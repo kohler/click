@@ -2025,7 +2025,7 @@ cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
 void
 cp_va_static_initialize()
 {
-  cp_add_argtype(cpArgument, "??", 0, default_parsefunc, default_storefunc);
+  cp_add_argtype(cpArgument, "arg", 0, default_parsefunc, default_storefunc);
   cp_add_argtype(cpString, "string", 0, default_parsefunc, default_storefunc);
   cp_add_argtype(cpWord, "word", 0, default_parsefunc, default_storefunc);
   cp_add_argtype(cpBool, "bool", 0, default_parsefunc, default_storefunc);

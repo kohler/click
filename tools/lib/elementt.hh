@@ -4,9 +4,10 @@
 #include <stddef.h>
 #include <click/vector.hh>
 class RouterT;
-class RouterScope;
+class VariableEnvironment;
 class ErrorHandler;
 class StringAccum;
+class CompoundElementClassT;
 
 struct ElementT {
   
@@ -47,11 +48,7 @@ struct Hookup {
   
 };
 
-class ElementClassT {
-
-  int _use_count;
-  
- public:
+class ElementClassT { public:
 
   ElementClassT();
   virtual ~ElementClassT()		{ }
@@ -59,14 +56,25 @@ class ElementClassT {
   void use()				{ _use_count++; }
   void unuse()				{ if (--_use_count <= 0) delete this; }
 
-  static int simple_expand_into(RouterT *, int, RouterT *,
-				const RouterScope &, ErrorHandler *);
-  virtual int expand_into(RouterT *, int, RouterT *,
-			  const RouterScope &, ErrorHandler *);
-  virtual void compound_declaration_string(StringAccum &, const String &, const String &);
+  static int expand_element(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
+  
+  virtual ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
+  virtual void report_signatures(const String &, String, ErrorHandler *);
+  virtual int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+  
+  virtual void declaration_string(StringAccum &, const String &, const String &);
 
-  virtual bool expands_away() const	{ return false; }
+  virtual bool direct_expansion() const	{ return true; }
+  virtual CompoundElementClassT *cast_compound() { return 0; }
   virtual RouterT *cast_router()	{ return 0; }
+
+  static String signature(const String &, int, int, int);
+  
+ private:
+  
+  int _use_count;
+  
+  static int direct_expand_element(RouterT *, int, ElementClassT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
   
 };
 
@@ -79,12 +87,51 @@ class SynonymElementClassT : public ElementClassT {
 
   SynonymElementClassT(const String &, ElementClassT *);
 
-  int expand_into(RouterT *, int, RouterT *,
-		  const RouterScope &, ErrorHandler *);
-  void compound_declaration_string(StringAccum &, const String &,
-				   const String &);
+  int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+  
+  void declaration_string(StringAccum &, const String &, const String &);
 
-  bool expands_away() const		{ return true; }
+  bool direct_expansion() const		{ return false; }
+  
+};
+
+class CompoundElementClassT : public ElementClassT {
+
+  String _name;
+  String _landmark;
+  RouterT *_router;
+  int _depth;
+  Vector<String> _formals;
+  int _ninputs;
+  int _noutputs;
+  
+  ElementClassT *_next;
+  
+  bool _circularity_flag;
+  
+  int actual_expand(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
+  
+ public:
+
+  CompoundElementClassT(RouterT *);
+  CompoundElementClassT(const String &name, const String &landmark, RouterT *, ElementClassT *, int depth);
+  ~CompoundElementClassT();
+
+  void add_formal(const String &n)	{ _formals.push_back(n); }
+  void finish(ErrorHandler *);
+  void check_duplicates_until(ElementClassT *, ErrorHandler *);
+  
+  ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
+  void report_signatures(const String &, String, ErrorHandler *);
+  int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+  
+  void declaration_string(StringAccum &, const String &, const String &);
+
+  bool direct_expansion() const		{ return false; }
+  CompoundElementClassT *cast_compound() { return this; }
+  RouterT *cast_router()		{ return _router; }
+
+  String signature() const;
   
 };
 

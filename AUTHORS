@@ -1,7 +1,7 @@
 Benjie Chen
 benjie@lcs.mit.edu
 polling extensions, Linux kernel patches, stride scheduling, Linux kernel
-thread, device driver updates, smp click
+thread, device driver updates, SMP patches
 
 Douglas S. J. De Couto
 decouto@lcs.mit.edu
@@ -27,7 +27,7 @@ universal improvements, new elements
 
 Robert Morris
 rtm@lcs.mit.edu
-design, Ethernet, IP, Linux kernel module, and radio elements, Linux kernel 
+design, Ethernet, IP, Linux kernel module, radio elements, Linux kernel 
 patches, IP router configuration, element documentation, other elements
 
 Massimiliano Poletto

@@ -113,6 +113,7 @@ include/click/string.hh
 include/click/subvector.hh
 include/click/timer.hh
 include/click/userutils.hh
+include/click/variableenv.hh
 include/click/vector.cc
 include/click/vector.hh
 
@@ -149,6 +150,7 @@ lib/string.cc
 lib/templatei.cc
 lib/timer.cc
 lib/userutils.cc
+lib/variableenv.cc
 lib/vectorv.cc
 
 userlevel

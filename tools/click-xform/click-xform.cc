@@ -24,6 +24,7 @@
 #include "lexert.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
+#include <click/variableenv.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include "adjacency.hh"
@@ -77,8 +78,6 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
   : _pat(pat), _pat_m(pat_m), _body(body), _body_m(body_m), _patid(patid),
     _pat_input_idx(-1), _pat_output_idx(-1)
 {
-  _pat->use();
-  _body->use();
   // check tunnel situation
   for (int i = 0; i < _pat->nelements(); i++) {
     ElementT &fac = _pat->element(i);
@@ -97,8 +96,6 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
 
 Matcher::~Matcher()
 {
-  _pat->unuse();
-  _body->unuse();
 }
 
 bool
@@ -324,8 +321,14 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   // add replacement
   // collect new element indices in `changed_elements'
   _body->set_new_eindex_collector(&changed_elements);
+
+  // make element named `prefix'
   int new_eindex = _body->get_eindex(prefix, RouterT::TUNNEL_TYPE, String(), landmark);
-  replacement->expand_into(_body, new_eindex, _body, RouterScope(), errh);
+
+  // expand 'replacement' into '_body'; need crap compound element
+  Vector<String> crap_args;
+  CompoundElementClassT comp(replacement);
+  comp.complex_expand_element(_body, new_eindex, String(), crap_args, _body, VariableEnvironment(), errh);
 
   // mark replacement
   for (int i = 0; i < changed_elements.size(); i++) {
@@ -340,11 +343,9 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   for (int i = 0; i < _match.size(); i++)
     if (_match[i] >= 0) {
       String n = _pat->ename(i);
-      if (replacement->eindex(n) >= 0) {
-	int new_index = _body->eindex(prefix + "/" + n);
-	assert(new_index >= 0);
+      int new_index = _body->eindex(prefix + "/" + n);
+      if (new_index >= 0) 
 	_body->change_ename(new_index, old_names[i]);
-      }
     }
 
   // find input and output, add connections to tunnels
@@ -577,9 +578,10 @@ particular purpose.\n");
   
  done:
   RouterT *r = read_router_file(router_file, errh);
+  if (r)
+    r->flatten(errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
-  r->flatten(errh);
 
   if (!patterns_attempted)
     errh->warning("no patterns read");
@@ -593,8 +595,8 @@ particular purpose.\n");
 	new_patterns.push_back(replacements[i]);
 	new_replacements.push_back(patterns[i]);
       }
-      patterns = new_patterns;
-      replacements = new_replacements;
+      patterns.swap(new_patterns);
+      replacements.swap(new_replacements);
     }
 
     // flatten patterns
@@ -602,6 +604,8 @@ particular purpose.\n");
       patterns[i]->flatten(errh);
 
     // unify pattern types
+    // (warning: creates circular element class references, which are
+    // removed below by remove_unused_element_types())
     for (int i = 0; i < patterns.size(); i++) {
       r->get_types_from(patterns[i]);
       r->get_types_from(replacements[i]);
@@ -641,6 +645,7 @@ particular purpose.\n");
   // write result
   if (nreplace)
     r->remove_dead_elements(0);
+  r->remove_unused_element_types(); // remove circular compound elements
   if (write_router_file(r, output_file, errh) < 0)
     exit(1);
   return 0;

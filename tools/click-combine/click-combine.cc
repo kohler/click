@@ -27,6 +27,7 @@
 #include "toolutils.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/variableenv.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -446,11 +447,8 @@ particular purpose.\n");
 
   // combine routers
   RouterT *combined = new RouterT;
-  for (int i = 0; i < routers.size(); i++) {
-    int ei = combined->get_eindex(router_names[i], RouterT::TUNNEL_TYPE,
-				  String(), String());
-    routers[i]->expand_into(combined, ei, combined, RouterScope(), errh);
-  }
+  for (int i = 0; i < routers.size(); i++)
+    routers[i]->expand_into(combined, VariableEnvironment(router_names[i]), errh);
 
   // nested combinations: change config strings of included RouterLinks
   int link_type = combined->type_index("RouterLink");

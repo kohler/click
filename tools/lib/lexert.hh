@@ -3,6 +3,7 @@
 #include <click/error.hh>
 #include <stdio.h>
 class RouterT;
+class CompoundElementClassT;
 
 enum {
   lexEOF = 0,
@@ -10,6 +11,8 @@ enum {
   lexVariable,
   lexArrow,
   lex2Colon,
+  lex2Bar,
+  lex3Dot,
   lexTunnel,
   lexElementclass,
   lexRequire,
@@ -64,8 +67,8 @@ class LexerT { protected:
   // router
   RouterT *_router;
 
-  String _element_prefix;
   int _anonymous_offset;
+  int _compound_depth;
   
   // errors
   ErrorHandler *_errh;
@@ -99,13 +102,12 @@ class LexerT { protected:
   
   bool yport(int &port);
   bool yelement(int &element, bool comma_ok);
-  bool yelement_upref(int &element);
   void ydeclaration(const String &first_element = "");
   bool yconnection();
-  void ycompound_arguments();
+  void ycompound_arguments(CompoundElementClassT *);
   void yelementclass();
   void ytunnel();
-  int ylocal();
+  int ycompound(String);
   void yrequire();
   bool ystatement(bool nested = false);
 

@@ -4,6 +4,7 @@
 #include <click/router.hh>
 #include <click/glue.hh>
 class LexerExtra;
+class VariableEnvironment;
 
 enum Lexemes {
   lexEOF = 0,
@@ -11,6 +12,8 @@ enum Lexemes {
   lexVariable,
   lexArrow,
   lex2Colon,
+  lex2Bar,
+  lex3Dot,
   lexTunnel,
   lexElementclass,
   lexRequire,
@@ -38,6 +41,7 @@ class Lexer {
   
   class TunnelEnd;
   class Compound;
+  class Synonym;
   typedef Router::Hookup Hookup;
   
   // lexer
@@ -70,21 +74,16 @@ class Lexer {
   Vector<Element *> _element_types;
   Vector<String> _element_type_names;
   Vector<int> _element_type_next;
-  Element *_tunnel_element_type;
   int _last_element_type;
   int _free_element_type;
 
-  // configuration arguments for compounds
-  HashMap<String, int> _variable_map;
-  Vector<String> _variable_values;
-  
   // elements
   HashMap<String, int> _element_map;
-  Vector<Element *> _elements;
+  Vector<int> _elements;
   Vector<String> _element_names;
   Vector<String> _element_configurations;
   Vector<String> _element_landmarks;
-  
+
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;
   
@@ -92,8 +91,8 @@ class Lexer {
   TunnelEnd *_defoutputs;
   
   // compound elements
-  String _element_prefix;
   int _anonymous_offset;
+  int _compound_depth;
 
   // requirements
   Vector<String> _requirements;
@@ -107,10 +106,11 @@ class Lexer {
   int get_element(String, int, const String & = String(), const String & = String());
   int lexical_scoping_in() const;
   void lexical_scoping_out(int);
-  void lexical_scoping_back(int, Vector<int> &);
-  void lexical_scoping_forward(const Vector<int> &);
-  int make_compound_element(String, int, const String &);
+  int make_compound_element(int);
+  void expand_compound_element(int, Vector<int> &, Vector<VariableEnvironment *> &);
   void add_router_connections(int, const Vector<int> &, Router *);
+
+  friend class Compound;
   
  public:
 
@@ -128,7 +128,6 @@ class Lexer {
   const Lexeme &lex();
   void unlex(const Lexeme &);
   String lex_config();
-  String lex_compound_body();
   String landmark() const;
   
   bool expect(int, bool report_error = true);
@@ -142,20 +141,20 @@ class Lexer {
   
   void remove_element_type(int);
 
-  void connect(int f1, int p1, int f2, int p2);
+  void connect(int element1, int port1, int element2, int port2);
   String element_name(int) const;
   String element_landmark(int) const;
   
   void add_tunnel(String, String);
   
   bool yport(int &port);
-  bool yelement_upref(int &element);
   bool yelement(int &element, bool comma_ok);
-  void ydeclaration(const String &first_element = "");
+  void ydeclaration(const String &first_element = String());
   bool yconnection();
   void yelementclass();
   void ytunnel();
-  int ylocal(String = "");
+  void ycompound_arguments(Compound *);
+  int ycompound(String name = String());
   void yrequire();
   bool ystatement(bool nested = false);
   

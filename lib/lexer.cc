@@ -26,6 +26,8 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
+#include <click/variableenv.hh>
 #include "elements/standard/errorelement.hh"
 
 //
@@ -57,60 +59,266 @@ class Lexer::TunnelEnd {
 };
 
 //
+// CLASS LEXER::SYNONYM
+//
+
+class Lexer::Synonym : public Element {
+  
+  Element *_element;
+  
+ public:
+  
+  Synonym(Element *e)			: _element(e) { }
+
+  const char *class_name() const	{ return _element->class_name(); }
+  void *cast(const char *);
+  Element *clone() const		{ return _element->clone(); }
+  
+};
+
+void *
+Lexer::Synonym::cast(const char *s)
+{
+  if (strcmp(s, "Lexer::Synonym") == 0)
+    return this;
+  else
+    return _element->cast(s);
+}
+
+//
 // CLASS LEXER::COMPOUND
 //
 
 class Lexer::Compound : public Element {
   
   mutable String _name;
-  String _body;
-  String _filename;
-  unsigned _lineno;
-  Vector<String> _arguments;
-  int _scope;
+  String _landmark;
+  int _depth;
+  Element *_next;
+
+  Vector<String> _formals;
+  int _ninputs;
+  int _noutputs;
+  
+  Vector<int> _elements;
+  Vector<String> _element_names;
+  Vector<String> _element_configurations;
+  Vector<String> _element_landmarks;
+  
+  Vector<Hookup> _hookup_from;
+  Vector<Hookup> _hookup_to;
   
  public:
   
-  Compound(const String &, const String &, const String &, unsigned,
-	   const Vector<String> &);
-  Compound(const Compound &);
+  Compound(const String &, const String &, int, Element *);
+
+  const String &name() const		{ return _name; }
+  const String &landmark() const	{ return _landmark; }
+  int nformals() const			{ return _formals.size(); }
+  const Vector<String> &formals() const	{ return _formals; }
+  void add_formal(const String &f)	{ _formals.push_back(f); }
+  int depth() const			{ return _depth; }
+
+  void swap_router(Lexer *);
+  void finish(ErrorHandler *);
+  void check_duplicates_until(Element *, ErrorHandler *);
+
+  Element *find_relevant_class(int, int, const Vector<String> &);
+  void report_signatures(ErrorHandler *);
+  void expand_into(Lexer *, int, const VariableEnvironment &);
   
   const char *class_name() const	{ return _name.cc(); }
   void *cast(const char *);
   Compound *clone() const		{ return 0; }
 
-  void set_scope(int s)			{ _scope = s; }
-  
-  const String &body() const		{ return _body; }
-  const String &filename() const	{ return _filename; }
-  unsigned lineno() const		{ return _lineno; }
-  int narguments() const		{ return _arguments.size(); }
-  const String &argument(int i) const	{ return _arguments[i]; }
-  int scope() const			{ return _scope; }
+  String signature() const;
+  static String signature(const String &, int, int, int);
   
 };
 
-Lexer::Compound::Compound(const String &name, const String &body,
-			  const String &filename, unsigned lineno,
-			  const Vector<String> &args)
-  : _name(name), _body(body), _filename(filename), _lineno(lineno),
-    _arguments(args), _scope(-1)
-{
-}
-
-Lexer::Compound::Compound(const Compound &o)
-  : Element(), _name(o._name), _body(o._body), _filename(o._filename),
-    _lineno(o._lineno), _arguments(o._arguments), _scope(o._scope)
+Lexer::Compound::Compound(const String &name, const String &lm, int depth, Element *next)
+  : _name(name), _landmark(lm), _depth(depth), _next(next),
+    _ninputs(0), _noutputs(0)
 {
 }
 
 void *
 Lexer::Compound::cast(const char *s)
 {
-  if (String("Lexer::Compound") == s || _name == s)
+  if (strcmp(s, "Lexer::Compound") == 0 || _name == s)
     return this;
   else
     return 0;
+}
+
+void
+Lexer::Compound::swap_router(Lexer *lexer)
+{
+  lexer->_elements.swap(_elements);
+  lexer->_element_names.swap(_element_names);
+  lexer->_element_configurations.swap(_element_configurations);
+  lexer->_element_landmarks.swap(_element_landmarks);
+
+  lexer->_hookup_from.swap(_hookup_from);
+  lexer->_hookup_to.swap(_hookup_to);
+}
+
+void
+Lexer::Compound::finish(ErrorHandler *errh)
+{
+  assert(_element_names[0] == "input" && _element_names[1] == "output");
+
+  // count numbers of inputs and outputs
+  Vector<int> from_in, to_out;
+  bool to_in = false, from_out = false;
+  for (int i = 0; i < _hookup_from.size(); i++) {
+    const Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
+    
+    if (hf.idx == 0) {
+      if (from_in.size() <= hf.port)
+	from_in.resize(hf.port + 1, 0);
+      from_in[hf.port] = 1;
+    } else if (hf.idx == 1)
+      from_out = true;
+    
+    if (ht.idx == 1) {
+      if (to_out.size() <= ht.port)
+	to_out.resize(ht.port + 1, 0);
+      to_out[ht.port] = 1;
+    } else if (ht.idx == 0)
+      to_in = true;
+  }
+  
+  // store information
+  _ninputs = from_in.size();
+  if (to_in)
+    errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", _name.cc());
+  for (int i = 0; i < from_in.size(); i++)
+    if (!from_in[i])
+      errh->lerror(_landmark, "compound element `%s' input %d unused", _name.cc(), i);
+  
+  _noutputs = to_out.size();
+  if (from_out)
+    errh->lerror(_landmark, "`%s' pseudoelement `output' may only be used as input", _name.cc());
+  for (int i = 0; i < to_out.size(); i++)
+    if (!to_out[i])
+      errh->lerror(_landmark, "compound element `%s' output %d unused", _name.cc(), i);
+}
+
+void
+Lexer::Compound::check_duplicates_until(Element *last, ErrorHandler *errh)
+{
+  if (this == last || !_next)
+    return;
+  
+  Element *n = _next;
+  while (n && n != last) {
+    Compound *nc = (Compound *)n->cast("Lexer::Compound");
+    if (!nc) break;
+    if (nc->_ninputs == _ninputs && nc->_noutputs == _noutputs && nc->_formals.size() == _formals.size()) {
+      errh->lerror(_landmark, "redeclaration of `%s'", signature().cc());
+      errh->lerror(nc->_landmark, "`%s' previously declared here", signature().cc());
+      break;
+    }
+    n = nc->_next;
+  }
+
+  if (Compound *nc = (Compound *)_next->cast("Lexer::Compound"))
+    nc->check_duplicates_until(last, errh);
+}
+
+Element *
+Lexer::Compound::find_relevant_class(int ninputs, int noutputs, const Vector<String> &args)
+{
+  Compound *ct = this;
+  
+  while (1) {
+    if (ct->_ninputs == ninputs && ct->_noutputs == noutputs && ct->_formals.size() == args.size())
+      return ct;
+    Element *e = ct->_next;
+    if (!e)
+      return 0;
+    else if (Compound *next = (Compound *)e->cast("Lexer::Compound"))
+      ct = next;
+    else
+      return e;
+  }
+}
+
+String
+Lexer::Compound::signature(const String &name, int ninputs, int noutputs, int nargs)
+{
+  StringAccum sa;
+  const char *pl_args = (nargs == 1 ? " argument, " : " arguments, ");
+  const char *pl_ins = (ninputs == 1 ? " input, " : " inputs,");
+  const char *pl_outs = (noutputs == 1 ? " output" : " outputs");
+  sa << name << '[' << nargs << pl_args << ninputs << pl_ins << noutputs << pl_outs << ']';
+  return sa.take_string();
+}
+
+String
+Lexer::Compound::signature() const
+{
+  return signature(_name, _ninputs, _noutputs, _formals.size());
+}
+
+void
+Lexer::Compound::report_signatures(ErrorHandler *errh)
+{
+  if (_next) {
+    if (Compound *n = (Compound *)_next->cast("Lexer::Compound"))
+      n->report_signatures(errh);
+    else
+      errh->lmessage(_landmark, "`%s[...]'", _name.cc());
+  }
+  errh->lmessage(_landmark, "`%s'", signature().cc());
+}
+
+void
+Lexer::Compound::expand_into(Lexer *lexer, int which, const VariableEnvironment &ve)
+{
+  ErrorHandler *errh = lexer->_errh;
+  
+  // `name_slash' is `name' constrained to end with a slash
+  String ename = lexer->_element_names[which];
+  String ename_slash;
+  if (ename[ename.length() - 1] == '/')
+    ename_slash = ename;
+  else
+    ename_slash = ename + "/";
+
+  assert(_element_names[0] == "input" && _element_names[1] == "output");
+
+  lexer->_elements[which] = TUNNEL_TYPE;
+  lexer->add_tunnel(ename, ename_slash + "input");
+  lexer->add_tunnel(ename_slash + "output", ename);
+
+  Vector<int> eidx_map;
+  eidx_map.push_back(lexer->_element_map[ename_slash + "input"]);
+  eidx_map.push_back(lexer->_element_map[ename_slash + "output"]);
+
+  for (int i = 2; i < _elements.size(); i++) {
+    String cname = ename_slash + _element_names[i];
+    int eidx = lexer->_element_map[cname];
+    if (eidx >= 0) {
+      errh->lerror(lexer->element_landmark(which), "redeclaration of element `%s'", cname.cc());
+      errh->lerror(lexer->element_landmark(eidx), "`%s' previously declared here", cname.cc());
+      eidx_map.push_back(-1);
+    } else {
+      if (lexer->_element_type_map[cname] >= 0)
+	errh->lerror(lexer->element_landmark(which), "`%s' is an element class", cname.cc());
+      eidx = lexer->get_element(cname, _elements[i], ve.interpolate(_element_configurations[i]), _element_landmarks[i]);
+      eidx_map.push_back(eidx);
+    }
+  }
+
+  // now copy hookups
+  int nh = _hookup_from.size();
+  for (int i = 0; i < nh; i++) {
+    const Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
+    if (eidx_map[hf.idx] >= 0 && eidx_map[ht.idx] >= 0)
+      lexer->connect(eidx_map[hf.idx], hf.port, eidx_map[ht.idx], ht.port);
+  }
 }
 
 //
@@ -121,26 +329,22 @@ Lexer::Lexer(ErrorHandler *errh)
   : _data(0), _len(0), _pos(0), _lineno(1), _lextra(0),
     _tpos(0), _tfull(0),
     _element_type_map(-1),
-    _tunnel_element_type(new ErrorElement),
     _last_element_type(-1),
     _free_element_type(-1),
-    _variable_map(-1),
     _element_map(-1),
     _definputs(0), _defoutputs(0),
     _errh(errh)
 {
   if (!_errh) _errh = ErrorHandler::default_handler();
   end_parse(-1);		// clear private state
-  add_element_type("<tunnel>", _tunnel_element_type);
+  add_element_type("<tunnel>", new ErrorElement);
   add_element_type(new ErrorElement);
-  assert(element_type("<tunnel>") == TUNNEL_TYPE
-	 && element_type("Error") == ERROR_TYPE);
+  assert(element_type("<tunnel>") == TUNNEL_TYPE && element_type("Error") == ERROR_TYPE);
 }
 
 Lexer::~Lexer()
 {
   end_parse(-1);
-  // _default_element_type and _tunnel_element_type removed by end_parse()
 }
 
 int
@@ -161,17 +365,13 @@ Lexer::begin_parse(const String &data, const String &filename,
   _lineno = 1;
 
   _lextra = lextra;
-  return _last_element_type;
+  return lexical_scoping_in();
 }
 
 void
 Lexer::end_parse(int cookie)
 {
   lexical_scoping_out(cookie);
-  for (int i = 0; i < _elements.size(); i++)
-    // don't delete _tunnel_element_type!
-    if (_elements[i] != _tunnel_element_type)
-      delete _elements[i];
   
   delete _definputs;
   _definputs = 0;
@@ -198,8 +398,8 @@ Lexer::end_parse(int cookie)
   _tpos = 0;
   _tfull = 0;
   
-  _element_prefix = "";
   _anonymous_offset = 0;
+  _compound_depth = 0;
 }
 
 
@@ -373,7 +573,14 @@ Lexer::next_lexeme()
     } else if (_data[pos] == ':' && _data[pos+1] == ':') {
       _pos = pos + 2;
       return Lexeme(lex2Colon, _big_string.substring(word_pos, 2));
+    } else if (_data[pos] == '|' && _data[pos+1] == '|') {
+      _pos = pos + 2;
+      return Lexeme(lex2Bar, _big_string.substring(word_pos, 2));
     }
+  }
+  if (pos < _len - 2 && _data[pos] == '.' && _data[pos+1] == '.' && _data[pos+2] == '.') {
+    _pos = pos + 3;
+    return Lexeme(lex3Dot, _big_string.substring(word_pos, 3));
   }
   
   _pos = pos + 1;
@@ -386,7 +593,6 @@ Lexer::lex_config()
   unsigned config_pos = _pos;
   unsigned pos = _pos;
   unsigned paren_depth = 1;
-  bool have_arguments = _variable_values.size() != 0;
   int quote = 0;
   String output;
   
@@ -413,23 +619,6 @@ Lexer::lex_config()
     else if (_data[pos] == '\\' && pos < _len - 1 && quote == '\"') {
       if (_data[pos+1] == '\"' || _data[pos+1] == '$')
 	pos++;
-    } else if (_data[pos] == '$' && have_arguments && quote != '\'') {
-      unsigned word_pos = pos;
-      for (pos++; isalnum(_data[pos]) || _data[pos] == '_'; pos++)
-	/* nada */;
-      String name = _big_string.substring(word_pos, pos - word_pos);
-      int variable = _variable_map[name];
-      if (variable >= 0) {
-	output += _big_string.substring(config_pos, word_pos - config_pos);
-	String value = _variable_values[variable];
-	if (quote == '\"') {	// interpolate inside the quotes
-	  value = cp_quote(cp_unquote(value));
-	  if (value[0] == '\"') value = value.substring(1, value.length() - 2);
-	}
-	output += value;
-	config_pos = pos;
-      }
-      pos--;
     }
   
   _pos = pos;
@@ -437,40 +626,6 @@ Lexer::lex_config()
     return _big_string.substring(config_pos, pos - config_pos);
   else
     return output + _big_string.substring(config_pos, pos - config_pos);
-}
-
-String
-Lexer::lex_compound_body()
-{
-  unsigned config_pos = _pos;
-  unsigned pos = _pos;
-  unsigned paren_depth = 0;
-  unsigned brace_depth = 1;
-  for (; pos < _len; pos++)
-    if (_data[pos] == '(')
-      paren_depth++;
-    else if (_data[pos] == ')' && paren_depth)
-      paren_depth--;
-    else if (_data[pos] == '{' && !paren_depth)
-      brace_depth++;
-    else if (_data[pos] == '}' && !paren_depth) {
-      brace_depth--;
-      if (!brace_depth) break;
-    } else if (_data[pos] == '/' && pos < _len - 1) {
-      if (_data[pos+1] == '/')
-	pos = skip_line(pos + 2) - 1;
-      else if (_data[pos+1] == '*')
-	pos = skip_slash_star(pos + 2) - 1;
-    } else if (_data[pos] == '\n')
-      _lineno++;
-    else if (_data[pos] == '\r') {
-      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
-      _lineno++;
-    } else if ((_data[pos] == '\'' || _data[pos] == '\"') && paren_depth)
-      pos = skip_quote(pos + 1, _data[pos]) - 1;
-  
-  _pos = pos;
-  return _big_string.substring(config_pos, pos - config_pos);
 }
 
 String
@@ -485,10 +640,16 @@ Lexer::lexeme_string(int kind)
     return "`->'";
   else if (kind == lex2Colon)
     return "`::'";
+  else if (kind == lex2Bar)
+    return "`||'";
+  else if (kind == lex3Dot)
+    return "`...'";
   else if (kind == lexTunnel)
     return "`connectiontunnel'";
   else if (kind == lexElementclass)
     return "`elementclass'";
+  else if (kind == lexRequire)
+    return "`require'";
   else if (kind >= 32 && kind < 127) {
     sprintf(buf, "`%c'", kind);
     return buf;
@@ -567,6 +728,7 @@ Lexer::add_element_type(Element *e)
 int
 Lexer::add_element_type(String name, Element *e)
 {
+  assert(e);
   // Lexer now owns `e'
   int tid;
   if (!name)
@@ -673,18 +835,18 @@ Lexer::element_type_names(Vector<String> &v) const
 void
 Lexer::add_tunnel(String namein, String nameout)
 {
-  Hookup hin(get_element(_element_prefix + namein, TUNNEL_TYPE), 0);
-  Hookup hout(get_element(_element_prefix + nameout, TUNNEL_TYPE), 0);
+  Hookup hin(get_element(namein, TUNNEL_TYPE), 0);
+  Hookup hout(get_element(nameout, TUNNEL_TYPE), 0);
   
   bool ok = true;
-  if (_elements[hin.idx] != _tunnel_element_type) {
+  if (_elements[hin.idx] != TUNNEL_TYPE) {
     lerror("redeclaration of element `%s'", namein.cc());
-    _errh->lerror(_elements[hin.idx]->landmark(), "`%s' previously declared here", namein.cc());
+    _errh->lerror(_element_landmarks[hin.idx], "`%s' previously declared here", namein.cc());
     ok = 0;
   }
-  if (_elements[hout.idx] != _tunnel_element_type) {
+  if (_elements[hout.idx] != TUNNEL_TYPE) {
     lerror("redeclaration of element `%s'", nameout.cc());
-    _errh->lerror(_elements[hout.idx]->landmark(), "`%s' previously declared here", nameout.cc());
+    _errh->lerror(_element_landmarks[hout.idx], "`%s' previously declared here", nameout.cc());
     ok = 0;
   }
   if (_definputs && _definputs->find(hin))
@@ -710,33 +872,19 @@ Lexer::get_element(String name, int etype, const String &conf,
   if (_element_map[name] >= 0)
     return _element_map[name];
 
-  // check type
-  Element *e;
-  Element *et = _element_types[etype];
-  if (etype == TUNNEL_TYPE)
-    e = et;
-  else if ((e = et->clone()))
-    /* do nothing */;
-  else if (et->cast("Lexer::Compound"))
-    return make_compound_element(name, etype, conf);
-  else {
-    lerror("can't clone `%s'", et->declaration().cc());
-    e = 0;
-  }
-
   int eid = _elements.size();
   _element_map.insert(name, eid);
   _element_names.push_back(name);
   _element_configurations.push_back(conf);
   _element_landmarks.push_back(lm ? lm : landmark());
-  _elements.push_back(e);
+  _elements.push_back(etype);
   return eid;
 }
 
 String
 Lexer::anon_element_name(const String &class_name) const
 {
-  String prefix = _element_prefix + class_name + "@";
+  String prefix = class_name + "@";
   int anonymizer = _elements.size() - _anonymous_offset + 1;
   String name = prefix + String(anonymizer);
   while (_element_map[name] >= 0) {
@@ -744,144 +892,6 @@ Lexer::anon_element_name(const String &class_name) const
     name = prefix + String(anonymizer);
   }
   return name;
-}
-
-void
-Lexer::lexical_scoping_back(int first, Vector<int> &insertions)
-{
-  for (int t = _last_element_type; t >= 0; t = _element_type_next[t]) {
-    const String &name = _element_type_names[t];
-    if (_element_type_map[name] == t) {
-      // remove it from map
-      int prev = _element_type_next[first];
-      while (prev >= 0 && _element_type_names[prev] != name)
-	prev = _element_type_next[prev];
-      _element_type_map.insert(name, prev);
-      insertions.push_back(t);
-    }
-    if (t == first)
-      break;
-  }
-}
-
-void
-Lexer::lexical_scoping_forward(const Vector<int> &insertions)
-{
-  for (int i = 0; i < insertions.size(); i++) {
-    int j = insertions[i];
-    _element_type_map.insert(_element_type_names[j], j);
-  }
-}
-
-int
-Lexer::make_compound_element(String name, int etype, const String &conf)
-{
-  Compound *compound = (Compound *)_element_types[etype];
-  if (!name)
-    name = anon_element_name(compound->class_name());
-  // change `name' to not contain the current prefix
-  name = name.substring(_element_prefix.length());
-
-  // handle configuration string
-  Vector<String> args;
-  cp_argvec(conf, args);
-  int nargs = compound->narguments();
-  if (args.size() != nargs) {
-    const char *whoops = (args.size() < nargs ? "few" : "many");
-    String signature;
-    for (int i = 0; i < nargs; i++) {
-      if (i) signature += ", ";
-      signature += compound->argument(i);
-    }
-    lerror("too %s arguments to compound element `%s(%s)'", whoops,
-	   compound->class_name(), signature.cc());
-    for (int i = args.size(); i < nargs; i++)
-      args.push_back("");
-  }
-  
-  // store arguments
-  Vector<int> prev_variable_value;
-  for (int i = 0; i < nargs; i++) {
-    const String &name = compound->argument(i);
-    int prev = _variable_map[name];
-    _variable_values.push_back(args[i]);
-    prev_variable_value.push_back(prev);
-    _variable_map.insert(name, _variable_values.size() - 1);
-  }
-
-  // `name_slash' is `name' constrained to end with a slash
-  String name_slash;
-  if (name[name.length() - 1] == '/')
-    name_slash = name;
-  else
-    name_slash = name + "/";
-  
-  int fake_index = get_element(_element_prefix + name, TUNNEL_TYPE);
-  add_tunnel(name, name_slash + "input");
-  add_tunnel(name_slash + "output", name);
-  
-  // save parser state
-  String old_prefix = _element_prefix;
-  String old_big_string = _big_string;
-  unsigned old_len = _len;
-  unsigned old_pos = _pos;
-  String old_filename = _filename;
-  unsigned old_lineno = _lineno;
-  Lexeme old_tcircle[TCIRCLE_SIZE];
-  old_tcircle = _tcircle;
-  int old_tpos = _tpos;
-  int old_tfull = _tfull;
-  int old_anonymous_offset = _anonymous_offset;
-
-  // reparse the saved compound element's body!
-  _element_prefix += name_slash;
-  _big_string = compound->body();
-  _data = _big_string.data();
-  _len = _big_string.length();
-  _pos = 0;
-  _filename = compound->filename();
-  _lineno = compound->lineno();
-  _tpos = _tfull;
-  // manipulate the anonymous offset so anon elements in 2 instances of the
-  // compound have identical suffixes
-  int old_elements_size = _elements.size();
-  _anonymous_offset = _elements.size();
-  
-  // lexical scoping of types
-  int cookie = lexical_scoping_in();
-  Vector<int> lexical_scoping_help;
-  lexical_scoping_back(compound->scope(), lexical_scoping_help);
-  
-  while (ystatement())
-    /* do nothing */;
-
-  // restore parser state
-  _element_prefix = old_prefix;
-  _big_string = old_big_string;
-  _data = _big_string.data();
-  _len = old_len;
-  _pos = old_pos;
-  _filename = old_filename;
-  _lineno = old_lineno;
-  _tcircle = old_tcircle;
-  _tpos = old_tpos;
-  _tfull = old_tfull;
-  // manipulate the anonymous offset to get consistent results with tools
-  _anonymous_offset = old_anonymous_offset + _elements.size()
-    - old_elements_size + 2;
-
-  // lexical scoping fixup
-  lexical_scoping_out(cookie);
-  lexical_scoping_forward(lexical_scoping_help);
-  
-  // lexical scoping of arguments
-  for (int i = nargs - 1; i >= 0; i--) {
-    const String &name = compound->argument(i);
-    _variable_map.insert(name, prev_variable_value[i]);
-  }
-  _variable_values.resize(_variable_values.size() - nargs);
-
-  return fake_index;
 }
 
 void
@@ -903,12 +913,13 @@ Lexer::element_name(int eid) const
   else {
     char buf[100];
     sprintf(buf, "@%d", eid);
-    if (_elements[eid] == _tunnel_element_type)
-      return "<tunnel " + String(buf) + ">";
-    else if (!_elements[eid])
-      return "<null " + String(buf) + ">";
+    int t = _elements[eid];
+    if (t == TUNNEL_TYPE)
+      return "<tunnel" + String(buf) + ">";
+    else if (!_element_types[t])
+      return "<null" + String(buf) + ">";
     else
-      return _elements[eid]->class_name() + String(buf);
+      return _element_types[t]->class_name() + String(buf);
   }
 }
 
@@ -955,48 +966,17 @@ Lexer::yport(int &port)
 }
 
 bool
-Lexer::yelement_upref(int &element)
-{
-  Lexeme t = lex();
-  if (!t.is(lexIdent)) {
-    lerror("syntax error: expected element name");
-    unlex(t);
-    return false;
-  }
-
-  String prefix = _element_prefix;
-  while (1) {
-    int pos = prefix.find_right('/', prefix.length() - 2);
-    prefix = (pos >= 0 ? prefix.substring(0, pos + 1) : String());
-    
-    String name = prefix + t.string();
-    int en = _element_map[name];
-    if (en >= 0) {
-      element = en;
-      return true;
-    }
-
-    if (!prefix) {
-      lerror("`%s' not found in enclosing scopes", t.string().cc());
-      return false;
-    }
-  }
-}
-
-bool
 Lexer::yelement(int &element, bool comma_ok)
 {
   Lexeme t = lex();
   String name;
   int etype;
 
-  if (t.is('^')) {
-    return yelement_upref(element);
-  } else if (t.is(lexIdent)) {
+  if (t.is(lexIdent)) {
     name = t.string();
     etype = element_type(name);
   } else if (t.is('{')) {
-    etype = ylocal();
+    etype = ycompound();
     name = _element_types[etype]->class_name();
   } else {
     unlex(t);
@@ -1016,8 +996,7 @@ Lexer::yelement(int &element, bool comma_ok)
   if (etype >= 0)
     element = get_element(anon_element_name(name), etype, configuration, lm);
   else {
-    String lookup_name = _element_prefix + name;
-    element = _element_map[lookup_name];
+    element = _element_map[name];
     if (element < 0) {
       const Lexeme &t2colon = lex();
       unlex(t2colon);
@@ -1025,9 +1004,9 @@ Lexer::yelement(int &element, bool comma_ok)
 	ydeclaration(name);
       else {
 	lerror("undeclared element `%s' (first use this block)", name.cc());
-	get_element(lookup_name, ERROR_TYPE);
+	get_element(name, ERROR_TYPE);
       }
-      element = _element_map[lookup_name];
+      element = _element_map[name];
     }
   }
   
@@ -1071,7 +1050,7 @@ Lexer::ydeclaration(const String &first_element)
   if (t.is(lexIdent))
     etype = force_element_type(t.string());
   else if (t.is('{'))
-    etype = ylocal();
+    etype = ycompound();
   else {
     lerror("missing element type in declaration");
     return;
@@ -1087,18 +1066,15 @@ Lexer::ydeclaration(const String &first_element)
 
   for (int i = 0; i < decls.size(); i++) {
     String name = decls[i];
-    String lookup_name = _element_prefix + name;
-    if (_element_map[lookup_name] >= 0) {
-      int e = _element_map[lookup_name];
+    if (_element_map[name] >= 0) {
+      int e = _element_map[name];
       lerror("redeclaration of element `%s'", name.cc());
-      if (_elements[e] != _tunnel_element_type)
-	_errh->lerror(_elements[e]->landmark(), "element `%s' previously declared here", name.cc());
+      if (_elements[e] != TUNNEL_TYPE)
+	_errh->lerror(_element_landmarks[e], "element `%s' previously declared here", name.cc());
     } else if (_element_type_map[name] >= 0)
       lerror("`%s' is an element class", name.cc());
-    else if (_element_type_map[lookup_name] >= 0)
-      lerror("`%s' is an element class", lookup_name.cc());
     else
-      get_element(lookup_name, etype, configuration, lm);
+      get_element(name, etype, configuration, lm);
   }
 }
 
@@ -1146,9 +1122,12 @@ Lexer::yconnection()
       goto relex;
       
      case lexIdent:
-     case '^':
      case '{':
      case '}':
+     case lex2Bar:
+     case lexTunnel:
+     case lexElementclass:
+     case lexRequire:
       unlex(t);
       // FALLTHRU
      case ';':
@@ -1184,24 +1163,13 @@ Lexer::yelementclass()
 
   Lexeme tnext = lex();
   if (tnext.is('{'))
-    ylocal(name);
+    ycompound(name);
     
   else if (tnext.is(lexIdent)) {
-    // Go through some rigamarole because other code always assumes that
-    // _element_type_map[x] == _element_type_map[y] <==>
+    // define synonym type
     int t = force_element_type(tnext.string());
     Element *et = _element_types[t];
-    Element *e = et->clone();
-    if (!e) {
-      Compound *comp = static_cast<Compound *>(et->cast("Lexer::Compound"));
-      if (comp)
-	e = new Compound(*comp);
-    }
-    if (!e) {
-      lerror("can't clone `%s'", et->declaration().cc());
-      add_element_type(name, new ErrorElement);
-    } else
-      add_element_type(name, e);
+    add_element_type(name, new Synonym(et));
 
   } else {
     lerror("syntax error near `%s'", String(tnext.string()).cc());
@@ -1238,42 +1206,87 @@ Lexer::ytunnel()
   }
 }
 
-int
-Lexer::ylocal(String name)
+void
+Lexer::ycompound_arguments(Compound *comptype)
 {
-  // OK because every used ylocal() corresponds to at least one element
+  while (1) {
+    const Lexeme &tvar = lex();
+    if (!tvar.is(lexVariable)) {
+      unlex(tvar);
+      return;
+    }
+    comptype->add_formal(tvar.string());
+    const Lexeme &tsep = lex();
+    if (tsep.is('|'))
+      return;
+    else if (!tsep.is(',')) {
+      lerror("expected `,' or `|'");
+      unlex(tsep);
+      return;
+    }
+  }
+}
+
+int
+Lexer::ycompound(String name)
+{
+  // OK because every used ycompound() corresponds to at least one element
   if (!name)
     name = "@Class" + String(_elements.size() - _anonymous_offset + 1);
 
-  // check for arguments
-  Vector<String> arguments;
-  unsigned old_pos = _pos;
+  HashMap<String, int> old_element_map(-1);
+  old_element_map.swap(_element_map);
+  HashMap<String, int> old_type_map(_element_type_map);
+  int old_offset = _anonymous_offset;
+  Element *created = 0;
+
+  // check for '...'
+  const Lexeme &t = lex();
+  if (t.is(lex3Dot)) {
+    if (_element_type_map[name] < 0) {
+      lerror("extending unknwon element class `%s'", name.cc());
+      add_element_type(name, new ErrorElement);
+    }
+    created = _element_types[ _element_type_map[name] ];
+    expect(lex2Bar);
+  } else
+    unlex(t);
+
+  Element *first = created;
+
   while (1) {
-    Lexeme t = lex();
-    if (!t.is(lexVariable))
-      break;
-    arguments.push_back(t.string());
-    old_pos = _pos;
-    const Lexeme &sep = lex();
-    if (sep.is('|')) {
-      old_pos = _pos;
-      break;
-    } else if (!sep.is(','))
+    // prepare
+    _element_map.clear();
+    Compound *ct = new Compound(name, landmark(), _compound_depth, created);
+    ct->swap_router(this);
+    get_element("input", TUNNEL_TYPE);
+    get_element("output", TUNNEL_TYPE);
+    _anonymous_offset = 2;
+    _compound_depth++;
+
+    ycompound_arguments(ct);
+    while (ystatement(true))
+      /* nada */;
+
+    _compound_depth--;
+    _anonymous_offset = old_offset;
+    old_type_map.swap(_element_type_map);
+    ct->swap_router(this);
+
+    ct->finish(_errh);
+    created = ct;
+
+    // check for '||' or '}'
+    const Lexeme &t = lex();
+    if (!t.is(lex2Bar))
       break;
   }
-  _pos = old_pos;
   
-  // opening brace was already read
-  String body_filename = _filename;
-  unsigned body_lineno = _lineno;
-  String body = lex_compound_body();
-  expect('}');
-
-  Compound *c =
-    new Compound(name, body, body_filename, body_lineno, arguments);
-  int t = add_element_type(name, c);
-  c->set_scope(t);
-  return t;
+  // on the way out
+  ((Compound *)created)->check_duplicates_until(first, _errh);
+  old_element_map.swap(_element_map);
+  
+  return add_element_type(name, created);
 }
 
 void
@@ -1304,7 +1317,6 @@ Lexer::ystatement(bool nested)
   switch (t.kind()) {
     
    case lexIdent:
-   case '^':
    case '[':
    case '{':
     unlex(t);
@@ -1327,8 +1339,10 @@ Lexer::ystatement(bool nested)
     return true;
     
    case '}':
+   case lex2Bar:
     if (!nested)
       goto syntax_error;
+    unlex(t);
     return false;
     
    case lexEOF:
@@ -1366,6 +1380,68 @@ Lexer::add_router_connections(int c, const Vector<int> &router_id,
   }
 }
 
+void
+Lexer::expand_compound_element(int which, Vector<int> &environment_map, Vector<VariableEnvironment *> &environments)
+{
+  String name = _element_names[which];
+  int etype = _elements[which];
+  assert(name);
+  int old_nelements = _elements.size();
+    
+  // find right version
+  Vector<String> args;
+  cp_argvec(_element_configurations[which], args);
+  int inputs_used = 0, outputs_used = 0;
+  for (int i = 0; i < _hookup_from.size(); i++) {
+    const Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
+    if (ht.idx == which && ht.port >= inputs_used)
+      inputs_used = ht.port + 1;
+    if (hf.idx == which && hf.port >= outputs_used)
+      outputs_used = hf.port + 1;
+  }
+  Compound *c = (Compound *)_element_types[etype];
+  Element *found_c = c->find_relevant_class(inputs_used, outputs_used, args);
+  if (!found_c) {
+    _errh->lerror(c->landmark(), "no match for `%s'", Compound::signature(c->name(), inputs_used, outputs_used, args.size()).cc());
+    ContextErrorHandler cerrh(_errh, "possibilities are:", "  ");
+    c->report_signatures(&cerrh);
+    _elements[which] = ERROR_TYPE;
+    return;
+  }
+
+  // have putatively correct version
+  Compound *found_comp = (Compound *)found_c->cast("Lexer::Compound");
+  if (!found_comp) {
+    for (int i = 0; i < _element_types.size(); i++)
+      if (_element_types[i] == found_c) {
+	_elements[which] = i;
+	return;
+      }
+    assert(0);
+    _elements[which] = ERROR_TYPE;
+    return;
+  }
+  
+  int vei = environment_map[which];
+  if (args.size() == 0 && found_comp->depth() == 0)
+    vei = 0;
+  else if (args.size() || environments[vei]->depth() >= found_comp->depth()) {
+    VariableEnvironment *new_ve = new VariableEnvironment;
+    if (vei > 0)
+      new_ve->enter(*environments[vei]);
+    new_ve->limit_depth(found_comp->depth());
+    new_ve->enter(found_comp->formals(), args, found_comp->depth());
+    environments.push_back(new_ve);
+    vei = environments.size() - 1;
+  }
+
+  found_comp->expand_into(this, which, *environments[vei]);
+
+  // mark new environments
+  for (int i = old_nelements; i < _elements.size(); i++)
+    environment_map.push_back(vei);
+}
+
 Router *
 Lexer::create_router()
 {
@@ -1373,19 +1449,28 @@ Lexer::create_router()
   if (!router)
     return 0;
   
-  // check for elements w/o types
-  for (int i = 0; i < _elements.size(); i++)
-    if (!_elements[i])
-      _errh->error("undeclared element `%s'", element_name(i).cc());
+  // expand compounds
+  Vector<int> environment_map(_elements.size(), 0);
+  Vector<VariableEnvironment *> environments;
+  environments.push_back(new VariableEnvironment);
+  
+  for (int i = 0; i < _elements.size(); i++) {
+    int t = _elements[i];
+    if (t != TUNNEL_TYPE && _element_types[t]->cast("Lexer::Compound"))
+      expand_compound_element(i, environment_map, environments);
+  }
+
+  for (int i = 0; i < environments.size(); i++)
+    delete environments[i];
   
   // add elements to router
   Vector<int> router_id;
   for (int i = 0; i < _elements.size(); i++)
-    if (_elements[i] && _elements[i] != _tunnel_element_type) {
-      int fi = router->add_element
-	(_elements[i], _element_names[i], _element_configurations[i],
-	 _element_landmarks[i]);
-      router_id.push_back(fi);
+    if (_elements[i] != TUNNEL_TYPE) {
+      Element *tc = _element_types[_elements[i]];
+      int ei = router->add_element
+	(tc->clone(), _element_names[i], _element_configurations[i], _element_landmarks[i]);
+      router_id.push_back(ei);
     } else
       router_id.push_back(-1);
   
@@ -1404,9 +1489,6 @@ Lexer::create_router()
   for (int i = 0; i < _requirements.size(); i++)
     router->add_requirement(_requirements[i]);
 
-  // clear _elements, as all elements are owned by router
-  _elements.assign(_elements.size(), (Element *)0);
-  
   return router;
 }
 
@@ -1518,7 +1600,7 @@ void
 Lexer::expand_connection(const Hookup &this_end, bool is_out,
 			 Vector<Hookup> &into) const
 {
-  if (_elements[this_end.idx] != _tunnel_element_type)
+  if (_elements[this_end.idx] != TUNNEL_TYPE)
     into.push_back(this_end);
   else {
     TunnelEnd *dp = (is_out ? _defoutputs : _definputs);

@@ -3,21 +3,28 @@
 #include <click/element.hh>
 
 /*
- * =c
- * Null1()
- * Null2()
- * Null3()
- * Null4()
- * Null5()
- * Null6()
- * Null7()
- * Null8()
- * =s
- * copies of Null
- * =d
- * Copies of Null that do not share code.
- * =a Null
- */
+=c
+
+Null1()
+Null2()
+Null3()
+Null4()
+Null5()
+Null6()
+Null7()
+Null8()
+
+=s
+
+copy of Null
+
+=d
+
+Each of these elements is a reimplementation of Null. However, each has
+independent code, so the i-cache cost of using all eight elements (Null1
+through Null8) is eight times the cost of eight Null elements.
+
+=a Null */
 
 class Null1 : public Element {
   

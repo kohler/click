@@ -348,8 +348,8 @@ main(int argc, char **argv)
 {
   String::static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
-  ErrorHandler *errh = new PrefixErrorHandler
-    (ErrorHandler::default_handler(), "click-install: ");
+  ErrorHandler *nop_errh = ErrorHandler::default_handler();
+  ErrorHandler *errh = new PrefixErrorHandler(nop_errh, "click-install: ");
 
   // read command line arguments
   Clp_Parser *clp =
@@ -424,10 +424,11 @@ particular purpose.\n");
   if (hotswap && uninstall)
     errh->warning("`--hotswap' and `--uninstall' are mutually exclusive");
   
-  RouterT *r = read_router_file(router_file, errh);
+  RouterT *r = read_router_file(router_file, nop_errh);
+  if (r)
+    r->flatten(nop_errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
-  r->flatten(errh);
 
   // uninstall Click if requested
   if (uninstall && access("/proc/click/version", F_OK) >= 0) {

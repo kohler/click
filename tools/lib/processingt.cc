@@ -130,7 +130,7 @@ ProcessingT::initial_processing_for(int ei, const ElementMap &em, ErrorHandler *
 {
   // don't handle uprefs or tunnels
   int etype = _router->etype(ei);
-  if (etype < 0 || etype == RouterT::TUNNEL_TYPE || etype == RouterT::UPREF_TYPE)
+  if (etype < 0 || etype == RouterT::TUNNEL_TYPE)
     return;
   
   String etype_name = _router->type_name(etype);

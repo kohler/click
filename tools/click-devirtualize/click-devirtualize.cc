@@ -322,9 +322,10 @@ particular purpose.\n");
 
   // read router
   RouterT *router = read_router_file(router_file, errh);
+  if (router)
+    router->flatten(errh);
   if (!router || errh->nerrors() > 0)
     exit(1);
-  router->flatten(errh);
 
   // open output file
   FILE *outf = stdout;

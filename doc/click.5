@@ -321,7 +321,7 @@ a -> X -> b;
 c -> Y -> d;
 .Re
 .PP
-The `input' and `output' pseudo-elements have no existence in a running
+The `input' and `output' pseudoelements have no existence in a running
 router; they serve as placeholders for connections from outside. (In fact,
 they are connection tunnel endpoints. See below for more on connection
 tunnels.)
@@ -362,6 +362,11 @@ like
 Nothing prevents a user from declaring an element named like a compound
 element component. We suggest that users generally avoid using the `/'
 character in their element names.
+.PP
+It is an error to use the `input' pseudoelement's input ports or the
+`output' pseudoelement's output ports. It is also an error to leave an
+intermediate port unused\*Efor example, to use `input [0]' and `input [2]'
+but not `input [1]'.
 '
 .SS "The `elementclass' statement"
 '
@@ -449,7 +454,58 @@ expands to this:
 .Rs
 \&... -> A(1, 100, 3) -> ...
 .Re
-You can avoid this substitution by quoting a dollar sign with a backslash.
+You can avoid this substitution by putting the dollar sign inside single
+quotes.
+'
+.SS "Overloading"
+'
+A single compound element may contain multiple overloaded definitions
+separated from one another by two vertical bars "\f(CW||\fR". Different
+definitions may have different numbers of input ports, output ports, or
+configuration arguments. For example, this extended MyQueue compound
+element takes an optional capacity argument, just like Queue itself:
+.Rs
+elementclass MyQueue {
+.br
+\%  input -> Queue -> Shaper(1000) -> output;
+.br
+\%||
+.br
+\%  $cap | input -> Queue($cap)
+.br
+\%               -> Shaper(1000) -> output;
+.br
+}
+.Re
+For each use of an overloaded compound element, Click will choose one
+definition that matches the numbers of input ports, output ports, and
+configuration arguments provided. It is an error if no definition matches
+these properties exactly.
+.PP
+It is also possible to extend an existing element class with new overloaded
+definitions with "\f(CW...\fR". For example, this definition introduces a
+two-argument version of Queue:
+.Rs
+elementclass Queue { ... ||
+.br
+\%  $cap, $rate | input -> Queue($cap)
+.br
+\%                -> Shaper($rate) -> output;
+.br
+}
+.Re
+(The ellipsis in this example must be typed verbatim.) The overloadings
+visible at a given declaration are those that lexically precede that
+declaration. For example, the following example is an error since the
+two-argument version of Test is not visible at the declaration where it is
+required:
+.Rs
+elementclass Test { $a | /* nothing */ }
+.br
+test :: Test(1, 2);
+.br
+elementclass Test { ... || $a, $b | /* nothing */ }
+.Re
 '
 .SH "CONNECTION TUNNELS"
 '
@@ -562,11 +618,12 @@ The keywords `connectiontunnel', `elementclass' and `require' may not be
 used as identifiers. The normal identifiers `input' and `output' have
 special meaning inside compound element definitions.
 .PP
-The following characters and two-character sequences are single Click
+The following characters and multi-character sequences are single Click
 tokens:
 .TS
 l l l l l l l l l l l l l.
 	->	::	;	,	(	)	[	]	{	}	|
+	||	...
 .\" ^
 .TE
 .PP
@@ -646,9 +703,13 @@ kernel module will not accept archives; use
 .IR element-name " ::= identifier
 .\" | ""^"" identifier
 .br
-.IR class " ::= identifier | ""{"" " stmts " ""}"""
+.IR class " ::= identifier | ""{"" " compounds " ""}"""
 .br
-.RI "    | ""{"" " formals " ""|"" " stmts " ""}"""
+.RI "    | ""{"" ""..."" ""||"" " compounds " ""}"""
+.br
+.IR compounds " ::= " compound " | " compounds " ""||"" " compound
+.br
+.IR compound " ::= " stmts " | " formals " ""|"" " stmts
 .br
 .IR formals " ::= parameter | " formals " "","" parameter"
 .br

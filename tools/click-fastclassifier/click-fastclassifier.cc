@@ -916,9 +916,10 @@ particular purpose.\n");
   
  done:
   RouterT *r = read_router_file(router_file, errh);
+  if (r)
+    r->flatten(errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
-  r->flatten(errh);
   if (source_only || config_only)
     compile_user = compile_kernel = false;
 

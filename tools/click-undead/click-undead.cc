@@ -647,9 +647,10 @@ particular purpose.\n");
   
  done:
   RouterT *r = read_router_file(router_file, default_errh);
+  if (r)
+    r->flatten(default_errh);
   if (!r || default_errh->nerrors() > 0)
     exit(1);
-  r->flatten(default_errh);
 
   // open output file
   FILE *outf = stdout;

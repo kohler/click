@@ -212,11 +212,12 @@ particular purpose.\n");
   
  done:
   RouterT *r = read_router_file(router_file, errh);
+  if (r)
+    r->flatten(errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
   if (!router_file || strcmp(router_file, "-") == 0)
     router_file = "<stdin>";
-  r->flatten(errh);
 
   // open output file
   FILE *outf = stdout;

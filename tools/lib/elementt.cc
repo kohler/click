@@ -24,6 +24,8 @@
 #include "elementt.hh"
 #include "routert.hh"
 #include <click/straccum.hh>
+#include <click/confparse.hh>
+#include <click/variableenv.hh>
 #include <stdlib.h>
 
 ElementT::ElementT()
@@ -82,77 +84,125 @@ ElementClassT::ElementClassT()
 {
 }
 
-static int
-resolve_upref(const String &upref, String prefix, RouterT *r)
+ElementClassT *
+ElementClassT::find_relevant_class(int, int, const Vector<String> &)
 {
-  while (prefix) {
-    int pos = prefix.find_right('/', prefix.length() - 2);
-    prefix = (pos >= 0 ? prefix.substring(0, pos + 1) : String());
-    
-    String try_name = prefix + upref;
-    int en = r->eindex(try_name);
-    if (en >= 0) return en;
-  }
-  return -1;
-}
-
-int
-ElementClassT::simple_expand_into(RouterT *fromr, int which,
-				  RouterT *tor,
-				  const RouterScope &scope, ErrorHandler *errh)
-{
-  if (fromr == tor)
-    return which;
-
-  const ElementT &e = fromr->element(which);
-  
-  if (e.type == RouterT::UPREF_TYPE) {
-    // try and resolve the upref within the current prefix. if not, then
-    // pass the upref on up, without tacking on the prefix.
-    int new_index = resolve_upref(e.name, scope.prefix(), tor);
-    if (new_index < 0)
-      new_index = tor->get_anon_eindex(e.name, RouterT::UPREF_TYPE,
-				       e.configuration, e.landmark);
-    return new_index;
-  }
-
-  if (e.type == RouterT::TUNNEL_TYPE) {
-    // make the tunnel or tunnel pair
-    String new_name = scope.prefix() + e.name;
-    if (e.tunnel_output >= 0 && e.tunnel_output < fromr->nelements()) {
-      tor->add_tunnel(new_name,
-		      scope.prefix() + fromr->ename(e.tunnel_output),
-		      e.landmark, errh);
-      return tor->eindex(new_name);
-    } else
-      return tor->get_eindex
-	(new_name, RouterT::TUNNEL_TYPE, e.configuration, e.landmark);
-  }
-  
-  // get element type index. add new "anonymous" element type if needed
-  String type_name = fromr->type_name(e.type);
-  ElementClassT *type_class = fromr->type_class(e.type);
-  int new_type = tor->get_type_index(type_name, type_class);
-  ElementClassT *new_type_class = tor->type_class(new_type);
-  if (type_class != new_type_class && new_type_class)
-    new_type = tor->get_anon_type_index(type_name, type_class);
-  
-  // add element
-  return tor->get_eindex(scope.prefix() + e.name, new_type,
-			 scope.interpolate(e.configuration), e.landmark);
-}
-
-int
-ElementClassT::expand_into(RouterT *fromr, int which,
-			   RouterT *tor, const RouterScope &scope,
-			   ErrorHandler *errh)
-{
-  return simple_expand_into(fromr, which, tor, scope, errh);
+  return this;
 }
 
 void
-ElementClassT::compound_declaration_string(StringAccum &, const String &, const String &)
+ElementClassT::report_signatures(const String &lm, String name, ErrorHandler *errh)
 {
+  errh->lmessage(lm, "`%s[...]'", name.cc());
+}
+
+int
+ElementClassT::direct_expand_element(RouterT *fromr, int which, ElementClassT *thus, RouterT *tor,
+				     const VariableEnvironment &env, ErrorHandler *errh)
+{
+  ElementT &e = fromr->element(which);
+  String new_name = env.prefix() + e.name;
+  String new_configuration = env.interpolate(e.configuration);
+  
+  switch (e.type) {
+
+   case RouterT::TUNNEL_TYPE: {
+     // common case -- expanding router into itself
+     if (fromr == tor && !env.prefix())
+       return which;
+     // make the tunnel or tunnel pair
+     if (e.tunnel_output >= 0 && e.tunnel_output < fromr->nelements()) {
+       tor->add_tunnel(new_name,
+		       env.prefix() + fromr->ename(e.tunnel_output),
+		       e.landmark, errh);
+       return tor->eindex(new_name);
+     } else
+       return tor->get_eindex
+	 (new_name, RouterT::TUNNEL_TYPE, e.configuration, e.landmark);
+   }
+
+   default: {
+     // get element type index. add new "anonymous" element type if needed
+     String type_name = fromr->type_name(e.type);
+     int new_type = tor->get_type_index(type_name, thus);
+     ElementClassT *new_type_class = tor->type_class(new_type);
+     if (thus != new_type_class && new_type_class)
+       new_type = tor->get_anon_type_index(type_name, thus);
+     
+     // check for common case -- expanding router into itself
+     if (fromr == tor && !env.prefix()) {
+       e.configuration = new_configuration;
+       e.type = new_type;
+       return which;
+     }
+
+     // check for old element
+     int new_eidx = tor->eindex(new_name);
+     if (new_eidx >= 0) {
+       errh->lerror(e.landmark, "redeclaration of element `%s'", new_name.cc());
+       errh->lerror(tor->elandmark(new_eidx), "`%s' previously declared here", tor->edeclaration(new_eidx).cc());
+     }
+     
+     // add element
+     return tor->get_eindex(new_name, new_type, new_configuration, e.landmark);
+   }
+
+  }
+}
+
+int
+ElementClassT::expand_element(RouterT *fromr, int which, RouterT *tor,
+			      const VariableEnvironment &env, ErrorHandler *errh)
+{
+  ElementClassT *c = fromr->etype_class(which);
+
+  if (!c || c->direct_expansion())
+    return direct_expand_element(fromr, which, c, tor, env, errh);
+
+  // if not direct expansion, do some more work
+  int inputs_used = fromr->ninputs(which);
+  int outputs_used = fromr->noutputs(which);
+
+  Vector<String> args;
+  String new_configuration = env.interpolate(fromr->econfiguration(which));
+  cp_argvec(new_configuration, args);
+
+  ElementClassT *found_c = c->find_relevant_class(inputs_used, outputs_used, args);
+  if (!found_c) {
+    String lm = fromr->elandmark(which), name = fromr->etype_name(which);
+    errh->lerror(lm, "no match for `%s'", name.cc(), signature(name, inputs_used, outputs_used, args.size()).cc());
+    ContextErrorHandler cerrh(errh, "possibilities are:", "  ");
+    c->report_signatures(lm, name, &cerrh);
+    if (fromr == tor)
+      tor->kill_element(which);
+    return -1;
+  }
+
+  return found_c->complex_expand_element(fromr, which, new_configuration, args,
+					 tor, env, errh);
+}
+
+int
+ElementClassT::complex_expand_element(RouterT *fromr, int which, const String &, Vector<String> &,
+				      RouterT *tor, const VariableEnvironment &env, ErrorHandler *errh)
+{
+  return direct_expand_element(fromr, which, this, tor, env, errh);
+}
+
+void
+ElementClassT::declaration_string(StringAccum &, const String &, const String &)
+{
+}
+
+String
+ElementClassT::signature(const String &name, int ninputs, int noutputs, int nargs)
+{
+  const char *pl_args = (nargs == 1 ? " argument, " : " arguments, ");
+  const char *pl_ins = (ninputs == 1 ? " input, " : " inputs, ");
+  const char *pl_outs = (noutputs == 1 ? " output" : " outputs");
+  StringAccum sa;
+  sa << name << '[' << nargs << pl_args << ninputs << pl_ins << noutputs << pl_outs << ']';
+  return sa.take_string();
 }
 
 
@@ -162,9 +212,9 @@ SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *ec
 }
 
 int
-SynonymElementClassT::expand_into(RouterT *fromr, int which,
-				  RouterT *tor, const RouterScope &scope,
-				  ErrorHandler *)
+SynonymElementClassT::complex_expand_element(
+	RouterT *fromr, int which, const String &new_config, Vector<String> &,
+	RouterT *tor, const VariableEnvironment &env, ErrorHandler *errh)
 {
   // get element type index. add new "anonymous" element type if needed
   int new_type = tor->get_type_index(_name, _eclass);
@@ -173,16 +223,212 @@ SynonymElementClassT::expand_into(RouterT *fromr, int which,
     new_type = tor->get_anon_type_index(_name, _eclass);
 
   ElementT &e = fromr->element(which);
-  if (fromr == tor) {
+  if (fromr == tor && !env.prefix()) {
+    e.configuration = new_config; // interpolated
     e.type = new_type;
     return which;
-  } else
-    return tor->get_eindex(scope.prefix() + e.name, new_type,
-			   scope.interpolate(e.configuration), e.landmark);
+  } else {
+    String new_name = env.prefix() + e.name;
+    int new_eidx = tor->eindex(new_name);
+    if (new_eidx >= 0) {
+      errh->lerror(e.landmark, "redeclaration of element `%s'", new_name.cc());
+      errh->lerror(tor->elandmark(new_eidx), "`%s' previously declared here", tor->edeclaration(new_eidx).cc());
+      return -1;
+    } else
+      return tor->get_eindex(new_name, new_type, new_config, e.landmark);
+  }
 }
 
 void
-SynonymElementClassT::compound_declaration_string(StringAccum &sa, const String &name, const String &indent)
+SynonymElementClassT::declaration_string(StringAccum &sa, const String &name, const String &indent)
 {
   sa << indent << "elementclass " << name << " " << _name << ";\n";
+}
+
+
+CompoundElementClassT::CompoundElementClassT(RouterT *r)
+  : _router(r), _depth(0), _ninputs(0), _noutputs(0), _next(0),
+    _circularity_flag(false)
+{
+  _router->use();
+}
+
+CompoundElementClassT::CompoundElementClassT(const String &name, const String &landmark, RouterT *r, ElementClassT *next, int depth)
+  : _name(name), _landmark(landmark), _router(r), _depth(depth),
+    _ninputs(0), _noutputs(0), _next(next),
+    _circularity_flag(false)
+{
+  _router->use();
+  if (_next)
+    _next->use();
+}
+
+CompoundElementClassT::~CompoundElementClassT()
+{
+  _router->unuse();
+  if (_next)
+    _next->unuse();
+}
+
+void
+CompoundElementClassT::finish(ErrorHandler *errh)
+{
+  if (!errh)
+    errh = ErrorHandler::silent_handler();
+
+  int einput = _router->eindex("input");
+  if (einput >= 0) {
+    _ninputs = _router->noutputs(einput);
+    
+    if (_router->ninputs(einput))
+      errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", _name.cc());
+
+    if (_ninputs) {
+      Vector<int> used;
+      _router->find_connection_vector_from(einput, used);
+      assert(used.size() == _ninputs);
+      for (int i = 0; i < _ninputs; i++)
+	if (used[i] == -1)
+	  errh->lerror(_landmark, "compound element `%s' input %d unused", _name.cc(), i);
+    }
+  } else
+    _ninputs = 0;
+
+  int eoutput = _router->eindex("output");
+  if (eoutput >= 0) {
+    _noutputs = _router->ninputs(eoutput);
+    if (_router->noutputs(eoutput))
+      errh->lerror(_landmark, "`%s' pseudoelement `output' may only be used as input", _name.cc());
+
+    if (_noutputs) {
+      Vector<int> used;
+      _router->find_connection_vector_to(eoutput, used);
+      assert(used.size() == _noutputs);
+      for (int i = 0; i < _noutputs; i++)
+	if (used[i] == -1)
+	  errh->lerror(_landmark, "compound element `%s' output %d unused", _name.cc(), i);
+    }
+  } else
+    _noutputs = 0;
+}
+
+void
+CompoundElementClassT::check_duplicates_until(ElementClassT *last, ErrorHandler *errh)
+{
+  if (this == last || !_next)
+    return;
+  
+  ElementClassT *n = _next;
+  while (n && n != last) {
+    CompoundElementClassT *nc = n->cast_compound();
+    if (!nc) break;
+    if (nc->_ninputs == _ninputs && nc->_noutputs == _noutputs && nc->_formals.size() == _formals.size()) {
+      errh->lerror(_landmark, "redeclaration of `%s'", signature().cc());
+      errh->lerror(nc->_landmark, "`%s' previously declared here", signature().cc());
+      break;
+    }
+    n = nc->_next;
+  }
+
+  if (CompoundElementClassT *nc = _next->cast_compound())
+    nc->check_duplicates_until(last, errh);
+}
+
+ElementClassT *
+CompoundElementClassT::find_relevant_class(int ninputs, int noutputs, const Vector<String> &args)
+{
+  if (ninputs == _ninputs && noutputs == _noutputs && args.size() == _formals.size())
+    return this;
+  else if (_next)
+    return _next->find_relevant_class(ninputs, noutputs, args);
+  else
+    return 0;
+}
+
+String
+CompoundElementClassT::signature() const
+{
+  return ElementClassT::signature(_name, _ninputs, _noutputs, _formals.size());
+}
+
+void
+CompoundElementClassT::report_signatures(const String &lm, String name, ErrorHandler *errh)
+{
+  if (_next)
+    _next->report_signatures(lm, name, errh);
+  errh->lmessage(lm, "`%s'", signature().cc());
+}
+
+int
+CompoundElementClassT::complex_expand_element(
+	RouterT *fromr, int which, const String &, Vector<String> &args,
+	RouterT *tor, const VariableEnvironment &env, ErrorHandler *errh)
+{
+  assert(fromr != _router && tor != _router);
+  assert(!_circularity_flag);
+  _circularity_flag = true;
+  
+  // must make a copy of `compound' because we might be growing the _elements
+  // vector, in which case our reference would die
+  ElementT compound = fromr->element(which);
+  
+  // parse configuration string
+  int nargs = _formals.size();
+  if (args.size() != nargs) {
+    const char *whoops = (args.size() < nargs ? "few" : "many");
+    String signature;
+    for (int i = 0; i < nargs; i++) {
+      if (i) signature += ", ";
+      signature += _formals[i];
+    }
+    if (errh)
+      errh->lerror(compound.landmark,
+		   "too %s arguments to compound element `%s(%s)'", whoops,
+		   compound.name.cc() /* XXX should be class_name */, signature.cc());
+    for (int i = args.size(); i < nargs; i++)
+      args.push_back("");
+  }
+
+  // create prefix
+  assert(compound.name);
+  VariableEnvironment new_env(env, compound.name);
+  String prefix = env.prefix();
+  String new_prefix = new_env.prefix(); // includes previous prefix
+  new_env.limit_depth(_depth);
+  new_env.enter(_formals, args, _depth);
+
+  // create input/output tunnels
+  if (fromr == tor)
+    tor->element(which).type = RouterT::TUNNEL_TYPE;
+  tor->add_tunnel(prefix + compound.name, new_prefix + "input", compound.landmark, errh);
+  tor->add_tunnel(new_prefix + "output", prefix + compound.name, compound.landmark, errh);
+  int new_eindex = tor->eindex(prefix + compound.name);
+
+  // dump compound router into `tor'
+  _router->expand_into(tor, new_env, errh);
+  
+  // yes, we expanded it
+  _circularity_flag = false;
+  return new_eindex;
+}
+
+void
+CompoundElementClassT::declaration_string(StringAccum &sa, const String &name, const String &indent)
+{
+  assert(!_circularity_flag);
+  _circularity_flag = true;
+
+  sa << indent << "elementclass " << name << " {";
+  
+  // print formals
+  for (int i = 0; i < _formals.size(); i++)
+    sa << (i ? ", " : " ") << _formals[i];
+  if (_formals.size())
+    sa << " |";
+  sa << "\n";
+
+  _router->configuration_string(sa, indent + "  ");
+  
+  sa << indent << "}\n";
+  _circularity_flag = false;
 }

@@ -6,7 +6,7 @@
 #include <click/archive.hh>
 typedef HashMap<String, int> StringMap;
 
-class RouterT : public ElementClassT {
+class RouterT {
 
   struct Pair {
     int from;
@@ -15,8 +15,7 @@ class RouterT : public ElementClassT {
     Pair(int f, int t) : from(f), to(t) { }
   };
 
-  RouterT *_enclosing_scope;
-  Vector<String> _formals;
+  int _use_count;
   
   StringMap _element_type_map;
   Vector<String> _element_type_names;
@@ -52,24 +51,24 @@ class RouterT : public ElementClassT {
 
  public:
 
-  enum { TUNNEL_TYPE = 0, UPREF_TYPE = 1 };
+  enum { TUNNEL_TYPE = 0 };
   
   RouterT(RouterT * = 0);
   RouterT(const RouterT &);
   virtual ~RouterT();
 
+  void use()				{ _use_count++; }
+  void unuse()				{ if (--_use_count <= 0) delete this; }
+  
   void check() const;
   bool is_flat() const;
-  
-  void add_formal(const String &n)	{ _formals.push_back(n); }
   
   int ntypes() const			{ return _element_classes.size(); }
   const String &type_name(int i) const	{ return _element_type_names[i]; }
   ElementClassT *type_class(int i) const { return _element_classes[i]; }
+  ElementClassT *type_class(const String &) const;
   int type_index(const String &s) const { return _element_type_map[s]; }
-  ElementClassT *find_type_class(const String &) const;
-  int get_type_index(const String &);
-  int get_type_index(const String &, ElementClassT *);
+  int get_type_index(const String &, ElementClassT * = 0);
   int add_type_index(const String &, ElementClassT *);
   int get_anon_type_index(const String &, ElementClassT *);
   void get_types_from(const RouterT *);
@@ -83,7 +82,6 @@ class RouterT : public ElementClassT {
   bool elive(int ei) const		{ return _elements[ei].live(); }
   bool edead(int ei) const		{ return _elements[ei].dead(); }
   String ename(int) const;
-  String ename_upref(int) const;
   int etype(int) const;
   String etype_name(int) const;
   String edeclaration(int) const;
@@ -109,6 +107,7 @@ class RouterT : public ElementClassT {
   const Hookup &hookup_from(int i) const	{ return _hookup_from[i]; }
   const Vector<Hookup> &hookup_to() const	{ return _hookup_to; }
   const Hookup &hookup_to(int i) const		{ return _hookup_to[i]; }
+  const Vector<String> &hookup_landmark() const	{ return _hookup_landmark; }
   const String &hookup_landmark(int i) const	{ return _hookup_landmark[i]; }
   bool hookup_live(int i) const		{ return _hookup_from[i].live(); }
  
@@ -153,20 +152,16 @@ class RouterT : public ElementClassT {
   
   void add_components_to(RouterT *, const String &prefix = String()) const;
 
-  int expand_into(RouterT *, int, RouterT *, const RouterScope &, ErrorHandler *);
-  bool expands_away() const			{ return true; }
-  
   void remove_unused_element_types();
   void remove_duplicate_connections();
   void remove_dead_elements(ErrorHandler * = 0);
   
   void remove_compound_elements(ErrorHandler *);
   void remove_tunnels();
-  void remove_unresolved_uprefs(ErrorHandler *);
 
+  void expand_into(RouterT *, const VariableEnvironment &, ErrorHandler *);
   void flatten(ErrorHandler *);
 
-  void compound_declaration_string(StringAccum &, const String &, const String &);
   void configuration_string(StringAccum &, const String & = String()) const;
   String configuration_string() const;
 
@@ -174,26 +169,13 @@ class RouterT : public ElementClassT {
 
 };
 
-class RouterScope {
 
-  String _prefix;
-  Vector<String> _formals;
-  Vector<String> _values;
-
- public:
-  
-  RouterScope()				{ }
-  RouterScope(const RouterScope &, const String &suffix);
-
-  operator bool() const			{ return _formals.size() != 0; }
-  const String &prefix() const		{ return _prefix; }
-  
-  void combine(const Vector<String> &, const Vector<String> &);
-  
-  String interpolate(const String &) const;
-  
-};
-
+inline ElementClassT *
+RouterT::type_class(const String &n) const
+{
+  int i = type_index(n);
+  return (i < 0 ? 0 : _element_classes[i]);
+}
 
 inline String
 RouterT::ename(int idx) const

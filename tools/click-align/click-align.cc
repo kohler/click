@@ -323,9 +323,10 @@ particular purpose.\n");
   
  done:
   RouterT *router = read_router_file(router_file, prepared_router(), errh);
+  if (router)
+    router->flatten(errh);
   if (!router || errh->nerrors() > 0)
     exit(1);
-  router->flatten(errh);
   int align_tindex = router->type_index("Align");
 
   int original_nelements = router->nelements();
