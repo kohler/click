@@ -17,6 +17,7 @@ CLICK_DECLS
  * Input 1: ethernet packets.
  * Output 0: IP packets for higher layer.
  * Output 1: ethernet packets.
+ * Test script in ~rtm/scripts/rtmdsr.pl
  *
  * To Do:
  * Work sensibly with multiple network interfaces.
@@ -31,12 +32,16 @@ CLICK_DECLS
  *   3) Unicast to neighbors in order of link quality.
  *   4) Stall every query proportional to link quality from
  *      neighbor we heard it from.
+ * Two distinct issues: A) how to make sure we deliver the best
+ *   query+route, and B) how to avoid forwarding an exponential
+ *   number of queries.
  * Accumulate current path quality in each packet, re-query if it's
  *   too much worse that original quality.
  * Be aware if path to some other destination reveals potentially
  *   useful better links.
  * If you learn about multiple disjoint paths, use them for multi-path
- *   routing.
+ *   routing. May need to know about link speed to reason correctly
+ *   about links shared by two paths.
  * Be sensitive to congestion? If dst receives packets out of order along
  *   different paths, prefer paths that delivered packets first?
  *   Maybe use expected transmission *time*.
