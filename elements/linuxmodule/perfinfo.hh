@@ -15,8 +15,10 @@
  * DCU_MISS_OUTSTANDING,
  * IFU_IFETCH_MISS,
  * L2_IFETCH,
- * L2_LD,
- * L2_RQSTS
+ * L2_RQSTS,
+ * L2_LINES_OUTM,
+ * BUS_TRAN_MEM,
+ * BUS_TRAN_INVAL
  * 
  * =a PerfCount
  */
