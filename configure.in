@@ -189,8 +189,7 @@ dnl multithread support?
 dnl
 
 AC_ARG_ENABLE(multithread,
-  [  --enable-multithread[[=NUM]]
-                          support kernel multithreading with NUM threads max],
+  [  --enable-multithread[[=NUM]] support kernel multithreading; NUM threads max],
   :, enable_multithread=no)
 
 if test "$enable_multithread" = yes; then
