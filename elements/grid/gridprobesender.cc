@@ -84,7 +84,7 @@ GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
   // leave ether src, dest for the forwarding elements to fill in
 
   gh->hdr_len = sizeof(grid_hdr);
-  gh->type = grid_hdr::GRID_LOC_REPLY;
+  gh->type = grid_hdr::GRID_ROUTE_PROBE;
   gh->ip = _ip;
   gh->total_len = htons(q->length() - sizeof(click_ether));
 

@@ -1,5 +1,5 @@
 /*
- * gridprobereplyreceiver.{cc,hh} -- element that receives Grid porbe reply packets
+ * gridprobereplyreceiver.{cc,hh} -- element that receives Grid probe reply packets
  * Douglas S. J. De Couto
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
