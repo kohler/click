@@ -1,3 +1,38 @@
+2001-08-20 Monday 16:41  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/freebsd-4.3-patch (1.4): Oops, some debugging changes
+	accidentally got out (the number of RFA buffers shouldn't be
+	reduced..)
+
+2001-08-20 Monday 16:28  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.18-patch (1.9): changed tulip so by default it does
+	not use DEMAND_POLLING but the eob interface instead
+
+2001-08-20 Monday 16:00  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/clickfs_vnops.cc (1.4): fix a bug with symlink
+	following in clickfs and disable debug printfs by default
+
+2001-08-20 Monday 15:25  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/freebsd-4.3-patch (1.3): Fix a bug in eepro100 polling mode
+	where a race between a "no-resources" condition and the actual
+	refilling of the receive ring was possible.
+
+2001-08-20 Monday 14:50  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/iproutetable.hh (1.2): nitlet
+
+2001-08-20 Monday 14:45  Benjie Chen <benjie@lcs.mit.edu>
+
+	* config.h.in (1.13), configure.in (1.140), lib/routerthread.cc
+	(1.15): add configuration option CLICK_GREEDY; when specified,
+	click will not give up processor to OS (linux or bsd). instead it
+	will occupy one cpu exclusively, preventing other processes to run
+	on that cpu. should only be used if you have more than one CPU to
+	begin with...
+
 2001-08-20 Monday 12:25  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* elements/bsdmodule/fromdevice.cc (1.2),
