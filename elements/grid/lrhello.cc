@@ -121,6 +121,11 @@ SendGridLRHello::make_hello()
   p->pull(2);
   memset(p->data(), 0, p->length());
 
+  struct timeval tv;
+  int res = gettimeofday(&tv, 0);
+  if (res == 0) 
+    p->set_timestamp_anno(tv);
+
   click_ether *eh = (click_ether *) p->data();
   memset(eh->ether_dhost, 0xff, 6); // broadcast
   eh->ether_type = htons(ETHERTYPE_GRID);

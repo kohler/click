@@ -133,6 +133,12 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
     click_chatter("in %s: cannot make packet!", id().cc());
     assert(0);
   } 
+
+  struct timeval tv;
+  int res = gettimeofday(&tv, 0);
+  if (res == 0) 
+    q->set_timestamp_anno(tv);
+
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
   gh = (grid_hdr *) (e + 1);

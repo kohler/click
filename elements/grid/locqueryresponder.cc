@@ -124,6 +124,12 @@ LocQueryResponder::simple_action(Packet *p)
   WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap) + 2);
   ASSERT_ALIGNED(q->data());
   q->pull(2);
+
+  struct timeval tv;
+  int res = gettimeofday(&tv, 0);
+  if (res == 0) 
+    p->set_timestamp_anno(tv);
+
   memset(q->data(), 0, q->length());
   e = (click_ether *) q->data();
   grid_hdr *ngh = (grid_hdr *) (e + 1);
