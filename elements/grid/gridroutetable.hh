@@ -294,6 +294,9 @@ private:
   static int write_start_log(const String &, Element *, void *, ErrorHandler *);
   static int write_stop_log(const String &, Element *, void *, ErrorHandler *);
 
+  static String print_frozen(Element *e, void *);
+  static int write_frozen(const String &, Element *, void *, ErrorHandler *);
+
   unsigned int qual_to_pct(int q);
   unsigned int sig_to_pct(int s);
 
@@ -345,6 +348,8 @@ private:
   };
 
   unsigned int _est_type;
+
+  bool _frozen;
 
 };
 

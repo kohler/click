@@ -44,7 +44,8 @@ GridRouteTable::GridRouteTable() :
   _hello_timer(hello_hook, this),
   _metric_type(MetricEstTxCount),
   _max_metric(0), _min_metric(0),
-  _est_type(EstBySigQual)
+  _est_type(EstBySigQual),
+  _frozen(false)
 {
   MOD_INC_USE_COUNT;
 }
@@ -670,6 +671,14 @@ GridRouteTable::simple_action(Packet *packet)
   if (_log)
     _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, tv);
   
+  if (_frozen) {
+    if (_log)
+      _log->log_end_recv_advertisement();
+    packet->kill();
+    return 0;
+  }
+
+
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
    * checking if entry already existed 
@@ -1129,6 +1138,27 @@ GridRouteTable::write_seq_delay(const String &arg, Element *el,
 }
 
 
+String
+GridRouteTable::print_frozen(Element *e, void *)
+{
+  GridRouteTable *rt = (GridRouteTable *) e;
+  
+  return (rt->_frozen ? "true\n" : "false\n");
+}
+
+int
+GridRouteTable::write_frozen(const String &arg, Element *el, 
+				void *, ErrorHandler *)
+{
+  GridRouteTable *rt = (GridRouteTable *) el;
+  rt->_frozen = atoi(((String) arg).cc());
+
+  click_chatter("GridRouteTable: setting _frozen to %s", rt->_frozen ? "true" : "false");
+
+  return 0;
+}
+
+
 int
 GridRouteTable::write_start_log(const String &arg, Element *, 
 				void *, ErrorHandler *errh)
@@ -1220,6 +1250,8 @@ GridRouteTable::add_handlers()
   add_write_handler("seq_delay", write_seq_delay, 0);
   add_write_handler("start_log", write_start_log, 0);
   add_write_handler("stop_log", write_stop_log, 0);
+  add_read_handler("frozen", print_frozen, 0);
+  add_write_handler("frozen", write_frozen, 0);
 }
 
 
@@ -1252,11 +1284,14 @@ GridRouteTable::expire_routes()
     }
   }
       
-
   assert(_timeout > 0);
   int jiff = click_jiffies();
 
   Vector<RTEntry> retval;
+
+  if (_frozen)
+    return retval;
+
 
   typedef BigHashMap<IPAddress, bool> xip_t; // ``expired ip''
   xip_t expired_rtes;
@@ -1381,6 +1416,9 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
    * nbr entry.  If check_ttls, decrement and check ttls before
    * building the packet.
    */
+
+  if (_frozen)
+    return;
 
   int jiff = click_jiffies();
 
