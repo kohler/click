@@ -14,7 +14,7 @@ class IPSummaryDumpInfo { public:
 	W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PAYLOAD_LENGTH,
 	W_COUNT, W_FRAG, W_FRAGOFF, W_PAYLOAD, W_LINK,
 	W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT, W_FIRST_TIMESTAMP,
-	W_TCP_WINDOW,
+	W_TCP_WINDOW, W_IP_OPT,
 	W_LAST
     };
     static int parse_content(const String &);

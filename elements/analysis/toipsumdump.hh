@@ -49,6 +49,7 @@ contain those fields. Valid field names, with examples, are:
    proto        IP protocol: '10', or 'I' for ICMP, 'T' for
                 TCP, 'U' for UDP
    ip_id        IP ID: '48759'
+   ip_opt       IP options (see below)
    sport        TCP/UDP source port: '22'
    dport        TCP/UDP destination port: '2943'
    tcp_seq      TCP sequence number: '93167339'
@@ -161,6 +162,45 @@ Verson 1.0 of the IPSummaryDump file format expressed fragment offsets in
 8-byte units, not bytes. Content types in old dumps were sometimes quoted and
 contained spaces instead of underscores.
 
+=head1 IP OPTIONS
+
+Single IP option fields have the following representations.
+
+    EOL, NOP        Not written, but FromIPSummaryDump
+                    understands 'eol' and 'nop'
+    RR              'rr{10.0.0.1:20.0.0.2}+5' (addresses
+                    inside the braces come before the
+		    pointer; '+5' means there is space for
+		    5 more addresses after the pointer)
+    SSRR, LSRR      like RR, starting with 'ssrr' or 'lsrr'
+    Other options   '98' (option 98, no data),
+                    '99=0:5:10' (option with data, data
+		    octets separated by colons)
+
+Multiple options are separated by commas. Any invalid option causes the entire
+field to be replaced by a single question mark 'C<?>'. A period 'C<.>' is used
+for packets with no options (except possibly EOL and NOP).
+
+=head1 TCP OPTIONS
+
+Single TCP option fields have the following representations.
+
+    EOL, NOP        Not written, but FromIPSummaryDump
+                    understands 'eol' and 'nop'
+    MSS             'mss1400'
+    Window scale    'wscale10'
+    SACK permitted  'sackok'
+    SACK            'sack95:98'; each SACK block
+                    is listed separately
+    Timestamp       'ts669063908:38382731'
+    Other options   '98' (option 98, no data),
+                    '99=0:5:10' (option with data, data
+		    octets separated by colons)
+
+Multiple options are separated by commas. Any invalid option causes the entire
+field to be replaced by a single question mark 'C<?>'. A period 'C<.>' is used
+for packets with no options (except possibly EOL and NOP).
+
 =head1 BINARY FORMAT
 
 Binary IPSummaryDump files begin with several ASCII lines, just like regular
@@ -194,6 +234,7 @@ the 'C<!data>' line, as follows:
    ip_frag          1    fragment descriptor
                          ('F', 'f', or '.')
    ip_fragoff       2    IP fragment offset field
+   ip_opt           ?    IP options
    tcp_seq          4    TCP seqnece number
    tcp_ack          4    TCP ack number
    tcp_flags        1    TCP flags
@@ -211,25 +252,6 @@ followed by that many bytes of data.
 The data stored in a metadata record is just an ASCII string, ending with
 newline, same as in a regular ASCII IPSummaryDump file. 'C<!bad>' records, for
 example, are stored this way.
-
-=head1 TCP OPTIONS
-
-Single TCP option fields have the following representations.
-
-    EOL, NOP        No representation
-    MSS             'mss1400'
-    Window scale    'wscale10'
-    SACK permitted  'sackok'
-    SACK            'sack95:98'; each SACK block
-                    is listed separately
-    Timestamp       'ts669063908:38382731'
-    Other options   '98' (option 98, no data),
-                    '99=0:5:10' (option with data, data
-		    octets separated by colons)
-
-Multiple options are separated by commas. Any invalid option causes the entire
-field to be replaced by a single question mark 'C<?>'. A period 'C<.>' is used
-for packets with no options (except possibly EOL and NOP).
 
 =a
 
@@ -258,6 +280,14 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     void add_note(const String &);
     void write_line(const String &);
     void flush_buffer();
+
+    enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2,
+	   DO_IPOPT_UNKNOWN = 32,
+	   DO_IPOPT_ALL = 0xFFFFFFFFU, DO_IPOPT_ALL_NOPAD = 0xFFFFFFFEU };
+    static void store_ip_opt_ascii(const uint8_t *, int olen, int, StringAccum &);
+    static inline void store_ip_opt_ascii(const click_ip *, int, StringAccum &);
+    static int store_ip_opt_binary(const uint8_t *, int olen, int, StringAccum &);
+    static inline int store_ip_opt_binary(const click_ip *, int, StringAccum &);
 
     enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
 	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
