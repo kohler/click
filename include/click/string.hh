@@ -43,7 +43,6 @@ class String { public:
   static String stable_string(const char *, int = -1); // stable read-only mem.
   
   bool out_of_memory() const		{ return _memo == oom_memo; }
-  static int out_of_memory_count();
   
   int length() const			{ return _length; }
   const char *data() const		{ return _data; }

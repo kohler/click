@@ -28,7 +28,6 @@ String::Memo *String::permanent_memo = 0;
 String::Memo *String::oom_memo = 0;
 String *String::null_string_p = 0;
 String *String::oom_string_p = 0;
-static int out_of_memory_flag = 0;
 
 inline
 String::Memo::Memo()
@@ -157,13 +156,6 @@ String::make_out_of_memory()
   _memo->_refcount++;
   _data = _memo->_real_data;
   _length = 0;
-  out_of_memory_flag++;
-}
-
-int
-String::out_of_memory_count()
-{
-  return out_of_memory_flag;
 }
 
 void
@@ -417,7 +409,8 @@ String::substring(int left, int len) const
 int
 String::find_left(int c, int start) const
 {
-  if (start < 0) start = 0;
+  if (start < 0)
+    start = 0;
   for (int i = start; i < _length; i++)
     if ((unsigned char)_data[i] == c)
       return i;
@@ -427,9 +420,12 @@ String::find_left(int c, int start) const
 int
 String::find_left(const String &s, int start) const
 {
-  if (start < 0) start = 0;
-  if (start >= length()) return -1;
-  if (!s.length()) return 0;
+  if (start < 0)
+    start = 0;
+  if (start >= length())
+    return -1;
+  if (!s.length())
+    return 0;
   int first_c = (unsigned char)s[0];
   int pos = start, max_pos = length() - s.length();
   for (pos = find_left(first_c, pos); pos >= 0 && pos <= max_pos;
@@ -442,7 +438,8 @@ String::find_left(const String &s, int start) const
 int
 String::find_right(int c, int start) const
 {
-  if (start >= _length) start = _length - 1;
+  if (start >= _length)
+    start = _length - 1;
   for (int i = start; i >= 0; i--)
     if ((unsigned char)_data[i] == c)
       return i;
@@ -538,14 +535,18 @@ hashcode(const String &s)
 bool
 String::equals(const char *s, int len) const
 {
+  // I would like to make "out-of-memory" strings compare unequal to anything,
+  // even themseleves, but this would be a bad idea for Strings used as (for
+  // example) keys in hashtables. Instead, "out-of-memory" strings compare
+  // unequal to other null strings, but equal to each other.
   if (len < 0)
     len = strlen(s);
-  // "out-of-memory" strings compare unequal to anything, even themselves
-  if (_length != len || s == oom_memo->_real_data || _memo == oom_memo)
+  if (_length != len)
     return false;
-  if (_data == s)
-    return true;
-  return memcmp(_data, s, len) == 0;
+  else if (len == 0)
+    return (_data == s || (s != oom_memo->_real_data && _memo != oom_memo));
+  else
+    return (_data == s || memcmp(_data, s, len) == 0);
 }
 
 int
@@ -581,6 +582,8 @@ String::static_initialize()
     null_memo->_refcount++;
     permanent_memo = new Memo;
     permanent_memo->_refcount++;
+    // allocate a separate string for oom_memo's data, so we can distinguish
+    // the pointer
     oom_memo = new Memo(0, 1);
     oom_memo->_real_data[0] = '\0';
     null_string_p = new String;
