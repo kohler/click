@@ -1,3 +1,13 @@
+2003-08-21 Thursday 13:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/ratedunqueue.hh (1.14): man page nitlet
+
+2003-08-21 Thursday 13:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/: print.cc (1.25), print.hh (1.15): Add
+	PRINTANNO keyword that prints user annotaiton bytes.  Code & idea
+	from Danial Aguayo (aguayo@lcs.mit.edu)
+
 2003-08-20 Wednesday 20:39  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/: dsrarptable.cc (1.2), dsrroutetable.cc (1.2):
