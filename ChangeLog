@@ -1,3 +1,32 @@
+2002-04-25 Thursday 19:58  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/ethermirror.cc (1.11): ::memcpy doesn't work in
+	the kernel
+
+2002-04-25 Thursday 19:54  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/ethermirror.cc (1.10),
+	include/click/click_ip6.h (1.7), tools/lib/processingt.cc (1.21),
+	tools/lib/processingt.hh (1.13): integrate version of C++ std patch
+	5 from Scott Page
+
+2002-04-25 Thursday 19:51  Eddie Kohler <kohler@aciri.org>
+
+	* elements/grid/lookuplocalgridroute.cc (1.33): fix grid buglet
+
+2002-04-25 Thursday 19:45  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bighashmap_arena.hh (1.4), lib/bighashmap_arena.cc
+	(1.5), lib/bighashmap_arena.cc (1.6): std C++ patch 4 from Scott
+	Page
+
+2002-04-25 Thursday 19:08  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdevice.cc (1.41),
+	elements/userlevel/fromdevice.hh (1.22), tools/lib/elementt.cc
+	(1.26), tools/lib/elementt.hh (1.22), userlevel/click.cc (1.65):
+	integrate version of std C++ patch #3 from Scott Page
+
 2002-04-25 Thursday 18:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/lookuplocalgridroute.cc (1.32): [no log message]

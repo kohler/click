@@ -1,3 +1,14 @@
+2002-04-25 Thursday 19:54  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ip6.h, click_ip6.h: integrate version of
+	C++ std patch 5 from Scott Page
+
+2002-04-25 Thursday 19:45  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bighashmap_arena.hh,
+	include/click/bighashmap_arena.hh, libsrc/bighashmap_arena.cc,
+	libsrc/bighashmap_arena.cc: std C++ patch 4 from Scott Page
+
 2002-04-24 Wednesday 12:39  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/bighashmap.cc, include/click/bighashmap.hh,
