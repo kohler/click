@@ -176,6 +176,7 @@ DSDVRouteTable::DSDVRouteTable() :
   _max_hops(3), _alpha(88), _wst0(6000),
   _last_periodic_update(0),
   _last_triggered_update(0), 
+  _ignore_invalid_routes(false),
   _hello_timer(static_hello_hook, this),
   _log_dump_timer(static_log_dump_hook, this),
   _verbose(true)
@@ -235,6 +236,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"ALPHA", cpUnsigned, "alpha parameter for settling time computation, in percent (0 <= ALPHA <= 100)", &_alpha,
 			"SEQ0", cpUnsigned, "initial sequence number (must be even)", &_seq_no,
 			"MTU", cpUnsigned, "interface MTU", &_mtu,
+			"IGNORE_INVALID_ROUTES", cpBool, "ignore routes with invalid metrics?", &_ignore_invalid_routes,
 #if SEQ_METRIC
 			"USE_SEQ_METRIC", cpBool, "use `dsdv_seqs' metric?", &_use_seq_metric,
 #endif
@@ -341,6 +343,8 @@ DSDVRouteTable::insert_route(const RTEntry &r, const GridGenericLogger::reason_t
 {
   check_invariants();
   r.check();
+  
+  dsdv_assert(!_ignore_invalid_routes || r.metric.good());
   
   RTEntry *old_r = _rtes.findp(r.dest_ip);
   
@@ -696,7 +700,7 @@ DSDVRouteTable::update_metric(RTEntry &r)
 #endif
 
   if (_metric)
-    r.metric = _metric->append_metric(r.metric, next_hop->metric);
+    r.metric = _metric->prepend_metric(r.metric, next_hop->metric);
   else
     r.metric = _bad_metric;
 }
@@ -885,6 +889,10 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     init_metric(new_r);
   else if (new_r.good())
     update_metric(new_r);
+
+  if (_ignore_invalid_routes && !new_r.metric.good())
+    return; // don't keep routes with invalid metrics
+
 
   RTEntry *old_r = _rtes.findp(new_r.dest_ip);
   update_wst(old_r, new_r, jiff);
@@ -1613,6 +1621,8 @@ DSDVRouteTable::check_invariants(const IPAddress *ignore) const
     const RTEntry &r = i.value();
 
     r.check();
+    
+    dsdv_assert(!_ignore_invalid_routes || r.metric.good());
 
     if (ignore && *ignore == i.key())
       continue;

@@ -87,7 +87,12 @@ CLICK_DECLS
  * =item USE_SEQ_METRIC
  *
  * Boolean.  Iff true, use the `dsdv_seqs' metric, and ignore the
- * METRIC keyword.
+ * METRIC keyword.  Defaults to false.
+ *
+ * =item IGNORE_INVALID_ROUTES
+ *
+ * Boolean.  Iff true, don't advertise or use routes with invalid
+ * route metrics.  Defaults to false.
  *
  * =item LOG
  *
@@ -421,6 +426,9 @@ private:
   /* track route ads */
   unsigned int _last_periodic_update;  // jiffies
   unsigned int _last_triggered_update; // jiffies
+
+  /* Keep and propagate route with invalid metrics? */
+  bool _ignore_invalid_routes; 
 
   class Timer _hello_timer;
   static void static_hello_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->hello_hook(); }
