@@ -622,7 +622,7 @@ inline void
 Packet::shrink_data(const unsigned char *d, uint32_t length)
 {
   assert(_data_packet);
-  if (d > _head && d + length < _end) {
+  if (d >= _head && d + length >= d && d + length <= _end) {
     _head = _data = const_cast<unsigned char *>(d);
     _tail = _end = const_cast<unsigned char *>(d + length);
   }
