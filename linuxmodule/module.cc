@@ -328,6 +328,7 @@ write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
     errh->error("no router to drive");
     return -EINVAL;
   }
+  printk("driving %d times\n", num);
   for (int i = 0; i < num; i++)
     if (!current_router->driver())
       break;
@@ -371,8 +372,6 @@ click_remove_element_type(int i)
 
 
 extern void export_elements(Lexer *);
-extern "C" void click_start_sched();
-extern "C" void click_kill_sched();
 
 extern "C" int
 init_module()
@@ -383,7 +382,6 @@ init_module()
   ErrorHandler::static_initialize(new KernelErrorHandler);
   FromDevice::static_initialize();
   ToDevice::static_initialize();
-
   kernel_errh = ErrorHandler::default_handler();
   extern ErrorHandler *click_chatter_errh;
   click_chatter_errh = kernel_errh;
@@ -412,10 +410,6 @@ init_module()
   kfr.add_read("requirements", read_requirements, 0);
   kfr.add_write("driver", write_driver, 0);
  
-#ifdef HAVE_CLICK_SCHEDULER
-  click_start_sched();
-#endif
-
   return 0;
 }
 
@@ -425,10 +419,6 @@ cleanup_module()
   extern int click_new_count; /* glue.cc */
   extern int click_outstanding_news; /* glue.cc */
   
-#ifdef HAVE_CLICK_SCHEDULER
-  click_kill_sched();
-#endif
-
   cleanup_proc_click_errors();
   cleanup_proc_click_elements();
   cleanup_proc_click_config();

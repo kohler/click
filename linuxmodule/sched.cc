@@ -36,6 +36,7 @@ extern "C" {
 #undef new
 }
 
+
 static pid_t click_sched_pid;      /* kernel thread ID for click scheduler */
 static struct wait_queue *click_sched_wq = NULL;   /* killing sched thread */
 
@@ -46,28 +47,36 @@ extern "C" void click_kill_sched();
 static int
 click_sched(void *)
 { 
-    extern struct device *tulip_dev; /* XXX - hack */ 
-    struct device *dev = tulip_dev;
+    struct device *dev = dev_get("eth0");
     int total_poll_work = 0;
     int total_intr_wait = 0;
     int idle = 0;
+
+    if (dev == NULL)
+    {
+	printk("cannot grab device %s\n","eth0");
+	return;
+    }
 
     current->session = 1;
     current->pgrp = 1;
     sprintf(current->comm, "click_sched");
 
     dev->intr_off(dev); 
-    dev->poll_mode = 1;
+    dev->defer_intr = 1;
 
     for(;;) 
     {
-    	int work = tulip_poll();
+	struct sk_buff *skb;
 
-    	if (work > 0) 
+    	skb = dev->rx_poll(dev);
+
+    	if (skb > 0) 
     	{
-		total_poll_work += work;
+		total_poll_work ++;
 		do_bottom_half();
     	}
+
 	else 
 	{
 	    idle++; 
@@ -88,7 +97,7 @@ click_sched(void *)
             } 
 	}
 
-	if (idle == 25)
+	if (idle == 20)
 	{
 	    total_intr_wait++;
 	    dev->intr_on(dev);
@@ -99,7 +108,7 @@ click_sched(void *)
     }
 
     printk("click_sched: waited for interrupts %d times\n", total_intr_wait);
-    dev->poll_mode = 0;
+    dev->defer_intr = 0;
     dev->intr_on(dev); 
     return 0;
 }
