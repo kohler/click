@@ -108,8 +108,10 @@ by setting the "'`'"CXX' environment variable and rerunning me.
     fi
 
     ac_base_cxx="$CXX"
+    test -z "$ac_user_cxx" -a -n "$GXX" && \
+	CXX="$CXX -fno-exceptions -fno-rtti -fvtable-thunks -MD"
     test -z "$ac_user_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	CXX="$CXX -Wp,-w -W -Wall -fno-exceptions -fno-rtti -fvtable-thunks -MD"
+	CXX="$CXX -Wp,-w -W -Wall"
 
     CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
     AC_SUBST(CXXFLAGS_NDEBUG)
@@ -124,8 +126,8 @@ dnl
 AC_DEFUN([CLICK_PROG_BUILD_CXX], [
     dnl This doesn't really work, but it's close.
     ac_base_build_cxx="$CXX"
-    test -z "$ac_user_build_cxx" -a -n "$ac_compile_with_warnings" && \
-	BUILD_CXX="$BUILD_CXX -Wp,-w -W -Wall -fno-exceptions -fno-rtti -fvtable-thunks"
+    test -z "$ac_user_build_cxx" && \
+	BUILD_CXX="$CXX"
 ])
 
 
@@ -137,9 +139,9 @@ dnl
 AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
     AC_REQUIRE([CLICK_PROG_CXX])
     test -z "$ac_user_kernel_cxx" && \
-	KERNEL_CXX="$ac_base_cxx -MD"
+	KERNEL_CXX="$ac_base_cxx -fno-exceptions -fno-rtti -fvtable-thunks -fno-strict-aliasing -MD"
     test -z "$ac_user_kernel_cxx" -a -n "$GXX" -a -n "$ac_compile_with_warnings" && \
-	KERNEL_CXX="$ac_base_cxx -w -Wall -fno-exceptions -fno-rtti -fvtable-thunks -MD"
+	KERNEL_CXX="$KERNEL_CXX -w -Wall"
     AC_SUBST(KERNEL_CXX)
 ])
 
