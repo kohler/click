@@ -1,3 +1,11 @@
+2003-11-30 Sunday 22:19  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.21), sr/dupefilter.cc (1.2),
+	sr/ettmetric.hh (1.6), sr/linkmetric.hh (1.3), sr/printsr.cc (1.6),
+	sr/printsr.hh (1.2), sr/srcr.cc (1.31), sr/srcr.hh (1.27): fixed
+	virtual function bug in linkmetric.hh - It is now very clear to
+	everyone that I do not understand c++
+
 2003-11-26 Wednesday 23:53  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: dupefilter.cc (1.1), dupefilter.hh (1.1): srcr
