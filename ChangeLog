@@ -1,3 +1,31 @@
+2001-03-16 Friday 21:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/: click-check/click-check.cc,
+	click-devirtualize/click-devirtualize.cc,
+	click-undead/click-undead.cc: use new parse_all_files() function
+
+2001-03-16 Friday 21:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/lib/routert.hh: nitlets, and add FIRST_REAL_TYPE constant
+
+2001-03-16 Friday 21:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* userlevel/click.cc: nitlet
+
+2001-03-16 Friday 21:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/lib/: toolutils.cc, toolutils.hh: change parse_all_required
+	to parse_all_files; add parse_default_file and
+	parse_requirement_files; bug fix: print flow_code in unparse(); add
+	size() method
+
+2001-03-16 Friday 21:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-mkelemmap: bug fix: files that only define provisions, not
+	elements, won't have flow codes or processing codes; write an
+	explicit null string "" in those cases so the tab order doesn't get
+	screwed up
+
 2001-03-16 Friday 20:06  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* tools/: click-check/click-check.cc, lib/processingt.cc,
