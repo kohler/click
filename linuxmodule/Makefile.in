@@ -54,7 +54,8 @@ GENERIC_OBJS = string.o straccum.o \
 	element.o \
 	confparse.o variableenv.o lexer.o elemfilter.o \
 	routerthread.o router.o \
-	crc32.o iptable.o iptable2.o radix.o skbmgr.o \
+	crc32.o iptable.o iptable2.o radix.o \
+	packageutils.o skbmgr.o \
 	$(EXTRA_DRIVER_OBJS)
 
 LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \
