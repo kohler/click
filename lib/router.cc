@@ -40,7 +40,6 @@ Router::Router()
     _have_connections(0), _have_hookpidx(0),
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
-  _task_list.initialize_list();
   //printf("sizeof(Anno) %d\n", sizeof(Packet::Anno));
 }
 
@@ -1212,12 +1211,16 @@ Router::driver()
 #else
     int c = 10000;
 #endif
-    while ((t = _task_list.next_task()),
+    
+    _task_list.lock();
+    while ((t = _task_list.scheduled_next()),
 	   t != &_task_list && !_please_stop_driver && c >= 0) {
-      t->unschedule();
+      t->fast_unschedule();
       t->call_hook();
       c--;
     }
+    _task_list.unlock();
+    
     if (_please_stop_driver)
       break;
     else
@@ -1230,11 +1233,14 @@ Router::driver_once()
 {
   if (_please_stop_driver)
     return;
-  Task *t = _task_list.next_task();
+
+  _task_list.lock();
+  Task *t = _task_list.scheduled_next();
   if (t != &_task_list) {
-    t->unschedule();
+    t->fast_unschedule();
     t->call_hook();
   }
+  _task_list.unlock();
 }
 
 

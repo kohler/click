@@ -66,7 +66,7 @@ class Router { public:
   int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
   void set_configuration(int, const String &);
 
-  Task *task_list()				{ return &_task_list; }
+  TaskList *task_list()				{ return &_task_list; }
   Timer *timer_head()				{ return &_timer_head; }
 
 #if CLICK_USERLEVEL
@@ -88,7 +88,7 @@ class Router { public:
  private:
   
   Timer _timer_head;
-  Task _task_list;
+  TaskList _task_list;
   bool _please_stop_driver;
 
 #ifdef CLICK_USERLEVEL
