@@ -1,9 +1,11 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * lookupiproute.{cc,hh} -- element looks up next-hop address in static
  * routing table
- * Robert Morris
+ * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -19,125 +21,44 @@
 #include <click/config.h>
 #include "lookupiproute.hh"
 #include <click/ipaddress.hh>
-#include <click/confparse.hh>
+#include <click/straccum.hh>
 #include <click/error.hh>
-#include <click/glue.hh>
 
 StaticIPLookup::StaticIPLookup()
 {
-  MOD_INC_USE_COUNT;
-  add_input();
+    MOD_INC_USE_COUNT;
 }
 
 StaticIPLookup::~StaticIPLookup()
 {
-  MOD_DEC_USE_COUNT;
-}
-
-StaticIPLookup *
-StaticIPLookup::clone() const
-{
-  return new StaticIPLookup;
+    MOD_DEC_USE_COUNT;
 }
 
 int
-StaticIPLookup::configure(Vector<String> &conf, ErrorHandler *errh)
+StaticIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
+			  int output, ErrorHandler *errh)
 {
-  int maxout = -1;
-  _t.clear();
-  
-  int before = errh->nerrors();
-  for (int i = 0; i < conf.size(); i++) {
-    uint32_t dst, mask, gw = 0;
-    int32_t output_num;
-    bool ok = false;
-
-    Vector<String> words;
-    cp_spacevec(conf[i], words);
-    
-    if ((words.size() == 2 || words.size() == 3)
-	&& cp_ip_prefix(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, this) // allow base IP addresses
-	&& cp_integer(words.back(), &output_num)) {
-      if (words.size() == 3)
-	ok = cp_ip_address(words[1], (unsigned char *)&gw, this);
-      else
-	ok = true;
-    }
-
-    if (ok && output_num >= 0) {
-      _t.add(dst, mask, gw, output_num);
-      if (output_num > maxout)
-        maxout = output_num;
-    } else
-      errh->error("argument %d should be `DADDR/MASK [GATEWAY] OUTPUT'", i+1);
-  }
-  if (errh->nerrors() != before)
-    return -1;
-  if (maxout < 0)
-    errh->warning("no routes");
-
-  set_noutputs(maxout + 1);
-  return 0;
+    if (ports_frozen())
+	return errh->error("can't add routes dynamically");
+    else
+	return LinearIPLookup::add_route(addr, mask, gw, output, errh);
 }
 
 int
-StaticIPLookup::initialize(ErrorHandler *)
+StaticIPLookup::remove_route(IPAddress addr, IPAddress mask, IPAddress gw,
+			     int output, ErrorHandler *errh)
 {
-  _last_addr = IPAddress();
-#ifdef IP_RT_CACHE2
-  _last_addr2 = _last_addr;
-#endif
-  return 0;
+    if (ports_frozen())
+	return errh->error("can't remove routes dynamically");
+    else
+	return LinearIPLookup::remove_route(addr, mask, gw, output, errh);
 }
 
 void
-StaticIPLookup::push(int, Packet *p)
+StaticIPLookup::add_handlers()
 {
-#define EXCHANGE(a,b,t) { t = a; a = b; b = t; }
-  IPAddress a = p->dst_ip_anno();
-  IPAddress gw;
-  int ifi = -1;
-
-  if (a) {
-    if (a == _last_addr) {
-      if (_last_gw)
-	p->set_dst_ip_anno(_last_gw);
-      output(_last_output).push(p);
-      return;
-    } 
-#ifdef IP_RT_CACHE2
-    else if (a == _last_addr2) {
-#if 0
-      IPAddress tmpa; 
-      int tmpi;
-      EXCHANGE(_last_addr, _last_addr2, tmpa);
-      EXCHANGE(_last_gw, _last_gw2, tmpa);
-      EXCHANGE(_last_output, _last_output2, tmpi);
-#endif
-      if (_last_gw2)
-	p->set_dst_ip_anno(_last_gw2);
-      output(_last_output2).push(p);
-      return;
-    }
-#endif
-  }
-  
-  if (_t.lookup(a, gw, ifi) == true) {
-#ifdef IP_RT_CACHE2
-    _last_addr2 = _last_addr;
-    _last_gw2 = _last_gw;
-    _last_output2 = _last_output;
-#endif
-    _last_addr = a;
-    _last_gw = gw;
-    _last_output = ifi;
-    if (gw)
-      p->set_dst_ip_anno(IPAddress(gw));
-    output(ifi).push(p);
-  } else {
-    click_chatter("StaticIPLookup: no gw for %x", a.addr());
-    p->kill();
-  }
+    add_read_handler("table", table_handler, 0);
 }
 
+ELEMENT_REQUIRES(LinearIPLookup)
 EXPORT_ELEMENT(StaticIPLookup StaticIPLookup-LookupIPRoute)

@@ -59,7 +59,7 @@ RadixIPLookup::uninitialize()
 
 
 String
-RadixIPLookup::dump_routes()
+RadixIPLookup::dump_routes() const
 {
     StringAccum sa;
     unsigned dst, mask, gw, port;
@@ -107,8 +107,9 @@ RadixIPLookup::add_route(IPAddress d, IPAddress m, IPAddress g, int port, ErrorH
 }
 
 int
-RadixIPLookup::remove_route(IPAddress d, IPAddress m, ErrorHandler *errh)
+RadixIPLookup::remove_route(IPAddress d, IPAddress m, IPAddress, int, ErrorHandler *errh)
 {
+    // XXX
     unsigned dst = d.addr();
     unsigned mask = m.addr();
 
@@ -144,7 +145,7 @@ RadixIPLookup::lookup_route(IPAddress d, IPAddress &gw) const
 }
 
 bool
-RadixIPLookup::get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port)
+RadixIPLookup::get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port) const
 {
     assert(i >= 0 && i < _v.size());
     if(i < 0 || i >= _v.size() || _v[i]->valid == 0) {

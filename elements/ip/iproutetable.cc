@@ -39,15 +39,14 @@ IPRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int before = errh->nerrors();
     for (int i = 0; i < conf.size(); i++) {
-	IPAddress dst, mask, gw;
-	int32_t port;
-	bool ok;
-
 	Vector<String> words;
 	cp_spacevec(conf[i], words);
 
+	IPAddress dst, mask, gw;
+	int32_t port;
+	bool ok = false;
 	if ((words.size() == 2 || words.size() == 3)
-	    && cp_ip_prefix(words[0], &dst, &mask, true, this) // allow base IP addresses
+	    && cp_ip_prefix(words[0], &dst, &mask, true, this)
 	    && cp_integer(words.back(), &port)) {
 	    if (words.size() == 3)
 		ok = cp_ip_address(words[1], &gw, this);
@@ -72,7 +71,7 @@ IPRouteTable::add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *errh
 }
 
 int
-IPRouteTable::remove_route(IPAddress, IPAddress, ErrorHandler *errh)
+IPRouteTable::remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *errh)
 {
     // by default, cannot remove routes
     return errh->error("cannot delete routes from this routing table");
@@ -85,9 +84,9 @@ IPRouteTable::lookup_route(IPAddress, IPAddress &) const
 }
 
 String
-IPRouteTable::dump_routes()
+IPRouteTable::dump_routes() const
 {
-    return "";
+    return String();
 }
 
 
@@ -110,60 +109,78 @@ IPRouteTable::push(int, Packet *p)
 
 
 int
-IPRouteTable::ctrl_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+IPRouteTable::add_route_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
     IPRouteTable *r = static_cast<IPRouteTable *>(e);
 
     Vector<String> words;
     cp_spacevec(conf, words);
-    if (words.size() == 0)
-	words.push_back("");
 
-    if (words[0] == "add") {
-	IPAddress dst, mask, gw;
-	int port, ok;
+    IPAddress dst, mask, gw;
+    int port, ok;
 
-	if (words.size() == 3)
-	    ok = cp_va_parse(words, r, errh, cpIgnore,
-			     cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
-			     cpInteger, "output port", &port, 0);
-	else
-	    ok = cp_va_parse(words, r, errh, cpIgnore,
-			     cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
-			     cpIPAddress, "gateway address", &gw,
-			     cpInteger, "output port", &port, 0);
+    if (words.size() == 2)
+	ok = cp_va_parse(words, r, errh,
+			 cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
+			 cpInteger, "output port", &port, 0);
+    else
+	ok = cp_va_parse(words, r, errh,
+			 cpIPAddressOrPrefix, "routing prefix", &dst, &mask,
+			 cpIPAddress, "gateway address", &gw,
+			 cpInteger, "output port", &port, 0);
 
-	if (ok >= 0 && (port < 0 || port >= r->noutputs()))
-	    ok = errh->error("output port out of range");
-	if (ok >= 0)
-	    ok = r->add_route(dst, mask, gw, port, errh);
-	return ok;
+    if (ok >= 0 && (port < 0 || port >= r->noutputs()))
+	ok = errh->error("output port out of range");
+    if (ok >= 0)
+	ok = r->add_route(dst, mask, gw, port, errh);
+    return ok;
+}
 
-    } else if (words[0] == "remove") {
-	IPAddress dst, mask;
-	if (cp_va_parse(words, r, errh, cpIgnore,
-			cpIPAddressOrPrefix, "routing prefix", &dst, &mask, 0) < 0)
-	    return -1;
-	else
-	    return r->remove_route(dst, mask, errh);
+int
+IPRouteTable::remove_route_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+    IPRouteTable *r = static_cast<IPRouteTable *>(e);
 
-    } else
+    Vector<String> words;
+    cp_spacevec(conf, words);
+
+    IPAddress a, mask, gw;
+    int port = -1, ok;
+
+    if (words.size() <= 2)
+	ok = cp_va_parse(words, r, errh,
+			 cpIPAddressOrPrefix, "routing prefix", &a, &mask,
+			 cpOptional,
+			 cpInteger, "output port", &port, 0);
+    else
+	ok = cp_va_parse(words, r, errh,
+			 cpIPAddressOrPrefix, "routing prefix", &a, &mask,
+			 cpIPAddress, "gateway address", &gw,
+			 cpInteger, "output port", &port, 0);
+
+    if (ok >= 0)
+	ok = r->remove_route(a, mask, gw, port, errh);
+    return ok;
+}
+
+int
+IPRouteTable::ctrl_handler(const String &conf_in, Element *e, void *thunk, ErrorHandler *errh)
+{
+    String conf = conf_in;
+    String first_word = cp_pop_spacevec(conf);
+    if (first_word == "add")
+	return add_route_handler(conf, e, thunk, errh);
+    else if (first_word == "remove")
+	return remove_route_handler(conf, e, thunk, errh);
+    else
 	return errh->error("bad command, should be `add' or `remove'");
 }
 
 String
-IPRouteTable::look_handler(Element *e, void *)
+IPRouteTable::table_handler(Element *e, void *)
 {
     IPRouteTable *r = static_cast<IPRouteTable*>(e);
     return r->dump_routes();
 }
-
-void
-IPRouteTable::add_handlers()
-{
-    add_write_handler("ctrl", ctrl_handler, 0);
-    add_read_handler("look", look_handler, 0);
-}
-
 
 ELEMENT_PROVIDES(IPRouteTable)

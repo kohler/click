@@ -34,13 +34,13 @@ class RadixIPLookup : public IPRouteTable { public:
     void uninitialize();
 
     int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
-    int remove_route(IPAddress, IPAddress, ErrorHandler *);
+    int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
     int lookup_route(IPAddress, IPAddress &) const;
-    String dump_routes();
+    String dump_routes() const;
 
   private:
     
-    bool get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port);
+    bool get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port) const;
 
     // Simple routing table
     struct Entry {

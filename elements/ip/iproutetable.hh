@@ -48,7 +48,7 @@
  * =h look read-only
  * Returns the contents of the routing table.
  *
- * =a LookupIPRoute, RadixIPLookup
+ * =a StaticIPLookup, RadixIPLookup
  */
 
 #include <click/glue.hh>
@@ -60,18 +60,16 @@ class IPRouteTable : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
 
     virtual int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler*);
-    virtual int remove_route(IPAddress, IPAddress, ErrorHandler *);
+    virtual int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
     virtual int lookup_route(IPAddress, IPAddress &) const = 0;
-    virtual String dump_routes();
-  
+    virtual String dump_routes() const;
+
     void push(int port, Packet *p);
 
-    void add_handlers();
-
-  private:
-
-    static int ctrl_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
-    static String look_handler(Element *, void *);
+    static int add_route_handler(const String &, Element *, void *, ErrorHandler *);
+    static int remove_route_handler(const String &, Element *, void *, ErrorHandler *);
+    static int ctrl_handler(const String &, Element *, void *, ErrorHandler *);
+    static String table_handler(Element *, void *);
 
 };
 
