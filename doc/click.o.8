@@ -176,7 +176,9 @@ are, their processing type, and (for pull inputs and push outputs) what
 they are connected to.
 .TP
 .BI /proc/click/xxx/handlers
-Read-only. Lists the element's handlers.
+Read-only. Lists the element's handlers, one per line. Each line has the
+handler name and, after a tab, a permissions word. The permissions word is
+currently "r" (read-only), "w" (write-only), or "rw" (read/write).
 .TP
 .BI /proc/click/xxx/tickets
 Read-only. Describes the element's scheduler-related state. Contains a
