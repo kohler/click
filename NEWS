@@ -32,9 +32,13 @@ Version 1.0.5
 * TimedSource::initialize now sets tickets, allowing TimedSource to be
   scheduled.
 
-* click-xform: Bug fixes and performance improvements.
+* click-xform: Bug fixes and performance improvements. Also, click-xform
+  tries to preserve element names from the original configuration. If a
+  pattern element and a replacement element share a name, then when the
+  pattern is applied, the replacing element will use the name of the
+  original element that corresponded to the pattern element. (Phew!)
 
-* click-devirtualize: Bug fixes.
+* click-devirtualize: Bug fixes. It also uses standards-compliant C++ only.
 
 * Added click-combine and click-uncombine.
 
