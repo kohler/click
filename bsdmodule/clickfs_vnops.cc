@@ -331,7 +331,7 @@ clickfs_open(struct vop_open_args *ap)
 		return ENOMEM;
 	}
 	if (mode & FREAD) {
-	    cp->rwbuf = current_config;
+	    cp->rwbuf = new String(*current_config);
 	}
 	return 0;
     }
@@ -415,7 +415,6 @@ clickfs_close(struct vop_close_args *ap)
 
     if (cp->dirent->type == CLICKFS_DIRENT_CONFIG && (flags & FWRITE)) {
 	*current_config = *cp->rwbuf;
-	cp->rwbuf = NULL;
 	kill_current_router();
 
 	Router *r = parse_router(*current_config);

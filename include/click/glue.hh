@@ -135,8 +135,6 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-#define CLICK_DMALLOC_REG(s)
-
 /* Char-type glue */
 
 #define _U	0x01	/* upper */

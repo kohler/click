@@ -153,6 +153,8 @@ clickfs_init(struct vfsconf *vfsp)
 static int
 clickfs_uninit(struct vfsconf *vfsp)
 {
+    delete current_config;
+    current_config = 0;
     return 0;
 }
 
