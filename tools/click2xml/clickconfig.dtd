@@ -1,0 +1,41 @@
+<!ELEMENT configuration (elementclass | element | connection)*>
+<!ELEMENT elementclass (compound | synonym)>
+<!ELEMENT synonym EMPTY>
+<!ELEMENT compound (formal*, (elementclass | element | connection)*)>
+<!ELEMENT formal EMPTY>
+<!ELEMENT element EMPTY>
+<!ELEMENT connection EMPTY>
+
+<!ATTLIST elementclass classname CDATA #IMPLIED
+classid ID #REQUIRED
+file CDATA #IMPLIED
+line NMTOKEN #IMPLIED>
+
+<!ATTLIST synonym classname CDATA #IMPLIED
+classid IDREF #IMPLIED>
+
+<!ATTLIST compound prevclassname CDATA #IMPLIED
+prevclassid IDREF #IMPLIED
+ninputs NMTOKEN #IMPLIED
+noutputs NMTOKEN #IMPLIED
+nformals NMTOKEN #IMPLIED>
+
+<!ATTLIST formal number NMTOKEN #REQUIRED
+name NMTOKEN #REQUIRED>
+
+<!ATTLIST element name CDATA #REQUIRED
+classname CDATA #IMPLIED
+classid IDREF #IMPLIED
+file CDATA #IMPLIED
+line NMTOKEN #IMPLIED
+ninputs NMTOKEN #IMPLIED
+noutputs NMTOKEN #IMPLIED
+processing CDATA #IMPLIED>
+
+<!ATTLIST connection from CDATA #REQUIRED
+fromport NMTOKEN #REQUIRED
+to CDATA #REQUIRED
+toport NMTOKEN #REQUIRED
+processing NMTOKEN #IMPLIED
+file CDATA #IMPLIED
+line NMTOKEN #IMPLIED>

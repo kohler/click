@@ -148,30 +148,25 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 
     fprintf(f, "%s<elementclass ", indent.cc());
     print_class_reference(f, c, "");
-    fprintf(f, ">\n");
     
     if (SynonymElementClassT *synonym = c->cast_synonym()) {
-	fprintf(f, "%s  <synonym ", indent.cc());
+	fprintf(f, ">\n%s  <synonym ", indent.cc());
 	print_class_reference(f, synonym->synonym_of(), "");
 	fprintf(f, " />\n");
     } else if (CompoundElementClassT *compound = c->cast_compound()) {
-	fprintf(f, "%s  <compound", indent.cc());
+	print_landmark_attributes(f, compound->landmark());
+	fprintf(f, ">\n%s  <compound", indent.cc());
 	if (ElementClassT *prev = compound->previous()) {
 	    fprintf(f, " ");
 	    print_class_reference(f, prev, "prev");
 	}
-	if (compound->ninputs())
-	    fprintf(f, " ninputs='%d'", compound->ninputs());
-	if (compound->noutputs())
-	    fprintf(f, " noutputs='%d'", compound->ninputs());
-	if (compound->nformals())
-	    fprintf(f, " nformals='%d'", compound->nformals());
-	fprintf(f, ">\n");
+	fprintf(f, " ninputs='%d' noutputs='%d' nformals='%d'>\n",
+		compound->ninputs(), compound->noutputs(), compound->nformals());
 
 	String new_indent = add_indent(indent, 4);
 	for (int i = 0; i < compound->nformals(); i++)
 	    fprintf(f, "%s<formal number='%d' name='%s' />\n",
-		    new_indent.cc(), i, String(compound->formals()[i]).cc());
+		    new_indent.cc(), i, compound->formals()[i].substring(1).cc());
 	generate_router(compound->cast_router(), f, new_indent, false, errh);
 	
 	fprintf(f, "%s  </compound>\n", indent.cc());
@@ -257,9 +252,9 @@ process(const char *infile, bool file_is_expr, const char *outfile,
     emap.set_driver(driver);
     ElementMap::push_default(&emap);
 
-    fprintf(outf, "<clickrouter>\n");
+    fprintf(outf, "<configuration>\n");
     generate_router(r, outf, "", true, errh);
-    fprintf(outf, "</clickrouter>\n");
+    fprintf(outf, "</configuration>\n");
     
     ElementMap::pop_default();
     
