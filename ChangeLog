@@ -1,3 +1,8 @@
+2003-07-30 Wednesday 00:37  Eddie Kohler <kohler@icir.org>
+
+	* elements/tcpudp/: tcprewriter.cc (1.31), tcprewriter.hh (1.15):
+	TCPRewriter takes account of tcp sack options (but untested)
+
 2003-07-29 Tuesday 18:00  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: linktable.cc (1.9), linktable.hh (1.9): fixed
