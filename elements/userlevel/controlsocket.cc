@@ -590,6 +590,11 @@ ControlSocket::selected(int fd)
     }
     if (w < 0 && errno == EPIPE)
       _flags[fd] |= WRITE_CLOSED;
+    // don't select writes unless we have data to write
+    if (_out_texts[fd].length())
+      add_select(fd, SELECT_WRITE);
+    else
+      remove_select(fd, SELECT_WRITE);
   }
 
   // maybe close out

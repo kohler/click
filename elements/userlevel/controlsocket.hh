@@ -159,10 +159,6 @@ class ControlSocket : public Element { public:
 
   void selected(int);
 
-  int message(int fd, int code, const String &, bool continuation = false);
-  int transfer_messages(int fd, int default_code, const String &first_message,
-			ControlSocketErrorHandler *);
-  
   enum {
     CSERR_OK			= HandlerProxy::CSERR_OK,	       // 200
     CSERR_OK_HANDLER_WARNING	= 220,
@@ -196,7 +192,11 @@ class ControlSocket : public Element { public:
   enum { READ_CLOSED = 1, WRITE_CLOSED = 2, ANY_ERR = -1 };
 
   static const char * const protocol_version;
-
+  
+  int message(int fd, int code, const String &, bool continuation = false);
+  int transfer_messages(int fd, int default_code, const String &first_message,
+			ControlSocketErrorHandler *);
+  
   String proxied_handler_name(const String &) const;
   int parse_handler(int fd, const String &, Element **);
   int read_command(int fd, const String &);
