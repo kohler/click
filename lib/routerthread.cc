@@ -101,6 +101,7 @@ RouterThread::RouterThread(Master *m, int id)
 
 RouterThread::~RouterThread()
 {
+    _pending = 0;
     assert(empty());
 }
 

@@ -40,7 +40,7 @@ class RouterThread : public Task { public:
 
     // Task list functions
     inline bool empty() const;
-
+    
     inline void lock_tasks();
     inline bool attempt_lock_tasks();
     inline void unlock_tasks();
@@ -153,7 +153,7 @@ class RouterThread : public Task { public:
 inline bool
 RouterThread::empty() const
 {
-    return _task_heap.size() == 0;
+    return _task_heap.size() == 0 && !_pending;
 }
 #else
 inline bool
