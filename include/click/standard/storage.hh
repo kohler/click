@@ -12,10 +12,13 @@ class Storage { public:
     int size() const;
     int capacity() const		{ return _capacity; }
 
+    int head() const			{ return _head; }
+    int tail() const			{ return _tail; }
+    
     int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
     int prev_i(int i) const		{ return (i!=0 ? i-1 : _capacity); }
 
-    // to be used with care...
+    // to be used with care
     void set_capacity(int c)		{ _capacity = c; }
     void set_head(int h)		{ _head = h; }
     void set_tail(int t)		{ _tail = t; }

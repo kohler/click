@@ -76,7 +76,7 @@ class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
     void add_handlers();
 #endif
  
-  private:
+  protected:
 
     enum { SLEEPINESS_TRIGGER = 9 };
     int _sleepiness;

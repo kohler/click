@@ -60,46 +60,46 @@ class SimpleQueue : public Element, public Storage { public:
   
     int drops() const				{ return _drops; }
     int highwater_length() const		{ return _highwater_length; }
-  
-    void enq(Packet *);
-    void lifo_enq(Packet *);
-    Packet *deq();
-    Packet *head() const;
+    
+    void enq(Packet*);
+    void lifo_enq(Packet*);
+    Packet* deq();
 
-    template <typename Filter> Packet *yank1(Filter);
-    template <typename Filter> Packet *yank1_peek(Filter);
+    // to be used with care
+    Packet* packet(int i) const			{ return _q[i]; }
+    
+    template <typename Filter> Packet* yank1(Filter);
+    template <typename Filter> Packet* yank1_peek(Filter);
     template <typename Filter> int yank(Filter, Vector<Packet *> &);
 
-    const char *class_name() const		{ return "SimpleQueue"; }
-    const char *processing() const		{ return PUSH_TO_PULL; }
-    void *cast(const char *);
+    const char* class_name() const		{ return "SimpleQueue"; }
+    const char* processing() const		{ return PUSH_TO_PULL; }
+    void* cast(const char*);
   
-    int configure(Vector<String> &, ErrorHandler *);
-    int initialize(ErrorHandler *);
+    int configure(Vector<String>&, ErrorHandler*);
+    int initialize(ErrorHandler*);
     void cleanup(CleanupStage);
     bool can_live_reconfigure() const		{ return true; }
-    int live_reconfigure(Vector<String> &, ErrorHandler *);
-    void take_state(Element *, ErrorHandler *);
+    int live_reconfigure(Vector<String>&, ErrorHandler*);
+    void take_state(Element*, ErrorHandler*);
     void add_handlers();
   
-    void push(int port, Packet *);
-    Packet *pull(int port);
+    void push(int port, Packet*);
+    Packet* pull(int port);
   
-  private:
+  protected:
   
-    Packet **_q;
+    Packet** _q;
     int _drops;
     int _highwater_length;
 
-    friend class FrontDropQueue;
-    friend class NotifierQueue;
     friend class MixedQueue;
     friend class TokenQueue;
     friend class InOrderQueue;
     friend class ECNQueue;
 
-    static String read_handler(Element *, void *);
-    static int write_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element*, void*);
+    static int write_handler(const String&, Element*, void*, ErrorHandler*);
   
 };
 
@@ -141,12 +141,6 @@ SimpleQueue::deq()
 	return p;
     } else
 	return 0;
-}
-
-inline Packet *
-SimpleQueue::head() const
-{
-    return (_head != _tail ? _q[_head] : 0);
 }
 
 template <typename Filter>

@@ -76,32 +76,34 @@ FrontDropQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 void
 FrontDropQueue::take_state(Element *e, ErrorHandler *errh)
 {
-  SimpleQueue *q = (SimpleQueue *)e->cast("SimpleQueue");
-  if (!q) return;
+    SimpleQueue *q = (SimpleQueue *)e->cast("SimpleQueue");
+    if (!q)
+	return;
   
-  if (_tail != _head || _head != 0) {
-    errh->error("already have packets enqueued, can't take state");
-    return;
-  }
+    if (_tail != _head || _head != 0) {
+	errh->error("already have packets enqueued, can't take state");
+	return;
+    }
   
-  _tail = _capacity;
-  int i = _capacity, j = q->_tail;
-  while (i > 0 && j != q->_head) {
-    i--;
-    j = q->prev_i(j);
-    _q[i] = q->_q[j];
-  }
-  _head = i;
-  _highwater_length = size();
+    _tail = _capacity;
+    int i = _capacity, j = q->tail();
+    while (i > 0 && j != q->head()) {
+	i--;
+	j = q->prev_i(j);
+	_q[i] = q->packet(j);
+    }
+    _head = i;
+    _highwater_length = size();
 
-  if (j != q->_head)
-    errh->warning("some packets lost (old length %d, new capacity %d)",
-		  q->size(), _capacity);
-  while (j != q->_head) {
-    j = q->prev_i(j);
-    q->_q[j]->kill();
-  }
-  q->_head = q->_tail = 0;
+    if (j != q->head())
+	errh->warning("some packets lost (old length %d, new capacity %d)",
+		      q->size(), _capacity);
+    while (j != q->head()) {
+	j = q->prev_i(j);
+	q->packet(j)->kill();
+    }
+    q->set_head(0);
+    q->set_tail(0);
 }
 
 void
