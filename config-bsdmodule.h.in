@@ -12,6 +12,9 @@
 #define MODULE
 #define NDEBUG 1
 
+/* Define if the BSD kernel module target will be compiled. */
+#undef HAVE_BSDMODULE_TARGET
+
 /* Define if your BSD kernel has Click extensions. */
 #undef HAVE_CLICK_BSD_KERNEL
 
