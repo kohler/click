@@ -1,3 +1,16 @@
+2003-01-31 Friday 17:29  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/drivermanager.cc, include/click/element.hh,
+	include/click/task.hh, include/click/timer.hh,
+	include/click/standard/drivermanager.hh, include/click/element.hh,
+	include/click/task.hh, include/click/timer.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh, libsrc/element.cc,
+	libsrc/task.cc, libsrc/timer.cc: Great Scheduling Rewrite, from
+	Petros Zerfos: don't use run_scheduled(), use run_task() {WITH A
+	bool RETURN TYPE, representing whether or not the task accomplished
+	any useful work} or run_timer().
+
 2003-01-30 Thursday 17:31  Eddie Kohler <kohler@icir.org>
 
 	* config-userlevel.h.in: KernelTun works with Linux Universal

@@ -1,3 +1,124 @@
+2003-01-31 Friday 17:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: checkgridheader.cc (1.24), dsdvroutetable.hh
+	(1.22), filterbyhops.cc (1.15), fixsrcloc.cc (1.28), grid.hh
+	(1.42), gridgatewayinfo.cc (1.4), gridgenericlogger.hh (1.1),
+	gridheaderinfo.cc (1.7), gridlocationinfo.cc (1.19),
+	gridlocationinfo.hh (1.11), gridlogger.cc (1.5), gridlogger.hh
+	(1.20), gridtxerror.cc (1.6), gridtxerror.hh (1.5), linkstat.cc
+	(1.14), pingpong.cc (1.7), pingpong.hh (1.4), timeutils.hh (1.7):
+	First pass at converting simplest elements to work in kernel-click
+
+2003-01-31 Friday 17:44  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.texi (1.53): remove doc references to run_scheduled
+
+2003-01-31 Friday 17:29  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromdagdump.cc (1.14),
+	elements/analysis/fromdagdump.hh (1.8),
+	elements/analysis/fromipsumdump.cc (1.42),
+	elements/analysis/fromipsumdump.hh (1.23),
+	elements/analysis/fromnetflowsumdump.cc (1.11),
+	elements/analysis/fromnetflowsumdump.hh (1.8),
+	elements/analysis/toipsumdump.cc (1.37),
+	elements/analysis/toipsumdump.hh (1.32),
+	elements/aqm/adaptivered.cc (1.9), elements/aqm/adaptivered.hh
+	(1.8), elements/aqm/pi.cc (1.8), elements/aqm/pi.hh (1.6),
+	elements/bsdmodule/fromdevice.cc (1.14),
+	elements/bsdmodule/fromdevice.hh (1.11),
+	elements/bsdmodule/fromhost.cc (1.5),
+	elements/bsdmodule/fromhost.hh (1.4),
+	elements/bsdmodule/todevice.cc (1.7),
+	elements/bsdmodule/todevice.hh (1.8), elements/ethernet/arpfaker.cc
+	(1.22), elements/ethernet/arpfaker.hh (1.17),
+	elements/grid/ackretrysender.cc (1.3),
+	elements/grid/ackretrysender.hh (1.3), elements/grid/hello.cc
+	(1.41), elements/grid/hello.hh (1.17),
+	elements/grid/lookupgeogridroute.cc (1.29),
+	elements/grid/lookupgeogridroute.hh (1.13),
+	elements/grid/lookuplocalgridroute.cc (1.46),
+	elements/grid/lookuplocalgridroute.hh (1.17),
+	elements/grid/lrhello.cc (1.26), elements/grid/lrhello.hh (1.8),
+	elements/grid/pep.cc (1.24), elements/grid/pep.hh (1.12),
+	elements/grid/radiosim.cc (1.21), elements/grid/radiosim.hh (1.12),
+	elements/grid/regionpep.cc (1.15), elements/grid/regionpep.hh
+	(1.9), elements/icmp/icmppingrewriter.cc (1.20),
+	elements/icmp/icmppingrewriter.hh (1.9),
+	elements/icmp/icmpsendpings.cc (1.19),
+	elements/icmp/icmpsendpings.hh (1.7), elements/ip/ipaddrrewriter.cc
+	(1.18), elements/ip/ipaddrrewriter.hh (1.9), elements/ip/ripsend.cc
+	(1.30), elements/ip/ripsend.hh (1.20),
+	elements/linuxmodule/fromdevice.cc (1.74),
+	elements/linuxmodule/fromdevice.hh (1.34),
+	elements/linuxmodule/polldevice.cc (1.130),
+	elements/linuxmodule/polldevice.hh (1.62),
+	elements/linuxmodule/schedulelinux.cc (1.21),
+	elements/linuxmodule/schedulelinux.hh (1.12),
+	elements/linuxmodule/sortedsched.cc (1.5),
+	elements/linuxmodule/sortedsched.hh (1.3),
+	elements/linuxmodule/staticthreadsched.cc (1.5),
+	elements/linuxmodule/staticthreadsched.hh (1.3),
+	elements/linuxmodule/threadmonitor.cc (1.4),
+	elements/linuxmodule/threadmonitor.hh (1.3),
+	elements/linuxmodule/todevice.cc (1.130),
+	elements/linuxmodule/todevice.hh (1.62),
+	elements/linuxmodule/tulipstats.cc (1.17),
+	elements/linuxmodule/tulipstats.hh (1.8), elements/local/bufconv.cc
+	(1.9), elements/local/bufconv.hh (1.6), elements/local/rrunqueue.cc
+	(1.9), elements/local/rrunqueue.hh (1.5), elements/local/tcpack.cc
+	(1.14), elements/local/tcpack.hh (1.10), elements/local/toytcp.cc
+	(1.21), elements/local/toytcp.hh (1.10), elements/local/webgen.cc
+	(1.13), elements/local/webgen.hh (1.9), elements/ns/tosimdevice.cc
+	(1.6), elements/ns/tosimdevice.hh (1.3), elements/radio/bim.cc
+	(1.29), elements/radio/bim.hh (1.16), elements/standard/burster.cc
+	(1.24), elements/standard/burster.hh (1.16),
+	elements/standard/bwratedunqueue.cc (1.12),
+	elements/standard/bwratedunqueue.hh (1.6),
+	elements/standard/delayunqueue.cc (1.15),
+	elements/standard/delayunqueue.hh (1.11),
+	elements/standard/discard.cc (1.24), elements/standard/discard.hh
+	(1.21), elements/standard/discardnofree.cc (1.20),
+	elements/standard/discardnofree.hh (1.15),
+	elements/standard/drivermanager.cc (1.21),
+	elements/standard/infinitesource.cc (1.37),
+	elements/standard/infinitesource.hh (1.31),
+	elements/standard/quitwatcher.cc (1.19),
+	elements/standard/quitwatcher.hh (1.16),
+	elements/standard/randomsource.cc (1.17),
+	elements/standard/randomsource.hh (1.12),
+	elements/standard/ratedsource.cc (1.46),
+	elements/standard/ratedsource.hh (1.27),
+	elements/standard/ratedunqueue.cc (1.19),
+	elements/standard/ratedunqueue.hh (1.13),
+	elements/standard/timedsink.cc (1.25),
+	elements/standard/timedsink.hh (1.17),
+	elements/standard/timedsource.cc (1.29),
+	elements/standard/timedsource.hh (1.19),
+	elements/standard/unqueue.cc (1.21), elements/standard/unqueue.hh
+	(1.13), elements/standard/unqueue2.cc (1.10),
+	elements/standard/unqueue2.hh (1.6), elements/userlevel/fromdump.cc
+	(1.75), elements/userlevel/fromdump.hh (1.42),
+	elements/userlevel/kerneltap.cc (1.37),
+	elements/userlevel/kerneltap.hh (1.16),
+	elements/userlevel/kerneltun.cc (1.40),
+	elements/userlevel/kerneltun.hh (1.17),
+	elements/userlevel/progressbar.cc (1.22),
+	elements/userlevel/progressbar.hh (1.15),
+	elements/userlevel/todevice.cc (1.33),
+	elements/userlevel/todevice.hh (1.23), elements/userlevel/todump.cc
+	(1.47), elements/userlevel/todump.hh (1.29),
+	etc/ron/discardnotify.cc (1.2), etc/ron/discardnotify.hh (1.2),
+	etc/ron/todevicenotify.cc (1.3), etc/ron/todevicenotify.hh (1.2),
+	include/click/element.hh (1.27), include/click/task.hh (1.22),
+	include/click/timer.hh (1.19),
+	include/click/standard/drivermanager.hh (1.11), lib/element.cc
+	(1.77), lib/task.cc (1.22), lib/timer.cc (1.28),
+	tools/click-devirtualize/cxxclass.cc (1.11): Great Scheduling
+	Rewrite, from Petros Zerfos: don't use run_scheduled(), use
+	run_task() {WITH A bool RETURN TYPE, representing whether or not
+	the task accomplished any useful work} or run_timer().
+
 2003-01-31 Friday 15:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.28), dsdvroutetable.hh
