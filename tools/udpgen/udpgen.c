@@ -24,6 +24,16 @@
  * to four numbers.
  */
 
+#include <linux/autoconf.h>
+#ifdef CONFIG_SMP
+# define __SMP__ 1
+#endif
+#if defined(CONFIG_MODVERSIONS) && !defined(MODVERSIONS)
+# define MODVERSIONS 1
+#endif
+#ifdef MODVERSIONS
+# include <linux/modversions.h>
+#endif
 #include <asm/system.h>
 #include <linux/types.h>
 #include <linux/socket.h>
