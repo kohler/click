@@ -79,7 +79,7 @@ class IPRateMonitor : public Element { public:
   const char *class_name() const		{ return "IPRateMonitor"; }
   const char * default_processing() const	{ return AGNOSTIC; }
   
-  void uninitialize() 				{ destroy(_base); }
+  void uninitialize() 				{ _base->clear(_period); }
   int configure(const String &conf, ErrorHandler *errh);
 
   IPRateMonitor *clone() const;
@@ -103,24 +103,23 @@ private:
   };
 
   // one for each address
-  struct _stats;
-  struct _counter {
-    unsigned char flags;
-#define CLEAN    0x0000
-#define INIT     0x0001
-#define SPLIT    0x0010
+  struct Stats;
+  struct Counter {
     EWMA2 dst_rate;
     EWMA2 src_rate;
-    struct _stats *next_level;
+    struct Stats *next_level;
   };
 
-  struct _stats {
-    struct _counter counter[MAX_COUNTERS];
+  struct Stats {
+    struct Counter counter[MAX_COUNTERS];
+    Stats(int);
+    ~Stats();
+    void clear(int);
   };
 
   int _period;
   int _thresh;
-  struct _stats *_base;
+  struct Stats *_base;
   long unsigned int _resettime;       // time of last reset
 
   void set_resettime();
@@ -128,9 +127,7 @@ private:
   void update(IPAddress dstaddr, IPAddress srcaddr, 
               int val, Packet *p, int port);
 
-  String print(_stats *s, String ip = "");
-  void clean(_stats *s);
-  void destroy(_stats *s);
+  String print(Stats *s, String ip = "");
 
   void add_handlers();
   static String thresh_read_handler(Element *e, void *);
@@ -153,40 +150,21 @@ IPRateMonitor::update(IPAddress dstaddr, IPAddress srcaddr,
   unsigned int dst = true;
   int now = click_jiffies();
 
-_restart:
-  struct _stats *s = _base;
-  struct _counter *c = NULL;
+ restart:
+  struct Stats *s = _base;
+  Counter *c = 0;
   int bitshift;
 
   // find entry on correct level
-  for(bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
+  for (bitshift = 0; bitshift <= MAX_SHIFT && s; bitshift += 8) {
     unsigned char byte = (saddr >> bitshift) & 0x000000ff;
     c = &(s->counter[byte]);
-
-    if(c->flags & SPLIT) {
-      if (dst) 
-	c->dst_rate.update(val, now);
-      else 
-	c->src_rate.update(val, now);
-      s = c->next_level;
-    }
-    else
-      break;
+    if (dst) 
+      c->dst_rate.update(val, now);
+    else 
+      c->src_rate.update(val, now);
+    s = c->next_level;
   }
-
-  // is vector allocated already?
-  if(!c->flags) {
-    c->dst_rate.initialize(_period);
-    c->src_rate.initialize(_period);
-    c->flags = INIT;
-  }
-
-  // update values.
-  if (dst)
-    c->dst_rate.update(val, now);
-  else 
-    c->src_rate.update(val, now);
-
 
   // annotate src and dst rate for dst address
   int cr;
@@ -209,18 +187,14 @@ _restart:
 
   // did value get larger than THRESH in the specified period?
   if (cr >= _thresh) {
-    if(bitshift < MAX_SHIFT) {
-      c->flags |= SPLIT;
-      struct _stats *tmp = new struct _stats;
-      clean(tmp);
-      c->next_level = tmp;
-    }
+    if (bitshift < MAX_SHIFT)
+      c->next_level = new Stats(_period);
   }
 
   if (dst) {
     dst = false;
     saddr = srcaddr.saddr();
-    goto _restart;
+    goto restart;
   }
 }
 

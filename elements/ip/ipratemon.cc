@@ -91,10 +91,9 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   set_resettime();
 
   // Make _base
-  _base = new struct _stats;
+  _base = new Stats(_period);
   if(!_base)
     return errh->error("cannot allocate data structure.");
-  clean(_base);
 
   return 0;
 #else
@@ -128,65 +127,62 @@ IPRateMonitor::pull(int port)
 //
 // Recursively destroys tables.
 //
-void
-IPRateMonitor::destroy(_stats *s)
+
+IPRateMonitor::Stats::Stats(int period)
 {
-  for(int i = 0; i < MAX_COUNTERS; i++) {
-    if(s->counter[i].flags & SPLIT) {
-      destroy(s->counter[i].next_level);
-      delete s->counter[i].next_level;
-      s->counter[i].next_level = NULL;
-    }
-    s->counter[i].flags = CLEAN;
+  for (int i = 0; i < MAX_COUNTERS; i++) {
+    counter[i].dst_rate.initialize(period);
+    counter[i].src_rate.initialize(period);
   }
 }
 
-//
-// Cleans entry
-//
-void
-IPRateMonitor::clean(_stats *s)
+IPRateMonitor::Stats::~Stats()
 {
-  for(int i = 0; i < MAX_COUNTERS; i++) {
-    s->counter[i].flags = CLEAN;
-    s->counter[i].next_level = NULL;
-  }
+  for (int i = 0; i < MAX_COUNTERS; i++)
+    delete counter[i].next_level;
 }
 
+void
+IPRateMonitor::Stats::clear(int period)
+{
+  for (int i = 0; i < MAX_COUNTERS; i++) {
+    delete counter[i].next_level;
+    counter[i].next_level = 0;
+    counter[i].dst_rate.initialize(period);
+    counter[i].src_rate.initialize(period);
+  }
+}
 
 //
 // Prints out nice data.
 //
 String
-IPRateMonitor::print(_stats *s, String ip = "")
+IPRateMonitor::print(Stats *s, String ip = "")
 {
   int jiffs = click_jiffies();
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
-    if (s->counter[i].flags != CLEAN) {
+    Counter &c = s->counter[i];
+    if (c.dst_rate.average() > 0 || c.src_rate.average() > 0) {
       String this_ip;
-      if(ip)
+      if (ip)
         this_ip = ip + "." + String(i);
       else
         this_ip = String(i);
       ret += this_ip;
 
-      if (s->counter[i].dst_rate.average() > 0 ||
-	  s->counter[i].src_rate.average() > 0) {
-	s->counter[i].src_rate.update(0, jiffs);
-	s->counter[i].dst_rate.update(0, jiffs);
-	ret += "\t"; 
-	ret += cp_unparse_real(s->counter[i].src_rate.average()*CLICK_HZ, 
-	                       s->counter[i].src_rate.scale());
-	ret += "\t"; 
-	ret += cp_unparse_real(s->counter[i].dst_rate.average()*CLICK_HZ, 
-	                       s->counter[i].dst_rate.scale());
-      } 
-      else ret += "\t0\t0";
-    
+      c.src_rate.update(0, jiffs);
+      c.dst_rate.update(0, jiffs);
+      ret += "\t"; 
+      ret += cp_unparse_real(c.src_rate.average()*CLICK_HZ,
+			     c.src_rate.scale());
+      ret += "\t"; 
+      ret += cp_unparse_real(c.dst_rate.average()*CLICK_HZ, 
+			     c.dst_rate.scale());
+      
       ret += "\n";
-      if(s->counter[i].flags & SPLIT) 
-        ret += print(s->counter[i].next_level, "\t" + this_ip);
+      if (c.next_level) 
+        ret += print(c.next_level, "\t" + this_ip);
     }
   }
   return ret;
@@ -227,7 +223,7 @@ IPRateMonitor::reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
 {
   IPRateMonitor* me = (IPRateMonitor *) e;
-  me->destroy(me->_base);
+  me->_base->clear(me->_period);
   me->set_resettime();
   return 0;
 }
