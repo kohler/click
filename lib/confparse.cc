@@ -589,8 +589,8 @@ cp_integer(const String &str, int *return_value)
 }
 
 bool
-cp_real(const String &str, int frac_digits,
-	int *return_int_part, int *return_frac_part)
+cp_real10(const String &str, int frac_digits,
+	  int *return_int_part, int *return_frac_part)
 {
   const char *s = str.data();
   const char *last = s + str.length();
@@ -676,10 +676,10 @@ cp_real(const String &str, int frac_digits,
 }
 
 bool
-cp_real(const String &str, int frac_digits, int *return_value)
+cp_real10(const String &str, int frac_digits, int *return_value)
 {
   int int_part, frac_part;
-  if (!cp_real(str, frac_digits, &int_part, &frac_part))
+  if (!cp_real10(str, frac_digits, &int_part, &frac_part))
     return false;
   
   int one = 1;
@@ -697,7 +697,7 @@ cp_real(const String &str, int frac_digits, int *return_value)
 }
 
 bool
-cp_real2(const String &str, int frac_bits, int *return_value)
+cp_unsigned_real2(const String &str, int frac_bits, unsigned *return_value)
 {
   if (frac_bits >= 29) {
     cp_errno = CPE_INVALID;
@@ -705,7 +705,7 @@ cp_real2(const String &str, int frac_bits, int *return_value)
   }
   
   int int_part, frac_part;
-  if (!cp_real(str, 9, &int_part, &frac_part)) {
+  if (!cp_real10(str, 9, &int_part, &frac_part)) {
     cp_errno = CPE_FORMAT;
     return false;
   } else if (int_part < 0 || frac_part < 0) {
@@ -714,28 +714,50 @@ cp_real2(const String &str, int frac_bits, int *return_value)
   } else if (int_part > (1 << (32 - frac_bits)) - 1) {
     cp_errno = CPE_OVERFLOW;
     return false;
-  } else {
-    // method from Knuth's TeX, round_decimals. Works well with
-    // cp_unparse_real below
-    int fraction = 0;
-    unsigned two = 2 << frac_bits;
-    for (int i = 0; i < 9; i++) {
-      unsigned digit = frac_part % 10;
-      fraction = (fraction + digit*two) / 10;
-      frac_part /= 10;
-    }
-    fraction = (fraction + 1) / 2;
-    cp_errno = CPE_OK;
-    *return_value = (int_part << frac_bits) + fraction;
-    return true;
   }
+  
+  // method from Knuth's TeX, round_decimals. Works well with
+  // cp_unparse_real2 below
+  int fraction = 0;
+  unsigned two = 2 << frac_bits;
+  for (int i = 0; i < 9; i++) {
+    unsigned digit = frac_part % 10;
+    fraction = (fraction + digit*two) / 10;
+    frac_part /= 10;
+  }
+  fraction = (fraction + 1) / 2;
+  cp_errno = CPE_OK;
+  *return_value = (int_part << frac_bits) + fraction;
+  return true;
+}
+
+bool
+cp_real2(const String &in_str, int frac_bits, int *return_value)
+{
+  String str = in_str;
+  bool negative = false;
+  if (str.length() && str[0] == '-') {
+    negative = true;
+    str = str.substring(1);
+  }
+
+  unsigned value;
+  if (!cp_unsigned_real2(str, frac_bits, &value))
+    return false;
+  else if (value > 0x80000000U || (value == 0x80000000U && !negative)) {
+    cp_errno = CPE_OVERFLOW;
+    return false;
+  }
+
+  *return_value = (negative ? -value : value);
+  return true;
 }
 
 bool
 cp_milliseconds(const String &str, int *return_value)
 {
   int v;
-  if (!cp_real(str, 3, &v))
+  if (!cp_real10(str, 3, &v))
     return false;
   else if (v < 0) {
     cp_errno = CPE_NEGATIVE;
@@ -759,7 +781,7 @@ cp_timeval(const String &str, struct timeval *return_value)
   }
   int usec = 0;
   if (dot < str.length() - 1) {
-    if (!cp_real(str.substring(dot), 6, &usec))
+    if (!cp_real10(str.substring(dot), 6, &usec))
       return false;
   }
   return_value->tv_sec = sec;
@@ -1379,9 +1401,10 @@ CpVaParseCmd
   cpUnsignedShort	= "u_short",
   cpInteger		= "int",
   cpUnsigned		= "u_int",
-  cpReal		= "real",
-  cpNonnegReal		= "u_real",
-  cpNonnegFixed		= "u_real_fixed",
+  cpReal2		= "real2",
+  cpNonnegReal2		= "u_real2",
+  cpReal10		= "real10",
+  cpNonnegReal10	= "u_real10",
   cpMilliseconds	= "msec",
   cpTimeval		= "timeval",
   cpIPAddress		= "ip_addr",
@@ -1411,9 +1434,10 @@ enum {
   cpiUnsignedShort,
   cpiInteger,
   cpiUnsigned,
-  cpiReal,
-  cpiNonnegReal,
-  cpiNonnegFixed,
+  cpiReal2,
+  cpiNonnegReal2,
+  cpiReal10,
+  cpiNonnegReal10,
   cpiMilliseconds,
   cpiTimeval,
   cpiIPAddress,
@@ -1576,14 +1600,14 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s (%s) must be <= %u", argname, desc, overflower);
     break;
 
-   case cpiReal:
-   case cpiNonnegReal:
-    if (!cp_real(arg, v->extra, &v->v.i)) {
+   case cpiReal10:
+   case cpiNonnegReal10:
+    if (!cp_real10(arg, v->extra, &v->v.i)) {
       if (cp_errno == CPE_OVERFLOW)
 	errh->error("overflow on %s (%s)", argname, desc);
       else
 	errh->error("%s takes real (%s)", argname, desc);
-    } else if (argtype->internal == cpiNonnegReal && v->v.i < 0)
+    } else if (argtype->internal == cpiNonnegReal10 && v->v.i < 0)
       errh->error("%s (%s) must be >= 0", argname, desc);
     break;
 
@@ -1614,9 +1638,21 @@ default_parsefunc(cp_value *v, const String &arg,
      break;
    }
 
-   case cpiNonnegFixed:
+   case cpiReal2:
     assert(v->extra > 0);
     if (!cp_real2(arg, v->extra, &v->v.i)) {
+      if (cp_errno == CPE_OVERFLOW)
+	errh->error("overflow on %s (%s)", argname, desc);
+      else if (cp_errno == CPE_INVALID)
+	errh->error("%s (%s) is an invalid real", argname, desc);
+      else
+	errh->error("%s takes real (%s)", argname, desc);
+    }
+    break;
+
+   case cpiNonnegReal2:
+    assert(v->extra > 0);
+    if (!cp_unsigned_real2(arg, v->extra, &v->v.u)) {
       if (cp_errno == CPE_NEGATIVE)
 	errh->error("%s (%s) must be >= 0", argname, desc);
       else if (cp_errno == CPE_OVERFLOW)
@@ -1720,16 +1756,17 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    }
    
    case cpiInteger:
-   case cpiReal:
-   case cpiNonnegReal:
-   case cpiMilliseconds:
-   case cpiNonnegFixed: {
+   case cpiReal2:
+   case cpiReal10:
+   case cpiNonnegReal10:
+   case cpiMilliseconds: {
      int *istore = (int *)v->store;
      *istore = v->v.i;
      break;
    }
   
-   case cpiUnsigned: { 
+   case cpiUnsigned:
+   case cpiNonnegReal2: { 
      unsigned *ustore = (unsigned *)v->store; 
      *ustore = v->v.u; 
      break; 
@@ -2171,53 +2208,6 @@ cp_unparse_bool(bool b)
 }
 
 String
-cp_unparse_real(unsigned real, int frac_bits)
-{
-  // adopted from Knuth's TeX function print_scaled, hope it is correct in
-  // this context but not sure.
-  // Works well with cp_real2 above; as an invariant,
-  // unsigned x, y;
-  // cp_real2(cp_unparse_real(x, FRAC_BITS), FRAC_BITS, &y) == true && x == y
-  
-  StringAccum sa;
-  assert(frac_bits < 29);
-
-  unsigned int_part = real >> frac_bits;
-  sa << int_part;
-
-  unsigned one = 1 << frac_bits;
-  real &= one - 1;
-  if (!real) return sa.take_string();
-  
-  sa << ".";
-  real = (10 * real) + 5;
-  unsigned allowable_inaccuracy = 10;
-
-  unsigned inaccuracy_rounder = 5;
-  while (inaccuracy_rounder * 10 < one)
-    inaccuracy_rounder *= 10;
-  
-  do {
-    if (allowable_inaccuracy > one)
-      real += (one >> 1) - inaccuracy_rounder;
-    sa << static_cast<char>('0' + (real >> frac_bits));
-    real = 10 * (real & (one - 1));
-    allowable_inaccuracy *= 10;
-  } while (real > allowable_inaccuracy);
-
-  return sa.take_string();
-}
-
-String
-cp_unparse_real(int real, int frac_bits)
-{
-  if (real < 0)
-    return "-" + cp_unparse_real(static_cast<unsigned>(-real), frac_bits);
-  else
-    return cp_unparse_real(static_cast<unsigned>(real), frac_bits);
-}
-
-String
 cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
 {
   // Unparse an unsigned long long. Linux kernel sprintf can't handle %L,
@@ -2274,6 +2264,95 @@ cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
   return String(trav + 1, lastbuf - trav);
 }
 
+String
+cp_unparse_real2(unsigned real, int frac_bits)
+{
+  // adopted from Knuth's TeX function print_scaled, hope it is correct in
+  // this context but not sure.
+  // Works well with cp_real2 above; as an invariant,
+  // unsigned x, y;
+  // cp_real2(cp_unparse_real2(x, FRAC_BITS), FRAC_BITS, &y) == true && x == y
+  
+  StringAccum sa;
+  assert(frac_bits < 29);
+
+  unsigned int_part = real >> frac_bits;
+  sa << int_part;
+
+  unsigned one = 1 << frac_bits;
+  real &= one - 1;
+  if (!real) return sa.take_string();
+  
+  sa << ".";
+  real = (10 * real) + 5;
+  unsigned allowable_inaccuracy = 10;
+
+  unsigned inaccuracy_rounder = 5;
+  while (inaccuracy_rounder * 10 < one)
+    inaccuracy_rounder *= 10;
+  
+  do {
+    if (allowable_inaccuracy > one)
+      real += (one >> 1) - inaccuracy_rounder;
+    sa << static_cast<char>('0' + (real >> frac_bits));
+    real = 10 * (real & (one - 1));
+    allowable_inaccuracy *= 10;
+  } while (real > allowable_inaccuracy);
+
+  return sa.take_string();
+}
+
+String
+cp_unparse_real2(int real, int frac_bits)
+{
+  if (real < 0)
+    return "-" + cp_unparse_real2(static_cast<unsigned>(-real), frac_bits);
+  else
+    return cp_unparse_real2(static_cast<unsigned>(real), frac_bits);
+}
+
+String
+cp_unparse_real10(unsigned real, int frac_digits)
+{
+  int one = 1;
+  for (int i = 0; i < frac_digits; i++)
+    one *= 10;
+
+  unsigned int_part = real / one;
+  unsigned frac_part = real - (int_part * one);
+
+  if (frac_part == 0)
+    return String(int_part);
+
+  StringAccum sa(30);
+  sa << int_part << '.';
+  if (char *x = sa.extend(frac_digits))
+    sprintf(x, "%0*d", frac_digits, frac_part);
+  else				// out of memory
+    return sa.take_string();
+
+  // remove trailing zeros from fraction part
+  while (sa.back() == '0')
+    sa.pop_back();
+
+  return sa.take_string();
+}
+
+String
+cp_unparse_real10(int real, int frac_digits)
+{
+  if (real < 0)
+    return "-" + cp_unparse_real10(static_cast<unsigned>(-real), frac_digits);
+  else
+    return cp_unparse_real10(static_cast<unsigned>(real), frac_digits);
+}
+
+String
+cp_unparse_milliseconds(int ms)
+{
+  return cp_unparse_real10(ms, 3);
+}
+
 
 // initialization and cleanup
 
@@ -2298,9 +2377,10 @@ cp_va_static_initialize()
   cp_register_argtype(cpUnsignedShort, "unsigned short", 0, default_parsefunc, default_storefunc, cpiUnsignedShort);
   cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
   cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
-  cp_register_argtype(cpReal, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal);
-  cp_register_argtype(cpNonnegReal, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegReal);
-  cp_register_argtype(cpNonnegFixed, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegFixed);
+  cp_register_argtype(cpReal2, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal2);
+  cp_register_argtype(cpNonnegReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegReal2);
+  cp_register_argtype(cpReal10, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal10);
+  cp_register_argtype(cpNonnegReal10, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegReal10);
   cp_register_argtype(cpMilliseconds, "time in seconds", 0, default_parsefunc, default_storefunc, cpiMilliseconds);
   cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
   cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);

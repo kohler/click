@@ -43,20 +43,24 @@ bool cp_word(const String &, String *, String *rest = 0);
 
 // numbers
 bool cp_bool(const String &, bool *);
-bool cp_unsigned(const String &, unsigned *);
-bool cp_unsigned(const String &, int base, unsigned *);
 bool cp_integer(const String &, int *);
 bool cp_integer(const String &, int base, int *);
-bool cp_real(const String &, int frac_digits, int *, int *);
-bool cp_real(const String &, int frac_digits, int *);
+bool cp_unsigned(const String &, unsigned *);
+bool cp_unsigned(const String &, int base, unsigned *);
 bool cp_real2(const String &, int frac_bits, int *);
+bool cp_unsigned_real2(const String &, int frac_bits, unsigned *);
+bool cp_real10(const String &, int frac_digits, int *, int *);
+bool cp_real10(const String &, int frac_digits, int *);
 bool cp_milliseconds(const String &, int *);
 bool cp_timeval(const String &, struct timeval *);
 
 String cp_unparse_bool(bool);
-String cp_unparse_real(unsigned, int frac_bits);
-String cp_unparse_real(int, int frac_bits);
 String cp_unparse_ulonglong(unsigned long long, int base, bool uppercase);
+String cp_unparse_real2(int, int frac_bits);
+String cp_unparse_real2(unsigned, int frac_bits);
+String cp_unparse_real10(int, int frac_digits);
+String cp_unparse_real10(unsigned, int frac_digits);
+String cp_unparse_milliseconds(int);
 
 // network addresses
 class IPAddress;
@@ -108,9 +112,10 @@ extern CpVaParseCmd
   cpUnsignedShort, // unsigned short *value
   cpInteger,	// int *value
   cpUnsigned,	// unsigned *value
-  cpReal,	// int frac_digits, int *value
-  cpNonnegReal,	// int frac_digits, int *value
-  cpNonnegFixed, // int frac_bits, int *value
+  cpReal2,	  // int frac_bits, int *value
+  cpNonnegReal2,  // int frac_bits, unsigned *value
+  cpReal10,	  // int frac_digits, int *value
+  cpNonnegReal10, // int frac_digits, unsigned *value
   cpMilliseconds, // int *value_milliseconds
   cpTimeval,	// struct timeval *value
   cpIPAddress,	// unsigned char value[4] (or IPAddress *, or unsigned int *)
@@ -128,13 +133,12 @@ int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
 int cp_va_space_parse(const String &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse_keyword(const String &, CP_VA_PARSE_ARGS_REST);
-// ... is: cpEnd				stop
-//     or: cpOptional				remaining args are optional
-//     or: CpVaParseCmd type_id,		actual argument
+// Takes: cpEnd					end of argument list
+//        cpOptional, cpKeywords, cpIgnore...	manipulators
+//        CpVaParseCmd type_id,			actual argument
 //		const char *description,
 //		[[from table above; usually T *value_store]]
-// cp_va_parse stores no values in the value_store arguments
-// unless it succeeds.
+// Stores no values in the value_store arguments on error.
 
 void cp_va_static_initialize();
 void cp_va_static_cleanup();
