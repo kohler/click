@@ -147,7 +147,7 @@ ARPQuerier6::expire_hook(unsigned long thunk)
 }
 
 void
-ARPQuerier6::send_query_for(u_char want_ip6[16])
+ARPQuerier6::send_query_for(const u_char want_ip6[16])
 {
   click_ether *e;
   click_ip6 *ip6;
@@ -255,7 +255,7 @@ ARPQuerier6::handle_ip6(Packet *p)
     ae->next = _map[bucket];
     _map[bucket] = ae;
     send_query_for(p->dst_ip6_anno().data());
-    unsigned  char *d = p->dst_ip6_anno().data();
+    const unsigned char *d = p->dst_ip6_anno().data();
     click_chatter("ARPQuerier6:: %x", (p->dst_ip6_anno().data())[15]);
     click_chatter("ARPQuerier6:: %x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", d[0], d[1], d[2], d[3],d[4], d[5],d[6], d[7],d[8], d[9],d[10], d[11],d[12], d[13],d[14], d[15]);
     click_chatter("ARPQuerier6::push ! -7");

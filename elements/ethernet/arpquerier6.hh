@@ -88,7 +88,7 @@ class ARPQuerier6 : public Element {
   IP6Address _my_ip6;
   Timer _expire_timer;
   
-  void send_query_for(u_char want_ip6[16]);
+  void send_query_for(const u_char want_ip6[16]);
   
   void handle_ip6(Packet *);
   void handle_response(Packet *);
