@@ -255,9 +255,8 @@ Monitor::look_read_handler(Element *e, void *)
 {
   Monitor *me = (Monitor*) e;
 
-  /* struct timeval t;       */
-  /* click_gettimeofday(&t); */
-  return String(click_jiffies() - me->_resettime) + "\n" + me->print(me->_base);
+  String ret = String(click_jiffies() - me->_resettime) + "\n";
+  return ret + me->print(me->_base);
 }
 
 
@@ -266,6 +265,13 @@ Monitor::thresh_read_handler(Element *e, void *)
 {
   Monitor *me = (Monitor *) e;
   return String(me->_thresh) + "\n";
+}
+
+String
+Monitor::what_read_handler(Element *e, void *)
+{
+  Monitor *me = (Monitor *) e;
+  return (me->_pb == COUNT_PACKETS ? "PACKETS\n" : "BYTES\n");
 }
 
 
@@ -319,8 +325,10 @@ Monitor::add_handlers()
   add_read_handler("thresh", thresh_read_handler, 0);
   add_write_handler("thresh", thresh_write_handler, 0);
 
-  add_write_handler("reset", reset_write_handler, 0);
+  add_read_handler("what", what_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
+
+  add_write_handler("reset", reset_write_handler, 0);
 }
 
 EXPORT_ELEMENT(Monitor)
