@@ -1,3 +1,22 @@
+2001-06-19 Tuesday 17:02  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/icmp/: icmppingrewriter.cc (1.7), icmppingrewriter.hh
+	(1.3), icmprewriter.cc (1.8), icmprewriter.hh (1.3): ICMPRewriter:
+	add support for rewriting responses to pings; you can list
+	ICMPPingRewriters as MAPS
+
+2001-06-19 Tuesday 17:01  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/icmp/: icmpsendpings.cc (1.9), icmpsendpings.hh (1.2):
+	ICMPSendPings: add INTERVAL and IDENTIFIER keyword arguments
+
+2001-06-19 Tuesday 17:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/icmp/: icmppingresponder.cc (1.6), icmppingresponder.hh
+	(1.2): ICMPPingResponder: set destination IP address appropriately
+	(requested/reported by Sven Hirsch); also, add second output for
+	non-pings
+
 2001-06-19 Tuesday 16:34  Benjie Chen <benjie@lcs.mit.edu>
 
 	* conf/delay.click (1.3): DelayShaper example
