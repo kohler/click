@@ -1,3 +1,15 @@
+2004-10-25 Monday 19:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/bsdmodule/anydevice.cc (1.4),
+	elements/bsdmodule/anydevice.hh (1.7),
+	elements/bsdmodule/fromdevice.cc (1.16),
+	elements/bsdmodule/fromdevice.hh (1.14),
+	elements/bsdmodule/fromhost.hh (1.7),
+	elements/bsdmodule/todevice.cc (1.9),
+	elements/bsdmodule/todevice.hh (1.11),
+	include/click/routerthread.hh (1.27), lib/routerthread.cc (1.47):
+	bsdmodule polling patch from the estimable Marko Zec
+
 2004-10-22 Friday 19:25  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/linktable.cc (1.13): fix compiler warning
