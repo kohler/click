@@ -49,10 +49,12 @@
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
 
-#ifdef __cplusplus
-/* Get rid of inline macro under C++. */
+#ifndef __cplusplus
+/* Define inline, if necessary. C only. */
 #undef inline
+#endif
 
+#ifdef __cplusplus
 /* Explicit template instances? */
 #if __GNUC__ == 2 && __GNUC_MINOR__ < 90
 #define EXPLICIT_TEMPLATE_INSTANCES 1

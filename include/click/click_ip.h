@@ -13,8 +13,6 @@ CLICK_CXX_PROTECT
 # include <netinet/in.h>
 uint16_t click_in_cksum(const unsigned char *addr, int len);
 #endif
-CLICK_CXX_UNPROTECT
-#include <click/cxxunprotect.h>
 
 /*
  * click_ip.h -- our own definitions of IP headers
@@ -23,11 +21,11 @@ CLICK_CXX_UNPROTECT
 
 struct click_ip {
 #if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-    uint8_t	ip_hl : 4;		/* 0     header length */
-    uint8_t	ip_v : 4;		/*       version == 4 */
+    unsigned	ip_hl : 4;		/* 0     header length */
+    unsigned	ip_v : 4;		/*       version == 4 */
 #elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-    uint8_t	ip_v : 4;		/* 0     version == 4 */
-    uint8_t	ip_hl : 4;		/*       header length */
+    unsigned	ip_v : 4;		/* 0     version == 4 */
+    unsigned	ip_hl : 4;		/*       header length */
 #else
 #   error "unknown byte order"
 #endif
@@ -116,11 +114,13 @@ struct click_ip {
 static inline void
 click_update_in_cksum(uint16_t *csum, uint16_t old_hw, uint16_t new_hw)
 {
-    // incrementally update IP checksum according to RFC1624:
-    // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
+    /* incrementally update IP checksum according to RFC1624:
+       new_sum = ~(~old_sum + ~old_halfword + new_halfword) */
     uint32_t sum = (~*csum & 0xFFFF) + (~old_hw & 0xFFFF) + new_hw;
     sum = (sum & 0xFFFF) + (sum >> 16);
     *csum = ~(sum + (sum >> 16));
 }
 
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
 #endif

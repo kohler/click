@@ -33,11 +33,11 @@ struct click_ip6 {
 	uint32_t ip6_un1_flow;		/* 0-3   version, class, flow label */
 	struct {
 #if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-	    uint8_t ip6_un2_tc : 4;	/* 0     top of traffic class */
-	    uint8_t ip6_un2_v : 4;	/*       version == 6 */
+	    unsigned ip6_un2_tc : 4;	/* 0     top of traffic class */
+	    unsigned ip6_un2_v : 4;	/*       version == 6 */
 #elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-	    uint8_t ip6_un2_v : 4;	/* 0     version == 6 */
-	    uint8_t ip6_un2_tc : 4;	/*       top of traffic class */
+	    unsigned ip6_un2_v : 4;	/* 0     version == 6 */
+	    unsigned ip6_un2_tc : 4;	/*       top of traffic class */
 #else
 # error "unknown endianness!"
 #endif
