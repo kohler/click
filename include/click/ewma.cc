@@ -25,9 +25,7 @@ DirectEWMAX<stability_shift, scale>::update_zero_period(unsigned period)
   // XXX use table lookup
   if (period >= 100)
     _avg = 0;
-  else {
-    int compensation = 1 << (stability_shift - 1); // round off
+  else
     for (; period > 0; period--)
       _avg += static_cast<int>(-_avg + compensation) >> stability_shift;
-  }
 }

@@ -58,6 +58,10 @@ Returns the number of packets dropped so far.
 
 Returns the Queues associated with this RED element, listed one per line.
 
+=h avg_queue_size read-only
+
+Returns the current average queue size.
+
 =h stats read-only
 
 Returns some human-readable statistics.
@@ -114,6 +118,7 @@ class RED : public Element { public:
   unsigned _C2;
   int _count;
   int _random_value;
+  int _last_jiffies;
   
   int _drops;
   Vector<Element *> _queue_elements;

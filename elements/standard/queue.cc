@@ -64,7 +64,6 @@ Queue::initialize(ErrorHandler *errh)
   if (_q == 0)
     return errh->error("out of memory");
 
-  _empty_jiffies = click_jiffies();
   _head = _tail = 0;
   _drops = 0;
   _highwater_length = 0;

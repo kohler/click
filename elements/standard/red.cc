@@ -195,6 +195,7 @@ RED::initialize(ErrorHandler *errh)
   
   _drops = 0;
   _count = -1;
+  _last_jiffies = 0;
   return 0;
 }
 
@@ -236,20 +237,22 @@ RED::queue_size() const
 bool
 RED::should_drop()
 {
-  // calculate the new average queue size
+  // calculate the new average queue size.
+  // Do some rigamarole to handle empty periods, but don't work too hard.
+  // (Therefore it contains errors. XXX)
   int s = queue_size();
-  if (s)
+  if (s) {
     _size.update_with(s);
-  else {
+    _last_jiffies = 0;
+  } else {
     // do timing stuff for when the queue was empty
-    int now_j = click_jiffies();
-    int j = now_j;
-    for (int i = 0; i < _queues.size(); i++) {
-      int ej = _queues[i]->empty_jiffies();
-      if (ej - now_j > j - now_j)
-	j = ej;
-    }
-    _size.update_zero_period(j - now_j);
+#if CLICK_HZ < 50
+    int j = click_jiffies();
+#else
+    int j = click_jiffies() / (CLICK_HZ / 50);
+#endif
+    _size.update_zero_period(_last_jiffies ? j - _last_jiffies : 1);
+    _last_jiffies = j;
   }
   
   unsigned avg = _size.average();
@@ -337,6 +340,8 @@ RED::read_parameter(Element *f, void *vparam)
     return String(red->_max_thresh>>QUEUE_SCALE) + "\n";
    case 2:			// max_p
     return cp_unparse_real2(red->_max_p, 16) + "\n";
+   case 3:			// avg_queue_size
+    return red->_size.unparse() + "\n";
    default:
     return "";
   }
@@ -379,6 +384,7 @@ RED::add_handlers()
   add_write_handler("max_thresh", reconfigure_positional_handler_2, (void *)1);
   add_read_handler("max_p", read_parameter, (void *)2);
   add_write_handler("max_p", reconfigure_positional_handler_2, (void *)2);
+  add_read_handler("avg_queue_size", read_parameter, (void *)3);
 }
 
 ELEMENT_REQUIRES(Storage)

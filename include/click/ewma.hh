@@ -15,12 +15,15 @@ class DirectEWMAX {
   unsigned average() const		{ return _avg; }
   static const unsigned stability_shift = Stability_shift;
   static const unsigned scale = Scale;
+  static const unsigned compensation = 1 << (Stability_shift - 1);
   
   void clear()				{ _avg = 0; }
   
   inline void update_with(unsigned);
   void update_zero_period(unsigned);
   
+  String unparse() const;
+
 };
 
 template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
@@ -67,7 +70,6 @@ inline void
 DirectEWMAX<stability_shift, scale>::update_with(unsigned val)
 {
   int val_scaled = val << scale;
-  int compensation = 1 << (stability_shift - 1); // round off
   _avg += static_cast<int>(val_scaled - _avg + compensation) >> stability_shift;
   // XXX implementation-defined right shift behavior
 }
@@ -130,6 +132,13 @@ inline int
 RateEWMAX<stability_shift, scale, n, Timer>::rate(unsigned which) const
 {
   return (average(which) * Timer::freq()) >> scale;
+}
+
+template <unsigned stability_shift, unsigned scale>
+inline String
+DirectEWMAX<stability_shift, scale>::unparse() const
+{
+  return cp_unparse_real2(average(), scale);
 }
 
 template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>

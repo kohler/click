@@ -41,21 +41,16 @@ class Storage { public:
   int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
   int prev_i(int i) const		{ return (i!=0 ? i-1 : _capacity); }
 
-  int empty_jiffies() const		{ return _empty_jiffies; }
-
   // to be used with care...
   void set_capacity(int c)		{ _capacity = c; }
   void set_head(int h)			{ _head = h; }
   void set_tail(int t)			{ _tail = t; }
-  void set_empty_jiffies(int ej)	{ _empty_jiffies = ej; }
   
  protected:
 
   int _capacity;
   int _head;
   int _tail;
-
-  int _empty_jiffies;
   
 };
 
@@ -127,8 +122,6 @@ Queue::deq()
     Packet *p = _q[_head];
     assert(p);
     _head = next_i(_head);
-    if (_head == _tail)
-      _empty_jiffies = click_jiffies();
     return p;
   } else
     return 0;
