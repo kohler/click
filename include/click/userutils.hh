@@ -25,8 +25,9 @@ String click_mktmpdir(ErrorHandler * = 0);
 const char *clickpath();
 void set_clickpath(const char *);
 
-String clickpath_find_file(const String &filename, const char *subdir,
+String clickpath_find_file(const String& filename, const char *subdir,
 			   String default_path, ErrorHandler * = 0);
+void clickpath_expand_path(const char* subdir, const String& default_path, Vector<String>&);
 
 void parse_tabbed_lines(const String &, Vector<String> *, ...);
 

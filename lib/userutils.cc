@@ -33,6 +33,7 @@
 #include <signal.h>
 #include <dirent.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #if HAVE_DYNAMIC_LINKING && defined(HAVE_DLFCN_H)
 # include <dlfcn.h>
@@ -390,15 +391,43 @@ remove_file_on_exit(const String &file)
     }
 }
 
-static String
+
+static const char* the_clickpath = 0;
+
+const char *
+clickpath()
+{
+    if (!the_clickpath) {
+	the_clickpath = getenv("CLICKPATH");
+	if (!the_clickpath)
+	    the_clickpath = "";
+    }
+    return the_clickpath;
+}
+
+void
+set_clickpath(const char* p)
+{
+    // small memory leak, since we cannot be sure that putenv() copies its
+    // argument
+    char* env = new char[strlen(p) + 11];
+    sprintf(env, "CLICKPATH=%s", p);
+    putenv(env);
+    the_clickpath = env + 10;
+}
+
+
+static bool
 path_find_file_2(const String &filename, const String &path,
-		 String default_path, String subdir)
+		 String default_path, String subdir,
+		 Vector<String>& results, bool exit_early)
 {
     if (subdir && subdir.back() != '/')
 	subdir += "/";
 
     const char *begin = path.begin();
     const char *end = path.end();
+    int before_size = results.size();
     
     do {
 	String dir = path.substring(begin, find(begin, end, ':'));
@@ -406,50 +435,34 @@ path_find_file_2(const String &filename, const String &path,
     
 	if (!dir && default_path) {
 	    // look in default path
-	    String fn = path_find_file_2(filename, default_path, "", 0);
-	    if (fn)
-		return fn;
+	    if (path_find_file_2(filename, default_path, "", 0, results, exit_early) && exit_early)
+		return true;
       
 	} else if (dir) {
 	    if (dir.back() != '/')
-		dir += "/"; 
-	    // look for 'dir/filename'
-	    String fn = dir + filename;
-	    if (access(fn.cc(), F_OK) >= 0)
-		return fn;
-	    // look for 'dir/subdir/filename' and 'dir/subdir/click/filename'
+		dir += "/";
+	    String fn;
+	    // look for 'dir/subdir/click/filename' and 'dir/subdir/filename'
 	    if (subdir) {
-		fn = dir + subdir + filename;
-		if (access(fn.cc(), F_OK) >= 0)
-		    return fn;
 		fn = dir + subdir + "click/" + filename;
 		if (access(fn.cc(), F_OK) >= 0)
-		    return fn;
+		    goto found;
+		fn = dir + subdir + filename;
+		if (access(fn.cc(), F_OK) >= 0)
+		    goto found;
+	    }
+	    // look for 'dir/filename'
+	    fn = dir + filename;
+	    if (access(fn.cc(), F_OK) >= 0) {
+	      found:
+		results.push_back(fn);
+		if (exit_early)
+		    return true;
 	    }
 	}
     } while (begin < end);
 
-    return String();
-}
-
-
-static const char *the_clickpath = 0;
-
-const char *
-clickpath()
-{
-  if (!the_clickpath) {
-    the_clickpath = getenv("CLICKPATH");
-    if (!the_clickpath)
-      the_clickpath = "";
-  }
-  return the_clickpath;
-}
-
-void
-set_clickpath(const char *p)
-{
-  the_clickpath = p;
+    return results.size() == before_size;
 }
 
 
@@ -457,35 +470,49 @@ String
 clickpath_find_file(const String &filename, const char *subdir,
 		    String default_path, ErrorHandler *errh)
 {
-  const char *path = clickpath();
-  String was_default_path = default_path;
+    const char *path = clickpath();
+    String was_default_path = default_path;
 
-  if (filename && filename[0] == '/')
-    return filename;
-  if (!path && default_path)
-    path = ":";
-  String fn = path_find_file_2(filename, path, default_path, subdir);
+    if (filename && filename[0] == '/')
+	return filename;
+    if (!path && default_path)
+	path = ":";
+    Vector<String> fns;
+    path_find_file_2(filename, path, default_path, subdir, fns, true);
 
-  // look in 'PATH' for binaries
-  if (!fn && subdir
-      && (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0))
-    if (const char *path_variable = getenv("PATH"))
-      fn = path_find_file_2(filename, path_variable, "", 0);
+    // look in 'PATH' for binaries
+    if (!fns.size() && subdir
+	&& (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0))
+	if (const char *path_variable = getenv("PATH"))
+	    path_find_file_2(filename, path_variable, "", 0, fns, true);
   
-  if (!fn && errh) {
-    if (default_path) {
-      // CLICKPATH set, left no opportunity to use default path
-      errh->fatal("cannot find file '%s'\nin CLICKPATH '%s'", filename.c_str(), path);
-    } else if (!path) {
-      // CLICKPATH not set
-      errh->fatal("cannot find file '%s'\nin install directory '%s'\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.cc());
-    } else {
-      // CLICKPATH set, left opportunity to use default pathb
-      errh->fatal("cannot find file '%s'\nin CLICKPATH or '%s'", filename.c_str(), was_default_path.cc());
+    if (!fns.size() && errh) {
+	if (default_path) {
+	    // CLICKPATH set, left no opportunity to use default path
+	    errh->fatal("cannot find file '%s'\nin CLICKPATH '%s'", filename.c_str(), path);
+	} else if (!path) {
+	    // CLICKPATH not set
+	    errh->fatal("cannot find file '%s'\nin install directory '%s'\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.cc());
+	} else {
+	    // CLICKPATH set, left opportunity to use default pathb
+	    errh->fatal("cannot find file '%s'\nin CLICKPATH or '%s'", filename.c_str(), was_default_path.cc());
+	}
     }
-  }
-  
-  return fn;
+    
+    return fns.size() ? fns[0] : String();
+}
+
+void
+clickpath_expand_path(const char* subdir, const String& default_path, Vector<String>& result)
+{
+    const char* path = clickpath();
+    if (!path && default_path)
+	path = ":";
+    int first = result.size();
+    path_find_file_2(".", path, default_path, subdir, result, false);
+    // remove trailing '/.'s
+    for (String* x = result.begin() + first; x < result.end(); x++)
+	*x = x->substring(x->begin(), x->end() - 2);
 }
 
 bool
@@ -507,31 +534,31 @@ path_allows_default_path(String path)
 String
 click_mktmpdir(ErrorHandler *errh)
 {
-  String tmpdir;
-  if (const char *path = getenv("TMPDIR"))
-    tmpdir = path;
+    String tmpdir;
+    if (const char *path = getenv("TMPDIR"))
+	tmpdir = path;
 #ifdef P_tmpdir
-  else if (P_tmpdir)
-    tmpdir = P_tmpdir;
+    else if (P_tmpdir)
+	tmpdir = P_tmpdir;
 #endif
-  else
-    tmpdir = "/tmp";
+    else
+	tmpdir = "/tmp";
   
-  int uniqueifier = getpid();
-  while (1) {
-    String tmpsubdir = tmpdir + "/clicktmp" + String(uniqueifier);
-    int result = mkdir(tmpsubdir.cc(), 0700);
-    if (result >= 0) {
-      remove_file_on_exit(tmpsubdir);
-      return tmpsubdir + "/";
+    int uniqueifier = getpid();
+    while (1) {
+	String tmpsubdir = tmpdir + "/clicktmp" + String(uniqueifier);
+	int result = mkdir(tmpsubdir.cc(), 0700);
+	if (result >= 0) {
+	    remove_file_on_exit(tmpsubdir);
+	    return tmpsubdir + "/";
+	}
+	if (result < 0 && errno != EEXIST) {
+	    if (errh)
+		errh->fatal("cannot create temporary directory: %s", strerror(errno));
+	    return String();
+	}
+	uniqueifier++;
     }
-    if (result < 0 && errno != EEXIST) {
-      if (errh)
-	errh->fatal("cannot create temporary directory: %s", strerror(errno));
-      return String();
-    }
-    uniqueifier++;
-  }
 }
 
 void
@@ -573,42 +600,42 @@ parse_tabbed_lines(const String &str, Vector<String> *fields1, ...)
 ArchiveElement
 init_archive_element(const String &name, int mode)
 {
-  ArchiveElement ae;
-  ae.name = name;
-  ae.date = time(0);
-  ae.uid = geteuid();
-  ae.gid = getegid();
-  ae.mode = mode;
-  ae.data = String();
-  return ae;
+    ArchiveElement ae;
+    ae.name = name;
+    ae.date = time(0);
+    ae.uid = geteuid();
+    ae.gid = getegid();
+    ae.mode = mode;
+    ae.data = String();
+    return ae;
 }
 
 
 bool
 compressed_data(const unsigned char *buf, int len)
 {
-  return (len >= 3
-	  && ((buf[0] == 037 && buf[1] == 0235)
-	      || (buf[0] == 037 && buf[1] == 0213)
-	      || (buf[0] == 'B' && buf[1] == 'Z' && buf[2] == 'h')));
+    return (len >= 3
+	    && ((buf[0] == 037 && buf[1] == 0235)
+		|| (buf[0] == 037 && buf[1] == 0213)
+		|| (buf[0] == 'B' && buf[1] == 'Z' && buf[2] == 'h')));
 }
 
 FILE *
 open_uncompress_pipe(const String &filename, const unsigned char *buf, int, ErrorHandler *errh)
 {
-  String command;
-  if (buf[0] == 'B')
-    command = "bzcat " + filename;
-  else if (access("/usr/bin/gzcat", X_OK) >= 0)
-    command = "/usr/bin/gzcat " + filename;
-  else 
-    command = "zcat " + filename;
-  if (FILE *p = popen(command.cc(), "r"))
-    return p;
-  else {
-    errh->error("'%s': %s", command.cc(), strerror(errno));
-    return 0;
-  }
+    String command;
+    if (buf[0] == 'B')
+	command = "bzcat " + filename;
+    else if (access("/usr/bin/gzcat", X_OK) >= 0)
+	command = "/usr/bin/gzcat " + filename;
+    else 
+	command = "zcat " + filename;
+    if (FILE *p = popen(command.cc(), "r"))
+	return p;
+    else {
+	errh->error("'%s': %s", command.cc(), strerror(errno));
+	return 0;
+    }
 }
 
 
