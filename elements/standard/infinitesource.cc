@@ -76,19 +76,9 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
   _count = 0;
   _active = active;
   _stop = stop;
-  if (_packet) _packet->kill();
 
-  if (_datasize != -1 && _datasize > _data.length()) {
-    // make up some data to fill extra space
-    String new_data;
-    do {
-      new_data += _data;
-    }
-    while (new_data.length() < _datasize);    
-    _packet = Packet::make(new_data.data(), _datasize);
-  }
-  else
-    _packet = Packet::make(_data.data(), _data.length());
+  setup_packet();
+  
   return 0;
 }
 
@@ -147,6 +137,24 @@ InfiniteSource::pull(int)
   return p;
 }
 
+void
+InfiniteSource::setup_packet() 
+{
+  if (_packet) _packet->kill();
+
+  if (_datasize != -1 && _datasize > _data.length()) {
+    // make up some data to fill extra space
+    String new_data;
+    do {
+      new_data += _data;
+    }
+    while (new_data.length() < _datasize);    
+    _packet = Packet::make(new_data.data(), _datasize);
+  }
+  else
+    _packet = Packet::make(_data.data(), _data.length());
+}
+
 String
 InfiniteSource::read_param(Element *e, void *vparam)
 {
@@ -182,8 +190,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_string(s, &data))
        return errh->error("data parameter must be string");
      is->_data = data;
-     if (is->_packet) is->_packet->kill();
-     is->_packet = Packet::make(data.data(), data.length());
+     is->setup_packet();
      break;
    }
    
@@ -225,6 +232,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_integer(s, &datasize) || datasize < 1)
        return errh->error("datasize parameter must be integer >= 1");
      is->_datasize = datasize;
+     is->setup_packet();
      break;
    }
   }

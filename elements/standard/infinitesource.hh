@@ -104,6 +104,8 @@ class InfiniteSource : public Element { public:
   Packet *pull(int);
 
  protected:
+
+  void setup_packet();
   
   Packet *_packet;
   int _burstsize;
