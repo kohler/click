@@ -1,3 +1,8 @@
+2002-10-03 Thursday 13:01  Eddie Kohler <kohler@icir.org>
+
+	* tools/click2xml/: click2xml.cc (1.6), clickconfig.dtd (1.1): add
+	DTD
+
 2002-10-03 Thursday 01:16  Eddie Kohler <kohler@icir.org>
 
 	* tools/: click-combine/click-uncombine.cc (1.25),
