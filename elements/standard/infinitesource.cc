@@ -18,6 +18,7 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "router.hh"
+#include "scheduleinfo.hh"
 #include "glue.hh"
 
 InfiniteSource::InfiniteSource()
@@ -45,9 +46,10 @@ InfiniteSource::configure(const String &conf, ErrorHandler *errh)
 }
 
 int
-InfiniteSource::initialize(ErrorHandler *)
+InfiniteSource::initialize(ErrorHandler *errh)
 {
   _packet = Packet::make(_data.data(), _data.length());
+  ScheduleInfo::join_scheduler(this, errh);
   return 0;
 }
 

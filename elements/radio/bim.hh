@@ -22,6 +22,7 @@ class BIM : public Element {
   BIM *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
+  void uninitialize();
 
   int select_fd() { return(_fd); }
   void selected(int fd);

@@ -1,5 +1,11 @@
 Click NEWS
 
+
+* Added polling.
+
+* Fixed lexer bug: compound elements with `{' are accepted everywhere.
+
+
 Version 0.6   11.Dec.1999
 
 * Added dynamic linking support. Click configuration files can now be ar(1)

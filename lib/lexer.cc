@@ -904,6 +904,7 @@ Lexer::yconnection()
       goto relex;
       
      case lexIdent:
+     case '{':
      case '}':
       unlex(t);
       // FALLTHRU
@@ -978,7 +979,7 @@ int
 Lexer::ylocal()
 {
   // OK because every used ylocal() corresponds to at least one element
-  String name = "@Anon" + String(_elements.size() - _anonymous_offset + 1);
+  String name = "@X" + String(_elements.size() - _anonymous_offset + 1);
   
   // opening brace was already read
   unsigned original_lineno = _lineno;
@@ -1012,6 +1013,7 @@ Lexer::ystatement(bool nested)
     
    case lexIdent:
    case '[':
+   case '{':
     unlex(t);
     yconnection();
     return true;

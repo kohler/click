@@ -13,7 +13,6 @@
 #include "element.hh"
 
 class Idle : public Element {
-  int _idle;
 
  public:
   
@@ -23,11 +22,13 @@ class Idle : public Element {
   const char *class_name() const		{ return "Idle"; }
   void notify_ninputs(int);
   void notify_noutputs(int);
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   
   Idle *clone() const				{ return new Idle; }
+  int initialize(ErrorHandler *);
+  void uninitialize();
   
   void push(int, Packet *);
   Packet *pull(int);

@@ -57,6 +57,7 @@ class ToBPF : public Element {
   ToBPF *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
+  void uninitialize();
   
   void push(int port, Packet *);
 

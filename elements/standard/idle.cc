@@ -15,10 +15,10 @@
 #endif
 #include "idle.hh"
 #include "bitvector.hh"
+#include "scheduleinfo.hh"
 
 Idle::Idle() 
 {
-  _idle = 0;
   add_output();
 }
 
@@ -50,6 +50,23 @@ Idle::backward_flow(int) const
   return Bitvector(ninputs(), false);
 }
 
+int
+Idle::initialize(ErrorHandler *errh)
+{
+  for (int i = 0; i < ninputs(); i++)
+    if (input_is_pull(i)) {
+      ScheduleInfo::join_scheduler(this, errh);
+      break;
+    }
+  return 0;
+}
+
+void
+Idle::uninitialize()
+{
+  unschedule();
+}
+
 void
 Idle::push(int, Packet *p)
 {
@@ -65,14 +82,13 @@ Idle::pull(int)
 void
 Idle::run_scheduled()
 {
-  _idle++;
+  // XXX reduce tickets if idle
   for (int i = 0; i < ninputs(); i++)
     if (input_is_pull(i))
       if (Packet *p = input(i).pull()) {
 	p->kill();
-	_idle = 0;
       }
-  if (_idle <= 32) reschedule();
+  reschedule();
 }
 
 EXPORT_ELEMENT(Idle)

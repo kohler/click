@@ -61,8 +61,8 @@ class PollDevice : public Element {
   struct device *_dev;
   struct wait_queue _self_wq;
 
-  static int _num_polldevices;
-  static int _num_idle_polldevices;
+  static int num_polldevices;
+  static int num_idle_polldevices;
 };
 
 #endif 

@@ -553,6 +553,7 @@ LexerT::yconnection()
       goto relex;
       
      case lexIdent:
+     case '{':
      case '}':
       unlex(t);
       // FALLTHRU
@@ -644,7 +645,7 @@ int
 LexerT::ylocal()
 {
   // OK because every used ylocal() corresponds to at least one element
-  String name = "@Anon" + String(_router->nelements() - _anonymous_offset + 1);
+  String name = "@X" + String(_router->nelements() - _anonymous_offset + 1);
   
   // '{' was already read
   RouterT *old_router = _router;
@@ -689,6 +690,7 @@ LexerT::ystatement(bool nested)
     
    case lexIdent:
    case '[':
+   case '{':
     unlex(t);
     yconnection();
     return true;

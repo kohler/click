@@ -32,6 +32,14 @@ AlignmentInfo::configure_first() const
 int
 AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
 {
+  // check for an earlier AlignmentInfo
+  int my_number = router()->eindex(this);
+  const Vector<Element *> &ev = router()->elements();
+  for (int i = 0; i < my_number; i++)
+    if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->is_a_cast("AlignmentInfo"))
+      return ai->configure(conf, errh);
+
+  // this is the first AlignmentInfo; store all information here
   Vector<String> args;
   cp_argvec(conf, args);
   for (int i = 0; i < args.size(); i++) {
@@ -47,8 +55,9 @@ AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
 	_elem_offset.resize(number + 1, -1);
 	_elem_icount.resize(number + 1, -1);
       }
-      if (_elem_offset[number] >= 0)
-	errh->error("duplicate entry for element `%s'", parts[0].cc());
+      // report an error if different AlignmentInfo is given
+      int old_offset = _elem_offset[number];
+      int old_icount = _elem_icount[number];
       if (parts.size() % 2 != 1)
 	errh->error("expected `ELEMENTNAME CHUNK OFFSET [CHUNK OFFSET...]'");
       _elem_offset[number] = _chunks.size();
@@ -62,6 +71,14 @@ AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
 	_chunks.push_back(c);
 	_offsets.push_back(o);
       }
+      // check for conflicting information on duplicate AlignmentInfo
+      if (old_offset >= 0
+	  && (old_icount != _elem_icount[number]
+	      || memcmp(&_chunks[old_offset], &_chunks[_elem_offset[number]],
+			old_icount * sizeof(int)) != 0
+	      || memcmp(&_offsets[old_offset], &_offsets[_elem_offset[number]],
+			old_icount * sizeof(int)) != 0))
+	errh->error("conflicting alignment info for `%s'", parts[0].cc());
       
     } else
       errh->warning("no such element `%s'", parts[0].cc());
@@ -90,8 +107,7 @@ AlignmentInfo::query(Element *e, int port, int &chunk, int &offset)
   const Vector<Element *> &ev = e->router()->elements();
   for (int i = 0; i < ev.size(); i++)
     if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->is_a_cast("AlignmentInfo"))
-      if (ai->query1(e, port, chunk, offset))
-	return true;
+      return ai->query1(e, port, chunk, offset);
   return false;
 }
 

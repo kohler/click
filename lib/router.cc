@@ -739,10 +739,6 @@ Router::initialize(ErrorHandler *errh)
 	_elements[i]->uninitialize();
     return -1;
   } else {
-    for (int i = 0; i < _elements.size(); i++) {
-      Element *e = _elements[i]; 
-      if (e->ntickets() > 0) e->join_scheduler();
-    }
     _initialized = true;
     return 0;
   }

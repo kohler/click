@@ -19,6 +19,7 @@
 #include "confparse.hh"
 #include "router.hh"
 #include "frombpf.hh"
+#include "elements/standard/scheduleinfo.hh"
 
 #include <stdio.h>
 #include <assert.h>
@@ -45,7 +46,7 @@ ToBPF::ToBPF(const String &ifname)
 
 ToBPF::~ToBPF()
 {
-  if (_pcap) pcap_close(_pcap);
+  uninitialize();
 }
 
 ToBPF *
@@ -68,6 +69,7 @@ int
 ToBPF::initialize(ErrorHandler *errh)
 {
 #if defined(__FreeBSD__) && defined(HAVE_PCAP)
+  
   /* FreeBSD pcap_open_live() doesn't open for writing. */
   if(_fd >= 0)
     return(0);
@@ -90,9 +92,10 @@ ToBPF::initialize(ErrorHandler *errh)
   struct ifreq ifr;
   (void)strncpy(ifr.ifr_name, _ifname.mutable_c_str(), sizeof(ifr.ifr_name));
   if (ioctl(_fd, BIOCSETIF, (caddr_t)&ifr) < 0)
-    return(errh->error("ToBPF: BIOCSETIF %s failed", ifr.ifr_name));
-  return(0);
+    return errh->error("ToBPF: BIOCSETIF %s failed", ifr.ifr_name);
+  
 #else
+  
   if (_pcap || _fd >= 0)
     return 0;
   else if (!_ifname)
@@ -125,8 +128,18 @@ ToBPF::initialize(ErrorHandler *errh)
     _fd = pcap_fileno(_pcap);
   }
   
-  return 0;
 #endif
+
+  if (input_is_pull(0))
+    ScheduleInfo::join_scheduler(this, errh);
+  return 0;
+}
+
+void
+ToBPF::uninitialize()
+{
+  if (_pcap) pcap_close(_pcap);
+  unschedule();
 }
 
 #ifdef HAVE_PCAP
@@ -167,11 +180,10 @@ ToBPF::push(int, Packet *p)
 void
 ToBPF::run_scheduled()
 {
+  // XXX reduce tickets when idle
   if (Packet *p = input(0).pull())
-  {
     push(0, p); 
-    reschedule();
-  } 
+  reschedule();
 }
 
 EXPORT_ELEMENT(ToBPF)

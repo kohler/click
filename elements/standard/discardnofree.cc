@@ -14,10 +14,25 @@
 # include <config.h>
 #endif
 #include "discardnofree.hh"
+#include "scheduleinfo.hh"
 
 DiscardNoFree::DiscardNoFree()
   : Element(1, 0)
 {
+}
+
+int
+DiscardNoFree::initialize(ErrorHandler *errh)
+{
+  if (input_is_pull(0))
+    ScheduleInfo::join_scheduler(this, errh);
+  return 0;
+}
+
+void
+DiscardNoFree::uninitialize()
+{
+  unschedule();
 }
 
 void

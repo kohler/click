@@ -19,9 +19,11 @@ class Discard : public Element {
   ~Discard()					{ }
   
   const char *class_name() const		{ return "Discard"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Discard *clone() const			{ return new Discard; }
+  int initialize(ErrorHandler *);
+  void uninitialize();
   
   void push(int, Packet *);
   

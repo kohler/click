@@ -34,6 +34,7 @@ class Tun : public Element {
   Processing default_processing() const	{ return PULL_TO_PUSH; }
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
+  void uninitialize();
   Tun *clone() const;
 
   int select_fd() { return(_fd); }

@@ -22,14 +22,15 @@
 #include "confparse.hh"
 #include "router.hh"
 #include "elemfilter.hh"
+#include "elements/standard/scheduleinfo.hh"
 
 extern "C" {
 #include <linux/netdevice.h>
 #include <unistd.h>
 }
 
-static int PollDevice::_num_polldevices = 0;
-static int PollDevice::_num_idle_polldevices = 0;
+static int PollDevice::num_polldevices = 0;
+static int PollDevice::num_idle_polldevices = 0;
 
 PollDevice::PollDevice()
   : _dev(0)
@@ -55,6 +56,7 @@ PollDevice::~PollDevice()
 void
 PollDevice::static_initialize()
 {
+  num_polldevices = num_idle_polldevices = 0;
 }
 
 void
@@ -95,8 +97,10 @@ PollDevice::initialize(ErrorHandler *errh)
   _dev->intr_defer = 1;
   _idle = 0;
   _total_intr_wait = 0;
-
-  _num_polldevices++;
+  
+  ScheduleInfo::join_scheduler(this, errh);
+  
+  num_polldevices++;
   return 0;
 }
 
@@ -104,15 +108,16 @@ PollDevice::initialize(ErrorHandler *errh)
 void
 PollDevice::uninitialize()
 {
-  if (_dev)
-  { 
-    _num_polldevices--;
+  if (_dev) { 
+    num_polldevices--;
     if (_idle >= POLLDEV_IDLE_LIMIT) 
-      _num_idle_polldevices--;
+      num_idle_polldevices--;
     _idle = 0;
 
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
+    
+    unschedule();
   }
 }
 
@@ -129,7 +134,7 @@ PollDevice::run_scheduled()
     _pkts_received++;
 #if 0
     if (_idle >= POLLDEV_IDLE_LIMIT)
-      _num_idle_polldevices--; 
+      num_idle_polldevices--; 
 #endif
     _idle = 0;
     rtm_ipackets++;

@@ -18,6 +18,7 @@
 #include "packet.hh"
 #include "confparse.hh"
 #include "glue.hh"
+#include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
 #include <errno.h>
 #include <fcntl.h>
@@ -33,8 +34,6 @@ Tun::Tun()
 
 Tun::~Tun()
 {
-  if(_fd >= 0)
-    close(_fd);
 }
 
 Tun *
@@ -59,10 +58,19 @@ int
 Tun::initialize(ErrorHandler *errh)
 {
   _fd = alloc_tun(_near, _far, errh);
-  if(_fd < 0)
-    return(-1);
-
+  if (_fd < 0)
+    return -1;
+  if (input_is_pull(0))
+    ScheduleInfo::join_scheduler(this, errh);
   return 0;
+}
+
+void
+Tun::uninitialize()
+{
+  unschedule();
+  if (_fd >= 0)
+    close(_fd);
 }
 
 void
@@ -90,8 +98,7 @@ Tun::selected(int fd)
 void
 Tun::run_scheduled()
 {
-  if (Packet *p = input(0).pull())
-  {
+  if (Packet *p = input(0).pull()) {
     push(0, p); 
     reschedule();
   }

@@ -20,6 +20,7 @@
 #include "confparse.hh"
 #include "glue.hh"
 #include "bim-proto.hh"
+#include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
 #include <termios.h>
 #include <errno.h>
@@ -117,7 +118,15 @@ BIM::initialize(ErrorHandler *errh)
   return errh->error("this architecture has no TIOCFLUSH");
 #endif
 
+  ScheduleInfo::join_scheduler(this, errh);
+  
   return 0;
+}
+
+void
+BIM::uninitialize()
+{
+  unschedule();
 }
 
 void

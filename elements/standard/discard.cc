@@ -16,10 +16,25 @@
 #include "discard.hh"
 #include "error.hh"
 #include "confparse.hh"
+#include "scheduleinfo.hh"
 
 Discard::Discard()
   : Element(1, 0)
 {
+}
+
+int
+Discard::initialize(ErrorHandler *errh)
+{
+  if (input_is_pull(0))
+    ScheduleInfo::join_scheduler(this, errh);
+  return 0;
+}
+
+void
+Discard::uninitialize()
+{
+  unschedule();
 }
 
 void

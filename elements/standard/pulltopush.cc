@@ -15,23 +15,28 @@
 # include <config.h>
 #endif
 #include "pulltopush.hh"
+#include "elements/standard/scheduleinfo.hh"
 
+int
+PullToPush::initialize(ErrorHandler *errh)
+{
+  ScheduleInfo::join_scheduler(this, errh);
+  return 0;
+}
+
+void
+PullToPush::uninitialize()
+{
+  unschedule();
+}
 
 void
 PullToPush::run_scheduled()
 {
-  Packet *p;
-  int i=0;
-
-  _idle++;
-  while ((p = input(0).pull()) && i<8) {
-    _idle = 0;
+  // XXX reduce # of tickets if idle
+  if (Packet *p = input(0).pull())
     output(0).push(p);
-    i++;
-  } 
-
-  if (_idle <= 32)
-    reschedule();
+  reschedule();
 }
 
 EXPORT_ELEMENT(PullToPush)

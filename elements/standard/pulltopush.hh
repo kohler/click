@@ -12,22 +12,19 @@
  */
 
 class PullToPush : public Element {
- private:
-   int _idle;
+
  public:
   
-  PullToPush() : Element(1,1) { _idle = 0; }
+  PullToPush() : Element(1, 1)			{ }
   
   const char *class_name() const		{ return "PullToPush"; }
   Processing default_processing() const		{ return PULL_TO_PUSH; }
   
   PullToPush *clone() const			{ return new PullToPush; }
+  int initialize(ErrorHandler *);
+  void uninitialize();
   
   void run_scheduled();
-
-#ifdef __KERNEL__
-  int initialize(ErrorHandler *) { return 0; }
-#endif
 
 };
 

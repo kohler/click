@@ -22,7 +22,6 @@ class ElementLink {
   
   void stride() { _pass += _stride; }
   void schedule_before(ElementLink *);
-  void schedule_head();
   void schedule_tail();
 
  public:
@@ -70,20 +69,6 @@ ElementLink::unschedule()
     _prev->_next = _next;
   }
   _next = _prev = 0;
-}
-
-inline void
-ElementLink::schedule_head()
-{
-  if (_next) {
-    _next->_prev = _prev;
-    _prev->_next = _next;
-  }
-  ElementLink *n = _list->_next;
-  _next = n;
-  _prev = _list;
-  _list->_next = this;
-  n->_prev = this;
 }
 
 inline void

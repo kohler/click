@@ -85,7 +85,7 @@ static String
 SetIPDSCP_read_dscp(Element *xf, void *)
 {
   SetIPDSCP *f = (SetIPDSCP *)xf;
-  return String(f->dscp()) + "\n";
+  return String((int)f->dscp()) + "\n";
 }
 
 void

@@ -30,7 +30,7 @@ class Element : public ElementLink { public:
   virtual bool is_a(const char *) const;
   Element *is_a_cast(const char *name)	{ return (is_a(name) ? this : 0); }
   
-  const String &id() const			{ return _id; }
+  String id() const				{ return _id; }
   void set_id(const String &);
   String declaration() const;
   

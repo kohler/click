@@ -21,6 +21,7 @@
 #include "etheraddress.hh"
 #include "confparse.hh"
 #include "router.hh"
+#include "elements/standard/scheduleinfo.hh"
 extern "C" {
 #define new xxx_new
 #define class xxx_class
@@ -155,7 +156,10 @@ ToDevice::initialize(ErrorHandler *errh)
       _registered = 1;
       registered_writers++;
     }
+    
+    ScheduleInfo::join_scheduler(this, errh);
   }
+
   return 0;
 }
 

@@ -31,6 +31,19 @@ ScheduleLinux::configure(const String &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh, cpEnd);
 }
 
+int
+ScheduleLinux::initialize(ErrorHandler *errh)
+{
+  ScheduleInfo::join_scheduler(this, errh);
+  return 0;
+}
+
+void
+ScheduleLinux::uninitialize()
+{
+  unschedule();
+}
+
 void
 ScheduleLinux::run_scheduled()
 {

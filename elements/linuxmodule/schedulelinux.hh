@@ -18,10 +18,14 @@ class ScheduleLinux : public Element {
   
   const char *class_name() const		{ return "ScheduleLinux"; }
   Processing default_processing() const		{ return AGNOSTIC; }
+  
   ScheduleLinux *clone() const;
   int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
 
   void run_scheduled();
+  
 };
 
 #endif

@@ -154,7 +154,7 @@ Queue::push(int, Packet *packet)
   } else {
     // if (!(_drops % 100))
     if (_drops == 0)
-      click_chatter("Queue %s overflow", String(id()).cc());
+      click_chatter("Queue %s overflow", id().cc());
     _drops++;
     packet->kill();
   }
