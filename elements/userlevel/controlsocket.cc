@@ -20,6 +20,7 @@
 #include "controlsocket.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/timer.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/llrpc.h>
@@ -75,7 +76,7 @@ ControlSocketErrorHandler::handle_text(Seriousness seriousness, const String &m)
 
 
 ControlSocket::ControlSocket()
-  : _socket_fd(-1), _proxy(0), _full_proxy(0)
+  : _socket_fd(-1), _proxy(0), _full_proxy(0), _retry_timer(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -88,98 +89,168 @@ ControlSocket::~ControlSocket()
 int
 ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  bool read_only = false, verbose = false;
-  
   String socktype;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "type of socket (`TCP' or `UNIX')", &socktype,
 		  cpIgnoreRest, cpEnd) < 0)
     return -1;
 
+  // remove keyword arguments
+  bool read_only = false, verbose = false, retry_warnings = true;
+  _retries = 0;
+  if (cp_va_parse_remove_keywords(conf, 2, this, errh,
+		"READONLY", cpBool, "read-only?", &read_only,
+		"PROXY", cpElement, "handler proxy", &_proxy,
+		"VERBOSE", cpBool, "be verbose?", &verbose,
+		"RETRIES", cpInteger, "number of retries", &_retries,
+		"RETRY_WARNINGS", cpBool, "warn on unsuccessful socket attempt?", &retry_warnings,
+		0) < 0)
+    return -1;
+  _read_only = read_only;
+  _verbose = verbose;
+  _retry_warnings = retry_warnings;
+  
   socktype = socktype.upper();
   if (socktype == "TCP") {
+    _tcp_socket = true;
     unsigned short portno;
     if (cp_va_parse(conf, this, errh,
-		    cpIgnore,
-		    cpUnsignedShort, "port number", &portno,
-		    cpKeywords,
-		    "READONLY", cpBool, "read-only?", &read_only,
-		    "PROXY", cpElement, "handler proxy", &_proxy,
-		    "VERBOSE", cpBool, "be verbose?", &verbose,
-		    cpEnd) < 0)
+		    cpIgnore, cpUnsignedShort, "port number", &portno, 0) < 0)
       return -1;
+    _unix_pathname = String(portno);
 
-    // open socket, set options
+  } else if (socktype == "UNIX") {
+    _tcp_socket = false;
+    if (cp_va_parse(conf, this, errh,
+		    cpIgnore, cpString, "filename", &_unix_pathname, 0) < 0)
+      return -1;
+    if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
+      return errh->error("filename too long");
+
+  } else
+    return errh->error("unknown socket type `%s'", socktype.cc());
+  
+  return 0;
+}
+
+
+int
+ControlSocket::initialize_socket_error(ErrorHandler *errh, const char *syscall)
+{
+  int e = errno;		// preserve errno
+
+  if (_socket_fd >= 0) {
+    close(_socket_fd);
+    _socket_fd = -1;
+  }
+
+  if (_retries >= 0) {
+    if (_retry_warnings)
+      errh->warning("%s: %s (%d %s left)", syscall, strerror(e), _retries + 1, (_retries == 0 ? "try" : "tries"));
+    return -EINVAL;
+  } else
+    return errh->error("%s: %s", syscall, strerror(e));
+}
+
+int
+ControlSocket::initialize_socket(ErrorHandler *errh)
+{
+  _retries--;
+
+  // open socket, set options, bind to address
+  if (_tcp_socket) {
     _socket_fd = socket(PF_INET, SOCK_STREAM, 0);
     if (_socket_fd < 0)
-      return errh->error("socket: %s", strerror(errno));
+      return initialize_socket_error(errh, "socket");
     int sockopt = 1;
     if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&sockopt, sizeof(sockopt)) < 0)
       errh->warning("setsockopt: %s", strerror(errno));
 
     // bind to port
+    int portno;
+    (void) cp_integer(_unix_pathname, &portno);
     struct sockaddr_in sa;
     sa.sin_family = AF_INET;
     sa.sin_port = htons(portno);
     sa.sin_addr = inet_makeaddr(0, 0);
     if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-      return errh->error("bind: %s", strerror(errno));
+      return initialize_socket_error(errh, "bind");
 
-  } else if (socktype == "UNIX") {
-    if (cp_va_parse(conf, this, errh,
-		    cpIgnore,
-		    cpString, "filename", &_unix_pathname,
-		    cpKeywords,
-		    "READONLY", cpBool, "read-only?", &read_only,
-		    "PROXY", cpElement, "handler proxy", &_proxy,
-		    "VERBOSE", cpBool, "be verbose?", &verbose,
-		    cpEnd) < 0)
-      return -1;
-
-    // create socket address
-    struct sockaddr_un sa;
-    sa.sun_family = AF_UNIX;
-    if (_unix_pathname.length() >= (int)sizeof(sa.sun_path))
-      return errh->error("filename too long");
-    memcpy(sa.sun_path, _unix_pathname.cc(), _unix_pathname.length() + 1);
-    
-    // open socket, set options
+  } else {
     _socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
     if (_socket_fd < 0)
-      return errh->error("socket: %s", strerror(errno));
+      return initialize_socket_error(errh, "socket");
 
     // bind to port
+    struct sockaddr_un sa;
+    sa.sun_family = AF_UNIX;
+    memcpy(sa.sun_path, _unix_pathname.cc(), _unix_pathname.length() + 1);
     if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-      return errh->error("bind: %s", strerror(errno));
+      return initialize_socket_error(errh, "bind");
+  }
 
-  } else
-    return errh->error("unknown socket type `%s'", socktype.cc());
+  // start listening
+  if (listen(_socket_fd, 2) < 0)
+    return initialize_socket_error(errh, "listen");
+  
+  // nonblocking I/O and close-on-exec for the socket
+  fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
+  fcntl(_socket_fd, F_SETFD, FD_CLOEXEC);
 
-  _read_only = read_only;
-  _verbose = verbose;
+  add_select(_socket_fd, SELECT_READ);
   return 0;
 }
 
 int
 ControlSocket::initialize(ErrorHandler *errh)
 {
-  // start listening
-  if (listen(_socket_fd, 2) < 0)
-    return errh->error("listen: %s", strerror(errno));
-  
-  // nonblocking I/O on the socket
-  fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
-
   // check for a full proxy
-  if (_proxy && _proxy->cast("HandlerProxy"))
-    _full_proxy = (HandlerProxy *)_proxy;
+  if (_proxy)
+    if (void *v = _proxy->cast("HandlerProxy"))
+      _full_proxy = (HandlerProxy *)v;
   
   // ask the proxy to send us errors
   if (_full_proxy)
     _full_proxy->add_error_receiver(proxy_error_function, this);
 
-  add_select(_socket_fd, SELECT_READ | SELECT_WRITE);
-  return 0;
+  if (initialize_socket(errh) >= 0)
+    return 0;
+  else if (_retries >= 0) {
+    _retry_timer = new Timer(retry_hook, this);
+    _retry_timer->initialize(this);
+    _retry_timer->schedule_after_s(1);
+    return 0;
+  } else
+    return -1;
+}
+
+void
+ControlSocket::take_state(Element *e, ErrorHandler *errh)
+{
+  ControlSocket *cs = (ControlSocket *)e->cast("ControlSocket");
+  if (!cs)
+    return;
+
+  if (_socket_fd >= 0) {
+    errh->error("already initialized, can't take state");
+    return;
+  } else if (_tcp_socket != cs->_tcp_socket
+	     || _unix_pathname != cs->_unix_pathname) {
+    errh->error("incompatible ControlSockets");
+    return;
+  }
+
+  _socket_fd = cs->_socket_fd;
+  cs->_socket_fd = -1;
+  _in_texts.swap(cs->_in_texts);
+  _out_texts.swap(cs->_out_texts);
+  _flags.swap(cs->_flags);
+
+  if (_socket_fd >= 0)
+    add_select(_socket_fd, SELECT_READ);
+  for (int i = 0; i < _flags.size(); i++)
+    if (_flags[i] >= 0)
+      add_select(i, SELECT_READ | SELECT_WRITE);
 }
 
 void
@@ -195,22 +266,41 @@ ControlSocket::cleanup(CleanupStage)
     shutdown(_socket_fd, 2);
 #endif
     close(_socket_fd);
-    if (_unix_pathname)
+    if (!_tcp_socket)
       unlink(_unix_pathname.c_str());
+    _socket_fd = -1;
   }
-  _socket_fd = -1;
   for (int i = 0; i < _flags.size(); i++)
     if (_flags[i] >= 0) {
       close(i);
       _flags[i] = -1;
     }
+  if (_retry_timer) {
+    _retry_timer->cleanup();
+    delete _retry_timer;
+    _retry_timer = 0;
+  }
+}
+
+void
+ControlSocket::retry_hook(Timer *t, void *thunk)
+{
+  ControlSocket *cs = (ControlSocket *)thunk;
+  if (cs->_socket_fd >= 0)
+    /* nada */;
+  else if (cs->initialize_socket(ErrorHandler::default_handler()) >= 0)
+    /* nada */;
+  else if (cs->_retries >= 0)
+    t->reschedule_after_s(1);
+  else
+    cs->router()->please_stop_driver();
 }
 
 int
 ControlSocket::message(int fd, int code, const String &s, bool continuation)
 {
   assert(code >= 100 && code <= 999);
-  if (fd >= 0)
+  if (fd >= 0 && !(_flags[fd] & WRITE_CLOSED))
     _out_texts[fd] += String(code) + (continuation ? "-" : " ") + s.printable() + "\r\n";
   return ANY_ERR;
 }
@@ -491,6 +581,29 @@ ControlSocket::parse_command(int fd, const String &line)
     return message(fd, CSERR_UNIMPLEMENTED, "Command `" + command + "' unimplemented");
 }
 
+void
+ControlSocket::flush_write(int fd)
+{
+  assert(_flags[fd] >= 0);
+  if (!(_flags[fd] & WRITE_CLOSED)) {
+    int w = 0;
+    while (_out_texts[fd].length()) {
+      const char *x = _out_texts[fd].data();
+      w = write(fd, x, _out_texts[fd].length());
+      if (w < 0 && errno != EINTR)
+	break;
+      if (w > 0)
+	_out_texts[fd] = _out_texts[fd].substring(w);
+    }
+    if (w < 0 && errno == EPIPE)
+      _flags[fd] |= WRITE_CLOSED;
+    // don't select writes unless we have data to write
+    if (_out_texts[fd].length())
+      add_select(fd, SELECT_WRITE);
+    else
+      remove_select(fd, SELECT_WRITE);
+  }
+}
 
 void
 ControlSocket::selected(int fd)
@@ -512,13 +625,14 @@ ControlSocket::selected(int fd)
     }
 
     if (_verbose) {
-      if (!_unix_pathname)
+      if (_tcp_socket)
 	click_chatter("%s: opened connection %d from %s.%d", declaration().cc(), new_fd, IPAddress(sa.in.sin_addr).unparse().cc(), ntohs(sa.in.sin_port));
       else
 	click_chatter("%s: opened connection %d", declaration().cc(), new_fd);
     }
 
     fcntl(new_fd, F_SETFL, O_NONBLOCK);
+    fcntl(new_fd, F_SETFD, FD_CLOEXEC);
     add_select(new_fd, SELECT_READ | SELECT_WRITE);
 
     while (new_fd >= _in_texts.size()) {
@@ -582,24 +696,7 @@ ControlSocket::selected(int fd)
   }
 
   // write data until blocked
-  if (!(_flags[fd] & WRITE_CLOSED)) {
-    int w = 0;
-    while (_out_texts[fd].length()) {
-      const char *x = _out_texts[fd].data();
-      w = write(fd, x, _out_texts[fd].length());
-      if (w < 0 && errno != EINTR)
-	break;
-      if (w > 0)
-	_out_texts[fd] = _out_texts[fd].substring(w);
-    }
-    if (w < 0 && errno == EPIPE)
-      _flags[fd] |= WRITE_CLOSED;
-    // don't select writes unless we have data to write
-    if (_out_texts[fd].length())
-      add_select(fd, SELECT_WRITE);
-    else
-      remove_select(fd, SELECT_WRITE);
-  }
+  flush_write(fd);
 
   // maybe close out
   if (((_flags[fd] & READ_CLOSED) && !_out_texts[fd].length())

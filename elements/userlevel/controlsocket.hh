@@ -3,6 +3,7 @@
 #include "elements/userlevel/handlerproxy.hh"
 CLICK_DECLS
 class ControlSocketErrorHandler;
+class Timer;
 
 /*
 =c
@@ -64,6 +65,19 @@ useful with elements like KernelHandlerProxy. Default is empty (no proxy).
 Boolean. When true, ControlSocket will print messages whenever it accepts a
 new connection or drops an old one. Default is false.
 
+=item RETRIES
+
+Integer. If greater than 0, ControlSocket won't immediately fail when it can't
+open its socket. Instead, it will attempt to open the socket once a second
+until it succeeds, or until RETRIES unsuccessful attempts (after which it will
+stop the router). Default is 0.
+
+=item RETRY_WARNINGS
+
+Boolean. If true, ControlSocket will print warning messages every time it
+fails to open a socket. If false, it will print messages only on the final
+failure. Default is true.
+
 =back
 
 =head1 SERVER COMMANDS
@@ -82,15 +96,15 @@ C<requirements>. See click.o(8) for more information.)
 =item READ I<handler>
 
 Call a read I<handler>
-and return the results. On success, responds with a "success" message
-(response code 2xy) followed by a line like "DATA I<n>". Here, I<n> is a
+and return the results. On success, responds with a "success" message (response
+code 2xy) followed by a line like "DATA I<n>". Here, I<n> is a
 decimal integer indicating the length of the read handler data. The I<n>
 bytes immediately following (the CRLF that terminates) the DATA line are
 the handler's results.
 
 =item WRITE I<handler> I<args...>
 
-Call a write I<handler>, passing the I<args> (if any) as arguments.
+Call a write I<handler>, passing the I<args>, if any, as arguments.
 
 =item WRITEDATA I<handler> I<n>
 
@@ -156,6 +170,7 @@ class ControlSocket : public Element { public:
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
+  void take_state(Element *, ErrorHandler *);
 
   void selected(int);
 
@@ -179,6 +194,8 @@ class ControlSocket : public Element { public:
   int _socket_fd;
   bool _read_only : 1;
   bool _verbose : 1;
+  bool _retry_warnings : 1;
+  bool _tcp_socket : 1;
   Element *_proxy;
   HandlerProxy *_full_proxy;
   
@@ -189,9 +206,16 @@ class ControlSocket : public Element { public:
   String _proxied_handler;
   ErrorHandler *_proxied_errh;
 
+  int _retries;
+  Timer *_retry_timer;
+
   enum { READ_CLOSED = 1, WRITE_CLOSED = 2, ANY_ERR = -1 };
 
   static const char * const protocol_version;
+
+  int initialize_socket_error(ErrorHandler *, const char *);
+  int initialize_socket(ErrorHandler *);
+  static void retry_hook(Timer *, void *);
   
   int message(int fd, int code, const String &, bool continuation = false);
   int transfer_messages(int fd, int default_code, const String &first_message,
@@ -203,6 +227,7 @@ class ControlSocket : public Element { public:
   int write_command(int fd, const String &, const String &);
   int check_command(int fd, const String &, bool write);
   int parse_command(int fd, const String &);
+  void flush_write(int fd);
 
   int report_proxy_errors(int fd, const String &);
   static ErrorHandler *proxy_error_function(const String &, void *);

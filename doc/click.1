@@ -30,7 +30,7 @@
 .de RM
 .RB "\\$1" "\\$2" "(\\$3)\\$4"
 ..
-.TH CLICK 1 "27/Nov/1999" "Version \*V"
+.TH CLICK 1 "26/Mar/2003" "Version \*V"
 .SH NAME
 click \- runs router configurations at user level
 '
@@ -94,32 +94,47 @@ a string in the Click language, as the router configuration.
 '
 .Sp
 .TP
-.BI \-o " file"
+.BI \-p " port"
 .TP
-.BI \-\-output " file"
-Write the router configuration to
-.IR file
-with all compound elements removed, and without any additional archive
-members.
+.BI \-\-port " port"
+Open a
+.M ControlSocket n
+connection listening on TCP port
+.IR port .
+ControlSockets allow users to connect to the router and call its read and
+write handlers remotely.
 '
 .Sp
 .TP
-.BI \-d " dir"
+.BI \-u " file"
 .TP
-.BI \-\-directory " dir"
-Write the output of registered read handlers to
-.IR dir 
-.
+.BI \-\-unix\-socket " file"
+Open a
+.M ControlSocket n
+connection listening on a Unix socket, on file
+.IR file .
 '
 .Sp
 .TP
-.BI \-h " element\fR.\fPhandler"
+.BR \-R ", " \-\-allow\-reconfigure
+Provide a "hotconfig" handler, which allows remote
+.M ControlSocket n
+users, and elements within the router, to reconfigure the router
+dynamically. See
+.M click.o 8 's
+"/click/hotconfig" section for more information on hot-swapping.
+'
+.Sp
 .TP
-.BI \-\-handler " element\fR.\fPhandler"
+.BI \-h " \fR[\fPelement\fR.]\fPhandler"
+.TP
+.BI \-\-handler " \fR[\fPelement\fR.]\fPhandler"
 After running the driver, call
 .IR element 's
 read handler named
-.IR handler
+.IR handler ,
+or the global read handler named
+.IR handler ,
 and print the result to standard output. Each element has several generic
 handlers\*Efor example,
 .BR config
@@ -144,6 +159,16 @@ will run every handler whose name is
 and whose element's name matches the pattern.
 '
 .Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write a flattened version of the router configuration to
+.IR file .
+The flattening process removes all compound elements and additional archive
+members.
+'
+.Sp
 .TP 5
 .BR \-q ", " \-\-quit
 Do not run the driver. This option can be used to check a configuration for
@@ -155,6 +180,20 @@ option) without running the configuration.
 .TP 5
 .BR \-t ", " \-\-time
 Print the time it took to run the driver.
+'
+.Sp
+.TP 5
+.BR \-w ", " \-\-no\-warnings
+Do not print any warning messages.
+'
+.Sp
+.TP
+.BI \-C " path"
+.TP
+.BI \-\-clickpath " path"
+Use
+.I path
+for CLICKPATH.
 '
 .Sp
 .TP 5
@@ -178,6 +217,7 @@ first.
 .M click-align 1 ,
 .M click 5 ,
 .M click.o 8 ,
+.M ControlSocket n ,
 .M FromDevice.u n ,
 .M ToDevice.u n ,
 .M FromDump n ,
