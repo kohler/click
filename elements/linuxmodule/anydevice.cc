@@ -31,14 +31,15 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 AnyDevice::AnyDevice()
-    : _dev(0), _task(this), _idles(0), _flags(0), _next(0)
+    : _dev(0), _task(this), _idles(0),
+      _promisc(false), _in_map(false), _next(0)
 {
     MOD_INC_USE_COUNT;
 }
 
 AnyDevice::~AnyDevice()
 {
-    if (flag(F_IN_MAP) || _dev)
+    if (_in_map || _dev)
 	click_chatter("%s: bad device destructor!", id().cc());
     MOD_DEC_USE_COUNT;
 }
@@ -62,10 +63,9 @@ AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
 	_dev = 0;
     }
 
-    if (_dev && flag(F_PROMISC))
+    if (_dev && _promisc)
 	dev_set_promiscuity(_dev, 1);
     
-    set_flag(F_IN_MAP);
     adm->insert(this);
 
     return 0;
@@ -82,35 +82,31 @@ AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm)
     if (dev)
 	click_chatter("%s: device `%s' came up", declaration().cc(), _devname.cc());
 
-    if (_dev && flag(F_PROMISC))
+    if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);
     
-    if (adm && flag(F_IN_MAP))
+    if (adm && _in_map)
 	adm->remove(this);
     if (_dev)
 	dev_put(_dev);
     _dev = dev;
     if (_dev)
 	dev_hold(_dev);
-    if (adm) {
-	set_flag(F_IN_MAP);
+    if (adm)
 	adm->insert(this);
-    }
 
-    if (_dev && flag(F_PROMISC))
+    if (_dev && _promisc)
 	dev_set_promiscuity(_dev, 1);
 }
 
 void
 AnyDevice::clear_device(AnyDeviceMap *adm)
 {
-    if (_dev && flag(F_PROMISC))
+    if (_dev && _promisc)
 	dev_set_promiscuity(_dev, -1);
     
-    if (adm) {
-	clear_flag(F_IN_MAP);
+    if (adm)
 	adm->remove(this);
-    }
     if (_dev)
 	dev_put(_dev);
     _dev = 0;
@@ -141,6 +137,7 @@ AnyDeviceMap::insert(AnyDevice *d)
     d->_next = 0;
     *pprev = d;
 
+    d->_in_map = true;
     unlock_kernel();
 }
 
@@ -164,6 +161,7 @@ AnyDeviceMap::move_to_front(AnyDevice *d)
     d->_next = *head;
     *head = d;
 
+    d->_in_map = true;
     unlock_kernel();
 }
 
@@ -182,6 +180,7 @@ AnyDeviceMap::remove(AnyDevice *d)
     if (trav)
 	*pprev = d->_next;
 
+    d->_in_map = false;
     unlock_kernel();
 }
 

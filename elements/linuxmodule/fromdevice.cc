@@ -116,7 +116,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpEnd) < 0)
 	return -1;
     if (promisc)
-	set_flag(F_PROMISC);
+	set_promisc();
     
     return find_device(allow_nonexistent, &from_device_map, errh);
 }

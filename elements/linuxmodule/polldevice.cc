@@ -99,7 +99,7 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpEnd) < 0)
 	return -1;
     if (promisc)
-	set_flag(F_PROMISC);
+	set_promisc();
     
 #if HAVE_LINUX_POLLING
     if (find_device(allow_nonexistent, &poll_device_map, errh) < 0)

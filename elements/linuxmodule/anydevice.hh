@@ -75,8 +75,6 @@ class AnyDeviceMap;
 
 class AnyDevice : public Element { public:
 
-    enum { F_IN_MAP = 1, F_PROMISC = 2 };
-    
     AnyDevice();
     ~AnyDevice();
 
@@ -84,9 +82,8 @@ class AnyDevice : public Element { public:
     net_device *device() const		{ return _dev; }
     int ifindex() const			{ return _dev ? _dev->ifindex : -1; }
 
-    bool flag(uint32_t f) const		{ return (_flags & f) != 0; }
-    void set_flag(uint32_t f)		{ _flags |= f; }
-    void clear_flag(uint32_t f)		{ _flags &= ~f; }
+    bool promisc() const		{ return _promisc; }
+    void set_promisc()			{ _promisc = true; }
 
     int find_device(bool, AnyDeviceMap *, ErrorHandler *);
     void set_device(net_device *, AnyDeviceMap *);
@@ -102,7 +99,8 @@ class AnyDevice : public Element { public:
     int _max_tickets;
     int _idles;
 
-    uint32_t _flags;
+    bool _promisc : 1;
+    bool _in_map : 1;
     AnyDevice *_next;
 
     friend class AnyDeviceMap;
