@@ -133,7 +133,7 @@ FromCapDump::packno2seqno(uint32_t p, int len)
 {
     uint32_t seqno = packno2seqno(p);
     if (!(_p2s_map[p + 1] == NO_SEQNO || _p2s_map[p + 1] == seqno + len))
-	click_chatter("   >> %u %u %u", p+1, _p2s_map[p+1], seqno + len);
+	click_chatter("   %s >> %u %u %u", _ff.landmark().c_str(), p+1, _p2s_map[p+1], seqno + len);
     assert(_p2s_map[p + 1] == NO_SEQNO || _p2s_map[p + 1] == seqno + len);
     _p2s_map[p + 1] = seqno + len;
     return seqno;
@@ -240,9 +240,10 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	next = cp_unsigned(data, end, 10, &payload_len);
 	if (data == next)
 	    continue;
-	data = cp_skip_space(next, end);
 
 	// extra stuff, if any
+      parse_annotations:
+	data = cp_skip_space(next, end);
 	if (data + 6 < end && data[0] == 'D' && data[1] == 'S'
 	    && data[2] == 'A' && data[3] == 'C' && data[4] == 'K'
 	    && data[5] == ':'
@@ -255,15 +256,22 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    *opt++ = 10;
 	    *(reinterpret_cast<uint32_t *>(opt)) = htonl(packno2seqno(u1));
 	    *(reinterpret_cast<uint32_t *>(opt + 4)) = htonl(packno2seqno(u1 + 1));
+	    goto parse_annotations;
 	    
 	} else if (data + 2 < end && data[0] == 'F' && data[1] == 'I'
 		   && data[2] == 'N') {
 	    tcph->th_flags |= TH_FIN;
+	    next = data + 3;
+	    goto parse_annotations;
 	    
 	} else if (data + 1 < end && data[0] == 'F' && data[1] == 'R') {
+	    next = data + 2;
+	    goto parse_annotations;
 	    
 	} else if (data + 2 < end && data[0] == 'R' && data[1] == 'T'
 		   && data[2] == 'O') {
+	    next = data + 3;
+	    goto parse_annotations;
 	    
 	} else if (data + 4 < end && data[0] == 'S' && data[1] == 'A'
 		   && data[2] == 'C' && data[3] == 'K' && data[4] == ':') {
@@ -288,16 +296,26 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    }
 	    q->transport_header()[sizeof(click_tcp) + 3] = opt - (q->transport_header() + sizeof(click_tcp) + 2);
 	    q->take(q->end_data() - opt);
+	    next = data;
+	    goto parse_annotations;
 	    
 	} else if (data + 7 < end && data[0] == 'S' && data[1] == 'A'
 		   && data[2] == 'C' && data[3] == 'K' && data[4] == '_'
 		   && data[5] == 'N' && data[6] == 'E' && data[7] == 'W') {
+	    next = data + 8;
+	    goto parse_annotations;
+	    
 	} else if (data + 9 < end && data[0] == 'S' && data[1] == 'A'
 		   && data[2] == 'C' && data[3] == 'K' && data[4] == '_'
 		   && data[5] == 'R' && data[6] == 'E' && data[7] == 'X'
 		   && data[8] == 'M' && data[9] == 'T') {
+	    next = data + 10;
+	    goto parse_annotations;
+	    
 	} else if (data + 2 < end && data[0] == 'T' && data[1] == 'I'
 		   && data[2] == 'M') {
+	    next = data + 3;
+	    goto parse_annotations;
 	}
 
 	if (packet_type == 'D') {
