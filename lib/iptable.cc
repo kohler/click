@@ -79,4 +79,6 @@ IPTable::del(IPAddress dst, IPAddress mask)
 
 // generate Vector template instance
 #include <click/vector.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<IPTable::Entry>;
+#endif
