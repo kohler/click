@@ -359,7 +359,7 @@ IPReassembler::garbage_collect()
 
     // First throw away fragments at least 10 seconds old, then at least 5
     // seconds old, then any fragments.
-    for (int delta = 10; delta >= 0; delta -= 5)
+    for (int delta = 10 * CLICK_HZ; delta >= 0; delta -= 5 * CLICK_HZ)
 	for (int bucket = 0; bucket < NMAP; bucket++) {
 	    WritablePacket **pprev = &_map[bucket];
 	    for (WritablePacket *q = *pprev; q; q = *pprev)
