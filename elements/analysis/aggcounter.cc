@@ -99,7 +99,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     _use_extra_length = extra_length;
 
     if ((freeze_nnz != (uint32_t)(-1)) + (stop_nnz != (uint32_t)(-1)) + ((bool)call_nnz) > 1)
-	return errh->error("`AGGREGATE_FREEZE', `AGGREGATE_STOP', and `AGGREGATE_CALL' are mutually exclusive");
+	return errh->error("'AGGREGATE_FREEZE', 'AGGREGATE_STOP', and 'AGGREGATE_CALL' are mutually exclusive");
     else if (freeze_nnz != (uint32_t)(-1)) {
 	_call_nnz = freeze_nnz;
 	_call_nnz_h = new HandlerCall(id() + ".freeze true");
@@ -108,12 +108,12 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_call_nnz_h = new HandlerCall(id() + ".stop");
     } else if (call_nnz) {
 	if (!cp_unsigned(cp_pop_spacevec(call_nnz), &_call_nnz))
-	    return errh->error("`AGGREGATE_CALL' first word should be unsigned (number of aggregates)");
+	    return errh->error("'AGGREGATE_CALL' first word should be unsigned (number of aggregates)");
 	_call_nnz_h = new HandlerCall(call_nnz);
     }
     
     if ((freeze_count != (uint64_t)(-1)) + (stop_count != (uint64_t)(-1)) + ((bool)call_count) > 1)
-	return errh->error("`COUNT_FREEZE', `COUNT_STOP', and `COUNT_CALL' are mutually exclusive");
+	return errh->error("'COUNT_FREEZE', 'COUNT_STOP', and 'COUNT_CALL' are mutually exclusive");
     else if (freeze_count != (uint64_t)(-1)) {
 	_call_count = freeze_count;
 	_call_count_h = new HandlerCall(id() + ".freeze true");
@@ -122,7 +122,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_call_count_h = new HandlerCall(id() + ".stop");
     } else if (call_count) {
 	if (!cp_unsigned64(cp_pop_spacevec(call_count), &_call_count))
-	    return errh->error("`COUNT_CALL' first word should be unsigned (count)");
+	    return errh->error("'COUNT_CALL' first word should be unsigned (count)");
 	_call_count_h = new HandlerCall(call_count);
     }
     
@@ -479,14 +479,14 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
       case AC_FROZEN: {
 	  bool val;
 	  if (!cp_bool(s, &val))
-	      return errh->error("argument to `frozen' should be bool");
+	      return errh->error("argument to 'frozen' should be bool");
 	  ac->_frozen = val;
 	  return 0;
       }
       case AC_ACTIVE: {
 	  bool val;
 	  if (!cp_bool(s, &val))
-	      return errh->error("argument to `active' should be bool");
+	      return errh->error("argument to 'active' should be bool");
 	  ac->_active = val;
 	  return 0;
       }
@@ -510,7 +510,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	  uint32_t new_nnz = (uint32_t)(-1);
 	  if (s) {
 	      if (!cp_unsigned(cp_pop_spacevec(s), &new_nnz))
-		  return errh->error("argument to `aggregate_call' should be `N HANDLER [VALUE]'");
+		  return errh->error("argument to 'aggregate_call' should be 'N HANDLER [VALUE]'");
 	      else if (HandlerCall::reset_write(ac->_call_nnz_h, s, ac, errh) < 0)
 		  return -1;
 	  }
@@ -521,7 +521,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	  uint64_t new_count = (uint64_t)(-1);
 	  if (s) {
 	      if (!cp_unsigned64(cp_pop_spacevec(s), &new_count))
-		  return errh->error("argument to `count_call' should be `N HANDLER [VALUE]'");
+		  return errh->error("argument to 'count_call' should be 'N HANDLER [VALUE]'");
 	      else if (HandlerCall::reset_write(ac->_call_count_h, s, ac, errh) < 0)
 		  return -1;
 	  }
