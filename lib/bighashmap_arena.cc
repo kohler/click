@@ -1,4 +1,3 @@
-// -*- related-file-name: "../include/click/bighashmap_arena.hh" -*-
 /*
  * bighashmap_arena.{cc,hh} -- a hash table template that supports removal
  * Eddie Kohler
