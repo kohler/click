@@ -425,7 +425,7 @@ FromDump::read_packet(ErrorHandler *errh)
 {
     fake_pcap_pkthdr swapped_ph;
     const fake_pcap_pkthdr *ph;
-    int len, caplen;
+    int len, caplen, skiplen = 0;
     Packet *p;
     int tries = 0;
     assert(!_packet);
@@ -471,9 +471,16 @@ FromDump::read_packet(ErrorHandler *errh)
     }
 
     // check for errors
-    if (caplen > len || caplen > 65535) {
+    // 3.Jul.2002 -- Angelos Stavrou discovered that tcptrace-generated
+    // tcpdump files store an incorrect caplen. It's only off by one. Tcptrace
+    // should be fixed, but we hack around the problem here, as does
+    // tcpdump itself.
+    if (caplen > 65535) {
 	error_helper(errh, "bad packet header; giving up");
 	return false;
+    } else if (caplen > len) {
+	skiplen = caplen - len;
+	caplen = len;
     }
 
     // compensate for modified pcap versions
@@ -485,7 +492,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	prepare_times(ph->ts);
     if (_have_first_time) {
 	if (timercmp(&ph->ts, &_first_time, <)) {
-	    _pos += caplen;
+	    _pos += caplen + skiplen;
 	    goto retry;
 	} else
 	    _have_first_time = false;
@@ -498,7 +505,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	// unscheduled.
 	_task.fast_unschedule();
 	if (!_active) {
-	    _pos += caplen;
+	    _pos += caplen + skiplen;
 	    return false;
 	}
 	// retry _last_time in case someone changed it
@@ -508,7 +515,7 @@ FromDump::read_packet(ErrorHandler *errh)
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
 	&& (uint32_t)(random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob) {
-	_pos += caplen;
+	_pos += caplen + skiplen;
 	goto retry;
     }
     
@@ -522,7 +529,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	p->change_headroom_and_length(_pos, caplen);
 	p->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
 	SET_EXTRA_LENGTH_ANNO(p, len - caplen);
-	_pos += caplen;
+	_pos += caplen + skiplen;
 	
     } else {
 	WritablePacket *wp = Packet::make(0, 0, caplen, 0);
@@ -533,14 +540,13 @@ FromDump::read_packet(ErrorHandler *errh)
 	// set annotations now: may unmap earlier memory!
 	wp->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
 	SET_EXTRA_LENGTH_ANNO(wp, len - caplen);
-	
 	if (read_into(wp->data(), caplen, errh) < caplen) {
 	    // XXX error message too annoying
 	    // error_helper(errh, "short packet");
 	    wp->kill();
 	    return false;
 	}
-	
+	_pos += skiplen;
 	p = wp;
     }
 
