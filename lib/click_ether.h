@@ -13,6 +13,7 @@ struct ether_header {
 };
 #define ETHERTYPE_IP  0x0800
 #define ETHERTYPE_ARP 0x0806
+#define ETHERTYPE_GRID 0xBABE
 
 struct arp_header {
   unsigned short int ar_hrd;  /* Format of hardware address.  */

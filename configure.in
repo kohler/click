@@ -154,6 +154,7 @@ ELEMENTS_ARG_ENABLE(etherswitch, [include Ethernet switch elements (on by defaul
 ELEMENTS_ARG_ENABLE(ipsec, [include IP security elements], no)
 ELEMENTS_ARG_ENABLE(radio, [include radio elements], no)
 ELEMENTS_ARG_ENABLE(local, [include local elements], no)
+ELEMENTS_ARG_ENABLE(grid, [include Grid elements (on by default)], yes)
 
 elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
 AC_SUBST(elements_vpath)

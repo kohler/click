@@ -17,12 +17,11 @@
 #include "click_ether.h"
 #include "confparse.hh"
 #include "error.hh"
-
+#include "elements/standard/scheduleinfo.hh"
 
 Hello::Hello()
-  : _timer(this)
+  : Element(0, 1), _timer(this)
 {
-  add_output();
 }
 
 Hello::~Hello()
@@ -57,8 +56,9 @@ Hello::configure(const String &conf, ErrorHandler *errh)
 }
 
 int
-Hello::initialize(ErrorHandler *)
+Hello::initialize(ErrorHandler *errh)
 {
+  ScheduleInfo::join_scheduler(this, errh);
   _timer.attach(this);
   _timer.schedule_after_ms(_period * 1000); // Send an ARP reply periodically.
   return 0;
@@ -69,6 +69,7 @@ Hello::run_scheduled()
 {
   output(0).push(make_hello());
   _timer.schedule_after_ms(_period * 1000);
+  click_chatter("hey ho let's go");
 }
 
 Packet *
@@ -78,9 +79,14 @@ Hello::make_hello()
   memset(p->data(), 0, p->length());
   struct ether_header *eh = (struct ether_header *) p->data();
   memset(eh->ether_dhost, 0xff, 6);
-  eh->ether_type = ETHERTYPE_GRID;
+  eh->ether_type = htons(ETHERTYPE_GRID);
   memcpy(eh->ether_shost, _from.data(), 6);
   return p;
 }
 
 EXPORT_ELEMENT(Hello)
+
+
+
+
+

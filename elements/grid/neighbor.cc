@@ -21,7 +21,6 @@
 
 Neighbor::Neighbor() : Element(1, 0)
 {
-  add_input();  
 }
 
 Neighbor::~Neighbor()
@@ -48,6 +47,7 @@ Neighbor::initialize(ErrorHandler *errh)
 {
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, errh);
+  return 0;
 }
 
 void
@@ -101,7 +101,7 @@ print_nbrs(Element *f, void *thunk)
   int num;
   while (n->_addresses.each(i, addr, num)) {
     s += addr.s();
-    s + '\n';
+    s += '\n';
   }
   return s;
 }
