@@ -77,7 +77,7 @@ nb :: GridRouteTable(ROUTE_TIMEOUT,
 		     MAX_HOPS NUM_HOPS,
                      METRIC est_tx_count);
 
-lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi);
+lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi, lt);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb, li);
 
 grid_demux :: Classifier(OFFSET_GRID_PROTO/GRID_PROTO_NBR_ENCAP,    // encapsulated (data) packets

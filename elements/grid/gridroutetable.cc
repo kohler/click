@@ -29,14 +29,42 @@
 #include "timeutils.hh"
 #include "gridlogger.hh"
 
+#define NEXT_HOP_ETH_FIXUP 0
+
 /* these are here because I am too lazy to make a gridlogger.cc file */
 int GridLogger::_fd = -1;
 bool GridLogger::_log_full_ip = false;
 String GridLogger::_fn;
 
+bool
+GridRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry) 
+{
+  RTEntry *r = _rtes.findp(dest_ip);
+  if (r == 0)
+    return false;
+  
+  entry.dest_ip = dest_ip;
+  entry.dest_loc = r->loc;
+  entry.loc_good = r->loc_good;
+  entry.loc_err = r->loc_err;
+  entry.next_hop_eth = r->next_hop_eth;
+  entry.next_hop_ip = r->next_hop_ip;
+
+  return true;  
+}
+
+void
+GridRouteTable::get_all_entries(Vector<RouteEntry> &vec)
+{
+  for (RTIter iter = _rtes.first(); iter; iter++) {
+    const RTEntry &rte = iter.value();
+    vec.push_back(RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, rte.next_hop_eth, rte.next_hop_ip));
+  }
+}
+
 
 GridRouteTable::GridRouteTable() : 
-  Element(1, 1), _log(0), _dump_tick(0),
+  GridGenericRouteTable(1, 1), _log(0), _dump_tick(0),
   _seq_no(0), _fake_seq_no(0), _bcast_count(0),
   _seq_delay(1),
   _max_hops(3), 
@@ -67,6 +95,8 @@ GridRouteTable::cast(const char *n)
 {
   if (strcmp(n, "GridRouteTable") == 0)
     return (GridRouteTable *) this;
+  else if (strcmp(n, "GenericGridRouteTable") == 0)
+    return (GridGenericRouteTable *) this;
   else
     return 0;
 }
@@ -169,17 +199,19 @@ GridRouteTable::initialize(ErrorHandler *)
 }
 
 
-const GridRouteTable::RTEntry *
-GridRouteTable::current_gateway()
+bool
+GridRouteTable::current_gateway(RouteEntry &entry)
 {
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &f = i.value();
 
-    if (f.is_gateway)
-      return &f;
+    if (f.is_gateway) {
+      entry = RouteEntry(f.dest_ip, f.loc_good, f.loc_err, f.loc, f.next_hop_eth, f.next_hop_ip);
+      return true;
+      }
   }
 
-  return NULL;
+  return false;
 }
 
 
@@ -1620,4 +1652,4 @@ template class BigHashMap<IPAddress, bool>;
 #include <click/vector.cc>
 template class Vector<IPAddress>;
 template class Vector<GridRouteTable::RTEntry>;
-
+template class Vector<GridGenericRouteTable::RouteEntry>;

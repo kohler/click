@@ -160,7 +160,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     click_chatter("LookupGeographicGridRoute %s: unable to forward %s packet with geographic routing", 
 		  id().cc(), grid_hdr::type_string(gh->type).cc());
 #if 0
-    if (gh->type == grid_hdr::GRID_NBR_ENCAP) {
+    if (gh->type ==  grid_hdr::GRID_NBR_ENCAP) {
       int ip_off = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap);
       xp->pull(ip_off);
       IPAddress src_ip(xp->data() + 12);
@@ -188,25 +188,32 @@ LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, Ether
    * destination location to send the packet to.  Our node may be the
    * closest; in that case, the packet should be dropped.
    */
-  IPAddress next_hop;
+
   assert(_li->loc_good());
   double d = grid_location::calc_range(dest_loc, _li->get_current_location());
   bool found_one = false;
-  for (GridRouteTable::RTIter iter = _rt->_rtes.first(); iter; iter++) {
-    const GridRouteTable::RTEntry &rte = iter.value();
+  
+  Vector<GridGenericRouteTable::RouteEntry> rtes;
+  _rt->get_all_entries(rtes);
+  
+  GridGenericRouteTable::RouteEntry best_nbr_entry;
+
+  for (int i = 0; i < rtes.size(); i++) {
+    const GridGenericRouteTable::RouteEntry &rte = rtes[i];
     if (!rte.loc_good)
       continue; 
-    double new_d = grid_location::calc_range(dest_loc, rte.loc);
+    double new_d = grid_location::calc_range(dest_loc, rte.dest_loc);
     if (!found_one) {
       found_one = true;
       d = new_d;
-      next_hop = rte.next_hop_ip;
+      best_nbr_entry = rte;
     }
     else if (new_d < d) {
       d = new_d;
-      next_hop = rte.next_hop_ip;
+      best_nbr_entry = rte;
     }
   }
+
   if (!found_one)
     return false;
 
@@ -221,19 +228,9 @@ LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, Ether
      across hops, so that no intermediate forwarding node will make a
      backwards decision. -- decouto  */
 
-  // find the MAC address
-  GridRouteTable::RTEntry *nent = _rt->_rtes.findp(next_hop);
-  if (nent == 0) {
-    click_chatter("%s: dude, routing table is not consistent -- there is no entry for the next hop", id().cc());
-    return false;
-  }
-  if (nent->num_hops != 1) {
-    click_chatter("%s: dude, routing table is not consistent -- the next hop entry is not one hop away", id().cc());
-    return false;
-  }
-  *dest_eth = nent->next_hop_eth;
-  *dest_ip = nent->next_hop_ip;
-  *best_nbr = next_hop;
+  *dest_eth = best_nbr_entry.next_hop_eth;
+  *dest_ip = best_nbr_entry.next_hop_ip;
+  *best_nbr = best_nbr_entry.dest_ip;
   
   return true;
 } 

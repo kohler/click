@@ -81,15 +81,21 @@
 #include <elements/grid/linktracker.hh>
 #include <elements/grid/linkstat.hh>
 #include "grid.hh"
+#include "gridgenericrt.hh"
 #include <click/timer.hh>
 
 
-#define NEXT_HOP_ETH_FIXUP 0
 
 
 class GridLogger;
 
-class GridRouteTable : public Element {
+class GridRouteTable : public GridGenericRouteTable {
+public:
+  // generic rt methods
+  bool current_gateway(RouteEntry &entry);
+  bool get_one_entry(IPAddress &dest_ip, RouteEntry &entry);
+  void get_all_entries(Vector<RouteEntry> &vec);
+ 
 
 public:
 
@@ -111,6 +117,8 @@ public:
 
   void add_handlers();
   
+
+private:
   /* 
    * route table entry
    */
@@ -187,7 +195,6 @@ public:
     void fill_in(grid_nbr_entry *nb, LinkStat *ls = 0);
     
   };
-  friend class RTEntry;
   
   typedef BigHashMap<IPAddress, RTEntry> RTable;
   typedef RTable::Iterator RTIter;
@@ -197,10 +204,6 @@ public:
 
   void get_rtes(Vector<RTEntry> *retval);
 
-  const RTEntry *current_gateway();
-
-  friend class LookupLocalGridRoute;
-  
 private:
   /* max time to keep an entry in RT */
   int _timeout; // msecs, -1 if we are not timing out entries

@@ -32,7 +32,10 @@ int GridRouteActor::_next_free_cb = 0;
 #define NOISY 0
 
 LookupLocalGridRoute::LookupLocalGridRoute()
-  : Element(2, 4), _rtes(0), _any_gateway_ip(0), _task(this), _log(0)
+  : Element(2, 4), 
+  _gw_info(0), _link_tracker(0), _rtes(0),
+  _any_gateway_ip(0), _task(this), 
+  _log(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -60,8 +63,9 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
-                        cpElement, "GridRouteTable element", &_rtes,
+                        cpElement, "GenericGridRouteTable element", &_rtes,
                         cpElement, "GridGatewayInfo element", &_gw_info,
+			cpElement, "LinkTracker element", &_link_tracker,
 			0);
   _any_gateway_ip = (_ipaddr.addr() & 0xFFffFF00) | 254;
 
@@ -74,24 +78,31 @@ int
 LookupLocalGridRoute::initialize(ErrorHandler *errh)
 {
 
-  if (_rtes && _rtes->cast("GridRouteTable") == 0){
-    errh->warning("%s: GridRouteTable argument %s has the wrong type",
-                  id().cc(),
-                  _rtes->id().cc());
-    _rtes = 0;
+  if (_rtes && _rtes->cast("GridGenericRouteTable") == 0) {
+    return errh->error("%s: GridRouteTable argument %s has the wrong type",
+		       id().cc(),
+		       _rtes->id().cc());
   } else if (_rtes == 0) {
-    errh->warning("%s: no GridRouteTable element given",
-                  id().cc());
+    return errh->error("%s: no GridRouteTable element given",
+		       id().cc());
   }
 
   if (_gw_info && _gw_info->cast("GridGatewayInfo") == 0) {
-    errh->warning("%s: GridGatewayInfo argument %s has the wrong type",
-                  id().cc(),
-                  _gw_info->id().cc());
-    _gw_info = 0; //?
+    return errh->error("%s: GridGatewayInfo argument %s has the wrong type",
+		       id().cc(),
+		       _gw_info->id().cc());
   } else if (_gw_info == 0) {
-    errh->warning("%s: no GridGatewayInfo element given",
-		  id().cc());
+    return errh->error("%s: no GridGatewayInfo element given",
+		       id().cc());
+  }
+
+  if (_link_tracker && _link_tracker->cast("LinkTracker") == 0) {
+    return errh->error("%s: LinkTracker argument %s has the wrong type",
+		       id().cc(),
+		       _link_tracker->id().cc());
+  } else if (_gw_info == 0) {
+    return errh->error("%s: no GridGatewayInfo element given",
+		       id().cc());
   }
 
   if (input_is_pull(0))
@@ -246,10 +257,12 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IP
 {
   assert(dest_eth != 0);
 
-  const GridRouteTable::RTEntry *rte;
+  GridGenericRouteTable::RouteEntry rte;
+  bool found_route;
 
   if (dest_ip == _any_gateway_ip) {
-    rte = _rtes->current_gateway();
+    
+    found_route = _rtes->current_gateway(rte);
       
     // what if we are being asked to forward a grid packet to an
     // internet host, but we have no local routes to a gateway?
@@ -259,29 +272,17 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IP
     // sketchy to me though.
 
   } else {
-    rte = _rtes->_rtes.findp(dest_ip);
+    found_route = _rtes->get_one_entry(dest_ip, rte);
   }
   
   /* did we have a route? */
-  if (rte == 0)
-    return false;
-
-  *dest_eth = rte->next_hop_eth;
-  *next_hop_ip = rte->next_hop_ip;
-
-#if NEXT_HOP_ETH_FIXUP
-#error This is likely to drop lots of packets...
-#error Not to mention it's broken anyway.
-  /* sanity check routing table entries -- does entry's next_hop_eth
-     actually match the next hop's eth? */
-  GridRouteTable::RTEntry *nhr = _rtes->_rtes.findp(rte->next_hop_ip);
-  if (nhr == 0 || nhr->next_hop_eth != rte->next_hop_eth) {
-    click_chatter("LookupLocalGridRoute %s: route table inconsistency looking up route for %s", id().cc(), dest_ip.s().cc());
-    return false;
+  if (found_route) {
+    *dest_eth = rte.next_hop_eth;
+    *next_hop_ip = rte.next_hop_ip;
+    return true;
   }
-#endif
 
-  return true;
+  return false;
 }
 
 
@@ -328,7 +329,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     int sig = 0;
     int qual = 0;
     struct timeval tv;
-    _rtes->_link_tracker->get_stat(next_hop_ip, sig, qual, tv);
+    _link_tracker->get_stat(next_hop_ip, sig, qual, tv);
     unsigned int data2 = (qual << 16) | ((-sig) & 0xFFff);
     notify_route_cbs(packet, dest_ip, GRCB::ForwardDSDV, next_hop_ip, data2);
     output(0).push(packet);

@@ -3,12 +3,12 @@
 
 /*
  * =c
- * LookupLocalGridRoute(MAC-ADDRESS, IP-ADDRESS, UpdateGridRoutes)
+ * LookupLocalGridRoute(MAC-ADDRESS, IP-ADDRESS, GenericGridRouteTable, GridGatewayInfo, LinkTracker)
  *
  * =s Grid
  * =d 
  * Forward packets according to the tables accumulated by the
- * UpdateGridRoutes element.  MAC-ADDRESS and IP-ADDRESS are the local
+ * GenericGridRouteTable element.  MAC-ADDRESS and IP-ADDRESS are the local
  * machine's addresses.
  *
  * Input 0 is from the device, output 0 is to the device.  Both should
@@ -26,17 +26,18 @@
  * e.g., Grid protocol packets with an unknown type.
  *
  * =a
- * LookupGeographicGridRoute
- * UpdateGridRoutes */
+ * LookupGeographicGridRoute, GenericGridRouteTable, GridGatewayInfo, LinkTracker
+ */
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include "gridroutetable.hh"
+#include "gridgenericrt.hh"
 #include "gridroutecb.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
 #include "gridlogger.hh"
+#include "linktracker.hh"
 
 class LookupLocalGridRoute : public Element, public GridRouteActor  {
   public:
@@ -64,8 +65,8 @@ private:
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 
   GridGatewayInfo *_gw_info;
-
-  GridRouteTable *_rtes;
+  LinkTracker *_link_tracker;
+  GridGenericRouteTable *_rtes;
   EtherAddress _ethaddr;
   IPAddress _ipaddr;
   IPAddress _any_gateway_ip;
