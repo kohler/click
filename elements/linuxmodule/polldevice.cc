@@ -213,13 +213,13 @@ PollDevice::run_scheduled()
   skb_list = _dev->rx_poll(_dev, &got);
 
 #if CLICK_DEVICE_STATS
-  if (got > 0 || _activations > 0) {
-    _activations++;
+  if (got > 0 || _activations > 0)
     GET_STATS_RESET(low00, low10, time_now, 
-	            _perfcnt1_poll, _perfcnt2_poll, _time_poll);
-    _pkts_received += got;
-    if (got == 0) _idle_calls++;
-  }
+		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
+  if (got > 0)
+    _activations++;
+  else
+    _idle_calls++;
 #endif
   
   _dev->rx_refill(_dev);
@@ -227,10 +227,10 @@ PollDevice::run_scheduled()
 #if CLICK_DEVICE_STATS
   if (_activations > 0)
     GET_STATS_RESET(low00, low10, time_now, 
-	            _perfcnt1_refill, _perfcnt2_refill, _time_refill);
+		    _perfcnt1_refill, _perfcnt2_refill, _time_refill);
 #endif
 
-  for(int i=0; i<got; i++) {
+  for (int i = 0; i < got; i++) {
     skb = skb_list;
     skb_list = skb_list->next;
     skb->next = skb->prev = NULL;
@@ -304,7 +304,7 @@ PollDevice_read_calls(Element *f, void *)
   PollDevice *kw = (PollDevice *)f;
   return
 #if CLICK_DEVICE_STATS
-    String(kw->_pkts_received) + " packets received\n" +
+    String(kw->_npackets) + " packets received\n" +
     String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_time_poll) + " cycles poll\n" +
     String(kw->_time_refill) + " cycles refill\n" +
