@@ -82,8 +82,9 @@ class ScheduleInfo : public Element { public:
   bool query(const String &, int &) const;
   bool query_prefixes(const String &, int &, String &) const;
   static int query(Element *, ErrorHandler *);
+  static void initialize_task(Element *, Task *, bool sched, ErrorHandler *);
+  static void initialize_task(Element *, Task *, ErrorHandler *);
   static void join_scheduler(Element *, Task *, ErrorHandler *);
-  static void join_scheduler(Element *, Task *, bool sched, ErrorHandler *);
   
  private:
 
@@ -95,9 +96,15 @@ class ScheduleInfo : public Element { public:
 
 
 inline void
+ScheduleInfo::initialize_task(Element *e, Task *t, ErrorHandler *errh)
+{
+  initialize_task(e, t, true, errh);
+}
+
+inline void
 ScheduleInfo::join_scheduler(Element *e, Task *t, ErrorHandler *errh)
 {
-  join_scheduler(e, t, true, errh);
+  initialize_task(e, t, true, errh);
 }
 
 #endif

@@ -158,8 +158,8 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
 }
 
 void
-ScheduleInfo::join_scheduler(Element *e, Task *task, bool schedule,
-			     ErrorHandler *errh)
+ScheduleInfo::initialize_task(Element *e, Task *task, bool schedule,
+			      ErrorHandler *errh)
 {
 #ifdef HAVE_STRIDE_SCHED
   int tickets = query(e, errh);
