@@ -511,7 +511,7 @@ sub check_expects ($$) {
 
 package main;
 
-my $dir;
+my($dir, @show, $show_stdout, $show_stderr);
 
 sub script_fn_to_fn ($) {
     my($fn) = @_;
@@ -535,7 +535,7 @@ sub run_test (;$$) {
     my($fn, $verbose) = @_;
 
     # read the testie
-    my($tt);
+    my($tt, $f);
     if (!defined($fn) || $fn eq '-') {
 	$tt = Testie::read(STDIN, "<stdin>");
     } else {
@@ -557,9 +557,23 @@ sub run_test (;$$) {
 
     # run the script
     my($actual_stdin) = ($tt->have_file('stdin') ? script_fn_to_fn('stdin') : "/dev/null");
-    my($actual_stdout) = ($tt->have_file('stdout') ? script_fn_to_fn('stdout') : "/dev/null");
+    my($actual_stdout) = ($show_stdout || $tt->have_file('stdout') ? script_fn_to_fn('stdout') : "/dev/null");
     my($actual_stderr) = script_fn_to_fn('stderr');
     my($exitval) = system("cd $dir; /bin/sh script <$actual_stdin >$actual_stdout 2>$actual_stderr");
+
+    # echo files
+    foreach $f (@show) {
+	if (-r out_script_fn_to_fn($f)) {
+	    print "$fn: $f\n", "=" x 79, "\n";
+	    local($/) = undef;
+	    open(X, out_script_fn_to_fn($f));
+	    $_ = <X>;
+	    close(X);
+	    print $_, "=" x 79, "\n";
+	} else {
+	    print "$fn: $f does not exist\n";
+	}
+    }
 
     # if it exited with a bad value, quit
     if ($exitval) {
@@ -639,9 +653,10 @@ sub argcmp ($$$;\$) {
 
 $dir = "/tmp/testie$$";
 
-my(@tests, $verbose, $preserve_temporaries);
+my(@tests, $verbose, $preserve_temporaries, $arg);
 
-foreach $_ (@ARGV) {
+while (@ARGV) {
+    $_ = shift @ARGV;
     if (/^([A-Za-z_]\w*)=(.*)$/s) {
 	$Testie::_variables{$1} = $2;
     } elsif (/^-$/ || !/^-/) {
@@ -654,6 +669,13 @@ foreach $_ (@ARGV) {
 	help;
     } elsif (argcmp($_, '--preserve-temporaries', 1)) {
 	$preserve_temporaries = 1;
+    } elsif (/^-s$/ || argcmp($_, '--show', 1)) {
+	usage if @ARGV == 0;
+	push @show, (shift @ARGV);
+    } elsif (/^-s(.+)$/) {
+	push @show, $1;
+    } elsif (argcmp($_, '--show', 1, $arg)) {
+	push @show, $arg;
     } else {
 	usage;
     }
@@ -667,6 +689,12 @@ if (-d $dir) {
 mkdir $dir || die "cannot create $dir directory: $!\n";
 
 my($exitvalue) = 0;
+
+# check @show for stdout/stderr
+foreach my $s (@show) {
+    $show_stdout = 1 if $s eq 'stdout';
+    $show_stderr = 1 if $s eq 'stderr';
+}
 
 push @tests, '-' if !@tests;
 foreach my $test (@tests) {
@@ -727,6 +755,10 @@ Print help information and exit.
 =item --preserve-temporaries
 
 Preserve the temporary directory created for the test.
+
+=item -s, --show FILE
+
+Echo the contents of file FILE on completion.
 
 =back
 
