@@ -69,6 +69,10 @@ class GridLogger {
     v = htonl(v);
     add_bytes(&v, sizeof(v));
   }
+  void dump_buf() {
+    for (size_t i = 0; i < _bufptr; i++)
+      click_chatter("XXXX %x ", (unsigned) _buf[i]);
+  }
   void add_timeval(struct timeval tv) {
     tv.tv_sec = htonl(tv.tv_sec);
     tv.tv_usec = htonl(tv.tv_usec);
@@ -227,10 +231,10 @@ public:
 
   // assumes Grid packet
   void log_tx_err(const Packet *p, int err, struct timeval when) {
-    if (_state != WAITING)
+    if (_state != WAITING) 
       return;
     struct click_ether *eh = (click_ether *) (p->data());
-    if (eh->ether_type != ETHERTYPE_GRID)
+     if (eh->ether_type != htons(ETHERTYPE_GRID)) 
       return;
     add_one_byte(TX_ERR_CODE);
     add_long((unsigned long) err);
@@ -241,7 +245,7 @@ public:
     case grid_hdr::GRID_LR_HELLO:
     case grid_hdr::GRID_HELLO: {
       struct grid_hello *hlo = (struct grid_hello *) (gh + 1);
-      add_long(hlo->seq_no);
+      add_long(ntohl(hlo->seq_no));
       break;
     }
     case grid_hdr::GRID_NBR_ENCAP: {
@@ -252,6 +256,7 @@ public:
     default:
       ; /* nothing */
     }
+    // dump_buf();
     write_buf();
   }
 
