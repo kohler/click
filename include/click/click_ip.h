@@ -111,4 +111,7 @@ struct click_ip {
 #define IPOPT_SSRR		137	/* strict source route */
 #define IPOPT_RA		148	/* router alert */
 
+#define IP_ISFRAG(iph)	  (((iph)->ip_off & htons(IP_MF | IP_OFFMASK)) != 0)
+#define IP_FIRSTFRAG(iph) (((iph)->ip_off & htons(IP_OFFMASK)) == 0)
+
 #endif

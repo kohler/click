@@ -1,6 +1,6 @@
 #ifndef CLICK_IP6_H
 #define CLICK_IP6_H
-#include "click_ip.h"
+#include <click/click_ip.h>
 
 /*
  * click_ip6.h -- our own definitions of IP6 headers

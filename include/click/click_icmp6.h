@@ -1,6 +1,6 @@
 #ifndef CLICK_ICMP6_H
 #define CLICK_ICMP6_H
-#include "click_ip6.h"
+#include <click/click_ip6.h>
 
 /*
  * click_icmp6.h -- our own definitions for ICMP6 packets
