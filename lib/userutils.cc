@@ -170,6 +170,45 @@ percent_substitute(const String &pattern, int format1, ...)
   }
 }
 
+int
+click_strcmp(const String &a, const String &b)
+{
+    const char *ad = a.data(), *ae = a.data() + a.length();
+    const char *bd = b.data(), *be = b.data() + b.length();
+    
+    while (ad < ae && bd < be) {
+	if (isdigit(*ad) && isdigit(*bd)) {
+	    const char *iad = ad, *ibd = bd;
+	    int an = 0, bn = 0;
+	    while (ad < ae && isdigit(*ad))
+		an = (an * 10) + *ad - '0', ad++;
+	    while (bd < be && isdigit(*bd))
+		bn = (bn * 10) + *bd - '0', bd++;
+	    if (an != bn)
+		return an - bn;
+	    else if ((ad - iad) != (bd - ibd))
+		return (bd - ibd) - (ad - iad);
+	} else if (isdigit(*ad))
+	    return (*bd == '@' ? 1 : -1);
+	else if (isdigit(*bd))
+	    return (*ad == '@' ? -1 : 1);
+	else {
+	    int d = tolower(*ad) - tolower(*bd);
+	    if (d != 0)
+		return d;
+	    ad++;
+	    bd++;
+	}
+    }
+
+    if ((ae - ad) != (be - bd))
+	return (ae - ad) - (be - bd);
+    else {
+	assert(a.length() == b.length());
+	return memcmp(a.data(), b.data(), a.length());
+    }
+}
+
 String
 file_string(FILE *f, ErrorHandler *errh)
 {
