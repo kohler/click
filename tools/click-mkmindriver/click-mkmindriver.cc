@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * click-mkmindriver.cc -- flatten a Click configuration (remove compounds)
+ * click-mkmindriver.cc -- produce a minimum Click driver Makefile setup
  * Eddie Kohler
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
