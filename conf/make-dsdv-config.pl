@@ -206,6 +206,7 @@ my $sizeof_grid_hdr = get_proto_info("sizeof_grid_hdr");
 my $sizeof_grid_nbr_encap = get_proto_info("sizeof_grid_nbr_encap");
 my $offset_encap_ip = 14 + $sizeof_grid_hdr + $sizeof_grid_nbr_encap;
 my $tun_input_headroom = $sizeof_grid_hdr + $sizeof_grid_nbr_encap;
+my $tun_mtu = 1500 - $sizeof_grid_hdr - $sizeof_grid_nbr_encap;
 
 my $now = `date`;
 chomp $now;
@@ -406,7 +407,7 @@ arp_demux [1] -> Strip(14) -> ip_input;
 }
 else {
     print ";
-to_host_encap :: KernelTun(me/24, HEADROOM $tun_input_headroom) -> ip_input;
+to_host_encap :: KernelTun(me/24, HEADROOM $tun_input_headroom, MTU $tun_mtu) -> ip_input;
 
 // not needed in userlevel
 Idle -> arp_demux [0] -> Idle;
@@ -417,7 +418,7 @@ ControlSocket(tcp, 7777);
 }
 
 print "
-ip_demux [0] -> IPPrint('IP loopback') -> to_host_encap;  // loopback packet sent by us
+ip_demux [0] -> to_host_encap;  // loopback packet sent by us, required on BSD userlevel
 ip_demux [1] -> GridEncap(me:eth, me:ip) -> dec_ip_ttl;   // forward packet sent by us
 
 grid_data_demux [0] -> Strip($offset_encap_ip) -> to_host_encap;  // receive packet from net for us  
