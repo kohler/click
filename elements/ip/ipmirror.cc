@@ -22,6 +22,7 @@
 #include "ipmirror.hh"
 #include <click/click_ip.h>
 #include <click/click_udp.h>
+#include <click/click_tcp.h>
 
 IPMirror::IPMirror()
   : Element(1, 1)
@@ -51,6 +52,12 @@ IPMirror::simple_action(Packet *p_in)
     unsigned short tmpp = udph->uh_sport;
     udph->uh_sport = udph->uh_dport;
     udph->uh_dport = tmpp;
+    if (iph->ip_p == IP_PROTO_TCP) {
+      click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+      unsigned seqn = tcph->th_seq;
+      tcph->th_seq = tcph->th_ack;
+      tcph->th_ack = seqn;
+    }
   }
   
   return p;
