@@ -42,39 +42,31 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0), 
-    _dev_idle(0), _last_dma_length(0), _last_tx(0)
+    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0)
 {
 #if DEV_KEEP_STATS
-  _dma_full_resched = 0;
-  _q_burst_resched = 0;
-  _q_full_resched = 0;
-  _q_empty_resched = 0;
   _idle_calls = 0; 
   _busy_returns = 0; 
-  _hard_start = 0; 
   _activations = 0; 
-  _pkts_on_dma = 0; 
   _pkts_sent = 0; 
-  _tks_allocated = 0;
+  _time_clean = 0;
+  _time_tx = 0;
+  _time_running = 0;
 #endif
 }
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
-    _dev_idle(0), _last_dma_length(0), _last_tx(0)
+    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0)
 {
 #if DEV_KEEP_STATS
-  _dma_full_resched = 0;
-  _q_burst_resched = 0;
-  _q_full_resched = 0;
-  _q_empty_resched = 0;
   _idle_calls = 0; 
   _busy_returns = 0; 
-  _hard_start = 0; 
   _activations = 0; 
-  _pkts_on_dma = 0; 
   _pkts_sent = 0; 
-  _tks_allocated = 0;
+  _time_clean = 0;
+  _time_tx = 0;
+  _time_running = 0;
 #endif
 }
 
@@ -181,10 +173,12 @@ ToDevice::initialize(ErrorHandler *errh)
       registered_writers++;
     }
     
+#ifndef RR_SCHED
     // start out with default number of tickets, inflate up to max
     int max_tickets = ScheduleInfo::query(this, errh);
     set_max_tickets(max_tickets);
     set_tickets(ScheduleInfo::DEFAULT);
+#endif
     join_scheduler();
   }
 
@@ -255,11 +249,18 @@ ToDevice::tx_intr()
   int busy;
   int sent = 0;
   int queued_pkts;
- 
-#if HAVE_POLLING
-  queued_pkts = _dev->clean_tx(_dev);
+
 #if DEV_KEEP_STATS
-  _pkts_on_dma += queued_pkts;
+  unsigned long time_now = get_cycles();
+#endif
+
+#if HAVE_POLLING
+  queued_pkts = _dev->tx_clean(_dev);
+
+#if DEV_KEEP_STATS
+  if (_activations>0)
+    _time_clean += get_cycles()-time_now;
+  unsigned long time_now_tx = get_cycles();
 #endif
 #endif
 
@@ -268,17 +269,18 @@ ToDevice::tx_intr()
     if (p = input(0).pull()) {
       queue_packet(p);
       sent++;
-    } 
+    }
     else break;
   }
-  
+
 #if DEV_KEEP_STATS
   if (_activations > 0 || sent > 0) {
     _activations++;
-    _tks_allocated += tickets();
     if (sent == 0) _idle_calls++;
+    if (sent > 0) _pkts_sent+=sent;
+    if (busy) _busy_returns++;
+    if (sent>0) _time_tx += get_cycles()-time_now_tx;
   }
-  if (sent > 0) _pkts_sent+=sent;
 #endif
 
 #if HAVE_POLLING
@@ -286,21 +288,13 @@ ToDevice::tx_intr()
     _dev_idle++;
     if (_dev_idle==1024) {
       /* device didn't send anything, ping it */
-      _dev->start_tx(_dev);
-#if DEV_KEEP_STATS
-      _hard_start++;
-#endif
+      _dev->tx_start(_dev);
       _dev_idle=0;
     }
   } else
     _dev_idle = 0;
 #endif
  
-#if DEV_KEEP_STATS
-  if (busy)
-    _busy_returns++;
-#endif
-  
   /*
    * If we have packets left in the queue, arrange for
    * net_bh()/qdisc_run_queues() to call us when the
@@ -316,66 +310,46 @@ ToDevice::tx_intr()
     }
   }
   
-  /* adjusting tickets. goal: each time we are called, we should send a few
-   * packets, but also keep dma ring floating between 1/3 to 3/4 full.
-   */
+#ifndef RR_SCHED
+  /* adjusting tickets */
 
 #if HAVE_POLLING
   int dmal = _dev->tx_dma_length;
 #else
   int dmal = 16;
 #endif
+
   int dma_thresh_high = dmal-dmal/4;
   int dma_thresh_low  = dmal/4;
   int adj = tickets()/4;
   if (adj<2) adj=2;
 
-  /* tx dma ring was fairly full, and it was full last time as well, so we
-   * should slow down */
-
+  /* tx dma ring was fairly full, slow down */
   if (busy && queued_pkts > dma_thresh_high 
-      && _last_dma_length > dma_thresh_high) { 
-    adj = 0-adj;
-#if DEV_KEEP_STATS
-    if (_activations>0) _dma_full_resched++;
-#endif
-  }
-
+      && _last_dma_length > dma_thresh_high) adj=0-adj;
   /* not much there upstream, so slow down */
-  else if (!busy && sent < dma_thresh_low) {
-    adj = 0-adj;
-#if DEV_KEEP_STATS
-    if (_activations>0) _q_empty_resched++;
-#endif
-  }
-  
+  else if (!busy && sent < dma_thresh_low) adj=0-adj;
   /* handle burstiness: start a bit faster */
   else if (sent > dma_thresh_high && !busy && 
-           _last_tx < dma_thresh_low && !_last_busy) {
-    adj *= 2;
-#if DEV_KEEP_STATS
-    if (_activations>0) _q_burst_resched++;
-#endif
-  }
-  
+           _last_tx < dma_thresh_low && !_last_busy) adj*=2;
   /* prevent backlog and keep device running */
   else if (sent > dmal/2) {
-    if (sent > dma_thresh_high) 
-      /* semi-bursty: start a bit faster if we sent a lot */
-      if (adj<8) adj=8;
-#if DEV_KEEP_STATS
-    if (_activations>0) _q_full_resched++;
-#endif
+    /* semi-bursty: start a bit faster if we sent a lot */
+    if (sent > dma_thresh_high) if (adj<8) adj=8;
   }
-  
   else adj = 0;
-  
+
   adj_tickets(adj);
   _last_dma_length = queued_pkts;
   _last_tx = sent;
   _last_busy = busy;
 
   reschedule();
+#endif
+
+#if DEV_KEEP_STATS
+  if (_activations>0) _time_running += get_cycles()-time_now;
+#endif
 }
 
 void
@@ -400,7 +374,7 @@ ToDevice::queue_packet(Packet *p)
   }
 
 #if HAVE_POLLING
-  int ret = _dev->queue_tx(skb1, _dev);
+  int ret = _dev->tx_queue(skb1, _dev);
 #else
   int ret = _dev->hard_start_xmit(skb1, _dev);
 #endif
@@ -422,20 +396,15 @@ ToDevice_read_calls(Element *f, void *)
   ToDevice *td = (ToDevice *)f;
   return
 #if DEV_KEEP_STATS
-    String(td->max_tickets()) + " maximum number of tickets\n" +
-    String(td->_hard_start) + " hard transmit start\n" +
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_busy_returns) + " device busy returns\n" +
-    String(td->_pkts_on_dma) + " packets seen pending on DMA ring\n" +
-    String(td->_tks_allocated) + " total tickets seen\n" +
-    String(td->_dma_full_resched) + " dma full resched\n" +
-    String(td->_q_burst_resched) + " q burst resched\n" +
-    String(td->_q_full_resched) + " q full resched\n" +
-    String(td->_q_empty_resched) + " q empty resched\n" +
     String(td->_pkts_sent) + " packets sent\n" +
+    String(td->_time_clean) + " cycles cleaning\n" +
+    String(td->_time_tx) + " cycles tx\n" +
+    String(td->_time_running) + " cycles running\n" +
     String(td->_activations) + " transmit activations\n";
 #else
-    String(td->max_tickets()) + " maximum number of tickets\n";
+    String();
 #endif
 }
 

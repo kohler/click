@@ -29,39 +29,33 @@ extern "C" {
 }
 
 PollDevice::PollDevice()
-  : _dev(0), _last_dma_length(0)
+  : _dev(0), _last_rx(0)
 {
   add_output();
 #if DEV_KEEP_STATS
-  _dma_burst_resched = 0;
-  _dma_full_resched = 0;
-  _dma_empty_resched = 0;
   _idle_calls = 0;
-  _dma_full = 0; 
   _pkts_received = 0;
-  _pkts_on_dma = 0;
   _activations = 0;
-  _tks_allocated = 0;
+  _time_recv = 0;
+  _time_pushing = 0;
+  _time_running = 0;
 #endif
 }
 
 PollDevice::PollDevice(const String &devname)
-  : _devname(devname), _dev(0), _last_dma_length(0)
+  : _devname(devname), _dev(0), _last_rx(0)
 {
 #ifdef CLICK_BENCHMARK
   _bm_done = 0;
 #endif
   add_output();
 #if DEV_KEEP_STATS
-  _dma_burst_resched = 0;
-  _dma_full_resched = 0;
-  _dma_empty_resched = 0;
   _idle_calls = 0;
-  _dma_full = 0;
   _pkts_received = 0;
-  _pkts_on_dma = 0;
   _activations = 0;
-  _tks_allocated = 0;
+  _time_recv = 0;
+  _time_pushing = 0;
+  _time_running = 0;
 #endif
 }
 
@@ -111,10 +105,12 @@ PollDevice::initialize(ErrorHandler *errh)
   
   _dev->intr_off(_dev);
 
+#ifndef RR_SCHED
   // start out with default number of tickets, inflate up to max
   int max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
   set_tickets(ScheduleInfo::DEFAULT);
+#endif
   join_scheduler();
   
   return 0;
@@ -129,7 +125,6 @@ PollDevice::uninitialize()
 {
 #if HAVE_POLLING
   if (_dev) {
-    _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
     unschedule();
   }
@@ -142,15 +137,16 @@ PollDevice::run_scheduled()
 #if HAVE_POLLING
   struct sk_buff *skb;
   int got=0;
+  Packet *new_pkts[POLLDEV_MAX_PKTS_PER_RUN];
 
-  // _dev->clean_tx(_dev);
-
-  /* order of && clauses important */
-  while(got<POLLDEV_MAX_PKTS_PER_RUN && (skb = _dev->rx_poll(_dev))) {
 #if DEV_KEEP_STATS
-    _pkts_received++;
-#endif
-
+  unsigned long time_now = get_cycles();
+#endif   
+  
+  /* need to have this somewhere */
+  // _dev->tx_clean(_dev);
+  
+  while(got<POLLDEV_MAX_PKTS_PER_RUN && (skb = _dev->rx_poll(_dev))) {
     assert(skb->data - skb->head >= 14);
     assert(skb->mac.raw == skb->data - 14);
     assert(skb_shared(skb) == 0);
@@ -162,67 +158,61 @@ PollDevice::run_scheduled()
     if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
       p->set_mac_broadcast_anno(1);
 
-    output(0).push(p);
+    new_pkts[got] = p;
     got++;
   }
   
-  /* !!! careful: if POLLDEV_MAX_PKTS_PER_RUN is greater than RX ring size, we
-   * need to fill_rx more often... by default, RX ring size is 32, and we set
-   * POLLDEV_MAX_PKTS_PER_RUN to 8, so we can fill once per run */
+  /* if POLLDEV_MAX_PKTS_PER_RUN is greater than RX ring size, we need to fill
+   * more often... */
+  _dev->rx_refill(_dev);
 
-  int queued_pkts_now = _dev->clean_rx(_dev);
-#if DEV_KEEP_STATS
-  _pkts_on_dma += queued_pkts_now;
-#endif
-  int queued_pkts_before = queued_pkts_now + got;
-  
 #if DEV_KEEP_STATS
   if (_activations > 0 || got > 0) {
     _activations++;
-    _tks_allocated += tickets();
     if (got == 0) _idle_calls++;
-    if (queued_pkts_before >= _dev->rx_dma_length-4)
-      _dma_full++;
+    _pkts_received += got;
+    _time_recv += get_cycles()-time_now;
   }
 #endif
 
+#if DEV_KEEP_STATS
+  unsigned long tmptime = get_cycles();
+#endif
+
+  for(int i=0; i<got; i++)
+    output(0).push(new_pkts[i]);
+
+#if DEV_KEEP_STATS
+  if (_activations > 0 || got > 0)
+    _time_pushing += get_cycles()-tmptime;
+#endif
+
+#ifndef RR_SCHED
   /* adjusting tickets */
-  int dmal = _dev->rx_dma_length;
-  int dma_thresh_high = dmal/4;
-  int dma_thresh_low  = dmal/8;
   int adj = tickets()/4;
   if (adj<2) adj=2;
-
   /* handles burstiness: fast start */
-  if (queued_pkts_before > dma_thresh_high && 
-      _last_dma_length < dma_thresh_low) {
-    adj *= 2;
-#if DEV_KEEP_STATS
-    if (_activations>0) _dma_burst_resched++;
-#endif
-  }
-
+  if (got == POLLDEV_MAX_PKTS_PER_RUN && 
+      _last_rx <= POLLDEV_MAX_PKTS_PER_RUN/4) adj*=2;
   /* rx dma ring is fairly full, schedule ourselves more */
-  else if (queued_pkts_before > dma_thresh_high) {
-#if DEV_KEEP_STATS
-    if (_activations>0) _dma_full_resched++;
-#endif
-  }
- 
+  else if (got == POLLDEV_MAX_PKTS_PER_RUN);
   /* rx dma ring was fairly empty, schedule ourselves less */
-  else if (queued_pkts_before < dma_thresh_low && 
-           _last_dma_length < dma_thresh_low) {
-    adj=0-adj;
-#if DEV_KEEP_STATS
-    if (_activations>0) _dma_empty_resched++;
-#endif
-  }
+  else if (got < POLLDEV_MAX_PKTS_PER_RUN/4 && 
+           _last_rx < POLLDEV_MAX_PKTS_PER_RUN/4) adj=0-adj;
+  else adj=0;
 
   adj_tickets(adj);
-  _last_dma_length = queued_pkts_before;
 
+  _last_rx = got;
   reschedule();
 #endif
+
+#if DEV_KEEP_STATS
+  if (_activations>0)
+    _time_running += get_cycles()-time_now;
+#endif
+
+#endif /* HAVE_POLLING */
 }
  
 static String
@@ -231,18 +221,14 @@ PollDevice_read_calls(Element *f, void *)
   PollDevice *kw = (PollDevice *)f;
   return
 #if DEV_KEEP_STATS
-    String(kw->max_tickets()) + " maximum number of tickets\n" + 
-    String(kw->_pkts_received) + " packets received\n" +
-    String(kw->_dma_full) + " times DMA ring seems full\n" +
-    String(kw->_pkts_on_dma) + " packets seen pending on DMA ring\n" +
-    String(kw->_dma_burst_resched) + " dma burst resched\n" +
-    String(kw->_dma_full_resched) + " dma full resched\n" +
-    String(kw->_dma_empty_resched) + " dma empty resched\n" +
-    String(kw->_tks_allocated) + " total tickets seen\n" +
     String(kw->_idle_calls) + " idle calls\n" +
+    String(kw->_pkts_received) + " packets received\n" +
+    String(kw->_time_recv) + " cycles rx\n" +
+    String(kw->_time_pushing) + " cycles pushing\n" +
+    String(kw->_time_running) + " cycles running\n" +
     String(kw->_activations) + " activations\n";
 #else
-    String(kw->max_tickets()) + " maximum number of tickets\n";
+    String();
 #endif
 }
 

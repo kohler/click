@@ -52,20 +52,17 @@ class PollDevice : public Element {
 #if DEV_KEEP_STATS
   // statistics
   unsigned long long _pkts_received;
-  unsigned long long _pkts_on_dma;
   unsigned long long _activations;
-  unsigned long long _tks_allocated;
-  unsigned long long _dma_burst_resched;
-  unsigned long long _dma_full_resched;
-  unsigned long long _dma_empty_resched;
   unsigned long long _idle_calls;
-  unsigned long long _dma_full;
+  unsigned long long _time_recv;
+  unsigned long long _time_pushing;
+  unsigned long long _time_running;
 #endif
   
+  struct device *_dev;
  private:
   String _devname;
-  struct device *_dev;
-  int _last_dma_length;
+  unsigned int _last_rx;
 };
 
 #endif 

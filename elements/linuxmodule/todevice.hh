@@ -53,18 +53,13 @@ class ToDevice : public Element {
 
 #if DEV_KEEP_STATS
   // Statistics.
-  int _idle_calls;   // # of times called because driver was idle.
-  int _busy_returns; // # of times returned because dev->tbusy.
-  int _hard_start;   // # of hard xmit starts
-  unsigned long long _activations;  // # number of activations
-  unsigned long long _pkts_on_dma;  // # number of packet left on tx ring
-  unsigned long long _pkts_sent;    // # number of packet sent
-  unsigned long long _tks_allocated;
-
-  unsigned long long _dma_full_resched;
-  unsigned long long _q_burst_resched;
-  unsigned long long _q_full_resched;
-  unsigned long long _q_empty_resched;
+  unsigned long long _idle_calls;  
+  unsigned long long _busy_returns;
+  unsigned long long _activations; 
+  unsigned long long _pkts_sent;    
+  unsigned long long _time_clean;
+  unsigned long long _time_tx;
+  unsigned long long _time_running;
 #endif
   
  private:
