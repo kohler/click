@@ -1,3 +1,13 @@
+2001-10-02 Tuesday 20:30  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdevice.cc (1.32): update for BSD
+
+2001-10-02 Tuesday 20:18  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fromdevice.cc (1.31), fromdevice.hh (1.16):
+	FromDevice.u: add kernel_drops handler and function, to communicate
+	some idea about how many packets were dropped by the kernel
+
 2001-10-01 Monday 19:03  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: lookupiprouteron.cc (1.7), lookupiprouteron.hh (1.6):
