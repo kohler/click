@@ -33,7 +33,7 @@ from_dev :: FromDevice(ath0)
 -> extra_decap :: ExtraDecap()
 -> phyerr_filter :: FilterPhyErr()
 -> tx_filter :: FilterTX()
--> dupe :: WifiDupeFilter(
+-> dupe :: WifiDupeFilter()
 -> wifi_cl :: Classifier(0/08%0c 1/00%03) //nods data
 -> WifiDecap()
 -> SetPacketType(HOST)
