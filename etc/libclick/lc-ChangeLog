@@ -1,3 +1,7 @@
+2001-10-20 Saturday 02:58  Eddie Kohler <kohler@aciri.org>
+
+	* config-userlevel.h.in, configure.in: add HAVE_TERMIO_H
+
 2001-10-19 Friday 23:23  Eddie Kohler <kohler@aciri.org>
 
 	* config-userlevel.h.in, configure.in: other changes to support

@@ -1,6 +1,21 @@
+2001-10-20 Saturday 03:01  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/progressbar.cc (1.7): nitlet
+
+2001-10-20 Saturday 02:58  Eddie Kohler <kohler@aciri.org>
+
+	* config-userlevel.h.in (1.4), configure.in (1.154),
+	elements/userlevel/progressbar.cc (1.6),
+	etc/libclick/lc-configure.in (1.14): add HAVE_TERMIO_H
+
+2001-10-20 Saturday 02:55  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/progressbar.cc (1.5): nitlets
+
 2001-10-20 Saturday 02:40  Eddie Kohler <kohler@aciri.org>
 
-	* elements/userlevel/: progressbar.cc (1.4), progressbar.hh (1.3):
+	* elements/: analysis/fromipsumdump.cc (1.6),
+	userlevel/progressbar.cc (1.4), userlevel/progressbar.hh (1.3):
 	finish off ProgressBar for now
 
 2001-10-20 Saturday 02:29  Eddie Kohler <kohler@aciri.org>
