@@ -16,42 +16,42 @@
 #define WIFI_EXTRA_MAGIC  0x7492001
 
 enum {
-  WIFI_EXTRA_TX                    = (1<<0), /* packet transmission */
-  WIFI_EXTRA_TX_FAIL               = (1<<1), /* transmission failed */
-  WIFI_EXTRA_TX_USED_ALT_RATE      = (1<<2), /* used alternate bitrate */
-  WIFI_EXTRA_RX_ERR                = (1<<3), /* failed crc check */
-  WIFI_EXTRA_RX_MORE               = (1<<4), /* first part of a fragmented skb */
-  WIFI_EXTRA_NO_SEQ                = (1<<5),
-  WIFI_EXTRA_NO_TXF                = (1<<6),
-  WIFI_EXTRA_DO_RTS_CTS             = (1<<7),
-  WIFI_EXTRA_DO_CTS             = (1<<8),
+  WIFI_EXTRA_TX			= (1<<0), /* packet transmission */
+  WIFI_EXTRA_TX_FAIL		= (1<<1), /* transmission failed */
+  WIFI_EXTRA_TX_USED_ALT_RATE	= (1<<2), /* used alternate bitrate */
+  WIFI_EXTRA_RX_ERR		= (1<<3), /* failed crc check */
+  WIFI_EXTRA_RX_MORE		= (1<<4), /* first part of a fragmented skb */
+  WIFI_EXTRA_NO_SEQ		= (1<<5),
+  WIFI_EXTRA_NO_TXF		= (1<<6),
+  WIFI_EXTRA_DO_RTS_CTS		= (1<<7),
+  WIFI_EXTRA_DO_CTS		= (1<<8)
 };
 
 
 
 CLICK_SIZE_PACKED_STRUCTURE(
 struct click_wifi_extra {,
-  u_int32_t magic;
-  u_int32_t flags;
+  uint32_t magic;
+  uint32_t flags;
 
-  u_int8_t rssi;
-  u_int8_t silence;
-  u_int8_t power;
-  u_int8_t pad;
+  uint8_t rssi;
+  uint8_t silence;
+  uint8_t power;
+  uint8_t pad;
 
-  u_int8_t rate;              /* bitrate in Mbps*2 */
-  u_int8_t rate1;              /* bitrate in Mbps*2 */
-  u_int8_t rate2;              /* bitrate in Mbps*2 */
-  u_int8_t rate3;              /* bitrate in Mbps*2 */
+  uint8_t rate;              /* bitrate in Mbps*2 */
+  uint8_t rate1;              /* bitrate in Mbps*2 */
+  uint8_t rate2;              /* bitrate in Mbps*2 */
+  uint8_t rate3;              /* bitrate in Mbps*2 */
 
-  u_int8_t max_tries;
-  u_int8_t max_tries1;
-  u_int8_t max_tries2;
-  u_int8_t max_tries3;
+  uint8_t max_tries;
+  uint8_t max_tries1;
+  uint8_t max_tries2;
+  uint8_t max_tries3;
 
-  u_int8_t virt_col;
-  u_int8_t retries;
-  u_int16_t len;
+  uint8_t virt_col;
+  uint8_t retries;
+  uint16_t len;
 });
 
 
@@ -60,12 +60,12 @@ struct click_wifi_extra {,
  */
 CLICK_SIZE_PACKED_STRUCTURE(
 struct click_wifi {,
-	u_int8_t	i_fc[2];
-	u_int8_t	i_dur[2];
-	u_int8_t	i_addr1[6];
-	u_int8_t	i_addr2[6];
-	u_int8_t	i_addr3[6];
-	u_int8_t	i_seq[2];
+	uint8_t		i_fc[2];
+	uint8_t		i_dur[2];
+	uint8_t		i_addr1[6];
+	uint8_t		i_addr2[6];
+	uint8_t		i_addr3[6];
+	uint8_t		i_seq[2];
 });
 
 #define	WIFI_FC0_VERSION_MASK		0x03
@@ -131,7 +131,7 @@ struct click_wifi {,
  *		octect length
  *		octect information[length[
  */
-typedef u_int8_t *	wifi_mgt_beacon_t;
+typedef uint8_t *	wifi_mgt_beacon_t;
 
 #define WIFI_BEACON_INTERVAL(beacon) \
 	(beacon[8] + (beacon[9] << 8))
@@ -156,53 +156,53 @@ typedef u_int8_t *	wifi_mgt_beacon_t;
 struct wifi_information {
 	char	ssid[WIFI_NWID_LEN+1];
 	struct rates {
-		u_int8_t 	*p;
+		uint8_t 	*p;
 	} rates;
 	struct fh {
-		u_int16_t 	dwell;
-		u_int8_t 	set;
-		u_int8_t 	pattern;
-		u_int8_t 	index;
+		uint16_t 	dwell;
+		uint8_t 	set;
+		uint8_t 	pattern;
+		uint8_t 	index;
 	} fh;
 	struct ds {
-		u_int8_t	channel;
+		uint8_t		channel;
 	} ds;
 	struct cf {
-		u_int8_t	count;
-		u_int8_t	period;
-		u_int8_t	maxdur[2];
-		u_int8_t	dur[2];
+		uint8_t		count;
+		uint8_t		period;
+		uint8_t		maxdur[2];
+		uint8_t		dur[2];
 	} cf;
 	struct tim {
-		u_int8_t 	count;
-		u_int8_t 	period;
-		u_int8_t 	bitctl;
-		/* u_int8_t 	pvt[251]; The driver never needs to use this */
+		uint8_t 	count;
+		uint8_t 	period;
+		uint8_t 	bitctl;
+		/* uint8_t 	pvt[251]; The driver never needs to use this */
 	} tim;
 	struct ibss {
-	    	u_int16_t	atim;
+	    	uint16_t	atim;
 	} ibss;
 	struct challenge {
-		u_int8_t 	*p;
-		u_int8_t	len;
+		uint8_t 	*p;
+		uint8_t		len;
 	} challenge;
 };
 
-#define WIFI_RATES_MAXSIZE              15
-#define WIFI_NWID_MAXSIZE               32
+#define WIFI_RATES_MAXSIZE	15
+#define WIFI_NWID_MAXSIZE	32
 
 enum {
-  WIFI_ELEMID_SSID	     = 0,
-  WIFI_ELEMID_RATES	     = 1,
-  WIFI_ELEMID_FHPARMS	     = 2,
-  WIFI_ELEMID_DSPARMS	     = 3,
-  WIFI_ELEMID_CFPARMS	     = 4,
-  WIFI_ELEMID_TIM	     = 5,
-  WIFI_ELEMID_IBSSPARMS	     = 6,
-  WIFI_ELEMID_CHALLENGE	     = 16,
-  WIFI_ELEMID_ERP	     = 42,
-  WIFI_ELEMID_XRATES         = 50,
-  WIFI_ELEMID_VENDOR	     = 221,
+  WIFI_ELEMID_SSID		= 0,
+  WIFI_ELEMID_RATES		= 1,
+  WIFI_ELEMID_FHPARMS		= 2,
+  WIFI_ELEMID_DSPARMS		= 3,
+  WIFI_ELEMID_CFPARMS		= 4,
+  WIFI_ELEMID_TIM		= 5,
+  WIFI_ELEMID_IBSSPARMS		= 6,
+  WIFI_ELEMID_CHALLENGE		= 16,
+  WIFI_ELEMID_ERP		= 42,
+  WIFI_ELEMID_XRATES		= 50,
+  WIFI_ELEMID_VENDOR		= 221
 };
 /*
  * AUTH management packets
@@ -214,7 +214,7 @@ enum {
  *	octect chal.length
  *	octect chal.text[253]
  */
-typedef u_int8_t *	wifi_mgt_auth_t;
+typedef uint8_t *	wifi_mgt_auth_t;
 
 #define WIFI_AUTH_ALGORITHM(auth) \
     (auth[0] + (auth[1] << 8))
@@ -350,17 +350,17 @@ enum {
 
 
 typedef struct {
-  u_int32_t did;
-  u_int16_t status;
-  u_int16_t len;
-  u_int32_t data;
+  uint32_t did;
+  uint16_t status;
+  uint16_t len;
+  uint32_t data;
 } p80211item_uint32_t;
 
 typedef struct {
-  u_int32_t msgcode;
-  u_int32_t msglen;
+  uint32_t msgcode;
+  uint32_t msglen;
 #define WLAN_DEVNAMELEN_MAX 16
-  u_int8_t devname[WLAN_DEVNAMELEN_MAX];
+  uint8_t devname[WLAN_DEVNAMELEN_MAX];
   p80211item_uint32_t hosttime;
   p80211item_uint32_t mactime;
   p80211item_uint32_t channel;
