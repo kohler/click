@@ -58,7 +58,7 @@ class HashMap { public:
   
   void increase(int);
   void check_capacity();
-  inline int bucket(const K &) const;
+  int bucket(const K &) const;
 
   friend class HashMapIterator<K, V>;
   
@@ -83,6 +83,20 @@ class HashMapIterator { public:
 
 };
 
+
+template <class K, class V>
+inline int
+HashMap<K, V>::bucket(const K &key) const
+{
+  int hc = hashcode(key);
+  int i =   hc       & (_capacity - 1);
+  int j = ((hc >> 6) & (_capacity - 1)) | 1;
+  
+  while (_e[i].k && !(_e[i].k == key))
+    i = (i + j) & (_capacity - 1);
+  
+  return i;
+}
 
 template <class K, class V>
 inline const V &
