@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.7 2004/07/22 15:02:52 max Exp $
+# $Id: click-mkclgw.pl,v 1.8 2004/07/29 15:40:29 max Exp $
 #
 # click-mkclgw
 #
@@ -123,7 +123,7 @@ $CLGW::Const::TAB_IN = 45;  # formatting constant
 
 %CLGW::Const::R_PORTMAP = ( $CLGW::Const::PORT_SSH => "ssh",
 			    $CLGW::Const::PORT_HTTP => "www",
-			    $CLGW::Const::PORT_SFS = > 4  );
+			    $CLGW::Const::PORT_SFS => 4  );
 
 # 
 # strings of how these parameters will be output to the 
