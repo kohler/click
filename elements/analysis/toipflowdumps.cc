@@ -123,7 +123,7 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 	    pi++;
 	} else {
 	    int len = (ni == _nnote - 1 ? _note_text.length() : _note[ni+1].pos) - _note[ni].pos;
-	    int record_len = (len + 2 + 7) & ~3;
+	    int record_len = (4 + (len + 2) + 3) & ~3;
 	    *(reinterpret_cast<uint32_t *>(buf + 0)) = ntohl(record_len | 0x80000000U);
 	    *(buf + 4) = '#';
 	    sa.append(buf, 5);
