@@ -61,9 +61,9 @@ dnl
 dnl extract properties of the Click installation
 dnl
 
-click_have_linuxmodule=`if grep 'define HAVE_LINUXMODULE_TARGET' $clickprefix/include/click/config-linuxmodule.h >/dev/null 2>&1; then echo 1; else echo 0; fi`
+click_have_linuxmodule=`if grep 'define HAVE_LINUXMODULE_DRIVER' $clickprefix/include/click/pathvars.h >/dev/null 2>&1; then echo 1; else echo 0; fi`
 linuxdir=`grep LINUX_SRCDIR $clickprefix/include/click/pathvars.h | sed 's/.*"\(.*\)".*/\1/'`
-click_have_bsdmodule=`if grep 'define HAVE_BSDMODULE_TARGET' $clickprefix/include/click/config-bsdmodule.h >/dev/null 2>&1; then echo 1; else echo 0; fi`
+click_have_bsdmodule=`if grep 'define HAVE_BSDMODULE_DRIVER' $clickprefix/include/click/pathvars.h >/dev/null 2>&1; then echo 1; else echo 0; fi`
 freebsd_includedir=`grep FREEBSD_INCLUDEDIR $clickprefix/include/click/pathvars.h | sed 's/.*"\(.*\)".*/\1/'`
 
 
