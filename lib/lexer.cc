@@ -99,7 +99,7 @@ class Lexer::Compound : public Element { public:
   int nformals() const			{ return _formals.size(); }
   const Vector<String> &formals() const	{ return _formals; }
   const Vector<String> &formal_types() const { return _formal_types; }
-  inline void add_formal(const String &fn, const String &ft);
+  inline void add_formal(const String &fname, const String &ftype);
   int depth() const			{ return _depth; }
 
   void swap_router(Lexer *);
