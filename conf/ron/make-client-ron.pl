@@ -78,9 +78,9 @@ print "\t-> [1]arpq;\n";
 print "c[1] -> Discard;\n";
 print "\n";
 
-print "sOut :: Switch(0);\n";
+print "sOut :: Switch(1);\n";
 print "sOut[0]  -> setgw;\n";
-print "sIn :: Switch(0);\n";
+print "sIn :: Switch(1);\n";
 print "sIn[0] ->  toktap;\n";
 print "\n";
 
