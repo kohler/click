@@ -73,22 +73,23 @@ class RONRouteModular::Policy{
     
 protected:
   RONRouteModular *_parent;
+  int _numpaths;
     
 public:
   Policy(RONRouteModular *parent) {_parent = parent;}
   virtual ~Policy() {}
 
-  virtual void initialize(RONRouteModular *){}
+  virtual void initialize(int numpaths){_numpaths = numpaths;}
 
-  virtual void push_forward_syn(Packet *p){}
-  virtual void push_forward_fin(Packet *p){}
-  virtual void push_forward_rst(Packet *p){}
-  virtual void push_forward_normal(Packet *p){}
+  virtual void push_forward_syn(Packet *p) = 0;
+  virtual void push_forward_fin(Packet *p) = 0;
+  virtual void push_forward_rst(Packet *p) = 0;
+  virtual void push_forward_normal(Packet *p) = 0;
     
-  virtual void push_reverse_synack(int inport, Packet *p){}
-  virtual void push_reverse_fin(Packet *p){}
-  virtual void push_reverse_rst(Packet *p){}
-  virtual void push_reverse_normal(Packet *p){}
+  virtual void push_reverse_synack(int inport, Packet *p) = 0;
+  virtual void push_reverse_fin(Packet *p) = 0;
+  virtual void push_reverse_rst(Packet *p) = 0;
+  virtual void push_reverse_normal(Packet *p) = 0;
 };
 
 class RONRouteModular::FlowTableEntry {

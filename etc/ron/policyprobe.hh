@@ -21,10 +21,15 @@
 class PolicyProbe : public RONRouteModular::Policy {
 
 public:
-  PolicyProbe(RONRouteModular *parent, 
-	      unsigned int delayms, unsigned int probenum);
-  ~PolicyProbe();
+  static const int PROBE     = 0;
+  static const int PURGE     = 1;
+  static const int NO_SYNACK = 2;
 
+  PolicyProbe(RONRouteModular *parent, 
+	      long double delays, unsigned int numprobes, int numrandom,
+	      long double link_down_penalty, long double link_down_timeout);
+  ~PolicyProbe();
+  void initialize(int numpaths);
   void push_forward_syn(Packet *p) ;
   void push_forward_fin(Packet *p) ;
   void push_forward_rst(Packet *p) ;
@@ -35,7 +40,12 @@ public:
   void push_reverse_rst(Packet *p) ;
   void push_reverse_normal(Packet *p) ;
 
-  void expire_hook(Timer *, void *thunk) ;
+  static void expire_hook(Timer *, void *thunk) ;
+
+  static int myrandom(int x) {
+    // return a number in [0,x)
+    return (int) (x * ( (float)(random() & 0xfffe) / (float)(0xffff)));
+  }
 
   static long double gettime() {
     struct timeval tv;
@@ -51,6 +61,13 @@ protected:
   
   FlowTable *_flowtable;
   TimerQueue *_timerqueue;
+  RTTHistory *_history;
+  long double _delays, _link_down_penalty, _link_down_timeout;
+  int _numprobes, _numrandom;
+
+  Timer _timer;
+  int _scheduled;
+  void send_probes(FlowTableEntry *flowentry, int numprobes);
 
   static long double tolongdouble(struct timeval *tv) {
     return tv->tv_sec + (long double)((long double) tv->tv_usec 
@@ -66,6 +83,7 @@ protected:
   };
   Vector<entry> _history[15];
   
+public:
   void punt_old(int port) {
     int i=0, j=0;
     long double now = gettime();
@@ -82,52 +100,17 @@ protected:
     punt_old(port);
     _history[port].push_back(e);
   }
+  long double get_avg_rtt(int port) {
+    int i; 
+    long double sum=0;
+    if (!_history[port].size())  return 0;
+
+    for(i=0; i<_history[port].size(); i++)
+      sum += _history[port][i].rtt;
+    return sum / _history[port].size(); 
+  }
 };
 
-class PolicyProbe::TimerQueue {
-protected:
-  Vector<long double> _times;
-  Vector<int> _purge;  // if purge[i] == 0, send probe, else remove.
-  Vector<FlowTableEntry*> _entries;
-public:
-  void insert(long double time, int purge, FlowTableEntry *entry) {
-    _times.push_back(time);
-    _purge.push_back(purge);
-    _entries.push_back(entry);
-  }
-  // returns -1 if there is nothing left in the TimerQueue
-  long double get_oldest(FlowTableEntry **entry, int *purge) {
-    long double r = -1;
-    if (_entries.size() > 0) {
-      *entry = _entries[0];
-      *purge = _purge[0];
-      r      = _times[0];
-    }
-    return r;
-  }
-  void shift() {
-    if (_entries.size() > 0) {
-      _times.pop_back();
-      _purge.pop_back();
-      _entries.pop_back();
-    }
-  }
-  void remove(FlowTableEntry *entry) {
-    int i,j;
-    for(i=0; i<_entries.size(); i++) {
-      if (entry == _entries[i]) {
-	for(j=i; j<_entries.size()-1; j++) {
-	  _entries[j] = _entries[j+1];
-	  _purge[j] = _purge[j+1];
-	  _times[j] = _times[j+1];
-	  _entries.pop_back();
-	  _purge.pop_back();
-	  _times.pop_back();
-	}
-      }
-    }
-  }
-};
 
 /*
   Need a table mapping 
@@ -143,13 +126,19 @@ public:
   unsigned short sport, dport; // network order
   Vector<int> ports_tried;
   Vector<long double> sent_time;
+  Vector<long double> rtt;
   Packet *syn_pkt;
-
   FlowTableEntry() {
     syn_pkt = NULL;
+    _port = 0;
+    _forward_up = _reverse_up = 1;
   };
   ~FlowTableEntry() {
     if (syn_pkt) syn_pkt->kill();
+  }
+
+  void print() {
+    fprintf(stderr, "%s(%d) -> %s(%d)", src.unparse().cc(), sport, dst.unparse().cc(), dport);
   }
 
   void initialize(IPAddress s, unsigned short sp,
@@ -172,7 +161,17 @@ public:
     }
     ports_tried.push_back(port);
     sent_time.push_back(time);
+    rtt.push_back(100);
     assert(ports_tried.size() == sent_time.size());
+  }
+  void got_synack(int port) {
+    int i;
+    for(i=0; i<ports_tried.size(); i++) {
+      if (ports_tried[i] == port){
+	rtt[i] = gettime() - sent_time[i];
+	return;
+      }
+    }
   }
   long double get_syn_time(int port) {
     int i;
@@ -183,6 +182,31 @@ public:
     }
     return -1;
   }
+  long double get_rtt(int port) {
+    int i;
+    for(i=0; i<ports_tried.size(); i++) {
+      if (ports_tried[i] == port){
+	return rtt[i];
+      }
+    }
+    return -1;
+  }
+  void choose_port(int port) {
+    assert(!_port);
+    if (syn_pkt) {
+      syn_pkt->kill();
+      syn_pkt = NULL;
+    }
+    _port = port;
+  }
+  int  chosen_port() { return _port; }
+  void forw_fin() {_forward_up = 0; }
+  void rev_fin() {_reverse_up = 0; }
+  int done() {return (!_forward_up && !_reverse_up); }
+
+protected:
+  int _port;
+  int _forward_up, _reverse_up;
 };
 
 class PolicyProbe::FlowTable {
@@ -200,10 +224,120 @@ public:
   lookup(IPAddress src, unsigned short sport,
 	 IPAddress dst, unsigned short dport);
   
-  void
-  remove(IPAddress src, unsigned short sport,
-	 IPAddress dst, unsigned short dport);
-  
+  void remove(IPAddress src, unsigned short sport,
+	      IPAddress dst, unsigned short dport);
+  void remove(FlowTableEntry *entry);
+};
+
+class PolicyProbe::TimerQueue {
+  //  older entries are at index 0.
+  //  newest entry is at index n-1
+
+protected:
+  struct TimerEntry {
+    long double time;
+    int action, data;
+    FlowTableEntry *entry;
+    struct TimerEntry *next;
+  };
+  Timer *_timer;
+  TimerEntry *_head;
+public:
+  int _scheduled;
+
+  TimerQueue(Timer *timer){_timer = timer; _scheduled = 0; _head = NULL;}
+  ~TimerQueue() {
+    TimerEntry *p = _head, *t;
+    while(p) {
+      t = p;
+      p = p->next;
+      free(t);
+    }
+  }
+  void schedule() {
+    assert(_head || !_scheduled);
+
+    if (!_head) {
+      if (_scheduled)  _timer->unschedule();
+      _scheduled = 0;
+      return;
+    }
+
+    if (_scheduled) _timer->unschedule();
+    fprintf(stderr, "Scheduling after %dms\n", (uint32_t) (1000*(_head->time - gettime())));
+    _timer->schedule_after_ms( (uint32_t) (1000*(_head->time - gettime())) );
+    _scheduled = 1;
+    
+  }
+  void print() {
+    struct TimerEntry *p = _head;
+    while(p){
+      fprintf(stderr, " timerqueue: %Lf %d %d ", p->time, p->action, p->data);
+      p->entry->print();
+      fprintf(stderr, "\n");
+      p = p->next;
+    }
+    fprintf(stderr, "\n");
+  }
+  void insert(long double time, int action, FlowTableEntry *entry, int data=0) {
+    struct TimerEntry **last = &_head;
+    struct TimerEntry *p = _head;
+    struct TimerEntry *t;
+    while(p && p->time <= time) {
+      last = &(p->next);
+      p = p->next;
+    }
+
+    t = (struct TimerEntry*) malloc(sizeof(struct TimerEntry));
+    t->time = time;
+    t->action = action;
+    t->entry = entry;
+    t->data = data;
+    t->next = p;
+    *last = t;
+
+    print();
+    schedule();
+  }
+  // returns -1 if there is nothing left in the TimerQueue
+  long double get_oldest(FlowTableEntry **entry, int *action, int *data = NULL) {
+    long double r = -1;
+    if (_head) {
+      *entry  = _head->entry;
+      *action = _head->action;
+      r       = _head->time;
+      if (data) *data   = _head->data;
+    }
+    return r;
+  }
+  void shift() {
+    struct TimerEntry *p;
+
+    if (_head) {
+      p = _head->next;
+      free(_head);
+      _head = p;
+    }
+  }
+  void remove(FlowTableEntry *entry) {
+    fprintf(stderr, "removing: ");
+    entry->print();
+    fprintf(stderr, "\n");
+    struct TimerEntry **last = &_head;
+    struct TimerEntry *p = _head;
+
+    while(p) {
+      if (p->entry == entry) {
+	*last = p->next;
+	free(p);
+	p = *last;
+      } else {
+	last = &(p->next);
+	p = p->next;
+      }
+    }
+  }
 };
 
   
+

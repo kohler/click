@@ -37,7 +37,7 @@ RONRouteModular::RONRouteModular() {
 
   _flowtable = new FlowTable();
 
-  probe0 = new PolicyProbe(this, 400, 3);
+  probe0 = new PolicyProbe(this, .4, 2, 1, 10, 10);
 
   _policies.push_back(probe0);
 }
@@ -63,6 +63,10 @@ RONRouteModular::configure(const Vector<String> &conf, ErrorHandler *errh){
 
 int
 RONRouteModular::initialize(ErrorHandler *){
+  int i;
+  for(i=0; i<_policies.size(); i++)
+    _policies[i]->initialize(noutputs()-1);
+
   return 0;
 }
 
@@ -85,7 +89,6 @@ void RONRouteModular::push(int inport, Packet *p)
   } else {
     push_reverse_packet(inport, p);
   }
-  d2printf(" ");
 }
 
 void RONRouteModular::push_forward_packet(Packet *p) 
@@ -93,7 +96,7 @@ void RONRouteModular::push_forward_packet(Packet *p)
   const click_tcp *tcph;
   int policy = PAINT_ANNO(p);
 
-  click_chatter("SAW FORWARD PKT color: %d",  PAINT_ANNO(p) );
+  //click_chatter("SAW FORWARD PKT color: %d",  PAINT_ANNO(p) );
 
   // Verify policy is in valid range.
   //d2printf("policies size: %d", _policies.size());
@@ -126,7 +129,7 @@ void RONRouteModular::push_forward_packet(Packet *p)
   } else {
     _policies[policy]->push_forward_normal(p);
   }
-  click_chatter("");
+  //click_chatter("");
   return;
 }
 
@@ -134,7 +137,7 @@ void RONRouteModular::push_reverse_packet(int inport, Packet *p)
 {
   const click_tcp *tcph;
   FlowTableEntry *entry;
-  d2printf("push reverse");
+  //d2printf("SAW REVERSE PACKET");
 
   // if non-TCP just forward direct 
   if (p->ip_header()->ip_p != IP_PROTO_TCP) {
@@ -252,9 +255,7 @@ RONRouteModular::FlowTable::insert(IPAddress src, unsigned short sport,
   
   FlowTableEntry e(src, sport, dst, dport, policy);
   _v.push_back(e);
-  d2printf(" inserting %s(%d) -> %s(%d)", 
-	   src.unparse().cc(), _v[_v.size()-1].sport, 
-	   dst.unparse().cc(), _v[_v.size()-1].dport);
+  //  d2printf(" inserting %s(%d) -> %s(%d)", src.unparse().cc(), _v[_v.size()-1].sport, dst.unparse().cc(), _v[_v.size()-1].dport);
   return &_v[_v.size()-1];
 }
 
