@@ -363,6 +363,7 @@ int call_read_handlers()
 static void
 catch_sigalrm(int)
 {
+  click_chatter("signal alarm");
   if (readhandler_element) 
     readhandler_element->schedule_immediately();
   alarm(handler_duration);
