@@ -1,3 +1,7 @@
+2003-10-27 Monday 18:47  Eddie Kohler <kohler@icir.org>
+
+	* test/testie (1.19): testie supports %eot
+
 2003-10-24 Friday 14:10  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.18): better error messages on bad %file names
