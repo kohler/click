@@ -914,8 +914,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
   // Initialize elements if OK so far.
   if (all_ok) {
     initialize_handlers(true, true);
-    for (int ord = 0; ord < _elements.size() && (all_ok || verbose_errors);
-	 ord++) {
+    for (int ord = 0; ord < _elements.size(); ord++) {
       int i = configure_order[ord];
       if (element_ok[i]) {
 #if CLICK_DMALLOC
