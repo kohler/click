@@ -1,3 +1,7 @@
+2001-10-30 Tuesday 18:28  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/Makefile.in (1.21): typo
+
 2001-10-30 Tuesday 12:42  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fromdump.cc (1.56): missed an mmap symbol
