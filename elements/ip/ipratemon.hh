@@ -3,14 +3,14 @@
 
 /*
  * =c
- * IPRateMonitor(DS, OFF, PB, THRESH/PERIOD, T1, T2, ...)
+ * IPRateMonitor(DS, PB, OFF, THRESH/PERIOD, T1, T2, ...)
  * =d
  *
  * See FlexMonitor.
  *
  * DS: "SRC" or "DST". Look at src or dst IP address
- * OFF: offset in packet where IP header starts
  * PB: count packets or bytes
+ * OFF: offset in packet where IP header starts
  * THRESH/PERIOD: THRESH per PERIOD seconds causes a split
  * T1, T2: Instructs IPRateMonitor to keep track of last Tx seconds
  *
