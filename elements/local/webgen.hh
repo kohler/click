@@ -3,18 +3,17 @@
 
 /*
  * =c
- * WebGen()
+ * WebGen(PREFIX/LEN, DST)
  * =d
- * Ask for a random web pages over and over with repeated HTTP/1.0
- * connections.
+ * Ask for a random web pages over and over with repeated HTTP
+ * connections. Generate them with random source IP addresses
+ * starting with PREFIX.
  * =e
- * FromDevice(...)
- *   -> Strip(34)
- *   -> WebGen()
- *   -> IPEncap(6, 1.0.0.1, 1.0.0.2)
- *   -> SetTCPChecksum
- *   -> EtherEncap(0x0800, ..., ...)
- *   -> ToDevice(...)
+ * kt :: KernelTap(127.1.0.0/16);
+ * kt -> Strip(14)
+ *    -> WebGen(127.1.0.0/16, 127.0.0.1)
+ *    -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
+ *    -> kt;
  */
 
 #include <click/element.hh>
@@ -32,19 +31,24 @@ class WebGen : public Element {
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
   WebGen *clone() const;
+  int configure(const Vector<String> &conf, ErrorHandler *errh);
 
   Packet *simple_action(Packet *);
   void run_scheduled();
 
 private:
   Timer _timer;
-  int _next_port;
+  IPAddress _src_prefix;
+  IPAddress _mask;
+  IPAddress _dst;
+  u_atomic32_t _id;
 
   // TCP Control Block
   class CB {
   public:
     CB();
 
+    IPAddress _src; // Our IP address.
     unsigned short _sport; // network byte order.
     unsigned short _dport;
 
@@ -62,7 +66,7 @@ private:
     int _do_send;
     int _resends;
 
-    void reset(int np);
+    void reset(IPAddress src);
   };
 
   CB *_cbs[100];
@@ -70,7 +74,8 @@ private:
 
   void tcp_output(CB *, Packet *);
   void tcp_input(Packet *);
-  CB *find_cb(unsigned short sport, unsigned short dport);
+  CB *find_cb(unsigned src, unsigned short sport, unsigned short dport);
+  IPAddress pick_src();
 };
 
 #endif

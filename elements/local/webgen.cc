@@ -35,12 +35,11 @@ WebGen::WebGen()
   add_input();
   add_output();
 
-  _next_port = 1024;
   _ncbs = 3;
   int i;
   for(i = 0; i < _ncbs; i++){
     _cbs[i] = new CB;
-    _cbs[i]->reset(_next_port++);
+    _cbs[i]->_reset = 1;
   }
 }
 
@@ -53,19 +52,44 @@ WebGen::~WebGen()
   }
 }
 
+int
+WebGen::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  int ret;
+
+  ret = cp_va_parse(conf, this, errh,
+                    cpIPAddressOrPrefix, "IP address/len", &_src_prefix, &_mask,
+                    cpIPAddress, "IP address/len", &_dst,
+                    0);
+
+  return(ret);
+}
+
+IPAddress
+WebGen::pick_src()
+{
+  u_int32_t x;
+  u_int32_t mask = (u_int32_t) _mask;
+
+  x = (random() & ~mask) | ((u_int32_t)_src_prefix & mask);
+  
+  return(IPAddress(x));
+}
+
 WebGen::CB::CB()
 {
 }
 
 void
-WebGen::CB::reset(int np)
+WebGen::CB::reset(IPAddress src)
 {
+  _src = src;
   _dport = htons(79); // XXX 80
   _iss = (random() & 0x0fffffff);
   _irs = 0;
   _snd_nxt = _iss;
   _snd_una = _iss;
-  _sport = htons(1024 + (np % 60000));
+  _sport = htons(1024 + (random() % 60000));
   _do_send = 0;
   _connected = 0;
   _got_fin = 0;
@@ -96,7 +120,7 @@ WebGen::run_scheduled()
   for(i = 0; i < _ncbs; i++){
     CB *cb = _cbs[i];
     if(cb->_reset || cb->_closed || cb->_resends > 5)
-      cb->reset(_next_port++);
+      cb->reset(pick_src());
     tcp_output(cb, 0);
     cb->_resends += 1;
   }
@@ -104,12 +128,14 @@ WebGen::run_scheduled()
 }
 
 WebGen::CB *
-WebGen::find_cb(unsigned short sport, unsigned short dport)
+WebGen::find_cb(unsigned src, unsigned short sport, unsigned short dport)
 {
   int i;
 
   for(i = 0; i < _ncbs; i++){
-    if(sport == _cbs[i]->_sport && dport == _cbs[i]->_dport){
+    if(sport == _cbs[i]->_sport &&
+       dport == _cbs[i]->_dport &&
+       src == (u_int32_t) _cbs[i]->_src){
       return(_cbs[i]);
     }
   }
@@ -119,14 +145,24 @@ WebGen::find_cb(unsigned short sport, unsigned short dport)
 void
 WebGen::tcp_input(Packet *p)
 {
-  click_tcp *th = (click_tcp *) p->data();
-  int dlen = p->length() - sizeof(click_tcp);
   unsigned seq, ack;
+  unsigned plen = p->length();
 
-  if(p->length() < sizeof(*th))
+  if(plen < sizeof(click_ip) + sizeof(click_tcp))
     return;
 
-  CB *cb = find_cb(th->th_dport, th->th_sport);
+  click_ip *ip = (click_ip *) p->data();
+  unsigned hlen = ip->ip_hl << 2;
+  if (hlen < sizeof(click_ip) || hlen > plen){
+    p->kill();
+    return;
+  }
+
+  click_tcp *th = (click_tcp *) (((char *)ip) + hlen);
+  unsigned off = th->th_off << 2;
+  int dlen = plen - hlen - off;
+
+  CB *cb = find_cb(ip->ip_dst.s_addr, th->th_dport, th->th_sport);
   if(cb == 0 || cb->_reset){
     p->kill();
     return;
@@ -186,7 +222,7 @@ WebGen::tcp_input(Packet *p)
   }
 
   if(cb->_reset || cb->_closed){
-    cb->reset(_next_port++);
+    cb->reset(pick_src());
     tcp_output(cb, 0);
   }
 }
@@ -207,6 +243,7 @@ WebGen::tcp_output(CB *cb, Packet *xp)
   unsigned int plen;
   unsigned int headroom = 34;
   unsigned int seq;
+  char itmp[9];
   WritablePacket *p = 0;
 
 #define STR "GET /\n"
@@ -219,7 +256,7 @@ WebGen::tcp_output(CB *cb, Packet *xp)
     paylen = 0;
     seq = cb->_snd_nxt;
   }
-  plen = sizeof(click_tcp) + paylen;
+  plen = sizeof(click_ip) + sizeof(click_tcp) + paylen;
 
   if(cb->_connected == 1 && cb->_do_send == 0 && paylen == 0){
     if(xp)
@@ -244,7 +281,21 @@ WebGen::tcp_output(CB *cb, Packet *xp)
       p->take(p->length() - plen);
   }
 
-  click_tcp *th = (click_tcp *) p->data();
+  click_ip *ip = (click_ip *) p->data();
+  ip->ip_v = 4;
+  ip->ip_hl = sizeof(click_ip) >> 2;
+  ip->ip_len = htons(p->length());
+  ip->ip_id = htons(_id.read_and_add(1));
+  ip->ip_p = 6;
+  ip->ip_src = cb->_src;
+  ip->ip_dst = _dst;
+  ip->ip_tos = 0;
+  ip->ip_off = 0;
+  ip->ip_ttl = 250;
+  p->set_dst_ip_anno(IPAddress(ip->ip_dst));
+  p->set_ip_header(ip, sizeof(click_ip));
+
+  click_tcp *th = (click_tcp *) (ip + 1);
 
   memset(th, '\0', sizeof(*th));
 
@@ -268,6 +319,20 @@ WebGen::tcp_output(CB *cb, Packet *xp)
   }
 
   th->th_win = htons(60*1024);
+
+  memcpy(itmp, ip, 9);
+  memset(ip, '\0', 9);
+  ip->ip_sum = 0;
+  ip->ip_len = htons(plen - 20);
+
+  th->th_sum = 0;
+  th->th_sum = in_cksum((unsigned char *)ip, plen);
+
+  memcpy(ip, itmp, 9);
+  ip->ip_len = htons(plen);
+
+  ip->ip_sum = 0;
+  ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
 
   output(0).push(p);
 }
