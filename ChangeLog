@@ -1,3 +1,8 @@
+2001-12-18 Tuesday 13:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc (1.28), gridprobehandler.cc
+	(1.10), gridprobehandler.hh (1.4): added extra warning message
+
 2001-12-18 Tuesday 10:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridprobehandler.cc (1.9): [no log message]
