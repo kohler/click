@@ -30,6 +30,12 @@ CLICK_DECLS
  * Boolean.  If true, then set the SEND_ERR annotation on error output
  * packets.  Default is false.
  *
+ * =item IGNORE_QUEUE_OVERFLOWS
+ *
+ * Boolean.  If true, don't print error messages when there is a queue
+ * overflow error when sending a packet to the device (e.g. send() or
+ * write() produced an ENOBUFS or EAGAIN error).  Default is false.
+ *
  * =back
  *
  * Packets sent via ToDevice should already have a link-level
@@ -108,7 +114,7 @@ private:
   NotifierSignal _signal;
   
   bool _set_error_anno;
-
+  bool _ignore_q_errs;
 };
 
 CLICK_ENDDECLS

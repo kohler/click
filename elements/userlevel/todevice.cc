@@ -50,7 +50,8 @@
 CLICK_DECLS
 
 ToDevice::ToDevice()
-  : Element(1, 0), _task(this), _fd(-1), _my_fd(false), _set_error_anno(false)
+  : Element(1, 0), _task(this), _fd(-1), _my_fd(false), _set_error_anno(false),
+    _ignore_q_errs(false)
 {
   MOD_INC_USE_COUNT;
 }
@@ -79,6 +80,7 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpString, "interface name", &_ifname,
 		  cpKeywords,
 		  "SET_ERROR_ANNO", cpBool, "set annotation on error packets?", &_set_error_anno,
+		  "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
 		  0) < 0)
     return -1;
   if (!_ifname)
@@ -175,7 +177,8 @@ ToDevice::send_packet(Packet *p)
 #endif
   if (retval < 0) {
     int saved_errno = errno;
-    click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
+    if (!_ignore_q_errs || errno != ENOBUFS || errno != EAGAIN)
+      click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
     if (_set_error_anno) {
       unsigned char c = saved_errno & 0xFF;
       if (c != saved_errno)
@@ -216,3 +219,5 @@ ToDevice::add_handlers()
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(FromDevice userlevel)
 EXPORT_ELEMENT(ToDevice)
+
+
