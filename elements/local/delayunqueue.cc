@@ -75,16 +75,7 @@ DelayUnqueue::run_scheduled()
       _p = input(0).pull();
     if (!_p)
       break;
-    if (_p && elapsed_ms(_p->timestamp_anno()) >= _delay) {
-#if 0
-      {
-	struct timeval tv = _p->timestamp_anno();
-	struct timeval t; click_gettimeofday(&t);
-	unsigned z = 
-	  (t.tv_sec*1000+t.tv_usec/1000)-(tv.tv_sec*1000+tv.tv_usec/1000);
-        click_chatter("delay: %d\n", z);
-      }
-#endif
+    if ((_p && elapsed_ms(_p->timestamp_anno()) >= _delay) || 0) {
       output(0).push(_p);
       _p = 0;
     }
