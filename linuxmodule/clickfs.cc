@@ -37,6 +37,8 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
+#define CLICKFS_SUPER_MAGIC	0x436C696B /* "Clik" */
+
 static struct file_operations click_dir_file_ops;
 static struct inode_operations click_dir_inode_ops;
 static struct file_operations click_handler_file_ops;
@@ -113,6 +115,21 @@ static ClickIno click_ino;
 
 /*************************** Inode operations ********************************/
 
+#ifdef LINUX_2_2
+// borrowed from Linux 2.4
+static inline struct inode *
+new_inode(struct super_block *sb)
+{
+    struct inode *inode = get_empty_inode();
+    if (inode) {
+	inode->i_sb = sb;
+	inode->i_dev = sb->s_dev;
+	inode->i_blkbits = sb->s_blocksize_bits;
+    }
+    return inode;
+}
+#endif
+
 static struct inode *
 click_inode(struct super_block *sb, ino_t ino)
 {
@@ -122,10 +139,11 @@ click_inode(struct super_block *sb, ino_t ino)
 	return 0;
     
     MDEBUG("i_get");
-    struct inode *inode = iget(sb, ino);
+    struct inode *inode = new_inode(sb);
     if (!inode)
 	return 0;
 
+    inode->i_ino = ino;
     INODE_INFO(inode).config_generation = click_config_generation;
 
     if (INO_ISHANDLER(ino)) {
@@ -146,6 +164,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	    panic("click_inode");
 	}
     } else {
+	MDEBUG("got a directory");
 	inode->i_mode = click_mode_dir;
 	inode->i_uid = inode->i_gid = 0;
 	inode->i_op = &click_dir_inode_ops;
@@ -155,7 +174,12 @@ click_inode(struct super_block *sb, ino_t ino)
 	inode->i_nlink = click_ino.nlink(ino);
     }
 
-    MDEBUG("leaving click_inode");
+    inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
+#if USE_PROCLIKEFS
+    proclikefs_read_inode(inode);
+#endif
+	
+    MDEBUG("%lx:%p:%p: leaving click_inode", ino, inode, inode->i_op);
     return inode;
 }
 
@@ -169,6 +193,7 @@ static struct dentry *
 click_dir_lookup(struct inode *dir, struct dentry *dentry)
 {
     lock_config_read();
+    MDEBUG("click_dir_lookup %lx", dir->i_ino);
 
     struct inode *inode = 0;
     int error;
@@ -201,8 +226,10 @@ static int
 click_dir_revalidate(struct dentry *dentry)
 {
     struct inode *inode = dentry->d_inode;
+    MDEBUG("click_dir_revalidate %lx", (inode ? inode->i_ino : 0));
     if (!inode)
 	return -EINVAL;
+    
     int error = 0;
     lock_config_read();
     if (INODE_INFO(inode).config_generation != click_config_generation) {
@@ -248,6 +275,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     struct inode *inode = filp->f_dentry->d_inode;
     ino_t ino = inode->i_ino;
     uint32_t f_pos = filp->f_pos;
+    MDEBUG("click_dir_readdir %lx", ino);
 
     lock_config_read();
 
@@ -289,31 +317,6 @@ static struct super_operations click_superblock_ops;
 
 extern "C" {
 
-static void
-click_read_inode(struct inode *inode)
-{
-    ino_t ino = inode->i_ino;
-
-    // XXX can do better for some handlers, particularly 'config'
-    inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
-
-#ifdef LINUX_2_2
-    inode->i_blocks = 0;
-    inode->i_blksize = 1024;
-    inode->i_op = 0;
-    inode->i_mode = 0;
-    inode->i_uid = 0;
-    inode->i_gid = 0;
-    inode->i_nlink = 1;
-    inode->i_size = 0;
-#endif
-
-    // Why don't we fill out the inode more completely? This is weird.
-#if USE_PROCLIKEFS
-    proclikefs_read_inode(inode);
-#endif
-}
-
 #ifdef LINUX_2_2
 static void
 click_write_inode(struct inode *)
@@ -335,13 +338,12 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     MDEBUG("click_read_super");
     sb->s_blocksize = 1024;
     sb->s_blocksize_bits = 10;
-    //sb->s_magic = PROC_SUPER_MAGIC;
+    sb->s_magic = CLICKFS_SUPER_MAGIC;
     sb->s_op = &click_superblock_ops;
     MDEBUG("click_config_lock");
     lock_config_read();
     struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
     unlock_config_read();
-    MDEBUG("got root inode %p", root_inode);
     if (!root_inode)
 	goto out_no_root;
 #ifdef LINUX_2_4
@@ -349,6 +351,7 @@ click_read_super(struct super_block *sb, void * /* data */, int)
 #else
     sb->s_root = d_alloc_root(root_inode, 0);
 #endif
+    MDEBUG("got root inode %p:%p", root_inode, root_inode->i_op);
     if (!sb->s_root)
 	goto out_no_root;
     // XXX options
@@ -737,7 +740,6 @@ init_clickfs()
 {
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
     
-    click_superblock_ops.read_inode = click_read_inode;
 #ifdef LINUX_2_4
     click_superblock_ops.put_inode = force_delete;
 #else

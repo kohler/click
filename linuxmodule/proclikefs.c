@@ -29,7 +29,7 @@
 #include <linux/locks.h>
 #include <linux/file.h>
 
-#if 1
+#if 0
 # define DEBUG(args...) do { printk("<1>proclikefs: " args); printk("\n"); } while (0)
 #else
 # define DEBUG(args...) /* nada */
