@@ -44,7 +44,6 @@ class RadioSim : public Element {
   void notify_ninputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
-  void uninitialize();
   void add_handlers();
 
   void run_scheduled();

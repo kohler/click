@@ -76,7 +76,6 @@ IP6NDSolicitor::initialize(ErrorHandler *)
 void
 IP6NDSolicitor::uninitialize()
 {
-  _expire_timer.unschedule();
   for (int i = 0; i < NMAP; i++) {
     for (NDEntry *t = _map[i]; t; ) {
       NDEntry *n = t->next;

@@ -55,12 +55,6 @@ TimedSink::initialize(ErrorHandler *)
 }
 
 void
-TimedSink::uninitialize()
-{
-  _timer.unschedule();
-}
-
-void
 TimedSink::run_scheduled()
 {
   Packet *p = input(0).pull();

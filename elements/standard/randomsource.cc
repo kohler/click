@@ -63,12 +63,6 @@ RandomSource::initialize(ErrorHandler *errh)
   return 0;
 }
 
-void
-RandomSource::uninitialize()
-{
-  _task.unschedule();
-}
-
 Packet *
 RandomSource::make_packet()
 {

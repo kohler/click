@@ -49,7 +49,6 @@ class FloodingLocQuerier : public Element {
   FloodingLocQuerier *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
   
   void push(int port, Packet *);
 

@@ -25,6 +25,8 @@ class RouterThread : public Task { public:
   bool attempt_lock_tasks();
   void unlock_tasks();
 
+  void unschedule_all_tasks();
+
  private:
 
   Router *_router;

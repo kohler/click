@@ -54,12 +54,6 @@ RoundRobinUnqueue::initialize(ErrorHandler *errh)
 }
 
 void
-RoundRobinUnqueue::uninitialize()
-{
-  _task.unschedule();
-}
-
-void
 RoundRobinUnqueue::run_scheduled()
 {
   int sent = 0;

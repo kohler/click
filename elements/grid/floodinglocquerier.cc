@@ -73,12 +73,6 @@ FloodingLocQuerier::initialize(ErrorHandler *)
   return 0;
 }
 
-void
-FloodingLocQuerier::uninitialize()
-{
-  _expire_timer.unschedule();
-}
-
 
 void
 FloodingLocQuerier::expire_hook(Timer *, void *thunk)

@@ -34,7 +34,6 @@ class Burster : public Element { public:
   Burster *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
 
   void run_scheduled();
   

@@ -56,12 +56,6 @@ Unqueue::initialize(ErrorHandler *errh)
 }
 
 void
-Unqueue::uninitialize()
-{
-  _task.unschedule();
-}
-
-void
 Unqueue::run_scheduled()
 {
   if (!_active)

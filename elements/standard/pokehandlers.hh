@@ -71,7 +71,6 @@ class PokeHandlers : public Element { public:
     
     int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
 
   private:
 

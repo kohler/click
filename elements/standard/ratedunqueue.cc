@@ -58,12 +58,6 @@ RatedUnqueue::initialize(ErrorHandler *errh)
 }
 
 void
-RatedUnqueue::uninitialize()
-{
-  _task.unschedule();
-}
-
-void
 RatedUnqueue::set_rate(unsigned r, ErrorHandler *errh)
 {
   _rate.set_rate(r, errh);

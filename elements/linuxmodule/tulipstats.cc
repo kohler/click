@@ -172,7 +172,6 @@ TulipStats::initialize(ErrorHandler *errh)
 void
 TulipStats::uninitialize()
 {
-  _task.unschedule();
   tulip_stats_map.remove(this);
 
   tulip_stats_active--;

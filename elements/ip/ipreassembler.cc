@@ -64,7 +64,6 @@ IPReassembler::initialize(ErrorHandler *)
 void
 IPReassembler::uninitialize()
 {
-  _expire_timer.unschedule();
   for (int i = 0; i < NMAP; i++) {
     for (IPQueue *t = _map[i]; t; ) {
       IPQueue *n = t->next;

@@ -41,12 +41,6 @@ Discard::initialize(ErrorHandler *errh)
 }
 
 void
-Discard::uninitialize()
-{
-  _task.unschedule();
-}
-
-void
 Discard::push(int, Packet *p)
 {
   p->kill();

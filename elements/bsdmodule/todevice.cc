@@ -167,7 +167,6 @@ void
 ToDevice::uninitialize()
 {
   to_device_map.remove(this);
-  _task.unschedule();
 }
 
 void

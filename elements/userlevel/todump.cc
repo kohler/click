@@ -146,7 +146,6 @@ ToDump::uninitialize()
   if (_fp && _fp != stdout)
     fclose(_fp);
   _fp = 0;
-  _task.unschedule();
 }
 
 void

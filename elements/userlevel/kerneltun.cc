@@ -197,7 +197,6 @@ KernelTap::initialize(ErrorHandler *errh)
 void
 KernelTap::uninitialize()
 {
-  _task.unschedule();
   if (_fd >= 0) {
     close(_fd);
     remove_select(_fd, SELECT_READ);

@@ -177,7 +177,6 @@ FromDevice::uninitialize()
 	unregister_net_in(&packet_notifier);
 #endif
     
-    _task.unschedule();
     uninitialize_device();
     
     for (unsigned i = _head; i != _tail; i = next_i(i))
@@ -231,17 +230,14 @@ packet_notifier_hook(struct notifier_block *nb, unsigned long backlog_len, void 
 static int
 device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 {
-    net_device *dev = (net_device *)v;
-    AnyDevice *e = 0;
-
-    if (flags == NETDEV_UP) {
-	while ((e = from_device_map.lookup_unknown(dev, e)))
-	    ((FromDevice *)e)->change_device(dev);
-    } else if (flags == NETDEV_DOWN) {
-	while ((e = from_device_map.lookup(dev, e)))
-	    ((FromDevice *)e)->change_device(0);
+    if (flags == NETDEV_DOWN || flags == NETDEV_UP) {
+	bool down = (flags == NETDEV_DOWN);
+	net_device *dev = (net_device *)v;
+	Vector<AnyDevice *> es;
+	from_device_map.lookup_all(dev, down, es);
+	for (int i = 0; i < es.size(); i++)
+	    ((FromDevice *)(es[i]))->change_device(down ? 0 : dev);
     }
-
     return 0;
 }
 

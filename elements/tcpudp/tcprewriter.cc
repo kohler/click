@@ -215,8 +215,6 @@ TCPRewriter::initialize(ErrorHandler *)
 void
 TCPRewriter::uninitialize()
 {
-  _tcp_gc_timer.unschedule();
-  _tcp_done_gc_timer.unschedule();
   clear_map(_tcp_map);
   for (int i = 0; i < _input_specs.size(); i++)
     if (_input_specs[i].kind == INPUT_SPEC_PATTERN)

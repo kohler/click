@@ -142,7 +142,6 @@ ToDevice::uninitialize()
   if (_fd >= 0 && _my_fd) close(_fd);
   _fd = -1;
 #endif
-  _task.unschedule();
 }
 
 void

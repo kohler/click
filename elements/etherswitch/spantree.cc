@@ -91,12 +91,6 @@ EtherSpanTree::initialize(ErrorHandler *)
   return 0;
 }
 
-void
-EtherSpanTree::uninitialize()
-{
-  _hello_timer.unschedule();
-}
-
 String
 EtherSpanTree::read_msgs(Element* f, void *) {
   EtherSpanTree* sw = (EtherSpanTree*)f;

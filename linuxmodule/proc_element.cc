@@ -355,7 +355,10 @@ proc_element_handler_ioctl(struct inode *ino, struct file *filp,
   if (eindex < 0) return eindex;
   
   Element *e = current_router->element(eindex);
-  return e->llrpc(command, reinterpret_cast<void *>(address));
+  if (current_router->initialized())
+    return e->llrpc(command, reinterpret_cast<void *>(address));
+  else
+    return e->Element::llrpc(command, reinterpret_cast<void *>(address));
 }
 
 //

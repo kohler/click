@@ -206,3 +206,16 @@ TimerList::get_next_delay(struct timeval *tv)
   release_lock();
   return retval;
 }
+
+void
+TimerList::unschedule_all()
+{
+  acquire_lock();
+  while (_next != this) {
+    Timer *t = _next;
+    _next = t->_next;
+    _next->_prev = this;
+    t->_prev = 0;
+  }
+  release_lock();
+}

@@ -52,7 +52,6 @@ class Unqueue : public Element { public:
   Unqueue *clone() const			{ return new Unqueue; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
   void add_handlers();
   
   void run_scheduled();

@@ -138,8 +138,8 @@ void
 Task::reschedule()
 {
   assert(_list);
-  if (!scheduled()) {
-    if (_list->attempt_lock_tasks()) {
+  if (_list->attempt_lock_tasks()) {
+    if (!scheduled()) {
 #ifdef HAVE_STRIDE_SCHED
       if (_tickets >= 1) {
 	_pass = _list->_next->_pass;
@@ -148,16 +148,30 @@ Task::reschedule()
 #else
       fast_reschedule();
 #endif
-      _list->unlock_tasks();
-    } else
-      _list->add_task_request(RouterThread::SCHEDULE_TASK, this);
-  }
+    }
+    _list->unlock_tasks();
+  } else
+    _list->add_task_request(RouterThread::SCHEDULE_TASK, this);
 }
 
 void
 Task::unschedule()
 {
-  if (scheduled()) {
+  // Thanksgiving 2001: unschedule() will always unschedule the task. This
+  // seems more reliable, since some people depend on unschedule() ensuring
+  // that the task is not scheduled any more, no way, no how. Possible
+  // problem: calling unschedule() from run_scheduled() will hang!
+  if (_list) {
+    _list->lock_tasks();
+    fast_unschedule();
+    _list->unlock_tasks();
+  }
+}
+
+void
+Task::unschedule_soon()
+{
+  if (_list) {
     if (_list->attempt_lock_tasks()) {
       fast_unschedule();
       _list->unlock_tasks();

@@ -130,7 +130,6 @@ BIM::initialize(ErrorHandler *errh)
 void
 BIM::uninitialize()
 {
-  _task.unschedule();
   remove_select(_fd, SELECT_READ | SELECT_WRITE);
 }
 

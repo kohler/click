@@ -56,7 +56,6 @@ DelayUnqueue::uninitialize()
     _p->kill();
     _p = 0;
   }
-  _task.unschedule();
 }
 
 static inline unsigned

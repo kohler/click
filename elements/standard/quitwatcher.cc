@@ -67,12 +67,6 @@ QuitWatcher::initialize(ErrorHandler *errh)
 }
 
 void
-QuitWatcher::uninitialize()
-{
-  _timer.unschedule();
-}
-
-void
 QuitWatcher::run_scheduled()
 {
   String unscheduled_string = "false\n";

@@ -24,7 +24,6 @@ class Discard : public Element { public:
   
   Discard *clone() const			{ return new Discard; }
   int initialize(ErrorHandler *);
-  void uninitialize();
   void add_handlers();
   
   void push(int, Packet *);

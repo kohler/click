@@ -30,7 +30,6 @@ class TimedSink : public Element {
   TimedSink *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
   
   void run_scheduled();
   

@@ -405,7 +405,6 @@ FromDump::uninitialize()
 	_packet->kill();
     if (_data_packet)
 	_data_packet->kill();
-    _task.unschedule();
     _fd = -1;
     _packet = _data_packet = 0;
     _pipe = 0;
@@ -500,7 +499,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	// The handler might have scheduled us, in which case we might crash
 	// at fast_reschedule()! Don't want that -- make sure we are
 	// unscheduled.
-	_task.unschedule();
+	_task.fast_unschedule();
 	// retry _last_time in case someone changed it
 	goto check_times;
     }

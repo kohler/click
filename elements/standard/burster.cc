@@ -61,12 +61,6 @@ Burster::initialize(ErrorHandler *)
 }
 
 void
-Burster::uninitialize()
-{
-  _timer.unschedule();
-}
-
-void
 Burster::run_scheduled()
 {
   // don't run if the timer is scheduled (an upstream queue went empty but we

@@ -67,12 +67,6 @@ ICMPSendPings::initialize(ErrorHandler *)
 }
 
 void
-ICMPSendPings::uninitialize()
-{
-  _timer.unschedule();
-}
-
-void
 ICMPSendPings::run_scheduled()
 {
   WritablePacket *q = Packet::make(sizeof(click_ip) +

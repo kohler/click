@@ -98,7 +98,6 @@ ARPQuerier::initialize(ErrorHandler *)
 void
 ARPQuerier::uninitialize()
 {
-  _expire_timer.unschedule();
   clear_map();
 }
 

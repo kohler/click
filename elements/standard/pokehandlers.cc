@@ -109,12 +109,6 @@ PokeHandlers::initialize(ErrorHandler *)
     return 0;
 }
 
-void
-PokeHandlers::uninitialize()
-{
-    _timer.unschedule();
-}
-
 
 void
 PokeHandlers::timer_hook(Timer *, void *thunk)

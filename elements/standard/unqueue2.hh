@@ -30,7 +30,6 @@ class Unqueue2 : public Element { public:
   Unqueue2 *clone() const			{ return new Unqueue2; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
   void add_handlers();
   
   void run_scheduled();

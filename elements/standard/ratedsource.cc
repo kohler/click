@@ -32,6 +32,7 @@ RatedSource::RatedSource()
 
 RatedSource::~RatedSource()
 {
+  uninitialize();
   MOD_DEC_USE_COUNT;
 }
 
@@ -91,8 +92,8 @@ RatedSource::initialize(ErrorHandler *errh)
 void
 RatedSource::uninitialize()
 {
-  _task.unschedule();
-  _packet->kill();
+  if (_packet)
+    _packet->kill();
   _packet = 0;
 }
 

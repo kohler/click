@@ -54,19 +54,28 @@ Router::~Router()
 {
   if (_refcount > 0)
     click_chatter("deleting router while ref count > 0");
+  
+  // Uninitialize elements in reverse configuration order
   if (_initialized) {
     for (int ord = _elements.size() - 1; ord >= 0; ord--)
       _elements[ _configure_order[ord] ]->uninitialize();
   }
-  for (int i = 0; i < _threads.size(); i++)
+  
+  // Unschedule tasks and timers, delete threads
+  for (int i = 0; i < _threads.size(); i++) {
+    _threads[i]->unschedule_all_tasks();
     delete _threads[i];
-  // delete elements in reverse configuration order
+  }
+  _timer_list.unschedule_all();
+  
+  // Delete elements in reverse configuration order
   if (_configure_order.size())
     for (int ord = _elements.size() - 1; ord >= 0; ord--)
       delete _elements[ _configure_order[ord] ];
   else
     for (int i = 0; i < _elements.size(); i++)
       delete _elements[i];
+  
   delete _root_element;
   delete[] _handlers;
 }
@@ -960,20 +969,30 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
   
   // If there were errors, uninitialize any elements that we initialized
   // successfully and return -1 (error). Otherwise, we're all set!
-  if (!all_ok) {
+  if (all_ok) {
+    _initialized = true;
+    return 0;
+  } else {
     if (verbose_errors)
       errh->error("Router could not be initialized!");
+    
+    // Uninitialize elements
     for (int ord = _elements.size() - 1; ord >= 0; ord--) {
       int i = _configure_order[ord];
       if (element_ok[i])
 	_elements[i]->uninitialize();
     }
+    
+    // Unschedule tasks and timers
+    for (int i = 0; i < _threads.size(); i++)
+      _threads[i]->unschedule_all_tasks();
+    _timer_list.unschedule_all();
+
+    // Remove element-specific handlers
     initialize_handlers(true, false);
+    
     _driver_runcount = 0;
     return -1;
-  } else {
-    _initialized = true;
-    return 0;
   }
 }
 

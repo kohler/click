@@ -94,12 +94,6 @@ RadioSim::initialize(ErrorHandler *errh)
 }
 
 void
-RadioSim::uninitialize()
-{
-  _task.unschedule();
-}
-
-void
 RadioSim::run_scheduled()
 {
   int in, out;

@@ -39,12 +39,6 @@ DiscardNoFree::initialize(ErrorHandler *errh)
 }
 
 void
-DiscardNoFree::uninitialize()
-{
-  _task.unschedule();
-}
-
-void
 DiscardNoFree::push(int, Packet *)
 {
   // Don't kill().

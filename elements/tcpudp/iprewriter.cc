@@ -136,10 +136,6 @@ IPRewriter::initialize(ErrorHandler *)
 void
 IPRewriter::uninitialize()
 {
-  _tcp_gc_timer.unschedule();
-  _tcp_done_gc_timer.unschedule();
-  _udp_gc_timer.unschedule();
-
   clear_map(_tcp_map);
   clear_map(_udp_map);
 

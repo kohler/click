@@ -5,8 +5,6 @@
 # Created: 1993-05-16
 # Public domain
 
-# $Id: mkinstalldirs,v 1.1 1999/10/18 17:50:35 eddietwo Exp $
-
 errstatus=0
 
 for file

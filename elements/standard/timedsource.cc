@@ -30,6 +30,7 @@ TimedSource::TimedSource()
 
 TimedSource::~TimedSource()
 {
+  uninitialize();
   MOD_DEC_USE_COUNT;
 }
 
@@ -83,8 +84,8 @@ TimedSource::initialize(ErrorHandler *)
 void
 TimedSource::uninitialize()
 {
-  _timer.unschedule();
-  _packet->kill();
+  if (_packet)
+    _packet->kill();
   _packet = 0;
 }
 

@@ -97,7 +97,6 @@ ProgressBar::uninitialize()
 	_status = ST_DONE;
 	run_scheduled();
     }
-    _timer.unschedule();
 }
 
 // from openssh scp

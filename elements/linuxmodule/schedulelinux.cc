@@ -54,12 +54,6 @@ ScheduleLinux::initialize(ErrorHandler *errh)
 }
 
 void
-ScheduleLinux::uninitialize()
-{
-  _task.unschedule();
-}
-
-void
 ScheduleLinux::run_scheduled()
 {
   schedule();

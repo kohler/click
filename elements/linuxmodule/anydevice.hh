@@ -145,6 +145,7 @@ class AnyDeviceMap { public:
     void initialize();
     AnyDevice *lookup(net_device *, AnyDevice *);
     AnyDevice *lookup_unknown(net_device *, AnyDevice *);
+    void lookup_all(net_device *, bool known, Vector<AnyDevice *> &);
     void insert(AnyDevice *);
     void remove(AnyDevice *);
     void move_to_front(AnyDevice *);
@@ -162,7 +163,7 @@ AnyDeviceMap::lookup(net_device *dev, AnyDevice *last)
 {
     if (!dev)
 	return 0;
-    AnyDevice *d = (last ? last : _map[dev->ifindex % MAP_SIZE]);
+    AnyDevice *d = (last ? last->_next : _map[dev->ifindex % MAP_SIZE]);
     while (d && d->device() != dev)
 	d = d->_next;
     return d;

@@ -33,6 +33,7 @@ RouterThread::RouterThread(Router *r)
 
 RouterThread::~RouterThread()
 {
+  unschedule_all_tasks();
   router()->remove_thread(this);
 }
 
@@ -188,7 +189,7 @@ RouterThread::driver_once()
   lock_tasks();
   Task *t = scheduled_next();
   if (t != this) {
-    t->unschedule();
+    t->fast_unschedule();
     t->call_hook();
   }
   unlock_tasks();
@@ -226,4 +227,14 @@ RouterThread::wait(int iter)
 
   if (iter % DRIVER_ITER_TIMERS == 0)
     router()->run_timers();
+}
+
+void
+RouterThread::unschedule_all_tasks()
+{
+  Task *t;
+  lock_tasks();
+  while ((t = scheduled_next()), t != this)
+    t->fast_unschedule();
+  unlock_tasks();
 }

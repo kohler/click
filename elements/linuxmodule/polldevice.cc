@@ -204,8 +204,6 @@ PollDevice::uninitialize()
 
     if (had_dev && had_dev->polling > 0 && !poll_device_map.lookup(had_dev, 0))
 	had_dev->poll_off(had_dev);
-    
-    _task.unschedule();
 #endif
 }
 
@@ -310,7 +308,8 @@ PollDevice::run_scheduled()
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_pushing, _perfcnt2_pushing, _push_cycles);
 #if _DEV_OVRN_STATS_
-    if ((_activations % 1024) == 0) _dev->get_stats(_dev);
+    if ((_activations % 1024) == 0)
+	_dev->get_stats(_dev);
 #endif
   }
 #endif
@@ -325,6 +324,9 @@ void
 PollDevice::change_device(net_device *dev)
 {
 #if HAVE_LINUX_POLLING
+    if (_dev == dev)		// no op
+	return;
+    
     _task.unschedule();
     
     if (dev && (!dev->poll_on || dev->polling < 0)) {
@@ -351,17 +353,14 @@ extern "C" {
 static int
 device_notifier_hook(struct notifier_block *nb, unsigned long flags, void *v)
 {
-    net_device *dev = (net_device *)v;
-    AnyDevice *e = 0;
-
-    if (flags == NETDEV_UP) {
-	while ((e = poll_device_map.lookup_unknown(dev, e)))
-	    ((PollDevice *)e)->change_device(dev);
-    } else if (flags == NETDEV_DOWN) {
-	while ((e = poll_device_map.lookup(dev, e)))
-	    ((PollDevice *)e)->change_device(0);
+    if (flags == NETDEV_DOWN || flags == NETDEV_UP) {
+	bool down = (flags == NETDEV_DOWN);
+	net_device *dev = (net_device *)v;
+	Vector<AnyDevice *> es;
+	poll_device_map.lookup_all(dev, down, es);
+	for (int i = 0; i < es.size(); i++)
+	    ((PollDevice *)(es[i]))->change_device(down ? 0 : dev);
     }
-
     return 0;
 }
 }

@@ -57,6 +57,8 @@ class TimerList : public Timer { public:
 
   void run();
   int get_next_delay(struct timeval *tv);
+
+  void unschedule_all();
   
  private:
 

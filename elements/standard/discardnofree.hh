@@ -23,7 +23,6 @@ class DiscardNoFree : public Element { public:
   DiscardNoFree *clone() const			{ return new DiscardNoFree; }
   
   int initialize(ErrorHandler *);
-  void uninitialize();
   void add_handlers();
   
   void push(int, Packet *);

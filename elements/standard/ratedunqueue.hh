@@ -28,7 +28,6 @@ class RatedUnqueue : public Element { public:
   int configure(const Vector<String> &, ErrorHandler *);
   void configuration(Vector<String> &, bool *) const;
   int initialize(ErrorHandler *);
-  void uninitialize();
   void add_handlers();
   
   void run_scheduled();

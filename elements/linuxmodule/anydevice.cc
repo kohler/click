@@ -74,6 +74,9 @@ AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
 void
 AnyDevice::set_device(net_device *dev, AnyDeviceMap *adm)
 {
+    if (_dev == dev)		// changing to the same device is a noop
+	return;
+    
     if (_dev)
 	click_chatter("%s: device `%s' went down", declaration().cc(), _devname.cc());
     if (dev)
@@ -193,7 +196,7 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last)
     String dev_name = dev->name;
     unsigned char en[6];
     
-    for (AnyDevice *d = (last ? last : _unknown_map); d; d = d->_next)
+    for (AnyDevice *d = (last ? last->_next : _unknown_map); d; d = d->_next)
 	if (d->devname() == dev_name)
 	    return d;
 	else if (dev->type == ARPHRD_ETHER
@@ -202,6 +205,17 @@ AnyDeviceMap::lookup_unknown(net_device *dev, AnyDevice *last)
 	    return d;
 
     return 0;
+}
+
+void
+AnyDeviceMap::lookup_all(net_device *dev, bool known, Vector<AnyDevice *> &v)
+{
+    if (known)
+	for (AnyDevice *d = 0; d = lookup(dev, d); v.push_back(d))
+	    /* nada */;
+    else
+	for (AnyDevice *d = 0; d = lookup_unknown(dev, d); v.push_back(d))
+	    /* nada */;
 }
 
 

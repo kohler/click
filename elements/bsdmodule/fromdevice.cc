@@ -220,8 +220,6 @@ FromDevice::uninitialize()
     unregister_rx(this, _dev);
 #endif
     
-    _task.unschedule();
-    
     from_device_map.remove(this);
     if (_promisc && _dev)
 	ifpromisc(_dev, 0);

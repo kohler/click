@@ -61,12 +61,6 @@ Unqueue2::initialize(ErrorHandler *errh)
 }
 
 void
-Unqueue2::uninitialize()
-{
-  _task.unschedule();
-}
-
-void
 Unqueue2::run_scheduled()
 {
   int burst = -1;

@@ -209,7 +209,6 @@ FromNetFlowSummaryDump::uninitialize()
     _fd = -1;
     _pipe = 0;
     _buffer = String();
-    _task.unschedule();
 }
 
 Packet *

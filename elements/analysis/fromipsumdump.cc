@@ -248,7 +248,6 @@ FromIPSummaryDump::uninitialize()
     _pipe = 0;
     free(_buffer);
     _buffer = 0;
-    _task.unschedule();
 }
 
 void

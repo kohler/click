@@ -31,7 +31,6 @@ class RoundRobinUnqueue : public Element { public:
   RoundRobinUnqueue *clone() const	{ return new RoundRobinUnqueue; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
   void add_handlers();
   
   void run_scheduled();

@@ -20,7 +20,6 @@ public:
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
 
   static String read_msgs(Element* f, void *);
   void add_handlers();

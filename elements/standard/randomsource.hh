@@ -23,7 +23,6 @@ class RandomSource : public Element { public:
   RandomSource *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
   void add_handlers();
 
   Packet *pull(int);

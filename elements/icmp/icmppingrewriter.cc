@@ -82,8 +82,6 @@ ICMPPingRewriter::initialize(ErrorHandler *)
 void
 ICMPPingRewriter::uninitialize()
 {
-  _timer.unschedule();
-
   for (Map::Iterator iter = _request_map.first(); iter; iter++) {
     Mapping *m = iter.value();
     delete m->reverse();

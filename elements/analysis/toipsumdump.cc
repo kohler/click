@@ -135,7 +135,6 @@ ToIPSummaryDump::uninitialize()
     if (_f && _f != stdout)
 	fclose(_f);
     _f = 0;
-    _task.unschedule();
 }
 
 bool

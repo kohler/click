@@ -126,8 +126,6 @@ IPAddrRewriter::initialize(ErrorHandler *)
 void
 IPAddrRewriter::uninitialize()
 {
-  _timer.unschedule();
-
   clear_map(_map);
 
   for (int i = 0; i < _input_specs.size(); i++)

@@ -49,6 +49,7 @@ class Task { public:
 
   void reschedule();
   void unschedule();
+  void unschedule_soon();
 
 #if __MTCLICK__
   int thread_preference() const		{ return _thread_preference; }

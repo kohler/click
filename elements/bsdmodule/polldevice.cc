@@ -193,7 +193,6 @@ PollDevice::uninitialize()
   }
   if (_dev && _promisc)
       ifpromisc(_dev, 0);
-  _task.unschedule();
 #endif
 }
 

@@ -32,6 +32,7 @@ InfiniteSource::InfiniteSource()
 
 InfiniteSource::~InfiniteSource()
 {
+  uninitialize();
   MOD_DEC_USE_COUNT;
 }
 
@@ -87,8 +88,8 @@ InfiniteSource::initialize(ErrorHandler *errh)
 void
 InfiniteSource::uninitialize()
 {
-  _task.unschedule();
-  _packet->kill();
+  if (_packet)
+    _packet->kill();
   _packet = 0;
 }
 
