@@ -259,9 +259,9 @@ if ($system_type =~ /Linux/) {
 	my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
     }
     elsif ($radio_type eq "aironet") {
-	# my_system "echo \"Mode: adhoc\" > /proc/aironet/$grid_if/Config";
-	# my_system "echo \"Channel: $grid_channel\" > /proc/aironet/$grid_if/Config";
-	# my_system "echo \"$grid_ssid\" > /proc/aironet/$grid_if/SSID";
+	my_system "echo \"Mode: adhoc\" > /proc/aironet/$grid_if/Config";
+	my_system "echo \"Channel: $grid_channel\" > /proc/aironet/$grid_if/Config";
+	my_system "echo \"$grid_ssid\" > /proc/aironet/$grid_if/SSID";
     }
     else {
 	print stderr "Radio type $radio_type is not supported\n";
