@@ -15,7 +15,7 @@
 tun :: KernelTun(1.0.0.1/8);
 tunq :: Queue -> tun;
 tun[1] -> Print(tun-nonip) -> Discard;
-ICMPSendPings(1.0.0.2, 1.0.0.1)
+ICMPPingSource(1.0.0.2, 1.0.0.1)
     -> tunq;
 
 tun -> ch :: CheckIPHeader;

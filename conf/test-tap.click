@@ -22,7 +22,7 @@ Message("'test-tap.click' is deprecated; run 'test-tun.click' instead", WARNING)
 
 tun :: KernelTap(1.0.0.1/8);
 
-ICMPSendPings(1.0.0.2, 1.0.0.1)
+ICMPPingSource(1.0.0.2, 1.0.0.1)
 	-> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
 	-> tun;
 
