@@ -67,8 +67,6 @@ class PortInfo : public Element { public:
     static void static_initialize();
     int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
     int configure(Vector<String> &, ErrorHandler *);
-
-    static bool query(const String &, int ip_p, uint16_t &, Element *);
   
 };
 

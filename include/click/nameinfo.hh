@@ -25,25 +25,26 @@ class NameInfo { public:
 	T_IP_PREFIX = 0x04000002,
 	T_IP_PROTO = 0x04000003,
 	T_IPFILTER_TYPE = 0x04000004,
+	T_TCP_OPT = 0x04000005,
 	T_ICMP_TYPE = 0x04010000,
 	T_ICMP_CODE = 0x04010100,
-	T_TCP_PORT = 0x04060001,
-	T_TCP_OPT = 0x04060002,
-	T_UDP_PORT = 0x04110001,
+	T_IP_PORT = 0x04020000,
+	T_TCP_PORT = 0x04020006,
+	T_UDP_PORT = 0x04020011,
 	T_IP6_ADDR = 0x06000001,
 	T_IP6_PREFIX = 0x06000002
     };
 
-    static NameDB *getdb(uint32_t type, const Element *prefix, int data, bool create);
+    static NameDB *getdb(uint32_t type, const Element *prefix, int value_size, bool create);
     static void installdb(NameDB *db, const Element *prefix);
     static void removedb(NameDB *db);
 
-    static bool query(uint32_t type, const Element *prefix, const String &name, void *value_store, int data);
+    static bool query(uint32_t type, const Element *prefix, const String &name, void *value_store, int value_size);
     static bool query_int(uint32_t type, const Element *prefix, const String &name, int32_t *value_store);
     static bool query_int(uint32_t type, const Element *prefix, const String &name, uint32_t *value_store);
-    static String revquery(uint32_t type, const Element *prefix, const void *value, int data);
+    static String revquery(uint32_t type, const Element *prefix, const void *value, int value_size);
     static inline String revquery_int(uint32_t type, const Element *prefix, int32_t value);
-    static inline void define(uint32_t type, const Element *prefix, const String &name, const void *value, int data);
+    static inline void define(uint32_t type, const Element *prefix, const String &name, const void *value, int value_size);
 
 #ifdef CLICK_NAMEDB_CHECK
     void check(ErrorHandler *);
@@ -56,7 +57,7 @@ class NameInfo { public:
     Vector<NameDB *> _namedbs;
 
     inline NameDB *install_dynamic_sentinel() { return (NameDB *) this; }
-    NameDB *namedb(uint32_t type, int data, const String &prefix, NameDB *installer);
+    NameDB *namedb(uint32_t type, int value_size, const String &prefix, NameDB *installer);
     
 #ifdef CLICK_NAMEDB_CHECK
     uintptr_t _check_generation;
@@ -68,18 +69,17 @@ class NameInfo { public:
 
 class NameDB { public:
     
-    inline NameDB(uint32_t type, const String &prefix, int data);
+    inline NameDB(uint32_t type, const String &prefix, int value_size);
     virtual ~NameDB()			{ }
 
     uint32_t type() const		{ return _type; }
-    int data() const			{ return _data; }
+    int value_size() const		{ return _value_size; }
     const String &prefix() const	{ return _prefix; }
     NameDB *prefix_parent() const	{ return _prefix_parent; }
 
-    virtual void *find(const String &name, bool create) = 0;
-    virtual String revfind(const void *value, int data) = 0;
-    inline bool query(const String &name, void *value, int data);
-    inline void define(const String &name, const void *value, int data);
+    virtual bool query(const String &name, void *value, int vsize) = 0;
+    virtual void define(const String &name, const void *value, int vsize);
+    virtual String revfind(const void *value, int vsize);
 
 #ifdef CLICK_NAMEDB_CHECK
     virtual void check(ErrorHandler *) = 0;
@@ -89,7 +89,7 @@ class NameDB { public:
     
     uint32_t _type;
     String _prefix;
-    int _data;
+    int _value_size;
     NameDB *_prefix_parent;
     NameDB *_prefix_sibling;
     NameDB *_prefix_child;
@@ -112,8 +112,8 @@ class StaticNameDB : public NameDB { public:
 
     inline StaticNameDB(uint32_t type, const String &prefix, const Entry *entry, int nentry);
 
-    void *find(const String &name, bool create);
-    String revfind(const void *value, int data);
+    bool query(const String &name, void *value, int vsize);
+    String revfind(const void *value, int vsize);
 
 #ifdef CLICK_NAMEDB_CHECK
     void check(ErrorHandler *);
@@ -128,10 +128,11 @@ class StaticNameDB : public NameDB { public:
 
 class DynamicNameDB : public NameDB { public:
 
-    inline DynamicNameDB(uint32_t type, const String &prefix, int data);
+    inline DynamicNameDB(uint32_t type, const String &prefix, int vsize);
 
-    void *find(const String &name, bool create);
-    String revfind(const void *value, int data);
+    bool query(const String &name, void *value, int vsize);
+    void define(const String &name, const void *value, int vsize);
+    String revfind(const void *value, int vsize);
     
 #ifdef CLICK_NAMEDB_CHECK
     void check(ErrorHandler *);
@@ -143,14 +144,15 @@ class DynamicNameDB : public NameDB { public:
     StringAccum _values;
     int _sorted;
 
+    void *find(const String &name, bool create);
     void sort();
     
 };
 
 
 inline
-NameDB::NameDB(uint32_t type, const String &prefix, int data)
-    : _type(type), _prefix(prefix), _data(data),
+NameDB::NameDB(uint32_t type, const String &prefix, int vsize)
+    : _type(type), _prefix(prefix), _value_size(vsize),
       _prefix_parent(0), _prefix_sibling(0), _prefix_child(0),
       _installed(0)
 {
@@ -166,28 +168,9 @@ StaticNameDB::StaticNameDB(uint32_t type, const String &prefix, const Entry *ent
 }
 
 inline
-DynamicNameDB::DynamicNameDB(uint32_t type, const String &prefix, int data)
-    : NameDB(type, prefix, data), _sorted(0)
+DynamicNameDB::DynamicNameDB(uint32_t type, const String &prefix, int vsize)
+    : NameDB(type, prefix, vsize), _sorted(0)
 {
-}
-
-inline bool
-NameDB::query(const String &name, void *value, int data)
-{
-    assert(_data == data);
-    if (const void *x = find(name, false)) {
-	memcpy(value, x, data);
-	return true;
-    } else
-	return false;
-}
-
-inline void
-NameDB::define(const String &name, const void *value, int data)
-{
-    assert(_data == data);
-    if (void *x = find(name, true))
-	memcpy(x, value, data);
 }
 
 inline String
@@ -197,10 +180,10 @@ NameInfo::revquery_int(uint32_t type, const Element *e, int32_t value)
 }
 
 inline void
-NameInfo::define(uint32_t type, const Element *e, const String &name, const void *value, int data)
+NameInfo::define(uint32_t type, const Element *e, const String &name, const void *value, int vsize)
 {
-    if (NameDB *db = getdb(type, e, data, true))
-	db->define(name, value, data);
+    if (NameDB *db = getdb(type, e, vsize, true))
+	db->define(name, value, vsize);
 }
 
 CLICK_ENDDECLS

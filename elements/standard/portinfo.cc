@@ -28,7 +28,9 @@
 #endif
 CLICK_DECLS
 
-static const StaticNameDB::Entry known_ports[] = {
+namespace {
+
+const StaticNameDB::Entry known_ports[] = {
     { "auth", 113 },
     { "bootpc", 68 },
     { "bootps", 67 },
@@ -63,7 +65,26 @@ static const StaticNameDB::Entry known_ports[] = {
     { "tftp", 69 },
     { "www", 80 }
 };
-    
+
+#if CLICK_USERLEVEL && HAVE_NETDB_H
+class ServicesNameDB : public NameDB { public:
+    ServicesNameDB(uint32_t type)	: NameDB(type, String(), 4) { }
+    bool query(const String &name, void *value, int vsize);
+};
+bool
+ServicesNameDB::query(const String &name, void *value, int vsize)
+{
+    assert(vsize == 4);
+    if (const struct servent *srv = getservbyname(name.c_str(), (type() == IP_PROTO_TCP ? "tcp" : "udp"))) {
+	*reinterpret_cast<uint32_t*>(value) = ntohs(srv->s_port);
+	return true;
+    } else
+	return false;
+}
+#endif
+
+}
+
 
 PortInfo::PortInfo()
 {
@@ -76,7 +97,11 @@ PortInfo::~PortInfo()
 void
 PortInfo::static_initialize()
 {
-    NameDB *tcpdb = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
+#if CLICK_USERLEVEL && HAVE_NETDB_H
+    NameInfo::installdb(new ServicesNameDB(NameInfo::T_TCP_PORT), 0);
+    NameInfo::installdb(new ServicesNameDB(NameInfo::T_UDP_PORT), 0);
+#endif
+    NameDB *tcpdb = new StaticNameDB(NameInfo::T_TCP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
     NameInfo::installdb(tcpdb, 0);
     NameDB *udpdb = new StaticNameDB(NameInfo::T_UDP_PORT, String(), known_ports, sizeof(known_ports) / sizeof(known_ports[0]));
     NameInfo::installdb(udpdb, 0);
@@ -120,25 +145,6 @@ PortInfo::configure(Vector<String> &conf, ErrorHandler *errh)
     }
     
     return (errh->nerrors() == before ? 0 : -1);
-}
-
-bool
-PortInfo::query(const String &s, int ip_p, uint16_t &store, Element *e)
-{
-    if (ip_p != IP_PROTO_TCP && ip_p != IP_PROTO_UDP)
-	return false;
-
-    if (NameInfo::query((ip_p == IP_PROTO_TCP ? NameInfo::T_TCP_PORT : NameInfo::T_UDP_PORT), e, s, &store, 4))
-	return true;
-
-#if HAVE_NETDB_H
-    if (const struct servent *srv = getservbyname(s.c_str(), (ip_p == IP_PROTO_TCP ? "tcp" : "udp"))) {
-	store = ntohs(srv->s_port);
-	return true;
-    }
-#endif
-    
-    return false;
 }
 
 EXPORT_ELEMENT(PortInfo)

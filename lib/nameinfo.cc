@@ -26,31 +26,42 @@ CLICK_DECLS
 
 static NameInfo *the_name_info;
 
-void *
-StaticNameDB::find(const String &name, bool create)
+void
+NameDB::define(const String &, const void *, int)
 {
-    if (create)
-	return 0;
-    
+}
+
+String
+NameDB::revfind(const void *, int)
+{
+    return String();
+}
+
+
+bool
+StaticNameDB::query(const String &name, void *value, int vsize)
+{
+    assert(vsize == 4);
     const char *namestr = name.c_str();
     int l = 0, r = _nentries - 1;
     while (l <= r) {
 	int m = (l + r) / 2;
 	int cmp = strcmp(namestr, _entries[m].name);
-	if (cmp == 0)
-	    return const_cast<uint32_t *>(&_entries[m].value);
-	else if (cmp < 0)
+	if (cmp == 0) {
+	    *reinterpret_cast<uint32_t *>(value) = _entries[m].value;
+	    return true;
+	} else if (cmp < 0)
 	    r = m - 1;
 	else
 	    l = m + 1;
     }
-    return 0;
+    return false;
 }
 
 String
-StaticNameDB::revfind(const void *value, int data)
+StaticNameDB::revfind(const void *value, int vsize)
 {
-    assert(data == 4);
+    assert(vsize == 4);
     uint32_t ivalue;
     memcpy(&ivalue, value, 4);
     for (int i = 0; i < _nentries; i++)
@@ -72,7 +83,7 @@ DynamicNameDB::find(const String &name, bool create)
 	    m = (l + r) / 2;
 	    int cmp = String::compare(name, _names[m]);
 	    if (cmp == 0)
-		return _values.data() + data() * m;
+		return _values.data() + value_size() * m;
 	    else if (cmp < 0)
 		r = m - 1;
 	    else
@@ -82,14 +93,14 @@ DynamicNameDB::find(const String &name, bool create)
 	_sorted++;
 	for (int i = 0; i < _names.size(); i++)
 	    if (name == _names[i])
-		return _values.data() + data() * i;
+		return _values.data() + value_size() * i;
     }
 
     if (create) {
 	_sorted = 0;
 	_names.push_back(name);
-	_values.extend(data());
-	return _values.data() + _values.length() - data();
+	_values.extend(value_size());
+	return _values.data() + _values.length() - value_size();
     } else
 	return 0;
 }
@@ -119,9 +130,9 @@ DynamicNameDB::sort()
 
     String *nn = new_names.begin();
     char *nv = new_values.data();
-    for (int i = 0; i < _names.size(); i++, nn++, nv += data()) {
+    for (int i = 0; i < _names.size(); i++, nn++, nv += value_size()) {
 	*nn = _names[permutation[i]];
-	memcpy(nv, _values.data() + data() * permutation[i], data());
+	memcpy(nv, _values.data() + value_size() * permutation[i], value_size());
     }
 
     _names.swap(new_names);
@@ -129,12 +140,32 @@ DynamicNameDB::sort()
     _sorted = 100;
 }
 
+bool
+DynamicNameDB::query(const String& name, void* value, int vsize)
+{
+    assert(value_size() == vsize);
+    if (void *x = find(name, false)) {
+	memcpy(value, x, vsize);
+	return true;
+    } else
+	return false;
+}
+
+void
+DynamicNameDB::define(const String& name, const void* value, int vsize)
+{
+    assert(value_size() == vsize);
+    if (void *x = find(name, true))
+	memcpy(x, value, vsize);
+}
+
+
 String
-DynamicNameDB::revfind(const void *value, int data)
+DynamicNameDB::revfind(const void *value, int vsize)
 {
     const uint8_t *dx = (const uint8_t *) _values.data();
-    for (int i = 0; i < _names.size(); i++, dx += data)
-	if (memcmp(dx, value, data) == 0)
+    for (int i = 0; i < _names.size(); i++, dx += vsize)
+	if (memcmp(dx, value, vsize) == 0)
 	    return _names[i];
     return String();
 }
@@ -169,8 +200,8 @@ NameInfo::static_cleanup()
 String
 NameInfo::NameList::rlookup(uint32_t val)
 {
-    assert(_data == 4);
-    const uint32_t *x = (const uint32_t *) _values.data();
+    assert(_value_size == 4);
+    const uint32_t *x = (const uint32_t *) _values.value_size();
     for (int i = 0; i < _names.size(); i++)
 	if (x[i] == val)
 	    return _names[i];
@@ -179,7 +210,7 @@ NameInfo::NameList::rlookup(uint32_t val)
 #endif
 
 NameDB *
-NameInfo::namedb(uint32_t type, int data, const String &prefix, NameDB *install)
+NameInfo::namedb(uint32_t type, int vsize, const String &prefix, NameDB *install)
 {
     NameDB *db;
 
@@ -197,7 +228,7 @@ NameInfo::namedb(uint32_t type, int data, const String &prefix, NameDB *install)
 
     // type not found
     if (install == install_dynamic_sentinel())
-	install = new DynamicNameDB(type, prefix, data);
+	install = new DynamicNameDB(type, prefix, vsize);
     if (install) {
 	assert(!install->_installed);
 	install->_installed = this;
@@ -222,13 +253,13 @@ NameInfo::namedb(uint32_t type, int data, const String &prefix, NameDB *install)
 
     // prefix found?
     if (closest && closest->_prefix == prefix) {
-	assert(data < 0 || closest->_data == data);
+	assert(vsize < 0 || closest->_value_size == vsize);
 	return closest;
     }
     
     // prefix not found
     if (install == install_dynamic_sentinel())
-	install = new DynamicNameDB(type, prefix, data);
+	install = new DynamicNameDB(type, prefix, vsize);
     if (install) {
 	assert(!install->_installed);
 	install->_installed = this;
@@ -252,34 +283,34 @@ NameInfo::namedb(uint32_t type, int data, const String &prefix, NameDB *install)
 	}
 	return install;
     } else {
-	assert(!closest || data < 0 || closest->_data == data);
+	assert(!closest || vsize < 0 || closest->_value_size == vsize);
 	return closest;
     }
 }
 
 NameDB *
-NameInfo::getdb(uint32_t type, const Element *e, int data, bool create)
+NameInfo::getdb(uint32_t type, const Element *e, int vsize, bool create)
 {
     if (e) {
 	if (NameInfo *ni = (create ? e->router()->force_name_info() : e->router()->name_info())) {
 	    NameDB *install = (create ? ni->install_dynamic_sentinel() : 0);
 	    int last_slash = e->id().find_right('/');
 	    if (last_slash >= 0)
-		return ni->namedb(type, data, e->id().substring(0, last_slash + 1), install);
+		return ni->namedb(type, vsize, e->id().substring(0, last_slash + 1), install);
 	    else
-		return ni->namedb(type, data, String(), install);
+		return ni->namedb(type, vsize, String(), install);
 	}
     }
 
     NameDB *install = (create ? the_name_info->install_dynamic_sentinel() : 0);
-    return the_name_info->namedb(type, data, String(), install);
+    return the_name_info->namedb(type, vsize, String(), install);
 }
 
 void
 NameInfo::installdb(NameDB *db, const Element *prefix)
 {
     NameInfo *ni = (prefix ? prefix->router()->force_name_info() : the_name_info);
-    NameDB *curdb = ni->namedb(db->type(), db->data(), db->prefix(), db);
+    NameDB *curdb = ni->namedb(db->type(), db->value_size(), db->prefix(), db);
     if (curdb != db) {
 	assert(!curdb->_prefix_child || curdb->_prefix_child->prefix().length() > db->prefix().length());
 	db->_prefix_child = curdb->_prefix_child;
@@ -334,12 +365,12 @@ NameInfo::removedb(NameDB *db)
 }
 
 bool
-NameInfo::query(uint32_t type, const Element *e, const String &name, void *value, int data)
+NameInfo::query(uint32_t type, const Element *e, const String &name, void *value, int vsize)
 {
     while (1) {
-	NameDB *db = getdb(type, e, data, false);
+	NameDB *db = getdb(type, e, vsize, false);
 	while (db) {
-	    if (db->query(name, value, data))
+	    if (db->query(name, value, vsize))
 		return true;
 	    db = db->prefix_parent();
 	}
@@ -362,12 +393,12 @@ NameInfo::query_int(uint32_t type, const Element *e, const String &name, uint32_
 }
 
 String
-NameInfo::revquery(uint32_t type, const Element *e, const void *value, int data)
+NameInfo::revquery(uint32_t type, const Element *e, const void *value, int vsize)
 {
     while (1) {
-	NameDB *db = getdb(type, e, data, false);
+	NameDB *db = getdb(type, e, vsize, false);
 	while (db) {
-	    if (String s = db->revfind(value, data))
+	    if (String s = db->revfind(value, vsize))
 		return s;
 	    db = db->prefix_parent();
 	}
@@ -432,8 +463,8 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
 	perrh.error("prefix doesn't end with '/'");
     if (parent && parent->_type != db->_type)
 	perrh.error("parent DB[%u %s %p] has different type", parent->_type, parent->_prefix.c_str(), parent);
-    if (parent && parent->_data != db->_data)
-	perrh.error("parent DB[%u %s %p] has different data (%u/%u)", parent->_type, parent->_prefix.c_str(), parent, parent->_data, db->_data);
+    if (parent && parent->_value_size != db->_value_size)
+	perrh.error("parent DB[%u %s %p] has different value size (%u/%u)", parent->_type, parent->_prefix.c_str(), parent, parent->_value_size, db->_value_size);
     
     // check sibling relationships
     for (NameDB* sib = db->_prefix_sibling; sib; sib = sib->_prefix_sibling) {
@@ -442,9 +473,9 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
 	    : db->_prefix.substring(0, l2) == sib->_prefix)
 	    perrh.error("sibling DB[%u %s %p] should have parent/child relationship", sib->_type, sib->_prefix.c_str(), sib);
 	if (sib->_type != db->_type)
-	    perrh.error("sibling DB[%u %s %p] has different data", sib->_type, sib->_prefix.c_str(), sib);
-	if (sib->_data != db->_data)
-	    perrh.error("sibling DB[%u %s %p] has different data (%u/%u)", sib->_type, sib->_prefix.c_str(), sib, sib->_data, db->_data);
+	    perrh.error("sibling DB[%u %s %p] has different type", sib->_type, sib->_prefix.c_str(), sib);
+	if (sib->_value_size != db->_value_size)
+	    perrh.error("sibling DB[%u %s %p] has different value size (%u/%u)", sib->_type, sib->_prefix.c_str(), sib, sib->_value_size, db->_value_size);
     }
     
     // check db itself
@@ -475,8 +506,8 @@ DynamicNameDB::check(ErrorHandler *errh)
 	for (int i = 0; i < _names.size() - 1; i++)
 	    if (String::compare(_names[i], _names[i+1]) >=0)
 		errh->error("entries %d/%d (%s/%s) out of order", i, i+1, _names[i].c_str(), _names[i+1].c_str());
-    if (_values.length() != _names.size() * data())
-	errh->error("odd value length %d (should be %d)", _values.length(), _names.size() * data());
+    if (_values.length() != _names.size() * value_size())
+	errh->error("odd value length %d (should be %d)", _values.length(), _names.size() * value_size());
 }
 
 void

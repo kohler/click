@@ -6,7 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
- * Copyright (c) 2004 The Regents of the University of California
+ * Copyright (c) 2004-2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -37,7 +37,6 @@
 # include <click/handlercall.hh>
 # include <click/nameinfo.hh>
 # include <click/standard/addressinfo.hh>
-# include <click/standard/portinfo.hh>
 # define CP_CONTEXT_ARG , Element *context
 # define CP_PASS_CONTEXT , context
 #else
@@ -1764,22 +1763,23 @@ bool
 cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
 	       CP_CONTEXT_ARG)
 {
-  uint32_t value;
-  if (str && isdigit((unsigned char) str[0]) && cp_unsigned(str, &value)) {
-    if (value <= 0xFFFF) {
-      *return_value = value;
-      return true;
-    } else {
-      cp_errno = CPE_OVERFLOW;
-      return false;
-    }
-  }
+    uint32_t value;
+    assert(ip_p > 0 && ip_p < 256);
 #ifndef CLICK_TOOL
-  return PortInfo::query(str, ip_p, *return_value, context);
+    if (!NameInfo::query_int(NameInfo::T_IP_PORT + ip_p, context, str, &value))
+	return false;
 #else
-  (void)ip_p;
-  return false;
+    (void) ip_p;
+    if (!cp_unsigned(str, &value))
+	return false;
 #endif
+    if (value <= 0xFFFF) {
+	*return_value = value;
+	return true;
+    } else {
+	cp_errno = CPE_OVERFLOW;
+	return false;
+    }
 }
 
 
