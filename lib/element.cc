@@ -660,7 +660,7 @@ Element::add_default_handlers(bool allow_write_config)
 #endif
 }
 
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
 static String
 read_task_tickets(Element *, void *thunk)
 {
@@ -688,7 +688,7 @@ read_task_thread_preference(Element *, void *thunk)
 void
 Element::add_task_handlers(Task *task, const String &prefix)
 {
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
   add_read_handler(prefix + "tickets", read_task_tickets, task);
 #endif
   add_read_handler(prefix + "scheduled", read_task_scheduled, task);

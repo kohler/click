@@ -15,7 +15,7 @@ class TaskList;
 
 class Task { public:
 
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
   static const unsigned STRIDE1 = 1U<<16;
   static const unsigned MAX_STRIDE = 1U<<31;
   static const int MAX_TICKETS = 1<<15;
@@ -37,7 +37,7 @@ class Task { public:
   Task *scheduled_prev() const		{ return _prev; }
   RouterThread *scheduled_list() const	{ return _list; }
   
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
   int tickets() const			{ return _tickets; }
   void set_tickets(int);
   void adj_tickets(int);
@@ -75,7 +75,7 @@ class Task { public:
 
   Task *_prev;
   Task *_next;
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
   unsigned _pass;
   unsigned _stride;
   int _tickets;
@@ -134,7 +134,7 @@ class TaskList : public Task { public:
 inline
 Task::Task(TaskHook hook, void *thunk)
   : _prev(0), _next(0),
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
     _pass(0), _stride(0), _tickets(-1),
 #endif
     _hook(hook), _thunk(thunk),
@@ -148,7 +148,7 @@ Task::Task(TaskHook hook, void *thunk)
 inline
 Task::Task(Element *e)
   : _prev(0), _next(0),
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
     _pass(0), _stride(0), _tickets(-1),
 #endif
     _hook(0), _thunk(e),
@@ -186,7 +186,7 @@ Task::fast_unschedule()
 #endif
 }
 
-#ifndef RR_SCHED
+#ifdef HAVE_STRIDE_SCHED
 
 inline void 
 Task::set_tickets(int n)
@@ -240,7 +240,7 @@ Task::fast_reschedule()
 #endif
 }
 
-#else /* RR_SCHED */
+#else /* !HAVE_STRIDE_SCHED */
 
 inline void
 Task::fast_reschedule()
@@ -252,7 +252,7 @@ Task::fast_reschedule()
   _prev->_next = this;
 }
 
-#endif /* RR_SCHED */
+#endif /* HAVE_STRIDE_SCHED */
 
 inline void
 Task::call_hook()
