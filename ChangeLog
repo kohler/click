@@ -1,3 +1,13 @@
+2002-11-22 Friday 19:26  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/skbmgr.cc (1.14): the correct size of the packet's
+	data is end - head, not truesize (truesize includes the sk_buff
+	header as well) (Mz)
+
+2002-11-22 Friday 19:24  Eddie Kohler <kohler@icir.org>
+
+	* drivers/e1000-4.x/src/e1000_main.c (1.2): driver fixes (Mz)
+
 2002-11-22 Friday 12:19  Eddie Kohler <kohler@icir.org>
 
 	* DISTFILES (1.66), README (1.36), drivers/README (1.1): driver
