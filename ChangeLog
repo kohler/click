@@ -1,3 +1,7 @@
+2004-03-06 Saturday 19:03  Eddie Kohler <kohler@icir.org>
+
+	* lib/: task.cc (1.27), master.cc (1.7): more of the same
+
 2004-03-06 Saturday 17:50  Eddie Kohler <kohler@icir.org>
 
 	* include/click/router.hh (1.53), lib/master.cc (1.6),
