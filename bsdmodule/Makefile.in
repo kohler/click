@@ -111,8 +111,12 @@ setdef1.c: module.o
 
 vnode_if.h: vnode_if.pl /sys/kern/vnode_if.src
 	perl ./vnode_if.pl -h /sys/kern/vnode_if.src
-clickfs.o: clickfs.cc vnode_if.h
-clickfs_vnops.o: clickfs_vnops.cc vnode_if.h
+clickfs.cc: modulepriv.hh
+clickfs_vnops.cc: modulepriv.hh
+clickfs_tree.cc: modulepriv.hh
+clickfs_element.cc: modulepriv.hh
+module.cc: modulepriv.hh
+modulepriv.hh: vnode_if.h
 
 # Special compile rule for click-mount because we don't want
 # to built it with -D_KERNEL, it's in user-space..
