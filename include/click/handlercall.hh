@@ -1,10 +1,7 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef CLICK_HANDLERCALL_HH
 #define CLICK_HANDLERCALL_HH
-#include <click/string.hh>
-class Element;
-class Router;
-class ErrorHandler;
+#include <click/element.hh>
 
 class HandlerCall { public:
 
@@ -21,9 +18,15 @@ class HandlerCall { public:
     int initialize_write(Element *, ErrorHandler *);
     int initialize_write(const String &, Element *, ErrorHandler *);
 
-    String call_read(const Element *context);
-    int call_write(const Element *context, ErrorHandler * = 0);
+    String call_read(Router *) const;
+    int call_write(Router *, ErrorHandler * = 0) const;
+    
+    String call_read(const Element *context) const;
+    int call_write(const Element *context, ErrorHandler * = 0) const;
 
+    static String call_read(Router *, const String &, ErrorHandler * = 0);
+    static int call_write(Router *, const String &, ErrorHandler * = 0);
+    
     static String call_read(Router *, const String &, const String &, ErrorHandler * = 0);
     static String call_read(Router *, Element *, const String &, ErrorHandler * = 0);
     static int call_write(Router *, const String &, const String &, const String & = String(), ErrorHandler * = 0);
@@ -34,6 +37,8 @@ class HandlerCall { public:
   private:
     
     static const char * const READ_MARKER;
+    static const int READ_HI = -9998;
+    static const int WRITE_HI = -9999;
     
     Element *_e;
     int _hi;
@@ -75,6 +80,18 @@ inline int
 HandlerCall::initialize_write(Element *context, ErrorHandler *errh)
 {
     return initialize(_value, true, context, errh);
+}
+
+inline String
+HandlerCall::call_read(const Element *context) const
+{
+    return call_read(context->router());
+}
+
+inline int
+HandlerCall::call_write(const Element *context, ErrorHandler *errh) const
+{
+    return call_write(context->router(), errh);
 }
 
 #endif

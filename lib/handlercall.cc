@@ -27,40 +27,49 @@ const char * const HandlerCall::READ_MARKER = "r";
 int
 HandlerCall::initialize(String what, bool write, Element *context, ErrorHandler *errh)
 {
+    String original_what = what;
     _e = 0;
     _hi = -1;
-    _value = String();
-    if (write)
-	return cp_va_space_parse
-	    (what, context, errh,
-	     cpWriteHandler, "write handler name", &_e, &_hi,
-	     cpOptional,
-	     cpString, "value", &_value,
-	     0);
-    else
-	return cp_va_space_parse
-	    (what, context, errh,
-	     cpReadHandler, "read handler name", &_e, &_hi,
-	     0);
+    
+    if (context->router()->nhandlers() < 0) {
+	Element *e;
+	String hname, value;
+	if (!cp_handler(cp_pop_spacevec(what), context, &e, &hname, errh))
+	    return -1;
+    } else {
+	if (!cp_handler(cp_pop_spacevec(what), context, !write, write, &_e, &_hi, errh))
+	    return -1;
+    }
+
+    if (what) {
+	if (write && !cp_string(what, &_value))
+	    return (errh ? errh->error("malformed value after handler name") : -1);
+	else if (!write)
+	    return (errh ? errh->error("garbage after handler name") : -1);
+    }
+
+    if (context->router()->nhandlers() < 0)
+    	_value = original_what;
+    return 0;
 }
 
 String
-HandlerCall::call_read(const Element *context)
+HandlerCall::call_read(Router *router) const
 {
     if (!ok() || !is_read())
 	return String();
-    const Router::Handler &h = context->router()->handler(_hi);
+    const Router::Handler &h = router->handler(_hi);
     return h.call_read(_e);
 }
 
 int
-HandlerCall::call_write(const Element *context, ErrorHandler *errh)
+HandlerCall::call_write(Router *router, ErrorHandler *errh) const
 {
     if (!errh)
 	errh = ErrorHandler::default_handler();
     if (!ok() || is_read())
 	return errh->error("not a write handler");
-    const Router::Handler &h = context->router()->handler(_hi);
+    const Router::Handler &h = router->handler(_hi);
     return h.call_write(_value, _e, errh);
 }
 
@@ -120,6 +129,26 @@ HandlerCall::call_write(Router *router, const String &ename, const String &hname
 	    return -ENOENT;
     }
     return call_write(router, e, hname, value, errh);
+}
+
+String
+HandlerCall::call_read(Router *router, const String &hcall, ErrorHandler *errh)
+{
+    HandlerCall hc;
+    if (hc.initialize(hcall, false, router->root_element(), errh) >= 0)
+	return hc.call_read(router);
+    else
+	return String();
+}
+
+int
+HandlerCall::call_write(Router *router, const String &hcall, ErrorHandler *errh)
+{
+    HandlerCall hc;
+    if (hc.initialize(hcall, true, router->root_element(), errh) >= 0)
+	return hc.call_write(router, errh);
+    else
+	return -1;
 }
 
 String
