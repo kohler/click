@@ -1,3 +1,8 @@
+2002-05-09 Thursday 16:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.55), tools/build-grid-config.sh (1.8),
+	tools/run-grid (1.15): bugfixes for GF changes
+
 2002-05-09 Thursday 16:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.54), tools/build-grid-config.sh (1.7),
