@@ -1,5 +1,5 @@
 /*
- * phyerrfilter.{cc,hh} -- filters packets out with phy errors
+ * filterphyerr.{cc,hh} -- filters packets out with phy errors
  * John Bicket
  *
  * Copyright (c) 2004 Massachussrcrs Institute of Technology
@@ -21,12 +21,12 @@
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
 #include <clicknet/wifi.h>
-#include "phyerrfilter.hh"
+#include "filterphyerr.hh"
 
 CLICK_DECLS
 
 
-PhyErrFilter::PhyErrFilter()
+FilterPhyErr::FilterPhyErr()
   : Element(1, 1),
     _drops(0)
   
@@ -34,19 +34,19 @@ PhyErrFilter::PhyErrFilter()
   MOD_INC_USE_COUNT;
 }
 
-PhyErrFilter::~PhyErrFilter()
+FilterPhyErr::~FilterPhyErr()
 {
   MOD_DEC_USE_COUNT;
 }
 
 void
-PhyErrFilter::notify_noutputs(int n) 
+FilterPhyErr::notify_noutputs(int n) 
 {
   set_noutputs((n > 3 || n < 1) ? 1 : n);
 }
 
 int
-PhyErrFilter::configure(Vector<String> &conf, ErrorHandler *errh)
+FilterPhyErr::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
     if (cp_va_parse(conf, this, errh, 
@@ -58,7 +58,7 @@ PhyErrFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-PhyErrFilter::simple_action(Packet *p)
+FilterPhyErr::simple_action(Packet *p)
 {
   struct click_wifi_extra *ceha = (struct click_wifi_extra *) p->all_user_anno();  
   struct click_wifi_extra *cehp = (struct click_wifi_extra *) p->data();
@@ -80,9 +80,9 @@ PhyErrFilter::simple_action(Packet *p)
 enum {H_DROPS };
 
 static String
-PhyErrFilter_read_param(Element *e, void *thunk)
+FilterPhyErr_read_param(Element *e, void *thunk)
 {
-  PhyErrFilter *td = (PhyErrFilter *)e;
+  FilterPhyErr *td = (FilterPhyErr *)e;
   switch ((uintptr_t) thunk) {
   case H_DROPS: 
     return String(td->_drops) + "\n";
@@ -92,15 +92,15 @@ PhyErrFilter_read_param(Element *e, void *thunk)
 
 }
 void
-PhyErrFilter::add_handlers()
+FilterPhyErr::add_handlers()
 {
-  add_read_handler("drops", PhyErrFilter_read_param, (void *) H_DROPS);
+  add_read_handler("drops", FilterPhyErr_read_param, (void *) H_DROPS);
 }
 
 CLICK_ENDDECLS
 
 
-EXPORT_ELEMENT(PhyErrFilter)
+EXPORT_ELEMENT(FilterPhyErr)
 
 
 

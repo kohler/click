@@ -2,7 +2,6 @@
 #define CLICK_SETTXRATE_HH
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <elements/wifi/sr/ettmetric.hh>
 CLICK_DECLS
 
 /*
@@ -46,17 +45,13 @@ class SetTXRate : public Element { public:
   Packet *simple_action(Packet *);
 
   void add_handlers();
-  static String rate_read_handler(Element *e, void *);
-  static String auto_read_handler(Element *e, void *);  
-  static int rate_write_handler(const String &arg, Element *e,
-				void *, ErrorHandler *errh);
-  static int auto_write_handler(const String &arg, Element *e,
-				void *, ErrorHandler *errh);
- private:
+  static String read_handler(Element *e, void *);  
+  static int write_handler(const String &arg, Element *e,
+			   void *, ErrorHandler *errh);
+private:
   
   int _rate;
-  class ETTMetric *_ett_l;
-  bool _auto;
+
   uint16_t _et;     // This protocol's ethertype
   unsigned _offset;
 };

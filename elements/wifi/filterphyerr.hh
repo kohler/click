@@ -1,5 +1,5 @@
-#ifndef CLICK_PHYERRFILTER_HH
-#define CLICK_PHYERRFILTER_HH
+#ifndef CLICK_FILTERPHYERR_HH
+#define CLICK_FILTERPHYERR_HH
 #include <click/element.hh>
 #include <click/etheraddress.hh>
 #include <click/bighashmap.hh>
@@ -8,7 +8,7 @@ CLICK_DECLS
 
 /*
 =c
-PhyErrFilter([I<KEYWORDS>])
+FilterPhyErr([I<KEYWORDS>])
 
 =s Wifi
 
@@ -23,12 +23,12 @@ if it is present.
 */
 
 
-class PhyErrFilter : public Element { public:
+class FilterPhyErr : public Element { public:
   
-  PhyErrFilter();
-  ~PhyErrFilter();
+  FilterPhyErr();
+  ~FilterPhyErr();
   
-  const char *class_name() const		{ return "PhyErrFilter"; }
+  const char *class_name() const		{ return "FilterPhyErr"; }
   const char *processing() const		{ return "a/ah"; }
 
   void notify_noutputs(int);

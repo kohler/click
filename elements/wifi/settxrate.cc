@@ -23,6 +23,7 @@
 #include "settxrate.hh"
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
+#include <clicknet/wifi.h>
 CLICK_DECLS
 
 SetTXRate::SetTXRate()
@@ -39,15 +40,15 @@ SetTXRate::~SetTXRate()
 int
 SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _ett_l = 0;
   _rate = 0;
   _et = 0;
   _offset = 0;
   if (cp_va_parse(conf, this, errh,
+		  cpOptional,
+		  cpUnsigned, "rate", &_rate, 
 		  cpKeywords, 
-		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		  "RATE", cpUnsigned, "rate", &_rate, 
-		  "ETT", cpElement, "ETTMetric element", &_ett_l,
+		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		  "OFFSET", cpUnsigned, "offset", &_offset,
 		  cpEnd) < 0) {
     return -1;
@@ -59,12 +60,6 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 
   
   
-  
-  if (_ett_l && _ett_l->cast("ETTMetric") == 0) {
-    return errh->error("ETT element is not a ETTMetric");
-  }
-  
-  _auto = (_ett_l);
   
   return 0;
 }
@@ -84,79 +79,45 @@ SetTXRate::simple_action(Packet *p_in)
   ceh->rate = _rate ? _rate : 2;
   ceh->max_retries = WIFI_MAX_RETRIES;
 
-  if (_auto) {
-    EtherAddress dst = EtherAddress(eh->ether_dhost);
-    int rate = 0;
-    if (_ett_l) {
-      rate = _ett_l->get_tx_rate(dst);
-    }
-    
-    if (rate) {
-      ceh->rate = rate;
-      return p_in;
-    }
-  }
   return p_in;
 }
+enum {H_RATE};
+
 String
-SetTXRate::rate_read_handler(Element *e, void *)
+SetTXRate::read_handler(Element *e, void *thunk)
 {
   SetTXRate *foo = (SetTXRate *)e;
-  return String(foo->_rate) + "\n";
-}
-
-int
-SetTXRate::rate_write_handler(const String &arg, Element *e,
-			      void *, ErrorHandler *errh) 
-{
-  SetTXRate *n = (SetTXRate *) e;
-  int b;
-
-  if (!cp_integer(arg, &b))
-    return errh->error("`rate' must be an integer");
-
-  if (b < 0) {
-    return errh->error("RATE must be >=0");
+  switch((uintptr_t) thunk) {
+  case H_RATE: return String(foo->_rate) + "\n";
+  default:   return "\n";
   }
-  n->_rate = b;
-  return 0;
-}
-
-int
-SetTXRate::auto_write_handler(const String &arg, Element *e,
-			      void *, ErrorHandler *errh) 
-{
-  SetTXRate *n = (SetTXRate *) e;
-  bool b;
-
-  if (!cp_bool(arg, &b))
-    return errh->error("`auto' must be an boolean");
   
-  if (b && !(n->_ett_l)) {
-    return errh->error("`auto' is true but no auto_rate element configured");
-  }
-
-  n->_auto = b;
-  return 0;
 }
-String
-SetTXRate::auto_read_handler(Element *e, void *)
+
+int
+SetTXRate::write_handler(const String &arg, Element *e,
+			 void *vparam, ErrorHandler *errh) 
 {
-  SetTXRate *foo = (SetTXRate *)e;
-  if (foo->_auto && foo->_ett_l) {
-    return String("true") + "\n";
+  SetTXRate *f = (SetTXRate *) e;
+  String s = cp_uncomment(arg);
+  switch((int)vparam) {
+  case H_RATE: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("rate parameter must be unsigned");
+    f->_rate = m;
+    break;
   }
-  return String("false") + "\n";
+  }
+  return 0;
 }
 
 void
 SetTXRate::add_handlers()
 {
   add_default_handlers(true);
-  add_read_handler("rate", rate_read_handler, 0);
-  add_write_handler("rate", rate_write_handler, 0);
-  add_read_handler("auto", auto_read_handler, 0);
-  add_write_handler("auto", auto_write_handler, 0);
+  add_read_handler("rate", read_handler, (void *) H_RATE);
+  add_write_handler("rate", write_handler, (void *) H_RATE);
 }
 
 CLICK_ENDDECLS
