@@ -83,6 +83,10 @@ Returns the sampling probability (see the SAMPLE keyword argument).
 
 Value is a Boolean.
 
+=h encap read-only
+
+Returns the file's encapsulation type.
+
 =a
 
 ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2) */
@@ -149,7 +153,6 @@ class FromDump : public Element { public:
 #endif
     int read_buffer(ErrorHandler *);
     int read_into(void *, uint32_t, ErrorHandler *);
-    bool check_force_ip(Packet *);
     Packet *read_packet(ErrorHandler *);
 
     static String read_handler(Element *, void *);

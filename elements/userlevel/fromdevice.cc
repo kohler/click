@@ -42,9 +42,7 @@
 # endif
 #endif
 
-#include <click/click_ether.h>
-#include <click/click_ip.h>
-#include "fakepcap.h"
+#include "fakepcap.hh"
 
 FromDevice::FromDevice()
   : Element(0, 1), _promisc(0), _packetbuf_size(0)
@@ -280,46 +278,6 @@ FromDevice::uninitialize()
 #endif
 }
 
-bool
-FromDevice::check_force_ip(Packet *p)
-{
-    const click_ip *iph = 0;
-    switch (_datalink) {
-
-      case FAKE_DLT_EN10MB: {
-	  const click_ether *ethh = (const click_ether *)p->data();
-	  iph = (const click_ip *)(ethh + 1);
-	  if (p->length() < sizeof(click_ether) + sizeof(click_ip)
-	      || (ethh->ether_type != htons(ETHERTYPE_IP)
-		  && ethh->ether_type != htons(ETHERTYPE_IP6))
-	      || p->length() < sizeof(click_ether) + (iph->ip_hl << 2))
-	      iph = 0;
-	  break;
-      }
-
-      case FAKE_DLT_RAW: {
-	  iph = (const click_ip *)p->data();
-	  if (p->length() < sizeof(click_ip)
-	      || (int)p->length() < (iph->ip_hl << 2))
-	      iph = 0;
-	  break;
-      }
-
-      default:
-	break;
-
-    }
-
-    if (iph) {
-	p->pull((const uint8_t *)iph - p->data());
-	p->set_ip_header(iph, iph->ip_hl << 2);
-	return true;
-    } else {
-	p->kill();
-	return false;
-    }
-}
-
 #if FROMDEVICE_PCAP
 void
 FromDevice::get_packet(u_char* clientdata,
@@ -344,8 +302,10 @@ FromDevice::get_packet(u_char* clientdata,
     p->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
     SET_EXTRA_LENGTH_ANNO(p, pkthdr->len - length);
 
-    if (!fd->_force_ip || fd->check_force_ip(p))
+    if (!fd->_force_ip || fake_pcap_force_ip(p, fd->_datalink))
 	fd->output(0).push(p);
+    else
+	p->kill();
 }
 #endif
 
@@ -371,8 +331,10 @@ FromDevice::selected(int)
 	p->change_headroom_and_length(2, len);
 	p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
 	(void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
-	if (!_force_ip || check_force_ip(p))
+	if (!_force_ip || fake_pcap_force_ip(p, _datalink))
 	    output(0).push(p);
+	else
+	    p->kill();
     } else {
 	p->kill();
 	if (len <= 0 && errno != EAGAIN)
@@ -413,11 +375,19 @@ FromDevice::read_kernel_drops(Element* e, void*)
 	return "??\n";
 }
 
+String
+FromDevice::read_encap(Element* e, void*)
+{
+    FromDevice* fd = static_cast<FromDevice*>(e);
+    return String(fake_pcap_unparse_dlt(fd->_datalink)) + "\n";
+}
+
 void
 FromDevice::add_handlers()
 {
     add_read_handler("kernel_drops", read_kernel_drops, 0);
+    add_read_handler("encap", read_encap, 0);
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel FakePcap)
 EXPORT_ELEMENT(FromDevice)

@@ -1,5 +1,6 @@
-#ifndef TODUMP_HH
-#define TODUMP_HH
+// -*- mode: c++; c-basic-offset: 4 -*-
+#ifndef CLICK_TODUMP_HH
+#define CLICK_TODUMP_HH
 #include <click/timer.hh>
 #include <click/element.hh>
 #include <click/task.hh>
@@ -36,7 +37,15 @@ Integer. Same as the SNAPLEN argument.
 
 =item ENCAP
 
-Either `C<IP>' or `C<ETHER>'. Same as the ENCAP argument.
+Either `C<IP>', `C<ETHER>', or `C<FDDI>'. Same as the ENCAP argument.
+
+=item USE_ENCAP_FROM
+
+Argument is a space-separated list of element names. At initialization time,
+ToDump will check these elements' `encap' handlers, and parse them as ENCAP
+arguments. If all the handlers agree, ToDump will use that encapsulation type;
+otherwise, it will report an error. You can specify at most one of ENCAP and
+USE_ENCAP_FROM. FromDump and FromDevice.u have `encap' handlers.
 
 =item EXTRA_LENGTH
 
@@ -57,34 +66,37 @@ FromDump, FromDevice.u, ToDevice.u, tcpdump(1) */
 
 class ToDump : public Element { public:
   
-  ToDump();
-  ~ToDump();
-  
-  const char *class_name() const		{ return "ToDump"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  const char *flags() const			{ return "S2"; }
-  ToDump *clone() const;
-  
-  int configure(const Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void uninitialize();
-  void add_handlers();
+    ToDump();
+    ~ToDump();
 
-  void push(int, Packet *);
-  void run_scheduled();
+    const char *class_name() const	{ return "ToDump"; }
+    const char *processing() const	{ return AGNOSTIC; }
+    const char *flags() const		{ return "S2"; }
+    ToDump *clone() const;
 
- private:
-  
-  String _filename;
-  FILE *_fp;
-  unsigned _snaplen;
-  unsigned _encap_type;
-  bool _active;
-  bool _extra_length;
-  Task _task;
-  
-  void write_packet(Packet *);
-  
+    // configure after FromDevice and FromDump
+    int configure_phase() const		{ return CONFIGURE_PHASE_DEFAULT+100; }
+    int configure(const Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void uninitialize();
+    void add_handlers();
+
+    void push(int, Packet *);
+    void run_scheduled();
+
+  private:
+
+    String _filename;
+    FILE *_fp;
+    unsigned _snaplen;
+    int _encap_type;
+    bool _active;
+    bool _extra_length;
+    Task _task;
+    Element **_use_encap_from;
+
+    void write_packet(Packet *);
+
 };
 
 #endif

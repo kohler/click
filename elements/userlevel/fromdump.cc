@@ -25,11 +25,8 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <click/click_ip.h>
-#include <click/click_ether.h>
-#include <click/click_fddi.h>
 #include <click/packet_anno.hh>
-#include "fakepcap.h"
+#include "fakepcap.hh"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -329,7 +326,9 @@ FromDump::initialize(ErrorHandler *errh)
 	    return errh->error("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
 	if (_timing)
 	    return errh->error("FORCE_IP and TIMING options are incompatible");
-    }
+    } else if (_linktype == FAKE_DLT_RAW)
+	// force FORCE_IP.
+	_force_ip = true;	// XXX _timing?
 
     // try reading a packet
     if ((_packet = read_packet(errh))) {
@@ -358,60 +357,6 @@ FromDump::uninitialize()
     _fd = -1;
     _packet = _data_packet = 0;
     _pipe = 0;
-}
-
-bool
-FromDump::check_force_ip(Packet *p)
-{
-    const click_ip *iph = 0;
-    
-    switch (_linktype) {
-
-      case FAKE_DLT_RAW:
-	if (p->ip_header())	// header already set
-	    return true;
-	break;
-
-      case FAKE_DLT_EN10MB: {
-	  const click_ether *ethh = (const click_ether *)p->data();
-	  iph = (const click_ip *)(ethh + 1);
-	  if (p->length() < sizeof(click_ether) + sizeof(click_ip)
-	      || (ethh->ether_type != htons(ETHERTYPE_IP)
-		  && ethh->ether_type != htons(ETHERTYPE_IP6))
-	      || p->length() < sizeof(click_ether) + (iph->ip_hl << 2))
-	      iph = 0;
-	  break;
-      }
-
-      case FAKE_DLT_FDDI: {
-	  const click_fddi *fh = (const click_fddi *)p->data();
-	  if (p->length() < sizeof(click_fddi)
-	      || (fh->fc & FDDI_FC_LLCMASK) != FDDI_FC_LLC_ASYNC)
-	      break;
-	  const click_fddi_snap *fsh = (const click_fddi_snap *)fh;
-	  if (p->length() < sizeof(*fsh) + sizeof(click_ip)
-	      || memcmp(&fsh->dsap, FDDI_SNAP_EXPECTED, FDDI_SNAP_EXPECTED_LEN) != 0
-	      || (fsh->ether_type != htons(ETHERTYPE_IP)
-		  && fsh->ether_type != htons(ETHERTYPE_IP6)))
-	      break;
-	  iph = (const click_ip *)(fsh + 1);
-	  if (p->length() < sizeof(*fsh) + (iph->ip_hl << 2))
-	      iph = 0;
-	  break;
-      }
-      
-      default:
-	break;
-	
-    }
-
-    if (iph) {
-	p->set_ip_header(iph, iph->ip_hl << 2);
-	return true;
-    } else {
-	checked_output_push(1, p);
-	return false;
-    }
 }
 
 Packet *
@@ -494,13 +439,10 @@ FromDump::read_packet(ErrorHandler *errh)
 	p = wp;
     }
 
-    if (_linktype == FAKE_DLT_RAW && caplen >= 20) {
-	const click_ip *iph = reinterpret_cast<const click_ip *>(p->data());
-	p->set_ip_header(iph, iph->ip_hl << 2);
-    }
-
-    if (_force_ip && !check_force_ip(p))
+    if (_force_ip && !fake_pcap_force_ip(p, _linktype)) {
+	checked_output_push(1, p);
 	goto retry;
+    }
     
     return p;
 }
@@ -564,6 +506,8 @@ FromDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
       case 1:
 	return cp_unparse_bool(fd->_active) + "\n";
+      case 2:
+	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
       default:
 	return "<error>\n";
     }
@@ -596,9 +540,10 @@ FromDump::add_handlers()
     add_read_handler("sampling_prob", read_handler, (void *)0);
     add_read_handler("active", read_handler, (void *)1);
     add_write_handler("active", write_handler, (void *)1);
+    add_read_handler("encap", read_handler, (void *)2);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel FakePcap)
 EXPORT_ELEMENT(FromDump)

@@ -48,8 +48,8 @@ Unsigned integer. Same as the SNAPLEN argument.
 
 =item FORCE_IP
 
-Boolean. If true, then output only IP packets, with Ethernet header removed.
-Default is false.
+Boolean. If true, then output only IP packets. (Any link-level header remains,
+but the IP header annotation has been set appropriately.) Default is false.
 
 =item BPF_FILTER
 
@@ -73,6 +73,11 @@ Returns the number of packets dropped by the kernel, probably due to memory
 constraints, before FromDevice could get them. This may be an integer; the
 notation C<"<I<d>">, meaning at most C<I<d>> drops; or C<"??">, meaning the
 number of drops is not known.
+
+=h encap read-only
+
+Returns a string indicating the encapsulation type on this link. Can be
+`C<IP>', `C<ETHER>', or `C<FDDI>', for example.
 
 =a ToDevice.u, FromDump, ToDump, FromDevice(n) */
 
@@ -146,9 +151,8 @@ class FromDevice : public Element { public:
   String _bpf_filter;
 #endif
 
-  bool check_force_ip(Packet *);
-  
   static String read_kernel_drops(Element*, void*);
+  static String read_encap(Element*, void*);
 
 };
 

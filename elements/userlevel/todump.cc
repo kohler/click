@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * todump.{cc,hh} -- element writes packets to tcpdump-like file
  * John Jannotti, Eddie Kohler
@@ -20,75 +21,103 @@
 #include <click/glue.hh>
 #include "todump.hh"
 #include <click/confparse.hh>
+#include <click/router.hh>
 #include <click/error.hh>
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
 #include <string.h>
 #include <assert.h>
-#include "fakepcap.h"
+#include "fakepcap.hh"
 
 ToDump::ToDump()
-  : Element(1, 0), _fp(0), _task(this)
+    : Element(1, 0), _fp(0), _task(this), _use_encap_from(0)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 ToDump::~ToDump()
 {
-  MOD_DEC_USE_COUNT;
-  uninitialize();
+    MOD_DEC_USE_COUNT;
+    uninitialize();
 }
 
 ToDump*
 ToDump::clone() const
 {
-  return new ToDump;
+    return new ToDump;
 }
 
 int
 ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  String encap_type;
-  _snaplen = 2000;
-  _extra_length = true;
+    String encap_type;
+    String use_encap_from;
+    _snaplen = 2000;
+    _extra_length = true;
   
-  if (cp_va_parse(conf, this, errh,
-		  cpFilename, "dump filename", &_filename,
-		  cpOptional,
-		  cpUnsigned, "max packet length", &_snaplen,
-		  cpWord, "encapsulation type", &encap_type,
-		  cpKeywords,
-		  "SNAPLEN", cpUnsigned, "max packet length", &_snaplen,
-		  "ENCAP", cpWord, "encapsulation type", &encap_type,
-		  "EXTRA_LENGTH", cpBool, "record extra length?", &_extra_length,
-		  0) < 0)
-    return -1;
+    if (cp_va_parse(conf, this, errh,
+		    cpFilename, "dump filename", &_filename,
+		    cpOptional,
+		    cpUnsigned, "max packet length", &_snaplen,
+		    cpWord, "encapsulation type", &encap_type,
+		    cpKeywords,
+		    "SNAPLEN", cpUnsigned, "max packet length", &_snaplen,
+		    "ENCAP", cpWord, "encapsulation type", &encap_type,
+		    "USE_ENCAP_FROM", cpArgument, "use encapsulation from elements", &use_encap_from,
+		    "EXTRA_LENGTH", cpBool, "record extra length?", &_extra_length,
+		    0) < 0)
+	return -1;
 
-  encap_type = encap_type.upper();
-  if (!encap_type || encap_type == "ETHER")
-    _encap_type = FAKE_DLT_EN10MB;
-  else if (encap_type == "IP")
-    _encap_type = FAKE_DLT_RAW;
-  else if (encap_type == "FDDI")
-    _encap_type = FAKE_DLT_FDDI;
-  else
-    return errh->error("bad encapsulation type, expected `ETHER', `IP', or `FDDI'");
+    if (use_encap_from && encap_type)
+	return errh->error("specify at most one of `ENCAP' and `USE_ENCAP_FROM'");
+    else if (use_encap_from) {
+	Vector<String> words;
+	cp_spacevec(use_encap_from, words);
+	_use_encap_from = new Element *[words.size() + 1];
+	for (int i = 0; i < words.size(); i++)
+	    if (!(_use_encap_from[i] = router()->find(words[i], this, errh)))
+		return -1;
+	_use_encap_from[words.size()] = 0;
+	if (words.size() == 0)
+	    return errh->error("element names missing after `USE_ENCAP_FROM'");
+    } else if (!encap_type)
+	_encap_type = FAKE_DLT_EN10MB;
+    else if ((_encap_type = fake_pcap_parse_dlt(encap_type)) < 0)
+	return errh->error("bad encapsulation type, expected `ETHER', `IP', or `FDDI'");
 
-  return 0;
+    return 0;
 }
 
 int
 ToDump::initialize(ErrorHandler *errh)
 {
-  assert(!_fp);
-  if (_filename != "-") {
-      _fp = fopen(_filename, "wb");
-      if (!_fp)
-	  return errh->error("%s: %s", _filename.cc(), strerror(errno));
-  } else {
-      _fp = stdout;
-      _filename = "<stdout>";
-  }
+    // check _use_encap_from
+    if (_use_encap_from) {
+	_encap_type = -1;
+	for (int i = 0; _use_encap_from[i]; i++) {
+	    int hi = router()->find_handler(_use_encap_from[i], "encap");
+	    if (hi < 0 || !router()->handler(hi).readable())
+		return errh->error("`%e' has no `encap' read handler", _use_encap_from[i]);
+	    int et = fake_pcap_parse_dlt(cp_uncomment(router()->handler(hi).call_read(_use_encap_from[i])));
+	    if (et < 0)
+		return errh->error("`%e.encap' did not return a valid encapsulation type", _use_encap_from[i]);
+	    else if (_encap_type >= 0 && et != _encap_type)
+		return errh->error("`USE_ENCAP_FROM' elements have different encapsulation types");
+	    else
+		_encap_type = et;
+	}
+    }
+
+    // if OK, prepare files and move onward
+    assert(!_fp);
+    if (_filename != "-") {
+	_fp = fopen(_filename, "wb");
+	if (!_fp)
+	    return errh->error("%s: %s", _filename.cc(), strerror(errno));
+    } else {
+	_fp = stdout;
+	_filename = "<stdout>";
+    }
 
   struct fake_pcap_file_header h;
 
@@ -180,5 +209,5 @@ ToDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel FakePcap)
 EXPORT_ELEMENT(ToDump)

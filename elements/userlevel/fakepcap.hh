@@ -1,5 +1,7 @@
-#ifndef FAKEPCAP_H
-#define FAKEPCAP_H
+#ifndef CLICK_FAKEPCAP_HH
+#define CLICK_FAKEPCAP_HH
+#include <click/string.hh>
+#include <click/packet.hh>
 
 #define FAKE_PCAP_MAGIC			0xa1b2c3d4
 #define	FAKE_MODIFIED_PCAP_MAGIC	0xa1b2cd34
@@ -53,5 +55,12 @@ struct fake_modified_pcap_pkthdr {
 	uint8_t pkt_type;	/* broadcast/multicast/etc. indication */
 	uint8_t pad;		/* pad to a 4-byte boundary */
 };
+
+// Parsing and unparsing.
+int fake_pcap_parse_dlt(const String &);
+const char *fake_pcap_unparse_dlt(int);
+
+// Handling FORCE_IP.
+bool fake_pcap_force_ip(Packet *, int);
 
 #endif
