@@ -473,7 +473,7 @@ ETTStat::simple_action(Packet *p)
     /* add into the neighbors vector */
     _neighbors.push_back(ip);
   } else if (l->period != new_period) {
-    click_chatter("ETTStat %s: %s has changed its link probe period from %u to %u; clearing probe info\n",
+    click_chatter("ETTStat %s: %s has changed its link probe period from %u to %u; clearing probe info",
 		  id().cc(), ip.s().cc(), l->period, new_period);
     l->probes_small.clear();
     l->probes_1.clear();
@@ -483,7 +483,7 @@ ETTStat::simple_action(Packet *p)
   }
 
   if (lp->sent < (unsigned)l->sent) {
-    click_chatter("ETTStat %s: %s has reset; clearing probe info\n",
+    click_chatter("ETTStat %s: %s has reset; clearing probe info",
 		  id().cc(), ip.s().cc());
     l->probes_small.clear();
     l->probes_1.clear();

@@ -60,7 +60,7 @@ CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
                     "BCAST_IP", cpIPAddress, "IP address", &_bcast_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
 		    "COUNT", cpInteger, "Count", &_count,
-		    "MAX_DELAY", cpUnsigned, "Max Delay (ms)", &_max_delay_ms,
+		    "MAX_DELAY_MS", cpUnsigned, "Max Delay (ms)", &_max_delay_ms,
 		    /* below not required */
 		    "DEBUG", cpBool, "Debug", &_debug,
 		    "HISTORY", cpUnsigned, "history", &_history,
@@ -94,11 +94,10 @@ void
 CounterFlood::forward(Broadcast *bcast) {
 
   if (_debug) {
-    click_chatter("%{element} seq %d sender %s my_expected_rx %d sending\n",
+    click_chatter("%{element} seq %d my_expected_rx %d sending\n",
 		  this,
-		  bcast->_seq,
-		  bcast->_rx_from.s().cc(),
-		  0);
+		  bcast->_seq
+		  );
   }
   if (_debug) {
     click_chatter("%{element} forwarding seq %d\n",
@@ -142,6 +141,11 @@ CounterFlood::forward(Broadcast *bcast) {
   pk->set_hop(hops - 1,_ip);
   pk->set_next(hops);
   pk->set_seq(bcast->_seq);
+  uint32_t link_seq = random();
+  pk->set_seq2(link_seq);
+
+  bcast->_sent_seq.push_back(link_seq);
+
   if (bcast->_originated) {
     memcpy(pk->data(), p_in->data(), p_in->length());
     pk->set_data_len(p_in->length());
@@ -150,13 +154,18 @@ CounterFlood::forward(Broadcast *bcast) {
     memcpy(pk->data(), pk_in->data(), pk_in->data_len());
     pk->set_data_len(pk_in->data_len());
   }
-  bcast->_actually_sent = true;
-  _packets_tx++;
-  
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
   memset(eh->ether_dhost, 0xff, 6);
   output(0).push(p);
+
+  _packets_tx++;
+  
+  bcast->_actually_sent = true;
+  bcast->_rx_from.push_back(_ip);
+  bcast->_rx_from_seq.push_back(link_seq);
+
+  
 
 }
 
@@ -218,7 +227,6 @@ CounterFlood::push(int port, Packet *p_in)
     _packets[index]._actually_sent = false;
     _packets[index].t = NULL;
     _packets[index]._to_send = now;
-    _packets[index]._rx_from = _ip;
     if (_debug) {
       click_chatter("%{element} original packet %d, seq %d\n",
 		    this,
@@ -234,7 +242,8 @@ CounterFlood::push(int port, Packet *p_in)
     struct srpacket *pk = (struct srpacket *) (eh+1);
     
     uint32_t seq = pk->seq();
-    
+    uint32_t link_seq = pk->seq2();
+
     int index = -1;
     for (int x = 0; x < _packets.size(); x++) {
       if (_packets[x]._seq == seq) {
@@ -251,12 +260,13 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index]._seq = seq;
       _packets[index]._originated = false;
       _packets[index]._p = p_in->clone();
-      _packets[index]._num_rx = 1;
+      _packets[index]._num_rx = 0;
       _packets[index]._first_rx = now;
       _packets[index]._forwarded = false;
       _packets[index]._actually_sent = false;
       _packets[index].t = NULL;
-      _packets[index]._rx_from = src;
+      _packets[index]._rx_from.push_back(src);
+      _packets[index]._rx_from_seq.push_back(link_seq);
 
       /* schedule timer */
       int delay_time = (random() % _max_delay_ms) + 1;
@@ -286,100 +296,18 @@ CounterFlood::push(int port, Packet *p_in)
 		      src.s().cc());
       }
       /* we've seen this packet before */
-      _packets[index]._extra_rx.push_back(src);
       p_in->kill();
-      _packets[index]._num_rx++;
     }
+    _packets[index]._num_rx++;
+    _packets[index]._rx_from.push_back(src);
+    _packets[index]._rx_from_seq.push_back(link_seq);
+      
+
   }
 
   trim_packets();
 }
 
-
-String
-CounterFlood::static_print_stats(Element *f, void *)
-{
-  CounterFlood *d = (CounterFlood *) f;
-  return d->print_stats();
-}
-
-String
-CounterFlood::print_stats()
-{
-  StringAccum sa;
-
-  sa << "originated " << _packets_originated;
-  sa << " tx " << _packets_tx;
-  sa << " rx " << _packets_rx;
-  sa << "\n";
-  return sa.take_string();
-}
-
-String
-CounterFlood::static_print_count(Element *f, void *)
-{
-  CounterFlood *d = (CounterFlood *) f;
-  return d->print_count();
-}
-
-String
-CounterFlood::print_count()
-{
-  StringAccum sa;
-  sa << _count << "\n";
-  return sa.take_string();
-}
-
-int
-CounterFlood::static_write_debug(const String &arg, Element *e,
-			void *, ErrorHandler *errh) 
-{
-  CounterFlood *n = (CounterFlood *) e;
-  bool b;
-
-  if (!cp_bool(arg, &b))
-    return errh->error("`debug' must be a boolean");
-
-  n->_debug = b;
-  return 0;
-}
-
-int
-CounterFlood::static_write_count(const String &arg, Element *e,
-			void *, ErrorHandler *errh) 
-{
-  CounterFlood *n = (CounterFlood *) e;
-  int b;
-
-  if (!cp_integer(arg, &b))
-    return errh->error("`count' must be a integer");
-
-  n->_count = b;
-  return 0;
-}
-
-int
-CounterFlood::static_write_clear(const String &, Element *e,
-			void *, ErrorHandler *) 
-{
-  CounterFlood *n = (CounterFlood *) e;
-  n->clear();
-  return 0;
-}
-
-void 
-CounterFlood::clear() 
-{
-  _packets.clear();
-}
-String
-CounterFlood::static_print_debug(Element *f, void *)
-{
-  StringAccum sa;
-  CounterFlood *d = (CounterFlood *) f;
-  sa << d->_debug << "\n";
-  return sa.take_string();
-}
 
 String
 CounterFlood::print_packets()
@@ -389,37 +317,103 @@ CounterFlood::print_packets()
     sa << "ip " << _ip;
     sa << " seq " << _packets[x]._seq;
     sa << " originated " << _packets[x]._originated;
+    sa << " actual_first_rx true";
     sa << " num_rx " << _packets[x]._num_rx;
     sa << " num_tx " << (int) _packets[x]._actually_sent;
-    sa << " rx_from " << _packets[x]._rx_from;
+    sa << " sent_seqs ";
+    for (int y = 0; y < _packets[x]._sent_seq.size(); y++) {
+      sa << _packets[x]._sent_seq[y] << " ";
+    }
+    sa << " rx_from "; 
 
-    sa << " ";
-    for (int y = 0; y < _packets[x]._extra_rx.size(); y++) {
-      sa << _packets[x]._extra_rx[y] << " ";
+    for (int y = 0; y < _packets[x]._rx_from.size(); y++) {
+      sa << _packets[x]._rx_from[y] << " " << _packets[x]._rx_from_seq[y] << " ";
     }
 
     sa << "\n";
   }
   return sa.take_string();
 }
-String
-CounterFlood::static_print_packets(Element *f, void *)
-{
-  CounterFlood *d = (CounterFlood *) f;
-  return d->print_packets();
-}
 
+
+String
+CounterFlood::read_param(Element *e, void *vparam)
+{
+  CounterFlood *f = (CounterFlood *) e;
+  switch ((int)vparam) {
+  case 0:			
+    return cp_unparse_bool(f->_debug) + "\n";
+  case 1:			
+    return String(f->_history) + "\n";
+  case 2:			
+    return String(f->_count) + "\n";
+  case 3:			
+    return String(f->_max_delay_ms) + "\n";
+  case 4:
+    return f->print_packets();
+  default:
+    return "";
+  }
+}
+int 
+CounterFlood::write_param(const String &in_s, Element *e, void *vparam,
+			 ErrorHandler *errh)
+{
+  CounterFlood *f = (CounterFlood *)e;
+  String s = cp_uncomment(in_s);
+  switch((int)vparam) {
+  case 0: {    //debug
+    bool debug;
+    if (!cp_bool(s, &debug)) 
+      return errh->error("debug parameter must be boolean");
+    f->_debug = debug;
+    break;
+  }
+
+  case 1: {			// history
+    int history;
+    if (!cp_integer(s, &history))
+      return errh->error("history parameter must be integer");
+    f->_history = history;
+    break;
+  }
+
+  case 2: {			// count
+    int count;
+    if (!cp_integer(s, &count))
+      return errh->error("count parameter must be integer");
+    f->_count = count;
+    break;
+  }
+  case 3: {			// max_delay_ms
+    int max_delay_ms;
+    if (!cp_integer(s, &max_delay_ms))
+      return errh->error("max_delay_ms parameter must be integer");
+    f->_max_delay_ms = max_delay_ms;
+    break;
+  }
+
+  case 5: {	// clear
+    f->_packets.clear();
+    break;
+  }
+  }
+  return 0;
+}
 void
 CounterFlood::add_handlers()
 {
-  add_read_handler("stats", static_print_stats, 0);
-  add_read_handler("debug", static_print_debug, 0);
-  add_read_handler("packets", static_print_packets, 0);
-  add_read_handler("count", static_print_count, 0);
+  add_read_handler("debug", read_param, (void *) 0);
+  add_read_handler("history", read_param, (void *) 1);
+  add_read_handler("count", read_param, (void *) 2);
+  add_read_handler("max_delay_ms", read_param, (void *) 3);
+  add_read_handler("packets", read_param, (void *) 4);
 
-  add_write_handler("debug", static_write_debug, 0);
-  add_write_handler("count", static_write_count, 0);
-  add_write_handler("clear", static_write_clear, 0);
+  add_write_handler("debug", write_param, (void *) 0);
+  add_write_handler("history", write_param, (void *) 1);
+  add_write_handler("count", write_param, (void *) 2);
+  add_write_handler("max_delay_ms", write_param , (void *) 3);
+  add_write_handler("clear", write_param, (void *) 5);
 }
 
 // generate Vector template instance

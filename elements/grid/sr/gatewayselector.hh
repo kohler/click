@@ -51,15 +51,12 @@ class GatewaySelector : public Element {
   /* handler stuff */
   void add_handlers();
 
-  static String static_print_gateway_stats(Element *e, void *);
   String print_gateway_stats();
 
-  static String static_print_is_gateway(Element *e, void *);
-  String print_is_gateway();
-
-  static int static_write_is_gateway(const String &arg, Element *el,
-				     void *, ErrorHandler *errh);
-  void write_is_gateway(bool b);
+  static int write_param(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
+  
+  static String read_param(Element *, void *);
 
   static int static_pick_new_gateway(const String &arg, Element *el,
 				     void *, ErrorHandler *errh);
@@ -93,6 +90,13 @@ private:
   };
   
   DEQueue<Seen> _seen;
+
+
+
+  typedef HashMap<IPAddress, IPAddress> IPTable;
+  typedef IPTable::const_iterator IPIter;
+  IPTable _ignore;
+  IPTable _allow;
   
   class GWInfo {
   public:

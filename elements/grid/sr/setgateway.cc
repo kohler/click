@@ -294,7 +294,7 @@ SetGateway::read_param(Element *e, void *vparam)
     if (d->_gw) {
       return d->_gw.s() + "\n";
     }
-    return "auto:" + d->_gw_sel->id();
+    return "auto:" + d->_gw_sel->id() + "\n";;
   default:
     return "";
   }

@@ -69,22 +69,12 @@ class FlashFlood : public Element {
   static String static_print_debug(Element *f, void *);
   static String static_print_min_p(Element *e, void *);
 
-  static int static_write_debug(const String &arg, Element *e,
-				void *, ErrorHandler *errh); 
-  static int static_write_min_p(const String &arg, Element *e,
-				void *, ErrorHandler *errh); 
-  static int static_write_threshold(const String &arg, Element *e,
-				void *, ErrorHandler *errh); 
-  static int static_write_clear(const String &arg, Element *e,
+  static int write_param(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 
 
   void clear();
 
-  static String static_print_stats(Element *e, void *);
-  String print_stats();
-
-  static String static_print_packets(Element *e, void *);
-  static String static_print_threshold(Element *e, void *);
+  static String read_param(Element *e, void *);
   String print_packets();
 
   void push(int, Packet *);
@@ -99,6 +89,8 @@ private:
   public:
     uint32_t _seq;
     IPProbMap _node_to_prob;
+    Vector<IPAddress> _senders;
+    Vector<uint32_t> _link_seq;
   };
 
 
@@ -117,15 +109,9 @@ private:
     Timer *t;
     struct timeval _to_send;
     
-    IPAddress _rx_from; /* who I got this packet from */
-    Vector<IPAddress> _extra_rx;
-
-    int _delay_ms;
-    int _nweight;
-    int _expected_rx;
-    int _slot;
-
-
+    Vector<IPAddress> _rx_from; /* who I got this packet from */
+    Vector<uint32_t> _rx_from_seq;
+    Vector<uint32_t> _sent_seq;
 
     void del_timer() {
       if (t) {
@@ -156,6 +142,7 @@ private:
   bool _pick_slots;
   bool _slots_nweight;
   bool _slots_erx;
+  bool _process_own_sends;
 
   int _packets_originated;
   int _packets_tx;
@@ -171,11 +158,13 @@ private:
   void forward_hook();
   void trim_packets();
   int get_link_prob(IPAddress from, IPAddress to);
-  void update_probs(int seq, IPAddress ip);
-  void schedule_bcast(Broadcast *bcast);
+  void update_probs(uint32_t seq, uint32_t link_seq, IPAddress ip);
   SeqProbMap *findmap(uint32_t seq);
   int expected_rx(uint32_t seq, IPAddress src);
   int neighbor_weight(IPAddress src);
+  int get_wait_time(uint32_t, IPAddress);
+  void start_flood(Packet *);
+  void process_packet(Packet *);
   static void static_forward_hook(Timer *, void *e) { 
     ((FlashFlood *) e)->forward_hook(); 
   }

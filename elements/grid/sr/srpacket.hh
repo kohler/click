@@ -90,7 +90,7 @@ struct srpacket {
     return _random_rev_metric;
   }
 
-
+  
   // How long should the packet be?
   size_t hlen_wo_data() const { return len_wo_data(_nhops); }
   size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }
@@ -166,6 +166,11 @@ struct srpacket {
     _flags = htons(flags & !f);
   }
 
+  uint32_t get_hop_seq(int h) {
+    uint32_t *ndx = (uint32_t *) (this+1);
+    return ndx[h + num_hops()];
+  }
+
   uint16_t get_fwd_metric(int h) { 
     uint16_t *ndx = (uint16_t *) (this+1);
     return ndx[2*h + num_hops()*2];
@@ -176,6 +181,11 @@ struct srpacket {
     return ndx[1 + 2*h  + num_hops()*2];
   }
 
+
+  void set_hop_seq(int hop, uint32_t seq) {
+    uint32_t *ndx = (uint32_t  *) (this+1);
+    ndx[hop + num_hops()] = seq;
+  }
   void set_fwd_metric(int hop, uint16_t s) { 
     uint16_t *ndx = (uint16_t *) (this+1);
     ndx[2*hop + num_hops()*2] = s;

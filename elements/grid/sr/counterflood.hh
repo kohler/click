@@ -63,23 +63,10 @@ class CounterFlood : public Element {
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 
-  static String static_print_debug(Element *f, void *);
-  static int static_write_debug(const String &arg, Element *e,
-				void *, ErrorHandler *errh); 
+  static String read_param(Element *f, void *);
+  static int write_param(const String &arg, Element *e,
+			 void *, ErrorHandler *errh); 
 
-  static int static_write_count(const String &arg, Element *e,
-				void *, ErrorHandler *errh); 
-
-  static int static_write_clear(const String &arg, Element *e,
-				void *, ErrorHandler *errh); 
-
-  void clear();
-  static String static_print_stats(Element *e, void *);
-  String print_stats();
-  static String static_print_count(Element *e, void *);
-  String print_count();
-
-  static String static_print_packets(Element *e, void *);
   String print_packets();
 
   void push(int, Packet *);
@@ -99,8 +86,10 @@ private:
     bool _actually_sent;
     Timer *t;
     struct timeval _to_send;
-    IPAddress _rx_from;
-    Vector<IPAddress> _extra_rx;
+    Vector<IPAddress> _rx_from;
+    Vector<uint32_t> _rx_from_seq;
+    Vector<uint32_t> _sent_seq;
+
 
     void del_timer() {
       if (t) {

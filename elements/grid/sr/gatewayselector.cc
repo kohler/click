@@ -293,7 +293,9 @@ GatewaySelector::best_gateway()
     int metric = _link_table->get_route_metric(p);
     if (timercmp(&now, &expire, <) && 
 	metric && 
-	((!best_metric) || best_metric > metric)) {
+	((!best_metric) || best_metric > metric) &&
+	!_ignore.findp(nfo._ip) &&
+	(!_allow.size() || _allow.findp(nfo._ip))) {
       best_gw = nfo._ip;
       best_metric = metric;
     }
@@ -463,11 +465,6 @@ GatewaySelector::push(int port, Packet *p_in)
   _seen[si]._fwd_metrics = fwd_metrics;
   _seen[si]._rev_metrics = rev_metrics;
 
-  if (_is_gw) {
-    p_in->kill();
-    return;
-  }
-
 
   if (timercmp(&_seen[si]._when, &_seen[si]._to_send, <)) {
     /* a timer has already been scheduled */
@@ -496,13 +493,6 @@ GatewaySelector::push(int port, Packet *p_in)
 
 
 String
-GatewaySelector::static_print_gateway_stats(Element *f, void *)
-{
-  GatewaySelector *d = (GatewaySelector *) f;
-  return d->print_gateway_stats();
-}
-
-String
 GatewaySelector::print_gateway_stats()
 {
     StringAccum sa;
@@ -523,49 +513,117 @@ GatewaySelector::print_gateway_stats()
 }
 
 String
-GatewaySelector::static_print_is_gateway(Element *f, void *)
+GatewaySelector::read_param(Element *e, void *vparam)
 {
-  GatewaySelector *d = (GatewaySelector *) f;
-  return d->print_is_gateway();
-}
-
-String
-GatewaySelector::print_is_gateway()
-{
-  
-  if (_is_gw) {
-    return "true\n";
+  GatewaySelector *f = (GatewaySelector *) e;
+  switch ((int)vparam) {
+  case 0:			
+    return String(f->_is_gw) + "\n";
+  case 1:			
+    return f->print_gateway_stats();
+  case 2: { //ignore
+    StringAccum sa;
+    for (IPIter iter = f->_ignore.begin(); iter; iter++) {
+      IPAddress ip = iter.key();
+      sa << ip << "\n";
+    }
+    return sa.take_string();
   }
-  return "false\n";
+
+  case 3: { //allow
+    StringAccum sa;
+    for (IPIter iter = f->_allow.begin(); iter; iter++) {
+      IPAddress ip = iter.key();
+      sa << ip << "\n";
+    }
+    return sa.take_string();
+  }
+    
+  default:
+    return "";
+  }
+  
 }
 int
-GatewaySelector::static_write_is_gateway(const String &arg, Element *el,
-			     void *, ErrorHandler *errh)
+GatewaySelector::write_param(const String &in_s, Element *e, void *vparam,
+			 ErrorHandler *errh)
+
 {
-  GatewaySelector *d = (GatewaySelector *) el;
-  bool b;
-  if (!cp_bool(arg, &b)) {
-    return errh->error("arg must be bool");
+  GatewaySelector *f = (GatewaySelector *)e;
+  String s = cp_uncomment(in_s);
+  switch((int)vparam) {
+  case 0: {    //is_gateway
+    bool b;
+    if (!cp_bool(s, &b)) 
+      return errh->error("is_gateway parameter must be boolean");
+    f->_is_gw = b;
+    break;
+  }
+  case 1: { //ignore_add
+    IPAddress ip;
+    if (!cp_ip_address(s, &ip)) {
+      return errh->error("ignore_add parameter must be IPAddress");
+    }
+    f->_ignore.insert(ip, ip);
+    break;
   }
 
-  d->write_is_gateway(b);
-  return 0;
+  case 2: { //ignore_del
+    IPAddress ip;
+    if (!cp_ip_address(s, &ip)) {
+      return errh->error("ignore_del parameter must be IPAddress");
+    }
+    f->_ignore.remove(ip);
+    break;
+  }
+
+  case 3: { //ignore_clear
+    f->_ignore.clear();
+    break;
+  }
+
+  case 4: { //allow_add
+    IPAddress ip;
+    if (!cp_ip_address(s, &ip)) {
+      return errh->error("allow_add parameter must be IPAddress");
+    }
+    f->_allow.insert(ip, ip);
+    break;
+  }
+
+  case 5: { //allow_del
+    IPAddress ip;
+    if (!cp_ip_address(s, &ip)) {
+      return errh->error("allow_del parameter must be IPAddress");
+    }
+    f->_allow.remove(ip);
+    break;
+  }
+
+  case 6: { //allow_clear
+    f->_allow.clear();
+    break;
+  }
+    
+  }
+    return 0;
+
 }
-
-void
-GatewaySelector::write_is_gateway(bool b)
-{
-  _is_gw = b;
-}
-
-
-
 void
 GatewaySelector::add_handlers()
 {
-  add_read_handler("gateway_stats", static_print_gateway_stats, 0);
-  add_read_handler("is_gateway", static_print_is_gateway, 0);
-  add_write_handler("is_gateway", static_write_is_gateway, 0);
+  add_read_handler("is_gateway", read_param, (void *) 0);
+  add_read_handler("gateway_stats", read_param, (void *) 1);
+  add_read_handler("ignore", read_param, (void *) 2);
+  add_read_handler("allow", read_param, (void *) 3);
+  
+  add_write_handler("is_gateway", write_param, (void *) 0);
+  add_write_handler("ignore_add", write_param, (void *) 1);
+  add_write_handler("ignore_del", write_param, (void *) 2);
+  add_write_handler("ignore_clear", write_param, (void *) 3);
+  add_write_handler("allow_add", write_param, (void *) 4);
+  add_write_handler("allow_del", write_param, (void *) 5);
+  add_write_handler("allow_clear", write_param, (void *) 6);
 }
 
 // generate Vector template instance
