@@ -59,7 +59,7 @@ extern "C" {
 # if defined(__FreeBSD__) || defined(__OpenBSD__)
 #  define TODEVICE_BSD_DEV_BPF 1
 #  define TODEVICE_WRITE 1
-# elif defined(__sparc)
+# elif defined(__sun)
 #  define TODEVICE_PCAP 1
 #  define TODEVICE_WRITE 1
 # endif
