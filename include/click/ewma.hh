@@ -136,7 +136,7 @@ template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
 inline String
 RateEWMAX<stability_shift, scale, n, Timer>::unparse(unsigned which) const
 {
-  return cp_unparse_real(average(which) * Timer::freq(), scale);
+  return cp_unparse_real2(average(which) * Timer::freq(), scale);
 }
 
 #endif

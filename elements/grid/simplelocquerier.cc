@@ -55,8 +55,8 @@ SimpleLocQuerier::configure(const Vector<String> &conf, ErrorHandler *errh)
     int ilat, ilon;
     if (cp_va_space_parse(conf[i], this, errh,
 			  cpIPAddress, "IP address", &ip,
-			  cpReal, "latitude", 7, &ilat,
-			  cpReal, "longitude", 7, &ilon,
+			  cpReal10, "latitude", 7, &ilat,
+			  cpReal10, "longitude", 7, &ilon,
 			  0) < 0)
       return -1;
     grid_location loc;
@@ -118,8 +118,8 @@ SimpleLocQuerier::add_entry(const String &arg, Element *element,
   int ilat, ilon;
   if (cp_va_space_parse(arg, l, errh,
 			cpIPAddress, "IP address", &ip,
-			cpReal, "latitude", 7, &ilat,
-			cpReal, "longitude", 7, &ilon,
+			cpReal10, "latitude", 7, &ilat,
+			cpReal10, "longitude", 7, &ilon,
 			0) < 0)
     return -1;
   grid_location loc;

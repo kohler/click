@@ -54,7 +54,7 @@ RadioSim::configure(const Vector<String> &conf, ErrorHandler *errh)
     if(words.size() != 2)
       return errh->error("argument %d doesn't have lat and lon", i);
     int xlat, xlon;
-    if(!cp_real(words[0], 5, &xlat) || !cp_real(words[1], 5, &xlon))
+    if(!cp_real10(words[0], 5, &xlat) || !cp_real10(words[1], 5, &xlon))
       return errh->error("could not parse lat or lon from arg %d", i);
     Node n;
     n._lat = ((double)xlat) / 100000.0;
@@ -155,8 +155,8 @@ rs_write_handler(const String &arg, Element *element,
   int xi, xlat, xlon;
   if(words.size() != 3 ||
      !cp_integer(words[0], 10, &xi) ||
-     !cp_real(words[1], 5, &xlat) ||
-     !cp_real(words[2], 5, &xlon))
+     !cp_real10(words[1], 5, &xlat) ||
+     !cp_real10(words[2], 5, &xlon))
     return errh->error("%s: expecting node-index lat lon", l->id().cc());
   if(xi >= 0 && xi < l->nnodes()){
     double lat = ((double)xlat) / 100000.0;

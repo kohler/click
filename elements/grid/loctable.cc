@@ -44,8 +44,8 @@ LocationTable::read_args(const Vector<String> &conf, ErrorHandler *errh)
     int err;
     int res = cp_va_space_parse(conf[i], this, errh,
 				cpIPAddress, "IP", &ip,
-				cpReal, "latitude", 7, &lat,
-				cpReal, "longitude", 7, &lon,
+				cpReal10, "latitude", 7, &lat,
+				cpReal10, "longitude", 7, &lon,
 				cpInteger, "error_radius", &err,
 				0);
     if (res < 0)
@@ -108,8 +108,8 @@ loc_write_handler(const String &arg, Element *element,
   int err;
   int res = cp_va_space_parse(arg, l, errh,
 			      cpIPAddress, "IP", &ip,
-			      cpReal, "latitude", 7, &lat,
-			      cpReal, "longitude", 7, &lon,
+			      cpReal10, "latitude", 7, &lat,
+			      cpReal10, "longitude", 7, &lon,
 			      cpInteger, "error_radius", &err,
 			      0);
   if (res < 0)

@@ -49,8 +49,8 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   int lat_int, lon_int;
   int res = cp_va_parse(conf, this, errh,
 			// 5 fractional digits ~= 1 metre precision
-			cpReal, "latitude (decimal degrees)", 5, &lat_int,
-			cpReal, "longitude (decimal degrees)", 5, &lon_int,
+			cpReal10, "latitude (decimal degrees)", 5, &lat_int,
+			cpReal10, "longitude (decimal degrees)", 5, &lon_int,
                         cpOptional,
                         cpInteger, "move?", &do_move,
 			0);

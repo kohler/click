@@ -91,13 +91,13 @@ RED::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "min_thresh queue length", &min_thresh,
 		  cpUnsigned, "max_thresh queue length", &max_thresh,
-		  cpNonnegFixed, "max_p drop probability", 16, &max_p,
+		  cpNonnegReal2, "max_p drop probability", 16, &max_p,
 		  cpOptional,
 		  cpArgument, "relevant queues", &queues_string,
 		  cpKeywords,
 		  "MIN_THRESH", cpUnsigned, "min_thresh queue length", &min_thresh,
 		  "MAX_THRESH", cpUnsigned, "max_thresh queue length", &max_thresh,
-		  "MAX_P", cpNonnegFixed, "max_p drop probability", 16, &max_p,
+		  "MAX_P", cpNonnegReal2, "max_p drop probability", 16, &max_p,
 		  "QUEUES", cpArgument, "relevant queues", &queues_string,
 		  0) < 0)
     return -1;
@@ -283,7 +283,7 @@ RED::read_parameter(Element *f, void *vparam)
    case 1:			// max_thresh
     return String(red->_max_thresh>>QUEUE_SCALE) + "\n";
    case 2:			// max_p
-    return cp_unparse_real(red->_max_p, 16) + "\n";
+    return cp_unparse_real2(red->_max_p, 16) + "\n";
    default:
     return "";
   }
@@ -296,7 +296,7 @@ RED::read_stats(Element *f, void *)
   const DirectEWMA &ewma = r->average_queue_size();
   return
     String(r->queue_size()) + " current queue\n" +
-    cp_unparse_real(ewma.average(), ewma.scale) + " avg queue\n" +
+    cp_unparse_real2(ewma.average(), ewma.scale) + " avg queue\n" +
     String(r->drops()) + " drops\n"
 #if CLICK_STATS >= 1
     + String(r->output(0).npackets()) + " packets\n"

@@ -57,8 +57,8 @@ MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_space_parse(conf[i], this, errh,
 			  cpUnsigned, "movement interval (ms)", &t,
 			  cpElement, "GridLocationInfo", &el,
-			  cpReal, "latitude", 7, &int_vlat,
-			  cpReal, "longitude", 7, &int_vlon,
+			  cpReal10, "latitude", 7, &int_vlat,
+			  cpReal10, "longitude", 7, &int_vlon,
 			  0) < 0)
       return -1;
     GridLocationInfo *li = (GridLocationInfo *)el->cast("GridLocationInfo");

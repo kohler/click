@@ -65,8 +65,8 @@ PEP::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpIPAddress, "source IP address", &_my_ip,
                         cpOptional,
                         cpBool, "fixed?", &fixed,
-			cpReal, "latitude (decimal degrees)", 5, &lat_int,
-			cpReal, "longitude (decimal degrees)", 5, &lon_int,
+			cpReal10, "latitude (decimal degrees)", 5, &lat_int,
+			cpReal10, "longitude (decimal degrees)", 5, &lon_int,
 			0);
   if(res < 0)
     return(res);

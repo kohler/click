@@ -52,7 +52,7 @@ RandomLossage::configure(const Vector<String> &conf, ErrorHandler *errh)
   int p_drop;
   bool on = true;
   if (cp_va_parse(conf, this, errh,
-		  cpNonnegFixed, "max_p drop probability", 16, &p_drop,
+		  cpNonnegReal2, "max_p drop probability", 16, &p_drop,
 		  cpOptional,
 		  cpBool, "active?", &on,
 		  0) < 0)
@@ -113,7 +113,7 @@ random_lossage_read(Element *f, void *vwhich)
   int which = (int)vwhich;
   RandomLossage *lossage = (RandomLossage *)f;
   if (which == 0)
-    return cp_unparse_real(lossage->p_drop(), 16) + "\n";
+    return cp_unparse_real2(lossage->p_drop(), 16) + "\n";
   else if (which == 1)
     return (lossage->on() ? "true\n" : "false\n");
   else

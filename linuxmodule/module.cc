@@ -388,10 +388,10 @@ cleanup_module()
   
   delete[] root_handlers;
   cp_va_static_cleanup();
-  
-  ErrorHandler::static_cleanup();
+
   delete kernel_errh;
   delete syslog_errh;
+  ErrorHandler::static_cleanup();
   kernel_errh = syslog_errh = 0;
   
   skbmgr_cleanup();

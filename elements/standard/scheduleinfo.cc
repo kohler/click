@@ -159,7 +159,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
   // check for too many tickets
   if (max_tickets > Task::MAX_TICKETS) {
     max_tickets = Task::MAX_TICKETS;
-    String m = cp_unparse_real(max_tickets, FRAC_BITS);
+    String m = cp_unparse_real2(max_tickets, FRAC_BITS);
     errh->warning("ScheduleInfo too high; reduced to %s", m.cc());
   }
   

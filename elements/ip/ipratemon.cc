@@ -64,7 +64,7 @@ IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
   _anno_packets = true;
   if (cp_va_parse(conf, this, errh,
 		  cpWord, "monitor type", &count_what,
-		  cpNonnegFixed, "ratio", 16, &_ratio,
+		  cpNonnegReal2, "ratio", 16, &_ratio,
 		  cpUnsigned, "threshold", &_thresh,
 		  cpOptional, 
 		  cpUnsigned, "memmax", &_memmax,
@@ -323,13 +323,13 @@ IPRateMonitor::print(Stats *s, String ip = "")
 
       c->fwd_and_rev_rate.update_time();
       ret += "\t"; 
-      ret += cp_unparse_real(c->fwd_and_rev_rate.average(0) *
-	                     c->fwd_and_rev_rate.freq(),
-	                     c->fwd_and_rev_rate.scale);
+      ret += cp_unparse_real2(c->fwd_and_rev_rate.average(0) *
+			      c->fwd_and_rev_rate.freq(),
+			      c->fwd_and_rev_rate.scale);
       ret += "\t"; 
-      ret += cp_unparse_real(c->fwd_and_rev_rate.average(1) *
-	                     c->fwd_and_rev_rate.freq(),
-	                     c->fwd_and_rev_rate.scale);
+      ret += cp_unparse_real2(c->fwd_and_rev_rate.average(1) *
+			      c->fwd_and_rev_rate.freq(),
+			      c->fwd_and_rev_rate.scale);
       
       ret += "\n";
       if (c->next_level) 

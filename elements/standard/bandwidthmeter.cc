@@ -112,11 +112,11 @@ BandwidthMeter::meters_read_handler(Element *f, void *)
 {
   BandwidthMeter *m = (BandwidthMeter *)f;
   if (m->_nmeters == 1)
-    return cp_unparse_real(m->_meter1*m->rate_freq(), m->rate_scale()) + "\n";
+    return cp_unparse_real2(m->_meter1*m->rate_freq(), m->rate_scale()) + "\n";
   else {
     String s;
     for (int i = 0; i < m->_nmeters; i++)
-      s = s + cp_unparse_real(m->_meters[i]*m->rate_freq(), m->rate_scale()) + "\n";
+      s = s + cp_unparse_real2(m->_meters[i]*m->rate_freq(), m->rate_scale()) + "\n";
     return s;
   }
 }
@@ -125,7 +125,7 @@ static String
 read_rate_handler(Element *f, void *)
 {
   BandwidthMeter *c = (BandwidthMeter *)f;
-  return cp_unparse_real(c->rate()*c->rate_freq(), c->rate_scale()) + "\n";
+  return cp_unparse_real2(c->rate()*c->rate_freq(), c->rate_scale()) + "\n";
 }
 
 void
