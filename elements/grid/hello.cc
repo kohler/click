@@ -95,7 +95,7 @@ Hello::make_hello()
 
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->hdr_len = sizeof(grid_hdr);
-  gh->total_len = sizeof(grid_hdr);
+  gh->total_len = htons(sizeof(grid_hdr));
   gh->type = grid_hdr::GRID_HELLO;
   memcpy(&gh->ip, _from_ip.data(), 4);
 

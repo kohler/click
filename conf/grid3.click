@@ -39,7 +39,7 @@ cl [0] -> to_linux
 cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> to_linux
 check [1] -> Discard
 cl [2] -> SetIPAddress(GRID_GW) -> [1] lr // for grid gateway
-nb [1] -> to_wvlan
+nb [1] -> to_wvlan // Routing hello packets
 
 Hello(HELLO_PERIOD, HELLO_JITTER, MAC_ADDR, GRID_IP) -> to_wvlan
 

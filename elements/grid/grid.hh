@@ -67,8 +67,8 @@ struct grid_hdr {
                             // Why do we need total_len? What about byte order? -- for cksum.  network order.
   unsigned short cksum;     // Over the whole packet, starting at grid_hdr.
 
-  grid_hdr()
-    : hdr_len(sizeof(grid_hdr)), total_len(sizeof(grid_hdr)), cksum(0) { }
+  grid_hdr() : hdr_len(sizeof(grid_hdr)), cksum(0) 
+  { total_len = htons(sizeof(grid_hdr)); }
 
   static String type_string(int type);
 };
