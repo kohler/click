@@ -1,3 +1,16 @@
+2005-02-19 Saturday 23:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/portinfo.cc (1.5), include/click/nameinfo.hh
+	(1.2), include/click/standard/portinfo.hh (1.4), lib/confparse.cc
+	(1.139), lib/nameinfo.cc (1.3): more NameInfo changes: support
+	stacked NameInfo in PortInfo; now confparse is independent of
+	PortInfo
+
+2005-02-19 Saturday 23:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure.in (1.254), configure (1.45): follow symbolic links
+	(Nick Weaver)
+
 2005-02-17 Thursday 15:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/routerthread.cc (1.54): John Bicket saw "schedule_timeout:
