@@ -1,3 +1,28 @@
+2002-07-23 Tuesday 13:21  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromdagdump.cc (1.8),
+	elements/analysis/fromflandump.cc (1.4),
+	elements/analysis/fromipsumdump.cc (1.22),
+	elements/analysis/fromnetflowsumdump.cc (1.9),
+	elements/analysis/timefilter.cc (1.7),
+	elements/analysis/timerange.cc (1.3),
+	elements/ethernet/arpresponder.cc (1.40),
+	elements/ethernet/etherencap.cc (1.18),
+	elements/icmp/checkicmpheader.cc (1.13),
+	elements/ip/checkipheader.cc (1.45), elements/ip/ipencap.cc (1.32),
+	elements/standard/counter.cc (1.26),
+	elements/standard/infinitesource.cc (1.35),
+	elements/standard/randomsample.cc (1.4),
+	elements/standard/stridesched.cc (1.17),
+	elements/standard/unqueue.cc (1.19),
+	elements/tcpudp/checktcpheader.cc (1.12),
+	elements/tcpudp/checkudpheader.cc (1.12),
+	elements/userlevel/fromdump.cc (1.67),
+	elements/userlevel/khandlerproxy.cc (1.6),
+	elements/userlevel/progressbar.cc (1.18), lib/element.cc (1.72),
+	lib/notifier.cc (1.6): use intptr_t when casting between void* and
+	integer types (YongKang Zhu reported)
+
 2002-07-23 Tuesday 02:34  Eddie Kohler <kohler@icir.org>
 
 	* include/click/timer.hh (1.17): aesthetic rearrangement

@@ -1,3 +1,8 @@
+2002-07-23 Tuesday 13:21  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/: element.cc, notifier.cc: use intptr_t when casting
+	between void* and integer types (YongKang Zhu reported)
+
 2002-07-23 Tuesday 02:34  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: timer.hh, timer.hh: aesthetic rearrangement
