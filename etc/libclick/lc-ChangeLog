@@ -1,3 +1,14 @@
+2002-03-07 Thursday 14:09  Eddie Kohler <kohler@aciri.org>
+
+	* LICENSE, click-buildtool: nitlets
+
+2002-03-07 Thursday 13:32  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: I am a complete moron.
+	cp_va_parse_remove_keywords removed arguments that WEREN'T
+	keywords, instead of arguments that were. Doug DeCouto reported the
+	IPRewriter bug.
+
 2002-03-06 Wednesday 21:06  Eddie Kohler <kohler@aciri.org>
 
 	* config-bsdmodule.h.in, config-linuxmodule.h.in, pathvars.h.in:

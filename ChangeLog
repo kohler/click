@@ -1,3 +1,19 @@
+2002-03-07 Thursday 14:09  Eddie Kohler <kohler@aciri.org>
+
+	* LICENSE (1.5), click-buildtool (1.35): nitlets
+
+2002-03-07 Thursday 13:33  Eddie Kohler <kohler@aciri.org>
+
+	* elements/tcpudp/: iprewriter.cc (1.32), tcprewriter.cc (1.20):
+	nitlets
+
+2002-03-07 Thursday 13:32  Eddie Kohler <kohler@aciri.org>
+
+	* lib/confparse.cc (1.96): I am a complete moron.
+	cp_va_parse_remove_keywords removed arguments that WEREN'T
+	keywords, instead of arguments that were. Doug DeCouto reported the
+	IPRewriter bug.
+
 2002-03-06 Wednesday 21:17  Eddie Kohler <kohler@aciri.org>
 
 	* tools/click-install/: common.cc (1.2), click-install.cc (1.44):
