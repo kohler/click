@@ -264,6 +264,8 @@ dnl
 AC_ARG_ENABLE(int64, [  --disable-int64         disable 64-bit integer support], :, enable_int64=yes)
 
 CLICK_CHECK_ALIGNMENT
+AC_CHECK_SIZEOF(int)
+AC_CHECK_SIZEOF(long)
 CLICK_CHECK_INTEGER_TYPES
 if test "x$enable_int64" = xyes; then
     CLICK_CHECK_INT64_TYPES
