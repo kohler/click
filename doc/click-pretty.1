@@ -249,8 +249,10 @@ the element class's Web documentation.
 .TP 5
 .BR "<~config [limit" "=\fIlimit" "] [parens]>"
 Elements only. Expands to the current element's configuration string. The
-result contains at most \fIlimit\fR characters; when \fIlimit\fR is too
-short, Click will append an ellipsis. If
+result contains at most \fIlimit\fR characters; if the configuration string
+was longer,
+.B click-pretty
+prints its first \fIlimit\fR characters, followed by an ellipsis. If
 .B parens
 was supplied, non-empty configuration strings are enclosed in parentheses.
 '
