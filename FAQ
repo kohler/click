@@ -40,7 +40,7 @@ Q. How does Click run inside a Linux kernel?
 
 A. As a kernel thread. It continually loops over a list of things to do,
    and does them---basically busy waiting. Other processes on the machine
-   will get run, but not as often.
+   will get run, but not as often as on a machine without Click.
 
 
 SECTION 2: QUESTIONS ABOUT POLLING
@@ -59,7 +59,7 @@ Q. Can I use Click without updating device drivers (that is, without
    polling)?
 
 A. Sure you can. Just use FromDevice elements instead of PollDevice
-   elements. However, your performance will suck. It may suck even more
+   elements. Your performance will suck. In fact, it may suck even more
    than it used to. Earlier versions of Click had a couple hacks that made
    performance a bit better on a non-polling system. We removed those hacks
    for Click 1.0, now that we know how to make a high-performance system:

@@ -3,7 +3,7 @@
 # make-ip-conf.pl -- make a Click IP router configuration
 # Robert Morris
 #
-# Copyright (c) 1999 Massachusetts Institute of Technology.
+# Copyright (c) 1999-2000 Massachusetts Institute of Technology.
 #
 # This software is being provided by the copyright holders under the GNU
 # General Public License, either version 2 or, at your discretion, any later
@@ -12,27 +12,29 @@
 
 # Make a Click IP router configuration.
 # The output is only useful with the Linux kernel module.
-
+# This script generates a configuration using PollDevices. You can change
+# it to use FromDevices; see the comment above the $ifs array, below.
 
 
 # IP router setup for  blackisle -> plebic -> darkstar
 
 # Change this array to suit your router.
 # One line per network interface, containing:
-#  The interface name,
-#  The router's IP address on that interface,
-#  The netmask on that interface, and
+#  The interface name;
+#  Whether the interface can use polling (1 = polling, 0 = no polling);
+#  The router's IP address on that interface;
+#  The netmask on that interface; and
 #  The router's Ethernet address on that interface.
 
-my $ifs = [ [ "eth0", "18.26.4.92", "255.255.255.0", "00:00:C0:3B:71:EF" ],
-            [ "eth1", "1.0.0.1", "255.0.0.0", "00:00:C0:CA:68:EF" ],
-#            [ "eth2", "2.0.0.1", "255.0.0.0", "00:00:C0:8A:67:EF" ],
+my $ifs = [ [ "eth0", 1, "18.26.4.92", "255.255.255.0", "00:00:C0:3B:71:EF" ],
+            [ "eth1", 1, "1.0.0.1", "255.0.0.0", "00:00:C0:CA:68:EF" ],
+#           [ "eth2", 1, "2.0.0.1", "255.0.0.0", "00:00:C0:8A:67:EF" ],
            ];
 
 if ($#ARGV >= 0) {
   $ifs = [];
   for ($i = 0; $i < $ARGV[0]; $i++) {
-    push @$ifs, [ "eth" . $i, "1.0.0.2", "255.0.0.0", "00:00:c0:8a:67:ef" ];
+    push @$ifs, [ "eth" . $i, 1, "1.0.0.2", "255.0.0.0", "00:00:c0:8a:67:ef" ];
   }
 }
 
@@ -44,8 +46,8 @@ my $i;
 for($i = 0; $i < $nifs; $i++){
     printf("// %s %s %s\n",
            $ifs->[$i]->[0],
-           $ifs->[$i]->[1],
-           $ifs->[$i]->[3]);
+           $ifs->[$i]->[2],
+           $ifs->[$i]->[4]);
 }
 print "\n";
 
@@ -56,15 +58,16 @@ print "\n";
 
 for($i = 0; $i < $nifs; $i++){
     my $eth = $ifs->[$i]->[0];
-    my $ip = $ifs->[$i]->[1];
-    my $ena = $ifs->[$i]->[3];
+    my $ip = $ifs->[$i]->[2];
+    my $ena = $ifs->[$i]->[4];
     my $paint = $i + 1;
+    my $fromdevice = ($ifs->[$i]->[1] ? "PollDevice" : "FromDevice");
     print <<EOF
 c$i :: Classifier(12/0806 20/0001,
                   12/0806 20/0002,
                   12/0800,
                   -);
-PollDevice($eth) -> PullToPush -> [0]c$i;
+$fromdevice($eth) -> PullToPush -> [0]c$i;
 out$i :: Queue(200) -> ToDevice($eth);
 arpq$i :: ARPQuerier($ip, $ena);
 c$i [1] -> t;
@@ -78,24 +81,24 @@ EOF
 
 my $ipharg = "";
 for($i = 0; $i < $nifs; $i++){
-    my $ii = ip2i($ifs->[$i]->[1]);
-    my $mask = ip2i($ifs->[$i]->[2]);
+    my $ii = ip2i($ifs->[$i]->[2]);
+    my $mask = ip2i($ifs->[$i]->[3]);
     $ipharg .= i2ip(($ii & $mask) | ~$mask) . " ";
 }
 
 print "rt :: LookupIPRoute(\n";
 for($i = 0; $i < $nifs; $i++){
-    my $ii = ip2i($ifs->[$i]->[1]);
-    my $mask = ip2i($ifs->[$i]->[2]);
-    printf(" %s 255.255.255.255 0.0.0.0 0,\n", $ifs->[$i]->[1]);
+    my $ii = ip2i($ifs->[$i]->[2]);
+    my $mask = ip2i($ifs->[$i]->[3]);
+    printf(" %s 255.255.255.255 0.0.0.0 0,\n", $ifs->[$i]->[2]);
     printf(" %s 255.255.255.255 0.0.0.0 0,\n",
            i2ip(($ii & $mask) | ~$mask));
     printf(" %s 255.255.255.255 0.0.0.0 0,\n",
            i2ip($ii & $mask));
 }
 for($i = 0; $i < $nifs; $i++){
-    my $ii = ip2i($ifs->[$i]->[1]);
-    my $mask = ip2i($ifs->[$i]->[2]);
+    my $ii = ip2i($ifs->[$i]->[2]);
+    my $mask = ip2i($ifs->[$i]->[3]);
     printf(" %s %s 0.0.0.0 %d,\n",
            i2ip($ii & $mask),
            i2ip($mask),
@@ -122,7 +125,7 @@ print "\n";
 
 for($i = 0; $i < $nifs; $i++){
     my $i1 = $i + 1;
-    my $ipa = $ifs->[$i]->[1];
+    my $ipa = $ifs->[$i]->[2];
     print <<EOF;
 rt[$i1] -> DropBroadcasts
         -> cp$i :: CheckPaint($i1)

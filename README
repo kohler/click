@@ -10,7 +10,8 @@ information on the Web at
     Click is a modular router toolkit. To use it you'll need to know how to
 compile and install the software, how to write router configurations, and
 how to write new elements. Our SOSP 1999 paper (available from the Web
-site) is a good place to get a feeling for what Click can do.
+site) will give you a feeling for what Click can do. (Note: Our performance
+has improved about sixfold since that paper.)
 
 CONTENTS
 --------
@@ -62,7 +63,7 @@ modules. See the `doc/click.5' manual page for a detailed description, or
 check the `conf' directory for some simple examples.
 
     Click can be compiled as a user-level program, which (when run as the
-superuser) can get copies of arriving packets via the pcap library, or as a
+superuser) can get copies of arriving packets via the pcap library; or as a
 Linux kernel module, which lives in the kernel and steals packets directly
 from devices.
 
