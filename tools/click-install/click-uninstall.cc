@@ -50,7 +50,7 @@ static const char *program_name;
 void
 short_usage()
 {
-  fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
+  fprintf(stderr, "Usage: %s [OPTION]...\n\
 Try `%s --help' for more information.\n",
 	  program_name, program_name);
 }
