@@ -275,6 +275,12 @@ if ($dev =~ /ath/) {
     print "-> WifiEncap(0x02, $wireless_mac)\n";
 }
 
+my $gw_string = "false";
+
+if ($gateway) {
+    $gw_string = "true";
+}
+
 print <<EOF;
 
 -> SetTXRate(RATE 2)
@@ -331,7 +337,7 @@ srcr_gw :: GatewaySelector(ETHTYPE 0x092c,
 		      LT srcr_lt, 
 		      ARP srcr_arp, 
 		      PERIOD 15,
-		      GW false,
+		      GW $gw_string,
 		      LM srcr_ett);
 
 srcr_set_gw :: SetGateway(SEL srcr_gw);
