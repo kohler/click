@@ -19,7 +19,6 @@ class IPFlowID {
   explicit IPFlowID(Packet *);
 
   operator bool() const;
-  unsigned hashcode() const;
 
   IPAddress saddr() const		{ return _saddr; }
   IPAddress daddr() const		{ return _daddr; }
@@ -66,24 +65,14 @@ IPFlowID::rev() const
 
 #define ROT(v, r) ((v)<<(r) | ((unsigned)(v))>>(32-(r)))
 
-#if 0
 inline unsigned
-IPFlowID::hashcode() const
-{ 
-#define CHUCK_MAGIC 0x4c6d92b3;
-  return (ROT(_saddr.hashcode(), 13) 
-	  ^ ROT(_daddr.hashcode(), 23) ^ (_sport | (_dport<<16)));
-}
-#endif
-
-inline unsigned
-IPFlowID::hashcode() const
+hashcode(const IPFlowID &f)
 { 
   // more complicated hashcode, but causes less collision
-  unsigned short s = ntohs(_sport);
-  unsigned short d = ntohs(_dport);
-  return (ROT(_saddr.hashcode(), s%16)
-          ^ ROT(_daddr.hashcode(), 31-d%16))
+  unsigned short s = ntohs(f.sport());
+  unsigned short d = ntohs(f.dport());
+  return (ROT(hashcode(f.saddr()), s%16)
+          ^ ROT(hashcode(f.daddr()), 31-d%16))
 	  ^ ((d << 16) | s);
 }
 

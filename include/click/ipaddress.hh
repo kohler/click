@@ -26,7 +26,6 @@ class IPAddress { public:
   unsigned char *data();
   const unsigned char *data() const;
   
-  unsigned hashcode() const	{ return _addr; }
   int mask_to_prefix_len() const;
   bool matches_prefix(IPAddress addr, IPAddress mask) const;
   bool mask_more_specific(IPAddress) const;
@@ -167,6 +166,12 @@ inline IPAddress
 operator~(IPAddress a)
 {
   return IPAddress(~a.addr());
+}
+
+inline unsigned
+hashcode(IPAddress a)
+{
+  return a.addr();
 }
 
 #endif

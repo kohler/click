@@ -15,19 +15,18 @@ class IP6FlowID {
  public:
 
   IP6FlowID();
-  IP6FlowID(IP6Address, unsigned short, IP6Address, unsigned short);
+  IP6FlowID(const IP6Address &, unsigned short, const IP6Address &, unsigned short);
   explicit IP6FlowID(Packet *);
 
   operator bool() const;
-  unsigned hashcode() const;
 
-  IP6Address saddr() const		{ return _saddr; }
-  IP6Address daddr() const		{ return _daddr; }
+  const IP6Address &saddr() const	{ return _saddr; }
+  const IP6Address &daddr() const	{ return _daddr; }
   unsigned short sport() const		{ return _sport; }
   unsigned short dport() const		{ return _dport; }
 
-  void set_saddr(IP6Address a)		{ _saddr = a; }
-  void set_daddr(IP6Address a)		{ _daddr = a; }
+  void set_saddr(const IP6Address &a)	{ _saddr = a; }
+  void set_daddr(const IP6Address &a)	{ _daddr = a; }
   void set_sport(unsigned short p)	{ _sport = p; }
   void set_dport(unsigned short p)	{ _dport = p; }
   
@@ -45,8 +44,8 @@ IP6FlowID::IP6FlowID()
 }
 
 inline
-IP6FlowID::IP6FlowID(IP6Address saddr, unsigned short sport,
-		   IP6Address daddr, unsigned short dport)
+IP6FlowID::IP6FlowID(const IP6Address &saddr, unsigned short sport,
+		     const IP6Address &daddr, unsigned short dport)
   : _saddr(saddr), _daddr(daddr), _sport(sport), _dport(dport)
 {
 }
@@ -77,13 +76,13 @@ IP6FlowID::hashcode() const
 #endif
 
 inline unsigned
-IP6FlowID::hashcode() const
+hashcode(const IP6FlowID &f)
 { 
   // more complicated hashcode, but causes less collision
-  unsigned short s = ntohs(_sport);
-  unsigned short d = ntohs(_dport);
-  return (ROT(_saddr.hashcode(), s%16)
-          ^ ROT(_daddr.hashcode(), 31-d%16))
+  unsigned short s = ntohs(f.sport());
+  unsigned short d = ntohs(f.dport());
+  return (ROT(hashcode(f.saddr()), s%16)
+          ^ ROT(hashcode(f.daddr()), 31-d%16))
 	  ^ ((d << 16) | s);
 }
 

@@ -17,13 +17,14 @@
 
 #include <click/hashmap.hh>
 
-// 		k1 == k2  (must exist)
 //		K::K()
 // 		K::operator bool() const
 //			It must be true that (bool)(K()) == 0
 //			and that no k with (bool)k == 0 is stored.
 // K &		K::operator=(const K &)
-// int		K::hashcode() const
+
+// 		k1 == k2
+// int		hashcode(const K &)
 
 // V &		V::operator=(const V &)
 
@@ -84,8 +85,8 @@ template <class K, class V>
 inline int
 HashMap<K, V>::bucket(const K &key) const
 {
-  int hc = key.hashcode();
-  int i =  (hc >> 2) & (_size - 1);
+  int hc = hashcode(key);
+  int i =   hc       & (_size - 1);
   int j = ((hc >> 6) & (_size - 1)) | 1;
   
   while (_e[i].k && !(_e[i].k == key))

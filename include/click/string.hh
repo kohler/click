@@ -65,8 +65,6 @@ class String { public:
   int find_left(const String &s, int start = 0) const;
   int find_right(int c, int start = 0x7FFFFFFF) const;
   
-  int hashcode() const;
-  
   bool equals(const char *, int) const;
   // bool operator==(const String &, const String &);
   // bool operator==(const String &, const char *);
@@ -393,5 +391,7 @@ operator+(PermString p1, PermString p2)
 }
 
 #endif
+
+int hashcode(const String &);
 
 #endif

@@ -6,7 +6,7 @@
 //
 // 		k1 == k2
 //		K::K(const K &)
-// int		K::hashcode() const
+// int		hashcode(const K &)
 //
 //		V::V()		(can be expensive; only used for default value)
 // 		V::V(const V &)

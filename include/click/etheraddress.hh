@@ -18,8 +18,6 @@ class EtherAddress {
   const unsigned char *data() const;
   const unsigned short *sdata() const	{ return _data; }
 
-  unsigned hashcode() const;
-  
   String s() const;
 };
 
@@ -47,12 +45,6 @@ EtherAddress::is_group() const
   return data()[0] & 1;
 }
 
-inline unsigned
-EtherAddress::hashcode() const
-{
-  return (_data[2] | (_data[1] << 16)) ^ (_data[0] << 9);
-}
-
 inline bool
 operator==(const EtherAddress &a, const EtherAddress &b)
 {
@@ -68,5 +60,12 @@ operator!=(const EtherAddress &a, const EtherAddress &b)
 
 class StringAccum;
 StringAccum &operator<<(StringAccum &, const EtherAddress &);
+
+inline int
+hashcode(const EtherAddress &ea)
+{
+  const unsigned char *d = ea.data();
+  return (d[2] | (d[1] << 16)) ^ (d[0] << 9);
+}
 
 #endif

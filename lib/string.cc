@@ -503,17 +503,19 @@ String::printable() const
 }
 
 int
-String::hashcode() const
+hashcode(const String &s)
 {
-  if (!_length)
+  int length = s.length();
+  const char *data = s.data();
+  if (!length)
     return 0;
-  else if (_length == 1)
-    return _data[0] | (_data[0] << 8);
-  else if (_length < 4)
-    return _data[0] + (_data[1] << 3) + (_length << 12);
+  else if (length == 1)
+    return data[0] | (data[0] << 8);
+  else if (length < 4)
+    return data[0] + (data[1] << 3) + (length << 12);
   else
-    return _data[0] + (_data[1] << 8) + (_data[2] << 16) + (_data[3] << 24)
-      + (_length << 12) + (_data[_length-1] << 10);
+    return data[0] + (data[1] << 8) + (data[2] << 16) + (data[3] << 24)
+      + (length << 12) + (data[length-1] << 10);
 }
 
 bool
