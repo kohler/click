@@ -206,7 +206,7 @@ create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh = 0)
 	      (unsigned)wrote_size);
 
     if (must_longname)
-      sa.push(ndata, nlen);
+      sa.append(ndata, nlen);
     sa << ae.data;
 
     want_size += 60 + wrote_size;

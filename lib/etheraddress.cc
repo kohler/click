@@ -54,6 +54,6 @@ operator<<(StringAccum &sa, const EtherAddress &ea)
   const unsigned char *p = ea.data();
   sprintf(buf, "%02x:%02x:%02x:%02x:%02x:%02x",
 	  p[0], p[1], p[2], p[3], p[4], p[5]);
-  sa.push(buf, 17);
+  sa.append(buf, 17);
   return sa;
 }

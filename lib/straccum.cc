@@ -47,7 +47,7 @@ StringAccum::grow(int want)
 const char *
 StringAccum::cc()
 {
-  push('\0');
+  append('\0');
   pop();
   return reinterpret_cast<char *>(_s);
 }
@@ -62,7 +62,7 @@ StringAccum::take_string()
 StringAccum &
 operator<<(StringAccum &sa, const char *s)
 {
-  sa.push(s, strlen(s));
+  sa.append(s, strlen(s));
   return sa;
 }
 

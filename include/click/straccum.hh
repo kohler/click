@@ -25,9 +25,9 @@ class StringAccum { public:
   void forward(int f)			{ _len += f; assert(_len <= _cap); }
   char *extend(int);
   
-  void push(unsigned char);
-  void push(char);
-  void push(const char *, int);
+  void append(char);
+  void append(unsigned char);
+  void append(const char *, int);
   
   void pop(int n = 1)			{ if (_len >= n) _len -= n; }
   
@@ -88,20 +88,20 @@ StringAccum::StringAccum(int cap)
 }
 
 inline void
-StringAccum::push(unsigned char c)
+StringAccum::append(unsigned char c)
 {
   if (_len < _cap || grow(_len))
     _s[_len++] = c;
 }
 
 inline void
-StringAccum::push(char c)
+StringAccum::append(char c)
 {
-  push(static_cast<unsigned char>(c));
+  append(static_cast<unsigned char>(c));
 }
 
 inline void
-StringAccum::push(const char *s, int len)
+StringAccum::append(const char *s, int len)
 {
   if (char *x = extend(len))
     memcpy(x, s, len);
@@ -141,14 +141,14 @@ StringAccum::take()
 inline StringAccum &
 operator<<(StringAccum &sa, char c)
 {
-  sa.push(c);
+  sa.append(c);
   return sa;
 }
 
 inline StringAccum &
 operator<<(StringAccum &sa, unsigned char c)
 {
-  sa.push(c);
+  sa.append(c);
   return sa;
 }
 
@@ -180,7 +180,7 @@ operator<<(StringAccum &sa, unsigned u)
 inline StringAccum &
 operator<<(StringAccum &sa, PermString s)
 {
-  sa.push(s.cc(), s.length());
+  sa.append(s.cc(), s.length());
   return sa;
 }
 #endif
@@ -188,14 +188,14 @@ operator<<(StringAccum &sa, PermString s)
 inline StringAccum &
 operator<<(StringAccum &sa, const String &s)
 {
-  sa.push(s.data(), s.length());
+  sa.append(s.data(), s.length());
   return sa;
 }
 
 inline StringAccum &
 operator<<(StringAccum &sa, const StringAccum &sb)
 {
-  sa.push(sb.data(), sb.length());
+  sa.append(sb.data(), sb.length());
   return sa;
 }
 
