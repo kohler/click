@@ -54,9 +54,13 @@ shell_command_output_string(String cmdline, const String &input, ErrorHandler *e
     errh->fatal("`%s': %s", cmdline.cc(), strerror(errno));
 
   StringAccum sa;
-  while (!feof(p) && sa.length() < 200000) {
-    int x = fread(sa.reserve(2048), 1, 2048, p);
-    if (x > 0) sa.forward(x);
+  while (!feof(p)) {
+    if (char *s = sa.reserve(2048)) {
+      int x = fread(s, 1, 2048, p);
+      if (x > 0)
+	sa.forward(x);
+    } else /* out of memory */
+      break;
   }
   if (!feof(p))
     errh->warning("`%s' output too long, truncated", cmdline.cc());
