@@ -1,3 +1,9 @@
+2001-10-09 Tuesday 00:54  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: ewma.cc, ewma.hh, ewma.cc, ewma.hh: improve RED
+	handling of empty periods, and remove _empty_jiffies, at the
+	request of Geir <kp13@gmx.co.uk>
+
 2001-10-08 Monday 14:13  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/glue.hh, include/click/glue.hh, libsrc/glue.cc:
