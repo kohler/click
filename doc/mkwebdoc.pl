@@ -68,7 +68,8 @@ my(@examples) = ([ 'test.click', 'Trivial Test Configuration' ],
 		 [ 'test-tap.click', 'KernelTap Test' ],
 		 [ 'udpgen.click', 'UDP Generator' ],
 		 [ 'mazu-nat.click', 'Sample Firewall/NAT' ],
-		 [ 'fake-iprouter.click', 'IP Router Simulation' ]);
+		 [ 'fake-iprouter.click', 'IP Router Simulation' ],
+		 [ 'fromhost-tunnel.click', 'Kernel FromHost Tunnel Example' ]);
 foreach $i (@examples) {
     my($fn, $title) = ('"' . $i->[0] . '"', '"' . $i->[1] . '"');
     my($html) = $fn;

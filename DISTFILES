@@ -56,6 +56,7 @@ conf/ip.clickpat
 conf/ip6ndadvertiser.click
 conf/ip6ndsolicitor.click
 conf/fake-iprouter.click
+conf/fromhost-tunnel.click
 conf/kernel.clickpat
 conf/mazu-nat.click
 conf/test.click
