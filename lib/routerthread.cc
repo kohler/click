@@ -10,10 +10,19 @@ extern "C" {
 }
 #endif
 
-#define DEBUG_RT_SCHED 0
+#define DEBUG_RT_SCHED		0
+
+#define DRIVER_TASKS_PER_ITER	128
+#define PROFILE_ELEMENT		20
+
+#define DRIVER_ITER_ANY		32
+#define DRIVER_ITER_TIMERS	32
+#define DRIVER_ITER_SELECT	64
+#define DRIVER_ITER_LINUXSCHED	256
+
 
 RouterThread::RouterThread(Router *r)
-  : Task(Task::error_hook, 0), _router(r), _please_stop_driver(0)
+  : Task(Task::error_hook, 0), _router(r)
 {
   _prev = _next = _list = this;
   router()->add_thread(this);
@@ -39,9 +48,6 @@ RouterThread::process_task_requests()
 {
   Vector<unsigned> ops;
   Vector<Task *> tasks;
-
-  if (_taskreq_ops.size() == 0)
-    return;
 
   _taskreq_lock.acquire();
   ops.swap(_taskreq_ops);
@@ -78,33 +84,49 @@ RouterThread::process_task_requests()
 void
 RouterThread::driver()
 {
+  const volatile int * const runcount = _router->driver_runcount_ptr();
   unsigned long long cycles = 0;
+  int iter = 0;
+  Task *t;
+  
   lock_tasks();
-  while (1) {
-    int c = MAX_DRIVER_COUNT;
-    while (c >= 0) {
-      if (_please_stop_driver) {
-	unlock_tasks();
-	return;
-      }
-      process_task_requests();
-      Task *t = scheduled_next();
-      if (t != this) {
+
+  do {
+    
+    while (*runcount > 0) {
+      // run a bunch of tasks
+      int c = DRIVER_TASKS_PER_ITER;
+      while ((t = scheduled_next()),
+	     t != this && c >= 0) {
 	int runs = t->fast_unschedule();
 	if (runs > PROFILE_ELEMENT)
 	  cycles = click_get_cycles();
 	t->call_hook();
 	if (runs > PROFILE_ELEMENT) {
-          cycles = click_get_cycles() - cycles;
+	  cycles = click_get_cycles() - cycles;
 	  cycles = ((unsigned)cycles)/32 + ((unsigned)t->cycles())*31/32;
 	  t->update_cycles(cycles);
 	}
+	c--;
       }
-      c--;
+
+      // check _driver_runcount
+      if (*runcount <= 0)
+	break;
+
+      // run task requests
+      if (_taskreq_ops.size())
+	process_task_requests();
+
+      // run occasional tasks: task requests, timers, select, etc.
+      iter++;
+      if (iter % DRIVER_ITER_ANY == 0)
+	wait(iter);
     }
-    wait();
-  }
-  assert(0);
+
+  } while (_router->check_driver());
+  
+  unlock_tasks();
 }
 
 #else
@@ -112,21 +134,40 @@ RouterThread::driver()
 void
 RouterThread::driver()
 {
+  const volatile int * const runcount = _router->driver_runcount_ptr();
+  int iter = 0;
   Task *t;
+  
   lock_tasks();
-  while (1) {
-    int c = MAX_DRIVER_COUNT;
-    while ((t = scheduled_next()),
-           t != this && !_please_stop_driver && c >= 0) {
-      t->unschedule();
-      t->call_hook();
-      c--;
+
+  do {
+    
+    while (*runcount > 0) {
+      // run a bunch of tasks
+      int c = DRIVER_TASKS_PER_ITER;
+      while ((t = scheduled_next()),
+	     t != this && c >= 0) {
+	t->fast_unschedule();
+	t->call_hook();
+	c--;
+      }
+
+      // check _driver_runcount
+      if (*runcount <= 0)
+	break;
+
+      // run task requests
+      if (_taskreq_ops.size())
+	process_task_requests();
+    
+      // run occasional tasks: timers, select, etc.
+      iter++;
+      if (iter % DRIVER_ITER_ANY == 0)
+	wait(iter);
     }
-    if (_please_stop_driver)
-      break;
-    else
-      wait();
-  }
+
+  } while (_router->check_driver());
+
   unlock_tasks();
 }
 
@@ -135,8 +176,9 @@ RouterThread::driver()
 void
 RouterThread::driver_once()
 {
-  if (_please_stop_driver)
+  if (!_router->check_driver())
     return;
+  
   lock_tasks();
   Task *t = scheduled_next();
   if (t != this) {
@@ -147,14 +189,18 @@ RouterThread::driver_once()
 }
 
 void
-RouterThread::wait()
+RouterThread::wait(int iter)
 {
   unlock_tasks();
 #if CLICK_USERLEVEL
-  router()->run_selects(!empty());
+  if (iter % DRIVER_ITER_SELECT == 0)
+    router()->run_selects(!empty());
 #else /* __KERNEL__ */
-  schedule();
+  if (iter % DRIVER_ITER_LINUXSCHED == 0)
+    schedule();
 #endif
   lock_tasks();
-  router()->run_timers();
+
+  if (iter % DRIVER_ITER_TIMERS == 0)
+    router()->run_timers();
 }

@@ -17,7 +17,6 @@ class RouterThread : public Task { public:
 
   void driver();
   void driver_once();
-  void wait();
 
   // Task list functions
   bool empty() const;
@@ -26,26 +25,18 @@ class RouterThread : public Task { public:
   bool attempt_lock_tasks();
   void unlock_tasks();
 
-  void process_task_requests();
-  
  private:
-  
-#if CLICK_USERLEVEL
-  static const int MAX_DRIVER_COUNT = 5000;
-#else
-  static const int MAX_DRIVER_COUNT = 10000;
-#endif
-  static const int PROFILE_ELEMENT = 20;
 
   Router *_router;
   int _id;
-  bool _please_stop_driver;
 
   Spinlock _task_lock;
   
   Spinlock _taskreq_lock;
   Vector<unsigned> _taskreq_ops;
   Vector<Task *> _taskreq_tasks;
+
+  void set_thread_id(int i)		{ _id = i; }
 
   // task request IDs
   static const unsigned SCHEDULE_TASK = 1;
@@ -54,10 +45,9 @@ class RouterThread : public Task { public:
   static const unsigned MOVE_TASK = 3;
 #endif
   void add_task_request(unsigned, Task *);
+  void process_task_requests();
+  void wait(int iter);
   
-  void set_thread_id(int i)		{ _id = i; }
-  void please_stop_driver()		{ _please_stop_driver = 1; }
-
   friend class Task;
   friend class Router;
 
