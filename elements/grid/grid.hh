@@ -11,12 +11,17 @@ struct grid_location {
 };
 
 struct grid_hdr {
-  unsigned char len;
+  unsigned char hdr_len; // bytes
   unsigned char type;
-#define GRID_HELLO 1
+#define GRID_HELLO     1
 #define GRID_NBR_ENCAP 2
   unsigned int ip;
   struct grid_location loc;
+  unsigned short total_len; // bytes
+  unsigned short cksum; // over header
+
+  grid_hdr()
+    : hdr_len(sizeof(grid_hdr)), total_len(sizeof(grid_hdr)), cksum(0) { }
 };
 
 #endif
