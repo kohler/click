@@ -48,7 +48,8 @@ class PollDevice : public Element {
   int got_skb(struct sk_buff *);
 
   void run_scheduled();
- 
+
+#if DEV_KEEP_STATS
   // statistics
   unsigned long long _pkts_received;
   unsigned long long _pkts_on_dma;
@@ -59,6 +60,7 @@ class PollDevice : public Element {
   unsigned long long _dma_empty_resched;
   unsigned long long _idle_calls;
   unsigned long long _dma_full;
+#endif
   
  private:
   String _devname;

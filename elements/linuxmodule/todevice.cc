@@ -41,29 +41,41 @@ static int registered_writers;
 extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v);
 
 ToDevice::ToDevice()
-  : Element(1, 0), _dev(0), _registered(0),
-    _idle_calls(0), _busy_returns(0), _hard_start(0), 
-    _dev_idle(0), _last_dma_length(0), _last_tx(0),
-    _activations(0), _pkts_on_dma(0), _pkts_sent(0),
-    _tks_allocated(0)
+  : Element(1, 0), _dev(0), _registered(0), 
+    _dev_idle(0), _last_dma_length(0), _last_tx(0)
 {
+#if DEV_KEEP_STATS
   _dma_full_resched = 0;
   _q_burst_resched = 0;
   _q_full_resched = 0;
   _q_empty_resched = 0;
+  _idle_calls = 0; 
+  _busy_returns = 0; 
+  _hard_start = 0; 
+  _activations = 0; 
+  _pkts_on_dma = 0; 
+  _pkts_sent = 0; 
+  _tks_allocated = 0;
+#endif
 }
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
-    _idle_calls(0), _busy_returns(0), _hard_start(0), 
-    _dev_idle(0), _last_dma_length(0), _last_tx(0),
-    _activations(0), _pkts_on_dma(0), _pkts_sent(0),
-    _tks_allocated(0)
+    _dev_idle(0), _last_dma_length(0), _last_tx(0)
 {
+#if DEV_KEEP_STATS
   _dma_full_resched = 0;
   _q_burst_resched = 0;
   _q_full_resched = 0;
   _q_empty_resched = 0;
+  _idle_calls = 0; 
+  _busy_returns = 0; 
+  _hard_start = 0; 
+  _activations = 0; 
+  _pkts_on_dma = 0; 
+  _pkts_sent = 0; 
+  _tks_allocated = 0;
+#endif
 }
 
 ToDevice::~ToDevice()
@@ -246,7 +258,9 @@ ToDevice::tx_intr()
  
 #if HAVE_POLLING
   queued_pkts = _dev->clean_tx(_dev);
+#if DEV_KEEP_STATS
   _pkts_on_dma += queued_pkts;
+#endif
 #endif
 
   while (sent<TODEV_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
@@ -258,13 +272,14 @@ ToDevice::tx_intr()
     else break;
   }
   
+#if DEV_KEEP_STATS
   if (_activations > 0 || sent > 0) {
     _activations++;
-    _tks_allocated += ntickets();
+    _tks_allocated += tickets();
     if (sent == 0) _idle_calls++;
   }
-  
   if (sent > 0) _pkts_sent+=sent;
+#endif
 
 #if HAVE_POLLING
   if (queued_pkts == _last_dma_length + _last_tx && queued_pkts != 0) {
@@ -272,11 +287,18 @@ ToDevice::tx_intr()
     if (_dev_idle==1024) {
       /* device didn't send anything, ping it */
       _dev->start_tx(_dev);
+#if DEV_KEEP_STATS
       _hard_start++;
+#endif
       _dev_idle=0;
     }
   } else
     _dev_idle = 0;
+#endif
+ 
+#if DEV_KEEP_STATS
+  if (busy)
+    _busy_returns++;
 #endif
   
   /*
@@ -294,9 +316,6 @@ ToDevice::tx_intr()
     }
   }
   
-  if (busy)
-    _busy_returns++;
-
   /* adjusting tickets. goal: each time we are called, we should send a few
    * packets, but also keep dma ring floating between 1/3 to 3/4 full.
    */
@@ -308,7 +327,7 @@ ToDevice::tx_intr()
 #endif
   int dma_thresh_high = dmal-dmal/4;
   int dma_thresh_low  = dmal/4;
-  int adj = ntickets()/4;
+  int adj = tickets()/4;
   if (adj<2) adj=2;
 
   /* tx dma ring was fairly full, and it was full last time as well, so we
@@ -317,20 +336,26 @@ ToDevice::tx_intr()
   if (busy && queued_pkts > dma_thresh_high 
       && _last_dma_length > dma_thresh_high) { 
     adj = 0-adj;
+#if DEV_KEEP_STATS
     if (_activations>0) _dma_full_resched++;
+#endif
   }
 
   /* not much there upstream, so slow down */
   else if (!busy && sent < dma_thresh_low) {
     adj = 0-adj;
+#if DEV_KEEP_STATS
     if (_activations>0) _q_empty_resched++;
+#endif
   }
   
   /* handle burstiness: start a bit faster */
   else if (sent > dma_thresh_high && !busy && 
            _last_tx < dma_thresh_low && !_last_busy) {
     adj *= 2;
+#if DEV_KEEP_STATS
     if (_activations>0) _q_burst_resched++;
+#endif
   }
   
   /* prevent backlog and keep device running */
@@ -338,7 +363,9 @@ ToDevice::tx_intr()
     if (sent > dma_thresh_high) 
       /* semi-bursty: start a bit faster if we sent a lot */
       if (adj<8) adj=8;
+#if DEV_KEEP_STATS
     if (_activations>0) _q_full_resched++;
+#endif
   }
   
   else adj = 0;
@@ -394,6 +421,7 @@ ToDevice_read_calls(Element *f, void *)
 {
   ToDevice *td = (ToDevice *)f;
   return
+#if DEV_KEEP_STATS
     String(td->max_tickets()) + " maximum number of tickets\n" +
     String(td->_hard_start) + " hard transmit start\n" +
     String(td->_idle_calls) + " idle tx calls\n" +
@@ -406,6 +434,9 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_q_empty_resched) + " q empty resched\n" +
     String(td->_pkts_sent) + " packets sent\n" +
     String(td->_activations) + " transmit activations\n";
+#else
+    String(td->max_tickets()) + " maximum number of tickets\n";
+#endif
 }
 
 void

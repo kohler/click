@@ -51,6 +51,7 @@ class ToDevice : public Element {
   
   bool tx_intr();
 
+#if DEV_KEEP_STATS
   // Statistics.
   int _idle_calls;   // # of times called because driver was idle.
   int _busy_returns; // # of times returned because dev->tbusy.
@@ -64,6 +65,7 @@ class ToDevice : public Element {
   unsigned long long _q_burst_resched;
   unsigned long long _q_full_resched;
   unsigned long long _q_empty_resched;
+#endif
   
  private:
 
