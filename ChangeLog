@@ -1,3 +1,10 @@
+2001-08-04 Saturday 01:52  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/: module.cc (1.58), modulepriv.hh (1.23), sched.cc
+	(1.29): Linux kernel threads: call daemonize() to renounce
+	association with user processes; should improve interactions with
+	user-level processes, particularly click-install
+
 2001-08-03 Friday 18:21  Eddie Kohler <kohler@aciri.org>
 
 	* elements/app/ftpportmapper.cc (1.17), elements/ip/ipmirror.cc
