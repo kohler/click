@@ -71,18 +71,24 @@ vardef _make_element_ports(suffix $, port, side)(expr n, length, isout) =
 enddef;
 
 vardef make_element_inputs(suffix $)(expr xlen, ylen) =
-  if $.down: _make_element_ports($, in, n, $.nin, xlen-6, false);
-  else: _make_element_ports($, in, w, $.nin, ylen, false); fi;
+  if $.down:
+    _make_element_ports($, in, if $.rev: s else: n fi, $.nin, xlen-6, false);
+  else:
+    _make_element_ports($, in, if $.rev: e else: w fi, $.nin, ylen, false);
+  fi;
 enddef;
 
 vardef make_element_outputs(suffix $)(expr xlen, ylen) =
-  if $.down: _make_element_ports($, out, s, $.nout, xlen-6, true);
-  else: _make_element_ports($, out, e, $.nout, ylen, true); fi;
+  if $.down:
+    _make_element_ports($, out, if $.rev: n else: s fi, $.nout, xlen-6, true);
+  else:
+    _make_element_ports($, out, if $.rev: w else: e fi, $.nout, ylen, true);
+  fi;
 enddef;
 
 vardef clearelement_(suffix $) =
   _n_ := str $;
-  generic_redeclare(numeric) _n.down, _n.sidevector, _n.flowvector, _n.width, _n.height, _n.nin, _n.nout, _n.borderscale, _n.portscale, _n.drawports;
+  generic_redeclare(numeric) _n.down, _n.rev, _n.sidevector, _n.flowvector, _n.width, _n.height, _n.nin, _n.nout, _n.borderscale, _n.portscale, _n.drawports;
   _n_ := str $ & ".in[0]";
   generic_redeclare(numeric) _n;
   _n_ := str $ & ".out[0]";
@@ -95,7 +101,7 @@ vardef clearelement_(suffix $) =
   generic_redeclare(numeric) _n;
 enddef;
 
-vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var) =
+vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var, rev_var) =
   picture _label_; numeric _x_, _y_;
   
   if picture label_str: _label_ = label_str
@@ -104,7 +110,7 @@ vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var) =
   
   boxit.@#(_label_);
   _n_ := str @#;
-  generic_declare(boolean) _n.down, _n.drawports;
+  generic_declare(boolean) _n.down, _n.rev, _n.drawports;
   generic_declare(pair) _n.sidevector, _n.flowvector;
   generic_declare(numeric) _n.width, _n.height, _n.nin, _n.nout, _n.borderscale, _n.portscale;
   _n_ := str @# & ".in[0]";
@@ -117,6 +123,8 @@ vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var) =
   @#.down = down_var;
   if down_var: @#.sidevector = (-1, 0); else: @#.sidevector = (0, 1); fi;
   if down_var: @#.flowvector = (0, -1); else: @#.flowvector = (1, 0); fi;
+  @#.rev = rev_var;
+  if rev_var: @#.flowvector := -@#.flowvector; @#.sidevector := -@#.sidevector; fi;
   @#.drawports = true;
   
   @#.width = xpart(@#.e - @#.w);
@@ -148,10 +156,16 @@ vardef _elementit@#(expr label_str, ninputs, noutputs, personality, down_var) =
 enddef;
 
 vardef elementit@#(expr s, ninputs, noutputs, personality_var) =
-  _elementit.@#(s, ninputs, noutputs, personality_var, false);
+  _elementit.@#(s, ninputs, noutputs, personality_var, false, false);
+enddef;
+vardef relementit@#(expr s, ninputs, noutputs, personality_var) =
+  _elementit.@#(s, ninputs, noutputs, personality_var, false, true);
 enddef;
 vardef velementit@#(expr s, ninputs, noutputs, personality_var) =
-  _elementit.@#(s, ninputs, noutputs, personality_var, true);
+  _elementit.@#(s, ninputs, noutputs, personality_var, true, false);
+enddef;
+vardef rvelementit@#(expr s, ninputs, noutputs, personality_var) =
+  _elementit.@#(s, ninputs, noutputs, personality_var, true, true);
 enddef;
 
 
@@ -234,6 +248,7 @@ vardef draw_element_inputs(suffix $) =
   _p_ := _normal_input scaled $.portscale;
   _ag_ := _agnostic_input scaled $.portscale;
   if $.down: _p_ := _p_ rotated -90; _ag_ := _ag_ rotated -90; fi;
+  if $.rev: _p_ := _p_ rotated 180; _ag_ := _ag_ rotated 180; fi;
   for i = 0 upto $.nin - 1:
     fill _p_ shifted $.in[i] withcolor personalitycolor[$.inpers[i]];
     draw _p_ shifted $.in[i];
@@ -248,6 +263,7 @@ vardef draw_element_outputs(suffix $) =
   _p_ := _normal_output scaled $.portscale;
   _ag_ := _agnostic_output scaled $.portscale;
   if $.down: _p_ := _p_ rotated -90; _ag_ := _ag_ rotated -90; fi;
+  if $.rev: _p_ := _p_ rotated 180; _ag_ := _ag_ rotated 180; fi;
   for i = 0 upto $.nout - 1:
     fill _p_ shifted $.out[i] withcolor personalitycolor[$.outpers[i]];
     draw _p_ shifted $.out[i];
@@ -290,30 +306,42 @@ enddef;
 
 %% queues
 
-vardef drawqueued(suffix $) =
-  save i; interim linecap := squared; i := 6;
+vardef _drawqueued(expr p,delta,rot,lim,pp) =
+  save i; interim linecap := squared; i := delta;
   forever:
-    draw ($.ne -- $.se) shifted (-i,0) withpen currentpen scaled 0.25;
-    i := i + 6; exitunless i < .9*$.width;
+    draw (p) shifted ((i,0) rotated rot) withpen currentpen scaled 0.25;
+    i := i + delta; exitunless i < lim;
   endfor;
-  draw ($.nw -- $.ne -- $.se -- $.sw);
+  draw (pp);
+enddef;
+vardef drawqueued(suffix $) =
+  _drawqueued($.ne -- $.se, 6, 180, .9*$.width, $.nw -- $.ne -- $.se -- $.sw);
+enddef;
+vardef drawrqueued(suffix $) =
+  _drawqueued($.nw -- $.sw, 6, 0, .9*$.width, $.ne -- $.nw -- $.sw -- $.se);
 enddef;
 vardef drawvqueued(suffix $) =
-  save i; interim linecap := squared; i := 5;
-  forever:
-    draw ($.se -- $.sw) shifted (0,i) withpen currentpen scaled 0.25;
-    i := i + 5; exitunless i < .9*$.height;
-  endfor;
-  draw ($.nw -- $.sw -- $.se -- $.ne);
+  _drawqueued($.se -- $.sw, 5, 90, .9*$.height, $.nw -- $.sw -- $.se -- $.ne);
+enddef;
+vardef drawrvqueued(suffix $) =
+  _drawqueued($.ne -- $.nw, 5, 270, .9*$.height, $.sw -- $.nw -- $.ne -- $.se);
 enddef;
 
 vardef queueit@#(expr s) =
-  _elementit.@#(s, 1, 1, push_to_pull, false);
+  _elementit.@#(s, 1, 1, push_to_pull, false, false);
   elemdraw_@# := "drawqueued";
 enddef;
+vardef rqueueit@#(expr s) =
+  _elementit.@#(s, 1, 1, push_to_pull, false, true);
+  elemdraw_@# := "drawrqueued";
+enddef;
 vardef vqueueit@#(expr s) =
-  _elementit.@#(s, 1, 1, push_to_pull, true);
+  _elementit.@#(s, 1, 1, push_to_pull, true, false);
   elemdraw_@# := "drawvqueued";
+enddef;
+vardef rvqueueit@#(expr s) =
+  _elementit.@#(s, 1, 1, push_to_pull, true, true);
+  elemdraw_@# := "drawrvqueued";
 enddef;
 
 
