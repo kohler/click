@@ -1,3 +1,8 @@
+2004-01-27 Tuesday 22:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/make-dsdv-config.pl (1.4): roll in latest changes from grid
+	testbed code
+
 2004-01-26 Monday 12:51  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.220), etc/libclick/DISTFILES (1.18),
