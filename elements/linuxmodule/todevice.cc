@@ -68,16 +68,6 @@ ToDevice::~ToDevice()
   if (_registered) uninitialize();
 }
 
-void
-ToDevice::static_initialize()
-{
-}
-
-void
-ToDevice::static_cleanup()
-{
-}
-
 
 int
 ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)

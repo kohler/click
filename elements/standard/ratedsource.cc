@@ -159,7 +159,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
      int rate;
      if (!cp_integer(s, &rate) || rate < 0)
        return errh->error("rate parameter must be integer >= 0");
-     rs->change_configuration(1, s);
+     rs->set_configuration_argument(1, s);
      rs->_rate = rate;
      rs->_ugap = (rate ? 1000000 / rate : 1000000);
      if (!rate) break;

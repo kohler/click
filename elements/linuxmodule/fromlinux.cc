@@ -31,26 +31,32 @@ static int iff_clear(struct ifreq *ifr, short flag);
 static int fl_init(struct device *dev);
 
 static AnyDeviceMap fromlinux_map;
+static int from_linux_count;
+
+static void
+static_initialize()
+{
+  from_linux_count++;
+  if (from_linux_count > 1) return;
+  fromlinux_map.initialize();  
+}
+
+static void
+static_cleanup()
+{
+  from_linux_count--;
+}
 
 FromLinux::FromLinux()
 {
   _dev = 0; _rt = 0;
   add_output();
+  static_initialize();
 }
 
 FromLinux::~FromLinux()
 {
-}
-
-void
-FromLinux::static_initialize()
-{
-  fromlinux_map.initialize();
-}
-
-void
-FromLinux::static_cleanup()
-{
+  static_cleanup();
 }
 
 FromLinux *

@@ -218,7 +218,7 @@ xokReader::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
 
   dprintf("xokReader: ring descriptor %d (%d buffers)\n", fd, ring_sz);
-  router()->add_select(fd, elementno());
+  add_select(fd, SELECT_READ);
   return 0;
 }
 

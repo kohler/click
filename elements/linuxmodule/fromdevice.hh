@@ -38,9 +38,6 @@ class FromDevice : public AnyDevice {
   FromDevice();
   ~FromDevice();
   
-  static void static_initialize();
-  static void static_cleanup();
-  
   const char *class_name() const		{ return "FromDevice"; }
   const char *processing() const		{ return PUSH; }
   FromDevice *clone() const			{ return new FromDevice; }

@@ -31,9 +31,6 @@ class Element : public ElementLink { public:
   Element(int ninputs, int noutputs);
   virtual ~Element();
   static void static_initialize();
-  
-  void use()				{ _refcount++; }
-  void unuse()				{ if (--_refcount <= 0) delete this; }
   static int nelements_allocated;
   
   // CHARACTERISTICS
@@ -44,9 +41,9 @@ class Element : public ElementLink { public:
   String declaration() const;
   String landmark() const;
   
-  int number() const				{ return _number; }
-  void set_number(int n)			{ _number = n; }
   Router *router() const		{ return (Router *)scheduled_list(); }
+  int elementno() const			{ return _elementno; }
+  void set_elementno(int n)		{ _elementno = n; }
 
   // INPUTS
   int ninputs() const				{ return _ninputs; }
@@ -89,12 +86,15 @@ class Element : public ElementLink { public:
   virtual int configure(const Vector<String> &, ErrorHandler *);
   virtual int initialize(ErrorHandler *);
   virtual void uninitialize();
-  
+
   // LIVE CONFIGURATION
   virtual bool can_live_reconfigure() const;
   virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
   virtual void take_state(Element *, ErrorHandler *);
   
+  void set_configuration(const String &);
+  void set_configuration_argument(int, const String &);
+
   // HANDLERS
   void add_read_handler(const String &, ReadHandler, void *);
   void add_write_handler(const String &, WriteHandler, void *);
@@ -103,14 +103,13 @@ class Element : public ElementLink { public:
   static String configuration_read_handler(Element *, void *);
   static int reconfigure_write_handler(const String &, Element *, void *,
 				       ErrorHandler *);
-  void change_configuration(const String &);
-  void change_configuration(int, const String &);
   
   // RUNTIME
   virtual void run_scheduled();
 #if CLICK_USERLEVEL
-  int add_select(int fd) const;
-  int remove_select(int fd) const;
+  enum { SELECT_READ = 1, SELECT_WRITE = 2 };
+  int add_select(int fd, int mask) const;
+  int remove_select(int fd, int mask) const;
   virtual void selected(int fd);
 #endif
 
@@ -173,8 +172,7 @@ class Element : public ElementLink { public:
   int _ninputs;
   int _noutputs;
   
-  int _number;
-  int _refcount;
+  int _elementno;
 
   Element(const Element &);
   Element &operator=(const Element &);
@@ -238,12 +236,6 @@ inline
 Element::Connection::Connection(CONNECTION_CTOR_ARG(owner), Element *f, int p)
   : _f(f), _port(p) CONNECTION_CTOR_INIT(owner)
 {
-}
-
-inline bool
-operator==(const Element::Connection &c1, const Element::Connection &c2)
-{
-  return c1.element() == c2.element() && c1.port() == c2.port();
 }
 
 inline void

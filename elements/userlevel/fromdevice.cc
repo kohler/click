@@ -224,7 +224,7 @@ FromDevice::initialize(ErrorHandler *errh)
   ScheduleInfo::join_scheduler(this, errh);
 #endif
 #if FROMDEVICE_LINUX
-  add_select(_fd);
+  add_select(_fd, SELECT_READ);
 #endif
   return 0;
 }
@@ -240,9 +240,11 @@ FromDevice::uninitialize()
 #if FROMDEVICE_LINUX
   if (_was_promisc >= 0)
     set_promiscuous(_fd, _ifname, _was_promisc);
-  if (_fd >= 0)
+  if (_fd >= 0) {
     close(_fd);
-  _fd = -1;
+    remove_select(_fd, SELECT_READ);
+    _fd = -1;
+  }
   delete[] _packetbuf;
   _packetbuf = 0;
 #endif

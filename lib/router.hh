@@ -17,9 +17,10 @@ class Router : public ElementLink {
   bool _please_stop_driver;
 
 #ifdef CLICK_USERLEVEL
-  fd_set _select_fd_set;
-  Vector<int> _select_fd;
-  Vector<int> _select_element;
+  struct Selector;
+  fd_set _read_select_fd_set;
+  fd_set _write_select_fd_set;
+  Vector<Selector> _selectors;
 #endif
   
   int _refcount;
@@ -146,8 +147,9 @@ class Router : public ElementLink {
   Timer *timer_head()				{ return &_timer_head; }
 
 #if CLICK_USERLEVEL
-  int add_select(int fd, int element);
-  int remove_select(int fd, int element);
+  enum { SELECT_READ = Element::SELECT_READ, SELECT_WRITE = Element::SELECT_WRITE };
+  int add_select(int fd, int element, int mask);
+  int remove_select(int fd, int element, int mask);
 #endif
   
   void driver();
@@ -179,6 +181,16 @@ struct Router::Handler {
   void *write_thunk;
 };
   
+#if CLICK_USERLEVEL
+struct Router::Selector {
+  int fd;
+  int element;
+  int mask;
+  Selector()				: fd(-1), element(-1), mask(0) { }
+  Selector(int f, int e, int m)		: fd(f), element(e), mask(m) { }
+};
+#endif
+
 
 inline bool
 operator==(const Router::Hookup &a, const Router::Hookup &b)

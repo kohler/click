@@ -119,7 +119,7 @@ BIM::initialize(ErrorHandler *errh)
 #endif
 
   ScheduleInfo::join_scheduler(this, errh);
-  add_select(_fd);
+  add_select(_fd, SELECT_READ | SELECT_WRITE);
   
   return 0;
 }
@@ -128,7 +128,7 @@ void
 BIM::uninitialize()
 {
   unschedule();
-  remove_select(_fd);
+  remove_select(_fd, SELECT_READ | SELECT_WRITE);
 }
 
 void

@@ -17,10 +17,6 @@
 
 #include "lexer.hh"
 #include "router.hh"
-#include "elements/linuxmodule/fromlinux.hh"
-#include "elements/linuxmodule/fromdevice.hh"
-#include "elements/linuxmodule/polldevice.hh"
-#include "elements/linuxmodule/todevice.hh"
 #include "kernelerror.hh"
 #include "straccum.hh"
 #include "confparse.hh"
@@ -405,11 +401,6 @@ init_module()
   String::static_initialize();
   Element::static_initialize();
   ErrorHandler::static_initialize(new KernelErrorHandler);
-  AnyDevice::static_initialize();
-  FromDevice::static_initialize();
-  PollDevice::static_initialize();
-  ToDevice::static_initialize();
-  FromLinux::static_initialize();
   kernel_errh = ErrorHandler::default_handler();
   extern ErrorHandler *click_chatter_errh;
   click_chatter_errh = new SyslogErrorHandler;
@@ -457,9 +448,8 @@ cleanup_module()
   cleanup_proc_click_config();
   click_unregister_pde(&proc_click_entry);
   cleanup_click_proc();
-  delete lexer;
-
   cleanup_click_sched();
+  delete lexer;
   
   extern ErrorHandler *click_chatter_errh;
   delete click_chatter_errh;
@@ -467,9 +457,6 @@ cleanup_module()
   
   delete[] root_handlers;
   ErrorHandler::static_cleanup();
-  FromDevice::static_cleanup();
-  ToDevice::static_cleanup();
-  FromLinux::static_cleanup();
   
   printk("<1>click module exiting\n");
     

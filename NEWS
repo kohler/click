@@ -21,6 +21,10 @@ Version 1.1
 
 * Incompatible C++ API changes
 
+** Reorganized Linux kernel polling patches. If you have a previous version
+   of Click, you must unapply the old kernel patch and apply the new kernel
+   patch before compiling.
+
 ** Made configuration argument parsing more uniform among elements. For
    example, every configuration argument is always a comma-separated
    string. This is enforced by passing a vector of strings to the
@@ -34,8 +38,21 @@ Version 1.1
 
 ** Changed Element method `bool configure_first() const' to `int
    configure_phase() const'. Now element classes can specify their relative
-   configuration and initialization order; for example, ToBPF specifies
-   that it should be configured and initialized after any FromBPFs.
+   configuration and initialization order; for example, ToDevice specifies
+   that it should be configured and initialized after any FromDevices.
+
+** Removed user-level Element method `select_fd()'. Replaced with
+   `add_select(fd, mask)' and `remove_select(fd, mask)', so elements can
+   listen to any number of file descriptors for reading, writing, or both.
+   (`mask' is either `SELECT_READ', `SELECT_WRITE', or
+   `SELECT_READ|SELECT_WRITE'.)
+
+** Other small changes and method renamings should have very limited
+   impact. For instance, renamed `Element::number()' to
+   `Element::elementno()'; removed `Element::use()' and `Element::unuse()';
+   renamed `Element::change_configuration()' to
+   `Element::set_configuration()' and
+   `Element::set_configuration_argument()'.
 
 * General
 
@@ -61,9 +78,11 @@ Version 1.1
 
 * Kernel driver
 
-** Added patch for Linux kernel 2.2.16. Linux kernel 2.2.16 patch contains the
-   latest changes to Linux. While Click will continue to work under 2.2.14 for
-   the time being, it may not be in the future.
+** Added patch for Linux kernel 2.2.16. Linux kernel 2.2.16 patch contains
+   the latest changes to Linux. While Click will continue to work under
+   2.2.14 for the time being, it may not work in the future. If you have a
+   previous version of Click, you must unapply the old kernel patch and
+   apply the new kernel patch before compiling.
 
 ** Cleaned up polling interface in Linux.
 
@@ -75,8 +94,8 @@ Version 1.1
 ** Added QuitWatcher, FrontDropQueue, StripIPHeader, IPClassifier, and
    IPPrint.
 
-** Fixed FromBPF and ToBPF bugs. Now FromDevice will not starve other
-   router processing, and ToDevice works on Linux.
+** Fixed user-level FromDevice and ToDevice bugs. Now FromDevice will not
+   starve other router processing, and ToDevice works on Linux.
 
 ** Fixed FromLinux bug: now supports multiple instances of FromLinux for same
    device (this happens while installing a new configuration: initialize is

@@ -126,7 +126,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_integer(s, &limit))
        return errh->error("limit parameter must be integer");
      is->_limit = limit;
-     is->change_configuration(1, s);
+     is->set_configuration_argument(1, s);
      break;
    }
    
@@ -135,7 +135,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_integer(s, &burstsize) || burstsize < 1)
        return errh->error("burstsize parameter must be integer >= 1");
      is->_burstsize = burstsize;
-     is->change_configuration(2, s);
+     is->set_configuration_argument(2, s);
      break;
    }
    

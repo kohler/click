@@ -144,8 +144,9 @@ Lexer::end_parse(int cookie)
 {
   lexical_scoping_out(cookie);
   for (int i = 0; i < _elements.size(); i++)
-    if (_elements[i])
-      _elements[i]->unuse();
+    // don't delete _tunnel_element_type!
+    if (_elements[i] != _tunnel_element_type)
+      delete _elements[i];
   
   delete _definputs;
   _definputs = 0;
@@ -494,7 +495,6 @@ Lexer::add_element_type(const String &name, Element *e)
     _element_type_next[tid] = _last_element_type;
   }
   _element_type_map.insert(name, tid);
-  e->use();
   _last_element_type = tid;
   return tid;
 }
@@ -564,7 +564,7 @@ Lexer::remove_element_type(int removed)
 
   // remove stuff
   _element_type_names[removed] = String();
-  _element_types[removed]->unuse();
+  delete _element_types[removed];
   _element_types[removed] = 0;
   _element_type_next[removed] = _free_element_type;
   _free_element_type = removed;
@@ -644,7 +644,6 @@ Lexer::get_element(String name, int etype, const String &conf)
   _element_configurations.push_back(conf);
   _element_landmarks.push_back(landmark());
   _elements.push_back(e);
-  if (e) e->use();
   return eid;
 }
 
@@ -1266,6 +1265,9 @@ Lexer::create_router()
   // add requirements to router
   for (int i = 0; i < _requirements.size(); i++)
     router->add_requirement(_requirements[i]);
+
+  // clear _elements, as all elements are owned by router
+  _elements.clear();
   
   return router;
 }

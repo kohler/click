@@ -40,14 +40,14 @@ int Element::nelements_allocated;
 
 Element::Element()
   : ELEMENT_CTOR_STATS _inputs(&_ports0[0]), _outputs(&_ports0[0]),
-    _ninputs(0), _noutputs(0), _refcount(0)
+    _ninputs(0), _noutputs(0)
 {
   nelements_allocated++;
 }
 
 Element::Element(int ninputs, int noutputs)
   : ELEMENT_CTOR_STATS _inputs(&_ports0[0]), _outputs(&_ports0[0]),
-    _ninputs(0), _noutputs(0), _refcount(0)
+    _ninputs(0), _noutputs(0)
 {
   set_nports(ninputs, noutputs);
   nelements_allocated++;
@@ -85,7 +85,7 @@ Element::id() const
 {
   String s;
   if (Router *r = router())
-    s = r->ename(_number);
+    s = r->ename(_elementno);
   return (s ? s : String("<unknown>"));
 }
 
@@ -100,7 +100,7 @@ Element::landmark() const
 {
   String s;
   if (Router *r = router())
-    s = r->elandmark(_number);
+    s = r->elandmark(_elementno);
   return (s ? s : String("<unknown>"));
 }
 
@@ -367,15 +367,15 @@ Element::take_state(Element *, ErrorHandler *)
 #if CLICK_USERLEVEL
 
 int
-Element::add_select(int fd) const
+Element::add_select(int fd, int mask) const
 {
-  return router()->add_select(fd, number());
+  return router()->add_select(fd, elementno(), mask);
 }
 
 int
-Element::remove_select(int fd) const
+Element::remove_select(int fd, int mask) const
 {
-  return router()->remove_select(fd, number());
+  return router()->remove_select(fd, elementno(), mask);
 }
 
 void
@@ -403,7 +403,7 @@ read_element_name(Element *e, void *)
 static String
 read_element_config(Element *e, void *)
 {
-  String s = e->router()->econfiguration(e->number());
+  String s = e->router()->econfiguration(e->elementno());
   if (s) {
     int c = s[s.length() - 1];
     if (c != '\n' && c != '\\')
@@ -417,7 +417,7 @@ write_element_config(const String &conf, Element *e, void *,
 		     ErrorHandler *errh)
 {
   if (e->can_live_reconfigure())
-    return e->router()->live_reconfigure(e->number(), conf, errh);
+    return e->router()->live_reconfigure(e->elementno(), conf, errh);
   else
     return -EPERM;
 }
@@ -425,13 +425,13 @@ write_element_config(const String &conf, Element *e, void *,
 static String
 read_element_inputs(Element *e, void *)
 {
-  return e->router()->element_inputs_string(e->number());
+  return e->router()->element_inputs_string(e->elementno());
 }
 
 static String
 read_element_outputs(Element *e, void *)
 {
-  return e->router()->element_outputs_string(e->number());
+  return e->router()->element_outputs_string(e->elementno());
 }
 
 static String
@@ -532,7 +532,7 @@ Element::configuration_read_handler(Element *element, void *vno)
 {
   Router *router = element->router();
   Vector<String> args;
-  cp_argvec(router->econfiguration(element->number()), args);
+  cp_argvec(router->econfiguration(element->elementno()), args);
   int no = (int)vno;
   if (no >= args.size())
     return String();
@@ -552,33 +552,33 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
 {
   Router *router = element->router();
   Vector<String> args;
-  cp_argvec(router->econfiguration(element->number()), args);
+  cp_argvec(router->econfiguration(element->elementno()), args);
   int no = (int)vno;
   while (args.size() <= no)
     args.push_back(String());
   args[no] = arg;
-  if (router->live_reconfigure(element->number(), args, errh) < 0)
+  if (router->live_reconfigure(element->elementno(), args, errh) < 0)
     return -EINVAL;
   else
     return 0;
 }
 
 void
-Element::change_configuration(const String &conf)
+Element::set_configuration(const String &conf)
 {
-  router()->set_configuration(number(), conf);
+  router()->set_configuration(elementno(), conf);
 }
 
 void
-Element::change_configuration(int which, const String &arg)
+Element::set_configuration_argument(int which, const String &arg)
 {
   assert(which >= 0);
   Vector<String> args;
-  cp_argvec(router()->econfiguration(number()), args);
+  cp_argvec(router()->econfiguration(elementno()), args);
   while (args.size() <= which)
     args.push_back(String());
   args[which] = arg;
-  router()->set_configuration(number(), cp_unargvec(args));
+  router()->set_configuration(elementno(), cp_unargvec(args));
 }
 
 // RUNNING

@@ -173,7 +173,7 @@ ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 ControlSocket::initialize(ErrorHandler *)
 {
-  add_select(_socket_fd);
+  add_select(_socket_fd, SELECT_READ | SELECT_WRITE);
   return 0;
 }
 
@@ -333,7 +333,7 @@ ControlSocket::selected(int fd)
     { unsigned x = sa.sin_addr.s_addr;  click_chatter("%s: %d.%d.%d.%d:%d -> %d", declaration().cc(), (int)(x>>24)&255, (int)(x>>16)&255, (int)(x>>8)&255, x&255, sa.sin_port, new_fd);}
     
     fcntl(new_fd, F_SETFL, O_NONBLOCK);
-    add_select(new_fd);
+    add_select(new_fd, SELECT_READ | SELECT_WRITE);
 
     while (new_fd >= _in_texts.size()) {
       _in_texts.push_back(String());
@@ -414,7 +414,7 @@ ControlSocket::selected(int fd)
   if (((_flags[fd] & READ_CLOSED) && !_out_texts[fd].length())
       || (_flags[fd] & WRITE_CLOSED)) {
     close(fd);
-    remove_select(fd);
+    remove_select(fd, SELECT_READ | SELECT_WRITE);
     click_chatter("%s: closed %d", declaration().cc(), fd);
     _flags[fd] = -1;
   }

@@ -69,7 +69,7 @@ Switch::write_param(const String &in_s, Element *e, void *, ErrorHandler *errh)
     return errh->error("Switch output must be integer");
   if (sw->_output >= sw->noutputs())
     sw->_output = -1;
-  sw->router()->set_configuration(sw->number(), String(sw->_output));
+  sw->set_configuration(String(sw->_output));
   return 0;
 }
 

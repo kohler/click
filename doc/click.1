@@ -55,9 +55,9 @@ The
 .B click
 program can read and write packets from the network using Berkeley Packet
 Filters\*Esee
-.M FromBPF n
+.M FromDevice.u n
 and
-.M ToBPF n .
+.M ToDevice.u n .
 It can also read and write BPF dump files, such as those created by
 .M tcpdump 1 "\*Esee"
 .M FromDump n
@@ -181,8 +181,8 @@ first.
 .M click-align 1 ,
 .M click 5 ,
 .M click.o 8 ,
-.M FromBPF n ,
-.M ToBPF n ,
+.M FromDevice.u n ,
+.M ToDevice.u n ,
 .M FromDump n ,
 .M ToDump n ,
 .M tcpdump 1 ,

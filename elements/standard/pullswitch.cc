@@ -69,7 +69,7 @@ PullSwitch::write_param(const String &in_s, Element *e, void *, ErrorHandler *er
     return errh->error("PullSwitch input must be integer");
   if (sw->_input >= sw->ninputs())
     sw->_input = -1;
-  sw->router()->set_configuration(sw->number(), String(sw->_input));
+  sw->set_configuration(String(sw->_input));
   return 0;
 }
 

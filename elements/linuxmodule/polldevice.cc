@@ -34,7 +34,22 @@ extern "C" {
 
 /* for hot-swapping */
 static AnyDeviceMap poll_device_map;
+static int poll_device_count;
 
+
+static void
+static_initialize()
+{
+  poll_device_count++;
+  if (poll_device_count > 1) return;
+  poll_device_map.initialize();
+}
+
+static void
+static_cleanup()
+{
+  poll_device_count--;
+}
 
 PollDevice::PollDevice()
   : _registered(0), _manage_tx(1)
@@ -54,22 +69,13 @@ PollDevice::PollDevice()
   _perfcnt2_refill = 0;
   _perfcnt2_pushing = 0;
 #endif
+  static_initialize();
 }
 
 PollDevice::~PollDevice()
 {
-  if (_registered) uninitialize();
-}
-
-void
-PollDevice::static_initialize()
-{
-  poll_device_map.initialize();
-}
-
-void
-PollDevice::static_cleanup()
-{
+  assert(!_registered);
+  static_cleanup();
 }
 
 
@@ -156,12 +162,11 @@ void
 PollDevice::uninitialize()
 {
 #if HAVE_POLLING
-  if (_registered) {
-    poll_device_map.remove(this);
-    _registered = 0;
-  }
+  assert(_registered);
+  poll_device_map.remove(this);
+  _registered = 0;
   if (poll_device_map.lookup(ifindex()) == 0) {
-    if (_dev && _dev->polling)
+    if (_dev && _dev->polling > 0)
       _dev->poll_off(_dev);
   } 
   unschedule();

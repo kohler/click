@@ -84,7 +84,7 @@ ToDump::initialize(ErrorHandler *errh)
 #else
   errh->warning("dropping all packets: not compiled with pcap support");
 #endif
-  
+
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, errh);
   return 0;

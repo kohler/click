@@ -63,7 +63,7 @@ Tun::initialize(ErrorHandler *errh)
     return -1;
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, errh);
-  add_select(_fd);
+  add_select(_fd, SELECT_READ | SELECT_WRITE);
   return 0;
 }
 
@@ -71,8 +71,10 @@ void
 Tun::uninitialize()
 {
   unschedule();
-  if (_fd >= 0)
+  if (_fd >= 0) {
     close(_fd);
+    remove_select(_fd, SELECT_READ | SELECT_WRITE);
+  }
 }
 
 void

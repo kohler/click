@@ -41,7 +41,7 @@ Router::~Router()
     for (int i = 0; i < _elements.size(); i++)
       _elements[i]->uninitialize();
   for (int i = 0; i < _elements.size(); i++)
-    _elements[i]->unuse();
+    delete _elements[i];
   delete[] _handlers;
 #ifdef __KERNEL__
   initialize_head();		// get rid of scheduled wait queue
@@ -89,7 +89,7 @@ Router::find(String prefix, const String &name, ErrorHandler *errh) const
 Element *
 Router::find(Element *me, const String &name, ErrorHandler *errh) const
 {
-  String prefix = _element_names[me->number()];
+  String prefix = _element_names[me->elementno()];
   int slash = prefix.find_right('/');
   return find((slash >= 0 ? prefix.substring(0, slash + 1) : String()),
 	      name, errh);
@@ -147,14 +147,14 @@ int
 Router::add_element(Element *e, const String &ename, const String &conf,
 		    const String &landmark)
 {
+  // router now owns the element
   if (_initialized || !e) return -1;
   _elements.push_back(e);
   _element_names.push_back(ename);
   _element_landmarks.push_back(landmark);
   _configurations.push_back(conf);
   int i = _elements.size() - 1;
-  e->use();
-  e->set_number(i);
+  e->set_elementno(i);
   /* make all elements use Router as its link: subsequent calls to
    * schedule_xxxx places elements on this link, therefore allow
    * driver to see them */
@@ -743,9 +743,9 @@ Router::initialize(ErrorHandler *errh)
 {
   assert(!_initialized);
 #if CLICK_USERLEVEL
-  FD_ZERO(&_select_fd_set);
-  _select_fd.clear();
-  _select_element.clear();
+  FD_ZERO(&_read_select_fd_set);
+  FD_ZERO(&_write_select_fd_set);
+  assert(!_selectors.size());
 #endif
     
   if (check_hookup_elements(errh) < 0)
@@ -838,7 +838,7 @@ Router::take_state(Router *r, ErrorHandler *errh)
   assert(_initialized);
   for (int i = 0; i < _elements.size(); i++) {
     Element *e = _elements[i];
-    Element *other = r->find(_element_names[e->number()]);
+    Element *other = r->find(_element_names[e->elementno()]);
     if (other) {
       ContextErrorHandler cerrh
 	(errh, context_message(i, "While hot-swapping state into"));
@@ -927,7 +927,7 @@ Router::put_handler(const Handler &to_add)
 int
 Router::find_ehandler(Element *element, const String &name, bool force)
 {
-  int elementno = element->number();
+  int elementno = element->elementno();
   int eh = _ehandler_first_by_element[elementno];
   while (eh >= 0) {
     int h = _ehandler_to_handler[eh];
@@ -1048,33 +1048,54 @@ Router::set_configuration(int elementno, const String &conf)
 #if CLICK_USERLEVEL
 
 int
-Router::add_select(int fd, int element)
+Router::add_select(int fd, int element, int mask)
 {
   if (fd < 0) return -1;
   assert(fd >= 0 && element >= 0 && element < nelements());
-  for (int i = 0; i < _select_fd.size(); i++)
-    if (_select_fd[i] == fd)
+
+  for (int i = 0; i < _selectors.size(); i++)
+    if (_selectors[i].fd == fd && _selectors[i].element != element
+	&& (_selectors[i].mask & mask))
       return -1;
-  _select_fd.push_back(fd);
-  _select_element.push_back(element);
-  FD_SET(fd, &_select_fd_set);
+  
+  if (mask & SELECT_READ)
+    FD_SET(fd, &_read_select_fd_set);
+  if (mask & SELECT_WRITE)
+    FD_SET(fd, &_write_select_fd_set);
+  
+  for (int i = 0; i < _selectors.size(); i++)
+    if (_selectors[i].fd == fd && _selectors[i].element == element) {
+      _selectors[i].mask |= mask;
+      return 0;
+    }
+  _selectors.push_back(Selector(fd, element, mask));
   return 0;
 }
 
 int
-Router::remove_select(int fd, int element)
+Router::remove_select(int fd, int element, int mask)
 {
   if (fd < 0) return -1;
   assert(fd >= 0 && element >= 0 && element < nelements());
-  for (int i = 0; i < _select_fd.size(); i++)
-    if (_select_fd[i] == fd && _select_element[i] == element) {
-      _select_fd[i] = _select_fd.back();
-      _select_element[i] = _select_element.back();
-      _select_fd.pop_back();
-      _select_element.pop_back();
-      FD_CLR(fd, &_select_fd_set);
+  
+  for (int i = 0; i < _selectors.size(); i++) {
+    Selector &s = _selectors[i];
+    if (s.fd == fd && s.element == element) {
+      mask &= s.mask;
+      if (!mask) return -1;
+      if (mask & SELECT_READ)
+	FD_CLR(fd, &_read_select_fd_set);
+      if (mask & SELECT_WRITE)
+	FD_CLR(fd, &_write_select_fd_set);
+      s.mask &= ~mask;
+      if (!s.mask) {
+	s = _selectors.back();
+	_selectors.pop_back();
+      }
       return 0;
     }
+  }
+  
   return -1;
 }
 
@@ -1090,8 +1111,9 @@ Router::wait()
   
   // Wait in select() for input or timer.
   // And call relevant elements' selected() methods.
-  fd_set mask = _select_fd_set;
-  bool any = (_select_fd.size() > 0);
+  fd_set read_mask = _read_select_fd_set;
+  fd_set write_mask = _write_select_fd_set;
+  bool any = (_selectors.size() > 0);
 
   struct timeval tv;
   // do not wait if anything is scheduled
@@ -1100,15 +1122,16 @@ Router::wait()
   if (!any && !_timer_head.get_next_delay(&tv))
     return;
   
-  int n = select(FD_SETSIZE, &mask, (fd_set*)0, (fd_set*)0, &tv);
+  int n = select(FD_SETSIZE, &read_mask, &write_mask, (fd_set*)0, &tv);
   
   if (n < 0 && errno != EINTR)
     perror("select");
   else if (n > 0) {
-    for (int i = 0; i < _select_fd.size(); i++) {
-      int fd = _select_fd[i];
-      if (FD_ISSET(fd, &mask))
-	_elements[ _select_element[i] ]->selected(fd);
+    for (int i = 0; i < _selectors.size(); i++) {
+      const Selector &s = _selectors[i];
+      if (((s.mask & SELECT_READ) && FD_ISSET(s.fd, &read_mask))
+	  || ((s.mask & SELECT_WRITE) && FD_ISSET(s.fd, &write_mask)))
+	_elements[s.element]->selected(s.fd);
     }
   }
   
@@ -1322,3 +1345,8 @@ Router::element_outputs_string(int fi) const
   }
   return sa.take_string();
 }
+
+#if CLICK_USERLEVEL
+// Vector template instance
+# include "vector.cc"
+#endif

@@ -27,37 +27,44 @@
 static AnyDeviceMap from_device_map;
 static int registered_readers;
 static struct notifier_block notifier;
+static int from_device_count;
 
 extern "C" int click_FromDevice_in
   (struct notifier_block *nb, unsigned long val, void *v);
 
 
+static void
+static_initialize()
+{
+  from_device_count++;
+  if (from_device_count > 1) return;
+  notifier.notifier_call = click_FromDevice_in;
+  notifier.priority = 1;
+  from_device_map.initialize();
+}
+
+static void
+static_cleanup()
+{
+  from_device_count--;
+  if (from_device_count > 0) return;
+#ifdef HAVE_CLICK_KERNEL
+  if (registered_readers)
+    unregister_net_in(&notifier);
+#endif
+}
+
 FromDevice::FromDevice()
   : _registered(0), _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
+  static_initialize();
   add_output();
 }
 
 FromDevice::~FromDevice()
 {
   if (_registered) uninitialize();
-}
-
-void
-FromDevice::static_initialize()
-{
-  notifier.notifier_call = click_FromDevice_in;
-  notifier.priority = 1;
-  from_device_map.initialize();
-}
-
-void
-FromDevice::static_cleanup()
-{
-#ifdef HAVE_CLICK_KERNEL
-  if (registered_readers)
-    unregister_net_in(&notifier);
-#endif
+  static_cleanup();
 }
 
 
