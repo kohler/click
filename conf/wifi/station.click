@@ -47,9 +47,10 @@ winfo :: WirelessInfo(SSID "", BSSID 00:00:00:00:00:00, CHANNEL 1);
 rates :: AvailableRates(DEFAULT 2 4 11 22);
 
 q :: Queue(10)
+-> wep_encap :: WepEncap(ACTIVE false)
 -> set_rate :: SetTXRate(22)
 -> SetTXPower(63)
--> seq :: WifiSeq()
+  //-> seq :: WifiSeq()
 -> extra_encap :: ExtraEncap()
 -> to_dev :: ToDevice (ath0);
 
@@ -61,6 +62,7 @@ from_dev :: FromDevice(ath0, PROMISC true)
 -> tx_filter :: FilterTX()
 -> HostEtherFilter(station_address, OFFSET 4)
 -> dupe :: WifiDupeFilter()
+-> wep_decap :: WepDecap()
 -> wifi_cl :: Classifier(0/00%0c, //mgt
 			 0/08%0c, //data
 			 );
@@ -98,7 +100,7 @@ management_cl [2] -> beacon_t :: Tee(2)
 beacon_t [1] -> tracker :: BeaconTracker(WIRELESS_INFO winfo, TRACK 10) -> Discard;
 
 management_cl [3] -> PrintWifi() -> station_assoc;
-management_cl [4] -> bs;
+management_cl [4] -> PrintWifi(probe_resp) -> bs;
 management_cl [5] -> PrintWifi() -> station_auth;
 
 wifi_cl [1] 

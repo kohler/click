@@ -43,6 +43,15 @@ FromDevice(ath1)
 -> wifi_cl :: Classifier(0/08%0c 1/01%03, //data
 			 0/00%0c); //mgt
 
+FromHost(ap, ap_bssid, ETHER ap_bssid)
+-> wifi_encap :: WifiEncap(0x02, WIRELESS_INFO winfo)
+-> q;
+
+wifi_cl [0] 
+-> decap :: WifiDecap()
+-> HostEtherFilter(ap_bssid, DROP_OTHER true, DROP_OWN true) 
+-> ToHost(ap)
+
 wifi_cl [1] -> mgt_cl :: Classifier(0/00%f0, //assoc req
 				    0/10%f0, //assoc resp
 				    0/40%f0, //probe req
@@ -52,10 +61,6 @@ wifi_cl [1] -> mgt_cl :: Classifier(0/00%f0, //assoc req
 				    0/b0%f0, //disassoc
 				    );
 
-wifi_cl [0] 
--> decap :: WifiDecap()
--> HostEtherFilter(ap_bssid, DROP_OTHER true, DROP_OWN true) 
--> ToHost(ap)
 
 
 mgt_cl [0] -> PrintWifi()

@@ -2,7 +2,7 @@
 
 use strict;
 my $desired_ssid;
-my $best_ssid = "";
+my $best_ssid;
 my $best_rssi = 0;
 my $best_bssid = "";
 my $best_channel = 0;
@@ -37,8 +37,11 @@ foreach my $line (@lines) {
     my $ssid = $1;
 
     if (defined $ssid_blacklist{$ssid}) {
-	print "# ignoring $ssid\n";
-	next;
+	if (! defined $desired_ssid ||
+	    $desired_ssid ne $ssid) {
+	    print "# ignoring $ssid\n";
+	    next;
+	}
     }
 
     if ($best_rssi < $rssi &&
@@ -51,15 +54,13 @@ foreach my $line (@lines) {
     }
 }
 
-system "/sbin/iwconfig ath0 channel $best_channel";
-
-if ($best_channel < 15) {
-    system "write_handler.pl set_rate.rate 22";
-} else {
-    system "write_handler.pl set_rate.rate 12";
+if (! defined $best_ssid) {
+    print STDERR "no ssid found!\n";
+    exit -1;
 }
+system "set_channel.pl $best_channel";
+
 system "write_handler.pl winfo.bssid $best_bssid";
-system "write_handler.pl winfo.channel $best_channel";
 system "write_handler.pl winfo.ssid $best_ssid";
 
 system "write_handler.pl station_auth.send_auth_req 1";

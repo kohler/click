@@ -9,13 +9,16 @@
 
 
 FromDevice(ath0, PROMISC true) 
+  //  ->Print (foo)
 -> prism2_decap :: Prism2Decap()
 -> extra_decap :: ExtraDecap()
   //-> err_filter :: FilterPhyErr() 
 //-> tx_filter :: FilterTX()
--> bs :: BeaconScanner()
+//-> bs :: BeaconScanner()
 -> Classifier(!0/80%f0) // filter out beacons
--> PrintWifi(TIMESTAMP true) 
+  //-> Classifier(0/00%0c) //mgt
+
+-> PrintWifi() 
 //-> Print(TIMESTAMP true)
 -> WifiDecap()
 -> Strip(14)
