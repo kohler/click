@@ -1,3 +1,8 @@
+2004-07-07 Wednesday 14:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/wifi/wifitxfeedback.cc (1.13): fix static_whatever error
+	reported by Nels Anderson
+
 2004-07-07 Wednesday 13:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/handlers/kernel-01.testie (1.6): update test
