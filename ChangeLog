@@ -1,3 +1,15 @@
+2001-03-16 Friday 09:04  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ipsec/esp.cc: fix compile bug
+
+2001-03-16 Friday 09:02  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ipsec/desp.cc, elements/ipsec/esp.cc,
+	elements/ipsec/sha1.hh, include/click/sha1.hh, lib/sha1.cc,
+	linuxmodule/Makefile.in, userlevel/Makefile.in: move sha1
+	implementation out of library and have it as a .hh file only in
+	ipsec
+
 2001-03-15 Thursday 23:54  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/ipsec/desp.cc, elements/ipsec/esp.cc,
