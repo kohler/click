@@ -93,7 +93,7 @@
  * 5)' matches non-TCP packets as well. (The `src tcp port != 5' option is
  * effectively equivalent to `tcp and not src tcp port 5'.) Similarly, `icmp
  * type != 4' will not match non-ICMP packets. The same goes for the `<', `>',
- * `<=', and `>=' relations.
+ * `<=', and `>=' relations, and the B<tcp opt> directives.
  *
  * You can omit a lot of this syntax. For example, instead of `ip proto tcp',
  * you can just say `tcp'; and similarly for `port www' (just say `www'), `tcp
@@ -102,7 +102,8 @@
  * qualifiers, too: `src port 80 or 81' is the same as `src port 80 or src
  * port 81'.
  *
- * As a special case, a pattern consisting of "-" matches every packet.
+ * As a special case, a pattern consisting of "-", "any", or "all" matches
+ * every packet.
  *
  * The patterns are scanned in order, and the packet is sent to the output
  * corresponding to the first matching pattern. Thus more specific patterns
@@ -123,8 +124,8 @@
  *
  * This element correctly handles IP packets with options.
  *
- * B<[tcp | udp] port> and B<icmp type> directives can only be true on the
- * first fragment of a fragmented packet.
+ * B<[tcp | udp] port>, B<icmp type>, and B<tcp opt> directives can only be
+ * true on the first fragment of a fragmented packet.
  *
  * Every IPClassifier element has an equivalent corresponding IPFilter element
  * and vice versa. Use the element whose syntax is more convenient for your
@@ -160,8 +161,7 @@
  * of packet data are ANDed with a mask and compared against four bytes of
  * classifier pattern.
  *
- * =a
- * Classifier, IPFilter, CheckIPHeader, MarkIPHeader, CheckIPHeader2,
+ * =a Classifier, IPFilter, CheckIPHeader, MarkIPHeader, CheckIPHeader2,
  * tcpdump(1) */
 
 class IPClassifier : public IPFilter {

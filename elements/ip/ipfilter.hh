@@ -10,9 +10,9 @@
  * V<classification>
  * =d
  *
- * Filters IP packets. IPFilter can have an arbitrary number of filters, or
- * ACTION-PATTERN pairs. The ACTIONs describe what to do with packets, while
- * the PATTERNs are tcpdump(1)-like patterns; see IPClassifier(n) for a
+ * Filters IP packets. IPFilter can have an arbitrary number of filters, which
+ * are ACTION-PATTERN pairs. The ACTIONs describe what to do with packets,
+ * while the PATTERNs are tcpdump(1)-like patterns; see IPClassifier(n) for a
  * description of their syntax. Packets are tested against the filters in
  * order, and are processed according to the ACTION in the first filter that
  * matched.

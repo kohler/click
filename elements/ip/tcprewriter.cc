@@ -1,7 +1,8 @@
 /*
  * tcprewriter.{cc,hh} -- rewrites packet source and destination
- * Max Poletto, Eddie Kohler
+ * Eddie Kohler
  *
+ * Copyright (c) 2000 Massachusetts Institute of Technology.
  * Copyright (c) 2000 Mazu Networks, Inc.
  *
  * This software is being provided by the copyright holders under the GNU
