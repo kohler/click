@@ -1,3 +1,51 @@
+2001-03-13 Tuesday 00:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: updates
+
+2001-03-13 Tuesday 00:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ethernet/arpquerier.cc, ethernet/arpquerier.hh,
+	ethernet/ip6ndsolicitor.cc, ethernet/ip6ndsolicitor.hh,
+	etherswitch/etherswitch.cc, etherswitch/etherswitch.hh,
+	etherswitch/spantree.hh, standard/errorelement.cc,
+	standard/errorelement.hh, standard/idle.cc, standard/idle.hh,
+	standard/suppressor.cc, standard/suppressor.hh, tcpudp/snooptcp.cc,
+	tcpudp/snooptcp.hh, userlevel/kerneltap.cc, userlevel/kerneltap.hh:
+	use new flow_code() function instead of forward_flow() and
+	backward_flow()
+
+2001-03-13 Tuesday 00:54  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/lib/processingt.cc: # and whitespace are not valid in
+	processing codes any more
+
+2001-03-13 Tuesday 00:53  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/router.cc: use new forward_flow() and backward_flow()
+	interfaces (with ErrorHandler *)
+
+2001-03-13 Tuesday 00:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/module.cc: don't use click_threads() if !__MTCLICK__
+
+2001-03-13 Tuesday 00:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/task.cc: Don't complain if a task list is scheduled at
+	destruction -- task lists are always "scheduled".
+
+2001-03-13 Tuesday 00:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, lib/element.cc: added flow_code()
+	method, which packages forward and backward flow information into a
+	convenient string representation. Now Element::forward_flow() and
+	backward_flow() are use flow_code() to do their work. Added
+	COMPLETE_FLOW constant to express the normal case.
+
+2001-03-13 Tuesday 00:47  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/bitvector.hh, lib/bitvector.cc: added
+	nonzero_intersection() method
+
 2001-03-12 Monday 20:22  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/element.hh: processing_vector is no longer virtual:
