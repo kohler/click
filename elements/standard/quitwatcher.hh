@@ -22,10 +22,7 @@ None
 Stops router processing when at least one of the ELEMENTs is no longer
 scheduled.
 
-=n
-
-This element is inserted automatically by the user-level driver when
-it is given the `--stop' option. */
+*/
 
 class QuitWatcher : public Element { public:
 
