@@ -22,7 +22,8 @@ CxxFunction::CxxFunction(const String &name, bool in_header,
 			 const String &ret_type, const String &args,
 			 const String &body, const String &clean_body)
   : _name(name), _in_header(in_header), _from_header_file(parsing_header_file),
-    _ret_type(ret_type), _args(args), _body(body), _clean_body(clean_body)
+    _alive(true), _ret_type(ret_type), _args(args),
+    _body(body), _clean_body(clean_body)
 {
   //fprintf(stderr, "%s::%s\n", _name.cc(), _body.cc());
 }
@@ -234,6 +235,7 @@ CxxClass::defun(const CxxFunction &fn)
   int which = _functions.size();
   _functions.push_back(fn);
   _fn_map.insert(fn.name(), which);
+  _functions.back().unkill();
   return _functions.back();
 }
 

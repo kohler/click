@@ -326,6 +326,8 @@ Specializer::do_simple_action(SpecializedClass &spc)
     (CxxFunction("pull", false, "Packet *", "(int)",
 		 "\n  Packet *p = pull_input(0);\n\
   return (p ? smaction(p) : 0);\n", ""));
+  spc.cxxc->find("push_output")->unkill();
+  spc.cxxc->find("pull_input")->unkill();
 }
 
 inline const String &

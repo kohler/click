@@ -12,6 +12,7 @@ class CxxFunction {
   String _name;
   bool _in_header;
   bool _from_header_file;
+  bool _alive;
   String _ret_type;
   String _args;
   String _body;
@@ -23,12 +24,12 @@ class CxxFunction {
 
   static bool parsing_header_file;
   
-  CxxFunction()				{ }
+  CxxFunction()				: _alive(false) { }
   CxxFunction(const String &, bool, const String &, const String &,
 	      const String &, const String &);
 
   String name() const			{ return _name; }
-  bool alive() const			{ return _name; }
+  bool alive() const			{ return _alive; }
   bool in_header() const		{ return _in_header; }
   bool from_header_file() const		{ return _from_header_file; }
   const String &ret_type() const	{ return _ret_type; }
@@ -37,7 +38,8 @@ class CxxFunction {
   const String &clean_body() const	{ return _clean_body; }
 
   void set_body(const String &b)	{ _body = b; _clean_body = String(); }
-  void kill()				{ _name = String(); }
+  void kill()				{ _alive = false; }
+  void unkill()				{ _alive = true; }
   
   bool find_expr(const String &) const;
   bool replace_expr(const String &, const String &);
