@@ -173,7 +173,7 @@ FromRawSocket::selected(int fd)
       if (!p)
 	break;
       // set timestamp
-      (void) ioctl(fd, SIOCGSTAMP, &p->timestamp_anno());
+      p->timestamp_anno().set_timeval_ioctl(fd, SIOCGSTAMP);
       // set IP annotations
       if (fake_pcap_force_ip(p, FAKE_DLT_RAW)) {
 	output(0).push(p);

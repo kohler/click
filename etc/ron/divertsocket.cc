@@ -479,7 +479,7 @@ DivertSocket::selected(int fd)
   if (len > 0) {
 
     // set the timestamp 
-    click_gettimeofday(&p->timestamp_anno());
+    p->timestamp_anno() = Timestamp::now();
     p->change_headroom_and_length(2, len);		 
     output(0).push(p);
 

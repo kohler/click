@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.cc,v 1.7 2004/12/30 23:51:47 eddietwo Exp $
+ * $Id: ipflowrawsockets.cc,v 1.8 2005/01/03 06:10:47 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -355,7 +355,7 @@ IPFlowRawSockets::selected(int fd)
 		    break;
 #ifdef SIOCGSTAMP
 		// set timestamp
-		(void) ioctl(fd, SIOCGSTAMP, &p->timestamp_anno());
+		p->timestamp_anno().set_timeval_ioctl(fd, SIOCGSTAMP);
 #endif
 		// set IP annotations
 		if (fake_pcap_force_ip(p, FAKE_DLT_RAW)) {

@@ -173,7 +173,7 @@ FromDevice::set_promiscuous(int fd, String ifname, bool promisc)
 
     return was_promisc;
 }
-#endif
+#endif /* FROMDEVICE_LINUX */
 
 int
 FromDevice::initialize(ErrorHandler *errh)
@@ -359,14 +359,7 @@ FromDevice::selected(int)
 	} else
 	    p->take(_snaplen - len);
 	p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
-# if SIZEOF_STRUCT_TIMEVAL == 8
-	(void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
-	p->timestamp_anno()._subsec = Timestamp::usec_to_subsec(p->timestamp_anno()._subsec);
-# else
-	struct timeval tv;
-	(void) ioctl(_fd, SIOCGSTAMP, &tv);
-	p->set_timestamp_anno(tv);
-# endif
+	p->timestamp_anno().set_timeval_ioctl(_fd, SIOCGSTAMP);
 	if (!_force_ip || fake_pcap_force_ip(p, _datalink))
 	    output(0).push(p);
 	else

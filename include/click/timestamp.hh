@@ -57,13 +57,17 @@ class Timestamp { public:
     static inline Timestamp make_usec(uint32_t us);
     static inline Timestamp make_nsec(int32_t s, int32_t ns);
     
-    inline void set_now();
     void set(int32_t s, int32_t ss)		{ _sec = s; _subsec = ss; }
     void set_sec(int32_t s)			{ _sec = s; }
     void set_subsec(int32_t ss)			{ _subsec = ss; }
     void set_usec(int32_t s, int32_t us)	{ _sec = s; _subsec = usec_to_subsec(us); }
     void set_nsec(int32_t s, int32_t ns)	{ _sec = s; _subsec = nsec_to_subsec(ns); }
 
+    inline void set_now();
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+    int set_timeval_ioctl(int fd, int ioctl);
+#endif
+    
     int32_t sec() const		{ return _sec; }
     int32_t subsec() const	{ return _subsec; }
     

@@ -19,7 +19,31 @@
 #include <click/config.h>
 #include <click/timestamp.hh>
 #include <click/straccum.hh>
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+# include <unistd.h>
+# include <sys/ioctl.h>
+#endif
 CLICK_DECLS
+
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
+int
+Timestamp::set_timeval_ioctl(int fd, int ioctl_selector)
+{
+    int r;
+# if TIMESTAMP_PUNS_TIMEVAL
+    r = ioctl(fd, ioctl_selector, this);
+# elif SIZEOF_STRUCT_TIMEVAL == 8
+    if ((r = ioctl(fd, ioctl_selector, this)) >= 0)
+	_subsec = usec_to_subsec(_subsec);
+# else
+    struct timeval tv;
+    if ((r = ioctl(fd, ioctl_selector, &tv)) >= 0)
+	set_usec(tv.tv_sec, tv.tv_usec);
+# endif
+    return r;
+}
+#endif
+
 
 StringAccum &
 operator<<(StringAccum &sa, const struct timeval &tv)
