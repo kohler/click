@@ -1,3 +1,8 @@
+2001-12-30 Sunday 05:23  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: fromnetflowsumdump.hh (1.4), toipsumdump.cc
+	(1.8): nitlets, and update to ipsumdump 1.18
+
 2001-12-27 Thursday 16:25  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/drivermanager.cc (1.17): DriverManager bug
