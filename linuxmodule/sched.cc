@@ -55,8 +55,8 @@ CLICK_CXX_UNPROTECT
 # define TASK_PRIO(t)	((t)->nice)
 #endif
 
-#define SOFT_SPIN_LOCK(l)	soft_spin_lock((l))
-#define SPIN_UNLOCK(l)		spin_unlock((l))
+#define SOFT_SPIN_LOCK(l)	do { MDEBUG("soft_lock %s", #l); soft_spin_lock((l)); } while (0)
+#define SPIN_UNLOCK(l)		do { MDEBUG("unlock %s", #l); spin_unlock((l)); } while (0)
 
 static spinlock_t click_thread_lock;
 static int click_thread_priority = DEF_PRIO;
@@ -252,6 +252,9 @@ write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
 
 
 /********************** Initialization and cleanup ***************************/
+#if __MTCLICK__
+extern "C" int click_threads();
+#endif
 
 void
 click_init_sched(ErrorHandler *errh)
