@@ -13,8 +13,8 @@
  * =h count read-only
  * Returns the number of packets/bytes that have passed through.
  * =h rate read-only
- * Returns the recent packet/byte arrival rate (measured by exponential
- * weighted moving average) in packets per second.
+ * Returns the recent arrival rate (measured by exponential
+ * weighted moving average) in packets/bytes per second.
  * =h reset write-only
  * Resets the count and rate to zero.
  */
