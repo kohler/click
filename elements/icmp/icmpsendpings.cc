@@ -49,12 +49,14 @@ ICMPSendPings::configure(Vector<String> &conf, ErrorHandler *errh)
   _ip_id = 1;
   _icmp_id = 0;
   _interval = 1000;
+  _data = String();
   return cp_va_parse(conf, this, errh,
                      cpIPAddress, "source IP address", &_src,
                      cpIPAddress, "destination IP address", &_dst,
 		     cpKeywords,
 		     "INTERVAL", cpSecondsAsMilli, "time between pings (s)", &_interval,
 		     "IDENTIFIER", cpUnsignedShort, "ICMP echo identifier", &_icmp_id,
+		     "DATA", cpString, "payload", &_data,
 		     0);
 }
 
@@ -69,9 +71,9 @@ ICMPSendPings::initialize(ErrorHandler *)
 void
 ICMPSendPings::run_scheduled()
 {
-  WritablePacket *q = Packet::make(sizeof(click_ip) +
-                                   sizeof(struct icmp_sequenced));
-  memset(q->data(), '\0', q->length());
+  WritablePacket *q = Packet::make(sizeof(click_ip) + sizeof(struct icmp_sequenced) + _data.length());
+  memset(q->data(), '\0', sizeof(click_ip) + sizeof(struct icmp_sequenced));
+  memcpy(q->data() + sizeof(click_ip) + sizeof(struct icmp_sequenced), _data.data(), _data.length());
 
   click_ip *nip = reinterpret_cast<click_ip *>(q->data());
   nip->ip_v = 4;
@@ -90,7 +92,7 @@ ICMPSendPings::run_scheduled()
   icp->identifier = htons(_icmp_id);
   icp->sequence = htons(_ip_id);
 
-  icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(icmp_sequenced));
+  icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(struct icmp_sequenced) + _data.length());
 
   q->set_dst_ip_anno(IPAddress(_dst));
   q->set_ip_header(nip, sizeof(click_ip));

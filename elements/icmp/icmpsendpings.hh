@@ -30,8 +30,12 @@ Amount of time between pings, in seconds. Default is 1.
 
 =item IDENTIFIER
 
-Integer. Determines the ICMP identifier field in the ping packet. Default is
+Integer. Determines the ICMP identifier field in emitted pings. Default is
 0.
+
+=item DATA
+
+String. Extra data in emitted pings. Default is the empty string (nothing).
 
 =back
 
@@ -61,6 +65,7 @@ class ICMPSendPings : public Element { public:
   uint16_t _icmp_id;
   int _interval;
   Timer _timer;
+  String _data;
   
 };
 
