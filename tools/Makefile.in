@@ -39,9 +39,9 @@ click-compile: $(srcdir)/click-compile.in
 	@chmod +x click-compile; touch click-compile
 
 clean:
-	@-for d in $(TOOLS); do (cd $$d 2>/dev/null && $(MAKE) clean); done
+	@-for d in $(TOOLDIRS); do (cd $$d && $(MAKE) clean); done
 distclean:
-	@-for d in $(TOOLS); do (cd $$d 2>/dev/null && $(MAKE) distclean); done
+	@-for d in $(TOOLDIRS); do (cd $$d && $(MAKE) distclean); done
 	-rm -f Makefile click-compile
 
 install: install-subdirs install-local
@@ -74,7 +74,7 @@ DISTFILES = Makefile.in \
 distdir:
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
-	@-for d in lib $(TOOLS); do mkdir $(distdir)/$$d; chmod 777 $(distdir)/$$d; done
+	@-for d in lib $(TOOLDIRS); do mkdir $(distdir)/$$d; chmod 777 $(distdir)/$$d; done
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
