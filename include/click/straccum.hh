@@ -102,6 +102,8 @@ StringAccum &operator<<(StringAccum &, double);
 #endif
 StringAccum &operator<<(StringAccum &, const struct timeval &);
 
+StringAccum &operator<<(StringAccum &, void *);
+
 
 inline
 StringAccum::StringAccum(int cap)

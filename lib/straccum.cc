@@ -155,6 +155,16 @@ operator<<(StringAccum &sa, const struct timeval &tv)
   return sa;
 }
 
+StringAccum &
+operator<<(StringAccum &sa, void *v)
+{
+  if (char *x = sa.reserve(30)) {
+    int len = sprintf(x, "%p", v);
+    sa.forward(len);
+  }
+  return sa;
+}
+
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 StringAccum &
 StringAccum::snprintf(int n, const char *format, ...)
