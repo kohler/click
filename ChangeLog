@@ -1,3 +1,13 @@
+2003-08-18 Monday 14:07  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipflowdumps.cc (1.28), toipflowdumps.hh
+	(1.18): add ALL_TCP_OPT
+
+2003-08-18 Monday 14:07  Eddie Kohler <kohler@icir.org>
+
+	* lib/error.cc (1.46): add "%{timeval}" ErrorHandler conversion
+	(takes a const struct timeval *)
+
 2003-08-15 Friday 17:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/make-dsdv-config.pl (1.2): Set KernelTun MTU to account for
