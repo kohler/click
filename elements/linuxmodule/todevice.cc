@@ -45,23 +45,6 @@ ToDevice::ToDevice()
     _rejected(0), _hard_start(0)
 {
   add_input();
-  _busy_returns = 0; 
-  _pkts_sent = 0; 
-#if CLICK_DEVICE_STATS
-  _activations = 0;
-  _idle_pulls = 0; 
-  _idle_calls = 0; 
-  _linux_pkts_sent = 0; 
-  _time_pull = 0;
-  _time_clean = 0;
-  _time_queue = 0;
-  _perfcnt1_pull = 0;
-  _perfcnt1_clean = 0;
-  _perfcnt1_queue = 0;
-  _perfcnt2_pull = 0;
-  _perfcnt2_clean = 0;
-  _perfcnt2_queue = 0;
-#endif
 }
 
 ToDevice::~ToDevice()
@@ -117,6 +100,29 @@ ToDevice::initialize(ErrorHandler *errh)
 #endif
   join_scheduler();
 
+  // reset stats
+  _busy_returns = 0; 
+  _pkts_sent = 0; 
+#if CLICK_DEVICE_STATS
+  _activations = 0;
+  _idle_pulls = 0; 
+  _idle_calls = 0; 
+  _linux_pkts_sent = 0; 
+  _time_pull = 0;
+  _time_clean = 0;
+  _time_queue = 0;
+  _perfcnt1_pull = 0;
+  _perfcnt1_clean = 0;
+  _perfcnt1_queue = 0;
+  _perfcnt2_pull = 0;
+  _perfcnt2_clean = 0;
+  _perfcnt2_queue = 0;
+#endif
+#if CLICK_DEVICE_THESIS_STATS
+  _npackets = 0;
+  _pull_cycles = 0;
+#endif
+  
   return 0;
 }
 
@@ -163,14 +169,21 @@ ToDevice::tx_intr()
 
   /* try to send from click */
   while (sent < OUTPUT_BATCH && (busy=_dev->tbusy) == 0) {
-    int r;
-    Packet *p;
-    if (p = input(0).pull()) {
+#if CLICK_DEVICE_THESIS_STATS
+    unsigned long long before_pull_cycles = click_get_cycles();
+#endif
+    
+    if (Packet *p = input(0).pull()) {
       
+#if CLICK_DEVICE_THESIS_STATS
+      _npackets++;
+      _pull_cycles += click_get_cycles() - before_pull_cycles;
+#endif
+    
       GET_STATS_RESET(low00, low10, time_now, 
 	              _perfcnt1_pull, _perfcnt2_pull, _time_pull);
-
-      r = queue_packet(p);
+      
+      int r = queue_packet(p);
       
       GET_STATS_RESET(low00, low10, time_now, 
 	              _perfcnt1_queue, _perfcnt2_queue, _time_queue);
@@ -334,10 +347,41 @@ ToDevice_read_calls(Element *f, void *)
 #endif
 }
 
+#if CLICK_DEVICE_THESIS_STATS
+static String
+ToDevice_read_stats(Element *e, void *thunk)
+{
+  ToDevice *td = (ToDevice *)e;
+  int which = reinterpret_cast<int>(thunk);
+  switch (which) {
+   case 0:
+    return String(td->_npackets) + "\n";
+   case 1:
+    return String(td->_pull_cycles) + "\n";
+   default:
+    return String();
+  }
+}
+
+static int
+ToDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
+{
+  ToDevice *td = (ToDevice *)e;
+  td->_npackets = 0;
+  td->_pull_cycles = 0;
+  return 0;
+}
+#endif
+
 void
 ToDevice::add_handlers()
 {
   add_read_handler("calls", ToDevice_read_calls, 0);
+#if CLICK_DEVICE_THESIS_STATS
+  add_read_handler("packets", ToDevice_read_stats, 0);
+  add_read_handler("pull_cycles", ToDevice_read_stats, (void *)1);
+  add_write_handler("reset_counts", ToDevice_write_stats, 0);
+#endif
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

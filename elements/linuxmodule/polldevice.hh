@@ -28,7 +28,6 @@
  * =a FromDevice, ToDevice, FromLinux, ToLinux */
 
 #include "anydevice.hh"
-// #define POLLDEVICE_STATS 1
 
 class PollDevice : public AnyDevice {
  public:
@@ -64,7 +63,7 @@ class PollDevice : public AnyDevice {
   unsigned long long _perfcnt2_pushing;
   unsigned long _activations;
 #endif
-#if POLLDEVICE_STATS
+#if CLICK_DEVICE_THESIS_STATS
   unsigned _npackets;
   unsigned long long _push_cycles;
 #endif

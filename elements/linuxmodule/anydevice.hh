@@ -16,7 +16,7 @@ extern "C" {
 #define OUTPUT_BATCH    16
 
 // #define CLICK_DEVICE_STATS 1
-#define CLICK_DEVICE_THESIS_STATS 1
+// #define CLICK_DEVICE_THESIS_STATS 1
 // #define _DEV_OVRN_STATS_ 1
 
 #ifndef RR_SCHED

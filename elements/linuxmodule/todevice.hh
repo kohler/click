@@ -70,6 +70,10 @@ class ToDevice : public AnyDevice {
   unsigned long long _perfcnt2_queue;
   unsigned long _activations; 
 #endif
+#if CLICK_DEVICE_THESIS_STATS
+  unsigned _npackets;
+  unsigned long long _pull_cycles;
+#endif
   unsigned long _rejected;
   unsigned long _hard_start;
   unsigned long long _busy_returns;
