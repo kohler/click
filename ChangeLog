@@ -1,3 +1,8 @@
+2001-03-29 Thursday 07:57  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/standard/: drr.cc, drr.hh: Deficit round robin packet
+	scheduler.
+
 2001-03-28 Wednesday 19:21  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/: ethernet/etherencap.cc, ip/ipencap.cc,
