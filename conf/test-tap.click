@@ -1,8 +1,15 @@
-// This configuration should work on FreeBSD, OpenBSD, and Linux.
-// It should produce a stream of tun-ok printouts if all goes well.
-// On OpenBSD, you may need to run
+// test-tap.click
+
+// This user-level configuration tests the KernelTap element, which accesses
+// Linux's ethertap device (or, equivalently, *BSD's /dev/tun* devices). These
+// devices let user-level programs trade packets with kernel IP processing
+// code. You will need to run it as root.
+//
+// This configuration should work on FreeBSD, OpenBSD, and Linux. It should
+// produce a stream of `tun-ok' printouts if all goes well. On OpenBSD, you
+// may need to run
 //   route add 1.0.0.0 -interface 1.0.0.1
-// after you start the click configuration.
+// after starting the Click configuration.
 
 tun :: KernelTap(1.0.0.1/8);
 
