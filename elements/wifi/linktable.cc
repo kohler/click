@@ -209,7 +209,7 @@ LinkTable::static_update_link(const String &arg, Element *e,
   Vector<String> args;
   IPAddress from;
   IPAddress to;
-  int metric;
+  unsigned metric;
 
   cp_spacevec(arg, args);
 
@@ -225,7 +225,7 @@ LinkTable::static_update_link(const String &arg, Element *e,
   if (!cp_ip_address(args[1], &to)) {
     return errh->error("Couldn't read IPAddress out of to");
   }
-  if (!cp_integer(args[2], &metric)) {
+  if (!cp_unsigned(args[2], &metric)) {
     return errh->error("Couldn't read metric");
   }
   
@@ -241,7 +241,7 @@ LinkTable::clear()
 
 }
 bool 
-LinkTable::update_link(IPAddress from, IPAddress to, int metric)
+LinkTable::update_link(IPAddress from, IPAddress to, unsigned metric)
 {
   lt_assert(from);
   lt_assert(to);
@@ -302,7 +302,7 @@ LinkTable::get_hosts()
   }
   return v;
 }
-int 
+unsigned 
 LinkTable::get_host_metric(IPAddress s)
 {
   lt_assert(s);
@@ -316,7 +316,7 @@ LinkTable::get_host_metric(IPAddress s)
   return nfo->_metric;
 }
 
-int 
+unsigned 
 LinkTable::get_hop_metric(IPAddress from, IPAddress to) 
 {
   lt_assert(from);
@@ -337,12 +337,12 @@ LinkTable::get_hop_metric(IPAddress from, IPAddress to)
   
   
   
-int 
+unsigned 
 LinkTable::get_route_metric(Vector<IPAddress> route) 
 {
-  int metric = 0;
+  unsigned metric = 0;
   for (int i = 0; i < route.size() - 1; i++) {
-    int m = get_hop_metric(route[i], route[i+1]);
+    unsigned m = get_hop_metric(route[i], route[i+1]);
     if (m == 0) {
       return 0;
     }
@@ -380,7 +380,7 @@ LinkTable::valid_route(Vector<IPAddress> route)
     return false;
   }
   /* ensure the metrics are all valid */
-  int metric = get_route_metric(route);
+  unsigned metric = get_route_metric(route);
   if (metric  == 0 ||
       metric >= 777777){
     return false;
@@ -444,7 +444,7 @@ LinkTable::update_routes(Vector<Path> routes, int size, Vector<IPAddress> route)
       routes[x] = route;
       return routes;
     }
-    int m = get_route_metric(routes[x]);
+    unsigned m = get_route_metric(routes[x]);
     if (route_m < m) {
       break;
     }
@@ -724,7 +724,7 @@ LinkTable::dijkstra()
     }
 
     current_min_ip = IPAddress();
-    int min_metric = 32000;
+    unsigned min_metric = 32000;
     for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
       HostInfo *nfo = _hosts.findp(i.key());
       if (!nfo->_marked && nfo->_metric && nfo->_metric < min_metric) {

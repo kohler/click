@@ -206,10 +206,6 @@ sniff_dev :: SniffDevice($dev, false);
 sched :: PrioSched()
 -> set_power :: SetTXPower(POWER 63)
 //-> Print ("to_dev", TIMESTAMP true)
--> pace :: WifiPace(THRESHOLD 500,
-		    OFFSET 4,
-		    DELAY 0,
-		    DEBUG false)
 -> sniff_dev;
 
 route_q :: NotifierQueue(50) 

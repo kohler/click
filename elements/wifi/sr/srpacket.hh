@@ -61,7 +61,8 @@ struct srpacket {
   uint32_t _seq2;  // another seq number
 
   
-  
+  /* uin32_t ip[_nhops] */
+  /* uin32_t metrics[_nhops] */
 
 
   void set_random_from(IPAddress ip) {
@@ -166,37 +167,23 @@ struct srpacket {
     _flags = htons(flags & !f);
   }
 
-  uint32_t get_hop_seq(int h) {
-    uint32_t *ndx = (uint32_t *) (this+1);
-    return ndx[h + num_hops()];
-  }
-
   uint32_t get_fwd_metric(int h) { 
     uint32_t *ndx = (uint32_t *) (this+1);
-    return ndx[2*h + num_hops()*2];
+    return ndx[2*h + num_hops()];
+  }
+  void set_fwd_metric(int hop, uint32_t s) { 
+    uint32_t *ndx = (uint32_t *) (this+1);
+    ndx[2*hop + num_hops()] = s;
   }
 
   uint32_t get_rev_metric(int h) { 
     uint32_t *ndx = (uint32_t *) (this+1);
-    return ndx[1 + 2*h  + num_hops()*2];
+    return ndx[1 + 2*h  + num_hops()];
   }
-
-
-  void set_hop_seq(int hop, uint32_t seq) {
-    uint32_t *ndx = (uint32_t  *) (this+1);
-    ndx[hop + num_hops()] = seq;
-  }
-  void set_fwd_metric(int hop, uint32_t s) { 
-    uint32_t *ndx = (uint32_t *) (this+1);
-    ndx[2*hop + num_hops()*2] = s;
-  }
-
-
   void set_rev_metric(int hop, uint32_t s) { 
     uint32_t *ndx = (uint32_t *) (this+1);
-    ndx[1 + 2*hop + num_hops()*2] = s;
+    ndx[1 + 2*hop + num_hops()] = s;
   }
-
 
 
   IPAddress get_hop(int h) { 

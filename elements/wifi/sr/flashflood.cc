@@ -279,7 +279,7 @@ FlashFlood::forward(Broadcast *bcast) {
   pk->set_num_hops(hops);
   for (int x = 0; x < hops - 1; x++) {
     pk->set_hop(x, pk_in->get_hop(x));
-    pk->set_hop_seq(x, pk_in->get_hop_seq(x));
+    //pk->set_hop_seq(x, 0);
   }
 
   pk->set_hop(hops - 1,_ip);
@@ -287,7 +287,7 @@ FlashFlood::forward(Broadcast *bcast) {
   pk->set_seq(bcast->_seq);
   uint32_t link_seq = random();
   pk->set_seq2(link_seq);
-  pk->set_hop_seq(hops - 1, link_seq);
+  //pk->set_hop_seq(hops - 1, link_seq);
   bcast->_sent_seq.push_back(link_seq);
 
   if (bcast->_originated) {
@@ -452,8 +452,8 @@ FlashFlood::process_packet(Packet *p_in)
 
     for (int x = 0; x < pk->num_hops(); x++) {
       IPAddress prev_src = pk->get_hop(x);
-      uint32_t prev_link_seq = pk->get_hop_seq(x);
-      update_probs(seq, prev_link_seq, prev_src);
+      //uint32_t prev_link_seq = pk->get_hop_seq(x);
+      //update_probs(seq, prev_link_seq, prev_src);
     }
     update_probs(seq, link_seq, src);
 

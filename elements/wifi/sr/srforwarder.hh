@@ -18,8 +18,7 @@ CLICK_DECLS
  * DSR-inspired ad-hoc routing protocol.
  * Input 0: packets that I receive off the wire
  * Output 0: Outgoing ethernet packets that I forward
- * Output 1: outgoing ethernet packets originating from me
- * Output 2: packets that were addressed to me.
+ * Output 1: packets that were addressed to me.
  *
  * Normally usged in conjuction with ETT element
  *
@@ -47,7 +46,6 @@ class SRForwarder : public Element {
 
   void push(int, Packet *);
   
-  void send(Packet *, Vector<IPAddress>, int flags);
   Packet *encap(Packet *, Vector<IPAddress>, int flags);
   IPAddress ip() { return _ip; }
 private:

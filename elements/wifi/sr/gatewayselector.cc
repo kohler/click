@@ -333,6 +333,15 @@ GatewaySelector::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
+
+  if (pk->_version != _sr_version) {
+    click_chatter("%{element} bad sr version %d vs %d\n",
+		  this,
+		  pk->_version,
+		  _sr_version);
+    p_in->kill();
+    return;
+  }
   if (pk->_type != PT_GATEWAY) {
     click_chatter("GatewaySelector %s: back packet type %d",
 		  pk->_type);

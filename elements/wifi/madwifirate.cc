@@ -198,7 +198,7 @@ MadwifiRate::assign_rate(Packet *p_in)
     return;
   }
   DstInfo *nfo = _neighbors.findp(dst);
-  if (!nfo) {
+  if (!nfo || !nfo->_rates.size()) {
     _neighbors.insert(dst, DstInfo(dst));
     nfo = _neighbors.findp(dst);
     nfo->_rates = _rtable->lookup(dst);
@@ -253,7 +253,19 @@ MadwifiRate::push(int port, Packet *p_in)
 String
 MadwifiRate::print_rates() 
 {
-  return "";
+    StringAccum sa;
+  for (NIter iter = _neighbors.begin(); iter; iter++) {
+    DstInfo nfo = iter.value();
+    sa << nfo._eth << " ";
+    if (nfo._rates.size()) {
+      sa << nfo._rates[nfo._current_index];
+      sa << " successes " << nfo._successes;
+      sa << " failures " << nfo._failures;
+      sa << " retries " << nfo._retries;
+    }
+    sa << "\n";
+  }
+  return sa.take_string();
 }
 
 

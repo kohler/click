@@ -151,21 +151,26 @@ ARPTable::static_insert(const String&arg, Element *e,
   IPAddress ip;
   EtherAddress eth;
   cp_spacevec(arg, args);
-  if (args.size() != 2) {
-    return errh->error("Must have two arguments: currently has %d: %s",
+  if (args.size() % 2 != 0) {
+    return errh->error("Must have mode xtwo arguments: currently has %d: %s",
 		       args.size(),
 		       args[0].cc());
   }
 
-  if (!cp_ip_address(args[0], &ip)) {
-    return errh->error("Couldn't read IPAddress out of ip");
+  for (int x = 0; x < args.size(); x += 2) {
+    if (!cp_ip_address(args[x], &ip)) {
+      return errh->error("Couldn't read IPAddress out of ip");
+    }
+    
+    if (!cp_ethernet_address(args[x + 1], &eth)) {
+      return errh->error("Couldn't read EtherAddress out of eth");
+    }
+    
+    if (n->insert(ip, eth) < 0) {
+      return -1;
+    }
   }
-
-  if (!cp_ethernet_address(args[1], &eth)) {
-    return errh->error("Couldn't read EtherAddress out of eth");
-  }
-
-  return n->insert(ip, eth);
+  return 0;
 }
 void
 ARPTable::add_handlers()

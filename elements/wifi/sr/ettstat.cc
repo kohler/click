@@ -632,7 +632,7 @@ ETTStat::read_bcast_stats(Element *xf, void *)
   for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
     IPAddress ip  = i.key();
     probe_list_t *pl = e->_bcast_stats.findp(ip);
-    
+    sa << e->_ip << " " << e->_eth << " ";
     sa << ip;
     if (e->_arp_table) {
       EtherAddress eth_dest = e->_arp_table->lookup(ip);

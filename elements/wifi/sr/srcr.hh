@@ -21,10 +21,9 @@ CLICK_DECLS
  *    [METRIC GridGenericMetric], [WARMUP period in seconds])
  * =d
  * DSR-inspired end-to-end ad-hoc routing protocol.
- * Input 0: ethernet packets 
- * Input 1: ethernet data packets from device 
- * Input 2: IP packets from higher layer, w/ ip addr anno.
- * Input 3: IP packets from higher layer for gw, w/ ip addr anno.
+ * Input 0: ethernet data packets from device 
+ * Input 1: IP packets from higher layer, w/ ip addr anno.
+ * Input 2: data packets
  * Output 0: ethernet packets to device (protocol)
  * Output 1: ethernet packets to device (data)
  *

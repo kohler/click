@@ -33,7 +33,7 @@ CLICK_DECLS
 
 
 SRForwarder::SRForwarder()
-  :  Element(1,3), 
+  :  Element(1,2), 
      _ip(),
      _eth(),
      _et(0),
@@ -161,13 +161,7 @@ SRForwarder::update_link(IPAddress from, IPAddress to, int metric)
 
 
 
-void
-SRForwarder::send(Packet *p_in, Vector<IPAddress> r, int flags)
-{
-  Packet *p_out = encap(p_in, r, flags);
-  output(1).push(p_out);
 
-}
 Packet *
 SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 {
@@ -358,7 +352,7 @@ SRForwarder::push(int port, Packet *p_in)
      * this is kinda weird.
      */
     SET_MISC_IP_ANNO(p, pk->get_hop(0));
-    output(2).push(p);
+    output(1).push(p);
     return;
   } 
 

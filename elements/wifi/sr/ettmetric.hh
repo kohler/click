@@ -20,15 +20,19 @@ CLICK_DECLS
 
 
 
-inline int ett_metric(int ack_prob, int data_prob, int data_rate) 
+inline unsigned ett_metric(int ack_prob, int data_prob, int data_rate) 
 {
   
   if (!ack_prob || ! data_prob) {
     return 0;
   }
-  int retries = 100 * 100 * 100 / (ack_prob * data_prob);
-  int usecs = calc_usecs_wifi_packet(1500, data_rate, MIN(0, (retries/100) - 1));
-  return usecs;
+  int retries = 100 * 100 * 100 / (ack_prob * data_prob) - 100;
+  unsigned low_usecs = calc_usecs_wifi_packet(1500, data_rate, retries/100);
+  unsigned high_usecs = calc_usecs_wifi_packet(1500, data_rate, (retries/100) + 1);
+
+  unsigned diff = retries % 100;
+  unsigned average = (diff * high_usecs + (100 - diff) * low_usecs) / 100;
+  return average;
 
 }
 
@@ -86,21 +90,21 @@ public:
   void *cast(const char *);
 
   static String read_stats(Element *xf, void *);
-  int get_fwd_metric(IPAddress ip);
-  int get_rev_metric(IPAddress ip);
+  unsigned get_fwd_metric(IPAddress ip);
+  unsigned get_rev_metric(IPAddress ip);
   
   Vector <IPAddress> get_neighbors();
   void update_link(IPAddress from, IPAddress to, 
-		   int fwd, int rev,
+		   unsigned fwd, unsigned rev,
 		   int fwd_rate, int rev_rate);
 
   int get_tx_rate(EtherAddress);
   class LinkInfo {
   public:
     IPOrderedPair _p;
-    int _fwd;
+    unsigned _fwd;
     int _fwd_rate;
-    int _rev;
+    unsigned _rev;
     int _rev_rate;
 
     struct timeval _last;

@@ -110,7 +110,7 @@ ETTMetric::get_tx_rate(EtherAddress eth)
 
 void
 ETTMetric::update_link(IPAddress from, IPAddress to, 
-		       int fwd, int rev,
+		       unsigned fwd, unsigned rev,
 		       int fwd_rate, int rev_rate)
 {
 
@@ -166,7 +166,7 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   }
 }
 
-int 
+unsigned 
 ETTMetric::get_fwd_metric(IPAddress ip)
 {
   if (_ett_stat) {
@@ -183,7 +183,7 @@ ETTMetric::get_fwd_metric(IPAddress ip)
   return 777777;
 }
 
-int 
+unsigned 
 ETTMetric::get_rev_metric(IPAddress ip)
 {
   if (_ett_stat) {

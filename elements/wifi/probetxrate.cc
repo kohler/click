@@ -107,7 +107,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
     return;
   }
   DstInfo *nfo = _neighbors.findp(dst);
-  if (!nfo) {
+  if (!nfo || !nfo->_rates.size()) {
     _neighbors.insert(dst, DstInfo(dst, _rtable->lookup(dst)));
     nfo = _neighbors.findp(dst);
   }

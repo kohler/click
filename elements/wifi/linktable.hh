@@ -85,35 +85,35 @@ public:
 
   String routes_to_string(Vector< Vector<IPAddress> > routes);
   /* other public functions */
-  bool update_link(IPAddress from, IPAddress to, int metric);
-  bool update_both_links(IPAddress a, IPAddress b, int metric) {
+  bool update_link(IPAddress from, IPAddress to, unsigned metric);
+  bool update_both_links(IPAddress a, IPAddress b, unsigned metric) {
     if (update_link(a,b,metric)) {
       return update_link(b,a,metric);
     }
     return false;
   }
 
-  int get_hop_metric(IPAddress from, IPAddress to);
+  unsigned get_hop_metric(IPAddress from, IPAddress to);
   Vector< Vector<IPAddress> >  update_routes(Vector<Vector<IPAddress> > routes, 
 					     int n, Vector<IPAddress> route);
   bool valid_route(Vector<IPAddress> route);
-  int get_route_metric(Vector<IPAddress> route);
+  unsigned get_route_metric(Vector<IPAddress> route);
   Vector<IPAddress> get_neighbors(IPAddress ip);
   void dijkstra();
   void clear_stale();
   Vector<IPAddress> best_route(IPAddress dst);
 
   Vector< Vector<IPAddress> > top_n_routes(IPAddress dst, int n);
-  int get_host_metric(IPAddress s);
+  unsigned get_host_metric(IPAddress s);
   Vector<IPAddress> get_hosts();
 
   class Link {
   public:
     IPAddress _from;
     IPAddress _to;
-    int _metric;
+    unsigned _metric;
     Link() : _from(), _to(), _metric(0) { }
-    Link(IPAddress from, IPAddress to, int metric) {
+    Link(IPAddress from, IPAddress to, unsigned metric) {
       _from = from;
       _to = to;
       _metric = metric;
@@ -134,11 +134,11 @@ private:
   public:
     IPAddress _from;
     IPAddress _to;
-    int _metric;
+    unsigned _metric;
     struct timeval _last_updated;
     LinkInfo() { _from = IPAddress(); _to = IPAddress(); _metric = 0; _last_updated.tv_sec = 0; }
     
-    LinkInfo(IPAddress from, IPAddress to, int metric)
+    LinkInfo(IPAddress from, IPAddress to, unsigned metric)
     { 
       _from = from;
       _to = to;
@@ -146,7 +146,7 @@ private:
       click_gettimeofday(&_last_updated);
     }
     LinkInfo(const LinkInfo &p) : _from(p._from), _to(p._to), _metric(p._metric), _last_updated(p._last_updated) { }
-    void update(int metric) {
+    void update(unsigned metric) {
       if (9999 == _metric) {
 	/* once a link is marked as bad, 
 	 * don't let anyone change it for
@@ -171,7 +171,7 @@ private:
   class HostInfo {
   public:
     IPAddress _ip;
-    int _metric;
+    unsigned _metric;
     IPAddress _prev;
     bool _marked;
     HostInfo() { _ip = IPAddress(); _prev = IPAddress(); _metric = 0; _marked = false;}
