@@ -76,7 +76,14 @@ generated per record.
 
 =item DEFAULT_CONTENTS
 
-String. Provides the default contents of the dump.
+String, containing a space-separated list of content names (see
+ToIPSummaryDump for the possibilities). Defines the default contents of the
+dump.
+
+=item HASH
+
+Unsigned. If supplied, FromIPSummaryDump will print a hash character to
+standard error every HASH packets it reads.
 
 =back
 
@@ -147,6 +154,9 @@ class FromIPSummaryDump : public Element { public:
     Vector<int> _contents;
     uint16_t _default_proto;
     uint32_t _sampling_prob;
+
+    uint32_t _count;
+    uint32_t _hash_chunk;
     
     bool _stop : 1;
     bool _format_complaint : 1;

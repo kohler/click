@@ -89,6 +89,11 @@ This can result in slightly better performance on some machines. FromDump's
 regular file discipline is pretty optimized, so the difference is often small
 in practice. Default is true on most operating systems, but false on Linux.
 
+=item HASH
+
+Unsigned. If supplied, FromIPSummaryDump will print a hash character to
+standard error every HASH packets it reads.
+
 =back
 
 You can supply at most one of START and START_AFTER, and at most one of END,
@@ -151,6 +156,9 @@ class FromDump : public Element { public:
     
     WritablePacket *_data_packet;
     Packet *_packet;
+
+    uint32_t _count;
+    uint32_t _hash_chunk;
     
     bool _swapped : 1;
     bool _timing : 1;

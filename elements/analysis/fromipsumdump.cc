@@ -60,6 +60,7 @@ FromIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     String default_contents;
+    _hash_chunk = 0;
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -71,6 +72,7 @@ FromIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "PROTO", cpByte, "default IP protocol", &default_proto,
 		    "MULTIPACKET", cpBool, "generate multiple packets per record?", &multipacket,
 		    "DEFAULT_CONTENTS", cpArgument, "default contents of log", &default_contents,
+		    "HASH", cpUnsigned, "hash printing interval", &_hash_chunk,
 		    0) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
@@ -214,6 +216,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     }
     
     _format_complaint = false;
+    _count = 0;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     return 0;
@@ -229,6 +232,10 @@ FromIPSummaryDump::uninitialize()
     if (_work_packet) {
 	_work_packet->kill();
 	_work_packet = 0;
+    }
+    if (_count && _hash_chunk) {
+	fputc('\n', stderr);
+	_count = 0;
     }
     _fd = -1;
     _pipe = 0;
@@ -456,6 +463,12 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    SET_EXTRA_LENGTH_ANNO(q, byte_count - q->length());
 	else if (payload_len)
 	    SET_EXTRA_LENGTH_ANNO(q, payload_len);
+
+	// maybe print a hash
+	_count++;
+	if (_hash_chunk && _count % _hash_chunk == _hash_chunk - 1)
+	    fputc('#', stderr);
+	
 	return q;
     }
 

@@ -75,6 +75,7 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     timerclear(&last_time_off);
     timerclear(&interval);
     _sampling_prob = (1 << SAMPLING_SHIFT);
+    _hash_chunk = 0;
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -92,6 +93,7 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "END", cpTimeval, "ending time", &last_time,
 		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimeval, "time interval", &interval,
+		    "HASH", cpUnsigned, "hash printing interval", &_hash_chunk,
 		    0) < 0)
 	return -1;
 
@@ -356,8 +358,7 @@ FromDump::initialize(ErrorHandler *errh)
     _linktype = fh->linktype;
     _pos = sizeof(fake_pcap_file_header);
 
-    // if forcing IP packets, check datalink type: only Ethernet and IP are
-    // allowed
+    // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {
 	if (_linktype != FAKE_DLT_RAW && _linktype != FAKE_DLT_EN10MB
 	    && _linktype != FAKE_DLT_FDDI)
@@ -368,6 +369,9 @@ FromDump::initialize(ErrorHandler *errh)
 	// force FORCE_IP.
 	_force_ip = true;	// XXX _timing?
 
+    // clear _count
+    _count = 0;
+    
     // try reading a packet
     if ((_packet = read_packet(errh))) {
 	struct timeval now;
@@ -391,6 +395,10 @@ FromDump::uninitialize()
 	_packet->kill();
     if (_data_packet)
 	_data_packet->kill();
+    if (_count && _hash_chunk) {
+	fputc('\n', stderr);
+	_count = 0;
+    }
     _task.unschedule();
     _fd = -1;
     _packet = _data_packet = 0;
@@ -506,6 +514,11 @@ FromDump::read_packet(ErrorHandler *errh)
 	checked_output_push(1, p);
 	goto retry;
     }
+
+    // up count, print hash if necessary
+    _count++;
+    if (_hash_chunk && _count % _hash_chunk == _hash_chunk - 1)
+	fputc('#', stderr);
     
     return p;
 }
