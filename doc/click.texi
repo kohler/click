@@ -610,7 +610,7 @@ Returns a number with the property that, for any two equal strings
 @var{s1} and @var{s2}, @code{hashcode(@var{s1}) ==
 hashcode(@var{s2})}. With this function, @code{String}s may be used as
 keys for @code{HashMap}s and @code{BigHashMap}s (@pxref{HashMap}).
-@end deftypemethod
+@end deftypefun
 
 
 @node String Out-of-Memory,  , String Comparison, String
@@ -1596,7 +1596,7 @@ Returns a number with the property that, for any two equal IP addresses
 hashcode(@var{addr2})}. With this function, @code{IPAddress}es may be
 used as keys for @code{HashMap}s and @code{BigHashMap}s
 (@pxref{HashMap}).
-@end deftypemethod
+@end deftypefun
 
 
 @node IPAddress Operations, IPAddress Unparsing, IPAddress Data, IPAddress
