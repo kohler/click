@@ -30,6 +30,17 @@
 #include <sys/time.h>
 CLICK_DECLS
 
+#ifdef i386
+# define PUT4NET(p, d)	*reinterpret_cast<uint32_t *>((p)) = (d)
+# define PUT4(p, d)	*reinterpret_cast<uint32_t *>((p)) = htonl((d))
+# define PUT2NET(p, d)	*reinterpret_cast<uint16_t *>((p)) = (d)
+#else
+# define PUT4NET(p, d)	do { uint32_t d__ = ntohl((d)); (p)[0] = d__>>24; (p)[1] = d__>>16; (p)[2] = d__>>8; (p)[3] = d__; } while (0)
+# define PUT4(p, d)	do { (p)[0] = (d)>>24; (p)[1] = (d)>>16; (p)[2] = (d)>>8; (p)[3] = (d); } while (0)
+# define PUT2NET(p, d)	do { uint16_t d__ = ntohs((d)); (p)[0] = d__>>8; (p)[1] = d__; } while (0)
+#endif
+#define PUT1(p, d)	((p)[0] = (d))
+
 ToIPSummaryDump::ToIPSummaryDump()
     : Element(1, 0), _f(0), _task(this)
 {
@@ -45,7 +56,7 @@ int
 ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     int before = errh->nerrors();
-    String save = "timestamp 'ip src'";
+    String save = "timestamp ip_src";
     bool verbose = false;
     bool bad_packets = false;
     bool careful_trunc = true;
@@ -603,25 +614,26 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	uint32_t v = 0;
 	switch (_contents[i]) {
 	  case W_TIMESTAMP:
-	    pos = (pos + 3) & ~3;
-	    *(reinterpret_cast<uint32_t *>(buf + pos)) = htonl(p->timestamp_anno().tv_sec);
-	    *(reinterpret_cast<uint32_t *>(buf + pos + 4)) = htonl(p->timestamp_anno().tv_usec);
+	    PUT4(buf + pos, p->timestamp_anno().tv_sec);
+	    PUT4(buf + pos + 4, p->timestamp_anno().tv_usec);
 	    pos += 8;
 	    break;
 	  case W_TIMESTAMP_SEC:
-	    v = htonl(p->timestamp_anno().tv_sec);
-	    goto output_4;
+	    PUT4(buf + pos, p->timestamp_anno().tv_sec);
+	    pos += 4;
+	    break;
 	  case W_TIMESTAMP_USEC:
-	    v = htonl(p->timestamp_anno().tv_usec);
-	    goto output_4;
+	    PUT4(buf + pos, p->timestamp_anno().tv_usec);
+	    pos += 4;
+	    break;
 	  case W_SRC:
 	    if (iph)
 		v = iph->ip_src.s_addr;
-	    goto output_4;
+	    goto output_4_net;
 	  case W_DST:
 	    if (iph)
 		v = iph->ip_dst.s_addr;
-	    goto output_4;
+	    goto output_4_net;
 	  case W_FRAG:
 	    if (iph)
 		v = (IP_ISFRAG(iph) ? (IP_FIRSTFRAG(iph) ? 'F' : 'f') : '.');
@@ -629,19 +641,19 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	  case W_FRAGOFF:
 	    if (iph)
 		v = iph->ip_off;
-	    goto output_2;
+	    goto output_2_net;
 	  case W_SPORT:
 	    if (tcph || udph)
 		v = (tcph ? tcph->th_sport : udph->uh_sport);
-	    goto output_2;
+	    goto output_2_net;
 	  case W_DPORT:
 	    if (tcph || udph)
 		v = (tcph ? tcph->th_dport : udph->uh_dport);
-	    goto output_2;
+	    goto output_2_net;
 	  case W_IPID:
 	    if (iph)
 		v = iph->ip_id;
-	    goto output_2;
+	    goto output_2_net;
 	  case W_PROTO:
 	    if (iph)
 		v = iph->ip_p;
@@ -649,11 +661,11 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	  case W_TCP_SEQ:
 	    if (tcph)
 		v = tcph->th_seq;
-	    goto output_4;
+	    goto output_4_net;
 	  case W_TCP_ACK:
 	    if (tcph)
 		v = tcph->th_ack;
-	    goto output_4;
+	    goto output_4_net;
 	  case W_TCP_FLAGS:
 	    if (tcph)
 		v = tcph->th_flags;
@@ -682,10 +694,10 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	  }
 	  case W_LENGTH:
 	    if (iph)
-		v = htonl(ntohs(iph->ip_len) + EXTRA_LENGTH_ANNO(p));
+		v = ntohs(iph->ip_len) + EXTRA_LENGTH_ANNO(p);
 	    else
-		v = htonl(p->length() + EXTRA_LENGTH_ANNO(p));
-	    goto output_4;
+		v = p->length() + EXTRA_LENGTH_ANNO(p);
+	    goto output_4_host;
 	  case W_PAYLOAD_LENGTH:
 	    v = EXTRA_LENGTH_ANNO(p);
 	    if (iph) {
@@ -699,38 +711,38 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 		v += ntohs(iph->ip_len) + p->network_header_offset() - off;
 	    } else
 		v += p->length();
-	    v = htonl(v);
-	    goto output_4;
+	    goto output_4_host;
 	  case W_COUNT:
-	    v = htonl(1 + EXTRA_PACKETS_ANNO(p));
-	    goto output_4;
+	    v = 1 + EXTRA_PACKETS_ANNO(p);
+	    goto output_4_host;
 	  case W_LINK:
 	    v = PAINT_ANNO(p);
 	    goto output_1;
 	  case W_AGGREGATE:
-	    v = htonl(AGGREGATE_ANNO(p));
-	    goto output_4;
+	    v = AGGREGATE_ANNO(p);
+	    goto output_4_host;
 	  output_1:
-	    *(buf + pos) = v;
+	    PUT1(buf + pos, v);
 	    pos++;
 	    break;
-	  output_2:
-	    pos = (pos + 1) & ~1;
-	    *(reinterpret_cast<uint16_t *>(buf + pos)) = v;
+	  output_2_net:
+	    PUT2NET(buf + pos, v);
 	    pos += 2;
 	    break;
-	  output_4:
+	  output_4_host:
+	    PUT4(buf + pos, v);
+	    pos += 4;
+	    break;
+	  output_4_net:
 	  default:
-	    pos = (pos + 3) & ~3;
-	    *(reinterpret_cast<uint32_t *>(buf + pos)) = v;
+	    PUT4NET(buf + pos, v);
 	    pos += 4;
 	    break;
 	}
     }
 
-    pos = (pos + 3) & ~3;
     sa.set_length(pos);
-    *(reinterpret_cast<uint32_t *>(buf)) = htonl(pos >> 2);
+    *(reinterpret_cast<uint32_t *>(buf)) = htonl(pos);
     return true;
 }
 
@@ -787,13 +799,10 @@ ToIPSummaryDump::write_line(const String &s)
     if (s.length()) {
 	assert(s.back() == '\n');
 	if (_binary) {
-	    uint32_t marker = htonl(((7 + s.length()) >> 2) | 0x80000000U);
+	    uint32_t marker = htonl(s.length() | 0x80000000U);
 	    fwrite(&marker, 4, 1, _f);
-	    fwrite(s.data(), 1, s.length(), _f);
-	    if (s.length() & 3)
-		fwrite("\0\0\0", 1, 4 - (s.length() & 3), _f);
-	} else
-	    fwrite(s.data(), 1, s.length(), _f);
+	}
+	fwrite(s.data(), 1, s.length(), _f);
     }
 }
 

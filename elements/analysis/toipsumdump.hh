@@ -161,57 +161,49 @@ Binary IPSummaryDump files begin with several ASCII lines, just like regular
 files. The line `C<!binary>' indicates that the rest of the file, starting
 immediately after the newline, consists of binary records. (`C<!binary>' may
 be followed by several space characters to ensure that the first binary record
-begins on a 4-byte boundary.) Each record is a multiple of 4 bytes long, and
-looks like this:
+begins on a 4-byte boundary.) Each record looks like this:
 
    +---------------+------------...
    |X|record length|    data
    +---------------+------------...
     <---4 bytes--->
 
-The initial word of data stores the record length in words. (All numbers in
+The initial word of data contains the record length in bytes. (All numbers in
 the file are stored in network byte order.) The record length includes the
-initial word itself, so the minimum valid record length is 1. The
-high-order bit `C<X>' is the metadata indicator. It is zero for regular
-packets and one for metadata lines.
+initial word itself, so the minimum valid record length is 4. The high-order
+bit `C<X>' is the metadata indicator. It is zero for regular packets and one
+for metadata lines.
 
 Regular packet records have binary fields stored in the order indicated by
 the `C<!data>' line, as follows:
 
-   Field Name  Length Align  Description
-   timestamp      8     4    timestamp sec, usec
-   ip_src         4     4    source IP address
-   ip_dst         4     4    destination IP address
-   sport          2     2    source port
-   dport          2     2    destination port
-   ip_len         4     4    IP length field
-   ip_proto       1     1    IP protocol
-   ip_id          2     2    IP ID
-   ip_frag        1     1    fragment descriptor
-                             ('F', 'f', or '.')
-   ip_fragoff     2     2    IP fragment offset field
-   tcp_seq        4     4    TCP seqnece number
-   tcp_ack        4     4    TCP ack number
-   tcp_flags      1     1    TCP flags
-   tcp_opt        ?     1    TCP options
-   tcp_sack       ?     1    TCP SACK options
-   payload_len    4     4    payload length
-   count          4     4    packet count
+   Field Name  Length  Description
+   timestamp      8    timestamp sec, usec
+   ip_src         4    source IP address
+   ip_dst         4    destination IP address
+   sport          2    source port
+   dport          2    destination port
+   ip_len         4    IP length field
+   ip_proto       1    IP protocol
+   ip_id          2    IP ID
+   ip_frag        1    fragment descriptor
+                       ('F', 'f', or '.')
+   ip_fragoff     2    IP fragment offset field
+   tcp_seq        4    TCP seqnece number
+   tcp_ack        4    TCP ack number
+   tcp_flags      1    TCP flags
+   tcp_opt        ?    TCP options
+   tcp_sack       ?    TCP SACK options
+   payload_len    4    payload length
+   count          4    packet count
 
-Each field is Length bytes long, and aligned on an Align-byte boundary,
-possibly by introducing padding between fields. Variable-length fields have
-Length `C<?>' in the table. In a packet record, these fields consist of a
-single length byte, followed by that many bytes of data.
-
-Some CONTENTS orders may introduce unnecessary padding. For example, the
-records for CONTENTS `C<sport src dport>' will be 12 bytes long (because
-`C<sport>' is padded by two bytes so `C<src>' can start on a 4-byte boundary),
-but the records for `C<src sport dport>' will be 8 bytes long.
+Each field is Length bytes long. Variable-length fields have Length `C<?>' in
+the table; in a packet record, these fields consist of a single length byte,
+followed by that many bytes of data.
 
 The data stored in a metadata record is just an ASCII string, ending with
-newline (possibly padded with zero bytes on the right), same as in a regular
-ASCII IPSummaryDump file. For instance, `C<!bad>' records are stored this
-way.
+newline, same as in a regular ASCII IPSummaryDump file. `C<!bad>' records, for
+example, are stored this way.
 
 =head1 TCP OPTIONS
 

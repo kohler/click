@@ -36,6 +36,15 @@
 #include <fcntl.h>
 CLICK_DECLS
 
+#ifdef i386
+# define GET4(p)	ntohl(*reinterpret_cast<const uint32_t *>((p)))
+# define GET2(p)	ntohs(*reinterpret_cast<const uint16_t *>((p)))
+#else
+# define GET4(p)	(((p)[0]<<24) | ((p)[1]<<16) | ((p)[2]<<8) | (p)[3])
+# define GET2(p)	(((p)[0]<<8) | (p)[1])
+#endif
+#define GET1(p)		((p)[0])
+
 FromIPSummaryDump::FromIPSummaryDump()
     : Element(0, 1), _fd(-1), _buffer(0), _pos(0), _len(0), _buffer_len(0),
       _work_packet(0), _task(this), _pipe(0)
@@ -139,7 +148,7 @@ FromIPSummaryDump::read_line(String &result, ErrorHandler *errh)
 	    if (errcode <= 0)
 		return errcode;
 	}
-	int record_length = ntohl(*(reinterpret_cast<const uint32_t *>(_buffer + _pos))) << 2;
+	int record_length = GET4(_buffer + _pos) & 0x7FFFFFFFU;
 	if (record_length == 0)
 	    return error_helper(errh, "zero-length binary record");
 	while (_pos > _len - record_length) {
@@ -153,7 +162,7 @@ FromIPSummaryDump::read_line(String &result, ErrorHandler *errh)
 		l--;
 	    result = String::stable_string(_buffer + _pos + 4, l - 4);
 	} else {
-	    _buffer[_pos] = 0;	// ensure it's not a special character
+	    _buffer[_pos] = 0;	// ensure it's not '!' or '#'
 	    result = String::stable_string(_buffer + _pos, record_length);
 	}
 	_pos += record_length;
@@ -607,9 +616,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    if (_binary) {
 		switch (_contents[i]) {
 		  case W_TIMESTAMP:
-		    pos = (pos + 3) & ~3;
-		    u1 = ntohl(*(reinterpret_cast<const uint32_t *>(data + pos)));
-		    u2 = ntohl(*(reinterpret_cast<const uint32_t *>(data + pos + 4)));
+		    u1 = GET4(data + pos);
+		    u2 = GET4(data + pos + 4);
 		    pos += 8;
 		    break;
 		  case W_TIMESTAMP_SEC:
@@ -622,22 +630,20 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		  case W_AGGREGATE:
 		  case W_SRC:
 		  case W_DST:
-		    pos = (pos + 3) & ~3;
-		    u1 = ntohl(*(reinterpret_cast<const uint32_t *>(data + pos)));
+		    u1 = GET4(data + pos);
 		    pos += 4;
 		    break;
 		  case W_IPID:
 		  case W_SPORT:
 		  case W_DPORT:
 		  case W_FRAGOFF:
-		    pos = (pos + 1) & ~1;
-		    u1 = ntohs(*(reinterpret_cast<const uint16_t *>(data + pos)));
+		    u1 = GET2(data + pos);
 		    pos += 2;
 		    break;
 		  case W_PROTO:
 		  case W_TCP_FLAGS:
 		  case W_LINK:
-		    u1 = *(data + pos);
+		    u1 = GET1(data + pos);
 		    pos++;
 		    break;
 		  case W_FRAG:
