@@ -97,8 +97,8 @@ RFC2507d::simple_action(Packet *p)
     if(cid <= 0 || cid >= TCP_SPACE)
       goto out;
     struct tcpip *ctx = &_ccbs[cid]._context;
-    memcpy(&(ctx->_ip), p->data() + 2, sizeof(struct ip));
-    memcpy(&(ctx->_tcp), p->data() + 2 + sizeof(struct ip),
+    memcpy(&(ctx->_ip), p->data() + 2, sizeof(click_ip));
+    memcpy(&(ctx->_tcp), p->data() + 2 + sizeof(click_ip),
            sizeof(struct tcp_header));
     q = Packet::make(p->length() - 2);
     memcpy(q->data(), p->data() + 2, p->length() - 2);
@@ -143,18 +143,18 @@ RFC2507d::simple_action(Packet *p)
     }
 
     int len = p->length() - (in - p->data());
-    len += sizeof(struct ip) + sizeof(struct tcp_header);
+    len += sizeof(click_ip) + sizeof(struct tcp_header);
     ctx->_ip.ip_len = htons(len);
 
     ctx->_ip.ip_sum = 0;
-    ctx->_ip.ip_sum = in_cksum((unsigned char *) &(ctx->_ip), sizeof(struct ip));
+    ctx->_ip.ip_sum = in_cksum((unsigned char *) &(ctx->_ip), sizeof(click_ip));
 
     q = Packet::make(len);
-    memcpy(q->data(), &(ctx->_ip), sizeof(struct ip));
-    memcpy(q->data() + sizeof(struct ip),
+    memcpy(q->data(), &(ctx->_ip), sizeof(click_ip));
+    memcpy(q->data() + sizeof(click_ip),
            &(ctx->_tcp),
            sizeof(struct tcp_header));
-    memcpy(q->data() + sizeof(struct ip) + sizeof(struct tcp_header),
+    memcpy(q->data() + sizeof(click_ip) + sizeof(struct tcp_header),
            in,
            p->length() - (in - p->data()));
   } else {
@@ -163,10 +163,10 @@ RFC2507d::simple_action(Packet *p)
 
  out:
   if(q){
-    struct ip iph;
+    click_ip iph;
     struct tcp_header tcph;
     memcpy(&iph, q->data(), sizeof(iph));
-    memcpy(&tcph, q->data() + sizeof(struct ip), sizeof(tcph));
+    memcpy(&tcph, q->data() + sizeof(click_ip), sizeof(tcph));
     click_chatter("seq %d len %d",
                 (int)ntohl(tcph.th_seq),
                 q->length() - sizeof(tcph) - sizeof(iph));
@@ -176,7 +176,7 @@ RFC2507d::simple_action(Packet *p)
       memcpy(p, q->data(), q->length());
 
       // check IP checksum
-      struct ip *ipp = (struct ip *) p;
+      click_ip *ipp = (click_ip *) p;
       int hlen = ipp->ip_hl << 2;
       if(in_cksum((unsigned char *)ipp, hlen) != 0){
         click_chatter(" ip cksum failed");
@@ -186,7 +186,7 @@ RFC2507d::simple_action(Packet *p)
       int len = ntohs(ipp->ip_len);
       // zero ip_v, ip_hl, ip_tos, ip_len, ip_off, ip_ttl
       memset(ipp, '\0', 9);
-      ipp->ip_sum = htons(len - sizeof(struct ip));
+      ipp->ip_sum = htons(len - sizeof(click_ip));
       if(in_cksum((unsigned char *)p, len) != 0){
         click_chatter(" tcp cksum failed");
       }

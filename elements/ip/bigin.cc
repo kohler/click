@@ -84,17 +84,17 @@ BigIn::smaction(Packet *p)
   p->set_dst_ip_anno(IPAddress(p->data() + 16));
 
   /* CheckIPHeader */
-  struct ip *ip = (struct ip *) p->data();
+  click_ip *ip = (click_ip *) p->data();
   unsigned hlen;
   
-  if(p->length() < sizeof(struct ip))
+  if(p->length() < sizeof(click_ip))
     goto bad;
   
   if(ip->ip_v != 4)
     goto bad;
   
   hlen = ip->ip_hl << 2;
-  if(hlen < sizeof(struct ip))
+  if(hlen < sizeof(click_ip))
     goto bad;
   
   if(hlen > p->length())
@@ -110,7 +110,8 @@ BigIn::smaction(Packet *p)
   for(int i = 0; i < _n_bad_src; i++)
     if(src == _bad_src[i])
       goto bad;
-  
+
+  p->set_ip_header(ip);
   return(p);
   
  bad:

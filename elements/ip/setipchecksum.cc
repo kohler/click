@@ -36,20 +36,21 @@ SetIPChecksum::clone() const
 Packet *
 SetIPChecksum::simple_action(Packet *p)
 {
-  struct ip *ip = (struct ip *) p->data();
-  int hlen;
-
-  if(p->length() < sizeof(struct ip))
+  click_ip *ip = p->ip_header();
+  unsigned plen = p->length() - p->ip_header_offset();
+  unsigned hlen;
+  
+  if (!ip || plen < sizeof(click_ip))
     goto bad;
 
   hlen = ip->ip_hl << 2;
-  if(hlen < (int)sizeof(struct ip) || hlen > (int)p->length())
+  if (hlen < sizeof(click_ip) || hlen > plen)
     goto bad;
 
   ip->ip_sum = 0;
   ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
   
-  return(p);
+  return p;
 
  bad:
   click_chatter("SetIPChecksum: bad lengths");

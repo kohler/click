@@ -14,7 +14,7 @@
 #define __BYTE_ORDER __LITTLE_ENDIAN
 #endif
 
-struct ip {
+struct click_ip {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     unsigned char ip_hl:4;			/* header length */
     unsigned char ip_v:4;			/* version */

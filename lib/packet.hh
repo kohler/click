@@ -2,6 +2,7 @@
 #define PACKET_HH
 #include "ipaddress.hh"
 #include "glue.hh"
+struct click_ip;
 
 class Packet {
 
@@ -26,6 +27,7 @@ class Packet {
   unsigned char *_tail; /* one beyond end of packet */
   unsigned char *_end;  /* one beyond end of allocated buffer */
   unsigned char _cb[48];
+  click_ip *_nh_iph;
 #endif
   
   Packet();
@@ -38,7 +40,7 @@ class Packet {
   static Packet *make(int, int, int);
   void alloc_data(unsigned, unsigned, unsigned);
 #endif
-  static unsigned default_headroom()	{ return 24; }
+  static unsigned default_headroom() { return 24; }
   static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
 
   Packet *uniqueify_copy();
@@ -97,11 +99,15 @@ class Packet {
   void pull(unsigned int nbytes);	// Get rid of initial bytes.
   Packet *put(unsigned int nbytes);	// Add bytes to end of pkt.
   Packet *take(unsigned int nbytes);	// Delete bytes from end of pkt.
-  
+
 #ifndef __KERNEL__
-  /* for Spew(), not checked for speed */
-  void spew_push(int zz) { _data -= zz; }
+  click_ip *ip_header() const		{ return _nh_iph; }
+  void set_ip_header(click_ip *h)	{ _nh_iph = h; }
+#else
+  click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
+  void set_ip_header(click_ip *h)	{ skb()->nh.iph = (struct iphdr *)h; }
 #endif
+  unsigned ip_header_offset() const;
 
   void copy_annotations(Packet *);
   
@@ -192,6 +198,12 @@ Packet::pull(unsigned int nbytes)
 #else
   _data += nbytes;
 #endif
+}
+
+inline unsigned
+Packet::ip_header_offset() const
+{
+  return (unsigned char *)ip_header() - data();
 }
 
 inline void

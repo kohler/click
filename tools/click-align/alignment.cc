@@ -18,10 +18,10 @@
 bool
 Alignment::operator<=(const Alignment &o) const
 {
-  if (o._chunk == 0)
+  if (o._chunk <= 1)
     return true;
-  else if (_chunk == 0)
-    return o._chunk == 1;
+  else if (_chunk <= 1)
+    return false;
   else if (_chunk % o._chunk != 0)
     return false;
   else
@@ -31,7 +31,7 @@ Alignment::operator<=(const Alignment &o) const
 Alignment &
 Alignment::operator+=(int delta)
 {
-  if (_chunk) {
+  if (_chunk > 1) {
     if (delta < 0)
       delta += ((-delta)/_chunk + 1) * _chunk;
     _offset = (_offset + delta) % _chunk;
@@ -40,7 +40,7 @@ Alignment::operator+=(int delta)
 }
 
 Alignment &
-Alignment::operator*=(const Alignment &o)
+Alignment::operator|=(const Alignment &o)
 {
   if (_chunk == 0)
     return (*this = o);

@@ -20,6 +20,7 @@ class RouterT : public ElementClassT {
   Vector<String> _hookup_landmark;
 
   void finish_remove_elements(Vector<int> &, ErrorHandler *);
+  void finish_remove_element_types(Vector<int> &);
   void expand_tunnel(Vector<Hookup> *, bool is_input, int which,
 		     Vector<Hookup> &results) const;
   
@@ -85,7 +86,7 @@ class RouterT : public ElementClassT {
 
   void add_components_to(RouterT *, const String &prefix = String()) const;
 
-  void expand_compound(ElementT &, RouterT *, ErrorHandler *);
+  bool expand_compound(ElementT &, RouterT *, ErrorHandler *);
   
   void remove_unused_element_types();
   void remove_blank_elements(ErrorHandler * = 0);

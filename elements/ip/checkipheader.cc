@@ -93,18 +93,18 @@ CheckIPHeader::configure(const String &conf, ErrorHandler *errh)
 inline Packet *
 CheckIPHeader::smaction(Packet *p)
 {
-  struct ip *ip = (struct ip *) p->data();
+  click_ip *ip = (click_ip *) p->data();
   unsigned int src;
   unsigned hlen;
   
-  if(p->length() < sizeof(struct ip))
+  if(p->length() < sizeof(click_ip))
     goto bad;
   
   if(ip->ip_v != 4)
     goto bad;
   
   hlen = ip->ip_hl << 2;
-  if(hlen < sizeof(struct ip))
+  if(hlen < sizeof(click_ip))
     goto bad;
   
   if(hlen > p->length())
@@ -130,7 +130,8 @@ CheckIPHeader::smaction(Packet *p)
    * RFC1812 4.2.3.1: discard illegal destinations.
    * We now do this in the IP routing table.
    */
-  
+
+  p->set_ip_header(ip);
   return(p);
   
  bad:

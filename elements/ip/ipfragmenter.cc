@@ -43,7 +43,7 @@ IPFragmenter::notify_noutputs(int n)
 IPFragmenter *
 IPFragmenter::clone() const
 {
-  return new IPFragmenter();
+  return new IPFragmenter;
 }
 
 
@@ -58,9 +58,9 @@ IPFragmenter::configure(const String &conf, ErrorHandler *errh)
 }
 
 int
-IPFragmenter::optcopy(struct ip *ip1, struct ip *ip2)
+IPFragmenter::optcopy(click_ip *ip1, click_ip *ip2)
 {
-  int opts = (ip1->ip_hl << 2) - sizeof(struct ip);
+  int opts = (ip1->ip_hl << 2) - sizeof(click_ip);
   u_char *base1 = (u_char *) (ip1 + 1);
   int i1, optlen;
   int i2 = 0;
@@ -98,11 +98,13 @@ IPFragmenter::smaction(Packet *p)
   if (p->length() <= _mtu)
     return(p);
 
-  struct ip *ip = (struct ip *)p->data();
+  click_ip *ip = p->ip_header();
+  assert(ip);
+  
   int hlen = ip->ip_hl << 2;
   int len = (_mtu - hlen) & ~7;
   int ipoff = ntohs(ip->ip_off);
-  if((ipoff & IP_DF) || len < 8){
+  if ((ipoff & IP_DF) || len < 8) {
     click_chatter("IPFragmenter(%d) DF %s %s len=%d",
                   _mtu,
                   IPAddress(ip->ip_src).s().cc(),
@@ -116,22 +118,22 @@ IPFragmenter::smaction(Packet *p)
     return 0;
   }
 
-  int olen = optcopy(ip, (struct ip *)0);
+  int olen = optcopy(ip, (click_ip *)0);
   int h1len = sizeof(*ip) + olen;
   int plen = ntohs(ip->ip_len);
   int off;
   for(off = hlen + len; off < plen; off += len){
     int p1datalen = plen - off;
-    if(p1datalen > len)
+    if (p1datalen > len)
       p1datalen = len;
     int p1len = p1datalen + h1len;
     Packet *p1 = Packet::make(p1len);
-    struct ip *ip1 = (struct ip *) p1->data();
+    click_ip *ip1 = (click_ip *) p1->data();
 
     *ip1 = *ip;
     optcopy(ip, ip1);
 
-    assert(off + p1datalen <= p->length());
+    assert(off + p1datalen <= (int)p->length());
     memcpy(p1->data() + h1len, p->data() + off, p1datalen);
     
     ip1->ip_hl = h1len >> 2;
@@ -145,20 +147,21 @@ IPFragmenter::smaction(Packet *p)
     ip1->ip_sum = 0;
     ip1->ip_sum = in_cksum(p1->data(), h1len);
 
-    // XXX copy all annotations?
-    p1->set_dst_ip_anno(p->dst_ip_anno());
-    p1->set_mac_broadcast_anno(p->mac_broadcast_anno());
+    p1->copy_annotations(p);
+    p1->set_ip_header(ip1);
 
     output(0).push(p1);
     _fragments++;
   }
 
+  // XXX alignment???
   p = p->take(p->length() - (hlen + len));
-  ip = (struct ip *) p->data();
+  ip = (click_ip *) p->data();
   ip->ip_len = htons(hlen + len);
   ip->ip_off = htons(ipoff | IP_MF);
   ip->ip_sum = 0;
   ip->ip_sum = in_cksum((unsigned char *) ip, hlen);
+  p->set_ip_header(ip);
 
   return(p);
 }

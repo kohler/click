@@ -1,7 +1,7 @@
 /*
- * annotate.{cc,hh} -- set IP TOS, TTL, and OFF annotations based on values
+ * saveipfields.{cc,hh} -- set IP TOS, TTL, and OFF annotations based on values
  * in packet data
- * Alex Snoeren
+ * Alex Snoeren, Eddie Kohler
  *
  * Copyright (c) 1999 Massachusetts Institute of Technology.
  *
@@ -14,30 +14,31 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "annotate.hh"
+#include "saveipfields.hh"
 #include "click_ip.h"
 #include "confparse.hh"
 #include "error.hh"
 
-Annotate::Annotate()
+SaveIPFields::SaveIPFields()
   : Element(1, 1)
 {
 }
 
-Packet *
-Annotate::simple_action(Packet *p)
+SaveIPFields *
+SaveIPFields::clone() const
 {
-  struct ip *ip = (struct ip *) p->data();
+  return new SaveIPFields;
+}
+
+Packet *
+SaveIPFields::simple_action(Packet *p)
+{
+  click_ip *ip = p->ip_header();
+  assert(ip);
   p->set_ip_tos_anno(ip->ip_tos);
   p->set_ip_ttl_anno(ip->ip_ttl);
   p->set_ip_off_anno(ip->ip_off);
   return p;
 }
 
-Annotate *
-Annotate::clone() const
-{
-  return new Annotate();
-}
-
-EXPORT_ELEMENT(Annotate)
+EXPORT_ELEMENT(SaveIPFields)

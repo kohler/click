@@ -39,6 +39,8 @@ struct RouterAlign {
   bool calc_input();
   void calc_output();
   
+  void print(FILE *);
+  
 };
 
 RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
@@ -83,23 +85,44 @@ RouterAlign::calc_input()
   const Vector<Hookup> &hf = _router->hookup_from();
   const Vector<Hookup> &ht = _router->hookup_to();
   int nh = hf.size();
-  int ne = _icount.size();
-  
-  Vector<Alignment> new_ialign(ne, Alignment());
+  int nialign = _ialign.size();
+
+  Vector<Alignment> new_ialign(nialign, Alignment());
   for (int i = 0; i < nh; i++) {
     int ioff = _ioffset[ht[i].idx] + ht[i].port;
     int ooff = _ooffset[hf[i].idx] + hf[i].port;
-    new_ialign[ioff] *= _oalign[ooff];
+    new_ialign[ioff] |= _oalign[ooff];
   }
 
   // see if anything happened
   bool changed = false;
-  for (int i = 0; i < ne && !changed; i++)
+  for (int i = 0; i < nialign && !changed; i++)
     if (new_ialign[i] != _ialign[i])
       changed = true;
   _ialign.swap(new_ialign);
   return changed;
 }
+
+void
+RouterAlign::print(FILE *f)
+{
+  int ne = _router->nelements();
+  for (int i = 0; i < ne; i++) {
+    fprintf(f, "%s :", _router->ename(i).cc());
+    for (int j = 0; j < _icount[i]; j++) {
+      const Alignment &a = _ialign[ _ioffset[i] + j ];
+      fprintf(f, " %d/%d", a.chunk(), a.offset());
+    }
+    fprintf(f, " /");
+    for (int j = 0; j < _ocount[i]; j++) {
+      const Alignment &a = _oalign[ _ooffset[i] + j ];
+      fprintf(f, " %d/%d", a.chunk(), a.offset());
+    }
+    fprintf(f, "\n");
+  }
+  fprintf(f, "\n");
+}
+
 
 
 String
@@ -133,7 +156,9 @@ prepare_router(RouterT *r)
   r->get_type_index("Align", new AlignAlignClass);
   r->get_type_index("Strip", new StripAlignClass);
   r->get_type_index("FromDevice", new AlignClass(new GeneratorAligner(Alignment(4, 2))));
-  r->get_type_index("CheckIPHeader", new AlignClass(new WantAligner(Alignment(4, 0))));
+  r->get_type_index("Classifier", new AlignClass(new ClassifierAligner));
+  Aligner *a = new WantAligner(Alignment(4, 0));
+  r->get_type_index("CheckIPHeader", new AlignClass(a));
 }
 
 RouterT *
@@ -158,36 +183,16 @@ read_router_file(const char *filename, ErrorHandler *errh)
   if (f != stdin) fclose(f);
   return r;
 }
-  
 
-static void
-print_router_align(const RouterAlign &ral)
-{
-  RouterT *router = ral._router;
-  int ne = router->nelements();
-  for (int i = 0; i < ne; i++) {
-    fprintf(stderr, "%s :", router->ename(i).cc());
-    for (int j = 0; j < ral._icount[i]; j++) {
-      const Alignment &a = ral._ialign[ ral._ioffset[i] + j ];
-      fprintf(stderr, " %d/%d", a.chunk(), a.offset());
-    }
-    fprintf(stderr, " /");
-    for (int j = 0; j < ral._ocount[i]; j++) {
-      const Alignment &a = ral._oalign[ ral._ooffset[i] + j ];
-      fprintf(stderr, " %d/%d", a.chunk(), a.offset());
-    }
-    fprintf(stderr, "\n");
-  }
-}
 
 inline String
 aligner_name(int anonymizer)
 {
-  return String("@click_align@") + String(anonymizer);
+  return String("Align@click_align@") + String(anonymizer);
 }
 
 int
-main(int argc, char **argv)
+main(int, char **argv)
 {
   String::static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
@@ -196,7 +201,7 @@ main(int argc, char **argv)
   RouterT *router = read_router_file(argv[1], errh);
   if (!router) exit(1);
   router->flatten(errh);
-  int align_tindex = router->get_type_index("Align");
+  int align_tindex = router->type_index("Align");
 
   int original_nelements = router->nelements();
   int anonymizer = original_nelements + 1;
@@ -214,7 +219,7 @@ main(int argc, char **argv)
     for (int i = 0; i < original_nelements; i++)
       for (int j = 0; j < ral._icount[i]; j++) {
 	Alignment have = ral._ialign[ ral._ioffset[i] + j ];
-	Alignment want = ral._aligners[i]->want(j);
+	Alignment want = ral._aligners[i]->want(j, have);
 	if (have <= want)
 	  /* do nothing */;
 	else {
@@ -228,6 +233,28 @@ main(int argc, char **argv)
   }
 
   // remove redundant Aligns
+  {
+    Vector<Hookup> &hf = router->hookup_from();
+    Vector<Hookup> &ht = router->hookup_to();
+    int nhook = hf.size();
+    for (int i = 0; i < nhook; i++)
+      if (router->etype(ht[i].idx) == align_tindex
+	  && router->etype(hf[i].idx) == align_tindex) {
+	// skip over hf[i]
+	Vector<Hookup> above, below;
+	router->find_connections_to(hf[i], above);
+	router->find_connections_from(hf[i], below);
+	if (below.size() == 1) {
+	  for (int j = 0; j < nhook; j++)
+	    if (ht[j] == hf[i])
+	      ht[j] = ht[i];
+	} else if (above.size() == 1) {
+	  for (int j = 0; j < nhook; j++)
+	    if (ht[j] == ht[i])
+	      hf[j] = above[0];
+	}
+      }
+  }
 
   while (1) {
     // calculate current alignment
@@ -262,22 +289,18 @@ main(int argc, char **argv)
     router->remove_duplicate_connections();
   }
 
-  // remove unused Aligns, which have no input
+  // remove unused Aligns (they have no input)
   {
     Vector<int> ninputs, noutputs;
     router->count_ports(ninputs, noutputs);
     int nelem = router->nelements();
     for (int i = 0; i < nelem; i++)
-      if (router->etype(i) == align_tindex && ninputs[i] == 0)
+      if (router->etype(i) == align_tindex
+	  && (ninputs[i] == 0 || noutputs[i] == 0))
 	router->element(i).type = -1;
     router->remove_blank_elements();
   }
   
-  RouterAlign ral(router, errh);
-  do {
-    ral.calc_output();
-  } while (ral.calc_input());
-  print_router_align(ral);
-  fputs(router->configuration_string(), stderr);
+  fputs(router->configuration_string(), stdout);
   return 0;
 }

@@ -38,7 +38,7 @@ void
 ICMPPing::make_echo_response(Packet *p)
 {
   struct ether_header *eth_header = (struct ether_header *) p->data();
-  struct ip *ip_header = (struct ip *) (eth_header+1);
+  click_ip *ip_header = (click_ip *) (eth_header+1);
   struct icmp_echo *icmp = (struct icmp_echo *) (ip_header+1);
 
   /* him */
@@ -74,7 +74,7 @@ Packet *
 ICMPPing::simple_action(Packet *p)
 {
   struct ether_header *eth_header = (struct ether_header *) p->data();
-  struct ip *ip_header = (struct ip *) (eth_header+1);
+  click_ip *ip_header = (click_ip *) (eth_header+1);
   struct icmp_generic *icmp = (struct icmp_generic *) (ip_header+1);
 
   if (ip_header->ip_p != IP_PROTO_ICMP)

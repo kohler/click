@@ -395,7 +395,7 @@ SnoopTCP::find(unsigned s_ip, unsigned short s_port,
 Packet *
 SnoopTCP::handle_packet(int port, Packet *p)
 {
-  struct ip *iph = (struct ip *)p->data();
+  click_ip *iph = (click_ip *)p->data();
   if (p->length() < 40 || iph->ip_p != IPPROTO_TCP) {
     DEBUG_CHATTER("Non TCP");
     // ignore non-TCP traffic

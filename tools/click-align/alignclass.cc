@@ -23,7 +23,7 @@ common_alignment(const Vector<Alignment> &a, int off, int n)
     return Alignment(1, 0);
   Alignment m = a[off];
   for (int i = 1; i < n; i++)
-    m *= a[off+i];
+    m |= a[off+i];
   return m;
 }
 
@@ -41,7 +41,7 @@ Aligner::flow(const Vector<Alignment> &ain, int offin, int nin,
 }
 
 Alignment
-Aligner::want(int)
+Aligner::want(int, const Alignment &)
 {
   return Alignment();
 }
@@ -63,9 +63,18 @@ ShifterAligner::flow(const Vector<Alignment> &ain, int offin, int nin, Vector<Al
 }
 
 Alignment
-WantAligner::want(int)
+WantAligner::want(int, const Alignment &)
 {
   return _alignment;
+}
+
+Alignment
+ClassifierAligner::want(int, const Alignment &a)
+{
+  if (a.chunk() % 4 == 0 && a.chunk() >= 4)
+    return a;
+  else
+    return Alignment(4, 0);
 }
 
 

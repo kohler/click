@@ -50,14 +50,14 @@ RIPSend::initialize(ErrorHandler *)
 void
 RIPSend::run_scheduled()
 {
-  struct ip *ipp;
+  click_ip *ipp;
   struct udphdr *udpp;
   Packet *p = Packet::make(sizeof(*ipp) + sizeof(*udpp) + 24);
 
   memset(p->data(), '\0', p->length());
   
   /* for now just pseudo-header fields for UDP checksum */
-  ipp = (struct ip *) p->data();
+  ipp = (click_ip *) p->data();
   ipp->ip_len = htons(p->length() - sizeof(*ipp));
   ipp->ip_p = IPPROTO_UDP;
   ipp->ip_src = _src.in_addr();
@@ -85,6 +85,8 @@ RIPSend::run_scheduled()
   ipp->ip_v = IPVERSION;
   ipp->ip_ttl = 200;
   ipp->ip_sum = in_cksum((unsigned char *) ipp, sizeof(*ipp));
+  
+  p->set_ip_header(ipp);
   
   output(0).push(p);
 

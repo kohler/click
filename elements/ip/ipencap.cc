@@ -70,12 +70,12 @@ Packet *
 IPEncap::simple_action(Packet *p)
 {
   /* What the fuck was going on here???  -  ED*/
-  p = p->push(sizeof(struct ip));
-  struct ip *ip = (struct ip *) p->data();
-  memset(ip, '\0', sizeof(struct ip));
+  p = p->push(sizeof(click_ip));
+  click_ip *ip = (click_ip *) p->data();
+  memset(ip, '\0', sizeof(click_ip));
   
   ip->ip_v = IPVERSION;
-  ip->ip_hl = sizeof(struct ip) >> 2;
+  ip->ip_hl = sizeof(click_ip) >> 2;
   ip->ip_len = htons(p->length());
   ip->ip_id = htons(_id++);
   ip->ip_p = _ip_p;
@@ -92,8 +92,9 @@ IPEncap::simple_action(Packet *p)
     ip->ip_ttl = 250; //rtm
   }
 
-  ip->ip_sum = in_cksum(p->data(), sizeof(struct ip));
+  ip->ip_sum = in_cksum(p->data(), sizeof(click_ip));
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));
+  p->set_ip_header(ip);
   
   return p;
 }

@@ -54,9 +54,9 @@ DecIPTTL::clone() const
 inline Packet *
 DecIPTTL::smaction(Packet *p)
 {
-  assert(p->length() >= sizeof(struct ip));
+  click_ip *ip = p->ip_header();
+  assert(ip);
   
-  struct ip *ip = (struct ip *)p->data();
   if (ip->ip_ttl <= 1) {
     _drops++;
     if (noutputs() == 2)
@@ -67,7 +67,7 @@ DecIPTTL::smaction(Packet *p)
     
   } else {
     p = p->uniqueify();
-    ip = (struct ip *)p->data();
+    ip = p->ip_header();
     ip->ip_ttl--;
     
     // 19.Aug.1999 - incrementally update IP checksum as suggested by SOSP

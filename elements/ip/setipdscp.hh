@@ -18,14 +18,13 @@
 class SetIPDSCP : public Element {
 
   unsigned char _dscp;
-  unsigned _ip_offset;
   
  public:
   
   SetIPDSCP();
   
   const char *class_name() const		{ return "SetIPDSCP"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
 
   unsigned char dscp() const			{ return _dscp; }
   

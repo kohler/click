@@ -49,7 +49,7 @@ class ElementClassT {
   void use()				{ _use_count++; }
   void unuse()				{ if (--_use_count <= 0) delete this; }
   
-  virtual void expand_compound(ElementT &, RouterT *, ErrorHandler *);
+  virtual bool expand_compound(ElementT &, RouterT *, ErrorHandler *);
   virtual void compound_declaration_string(StringAccum &, const String &, const String &);
 
   virtual RouterT *cast_router()	{ return 0; }

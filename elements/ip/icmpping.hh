@@ -21,7 +21,7 @@ public:
   ~ICMPPing() {}
   
   const char *class_name() const		{ return "ICMPPing"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   ICMPPing *clone() const;
   Packet *simple_action(Packet *);

@@ -72,11 +72,11 @@ IPGWOptions::handle_options(Packet *p)
 {
   /* This is lame: should be lazier. */
   p = p->uniqueify();
-  struct ip *ip = (struct ip *)p->data();
+  click_ip *ip = p->ip_header();
   unsigned hlen = ip->ip_hl << 2;
 
   u_char *oa = (u_char *) (ip + 1);
-  int olen = hlen - sizeof(struct ip);
+  int olen = hlen - sizeof(click_ip);
   int oi;
   int do_cksum = 0;
   int problem_offset = -1;
@@ -200,11 +200,10 @@ IPGWOptions::add_handlers(HandlerRegistry *fcr)
 void
 IPGWOptions::push(int, Packet *p)
 {
-  assert(p->length() >= sizeof(struct ip));
-  
-  struct ip *ip = (struct ip *)p->data();
+  click_ip *ip = p->ip_header();
+  assert(ip);
   unsigned hlen = ip->ip_hl << 2;
-  if (hlen <= sizeof(struct ip)
+  if (hlen <= sizeof(click_ip)
       || (p = handle_options(p)))
     output(0).push(p);
 }
@@ -214,9 +213,9 @@ IPGWOptions::pull(int)
 {
   Packet *p = input(0).pull();
   if (p) {
-    struct ip *ip = (struct ip *)p->data();
+    click_ip *ip = p->ip_header();
     unsigned hlen = ip->ip_hl << 2;
-    if (hlen > sizeof(struct ip))
+    if (hlen > sizeof(click_ip))
       p = handle_options(p);
   }
   return p;

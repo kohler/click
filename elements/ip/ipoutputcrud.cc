@@ -62,14 +62,14 @@ IPOutputCrud::push(int, Packet *p)
     output(1).push(p->clone());
   
   // IPGWOptions
-  assert(p->length() >= sizeof(struct ip));
   p = p->uniqueify();
-  struct ip *ip = (struct ip *)p->data();
+  click_ip *ip = p->ip_header();
+  assert(ip);
   unsigned hlen = (ip->ip_hl << 2);
 
-  if(hlen > sizeof(struct ip)){
+  if(hlen > sizeof(click_ip)){
     u_char *oa = (u_char *) (ip + 1);
-    int olen = hlen - sizeof(struct ip);
+    int olen = hlen - sizeof(click_ip);
     int oi;
   
     for (oi = 0; oi < olen; ) {

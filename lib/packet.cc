@@ -116,6 +116,9 @@ Packet *
 Packet::uniqueify_copy()
 {
   struct sk_buff *n = skb_copy(skb(), GFP_ATOMIC);
+  // all annotations, including IP header annotation, are copied,
+  // but IP header will point to garbage if old header was 0
+  if (!ip_header()) n->nh.iph = 0;
   kill();
   return (Packet *)n;
 }
@@ -133,7 +136,8 @@ Packet::clone()
   p->_data = _data;
   p->_tail = _tail;
   p->_end = _end;
-  memcpy(p->_cb, _cb, sizeof(_cb));
+  p->copy_annotations(this);
+  p->_nh_iph = _nh_iph;
   // increment our reference count because of _data_packet reference
   _use_count++;
   return p;
@@ -148,6 +152,11 @@ Packet::uniqueify_copy()
   p->_data_packet = 0;
   p->alloc_data(headroom(), length(), tailroom());
   memcpy(p->_data, _data, _tail - _data);
+  p->copy_annotations(this);
+  if (_nh_iph)
+    p->_nh_iph = (click_ip *)(p->_data + ((unsigned char *)_nh_iph - _data));
+  else
+    p->_nh_iph = 0;
   memcpy(p->_cb, _cb, sizeof(_cb));
   kill();
   return p;

@@ -87,7 +87,7 @@ Spew::spew_some()
   
   Packet *p = Packet::make(14 + 20 + 16);
   struct ether_header *e = (struct ether_header *) p->data();
-  struct ip *ip = (struct ip *) (e + 1);
+  click_ip *ip = (click_ip *) (e + 1);
   unsigned short sum;
 
   memcpy(e->ether_dhost, "\x00\x00\xc0\xae\x67\xef", 6); /* to cone */

@@ -38,8 +38,7 @@ struct icmp_generic
   unsigned char icmp_code;		/* one of the ICMP_CODE_*'s above */
   unsigned short icmp_cksum;		/* 16 1's comp csum */
   unsigned int unused;			/* should be zero */
-  struct ip ip;				/* ip header from original packet */
-  unsigned char data[8];		/* first 64 bits from original packet */
+  /* followed by original IP header and first 8 octets of data */
 };
 
 
@@ -51,8 +50,7 @@ struct icmp_param
   unsigned short icmp_cksum;		/* 16 1's comp csum */
   unsigned char pointer;		/* which octect was a problem */
   unsigned char unused[3];		/* should be zero */
-  struct ip ip;				/* ip header from original packet */
-  unsigned char data[8];		/* first 64 bits from original packet */
+  /* followed by original IP header and first 8 octets of data */
 };
 
 
@@ -63,8 +61,7 @@ struct icmp_redirect
   unsigned char icmp_code;		/* one of the ICMP_CODE_*'s above */
   unsigned short icmp_cksum;		/* 16 1's comp csum */
   unsigned int gateway;			/* address of gateway */
-  struct ip ip;				/* ip header from original packet */
-  unsigned char data[8];		/* first 64 bits from original packet */
+  /* followed by original IP header and first 8 octets of data */
 };
 
 

@@ -34,11 +34,8 @@ int
 SetIPDSCP::configure(const String &conf, ErrorHandler *errh)
 {
   unsigned dscp_val;
-  int ip_offset = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "diffserv code point", &dscp_val,
-		  cpOptional,
-		  cpUnsigned, "IP header offset", &ip_offset,
 		  0) < 0)
     return -1;
   if (dscp_val > 0x3F)
@@ -46,16 +43,15 @@ SetIPDSCP::configure(const String &conf, ErrorHandler *errh)
 
   // OK: set values
   _dscp = (dscp_val << 2);
-  _ip_offset = ip_offset;
   return 0;
 }
 
 inline Packet *
 SetIPDSCP::smaction(Packet *p)
 {
-  assert(p->length() >= sizeof(struct ip) + _ip_offset);
+  click_ip *ip = p->ip_header();
+  assert(ip);
   
-  struct ip *ip = (struct ip *)(p->data() + _ip_offset);
   unsigned short old_hw = ((unsigned short *)ip)[0];
   ip->ip_tos = (ip->ip_tos & 0x3) | _dscp;
   unsigned short new_hw = ((unsigned short *)ip)[0];

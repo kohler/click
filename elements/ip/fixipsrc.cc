@@ -51,9 +51,9 @@ FixIPSrc::configure(const String &conf, ErrorHandler *errh)
 inline Packet *
 FixIPSrc::smaction(Packet *p)
 {
-  if(p->fix_ip_src_anno() && p->length() >= sizeof(struct ip)){
+  click_ip *ip = p->ip_header();
+  if(p->fix_ip_src_anno() && ip){
     p->set_fix_ip_src_anno(0);
-    struct ip *ip = (struct ip *) p->data();
     click_chatter("FixIPSrc changed %x to %x",
                   ip->ip_src.s_addr,
                   _my_ip.s_addr);

@@ -72,9 +72,11 @@ ElementClassT::ElementClassT()
 {
 }
 
-void
+bool
 ElementClassT::expand_compound(ElementT &, RouterT *, ErrorHandler *)
 {
+  // did not expand
+  return false;
 }
 
 void

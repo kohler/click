@@ -127,6 +127,7 @@ RouterT::get_eindex(const String &s, int type_index, const String &config,
 {
   int i = _element_name_map[s];
   if (i < 0 && type_index >= 0) {
+    assert(type_index >= 0 && type_index < ntypes());
     i = _elements.size();
     _elements.push_back(ElementT(s, type_index, config, landmark));
     _element_name_map.insert(s, i);
@@ -138,6 +139,7 @@ int
 RouterT::get_anon_eindex(const String &s, int type_index, const String &config,
 			 const String &landmark)
 {
+  assert(type_index >= 0 && type_index < ntypes());
   int i = _elements.size();
   _elements.push_back(ElementT(s, type_index, config, landmark));
   return i;
@@ -389,37 +391,33 @@ RouterT::remove_unconnected_elements()
 
 
 void
-RouterT::remove_unused_element_types()
+RouterT::finish_remove_element_types(Vector<int> &new_tindex)
 {
+  int ntype = _element_classes.size();
   int nelements = _elements.size();
-  int nfactype = _element_classes.size();
 
   // find new ftypeindexes
-  Vector<int> new_ftypeidx(nfactype, -1);
-  new_ftypeidx[TUNNEL_TYPE] = TUNNEL_TYPE; // save TUNNEL_TYPE
-  new_ftypeidx[UPREF_TYPE] = UPREF_TYPE; // save UPREF_TYPE
-  for (int i = 0; i < nelements; i++)
-    if (_elements[i].type >= 0 && _elements[i].type < nfactype)
-      new_ftypeidx[ _elements[i].type ] = 0;
+  // save TUNNEL_TYPE and UPREF_TYPE
+  new_tindex[TUNNEL_TYPE] = new_tindex[UPREF_TYPE] = 0;
   int j = 0;
-  for (int i = 0; i < nfactype; i++)
-    if (new_ftypeidx[i] >= 0)
-      new_ftypeidx[i] = j++;
-  int new_nfactype = j;
+  for (int i = 0; i < ntype; i++)
+    if (new_tindex[i] >= 0)
+      new_tindex[i] = j++;
+  int new_ntype = j;
 
   // return if nothing has changed
-  assert(new_ftypeidx[TUNNEL_TYPE] == TUNNEL_TYPE);
-  assert(new_ftypeidx[UPREF_TYPE] == UPREF_TYPE);
-  if (new_nfactype == nfactype)
+  assert(new_tindex[TUNNEL_TYPE] == TUNNEL_TYPE);
+  assert(new_tindex[UPREF_TYPE] == UPREF_TYPE);
+  if (new_ntype == ntype)
     return;
 
   // change elements
   for (int i = 0; i < nelements; i++)
-    _elements[i].type = new_ftypeidx[ _elements[i].type ];
+    _elements[i].type = new_tindex[ _elements[i].type ];
   
   // compress element type arrays
-  for (int i = 0; i < nfactype; i++) {
-    j = new_ftypeidx[i];
+  for (int i = 0; i < ntype; i++) {
+    j = new_tindex[i];
     if (j != i) {
       _element_type_map.insert(_element_type_names[i], j);
       if (j >= 0) {
@@ -431,8 +429,18 @@ RouterT::remove_unused_element_types()
   }
 
   // resize element type arrays
-  _element_type_names.resize(new_nfactype);
-  _element_classes.resize(new_nfactype);
+  _element_type_names.resize(new_ntype);
+  _element_classes.resize(new_ntype);
+}
+
+void
+RouterT::remove_unused_element_types()
+{
+  Vector<int> new_tindex(_element_classes.size(), -1);
+  int nelem = _elements.size();
+  for (int i = 0; i < nelem; i++)
+    new_tindex[ _elements[i].type ] = 0;
+  finish_remove_element_types(new_tindex);
 }
 
 
@@ -571,7 +579,7 @@ resolve_upref(const String &upref, String prefix, RouterT *r)
   return -1;
 }
 
-void
+bool
 RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
 {
   // complain about configuration string
@@ -636,20 +644,34 @@ RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
 		      Hookup(new_fidx[hto.idx], hto.port),
 		      _hookup_landmark[i]);
   }
+
+  // yes, we expanded it
+  return true;
 }
 
 void
 RouterT::remove_compound_elements(ErrorHandler *errh)
 {
+  Vector<int> removed_eclass(_element_classes.size(), 0);
+  
   for (int i = 0; i < _elements.size(); i++) {
     int typ = _elements[i].type;
     if (typ < 0 || typ >= _element_classes.size() || !_element_classes[typ])
       continue;
-    _element_classes[typ]->expand_compound(_elements[i], this, errh);
+    if (_element_classes[typ]->expand_compound(_elements[i], this, errh))
+      removed_eclass[typ] = -1;
   }
 
   remove_blank_elements(errh);
-  remove_unused_element_types();
+
+  // check to see if we can remove element classes
+  removed_eclass.resize(_element_classes.size(), 0);
+  for (int i = 0; i < _elements.size(); i++) {
+    int typ = _elements[i].type;
+    if (typ >= 0 && typ < removed_eclass.size())
+      removed_eclass[typ] = 0;
+  }
+  finish_remove_element_types(removed_eclass);
 }
 
 void

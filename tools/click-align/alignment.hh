@@ -21,7 +21,7 @@ class Alignment {
 
   Alignment &operator+=(int);
   Alignment &operator-=(int);
-  Alignment &operator*=(const Alignment &);
+  Alignment &operator|=(const Alignment &);
 
 };
 
@@ -63,9 +63,9 @@ operator-(Alignment a, int off)
 }
 
 inline Alignment
-operator*(Alignment a, const Alignment &b)
+operator|(Alignment a, const Alignment &b)
 {
-  return a *= b;
+  return a |= b;
 }
 
 #endif

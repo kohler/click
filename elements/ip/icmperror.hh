@@ -57,8 +57,8 @@ public:
   ~ICMPError();
   
   const char *class_name() const		{ return "ICMPError"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
-  ICMPError *clone() const { return(new ICMPError); }
+  Processing default_processing() const		{ return AGNOSTIC; }
+  ICMPError *clone() const			{ return new ICMPError; }
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
 
@@ -73,7 +73,8 @@ private:
   bool is_error_type(int);
   bool unicast(struct in_addr);
   bool valid_source(struct in_addr);
-  bool has_route_opt(struct ip *ip);
+  bool has_route_opt(click_ip *ip);
+  
 };
 
 #endif

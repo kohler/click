@@ -8,7 +8,7 @@ class Aligner {
   Aligner();
   virtual void flow(const Vector<Alignment> &in, int ioff, int nin,
 		    Vector<Alignment> &out, int ooff, int nout);
-  virtual Alignment want(int);
+  virtual Alignment want(int, const Alignment &);
 };
 
 class GeneratorAligner : public Aligner {
@@ -31,7 +31,13 @@ class WantAligner : public Aligner {
   Alignment _alignment;
  public:
   WantAligner(Alignment a) : _alignment(a) { }
-  Alignment want(int);
+  Alignment want(int, const Alignment &);
+};
+
+class ClassifierAligner : public Aligner {
+ public:
+  ClassifierAligner() { }
+  Alignment want(int, const Alignment &);
 };
 
 

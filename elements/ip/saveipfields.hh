@@ -1,11 +1,10 @@
-#ifndef ANNOTATE_HH
-#define ANNOTATE_HH
+#ifndef SAVEIPFIELDS_HH
+#define SAVEIPFIELDS_HH
 #include "element.hh"
-#include "ipaddress.hh"
 
 /*
  * =c
- * Annotate()
+ * SaveIPFields()
  * =d
  * Expects IP packets. Copies the IP header's TOS, TTL,
  * and offset fields into the Click packet annotation.
@@ -15,18 +14,16 @@
  * =a IPEncap
  */
 
-class Annotate : public Element {
-  
-  int _offset;
+class SaveIPFields : public Element {
   
  public:
   
-  Annotate();
+  SaveIPFields();
   
-  const char *class_name() const		{ return "Annotate"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  const char *class_name() const		{ return "SaveIPFields"; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
-  Annotate *clone() const;
+  SaveIPFields *clone() const;
   
   Packet *simple_action(Packet *);
   

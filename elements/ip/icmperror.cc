@@ -121,9 +121,9 @@ ICMPError::valid_source(struct in_addr aa)
  * Does a packet contain a source route option?
  */
 bool
-ICMPError::has_route_opt(struct ip *ip)
+ICMPError::has_route_opt(click_ip *ip)
 {
-  int opts = (ip->ip_hl << 2) - sizeof(struct ip);
+  int opts = (ip->ip_hl << 2) - sizeof(click_ip);
   u_char *base = (u_char *) (ip + 1);
   int i, optlen;
 
@@ -147,13 +147,13 @@ Packet *
 ICMPError::simple_action(Packet *p)
 {
   Packet *q = 0;
-  struct ip *ipp = (struct ip *) p->data();
-  struct ip *nip;
+  click_ip *ipp = p->ip_header();
+  click_ip *nip;
   struct icmp_generic *icp;
   unsigned hlen, xlen;
   static int id = 1;
 
-  if(p->length() < sizeof(*ipp))
+  if (!ipp)
     goto out;
 
   hlen = ipp->ip_hl * 4;
@@ -190,21 +190,22 @@ ICMPError::simple_action(Packet *p)
 
   /* send back IP header and 8 bytes of payload */
   xlen = p->length();
-  if(xlen > hlen + 8)
+  if (xlen > hlen + 8)
     xlen = hlen + 8;
 
-  q = Packet::make(sizeof(*ipp) + sizeof(*icp));
+  q = Packet::make(sizeof(click_ip) + sizeof(struct icmp_generic) + xlen);
+  // guaranteed that packet data is aligned
   memset(q->data(), '\0', q->length());
-  nip = (struct ip *) q->data();
+  nip = (click_ip *) q->data();
   nip->ip_v = IPVERSION;
-  nip->ip_hl = sizeof(struct ip) >> 2;
+  nip->ip_hl = sizeof(click_ip) >> 2;
   nip->ip_len = htons(q->length());
   nip->ip_id = htons(id++);
   nip->ip_p = IP_PROTO_ICMP; /* icmp */
   nip->ip_ttl = 200;
   nip->ip_src = _src_ip.in_addr();
   nip->ip_dst = ipp->ip_src;
-  nip->ip_sum = in_cksum((unsigned char *) nip, sizeof(struct ip));
+  nip->ip_sum = in_cksum((unsigned char *) nip, sizeof(click_ip));
 
   icp = (struct icmp_generic *) (nip + 1);
   icp->icmp_type = _type;
@@ -219,11 +220,12 @@ ICMPError::simple_action(Packet *p)
     ((struct icmp_redirect *) icp)->gateway = p->dst_ip_anno().saddr();
   }
 
-  memcpy(&(icp->ip), p->data(), xlen);
-  icp->icmp_cksum = in_cksum((unsigned char *)icp, sizeof(icmp_generic));
+  memcpy((void *)(icp + 1), p->data(), xlen);
+  icp->icmp_cksum = in_cksum((unsigned char *)icp, sizeof(icmp_generic) + xlen);
 
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
   q->set_fix_ip_src_anno(1);
+  q->set_ip_header(nip);
 
  out:
   p->kill();

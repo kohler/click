@@ -42,12 +42,12 @@ class IPFragmenter : public Element {
   ~IPFragmenter();
   
   const char *class_name() const		{ return "IPFragmenter"; }
-  int configure(const String &, ErrorHandler *);
+  Processing default_processing() const		{ return PUSH; }
   void notify_noutputs(int);
-  Processing default_processing() const	{ return PUSH; }
+  int configure(const String &, ErrorHandler *);
   
-  int drops()					{ return _drops; }
-  int fragments() { return _fragments; }
+  int drops() const				{ return _drops; }
+  int fragments() const				{ return _fragments; }
   
   IPFragmenter *clone() const;
   void add_handlers(HandlerRegistry *fcr);
@@ -55,7 +55,7 @@ class IPFragmenter : public Element {
   inline Packet *smaction(Packet *);
   void push(int, Packet *p);
   Packet *pull(int);
-  int optcopy(struct ip *ip1, struct ip *ip2);
+  int optcopy(click_ip *ip1, click_ip *ip2);
   
 };
 

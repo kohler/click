@@ -21,7 +21,7 @@ public:
   ~BigIn();
   
   const char *class_name() const		{ return "BigIn"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   int drops() { return(_drops); }
   BigIn *clone() const;
   void add_handlers(HandlerRegistry *fcr);
