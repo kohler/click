@@ -1,0 +1,17 @@
+%script
+
+# read from a hand-written IPSummaryDump file; check headers, emit to a dump
+click -e "
+InfiniteSource('', LIMIT 2, STOP true)
+	-> ICMPPingEncap(1.0.0.1, 2.0.0.2, IDENTIFIER 3)
+	-> CheckICMPHeader
+	-> CheckIPHeader
+	-> ICMPPingResponder
+	-> ToDump(FOO, ENCAP IP)
+"
+tcpdump -n -r FOO > CHECK
+
+%file FOO
+%expectx CHECK
+.* 2\.0\.0\.2 > 1\.0\.0\.1: icmp: echo reply
+.* 2\.0\.0\.2 > 1\.0\.0\.1: icmp: echo reply
