@@ -33,11 +33,14 @@
 /* Define if you have the strtoul function.  */
 #undef HAVE_STRTOUL
 
+/* Define if you have the <unistd.h> header file.  */
+#undef HAVE_UNISTD_H
+
 /* Define if you have the <dlfcn.h> header file.  */
 #undef HAVE_DLFCN_H
 
-/* Define if you have the <unistd.h> header file.  */
-#undef HAVE_UNISTD_H
+/* Define if dynamic linking is possible. */
+#undef HAVE_DYNAMIC_LINKING
 
 /* Define stuff under a Linux module. */
 #ifdef CLICK_LINUXMODULE
@@ -80,9 +83,6 @@
 
 /* Define if you both need and have -lpcap and pcap.h. */
 #undef HAVE_PCAP
-
-/* Define if you have -ldl. */
-#undef HAVE_LIBDL
 
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__

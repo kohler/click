@@ -1,10 +1,12 @@
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(pathvars.h.in)
-AC_SUBST(ac_configure_args)
+AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in)
+
 CLICK_VERSION=1.2.0a
+
+AC_SUBST(ac_configure_args)
 AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
 AC_SUBST(CLICK_VERSION)
-AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in)
 
 dnl support for cross compiling
 AC_CANONICAL_SYSTEM
@@ -276,11 +278,16 @@ dnl
 dnl dynamic linking
 dnl
 
-AC_CHECK_HEADERS(unistd.h dlfcn.h)
+AC_CHECK_HEADERS(unistd.h)
+
 DL_LIBRARY=
-AC_CHECK_FUNC(dlopen, [AC_DEFINE(HAVE_LIBDL)],
-[AC_CHECK_LIB(dl, dlopen, [AC_DEFINE(HAVE_LIBDL)
-DL_LIBRARY="-ldl"])])
+AC_CHECK_HEADERS(dlfcn.h, ac_have_dlfcn_h=yes, ac_have_dlfcn_h=no)
+AC_CHECK_FUNC(dlopen, ac_have_dlopen=yes,
+[AC_CHECK_LIB(dl, dlopen, [ac_have_dlopen=yes
+DL_LIBRARY="-ldl"], ac_have_dlopen=no)])
+if test "x$ac_have_dlopen" = xyes -a "x$ac_have_dlfcn_h" = xyes; then
+  AC_DEFINE(HAVE_DYNAMIC_LINKING)
+fi
 AC_SUBST(DL_LIBRARY)
 
 dnl
@@ -434,8 +441,8 @@ dnl
 
 TARGETS=
 AC_SUBST(TARGETS)
-TOOLDIRS="click-align click-check click-combine click-devirtualize click-fastclassifier click-install click-mkmindriver click-undead click-xform"
-TOOL_TARGETS="click-align click-check click-combine click-devirtualize click-fastclassifier click-mkmindriver click-undead click-xform"
+TOOLDIRS="click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-install click-mkmindriver click-undead click-xform"
+TOOL_TARGETS="click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-mkmindriver click-undead click-xform"
 if test -d $srcdir/tools/click-ipopt; then
   TOOLDIRS="$TOOLDIRS click-ipopt"
   TOOL_TARGETS="$TOOLDIRS click-ipopt"
