@@ -159,6 +159,7 @@ void
 ToDevice::uninitialize()
 {
   to_device_map.remove(this);
+  dev_put(_dev);
   _task.unschedule();
 }
 
@@ -170,6 +171,7 @@ ToDevice::uninitialize()
 
 #if LINUX_VERSION_CODE < 0x020400
 # define netif_queue_stopped(dev)	((dev)->tbusy)
+# define netif_wake_queue(dev)		mark_bh(NET_BH)
 #endif
 
 void
@@ -179,7 +181,9 @@ ToDevice::run_scheduled()
   int sent = 0;
 
 #if LINUX_VERSION_CODE >= 0x020400
+  local_bh_disable();
   if (!spin_trylock(&_dev->xmit_lock)) {
+    local_bh_enable();
     _task.fast_reschedule();
     return;
   }
@@ -259,7 +263,7 @@ ToDevice::run_scheduled()
   // to call qdisc_restart() ourselves, outside of net_bh().
   if (is_polling && !busy && _dev->qdisc->q.qlen) {
     _dev->tx_eob(_dev);
-    mark_bh(NET_BH);
+    netif_wake_queue(_dev);
   }
 #endif
 
@@ -286,6 +290,7 @@ ToDevice::run_scheduled()
 
 #if LINUX_VERSION_CODE >= 0x020400
   spin_unlock(&_dev->xmit_lock);
+  local_bh_enable();
 #endif
   
   adjust_tickets(sent);
