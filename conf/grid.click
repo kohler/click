@@ -1,7 +1,7 @@
 rh :: ReadHandlerCaller(1) 
 
 // protocol els
-nb :: Neighbor
+nb :: Neighbor(00:90:27:E0:23:03, 10.0.0.1)
 h :: Hello(1, 00:90:27:E0:23:03, 10.0.0.1)
 
 // device layer els
