@@ -1,3 +1,18 @@
+2004-01-08 Thursday 01:33  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh (1.38), lib/confparse.cc (1.115):
+	change several confparse functions to use interator-style "begin"
+	and "end", instead of integer positions (cleaner); cp_pop_spacevec
+	removes comments on either side of the popped item (previously it
+	removed comments before and only spaces after); add const char
+	*cp_integer(const char *begin, const char *end, int base, int32_t
+	*return_value) and friends, to support incremental parsing
+
+2004-01-08 Thursday 01:27  Eddie Kohler <kohler@icir.org>
+
+	* include/click/straccum.hh (1.29): add StringAccum::append(const
+	char *begin, const char *end)
+
 2004-01-07 Wednesday 02:03  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: flood.cc (1.1), flood.hh (1.1): flood sends
