@@ -178,9 +178,9 @@ if test ! -f /usr/src/linux/System.map; then
 fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
-if grep register_net_out /usr/src/linux/System.map >/dev/null 2>&1; then
+[if grep register_net_out /usr/src/linux/System.map >/dev/null 2>&1; then
   ac_cv_click_kernel=yes
-else ac_cv_click_kernel=no; fi)
+else ac_cv_click_kernel=no; fi])
 if test $ac_cv_click_kernel = yes; then
   AC_DEFINE_UNQUOTED(HAVE_CLICK_KERNEL, 1)
 fi
@@ -194,7 +194,7 @@ if test $ac_cv_read_net_skbcount = yes; then
 fi
 
 AC_CACHE_CHECK(for tcp_prot kernel symbol, ac_cv_tcp_prot,
-[if grep tcp_prot /usr/src/linux/System.map >/dev/null 2>&1; then
+[if grep tcp_prot /usr/src/linux/net/netsyms.c >/dev/null 2>&1; then
   ac_cv_tcp_prot=yes
 else ac_cv_tcp_prot=no; fi])
 if test $ac_cv_tcp_prot = yes; then
