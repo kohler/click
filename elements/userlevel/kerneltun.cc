@@ -270,6 +270,7 @@ KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     }
 
     // set MTU
+#ifdef SIOCSIFMTU
     int s = socket(PF_INET, SOCK_DGRAM, IPPROTO_IP);
     if (s < 0)
 	return errh->error("socket() failed: %s", strerror(errno));
@@ -279,6 +280,8 @@ KernelTun::setup_tun(struct in_addr near, struct in_addr mask, ErrorHandler *err
     ifr.ifr_mtu = _mtu_out;
     if (ioctl(s, SIOCSIFMTU, &ifr) != 0)
 	return errh->error("SIOCSIFMTU failed: %s", strerror(errno));
+    close(s);
+#endif
 
     // calculate maximum packet size needed to receive data from
     // tun/tap.
