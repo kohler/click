@@ -496,11 +496,19 @@ __assert_fail(const char *__assertion,
  * GCC generates calls to these run-time library routines.
  */
 
+#if __GNUC__ >= 3
+void
+__cxa_pure_virtual()
+{
+  click_chatter("pure virtual method called\n");
+}
+#else
 void
 __pure_virtual()
 {
   click_chatter("pure virtual method called\n");
 }
+#endif
 
 void *
 __rtti_si()
