@@ -1,3 +1,8 @@
+2005-02-08 Tuesday 03:05  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipratemon.cc (1.103): IPRateMon is userlevel-only,
+	since it uses floating point (Ross Mcilroy)
+
 2005-02-07 Monday 17:19  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/router.hh (1.70), lib/lexer.cc (1.80),
