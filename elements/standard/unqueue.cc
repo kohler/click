@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include "unqueue.hh"
 #include <click/confparse.hh>
+#include <click/error.hh>
 #include "elements/standard/scheduleinfo.hh"
 
 Unqueue::Unqueue()
@@ -36,17 +37,21 @@ int
 Unqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _burst = 1;
+  _active = true;
   return cp_va_parse(conf, this, errh,
 		     cpOptional,
 		     cpUnsigned, "burst size", &_burst,
+		     cpKeywords,
+		     "ACTIVE", cpBool, "is active?", &_active,
 		     0);
 }
 
 int
 Unqueue::initialize(ErrorHandler *errh)
 {
-  _packets = 0;
-  ScheduleInfo::join_scheduler(this, &_task, errh);
+  _count = 0;
+  if (_active)
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
@@ -59,10 +64,13 @@ Unqueue::uninitialize()
 void
 Unqueue::run_scheduled()
 {
+  if (!_active)
+    return;
+
   int sent = 0;
   Packet *p_next = input(0).pull();
   
-  while (p_next) {
+  while (_active && p_next) {
     Packet *p = p_next;
     sent++;
     if (sent < _burst || _burst == 0) {
@@ -80,23 +88,45 @@ Unqueue::run_scheduled()
 #endif
 #endif
     output(0).push(p);
-    _packets++;
+    _count++;
   }
-  
-  _task.fast_reschedule();
+
+  if (_active)
+    _task.fast_reschedule();
 }
 
 String
 Unqueue::read_param(Element *e, void *)
 {
   Unqueue *u = (Unqueue *)e;
-  return String(u->_packets) + " packets\n";
+  return String(u->_count) + "\n";
+}
+
+int 
+Unqueue::write_param(const String &conf, Element *e, 
+		     void *thunk, ErrorHandler *errh)
+{
+  Unqueue *uq = (Unqueue *)e;
+  String s = cp_uncomment(conf);
+  switch ((int)thunk) {
+    
+   case 1: {			// active
+     if (!cp_bool(s, &uq->_active))
+       return errh->error("active parameter must be boolean");    
+     if (uq->_active && !uq->_task.scheduled())
+       uq->_task.reschedule();
+     break;
+   }
+   
+  }
+  return 0;
 }
 
 void
 Unqueue::add_handlers()
 {
-  add_read_handler("packets", read_param, (void *)0);
+  add_read_handler("count", read_param, (void *)0);
+  add_write_handler("active", write_param, (void *)1);
   add_task_handlers(&_task);
 }
 
