@@ -1,3 +1,10 @@
+2002-04-03 Wednesday 13:44  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: checkipheader.cc (1.43), checkipheader.hh (1.32),
+	checkipheader2.cc (1.27), checkipheader2.hh (1.20), ipinputcombo.cc
+	(1.26): set destination IP address annotation all the time. Problem
+	fixed by Parveen Kumar Patel <ppatel@cs.utah.edu>
+
 2002-04-02 Tuesday 21:41  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: policyprobe.cc (1.7), policyprobe.hh (1.6),
