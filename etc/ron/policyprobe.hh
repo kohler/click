@@ -28,7 +28,7 @@ public:
   PolicyProbe(RONRouteModular *parent, 
 	      long double delays, unsigned int numprobes, int numrandom,
 	      long double link_down_penalty, long double link_down_timeout, 
-	      long double history_timeout);
+	      long double history_timeout, int recycle);
   ~PolicyProbe();
   void initialize(int numpaths);
   void push_forward_syn(Packet *p) ;
@@ -69,6 +69,8 @@ protected:
 
   Timer _timer;
   int _scheduled;
+  int _recycle;
+
   void send_probes(FlowTableEntry *flowentry, int numprobes);
 
   static long double tolongdouble(struct timeval *tv) {
@@ -376,7 +378,7 @@ public:
     struct TimerEntry *p = _head;
 
     while(p) {
-      if ( (p->entry == entry) && (p->data == data) ) {
+      if ( (p->entry == entry) && ((data == -1) || (p->data == data))) {
 	*last = p->next;
 	free(p);
 	p = *last;

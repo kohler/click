@@ -31,15 +31,16 @@
 #define d2printf if(1)click_chatter
 
 RONRouteModular::RONRouteModular() {
-  PolicyProbe *probe0;
   MOD_INC_USE_COUNT;
   add_input();
 
   _flowtable = new FlowTable();
 
-  probe0 = new PolicyProbe(this, .4, 3, 1, 10, 10, 300);
-
-  _policies.push_back(probe0);
+  _policies.push_back(new PolicyProbe(this, .4, 3, 1, 75, 75, 300, 1));
+  _policies.push_back(new PolicyProbe(this, .4, 2, 1, 75, 75, 300, 1));
+  _policies.push_back(new PolicyProbe(this, .2, 3, 1, 75, 75, 300, 1));
+  _policies.push_back(new PolicyProbe(this, .4, 3, 1, 75, 75, 150, 1));
+  _policies.push_back(new PolicyProbe(this, .4, 3, 1, 75, 75, 300, 0));
 }
 
 RONRouteModular::~RONRouteModular(){

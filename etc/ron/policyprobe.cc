@@ -28,7 +28,7 @@
 #include <click/packet_anno.hh>
 
 #define dprintf if(0)printf
-#define DONEDELAY 15
+#define DONEDELAY 90
 #define MAXROUNDS 5
 
 PolicyProbe::PolicyProbe(RONRouteModular *parent, 
@@ -37,7 +37,8 @@ PolicyProbe::PolicyProbe(RONRouteModular *parent,
 			 int numrandom,
 			 long double link_down_penalty,
 			 long double link_down_timeout,
-			 long double history_timeout) 
+			 long double history_timeout,
+			 int recycle) 
   : RONRouteModular::Policy(parent), _timer(&expire_hook, (void*)this) { 
   assert(numprobes >= numrandom);
   assert(link_down_timeout < DONEDELAY);
@@ -47,6 +48,7 @@ PolicyProbe::PolicyProbe(RONRouteModular *parent,
   _history = new RTTHistory();
   _delays = delays;
   _scheduled = 0;
+  _recycle = recycle;
   _numprobes = numprobes;
   _numrandom = numrandom;
   _link_down_penalty = link_down_penalty;
@@ -282,15 +284,19 @@ void PolicyProbe::expire_hook(Timer *, void *thunk) {
 	gettime() && time >= 0){
     me->_timerqueue->shift();
 
-    fprintf(stderr, " dequing %Lf %d %d ", time, action, data);
-    flowentry->print();
-    fprintf(stderr, "\n");
+    //fprintf(stderr, " dequing %Lf %d %d ", time, action, data);
+    //flowentry->print();
+    //fprintf(stderr, "\n");
 
     switch (action) {
     case PROBE:
       me->send_probes(flowentry, me->_numprobes);
       break;
     case PURGE: 
+      fprintf(stderr, " removing: ");
+      flowentry->print();
+      fprintf(stderr, "\n");
+      me->_timerqueue->remove(flowentry, -1);
       me->_flowtable->remove(flowentry);
       break;
     case NO_SYNACK: 
@@ -318,48 +324,90 @@ void PolicyProbe::send_probes(FlowTableEntry *flowentry, int numprobes) {
   fprintf(stderr, " Sending probes(%d of %d)\n", numprobes, _numpaths);
   // pick best <numprobes> which we haven't tried yet.
   for(i=1; i<=_numpaths; i++) { times[i] = _history->get_avg_rtt(i); }
-  for(i=1; i<=_numpaths; i++)
-    fprintf(stderr, "  5min avg rtts %d %.4Lf %d\n", 
-	    i, times[i], flowentry->get_times_tried(i));
-
-  // figure out what the current round number is:
-  round = flowentry->get_times_tried(2);
-  for(i=3; i<=_numpaths; i++)
-    if (round > flowentry->get_times_tried(i)) 
-      round = flowentry->get_times_tried(i);
+  //for(i=1; i<=_numpaths; i++)
+    //fprintf(stderr, "  5min avg rtts %d %.4Lf %d\n", 
+    //    i, times[i], flowentry->get_times_tried(i));
 
   // pick the best (numprobes - numrandom) guesses
-  for(i=round; !done && i<MAXROUNDS; i++) {
-    exhausted_round = 0;
+  if (_recycle) { // RECYCLE
 
-    while(!exhausted_round) {
-      saveme=0;
-      shortest = 100;
-      for(j=2; !done && j<=_numpaths; j++) {
-	if (flowentry->get_times_tried(j) == i) {
-	  if (times[j] <= shortest) {
-	    found_already = 0;
-	    for(k=0; !found_already && k<best_paths.size(); k++)
-	      if (best_paths[k] == j) found_already = 1;
-	    if (!found_already){
-	      shortest = times[j];
-	      saveme = j;
+    // figure out what the current round number is:
+    round = flowentry->get_times_tried(2);
+    for(i=3; i<=_numpaths; i++)
+      if (round > flowentry->get_times_tried(i)) 
+	round = flowentry->get_times_tried(i);
+    
+    for(i=round; !done && i<MAXROUNDS; i++) {
+      exhausted_round = 0;
+      
+      while(!exhausted_round) {
+	saveme=0;
+	shortest = 100;
+	for(j=2; !done && j<=_numpaths; j++) {
+	  if (flowentry->get_times_tried(j) == i) {
+	    if (times[j] <= shortest) {
+	      found_already = 0;
+	      for(k=0; !found_already && k<best_paths.size(); k++)
+		if (best_paths[k] == j) found_already = 1;
+	      if (!found_already){
+		shortest = times[j];
+		saveme = j;
+	      }
 	    }
 	  }
 	}
+	if (!saveme) exhausted_round = 1;
+	else {
+	  if (best_paths.size() < (numprobes - _numrandom)) {
+	    for(k=0; k<best_paths.size(); k++) 
+	      assert (best_paths[k] != saveme);
+	    best_paths.push_back(saveme);
+	  }
+	  
+	  if (best_paths.size() == (numprobes - _numrandom)) {
+	    exhausted_round = 1;
+	    done = 1;
+	  }
+	}
       }
-      if (!saveme) exhausted_round = 1;
-      else {
-	if (best_paths.size() < (numprobes - _numrandom)) {
-	  for(k=0; k<best_paths.size(); k++) 
-	    assert (best_paths[k] != saveme);
-	  best_paths.push_back(saveme);
-	}
+    }
+  } else { // NO RECYCLE, just pick n best guesses
 
-	if (best_paths.size() == (numprobes - _numrandom)) {
-	  exhausted_round = 1;
-	  done = 1;
+    // if we already sent probes, just use the same paths
+    for(j=2; j<=_numpaths; j++) {
+      if (flowentry->get_times_tried(j) > 0) {
+	done = 1;
+	fprintf(stderr,"  probing paths2: %d\n", j);
+	flowentry->sent_syn(j, gettime());
+	if (flowentry->syn_pkt)
+	  _parent->output(j).push(flowentry->syn_pkt->clone());
+      }
+    }
+    if (done) return;
+
+    // if this is the first syn, then pick the best paths.
+    for(i=0; i<(numprobes - _numrandom); i++) {      
+      shortest = 100;
+      done = 0;
+
+      for(j=2; !done && j<=_numpaths; j++) {
+
+	if (times[j] <= shortest) {
+	  found_already = 0;
+	  for(k=0; !found_already && k<best_paths.size(); k++)
+	    if (best_paths[k] == j) found_already = 1;
+	  if (!found_already){
+	    shortest = times[j];
+	    saveme = j;
+	    done = 1;
+	  }
 	}
+      }
+      assert (saveme);
+      if (best_paths.size() < (numprobes - _numrandom)) {
+	for(k=0; k<best_paths.size(); k++) 
+	  assert (best_paths[k] != saveme);
+	best_paths.push_back(saveme);
       }
     }
   }
