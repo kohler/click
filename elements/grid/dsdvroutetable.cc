@@ -661,7 +661,7 @@ DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r, unsigned int jiff)
     dsdv_assert(old_r->seq_no() > new_r.seq_no());
     // Do nothing.  We will never accept this route anyway.  Well,
     // almost never.  See the reboot/wraparound handling in
-    // handle_update()
+    // the handle_update() function.
   }
   
   // XXX when our current route is broken, and the new route is good,
@@ -874,8 +874,8 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   check_invariants();
 }
 
-void
-DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsigned int jiff)
+bool
+DSDVRouteTable::handle_update(RTEntry new_r, const bool was_sender, const unsigned int jiff)
 {
   check_invariants();
   new_r.check();
@@ -883,7 +883,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
   dsdv_assert(was_sender ? new_r.num_hops() == 1 : new_r.num_hops() != 1);
 
   if (new_r.good() && new_r.num_hops() >_max_hops)
-    return; // ignore ``non-local'' routes
+    return false; // ignore ``non-local'' routes
 
   if (was_sender)
     init_metric(new_r);
@@ -891,7 +891,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     update_metric(new_r);
 
   if (_ignore_invalid_routes && !new_r.metric.good())
-    return; // don't keep routes with invalid metrics
+    return false; // don't keep routes with invalid metrics
 
 
   RTEntry *old_r = _rtes.findp(new_r.dest_ip);
@@ -962,6 +962,8 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
       old_r->advertise_ok_jiffies = jiff;
       old_r->need_metric_ad = true;
       schedule_triggered_update(old_r->dest_ip, jiff);
+      check_invariants();
+      return false;
     }
     else if (new_r.good() && old_r->broken()) {
       // Perhaps a node rebooted?  This case is not handled by ns
@@ -983,6 +985,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     }
   }
   check_invariants();
+  return true;
 }
 
 Packet *
@@ -1064,6 +1067,7 @@ DSDVRouteTable::simple_action(Packet *packet)
 #endif
 
   RTEntry new_r(ipaddr, ethaddr, gh, hlo, PAINT_ANNO(packet), jiff);
+  bool inserted_new_r;
 
 #if ENABLE_SEEN
   bool sender_saw_us = false;
@@ -1096,21 +1100,24 @@ DSDVRouteTable::simple_action(Packet *packet)
     new_r.need_metric_ad = true;
     schedule_triggered_update(new_r.dest_ip, jiff);
     insert_route(new_r, GridGenericLogger::NEW_DEST_SENDER);
+    inserted_new_r = true;
     goto after_sender_update;
   }
-#endif
+#endif // ENABLE_SEEN
 
-  // insert 1-hop route
-  handle_update(new_r, true, jiff);
+  // insert 1-hop route, update new_r's metric as side-effect
+  inserted_new_r = handle_update(new_r, true, jiff);
 
 #if ENABLE_SEEN
   after_sender_update:
 #endif
 
-  // update this dest's eth
-  r = _rtes.findp(ipaddr);
-  dsdv_assert(r);
-  r->dest_eth = ethaddr;
+  // update this dest's eth, if we inserted it into the route table
+  if (inserted_new_r) {
+    r = _rtes.findp(ipaddr);
+    dsdv_assert(r);
+    r->dest_eth = ethaddr;
+  }
 
   // handle each entry in message
   bool need_full_update = false;

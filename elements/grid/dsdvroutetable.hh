@@ -348,7 +348,9 @@ private:
   bool use_old_route(const IPAddress &dst, unsigned jiff);
 #endif
 
-  void handle_update(RTEntry &, const bool was_sender, const unsigned int jiff);  
+  // returns true if route entry was inserted into route table, else return false
+  bool handle_update(RTEntry, const bool was_sender, const unsigned int jiff);  
+  
   void insert_route(const RTEntry &, const GridGenericLogger::reason_t why);
   void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
   bool lookup_route(const IPAddress &dest_ip, RTEntry &entry);
