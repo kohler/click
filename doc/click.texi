@@ -3,19 +3,21 @@
 @settitle Click
 @footnotestyle end
 
-@ifinfo
-@macro click {arg}
-@code{\arg\}
-@end macro
+@ifnottex
 @macro leq
 <=
 @end macro
-@end ifinfo
+@end ifnottex
 @ifnotinfo
 @macro click {arg}
 @emph{\arg\}
 @end macro
 @end ifnotinfo
+@ifinfo
+@macro click {arg}
+@code{\arg\}
+@end macro
+@end ifinfo
 
 @macro handler {arg}
 `\arg\'
@@ -77,6 +79,7 @@ Helper Classes
 
 String
 
+* String Initialization::
 * String Constructors::         
 * String Contents::             
 * String Characters::           
@@ -271,7 +274,7 @@ passed to functions.
 * String Out-of-Memory::        
 @end menu
 
-@node String Initialization
+@node String Initialization, String Constructors, String, String
 @subsection Class Initialization
 
 The @code{String} class maintains some global state that must be
@@ -317,7 +320,7 @@ int main(int, char **) @{ /* ... */ @}
 @end example
 @end deftp
 
-@node String Constructors, String Contents, String, String
+@node String Constructors, String Contents, String Initialization, String
 @subsection Constructors
 
 @deftypeop Constructor String {} String ()
@@ -775,12 +778,11 @@ change the @code{StringAccum}'s length.
 
 @deftypemethod StringAccum void forward (int @var{amt})
 Adds @var{amt} to the @code{StringAccum}'s length without changing its
-data. This method is only useful in conjunction with @code{reserve},
-above. Use @code{reserve} to get space suitable for appending a string
-of unknown, but bounded, length. After finding the actual length, use
-@code{forward} to inform the @code{StringAccum}. @var{amt} must be
-greater than or equal to zero, and less than or equal to the remaining
-capacity.
+data. This method is used in conjunction with @code{reserve}, above. Use
+@code{reserve} to get space suitable for appending a string of unknown,
+but bounded, length. After finding the actual length, use @code{forward}
+to inform the @code{StringAccum}. @var{amt} must be greater than or
+equal to zero, and less than or equal to the remaining capacity.
 @end deftypemethod
 
 Finally, these methods remove characters from a @code{StringAccum}
@@ -889,10 +891,10 @@ implementation; no data copies are performed.
 
 @code{StringAccum} operations are robust against out-of-memory
 conditions. The @code{operator<<} functions and the @code{append} method
-leave a @code{StringAccum} as is if they cannot create the memory needed
-to complete an append. The @code{extend} and @code{reserve} methods can
-return null pointers on out-of-memory; their callers should always check
-that their return values are non-null.
+leave a @code{StringAccum} unchanged if they cannot create the memory
+needed to complete an append. The @code{extend} and @code{reserve}
+methods can return null pointers on out-of-memory; their callers should
+always check that their return values are non-null.
 
 @code{StringAccum} has no equivalent to @code{String}'s
 @code{out_of_memory_count} static method.
@@ -3656,6 +3658,7 @@ Click users interact with a running router through @dfn{handlers}.
 * Quoting::                     
 * Config String Splitting::     
 * Parsing Functions::           
+* cp_va::                       
 @end menu
 
 @node Config String Structure, Quoting, Configuration Strings, Configuration Strings
@@ -3882,7 +3885,7 @@ For example:
 @end display
 
 
-@node Parsing Functions,  , Config String Splitting, Configuration Strings
+@node Parsing Functions, cp_va, Config String Splitting, Configuration Strings
 @section Parsing Functions
 
 Click's @dfn{parsing functions} parse strings into various kinds of
@@ -4511,15 +4514,20 @@ result in @code{@var{result}->tv_sec} and the fraction part in
 @end deftypefn
 
 
-@node cp_va
+@node cp_va,  , Parsing Functions, Configuration Strings
 @section Parsing Argument Lists
 
 @cindex cp_va
 
-@node cp_va Concepts
+@menu
+* cp_va Concepts::              
+* cp_va Initialization::        
+@end menu
+
+@node cp_va Concepts, cp_va Initialization, cp_va, cp_va
 @subsection Concepts
 
-@node cp_va Initialization
+@node cp_va Initialization,  , cp_va Concepts, cp_va
 @subsection Global Initialization
 
 The @code{cp_va} functions maintain some private global state---for

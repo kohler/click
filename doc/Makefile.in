@@ -46,6 +46,8 @@ install-man:
 
 click.info: $(srcdir)/click.texi
 	$(MAKEINFO) $(srcdir)/click.texi
+click.html: $(srcdir)/click.texi
+	$(MAKEINFO) --html --no-split $(srcdir)/click.texi
 click.dvi: $(srcdir)/click.texi always
 	$(TEXI2DVI) $(srcdir)/click.texi
 
@@ -53,7 +55,7 @@ always:
 	@:
 
 clean:
-	rm -f click.aux click.cp click.cps click.dvi click.fn click.ky click.pg click.tmp click.toc click.tp click.tps click.vr *.log
+	rm -f click.aux click.cp click.cps click.dvi click.fn click.html click.ky click.pg click.tmp click.toc click.tp click.tps click.vr *.log
 distclean: clean
 	-rm -f Makefile click.info*
 
