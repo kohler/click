@@ -146,19 +146,19 @@ extern "C" {
 /* CLICK_HTON_LLRPC: host LLRPC numbers to portable LLRPC numbers */
 /* both macros are only suitable for integer constants and the like */
 #if _CLICK_IOC_VOID != _CLICK_NET_IOC_VOID || _CLICK_IOC_OUT != _CLICK_NET_IOC_OUT || _CLICK_IOC_IN != _CLICK_NET_IOC_IN
-# define CLICK_NTOH_LLRPC(command) \
+# define CLICK_LLRPC_NTOH(command) \
 	(((command) & _CLICK_NET_IOC_VOID ? _CLICK_IOC_VOID : 0) \
 	 | ((command) & _CLICK_NET_IOC_OUT ? _CLICK_IOC_OUT : 0) \
 	 | ((command) & _CLICK_NET_IOC_IN ? _CLICK_IOC_IN : 0) \
 	 | ((command) & _CLICK_IOC_BASE_MASK))
-# define CLICK_HTON_LLRPC(command) \
+# define CLICK_LLRPC_HTON(command) \
 	(((command) & _CLICK_IOC_VOID ? _CLICK_NET_IOC_VOID : 0) \
 	 | ((command) & _CLICK_IOC_OUT ? _CLICK_NET_IOC_OUT : 0) \
 	 | ((command) & _CLICK_IOC_IN ? _CLICK_NET_IOC_IN : 0) \
 	 | ((command) & _CLICK_IOC_BASE_MASK))
 #else
-# define CLICK_NTOH_LLRPC(command) (command)
-# define CLICK_HTON_LLRPC(command) (command)
+# define CLICK_LLRPC_NTOH(command) (command)
+# define CLICK_LLRPC_HTON(command) (command)
 #endif
 
 /* sanity checks */

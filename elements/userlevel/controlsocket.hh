@@ -128,7 +128,19 @@ handlers or nonexistent handlers.
 
 Checks whether a I<handler> exists and is writable.
 
-=item LLRPC I<element>#I<llrpc> [I<n>]
+=item LLRPC I<llrpc> [I<n>]
+
+Call an LLRPC I<llrpc> and return the results. I<Llrpc> should have the form
+C<I<element>#I<hexnumber>>. The C<I<hexnumber>> is the LLRPC number, from
+C<E<lt>click/llrpc.hE<gt>>, in network format. Translate C<CLICK_LLRPC>
+constants to network format by calling
+C<CLICK_LLRPC_HTON(CLICK_LLRPC_...)>. If I<n> is given, then the I<n> bytes
+immediately following (the CRLF that terminates) the LLRPC line are passed in
+as an argument. The results are returned after a "DATA I<nn>" line, as in
+READ.
+
+ControlSocket will not call an LLRPC unless it can determine (from the command
+number) how much data the LLRPC expects and returns.
 
 =item QUIT
 

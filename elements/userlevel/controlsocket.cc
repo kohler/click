@@ -501,14 +501,11 @@ int
 ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
 {
   int octothorp = llrpcname.find_left('#');
-  bool portable = (octothorp >= 0 && octothorp + 1 < llrpcname.length() && llrpcname[octothorp + 1] == '#');
-  int post_octothorp = octothorp + (portable ? 2 : 1);
   uint32_t command;
-  if (octothorp < 0 || !cp_unsigned(llrpcname.substring(post_octothorp), 16, &command))
+  if (octothorp < 0 || !cp_unsigned(llrpcname.substring(octothorp + 1), 16, &command))
     return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name `" + llrpcname + "'");
-  // transform net LLRPC id into host LLRPC id if required
-  if (portable)
-    command = CLICK_NTOH_LLRPC(command);
+  // transform net LLRPC id into host LLRPC id
+  command = CLICK_LLRPC_NTOH(command);
   
   Element *e;
   int hid = parse_handler(fd, llrpcname.substring(0, octothorp) + ".name", &e);
