@@ -544,7 +544,7 @@ LexerT::anon_element_class_name(String prefix) const
 }
 
 int
-LexerT::make_element(String name, const Lexeme &location,
+LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
 		     ElementClassT *type, const String &conf, const String &lm)
 {
     // check `name' for validity
@@ -558,16 +558,16 @@ LexerT::make_element(String name, const Lexeme &location,
 	    break;
 	}
     }
-    _lexinfo->notify_element_declaration(name, type, _compound_class, location.pos1(), location.pos2());
-    _lexinfo->notify_element_reference(name, type, _compound_class, location.pos1(), location.pos2());
+    _lexinfo->notify_element_declaration(name, type, _compound_class, location.pos1(), location.pos2(), (decl_pos2 < 0 ? location.pos2() : decl_pos2));
     return _router->get_eindex(name, type, conf, lm ? lm : landmark());
 }
 
 int
-LexerT::make_anon_element(const Lexeme &what, ElementClassT *type,
-			  const String &conf, const String &lm)
+LexerT::make_anon_element(const Lexeme &what, int decl_pos2,
+			  ElementClassT *type, const String &conf,
+			  const String &lm)
 {
-    return make_element(anon_element_name(type->name()), what, type, conf, lm);
+    return make_element(anon_element_name(type->name()), what, decl_pos2, type, conf, lm);
 }
 
 void
@@ -625,13 +625,16 @@ LexerT::yelement(int &element, bool comma_ok)
     Lexeme tname = lex();
     String name;
     ElementClassT *etype;
+    int decl_pos2 = -1;
 
     if (tname.is(lexIdent)) {
 	etype = element_type(tname);
 	name = tname.string();
+	decl_pos2 = tname.pos2();
     } else if (tname.is('{')) {
 	etype = ycompound(String(), tname.pos1(), tname.pos1());
 	name = etype->name();
+	decl_pos2 = next_pos();
     } else {
 	unlex(tname);
 	return false;
@@ -646,11 +649,12 @@ LexerT::yelement(int &element, bool comma_ok)
 	    etype = force_element_type(tname);
 	configuration = lex_config();
 	expect(')');
+	decl_pos2 = next_pos();
     } else
 	unlex(tparen);
 
     if (etype)
-	element = make_anon_element(tname, etype, configuration.string(), lm);
+	element = make_anon_element(tname, decl_pos2, etype, configuration.string(), lm);
     else {
 	const Lexeme &t2colon = lex();
 	unlex(t2colon);
@@ -662,7 +666,7 @@ LexerT::yelement(int &element, bool comma_ok)
 	    if (element < 0) {
 		// assume it's an element type
 		etype = force_element_type(tname);
-		element = make_anon_element(tname, etype, configuration.string(), lm);
+		element = make_anon_element(tname, tname.pos2(), etype, configuration.string(), lm);
 	    } else
 		_lexinfo->notify_element_reference(name, _router->etype(element), _compound_class, tname.pos1(), tname.pos2());
 	}
@@ -704,13 +708,13 @@ LexerT::ydeclaration(const Lexeme &first_element)
 
     String lm = landmark();
     ElementClassT *etype;
-    t = lex();
-    if (t.is(lexIdent))
-	etype = force_element_type(t);
-    else if (t.is('{'))
-	etype = ycompound(String(), t.pos1(), t.pos1());
+    Lexeme etypet = lex();
+    if (etypet.is(lexIdent))
+	etype = force_element_type(etypet);
+    else if (etypet.is('{'))
+	etype = ycompound(String(), etypet.pos1(), etypet.pos1());
     else {
-	lerror(t, "missing element type in declaration");
+	lerror(etypet, "missing element type in declaration");
 	return;
     }
 
@@ -722,6 +726,8 @@ LexerT::ydeclaration(const Lexeme &first_element)
     } else
 	unlex(t);
 
+    int decl_pos2 = (decls.size() == 1 ? next_pos() : -1);
+
     for (int i = 0; i < decls.size(); i++) {
 	String name = decls[i].string();
 	int old_eidx = _router->eindex(name);
@@ -731,7 +737,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	} else if (_router->try_type(name))
 	    lerror(decls[i], "`%s' is an element class", name.cc());
 	else
-	    make_element(name, decls[i], etype, configuration.string(), lm);
+	    make_element(name, decls[i], decl_pos2, etype, configuration.string(), lm);
     }
 }
 

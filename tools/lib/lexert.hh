@@ -65,15 +65,6 @@ class LexerT { public:
     Lexeme lex_config();
     String landmark() const;
   
-    bool expect(int, bool report_error = true);
-  
-    ElementClassT *element_type(const Lexeme &) const;
-    ElementClassT *force_element_type(const Lexeme &);
-  
-    int make_element(String, const Lexeme &, ElementClassT *, const String &, const String &);
-    int make_anon_element(const Lexeme &, ElementClassT *, const String &, const String &);
-    void connect(int f1, int p1, int p2, int f2);
-  
     bool yport(int &port, int &pos1, int &pos2);
     bool yelement(int &element, bool comma_ok);
     void ydeclaration(const Lexeme &first_element = Lexeme());
@@ -134,8 +125,16 @@ class LexerT { public:
     String anon_element_name(const String &) const;
     String anon_element_class_name(String) const;
 
+    bool expect(int, bool report_error = true);
     int next_pos() const;
     
+    ElementClassT *element_type(const Lexeme &) const;
+    ElementClassT *force_element_type(const Lexeme &);
+  
+    int make_element(String, const Lexeme &, int decl_pos2, ElementClassT *, const String &, const String &);
+    int make_anon_element(const Lexeme &, int decl_pos2, ElementClassT *, const String &, const String &);
+    void connect(int f1, int p1, int p2, int f2);
+  
     void run_parser_package(String);
 
 };

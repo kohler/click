@@ -164,16 +164,16 @@ static OutputItem *compar_items;
 static int
 item_compar(const void *v1, const void *v2)
 {
-    const int *oi1 = (const int *)v1;
-    const int *oi2 = (const int *)v2;
-    int diff = compar_items[*oi1].pos - compar_items[*oi2].pos;
+    const OutputItem &oi1 = compar_items[*((const int *)v1)];
+    const OutputItem &oi2 = compar_items[*((const int *)v2)];
+    int diff = oi1.pos - oi2.pos;
     if (diff != 0)
 	return diff;
-    else if (compar_items[*oi1].end_item())
+    else if (oi1.end_item())
 	// Sort end items in reverse order from corresponding start items.
-	return compar_items[*oi2].other_index() - compar_items[*oi1].other_index();
+	return oi2.other_index() - oi1.other_index();
     else
-	return 0;
+	return oi2.other()->pos - oi1.other()->pos;
 }
 }
 
@@ -306,11 +306,12 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	if (href)
 	    add_item(pos1, "<a href='" + href + "'>", pos2, "</a>");
     }
-    void notify_element_declaration(const String &name, ElementClassT *, ElementClassT *enclose, int pos1, int pos2) {
+    void notify_element_declaration(const String &name, ElementClassT *type, ElementClassT *enclose, int pos1, int pos2, int decl_pos2) {
 	if (!enclose)
 	    add_item(pos1, "<a name='e-" + name + "'>", pos2, "</a>");
 	else
 	    add_item(pos1, "<a name='e" + String(enclose->unique_id()) + "-" + name + "'>", pos2, "</a>");
+	notify_element_reference(name, type, enclose, pos1, decl_pos2);
     }
     void notify_element_reference(const String &name, ElementClassT *type, ElementClassT *, int pos1, int pos2) {
 	add_item(pos1, "<span title='" + name + " :: " + type->name() + "'>", pos2, "</span>");

@@ -61,7 +61,7 @@ LexerTInfo::notify_class_reference(ElementClassT *, int, int)
 }
 
 void
-LexerTInfo::notify_element_declaration(const String &, ElementClassT *, ElementClassT *, int, int)
+LexerTInfo::notify_element_declaration(const String &, ElementClassT *, ElementClassT *, int, int, int)
 {
 }
 

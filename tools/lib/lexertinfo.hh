@@ -19,7 +19,7 @@ class LexerTInfo { public:
     virtual void notify_class_reference(ElementClassT *, int pos1, int pos2);
     virtual void notify_element_declaration(
 		const String &name, ElementClassT *type,
-		ElementClassT *owner, int pos1, int pos2);
+		ElementClassT *owner, int pos1, int name_pos2, int decl_pos2);
     virtual void notify_element_reference(
 		const String &name, ElementClassT *type,
 		ElementClassT *owner, int pos1, int pos2);
