@@ -53,8 +53,8 @@ Boolean. If false, then FromTcpdump will not emit packets (until the
 
 =item ZERO
 
-Boolean. Determines the contents of packet data not set by the dump. If true,
-this data is zero. If false (the default), this data is random garbage.
+Boolean. Determines the contents of packet data not set by the dump. If true
+E<lparen>the default), this data is zero. If false, it is random garbage.
 
 =item CHECKSUM
 

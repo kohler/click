@@ -70,7 +70,7 @@ FromIPSummaryDump::cast(const char *n)
 int
 FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool stop = false, active = true, zero = false, checksum = false, multipacket = false;
+    bool stop = false, active = true, zero = true, checksum = false, multipacket = false;
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     String default_contents, default_flowid;

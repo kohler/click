@@ -63,7 +63,7 @@ FromCapDump::cast(const char *n)
 int
 FromCapDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool stop = false, active = true, zero = false, checksum = false;
+    bool stop = false, active = true, zero = true, checksum = false;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     
     if (cp_va_parse(conf, this, errh,
@@ -171,6 +171,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
     iph->ip_p = IP_PROTO_TCP;
     iph->ip_off = 0;
     click_tcp *tcph = q->tcp_header();
+    tcph->th_win = htons(65535);
     
     String line;
     

@@ -60,7 +60,7 @@ FromNetFlowSummaryDump::cast(const char *n)
 int
 FromNetFlowSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool stop = false, active = true, zero = false, multipacket = false;
+    bool stop = false, active = true, zero = true, multipacket = false;
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_ff.filename(),

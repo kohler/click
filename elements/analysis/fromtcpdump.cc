@@ -60,7 +60,7 @@ FromTcpdump::cast(const char *n)
 int
 FromTcpdump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    bool stop = false, active = true, zero = false, checksum = false;
+    bool stop = false, active = true, zero = true, checksum = false;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     _absolute_seq = -1;
     

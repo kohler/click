@@ -42,8 +42,8 @@ the `C<active>' handler is written). Default is true.
 
 =item ZERO
 
-Boolean. If true, then emitted packet data is zero, except for data set by the
-dump. If false (the default), this data is random garbage.
+Boolean. If true (the default), then emitted packet data is zero, except for
+data set by the dump. If false, this data is random garbage.
 
 =item MULTIPACKET
 
