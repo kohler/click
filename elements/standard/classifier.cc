@@ -45,11 +45,16 @@ Classifier::Expr::implies(const Expr &e) const
 bool
 Classifier::Expr::not_implies(const Expr &e) const
   /* Returns true iff a packet that DOES NOT match `*this' must match `e'. */
+  /* This happens when (1) 'e' matches everything, or (2) 'e' and '*this'
+     both match against the same single bit, and they have different values. */
 {
   if (!e.mask.u)
     return true;
-  else
+  else if (e.offset != offset || (mask.u & (mask.u - 1)) != 0
+	   || mask.u != e.mask.u || value.u == e.value.u)
     return false;
+  else
+    return true;
 }
 
 bool
@@ -563,7 +568,7 @@ Classifier::combine_compatible_states()
 }
 
 void
-Classifier::bubble_sort_and_exprs()
+Classifier::bubble_sort_and_exprs(int sort_stopper)
 {
   // count inbranches
   Vector<int> inbranch(_exprs.size(), -1);
@@ -580,7 +585,8 @@ Classifier::bubble_sort_and_exprs()
     if (_exprs[i].yes > 0) {
       int j = _exprs[i].yes;
       Expr &e1 = _exprs[i], &e2 = _exprs[j];
-      if (e1.no == e2.no && e1.offset > e2.offset && inbranch[j] > 0) {
+      if (e1.no == e2.no && e1.offset > e2.offset && e1.offset < sort_stopper
+	  && inbranch[j] > 0) {
 	Expr temp(e2);
 	e2 = e1;
 	e2.yes = temp.yes;
@@ -593,10 +599,10 @@ Classifier::bubble_sort_and_exprs()
 }
 
 void
-Classifier::optimize_exprs(ErrorHandler *errh)
+Classifier::optimize_exprs(ErrorHandler *errh, int sort_stopper)
 {
   // sort 'and' expressions
-  bubble_sort_and_exprs();
+  bubble_sort_and_exprs(sort_stopper);
   
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
 
@@ -687,48 +693,74 @@ Classifier::start_expr_subtree(Vector<int> &tree)
 }
 
 void
-Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
+Classifier::redirect_expr_subtree(int first, int last, int success, int failure)
+{
+  for (int i = first; i < last; i++) {
+    Expr &e = _exprs[i];
+    if (e.yes == SUCCESS)
+      e.yes = success;
+    else if (e.yes == FAILURE)
+      e.yes = failure;
+    if (e.no == SUCCESS)
+      e.no = success;
+    else if (e.no == FAILURE)
+      e.no = failure;
+  }
+}
+
+void
+Classifier::finish_expr_subtree(Vector<int> &tree, Combiner combiner,
 				int success, int failure)
 {
   int level = tree[0];
+
+  // 'subtrees' contains pointers to trees at level 'level'
   Vector<int> subtrees;
-  
-  for (int i = _exprs.size() - 1; i >= 0; i--)
-    if (tree[i+1] == level)
-      subtrees.push_back(i);
-    else if (tree[i+1] >= 0 && tree[i+1] < level)
-      break;
+  {
+    // move backward to parent subtree
+    int ptr = _exprs.size();
+    while (ptr > 0 && (tree[ptr] < 0 || tree[ptr] >= level))
+      ptr--;
+    // collect child subtrees
+    for (ptr++; ptr <= _exprs.size(); ptr++)
+      if (tree[ptr] == level)
+	subtrees.push_back(ptr - 1);
+  }
 
   if (subtrees.size()) {
-    int first = subtrees.back();
-    
-    tree[first+1] = level - 1;
-    for (int i = first + 1; i < _exprs.size(); i++)
-      tree[i+1] = -1;
 
-    int change_from = (is_and ? SUCCESS : FAILURE);
-    while (subtrees.size()) {
-      subtrees.pop_back();
-      int next = (subtrees.size() ? subtrees.back() : _exprs.size());
-      if (!subtrees.size())
-	change_from = NEVER;
-      /* click_chatter("%d %d   %d %d", first, next, change_from, next); */
-      for (int i = first; i < next; i++) {
-	Expr &e = _exprs[i];
-	if (e.yes == change_from)
-	  e.yes = next;
-	else if (e.yes == SUCCESS)
-	  e.yes = success;
-	else if (e.yes == FAILURE)
-	  e.yes = failure;
-	if (e.no == change_from)
-	  e.no = next;
-	else if (e.no == SUCCESS)
-	  e.no = success;
-	else if (e.no == FAILURE)
-	  e.no = failure;
-      }
-      first = next;
+    // combine subtrees
+
+    // first mark all subtrees as next higher level
+    tree[subtrees[0] + 1] = level - 1;
+    for (int e = subtrees[0] + 2; e <= _exprs.size(); e++)
+      tree[e] = -1;
+
+    // loop over expressions
+    int t;
+    for (t = 0; t < subtrees.size() - 1; t++) {
+      int first = subtrees[t];
+      int next = subtrees[t+1];
+
+      if (combiner == C_AND)
+	redirect_expr_subtree(first, next, next, failure);
+      else if (combiner == C_OR)
+	redirect_expr_subtree(first, next, success, next);
+      else if (combiner == C_TERNARY) {
+	if (t < subtrees.size() - 2) {
+	  int next2 = subtrees[t+2];
+	  redirect_expr_subtree(first, next, next, next2);
+	  redirect_expr_subtree(next, next2, success, failure);
+	  t++;
+	} else			// like C_AND
+	  redirect_expr_subtree(first, next, next, failure);
+      } else
+	redirect_expr_subtree(first, next, success, failure);
+    }
+
+    if (t < subtrees.size()) {
+      assert(t == subtrees.size() - 1);
+      redirect_expr_subtree(subtrees[t], _exprs.size(), success, failure);
     }
   }
 
@@ -908,7 +940,7 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
       }
 
       // combine with "and"
-      finish_expr_subtree(tree, true);
+      finish_expr_subtree(tree, C_AND);
 
       if (negated)
 	negate_expr_subtree(tree);
@@ -918,10 +950,10 @@ Classifier::configure(Vector<String> &conf, ErrorHandler *errh)
     if (_exprs.size() == slot_branch)
       add_expr(tree, 0, 0, 0);
 
-    finish_expr_subtree(tree, true, -slot);
+    finish_expr_subtree(tree, C_AND, -slot);
   }
 
-  finish_expr_subtree(tree, false, -noutputs(), -noutputs());
+  finish_expr_subtree(tree, C_OR, -noutputs(), -noutputs());
 
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   optimize_exprs(errh);

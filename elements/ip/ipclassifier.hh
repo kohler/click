@@ -95,9 +95,10 @@ Matches no packets.
 
 =back
 
-These primitives can be combined with the connectives `and', `or', and
-`not' (synonyms `&&', `||', and `!'), and with parentheses. For example,
-`(dst port www or dst port ssh) and tcp opt syn'.
+These primitives can be combined with the connectives `and', `or', and `not'
+V<>(synonyms `&&', `||', and `!'), with the ternary operator `?:' (the colon
+must be surrounded by spaces!), and with parentheses. For example, `(dst port
+www or dst port ssh) and tcp opt syn'.
 
 All primitives except B<tcp opt> accept an optional OPERATION, `==' or `!=',
 which can occur before the actual option. If no OPERATION is specified, `=='

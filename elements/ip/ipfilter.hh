@@ -207,6 +207,8 @@ class IPFilter : public Classifier { public:
   
   int parse_expr(const Vector<String> &, int, Vector<int> &, Primitive &,
 		 ErrorHandler *);
+  int parse_orexpr(const Vector<String> &, int, Vector<int> &, Primitive &,
+		 ErrorHandler *);
   int parse_term(const Vector<String> &, int, Vector<int> &, Primitive &,
 		 ErrorHandler *);  
   int parse_factor(const Vector<String> &, int, Vector<int> &, Primitive &,

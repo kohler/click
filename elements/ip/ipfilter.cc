@@ -639,7 +639,7 @@ add_exprs_for_proto(int32_t proto, int32_t mask, Classifier *c, Vector<int> &tre
     c->start_expr_subtree(tree);
     c->add_expr(tree, 8, htonl(IP_PROTO_TCP << 16), htonl(0x00FF0000));
     c->add_expr(tree, 8, htonl(IP_PROTO_UDP << 16), htonl(0x00FF0000));
-    c->finish_expr_subtree(tree, false);
+    c->finish_expr_subtree(tree, Classifier::C_OR);
   } else
     c->add_expr(tree, 8, htonl(proto << 16), htonl(mask << 16));
 }
@@ -677,7 +677,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
        c->add_expr(tree, 16, e.value.u, e.mask.u);
        if (_op_negated) c->negate_expr_subtree(tree);
      }
-     c->finish_expr_subtree(tree, _srcdst != SD_OR);
+     c->finish_expr_subtree(tree, (_srcdst == SD_OR ? C_OR : C_AND));
      break;
    }
 
@@ -688,7 +688,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    case TYPE_TOS: {
      c->start_expr_subtree(tree);
      c->add_expr(tree, 0, htonl(_u.u << 16), htonl(_mask.u << 16));
-     c->finish_expr_subtree(tree, true);
+     c->finish_expr_subtree(tree);
      if (_op_negated) c->negate_expr_subtree(tree);
      break;
    }
@@ -696,7 +696,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    case TYPE_TTL: {
      c->start_expr_subtree(tree);
      c->add_expr(tree, 8, htonl(_u.u << 24), htonl(_mask.u << 24));
-     c->finish_expr_subtree(tree, true);
+     c->finish_expr_subtree(tree);
      if (_op_negated) c->negate_expr_subtree(tree);
      break;
    }
@@ -704,7 +704,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    case TYPE_IPFRAG: {
      c->start_expr_subtree(tree);
      c->add_expr(tree, 4, 0, htonl(0x00003FFF));
-     c->finish_expr_subtree(tree, true);
+     c->finish_expr_subtree(tree);
      if (!_op_negated) c->negate_expr_subtree(tree);
      break;
    }
@@ -712,7 +712,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    case TYPE_IPLEN: {
      c->start_expr_subtree(tree);
      c->add_expr(tree, 0, htonl(_u.u), htonl(_mask.u));
-     c->finish_expr_subtree(tree, true);
+     c->finish_expr_subtree(tree);
      if (_op_negated) c->negate_expr_subtree(tree);
      break;
    }
@@ -730,7 +730,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
        c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0x0000FFFF));
        if (_op_negated) c->negate_expr_subtree(tree);
      }
-     c->finish_expr_subtree(tree, _srcdst != SD_OR);
+     c->finish_expr_subtree(tree, (_srcdst == SD_OR ? C_OR : C_AND));
      break;
    }
 
@@ -742,7 +742,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    case TYPE_ICMP_TYPE: {
      c->start_expr_subtree(tree);
      c->add_expr(tree, TRANSP_FAKE_OFFSET, htonl(_u.u << 24), htonl(_mask.u << 24));
-     c->finish_expr_subtree(tree, true);
+     c->finish_expr_subtree(tree);
      if (_op_negated) c->negate_expr_subtree(tree);
      break;
    }
@@ -752,7 +752,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 
   }
 
-  c->finish_expr_subtree(tree, true);
+  c->finish_expr_subtree(tree);
 }
 
 
@@ -766,7 +766,8 @@ separate_words(Vector<String> &words)
     int first = 0;
     for (int pos = 0; pos < len; pos++) {
       int length = -1;
-      if (data[pos] == '(' || data[pos] == ')' || data[pos] == '!')
+      if (data[pos] == '(' || data[pos] == ')' || data[pos] == '!'
+	  || data[pos] == '?')
 	length = 1;
       else if (data[pos] == '&' || data[pos] == '|')
 	length = (pos < len-1 && data[pos+1] == data[pos] ? 2 : 1);
@@ -793,8 +794,11 @@ IPFilter::notify_noutputs(int n)
 }
 
 /*
- * expr ::= expr || expr
- *	|   expr or expr
+ * expr ::= orexpr
+ *	|   orexpr ? expr : expr
+ *	;
+ * orexpr ::= orexpr || orexpr
+ *	|   orexpr or orexpr
  *	|   term
  *	;
  * term ::= term && term
@@ -818,6 +822,33 @@ IPFilter::parse_expr(const Vector<String> &words, int pos,
   start_expr_subtree(tree);
 
   while (1) {
+    pos = parse_orexpr(words, pos, tree, prev_prim, errh);
+    if (pos >= words.size())
+      break;
+    if (words[pos] != "?")
+      break;
+    int old_pos = pos + 1;
+    pos = parse_expr(words, old_pos, tree, prev_prim, errh);
+    if (pos > old_pos && pos < words.size() && words[pos] == ":")
+      pos++;
+    else {
+      errh->error("':' missing in ternary expression");
+      break;
+    }
+  }
+
+  finish_expr_subtree(tree, C_TERNARY);
+  return pos;
+}
+
+int
+IPFilter::parse_orexpr(const Vector<String> &words, int pos,
+		     Vector<int> &tree, Primitive &prev_prim,
+		     ErrorHandler *errh)
+{
+  start_expr_subtree(tree);
+
+  while (1) {
     pos = parse_term(words, pos, tree, prev_prim, errh);
     if (pos >= words.size())
       break;
@@ -827,7 +858,7 @@ IPFilter::parse_expr(const Vector<String> &words, int pos,
       break;
   }
 
-  finish_expr_subtree(tree, false);
+  finish_expr_subtree(tree, C_OR);
   return pos;
 }
 
@@ -853,7 +884,7 @@ IPFilter::parse_term(const Vector<String> &words, int pos,
 
   if (!blank_ok)
     errh->error("missing term");
-  finish_expr_subtree(tree, true);
+  finish_expr_subtree(tree);
   return pos;
 }
 
@@ -862,8 +893,8 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 		       Vector<int> &tree, Primitive &prev_prim,
 		       bool negated, ErrorHandler *errh)
 {
-  // return immediately on last word, ")", "||", "or"
-  if (pos >= words.size() || words[pos] == ")" || words[pos] == "||" || words[pos] == "or")
+  // return immediately on last word, ")", "||", "or", "?", ":"
+  if (pos >= words.size() || words[pos] == ")" || words[pos] == "||" || words[pos] == "or" || words[pos] == "?" || words[pos] == ":")
     return pos;
 
   // easy cases
@@ -1041,6 +1072,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 int
 IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+  int before_nerrors = errh->nerrors();
   _output_everything = -1;
 
   // requires packet headers be aligned
@@ -1104,15 +1136,15 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	cerrh.error("garbage after expression at `%s'", String(words[pos]).cc());
     }
     
-    finish_expr_subtree(tree, true, -slot);
+    finish_expr_subtree(tree, C_AND, -slot);
   }
 
-  finish_expr_subtree(tree, false, -noutputs(), -noutputs());
+  finish_expr_subtree(tree, C_OR, -noutputs(), -noutputs());
   
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   optimize_exprs(errh);
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
-  return 0;
+  return (errh->nerrors() == before_nerrors ? 0 : -1);
 }
 
 

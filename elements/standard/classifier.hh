@@ -92,7 +92,8 @@ class Classifier : public Element { public:
   void init_expr_subtree(Vector<int> &);
   void start_expr_subtree(Vector<int> &);
   void negate_expr_subtree(Vector<int> &);
-  void finish_expr_subtree(Vector<int> &, bool is_and, int success = SUCCESS, int failure = FAILURE);
+  enum Combiner { C_AND, C_OR, C_TERNARY };
+  void finish_expr_subtree(Vector<int> &, Combiner = C_AND, int success = SUCCESS, int failure = FAILURE);
   
   void push(int port, Packet *);
   
@@ -127,12 +128,14 @@ class Classifier : public Element { public:
   unsigned _safe_length;
   unsigned _align_offset;
 
+  void redirect_expr_subtree(int first, int next, int success, int failure);
+  
   void combine_compatible_states();
   bool remove_unused_states();
   //int count_occurrences(const Expr &, int state, bool first) const;
   //bool remove_duplicate_states();
   void unaligned_optimize();
-  void optimize_exprs(ErrorHandler *);
+  void optimize_exprs(ErrorHandler *, int sort_stopper = 0x7FFFFFFF);
   
   static String program_string(Element *, void *);
   
@@ -175,7 +178,7 @@ class Classifier : public Element { public:
     
   };
   
-  void bubble_sort_and_exprs();
+  void bubble_sort_and_exprs(int sort_stopper);
   //bool check_path_iterative(Vector<int> &, int interested, int eventual) const;
   //bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
   //int check_path(int, bool) const;
