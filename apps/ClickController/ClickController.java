@@ -10,7 +10,7 @@ class ClickController extends JPanel {
     
     private JFrame _frame;
     private JMenuItem _closeItem;
-    private JTextField _statusLine;
+    private JLabel _statusLine;
 
     private JPanel _infoPanel;
     private JLabel _handlerLabel;
@@ -170,8 +170,7 @@ class ClickController extends JPanel {
 	addController(this);
 
 	setLayout(new BorderLayout());
-	_statusLine = new JTextField(" ");
-	
+
 	JMenuBar menuBar = createMenus();
 	add(menuBar, BorderLayout.NORTH);
 	
