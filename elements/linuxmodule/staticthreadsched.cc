@@ -1,91 +1,58 @@
+// -*- c-basic-offset: 4 -*-
 #include <click/config.h>
-#include <click/standard/scheduleinfo.hh>
 #include "staticthreadsched.hh"
 #include <click/task.hh>
-#include <click/routerthread.hh>
-#include <click/glue.hh>
-#include <click/confparse.hh>
+#include <click/master.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 
 StaticThreadSched::StaticThreadSched()
-  : _timer(this)
+    : _next_thread_sched(0)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 StaticThreadSched::~StaticThreadSched()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 int
 StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-#if __MTCLICK__
-  for (int i = 0; i < conf.size(); i++) {
-    Vector<String> parts;
-    int thread;
-    cp_spacevec(conf[i], parts);
-    if (parts.size() == 0) /* empty argument OK */;
-    else if (parts.size() != 2 || !cp_integer(parts[1], &thread))
-      return errh->error("expected `ELEMENTNAME THREAD', got `%s'", conf[i].c_str());
-    else {
-      _element_names.push_back(parts[0]);
-      _threads.push_back(thread);
+    Element *e;
+    int preference;
+    for (int i = 0; i < conf.size(); i++) {
+	if (cp_va_space_parse(conf[i], this, errh,
+			      cpElement, "element", &e,
+			      cpInteger, "thread ID", &preference,
+			      0) < 0)
+	    return -1;
+	if (e->eindex() >= _thread_preferences.size())
+	    _thread_preferences.resize(e->eindex() + 1, THREAD_PREFERENCE_UNKNOWN);
+	if (preference < -1 || preference >= master()->nthreads()) {
+	    errh->warning("thread preference %d out of range", preference);
+	    preference = (preference < 0 ? -1 : 0);
+	}
+	_thread_preferences[e->eindex()] = preference;
     }
-  }
-  return 0;
-#else
-  (void) conf;
-  return errh->error("StaticThreadSched requires multithreading\n");
-#endif
+    _next_thread_sched = router()->thread_sched();
+    router()->set_thread_sched(this);
+    return 0;
 }
 
 int
-StaticThreadSched::initialize(ErrorHandler *)
+StaticThreadSched::initial_thread_preference(Task *task, bool scheduled)
 {
-  _timer.initialize(this);
-  _timer.schedule_after_ms(1000);
-  return 0;
-}
-
-void
-StaticThreadSched::run_timer()
-{
-#if __MTCLICK__
-  TaskList *task_list = router()->task_list();
-  task_list->lock();
-  Task *t = task_list->all_tasks_next();
-  while (t != task_list) {
-    Element *e = t->element();
-    if (e) {
-      for (int i=0; i<_element_names.size(); i++) {
-        if (_element_names[i] == e->id()) {
-          if (_threads[i] < router()->nthreads()) {
-            click_chatter("sticking element %s on thread %d", 
-	                  e->id().cc(), _threads[i]);
-	    t->change_thread(_threads[i]);
-#if 0
-            int old = t->thread_preference();
-            if (old >= 0 && old != _threads[i]) {
-	      t->set_thread_preference(_threads[i]);
-              router()->thread(old)->add_task_request
-		(RouterThread::MOVE_TASK, t);
-            } else if (old < 0)
-	      router()->thread(_threads[i])->add_task_request
-		(RouterThread::SCHEDULE_TASK, t);
-#endif
-	  }
-	  break;
-	}
-      }
+    if (Element *e = task->element()) {
+	int eidx = e->eindex();
+	if (eidx >= 0 && eidx < _thread_preferences.size() && _thread_preferences[eidx] != THREAD_PREFERENCE_UNKNOWN)
+	    return _thread_preferences[eidx];
     }
-    t = t->all_tasks_next();
-  }
-  task_list->unlock();
-#endif
+    if (_next_thread_sched)
+	return _next_thread_sched->initial_thread_preference(task, scheduled);
+    else
+	return THREAD_PREFERENCE_UNKNOWN;
 }
 
 EXPORT_ELEMENT(StaticThreadSched)
-

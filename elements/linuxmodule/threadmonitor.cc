@@ -83,5 +83,5 @@ ThreadMonitor::run_timer()
 #endif
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(ThreadMonitor)
-

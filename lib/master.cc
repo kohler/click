@@ -197,18 +197,6 @@ Master::remove_router(Router *router)
 	}
 	prev->_pending_next = &_task_list;
 
-	// Remove "all" tasks
-	prev = &_task_list;
-	Task *t;
-	for (t = prev->_all_next; t != &_task_list; t = t->_all_next)
-	    if (t->_router != router) {
-		prev->_all_next = t;
-		t->_all_prev = prev;
-		prev = t;
-	    }
-	prev->_all_next = t;
-	t->_all_prev = prev;
-
 	_task_lock.release(flags);
     }
     

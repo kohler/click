@@ -4,8 +4,8 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <click/sync.hh>
-#include <click/bitvector.hh>
 #include <click/task.hh>
+#include <click/standard/threadsched.hh>
 #if CLICK_NS
 # include <click/simclick.h>
 #endif
@@ -16,6 +16,7 @@ class ElementFilter;
 class RouterThread;
 class HashMap_ArenaFactory;
 class NotifierSignal;
+class ThreadSched;
 
 class Router { public:
 
@@ -92,6 +93,10 @@ class Router { public:
     ErrorHandler *chatter_channel(const String &) const;
     HashMap_ArenaFactory *arena_factory() const;
 
+    ThreadSched *thread_sched() const		{ return _thread_sched; }
+    void set_thread_sched(ThreadSched *ts)	{ _thread_sched = ts; }
+    int initial_thread_preference(Task *, bool scheduled) const;
+
     int new_notifier_signal(NotifierSignal &);
 
     // MASTER
@@ -99,11 +104,11 @@ class Router { public:
     enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_ACTIVE = 0, RUNNING_PAUSED = 1 };
   
     // DRIVER RESERVATIONS
-    void please_stop_driver()		{ adjust_runcount(-1); }
-    void reserve_driver()		{ adjust_runcount(1); }
+    void please_stop_driver()			{ adjust_runcount(-1); }
+    void reserve_driver()			{ adjust_runcount(1); }
     void set_runcount(int);
     void adjust_runcount(int);
-    int runcount() const		{ return _runcount; }
+    int runcount() const			{ return _runcount; }
 
     // UNPARSING
     const String &configuration_string() const	{ return _configuration; }
@@ -189,6 +194,7 @@ class Router { public:
     int _n_notifier_signals;
     HashMap_ArenaFactory *_arena_factory;
     Router *_hotswap_router;
+    ThreadSched *_thread_sched;
 
     Router *_next_router;
   
@@ -206,8 +212,8 @@ class Router { public:
     int check_push_and_pull(ErrorHandler *);
   
     void make_pidxes();
-    int ninput_pidx() const		{ return _input_eidx.size(); }
-    int noutput_pidx() const		{ return _output_eidx.size(); }
+    int ninput_pidx() const			{ return _input_eidx.size(); }
+    int noutput_pidx() const			{ return _output_eidx.size(); }
     inline int input_pidx(const Hookup &) const;
     inline int input_pidx_element(int) const;
     inline int input_pidx_port(int) const;
@@ -354,6 +360,15 @@ inline HashMap_ArenaFactory *
 Router::arena_factory() const
 {
     return _arena_factory;
+}
+
+inline int
+Router::initial_thread_preference(Task *t, bool scheduled) const
+{
+    if (!_thread_sched)
+	return ThreadSched::THREAD_PREFERENCE_UNKNOWN;
+    else
+	return _thread_sched->initial_thread_preference(t, scheduled);
 }
 
 CLICK_ENDDECLS

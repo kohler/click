@@ -31,6 +31,7 @@
 #include <click/notifier.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/standard/errorelement.hh>
+#include <click/standard/threadsched.hh>
 #include <stdarg.h>
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
@@ -52,7 +53,7 @@ Router::Router(const String &configuration, Master *m)
       _configuration(configuration),
       _notifier_signals(0), _n_notifier_signals(0),
       _arena_factory(new HashMap_ArenaFactory),
-      _hotswap_router(0), _next_router(0)
+      _hotswap_router(0), _thread_sched(0), _next_router(0)
 {
     _refcount = 0;
     _runcount = 0;
@@ -1328,6 +1329,12 @@ Router::new_notifier_signal(NotifierSignal &signal)
 	_n_notifier_signals++;
 	return 0;
     }
+}
+
+int
+ThreadSched::initial_thread_preference(Task *, bool)
+{
+    return 0;
 }
 
 

@@ -82,9 +82,6 @@ class Task { public:
     inline void update_cycles(unsigned c);
 #endif
 
-    Task *all_tasks_prev() const	{ return _all_prev; }
-    Task *all_tasks_next() const	{ return _all_next; }
-
   private:
 
     /* if gcc keeps this ordering, we may get some cache locality on a 16 or 32
@@ -113,8 +110,6 @@ class Task { public:
     RouterThread *_thread;
     int _thread_preference;
   
-    Task *_all_prev;
-    Task *_all_next;
     Router *_router;
 
     enum { RESCHEDULE = 1, CHANGE_THREAD = 2 };
@@ -160,8 +155,7 @@ Task::Task(TaskHook hook, void *thunk)
       _cycle_runs(0),
 #endif
       _thread(0), _thread_preference(-1),
-      _all_prev(0), _all_next(0), _router(0),
-      _pending(0), _pending_next(0)
+      _router(0), _pending(0), _pending_next(0)
 {
 }
 
@@ -179,8 +173,7 @@ Task::Task(Element *e)
       _cycle_runs(0),
 #endif
       _thread(0), _thread_preference(-1),
-      _all_prev(0), _all_next(0), _router(0),
-      _pending(0), _pending_next(0)
+      _router(0), _pending(0), _pending_next(0)
 {
 }
 

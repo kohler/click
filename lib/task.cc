@@ -43,7 +43,7 @@ void
 Task::make_list()
 {
     _hook = error_hook;
-    _pending_next = _all_prev = _all_next = this;
+    _pending_next = this;
 }
 
 Task::~Task()
@@ -63,21 +63,14 @@ Task::initialize(Router *router, bool join)
 {
     assert(!initialized() && !scheduled());
 
-    Master *m = router->master();
-    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
-
     _router = router;
-    _all_prev = &m->_task_list;
-    _all_next = m->_task_list._all_next;
-    m->_task_list._all_next = _all_next->_all_prev = this;
-
     _thread = router->master()->thread(0);
-    _thread_preference = 0;
+    _thread_preference = router->initial_thread_preference(this, join);
+    if (_thread_preference == ThreadSched::THREAD_PREFERENCE_UNKNOWN)
+	_thread_preference = 0;
 #ifdef HAVE_STRIDE_SCHED
     set_tickets(DEFAULT_TICKETS);
 #endif
-  
-    m->_task_lock.release(flags);
 
     if (join)
 	add_pending(RESCHEDULE);
@@ -93,12 +86,11 @@ void
 Task::cleanup()
 {
     if (initialized()) {
-	unschedule();
-
-	Master *m = _router->master();
-	SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
+	strong_unschedule();
 
 	if (_pending) {
+	    Master *m = _router->master();
+	    SpinlockIRQ::flags_t flags = m->_task_lock.acquire();
 	    Task *prev = &m->_task_list;
 	    for (Task *t = prev->_pending_next; t != &m->_task_list; prev = t, t = t->_pending_next)
 		if (t == this) {
@@ -107,15 +99,11 @@ Task::cleanup()
 		}
 	    _pending = 0;
 	    _pending_next = 0;
+	    m->_task_lock.release(flags);
 	}
 	
-	_all_prev->_all_next = _all_next; 
-	_all_next->_all_prev = _all_prev; 
-	_all_next = _all_prev = 0;
 	_router = 0;
 	_thread = 0;
-    
-	m->_task_lock.release(flags);
     }
 }
 

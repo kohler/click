@@ -322,6 +322,7 @@ errorelement.hh
 portinfo.hh
 scheduleinfo.hh
 storage.hh
+threadsched.hh
 
 ./include/clicknet:
 ether.h

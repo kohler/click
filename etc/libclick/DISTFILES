@@ -83,6 +83,7 @@ include/click/standard/errorelement.hh
 include/click/standard/portinfo.hh
 include/click/standard/scheduleinfo.hh
 include/click/standard/storage.hh
+include/click/standard/threadsched.hh
 
 include/clicknet
 include/clicknet/ether.h

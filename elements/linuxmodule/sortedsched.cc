@@ -176,5 +176,5 @@ SortedTaskSched::run_timer()
 #endif
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(SortedTaskSched)
-
