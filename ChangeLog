@@ -1,3 +1,8 @@
+2001-11-30 Friday 19:57  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: progressbar.cc (1.15), progressbar.hh (1.9):
+	ProgressBar: add CHECK_STDOUT keyword argument
+
 2001-11-29 Thursday 04:19  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/: progressbar.cc (1.14), progressbar.hh (1.8):
