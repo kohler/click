@@ -1,3 +1,17 @@
+2002-10-15 Tuesday 14:39  Eddie Kohler <kohler@icir.org>
+
+	* etc/diagrams/Makefile (1.3): Makenit
+
+2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
+	typename where required by later GCCs
+
+2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet.hh (1.42): add end_data() function (= data()
+	+ length())
+
 2002-10-14 Monday 20:26  Eddie Kohler <kohler@icir.org>
 
 	* doc/mkwebdoc.pl (1.40): fix <ul> nesting

@@ -1,3 +1,13 @@
+2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: bighashmap.cc, hashmap.cc, bighashmap.cc,
+	hashmap.cc: add typename where required by later GCCs
+
+2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet.hh, packet.hh: add end_data() function (=
+	data() + length())
+
 2002-10-14 Monday 18:35  Eddie Kohler <kohler@icir.org>
 
 	* click-mkelemmap: mkwebdoc understands elementmap.xml format
