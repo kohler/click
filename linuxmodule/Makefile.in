@@ -2,6 +2,15 @@
 ## Click linuxmodule driver Makefile ##
 SHELL = @SHELL@
 
+subdir := linuxmodule
+conf_auxdir = @conf_auxdir@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libdir = @libdir@
+linuxdir = @linuxdir@
 
 LIB_CXX_OBJS = string.o straccum.o nameinfo.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
@@ -57,14 +66,10 @@ endif
 endif
 top_builddir := $(obj)/..
 endif
-subdir := linuxmodule
 
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-bindir = @bindir@
-sbindir = @sbindir@
-libdir = @libdir@
-linuxdir = @linuxdir@
+CLICKINSTALL = @INSTALL@
+CLICKINSTALL_DATA = @INSTALL@ -m 644
+CLICKmkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 CLICK_ELEM2MAKE = $(top_builddir)/click-buildtool elem2make --linux26
 
@@ -79,15 +84,16 @@ LINUXCFLAGS = $(shell echo "$(CFLAGS)" | sed -e s,-fno-unit-at-a-time,, \
 CLICKCPPFLAGS = @CPPFLAGS@ -DCLICK_LINUXMODULE
 CLICKCFLAGS = @CFLAGS_NDEBUG@
 CLICKCXXFLAGS = @CXXFLAGS_NDEBUG@
+CLICKDEPCFLAGS = @DEPCFLAGS@
 
 CLICKDEFS = @DEFS@ 
 CLICKINCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
 
 CXXCOMPILE = $(CLICKCXX) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
-	$(CLICKCXXFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) 
+	$(CLICKCXXFLAGS) $(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
 COMPILE = $(CLICKCC) $(LINUXCFLAGS) $(CLICKCPPFLAGS) $(CLICKCFLAGS) \
-	$(CLICKDEFS) $(CLICKINCLUDES) 
+	$(CLICKDEFS) $(CLICKINCLUDES) $(CLICKDEPCFLAGS)
 
 quiet_cmd_cxxcompile = CXX $(quiet_modtag) $(subst $(obj)/,,$@)
 cmd_cxxcompile = $(CXXCOMPILE) -c -o $@ $<
@@ -106,6 +112,10 @@ click-objs := $(LIB_C_OBJS) $(LIB_CXX_OBJS) $(STD_ELEMENT_OBJS) \
 	$(ELEMENT_OBJS) $(LINUXMODULE_C_OBJS) $(LINUXMODULE_CXX_OBJS) \
 	elements.o
 proclikefs-objs := proclikefs_.o
+
+all: Makefile elements.mk elements.cc always
+	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules
+
 
 $(addprefix $(obj)/,$(LIB_CXX_OBJS)): $(obj)/%.o : $(top_srcdir)/lib/%.cc
 	$(call cmd,cxxcompile)
@@ -128,15 +138,20 @@ $(obj)/elements.o : $(obj)/elements.cc
 $(obj)/proclikefs_.o : $(srcdir)/proclikefs.c
 	$(call cmd,xcompile)
 
-all: Makefile elements.mk elements.cc always
-	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules
-install: all
-	$(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules_install
+# Don't install in Linux directories for now
+# $(MAKE) -C $(KERNELPATH) M=$(shell pwd) modules_install
+install: Makefile elements.mk elements.cc all
+	$(CLICKmkinstalldirs) $(DESTDIR)$(libdir)
+	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do $(CLICKINSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
+uninstall:
+	for i in $(patsubst %.o,%.ko,$(INSTALLOBJS)); do /bin/rm -f $(DESTDIR)$(libdir)/$$i; done
 
 clean:
-	-rm -f *~ *.o *.ko *.mod.c
+	-rm -f *~ *.d *.o *.ko *.mod.c
 	-rm -f .version .*.o.flags .*.o.d .*.o.cmd .*.ko.cmd
-
+	-rm -f elements.mk elements.cc elements.conf
+distclean: clean
+	-rm -f Makefile
 
 else
 
@@ -146,15 +161,6 @@ else
 top_srcdir := @top_srcdir@
 srcdir := @srcdir@
 top_builddir := ..
-subdir := linuxmodule
-conf_auxdir = @conf_auxdir@
-
-prefix = @prefix@
-exec_prefix = @exec_prefix@
-bindir = @bindir@
-sbindir = @sbindir@
-libdir = @libdir@
-linuxdir = @linuxdir@
 
 VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):@elements_vpath@$(top_srcdir)/elements/linuxmodule
 
@@ -220,11 +226,6 @@ click.o: Makefile $(OBJS)
 proclikefs.o: proclikefs.c Makefile
 	$(COMPILE) -D__KERNEL__ -DMODULE -c $<
 
-DEPFILES := $(wildcard *.d)
-ifneq ($(DEPFILES),)
-include $(DEPFILES)
-endif
-
 install: $(INSTALLOBJS)
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(DESTDIR)$(libdir)/$$i; done
@@ -236,16 +237,16 @@ clean:
 distclean: clean
 	-rm -f Makefile
 
-
-Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
-
 endif
 
 
 ##########################################################################
 ## ANY LINUX								##
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
 
 elemlist:
 	@/bin/rm -f elements.conf
@@ -257,6 +258,10 @@ elements.mk: elements.conf $(top_builddir)/click-buildtool
 elements.cc: elements.conf $(top_builddir)/click-buildtool
 	$(top_builddir)/click-buildtool elem2export < elements.conf > elements.cc
 	@rm -f elements.d
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 always:
 	@:

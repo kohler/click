@@ -321,6 +321,18 @@ diff -ru ../linux-2.6.11.6/drivers/video/i810/i810_main.h ./drivers/video/i810/i
  }
  #else
  #define flush_cache() do { } while(0)
+diff -ru ../linux-2.6.11.6/fs/file_table.c ./fs/file_table.c
+--- ../linux-2.6.11.6/fs/file_table.c	2005-03-25 19:28:14.000000000 -0800
++++ ./fs/file_table.c	2005-03-29 16:18:42.000000000 -0800
+@@ -27,6 +27,8 @@
+ /* public. Not pretty! */
+  __cacheline_aligned_in_smp DEFINE_SPINLOCK(files_lock);
+ 
++EXPORT_SYMBOL(files_lock);
++
+ static DEFINE_SPINLOCK(filp_count_lock);
+ 
+ /* slab constructors and destructors are called from arbitrary
 diff -ru ../linux-2.6.11.6/fs/proc/inode.c ./fs/proc/inode.c
 --- ../linux-2.6.11.6/fs/proc/inode.c	2005-03-25 19:28:36.000000000 -0800
 +++ ./fs/proc/inode.c	2005-03-28 21:21:46.000000000 -0800
@@ -336,6 +348,18 @@ diff -ru ../linux-2.6.11.6/fs/proc/inode.c ./fs/proc/inode.c
  	PROC_I(inode)->pde = de;
  	if (de) {
  		if (de->mode) {
+diff -ru ../linux-2.6.11.6/fs/super.c ./fs/super.c
+--- ../linux-2.6.11.6/fs/super.c	2005-03-25 19:28:20.000000000 -0800
++++ ./fs/super.c	2005-03-29 16:19:26.000000000 -0800
+@@ -47,6 +47,8 @@
+ LIST_HEAD(super_blocks);
+ DEFINE_SPINLOCK(sb_lock);
+ 
++EXPORT_SYMBOL(sb_lock);
++
+ /**
+  *	alloc_super	-	create new superblock
+  *
 diff -ru ../linux-2.6.11.6/include/asm-alpha/core_tsunami.h ./include/asm-alpha/core_tsunami.h
 --- ../linux-2.6.11.6/include/asm-alpha/core_tsunami.h	2005-03-25 19:28:24.000000000 -0800
 +++ ./include/asm-alpha/core_tsunami.h	2005-03-28 21:21:46.000000000 -0800

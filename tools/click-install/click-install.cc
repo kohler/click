@@ -445,8 +445,13 @@ particular purpose.\n");
     // find and install proclikefs.o
     StringMap modules(-1);
     if (read_active_modules(modules, errh) && modules["proclikefs"] < 0) {
+# if HAVE_LINUXMODULE_2_6
+      String proclikefs_o =
+	clickpath_find_file("proclikefs.ko", "lib", CLICK_LIBDIR, errh);
+# else
       String proclikefs_o =
 	clickpath_find_file("proclikefs.o", "lib", CLICK_LIBDIR, errh);
+# endif
       if (verbose)
 	errh->message("Installing proclikefs (%s)", proclikefs_o.cc());
       install_module(proclikefs_o, String(), errh);
@@ -454,12 +459,12 @@ particular purpose.\n");
 #endif
     
     // find loadable module 
-#if FOR_LINUXMODULE
-    String click_o =
-      clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
-#elif FOR_BSDMODULE
+#if FOR_BSDMODULE || (FOR_LINUXMODULE && HAVE_LINUXMODULE_2_6)
     String click_o =
       clickpath_find_file("click.ko", "lib", CLICK_LIBDIR, errh);
+#elif FOR_LINUXMODULE
+    String click_o =
+      clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
 #endif
     if (verbose)
       errh->message("Installing Click module (%s)", click_o.cc());

@@ -11757,6 +11757,13 @@ echo "$as_me:$LINENO: result: $ac_cv_linux26" >&5
 echo "${ECHO_T}$ac_cv_linux26" >&6
 LINUXMODULE_2_6=$ac_cv_linux26
 
+if test $LINUXMODULE_2_6 = 1; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_LINUXMODULE_2_6 1
+_ACEOF
+
+fi
 
 echo "$as_me:$LINENO: checking for Click Linux kernel extensions" >&5
 echo $ECHO_N "checking for Click Linux kernel extensions... $ECHO_C" >&6

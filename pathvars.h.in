@@ -11,17 +11,8 @@
 /* Directory for shared files. */
 #undef CLICK_SHAREDIR
 
-/* Directory containing Linux sources. */
-#undef LINUX_SRCDIR
-
 /* FreeBSD kernel include directory. */
 #undef FREEBSD_INCLUDEDIR
-
-/* Define if the user-level driver was compiled. */
-#undef HAVE_USERLEVEL_DRIVER
-
-/* Define if the Linux kernel module driver was compiled. */
-#undef HAVE_LINUXMODULE_DRIVER
 
 /* Define if the BSD kernel module driver was compiled. */
 #undef HAVE_BSDMODULE_DRIVER
@@ -31,5 +22,17 @@
 
 /* Define if the expat library is available. */
 #undef HAVE_EXPAT
+
+/* Define if the Click linuxmodule is compiled for a 2.6 kernel. */
+#undef HAVE_LINUXMODULE_2_6
+
+/* Define if the Linux kernel module driver was compiled. */
+#undef HAVE_LINUXMODULE_DRIVER
+
+/* Define if the user-level driver was compiled. */
+#undef HAVE_USERLEVEL_DRIVER
+
+/* Directory containing Linux sources. */
+#undef LINUX_SRCDIR
 
 #endif

@@ -35,10 +35,10 @@ CLICK_CXX_UNPROTECT
 
 #define CLICKFS_SUPER_MAGIC	0x436C696B /* "Clik" */
 
-static struct file_operations click_dir_file_ops;
-static struct inode_operations click_dir_inode_ops;
-static struct file_operations click_handler_file_ops;
-static struct inode_operations click_handler_inode_ops;
+static struct file_operations *click_dir_file_ops;
+static struct inode_operations *click_dir_inode_ops;
+static struct file_operations *click_handler_file_ops;
+static struct inode_operations *click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
@@ -98,14 +98,9 @@ unlock_config_write(const char *file, int line)
 
 /*************************** Inode constants ********************************/
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-# define INODE_INFO(inode)		(*((ClickInodeInfo *)((inode)->u.generic_ip)))
-#else
-# define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
-#endif
+#define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
 
 struct ClickInodeInfo {
-    struct proclikefs_inode_info padding;
     uint32_t config_generation;
 };
 
@@ -147,11 +142,6 @@ click_inode(struct super_block *sb, ino_t ino)
     if (!inode)
 	return 0;
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    ClickInodeInfo *inode_info = new ClickInodeInfo;
-    inode->u.generic_ip = inode_info;
-#endif
-    
     inode->i_ino = ino;
     INODE_INFO(inode).config_generation = click_config_generation;
 
@@ -160,16 +150,13 @@ click_inode(struct super_block *sb, ino_t ino)
 	if (const Handler *h = Router::handler(click_router, hi)) {
 	    inode->i_mode = S_IFREG | (h->read_visible() ? click_mode_r : 0) | (h->write_visible() ? click_mode_w : 0);
 	    inode->i_uid = inode->i_gid = 0;
-	    inode->i_op = &click_handler_inode_ops;
+	    inode->i_op = click_handler_inode_ops;
 #ifdef LINUX_2_4
-	    inode->i_fop = &click_handler_file_ops;
+	    inode->i_fop = click_handler_file_ops;
 #endif
 	    inode->i_nlink = click_ino.nlink(ino);
 	} else {
 	    // can't happen
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-	    delete inode_info;
-#endif
 	    iput(inode);
 	    inode = 0;
 	    panic("click_inode");
@@ -177,15 +164,14 @@ click_inode(struct super_block *sb, ino_t ino)
     } else {
 	inode->i_mode = click_mode_dir;
 	inode->i_uid = inode->i_gid = 0;
-	inode->i_op = &click_dir_inode_ops;
+	inode->i_op = click_dir_inode_ops;
 #ifdef LINUX_2_4
-	inode->i_fop = &click_dir_file_ops;
+	inode->i_fop = click_dir_file_ops;
 #endif
 	inode->i_nlink = click_ino.nlink(ino);
     }
 
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
-    proclikefs_read_inode(inode);
     
     MDEBUG("%lx:%p:%p: leaving click_inode", ino, inode, inode->i_op);
     return inode;
@@ -343,17 +329,6 @@ click_put_inode(struct inode *inode)
     // Delete inodes when they're unused, since we can recreate them easily.
     if (inode->i_count == 1)
 	inode->i_nlink = 0;
-}
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-static void
-click_put_inode(struct inode *inode)
-{
-    if (atomic_read(&inode->i_count) == 1) {
-	delete (ClickInodeInfo *) inode->u.generic_ip;
-	inode->i_nlink = 0;
-    }
 }
 #endif
 
@@ -789,56 +764,6 @@ init_clickfs()
     static_assert(sizeof(((struct inode *)0)->u) >= sizeof(ClickInodeInfo));
 #endif
 
-#if INO_DEBUG
-    Router::add_read_handler(0, "ino_info", read_ino_info, 0);
-#endif
-
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
-    click_superblock_ops.put_inode = click_put_inode;
-#elif LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-    click_superblock_ops.put_inode = force_delete;
-#else
-    click_superblock_ops.write_inode = click_write_inode;
-    click_superblock_ops.put_inode = click_put_inode;
-#endif
-    click_superblock_ops.delete_inode = proclikefs_delete_inode;
-    click_superblock_ops.put_super = proclikefs_put_super;
-    // XXX statfs
-
-    click_dentry_ops.d_delete = click_delete_dentry;
-
-#ifdef LINUX_2_4
-    click_dir_file_ops.owner = 0; // proclikefs takes care of ownership
-    click_dir_file_ops.read = generic_read_dir;
-#endif
-    click_dir_file_ops.readdir = click_dir_readdir;
-    click_dir_inode_ops.lookup = click_dir_lookup;
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
-    click_dir_inode_ops.revalidate = click_dir_revalidate;
-#endif
-#ifdef LINUX_2_2
-    click_dir_inode_ops.default_file_ops = &click_dir_file_ops;
-#endif
-
-#ifdef LINUX_2_4
-    click_handler_file_ops.owner = 0; // proclikefs takes care of ownership
-#endif
-    click_handler_file_ops.read = handler_read;
-    click_handler_file_ops.write = handler_write;
-    click_handler_file_ops.ioctl = handler_ioctl;
-    click_handler_file_ops.open = handler_open;
-    click_handler_file_ops.flush = handler_flush;
-    click_handler_file_ops.release = handler_release;
-
-#ifdef LINUX_2_2
-    click_handler_inode_ops.default_file_ops = &click_handler_file_ops;
-#endif
-
-    spin_lock_init(&handler_strings_lock);
-    spin_lock_init(&config_write_lock);
-    atomic_set(&config_read_count, 0);
-    click_ino.initialize();
-
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
     clickfs = proclikefs_register_filesystem("click", 0, click_get_sb, click_reread_super);
 #else
@@ -846,10 +771,54 @@ init_clickfs()
     // Click superblocks -- if we introduce mount options, for example
     clickfs = proclikefs_register_filesystem("click", FS_SINGLE, click_read_super, click_reread_super);
 #endif
-    if (!clickfs) {
+    if (!clickfs
+	|| !(click_dir_file_ops = proclikefs_new_file_operations(clickfs))
+	|| !(click_dir_inode_ops = proclikefs_new_inode_operations(clickfs))
+	|| !(click_handler_file_ops = proclikefs_new_file_operations(clickfs))
+	|| !(click_handler_inode_ops = proclikefs_new_inode_operations(clickfs))) {
 	printk("<1>click: could not initialize clickfs!\n");
 	return -EINVAL;
     }
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) \
+	&& LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+    click_superblock_ops.put_inode = force_delete;
+#elif LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+    click_superblock_ops.write_inode = click_write_inode;
+    click_superblock_ops.put_inode = click_put_inode;
+#endif
+    click_superblock_ops.put_super = proclikefs_put_super;
+    // XXX statfs
+
+    click_dentry_ops.d_delete = click_delete_dentry;
+
+#ifdef LINUX_2_4
+    click_dir_file_ops->read = generic_read_dir;
+#endif
+    click_dir_file_ops->readdir = click_dir_readdir;
+    click_dir_inode_ops->lookup = click_dir_lookup;
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 0)
+    click_dir_inode_ops->revalidate = click_dir_revalidate;
+#endif
+#ifdef LINUX_2_2
+    click_dir_inode_ops->default_file_ops = click_dir_file_ops;
+#endif
+
+    click_handler_file_ops->read = handler_read;
+    click_handler_file_ops->write = handler_write;
+    click_handler_file_ops->ioctl = handler_ioctl;
+    click_handler_file_ops->open = handler_open;
+    click_handler_file_ops->flush = handler_flush;
+    click_handler_file_ops->release = handler_release;
+
+#ifdef LINUX_2_2
+    click_handler_inode_ops->default_file_ops = click_handler_file_ops;
+#endif
+
+    spin_lock_init(&handler_strings_lock);
+    spin_lock_init(&config_write_lock);
+    atomic_set(&config_read_count, 0);
+    click_ino.initialize();
 
     // initialize a symlink from /proc/click -> /click, to ease transition
 #ifdef LINUX_2_4
@@ -857,6 +826,10 @@ init_clickfs()
 #elif defined(LINUX_2_2)
     if (proc_dir_entry *link = create_proc_entry("click", S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO, 0))
 	link->readlink_proc = proc_click_readlink_proc;
+#endif
+
+#if INO_DEBUG
+    Router::add_read_handler(0, "ino_info", read_ino_info, 0);
 #endif
 
     return 0;

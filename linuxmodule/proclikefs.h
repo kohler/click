@@ -10,10 +10,6 @@ extern "C" {
 
 struct proclikefs_file_system;
 
-struct proclikefs_inode_info {
-    struct list_head fsi_list;
-};
-
 struct proclikefs_file_system *proclikefs_register_filesystem
 		(const char *name, int fs_flags,
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 0)
@@ -27,11 +23,10 @@ void proclikefs_unregister_filesystem(struct proclikefs_file_system *);
 void proclikefs_read_super(struct super_block *);
 void proclikefs_put_super(struct super_block *);
 
-void proclikefs_read_inode(struct inode *);
-void proclikefs_delete_inode(struct inode *);
+struct file_operations *proclikefs_new_file_operations(struct proclikefs_file_system *);
+struct inode_operations *proclikefs_new_inode_operations(struct proclikefs_file_system *);
 
 #ifdef __cplusplus
 }
 #endif
 #endif
-

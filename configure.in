@@ -428,6 +428,9 @@ AC_CACHE_CHECK([for Linux 2.6], [ac_cv_linux26],
     [if grep '^PATCHLEVEL[ 	]*=[ 	]*6' $linuxdir/Makefile >/dev/null 2>&1; then ac_cv_linux26=1; else ac_cv_linux26=0; fi])
 LINUXMODULE_2_6=$ac_cv_linux26
 AC_SUBST(LINUXMODULE_2_6)
+if test $LINUXMODULE_2_6 = 1; then
+    AC_DEFINE([HAVE_LINUXMODULE_2_6], [1], [Define if the Click linuxmodule is compiled for a 2.6 kernel.])
+fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
 [if grep register_net_in $linux_system_map >/dev/null 2>&1; then
