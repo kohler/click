@@ -94,11 +94,7 @@ typedef unsigned long uintptr_t;
 #endif
 
 /* Include assert macro. */
-#ifdef __cplusplus
-# include <cassert>
-#else
-# include <assert.h>
-#endif
+#include <assert.h>
 
 /* Define if mmap is allowed. */
 #if defined(HAVE_SYS_MMAN_H) && defined(HAVE_MMAP)
