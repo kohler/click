@@ -409,8 +409,8 @@ AggregateIP::configure(const Vector<String> &conf, ErrorHandler *errh)
     uint32_t right = _f.offset() + _f.length() - 1;
     if ((_f.offset() / 32) != (right / 32))
 	return errh->error("field specification does not fit within a single word");
-    if (_f.length() > 31)
-	return errh->error("too many aggregates: field length too large, max 31");
+    if (_f.length() > 32)
+	return errh->error("too many aggregates: field length too large, max 32");
     _n = 1 << _f.length();
     _offset = (_f.offset() / 32) * 4;
     _shift = 31 - right % 32;
