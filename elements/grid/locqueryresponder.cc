@@ -85,6 +85,9 @@ LocQueryResponder::simple_action(Packet *p)
   grid_hdr *ngh = (grid_hdr *) (e + 1);
   grid_nbr_encap *nb = (grid_nbr_encap *) (ngh + 1);
 
+  e->ether_type = htons(ETHERTYPE_GRID);
+  // leave ether src, dest for the forwarding elements to fill in
+
   ngh->hdr_len = sizeof(grid_hdr);
   ngh->type = grid_hdr::GRID_LOC_REPLY;
   ngh->ip = ngh->tx_ip = _ip;
