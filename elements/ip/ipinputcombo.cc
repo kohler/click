@@ -90,9 +90,6 @@ IPInputCombo::smaction(Packet *p)
   /* Strip(14) */
   p->pull(14);
 
-  /* GetIPAddress(16) */
-  p->set_dst_ip_anno(IPAddress(p->data() + 16));
-
   /* CheckIPHeader */
   const click_ip *ip = reinterpret_cast<const click_ip *>(p->data());
   unsigned hlen, len;
@@ -148,6 +145,9 @@ IPInputCombo::smaction(Packet *p)
   if (p->length() > len)
     p->take(p->length() - len);
   
+  // set destination IP address annotation
+  p->set_dst_ip_anno(ip->ip_dst);
+
   return(p);
   
  bad:

@@ -120,8 +120,8 @@ CheckIPHeader2::smaction(Packet *p)
   
   // set destination IP address annotation if it doesn't exist already --
   // 9/26/2001
-  if (!p->dst_ip_anno())
-    p->set_dst_ip_anno(ip->ip_dst);
+  // always set destination IP address annotation -- 4/3/2002
+  p->set_dst_ip_anno(ip->ip_dst);
   
   return(p);
 }

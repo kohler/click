@@ -19,8 +19,7 @@ address is a legal unicast address -- that is, that it is not 0.0.0.0 or
 255.255.255.255, or one of the local broadcast addresses in BADADDRS. Shortens
 packets to the IP length, if the IP length is shorter than the nominal packet
 length (due to Ethernet padding, for example). Also sets the destination IP
-address annotation to the actual destination IP address, unless that
-annotation was already set.
+address annotation to the actual destination IP address.
 
 CheckIPHeader2 emits valid packets on output 0. Invalid packets are pushed out
 on output 1, unless output 1 was unused; if so, drops invalid packets.
