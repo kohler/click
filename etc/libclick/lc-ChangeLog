@@ -1,3 +1,10 @@
+2001-12-05 Wednesday 14:04  Eddie Kohler <kohler@aciri.org>
+
+	* config-bsdmodule.h.in, config-linuxmodule.h.in, libsrc/glue.cc:
+	In linuxmodule and bsdmodule, use "operator new() throw ()". This
+	tells GCC that new might return null, so don't optimize away the
+	check. Noticed by Gordon Lee at Mazu
+
 2001-12-04 Tuesday 22:50  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in: bump version number to 1.2.3a
