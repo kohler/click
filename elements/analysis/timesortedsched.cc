@@ -70,7 +70,7 @@ TimeSortedSched::configure(Vector<String> &conf, ErrorHandler *errh)
 int 
 TimeSortedSched::initialize(ErrorHandler *errh)
 {
-    _vec = new Packet *[ninputs()];
+    _vec = new Packet*[ninputs()];
     _signals = new NotifierSignal[ninputs()];
     if (!_vec || !_signals)
 	return errh->error("out of memory!");
@@ -92,11 +92,11 @@ TimeSortedSched::cleanup(CleanupStage)
     delete[] _signals;
 }
 
-Packet *
+Packet*
 TimeSortedSched::pull(int)
 {
     int which = -1;
-    struct timeval *tv = 0;
+    struct timeval* tv = 0;
     bool signals_on = false;
     
     for (int i = 0; i < ninputs(); i++) {

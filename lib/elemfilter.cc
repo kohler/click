@@ -21,29 +21,29 @@
 CLICK_DECLS
 
 bool
-ElementFilter::check_match(Element *, int, PortType)
+ElementFilter::check_match(Element*, int, PortType)
 {
     return false;
 }
 
 void
-ElementFilter::filter(Vector<Element *> &v)
+ElementFilter::filter(Vector<Element*>& v)
 {
-    Vector<Element *> nv;
+    Vector<Element*> nv;
     for (int i = 0; i < v.size(); i++)
 	if (check_match(v[i], -1, NONE))
 	    nv.push_back(v[i]);
-    v = nv;
+    v.swap(nv);
 }
 
 
-CastElementFilter::CastElementFilter(const String &what)
+CastElementFilter::CastElementFilter(const String& what)
     : _what(what)
 {
 }
 
 bool
-CastElementFilter::check_match(Element *e, int, PortType)
+CastElementFilter::check_match(Element* e, int, PortType)
 {
     return e->cast(_what.c_str()) != 0;
 }
