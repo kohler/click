@@ -30,6 +30,8 @@ struct click_tcp {
 #define	TH_PUSH	0x08
 #define	TH_ACK	0x10
 #define	TH_URG	0x20
+#define	TH_ECE	0x40
+#define	TH_CWR	0x80
     uint16_t	th_win;			/* 14-15 window */
     uint16_t	th_sum;			/* 16-17 checksum */
     uint16_t	th_urp;			/* 18-19 urgent pointer */
