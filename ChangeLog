@@ -1,3 +1,14 @@
+2002-05-03 Friday 12:00  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4 (1.14), aclocal.m4 (1.14): protect config variables
+	that might contain spaces; reported by Scott Page
+
+2002-05-03 Friday 10:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: todevice.cc (1.25), todevice.hh (1.16):
+	added SET_ERROR_ANNO keyword to control setting annos on error
+	packets
+
 2002-05-03 Friday 02:47  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in (1.183), pathvars.h.in (1.5),

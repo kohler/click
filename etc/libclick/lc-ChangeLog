@@ -1,3 +1,8 @@
+2002-05-03 Friday 12:00  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4: protect config variables that might contain spaces;
+	reported by Scott Page
+
 2002-05-03 Friday 02:47  Eddie Kohler <kohler@aciri.org>
 
 	* pathvars.h.in: add optional, partially-working clickfs support
