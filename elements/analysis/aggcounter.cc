@@ -55,16 +55,21 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
     bool bytes = false;
     bool packet_count = true;
     bool extra_length = true;
+    _freeze_nnz = 0xFFFFFFFFU;
+    _freeze_count = (uint64_t)(-1);
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "BYTES", cpBool, "count bytes?", &bytes,
 		    "MULTIPACKET", cpBool, "use packet count annotation?", &packet_count,
 		    "EXTRA_LENGTH", cpBool, "use extra length annotation?", &extra_length,
+		    "FREEZE_AFTER_AGG", cpUnsigned, "freeze after N nonzero aggregates", &_freeze_nnz,
+		    "FREEZE_AFTER_COUNT", cpUnsigned64, "freeze after count reaches N", &_freeze_count,
 		    0) < 0)
 	return -1;
     _bytes = bytes;
     _packet_count = packet_count;
     _extra_length = extra_length;
+    _frozen = false;
     return 0;
 }
 
@@ -79,6 +84,7 @@ AggregateCounter::initialize(ErrorHandler *errh)
     _root->count = 0;
     _root->child[0] = _root->child[1] = 0;
     _num_nonzero = 0;
+    _count = 0;
     
     return 0;
 }
@@ -128,6 +134,9 @@ AggregateCounter::make_peer(uint32_t a, Node *n)
      * the parent of the two new ones.
      */
 
+    if (_frozen)
+	return 0;
+    
     Node *down[2];
     if (!(down[0] = new_node()))
 	return 0;
@@ -164,7 +173,7 @@ AggregateCounter::find_node(uint32_t a)
     Node *n = _root;
     while (n) {
 	if (n->aggregate == a)
-	    return n;
+	    return (n->count || !_frozen ? n : 0);
 	if (!n->child[0])
 	    n = make_peer(a, n);
 	else {
@@ -178,8 +187,9 @@ AggregateCounter::find_node(uint32_t a)
 		n = n->child[0];
 	}
     }
-    
-    click_chatter("AggregateCounter: out of memory!");
+
+    if (!_frozen)
+	click_chatter("AggregateCounter: out of memory!");
     return 0;
 }
 
@@ -197,6 +207,9 @@ AggregateCounter::simple_action(Packet *p)
 	if (amount && !n->count)
 	    _num_nonzero++;
 	n->count += amount;
+	_count += amount;
+	if (_num_nonzero >= _freeze_nnz || _count >= _freeze_count)
+	    _frozen = true;
     }
     return p;
 }
@@ -266,11 +279,41 @@ AggregateCounter::write_file(String where, bool binary,
 int
 AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk, ErrorHandler *errh)
 {
-    AggregateCounter *sa = static_cast<AggregateCounter *>(e);
+    AggregateCounter *ac = static_cast<AggregateCounter *>(e);
     String fn;
     if (!cp_filename(cp_uncomment(data), &fn))
 	return errh->error("argument should be filename");
-    return sa->write_file(fn, (thunk != 0), errh);
+    return ac->write_file(fn, (thunk != 0), errh);
+}
+
+String
+AggregateCounter::read_handler(Element *e, void *thunk)
+{
+    AggregateCounter *ac = static_cast<AggregateCounter *>(e);
+    switch ((int)thunk) {
+      case 0:
+	return cp_unparse_bool(ac->_frozen) + "\n";
+      default:
+	return "<error>";
+    }
+}
+
+int
+AggregateCounter::write_handler(const String &data, Element *e, void *thunk, ErrorHandler *errh)
+{
+    AggregateCounter *ac = static_cast<AggregateCounter *>(e);
+    String s = cp_uncomment(data);
+    switch ((int)thunk) {
+      case 0: {
+	  bool val;
+	  if (!cp_bool(s, &val))
+	      return errh->error("argument to `frozen' should be bool");
+	  ac->_frozen = val;
+	  return 0;
+      }
+      default:
+	return errh->error("internal error");
+    }
 }
 
 void
@@ -278,6 +321,8 @@ AggregateCounter::add_handlers()
 {
     add_write_handler("write_ascii_file", write_file_handler, (void *)0);
     add_write_handler("write_file", write_file_handler, (void *)1);
+    add_read_handler("freeze", read_handler, (void *)0);
+    add_write_handler("freeze", write_handler, (void *)0);
 }
 
 ELEMENT_REQUIRES(userlevel)

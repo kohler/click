@@ -13,10 +13,15 @@ maintains information about aggregate annotations
 
 =d
 
-AggregateCounter maintains per-aggregate counts of how many packets or bytes
-it has seen. Each aggregate annotation value it sees gets a different value.
+AggregateCounter maintains counts of how many packets or bytes it has seen for
+each aggregate value. Each aggregate annotation value gets a different count.
 Call its C<write_file> or C<write_ascii_file> write handler to get a dump of
 the information.
+
+The C<freeze> handler, and the C<FREEZE_AFTER_AGG> and C<FREEZE_AFTER_COUNT>
+keyword arguments, can put AggregateCounter in a frozen state. Frozen
+AggregateCounters only update existing counters; they do not create new
+counters for previously unseen aggregate values.
 
 Keyword arguments are:
 
@@ -24,7 +29,7 @@ Keyword arguments are:
 
 =item BYTES
 
-Boolean. If true, then count bytes seen, not packets seen. Default is false.
+Boolean. If true, then count bytes, not packets. Default is false.
 
 =item MULTIPACKET
 
@@ -34,9 +39,19 @@ FromIPSummaryDump set this annotation. Default is true.
 
 =item EXTRA_LENGTH
 
-Boolean. If true, and BYTES is true, then use packets' extra length
-annotations to add to the length counted. Elements like FromDump set this
-annotation. Default is true.
+Boolean. If true, and BYTES is true, then include packets' extra length
+annotations in the byte counts. Elements like FromDump set this annotation.
+Default is true.
+
+=item FREEZE_AFTER_AGG I<n>
+
+Unsigned. Freeze the AggregateCounter once I<n> distinct aggregates have been
+seen. Default is never to freeze.
+
+=item FREEZE_AFTER_COUNT I<n>
+
+Unsigned. Freeze the AggregateCounter once the total count (of bytes or
+packets) has reached or exceeded I<n>. Default is never to freeze.
 
 =back
 
@@ -54,6 +69,11 @@ Argument is a filename, or `C<->', meaning standard out. Write an ASCII file
 containing all current data to the specified filename. The format is a couple
 ASCII lines, followed by N data lines, each containing the aggregate ID in
 decimal, a space, then the count in decimal.
+
+=h freeze read/write
+
+Returns or sets the AggregateCounter's frozen state, which is `true' or
+`false'. AggregateCounter starts off unfrozen.
 
 =n
 
@@ -110,11 +130,16 @@ class AggregateCounter : public Element { public:
     bool _bytes : 1;
     bool _packet_count : 1;
     bool _extra_length : 1;
+    bool _frozen : 1;
     
     Node *_root;
     Node *_free;
     Vector<Node *> _blocks;
     uint32_t _num_nonzero;
+    uint64_t _count;
+
+    uint32_t _freeze_nnz;
+    uint64_t _freeze_count;
 
     Node *new_node();
     Node *new_node_block();
@@ -125,6 +150,8 @@ class AggregateCounter : public Element { public:
 
     static void write_nodes(Node *, FILE *, bool, uint32_t *, int &, int, ErrorHandler *);
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler *);
     
 };
 
