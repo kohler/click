@@ -85,7 +85,8 @@ class Router : public ElementLink {
   void unuse();
   
   int add_element(Element *, const String &name, const String &conf, const String &landmark);
-  int connect(int from_idx, int from_port, int to_idx, int to_port);
+  int add_connection(int from_idx, int from_port, int to_idx, int to_port);
+  void add_requirement(const String &);
   
   bool initialized() const			{ return _initialized; }
   
@@ -99,7 +100,6 @@ class Router : public ElementLink {
   Element *find(const String &, ErrorHandler * = 0) const;
   Element *find(Element *, const String &, ErrorHandler * = 0) const;
 
-  void add_requirement(const String &);
   const Vector<String> &requirements() const	{ return _requirements; }
 
   int ninput_pidx() const			{ return _input_fidx.size(); }

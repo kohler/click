@@ -1204,7 +1204,7 @@ Lexer::add_router_connections(int c, const Vector<int> &router_id,
       for (int t = 0; t < hto.size(); t++) {
 	int tidx = router_id[hto[t].idx];
 	if (tidx >= 0)
-	  router->connect(fidx, hfrom[f].port, tidx, hto[t].port);
+	  router->add_connection(fidx, hfrom[f].port, tidx, hto[t].port);
       }
   }
 }
@@ -1237,7 +1237,8 @@ Lexer::create_router()
     int fromi = router_id[ _hookup_from[i].idx ];
     int toi = router_id[ _hookup_to[i].idx ];
     if (fromi >= 0 && toi >= 0)
-      router->connect(fromi, _hookup_from[i].port, toi, _hookup_to[i].port);
+      router->add_connection(fromi, _hookup_from[i].port,
+			     toi, _hookup_to[i].port);
     else
       add_router_connections(i, router_id, router);
   }

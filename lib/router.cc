@@ -163,7 +163,7 @@ Router::add_element(Element *e, const String &ename, const String &conf,
 }
 
 int
-Router::connect(int from_idx, int from_port, int to_idx, int to_port)
+Router::add_connection(int from_idx, int from_port, int to_idx, int to_port)
 {
   if (_initialized) return -1;
   Hookup hfrom(from_idx, from_port);
