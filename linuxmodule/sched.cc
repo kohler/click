@@ -70,7 +70,8 @@ click_sched(void *thunk)
   // In Linux 2.2, daemonize() doesn't do exit_files.
   exit_files(current);
   current->files = init_task.files;
-  atomic_inc(&current->files->count);
+  if (current->files)
+    atomic_inc(&current->files->count);
 #endif
   daemonize();
   
