@@ -3,7 +3,7 @@
 
 /*
  * =c
- * SetTCPChecksum()
+ * SetTCPChecksum([FIX-OFF?])
  * =s sets TCP packets' checksums
  * =d
  * Input packets should be TCP in IP.
@@ -25,8 +25,12 @@ public:
   const char *class_name() const		{ return "SetTCPChecksum"; }
   const char *processing() const		{ return AGNOSTIC; }
   SetTCPChecksum *clone() const;
+  int configure(const Vector<String> &conf, ErrorHandler *errh);
 
   Packet *simple_action(Packet *);
+
+private:
+  bool _fixoff;
 };
 
 #endif

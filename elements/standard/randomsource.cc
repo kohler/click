@@ -1,5 +1,5 @@
 /*
- * RandomSource.{cc,hh} -- element generates configurable infinite stream
+ * RandomSource.{cc,hh} -- element generates random infinite stream
  * of packets
  * Robert Morris
  *

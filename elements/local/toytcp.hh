@@ -48,6 +48,7 @@ private:
 
   int _state;
   int _grow;
+  int _wc;
 
   void tcp_output(Packet *);
   void tcp_input(Packet *);

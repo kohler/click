@@ -15,6 +15,8 @@
 #endif
 #include "settcpchecksum.hh"
 #include "glue.hh"
+#include "confparse.hh"
+#include "error.hh"
 #include "click_ip.h"
 #include "click_tcp.h"
 
@@ -22,10 +24,22 @@ SetTCPChecksum::SetTCPChecksum()
 {
   add_input();
   add_output();
+  _fixoff = false;
 }
 
 SetTCPChecksum::~SetTCPChecksum()
 {
+}
+
+int
+SetTCPChecksum::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  if (cp_va_parse(conf, this, errh,
+                  cpOptional,
+		  cpBool, "fix th_off?", &_fixoff,
+		  0) < 0)
+    return -1;
+  return 0;
 }
 
 SetTCPChecksum *
@@ -56,6 +70,13 @@ SetTCPChecksum::simple_action(Packet *p_in)
     goto bad;
 
   th = (click_tcp *) (((char *)ip) + hlen);
+
+  if(_fixoff){
+    unsigned int off = th->th_off << 2;
+    if(off < sizeof(click_tcp) || off > (ilen - hlen)){
+      th->th_off = (ilen - hlen) >> 2;
+    }
+  }    
 
   memcpy(itmp, ip, 9);
   memset(ip, '\0', 9);

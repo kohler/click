@@ -38,6 +38,7 @@ ToyTCP::ToyTCP()
   _iss = tv.tv_sec & 0x0fffffff;
   _snd_nxt = _iss;
   _grow = 0;
+  _wc = 0;
 }
 
 ToyTCP::~ToyTCP()
@@ -162,7 +163,13 @@ ToyTCP::tcp_output(Packet *xp)
     th->th_flags = TH_ACK;
     th->th_ack = htonl(_rcv_nxt);
   }
-  th->th_win = htons(60*1024);
+
+  if(_wc++ > 2){
+    _wc = 0;
+    th->th_win = htons(30*1024);
+  } else {
+    th->th_win = htons(60*1024);
+  }
 
   output(0).push(p);
 }
