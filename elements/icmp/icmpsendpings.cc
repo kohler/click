@@ -24,6 +24,7 @@
 #include <clicknet/ip.h>
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
+#include <click/integers.hh>
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -34,7 +35,7 @@ CLICK_CXX_UNPROTECT
 CLICK_DECLS
 
 ICMPPingSource::ICMPPingSource()
-    : Element(0, 1), _limit(-1), _timer(this), _timestamp_record(0)
+    : Element(0, 1), _limit(-1), _timer(this), _receiver(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -85,13 +86,13 @@ ICMPPingSource::initialize(ErrorHandler *errh)
 	_timer.schedule_after_ms(_interval);
     if (ninputs() == 1) {
 #if CLICK_LINUXMODULE
-	_timestamp_record = (struct timeval *)vmalloc(sizeof(struct timeval) * 65536);
+	_receiver = (ReceiverInfo *)vmalloc(sizeof(ReceiverInfo));
 #else
-	_timestamp_record = new struct timeval[65536];
+	_receiver = new ReceiverInfo;
 #endif
-	if (!_timestamp_record)
+	if (!_receiver)
 	    return errh->error("out of memory!");
-	memset(_timestamp_record, 0, sizeof(struct timeval) * 65536);
+	memset(_receiver, 0, sizeof(ReceiverInfo));
     }
     return 0;
 }
@@ -99,12 +100,21 @@ ICMPPingSource::initialize(ErrorHandler *errh)
 void
 ICMPPingSource::cleanup(CleanupStage)
 {
+    if (_receiver) {
+	click_chatter("%s: %u packets transmitted, %u received, %d%% packet loss", declaration().c_str(), _count, (_receiver->nreceived - _receiver->nduplicate), (int)((_count - _receiver->nreceived - _receiver->nduplicate) * 100) / _count);
+	if (_receiver->nreceived) {
+	    counter_t avg = _receiver->time_sum / _receiver->nreceived;
+	    counter_t avg_sq = _receiver->time_sq_sum / _receiver->nreceived;
+	    counter_t stdev = int_sqrt(avg_sq - avg * avg);
+	    click_chatter("%s: rtt min/avg/max/mdev = %u.%03u/%u.%03u/%u.%03u/%u.%03u", declaration().c_str(), _receiver->time_min / 1000, _receiver->time_min % 1000, (unsigned)(avg / 1000), (unsigned)(avg % 1000), _receiver->time_max / 1000, _receiver->time_max % 1000, (unsigned)(stdev / 1000), (unsigned)(stdev % 1000));
+	}
+	
 #if CLICK_LINUXMODULE
-    if (_timestamp_record)
-	vfree(_timestamp_record);
+	vfree(_receiver);
 #else
-    delete[] _timestamp_record;
+	delete _receiver;
 #endif
+    }
 }
 
 void
@@ -142,8 +152,8 @@ ICMPPingSource::run_timer()
     q->set_ip_header(nip, sizeof(click_ip));
     click_gettimeofday(&q->timestamp_anno());
 
-    if (_timestamp_record)
-	_timestamp_record[icp->icmp_sequence] = q->timestamp_anno();
+    if (_receiver)
+	_receiver->send_timestamp[icp->icmp_sequence] = q->timestamp_anno();
     
     output(0).push(q);
 
@@ -157,14 +167,39 @@ ICMPPingSource::push(int, Packet *p)
 {
     const click_ip *iph = p->ip_header();
     const click_icmp_echo *icmph = reinterpret_cast<const click_icmp_echo *>(p->icmp_header());
-    if (iph && iph->ip_p == IP_PROTO_ICMP && p->transport_length() >= (int)sizeof(click_icmp_echo) && icmph->icmp_type == ICMP_ECHOREPLY && icmph->icmp_identifier == _icmp_id) {
-	struct timeval diff = p->timestamp_anno() - _timestamp_record[icmph->icmp_sequence];
+    if (iph && iph->ip_p == IP_PROTO_ICMP
+	&& p->transport_length() >= (int)sizeof(click_icmp_echo)
+	&& icmph->icmp_type == ICMP_ECHOREPLY
+	&& icmph->icmp_identifier == _icmp_id) {
+	struct timeval *send_ts = &_receiver->send_timestamp[icmph->icmp_sequence];
+	
+	if (!timerisset(send_ts))
+	    /* error */;
+	else {
+	    if (send_ts->tv_usec >= 1000000) {
+		_receiver->nduplicate++;
+		send_ts->tv_usec -= 1000000;
+	    }
+	    
+	    struct timeval diff = p->timestamp_anno() - *send_ts;
+	    uint32_t diffval = (diff.tv_sec * 1000000) + diff.tv_usec;
+	    if (diffval < _receiver->time_min || !_receiver->nreceived)
+		_receiver->time_min = diffval;
+	    if (diffval > _receiver->time_max || !_receiver->nreceived)
+		_receiver->time_max = diffval;
+	    _receiver->time_sum += diffval;
+	    _receiver->time_sq_sum += ((counter_t)diffval) * diffval;
+
+	    _receiver->nreceived++;
+	    send_ts->tv_usec += 1000000;
+	    
 #ifdef __linux__
-	uint16_t readable_seq = icmph->icmp_sequence;
+	    uint16_t readable_seq = icmph->icmp_sequence;
 #else
-	uint16_t readable_seq = ntohs(icmph->icmp_sequence);
+	    uint16_t readable_seq = ntohs(icmph->icmp_sequence);
 #endif
-	click_chatter("%s: %d bytes from %s: icmp_seq=%u ttl=%u time=%d.%d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), IPAddress(iph->ip_dst).s().c_str(), readable_seq, iph->ip_ttl, diff.tv_sec*1000 + diff.tv_usec/1000, diff.tv_usec%1000);
+	    click_chatter("%s: %d bytes from %s: icmp_seq=%u ttl=%u time=%d.%d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), IPAddress(iph->ip_dst).s().c_str(), readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
+	}
     }
     p->kill();
 }
@@ -197,6 +232,8 @@ ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, Err
 	return 0;
       case H_RESET_COUNTS:
 	ps->_count = 0;
+	if (ReceiverInfo *ri = ps->_receiver)
+	    memset(ri, 0, sizeof(ReceiverInfo));
 	if (ps->_count < ps->_limit && ps->_active && !ps->_timer.scheduled())
 	    ps->_timer.schedule_after_ms(ps->_interval);
 	return 0;

@@ -81,8 +81,22 @@ class ICMPPingSource : public Element { public:
     Timer _timer;
     String _data;
     bool _active;
-    
-    struct timeval *_timestamp_record;
+
+#ifdef HAVE_INT64_TYPES
+    typedef uint64_t counter_t;
+#else
+    typedef uint32_t counter_t;
+#endif
+    struct ReceiverInfo {
+	int nreceived;
+	int nduplicate;
+	uint32_t time_min;
+	uint32_t time_max;
+	counter_t time_sum;
+	counter_t time_sq_sum;
+	struct timeval send_timestamp[65536];
+    };
+    ReceiverInfo *_receiver;
 
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
     
