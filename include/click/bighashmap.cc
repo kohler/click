@@ -19,6 +19,8 @@
 
 #include <click/bighashmap.hh>
 
+#define BIGHASHMAP_REARRANGE_ON_FIND 1
+
 template <class K, class V>
 void
 BigHashMap<K, V>::initialize()
@@ -134,9 +136,10 @@ template <class K, class V>
 BigHashMap<K, V>::Elt *
 BigHashMap<K, V>::find_elt(const K &key) const
 {
+#if BIGHASHMAP_REARRANGE_ON_FIND
   Elt *prev = 0;
   int b = bucket(key);
-  for (Elt *e = _buckets[b]; e; e = e->next) {
+  for (Elt *e = _buckets[b]; e; prev = e, e = e->next)
     if (e->k == key) {
       if (prev) {
         // move to front
@@ -146,9 +149,13 @@ BigHashMap<K, V>::find_elt(const K &key) const
       }
       return e;
     }
-    prev = e;
-  }
   return 0;
+#else
+  for (Elt *e = _buckets[bucket(key)]; e; e = e->next)
+    if (e->k == key)
+      return e;
+  return 0;
+#endif
 }
 
 
@@ -184,10 +191,10 @@ void
 BigHashMap<K, V>::resize(int want_nbuckets)
 {
   int new_nbuckets = 1;
-  while (new_nbuckets < want_nbuckets && new_nbuckets > 0)
+  while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
     new_nbuckets <<= 1;
-  if (new_nbuckets > 0 && new_nbuckets <= _max_nbuckets)
-    resize0(new_nbuckets);
+  assert(new_nbuckets > 0 && new_nbuckets <= MAX_NBUCKETS);
+  resize0(new_nbuckets);
 }
 
 template <class K, class V>
@@ -201,12 +208,9 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
       return false;
     }
 
-  if (_n >= _capacity) {
-    int new_nbuckets = _nbuckets << 1;
-    if (new_nbuckets <= _max_nbuckets) {
-      resize0(new_nbuckets); 
-      b = bucket(key);
-    }
+  if (_n >= _capacity && _nbuckets < MAX_NBUCKETS) {
+    resize0(_nbuckets << 1);
+    b = bucket(key);
   }
   Elt *e = alloc();
   new(reinterpret_cast<void *>(&e->k)) K(key);
@@ -485,9 +489,10 @@ template <class K>
 BigHashMap<K, void *>::Elt *
 BigHashMap<K, void *>::find_elt(const K &key) const
 {
+#if BIGHASHMAP_REARRANGE_ON_FIND
   Elt *prev = 0;
   int b = bucket(key);
-  for (Elt *e = _buckets[b]; e; e = e->next) {
+  for (Elt *e = _buckets[b]; e; prev = e, e = e->next)
     if (e->k == key) {
       if (prev) {
         // move to front
@@ -497,9 +502,13 @@ BigHashMap<K, void *>::find_elt(const K &key) const
       }
       return e;
     }
-    prev = e;
-  }
   return 0;
+#else
+  for (Elt *e = _buckets[bucket(key)]; e; e = e->next)
+    if (e->k == key)
+      return e;
+  return 0;
+#endif
 }
 
 
@@ -535,10 +544,10 @@ void
 BigHashMap<K, void *>::resize(int want_nbuckets)
 {
   int new_nbuckets = 1;
-  while (new_nbuckets < want_nbuckets && new_nbuckets > 0)
+  while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
     new_nbuckets <<= 1;
-  if (new_nbuckets > 0 && new_nbuckets <= _max_nbuckets)
-    resize0(new_nbuckets);
+  assert(new_nbuckets > 0 && new_nbuckets <= MAX_NBUCKETS);
+  resize0(new_nbuckets);
 }
 
 template <class K>
@@ -552,12 +561,9 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
       return false;
     }
 
-  if (_n >= _capacity) {
-    int new_nbuckets = _nbuckets << 1;
-    if (new_nbuckets <= _max_nbuckets) {
-      resize0(new_nbuckets);
-      b = bucket(key);
-    }
+  if (_n >= _capacity && _nbuckets < MAX_NBUCKETS) {
+    resize0(_nbuckets << 1);
+    b = bucket(key);
   }
   Elt *e = alloc();
   new(reinterpret_cast<void *>(&e->k)) K(key);

@@ -76,8 +76,9 @@ class BigHashMap { public:
   Elt *slow_alloc();
   void free(Elt *);
 
+  static const int MAX_NBUCKETS = 32768;
+  
   friend class BigHashMapIterator<K, V>;
-  static const int _max_nbuckets = 0x8000;
   
 };
 
@@ -186,8 +187,9 @@ class BigHashMap<K, void *> { public:
   Elt *slow_alloc();
   void free(Elt *);
 
+  static const int MAX_NBUCKETS = 32768;
+  
   friend class BigHashMapIterator<K, void *>;
-  static const int _max_nbuckets = 0x8000;
   
 };
 
