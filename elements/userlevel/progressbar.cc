@@ -31,7 +31,7 @@
 CLICK_DECLS
 
 ProgressBar::ProgressBar()
-    : _timer(this)
+    : _status(ST_FIRST), _timer(this)
 {
     MOD_INC_USE_COUNT;
 }

@@ -26,7 +26,8 @@
 CLICK_DECLS
 
 AddressTranslator::AddressTranslator()
-  : _in_map(0), _out_map(0), _rover(0), _rover2(0), _nmappings(0)
+  : _dynamic_mapping_allocation_direction(0),
+    _in_map(0), _out_map(0), _rover(0), _rover2(0), _nmappings(0)
 {
   add_input(); /*IPv6 arriving outward packets */
   add_input(); /*IPv6 arriving inward packets */
