@@ -1,3 +1,7 @@
+2003-02-14 Friday 00:44  Eddie Kohler <kohler@icir.org>
+
+	* lib/ino.cc (1.7): nit
+
 2003-02-14 Friday 00:09  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromdagdump.cc (1.15),
