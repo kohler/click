@@ -44,7 +44,7 @@ class HashMap { public:
   HashMap<K, V> &operator=(const HashMap<K, V> &);
   void swap(HashMap<K, V> &);
 
-  void resize(int);
+  void resize(int size)			{ increase(size); }
   
  private:
   
@@ -56,9 +56,9 @@ class HashMap { public:
   Elt *_e;
   V _default_v;
   
-  void increase();
+  void increase(int);
   void check_capacity();
-  int bucket(const K &) const;
+  inline int bucket(const K &) const;
 
   friend class HashMapIterator<K, V>;
   

@@ -21,14 +21,14 @@ template <class K, class V>
 HashMap<K, V>::HashMap()
   : _capacity(0), _grow_limit(0), _n(0), _e(0), _default_v()
 {
-  increase();
+  increase(-1);
 }
 
 template <class K, class V>
 HashMap<K, V>::HashMap(const V &def)
   : _capacity(0), _grow_limit(0), _n(0), _e(0), _default_v(def)
 {
-  increase();
+  increase(-1);
 }
 
 
@@ -64,13 +64,6 @@ HashMap<K, V>::operator=(const HashMap<K, V> &o)
 }
 
 template <class K, class V>
-inline void
-HashMap<K, V>::resize(int i)
-{
-  while (i > _capacity) increase();
-}
-
-template <class K, class V>
 inline int
 HashMap<K, V>::bucket(const K &key) const
 {
@@ -87,15 +80,23 @@ HashMap<K, V>::bucket(const K &key) const
 
 template <class K, class V>
 void
-HashMap<K, V>::increase()
+HashMap<K, V>::increase(int min_size)
 {
+  int ncap = (_capacity < 8 ? 8 : _capacity * 2);
+  while (ncap < min_size && ncap > 0)
+    ncap *= 2;
+  if (ncap <= 0)		// want too many elements
+    return;
+
+  Elt *ne = new Elt[ncap];
+  if (!ne)			// out of memory
+    return;
+  
   Elt *oe = _e;
   int ocap = _capacity;
-  
-  _capacity *= 2;
-  if (_capacity < 8) _capacity = 8;
+  _e = ne;
+  _capacity = ncap;
   _grow_limit = (int)(0.8 * _capacity) - 1;
-  _e = new Elt[_capacity];
   
   Elt *otrav = oe;
   for (int i = 0; i < ocap; i++, otrav++)
@@ -111,7 +112,8 @@ template <class K, class V>
 inline void
 HashMap<K, V>::check_capacity()
 {
-  if (_n >= _grow_limit) increase();
+  if (_n >= _grow_limit)
+    increase(-1);
 }
 
 template <class K, class V>
@@ -149,7 +151,7 @@ HashMap<K, V>::clear()
   delete[] _e;
   _e = 0;
   _capacity = _grow_limit = _n = 0;
-  increase();
+  increase(-1);
 }
 
 template <class K, class V>
