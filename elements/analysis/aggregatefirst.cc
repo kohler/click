@@ -1,5 +1,5 @@
 /*
- * aggregateuniq.{cc,hh} -- output the first packet per aggregate
+ * aggregatefirst.{cc,hh} -- output the first packet per aggregate
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
@@ -16,13 +16,13 @@
  */
 
 #include <click/config.h>
-#include "aggregateuniq.hh"
+#include "aggregatefirst.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
-AggregateUniq::AggregateUniq()
+AggregateFirst::AggregateFirst()
     : Element(1, 1), _agg_notifier(0)
 {
     MOD_INC_USE_COUNT;
@@ -30,19 +30,19 @@ AggregateUniq::AggregateUniq()
     memset(_counts, 0, sizeof(_counts));
 }
 
-AggregateUniq::~AggregateUniq()
+AggregateFirst::~AggregateFirst()
 {
     MOD_DEC_USE_COUNT;
 }
 
 void
-AggregateUniq::notify_noutputs(int n)
+AggregateFirst::notify_noutputs(int n)
 {
     set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
-AggregateUniq::configure(Vector<String> &conf, ErrorHandler *errh)
+AggregateFirst::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
     
@@ -59,7 +59,7 @@ AggregateUniq::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-AggregateUniq::initialize(ErrorHandler *errh)
+AggregateFirst::initialize(ErrorHandler *errh)
 {
     if (_agg_notifier)
 	_agg_notifier->add_listener(this);
@@ -67,7 +67,7 @@ AggregateUniq::initialize(ErrorHandler *errh)
 }
 
 void
-AggregateUniq::cleanup(CleanupStage)
+AggregateFirst::cleanup(CleanupStage)
 {
     for (int i = 0; i < NPLANE; i++) {
 	if (uint32_t **p = _kills[i]) {
@@ -80,7 +80,7 @@ AggregateUniq::cleanup(CleanupStage)
 }
 
 uint32_t *
-AggregateUniq::create_row(uint32_t agg)
+AggregateFirst::create_row(uint32_t agg)
 {
     int planeno = (agg >> PLANE_SHIFT) & PLANE_MASK;
     if (!_kills[planeno]) {
@@ -89,12 +89,12 @@ AggregateUniq::create_row(uint32_t agg)
 	memset(_kills[planeno], 0, sizeof(uint32_t *) * NCOL);
 	if (!_agg_notifier)
 	    /* skip */;
-	else if (!(_counts[planeno] = new uint32_t[NCOL])) {
+	else if (!(_counts[planeno] = new uint32_t[NCOL + 1])) {
 	    delete[] _kills[planeno];
 	    _kills[planeno] = 0;
 	    return 0;
 	} else
-	    memset(_counts[planeno], 0, sizeof(uint32_t) * NCOL);
+	    memset(_counts[planeno], 0, sizeof(uint32_t) * (NCOL + 1));
     }
     uint32_t **plane = _kills[planeno];
 
@@ -109,7 +109,7 @@ AggregateUniq::create_row(uint32_t agg)
 }
 
 inline Packet *
-AggregateUniq::smaction(Packet *p)
+AggregateFirst::smaction(Packet *p)
 {
     uint32_t agg = AGGREGATE_ANNO(p);
     
@@ -127,14 +127,14 @@ AggregateUniq::smaction(Packet *p)
 }
 
 void
-AggregateUniq::push(int, Packet *p)
+AggregateFirst::push(int, Packet *p)
 {
     if ((p = smaction(p)))
 	output(0).push(p);
 }
 
 Packet *
-AggregateUniq::pull(int)
+AggregateFirst::pull(int)
 {
     Packet *p = input(0).pull();
     if (p)
@@ -143,7 +143,7 @@ AggregateUniq::pull(int)
 }
 
 void
-AggregateUniq::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet *)
+AggregateFirst::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet *)
 {
     int plane = (agg >> PLANE_SHIFT) & PLANE_MASK;
     int col = (agg >> COL_SHIFT) & COL_MASK;
@@ -151,27 +151,26 @@ AggregateUniq::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet
     if (!r)			// out of memory
 	return;
     
-    if (event == NEW_AGG)
-	_counts[plane][col]++;
-    else if (event == DELETE_AGG) {
+    if (event == NEW_AGG) {
+	if ((++_counts[plane][col]) == 1)
+	    _counts[plane][NCOL]++;
+    } else if (event == DELETE_AGG) {
 	r[(agg & ROW_MASK) >> 5] &= ~(1 << (agg & 0x1F));
 	if ((--_counts[plane][col]) == 0) {
 	    // get rid of empty row
 	    delete[] _kills[plane][col];
 	    _kills[plane][col] = 0;
 	    // get rid of empty column
-	    for (int i = 0; i < NCOL; i++)
-		if (_counts[plane][i])
-		    goto busy;
-	    delete[] _counts[plane];
-	    _counts[plane] = 0;
-	    delete[] _kills[plane];
-	    _kills[plane] = 0;
-	  busy: ;
+	    if ((--_counts[plane][NCOL]) == 0) {
+		delete[] _counts[plane];
+		_counts[plane] = 0;
+		delete[] _kills[plane];
+		_kills[plane] = 0;
+	    }
 	}
     }
 }
 
 ELEMENT_REQUIRES(userlevel)
-EXPORT_ELEMENT(AggregateUniq)
+EXPORT_ELEMENT(AggregateFirst)
 CLICK_ENDDECLS
