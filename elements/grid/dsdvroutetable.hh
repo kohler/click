@@ -58,10 +58,9 @@
  * =item METRIC
  *
  * String.  The type of metric that should be used to compare two
- * routes.  Allowable values are: ``hopcount'',
- * ``cumulative_delivery_rate'', ``min_delivery_rate'',
- * ``min_sig_strength'', and ``min_sig_quality''.  The default is to
- * use hopcount.
+ * routes.  Allowable values are: ``hopcount'' or ``est_tx_count''
+ * (estimate transmission count).  The default is to use estimated
+ * transmission count.
  *
  * =item LOGFILE
  *
@@ -71,7 +70,7 @@
  * 
  * Unsigned integer.  Initial weighted settling time.  Milliseconds.
  *
- * =item ALPHA. 
+ * =item ALPHA
  * 
  * Double.  DSDV settling time weighting parameter.  Between 0 and 1 inclusive.
  *
