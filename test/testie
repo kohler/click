@@ -11,6 +11,14 @@ sub index2 ($$;$) {
     $result;
 }
 
+sub min (@) {
+    my($m) = $_[0];
+    for (my $i = 1; $i < @_; $i++) {
+	$m = $_[$i] if $m > $_[$i];
+    }
+    $m;
+}
+
 sub shquote ($) {
     my($t) = @_;
     $t =~ s/\'/\'\"\'\"\'/g;
@@ -69,7 +77,7 @@ sub _shell_split (\@\@$$;$) {
     my($arr, $lineno_arr, $text, $lineno, $rewrite_sub) = @_;
     $rewrite_sub = sub { $_[0] } if !defined($rewrite_sub);
     my($qf, $qb, $out) = (0, 0, '');
-    my($sq, $dq, $bq, $nl) = (-2, -2, -2, -2);
+    my($sq, $dq, $bq, $nl, $hh) = (-2, -2, -2, -2, -2);
     my($first, $pos) = (0, 0);
     $lineno -= ($text =~ tr/\n//);
     
@@ -78,6 +86,7 @@ sub _shell_split (\@\@$$;$) {
 	$dq = ::index2($text, "\"", $pos) if $dq < $pos;
 	$bq = ::index2($text, "\`", $pos) if $bq < $pos;
 	$nl = ::index2($text, "\n", $pos) if $nl < $pos;
+	$hh = ::index2($text, "#", $pos) if $hh < $pos;
 	
 	if ($qf == 1) {
 	    $qf = 0 if $sq < length $text;
@@ -92,8 +101,7 @@ sub _shell_split (\@\@$$;$) {
 	}
 
 	# find minimum
-	my($min, $min1) = (($sq < $dq ? $sq : $dq), ($bq < $nl ? $bq : $nl));
-	$min = $min1 if $min1 < $min;
+	my($min) = min($sq, $dq, $bq, $nl, $hh);
 	$out .= $rewrite_sub->(substr($text, $pos, $min - $pos), 0) . substr($text, $min, 1);
 	
 	if ($sq == $min) {
@@ -105,6 +113,9 @@ sub _shell_split (\@\@$$;$) {
 	} elsif ($bq == $min) {
 	    $qb = !$qb;
 	    $pos = $bq + 1;
+	} elsif ($hh == $min) {
+	    $out .= substr($text, $min + 1, $nl - $min);
+	    $pos = $nl + 1;
 	} elsif (!$qb && ($nl == $pos || substr($text, $nl - 1, 1) ne "\\")) {
 	    push @$arr, $out;
 	    push @$lineno_arr, $lineno;
@@ -608,6 +619,7 @@ Usage: testie [OPTIONS] [FILE]...
 Options:
   VARIABLE=VALUE             Variable settings for test script.
   -V, --verbose              Print information for successful tests.
+  -s, --show TESTIEFILE      Show contents of TESTIEFILE on completion.
   --preserve-temporaries     Preserve temporary files.
   -v, --version              Print version information and exit.
   --help                     Print this message and exit.
