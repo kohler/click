@@ -4486,24 +4486,29 @@ The @code{cp_handler} functions parse a handler specification, such as
 Unlike most other parsing functions, it can report errors to an
 @code{ErrorHandler}, if one is supplied.
 
-A handler specification consists of an element name and a handler name
-separated by a period: @samp{@var{element}.@var{handler}}. The simplest
-@code{cp_handler} function parses such a specification into an element
-pointer, corresponding to @var{element}, and the handler name,
+Most handler specifications consists of an element name and a handler
+name separated by a period: @samp{@var{element}.@var{handler}}. The
+simplest @code{cp_handler} function parses such a specification into an
+element pointer, corresponding to @var{element}, and the handler name,
 @var{handler}. Like @code{cp_element} (@pxref{Parsing Elements}),
 @code{cp_handler} uses a lexically-scoped search to find the element
 corresponding to a given name.
 
+Click also supports a few global handlers, such as @samp{config}.
+@code{cp_handler} will also parse global handler names, returning null
+for the element pointer.
+
 @deftypefn {Parsing Function} {bool} cp_handler (@w{const String &@var{str}}, @w{Element *@var{context}}, @w{Element **@var{result_element}}, @w{String *@var{result_hname}}, @w{ErrorHandler *@var{errh}})
 Parses @var{str} into a handler specification, storing the resulting
-element in @code{*@var{result_element}} and handler name in
+element (if any) in @code{*@var{result_element}} and handler name in
 @code{*@var{result_hname}}. @var{str} is first processed as by
 @code{cp_unquote}. @var{context} determines both the relevant router
 configuration and any compound element context. Returns true if and only
 if @var{str} contained a valid handler specification whose element part
 named an actual element. Note that this function will not check whether
 @code{*@var{result_element}} actually has a handler named
-@code{*@var{result_hname}}.
+@code{*@var{result_hname}}---or, for global handlers, whether the global
+handler @code{*@var{result_hname}} actually exists.
 @end deftypefn
 
 The other @code{cp_handler} variants ensure that the input string names
