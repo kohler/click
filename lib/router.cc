@@ -1107,12 +1107,12 @@ Router::wait()
   bool any = (_selectors.size() > 0);
 
   struct timeval tv;
-  // do not wait if anything is scheduled
-  tv.tv_sec = (scheduled_next() == this ? 0 : 1);
-  tv.tv_usec = 0;
   if (!any && !_timer_head.get_next_delay(&tv))
     return;
-  
+  // never wait if anything is scheduled
+  if (scheduled_next() != this)
+    tv.tv_sec = tv.tv_usec = 0;
+
   int n = select(FD_SETSIZE, &read_mask, &write_mask, (fd_set*)0, &tv);
   
   if (n < 0 && errno != EINTR)

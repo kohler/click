@@ -141,6 +141,6 @@ Timer::get_next_delay(struct timeval *tv)
       tv->tv_usec = 0;
     }
     return 1;
-  }  
+  }
 }
 
