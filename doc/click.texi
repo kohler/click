@@ -2961,6 +2961,10 @@ ARPQuerier::notify_noutputs(int n)
 @}
 @end example
 
+There is no need to supply a @code{notify_ninputs} or
+@code{notify_noutputs} method if your element has a fixed number of
+inputs or outputs.
+
 
 @node configure_phase, configure, notify_ninputs notify_noutputs, Element Initialization
 @section @code{configure_phase}---Initialization Order
