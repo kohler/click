@@ -7,6 +7,26 @@
  * long type and has a METER SCALE of 30. This implies that the stability
  * factor, which correlates to time period of the average, can be larger as
  * well.
+ *
+ * The formula to compute EWMA time period is 
+ *
+ *     2 / (T + 1) = p
+ *
+ * where p is used in the following calculation:
+ *
+ *     EWMA@T = p * Value@T + (1 - p) * EWMA@T-1
+ *
+ * since linux kernel does not have long long multiply and divide (part of
+ * libgcc), we uses shifts instead of multiplier p:
+ *
+ *     EWMA@T = (Value@T - EWMA@T-1) / x + EWMA@T-1
+ *
+ * where x is a power of 2. It happens that 1/x = p, or x = (T+1)/2.  The
+ * stability factor is log_2(x).
+ *
+ * Note: since we use shifts instead of mul/div, our rates are not very
+ * accurate: keeping rates over the past 1hr, for example, uses a stability
+ * factor that actually keeps rates over the past 1.5hr.
  */
 
 class EWMA2 {
