@@ -32,7 +32,6 @@
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 const DSDVRouteTable::metric_t DSDVRouteTable::_bad_metric; // default metric state is ``bad''
-DSDVRouteTable *DSDVRouteTable::_instance = 0;
 
 bool
 DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry) 
@@ -76,6 +75,21 @@ DSDVRouteTable::~DSDVRouteTable()
 
   if (GridLogger::log_is_open())
     GridLogger::close_log();
+
+  for (TMIter i = _expire_timers.first(); i; i++) {
+    if (i.value()->scheduled())
+      i.value()->unschedule();
+    delete i.value();
+  }
+  for (TMIter i = _trigger_timers.first(); i; i++) {
+    if (i.value()->scheduled())
+      i.value()->unschedule();
+    delete i.value();
+  }
+  for (HMIter i = _expire_hooks.first(); i; i++) 
+    delete i.value();
+  for (HMIter i = _trigger_hooks.first(); i; i++) 
+    delete i.value();
 }
 
 void *
@@ -140,9 +154,6 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 DSDVRouteTable::initialize(ErrorHandler *)
 {
-  assert(!_instance);
-  _instance = this;
-
   _hello_timer.initialize(this);
   _hello_timer.schedule_after_ms(_period);
   _log_dump_timer.initialize(this);
@@ -213,27 +224,32 @@ DSDVRouteTable::insert_route(const RTEntry &r, const bool was_sender)
   
   // invariant check: running timers exist for all current good
   // routes.  no timers or bogus timer entries exist for bad routes.
+  // hook objects exist for each timer.
   Timer **old = _expire_timers.findp(r.dest_ip);
+  HookPair **oldhp = _expire_hooks.findp(r.dest_ip);
   if (old_r && old_r->good())
-    assert(old && *old && (*old)->scheduled());
+    assert(old && *old && (*old)->scheduled() && oldhp && *oldhp);
   else 
-    assert(old == 0);
+    assert(old == 0 && oldhp == 0);
 
   // get rid of old expire timer
   if (old) {
     (*old)->unschedule();
     delete *old;
+    delete *oldhp;
   }
   
   // Note: ns dsdv only schedules a timeout for the sender of each
   // route ad, relying on the next-hop expiry logic to get all routes
   // via that next hop.  However, that won't work for general metrics,
-  // so we install a timeout for *every* newly installed route.
-  Timer *t = new Timer(static_expire_hook, (void *) ((unsigned int) r.dest_ip));
+  // so we install a timeout for *every* newly installed 
+  HookPair *hp = new HookPair(this, r.dest_ip);
+  Timer *t = new Timer(static_expire_hook, (void *) hp);
   t->initialize(this);
   t->schedule_after_ms(min(r.ttl, _timeout));
   
   _expire_timers.insert(r.dest_ip, t);
+  _expire_hooks.insert(r.dest_ip, hp);
   _rtes.insert(r.dest_ip, r);
 
   // note, we don't change any pending triggered update for this updated dest.
@@ -303,9 +319,11 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 
     // invariant check: 
     // 1. route to expire must be good, and thus should have existing
-    // expire timer
+    // expire timer and hook object.
     Timer **exp_timer = _expire_timers.findp(r->dest_ip);
     assert(exp_timer && *exp_timer);
+    HookPair **hp = _expire_hooks.findp(r->dest_ip);
+    assert(hp && *hp);
 
     // 2. that existing timer should still be scheduled, except for
     // the timer whose expiry called this hook
@@ -315,7 +333,9 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
     if ((*exp_timer)->scheduled())
       (*exp_timer)->unschedule();
     delete *exp_timer;
+    delete *hp;
     _expire_timers.remove(r->dest_ip);
+    _expire_hooks.remove(r->dest_ip);
 
     // mark route as broken
     r->num_hops = 0;
@@ -340,18 +360,22 @@ DSDVRouteTable::schedule_triggered_update(const IPAddress &ip, int when)
 {
   // get rid of outstanding triggered request (if any)
   Timer **old = _trigger_timers.findp(ip);
+  HookPair **oldhp = _trigger_hooks.findp(ip);
   if (old) {
-    assert(*old && (*old)->scheduled());
+    assert(*old && (*old)->scheduled() && oldhp && *oldhp);
     (*old)->unschedule();
     delete *old;
+    delete *oldhp;
   }
   
   // set up new timer
-  Timer *t = new Timer(static_trigger_hook, (void *) ((unsigned int) ip));
+  HookPair *hp = new HookPair(this, ip);
+  Timer *t = new Timer(static_trigger_hook, (void *) hp);
   t->initialize(this);
   int jiff = click_jiffies();
   t->schedule_after_ms(jiff_to_msec(jiff > when ? 0 : when - jiff));
   _trigger_timers.insert(ip, t);
+  _trigger_hooks.insert(ip, hp);
 }
 
 void
@@ -360,7 +384,8 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   // invariant: the trigger timer must exist for this dest, but must
   // not be running
   Timer **old = _trigger_timers.findp(ip);
-  assert(old && *old && !(*old)->scheduled());
+  HookPair **oldhp = _trigger_hooks.findp(ip);
+  assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
 
   int jiff = click_jiffies();
   int next_trigger_time = _last_triggered_update + _min_triggered_update_period;
@@ -368,7 +393,9 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   if (jiff >= next_trigger_time) {
     // It's ok to send a triggered update now.  Cleanup expired timer.
     delete *old;
+    delete *oldhp;
     _trigger_timers.remove(ip);
+    _trigger_hooks.remove(ip);
 
     send_triggered_update(ip);
   }
@@ -388,14 +415,20 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
       Timer *old2 = i.value();
       assert(old2 && old2->scheduled());
 
+      HookPair **oldhp = _trigger_hooks.findp(i.key());
+      assert(oldhp && *oldhp);
+
       if (r->advertise_ok_jiffies < next_trigger_time) {
 	delete old2;
+	delete oldhp;
 	remove_list.push_back(i.key());
       }
     }
 
-    for (int i = 0; i < remove_list.size(); i++)
+    for (int i = 0; i < remove_list.size(); i++) {
       _trigger_timers.remove(remove_list[i]);
+      _trigger_hooks.remove(remove_list[i]);
+    }
 
     // reschedule this timer to earliest possible time -- when it
     // fires, its update will also include updates that would have
@@ -598,8 +631,15 @@ DSDVRouteTable::send_full_update() {
 }
 
 void
-DSDVRouteTable::send_triggered_update(const IPAddress &) 
+DSDVRouteTable::send_triggered_update(const IPAddress &ip) 
 {
+  // Check that there is actually a route to the destination which
+  // prompted this trigger.  There ought to be since we never actually
+  // take entries out of the route table; we only mark them as
+  // expired.
+  RTEntry *r = _rtes.findp(ip);
+  assert(r);
+
   int jiff = click_jiffies();
 
   Vector<RTEntry> triggered_routes;

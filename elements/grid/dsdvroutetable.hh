@@ -17,8 +17,7 @@
  * are actually achieved.
  *
  * There must only be one of DSDVRouteTable or GridRouteTable in a
- * grid configuration.  There can only be one DSDVRouteTable per
- * configuration.
+ * grid configuration.
  *
  * Regular arguments are:
  *
@@ -223,15 +222,31 @@ private:
   typedef BigHashMap<IPAddress, Timer *> TMap;
   typedef TMap::Iterator TMIter;
 
+  struct HookPair {
+    DSDVRouteTable *obj;
+    unsigned int ip;
+    HookPair(DSDVRouteTable *o, unsigned int _ip) : obj(o), ip(_ip) { }
+  private:
+    HookPair() { }
+  };
+
+  typedef BigHashMap<IPAddress, HookPair *> HMap;
+  typedef HMap::Iterator HMIter;
+
   // Expire timer map invariants: every good route (r.good() is true)
   // has a running timer in _expire_timers.  No broken routes have a
-  // timer.
+  // timer.  Every entry in _expire_timers has a corresponding
+  // TimerHook pointer stored in _expire_hooks.
   class TMap _expire_timers;
+  class HMap _expire_hooks;
 
   // Trigger timer invariants: any route may have a timer in this
   // table.  A route with a timer in this table has need_seq_ad or
   // need_metric_ad set.  All timers in the table must be running.
+  // Every entry in _trigger_timers has a corresponding TimerHook
+  // pointer stored in _trigger_hooks.
   class TMap _trigger_timers;
+  class HMap _trigger_hooks;
 
   /* max time to keep an entry in RT */
   unsigned int _timeout; // msecs
@@ -280,10 +295,15 @@ private:
   static void static_log_dump_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->log_dump_hook(); }
   void log_dump_hook();
 
-  static void static_expire_hook(Timer *, void *v) { _instance->expire_hook((unsigned int) v); }
+
+  static void static_expire_hook(Timer *, void *v) 
+  { ((HookPair *) v)->obj->expire_hook(((HookPair *) v)->ip); }
+
   void expire_hook(const IPAddress &);
 
-  static void static_trigger_hook(Timer *, void *v) { _instance->trigger_hook((unsigned int) v); }
+  static void static_trigger_hook(Timer *, void *v)
+  { ((HookPair *) v)->obj->trigger_hook(((HookPair *) v)->ip); }
+
   void trigger_hook(const IPAddress &);
 
   void send_full_update();
@@ -367,9 +387,6 @@ private:
   static const metric_t _bad_metric; // default value is ``bad''
 
   bool _frozen;
-
-  // this class is singleton, at least in terms of how many can be configured
-  static DSDVRouteTable *_instance;
 };
 
 #endif
