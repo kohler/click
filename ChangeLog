@@ -1,3 +1,12 @@
+2003-04-03 Thursday 14:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/simple-dsdv-userlevel.click (1.2): in process of
+	synchronizing grid configs with code in elements...
+
+2003-04-03 Thursday 14:15  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/simple-dsdv-userlevel.click (1.1): [no log message]
+
 2003-04-01 Tuesday 18:00  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: aggcounter.cc (1.27), aggregateip.cc (1.15),
