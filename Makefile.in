@@ -157,7 +157,6 @@ distdir:
 	    ln $$d/$$cfile $(distdir)/$$cfile; \
 	  done; \
 	done
-	rm -f $(distdir)/elements/ip/rewriter*
 	@for subdir in tools; do \
 	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
 	      || exit 1; \

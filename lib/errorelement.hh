@@ -17,7 +17,6 @@ class ErrorElement : public UnlimitedElement {
   ErrorElement *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void add_handlers();
   
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;

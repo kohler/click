@@ -54,10 +54,4 @@ ErrorElement::backward_flow(int) const
   return Bitvector(ninputs(), false);
 }
 
-void
-ErrorElement::add_handlers()
-{
-  /* no handlers whatsoever -- not even the defaults */
-}
-
 EXPORT_ELEMENT(ErrorElement)
