@@ -54,9 +54,13 @@ ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpOptional,
 		  cpUnsigned, "max packet length", &_snaplen,
 		  cpWord, "encapsulation type", &encap_type,
+		  cpKeywords,
+		  "SNAPLEN", cpUnsigned, "max packet length", &_snaplen,
+		  "ENCAP", cpWord, "encapsulation type", &encap_type,
 		  0) < 0)
     return -1;
 
+  encap_type = encap_type.upper();
   if (!encap_type || encap_type == "ETHER")
     _encap_type = FAKE_DLT_EN10MB;
   else if (encap_type == "IP")
@@ -70,10 +74,15 @@ ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 ToDump::initialize(ErrorHandler *errh)
 {
-  assert(!_fp);  
-  _fp = fopen(_filename, "wb");
-  if (!_fp)
-    return errh->error("%s: %s", _filename.cc(), strerror(errno));
+  assert(!_fp);
+  if (_filename != "-") {
+      _fp = fopen(_filename, "wb");
+      if (!_fp)
+	  return errh->error("%s: %s", _filename.cc(), strerror(errno));
+  } else {
+      _fp = stdout;
+      _filename = "<stdout>";
+  }
 
   struct fake_pcap_file_header h;
 
@@ -88,17 +97,18 @@ ToDump::initialize(ErrorHandler *errh)
   
   size_t wrote_header = fwrite(&h, sizeof(h), 1, _fp);
   if (wrote_header != 1)
-    return errh->error("unable to write to dump file");
+    return errh->error("%s: unable to write file header", _filename.cc());
 
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, &_task, errh);
+  _active = true;
   return 0;
 }
 
 void
 ToDump::uninitialize()
 {
-  if (_fp)
+  if (_fp && _fp != stdout)
     fclose(_fp);
   _fp = 0;
   _task.unschedule();
@@ -108,7 +118,7 @@ void
 ToDump::write_packet(Packet *p)
 {
   struct fake_pcap_pkthdr ph;
-    
+  
   const struct timeval &ts = p->timestamp_anno();
   if (!ts.tv_sec && !ts.tv_usec) {
     struct timeval now;
@@ -127,35 +137,41 @@ ToDump::write_packet(Packet *p)
   ph.len = p->length();
 
   // XXX writing to pipe?
-  if (fwrite(&ph, sizeof(ph), 1, _fp) == 0)
-    click_chatter("ToDump(%s): %s", _filename.cc(), strerror(errno));
-  else if (fwrite(p->data(), 1, to_write, _fp) == 0)
-    click_chatter("ToDump(%s): %s", _filename.cc(), strerror(errno));
+  if (fwrite(&ph, sizeof(ph), 1, _fp) == 0
+      || fwrite(p->data(), 1, to_write, _fp) == 0) {
+      if (errno != EAGAIN) {
+	  _active = false;
+	  click_chatter("ToDump(%s): %s", _filename.cc(), strerror(errno));
+      }
+  }
 }
 
 void
 ToDump::push(int, Packet *p)
 {
-  write_packet(p);
-  p->kill();
+    if (_active)
+	write_packet(p);
+    p->kill();
 }
 
 void
 ToDump::run_scheduled()
 {
-  Packet *p = input(0).pull();
-  if (p) {
-    write_packet(p);
-    p->kill();
-  }
-  _task.fast_reschedule();
+    if (!_active)
+	return;
+    Packet *p = input(0).pull();
+    if (p) {
+	write_packet(p);
+	p->kill();
+    }
+    _task.fast_reschedule();
 }
 
 void
 ToDump::add_handlers()
 {
-  if (input_is_pull(0))
-    add_task_handlers(&_task);
+    if (input_is_pull(0))
+	add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(userlevel)
