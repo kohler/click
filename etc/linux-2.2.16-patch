@@ -469,7 +469,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Wed May  3 20:16:43 2000
-+++ drivers/net/tulip.c	Sat Oct 28 17:02:25 2000
++++ drivers/net/tulip.c	Sat Oct 28 17:25:54 2000
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
@@ -498,7 +498,7 @@ Index: drivers/net/tulip.c
 +/* Polling extensions and extensions for recycling sk_buffs. */
 +#define SKB_BUCKETS	4
 +/* set to 0 if don't want to do recycle */
-+#define SKB_RECYCLED	128
++#define SKB_RECYCLED	64
 +/* demand polling */
 +#define DEMAND_POLLTX	1
 +/* prefetching of descriptor data */
@@ -872,7 +872,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3356,3 +3468,339 @@
+@@ -3356,3 +3468,355 @@
   *  tab-width: 4
   * End:
   */
@@ -911,15 +911,23 @@ Index: drivers/net/tulip.c
 +  	int bucket = current->processor % SKB_BUCKETS;
 +  	struct sk_buff* skb = 0;
 +  	if (tulip_recycled_skb_cnt[bucket] > 0) {
-+	  	while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock[bucket])) {
-+			while(tulip_recycle_skb_lock[bucket]) 
-+			  	asm volatile("" ::: "memory");
++#ifdef __SMP__
++	    if (smp_num_cpus > SKB_BUCKETS) {
++	  		while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock[bucket])) {
++				while(tulip_recycle_skb_lock[bucket]) 
++			  		asm volatile("" ::: "memory");
++			}
 +		}
++#endif
 +      	if (tulip_recycled_skb_cnt[bucket] > 0) {
 +       		tulip_recycled_skb_cnt[bucket]--;
 +       		skb = tulip_recycled_skbs[bucket][tulip_recycled_skb_cnt[bucket]];
 +      	}
-+		clear_bit(0, (void*)&tulip_recycle_skb_lock[bucket]);
++#ifdef __SMP__
++	    if (smp_num_cpus > SKB_BUCKETS) {
++			clear_bit(0, (void*)&tulip_recycle_skb_lock[bucket]);
++		}
++#endif
 +	}
 +	return skb;
 +}
@@ -931,10 +939,14 @@ Index: drivers/net/tulip.c
 +	int recycled = 0; 
 +   	if (skb->truesize == tulip_recycled_skb_size) {
 +   		if (tulip_recycled_skb_cnt[bucket] < SKB_RECYCLED) {
-+	  		while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock[bucket])) {
-+		  		while(tulip_recycle_skb_lock[bucket]) 
-+			  		asm volatile("" ::: "memory");
++#ifdef __SMP__
++	    	if (smp_num_cpus > SKB_BUCKETS) {
++	  			while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock[bucket])) {
++		  			while(tulip_recycle_skb_lock[bucket]) 
++			  			asm volatile("" ::: "memory");
++				}
 +			}
++#endif
 +   			if (tulip_recycled_skb_cnt[bucket] < SKB_RECYCLED) {
 +      			if (skb_recycle(skb)) {
 +					tulip_recycled_skbs[bucket][tulip_recycled_skb_cnt[bucket]] = skb;
@@ -943,7 +955,11 @@ Index: drivers/net/tulip.c
 +      			}
 +				skb = 0;
 +			}
-+			clear_bit(0, (void*)&tulip_recycle_skb_lock[bucket]);
++#ifdef __SMP__
++	    	if (smp_num_cpus > SKB_BUCKETS) {
++				clear_bit(0, (void*)&tulip_recycle_skb_lock[bucket]);
++		}
++#endif
 +    	}
 +	}
 +	if (skb != 0) dev_kfree_skb(skb);
