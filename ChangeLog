@@ -1,3 +1,12 @@
+2003-02-19 Wednesday 22:38  Eddie Kohler <kohler@icir.org>
+
+	* test/handlers/k01.testie (1.2): add some tests
+
+2003-02-19 Wednesday 22:37  Eddie Kohler <kohler@icir.org>
+
+	* etc/diagrams/elements.mp (1.5): allow "drawconnect(0,0,0,0)
+	withpen XXX withcolor YYY" type stuff
+
 2003-02-18 Tuesday 11:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/simple-dsdv.click (1.2): Try it without the bugs
