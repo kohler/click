@@ -167,7 +167,7 @@ template <class K, class V>
 _HashMapIterator<K, V>::_HashMapIterator(const HashMap<K, V> *hm)
   : _hm(hm)
 {
-  HashMap<K, V>::Elt *e = _hm->_e;
+  typename HashMap<K, V>::Elt *e = _hm->_e;
   int capacity = _hm->_capacity;
   for (_pos = 0; _pos < capacity && !(bool)e[_pos].k; _pos++)
     ;
@@ -177,7 +177,7 @@ template <class K, class V>
 void
 _HashMapIterator<K, V>::operator++(int)
 {
-  HashMap<K, V>::Elt *e = _hm->_e;
+  typename HashMap<K, V>::Elt *e = _hm->_e;
   int capacity = _hm->_capacity;
   for (_pos++; _pos < capacity && !(bool)e[_pos].k; _pos++)
     ;

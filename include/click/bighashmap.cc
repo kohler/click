@@ -95,7 +95,7 @@ BigHashMap<K, V>::bucket(const K &key) const
 }
 
 template <class K, class V>
-BigHashMap<K, V>::Elt *
+typename BigHashMap<K, V>::Elt *
 BigHashMap<K, V>::find_elt(const K &key) const
 {
 #if BIGHASHMAP_REARRANGE_ON_FIND
@@ -268,7 +268,7 @@ _BigHashMap_const_iterator<K, V>::_BigHashMap_const_iterator(const BigHashMap<K,
   : _hm(hm)
 {
   int nb = _hm->_nbuckets;
-  BigHashMap<K, V>::Elt **b = _hm->_buckets;
+  typename BigHashMap<K, V>::Elt **b = _hm->_buckets;
   for (_bucket = 0; _bucket < nb; _bucket++)
     if (b[_bucket]) {
       _elt = b[_bucket];
@@ -285,7 +285,7 @@ _BigHashMap_const_iterator<K, V>::operator++(int)
     _elt = _elt->next;
   else {
     int nb = _hm->_nbuckets;
-    BigHashMap<K, V>::Elt **b = _hm->_buckets;
+    typename BigHashMap<K, V>::Elt **b = _hm->_buckets;
     for (_bucket++; _bucket < nb; _bucket++)
       if (b[_bucket]) {
 	_elt = b[_bucket];
@@ -574,7 +574,7 @@ _BigHashMap_const_iterator<K, void *>::_BigHashMap_const_iterator(const BigHashM
   : _hm(hm)
 {
   int nb = _hm->_nbuckets;
-  BigHashMap<K, void *>::Elt **b = _hm->_buckets;
+  typename BigHashMap<K, void *>::Elt **b = _hm->_buckets;
   for (_bucket = 0; _bucket < nb; _bucket++)
     if (b[_bucket]) {
       _elt = b[_bucket];
@@ -591,7 +591,7 @@ _BigHashMap_const_iterator<K, void *>::operator++(int)
     _elt = _elt->next;
   else {
     int nb = _hm->_nbuckets;
-    BigHashMap<K, void *>::Elt **b = _hm->_buckets;
+    typename BigHashMap<K, void *>::Elt **b = _hm->_buckets;
     for (_bucket++; _bucket < nb; _bucket++)
       if (b[_bucket]) {
 	_elt = b[_bucket];
