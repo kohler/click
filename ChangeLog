@@ -1,3 +1,7 @@
+2004-05-14 Friday 19:12  John Bicket <jbicket@mit.edu>
+
+	* include/click/task.hh (1.29): make task.hh compile (?)
+
 2004-05-13 Thursday 23:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/toipsumdump.hh (1.41): what happen?
