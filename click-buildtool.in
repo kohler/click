@@ -599,9 +599,14 @@ EOF
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
     name = (ans[2] == "" ? "0" : "\"" ans[2] "\"");
-    B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n  " ans[1] "::static_initialize();\n";
-    C = C "  " ans[1] "::static_cleanup();\n  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
+    B = B "  hatred_of_rebecca[" nrebecca "] = click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n"
+    C = C "  click_remove_element_type(hatred_of_rebecca[" nrebecca "]);\n";
     D = D "   case " nrebecca ": return new " ans[1] ";\n";
+    if (!(ans[1] in static_done)) {
+      B = B "  " ans[1] "::static_initialize();\n";
+      C = C "  " ans[1] "::static_cleanup();\n";
+      static_done[ans[1]] = 1;
+    }
     nrebecca++;
   }
 }
@@ -637,9 +642,13 @@ END {
   for (i = 3; i <= NF; i++) {
     split($i, ans, /-/);
     name = "\"" ans[2] "\""
-    B = B "  (void) click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n  " ans[1] "::static_initialize();\n";
-    C = C "  " ans[1] "::static_cleanup();\n";
+    B = B "  (void) click_add_element_type(" name ", beetlemonkey, " nrebecca ");\n";
     D = D "   case " nrebecca ": return new " ans[1] ";\n";
+    if (!(ans[1] in static_done)) {
+      B = B "  " ans[1] "::static_initialize();\n";
+      C = C "  " ans[1] "::static_cleanup();\n";
+      static_done[ans[1]] = 1;
+    }
     nrebecca++;
   }
 }
