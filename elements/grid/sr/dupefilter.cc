@@ -22,6 +22,7 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
+#include <click/confparse.hh>
 #include <clicknet/ether.h>
 #include "srpacket.hh"
 #include "dupefilter.hh"
@@ -30,7 +31,8 @@ CLICK_DECLS
 
 DupeFilter::DupeFilter()
   : Element(1, 1),
-    _window(10)
+    _window(10),
+    _debug(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -53,6 +55,7 @@ DupeFilter::configure(Vector<String> &conf, ErrorHandler* errh)
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "WINDOW", cpInteger, "window length", &_window,
+		    "DEBUG", cpInteger, "debug level", &_debug,
 		    cpEnd);
   return ret;
 }
@@ -77,12 +80,24 @@ DupeFilter::simple_action(Packet *p_in)
   int seq = pk->data_seq();
   if (0 == seq || (now.tv_sec - nfo->_last.tv_sec > 30)) {
     /* reset */
+    if (_debug > 2) {
+      click_chatter("%{element}: reset seq %d path %s\n",
+		    this,
+		    seq,
+		    path_to_string(p).cc());
+    }
     nfo->clear();
   }
   
   for (int x = 0; x < nfo->_sequences.size(); x++) {
     if(seq == nfo->_sequences[x]) {
       /* duplicate dectected */
+      if (_debug > 2) {
+	click_chatter("%{element}: dup seq %d path %s\n",
+		      this,
+		      seq,
+		      path_to_string(p).cc());
+      }
       nfo->_dupes++;
       p_in->kill();
       return 0;
@@ -92,17 +107,18 @@ DupeFilter::simple_action(Packet *p_in)
   nfo->_packets++;
   nfo->_last = now;
   nfo->_sequences.push_back(seq);
-
-  while(nfo->_sequences.size() > _window) {
+  /* clear space for new seq */
+  while( nfo->_sequences.size() > _window) {
     nfo->_sequences.pop_front();
   }
-  
+
+
   return p_in;
 }
 
 
 String
-DupeFilter::read_stats(Element *xf, void *) 
+DupeFilter::static_read_stats(Element *xf, void *) 
 {
   DupeFilter *e = (DupeFilter *) xf;
   StringAccum sa;
@@ -117,15 +133,44 @@ DupeFilter::read_stats(Element *xf, void *)
     sa << " dupes " << nfo._dupes;
     sa << " seq_size " << nfo._sequences.size();
     sa << " [ " << path_to_string(nfo._p) << " ]\n";
+    sa << "[";
+    for (int x = 0; x < nfo._sequences.size(); x++) {
+      sa << " " << nfo._sequences[x];
+    }
+    sa << "]\n";
+
   }
   return sa.take_string();
 }
 
+String
+DupeFilter::static_read_debug(Element *f, void *)
+{
+  StringAccum sa;
+  DupeFilter *d = (DupeFilter *) f;
+  sa << d->_debug << "\n";
+  return sa.take_string();
+}
+int
+DupeFilter::static_write_debug(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  DupeFilter *n = (DupeFilter *) e;
+  int i;
+
+  if (!cp_integer(arg, &i))
+    return errh->error("`debug' must be a integer");
+
+  n->_debug = i;
+  return 0;
+}
 void
 DupeFilter::add_handlers() 
 {
   add_default_handlers(true);
-  add_read_handler("stats", read_stats, 0);
+  add_read_handler("stats", static_read_stats, 0);
+  add_read_handler("debug", static_read_debug, 0);
+  add_write_handler("debug", static_write_debug, 0);
 }
 
 EXPORT_ELEMENT(DupeFilter)

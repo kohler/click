@@ -53,11 +53,20 @@ ETTMetric::cast(const char *n)
 int
 ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+  _weight_1 = 100;
+  _weight_2 = 180;
+  _weight_5 = 260;
+  _weight_11 = 600;
+
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
 			"ETT",cpElement, "ETTStat element", &_ett_stat,
 			"IP", cpIPAddress, "IP address", &_ip,
 			"LT", cpElement, "LinkTable element", &_link_table, 
+			"1_WEIGHT", cpUnsigned, "LinkTable element", &_weight_1, 
+			"2_WEIGHT", cpUnsigned, "LinkTable element", &_weight_2, 
+			"5_WEIGHT", cpUnsigned, "LinkTable element", &_weight_5, 
+			"11_WEIGHT", cpUnsigned, "LinkTable element", &_weight_11, 
 			0);
   if (res < 0)
     return res;
@@ -101,29 +110,36 @@ ETTMetric::get_tx_rate(EtherAddress eth)
   return 1;
 }
 
-void get_rate_and_tput(int *tput, int *rate, 
-		       int fwd_1,
-		       int fwd_2, int fwd_5, 
-		       int fwd_11,  int rev_small)
+void 
+ETTMetric::get_rate_and_tput(int *tput, int *rate, 
+			     int fwd_1,
+			     int fwd_2, 
+			     int fwd_5, 
+			     int fwd_11,  
+			     int rev_small)
 {
   if (!rate || !tput) {
     click_chatter("get_rate_and_tput called with %d, %d\n", rate, tput);
     return;
   }
-  *rate = 1;
-  *tput = rev_small * fwd_1;
+  int tput_1 = rev_small * fwd_1 * _weight_1 / 100;
+  int tput_2 = rev_small * fwd_2 * _weight_2 / 100;
+  int tput_5 = rev_small * fwd_5 * _weight_5 / 100;
+  int tput_11 = rev_small * fwd_11 * _weight_11 / 100;
 
-  if (*tput < rev_small * (3*fwd_2)/2) {
-    *tput = rev_small * (3*fwd_2)/2;
+  *rate = 1;
+  *tput = tput_1;
+
+  if (*tput < tput_2) {
+    *tput = tput_2;
     *rate = 2;
   }
-  if (*tput < rev_small * fwd_5 * 3) {
-    *tput = rev_small * fwd_5 * 3;
+  if (*tput < tput_5) {
+    *tput = tput_5;
     *rate = 5;
   }
-
-  if (*tput < rev_small * fwd_11 * 5) {
-    *tput = rev_small * fwd_11 * 5;
+  if (*tput < tput_11) {
+    *tput = tput_11;
     *rate = 11;
   }
 
@@ -138,6 +154,13 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
 		       int fwd_11, int rev_11
 		       ) 
 {
+
+  if (!from || !to) {
+    click_chatter("%{element}::update_link called with %s %s\n",
+		  this,
+		  from.s().cc(),
+		  to.s().cc());
+  }
   IPOrderedPair p = IPOrderedPair(from, to);
 
   if (!p.first(from)) {

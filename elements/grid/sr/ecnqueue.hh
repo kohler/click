@@ -40,8 +40,8 @@ private:
 	int _seq;
 	struct timeval _last_tx;
 	bool _ecn;
-	PathInfo() : _p(), _seq(0) { }
-	PathInfo(Path p) : _p(p), _seq(0) { }
+	PathInfo() : _p(), _seq(0), _ecn(false) { }
+	PathInfo(Path p) : _p(p), _seq(0), _ecn(false) { }
 
 	struct timeval last_tx_age() {
 	    struct timeval age;

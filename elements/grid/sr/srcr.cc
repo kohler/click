@@ -43,10 +43,14 @@ SRCR::SRCR()
      _link_table(0),
      _metric(0),
      _arp_table(0),
-     _num_queries(0),
-     _bytes_queries(0),
-     _num_replies(0), 
-     _bytes_replies(0)
+     _num_queries_tx(0),
+     _bytes_queries_tx(0),
+     _num_replies_tx(0), 
+     _bytes_replies_tx(0),
+     _num_queries_rx(0),
+     _bytes_queries_rx(0),
+     _num_replies_rx(0), 
+     _bytes_replies_rx(0)
 
 {
   MOD_INC_USE_COUNT;
@@ -209,8 +213,8 @@ SRCR::send(WritablePacket *p)
   u_char type = pk->_type;
   if(type == PT_QUERY){
     memset(eh->ether_dhost, 0xff, 6);
-    _num_queries++;
-    _bytes_queries += p->length();
+    _num_queries_tx++;
+    _bytes_queries_tx += p->length();
   } else if(type == PT_REPLY){
     int next = pk->next();
     srcr_assert(next < MaxHops);
@@ -218,8 +222,8 @@ SRCR::send(WritablePacket *p)
     srcr_assert(next_ip != _ip);
     EtherAddress eth_dest = _arp_table->lookup(next_ip);
     memcpy(eh->ether_dhost, eth_dest.data(), 6);
-    _num_replies++;
-    _bytes_replies += p->length();
+    _num_replies_tx++;
+    _bytes_replies_tx += p->length();
   } else {
     srcr_assert(0);
     return;
@@ -746,7 +750,7 @@ SRCR::push(int port, Packet *p_in)
 	best_metric < 2 * q->_metric && 
 	best_metric < 7777) {
       /* don't send another query if we have a within 2x path
-       * that is valid (ie metric is < 7777
+       * that is valid (ie metric is < 7777)
        */
       return;
     }
@@ -832,9 +836,13 @@ SRCR::push(int port, Packet *p_in)
     get_fwd_metric(neighbor);
     get_rev_metric(neighbor);
     if(type == PT_QUERY){
+      _num_queries_rx++;
+      _bytes_queries_rx += p_in->length();
       process_query(pk);
       
     } else if(type == PT_REPLY){
+      _num_replies_rx++;
+      _bytes_replies_rx += p_in->length();
       if(pk->get_hop(pk->next()) != _ip){
 	// it's not for me. these are supposed to be unicast,
 	// so how did this get to me?
@@ -887,10 +895,14 @@ SRCR::print_stats()
 {
   
   return
-    String(_num_queries) + " queries sent\n" +
-    String(_bytes_queries) + " bytes of query sent\n" +
-    String(_num_replies) + " replies sent\n" +
-    String(_bytes_replies) + " bytes of reply sent\n";
+    String(_num_queries_tx) + " queries sent\n" +
+    String(_bytes_queries_tx) + " bytes of query sent\n" +
+    String(_num_replies_rx) + " replies recv\n" +
+    String(_bytes_replies_rx) + " bytes of reply recv\n" +
+    String(_num_queries_rx) + " queries recv\n" +
+    String(_bytes_queries_rx) + " bytes of query recv\n" +
+    String(_num_replies_tx) + " replies sent\n" +
+    String(_bytes_replies_tx) + " bytes of reply sent\n";
 }
 
 String
@@ -946,10 +958,14 @@ SRCR::clear()
   _link_table->clear();
   _seen.clear();
 
-  _num_queries = 0;
-  _bytes_queries = 0;
-  _num_replies = 0;
-  _bytes_replies = 0;
+  _num_queries_tx = 0;
+  _bytes_queries_tx = 0;
+  _num_replies_tx = 0;
+  _bytes_replies_tx = 0;
+  _num_queries_rx = 0;
+  _bytes_queries_rx = 0;
+  _num_replies_rx = 0;
+  _bytes_replies_rx = 0;
 }
 
 int

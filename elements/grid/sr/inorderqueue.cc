@@ -119,7 +119,12 @@ InOrderQueue::ready_for(const Packet *p_in) {
     Path p = pk->get_path();
 
     PathInfo *nfo = _paths.findp(p);
-
+    if (!nfo) {
+	click_chatter("%{element} nfo for path is NULL! [%s]\n",
+		      this,
+		      path_to_string(p).cc());
+	return true;
+    }
     uint32_t seq = pk->data_seq();
 
     if (seq == nfo->_seq + 1) {

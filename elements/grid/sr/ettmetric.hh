@@ -84,6 +84,10 @@ public:
 		   ); 
 
   int get_tx_rate(EtherAddress);
+  void get_rate_and_tput(int *tput, int *rate, 
+			 int fwd_1,
+			 int fwd_2, int fwd_5, 
+			 int fwd_11,  int rev_small);
   class LinkInfo {
   public:
     IPOrderedPair _p;
@@ -105,6 +109,11 @@ private:
   ETTStat *_ett_stat;
   LinkTable *_link_table;
   IPAddress _ip;
+
+  int _weight_1;
+  int _weight_2;
+  int _weight_5;
+  int _weight_11;
 };
 
 CLICK_ENDDECLS

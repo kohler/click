@@ -100,15 +100,15 @@ SetTXRate::simple_action(Packet *p_in)
   }
 
   SET_WIFI_FROM_CLICK(p_in);
-  EtherAddress dst = EtherAddress(eh->ether_dhost);
-  if (_auto_l) {
-    int rate = _auto_l->get_tx_rate(dst);
-    if (rate) {
-      SET_WIFI_RATE_ANNO(p_in, rate);  
-      return p_in;
+  if (_auto) {
+    EtherAddress dst = EtherAddress(eh->ether_dhost);
+    int rate = 0;
+    if (_auto_l) {
+      rate = _auto_l->get_tx_rate(dst);
+    } else if (_ett_l) {
+      rate = _ett_l->get_tx_rate(dst);
     }
-  } else if (_ett_l) {
-    int rate = _ett_l->get_tx_rate(dst);
+    
     if (rate) {
       SET_WIFI_RATE_ANNO(p_in, rate);  
       return p_in;
@@ -172,7 +172,7 @@ String
 SetTXRate::auto_read_handler(Element *e, void *)
 {
   SetTXRate *foo = (SetTXRate *)e;
-  if (foo->_auto_l) {
+  if (foo->_auto && (foo->_auto_l || foo->_ett_l)) {
     return String("true") + "\n";
   }
   return String("false") + "\n";

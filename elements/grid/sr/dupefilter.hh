@@ -37,7 +37,10 @@ class DupeFilter : public Element {
   
   Packet *simple_action(Packet *);
 
-  static String read_stats(Element *xf, void *);
+  static String static_read_stats(Element *xf, void *);
+  static String static_read_debug(Element *xf, void *);
+  static int static_write_debug(const String &arg, Element *e,
+				void *, ErrorHandler *errh);
   void add_handlers();
 
   class PathInfo {
@@ -64,6 +67,7 @@ class DupeFilter : public Element {
 
   PathTable _paths;
   int _window;
+  int _debug;
 };
 
 CLICK_ENDDECLS

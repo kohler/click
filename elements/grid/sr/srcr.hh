@@ -202,10 +202,15 @@ private:
   class ARPTable *_arp_table;
 
   // Statistics for handlers.
-  int _num_queries;
-  int _bytes_queries;
-  int _num_replies;
-  int _bytes_replies;
+  int _num_queries_tx;
+  int _bytes_queries_tx;
+  int _num_replies_tx;
+  int _bytes_replies_tx;
+
+  int _num_queries_rx;
+  int _bytes_queries_rx;
+  int _num_replies_rx;
+  int _bytes_replies_rx;
 
 
   bool _debug;

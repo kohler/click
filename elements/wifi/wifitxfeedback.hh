@@ -60,11 +60,13 @@ public:
     
     int got_skb(struct sk_buff *);
     static int static_got_skb(struct sk_buff *, void *arg);
-    
+    static String static_print_stats(Element *e, void *);
 private:
     
     void tx_completed(Packet *p);
-    
+
+    int _successes;
+    int _failures;
 };
 
 CLICK_ENDDECLS
