@@ -96,6 +96,7 @@ ICMPSendPings::run_scheduled()
 
   q->set_dst_ip_anno(IPAddress(_dst));
   q->set_ip_header(nip, sizeof(click_ip));
+  click_gettimeofday(&q->timestamp_anno());
 
   output(0).push(q);
 
