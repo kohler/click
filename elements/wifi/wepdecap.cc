@@ -165,7 +165,7 @@ read_param(Element *e, void *thunk)
   WepDecap *td = (WepDecap *)e;
     switch ((uintptr_t) thunk) {
       case H_DEBUG: return String(td->_debug) + "\n";
-    case H_KEY: return td->_key.hex() + "\n";
+    case H_KEY: return td->_key.qouted_hex() + "\n";
     case H_KEYID: return String(td->_keyid) + "\n";
     default:
       return String();

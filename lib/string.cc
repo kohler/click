@@ -455,20 +455,21 @@ String::trim_space() const
 }
 
 String
-String::hex() const
+String::quoted_hex() const
 {
+    static const char hex_digits[16] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
     StringAccum sa;
     sa << "\\<";
-    const uint8_t *x = reinterpret_cast<const u_int8_t *>(data());
-    char *buf = sa.reserve(length()*2);
-    for (int j = 0; j < length(); j++) {
-	sprintf(buf+j*2, "%02x", x[j]);
-    }
-    sa.forward(length()*2);
-
-    sa << ">";
-    return sa.take_string();
-
+    if (char *buf = sa.extend(length() * 2 + 1)) {
+	const uint8_t *e = reinterpret_cast<const uint8_t*>(end());
+	for (const uint8_t *x = reinterpret_cast<const uint8_t*>(begin()); x < e; x++) {
+	    *buf++ = hex_digits[(*x >> 4) & 0xF];
+	    *buf++ = hex_digits[*x & 0xF];
+	}
+	*buf++ = '>';
+	return sa.take_string();
+    } else
+	return out_of_memory_string();
 }
 
 int
