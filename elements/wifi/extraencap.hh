@@ -10,7 +10,7 @@ ExtraEncap()
 
 =s Wifi
 
-Pushes the prism2 header on a packet based on information in Packet::anno()
+Pushes the click_wifi_extra header on a packet based on information in Packet::anno()
 
 =d
 

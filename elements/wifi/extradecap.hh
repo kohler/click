@@ -10,7 +10,7 @@ ExtraDecap()
 
 =s Wifi
 
-Pulls the prism2 header from a packet and stores it in Packet::anno()
+Pulls the click_wifi_extra header from a packet and stores it in Packet::anno()
 
 =d
 Removes the extra header and copies to to Packet->anno(). This contains
