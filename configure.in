@@ -277,6 +277,14 @@ if test $ac_cv_click_bsd_kernel = yes; then
     AC_DEFINE_UNQUOTED(HAVE_CLICK_BSD_KERNEL, 1)
 fi
 
+AC_CACHE_CHECK(for device polling BSD kernel extension, ac_cv_bsd_poll_extension,
+[if grep polling /usr/include/net/if_var.h >/dev/null 2>&1; then
+  ac_cv_bsd_poll_extension=yes
+else ac_cv_bsd_poll_extension=no; fi])
+if test $ac_cv_bsd_poll_extension = yes; then
+    AC_DEFINE_UNQUOTED(HAVE_BSD_POLLING, 1)
+fi
+
 fi
 
 

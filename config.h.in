@@ -86,6 +86,9 @@
 /* Define if your Linux kernel has polling extensions. */
 #undef HAVE_POLLING
 
+/* Define if your BSD kernel has polling extensions. */
+#undef HAVE_BSD_POLLING
+
 /* Define if your Linux kernel has sk_buff reuse extensions. */
 #undef HAVE_REUSE_SKB
 
