@@ -25,7 +25,11 @@
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
 #if CLICK_LINUXMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 # include <linux/vmalloc.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #endif
 CLICK_DECLS
 
