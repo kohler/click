@@ -6,11 +6,12 @@
 
 $| = 1;
 $debug = 0;
+$config_file = "";
 
-$click = "../userlevel/click";
+$click = "/userlevel/click";
 $click_debug = "cat";
-$click_config_name = "../conf/grid.click";
-
+$click_config_name = "/conf/grid.click";
+$clickdir = "..";
 
 $grid_channel = "5";
 $grid_ssid = "grid";
@@ -48,7 +49,8 @@ sub my_system {
 }
 
 if (@ARGV < 2) { 
-    print stderr "usage: $0 <ip-addr> <interface> [-debug -no-cleanup -no-gw  -pos <lat> <lon> -range <rng>]\n";
+    print stderr "usage: $0 <ip-addr> <interface> [-debug -no-cleanup -no-gw  -pos <lat> <lon> -range <rng> -config <config-file>]\n";
+    print stderr "usage: $0 -config <config-file\n";
     exit 1;
 }
 
@@ -61,9 +63,75 @@ if (!($system_type =~ /Linux/ ||
 
 
 $do_cleanup = 1;
-$grid_addr = $ARGV[0];
-$grid_if = $ARGV[1];
-$grid_gw = $GRID_GW;
+$grid_addr = "0.0.0.0";
+$grid_if = "lo";
+
+if ($ARGV[0] eq "-config") {
+    $config_file = $ARGV[1];
+    print "Using config file $config_file\n";
+    open(grid_config_file, $config_file) || die "can't open config file ", $config_file, "\n";
+    while(<grid_config_file>) {
+	if (/GW=(\d+\.\d+\.\d+\.\d+)/) {
+	    $GRID_GW = $1;
+	}
+	if (/IP=(\d+\.\d+\.\d+\.\d+)/) {
+	    $grid_addr = $1;
+	}
+	if (/LAT=(\d+\.?\d*|\.d+)/) {
+	    $POS_LAT = $1;
+	}
+	if (/LON=(\d+\.?\d*|\.d+)/) {
+	    $POS_LON = $1;
+	}
+	if (/IF=(\w+)/) {
+	    $grid_if = $1;
+	}
+	if (/CLICKDIR=(.+)/) {
+	    $clickdir = $1;
+	    print "new click dir $clickdir\n";
+	}
+    }
+    close grid_config_file;
+}
+else {
+    $grid_addr = $ARGV[0];
+    $grid_if = $ARGV[1];
+
+    $i = 0;
+    for ($i = 2; $i < @ARGV; $i++) {
+	if ($ARGV[$i] eq "-debug") {
+	    $debug = 1;
+	    $click = $click_debug;
+	    $CONTROL_RO = "false";
+	    print "Using DEBUG command\n";
+	    print "ControlSocket is write-enabled\n";
+	}
+	if ($ARGV[$i] eq "-no-gw") {
+	    $GRID_GW = "0.0.0.0";
+	}
+	if ($ARGV[$i] eq "-no-cleanup") {
+	    $do_cleanup = 0;
+	}
+	if ($ARGV[$i] eq "-pos") {
+	    if (@ARGV - $i < 3) {
+		print "must specify position as `lat lon'\n";
+		exit 1;
+	    }
+	    $i++;
+	    $POS_LAT = $ARGV[$i];
+	    $i++;
+	    $POS_LON = $ARGV[$i];
+	}
+	if ($ARGV[$i] eq "-range") {
+	    if (@ARGV - $i < 2) {
+		print "must specify range\n";
+		exit 1;
+	    }
+	    $i++;
+	    $RANGE = $ARGV[$i];
+	}
+    }
+}
 
 if (-e "/proc/aironet/$grid_if") {
     $radio_type = "aironet";
@@ -74,44 +142,12 @@ if (!($grid_addr =~ /18.26.7.\d+/)) {
     exit 1;
 }
 
-$i = 0;
-for ($i = 2; $i < @ARGV; $i++) {
-    if ($ARGV[$i] eq "-debug") {
-	$debug = 1;
-	$click = $click_debug;
-	$CONTROL_RO = "false";
-	print "Using DEBUG command\n";
-	print "ControlSocket is write-enabled\n";
-    }
-    if ($ARGV[$i] eq "-no-gw") {
-	$grid_gw = "0.0.0.0";
-    }
-    if ($ARGV[$i] eq "-no-cleanup") {
-	$do_cleanup = 0;
-    }
-    if ($ARGV[$i] eq "-pos") {
-	if (@ARGV - $i < 3) {
-	    print "must specify position as `lat lon'\n";
-	    exit 1;
-	}
-	$i++;
-	$POS_LAT = $ARGV[$i];
-	$i++;
-	$POS_LON = $ARGV[$i];
-    }
-    if ($ARGV[$i] eq "-range") {
-	if (@ARGV - $i < 2) {
-	    print "must specify range\n";
-	    exit 1;
-	}
-	$i++;
-	$RANGE = $ARGV[$i];
-    }
-}
+
+
 
 print "Running Grid with address $grid_addr on interface $grid_if ($radio_type), ad-hoc channel $grid_channel.\n";
-if ($grid_gw != "0.0.0.0") {
-    print "Using Grid gateway ", $grid_gw, "\n";
+if ($GRID_GW != "0.0.0.0") {
+    print "Using Grid gateway ", $GRID_GW, "\n";
 }
 else {
     print "NOT using Grid gateway\n";
@@ -250,11 +286,11 @@ else {
 # fire up click, substituting appropriate values into the config file,
 # and piping it into click stdin.
 
-open(click_config_file, $click_config_name) || die "can't open click configuration ", $click_config_name, "\n";
+open(click_config_file, "$clickdir$click_config_name") || die "can't open click configuration ", "$clickdir$click_config_name", "\n";
 
 $grid_addr_hex = ip_to_hex($grid_addr);
 
-open(P, "| $click");
+open(P, "| $clickdir$click");
 while(<click_config_file>) {
 
     s/CONTROL_PORT/$CONTROL_PORT/;
@@ -271,7 +307,7 @@ while(<click_config_file>) {
     s/LR_JITTER/$LR_JITTER/;
     s/GRID_ETH_PROTO/$GRID_ETH_PROTO/;
     s/GRID_NBR_ENCAP_PROTO/$GRID_NBR_ENCAP_PROTO/;
-    s/GRID_GW/$grid_gw/;
+    s/GRID_GW/$GRID_GW/;
     s/GRID_IP/$grid_addr/;
     s/GRID_HEX_IP/$grid_addr_hex/;
     s/NET_DEVICE/$grid_if/;
@@ -282,6 +318,8 @@ while(<click_config_file>) {
 close P;
 close click_config_file;
 
+
+print "Cleaning up\n";
 
 if ($do_cleanup) {
     if ($system_type =~ /Linux/) {
