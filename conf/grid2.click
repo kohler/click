@@ -1,8 +1,5 @@
 // grid2.click
 
-// better than grid.click, this configuration uses the PacketSocket
-// element for device input and output
-
 rh :: ReadHandlerCaller(1) 
 
 // protocol els

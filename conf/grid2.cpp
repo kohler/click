@@ -13,8 +13,8 @@ nb :: Neighbor(NBR_TIMEOUT, MAC_ADDR, GRID_IP)
 h :: Hello(HELLO_PERIOD, HELLO_JITTER, MAC_ADDR, GRID_IP)
 
 // device layer els
-ps :: PacketSocket(NET_DEVICE, 0)
-q :: Queue -> ps
+ps :: FromDevice(NET_DEVICE, 0)
+q :: ToDevice(NET_DEVICE)
 
 // linux ip layer els
 linux :: Tun(TUN_DEVICE, GRID_IP, GRID_NETMASK)
