@@ -362,27 +362,27 @@ def _finarr text t =
   fill arrowhead _apth  t
 enddef;
 
-vardef connectpath(suffix $,#,##,$$) =
+def connectpath(suffix $,#,##,$$) =
   $.out[#]{$.flowvector} .. {$$.flowvector}$$.in[##]
 enddef;
-vardef drawconnectj(suffix $,#,##,$$)(text t) =
+vardef drawconnectj(suffix $,#,##,$$)(text t) text rest =
   interim linejoin := mitered;
-  drawarrow $.out[#]{$.flowvector} t {$$.flowvector}$$.in[##] withpen connectionpen
+  drawarrow $.out[#]{$.flowvector} t {$$.flowvector}$$.in[##] withpen connectionpen rest
 enddef;
-vardef drawconnect(suffix $,#,##,$$) =
-  drawconnectj($,#,##,$$)(..);
+def drawconnect(suffix $,#,##,$$) =
+  drawconnectj($,#,##,$$)(..)
 enddef;
-vardef drawconnectna(suffix $,#,##,$$) =
+vardef drawconnectna(suffix $,#,##,$$) text rest =
   interim linejoin := mitered;
-  draw $.out[#]{$.flowvector} .. {$$.flowvector}$$.in[##] withpen connectionpen
+  draw $.out[#]{$.flowvector} .. {$$.flowvector}$$.in[##] withpen connectionpen rest
 enddef;
 
-vardef drawconnarrow expr p =
+def drawconnarrow expr p =
   _apth:=p; _finarr withpen connectionpen
 enddef;
-vardef drawconnarrowna expr p =
+def drawconnarrowna expr p =
   draw p withpen connectionpen
 enddef;
-vardef drawdblconnarrow expr p =
+def drawdblconnarrow expr p =
   _apth:=p; _findarr withpen connectionpen
 enddef;
