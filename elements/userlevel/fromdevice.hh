@@ -89,6 +89,7 @@ Returns a string indicating the encapsulation type on this link. Can be
 # define FROMDEVICE_PCAP 1
 extern "C" {
 # include <pcap.h>
+void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*, const u_char*);
 }
 #endif
 
@@ -137,8 +138,8 @@ class FromDevice : public Element { public:
 #endif
 #if FROMDEVICE_PCAP
   pcap_t* _pcap;
-  static void get_packet(u_char *, const struct pcap_pkthdr *,
-			 const u_char *);
+  friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
+				    const u_char*);
 #endif
   bool _force_ip;
   int _datalink;

@@ -26,7 +26,11 @@
 #include <unistd.h>
 #include <fcntl.h>
 
+#ifndef __sun
 #include <sys/ioctl.h>
+#else
+#include <sys/ioccom.h>
+#endif
 
 #if FROMDEVICE_LINUX
 # include <sys/socket.h>
@@ -275,10 +279,11 @@ FromDevice::cleanup(CleanupStage)
 }
 
 #if FROMDEVICE_PCAP
+extern "C" {
 void
-FromDevice::get_packet(u_char* clientdata,
-		       const struct pcap_pkthdr* pkthdr,
-		       const u_char* data)
+FromDevice_get_packet(u_char* clientdata,
+		      const struct pcap_pkthdr* pkthdr,
+		      const u_char* data)
 {
     static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
@@ -303,6 +308,7 @@ FromDevice::get_packet(u_char* clientdata,
     else
 	p->kill();
 }
+}
 #endif
 
 void
@@ -310,7 +316,7 @@ FromDevice::selected(int)
 {
 #ifdef FROMDEVICE_PCAP
     // Read and push() at most one packet.
-    pcap_dispatch(_pcap, 1, FromDevice::get_packet, (u_char *) this);
+    pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
 #endif
 #ifdef FROMDEVICE_LINUX
     struct sockaddr_ll sa;

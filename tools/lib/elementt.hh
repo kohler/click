@@ -88,7 +88,6 @@ struct PortT {
     String unparse_input() const;
     String unparse_output() const;
     
-    static int sorter(const void *, const void *);
     static void sort(Vector<PortT> &);
 
 };

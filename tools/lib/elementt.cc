@@ -83,8 +83,9 @@ PortT::force_index_in(Vector<PortT> &v, int start) const
     return size;
 }
 
-int
-PortT::sorter(const void *av, const void *bv)
+extern "C" {
+static int
+PortT_sorter(const void *av, const void *bv)
 {
     const PortT *a = (const PortT *)av, *b = (const PortT *)bv;
     if (a->elt == b->elt)
@@ -92,11 +93,12 @@ PortT::sorter(const void *av, const void *bv)
     else
 	return a->elt->idx() - b->elt->idx();
 }
+}
 
 void
 PortT::sort(Vector<PortT> &v)
 {
-    qsort(&v[0], v.size(), sizeof(PortT), &sorter);
+    qsort(&v[0], v.size(), sizeof(PortT), PortT_sorter);
 }
 
 String

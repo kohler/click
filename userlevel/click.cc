@@ -123,6 +123,7 @@ static Router *router;
 static ErrorHandler *errh;
 static bool started = 0;
 
+extern "C" {
 static void
 catch_sigint(int)
 {
@@ -130,6 +131,7 @@ catch_sigint(int)
   if (!started)
     kill(getpid(), SIGINT);
   router->please_stop_driver();
+}
 }
 
 
