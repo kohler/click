@@ -48,7 +48,7 @@ eth_demux [5] -> [0] nb
 
 ip_cl [0] -> to_tun1
 ip_cl [1] -> to_tun2
-ip_cl [2] -> -> to_nb_ip // send 18.26.7.* to Grid processing
+ip_cl [2] -> to_nb_ip // send 18.26.7.* to Grid processing
 ip_cl [3] -> gw_cl :: Classifier(16/121a04, -) // get local wired IP for 18.26.4.*
 gw_cl [0] -> GetIPAddress(16) -> [0] arpq // ARP and send local net traffic
 gw_cl [1] -> SetIPAddress(18.26.4.1) -> [0] arpq // ARP and send gateway traffic
