@@ -1,3 +1,37 @@
+2000-12-11 Monday 16:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* README, configure.in, elements/app/ftpportmapper.hh,
+	elements/ip/checktcpheader.cc, elements/ip/checktcpheader.hh,
+	elements/ip/checkudpheader.cc, elements/ip/checkudpheader.hh,
+	elements/ip/ipaddrrewriter.cc, elements/ip/iprewriter.cc,
+	elements/ip/iprewriter.hh, elements/ip/iprw.cc,
+	elements/ip/iprw.hh, elements/ip/rripmapper.cc,
+	elements/ip/rripmapper.hh, elements/ip/settcpchecksum.cc,
+	elements/ip/settcpchecksum.hh, elements/ip/snooptcp.cc,
+	elements/ip/snooptcp.hh, elements/ip/tcpipsend.cc,
+	elements/ip/tcpipsend.hh, elements/ip/tcprewriter.cc,
+	elements/ip/tcprewriter.hh, elements/ip/udpipencap.cc,
+	elements/ip/udpipencap.hh, elements/linuxmodule/fastudpsrc.hh,
+	elements/tcpudp/checktcpheader.cc,
+	elements/tcpudp/checktcpheader.hh,
+	elements/tcpudp/checkudpheader.cc,
+	elements/tcpudp/checkudpheader.hh, elements/tcpudp/iprewriter.cc,
+	elements/tcpudp/iprewriter.hh, elements/tcpudp/settcpchecksum.cc,
+	elements/tcpudp/settcpchecksum.hh, elements/tcpudp/snooptcp.cc,
+	elements/tcpudp/snooptcp.hh, elements/tcpudp/tcpipsend.cc,
+	elements/tcpudp/tcpipsend.hh, elements/tcpudp/tcprewriter.cc,
+	elements/tcpudp/tcprewriter.hh, elements/tcpudp/udpipencap.cc,
+	elements/tcpudp/udpipencap.hh: added tcpudp directory for TCP or
+	UDP elements; updated IPRewriter and TCPRewriter to support
+	dropping on receipt of FIN or RST; other changes to support that;
+	doc nitlets elsewhere
+
+2000-12-11 Monday 16:46  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: added
+	cp_keyword_argument(): parse a single keyword argument, or ignore
+	it
+
 2000-12-08 Friday 21:46  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ip/iprw.cc: IPRewriter clean_map: be careful about
