@@ -1,3 +1,18 @@
+2002-05-21 Tuesday 21:15  Eddie Kohler <kohler@aciri.org>
+
+	* conf/demo.click (1.4), conf/fake-iprouter.click (1.14),
+	conf/fastudpsrc.click (1.2), conf/kernel.clickpat (1.2),
+	conf/kswitch.ipb (1.3), conf/make-udpcount.pl (1.5),
+	conf/make-udpgen.pl (1.9), conf/mazu-nat.click (1.9),
+	conf/rewriter.click (1.6), conf/sampler.click (1.2),
+	conf/udpgen.click (1.7), elements/linuxmodule/fromdevice.hh (1.32),
+	elements/linuxmodule/fromhost.hh (1.33),
+	elements/linuxmodule/polldevice.hh (1.61),
+	elements/linuxmodule/todevice.hh (1.59),
+	elements/linuxmodule/tohostsniffers.hh (1.17),
+	elements/linuxmodule/tulipstats.hh (1.7): finish renaming of
+	{To,From}Linux to {To,From}Host
+
 2002-05-21 Tuesday 21:04  Eddie Kohler <kohler@aciri.org>
 
 	* lib/packet.cc (1.56): Linux 2.4 support (cross fingers)
