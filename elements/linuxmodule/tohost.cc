@@ -44,7 +44,7 @@ static int device_notifier_hook(struct notifier_block *nb, unsigned long val, vo
 }
 
 ToHost::ToHost()
-    : _dev(0), _sniffers(false), _allow_nonexistent(false), _drops(0)
+    : _sniffers(false), _allow_nonexistent(false), _drops(0)
 {
     MOD_INC_USE_COUNT;
     add_input();
