@@ -38,7 +38,7 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 4 || args.size() > 4+MAX_NRATES-1) {
+  if(args.size() < 4 || args.size() > 4+MAX_NRATES) {
     errh->error("too few or too many arguments");
     return -1;
   }

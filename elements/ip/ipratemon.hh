@@ -3,15 +3,14 @@
 
 /*
  * =c
- * IPRateMonitor(DS, PB, OFF, THRESH/PERIOD, T1, ..., T3)
+ * IPRateMonitor(DS, PB, OFF, THRESH/PERIOD, T1, ..., T4)
  * =d
  *
  * Monitors network traffic rates, much like IPFlexMonitor. Can monitor either
  * packet or byte rate for either dst IP addresses or src IP addresses. Can
- * keep rates over up to four time periods (one threshold rate, three
- * auxiliary rates). When the rate for a particular IP network address exceeds
- * the threshold, rates will then be kept for host or subnet addresses within
- * that network.
+ * keep rates over up to four time periods. When the rate for a particular IP
+ * network address exceeds the threshold, rates will then be kept for host or
+ * subnet addresses within that network.
  *
  * DS: SRC or DST. Look at src or dst IP address.
  *
@@ -41,7 +40,7 @@
  * When read, returns THRESH/PERIOD. When written, expects THRESH/PERIOD.
  *
  * =h rates (read)
- * Returns rates over T1, T2, T3
+ * Returns rates over T1, T2, T3, T4
  *
  * =e
  * Example: 
