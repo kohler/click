@@ -27,7 +27,7 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
-#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
 #include <net/if.h>
 #include <net/if_tun.h>
 #endif
@@ -206,7 +206,7 @@ KernelTap::cleanup(CleanupStage)
 void
 KernelTap::selected(int fd)
 {
-#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__)
+#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__) || defined(__APPLE__)
   int cc;
   unsigned char b[2048];
 
@@ -215,7 +215,7 @@ KernelTap::selected(int fd)
   
   cc = read(_fd, b, sizeof(b));
   if (cc > 0) {
-# if defined (__OpenBSD__) || defined(__FreeBSD__)
+# if defined (__OpenBSD__) || defined(__FreeBSD__) || defined(__APPLE__)
     // BSDs prefix packet with 32-bit address family.
     int af = ntohl(*(unsigned *)b);
     struct click_ether *e;
@@ -277,7 +277,7 @@ KernelTap::push(int, Packet *p)
   const unsigned char *data = p->data() + sizeof(*e);
   unsigned length = p->length() - sizeof(*e);
 
-#if defined (__OpenBSD__) || defined(__FreeBSD__)
+#if defined (__OpenBSD__) || defined(__FreeBSD__) || defined(__APPLE__)
   char big[2048];
   int af;
 
