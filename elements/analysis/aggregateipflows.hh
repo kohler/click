@@ -56,6 +56,9 @@ The garbage collection interval. Default is 10 minutes of packet time.
 
 =back
 
+AggregateFlows is an AggregateNotifier, so AggregateListeners can request
+notifications when new aggregates are created and old ones are deleted.
+
 =a
 
 AggregateIP, AggregateCounter */
