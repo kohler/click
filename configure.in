@@ -288,6 +288,13 @@ AC_LANG_CPLUSPLUS
 
 
 dnl
+dnl large file support
+dnl
+
+CLICK_CHECK_LARGE_FILE_SUPPORT
+
+
+dnl
 dnl mmap
 dnl
 
@@ -518,6 +525,7 @@ AC_ARG_ENABLE(kassert, [  --enable-kassert        enable kernel assertions], :, 
 if test $enable_kassert = yes; then
     AC_DEFINE(HAVE_KERNEL_ASSERT)
 fi
+
 
 dnl
 dnl kernel interfaces
