@@ -328,7 +328,9 @@ ControlSocket::selected(int fd)
       return;
     }
 
+#if 0
     { unsigned x = sa.sin_addr.s_addr;  click_chatter("%s: %d.%d.%d.%d:%d -> %d", declaration().cc(), (int)(x>>24)&255, (int)(x>>16)&255, (int)(x>>8)&255, x&255, sa.sin_port, new_fd);}
+#endif
     
     fcntl(new_fd, F_SETFL, O_NONBLOCK);
     add_select(new_fd, SELECT_READ | SELECT_WRITE);
@@ -413,7 +415,9 @@ ControlSocket::selected(int fd)
       || (_flags[fd] & WRITE_CLOSED)) {
     close(fd);
     remove_select(fd, SELECT_READ | SELECT_WRITE);
+#if 0
     click_chatter("%s: closed %d", declaration().cc(), fd);
+#endif
     _flags[fd] = -1;
   }
 }

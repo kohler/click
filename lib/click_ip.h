@@ -13,6 +13,7 @@ extern "C" {
 # undef new
 # define in_cksum(addr, len) ip_compute_csum((addr), (len))
 #else
+# include <sys/types.h>
 # include <netinet/in.h>
 unsigned short in_cksum(const unsigned char *addr, int len);
 #endif
