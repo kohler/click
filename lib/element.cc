@@ -687,25 +687,25 @@ Element::add_default_handlers(bool allow_write_config)
 
 #ifdef HAVE_STRIDE_SCHED
 static String
-read_task_tickets(Element *, void *thunk)
+read_task_tickets(Element *e, void *thunk)
 {
-  Task *task = (Task *)thunk;
+  Task *task = (Task *)((uint8_t *)e + (int)thunk);
   return String(task->tickets()) + "\n";
 }
 #endif
 
 static String
-read_task_scheduled(Element *, void *thunk)
+read_task_scheduled(Element *e, void *thunk)
 {
-  Task *task = (Task *)thunk;
+  Task *task = (Task *)((uint8_t *)e + (int)thunk);
   return String(task->scheduled() ? "true\n" : "false\n");
 }
 
 #if __MTCLICK__
 static String
-read_task_thread_preference(Element *, void *thunk)
+read_task_thread_preference(Element *e, void *thunk)
 {
-  Task *task = (Task *)thunk;
+  Task *task = (Task *)((uint8_t *)e + (int)thunk);
   return String(task->thread_preference())+String("\n");
 }
 #endif
@@ -713,12 +713,14 @@ read_task_thread_preference(Element *, void *thunk)
 void
 Element::add_task_handlers(Task *task, const String &prefix)
 {
+  int task_offset = (uint8_t *)task - (uint8_t *)this;
+  void *thunk = (void *)task_offset;
 #ifdef HAVE_STRIDE_SCHED
-  add_read_handler(prefix + "tickets", read_task_tickets, task);
+  add_read_handler(prefix + "tickets", read_task_tickets, thunk);
 #endif
-  add_read_handler(prefix + "scheduled", read_task_scheduled, task);
+  add_read_handler(prefix + "scheduled", read_task_scheduled, thunk);
 #if __MTCLICK__
-  add_read_handler(prefix + "thread_preference", read_task_thread_preference, task);
+  add_read_handler(prefix + "thread_preference", read_task_thread_preference, thunk);
 #endif
 }
 
