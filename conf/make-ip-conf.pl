@@ -106,7 +106,7 @@ for($i = 0; $i < $nifs; $i++){
 for($i = 0; $i < $nifs; $i++){
     my $ii = ip2i($ifs->[$i]->[2]);
     my $mask = ip2i($ifs->[$i]->[3]);
-    printf(" %s %s %d,\n",
+    printf(" %s/%s %d,\n",
            i2ip($ii & $mask),
            i2ip($mask),
            $i + 1);
