@@ -493,6 +493,8 @@ inline void
 Packet::copy_annotations(Packet *p)
 {
   *anno() = *p->anno();
+  set_packet_type_anno(p->packet_type_anno());
+  set_device_anno(p->device_anno());
   set_timestamp_anno(p->timestamp_anno());
 }
 
