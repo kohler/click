@@ -1,3 +1,20 @@
+2001-05-25 Friday 21:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES (1.27), etc/linux-2.4.4-patch (1.1): add Linux 2.4.4
+	kernel patch!
+
+2001-05-25 Friday 21:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: linuxmodule/anydevice.cc (1.17),
+	standard/addressinfo.cc (1.14), standard/addressinfo.hh (1.11):
+	AddressInfo: support "DEVNAME" as an Ethernet address even without
+	explicit AddressInfo about DEVNAME
+
+2001-05-25 Friday 20:43  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/todevice.cc (1.108): support Linux 2.4: use
+	netif_queue_stopped()
+
 2001-05-25 Friday 19:49  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* etc/linux-2.2.18-patch (1.4): get rid of register_net_out; we
