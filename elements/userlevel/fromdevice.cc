@@ -353,10 +353,12 @@ FromDevice::kernel_drops(bool& known, int& max_drops) const
 	known = true, max_drops = stats.ps_drop;
     else
 	known = false, max_drops = -1;
-#endif
-#ifdef FROMDEVICE_LINUX
+#elif defined(FROMDEVICE_LINUX)
     // You might be able to do this better by parsing netstat/ifconfig output,
     // but for now, we just give up.
+    known = false, max_drops = -1;
+#else
+    // Drop statistics unknown.
     known = false, max_drops = -1;
 #endif
 }
