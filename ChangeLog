@@ -1,3 +1,9 @@
+2003-08-11 Monday 03:43  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.14), linktable.hh (1.11): add
+	stale expire timer to linktable, fix bug in ett that would respond
+	to querys with stale route info.
+
 2003-08-09 Saturday 02:36  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/linktable.cc (1.13): srcr random link propogation,
