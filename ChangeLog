@@ -1,3 +1,11 @@
+2001-07-14 Saturday 13:35  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.31), README (1.26), etc/samplellrpc/.cvsignore
+	(1.1), etc/samplellrpc/Makefile (1.1), etc/samplellrpc/README
+	(1.1), etc/samplellrpc/click-readcounter.c (1.1): add
+	etc/samplellrpc directory, demonstrating how LLRPCs work at user
+	level
+
 2001-07-14 Saturday 03:50  Eddie Kohler <kohler@aciri.org>
 
 	* click-buildtool (1.19): buildtool nitlet: allow semicolons and/or
