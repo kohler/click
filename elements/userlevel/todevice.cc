@@ -199,8 +199,8 @@ ToDevice::selected(int)
 
 	click_gettimeofday(&now);
 	_backoff = (!_backoff) ? 1 : _backoff*2;
-	after.tv_usec = _backoff;
-	after.tv_sec = _backoff % 1000000;
+	after.tv_usec = _backoff % 1000000;
+	after.tv_sec = _backoff / 1000000;
 	timeradd(&now, &after, &after);
 	_timer.schedule_at(after);
 
