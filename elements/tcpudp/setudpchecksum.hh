@@ -10,11 +10,10 @@
  * =d
  * Input packets should be UDP in IP.
  *
- * Calculates the UDP header's checksum and sets the checksum header field.
- * Uses the IP header fields to generate the pseudo-header.
+ * Calculates the UDP checksum and sets the UDP header's checksum field. Uses
+ * IP header fields to generate the pseudo-header.
  *
- * =a CheckUDPHeader, SetIPChecksum, CheckIPHeader, SetTCPChecksum
- */
+ * =a CheckUDPHeader, SetIPChecksum, CheckIPHeader, SetTCPChecksum */
 
 #include <click/element.hh>
 #include <click/glue.hh>

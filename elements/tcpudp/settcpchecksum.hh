@@ -12,7 +12,7 @@
  * Calculates the TCP header's checksum and sets the checksum header field.
  * Uses the IP header fields to generate the pseudo-header.
  *
- * =a CheckTCPHeader, SetIPChecksum, CheckIPChecksum
+ * =a CheckTCPHeader, SetIPChecksum, CheckIPHeader, SetUDPChecksum
  */
 
 #include <click/element.hh>
