@@ -116,7 +116,7 @@ AC_SUBST(AUTOHEADER)
 AC_SUBST(AUTOCONF)
 
 dnl
-dnl build userlevel? Linux module?
+dnl build userlevel? Linux module? are we compiling on Linux?
 dnl
 
 AC_ARG_ENABLE(userlevel, [  --enable-userlevel      enable user-level driver [yes]], :, enable_userlevel=yes)
@@ -135,16 +135,25 @@ if test $linuxdir = NONE; then
   fi
 fi
 
-ac_under_linux=n
+ac_have_linux_kernel=n
 if test $linuxdir != NONE -a $linuxdir != no -a $enable_linuxmodule = yes; then
   if test -r $linuxdir/include/linux/skbuff.h; then
-    ac_under_linux=y
+    ac_have_linux_kernel=y
   else
     AC_MSG_ERROR([can't find $linuxdir/include/linux/skbuff.h:
   are you sure $linuxdir holds the Linux source code?])
   fi
 fi
 AC_SUBST(linuxdir)
+
+AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
+  AC_TRY_RUN([int main(int c, char **v) {
+#ifdef __linux__
+  return 0;
+#else
+  return 1;
+#endif
+}], ac_cv_under_linux=yes, ac_cv_under_linux=no, ac_cv_under_linux=no))
 
 dnl
 dnl element collections
@@ -215,7 +224,7 @@ dnl
 dnl check for stuff in the linux kernel
 dnl
 
-if test $ac_under_linux = y; then
+if test $ac_have_linux_kernel = y; then
 
 if test ! -f $linuxdir/System.map; then
   AC_MSG_ERROR(can't find $linuxdir/System.map)
@@ -353,12 +362,13 @@ AC_SUBST(TOOLDIRS)
 AC_SUBST(TOOL_TARGETS)
 
 dnl check userlevel for pcap library
+dnl note: no longer need pcap under Linux
 
 if test "$enable_userlevel" = yes; then
 
   if test "${PCAP_HEADER_PATH-NO}" != NO; then
     ac_cv_pcap_header_path="$PCAP_HEADER_PATH"
-  else
+  elif test "$ac_cv_under_linux" != yes; then
     saveflags="$CPPFLAGS"
     AC_CACHE_CHECK(for pcap.h, ac_cv_pcap_header_path,
       AC_TRY_CPP([#include <pcap.h>], ac_cv_pcap_header_path="found",
@@ -381,12 +391,14 @@ if test "$enable_userlevel" = yes; then
       fi
     fi
     CPPFLAGS="$saveflags"
+  else
+    ac_cv_pcap_header_path="not found"
   fi
 
   if test ${PCAP_LIBRARY_PATH-NO} != NO; then
     ac_cv_pcap_header_path="$PCAP_LIBRARY_PATH"
     PCAP_LIBRARY="-lpcap"
-  else
+  elif test "$ac_cv_under_linux" != yes; then
     saveflags="$LDFLAGS"
     savelibs="$LIBS"
     LIBS="$savelibs -lpcap"
@@ -405,10 +417,14 @@ if test "$enable_userlevel" = yes; then
       PCAP_LIBRARY_PATH="$ac_cv_pcap_library_path"
       PCAP_LIBRARY="-lpcap"
     fi
+  else
+    ac_cv_pcap_library_path="not found"
   fi
 
   if test "$ac_cv_pcap_library_path" = "not found" -o "$ac_cv_pcap_library_path" = "not found"; then
-    AC_MSG_WARN(pcap.h or -lpcap not found; user-level driver can't steal packets)
+    if test "$ac_cv_under_linux" != yes; then
+      AC_MSG_WARN(pcap.h or -lpcap not found; user-level driver can't steal packets)
+    fi
   else
     AC_DEFINE_UNQUOTED(HAVE_PCAP, 1)
   fi
@@ -421,7 +437,7 @@ AC_SUBST(PCAP_LIBRARY)
 
 dnl check linuxmodule for Linux
 
-if test $ac_under_linux = y; then
+if test $ac_have_linux_kernel = y; then
   AC_CACHE_CHECK(for C++-includable system header files,
     ac_cv_cxx_aware_system,
     AC_LANG_CPLUSPLUS

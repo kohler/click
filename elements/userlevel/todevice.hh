@@ -31,23 +31,17 @@
  * =a
  * FromDevice.u, FromDump, ToDump, ToDevice(n) */
 
-#ifdef HAVE_PCAP
+#if defined(__linux__)
+# define TODEVICE_LINUX 1
+# define TODEVICE_SEND 1
+#elif defined(HAVE_PCAP)
 extern "C" {
 # include <pcap.h>
 }
-#else
-# include "fakepcap.h"
-#endif
-
-#ifdef HAVE_PCAP
 # if defined(__FreeBSD__) || defined(__OpenBSD__)
 #  define TODEVICE_BSD_DEV_BPF 1
 #  define TODEVICE_WRITE 1
 # endif
-#endif
-#if defined(__linux__)
-# define TODEVICE_LINUX 1
-# define TODEVICE_SEND 1
 #endif
 
 /*

@@ -67,7 +67,7 @@
 #undef __SMP__
 #endif
 
-/* Define if you have -lpcap and pcap.h. */
+/* Define if you both need and have -lpcap and pcap.h. */
 #undef HAVE_PCAP
 
 /* Define if you have -ldl. */
