@@ -1,3 +1,8 @@
+2002-02-19 Tuesday 21:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: linkstat.cc (1.3), linkstat.hh (1.3): added
+	handlers for setting/reading window size to LinkStat
+
 2002-02-19 Tuesday 20:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: grid.hh (1.37), gridprobereplyreceiver.cc (1.9),
