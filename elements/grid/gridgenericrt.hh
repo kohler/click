@@ -19,17 +19,17 @@ public:
 
   struct RouteEntry {
 
-    class IPAddress dest_ip;
+    class IPAddress      dest_ip;      // IP address of this destination
 
-    class grid_location dest_loc;
-    bool loc_good;
-    unsigned short loc_err;
+    class grid_location  dest_loc;     // location of dest, as contained in its route ads
+    bool                 loc_good;     // is location any good?
+    unsigned short       loc_err;      // error in metres
     
-    class EtherAddress next_hop_eth;
-    class IPAddress next_hop_ip;
+    class EtherAddress   next_hop_eth; // hardware address of next hop
+    class IPAddress      next_hop_ip;  // IP address of next hop
     
-    unsigned int seq_no;
-    unsigned char num_hops;
+    unsigned int         seq_no;
+    unsigned char        num_hops;
 
     RouteEntry(const IPAddress &dst, 
 	       bool lg, unsigned short le, const grid_location &l, 

@@ -37,9 +37,7 @@ DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry)
   if (r == 0)
     return false;
   
-  entry = RouteEntry(dest_ip, r->loc_good, r->loc_err, r->loc,
-		     r->next_hop_eth, r->next_hop_ip, 
-		     r->seq_no, r->num_hops);
+  entry = *r;
   return true;  
 }
 
@@ -48,9 +46,7 @@ DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 {
   for (RTIter iter = _rtes.first(); iter; iter++) {
     const RTEntry &rte = iter.value();
-    vec.push_back(RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
-			     rte.next_hop_eth, rte.next_hop_ip, 
-			     rte.seq_no, rte.num_hops));
+    vec.push_back(rte);
   }
 }
 
@@ -104,7 +100,7 @@ DSDVRouteTable::log_route_table ()
     snprintf(str, sizeof(str), 
 	     "%s %s %s %d %c %u\n", 
 	     f.dest_ip.s().cc(),
-	     f.loc.s().cc(),
+	     f.dest_loc.s().cc(),
 	     f.next_hop_ip.s().cc(),
 	     f.num_hops,
 	     (f.is_gateway ? 'y' : 'n'),
@@ -197,10 +193,9 @@ DSDVRouteTable::current_gateway(RouteEntry &entry)
     const RTEntry &f = i.value();
 
     if (f.is_gateway) {
-      entry = RouteEntry(f.dest_ip, f.loc_good, f.loc_err, f.loc, 
-			 f.next_hop_eth, f.next_hop_ip, f.seq_no, f.num_hops);
+      entry = f;
       return true;
-      }
+    }
   }
 
   return false;
@@ -686,7 +681,7 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
       + " next=" + f.next_hop_ip.s() 
       + " hops=" + String((int) f.num_hops) 
       + " gw=" + (f.is_gateway ? "y" : "n")
-      + " loc=" + f.loc.s()
+      + " loc=" + f.dest_loc.s()
       + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
       + " seq=" + String(f.seq_no)
       + " metric_valid=" + (f.metric_valid ? "yes" : "no")
@@ -1252,7 +1247,7 @@ DSDVRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
     snprintf(str, sizeof(str), 
 	     "%s %s %s %d %c %u %u\n", 
 	     f.dest_ip.s().cc(),
-	     f.loc.s().cc(),
+	     f.dest_loc.s().cc(),
 	     f.next_hop_ip.s().cc(),
 	     f.num_hops,
 	     (f.is_gateway ? 'y' : 'n'),
@@ -1275,7 +1270,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
   nb->ip = dest_ip;
   nb->next_hop_ip = next_hop_ip;
   nb->num_hops = num_hops;
-  nb->loc = loc;
+  nb->loc = dest_loc;
   nb->loc_err = htons(loc_err);
   nb->loc_good = loc_good;
   nb->seq_no = htonl(seq_no);

@@ -71,73 +71,65 @@ private:
   /* 
    * route table entry
    */
-  class RTEntry {
-    bool _init;
+  class RTEntry : public RouteEntry {
+
+    bool                _init;
 
   public:
-    IPAddress dest_ip; // IP address of this destination
-    EtherAddress dest_eth; // Eth of this destination; may be all 0s if we don't hear any ads...
-    IPAddress next_hop_ip; // IP address of next hop for this destination
-    EtherAddress next_hop_eth; // hardware address of next hop
+    class EtherAddress  dest_eth;              // hardware address of destination; may be all 0s if we don't hear any ads...
+    
+    bool                is_gateway;
 
-    unsigned char num_hops; // number of hops to dest
+    unsigned int        ttl;                   // msecs
+    int                 last_updated_jiffies;  // last time this entry was updated
 
-    struct grid_location loc; // location of dest, as contained in its route ads
-    unsigned short loc_err;
-    bool loc_good;
-    bool is_gateway;
+    // metrics are invalid until updated to incorporate the last hop's
+    // link, i.e. by calling initialize_metric or update_metric.
+    unsigned int        metric;                // generic metric -- routing code must interpret this as neccessary
+    bool                metric_valid;          
 
-    unsigned int seq_no; 
-    unsigned int ttl;  // msecs
+    static const unsigned int bad_metric = 777777;    
 
-    int last_updated_jiffies; // last time this entry was updated
-
-    unsigned int metric; // generic metric -- routing code must interpret this as neccessary
-    bool metric_valid;   /* metrics are invalid until updated to
-                            incorporate the last hop's link, i.e. by
-                            calling initialize_metric or
-                            update_metric. */
 
     RTEntry() : 
-      _init(false), num_hops(0), loc_good(false), is_gateway(false), 
-      seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false)
+      _init(false), is_gateway(false), ttl(0), last_updated_jiffies(-1), 
+      metric(bad_metric), metric_valid(false)
     { }
     
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
 	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 
 	    bool _loc_good, bool _is_gateway, unsigned int _seq_no, unsigned int _ttl, 
 	    int _last_updated_jiffies) :
-      _init(true), dest_ip(_dest_ip), next_hop_ip(_next_hop_ip), 
-      next_hop_eth(_next_hop_eth), num_hops(_num_hops), loc(_loc), 
-      loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway), 
-      seq_no(_seq_no), ttl(_ttl),
+      RouteEntry(_dest_ip, _loc_good, _loc_err, _loc, _next_hop_eth, _next_hop_ip,
+		 _seq_no, _num_hops), 
+      _init(true), is_gateway(_is_gateway), ttl(_ttl),
       last_updated_jiffies(_last_updated_jiffies), metric_valid(false)
     { }
 
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
 	    unsigned int jiff) :
-      _init(true), dest_ip(ip), dest_eth(eth), next_hop_ip(ip), next_hop_eth(eth), num_hops(1), 
-      loc(gh->loc), loc_good(gh->loc_good), is_gateway(hlo->is_gateway),
-      last_updated_jiffies(jiff), metric_valid(false)
+      RouteEntry(ip, gh->loc_good, gh->loc_err, gh->loc, eth, ip, hlo->seq_no, 1),
+      _init(true), dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
+      metric_valid(false)
     { 
-      loc_err = ntohs(gh->loc_err); 
-      seq_no = ntohl(hlo->seq_no); 
-      ttl = ntohl(hlo->ttl);
+      loc_err = ntohs(loc_err); 
+      seq_no = ntohl(seq_no); 
+      ttl = ntohl(ttl);
     }
 
     /* constructor from grid_nbr_entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_nbr_entry *nbr, 
 	    unsigned int jiff) :
-      _init(true), dest_ip(nbr->ip), next_hop_ip(ip), next_hop_eth(eth),
-      num_hops(nbr->num_hops + 1), loc(nbr->loc), loc_good(nbr->loc_good),  
-      is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
-      metric_valid(nbr->metric_valid)
+      RouteEntry(nbr->ip, nbr->loc_good, nbr->loc_err, nbr->loc,
+		 eth, ip, nbr->seq_no, nbr->num_hops + 1),
+      _init(true), is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
+      metric(nbr->metric), metric_valid(nbr->metric_valid)
     {
-      loc_err = ntohs(nbr->loc_err);
-      seq_no = ntohl(nbr->seq_no);
-      ttl = ntohl(nbr->ttl);
-      metric = ntohl(nbr->metric);
+      loc_err = ntohs(loc_err);
+      seq_no = ntohl(seq_no);
+      ttl = ntohl(ttl);
+      metric = ntohl(metric);
     }
     
     /* copy data from this into nb, converting to net byte order */
@@ -272,7 +264,7 @@ private:
   
   MetricType _metric_type;
 
-  static const unsigned int _bad_metric = 7777777;
+  static const unsigned int _bad_metric = RTEntry::bad_metric;
 
   enum {
     EstByQual = 0,
@@ -284,9 +276,7 @@ private:
   bool _frozen;
 
   RouteEntry make_generic_rte(const RTEntry &rte) {
-    return RouteEntry(rte.dest_ip, rte.loc_good, rte.loc_err, rte.loc, 
-		      rte.next_hop_eth, rte.next_hop_ip, 
-		      rte.seq_no, rte.num_hops);
+    return rte;
   }
 
 };
