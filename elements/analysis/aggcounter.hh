@@ -11,7 +11,7 @@ AggregateCounter([I<KEYWORDS>])
 
 =s analysis
 
-maintains information about aggregate annotations
+counts packets per aggregate annotation
 
 =d
 
@@ -68,7 +68,7 @@ seen. Default is never to freeze.
 
 =item AGGREGATE_CALL
 
-Argument is `I<N> I<HANDLER> [I<VALUE>]'. Call the given write handler, with
+Argument is 'I<N> I<HANDLER> [I<VALUE>]'. Call the given write handler, with
 the supplied value, once I<N> distinct aggregates have been seen.
 
 The three AGGREGATE keywords are mutually exclusive. Supply at most one of
@@ -86,7 +86,7 @@ exceeded I<N>. Default is never to freeze.
 
 =item COUNT_CALL
 
-Argument is `I<N> I<HANDLER> [I<VALUE>]'. Call the given write handler, with
+Argument is 'I<N> I<HANDLER> [I<VALUE>]'. Call the given write handler, with
 the supplied value, once the total count has reached or exceeded I<N>.
 
 The three COUNT keywords are mutually exclusive. Supply at most one of
@@ -95,47 +95,47 @@ them.
 =item BANNER
 
 String. This banner is written to the head of any output file. It should
-probably begin with a comment character, like `!' or `#'. Default is empty.
+probably begin with a comment character, like '!' or '#'. Default is empty.
 
 =back
 
 =h write_file write-only
 
-Argument is a filename, or `C<->', meaning standard out. Write a packed binary
+Argument is a filename, or 'C<->', meaning standard out. Write a packed binary
 file containing all current data to the specified filename. The format is a
-couple ASCII lines, followed by a line containing `C<$packed_le>' or
-`C<$packed_be>', followed by N 8-byte records. In each record, bytes 1-4 are
+couple ASCII lines, followed by a line containing 'C<!packed_le>' or
+'C<!packed_be>', followed by N 8-byte records. In each record, bytes 1-4 are
 the aggregate, and bytes 5-8 are the count. Both values are 32-bit integers.
-The byte order is indicated by the `C<$packed>' line: `C<$packed_le>' means
-little-endian, `C<$packed_be>' means big-endian.
+The byte order is indicated by the 'C<!packed>' line: 'C<!packed_le>' means
+little-endian, 'C<!packed_be>' means big-endian.
 
 =h write_ascii_file write-only
 
-Argument is a filename, or `C<->', meaning standard out. Write an ASCII file
+Argument is a filename, or 'C<->', meaning standard out. Write an ASCII file
 containing all current data to the specified filename. The format is a couple
 ASCII lines, followed by N data lines, each containing the aggregate ID in
 decimal, a space, then the count in decimal.
 
 =h write_ip_file write-only
 
-Argument is a filename, or `C<->', meaning standard out. Write an ASCII file
+Argument is a filename, or 'C<->', meaning standard out. Write an ASCII file
 containing all current data to the specified filename. The format is as in
 C<write_ascii_file>, except that aggregate IDs are printed as IP addresses.
 
 =h freeze read/write
 
-Returns or sets the AggregateCounter's frozen state, which is `true' or
-`false'. AggregateCounter starts off unfrozen.
+Returns or sets the AggregateCounter's frozen state, which is 'true' or
+'false'. AggregateCounter starts off unfrozen.
 
 =h active read/write
 
 Returns or sets the AggregateCounter's active state. When AggregateCounter is
-inactive (`false'), it does not record information about any packets that
+inactive ('false'), it does not record information about any packets that
 pass. It starts out active.
 
 =h stop write-only
 
-When any value is written to this handler, AggregateCounter sets `active' to
+When any value is written to this handler, AggregateCounter sets 'active' to
 false and additionally stops the driver.
 
 =h reaggregate_counts write-only
@@ -187,7 +187,7 @@ form.
 
 =a
 
-AggregateIP, FromIPSummaryDump, FromDump, tcpdpriv(1) */
+AggregateIP, AggregatePacketCounter, FromIPSummaryDump, FromDump */
 
 class AggregateCounter : public Element { public:
   

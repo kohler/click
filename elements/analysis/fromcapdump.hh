@@ -15,13 +15,27 @@ FromCapDump(FILENAME [, I<KEYWORDS>])
 
 =s analysis
 
-reads packets from an IP summary dump file
+reads packets from a 'cap' output file
 
 =d
 
-Reads IP packet descriptors from a file produced by ToIPSummaryDump, then
-creates packets containing info from the descriptors and pushes them out the
-output. Optionally stops the driver when there are no more packets.
+Reads TCP packet descriptors from a file produced by Mark Allman's 'cap' tool
+and emits the corresponding TCP packets.  Here's an example 'cap' file:
+
+   SND 0
+   INF - cap v2.13
+   SYN > 1046102982.856142 0 0 40 0
+   SYN < 1046102982.931832 0 0 40 0
+   DAT > 1046102982.931941 1 1 1500 1460
+   ACK < 1046102983.156387 1 1 40 0
+   DAT > 1046102983.156531 2 2 1500 1460
+   ...
+   DAT > 1046102996.137294 5068 5000 1500 1460 FIN
+   ACK < 1046102996.215164 5068 5000 40 0 FIN
+
+C<SYN>, C<DAT>, and C<ACK> lines have the following fields: packet type,
+direction, timestamp (in seconds past the epoch), unique packet number, packet
+sequence number, packet IP length, payload length, and optional flags.
 
 The file may be compressed with gzip(1) or bzip2(1); FromCapDump will
 run zcat(1) or bzcat(1) to uncompress it.
@@ -29,6 +43,11 @@ run zcat(1) or bzcat(1) to uncompress it.
 FromCapDump reads from the file named FILENAME unless FILENAME is a
 single dash `C<->', in which case it reads from the standard input. It will
 not uncompress the standard input, however.
+
+Output packets have timestamp, aggregate, paint, and packet number
+annotations.  The paint annotation is 0 for data packets and 1 for
+acknowledgements.  The first packet number annotation equals the unique packet
+number; the second equals the packet sequence number.
 
 Keyword arguments are:
 
@@ -54,17 +73,6 @@ this data is zero. If false (the default), this data is random garbage.
 Boolean. If true, then output packets' IP, TCP, and UDP checksums are set. If
 false (the default), the checksum fields contain random garbage.
 
-=item PROTO
-
-Byte (0-255). Sets the IP protocol used for output packets when the dump
-doesn't specify a protocol. Default is 6 (TCP).
-
-=item MULTIPACKET
-
-Boolean. If true, then FromCapDump will emit multiple packets for each
-line---specifically, it will emit as many packets as the packet count field
-specifies. Default is false.
-
 =item SAMPLE
 
 Unsigned real number between 0 and 1. FromCapDump will output each
@@ -75,17 +83,17 @@ C<sampling_prob> handler to find out the actual probability. If MULTIPACKET is
 true, then the sampling probability applies separately to the multiple packets
 generated per record.
 
-=item DEFAULT_CONTENTS
-
-String, containing a space-separated list of content names (see
-ToIPSummaryDump for the possibilities). Defines the default contents of the
-dump.
-
-=item DEFAULT_FLOWID
+=item FLOWID
 
 String, containing a space-separated flow ID (source address, source port,
 destination address, destination port, and, optionally, protocol). Defines the
-IP addresses and ports used by default.
+IP addresses and ports on output packets.  If no FLOWID is given, FromCapDump
+uses C<1.0.0.1 1 2.0.0.2 2>.
+
+=item AGGREGATE
+
+Unsigned integer.  Defines the aggregate annotation for output packets.
+Default is 1.
 
 =back
 
@@ -111,7 +119,7 @@ Value is a Boolean.
 
 =h encap read-only
 
-Returns `IP'. Useful for ToDump's USE_ENCAP_FROM option.
+Returns 'IP'. Useful for ToDump's USE_ENCAP_FROM option.
 
 =h filesize read-only
 
@@ -128,7 +136,10 @@ When written, sets `active' to false and stops the driver.
 
 =a
 
-ToIPSummaryDump */
+FromIPSummaryDump, ToIPSummaryDump
+
+Mark Allman, "Measuring End-to-End Bulk Transfer Capacity", Proc. Internet
+Measurement Workshop 2001.*/
 
 class FromCapDump : public Element { public:
 

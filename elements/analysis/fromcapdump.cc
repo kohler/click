@@ -75,7 +75,7 @@ FromCapDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "CHECKSUM", cpBool, "set packet checksums?", &checksum,
 		    "AGGREGATE", cpUnsigned, "aggregate annotation", &_aggregate,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
-		    "DEFAULT_FLOWID", cpArgument, "default flow ID", &_flowid,
+		    "FLOWID", cpArgument, "default flow ID", &_flowid,
 		    0) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
