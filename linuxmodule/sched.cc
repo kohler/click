@@ -57,6 +57,10 @@ static spinlock_t click_thread_lock;
 static int click_thread_priority = DEF_PRIO;
 static Vector<int> *click_thread_pids;
 
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+static unsigned min_click_frac = 5, max_click_frac = 800;
+#endif
+
 static void
 soft_spin_lock(spinlock_t *l)
 {
@@ -80,6 +84,9 @@ click_sched(void *thunk)
   strcpy(current->comm, "kclick");
 
   RouterThread *rt = (RouterThread *)thunk;
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+  rt->set_click_fraction(min_click_frac, max_click_frac);
+#endif
   printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
 
   // add pid to thread list
@@ -199,7 +206,7 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 {
   int priority;
   if (!cp_integer(cp_uncomment(conf), &priority))
-    return errh->error("priority must be integer");
+    return errh->error("priority must be an integer");
 
   priority = NICE2PRIO(priority);
   if (priority < MIN_PRIO) {
@@ -225,6 +232,50 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 }
 
 
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+
+
+static String
+read_fraction(Element *, void *thunk)
+{
+  int val = (thunk ? max_click_frac : min_click_frac);
+  return cp_unparse_real10(val, 3) + "\n";
+}
+
+static String
+read_cur_fraction(Element *, void *)
+{
+  if (click_router) {
+    String s;
+    for (int i = 0; i < click_router->nthreads(); i++)
+      s += cp_unparse_real10(click_router->thread(i)->cur_click_fraction(), 3) + "\n";
+    return s;
+  } else
+    return "0\n";
+}
+
+static int
+write_fraction(const String &conf, Element *, void *thunk, ErrorHandler *errh)
+{
+  const char *name = (thunk ? "max_" : "min_");
+  
+  int32_t frac;
+  if (!cp_real10(cp_uncomment(conf), 3, &frac) || frac < 1 || frac > 999)
+    return errh->error("%sfraction must be a real number between 0.001 and 0.999");
+
+  (thunk ? max_click_frac : min_click_frac) = frac;
+
+  // change current thread priorities
+  if (click_router)
+    for (int i = 0; i < click_router->nthreads(); i++)
+      click_router->thread(i)->set_click_fraction(min_click_frac, max_click_frac);
+  
+  return 0;
+}
+
+#endif
+
+
 /********************** Initialization and cleanup ***************************/
 
 void
@@ -235,6 +286,14 @@ click_init_sched()
   Router::add_global_read_handler("threads", read_threads, 0);
   Router::add_global_read_handler("priority", read_priority, 0);
   Router::add_global_write_handler("priority", write_priority, 0);
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+  static_assert(Task::MAX_UTILIZATION == 1000);
+  Router::add_global_read_handler("min_fraction", read_fraction, 0);
+  Router::add_global_write_handler("min_fraction", write_fraction, 0);
+  Router::add_global_read_handler("max_fraction", read_fraction, (void *)1);
+  Router::add_global_write_handler("max_fraction", write_fraction, (void *)1);
+  Router::add_global_read_handler("fraction", read_cur_fraction, 0);
+#endif
 }
 
 int
