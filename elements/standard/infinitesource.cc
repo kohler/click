@@ -249,8 +249,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
    }
   }
 
-
-  if (is->_active && is->_limit > 0 && is->_count < is->_limit) {
+  if (is->_active && (is->_limit < 0 || is->_count < is->_limit)) {
     if (is->output_is_push(0) && !is->_task.scheduled())
       is->_task.reschedule();
     
