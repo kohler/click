@@ -25,25 +25,12 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-static click_proc_dir_entry **element_pdes = 0;
-static char *numbers = 0;
-static int numbers_ndigits = 0;
+static proc_dir_entry **element_pdes = 0;
 
 static String *handler_strings = 0;
 static int *handler_strings_next = 0;
 static int handler_strings_cap = 0;
 static int handler_strings_free = -1;
-
-static proc_dir_entry proc_element_elemdir_prototype = {
-  0,				// dynamic inode
-  0, "",			// name
-  S_IFDIR | S_IRUGO | S_IXUGO,
-  2, 0, 0,			// nlink, uid, gid
-  0, &proc_dir_inode_operations,
-  NULL, NULL,
-  NULL,
-  NULL, NULL
-};
 
 //
 // ELEMENT NAME SYMLINK OPERATIONS
@@ -62,19 +49,6 @@ proc_elementlink_readlink_proc(proc_dir_entry *pde, char *page)
   }
   return pos + sprintf(page + pos, "%d", (int)pde->data + 1);
 }
-
-static proc_dir_entry proc_element_elemdir_link_prototype = {
-  0,
-  0, "",
-  S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO,
-  1, 0, 0,			// nlink, uid, gid
-  64, NULL,			// size, inode operations
-  NULL, NULL,			// get_info, fill_inode
-  NULL, NULL, NULL,		// next, parent, subdir
-  NULL,				// data
-  NULL, NULL,			// read_proc, write_proc
-  proc_elementlink_readlink_proc // readlink_proc
-};
 
 
 //
@@ -103,35 +77,6 @@ static struct file_operations proc_element_handler_operations = {
 
 static struct inode_operations proc_element_handler_inode_operations;
 
-static proc_dir_entry proc_element_read_handler_prototype = {
-  0,				// dynamic inode
-  0, "",			// name
-  S_IFREG | S_IRUGO,
-  1, 0, 0,			// nlink, uid, gid
-  0, &proc_element_handler_inode_operations,
-  NULL, NULL,
-  NULL, NULL, NULL,
-};
-
-static proc_dir_entry proc_element_write_handler_prototype = {
-  0,				// dynamic inode
-  0, "",			// name
-  S_IFREG | S_IWUSR | S_IWGRP,
-  1, 0, 0,			// nlink, uid, gid
-  0, &proc_element_handler_inode_operations,
-  NULL, NULL,
-  NULL, NULL, NULL,
-};
-
-static proc_dir_entry proc_element_read_write_handler_prototype = {
-  0,				// dynamic inode
-  0, "",			// name
-  S_IFREG | S_IRUGO | S_IWUSR | S_IWGRP,
-  1, 0, 0,			// nlink, uid, gid
-  0, &proc_element_handler_inode_operations,
-  NULL, NULL,
-  NULL, NULL, NULL,
-};
 
 // OPERATIONS
 
@@ -426,17 +371,22 @@ register_handler(proc_dir_entry *directory, int eindex, int handlerno)
 {
   const proc_dir_entry *pattern = 0;
   const Router::Handler *h = (eindex >= 0 ? &current_router->handler(handlerno) : &root_handlers[handlerno]);
+  
+  mode_t mode;
   if (h->read && h->write)
-    pattern = &proc_element_read_write_handler_prototype;
+    mode = S_IFREG | S_IRUGO | S_IWUSR | S_IWGRP;
   else if (h->write)
-    pattern = &proc_element_write_handler_prototype;
+    mode = S_IFREG | S_IWUSR | S_IWGRP;
   else if (h->read)
-    pattern = &proc_element_read_handler_prototype;
+    mode = S_IFREG | S_IRUGO;
   else
     return;
+
   String name = h->name;
-  click_register_new_dynamic_pde
-    (directory, pattern, h->name.length(), name.cc(), (void *)handlerno);
+  proc_dir_entry *pde = create_proc_entry(name.cc(), mode, directory);
+  // XXX check for NULL
+  pde->ops = &proc_element_handler_inode_operations;
+  pde->data = (void *)handlerno;
 }
 
 //
@@ -448,19 +398,18 @@ cleanup_router_element_procs()
 {
   if (!current_router) return;
   int nelements = current_router->nelements();
-  for (int i = 0; i < 2*nelements; i++)
-    if (element_pdes[i])
-      click_kill_dynamic_pde(element_pdes[i]);
+  for (int i = 0; i < 2*nelements; i++) {
+    if (proc_dir_entry *pde = element_pdes[i])
+      remove_proc_entry_recursive(pde, proc_click_entry);
+  }
   kfree(element_pdes);
   element_pdes = 0;
 }
 
 static void
-make_compound_element_symlink(int fi)
+make_compound_element_symlink(int ei)
 {
-  // must use substrings of `id' -- otherwise not guaranteed the char data
-  // will stick around
-  const String &id = current_router->element(fi)->id();
+  const String &id = current_router->element(ei)->id();
   const char *data = id.data();
   int len = id.length();
   if (len == 0)
@@ -469,7 +418,7 @@ make_compound_element_symlink(int fi)
 
   // looking in `parent_dir'. if we create any proc_dir_entry at top level --
   // under `proc_click_entry' -- we must save it in
-  // element_pdes[fi+nelements]. otherwise it will not be removed when the
+  // element_pdes[ei+nelements]. otherwise it will not be removed when the
   // router is destroyed.
   proc_dir_entry *parent_dir = proc_click_entry;
   int nelements = current_router->nelements();
@@ -499,15 +448,13 @@ make_compound_element_symlink(int fi)
     // otherwise, it was an intermediate component. make a directory for it
     assert(last_pos > first_pos && last_pos < len);
     String component = id.substring(first_pos, last_pos - first_pos);
-    click_proc_dir_entry *subdir = click_find_pde(parent_dir, component);
+    proc_dir_entry *subdir = click_find_pde(parent_dir, component);
     if (!subdir) {
       // make the directory
-      subdir = click_register_new_dynamic_pde
-	(parent_dir, &proc_element_elemdir_prototype,
-	 last_pos - first_pos, data + first_pos, (void *)0);
+      subdir = create_proc_entry(component.cc(), S_IFDIR, parent_dir);
       if (parent_dir == proc_click_entry)
-	element_pdes[fi + nelements] = subdir;
-    } else if (subdir->ops != &proc_dir_inode_operations)
+	element_pdes[ei + nelements] = subdir;
+    } else if (!S_ISDIR(subdir->mode))
       // not a directory; can't deal
       return;
     
@@ -526,11 +473,11 @@ make_compound_element_symlink(int fi)
     return;
 
   // make the link
-  click_proc_dir_entry *link = click_register_new_dynamic_pde
-    (parent_dir, &proc_element_elemdir_link_prototype,
-     last_pos - first_pos, data + first_pos, (void *)fi);
+  proc_dir_entry *link = create_proc_entry(component.cc(), S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO, parent_dir);
+  link->data = (void *)ei;
+  link->readlink_proc = proc_elementlink_readlink_proc;
   if (parent_dir == proc_click_entry)
-    element_pdes[fi + nelements] = link;
+    element_pdes[ei + nelements] = link;
 }
 
 void
@@ -538,49 +485,31 @@ init_router_element_procs()
 {
   int nelements = current_router->nelements();
   
-  int ndigits = 2;
-  int top;
-  for (top = 10; top <= nelements; top *= 10)
-    ndigits++;
-  if (ndigits != numbers_ndigits) {
-    kfree(numbers);
-    numbers = (char *)kmalloc(ndigits * top, GFP_ATOMIC);
-    if (numbers) {
-      for (int i = 1; i < top; i++)
-	sprintf(numbers + (i-1)*ndigits, "%d", i);
-      numbers_ndigits = ndigits;
-    } else
-      numbers_ndigits = 0;
-  }
-  
-  if (!numbers) return;
-  
-  element_pdes = (click_proc_dir_entry **)
-    kmalloc(sizeof(click_proc_dir_entry *) * 2 * nelements, GFP_ATOMIC);
+  element_pdes = (proc_dir_entry **)
+    kmalloc(sizeof(proc_dir_entry *) * 2 * nelements, GFP_ATOMIC);
   if (!element_pdes) return;
   for (int i = 0; i < 2*nelements; i++)
     element_pdes[i] = 0;
 
   // make EINDEX directories
-  int namelen = 1, next_namegap = 10;
+  char namebuf[200];
   for (int i = 0; i < nelements; i++) {
-    if (i+1 >= next_namegap) namelen++, next_namegap *= 10;
-    element_pdes[i] = click_register_new_dynamic_pde
-      (proc_click_entry, &proc_element_elemdir_prototype,
-       namelen, numbers + numbers_ndigits * i, (void *)i);
+    sprintf(namebuf, "%d", i + 1);
+    element_pdes[i] = create_proc_entry(namebuf, S_IFDIR, proc_click_entry);
+    element_pdes[i]->data = (void *)i;
   }
   
   // add symlinks for ELEMENTNAME -> EINDEX
   for (int i = 0; i < nelements; i++)
     if (proc_dir_entry *pde = element_pdes[i]) {
-      const String &id = current_router->element(i)->id();
+      String id = current_router->element(i)->id();
       if (memchr(id.data(), '/', id.length()) != 0)
 	make_compound_element_symlink(i);
       else {
 	if (click_find_pde(proc_click_entry, id)) continue;
-	element_pdes[i + nelements] = click_register_new_dynamic_pde
-	  (proc_click_entry, &proc_element_elemdir_link_prototype,
-	   id.length(), id.data(), (void *)i);
+	element_pdes[i + nelements] = create_proc_entry(id.cc(), S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO, proc_click_entry);
+	element_pdes[i + nelements]->data = (void *)i;
+	element_pdes[i + nelements]->readlink_proc = proc_elementlink_readlink_proc;
       }
     }
 
@@ -620,7 +549,6 @@ void
 cleanup_proc_click_elements()
 {
   cleanup_router_element_procs();
-  kfree(numbers);
   delete[] handler_strings;
   delete[] handler_strings_next;
 }

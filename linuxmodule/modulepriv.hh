@@ -11,32 +11,10 @@ extern "C" {
 #undef new
 }
 
-struct click_proc_dir_entry : public proc_dir_entry {
-  struct inode *inode;
-};
-struct click_x_proc_dir_entry {
-  // XXX I wish you could initialize a 'click_proc_dir_entry' directly!
-  proc_dir_entry u;
-  struct inode *inode;
-};
+extern proc_dir_entry *proc_click_entry;
 
-extern click_proc_dir_entry *proc_click_entry;
-
-void init_click_proc();
-void cleanup_click_proc();
-
-int click_register_pde(proc_dir_entry *, click_proc_dir_entry *);
-int click_register_pde(proc_dir_entry *, click_x_proc_dir_entry *);
-int click_unregister_pde(click_proc_dir_entry *);
-
-click_proc_dir_entry *click_find_pde(proc_dir_entry *, const String &);
-
-click_proc_dir_entry *click_new_dynamic_pde();
-int click_kill_dynamic_pde(click_proc_dir_entry *);
-
-click_proc_dir_entry *click_register_new_dynamic_pde
-	(proc_dir_entry *parent, const proc_dir_entry *pattern,
-	 int namelen = -1, const char *name = 0, void *data = 0);
+proc_dir_entry *click_find_pde(proc_dir_entry *, const String &);
+void remove_proc_entry_recursive(proc_dir_entry *, proc_dir_entry *parent);
 
 void init_proc_click_config();
 void cleanup_proc_click_config();

@@ -430,7 +430,7 @@ particular purpose.\n");
   r->flatten(errh);
 
   // uninstall Click if requested
-  if (uninstall && access("/proc/click", F_OK) >= 0) {
+  if (uninstall && access("/proc/click/version", F_OK) >= 0) {
     // install blank configuration
     kill_current_configuration(errh);
     // find current packages
@@ -451,22 +451,22 @@ particular purpose.\n");
     (void) system("/sbin/rmmod click");
 
     // see if we successfully removed it
-    if (access("/proc/click", F_OK) >= 0)
+    if (access("/proc/click/version", F_OK) >= 0)
       errh->warning("could not uninstall Click module");
   }
   
   // check for Click module; install it if not available
-  if (access("/proc/click", F_OK) < 0) {
+  if (access("/proc/click/version", F_OK) < 0) {
     String click_o =
       clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
     if (verbose)
-      errh->message("Installing Click module %s", click_o.cc());
+      errh->message("Installing Click module (%s)", click_o.cc());
     String cmdline = "/sbin/insmod ";
     if (output_map)
       cmdline += "-m ";
     cmdline += click_o;
     (void) system(cmdline);
-    if (access("/proc/click", F_OK) < 0)
+    if (access("/proc/click/version", F_OK) < 0)
       errh->fatal("cannot install Click module");
   }
 

@@ -45,15 +45,7 @@ static struct file_operations proc_click_errors_operations = {
 };
 
 static struct inode_operations proc_click_errors_inode_operations;
-
-static click_x_proc_dir_entry proc_click_errors_entry = {
-  0,				// dynamic inode
-  6, "errors",
-  S_IFREG | S_IRUGO,
-  1, 0, 0,			// nlink, uid, gid
-  0, &proc_click_errors_inode_operations, // inode size, operations
-};
-
+static struct proc_dir_entry *proc_click_errors_entry;
 static struct wait_queue *proc_click_errors_wait_queue = 0;
 
 
@@ -78,11 +70,11 @@ update_proc_click_errors()
   unsigned len = (all_errors ? all_errors->length() : 0);
   
   // change inode status
-  if (inode *ino = proc_click_errors_entry.inode) {
+  /* if (inode *ino = proc_click_errors_entry.inode) {
     ino->i_mtime = ino->i_ctime = CURRENT_TIME;
     ino->i_size = len;
-  }
-  proc_click_errors_entry.u.size = len;
+    }*/
+  proc_click_errors_entry->size = len;
   
   // wake up anyone waiting for errors
   wake_up_interruptible(&proc_click_errors_wait_queue);
@@ -153,7 +145,10 @@ init_proc_click_errors()
   // work around proc_lookup not being exported
   proc_click_errors_inode_operations = proc_dir_inode_operations;
   proc_click_errors_inode_operations.default_file_ops = &proc_click_errors_operations;
-  click_register_pde(proc_click_entry, &proc_click_errors_entry);
+
+  proc_click_errors_entry = create_proc_entry("errors", S_IFREG | S_IRUGO, proc_click_entry);
+  // XXX error checking
+  proc_click_errors_entry->ops = &proc_click_errors_inode_operations;
   
   all_errors = new StringAccum;
 }
@@ -161,6 +156,7 @@ init_proc_click_errors()
 void
 cleanup_proc_click_errors()
 {
+  remove_proc_entry("errors", proc_click_entry);
   reset_proc_click_errors();
   delete all_errors;
 }

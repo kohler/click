@@ -210,8 +210,8 @@ particular purpose.\n");
   (void) system("/sbin/rmmod click");
 
   // see if we successfully removed it
-  if (access("/proc/click", F_OK) >= 0)
-    errh->fatal("could not uninstall Click module");
+  if (access("/proc/click/version", F_OK) >= 0)
+    errh->warning("could not uninstall Click module");
   
   return 0;
 }

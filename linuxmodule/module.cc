@@ -28,14 +28,7 @@
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 
-static struct click_x_proc_dir_entry proc_click_x_entry = {
-  0,				// dynamic inode
-  5, "click",			// name
-  S_IFDIR | S_IRUGO | S_IXUGO,
-  2, 0, 0,			// nlink, uid, gid
-  0, &proc_dir_inode_operations,
-};
-click_proc_dir_entry *proc_click_entry = reinterpret_cast<click_proc_dir_entry *>(&proc_click_x_entry);
+proc_dir_entry *proc_click_entry = 0;
 
 ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
@@ -306,9 +299,8 @@ init_module()
   export_elements(lexer);
   
   current_router = 0;
-  
-  click_register_pde(&proc_root, proc_click_entry);
-  init_click_proc();  
+
+  proc_click_entry = create_proc_entry("click", S_IFDIR, 0);
   init_proc_click_config();
   init_proc_click_elements();
   init_proc_click_errors();
@@ -337,13 +329,27 @@ cleanup_module()
 {
   extern int click_new_count; /* glue.cc */
   extern int click_outstanding_news; /* glue.cc */
-
+  
   kill_current_router();
   cleanup_proc_click_errors();
   cleanup_proc_click_elements();
   cleanup_proc_click_config();
-  click_unregister_pde(proc_click_entry);
-  cleanup_click_proc();
+  
+  // remove root handlers
+  for (int i = 0; i < nroot_handlers; i++)
+    remove_proc_entry(root_handlers[i].name, proc_click_entry);
+
+  // remove the `/proc/click' directory first
+  remove_proc_entry("click", 0);
+
+  // invalidate any remaining `/proc/click' dentry, which would be hanging
+  // around because someone has a handler open
+  struct dentry *click_de = lookup_dentry("/proc/click", 0, LOOKUP_DIRECTORY);
+  if (!IS_ERR(click_de)) {
+    d_drop(click_de);
+    dput(click_de);
+  }
+  
   cleanup_click_sched();
   delete lexer;
   
