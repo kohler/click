@@ -92,6 +92,8 @@ class ToDevice : public Element { public:
   bool run_task();
   void selected(int);
   void run_timer();
+  static int write_param(const String &in_s, Element *e, void *vparam, ErrorHandler *errh);
+  static String read_param(Element *e, void *thunk);
 protected:
   Task _task;
   Timer _timer;
@@ -107,7 +109,7 @@ private:
 public:
   bool _debug;
   bool _backoff;
-
+  int _pulls;
 };
 
 CLICK_ENDDECLS

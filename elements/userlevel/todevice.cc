@@ -50,7 +50,8 @@ CLICK_DECLS
 
 ToDevice::ToDevice()
   : Element(1, 0), _task(this), _timer(this), _fd(-1), _my_fd(false),
-    _q(0)
+    _q(0),
+    _pulls(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -173,6 +174,7 @@ ToDevice::selected(int)
     _q = 0;
   } else {
     p = input(0).pull();
+    _pulls++;
   }
   if (p) {
     int retval;
@@ -214,7 +216,10 @@ ToDevice::selected(int)
     }
   }
   if (!_q && !p && !_signal) {
-    remove_select(_fd, SELECT_WRITE);
+    if (remove_select(_fd, SELECT_WRITE) < 0) {
+      click_chatter("%s %{element} remove_select failed %d\n", 
+		    Timestamp::now().unparse().cc(), this, _fd);
+    }
   }
 }
 
@@ -222,18 +227,17 @@ void
 ToDevice::run_timer()
 {
   if (_debug) {
-    struct timeval now;
-    click_gettimeofday(&now);
-    StringAccum sa;
-    sa << now;
-    click_chatter("%{element} %s at %s\n",
+    click_chatter("%s %{element} %s at %s\n",
 		  this,
 		  __func__,
-		  sa.take_string().cc());
+		  Timestamp::now().unparse().cc());
   }
 
   if (_q || _signal) {
-    add_select(_fd, SELECT_WRITE);
+    if (add_select(_fd, SELECT_WRITE) < 0) {
+      click_chatter("%s %{element}::%s add_select failed %d\n", 
+		    Timestamp::now().unparse().cc(), this, __func__, _fd);
+    }
     selected(_fd);
   }
 }
@@ -242,7 +246,10 @@ bool
 ToDevice::run_task()
 {
   if (_q || _signal) {
-    add_select(_fd, SELECT_WRITE);
+    if (add_select(_fd, SELECT_WRITE) < 0) {
+      click_chatter("%s %{element}::%s add_select failed %d\n", 
+		    Timestamp::now().unparse().cc(), this, __func__, _fd);
+    }
     selected(_fd);
     return true;
   }
@@ -250,22 +257,28 @@ ToDevice::run_task()
 }
 
 
-enum {H_DEBUG };
+enum {H_DEBUG, H_SIGNAL, H_PULLS, H_Q};
 
-static String
-ToDevice_read_param(Element *e, void *thunk)
+String
+ToDevice::read_param(Element *e, void *thunk)
 {
   ToDevice *td = (ToDevice *)e;
   switch((uintptr_t) thunk) {
   case H_DEBUG:
     return String(td->_debug) + "\n";
+  case H_SIGNAL:
+    return String(td->_signal) + "\n";
+  case H_PULLS:
+    return String(td->_pulls) + "\n";
+  case H_Q:
+    return String((bool) td->_q) + "\n";
   default:
     return String();
   }
 }
 
-static int 
-ToDevice_write_param(const String &in_s, Element *e, void *vparam,
+int 
+ToDevice::write_param(const String &in_s, Element *e, void *vparam,
 		     ErrorHandler *errh)
 {
   ToDevice *td = (ToDevice *)e;
@@ -286,9 +299,12 @@ ToDevice::add_handlers()
 {
   add_task_handlers(&_task);
 
-  add_read_handler("debug", ToDevice_read_param, (void *) H_DEBUG);
+  add_read_handler("debug", read_param, (void *) H_DEBUG);
+  add_read_handler("pulls", read_param, (void *) H_PULLS);
+  add_read_handler("signal", read_param, (void *) H_SIGNAL);
+  add_read_handler("q", read_param, (void *) H_Q);
 
-  add_write_handler("debug", ToDevice_write_param, (void *) H_DEBUG);
+  add_write_handler("debug", write_param, (void *) H_DEBUG);
 
 }
 
