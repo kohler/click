@@ -17,8 +17,6 @@
 
 #include <click/config.h>
 #include "idle.hh"
-#include <click/bitvector.hh>
-#include "scheduleinfo.hh"
 
 Idle::Idle() 
 {

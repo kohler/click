@@ -25,7 +25,7 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
-#include "elements/standard/errorelement.hh"
+#include <click/standard/errorelement.hh>
 
 //
 // CLASS LEXER::TUNNELEND

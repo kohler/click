@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
@@ -173,3 +173,4 @@ ScheduleInfo::initialize_task(Element *e, Task *task, bool schedule,
 }
 
 EXPORT_ELEMENT(ScheduleInfo)
+ELEMENT_HEADER(<click/standard/scheduleinfo.hh>)

@@ -27,7 +27,7 @@
 #include <click/etheraddress.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT

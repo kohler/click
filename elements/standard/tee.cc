@@ -123,7 +123,6 @@ PullTee::pull(int)
   return p;
 }
 
-EXPORT_ELEMENT(Tee)
+EXPORT_ELEMENT(Tee PullTee)
 ELEMENT_MT_SAFE(Tee)
-EXPORT_ELEMENT(PullTee)
 ELEMENT_MT_SAFE(PullTee)

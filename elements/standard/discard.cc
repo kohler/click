@@ -19,7 +19,7 @@
 #include "discard.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
-#include "scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 Discard::Discard()
   : Element(1, 0), _task(this)

@@ -32,7 +32,7 @@
 #endif
 #ifndef CLICK_TOOL
 # include <click/router.hh>
-# include "elements/standard/addressinfo.hh"
+# include <click/standard/addressinfo.hh>
 # define CP_CONTEXT_ARG , Element *context = 0
 # define CP_PASS_CONTEXT , context
 #else

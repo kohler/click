@@ -22,7 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 QuitWatcher::QuitWatcher()
   : _timer(this)

@@ -22,7 +22,7 @@
 #include <click/error.hh>
 #include <click/click_ether.h>
 #include <click/click_ip.h>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include "grid.hh"
 #include <click/router.hh>
 #include <click/glue.hh>

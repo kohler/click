@@ -23,7 +23,7 @@
 #include <click/confparse.hh>
 #include <click/glue.hh>
 #include "bim-proto.hh"
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include <unistd.h>
 #include <termios.h>
 #include <fcntl.h>

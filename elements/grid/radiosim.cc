@@ -19,7 +19,7 @@
 #include "radiosim.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include "elements/grid/filterbyrange.hh"
 
 RadioSim::RadioSim()

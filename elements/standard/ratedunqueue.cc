@@ -20,7 +20,7 @@
 #include "ratedunqueue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 RatedUnqueue::RatedUnqueue()
   : Element(1, 1), _task(this)

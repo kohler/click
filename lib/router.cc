@@ -27,7 +27,7 @@
 #include <click/confparse.hh>
 #include <click/subvector.hh>
 #include <click/timer.hh>
-#include "elements/standard/drivermanager.hh"
+#include <click/standard/drivermanager.hh>
 #include <stdarg.h>
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>

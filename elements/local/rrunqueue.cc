@@ -19,7 +19,7 @@
 #include <click/error.hh>
 #include "rrunqueue.hh"
 #include <click/confparse.hh>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 RoundRobinUnqueue::RoundRobinUnqueue()
   : _task(this), _next(0)

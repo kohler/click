@@ -21,7 +21,7 @@
 #include <click/click_ether.h>
 #include <click/click_ip.h>
 #include <stddef.h>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include <click/router.hh>
 #include <click/element.hh>
 #include <click/glue.hh>

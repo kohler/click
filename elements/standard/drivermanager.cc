@@ -17,7 +17,7 @@
  */
 
 #include <click/config.h>
-#include "drivermanager.hh"
+#include <click/standard/drivermanager.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/router.hh>
@@ -208,3 +208,4 @@ DriverManager::run_scheduled()
 }
 
 EXPORT_ELEMENT(DriverManager)
+ELEMENT_HEADER(<click/standard/drivermanager.hh>)

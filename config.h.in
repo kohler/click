@@ -8,11 +8,12 @@
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
 
-/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, and ELEMENT_MT_SAFE
-   are noops. */
+/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, ELEMENT_HEADER, and
+   ELEMENT_MT_SAFE are noops. */
 #define EXPORT_ELEMENT(x)
 #define ELEMENT_REQUIRES(x)
 #define ELEMENT_PROVIDES(x)
+#define ELEMENT_HEADER(x)
 #define ELEMENT_MT_SAFE(x)
 
 /* Define if <new.h> exists and works. */

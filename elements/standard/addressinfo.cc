@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "addressinfo.hh"
+#include <click/standard/addressinfo.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
@@ -280,6 +280,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 }
 
 EXPORT_ELEMENT(AddressInfo)
+ELEMENT_HEADER(<click/standard/addressinfo.hh>)
 
 // template instance
 #include <click/vector.cc>

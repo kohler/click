@@ -24,7 +24,7 @@
 #include "queue.hh"
 #include "unqueue2.hh"
 #include <click/confparse.hh>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 Unqueue2::Unqueue2()
   : Element(1, 1), _task(this)

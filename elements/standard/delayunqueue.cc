@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/glue.hh>
 #include "delayunqueue.hh"
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 DelayUnqueue::DelayUnqueue()
   : Element(1,1), _task(this)

@@ -1,5 +1,5 @@
 #include <click/config.h>
-#include "../standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include "sortedsched.hh"
 #include <click/task.hh>
 #include <click/routerthread.hh>

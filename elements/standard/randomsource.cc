@@ -20,7 +20,7 @@
 #include "randomsource.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include <click/glue.hh>
 
 RandomSource::RandomSource()

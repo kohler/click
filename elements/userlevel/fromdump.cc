@@ -21,7 +21,7 @@
 #include "fromdump.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/click_ip.h>

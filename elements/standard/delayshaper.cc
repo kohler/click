@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/glue.hh>
 #include "delayshaper.hh"
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 DelayShaper::DelayShaper()
   : Element(1,1)

@@ -26,7 +26,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 static AnyDeviceMap from_device_map;
 static int registered_readers;

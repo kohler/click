@@ -144,6 +144,12 @@ include/click/variableenv.hh
 include/click/vector.cc
 include/click/vector.hh
 
+include/click/standard
+include/click/standard/addressinfo.hh
+include/click/standard/drivermanager.hh
+include/click/standard/errorelement.hh
+include/click/standard/scheduleinfo.hh
+
 lib
 lib/archive.cc
 lib/atomic.cc

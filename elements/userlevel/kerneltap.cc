@@ -22,7 +22,7 @@
 #include <click/confparse.hh>
 #include <click/glue.hh>
 #include <click/click_ether.h>
-#include "elements/standard/scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 #include <unistd.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>

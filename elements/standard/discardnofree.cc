@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "discardnofree.hh"
-#include "scheduleinfo.hh"
+#include <click/standard/scheduleinfo.hh>
 
 DiscardNoFree::DiscardNoFree()
   : Element(1, 0), _task(this)
