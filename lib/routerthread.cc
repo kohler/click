@@ -254,7 +254,7 @@ RouterThread::run_tasks(int ntasks)
 #if __MTCLICK__
 	if (runs > PROFILE_ELEMENT) {
 	    unsigned delta = click_get_cycles() - cycles;
-	    t->update_cycles(cycles/32 + (t->cycles()*31)/32);
+	    t->update_cycles(delta/32 + (t->cycles()*31)/32);
 	}
 #endif
 

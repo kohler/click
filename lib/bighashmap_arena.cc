@@ -109,7 +109,7 @@ BigHashMap_ArenaFactory::get_arena(uint32_t element_size, BigHashMap_ArenaFactor
 	static_initialize();
     if (!factory)
 	factory = the_factory;
-    return the_factory->get_arena_func(element_size);
+    return factory->get_arena_func(element_size);
 }
 
 BigHashMap_Arena *
