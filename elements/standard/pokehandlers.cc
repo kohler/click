@@ -75,7 +75,7 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 		errh->warning("arguments after `loop' directive ignored");
 	    add(LOOP_MARKER, "", "", next_timeout);
 	    break;
-	} else if (word == "read") {
+	} else if (word == "read" || word == "print") {
 	    if (cp_handler(text, this, &e, &hname, errh)) {
 		add(e, hname, String::stable_string(READ_MARKER), next_timeout);
 		next_timeout = 0;
