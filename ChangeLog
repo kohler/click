@@ -1,3 +1,16 @@
+2003-07-09 Wednesday 13:37  John Bicket <jbicket@mit.edu>
+
+	* configure.in (1.208), elements/grid/dsdvroutetable.cc (1.57),
+	elements/grid/txfeedbackstats.cc (1.4),
+	elements/grid/txfeedbackstats.hh (1.3), elements/grid/txstat.cc
+	(1.3), elements/grid/txstat.hh (1.2), elements/grid/wifiqueue.cc
+	(1.4), elements/grid/wifiqueue.hh (1.2),
+	elements/grid/wifitxfeedback.cc (1.3),
+	elements/grid/wifitxfeedback.hh (1.3): Made directory for wifi
+	elements (use the --enable-wifi configure flag).
+	
+	--john
+
 2003-07-08 Tuesday 15:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridheaderinfo.cc (1.10), gridheaderinfo.hh
