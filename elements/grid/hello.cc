@@ -89,6 +89,10 @@ SendGridHello::make_hello()
   int psz = sizeof(click_ether) + sizeof(grid_hdr);
 
   WritablePacket *p = Packet::make(psz + 2); // for alignment
+  if (p == 0) {
+    click_chatter("in %s: cannot make packet!", id().cc());
+    assert(0);
+  } 
   ASSERT_ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());

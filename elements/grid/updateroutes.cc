@@ -538,6 +538,10 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   psz += sizeof(grid_nbr_entry) * num_rtes;
 
   WritablePacket *p = Packet::make(psz + 2); // for alignment
+  if (p == 0) {
+    click_chatter("in %s: cannot make packet!", id().cc());
+    assert(0);
+  } 
   ASSERT_ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());

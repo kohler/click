@@ -119,6 +119,10 @@ LocQueryResponder::simple_action(Packet *p)
 
   // construct the response
   WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap) + 2);
+  if (q == 0) {
+    click_chatter("in %s: cannot make packet!", id().cc());
+    assert(0);
+  } 
   ASSERT_ALIGNED(q->data());
   q->pull(2);
 

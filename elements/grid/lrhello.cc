@@ -114,6 +114,10 @@ SendGridLRHello::make_hello()
   }
 
   WritablePacket *p = Packet::make(psz + 2);
+  if (p == 0) {
+    click_chatter("in %s: cannot make packet!", id().cc());
+    assert(0);
+  } 
   ASSERT_ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());

@@ -27,6 +27,8 @@
 #include <click/router.hh>
 #include <click/glue.hh>
 
+#define NOISY 0
+
 LookupLocalGridRoute::LookupLocalGridRoute()
   : Element(2, 4), _rtes(0), _any_gateway_ip("18.26.7.254"), _task(this)
 {
@@ -120,17 +122,17 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 	*/
 	struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + gh->hdr_len);
 	IPAddress dest_ip(encap->dst_ip);
-
-// 	click_chatter ("lr: got packet for %s; I am %s; agi=%s, is_gw = %d\n",
-// 		       dest_ip.s().cc(), 
-// 		       _ipaddr.s().cc(),
-// 		       _any_gateway_ip.s().cc(),
-// 		       _gw_info->is_gateway () ? 1 : 0);
-
+#if NOISY
+ 	click_chatter("lr: got packet for %s; I am %s; agi=%s, is_gw = %d\n",
+		      dest_ip.s().cc(), 
+		      _ipaddr.s().cc(),
+		      _any_gateway_ip.s().cc(),
+		      _gw_info->is_gateway () ? 1 : 0);
+#endif
  	if ((dest_ip == _any_gateway_ip && _gw_info->is_gateway ())
 	    || (dest_ip == _ipaddr)) {
 	  // it's for us, send to higher level
-#if 0
+#if NOISY
 	  click_chatter("%s: got an IP packet for us %s",
                         id().cc(),
                         dest_ip.s().cc());
@@ -159,16 +161,16 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     assert(port == 1);
     // check to see is the desired dest is our neighbor
     IPAddress dst = packet->dst_ip_anno();
-
-//     click_chatter ("lr: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
-// 		   dst.s().cc(), 
-// 		   _ipaddr.s().cc(),
-// 		   _any_gateway_ip.s().cc(),
-// 		   _gw_info->is_gateway () ? 1 : 0);
-    
-    if (dst == _any_gateway_ip && _gw_info->is_gateway ()) {
-      //     output ( );
-      packet->kill ();
+#if NOISY
+    click_chatter("lr: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
+		  dst.s().cc(), 
+		  _ipaddr.s().cc(),
+		  _any_gateway_ip.s().cc(),
+		  _gw_info->is_gateway () ? 1 : 0);
+#endif
+    if (dst == _any_gateway_ip && _gw_info->is_gateway()) {
+      //     output();
+      packet->kill();
     } if (dst == _ipaddr) {
       click_chatter("%s: got IP packet from us for our address; looping it back.  Check the configuration.", id().cc());
       output(1).push(packet);
@@ -288,7 +290,9 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     output(0).push(packet);
   }
   else {
-    // click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", id().cc(), dest_ip.s().cc());
+#if NOISY
+    click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", id().cc(), dest_ip.s().cc());
+#endif
     output(2).push(packet);
   }
 }

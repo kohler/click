@@ -124,12 +124,12 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
   grid_hdr *gh;
   grid_loc_query *fq;
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*gh) + sizeof(*fq) + 2);
-  ASSERT_ALIGNED(q->data());
-  q->pull(2);
   if (q == 0) {
     click_chatter("in %s: cannot make packet!", id().cc());
     assert(0);
   } 
+  ASSERT_ALIGNED(q->data());
+  q->pull(2);
 
   struct timeval tv;
   int res = gettimeofday(&tv, 0);

@@ -63,18 +63,18 @@ GridRouteTable::log_route_table ()
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &f = i.value();
     
-    sprintf (str, 
-	     "%s %f %f %s %d %c %u\n", 
-	     f.dest_ip.s().cc(),
-	     f.loc.lat(),
-	     f.loc.lon(),
-	     f.next_hop_ip.s().cc(),
-	     f.num_hops,
-	     (f.is_gateway ? 'y' : 'n'),
-	     f.seq_no);
-    _extended_logging_errh->message (str);
+    sprintf(str, 
+	    "%s %f %f %s %d %c %u\n", 
+	    f.dest_ip.s().cc(),
+	    f.loc.lat(),
+	    f.loc.lon(),
+	    f.next_hop_ip.s().cc(),
+	    f.num_hops,
+	    (f.is_gateway ? 'y' : 'n'),
+	    f.seq_no);
+    _extended_logging_errh->message(str);
   }
-  _extended_logging_errh->message ("\n");
+  _extended_logging_errh->message("\n");
 }
 
 
@@ -134,7 +134,7 @@ GridRouteTable::initialize(ErrorHandler *)
 
 
 const GridRouteTable::RTEntry *
-GridRouteTable::current_gateway ()
+GridRouteTable::current_gateway()
 {
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &f = i.value();
@@ -187,8 +187,8 @@ GridRouteTable::simple_action(Packet *packet)
    
   // extended logging
   timeval tv;
-  gettimeofday (&tv, NULL);
-  _extended_logging_errh->message ("recvd %u from %s %ld %ld", ntohl(hlo->seq_no), ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
+  gettimeofday(&tv, NULL);
+  _extended_logging_errh->message("recvd %u from %s %ld %ld", ntohl(hlo->seq_no), ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
 
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
@@ -440,7 +440,7 @@ GridRouteTable::expire_routes()
 	!expired_rtes.findp(i.value().dest_ip)) {
       expired_rtes.insert(i.value().dest_ip, true);
 
-      _extended_logging_errh->message ("next to %s expired %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+      _extended_logging_errh->message("next to %s expired %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
     }
   }
   
@@ -542,6 +542,10 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
   /* allocate and align the packet */
   WritablePacket *p = Packet::make(psz + 2); // for alignment
+  if (p == 0) {
+    click_chatter("in %s: cannot make packet!", id().cc());
+    assert(0);
+  } 
   ASSERT_ALIGNED(p->data());
   p->pull(2);
   memset(p->data(), 0, p->length());
@@ -584,8 +588,8 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
     _seq_no += 2;
   
   /* extended logging */
-  gettimeofday (&tv, NULL);
-  _extended_logging_errh->message ("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
+  gettimeofday(&tv, NULL);
+  _extended_logging_errh->message("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
 
   hlo->ttl = htonl(grid_hello::MAX_TTL_DEFAULT);
 

@@ -70,11 +70,13 @@ struct grid_hdr {
   unsigned char hdr_len;    // sizeof(grid_hdr). Why do we need this? -- it was changing...
 
   unsigned char type;
-  static const unsigned char GRID_HELLO     = 1;  // no additional info in packet beyond header
-  static const unsigned char GRID_LR_HELLO  = 2;  // followed by grid_hello and grid_nbr_entries
-  static const unsigned char GRID_NBR_ENCAP = 3;  // followed by grid_nbr_encap
-  static const unsigned char GRID_LOC_QUERY = 4;  // followed by grid_loc_query
-  static const unsigned char GRID_LOC_REPLY = 5;  // followed by grid_nbr_encap header 
+  static const unsigned char GRID_HELLO       = 1;  // no additional info in packet beyond header
+  static const unsigned char GRID_LR_HELLO    = 2;  // followed by grid_hello and grid_nbr_entries
+  static const unsigned char GRID_NBR_ENCAP   = 3;  // followed by grid_nbr_encap
+  static const unsigned char GRID_LOC_QUERY   = 4;  // followed by grid_loc_query
+  static const unsigned char GRID_LOC_REPLY   = 5;  // followed by grid_nbr_encap 
+  static const unsigned char GRID_ROUTE_PROBE = 6;  // followed by grid_nbr_encap and grid_route_probe
+  static const unsigned char GRID_ROUTE_REPLY = 7;  // followed by grid_nbr_encap and grid_route_reply
 
   unsigned char pad1, pad2;
 
@@ -205,6 +207,16 @@ struct grid_loc_query {
   unsigned int seq_no;
 };
 
+struct grid_route_probe {
+  unsigned int nonce;
+};
+
+struct grid_route_reply {
+  unsigned int nonce;
+  unsigned int reply_hop;
+  unsigned int probe_dest;
+};
+
 
 inline String
 grid_hdr::type_string(unsigned char type)
@@ -215,6 +227,8 @@ grid_hdr::type_string(unsigned char type)
   case GRID_NBR_ENCAP: return String("GRID_NBR_ENCAP"); break;
   case GRID_LOC_REPLY: return String("GRID_LOC_REPLY"); break;
   case GRID_LOC_QUERY: return String("GRID_LOC_QUERY"); break;
+  case GRID_ROUTE_PROBE: return String("GRID_ROUTE_PROBE"); break;
+  case GRID_ROUTE_REPLY: return String("GRID_ROUTE_REPLY"); break;
   default: return String("Unknown-type");
   }
 }
