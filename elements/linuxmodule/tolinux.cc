@@ -35,7 +35,7 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 ToLinux::ToLinux()
-    : Element(1, 0)
+    : Element(1, 0), _dev(0)
 {
     MOD_INC_USE_COUNT;
 }

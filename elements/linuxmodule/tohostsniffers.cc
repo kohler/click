@@ -36,7 +36,7 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 ToLinuxSniffers::ToLinuxSniffers()
-    : Element(1, 0)
+    : Element(1, 0), _dev(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -50,7 +50,7 @@ ToLinuxSniffers::~ToLinuxSniffers()
 ToLinuxSniffers *
 ToLinuxSniffers::clone() const
 {
-  return new ToLinuxSniffers();
+    return new ToLinuxSniffers();
 }
 
 int
