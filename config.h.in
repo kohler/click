@@ -5,60 +5,61 @@
 /* Version number of package */
 #define CLICK_VERSION "0.1"
 
-/* Define to 1 since we have Strings. */
-#define HAVE_STRING 1
-
-/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, ELEMENT_HEADER, and
-   ELEMENT_MT_SAFE are noops. */
-#define EXPORT_ELEMENT(x)
-#define ELEMENT_REQUIRES(x)
-#define ELEMENT_PROVIDES(x)
-#define ELEMENT_HEADER(x)
-#define ELEMENT_MT_SAFE(x)
-
-/* Define if <new.h> exists and works. */
-#undef HAVE_NEW_H
+/* Define if IPv6 support is enabled. */
+#undef HAVE_IP6
 
 /* Define if IPsec support is enabled. */
 #undef HAVE_IPSEC
 
-/* Define if IPv6 support is enabled. */
-#undef HAVE_IP6
-
 /* Define if PollDevice should run fast to get good benchmark numbers */
 #undef CLICK_WARP9
 
-/* Define if <pcap.h> uses bpf_timeval. */
-#undef HAVE_BPF_TIMEVAL
+/* Define if <new.h> exists and works. */
+#undef HAVE_NEW_H
 
-/* Define if you have the strerror function.  */
-#undef HAVE_STRERROR
+/* Define if inttypes.h exists. */
+#undef HAVE_INTTYPES_H
 
-/* Define if you have the strtoul function.  */
-#undef HAVE_STRTOUL
+/* Define if 64-bit integer types are enabled. */
+#undef HAVE_INT64_TYPES
 
-/* Define if you have the <unistd.h> header file.  */
+/* Define if the machine is indifferent to alignment. */
+#undef HAVE_INDIFFERENT_ALIGNMENT
+
+/* Define if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define if you have the <dlfcn.h> header file.  */
+/* Define if you have the strerror function. */
+#undef HAVE_STRERROR
+
+/* Define if you have the strtoul function. */
+#undef HAVE_STRTOUL
+
+/* Define if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
 
 /* Define if dynamic linking is possible. */
 #undef HAVE_DYNAMIC_LINKING
 
-/* Define if you have the <sys/mman.h> header file.  */
+/* Define if you have the <sys/mman.h> header file. */
 #undef HAVE_SYS_MMAN_H
 
-/* Define if you have the mmap function.  */
+/* Define if you have the mmap function. */
 #undef HAVE_MMAP
 
-/* Define if you have the madvise function.  */
+/* Define if you have the madvise function. */
 #undef HAVE_MADVISE
 
-/* Define if mmap is allowed.  */
+/* Define if mmap is allowed. */
 #if defined(HAVE_SYS_MMAN_H) && defined(HAVE_MMAP)
 # define ALLOW_MMAP 1
 #endif
+
+/* Define if you have -lpcap and pcap.h. */
+#undef HAVE_PCAP
+
+/* Define if <pcap.h> uses bpf_timeval. */
+#undef HAVE_BPF_TIMEVAL
 
 /* Define stuff under a Linux module. */
 #ifdef CLICK_LINUXMODULE
@@ -96,9 +97,6 @@
 #undef __SMP__
 #endif
 
-/* Define if you both need and have -lpcap and pcap.h. */
-#undef HAVE_PCAP
-
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__
 #undef NUM_CLICK_CPUS
@@ -115,20 +113,10 @@
 /* Define for Click memory allocation debugging. */
 #undef CLICK_DMALLOC
 
-/* Prototype strerror if we don't have it. */
-#ifndef CLICK_LINUXMODULE
-# ifndef HAVE_STRERROR
-char *strerror(int errno);
-# endif
-#endif
+/* Define to 1 since we have Strings. */
+#define HAVE_STRING 1
 
-/* Define if inttypes.h exists. */
-#undef HAVE_INTTYPES_H
-
-/* Define if 64-bit integer types are enabled. */
-#undef HAVE_INT64_TYPES
-
-/* Include type definitions. */
+/* Include integer type definitions. */
 #ifdef CLICK_LINUXMODULE
 # include <linux/types.h>
 #else
@@ -136,6 +124,13 @@ char *strerror(int errno);
 #  include <inttypes.h>
 # endif
 # include <sys/types.h>
+#endif
+
+/* Prototype strerror if we don't have it. */
+#ifndef CLICK_LINUXMODULE
+# ifndef HAVE_STRERROR
+char *strerror(int errno);
+# endif
 #endif
 
 /* Define if fast checksum functions available. */
@@ -167,5 +162,13 @@ inline void *operator new(size_t, void *v) { return v; }
 #define EXPLICIT_TEMPLATE_INSTANCES 1
 #endif
 #endif /* __cplusplus */
+
+/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, ELEMENT_HEADER, and
+   ELEMENT_MT_SAFE are noops. */
+#define EXPORT_ELEMENT(x)
+#define ELEMENT_REQUIRES(x)
+#define ELEMENT_PROVIDES(x)
+#define ELEMENT_HEADER(x)
+#define ELEMENT_MT_SAFE(x)
 
 #endif /* CLICK_CONFIG_H */

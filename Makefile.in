@@ -119,8 +119,8 @@ top_distdir = $(distdir)
 
 dist: distdir
 distdir: $(srcdir)/configure
-	@cd doc && $(MAKE) info
-	@cp $(srcdir)/acclick.m4 $(srcdir)/aclocal.m4 $(srcdir)/etc/samplepackage; cd $(srcdir)/etc/samplepackage; $(AUTOCONF)
+	cd doc && $(MAKE) info
+	cp $(srcdir)/acclick.m4 $(srcdir)/aclocal.m4 $(srcdir)/etc/samplepackage; cd $(srcdir)/etc/samplepackage; $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)

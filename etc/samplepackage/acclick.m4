@@ -143,7 +143,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 		ac_cv_pcap_header_path='-I/usr/include/pcap'))
 	if test "$ac_cv_pcap_header_path" = 'not found'; then
 	    HAVE_PCAP=
-	else
+	elif test "$ac_cv_pcap_header_path" != 'found'; then
 	    PCAP_INCLUDES="$ac_cv_pcap_header_path"
         fi
     fi
@@ -200,8 +200,8 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
     AC_SUBST(PCAP_LIBS)
 
 
-    if test "$HAVE_PCAP" = y; then
-	AC_DEFINE_UNQUOTED(HAVE_PCAP, 1)
+    if test "$HAVE_PCAP" = yes; then
+	AC_DEFINE(HAVE_PCAP)
     fi
 ])
 
@@ -306,3 +306,86 @@ AC_DEFUN([CLICK_PROG_GMAKE], [
     test -n "$GMAKE" -a "$GMAKE" != make && SUBMAKE="MAKE = $GMAKE"
     AC_SUBST(SUBMAKE)
 ])
+
+
+dnl
+dnl CLICK_CHECK_ALIGNMENT
+dnl Check whether machine is indifferent to alignment. Defines
+dnl HAVE_INDIFFERENT_ALIGNMENT.
+dnl
+
+AC_DEFUN([CLICK_CHECK_ALIGNMENT], [
+    AC_CACHE_CHECK(whether machine is indifferent to alignment, ac_cv_alignment_indifferent,
+    [AC_TRY_RUN([#ifdef __cplusplus
+extern "C" void exit(int);
+#else
+void exit(int status);
+#endif
+void get_value(char *buf, int offset, int *value) {
+    int i;
+    for (i = 0; i < 4; i++)
+	buf[i + offset] = i;
+    *value = *((int *)(buf + offset));
+}
+int main(int argc, char *argv[]) {
+    char buf[12];
+    int value, i, try_value;
+    get_value(buf, 0, &value);
+    for (i = 1; i < 4; i++) {
+	get_value(buf, i, &try_value);
+	if (value != try_value)
+	    exit(1);
+    }
+    exit(0);
+}], ac_cv_alignment_indifferent=yes, ac_cv_alignment_indifferent=no,
+	ac_cv_alignment_indifferent=no)])
+    if test "x$ac_cv_alignment_indifferent" = xyes; then
+	AC_DEFINE(HAVE_INDIFFERENT_ALIGNMENT)
+    fi])
+
+
+dnl
+dnl CLICK_CHECK_INTEGER_TYPES
+dnl Finds definitions for 'int8_t' ... 'int32_t' and 'uint8_t' ... 'uint32_t'.
+dnl Also defines shell variable 'have_inttypes_h' to 'yes' iff the header
+dnl file <inttypes.h> exists.
+dnl
+
+AC_DEFUN([CLICK_CHECK_INTEGER_TYPES], [
+    AC_CHECK_HEADERS(inttypes.h, have_inttypes_h=yes, have_inttypes_h=no)
+
+    if test $have_inttypes_h = no; then
+	AC_CACHE_CHECK(for uintXX_t typedefs, ac_cv_uint_t,
+	[AC_EGREP_HEADER(uint32_t, sys/types.h, ac_cv_uint_t=yes, ac_cv_uint_t=no)])
+	if test $ac_cv_uint_t = no; then
+	    AC_MSG_ERROR("uint32_t not defined by <inttypes.h> or <sys/types.h>!")
+	fi
+    fi])
+
+
+dnl
+dnl CLICK_CHECK_INT64_TYPES
+dnl Finds definitions for 'int64_t' and 'uint64_t'.
+dnl On input, shell variable 'have_inttypes_h' should be 'yes' if the header
+dnl file <inttypes.h> exists.
+dnl
+
+AC_DEFUN([CLICK_CHECK_INT64_TYPES], [
+    if test "x$have_inttypes_h" = xyes; then
+	inttypes_hdr='inttypes.h'
+    else
+	inttypes_hdr='sys/types.h'
+    fi
+
+    AC_CACHE_CHECK(for int64_t typedef, ac_cv_int64_t,
+[AC_EGREP_HEADER(int64_t, $inttypes_hdr, ac_cv_int64_t=yes, ac_cv_int64_t=no)])
+    AC_CACHE_CHECK(for uint64_t typedef, ac_cv_uint64_t,
+[AC_EGREP_HEADER(uint64_t, $inttypes_hdr, ac_cv_uint64_t=yes, ac_cv_uint64_t=no)])
+
+    if test $ac_cv_int64_t = no -o $ac_cv_uint64_t = no; then
+	AC_MSG_ERROR(int64_t types not defined by $inttypes_hdr!
+Compile with "'`'"--disable-int64'.)
+    else
+	AC_DEFINE_UNQUOTED(HAVE_INT64_TYPES)
+    fi])
+
