@@ -412,6 +412,7 @@ particular purpose.\n");
     ae.uid = geteuid();
     ae.gid = getegid();
     ae.mode = 0600;
+    out.pop();			// get rid of trailing `\0'
     ae.data = out.take_string();
 
     if (!config_only)
