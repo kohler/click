@@ -1,3 +1,17 @@
+2004-06-28 Monday 14:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.80), README (1.44), apps/csclient/test.click (1.2),
+	conf/delay.click (1.4), conf/dnsproxy.click (1.2): update
+	DISTFILES, README, some documentation
+
+2004-06-28 Monday 13:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.152): news update
+
+2004-06-28 Monday 13:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* AUTHORS (1.26): add Mark Huang and Nikitas
+
 2004-06-27 Sunday 08:20  John Bicket <jbicket@mit.edu>
 
 	* NEWS (1.151): add more detailed wifi news.
