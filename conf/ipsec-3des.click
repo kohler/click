@@ -3,7 +3,7 @@ RatedSource(\<0000000011111111222222223333333344444444555555556666>,
             1,1,1)
 	-> IPEncap(17, 4.0.0.2, 1.0.0.2) 
 	-> SetIPChecksum
-	-> CheckIPHeader(18.26.4.255 2.255.255.255 1.255.255.255)
+	-> CheckIPHeader(INTERFACES 18.26.4.1/24 2.0.0.1/8 1.0.0.1/8)
         -> Print(crypt,128)
 
 	-> IPsecESPEncap(0x00000001)

@@ -114,7 +114,7 @@ c[5] 	//-> Print(arp-reply, 200)
 	
 c[6] 	//-> Print(c5-normal-ip-pkt, 200) 
 	-> Strip(14)
-	-> CheckIPHeader(18.26.4.255)
+	-> CheckIPHeader(BADSRC 18.26.4.255)
 	-> GetIPAddress(16)
 	-> rt;
 
@@ -157,7 +157,7 @@ at[1]  	-> Print(after-at1, 200)
 	-> [0]rt6;
 	
 pt64[0]	-> Print(after-pt640, 200) 
-	-> CheckIPHeader(18.26.4.255 1.255.255.255)
+	-> CheckIPHeader(BADSRC 18.26.4.255 1.255.255.255)
 	-> GetIPAddress(16)
 	-> [0]rt;
 pt46[0]	-> Print(after-pt46, 200) 

@@ -4,7 +4,7 @@ InfiniteSource(DATA \<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
 02 00 00 02  13 69 13 69  00 14 d6 41  55 44 50 20
 70 61 63 6b  65 74 21 0a>, LIMIT 1, STOP true)
 	-> Strip(14)
-	-> CheckIPHeader(18.26.4.255 2.255.255.255 1.255.255.255)
+	-> CheckIPHeader(18.26.4.1/24 2.0.0.1/8 1.0.0.1/8)
         -> IPPrint(start)
 	-> IPsecESPEncap(0x00000001)
 	-> IPsecAuthSHA1(0)
