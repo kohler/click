@@ -1,3 +1,23 @@
+2001-03-09 Friday 23:00  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ethernet/arpquerier.cc, elements/ethernet/arpquerier.hh,
+	elements/linuxmodule/fastudpflows.cc,
+	elements/linuxmodule/fastudpflows.hh,
+	elements/local/binpackingsched.cc,
+	elements/local/binpackingsched.hh, elements/local/duppath.cc,
+	elements/local/duppath.hh, elements/local/staticthreadsched.cc,
+	elements/local/staticthreadsched.hh,
+	elements/local/threadmonitor.cc, elements/local/threadmonitor.hh,
+	elements/standard/msqueue.cc, elements/standard/msqueue.hh,
+	elements/tcpudp/iprewriter.cc, elements/tcpudp/iprewriter.hh,
+	include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/glue.hh, include/click/skbmgr.h.old,
+	linuxmodule/skbmgr.c.old: merge in changes from smp branch.
+	bighashmap now has a max number of buckets, otherwise linux will
+	blow up if we try to allocate the array of buckets; iprewriter and
+	arpquerier now have locks, which are compiled away in smp_click;
+	added load balancing elements to elements/local; other minor stuff
+
 2001-03-09 Friday 22:34  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* linuxmodule/kernelversion.c: oops: dont define click_threads()
