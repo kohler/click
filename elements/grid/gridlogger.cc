@@ -24,4 +24,5 @@ bool GridLogger::_log_full_ip = false;
 String GridLogger::_fn;
 
 
+ELEMENT_REQUIRES(userlevel)
 ELEMENT_PROVIDES(gridlogger)
