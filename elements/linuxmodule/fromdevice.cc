@@ -134,7 +134,7 @@ FromDevice::uninitialize()
 }
 
 void
-FromDevice::take_state(Element *e, ErrorHandler *)
+FromDevice::take_state(Element *e, ErrorHandler *errh)
 {
   FromDevice *fd = (FromDevice *)e->cast("FromDevice");
   if (!fd) return;
