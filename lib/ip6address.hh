@@ -2,6 +2,7 @@
 #define IP6ADDRESS_HH
 #include "string.hh"
 #include "click_ip6.h"
+#include "ipaddress.hh"
 
 class IP6Address {
  
@@ -12,6 +13,7 @@ class IP6Address {
   IP6Address();
   explicit IP6Address(const click_in6_addr &a)	: _addr(a) { }
   explicit IP6Address(const unsigned char *);
+  explicit IP6Address(const IPAddress ip);
   explicit IP6Address(const String &);		// "fec0:0:0:1::1"
   static IP6Address make_prefix(int);
 

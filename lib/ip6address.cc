@@ -38,6 +38,18 @@ IP6Address::IP6Address(const unsigned char *data)
     _addr.s6_addr32[i] = udata[i];
 }
 
+IP6Address::IP6Address(const IPAddress ip)
+{
+  //const unsigned *udata = reinterpret_cast<const unsigned *>(ip.data());
+  unsigned char *udata = ip.data();
+  for (int i=0; i<10; i++)
+    _addr.s6_addr[i] = 0;
+  _addr.s6_addr[10]=0xff;
+  _addr.s6_addr[11]=0xff;
+  for (int i=0; i<4; i++)
+    _addr.s6_addr[12+i] = udata[i];
+}
+
 IP6Address::IP6Address(const String &str)
 {
   if (!cp_ip6_address(str, *this))
