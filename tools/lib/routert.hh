@@ -11,7 +11,7 @@ typedef HashMap<String, int> StringMap;
 class RouterT : public ElementClassT { public:
 
     RouterT();
-    RouterT(const String &name, const String &landmark, RouterT *enclosing_scope = 0, ElementClassT *overload = 0);
+    RouterT(const String &name, const String &landmark, RouterT *declaration_scope = 0, ElementClassT *overload = 0);
     virtual ~RouterT();
 
     // ELEMENTS
@@ -139,7 +139,8 @@ class RouterT : public ElementClassT { public:
     int ninputs() const			{ return _ninputs; }
     int noutputs() const		{ return _noutputs; }
     
-    RouterT *enclosing_scope() const;
+    RouterT *declaration_scope() const	{ return _declaration_scope; }
+    int declaration_depth() const	{ return _declaration_depth; }
     ElementClassT *overload_type() const { return _overload_type; }
     int overload_depth() const		{ return _overload_depth; }
 

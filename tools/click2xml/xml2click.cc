@@ -431,7 +431,7 @@ complete_elementclass(const String &id, const String &xml_landmark, ErrorHandler
     assert(id);
     int which = class_id_map[id];
     if (which < 0) {
-	errh->lerror(xml_landmark, "no such element class '%s'", String(id).cc());
+	errh->lerror(xml_landmark, "no such element class '%s'", id.c_str());
 	return 0;
     } else {
 	classes[which]->complete_elementclass(errh);

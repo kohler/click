@@ -82,7 +82,7 @@ IPRewriterPatterns::find(Element *e, const String &name, ErrorHandler *errh)
 	return rwp->_patterns[x];
       break;
     }
-  errh->error("no pattern named `%s'", String(name).cc());
+  errh->error("no pattern named `%s'", name.c_str());
   return 0;
 }
 

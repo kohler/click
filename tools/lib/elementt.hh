@@ -58,7 +58,7 @@ struct ElementT {
   private:
 
     int _eindex;
-    mutable String _name;		// mutable for c_str()
+    String _name;
     ElementClassT *_type;
     String _configuration;
     String _landmark;

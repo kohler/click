@@ -784,7 +784,7 @@ LexerT::yconnection()
 	    return true;
       
 	  default:
-	    lerror(t, "syntax error near `%#s'", String(t.string()).cc());
+	    lerror(t, "syntax error near `%#s'", t.string().c_str());
 	    if (t.kind() >= lexIdent)	// save meaningful tokens
 		unlex(t);
 	    return true;
@@ -825,7 +825,7 @@ LexerT::yelementclass(int pos1)
 	}
 	
     } else
-	lerror(tnext, "syntax error near `%#s'", String(tnext.string()).cc());
+	lerror(tnext, "syntax error near `%#s'", tnext.string().c_str());
 }
 
 void
@@ -1005,7 +1005,7 @@ LexerT::ystatement(bool nested)
     
    default:
    syntax_error:
-    lerror(t, "syntax error near `%#s'", String(t.string()).cc());
+    lerror(t, "syntax error near `%#s'", t.string().c_str());
     return true;
     
   }

@@ -631,7 +631,7 @@ cleanup_proc_click()
   cleanup_router_element_procs();
   for (int i = 0; i < Router::nglobal_handlers(); i++) {
     const Router::Handler *h = Router::handler((Router *)0, Router::FIRST_GLOBAL_HANDLER + i);
-    remove_proc_entry(String(h->name()).cc(), proc_click_entry);
+    remove_proc_entry(h->name().c_str(), proc_click_entry);
   }
 
   // remove the `/proc/click' directory

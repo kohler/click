@@ -37,7 +37,7 @@ RouterT::RouterT()
       _free_conn(-1),
       _declared_type_map(-1),
       _archive_map(-1),
-      _declaration_scope(0), _declaration_depth(0), _scope_cookie(0),
+      _declaration_scope(0), _declaration_depth(1), _scope_cookie(0),
       _ninputs(0), _noutputs(0), _overload_type(0), _overload_depth(0),
       _circularity_flag(false)
 {
@@ -64,7 +64,7 @@ RouterT::RouterT(const String &name, const String &landmark, RouterT *declaratio
 	_declaration_scope->use();
 	_declaration_depth = _declaration_scope->_declaration_depth + 1;
     } else
-	_declaration_depth = 0;
+	_declaration_depth = 1;
     // create input and output pseudoelements
     get_element("input", ElementClassT::tunnel_type(), String(), landmark);
     get_element("output", ElementClassT::tunnel_type(), String(), landmark);
@@ -951,7 +951,7 @@ RouterT::expand_into(RouterT *tor, const VariableEnvironment &env, ErrorHandler 
 	const ArchiveElement &ae = _archive[i];
 	if (ae.live() && ae.name != "config") {
 	    if (tor->archive_index(ae.name) >= 0)
-		errh->error("expansion confict: two archive elements named `%s'", String(ae.name).cc());
+		errh->error("expansion confict: two archive elements named `%s'", ae.name.c_str());
 	    else
 		tor->add_archive(ae);
 	}

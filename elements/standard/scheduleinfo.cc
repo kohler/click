@@ -60,7 +60,7 @@ ScheduleInfo::configure(Vector<String> &conf, ErrorHandler *errh)
     if (parts.size() == 0)
       /* empty argument OK */;
     else if (parts.size() != 2 || !cp_real2(parts[1], FRAC_BITS, &mt))
-      errh->error("expected `ELEMENTNAME PARAM', got `%s'", String(conf[i]).cc());
+      errh->error("expected `ELEMENTNAME PARAM', got `%s'", conf[i].c_str());
     else {
       for (int j = 0; j < _element_names.size(); j++)
 	if (_element_names[j] == parts[0]) {

@@ -29,8 +29,7 @@ StaticThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
     cp_spacevec(conf[i], parts);
     if (parts.size() == 0) /* empty argument OK */;
     else if (parts.size() != 2 || !cp_integer(parts[1], &thread))
-      return errh->error("expected `ELEMENTNAME THREAD', got `%s'", 
-	                 String(conf[i]).cc());
+      return errh->error("expected `ELEMENTNAME THREAD', got `%s'", conf[i].c_str());
     else {
       _element_names.push_back(parts[0]);
       _threads.push_back(thread);

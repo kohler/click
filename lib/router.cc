@@ -138,7 +138,8 @@ Router::find(const String &name, String prefix, ErrorHandler *errh) const
     prefix = (slash >= 0 ? prefix.substring(0, slash + 1) : String());
   }
   
-  if (errh) errh->error("no element named `%s'", String(name).cc());
+  if (errh)
+    errh->error("no element named `%s'", name.c_str());
   return 0;
 }
 

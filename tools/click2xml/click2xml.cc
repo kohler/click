@@ -119,7 +119,7 @@ static void
 print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
 {
     if (c->primitive())
-	fprintf(f, "%sclassname=\"%s\"", prefix, String(c->name()).cc());
+	fprintf(f, "%sclassname=\"%s\"", prefix, c->name().c_str());
     else
 	fprintf(f, "%sclassid=\"c%p\"", prefix, c);
 }
@@ -146,7 +146,7 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 
     fprintf(f, "%s<elementclass ", indent.cc());
     if (c->name())
-	fprintf(f, "classname=\"%s\" ", String(c->name()).cc());
+	fprintf(f, "classname=\"%s\" ", c->name().c_str());
     print_class_reference(f, c, "");
     
     if (SynonymElementClassT *synonym = c->cast_synonym()) {

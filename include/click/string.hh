@@ -15,16 +15,16 @@ class String { public:
   friend class String::Initializer;
   static void static_initialize();
   static void static_cleanup();
-  
-  String();
-  String(const String &s);
+
+  inline String();
+  inline String(const String &);
   String(const char *cc)		{ assign(cc, -1); }
   String(const char *cc, int l)		{ assign(cc, l); }
 #ifdef HAVE_PERMSTRING
-  String(PermString p);
+  inline String(PermString p);
 #endif
-  explicit String(char);
-  explicit String(unsigned char);
+  explicit inline String(char);
+  explicit inline String(unsigned char);
   explicit String(int);
   explicit String(unsigned);
   explicit String(long);
@@ -36,7 +36,7 @@ class String { public:
 #ifndef __KERNEL__
   explicit String(double);
 #endif
-  ~String();
+  inline ~String();
   
   static const String &null_string()	{ return *null_string_p; }
   static const String &out_of_memory_string() { return *oom_string_p; }
@@ -58,14 +58,15 @@ class String { public:
   operator PermString() const		{ return PermString(_data, _length); }
 #endif
   
-  const char *cc();			// pointer returned is semi-transient
-  const char *c_str()			{ return cc(); }
+  const char *c_str() const;		// pointer returned is semi-transient
+  const char *cc() const		{ return c_str(); }
   
-  char operator[](int e) const		{ return _data[e]; }
+  char operator[](int i) const		{ return _data[i]; }
+  char at(int i) const			{ assert(i>=0&&i<_length); return _data[i]; }
   char back() const			{ return _data[_length-1]; }
   int find_left(int c, int start = 0) const;
   int find_left(const String &s, int start = 0) const;
-  int find_right(int c, int start = 0x7FFFFFFF) const;
+  int find_right(int c, int start = ~(-1)) const;
   
   bool equals(const char *, int) const;
   // bool operator==(const String &, const String &);
@@ -77,34 +78,39 @@ class String { public:
 
   int compare(const char *, int) const;
   int compare(const String &x) const	{ return compare(x._data, x._length); }
-  static int compare(const String &a, const String &b);
+  static inline int compare(const String &a, const String &b);
   // bool operator<(const String &, const String &);
   // bool operator<=(const String &, const String &);
   // bool operator>(const String &, const String &);
   // bool operator>=(const String &, const String &);
   
-  String substring(int, int) const;
-  String substring(int left) const	{ return substring(left, _length); }
+  typedef const char *const_iterator;
+  typedef const_iterator iterator;
+  const_iterator begin() const		{ return _data; }
+  const_iterator end() const		{ return _data + _length; }
 
+  String substring(int pos, int len) const;
+  String substring(int pos) const	{ return substring(pos, _length); }
+  
   String lower() const;			// lowercase
   String upper() const;			// uppercase
   String printable() const;		// quote non-ASCII characters
   String trim_space() const;		// trim space from right
   
-  String &operator=(const String &);
-  String &operator=(const char *);
+  inline String &operator=(const String &);
+  inline String &operator=(const char *);
 #ifdef HAVE_PERMSTRING
-  String &operator=(PermString);
+  inline String &operator=(PermString);
 #endif
 
   void append(const char *, int len);
   void append_fill(int c, int len);
-  void append_garbage(int len);
-  String &operator+=(const String &);
-  String &operator+=(const char *);
-  String &operator+=(char);
+  char *append_garbage(int len);
+  inline String &operator+=(const String &);
+  inline String &operator+=(const char *);
+  inline String &operator+=(char);
 #ifdef HAVE_PERMSTRING
-  String &operator+=(PermString p);
+  inline String &operator+=(PermString p);
 #endif
 
   // String operator+(String, const String &);
@@ -131,18 +137,18 @@ class String { public:
     ~Memo();
   };
   
-  const char *_data;
-  int _length;
-  Memo *_memo;
+  mutable const char *_data;	// mutable for c_str()
+  mutable int _length;
+  mutable Memo *_memo;
   
-  String(const char *, int, Memo *);
+  inline String(const char *, int, Memo *);
   
-  void assign(const String &);
+  inline void assign(const String &) const;
   void assign(const char *, int);
 #ifdef HAVE_PERMSTRING
-  void assign(PermString);
+  inline void assign(PermString);
 #endif
-  void deref();
+  inline void deref() const;
   void make_out_of_memory();
   
   static Memo *null_memo;
@@ -166,7 +172,7 @@ String::String(const char *data, int length, Memo *memo)
 }
 
 inline void
-String::assign(const String &s)
+String::assign(const String &s) const
 {
   _data = s._data;
   _length = s._length;
@@ -175,7 +181,7 @@ String::assign(const String &s)
 }
 
 inline void
-String::deref()
+String::deref() const
 {
   if (--_memo->_refcount == 0)
     delete _memo;

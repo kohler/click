@@ -171,7 +171,7 @@ String::assign(const char *str, int len)
     _memo->_refcount++;
     
   } else {
-    // Make `capacity' a multiple of 16 characters at least as big as `len'.
+    // Make 'capacity' a multiple of 16 characters and bigger than 'len'.
     int capacity = (len + 16) & ~15;
     _memo = new Memo(len, capacity);
     if (!_memo || !_memo->_real_data) {
@@ -185,141 +185,72 @@ String::assign(const char *str, int len)
   _length = len;
 }
 
+char *
+String::append_garbage(int suffix_len)
+{
+    // Appending anything to "out of memory" leaves it as "out of memory"
+    if (suffix_len <= 0 || _memo == oom_memo)
+	return 0;
+  
+    // If we can, append into unused space. First, we check that there's
+    // enough unused space for `suffix_len' characters to fit; then, we check
+    // that the unused space immediately follows the data in `*this'.
+    if (_memo->_capacity > _memo->_dirty + suffix_len) {
+	char *real_dirty = _memo->_real_data + _memo->_dirty;
+	if (real_dirty == _data + _length) {
+	    _length += suffix_len;
+	    _memo->_dirty += suffix_len;
+	    assert(_memo->_dirty < _memo->_capacity);
+	    return real_dirty;
+	}
+    }
+  
+    // Now we have to make new space. Make sure the new capacity is a
+    // multiple of 16 characters and that it is at least 16.
+    int new_capacity = (_length + 16) & ~15;
+    while (new_capacity < _length + suffix_len)
+	new_capacity *= 2;
+    Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
+    if (!new_memo || !new_memo->_real_data) {
+	delete new_memo;
+	make_out_of_memory();
+	return 0;
+    }
+
+    char *new_data = new_memo->_real_data;
+    memcpy(new_data, _data, _length);
+  
+    deref();
+    _data = new_data;
+    new_data += _length;
+    _length += suffix_len;
+    _memo = new_memo;
+    return new_data;
+}
+
 void
 String::append(const char *suffix, int suffix_len)
 {
-  if (!suffix) {
-    assert(suffix_len <= 0);
-    suffix_len = 0;
-  } else if (suffix_len < 0)
-    suffix_len = strlen(suffix);
+    if (!suffix) {
+	assert(suffix_len <= 0);
+	suffix_len = 0;
+    } else if (suffix_len < 0)
+	suffix_len = strlen(suffix);
 
-  // Appending "out of memory" to a regular string makes it "out of memory",
-  // and appending anything to "out of memory" leaves it as "out of memory"
-  if (suffix_len == 0 || _memo == oom_memo) {
-    if (suffix == oom_memo->_real_data)
-      make_out_of_memory();
-    return;
-  }
-  
-  // If we can, append into unused space. First, we check that there's enough
-  // unused space for `suffix_len' characters to fit; then, we check that the
-  // unused space immediately follows the data in `*this'.
-  if (_memo->_capacity > _memo->_dirty + suffix_len) {
-    char *real_dirty = _memo->_real_data + _memo->_dirty;
-    if (real_dirty == _data + _length) {
-      memcpy(real_dirty, suffix, suffix_len);
-      _length += suffix_len;
-      _memo->_dirty += suffix_len;
-      assert(_memo->_dirty < _memo->_capacity);
-      return;
-    }
-  }
-  
-  // Now we have to make new space. Make sure the new capacity is a
-  // multiple of 16 characters and that it is at least 16.
-  int new_capacity = (_length + 16) & ~15;
-  while (new_capacity < _length + suffix_len)
-    new_capacity *= 2;
-  Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
-  if (!new_memo || !new_memo->_real_data) {
-    delete new_memo;
-    make_out_of_memory();
-    return;
-  }
-
-  char *new_data = new_memo->_real_data;
-  memcpy(new_data, _data, _length);
-  memcpy(new_data + _length, suffix, suffix_len);
-  
-  deref();
-  _data = new_data;
-  _length += suffix_len;
-  _memo = new_memo;
+    if (char *space = append_garbage(suffix_len))
+	memcpy(space, suffix, suffix_len);
+    else if (suffix == oom_memo->_real_data)
+	// Appending "out of memory" to a regular string makes it "out of
+	// memory"
+	make_out_of_memory();
 }
 
 void
 String::append_fill(int c, int suffix_len)
 {
-  assert(suffix_len >= 0);
-  if (suffix_len == 0 || _memo == oom_memo)
-    return;
-  
-  // If we can, append into unused space. First, we check that there's enough
-  // unused space for `suffix_len' characters to fit; then, we check that the
-  // unused space immediately follows the data in `*this'.
-  if (_memo->_capacity > _memo->_dirty + suffix_len) {
-    char *real_dirty = _memo->_real_data + _memo->_dirty;
-    if (real_dirty == _data + _length) {
-      memset(real_dirty, c, suffix_len);
-      _length += suffix_len;
-      _memo->_dirty += suffix_len;
-      assert(_memo->_dirty < _memo->_capacity);
-      return;
-    }
-  }
-  
-  // Now we have to make new space. Make sure the new capacity is a
-  // multiple of 16 characters and that it is at least 16.
-  int new_capacity = (_length + 16) & ~15;
-  while (new_capacity < _length + suffix_len)
-    new_capacity *= 2;
-  Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
-  if (!new_memo || !new_memo->_real_data) {
-    delete new_memo;
-    make_out_of_memory();
-    return;
-  }
-
-  char *new_data = new_memo->_real_data;
-  memcpy(new_data, _data, _length);
-  memset(new_data + _length, c, suffix_len);
-  
-  deref();
-  _data = new_data;
-  _length += suffix_len;
-  _memo = new_memo;
-}
-
-void
-String::append_garbage(int suffix_len)
-{
-  assert(suffix_len >= 0);
-  if (suffix_len == 0 || _memo == oom_memo)
-    return;
-  
-  // If we can, append into unused space. First, we check that there's enough
-  // unused space for `suffix_len' characters to fit; then, we check that the
-  // unused space immediately follows the data in `*this'.
-  if (_memo->_capacity > _memo->_dirty + suffix_len) {
-    char *real_dirty = _memo->_real_data + _memo->_dirty;
-    if (real_dirty == _data + _length) {
-      _length += suffix_len;
-      _memo->_dirty += suffix_len;
-      assert(_memo->_dirty < _memo->_capacity);
-      return;
-    }
-  }
-  
-  // Now we have to make new space. Make sure the new capacity is a
-  // multiple of 16 characters and that it is at least 16.
-  int new_capacity = (_length + 16) & ~15;
-  while (new_capacity < _length + suffix_len)
-    new_capacity *= 2;
-  Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
-  if (!new_memo || !new_memo->_real_data) {
-    delete new_memo;
-    out_of_memory();
-    return;
-  }
-
-  char *new_data = new_memo->_real_data;
-  memcpy(new_data, _data, _length);
-  
-  deref();
-  _data = new_data;
-  _length += suffix_len;
-  _memo = new_memo;
+    assert(suffix_len >= 0);
+    if (char *space = append_garbage(suffix_len))
+	memset(space, c, suffix_len);
 }
 
 char *
@@ -342,12 +273,12 @@ char *
 String::mutable_c_str()
 {
   (void) mutable_data();
-  (void) cc();
+  (void) c_str();
   return const_cast<char *>(_data);
 }
 
 const char *
-String::cc()
+String::c_str() const
 {
   // If _memo has no capacity, then this is one of the special strings (null
   // or PermString). We are guaranteed, in these strings, that _data[_length]

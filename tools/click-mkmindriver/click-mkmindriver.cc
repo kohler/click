@@ -186,7 +186,7 @@ find_requirement(const String &requirement, const ElementMap &emap,
       return;
     }
 
-  errh->error("cannot satisfy requirement `%s' from default elementmap", String(requirement).cc());
+  errh->error("cannot satisfy requirement `%s' from default elementmap", requirement.c_str());
 }
 
 static void

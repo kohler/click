@@ -227,7 +227,7 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
     return 0;
 
   if (r->nelements() == 0 && warnings)
-    errh->warning("%s: configuration has no elements", (text_is_expr ? "<expr>" : String(text).cc()));
+    errh->warning("%s: configuration has no elements", (text_is_expr ? "<expr>" : text.c_str()));
 
   // add new ControlSockets
   String retries = (hotswap ? ", RETRIES 1, RETRY_WARNINGS false" : "");

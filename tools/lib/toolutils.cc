@@ -146,7 +146,7 @@ read_router(const String &whatever, bool is_expr, ErrorHandler *errh)
   if (is_expr)
     return read_router_string(whatever, "<expr>", errh);
   else
-    return read_router_file(String(whatever).cc(), false, errh);
+    return read_router_file(whatever.c_str(), false, errh);
 }
 
 

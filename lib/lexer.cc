@@ -1282,7 +1282,7 @@ Lexer::yelementclass()
     add_element_type(name, new Synonym(et), true);
 
   } else {
-    lerror("syntax error near `%#s'", String(tnext.string()).cc());
+    lerror("syntax error near `%#s'", tnext.string().cc());
     add_element_type(name, new ErrorElement, true);
   }
 }
@@ -1462,7 +1462,7 @@ Lexer::ystatement(bool nested)
     
    default:
    syntax_error:
-    lerror("syntax error near `%#s'", String(t.string()).cc());
+    lerror("syntax error near `%#s'", t.string().cc());
     return true;
     
   }

@@ -181,8 +181,7 @@ create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh)
     bool must_longname = false;
     for (int i = 0; i < nlen; i++)
       if (ndata[i] == '/') {
-	errh->error("archive element name `%s' contains slash",
-		    String(ae.name).cc());
+	errh->error("archive element name `%s' contains slash", ae.name.c_str());
 	nlen = i;
 	break;
       } else if (isspace(ndata[i]))

@@ -54,7 +54,7 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
       // allow empty arguments
       continue;
     else if (parts.size() < 2)
-      errh->error("expected `NAME [ADDRS]', got `%s'", String(conf[i]).cc());
+      errh->error("expected `NAME [ADDRS]', got `%s'", conf[i].c_str());
     else {
       String name = prefix + parts[0];
       if (_map[name] < 0) {

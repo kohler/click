@@ -169,7 +169,7 @@ void
 VariableEnvironment::print() const
 {
   for (int i = 0; i < _formals.size(); i++)
-    fprintf(stderr, "%s.%d=%s ", String(_formals[i]).cc(), _depths[i], String(_values[i]).cc());
+    fprintf(stderr, "%s.%d=%s ", _formals[i].c_str(), _depths[i], _values[i].c_str());
   fprintf(stderr, "\n");
 }
 #endif

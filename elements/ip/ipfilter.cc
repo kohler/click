@@ -918,7 +918,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   if (words[pos] == "not" || words[pos] == "!") {
     int next = parse_factor(words, pos + 1, tree, prev_prim, !negated, errh);
     if (next == pos + 1)
-      errh->error("missing factor after `%s'", String(words[pos]).cc());
+      errh->error("missing factor after `%s'", words[pos].c_str());
     return next;
   }
   // ( expr )
@@ -1135,7 +1135,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
       
       int pos = parse_expr(words, 1, tree, prev_prim, &cerrh);
       if (pos < words.size())
-	cerrh.error("garbage after expression at `%s'", String(words[pos]).cc());
+	cerrh.error("garbage after expression at `%s'", words[pos].c_str());
     }
     
     finish_expr_subtree(tree, C_AND, -slot);
