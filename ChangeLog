@@ -1,3 +1,10 @@
+2001-09-17 Monday 16:20  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/: checkgridheader.cc (1.19), checkgridheader.hh
+	(1.5), grid.hh (1.27), gridroutetable.cc (1.9),
+	lookuplocalgridroute.cc (1.25), setgridchecksum.cc (1.16): addition
+	of version field in header
+
 2001-09-11 Tuesday 08:13  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: cxxprotect.h (1.2), cxxunprotect.h (1.2): protect
