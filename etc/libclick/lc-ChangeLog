@@ -1,3 +1,7 @@
+2002-03-26 Tuesday 20:50  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4: update endianness test; it failed on Solaris
+
 2002-03-26 Tuesday 19:15  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: click_fddi.h, click_rfc1483.h, fddi.h, rfc1483.h,

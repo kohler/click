@@ -1,3 +1,8 @@
+2002-03-26 Tuesday 20:50  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4 (1.12), aclocal.m4 (1.12): update endianness test; it
+	failed on Solaris
+
 2002-03-26 Tuesday 20:28  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/: fromdump.cc (1.60), fromdump.hh (1.35):
