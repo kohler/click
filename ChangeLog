@@ -1,3 +1,8 @@
+2001-12-13 Thursday 03:48  Eddie Kohler <kohler@aciri.org>
+
+	* apps/ClickController/Pair.java (1.2): nitlet (mostly to check CVS
+	repository)
+
 2001-12-12 Wednesday 22:14  Eddie Kohler <kohler@aciri.org>
 
 	* tools/lib/elementt.cc (1.20): more fixes
