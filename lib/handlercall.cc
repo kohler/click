@@ -158,20 +158,20 @@ String
 HandlerCall::call_read(const String &hdesc, Router *router, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize_read(router->root_element(), errh) < 0)
-	return String();
-    else
+    if (hcall.initialize_read(router->root_element(), errh) >= 0)
 	return hcall.call_read();
+    else
+	return String();
 }
 
 int
 HandlerCall::call_write(const String &hdesc, Router *router, ErrorHandler *errh)
 {
     HandlerCall hcall(hdesc);
-    if (hcall.initialize_write(router->root_element(), errh) < 0)
-	return -EINVAL;
-    else
+    if (hcall.initialize_write(router->root_element(), errh) >= 0)
 	return hcall.call_write(errh);
+    else
+	return -EINVAL;
 }
 
 
