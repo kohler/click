@@ -1,3 +1,8 @@
+2001-10-05 Friday 16:02  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.11): fixed format strings for
+	route logging messages
+
 2001-10-05 Friday 13:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* apps/csclient/: csclient.cc (1.5), test.click (1.1): code tested,
