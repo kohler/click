@@ -220,19 +220,6 @@ write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
 }
 
 
-extern "C" int
-click_add_element_type(const char *name, Element *e)
-{
-  return lexer->add_element_type(name, e);
-}
-
-extern "C" void
-click_remove_element_type(int i)
-{
-  lexer->remove_element_type(i);
-}
-
-
 static void
 next_root_handler(const char *name, ReadHandler read, void *read_thunk,
 		  WriteHandler write, void *write_thunk)
@@ -244,6 +231,18 @@ next_root_handler(const char *name, ReadHandler read, void *read_thunk,
   register_handler(proc_click_entry, Router::find_global_handler(name));
 }
 #endif
+
+extern "C" int
+click_add_element_type(const char *name, Element *e)
+{
+  return lexer->add_element_type(name, e);
+}
+
+extern "C" void
+click_remove_element_type(int i)
+{
+  lexer->remove_element_type(i);
+}
 
 extern void export_elements(Lexer *);
 
