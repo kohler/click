@@ -42,7 +42,7 @@ ICMPRewriter::~ICMPRewriter()
 void
 ICMPRewriter::notify_noutputs(int n)
 {
-  set_ninputs(n < 2 ? 1 : 2);
+  set_noutputs(n < 2 ? 1 : 2);
 }
 
 int
