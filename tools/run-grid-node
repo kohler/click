@@ -1,0 +1,111 @@
+#!/usr/bin/perl 
+
+# $Id: run-grid-node,v 1.1 2000/08/03 23:24:30 decouto Exp $
+
+# usage: run-grid-node <ip-addr> [no-gw]
+
+# assume we run in <clickdir>/conf XXX
+
+$click = "../userlevel/click";
+$click_config_name = "../conf/grid3.click";
+
+sub ip_to_hex {
+    ($a, $b, $c, $d) = @_[0] =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+    return sprintf("%02x%02x%02x%02x", $a, $b, $c, $d);
+}
+	
+
+
+if (@ARGV < 2) { 
+    print stderr "usage: $0 <ip-addr> <interface> [no-gw]\n";
+    exit 1;
+}
+
+$system_type = `uname`;
+if (!($system_type =~ /Linux/ || 
+      $system_type =~ /FreeBSD/)) {
+    print stderr "This system is not supported\n";
+    exit 1;
+}
+
+
+$grid_addr = $ARGV[0];
+$grid_if = $ARGV[1];
+
+$use_grid_gw = (@ARGV < 3);
+
+print "Running Grid with address ", $grid_addr, " on interface ", $grid_if. "\n";
+if ($use_grid_gw) {
+    print "Using Grid gateway ", $grid_gw_addr, "\n";
+}
+else {
+    print "NOT using Grid gateway\n";
+}
+
+# get MAC address
+
+$ifconfig_out = `ifconfig $grid_if`;
+$hw_addr = "";
+$tun_dev_type = "";
+
+if ($system_type =~ /Linux/) {
+    if(!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
+	print "Unable to get MAC address";
+	exit 1;
+    }
+    $hw_addr = $1;
+    
+    $tun_dev_type = "tap";
+}
+elsif ($system_type =~ /FreeBSD/) {
+    if(!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
+	print "Unable to get MAC address\n";
+	exit 1;
+    }
+    $hw_addr = $1;
+
+    $tun_dev_type = "tun";
+}
+else {
+    print stderr "This system is not supported\n";
+    exit 1;
+}
+
+# turn off routing etc. for grid interface
+# turn on routing for Tun.
+
+open(click_config_file, $click_config_name) || die "can't open click configuration ", $click_config_name, "\n";
+
+
+$GRID_GW = "18.26.7.1";
+$GRID_NETMASK = "255.255.255.0";
+$GRID_NET_HEX = "16/121a07"; # 18.26.7.*
+$NBR_TIMEOUT = "2000"; # msecs
+$HELLO_PERIOD = "500"; # msecs
+$HELLO_JITTER = "100"; # msecs
+$GRID_ETH_PROTO = "12/7FFF";
+$GRID_NBR_ENCAP_PROTO = "15/03";
+
+$grid_addr_hex = ip_to_hex($grid_addr);
+
+open(P, "| $click");
+while(<click_config_file>) {
+    
+    s/GRID_NETMASK/$GRID_NETMASK/;
+    s/GRID_NET_HEX/$GRID_NET_HEX/;
+    s/NBR_TIMEOUT/$NBR_TIMEOUT/;
+    s/HELLO_PERIOD/$HELLO_PERIOD/;
+    s/HELLO_JITTER/$HELLO_JITTER/;
+    s/GRID_ETH_PROTO/$GRID_ETH_PROTO/;
+    s/GRID_NBR_ENCAP_PROTO/$GRID_NBR_ENCAP_PROTO/;
+    s/GRID_GW/$GRID_GW/;
+    s/GRID_IP/$grid_addr/;
+    s/GRID_HEX_IP/$grid_addr_hex/;
+    s/NET_DEVICE/$grid_if/;
+    s/MAC_ADDR/$hw_addr/;
+    s/TUN_DEVICE/$tun_dev_type/;
+    
+    print P $_;
+}
+close P;
+close click_config_file;
