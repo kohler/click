@@ -1,6 +1,7 @@
 /*
  * printold.{cc,hh} -- element prints ``old'' packet contents to system log
  * Douglas S. J. De Couto
+ * based on print.{cc,hh}
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
