@@ -562,6 +562,7 @@ particular purpose.\n");
   // create a ReadHandlerCaller element: is this kosher? we don't use
   // ReadHandlerCaller anywhere else...
   readhandler_element = new ReadHandlerCaller();
+  readhandler_element->initialize_link(router);
   alarm(handler_duration);
 
   // run driver
