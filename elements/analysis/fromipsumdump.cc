@@ -209,7 +209,8 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 	uninitialize();
 	return -1;
     } else if (line.substring(0, 14) != "!IPSummaryDump"
-	       && line.substring(0, 8) != "!creator") {
+	       && line.substring(0, 8) != "!creator"
+	       && !_contents.size() /* don't warn on DEFAULT_CONTENTS */) {
 	errh->warning("%s: missing banner line; is this an IP summary dump?", _filename.cc());
 	_pos = 0;
     }

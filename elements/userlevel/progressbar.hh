@@ -7,11 +7,11 @@
 /*
 =c
 
-FromDump(FILENAME [, TIMING, I<KEYWORDS>])
+ProgressBar(POSHANDLER [, SIZEHANDLER, I<KEYWORDS>])
 
-=s sources
+=s debugging
 
-reads packets from a tcpdump(1) file
+prints a progress bar to standard error
 
 =io
 
@@ -19,120 +19,57 @@ None
 
 =d
 
-Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump. Pushes
-them out the output, and optionally stops the driver when there are no more
-packets. If TIMING is true, then FromDump tries to maintain the timing of the
-original packet stream. TIMING is false by default.
+Reads progress information from handlers, and displays an ASCII-art progress
+bar on standard error, indicating how much progress has been made and how much
+reamins to go.
 
-FromDump also transparently reads gzip- and bzip2-compressed tcpdump files, if
-you have zcat(1) and bzcat(1) installed.
+POSHANDLER and SIZEHANDLER are read handlers. Each of them should return an
+unsigned number. POSHANDLER is checked each time the progress bar displays;
+SIZEHANDLER is checked just once, the first time the progress bar comes up.
+Intuitively, POSHANDLER represents the "position"; the process is complete
+when its value equals the "size" returned by SIZEHANDLER.
 
 Keyword arguments are:
 
 =over 8
 
-=item SAMPLE
+=item BANNER
 
-Unsigned real number between 0 and 1. FromDump will output each packet with
-probability SAMPLE. Default is 1. FromDump uses fixed-point arithmetic, so the
-actual sampling probability may differ substantially from the requested
-sampling probability. Use the C<sampling_prob> handler to find out the actual
-probability.
+String. Print this string before the progress bar. For example, this might be
+a section of some filename. Default is empty.
 
-=item FORCE_IP
+=item UPDATE
 
-Boolean. If true, then FromDump will emit only IP packets with their IP header
-annotations correctly set. (If FromDump has two outputs, non-IP packets are
-pushed out on output 1; otherwise, they are dropped.) Default is false.
-
-=item STOP
-
-Boolean. If true, then FromDump will ask the router to stop when it is done
-reading its tcpdump file. Default is false.
-
-=item START
-
-Absolute time in seconds since the epoch. FromDump will output packets with
-timestamps after that time.
-
-=item START_AFTER
-
-Argument is relative time in seconds (or supply a suffix like `min', `h').
-FromDump will skip the first I<T> seconds in the log.
-
-=item END
-
-Absolute time in seconds since the epoch. FromDump will stop when encountering
-a packet with timestamp at or after that time.
-
-=item END_AFTER
-
-Argument is relative time in seconds (or supply a suffix like `min', `h').
-FromDump will stop at the first packet whose timestamp is at least I<T>
-seconds after the first timestamp in the log.
-
-=item INTERVAL
-
-Argument is relative time in seconds (or supply a suffix like `min', `h').
-FromDump will stop at the first packet whose timestamp is at least I<T>
-seconds after the first packet output.
-
-=item TIMING
-
-Boolean. Same as the TIMING argument.
-
-=item ACTIVE
-
-Boolean. If false, then FromDump will not emit packets (until the `C<active>'
-handler is written). Default is true.
-
-=item MMAP
-
-Boolean. If true, then FromDump will use mmap(2) to access the tcpdump file.
-This can result in slightly better performance on some machines. FromDump's
-regular file discipline is pretty optimized, so the difference is often small
-in practice. Default is true on most operating systems, but false on Linux.
+Time in seconds (millisecond precision). The progress bar updates itself with
+this frequency. Default is 1 second.
 
 =back
 
-You can supply at most one of START and START_AFTER, and at most one of END,
-END_AFTER, and INTERVAL.
-
 Only available in user-level processes.
+
+=e
+
+This ProgressBar shows how far into the file FromDump has gotten:
+
+  fd :: FromDump(~/largedump.gz) -> ...
+  ProgressBar(fd.filepos, fd.filesize);
+
+Here are some example progress bars. The first form occurs when the file size
+is known; the second, when it is not known.
+
+   74% |**************     | 23315KB    00:01 ETA
+  
+  |           ***          |  5184KB    --:-- ETA
 
 =n
 
-By default, `tcpdump -w FILENAME' dumps only the first 68 bytes of
-each packet. You probably want to run `tcpdump -w FILENAME -s 2000' or some
-such.
-
-FromDump sets packets' extra length annotations to any additional length
-recorded in the dump.
-
-=h sampling_prob read-only
-
-Returns the sampling probability (see the SAMPLE keyword argument).
-
-=h active read/write
-
-Value is a Boolean.
-
-=h encap read-only
-
-Returns the file's encapsulation type.
-
-=h filesize read-only
-
-Returns the length of the FromIPSummaryDump file, in bytes, or "-" if that
-length cannot be determined.
-
-=h filepos read-only
-
-Returns FromIPSummaryDump's position in the file, in bytes.
+Code based on the progress bar in the OpenSSH project's B<scp> program. Its
+authors are listed as Timo Rinne, Tatu Ylonen, Theo de Raadt, and Aaron
+Campbell.
 
 =a
 
-ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2) */
+FromDump */
 
 class ProgressBar : public Element { public:
 

@@ -50,9 +50,11 @@ ProgressBar::initialize(ErrorHandler *errh)
     Vector<String> conf;
     configuration(conf);
     _interval = 1000;
+    _size_hi = -1;
 
     if (cp_va_parse(conf, this, errh,
 		    cpReadHandler, "position handler", &_pos_element, &_pos_hi,
+		    cpOptional,
 		    cpReadHandler, "size handler", &_size_element, &_size_hi,
 		    cpKeywords,
 		    "UPDATE", cpSecondsAsMilli, "update interval (s)", &_interval,
@@ -95,6 +97,11 @@ foregroundproc()
 	     ctty_pgrp == pgrp));
 #endif
 }
+
+
+// Code based on the progress bar in the OpenSSH project's B<scp> program. Its
+// authors are listed as Timo Rinne, Tatu Ylonen, Theo de Raadt, and Aaron
+// Campbell. Under a BSD-like copyright.
 
 static int
 getttywidth()
@@ -158,7 +165,9 @@ ProgressBar::run_scheduled()
 {
     // get size on first time through
     if (_status == ST_FIRST) {
-	String s = cp_uncomment(router()->handler(_size_hi).call_read(_size_element));
+	String s;
+	if (_size_hi >= 0)
+	    s = cp_uncomment(router()->handler(_size_hi).call_read(_size_element));
 #ifdef HAVE_INT64_TYPES
 	_have_size = cp_unsigned64(s, &_size);
 #else
@@ -221,16 +230,18 @@ ProgressBar::run_scheduled()
     int barlength = getttywidth() - (sa.length() + 25);
     barlength = (barlength <= max_bar_length ? barlength : max_bar_length);
     if (barlength > 0) {
-	int barchar = (barlength * thermpos / 100);
 	if (thermpos < 0 || (!_have_size && _status == ST_DONE))
 	    sa.snprintf(barlength + 10, "|%.*s|", barlength, bad_bar);
 	else if (!_have_size && barlength > 3) {
-	    barchar = ((barlength - 2) * thermpos / 100);
+	    int barchar = ((barlength - 3) * thermpos / 100);
 	    sa.snprintf(barlength + 10, "|%*s***%*s|", barchar, "", barlength - barchar - 3, "");
-	} else if (!_have_size)
+	} else if (!_have_size) {
+	    int barchar = ((barlength - 1) * thermpos / 100);
 	    sa.snprintf(barlength + 10, "|%*s*%*s|", barchar, "", barlength - barchar - 1, "");
-	else
+	} else {
+	    int barchar = (barlength * thermpos / 100);
 	    sa.snprintf(barlength + 10, "|%.*s%*s|", barchar, bar, barlength - barchar, "");
+	}
     }
 
     // print the size
@@ -243,7 +254,7 @@ ProgressBar::run_scheduled()
 	}
 	sa.snprintf(30, " %5lu%c%c ", (unsigned long)abbrevpos, prefixes[which_pfx], (prefixes[which_pfx] == ' ' ? ' ' : 'B'));
     } else
-	sa << " -----    ";
+	sa << " -----   ";
 
     // check wait time
     struct timeval wait;
