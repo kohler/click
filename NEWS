@@ -2,50 +2,64 @@ Click NEWS
 
 Version 1.0.5
 
-* More changes to ToDevice to enable Linux and Click to send packets
-  independently and not cause race conditions. This includes a new linux
-  kernel patch (etc/linux-2.2.14-patch) and changes to ToDevice. 
+* Kernel and user-level drivers
+
+** You can hot-swap install Click configurations in the Linux kernel
+   module. In a hot-swap install, packets stored in the old configuration
+   will not be lost. (The new configuration's Queues must have the same
+   names as the old configuration's Queues.) See the click.o(8) man page
+   (under /proc/click/hotconfig) and the click-install(1) man page for more
+   information.
+
+** Bug fix: User-level click now correctly handles timed elements like
+   TimedSource and TimedSink and scheduled elements like RatedSource.
+
+** More changes to ToDevice to enable Linux and Click to send packets
+   independently and not cause race conditions. This includes a new linux
+   kernel patch (etc/linux-2.2.14-patch) and changes to ToDevice. Click
+   runs in a separate kernel thread, so we synchronize ToDevice send
+   operations in kernel with a bit lock (dev->tbusy).
   
-  When Click is not running on top of a polling capable kernel, it does not
-  use a scheduler thread. In this case, ToDevice only sends packets when Linux
-  asks it to do so via a notifier. Since Linux only calls the notifier in
-  net_bh, there are no races.  When Click is running with a scheduler thread,
-  we synchronize ToDevice's send operation in kernel with a bit lock
-  (dev->tbusy).
+   XXXXXXXXXXXXXXXXXXXXXXXX When Click is not running on top of a polling
+   capable kernel, it does not use a scheduler thread. In this case,
+   ToDevice only sends packets when Linux asks it to do so via a notifier.
+   Since Linux only calls the notifier in net_bh, there are no races.
 
-* RatedSource::run_scheduled() now places a dummy timer for 0 ms if it 
-  has other things to do. In userlevel, this is needed because RatedSource
-  doesn't listen on a descriptor, so Router::wait() must be notified, somehow,
-  that RatedSource still needs to run. I find scheduling a dummy timer is the
-  best option right now.
+** Every Linux kernel module now runs as a separate kernel thread, even if
+   HAVE_POLLING is not defined.
 
-* click-fastclassifier can combine adjacent Classifiers.
+** The click user-level driver can now automatically compile any required
+   package sources. (Click-install has been able to do this for a while.)
 
-* Added select_fd() and selected() to ToBPF.
+* Tools
 
-* conf/make-udpgen.pl: a Perl script that generates udpgen configuration.
+** click-xform: Bug fixes and performance improvements. Also, click-xform
+   tries to preserve element names from the original configuration. If a
+   pattern element and a replacement element share a name, then when the
+   pattern is applied, the replacing element will use the name of the
+   original element that corresponded to the pattern element. (Phew!)
 
-* conf/make-udpcount.pl: a Perl script that generates udpcount configuration.
+** click-devirtualize: Bug fixes. It also uses standards-compliant C++.
 
-* Removed UnlimitedElement in favor of `notify_n{in,out}puts()'.
+** click-fastclassifier can combine adjacent Classifiers.
 
-* TimedSource::initialize now sets tickets, allowing TimedSource to be
-  scheduled.
+** Added click-combine and click-uncombine.
 
-* click-xform: Bug fixes and performance improvements. Also, click-xform
-  tries to preserve element names from the original configuration. If a
-  pattern element and a replacement element share a name, then when the
-  pattern is applied, the replacing element will use the name of the
-  original element that corresponded to the pattern element. (Phew!)
+* Elements
 
-* click-devirtualize: Bug fixes. It also uses standards-compliant C++ only.
+** Removed UnlimitedElement in favor of `notify_n{in,out}puts()'.
 
-* Added click-combine and click-uncombine.
+** Removed Broadcast in favor of Tee.
 
-* The click user-level driver can now compile package sources, like
-  click-install(1).
+** Added select_fd() and selected() to ToBPF.
 
-* Removed Broadcast in favor of Tee.
+* Configurations
+
+** Added conf/make-udpgen.pl, a Perl script that generates a udpgen-like
+   Click configuration.
+
+** Added conf/make-udpcount.pl, a Perl script that generates a
+   udpcount-like Click configuration.
 
 
 Version 1.0.4   13.Apr.2000
@@ -71,13 +85,19 @@ Version 1.0.4   13.Apr.2000
   on some machines we observe a delay (on order of ms) between when
   transmission complete and tx interrupt. This causes the transmission
   queue to not get cleaned fast enough for udpgen to send its packets.
-  Using click, we control when the tx queue is cleaned.
+  Using Click, we can control when the tx queue is cleaned.
 
 
 Version 1.0.3   9.Apr.2000
 
 * Added `--with-linux[=DIR]' option to `./configure'. Suggested by Richard
   Mortier <Richard.Mortier@cl.cam.ac.uk>.
+
+* Removed `default_processing()' method of Element and replaced it with
+  `processing()'. Where you once wrote `Processing default_processing()
+  const { return PUSH; }', now write `const char *processing() const {
+  return PUSH; }'. The new way is more flexible and lets us abstract the
+  element's processing code. See Element(3) for details.
 
 * Added `click-check' tool, a static checker for Click configurations.
   Currently it only checks push and pull processing for correctness.
@@ -93,12 +113,6 @@ Version 1.0.3   9.Apr.2000
 * Click-devirtualize now determines automatically whether two specialized
   elements can share code. As a result, the `--like' option has been
   removed.
-
-* Removed `default_processing()' method of Element and replaced it with
-  `processing()'. Where you once wrote `Processing default_processing()
-  const { return PUSH; }', now write `const char *processing() const {
-  return PUSH; }'. The new way is more flexible and lets us abstract the
-  element's processing code. See Element(3) for details.
 
 * Fixed bugs: RFC2507Decomp didn't compile. Rewriter updates. Several bugs
   caught by recent GCCs; patches supplied by Richard Mortier
@@ -173,7 +187,7 @@ Version 1.0   25.Feb.2000
 * Improved several elements, including ARPQuerier.
 
 * Changed interface for registering handlers. See
-  `elements/standard/red.cc' or the Element.3 manual page for examples.
+  `elements/standard/red.cc' or the Element(3) manual page for examples.
 
 * Many other changes, bug fixes and improvements.
 
