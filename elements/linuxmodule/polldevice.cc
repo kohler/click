@@ -122,10 +122,16 @@ PollDevice::initialize(ErrorHandler *errh)
 #if HAVE_LINUX_POLLING
     // check for duplicate readers
     if (ifindex() >= 0) {
-	void *&used = router()->force_attachment("device_reader_" + ifindex());
+	void *&used = router()->force_attachment("device_reader_" + String(ifindex()));
 	if (used)
 	    return errh->error("duplicate reader for device `%s'", _devname.cc());
 	used = this;
+
+	if (!router()->attachment("device_writer_" + String(ifindex())))
+	    errh->warning("no ToDevice(%s) in configuration\n(\
+Generally, you will get bad performance from PollDevice unless\n\
+you include a ToDevice for the same device. Try adding\n\
+'Idle -> ToDevice(%s)' to your configuration.)", _devname.c_str(), _devname.c_str());
     }
 
     if (_dev && !_dev->polling) {

@@ -74,10 +74,11 @@ class PollDevice : public AnyTaskDevice { public:
   PollDevice();
   ~PollDevice();
   
-  const char *class_name() const		{ return "PollDevice"; }
-  const char *processing() const		{ return PUSH; }
-  PollDevice *clone() const			{ return new PollDevice; }
+  const char *class_name() const	{ return "PollDevice"; }
+  const char *processing() const	{ return PUSH; }
+  PollDevice *clone() const		{ return new PollDevice; }
   
+  int configure_phase() const		{ return CONFIGURE_PHASE_POLLDEVICE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
