@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * bwratedsplitter.{cc,hh} -- split packets at a given bandwidth rate.
  * Benjie Chen, Eddie Kohler
@@ -21,24 +22,24 @@ CLICK_DECLS
 
 BandwidthRatedSplitter::BandwidthRatedSplitter()
 {
-  // no MOD_INC_USE_COUNT; rely on RatedSplitter
+    // no MOD_INC_USE_COUNT; rely on RatedSplitter
 }
 
 BandwidthRatedSplitter::~BandwidthRatedSplitter()
 {
-  // no MOD_DEC_USE_COUNT; rely on RatedSplitter
+    // no MOD_DEC_USE_COUNT; rely on RatedSplitter
 }
 
 void
 BandwidthRatedSplitter::push(int, Packet *p)
 {
-  struct timeval now;
-  click_gettimeofday(&now);
-  if (_rate.need_update(now)) {
-    _rate.update_with(p->length());
-    output(0).push(p);
-  } else
-    output(1).push(p);
+    struct timeval now;
+    click_gettimeofday(&now);
+    if (_rate.need_update(now)) {
+	_rate.update_with(p->length());
+	output(0).push(p);
+    } else
+	output(1).push(p);
 }
 
 CLICK_ENDDECLS

@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_RATEDUNQUEUE_HH
 #define CLICK_RATEDUNQUEUE_HH
 #include <click/element.hh>
@@ -21,26 +22,24 @@ CLICK_DECLS
 
 class RatedUnqueue : public Element { public:
   
-  RatedUnqueue();
-  ~RatedUnqueue();
+    RatedUnqueue();
+    ~RatedUnqueue();
   
-  const char *class_name() const		{ return "RatedUnqueue"; }
-  const char *processing() const		{ return PULL_TO_PUSH; }
+    const char *class_name() const	{ return "RatedUnqueue"; }
+    const char *processing() const	{ return PULL_TO_PUSH; }
+    bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
   
-  int configure(Vector<String> &, ErrorHandler *);
-  void configuration(Vector<String> &) const;
-  int initialize(ErrorHandler *);
-  void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *);
+    void configuration(Vector<String> &) const;
+    int initialize(ErrorHandler *);
+    void add_handlers();
   
-  bool run_task();
+    bool run_task();
 
-  unsigned rate() const				{ return _rate.rate(); }
-  void set_rate(unsigned, ErrorHandler * = 0);
-  
- protected:
+  protected:
 
-  GapRate _rate;
-  Task _task;
+    GapRate _rate;
+    Task _task;
   
 };
 

@@ -21,10 +21,10 @@ link emulator
 
 Pulls packets from the single input port, then delays them so as to emulate a
 serial link with latency LATENCY (microsecond precision) and bandwidth
-BANDWIDTH (in Kbits/second). Thus, every packet is delayed at least by
-LATENCY, and additionally delayed by their packet size and BANDWIDTH, and by
-any packets ahead of it in the virtual link. Packets are pushed out the single
-output port when their time comes.
+BANDWIDTH (default units bytes/second). Thus, every packet is delayed at least
+by LATENCY, and additionally delayed by their packet size and BANDWIDTH, and
+by any packets ahead of it in the virtual link. Packets are pushed out the
+single output port when their time comes.
 
 LinkUnqueue listens for upstream notification, such as that available from
 Queue.

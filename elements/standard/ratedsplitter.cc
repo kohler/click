@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * ratedsplitter.{cc,hh} -- split packets at a given rate.
  * Benjie Chen, Eddie Kohler
@@ -23,77 +24,54 @@
 CLICK_DECLS
 
 RatedSplitter::RatedSplitter()
-  : Element(1, 2)
+    : Element(1, 2)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 RatedSplitter::~RatedSplitter()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 int
 RatedSplitter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned r;
-  if (cp_va_parse(conf, this, errh, 
-	          cpUnsigned, "split rate", &r, 0) < 0) 
-    return -1;
-  set_rate(r, errh);
-  return 0;
+    uint32_t r;
+    CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
+    if (cp_va_parse(conf, this, errh, 
+		    cmd, "split rate", &r, 0) < 0) 
+	return -1;
+    _rate.set_rate(r, errh);
+    return 0;
 }
 
 void
 RatedSplitter::configuration(Vector<String> &conf) const
 {
-  conf.push_back(String(rate()));
-}
-
-void
-RatedSplitter::set_rate(unsigned r, ErrorHandler *errh)
-{
-  _rate.set_rate(r, errh);
+    conf.push_back(String(_rate.rate()));
 }
 
 void
 RatedSplitter::push(int, Packet *p)
 {
-  struct timeval now;
-  click_gettimeofday(&now);
-  if (_rate.need_update(now)) {
-    _rate.update();
-    output(0).push(p);
-  } else
-    output(1).push(p);
+    struct timeval now;
+    click_gettimeofday(&now);
+    if (_rate.need_update(now)) {
+	_rate.update();
+	output(0).push(p);
+    } else
+	output(1).push(p);
 }
 
 
 // HANDLERS
 
-static int
-rate_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
-{
-  RatedSplitter *me = (RatedSplitter *)e;
-  unsigned r;
-  if (!cp_unsigned(cp_uncomment(conf), &r))
-    return errh->error("rate must be an integer");
-  me->set_rate(r);
-  return 0;
-}
-
-static String
-rate_read_handler(Element *e, void *)
-{
-  RatedSplitter *me = (RatedSplitter *) e;
-  return String(me->rate()) + "\n";
-}
-
 void
 RatedSplitter::add_handlers()
 {
-  add_read_handler("rate", rate_read_handler, 0);
-  add_write_handler("rate", rate_write_handler, 0);
+    add_read_handler("rate", read_positional_handler, (void *)0);
+    add_write_handler("rate", reconfigure_positional_handler, (void *)0);
 }
 
 CLICK_ENDDECLS

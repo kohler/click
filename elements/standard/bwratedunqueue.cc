@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * ratedunqueue.{cc,hh} -- element pulls as many packets as possible from
  * its input, pushes them out its output
@@ -22,29 +23,29 @@ CLICK_DECLS
 
 BandwidthRatedUnqueue::BandwidthRatedUnqueue()
 {
-  // no MOD_INC_USE_COUNT; rely on RatedUnqueue
+    // no MOD_INC_USE_COUNT; rely on RatedUnqueue
 }
 
 BandwidthRatedUnqueue::~BandwidthRatedUnqueue()
 {
-  // no MOD_DEC_USE_COUNT; rely on RatedUnqueue
+    // no MOD_DEC_USE_COUNT; rely on RatedUnqueue
 }
 
 bool
 BandwidthRatedUnqueue::run_task()
 {
-  struct timeval now;
-  click_gettimeofday(&now);
-  bool worked = false;
-  if (_rate.need_update(now)) {
-    if (Packet *p = input(0).pull()) {
-      _rate.update_with(p->length());
-      worked = true;
-      output(0).push(p);
+    struct timeval now;
+    click_gettimeofday(&now);
+    bool worked = false;
+    if (_rate.need_update(now)) {
+	if (Packet *p = input(0).pull()) {
+	    _rate.update_with(p->length());
+	    worked = true;
+	    output(0).push(p);
+	}
     }
-  }
-  _task.fast_reschedule();
-  return worked;
+    _task.fast_reschedule();
+    return worked;
 }
 
 CLICK_ENDDECLS

@@ -39,13 +39,20 @@ Shaper::~Shaper()
 int
 Shaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    unsigned rate;
+    uint32_t rate;
+    CpVaParseCmd cmd = (is_bandwidth() ? cpBandwidth : cpUnsigned);
     if (cp_va_parse(conf, this, errh,
-		    cpUnsigned, "max allowable rate", &rate,
+		    cmd, "max allowable rate", &rate,
 		    0) < 0)
 	return -1;
     _rate.set_rate(rate, errh);
     return 0;
+}
+
+void
+Shaper::configuration(Vector<String> &conf) const
+{
+    conf.push_back(String(_rate.rate()));
 }
 
 Packet *

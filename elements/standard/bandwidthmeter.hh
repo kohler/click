@@ -11,17 +11,19 @@ CLICK_DECLS
  * classifies packet stream by arrival rate
  * =d
  *
- * Classifies packet stream based on the rate of packet arrival. The rate is
- * measured in bytes per second using an exponential weighted moving average.
- * (The related Meter element measures rates in packets per second.)
+ * Classifies packet stream based on the rate of packet arrival.  The rate
+ * is measured in bytes per second using an exponential weighted moving
+ * average.  (The related Meter element measures rates in packets per
+ * second.)
  * 
- * The configuration string consists of one or more rate arguments. Earlier
+ * The configuration string consists of one or more RATE arguments.  Each
+ * RATE is a bandwidth, with default units of bytes per second.  Earlier
  * rates in the list must be less than later rates. A Meter with I<n> rate
  * arguments will have I<n>+1 outputs. It sends packets out the output
- * corresponding to the current rate. If the rate is less than RATE1 packets
- * are sent to output 0; if it is >= RATE1 but < RATE2, packets are sent to
- * output 1; and so on. If it is >= RATEI<n>, packets are sent to output
- * I<n>.
+ * corresponding to the current rate. If the rate is less than RATE1
+ * packets are sent to output 0; if it is >= RATE1 but < RATE2, packets are
+ * sent to output 1; and so on. If it is >= RATEI<n>, packets are sent to
+ * output I<n>.
  *
  * =e
  *

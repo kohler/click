@@ -42,8 +42,10 @@ class Shaper : public Element { public:
 
     const char *class_name() const	{ return "Shaper"; }
     const char *processing() const	{ return PULL; }
+    bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
     
     int configure(Vector<String> &, ErrorHandler *);
+    void configuration(Vector<String> &) const;
     bool can_live_reconfigure() const	{ return true; }
     void add_handlers();
 

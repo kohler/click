@@ -42,12 +42,12 @@ BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
   _nmeters = 0;
 
   if (conf.size() == 0)
-    return errh->error("too few arguments to BandwidthMeter(int, ...)");
+    return errh->error("too few arguments to BandwidthMeter(bandwidth, ...)");
 
   Vector<unsigned> vals(conf.size(), 0);
   for (int i = 0; i < conf.size(); i++)
-    if (!cp_unsigned(conf[i], &vals[i]))
-      return errh->error("argument %d should be unsigned (rate)", i+1);
+    if (!cp_bandwidth(conf[i], &vals[i]))
+      return errh->error("argument %d should be bandwidth (rate)", i+1);
     else if (i > 0 && vals[i] <= vals[i-1])
       return errh->error("rate %d must be > rate %d", i+1, i);
 

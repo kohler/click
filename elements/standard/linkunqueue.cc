@@ -51,10 +51,15 @@ LinkUnqueue::cast(const char *n)
 int
 LinkUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    return cp_va_parse(conf, this, errh,
-		       cpInterval, "latency", &_latency,
-		       cpUnsigned, "bandwidth (Kbits/s)", &_bandwidth,
-		       0);
+    if (cp_va_parse(conf, this, errh,
+		    cpInterval, "latency", &_latency,
+		    cpBandwidth, "bandwidth", &_bandwidth,
+		    0) < 0)
+	return -1;
+    if (_bandwidth < 100)
+	return errh->error("bandwidth too small, minimum 100Bps");
+    _bandwidth /= 100;
+    return 0;
 }
 
 int
@@ -82,7 +87,7 @@ void
 LinkUnqueue::delay_by_bandwidth(Packet *p, const struct timeval &tv) const
 {
     uint32_t length = p->length() + EXTRA_LENGTH_ANNO(p);
-    uint32_t delay = (length * 8000) / _bandwidth;
+    uint32_t delay = (length * 10000) / _bandwidth;
     struct timeval &timestamp = p->timestamp_anno();
     timestamp = tv;
     if (delay >= 1000000) {
@@ -207,7 +212,7 @@ LinkUnqueue::read_param(Element *e, void *thunk)
       case H_LATENCY:
 	return cp_unparse_interval(u->_latency) + "\n";
       case H_BANDWIDTH:
-	return String(u->_bandwidth) + "\n";
+	return String(u->_bandwidth * 100) + "\n";
       case H_SIZE:
 	return String(u->Storage::size()) + "\n";
       default:

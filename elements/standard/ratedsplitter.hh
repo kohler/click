@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_RATEDSPLITTER_HH
 #define CLICK_RATEDSPLITTER_HH
 #include <click/element.hh>
@@ -37,27 +38,25 @@ CLICK_DECLS
  *
  * =a BandwidthRatedSplitter, ProbSplitter, Meter, Shaper, RatedUnqueue, Tee */
 
-class RatedSplitter : public Element { protected:
-
-  GapRate _rate;
-
- public:
+class RatedSplitter : public Element { public:
   
-  RatedSplitter();
-  ~RatedSplitter();
+    RatedSplitter();
+    ~RatedSplitter();
 
-  const char *class_name() const		{ return "RatedSplitter"; }
-  const char *processing() const	        { return PUSH; }
-  void add_handlers();
+    const char *class_name() const	{ return "RatedSplitter"; }
+    const char *processing() const	{ return PUSH; }
+    bool is_bandwidth() const		{ return class_name()[0] == 'B'; }
  
-  int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const		{ return true; }
-  void configuration(Vector<String> &) const;
+    int configure(Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const	{ return true; }
+    void configuration(Vector<String> &) const;
+    void add_handlers();
   
-  void push(int port, Packet *);
-  
-  unsigned rate() const				{ return _rate.rate(); }
-  void set_rate(unsigned r, ErrorHandler * = 0);
+    void push(int port, Packet *);
+
+ protected:
+
+    GapRate _rate;
 
 };
 

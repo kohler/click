@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_BWRATEDSPLITTER_HH
 #define CLICK_BWRATEDSPLITTER_HH
 #include "elements/standard/ratedsplitter.hh"
@@ -5,34 +6,32 @@ CLICK_DECLS
 
 /*
  * =c
- * BandwidthRatedSplitter(R)
+ * BandwidthRatedSplitter(RATE)
  * =s classification
  * splits flow of packets at specified bandwidth rate
  * =processing
  * Push
  * =d
  * 
- * BandwidthRatedSplitter has two output ports. All incoming packets up to a
- * maximum of R bytes per second are emitted on output port 0. Any remaining
- * packets are emitted on output port 1. Unlike BandwidthMeter, R bytes per
- * second are emitted on output port 0 even when the input rate is greater
- * than R.
+ * BandwidthRatedSplitter has two output ports.  All incoming packets up to a
+ * maximum of RATE are emitted on output port 0.  Any remaining packets are
+ * emitted on output port 1.  RATE is a bandwidth with default units of bytes
+ * per second.  Unlike BandwidthMeter, the base RATE is emitted on output port
+ * 0 even when the input rate is greater than RATE.
  *
  * =h rate read/write
  * rate of splitting
  *
  * =a RatedSplitter, BandwidthMeter, BandwidthShaper, BandwidthRatedUnqueue */
 
-class BandwidthRatedSplitter : public RatedSplitter {
-
- public:
+class BandwidthRatedSplitter : public RatedSplitter { public:
   
-  BandwidthRatedSplitter();
-  ~BandwidthRatedSplitter();
+    BandwidthRatedSplitter();
+    ~BandwidthRatedSplitter();
 
-  const char *class_name() const	{ return "BandwidthRatedSplitter"; }
+    const char *class_name() const	{ return "BandwidthRatedSplitter"; }
   
-  void push(int port, Packet *);
+    void push(int port, Packet *);
 
 };
 
