@@ -1,3 +1,7 @@
+2005-03-30 Wednesday 12:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/proclikefs.c (1.15): getxattr, etc. arent in 2.4.18
+
 2005-03-29 Tuesday 23:13  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.66): buildtool nit
