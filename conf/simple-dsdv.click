@@ -1,6 +1,6 @@
 // simple-dsdv.click
 
-// bare-bones kernel-compatible DSDV configuration for a single interfac
+// bare-bones kernel-compatible DSDV configuration for a single interface
 
 // to be used with tools/build-grid-config.sh
 
