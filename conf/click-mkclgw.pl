@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.5 2004/04/14 19:54:42 max Exp $
+# $Id: click-mkclgw.pl,v 1.6 2004/06/16 13:57:26 max Exp $
 #
 # click-mkclgw
 #
@@ -98,6 +98,7 @@ $CLGW::Const::PORT_SSH = 2;
 $CLGW::Const::PORT_NAPT = 3;
 $CLGW::Const::INFO = 4;
 $CLGW::Const::PARAM = 5;
+$CLGW::Const::PORT_SFS = 6;
 
 #
 # Different types of definable addressing schemes
@@ -117,10 +118,12 @@ $CLGW::Const::TAB_IN = 45;  # formatting constant
 			  "napt" => $CLGW::Const::PORT_NAPT,
 			  "info" => $CLGW::Const::INFO,
 			  "default" => $CLGW::Const::INFO,
-			  "param" => $CLGW::Const::PARAM );
+			  "param" => $CLGW::Const::PARAM,
+			  "sfs" => $CLGW::Const::PORT_SFS  );
 
 %CLGW::Const::R_PORTMAP = ( $CLGW::Const::PORT_SSH => "ssh",
-			    $CLGW::Const::PORT_HTTP => "www" );
+			    $CLGW::Const::PORT_HTTP => "www",
+			    $CLGW::Const::PORT_SFS = > 4  );
 
 # 
 # strings of how these parameters will be output to the 
