@@ -50,6 +50,11 @@ false.
 Boolean. Determines whether to print each packet's IP TOS field. Default is
 false.
 
+=item LENGTH
+
+Boolean. Determines whether to print each packet's IP length field. Default is
+false.
+
 =item TIMESTAMP
 
 Boolean. Determines whether to print each packet's timestamp in seconds since
@@ -98,6 +103,7 @@ class IPPrint : public Element { public:
   bool _print_paint : 1;
   bool _print_tos : 1;
   bool _print_ttl : 1;
+  bool _print_len : 1;
   unsigned _contents : 2;	// Whether to dump packet contents
 
 #if CLICK_USERLEVEL

@@ -64,6 +64,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
   bool print_paint = false;
   bool print_tos = false;
   bool print_ttl = false;
+  bool print_len = false;
   
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
@@ -77,6 +78,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  "TOS", cpBool, "print IP TOS?", &print_tos,
 		  "TTL", cpBool, "print IP TTL?", &print_ttl,
 		  "SWAP", cpBool, "swap ICMP values when printing?", &_swap,
+		  "LENGTH", cpBool, "print IP length?", &print_len,
 #if CLICK_USERLEVEL
 		  "OUTFILE", cpFilename, "output filename", &_outfilename,
 #endif
@@ -98,7 +100,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
   _print_paint = print_paint;
   _print_tos = print_tos;
   _print_ttl = print_ttl;
-  
+  _print_len = print_len;
   return 0;
 }
 
@@ -159,6 +161,8 @@ IPPrint::simple_action(Packet *p)
     sa << "ttl " << (int)iph->ip_ttl << ' ';
   if (_print_tos)
     sa << "tos " << (int)iph->ip_tos << ' ';
+  if (_print_len)
+    sa << "length " << ntohs(iph->ip_len) << ' ';
 
   switch (iph->ip_p) {
     
