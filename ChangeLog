@@ -1,3 +1,22 @@
+2001-03-12 Monday 18:05  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: updates
+
+2001-03-12 Monday 18:04  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/Makefile.in: can make click.dvi from click.texi
+
+2001-03-12 Monday 18:04  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: added configure checks for texi2dvi and makeinfo
+
+2001-03-12 Monday 18:04  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, elements/standard/addressinfo.hh,
+	elements/standard/spinlockinfo.hh: renamed CONFIGURE_PHASE_ZERO to
+	CONFIGURE_PHASE_FIRST, and CONFIGURE_PHASE_LATE to
+	CONFIGURE_PHASE_LAST
+
 2001-03-11 Sunday 20:55  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/.cvsignore: ignore Texinfo-related crap
