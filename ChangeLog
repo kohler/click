@@ -1,3 +1,11 @@
+2004-06-23 Wednesday 17:38  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autoratefallback.cc (1.2), autoratefallback.hh
+	(1.2), autotxrate.cc (1.9), autotxrate.hh (1.8), printwifi.cc
+	(1.3), probetxrate.cc (1.4), probetxrate.hh (1.4),
+	ap/openauthresponder.cc (1.2), station/openauthrequester.cc (1.2):
+	more rate control fixes, fix more gcc warnings.
+
 2004-06-23 Wednesday 13:34  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/ettmetric.hh (1.3): another gcc compile error.
