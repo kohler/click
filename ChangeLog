@@ -1,3 +1,31 @@
+2003-09-22 Monday 18:48  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.56), ipsumdumpinfo.cc
+	(1.10), ipsumdumpinfo.hh (1.7), toipsumdump.cc (1.47),
+	toipsumdump.hh (1.37): add "ip tos" and "ip ttl" types
+
+2003-09-22 Monday 18:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipfilter.cc (1.36), include/click/straccum.hh (1.28):
+	nits
+
+2003-09-22 Monday 18:46  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/khandlerproxy.cc (1.12): refer to /click, not
+	/proc/click
+
+2003-09-22 Monday 18:46  Eddie Kohler <kohler@icir.org>
+
+	* include/clicknet/ip.h (1.3): byte order nit
+
+2003-09-22 Monday 18:46  Eddie Kohler <kohler@icir.org>
+
+	* click-buildtool (1.45), lib/driver.cc (1.17),
+	linuxmodule/config.cc (1.11), userlevel/click.cc (1.84):
+	"click-buildtool elem2export" uses click_add_element_type(), not an
+	explicit lexer; will make it easier to write programs using limited
+	sets of elements
+
 2003-09-10 Wednesday 15:06  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/linktable.cc (1.18): top5 fixes first cut of
