@@ -1,6 +1,6 @@
 #ifndef FTPPORTMAPPER_HH
 #define FTPPORTMAPPER_HH
-#include "elements/ip/tcprewriter.hh"
+#include "elements/tcpudp/tcprewriter.hh"
 
 /*
  * =c

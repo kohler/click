@@ -90,15 +90,15 @@ RoundRobinIPMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
 }
 
 IPRw::Mapping *
-RoundRobinIPMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow)
+RoundRobinIPMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow, Packet *)
 {
   int first_pattern = _last_pattern;
   do {
-    IPRw::Pattern *p = _patterns[_last_pattern];
+    IPRw::Pattern *pat = _patterns[_last_pattern];
     int fport = _forward_outputs[_last_pattern];
     int rport = _reverse_outputs[_last_pattern];
     _last_pattern++;
-    if (IPRw::Mapping *m = rw->apply_pattern(p, ip_p, flow, fport, rport))
+    if (IPRw::Mapping *m = rw->apply_pattern(pat, ip_p, flow, fport, rport))
       return m;
   } while (_last_pattern != first_pattern);
   return 0;

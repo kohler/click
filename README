@@ -26,11 +26,14 @@ CLICKDIR/elements		element source code
 CLICKDIR/elements/app		... for application-level protocol elements
 CLICKDIR/elements/ethernet	... for Ethernet elements
 CLICKDIR/elements/etherswitch	... for Ethernet-switch elements
+CLICKDIR/elements/icmp		... for ICMP elements
 CLICKDIR/elements/ip		... for IP, ICMP, and TCP/UDP elements
+CLICKDIR/elements/ip6		... for IPv6 elements
 CLICKDIR/elements/linuxmodule	... for Linux kernel-specific elements
 CLICKDIR/elements/local		... for your own elements (empty)
 CLICKDIR/elements/radio		... for communicating with wireless radios
 CLICKDIR/elements/standard	... for generic elements
+CLICKDIR/elements/tcpudp	... for TCP and UDP elements
 CLICKDIR/elements/userlevel	... for user-level-specific elements
 CLICKDIR/etc			Linux patches
 CLICKDIR/lib			common non-element source code

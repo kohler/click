@@ -59,39 +59,21 @@ class IPRw : public Element { public:
   static const int GC_INTERVAL_SEC = 3600;
 
   void take_state_map(Map &, const Vector<Pattern *> &, const Vector<Pattern *> &);
-  void mark_live_tcp(Map &);
   void clean_map(Map &);
+  void clean_map_free_tracked(Map &, Mapping **free_tracked);
   void clear_map(Map &);
 
 };
 
 
-class IPRw::Mapping { protected:
-    
-  IPFlowID _mapto;
-    
-  unsigned short _ip_csum_delta;
-  unsigned short _udp_csum_delta;
-    
-  int _output;
-  Mapping *_reverse;
-    
-  bool _used : 1;
-  bool _is_reverse : 1;
-  unsigned char _ip_p;
-  
-  Pattern *_pat;
-  Mapping *_pat_prev;
-  Mapping *_pat_next;
-    
- public:
+class IPRw::Mapping { public:
 
   Mapping();
   
   void initialize(int ip_p, const IPFlowID &, const IPFlowID &, int, bool, Mapping *);
   static void make_pair(int ip_p, const IPFlowID &, const IPFlowID &,
 			int, int, Mapping *, Mapping *);
-    
+  
   const IPFlowID &flow_id() const	{ return _mapto; }
   Pattern *pattern() const		{ return _pat; }
   int output() const 			{ return _output; }
@@ -109,11 +91,43 @@ class IPRw::Mapping { protected:
   void pat_unlink();
   Mapping *pat_prev() const		{ return _pat_prev; }
   Mapping *pat_next() const		{ return _pat_next; }
+
+  Mapping *free_next() const		{ return _free_next; }
+  void set_free_next(Mapping *m)	{ _free_next = m; }
+
+  bool session_over() const		{ return _session_over && _reverse->_session_over; }
+
+  bool free_tracked() const		{ return _free_tracked; }
+  Mapping *add_to_free_tracked(Mapping *);
   
   void apply(WritablePacket *);
 
   String s() const;
-    
+  
+ protected:
+  
+  IPFlowID _mapto;
+  
+  unsigned short _ip_csum_delta;
+  unsigned short _udp_csum_delta;
+  
+  Mapping *_reverse;
+  
+  bool _used : 1;
+  bool _is_reverse : 1;
+  bool _session_over : 1;
+  bool _free_tracked : 1;
+  unsigned char _ip_p;
+  unsigned char _output;
+  
+  Pattern *_pat;
+  Mapping *_pat_prev;
+  Mapping *_pat_next;
+
+  Mapping *_free_next;
+
+  friend class IPRw;
+
 };
 
 
@@ -143,7 +157,7 @@ class IPRw::Pattern { public:
   bool create_mapping(int ip_p, const IPFlowID &, int fport, int rport, Mapping *, Mapping *);
   void accept_mapping(Mapping *);
   void mapping_freed(Mapping *);
-    
+  
   String s() const;
   operator String() const	{ return s(); }
 
@@ -179,7 +193,7 @@ class IPMapper {
   virtual ~IPMapper()			{ }
 
   void notify_rewriter(IPRw *, ErrorHandler *);
-  IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &);
+  IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);
   
 };
 
@@ -201,6 +215,15 @@ IPRw::Mapping::pat_unlink()
 {
   _pat_next->_pat_prev = _pat_prev;
   _pat_prev->_pat_next = _pat_next;
+}
+
+inline IPRw::Mapping *
+IPRw::Mapping::add_to_free_tracked(Mapping *m)
+{
+  Mapping *me = (_is_reverse ? _reverse : this);
+  me->_free_next = m;
+  _free_tracked = _reverse->_free_tracked = true;
+  return me;
 }
 
 #endif

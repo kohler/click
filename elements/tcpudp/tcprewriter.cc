@@ -119,7 +119,9 @@ TCPRewriter::TCPMapping::s() const
 // TCPRewriter
 
 TCPRewriter::TCPRewriter()
-  : _tcp_map(0), _timer(this)
+  : _tcp_map(0), _tcp_done(0),
+    _tcp_gc_timer(tcp_gc_hook, (unsigned long) this),
+    _tcp_done_gc_timer(tcp_done_gc_hook, (unsigned long) this)
 {
   // no MOD_INC_USE_COUNT; rely on IPRw
 }
@@ -127,7 +129,7 @@ TCPRewriter::TCPRewriter()
 TCPRewriter::~TCPRewriter()
 {
   // no MOD_DEC_USE_COUNT; rely on IPRw
-  assert(!_timer.scheduled());
+  assert(!_tcp_gc_timer.scheduled() && !_tcp_done_gc_timer.scheduled());
 }
 
 void *
@@ -144,45 +146,55 @@ TCPRewriter::cast(const char *n)
 void
 TCPRewriter::notify_noutputs(int n)
 {
-  set_noutputs(n < 1 ? 1 : n);
+  if (n < 1)
+    set_noutputs(1);
+  else if (n > 256)
+    set_noutputs(256);
+  else
+    set_noutputs(n);
 }
 
 int
 TCPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  if (conf.size() == 0)
-    return errh->error("too few arguments; expected `INPUTSPEC, ...'");
-  set_ninputs(conf.size());
-
   int before = errh->nerrors();
+  int ninputs = 0;
+  _tcp_gc_interval = 86400000;	// 24 hours
+  _tcp_done_gc_interval = 240000; // 4 minutes
+
   for (int i = 0; i < conf.size(); i++) {
+    if (cp_va_parse_keyword(conf[i], this, errh,
+			    "GC_INTERVAL", cpMilliseconds, "garbage collection interval", &_tcp_gc_interval,
+			    0) != 0)
+      continue;
     InputSpec is;
-    if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0)
+    if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0) {
       _input_specs.push_back(is);
+      ninputs++;
+    }
   }
+
+  if (ninputs == 0)
+    return errh->error("too few arguments; expected `INPUTSPEC, ...'");
+  set_ninputs(ninputs);
   return (errh->nerrors() == before ? 0 : -1);
 }
 
 int
-TCPRewriter::initialize(ErrorHandler *errh)
+TCPRewriter::initialize(ErrorHandler *)
 {
-  _timer.attach(this);
-  _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
-#if defined(CLICK_LINUXMODULE) && !defined(HAVE_TCP_PROT)
-  errh->message
-    ("The kernel does not export the symbol `tcp_prot', so I cannot remove\n"
-     "stale mappings. Apply the Click kernel patch to fix this problem.");
-#endif
-#ifndef CLICK_LINUXMODULE
-  errh->message("can't remove stale mappings at userlevel");
-#endif
+  _tcp_gc_timer.attach(this);
+  _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
+  _tcp_done_gc_timer.attach(this);
+  _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
   return 0;
 }
 
 void
 TCPRewriter::uninitialize()
 {
-  _timer.unschedule();
+  _tcp_gc_timer.unschedule();
+  _tcp_done_gc_timer.unschedule();
   clear_map(_tcp_map);
   for (int i = 0; i < _input_specs.size(); i++)
     if (_input_specs[i].kind == INPUT_SPEC_PATTERN)
@@ -226,13 +238,19 @@ TCPRewriter::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-TCPRewriter::run_scheduled()
+TCPRewriter::tcp_gc_hook(unsigned long thunk)
 {
-#if defined(CLICK_LINUXMODULE) && defined(HAVE_TCP_PROT)
-  mark_live_tcp(_tcp_map);
-#endif
-  clean_map(_tcp_map);
-  _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
+  TCPRewriter *rw = (TCPRewriter *)thunk;
+  rw->clean_map(rw->_tcp_map);
+  rw->_tcp_gc_timer.schedule_after_ms(rw->_tcp_gc_interval);
+}
+
+void
+TCPRewriter::tcp_done_gc_hook(unsigned long thunk)
+{
+  TCPRewriter *rw = (TCPRewriter *)thunk;
+  rw->clean_map_free_tracked(rw->_tcp_map, &rw->_tcp_done);
+  rw->_tcp_done_gc_timer.schedule_after_ms(rw->_tcp_done_gc_interval);
 }
 
 TCPRewriter::TCPMapping *
@@ -268,6 +286,7 @@ TCPRewriter::push(int port, Packet *p_in)
   WritablePacket *p = p_in->uniqueify();
   IPFlowID flow(p);
   click_ip *iph = p->ip_header();
+  click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
 
   // handle non-first fragments
   if (!IP_FIRSTFRAG(iph) || iph->ip_p != IP_PROTO_TCP) {
@@ -308,7 +327,7 @@ TCPRewriter::push(int port, Packet *p_in)
      }
 
      case INPUT_SPEC_MAPPER: {
-       m = static_cast<TCPMapping *>(is.u.mapper->get_map(this, IP_PROTO_TCP, flow));
+       m = static_cast<TCPMapping *>(is.u.mapper->get_map(this, IP_PROTO_TCP, flow, p));
        break;
      }
      
@@ -321,6 +340,11 @@ TCPRewriter::push(int port, Packet *p_in)
   
   m->apply(p);
   output(m->output()).push(p);
+
+  // add to list for dropping TCP connections faster
+  if (!m->free_tracked() && (tcph->th_flags & (TH_FIN | TH_RST))
+      && m->session_over())
+    _tcp_done = m->add_to_free_tracked(_tcp_done);
 }
 
 

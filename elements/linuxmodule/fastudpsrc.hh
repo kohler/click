@@ -2,32 +2,38 @@
 #define FASTUDPSRC_HH
 
 /*
- * =c
- * FastUDPSource(RATE, LIMIT, LEN, SETHADDR, SIPADDR, SPORT, DETHADDR, DIPADDR, DPORT [, CHECKSUM?])
- * =s sources
- * creates packets with static UDP/IP/Ethernet headers
- * =d
- * FastUDPSource is a benchmark tool. At initialization time, FastUDPSource
- * creates a UDP/IP packet of length LEN (min 60), with source ethernet
- * address SETHADDR, source IP address SIPADDR, source port SPORT, destination
- * ethernet address DETHADDR, destination IP address DIPADDR, and destination
- * port DPORT. The UDP checksum is calculated if CHECKSUM? is true; it is
- * true by default. Each time the FastUDPSource element is called, it
- * increments the reference count on the skbuff created and returns the skbuff
- * object w/o copying or cloning. Therefore, the packet returned by
- * FastUDPSource should not be modified.
- *
- * FastUDPSource sents packets at RATE packets per second. It will send LIMIT
- * number of packets in total.
- *
- * After FastUDPSource has sent LIMIT packets, it will calculate the
- * average send rate (packets per second) between the first and last
- * packets sent and make that available in the rate handler.
- *
- * =e
- *  FastUDPSource(100000, 500000, 60, 0:0:0:0:0:0, 1.0.0.1, 1234, 1:1:1:1:1:1, 2.0.0.2, 1234) 
- *    -> ToDevice;
- */
+=c
+
+FastUDPSource(RATE, LIMIT, LEN, SETHADDR, SIPADDR, SPORT, DETHADDR, DIPADDR, DPORT [, CHECKSUM?])
+
+=s sources
+
+creates packets with static UDP/IP/Ethernet headers
+
+=d
+
+FastUDPSource is a benchmark tool. At initialization time, FastUDPSource
+creates a UDP/IP packet of length LEN (min 60), with source ethernet
+address SETHADDR, source IP address SIPADDR, source port SPORT, destination
+ethernet address DETHADDR, destination IP address DIPADDR, and destination
+port DPORT. The UDP checksum is calculated if CHECKSUM? is true; it is
+true by default. Each time the FastUDPSource element is called, it
+increments the reference count on the skbuff created and returns the skbuff
+object w/o copying or cloning. Therefore, the packet returned by
+FastUDPSource should not be modified.
+
+FastUDPSource sents packets at RATE packets per second. It will send LIMIT
+number of packets in total.
+
+After FastUDPSource has sent LIMIT packets, it will calculate the
+average send rate (packets per second) between the first and last
+packets sent and make that available in the rate handler.
+
+=e
+
+ FastUDPSource(100000, 500000, 60, 0:0:0:0:0:0, 1.0.0.1, 1234, 1:1:1:1:1:1, 2.0.0.2, 1234) 
+   -> ToDevice;
+*/
 
 #include <click/element.hh>
 #include <click/glue.hh>

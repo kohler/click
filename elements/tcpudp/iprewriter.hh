@@ -126,8 +126,6 @@ class IPRewriter : public IPRw { public:
   void uninitialize();
   void take_state(Element *, ErrorHandler *);
   
-  void run_scheduled();
-
   int notify_pattern(Pattern *, ErrorHandler *);
   Mapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
   Mapping *get_mapping(int, const IPFlowID &) const;
@@ -141,11 +139,20 @@ class IPRewriter : public IPRw { public:
 
   Map _tcp_map;
   Map _udp_map;
+  Mapping *_tcp_done;
 
   Vector<InputSpec> _input_specs;
-  Timer _timer;
 
-  static const int GC_INTERVAL_SEC = 3600;
+  int _tcp_done_gc_interval;
+  Timer _tcp_done_gc_timer;
+  int _tcp_gc_interval;
+  Timer _tcp_gc_timer;
+  int _udp_gc_interval;
+  Timer _udp_gc_timer;
+  
+  static void tcp_gc_hook(unsigned long);
+  static void udp_gc_hook(unsigned long);
+  static void tcp_done_gc_hook(unsigned long);
 
   static String dump_mappings_handler(Element *, void *);
   static String dump_nmappings_handler(Element *, void *);

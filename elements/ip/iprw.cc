@@ -47,7 +47,9 @@ extern struct proto tcp_prot;
 //
 
 IPRw::Mapping::Mapping()
-  : _used(false), _ip_p(0), _pat(0), _pat_prev(0), _pat_next(0)
+  : _used(false), _is_reverse(false),
+    _session_over(false), _free_tracked(false),
+    _ip_p(0), _pat(0), _pat_prev(0), _pat_next(0), _free_next(0)
 {
 }
 
@@ -59,6 +61,7 @@ IPRw::Mapping::initialize(int ip_p, const IPFlowID &in, const IPFlowID &out,
   _ip_p = ip_p;
   _mapto = out;
   _output = output;
+  assert(output >= 0 && output < 256);
   _is_reverse = is_reverse;
   _reverse = reverse;
   
@@ -104,28 +107,40 @@ IPRw::Mapping::apply(WritablePacket *p)
   sum = (sum & 0xFFFF) + (sum >> 16);
   iph->ip_sum = ~(sum + (sum >> 16));
 
-  // UDP/TCP header
-  if (IP_FIRSTFRAG(iph)) {
-    if (_ip_p == IP_PROTO_TCP) {
-      click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
-      tcph->th_sport = _mapto.sport();
-      tcph->th_dport = _mapto.dport();
-      unsigned sum2 = (~tcph->th_sum & 0xFFFF) + _udp_csum_delta;
-      sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-      tcph->th_sum = ~(sum2 + (sum2 >> 16));
-    } else if (_ip_p == IP_PROTO_UDP) {
-      click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
-      udph->uh_sport = _mapto.sport();
-      udph->uh_dport = _mapto.dport();
-      if (udph->uh_sum) {		// 0 checksum is no checksum
-	unsigned sum2 = (~udph->uh_sum & 0xFFFF) + _udp_csum_delta;
-	sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-	udph->uh_sum = ~(sum2 + (sum2 >> 16));
-      }
-    }
-  }
-  
   mark_used();
+
+  // end if not first fragment
+  if (!IP_FIRSTFRAG(iph))
+    return;
+  
+  // UDP/TCP header
+  if (_ip_p == IP_PROTO_TCP) {
+    
+    click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+    tcph->th_sport = _mapto.sport();
+    tcph->th_dport = _mapto.dport();
+    unsigned sum2 = (~tcph->th_sum & 0xFFFF) + _udp_csum_delta;
+    sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
+    tcph->th_sum = ~(sum2 + (sum2 >> 16));
+    
+    // check for session ending flags
+    if (tcph->th_flags & TH_RST)
+      _session_over = _reverse->_session_over = true;
+    else if (tcph->th_flags & TH_FIN)
+      _session_over = true;
+    
+  } else if (_ip_p == IP_PROTO_UDP) {
+    
+    click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
+    udph->uh_sport = _mapto.sport();
+    udph->uh_dport = _mapto.dport();
+    if (udph->uh_sum) {		// 0 checksum is no checksum
+      unsigned sum2 = (~udph->uh_sum & 0xFFFF) + _udp_csum_delta;
+      sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
+      udph->uh_sum = ~(sum2 + (sum2 >> 16));
+    }
+    
+  }
 }
 
 String
@@ -430,7 +445,7 @@ IPMapper::notify_rewriter(IPRw *, ErrorHandler *)
 }
 
 IPRw::Mapping *
-IPMapper::get_map(IPRw *, int, const IPFlowID &)
+IPMapper::get_map(IPRw *, int, const IPFlowID &, Packet *)
 {
   return 0;
 }
@@ -527,7 +542,7 @@ void
 IPRw::take_state_map(Map &map, const Vector<Pattern *> &in_patterns,
 		     const Vector<Pattern *> &out_patterns)
 {
-  Vector<Mapping *> to_free;
+  Mapping *to_free = 0;
   int np = in_patterns.size();
   int no = noutputs();
 
@@ -544,108 +559,108 @@ IPRw::take_state_map(Map &map, const Vector<Pattern *> &in_patterns,
 	p->mapping_freed(m);
       if (q && m->output() < no && m->reverse()->output() < no)
 	q->accept_mapping(m);
-      else
-	to_free.push_back(m);
+      else {
+	m->set_free_next(to_free);
+	to_free = m;
+      }
     }
   }
 
-  for (int i = 0; i < to_free.size(); i++) {
-    Mapping *m = to_free[i];
-    map.remove(m->reverse()->flow_id().rev());
-    map.remove(m->flow_id().rev());
-    delete m->reverse();
-    delete m;
+  while (to_free) {
+    Mapping *next = to_free->free_next();
+    map.remove(to_free->reverse()->flow_id().rev());
+    map.remove(to_free->flow_id().rev());
+    delete to_free->reverse();
+    delete to_free;
+    to_free = next;
   }
-}
-
-void
-IPRw::mark_live_tcp(Map &)
-{
-#if defined(CLICK_LINUXMODULE) && defined(HAVE_TCP_PROT)
-#if 0
-  start_bh_atomic();
-
-  for (struct sock *sp = tcp_prot.sklist_next;
-       sp != (struct sock *)&tcp_prot;
-       sp = sp->sklist_next) {
-    // socket port numbers are already in network byte order
-    IPFlowID c(sp->rcv_saddr, sp->sport, sp->daddr, sp->dport);
-    if (Mapping *m = map.find(c))
-      m->mark_used();
-  }
-
-  end_bh_atomic();
-#endif
-#endif
 }
 
 void
 IPRw::clean_map(Map &table)
 {
-  static const int max_count = 20000;
-  Vector<Mapping *> to_free;
+  Mapping *to_free = 0;
 
-  while (1) {
-
-    // XXX BUGGY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    for (Map::Iterator iter = table.first(); iter; iter++)
-      if (Mapping *m = iter.value()) {
-	if (!m->used() && !m->reverse()->used() && !m->is_reverse()) {
-	  to_free.push_back(m);
-	  if (to_free.size() > max_count)
-	    break;
-	} else
-	  m->clear_used();
+  for (Map::Iterator iter = table.first(); iter; iter++)
+    if (Mapping *m = iter.value()) {
+      if (!m->is_reverse() && !m->used() && !m->free_tracked()
+	  && !m->reverse()->used()) {
+	m->set_free_next(to_free);
+	to_free = m;
       }
-    
-    for (int i = 0; i < to_free.size(); i++) {
-      Mapping *m = to_free[i];
-      if (Pattern *p = m->pattern())
-	p->mapping_freed(m);
-      table.remove(m->reverse()->flow_id().rev());
-      table.remove(m->flow_id().rev());
-      delete m->reverse();
-      delete m;
     }
-
-    if (to_free.size() <= max_count)
-      break;
-
-    to_free.clear();
-        
+  
+  while (to_free) {
+    Mapping *next = to_free->free_next();
+    if (Pattern *p = to_free->pattern())
+      p->mapping_freed(to_free);
+    table.remove(to_free->reverse()->flow_id().rev());
+    table.remove(to_free->flow_id().rev());
+    delete to_free->reverse();
+    delete to_free;
+    to_free = next;
   }
+
+  for (Map::Iterator iter = table.first(); iter; iter++)
+    if (Mapping *m = iter.value()) {
+      if (!m->free_tracked())
+	m->clear_used();
+    }
+}
+
+void
+IPRw::clean_map_free_tracked(Map &table, Mapping **free_tracked)
+{
+  Mapping *to_free = 0;
+  Mapping **prev_ptr = free_tracked;
+
+  Mapping *m = *free_tracked;
+  while (m) {
+    Mapping *next = m->free_next();
+    if (!m->is_reverse() && !m->used() && !m->reverse()->used()) {
+      *prev_ptr = next;
+      m->set_free_next(to_free);
+      to_free = m;
+    } else
+      prev_ptr = &m->_free_next;
+    m = next;
+  }
+
+  while (to_free) {
+    Mapping *next = to_free->free_next();
+    if (Pattern *p = to_free->pattern())
+      p->mapping_freed(to_free);
+    table.remove(to_free->reverse()->flow_id().rev());
+    table.remove(to_free->flow_id().rev());
+    delete to_free->reverse();
+    delete to_free;
+    to_free = next;
+  }
+
+  for (m = *free_tracked; m; m = m->free_next())
+    m->clear_used();
 }
 
 void
 IPRw::clear_map(Map &table)
 {
-  static const int max_count = 20000;
-  Vector<Mapping *> to_free;
+  Mapping *to_free = 0;
 
-  while (1) {
-
-    for (Map::Iterator iter = table.first(); iter; iter++) {
-      Mapping *m = iter.value();
-      if (m->is_forward()) {
-	to_free.push_back(m);
-	if (to_free.size() > max_count)
-	  break;
-      }
+  for (Map::Iterator iter = table.first(); iter; iter++) {
+    Mapping *m = iter.value();
+    if (m->is_forward()) {
+      m->set_free_next(to_free);
+      to_free = m;
     }
-    
-    for (int i = 0; i < to_free.size(); i++) {
-      Mapping *m = to_free[i];
-      if (Pattern *p = m->pattern())
-	p->mapping_freed(m);
-      delete m->reverse();
-      delete m;
-    }
-
-    if (to_free.size() <= max_count)
-      break;
-
-    to_free.clear();
-    
+  }
+  
+  while (to_free) {
+    Mapping *next = to_free->free_next();
+    if (Pattern *pat = to_free->pattern())
+      pat->mapping_freed(to_free);
+    delete to_free->reverse();
+    delete to_free;
+    to_free = next;
   }
 
   table.clear();

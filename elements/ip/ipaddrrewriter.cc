@@ -96,7 +96,12 @@ IPAddrRewriter::cast(const char *n)
 void
 IPAddrRewriter::notify_noutputs(int n)
 {
-  set_noutputs(n < 1 ? 1 : n);
+  if (n < 1)
+    set_noutputs(1);
+  else if (n > 256)
+    set_noutputs(256);
+  else
+    set_noutputs(n);
 }
 
 int
@@ -221,7 +226,7 @@ IPAddrRewriter::push(int port, Packet *p_in)
      }
 
      case INPUT_SPEC_MAPPER: {
-       m = static_cast<IPAddrMapping *>(is.u.mapper->get_map(this, 0, flow));
+       m = static_cast<IPAddrMapping *>(is.u.mapper->get_map(this, 0, flow, p));
        break;
      }
       

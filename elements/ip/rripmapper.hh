@@ -41,7 +41,7 @@ class RoundRobinIPMapper : public Element, public IPMapper {
   void uninitialize();
   
   void notify_rewriter(IPRw *, ErrorHandler *);
-  IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &);
+  IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);
   
 };
 

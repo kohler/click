@@ -3,31 +3,31 @@
 #include "elements/ip/iprw.hh"
 
 /*
- * =c
- * TCPRewriter(INPUTSPEC1, ..., INPUTSPECn)
- * =s TCP
- * rewrites TCP packets' addresses, ports, and sequence numbers
- * =d
- *
- * Rewrites TCP flows by changing their source address, source port,
- * destination address, and/or destination port, and optionally, their
- * sequence numbers and acknowledgement numbers.
- *
- * This element is an IPRewriter-like element. Please read the IPRewriter
- * documentation for more information and a detailed description of its
- * INPUTSPEC arguments.
- *
- * In addition to IPRewriter's functionality, the TCPRewriter element can add
- * or subtract amounts from incoming packets' sequence and acknowledgement
- * numbers. Each newly created mapping starts with these deltas at zero; other
- * elements can request changes to a given mapping. For example, FTPPortMapper
- * uses this facility.
- *
- * =h mappings read-only
- * Returns a human-readable description of the IPRewriter's current set of
- * mappings.
- *
- * =a IPRewriter, IPRewriterPatterns, FTPPortMapper */
+=c
+TCPRewriter(INPUTSPEC1, ..., INPUTSPECn)
+=s TCP
+rewrites TCP packets' addresses, ports, and sequence numbers
+=d
+
+Rewrites TCP flows by changing their source address, source port,
+destination address, and/or destination port, and optionally, their
+sequence numbers and acknowledgement numbers.
+
+This element is an IPRewriter-like element. Please read the IPRewriter
+documentation for more information and a detailed description of its
+INPUTSPEC arguments.
+
+In addition to IPRewriter's functionality, the TCPRewriter element can add
+or subtract amounts from incoming packets' sequence and acknowledgement
+numbers. Each newly created mapping starts with these deltas at zero; other
+elements can request changes to a given mapping. For example, FTPPortMapper
+uses this facility.
+
+=h mappings read-only
+Returns a human-readable description of the IPRewriter's current set of
+mappings.
+
+=a IPRewriter, IPRewriterPatterns, FTPPortMapper */
 
 class TCPRewriter : public IPRw { public:
 
@@ -71,8 +71,6 @@ class TCPRewriter : public IPRw { public:
   void uninitialize();
   void take_state(Element *, ErrorHandler *);
   
-  void run_scheduled();
-
   int notify_pattern(Pattern *, ErrorHandler *);
   TCPMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
   TCPMapping *get_mapping(int ip_p, const IPFlowID &) const;
@@ -85,11 +83,17 @@ class TCPRewriter : public IPRw { public:
  private:
   
   Map _tcp_map;
+  Mapping *_tcp_done;
 
   Vector<InputSpec> _input_specs;
-  Timer _timer;
 
-  static const int GC_INTERVAL_SEC = 3600;
+  int _tcp_gc_interval;
+  Timer _tcp_gc_timer;
+  int _tcp_done_gc_interval;
+  Timer _tcp_done_gc_timer;
+
+  static void tcp_gc_hook(unsigned long);
+  static void tcp_done_gc_hook(unsigned long);
 
   static String dump_mappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);

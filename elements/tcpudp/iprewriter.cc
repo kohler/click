@@ -34,7 +34,10 @@
 #include <limits.h>
 
 IPRewriter::IPRewriter()
-  : _tcp_map(0), _udp_map(0), _timer(this)
+  : _tcp_map(0), _udp_map(0), _tcp_done(0),
+    _tcp_done_gc_timer(tcp_done_gc_hook, (unsigned long) this),
+    _tcp_gc_timer(tcp_gc_hook, (unsigned long) this),
+    _udp_gc_timer(udp_gc_hook, (unsigned long) this)
 {
   // no MOD_INC_USE_COUNT; rely on IPRw
 }
@@ -42,7 +45,7 @@ IPRewriter::IPRewriter()
 IPRewriter::~IPRewriter()
 {
   // no MOD_DEC_USE_COUNT; rely on IPRw
-  assert(!_timer.scheduled());
+  assert(!_tcp_gc_timer.scheduled() && !_udp_gc_timer.scheduled());
 }
 
 void *
@@ -59,45 +62,57 @@ IPRewriter::cast(const char *n)
 void
 IPRewriter::notify_noutputs(int n)
 {
-  set_noutputs(n < 1 ? 1 : n);
+  if (n < 1)
+    set_noutputs(1);
+  else if (n > 256)
+    set_noutputs(256);
+  else
+    set_noutputs(n);
 }
 
 int
 IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  if (conf.size() == 0)
-    return errh->error("too few arguments; expected `INPUTSPEC, ...'");
-  set_ninputs(conf.size());
-
   int before = errh->nerrors();
+  int ninputs = 0;
+  _tcp_gc_interval = 86400000;	// 24 hours
+  _tcp_done_gc_interval = 240000;	// 4 minutes
+  _udp_gc_interval = 60000;	// 1 minute
+  
   for (int i = 0; i < conf.size(); i++) {
+    if (cp_va_parse_keyword(conf[i], this, errh,
+			    "TCP_GC_INTERVAL", cpMilliseconds, "TCP garbage collection interval", &_tcp_gc_interval,
+			    "UDP_GC_INTERVAL", cpMilliseconds, "UDP garbage collection interval", &_udp_gc_interval,
+			    0) != 0)
+      continue;
     InputSpec is;
-    if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0)
+    if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0) {
       _input_specs.push_back(is);
+      ninputs++;
+    }
   }
+
+  if (ninputs == 0)
+    return errh->error("too few arguments; expected `INPUTSPEC, ...'");
+  set_ninputs(ninputs);
   return (errh->nerrors() == before ? 0 : -1);
 }
 
 int
-IPRewriter::initialize(ErrorHandler *errh)
+IPRewriter::initialize(ErrorHandler *)
 {
-  _timer.attach(this);
-  _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
-#if defined(CLICK_LINUXMODULE) && !defined(HAVE_TCP_PROT)
-  errh->message
-    ("The kernel does not export the symbol `tcp_prot', so I cannot remove\n"
-     "stale mappings. Apply the Click kernel patch to fix this problem.");
-#endif
-#ifndef CLICK_LINUXMODULE
-  errh->message("can't remove stale mappings at userlevel");
-#endif
+  _tcp_gc_timer.attach(this);
+  _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
+  _udp_gc_timer.attach(this);
+  _udp_gc_timer.schedule_after_ms(_udp_gc_interval);
   return 0;
 }
 
 void
 IPRewriter::uninitialize()
 {
-  _timer.unschedule();
+  _tcp_gc_timer.unschedule();
+  _udp_gc_timer.unschedule();
 
   clear_map(_tcp_map);
   clear_map(_udp_map);
@@ -123,7 +138,7 @@ IPRewriter::take_state(Element *e, ErrorHandler *errh)
   if (!rw) return;
 
   if (noutputs() != rw->noutputs()) {
-    errh->warning("taking mappings from `%s', although it has\n%s output ports", rw->declaration().cc(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
+    errh->warning("taking mappings from `%s', although it has %s output ports", rw->declaration().cc(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
     if (noutputs() < rw->noutputs())
       errh->message("(out of range mappings will be dropped)");
   }
@@ -146,14 +161,27 @@ IPRewriter::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-IPRewriter::run_scheduled()
+IPRewriter::tcp_gc_hook(unsigned long thunk)
 {
-#if defined(CLICK_LINUXMODULE) && defined(HAVE_TCP_PROT)
-  mark_live_tcp(_tcp_map);
-#endif
-  clean_map(_tcp_map);
-  clean_map(_udp_map);
-  _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
+  IPRewriter *rw = (IPRewriter *)thunk;
+  rw->clean_map(rw->_tcp_map);
+  rw->_tcp_gc_timer.schedule_after_ms(rw->_tcp_gc_interval);
+}
+
+void
+IPRewriter::tcp_done_gc_hook(unsigned long thunk)
+{
+  IPRewriter *rw = (IPRewriter *)thunk;
+  rw->clean_map_free_tracked(rw->_udp_map, &rw->_tcp_done);
+  rw->_tcp_done_gc_timer.schedule_after_ms(rw->_tcp_done_gc_interval);
+}
+
+void
+IPRewriter::udp_gc_hook(unsigned long thunk)
+{
+  IPRewriter *rw = (IPRewriter *)thunk;
+  rw->clean_map(rw->_udp_map);
+  rw->_udp_gc_timer.schedule_after_ms(rw->_udp_gc_interval);
 }
 
 IPRw::Mapping *
@@ -238,7 +266,7 @@ IPRewriter::push(int port, Packet *p_in)
      }
 
      case INPUT_SPEC_MAPPER: {
-       m = is.u.mapper->get_map(this, ip_p, flow);
+       m = is.u.mapper->get_map(this, ip_p, flow, p);
        break;
      }
       
@@ -251,6 +279,13 @@ IPRewriter::push(int port, Packet *p_in)
   
   m->apply(p);
   output(m->output()).push(p);
+
+  // add to list for dropping TCP connections faster
+  if (ip_p == IP_PROTO_TCP && !m->free_tracked()) {
+    click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+    if ((tcph->th_flags & (TH_FIN | TH_RST)) && m->session_over())
+      _tcp_done = m->add_to_free_tracked(_tcp_done);
+  }
 }
 
 
