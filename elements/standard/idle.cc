@@ -28,6 +28,17 @@ Idle::~Idle()
   MOD_DEC_USE_COUNT;
 }
 
+void *
+Idle::cast(const char *name)
+{
+  if (strcmp(name, "AbstractNotifier") == 0)
+    return static_cast<AbstractNotifier *>(this);
+  else if (strcmp(name, "Idle") == 0)
+    return this;
+  else
+    return Element::cast(name);
+}
+
 void
 Idle::notify_ninputs(int n)
 {

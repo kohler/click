@@ -27,6 +27,20 @@ static uint32_t signals[NUM_SIGNALS / 32];
 
 uint32_t NotifierSignal::true_value = 0xFFFFFFFFU;
 
+
+NotifierSignal
+AbstractNotifier::notifier_signal()
+{
+    return NotifierSignal(false);
+}
+
+bool
+AbstractNotifier::stop_search()
+{
+    return true;
+}
+
+
 Notifier::Notifier()
     : _listener1(0), _listeners(0)
 {
@@ -94,34 +108,49 @@ Notifier::remove_listener(Task *bad_l)
     }
 }
 
+
+class NotifierElementFilter : public ElementFilter { public:
+
+    NotifierElementFilter()		: _signal(false) { }
+    bool check_match(Element *, int);
+    Vector<Notifier *> _notifiers;
+    NotifierSignal _signal;
+    
+};
+
+bool
+NotifierElementFilter::check_match(Element *e, int port)
+{
+    if (Notifier *n = (Notifier *) (e->cast("Notifier"))) {
+	_notifiers.push_back(n);
+	_signal += n->notifier_signal();
+	return true;
+    } else if (AbstractNotifier *n = (AbstractNotifier *) (e->cast("AbstractNotifier"))) {
+	_signal += n->notifier_signal();
+	return n->stop_search();
+    } else if (e->output_is_push(port) || e->ninputs() == 0) {
+	_signal = NotifierSignal(true);
+	return true;
+    } else
+	return false;
+}
+
 NotifierSignal
 Notifier::upstream_pull_signal(Element *e, int port, Task *t)
 {
-    CastElementFilter notifier_filter("Notifier");
-    OutputProcessingElementFilter push_filter(true);
-    DisjunctionElementFilter filter;
-    filter.add(&notifier_filter);
-    filter.add(&push_filter);
+    NotifierElementFilter filter;
     
     Vector<Element *> v;
     int ok = e->router()->upstream_elements(e, port, &filter, v);
 
     // All bets are off if filter ran into a push output. That means there was
     // a regular Queue in the way (for example).
-    if (push_filter.match_count())
-	return NotifierSignal();
-    
-    notifier_filter.filter(v);
-
-    if (ok < 0 || !v.size())
+    if (ok < 0 || filter._signal == NotifierSignal())
 	return NotifierSignal();
 
-    NotifierSignal signal(false);
-    for (int i = 0; i < v.size(); i++) {
-	Notifier *n = (Notifier *) (v[i]->cast("Notifier"));
-	if (t)
-	    n->add_listener(t);
-	signal += n->notifier_signal();
-    }
-    return signal;
+    if (t)
+	for (int i = 0; i < filter._notifiers.size(); i++)
+	    filter._notifiers[i]->add_listener(t);
+
+    return filter._signal;
 }

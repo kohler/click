@@ -32,40 +32,6 @@ class CastElementFilter : public ElementFilter { public:
 
 };
 
-class InputProcessingElementFilter : public ElementFilter { public:
-
-    InputProcessingElementFilter(bool push);
-    bool check_match(Element *, int);
-
-  private:
-
-    bool _push;
-
-};
-
-class OutputProcessingElementFilter : public ElementFilter { public:
-
-    OutputProcessingElementFilter(bool push);
-    bool check_match(Element *, int);
-
-  private:
-
-    bool _push;
-
-};
-
-class DisjunctionElementFilter : public ElementFilter { public:
-
-    DisjunctionElementFilter()		{ }
-    void add(ElementFilter *f)		{ _filters.push_back(f); }
-    bool check_match(Element *, int);
-
-  private:
-
-    Vector<ElementFilter *> _filters;
-
-};
-
 
 inline bool
 ElementFilter::match(Element *e, int port)

@@ -22,7 +22,19 @@ class NotifierSignal { public:
     uint32_t _mask;
 
     static uint32_t true_value;
+    friend bool operator==(const NotifierSignal &, const NotifierSignal &);
+    friend bool operator!=(const NotifierSignal &, const NotifierSignal &);
 
+};
+
+class AbstractNotifier { public:
+
+    AbstractNotifier()			{ }
+    virtual ~AbstractNotifier()		{ }
+
+    virtual NotifierSignal notifier_signal();
+    virtual bool stop_search();
+    
 };
 
 class Notifier { public:
@@ -90,6 +102,18 @@ NotifierSignal::operator+=(const NotifierSignal &o)
     else
 	_value = &true_value;
     return *this;
+}
+
+inline bool
+operator==(const NotifierSignal &a, const NotifierSignal &b)
+{
+    return (a._mask == b._mask && (a._value == b._value || a._mask == 0));
+}
+
+inline bool
+operator!=(const NotifierSignal &a, const NotifierSignal &b)
+{
+    return !(a == b);
 }
 
 inline NotifierSignal

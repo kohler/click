@@ -557,6 +557,8 @@ FromDump::read_packet(ErrorHandler *errh)
 	p = wp;
     }
 
+    p->set_mac_header(p->data());
+    
     if (_force_ip && !fake_pcap_force_ip(p, _linktype)) {
 	checked_output_push(1, p);
 	goto retry;
