@@ -895,14 +895,21 @@ Router::driver()
 {
   unsigned c = 10000;
   ElementLink *fl;
-  while (fl = scheduled_next(), fl != this && !_please_stop_driver) {
-    fl->unschedule();
-    ((Element *)fl)->run_scheduled();
-    if (c-- == 0) {
-      c = 10000;
-      wait();
+#ifndef __KERNEL__
+  while (!_please_stop_driver) {
+#endif
+    while (fl = scheduled_next(), fl != this && !_please_stop_driver) {
+      fl->unschedule();
+      ((Element *)fl)->run_scheduled();
+      if (c-- == 0) {
+        c = 10000;
+        wait();
+      }
     }
+#ifndef __KERNEL__
+    wait();
   }
+#endif
 }
 
 void

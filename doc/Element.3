@@ -514,7 +514,18 @@ implementation just returns \fIp\fP.
 .PD 0
 .TP 5
 .BR "void join_scheduler()"
-Adds this element to the schedule.
+Adds this element to the schedule. In its 
+.B initialize()
+routine, an element that wants to be scheduled should either call 
+.B SchedulerInfo::join_scheduler(this, errh)
+or manually query and set the number of tickets assigned to the
+element in the router configuration using 
+.B SchedulerInfo::query(this, errh)
+and 
+.B set_tickets().
+Subsequent calls to
+.B join_scheduler()
+place the element on the schedule.
 '
 .Sp
 .TP 5
@@ -545,6 +556,7 @@ implementation reports an error.
 .M click 5 ,
 .M click.o 8 ,
 .M elements n ,
+.M ScheduleInfo n,
 .M Queue n ,
 .M RED n
 '
