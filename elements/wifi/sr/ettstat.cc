@@ -26,7 +26,6 @@
 #include <click/packet_anno.hh>
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
-
 // packet data should be 4 byte aligned                                         
 #define ASSERT_ALIGNED(p) assert(((unsigned int)(p) % 4) == 0)
 
@@ -99,6 +98,10 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
     _ads_rs.push_back(RateSize(rate, size));
   }
 
+  if (!_ads_rs.size()) {
+    return errh->error("no PROBES provided\n");
+  }
+  
   if (res < 0)
     return res;
 
@@ -123,11 +126,7 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("ARPTable element is not a ARPTable");
   }
 
-  assert(_ads_rs.size());
   return res;
-
-
-
 }
 
 
@@ -281,7 +280,14 @@ ETTStat::send_probe_hook()
 void
 ETTStat::send_probe() 
 {
-  assert(_ads_rs.size());
+
+  if (!_ads_rs.size()) {
+    click_chatter("%{element} :: %s no probes to send at\n",
+		  this,
+		  __func__);
+    return;
+  }
+
   int size = _ads_rs[_ads_rs_index]._size;
   int rate = _ads_rs[_ads_rs_index]._rate;
 
@@ -378,6 +384,11 @@ ETTStat::send_probe()
       }
       entry->num_rates = probe->probe_types.size();
       ptr += sizeof(link_entry);
+
+      Vector<RateSize> rates;
+      Vector<int> fwd;
+      Vector<int> rev;
+
       for (int x = 0; x < probe->probe_types.size(); x++) {
 	RateSize rs = probe->probe_types[x];
 	link_info *lnfo = (struct link_info *) (ptr + x*sizeof(link_info));
@@ -385,7 +396,13 @@ ETTStat::send_probe()
 	lnfo->rate = rs._rate;
 	lnfo->fwd = probe->_fwd_rates[x];
 	lnfo->rev = probe->rev_rate(_start, rs._rate, rs._size);
+	
+	rates.push_back(rs);
+	fwd.push_back(lnfo->fwd);
+	rev.push_back(lnfo->rev);
       }
+      calc_ett(_ip, entry->ip, rates, fwd, rev, entry->seq);
+
       ptr += probe->probe_types.size()*sizeof(link_info);
     }
 
@@ -458,10 +475,17 @@ ETTStat::simple_action(Packet *p)
   }
   link_probe *lp = (link_probe *)(p->data() + sizeof(click_ether));
   if (lp->_version != _ett_version) {
-    click_chatter ("%{element}: unknown sr version %x from %s", 
-		   this,
-		   lp->_version,
-		   EtherAddress(eh->ether_shost).s().cc());
+    static bool version_warning = false;
+    _bad_table.insert(EtherAddress(eh->ether_shost), lp->_version);
+    if (!version_warning) {
+      version_warning = true; 
+      click_chatter ("%{element}: unknown sr version %x from %s", 
+		     this,
+		     lp->_version,
+		     EtherAddress(eh->ether_shost).s().cc());
+    }
+
+    
     p->kill();
     return 0;
   }
@@ -623,7 +647,6 @@ ETTStat::simple_action(Packet *p)
       seq = now.tv_sec;
     }
     calc_ett(ip, neighbor, rates, fwd, rev, seq);
-
     ptr += num_rates * sizeof(struct link_info);
     
   }
@@ -634,14 +657,12 @@ ETTStat::simple_action(Packet *p)
   
 
 String
-ETTStat::read_bcast_stats(Element *xf, void *)
+ETTStat::read_bcast_stats()
 {
-  ETTStat *e = (ETTStat *) xf;
-
   typedef HashMap<IPAddress, bool> IPMap;
   IPMap ip_addrs;
   
-  for (ProbeMap::const_iterator i = e->_bcast_stats.begin(); i; i++) 
+  for (ProbeMap::const_iterator i = _bcast_stats.begin(); i; i++) 
     ip_addrs.insert(i.key(), true);
 
   struct timeval now;
@@ -650,11 +671,11 @@ ETTStat::read_bcast_stats(Element *xf, void *)
   StringAccum sa;
   for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
     IPAddress ip  = i.key();
-    probe_list_t *pl = e->_bcast_stats.findp(ip);
-    //sa << e->_ip << " " << e->_eth << " ";
+    probe_list_t *pl = _bcast_stats.findp(ip);
+    //sa << _ip << " " << _eth << " ";
     sa << ip;
-    if (e->_arp_table) {
-      EtherAddress eth_dest = e->_arp_table->lookup(ip);
+    if (_arp_table) {
+      EtherAddress eth_dest = _arp_table->lookup(ip);
       if (eth_dest) {
 	sa << " " << eth_dest.s().cc();
       } else {
@@ -666,7 +687,7 @@ ETTStat::read_bcast_stats(Element *xf, void *)
     for (int x = 0; x < pl->probe_types.size(); x++) {
       sa << " [ " << pl->probe_types[x]._rate << " ";
       sa << pl->probe_types[x]._size << " ";
-      int rev_rate = pl->rev_rate(e->_start, pl->probe_types[x]._rate, 
+      int rev_rate = pl->rev_rate(_start, pl->probe_types[x]._rate, 
 				  pl->probe_types[x]._size);
       sa << pl->_fwd_rates[x] << " ";
       sa << rev_rate << " ]";
@@ -683,6 +704,21 @@ ETTStat::read_bcast_stats(Element *xf, void *)
   return sa.take_string();
 }
 
+
+String 
+ETTStat::bad_nodes() {
+
+  StringAccum sa;
+  for (BadTable::const_iterator i = _bad_table.begin(); i; i++) {
+    uint8_t version = i.value();
+    EtherAddress dst = i.key();
+    sa << this << " eth " << dst.s().cc() << " version " << (int) version << "\n";
+  }
+
+  return sa.take_string();
+}
+
+
 void
 ETTStat::reset()
 {
@@ -693,8 +729,23 @@ ETTStat::reset()
   _sent = 0;
   click_gettimeofday(&_start);
 }
-enum {H_RESET};
+enum {
+  H_RESET,
+  H_BCAST_STATS,
+  H_BAD_VERSION,
+};
 
+static String 
+ETTStat_read_param(Element *e, void *thunk)
+{
+  ETTStat *td = (ETTStat *)e;
+    switch ((uintptr_t) thunk) {
+    case H_BCAST_STATS: return td->read_bcast_stats();
+    case H_BAD_VERSION: return td->bad_nodes();
+    default:
+      return String() + "\n";
+    }
+}
 static int 
 ETTStat_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *)
@@ -713,7 +764,8 @@ ETTStat_write_param(const String &in_s, Element *e, void *vparam,
 void
 ETTStat::add_handlers()
 {
-  add_read_handler("bcast_stats", read_bcast_stats, 0);
+  add_read_handler("bcast_stats", ETTStat_read_param, (void *) H_BCAST_STATS);
+  add_read_handler("bad_version", ETTStat_read_param, (void *) H_BAD_VERSION);
   add_write_handler("reset", ETTStat_write_param, (void *) H_RESET);
 
 }
@@ -732,4 +784,5 @@ EXPORT_ELEMENT(ETTStat)
 #include <click/vector.cc>
 template class DEQueue<ETTStat::probe_t>;
 template class HashMap<IPAddress, ETTStat::probe_list_t>;
+template class HashMap<EtherAddress, uint8_t>;
 CLICK_ENDDECLS

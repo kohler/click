@@ -21,11 +21,9 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include "linkmetric.hh"
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
 #include "srpacket.hh"
-#include "srforwarder.hh"
 CLICK_DECLS
 
 
@@ -35,9 +33,7 @@ SRQueryResponder::SRQueryResponder()
      _ip(),
      _en(),
      _et(0),
-     _sr_forwarder(0),
      _link_table(0),
-     _metric(0),
      _arp_table(0)
 {
   MOD_INC_USE_COUNT;
@@ -58,11 +54,9 @@ SRQueryResponder::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
-		    "SR", cpElement, "SRForwarder element", &_sr_forwarder,
 		    "LT", cpElement, "LinkTable element", &_link_table,
 		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    /* below not required */
-		    "LM", cpElement, "LinkMetric element", &_metric,
 		    "DEBUG", cpBool, "Debug", &_debug,
                     cpEnd);
 
@@ -72,22 +66,16 @@ SRQueryResponder::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("IP not specified");
   if (!_en) 
     return errh->error("ETH not specified");
-  if (!_metric) 
-    return errh->error("LinkMetric not specified");
   if (!_link_table) 
     return errh->error("LT not specified");
   if (!_arp_table) 
     return errh->error("ARPTable not specified");
 
 
-  if (_sr_forwarder->cast("SRForwarder") == 0) 
-    return errh->error("SRQueryResponder element is not a SRQueryResponder");
   if (_link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
   if (_arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a ARPTable");
-  if (_metric && _metric->cast("LinkMetric") == 0) 
-    return errh->error("LinkMetric element is not a LinkMetric");
 
   return ret;
 }
@@ -120,49 +108,9 @@ SRQueryResponder::send(WritablePacket *p)
 }
 
 
-int
-SRQueryResponder::get_fwd_metric(IPAddress other)
-{
-  sr_assert(other);
-  int metric = 9999;
-  uint32_t seq = 0;
-  if (_metric) {
-    metric = _metric->get_fwd_metric(other);
-    seq = _metric->get_seq(other);
-  }
-  if (metric && !update_link(_ip, other, seq, metric)) {
-    click_chatter("%{element} couldn't update get_fwd_metric %s > %d > %s\n",
-		  this,
-		  _ip.s().cc(),
-		  metric,
-		  other.s().cc());
-  }
-  return metric;
-}
-
-int
-SRQueryResponder::get_rev_metric(IPAddress other)
-{
-  sr_assert(other);
-  int metric = 9999;
-  uint32_t seq = 0;
-  if (_metric) {
-    metric = _metric->get_rev_metric(other);
-    seq = _metric->get_seq(other);
-  }
-  if (metric && !update_link(other, _ip, seq, metric)) {
-    click_chatter("%{element} couldn't update get_rev_metric %s > %d > %s\n",
-		  this,
-		  other.s().cc(),
-		  metric,
-		  _ip.s().cc());
-  }
-  return metric;
-}
-
 bool
 SRQueryResponder::update_link(IPAddress from, IPAddress to, uint32_t seq, int metric) {
-  if (_link_table && !_link_table->update_link(from, to, seq, metric)) {
+  if (_link_table && !_link_table->update_link(from, to, seq, 0, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
@@ -180,7 +128,7 @@ SRQueryResponder::forward_reply(struct srpacket *pk1)
   u_char type = pk1->_type;
   sr_assert(type == PT_REPLY);
 
-  _link_table->dijkstra();
+  _link_table->dijkstra(true);
   if (_debug) {
     click_chatter("%{element}: forward_reply %s <- %s\n", 
 		  this,
@@ -220,9 +168,21 @@ SRQueryResponder::forward_reply(struct srpacket *pk1)
 
 void SRQueryResponder::start_reply(struct srpacket *pk_in)
 {
+  _link_table->dijkstra(false);
+  IPAddress src = pk_in->get_link_node(0);
+  Path best = _link_table->best_route(src, false);
+  bool best_valid = _link_table->valid_route(best);
 
-  int len = srpacket::len_wo_data(pk_in->num_links()+1);
-  _link_table->dijkstra();
+  if (!best_valid) {
+    click_chatter("%{element} :: %s :: invalid route for src %s: %s\n",
+		  this,
+		  __func__,
+		  src.s().cc(),
+		  path_to_string(best).cc());
+    return;
+  }
+  int links = best.size() - 1;
+  int len = srpacket::len_wo_data(links);
   if (_debug) {
     click_chatter("%{element}: start_reply %s <- %s\n",
 		  this,
@@ -240,29 +200,21 @@ void SRQueryResponder::start_reply(struct srpacket *pk_in)
   pk_out->_version = _sr_version;
   pk_out->_type = PT_REPLY;
   pk_out->_flags = 0;
-  pk_out->_seq = pk_in->_seq;
-  pk_out->set_num_links(pk_in->num_links()+1);
-  pk_out->set_next(pk_in->num_links());
+  pk_out->set_seq(pk_in->seq());
+  pk_out->set_num_links(links);
+  pk_out->set_next(links-1);
   pk_out->_qdst = pk_in->_qdst;
 
-
-  for (int x = 0; x < pk_in->num_links(); x++) {
-    pk_out->set_link(x,
-		     pk_in->get_link_node(x),
-		     pk_in->get_link_node(x+1),
-		     pk_in->get_link_fwd(x),
-		     pk_in->get_link_rev(x),
-		     pk_in->get_link_seq(x),
-		     0);
+  
+  for (int i = 0; i < links; i++) {
+    pk_out->set_link(i,
+		     best[i], best[i+1],
+		     _link_table->get_link_metric(best[i], best[i+1]),
+		     _link_table->get_link_metric(best[i+1], best[i]),
+		     _link_table->get_link_seq(best[i], best[i+1]),
+		     _link_table->get_link_age(best[i], best[i+1]));
   }
-  IPAddress neighbor = pk_in->get_link_node(pk_in->num_links());
-  pk_out->set_link(pk_in->num_links(),
-		   neighbor, _ip, 
-		   (_metric) ? _metric->get_fwd_metric(neighbor) : 0,
-		   (_metric) ? _metric->get_rev_metric(neighbor) : 0,
-		   (_metric) ? _metric->get_seq(neighbor) : 0,
-		   0);
-
+  
   send(p);
 }
 
@@ -280,7 +232,7 @@ SRQueryResponder::got_reply(struct srpacket *pk)
 		  _ip.s().cc(),
 		  dst.s().cc());
   }
-  _link_table->dijkstra();
+  _link_table->dijkstra(true);
 
 }
 
@@ -308,8 +260,10 @@ SRQueryResponder::push(int, Packet *p_in)
   u_char type = pk->_type;
   IPAddress dst = IPAddress(pk->_qdst);
   
-  if (type == PT_QUERY && dst == _ip) {
-    start_reply(pk);
+  if (type == PT_QUERY) {
+    if (dst == _ip) {
+      start_reply(pk);
+    }
     p_in->kill();
     return;
   }
@@ -339,36 +293,27 @@ SRQueryResponder::push(int, Packet *p_in)
     int fwd_m = pk->get_link_fwd(i);
     int rev_m = pk->get_link_fwd(i);
     uint32_t seq = pk->get_link_seq(i);
-    if (a != _ip && b != _ip) {
-      /* don't update my immediate neighbor. see below */
-      if (fwd_m && !update_link(a,b,seq,fwd_m)) {
-	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
-		      this,
-		      a.s().cc(),
-		      fwd_m,
-		      b.s().cc());
-      }
-      if (rev_m && !update_link(b,a,seq,rev_m)) {
-	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
-		      this,
-		      b.s().cc(),
-		      rev_m,
-		      a.s().cc());
-      }
+    /* don't update my immediate neighbor. see below */
+    if (fwd_m && !update_link(a,b,seq,fwd_m)) {
+      click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
+		    this,
+		    a.s().cc(),
+		    fwd_m,
+		    b.s().cc());
+    }
+    if (rev_m && !update_link(b,a,seq,rev_m)) {
+      click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
+		    this,
+		    b.s().cc(),
+		    rev_m,
+		    a.s().cc());
     }
   }
   
   
   IPAddress neighbor = pk->get_link_node(pk->num_links());
-  assert(neighbor);
+  sr_assert(neighbor);
   
-  /* 
-   * calling these functions updates the neighbor link 
-   * in the link_table, so we can ignore the return value.
-   */
-  get_fwd_metric(neighbor);
-  get_rev_metric(neighbor);
-
   if(pk->next() == 0){
     // I'm the ultimate consumer of this reply. Add to routing tbl.
     got_reply(pk);

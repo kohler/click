@@ -140,10 +140,9 @@ class ProbeTXRate : public Element { public:
     void add_result(struct timeval now, int rate, int success,
 		    int time) {
       int ndx = rate_index(rate);
-      if (ndx < 0 || ndx > _rates.size()){
+      if (!rate || ndx < 0 || ndx > _rates.size()){
 	return;
       }
-      assert(rate);
       _total_usecs[ndx] += time;
       if (success) {
 	_total_success[ndx]++;

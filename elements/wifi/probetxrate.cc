@@ -93,7 +93,6 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 ProbeTXRate::assign_rate(Packet *p_in) {
 
-  assert(p_in);
   if (!p_in) {
     click_chatter("%{element} ah, !p_in\n",
 		  this);
@@ -140,7 +139,6 @@ ProbeTXRate::assign_rate(Packet *p_in) {
 void
 ProbeTXRate::process_feedback(Packet *p_in) {
 
-  assert(p_in);
   if (!p_in) {
     return;
   }

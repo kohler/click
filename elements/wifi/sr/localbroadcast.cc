@@ -116,10 +116,10 @@ LocalBroadcast::push(int port, Packet *p_in)
     memset(pk, '\0', srpacket::len_wo_data(hops));
     pk->_version = _sr_version;
     pk->_type = PT_DATA;
-    pk->_dlen = htons(payload_len);
+    pk->set_data_len(payload_len);
     pk->_flags = 0;
     pk->_qdst = _bcast_ip;
-    pk->_seq = htonl(++_seq);
+    pk->set_seq(++_seq);
     pk->set_num_links(hops);
     pk->set_link_node(0,_ip);
     pk->set_next(0);

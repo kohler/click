@@ -207,13 +207,13 @@ TXFeedbackStats::read_params(Element *xf, void *n)
 {
   TXFeedbackStats *f = (TXFeedbackStats *) xf;
   switch ((int) n) {
-  case 0: return String(f->_tau) + "\n"; break;
-  case 1: return String(f->_min_pkts) + "\n"; break;
-  case 2: return f->print_stats(); break;
+  case 0: return String(f->_tau) + "\n";
+  case 1: return String(f->_min_pkts) + "\n";
+  case 2: return f->print_stats();
   default:
-    assert(0);
-  }
   return "<unknown parameter>";
+  }
+
 }
 
 void

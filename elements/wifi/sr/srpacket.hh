@@ -90,6 +90,9 @@ struct srpacket {,
   void set_random_seq(uint32_t s) {
     _random_seq = s;
   }
+  void set_random_age(uint32_t s) {
+    _random_age = s;
+  }
 
   IPAddress get_random_from() {
     return _random_from;
@@ -106,6 +109,10 @@ struct srpacket {,
 
   uint32_t get_random_seq() {
     return _random_seq;
+  }
+
+  uint32_t get_random_age() {
+    return _random_age;
   }
 
 
@@ -142,6 +149,13 @@ struct srpacket {,
     ndx += link * 5;
     return ndx[3];
   }
+
+  uint32_t get_link_age(int link) {
+    uint32_t *ndx = (uint32_t *) (this+1);
+    ndx += link * 5;
+    return ndx[4];
+  }
+
   IPAddress get_link_node(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
     ndx += link * 5;

@@ -607,7 +607,7 @@ int
 FlashFlood::get_link_prob(IPAddress from, IPAddress to) 
 {
 
-  int metric = _link_table->get_hop_metric(from, to);
+  int metric = _link_table->get_link_metric(from, to);
   if (!metric) {
     return 0;
   }

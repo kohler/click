@@ -28,8 +28,7 @@ CLICK_DECLS
 ETTMetric::ETTMetric()
   : LinkMetric(), 
     _ett_stat(0),
-    _link_table(0),
-    _ip()
+    _link_table(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -56,15 +55,12 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
 			"ETT",cpElement, "ETTStat element", &_ett_stat,
-			"IP", cpIPAddress, "IP address", &_ip,
 			"LT", cpElement, "LinkTable element", &_link_table, 
 			cpEnd);
   if (res < 0)
     return res;
   if (_ett_stat == 0) 
     return errh->error("no ETTStat element specified");
-  if (!_ip) 
-    return errh->error("no IP specififed\n");
   if (_link_table == 0) {
     click_chatter("%{element}: no LTelement specified",
 		  this);
@@ -77,41 +73,21 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-void
-ETTMetric::take_state(Element *e, ErrorHandler *)
-{
-  ETTMetric *q = (ETTMetric *)e->cast("ETTMetric");
-  if (!q) return;
-  _links = q->_links;
-}
-
 Vector<IPAddress>
 ETTMetric::get_neighbors() {
   return _ett_stat->get_neighbors();
 }
 int 
-ETTMetric::get_tx_rate(EtherAddress eth) 
+ETTMetric::get_tx_rate(EtherAddress) 
 {
-  if (_ett_stat) {
-    IPAddress ip = _ett_stat->reverse_arp(eth);
-    if (ip) {
-      //_ett_stat->update_links(ip);
-      struct timeval now;
-      click_gettimeofday(&now);
-      IPOrderedPair p = IPOrderedPair(_ip, ip);
-      LinkInfo *nfo = _links.findp(p);
-      if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
-	return p.first(ip) ? nfo->_fwd_rate : nfo->_rev_rate;
-      }
-    }
-  }
+
   return 2;
 }
 
 void
 ETTMetric::update_link(IPAddress from, IPAddress to, 
 		       unsigned fwd, unsigned rev,
-		       int fwd_rate, int rev_rate,
+		       int , int,
 		       uint32_t seq)
 {
 
@@ -122,56 +98,20 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
 		  to.s().cc());
     return;
   }
-  IPOrderedPair p = IPOrderedPair(from, to);
-
-  if (!p.first(from)) {
-    return update_link(to, from, 
-		       fwd, rev,
-		       fwd_rate, rev_rate,seq);
-  }
-  LinkInfo *nfo = _links.findp(p);
-  if (!nfo) {
-    _links.insert(p, LinkInfo(p));
-    nfo = _links.findp(p);
-    nfo->_fwd = 0;
-    nfo->_rev = 0;
-    nfo->_seq = 0;
-  }
 
   if (!fwd && !rev) {
     return;
   }
 
-  if (nfo->_seq > seq) {
-    click_chatter("%{element}::%s old seq %d vs %d %s -> %s\n",
-		  this,
-		  __func__,
-		  seq,
-		  nfo->_seq,
-		  from.s().cc(),
-		  to.s().cc());
-		  
-    return;
-  }
-  struct timeval now;
-  click_gettimeofday(&now);
-  
-  nfo->_last = now;
-  nfo->_fwd = fwd;
-  nfo->_rev = rev;
-  nfo->_fwd_rate = fwd_rate;
-  nfo->_rev_rate = rev_rate;
-  nfo->_seq = seq;
-
   /* update linktable */
-  if (nfo->_fwd && _link_table && !_link_table->update_link(from, to, seq, fwd)) {
+  if (fwd && _link_table && !_link_table->update_link(from, to, seq, 0,fwd)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
 		  fwd,
 		  to.s().cc());
   }
-  if (nfo->_rev && _link_table && !_link_table->update_link(to, from, seq, rev)){
+  if (rev && _link_table && !_link_table->update_link(to, from, seq, 0, rev)){
     click_chatter("%{element} couldn't update link %s < %d < %s\n",
 		  this,
 		  from.s().cc(),
@@ -180,73 +120,13 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   }
 }
 
-uint32_t 
-ETTMetric::get_fwd_metric(IPAddress ip)
-{
-  struct timeval now;
-  click_gettimeofday(&now);
-  IPOrderedPair p = IPOrderedPair(_ip, ip);
-  LinkInfo *nfo = _links.findp(p);
-  if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
-    return  p.first(_ip) ? nfo->_fwd : nfo->_rev;
-  }
-  return 777777;
-}
-
-uint32_t 
-ETTMetric::get_rev_metric(IPAddress ip)
-{
-  struct timeval now;
-  click_gettimeofday(&now);
-  IPOrderedPair p = IPOrderedPair(_ip, ip);
-  LinkInfo *nfo = _links.findp(p);
-    if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
-      return  p.first(_ip) ? nfo->_rev : nfo->_fwd;
-  }
-  return 777777;
-}
-
-uint32_t 
-ETTMetric::get_seq(IPAddress ip) {
-  struct timeval now;
-  click_gettimeofday(&now);
-  IPOrderedPair p = IPOrderedPair(_ip, ip);
-  LinkInfo *nfo = _links.findp(p);
-    if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
-      return nfo->_seq;
-  }
-  return 0;
-}
-String
-ETTMetric::read_stats(Element *xf, void *)
-{
-  ETTMetric *e = (ETTMetric *) xf;
-  StringAccum sa;
-  struct timeval now;
-  click_gettimeofday(&now);
-  for(LTable::const_iterator i = e->_links.begin(); i; i++) {
-    LinkInfo nfo = i.value();
-    sa << nfo._p._a << " " << nfo._p._b;
-    sa << " fwd " << nfo._fwd;
-    sa << " fwd_rate " << nfo._fwd_rate;
-    sa << " rev " << nfo._rev;
-    sa << " rev_rate " << nfo._rev_rate;
-    sa << " last " << now - nfo._last;
-    sa << "\n";
-  }
-  return sa.take_string();
-}
 void
 ETTMetric::add_handlers()
 {
   add_default_handlers(true);
-  add_read_handler("stats", read_stats, 0);
 }
 
 
 ELEMENT_PROVIDES(GridGenericMetric)
 EXPORT_ELEMENT(ETTMetric)
-#include <click/hashmap.cc>
-#include <click/bighashmap.cc>
-template class HashMap<IPOrderedPair, ETTMetric::LinkInfo>;
 CLICK_ENDDECLS

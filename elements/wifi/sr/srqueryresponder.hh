@@ -48,17 +48,13 @@ class SRQueryResponder : public Element {
 
   void push(int, Packet *);
 
-  int get_fwd_metric(IPAddress other);
-  int get_rev_metric(IPAddress other);
   bool update_link(IPAddress from, IPAddress to, uint32_t seq, int metric);
 
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   uint32_t _et;     // This protocol's ethertype
 
-  class SRForwarder *_sr_forwarder;
   class LinkTable *_link_table;
-  class LinkMetric *_metric;
   class ARPTable *_arp_table;
 
   bool _debug;

@@ -85,6 +85,8 @@ SRQuerier::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("ETH not specified");
   if (!_link_table) 
     return errh->error("LT not specified");
+  if (!_sr_forwarder) 
+    return errh->error("SR not specified");
 
 
   if (_sr_forwarder->cast("SRForwarder") == 0) 
@@ -142,7 +144,7 @@ SRQuerier::start_query(IPAddress dstip)
   pk->_type = PT_QUERY;
   pk->_flags = 0;
   pk->_qdst = dstip;
-  pk->_seq = htonl(++_seq);
+  pk->set_seq(++_seq);
   pk->set_num_links(0);
   pk->set_link_node(0,_ip);
   output(1).push(p);
@@ -163,7 +165,7 @@ SRQuerier::push(int, Packet *p_in)
     return;
   }
   sr_assert(dst);
-  Path best = _link_table->best_route(dst);
+  Path best = _link_table->best_route(dst, true);
   bool best_valid = _link_table->valid_route(best);
   int best_metric = _link_table->get_route_metric(best);
   
@@ -214,7 +216,7 @@ SRQuerier::push(int, Packet *p_in)
     sent_packet = true;
   } else {
     /* no valid route, don't send. */
-    click_chatter("%{element}::%s no valid route to %s\n",
+    click_chatter("%{element} :: %s no valid route to %s\n",
 		  this,
 		  __func__,
 		  dst.s().cc());
@@ -287,7 +289,7 @@ SRQuerier_read_param(Element *e, void *thunk)
 	  sa << " [ ";
 	  sa << path_to_string(dst._p);
 	  sa << " ]";
-	  Path best = td->_link_table->best_route(dst._ip);
+	  Path best = td->_link_table->best_route(dst._ip, true);
 	  int best_metric = td->_link_table->get_route_metric(best);
 	  sa << " best_metric " << best_metric;
 	  sa << " best_route [ ";

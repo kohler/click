@@ -23,7 +23,6 @@
 #include <click/ipaddress.hh>
 #include <clicknet/ether.h>
 #include "srpacket.hh"
-#include "linkmetric.hh"
 #include "gatewayselector.hh"
 
 CLICK_DECLS
@@ -34,7 +33,6 @@ GatewaySelector::GatewaySelector()
      _en(),
      _et(0),
      _link_table(0),
-     _metric(0),
      _arp_table(0),
      _timer(this)
 {
@@ -73,7 +71,6 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
 		    /* not required */
 		    "PERIOD", cpUnsigned, "Ad broadcast period (secs)", &_period,
 		    "GW", cpBool, "Gateway", &_is_gw,
-		    "LM", cpElement, "LinkMetric element", &_metric,
                     cpEnd);
 
   if (!_et) 
@@ -84,17 +81,12 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("ETH not specified");
   if (!_link_table) 
     return errh->error("LT not specified");
-  if (!_arp_table) 
-    return errh->error("ARPTable not specified");
 
 
   if (_link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
-  if (_arp_table->cast("ARPTable") == 0) 
+  if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
-
-  if (_metric && _metric->cast("LinkMetric") == 0) 
-    return errh->error("LinkMetric element is not a LinkMetric");
 
   _gw_expire.tv_usec = 0;
   _gw_expire.tv_sec = _period*4;
@@ -171,7 +163,7 @@ GatewaySelector::send(WritablePacket *p)
 bool
 GatewaySelector::update_link(IPAddress from, IPAddress to, uint32_t seq, 
 			     uint32_t metric) {
-  if (_link_table && !_link_table->update_link(from, to, seq, metric)) {
+  if (_link_table && !_link_table->update_link(from, to, seq, 0, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
@@ -229,10 +221,10 @@ GatewaySelector::forward_ad(Seen *s)
   IPAddress neighbor = s->_hops[links-1];
   pk->set_link(links-1,
 	       neighbor, _ip,
-	       (_metric) ? _metric->get_fwd_metric(neighbor) : 0,
-	       (_metric) ? _metric->get_rev_metric(neighbor) : 0,
-	       (_metric) ? _metric->get_seq(neighbor) : 0,
-	       0);
+	       (_link_table) ? _link_table->get_link_metric(neighbor, _ip) : 0,
+	       (_link_table) ? _link_table->get_link_metric(_ip, neighbor) : 0,
+	       (_link_table) ? _link_table->get_link_seq(_ip, neighbor) : 0,
+	       (_link_table) ? _link_table->get_link_age(_ip, neighbor) : 0);
   s->_forwarded = true;
   send(p);
 }
@@ -246,13 +238,13 @@ GatewaySelector::best_gateway()
   struct timeval expire;
   struct timeval now;
   
-  _link_table->dijkstra();
+  _link_table->dijkstra(false);
   click_gettimeofday(&now);
   
   for(GWIter iter = _gateways.begin(); iter; iter++) {
     GWInfo nfo = iter.value();
     timeradd(&nfo._last_update, &_gw_expire, &expire);
-    Path p = _link_table->best_route(nfo._ip);
+    Path p = _link_table->best_route(nfo._ip, false);
     int metric = _link_table->get_route_metric(p);
     if (timercmp(&now, &expire, <) && 
 	metric && 
@@ -349,33 +341,34 @@ GatewaySelector::push(int port, Packet *p_in)
     rev_metric += rev_m;
 
 
-    if (a != _ip && b != _ip) {
-      /* don't update my immediate neighbor. see below */
-      if (fwd_m && !update_link(a,b,seq,fwd_m)) {
-	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
-		      this,
-		      a.s().cc(),
-		      fwd_m,
-		      b.s().cc());
-      }
-      if (rev_m && !update_link(b,a,seq,rev_m)) {
-	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
-		      this,
-		      b.s().cc(),
-		      rev_m,
-		      a.s().cc());
-      }
+    /* don't update my immediate neighbor. see below */
+    if (fwd_m && !update_link(a,b,seq,fwd_m)) {
+      click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
+		    this,
+		    a.s().cc(),
+		    fwd_m,
+		    b.s().cc());
     }
-    
+    if (rev_m && !update_link(b,a,seq,rev_m)) {
+      click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
+		    this,
+		    b.s().cc(),
+		    rev_m,
+		    a.s().cc());
+    }
+
+  
   }
 
   IPAddress neighbor = pk->get_link_node(pk->num_links());
   hops.push_back(neighbor);
-  _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
+  if (_arp_table) {
+    _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
+  }
   
   /* also get the metric from the neighbor */
-  int fwd_m =  (_metric) ? _metric->get_fwd_metric(neighbor) : 0;
-  int rev_m =  (_metric) ? _metric->get_rev_metric(neighbor) : 0;
+  int fwd_m =  (_link_table) ? _link_table->get_link_metric(neighbor, _ip) : 0;
+  int rev_m =  (_link_table) ? _link_table->get_link_metric(_ip, neighbor) : 0;
   fwd_metric += fwd_m;
   rev_metric += rev_m;
 
@@ -391,7 +384,7 @@ GatewaySelector::push(int port, Packet *p_in)
   
 
   int si = 0;
-  u_long seq = ntohl(pk->_seq);
+  uint32_t seq = pk->seq();
   for(si = 0; si < _seen.size(); si++){
     if(gw == _seen[si]._gw && seq == _seen[si]._seq){
       break;
@@ -458,7 +451,7 @@ GatewaySelector::print_gateway_stats()
       sa << nfo._ip.s().cc() << " ";
       sa << now - nfo._last_update << " ";
       
-      Path p = _link_table->best_route(nfo._ip);
+      Path p = _link_table->best_route(nfo._ip, false);
       int metric = _link_table->get_route_metric(p);
       sa << metric << "\n";
     }

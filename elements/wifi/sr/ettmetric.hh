@@ -3,7 +3,6 @@
 #include <click/element.hh>
 #include "linkmetric.hh"
 #include <click/hashmap.hh>
-#include <elements/wifi/linktable.hh>
 #include <click/etheraddress.hh>
 #include <clicknet/wifi.h>
 CLICK_DECLS
@@ -82,16 +81,11 @@ public:
   const char *processing() const { return AGNOSTIC; }
 
   int configure(Vector<String> &, ErrorHandler *);
-  bool can_live_reconfigure() const { return false; }
-  void take_state(Element *, ErrorHandler *);
   void add_handlers();
 
   void *cast(const char *);
 
   static String read_stats(Element *xf, void *);
-  uint32_t get_fwd_metric(IPAddress ip);
-  uint32_t get_rev_metric(IPAddress ip);
-  uint32_t get_seq(IPAddress ip);
 
   Vector <IPAddress> get_neighbors();
   void update_link(IPAddress from, IPAddress to, 
@@ -100,27 +94,10 @@ public:
 		   uint32_t seq);
 
   int get_tx_rate(EtherAddress);
-  class LinkInfo {
-  public:
-    IPOrderedPair _p;
-    unsigned _fwd;
-    int _fwd_rate;
-    unsigned _rev;
-    int _rev_rate;
-    uint32_t _seq;
-    struct timeval _last;
-    LinkInfo() { }
-    LinkInfo(IPOrderedPair p) {
-      _p = p;
-    }
-  };
 
-  typedef HashMap<IPOrderedPair, LinkInfo> LTable;
-  class LTable _links;
 private:
-  ETTStat *_ett_stat;
-  LinkTable *_link_table;
-  IPAddress _ip;
+  class ETTStat *_ett_stat;
+  class LinkTable *_link_table;
 
 };
 

@@ -66,7 +66,7 @@ public:
   void take_state(Element *, ErrorHandler *);
   void *cast(const char *n);
   /* read/write handlers */
-  String print_routes();
+  String print_routes(bool);
   String print_links();
   String print_hosts();
 
@@ -77,27 +77,28 @@ public:
   String routes_to_string(Vector< Vector<IPAddress> > routes);
   /* other public functions */
   bool update_link(IPAddress from, IPAddress to, 
-		   uint32_t seq, uint32_t metric);
+		   uint32_t seq, uint32_t age, uint32_t metric);
   bool update_both_links(IPAddress a, IPAddress b, 
-			 uint32_t seq, uint32_t metric) {
-    if (update_link(a,b,seq,metric)) {
-      return update_link(b,a,seq,metric);
+			 uint32_t seq, uint32_t age, uint32_t metric) {
+    if (update_link(a,b,seq,age, metric)) {
+      return update_link(b,a,seq,age, metric);
     }
     return false;
   }
 
-  unsigned get_hop_metric(IPAddress from, IPAddress to);
-  Vector< Vector<IPAddress> >  update_routes(Vector<Vector<IPAddress> > routes, 
-					     int n, Vector<IPAddress> route);
+  uint32_t get_link_metric(IPAddress from, IPAddress to);
+  uint32_t get_link_seq(IPAddress from, IPAddress to);
+  uint32_t get_link_age(IPAddress from, IPAddress to);
   bool valid_route(Vector<IPAddress> route);
   unsigned get_route_metric(Vector<IPAddress> route);
   Vector<IPAddress> get_neighbors(IPAddress ip);
-  void dijkstra();
+  void dijkstra(bool);
   void clear_stale();
-  Vector<IPAddress> best_route(IPAddress dst);
+  Vector<IPAddress> best_route(IPAddress dst, bool from_me);
 
   Vector< Vector<IPAddress> > top_n_routes(IPAddress dst, int n);
-  unsigned get_host_metric(IPAddress s);
+  uint32_t get_host_metric_to_me(IPAddress s);
+  uint32_t get_host_metric_from_me(IPAddress s);
   Vector<IPAddress> get_hosts();
 
   class Link {
@@ -123,7 +124,7 @@ public:
   
   class IPTable _blacklist;
   
-
+  struct timeval dijkstra_time;
 private: 
   class LinkInfo {
   public:
@@ -155,11 +156,17 @@ private:
     LinkInfo(const LinkInfo &p) : 
       _from(p._from), _to(p._to), 
       _metric(p._metric), _seq(p._seq), 
+      _age(p._age),
       _last_updated(p._last_updated) 
     { }
 
+    uint32_t age() {
+      struct timeval now;
+      click_gettimeofday(&now);
+      return _age + (now.tv_sec - _last_updated.tv_sec);
+    }
     void update(uint32_t seq, uint32_t age, unsigned metric) {
-      if (seq < _seq) {
+      if (seq <= _seq) {
 	return;
       }
       _metric = metric; 
@@ -173,14 +180,23 @@ private:
   class HostInfo {
   public:
     IPAddress _ip;
-    unsigned _metric;
-    IPAddress _prev;
-    bool _marked;
+    uint32_t _metric_from_me;
+    uint32_t _metric_to_me;
+    
+    IPAddress _prev_from_me;
+    IPAddress _prev_to_me;
+
+    bool _marked_from_me;
+    bool _marked_to_me;
+
     HostInfo(IPAddress p) { 
       _ip = p; 
-      _prev = IPAddress(); 
-      _metric = 0; 
-      _marked = false; 
+      _metric_from_me = 0; 
+      _metric_to_me = 0; 
+      _prev_from_me = IPAddress(); 
+      _prev_to_me = IPAddress(); 
+      _marked_from_me = false; 
+      _marked_to_me = false; 
     }
     HostInfo() { 
       HostInfo(IPAddress());
@@ -188,15 +204,24 @@ private:
 
     HostInfo(const HostInfo &p) : 
       _ip(p._ip), 
-      _metric(p._metric), 
-      _prev(p._prev), 
-      _marked(p._marked) 
+      _metric_from_me(p._metric_from_me), 
+      _metric_to_me(p._metric_to_me), 
+      _prev_from_me(p._prev_from_me), 
+      _prev_to_me(p._prev_to_me), 
+      _marked_from_me(p._marked_from_me), 
+      _marked_to_me(p._marked_to_me)
     { }
     
-    void clear() { 
-      _prev = IPAddress(); 
-      _metric = 0; 
-      _marked = false;
+    void clear(bool from_me) { 
+      if (from_me ) {
+	_prev_from_me = IPAddress(); 
+	_metric_from_me = 0; 
+	_marked_from_me = false;
+      } else {
+	_prev_to_me = IPAddress(); 
+	_metric_to_me = 0; 
+	_marked_to_me = false;
+      }
     }
 
   };

@@ -70,7 +70,6 @@ AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 AutoRateFallback::process_feedback(Packet *p_in)
 {
-  assert(p_in);
   if (!p_in) {
     return;
   }
@@ -152,8 +151,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
 
 void
 AutoRateFallback::assign_rate(Packet *p_in)
-  {
-    assert(p_in);
+{
   if (!p_in) {
     click_chatter("%{element} ah, !p_in\n",
 		  this);

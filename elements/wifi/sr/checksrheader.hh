@@ -1,6 +1,7 @@
 #ifndef CHECKSRHEADER_HH
 #define CHECKSRHEADER_HH
 #include <click/element.hh>
+#include <click/hashmap.hh>
 #include <click/glue.hh>
 CLICK_DECLS
 
@@ -20,8 +21,12 @@ CLICK_DECLS
 
 class CheckSRHeader : public Element {
 
-  int _drops;
+  typedef HashMap<EtherAddress, uint8_t> BadTable;
+  typedef BadTable::const_iterator BTIter;
   
+  class BadTable _bad_table;
+  int _drops;
+
  public:
   
   CheckSRHeader();
@@ -33,11 +38,13 @@ class CheckSRHeader : public Element {
   void notify_noutputs(int);
 
   int drops() const				{ return _drops; }
-  
-  void add_handlers();
+
 
   Packet *simple_action(Packet *);
   void drop_it(Packet *);
+
+  String bad_nodes();
+  void add_handlers();
 
 };
 

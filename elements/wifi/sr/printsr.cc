@@ -132,10 +132,10 @@ PrintSR::simple_action(Packet *p)
   }
 
   if (pk->_type == PT_DATA) {
-    sa << " dlen=" << ntohs(pk->_dlen);
+    sa << " dlen=" << pk->data_len();
   }
 
-  sa << " seq " << pk->_seq;
+  sa << " seq " << pk->seq();
   sa << " nhops " << pk->num_links();
   sa << " next " << pk->next();
 
@@ -151,7 +151,8 @@ PrintSR::simple_action(Packet *p)
     int fwd = pk->get_link_fwd(i);
     int rev = pk->get_link_rev(i);
     int seq = pk->get_link_seq(i);
-    sa << "<" << fwd << "," << seq << "," << rev << ">";
+    int age = pk->get_link_age(i);
+    sa << "<" << fwd << " (" << seq << "," << age << ") " << rev << ">";
   }
   sa << " "<< pk->get_link_node(pk->num_links()).s().cc() << " ";
   sa << "]";

@@ -26,7 +26,6 @@
 #include <clicknet/ether.h>
 #include "srforwarder.hh"
 #include "srpacket.hh"
-#include "linkmetric.hh"
 #include "elements/wifi/arptable.hh"
 CLICK_DECLS
 
@@ -39,9 +38,7 @@ SRForwarder::SRForwarder()
      _datas(0), 
      _databytes(0),
      _link_table(0),
-     _arp_table(0),
-     _metric(0)
-
+     _arp_table(0)
 {
   MOD_INC_USE_COUNT;
 
@@ -66,7 +63,6 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "ETH", cpEtherAddress, "Ethernet Address", &_eth,
 		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    /* below not required */
-		    "LM", cpElement, "LinkMetric element", &_metric,
 		    "LT", cpElement, "LinkTable element", &_link_table,
                     cpEnd);
 
@@ -82,8 +78,6 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a ARPTable");
 
-  if (_metric && _metric->cast("LinkMetric") == 0) 
-    return errh->error("LinkMetric element is not a LinkMetric");
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
 
@@ -99,52 +93,11 @@ SRForwarder::initialize (ErrorHandler *)
   return 0;
 }
 
-int
-SRForwarder::get_fwd_metric(IPAddress other)
-{
-  int metric = 0;
-  sr_assert(other);
-  if (_metric) {
-    metric = _metric->get_fwd_metric(other);
-    if (metric && !update_link(_ip, other, 0, metric)) {
-      click_chatter("%{element} couldn't update fwd_metric %s > %d > %s\n",
-		    this,
-		    _ip.s().cc(),
-		    metric,
-		    other.s().cc());
-    }
-    return metric;
-  } else {
-    return 0;
-  }
-}
-
-
-int
-SRForwarder::get_rev_metric(IPAddress other)
-{
-  int metric = 0;
-  sr_assert(other);
-  if (_metric) {
-    metric = _metric->get_rev_metric(other);
-    if (metric && !update_link(other, _ip, 0, metric)) {
-      click_chatter("%{element} couldn't update rev_metric %s > %d > %s\n",
-		    this,
-		    other.s().cc(),
-		    metric,
-		    _ip.s().cc());
-    }
-    return metric;
-  } else {
-    return 0;
-  }
-}
-
 bool
 SRForwarder::update_link(IPAddress from, IPAddress to, 
-			 uint32_t seq, uint32_t metric) 
+			 uint32_t seq, uint32_t age, uint32_t metric) 
 {
-  if (_link_table && !_link_table->update_link(from, to, seq, metric)) {
+  if (_link_table && !_link_table->update_link(from, to, seq, age, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
@@ -198,7 +151,7 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
-  pk->_dlen = htons(payload_len);
+  pk->set_data_len(payload_len);
 
   pk->set_num_links(hops);
   pk->set_next(next);
@@ -284,18 +237,20 @@ SRForwarder::push(int port, Packet *p_in)
   /* update the metrics from the packet */
   IPAddress r_from = pk->get_random_from();
   IPAddress r_to = pk->get_random_to();
-  int r_fwd_metric = pk->get_random_fwd_metric();
-  int r_rev_metric = pk->get_random_rev_metric();
-  uint32_t seq = pk->get_random_seq();
+  uint32_t r_fwd_metric = pk->get_random_fwd_metric();
+  uint32_t r_rev_metric = pk->get_random_rev_metric();
+  uint32_t r_seq = pk->get_random_seq();
+  uint32_t r_age = pk->get_random_age();
+
   if (r_from && r_to) {
-    if (r_fwd_metric && !update_link(r_from, r_to, seq, r_fwd_metric)) {
+    if (r_fwd_metric && !update_link(r_from, r_to, r_seq, r_age, r_fwd_metric)) {
       click_chatter("%{element} couldn't update r_fwd %s > %d > %s\n",
 		    this,
 		    r_from.s().cc(),
 		    r_fwd_metric,
 		    r_to.s().cc());
     }
-    if (r_rev_metric && !update_link(r_to, r_from, seq, r_rev_metric)) {
+    if (r_rev_metric && !update_link(r_to, r_from, r_seq, r_age, r_rev_metric)) {
       click_chatter("%{element} couldn't update r_rev %s > %d > %s\n",
 		    this,
 		    r_to.s().cc(),
@@ -307,24 +262,24 @@ SRForwarder::push(int port, Packet *p_in)
   for(int i = 0; i < pk->num_links(); i++) {
     IPAddress a = pk->get_link_node(i);
     IPAddress b = pk->get_link_node(i+1);
-    int fwd_m = pk->get_link_fwd(i);
-    int rev_m = pk->get_link_rev(i);
-    if (a != _ip && b != _ip) {
-      /* don't update my immediate neighbor. see below */
-      if (fwd_m && !update_link(a,b,0,fwd_m)) {
-	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
-		      this,
-		      a.s().cc(),
-		      fwd_m,
-		      b.s().cc());
-      }
-      if (rev_m && !update_link(b,a,0,rev_m)) {
-	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
-		      this,
-		      b.s().cc(),
-		      rev_m,
-		      a.s().cc());
-      }
+    uint32_t fwd_m = pk->get_link_fwd(i);
+    uint32_t rev_m = pk->get_link_rev(i);
+    uint32_t seq = pk->get_link_seq(i);
+    uint32_t age = pk->get_link_age(i);
+
+    if (fwd_m && !update_link(a,b,seq,age,fwd_m)) {
+      click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
+		    this,
+		    a.s().cc(),
+		    fwd_m,
+		    b.s().cc());
+    }
+    if (rev_m && !update_link(b,a,seq,age,rev_m)) {
+      click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
+		    this,
+		    b.s().cc(),
+		    rev_m,
+		    a.s().cc());
     }
   }
   
@@ -338,13 +293,11 @@ SRForwarder::push(int port, Packet *p_in)
     (pk->data());
   p->set_ip_header(ip, sizeof(click_ip));
   
-  /* 
-   * these functions also update the link
-   * table, so we don't need to call update_link
-   */
+  uint32_t prev_fwd_metric = (_link_table) ? _link_table->get_link_metric(prev, _ip) : 0;
+  uint32_t prev_rev_metric = (_link_table) ? _link_table->get_link_metric(_ip, prev) : 0;
 
-  uint32_t prev_fwd_metric = get_fwd_metric(prev);
-  uint32_t prev_rev_metric = get_rev_metric(prev);
+  uint32_t seq = (_link_table) ? _link_table->get_link_seq(_ip, prev) : 0;
+  uint32_t age = (_link_table) ? _link_table->get_link_age(_ip, prev) : 0;
 
   if(pk->next() == pk->num_links()){
     // I'm the ultimate consumer of this data.
@@ -360,12 +313,10 @@ SRForwarder::push(int port, Packet *p_in)
   pk->set_link(pk->next()-1,
 	       pk->get_link_node(pk->next()-1), _ip,
 	       prev_fwd_metric, prev_rev_metric,
-	       0,0);
+	       seq,age);
 
   pk->set_next(pk->next() + 1);
   IPAddress nxt = pk->get_link_node(pk->next());
-  sr_assert(pk->next() < 8);
-
   
   EtherAddress eth_dest = _arp_table->lookup(nxt);
   if (eth_dest == _arp_table->_bcast) {

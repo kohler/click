@@ -48,9 +48,9 @@ class SRQueryForwarder : public Element {
 
   void push(int, Packet *);
 
-  int get_fwd_metric(IPAddress other);
-  int get_rev_metric(IPAddress other);
-  bool update_link(IPAddress from, IPAddress to, uint32_t seq, uint32_t metric);
+  bool update_link(IPAddress from, IPAddress to, 
+		   uint32_t seq, uint32_t age,		   
+		   uint32_t metric);
   void forward_query_hook();
   IPAddress get_random_neighbor();
 
@@ -61,18 +61,18 @@ class SRQueryForwarder : public Element {
     IPAddress _src;
     IPAddress _dst;
     u_long _seq;
-    int _fwd_metric;
-    int _rev_metric;
+
     int _count;
     struct timeval _when; /* when we saw the first query */
     struct timeval _to_send;
     bool _forwarded;
-    Vector<IPAddress> _hops;
-    Vector<int> _fwd_metrics;
-    Vector<int> _rev_metrics;
-    Vector<int> _seqs;
+
+
     Seen(IPAddress src, IPAddress dst, u_long seq, int fwd, int rev) {
-      _src = src; _dst = dst; _seq = seq; _count = 0; _rev_metric = rev; _fwd_metric = fwd;
+      _src = src; 
+      _dst = dst; 
+      _seq = seq; 
+      _count = 0;
     }
     Seen();
   };
@@ -95,9 +95,7 @@ class SRQueryForwarder : public Element {
 
   EtherAddress _bcast;
 
-  class SRForwarder *_sr_forwarder;
   class LinkTable *_link_table;
-  class LinkMetric *_metric;
   class ARPTable *_arp_table;
 
   bool _debug;

@@ -235,8 +235,6 @@ private:
   Vector <IPAddress> _neighbors;
   int _next_neighbor_to_ad;
 
-  static String read_stats(Element *, void *);
-  static String read_bcast_stats(Element *, void *);
 
   // handlers
   static String read_window(Element *, void *);
@@ -262,7 +260,16 @@ private:
 
 
   class AvailableRates *_rtable;
+
+
+    typedef HashMap<EtherAddress, uint8_t> BadTable;
+  typedef BadTable::const_iterator BTIter;
+  
+  class BadTable _bad_table;
+
  public:
+  String bad_nodes();
+  String read_bcast_stats();
 
 
   int get_etx(IPAddress);

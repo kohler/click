@@ -121,7 +121,6 @@ private:
   bool _is_gw;
 
   class LinkTable *_link_table;
-  class LinkMetric *_metric;
   class ARPTable *_arp_table;
   Timer _timer;
 

@@ -61,8 +61,6 @@ private:
 
   class LinkTable *_link_table;
   class ARPTable *_arp_table;
-  class SRCR *_srcr;
-  class LinkMetric *_metric;
   
   class PathInfo {
   public:
@@ -76,11 +74,8 @@ private:
   typedef HashMap<Path, PathInfo> PathTable;
   PathTable _paths;
   
-  int get_fwd_metric(IPAddress other);
-  int get_rev_metric(IPAddress other);
-
   bool update_link(IPAddress from, IPAddress to, 
-		   uint32_t seq, uint32_t metric);
+		   uint32_t seq, uint32_t age, uint32_t metric);
 };
 
 

@@ -84,10 +84,19 @@ CheckSRHeader::simple_action(Packet *p)
   }
 
   if (pk->_version != _sr_version) {
-     click_chatter ("%s: unknown sr version %x from %s", 
-		    id().cc(), 
-		    pk->_version,
-		    EtherAddress(eh->ether_shost).s().cc());
+    static bool version_warning = false;
+
+    _bad_table.insert(EtherAddress(eh->ether_shost), pk->_version);
+
+    if (!version_warning) {
+      version_warning = true;
+      click_chatter ("%s: unknown sr version %x from %s", 
+		     id().cc(), 
+		     pk->_version,
+		     EtherAddress(eh->ether_shost).s().cc());
+    }
+
+     
      goto bad;
   }
   
@@ -123,18 +132,51 @@ CheckSRHeader::simple_action(Packet *p)
   return 0;
 }
 
-static String
-CheckSRHeader_read_drops(Element *xf, void *)
-{
-  CheckSRHeader *f = (CheckSRHeader *)xf;
-  return String(f->drops()) + "\n";
+
+
+String 
+CheckSRHeader::bad_nodes() {
+
+  StringAccum sa;
+  for (BadTable::const_iterator i = _bad_table.begin(); i; i++) {
+    uint8_t version = i.value();
+    EtherAddress dst = i.key();
+    sa << this << " eth " << dst.s().cc() << " version " << (int) version << "\n";
+  }
+
+  return sa.take_string();
 }
+
+enum {
+  H_DROPS,
+  H_BAD_VERSION,
+};
+
+static String 
+CheckSRHeader_read_param(Element *e, void *thunk)
+{
+  CheckSRHeader *td = (CheckSRHeader *)e;
+    switch ((uintptr_t) thunk) {
+    case H_DROPS:   return String(td->drops()) + "\n";
+    case H_BAD_VERSION: return td->bad_nodes();
+    default:
+      return String() + "\n";
+    }
+}
+      
 
 void
 CheckSRHeader::add_handlers()
 {
-  add_read_handler("drops", CheckSRHeader_read_drops, 0);
+  add_read_handler("drops", CheckSRHeader_read_param, (void *) H_DROPS);
+  add_read_handler("bad_version", CheckSRHeader_read_param, (void *) H_BAD_VERSION);
 }
 
-CLICK_ENDDECLS
+#include <click/hashmap.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
+template class HashMap<EtherAddress, uint8_t>;
+#endif
+
 EXPORT_ELEMENT(CheckSRHeader)
+CLICK_ENDDECLS
+
