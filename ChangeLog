@@ -1,3 +1,10 @@
+2002-03-19 Tuesday 17:39  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: changeuid.cc (1.3), policyprobe.cc (1.2),
+	portclassifier.cc (1.2), portclassifier.hh (1.2),
+	ronroutemodular.cc (1.3), ronroutemodular.hh (1.2), policyprobe.hh
+	(1.1): compiling
+
 2002-03-17 Sunday 13:03  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: portclassifier.cc (1.1), portclassifier.hh (1.1),
