@@ -1,6 +1,6 @@
 /*
  * markip6header.{cc,hh} -- element sets IP6 Header annotation
- * Eddie Kohler
+ * Eddie Kohler, Peilei Fan
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
