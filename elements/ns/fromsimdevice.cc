@@ -31,7 +31,6 @@
  ****************************************************************************/
 
 #include <click/config.h>
-#include <click/package.hh>
 #include <sys/time.h>
 #include <unistd.h>
 #include <click/simclick.h>

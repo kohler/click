@@ -30,7 +30,6 @@
 
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "fromsimdevice.hh"
 #include "tosimdevice.hh"
 #include <click/error.hh>

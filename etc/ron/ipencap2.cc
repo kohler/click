@@ -18,11 +18,7 @@
  * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
  */
 
-#ifdef HAVE_CONFIG_H
 #include <click/config.h>
-#endif
-#include <click/config.h>
-#include <click/package.hh>
 #include "ipencap2.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>

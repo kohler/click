@@ -4,7 +4,6 @@
  */
 
 #include <click/config.h>
-#include <click/package.hh>
 #include "ip6print.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
