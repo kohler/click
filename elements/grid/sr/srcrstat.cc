@@ -27,6 +27,11 @@
 
 CLICK_DECLS
 
+
+#define MIN(x,y)      ((x)<(y) ? (x) : (y))
+#define MAX(x,y)      ((x)>(y) ? (x) : (y));
+
+
 SrcrStat::SrcrStat()
   : _window(100), 
     _tau(10000), 
@@ -321,7 +326,14 @@ SrcrStat::simple_action(Packet *p)
 int 
 SrcrStat::get_etx(int fwd, int rev) {
 
-  if (fwd && rev) {
+  fwd = MIN(fwd, 100);
+  rev = MIN(rev, 100);
+  
+  if (fwd > 0 && rev > 0) {
+    if (fwd >= 80 && rev >= 80) {
+      fwd += ((fwd/10)-7)*20;
+      rev += ((rev/10)-7)*20;
+    }  
     int val = (100 * 100 * 100) / (fwd * rev);
     return val;
   } 
