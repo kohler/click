@@ -54,9 +54,20 @@ private:
   int32_t _sportl, _sporth, _dportl, _dporth, _divertport, _rulenumber;
   String _device, _inout;
 
+#ifdef __linux__
+  struct ip_fw fw, fw2;
+  struct ip_fwuser ipfu, ipfu2;
+  struct ip_fwchange ipfc, ipfc2;
+
+
+  int fw_sock;
+#endif 
+
   int parse_ports(const String &param, ErrorHandler *errh, 
 		  int32_t *sportl, int32_t  *sporth);
   
+
+
   
 };
 

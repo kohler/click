@@ -202,6 +202,10 @@ DivertSocket::initialize(ErrorHandler *errh)
   char sport[32], dport[32], prot[8];
   struct sockaddr_in bindPort; //, sin;
 
+#ifdef __linux__
+  char *fw_policy="DIVERT";
+  char *fw_chain[32];
+#endif
 
   // Setup socket
   _fd = socket(AF_INET, SOCK_RAW, IPPROTO_DIVERT);
@@ -210,7 +214,7 @@ DivertSocket::initialize(ErrorHandler *errh)
     return -1;
   }
   bindPort.sin_family=AF_INET;
-  bindPort.sin_port=htons(2002);
+  bindPort.sin_port=htons(_divertport);
   bindPort.sin_addr.s_addr=0;
 
   ret=bind(_fd, (struct sockaddr *)&bindPort, sizeof(struct sockaddr_in));
@@ -225,6 +229,7 @@ DivertSocket::initialize(ErrorHandler *errh)
   
   
   // Setup firewall
+#if defined(__FreeBSD__)
   if (_protocol == 0) 
     sprintf(prot, "ip");
   else
@@ -260,6 +265,78 @@ DivertSocket::initialize(ErrorHandler *errh)
     errh->error("ipfw failed");
     return -1;
   }
+#elif defined(__linux__)
+  
+  /* fill in the rule first */
+  bzero(&fw, sizeof (struct ip_fw));
+  fw.fw_proto= _protocol;
+  fw.fw_redirpt=htons(bindPort.sin_port);
+
+  fw.fw_spts[0]=_sportl;
+  fw.fw_spts[1]=_sporth;
+  fw.fw_dpts[1]=_dportl;
+  fw.fw_dpts[1]=_dporth;
+
+  fw.fw_outputsize=0xffff;
+
+  fw.fw_src.s_addr = htonl(_saddr.in_addr());
+  fw.fw_smsk.s_addr= htonl(_smask.in_addr());
+
+  fw.fw_dst.s_addr = htonl(_daddr.in_addr());
+  fw.fw_dmsk.s_addr= htonl(_dmask.in_addr());
+  strcpy(fw.fw_vianame, _device.cc() );
+
+  /* fill in the fwuser structure */
+  ipfu.ipfw=fw;
+  memcpy(ipfu.label, fw_policy, strlen(fw_policy));
+
+
+  /* open a socket */
+  if ((fw_sock=socket(AF_INET, SOCK_RAW, IPPROTO_RAW))==-1) {
+    fprintf(stderr, "%s: could not create a raw socket: %s\n", argv[0], strerror(errno));
+    exit(2);
+  }
+
+  /* fill in the fwchange structure */
+  ipfc.fwc_rule=ipfu;
+  if (_inout == "in") {
+    strcpy(fw_chain, "input");
+    memcpy(ipfc.fwc_label, fw_chain, strlen(fw_chain));
+
+  } else if (_inout == "out") {
+    strcpy(fw_chain, "output");
+    memcpy(ipfc.fwc_label, fw_chain, strlen(fw_chain));
+
+  } else {
+    memcpy(&ipfc2, &ipfc, sizeof(ipfc));
+    strcpy(fw_chain, "input");
+    memcpy(ipfc.fwc_label, fw_chain, strlen(fw_chain));
+    strcpy(fw_chain, "output");
+    memcpy(ipfc2.fwc_label, fw_chain, strlen(fw_chain));
+
+    /* write a rule into it */
+    if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_APPEND, &ipfc2, sizeof(ipfc2))==-1) {
+      errh->error("could not set output rule");
+      exit(2);
+    }
+  }
+
+  /* write a rule into it */
+  if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_APPEND, &ipfc, sizeof(ipfc))==-1) {
+    errh->error("could not set input rule");
+    exit(2);
+  }
+       
+  /* install signal handler to delete the rule */
+  //signal(SIGINT, intHandler);
+
+#else 
+  close(_fd);
+  errh->error("This platform is not yet supported by DivertSocket");
+  return -1;
+  
+
+#endif
 
   printf("Device  : \t%s\n", _device.cc());
   printf("DIV port: \t%u\n", _divertport);
@@ -279,11 +356,30 @@ DivertSocket::initialize(ErrorHandler *errh)
 void 
 DivertSocket::uninitialize()
 {
-  char tmp[64];
 
   if (_fd >= 0) {
+
+#if defined(__FreeBSD__)
+    char tmp[64];
     sprintf(tmp, "/sbin/ipfw delete %u", _rulenumber);
     system(tmp);
+
+#elif defined(__linux__) 
+    if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE, &ipfc, sizeof(ipfc))==-1) {
+      fprintf(stderr, "could not remove firewall rule");
+    }
+
+    if (_inout == "") {
+      if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE, &ipfc2, sizeof(ipfc))==-1) {
+	fprintf(stderr, "could not remove output firewall rule");
+      }
+    }
+    close(fw_sock);
+  
+#else
+  
+#endif
+  
     close (_fd);
     remove_select(_fd, SELECT_READ);
     _fd = -1;
