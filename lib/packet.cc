@@ -50,7 +50,7 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
   p->set_mac_broadcast_anno(0);
   p->set_fix_ip_src_anno(0);
   p->set_color_anno(0);
-  p->set_siblings_anno(0);
+  p->set_rate_anno(0);
   p->set_cycle_anno(0,0);
   p->set_cycle_anno(1,0);
   p->set_cycle_anno(2,0);

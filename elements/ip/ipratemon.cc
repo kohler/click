@@ -108,7 +108,7 @@ IPRateMonitor::simple_action(Packet *p)
 
   // Measuring # of packets or # of bytes?
   int val = (_pb == COUNT_PACKETS) ? 1 : ip->ip_len;
-  update(a, val);
+  update(a, val, p);
 
   return p;
 }

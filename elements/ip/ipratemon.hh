@@ -122,7 +122,7 @@ private:
   long unsigned int _resettime;       // time of last reset
 
   void set_resettime();
-  void update(IPAddress a, int val);
+  void update(IPAddress a, int val, Packet *p);
 
   String print(_stats *s, String ip = "");
   void clean(_stats *s);
@@ -144,7 +144,7 @@ private:
 // Dives in tables based on a and raises all rates by val.
 //
 inline void
-IPRateMonitor::update(IPAddress a, int val)
+IPRateMonitor::update(IPAddress a, int val, Packet *p)
 {
   unsigned int saddr = a.saddr();
 
@@ -176,8 +176,12 @@ IPRateMonitor::update(IPAddress a, int val)
   c->rate.update(val);
   c->last_update = c->rate.now();
 
+  // write annotation
+  int r = (c->rate.average()*CLICK_HZ) >> c->rate.scale();
+  p->set_rate_anno(r);
+
   // did value get larger than THRESH in the specified period?
-  if(((c->rate.average()*CLICK_HZ) >> c->rate.scale()) >= _thresh) {
+  if(r >= _thresh) {
     if(bitshift < MAX_SHIFT) {
       c->flags |= SPLIT;
       struct _stats *tmp = new struct _stats;

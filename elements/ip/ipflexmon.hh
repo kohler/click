@@ -30,10 +30,6 @@
  * packet length in bytes. In other words: IPFlexMonitor can be used to either count
  * number of packets or load going to/coming from IP addresses.
  *
- * Everytime a packet passes the IPFlexMonitor, the sibling annotation is set denoting
- * the number of packets from the same cluster that preceded this packet. The
- * Block element drops packets based on this sibling annotation.
- *
  * THRESH is a value denoting an amount of packets per second. If the value
  * associated with a cluster of IP addresses increases with more than THRESH per
  * second, it is split.
