@@ -117,8 +117,6 @@ YarvisMetric::add_handlers()
   add_default_handlers(true);
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_PROVIDES(GridGenericMetric)
 EXPORT_ELEMENT(YarvisMetric)
-
-CLICK_ENDDECLS

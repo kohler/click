@@ -546,8 +546,8 @@ IPRewriter::llrpc(unsigned command, void *data)
     return Element::llrpc(command, data);
 }
 
-ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
-EXPORT_ELEMENT(IPRewriter)
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
+EXPORT_ELEMENT(IPRewriter)

@@ -682,10 +682,8 @@ TrieIPLookup::check_lengths(const TrieNode& root) {
 }
 
 
-#include<click/hashmap.cc>
-#include<click/vector.cc>
-
+#include <click/hashmap.cc>
+#include <click/vector.cc>
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRouteTable)
 EXPORT_ELEMENT(TrieIPLookup)
-
-CLICK_ENDDECLS

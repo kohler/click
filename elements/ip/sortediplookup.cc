@@ -171,8 +171,7 @@ SortedIPLookup::push(int, Packet *p)
     output(e.output).push(p);
 }
 
-ELEMENT_REQUIRES(LinearIPLookup)
-EXPORT_ELEMENT(SortedIPLookup)
-
 #include <click/vector.cc>
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(LinearIPLookup)
+EXPORT_ELEMENT(SortedIPLookup)

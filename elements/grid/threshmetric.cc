@@ -125,7 +125,6 @@ ThresholdMetric::add_handlers()
 }
 
 
+CLICK_ENDDECLS
 ELEMENT_PROVIDES(GridGenericMetric)
 EXPORT_ELEMENT(ThresholdMetric)
-
-CLICK_ENDDECLS

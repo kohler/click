@@ -514,8 +514,8 @@ TCPRewriter::TCPMapping::change_udp_csum_delta(unsigned old_word, unsigned new_w
 }
 #endif
 
-ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
-EXPORT_ELEMENT(TCPRewriter)
 #include <click/bighashmap.cc>
 #include <click/vector.cc>
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
+EXPORT_ELEMENT(TCPRewriter)
