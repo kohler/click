@@ -160,6 +160,12 @@ ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   } else
     return errh->error("unknown socket type `%s'", socktype.cc());
   
+  return 0;
+}
+
+int
+ControlSocket::initialize(ErrorHandler *errh)
+{
   // start listening
   if (listen(_socket_fd, 2) < 0) {
     uninitialize();
@@ -169,12 +175,6 @@ ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   // nonblocking I/O on the socket
   fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
 
-  return 0;
-}
-
-int
-ControlSocket::initialize(ErrorHandler *)
-{
   add_select(_socket_fd, SELECT_READ | SELECT_WRITE);
   return 0;
 }
@@ -348,10 +348,6 @@ ControlSocket::selected(int fd)
       return;
     }
 
-#if 0
-    { unsigned x = sa.sin_addr.s_addr;  click_chatter("%s: %d.%d.%d.%d:%d -> %d", declaration().cc(), (int)(x>>24)&255, (int)(x>>16)&255, (int)(x>>8)&255, x&255, sa.sin_port, new_fd);}
-#endif
-    
     fcntl(new_fd, F_SETFL, O_NONBLOCK);
     add_select(new_fd, SELECT_READ | SELECT_WRITE);
 

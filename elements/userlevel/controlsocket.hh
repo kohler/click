@@ -18,11 +18,11 @@ None
 
 =d
 
-Opens a control socket that allows other user-level programs to call read
-or write handlers on the router. Depending on its configuration string,
-ControlSocket will open a TCP connection that listens to port PORTNUMBER,
-or a UNIX-domain socket that listens on file FILENAME. Disallows write
-handlers if READONLY? is true; it is false by default.
+Opens a control socket that allows other user-level programs to call read or
+write handlers on the router. Depending on its configuration string,
+ControlSocket will listen on TCP port PORTNUMBER, or on a UNIX-domain socket
+named FILENAME. Disallows write handlers if READONLY? is true; it is false by
+default.
 
 The "server" (that is, the ControlSocket element) speaks a relatively
 simple line-based protocol. Commands sent to the server are single lines of
@@ -113,7 +113,9 @@ Only available in user-level processes.
 
 =e
 
-  ControlSocket(unix, /tmp/clicksocket); */
+  ControlSocket(unix, /tmp/clicksocket);
+
+=a ChatterSocket */
 
 class ControlSocket : public Element { public:
 
