@@ -45,22 +45,30 @@ ToLinux::clone() const
 void
 ToLinux::push(int port, Packet *p)
 {
-  struct sk_buff *skb1 = p->steal_skb();
-  if (!skb1) return;
+  struct sk_buff *skb = p->steal_skb();
+  if (!skb) return;
   
-  skb1->mac.raw = skb1->data;
-  skb1->protocol = skb1->mac.ethernet->h_proto;
+  skb->mac.raw = skb->data;
+  skb->protocol = skb->mac.ethernet->h_proto;
   /* skb->pkt_type = ???; */
+
+  // be nice to libpcap
+#ifndef CONFIG_CPU_IS_SLOW
+  if (skb->stamp.tv_sec==0)
+    get_fast_time(&skb->stamp);
+#else
+  skb->stamp = xtime;
+#endif
   
   /* skip past ether header */
-  skb_pull(skb1, 14);
+  skb_pull(skb, 14);
 #ifdef HAVE_CLICK_KERNEL
-  skb1->nh.raw = skb1->data;
+  skb->nh.raw = skb->data;
   start_bh_atomic();
 #if 0
   unsigned long c0 = click_get_cycles();
 #endif
-  ptype_dispatch(skb1, skb1->protocol);
+  ptype_dispatch(skb, skb->protocol);
 #if 0
   linux_cycles += click_get_cycles() - c0;
   linux_pkts ++;

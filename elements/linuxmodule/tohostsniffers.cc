@@ -65,6 +65,14 @@ ToLinuxSniffers::push(int port, Packet *p)
   if (_dev) skb->dev = _dev;
   /* skb->pkt_type = ???; */
   
+  // be nice to libpcap
+#ifndef CONFIG_CPU_IS_SLOW
+  if (skb->stamp.tv_sec==0)
+    get_fast_time(&skb->stamp);
+#else
+  skb->stamp = xtime;
+#endif
+  
   /* skip past ether header */
   skb_pull(skb, 14);
 #ifdef HAVE_CLICK_KERNEL
