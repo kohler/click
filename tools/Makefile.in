@@ -90,6 +90,8 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-install/Makefile.in \
 	click-install/click-install.cc \
 	click-install/click-uninstall.cc \
+	click-mkmindriver/Makefile.in \
+	click-mkmindriver/click-mkmindriver.cc \
 	click-undead/Makefile.in \
 	click-undead/click-undead.cc \
 	click-xform/Makefile.in \
