@@ -76,7 +76,13 @@ public:
   int get_rev_metric(IPAddress ip);
 
 
-  void update_link(IPAddress from, IPAddress to, int fwd, int rev);
+  void update_link(IPAddress from, IPAddress to, 
+		   int fwd_small, int rev_small,
+		   int fwd_1, int rev_1,
+		   int fwd_2, int rev_2,
+		   int fwd_5, int rev_5,
+		   int fwd_11, int rev_11
+		   ); 
 
   class LinkInfo {
   public:
@@ -92,7 +98,9 @@ public:
     void update(int fwd, int rev) {
       _fwd = fwd;
       _rev = rev;
+      click_gettimeofday(&_last);
     }
+
   };
 
   typedef HashMap<IPOrderedPair, LinkInfo> LTable;

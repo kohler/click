@@ -22,9 +22,14 @@
 #include <elements/grid/linktable.hh>
 CLICK_DECLS 
 
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
 ETTMetric::ETTMetric()
   : LinkMetric(), 
-    _ett_stat(0)
+    _ett_stat(0),
+    _link_table(0),
+    _ip()
 {
   MOD_INC_USE_COUNT;
 }
@@ -49,14 +54,19 @@ int
 ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-			cpElement, "ETTStat element", &_ett_stat,
 			cpKeywords,
+			"ETT",cpElement, "ETTStat element", &_ett_stat,
+			"IP", cpIPAddress, "IP address", &_ip,
 			"LT", cpElement, "LinkTable element", &_link_table, 
 			0);
   if (res < 0)
     return res;
   if (_ett_stat == 0) 
     errh->error("no ETTStat element specified");
+  if (!_ip) 
+    errh->error("no IP specififed\n");
+  if (_link_table == 0) 
+    errh->error("no LTelement specified\n");
   if (_ett_stat->cast("ETTStat") == 0)
     return errh->error("ETTStat argument is wrong element type (should be ETTStat)");
   if (_link_table && _link_table->cast("LinkTable") == 0) {
@@ -66,21 +76,41 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-ETTMetric::update_link(IPAddress from, IPAddress to, int fwd, int rev) 
+ETTMetric::update_link(IPAddress from, IPAddress to, 
+		       int fwd_small, int rev_small,
+		       int fwd_1, int rev_1,
+		       int fwd_2, int rev_2,
+		       int fwd_5, int rev_5,
+		       int fwd_11, int rev_11
+		       ) 
 {
   IPOrderedPair p = IPOrderedPair(from, to);
 
   if (!p.first(from)) {
-    /* switch */
-    IPAddress t = from;
-    from = to;
-    to = t;
-
-    int t2 = fwd;
-    fwd = rev;
-    rev = t2;
+    return update_link(to, from, 
+		       rev_small, fwd_small,
+		       rev_1, fwd_1,
+		       rev_2, fwd_2,
+		       rev_5, fwd_5, 
+		       rev_11, fwd_11);
   }
 
+
+  int fwd = max(max(max(fwd_1,fwd_2*2), fwd_5*3), fwd_11*5) * rev_small;
+
+  if (fwd == 0) {
+    fwd = 7777;
+  } else {
+    fwd = (100*100*100)/fwd;
+  }
+
+  int rev = max(max(max(fwd_1,fwd_2*2), fwd_5*3), fwd_11*5) * rev_small;
+  if (rev == 0) {
+    rev = 7777;
+  } else {
+    rev = (100*100*100)/rev;
+  }
+  
   LinkInfo *nfo = _links.findp(p);
   if (!nfo) {
     _links.insert(p, LinkInfo(p));
@@ -97,8 +127,8 @@ ETTMetric::update_link(IPAddress from, IPAddress to, int fwd, int rev)
   
   nfo->_fwd = fwd;
   nfo->_rev = rev;
-
-
+  nfo->_last = now;
+  
   if (now.tv_sec - nfo->_last.tv_sec < 30) {
     /* update linktable */
     int fwd = nfo->_fwd;
@@ -122,9 +152,15 @@ ETTMetric::update_link(IPAddress from, IPAddress to, int fwd, int rev)
 int 
 ETTMetric::get_fwd_metric(IPAddress ip)
 {
+  if (_ett_stat) {
+    _ett_stat->update_links(ip);
+  }
+
+  struct timeval now;
+  click_gettimeofday(&now);
   IPOrderedPair p = IPOrderedPair(_ip, ip);
   LinkInfo *nfo = _links.findp(p);
-  if (nfo) {
+  if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
     return nfo->_fwd;
   }
   return 7777;
@@ -133,9 +169,14 @@ ETTMetric::get_fwd_metric(IPAddress ip)
 int 
 ETTMetric::get_rev_metric(IPAddress ip)
 {
+  if (_ett_stat) {
+    _ett_stat->update_links(ip);
+  }
+  struct timeval now;
+  click_gettimeofday(&now);
   IPOrderedPair p = IPOrderedPair(_ip, ip);
   LinkInfo *nfo = _links.findp(p);
-  if (nfo) {
+    if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
     return nfo->_rev;
   }
   return 7777;
