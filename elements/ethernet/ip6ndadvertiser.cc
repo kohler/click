@@ -28,10 +28,9 @@
 CLICK_DECLS
 
 IP6NDAdvertiser::IP6NDAdvertiser()
+  : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
-  add_input();
-  add_output();
 }
 
 IP6NDAdvertiser::~IP6NDAdvertiser()

@@ -28,10 +28,9 @@
 #include <net/ethernet.h>
 
 FromHost::FromHost()
-    : _inq(0)
+    : Element(0, 1), _inq(0)
 {
     MOD_INC_USE_COUNT;
-    add_output();
 }
 
 FromHost::~FromHost()
