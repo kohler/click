@@ -362,14 +362,7 @@ TokenQueue::pull(int)
 	/* finally, we altered the packet, so we need to redo 
 	 * the checksum
 	 */
-	unsigned int tlen = 0;
-	if (pk->_type & PT_DATA) {
-	    tlen = pk->hlen_with_data();
-	} else {
-	    tlen = pk->hlen_wo_data();
-	}
-	pk->_cksum = 0;
-	pk->_cksum = click_in_cksum((unsigned char *) pk, tlen);
+	pk->set_checksum();
     }
     
  done:

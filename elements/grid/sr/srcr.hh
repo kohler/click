@@ -125,6 +125,7 @@ private:
 
     BadNeighbor() : _ip(), _when(), _timeout() { }
     BadNeighbor(IPAddress ip) : _ip(ip), _when(), _timeout() { }
+
     bool still_bad() {
       struct timeval expire;
       struct timeval now;

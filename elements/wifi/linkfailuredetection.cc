@@ -112,15 +112,16 @@ LinkFailureDetection::simple_action(Packet *p_in)
     nfo->_successive_failures++;
     StringAccum sa;
     sa  << nfo->_last_received;
-    click_chatter("%{element}: succ. failure %d, packet %d ethtype %x %s at %s\n",
-		  this,
-		  nfo->_successive_failures,
-		  WIFI_NUM_FAILURES(p_in),
-		  ntohs(eh->ether_type),
-		  nfo->_eth.s().cc(),
-		  sa.take_string().cc());
+    if (0 == nfo->_successive_failures % _threshold) {
+      click_chatter("%{element}: succ. failure %d, packet %d ethtype %x %s at %s\n",
+		    this,
+		    nfo->_successive_failures,
+		    WIFI_NUM_FAILURES(p_in),
+		    ntohs(eh->ether_type),
+		    nfo->_eth.s().cc(),
+		    sa.take_string().cc());
 
-    if (!nfo->_notified && nfo->_successive_failures >= _threshold) {
+
       /* call handler */
       call_handler(dst);
       nfo->_notified = true;
@@ -145,12 +146,12 @@ LinkFailureDetection::print_stats()
   for (NIter iter = _neighbors.begin(); iter; iter++) {
     DstInfo n = iter.value();
     struct timeval age = now - n._last_received;
-    sa << n._eth.s().cc() << " ";
-    sa << "successive failures: " << n._successive_failures;
+    sa << n._eth.s().cc();
+    sa << " successive_failures: " << n._successive_failures;
     if (n._notified) {
       sa << "*";
     }
-    sa << "last_received: " << age << "\n";
+    sa << " last_received: " << age << "\n";
   }
   return sa.take_string();
 }

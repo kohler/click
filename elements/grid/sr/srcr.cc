@@ -663,7 +663,7 @@ SRCR::push(int port, Packet *p_in)
       timeradd(&current_path->_last_switch, &max_switch, &expire);
 
       if (!current_path_valid || 
-	  current_path_metric > 2 * best_metric ||
+	  current_path_metric > 100 + best_metric ||
 	  timercmp(&expire, &now, <)) {
 	if (current_path->_p != best) {
 	  click_gettimeofday(&current_path->_first_selected);

@@ -97,6 +97,7 @@ class SimpleQueue : public Element, public Storage { public:
     friend class MixedQueue;
     friend class TokenQueue;
     friend class InOrderQueue;
+    friend class ECNQueue;
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

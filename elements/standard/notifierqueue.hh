@@ -81,6 +81,7 @@ class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
 
     friend class MixedQueue;
     friend class InOrderQueue;
+    friend class ECNQueue;
     friend class TokenQueue;
 #if NOTIFIERQUEUE_DEBUG
     static String read_handler(Element *, void *);

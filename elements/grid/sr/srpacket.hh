@@ -176,6 +176,17 @@ struct srpacket {
   /* remember that if you call this you must have set the number of hops in this packet! */
   u_char *data() { return (((u_char *)this) + len_wo_data(num_hops())); }
   String s();
+
+  void set_checksum() {
+    unsigned int tlen = 0;
+    if (_type & PT_DATA) {
+      tlen = hlen_with_data();
+    } else {
+      tlen = hlen_wo_data();
+    }
+    _cksum = 0;
+    _cksum = click_in_cksum((unsigned char *) this, tlen);
+  }
 };
 
 

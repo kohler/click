@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
-#ifndef CLICK_INORDERQUEUE_HH
-#define CLICK_INORDERQUEUE_HH
+#ifndef CLICK_ECNQUEUE_HH
+#define CLICK_ECNQUEUE_HH
 #include <elements/standard/notifierqueue.hh>
 #include <click/bighashmap.hh>
 #include <elements/grid/sr/path.hh>
@@ -9,8 +9,8 @@ CLICK_DECLS
 /*
 =c
 
-InOrderQueue
-InOrderQueue(CAPACITY)
+ECNQueue
+ECNQueue(CAPACITY)
 
 =s storage
 
@@ -18,29 +18,28 @@ stores packets in a push-to-push queue.
 
 =a Queue, SimpleQueue, FrontDropQueue */
 
-class InOrderQueue : public NotifierQueue { public:
+class ECNQueue : public NotifierQueue { public:
     
-    InOrderQueue();
-    ~InOrderQueue();
+    ECNQueue();
+    ~ECNQueue();
     
-    const char *class_name() const	{ return "InOrderQueue"; }
+    const char *class_name() const	{ return "ECNQueue"; }
     void *cast(const char *);
-    InOrderQueue *clone() const		{ return new InOrderQueue; }
-    const char *processing() const	{ return "h/h"; }
+    ECNQueue *clone() const		{ return new ECNQueue; }
+    const char *processing() const	{ return "h/l"; }
     inline bool enq(Packet *p);
     void push(int port, Packet *);
-    void shove_out();
+    Packet *pull(int);
     int configure(Vector<String> &, ErrorHandler *);    
-    void run_timer();
 private:
     int _drops;
 
     class PathInfo {
     public:
 	Path _p;
-	uint32_t _seq;
+	int _seq;
 	struct timeval _last_tx;
-
+	bool _ecn;
 	PathInfo() : _p(), _seq(0) { }
 	PathInfo(Path p) : _p(p), _seq(0) { }
 
@@ -58,17 +57,6 @@ private:
     PathTable _paths;
     
 
-    struct yank_filter {
-	InOrderQueue *s;
-	yank_filter(InOrderQueue *t) {
-	    s = t;
-	}
-	bool operator()(const Packet *p) {
-	    return (s) ? s->ready_for(p) : false;
-	}
-    };
-
-    bool ready_for(const Packet *);
     int bubble_up(Packet *);
     String print_stats();
     static String static_print_stats(Element *, void *);
@@ -79,22 +67,14 @@ private:
     static int static_write_debug(const String &arg, Element *e,
 				  void *, ErrorHandler *errh); 
     
-    static int static_write_packet_timeout(const String &arg, Element *e,
-					   void *, ErrorHandler *errh); 
-    int set_packet_timeout(ErrorHandler *, unsigned int);
-
     PathInfo *find_path_info(Path p);
     static String static_print_debug(Element *, void *);
-    static String static_print_packet_timeout(Element *, void *);
     
     bool _debug;
-    unsigned int _max_tx_packet_ms;
-    struct timeval _packet_timeout;
-    Timer _timer;
 };
 
 inline bool
-InOrderQueue::enq(Packet *p)
+ECNQueue::enq(Packet *p)
 {
     assert(p);
     int next = next_i(_tail);

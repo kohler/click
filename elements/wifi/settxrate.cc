@@ -44,14 +44,14 @@ SetTXRate::clone() const
 int
 SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _auto = NULL;
+  _auto_l = NULL;
   _rate = 0;
   _et = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpKeywords, 
 		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		  "RATE", cpUnsigned, "rate", &_rate, 
-		  "AUTO", cpElement, "AutoTXRate element", &_auto,
+		  "AUTO", cpElement, "AutoTXRate element", &_auto_l,
 		  0) < 0) {
     return -1;
   }
@@ -71,9 +71,11 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("RATE must be 0, 1,2,5, or 11");
   }
 
-  if (_auto && _auto->cast("AutoTXRate") == 0) {
+  if (_auto_l && _auto_l->cast("AutoTXRate") == 0) {
     return errh->error("AUTO element is not a AutoTXRate");
   }
+
+  _auto = (_auto_l);
 
   return 0;
 }
@@ -89,8 +91,8 @@ SetTXRate::simple_action(Packet *p_in)
 
   SET_WIFI_FROM_CLICK(p_in);
   EtherAddress dst = EtherAddress(eh->ether_dhost);
-  if (_auto) {
-    int rate = _auto->get_tx_rate(dst);
+  if (_auto_l) {
+    int rate = _auto_l->get_tx_rate(dst);
     if (rate) {
       SET_WIFI_RATE_ANNO(p_in, rate);  
       return p_in;
@@ -133,11 +135,28 @@ SetTXRate::rate_write_handler(const String &arg, Element *e,
   return 0;
 }
 
+int
+SetTXRate::auto_write_handler(const String &arg, Element *e,
+			      void *, ErrorHandler *errh) 
+{
+  SetTXRate *n = (SetTXRate *) e;
+  bool b;
+
+  if (!cp_bool(arg, &b))
+    return errh->error("`auto' must be an boolean");
+  
+  if (b && !(n->_auto_l)) {
+    return errh->error("`auto' is true but no auto_rate element configured");
+  }
+
+  n->_auto = b;
+  return 0;
+}
 String
 SetTXRate::auto_read_handler(Element *e, void *)
 {
   SetTXRate *foo = (SetTXRate *)e;
-  if (foo->_auto) {
+  if (foo->_auto_l) {
     return String("true") + "\n";
   }
   return String("false") + "\n";
@@ -150,6 +169,7 @@ SetTXRate::add_handlers()
   add_read_handler("rate", rate_read_handler, 0);
   add_write_handler("rate", rate_write_handler, 0);
   add_read_handler("auto", auto_read_handler, 0);
+  add_write_handler("auto", rate_write_handler, 0);
 }
 
 CLICK_ENDDECLS

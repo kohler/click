@@ -56,10 +56,13 @@ class SetTXRate : public Element { public:
   static String auto_read_handler(Element *e, void *);  
   static int rate_write_handler(const String &arg, Element *e,
 				void *, ErrorHandler *errh);
+  static int auto_write_handler(const String &arg, Element *e,
+				void *, ErrorHandler *errh);
  private:
   
   int _rate;
-  class AutoTXRate *_auto;
+  class AutoTXRate *_auto_l;
+  bool _auto;
   uint16_t _et;     // This protocol's ethertype
 };
 

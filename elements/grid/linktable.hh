@@ -136,7 +136,22 @@ private:
       click_gettimeofday(&_last_updated);
     }
     LinkInfo(const LinkInfo &p) : _from(p._from), _to(p._to), _metric(p._metric), _last_updated(p._last_updated) { }
-    void update(int metric) { 
+    void update(int metric) {
+      if (9999 == _metric) {
+	/* once a link is marked as bad, 
+	 * don't let anyone change it for
+	 * at least two minutes
+	 */
+	struct timeval now;
+	struct timeval diff;
+	struct timeval expire;
+	expire.tv_sec = 120;
+	click_gettimeofday(&now);
+	timersub(&now, &_last_updated, &diff);
+	if (timercmp(&diff, &expire, <)) {
+	  return;
+	}
+      }
       _metric = metric; 
       click_gettimeofday(&_last_updated); 
     }

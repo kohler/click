@@ -65,9 +65,10 @@ PrintSR::simple_action(Packet *p)
   struct srpacket *pk = (struct srpacket *) (eh+1);
 
   StringAccum sa;
-  sa << "PrintSR";
   if (_label[0] != 0) {
-    sa << " " << _label.cc() << ": ";
+    sa << _label.cc() << ": ";
+  } else {
+      sa << "PrintSR ";
   }
 
   String type;
@@ -90,46 +91,55 @@ PrintSR::simple_action(Packet *p)
   String flags = "";
   sa << type;
   sa << " flags (";
+  if (pk->flag(FLAG_ERROR)) {
+    sa << " ERROR ";
+  }
+  if (pk->flag(FLAG_UPDATE)) {
+    sa << " UPDATE ";
+  }
   if (pk->flag(FLAG_SCHEDULE)) {
-    sa << " FLAG_SCHEDULE ";
+    sa << " SCHEDULE ";
   }
   if (pk->flag(FLAG_SCHEDULE_TOKEN)) {
-    sa << " FLAG_SCHEDULE_TOKEN ";
+    sa << " SCHEDULE_TOKEN ";
   }
   if (pk->flag(FLAG_SCHEDULE_FAKE)) {
-    sa << " FLAG_SCHEDULE_FAKE ";
+    sa << " SCHEDULE_FAKE ";
+  }
+
+  if (pk->flag(FLAG_ECN)) {
+    sa << " ECN ";
   }
   sa << flags << ") ";
 
   if (pk->_type == PT_DATA) {
-    sa << " len=" << pk->hlen_with_data();
+    sa << " len " << pk->hlen_with_data();
   } else {
-    sa << " len=" << pk->hlen_wo_data();
+    sa << " len " << pk->hlen_wo_data();
   }
   
-  sa << " cksum = 0x" << (unsigned long) ntohs(pk->_cksum);
+  sa << " cksum " << (unsigned long) ntohs(pk->_cksum);
   int failures = WIFI_NUM_FAILURES(p);
   sa << " failures " << failures;
-  sa << " from_click " << WIFI_FROM_CLICK(p);
   int success = WIFI_TX_SUCCESS_ANNO(p);
   sa << " success " << success;
   int rate = WIFI_RATE_ANNO(p);
   sa << " rate " << rate;
 
   if (pk->_type == PT_DATA) {
-    sa << " dataseq = " << pk->data_seq();
+    sa << " dataseq " << pk->data_seq();
   } else {
-    sa << " qdst=" << IPAddress(pk->_qdst);
-    sa << " seq=" << pk->_seq;
+    sa << " qdst " << IPAddress(pk->_qdst);
+    sa << " seq " << pk->_seq;
   }
 
   if (pk->_type == PT_DATA) {
     sa << " dlen=" << ntohs(pk->_dlen);
   }
 
-  sa << " seq=" << pk->_seq;
-  sa << " nhops=" << pk->num_hops();
-  sa << " next=" << pk->next();
+  sa << " seq " << pk->_seq;
+  sa << " nhops " << pk->num_hops();
+  sa << " next " << pk->next();
 
   sa << " [";
   for(int i = 0; i< pk->num_hops(); i++) {

@@ -69,9 +69,7 @@ SetSRChecksum::simple_action(Packet *xp)
     goto bad;
 
   pk->_version = _sr_version;
-
-  pk->_cksum = 0;
-  pk->_cksum = click_in_cksum((unsigned char *) pk, tlen);
+  pk->set_checksum();
 
   return p;
 

@@ -93,7 +93,8 @@ void
 InOrderQueue::run_timer() 
 {
     shove_out();
-    _timer.schedule_after_ms(1000);
+
+    _timer.schedule_after_ms(_max_tx_packet_ms/2);
 }
 
 
@@ -119,7 +120,7 @@ InOrderQueue::ready_for(const Packet *p_in) {
 
     PathInfo *nfo = _paths.findp(p);
 
-    int seq = pk->data_seq();
+    uint32_t seq = pk->data_seq();
 
     if (seq == nfo->_seq + 1) {
 	/* this is the normal case */
@@ -130,7 +131,7 @@ InOrderQueue::ready_for(const Packet *p_in) {
 
     if (!seq || !nfo->_seq) {
 	/* reset on either end*/
-	if (_debug) {
+	if (_debug && nfo->_seq) {
 	    struct timeval now;
 	    click_gettimeofday(&now);
 	    StringAccum sa;
@@ -159,6 +160,21 @@ InOrderQueue::ready_for(const Packet *p_in) {
 	return true;
     }
 
+    if (pk->flag(FLAG_ECN)) {
+	if (_debug) {
+	    struct timeval now;
+	    click_gettimeofday(&now);
+	    StringAccum sa;
+	    sa << id() << " " << now;
+	    sa << " ecn [" << path_to_string(nfo->_p) << "]";
+	    sa << " nfo_seq " << nfo->_seq;
+	    sa << " pk_seq " << seq;
+	    click_chatter("%s", sa.take_string().cc());
+	}
+	nfo->_seq = max(nfo->_seq, seq);
+	click_gettimeofday(&nfo->_last_tx);
+	return true;
+    }
 
     struct timeval age = nfo->last_tx_age();
     if (timercmp(&age, &_packet_timeout, >)) {
@@ -188,6 +204,12 @@ InOrderQueue::bubble_up(Packet *p_in)
     struct srpacket *pk = (struct srpacket *) (eh+1);
     Path p = pk->get_path();
     bool reordered = false;
+    PathInfo *nfo = find_path_info(p);
+    
+    if (pk->flag(FLAG_ECN)) {
+	nfo->_seq = max(nfo->_seq, pk->data_seq());
+    }
+
     for (int x = _head; x != _tail; x = next_i(x)) {
 	click_ether *eh2 =  (click_ether *) _q[x]->data();
 	struct srpacket *pk2 = (struct srpacket *) (eh2+1);
@@ -202,7 +224,7 @@ InOrderQueue::bubble_up(Packet *p_in)
 		    struct timeval now;
 		    click_gettimeofday(&now);
 		    StringAccum sa;
-		    sa << "InOrderQueue " << now;
+		    sa << id() << " " << now;
 		    sa << " reordering ";
 		    sa << " pk->seq " << pk->data_seq();
 		    sa << " pk2->seq " << pk2->data_seq();
@@ -221,10 +243,9 @@ InOrderQueue::bubble_up(Packet *p_in)
 
     eh = (click_ether *) p_in->data();
     pk = (struct srpacket *) (eh+1);
-
-    PathInfo *nfo = find_path_info(p);
+    uint32_t seq = pk->data_seq();
     if (!enq(p_in)) {
-	pk->set_flag(FLAG_ECN);
+	nfo->_seq = max(seq, nfo->_seq);
 	struct timeval now;
 	click_gettimeofday(&now);
 	StringAccum sa;
