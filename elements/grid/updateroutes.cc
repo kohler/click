@@ -599,5 +599,7 @@ EXPORT_ELEMENT(UpdateGridRoutes)
 template class BigHashMap<IPAddress, UpdateGridRoutes::NbrEntry>;
 template class BigHashMap<IPAddress, UpdateGridRoutes::far_entry>;
 #include <click/vector.cc>
+#if 0 // now included in the new DSDV implementation, gridroutetable.cc
 template class Vector<IPAddress>;
+#endif
 template class Vector<grid_nbr_entry>;
