@@ -214,6 +214,8 @@ ElementMap::add(const String &click_name, String cxx_name,
   _cxx_name_map.insert(cxx_name, i);
   _name_next.push_back(old_name);
   _cxx_name_next.push_back(old_cxx_name);
+  
+  return i;
 }
 
 void
