@@ -389,12 +389,12 @@ particular purpose.\n");
       (router, Driver::USERLEVEL);
     if (linuxmodule_ok && userlevel_ok
 	&& (compile_kernel > 0) == (compile_user > 0))
-      p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify `-k' or `-u'");
+      p_errh->fatal("kernel and user-level drivers require different code;\nyou must specify either `-k' or `-u'");
     else if (!linuxmodule_ok && compile_kernel > 0)
       p_errh->fatal("configuration incompatible with kernel driver");
     else if (!userlevel_ok && compile_user > 0)
       p_errh->fatal("configuration incompatible with user-level driver");
-    else if (linuxmodule_ok) {
+    else if (compile_kernel > 0 || (linuxmodule_ok && compile_user <= 0)) {
       cc_suffix = ".k.cc";
       driver_requirement = "linuxmodule ";
       full_elementmap.set_driver(Driver::LINUXMODULE);
