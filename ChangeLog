@@ -1,3 +1,8 @@
+2003-04-25 Friday 11:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/todevice.hh (1.24): Tell ToDevice.u that it
+	knows how to work on MacOS X
+
 2003-04-25 Friday 11:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc (1.42), lrhello.cc (1.27): remove
