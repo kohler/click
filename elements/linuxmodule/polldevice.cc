@@ -32,6 +32,10 @@ extern "C" {
 #include "perfcount.hh"
 #include "asm/msr.h"
 
+/* for hot-swapping */
+static AnyDeviceMap poll_device_map;
+
+
 PollDevice::PollDevice()
   : _activations(0), _registered(0), _last_rx(0), _manage_tx(1)
 {
@@ -59,6 +63,7 @@ PollDevice::~PollDevice()
 void
 PollDevice::static_initialize()
 {
+  poll_device_map.initialize();
 }
 
 void
@@ -112,10 +117,17 @@ PollDevice::initialize(ErrorHandler *errh)
 	                   _devname.cc());
     }
   }
-
-  // install PollDevice
+  
+  if (poll_device_map.insert(this) < 0)
+    return errh->error("cannot use PollDevice for device `%s'", _devname.cc());
   _registered = 1;
-  _dev->intr_off(_dev);
+  
+  AnyDevice *l = poll_device_map.lookup(ifindex());
+  if (l->next() == 0) {
+    /* turn off interrupt if interrupts weren't already off */
+    _dev->intr_off(_dev);
+  }
+
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
   int max_tickets = ScheduleInfo::query(this, errh);
@@ -136,9 +148,14 @@ void
 PollDevice::uninitialize()
 {
 #if HAVE_POLLING
-  if (_dev && _dev->pollable)
-    _dev->intr_on(_dev);
-  _registered = 0;
+  if (_registered) {
+    poll_device_map.remove(this);
+    _registered = 0;
+  }
+  if (poll_device_map.lookup(ifindex()) == 0) {
+    if (_dev && _dev->pollable)
+      _dev->intr_on(_dev);
+  } 
   unschedule();
 #endif
 }

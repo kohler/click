@@ -36,11 +36,12 @@ extern "C" {
 #include "perfcount.hh"
 #include "asm/msr.h"
 
+#if 0
 static AnyDeviceMap to_device_map;
-static int registered_writers;
 static struct notifier_block notifier;
-
 extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v);
+#endif
+static int registered_writers;
 
 ToDevice::ToDevice()
   : _polling(0), _registered(0),
@@ -73,17 +74,21 @@ ToDevice::~ToDevice()
 void
 ToDevice::static_initialize()
 {
+#if 0
   notifier.notifier_call = click_ToDevice_out;
   notifier.priority = 1;
   to_device_map.initialize();
+#endif
 }
 
 void
 ToDevice::static_cleanup()
 {
 #ifdef HAVE_CLICK_KERNEL 
+#if 0
   if (registered_writers)
     unregister_net_out(&notifier);
+#endif
 #endif
 }
 
@@ -123,10 +128,10 @@ ToDevice::initialize(ErrorHandler *errh)
     }
   }
 
+#if 0
   if (to_device_map.insert(this) < 0)
     return errh->error("cannot use ToDevice for device `%s'", _devname.cc());
   
-  _registered = 1;
   if (!registered_writers) {
 #ifdef HAVE_CLICK_KERNEL
     notifier.next = 0;
@@ -134,6 +139,8 @@ ToDevice::initialize(ErrorHandler *errh)
 #endif
   }
   registered_writers++;
+#endif
+  _registered = 1;
 
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
@@ -149,6 +156,7 @@ ToDevice::initialize(ErrorHandler *errh)
 void
 ToDevice::uninitialize()
 {
+#if 0
   registered_writers--;
 #ifdef HAVE_CLICK_KERNEL
   if (registered_writers == 0) 
@@ -157,10 +165,12 @@ ToDevice::uninitialize()
   /* remove from ifindex_map */
   if (_registered)
     to_device_map.remove(this);
+#endif
   _registered = 0;
   unschedule();
 }
 
+#if 0
 /*
  * Called by net_bh() when an interface is ready to send.
  * Actually called by qdisc_run_queues() in sch_generic.c.
@@ -182,6 +192,7 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
     }
   return retval;
 }
+#endif
 
 /*
  * The kernel thinks our device is idle.
@@ -260,7 +271,7 @@ ToDevice::tx_intr()
   }
 #endif
  
-#if !HAVE_POLLING
+#if 0 && !HAVE_POLLING
   if (!_polling) {
     /* If we have packets left in the queue, arrange for
      * net_bh()/qdisc_run_queues() to call us when the device decides it's idle.

@@ -16,17 +16,10 @@
  * ToDevice wants to send a packet. Click is not clever enough to re-queue
  * such packets, and discards them. 
  *
- * ToDevice interacts with Linux in three possible modes: when Click is
- * running with its own scheduler thread, in polling mode; when Click is
- * running with its own scheduler thread, in interrupt mode; or when Click is
- * not running with its own scheduler thread (i.e. not running on top of a
- * polling capable kernel) and ToDevice is invoked by registered in/out
- * notifiers. In the last case, there are no race conditions because ToDevice
- * only send packets when it is notified by Linux to do so. Linux notifies
- * ToDevice in net_bh, which is not reentrant.
- *
- * In the first two cases, we depend on the net driver's send operation for
- * synchronization (e.g. tulip send operation uses a bit lock).
+ * ToDevice interacts with Linux in two ways: when Click is running in polling
+ * mode, or when Click is running in interrupt mode. In both of these cases,
+ * we depend on the net driver's send operation for synchronization (e.g.
+ * tulip send operation uses a bit lock).
  *
  * This element is only available inside the kernel module.
  *
