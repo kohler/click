@@ -53,6 +53,8 @@ contain those fields. Valid field names, with examples, are:
    payload len  Payload length (not including IP/TCP/UDP
                 headers): `34'
    count        Number of packets: `1'
+   direction    Link number (PAINT_ANNO): `L' (paint 0),
+                `R' (paint 1), or `2'
 
 If a field does not apply to a particular packet -- for example, `C<sport>' on
 an ICMP packet -- ToIPSummaryDump prints a single dash for that value.
@@ -153,7 +155,7 @@ class ToIPSummaryDump : public Element { public:
 	W_SRC, W_DST, W_LENGTH, W_PROTO, W_IPID,
 	W_SPORT, W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS,
 	W_PAYLOAD_LENGTH, W_COUNT, W_FRAG, W_FRAGOFF,
-	W_PAYLOAD,
+	W_PAYLOAD, W_LINK,
 	W_LAST
     };
 

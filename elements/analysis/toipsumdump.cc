@@ -343,6 +343,16 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	      sa << count;
 	      break;
 	  }
+	  case W_LINK: {
+	      int link = PAINT_ANNO(p);
+	      if (link == 0)
+		  sa << 'L';
+	      else if (link == 1)
+		  sa << 'R';
+	      else
+		  sa << link;
+	      break;
+	  }
 	  no_data:
 	  default:
 	    sa << '-';

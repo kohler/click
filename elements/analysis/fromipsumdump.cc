@@ -429,6 +429,19 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    }
 		break;
 		
+	      case W_LINK:
+		if (data[pos] == 'L') {
+		    u1 = 0;
+		    pos++;
+		} else if (data[pos] == 'R' || data[pos] == 'X') {
+		    u1 = 1;
+		    pos++;
+		} else {
+		    u1 = strtoul(data + pos, &next, 0);
+		    pos = next - data;
+		}
+		break;
+
 	    }
 
 	    // check whether we correctly parsed something
@@ -520,6 +533,10 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_COUNT:
 		if (u1)
 		    SET_EXTRA_PACKETS_ANNO(q, u1 - 1), ok++;
+		break;
+
+	      case W_LINK:
+		SET_PAINT_ANNO(q, u1), ok++;
 		break;
 
 	    }
@@ -704,7 +721,8 @@ static const char *content_names[] = {
     "??", "timestamp", "ts sec", "ts usec",
     "ip src", "ip dst", "ip len", "ip proto", "ip id",
     "sport", "dport", "tcp seq", "tcp ack", "tcp flags",
-    "payload len", "count", "ip frag", "ip fragoff", "payload"
+    "payload len", "count", "ip frag", "ip fragoff",
+    "payload", "direction"
 };
 
 const char *
@@ -755,6 +773,8 @@ FromIPSummaryDump::parse_content(const String &word)
 	return W_COUNT;
     else if (word == "payload")
 	return W_PAYLOAD;
+    else if (word == "link" || word == "direction")
+	return W_LINK;
     else
 	return W_NONE;
 }

@@ -134,7 +134,7 @@ class FromIPSummaryDump : public Element { public:
 	W_SRC, W_DST, W_LENGTH, W_PROTO, W_IPID,
 	W_SPORT, W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS,
 	W_PAYLOAD_LENGTH, W_COUNT, W_FRAG, W_FRAGOFF,
-	W_PAYLOAD,
+	W_PAYLOAD, W_LINK,
 	W_LAST
     };
     static int parse_content(const String &);
