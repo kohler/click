@@ -21,6 +21,7 @@
 #include "grid.hh"
 
 class LocationInfo : public Element {
+  
 public:
   LocationInfo();
   ~LocationInfo();
@@ -34,6 +35,7 @@ public:
   grid_location get_current_location() { return _loc; }
 
   void add_handlers();
+  int read_args(const Vector<String> &conf, ErrorHandler *errh);
 
 protected:
   grid_location _loc;

@@ -28,7 +28,7 @@ LocationInfo::~LocationInfo()
 }
 
 int
-LocationInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+LocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
   int lat_int, lon_int;
   int res = cp_va_parse(conf, this, errh,
@@ -39,14 +39,19 @@ LocationInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
   float lat = ((float) lat_int) / 100000.0f;
   float lon = ((float) lon_int) / 100000.0f; 
   if (lat > 90 || lat < -90)
-    return errh->error("latitude must be between +/- 90 degrees");
+    return errh->error("%s: latitude must be between +/- 90 degrees", id().cc());
   if (lon > 180 || lon < -180)
-    return errh->error("longitude must be between +/- 180 degrees");
+    return errh->error("%s: longitude must be between +/- 180 degrees", id().cc());
 
   _loc.lat = lat;
   _loc.lon = lon;
   
   return res;
+}
+int
+LocationInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  return read_args(conf, errh);
 }
 
 static String
@@ -66,22 +71,22 @@ loc_read_handler(Element *f, void *)
 }
 
 
-#if 0
 static int
 loc_write_handler(const String &arg, Element *element,
-		  void *vno, ErrorHandler *errh)
+		  void *, ErrorHandler *errh)
 {
-  // XXX can't get the reconfigure_write_handler of Element to work,
-  // or maybe i just don't know how to format my args?
   LocationInfo *l = (LocationInfo *) element;
-  return 0;
+  Vector<String> arg_list;
+  cp_argvec(arg, arg_list);
+  
+  return l->read_args(arg_list, errh);
 }
-#endif
 
 void
 LocationInfo::add_handlers()
 {
-  add_write_handler("loc", reconfigure_write_handler, (void *) 2);
+  add_default_handlers(true);
+  add_write_handler("loc", loc_write_handler, (void *) 0);
   add_read_handler("loc", loc_read_handler, (void *) 0);
 }
 
