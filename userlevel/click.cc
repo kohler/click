@@ -100,6 +100,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 static Router *router;
 static Vector<String> call_handlers;
+static ErrorHandler *errh;
 static int handler_duration = -1;
 static const char *handler_dir = 0;
 
@@ -346,15 +347,13 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
   
 int call_read_handlers()
 {
-  FileErrorHandler errh(stderr, "");
-  ErrorHandler::static_initialize(&errh);
-
   // call handlers
   if (call_handlers.size()) {
+    int nerrs = errh->nerrors();
     for (int i = 0; i < call_handlers.size(); i++)
       call_read_handler(call_handlers[i], router,
-	                call_handlers.size() > 1, handler_dir, &errh);
-    if (errh.nerrors()) return 1;
+	                call_handlers.size() > 1, handler_dir, errh);
+    if (errh->nerrors() > nerrs) return 1;
   }
   return 0;
 }
@@ -375,7 +374,8 @@ main(int argc, char **argv)
 {
   String::static_initialize();
   Element::static_initialize();
-  ErrorHandler *errh = new FileErrorHandler(stderr, "");
+  
+  errh = new FileErrorHandler(stderr, "");
   ErrorHandler::static_initialize(errh);
 
   // read command line arguments
