@@ -19,7 +19,7 @@
  * =h count read-only
  * Returns the number of packets that have passed through.
  *
- * =h average read-only
+ * =h rate read-only
  * Returns packet arrival rate.
  *
  * =h reset write-only
