@@ -79,9 +79,6 @@ FilterByRange::push(int, Packet *p)
     output(1).push(p);
 }
 
-#define GRID_RAD_PER_DEG 0.017453293 // from xcalc
-#define GRID_EARTH_RADIUS 6378156 // metres XXX do i believe this?
-
 #define sign(x) (((x) < 0) ? -1 : 1)
 
 double

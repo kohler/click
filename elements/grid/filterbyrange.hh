@@ -38,7 +38,7 @@ public:
 private:
   LocationInfo *_locinfo;
   int _range; // in metres
-  double calc_range(grid_location l1, grid_location l2);
+  static double calc_range(grid_location l1, grid_location l2);
 };
 
 #endif

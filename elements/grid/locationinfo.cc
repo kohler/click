@@ -22,7 +22,7 @@
 LocationInfo::LocationInfo()
 {
   _move = 0;
-  _lat0 = 32.2816;  // Doug's house in Vermuda.
+  _lat0 = 32.2816;  // Doug's house in Bermuda.
   _lon0 = -64.7685;
   _t0 = 0;
   _t1 = 0;
@@ -121,7 +121,7 @@ LocationInfo::get_current_location()
 {
   double t = now();
 
-  if(_move && t >= _t1){
+  if(_move == 1 && t >= _t1){
     _lat0 = xlat();
     _lon0 = xlon();
     _t0 = t;
@@ -131,6 +131,12 @@ LocationInfo::get_current_location()
     _vlat = (nlat - _lat0) / (nt - _t0);
     _vlon = (nlon - _lon0) / (nt - _t0);
     _t1 = nt;
+  }
+
+  if (_move == 2) {
+    _lat0 = xlat();
+    _lon0 = xlon();
+    _t0 = t;
   }
 
   grid_location gl(xlat(), xlon());
@@ -172,6 +178,21 @@ LocationInfo::add_handlers()
   add_write_handler("loc", loc_write_handler, (void *) 0);
   add_read_handler("loc", loc_read_handler, (void *) 0);
 }
+
+
+void
+LocationInfo::set_new_dest(double v_lat, double v_lon)
+{ /* velocities v_lat and v_lon in degrees per sec */
+
+  double t = now();
+  
+  _lat0 = xlat();
+  _lon0 = xlon();
+  _t0 = t;
+  _vlat = v_lat;
+  _vlon = v_lon;
+}
+
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocationInfo)

@@ -121,4 +121,8 @@ grid_hdr::type_string(int type)
 }
 
 
+static const double GRID_RAD_PER_DEG = 0.017453293; // from xcalc
+static const double GRID_EARTH_RADIUS = 6378156; // metres XXX do i believe this?
+static const double GRID_PI = 3.1415927;
+
 #endif

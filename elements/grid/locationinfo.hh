@@ -11,8 +11,11 @@
  * LATITUDE and LONGITUDE are in decimal degrees (Real).  Positive is
  * North and East, negative is South and West.
  *
- * If the optional move parameter is non-zero, the node will move
+ * If the optional move parameter is 1, the node will move
  * randomly at a few meters per second.
+ *
+ * If the optional move parameter is 2, the node will accept external
+ * ``set_new_dest'' directives for setting its speed etc.
  *
  * =h loc read/write
  * Returns or sets the element's location
@@ -40,6 +43,8 @@ public:
 
   void add_handlers();
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
+
+  void set_new_dest(double v_lat, double v_lon);
 
 protected:
 
