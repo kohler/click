@@ -47,6 +47,13 @@ class String { public:
   
   int length() const			{ return _length; }
   const char *data() const		{ return _data; }
+  
+  typedef const char *const_iterator;
+  typedef const_iterator iterator;
+  const_iterator begin() const		{ return _data; }
+  const_iterator end() const		{ return _data + _length; }
+
+  inline bool data_shared() const;
   char *mutable_data();
   char *mutable_c_str();
   
@@ -84,11 +91,6 @@ class String { public:
   // bool operator>(const String &, const String &);
   // bool operator>=(const String &, const String &);
   
-  typedef const char *const_iterator;
-  typedef const_iterator iterator;
-  const_iterator begin() const		{ return _data; }
-  const_iterator end() const		{ return _data + _length; }
-
   String substring(int pos, int len) const;
   String substring(int pos) const	{ return substring(pos, _length); }
   
@@ -218,6 +220,11 @@ String::~String()
   deref();
 }
 
+inline bool
+String::data_shared() const
+{
+  return !_memo->_capacity || _memo->_refcount != 1;
+}
 
 inline int
 String::compare(const String &a, const String &b)
