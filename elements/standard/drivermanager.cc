@@ -104,7 +104,7 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 		errh->error("expected '%s ELEMENT.HANDLER FILE'", insn_name.c_str());
 #endif
 	    
-	} else if (insn_name == "wait_time" || insn_name == "wait_for") {
+	} else if (insn_name == "wait_time" || insn_name == "wait_for" || insn_name == "wait") {
 	    uint32_t ms;
 	    if (words.size() != 2 || !cp_seconds_as_milli(words[1], &ms))
 		errh->error("expected '%s TIME'", insn_name.cc());
