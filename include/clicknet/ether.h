@@ -17,6 +17,7 @@ struct click_ether {,
 #define ETHERTYPE_IP6	0x86DD
 #define ETHERTYPE_ARP	0x0806
 
+#define ETHERTYPE_SRCR  0x0807
 #define ETHERTYPE_GRID	0x7fff	/* wvlan_cs driver won't transmit frames with high bit of protocol number set */
 
 struct click_arp {
