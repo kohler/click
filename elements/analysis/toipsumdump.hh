@@ -173,6 +173,7 @@ class ToIPSummaryDump : public Element { public:
     String _banner;
 
     bool ascii_summary(Packet *, StringAccum &) const;
+    bool bad_packet(StringAccum &, const String &, int) const;
     void write_packet(Packet *, bool multipacket = false);
     
 };
