@@ -20,23 +20,26 @@ class Timer { public:
 
   bool initialized() const		{ return _head != 0; }
   bool scheduled() const		{ return _prev != 0; }
+  const struct timeval &when() const	{ return _expires; }
   bool is_list() const;
   
   void initialize(TimerList *);
   void initialize(Router *);
   void initialize(Element *);
   void cleanup()			{ unschedule(); }
-  void uninitialize()			{ cleanup(); } // deprecated
+  void uninitialize()			{ cleanup(); }	// deprecated
+
+  void schedule_at(const struct timeval &);
+  void reschedule_at(const struct timeval &);		// synonym
 
   void schedule_now();
-  void schedule_at(const struct timeval &);
   void schedule_after_s(uint32_t);
   void schedule_after_ms(uint32_t);
-  void reschedule_at(const struct timeval &);
   void reschedule_after_s(uint32_t);
   void reschedule_after_ms(uint32_t);
-  void unschedule();
 
+  void unschedule();
+  
  private:
   
   Timer *_prev;
