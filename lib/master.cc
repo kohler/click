@@ -565,25 +565,24 @@ Master::remove_select(int fd, Element *element, int mask)
 	&& (!(mask & SELECT_READ) || !FD_ISSET(fd, &_read_select_fd_set))
 	&& (!(mask & SELECT_WRITE) || !FD_ISSET(fd, &_write_select_fd_set))) {
 	_select_lock.release();
-	return 0;
+	return -1;
     }
 #endif
 
-    // Otherwise, search for selector
+    // Search for selector
     for (pollfd *p = _pollfds.begin(); p != _pollfds.end(); p++)
 	if (p->fd == fd) {
 	    int pi = p - _pollfds.begin();
-	    int ok = 0;
-	    if ((mask & SELECT_READ) && (p->events & POLLIN) && _read_poll_elements[pi] == element) {
+	    // check what to remove before removing anything, since
+	    // remove_pollfd() can rearrange the _pollfds array
+	    bool remove_read = (mask & SELECT_READ) && (p->events & POLLIN) && _read_poll_elements[pi] == element;
+	    bool remove_write = (mask & SELECT_WRITE) && (p->events & POLLOUT) && _write_poll_elements[pi] == element;
+	    if (remove_read)
 		remove_pollfd(pi, POLLIN);
-		ok++;
-	    }
-	    if ((mask & SELECT_WRITE) && (p->events & POLLOUT) && _write_poll_elements[pi] == element) {
+	    if (remove_write)
 		remove_pollfd(pi, POLLOUT);
-		ok++;
-	    }
 	    _select_lock.release();
-	    return (ok ? 0 : -1);
+	    return (remove_read || remove_write ? 0 : -1);
 	}
 
     _select_lock.release();
