@@ -33,6 +33,7 @@ template class Vector<String>;
 #include <click/hashmap.cc>
 template class HashMap<String, int>;
 template class _HashMap_iterator<String, int>;
+template class _HashMap_const_iterator<String, int>;
 template class HashMap<IPAddress, unsigned>;
 template class HashMap<IPFlowID, bool>;
 
