@@ -1,3 +1,24 @@
+2001-04-05 Thursday 18:11  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/tcpudp/iprewriter.cc: make udp clean up every 5
+	seconds... will make this an argument later
+
+2001-04-05 Thursday 17:19  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/: ip/ipaddrrewriter.cc, ip/iprw.cc, ip/iprw.hh,
+	tcpudp/iprewriter.cc, tcpudp/tcprewriter.cc: changed how _used
+	field is used in Mapping; now it allows incremental GC; made udp gc
+	hook in iprw do incremental GC; will change tcp hooks later
+
+2001-04-05 Thursday 17:18  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/binpackingsched.cc: debug stuff
+
+2001-04-05 Thursday 17:18  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: tolinux.cc, tolinuxsniffers.cc: add header
+	file, needed for click tools to compile file correct
+
 2001-04-05 Thursday 09:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click: [no log message]
