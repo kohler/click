@@ -20,6 +20,9 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "bitvector.hh"
+#ifdef __KERNEL__
+# include <net/checksum.h>
+#endif
 
 CheckIPHeader::CheckIPHeader()
   : _drops(0)
@@ -110,8 +113,13 @@ CheckIPHeader::simple_action(Packet *p)
   if(hlen > p->length())
     goto bad;
   
+#ifndef __KERNEL__
   if(in_cksum((unsigned char *)ip, hlen) != 0)
     goto bad;
+#else
+  if (ip_fast_csum((unsigned char *)ip, ip->ip_hl) != 0)
+    goto bad;
+#endif
   
   if(ntohs(ip->ip_len) < hlen)
     goto bad;

@@ -16,6 +16,8 @@
  * = InfiniteSource(\<0800>, -1, 5) -> Queue -> ...
  * =n
  * Useful for profiling and experiments.
+ * =h count read-only
+ * Returns the number of packets that have been generated.
  */
 
 class InfiniteSource : public Element { protected:
@@ -32,11 +34,14 @@ class InfiniteSource : public Element { protected:
   
   const char *class_name() const		{ return "InfiniteSource"; }
   Processing default_processing() const		{ return PUSH; }
+  void add_handlers();
   
   InfiniteSource *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+
+  int total() const				{ return _total; }
   
   void run_scheduled();
   

@@ -77,4 +77,17 @@ InfiniteSource::run_scheduled()
   }
 }
 
+static String
+read_count(Element *e, void *)
+{
+  InfiniteSource *is = (InfiniteSource *)e;
+  return String(is->total()) + "\n";
+}
+
+void
+InfiniteSource::add_handlers()
+{
+  add_read_handler("count", read_count, 0);
+}
+
 EXPORT_ELEMENT(InfiniteSource)

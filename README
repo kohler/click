@@ -1,5 +1,5 @@
-THE CLICK MODULAR ROUTER RELEASE 1.0
-====================================
+THE CLICK MODULAR ROUTER RELEASE 1.0.1
+======================================
 
     This is the README file for the source release for the Click modular
 software router. The first thing you should do is look for more recent
@@ -36,7 +36,7 @@ CLICKDIR/tools/click-align	... handles alignment for non-x86 machines
 CLICKDIR/tools/click-compile	... compiles element source code portably
 CLICKDIR/tools/click-fastclassifier ... specializes Classifiers into C++ code
 CLICKDIR/tools/click-install	... installs configuration into Linux module
-CLICKDIR/tools/click-specialize ... specializes element source code
+CLICKDIR/tools/click-specialize ... removes virtual functions from source
 CLICKDIR/tools/click-xform	... pattern-based configuration optimizer
 CLICKDIR/tools/udpgen		... Linux kernel modules for quickly 
 				    generating and counting UDP packets
@@ -108,7 +108,8 @@ BUGS, QUESTIONS, ETC.
 =====================
 
     We welcome bug reports, questions, comments, code, whatever you'd like
-to give us. Write us at
+to give us. We also have a mailing list for software announcements. Write
+us at
 
 	click@pdos.lcs.mit.edu
 
@@ -116,6 +117,7 @@ to give us. Write us at
 	  Eddie Kohler
 	  Robert Morris
 	  Benjie Chen
-	  John Jannotti
 	  Max Poletto
 	  Thomer M. Gil
+	  John Jannotti
+	  M. Frans Kaashoek

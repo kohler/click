@@ -19,7 +19,6 @@
 #include "kernelerror.hh"
 
 extern "C" {
-void tulip_print_stats();
 #define __NO_VERSION__
 #define new linux_new
 #include <linux/module.h>
@@ -89,9 +88,11 @@ kill_click_sched()
     kill_proc(click_sched_pid, SIGTERM, 1); 
     /* wait for thread to die - paranoid =) */ 
     while(click_sched_pid > 0) { 
-      schedule(); 
-      asm volatile ("" : : : "memory"); 
+      schedule();
+#ifdef __i386__
+      asm volatile ("" : : : "memory");
+#endif
     } 
   }
-  tulip_print_stats();
+  /* tulip_print_stats(); */
 }

@@ -52,7 +52,11 @@ typedef u_quad_t pctrval;
 void
 click_cycle_counter(int which, unsigned int *fnp, unsigned long long *valp)
 {
+#ifdef __i386__
   *fnp = rdmsr(P6MSR_CTRSEL0 + which);
   *valp = rdpmc(which);
   wrmsr(P6MSR_CTR0+which, 0);
+#else
+  printk("<1>click_cycle_counter: not i386\n");
+#endif
 }
