@@ -1,0 +1,41 @@
+%script
+click -e '
+i1 :: InfiniteSource(\<11>, LIMIT 10)
+i2 :: InfiniteSource(\<22>, LIMIT 10)
+i3 :: InfiniteSource(\<33>, LIMIT 10, STOP true)
+ss :: StrideSched(4, 2, 1)
+i1 -> [0] ss; i2 -> [1]ss; i3 -> [2]ss
+ss -> Print -> Discard
+' 2>OUT
+
+%expect OUT
+   1 | 11
+   1 | 11
+   1 | 22
+   1 | 11
+   1 | 11
+   1 | 22
+   1 | 33
+   1 | 11
+   1 | 11
+   1 | 22
+   1 | 11
+   1 | 11
+   1 | 22
+   1 | 33
+   1 | 11
+   1 | 11
+   1 | 22
+   1 | 22
+   1 | 33
+   1 | 22
+   1 | 22
+   1 | 33
+   1 | 22
+   1 | 22
+   1 | 33
+   1 | 33
+   1 | 33
+   1 | 33
+   1 | 33
+   1 | 33
