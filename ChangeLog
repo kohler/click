@@ -1,3 +1,9 @@
+2002-04-24 Wednesday 17:37  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.181), tools/lib/Makefile.in (1.24),
+	userlevel/Makefile.in (1.64): more portability fixes from Scott
+	Page
+
 2002-04-24 Wednesday 12:39  Eddie Kohler <kohler@aciri.org>
 
 	* apps/csclient/csclient.hh (1.4), elements/analysis/fromdagdump.hh
