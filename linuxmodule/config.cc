@@ -185,13 +185,13 @@ write_config(const String &s, Element *, void *thunk, ErrorHandler *)
 
 /********************** Initialization and cleanup ***************************/
 
-extern void export_elements(Lexer *);
+extern void click_export_elements(Lexer *);
 
 void
 click_init_config()
 {
   lexer = new Lexer;
-  export_elements(lexer);
+  click_export_elements(lexer);
   
   Router::add_read_handler(0, "classes", read_classes, 0);
   Router::add_write_handler(0, "config", write_config, 0);

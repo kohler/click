@@ -285,6 +285,8 @@ CLICK_ENDDECLS
 
 
 #ifdef CLICK_USERLEVEL
+extern void click_export_elements(CLICK_NAME(Lexer) *);
+
 CLICK_DECLS
 namespace {
 
@@ -375,8 +377,6 @@ click_static_cleanup()
     String::static_cleanup();
 }
 
-extern void export_elements(Lexer *);
-
 Router *
 click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initialize)
 {
@@ -413,7 +413,7 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     // lex
     if (!click_lexer) {
 	click_lexer = new Lexer;
-	export_elements(click_lexer);
+	click_export_elements(click_lexer);
     }
     RequireLexerExtra lextra(&archive);
     int cookie = click_lexer->begin_parse(config_str, filename, &lextra, errh);

@@ -200,13 +200,13 @@ read_flatconfig(Element *, void *)
 
 /********************** Initialization and cleanup ***************************/
 
-extern void export_elements(Lexer *);
+extern void click_export_elements(Lexer *);
 
 void
 click_init_config()
 {
   lexer = new Lexer(click_logged_errh);
-  export_elements(lexer);
+  click_export_elements(lexer);
   
   Router::add_read_handler(0, "classes", read_classes, 0);
   Router::add_read_handler(0, "config", read_config, 0);

@@ -209,8 +209,6 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 
 // main
 
-extern void export_elements(Lexer *);
-
 int
 main(int argc, char **argv)
 {

@@ -24,7 +24,7 @@ print_bitvector(const Bitvector &bv)
   fprintf(stderr, "\n");
 }
 
-extern void export_elements(Lexer *);
+extern void click_export_elements(Lexer *);
 
 int
 main(int argc, char **argv)
@@ -40,7 +40,7 @@ main(int argc, char **argv)
     fp = new FileLexerSource(argv[1], 0);
   
   Lexer *lex = new Lexer(errh);
-  export_elements(lex);
+  click_export_elements(lex);
   lex->element_types_permanent();
   
   lex->reset(fp);

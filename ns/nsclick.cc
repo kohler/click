@@ -293,7 +293,7 @@ RequireLexerExtra::require(String name, ErrorHandler *errh)
 
 // main
 
-extern void export_elements(Lexer *);
+extern void click_export_elements(Lexer *);
 
 SimState*
 SimState::simmain(simclick_sim siminst,const char *router_file)
@@ -324,7 +324,7 @@ SimState::simmain(simclick_sim siminst,const char *router_file)
 
   // prepare lexer (for packages)
   Lexer* lexer = new Lexer();
-  export_elements(lexer);
+  click_export_elements(lexer);
   
   // lex
   RequireLexerExtra lextra;

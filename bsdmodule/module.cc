@@ -142,8 +142,6 @@ click_clear_error_log()
 
 /******************** Module initialization and cleanup **********************/
 
-extern void export_elements(Lexer *);
-
 static ErrorHandler *syslog_errh;
 
 extern "C" void click_ether_input(struct ifnet *, struct mbuf **, struct ether_header *);
