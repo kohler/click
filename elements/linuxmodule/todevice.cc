@@ -42,7 +42,7 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0), 
-    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0)
+    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), _rejected(0)
 {
 #if DEV_KEEP_STATS
   _idle_calls = 0; 
@@ -57,7 +57,7 @@ ToDevice::ToDevice()
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
-    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0)
+    _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), _rejected(0)
 {
 #if DEV_KEEP_STATS
   _idle_calls = 0; 
@@ -162,8 +162,10 @@ ToDevice::initialize(ErrorHandler *errh)
       
       if (!registered_writers) {
 #ifdef HAVE_CLICK_KERNEL
+#ifndef HAVE_POLLING
 	notifier.next = 0;
 	register_net_out(&notifier);
+#endif
 #else
 	errh->warning("not compiled for a Click kernel");
 #endif
@@ -267,7 +269,8 @@ ToDevice::tx_intr()
   while (sent<TODEV_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
     Packet *p;
     if (p = input(0).pull()) {
-      queue_packet(p);
+      if (queue_packet(p) < 0)
+	break;
       sent++;
     }
     else break;
@@ -354,7 +357,7 @@ ToDevice::tx_intr()
 #endif
 }
 
-void
+int
 ToDevice::queue_packet(Packet *p)
 {
   struct sk_buff *skb1 = p->steal_skb();
@@ -383,6 +386,7 @@ ToDevice::queue_packet(Packet *p)
   if(ret != 0){
     printk("<1>ToDevice %s tx oops\n", _dev->name);
     kfree_skb(skb1);
+    _rejected++;
   }
 }
 
@@ -397,6 +401,7 @@ ToDevice_read_calls(Element *f, void *)
 {
   ToDevice *td = (ToDevice *)f;
   return
+    String(td->_rejected) + " packets rejected\n" +
 #if DEV_KEEP_STATS
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_busy_returns) + " device busy returns\n" +

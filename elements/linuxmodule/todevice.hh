@@ -61,10 +61,11 @@ class ToDevice : public Element {
   unsigned long long _time_tx;
   unsigned long long _time_running;
 #endif
+  unsigned long _rejected;
   
  private:
 
-  void queue_packet(Packet *p);
+  int queue_packet(Packet *p);
 
   String _devname;
   struct device *_dev;
