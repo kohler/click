@@ -1,3 +1,8 @@
+2001-09-04 Tuesday 23:06  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/ipclassifier.cc (1.23): IPClassifier REQUIRES
+	IPFilter, as per Kyle Jamieson
+
 2001-09-02 Sunday 11:24  Eddie Kohler <kohler@aciri.org>
 
 	* etc/libclick/Makefile.in (1.6): libclick configure.in does not
