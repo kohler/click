@@ -1,0 +1,62 @@
+# 
+# $Id: example.clgw,v 1.1 2004/02/23 05:30:30 max Exp $
+#
+#  Script to be processed with click-mkclgw.pl, to make a click configuration
+#
+
+#
+# Parameters - SNIFF determines whether we've enabled Sniffing devices
+# (for tcpdump), LBNODES determines the number of load-balancer nodes
+# to add on the consistent hash ring, and LBSEED is the random number
+# generator seed.
+#
+{(param);
+SNIFF		0;
+LBNODES		129;
+LBSEED		0xbadbeef;
+}
+
+#
+# default internal and external IP addresses for the gateway
+# to bind to.  it will also be binding to other addresses.
+#
+{(default);
+INTERNAL	10.0.0.1	10.0.0.0/17	00:07:e9:5d:79:51;
+EXTERNAL 	77.59.77.4 	77.59.77.0/26 	00:07:e9:5d:79:52;
+NEXTHOP 		 			00:01:30:88:cd:00;
+INTDNS		10.0.12.20;
+}
+
+#
+# Reverse NAT; Each server stage[i] has a unique internal
+# and external IP address. Let ssh and www in through the FW
+#
+{(ssh|www);
+stage[0-3]	77.59.77.[20-23]	10.0.10.[10-13];
+stage4		77.59.77.19		10.0.10.9
+}
+
+#
+# Reverse NAT, but all ports are wide open (danger!!)
+#
+{(*);
+grave		77.59.77.14		10.0.10.14
+}
+
+#
+# ws[1-14] but ws2, ws3, and ws[5-7] are out of service.
+# external address is 77.59.77.10
+# internal mapped addresses are 10.0.11.[11-24]
+# internal GW address is 10.0.11.1
+# All traffic originating on 10.0.11.0/24 will be NATed to 77.59.77.10
+#
+{(www);
+ws[1-14]/[2,3,5-7]  77.59.77.10	 10.0.11.[11-24]  10.0.11.1  10.0.11.0/24
+}
+
+#
+# All traffic on 10.0.30.0/24 will be NATed to 77.59.77.40
+#
+{(natp);
+foo	77.59.77.40 	10.0.30.1 	10.0.30.0/24 
+}
