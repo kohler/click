@@ -80,7 +80,9 @@ Version 1.1
 
 * General
 
-** Added new `tickets' handler, available by default on every element.
+** Added new `tickets' and `handlers' handlers, available by default on
+   every element. Removed default `inputs' and `outputs' handlers,
+   replacing them with `ports'.
 
 ** Improved support for large numbers of handlers by reducing memory usage.
 

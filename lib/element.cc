@@ -423,15 +423,23 @@ write_element_config(const String &conf, Element *e, void *,
 }
 
 static String
-read_element_inputs(Element *e, void *)
+read_element_ports(Element *e, void *)
 {
-  return e->router()->element_inputs_string(e->eindex());
+  return e->router()->element_ports_string(e->eindex());
 }
 
 static String
-read_element_outputs(Element *e, void *)
+read_element_handlers(Element *e, void *)
 {
-  return e->router()->element_outputs_string(e->eindex());
+  Vector<int> handlers;
+  Router *r = e->router();
+  r->element_handlers(e->eindex(), handlers);
+  StringAccum sa;
+  for (int i = 0; i < handlers.size(); i++) {
+    const Router::Handler &h = r->handler(handlers[i]);
+    sa << h.name << '\n';
+  }
+  return sa.take_string();
 }
 
 static String
@@ -510,8 +518,8 @@ Element::add_default_handlers(bool allow_write_config)
   add_read_handler("config", read_element_config, 0);
   if (allow_write_config && can_live_reconfigure())
     add_write_handler("config", write_element_config, 0);
-  add_read_handler("inputs", read_element_inputs, 0);
-  add_read_handler("outputs", read_element_outputs, 0);
+  add_read_handler("ports", read_element_ports, 0);
+  add_read_handler("handlers", read_element_handlers, 0);
   add_read_handler("tickets", read_element_tickets, 0);
 #if CLICK_STATS >= 1
   add_read_handler("icounts", read_element_icounts, 0);

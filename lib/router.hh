@@ -157,8 +157,7 @@ class Router : public ElementLink {
   
   String flat_configuration_string() const;
   String element_list_string() const;
-  String element_inputs_string(int) const;
-  String element_outputs_string(int) const;
+  String element_ports_string(int) const;
   
   void please_stop_driver()			{ _please_stop_driver = 1; }
   

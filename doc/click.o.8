@@ -170,13 +170,13 @@ read-only. The element's current configuration. Writing to this file (if it
 is writable) causes the element to reconfigure itself on the fly. If the
 reconfiguration fails, the element's old configuration is used instead.
 .TP
-.BI /proc/click/xxx/inputs
-Read-only. Describes the element's inputs: how many there are, and (for
-pull inputs) what they are connected to.
+.BI /proc/click/xxx/ports
+Read-only. Describes the element's input and output ports: how many there
+are, their processing type, and (for pull inputs and push outputs) what
+they are connected to.
 .TP
-.BI /proc/click/xxx/outputs
-Read-only. Describes the element's outputs: how many there are, and (for
-push outputs) what they are connected to.
+.BI /proc/click/xxx/handlers
+Read-only. Lists the element's handlers.
 .TP
 .BI /proc/click/xxx/tickets
 Read-only. Describes the element's scheduler-related state. Contains a

@@ -1280,7 +1280,7 @@ Router::element_list_string() const
 }
 
 String
-Router::element_inputs_string(int fi) const
+Router::element_ports_string(int fi) const
 {
   if (fi < 0 || fi >= nelements()) return String();
   StringAccum sa;
@@ -1289,7 +1289,8 @@ Router::element_inputs_string(int fi) const
   Subvector<int> in_pers(pers, 0, f->ninputs());
   Subvector<int> out_pers(pers, f->ninputs(), f->noutputs());
   f->processing_vector(in_pers, out_pers, 0);
-  sa << f->ninputs() << "\n";
+
+  sa << f->ninputs() << " inputs\n";
   for (int i = 0; i < f->ninputs(); i++) {
     // processing
     const char *persid = (f->input_is_pull(i) ? "pull" : "push");
@@ -1315,20 +1316,8 @@ Router::element_inputs_string(int fi) const
       }
     sa << "\n";
   }
-  return sa.take_string();
-}
 
-String
-Router::element_outputs_string(int fi) const
-{
-  if (fi < 0 || fi >= nelements()) return String();
-  StringAccum sa;
-  Element *f = _elements[fi];
-  Vector<int> pers(f->ninputs() + f->noutputs(), 0);
-  Subvector<int> in_pers(pers, 0, f->ninputs());
-  Subvector<int> out_pers(pers, f->ninputs(), f->noutputs());
-  f->processing_vector(in_pers, out_pers, 0);
-  sa << f->noutputs() << "\n";
+  sa << f->noutputs() << " outputs\n";
   for (int i = 0; i < f->noutputs(); i++) {
     // processing
     const char *persid = (f->output_is_push(i) ? "push" : "pull");
@@ -1354,6 +1343,7 @@ Router::element_outputs_string(int fi) const
       }
     sa << "\n";
   }
+  
   return sa.take_string();
 }
 
