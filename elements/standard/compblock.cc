@@ -20,7 +20,6 @@
 #include "compblock.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
-#include <clicknet/ip.h>
 #include <click/packet_anno.hh>
 
 CompareBlock::CompareBlock()
