@@ -3807,14 +3807,14 @@ are connected to. The string has the form
 Each port description lists the port's processing type, a dash, and then
 a comma-separated list of all the ports to which this port is connected.
 The processing type is either @samp{push} or @samp{pull}; formerly
-agnostic ports are indicated by a trailing hyphen (@samp{push-} or
-@samp{pull-}). Example result:
+agnostic ports are indicated by a trailing tilde (@samp{push~} or
+@samp{pull~}). Example result:
 
 @example
 1 input
-push-   -       Strip@@2 [0]
+push~   -       Strip@@2 [0]
 2 outputs
-push-   -       [0] GetIPAddress@@4
+push~   -       [0] GetIPAddress@@4
 push    -       [0] Print@@7
 @end example
 

@@ -1,5 +1,13 @@
 Click NEWS
 
+Version 1.2.5
+
+* Tools
+
+** Changed meaning of click-mkmindriver's `-e' option. Now `-e' means
+   `--expression' for consistency. `-E' means `--elements'.
+
+
 Version 1.2.4   21.May.2002
 
 * Drivers
