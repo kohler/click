@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include <click/confparse.hh>
-#include <click/click_tcp.h>
+#include <clicknet/tcp.h>
 #include "copyflowid.hh"
 
 CopyFlowID::CopyFlowID()

@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include "udpipencap.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

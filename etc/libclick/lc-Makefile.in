@@ -25,6 +25,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 includedir = @includedir@/click
+netincludedir = @includedir@/clicknet
 bindir = @bindir@
 datadir = @datadir@/click
 
@@ -49,6 +50,8 @@ install-include: stamp-h
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(includedir)
 	$(mkinstalldirs) $(includedir)/standard
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(includedir)/standard
+	$(mkinstalldirs) $(netincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(netincludedir)
 
 click-compile: $(srcdir)/click-compile.in
 	cd $(top_builddir) && \
@@ -63,7 +66,7 @@ Makefile: config.status $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 config.h: stamp-h
-stamp-h: $(srcdir)/config.h.in $(srcdir)/config-bsdmodule.h.in $(srcdir)/config-linuxmodule.h.in $(srcdir)/config-userlevel.h.in config.status
+stamp-h: $(srcdir)/config.h.in $(srcdir)/config-userlevel.h.in config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES= $(SHELL) ./config.status
 	echo > stamp-h

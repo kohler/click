@@ -25,9 +25,9 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/packet_anno.hh>
-#include <click/click_ip.h>
-#include <click/click_udp.h>
-#include <click/click_tcp.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
+#include <clicknet/tcp.h>
 #include <click/userutils.hh>
 #include <unistd.h>
 #include <sys/types.h>

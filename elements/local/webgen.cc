@@ -17,8 +17,8 @@
 
 #include <click/config.h>
 #include "webgen.hh"
-#include <click/click_tcp.h>
-#include <click/click_ip.h>
+#include <clicknet/tcp.h>
+#include <clicknet/ip.h>
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>

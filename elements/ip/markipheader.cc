@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "markipheader.hh"
 #include <click/confparse.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 MarkIPHeader::MarkIPHeader()
   : Element(1, 1)

@@ -54,8 +54,8 @@
 #include <click/glue.hh>
 #include <click/gaprate.hh>
 #include <click/packet.hh>
-#include <click/click_ether.h>
-#include <click/click_tcp.h>
+#include <clicknet/ether.h>
+#include <clicknet/tcp.h>
 
 class FastTCPFlows : public Element {
 

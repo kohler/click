@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "floodinglocquerier.hh"
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>

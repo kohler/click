@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "saveipfields.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
 

@@ -19,8 +19,8 @@
 #include "forceicmp.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
-#include <click/click_ip.h>
-#include <click/click_icmp.h>
+#include <clicknet/ip.h>
+#include <clicknet/icmp.h>
 #include <click/confparse.hh>
 
 ForceICMP::ForceICMP()

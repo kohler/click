@@ -4,8 +4,8 @@
 #include <click/ipaddress.hh>
 #include <click/ipflowid.hh>
 #include <click/hashmap.hh>
-#include <click/click_ip.h>
-#include <click/click_tcp.h>
+#include <clicknet/ip.h>
+#include <clicknet/tcp.h>
 
 /*
  * SnoopTCP

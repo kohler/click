@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "setipchecksum.hh"
 #include <click/glue.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 SetIPChecksum::SetIPChecksum()
   : Element(1, 1)

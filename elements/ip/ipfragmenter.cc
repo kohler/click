@@ -19,7 +19,7 @@
 
 #include <click/config.h>
 #include "ipfragmenter.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>

@@ -24,9 +24,9 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <click/click_ip.h>
-#include <click/click_udp.h>
-#include <click/click_tcp.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
+#include <clicknet/tcp.h>
 #include <click/packet_anno.hh>
 #include <click/userutils.hh>
 #include <unistd.h>

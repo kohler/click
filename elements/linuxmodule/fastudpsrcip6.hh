@@ -54,8 +54,8 @@
 #include <click/glue.hh>
 #include <click/gaprate.hh>
 #include <click/packet.hh>
-#include <click/click_ether.h>
-#include <click/click_udp.h>
+#include <clicknet/ether.h>
+#include <clicknet/udp.h>
 #include <click/ip6address.hh>
 
 class FastUDPSourceIP6 : public Element {

@@ -22,7 +22,7 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
-#include <click/click_tcp.h>	/* for SEQ_LT, etc. */
+#include <clicknet/tcp.h>	/* for SEQ_LT, etc. */
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>

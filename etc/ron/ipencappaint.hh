@@ -32,7 +32,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 class IPEncapPaint : public Element {
   

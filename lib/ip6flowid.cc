@@ -20,8 +20,8 @@
 
 #include <click/glue.hh>
 #include <click/ip6flowid.hh>
-#include <click/click_ip6.h>
-#include <click/click_udp.h>
+#include <clicknet/ip6.h>
+#include <clicknet/udp.h>
 #include <click/packet.hh>
 #include <click/confparse.hh>
 

@@ -21,7 +21,7 @@
 #include <click/bitvector.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include <click/standard/scheduleinfo.hh>
 #include <unistd.h>
 #include <fcntl.h>

@@ -16,8 +16,8 @@
  */
 
 #include <click/config.h>
-#include <click/click_icmp.h>
-#include <click/click_ip.h>
+#include <clicknet/icmp.h>
+#include <clicknet/ip.h>
 #include <click/ipaddressset.hh>
 #include "icmperror.hh"
 #include <click/ipaddress.hh>

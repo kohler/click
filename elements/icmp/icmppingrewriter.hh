@@ -5,7 +5,7 @@
 #include <click/timer.hh>
 #include <click/bighashmap.hh>
 #include <click/ipflowid.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 /*
 =c

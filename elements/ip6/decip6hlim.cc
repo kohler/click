@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "decip6hlim.hh"
-#include <click/click_ip6.h>
+#include <clicknet/ip6.h>
 #include <click/glue.hh>
 
 DecIP6HLIM::DecIP6HLIM()

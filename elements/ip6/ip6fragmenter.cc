@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "ip6fragmenter.hh"
-#include <click/click_ip6.h>
+#include <clicknet/ip6.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>

@@ -21,8 +21,8 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <click/click_ip.h>
-#include <click/click_icmp.h>
+#include <clicknet/ip.h>
+#include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
 
 ICMPSendPings::ICMPSendPings()

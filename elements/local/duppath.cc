@@ -1,6 +1,6 @@
 #include <click/config.h>
 #include <click/error.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include "duppath.hh"
 
 DupPath::DupPath()

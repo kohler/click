@@ -20,7 +20,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <click/click_tcp.h>
+#include <clicknet/tcp.h>
 
 class TCPIPSend : public Element {
 public:

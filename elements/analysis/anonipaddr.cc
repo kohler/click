@@ -20,8 +20,8 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/click_ip.h>
-#include <click/click_udp.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
 #include <click/llrpc.h>
 #include <click/integers.hh>	// for first_bit_set
 #ifdef CLICK_USERLEVEL

@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "lrhello.hh"
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "elements/userlevel/todevice.hh"

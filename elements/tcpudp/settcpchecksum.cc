@@ -20,8 +20,8 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/click_ip.h>
-#include <click/click_tcp.h>
+#include <clicknet/ip.h>
+#include <clicknet/tcp.h>
 
 SetTCPChecksum::SetTCPChecksum()
   : Element(1, 1), _fixoff(false)

@@ -52,7 +52,7 @@
 # endif
 #endif
 
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 DivertSocket::DivertSocket()
 {

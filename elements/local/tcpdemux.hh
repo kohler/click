@@ -3,7 +3,7 @@
 #define TCPDEMUX_HH
 #include <click/element.hh>
 #include <click/timer.hh>
-#include <click/click_tcp.h>
+#include <clicknet/tcp.h>
 #include <click/bighashmap.hh>
 #include <click/ipflowid.hh>
 

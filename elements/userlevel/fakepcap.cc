@@ -18,11 +18,11 @@
 
 #include <click/config.h>
 #include "fakepcap.hh"
-#include <click/click_ip.h>
-#include <click/click_ip6.h>
-#include <click/click_ether.h>
-#include <click/fddi.h>
-#include <click/rfc1483.h>
+#include <clicknet/ip.h>
+#include <clicknet/ip6.h>
+#include <clicknet/ether.h>
+#include <clicknet/fddi.h>
+#include <clicknet/rfc1483.h>
 
 int
 fake_pcap_parse_dlt(const String &str)

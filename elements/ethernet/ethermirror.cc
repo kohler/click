@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "ethermirror.hh"
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 
 EtherMirror::EtherMirror()
 {

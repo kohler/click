@@ -22,7 +22,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <click/click_tcp.h>
+#include <clicknet/tcp.h>
 #include <click/string.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>

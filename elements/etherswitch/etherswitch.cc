@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "etherswitch.hh"
 
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/glue.hh>
 #include <click/bitvector.hh>

@@ -19,7 +19,7 @@
 #include "portclassifier.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/click_tcp.h>
+#include <clicknet/tcp.h>
 
 PortClassifier::PortClassifier()
 {

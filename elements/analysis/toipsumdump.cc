@@ -23,9 +23,9 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
-#include <click/click_ip.h>
-#include <click/click_udp.h>
-#include <click/click_tcp.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
+#include <clicknet/tcp.h>
 #include <unistd.h>
 #include <time.h>
 #include <sys/time.h>

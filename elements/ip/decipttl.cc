@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "decipttl.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/glue.hh>
 
 DecIPTTL::DecIPTTL()

@@ -15,7 +15,7 @@
  */
 
 #include <click/config.h>
-#include <click/click_ip6.h>
+#include <clicknet/ip6.h>
 #include "fastudpsrcip6.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

@@ -5,9 +5,9 @@
 #include <sys/uio.h>
 #include <unistd.h>
 #include <fcntl.h>
-#include <click/click_ether.h>
-#include <click/click_ip.h>
-#include <click/click_udp.h>
+#include <clicknet/ether.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
 #include "grid.hh"
 #include "gridroutetable.hh"
 

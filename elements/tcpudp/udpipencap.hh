@@ -24,7 +24,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/atomic.hh>
-#include <click/click_udp.h>
+#include <clicknet/udp.h>
 
 class UDPIPEncap : public Element { public:
 

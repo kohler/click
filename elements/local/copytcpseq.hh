@@ -1,7 +1,7 @@
 #ifndef COPYTCPSEQ_HH
 #define COPYTCPSEQ_HH
 #include <click/element.hh>
-#include <click/click_tcp.h>
+#include <clicknet/tcp.h>
 #include <click/ipflowid.hh>
 
 /*

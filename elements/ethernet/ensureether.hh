@@ -36,7 +36,7 @@ For IP packets you probably want to use ARPQuerier instead.
 EtherEncap */
 
 #include <click/element.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 
 class EnsureEther : public Element { public:
   

@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 
 HostEtherFilter::HostEtherFilter()
 {

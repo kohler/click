@@ -25,7 +25,7 @@
 #include <click/glue.hh>
 #include <click/handlercall.hh>
 #include <click/packet_anno.hh>
-#include <click/rfc1483.h>
+#include <clicknet/rfc1483.h>
 #include <click/userutils.hh>
 #include "elements/userlevel/fakepcap.hh"
 #include <unistd.h>

@@ -18,8 +18,8 @@
 
 #include <click/config.h>
 #include "icmppingrewriter.hh"
-#include <click/click_ip.h>
-#include <click/click_icmp.h>
+#include <clicknet/ip.h>
+#include <clicknet/icmp.h>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>

@@ -17,9 +17,9 @@
 
 #include <click/config.h>
 #include "ipmirror.hh"
-#include <click/click_ip.h>
-#include <click/click_udp.h>
-#include <click/click_tcp.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
+#include <clicknet/tcp.h>
 
 IPMirror::IPMirror()
   : Element(1, 1)

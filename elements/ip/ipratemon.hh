@@ -59,7 +59,7 @@
  * =a IPFlexMonitor, CompareBlock */
 
 #include <click/glue.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/element.hh>
 #include <click/ewma.hh>
 #include <click/vector.hh>

@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include <click/confparse.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include "pingpong.hh"
 #include <click/glue.hh>
 #include <sys/time.h>

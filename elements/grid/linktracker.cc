@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include <click/confparse.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include <click/error.hh>
 #include "linktracker.hh"
 #include <click/glue.hh>

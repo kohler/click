@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "stripipheader.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 StripIPHeader::StripIPHeader()
   : Element(1, 1)

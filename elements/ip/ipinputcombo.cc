@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "ipinputcombo.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/ipaddressset.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>

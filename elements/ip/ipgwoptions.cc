@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "ipgwoptions.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/ipaddressset.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>

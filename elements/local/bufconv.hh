@@ -2,7 +2,7 @@
 #define BUFCONV_HH
 #include <click/element.hh>
 #include <click/timer.hh>
-#include <click/click_tcp.h>
+#include <clicknet/tcp.h>
 
 /*
  * =c

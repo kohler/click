@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "chuckcheck.hh"
 #include <click/straccum.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 ChuckCheck::ChuckCheck()
   : Element(1, 1)

@@ -40,7 +40,7 @@ Returns or sets the DST parameter.
 ARPQuerier, EnsureEther */
 
 #include <click/element.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 
 class EtherEncap : public Element { public:
   

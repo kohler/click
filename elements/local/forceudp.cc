@@ -19,8 +19,8 @@
 #include "forceudp.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
-#include <click/click_ip.h>
-#include <click/click_udp.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
 #include <click/confparse.hh>
 
 ForceUDP::ForceUDP()

@@ -22,7 +22,7 @@
 #include <click/error.hh>
 #include "grid.hh"
 #include <click/router.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 
 FixSrcLoc::FixSrcLoc() : Element(1, 1), _locinfo(0)
 {

@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "unstripipheader.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 UnstripIPHeader::UnstripIPHeader()
   : Element(1, 1)

@@ -11,7 +11,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/timer.hh>
 
 class ChangeUID : public Element {

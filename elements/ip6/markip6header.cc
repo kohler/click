@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "markip6header.hh"
 #include <click/confparse.hh>
-#include <click/click_ip6.h>
+#include <clicknet/ip6.h>
 
 MarkIP6Header::MarkIP6Header()
 {

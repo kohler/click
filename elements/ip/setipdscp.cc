@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "setipdscp.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
 

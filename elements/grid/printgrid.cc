@@ -23,7 +23,7 @@
 
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include "grid.hh"
 
 PrintGrid::PrintGrid()

@@ -22,7 +22,7 @@
 #include <click/error.hh>
 #include "grid.hh"
 #include <click/router.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 
 FixDstLoc::FixDstLoc() : Element(1, 1), _loctab(0)
 {

@@ -24,10 +24,10 @@
 #include <click/packet_anno.hh>
 #include <click/router.hh>
 
-#include <click/click_ip.h>
-#include <click/click_icmp.h>
-#include <click/click_tcp.h>
-#include <click/click_udp.h>
+#include <clicknet/ip.h>
+#include <clicknet/icmp.h>
+#include <clicknet/tcp.h>
+#include <clicknet/udp.h>
 
 #if CLICK_USERLEVEL
 # include <stdio.h>

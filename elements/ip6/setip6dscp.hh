@@ -15,7 +15,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include <click/click_ip6.h>
+#include <clicknet/ip6.h>
 
 class SetIP6DSCP : public Element {
 

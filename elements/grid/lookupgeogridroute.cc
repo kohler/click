@@ -20,8 +20,8 @@
 #include "lookupgeogridroute.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/click_ether.h>
-#include <click/click_ip.h>
+#include <clicknet/ether.h>
+#include <clicknet/ip.h>
 #include <click/standard/scheduleinfo.hh>
 #include "grid.hh"
 #include <click/router.hh>

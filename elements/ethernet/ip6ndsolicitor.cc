@@ -17,7 +17,7 @@
 
 #include <click/config.h>
 #include "ip6ndsolicitor.hh"
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include <click/etheraddress.hh>
 #include <click/ip6address.hh>
 #include <click/confparse.hh>

@@ -31,19 +31,19 @@
 #endif
 
 // Include header structures so we can check their sizes with static_assert.
-#include <click/click_ether.h>
-#include <click/click_ip.h>
-#include <click/click_icmp.h>
-#include <click/click_tcp.h>
-#include <click/click_udp.h>
-#include <click/click_ip6.h>
-#include <click/fddi.h>
-#include <click/rfc1483.h>
+#include <clicknet/ether.h>
+#include <clicknet/fddi.h>
+#include <clicknet/ip.h>
+#include <clicknet/ip6.h>
+#include <clicknet/icmp.h>
+#include <clicknet/tcp.h>
+#include <clicknet/udp.h>
+#include <clicknet/rfc1483.h>
 
 void
 click_check_header_sizes()
 {
-  // <click/click_ether.h>
+  // <clicknet/ether.h>
   static_assert(sizeof(click_ether) == 14);
   static_assert(sizeof(click_arp) == 8);
   static_assert(sizeof(click_ether_arp) == 28);
@@ -51,32 +51,32 @@ click_check_header_sizes()
   static_assert(sizeof(click_nd_adv) == 32);
   static_assert(sizeof(click_nd_adv2) == 24);
 
-  // <click/click_ip.h>
+  // <clicknet/ip.h>
   static_assert(sizeof(click_ip) == 20);
 
-  // <click/click_icmp.h>
+  // <clicknet/icmp.h>
   static_assert(sizeof(icmp_generic) == 8);
   static_assert(sizeof(icmp_param) == 8);
   static_assert(sizeof(icmp_redirect) == 8);
   static_assert(sizeof(icmp_sequenced) == 8);
   static_assert(sizeof(icmp_time) == 20);
 
-  // <click/click_tcp.h>
+  // <clicknet/tcp.h>
   static_assert(sizeof(click_tcp) == 20);
 
-  // <click/click_udp.h>
+  // <clicknet/udp.h>
   static_assert(sizeof(click_udp) == 8);
 
-  // <click/click_ip6.h>
+  // <clicknet/ip6.h>
   static_assert(sizeof(click_ip6) == 40);
 
-  // <click/fddi.h>
+  // <clicknet/fddi.h>
   static_assert(sizeof(click_fddi) == 13);
   static_assert(sizeof(click_fddi_8022_1) == 16);
   static_assert(sizeof(click_fddi_8022_2) == 17);
   static_assert(sizeof(click_fddi_snap) == 21);
 
-  // <click/rfc1483.h>
+  // <clicknet/rfc1483.h>
   static_assert(sizeof(click_rfc1483) == 8);
 }
 

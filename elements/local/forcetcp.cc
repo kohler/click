@@ -19,8 +19,8 @@
 #include "forcetcp.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
-#include <click/click_ip.h>
-#include <click/click_tcp.h>
+#include <clicknet/ip.h>
+#include <clicknet/tcp.h>
 #include <click/confparse.hh>
 
 ForceTCP::ForceTCP()

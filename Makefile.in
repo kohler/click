@@ -27,6 +27,7 @@ EXTRA_PROVIDES =
 prefix = @prefix@
 exec_prefix = @exec_prefix@
 includedir = @includedir@/click
+netincludedir = @includedir@/clicknet
 toolincludedir = @includedir@/clicktool
 bindir = @bindir@
 datadir = @datadir@/click
@@ -71,6 +72,8 @@ install-include: stamp-h
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/*.h $(includedir)
 	$(mkinstalldirs) $(includedir)/standard
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(includedir)/standard
+	$(mkinstalldirs) $(netincludedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(netincludedir)
 	$(mkinstalldirs) $(toolincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/tools/lib/*.hh $(toolincludedir)
 

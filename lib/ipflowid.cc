@@ -19,8 +19,8 @@
 #include <click/config.h>
 
 #include <click/ipflowid.hh>
-#include <click/click_ip.h>
-#include <click/click_udp.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
 #include <click/packet.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>

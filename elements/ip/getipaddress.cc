@@ -20,7 +20,7 @@
 #include "getipaddress.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 GetIPAddress::GetIPAddress()
   : Element(1, 1)

@@ -19,12 +19,12 @@
 #include "protocoltranslator46.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/click_ip.h>
-#include <click/click_ip6.h>
-#include <click/click_icmp.h>
-#include <click/click_icmp6.h>
-#include <click/click_tcp.h>
-#include <click/click_udp.h>
+#include <clicknet/ip.h>
+#include <clicknet/ip6.h>
+#include <clicknet/icmp.h>
+#include <clicknet/icmp6.h>
+#include <clicknet/tcp.h>
+#include <clicknet/udp.h>
 
 
 ProtocolTranslator46::ProtocolTranslator46()

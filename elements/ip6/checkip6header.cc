@@ -18,7 +18,7 @@
 
 #include <click/config.h>
 #include "checkip6header.hh"
-#include <click/click_ip6.h>
+#include <clicknet/ip6.h>
 #include <click/ip6address.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>

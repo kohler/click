@@ -75,7 +75,7 @@ Returns or sets the DST parameter.
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/atomic.hh>
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 
 class IPEncap : public Element { public:
   

@@ -1,7 +1,7 @@
 #ifndef TCPBUFFER_HH
 #define TCPBUFFER_HH
 #include <click/element.hh>
-#include <click/click_tcp.h>
+#include <clicknet/tcp.h>
 
 /*
  * =c

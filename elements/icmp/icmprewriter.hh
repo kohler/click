@@ -2,8 +2,8 @@
 #ifndef ICMPREWRITER_HH
 #define ICMPREWRITER_HH
 #include <click/element.hh>
-#include <click/click_udp.h>
-#include <click/click_icmp.h>
+#include <clicknet/udp.h>
+#include <clicknet/icmp.h>
 #include "elements/ip/iprw.hh"
 #include "elements/icmp/icmppingrewriter.hh"
 

@@ -18,8 +18,8 @@
 
 #include <click/config.h>
 #include "ip6ndadvertiser.hh"
-#include <click/click_ether.h>
-#include <click/click_ip6.h>
+#include <clicknet/ether.h>
+#include <clicknet/ip6.h>
 #include <click/etheraddress.hh>
 #include <click/ip6address.hh>
 #include <click/confparse.hh>

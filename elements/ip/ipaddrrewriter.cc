@@ -18,7 +18,7 @@
 #include <click/config.h>
 #include "iprw.hh"
 #include "ipaddrrewriter.hh"
-#include <click/click_ip.h>
+#include <clicknet/ip.h>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>

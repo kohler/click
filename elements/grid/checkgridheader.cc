@@ -22,8 +22,8 @@
 #include "checkgridheader.hh"
 #include <click/glue.hh>
 #include "grid.hh"
-#include <click/click_ether.h>
-#include <click/click_ip.h>
+#include <clicknet/ether.h>
+#include <clicknet/ip.h>
 
 CheckGridHeader::CheckGridHeader()
   : _drops(0)

@@ -17,9 +17,9 @@
 
 #include <click/config.h>
 #include "ip6mirror.hh"
-#include <click/click_ip.h>
-#include <click/click_ip6.h>
-#include <click/click_udp.h>
+#include <clicknet/ip.h>
+#include <clicknet/ip6.h>
+#include <clicknet/udp.h>
 
 IP6Mirror::IP6Mirror()
   : Element(1, 1)

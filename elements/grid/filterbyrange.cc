@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/router.hh>
-#include <click/click_ether.h>
+#include <clicknet/ether.h>
 #include <click/glue.hh>
 
 FilterByRange::FilterByRange() : Element(1, 2), _locinfo(0)

@@ -48,7 +48,6 @@ include/click/etheraddress.hh
 include/click/ewma.cc
 include/click/ewma.hh
 include/click/ewma64.hh
-include/click/fddi.h
 include/click/gaprate.hh
 include/click/glue.hh
 include/click/handlercall.hh
@@ -69,7 +68,6 @@ include/click/package.hh
 include/click/packet.hh
 include/click/packet_anno.hh
 include/click/perfctr-i586.hh
-include/click/rfc1483.h
 include/click/router.hh
 include/click/routerthread.hh
 include/click/skbmgr.hh
@@ -90,6 +88,17 @@ include/click/standard/alignmentinfo.hh
 include/click/standard/drivermanager.hh
 include/click/standard/errorelement.hh
 include/click/standard/scheduleinfo.hh
+
+include/clicknet
+include/clicknet/ether.h
+include/clicknet/fddi.h
+include/clicknet/icmp.h
+include/clicknet/icmp6.h
+include/clicknet/ip.h
+include/clicknet/ip6.h
+include/clicknet/tcp.h
+include/clicknet/udp.h
+include/clicknet/rfc1483.h
 
 lib:libsrc
 etc/libclick/lc-libsrc-Makefile.in:libsrc/Makefile.in

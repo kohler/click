@@ -16,9 +16,9 @@
  */
 
 #include <click/config.h>
-#include <click/click_icmp6.h>
-#include <click/click_ip6.h>
-#include <click/click_ip.h>
+#include <clicknet/icmp6.h>
+#include <clicknet/ip6.h>
+#include <clicknet/ip.h>
 #include "icmp6error.hh"
 #include <click/ip6address.hh>
 #include <click/confparse.hh>
