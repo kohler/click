@@ -51,7 +51,7 @@ AlignmentInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (parts.size() == 0)
       errh->warning("empty configuration argument %d", i);
     
-    else if (Element *e = router()->find(this, parts[0], 0)) {
+    else if (Element *e = cp_element(parts[0], this, 0)) {
       int number = e->eindex();
       if (_elem_offset.size() <= number) {
 	_elem_offset.resize(number + 1, -1);

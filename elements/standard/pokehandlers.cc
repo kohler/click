@@ -68,11 +68,12 @@ PokeHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
       }
     }
 
-    int dot = first.find_left('.');
-    if (dot >= 0) {
-      if (Element *e = router()->find(this, first.substring(0, dot), errh)) {
+    Element *e;
+    String hname;
+    if (first.find_left('.') > 0) {
+      if (cp_handler(first, this, &e, &hname, errh)) {
 	_h_element.push_back(e);
-	_h_handler.push_back(first.substring(dot + 1));
+	_h_handler.push_back(hname);
 	_h_value.push_back(rest);
 	_h_timeout.push_back(next_timeout);
 	next_timeout = 0;
