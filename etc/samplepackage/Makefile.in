@@ -122,7 +122,7 @@ upackage.cc: uelements.conf $(clicksrcdir)/mkelemconf.sh
 	$(clicksrcdir)/mkelemconf.sh -k $(package) < uelements.conf > upackage.cc
 	@rm -f upackage.d
 
-DEPFILES := $(wildcard *.{d,kd,ud})
+DEPFILES := $(wildcard *.d *.kd *.ud)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
