@@ -37,6 +37,7 @@ class RateEWMAX {
   static const int stability_shift = Stability_shift;
   static const int scale = Scale;
   static unsigned now()			{ return Timer::now(); }
+  static unsigned freq()		{ return Timer::freq(); }
   
   void initialize();
   void initialize(unsigned now);
@@ -52,6 +53,7 @@ class RateEWMAX {
 
 struct JiffiesTimer {
   static unsigned now()			{ return click_jiffies(); }
+  static unsigned freq()                { return CLICK_HZ; }
 };
 
 typedef DirectEWMAX<4, 10> DirectEWMA;

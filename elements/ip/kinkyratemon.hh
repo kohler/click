@@ -1,8 +1,8 @@
-#ifndef IPRATEMON_HH
-#define IPRATEMON_HH
+#ifndef KINKYRATEMON_HH
+#define KINKYRATEMON_HH
 
 /*
- * =c IPRateMonitor(PB, OFF, RATIO, THRESH, MEMORY)
+ * =c KinkyRateMonitor(PB, OFF, RATIO, THRESH, MEMORY)
  *
  * =d
  * Monitors network traffic rates. Can monitor either packet or byte rate (per
@@ -12,7 +12,7 @@
  * with the rates for dst or src IP address.
  *
  * Packets coming in one input 0 are inspected on src address. Packets coming in
- * on input 1 are insepected on dst address. This enables IPRateMonitor to
+ * on input 1 are insepected on dst address. This enables KinkyRateMonitor to
  * annotate packets with both the forward rate and reverse rate.
  *
  * PB: PACKETS or BYTES. Count number of packets or bytes.
@@ -22,10 +22,10 @@
  * RATIO: chance that EWMA gets updated before packet is annotated with EWMA
  * value.
  *
- * THRESH: IPRateMonitor further splits a subnet if rate is over THRESH number
+ * THRESH: KinkyRateMonitor further splits a subnet if rate is over THRESH number
  * packets or bytes per second. Always specify value as if RATIO were 1.
  *
- * MEMORY: How much memory can IPRateMonitor use in kilobytes? Minimum of 100 is
+ * MEMORY: How much memory can KinkyRateMonitor use in kilobytes? Minimum of 100 is
  * enforced. 0 is unlimited memory.
  *
  * =h look (read)
@@ -40,7 +40,7 @@
  * When written, resets all rates.
  *
  * =e Example: 
- * = IPRateMonitor(PACKETS, 0, 0.5, 256, 600);
+ * = KinkyRateMonitor(PACKETS, 0, 0.5, 256, 600);
  *
  * Monitors packet rates. The memory usage is limited to 600K. When rate for a
  * network address (e.g. 18.26.*.*) exceeds 256 packets per second, start
@@ -63,20 +63,20 @@
 
 #define PERIODIC_FOLD_INIT     8192     // every n packets, a fold() is done
 
-struct HalfSecondsTimer {
+struct KinkySecondsTimer {
   static unsigned now()			{ return click_jiffies() >> 3; }
   static unsigned freq()                { return CLICK_HZ >> 3; }
 };
 
-class IPRateMonitor : public Element {
+class KinkyRateMonitor : public Element {
 public:
-  IPRateMonitor();
-  ~IPRateMonitor();
+  KinkyRateMonitor();
+  ~KinkyRateMonitor();
 
-  const char *class_name() const		{ return "IPRateMonitor"; }
+  const char *class_name() const		{ return "KinkyRateMonitor"; }
   const char *default_processing() const	{ return AGNOSTIC; }
 
-  IPRateMonitor *clone() const;
+  KinkyRateMonitor *clone() const;
   void notify_ninputs(int);  
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -95,6 +95,7 @@ public:
 
   void push(int port, Packet *p);
   Packet *pull(int port);
+
 
 
 private:
@@ -121,7 +122,7 @@ private:
   */
   
 
-  typedef RateEWMAX<5, 10, HalfSecondsTimer> MyEWMA;
+  typedef RateEWMAX<5, 10, KinkySecondsTimer> MyEWMA;
   // typedef EmptyEWMA MyEWMA;
   
   //
@@ -146,12 +147,30 @@ private:
     Stats *_prev, *_next;           // to maintain age-list
 
     Counter* counter[MAX_COUNTERS];
-    Stats(IPRateMonitor *m);
+    Stats(KinkyRateMonitor *m);
     ~Stats();
 
   private:
-    IPRateMonitor *_rm;             // XXX: this sucks
+    KinkyRateMonitor *_rm;             // XXX: this sucks
   };
+
+
+  struct counter_row {
+  public:
+    ~counter_row();
+    counter_row();
+
+    // Make pointer?
+#define ZOOMED_IN       1
+    char f;
+    // MyEWMA rev_rate;
+    // MyEWMA fwd_rate;
+    Counter zero_counter;
+    Counter* counter[MAX_COUNTERS];
+  };
+
+  counter_row _qbase[MAX_COUNTERS];
+
 
 
 #define COUNT_PACKETS 0
@@ -178,7 +197,7 @@ private:
   void update(IPAddress, int, Packet *, bool, bool);
   void forced_fold();
   void fold(int);
-  Counter *make_counter(Stats *, unsigned char, MyEWMA *, MyEWMA *);
+  Counter *make_counter(Counter**, unsigned char, MyEWMA *, MyEWMA *);
 
   void show_agelist(void);
 
@@ -201,31 +220,90 @@ private:
 // Dives in tables based on addr and raises all rates by val.
 //
 inline void
-IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
+KinkyRateMonitor::update(IPAddress saddr, int val, Packet *p,
     bool forward, bool update_ewma)
 {
   unsigned int addr = saddr.addr();
   struct Stats *s = _base;
   Counter *c = 0;
-  int bitshift;
+  int bitshift = 0;
+  unsigned char byte0 = 0, byte1 = 0;
+
   unsigned now = MyEWMA::now();
   static unsigned prev_fold_time = now;
 
+  //
+  // UPDATE UPPER EWMA
+  //
+  byte0 = addr & 0x000000ff;
+  c = &_qbase[byte0].zero_counter;
+  if(update_ewma)
+    if (forward) {
+      c->fwd_rate.update(now, val);
+    } else {
+      c->rev_rate.update(now, val);
+    }
+
+
+  //
+  // BAIL OUT IF NOT ZOOMED IN ON SECOND BYTE
+  //
+  if(!_qbase[byte0].f) { // i.e. not zoomed in
+    bitshift = 0;
+    goto done;
+
+    //XXX : THIS WILL CAUSE A WRONG ZOOM-IN! NOT IN _qbase, but directly from
+    //zero_counter. That is wrong.
+  }
+
+
+  //
+  // LOOK AT SECOND BYTE
+  //
+  assert(_qbase[byte0].f == ZOOMED_IN);
+  byte1 = (addr >> 8) & 0x000000ff;
+  bitshift = 8;
+
+  // allocate counter if not done yet
+  if (!(c = _qbase[byte0].counter[byte1]))
+    if (!(c = make_counter(_qbase[byte0].counter, byte1, NULL, NULL)))
+      return;
+
+  //
+  // UPDATE EWMA FOR SECOND IP-ADDRESS-BYTE
+  //
+  if(update_ewma)
+    if (forward) {
+      c->fwd_rate.update(now, val);
+    } else {
+      c->rev_rate.update(now, val);
+    }
+
+  //
+  // IF NO DEEPER LEVEL DEFINED: SKIP OVER ZOOMING-IN
+  // 
+  if(!(s = c->next_level))
+    goto done;
+
+
+  bitshift = 16;
   // zoom in to deepest opened level
-  for (bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
+  for (; bitshift <= MAX_SHIFT; bitshift += 8) {
     unsigned char byte = (addr >> bitshift) & 0x000000ff;
 
     // allocate Counter if it doesn't exist yet
+    //
+    // XXX: Why is this NULL, NULL? That is wrong.
     if (!(c = s->counter[byte]))
-      if (!(c = make_counter(s, byte, NULL, NULL)))
+      if (!(c = make_counter(s->counter, byte, NULL, NULL)))
         return;
 
     // update is done on every level. Result: Counter has sum of all the rates
     // of its children
     if(update_ewma) {
-      if (forward)
+      if (forward) {
         c->fwd_rate.update(now, val);
-      else
+      } else
         c->rev_rate.update(now, val);
     }
 
@@ -235,6 +313,7 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
     s = c->next_level;
   }
 
+done:
   // annotate packet with fwd and rev rates for inspection by CompareBlock
   int fwd_rate = c->fwd_rate.average(); 
   p->set_fwd_rate_anno(fwd_rate);
@@ -258,7 +337,7 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
   {
     unsigned char next_byte = (addr >> (bitshift+8)) & 0x000000ff;
     if (!(c->next_level = new Stats(this)) ||
-       !make_counter(c->next_level, next_byte, &c->fwd_rate, &c->rev_rate))
+       !make_counter(c->next_level->counter, next_byte, &c->fwd_rate, &c->rev_rate))
     {
       if(c->next_level) {     // new Stats() may have succeeded: kill it.
         delete c->next_level;
@@ -279,7 +358,7 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
 
   // Force a fold roughly once per CLICK_HZ jiffies (i.e., once per second)
   if(now - prev_fold_time >= MyEWMA::freq()) {
-    fold(_thresh);
+    // fold(_thresh);
     prev_fold_time = now;
   }
 }
@@ -288,7 +367,7 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
 // for forward packets (port 0), update based on src IP address;
 // for reverse packets (port 1), update based on dst IP address.
 inline void
-IPRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
+KinkyRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
 {
   click_ip *ip = (click_ip *) (p->data() + _offset);
   int val = (_pb == COUNT_PACKETS) ? 1 : ip->ip_len;
@@ -299,4 +378,4 @@ IPRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
     update(IPAddress(ip->ip_dst), val, p, false, update_ewma);
 }
 
-#endif /* IPRATEMON_HH */
+#endif /* KINKYRATEMON_HH */

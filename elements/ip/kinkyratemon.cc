@@ -14,38 +14,39 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "ipratemon.hh"
+#include "kinkyratemon.hh"
 #include "confparse.hh"
 #include "straccum.hh"
 #include "click_ip.h"
 #include "error.hh"
 #include "glue.hh"
 
-IPRateMonitor::IPRateMonitor()
+KinkyRateMonitor::KinkyRateMonitor()
   : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _memmax(0), _ratio(1),
     _base(NULL), _alloced_mem(0), _first(0), _last(0), _prev_deleted(0)
 {
+  click_chatter("size = %d", sizeof(_qbase));
 }
 
-IPRateMonitor::~IPRateMonitor()
+KinkyRateMonitor::~KinkyRateMonitor()
 {
 }
 
-IPRateMonitor *
-IPRateMonitor::clone() const
+KinkyRateMonitor *
+KinkyRateMonitor::clone() const
 {
-  return new IPRateMonitor;
+  return new KinkyRateMonitor;
 }
 
 void
-IPRateMonitor::notify_ninputs(int n)
+KinkyRateMonitor::notify_ninputs(int n)
 {
   set_ninputs(n == 1 ? 1 : 2);
   set_noutputs(n == 1 ? 1 : 2);
 }
 
 int
-IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
+KinkyRateMonitor::configure(const String &conf, ErrorHandler *errh)
 {
   String count_what;
   if (cp_va_parse(conf, this, errh,
@@ -77,7 +78,7 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 }
 
 int
-IPRateMonitor::initialize(ErrorHandler *errh)
+KinkyRateMonitor::initialize(ErrorHandler *errh)
 {
   set_resettime();
 
@@ -90,14 +91,14 @@ IPRateMonitor::initialize(ErrorHandler *errh)
 }
 
 void
-IPRateMonitor::uninitialize()
+KinkyRateMonitor::uninitialize()
 { 
   delete _base;
   _base = 0;
 }
 
 void
-IPRateMonitor::push(int port, Packet *p)
+KinkyRateMonitor::push(int port, Packet *p)
 {
   // Only inspect 1 in RATIO packets
   bool ewma = ((unsigned) ((random() >> 5) & 0xffff) <= _ratio);
@@ -106,7 +107,7 @@ IPRateMonitor::push(int port, Packet *p)
 }
 
 Packet *
-IPRateMonitor::pull(int port)
+KinkyRateMonitor::pull(int port)
 {
   Packet *p = input(port).pull();
   if (p)
@@ -115,35 +116,35 @@ IPRateMonitor::pull(int port)
 }
 
 
-IPRateMonitor::Counter*
-IPRateMonitor::make_counter(Stats *s, unsigned char index, MyEWMA *fwd, MyEWMA *rev)
+KinkyRateMonitor::Counter*
+KinkyRateMonitor::make_counter(Counter* c[], unsigned char index, MyEWMA *fwd, MyEWMA *rev)
 {
-  Counter *c = NULL;
+  Counter *new_c = NULL;
 
   // Return NULL if
   // 1. This allocation would violate memory limit
   // 2. Allocation did not succeed
   if ((_memmax && (_alloced_mem + sizeof(Counter) > _memmax)) ||
-      !(c = s->counter[index] = new Counter))
+      !(new_c = c[index] = new Counter))
     return NULL;
   _alloced_mem += sizeof(Counter);
 
   if (!fwd)
-    c->fwd_rate.initialize();
+    new_c->fwd_rate.initialize();
   else
-    c->fwd_rate = *fwd;
+    new_c->fwd_rate = *fwd;
 
   if (!rev)
-    c->rev_rate.initialize();
+    new_c->rev_rate.initialize();
   else
-    c->rev_rate = *rev;
-  c->next_level = 0;
+    new_c->rev_rate = *rev;
+  new_c->next_level = 0;
 
-  return c;
+  return new_c;
 }
 
 void
-IPRateMonitor::forced_fold()
+KinkyRateMonitor::forced_fold()
 {
 #define FOLD_INCREASE_FACTOR    5.0 // percent
 
@@ -167,7 +168,7 @@ IPRateMonitor::forced_fold()
 //
 #define FOLD_FACTOR     0.9
 void
-IPRateMonitor::fold(int thresh)
+KinkyRateMonitor::fold(int thresh)
 {
   char forward = ((char) random()) & 0x01;
   int now = MyEWMA::now();
@@ -203,7 +204,7 @@ start:
 
 
 void
-IPRateMonitor::show_agelist(void)
+KinkyRateMonitor::show_agelist(void)
 {
   click_chatter("\n----------------");
   click_chatter("_base = %p, _first: %p, _last = %p\n", _base, _first, _last);
@@ -214,11 +215,137 @@ IPRateMonitor::show_agelist(void)
   }
 }
 
+//
+// Prints out nice data.
+//
+String
+KinkyRateMonitor::print(Stats *s, String ip = "")
+{
+  int jiffs = MyEWMA::now();
+  String ret = "";
+  for (int i = 0; i < MAX_COUNTERS; i++) {
+    Counter *c;
+    if (!(c = s->counter[i]))
+      continue;
+
+    if (c->rev_rate.average() > 0 || c->fwd_rate.average() > 0) {
+      String this_ip;
+      if (ip)
+        this_ip = ip + "." + String(i);
+      else
+        this_ip = String(i);
+      ret += this_ip;
+
+      c->fwd_rate.update(jiffs, 0);
+      c->rev_rate.update(jiffs, 0);
+      ret += "\t"; 
+      ret += String(c->fwd_rate.average());
+      ret += "\t"; 
+      ret += String(c->rev_rate.average());
+      
+      ret += "\n";
+      if (c->next_level) 
+        ret += print(c->next_level, "\t" + this_ip);
+    }
+  }
+  return ret;
+}
+
+
+String
+KinkyRateMonitor::look_read_handler(Element *e, void *)
+{
+  KinkyRateMonitor *me = (KinkyRateMonitor*) e;
+
+  String ret = String(MyEWMA::now() - me->_resettime) + "\n";
+  return ret + me->print(me->_base);
+}
+
+String
+KinkyRateMonitor::thresh_read_handler(Element *e, void *)
+{
+  KinkyRateMonitor *me = (KinkyRateMonitor *) e;
+  return String(me->_thresh);
+}
+
+String
+KinkyRateMonitor::mem_read_handler(Element *e, void *)
+{
+  KinkyRateMonitor *me = (KinkyRateMonitor *) e;
+  return String(me->_alloced_mem) + "\n";
+}
+
+String
+KinkyRateMonitor::memmax_read_handler(Element *e, void *)
+{
+  KinkyRateMonitor *me = (KinkyRateMonitor *) e;
+  return String(me->_memmax) + "\n";
+}
+
+int
+KinkyRateMonitor::reset_write_handler
+(const String &, Element *e, void *, ErrorHandler *)
+{
+  KinkyRateMonitor* me = (KinkyRateMonitor *) e;
+
+  for (int i = 0; i < MAX_COUNTERS; i++) {
+    if (me->_base->counter[i]) {
+      if (me->_base->counter[i]->next_level)
+        delete me->_base->counter[i]->next_level;
+      delete me->_base->counter[i];
+      me->_base->counter[i] = 0;
+    }
+  }
+
+  me->set_resettime();
+  return 0;
+}
+
+
+int
+KinkyRateMonitor::memmax_write_handler
+(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+  Vector<String> args;
+  cp_argvec(conf, args);
+  KinkyRateMonitor* me = (KinkyRateMonitor *) e;
+
+  if (args.size() != 1) {
+    errh->error("expecting 1 integer");
+    return -1;
+  }
+  int memmax;
+  if (!cp_integer(args[0], memmax)) {
+    errh->error("not an integer");
+    return -1;
+  }
+
+  if (memmax && memmax < MEMMAX_MIN)
+    memmax = MEMMAX_MIN;
+  me->_memmax = memmax * 1024; // count bytes, not kbytes
+
+  // Fold if necessary
+  if (me->_memmax && me->_alloced_mem > me->_memmax)
+    me->forced_fold();
+  return 0;
+}
+
+void
+KinkyRateMonitor::add_handlers()
+{
+  add_read_handler("thresh", thresh_read_handler, 0);
+  add_read_handler("look", look_read_handler, 0);
+  add_read_handler("mem", mem_read_handler, 0);
+  add_read_handler("memmax", memmax_read_handler, 0);
+
+  add_write_handler("reset", reset_write_handler, 0);
+  add_write_handler("memmax", memmax_write_handler, 0);
+}
 
 //
 // Recursively destroys tables.
 //
-IPRateMonitor::Stats::Stats(IPRateMonitor *m)
+KinkyRateMonitor::Stats::Stats(KinkyRateMonitor *m)
 {
   _rm = m;
   _rm->update_alloced_mem(sizeof(*this));
@@ -236,9 +363,9 @@ IPRateMonitor::Stats::Stats(IPRateMonitor *m)
 //
 // Removes all children.
 // Removes itself from linked list.
-// Tells IPRateMonitor where preceding element in age-list is (set_prev).
+// Tells KinkyRateMonitor where preceding element in age-list is (set_prev).
 //
-IPRateMonitor::Stats::~Stats()
+KinkyRateMonitor::Stats::~Stats()
 {
   for (int i = 0; i < MAX_COUNTERS; i++) {
     if (counter[i]) {
@@ -279,134 +406,21 @@ IPRateMonitor::Stats::~Stats()
   _rm->update_alloced_mem(-sizeof(*this));
 }
 
-//
-// Prints out nice data.
-//
-String
-IPRateMonitor::print(Stats *s, String ip = "")
+
+KinkyRateMonitor::counter_row::counter_row()
 {
-  int jiffs = MyEWMA::now();
-  String ret = "";
-  for (int i = 0; i < MAX_COUNTERS; i++) {
-    Counter *c;
-    if (!(c = s->counter[i]))
-      continue;
-
-    if (c->rev_rate.average() > 0 || c->fwd_rate.average() > 0) {
-      String this_ip;
-      if (ip)
-        this_ip = ip + "." + String(i);
-      else
-        this_ip = String(i);
-      ret += this_ip;
-
-      c->fwd_rate.update(jiffs, 0);
-      c->rev_rate.update(jiffs, 0);
-      ret += "\t"; 
-      ret += String(c->fwd_rate.average());
-      ret += "\t"; 
-      ret += String(c->rev_rate.average());
-      
-      ret += "\n";
-      if (c->next_level) 
-        ret += print(c->next_level, "\t" + this_ip);
-    }
-  }
-  return ret;
+  f = 0;
+  for(int i=0; i<MAX_COUNTERS; i++)
+    counter[i] = 0;
 }
 
 
-String
-IPRateMonitor::look_read_handler(Element *e, void *)
+KinkyRateMonitor::counter_row::~counter_row()
 {
-  IPRateMonitor *me = (IPRateMonitor*) e;
-
-  String ret = String(MyEWMA::now() - me->_resettime) + "\n";
-  return ret + me->print(me->_base);
-}
-
-String
-IPRateMonitor::thresh_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_thresh);
-}
-
-String
-IPRateMonitor::mem_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_alloced_mem) + "\n";
-}
-
-String
-IPRateMonitor::memmax_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  return String(me->_memmax) + "\n";
-}
-
-int
-IPRateMonitor::reset_write_handler
-(const String &, Element *e, void *, ErrorHandler *)
-{
-  IPRateMonitor* me = (IPRateMonitor *) e;
-
-  for (int i = 0; i < MAX_COUNTERS; i++) {
-    if (me->_base->counter[i]) {
-      if (me->_base->counter[i]->next_level)
-        delete me->_base->counter[i]->next_level;
-      delete me->_base->counter[i];
-      me->_base->counter[i] = 0;
-    }
-  }
-
-  me->set_resettime();
-  return 0;
 }
 
 
-int
-IPRateMonitor::memmax_write_handler
-(const String &conf, Element *e, void *, ErrorHandler *errh)
-{
-  Vector<String> args;
-  cp_argvec(conf, args);
-  IPRateMonitor* me = (IPRateMonitor *) e;
-
-  if (args.size() != 1) {
-    errh->error("expecting 1 integer");
-    return -1;
-  }
-  int memmax;
-  if (!cp_integer(args[0], memmax)) {
-    errh->error("not an integer");
-    return -1;
-  }
-
-  if (memmax && memmax < MEMMAX_MIN)
-    memmax = MEMMAX_MIN;
-  me->_memmax = memmax * 1024; // count bytes, not kbytes
-
-  // Fold if necessary
-  if (me->_memmax && me->_alloced_mem > me->_memmax)
-    me->forced_fold();
-  return 0;
-}
-
-void
-IPRateMonitor::add_handlers()
-{
-  add_read_handler("thresh", thresh_read_handler, 0);
-  add_read_handler("look", look_read_handler, 0);
-  add_read_handler("mem", mem_read_handler, 0);
-  add_read_handler("memmax", memmax_read_handler, 0);
-
-  add_write_handler("reset", reset_write_handler, 0);
-  add_write_handler("memmax", memmax_write_handler, 0);
-}
-
-EXPORT_ELEMENT(IPRateMonitor)
+EXPORT_ELEMENT(KinkyRateMonitor)
 
 // template instances
 #include "ewma.cc"
