@@ -192,21 +192,21 @@ FromDevice::initialize(ErrorHandler *errh)
     return errh->error("%s", ebuf);
 
   // nonblocking I/O on the packet socket so we can poll
-  int fd = pcap_fileno(_pcap);
-  fcntl(fd, F_SETFL, O_NONBLOCK);
+  int pcap_fd = fd();
+  fcntl(pcap_fd, F_SETFL, O_NONBLOCK);
 
 #ifdef BIOCSSEESENT
   {
     int no = 0;
-    if (ioctl(fd, BIOCSSEESENT, &no) != 0)
+    if (ioctl(pcap_fd, BIOCSSEESENT, &no) != 0)
       return errh->error("FromDevice: BIOCSEESENT failed");
   }
 #endif
 
-#ifdef BIOCIMMEDIATE
+#if defined( BIOCIMMEDIATE ) && ! defined( __sun ) // pcap/bpf ioctl, not in DLPI/bufmod
   {
     int yes = 1;
-    if (ioctl(fd, BIOCIMMEDIATE, &yes) != 0)
+    if (ioctl(pcap_fd, BIOCIMMEDIATE, &yes) != 0)
       return errh->error("FromDevice: BIOCIMMEDIATE failed");
   }
 #endif
@@ -227,7 +227,7 @@ FromDevice::initialize(ErrorHandler *errh)
     return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
   }
 
-  add_select(fd, SELECT_READ);
+  add_select(pcap_fd, SELECT_READ);
 
   _datalink = pcap_datalink(_pcap);
   if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
@@ -262,18 +262,17 @@ FromDevice::initialize(ErrorHandler *errh)
 void
 FromDevice::cleanup(CleanupStage)
 {
-#if FROMDEVICE_PCAP
-  if (_pcap)
-    pcap_close(_pcap);
-  _pcap = 0;
-#endif
 #if FROMDEVICE_LINUX
-  if (_was_promisc >= 0)
-    set_promiscuous(_fd, _ifname, _was_promisc);
   if (_fd >= 0) {
+    if (_was_promisc >= 0)
+	set_promiscuous(_fd, _ifname, _was_promisc);
     close(_fd);
-    remove_select(_fd, SELECT_READ);
     _fd = -1;
+  }
+#elif FROMDEVICE_PCAP
+  if (_pcap) {
+      pcap_close(_pcap);
+      _pcap = 0;
   }
 #endif
 }
@@ -289,7 +288,24 @@ FromDevice_get_packet(u_char* clientdata,
 
     FromDevice *fd = (FromDevice *) clientdata;
     int length = pkthdr->caplen;
+#if defined(__sparc)
+    // Packet::make(data,length) allocates new buffer to install
+    // DEFAULT_HEADROOM (28 bytes). Thus data winds up on a 4 byte
+    // boundary, irrespective of its original alignment. We assume we
+    // want a two byte offset from a four byte boundary (DLT_EN10B).
+    //
+    // Furthermore, note that pcap-dlpi on Solaris uses bufmod by
+    // default, hence while pcap-dlpi.pcap_read() is careful to load
+    // the initial read from the stream head into a buffer aligned
+    // appropriately for the network interface type, (I believe)
+    // subsequent packets in the batched read will be copied from the
+    // Stream's byte sequence into the pcap-dlpi user-level buffer at
+    // arbitrary alignments.
+    Packet *p = Packet::make(data - 2, length + 2);
+    p->pull(2); 
+#else
     Packet *p = Packet::make(data, length);
+#endif
 
     // set packet type annotation
     if (p->data()[0] & 1) {

@@ -51,9 +51,6 @@ ToDevice::ToDevice()
   : Element(1, 0), _task(this), _fd(-1), _my_fd(false), _set_error_anno(false)
 {
   MOD_INC_USE_COUNT;
-#if TODEVICE_BSD_DEV_BPF
-  _pcap = 0;
-#endif
 }
 
 ToDevice::~ToDevice()
@@ -108,8 +105,9 @@ ToDevice::initialize(ErrorHandler *errh)
   ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = 0;
   if (ioctl(_fd, BIOCSETIF, (caddr_t)&ifr) < 0)
     return errh->error("BIOCSETIF %s failed", ifr.ifr_name);
+  _my_fd = true;
 
-#elif TODEVICE_LINUX
+#elif TODEVICE_LINUX || TODEVICE_PCAP
   
   // find a FromDevice and reuse its socket if possible
   for (int ei = 0; ei < router()->nelements() && _fd < 0; ei++) {
@@ -120,14 +118,17 @@ ToDevice::initialize(ErrorHandler *errh)
       _my_fd = false;
     }
   }
-
   if (_fd < 0) {
+# if TODEVICE_LINUX
     _fd = FromDevice::open_packet_socket(_ifname, errh);
     _my_fd = true;
+# else
+    return errh->error("ToDevice requires an initialized FromDevice on this platform") ;
+# endif
   }
-
-  if (_fd < 0) return -1;
-
+  if (_fd < 0)
+    return -1;
+  
 #else
   
   return errh->error("ToDevice is not supported on this platform");
@@ -150,16 +151,9 @@ ToDevice::initialize(ErrorHandler *errh)
 void
 ToDevice::cleanup(CleanupStage)
 {
-#if TODEVICE_BSD_DEV_BPF
-  if (_pcap)
-    pcap_close(_pcap);
-  _pcap = 0;
-#endif
-#if TODEVICE_LINUX
   if (_fd >= 0 && _my_fd)
     close(_fd);
   _fd = -1;
-#endif
 }
 
 void
@@ -177,7 +171,6 @@ ToDevice::send_packet(Packet *p)
 #else
   retval = 0;
 #endif
-
   if (retval < 0) {
     int saved_errno = errno;
     click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
@@ -196,7 +189,7 @@ ToDevice::send_packet(Packet *p)
 void
 ToDevice::push(int, Packet *p)
 {
-  assert(p->length() >= 14);
+  assert(p->length() >= 14);	// XXX: sizeof()?
   send_packet(p);
 }
 

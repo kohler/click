@@ -59,6 +59,9 @@ extern "C" {
 # if defined(__FreeBSD__) || defined(__OpenBSD__)
 #  define TODEVICE_BSD_DEV_BPF 1
 #  define TODEVICE_WRITE 1
+# elif defined(__sparc)
+#  define TODEVICE_PCAP 1
+#  define TODEVICE_WRITE 1
 # endif
 #endif
 
@@ -105,11 +108,6 @@ private:
   
   bool _set_error_anno;
 
-#if TODEVICE_BSD_DEV_BPF
-  pcap_t *_pcap;
-#endif
-
-  
 };
 
 #endif

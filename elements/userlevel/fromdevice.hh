@@ -114,11 +114,10 @@ class FromDevice : public Element { public:
   void add_handlers();
   
   String ifname() const			{ return _ifname; }
-#if FROMDEVICE_PCAP
-  pcap_t *pcap() const			{ return _pcap; }  
-#endif
 #if FROMDEVICE_LINUX
   int fd() const			{ return _fd; }
+#elif FROMDEVICE_PCAP
+  int fd() const			{ return pcap_fileno(_pcap); }
 #endif
 
   void selected(int fd);
@@ -135,8 +134,7 @@ class FromDevice : public Element { public:
 #if FROMDEVICE_LINUX
   int _fd;
   unsigned char *_packetbuf;
-#endif
-#if FROMDEVICE_PCAP
+#elif FROMDEVICE_PCAP
   pcap_t* _pcap;
   friend void FromDevice_get_packet(u_char*, const struct pcap_pkthdr*,
 				    const u_char*);
