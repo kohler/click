@@ -122,7 +122,7 @@ ToDevice::initialize(ErrorHandler *errh)
   
   ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
 #ifdef HAVE_STRIDE_SCHED
-  /* start out with max number of tickets */
+  // user specifies max number of tickets; we start with default
   _max_tickets = _task.tickets();
   _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
@@ -161,7 +161,8 @@ ToDevice::uninitialize()
 {
   to_device_map.remove(this);
 #if LINUX_VERSION_CODE >= 0x020400
-  dev_put(_dev);
+  if (_dev)
+    dev_put(_dev);
 #endif
   _task.unschedule();
 }

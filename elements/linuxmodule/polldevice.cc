@@ -146,7 +146,7 @@ PollDevice::initialize(ErrorHandler *errh)
   
   ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
 #ifdef HAVE_STRIDE_SCHED
-  /* start out with default number of tickets, inflate up to max */
+  // user specifies max number of tickets; we start with default
   _max_tickets = _task.tickets();
   _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
