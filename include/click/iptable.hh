@@ -1,32 +1,35 @@
 #ifndef IPTABLE_HH
 #define IPTABLE_HH
+#include <click/glue.hh>
+#include <click/vector.hh>
+#include <click/ipaddress.hh>
 
 // IP routing table.
 // Lookup by longest prefix.
 // Each entry contains a gateway and an output index.
 
-#include <click/glue.hh>
-#include <click/vector.hh>
-
-class IPTable {
-public:
+class IPTable { public:
+  
   IPTable();
   ~IPTable();
 
-  bool lookup(unsigned dst, unsigned &gw, int &index) const;
-  void add(unsigned dst, unsigned mask, unsigned gw, int index);
-  void del(unsigned dst, unsigned mask);
-  void clear() { _v.clear(); }
+  bool lookup(IPAddress dst, IPAddress &gw, int &index) const;
+  
+  void add(IPAddress dst, IPAddress mask, IPAddress gw, int index);
+  void del(IPAddress dst, IPAddress mask);
+  void clear()				{ _v.clear(); }
 
-private:
+ private:
+  
   struct Entry {
-    unsigned _dst;
-    unsigned _mask;
-    unsigned _gw;
-    int _index;
-    int _valid;
+    IPAddress dst;
+    IPAddress mask;
+    IPAddress gw;
+    int index;
+    bool valid() const			{ return mask || !dst; }
   };
   Vector<Entry> _v;
+  
 };
 
 #endif

@@ -31,59 +31,53 @@ IPTable::~IPTable()
 }
 
 bool
-IPTable::lookup(unsigned dst, unsigned &gw, int &index) const
+IPTable::lookup(IPAddress dst, IPAddress &gw, int &index) const
 {
-  int i, besti = -1;
+  int best = -1;
 
-  for(i = 0; i < _v.size(); i++){
-    if(_v[i]._valid && (dst & _v[i]._mask) == _v[i]._dst){
-      if(besti == -1 || ~_v[i]._mask < ~_v[besti]._mask){
-        besti = i;
-      }
+  // longest prefix match
+  for (int i = 0; i < _v.size(); i++)
+    if (dst.matches_prefix(_v[i].dst, _v[i].mask)) {
+      if (best < 0 || _v[i].mask.mask_more_specific(_v[best].mask))
+	best = i;
     }
-  }
 
-  if(besti == -1){
-    return(false);
-  } else {
-    gw = _v[besti]._gw;
-    index = _v[besti]._index;
-    return(true);
+  if (best < 0)
+    return false;
+  else {
+    gw = _v[best].gw;
+    index = _v[best].index;
+    return true;
   }
 }
 
 void
-IPTable::add(unsigned dst, unsigned mask, unsigned gw, int index)
+IPTable::add(IPAddress dst, IPAddress mask, IPAddress gw, int index)
 {
   dst &= mask;
 
   struct Entry e;
-  e._dst = dst;
-  e._mask = mask;
-  e._gw = gw;
-  e._index = index;
-  e._valid = 1;
-
-  int i;
-  for(i = 0; i < _v.size(); i++){
-    if(_v[i]._valid == 0){
+  e.dst = dst;
+  e.mask = mask;
+  e.gw = gw;
+  e.index = index;
+  
+  for (int i = 0; i < _v.size(); i++)
+    if (!_v[i].valid()) {
       _v[i] = e;
       return;
     }
-  }
   _v.push_back(e);
 }
 
 void
-IPTable::del(unsigned dst, unsigned mask)
+IPTable::del(IPAddress dst, IPAddress mask)
 {
-  int i;
-
-  for(i = 0; i < _v.size(); i++){
-    if(_v[i]._valid && _v[i]._dst == dst && _v[i]._mask == mask){
-      _v[i]._valid = 0;
+  for (int i = 0; i < _v.size(); i++)
+    if (_v[i].dst == dst && _v[i].mask == mask) {
+      _v[i].dst = IPAddress(1);
+      _v[i].mask = IPAddress(0);
     }
-  }
 }
 
 // generate Vector template instance
