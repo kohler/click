@@ -75,14 +75,19 @@ another driver pause pending.
 
 =back
 
-The user level driver supports an additional instruction:
+The user level driver supports two additional instructions:
 
 =over 8
 
 =item 'C<save> ELEMENT.HANDLER FILE'
 
 Call ELEMENT's read handler named HANDLER and save the result to FILE.  If
-FILE is 'C<->', writes the file to the standard output.
+FILE is 'C<->', writes the handler value to the standard output.
+
+=item 'C<append> ELEMENT.HANDLER FILE'
+
+Call ELEMENT's read handler named HANDLER and append the result to FILE.  If
+FILE is 'C<->', writes the handler value to the standard output.
 
 =back
 
@@ -136,7 +141,7 @@ class DriverManager : public Element { public:
   private:
 
     enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_WRITE, INSN_READ,
-		INSN_WRITE_SKIP, INSN_SAVE, INSN_IGNORE };
+		INSN_WRITE_SKIP, INSN_SAVE, INSN_APPEND, INSN_IGNORE };
 
     Vector<int> _insns;
     Vector<int> _args;

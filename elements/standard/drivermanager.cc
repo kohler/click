@@ -97,9 +97,9 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 		errh->error("expected '%s ELEMENT.HANDLER'", insn_name.cc());
 
 #if CLICK_USERLEVEL || CLICK_TOOL
-	} else if (insn_name == "save") {
+	} else if (insn_name == "save" || insn_name == "append") {
 	    if (words.size() == 3)
-		add_insn(INSN_SAVE, 0, words[1] + " " + words[2]);
+		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, words[1] + " " + words[2]);
 	    else
 		errh->error("expected '%s ELEMENT.HANDLER FILE'", insn_name.c_str());
 #endif
@@ -152,6 +152,7 @@ DriverManager::initialize(ErrorHandler *errh)
 	  case INSN_READ:
 #if CLICK_USERLEVEL || CLICK_TOOL
 	  case INSN_SAVE:
+	  case INSN_APPEND:
 #endif
 	    command = cpReadHandler;
 	    goto parse;
@@ -214,15 +215,14 @@ DriverManager::step_insn()
 	errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
 	return true;
 #if CLICK_USERLEVEL || CLICK_TOOL
-    } else if (insn == INSN_SAVE) {
+    } else if (insn == INSN_SAVE || insn == INSN_APPEND) {
 	Element *e = router()->element(_args[_insn_pos]);
 	const Router::Handler *h = router()->handler(_args2[_insn_pos]);
 	String result = h->call_read(e);
-	ErrorHandler *errh = ErrorHandler::default_handler();
 	FILE *f;
 	if (_args3[_insn_pos] == "-")
 	    f = stdout;
-	else if (!(f = fopen(_args3[_insn_pos].c_str(), "wb"))) {
+	else if (!(f = fopen(_args3[_insn_pos].c_str(), (insn == INSN_SAVE ? "wb" : "ab")))) {
 	    int saved_errno = errno;
 	    StringAccum sa;
 	    sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
