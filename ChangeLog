@@ -1,3 +1,8 @@
+2001-04-12 Thursday 11:07  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/perfctr.hh, elements/linuxmodule/perfcountuser.cc:
+	more cycle counters
+
 2001-04-11 Wednesday 16:35  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/tcpudp/iprewriter.cc: remove click_chatter
