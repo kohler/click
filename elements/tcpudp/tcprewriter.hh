@@ -24,11 +24,11 @@ This element is an IPRewriter-like element. Please read the IPRewriter
 documentation for more information and a detailed description of its
 INPUTSPEC arguments.
 
-In addition to IPRewriter's functionality, the TCPRewriter element can add
-or subtract amounts from incoming packets' sequence and acknowledgement
-numbers. Each newly created mapping starts with these deltas at zero; other
-elements can request changes to a given mapping. For example, FTPPortMapper
-uses this facility.
+In addition to IPRewriter's functionality, the TCPRewriter element can add or
+subtract amounts from incoming packets' sequence and acknowledgement numbers,
+including any SACK acknowledgement numbers. Each newly created mapping starts
+with these deltas at zero; other elements can request changes to a given
+mapping. For example, FTPPortMapper uses this facility.
 
 Keyword arguments determine how often stale mappings should be removed.
 
