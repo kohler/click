@@ -1,0 +1,40 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
+#ifndef CLICK_STRIPTONET_HH
+#define CLICK_STRIPTONET_HH
+#include <click/element.hh>
+
+/*
+ * =c
+ *
+ * StripToNetworkHeader()
+ *
+ * =s encapsulation
+ *
+ * strips everything preceding network header
+ *
+ * =d
+ *
+ * Strips any data preceding the network header from every passing packet.
+ * Requires a network header annotation, such as an IP header annotation,
+ * on every packet.
+ * If the packet's network header annotation points before the start of the
+ * packet data, then StripToNetworkHeader will move the packet data pointer
+ * back, to point at the network header.
+ *
+ * =a Strip
+ */
+
+class StripToNetworkHeader : public Element { public:
+
+    StripToNetworkHeader();
+    ~StripToNetworkHeader();
+
+    const char *class_name() const	{ return "StripToNetworkHeader"; }
+    const char *processing() const	{ return AGNOSTIC; }
+    StripToNetworkHeader *clone() const	{ return new StripToNetworkHeader; }
+
+    Packet *simple_action(Packet *);
+
+};
+
+#endif

@@ -1,9 +1,9 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * strip.{cc,hh} -- element strips bytes from front of packet
- * Robert Morris, Eddie Kohler
+ * striptonet.{cc,hh} -- element strips to network header
+ * Eddie Kohler
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2001 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -17,36 +17,31 @@
  */
 
 #include <click/config.h>
-#include "strip.hh"
-#include <click/confparse.hh>
+#include "striptonet.hh"
 #include <click/error.hh>
 #include <click/glue.hh>
 
-Strip::Strip()
+StripToNetworkHeader::StripToNetworkHeader()
     : Element(1, 1)
 {
     MOD_INC_USE_COUNT;
 }
 
-Strip::~Strip()
+StripToNetworkHeader::~StripToNetworkHeader()
 {
     MOD_DEC_USE_COUNT;
 }
 
-int
-Strip::configure(const Vector<String> &conf, ErrorHandler *errh)
-{
-    return cp_va_parse(conf, this, errh,
-		       cpUnsigned, "number of bytes to strip", &_nbytes,
-		       0);
-}
-
 Packet *
-Strip::simple_action(Packet *p)
+StripToNetworkHeader::simple_action(Packet *p)
 {
-    p->pull(_nbytes);
-    return p;
+    int off = p->network_header_offset();
+    if (off >= 0) {
+	p->pull(off);
+	return p;
+    } else
+	return p->nonunique_push(-off);
 }
 
-EXPORT_ELEMENT(Strip)
-ELEMENT_MT_SAFE(Strip)
+EXPORT_ELEMENT(StripToNetworkHeader)
+ELEMENT_MT_SAFE(StripToNetworkHeader)
