@@ -1,3 +1,9 @@
+2002-03-11 Monday 22:45  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc: patch derived from Jose Vasconcellos:
+	AddressInfo checks for device names as Ethernet addresses on Linux
+	userlevel, as well as the kernel
+
 2002-03-11 Monday 12:48  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: vector.hh, vector.hh: remove references to

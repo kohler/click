@@ -1,3 +1,9 @@
+2002-03-11 Monday 22:45  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/addressinfo.cc (1.18): patch derived from Jose
+	Vasconcellos: AddressInfo checks for device names as Ethernet
+	addresses on Linux userlevel, as well as the kernel
+
 2002-03-11 Monday 21:38  Eddie Kohler <kohler@aciri.org>
 
 	* tools/click-install/: common.cc (1.3), common.hh (1.2): nits
