@@ -81,8 +81,9 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
-			    "TCP_GC_INTERVAL", cpMilliseconds, "TCP garbage collection interval", &_tcp_gc_interval,
-			    "UDP_GC_INTERVAL", cpMilliseconds, "UDP garbage collection interval", &_udp_gc_interval,
+			    "REAP_TCP", cpMilliseconds, "TCP garbage collection interval", &_tcp_gc_interval,
+			    "REAP_TCP_DONE", cpMilliseconds, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
+			    "REAP_UDP", cpMilliseconds, "UDP garbage collection interval", &_udp_gc_interval,
 			    0) != 0)
       continue;
     InputSpec is;
@@ -95,7 +96,12 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (ninputs == 0)
     return errh->error("too few arguments; expected `INPUTSPEC, ...'");
   set_ninputs(ninputs);
-  return (errh->nerrors() == before ? 0 : -1);
+  if (errh->nerrors() == before)
+    return 0;
+  else {
+    uninitialize();
+    return -1;
+  }
 }
 
 int
@@ -103,6 +109,8 @@ IPRewriter::initialize(ErrorHandler *)
 {
   _tcp_gc_timer.attach(this);
   _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
+  _tcp_done_gc_timer.attach(this);
+  _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
   _udp_gc_timer.attach(this);
   _udp_gc_timer.schedule_after_ms(_udp_gc_interval);
   return 0;
@@ -112,6 +120,7 @@ void
 IPRewriter::uninitialize()
 {
   _tcp_gc_timer.unschedule();
+  _tcp_done_gc_timer.unschedule();
   _udp_gc_timer.unschedule();
 
   clear_map(_tcp_map);
@@ -156,8 +165,8 @@ IPRewriter::take_state(Element *e, ErrorHandler *errh)
     pattern_map.push_back(q);
   }
   
-  take_state_map(_tcp_map, rw->_all_patterns, pattern_map);
-  take_state_map(_udp_map, rw->_all_patterns, pattern_map);
+  take_state_map(_tcp_map, &_tcp_done, rw->_all_patterns, pattern_map);
+  take_state_map(_udp_map, 0, rw->_all_patterns, pattern_map);
 }
 
 void
@@ -172,7 +181,7 @@ void
 IPRewriter::tcp_done_gc_hook(unsigned long thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
-  rw->clean_map_free_tracked(rw->_udp_map, &rw->_tcp_done);
+  rw->clean_map_free_tracked(rw->_tcp_map, &rw->_tcp_done);
   rw->_tcp_done_gc_timer.schedule_after_ms(rw->_tcp_done_gc_interval);
 }
 
@@ -290,32 +299,31 @@ IPRewriter::push(int port, Packet *p_in)
 
 
 String
-IPRewriter::dump_mappings_handler(Element *e, void *)
+IPRewriter::dump_mappings_handler(Element *e, void *thunk)
+{
+  IPRewriter *rw = (IPRewriter *)e;
+  Map *map = (thunk ? &rw->_udp_map : &rw->_tcp_map);
+  
+  StringAccum sa;
+  for (Map::Iterator iter = map->first(); iter; iter++) {
+    Mapping *m = iter.value();
+    if (!m->is_reverse())
+      sa << m->s() << "\n";
+  }
+  return sa.take_string();
+}
+
+String
+IPRewriter::dump_tcp_done_mappings_handler(Element *e, void *)
 {
   IPRewriter *rw = (IPRewriter *)e;
   
-  StringAccum tcps;
-  for (Map::Iterator iter = rw->_tcp_map.first(); iter; iter++) {
-    Mapping *m = iter.value();
+  StringAccum sa;
+  for (Mapping *m = rw->_tcp_done; m; m = m->free_next()) {
     if (!m->is_reverse())
-      tcps << m->s() << "\n";
+      sa << m->s() << "\n";
   }
-
-  StringAccum udps;
-  for (Map::Iterator iter = rw->_udp_map.first(); iter; iter++) {
-    Mapping *m = iter.value();
-    if (!m->is_reverse())
-      udps << m->s() << "\n";
-  }
-
-  if (tcps.length() && udps.length())
-    return "TCP:\n" + tcps.take_string() + "\nUDP:\n" + udps.take_string();
-  else if (tcps.length())
-    return "TCP:\n" + tcps.take_string();
-  else if (udps.length())
-    return "UDP:\n" + udps.take_string();
-  else
-    return String();
+  return sa.take_string();
 }
 
 String
@@ -339,7 +347,9 @@ IPRewriter::dump_patterns_handler(Element *e, void *)
 void
 IPRewriter::add_handlers()
 {
-  add_read_handler("mappings", dump_mappings_handler, (void *)0);
+  add_read_handler("tcp_mappings", dump_mappings_handler, (void *)0);
+  add_read_handler("udp_mappings", dump_mappings_handler, (void *)1);
+  add_read_handler("tcp_done_mappings", dump_tcp_done_mappings_handler, 0);
   add_read_handler("nmappings", dump_nmappings_handler, (void *)0);
   add_read_handler("patterns", dump_patterns_handler, (void *)0);
 }

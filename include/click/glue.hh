@@ -160,12 +160,4 @@ extern unsigned click_jiffies();
 /* static assert, for compile-time assertion checking */
 #define StaticAssert(c) switch (c) case 0: case (c):
 
-inline unsigned
-click_getusecofday()
-{
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  return tv.tv_sec*1000000+tv.tv_usec;
-}
-
 #endif

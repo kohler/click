@@ -5,7 +5,7 @@
 /*
 =c
 
-IPRewriter(INPUTSPEC1, ..., INPUTSPECn)
+IPRewriter(INPUTSPEC1, ..., INPUTSPECn [, KEYWORDS])
 
 =s TCP
 
@@ -102,10 +102,41 @@ IPRewriter drops all fragments except the first, unless those fragments
 arrived on an input port with a `nochange OUTPUT' specification. In that case,
 the fragments are emitted on output OUTPUT.
 
-=h mappings read-only
+Keyword arguments determine how often stale mappings should be removed.
+
+=over 5
+
+=item REAP_TCP I<time>
+
+Reap TCP connections every I<time> seconds. If no packets corresponding to a
+given mapping have been seen since the last reap, remove the mapping as stale.
+Default is 24 hours.
+
+=item REAP_TCP_DONE I<time>
+
+Reap completed TCP connections every I<time> seconds. FIN or RST flags mark a
+TCP connection as complete. Default is 4 minutes.
+
+=item REAP_UDP I<time>
+
+Reap UDP connections every I<time> seconds. Default is 1 minute.
+
+=back
+
+=h tcp_mappings read-only
 
 Returns a human-readable description of the IPRewriter's current set of
-mappings.
+TCP mappings.
+
+=h udp_mappings read-only
+
+Returns a human-readable description of the IPRewriter's current set of
+UDP mappings.
+
+=h tcp_done_mappings read-only
+
+Returns a human-readable description of the IPRewriter's current set of
+mappings for completed TCP sessions.
 
 =a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper,
 ICMPRewriter, ICMPPingRewriter */
@@ -155,6 +186,7 @@ class IPRewriter : public IPRw { public:
   static void tcp_done_gc_hook(unsigned long);
 
   static String dump_mappings_handler(Element *, void *);
+  static String dump_tcp_done_mappings_handler(Element *, void *);
   static String dump_nmappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);
   

@@ -1,6 +1,6 @@
 Click NEWS
 
-Version 1.1
+Version 1.1   15.Dec.2000
 
 * Element packages
 
@@ -45,12 +45,22 @@ Version 1.1
    cpKeywords, and see `elements/ip/ipprint.cc' for an example. Also
    supported: adding and removing argument types dynamically.
 
+** Added support for generic annotations, such as "a one-byte annotation
+   stored in generic annotation byte 13". Transitioned many existing packet
+   annotations to macro wrappers for generic annotations; see
+   `include/click/packet_anno.hh'. New structure is more easily extensible.
+
 ** Many other bug fixes and configuration fixes.
 
 * Elements
 
-** Added ICMPRewriter and ICMPPingRewriter. Reorganized ICMP elements into
-   `elements/icmp' directory.
+** Added ICMPRewriter and ICMPPingRewriter for rewriting ICMP errors and
+   ICMP pings, respectively.
+
+** Reorganized ICMP elements into `elements/icmp' directory, and TCP/UDP
+   elements into `elements/tcpudp' directory.
+
+** IPRewriter and TCPRewriter quickly release completed TCP connections.
 
 ** Improved IPFilter parsing functions and added some new protocols.
 
@@ -58,9 +68,14 @@ Version 1.1
    CheckUDPHeader can print more detailed information about why they are
    dropping packets.
 
-* User-level driver
+** Fixed bugs in many elements, including ToDump and FromLinux.
 
-** Fixed ToDump bugs.
+** Classifier optimization is now iterative, not recursive, which gets
+   around problems with small kernel stacks.
+
+** Removed 'PACKETS' or 'BYTES' argument to Counter. Now it always keeps
+   track of both number of packets and number of bytes. Also added several
+   LLRPCs.
 
 * Kernel driver
 
@@ -71,6 +86,10 @@ Version 1.1
 
 ** Added TulipStats element for collecting information about Tulip
    performance.
+
+** Replaced old cycle-counting elements with SetCycleCount and
+   CycleCountAccum, and similarly for performance counter elements (new
+   elements are SetPerfCount and PerfCountAccum).
 
 ** Fixed crash when Linux and Click both sent packets out the same
    interface on an SMP machine.

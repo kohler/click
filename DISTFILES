@@ -56,6 +56,7 @@ conf/udpgen.click
 etc
 etc/linux-2.2.14-patch
 etc/linux-2.2.17-patch
+etc/linux-2.2.18-patch
 
 etc/samplepackage
 etc/samplepackage/Makefile.in
@@ -105,6 +106,7 @@ include/click/llrpc.h
 include/click/mplock.hh
 include/click/package.hh
 include/click/packet.hh
+include/click/packet_anno.hh
 include/click/perfctr.hh
 include/click/radix.hh
 include/click/router.hh

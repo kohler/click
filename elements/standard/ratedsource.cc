@@ -106,7 +106,9 @@ RatedSource::run_scheduled()
   click_gettimeofday(&now);
   if (_rate.need_update(now)) {
     _rate.update();
-    output(0).push(_packet->clone());
+    Packet *p = _packet->clone();
+    p->set_timestamp_anno(now);
+    output(0).push(p);
     _count++;
   }
 
@@ -116,19 +118,19 @@ RatedSource::run_scheduled()
 Packet *
 RatedSource::pull(int)
 {
-  Packet *p = 0;
-  
   if (!_active || (_limit != NO_LIMIT && _count >= _limit))
-    return p;
+    return 0;
 
   struct timeval now;
   click_gettimeofday(&now);
   if (_rate.need_update(now)) { 
     _rate.update();
     _count++;
-    p = _packet->clone();
-  }
-  return p;
+    Packet *p = _packet->clone();
+    p->set_timestamp_anno(now);
+    return p;
+  } else
+    return 0;
 }
 
 String

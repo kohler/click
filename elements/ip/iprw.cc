@@ -47,7 +47,7 @@ extern struct proto tcp_prot;
 //
 
 IPRw::Mapping::Mapping()
-  : _used(false), _is_reverse(false),
+  :  _is_reverse(false), _used(false), _marked(false),
     _session_over(false), _free_tracked(false),
     _ip_p(0), _pat(0), _pat_prev(0), _pat_next(0), _free_next(0)
 {
@@ -125,9 +125,9 @@ IPRw::Mapping::apply(WritablePacket *p)
     
     // check for session ending flags
     if (tcph->th_flags & TH_RST)
-      _session_over = _reverse->_session_over = true;
+      set_session_over();
     else if (tcph->th_flags & TH_FIN)
-      _session_over = true;
+      set_session_flow_over();
     
   } else if (_ip_p == IP_PROTO_UDP) {
     
@@ -156,7 +156,7 @@ IPRw::Mapping::s() const
 IPRw::Pattern::Pattern(const IPAddress &saddr, int sportl, int sporth,
 		       const IPAddress &daddr, int dport)
   : _saddr(saddr), _sportl(sportl), _sporth(sporth), _daddr(daddr),
-    _dport(dport), _rover(0), _is_napt(true), _refcount(0)
+    _dport(dport), _rover(0), _is_napt(true), _refcount(0), _nmappings(0)
 {
 }
 
@@ -422,17 +422,32 @@ IPRw::Pattern::mapping_freed(Mapping *m)
 String
 IPRw::Pattern::s() const
 {
-  String saddr, sport, daddr, dport;
-  saddr = _saddr ? _saddr.s() : String("-");
-  daddr = _daddr ? _daddr.s() : String("-");
-  dport = _dport ? (String)_dport : String("-");
-  if (!_sporth)
-    sport = "-";
-  else if (_sporth == _sportl)
-    sport = String(_sporth);
+  StringAccum sa;
+  if (_saddr)
+    sa << _saddr.s() << ' ';
   else
-    sport = String(_sportl) + "-" + String(_sporth);
-  return saddr + " " + sport + " " + daddr + " " + dport;
+    sa << "- ";
+  
+  if (!_sporth)
+    sa << "- ";
+  else if (_sportl == _sporth)
+    sa << _sporth << ' ';
+  else
+    sa << _sportl << "-" << _sporth << ' ';
+
+  if (_daddr)
+    sa << _daddr.s() << ' ';
+  else
+    sa << "- ";
+
+  if (!_dport)
+    sa << "- ";
+  else
+    sa << _dport << ' ';
+
+  sa << '[' << _nmappings << ']';
+
+  return sa.take_string();
 }
 
 //
@@ -539,13 +554,14 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 
 
 void
-IPRw::take_state_map(Map &map, const Vector<Pattern *> &in_patterns,
+IPRw::take_state_map(Map &map, Mapping **free_tracked,
+		     const Vector<Pattern *> &in_patterns,
 		     const Vector<Pattern *> &out_patterns)
 {
   Mapping *to_free = 0;
   int np = in_patterns.size();
   int no = noutputs();
-
+  
   for (Map::Iterator iter = map.first(); iter; iter++) {
     Mapping *m = iter.value();
     if (m->is_forward()) {
@@ -557,9 +573,15 @@ IPRw::take_state_map(Map &map, const Vector<Pattern *> &in_patterns,
 	}
       if (p)
 	p->mapping_freed(m);
-      if (q && m->output() < no && m->reverse()->output() < no)
+      if (q && m->output() < no && m->reverse()->output() < no) {
 	q->accept_mapping(m);
-      else {
+	if (m->free_tracked()) {
+	  if (free_tracked)
+	    *free_tracked = m->add_to_free_tracked(*free_tracked);
+	  else
+	    m->clear_free_tracked();
+	}
+      } else {
 	m->set_free_next(to_free);
 	to_free = m;
       }
@@ -617,7 +639,8 @@ IPRw::clean_map_free_tracked(Map &table, Mapping **free_tracked)
   Mapping *m = *free_tracked;
   while (m) {
     Mapping *next = m->free_next();
-    if (!m->is_reverse() && !m->used() && !m->reverse()->used()) {
+    assert(!m->is_reverse());
+    if (!m->used() && !m->reverse()->used()) {
       *prev_ptr = next;
       m->set_free_next(to_free);
       to_free = m;
@@ -637,8 +660,10 @@ IPRw::clean_map_free_tracked(Map &table, Mapping **free_tracked)
     to_free = next;
   }
 
-  for (m = *free_tracked; m; m = m->free_next())
+  for (m = *free_tracked; m; m = m->free_next()) {
     m->clear_used();
+    m->reverse()->clear_used();
+  }
 }
 
 void

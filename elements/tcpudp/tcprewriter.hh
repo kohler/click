@@ -4,9 +4,13 @@
 
 /*
 =c
-TCPRewriter(INPUTSPEC1, ..., INPUTSPECn)
+
+TCPRewriter(INPUTSPEC1, ..., INPUTSPECn [, KEYWORDS])
+
 =s TCP
+
 rewrites TCP packets' addresses, ports, and sequence numbers
+
 =d
 
 Rewrites TCP flows by changing their source address, source port,
@@ -23,7 +27,25 @@ numbers. Each newly created mapping starts with these deltas at zero; other
 elements can request changes to a given mapping. For example, FTPPortMapper
 uses this facility.
 
+Keyword arguments determine how often stale mappings should be removed.
+
+=over 5
+
+=item REAP_TCP I<time>
+
+Reap TCP connections every I<time> seconds. If no packets corresponding to a
+given mapping have been seen since the last reap, remove the mapping as stale.
+Default is 24 hours.
+
+=item REAP_TCP_DONE I<time>
+
+Reap completed TCP connections every I<time> seconds. FIN or RST flags mark a
+TCP connection as complete. Default is 4 minutes.
+
+=back
+
 =h mappings read-only
+
 Returns a human-readable description of the IPRewriter's current set of
 mappings.
 

@@ -58,7 +58,7 @@ class IPRw : public Element { public:
 
   static const int GC_INTERVAL_SEC = 3600;
 
-  void take_state_map(Map &, const Vector<Pattern *> &, const Vector<Pattern *> &);
+  void take_state_map(Map &, Mapping **, const Vector<Pattern *> &, const Vector<Pattern *> &);
   void clean_map(Map &);
   void clean_map_free_tracked(Map &, Mapping **free_tracked);
   void clear_map(Map &);
@@ -81,9 +81,13 @@ class IPRw::Mapping { public:
   bool is_reverse() const		{ return _is_reverse; }
   Mapping *reverse() const		{ return _reverse; }
   bool used() const			{ return _used; }
+  bool marked() const			{ return _marked; }
   
   void mark_used()			{ _used = true; }
   void clear_used()			{ _used = false; }
+  
+  void mark()				{ _marked = true; }
+  void unmark()				{ _marked = false; }
     
   unsigned short sport() const		{ return _mapto.sport(); } // network
   
@@ -96,9 +100,12 @@ class IPRw::Mapping { public:
   void set_free_next(Mapping *m)	{ _free_next = m; }
 
   bool session_over() const		{ return _session_over && _reverse->_session_over; }
+  void set_session_over()		{ _session_over = _reverse->_session_over = true; }
+  void set_session_flow_over()		{ _session_over = true; }
 
   bool free_tracked() const		{ return _free_tracked; }
   Mapping *add_to_free_tracked(Mapping *);
+  void clear_free_tracked()		{ _free_tracked = 0; }
   
   void apply(WritablePacket *);
 
@@ -113,8 +120,9 @@ class IPRw::Mapping { public:
   
   Mapping *_reverse;
   
-  bool _used : 1;
   bool _is_reverse : 1;
+  bool _used : 1;
+  bool _marked : 1;
   bool _session_over : 1;
   bool _free_tracked : 1;
   unsigned char _ip_p;
@@ -147,6 +155,8 @@ class IPRw::Pattern { public:
 
   void use()			{ _refcount++; }
   void unuse()			{ if (--_refcount <= 0) delete this; }
+
+  int nmappings() const		{ return _nmappings; }
   
   operator bool() const { return _saddr || _sporth || _daddr || _dport; }
   bool allow_nat() const	{ return !_is_napt || _sportl == _sporth; }
@@ -157,6 +167,8 @@ class IPRw::Pattern { public:
   bool create_mapping(int ip_p, const IPFlowID &, int fport, int rport, Mapping *, Mapping *);
   void accept_mapping(Mapping *);
   void mapping_freed(Mapping *);
+
+  Mapping *rover()		{ return _rover; }
   
   String s() const;
   operator String() const	{ return s(); }
@@ -173,6 +185,7 @@ class IPRw::Pattern { public:
   bool _is_napt;
 
   int _refcount;
+  int _nmappings;
 
   Pattern(const Pattern &);
   Pattern &operator=(const Pattern &);
@@ -181,6 +194,7 @@ class IPRw::Pattern { public:
 
   static int parse_napt(Vector<String> &, Pattern **, Element *, ErrorHandler *);
   static int parse_nat(Vector<String> &, Pattern **, Element *, ErrorHandler *);
+  friend class Mapping;
 
 };
 
@@ -206,6 +220,7 @@ IPRw::Mapping::pat_insert_after(Pattern *p, Mapping *m)
     _pat_prev = m;
     _pat_next = m->_pat_next;
     m->_pat_next = _pat_next->_pat_prev = this;
+    p->_nmappings++;
   } else
     _pat_prev = _pat_next = this;
 }
@@ -213,8 +228,11 @@ IPRw::Mapping::pat_insert_after(Pattern *p, Mapping *m)
 inline void
 IPRw::Mapping::pat_unlink()
 {
-  _pat_next->_pat_prev = _pat_prev;
-  _pat_prev->_pat_next = _pat_next;
+  if (_pat) {
+    _pat_next->_pat_prev = _pat_prev;
+    _pat_prev->_pat_next = _pat_next;
+    _pat->_nmappings--;
+  }
 }
 
 inline IPRw::Mapping *

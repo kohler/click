@@ -48,18 +48,7 @@ extern "C" {
 
 #include "elements/linuxmodule/anydevice.hh"
 
-class FromLinux : public AnyDevice {
-
-  IPAddress _destaddr;
-  IPAddress _destmask;
-
-  struct enet_statistics _stats;
-  struct rtentry *_rt;
-
-  int init_rt();
-  int init_dev();
-
- public:
+class FromLinux : public AnyDevice { public:
 
   enum { FROMLINUX_CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT,
 	 TODEVICE_CONFIGURE_PHASE };
@@ -78,6 +67,18 @@ class FromLinux : public AnyDevice {
   int initialize(ErrorHandler *);
   int initialize_device(ErrorHandler *);
   void uninitialize();
+
+ private:
+
+  IPAddress _destaddr;
+  IPAddress _destmask;
+
+  struct enet_statistics _stats;
+
+  bool _device_up : 1;
+  
+  int init_rt();
+  int init_dev();
 
 };
 

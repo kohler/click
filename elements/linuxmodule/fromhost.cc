@@ -61,8 +61,9 @@ fromlinux_static_cleanup()
 FromLinux::FromLinux()
 {
   // no MOD_INC_USE_COUNT; rely on AnyDevice
-  _dev = 0; _rt = 0;
+  _dev = 0;
   fromlinux_static_initialize();
+  add_output();
 }
 
 FromLinux::~FromLinux()
@@ -113,51 +114,13 @@ FromLinux::init_dev()
 }
 
 int
-FromLinux::init_rt(void)
-{
-  union {
-       struct sockaddr_in m;
-       struct sockaddr d;
-  } s;
-
-  _rt = new struct rtentry;
-  if (!_rt)
-    return -ENOMEM;
-  memset(_rt, 0, sizeof(struct rtentry));
-
-  s.m.sin_family = AF_INET;
-  s.m.sin_addr.s_addr = _destaddr.addr() & _destmask.addr();
-  _rt->rt_dst = s.d;
-  s.m.sin_addr.s_addr = _destmask.addr();
-  _rt->rt_genmask = s.d;
-  _rt->rt_flags = RTF_UP;
-  _rt->rt_dev = _dev->name;
-  return 0;
-}
-
-#define CLEAN_RT  { delete _rt; _rt = 0; }
-#define CLEAN_DEV { if (_dev->name) delete[] _dev->name; \
-		    delete _dev; _dev = 0; }
-#define UNREG_DEV { unregister_netdev(_dev); }
-#define IF_DOWN { \
-  struct ifreq ifr; \
-  strncpy(ifr.ifr_name, _devname.cc(), IFNAMSIZ); \
-  if ((res = iff_clear(&ifr, IFF_UP)) < 0) \
-    click_chatter("FromLinux(%s): error %d bringing down interface\n", _devname.cc(), res); \
-}
-#define DEL_RT { \
-  if ((res = ip_rt_ioctl(SIOCDELRT, _rt)) < 0) \
-    click_chatter("FromLinux(%s): error %d removing route\n", _devname.cc(), res); \
-}
-
-int
 FromLinux::initialize_device(ErrorHandler *errh)
 {
-  int res;
+  int res = 0;
+  _device_up = false;
   
   _dev = dev_get(_devname.cc());
   if (_dev) {
-    _rt = (struct rtentry *) _dev->priv;
     if (fromlinux_map.insert(this) < 0) 
       return errh->error("cannot use FromLinux for device `%s'",_devname.cc());
     return 0;
@@ -165,13 +128,9 @@ FromLinux::initialize_device(ErrorHandler *errh)
 
   // Install fake interface
   if ((res = init_dev()) < 0)
-    return errh->error("error %d initializing device %s",
-		         res, _devname.cc());
-  if ((res = register_netdev(_dev)) < 0) {
-    CLEAN_DEV;
-    return errh->error("error %d registering device %s",
-		         res, _devname.cc());
-  }
+    errh->error("error %d initializing device %s", res, _devname.cc());
+  if (res >= 0 && (res = register_netdev(_dev)) < 0)
+    errh->error("error %d registering device %s", res, _devname.cc());
 
   // Bring up the interface
   struct ifreq ifr;
@@ -183,92 +142,59 @@ FromLinux::initialize_device(ErrorHandler *errh)
   mm_segment_t oldfs = get_fs();
   set_fs(get_ds());
 
-  if ((res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0) {
-    set_fs(oldfs);
-    UNREG_DEV;
-    CLEAN_DEV;
-    return errh->error("error %d setting address for interface %s",
-		         res, _devname.cc());
-  }
+  if (res >= 0 && (res = devinet_ioctl(SIOCSIFADDR, &ifr)) < 0)
+    errh->error("error %d setting address for interface %s", res, _devname.cc());
   
   sin->sin_addr = _destmask;
-  if ((res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0) {
-    set_fs(oldfs);
-    UNREG_DEV;
-    CLEAN_DEV;
-    return errh->error("error %d setting netmask for interface %s",
-		         res, _devname.cc());
-  }
+  if (res >= 0 && (res = devinet_ioctl(SIOCSIFNETMASK, &ifr)) < 0)
+    errh->error("error %d setting netmask for interface %s", res, _devname.cc());
   
-  if ((res = iff_set(&ifr, IFF_UP|IFF_RUNNING)) < 0) {
-    set_fs(oldfs);
-    UNREG_DEV;
-    CLEAN_DEV;
-    return errh->error("error %d bringing up interface %s", 
-		         res, _devname.cc());
-  }
-				  // Establish the route
-  if ((res = init_rt()) < 0) {
-    IF_DOWN;
-    set_fs(oldfs);
-    UNREG_DEV;
-    CLEAN_DEV;
-    return errh->error("error %d initializing route", res);
-  }
-  if ((res = ip_rt_ioctl(SIOCADDRT, _rt)) < 0) {
-    CLEAN_RT;
-    IF_DOWN;
-    set_fs(oldfs);
-    UNREG_DEV;
-    CLEAN_DEV; 
-    return errh->error("error %d establishing route", res);
-  }
-  _dev->priv = _rt;
-    
-  if (fromlinux_map.insert(this) < 0) { 
-    DEL_RT;
-    CLEAN_RT;
-    IF_DOWN;
-    set_fs(oldfs);
-    UNREG_DEV;
-    CLEAN_DEV; 
-    return errh->error("cannot use FromLinux for device `%s'",_devname.cc());
-  }
+  if (res >= 0 && (res = iff_set(&ifr, IFF_UP | IFF_RUNNING)) < 0)
+    errh->error("error %d bringing up interface %s", res, _devname.cc());
+  else
+    _device_up = true;
+
+  if (res >= 0 && (res = fromlinux_map.insert(this)) < 0)
+    errh->error("cannot use FromLinux for device `%s'", _devname.cc());
 
   set_fs(oldfs);
-
-  memset(&_stats, 0, sizeof(_stats));
+  
+  if (res < 0)
+    uninitialize();
   return res;
 }
 
 void
 FromLinux::uninitialize()
 {
-  int res;
-
   fromlinux_map.remove(this);
-  
   if (fromlinux_map.lookup(ifindex()) != 0) {
     _dev = 0; 
-    _rt = 0;
     return;
   }
 
   mm_segment_t oldfs = get_fs();
   set_fs(get_ds());
+  int res;
 
-  // Remove the route
-  if (_rt) {
-    DEL_RT;
-    CLEAN_RT;
+  // Remove the interface
+  if (_device_up) {
+    struct ifreq ifr;
+    strncpy(ifr.ifr_name, _devname.cc(), IFNAMSIZ);
+    if ((res = iff_clear(&ifr, IFF_UP)) < 0)
+      click_chatter("FromLinux(%s): error %d bringing down interface", _devname.cc(), res);
   }
 
-  IF_DOWN;
   set_fs(oldfs);
 
   // Uninstall fake interface
-  UNREG_DEV;
-  CLEAN_DEV;
+  if (_dev) {
+    unregister_netdev(_dev);
+    if (_dev->name)
+      delete[] _dev->name;
+    delete _dev;
+    _dev = 0;
+  }
 }
 
 int
@@ -313,7 +239,6 @@ static int
 fl_tx(struct sk_buff *skb, struct device *dev)
 {
   FromLinux *fl;
-
   if (dev->ifindex >= 0 && dev->ifindex < MAX_DEVICES) 
     if (fl = (FromLinux*)fromlinux_map.lookup(dev->ifindex)) {
       Packet *p = Packet::make(skb);

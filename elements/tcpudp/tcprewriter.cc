@@ -74,6 +74,12 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   sum = (sum & 0xFFFF) + (sum >> 16);
   iph->ip_sum = ~(sum + (sum >> 16));
 
+  mark_used();
+  
+  // end if not first fragment
+  if (!IP_FIRSTFRAG(iph))
+    return;
+  
   // TCP header
   click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
   tcph->th_sport = _mapto.sport();
@@ -100,8 +106,12 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   unsigned sum2 = (~tcph->th_sum & 0xFFFF) + csum_delta;
   sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
   tcph->th_sum = ~(sum2 + (sum2 >> 16));
-  
-  mark_used();
+
+  // check for session ending flags
+  if (tcph->th_flags & TH_RST)
+    set_session_over();
+  else if (tcph->th_flags & TH_FIN)
+    set_session_flow_over();
 }
 
 String
@@ -164,7 +174,8 @@ TCPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
-			    "GC_INTERVAL", cpMilliseconds, "garbage collection interval", &_tcp_gc_interval,
+			    "REAP_TCP", cpMilliseconds, "reap interval for active TCP connections", &_tcp_gc_interval,
+			    "REAP_TCP_DONE", cpMilliseconds, "reap interval for completed TCP connections", &_tcp_done_gc_interval,
 			    0) != 0)
       continue;
     InputSpec is;
@@ -177,7 +188,12 @@ TCPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (ninputs == 0)
     return errh->error("too few arguments; expected `INPUTSPEC, ...'");
   set_ninputs(ninputs);
-  return (errh->nerrors() == before ? 0 : -1);
+  if (errh->nerrors() == before)
+    return 0;
+  else {
+    uninitialize();
+    return -1;
+  }
 }
 
 int
@@ -217,7 +233,7 @@ TCPRewriter::take_state(Element *e, ErrorHandler *errh)
   if (!rw) return;
 
   if (noutputs() != rw->noutputs()) {
-    errh->warning("taking mappings from `%s', although it has\n%s output ports", rw->declaration().cc(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
+    errh->warning("taking mappings from `%s', although it has %s output ports", rw->declaration().cc(), (rw->noutputs() > noutputs() ? "more" : "fewer"));
     if (noutputs() < rw->noutputs())
       errh->message("(out of range mappings will be dropped)");
   }
@@ -234,7 +250,7 @@ TCPRewriter::take_state(Element *e, ErrorHandler *errh)
     pattern_map.push_back(q);
   }
   
-  take_state_map(_tcp_map, rw->_all_patterns, pattern_map);
+  take_state_map(_tcp_map, &_tcp_done, rw->_all_patterns, pattern_map);
 }
 
 void
