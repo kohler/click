@@ -526,7 +526,7 @@ FromDump::read_packet(ErrorHandler *errh)
 	    error_helper(errh, "out of memory!");
 	    return false;
 	}
-	p->change_headroom_and_length(_pos, caplen);
+	p->shrink_data(_buffer + _pos, caplen);
 	p->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
 	SET_EXTRA_LENGTH_ANNO(p, len - caplen);
 	_pos += caplen + skiplen;
