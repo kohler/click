@@ -103,7 +103,7 @@ class String { public:
   String upper() const;			// uppercase
   String printable() const;		// quote non-ASCII characters
   String trim_space() const;		// trim space from right
-  String hex() const;
+  String quoted_hex() const;		// hex enclosed in '\<...>'
   
   inline String &operator=(const String &);
   inline String &operator=(const char *);

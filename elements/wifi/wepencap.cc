@@ -163,7 +163,7 @@ read_param(Element *e, void *thunk)
     switch ((uintptr_t) thunk) {
     case H_DEBUG: return String(td->_debug) + "\n";
     case H_ACTIVE: return String(td->_active) + "\n";
-    case H_KEY: return td->_key.hex() + "\n";
+    case H_KEY: return td->_key.quoted_hex() + "\n";
     case H_KEYID: return String(td->_keyid) + "\n";
     default:
       return String();
