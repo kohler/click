@@ -63,8 +63,7 @@ DSDVRouteTable::DSDVRouteTable() :
   _expire_timer(expire_hook, this),
   _hello_timer(hello_hook, this),
   _metric_type(MetricEstTxCount),
-  _max_metric(0), _min_metric(0),
-  _est_type(EstBySigQual),
+  _est_type(EstByMeas),
   _frozen(false)
 {
   MOD_INC_USE_COUNT;
@@ -87,7 +86,7 @@ DSDVRouteTable::cast(const char *n)
 {
   if (strcmp(n, "DSDVRouteTable") == 0)
     return (DSDVRouteTable *) this;
-  else if (strcmp(n, "GenericDSDVRouteTable") == 0)
+  else if (strcmp(n, "GridGenericRouteTable") == 0)
     return (GridGenericRouteTable *) this;
   else
     return 0;
@@ -208,32 +207,6 @@ DSDVRouteTable::current_gateway(RouteEntry &entry)
 }
 
 
-unsigned int
-DSDVRouteTable::qual_to_pct(int q)
-{
-  /* smaller quality is better, so should be a higher pct when closer to min quality */
-  if (q > _max_metric)
-    return 0;
-  else if (q < _min_metric) 
-    return 100;
-
-  int delta = _max_metric - _min_metric;
-  return (100 * (_max_metric - q)) / delta;
-}
-
-unsigned int
-DSDVRouteTable::sig_to_pct(int s)
-{
-  /* large signal is better, so should be a higher pct when closer to max sig */
-  if (s > _max_metric)
-    return 100;
-  else if (s < _min_metric) 
-    return 0;
-
-  int delta = _max_metric - _min_metric;
-  return (100 * (s - _min_metric)) / delta;
-}
-
 // #define h(x) click_chatter("XXXX %d", x);
 #define h(x)
 
@@ -241,87 +214,13 @@ bool
 DSDVRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
 {
   switch (_est_type) {
-  case EstBySig:
-  case EstByQual: 
-  case EstBySigQual: {
-    int sig = 0;
-    int qual = 0;
-    struct timeval last;
-    bool res = _link_tracker->get_stat(ip, sig, qual, last);
-    if (!res) {
-      h(1);
-      return false;
-    }
-    if (_est_type == EstByQual) {
-      return false;
-    }
-    else if (_est_type == EstBySig) {
-      return false;
-    }
-    else if (_est_type == EstBySigQual) {
-      h(2);
-#if 0
-      click_chatter("XXX %s", ip.s().cc());
-#endif
-      /* 
-       * use jinyang's parameters, based on 1sec broadcast loss rates
-       * with 50-byte UDP packets.  
-       *
-       * good = delivery rate > 80%.  
-       *
-       * these parameters are chosen to correctly classify 85% of good
-       * links as good, while only classifying 2% of bad links as
-       * good.  
-       */
-      res = _link_tracker->get_bcast_stat(ip, rate, last);
-      double z = 9.4519 + 0.0391 * sig + 0.5518 * qual;
-      double z2 = 1 / (1 + exp(z));
-      double thresh = 0.8;
-      bool link_good = z2 > thresh;
-      /* paper fuckedness: */
-      if (link_good)
-	rate = 1;
-      else
-	rate = 0.1;
-      return true;
-      h(3);
-      if (!link_good && !res) {
-	h(4);
-	return false;
-      }
-      else if (link_good && !res) {
-	h(5);
-	rate = 0.8;
-	return true;
-      }
-      else if (!link_good && res) {
-	h(6);
-	return true; /* rate was set in call to get_bcast_stat */
-      }
-      else /* link_good && res */ {
-	h(7);
-	if (rate < 0.8) {
-	  h(8);
-	  rate = 0.8;
-	}
-	return true;
-      }
-      h(9);
-    }
-    else {
-      h(10);
-      return false;
-    }
-  }
   case EstByMeas: {
-    h(11);
     struct timeval last;
     bool res = _link_tracker->get_bcast_stat(ip, rate, last);
     return res;
     break;
   }
   default:
-    h(12);
     return false;
   }
 }
@@ -330,77 +229,6 @@ bool
 DSDVRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
 {
   switch (_est_type) {
-  case EstBySig:
-  case EstByQual: 
-    h(101);
-    return false;
-    break;
-  case EstBySigQual: {
-#if 0
-    click_chatter("XXX %s", ip.s().cc());
-#endif
-    h(102);
-    struct timeval last;
-    RTEntry *r = _rtes.findp(ip);
-    if (r == 0 || r->num_hops > 1) {
-      h(103);
-      return false;
-    }
-    LinkStat::stat_t *s = _link_stat->_stats.findp(r->next_hop_eth);
-    if (s == 0) {
-      return false;
-      h(104);
-    }
-    double z = 9.4519 + 0.0391 * s->sig + 0.5518 * s->qual;
-    double z2 = 1 / (1 + exp(z));
-    double thresh = 0.8;
-    bool link_good = z2 > thresh;
-    
-    /* paper fuckedness: */
-    if (link_good)
-      rate = 1;
-    else
-      rate = 0.1;
-    return true;
-    
-    unsigned int window = 0;
-    unsigned int num_rx = 0;
-    unsigned int num_expected = 0;
-    bool res = _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
-    if (res && num_expected > 1) {
-      h(105);
-      double num_rx_ = num_rx;
-      /* we assume all nodes have same hello period */
-      double num_expected_ = num_expected;
-      rate = (num_rx_ - 0.5) / num_expected_;
-    }
-    else {
-      h(107);
-      rate = 0;
-    }
-    if (!link_good && !res) {
-      h(108);
-      return false;
-    }
-    else if (link_good && !res) {
-      h(109);
-      rate = 0.8;
-      return true;
-    }
-    else if (!link_good && res) {
-      h(110);
-      return true; /* rate was set in call to get_bcast_stats */
-    }
-    else /* link_good && res */ {
-      h(111);
-      if (rate < 0.8) {
-	h(112);
-	rate = 0.8;
-      }
-      return true;
-    }
-  }
-  h(113);
   case EstByMeas: {
     struct timeval last;
     RTEntry *r = _rtes.findp(ip);
@@ -437,65 +265,12 @@ DSDVRouteTable::init_metric(RTEntry &r)
     r.metric = r.num_hops;
     r.metric_valid = true;
     break;
-  case MetricMinDeliveryRate:
-  case MetricCumulativeDeliveryRate:
-    assert(0);
-    /* code to estimate our delivery rate to this 1-hop nbr goes here */
-    r.metric_valid = true;
-    break;
-  case MetricMinSigStrength:
-  case MetricMinSigQuality: 
-  case MetricCumulativeQualPct:
-  case MetricCumulativeSigPct: {
-    int sig = 0;
-    int qual = 0;
-    struct timeval last;
-    bool res = _link_tracker->get_stat(r.dest_ip, sig, qual, last);
-    if (!res) {
-      click_chatter("DSDVRouteTable: no link sig/qual stats from 1-hop neighbor %s; not initializing metric\n",
-		    r.dest_ip.s().cc());
-      r.metric = _bad_metric;
-      r.metric_valid = false;
-      return;
-    }
-    struct timeval now;
-    gettimeofday(&now, 0);
-    now = now - last;
-    int delta_ms = 1000 * now.tv_sec + (now.tv_usec / 1000);
-    if (delta_ms > _timeout) {
-      click_chatter("DSDVRouteTable: link sig/qual stats from 1-hop neighbor %s are too old; not initializing metric\n",
-		    r.dest_ip.s().cc());
-      r.metric = _bad_metric;
-      r.metric_valid = false;
-      return;
-    }
-    if (_metric_type == MetricMinSigQuality) 
-      r.metric = (unsigned int) qual;
-    else if (_metric_type == MetricMinSigStrength)
-      r.metric = (unsigned int) -sig; // deal in -dBm
-    else if (_metric_type == MetricCumulativeQualPct) 
-      r.metric = qual_to_pct(qual);
-    else // _metric_type == MetricCumulativeSigPct
-      r.metric = sig_to_pct(sig);
-    r.metric_valid = true;
-  }
-  break;
   case MetricEstTxCount: {
-#if 0
-    click_chatter("XXX");
-#endif
     double fwd_rate = 0;
     double rev_rate = 0;
     bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
     bool res2 = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
-#if 0
-    char buf[255];
-    snprintf(buf, 255, "YYY %s %s -- res: %s, res2: %s, fwd: %f, rev: %f",
-	     r.dest_ip.s().cc(), r.next_hop_ip.s().cc(),
-	     res ? "true" : "false", res2 ? "true" : "false",
-	     fwd_rate, rev_rate);
-    click_chatter(buf);
-#endif
+
     if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
       if (fwd_rate >= 1) {
 	click_chatter("init_metric ERROR: fwd rate %d is too high for %s",
@@ -563,20 +338,6 @@ DSDVRouteTable::update_metric(RTEntry &r)
     }
     r.metric += next_hop->metric;
     break;
-  case MetricCumulativeDeliveryRate:
-  case MetricCumulativeQualPct:
-  case MetricCumulativeSigPct:
-    r.metric = (r.metric * next_hop->metric) / 100;
-    break;
-  case MetricMinDeliveryRate: 
-    r.metric = (next_hop->metric < r.metric) ? next_hop->metric : r.metric;
-    break;
-  case MetricMinSigStrength:
-  case MetricMinSigQuality:
-    // choose weakest signal, which is largest -dBm
-    // *or* choose worst quality, which is smaller numbers
-    r.metric = (next_hop->metric > r.metric) ? next_hop->metric : r.metric;
-    break;
   default:
     assert(0);
   }
@@ -593,16 +354,6 @@ DSDVRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
   case MetricHopCount:
   case MetricEstTxCount: 
     return r1.metric < r2.metric;
-  case MetricCumulativeDeliveryRate:
-  case MetricMinDeliveryRate:
-    return r1.metric > r2.metric;
-  case MetricMinSigQuality: 
-  case MetricMinSigStrength:
-    // smaller -dBm is stronger signal
-    // *or* prefer smaller quality number
-    return r1.metric < r2.metric; 
-  case MetricCumulativeQualPct:
-  case MetricCumulativeSigPct:
   default:
     assert(0);
   }
@@ -975,7 +726,7 @@ DSDVRouteTable::print_nbrs_v(Element *e, void *)
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
     /* only print immediate neighbors */
-    if (i.value().num_hops != 1)
+    if (i.value().num_hops != 1) // XXX
       continue;
     s += i.key().s();
     s += " eth=" + i.value().next_hop_eth.s();
@@ -1028,12 +779,6 @@ DSDVRouteTable::metric_type_to_string(MetricType t)
 {
   switch (t) {
   case MetricHopCount: return "hopcount"; break;
-  case MetricCumulativeDeliveryRate: return "cumulative_delivery_rate"; break;
-  case MetricMinDeliveryRate: return "min_delivery_rate"; break;
-  case MetricMinSigStrength: return "min_sig_strength"; break;
-  case MetricMinSigQuality: return "min_sig_quality"; break;
-  case MetricCumulativeQualPct: return "cumulative_qual_pct"; break;
-  case MetricCumulativeSigPct: return "cumulative_sig_pct"; break;
   case MetricEstTxCount:   return "est_tx_count"; break;
   default: 
     return "unknown_metric_type";
@@ -1054,18 +799,6 @@ DSDVRouteTable::check_metric_type(const String &s)
   String s2 = s.lower();
   if (s2 == "hopcount")
     return MetricHopCount;
-  else if (s2 == "cumulative_delivery_rate")
-    return MetricCumulativeDeliveryRate;
-  else if (s2 == "min_delivery_rate")
-    return MetricMinDeliveryRate;
-  else if (s2 == "min_sig_strength")
-    return MetricMinSigStrength;
-  else if (s2 == "min_sig_quality")
-    return MetricMinSigQuality;
-  else if (s2 == "cumulative_qual_pct")
-    return MetricCumulativeQualPct;
-  else if (s2 == "cumulative_sig_pct")
-    return MetricCumulativeSigPct;
   else if (s2 == "est_tx_count")
     return MetricEstTxCount;
   else
@@ -1082,21 +815,7 @@ DSDVRouteTable::write_metric_type(const String &arg, Element *el,
     return errh->error("unknown metric type ``%s''", ((String) arg).cc());
   
   if (type != rt->_metric_type) {
-    rt->_metric_type = type;
-
-    if (type == MetricCumulativeSigPct) {
-      rt->_max_metric = _max_sig;
-      rt->_min_metric = _min_sig;
-    }
-    else if (type == MetricCumulativeQualPct) {
-      rt->_max_metric = _max_qual;
-      rt->_min_metric = _min_qual;
-    }
-    else
-      rt->_max_metric = rt->_min_metric = 0;
-
-    /* make sure we don't try to use the old metric for a route */
-    
+    /* make sure we don't try to use the old metric for a route */    
     Vector<RTEntry> entries;
     for (RTIter i = rt->_rtes.first(); i; i++) {
       /* skanky, but there's no reason for this to be quick.  i guess
@@ -1109,39 +828,6 @@ DSDVRouteTable::write_metric_type(const String &arg, Element *el,
     for (int i = 0; i < entries.size(); i++) 
       rt->_rtes.insert(entries[i].dest_ip, entries[i]);
   }
-  return 0;
-}
-
-String
-DSDVRouteTable::print_metric_range(Element *e, void *)
-{
-  DSDVRouteTable *rt = (DSDVRouteTable *) e;
-  
-  return "max=" + String(rt->_max_metric) + " min=" + String(rt->_min_metric) + "\n";
-}
-
-int
-DSDVRouteTable::write_metric_range(const String &arg, Element *el, 
-				   void *, ErrorHandler *errh)
-{
-  DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  int max, min;
-  int res = cp_va_space_parse(arg, rt, errh,
-			      cpInteger, "metric range max", &max,
-			      cpInteger, "metric range min", &min,
-			      0);
-  if (res < 0)
-    return -1;
-
-  if (max < min) {
-    int t = max;
-    max = min;
-    min = t;
-  }
-
-  rt->_max_metric = max;
-  rt->_min_metric = min;
-
   return 0;
 }
 
@@ -1225,8 +911,6 @@ int
 DSDVRouteTable::write_stop_log(const String &, Element *, 
 			       void *, ErrorHandler *)
 {
-  // DSDVRouteTable *rt = (DSDVRouteTable *) el;
-
   if (GridLogger::log_is_open())
     GridLogger::close_log();
 
@@ -1287,8 +971,6 @@ DSDVRouteTable::add_handlers()
   add_read_handler("links", print_links, 0);
   add_read_handler("metric_type", print_metric_type, 0);
   add_write_handler("metric_type", write_metric_type, 0);
-  add_read_handler("metric_range", print_metric_range, 0);
-  add_write_handler("metric_range", write_metric_range, 0);
   add_read_handler("est_type", print_est_type, 0);
   add_write_handler("est_type", write_est_type, 0);
   add_read_handler("seq_delay", print_seq_delay, 0);
@@ -1639,6 +1321,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 }
 
 ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(gridlogger)
 EXPORT_ELEMENT(DSDVRouteTable)
 
 #include <click/bighashmap.cc>

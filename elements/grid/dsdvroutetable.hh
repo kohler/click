@@ -264,12 +264,6 @@ private:
   enum MetricType {
     MetricUnknown = -1,
     MetricHopCount = 0,            // unsigned int hop count
-    MetricCumulativeDeliveryRate,  // unsigned int percentage (0-100)
-    MetricMinDeliveryRate,         // unsigned int percentage (0-100)
-    MetricMinSigStrength,          // unsigned int negative dBm.  e.g. -40 dBm is 40
-    MetricMinSigQuality,           // unsigned int ``quality''
-    MetricCumulativeQualPct,       // unsigned int percentage (0-100) of range
-    MetricCumulativeSigPct,        // unsigned int percentage (0-100) of range
     MetricEstTxCount               // unsigned int expected number of transmission * 100
   };
 
@@ -278,31 +272,11 @@ private:
   
   MetricType _metric_type;
 
-  /* top and bottom of ranges for qual/sig pct */
-  int _max_metric;
-  int _min_metric;
-  
   static const unsigned int _bad_metric = 7777777;
 
-  /* default ranges taken from experiments -- from approx 144 million received packets! */
-  /*
-   * +-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+
-   * | min(signal) | max(signal) | std(signal) | avg(signal) | min(quality) | max(quality) | std(quality) | avg(quality) |
-   * +-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+
-   * |        -100 |         -13 |     13.0719 |    -69.8756 |            0 |          130 |       3.6859 |       6.7074 |
-   * +-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+
-   */
-  static const int _max_qual = 130; 
-  static const int _min_qual = 0;
-  static const int _max_sig = -13; 
-  static const int _min_sig = -100;
-
-    
   enum {
     EstByQual = 0,
-    EstBySig,
-    EstBySigQual,
-    EstByMeas
+    EstByMeas = 3
   };
 
   unsigned int _est_type;
