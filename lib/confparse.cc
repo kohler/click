@@ -418,12 +418,12 @@ cp_integer(String str, int *return_value, String *rest = 0)
 }
 
 bool
-cp_ulong(String str, unsigned long &return_value, String *rest = 0)
+cp_ulong(String str, unsigned long *return_value, String *rest = 0)
 {
   const char *s = str.cc();
   int len = str.length();
   char *end;
-  return_value = strtoul(s, &end, 10);
+  *return_value = strtoul(s, &end, 10);
   if (end == s)        // no characters in integer
     return false;
 
@@ -1140,7 +1140,7 @@ cp_va_parsev(const Vector<String> &args,
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, int *);
        if (skip) break;
-       if (!cp_ulong(args[argno], &v.v.i))
+       if (!cp_ulong(args[argno], &v.v.ul))
 	 errh->error("argument %d should be %s (unsigned long)", argno+1, desc);
        break;
      }
