@@ -112,6 +112,8 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
     set_session_over();
   else if (tcph->th_flags & TH_FIN)
     set_session_flow_over();
+  else if (tcph->th_flags & TH_SYN)
+    clear_session_flow_over();
 }
 
 String

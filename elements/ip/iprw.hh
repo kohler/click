@@ -102,6 +102,7 @@ class IPRw::Mapping { public:
   bool session_over() const		{ return _session_over && _reverse->_session_over; }
   void set_session_over()		{ _session_over = _reverse->_session_over = true; }
   void set_session_flow_over()		{ _session_over = true; }
+  void clear_session_flow_over()	{ _session_over = false; }
 
   bool free_tracked() const		{ return _free_tracked; }
   Mapping *add_to_free_tracked(Mapping *);

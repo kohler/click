@@ -128,6 +128,8 @@ IPRw::Mapping::apply(WritablePacket *p)
       set_session_over();
     else if (tcph->th_flags & TH_FIN)
       set_session_flow_over();
+    else if (tcph->th_flags & TH_SYN)
+      clear_session_flow_over();
     
   } else if (_ip_p == IP_PROTO_UDP) {
     
@@ -640,7 +642,11 @@ IPRw::clean_map_free_tracked(Map &table, Mapping **free_tracked)
   while (m) {
     Mapping *next = m->free_next();
     assert(!m->is_reverse());
-    if (!m->used() && !m->reverse()->used()) {
+    if (!m->session_over()) {
+      // reuse of a port; take it off the free-tracked list
+      *prev_ptr = next;
+      m->clear_free_tracked();
+    } else if (!m->used() && !m->reverse()->used()) {
       *prev_ptr = next;
       m->set_free_next(to_free);
       to_free = m;
