@@ -23,8 +23,10 @@ Timer::element_timer(unsigned long thunk)
   Element *f = (Element *)thunk;
   f->schedule_tail(); // don't do anything - just put it on the work list
 #ifdef __KERNEL__
+#ifndef CLICK_POLLDEV
   // run work list
   f->router()->run_scheduled();
+#endif
 #endif
 }
 
