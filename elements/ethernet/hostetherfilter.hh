@@ -38,6 +38,10 @@ Same as the DROP_OWN parameter.
 
 Same as the DROP_OTHER parameter.
 
+=item OFFSET
+
+The ethernet header starts OFFSET bytes into the packet. Default OFFSET is 0.
+
 =back
 
 */
@@ -59,6 +63,7 @@ class HostEtherFilter : public Element { public:
 
   bool _drop_own : 1;
   bool _drop_other : 1;
+  int _offset;
   unsigned char _addr[6];
 
   inline Packet *drop(Packet *);

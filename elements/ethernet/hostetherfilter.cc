@@ -45,6 +45,7 @@ int
 HostEtherFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool drop_own = false, drop_other = true;
+  _offset = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpEthernetAddress, "Ethernet address", &_addr,
 		  cpOptional,
@@ -53,6 +54,7 @@ HostEtherFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DROP_OWN", cpBool, "Drop packets from us?", &drop_own,
 		  "DROP_OTHER", cpBool, "Drop packets to others?", &drop_other,
+		  "OFFSET", cpUnsigned, "offset to IP header", &_offset,
 		  cpEnd) < 0)
     return -1;
   _drop_own = drop_own;
@@ -73,7 +75,7 @@ HostEtherFilter::drop(Packet *p)
 Packet *
 HostEtherFilter::simple_action(Packet *p)
 {
-  const click_ether *e = (const click_ether *)p->data();
+  const click_ether *e = (const click_ether *) (p->data() + _offset);
   const unsigned short *daddr = (const unsigned short *)e->ether_dhost;
 
   if (_drop_own && memcmp(e->ether_shost, _addr, 6) == 0)
