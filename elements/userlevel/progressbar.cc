@@ -50,29 +50,41 @@ ProgressBar::initialize(ErrorHandler *errh)
     Vector<String> conf;
     configuration(conf);
     _interval = 1000;
-    _size_hi = -1;
+    _active = true;
+    Element *pos_element = 0, *size_element = 0;
+    int pos_hi = -1, size_hi = -1;
 
     if (cp_va_parse(conf, this, errh,
-		    cpReadHandler, "position handler", &_pos_element, &_pos_hi,
+		    cpReadHandler, "position handler", &pos_element, &pos_hi,
 		    cpOptional,
-		    cpReadHandler, "size handler", &_size_element, &_size_hi,
+		    cpReadHandler, "size handler", &size_element, &size_hi,
 		    cpKeywords,
 		    "UPDATE", cpSecondsAsMilli, "update interval (s)", &_interval,
 		    "BANNER", cpString, "banner string", &_banner,
+		    "ACTIVE", cpBool, "start active?", &_active,
 		    0) < 0)
 	return -1;
 
+    if (size_hi >= 0) {
+	_es.push_back(size_element);
+	_his.push_back(size_hi);
+    }
+    _first_pos = _es.size();
+    _es.push_back(pos_element);
+    _his.push_back(pos_hi);
+    
     _have_size = false;
     _status = ST_FIRST;
     _timer.initialize(this);
-    _timer.schedule_now();
+    if (_active)
+	_timer.schedule_now();
     return 0;
 }
 
 void
 ProgressBar::uninitialize()
 {
-    if (_status != ST_FIRST) {
+    if (_status == ST_MIDDLE) {
 	_status = ST_DONE;
 	run_scheduled();
     }
@@ -90,10 +102,10 @@ foregroundproc()
 	pgrp = getpgrp();
 
 #ifdef HAVE_TCGETPGRP
-    return ((ctty_pgrp = tcgetpgrp(STDOUT_FILENO)) != -1 &&
+    return ((ctty_pgrp = tcgetpgrp(STDERR_FILENO)) != -1 &&
 	    ctty_pgrp == pgrp);
 #else
-    return ((ioctl(STDOUT_FILENO, TIOCGPGRP, &ctty_pgrp) != -1 &&
+    return ((ioctl(STDERR_FILENO, TIOCGPGRP, &ctty_pgrp) != -1 &&
 	     ctty_pgrp == pgrp));
 #endif
 }
@@ -108,7 +120,7 @@ getttywidth()
 {
     // set TTY width (from openssh scp)
     struct winsize winsize;
-    if (ioctl(fileno(stderr), TIOCGWINSZ, &winsize) != -1 && winsize.ws_col)
+    if (ioctl(STDERR_FILENO, TIOCGWINSZ, &winsize) != -1 && winsize.ws_col)
 	return (winsize.ws_col ? winsize.ws_col : 80);
     else
 	return 80;
@@ -160,19 +172,37 @@ atomicio(f, fd, _s, n)
 
 #define STALLTIME	5
 
+bool
+ProgressBar::get_value(int first, int last, thermometer_t *value)
+{
+    *value = 0;
+    bool all_known = true;
+    for (int i = first; i < last; i++) {
+	String s = cp_uncomment(router()->handler(_his[i]).call_read(_es[i]));
+	thermometer_t this_value;
+#ifdef HAVE_INT64_TYPES
+	bool ok = cp_unsigned64(s, &this_value);
+#else
+	bool ok = cp_unsigned(s, &this_value);
+#endif
+	if (ok)
+	    *value += this_value;
+	else
+	    all_known = false;
+    }
+    return (first == last ? false : all_known);
+}
+
 void
 ProgressBar::run_scheduled()
 {
+    // check _active
+    if (!_active)
+	return;
+    
     // get size on first time through
     if (_status == ST_FIRST) {
-	String s;
-	if (_size_hi >= 0)
-	    s = cp_uncomment(router()->handler(_size_hi).call_read(_size_element));
-#ifdef HAVE_INT64_TYPES
-	_have_size = cp_unsigned64(s, &_size);
-#else
-	_have_size = cp_unsigned(s, &_size);
-#endif
+	_have_size = get_value(0, _first_pos, &_size);
 	_last_pos = 0;
 	click_gettimeofday(&_start_time);
 	_last_time = _start_time;
@@ -194,13 +224,8 @@ ProgressBar::run_scheduled()
 	sa << _banner << ' ';
     
     // get position
-    String s = cp_uncomment(router()->handler(_pos_hi).call_read(_pos_element));
     thermometer_t pos;
-#ifdef HAVE_INT64_TYPES
-    bool have_pos = cp_unsigned64(s, &pos);
-#else
-    bool have_pos = cp_unsigned(s, &pos);
-#endif
+    bool have_pos = get_value(_first_pos, _es.size(), &pos);
 
     // get current time
     struct timeval now;
@@ -230,7 +255,7 @@ ProgressBar::run_scheduled()
     int barlength = getttywidth() - (sa.length() + 25);
     barlength = (barlength <= max_bar_length ? barlength : max_bar_length);
     if (barlength > 0) {
-	if (thermpos < 0 || (!_have_size && _status == ST_DONE))
+	if (thermpos < 0 || (!_have_size && _status >= ST_DONE))
 	    sa.snprintf(barlength + 10, "|%.*s|", barlength, bad_bar);
 	else if (!_have_size && barlength > 3) {
 	    int barchar = ((barlength - 3) * thermpos / 100);
@@ -274,14 +299,14 @@ ProgressBar::run_scheduled()
     double elapsed = tv.tv_sec + (tv.tv_usec / 1000000.0);
 
     // collect time
-    if (_status != ST_DONE
+    if (_status < ST_DONE
 	&& (!_have_size || elapsed <= 0.0 || pos > _size))
 	sa << "   --:-- ETA";
     else if (wait.tv_sec >= STALLTIME)
 	sa << " - stalled -";
     else {
 	int time_remaining;
-	if (_status == ST_DONE)
+	if (_status >= ST_DONE)
 	    time_remaining = (int)elapsed;
 	else
 	    time_remaining = (int)(_size / (pos / elapsed) - elapsed);
@@ -293,15 +318,15 @@ ProgressBar::run_scheduled()
 	    sa << "   ";
 	int sec = time_remaining % 3600;
 	sa.snprintf(12, "%02d:%02d%s", sec / 60, sec % 60,
-		    (_status == ST_DONE ? "    " : " ETA"));
+		    (_status >= ST_DONE ? "    " : " ETA"));
     }
 
     // add \n if appropriate
-    if (_status == ST_DONE)
+    if (_status >= ST_DONE)
 	sa << '\n';
 
     // write data
-    int fd = fileno(stderr);
+    int fd = STDERR_FILENO;
     int buflen = sa.length();
     int bufpos = 0;
     const char *data = sa.data();
@@ -309,14 +334,87 @@ ProgressBar::run_scheduled()
 	ssize_t got = write(fd, data + bufpos, buflen - bufpos);
 	if (got > 0)
 	    bufpos += got;
-	else if (errno != EINTR && errno != EAGAIN)
+	else if (errno != EINTR && errno != EAGAIN
+#ifdef EWOULDBLOCK
+		 && errno != EWOULDBLOCK
+#endif
+		 )
 	    break;
     }
 
-    if (_status != ST_DONE)
+    if (_status < ST_DONE)
 	_timer.reschedule_after_ms(_interval);
+    else
+	_active = false;
     if (_status == ST_FIRST)
 	_status = ST_MIDDLE;
+}
+
+void
+ProgressBar::complete(bool is_full)
+{
+    if (is_full) {
+	_have_size = true;
+	_size = _last_pos;
+    }
+    if (_status < ST_DONE && _active) {
+	_status = ST_DONE;
+	_timer.unschedule();
+	run_scheduled();
+    }
+}
+
+
+enum { H_MARK_STOPPED, H_MARK_DONE, H_BANNER, H_ACTIVE };
+
+String
+ProgressBar::read_handler(Element *e, void *thunk)
+{
+    ProgressBar *pb = static_cast<ProgressBar *>(e);
+    switch ((int)thunk) {
+      case H_BANNER:
+	return pb->_banner + "\n";
+      case H_ACTIVE:
+	return cp_unparse_bool(pb->_active) + "\n";
+      default:
+	return "<error>";
+    }
+}
+
+int
+ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandler *errh)
+{
+    ProgressBar *pb = static_cast<ProgressBar *>(e);
+    String str = cp_uncomment(in_str);
+    switch ((int)thunk) {
+      case H_MARK_STOPPED:
+      case H_MARK_DONE:
+	pb->complete((int)thunk == H_MARK_DONE);
+	return 0;
+      case H_BANNER:
+	pb->_banner = str;
+	return 0;
+      case H_ACTIVE:
+	if (cp_bool(str, &pb->_active)) {
+	    if (pb->_active && !pb->_timer.scheduled())
+		pb->_timer.schedule_now();
+	    return 0;
+	} else
+	    return errh->error("`active' should be bool (active setting)");
+      default:
+	return errh->error("internal");
+    }
+}
+
+void
+ProgressBar::add_handlers()
+{
+    add_write_handler("mark_stopped", write_handler, (void *)H_MARK_STOPPED);
+    add_write_handler("mark_done", write_handler, (void *)H_MARK_DONE);
+    add_read_handler("active", read_handler, (void *)H_ACTIVE);
+    add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("banner", read_handler, (void *)H_BANNER);
+    add_write_handler("banner", write_handler, (void *)H_BANNER);
 }
 
 ELEMENT_REQUIRES(userlevel)

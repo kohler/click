@@ -43,6 +43,11 @@ a section of some filename. Default is empty.
 Time in seconds (millisecond precision). The progress bar updates itself with
 this frequency. Default is 1 second.
 
+=item ACTIVE
+
+Boolean. The progress bar will not initially display itself if this is false.
+Default is true.
+
 =back
 
 Only available in user-level processes.
@@ -63,9 +68,28 @@ is known; the second, when it is not known.
 
 =n
 
-Code based on the progress bar in the OpenSSH project's B<scp> program. Its
+Code based on the progress bar in the OpenSSH project's B<scp> program, whose
 authors are listed as Timo Rinne, Tatu Ylonen, Theo de Raadt, and Aaron
 Campbell.
+
+=h mark_stopped write-only
+
+When written, the progress bar changes to indicate that the transfer has
+stopped, possibly prematurely.
+
+=h mark_done write-only
+
+When written, the progress bar changes to indicate that the transfer has
+successfully completed.
+
+=h active read/write
+
+Returns or sets the ACTIVE setting, a Boolean value. An inactive progress bar
+will not redraw itself.
+
+=h banner read/write
+
+Returns or sets the BANNER string.
 
 =a
 
@@ -82,8 +106,11 @@ class ProgressBar : public Element { public:
     int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
+    void add_handlers();
 
     void run_scheduled();
+
+    void complete(bool is_full);
 
   private:
 
@@ -106,11 +133,16 @@ class ProgressBar : public Element { public:
 
     Timer _timer;
     uint32_t _interval;
+    bool _active;
+
+    Vector<Element *> _es;
+    Vector<int> _his;
+    int _first_pos;
+
+    bool get_value(int first, int last, thermometer_t *);
     
-    Element *_size_element;
-    int _size_hi;
-    Element *_pos_element;
-    int _pos_hi;
+    static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler*);
     
 };
 
