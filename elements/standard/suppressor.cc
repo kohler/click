@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "suppressor.hh"
-#include "bitvector.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/bitvector.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 Suppressor::Suppressor()
 {

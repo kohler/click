@@ -1,8 +1,8 @@
 #ifndef ETHERSWITCH_HH
 #define ETHERSWITCH_HH
-#include "element.hh"
-#include "etheraddress.hh"
-#include "hashmap.hh"
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/hashmap.hh>
 
 class EtherSwitch : public Element {
   

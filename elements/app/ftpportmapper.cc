@@ -21,12 +21,12 @@
 # include <config.h>
 #endif
 #include "ftpportmapper.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
-#include "router.hh"
-#include "elemfilter.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
+#include <click/router.hh>
+#include <click/elemfilter.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 FTPPortMapper::FTPPortMapper()
   : _pattern(0)

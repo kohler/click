@@ -23,13 +23,13 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
+#include <click/glue.hh>
 #include "polldevice.hh"
 #include "todevice.hh"
-#include "error.hh"
-#include "etheraddress.hh"
-#include "confparse.hh"
-#include "router.hh"
+#include <click/error.hh>
+#include <click/etheraddress.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
 #include "elements/standard/scheduleinfo.hh"
 extern "C" {
 #define new xxx_new

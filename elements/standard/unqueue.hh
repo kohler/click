@@ -1,6 +1,6 @@
 #ifndef UNQUEUE_HH
 #define UNQUEUE_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

@@ -23,12 +23,12 @@
 # include <config.h>
 #endif
 #include "ipratemon.hh"
-#include "confparse.hh"
-#include "straccum.hh"
-#include "error.hh"
-#include "glue.hh"
-#include "mplock.hh"
-#include "llrpc.h"
+#include <click/confparse.hh>
+#include <click/straccum.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
+#include <click/mplock.hh>
+#include <click/llrpc.h>
 
 IPRateMonitor::IPRateMonitor()
   : _count_packets(true), _anno_packets(true),
@@ -650,4 +650,4 @@ IPRateMonitor::llrpc(unsigned command, void *data)
 EXPORT_ELEMENT(IPRateMonitor)
 
 // template instances
-#include "ewma.cc"
+#include <click/ewma.cc>

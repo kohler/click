@@ -21,12 +21,12 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "straccum.hh"
-#include "bitvector.hh"
+#include <click/straccum.hh>
+#include <click/bitvector.hh>
 #include "routert.hh"
 #include "lexert.hh"
 #include "toolutils.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
@@ -169,13 +169,17 @@ write_router_file(RouterT *r, const char *name, ErrorHandler *errh)
 ElementMap::ElementMap()
   : _name_map(0), _cxx_map(0)
 {
-  add(String(), String(), String(), String());
+  _e.push_back(Elt());
+  _def_srcdir.push_back(String());
+  _def_compile_flags.push_back(String());
 }
 
 ElementMap::ElementMap(const String &str)
   : _name_map(0), _cxx_map(0)
 {
-  add(String(), String(), String(), String());
+  _e.push_back(Elt());
+  _def_srcdir.push_back(String());
+  _def_compile_flags.push_back(String());
   parse(str);
 }
 
@@ -193,14 +197,14 @@ ElementMap::driver_name(int d)
 String
 ElementMap::processing_code(const String &n) const
 {
-  return _processing_code[ _name_map[n] ];
+  return _e[ _name_map[n] ].processing_code;
 }
 
 int
 ElementMap::flag_value(int ei, int flag) const
 {
-  const unsigned char *data = reinterpret_cast<const unsigned char *>(_flags[ei].data());
-  int len = _flags[ei].length();
+  const unsigned char *data = reinterpret_cast<const unsigned char *>(_e[ei].flags.data());
+  int len = _e[ei].flags.length();
   for (int i = 0; i < len; i++) {
     if (data[i] == flag) {
       if (i < len - 1 && isdigit(data[i+1])) {
@@ -223,15 +227,36 @@ ElementMap::flag_value(const String &n, int flag) const
   return flag_value(_name_map[n], flag);
 }
 
-void
-ElementMap::set_driver(int i, const String &requirements)
+int
+ElementMap::get_driver(const String &requirements)
 {
   int inreq = requirements.find_left("linuxmodule");
   if (inreq >= 0)		// XXX linuxmodule as substring?
-    _driver[i] = DRIVER_LINUXMODULE;
+    return DRIVER_LINUXMODULE;
   inreq = requirements.find_left("userlevel");
   if (inreq >= 0)
-    _driver[i] = DRIVER_USERLEVEL;
+    return DRIVER_USERLEVEL;
+  return -1;
+}
+
+int
+ElementMap::add(const Elt &e)
+{
+  int i = _e.size();
+  _e.push_back(e);
+  
+  Elt &my_e = _e.back();
+  if (my_e.requirements)
+    my_e.driver = get_driver(my_e.requirements);
+  my_e.name_next = _name_map[e.name];
+  my_e.cxx_next = _cxx_map[e.name];
+  
+  if (e.name)
+    _name_map.insert(e.name, i);
+  if (e.cxx)
+    _cxx_map.insert(e.cxx, i);
+  
+  return i;
 }
 
 int
@@ -240,29 +265,15 @@ ElementMap::add(const String &click_name, const String &cxx_name,
 		const String &flags,
 		const String &requirements, const String &provisions)
 {
-  int old_name = _name_map[click_name];
-  int old_cxx = _cxx_map[cxx_name];
-
-  int i = _name.size();
-  _name.push_back(click_name);
-  _cxx.push_back(cxx_name);
-  _header_file.push_back(header_file);
-  _processing_code.push_back(processing_code);
-  _flags.push_back(flags);
-  _requirements.push_back(requirements);
-  _provisions.push_back(provisions);
-  _driver.push_back(-1);
-  if (requirements)
-    set_driver(i, requirements);
-
-  if (click_name)
-    _name_map.insert(click_name, i);
-  if (cxx_name)
-    _cxx_map.insert(cxx_name, i);
-  _name_next.push_back(old_name);
-  _cxx_next.push_back(old_cxx);
-  
-  return i;
+  Elt e;
+  e.name = click_name;
+  e.cxx = cxx_name;
+  e.header_file = header_file;
+  e.processing_code = processing_code;
+  e.flags = flags;
+  e.requirements = requirements;
+  e.provisions = provisions;
+  return add(e);
 }
 
 int
@@ -276,27 +287,28 @@ ElementMap::add(const String &click_name, const String &cxx_name,
 void
 ElementMap::remove(int i)
 {
-  if (i <= 0 || i >= _name.size())
+  if (i <= 0 || i >= _e.size())
     return;
 
+  Elt &e = _e[i];
   int p = -1;
-  for (int t = _name_map[ _name[i] ]; t > 0; p = t, t = _name_next[t])
+  for (int t = _name_map[e.name]; t > 0; p = t, t = _e[t].name_next)
     /* nada */;
   if (p >= 0)
-    _name_next[p] = _name_next[i];
+    _e[p].name_next = e.name_next;
   else
-    _name_map.insert(_name[i], _name_next[i]);
+    _name_map.insert(e.name, e.name_next);
 
   p = -1;
-  for (int t = _cxx_map[ _cxx[i] ]; t > 0; p = t, t = _cxx_next[t])
+  for (int t = _cxx_map[e.cxx]; t > 0; p = t, t = _e[t].cxx_next)
     /* nada */;
   if (p >= 0)
-    _cxx_next[p] = _cxx_next[i];
+    _e[p].cxx_next = e.cxx_next;
   else
-    _cxx_map.insert(_cxx[i], _cxx_next[i]);
+    _cxx_map.insert(e.cxx, e.cxx_next);
 
-  _name[i] = String();
-  _cxx[i] = String();
+  e.name = String();
+  e.cxx = String();
 }
 
 void
@@ -315,16 +327,17 @@ String
 ElementMap::unparse() const
 {
   StringAccum sa;
-  for (int i = 1; i < _name.size(); i++) {
-    if (!_name[i] && !_cxx[i])
+  for (int i = 1; i < _e.size(); i++) {
+    const Elt &e = _e[i];
+    if (!e.name && !e.cxx)
       continue;
-    sa << cp_quote(_name[i]) << '\t'
-       << cp_quote(_cxx[i]) << '\t'
-       << cp_quote(_header_file[i]) << '\t'
-       << cp_quote(_processing_code[i]) << '\t'
-       << cp_quote(_flags[i]) << '\t'
-       << cp_quote(_requirements[i]) << '\t'
-       << cp_quote(_provisions[i]) << '\n';
+    sa << cp_quote(e.name) << '\t'
+       << cp_quote(e.cxx) << '\t'
+       << cp_quote(e.header_file) << '\t'
+       << cp_quote(e.processing_code) << '\t'
+       << cp_quote(e.flags) << '\t'
+       << cp_quote(e.requirements) << '\t'
+       << cp_quote(e.provisions) << '\n';
   }
   return sa.take_string();
 }
@@ -341,7 +354,7 @@ ElementMap::map_indexes(const RouterT *r, Vector<int> &map_indexes,
       int idx = _name_map[r->type_name(t)];
       if (idx <= 0) {
 	if (errh)
-	  errh->lerror(r->elandmark(i), "nothing known about element class `%s'", String(r->type_name(t)).cc());
+	  errh->lerror(r->elandmark(i), "unknown element class `%s'", String(r->type_name(t)).cc());
 	map_indexes[t] = -2;
       } else
 	map_indexes[t] = idx;
@@ -354,7 +367,7 @@ ElementMap::driver_indifferent(const Vector<int> &map_indexes) const
 {
   for (int i = 0; i < map_indexes.size(); i++) {
     int idx = map_indexes[i];
-    if (idx > 0 && _driver[idx] >= 0)
+    if (idx > 0 && _e[idx].driver >= 0)
       return false;
   }
   return true;
@@ -365,14 +378,14 @@ ElementMap::driver_compatible(const Vector<int> &map_indexes, int driver) const
 {
   for (int i = 0; i < map_indexes.size(); i++) {
     int idx = map_indexes[i];
-    if (idx <= 0 || _driver[idx] < 0)
+    if (idx <= 0 || _e[idx].driver < 0)
       continue;
     bool any = false;
     while (idx > 0 && !any) {
-      if (_driver[idx] < 0 || _driver[idx] == driver)
+      if (_e[idx].driver < 0 || _e[idx].driver == driver)
 	any = true;
       else
-	idx = _name_next[idx];
+	idx = _e[idx].name_next;
     }
     if (!any)
       return false;
@@ -385,69 +398,83 @@ ElementMap::limit_driver(int driver)
 {
   for (HashMap<String, int>::Iterator i = _name_map.first(); i; i++) {
     int t = i.value();
-    while (t > 0 && _driver[t] >= 0 && _driver[t] != driver)
-      t = i.value() = _name_next[t];
+    while (t > 0 && _e[t].driver >= 0 && _e[t].driver != driver)
+      t = i.value() = _e[t].name_next;
   }
   for (HashMap<String, int>::Iterator i = _cxx_map.first(); i; i++) {
     int t = i.value();
-    while (t > 0 && _driver[t] >= 0 && _driver[t] != driver)
-      t = i.value() = _cxx_next[t];
+    while (t > 0 && _e[t].driver >= 0 && _e[t].driver != driver)
+      t = i.value() = _e[t].cxx_next;
   }
 }
 
 
 void
-ElementMap::try_one_directory(String dir, ErrorHandler *errh)
+ElementMap::parse_all_required(RouterT *r, String default_path,
+			       ErrorHandler *errh)
 {
-  // append `/'
-  if (DIR *df = opendir(dir.cc())) {
-    while (struct dirent *d = readdir(df))
-      if (strncmp(d->d_name, "elementmap", 10) == 0) {
-	parse(file_string(dir + d->d_name, errh));
-      }
-    closedir(df);
-  }
-}
-
-void
-ElementMap::parse_all_on_path(String path, String default_path,
-			      ErrorHandler *errh)
-{
-  struct stat s;
+  bool not_found_default = false;
+  String not_found_other;
   
-  while (1) {
-    int colon = path.find_left(':');
-    String dir = (colon < 0 ? path : path.substring(0, colon));
-    
-    if (!dir) {
-      if (default_path)		// look in default path
-	parse_all_on_path(default_path, "", errh);
-      default_path = "";
-      
-    } else {
-      if (dir.back() != '/')
-	dir += "/";
-      
-      if (stat(dir.cc(), &s) >= 0 && S_ISDIR(s.st_mode))
-	try_one_directory(dir, errh);
-      
-      dir += "share/click/";
-      if (stat(dir.cc(), &s) >= 0 && S_ISDIR(s.st_mode))
-	try_one_directory(dir, errh);
+  // first, parse default elementmap
+  String default_fn = clickpath_find_file("elementmap", "share/click", default_path);
+  if (default_fn) {
+    String text = file_string(default_fn, errh);
+    parse(text);
+  } else {
+    errh->warning("cannot find main elementmap");
+    not_found_default = true;
+  }
+
+  // second, try elementmap in archive
+  int defaultmap_aei = r->archive_index("elementmap");
+  if (defaultmap_aei >= 0)
+    parse(r->archive(defaultmap_aei).data);
+  
+  // now, parse elementmaps for requirements in required order
+  const Vector<String> &requirements = r->requirements();
+  for (int i = 0; i < requirements.size(); i++) {
+    String req = requirements[i];
+    String mapname = "elementmap." + req;
+
+    // look for elementmap in archive
+    int map_aei = r->archive_index(mapname);
+    if (map_aei >= 0)
+      parse(r->archive(map_aei).data);
+    else {
+      String fn = clickpath_find_file(mapname, "share/click", default_path);
+      if (fn) {
+	String text = file_string(fn, errh);
+	parse(text);
+      } else {
+	if (not_found_other)
+	  not_found_other += ", ";
+	not_found_other += "`" + req + "'";
+      }
     }
-      
-    if (colon < 0)
-      return;
+  }
+
+  if (not_found_default || not_found_other) {
+    if (not_found_other)
+      errh->warning("cannot find package-specific elementmaps:\n  %s", not_found_other.cc());
     
-    path = path.substring(colon + 1);
+    const char *path = getenv("CLICKPATH");
+    bool allows_default = path_allows_default_path(path);
+    if (!allows_default)
+      errh->warning("in CLICKPATH `%s'", path);
+    else if (!path)
+      errh->warning("in install directory `%s'", default_path.cc());
+    else
+      errh->warning("in CLICKPATH or `%s'", default_path.cc());
+
+    if (not_found_default)
+      errh->message("(You may get unknown element class errors.\nTry `make install' or set the CLICKPATH evironment variable.)");
+    else
+      errh->message("(You may get unknown element class errors.)");
   }
 }
 
-void
-ElementMap::parse_all_on_path(String default_path, ErrorHandler *errh)
-{
-  const char *path = getenv("CLICKPATH");
-  if (!path)
-    path = ":";
-  parse_all_on_path(path, default_path, errh);
-}
+
+// template instance
+#include <click/vector.cc>
+template class Vector<ElementMap::Elt>;

@@ -14,8 +14,8 @@
  * SetGridChecksum
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class CheckGridHeader : public Element {
 

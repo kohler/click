@@ -20,27 +20,27 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "string.hh"
-#include "router.hh"
-#include "ipflowid.hh"
-#include "ipaddress.hh"
-#include "etheraddress.hh"
+#include <click/string.hh>
+#include <click/router.hh>
+#include <click/ipflowid.hh>
+#include <click/ipaddress.hh>
+#include <click/etheraddress.hh>
 
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<Router::Hookup>;
 template class Vector<int>;
 template class Vector<unsigned int>;
 template class Vector<String>;
 
-#include "hashmap.cc"
+#include <click/hashmap.cc>
 template class HashMap<String, int>;
 template class HashMapIterator<String, int>;
 
-#include "bighashmap.cc"
+#include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, unsigned>;
 template class BigHashMap<IPFlowID, bool>;
 template class BigHashMapIterator<IPAddress, unsigned>;
 template class BigHashMapIterator<IPFlowID, bool>;
 
-#include "ewma.cc"
+#include <click/ewma.cc>
 template class DirectEWMAX<4, 10>;

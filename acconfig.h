@@ -2,11 +2,8 @@
 #ifndef CLICK_CONFIG_H
 #define CLICK_CONFIG_H
 
-/* Name of package */
-#define PACKAGE "click"
-
 /* Version number of package */
-#define VERSION "0.1"
+#define CLICK_VERSION "0.1"
 
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1

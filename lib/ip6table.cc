@@ -20,8 +20,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-
-#include "ip6table.hh"
+#include <click/ip6table.hh>
 
 IP6Table::IP6Table()
 {
@@ -89,5 +88,5 @@ IP6Table::del(IP6Address dst, IP6Address mask)
 }
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<IP6Table::Entry>;

@@ -22,10 +22,10 @@
 #endif
 #include "red.hh"
 #include "queue.hh"
-#include "elemfilter.hh"
-#include "error.hh"
-#include "router.hh"
-#include "confparse.hh"
+#include <click/elemfilter.hh>
+#include <click/error.hh>
+#include <click/router.hh>
+#include <click/confparse.hh>
 #include <errno.h>
 
 RED::RED()

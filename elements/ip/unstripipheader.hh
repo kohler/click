@@ -15,7 +15,7 @@
  *
  * =a CheckIPHeader, MarkIPHeader, StripIPHeader */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class UnstripIPHeader : public Element {
 

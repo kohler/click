@@ -22,8 +22,8 @@
 #endif
 
 #include "bridgemessage.hh"
-#include "glue.hh"
-#include "confparse.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
 
 String
 BridgeMessage::s(String tag) const {

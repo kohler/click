@@ -1,7 +1,7 @@
 #ifndef BURSTER_HH
 #define BURSTER_HH
-#include "element.hh"
-#include "timer.hh"
+#include <click/element.hh>
+#include <click/timer.hh>
 
 /*
  * =c

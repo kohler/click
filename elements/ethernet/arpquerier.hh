@@ -43,10 +43,10 @@
  * ARPResponder, ARPFaker, AddressInfo
  */
 
-#include "element.hh"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "timer.hh"
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/timer.hh>
 
 class ARPQuerier : public Element {
  public:

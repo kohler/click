@@ -22,8 +22,8 @@
 # include <config.h>
 #endif
 #include "burster.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 Burster::Burster()
   : _npackets(0), _timer(this)

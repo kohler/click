@@ -1,6 +1,6 @@
 #ifndef RFC2507D_HH
 #define RFC2507D_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * RFC2507 IPv4/TCP header de-compressor.
@@ -8,10 +8,10 @@
  * Spits out IP packets.
  */
 
-#include "hashmap.hh"
-#include "glue.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
+#include <click/hashmap.hh>
+#include <click/glue.hh>
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
 
 class RFC2507d : public Element {
 public:

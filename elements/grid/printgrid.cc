@@ -21,13 +21,13 @@
 # include <config.h>
 #endif
 #include "printgrid.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "click_ether.h"
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/click_ether.h>
 #include "grid.hh"
 
 PrintGrid::PrintGrid()

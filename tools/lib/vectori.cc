@@ -20,8 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "vector.cc"
-#include "string.hh"
+#include <click/vector.cc>
+#include <click/string.hh>
 #include "routert.hh"
 template class Vector<int>;
 template class Vector<unsigned>;

@@ -22,8 +22,8 @@
 # include <config.h>
 #endif
 #include "bandwidthmeter.hh"
-#include "error.hh"
-#include "confparse.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
 #include <errno.h>
 
 BandwidthMeter::BandwidthMeter()

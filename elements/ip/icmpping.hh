@@ -13,7 +13,7 @@
  * =a ICMPError
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class ICMPPing : public Element {
   

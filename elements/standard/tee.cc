@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "tee.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 Tee *
 Tee::clone() const

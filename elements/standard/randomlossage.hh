@@ -1,6 +1,6 @@
 #ifndef RANDOMLOSSAGE_HH
 #define RANDOMLOSSAGE_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

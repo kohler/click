@@ -51,13 +51,13 @@
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute */
 
 
-#include "element.hh"
-#include "glue.hh"
-#include "bighashmap.hh"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/bighashmap.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
 #include "grid.hh"
-#include "timer.hh"
+#include <click/timer.hh>
 
 class UpdateGridRoutes : public Element {
 

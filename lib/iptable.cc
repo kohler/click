@@ -20,8 +20,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-
-#include "iptable.hh"
+#include <click/iptable.hh>
 
 IPTable::IPTable()
 {
@@ -87,5 +86,5 @@ IPTable::del(unsigned dst, unsigned mask)
 }
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<IPTable::Entry>;

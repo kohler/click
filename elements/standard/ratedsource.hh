@@ -1,7 +1,7 @@
 #ifndef RATEDSOURCE_HH
 #define RATEDSOURCE_HH
-#include "element.hh"
-#include "gaprate.hh"
+#include <click/element.hh>
+#include <click/gaprate.hh>
 
 /*
  * =c

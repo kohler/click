@@ -1,10 +1,10 @@
 #ifndef IPRW_HH
 #define IPRW_HH
-#include "element.hh"
-#include "timer.hh"
-#include "bighashmap.hh"
-#include "ipflowid.hh"
-#include "click_ip.h"
+#include <click/element.hh>
+#include <click/timer.hh>
+#include <click/bighashmap.hh>
+#include <click/ipflowid.hh>
+#include <click/click_ip.h>
 class IPMapper;
 
 class IPRw : public Element { public:

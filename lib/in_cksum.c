@@ -6,7 +6,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "click_ip.h"
+#include <click/click_ip.h>
 
 unsigned short
 in_cksum(const unsigned char *addr, int len)

@@ -21,12 +21,12 @@
 # include <config.h>
 #endif
 #include "fixdstloc.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "grid.hh"
-#include "router.hh"
-#include "click_ether.h"
+#include <click/router.hh>
+#include <click/click_ether.h>
 
 FixDstLoc::FixDstLoc() : Element(1, 1), _loctab(0)
 {

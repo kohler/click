@@ -1,6 +1,6 @@
 #ifndef NULLS_HH
 #define NULLS_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

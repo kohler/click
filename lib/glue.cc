@@ -20,8 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
-#include "error.hh"
+#include <click/glue.hh>
+#include <click/error.hh>
 
 #include <limits.h>
 

@@ -13,7 +13,7 @@
  * Scramble is its own inverse.
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class Scramble : public Element {
 public:

@@ -20,7 +20,7 @@
  * =a Align, click-align(1)
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class AlignmentInfo : public Element {
 

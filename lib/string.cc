@@ -20,14 +20,14 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "string.hh"
+#include <click/string.hh>
 #ifdef __KERNEL__
-# include "straccum.hh"
+# include <click/straccum.hh>
 # include <linux/ctype.h>
 #else
 # include <ctype.h>
 #endif
-#include "glue.hh"
+#include <click/glue.hh>
 #include <assert.h>
 
 String::Memo *String::null_memo = 0;

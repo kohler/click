@@ -15,8 +15,8 @@
  *
  * =a CheckIPHeader, DecIPTTL, SetIPDSCP, IPRewriter */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class SetIPChecksum : public Element {
 public:

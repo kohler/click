@@ -35,9 +35,9 @@
  * =a DropBroadcasts, PaintTee, CheckLength, IPGWOptions, FixIPSrc, DecIPTTL,
  * IPFragmenter, IPInputCombo */
 
-#include "element.hh"
-#include "glue.hh"
-#include "click_ip.h"
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/click_ip.h>
 
 class Address;
 

@@ -22,9 +22,9 @@
 # include <config.h>
 #endif
 #include "b8b10.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "glue.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/glue.hh>
 
 B8B10::B8B10()
 {

@@ -1,6 +1,6 @@
 #ifndef DISCARDNOFREE_HH
 #define DISCARDNOFREE_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

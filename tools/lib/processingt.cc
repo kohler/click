@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "processingt.hh"
-#include "error.hh"
+#include <click/error.hh>
 #include "toolutils.hh"
 #include <ctype.h>
 #include <string.h>

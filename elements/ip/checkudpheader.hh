@@ -16,8 +16,8 @@
  * =a CheckIPHeader, CheckTCPHeader, MarkIPHeader
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class CheckUDPHeader : public Element {
 

@@ -22,9 +22,9 @@
 # include <config.h>
 #endif
 #include "getip6address.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "click_ip6.h"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/click_ip6.h>
 
 GetIP6Address::GetIP6Address()
   : Element(1, 1)

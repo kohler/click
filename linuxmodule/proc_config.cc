@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "modulepriv.hh"
-#include "straccum.hh"
-#include "router.hh"
+#include <click/straccum.hh>
+#include <click/router.hh>
 
 static int config_write_lock = 0;
 static String *current_config = 0;

@@ -1,6 +1,6 @@
 #ifndef RRSWITCH_HH
 #define RRSWITCH_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

@@ -23,10 +23,10 @@
 #endif
 #include "routert.hh"
 #include "lexert.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "straccum.hh"
-#include "clp.h"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
+#include <click/clp.h>
 #include "toolutils.hh"
 #include <stdio.h>
 #include <stdlib.h>
@@ -656,30 +656,18 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 
   // remove requirements
   {
-    const StringMap &requirements = r->requirement_map();
-    Vector<String> removers;
-    for (StringMap::Iterator iter = requirements.first(); iter; iter++)
-      if (iter.value() > 0 && iter.key().substring(0, 14) == "fastclassifier")
-	removers.push_back(iter.key());
-    for (int i = 0; i < removers.size(); i++)
-      r->remove_requirement(removers[i]);
+    Vector<String> requirements = r->requirements();
+    for (int i = 0; i < requirements.size(); i++)
+      if (requirements[i].substring(0, 14) == "fastclassifier")
+	r->remove_requirement(requirements[i]);
   }
   
   // remove archive elements
   for (int i = 0; i < r->narchive(); i++) {
     ArchiveElement &ae = r->archive(i);
-    if (ae.name.substring(0, 14) == "fastclassifier")
+    if (ae.name.substring(0, 14) == "fastclassifier"
+	|| ae.name == "elementmap.fastclassifier")
       ae.name = String();
-  }
-
-  // modify elementmap
-  if (r->archive_index("elementmap") >= 0) {
-    ArchiveElement &ae = r->archive("elementmap");
-    ElementMap em(ae.data);
-    for (int i = 0; i < click_names.size(); i++)
-      em.remove(click_names[i]);
-    ae.data = em.unparse();
-    if (!ae.data) ae.name = String();
   }
 }
 
@@ -798,9 +786,9 @@ compile_classifiers(RouterT *r, const String &package_name,
 
   // add elementmap to archive
   {
-    if (r->archive_index("elementmap") < 0)
-      r->add_archive(init_archive_element("elementmap", 0600));
-    ArchiveElement &ae = r->archive("elementmap");
+    if (r->archive_index("elementmap.fastclassifier") < 0)
+      r->add_archive(init_archive_element("elementmap.fastclassifier", 0600));
+    ArchiveElement &ae = r->archive("elementmap.fastclassifier");
     ElementMap em(ae.data);
     String header_file = package_name + ".hh";
     for (int i = 0; i < gen_eclass_names.size(); i++)
@@ -861,7 +849,7 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click-fastclassifier (Click) %s\n", VERSION);
+      printf("click-fastclassifier (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 1999-2000 Massachusetts Institute of Technology\n\
 Copyright (c) 2000 Mazu Networks, Inc.\n\
 This is free software; see the source for copying conditions.\n\
@@ -1017,6 +1005,6 @@ particular purpose.\n");
 }
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<ProgramStep>;
 template class Vector<Classificand>;

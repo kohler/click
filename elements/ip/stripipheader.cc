@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "stripipheader.hh"
-#include "click_ip.h"
+#include <click/click_ip.h>
 
 StripIPHeader::StripIPHeader()
 {

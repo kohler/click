@@ -22,8 +22,8 @@
 # include <config.h>
 #endif
 #include "modulepriv.hh"
-#include "router.hh"
-#include "error.hh"
+#include <click/router.hh>
+#include <click/error.hh>
 
 static click_proc_dir_entry **element_pdes = 0;
 static char *numbers = 0;

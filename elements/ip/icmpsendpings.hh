@@ -1,8 +1,8 @@
 #ifndef ICMPSENDPINGS_HH
 #define ICMPSENDPINGS_HH
-#include "element.hh"
-#include "timer.hh"
-#include "ipaddress.hh"
+#include <click/element.hh>
+#include <click/timer.hh>
+#include <click/ipaddress.hh>
 
 /*
  * =c

@@ -21,12 +21,12 @@
 # include <config.h>
 #endif
 #include "icmpping.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
-#include "click_ether.h"
-#include "click_ip.h"
-#include "click_icmp.h"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
+#include <click/click_ether.h>
+#include <click/click_ip.h>
+#include <click/click_icmp.h>
 
 ICMPPing::ICMPPing()
   : Element(1,1)

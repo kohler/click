@@ -24,7 +24,7 @@
  * GridLocationInfo
  */
 
-#include "element.hh"
+#include <click/element.hh>
 #include "elements/grid/gridlocationinfo.hh"
 
 class LocFromFile : public GridLocationInfo {

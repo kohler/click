@@ -21,15 +21,14 @@
 # include <config.h>
 #endif
 #include "controlsocket.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "router.hh"
-#include "straccum.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/router.hh>
+#include <click/straccum.hh>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>
-#include <net/netinet.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
 
@@ -213,7 +212,7 @@ ControlSocket::global_read_handler(int fd, const String &name, String *data)
   StringAccum sa;
   int ok = 0;
   if (name == "version")
-    *data = String(VERSION) + "\n";
+    *data = String(CLICK_VERSION) + "\n";
   else if (name == "list")
     *data = router()->element_list_string();
   else if (name == "classes")

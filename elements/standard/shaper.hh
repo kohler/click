@@ -1,7 +1,7 @@
 #ifndef SHAPER_HH
 #define SHAPER_HH
-#include "element.hh"
-#include "gaprate.hh"
+#include <click/element.hh>
+#include <click/gaprate.hh>
 
 /*
  * =c

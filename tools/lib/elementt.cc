@@ -23,7 +23,7 @@
 #endif
 #include "elementt.hh"
 #include "routert.hh"
-#include "straccum.hh"
+#include <click/straccum.hh>
 #include <stdlib.h>
 
 ElementT::ElementT()

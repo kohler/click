@@ -23,7 +23,7 @@
 #include "signature.hh"
 #include "processingt.hh"
 #include "toolutils.hh"
-#include "error.hh"
+#include <click/error.hh>
 #include <stdio.h>
 #include <string.h>
 
@@ -211,5 +211,5 @@ Signatures::analyze(const ElementMap &em)
 }
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<SignatureNode>;

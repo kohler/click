@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "tolinuxsniffers.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "elements/linuxmodule/anydevice.hh"
 extern "C" {
 #include <linux/if_ether.h>

@@ -1,7 +1,7 @@
 #ifndef COUNTER_HH
 #define COUNTER_HH
-#include "element.hh"
-#include "ewma.hh"
+#include <click/element.hh>
+#include <click/ewma.hh>
 
 /* =c
  * Counter([TYPE])

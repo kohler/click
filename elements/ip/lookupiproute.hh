@@ -40,8 +40,8 @@
  * =a LookupIPRoute2, LookupIPRouteLinux
  */
 
-#include "element.hh"
-#include "iptable.hh"
+#include <click/element.hh>
+#include <click/iptable.hh>
 
 #define IP_RT_CACHE2 1
 

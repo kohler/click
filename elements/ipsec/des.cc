@@ -26,10 +26,10 @@
 #endif
 #include "des.hh"
 #include "esp.hh"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 Des::Des()
   : Element(1, 1), _decrypt(-1)

@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "cyclecountaccum.hh"
-#include "glue.hh"
+#include <click/glue.hh>
 
 CycleCountAccum::CycleCountAccum()
 {

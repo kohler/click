@@ -18,9 +18,8 @@ CC = @CC@
 CPP = @CPP@
 CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
 INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .SUFFIXES:
@@ -45,7 +44,7 @@ GENERIC_OBJS = string.o straccum.o \
 	ipaddress.o ip6address.o ipaddressset.o ipflowid.o etheraddress.o \
 	packet.o \
 	error.o glue.o timer.o gaprate.o \
-	elemlink.o element.o errorelement.o \
+	elemlink.o element.o \
 	confparse.o lexer.o elemfilter.o router.o \
 	crc32.o iptable.o iptable2.o ip6table.o radix.o
 
@@ -56,12 +55,12 @@ LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \
 
 OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(LINUXMODULE_OBJS) elements.o
 
-CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
+CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_LINUXMODULE
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
 
 DEFS = @DEFS@ 
-INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I$(top_srcdir)/lib -I$(linuxdir)/include
+INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I$(top_srcdir)/include -I$(linuxdir)/include
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
@@ -100,7 +99,7 @@ endif
 
 install: click.o
 	$(mkinstalldirs) $(libdir)
-	$(INSTALL) click.o $(libdir)/click.o
+	$(INSTALL_DATA) click.o $(libdir)/click.o
 install-man:
 
 clean:

@@ -10,8 +10,8 @@
  * packet look like TCP.
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class ForceTCP : public Element {
 public:

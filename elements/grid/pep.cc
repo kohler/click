@@ -22,8 +22,8 @@
 #endif
 #include "pep.hh"
 #include "amoeba.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "grid.hh"
 #include <math.h>
 
@@ -436,5 +436,5 @@ PEP::add_handlers()
 ELEMENT_REQUIRES(GridLocationInfo Amoeba)
 EXPORT_ELEMENT(PEP)
 
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<PEP::Entry>;

@@ -21,9 +21,9 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
+#include <click/glue.hh>
 #include "anydevice.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 
 void
 AnyDeviceMap::initialize()

@@ -13,7 +13,7 @@
  * =a CheckCRC32
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class EtherAddress;
 

@@ -22,12 +22,12 @@
 # include <config.h>
 #endif
 #include "checktcpheader.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "bitvector.hh"
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/bitvector.hh>
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif

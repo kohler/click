@@ -21,12 +21,11 @@
 # include <config.h>
 #endif
 #include "kerneltap.hh"
-#include "error.hh"
-#include "packet.hh"
-#include "bitvector.hh"
-#include "confparse.hh"
-#include "glue.hh"
-#include "click_ether.h"
+#include <click/error.hh>
+#include <click/bitvector.hh>
+#include <click/confparse.hh>
+#include <click/glue.hh>
+#include <click/click_ether.h>
 #include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
 #include <errno.h>

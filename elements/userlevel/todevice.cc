@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "todevice.hh"
-#include "error.hh"
-#include "etheraddress.hh"
-#include "confparse.hh"
-#include "router.hh"
+#include <click/error.hh>
+#include <click/etheraddress.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
 #include "elements/standard/scheduleinfo.hh"
 
 #include <stdio.h>

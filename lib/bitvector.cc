@@ -20,7 +20,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "bitvector.hh"
+#include <click/bitvector.hh>
 
 void
 Bitvector::finish_copy_constructor(const Bitvector &o)

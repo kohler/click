@@ -1,6 +1,6 @@
 #ifndef CONTROLSOCKET_HH
 #define CONTROLSOCKET_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

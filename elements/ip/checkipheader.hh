@@ -25,8 +25,8 @@
  *
  * =a CheckIPHeader2, MarkIPHeader, SetIPChecksum, StripIPHeader */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class CheckIPHeader : public Element {
 

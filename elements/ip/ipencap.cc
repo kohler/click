@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "ipencap.hh"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 #include "elements/standard/alignmentinfo.hh"
 
 IPEncap::IPEncap()

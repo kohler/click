@@ -1,6 +1,6 @@
 #ifndef CHECKPATTERN_HH
 #define CHECKPATTERN_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * CheckPattern(len)

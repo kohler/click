@@ -22,7 +22,7 @@
 # include <config.h>
 #endif
 #include "setip6address.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 
 SetIP6Address::SetIP6Address()
   : Element(1, 1)

@@ -14,7 +14,7 @@
  *
  * =a FromDevice.u */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class FromBPF : public Element {
  public:

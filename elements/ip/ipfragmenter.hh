@@ -27,8 +27,8 @@
  * =a ICMPError, CheckLength
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class IPFragmenter : public Element {
 

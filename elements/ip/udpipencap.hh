@@ -22,9 +22,9 @@
  * =a Strip, IPEncap
  */
 
-#include "element.hh"
-#include "glue.hh"
-#include "click_udp.h"
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/click_udp.h>
 
 class UDPIPEncap : public Element {
   

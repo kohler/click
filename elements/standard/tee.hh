@@ -1,6 +1,6 @@
 #ifndef TEE_HH
 #define TEE_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

@@ -1,7 +1,7 @@
 #ifndef GETIPADDRESS_HH
 #define GETIPADDRESS_HH
-#include "element.hh"
-#include "ipaddress.hh"
+#include <click/element.hh>
+#include <click/ipaddress.hh>
 
 /*
  * =c

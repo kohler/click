@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "strip.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 Strip::Strip(unsigned nbytes)
   : Element(1, 1), _nbytes(nbytes)

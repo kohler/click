@@ -1,6 +1,6 @@
 #ifndef COMPBLOCK_HH
 #define COMPBLOCK_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

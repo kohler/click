@@ -20,7 +20,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "elemfilter.hh"
+#include <click/elemfilter.hh>
 
 void
 ElementFilter::filter(Vector<Element *> &v)

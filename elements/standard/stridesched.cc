@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "stridesched.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 StrideSched::StrideSched()
 {

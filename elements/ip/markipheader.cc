@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "markipheader.hh"
-#include "confparse.hh"
-#include "click_ip.h"
+#include <click/confparse.hh>
+#include <click/click_ip.h>
 
 MarkIPHeader::MarkIPHeader()
 {

@@ -1,6 +1,6 @@
 #ifndef RTCYCLES_HH
 #define RTCYCLES_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

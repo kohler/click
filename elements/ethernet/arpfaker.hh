@@ -26,11 +26,11 @@
  * ARPQuerier, ARPResponder
  */
 
-#include "element.hh"
-#include "timer.hh"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "hashmap.hh"
+#include <click/element.hh>
+#include <click/timer.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/hashmap.hh>
 
 class ARPFaker : public Element {
   

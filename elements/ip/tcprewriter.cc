@@ -22,12 +22,12 @@
 # include <config.h>
 #endif
 #include "tcprewriter.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
-#include "confparse.hh"
-#include "straccum.hh"
-#include "error.hh"
-#include "llrpc.h"
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
+#include <click/error.hh>
+#include <click/llrpc.h>
 
 #include <limits.h>
 

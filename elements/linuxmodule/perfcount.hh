@@ -1,7 +1,7 @@
 #ifndef PERFCOUNT_HH
 #define PERFCOUNT_HH
-#include "element.hh"
-#include "hashmap.hh"
+#include <click/element.hh>
+#include <click/hashmap.hh>
 #include "perfinfo.hh"
 
 /*

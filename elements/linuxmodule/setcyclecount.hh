@@ -19,7 +19,7 @@
  * 
  * =a CycleCountAccum, RoundTripCycleCount, SetPerfCount, PerfCountAccum */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class SetCycleCount : public Element { public:
   

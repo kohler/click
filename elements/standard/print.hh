@@ -1,7 +1,7 @@
 #ifndef PRINT_HH
 #define PRINT_HH
-#include "element.hh"
-#include "string.hh"
+#include <click/element.hh>
+#include <click/string.hh>
 
 /*
  * =c

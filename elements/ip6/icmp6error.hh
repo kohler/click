@@ -46,8 +46,8 @@
  *
  * =a DecIP6HLIM */
 
-#include "element.hh"
-#include "ip6address.hh"
+#include <click/element.hh>
+#include <click/ip6address.hh>
 
 class ICMP6Error : public Element {
 public:

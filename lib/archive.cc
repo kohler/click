@@ -20,11 +20,11 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
-#include "archive.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "straccum.hh"
+#include <click/glue.hh>
+#include <click/archive.hh>
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
 
 /* `ar' file format:
 
@@ -226,5 +226,5 @@ create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh = 0)
 }
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<ArchiveElement>;

@@ -29,12 +29,12 @@
  * =a
  * LocQueryResponder, GridLocationInfo, SimpleLocQuerier */
 
-#include "element.hh"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "timer.hh"
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/timer.hh>
 #include "elements/grid/gridlocationinfo.hh"
-#include "bighashmap.hh"
+#include <click/bighashmap.hh>
 
 class FloodingLocQuerier : public Element {
  public:

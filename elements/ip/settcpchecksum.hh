@@ -14,8 +14,8 @@
  * =a CheckTCPHeader, SetIPChecksum, CheckIPChecksum
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class SetTCPChecksum : public Element {
 public:

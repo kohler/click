@@ -20,11 +20,11 @@
  * =a FloodingLocQuerier, LookupLocalGridRoute,
  * LookupGeographicGridRoute, FixSrcLoc */
 
-#include "element.hh"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "vector.hh"
-#include "bighashmap.hh"
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/vector.hh>
+#include <click/bighashmap.hh>
 
 class LocQueryResponder : public Element {
 

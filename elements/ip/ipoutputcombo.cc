@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "ipoutputcombo.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 IPOutputCombo::IPOutputCombo()
   : Element(1, 5)

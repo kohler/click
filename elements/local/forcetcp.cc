@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "forcetcp.hh"
-#include "glue.hh"
-#include "error.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
+#include <click/glue.hh>
+#include <click/error.hh>
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
 
 ForceTCP::ForceTCP()
 {

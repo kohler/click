@@ -16,7 +16,7 @@
  * it is given the `--stop' option.
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class QuitWatcher : public Element {
 

@@ -23,7 +23,7 @@
 #endif
 #include "lexert.hh"
 #include "routert.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 #include <ctype.h>
 #include <stdlib.h>
 

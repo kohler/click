@@ -2,7 +2,7 @@
 #define REGION_HH
 
 #include <assert.h>
-#include "string.hh"
+#include <click/string.hh>
 
 class RectRegion {
 

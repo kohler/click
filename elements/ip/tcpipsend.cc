@@ -21,11 +21,11 @@
 # include <config.h>
 #endif
 #include "tcpipsend.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif

@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "debugbridge.hh"
-#include "glue.hh"
-#include "confparse.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
 
 #include "bridgemessage.hh"
 

@@ -20,10 +20,10 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "straccum.hh"
-#include "confparse.hh"
-#include "userutils.hh"
-#include "error.hh"
+#include <click/straccum.hh>
+#include <click/confparse.hh>
+#include <click/userutils.hh>
+#include <click/error.hh>
 #include <errno.h>
 #include <string.h>
 #include <time.h>
@@ -325,7 +325,7 @@ clickpath_find_file(const String &filename, const char *subdir,
       errh->fatal("cannot find file `%s'\nin CLICKPATH `%s'", String(filename).cc(), path);
     } else if (!path) {
       // CLICKPATH not set
-      errh->fatal("cannot find file `%s'\nin installed location `%s'\n(Try setting the CLICKPATH environment variable.)", String(filename).cc(), was_default_path.cc());
+      errh->fatal("cannot find file `%s'\nin install directory `%s'\n(Try setting the CLICKPATH environment variable.)", String(filename).cc(), was_default_path.cc());
     } else {
       // CLICKPATH set, left opportunity to use default pathb
       errh->fatal("cannot find file `%s'\nin CLICKPATH or `%s'", String(filename).cc(), was_default_path.cc());
@@ -333,6 +333,20 @@ clickpath_find_file(const String &filename, const char *subdir,
   }
   
   return fn;
+}
+
+bool
+path_allows_default_path(String path)
+{
+  while (1) {
+    int colon = path.find_left(':');
+    if (colon == 0 || (!path && colon < 0))
+      return true;
+    else if (colon < 0)
+      return false;
+    else
+      path = path.substring(colon + 1);
+  }
 }
 
 String

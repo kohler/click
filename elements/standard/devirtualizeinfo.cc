@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "devirtualizeinfo.hh"
-#include "glue.hh"
+#include <click/glue.hh>
 
 DevirtualizeInfo::DevirtualizeInfo()
 {

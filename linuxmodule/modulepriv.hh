@@ -1,7 +1,7 @@
 #ifndef MODULEPRIV_HH
 #define MODULEPRIV_HH
-#include "router.hh"
-#include "clickpackage.hh"
+#include <click/router.hh>
+#include <click/package.hh>
 
 extern "C" {
 #define new linux_new
@@ -56,7 +56,7 @@ void install_current_router(Router *);
 void reset_proc_click_errors();
 
 extern atomic_t num_click_threads;
-void start_click_sched(Router *, ErrorHandler *);
+int start_click_sched(Router *, ErrorHandler *);
 void kill_click_sched(Router *);
 void init_click_sched();
 int cleanup_click_sched();

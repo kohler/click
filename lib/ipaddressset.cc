@@ -20,9 +20,9 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "ipaddressset.hh"
-#include "glue.hh"
-#include "confparse.hh"
+#include <click/ipaddressset.hh>
+#include <click/glue.hh>
+#include <click/confparse.hh>
 
 void
 IPAddressSet::insert(IPAddress ip)

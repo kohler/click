@@ -1,6 +1,6 @@
 #ifndef CYCLECOUNT_HH
 #define CYCLECOUNT_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

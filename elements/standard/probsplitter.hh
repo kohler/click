@@ -1,6 +1,6 @@
 #ifndef PROBSPLITTER_HH
 #define PROBSPLITTER_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

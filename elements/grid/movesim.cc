@@ -22,10 +22,10 @@
 # include <config.h>
 #endif
 #include "movesim.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "router.hh"
-#include "error.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
+#include <click/error.hh>
 
 
 
@@ -158,5 +158,5 @@ MovementSimulator::find_entry(unsigned int t, event_entry **retval)
 ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(MovementSimulator)
 
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<MovementSimulator::node_event>;

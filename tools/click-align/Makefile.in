@@ -13,14 +13,12 @@ sbindir = @sbindir@
 libdir = @libdir@
 mandir = @mandir@
 
-VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/lib
+VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/include
 
 CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
 INSTALL = @INSTALL@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
@@ -39,12 +37,12 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 OBJS = alignment.o alignclass.o click-align.o
 
-CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
+CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
 DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) \
-	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/lib
+	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/include
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 

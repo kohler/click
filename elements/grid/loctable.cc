@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "loctable.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "router.hh"
-#include "error.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
+#include <click/error.hh>
 
 LocationTable::LocationTable()
 {
@@ -132,5 +132,5 @@ LocationTable::add_handlers()
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocationTable)
 
-#include "bighashmap.cc"
+#include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, LocationTable::entry>;

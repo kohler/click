@@ -1,7 +1,7 @@
 #ifndef RATEDUNQUEUE_HH
 #define RATEDUNQUEUE_HH
-#include "element.hh"
-#include "gaprate.hh"
+#include <click/element.hh>
+#include <click/gaprate.hh>
 
 /*
  * =c

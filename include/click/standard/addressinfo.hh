@@ -1,8 +1,8 @@
 #ifndef ADDRESSINFO_HH
 #define ADDRESSINFO_HH
-#include "element.hh"
-#include "hashmap.hh"
-#include "ip6address.hh"
+#include <click/element.hh>
+#include <click/hashmap.hh>
+#include <click/ip6address.hh>
 
 /*
  * =c

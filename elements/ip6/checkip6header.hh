@@ -24,8 +24,8 @@
  * =a MarkIP6Header */
 
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class CheckIP6Header : public Element {
 

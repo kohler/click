@@ -21,12 +21,12 @@
 # include <config.h>
 #endif
 #include "perfcountuser.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "router.hh"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/router.hh>
+#include <click/glue.hh>
 #include <asm/msr.h>
-#include "perfctr.hh"
+#include <click/perfctr.hh>
 
 PerfCountUser::PerfCountUser()
 {

@@ -20,13 +20,13 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "error.hh"
-#include "straccum.hh"
-#include "string.hh"
+#include <click/error.hh>
+#include <click/straccum.hh>
+#include <click/string.hh>
 #ifndef CLICK_TOOL
-# include "element.hh"
+# include <click/element.hh>
 #endif
-#include "confparse.hh"
+#include <click/confparse.hh>
 
 void
 ErrorHandler::message(const String &message)
@@ -205,13 +205,26 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
   StringAccum msg;
   char numbuf[NUMBUF_SIZE];	// for numerics
   String placeholder;		// to ensure temporaries aren't destroyed
+  String s_placeholder;		// ditto, in case we change `s'
   numbuf[NUMBUF_SIZE-1] = 0;
+  
+  if (seriousness == Warning) {
+    // prepend `warning: ' to every line
+    StringAccum ns;
+    while (const char *nl = strchr(s, '\n')) {
+      ns << "warning: ";
+      ns.push(s, nl - s + 1);
+      s = nl + 1;
+    }
+    if (*s)
+      ns << "warning: " << s;
+    s_placeholder = ns.take_string();
+    s = s_placeholder.cc();
+  }
   
   if (where)
     msg << fix_landmark(where);
-  if (seriousness == Warning)
-    msg << "warning: ";
-  
+
   while (1) {
     
     const char *pct = strchr(s, '%');

@@ -23,11 +23,11 @@
 #endif
 #include "routert.hh"
 #include "lexert.hh"
-#include "error.hh"
-#include "clp.h"
+#include <click/error.hh>
+#include <click/clp.h>
 #include "toolutils.hh"
-#include "confparse.hh"
-#include "straccum.hh"
+#include <click/confparse.hh>
+#include <click/straccum.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -309,7 +309,7 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click-uncombine (Click) %s\n", VERSION);
+      printf("click-uncombine (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\

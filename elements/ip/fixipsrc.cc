@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "fixipsrc.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "click_ip.h"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/click_ip.h>
 
 FixIPSrc::FixIPSrc()
 {

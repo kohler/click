@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "cxxclass.hh"
-#include "straccum.hh"
+#include <click/straccum.hh>
 
 bool CxxFunction::parsing_header_file;
 
@@ -779,5 +779,5 @@ CxxInfo::parse_file(const String &original_text, bool header,
 }
 
 // Vector template instantiation
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<CxxFunction>;

@@ -3,11 +3,11 @@
 # include <config.h>
 #endif
 #include "xokreader.hh"
-#include "glue.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "bitvector.hh"
-#include "straccum.hh"
+#include <click/glue.hh>
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/bitvector.hh>
+#include <click/straccum.hh>
 #include <unistd.h>
 #include <fcntl.h>
 

@@ -32,17 +32,17 @@
 #include <sys/resource.h>
 #include <fcntl.h>
 
-#include "lexer.hh"
-#include "router.hh"
-#include "error.hh"
-#include "timer.hh"
-#include "straccum.hh"
-#include "clp.h"
-#include "archive.hh"
-#include "glue.hh"
-#include "clickpackage.hh"
-#include "userutils.hh"
-#include "confparse.hh"
+#include <click/lexer.hh>
+#include <click/router.hh>
+#include <click/error.hh>
+#include <click/timer.hh>
+#include <click/straccum.hh>
+#include <click/clp.h>
+#include <click/archive.hh>
+#include <click/glue.hh>
+#include <click/package.hh>
+#include <click/userutils.hh>
+#include <click/confparse.hh>
 #include "elements/standard/quitwatcher.hh"
 #include "elements/userlevel/controlsocket.hh"
 
@@ -548,7 +548,7 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click (Click) %s\n", VERSION);
+      printf("click (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\

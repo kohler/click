@@ -1,6 +1,6 @@
 #ifndef DISCARD_HH
 #define DISCARD_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

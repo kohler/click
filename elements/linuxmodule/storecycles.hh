@@ -1,6 +1,6 @@
 #ifndef STORECYCLES_HH
 #define STORECYCLES_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

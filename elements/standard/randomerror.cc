@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "randomerror.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 static int bit_flip_array_idx[] = {
   0, 1, 9, 37, 93, 163, 219, 247, 255, 256

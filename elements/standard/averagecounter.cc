@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "averagecounter.hh"
-#include "confparse.hh"
-#include "straccum.hh"
-#include "glue.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/straccum.hh>
+#include <click/glue.hh>
+#include <click/error.hh>
 
 AverageCounter::AverageCounter()
   : Element(1, 1)

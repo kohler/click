@@ -22,12 +22,12 @@
 # include <config.h>
 #endif
 #include "locqueryresponder.hh"
-#include "click_ether.h"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_ether.h>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 #include "grid.hh"
 
 LocQueryResponder::LocQueryResponder()

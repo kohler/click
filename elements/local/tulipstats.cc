@@ -21,12 +21,12 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
+#include <click/glue.hh>
 #include "tulipstats.hh"
-#include "error.hh"
-#include "etheraddress.hh"
-#include "straccum.hh"
-#include "confparse.hh"
+#include <click/error.hh>
+#include <click/etheraddress.hh>
+#include <click/straccum.hh>
+#include <click/confparse.hh>
 #include "elements/standard/scheduleinfo.hh"
 extern "C" {
 #define new xxx_new

@@ -21,13 +21,13 @@
 # include <config.h>
 #endif
 #include "ip6ndsolicitor.hh"
-#include "click_ether.h"
-#include "etheraddress.hh"
-#include "ip6address.hh"
-#include "confparse.hh"
-#include "bitvector.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_ether.h>
+#include <click/etheraddress.hh>
+#include <click/ip6address.hh>
+#include <click/confparse.hh>
+#include <click/bitvector.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 IP6NDSolicitor::IP6NDSolicitor()
 : _expire_timer(expire_hook, (unsigned long)this)

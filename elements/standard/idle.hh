@@ -14,7 +14,7 @@
  * error messages.
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class Idle : public Element {
 

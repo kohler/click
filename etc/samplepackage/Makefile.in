@@ -16,8 +16,8 @@ clickbindir := @top_srcdir@
 
 # SET `clickincludedir' TO THE CLICK INCLUDE DIRECTORY.
 # If you are making a standalone package, set
-#	clickincludedir := @clickprefix@/include/click
-clickincludedir := @prefix@/include/click
+#	clickincludedir := @clickprefix@/include
+clickincludedir := @top_srcdir@/include
 
 # SET `package' TO THE NAME OF YOUR PACKAGE.
 package := sample
@@ -43,8 +43,9 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 linuxdir = @linuxdir@
+datadir = @datadir@/click
 
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)
+VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)
 
 K_CC = @CC@
 U_CC = @CC@
@@ -52,12 +53,12 @@ CPP = @CPP@
 K_CXX = @KERNEL_CXX@
 U_CXX = @CXX@
 CXXCPP = @CXXCPP@
-VERSION = @VERSION@
 INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .o .ko .uo .ii
+.SUFFIXES: .c .cc .o .ko .uo .kii .uii
 
 .c.uo:
 	$(U_COMPILE) -c $< -o $@
@@ -82,18 +83,18 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 K_OBJS = $(K_ELEMENT_OBJS) kpackage.ko kernelversion.ko
 U_OBJS = $(U_ELEMENT_OBJS) upackage.uo
 
-K_CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
-U_CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL
+K_CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_LINUXMODULE
+U_CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
 
 DEFS = @DEFS@ 
-K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(clicksrcdir)/lib -I$(linuxdir)/include
-U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(clicksrcdir)/lib
+K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(linuxdir)/include
+U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir)
 
 K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS)
 U_CXXCOMPILE = $(U_CXX) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS)
-K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS)
+K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS) -D__KERNEL__
 U_COMPILE = $(U_CC) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CFLAGS)
 
 all: $(TARGETS)
@@ -110,7 +111,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
-elemlist: $(clickbindir)/click-buildtool
+elemlist:
 	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule > kelements.conf
 	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel > uelements.conf
 kelements.conf: $(clickbindir)/click-buildtool
@@ -122,24 +123,31 @@ elements.mk: kelements.conf uelements.conf $(clickbindir)/click-buildtool
 	$(clickbindir)/click-buildtool elem2make -t user < uelements.conf >> elements.mk
 kpackage.cc: kelements.conf $(clickbindir)/click-buildtool
 	$(clickbindir)/click-buildtool elem2package $(package) < kelements.conf > kpackage.cc
-	@rm -f kpackage.d
+	@rm -f kpackage.kd
 upackage.cc: uelements.conf $(clickbindir)/click-buildtool
 	$(clickbindir)/click-buildtool elem2package $(package) < uelements.conf > upackage.cc
-	@rm -f upackage.d
+	@rm -f upackage.ud
+
+elementmap.$(package): $(clickbindir)/click-mkelemmap always
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r userlevel | $(clickbindir)/click-mkelemmap -f - > elementmap.$(package)
+always:
+	@:
 
 DEPFILES := $(wildcard *.d *.kd *.ud)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: $(TARGETS)
+install: $(TARGETS) elementmap.$(package)
 	$(mkinstalldirs) $(libdir)
-	for i in $(TARGETS); do $(INSTALL) $$i $(libdir)/$$i; done
+	for i in $(TARGETS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
+	$(mkinstalldirs) $(datadir)
+	$(INSTALL_DATA) elementmap.$(package) $(datadir)/elementmap.$(package)
 install-man:
 
 clean:
-	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf
+	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package)
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install install-man
+.PHONY: all always clean distclean elemlist install install-man

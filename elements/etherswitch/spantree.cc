@@ -22,9 +22,9 @@
 # include <config.h>
 #endif
 #include "spantree.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 #include "elements/standard/suppressor.hh"
-#include "error.hh"
+#include <click/error.hh>
 
 EtherSpanTree::EtherSpanTree()
   : _input_sup(0), _output_sup(0), _topology_change(0),
@@ -336,7 +336,7 @@ EXPORT_ELEMENT(EtherSpanTree)
 ELEMENT_REQUIRES(Suppressor EtherSwitchBridgeMessage)
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<EtherSpanTree::PortInfo>;
 #endif

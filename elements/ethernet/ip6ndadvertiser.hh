@@ -29,10 +29,10 @@
  * NDSol
  */
 
-#include "element.hh"
-#include "etheraddress.hh"
-#include "ip6address.hh"
-#include "vector.hh"
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ip6address.hh>
+#include <click/vector.hh>
 
 class IP6NDAdvertiser : public Element {
 public:

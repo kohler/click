@@ -22,8 +22,8 @@
 # include <config.h>
 #endif
 #include "hashswitch.hh"
-#include "error.hh"
-#include "confparse.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
 
 HashSwitch::HashSwitch()
   : _offset(-1)

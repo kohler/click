@@ -22,7 +22,7 @@
 # include <config.h>
 #endif
 #include "staticpullswitch.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 
 StaticPullSwitch *
 StaticPullSwitch::clone() const

@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "iprwpatterns.hh"
-#include "confparse.hh"
-#include "router.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/router.hh>
+#include <click/error.hh>
 
 IPRewriterPatterns::IPRewriterPatterns()
   : _name_map(-1)

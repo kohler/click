@@ -24,8 +24,8 @@
  * =a ICMPError, CheckIPHeader
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class DecIPTTL : public Element {
 

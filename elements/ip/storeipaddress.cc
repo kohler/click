@@ -22,7 +22,7 @@
 # include <config.h>
 #endif
 #include "storeipaddress.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 
 StoreIPAddress::StoreIPAddress()
   : Element(1, 1)

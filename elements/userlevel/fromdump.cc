@@ -21,11 +21,11 @@
 # include <config.h>
 #endif
 #include "fromdump.hh"
-#include "confparse.hh"
-#include "router.hh"
+#include <click/confparse.hh>
+#include <click/router.hh>
 #include "elements/standard/scheduleinfo.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/error.hh>
+#include <click/glue.hh>
 
 FromDump::FromDump()
   : _pcap(0), _pending_packet(0)

@@ -21,11 +21,11 @@
 # include <config.h>
 #endif
 #include "hostetherfilter.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
-#include "etheraddress.hh"
-#include "click_ether.h"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
+#include <click/etheraddress.hh>
+#include <click/click_ether.h>
 
 HostEtherFilter::HostEtherFilter() : _drop_own(false)
 {

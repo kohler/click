@@ -1,6 +1,6 @@
 #ifndef STATICPULLSWITCH_HH
 #define STATICPULLSWITCH_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

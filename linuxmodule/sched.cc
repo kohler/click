@@ -22,8 +22,9 @@
 #ifdef HAVE_CONFIG_H
 #include <config.h>
 #endif
-#include "router.hh"
+#include "modulepriv.hh"
 #include "kernelerror.hh"
+#include <click/router.hh>
 
 extern "C" {
 #define __NO_VERSION__

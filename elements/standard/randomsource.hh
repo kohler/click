@@ -1,6 +1,6 @@
 #ifndef RANDOMSOURCE_HH
 #define RANDOMSOURCE_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

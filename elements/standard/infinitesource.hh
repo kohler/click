@@ -1,6 +1,6 @@
 #ifndef INFINITESOURCE_HH
 #define INFINITESOURCE_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

@@ -28,11 +28,11 @@
  * LookupGeographicGridRoute
  * UpdateGridRoutes */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 #include "updateroutes.hh"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
 
 class LookupLocalGridRoute : public Element {
   public:

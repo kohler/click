@@ -1,8 +1,8 @@
 #ifndef AVERAGECOUNTER_HH
 #define AVERAGECOUNTER_HH
-#include "element.hh"
-#include "ewma.hh"
-#include "timer.hh"
+#include <click/element.hh>
+#include <click/ewma.hh>
+#include <click/timer.hh>
 
 /*
  * =c

@@ -1,6 +1,6 @@
 #ifndef HASHSWITCH_HH
 #define HASHSWITCH_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

@@ -32,7 +32,7 @@
  *
  * =a ToDevice.u, FromDump, ToDump, FromDevice(n) */
 
-#include "element.hh"
+#include <click/element.hh>
 
 #ifdef __linux__
 # define FROMDEVICE_LINUX 1

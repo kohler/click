@@ -21,16 +21,16 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "straccum.hh"
-#include "ipaddress.hh"
-#include "ipaddressset.hh"
-#include "ip6address.hh"
-#include "etheraddress.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/straccum.hh>
+#include <click/ipaddress.hh>
+#include <click/ipaddressset.hh>
+#include <click/ip6address.hh>
+#include <click/etheraddress.hh>
 #ifndef CLICK_TOOL
-# include "router.hh"
+# include <click/router.hh>
 # include "elements/standard/addressinfo.hh"
 # define CP_CONTEXT_ARG , Element *context = 0
 # define CP_PASS_CONTEXT , context

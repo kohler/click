@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "ipclassifier.hh"
-#include "glue.hh"
-#include "error.hh"
-#include "confparse.hh"
+#include <click/glue.hh>
+#include <click/error.hh>
+#include <click/confparse.hh>
 
 IPClassifier::IPClassifier()
 {

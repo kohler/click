@@ -22,13 +22,13 @@
 # include <config.h>
 #endif
 #include "ip6ndadvertiser.hh"
-#include "click_ether.h"
-#include "click_ip6.h"
-#include "etheraddress.hh"
-#include "ip6address.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_ether.h>
+#include <click/click_ip6.h>
+#include <click/etheraddress.hh>
+#include <click/ip6address.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 
 IP6NDAdvertiser::IP6NDAdvertiser()
@@ -297,7 +297,7 @@ ELEMENT_REQUIRES(ip6)
 EXPORT_ELEMENT(IP6NDAdvertiser)
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<IP6NDAdvertiser::Entry>;
 #endif

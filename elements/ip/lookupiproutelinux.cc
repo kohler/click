@@ -22,10 +22,10 @@
 # include <config.h>
 #endif
 #include "lookupiproutelinux.hh"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 #ifdef __KERNEL__
 extern "C" {
 # define new xxx_new

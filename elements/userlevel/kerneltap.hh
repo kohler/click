@@ -33,8 +33,8 @@
  * =a
  * ToLinux, ifconfig(8) */
 
-#include "element.hh"
-#include "ipaddress.hh"
+#include <click/element.hh>
+#include <click/ipaddress.hh>
 
 class KernelTap : public Element {
  public:

@@ -21,8 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "packet.hh"
-#include "glue.hh"
+#include <click/packet.hh>
+#include <click/glue.hh>
 #include <stdarg.h>
 #include <unistd.h>
 #include <assert.h>

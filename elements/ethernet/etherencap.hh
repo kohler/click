@@ -27,8 +27,8 @@
  * =a
  * ARPQuerier */
 
-#include "element.hh"
-#include "click_ether.h"
+#include <click/element.hh>
+#include <click/click_ether.h>
 
 class EtherEncap : public Element { public:
   

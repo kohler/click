@@ -1,7 +1,7 @@
 #ifndef PERFINFO_HH
 #define PERFINFO_HH
-#include "element.hh"
-#include "hashmap.hh"
+#include <click/element.hh>
+#include <click/hashmap.hh>
 
 /*
  * =c

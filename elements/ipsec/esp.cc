@@ -24,11 +24,11 @@
 # error "Must #define HAVE_IPSEC in config.h"
 #endif
 #include "esp.hh"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "click_ip.h"
-#include "error.hh"
-#include "glue.hh"
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/click_ip.h>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 Esp::Esp()
   : Element(1, 1), _spi(-1)

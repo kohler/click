@@ -9,7 +9,7 @@
  * Pulls *and* pushes packets.
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class BIM : public Element {
  public:

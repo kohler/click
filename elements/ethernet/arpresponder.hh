@@ -38,10 +38,10 @@
  * =a
  * ARPQuerier, ARPFaker, AddressInfo */
 
-#include "element.hh"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "vector.hh"
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/vector.hh>
 
 class ARPResponder : public Element {
 

@@ -12,7 +12,7 @@
  * radio happy.
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class B8B10 : public Element {
 public:

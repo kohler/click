@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "counter.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 static String counter_read_rate_handler(Element *, void *);
 

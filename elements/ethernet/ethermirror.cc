@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "ethermirror.hh"
-#include "click_ether.h"
+#include <click/click_ether.h>
 
 Packet *
 EtherMirror::simple_action(Packet *p)

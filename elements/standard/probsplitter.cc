@@ -22,8 +22,8 @@
 # include <config.h>
 #endif
 #include "probsplitter.hh"
-#include "error.hh"
-#include "confparse.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
 
 int
 ProbSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)

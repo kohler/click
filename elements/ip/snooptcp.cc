@@ -24,11 +24,11 @@
 # define _BSD_SOURCE
 #endif
 #include "snooptcp.hh"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
-#include "bitvector.hh"
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
+#include <click/bitvector.hh>
 
 #ifdef DEBUG
 # define DEBUG_CHATTER(args...) click_chatter(args)
@@ -647,5 +647,5 @@ SnoopTCP::PCB::add_ack(Packet *p, unsigned th_ack, int data_len,
 ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(SnoopTCP)
 
-#include "hashmap.cc"
+#include <click/hashmap.cc>
 template class HashMap<IPFlowID, SnoopTCP::PCB *>;

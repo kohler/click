@@ -19,12 +19,12 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "router.hh"
+#include <click/router.hh>
 #include "elements/standard/scheduleinfo.hh"
 #include "schedulelinux.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 #include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
 

@@ -22,11 +22,11 @@
 # include <config.h>
 #endif
 #include "checkudpheader.hh"
-#include "click_ip.h"
-#include "click_udp.h"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/click_ip.h>
+#include <click/click_udp.h>
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif

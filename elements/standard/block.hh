@@ -1,6 +1,6 @@
 #ifndef BLOCK_HH
 #define BLOCK_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

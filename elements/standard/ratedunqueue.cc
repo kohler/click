@@ -22,8 +22,8 @@
 # include <config.h>
 #endif
 #include "ratedunqueue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "elements/standard/scheduleinfo.hh"
 
 int

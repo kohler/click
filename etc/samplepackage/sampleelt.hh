@@ -11,7 +11,7 @@
  * This is the only element in the `sample' package. It demonstrates how to
  * write an element that will be placed in a package. */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class SamplePackageElement : public Element { public:
   

@@ -22,13 +22,13 @@
 #endif
 #include "iprewriter.hh"
 #include "elements/ip/iprwpatterns.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
-#include "click_udp.h"
-#include "confparse.hh"
-#include "straccum.hh"
-#include "error.hh"
-#include "llrpc.h"
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
+#include <click/click_udp.h>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
+#include <click/error.hh>
+#include <click/llrpc.h>
 
 #include <limits.h>
 
@@ -325,5 +325,5 @@ IPRewriter::llrpc(unsigned command, void *data)
 ELEMENT_REQUIRES(IPRw IPRewriterPatterns)
 EXPORT_ELEMENT(IPRewriter)
 
-#include "bighashmap.cc"
-#include "vector.cc"
+#include <click/bighashmap.cc>
+#include <click/vector.cc>

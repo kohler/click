@@ -21,14 +21,14 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
-#include "element.hh"
-#include "bitvector.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "router.hh"
-#include "straccum.hh"
-#include "subvector.hh"
+#include <click/glue.hh>
+#include <click/element.hh>
+#include <click/bitvector.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/router.hh>
+#include <click/straccum.hh>
+#include <click/subvector.hh>
 #include <errno.h>
 
 const char *Element::AGNOSTIC = "a";

@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "randomlossage.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 RandomLossage::RandomLossage()
   : Element(1, 1)

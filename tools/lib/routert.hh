@@ -1,9 +1,9 @@
 #ifndef ROUTERT_HH
 #define ROUTERT_HH
 #include "elementt.hh"
-#include "error.hh"
-#include "hashmap.hh"
-#include "archive.hh"
+#include <click/error.hh>
+#include <click/hashmap.hh>
+#include <click/archive.hh>
 typedef HashMap<String, int> StringMap;
 
 class RouterT : public ElementClassT {
@@ -35,7 +35,7 @@ class RouterT : public ElementClassT {
   Vector<Pair> _hookup_first;
   int _free_hookup;
 
-  StringMap _require_map;
+  Vector<String> _requirements;
 
   StringMap _archive_map;
   Vector<ArchiveElement> _archive;
@@ -122,7 +122,7 @@ class RouterT : public ElementClassT {
 
   void add_requirement(const String &);
   void remove_requirement(const String &);
-  const StringMap &requirement_map() const	{ return _require_map; }
+  const Vector<String> &requirements() const	{ return _requirements; }
 
   void add_archive(const ArchiveElement &);
   int narchive() const				{ return _archive.size(); }

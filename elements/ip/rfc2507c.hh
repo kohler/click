@@ -1,6 +1,6 @@
 #ifndef RFC2507C_HH
 #define RFC2507C_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * RFC2507 IPv4/TCP header compressor.
@@ -13,10 +13,10 @@
  * sort it out. Then we wouldn't be AGNOSTIC...
  */
 
-#include "hashmap.hh"
-#include "glue.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
+#include <click/hashmap.hh>
+#include <click/glue.hh>
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
 
 class RFC2507c : public Element {
 public:

@@ -22,9 +22,9 @@
 #endif
 #include "perfctr.hh"
 #include "perfinfo.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 #include "asm/msr.h"
 
 unsigned PerfInfo::_init = 0;

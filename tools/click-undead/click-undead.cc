@@ -24,12 +24,12 @@
 #include "routert.hh"
 #include "lexert.hh"
 #include "processingt.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "straccum.hh"
-#include "clp.h"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
+#include <click/clp.h>
 #include "toolutils.hh"
-#include "bitvector.hh"
+#include <click/bitvector.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -591,7 +591,7 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click-undead (Click) %s\n", VERSION);
+      printf("click-undead (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
 Copyright (c) 2000 Mazu Networks, Inc.\n\
 This is free software; see the source for copying conditions.\n\
@@ -661,12 +661,7 @@ particular purpose.\n");
 
   // find and parse `elementmap'
   ElementMap elementmap;
-  elementmap.parse_all_on_path(CLICK_SHAREDIR, p_errh);
-  /* p_errh->fatal("cannot find `elementmap' in CLICKPATH or `%s'\n(Have you done a `make install' yet?)", CLICK_SHAREDIR); */
-
-  // parse `elementmap' from router archive
-  if (r->archive_index("elementmap") >= 0)
-    elementmap.parse(r->archive("elementmap").data);
+  elementmap.parse_all_required(r, CLICK_SHAREDIR, p_errh);
 
   // check configuration for driver indifference
   Vector<int> elementmap_indexes;

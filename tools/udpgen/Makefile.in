@@ -18,9 +18,8 @@ CC = @CC@
 CPP = @CPP@
 CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
 INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .SUFFIXES:
@@ -36,7 +35,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-CPPFLAGS = @CPPFLAGS@ -MMD
+CPPFLAGS = @CPPFLAGS@ -MD
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti
 
@@ -68,8 +67,8 @@ endif
 
 install: udpgen.o udpcount.o
 	$(mkinstalldirs) $(libdir)
-	$(INSTALL) udpgen.o $(libdir)/udpgen.o
-	$(INSTALL) udpcount.o $(libdir)/udpcount.o
+	$(INSTALL_DATA) udpgen.o $(libdir)/udpgen.o
+	$(INSTALL_DATA) udpcount.o $(libdir)/udpcount.o
 install-man:
 
 clean:

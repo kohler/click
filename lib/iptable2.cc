@@ -20,8 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "iptable2.hh"
-#include "integers.hh"
+#include <click/iptable2.hh>
+#include <click/integers.hh>
 
 
 IPTable2::IPTable2()
@@ -130,5 +130,5 @@ IPTable2::build()
 #endif
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<IPTable2::Entry>;

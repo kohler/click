@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "checkpattern.hh"
-#include "glue.hh"
-#include "confparse.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
 
 CheckPattern::CheckPattern()
 {

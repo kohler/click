@@ -20,11 +20,11 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "ipflowid.hh"
-#include "click_ip.h"
-#include "click_udp.h"
-#include "packet.hh"
-#include "confparse.hh"
+#include <click/ipflowid.hh>
+#include <click/click_ip.h>
+#include <click/click_udp.h>
+#include <click/packet.hh>
+#include <click/confparse.hh>
 
 IPFlowID::IPFlowID(Packet *p)
 {

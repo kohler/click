@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "locfromfile.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "router.hh"
-#include "error.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
+#include <click/error.hh>
 
 LocFromFile::LocFromFile()
 {
@@ -92,5 +92,5 @@ LocFromFile::choose_new_leg(double *nlat, double *nlon, double *nt)
 ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(LocFromFile)
 
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<LocFromFile::delta>;

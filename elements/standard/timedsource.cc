@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "timedsource.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 TimedSource::TimedSource()
   : _data("Random bullshit in a packet, at least 64 bytes long. Well, now it is."),

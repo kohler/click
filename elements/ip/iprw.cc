@@ -22,12 +22,12 @@
 #endif
 #include "iprw.hh"
 #include "elements/ip/iprwpatterns.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
-#include "click_udp.h"
-#include "confparse.hh"
-#include "straccum.hh"
-#include "error.hh"
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
+#include <click/click_udp.h>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
+#include <click/error.hh>
 
 #ifdef CLICK_LINUXMODULE
 extern "C" {
@@ -532,8 +532,8 @@ IPRw::clear_map(Map &table)
 
 ELEMENT_PROVIDES(IPRw)
 
-#include "bighashmap.cc"
-#include "vector.cc"
+#include <click/bighashmap.cc>
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class BigHashMap<IPFlowID, IPRw::Mapping *>;
 template class BigHashMapIterator<IPFlowID, IPRw::Mapping *>;

@@ -25,8 +25,8 @@
  * =a ICMP6Error, CheckIP6Header
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class DecIP6HLIM : public Element {
 

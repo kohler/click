@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "discard.hh"
-#include "error.hh"
-#include "confparse.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
 #include "scheduleinfo.hh"
 
 Discard::Discard()

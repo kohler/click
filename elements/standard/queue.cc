@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "queue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 Queue::Queue()
   : _q(0)

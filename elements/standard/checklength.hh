@@ -1,6 +1,6 @@
 #ifndef CHECKLENGTH_HH
 #define CHECKLENGTH_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

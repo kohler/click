@@ -29,8 +29,8 @@
  * =a ICMP6Error, CheckLength
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class IP6Fragmenter : public Element {
 

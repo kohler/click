@@ -20,9 +20,9 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "timer.hh"
-#include "element.hh"
-#include "router.hh"
+#include <click/timer.hh>
+#include <click/element.hh>
+#include <click/router.hh>
 
 Timer::Timer()
   : _prev(this), _next(this), _hook(head_hook), _thunk(0), _head(this)

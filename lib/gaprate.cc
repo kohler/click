@@ -21,8 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "gaprate.hh"
-#include "error.hh"
+#include <click/gaprate.hh>
+#include <click/error.hh>
 
 void
 GapRate::set_rate(unsigned r, ErrorHandler *errh)

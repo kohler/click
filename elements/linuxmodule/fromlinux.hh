@@ -1,6 +1,6 @@
 #ifndef FROMLINUX_HH
 #define FROMLINUX_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

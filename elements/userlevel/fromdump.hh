@@ -30,7 +30,7 @@ extern "C" {
 # include "fakepcap.h"
 #endif
 #include <sys/types.h>
-#include "element.hh"
+#include <click/element.hh>
 #ifndef HAVE_BPF_TIMEVAL
 typedef struct timeval bpf_timeval;
 #endif

@@ -13,7 +13,7 @@
  * =a CheckIPHeader, CheckIPHeader2, MarkIPHeader, UnstripIPHeader
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class StripIPHeader : public Element {
 

@@ -1,7 +1,7 @@
 #ifndef TODEVICE_HH
 #define TODEVICE_HH
-#include "element.hh"
-#include "string.hh"
+#include <click/element.hh>
+#include <click/string.hh>
 #include "elements/userlevel/fromdevice.hh"
 
 /*

@@ -22,9 +22,9 @@
 # include <config.h>
 #endif
 #include "compblock.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "click_ip.h"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/click_ip.h>
 
 CompareBlock::CompareBlock()
   : Element(1, 2), _fwd_weight(0), _rev_weight(1)

@@ -1,9 +1,9 @@
 #ifndef BRIDGEMESSAGE_HH
 #define BRIDGEMESSAGE_HH
 
-#include "glue.hh"
-#include "string.hh"
-#include "integers.hh"
+#include <click/glue.hh>
+#include <click/string.hh>
+#include <click/integers.hh>
 
 class BridgeMessage {
 public:

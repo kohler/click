@@ -21,10 +21,10 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
+#include <click/glue.hh>
 #include "todump.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "elements/standard/scheduleinfo.hh"
 #include <string.h>
 #include <assert.h>

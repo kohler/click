@@ -21,11 +21,11 @@
 # include <config.h>
 #endif
 #include "settcpchecksum.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
 
 SetTCPChecksum::SetTCPChecksum()
 {

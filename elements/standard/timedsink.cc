@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "timedsink.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 TimedSink::TimedSink()
   : _timer(this)

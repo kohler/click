@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include <stdio.h>
-#include "radix.hh"
+#include <click/radix.hh>
 
 
 Radix::Radix()

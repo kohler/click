@@ -11,9 +11,9 @@
  *
  * =a PEP, GridLocationInfo */
 
-#include "element.hh"
-#include "timer.hh"
-#include "ipaddress.hh"
+#include <click/element.hh>
+#include <click/timer.hh>
+#include <click/ipaddress.hh>
 #include "pep_proto.hh"
 #include "grid.hh"
 #include "elements/grid/gridlocationinfo.hh"

@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "idle.hh"
-#include "bitvector.hh"
+#include <click/bitvector.hh>
 #include "scheduleinfo.hh"
 
 Idle::Idle() 

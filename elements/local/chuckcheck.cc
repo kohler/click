@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "chuckcheck.hh"
-#include "straccum.hh"
-#include "click_ip.h"
+#include <click/straccum.hh>
+#include <click/click_ip.h>
 
 int
 ChuckCheck::initialize(ErrorHandler *)

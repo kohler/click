@@ -24,12 +24,11 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
+#include <click/glue.hh>
 #include "fromdevice.hh"
-#include "error.hh"
-#include "packet.hh"
-#include "confparse.hh"
-#include "router.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/router.hh>
 #include "elements/standard/scheduleinfo.hh"
 
 static AnyDeviceMap from_device_map;

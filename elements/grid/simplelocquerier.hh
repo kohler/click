@@ -18,9 +18,9 @@
  * =a FloodingLocQuerier
  */
 
-#include "element.hh"
-#include "ipaddress.hh"
-#include "bighashmap.hh"
+#include <click/element.hh>
+#include <click/ipaddress.hh>
+#include <click/bighashmap.hh>
 #include "grid.hh"
 
 class SimpleLocQuerier : public Element {

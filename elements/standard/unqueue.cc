@@ -22,7 +22,7 @@
 # include <config.h>
 #endif
 #include "unqueue.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 #include "elements/standard/scheduleinfo.hh"
 
 int

@@ -21,12 +21,12 @@
 # include <config.h>
 #endif
 #include "toytcp.hh"
-#include "click_tcp.h"
-#include "click_ip.h"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_tcp.h>
+#include <click/click_ip.h>
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 ToyTCP::ToyTCP()
   : _timer(this)

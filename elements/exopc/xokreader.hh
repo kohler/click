@@ -1,7 +1,7 @@
 
 #ifndef XOKREADER_HH
 #define XOKREADER_HH
-#include "element.hh"
+#include <click/element.hh>
 
 extern "C" {
 #include <vos/net/fast_eth.h>

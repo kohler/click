@@ -21,12 +21,12 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "lexer.hh"
-#include "errorelement.hh"
-#include "router.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "glue.hh"
+#include <click/lexer.hh>
+#include <click/router.hh>
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/glue.hh>
+#include "elements/standard/errorelement.hh"
 
 //
 // CLASS LEXER::TUNNELEND

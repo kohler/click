@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "markip6header.hh"
-#include "confparse.hh"
-#include "click_ip6.h"
+#include <click/confparse.hh>
+#include <click/click_ip6.h>
 
 MarkIP6Header::MarkIP6Header()
 {

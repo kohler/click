@@ -1,6 +1,6 @@
 #ifndef KERNELERROR_HH
 #define KERNELERROR_HH
-#include "error.hh"
+#include <click/error.hh>
 
 class KernelErrorHandler : public ErrorHandler {
 

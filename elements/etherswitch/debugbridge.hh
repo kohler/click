@@ -1,7 +1,7 @@
 #ifndef DEBUGBRIDGE_HH
 #define DEBUGBRIDGE_HH
-#include "element.hh"
-#include "string.hh"
+#include <click/element.hh>
+#include <click/string.hh>
 
 class DebugBridge : public Element {
   

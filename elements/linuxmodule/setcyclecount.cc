@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "setcyclecount.hh"
-#include "glue.hh"
+#include <click/glue.hh>
 
 SetCycleCount::SetCycleCount()
 {

@@ -22,14 +22,14 @@
 # include <config.h>
 #endif
 #include "lookuplocalgridroute.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "click_ether.h"
-#include "click_ip.h"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/click_ether.h>
+#include <click/click_ip.h>
 #include "elements/standard/scheduleinfo.hh"
 #include "grid.hh"
-#include "router.hh"
-#include "glue.hh"
+#include <click/router.hh>
+#include <click/glue.hh>
 
 LookupLocalGridRoute::LookupLocalGridRoute() : Element(2, 4), _nbr(0)
 {

@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "tobpf.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 ToBPF::ToBPF()
 {

@@ -20,7 +20,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "elemlink.hh"
+#include <click/elemlink.hh>
 
 #ifndef RR_SCHED
 

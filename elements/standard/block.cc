@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "block.hh"
-#include "error.hh"
-#include "confparse.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
 
 Block::Block()
   : Element(1, 2)

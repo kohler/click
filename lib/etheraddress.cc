@@ -21,8 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "etheraddress.hh"
-#include "glue.hh"
+#include <click/etheraddress.hh>
+#include <click/glue.hh>
 #if CLICK_LINUXMODULE
 extern "C" {
 # include <linux/kernel.h>

@@ -22,11 +22,11 @@
 # include <config.h>
 #endif
 #include "ipgwoptions.hh"
-#include "click_ip.h"
-#include "ipaddressset.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_ip.h>
+#include <click/ipaddressset.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 IPGWOptions::IPGWOptions()
 {

@@ -1,7 +1,7 @@
 #ifndef SIGNATURE_HH
 #define SIGNATURE_HH
-#include "vector.hh"
-#include "string.hh"
+#include <click/vector.hh>
+#include <click/string.hh>
 class RouterT;
 class ElementMap;
 class ProcessingT;

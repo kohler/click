@@ -1,10 +1,10 @@
 #ifndef NETADDRESSTRANSLATOR_HH
 #define NETADDRESSTRANSLATOR_HH
 
-#include "ip6address.hh"
-#include "ipaddress.hh"
-#include "vector.hh"
-#include "element.hh"
+#include <click/ip6address.hh>
+#include <click/ipaddress.hh>
+#include <click/vector.hh>
+#include <click/element.hh>
 
 
 

@@ -4,8 +4,8 @@
 SHELL = @SHELL@
 @SUBMAKE@
 
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
+PACKAGE = click
+VERSION = @CLICK_VERSION@
 
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
@@ -32,16 +32,17 @@ userlevel: stamp-h stamp-egroup
 	@cd userlevel && $(MAKE) all
 exopc: stamp-h stamp-egroup
 	@cd exopc && $(MAKE) all
-tools: Makefile elementmap
+tools: Makefile
 	@cd tools && $(MAKE) all
 
 install:
 	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-include
-install-local: elementmap click-buildtool click-compile
+install-local: elementmap $(srcdir)/click-buildtool click-compile $(srcdir)/click-mkelemmap
 	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-buildtool $(bindir)/click-buildtool
+	$(INSTALL) $(srcdir)/click-buildtool $(bindir)/click-buildtool
 	$(INSTALL) click-compile $(bindir)/click-compile
+	$(INSTALL) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
 	$(mkinstalldirs) $(datadir)
 	$(INSTALL_DATA) elementmap $(datadir)/elementmap
 	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
@@ -53,15 +54,17 @@ install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
 install-include:
 	$(mkinstalldirs) $(includedir)
-	$(INSTALL_DATA) $(top_builddir)/clickconfig.h $(srcdir)/lib/*.hh $(srcdir)/lib/*.h $(includedir)
+	$(INSTALL_DATA) $(top_builddir)/config.h $(srcdir)/include/click/*.* $(includedir)
 
 elemlist elemlists: stamp-egroup
 	for dir in @TARGETS@; do \
 	  echo $$dir @element_groups@ | (cd $(top_srcdir); ./click-buildtool findelem) > $$dir/elements.conf; \
 	done
 
-elementmap: $(srcdir)/mkelementmap.pl
-	$(top_srcdir)/click-buildtool findelem -a -p $(top_srcdir) | $(PERL) $(srcdir)/mkelementmap.pl -f - $(top_srcdir)/lib/errorelement.hh -p $(top_srcdir) > elementmap
+elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
+	(cd $(top_srcdir); ./click-buildtool findelem -a | $(PERL) ./click-mkelemmap -f -) > elementmap
+always:
+	@:
 
 click-compile: $(srcdir)/click-compile.in
 	cd $(top_builddir) \
@@ -141,6 +144,6 @@ distdir:
 	fi
 
 
-.PHONY: all elemlist elemlists elemlist-simple \
+.PHONY: all always elemlist elemlists \
 	linuxmodule userlevel exopc tools clean distclean dist distdir \
 	install install-doc install-man install-local install-include

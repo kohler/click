@@ -1,6 +1,6 @@
 #ifndef PULLTOPUSH_HH
 #define PULLTOPUSH_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

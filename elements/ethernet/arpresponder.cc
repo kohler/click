@@ -21,12 +21,12 @@
 # include <config.h>
 #endif
 #include "arpresponder.hh"
-#include "click_ether.h"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_ether.h>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 ARPResponder::ARPResponder()
 {
@@ -186,7 +186,7 @@ ARPResponder::simple_action(Packet *p)
 EXPORT_ELEMENT(ARPResponder)
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<ARPResponder::Entry>;
 #endif

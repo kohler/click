@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "setipdscp.hh"
-#include "click_ip.h"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/click_ip.h>
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 SetIPDSCP::SetIPDSCP()
 {

@@ -23,9 +23,9 @@
 #endif
 #include "routert.hh"
 #include "lexert.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "clp.h"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/clp.h>
 #include "toolutils.hh"
 #include <stdio.h>
 #include <stdlib.h>
@@ -166,7 +166,7 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click-uninstall (Click) %s\n", VERSION);
+      printf("click-uninstall (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
 Copyright (c) 2000 Mazu Networks, Inc.\n\
 This is free software; see the source for copying conditions.\n\

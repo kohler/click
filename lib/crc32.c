@@ -1,4 +1,4 @@
-#include "crc32.h"
+#include <click/crc32.h>
 
 /* crc32h.c -- package to compute 32-bit CRC one byte at a time using   */
 /*             the high-bit first (Big-Endian) bit ordering convention  */

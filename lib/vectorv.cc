@@ -20,9 +20,9 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "glue.hh"
-#include "vector.hh"
-#include "subvector.hh"
+#include <click/glue.hh>
+#include <click/vector.hh>
+#include <click/subvector.hh>
 
 Vector<void *>::Vector(const Vector<void *> &o)
   : _l(0), _n(0), _cap(0)

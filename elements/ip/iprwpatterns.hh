@@ -1,7 +1,7 @@
 #ifndef IPRWPATTERNS_HH
 #define IPRWPATTERNS_HH
 #include "elements/ip/iprw.hh"
-#include "hashmap.hh"
+#include <click/hashmap.hh>
 
 /*
  * =c

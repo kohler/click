@@ -14,8 +14,8 @@
  * GridLocationInfo 
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 #include "elements/grid/gridlocationinfo.hh"
 
 class FixSrcLoc : public Element {

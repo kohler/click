@@ -22,11 +22,11 @@
 # include <config.h>
 #endif
 #include "filterbyrange.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "router.hh"
-#include "click_ether.h"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/router.hh>
+#include <click/click_ether.h>
+#include <click/glue.hh>
 #include <math.h>
 
 FilterByRange::FilterByRange() : Element(1, 2), _locinfo(0)

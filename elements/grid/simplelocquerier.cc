@@ -21,13 +21,13 @@
 # include <config.h>
 #endif
 #include "simplelocquerier.hh"
-#include "click_ether.h"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
-#include "confparse.hh"
-#include "bitvector.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_ether.h>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
+#include <click/bitvector.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 SimpleLocQuerier::SimpleLocQuerier()
   : Element(1, 1)
@@ -138,5 +138,5 @@ SimpleLocQuerier::add_handlers()
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(SimpleLocQuerier)
 
-#include "bighashmap.cc"
+#include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, grid_location>;

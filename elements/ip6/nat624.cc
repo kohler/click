@@ -22,13 +22,13 @@
 # include <config.h>
 #endif
 #include "nat624.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "click_ip.h"
-#include "click_ip6.h"
-#include "click_icmp.h"
-#include "click_icmp6.h"
-#include "ip6address.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/click_ip.h>
+#include <click/click_ip6.h>
+#include <click/click_icmp.h>
+#include <click/click_icmp6.h>
+#include <click/ip6address.hh>
 
 Nat624::Nat624()
 {
@@ -395,7 +395,7 @@ Nat624::simple_action(Packet *p)
 EXPORT_ELEMENT(Nat624)
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<Nat624::Entry64>;
 #endif

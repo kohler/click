@@ -17,10 +17,10 @@
  * =a
  * GridLocationInfo */
 
-#include "element.hh"
+#include <click/element.hh>
 #include "grid.hh"
-#include "timer.hh"
-#include "vector.hh"
+#include <click/timer.hh>
+#include <click/vector.hh>
 #include "elements/grid/gridlocationinfo.hh"
 
 class MovementSimulator : public Element {

@@ -1,7 +1,7 @@
 #ifndef TODUMP_HH
 #define TODUMP_HH
-#include "timer.hh"
-#include "element.hh"
+#include <click/timer.hh>
+#include <click/element.hh>
 #include <stdio.h>
 
 /*

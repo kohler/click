@@ -22,10 +22,10 @@
 # include <config.h>
 #endif
 #include "classifier.hh"
-#include "glue.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include "straccum.hh"
+#include <click/glue.hh>
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
 #include "elements/standard/alignmentinfo.hh"
 
 //
@@ -1031,7 +1031,7 @@ ELEMENT_REQUIRES(AlignmentInfo)
 EXPORT_ELEMENT(Classifier)
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class Vector<Classifier::Expr>;
 #endif

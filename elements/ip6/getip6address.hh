@@ -1,7 +1,7 @@
 #ifndef GETIP6ADDRESS_HH
 #define GETIP6ADDRESS_HH
-#include "element.hh"
-#include "ip6address.hh"
+#include <click/element.hh>
+#include <click/ip6address.hh>
 
 /*
  * =c

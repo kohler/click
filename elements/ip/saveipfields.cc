@@ -22,9 +22,9 @@
 # include <config.h>
 #endif
 #include "saveipfields.hh"
-#include "click_ip.h"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/click_ip.h>
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 SaveIPFields::SaveIPFields()
   : Element(1, 1)

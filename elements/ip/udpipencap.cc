@@ -20,11 +20,11 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "click_ip.h"
+#include <click/click_ip.h>
 #include "udpipencap.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 #include "elements/standard/alignmentinfo.hh"
 #ifdef __KERNEL__
 # include <net/checksum.h>

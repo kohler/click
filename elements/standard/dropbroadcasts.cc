@@ -2,7 +2,7 @@
 # include <config.h>
 #endif
 #include "dropbroadcasts.hh"
-#include "glue.hh"
+#include <click/glue.hh>
 
 DropBroadcasts::DropBroadcasts()
 {

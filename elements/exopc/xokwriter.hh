@@ -1,7 +1,7 @@
 #ifndef XOKWRITER_HH
 #define XOKWRITER_HH
-#include "element.hh"
-#include "string.hh"
+#include <click/element.hh>
+#include <click/string.hh>
 
 
 /*

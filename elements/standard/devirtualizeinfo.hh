@@ -1,6 +1,6 @@
 #ifndef DEVIRTUALIZEINFO_HH
 #define DEVIRTUALIZEINFO_HH
-#include "element.hh"
+#include <click/element.hh>
 
 class DevirtualizeInfo : public Element {
 

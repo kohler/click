@@ -1,7 +1,7 @@
 #ifndef IPPRINT_HH
 #define IPPRINT_HH
-#include "element.hh"
-#include "string.hh"
+#include <click/element.hh>
+#include <click/string.hh>
 
 /*
  * =c

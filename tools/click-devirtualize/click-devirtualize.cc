@@ -21,17 +21,17 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "error.hh"
-#include "confparse.hh"
-#include "straccum.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
 #include "lexert.hh"
 #include "routert.hh"
 #include "toolutils.hh"
 #include "cxxclass.hh"
-#include "archive.hh"
+#include <click/archive.hh>
 #include "specializer.hh"
 #include "signature.hh"
-#include "clp.h"
+#include <click/clp.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -162,30 +162,18 @@ reverse_transformation(RouterT *r, ErrorHandler *)
 
   // remove requirements
   {
-    const StringMap &requirements = r->requirement_map();
-    Vector<String> removers;
-    for (StringMap::Iterator iter = requirements.first(); iter; iter++)
-      if (iter.value() > 0 && iter.key().substring(0, 12) == "devirtualize")
-	removers.push_back(iter.key());
-    for (int i = 0; i < removers.size(); i++)
-      r->remove_requirement(removers[i]);
+    Vector<String> requirements = r->requirements();
+    for (int i = 0; i < requirements.size(); i++)
+      if (requirements[i].substring(0, 12) == "devirtualize")
+	r->remove_requirement(requirements[i]);
   }
   
   // remove archive elements
   for (int i = 0; i < r->narchive(); i++) {
     ArchiveElement &ae = r->archive(i);
-    if (ae.name.substring(0, 12) == "devirtualize")
+    if (ae.name.substring(0, 12) == "devirtualize"
+	|| ae.name == "elementmap.devirtualize")
       ae.name = String();
-  }
-
-  // modify elementmap
-  if (r->archive_index("elementmap") >= 0) {
-    ArchiveElement &ae = r->archive("elementmap");
-    ElementMap em(ae.data);
-    for (int i = 0; i < new_click_names.size(); i++)
-      em.remove(new_click_names[i]);
-    ae.data = em.unparse();
-    if (!ae.data) ae.name = String();
   }
 }
 
@@ -258,7 +246,7 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click-devirtualize (Click) %s\n", VERSION);
+      printf("click-devirtualize (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2000 Massachusetts Institute of Technology\n\
 Copyright (c) 2000 Mazu Networks, Inc.\n\
 This is free software; see the source for copying conditions.\n\
@@ -355,13 +343,7 @@ particular purpose.\n");
 
   // find and parse `elementmap'
   ElementMap full_elementmap;
-  full_elementmap.parse_all_on_path(CLICK_SHAREDIR, errh);
-  /*if (!elementmap_fn)
-    p_errh->warning("cannot find `elementmap' in CLICKPATH or `%s'\n(Have you done a `make install' yet?)", CLICK_SHAREDIR);*/
-
-  // parse `elementmap' from router archive
-  if (router->archive_index("elementmap") >= 0)
-    full_elementmap.parse(router->archive("elementmap").data);
+  full_elementmap.parse_all_required(router, CLICK_SHAREDIR, errh);
 
   // initialize signatures
   Signatures sigs(router);
@@ -539,9 +521,9 @@ particular purpose.\n");
   
   // add elementmap to archive
   {
-    if (router->archive_index("elementmap") < 0)
-      router->add_archive(init_archive_element("elementmap", 0600));
-    ArchiveElement &ae = router->archive("elementmap");
+    if (router->archive_index("elementmap.devirtualize") < 0)
+      router->add_archive(init_archive_element("elementmap.devirtualize", 0600));
+    ArchiveElement &ae = router->archive("elementmap.devirtualize");
     ElementMap em(ae.data);
     specializer.output_new_elementmap(full_elementmap, em, package_name + cc_suffix, driver_requirement);
     ae.data = em.unparse();

@@ -57,11 +57,11 @@
  *
  * =a IPFlexMonitor, CompareBlock */
 
-#include "glue.hh"
-#include "click_ip.h"
-#include "element.hh"
-#include "ewma.hh"
-#include "vector.hh"
+#include <click/glue.hh>
+#include <click/click_ip.h>
+#include <click/element.hh>
+#include <click/ewma.hh>
+#include <click/vector.hh>
 
 struct IPRateMonitor_HalfSecondsTimer {
   static unsigned now()			{ return click_jiffies() >> 3; }

@@ -17,9 +17,9 @@
  *
  */
 
-#include "element.hh"
-#include "glue.hh"
-#include "click_tcp.h"
+#include <click/element.hh>
+#include <click/glue.hh>
+#include <click/click_tcp.h>
 
 class TCPIPSend : public Element {
 public:

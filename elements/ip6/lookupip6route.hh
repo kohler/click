@@ -35,8 +35,8 @@
  *
  */
 
-#include "element.hh"
-#include "ip6table.hh"
+#include <click/element.hh>
+#include <click/ip6table.hh>
 
 class LookupIP6Route : public Element {
 public:

@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "setipchecksum.hh"
-#include "glue.hh"
-#include "click_ip.h"
+#include <click/glue.hh>
+#include <click/click_ip.h>
 
 SetIPChecksum::SetIPChecksum()
 {

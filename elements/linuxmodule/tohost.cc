@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "tolinux.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 extern "C" {
 #include <linux/if_ether.h>
 #include <linux/netdevice.h>

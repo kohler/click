@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "ripsend.hh"
-#include "confparse.hh"
-#include "glue.hh"
-#include "click_ip.h"
-#include "click_udp.h"
+#include <click/confparse.hh>
+#include <click/glue.hh>
+#include <click/click_ip.h>
+#include <click/click_udp.h>
 
 RIPSend::RIPSend()
   : _timer(this)

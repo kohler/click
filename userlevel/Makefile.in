@@ -17,8 +17,6 @@ CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
 INSTALL = @INSTALL@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
@@ -42,7 +40,7 @@ GENERIC_OBJS = string.o straccum.o \
 	ipaddress.o ip6address.o ipaddressset.o ipflowid.o etheraddress.o \
 	packet.o \
 	error.o glue.o timer.o gaprate.o \
-	elemlink.o element.o errorelement.o \
+	elemlink.o element.o \
 	confparse.o lexer.o archive.o elemfilter.o router.o \
 	crc32.o in_cksum.o iptable.o iptable2.o ip6table.o radix.o \
 	userutils.o
@@ -53,13 +51,13 @@ USERLEVEL_OBJS = clp.o click.o
 
 OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(USERLEVEL_OBJS) elements.o
 
-CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL
+CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
 DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"' -DCLICK_LIBDIR='"$(libdir)"'
 INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
-	-I$(top_srcdir)/lib @PCAP_HEADER_PATH@
+	-I$(top_srcdir)/include @PCAP_HEADER_PATH@
 LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
 LIBS = @LIBS@ @PCAP_LIBRARY@ @DL_LIBRARY@ @SOCKET_LIBS@
 

@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "rripmapper.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 void *
 RoundRobinIPMapper::cast(const char *name)

@@ -15,7 +15,7 @@
  * packets originated by MACADDR; defaults to false. That is, tries to act
  * like Ethernet input hardware. */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class HostEtherFilter : public Element {
 

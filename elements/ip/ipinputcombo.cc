@@ -21,11 +21,11 @@
 # include <config.h>
 #endif
 #include "ipinputcombo.hh"
-#include "click_ip.h"
-#include "ipaddressset.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/click_ip.h>
+#include <click/ipaddressset.hh>
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "elements/standard/alignmentinfo.hh"
 
 IPInputCombo::IPInputCombo()

@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "etherswitch.hh"
-#include "click_ether.h"
-#include "etheraddress.hh"
-#include "glue.hh"
-#include "bitvector.hh"
+#include <click/click_ether.h>
+#include <click/etheraddress.hh>
+#include <click/glue.hh>
+#include <click/bitvector.hh>
 
 EtherSwitch::AddrInfo::AddrInfo(int p, const timeval& s)
   : port(p), stamp(s)
@@ -157,7 +157,7 @@ EtherSwitch::add_handlers()
 
 EXPORT_ELEMENT(EtherSwitch)
 
-#include "hashmap.cc"
+#include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<EtherAddress, EtherSwitch::AddrInfo*>;
 #endif

@@ -22,8 +22,8 @@
 # include <config.h>
 #endif
 #include "hashdemux.hh"
-#include "error.hh"
-#include "confparse.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
 
 HashDemux::HashDemux()
   : _offset(-1)

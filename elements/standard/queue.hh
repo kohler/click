@@ -1,8 +1,8 @@
 #ifndef QUEUE_HH
 #define QUEUE_HH
-#include "element.hh"
-#include "bitvector.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/bitvector.hh>
+#include <click/glue.hh>
 
 /*
  * =c

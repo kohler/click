@@ -1,6 +1,6 @@
 #ifndef SCHEDULELINUX_HH
 #define SCHEDULELINUX_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

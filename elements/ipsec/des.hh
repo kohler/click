@@ -8,8 +8,8 @@
  */
 
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 typedef unsigned char des_cblock[8];
 typedef struct des_ks_struct

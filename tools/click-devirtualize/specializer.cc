@@ -23,9 +23,9 @@
 #endif
 #include "specializer.hh"
 #include "routert.hh"
-#include "error.hh"
+#include <click/error.hh>
 #include "toolutils.hh"
-#include "straccum.hh"
+#include <click/straccum.hh>
 #include "signature.hh"
 #include <ctype.h>
 
@@ -542,6 +542,6 @@ Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
 }
 
 // Vector template instantiation
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<ElementTypeInfo>;
 template class Vector<SpecializedClass>;

@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "pokehandlers.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "router.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/router.hh>
 
 PokeHandlers::PokeHandlers()
   : _timer(timer_hook, (unsigned long)this)

@@ -1,8 +1,8 @@
 #ifndef SPANTREE_HH
 #define SPANTREE_HH
-#include "element.hh"
+#include <click/element.hh>
 #include "bridgemessage.hh"
-#include "timer.hh"
+#include <click/timer.hh>
 class Suppressor;
 class EtherSwitch;
 

@@ -21,14 +21,14 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "router.hh"
-#include "bitvector.hh"
-#include "error.hh"
-#include "straccum.hh"
-#include "elemfilter.hh"
-#include "confparse.hh"
-#include "subvector.hh"
-#include "timer.hh"
+#include <click/router.hh>
+#include <click/bitvector.hh>
+#include <click/error.hh>
+#include <click/straccum.hh>
+#include <click/elemfilter.hh>
+#include <click/confparse.hh>
+#include <click/subvector.hh>
+#include <click/timer.hh>
 #include <stdarg.h>
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
@@ -1366,5 +1366,5 @@ Router::element_ports_string(int fi) const
 
 #if CLICK_USERLEVEL
 // Vector template instance
-# include "vector.cc"
+# include <click/vector.cc>
 #endif

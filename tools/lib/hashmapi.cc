@@ -20,9 +20,9 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "hashmap.cc"
+#include <click/hashmap.cc>
 
-#include "string.hh"
+#include <click/string.hh>
 template class HashMap<String, int>;
 template class HashMapIterator<String, int>;
 template class HashMap<String, String>;

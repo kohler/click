@@ -3,8 +3,8 @@
 # include <config.h>
 #endif
 #include "xokwriter.hh"
-#include "error.hh"
-#include "confparse.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
 
 #include <stdio.h>
 #include <assert.h>

@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "forceip.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/error.hh>
+#include <click/glue.hh>
 #include "elements/standard/alignmentinfo.hh"
 
 ForceIP::ForceIP()

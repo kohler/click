@@ -22,12 +22,12 @@
 # include <config.h>
 #endif
 #include "updateroutes.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "click_ether.h"
-#include "click_ip.h"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/click_ether.h>
+#include <click/click_ip.h>
 #include "elements/standard/scheduleinfo.hh"
-#include "router.hh"
+#include <click/router.hh>
 #include "grid.hh"
 
 
@@ -640,9 +640,9 @@ UpdateGridRoutes::make_hello()
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(UpdateGridRoutes)
 
-#include "bighashmap.cc"
+#include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, UpdateGridRoutes::NbrEntry>;
 template class BigHashMap<IPAddress, UpdateGridRoutes::far_entry>;
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<IPAddress>;
 template class Vector<grid_nbr_entry>;

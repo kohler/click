@@ -21,10 +21,10 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "router.hh"
+#include <click/router.hh>
 #include "fromlinux.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 extern "C" {
 #define new xxx_new
 #include <asm/types.h>

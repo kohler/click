@@ -17,9 +17,8 @@ CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
 INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL@ -m 644
 AR = ar
 RANLIB = @RANLIB@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
@@ -42,12 +41,12 @@ OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
 	ipaddress.o ipaddressset.o ip6address.o etheraddress.o \
 	userutils.o toolutils.o clp.o @LIBOBJS@
 
-CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
+CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
-DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"' \
-	-I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir)/lib
+DEFS = @DEFS@ \
+	-I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir)/include
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
@@ -71,7 +70,7 @@ endif
 
 install: libclicktool.a
 	$(mkinstalldirs) $(libdir)
-	$(INSTALL) libclicktool.a $(libdir)/libclicktool.a
+	$(INSTALL_DATA) libclicktool.a $(libdir)/libclicktool.a
 install-man:
 
 clean:

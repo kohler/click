@@ -28,7 +28,7 @@
  * =a
  * FixSrcLoc */
 
-#include "element.hh"
+#include <click/element.hh>
 #include "grid.hh"
 
 class LocationInfo : public Element {

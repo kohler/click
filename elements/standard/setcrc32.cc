@@ -21,9 +21,8 @@
 # include <config.h>
 #endif
 #include "setcrc32.hh"
-
 extern "C" {
-#include "crc32.h"
+#include <click/crc32.h>
 }
 
 SetCRC32::SetCRC32()

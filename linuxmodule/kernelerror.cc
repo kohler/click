@@ -23,7 +23,7 @@
 #endif
 #include "kernelerror.hh"
 #include "modulepriv.hh"
-#include "straccum.hh"
+#include <click/straccum.hh>
 
 static StringAccum *all_errors = 0;
 

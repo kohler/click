@@ -22,10 +22,10 @@
 # include <config.h>
 #endif
 #include "lookupip6route.hh"
-#include "ip6address.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/ip6address.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
  
 LookupIP6Route::LookupIP6Route()
 {

@@ -21,12 +21,12 @@
 # include <config.h>
 #endif
 #include "ratedsource.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "timer.hh"
-#include "router.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/timer.hh>
+#include <click/router.hh>
 #include "scheduleinfo.hh"
-#include "glue.hh"
+#include <click/glue.hh>
 
 RatedSource::RatedSource()
 {

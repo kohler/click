@@ -22,7 +22,7 @@
 # include <config.h>
 #endif
 #include "modulepriv.hh"
-#include "string.hh"
+#include <click/string.hh>
 
 struct click_proc_dir_set {
   click_proc_dir_set *next;

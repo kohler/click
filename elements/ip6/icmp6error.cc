@@ -20,14 +20,14 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "click_icmp6.h"
-#include "click_ip6.h"
-#include "click_ip.h"
+#include <click/click_icmp6.h>
+#include <click/click_ip6.h>
+#include <click/click_ip.h>
 #include "icmp6error.hh"
-#include "ip6address.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/ip6address.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 ICMP6Error::ICMP6Error()
 {

@@ -22,10 +22,10 @@
 # include <config.h>
 #endif
 #include "randomsource.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "scheduleinfo.hh"
-#include "glue.hh"
+#include <click/glue.hh>
 
 RandomSource::RandomSource()
 {

@@ -1,6 +1,6 @@
 #ifndef CHUCKCHECK_HH
 #define CHUCKCHECK_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

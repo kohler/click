@@ -1,8 +1,8 @@
 #ifndef CXXCLASS_HH
 #define CXXCLASS_HH
-#include "string.hh"
-#include "vector.hh"
-#include "hashmap.hh"
+#include <click/string.hh>
+#include <click/vector.hh>
+#include <click/hashmap.hh>
 class StringAccum;
 
 String compile_pattern(const String &);

@@ -1,6 +1,6 @@
 #ifndef RRSCHED_HH
 #define RRSCHED_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

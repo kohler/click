@@ -20,10 +20,10 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "straccum.hh"
-#include "string.hh"
-#include "confparse.hh"
-#include "glue.hh"
+#include <click/straccum.hh>
+#include <click/string.hh>
+#include <click/confparse.hh>
+#include <click/glue.hh>
 
 bool
 StringAccum::grow(int want)

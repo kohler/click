@@ -2,10 +2,10 @@
 # include <config.h>
 #endif
 #include "etherencap.hh"
-#include "etheraddress.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/etheraddress.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 EtherEncap::EtherEncap()
   : Element(1, 1)

@@ -20,15 +20,15 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "error.hh"
-#include "confparse.hh"
-#include "straccum.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
 #include "lexert.hh"
 #include "routert.hh"
 #include "alignment.hh"
 #include "alignclass.hh"
 #include "toolutils.hh"
-#include "clp.h"
+#include <click/clp.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -283,7 +283,7 @@ main(int argc, char **argv)
       break;
       
      case VERSION_OPT:
-      printf("click-align (Click) %s\n", VERSION);
+      printf("click-align (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
@@ -473,5 +473,5 @@ particular purpose.\n");
 }
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<Alignment>;

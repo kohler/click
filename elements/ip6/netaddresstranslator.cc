@@ -22,13 +22,13 @@
 # include <config.h>
 #endif
 #include "netaddresstranslator.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "click_ip.h"
-#include "click_ip6.h"
-#include "click_icmp.h"
-#include "click_icmp6.h"
-#include "ip6address.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/click_ip.h>
+#include <click/click_ip6.h>
+#include <click/click_icmp.h>
+#include <click/click_icmp6.h>
+#include <click/ip6address.hh>
 
 NetAddressTranslator::NetAddressTranslator()
 {
@@ -681,5 +681,5 @@ NetAddressTranslator::handle_ip4(Packet *p)
 EXPORT_ELEMENT(NetAddressTranslator)
 
 // generate Vector template instance
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<NetAddressTranslator::Entry64>;

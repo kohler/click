@@ -22,10 +22,9 @@
 #endif
 #include "fromdevice.hh"
 #include "todevice.hh"
-#include "error.hh"
-#include "packet.hh"
-#include "confparse.hh"
-#include "glue.hh"
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/glue.hh>
 #include <unistd.h>
 #include <fcntl.h>
 #include <errno.h>

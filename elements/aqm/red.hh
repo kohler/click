@@ -1,7 +1,7 @@
 #ifndef RED_HH
 #define RED_HH
-#include "element.hh"
-#include "ewma.hh"
+#include <click/element.hh>
+#include <click/ewma.hh>
 class Storage;
 
 /*

@@ -22,12 +22,11 @@
 # include <config.h>
 #endif
 #include "modulepriv.hh"
-
-#include "lexer.hh"
-#include "router.hh"
 #include "kernelerror.hh"
-#include "straccum.hh"
-#include "confparse.hh"
+#include <click/lexer.hh>
+#include <click/router.hh>
+#include <click/straccum.hh>
+#include <click/confparse.hh>
 
 static struct click_x_proc_dir_entry proc_click_x_entry = {
   0,				// dynamic inode
@@ -161,7 +160,7 @@ read_cycles(Element *, void *)
 static String
 read_version(Element *, void *)
 {
-  return String(VERSION) + "\n";
+  return String(CLICK_VERSION) + "\n";
 }
 
 #ifdef HAVE_READ_NET_SKBCOUNT

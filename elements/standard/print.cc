@@ -21,9 +21,9 @@
 # include <config.h>
 #endif
 #include "print.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 Print::Print()
   : Element(1, 1)

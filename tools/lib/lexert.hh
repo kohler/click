@@ -1,6 +1,6 @@
 #ifndef LEXERT_HH
 #define LEXERT_HH
-#include "error.hh"
+#include <click/error.hh>
 #include <stdio.h>
 class RouterT;
 

@@ -22,7 +22,7 @@
 # include <config.h>
 #endif
 #include "staticswitch.hh"
-#include "confparse.hh"
+#include <click/confparse.hh>
 
 StaticSwitch *
 StaticSwitch::clone() const

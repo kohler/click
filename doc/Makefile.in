@@ -9,8 +9,6 @@ prefix = @prefix@
 mandir = @mandir@
 datadir = @datadir@/click
 
-PACKAGE = @PACKAGE@
-VERSION = @VERSION@
 PERL = @PERL@
 INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
@@ -39,7 +37,7 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/Element.3 $(mandir)/man3/Element.3
 	$(INSTALL_DATA) $(srcdir)/Connection.3 $(mandir)/man3/Connection.3
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
-	$(top_srcdir)/click-buildtool findelem -a -p $(top_srcdir) | $(PERL) $(srcdir)/element2man.pl -l -d $(mandir)/mann -f - $(top_srcdir)/lib/errorelement.hh
+	$(top_srcdir)/click-buildtool findelem -a -p $(top_srcdir) | $(PERL) $(srcdir)/element2man.pl -l -d $(mandir)/mann -f -
 
 clean:
 distclean: clean

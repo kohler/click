@@ -22,14 +22,14 @@
 # include <config.h>
 #endif
 #include "lookupgeogridroute.hh"
-#include "confparse.hh"
-#include "error.hh"
-#include "click_ether.h"
-#include "click_ip.h"
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/click_ether.h>
+#include <click/click_ip.h>
 #include "elements/standard/scheduleinfo.hh"
 #include "grid.hh"
-#include "router.hh"
-#include "glue.hh"
+#include <click/router.hh>
+#include <click/glue.hh>
 #include "filterbyrange.hh"
 
 LookupGeographicGridRoute::LookupGeographicGridRoute() : Element(1, 3), _rt(0)

@@ -22,10 +22,10 @@
 # include <config.h>
 #endif
 #include "bim.hh"
-#include "error.hh"
-#include "packet.hh"
-#include "confparse.hh"
-#include "glue.hh"
+#include <click/error.hh>
+#include <click/packet.hh>
+#include <click/confparse.hh>
+#include <click/glue.hh>
 #include "bim-proto.hh"
 #include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>

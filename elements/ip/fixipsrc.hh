@@ -18,8 +18,8 @@
  * 
  * =a ICMPError */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class FixIPSrc : public Element {
   struct in_addr _my_ip;

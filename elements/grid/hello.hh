@@ -21,10 +21,10 @@
  * UpdateGridRoutes, SendGridLRHello
  */
 
-#include "element.hh"
-#include "timer.hh"
-#include "etheraddress.hh"
-#include "ipaddress.hh"
+#include <click/element.hh>
+#include <click/timer.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
 
 class SendGridHello : public Element {
   

@@ -1,6 +1,6 @@
 #ifndef ADJACENCY_HH
 #define ADJACENCY_HH
-#include "vector.hh"
+#include <click/vector.hh>
 class RouterT;
 
 class AdjacencyMatrix {

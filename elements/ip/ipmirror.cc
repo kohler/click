@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "ipmirror.hh"
-#include "click_ip.h"
-#include "click_udp.h"
+#include <click/click_ip.h>
+#include <click/click_udp.h>
 
 Packet *
 IPMirror::simple_action(Packet *p_in)

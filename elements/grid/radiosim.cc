@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "radiosim.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "elements/standard/scheduleinfo.hh"
 #include "elements/grid/filterbyrange.hh"
 
@@ -191,5 +191,5 @@ RadioSim::add_handlers()
 ELEMENT_REQUIRES(FilterByRange)
 EXPORT_ELEMENT(RadioSim)
 
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<RadioSim::Node>;

@@ -20,8 +20,8 @@
  * =a Paint, CheckIPHeader, Strip, GetIPAddress, IPOutputCombo
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class IPInputCombo : public Element {
   

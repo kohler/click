@@ -21,7 +21,7 @@
 # include <config.h>
 #endif
 #include "rfc2507d.hh"
-#include "glue.hh"
+#include <click/glue.hh>
 
 RFC2507d::RFC2507d()
 {

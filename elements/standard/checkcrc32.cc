@@ -23,7 +23,7 @@
 #include "checkcrc32.hh"
 
 extern "C" {
-#include "crc32.h"
+#include <click/crc32.h>
 }
 
 CheckCRC32::CheckCRC32()

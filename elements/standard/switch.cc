@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "switch.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 Switch *
 Switch::clone() const

@@ -1,6 +1,6 @@
 #ifndef ANYDEVICE_HH
 #define ANYDEVICE_HH
-#include "element.hh"
+#include <click/element.hh>
 extern "C" {
 #include <linux/netdevice.h>
 }

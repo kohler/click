@@ -21,12 +21,12 @@
 # include <config.h>
 #endif
 #include "hello.hh"
-#include "click_ether.h"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/click_ether.h>
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "elements/standard/scheduleinfo.hh"
 #include "elements/userlevel/tobpf.hh"
-#include "router.hh"
+#include <click/router.hh>
 #include "grid.hh"
 
 SendGridHello::SendGridHello()

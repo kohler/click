@@ -22,8 +22,8 @@
 # include <config.h>
 #endif
 #include "sendpattern.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 SendPattern::SendPattern()
 {

@@ -1,6 +1,6 @@
 #ifndef PRIOSCHED_HH
 #define PRIOSCHED_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

@@ -21,8 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "ipaddress.hh"
-#include "confparse.hh"
+#include <click/ipaddress.hh>
+#include <click/confparse.hh>
 #if CLICK_LINUXMODULE
 extern "C" {
 # include <linux/kernel.h>

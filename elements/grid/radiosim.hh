@@ -25,8 +25,8 @@
  *   node-index latitude longitude
  */
 
-#include "element.hh"
-#include "vector.hh"
+#include <click/element.hh>
+#include <click/vector.hh>
 #include "grid.hh"
 
 class RadioSim : public Element {

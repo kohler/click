@@ -21,12 +21,12 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-// ALWAYS INCLUDE clickconfig.h
-#include <clickconfig.h>
-// ALWAYS INCLUDE clickpackage.hh
-#include <clickpackage.hh>
+// ALWAYS INCLUDE click/config.h
+#include <click/config.h>
+// ALWAYS INCLUDE click/package.hh
+#include <click/package.hh>
 #include "sampleelt.hh"
-#include "error.hh"
+#include <click/error.hh>
 
 SamplePackageElement::SamplePackageElement()
 {

@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "decipttl.hh"
-#include "click_ip.h"
-#include "glue.hh"
+#include <click/click_ip.h>
+#include <click/glue.hh>
 
 DecIPTTL::DecIPTTL()
   : _drops(0)

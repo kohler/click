@@ -12,8 +12,8 @@
  *
  * =a */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 #include "loctable.hh"
 
 class FixDstLoc : public Element {

@@ -21,8 +21,8 @@
 # include <config.h>
 #endif
 #include "regionpep.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "grid.hh"
 
 EstimateRouterRegion::EstimateRouterRegion()
@@ -398,5 +398,5 @@ EstimateRouterRegion::add_handlers()
 ELEMENT_REQUIRES(GridLocationInfo Amoeba RectRegion)
 EXPORT_ELEMENT(EstimateRouterRegion)
 
-#include "vector.cc"
+#include <click/vector.cc>
 template class Vector<EstimateRouterRegion::Entry>;

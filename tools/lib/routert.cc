@@ -22,16 +22,16 @@
 # include <config.h>
 #endif
 #include "routert.hh"
-#include "bitvector.hh"
-#include "confparse.hh"
-#include "straccum.hh"
+#include <click/bitvector.hh>
+#include <click/confparse.hh>
+#include <click/straccum.hh>
 #include <stdio.h>
 
 RouterT::RouterT(RouterT *enclosing)
   : _enclosing_scope(enclosing),
     _element_type_map(-1), _element_name_map(-1),
     _free_element(-1), _real_ecount(0), _new_eindex_collector(0),
-    _free_hookup(-1), _require_map(-1), _archive_map(-1)
+    _free_hookup(-1), _archive_map(-1)
 {
   if (_enclosing_scope)
     _enclosing_scope->use();
@@ -61,7 +61,7 @@ RouterT::RouterT(const RouterT &o)
     _hookup_next(o._hookup_next),
     _hookup_first(o._hookup_first),
     _free_hookup(o._free_hookup),
-    _require_map(o._require_map),
+    _requirements(o._requirements),
     _archive_map(o._archive_map),
     _archive(o._archive)
 {
@@ -715,13 +715,20 @@ RouterT::add_tunnel(String in, String out, const String &landmark,
 void
 RouterT::add_requirement(const String &s)
 {
-  _require_map.insert(s, 1);
+  _requirements.push_back(s);
 }
 
 void
 RouterT::remove_requirement(const String &s)
 {
-  _require_map.insert(s, 0);
+  for (int i = 0; i < _requirements.size(); i++)
+    if (_requirements[i] == s) {
+      // keep requirements in order
+      for (int j = i + 1; j < _requirements.size(); j++)
+	_requirements[j-1] = _requirements[j];
+      _requirements.pop_back();
+      return;
+    }
 }
 
 
@@ -1280,9 +1287,8 @@ RouterT::expand_into(RouterT *fromr, int which, RouterT *tor,
   }
 
   // add requirements
-  for (StringMap::Iterator iter = _require_map.first(); iter; iter++)
-    if (iter.value() > 0)
-      tor->add_requirement(iter.key());
+  for (int i = 0; i < _requirements.size(); i++)
+    tor->add_requirement(_requirements[i]);
   
   // yes, we expanded it
   return new_eindex;
@@ -1397,15 +1403,13 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   int nelemtype = _element_classes.size();
 
   // print requirements
-  {
-    StringAccum require_sa;
-    for (StringMap::Iterator iter = _require_map.first(); iter; iter++)
-      if (iter.value() > 0) {
-	if (require_sa.length()) require_sa << ", ";
-	require_sa << iter.key();
-      }
-    if (require_sa.length())
-      sa << "require(" << require_sa.take_string() << ");\n\n";
+  if (_requirements.size() > 0) {
+    sa << "require(";
+    for (int i = 0; i < _requirements.size(); i++) {
+      if (i) sa << ", ";
+      sa << _requirements[i];
+    }
+    sa << ");\n\n";
   }
 
   // print element classes

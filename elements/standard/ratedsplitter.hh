@@ -1,7 +1,7 @@
 #ifndef RATEDSPLITTER_HH
 #define RATEDSPLITTER_HH
-#include "element.hh"
-#include "gaprate.hh"
+#include <click/element.hh>
+#include <click/gaprate.hh>
 
 /*
  * =c

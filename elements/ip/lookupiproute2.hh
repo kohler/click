@@ -27,9 +27,9 @@
  * =a LookupIPRoute
  */
 
-#include "glue.hh"
-#include "element.hh"
-#include "iptable2.hh"
+#include <click/glue.hh>
+#include <click/element.hh>
+#include <click/iptable2.hh>
 
 class LookupIPRoute2 : public Element {
 public:

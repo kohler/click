@@ -13,8 +13,8 @@
  * The DSCP is the upper 6 bits of the IP TOS field.
  */
 
-#include "element.hh"
-#include "glue.hh"
+#include <click/element.hh>
+#include <click/glue.hh>
 
 class SetIPDSCP : public Element {
 

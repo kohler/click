@@ -1,6 +1,6 @@
 #ifndef PAINTTEE_HH
 #define PAINTTEE_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * =c

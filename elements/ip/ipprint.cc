@@ -21,13 +21,13 @@
 # include <config.h>
 #endif
 #include "ipprint.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 
-#include "click_ip.h"
-#include "click_tcp.h"
-#include "click_udp.h"
+#include <click/click_ip.h>
+#include <click/click_tcp.h>
+#include <click/click_udp.h>
 
 IPPrint::IPPrint()
   : Element(1, 1)

@@ -22,10 +22,10 @@
 # include <config.h>
 #endif
 #include "setgridchecksum.hh"
-#include "glue.hh"
+#include <click/glue.hh>
 #include "grid.hh"
-#include "click_ether.h"
-#include "click_ip.h"
+#include <click/click_ether.h>
+#include <click/click_ip.h>
 
 SetGridChecksum::SetGridChecksum()
 {

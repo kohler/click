@@ -1,6 +1,6 @@
 #ifndef SENDPATTERN_HH
 #define SENDPATTERN_HH
-#include "element.hh"
+#include <click/element.hh>
 
 /*
  * SendPattern(len)

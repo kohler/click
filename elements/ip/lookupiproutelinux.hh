@@ -32,8 +32,8 @@
  *   r[2] -> ICMPError(18.26.4.24, 3, 0) -> ...
  */
 
-#include "element.hh"
-#include "iptable.hh"
+#include <click/element.hh>
+#include <click/iptable.hh>
 
 class LookupIPRouteLinux : public Element {
 public:

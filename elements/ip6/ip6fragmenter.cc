@@ -21,10 +21,10 @@
 # include <config.h>
 #endif
 #include "ip6fragmenter.hh"
-#include "click_ip6.h"
-#include "confparse.hh"
-#include "error.hh"
-#include "glue.hh"
+#include <click/click_ip6.h>
+#include <click/confparse.hh>
+#include <click/error.hh>
+#include <click/glue.hh>
 
 IP6Fragmenter::IP6Fragmenter()
   : _drops(0)

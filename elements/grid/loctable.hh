@@ -25,9 +25,9 @@
  * =a
  * FixDstLoc */
 
-#include "element.hh"
+#include <click/element.hh>
 #include "grid.hh"
-#include "bighashmap.hh"
+#include <click/bighashmap.hh>
 
 class LocationTable : public Element {
   

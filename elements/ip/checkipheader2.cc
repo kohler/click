@@ -22,11 +22,11 @@
 # include <config.h>
 #endif
 #include "checkipheader2.hh"
-#include "click_ip.h"
-#include "ipaddressset.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/click_ip.h>
+#include <click/ipaddressset.hh>
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 
 CheckIPHeader2::CheckIPHeader2()
   : _drops(0)

@@ -22,11 +22,11 @@
 # include <config.h>
 #endif
 #include "checkip6header.hh"
-#include "click_ip6.h"
-#include "ip6address.hh"
-#include "glue.hh"
-#include "confparse.hh"
-#include "error.hh"
+#include <click/click_ip6.h>
+#include <click/ip6address.hh>
+#include <click/glue.hh>
+#include <click/confparse.hh>
+#include <click/error.hh>
 #include "elements/standard/alignmentinfo.hh"
 #ifdef __KERNEL__
 # include <net/checksum.h>

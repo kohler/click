@@ -1,6 +1,6 @@
 #ifndef PERFCOUNTUSER_HH
 #define PERFCOUNTUSER_HH
-#include "element.hh"
+#include <click/element.hh>
 
 class PerfCountUser : public Element { public:
 

@@ -58,7 +58,7 @@
  * then the InfiniteSource's final scaling parameter would be 10.5.
  */
 
-#include "element.hh"
+#include <click/element.hh>
 
 class ScheduleInfo : public Element {
 
