@@ -26,7 +26,8 @@ static const char *content_names[] = {
     "ip_dst", "ip_len", "ip_proto", "ip_id", "sport",
     "dport", "tcp_seq", "tcp_ack", "tcp_flags", "payload_len",
     "count", "ip_frag", "ip_fragoff", "payload", "direction",
-    "aggregate", "tcp_sack", "tcp_opt", "first_timestamp", "tcp_window"
+    "aggregate", "tcp_sack", "tcp_opt", "tcp_ntopt", "first_timestamp",
+    "tcp_window"
 };
 
 const char *
@@ -75,6 +76,8 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_TCP_SACK;
     else if (word == "tcp_opt")
 	return W_TCP_OPT;
+    else if (word == "tcp_ntopt")
+	return W_TCP_NTOPT;
     else if (word == "payload_len" || word == "payload_length")
 	return W_PAYLOAD_LENGTH;
     else if (word == "count" || word == "pkt_count" || word == "packet_count")

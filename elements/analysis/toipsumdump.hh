@@ -15,14 +15,15 @@ ToIPSummaryDump(FILENAME [, I<KEYWORDS>])
 
 =s analysis
 
-writes packet summary information
+writes packet summary information to an ASCII file
 
 =d
 
 Writes summary information about incoming packets to FILENAME in a simple
 ASCII format---each line corresponds to a packet. The CONTENTS keyword
 argument determines what information is written. Writes to standard output if
-FILENAME is a single dash `C<->'.
+FILENAME is a single dash `C<->'. (The BINARY keyword argument writes a packed
+binary format to save space.)
 
 ToIPSummaryDump uses packets' extra-length and extra-packet-count annotations.
 
@@ -54,6 +55,8 @@ contain those fields. Valid field names, with examples, are:
    tcp_ack      TCP acknowledgement number: '93178192'
    tcp_flags    TCP flags: 'SA', '.'
    tcp_opt      TCP options (see below)
+   tcp_ntopt    TCP options except NOP, EOL and timestamp
+                (see below)
    tcp_sack     TCP SACK options (see below)
    tcp_window   TCP receive window: '480'
    payload_len  Payload length (not including IP/TCP/UDP
@@ -195,6 +198,7 @@ the 'C<!data>' line, as follows:
    tcp_ack          4    TCP ack number
    tcp_flags        1    TCP flags
    tcp_opt          ?    TCP options
+   tcp_ntopt        ?    TCP non-timestamp options
    tcp_sack         ?    TCP SACK options
    payload_len      4    payload length
    count            4    packet count
@@ -258,7 +262,8 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
 	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
 	   DO_TCPOPT_UNKNOWN = 32,
-	   DO_TCPOPT_ALL = 0xFFFFFFFFU, DO_TCPOPT_ALL_NOPAD = 0xFFFFFFFEU };
+	   DO_TCPOPT_ALL = 0xFFFFFFFFU, DO_TCPOPT_ALL_NOPAD = 0xFFFFFFFEU,
+	   DO_TCPOPT_NTALL = 0xFFFFFFEEU };
     static void store_tcp_opt_ascii(const uint8_t *, int olen, int, StringAccum &);
     static inline void store_tcp_opt_ascii(const click_tcp *, int, StringAccum &);
     static int store_tcp_opt_binary(const uint8_t *, int olen, int, StringAccum &);

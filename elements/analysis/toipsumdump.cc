@@ -211,37 +211,37 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 	    opt++;
 	    break;
 	  case TCPOPT_MAXSEG:
-	    if (!(contents & DO_TCPOPT_MSS))
-		goto unknown;
 	    if (opt + opt[1] > end_opt || opt[1] != TCPOLEN_MAXSEG)
 		goto bad_opt;
+	    if (!(contents & DO_TCPOPT_MSS))
+		goto unknown;
 	    sa << sep << "mss" << ((opt[2] << 8) | opt[3]);
 	    opt += TCPOLEN_MAXSEG;
 	    sep = ",";
 	    break;
 	  case TCPOPT_WSCALE:
-	    if (!(contents & DO_TCPOPT_WSCALE))
-		goto unknown;
 	    if (opt + opt[1] > end_opt || opt[1] != TCPOLEN_WSCALE)
 		goto bad_opt;
+	    if (!(contents & DO_TCPOPT_WSCALE))
+		goto unknown;
 	    sa << sep << "wscale" << (int)(opt[2]);
 	    opt += TCPOLEN_WSCALE;
 	    sep = ",";
 	    break;
 	  case TCPOPT_SACK_PERMITTED:
-	    if (!(contents & DO_TCPOPT_SACK))
-		goto unknown;
 	    if (opt + opt[1] > end_opt || opt[1] != TCPOLEN_SACK_PERMITTED)
 		goto bad_opt;
+	    if (!(contents & DO_TCPOPT_SACK))
+		goto unknown;
 	    sa << sep << "sackok";
 	    opt += TCPOLEN_SACK_PERMITTED;
 	    sep = ",";
 	    break;
 	  case TCPOPT_SACK: {
-	      if (!(contents & DO_TCPOPT_SACK))
-		  goto unknown;
 	      if (opt + opt[1] > end_opt || (opt[1] % 8 != 2))
 		  goto bad_opt;
+	      if (!(contents & DO_TCPOPT_SACK))
+		  goto unknown;
 	      const uint8_t *end_sack = opt + opt[1];
 	      for (opt += 2; opt < end_sack; opt += 8) {
 		  uint32_t buf[2];
@@ -252,10 +252,10 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 	      break;
 	  }
 	  case TCPOPT_TIMESTAMP: {
-	      if (!(contents & DO_TCPOPT_TIMESTAMP))
-		  goto unknown;
 	      if (opt + opt[1] > end_opt || opt[1] != TCPOLEN_TIMESTAMP)
 		  goto bad_opt;
+	      if (!(contents & DO_TCPOPT_TIMESTAMP))
+		  goto unknown;
 	      uint32_t buf[2];
 	      memcpy(&buf[0], opt + 2, 8);
 	      sa << sep << "ts" << ntohl(buf[0]) << ':' << ntohl(buf[1]);
@@ -264,10 +264,10 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 	      break;
 	  }
 	  default: {
-	      if (!(contents & DO_TCPOPT_UNKNOWN))
-		  goto unknown;
 	      if (opt + opt[1] > end_opt || opt[1] == 0)
 		  goto bad_opt;
+	      if (!(contents & DO_TCPOPT_UNKNOWN))
+		  goto unknown;
 	      sa << sep << (int)(opt[0]);
 	      const uint8_t *end_this_opt = opt + opt[1];
 	      char opt_sep = '=';
@@ -456,6 +456,17 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 		sa << '.';
 	    else
 		store_tcp_opt_ascii(tcph, DO_TCPOPT_ALL_NOPAD, sa);
+	    break;
+	  case W_TCP_NTOPT:
+	    if (!tcph)
+		goto no_data;
+	    // skip function if no TCP options, or just timestamp option
+	    if (tcph->th_off <= 5
+		|| (tcph->th_off == 8
+		    && *(reinterpret_cast<const uint32_t *>(tcph + 1)) == htonl(0x0101080A)))
+		sa << '.';
+	    else
+		store_tcp_opt_ascii(tcph, DO_TCPOPT_NTALL, sa);
 	    break;
 	  case W_TCP_SACK:
 	    if (!tcph)
@@ -682,6 +693,18 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	      int left = sa.length() - pos;
 	      sa.set_length(pos);
 	      pos += store_tcp_opt_binary(tcph, DO_TCPOPT_ALL, sa);
+	      sa.extend(left);
+	      buf = sa.data();
+	      break;
+	  }
+	  case W_TCP_NTOPT: {
+	      if (!tcph || tcph->th_off <= (sizeof(click_tcp) >> 2)
+		  || (tcph->th_off == 8
+		      && *(reinterpret_cast<const uint32_t *>(tcph + 1)) == htonl(0x0101080A)))
+		  goto output_1;
+	      int left = sa.length() - pos;
+	      sa.set_length(pos);
+	      pos += store_tcp_opt_binary(tcph, DO_TCPOPT_NTALL, sa);
 	      sa.extend(left);
 	      buf = sa.data();
 	      break;

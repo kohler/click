@@ -663,6 +663,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    pos++;	// u1 already 0
 		    break;
 		  case W_TCP_OPT:
+		  case W_TCP_NTOPT:
 		  case W_TCP_SACK:
 		    if (pos + 1 + data[pos] <= len) {
 			tcp_opt = line.substring(pos + 1, data[pos]);
@@ -787,6 +788,15 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		else if (data[pos] != '-') {
 		    have_tcp_opt = true;
 		    pos = parse_tcp_opt_ascii(data, pos, &tcp_opt, DO_TCPOPT_SACK);
+		}
+		break;
+		
+	      case W_TCP_NTOPT:
+		if (data[pos] == '.')
+		    pos++;
+		else if (data[pos] != '-') {
+		    have_tcp_opt = true;
+		    pos = parse_tcp_opt_ascii(data, pos, &tcp_opt, DO_TCPOPT_NTALL);
 		}
 		break;
 		
