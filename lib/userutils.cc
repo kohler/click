@@ -413,11 +413,11 @@ path_find_file_2(const String &filename, const String &path,
 	} else if (dir) {
 	    if (dir.back() != '/')
 		dir += "/"; 
-	    // look for `dir/filename'
+	    // look for 'dir/filename'
 	    String fn = dir + filename;
 	    if (access(fn.cc(), F_OK) >= 0)
 		return fn;
-	    // look for `dir/subdir/filename' and `dir/subdir/click/filename'
+	    // look for 'dir/subdir/filename' and 'dir/subdir/click/filename'
 	    if (subdir) {
 		fn = dir + subdir + filename;
 		if (access(fn.cc(), F_OK) >= 0)
@@ -466,7 +466,7 @@ clickpath_find_file(const String &filename, const char *subdir,
     path = ":";
   String fn = path_find_file_2(filename, path, default_path, subdir);
 
-  // look in `PATH' for binaries
+  // look in 'PATH' for binaries
   if (!fn && subdir
       && (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0))
     if (const char *path_variable = getenv("PATH"))
@@ -475,13 +475,13 @@ clickpath_find_file(const String &filename, const char *subdir,
   if (!fn && errh) {
     if (default_path) {
       // CLICKPATH set, left no opportunity to use default path
-      errh->fatal("cannot find file `%s'\nin CLICKPATH `%s'", filename.c_str(), path);
+      errh->fatal("cannot find file '%s'\nin CLICKPATH '%s'", filename.c_str(), path);
     } else if (!path) {
       // CLICKPATH not set
-      errh->fatal("cannot find file `%s'\nin install directory `%s'\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.cc());
+      errh->fatal("cannot find file '%s'\nin install directory '%s'\n(Try setting the CLICKPATH environment variable.)", filename.c_str(), was_default_path.cc());
     } else {
       // CLICKPATH set, left opportunity to use default pathb
-      errh->fatal("cannot find file `%s'\nin CLICKPATH or `%s'", filename.c_str(), was_default_path.cc());
+      errh->fatal("cannot find file '%s'\nin CLICKPATH or '%s'", filename.c_str(), was_default_path.cc());
     }
   }
   
@@ -606,7 +606,7 @@ open_uncompress_pipe(const String &filename, const unsigned char *buf, int, Erro
   if (FILE *p = popen(command.cc(), "r"))
     return p;
   else {
-    errh->error("`%s': %s", command.cc(), strerror(errno));
+    errh->error("'%s': %s", command.cc(), strerror(errno));
     return 0;
   }
 }
@@ -633,10 +633,10 @@ clickdl_load_package(String package, ErrorHandler *errh)
     return errh->error("package %s", dlerror());
   void *init_sym = dlsym(handle, "init_module");
   if (!init_sym)
-    return errh->error("package `%s' has no `init_module'", package.cc());
+    return errh->error("package '%s' has no 'init_module'", package.cc());
   init_module_func init_func = (init_module_func)init_sym;
   if ((*init_func)() != 0)
-    return errh->error("error initializing package `%s'", package.cc());
+    return errh->error("error initializing package '%s'", package.cc());
   return 0;
 }
 
