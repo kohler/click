@@ -53,13 +53,17 @@ fi
 files=""
 directory_exports=""
 for i in $first_files; do
-  if test -d "${prefix}elements/$i"; then
+  pprefix="$prefix"
+  if test -d "${prefix}elements/$i" -a ! -d "${prefix}$i"; then
+    pprefix="${prefix}elements/"
+  fi
+  if test -d "${pprefix}$i"; then
     if echo "$i" | grep '/'; then
       :
     else
       directory_exports="$i
 $directory_exports"
-      i="${prefix}elements/$i"
+      i="${pprefix}$i"
     fi
   fi
   if test -d $i; then
