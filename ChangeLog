@@ -1,3 +1,19 @@
+2005-02-25 Friday 16:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* LICENSE (1.7), README (1.47): README/LICENSE updates
+
+2005-02-25 Friday 16:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.93), etc/libclick/DISTFILES (1.27),
+	lib/exportstub.cc (1.1), userlevel/Makefile.in (1.86),
+	etc/libclick/lc-libsrc-Makefile.in (1.18): include exportstub:
+	definitions of click_export_elements() and
+	click_unexport_elements(), which applications can override
+
+2005-02-25 Friday 16:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/glue.cc (1.46): nitlet
+
 2005-02-24 Thursday 12:21  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* NEWS (1.158), elements/analysis/ipsumdumpinfo.cc (1.21),
