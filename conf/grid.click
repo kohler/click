@@ -65,10 +65,13 @@ rps :: GridProbeSender(GRID_MAC_ADDR, GRID_IP);
 rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP, lr, geo, fq);
 rpr :: GridProbeReplyReceiver(PROBE_CHANNEL);
 
+ai :: AiroInfo(an0);
+
 nb :: GridRouteTable(ROUTE_TIMEOUT,
 		     BROADCAST_PERIOD, BROADCAST_JITTER,
 		     GRID_MAC_ADDR, GRID_IP, 
-		     ggi,
+		     ggi, 
+                     ai,
 		     MAX_HOPS NUM_HOPS);
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb, li);
