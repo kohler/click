@@ -1,3 +1,31 @@
+2002-07-06 Saturday 15:26  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/: config.cc (1.3), config.cc (1.4): use atomic
+	operations on click_config_generation
+
+2002-07-06 Saturday 14:59  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/: Makefile.in (1.22), clickfs.cc (1.8),
+	clickfs_element.cc (1.3), clickfs_vnops.cc (1.11), config.cc (1.2),
+	module.cc (1.8), modulepriv.hh (1.4), sched.cc (1.4): bsdmodule
+	compile fixes; next: the filesystem
+
+2002-07-06 Saturday 14:45  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/: Makefile.in (1.21), clickfs_vnops.cc (1.10),
+	config.cc (1.1), module.cc (1.7), modulepriv.hh (1.3), sched.cc
+	(1.3): bsdmodule parity with linuxmodule: port file organization
+	and code from recent linuxmodule rewrite
+
+2002-07-06 Saturday 14:43  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/: module.cc (1.70), sched.cc (1.35): cleanup nits
+
+2002-07-06 Saturday 14:42  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/click-mount.c (1.2): remove click-mount; click-install
+	supports bsdmodule now
+
 2002-07-06 Saturday 04:44  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: llrpc.h (1.17), llrpc.h (1.18): add explanatory
