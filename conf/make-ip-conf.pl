@@ -13,16 +13,29 @@
 # Make a Click IP router configuration.
 # The output is only useful with the Linux kernel module.
 
+
+
+# IP router setup for  blackisle -> plebic -> darkstar
+
 # Change this array to suit your router.
 # One line per network interface, containing:
 #  The interface name,
 #  The router's IP address on that interface,
 #  The netmask on that interface, and
 #  The router's Ethernet address on that interface.
-my $ifs = [ [ "eth0", "18.26.4.89", "255.255.255.0", "00:90:27:14:E3:59" ],
-            [ "eth1", "2.0.0.1", "255.0.0.0", "00:00:C0:B4:68:EF" ],
-            [ "eth2", "1.0.0.2", "255.0.0.0", "00:00:C0:8A:67:EF" ],
+
+my $ifs = [ [ "eth0", "18.26.4.92", "255.255.255.0", "00:00:C0:3B:71:EF" ],
+            [ "eth1", "1.0.0.1", "255.0.0.0", "00:00:C0:CA:68:EF" ],
+            [ "eth2", "2.0.0.1", "255.0.0.0", "00:00:C0:8A:67:EF" ],
            ];
+
+if ($#ARGV >= 0) {
+  $ifs = [];
+  for ($i = 0; $i < $ARGV[0]; $i++) {
+    push @$ifs, [ "eth" . $i, "1.0.0.2", "255.0.0.0", "00:00:c0:8a:67:ef" ];
+  }
+}
+
 
 my $nifs = $#$ifs + 1;
 
@@ -51,7 +64,7 @@ c$i :: Classifier(12/0806 20/0001,
                   12/0806 20/0002,
                   12/0800,
                   -);
-FromDevice($eth) -> [0]c$i;
+PollDevice($eth) -> PullToPush -> [0]c$i;
 out$i :: Queue(200) -> ToDevice($eth);
 arpq$i :: ARPQuerier($ip, $ena);
 c$i [1] -> t;
@@ -107,21 +120,6 @@ for($i = 0; $i < $nifs; $i++){
 }
 print "\n";
 
-# Classifier for junking crap ICMP errors (from packets destined for
-# directed broadcast addrs)
-my($icmpjunkarg) = '';
-my($nicmpjunkarg) = 0;
-while ($ipharg =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/g) {
-  $icmpjunkarg .= "44/" . sprintf("%02X%02X%02X%02X", $1, $2, $3, $4) . ",";
-  $nicmpjunkarg++;
-}
-$icmpjunkarg .= "-";
-print "icmpjunk :: Classifier($icmpjunkarg);\nicmpdisc :: Discard;\n";
-for ($i = 0; $i < $nicmpjunkarg; $i++) {
-  print "icmpjunk[$i] -> icmpdisc;\n";
-}
-print "icmpjunk[$nicmpjunkarg] -> [0]rt;\n\n";
-
 for($i = 0; $i < $nifs; $i++){
     my $i1 = $i + 1;
     my $ipa = $ifs->[$i]->[1];
@@ -133,10 +131,10 @@ rt[$i1] -> DropBroadcasts
         -> dt$i :: DecIPTTL
         -> fr$i :: IPFragmenter(1500)
         -> [0]arpq$i;
-dt$i [1] -> ICMPError($ipa, 11, 0) -> icmpjunk;
-fr$i [1] -> ICMPError($ipa, 3, 4) -> icmpjunk;
-gio$i [1] -> ICMPError($ipa, 12, 1) -> icmpjunk;
-cp$i [1] -> ICMPError($ipa, 5, 1) -> icmpjunk;
+dt$i [1] -> ICMPError($ipa, 11, 0) -> [0]rt;
+fr$i [1] -> ICMPError($ipa, 3, 4) -> [0]rt;
+gio$i [1] -> ICMPError($ipa, 12, 1) -> [0]rt;
+cp$i [1] -> ICMPError($ipa, 5, 1) -> [0]rt;
 c$i [3] -> Print(xx$i) -> Discard;
 EOF
 }
@@ -155,3 +153,4 @@ sub i2ip {
     my $d = $i & 0xff;
     return sprintf("%d.%d.%d.%d", $a, $b, $c, $d);
 }
+
