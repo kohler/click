@@ -64,12 +64,11 @@ fi
 dnl look for particular things in G++
 
 AC_CACHE_CHECK(for working new.h, ac_cv_good_new_h,
-  AC_TRY_RUN([#include <new.h>
-int main(int c, char **v) {
+  AC_TRY_LINK([#include <new.h>], [
   int a;
   int *b = new(&a) int;
   return 0;
-}], ac_cv_good_new_h=yes, ac_cv_good_new_h=no, ac_cv_good_new_h=no))
+], ac_cv_good_new_h=yes, ac_cv_good_new_h=no))
 if test "$ac_cv_good_new_h" = yes; then
   AC_DEFINE(HAVE_NEW_H)
 fi
