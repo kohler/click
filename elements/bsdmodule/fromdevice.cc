@@ -35,6 +35,34 @@ static int registered_readers;
 static int from_device_count;
 
 #ifdef HAVE_CLICK_BSD_KERNEL
+#include <net/if_var.h>
+#include <net/ethernet.h>
+
+/*
+ * process incoming packets using the ng_ether_input_p hook
+ */
+extern "C"
+void
+click_ether_input(struct ifnet *ifp,
+                struct mbuf **mp, struct ether_header *eh)
+{
+    struct ifqueue *inq;
+    struct mbuf *m = *mp;
+
+    inq = ifp->if_poll_slowq;
+    if (inq == NULL)	/* not for click... */
+	return ;
+    /* we want to make a full packet in the mbuf */
+    M_PREPEND(m, sizeof(*eh), M_WAIT);
+    bcopy(eh, mtod(m, struct ether_header *), sizeof(*eh));
+    if (IF_QFULL(inq)) {
+	IF_DROP(inq);
+	m_freem(m);
+    } else
+	IF_ENQUEUE(inq, m);
+    *mp = NULL;	// tell ether_input no further processing needed
+}
+
 /*
  * Attach ourselves to the current device's packet-receive hook.
  */

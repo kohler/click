@@ -92,22 +92,15 @@ static int
 clickfs_unmount(struct mount *mp, int mntflags, struct proc *p)
 {
     struct clickfs_mount *cmp = (struct clickfs_mount *)mp->mnt_data;
-    struct vnode *rootvp = cmp->click_root;
     int error;
     int flags = 0;
 
     if (mntflags & MNT_FORCE)
 	flags |= FORCECLOSE;
 
-    if (rootvp->v_usecount > 1)
-	return EBUSY;
-
-    error = vflush(mp, rootvp, flags);
+    error = vflush(mp, 1, flags); // there is 1 extra vnode ref.
     if (error)
 	return error;
-
-    vrele(rootvp);
-    vgone(rootvp);
 
     free(mp->mnt_data, M_TEMP);
     mp->mnt_data = 0;

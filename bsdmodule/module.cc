@@ -249,6 +249,9 @@ extern void export_elements(Lexer *);
 
 static ErrorHandler *syslog_errh;
 
+extern "C" void click_ether_input(struct ifnet *, struct mbuf **, struct ether_header *);
+extern "C" void (*ng_ether_input_p)(struct ifnet *, struct mbuf **, struct ether_header *);
+
 extern "C" int
 init_module()
 {
@@ -269,6 +272,7 @@ init_module()
   export_elements(lexer);
   
   current_router = 0;
+  ng_ether_input_p = click_ether_input;
 
   return 0;
 }
@@ -282,6 +286,8 @@ cleanup_module()
   extern int click_new_count; /* glue.cc */
   extern int click_outstanding_news; /* glue.cc */
 
+  ng_ether_input_p = 0;
+  
   kill_current_router();
 
   cleanup_click_sched();
