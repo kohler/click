@@ -131,7 +131,7 @@ the correct argument to --with-linux.
 fi
     AC_DEFINE(HAVE_WIFI)
     HAVE_WIFI=1
-    TARGETS="$TARGETS wifi"
+dnl TARGETS="$TARGETS wifi"
 else
     HAVE_WIFI=0
 fi
@@ -202,16 +202,18 @@ dnl check whether tools should be built for host or build
 dnl
 
 AC_ARG_ENABLE(tools,
-  [  --enable-tools=WHERE    build tools to run WHERE [[mixed]]],
+  [  --enable-tools=WHERE    enable tools (host/build/mixed/no) [[mixed]]],
   :, enable_tools=mixed)
 
-if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != build; then
+if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != build -a "$enable_tools" != no; then
   AC_MSG_ERROR([
 =========================================
 
-Bad value for --enable-tools! Try 'host', 'build', or 'mixed'.
+Bad value for --enable-tools! Try 'host', 'build', 'mixed', or 'no'.
 
 =========================================])
+elif test "$enable_tools" = no; then
+  HOST_TOOLS=host
 elif test "$cross_compiling" = no -o "$enable_tools" = host; then
   HOST_TOOLS=host
 else
@@ -231,7 +233,7 @@ dnl multithread support?
 dnl
 
 AC_ARG_ENABLE(multithread,
-  [  --enable-multithread[[=NUM]] support kernel multithreading; NUM threads max],
+  [  --enable-multithread[[=NUM]] support kernel multithreading, NUM threads max],
   :, enable_multithread=no)
 
 if test "$enable_multithread" = yes; then
@@ -280,7 +282,7 @@ dnl
 
 AC_CHECK_HEADERS(unistd.h termio.h poll.h netdb.h)
 CLICK_CHECK_DYNAMIC_LINKING
-if test "$HOST_TOOLS" != host; then
+if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
     CLICK_CHECK_BUILD_DYNAMIC_LINKING
 fi
 
@@ -566,6 +568,9 @@ dnl
 TARGETS=
 AC_SUBST(TARGETS)
 
+OTHER_TARGETS=
+AC_SUBST(OTHER_TARGETS)
+
 for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform click2xml; do
     test -d $srcdir/tools/$i &&	\
       TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
@@ -577,10 +582,8 @@ AC_SUBST(TOOLDIRS)
 AC_SUBST(TOOL_TARGETS)
 
 
-dnl
 dnl pcap library
 dnl note: no longer need pcap under Linux
-dnl
 
 if test "$enable_userlevel" = yes; then
     CLICK_CHECK_LIBPCAP
@@ -597,9 +600,7 @@ pcap.h and/or -lpcap not found; user-level driver can't steal packets
 fi
 
 
-dnl
 dnl expat library
-dnl
 
 explicit_expat=yes
 AC_ARG_WITH(expat, [  --with-expat[[=PREFIX]]   Prefix where expat library is installed (optional)],
@@ -744,6 +745,13 @@ dnl check ns
 
 if test "x$enable_nsclick" = xyes; then
   TARGETS="$TARGETS ns"
+fi
+
+
+dnl check tools
+
+if test "x$enable_tools" != xno; then
+  OTHER_TARGETS="$OTHER_TARGETS tools"
 fi
 
 

@@ -308,7 +308,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir HAVE_WIFI freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS element_groups elements_vpath HAVE_CLICKFS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir HAVE_WIFI freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS element_groups elements_vpath HAVE_CLICKFS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -860,8 +860,8 @@ Optional Features:
   --disable-linuxmodule   disable Linux kernel driver
   --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)
   --enable-nsclick        enable NS simulator driver (EXPERIMENTAL)
-  --enable-tools=WHERE    build tools to run WHERE [mixed]
-  --enable-multithread[=NUM] support kernel multithreading; NUM threads max
+  --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
+  --enable-multithread[=NUM] support kernel multithreading, NUM threads max
   --disable-int64         disable 64-bit integer support
   --disable-standard      do not include standard elements
   --disable-ethernet      do not include Ethernet elements
@@ -4015,7 +4015,6 @@ fi
 _ACEOF
 
     HAVE_WIFI=1
-    TARGETS="$TARGETS wifi"
 else
     HAVE_WIFI=0
 fi
@@ -4149,20 +4148,22 @@ else
   enable_tools=mixed
 fi;
 
-if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != build; then
+if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" != build -a "$enable_tools" != no; then
   { { echo "$as_me:$LINENO: error:
 =========================================
 
-Bad value for --enable-tools! Try 'host', 'build', or 'mixed'.
+Bad value for --enable-tools! Try 'host', 'build', 'mixed', or 'no'.
 
 =========================================" >&5
 echo "$as_me: error:
 =========================================
 
-Bad value for --enable-tools! Try 'host', 'build', or 'mixed'.
+Bad value for --enable-tools! Try 'host', 'build', 'mixed', or 'no'.
 
 =========================================" >&2;}
    { (exit 1); exit 1; }; }
+elif test "$enable_tools" = no; then
+  HOST_TOOLS=host
 elif test "$cross_compiling" = no -o "$enable_tools" = host; then
   HOST_TOOLS=host
 else
@@ -6127,7 +6128,7 @@ if test "${ac_cv_endian+set}" = set; then
 else
   	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6130 "configure"
+#line 6131 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -6887,7 +6888,7 @@ echo $ECHO_N "checking compiler flags for building loadable modules... $ECHO_C" 
 echo "${ECHO_T}$LDMODULEFLAGS" >&6
 
 
-if test "$HOST_TOOLS" != host; then
+if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
 
     saver="CXX='$CXX' CXXCPP='$CXXCPP' ac_cv_header_dlfcn_h='$ac_cv_header_dlfcn_h' ac_cv_func_dlopen='$ac_cv_func_dlopen' ac_cv_lib_dl_dlopen='$ac_cv_lib_dl_dlopen'"
     CXX="$BUILD_CXX"; CXXCPP="$BUILD_CXX -E"
@@ -9244,6 +9245,9 @@ done
 TARGETS=
 
 
+OTHER_TARGETS=
+
+
 for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform click2xml; do
     test -d $srcdir/tools/$i &&	\
       TOOLDIRS="$TOOLDIRS $i" TOOL_TARGETS="$TOOL_TARGETS $i"
@@ -10133,6 +10137,12 @@ fi
 
 if test "x$enable_nsclick" = xyes; then
   TARGETS="$TARGETS ns"
+fi
+
+
+
+if test "x$enable_tools" != xno; then
+  OTHER_TARGETS="$OTHER_TARGETS tools"
 fi
 
 
@@ -11280,6 +11290,7 @@ s,@EXTRA_DRIVER_OBJS@,$EXTRA_DRIVER_OBJS,;t t
 s,@EXTRA_TOOL_OBJS@,$EXTRA_TOOL_OBJS,;t t
 s,@POSSIBLE_TARGETS@,$POSSIBLE_TARGETS,;t t
 s,@TARGETS@,$TARGETS,;t t
+s,@OTHER_TARGETS@,$OTHER_TARGETS,;t t
 s,@TOOLDIRS@,$TOOLDIRS,;t t
 s,@TOOL_TARGETS@,$TOOL_TARGETS,;t t
 s,@PCAP_INCLUDES@,$PCAP_INCLUDES,;t t

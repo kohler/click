@@ -35,7 +35,11 @@ bindir = @bindir@
 datadir = @datadir@
 clickdatadir = $(datadir)/click
 
-all: @TARGETS@ tools Makefile
+TARGETS = @TARGETS@
+OTHER_TARGETS = @OTHER_TARGETS@
+ALL_TARGETS = $(TARGETS) $(OTHER_TARGETS)
+
+all: $(ALL_TARGETS) Makefile
 
 bsdmodule: Makefile stamp-h
 	@cd bsdmodule && $(MAKE) all
@@ -51,7 +55,7 @@ tools: Makefile
 	@cd tools && $(MAKE) all
 
 install: click-compile stamp-h
-	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
+	@for d in $(ALL_TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-local-include
 install-local: elementmap.xml $(srcdir)/click-buildtool click-compile
 	$(mkinstalldirs) $(bindir)
@@ -68,7 +72,7 @@ install-doc:
 install-info:
 	@cd doc && $(MAKE) install-info
 install-man:
-	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
+	@-for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) install-man); done
 install-local-include: stamp-h
 	$(mkinstalldirs) $(clickincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(clickincludedir)
@@ -83,7 +87,7 @@ install-include: install-local-include
 	@cd tools && $(MAKE) install-include
 
 uninstall:
-	@for d in @TARGETS@ doc tools; do (cd $$d && $(MAKE) uninstall) || exit 1; done
+	@for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) uninstall) || exit 1; done
 	@$(MAKE) uninstall-local uninstall-local-include
 uninstall-local:
 	/bin/rm -f $(bindir)/click-buildtool $(bindir)/click-compile $(bindir)/click-mkelemmap $(clickdatadir)/elementmap.xml $(clickdatadir)/srcdir $(clickdatadir)/src
@@ -94,11 +98,11 @@ uninstall-local-include:
 	cd $(srcdir)/include/clicknet; for i in *.h; do /bin/rm -f $(netincludedir)/$$i; done
 
 elemlist elemlists:
-	@for d in @TARGETS@; do (cd $$d && $(MAKE) elemlist) || exit 1; done
+	@for d in $(TARGETS); do (cd $$d && $(MAKE) elemlist) || exit 1; done
 
 MKELEMMAPFLAGS =
 elementmap.xml: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@ @TARGETS@ $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "$(PROVISIONS) @TARGETS@" | $(PERL) ./click-mkelemmap -r "$(PROVISIONS) $$t" -Iinclude $(MKELEMMAPFLAGS)) > elementmap.xml
+	t="@element_groups@ $(TARGETS) $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "$(PROVISIONS) $(TARGETS)" | $(PERL) ./click-mkelemmap -r "$(PROVISIONS) $$t" -Iinclude $(MKELEMMAPFLAGS)) > elementmap.xml
 always:
 	@:
 
