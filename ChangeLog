@@ -1,3 +1,67 @@
+2001-03-21 Wednesday 19:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in, etc/samplepackage/Makefile.in,
+	linuxmodule/Makefile.in: added cross-compiling support for ld and
+	strip
+
+2001-03-21 Wednesday 19:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES, doc/Connection.3, doc/Element.3, doc/Makefile.in:
+	removed Element.3 and Connection.3 manual pages; they are obsolete
+
+2001-03-21 Wednesday 19:16  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/sched.cc: better console messages
+
+2001-03-21 Wednesday 19:16  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/router.cc: changed the "ports" handler: agnostic ports are
+	reported as "push-" or "pull-", not "(push)" or "(pull)"; and
+	connected ports are comma-separated. Also adapt to Element
+	interface changes
+
+2001-03-21 Wednesday 19:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipfilter.cc, elements/ip/lookupiproutelinux.cc,
+	elements/ip/lookupiproutelinux.hh,
+	elements/linuxmodule/anydevice.cc,
+	elements/linuxmodule/anydevice.hh,
+	elements/linuxmodule/fromdevice.cc,
+	elements/linuxmodule/fromdevice.hh,
+	elements/linuxmodule/fromlinux.cc, elements/linuxmodule/tolinux.hh,
+	elements/linuxmodule/tolinuxsniffers.hh,
+	elements/linuxmodule/tulipstats.cc,
+	elements/linuxmodule/tulipstats.hh, elements/local/webgen.cc,
+	elements/standard/checklength.cc, elements/standard/checkpaint.cc,
+	elements/standard/classifier.cc, elements/standard/red.cc,
+	tools/click-devirtualize/cxxclass.cc,
+	tools/click-devirtualize/specializer.cc: in Element, renamed
+	checked_push_output to check_output_push, because the normal case
+	is output(...).push(...), not push(...).output(...). Adapt to this
+	change, and to the "net_device" change
+
+2001-03-21 Wednesday 19:13  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/packet.hh, lib/packet.cc: use "net_device", not
+	"struct device", for Linux 2.4 compatibility
+
+2001-03-21 Wednesday 19:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/glue.hh: provide a definition for "net_device", for
+	better Linux 2.4 compatibility; fix CLICK_DMALLOC_REG definition;
+	rename StaticAssert to static_assert
+
+2001-03-21 Wednesday 19:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, lib/element.cc: rename Connection to
+	Port; prevent set_ninputs()/set_noutputs()/etc. from working once
+	an element has been initialized; header file rearrangement for
+	readability
+
+2001-03-21 Wednesday 19:10  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: updates
+
 2001-03-20 Tuesday 20:13  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click.texi: doc updates, particularly flow_code and Element
