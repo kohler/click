@@ -1,3 +1,7 @@
+2004-02-07 Saturday 15:17  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/fromdump.cc (1.86): FromFile nit
+
 2004-02-05 Thursday 17:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsr.hh (1.2), elements/grid/dsrarptable.cc (1.7),
