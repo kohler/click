@@ -1,3 +1,9 @@
+2003-06-05 Thursday 21:40  Eddie Kohler <kohler@icir.org>
+
+	* include/click/bighashmap.hh (1.19): remove risky "Pair *pair()"
+	methods from non-const iterators (changing "key" would suck), and
+	fix a buglet
+
 2003-06-05 Thursday 15:13  Eddie Kohler <kohler@icir.org>
 
 	* include/click/router.hh (1.47), linuxmodule/clickfs.cc (1.33),
