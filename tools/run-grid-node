@@ -14,7 +14,7 @@ $click_config_name = "/grid.click";
 $clickdir = "..";
 $clickconfdir = "../conf";
 
-$grid_channel = "5";
+$grid_channel = "6";
 $grid_ssid = "grid";
 $radio_type = "wavelan";
 
@@ -23,7 +23,7 @@ $CONTROL_RO = "false";
 
 # XXX bogus static loc DB for manually deployed nodes
 $LOC_DB = "18.26.7.1 .0006 .00005, 18.26.7.6  .0006   .00005, 18.26.7.7  .0004   .0002, 18.26.7.8  .0005   .0002, 18.26.7.9  .0002   .00007, 18.26.7.10 .0007   0, 18.26.7.11 .0003   .00003";
-$HEADROOM = "44"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
+$HEADROOM = "64"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
 $NUM_HOPS = "10";
 $POS_LAT = "0";
 $POS_LON = "0";
@@ -259,9 +259,9 @@ if ($system_type =~ /Linux/) {
 	my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
     }
     elsif ($radio_type eq "aironet") {
-	my_system "echo \"Mode: adhoc\" > /proc/aironet/$grid_if/Config";
-	my_system "echo \"Channel: $grid_channel\" > /proc/aironet/$grid_if/Config";
-	my_system "echo \"$grid_ssid\" > /proc/aironet/$grid_if/SSID";
+	# my_system "echo \"Mode: adhoc\" > /proc/aironet/$grid_if/Config";
+	# my_system "echo \"Channel: $grid_channel\" > /proc/aironet/$grid_if/Config";
+	# my_system "echo \"$grid_ssid\" > /proc/aironet/$grid_if/SSID";
     }
     else {
 	print stderr "Radio type $radio_type is not supported\n";

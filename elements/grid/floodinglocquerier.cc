@@ -138,7 +138,7 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
   gh->total_len = htons(q->length() - sizeof(click_ether));
 
   fq->dst_ip = want_ip;
-  fq->seq_no = _loc_queries;
+  fq->seq_no = htonl(_loc_queries);
 
   // make sure we never propagate our own queries!
   _query_seqs.insert(_my_ip, _loc_queries);
@@ -162,6 +162,10 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
 {
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
+
+#if 1
+  click_chatter("%s: got packet for %s", id().cc(), IPAddress(nb->dst_ip).s().cc());
+#endif
 
   // see if packet has location info in it already
   if (nb->dst_loc_good) {
