@@ -63,7 +63,7 @@ extern "C" {
 
 extern uint32_t click_random_seed;
 
-__inline__ uint32_t
+inline uint32_t
 random()
 {
   click_random_seed = click_random_seed*69069L + 1;
@@ -72,7 +72,7 @@ random()
 
 extern void srandom(uint32_t);
 
-__inline__ uint64_t
+inline uint64_t
 click_get_cycles()
 {
 # if __i386__
@@ -91,7 +91,7 @@ click_get_cycles()
 
 long strtol(const char *, char **, int);
 
-__inline__ unsigned long
+inline unsigned long
 strtoul(const char *nptr, char **endptr, int base)
 {
   return simple_strtoul(nptr, endptr, base);
@@ -176,7 +176,7 @@ typedef struct ifnet net_device;
 # include <netinet/in.h>
 # include <sys/time.h>
 
-__inline__ unsigned long long
+inline unsigned long long
 click_get_cycles()
 {
   return(0);
