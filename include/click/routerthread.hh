@@ -34,6 +34,7 @@ class RouterThread : public Task { public:
   Router *_router;
   int _id;
 
+  Spinlock _lock;
   uatomic32_t _task_lock_waiting;
   uatomic32_t _pending;
 

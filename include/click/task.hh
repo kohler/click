@@ -106,14 +106,14 @@ class Task { public:
   unsigned _pending;
   Task *_pending_next;
 
-  Spinlock _lock;
-
   Task(const Task &);
   Task &operator=(const Task &);
 
   void add_pending(int);
   void process_pending(RouterThread *);
   void fast_schedule();
+  inline void lock_tasks();
+  inline bool attempt_lock_tasks();
 
   static void error_hook(Task *, void *);
   
@@ -130,7 +130,11 @@ class TaskList : public Task { public:
 
   void lock();
   void unlock();
+
+ private:
   
+  Spinlock _lock;
+
 };
 
 

@@ -23,7 +23,8 @@
 #include <click/routerthread.hh>
 CLICK_DECLS
 
-// - Access to _thread is protected by _lock and _thread->lock.
+// - Changes to _thread are protected by _thread->lock.
+// - Changes to _thread_preference are protected by _all_list->lock.
 // - If _pending is nonzero, then _pending_next is nonnull.
 // - Either _thread_preference == _thread->thread_id(), or
 //   _thread->thread_id() == -1.
@@ -87,6 +88,30 @@ Task::cleanup()
   }
 }
 
+inline void
+Task::lock_tasks()
+{
+  while (1) {
+    RouterThread *t = _thread;
+    t->lock_tasks();
+    if (t == _thread)
+      return;
+    t->unlock_tasks();
+  }
+}
+
+inline bool
+Task::attempt_lock_tasks()
+{
+  RouterThread *t = _thread;
+  if (t->attempt_lock_tasks()) {
+    if (t == _thread)
+      return true;
+    t->unlock_tasks();
+  }
+  return false;
+}
+
 void
 Task::add_pending(int p)
 {
@@ -108,32 +133,24 @@ Task::unschedule()
   // seems more reliable, since some people depend on unschedule() ensuring
   // that the task is not scheduled any more, no way, no how. Possible
   // problem: calling unschedule() from run_scheduled() will hang!
-  _lock.acquire();
-  
   if (_thread) {
-    _thread->lock_tasks();
+    lock_tasks();
     fast_unschedule();
     _pending &= ~RESCHEDULE;
     _thread->unlock_tasks();
   }
-  
-  _lock.release();
 }
 
 void
 Task::reschedule()
 {
-  _lock.acquire();
-  
   assert(_thread);
-  if (_thread->attempt_lock_tasks()) {
+  if (attempt_lock_tasks()) {
     if (!scheduled())
       fast_schedule();
     _thread->unlock_tasks();
   } else
     add_pending(RESCHEDULE);
-  
-  _lock.release();
 }
 
 void
@@ -141,73 +158,57 @@ Task::strong_unschedule()
 {
   // unschedule() and move to the quiescent thread, so that subsequent
   // reschedule()s won't have any effect
-  _lock.acquire();
-  
-  if (RouterThread *old_thread = _thread) {
-    old_thread->lock_tasks();
+  if (_thread) {
+    lock_tasks();
     fast_unschedule();
-    _thread = old_thread->router()->thread(-1);
+    RouterThread *old_thread = _thread;
     _pending &= ~(RESCHEDULE | CHANGE_THREAD);
+    _thread = old_thread->router()->thread(-1);
     old_thread->unlock_tasks();
   }
-  
-  _lock.release();
 }
 
 void
 Task::strong_reschedule()
 {
-  _lock.acquire();
-  
   assert(_thread);
-  RouterThread *old_thread = _thread;
-  old_thread->lock_tasks();
+  lock_tasks();
   fast_unschedule();
+  RouterThread *old_thread = _thread;
   _thread = old_thread->router()->thread(_thread_preference);
   add_pending(RESCHEDULE);
   old_thread->unlock_tasks();
-  
-  _lock.release();
 }
 
 void
 Task::change_thread(int new_preference)
 {
-  _lock.acquire();
-
-  assert(_thread);
-  RouterThread *old_thread = _thread;
   Router *router = _thread->router();
-  int old_preference = _thread_preference;
   _thread_preference = new_preference;
   if (_thread_preference < 0 || _thread_preference >= router->nthreads())
     _thread_preference = -1;	// quiescent thread
 
-  if (_thread_preference == old_preference
-      || old_preference != old_thread->thread_id())
-    /* nothing to do */;
-  else if (old_thread->attempt_lock_tasks()) {
-    // see also process_pending() below
-    if (scheduled()) {
-      fast_unschedule();
-      _pending |= RESCHEDULE;
-    }
-    _thread = router->thread(_thread_preference);
-    old_thread->unlock_tasks();
+  if (attempt_lock_tasks()) {
+    RouterThread *old_thread = _thread;
+    if (_thread_preference != old_thread->thread_id()) {
+      if (scheduled()) {
+	fast_unschedule();
+	_pending |= RESCHEDULE;
+      }
+      _thread = router->thread(_thread_preference);
+      old_thread->unlock_tasks();
+      add_pending(0);
+    } else
+      old_thread->unlock_tasks();
   } else
-    _pending |= CHANGE_THREAD;
-
-  if (_pending)
-    add_pending(0);
-
-  _lock.release();
+    add_pending(CHANGE_THREAD);
 }
 
 void
 Task::process_pending(RouterThread *thread)
 {
-  _lock.acquire();
-
+  // must be called with thread->lock held
+  
   if (_thread == thread) {
     if (_pending & CHANGE_THREAD) {
       // see also change_thread() above
@@ -226,8 +227,6 @@ Task::process_pending(RouterThread *thread)
 
   if (_pending)
     add_pending(0);
-
-  _lock.release();
 }
 
 TaskList::TaskList()
