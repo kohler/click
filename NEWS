@@ -1,5 +1,100 @@
 Click NEWS
 
+Version 1.2.3
+
+* General
+
+** General configuration cleanup: Split config.h into multiple files to
+   reduce needless recompilation; regularize symbols.
+
+** Task improvements should make everything a bit more robust. For example,
+   Task::unschedule() always unschedules the task right away; it grabs a
+   lock.
+
+* Elements
+
+** Added a collection of analysis-related elements; give
+   `--enable-analysis' to ./configure. Elements include FromIPSummaryDump
+   and ToIPSummaryDump (read and write ASCII summary files; see
+   http://www.aciri.org/kohler/ipsumdump/), FromNetFlowSummaryDump (read
+   ASCII NetFlow summary files), AnonymizeIPAddr (anonymize IP addresses
+   while preserving prefixes), MergeByTimestamp (merge multiple time-sorted
+   packet streams into a single time-sorted stream), TimeFilter (select
+   packets by timestamp), and TimeRange (monitors packet timestamps).
+
+** New elements: StripToNetworkHeader, ProgressBar (prints an ultra-cool
+   progress bar to standard error), etc.
+
+** CheckIPHeader and friends set the destination IP address annotation from
+   the IP header's destination address.
+
+** IPClassifier/IPFilter supports more >/>=/</<= comparisons, and gives
+   better error messages on comparisons it does not support.
+
+** RED handles long quiescent periods better. As a result, Queue and
+   friends could remove their annoying _empty_jiffies member. Also, RED
+   uses the Gentle variant recommended by the RED gods.
+
+** Added AdaptiveRED element, by Jitendra Padhye <padhye@aciri.org>.
+
+** FromDump can read from gzipped or bzipped tcpdump files.
+
+** Deprecate RandomLossage and ProbSplitter elements in favor of new
+   RandomSample element.
+
+** Deprecate PeekHandlers in favor of PokeHandlers, whose syntax has been
+   extended. The new PokeHandlers is incompatible with old PokeHandlers
+   configuration strings.
+
+** Bug fixes in ARPQuerier, FromDevice, ToDevice, FromDump,
+   ICMPPingResponder, ControlSocket, DriverManager, IPRewriter and friends,
+   Grid elements, Classifier.
+
+** Added functionality to FromDevice, FromDump, Shaper, BandwidthShaper,
+   PokeHandlers, DriverManager, Grid elements, Counter.
+
+* Configuration parsing
+
+** Configuration arguments that represent time can take suffixes like "h"
+   for hours and "m" for minutes, as well as "s" for seconds, "ms" for
+   milliseconds, and so forth.
+
+** Bug fixes in cp_real unparsing.
+
+** Add cp_double() and cpDouble, available only at user level.
+
+** Fix static binding errors in configuration language. Also, configuration
+   language supports `${VAR-DEFAULT}' variable reference syntax, which uses
+   the text `DEFAULT' if `$VAR' is not set.
+
+* Drivers
+
+** Linux kernel module: Rename Click kernel threads to "kclick".
+
+** User-level driver: Add `-e' option.
+
+** Various Linux 2.4 improvements.
+
+** BSD driver is coming along nicely. Thanks to Luigi Rizzo, many of the
+   improvements in the Click kernel patch have been checked in to the
+   latest FreeBSD source! Bug fixes: can handle chained mbufs, etc.
+
+** Better support for cross-compiling tools, via the `--enable-tools'
+   configuration switch.
+
+** Linux kernel module: Bug fixes, from Mazu, for dynamic installation and
+   removal of devices.
+
+* Grid
+
+** ???
+
+* Acknowledgements
+
+** Thanks to the usual suspects (AUTHORS), and to Geir <kp13@gmx.co.uk>,
+   Luigi Rizzo <rizzo@aciri.org>, and Atanu Ghosh <atanu@aciri.org>.
+
+
 Version 1.2.2   1.Sep.2001
 
 * General
