@@ -60,6 +60,7 @@ LinkTable::add_handlers() {
   add_read_handler("routes", static_print_routes, 0);
   add_read_handler("links", static_print_links, 0);
   add_read_handler("hosts", static_print_hosts, 0);
+  add_read_handler("neighbors", static_print_neighbors, 0);
   add_write_handler("clear", static_clear, 0);
 }
 
@@ -87,7 +88,7 @@ LinkTable::clear()
 
 }
 void 
-LinkTable::update_link(IPPair p, u_short metric, timeval now) 
+LinkTable::update_link(IPPair p, u_short metric, unsigned int now)
 {
   /* make sure both the hosts exist */
   HostInfo *hnfo_a = _hosts.findp(p._a);
@@ -114,7 +115,25 @@ LinkTable::update_link(IPPair p, u_short metric, timeval now)
   
 }
 
-
+Vector<IPAddress> 
+LinkTable::get_hosts()
+{
+  Vector<IPAddress> v;
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    HostInfo n = iter.value();
+    v.push_back(n._ip);
+  }
+  return v;
+}
+u_short 
+LinkTable::get_host_metric(IPAddress s)
+{
+  HostInfo *nfo = _hosts.findp(s);
+  if (!nfo) {
+    return 9999;
+  }
+  return nfo->_metric;
+}
 
 u_short 
 LinkTable::get_hop_metric(IPPair p) 
@@ -163,37 +182,46 @@ LinkTable::best_route(IPAddress dst)
   return route;
 }
 
-IPAddress
-LinkTable::extract_min()
+String
+LinkTable::static_print_neighbors(Element *e, void *)
 {
-
-  IPAddress min = IPAddress(0);
-  u_short min_metric = 9999;
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    HostInfo nfo = iter.value();
-    if (!nfo._marked && nfo._metric < min_metric) {
-      min = nfo._ip;
-      min_metric = nfo._metric;
-    }
-  }
-  return min;
+  LinkTable *n = (LinkTable *) e;
+  return n->print_neighbors();
 }
+String 
+LinkTable::print_neighbors() 
+{
+  StringAccum sa;
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    HostInfo n = iter.value();
 
+    sa << "neighbors: " << n._ip.s().cc() << ":";
+    for (IPTable::iterator iter = n._neighbors.begin(); iter; iter++) {
+      sa << " " << iter.value().s().cc() << " ";
+    }
+    sa << "\n";
+  }
+  return sa.take_string();
+}
 String
 LinkTable::static_print_links(Element *e, void *)
 {
   LinkTable *n = (LinkTable *) e;
   return n->print_links();
+
+
 }
 
 String 
 LinkTable::print_links() 
 {
   StringAccum sa;
+  unsigned int now = click_jiffies();
   for (LTIter iter = _links.begin(); iter; iter++) {
     LinkInfo n = iter.value();
+    sa << "link: ";
     sa << n._p._a.s().cc() << " " << n._p._b.s().cc() << " : ";
-    sa << n._metric << " " << " " << n._last_updated << "\n";
+    sa << n._metric << " " << " " << (now - n._last_updated)/100 << "\n";
   }
   return sa.take_string();
 }
@@ -214,7 +242,7 @@ LinkTable::print_routes()
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
     Vector <IPAddress> r = best_route(n._ip);
-    sa << n._ip.s().cc() << " : ";
+    sa << "route: " << n._ip.s().cc() << " : ";
     for (int i = 0; i < r.size(); i++) {
       sa << " " << r[i] << " ";
       if (i != r.size()-1) {
@@ -233,7 +261,7 @@ String
 LinkTable::static_print_hosts(Element *e, void *)
 {
   LinkTable *n = (LinkTable *) e;
-  return n->print_links();
+  return n->print_hosts();
 }
 
 String 
@@ -242,10 +270,28 @@ LinkTable::print_hosts()
   StringAccum sa;
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
-    sa << n._ip.s().cc() << "\n";
+    sa << "host: " << n._ip.s().cc() << "\n";
   }
   return sa.take_string();
 }
+
+IPAddress
+LinkTable::extract_min()
+{
+
+  IPAddress min = IPAddress(0);
+  u_short min_metric = 9999;
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    HostInfo nfo = iter.value();
+    if (!nfo._marked && nfo._metric < min_metric) {
+      min = nfo._ip;
+      min_metric = nfo._metric;
+    }
+  }
+  return min;
+}
+
+
 
 void
 LinkTable::dijkstra(IPAddress src) 
@@ -254,8 +300,7 @@ LinkTable::dijkstra(IPAddress src)
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     HostInfo n = iter.value();
     n.clear();
-    n._metric = 9999;
-    n._prev = IPAddress(0);
+    _hosts.insert(n._ip, n);
   }
   
   HostInfo *root_info = _hosts.findp(src);
@@ -269,7 +314,6 @@ LinkTable::dijkstra(IPAddress src)
 
   while (current_min_ip != IPAddress(0)) {
     HostInfo *current_min = _hosts.findp(current_min_ip);
-
     lt_assert(current_min);
 
     current_min->_marked = true;
@@ -286,6 +330,7 @@ LinkTable::dijkstra(IPAddress src)
 	  neighbor->_metric = current_min->_metric + lnfo->_metric;
 	  neighbor->_prev = current_min_ip;
 	} 
+      } else {
       }
     }
 

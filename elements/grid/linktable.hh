@@ -30,14 +30,13 @@ public:
   bool contains(IPAddress foo) {
     return ((foo == _a) || (foo == _b));
   }
-  bool other(IPAddress foo) { return ((_a == foo) ? _a : _b); }
+  bool other(IPAddress foo) { return ((_a == foo) ? _b : _a); }
 
 
   inline bool
   operator==(IPPair other)
   {
-    return (other.contains(other._a) && other.contains(other._b) && 
-	    contains(other._a) && contains(other._b));
+    return (other._a == _a && other._b == _b);
   }
 
 };
@@ -70,34 +69,36 @@ public:
   String print_links();
   static String static_print_hosts(Element *e, void *);
   String print_hosts();
+  static String static_print_neighbors(Element *e, void *);
+  String print_neighbors();
   static int static_clear(const String &arg, Element *e,
 			  void *, ErrorHandler *errh); 
   void clear();
 
   /* other public functions */
-  void update_link(IPPair p, u_short metric, timeval now);
+  void update_link(IPPair p, u_short metric, unsigned int now);
   u_short get_hop_metric(IPPair p);
   u_short get_route_metric(Vector<IPAddress> route, int size);
   void dijkstra(IPAddress src);
   Vector<IPAddress> best_route(IPAddress dst);
-
-
+  u_short get_host_metric(IPAddress s);
+  Vector<IPAddress> get_hosts();
 private: 
   class LinkInfo {
   public:
     IPPair _p;
     u_short _metric;
-    timeval _last_updated;
-    LinkInfo() { _p = IPPair();  _metric = 9999;  _last_updated.tv_sec = 0; }
+    unsigned int _last_updated;
+    LinkInfo() { _p = IPPair();  _metric = 9999;  _last_updated = 0; }
     
-    LinkInfo(IPPair p, u_short metric, timeval now)
+    LinkInfo(IPPair p, u_short metric, unsigned int now)
     { 
       _metric = metric;
       _p = IPPair(p._a, p._b);
       _last_updated = now;  
     }
     
-    void update(u_short metric, timeval now) { _metric = metric; _last_updated = now; }
+    void update(u_short metric, unsigned int now) { _metric = metric; _last_updated = now; }
     bool contains(IPAddress foo) { return _p.contains(foo); }
     IPPair get_pair() { return _p; }
   };

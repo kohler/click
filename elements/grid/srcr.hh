@@ -6,6 +6,7 @@
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <click/vector.hh>
+#include <click/hashmap.hh>
 #include "linktable.hh"
 CLICK_DECLS
 
@@ -21,26 +22,11 @@ CLICK_DECLS
  * Test script in ~rtm/scripts/srcr.pl
  *
  * To Do:
+ * How do we know when to re-query? 
  * Delete or re-check old routes? (Maybe not, maybe wait for failure.)
  * Work sensibly with multiple network interfaces.
  * Save the packet we're querying for, like ARP does.
  * Signal broken links &c.
- * Reliability of the unicast REPLY would be a serious problem
- *   were it not for 802.11 ACK.
- * How to use a metric effectively?
- *   1) Let any better new route through.
- *   2) Stall every query long enough to hear from all neighbors.
- *      Has trouble with longer hop-count paths.
- *   3) Unicast to neighbors in order of link quality.
- *   4) Stall every query proportional to link quality from
- *      neighbor we heard it from.
- * Two distinct issues: A) how to make sure we deliver the best
- *   query+route, and B) how to avoid forwarding an exponential
- *   number of queries.
- * Accumulate current path quality in each packet, re-query if it's
- *   too much worse that original quality.
- * Be aware if path to some other destination reveals potentially
- *   useful better links.
  * If you learn about multiple disjoint paths, use them for multi-path
  *   routing. May need to know about link speed to reason correctly
  *   about links shared by two paths.
@@ -53,21 +39,6 @@ CLICK_DECLS
  *   Very common to end up with one direction sub-optimal e.g.
  *     [m=430 1.0.0.26 1.0.0.18 1.0.0.19 1.0.0.37]
  *     [m=273 1.0.0.37 1.0.0.28 1.0.0.26]
-=e
-kt :: KernelTun(1.0.0.1/24);
-ls :: LinkStat(ETH 00:20:e0:8b:5d:d6, IP 1.0.0.1);
-dsr :: SRCR(1.0.0.1, 00:20:e0:8b:5d:d6, 0x0807, LS ls);
-fd :: FromDevice(wi0, 0);
-td :: ToDevice(wi0);
-kt -> icl :: Classifier(12/080045, -);
-icl[0] -> Strip(14) -> [0]dsr;
-icl[1] -> [0]dsr;
-dsr[0] -> CheckIPHeader -> kt;
-fd -> ncl :: Classifier(12/0807, 12/7fff);
-ncl[0] -> [1]dsr;
-dsr[1] -> td;
-ncl[1] -> ls;
-ls -> td;
  */
 
 
@@ -81,10 +52,10 @@ enum SRCRPacketFlags { PF_BETTER = 1 };
 
 // Packet format.
 struct sr_pkt {
-  uint8_t	ether_dhost[6];
-  uint8_t	ether_shost[6];
-  uint16_t	ether_type;
-  
+  uint8_t       ether_dhost[6];
+  uint8_t       ether_shost[6];
+  uint16_t      ether_type;
+
   u_char _type;  // PacketType
   u_char _flags; // PacketFlags
   
@@ -117,14 +88,25 @@ struct sr_pkt {
   u_short num_hops() {
     return ntohs(_nhops);
   }
-  
-  /* yes, I'm that nasty */
+
+  u_short next() {
+    return ntohs(_next);
+  }
+
+  void set_next(u_short n) {
+    _next = htons(n);
+  }
+
+  void set_num_hops(u_short n) {
+    _nhops = htons(n);
+  }
+
   in_addr get_hop(int h) { 
     in_addr *ndx = (in_addr *) (ether_dhost + sizeof(struct sr_pkt));
     return ndx[h];
   }
   u_short get_metric(int h) { 
-    u_short *ndx = (u_short *) (ether_dhost + sizeof(struct sr_pkt) + _nhops * sizeof(in_addr));
+    u_short *ndx = (u_short *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
     return ntohs(ndx[h]);
   }
   
@@ -133,11 +115,12 @@ struct sr_pkt {
     ndx[hop] = s;
   }
   void set_metric(int hop, u_short s) { 
-    u_short *ndx = (u_short *) (ether_dhost + sizeof(struct sr_pkt) + _nhops * sizeof(in_addr));
+    u_short *ndx = (u_short *) (ether_dhost + sizeof(struct sr_pkt) + num_hops() * sizeof(in_addr));
     ndx[hop] = htons(s);
   }
   
-  u_char *data() { return ether_dhost + len_wo_data(_nhops); }
+  /* remember that if you call this you must have set the number of hops in this packet! */
+  u_char *data() { return (ether_dhost + len_wo_data(num_hops())); }
   String s();
 };
 
@@ -163,6 +146,8 @@ class SRCR : public Element {
 
   static String static_print_stats(Element *e, void *);
   String print_stats();
+  static String static_print_arp(Element *e, void *);
+  String print_arp();
 
 
   void push(int, Packet *);
@@ -170,9 +155,13 @@ class SRCR : public Element {
 
 
 
-  static timeval get_timeval(void);
-  static timeval add_millisec(timeval t, int milli);
-  static bool timeval_past(timeval a, timeval b); // return if a is past b
+  static unsigned int jiff_to_ms(unsigned int j)
+  { return (j * 1000) / CLICK_HZ; }
+
+  static unsigned int ms_to_jiff(unsigned int m)
+  { return (CLICK_HZ * m) / 1000; }
+
+
   static String SRCR::route_to_string(Vector<IPAddress> s);
   // Statistics for handlers.
   int _queries;
@@ -185,30 +174,36 @@ class SRCR : public Element {
 private:
   int MaxSeen;   // Max size of table of already-seen queries.
   int MaxHops;   // Max hop count for queries.
-  int QueryInterval; // Don't re-query a dead dst too often.
-  int QueryLife; // Forget already-seen queries this often.
-  int ARPLife;   // ARP cache timeout.
+
+
+  /* these are all in ms */
+  unsigned int QueryInterval; // Don't re-query a dead dst too often.
+  unsigned int QueryLife; // Forget already-seen queries this often.
+  unsigned int ARPLife;   // ARP cache timeout.
   
   u_long _seq;      // Next query sequence number to use.
   Timer _timer;
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
 
+  EtherAddress _bcast;
   class LinkTable *_link_table;
   class LinkStat *_link_stat;
   
   // State of a destination.
   // We might have a request outstanding for this destination.
-  // We might know some routes to this destination.
   class Dst {
   public:
-    Dst(IPAddress ip) { _ip = ip; _seq = 0; _when.tv_sec = 0; _when.tv_usec = 0; }
+    Dst() {_ip = IPAddress(0) ; _seq = 0; _when = 0; _best_metric = 9999; }
+    Dst(IPAddress ip) { _ip = ip; _seq = 0; _when = 0; _best_metric = 9999;}
     IPAddress _ip;
     u_long _seq; // Of last query sent out.
-    timeval _when; // When we sent last query.
+    unsigned int _when; // When we sent last query.
+    u_short _best_metric;
   };
 
-  Vector<Dst> _dsts;
+  typedef HashMap<IPAddress, Dst> DstTable;
+  DstTable _dsts;
 
   // List of query sequence #s that we've already seen.
   class Seen {
@@ -216,16 +211,17 @@ private:
     IPAddress _src;
     IPAddress _dst;
     u_long _seq;
-    timeval _when;
+    unsigned int _when;
+    unsigned int _delay;
     u_short _metric;
     Vector<u_short> _metrics; // The hop-by-hop
     Vector<IPAddress> _hops;  // the best route seen for this <src, dst, seq>
     u_short _nhops;
     bool _forwarded;
-    Seen(IPAddress src, IPAddress dst, u_long seq, timeval now, 
+    Seen(IPAddress src, IPAddress dst, u_long seq, unsigned int now, unsigned int delay, 
 	 u_short metric, Vector<u_short> metrics, Vector<IPAddress> hops, u_short nhops) {
       _src = src; _dst = dst; _seq = seq; _metric = metric; _metrics = metrics; 
-      _when = now; _hops = hops; _nhops = nhops; _forwarded = false;
+      _when = now; _delay = delay; _hops = hops; _nhops = nhops; _forwarded = false;
     }
     String s();
     
@@ -239,26 +235,31 @@ private:
   public:
     IPAddress _ip;
     EtherAddress _en;
-    timeval _when; // When we last heard from this node.
-    ARP(IPAddress ip, EtherAddress en, timeval now) {
+    unsigned int _when; // When we last heard from this node.
+    ARP(IPAddress ip, EtherAddress en, unsigned int now) {
       _ip = ip; _en = en; _when = now;
     }
+    ARP() { _ip = IPAddress(0); _when = 0;  }
   };
-  Vector<ARP> _arp;
+  
+  typedef HashMap<IPAddress, ARP> ARPTable;
+  
+  ARPTable _arp;
 
   static void static_query_hook(Timer *t, void *v) 
    { ((SRCR *) v)->query_hook(t); }
 
 
   int find_dst(IPAddress ip, bool create);
-  bool find_arp(IPAddress ip, u_char en[6]);
-  void got_arp(IPAddress ip, u_char xen[6]);
+  EtherAddress find_arp(IPAddress ip);
+  void got_arp(IPAddress ip, EtherAddress en);
   u_short get_metric(IPAddress other);
   void got_sr_pkt(Packet *p_in);
   void start_query(IPAddress);
   void process_query(struct sr_pkt *pk);
   void forward_query(Seen s);
   void start_reply(struct sr_pkt *pk1);
+  void start_error(struct sr_pkt *pk1);
   void forward_reply(struct sr_pkt *pk);
   void got_reply(struct sr_pkt *pk);
   void start_data(const u_char *data, u_long len, Vector<IPAddress> r);
@@ -267,7 +268,8 @@ private:
   void send(WritablePacket *);
 
   void query_hook(Timer *t);
-
+  void update_best_metrics();
+  void update_link(IPPair p, u_short m, unsigned int now);
   void srcr_assert_(const char *, int, const char *) const;
 };
 

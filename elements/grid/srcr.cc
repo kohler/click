@@ -47,7 +47,7 @@ SRCR::SRCR()
   MaxSeen = 200;
   MaxHops = 30;
   /**
-   *  These are in milliseconds.
+   *  These are in ms
    */
   QueryInterval = 10000;
   QueryLife = 3000; 
@@ -57,7 +57,10 @@ SRCR::SRCR()
   struct timeval tv;
   click_gettimeofday(&tv);
   _seq = tv.tv_usec;
-  
+
+  /* bleh */
+  static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  _bcast = EtherAddress(bcast_addr);
 }
 
 SRCR::~SRCR()
@@ -98,76 +101,26 @@ void
 SRCR::run_timer ()
 {
   // Delete stale entries from list of queries we've seen.
-  timeval now = get_timeval();
+  unsigned int now = click_jiffies();
   Vector<Seen> v;
   int i;
   for(i = 0; i < _seen.size(); i++)
-    if(timeval_past(add_millisec(_seen[i]._when, QueryLife),  now))
+    if(ms_to_jiff(QueryLife) + _seen[i]._when > now) {
       v.push_back(_seen[i]);
+    }
   _seen = v;
 
-  // Delete stale entries from our ARP-like cache.
-  Vector<ARP> av;
-  for(i = 0; i < _arp.size(); i++)
-    if(timeval_past(add_millisec(_arp[i]._when, ARPLife), now))
-      av.push_back(_arp[i]);
-  _arp = av;
-
+  ARPTable a;
+  for (ARPTable::iterator iter = _arp.begin(); iter; iter++) {
+    ARP arp = iter.value();
+    if (arp._when + ms_to_jiff(ARPLife) >= now) {
+      a.insert(arp._ip, arp);
+    }
+  }
+  _arp = a;
   _timer.schedule_after_ms(1000);
 }
 
-// Returns an index into the _dsts[] array, or -1.
-int
-SRCR::find_dst(IPAddress ip, bool create)
-{
-  int i;
-
-  for(i = 0; i < _dsts.size(); i++)
-    if(_dsts[i]._ip == ip)
-      return i;
-
-  if(create){
-    _dsts.push_back(Dst(ip));
-    i = find_dst(ip, false);
-    srcr_assert(i >= 0);
-    return i;
-  }
-
-  return -1;
-}
-
-timeval 
-SRCR::get_timeval()
-{
-  timeval tv;
-  click_gettimeofday(&tv);
-  return tv;
-
-}
-bool
-SRCR::timeval_past(timeval a, timeval b) 
-{
-  if (a.tv_sec == b.tv_sec) 
-    return a.tv_usec > b.tv_usec;
-
-  return a.tv_sec > b.tv_sec;
-
-}
-
-timeval
-SRCR::add_millisec(timeval t, int milli)
- {
-  timeval new_time;
-
-  new_time = t;
-  new_time.tv_usec += milli*1000;
-  while (new_time.tv_usec > 1000000) {
-    new_time.tv_sec++;
-    new_time.tv_usec -= 1000000;
-  }
-
-  return new_time;
-}
 void
 SRCR::start_data(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
 {
@@ -179,7 +132,7 @@ SRCR::start_data(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
   pk->_type = PT_DATA;
   pk->_dlen = htons(payload_len);
   pk->_nhops = htons(hops);
-  pk->_next = htons(0);
+  pk->_next = htons(1);
   int i;
   for(i = 0; i < hops; i++) {
     pk->set_hop(i, r[i].in_addr());
@@ -194,23 +147,29 @@ SRCR::start_data(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
 void
 SRCR::got_data(struct sr_pkt *pk)
 {
+  /* now hand the packet to the upper layers */
   Packet *p = Packet::make(pk->data(), pk->_dlen);
+  
   output(0).push(p);
 }
 
 void
 SRCR::start_query(IPAddress dstip)
 {
-  int di = find_dst(dstip, true);
-  Dst &d = _dsts[di];  
-
-  timeval now = get_timeval();
-  if(d._when.tv_sec != 0 && timeval_past(add_millisec(d._when, QueryInterval), now)){
+  Dst *dst = _dsts.findp(dstip);
+  if (!dst) {
+    _dsts.insert(dstip, Dst(dstip));
+    dst = _dsts.findp(dstip);
+  }
+  srcr_assert(dst);
+  dst->_best_metric = 9999;
+  unsigned int now = click_jiffies();
+  if (dst->_when != 0 && now < dst->_when + ms_to_jiff(QueryInterval)) {
     // We sent a query less than 10 seconds ago, don't repeat.
     return;
   }
 
-  d._seq = ++_seq;
+  dst->_seq = ++_seq;
 
   int len = sr_pkt::len_wo_data(1);
   WritablePacket *p = Packet::make(len);
@@ -220,17 +179,17 @@ SRCR::start_query(IPAddress dstip)
   memset(pk, '\0', len);
   pk->_type = PT_QUERY;
   pk->_flags = 0;
-  pk->_qdst = d._ip;
-  pk->_seq = htonl(d._seq);
+  pk->_qdst = dst->_ip;
+  pk->_seq = htonl(dst->_seq);
   pk->_nhops = htons(1);
   pk->set_hop(0,_ip.in_addr());
   
-  d._when = now;
+  dst->_when = now;
 
   Vector<IPAddress> hops;
   Vector<u_short> metrics;
   hops.push_back(IPAddress(_ip));
-  _seen.push_back(Seen(_ip.in_addr(), dstip, pk->_seq, now, 0, metrics, hops, 1));
+  _seen.push_back(Seen(_ip.in_addr(), dstip, pk->_seq, now, 0, 0, metrics, hops, 1));
 
   send(p);
 }
@@ -239,46 +198,28 @@ SRCR::start_query(IPAddress dstip)
 // A packet has arrived from ip/en.
 // Enter the pair in our ARP table.
 void
-SRCR::got_arp(IPAddress ip, u_char xen[6])
+SRCR::got_arp(IPAddress ip, EtherAddress en)
 {
-  EtherAddress en(xen);
-  int i;
-  for(i = 0; i < _arp.size(); i++){
-    if(_arp[i]._ip == ip){
-      if(_arp[i]._en != en){
-        click_chatter("SRCR %s: got_arp %s changed from %s to %s",
-                      _ip.s().cc(),
-                      ip.s().cc(),
-                      _arp[i]._en.s().cc(),
-                      en.s().cc());
-      }
-      _arp[i]._en = en;
-      _arp[i]._when = get_timeval();
-      return;
-    }
-  }
-      
-  _arp.push_back(ARP(ip, en, get_timeval()));
+  _arp.insert(ip, ARP(ip, en, click_jiffies()));
 }
 
 // Given an IP address, look in our local ARP table to see
 // if we happen to know that node's ethernet address.
 // If we don't, just use ff:ff:ff:ff:ff:ff
-bool
-SRCR::find_arp(IPAddress ip, u_char en[6])
+EtherAddress
+SRCR::find_arp(IPAddress ip)
 {
-  int i;
-  for(i = 0; i < _arp.size(); i++){
-    if(_arp[i]._ip == ip){
-      memcpy(en, _arp[i]._en.data(), 6);
-      return true;
-    }
+
+  ARP *a = _arp.findp(ip);
+
+  if (a) {
+    return a->_en;
+  } else {
+    click_chatter("SRCR %s: find_arp %s ???",
+		  _ip.s().cc(),
+		  ip.s().cc());
+    return _bcast;
   }
-  click_chatter("SRCR %s: find_arp %s ???",
-                _ip.s().cc(),
-                ip.s().cc());
-  memcpy(en, "\xff\xff\xff\xff\xff\xff", 6);
-  return false;
 }
 
 // Send a packet.
@@ -289,19 +230,21 @@ SRCR::send(WritablePacket *p)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
 
-  pk->ether_type = ETHERTYPE_SRCR;
+  pk->ether_type = htons(ETHERTYPE_SRCR);
   memcpy(pk->ether_shost, _en.data(), 6);
 
   u_char type = pk->_type;
   if(type == PT_QUERY){
-    memcpy(pk->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
+    //memcpy(pk->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
+    memcpy(pk->ether_dhost, _bcast.data(), 6);
     _queries++;
     _querybytes += p->length();
   } else if(type == PT_REPLY || type == PT_DATA){
     u_short next = ntohs(pk->_next);
     srcr_assert(next < MaxHops + 2);
     struct in_addr nxt = pk->get_hop(next);
-    find_arp(IPAddress(nxt), pk->ether_dhost);
+    EtherAddress eth_dest = find_arp(IPAddress(nxt));
+    memcpy(pk->ether_dhost, eth_dest.data(), 6);
     if(type == PT_REPLY){
       _replies++;
       _replybytes += p->length();
@@ -321,22 +264,26 @@ SRCR::send(WritablePacket *p)
 u_short
 SRCR::get_metric(IPAddress other)
 {
-  u_short dft = 150; // default metric
+  u_short dft = 9999; // default metric
   if(_link_stat){
     unsigned int tau;
     struct timeval tv;
     unsigned int frate, rrate;
     bool res = _link_stat->get_forward_rate(other, &frate, &tau, &tv);
-    if(res == false)
+    if(res == false) {
       return dft;
+    }
     res = _link_stat->get_reverse_rate(other, &rrate, &tau);
-    if(res == false)
+    if(res == false) {
       return dft;
-    if(frate == 0 || rrate == 0)
+    }
+    if(frate == 0 || rrate == 0) {
       return dft;
+    }
     u_short m = 100 * 100 * 100 / (frate * (int) rrate);
     return m;
   } else {
+    click_chatter("no link stat!!!!");
     return dft;
   }
 }
@@ -348,8 +295,7 @@ SRCR::process_query(struct sr_pkt *pk1)
 {
   IPAddress src(pk1->get_hop(0));
   IPAddress dst(pk1->_qdst);
-  u_short nhops = ntohs(pk1->_nhops) + 1;
-  u_short last_hop_metric = get_metric(pk1->get_hop(nhops-1));
+  u_short last_hop_metric = get_metric(IPAddress(pk1->get_hop(pk1->num_hops()-1)));
   u_short metric = 0;
   u_long seq = ntohl(pk1->_seq);
   int si;
@@ -358,7 +304,7 @@ SRCR::process_query(struct sr_pkt *pk1)
   bool already_forwarded = false;
 
   Vector<IPAddress> hops;
-  for(int i = 0; i < nhops-1; i++) {
+  for(int i = 0; i < pk1->num_hops(); i++) {
     IPAddress hop = IPAddress(pk1->get_hop(i));
     hops.push_back(hop);
     if (pk1->get_hop(i) == _ip) {
@@ -370,7 +316,7 @@ SRCR::process_query(struct sr_pkt *pk1)
   hops.push_back(_ip);
 
   Vector<u_short> metrics;
-  for(int i = 0; i < nhops-2; i++) {
+  for(int i = 0; i < pk1->num_hops()-1; i++) {
     u_short m = pk1->get_metric(i);
     metrics.push_back(m);
     metric += m;
@@ -380,12 +326,12 @@ SRCR::process_query(struct sr_pkt *pk1)
 
   for(si = 0; si < _seen.size(); si++){
     if(src == _seen[si]._src && seq == _seen[si]._seq){
-      _seen[si]._when = get_timeval();
+      _seen[si]._when = click_jiffies();
       seen_before = true;
       if(metric < _seen[si]._metric){
         // OK, pass this new better route.
         _seen[si]._metrics = metrics;
-	_seen[si]._nhops = nhops;
+	_seen[si]._nhops = pk1->num_hops()+1;
 	_seen[si]._hops = hops;
 	already_forwarded = _seen[si]._forwarded;
         better = true;
@@ -397,31 +343,21 @@ SRCR::process_query(struct sr_pkt *pk1)
   if(_seen.size() > MaxSeen) {
      return;
   }
-  if(nhops > MaxHops) {
+  if(pk1->num_hops() > MaxHops) {
     return;
   }
+
   if (seen_before && !better) {
     return;
   }
-
-  /* update the link stats */
-  timeval now = get_timeval();
-  for(int i = 0; i < nhops-1; i++) {
-    IPAddress a = hops[i];
-    IPAddress b = hops[i+1];
-    u_short m = metrics[i];
-    _link_table->update_link(IPPair(a,b), m, now);
-  }
-  _link_table->dijkstra(_ip);
-
-
-
+  unsigned int now = click_jiffies();
   if (!seen_before) {
-    int delay_time = (last_hop_metric- 100)/10;
-    //click_chatter("SRCR %s: setting timer in %d milliseconds", _ip.s().cc(), delay_time);
+    /* add one so perfect links delay some */
+    int delay_time = (last_hop_metric-100)/10 + 1;
+    click_chatter("SRCR %s: setting timer in %d milliseconds", _ip.s().cc(), delay_time);
     srcr_assert(delay_time > 0);
 
-    Seen s = Seen(src, dst, seq, get_timeval(), metric, metrics, hops, nhops);
+    Seen s = Seen(src, dst, seq, now, ms_to_jiff(delay_time), metric, metrics, hops, pk1->num_hops()+1);
     _seen.push_back(s);
 
     Timer *t = new Timer(static_query_hook, (void *) this);
@@ -431,7 +367,7 @@ SRCR::process_query(struct sr_pkt *pk1)
   } else if (already_forwarded) {
 
     //click_chatter("SRCR %s: forwarding immediately", _ip.s().cc());
-    forward_query(Seen(src, dst, seq, get_timeval(), metric, metrics, hops, nhops));
+    forward_query(Seen(src, dst, seq, now, 0, metric, metrics, hops, pk1->num_hops()+1));
   }
   
   //click_chatter("SRCR %s: finished process_query\n", _ip.s().cc());
@@ -441,7 +377,7 @@ SRCR::forward_query(Seen s)
 {
   u_short nhops = s._nhops;
 
-
+  click_chatter("forward query called");
   int len = sr_pkt::len_wo_data(nhops);
   WritablePacket *p = Packet::make(len);
   if(p == 0)
@@ -477,29 +413,16 @@ void
 SRCR::forward_reply(struct sr_pkt *pk1)
 {
   u_char type = pk1->_type;
-  u_short next = ntohs(pk1->_next);
-  u_short nhops = ntohs(pk1->_nhops);
   
   srcr_assert(type == PT_REPLY);
-  next = next - 1;
 
-  if(next >= nhops) {
+  if(pk1->next() >= pk1->num_hops()) {
     click_chatter("SRCR %s: forward_reply strange next=%d, nhops=%d", 
 		  _ip.s().cc(), 
-		  next, 
-		  nhops);
+		  pk1->next(), 
+		  pk1->num_hops());
     return;
   }
-
-  /* update the link stats */
-  timeval now = get_timeval();
-  for(int i = next - 1; i > 0; i++) {
-    IPAddress a = pk1->get_hop(i);
-    IPAddress b = pk1->get_hop(i-1);
-    u_short m = pk1->get_metric(i);
-    _link_table->update_link(IPPair(a,b), m, now);
-  }
-  _link_table->dijkstra(_ip);
 
   int len = pk1->hlen_wo_data();
   WritablePacket *p = Packet::make(len);
@@ -508,10 +431,7 @@ SRCR::forward_reply(struct sr_pkt *pk1)
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memcpy(pk, pk1, len);
 
-  for(int i = 0; i < nhops; i++) {
-    pk->set_metric(i, pk1->get_metric(i));
-  }
-  pk->_next = htons(next);
+  pk->set_next(pk1->next() - 1);
 
   send(p);
 
@@ -522,35 +442,20 @@ void
 SRCR::forward_data(struct sr_pkt *pk1)
 {
   u_char type = pk1->_type;
-  u_short next = ntohs(pk1->_next);
-  u_short nhops = ntohs(pk1->_nhops);
   
   /* add the last hop's data onto the metric */
-  u_short last_hop_metric = get_metric(pk1->get_hop(next - 1));
+  u_short last_hop_metric = get_metric(IPAddress(pk1->get_hop(pk1->next() - 1)));
 
   srcr_assert(type == PT_DATA);
   
-  next = next + 1;
-
-  if(next >= nhops) {
+  if(pk1->next() + 1 >= pk1->num_hops()) {
     click_chatter("SRCR %s: forward_data strange next=%d, nhops=%d", 
 		  _ip.s().cc(), 
-		  next, 
-		  nhops);
+		  pk1->next() + 1,
+		  pk1->num_hops());
     
     return;
   }
-
-  /* update the link stats */
-  timeval now = get_timeval();
-  for(int i = 0; i < next; i++) {
-    IPAddress a = pk1->get_hop(i);
-    IPAddress b = pk1->get_hop(i+1);
-    u_short m = pk1->get_metric(i);
-    _link_table->update_link(IPPair(a,b), m, now);
-  }
-  _link_table->dijkstra(_ip);
-
 
   int len = pk1->hlen_with_data();
   WritablePacket *p = Packet::make(len);
@@ -559,12 +464,17 @@ SRCR::forward_data(struct sr_pkt *pk1)
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memcpy(pk, pk1, len);
 
-  for(int i = 0; i < nhops - 1; i++) {
-    pk->set_metric(i, pk1->get_metric(i));
+  
+  u_short next_hop_metric = get_metric(IPAddress(pk1->get_hop(pk1->next()+1)));
+  click_chatter("SRCR %s: next hop metric = %d", _ip.s().cc(), next_hop_metric);
+  if (next_hop_metric >= 9999) {
+    /* reply with a error */
+    start_error(pk1);
+    return;
   }
-  pk->set_metric(next - 1, last_hop_metric);
+  pk->set_metric(pk1->next() - 1, last_hop_metric);
+  pk->set_next(pk1->next() + 1);
 
-  pk->_next = htons(next);
   send(p);
 
 }
@@ -585,29 +495,59 @@ SRCR::Seen::s()
 
   return sa.take_string();
 }
-
-void
-SRCR::start_reply(struct sr_pkt *pk1)
+void 
+SRCR::start_error(struct sr_pkt *pk1)
 {
-  u_short nhops = ntohs(pk1->_nhops);
-  if(nhops > MaxHops)
-    return;
-  int len = sr_pkt::len_wo_data(nhops + 1);
+  int len = sr_pkt::len_wo_data(pk1->next()+2);
   WritablePacket *p = Packet::make(len);
   if(p == 0)
     return;
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   
   memcpy(pk, pk1, len);
-  pk->_type = PT_REPLY;
-  pk->_nhops = htons(nhops + 1);
-  pk->set_hop(nhops, _ip.in_addr());
 
-  for(int i = 0; i < nhops - 1; i++) {
+  IPAddress neighbor = IPAddress(pk1->get_hop(pk1->next()+1));
+  u_short m = get_metric(neighbor);
+  pk->_type = PT_REPLY;
+
+  pk->set_num_hops(pk1->next()+2);
+  pk->set_hop(pk1->next()+1, neighbor);
+  
+  for (int i=0; i < pk1->next(); i++) {
     pk->set_metric(i, pk1->get_metric(i));
   }
-  pk->set_metric(nhops - 1, get_metric(IPAddress(pk->get_hop(nhops-2))));
-  pk->_next = htons(nhops - 1); // Indicates next hop.
+  pk->set_metric(pk1->next(), m);
+  pk->set_next(pk1->next() - 1); // indicates next hop
+
+  send(p);
+
+
+}
+void
+SRCR::start_reply(struct sr_pkt *pk1)
+{
+  if(pk1->num_hops() > MaxHops)
+    return;
+
+  int len = sr_pkt::len_wo_data(pk1->num_hops() + 1);
+  WritablePacket *p = Packet::make(len);
+  if(p == 0)
+    return;
+  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  
+  memcpy(pk, pk1, len);
+
+  IPAddress neighbor = IPAddress(pk1->get_hop(pk1->num_hops()-1));
+  u_short m = get_metric(neighbor);
+  pk->_type = PT_REPLY;
+  pk->set_num_hops(pk1->num_hops() + 1);
+  pk->set_hop(pk1->num_hops(), _ip.in_addr());
+  
+  for (int i=0; i < pk1->num_hops()-1; i++) {
+    pk->set_metric(i, pk1->get_metric(i));
+  }
+  pk->set_metric(pk1->num_hops() - 1, m);
+  pk->set_next(pk1->num_hops() - 1); // indicates next hop
 
   send(p);
 }
@@ -617,33 +557,23 @@ SRCR::start_reply(struct sr_pkt *pk1)
 void
 SRCR::got_reply(struct sr_pkt *pk)
 {
-  int di = find_dst(pk->_qdst, false);
-  if(di < 0){
+  Dst *dst = _dsts.findp(IPAddress(pk->_qdst));
+  if(!dst){
     click_chatter("SRCR %s: reply but no Dst %s",
                   _ip.s().cc(),
                   IPAddress(pk->_qdst).s().cc());
     return;
   }
-  Dst &dst = _dsts[di];
-  if(ntohl(pk->_seq) != dst._seq){
+  if(ntohl(pk->_seq) != dst->_seq){
     click_chatter("SRCR %s: reply but wrong seq %d %d",
                   _ip.s().cc(),
                   ntohl(pk->_seq),
-                  dst._seq);
+                  dst->_seq);
     return;
   }
 
-  /* update the route metrics */
-  timeval now = get_timeval();
-  for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    u_short m = pk->get_metric(i);
-    _link_table->update_link(IPPair(a,b), m, now);
-  }
-  _link_table->dijkstra(_ip);
-
 }
+
 
 // Process a packet from the net, sent by a different SRCR.
 void
@@ -658,7 +588,7 @@ SRCR::got_sr_pkt(Packet *p_in)
 		  pk->hlen_wo_data());
     return;
   }
-  if(pk->ether_type != ETHERTYPE_SRCR){
+  if(pk->ether_type != htons(ETHERTYPE_SRCR)){
     click_chatter("SRCR %s: bad ether_type %04x",
                   _ip.s().cc(),
                   ntohs(pk->ether_type));
@@ -669,8 +599,42 @@ SRCR::got_sr_pkt(Packet *p_in)
   u_short nhops = ntohs(pk->_nhops);
   u_short next = ntohs(pk->_next);
 
+
+  /* update the metrics from the packet */
+  unsigned int now = click_jiffies();
+  for(int i = 0; i < pk->num_hops()-1; i++) {
+    IPAddress a = pk->get_hop(i);
+    IPAddress b = pk->get_hop(i+1);
+    u_short m = pk->get_metric(i);
+    if (m != 0) {
+      //click_chatter("updating %s <%d> %s", a.s().cc(), m, b.s().cc());
+      update_link(IPPair(a,b), m, now);
+    }
+  }
+  
+  IPAddress neighbor = IPAddress(0);
+  switch (type) {
+  case PT_QUERY:
+    neighbor = IPAddress(pk->get_hop(pk->num_hops() - 1));
+    break;
+  case PT_REPLY:
+    neighbor = IPAddress(pk->get_hop(pk->next()+1));
+    break;
+  case PT_DATA:
+    neighbor = IPAddress(pk->get_hop(pk->next()-1));
+    break;
+  default:
+    srcr_assert(0);
+  }
+  u_short m = get_metric(neighbor);
+  //click_chatter("updating %s <%d> %s", neighbor.s().cc(), m,  _ip.s().cc());
+  update_link(IPPair(neighbor, _ip), m, now);
+  update_best_metrics();
+
+  got_arp(neighbor, EtherAddress(pk->ether_shost));
+
   if(type == PT_QUERY && nhops >= 1){
-    got_arp(IPAddress(pk->get_hop(nhops-1)), pk->ether_shost);
+
     if(pk->_qdst == _ip.in_addr()){
       start_reply(pk);
     } else {
@@ -687,10 +651,6 @@ SRCR::got_sr_pkt(Packet *p_in)
                     IPAddress(pk->get_hop(next)).s().cc());
       return;
     }
-    if(next + 1 == nhops)
-      got_arp(IPAddress(pk->_qdst), pk->ether_shost);
-    else
-      got_arp(IPAddress(pk->get_hop(next+1)), pk->ether_shost);
     if(next == 0){
       // I'm the ultimate consumer of this reply. Add to routing tbl.
       got_reply(pk);
@@ -709,7 +669,7 @@ SRCR::got_sr_pkt(Packet *p_in)
                     IPAddress(pk->get_hop(next)).s().cc());
       return;
     }
-    if(next == nhops - 1){
+    if(next == nhops -1){
       // I'm the ultimate consumer of this data.
       got_data(pk);
     } else {
@@ -741,12 +701,21 @@ void
 SRCR::push(int port, Packet *p_in)
 {
   if(port == 0){
+    IPAddress p = p_in->dst_ip_anno();
+    Dst *dst = _dsts.findp(p);
+    
     // Packet from upper layers in same host.
-    Vector<IPAddress> r = _link_table->best_route(p_in->dst_ip_anno());
-    if(r.size() > 1)
+    u_short current_metric = _link_table->get_host_metric(p);
+    if (dst && current_metric != 9999 && dst->_best_metric/2 > current_metric ) {
+      Vector<IPAddress> r = _link_table->best_route(p);
+      srcr_assert(r.size() > 1);
+      //click_chatter("found route for %s: %s\n", p.s().cc(), 
+      //route_to_string(_link_table->best_route(p).cc());
       start_data(p_in->data(), p_in->length(), r);
-    else
-      start_query(p_in->dst_ip_anno());
+    } else {
+      //click_chatter("startin query for %s\n", p.s().cc());
+      start_query(p);
+    }
   } else {
     got_sr_pkt(p_in);
   }
@@ -760,10 +729,10 @@ SRCR::query_hook(Timer *t)
   srcr_assert(t);
 
   Vector<Seen> v;
-  timeval now = get_timeval();
+  unsigned int now = click_jiffies();
   for (int i = 0; i < _seen.size(); i++) {
-    if (_seen[i]._when.tv_sec != 0) {
-      if (timeval_past(add_millisec(_seen[i]._when, QueryLife), now)) {
+    if (_seen[i]._when != 0) {
+      if (now >= _seen[i]._when + _seen[i]._delay) {
 	forward_query(_seen[i]);
       } else {
 	v.push_back(_seen[i]);
@@ -772,6 +741,24 @@ SRCR::query_hook(Timer *t)
   }
   _seen = v;
 
+
+}
+
+String
+SRCR::static_print_arp(Element *f, void *)
+{
+  SRCR *d = (SRCR *) f;
+  return d->print_arp();
+}
+String
+SRCR::print_arp()
+{
+  StringAccum sa;
+  for (ARPTable::iterator iter = _arp.begin(); iter; iter++) {
+    ARP arp = iter.value();
+    sa << "arp:" << arp._ip.s().cc() << " " << arp._en.s().cc() << "\n";
+  }
+  return sa.take_string();
 
 }
 
@@ -831,8 +818,37 @@ SRCR::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
   add_write_handler("clear", static_clear, 0);
+  add_read_handler("arp", static_print_arp, 0);
 }
-
+void
+SRCR::update_link(IPPair p, u_short m, unsigned int now)
+{
+  _link_table->update_link(p, m, now);
+}
+void
+SRCR::update_best_metrics() 
+{
+  _link_table->dijkstra(_ip);
+  /* 
+   * it should be the case that all dsts in the linktable
+   * have a corresponding Dst in _dsts 
+   */
+  Vector<IPAddress> v = _link_table->get_hosts();
+  for (int i=0; i < v.size(); i++) {
+    Dst *dst = _dsts.findp(v[i]);
+    if (!dst) {
+      _dsts.insert(v[i], Dst(v[i]));
+      dst = _dsts.findp(v[i]);
+    }
+    srcr_assert(dst);
+    
+    u_short lt_metric = _link_table->get_host_metric(dst->_ip);
+    if (dst->_best_metric < lt_metric) {
+      dst->_best_metric = lt_metric;
+    }
+    
+  }
+}
  void
 SRCR::srcr_assert_(const char *file, int line, const char *expr) const
 {
@@ -848,9 +864,12 @@ SRCR::srcr_assert_(const char *file, int line, const char *expr) const
 
 // generate Vector template instance
 #include <click/vector.cc>
+#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<SRCR::Dst>;
 template class Vector<SRCR::IPAddresss>;
+template class HashMap<IPAddress, SRCR::ARP>;
+template class HashMap<IPAddress, SRCR::Dst>;
 #endif
 
 CLICK_ENDDECLS

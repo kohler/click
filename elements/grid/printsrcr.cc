@@ -61,7 +61,7 @@ PrintSRCR::simple_action(Packet *p)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
 
-  if(pk->ether_type != ETHERTYPE_SRCR){
+  if(ntohs(pk->ether_type) != ETHERTYPE_SRCR){
     click_chatter("PrintSRCR %s%s%s: not a srcr packet",
 		  id().cc(),
 		  _label.cc()[0] ? " " : "",
@@ -103,6 +103,7 @@ PrintSRCR::simple_action(Packet *p)
 
   if (pk->_type != PT_DATA) {
     sa << "qdst=" << IPAddress(pk->_qdst) << " ";
+    sa << "seq=" << pk->_seq << " ";
   }
 
   if (pk->_type == PT_DATA) {
