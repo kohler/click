@@ -41,6 +41,7 @@ class ElementMap { public:
   ElementMap(const String &);
 
   int size() const				{ return _e.size(); }
+  bool empty() const				{ return _e.size() == 1; }
   
   const Elt &elt(int i) const			{ return _e[i]; }
   const String &name(int i) const		{ return _e[i].name; }
