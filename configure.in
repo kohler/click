@@ -592,5 +592,8 @@ done
 
 AC_OUTPUT_COMMANDS(for ac_file in $CONFIG_HEADERS; do
   test $ac_file = config.h && echo > stamp-h
+done
+for ac_file in $CONFIG_FILES; do
+  test $ac_file = click-compile && chmod +x click-compile
 done)
 AC_OUTPUT($config_files)
