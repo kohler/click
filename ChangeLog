@@ -1,3 +1,12 @@
+2001-10-17 Wednesday 21:14  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/routerthread.hh (1.6), lib/routerthread.cc (1.17):
+	rearrangement
+
+2001-10-17 Wednesday 21:13  Eddie Kohler <kohler@aciri.org>
+
+	* userlevel/click.cc (1.62): add "stop" global handlers
+
 2001-10-16 Tuesday 16:55  Eddie Kohler <kohler@aciri.org>
 
 	* elements/aqm/: adaptivered.cc (1.4), adaptivered.hh (1.4), red.cc

@@ -1,3 +1,8 @@
+2001-10-17 Wednesday 21:14  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/routerthread.hh, include/click/routerthread.hh,
+	libsrc/routerthread.cc: rearrangement
+
 2001-10-16 Tuesday 16:25  Eddie Kohler <kohler@aciri.org>
 
 	* config-userlevel.h.in, include/click/confparse.hh,
