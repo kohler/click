@@ -112,6 +112,10 @@ AnyDeviceMap::remove(AnyDevice *d)
 AnyDevice *
 AnyDeviceMap::lookup_unknown(net_device *dev)
 {
+    // make sure device is valid
+    if (dev == NULL)
+	return NULL;
+
     // look first by device names
     String dev_name = dev->name;
     for (AnyDevice *d = _unknown_map; d; d = d->next())

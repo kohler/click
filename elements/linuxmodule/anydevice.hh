@@ -140,6 +140,9 @@ class AnyDeviceMap { public:
 inline AnyDevice *
 AnyDeviceMap::lookup(net_device *dev)
 {
+    if (dev == NULL)
+	return NULL;
+
     AnyDevice *d = _map[dev->ifindex % MAP_SIZE];
     while (d && d->device() != dev)
 	d = d->next();

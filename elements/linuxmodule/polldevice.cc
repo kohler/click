@@ -196,7 +196,8 @@ PollDevice::uninitialize()
   if (_dev && _promisc)
       dev_set_promiscuity(_dev, -1);
 #if LINUX_VERSION_CODE >= 0x020400
-  dev_put(_dev);
+  if (_dev)
+    dev_put(_dev);
 #endif
   _task.unschedule();
 #endif
