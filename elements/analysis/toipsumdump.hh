@@ -88,6 +88,13 @@ TCP, or UDP headers, instead of normal output. (Even if BAD_PACKETS is false,
 output will contain dashes `C<->' in place of data from bad headers.) Default
 is false.
 
+=item CAREFUL_TRUNC
+
+Boolean. If true, then print `C<!bad truncated IP length>' lines for packets
+whose data plus extra length annotation is less than their IP length.
+B<Tcpdump> prints C<truncated-ip - N bytes missing> for such packets. Default
+is true.
+
 =back
 
 =e
@@ -178,6 +185,7 @@ class ToIPSummaryDump : public Element { public:
     NotifierSignal _signal;
     bool _verbose : 1;
     bool _bad_packets : 1;
+    bool _careful_trunc : 1;
     
     String _banner;
 

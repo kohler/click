@@ -48,6 +48,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     String save = "timestamp 'ip src'";
     bool verbose = false;
     bool bad_packets = false;
+    bool careful_trunc = true;
     _multipacket = false;
 
     if (cp_va_parse(conf, this, errh,
@@ -58,6 +59,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "BANNER", cpString, "banner", &_banner,
 		    "MULTIPACKET", cpBool, "output multiple packets based on packet count anno?", &_multipacket,
 		    "BAD_PACKETS", cpBool, "output `!bad' messages for non-IP or bad IP packets?", &bad_packets,
+		    "CAREFUL_TRUNC", cpBool, "output `!bad' messages for truncated IP packets?", &careful_trunc,
 		    0) < 0)
 	return -1;
 
@@ -81,6 +83,7 @@ ToIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     
     _verbose = verbose;
     _bad_packets = bad_packets;
+    _careful_trunc = careful_trunc;
 
     return (before == errh->nerrors() ? 0 : -1);
 }
@@ -171,32 +174,33 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
     // Check that the IP header fields are valid.
     if (!iph)
 	BAD_IP("no IP header", 0);
-    else if (p->length() < (uint32_t)(p->network_header_offset() + sizeof(click_ip)))
+    else if (p->network_length() < (int)(sizeof(click_ip)))
 	BAD_IP("truncated IP header", 0);
     else if (iph->ip_v != 4)
 	BAD_IP("IP version %d", iph->ip_v);
     else if (iph->ip_hl < (sizeof(click_ip) >> 2))
 	BAD_IP("IP header length %d", iph->ip_hl);
-    else if (p->length() < (uint32_t)(p->network_header_offset() + (iph->ip_hl << 2)))
+    else if (p->network_length() < (int)(iph->ip_hl << 2))
 	BAD_IP("truncated IP header", 0);
     else if (ntohs(iph->ip_len) < (iph->ip_hl << 2))
 	BAD_IP("IP length %d", ntohs(iph->ip_len));
-    else if (p->length() + EXTRA_LENGTH_ANNO(p) < (uint32_t)(p->network_header_offset() + ntohs(iph->ip_len)))
-	BAD_IP("IP length %d", ntohs(iph->ip_len));
+    else if (p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t)(ntohs(iph->ip_len))
+	     && _careful_trunc)
+	BAD_IP("truncated IP missing %d", ntohs(iph->ip_len) - p->network_length() - EXTRA_LENGTH_ANNO(p));
 
     if (!iph || !tcph || iph->ip_p != IP_PROTO_TCP || !IP_FIRSTFRAG(iph))
 	tcph = 0;
-    else if (p->length() < (uint32_t)(p->transport_header_offset() + sizeof(click_tcp)))
+    else if (p->transport_length() < (int)(sizeof(click_tcp)))
 	BAD_TCP((IP_ISFRAG(iph) ? "fragmented TCP header" : "truncated TCP header"), 0);
     else if (tcph->th_off < (sizeof(click_tcp) >> 2))
 	BAD_TCP("TCP header length %d", tcph->th_off);
-    else if (p->length() < (uint32_t)(p->transport_header_offset() + (tcph->th_off << 2))
+    else if (p->transport_length() < (int)(tcph->th_off << 2)
 	     || ntohs(iph->ip_len) < (iph->ip_hl << 2) + (tcph->th_off << 2))
 	BAD_TCP((IP_ISFRAG(iph) ? "fragmented TCP header" : "truncated TCP header"), 0);
 
     if (!iph || !udph || iph->ip_p != IP_PROTO_UDP || !IP_FIRSTFRAG(iph))
 	udph = 0;
-    else if (p->length() < (uint32_t)(p->transport_header_offset() + sizeof(click_udp))
+    else if (p->transport_length() < (int)(sizeof(click_udp))
 	     || ntohs(iph->ip_len) < (iph->ip_hl << 2) + sizeof(click_udp))
 	BAD_UDP((IP_ISFRAG(iph) ? "fragmented UDP header" : "truncated UDP header"), 0);
 
