@@ -1,3 +1,8 @@
+2004-06-17 Thursday 18:08  John Bicket <jbicket@mit.edu>
+
+	* configure.in (1.228): fix for grid and wifi enabled userlevel
+	builds. reported by Erik Nordstrom.
+
 2004-06-17 Thursday 12:33  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: beaconscanner.cc (1.4), beaconscanner.hh (1.4),
