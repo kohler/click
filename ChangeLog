@@ -1,3 +1,7 @@
+2001-06-26 Tuesday 23:31  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip6/ip6print.cc (1.2): more compact print msg
+
 2001-06-26 Tuesday 20:50  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/mkwebdoc.pl (1.12): add "--enable" arguments, to get all
