@@ -1,3 +1,7 @@
+2004-03-11 Thursday 11:49  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/srcr.cc (1.37): add ip handler
+
 2004-03-06 Saturday 20:03  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/fromdevice.cc (1.78): Doug bug: remove
