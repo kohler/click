@@ -83,6 +83,7 @@ LookupIPRouteRON::initialize(ErrorHandler *)
 }
 
 void LookupIPRouteRON::duplicate_pkt(Packet *p) {
+  // send <p> out on all outgoing ports except 0
 
   int n = noutputs();
   for (int i =1; i < n - 1; i++)
@@ -99,6 +100,13 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
   FlowTableEntry *match = NULL;
   FlowTableEntry *new_entry = NULL;
   DstTableEntry  *dst_match = NULL;
+  const click_ip  *iph = p->ip_header();
+  const click_tcp *tchp= p->tcp_header();
+  unsigned tcp_seq = ntohl(tcph->th_seq) + 
+    ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2);
+
+  click_chatter("syn seq: %u\n", tcp_seq);
+
 
   tcph = p->tcp_header();
 
@@ -131,7 +139,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     // Add new entry to Flow Table
     new_entry = _flow_table->add(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 				 ntohs(tcph->th_sport), ntohs(tcph->th_dport),
-				 click_jiffies());
+				 click_jiffies(),tcp_seq);
     new_entry->saw_forward_packet();
     
     if (dst_match){
@@ -290,9 +298,31 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	output(0).push(p);
 	return;
       } else {
-	rtprintf("Incorrect return port, killing SYN-ACK\n");
+	rtprintf("Incorrect return port, replying with RST\n");
+
+	WritablePacket *rst_pkt = Packet::make(40);
+	click_ip *iphdr   = reinterpret_cast<click_ip *>(rst_pkt->ip_header());
+	click_tcp *tcphdr = reinterpret_cast<click_tcp*>(rst_pkt->tcp_header());
+
+	tcphdr->th_sport = p->tcp_header()->th_dport;	
+	tcphdr->th_dport = p->tcp_header()->th_sport;
+	tcphdr->th_seq   = 0;
+	tcphdr->th_ack   = p->tcp_header()->th_seq + 1;
+	
+	
+	iphdr->ip_len = htons(40);
+	iphdr->ip_id  = htons(0x1234);
+	iphdr->ip_off = htons(0);
+	iphdr->ip_ttl = htons(32);
+	iphdr->ip_p   = htons(IP_PROTO_TCP);
+	iphdr->ip_sum = 0;
+	iphdr->ip_sum = click_in_cksum(p1->data(), h1len);
+
 	p->kill();
-      }
+	duplicate_pkt(rst_pkt);
+	return;
+      }    
+
     }
   } else {
     rtprintf("FLOW no match, killing SYN-ACK\n");
@@ -510,7 +540,7 @@ LookupIPRouteRON::FlowTable::lookup(IPAddress src, IPAddress dst,
 LookupIPRouteRON::FlowTableEntry*
 LookupIPRouteRON::FlowTable::add(IPAddress src, IPAddress dst, 
 				 unsigned short sport, unsigned short dport, 
-				 unsigned probe_time) {
+				 unsigned probe_time, unsigned syn_seq) {
 
   FlowTableEntry e;
   e.src = src;
@@ -524,6 +554,7 @@ LookupIPRouteRON::FlowTable::add(IPAddress src, IPAddress dst,
   e.rev_alive = 1;
   e.outstanding_syns = 0;
   e.probe_time = probe_time;
+  e.syn_seq = syn_seq;
   //e.clear_waiting();
 
   // replace duplicate entry first

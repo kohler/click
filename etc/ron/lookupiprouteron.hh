@@ -98,6 +98,7 @@ public:
   unsigned outstanding_syns;
   //Vector<Packet*> waiting;
   bool valid, all_answered;
+  unsigned syn_seq;
 
   FlowTableEntry() {valid = 1; all_answered = 1;}
 
@@ -151,7 +152,7 @@ public:
   LookupIPRouteRON::FlowTableEntry*
   add(IPAddress src, IPAddress dst, 
       unsigned short sport, unsigned short dport, 
-      unsigned probe_time);
+      unsigned probe_time, unsigned syn_seq);
 
   void del(IPAddress src, IPAddress dst, 
 	   unsigned short sport, unsigned short dport);
