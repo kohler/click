@@ -23,12 +23,12 @@ CLICK_DECLS
 
 FrontDropQueue::FrontDropQueue()
 {
-  // no MOD_INC_USE_COUNT; rely on Queue
+  // no MOD_INC_USE_COUNT; rely on SimpleQueue
 }
 
 FrontDropQueue::~FrontDropQueue()
 {
-  // no MOD_DEC_USE_COUNT; rely on Queue
+  // no MOD_DEC_USE_COUNT; rely on SimpleQueue
 }
 
 void *
@@ -37,7 +37,7 @@ FrontDropQueue::cast(const char *n)
   if (strcmp(n, "FrontDropQueue") == 0)
     return (FrontDropQueue *)this;
   else
-    return Queue::cast(n);
+    return SimpleQueue::cast(n);
 }
 
 int
@@ -75,7 +75,7 @@ FrontDropQueue::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
 void
 FrontDropQueue::take_state(Element *e, ErrorHandler *errh)
 {
-  Queue *q = (Queue *)e->cast("Queue");
+  SimpleQueue *q = (SimpleQueue *)e->cast("SimpleQueue");
   if (!q) return;
   
   if (_tail != _head || _head != 0) {
@@ -127,5 +127,5 @@ FrontDropQueue::push(int, Packet *packet)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(Queue)
+ELEMENT_REQUIRES(SimpleQueue)
 EXPORT_ELEMENT(FrontDropQueue)

@@ -159,7 +159,7 @@ SimpleQueue::push(int, Packet *p)
   } else {
     // if (!(_drops % 100))
     if (_drops == 0)
-      click_chatter("%s %s overflow", class_name(), id().cc());
+      click_chatter("%{element}: overflow", this);
     _drops++;
     p->kill();
   }

@@ -54,7 +54,7 @@ RatedUnqueue::configuration(Vector<String> &conf) const
 int
 RatedUnqueue::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, &_task, errh);
+  ScheduleInfo::initialize_task(this, &_task, errh);
   return 0;
 }
 

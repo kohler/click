@@ -50,7 +50,7 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the Queue.
 
-=a Queue, RED, FrontDropQueue */
+=a Queue, MixedQueue, RED, FrontDropQueue */
 
 class SimpleQueue : public Element, public Storage { public:
 
@@ -61,6 +61,7 @@ class SimpleQueue : public Element, public Storage { public:
   int highwater_length() const			{ return _highwater_length; }
   
   void enq(Packet *);
+  void lifo_enq(Packet *);
   Packet *deq();
   Packet *head() const;
   
@@ -88,6 +89,7 @@ class SimpleQueue : public Element, public Storage { public:
 
   friend class FrontDropQueue;
   friend class NotifierQueue;
+  friend class MixedQueue;
 
   static String read_handler(Element *, void *);
   static int write_handler(const String &, Element *, void *, ErrorHandler *);
@@ -105,6 +107,21 @@ SimpleQueue::enq(Packet *p)
     _tail = next;
   } else
     p->kill();
+}
+
+inline void
+SimpleQueue::lifo_enq(Packet *p)
+{
+  // XXX NB: significantly more dangerous in a multithreaded environment
+  // than plain (FIFO) enq().
+  assert(p);
+  int prev = prev_i(_head);
+  if (prev == _tail) {
+    _tail = prev_i(_tail);
+    _q[_tail]->kill();
+  }
+  _q[prev] = p;
+  _head = prev;
 }
 
 inline Packet *

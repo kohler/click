@@ -46,7 +46,7 @@ DelayUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 DelayUnqueue::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, &_task, errh);
+  ScheduleInfo::initialize_task(this, &_task, errh);
   _timer.initialize(this);
   _signal = Notifier::upstream_pull_signal(this, 0, &_task);
   return 0;

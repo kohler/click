@@ -348,12 +348,8 @@ inline uint64_t
 click_get_cycles()
 {
 #  if __i386__
-  uint32_t low, high;
   uint64_t x;
-  __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
-  x = high;
-  x <<= 32;
-  x |= low;
+  __asm__ __volatile__("rdtsc": "=A" (x));
   return x;
 #  else
   // add other architectures here

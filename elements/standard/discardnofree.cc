@@ -35,7 +35,7 @@ int
 DiscardNoFree::initialize(ErrorHandler *errh)
 {
   if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, &_task, errh);
+    ScheduleInfo::initialize_task(this, &_task, errh);
   return 0;
 }
 

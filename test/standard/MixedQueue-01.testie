@@ -1,0 +1,26 @@
+%script
+click CONFIG < DUMP | grep -v '^!'
+
+%file CONFIG
+FromIPSummaryDump(-, STOP true)
+	-> c::IPClassifier(src 1.0.0.1, src 1.0.0.2)
+	-> m::MixedQueue
+	-> u::Unqueue(ACTIVE false)
+	-> ToIPSummaryDump(-, CONTENTS ip_dst);
+c[1] -> [1]m;
+DriverManager(wait, write u.active true, wait 0.1s, stop)
+
+%file DUMP
+!data ip_src ip_dst ip_proto
+1.0.0.1 1.0.0.1 U
+1.0.0.1 1.0.0.2 U
+1.0.0.2 1.0.0.3 U
+1.0.0.1 1.0.0.4 U
+1.0.0.2 1.0.0.5 U
+
+%expect stdout
+1.0.0.5
+1.0.0.3
+1.0.0.1
+1.0.0.2
+1.0.0.4

@@ -95,7 +95,8 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 InfiniteSource::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, &_task, errh);
+  if (output_is_push(0))
+    ScheduleInfo::initialize_task(this, &_task, errh);
   return 0;
 }
 

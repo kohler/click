@@ -14,7 +14,7 @@ Queue(CAPACITY)
 
 =s storage
 
-stores packets in a FIFO queue, with notification
+stores packets in a FIFO queue
 
 =d
 
@@ -54,7 +54,7 @@ When written, resets the C<drops> and C<highwater_length> counters.
 
 When written, drops all packets in the queue.
 
-=a SimpleQueue */
+=a SimpleQueue, MixedQueue, FrontDropQueue */
 
 class NotifierQueue : public SimpleQueue, public Notifier { public:
 
@@ -74,6 +74,8 @@ class NotifierQueue : public SimpleQueue, public Notifier { public:
 
     enum { SLEEPINESS_TRIGGER = 8 };
     int _sleepiness;
+
+    friend class MixedQueue;
     
 };
 

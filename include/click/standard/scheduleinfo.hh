@@ -52,7 +52,7 @@ are expanded.
 
 The name of the first ScheduleInfo element starts with `c/', so it is
 used to look up scheduling parameters for elements named `c/I<whatever>'.
-(This includes all components of the compound element `c'.) 
+V<>(This includes all components of the compound element `c'.) 
 The second ScheduleInfo element, however, has no slash in its name,
 so it is used to look up all scheduling parameters,
 including scaling factors for compound elements.

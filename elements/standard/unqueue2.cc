@@ -57,7 +57,7 @@ Unqueue2::initialize(ErrorHandler *errh)
   filter.filter(_queue_elements);
   click_chatter("Unqueue2: found %d downstream queues", _queue_elements.size());
   _packets = 0;
-  ScheduleInfo::join_scheduler(this, &_task, errh);
+  ScheduleInfo::initialize_task(this, &_task, errh);
   return 0;
 }
 

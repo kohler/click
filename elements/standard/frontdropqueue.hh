@@ -1,6 +1,6 @@
 #ifndef CLICK_FRONTDROPQUEUE_HH
 #define CLICK_FRONTDROPQUEUE_HH
-#include "queue.hh"
+#include "simplequeue.hh"
 CLICK_DECLS
 
 /*
@@ -25,10 +25,10 @@ CLICK_DECLS
  * When written, resets the C<drops> and C<highwater_length> counters.
  * =h reset write-only
  * When written, drops all packets in the Queue.
- * =a Queue, RED
+ * =a Queue, SimpleQueue, RED
  */
 
-class FrontDropQueue : public Queue { public:
+class FrontDropQueue : public SimpleQueue { public:
   
   FrontDropQueue();
   ~FrontDropQueue();
