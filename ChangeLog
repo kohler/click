@@ -1,3 +1,12 @@
+2004-12-02 Thursday 16:21  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: arptable.hh (1.2), autoratefallback.cc (1.12),
+	autoratefallback.hh (1.7), extradecap.hh (1.2), extraencap.hh
+	(1.2), filtertx.hh (1.3), madwifirate.cc (1.12), madwifirate.hh
+	(1.4), phyerrfilter.hh (1.2), pushanno.hh (1.2), readanno.hh (1.2),
+	setrts.hh (1.2), settxrate.hh (1.12), wifidecap.hh (1.3): a stab at
+	better documentation...this should be at least a start.
+
 2004-12-02 Thursday 15:03  John Bicket <jbicket@mit.edu>
 
 	* include/click/packet.hh (1.49): orphan packets when we get them
