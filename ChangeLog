@@ -1,3 +1,8 @@
+2003-06-26 Thursday 15:42  xwxin
+
+	* elements/ip/: trieiplookup.cc (1.2), trieiplookup.hh (1.2):
+	implemented remove_route and made add_route a bit more efficient
+
 2003-06-26 Thursday 15:27  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: lookupgeogridroute.cc (1.31),
