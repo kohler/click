@@ -205,7 +205,7 @@ CLICK_DECLS
 
 // if 1, enable `seen' link handshaking, described in Chin, Judge,
 // William, and Kermode 2002.
-#define USE_SEEN 1
+#define ENABLE_SEEN 1
 
 class GridGatewayInfo;
 class LinkStat;
@@ -280,6 +280,10 @@ private:
     bool                need_seq_ad;
     bool                need_metric_ad;
     unsigned int        last_expired_jiffies;  // when the route was expired (if broken)
+
+#if ENABLE_SEEN
+    unsigned int        last_seen_jiffies;     // last time this dest said it `saw' us (advertised a route to us)
+#endif
 
     bool broken() const { check(); return num_hops() == 0; }
     bool good()   const { check(); return num_hops() != 0; }
@@ -591,7 +595,7 @@ private:
 #endif
 #endif
 
-#if USE_SEEN
+#if ENABLE_SEEN
   bool _use_seen;
   static const unsigned _metric_seen = 999999;
 #endif

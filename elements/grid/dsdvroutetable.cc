@@ -294,7 +294,7 @@ DSDVRouteTable::initialize(ErrorHandler *errh)
   _use_good_new_route = false;
 #endif
 #endif
-#if USE_SEEN
+#if ENABLE_SEEN
   _use_seen = false;
 #endif
   return 0;
@@ -891,7 +891,7 @@ DSDVRouteTable::update_metric(RTEntry &r)
     return;
   }
 
-#if USE_SEEN
+#if ENABLE_SEEN
   if (_use_seen && next_hop->metric.val == _metric_seen) {
     r.metric = metric_t(_metric_seen, false);
     return;
@@ -1280,14 +1280,12 @@ DSDVRouteTable::simple_action(Packet *packet)
     click_chatter("DSDVRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->dest_eth.s().cc(), ethaddr.s().cc());
 
-  RTEntry new_r(ipaddr, ethaddr, gh, hlo, PAINT_ANNO(packet), jiff);
-
 #if SEQ_METRIC
   // track last few broadcast numbers we heard directly from this node
-  DEQueue<unsigned> *q = _seq_history.findp(new_r.dest_ip);
+  DEQueue<unsigned> *q = _seq_history.findp(ipaddr);
   if (!q) {
-    _seq_history.insert(new_r.dest_ip, DEQueue<unsigned>());
-    q = _seq_history.findp(new_r.dest_ip);
+    _seq_history.insert(ipaddr, DEQueue<unsigned>());
+    q = _seq_history.findp(ipaddr);
   }
   unsigned bcast_num = ntohl(grid_hdr::get_pad_bytes(*gh));
   q->push_back(bcast_num);
@@ -1295,35 +1293,47 @@ DSDVRouteTable::simple_action(Packet *packet)
     q->pop_front();
 #endif
 
-#if USE_SEEN
-  RTEntry *old = _rtes.findp(new_r.dest_ip);
-  if (_use_seen && (!old || old->metric.val == _metric_seen)) {
-    // Check to see if this node has heard about us.  If so, do
-    // normal metric initialization, else leave it marked as `seen'.
-    bool sender_saw_us = false;
-    char *c = entry_ptr;
-    for (unsigned i = 0; i < num_entries; i++, entry_ptr += entry_sz) {
-      grid_nbr_entry *e = (grid_nbr_entry *) c;
-	if (e->ip == _ip.addr() && e->num_hops > 0) {
-	  sender_saw_us = true;
-	  break;
-	}
-    }
-    if (!sender_saw_us) {
-      new_r.metric = metric_t(_metric_seen, false);
-      new_r.advertise_ok_jiffies = jiff;
-      new_r.need_metric_ad = true;
-      schedule_triggered_update(new_r.dest_ip, jiff);
-      insert_route(new_r, GridGenericLogger::NEW_DEST_SENDER);
-      goto after_sender_update;
+  RTEntry new_r(ipaddr, ethaddr, gh, hlo, PAINT_ANNO(packet), jiff);
+
+#if ENABLE_SEEN
+  bool sender_saw_us = false;
+  const char *c = entry_ptr;
+  for (unsigned i = 0; i < num_entries; i++, c += entry_sz) {
+    const grid_nbr_entry *e = (const grid_nbr_entry *) c;
+    if (e->ip == _ip.addr() && e->num_hops > 0) {
+      sender_saw_us = true;
+      break;
     }
   }
+  new_r.last_seen_jiffies = sender_saw_us ? jiff : 0;
+
+  RTEntry *old = _rtes.findp(new_r.dest_ip);
+  // If the sending node didn't see us, and has never seen us, or
+  // hasn't seen us in a while, mark the sender as `seen' instead of
+  // giving it a proper metric.
+#if 0
+  if (old)
+    click_chatter("XXX %s %s snd_saw %s  old metric %u  old last seen %u\n",
+		  id().cc(), ipaddr.s().cc(), sender_saw_us ? "y" : "n", old->metric.val, old->last_seen_jiffies);
+  else 
+    click_chatter("XXX %s %s snd_saw %s\n",
+		id().cc(), ipaddr.s().cc(), sender_saw_us ? "y" : "n");
 #endif
-  
+  if (_use_seen && !sender_saw_us &&
+      (!old || old->metric.val == _metric_seen || (jiff - old->last_seen_jiffies) > 3*msec_to_jiff(_period))) {
+    new_r.metric = metric_t(_metric_seen, false);
+    new_r.advertise_ok_jiffies = jiff;
+    new_r.need_metric_ad = true;
+    schedule_triggered_update(new_r.dest_ip, jiff);
+    insert_route(new_r, GridGenericLogger::NEW_DEST_SENDER);
+    goto after_sender_update;
+  }
+#endif
+
   // insert 1-hop route
   handle_update(new_r, true, jiff);
 
-#if USE_SEEN
+#if ENABLE_SEEN
   after_sender_update:
 #endif
 
@@ -1335,10 +1345,10 @@ DSDVRouteTable::simple_action(Packet *packet)
   // handle each entry in message
   bool need_full_update = false;
   for (unsigned i = 0; i < num_entries; i++, entry_ptr += entry_sz) {
-    
+
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
     RTEntry route(ipaddr, ethaddr, curr, PAINT_ANNO(packet), jiff); 
-    
+
     if (route.ttl == 0) // ignore expired ttl
       continue;
     if (route.dest_ip == _ip) { // ignore route to self
@@ -1413,6 +1423,9 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
       + " last_updated=" + jiff_diff_string(f.last_updated_jiffies, jiff)
       + " last_seq=" + jiff_diff_string(f.last_seq_jiffies, jiff)
       + " advertise_ok=" + jiff_diff_string(f.advertise_ok_jiffies, jiff);
+#if ENABLE_SEEN
+    s += " last_seen=" + jiff_diff_string(f.last_seen_jiffies, jiff);
+#endif
     
     s += "\n";
   }
@@ -1677,7 +1690,7 @@ DSDVRouteTable::print_use_old_route(Element *e, void *)
   sa << "use good new routes: " << pb(rt->_use_good_new_route) 
      << (rt->_use_good_new_route ? " (use good new routes immediately)" : " (wait to use good new routes)") << "\n";
 #endif
-#if USE_SEEN
+#if ENABLE_SEEN
   sa << "use seen: " << pb(rt->_use_seen) 
      << (rt->_use_seen ? " (check for `seen' handshake)" : " (ignore asymmetry)") << "\n";
 #endif
@@ -1714,7 +1727,7 @@ DSDVRouteTable::write_use_old_route(const String &arg, Element *el,
   click_chatter("DSDVRouteTable %s: setting _use_good_new_route to %s", 
 		rt->id().cc(), rt->_use_good_new_route ? "true" : "false");
 #endif
-#if USE_SEEN
+#if ENABLE_SEEN
   rt->_use_seen = use_seen;
   click_chatter("DSDVRouteTable %s: setting _use_seen to %s", 
 		rt->id().cc(), rt->_use_seen ? "true" : "false");
