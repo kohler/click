@@ -1,3 +1,25 @@
+2002-03-28 Thursday 12:45  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/align.cc (1.16): Align uses
+	Packet::shift_data()
+
+2002-03-28 Thursday 12:44  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fakepcap.cc (1.4), fakepcap.hh (1.12):
+	FakePcap handles unaligned accesses in force_ip(), and aligns the
+	IP header when necessary
+
+2002-03-28 Thursday 12:43  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh (1.31), lib/packet.cc (1.53): Packet
+	updates: change uniqueify() implementation so that it keeps the
+	same packet header (speed improvement because annotations don't
+	need to be copied); add mac_header() and friends; add shift_data()
+
+2002-03-28 Thursday 12:42  Eddie Kohler <kohler@aciri.org>
+
+	* config-userlevel.h.in (1.6): nitlet
+
 2002-03-28 Thursday 02:20  Eddie Kohler <kohler@aciri.org>
 
 	* etc/libclick/: DISTFILES (1.10), lc-configure.in (1.17):

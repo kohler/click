@@ -1,3 +1,15 @@
+2002-03-28 Thursday 12:43  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh,
+	libsrc/packet.cc: Packet updates: change uniqueify() implementation
+	so that it keeps the same packet header (speed improvement because
+	annotations don't need to be copied); add mac_header() and friends;
+	add shift_data()
+
+2002-03-28 Thursday 12:42  Eddie Kohler <kohler@aciri.org>
+
+	* config-userlevel.h.in: nitlet
+
 2002-03-28 Thursday 02:20  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in: config-bsdmodule.h and config-linuxmodule.h are
