@@ -1,3 +1,16 @@
+2002-10-16 Wednesday 00:57  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/fakepcap.cc (1.11): support IP6 ethertype
+
+2002-10-16 Wednesday 00:42  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.191), pathvars.h.in (1.6),
+	tools/click2xml/.cvsignore (1.1), tools/click2xml/Makefile.in
+	(1.2), tools/click2xml/click2xml.cc (1.9),
+	tools/click2xml/clickconfig.dtd (1.3), tools/click2xml/xml2click.cc
+	(1.3), tools/lib/elementt.cc (1.29), tools/lib/elementt.hh (1.25):
+	first nonridiculous xml2click; includes configure test for expat
+
 2002-10-15 Tuesday 21:31  Eddie Kohler <kohler@icir.org>
 
 	* tools/click2xml/xml2click.cc (1.2): xml2click updates
