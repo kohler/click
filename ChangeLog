@@ -1,3 +1,11 @@
+2003-04-23 Wednesday 18:36  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-align/click-align.cc (1.45): better comments
+
+2003-04-23 Wednesday 18:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/classifier.cc (1.45): add comments
+
 2003-04-23 Wednesday 10:55  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* elements/standard/addressinfo.cc (1.25): Don't choke if user only
