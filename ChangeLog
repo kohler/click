@@ -65,29 +65,29 @@
 	* elements/ipsec/: sha1.cc, sha1.hh, sha1_impl.hh: add drop handler
 	to SHA1 verifier; make sha1 smp safe
 
-2001-03-16 Friday 16:02  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-16 Friday 16:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.cc, grid.hh, hello.cc,
 	locqueryresponder.cc, lrhello.cc, updateroutes.cc: fixes for packet
 	data alignment
 
-2001-03-16 Friday 15:29  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-16 Friday 15:29  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/checkgridheader.cc: added more verbose messages
 	describing packet errors.
 
-2001-03-16 Friday 15:24  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-16 Friday 15:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* include/click/click_ether.h: added packed attribute to
 	click_ether.  on arm-linux, e.g. iPaq, sizeof(click_ether) is 16
 	unless the packed attribute is used.  there should probably be a
 	better way of dealing with this.
 
-2001-03-16 Friday 15:18  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-16 Friday 15:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* configure.in: now checks for new.h properly while cross-compiling
 
-2001-03-16 Friday 14:49  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-16 Friday 14:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: fromdevice.cc, kerneltap.cc: make sure that
 	the data portions of incoming packets (from device or O/S are
@@ -95,14 +95,14 @@
 	StrongARM.  assumes incoming packets are preceded by a 14-byte
 	ethernet header
 
-2001-03-16 Friday 14:34  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-16 Friday 14:34  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* userlevel/Makefile.in, tools/lib/Makefile.in: Changes to
 	configure system to support cross compiling, e.g. on iPaq with
 	arm-linux.  Makefile.in: get correct ``ar'' binary from the
 	configure script
 
-2001-03-16 Friday 14:33  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-16 Friday 14:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* config.sub, configure.in, config.guess: Changes to configure
 	system to support cross compiling, e.g. on iPaq with arm-linux. 
@@ -168,17 +168,17 @@
 	used to reset the IV, which means reencrypt using that original IV
 	was not possible)
 
-2001-03-15 Thursday 17:52  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-15 Thursday 17:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/kerneltap.cc: Get correct KernelTap behavior
 	on OpenBSD (as described in KernelTap man page)
 
-2001-03-15 Thursday 17:51  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-15 Thursday 17:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-gateway.openbsd: new script to work with BSD net
 	configuration tools
 
-2001-03-15 Thursday 17:51  Douglas De Couto <decouto@lcs.mit.edu>
+2001-03-15 Thursday 17:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click: ignore own grid packets
 
@@ -729,17 +729,17 @@
 	lib/task.cc: remove attach() method in favor of 
 	join_scheduler(Task *)
 
-2001-02-28 Wednesday 14:05  Douglas De Couto <decouto@lcs.mit.edu>
+2001-02-28 Wednesday 14:05  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/updateroutes.hh: added comment on ages vs.
 	timeouts.
 
-2001-02-28 Wednesday 14:04  Douglas De Couto <decouto@lcs.mit.edu>
+2001-02-28 Wednesday 14:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/updateroutes.cc: get_routes(): expire old routes
 	before returning current route list.  added comments
 
-2001-02-28 Wednesday 14:02  Douglas De Couto <decouto@lcs.mit.edu>
+2001-02-28 Wednesday 14:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/lookuplocalgridroute.cc: fixed typo in error
 	message
@@ -2266,7 +2266,7 @@
 
 	* elements/ip6/addresstranslator.cc: fix bug in lookup function.
 
-2000-11-07 Tuesday 21:15  Douglas De Couto <decouto@lcs.mit.edu>
+2000-11-07 Tuesday 21:15  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/floodinglocquerier.cc: added comments on when src
 	MAC addr has to be filled in: answer is, when orginating queries or
@@ -2319,7 +2319,7 @@
 	elements/standard/alignmentinfo.hh: added PerfCountInfo element for
 	Benjie, documentation generation fixes (Mazu)
 
-2000-11-01 Wednesday 20:10  Douglas De Couto <decouto@lcs.mit.edu>
+2000-11-01 Wednesday 20:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click: finally got the traceroute / decrement
 	ttl support really working.
@@ -2446,22 +2446,22 @@
 	* include/click/straccum.hh, lib/straccum.cc: add
 	StringAccum::operator<<(const StringAccum &)
 
-2000-11-01 Wednesday 17:06  Douglas De Couto <decouto@lcs.mit.edu>
+2000-11-01 Wednesday 17:06  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click: debugged support for decrementing ttl and
 	supporting traceroute
 
-2000-11-01 Wednesday 14:32  Douglas De Couto <decouto@lcs.mit.edu>
+2000-11-01 Wednesday 14:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click: trying to add traceroute support via IP
 	TTL decrementing...
 
-2000-11-01 Wednesday 13:55  Douglas De Couto <decouto@lcs.mit.edu>
+2000-11-01 Wednesday 13:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: fromdevice.cc, fromdevice.hh: set packet
 	type annotation
 
-2000-11-01 Wednesday 13:53  Douglas De Couto <decouto@lcs.mit.edu>
+2000-11-01 Wednesday 13:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/dropbroadcasts.hh: [no log message]
 
@@ -2531,26 +2531,26 @@
 	performance counter cleanups: do not include PerfInfo, remove old
 	PerfCtr class from perfctr.hh
 
-2000-10-31 Tuesday 15:05  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-31 Tuesday 15:05  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid.click, grid.click, grid.click: [no log message]
 
-2000-10-31 Tuesday 14:49  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-31 Tuesday 14:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: locqueryresponder.cc, locqueryresponder.hh:
 	hahaha bugfixes for my new bugs
 
-2000-10-31 Tuesday 14:03  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-31 Tuesday 14:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/floodinglocquerier.cc: memory leak
 
-2000-10-31 Tuesday 14:03  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-31 Tuesday 14:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: locqueryresponder.cc, locqueryresponder.hh: now
 	times out last remembered query sequence for each host, for when
 	nodes reboot
 
-2000-10-31 Tuesday 13:31  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-31 Tuesday 13:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click: added IP TTL decrement support for Grid
 	packets routed through this machine; allows traceroute to work.
@@ -2584,7 +2584,7 @@
 
 	* etc/linux-2.2.16-patch: more improvements to recycling code
 
-2000-10-30 Monday 16:07  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-30 Monday 16:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.cc, floodinglocquerier.hh,
 	locqueryresponder.cc: bug fixes and verbosity added
@@ -2603,32 +2603,32 @@
 
 	* etc/linux-2.2.16-patch: better recycle skb queue
 
-2000-10-29 Sunday 12:33  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-29 Sunday 12:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.cc, lookuplocalgridroute.cc:
 	minor cleanups
 
-2000-10-29 Sunday 12:14  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-29 Sunday 12:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-el.click: [no log message]
 
-2000-10-29 Sunday 12:12  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-29 Sunday 12:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/checkgridheader.cc: Now prints element name in
 	failed checksum alert
 
-2000-10-29 Sunday 12:11  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-29 Sunday 12:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/printgrid.cc: Now prints element name in addition
 	to tag
 
-2000-10-29 Sunday 12:10  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-29 Sunday 12:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyrange.cc, filterbyrange.hh: Now accepts
 	negative range parameter; means don't bother checking ranges and
 	pass all packets through
 
-2000-10-29 Sunday 12:08  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-29 Sunday 12:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.cc, floodinglocquerier.hh:
 	Fixed bug in location reply handling
@@ -2786,11 +2786,11 @@
 
 	* DISTFILES: changelog added to distfiles
 
-2000-10-15 Sunday 11:23  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-15 Sunday 11:23  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/filterbyrange.cc: [no log message]
 
-2000-10-15 Sunday 11:09  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-15 Sunday 11:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyrange.cc, filterbyrange.cc,
 	filterbyrange.cc: [no log message]
@@ -2803,12 +2803,12 @@
 
 	* lib/router.cc: [no log message]
 
-2000-10-13 Friday 10:58  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-13 Friday 10:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/floodinglocquerier.cc, conf/grid.click: [no log
 	message]
 
-2000-10-13 Friday 10:30  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-13 Friday 10:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid.click, grid-gateway.click: [no log message]
 
@@ -3652,7 +3652,7 @@
 
 	* elements/ethernet/arpquerier.cc: arpq newstyle cast
 
-2000-10-04 Wednesday 09:50  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-04 Wednesday 09:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/locqueryresponder.cc: [no log message]
 
@@ -3662,22 +3662,22 @@
 	elements/standard/strideswitch.cc, lib/llrpc.h,
 	userlevel/Makefile.in: up with mazuchanges
 
-2000-10-03 Tuesday 14:32  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-03 Tuesday 14:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-gateway, tools/run-grid-node,
 	elements/grid/locationinfo.cc, elements/grid/locationinfo.hh,
 	elements/grid/lookupgeogridroute.cc: [no log message]
 
-2000-10-03 Tuesday 13:09  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-03 Tuesday 13:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-gateway.click, grid.click: [no log message]
 
-2000-10-03 Tuesday 11:42  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-03 Tuesday 11:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.cc, grid.hh,
 	lookuplocalgridroute.cc: [no log message]
 
-2000-10-03 Tuesday 10:26  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-03 Tuesday 10:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/fixsrcloc.cc, elements/grid/grid.hh,
 	elements/grid/hello.cc, elements/grid/locqueryresponder.cc,
@@ -3700,11 +3700,11 @@
 
 	* elements/local/: tulipstats.cc, tulipstats.hh: blerf
 
-2000-10-02 Monday 13:34  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-02 Monday 13:34  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click: [no log message]
 
-2000-10-02 Monday 13:23  Douglas De Couto <decouto@lcs.mit.edu>
+2000-10-02 Monday 13:23  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-gateway.click, grid.click: fixup bugs in geo mods
 
@@ -3754,7 +3754,7 @@
 	* elements/standard/: frontdropqueue.cc, frontdropqueue.hh,
 	queue.cc, queue.hh: queue extras
 
-2000-09-29 Friday 17:17  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-29 Friday 17:17  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.hh, grid.hh, printgrid.cc: [no
 	log message]
@@ -3821,7 +3821,7 @@
 	* elements/linuxmodule/: polldevice.cc, polldevice.hh, todevice.hh:
 	polldev updates
 
-2000-09-28 Thursday 17:36  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-28 Thursday 17:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click: [no log message]
 
@@ -3836,20 +3836,20 @@
 	elements/local/tulipstats.hh, lib/straccum.cc, lib/straccum.hh:
 	tulipstats
 
-2000-09-27 Wednesday 18:43  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-27 Wednesday 18:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/locationinfo.hh: [no log message]
 
-2000-09-27 Wednesday 14:32  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-27 Wednesday 14:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node, tools/run-grid-gateway,
 	conf/grid-gateway.click: [no log message]
 
-2000-09-27 Wednesday 14:03  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-27 Wednesday 14:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
 
-2000-09-27 Wednesday 10:35  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-27 Wednesday 10:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/floodinglocquerier.cc, tools/run-grid-node,
 	elements/grid/floodinglocquerier.cc, tools/run-grid-node,
@@ -3860,7 +3860,7 @@
 	* etc/linux-2.2.16-patch,
 	tools/click-fastclassifier/click-fastclassifier.cc: fastclsas
 
-2000-09-26 Tuesday 14:27  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-26 Tuesday 14:27  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node, conf/grid.click,
 	elements/grid/floodinglocquerier.cc,
@@ -3886,7 +3886,7 @@
 	tools/lib/routert.hh, tools/lib/toolutils.cc: fix fastclass, fix
 	for gcc-2.96
 
-2000-09-25 Monday 22:04  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-25 Monday 22:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: fixdstloc.cc, fixsrcloc.cc,
 	floodinglocquerier.cc, floodinglocquerier.hh, grid.hh,
@@ -3904,7 +3904,7 @@
 
 	* elements/standard/: bwratedunqueue.cc, ratedunqueue.cc: bwshaper
 
-2000-09-25 Monday 16:00  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-25 Monday 16:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: fixsrcloc.cc, floodinglocquerier.cc,
 	floodinglocquerier.hh, grid.hh, locationinfo.cc, locationinfo.hh,
@@ -3957,7 +3957,7 @@
 	tools/lib/Makefile.in, tools/lib/vectori.cc, userlevel/Makefile.in:
 	IPAddressSet
 
-2000-09-22 Friday 18:54  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-22 Friday 18:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
 
@@ -3975,12 +3975,12 @@
 
 	* elements/local/: toytcp.cc, toytcp.hh: foo
 
-2000-09-21 Thursday 17:05  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-21 Thursday 17:05  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: simplelocquerier.cc, simplelocquerier.hh: [no log
 	message]
 
-2000-09-21 Thursday 16:24  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-21 Thursday 16:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click, conf/grid.click, tools/run-grid-gateway,
 	tools/run-grid-node: added dest loc lookup support
@@ -4033,7 +4033,7 @@
 	linuxmodule/sched.cc, userlevel/Makefile.in, userlevel/click.cc:
 	smp groundwork
 
-2000-09-20 Wednesday 15:38  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-20 Wednesday 15:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/: run-grid-gateway, run-grid-node: accomodate the smaller
 	effective mtu of the grid network caused by the encapsulation
@@ -4042,7 +4042,7 @@
 
 	* lib/: packet.cc, packet.hh: more packet bullshit
 
-2000-09-20 Wednesday 10:51  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-20 Wednesday 10:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click, conf/grid.click, tools/run-grid-gateway,
 	tools/run-grid-node: add headroom to encap packets to avoid
@@ -4052,16 +4052,16 @@
 
 	* elements/userlevel/: kerneltap.cc, kerneltap.hh: kt
 
-2000-09-19 Tuesday 20:49  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-19 Tuesday 20:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/updateroutes.cc: more stuff to maintain routes and
 	nbr consistency
 
-2000-09-19 Tuesday 19:41  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-19 Tuesday 19:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/lookuplocalgridroute.cc: [no log message]
 
-2000-09-19 Tuesday 19:31  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-19 Tuesday 19:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click, conf/grid.click, tools/run-grid-gateway,
 	tools/run-grid-node, elements/grid/updateroutes.cc: [no log
@@ -4071,12 +4071,12 @@
 
 	* lib/: packet.cc, packet.hh: fixed packet::put
 
-2000-09-18 Monday 21:35  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-18 Monday 21:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click, elements/grid/lookupgeogridroute.cc,
 	elements/grid/lookuplocalgridroute.cc: [no log message]
 
-2000-09-18 Monday 15:34  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-18 Monday 15:34  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid.click, grid.click: [no log message]
 
@@ -4084,7 +4084,7 @@
 
 	* Makefile.in: makef
 
-2000-09-18 Monday 10:37  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-18 Monday 10:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
 
@@ -4121,14 +4121,14 @@
 	the checkipheaders); packet_type to packet; device annotation; and
 	fixed from/tolinux to work correctly
 
-2000-09-15 Friday 15:27  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-15 Friday 15:27  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: grid.hh, lookupgeogridroute.cc,
 	lookupgeogridroute.hh, lookuplocalgridroute.cc,
 	lookuplocalgridroute.hh, lrhello.cc, updateroutes.cc,
 	updateroutes.hh: update some code structure
 
-2000-09-15 Friday 10:22  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-15 Friday 10:22  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click: added feo routing element
 
@@ -4140,17 +4140,17 @@
 	elements/ip/tcprewriter.cc, elements/ip/tcprewriter.hh,
 	lib/llrpc.h: iprewriter llrpc
 
-2000-09-12 Tuesday 19:47  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-12 Tuesday 19:47  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: properly set SSID for ad-hoc mode, and reset
 	to associate with any SSID in managed mode.
 
-2000-09-12 Tuesday 14:25  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-12 Tuesday 14:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/kerneltap.cc: also, route program not always
 	in path
 
-2000-09-12 Tuesday 14:12  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-12 Tuesday 14:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/kerneltap.cc: sometimes ifconfig isn't in
 	path...
@@ -4211,7 +4211,7 @@
 	tools/click-undead/click-undead.cc, userlevel/Makefile.in: unqueues
 	added ; gaprate.?? ; rearranged stuff for robert CLICKPATH
 
-2000-09-06 Wednesday 20:56  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-06 Wednesday 20:56  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: loctable.cc, lookupgeogridroute.cc,
 	updateroutes.cc: support for geographic routing
@@ -4310,12 +4310,12 @@
 	ip/rripmapper.hh, standard/,classifier.cc, standard/,classifier.hh:
 	fix hostetherfilter; renamed rripmapper
 
-2000-09-01 Friday 18:40  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-01 Friday 18:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyhops.cc, filterbyhops.hh,
 	lookupgeogridroute.cc, lookupgeogridroute.hh: [no log message]
 
-2000-09-01 Friday 17:20  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-01 Friday 17:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyrange.hh, fixdstloc.cc, fixdstloc.hh,
 	fixsrcloc.cc, grid.hh, loctable.cc, loctable.hh,
@@ -4337,18 +4337,18 @@
 	tools/click-combine/click-combine.cc,
 	tools/click-undead/click-undead.cc: xxx
 
-2000-09-01 Friday 11:56  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-01 Friday 11:56  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: lookupgridroute.cc, lookupgridroute.hh,
 	lookuplocalgridroute.cc, lookuplocalgridroute.hh: changed
 	lookupgridroute filename to lookuplocalgridroute
 
-2000-09-01 Friday 11:43  Douglas De Couto <decouto@lcs.mit.edu>
+2000-09-01 Friday 11:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: pep_proto.hh, region.cc, region.hh, regionpep.cc,
 	regionpep.hh: [no log message]
 
-2000-08-31 Thursday 14:24  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-31 Thursday 14:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: regionpep.cc, regionpep.hh, pep.cc: [no log
 	message]
@@ -4373,7 +4373,7 @@
 	tools/click-undead/click-undead.cc, tools/lib/lexert.cc,
 	tools/lib/routert.cc, userlevel/click.cc: deadcode, other updates
 
-2000-08-30 Wednesday 17:01  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-30 Wednesday 17:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* apps/ClickController/ClickController.java: [no log message]
 
@@ -4398,15 +4398,15 @@
 	* elements/ip6/icmp6error.cc, elements/ip6/ip6fragmenter.cc,
 	elements/ip6/nat624.cc, lib/click_ip6.h, lib/ip6address.cc: nits
 
-2000-08-30 Wednesday 10:24  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-30 Wednesday 10:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* lib/ip6address.cc: const bug
 
-2000-08-30 Wednesday 10:22  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-30 Wednesday 10:22  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: region.cc, region.hh: grid rect region stuff
 
-2000-08-30 Wednesday 10:13  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-30 Wednesday 10:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* apps/ClickController/ClickController.java: updated layout
 
@@ -4441,7 +4441,7 @@
 	* elements/ip6/: nat624.cc, nat624.hh, netaddresstranslator.cc,
 	netaddresstranslator.hh: [no log message]
 
-2000-08-29 Tuesday 14:15  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-29 Tuesday 14:15  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* apps/ClickController/ClickController.java: now works with java
 	1.1
@@ -4893,7 +4893,7 @@
 
 	* lib/ewma.hh: [no log message]
 
-2000-08-22 Tuesday 21:17  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-22 Tuesday 21:17  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/pep_proto.hh: changed #define to const int
 
@@ -4916,7 +4916,7 @@
 
 	* lib/click_ether.h: change arp6 stuff to nd_sol/nd_adv
 
-2000-08-22 Tuesday 15:31  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-22 Tuesday 15:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/movesim.cc: [no log message]
 
@@ -4983,7 +4983,7 @@
 	* lib/confparse.cc: change cp_ip6_prefix relevant_bits <=128 rather
 	than 64 (line 1081)
 
-2000-08-21 Monday 16:30  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-21 Monday 16:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click, elements/grid/lookupgridroute.hh,
 	conf/grid-gateway.click: [no log message]
@@ -5011,7 +5011,7 @@
 	* elements/ip6/lookupip6route.cc: use cp_ip6_prefix to get ip6 dst
 	and mask add pair
 
-2000-08-21 Monday 13:24  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-21 Monday 13:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-gateway.click, grid.click: update grid configurations
 	to use new elements and new KernelTap instead of Tun
@@ -5021,7 +5021,7 @@
 	* elements/linuxmodule/: fromdevice.cc, fromdevice.hh,
 	polldevice.cc, polldevice.hh: [no log message]
 
-2000-08-21 Monday 13:05  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-21 Monday 13:05  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/: run-grid-gateway, run-grid-node: [no log message]
 
@@ -5036,25 +5036,25 @@
 	testip6-linux2.click, testip62.click, testip63.click,
 	testip64.click: [no log message]
 
-2000-08-21 Monday 11:52  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-21 Monday 11:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-gateway.click, grid-gateway2.click, grid.click,
 	grid3.click: renamed some grid configs
 
-2000-08-21 Monday 11:50  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-21 Monday 11:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-gateway.click, grid-gateway.cpp, grid-gw-info.h,
 	grid-node-info.h, grid-single-if-gw.cpp, grid.click, grid2.click,
 	grid2.cpp: removed some old skanky grid configurations
 
-2000-08-21 Monday 11:38  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-21 Monday 11:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc, hello.hh, localroute.cc, localroute.hh,
 	lookupgridroute.cc, lookupgridroute.hh, lrhello.cc, lrhello.hh,
 	neighbor.cc, neighbor.hh, updateroutes.cc, updateroutes.hh: changed
 	element names; update documentation
 
-2000-08-21 Monday 11:09  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-21 Monday 11:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/local/chuckcheck.hh: [no log message]
 
@@ -5121,7 +5121,7 @@
 	tools/click-fastclassifier/click-fastclassifier.cc: updates to grid
 	elements (no linuxmodule), and fixed memory leak
 
-2000-08-18 Friday 19:50  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-18 Friday 19:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/ethernet/: hostetherfilter.cc, hostetherfilter.hh: [no
 	log message]
@@ -5301,7 +5301,7 @@
 	* elements/ethernet/: arpquerier6.cc, arpquerier6.hh: [no log
 	message]
 
-2000-08-17 Thursday 13:20  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-17 Thursday 13:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: grid.hh, locationinfo.cc, neighbor.cc,
 	neighbor.hh: [no log message]
@@ -5401,7 +5401,7 @@
 	elements/ip/ipratemon.hh, lib/packet.hh, lib/templatei.cc: mazu
 	merge
 
-2000-08-14 Monday 11:07  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-14 Monday 11:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/movesim.cc: bug fixes
 
@@ -5410,12 +5410,12 @@
 	* elements/grid/: locfromfile.hh, pep.cc, pep.hh, pep_proto.hh:
 	PEP, but still not finished.
 
-2000-08-13 Sunday 20:53  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-13 Sunday 20:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyrange.cc, filterbyrange.hh, grid.hh,
 	locationinfo.cc, locationinfo.hh: blah blah blah blah
 
-2000-08-13 Sunday 20:53  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-13 Sunday 20:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: movesim.cc, movesim.hh: element for moving many
 	nodes around in a grid simulation
@@ -5484,7 +5484,7 @@
 	for now.  The checksum part still need	more work.  Now the
 	arpresponder packet just set to 0.
 
-2000-08-08 Tuesday 18:46  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-08 Tuesday 18:46  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: [no log message]
 
@@ -5501,7 +5501,7 @@
 	* elements/ip/ipratemon.cc, lib/llrpc.hh, lib/templatei.cc: [no log
 	message]
 
-2000-08-07 Monday 23:37  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-07 Monday 23:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: grid.hh, neighbor.cc, neighbor.hh: many changes. 
 	1) now maintain sequence numbers and ages on routing information to
@@ -5556,33 +5556,33 @@
 	* lib/confparse.cc, elements/ip6/checkip6header.cc,
 	elements/ip6/checkip6header2.cc: [no log message]
 
-2000-08-06 Sunday 19:09  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-06 Sunday 19:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid3.click: [no log message]
 
-2000-08-06 Sunday 19:09  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-06 Sunday 19:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: run-grid-node
 
-2000-08-06 Sunday 18:57  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-06 Sunday 18:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-gateway: freebsd support untested
 
-2000-08-06 Sunday 18:30  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-06 Sunday 18:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway2.click, tools/run-grid-gateway: [no log
 	message]
 
-2000-08-06 Sunday 16:38  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-06 Sunday 16:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway2.click, tools/run-grid-gateway: [no log
 	message]
 
-2000-08-06 Sunday 14:13  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-06 Sunday 14:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
 
-2000-08-06 Sunday 14:12  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-06 Sunday 14:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid3.click: range is now a script parameter
 
@@ -5750,11 +5750,11 @@
 	lib/errorelement.hh: more element documentation: added =for,
 	=begin, =end, and summaries, greatly improved "man n elements"
 
-2000-08-05 Saturday 23:30  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 23:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
 
-2000-08-05 Saturday 23:00  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 23:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: works with freebsd now, sort of... is
 	generally very hacky and only fit for use on installations with
@@ -5762,49 +5762,49 @@
 	on it.	actually, route mgmt is not handled very well at all
 	here....
 
-2000-08-05 Saturday 22:01  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 22:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* lib/bighashmap.cc, elements/grid/neighbor.cc: [no log message]
 
-2000-08-05 Saturday 21:40  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 21:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: [no log message]
 
-2000-08-05 Saturday 21:29  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 21:29  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/tun.cc: [no log message]
 
-2000-08-05 Saturday 21:14  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 21:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: [no log message]
 
-2000-08-05 Saturday 20:59  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 20:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
 
-2000-08-05 Saturday 20:58  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 20:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid3.click: added control socket
 
-2000-08-05 Saturday 20:58  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 20:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: added control socket stuff, write enable it
 	for debug
 
-2000-08-05 Saturday 20:52  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 20:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: checkgridheader.cc, fixsrcloc.cc, neighbor.cc,
 	setgridchecksum.cc: the gruesome relics of a stupid programmer
 	session are now undone
 
-2000-08-05 Saturday 20:43  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 20:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid3.click, elements/grid/checkgridheader.cc,
 	elements/grid/fixsrcloc.cc, elements/grid/localroute.hh,
 	elements/grid/neighbor.cc, elements/grid/setgridchecksum.cc,
 	conf/grid3.click: [no log message]
 
-2000-08-05 Saturday 19:35  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 19:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/checkgridheader.cc, elements/grid/neighbor.cc,
 	elements/grid/grid.hh, elements/grid/hello.cc,
@@ -5812,24 +5812,24 @@
 	elements/grid/setgridchecksum.cc, conf/grid3.click: [no log
 	message]
 
-2000-08-05 Saturday 19:03  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 19:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: tun.cc, tun.hh: cleanup interface when done
 	-- ifconfig down <interface-name>
 
-2000-08-05 Saturday 19:03  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 19:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
 
-2000-08-05 Saturday 17:44  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 17:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: [no log message]
 
-2000-08-05 Saturday 17:23  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 17:23  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/tun.cc: [no log message]
 
-2000-08-05 Saturday 16:56  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-05 Saturday 16:56  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/grid.hh, elements/grid/localroute.cc,
 	elements/grid/localroute.hh, elements/grid/lrhello.cc,
@@ -5926,7 +5926,7 @@
 	tools/lib/lexert.cc, tools/lib/lexert.hh, tools/lib/routert.cc:
 	elementdoc, lexer #line
 
-2000-08-04 Friday 17:01  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-04 Friday 17:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: [no log message]
 
@@ -5934,7 +5934,7 @@
 
 	* elements/ip/ipratemon.hh: [no log message]
 
-2000-08-04 Friday 16:31  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-04 Friday 16:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid3.click, elements/userlevel/tun.cc,
 	elements/userlevel/tun.hh, tools/run-grid-node,
@@ -5978,12 +5978,12 @@
 	tcpipsend.cc, udpipencap.cc, ipflexmon.cc, ipratemon.cc: die
 	#define die
 
-2000-08-03 Thursday 20:00  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-03 Thursday 20:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: tun.cc, tun.hh: now take tun device full
 	name, for compatibility with grid node scripts
 
-2000-08-03 Thursday 19:59  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-03 Thursday 19:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: needs freebsd stuff; also, how to undo
 	changes?  ``fix-grid-node''??
@@ -5992,11 +5992,11 @@
 
 	* lib/click_ether.h: ethertype
 
-2000-08-03 Thursday 19:26  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-03 Thursday 19:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid3.click: [no log message]
 
-2000-08-03 Thursday 19:24  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-03 Thursday 19:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node: sergvstbsrtgbsrtbvsrtbsrbvsrdfz
 
@@ -6067,7 +6067,7 @@
 
 	* lib/mplock.hh: [no log message]
 
-2000-08-03 Thursday 13:22  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-03 Thursday 13:22  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/grid.hh: [no log message]
 
@@ -6181,11 +6181,11 @@
 	* acconfig.h, lib/bighashmap.cc, lib/bighashmap.hh, lib/vector.hh:
 	ddd
 
-2000-08-01 Tuesday 13:27  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-01 Tuesday 13:27  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: updated routing entry update logic
 
-2000-08-01 Tuesday 13:27  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-01 Tuesday 13:27  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/: userlevel/tun.cc, grid/neighbor.cc, userlevel/tun.cc:
 	[no log message]
@@ -6200,12 +6200,12 @@
 
 	* lib/hashmap2.hh: [no log message]
 
-2000-08-01 Tuesday 11:03  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-01 Tuesday 11:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/tun.cc: don't print error message on
 	selected() EAGAIN
 
-2000-08-01 Tuesday 10:37  Douglas De Couto <decouto@lcs.mit.edu>
+2000-08-01 Tuesday 10:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: bug in timeout logic
 
@@ -6240,7 +6240,7 @@
 	tools/lib/routert.cc, tools/lib/routert.hh, userlevel/click.cc:
 	HashMap skulduggery
 
-2000-07-31 Monday 19:24  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-31 Monday 19:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid2.cpp: [no log message]
 
@@ -6253,14 +6253,14 @@
 
 	* lib/: glue.cc, glue.hh: DUMB! strtol bug
 
-2000-07-31 Monday 17:00  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-31 Monday 17:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: grid.hh, hello.cc, hello.hh, localroute.cc,
 	localroute.hh, neighbor.cc, printgrid.cc, lrhello.cc, lrhello.hh:
 	split hello into HELLO and LocalRouteHello, with corresponding
 	changes in other grid els
 
-2000-07-31 Monday 16:59  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-31 Monday 16:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-sim.click: updated to use the latest grid elements
 
@@ -6546,32 +6546,32 @@
 
 	* tools/click-align/click-align.cc: add encap stuff to align tools
 
-2000-07-26 Wednesday 16:14  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-26 Wednesday 16:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-node-info.h: [no log message]
 
-2000-07-26 Wednesday 15:40  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-26 Wednesday 15:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: localroute.cc, neighbor.cc: [no log message]
 
-2000-07-26 Wednesday 15:14  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-26 Wednesday 15:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: [no log message]
 
-2000-07-26 Wednesday 14:54  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-26 Wednesday 14:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.cpp: updated to use localroute element
 
-2000-07-26 Wednesday 14:48  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-26 Wednesday 14:48  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid2.cpp: uses new localroute element
 
-2000-07-26 Wednesday 14:45  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-26 Wednesday 14:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc, conf/grid-node-info.h: [no log
 	message]
 
-2000-07-26 Wednesday 14:36  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-26 Wednesday 14:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc, localroute.cc, localroute.hh,
 	neighbor.cc, neighbor.hh: may not work...!
@@ -6595,16 +6595,16 @@
 
 	* elements/standard/classifier.cc: Classifier fix
 
-2000-07-25 Tuesday 23:10  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-25 Tuesday 23:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: checkgridheader.cc, hello.cc: [no log message]
 
-2000-07-25 Tuesday 23:10  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-25 Tuesday 23:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: checkgridheader.cc, hello.cc, neighbor.cc:
 	cleaned up some bugs with size checking, etc...
 
-2000-07-25 Tuesday 21:10  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-25 Tuesday 21:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: checkgridheader.cc, filterbyrange.cc,
 	fixsrcloc.cc, grid.hh, hello.cc, hello.hh, neighbor.cc,
@@ -6681,36 +6681,36 @@
 
 	* etc/linux-2.2.16-patch: [no log message]
 
-2000-07-23 Sunday 16:26  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-23 Sunday 16:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/userwritehandlers.hh: [no log message]
 
-2000-07-23 Sunday 15:35  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-23 Sunday 15:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: locationinfo.cc, locationinfo.hh: fixed up loc
 	write handler
 
-2000-07-22 Saturday 20:43  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-22 Saturday 20:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.cpp, conf/grid2.cpp,
 	elements/grid/locationinfo.hh: [no log message]
 
-2000-07-22 Saturday 20:40  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-22 Saturday 20:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: staticlocationinfo.cc, staticlocationinfo.hh: get
 	rid of staticlocationinfo.*, superseded by LocationInfo overhauls
 
-2000-07-22 Saturday 20:38  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-22 Saturday 20:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: replace bzero with memset
 
-2000-07-22 Saturday 20:37  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-22 Saturday 20:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/locationinfo.cc: upgraded with read/write handlers,
 	and a configuration string, to supercede StaticLocationInfo which
 	is now <poof!> gone.
 
-2000-07-22 Saturday 20:29  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-22 Saturday 20:29  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/: userlevel/userwritehandlers.hh,
 	userlevel/userwritehandlers.cc, userlevel/userwritehandlers.hh,
@@ -6729,47 +6729,47 @@
 	* elements/userlevel/: packetsocket.cc, packetsocket.hh: fixes to
 	compile on FreeBSD
 
-2000-07-20 Thursday 21:55  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 21:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid2.cpp: updated to use grid header sanity checking
 
-2000-07-20 Thursday 21:53  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 21:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.cpp: updated with grid header sanity checking
 
-2000-07-20 Thursday 21:49  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 21:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc, neighbor.cc, setgridchecksum.cc: [no
 	log message]
 
-2000-07-20 Thursday 21:47  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 21:47  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/grid.hh: new hdr format
 
-2000-07-20 Thursday 21:41  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 21:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: checkgridheader.cc, checkgridheader.hh,
 	setgridchecksum.cc, setgridchecksum.hh: grid header elements
 
-2000-07-20 Thursday 20:45  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 20:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.cpp: added location support
 
-2000-07-20 Thursday 20:29  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 20:29  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: fixsrcloc.cc, filterbyrange.cc, fixsrcloc.cc: [no
 	log message]
 
-2000-07-20 Thursday 16:52  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 16:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyrange.cc, fixsrcloc.cc: [no log message]
 
-2000-07-20 Thursday 14:04  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 14:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-gateway.cpp, grid-gw-info.h, grid-single-if-gw.cpp:
 	[no log message]
 
-2000-07-20 Thursday 14:01  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-20 Thursday 14:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-node-info.h, grid2.cpp: added hex grid ip item
 
@@ -6778,21 +6778,21 @@
 	* elements/ip/: ipclassifier.cc, iprewriter.hh: fix bug in
 	ipclassifier extend gc interval for iprewriter
 
-2000-07-19 Wednesday 16:19  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-19 Wednesday 16:19  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-gateway.cpp, grid-gw-info.h, grid-single-if-gw.click,
 	grid-single-if-gw.cpp: changed args to ARPResponder as i am unclear
 	on arg syntax
 
-2000-07-19 Wednesday 14:15  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-19 Wednesday 14:15  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-node-info.h: new grid protocol number
 
-2000-07-19 Wednesday 14:13  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-19 Wednesday 14:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click: this version is broken
 
-2000-07-19 Wednesday 14:10  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-19 Wednesday 14:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* lib/click_ether.h: changed grid protocol number: wvlan_cs driver
 	won't transmit frames with high bit of protocol number set
@@ -6806,7 +6806,7 @@
 	etc/linux-2.2.14-patch, etc/linux-2.2.16-patch: move to
 	linux-2.2.16
 
-2000-07-18 Tuesday 15:44  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 15:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-node-info.h: [no log message]
 
@@ -6814,21 +6814,21 @@
 
 	* etc/: linux-2.2.14-patch, linux-2.2.16-patch: lcs/mazu merge
 
-2000-07-18 Tuesday 13:43  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 13:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid2.click, grid2.cpp: [no log message]
 
-2000-07-18 Tuesday 13:42  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 13:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-single-if-gw.cpp: now uses To/FromDevice instead of
 	PacketSocket
 
-2000-07-18 Tuesday 13:39  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 13:39  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-single-if-gw.click: now uses From/ToDevice instead of
 	packet socket.	should ``automatically'' work in the kernel.
 
-2000-07-18 Tuesday 13:39  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 13:39  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid2.click: now uses the grid user level From/ToDevice
 	instead of packets sockets -- should ``automatically'' work in
@@ -6839,24 +6839,24 @@
 	* configure.in, elements/userlevel/fromdevice.cc,
 	elements/userlevel/fromdevice.hh: x
 
-2000-07-18 Tuesday 13:29  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 13:29  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc, conf/grid2.cpp,
 	conf/grid-single-if-gw.cpp: [no log message]
 
-2000-07-18 Tuesday 13:28  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 13:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: filterbyrange.cc, filterbyrange.hh, fixsrcloc.cc,
 	fixsrcloc.hh, locationinfo.cc, locationinfo.hh,
 	staticlocationinfo.cc, staticlocationinfo.hh: elements for dealing
 	with grid location info
 
-2000-07-18 Tuesday 13:06  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 13:06  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: grid.hh, neighbor.cc: supprt for location in grid
 	headers, and variable grid hdr lengths
 
-2000-07-18 Tuesday 12:09  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-18 Tuesday 12:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: fromdevice.cc, tobpf.cc, todevice.cc: typos
 
@@ -6878,7 +6878,7 @@
 	* elements/ip/ipprint.cc, elements/ip/ipprint.hh, lib/confparse.hh:
 	mazu merge
 
-2000-07-17 Monday 16:44  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-17 Monday 16:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* lib/confparse.cc: fixed types for cp_ulong
 
@@ -6921,64 +6921,64 @@
 
 	* lib/etheraddress.hh: [no log message]
 
-2000-07-14 Friday 11:54  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-14 Friday 11:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-gw-info.h, grid-single-if-gw.cpp: single interface
 	userlevel gateway configurations using cpp
 
-2000-07-14 Friday 11:30  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-14 Friday 11:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-node-info.h: [no log message]
 
-2000-07-14 Friday 11:04  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-14 Friday 11:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-node-info.h, grid2.cpp: user level grid client
 	configs for use with cpp
 
-2000-07-14 Friday 10:23  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-14 Friday 10:23  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/: grid-single-if-gw.click, grid-single-if-gw.click,
 	grid-single-if-gw.click, grid-gateway.click, grid2.click: [no log
 	message]
 
-2000-07-14 Friday 10:13  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-14 Friday 10:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: packetsocket.cc, packetsocket.hh:
 	promiscuous mode is now optional
 
-2000-07-14 Friday 09:57  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-14 Friday 09:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: neighbor.cc, neighbor.hh: now expects dest ip
 	annotations on input 1
 
-2000-07-13 Thursday 21:02  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-13 Thursday 21:02  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid2.click: updates to accomodate new element interfaces.
 
-2000-07-13 Thursday 20:58  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-13 Thursday 20:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/tun.cc: in linux, treat ``far'' address as the
 	netmask.
 
-2000-07-13 Thursday 20:38  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-13 Thursday 20:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc, hello.hh: added jitter to Hello
 	transmissions
 
-2000-07-13 Thursday 18:36  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-13 Thursday 18:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: neighbor.cc, neighbor.hh: added timeouts to
 	neighbor table; added manpage information
 
-2000-07-13 Thursday 16:58  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-13 Thursday 16:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/hello.cc: now takes a millisecond period argument.
 
-2000-07-13 Thursday 16:57  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-13 Thursday 16:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/hello.hh: updated man-page info
 
-2000-07-13 Thursday 16:46  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-13 Thursday 16:46  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/packetsocket.hh: added man page info
 
@@ -6987,17 +6987,17 @@
 	* elements/ip/ipmirror.cc, elements/ip/unstripipheader.cc,
 	elements/ip/unstripipheader.hh, lib/ipflowid.cc: [no log message]
 
-2000-07-13 Thursday 01:19  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-13 Thursday 01:19  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid-gateway.click: not tested
 
-2000-07-12 Wednesday 21:42  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-12 Wednesday 21:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/tun.cc: finally now tun works with linux
 	ethertap: linux actually receives *gasp* TCP as well as ICMP and
 	UDP packets.  yet another fun linux documentation omission!!
 
-2000-07-12 Wednesday 21:31  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-12 Wednesday 21:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/tun.cc: [no log message]
 
@@ -7006,20 +7006,20 @@
 	* lib/: hashmap.cc, hashmap.hh, ipflowid.hh, packet.cc, packet.hh:
 	mazu merge
 
-2000-07-12 Wednesday 17:42  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-12 Wednesday 17:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid2.click: like grid.click, but uses PacketSocket element
 	for better performance hopefully.
 
-2000-07-12 Wednesday 17:35  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-12 Wednesday 17:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: nothing special
 
-2000-07-12 Wednesday 17:35  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-12 Wednesday 17:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: tobpf.cc, tun.cc: nothing new
 
-2000-07-12 Wednesday 17:31  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-12 Wednesday 17:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: packetsocket.cc, packetsocket.hh: linux
 	implementation of user level device interface; kicks BPF's butt
@@ -7055,29 +7055,29 @@
 	* lib/router.cc, lib/router.hh, userlevel/click.cc: another blip to
 	element handlers
 
-2000-07-11 Tuesday 14:55  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 14:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/tun.cc: now actually hooks up the packets so
 	linux will accept them.
 
-2000-07-11 Tuesday 14:33  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 14:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: [no log message]
 
-2000-07-11 Tuesday 14:21  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 14:21  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click: new nbr params
 
-2000-07-11 Tuesday 14:21  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 14:21  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: Neighbor now needs ip and eth addr.
 	assigned
 
-2000-07-11 Tuesday 14:06  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 14:06  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/neighbor.cc: bugfixes
 
-2000-07-11 Tuesday 13:57  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 13:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc, neighbor.cc: grid bugfixes
 
@@ -7088,21 +7088,21 @@
 	linuxmodule/modulepriv.hh, linuxmodule/proc_element.cc: handler
 	fixes
 
-2000-07-11 Tuesday 13:37  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 13:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click: initial config for a grid node
 
-2000-07-11 Tuesday 13:32  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 13:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: tun.cc, tun.hh: modifications to work with
 	linux ethertap device
 
-2000-07-11 Tuesday 13:32  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 13:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/grid.hh: grid header formats for neighbor/hello
 	elements
 
-2000-07-11 Tuesday 13:31  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-11 Tuesday 13:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc, hello.hh, neighbor.cc, neighbor.hh:
 	further grid developments...
@@ -7131,7 +7131,7 @@
 	elements/linuxmodule/perfinfo.cc, elements/linuxmodule/perfinfo.hh,
 	lib/perfctr.hh: [no log message]
 
-2000-07-10 Monday 15:30  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-10 Monday 15:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc, hello.hh, neighbor.cc, neighbor.hh:
 	sdtuhbvslhgslhvsiluvhlsi more to come
@@ -7329,7 +7329,7 @@
 
 	* elements/local/randudpipencap.hh: [no log message]
 
-2000-07-06 Thursday 16:09  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-06 Thursday 16:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* configure.in, elements/grid/hello.cc, elements/grid/neighbor.cc,
 	lib/click_ether.h: add grid subdir and config stuff
@@ -7340,7 +7340,7 @@
 	elements/ip/kinkyratemon.cc, elements/ip/kinkyratemon.hh,
 	lib/ewma.hh: [no log message]
 
-2000-07-05 Wednesday 15:57  Douglas De Couto <decouto@lcs.mit.edu>
+2000-07-05 Wednesday 15:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: hello.cc, hello.hh, neighbor.cc, neighbor.hh:
 	hello.{cc,hh}: periodically broadcast grid HELLO messages.
@@ -8784,7 +8784,7 @@
 
 	* elements/standard/: print.cc, print.hh: updated Print man page
 
-2000-03-16 Thursday 18:17  Douglas De Couto <decouto@lcs.mit.edu>
+2000-03-16 Thursday 18:17  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/frombpf.cc: Updated to work with later version
 	(0.4-11) of the redhat libpcap distribution.  Need to install a
@@ -8837,7 +8837,7 @@
 
 	* elements/standard/red.hh: manual update
 
-2000-03-15 Wednesday 22:03  Douglas De Couto <decouto@lcs.mit.edu>
+2000-03-15 Wednesday 22:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: frombpf.cc, frombpf.hh: updated FromBPF to
 	work with polling scheduler
