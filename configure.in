@@ -224,7 +224,7 @@ if test $ac_cv_tcp_prot = yes; then
 fi
 
 AC_CACHE_CHECK(for device polling kernel extension, ac_cv_poll_extension,
-[if grep pollable $linuxdir/include/linux/netdevice.h >/dev/null 2>&1; then
+[if grep polling $linuxdir/include/linux/netdevice.h >/dev/null 2>&1; then
   ac_cv_poll_extension=yes
 else ac_cv_poll_extension=no; fi])
 if test $ac_cv_poll_extension = yes; then
