@@ -29,7 +29,8 @@ WirelessInfo::WirelessInfo()
     _ssid(""),
     _bssid((const unsigned char *) "\000\000\000\000\000\000"),
     _channel(-1),
-    _interval(100)  
+    _interval(100),
+    _wep(false)
 {
   MOD_INC_USE_COUNT;
 
@@ -50,13 +51,14 @@ WirelessInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "BSSID", cpEthernetAddress, "bssid", &_bssid,
 		    "CHANNEL", cpInteger, "channel", &_channel,
 		    "INTERVAL", cpInteger, "interval", &_interval,
+		    "WEP", cpBool, "wep", &_wep,
 		    cpEnd);
 
   return res;
 }
 
 
-enum {H_SSID, H_BSSID, H_CHANNEL, H_INTERVAL};
+enum {H_SSID, H_BSSID, H_CHANNEL, H_INTERVAL, H_WEP};
 
 int 
 WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
@@ -94,6 +96,13 @@ WirelessInfo::write_param(const String &in_s, Element *e, void *vparam,
     f->_interval = m;
     break;
  }
+  case H_WEP: {    //debug
+    bool wep;
+    if (!cp_bool(s, &wep)) 
+      return errh->error("wep parameter must be boolean");
+    f->_wep = wep;
+    break;
+  }
   }
   return 0;
 }
@@ -107,6 +116,7 @@ WirelessInfo::read_param(Element *e, void *thunk)
     case H_BSSID: return td->_bssid.s() + "\n";
     case H_CHANNEL: return String(td->_channel) + "\n";
     case H_INTERVAL: return String(td->_interval) + "\n";
+    case H_WEP: return String(td->_wep) + "\n";
     default:
       return "\n";
     }
@@ -120,12 +130,14 @@ WirelessInfo::add_handlers()
   add_read_handler("bssid", read_param, (void *) H_BSSID);
   add_read_handler("channel", read_param, (void *) H_CHANNEL);
   add_read_handler("interval", read_param, (void *) H_INTERVAL);
+  add_read_handler("wep", read_param, (void *) H_WEP);
 
 
   add_write_handler("ssid", write_param, (void *) H_SSID);
   add_write_handler("bssid", write_param, (void *) H_BSSID);
   add_write_handler("channel", write_param, (void *) H_CHANNEL);
   add_write_handler("interval", write_param, (void *) H_INTERVAL);
+  add_write_handler("wep", write_param, (void *) H_WEP);
   
 }
 

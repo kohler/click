@@ -153,7 +153,13 @@ AutoRateFallback::process_feedback(Packet *p_in)
     nfo->_stepup = _stepup;
   }
   nfo->_wentup = false;
-  nfo->_successes++;
+
+  if (eh->retries == 0) {
+    nfo->_successes++;
+  } else {
+    nfo->_successes = 0;
+  }
+
   if (nfo->_successes > nfo->_stepup && 
 
       nfo->_current_index != nfo->_rates.size() - 1) {

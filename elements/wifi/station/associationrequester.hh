@@ -66,6 +66,7 @@ class AssociationRequester : public Element { public:
   class WirelessInfo *_winfo;
 
   String scan_string();
+
  private:
 
 

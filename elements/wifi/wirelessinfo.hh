@@ -77,6 +77,7 @@ class WirelessInfo : public Element { public:
   EtherAddress _bssid;
   int _channel;
   int _interval;
+  bool _wep;
 };
 
 CLICK_ENDDECLS

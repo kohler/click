@@ -160,8 +160,7 @@ String unparse_beacon(Packet *p) {
     }
   }
   
-
-  
+ 
   sa << "[ ";
   if (capability & WIFI_CAPINFO_ESS) {
     sa << "ESS ";
@@ -266,6 +265,51 @@ String capability_string(int capability) {
   sa << "]";
   return sa.take_string();
 }
+
+String get_ssid(u_int8_t *ptr) {
+  if (ptr[0] != WIFI_ELEMID_SSID) {
+    return "(invalid ssid)";
+  }
+  return String((char *) ptr + 2, min((int)ptr[1], WIFI_NWID_MAXSIZE));  
+}
+
+Vector<int> get_rates(u_int8_t *ptr) {
+  Vector<int> rates;
+  for (int x = 0; x < min((int)ptr[1], WIFI_RATES_MAXSIZE); x++) {
+    uint8_t rate = ptr[x + 2];
+    rates.push_back(rate);
+  }
+  return rates;
+}
+
+String rates_string(Vector<int> rates) {
+  Vector<int> basic_rates;
+  Vector<int> other_rates;
+  StringAccum sa;
+  for (int x = 0; x < rates.size(); x++) {
+    if (rates[x] & WIFI_RATE_BASIC) {
+      basic_rates.push_back(rates[x]);
+    } else {
+      other_rates.push_back(rates[x]);
+    }
+  }
+  sa << "({";
+  for (int x = 0; x < basic_rates.size(); x++) {
+    sa << (basic_rates[x] & WIFI_RATE_VAL);
+    if (x != basic_rates.size()-1) {
+      sa << " ";
+    }
+  }
+  sa << "} ";
+  for (int x = 0; x < other_rates.size(); x++) {
+    sa << other_rates[x];
+    if (x != other_rates.size()-1) {
+      sa << " ";
+    }
+  }
+  sa << ")";
+  return sa.take_string();
+}
 Packet *
 PrintWifi::simple_action(Packet *p)
 {
@@ -339,7 +383,28 @@ PrintWifi::simple_action(Packet *p)
     sa << "mgmt ";
 
     switch (subtype) {
-    case WIFI_FC0_SUBTYPE_ASSOC_REQ:      sa << "assoc_req "; break;
+    case WIFI_FC0_SUBTYPE_ASSOC_REQ: {
+      uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
+      ptr += 2;
+      
+      uint16_t l_int = le16_to_cpu(*(uint16_t *) ptr);
+      ptr += 2;
+
+      String ssid = get_ssid(ptr);
+      ptr += ptr[1] + 2;
+
+      Vector<int> rates = get_rates(ptr);
+      String rates_s = rates_string(rates);
+
+      sa << "assoc_req ";
+      sa << "listen_int " << l_int << " ";
+      sa << capability_string(capability);
+      sa << " ssid " << ssid;
+      sa << " rates " << rates_s;
+      sa << " ";
+      break;
+
+    }
     case WIFI_FC0_SUBTYPE_ASSOC_RESP: {     
       uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
       ptr += 2;
@@ -357,7 +422,18 @@ PrintWifi::simple_action(Packet *p)
     }
     case WIFI_FC0_SUBTYPE_REASSOC_REQ:    sa << "reassoc_req "; break;
     case WIFI_FC0_SUBTYPE_REASSOC_RESP:   sa << "reassoc_resp "; break;
-    case WIFI_FC0_SUBTYPE_PROBE_REQ:      sa << "probe_req "; break;
+    case WIFI_FC0_SUBTYPE_PROBE_REQ:      {
+      sa << "probe_req "; 
+      String ssid = get_ssid(ptr);
+      ptr += ptr[1] + 2;
+
+      Vector<int> rates = get_rates(ptr);
+      String rates_s = rates_string(rates);
+      sa << "ssid " << ssid;
+      sa << " " << rates_s << " ";
+      break;
+
+    }
     case WIFI_FC0_SUBTYPE_PROBE_RESP:     
       sa << "probe_resp "; 
       sa << unparse_beacon(p);

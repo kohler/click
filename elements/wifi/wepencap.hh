@@ -55,6 +55,7 @@ class WepEncap : public Element { public:
   struct rc4_state _rc4;
   String _key;
   int _keyid;
+  bool _active;
  private:
 
 };

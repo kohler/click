@@ -74,14 +74,14 @@ WepDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _strict = false;
+  _keyid = 0;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
-		  cpOptional, 
-		  cpString, "key", &_keys[0],
-		  cpString, "key", &_keys[1],
-		  cpString, "key", &_keys[2],
-		  cpString, "key", &_keys[3],
+		  cpOptional,
+		  cpString, "key", &_key,
+		  cpUnsigned, "keyid", &_keyid,
 		  cpKeywords,
+		  "KEYID", cpUnsigned, "keyid", &_keyid,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "STRICT", cpBool, "strict header check", &_strict,
 		  cpEnd) < 0)
@@ -114,11 +114,14 @@ WepDecap::simple_action(Packet *p_in)
   u_int32_t iv;
   u_int8_t keyid = icp[WIFI_WEP_IVLEN];
 
+  if (keyid != _keyid) {
+    return p;
+  }
   iv = icp[0] | (icp[1] << 8) | (icp[2] << 16) | (icp[3] << 24);
 
   memcpy(rc4key, icp, WIFI_WEP_IVLEN);
-  memcpy(rc4key + WIFI_WEP_IVLEN, _keys[keyid].cc(), _keys[keyid].length());
-  rc4_init(&_rc4, rc4key, WIFI_WEP_IVLEN + _keys[keyid].length());
+  memcpy(rc4key + WIFI_WEP_IVLEN, _key.cc(), _key.length());
+  rc4_init(&_rc4, rc4key, WIFI_WEP_IVLEN + _key.length());
 
   u_int8_t *payload = p->data() + sizeof(click_wifi) + WIFI_WEP_HEADERSIZE;
   int payload_len = p->length() - (sizeof(click_wifi) + WIFI_WEP_HEADERSIZE + WIFI_WEP_CRCLEN);
@@ -154,21 +157,22 @@ WepDecap::simple_action(Packet *p_in)
 }
 
 
-enum {H_DEBUG};
+enum {H_DEBUG, H_KEY, H_KEYID};
 
 static String 
-WepDecap_read_param(Element *e, void *thunk)
+read_param(Element *e, void *thunk)
 {
   WepDecap *td = (WepDecap *)e;
     switch ((uintptr_t) thunk) {
-      case H_DEBUG:
-	return String(td->_debug) + "\n";
+      case H_DEBUG: return String(td->_debug) + "\n";
+    case H_KEY: return td->_key.hex() + "\n";
+    case H_KEYID: return String(td->_keyid) + "\n";
     default:
       return String();
     }
 }
 static int 
-WepDecap_write_param(const String &in_s, Element *e, void *vparam,
+write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
   WepDecap *f = (WepDecap *)e;
@@ -181,6 +185,20 @@ WepDecap_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
+  case H_KEYID: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("keyid parameter must be unsigned");
+    f->_keyid = m;
+    break;
+  }
+  case H_KEY: {
+    String m;
+    if (!cp_string(s, &m)) 
+      return errh->error("key parameter must be unsigned");
+    f->_key = m;
+    break;
+  }
   }
   return 0;
 }
@@ -190,9 +208,13 @@ WepDecap::add_handlers()
 {
   add_default_handlers(true);
 
-  add_read_handler("debug", WepDecap_read_param, (void *) H_DEBUG);
+  add_read_handler("debug", read_param, (void *) H_DEBUG);
+  add_read_handler("key", read_param, (void *) H_KEY);
+  add_read_handler("keyid", read_param, (void *) H_KEYID);
 
-  add_write_handler("debug", WepDecap_write_param, (void *) H_DEBUG);
+  add_write_handler("debug", write_param, (void *) H_DEBUG);
+  add_write_handler("key", write_param, (void *) H_KEY);
+  add_write_handler("keyid", write_param, (void *) H_KEYID);
 }
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(rc4)

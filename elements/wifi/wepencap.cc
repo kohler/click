@@ -74,15 +74,17 @@ WepEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _debug = false;
   _strict = false;
+  _active = false;
   _keyid = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional, 
 		  cpString, "key", &_key,
 		  /* not required */
 		  cpKeywords,
-		  "KEYID", _keyid,
+		  "KEYID", cpUnsigned, "keyid", &_keyid,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "STRICT", cpBool, "strict header check", &_strict,
+		  "ACTIVE", cpBool, "active", &_active,
 		  cpEnd) < 0)
     return -1;
   memset(&_rc4, 0,sizeof(_rc4));
@@ -96,6 +98,9 @@ WepEncap::simple_action(Packet *p_in)
   struct click_wifi *w = (struct click_wifi *) p->data();
   int type = w->i_fc[0] & WIFI_FC0_TYPE_MASK;
   int subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
+  if (!_active) {
+    return p;
+  }
   if (type != WIFI_FC0_TYPE_DATA &&
       !(type == WIFI_FC0_TYPE_MGT && subtype == WIFI_FC0_SUBTYPE_AUTH)) {
     /* only encrypt data and auth frames */
@@ -149,21 +154,23 @@ WepEncap::simple_action(Packet *p_in)
 }
 
 
-enum {H_DEBUG};
+enum {H_DEBUG, H_ACTIVE, H_KEY, H_KEYID};
 
 static String 
-WepEncap_read_param(Element *e, void *thunk)
+read_param(Element *e, void *thunk)
 {
   WepEncap *td = (WepEncap *)e;
     switch ((uintptr_t) thunk) {
-      case H_DEBUG:
-	return String(td->_debug) + "\n";
+    case H_DEBUG: return String(td->_debug) + "\n";
+    case H_ACTIVE: return String(td->_active) + "\n";
+    case H_KEY: return td->_key.hex() + "\n";
+    case H_KEYID: return String(td->_keyid) + "\n";
     default:
       return String();
     }
 }
 static int 
-WepEncap_write_param(const String &in_s, Element *e, void *vparam,
+write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
   WepEncap *f = (WepEncap *)e;
@@ -176,6 +183,27 @@ WepEncap_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
+  case H_ACTIVE: {    //debug
+    bool active;
+    if (!cp_bool(s, &active)) 
+      return errh->error("active parameter must be boolean");
+    f->_active = active;
+    break;
+  }
+  case H_KEYID: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("keyid parameter must be unsigned");
+    f->_keyid = m;
+    break;
+  }
+  case H_KEY: {
+    String m;
+    if (!cp_string(s, &m)) 
+      return errh->error("key parameter must be unsigned");
+    f->_key = m;
+    break;
+  }
   }
   return 0;
 }
@@ -185,9 +213,15 @@ WepEncap::add_handlers()
 {
   add_default_handlers(true);
 
-  add_read_handler("debug", WepEncap_read_param, (void *) H_DEBUG);
+  add_read_handler("debug", read_param, (void *) H_DEBUG);
+  add_read_handler("active", read_param, (void *) H_ACTIVE);
+  add_read_handler("key", read_param, (void *) H_KEY);
+  add_read_handler("keyid", read_param, (void *) H_KEYID);
 
-  add_write_handler("debug", WepEncap_write_param, (void *) H_DEBUG);
+  add_write_handler("debug", write_param, (void *) H_ACTIVE);
+  add_write_handler("active", write_param, (void *) H_ACTIVE);
+  add_write_handler("key", write_param, (void *) H_KEY);
+  add_write_handler("keyid", write_param, (void *) H_KEYID);
 }
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(rc4)

@@ -54,7 +54,8 @@ class WepDecap : public Element { public:
 
   u_int32_t iv;
   struct rc4_state _rc4;
-  String _keys[WIFI_WEP_NKID];
+  String _key;
+  int _keyid;
  private:
 
 };

@@ -116,6 +116,9 @@ AssociationRequester::send_assoc_req()
 
   uint16_t capability = 0;
   capability |= WIFI_CAPINFO_ESS;
+  if (_winfo && _winfo->_wep) {
+    capability |= WIFI_CAPINFO_PRIVACY;
+  }
 
   /* capability */
   *(uint16_t *) ptr = cpu_to_le16(capability);

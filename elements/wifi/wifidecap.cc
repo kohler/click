@@ -67,6 +67,11 @@ WifiDecap::simple_action(Packet *p)
     p->kill();
     return 0;
   }
+
+  if (w->i_fc[1] & WIFI_FC1_WEP) {
+    p->kill();
+    return 0;
+  }
   
   dir = w->i_fc[1] & WIFI_FC1_DIR_MASK;
 
