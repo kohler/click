@@ -146,8 +146,8 @@ IPPrint::simple_action(Packet *p)
 
   IPAddress src(iph->ip_src.s_addr);
   IPAddress dst(iph->ip_dst.s_addr);
-  unsigned ip_len = ntohs(iph->ip_len);
-  //  unsigned char tos = iph->ip_tos;
+  int ip_len = ntohs(iph->ip_len);
+  int payload_len = ip_len - (iph->ip_hl << 2);
 
   StringAccum sa;
   if (_label)
@@ -165,72 +165,92 @@ IPPrint::simple_action(Packet *p)
   if (_print_tos)
     sa << "tos " << (int)iph->ip_tos << ' ';
   if (_print_len)
-    sa << "length " << ntohs(iph->ip_len) << ' ';
+    sa << "length " << ip_len << ' ';
 
-  switch (iph->ip_p) {
+  if (IP_FIRSTFRAG(iph)) {
+    switch (iph->ip_p) {
     
-  case IP_PROTO_TCP: {
-    const click_tcp *tcph = p->tcp_header();
-    unsigned short srcp = ntohs(tcph->th_sport);
-    unsigned short dstp = ntohs(tcph->th_dport);
-    unsigned seq = ntohl(tcph->th_seq);
-    unsigned ack = ntohl(tcph->th_ack);
-    unsigned win = ntohs(tcph->th_win);
-    unsigned seqlen = ip_len - (iph->ip_hl << 2) - (tcph->th_off << 2);
-    int ackp = tcph->th_flags & TH_ACK;
+     case IP_PROTO_TCP: {
+       const click_tcp *tcph = p->tcp_header();
+       unsigned short srcp = ntohs(tcph->th_sport);
+       unsigned short dstp = ntohs(tcph->th_dport);
+       unsigned seq = ntohl(tcph->th_seq);
+       unsigned ack = ntohl(tcph->th_ack);
+       unsigned win = ntohs(tcph->th_win);
+       unsigned seqlen = payload_len - (tcph->th_off << 2);
+       int ackp = tcph->th_flags & TH_ACK;
 
-    sa << src << '.' << srcp << " > " << dst << '.' << dstp << ": ";
-    if (tcph->th_flags & TH_SYN)
-      sa << 'S', seqlen++;
-    if (tcph->th_flags & TH_FIN)
-      sa << 'F', seqlen++;
-    if (tcph->th_flags & TH_RST)
-      sa << 'R';
-    if (tcph->th_flags & TH_PUSH)
-      sa << 'P';
-    if (!(tcph->th_flags & (TH_SYN | TH_FIN | TH_RST | TH_PUSH)))
-      sa << '.';
+       sa << src << '.' << srcp << " > " << dst << '.' << dstp << ": ";
+       if (tcph->th_flags & TH_SYN)
+	 sa << 'S', seqlen++;
+       if (tcph->th_flags & TH_FIN)
+	 sa << 'F', seqlen++;
+       if (tcph->th_flags & TH_RST)
+	 sa << 'R';
+       if (tcph->th_flags & TH_PUSH)
+	 sa << 'P';
+       if (!(tcph->th_flags & (TH_SYN | TH_FIN | TH_RST | TH_PUSH)))
+	 sa << '.';
     
-    sa << ' ' << seq << ':' << (seq + seqlen)
-       << '(' << seqlen << ',' << p->length() << ',' << ip_len << ')';
-    if (ackp)
-      sa << " ack " << ack;
-    sa << " win " << win;
-    break;
-  }
+       sa << ' ' << seq << ':' << (seq + seqlen)
+	  << '(' << seqlen << ',' << p->length() << ',' << ip_len << ')';
+       if (ackp)
+	 sa << " ack " << ack;
+       sa << " win " << win;
+       break;
+     }
   
-  case IP_PROTO_UDP: {
-    const click_udp *udph = p->udp_header();
-    unsigned short srcp = ntohs(udph->uh_sport);
-    unsigned short dstp = ntohs(udph->uh_dport);
-    unsigned len = ntohs(udph->uh_ulen);
-    sa << src << '.' << srcp << " > " << dst << '.' << dstp << ": udp " << len;
-    break;
-  }
+     case IP_PROTO_UDP: {
+       const click_udp *udph = p->udp_header();
+       unsigned short srcp = ntohs(udph->uh_sport);
+       unsigned short dstp = ntohs(udph->uh_dport);
+       unsigned len = ntohs(udph->uh_ulen);
+       sa << src << '.' << srcp << " > " << dst << '.' << dstp << ": udp " << len;
+       break;
+     }
 
 #define swapit(x) (_swap ? ((((x) & 0xff) << 8) | ((x) >> 8)) : (x))
   
-  case IP_PROTO_ICMP: {
-    sa << src << " > " << dst << ": icmp";
-    const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
-    if (icmph->icmp_type == ICMP_ECHO_REPLY) {
-      const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
-      sa << ": echo reply (" << swapit(seqh->identifier) << ", " << swapit(seqh->sequence) << ")";
-    } else if (icmph->icmp_type == ICMP_ECHO) {
-      const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
-      sa << ": echo request (" << swapit(seqh->identifier) << ", " << swapit(seqh->sequence) << ")";
-    } else
-      sa << ": type " << (int)icmph->icmp_type;
-    break;
-  }
+     case IP_PROTO_ICMP: {
+       sa << src << " > " << dst << ": icmp";
+       const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
+       if (icmph->icmp_type == ICMP_ECHO_REPLY) {
+	 const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
+	 sa << ": echo reply (" << swapit(seqh->identifier) << ", " << swapit(seqh->sequence) << ")";
+       } else if (icmph->icmp_type == ICMP_ECHO) {
+	 const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
+	 sa << ": echo request (" << swapit(seqh->identifier) << ", " << swapit(seqh->sequence) << ")";
+       } else
+	 sa << ": type " << (int)icmph->icmp_type;
+       break;
+     }
   
-  default: {
-    sa << src << " > " << dst << ": ip protocol " << (int)iph->ip_p;
-    break;
-  }
+     default: {
+       sa << src << " > " << dst << ": ip-proto-" << (int)iph->ip_p;
+       break;
+     }
   
+    }
+    
+  } else {			// not first fragment
+
+    sa << src << " > " << dst << ": ";
+    switch (iph->ip_p) {
+     case IP_PROTO_TCP:		sa << "tcp"; break;
+     case IP_PROTO_UDP:		sa << "udp"; break;
+     case IP_PROTO_ICMP:	sa << "icmp"; break;
+     default:			sa << "ip-proto-" << (int)iph->ip_p; break;
+    }
+
   }
 
+  // print fragment info
+  if (IP_ISFRAG(iph))
+    sa << " (frag " << ntohs(iph->ip_id) << ':' << payload_len << '@'
+       << ((ntohs(iph->ip_off) & IP_OFFMASK) << 3)
+       << ((iph->ip_off & htons(IP_MF)) ? "+" : "") << ')';
+
+  // print payload
   const unsigned char *data = p->data();
   if (_contents > 0) {
     int amt = 3*_bytes + (_bytes/4+1) + 3*(_bytes/24+1) + 1;
