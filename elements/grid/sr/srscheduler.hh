@@ -169,7 +169,8 @@ private:
       return timercmp(&expire, &now, <);
     }
   };
-  
+  friend class ScheduleInfo;
+
   typedef HashMap<Path, ScheduleInfo> ScheduleTable;
   typedef ScheduleTable::const_iterator STIter;
   ScheduleTable _schedules;
@@ -197,7 +198,7 @@ private:
       return (s) ? s->ready_for(p, _p) : false;
     }
   };
-
+  friend class sr_filter;
 
   bool _debug_token;
 
@@ -205,17 +206,21 @@ private:
   class ScheduleInfo * find_nfo(Path p);
   class ScheduleInfo * create_nfo(Path p);
   void call_switch(int);
+#if 0
   void start_hook();
   void end_hook();
+#endif
   void start_path(Path p);
   void end_path(Path p);
   bool ready_for(const Packet *, Path p);
+#if 0
   static void static_start_hook(Timer *, void *e) { 
     ((SRScheduler *) e)->start_hook(); 
   }
   static void static_end_hook(Timer *, void *e) { 
     ((SRScheduler *) e)->end_hook(); 
   }
+#endif
 
   void srscheduler_assert_(const char *, int, const char *) const;
 

@@ -67,6 +67,7 @@ private:
 	    return (s) ? s->ready_for(p) : false;
 	}
     };
+    friend class yank_filter;
 
     bool ready_for(const Packet *);
     int bubble_up(Packet *);

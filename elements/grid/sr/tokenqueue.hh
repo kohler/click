@@ -137,7 +137,8 @@ private:
 	}
 
     };
-    
+    friend class PathInfo;
+
     typedef HashMap<Path, PathInfo> PathTable;
     typedef PathTable::const_iterator PathIter;
     PathTable _paths;
@@ -154,6 +155,7 @@ private:
 	    return (s) ? s->ready_for(p, _p) : false;
 	}
     };
+    friend class yank_filter;
 
     PathInfo *find_path_info(Path);
     bool ready_for(const Packet *, Path);
