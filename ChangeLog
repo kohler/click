@@ -1,3 +1,14 @@
+2001-10-29 Monday 21:44  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/acclick.m4 (1.4): update to acclick
+
+2001-10-29 Monday 20:50  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/: gridroutetable.cc (1.18), gridroutetable.hh
+	(1.8): "rectified doug's coding style errors" -- i.e., I find it
+	much more aethestically pleasing to have a network that is not
+	completely broken.
+
 2001-10-29 Monday 13:55  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/progressbar.cc (1.12): ProgressBar: #include
