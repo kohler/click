@@ -1,3 +1,13 @@
+2004-07-13 Tuesday 12:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/ip.h (1.5): add IP_PROTO_NONE (for IPFilter)
+
+2004-07-13 Tuesday 12:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: ipclassifier.hh (1.33), ipfilter.cc (1.48),
+	ipfilter.hh (1.28): add support for "ip[POS:LEN]" and
+	"transp[POS:LEN]" expressions
+
 2004-07-11 Sunday 14:17  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/: fromdevice.cc (1.48), fromdevice.hh (1.27):
