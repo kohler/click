@@ -72,6 +72,7 @@ public:
 
 
 private:
+  bool _saw_first;
   bool _setup_fw;
   bool _have_sport;
   bool _have_dport;

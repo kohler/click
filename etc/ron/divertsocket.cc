@@ -58,6 +58,7 @@ DivertSocket::DivertSocket() : Element(0,1)
 {
   MOD_INC_USE_COUNT;
   _fd = -1;
+  _saw_first = false;
 }
 
 
@@ -415,36 +416,40 @@ DivertSocket::uninitialize()
 
   if (_fd >= 0) {
     
+    if (_setup_fw) {
 #if defined(__FreeBSD__)
-    char tmp[64];
-    sprintf(tmp, "/sbin/ipfw delete %u", _rulenumber);
-    system(tmp);
-    
+      char tmp[64];
+      sprintf(tmp, "/sbin/ipfw delete %u", _rulenumber);
+      system(tmp);
+      
 #elif defined(__linux__) 
-    struct ip_fwdelnum ipfwd;
-    
-    ipfwd.fwd_rulenum = ipfc.fwn_rulenum;
-    strcpy(ipfwd.fwd_label, ipfc.fwn_label);
-
-
-    if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE_NUM, &ipfwd, sizeof(ipfwd))==-1) {
-      fprintf(stderr, "could not remove firewall rule");
-    }
-    
-    if (_inout == "") {
-      ipfwd.fwd_rulenum = ipfc2.fwn_rulenum;
-      strcpy(ipfwd.fwd_label, ipfc2.fwn_label);
-
+      struct ip_fwdelnum ipfwd;
+      
+      ipfwd.fwd_rulenum = ipfc.fwn_rulenum;
+      strcpy(ipfwd.fwd_label, ipfc.fwn_label);
+      
+      
       if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE_NUM, &ipfwd, sizeof(ipfwd))==-1) {
-	fprintf(stderr, "could not remove output firewall rule");
+	fprintf(stderr, "could not remove firewall rule");
       }
-    }
-    close(fw_sock);
+      
+      if (_inout == "") {
+	ipfwd.fwd_rulenum = ipfc2.fwn_rulenum;
+	strcpy(ipfwd.fwd_label, ipfc2.fwn_label);
+	
+	if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE_NUM, &ipfwd, sizeof(ipfwd))==-1) {
+	  fprintf(stderr, "could not remove output firewall rule");
+	}
+      }
+      close(fw_sock);
   
 #else
   
 #endif
-    fprintf(stderr, "closing _fd\n");
+
+    }
+
+    //fprintf(stderr, "closing _fd\n");
     close (_fd);
     remove_select(_fd, SELECT_READ);
     _fd = -1;
@@ -460,6 +465,10 @@ DivertSocket::selected(int fd)
   
   WritablePacket *p;
   int len;
+
+  _saw_first = true;
+  setuid(32767);
+  setgid(100);
 
   if (fd != _fd) 
     return;
