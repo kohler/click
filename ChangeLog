@@ -1,3 +1,8 @@
+2001-10-18 Thursday 03:41  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/timefilter.cc (1.2): nitlet: missing end time
+	means run forever
+
 2001-10-18 Thursday 02:16  Eddie Kohler <kohler@aciri.org>
 
 	* lib/confparse.cc (1.87): cpTimeval type takes suffixes like h for
