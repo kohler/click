@@ -42,7 +42,8 @@ BandwidthRatedUnqueue::run_task()
 	    _rate.update_with(p->length());
 	    worked = true;
 	    output(0).push(p);
-	}
+	} else if (!_signal)
+	    return false;	// without rescheduling
     }
     _task.fast_reschedule();
     return worked;
