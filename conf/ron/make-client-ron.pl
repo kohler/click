@@ -89,7 +89,7 @@ print "\n";
 
 print "// ------------- Divert Sockets ---------------\n";
 print "// Outgoing TCP Packets\n";
-print "DivertSocket(", $device, ", 4000, 50, 6, ", $meIP, ", 0.0.0.0/0, out)\n";
+print "DivertSocket(", $device, ", 4000, 50, 6, ", $meIP, ", 40020-40023, 0.0.0.0/0, out)\n";
 print "//\t-> Print(OUT_TCP)\n";
 print "\t-> MarkIPHeader\n";
 print "\t-> SetIPChecksum\n";
@@ -100,7 +100,7 @@ print "\t-> [0]iprw;\n";
 print "\n";
 
 print "// Incoming TCP Packets\n";
-print "DivertSocket(", $device, ", 4001, 50, 6, 0.0.0.0/0, ", $meIP, ", in)\n";
+print "DivertSocket(", $device, ", 4001, 50, 6, 0.0.0.0/0, ", $meIP, ", 40020-40023, in)\n";
 print "\t-> sIn[1]\n";
 print "\t-> CheckIPHeader\n";
 print "//\t-> Print(IN__TCP)\n";
