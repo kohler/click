@@ -1,3 +1,7 @@
+2003-02-24 Monday 14:19  Eddie Kohler <kohler@icir.org>
+
+	* lib/handlercall.cc (1.9): nitlet
+
 2003-02-23 Sunday 13:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.39): print routes packets
