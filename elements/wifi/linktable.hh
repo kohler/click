@@ -168,8 +168,6 @@ private:
     
   };
 
-  typedef HashMap<IPAddress, IPAddress> IPTable;
-  
   class HostInfo {
   public:
     IPAddress _ip;
