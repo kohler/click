@@ -19,13 +19,8 @@ enum Lexemes {
   lexRequire,
 };
 
-class Lexeme {
-  
-  int _kind;
-  String _s;
-  
- public:
-  
+class Lexeme { public:
+
   Lexeme()				: _kind(lexEOF) { }
   Lexeme(int k, const String &s)	: _kind(k), _s(s) { }
   
@@ -35,15 +30,71 @@ class Lexeme {
   const String &string() const		{ return _s; }
   String &string()			{ return _s; }
   
+ private:
+  
+  int _kind;
+  String _s;
+  
 };
 
-class Lexer {
+class Lexer { public:
+
+  static const int TUNNEL_TYPE = 0;
+  static const int ERROR_TYPE = 1;
   
   class TunnelEnd;
   class Compound;
   class Synonym;
   typedef Router::Hookup Hookup;
   
+  Lexer(ErrorHandler * = 0);
+  virtual ~Lexer();
+  
+  int begin_parse(const String &data, const String &filename, LexerExtra *);
+  void end_parse(int);
+
+  ErrorHandler *errh() const		{ return _errh; }
+  
+  const Lexeme &lex();
+  void unlex(const Lexeme &);
+  String lex_config();
+  String landmark() const;
+  
+  bool expect(int, bool report_error = true);
+  
+  int add_element_type(Element *);
+  int add_element_type(String, Element *);
+  int element_type(const String &) const;
+  int force_element_type(String);
+
+  void element_type_names(Vector<String> &) const;
+  
+  void remove_element_type(int);
+
+  void connect(int element1, int port1, int element2, int port2);
+  String element_name(int) const;
+  String element_landmark(int) const;
+  
+  void add_tunnel(String, String);
+  
+  bool yport(int &port);
+  bool yelement(int &element, bool comma_ok);
+  void ydeclaration(const String &first_element = String());
+  bool yconnection();
+  void yelementclass();
+  void ytunnel();
+  void ycompound_arguments(Compound *);
+  int ycompound(String name = String());
+  void yrequire();
+  bool ystatement(bool nested = false);
+  
+  void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
+  void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
+  
+  Router *create_router();
+
+ private:
+    
   // lexer
   String _big_string;
   
@@ -58,6 +109,7 @@ class Lexer {
   
   unsigned skip_line(unsigned);
   unsigned skip_slash_star(unsigned);
+  unsigned skip_backslash_angle(unsigned);
   unsigned skip_quote(unsigned, char);
   unsigned process_line_directive(unsigned);
   Lexeme next_lexeme();
@@ -112,57 +164,6 @@ class Lexer {
   void add_router_connections(int, const Vector<int> &, Router *);
 
   friend class Compound;
-  
- public:
-
-  static const int TUNNEL_TYPE = 0;
-  static const int ERROR_TYPE = 1;
-  
-  Lexer(ErrorHandler * = 0);
-  virtual ~Lexer();
-  
-  int begin_parse(const String &data, const String &filename, LexerExtra *);
-  void end_parse(int);
-
-  ErrorHandler *errh() const		{ return _errh; }
-  
-  const Lexeme &lex();
-  void unlex(const Lexeme &);
-  String lex_config();
-  String landmark() const;
-  
-  bool expect(int, bool report_error = true);
-  
-  int add_element_type(Element *);
-  int add_element_type(String, Element *);
-  int element_type(const String &) const;
-  int force_element_type(String);
-
-  void element_type_names(Vector<String> &) const;
-  
-  void remove_element_type(int);
-
-  void connect(int element1, int port1, int element2, int port2);
-  String element_name(int) const;
-  String element_landmark(int) const;
-  
-  void add_tunnel(String, String);
-  
-  bool yport(int &port);
-  bool yelement(int &element, bool comma_ok);
-  void ydeclaration(const String &first_element = String());
-  bool yconnection();
-  void yelementclass();
-  void ytunnel();
-  void ycompound_arguments(Compound *);
-  int ycompound(String name = String());
-  void yrequire();
-  bool ystatement(bool nested = false);
-  
-  void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
-  void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;
-  
-  Router *create_router();
   
 };
 

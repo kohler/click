@@ -448,6 +448,25 @@ Lexer::skip_slash_star(unsigned pos)
 }
 
 unsigned
+Lexer::skip_backslash_angle(unsigned pos)
+{
+  for (; pos < _len; pos++)
+    if (_data[pos] == '\n')
+      _lineno++;
+    else if (_data[pos] == '\r') {
+      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+      _lineno++;
+    } else if (_data[pos] == '/' && pos < _len - 1) {
+      if (_data[pos+1] == '/')
+	pos = skip_line(pos + 2) - 1;
+      else if (_data[pos+1] == '*')
+	pos = skip_slash_star(pos + 2) - 1;
+    } else if (_data[pos] == '>')
+      return pos + 1;
+  return _len;
+}
+
+unsigned
 Lexer::skip_quote(unsigned pos, char endc)
 {
   for (; pos < _len; pos++)
@@ -456,10 +475,12 @@ Lexer::skip_quote(unsigned pos, char endc)
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
-    } else if (_data[pos] == '\\' && pos < _len - 1 && endc == '\"'
-	       && _data[pos+1] == endc)
-      pos++;
-    else if (_data[pos] == endc)
+    } else if (_data[pos] == '\\' && endc == '\"' && pos < _len - 1) {
+      if (_data[pos+1] == '<')
+	pos = skip_backslash_angle(pos + 2) - 1;
+      else if (_data[pos+1] == '\"')
+	pos++;
+    } else if (_data[pos] == endc)
       return pos + 1;
   return _len;
 }
@@ -604,13 +625,11 @@ Lexer::lex_config()
   unsigned config_pos = _pos;
   unsigned pos = _pos;
   unsigned paren_depth = 1;
-  int quote = 0;
-  String output;
   
   for (; pos < _len; pos++)
-    if (_data[pos] == '(' && !quote)
+    if (_data[pos] == '(')
       paren_depth++;
-    else if (_data[pos] == ')' && !quote) {
+    else if (_data[pos] == ')') {
       paren_depth--;
       if (!paren_depth) break;
     } else if (_data[pos] == '\n')
@@ -618,25 +637,18 @@ Lexer::lex_config()
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
-    } else if (_data[pos] == '/' && pos < _len - 1 && !quote) {
+    } else if (_data[pos] == '/' && pos < _len - 1) {
       if (_data[pos+1] == '/')
 	pos = skip_line(pos + 2) - 1;
       else if (_data[pos+1] == '*')
 	pos = skip_slash_star(pos + 2) - 1;
-    } else if ((_data[pos] == '\'' || _data[pos] == '\"') && !quote)
-      quote = _data[pos];
-    else if (quote && _data[pos] == quote)
-      quote = 0;
-    else if (_data[pos] == '\\' && pos < _len - 1 && quote == '\"') {
-      if (_data[pos+1] == '\"' || _data[pos+1] == '$')
-	pos++;
-    }
+    } else if (_data[pos] == '\'' || _data[pos] == '\"')
+      pos = skip_quote(pos + 1, _data[pos]) - 1;
+    else if (_data[pos] == '\\' && pos < _len - 1 && _data[pos+1] == '<')
+      pos = skip_backslash_angle(pos + 2) - 1;
   
   _pos = pos;
-  if (!output)
-    return _big_string.substring(config_pos, pos - config_pos);
-  else
-    return output + _big_string.substring(config_pos, pos - config_pos);
+  return _big_string.substring(config_pos, pos - config_pos);
 }
 
 String

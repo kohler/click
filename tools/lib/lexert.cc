@@ -126,6 +126,25 @@ LexerT::skip_slash_star(unsigned pos)
 }
 
 unsigned
+LexerT::skip_backslash_angle(unsigned pos)
+{
+  for (; pos < _len; pos++)
+    if (_data[pos] == '\n')
+      _lineno++;
+    else if (_data[pos] == '\r') {
+      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+      _lineno++;
+    } else if (_data[pos] == '/' && pos < _len - 1) {
+      if (_data[pos+1] == '/')
+	pos = skip_line(pos + 2) - 1;
+      else if (_data[pos+1] == '*')
+	pos = skip_slash_star(pos + 2) - 1;
+    } else if (_data[pos] == '>')
+      return pos + 1;
+  return _len;
+}
+
+unsigned
 LexerT::skip_quote(unsigned pos, char endc)
 {
   for (; pos < _len; pos++)
@@ -134,10 +153,12 @@ LexerT::skip_quote(unsigned pos, char endc)
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
-    } else if (_data[pos] == '\\' && pos < _len - 1 && endc == '\"'
-	       && _data[pos+1] == endc)
-      pos++;
-    else if (_data[pos] == endc)
+    } else if (_data[pos] == '\\' && endc == '\"' && pos < _len - 1) {
+      if (_data[pos+1] == '<')
+	pos = skip_backslash_angle(pos + 2) - 1;
+      else if (_data[pos+1] == '\"')
+	pos++;
+    } else if (_data[pos] == endc)
       return pos + 1;
   return _len;
 }
@@ -302,6 +323,8 @@ LexerT::lex_config()
 	pos = skip_slash_star(pos + 2) - 1;
     } else if (_data[pos] == '\'' || _data[pos] == '\"')
       pos = skip_quote(pos + 1, _data[pos]) - 1;
+    else if (_data[pos] == '\\' && pos < _len - 1 && _data[pos+1] == '<')
+      pos = skip_backslash_angle(pos + 2) - 1;
   
   _pos = pos;
   return _big_string.substring(config_pos, pos - config_pos);

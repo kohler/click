@@ -93,215 +93,137 @@ xvalue(int x)
     return -1;
 }
 
-static void
-cp_argvec(const String &conf, Vector<String> &args, bool split_comma)
+static int
+skip_comment(const char *s, int pos, int len)
 {
-  const char *s = conf.data();
-  int len = conf.length();
-  int i = 0;
-  bool first_arg = true;
-  
-  // common case: no configuration
-  if (len == 0)
-    return;
+  assert(pos < len - 1 && s[pos] == '/' && (s[pos+1] == '/' || s[pos+1] == '*'));
 
-  // <= to handle case where `conf' ends in `,' (= an extra empty string
-  // argument)
-  while (i <= len) {
-
-    // accumulate an argument
-    StringAccum sa;
-    int start = i;
-
-    for (; i < len; i++)
-      switch (s[i]) {
-	
-       case ',':
-	if (split_comma)
-	  goto done;
-	break;
-	
-       case '/':
-	// skip comments
-	if (i == len - 1 || (s[i+1] != '/' && s[i+1] != '*'))
-	  break;
-	sa << conf.substring(start, i - start);
-	sa << ' ';
-	if (s[i+1] == '/') {
-	  while (i < len && s[i] != '\n' && s[i] != '\r')
-	    i++;
-	  if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
-	    i++;
-	} else {
-	  i += 2;
-	  while (i < len - 1 && (s[i] != '*' || s[i+1] != '/'))
-	    i++;
-	  i++; 
-	}
-	start = i + 1;
-	break;
-
-       case '\"':
-	for (i++; i < len && s[i] != '\"'; i++)
-	  if (s[i] == '\\' && i < len - 1)
-	    i++;
-	break;
-	
-       case '\'':
-	for (i++; i < len && s[i] != '\''; i++)
-	  /* nada */;
-	break;
-	
-      }
-    
-   done:
-    int comma_pos = i;
-    if (i > start)
-      sa << conf.substring(start, i - start);
-    
-    // remove leading & trailing spaces
-    const char *data = sa.data();
-    int first_pos, last_pos = sa.length();
-    for (first_pos = 0; first_pos < last_pos; first_pos++)
-      if (!isspace(data[first_pos]))
-	break;
-    for (; last_pos > first_pos; last_pos--)
-      if (!isspace(data[last_pos - 1]))
-	break;
-    
-    // add the argument if it is nonempty, or this isn't the first argument
-    String arg = sa.take_string().substring(first_pos, last_pos - first_pos);
-    if (arg || comma_pos < len || !first_arg)
-      args.push_back(arg);
-    
-    // bump `i' past the comma
-    i = comma_pos + 1;
-    first_arg = false;
+  if (s[pos+1] == '/') {
+    for (pos += 2; pos < len - 1 && s[pos] != '\n' && s[pos] != '\r'; pos++)
+      /* nada */;
+    if (pos < len - 1 && s[pos] == '\r' && s[pos+1] == '\n')
+      pos++;
+    return pos + 1;
+  } else { /* s[pos+1] == '*' */
+    for (pos += 2; pos < len - 2 && (s[pos] != '*' || s[pos+1] != '/'); pos++)
+      /* nada */;
+    return pos + 2;
   }
 }
 
-void
-cp_argvec(const String &str, Vector<String> &v)
+static int
+skip_backslash_angle(const char *s, int pos, int len)
 {
-  cp_argvec(str, v, true);
+  assert(pos < len - 1 && s[pos] == '\\' && s[pos+1] == '<');
+  
+  for (pos += 2; pos < len; )
+    if (s[pos] == '>')
+      return pos + 1;
+    else if (s[pos] == '/' && pos < len - 1 && (s[pos+1] == '/' || s[pos+1] == '*'))
+      pos = skip_comment(s, pos, len);
+    else
+      pos++;
+  
+  return len;
+}
+
+static int
+skip_double_quote(const char *s, int pos, int len)
+{
+  assert(pos < len && s[pos] == '\"');
+
+  for (pos++; pos < len; )
+    if (pos < len - 1 && s[pos] == '\\') {
+      if (s[pos+1] == '<')
+	pos = skip_backslash_angle(s, pos, len);
+      else
+	pos += 2;
+    } else if (s[pos] == '\"')
+      return pos + 1;
+    else
+      pos++;
+
+  return len;
+}
+
+static int
+skip_single_quote(const char *s, int pos, int len)
+{
+  assert(pos < len && s[pos] == '\'');
+
+  for (pos++; pos < len; pos++)
+    if (s[pos] == '\'')
+      return pos + 1;
+
+  return len;
+}
+
+static String
+partial_uncomment(const String &str, int i, int *comma_pos)
+{
+  const char *s = str.data();
+  int len = str.length();
+
+  // skip initial spaces
+  for (; i < len; i++) {
+    if (s[i] == '/' && i < len - 1 && (s[i+1] == '/' || s[i+1] == '*'))
+      i = skip_comment(s, i, len) - 1;
+    else if (!isspace(s[i]))
+      break;
+  }
+
+  // accumulate text, skipping comments
+  StringAccum sa;
+  int left = i;
+  int right = i;
+  bool closed = false;
+
+  while (i < len) {
+    if (isspace(s[i]))
+      i++;
+    else if (s[i] == '/' && i < len - 1 && (s[i+1] == '/' || s[i+1] == '*')) {
+      i = skip_comment(s, i, len);
+      closed = true;
+    } else if (s[i] == ',' && comma_pos)
+      break;
+    else {
+      if (closed) {
+	sa << str.substring(left, right - left);
+	left = i;
+	closed = false;
+      }
+      if (s[i] == '\'')
+	i = skip_single_quote(s, i, len);
+      else if (s[i] == '\"')
+	i = skip_double_quote(s, i, len);
+      else if (s[i] == '\\' && i < len - 1 && s[i+1] == '<')
+	i = skip_backslash_angle(s, i, len);
+      else
+	i++;
+      right = i;
+    }
+  }
+
+  if (comma_pos)
+    *comma_pos = i;
+  if (!sa)
+    return str.substring(left, right - left);
+  else {
+    sa << str.substring(left, right - left);
+    return sa.take_string();
+  }
 }
 
 String
 cp_uncomment(const String &str)
 {
-  Vector<String> v;
-  cp_argvec(str, v, false);
-  return (v.size() ? v[0] : String());
+  return partial_uncomment(str, 0, 0);
 }
 
 String
-cp_unargvec(const Vector<String> &args)
+cp_unquote(const String &in_str)
 {
-  StringAccum sa;
-  for (int i = 0; i < args.size(); i++) {
-    if (i) sa << ", ";
-    sa << args[i];
-  }
-  return sa.take_string();
-}
-
-String
-cp_unspacevec(const Vector<String> &args)
-{
-  StringAccum sa;
-  for (int i = 0; i < args.size(); i++) {
-    if (i) sa << " ";
-    sa << args[i];
-  }
-  return sa.take_string();
-}
-
-void
-cp_spacevec(const String &conf, Vector<String> &vec)
-{
-  const char *s = conf.data();
-  int len = conf.length();
-  int i = 0;
-  
-  // common case: no configuration
-  if (len == 0)
-    return;
-
-  // dump arguments into `vec'
-  int start = -1;
-  
-  for (; i < len; i++)
-    switch (s[i]) {
-      
-     case '/':
-      // skip comments
-      if (i == len - 1 || (s[i+1] != '/' && s[i+1] != '*'))
-	goto normal;
-      if (start >= 0)
-	vec.push_back(conf.substring(start, i - start));
-      if (s[i+1] == '/') {
-	while (i < len && s[i] != '\n' && s[i] != '\r')
-	  i++;
-	if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
-	  i++;
-      } else {
-	i += 2;
-	while (i < len - 1 && (s[i] != '*' || s[i+1] != '/'))
-	  i++;
-	i++;
-      }
-      start = -1;
-      break;
-      
-     case '\"':
-      if (start < 0)
-	start = i;
-      for (i++; i < len && s[i] != '\"'; i++)
-	if (s[i] == '\\')
-	  i++;
-      break;
-      
-     case '\'':
-      if (start < 0)
-	start = i;
-      for (i++; i < len && s[i] != '\''; i++)
-	/* nada */;
-      break;
-
-     case '\\':			// check for \<...> strings
-      if (start < 0)
-	start = i;
-      if (i < len - 1 && s[i+1] == '<')
-	for (i += 2; i < len && s[i] != '>'; i++)
-	  /* nada */;
-      break;
-      
-     case ' ':
-     case '\f':
-     case '\n':
-     case '\r':
-     case '\t':
-     case '\v':
-      if (start >= 0)
-	vec.push_back(conf.substring(start, i - start));
-      start = -1;
-      break;
-
-     default:
-     normal:
-      if (start < 0)
-	start = i;
-      break;
-      
-    }
-
-  if (start >= 0)
-    vec.push_back(conf.substring(start, len - start));
-}
-
-String
-cp_unquote(const String &str)
-{
+  String str = partial_uncomment(in_str, 0, 0);
   const char *s = str.data();
   int len = str.length();
   int i = 0;
@@ -313,7 +235,7 @@ cp_unquote(const String &str)
   
   for (; i < len; i++)
     switch (s[i]) {
-      
+
      case '\"':
      case '\'':
       if (quote_state == 0) {
@@ -386,19 +308,8 @@ cp_unquote(const String &str)
 	       c = c*16 + s[i] - 'A' + 10;
 	     else if (s[i] >= 'a' && s[i] <= 'f')
 	       c = c*16 + s[i] - 'a' + 10;
-	     else if (i < len - 1 && s[i] == '/') {
-	       // skip comments inside '\<...>'
-	       if (s[i+1] == '/') {
-		 while (i < len && s[i] != '\n' && s[i] != '\r')
-		   i++;
-		 if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
-		   i++;
-	       } else if (s[i+1] == '*') {
-		 i += 2;
-		 while (i < len - 1 && (s[i] != '*' || s[i+1] != '/'))
-		   i++;
-		 i++;
-	       }
+	     else if (s[i] == '/' && i < len - 1 && (s[i+1] == '/' || s[i+1] == '*')) {
+	       i = skip_comment(s, i, len) - 1;
 	       continue;
 	     } else
 	       continue;	// space (ignore it) or random (error)
@@ -485,6 +396,123 @@ cp_quote(const String &str, bool allow_newlines = false)
   
   sa << str.substring(start, i - start) << '\"';
   return sa.take_string();
+}
+
+void
+cp_argvec(const String &conf, Vector<String> &args)
+{
+  int len = conf.length();
+  int i = 0;
+  bool first_arg = true;
+  
+  // common case: no configuration
+  if (len == 0)
+    return;
+
+  // <= to handle case where `conf' ends in `,' (= an extra empty string
+  // argument)
+  while (i <= len) {
+    String arg = partial_uncomment(conf, i, &i);
+
+    // add the argument if it is nonempty, or this isn't the first argument
+    if (arg || i < len || !first_arg)
+      args.push_back(arg);
+    
+    // bump `i' past the comma
+    i++;
+    first_arg = false;
+  }
+}
+
+String
+cp_unargvec(const Vector<String> &args)
+{
+  StringAccum sa;
+  for (int i = 0; i < args.size(); i++) {
+    if (i) sa << ", ";
+    sa << args[i];
+  }
+  return sa.take_string();
+}
+
+String
+cp_unspacevec(const Vector<String> &args)
+{
+  StringAccum sa;
+  for (int i = 0; i < args.size(); i++) {
+    if (i) sa << " ";
+    sa << args[i];
+  }
+  return sa.take_string();
+}
+
+void
+cp_spacevec(const String &conf, Vector<String> &vec)
+{
+  const char *s = conf.data();
+  int len = conf.length();
+  int i = 0;
+  
+  // common case: no configuration
+  if (len == 0)
+    return;
+
+  // dump arguments into `vec'
+  int start = -1;
+  
+  for (; i < len; i++)
+    switch (s[i]) {
+      
+     case '/':
+      // skip comments
+      if (i == len - 1 || (s[i+1] != '/' && s[i+1] != '*'))
+	goto normal;
+      if (start >= 0)
+	vec.push_back(conf.substring(start, i - start));
+      i = skip_comment(s, i, len) - 1;
+      start = -1;
+      break;
+      
+     case '\"':
+      if (start < 0)
+	start = i;
+      i = skip_double_quote(s, i, len) - 1;
+      break;
+      
+     case '\'':
+      if (start < 0)
+	start = i;
+      i = skip_single_quote(s, i, len) - 1;
+      break;
+
+     case '\\':			// check for \<...> strings
+      if (start < 0)
+	start = i;
+      if (i < len - 1 && s[i+1] == '<')
+	i = skip_backslash_angle(s, i, len) - 1;
+      break;
+      
+     case ' ':
+     case '\f':
+     case '\n':
+     case '\r':
+     case '\t':
+     case '\v':
+      if (start >= 0)
+	vec.push_back(conf.substring(start, i - start));
+      start = -1;
+      break;
+
+     default:
+     normal:
+      if (start < 0)
+	start = i;
+      break;
+      
+    }
+
+  if (start >= 0)
+    vec.push_back(conf.substring(start, len - start));
 }
 
 bool
@@ -811,8 +839,6 @@ cp_string(const String &str, String *return_value, String *rest = 0)
   int i = 0;
 
   // accumulate a word
-  int quote_state = 0;
-  
   for (; i < len; i++)
     switch (s[i]) {
       
@@ -822,24 +848,19 @@ cp_string(const String &str, String *return_value, String *rest = 0)
      case '\r':
      case '\t':
      case '\v':
-      if (quote_state == 0)
-	goto done;
-      break;
+      goto done;
 
      case '\"':
-     case '\'':
-      if (quote_state == 0)
-	quote_state = s[i];
-      else if (quote_state == s[i])
-	quote_state = 0;
+      i = skip_double_quote(s, i, len) - 1;
       break;
-      
+
+     case '\'':
+      i = skip_single_quote(s, i, len) - 1;
+      break;
+
      case '\\':
-      if (i < len - 1 && s[i+1] == '<' && quote_state == 0) {
-	for (i += 2; i < len && s[i] != '>'; i++)
-	  /* nada */;
-      } else if (i < len - 1 && quote_state == '\"')
-	i++;
+      if (i < len - 1 && s[i+1] == '<')
+	i = skip_backslash_angle(s, i, len) - 1;
       break;
       
     }
