@@ -49,6 +49,6 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
   return IPFilter::configure(new_conf, errh);
 }
 
-ELEMENT_REQUIRES(Classifier)
+ELEMENT_REQUIRES(IPFilter)
 EXPORT_ELEMENT(IPClassifier)
 ELEMENT_MT_SAFE(IPClassifier)
