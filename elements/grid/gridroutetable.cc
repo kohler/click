@@ -61,10 +61,10 @@ GridRouteTable::log_route_table ()
 {
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &f = i.value();
-    _extended_logging_errh->message ("%s %f %f %s %d %c %d\n", 
+    _extended_logging_errh->message ("%s %d %d %s %d %c %d\n", 
 				     f.dest_ip.s().cc(),
-				     f.loc.lat(),
-				     f.loc.lon(),
+				     int(f.loc.lat()*1000),
+				     int(f.loc.lon()*1000),
 				     f.next_hop_ip.s().cc(),
 				     f.num_hops,
 				     (f.is_gateway ? 'y' : 'n'),
@@ -184,7 +184,7 @@ GridRouteTable::simple_action(Packet *packet)
   // extended logging
   timeval tv;
   gettimeofday (&tv, NULL);
-  _extended_logging_errh->message ("recvd %d from %s %d %d", hlo->seq_no, ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
+  _extended_logging_errh->message ("recvd %d from %s %ld %ld", hlo->seq_no, ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
 
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
@@ -416,7 +416,7 @@ GridRouteTable::expire_routes()
 	decr_ttl(i.value().ttl, jiff_to_msec(jiff - i.value().last_updated_jiffies)) == 0) {
       expired_rtes.insert(i.value().dest_ip, true);
 
-      _extended_logging_errh->message ("expiring %s %d %d", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+      _extended_logging_errh->message ("expiring %s %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
 
       if (i.value().num_hops == 1) /* may be another route's next hop */
 	expired_next_hops.insert(i.value().dest_ip, true);
@@ -432,7 +432,7 @@ GridRouteTable::expire_routes()
 	!expired_rtes.findp(i.value().dest_ip)) {
       expired_rtes.insert(i.value().dest_ip, true);
 
-      _extended_logging_errh->message ("next to %s expired %d %d", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+      _extended_logging_errh->message ("next to %s expired %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
     }
   }
   
@@ -552,7 +552,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
   
   // extended logging
   gettimeofday (&tv, NULL);
-  _extended_logging_errh->message ("sending %d %d %d", _seq_no, tv.tv_sec, tv.tv_usec);
+  _extended_logging_errh->message ("sending %d %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
 
   hlo->age = htonl(grid_hello::MAX_AGE_DEFAULT);
 
@@ -562,10 +562,10 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
     // extended logging    
     IPAddress ip((unsigned char *) &curr->ip);
     IPAddress next((unsigned char *) &curr->next_hop_ip);
-    _extended_logging_errh->message ("%s %f %f %s %d %c %d\n", 
+    _extended_logging_errh->message ("%s %d %d %s %d %c %d\n", 
 		   ip.s().cc(),
-		   curr->loc.lat(),
-		   curr->loc.lon(),
+		   int(curr->loc.lat()*1000),
+		   int(curr->loc.lon()*1000),
 		   next.s().cc(),
 		   curr->num_hops,
 		   (curr->is_gateway ? 'y' : 'n'),
