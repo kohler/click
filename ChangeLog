@@ -1,3 +1,17 @@
+2004-07-15 Thursday 13:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fromdump.cc (1.91), fromdump.hh (1.54),
+	fromfile.cc (1.7), fromfile.hh (1.3): FromDump's filepos handler is
+	read/write
+
+2004-07-15 Thursday 13:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.35),
+	include/click/standard/drivermanager.hh (1.23): add "loop"
+	instruction to DriverManager. Only available at userlevel, because
+	it can send click into a permanent infinite loop. Inspired by Kevin
+	Mitchell
+
 2004-07-14 Wednesday 22:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/: linux-2.4.20-patch (1.9), linux-2.4.26-patch (1.2):
