@@ -125,11 +125,11 @@ static bool started = 0;
 
 extern "C" {
 static void
-catch_sigint(int)
+catch_signal(int sig)
 {
-  signal(SIGINT, SIG_DFL);
+  signal(sig, SIG_DFL);
   if (!started)
-    kill(getpid(), SIGINT);
+    kill(getpid(), sig);
   router->please_stop_driver();
 }
 }
@@ -533,8 +533,9 @@ particular purpose.\n");
   Router::add_global_read_handler("requirements", read_global_handler, (void *)GH_REQUIREMENTS);
   Router::add_global_write_handler("stop", stop_global_handler, 0);
 
-  // catch control-C
-  signal(SIGINT, catch_sigint);
+  // catch control-C and SIGTERM
+  signal(SIGINT, catch_signal);
+  signal(SIGTERM, catch_signal);
   // ignore SIGPIPE
   signal(SIGPIPE, SIG_IGN);
   
