@@ -50,6 +50,7 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
     "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   unsigned rate = 10;
   int limit = -1;
+  int datasize = -1;
   bool active = true, stop = false;
   
   if (cp_va_parse(conf, this, errh,
@@ -60,6 +61,7 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpBool, "active?", &active,
 		  cpKeywords,
 		  "DATA", cpString, "packet data", &data,
+		  "DATASIZE", cpInteger, "minimum packet size", &datasize,
 		  "RATE", cpUnsigned, "sending rate (packets/s)", &rate,
 		  "LIMIT", cpInteger, "total packet count", &limit,
 		  "ACTIVE", cpBool, "active?", &active,
@@ -68,16 +70,14 @@ RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   
   _data = data;
+  _datasize = datasize;
   _rate.set_rate(rate, errh);
   _limit = (limit >= 0 ? limit : NO_LIMIT);
   _active = active;
   _stop = stop;
   
-  if (_packet) _packet->kill();
-  // note: if you change `headroom', change `click-align'
-  unsigned int headroom = 16+20+24;
-  _packet = Packet::make(headroom, (const unsigned char *)_data.data(), 
-      			 _data.length(), 0);
+  setup_packet();
+
   return 0;
 }
 
@@ -148,6 +148,27 @@ RatedSource::pull(int)
     return 0;
 }
 
+void
+RatedSource::setup_packet() 
+{
+  if (_packet) _packet->kill();
+
+  // note: if you change `headroom', change `click-align'
+  unsigned int headroom = 16+20+24;
+
+  if (_datasize != -1 && _datasize > _data.length()) {
+    // make up some data to fill extra space
+    String new_data;
+    do {
+      new_data += _data;
+    }
+    while (new_data.length() < _datasize);    
+    _packet = Packet::make(headroom, (unsigned char *) new_data.data(), _datasize, 0);
+  }
+  else
+    _packet = Packet::make(headroom, (unsigned char *) _data.data(), _data.length(), 0);
+}
+
 String
 RatedSource::read_param(Element *e, void *vparam)
 {
@@ -163,6 +184,8 @@ RatedSource::read_param(Element *e, void *vparam)
     return cp_unparse_bool(rs->_active) + "\n";
    case 4:			// count
     return String(rs->_count) + "\n";
+  case 6:			// datasize
+    return String(rs->_datasize) + "\n";
    default:
     return "";
   }
@@ -225,6 +248,14 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
      break;
    }
 
+   case 6: {			// datasize
+     int datasize;
+     if (!cp_integer(s, &datasize) || datasize < 1)
+       return errh->error("datasize parameter must be integer >= 1");
+     rs->_datasize = datasize;
+     rs->setup_packet();
+     break;
+   }
   }
   return 0;
 }
@@ -242,6 +273,9 @@ RatedSource::add_handlers()
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
   add_write_handler("reset", change_param, (void *)5);
+  add_read_handler("datasize", read_param, (void *)6);
+  add_write_handler("datasize", change_param, (void *)6);
+
   if (output_is_push(0)) 
     add_task_handlers(&_task);
 }

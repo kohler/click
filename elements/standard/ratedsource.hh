@@ -32,6 +32,10 @@ Keyword arguments are:
 
 String. Same as the DATA argument.
 
+=item DATASIZE
+
+Integer. If set, ensures the outgoing packet contains at least this many bytes.
+
 =item RATE
 
 Integer. Same as the RATE argument.
@@ -63,6 +67,10 @@ Returns the total number of packets that have been generated.
 =h reset write-only
 Resets the number of generated packets to 0. The RatedSource will then
 generate another LIMIT packets (if it is active).
+=h data read/write
+Returns or sets the DATA parameter.
+=h datasize read/write
+Returns or sets the DATASIZE parameter.
 =h rate read/write
 Returns or sets the RATE parameter.
 =h limit read/write
@@ -93,11 +101,14 @@ class RatedSource : public Element { public:
   
  protected:
   
+  void setup_packet();
+  
   static const unsigned NO_LIMIT = 0xFFFFFFFFU;
 
   GapRate _rate;
   unsigned _count;
   unsigned _limit;
+  int _datasize;
   bool _active : 1;
   bool _stop : 1;
   Packet *_packet;
