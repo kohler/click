@@ -180,6 +180,7 @@ Router::add_connection(int from_idx, int from_port, int to_idx, int to_port)
 void
 Router::add_requirement(const String &r)
 {
+  assert(cp_is_word(r));
   _requirements.push_back(r);
 }
 
@@ -910,7 +911,8 @@ Router::find_handler(Element *element, const String &name)
 // LIVE RECONFIGURATION
 
 int
-Router::live_reconfigure(int elementno, const String &conf, ErrorHandler *errh)
+Router::live_reconfigure(int elementno, const Vector<String> &conf,
+			 ErrorHandler *errh)
 {
   assert(_initialized);
   if (elementno < 0 || elementno >= nelements())
@@ -918,12 +920,19 @@ Router::live_reconfigure(int elementno, const String &conf, ErrorHandler *errh)
   Element *f = _elements[elementno];
   if (!f->can_live_reconfigure())
     return errh->error("cannot reconfigure `%s' live", f->declaration().cc());
-  Vector<String> confvec;
-  cp_argvec(conf, confvec);
-  int result = f->live_reconfigure(confvec, errh);
+  int result = f->live_reconfigure(conf, errh);
   if (result >= 0)
-    _configurations[elementno] = conf;
+    _configurations[elementno] = cp_unargvec(conf);
   return result;
+}
+
+int
+Router::live_reconfigure(int elementno, const String &confstr,
+			 ErrorHandler *errh)
+{
+  Vector<String> conf;
+  cp_argvec(confstr, conf);
+  return live_reconfigure(elementno, conf, errh);
 }
 
 void
@@ -1029,14 +1038,8 @@ Router::flat_configuration_string() const
   StringAccum sa;
 
   // requirements
-  if (_requirements.size()) {
-    sa << "require(";
-    for (int i = 0; i < _requirements.size(); i++) {
-      if (i) sa << ", ";
-      sa << cp_unsubst(_requirements[i]);
-    }
-    sa << ");\n\n";
-  }
+  if (_requirements.size())
+    sa << "require(" << cp_unargvec(_requirements) << ");\n\n";
   
   // element classes
   for (int i = 0; i < nelements(); i++) {

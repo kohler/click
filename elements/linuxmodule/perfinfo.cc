@@ -54,8 +54,8 @@ PerfInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
-		  cpString, "first metric", &metric0,
-		  cpString, "second metric", &metric1,
+		  cpWord, "first metric", &metric0,
+		  cpWord, "second metric", &metric1,
 		  cpEnd) < 0)
     return -1;
 

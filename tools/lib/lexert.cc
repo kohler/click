@@ -115,6 +115,23 @@ LexerT::skip_slash_star(unsigned pos)
   return _len;
 }
 
+unsigned
+LexerT::skip_quote(unsigned pos, char endc)
+{
+  for (; pos < _len; pos++)
+    if (_data[pos] == '\n')
+      _lineno++;
+    else if (_data[pos] == '\r') {
+      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+      _lineno++;
+    } else if (_data[pos] == '\\' && pos < _len - 1 && endc == '\"'
+	       && _data[pos+1] == endc)
+      pos++;
+    else if (_data[pos] == endc)
+      return pos + 1;
+  return _len;
+}
+
 Lexeme
 LexerT::next_lexeme()
 {
@@ -199,6 +216,7 @@ LexerT::lex_config()
   unsigned config_pos = _pos;
   unsigned pos = _pos;
   unsigned paren_depth = 1;
+  
   for (; pos < _len; pos++)
     if (_data[pos] == '(')
       paren_depth++;
@@ -210,15 +228,13 @@ LexerT::lex_config()
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
-    } else if (_data[pos] == '\\' && pos < _len - 1 &&
-	       _data[pos+1] != '\n' && _data[pos+1] != '\r')
-      pos++;
-    else if (_data[pos] == '/' && pos < _len - 1) {
+    } else if (_data[pos] == '/' && pos < _len - 1) {
       if (_data[pos+1] == '/')
 	pos = skip_line(pos + 2) - 1;
       else if (_data[pos+1] == '*')
 	pos = skip_slash_star(pos + 2) - 1;
-    }
+    } else if (_data[pos] == '\'' || _data[pos] == '\"')
+      pos = skip_quote(pos + 1, _data[pos]);
   
   _pos = pos;
   return _big_string.substring(config_pos, pos - config_pos);
@@ -708,9 +724,14 @@ LexerT::yrequire()
   if (expect('(')) {
     String requirement = lex_config();
     Vector<String> args;
+    String word;
     cp_argvec(requirement, args);
-    for (int i = 0; i < args.size(); i++)
-      _router->add_requirement(args[i]);
+    for (int i = 0; i < args.size(); i++) {
+      if (!cp_word(args[i], &word))
+	lerror("bad requirement: should be a single word");
+      else
+	_router->add_requirement(word);
+    }
     expect(')');
   }
 }

@@ -122,6 +122,7 @@ class Router : public ElementLink {
   const Handler &handler(int i) const;
   
   int live_reconfigure(int, const String &, ErrorHandler *);
+  int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
   void set_configuration(int, const String &);
 
   Timer *timer_head()				{ return &_timer_head; }

@@ -1090,7 +1090,7 @@ RouterT::expand_into(RouterT *fromr, int which, RouterT *tor,
   // parse configuration string
   Vector<String> args;
   int nargs = _formals.size();
-  cp_argvec_unsubst(scope.interpolate(compound.configuration), args);
+  cp_argvec(scope.interpolate(compound.configuration), args);
   if (args.size() != nargs) {
     const char *whoops = (args.size() < nargs ? "few" : "many");
     String signature;
@@ -1263,7 +1263,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
     while (_require_map.each(thunk, key, val))
       if (val > 0) {
 	if (require_sa.length()) require_sa << ", ";
-	require_sa << cp_unsubst(key);
+	require_sa << key;
       }
     if (require_sa.length())
       sa << "require(" << require_sa.take_string() << ");\n\n";

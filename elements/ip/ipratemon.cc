@@ -49,7 +49,7 @@ IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String count_what;
   if (cp_va_parse(conf, this, errh,
-		  cpString, "monitor type", &count_what,
+		  cpWord, "monitor type", &count_what,
 		  cpUnsigned, "offset", &_offset,
 		  cpNonnegFixed, "ratio", 16, &_ratio,
 		  cpUnsigned, "threshold", &_thresh,

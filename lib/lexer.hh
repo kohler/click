@@ -53,6 +53,7 @@ class Lexer {
   
   unsigned skip_line(unsigned);
   unsigned skip_slash_star(unsigned);
+  unsigned skip_quote(unsigned, char endc);
   Lexeme next_lexeme();
   static String lexeme_string(int);
   

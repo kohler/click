@@ -57,7 +57,7 @@ RED::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "max_thresh queue length", &max_thresh,
 		  cpNonnegFixed, "max_p drop probability", 16, &max_p,
 		  cpOptional,
-		  cpString, "relevant queues", &queues_string,
+		  cpArgument, "relevant queues", &queues_string,
 		  0) < 0)
     return -1;
   

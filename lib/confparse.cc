@@ -28,7 +28,8 @@ enum CpErrors {
   CPE_OK = 0,
   CPE_FORMAT,
   CPE_NEGATIVE,
-  CPE_OVERFLOW
+  CPE_OVERFLOW,
+  CPE_INVALID,
 };
 static int cp_errno;
 
@@ -47,13 +48,27 @@ cp_eat_space(String &str)
   return true;
 }
 
-static bool
-only_spaces(const char *s, int len)
+bool
+cp_is_space(const String &str)
 {
+  const char *s = str.data();
+  int len = str.length();
   for (int i = 0; i < len; i++)
     if (!isspace(s[i]))
       return false;
   return true;
+}
+
+bool
+cp_is_word(const String &str)
+{
+  const char *s = str.data();
+  int len = str.length();
+  for (int i = 0; i < len; i++)
+    if (s[i] == '\"' || s[i] == '\'' || s[i] == ','
+	|| s[i] <= 32 || s[i] >= 127)
+      return false;
+  return len > 0;
 }
 
 static int
@@ -69,14 +84,8 @@ xvalue(int x)
     return -1;
 }
 
-bool
-cp_is_space(const String &str)
-{
-  return only_spaces(str.data(), str.length());
-}
-
 void
-cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
+cp_argvec(const String &conf, Vector<String> &args)
 {
   const char *s = conf.data();
   int len = conf.length();
@@ -86,25 +95,20 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
   // common case: no configuration
   if (len == 0)
     return;
-  
+
   // <= to handle case where `conf' ends in `,' (= an extra empty string
   // argument)
   while (i <= len) {
-    
+
     // accumulate an argument
     StringAccum sa;
     int start = i;
-    
-    // we are allowed to eliminate spaces before `first_keep_spaces' and after
-    // `keep_spaces' in the completed string
-    int keep_spaces = 0, first_keep_spaces = -1;
-    
+
     for (; i < len; i++)
       switch (s[i]) {
 	
        case ',':
-	if (commas) goto done;
-	break;
+	goto done;
 	
        case '/':
 	// skip comments
@@ -125,97 +129,16 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
 	}
 	start = i + 1;
 	break;
+
+       case '\"':
+	for (i++; i < len && s[i] != '\"'; i++)
+	  if (s[i] == '\\')
+	    i++;
+	break;
 	
-       case '\\':
-	if (i < len - 1) {
-	  sa << conf.substring(start, i - start);
-	  switch (s[i+1]) {
-	    
-	   case '\r':
-	    if (i < len - 2 && s[i+2] == '\n') i++;
-	    /* FALLTHRU */
-	   case '\n':
-	    i++;
-	    start = i + 1;
-	    break;
-	    
-	   case 'a': sa << '\a'; goto keep_space_skip_2;
-	   case 'b': sa << '\b'; goto keep_space_skip_2;
-	   case 'f': sa << '\f'; goto keep_space_skip_2;
-	   case 'n': sa << '\n'; goto keep_space_skip_2;
-	   case 'r': sa << '\r'; goto keep_space_skip_2;
-	   case 't': sa << '\t'; goto keep_space_skip_2;
-	   case 'v': sa << '\v'; goto keep_space_skip_2;
-
-	   case '0': case '1': case '2': case '3':
-	   case '4': case '5': case '6': case '7': {
-	     int c = 0, d = 0;
-	     for (i++; i < len && s[i] >= '0' && s[i] <= '7' && d < 3;
-		  i++, d++)
-	       c = c*8 + s[i] - '0';
-	     sa << (char)c;
-	     goto keep_space_unskip_1;
-	   }
-
-	   case 'x': {
-	     int c = 0;
-	     for (i += 2; i < len; i++)
-	       if (s[i] >= '0' && s[i] <= '9')
-		 c = c*16 + s[i] - '0';
-	       else if (s[i] >= 'A' && s[i] <= 'F')
-		 c = c*16 + s[i] - 'A' + 10;
-	       else if (s[i] >= 'a' && s[i] <= 'f')
-		 c = c*16 + s[i] - 'a' + 10;
-	       else
-		 break;
-	     sa << (char)c;
-	     goto keep_space_unskip_1;
-	   }
-	   
-	   case '<': {
-	     int c = 0, d = 0;
-	     first_keep_spaces = sa.length();
-	     for (i += 2; i < len; i++) {
-	       if (isspace(s[i]))
-		 continue;
-	       else if (s[i] == '>') {
-		 i++;		// skip past it
-		 break;
-	       } else if (s[i] >= '0' && s[i] <= '9')
-		 c = c*16 + s[i] - '0';
-	       else if (s[i] >= 'A' && s[i] <= 'F')
-		 c = c*16 + s[i] - 'A' + 10;
-	       else if (s[i] >= 'a' && s[i] <= 'f')
-		 c = c*16 + s[i] - 'a' + 10;
-	       else
-		 continue;	// error: random character
-	       if (++d == 2) {
-		 sa << (char)c;
-		 c = d = 0;
-	       }
-	     }
-	     goto keep_space_unskip_1;
-	   }
-	    
-	   keep_space_unskip_1:
-	    keep_spaces = sa.length();
-	    if (first_keep_spaces < 0) first_keep_spaces = keep_spaces - 1;
-	    i--;
-	    start = i + 1;
-	    break;
-	    
-	   default:
-	    // keep the next character; if it's a space, don't let it be eaten
-	    sa << s[i+1];
-	   keep_space_skip_2:
-	    keep_spaces = sa.length();
-	    if (first_keep_spaces < 0) first_keep_spaces = keep_spaces - 1;
-	    i++;
-	    start = i + 1;
-	    break;
-	    
-	  }
-	}
+       case '\'':
+	for (i++; i < len && s[i] != '\''; i++)
+	  /* nada */;
 	break;
 	
       }
@@ -225,21 +148,18 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
     if (i > start)
       sa << conf.substring(start, i - start);
     
-    // remove trailing spaces
+    // remove leading & trailing spaces
     const char *data = sa.data();
-    for (int j = sa.length() - 1; j >= keep_spaces && isspace(data[j]); j--)
-      sa.pop(1);
-    
-    // remove leading spaces
-    if (first_keep_spaces < 0) first_keep_spaces = sa.length();
-    int space_prefix = 0;
-    for (; space_prefix < first_keep_spaces && isspace(data[space_prefix]);
-	 space_prefix++)
-      /* nada */;
+    int first_pos, last_pos = sa.length();
+    for (first_pos = 0; first_pos < last_pos; first_pos++)
+      if (!isspace(data[first_pos]))
+	break;
+    for (; last_pos > first_pos; last_pos--)
+      if (!isspace(data[last_pos - 1]))
+	break;
     
     // add the argument if it is nonempty, or this isn't the first argument
-    String arg = sa.take_string();
-    if (space_prefix) arg = arg.substring(space_prefix);
+    String arg = sa.take_string().substring(first_pos, last_pos - first_pos);
     if (arg || comma_pos < len || !first_arg)
       args.push_back(arg);
     
@@ -253,98 +173,25 @@ String
 cp_unargvec(const Vector<String> &args)
 {
   StringAccum sa;
-  for (int an = 0; an < args.size(); an++) {
-    const char *s = args[an].data();
-    int len = args[an].length();
-    if (an) sa << ", ";
-    if (len && isspace(s[0])) sa << "\\\n";
-    int start = 0, i;
-    for (i = 0; i < len; i++)
-      if (s[i] == ',' || s[i] == '\\' ||
-	  (s[i] == '/' && i < len - 1
-	   && (s[i+1] == '/' || s[i+1] == '*'))) {
-	sa << args[an].substring(start, i - start) << '\\';
-	start = i;
-      } else if (s[i] < ' ' || s[i] > '\x7E') {
-	sa << args[an].substring(start, i - start) << "\\";
-	int c = (unsigned char)s[i];
-	sa << (char)('0' + ((c >> 6) & 0x7))
-	   << (char)('0' + ((c >> 3) & 0x7))
-	   << (char)('0' + ((c) & 0x7));
-	start = i + 1;
-      }
-    sa << args[an].substring(start, i - start);
-    if (i > start && isspace(s[i-1])) sa << "\\\n";
+  for (int i = 0; i < args.size(); i++) {
+    if (i) sa << ", ";
+    sa << args[i];
   }
   return sa.take_string();
-}
-
-void
-cp_argvec_unsubst(const String &conf, Vector<String> &args)
-{
-  const char *s = conf.data();
-  int len = conf.length();
-  int pos = 0;
-  int last_pos = 0;
-  bool nonblank = false;
-  if (!conf)			// common case
-    return;
-  
-  for (; pos < len; pos++)
-    switch (s[pos]) {
-      
-     case ',':
-      args.push_back(conf.substring(last_pos, pos - last_pos));
-      last_pos = pos + 1;
-      break;
-      
-     case '/':
-      if (pos < len - 1 && s[pos+1] == '/') {
-	while (pos < len && s[pos] != '\n' && s[pos] != '\r')
-	  pos++;
-      } else if (pos < len - 1 && s[pos+1] == '*') {
-	pos += 2;
-	while (pos < len && (s[pos] != '*' || pos == len - 1 || s[pos+1] != '/'))
-	  pos++;
-	if (pos < len - 1)
-	  pos += 2;
-      } else
-	nonblank = true;
-      break;
-      
-     case '\\':
-      if (pos < len - 1)
-	pos++;
-      nonblank = true;
-      break;
-
-     case ' ': case '\t': case '\r': case '\n': case '\f': case '\v':
-      break;
-
-     default:
-      nonblank = true;
-      break;
-
-    }
-
-  if (last_pos != 0 || nonblank)
-    args.push_back(conf.substring(last_pos, pos - last_pos));
 }
 
 String
 cp_subst(const String &str)
 {
   Vector<String> v;
-  cp_argvec_2(str, v, false);
-  return (v.size() ? v[0] : String());
-}
-
-String
-cp_unsubst(const String &str)
-{
-  Vector<String> v;
-  v.push_back(str);
-  return cp_unargvec(v);
+  cp_argvec(str, v);
+  if (v.size() > 1) {
+    cp_errno = CPE_FORMAT;
+    return String();
+  } else {
+    cp_errno = CPE_OK;
+    return (v.size() ? v[0] : String());
+  }
 }
 
 void
@@ -354,18 +201,109 @@ cp_spacevec(const String &conf, Vector<String> &vec)
   int len = conf.length();
   int i = 0;
   
-  while (1) {
-    while (i < len && isspace(s[i]))
-      i++;
-    if (i >= len)
-      return;
+  // common case: no configuration
+  if (len == 0)
+    return;
 
-    // accumulate an argument
-    int start = i;
-    while (i < len && !isspace(s[i]))
-      i++;
-    vec.push_back(conf.substring(start, i - start));
-  }
+  // dump arguments into `vec'
+  int start = -1;
+  
+  for (; i < len; i++)
+    switch (s[i]) {
+      
+     case '/':
+      // skip comments
+      if (i == len - 1 || (s[i+1] != '/' && s[i+1] != '*'))
+	goto normal;
+      if (start >= 0)
+	vec.push_back(conf.substring(start, i - start));
+      if (s[i+1] == '/') {
+	while (i < len && s[i] != '\n' && s[i] != '\r')
+	  i++;
+	if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
+	  i++;
+      } else {
+	i += 2;
+	while (i < len && (s[i] != '*' || i == len - 1 || s[i+1] != '/'))
+	  i++;
+	i++;
+      }
+      start = -1;
+      break;
+      
+     case '\"':
+      if (start < 0)
+	start = i;
+      for (i++; i < len && s[i] != '\"'; i++)
+	if (s[i] == '\\')
+	  i++;
+      break;
+      
+     case '\'':
+      if (start < 0)
+	start = i;
+      for (i++; i < len && s[i] != '\''; i++)
+	/* nada */;
+      break;
+
+     case '\\':			// check for \<...> strings
+      if (i < len - 1 && s[i+1] == '<')
+	for (i += 2; i < len && s[i] != '>'; i++)
+	  /* nada */;
+      break;
+      
+     case ' ':
+     case '\f':
+     case '\n':
+     case '\r':
+     case '\t':
+     case '\v':
+      if (start >= 0)
+	vec.push_back(conf.substring(start, i - start));
+      start = -1;
+      break;
+
+     default:
+     normal:
+      if (start < 0)
+	start = i;
+      break;
+      
+    }
+}
+
+String
+cp_quote_string(const String &str)
+{
+  if (!str)
+    return String("\"\"");
+  
+  const char *s = str.data();
+  int len = str.length();
+  int i = 0;
+  
+  StringAccum sa;
+  int start = i;
+
+  sa << '\"';
+  
+  for (; i < len; i++)
+    if (s[i] == '\\' || s[i] == '\"') {
+      sa << str.substring(start, i - start);
+      sa << '\\' << s[i];
+      start = i + 1;
+    } else if ((s[i] >= 32 && s[i] < 127) || s[i] == '\n')
+      /* nada */;
+    else {
+      sa << str.substring(start, i - start);
+      unsigned int u = *((unsigned char *)(s + i));
+      sa << '\\' << '0' + (u >> 6) << '0' + ((u >> 3) & 7) << '0' + (u & 7);
+      start = i + 1;
+    }
+
+  sa << str.substring(start, i - start);
+  sa << '\"';
+  return sa.take_string();
 }
 
 bool
@@ -629,19 +567,148 @@ cp_milliseconds(const String &str, int *return_value, String *rest = 0)
 }
 
 bool
-cp_word(String str, String *return_value, String *rest = 0)
+cp_string(String str, String *return_value, String *rest = 0)
 {
   const char *s = str.data();
   int len = str.length();
-  int pos = 0;
-  while (pos < len && !isspace(s[pos]))
-    pos++;
-  String word = str.substring(0, pos);
-  if (!rest && pos != len)
+  int i = 0;
+
+  // accumulate a word
+  StringAccum sa;
+  int start = i;
+  int quote_state = 0;
+  bool any = false;
+  
+  for (; i < len; i++)
+    switch (s[i]) {
+      
+     case ' ':
+     case '\f':
+     case '\n':
+     case '\r':
+     case '\t':
+     case '\v':
+      if (quote_state == 0)
+	goto done;
+      break;
+
+     case '\"':
+     case '\'':
+      if (quote_state == 0) {
+	if (start > i) sa << str.substring(start, i - start);
+	start = i + 1;
+	quote_state = s[i];
+	any = true;
+      } else if (quote_state == s[i]) {
+	if (start > i) sa << str.substring(start, i - start);
+	start = i + 1;
+	quote_state = 0;
+      }
+      break;
+      
+     case '\\':
+      if (i < len - 1 && (quote_state == '\"'
+			  || (quote_state == 0 && s[i+1] == '<'))) {
+	sa << str.substring(start, i - start);
+	switch (s[i+1]) {
+	  
+	 case '\r':
+	  if (i < len - 2 && s[i+2] == '\n') i++;
+	  /* FALLTHRU */
+	 case '\n':
+	  i++;
+	  break;
+	  
+	 case 'a': sa << '\a'; i++; break;
+	 case 'b': sa << '\b'; i++; break;
+	 case 'f': sa << '\f'; i++; break;
+	 case 'n': sa << '\n'; i++; break;
+	 case 'r': sa << '\r'; i++; break;
+	 case 't': sa << '\t'; i++; break;
+	 case 'v': sa << '\v'; i++; break;
+	  
+	 case '0': case '1': case '2': case '3':
+	 case '4': case '5': case '6': case '7': {
+	   int c = 0, d = 0;
+	   for (i++; i < len && s[i] >= '0' && s[i] <= '7' && d < 3;
+		i++, d++)
+	     c = c*8 + s[i] - '0';
+	   sa << (char)c;
+	   i--;
+	   break;
+	 }
+	 
+	 case 'x': {
+	   int c = 0;
+	   for (i += 2; i < len; i++)
+	     if (s[i] >= '0' && s[i] <= '9')
+	       c = c*16 + s[i] - '0';
+	     else if (s[i] >= 'A' && s[i] <= 'F')
+	       c = c*16 + s[i] - 'A' + 10;
+	     else if (s[i] >= 'a' && s[i] <= 'f')
+	       c = c*16 + s[i] - 'a' + 10;
+	     else
+	       break;
+	   sa << (char)c;
+	   i--;
+	   break;
+	 }
+	 
+	 case '<': {
+	   int c = 0, d = 0;
+	   any = true;
+	   for (i += 2; i < len; i++) {
+	     if (s[i] == '>')
+	       break;
+	     else if (s[i] >= '0' && s[i] <= '9')
+	       c = c*16 + s[i] - '0';
+	     else if (s[i] >= 'A' && s[i] <= 'F')
+	       c = c*16 + s[i] - 'A' + 10;
+	     else if (s[i] >= 'a' && s[i] <= 'f')
+	       c = c*16 + s[i] - 'a' + 10;
+	     else
+	       continue;	// space (ignore it) or random (error)
+	     if (++d == 2) {
+	       sa << (char)c;
+	       c = d = 0;
+	     }
+	   }
+	   break;
+	 }
+	 
+	 default:
+	  sa << s[i+1];
+	  i++;
+	  break;
+
+	}
+	start = i + 1;
+      }
+      break;
+      
+    }
+  
+ done:
+  if ((!sa.length() && !any && start == i) || (!rest && i != len))
     return false;
   else {
     if (rest)
-      *rest = str.substring(pos);
+      *rest = str.substring(i);
+    sa << str.substring(start, i - start);
+    *return_value = sa.take_string();
+    return true;
+  }
+}
+
+bool
+cp_word(String str, String *return_value, String *rest = 0)
+{
+  String word;
+  if (!cp_string(str, &word, rest))
+    return false;
+  else if (!cp_is_word(word))
+    return false;
+  else {
     *return_value = word;
     return true;
   }
@@ -870,6 +937,8 @@ cp_command_name(int cp_command)
    case cpMilliseconds: return "time in seconds";
    case cpNonnegReal: case cpNonnegFixed: return "unsigned real";
    case cpString: return "string";
+   case cpWord: return "word";
+   case cpArgument: return "??";
    case cpIPAddress: return "IP address";
    case cpIPAddressMask: return "IP address with netmask";
    case cpEthernetAddress: return "Ethernet address";
@@ -908,7 +977,9 @@ store_value(int cp_command, Values &v)
      break;
    }
    
-   case cpString: {
+   case cpString:
+   case cpWord:
+   case cpArgument: {
      String *sstore = (String *)v.store;
      *sstore = v.v_string;
      break;
@@ -1085,7 +1156,25 @@ cp_va_parsev(const Vector<String> &args,
      }
      
      case cpString: {
-       (void) va_arg(val, const char *);
+       const char *desc = va_arg(val, const char *);
+       v.store = va_arg(val, String *);
+       if (skip) break;
+       if (!cp_string(args[argno], &v.v_string))
+	 errh->error("argument %d should be %s (string)", argno+1, desc);
+       break;
+     }
+     
+     case cpWord: {
+       const char *desc = va_arg(val, const char *);
+       v.store = va_arg(val, String *);
+       if (skip) break;
+       if (!cp_word(args[argno], &v.v_string))
+	 errh->error("argument %d should be %s (word)", argno+1, desc);
+       break;
+     }
+     
+     case cpArgument: {
+       (void)va_arg(val, const char *);
        v.store = va_arg(val, String *);
        if (skip) break;
        v.v_string = args[argno];

@@ -530,9 +530,8 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
   int no = (int)vno;
   while (args.size() <= no)
     args.push_back(String());
-  String real_arg = cp_subst(arg);
-  args[no] = real_arg;
-  if (router->live_reconfigure(element->number(), cp_unargvec(args), errh) < 0)
+  args[no] = arg;
+  if (router->live_reconfigure(element->number(), args, errh) < 0)
     return -EINVAL;
   else
     return 0;
@@ -552,7 +551,7 @@ Element::change_configuration(int which, const String &arg)
   cp_argvec(router()->econfiguration(number()), args);
   while (args.size() <= which)
     args.push_back(String());
-  args[which] = cp_subst(arg);
+  args[which] = arg;
   router()->set_configuration(number(), cp_unargvec(args));
 }
 

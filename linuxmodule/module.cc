@@ -334,7 +334,7 @@ read_requirements(Element *, void *)
     const Vector<String> &v = current_router->requirements();
     StringAccum sa;
     for (int i = 0; i < v.size(); i++)
-      sa << cp_unsubst(v[i]) << "\n";
+      sa << v[i] << "\n";
     return sa.take_string();
   } else
     return "";

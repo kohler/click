@@ -210,6 +210,23 @@ Lexer::skip_slash_star(unsigned pos)
   return _len;
 }
 
+unsigned
+Lexer::skip_quote(unsigned pos, char endc)
+{
+  for (; pos < _len; pos++)
+    if (_data[pos] == '\n')
+      _lineno++;
+    else if (_data[pos] == '\r') {
+      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+      _lineno++;
+    } else if (_data[pos] == '\\' && pos < _len - 1 && endc == '\"'
+	       && _data[pos+1] == endc)
+      pos++;
+    else if (_data[pos] == endc)
+      return pos + 1;
+  return _len;
+}
+
 Lexeme
 Lexer::next_lexeme()
 {
@@ -308,15 +325,14 @@ Lexer::lex_config()
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
-    } else if (_data[pos] == '\\' && pos < _len - 1 &&
-	       _data[pos+1] != '\n' && _data[pos+1] != '\r')
-      pos++;
-    else if (_data[pos] == '/' && pos < _len - 1) {
+    } else if (_data[pos] == '/' && pos < _len - 1) {
       if (_data[pos+1] == '/')
 	pos = skip_line(pos + 2) - 1;
       else if (_data[pos+1] == '*')
 	pos = skip_slash_star(pos + 2) - 1;
-    } else if (_data[pos] == '$' && have_arguments) {
+    } else if (_data[pos] == '\'' || _data[pos] == '\"')
+      pos = skip_quote(pos + 1, _data[pos]);
+    else if (_data[pos] == '$' && have_arguments) {
       unsigned word_pos = pos;
       for (pos++; isalnum(_data[pos]) || _data[pos] == '_'; pos++)
 	/* nada */;
@@ -364,9 +380,8 @@ Lexer::lex_compound_body()
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
-    } else if (_data[pos] == '\\' && pos < _len - 1 &&
-	       _data[pos+1] != '\n' && _data[pos+1] != '\r')
-      pos++;
+    } else if ((_data[pos] == '\'' || _data[pos] == '\"') && paren_depth)
+      pos = skip_quote(pos + 1, _data[pos]);
   
   _pos = pos;
   return _big_string.substring(config_pos, pos - config_pos);
@@ -679,7 +694,7 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
 
   // handle configuration string
   Vector<String> args;
-  cp_argvec_unsubst(conf, args);
+  cp_argvec(conf, args);
   int nargs = compound->narguments();
   if (args.size() != nargs) {
     const char *whoops = (args.size() < nargs ? "few" : "many");
@@ -1131,10 +1146,15 @@ Lexer::yrequire()
     String requirement = lex_config();
     Vector<String> args;
     cp_argvec(requirement, args);
+    String word;
     for (int i = 0; i < args.size(); i++) {
-      if (_lextra)
-	_lextra->require(args[i], _errh);
-      _requirements.push_back(args[i]);
+      if (!cp_word(args[i], &word))
+	lerror("bad requirement: should be a single word");
+      else {
+	if (_lextra)
+	  _lextra->require(word, _errh);
+	_requirements.push_back(word);
+      }
     }
     expect(')');
   }
