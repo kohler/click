@@ -22,6 +22,8 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/click_tcp.h>
+#include <click/string.hh>
+#include <click/straccum.hh>
 
 #define rtprintf if(0)printf
 
@@ -120,11 +122,11 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 	     p->dst_ip_anno().s().cc());
       fflush(NULL);
       output(match->outgoing_port).push(p);
+      return;
     }    
   } else {
     // NO match, Look into Dst Table
     dst_match = _dst_table->lookup(p->dst_ip_anno());
-
 
     // Add new entry to Flow Table
     new_entry = _flow_table->add(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
@@ -134,12 +136,14 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     
     if (dst_match){
       new_entry->outgoing_port = dst_match->outgoing_port;
-      output(new_entry->outgoing_port).push(p);
       printf("DST match, port (%d) {%s}->{%s}\n", 
 	     new_entry->outgoing_port,
 	     IPAddress(p->ip_header()->ip_src).s().cc(), 
 	     p->dst_ip_anno().s().cc() );
       fflush(NULL);
+      output(new_entry->outgoing_port).push(p);
+      return;
+
     } else {
       rtprintf("DST nomatch, send PROBE\n");
       new_entry->outgoing_port = 0;
@@ -251,6 +255,7 @@ void LookupIPRouteRON::push_forward_packet(Packet *p)
   } else {
     push_forward_normal(p);
   }
+  return;
 }
 
 void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p) 
@@ -277,11 +282,13 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
       match->outgoing_port = inport;
       match->outstanding_syns = 0;
       output(0).push(p);
+      return;
     } else {
       // FLOW not pending
       if (inport == match->outgoing_port){
 	rtprintf("Correct return port, forwarding reverse SYN-ACK\n");
 	output(0).push(p);
+	return;
       } else {
 	rtprintf("Incorrect return port, killing SYN-ACK\n");
 	p->kill();
@@ -389,6 +396,7 @@ void LookupIPRouteRON::push_reverse_packet(int inport, Packet *p)
   } else {
     push_reverse_normal(p);
   }
+  return;
 }
 
 void
@@ -659,6 +667,7 @@ LookupIPRouteRON::DstTable::print() {
 	     _v[i].outgoing_port, _v[i].is_valid(), _v[i].is_recent());
   }
 }
+
 
 
 // generate Vector template instance
