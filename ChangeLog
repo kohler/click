@@ -1,3 +1,19 @@
+2002-01-20 Sunday 18:18  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* elements/ip/ipreassembler.cc (1.6): fixed faulty free for
+	overalpping fragments
+
+2002-01-20 Sunday 18:16  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.15), lookupiprouteron.hh (1.10):
+	[no log message]
+
+2002-01-20 Sunday 17:40  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* elements/ip/ipfragmenter.cc (1.25): Fixed bug in disregarding DF
+	bit. Previously, the IP ID was not changed, now, it is replaced
+	with a random number if the DF bit was set true.
+
 2002-01-20 Sunday 15:15  Eddie Kohler <kohler@aciri.org>
 
 	* linuxmodule/proc_element.cc (1.39): nitlet
