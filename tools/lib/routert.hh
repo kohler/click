@@ -36,12 +36,16 @@ class RouterT { public:
     int nelements() const		{ return _elements.size(); }
     int real_element_count() const	{ return _real_ecount; }
     int eindex(const String &s) const	{ return _element_name_map[s]; }
+    
     const ElementT *element(int i) const{ return _elements[i]; }
     const ElementT *elt(int i) const	{ return _elements[i]; }
-    const ElementT *e(int i) const	{ return _elements[i]; }
     ElementT *element(int i)		{ return _elements[i]; }
     ElementT *elt(int i)		{ return _elements[i]; }
-    ElementT *e(int i)			{ return _elements[i]; }
+    const ElementT *element(const String &) const;
+    const ElementT *elt(const String &) const;
+    ElementT *element(const String &);
+    ElementT *elt(const String &);
+    
     bool elive(int ei) const		{ return _elements[ei]->live(); }
     bool edead(int ei) const		{ return _elements[ei]->dead(); }
     String ename(int) const;
@@ -55,10 +59,9 @@ class RouterT { public:
     const String &elandmark(int i) const{ return _elements[i]->landmark(); }
 
     int get_eindex(const String &name, ElementClassT *, const String &configuration, const String &landmark);
-    int get_anon_eindex(const String &name, ElementClassT *, const String &configuration = String(), const String &landmark = String());
-    int get_anon_eindex(ElementClassT *, const String &configuration = String(), const String &landmark = String());
+    ElementT *add_anon_element(ElementClassT *, const String &configuration = String(), const String &landmark = String());
     void change_ename(int, const String &);
-    void free_element(int);
+    void free_element(ElementT *);
     void free_dead_elements();
 
     void set_new_eindex_collector(Vector<int> *v) { _new_eindex_collector=v; }
@@ -72,8 +75,9 @@ class RouterT { public:
 
     void add_tunnel(String, String, const String &, ErrorHandler *);
 
+    bool add_connection(const Hookup &, const Hookup &, const String &landmark = String());
     bool add_connection(const HookupI &, const HookupI &, const String &landmark = String());
-    bool add_connection(int, int, int, int, const String &landmark = String());
+    bool add_connection(ElementT *, int, ElementT *, int, const String &landmark = String());
     void kill_connection(int);
     void kill_bad_connections();
     void compact_connections();
@@ -91,18 +95,26 @@ class RouterT { public:
     ArchiveElement &archive(const String &s);
     const ArchiveElement &archive(const String &s) const;
 
+    bool has_connection(const Hookup &, const Hookup &) const;
+    int find_connection(const Hookup &, const Hookup &) const;
+    void change_connection_to(int, Hookup);
+    void change_connection_from(int, Hookup);
+    bool find_connection_from(const HookupI &, HookupI &) const;
+    void find_connections_from(const Hookup &, Vector<Hookup> &) const;
+    void find_connections_from(const Hookup &, Vector<int> &) const;
+    void find_connections_to(const Hookup &, Vector<Hookup> &) const;
+    void find_connections_to(const Hookup &, Vector<int> &) const;
+    void find_connection_vector_from(ElementT *, Vector<int> &) const;
+    void find_connection_vector_to(ElementT *, Vector<int> &) const;
+
     bool has_connection(const HookupI &, const HookupI &) const;
     int find_connection(const HookupI &, const HookupI &) const;
-    void change_connection_to(int, HookupI);
-    void change_connection_from(int, HookupI);
-    bool find_connection_from(const HookupI &, HookupI &) const;
-    void find_connections_from(const HookupI &, Vector<HookupI> &) const;
+    void find_connections_from(const HookupI &, Vector<Hookup> &) const;
     void find_connections_from(const HookupI &, Vector<int> &) const;
-    void find_connections_to(const HookupI &, Vector<HookupI> &) const;
+    void find_connections_to(const HookupI &, Vector<Hookup> &) const;
     void find_connections_to(const HookupI &, Vector<int> &) const;
-    void find_connection_vector_from(int, Vector<int> &) const;
-    void find_connection_vector_to(int, Vector<int> &) const;
-    void count_ports(Vector<int> &, Vector<int> &) const;
+    //void find_connection_vector_from(int, Vector<int> &) const;
+    //void find_connection_vector_to(int, Vector<int> &) const;
 
     bool insert_before(const HookupI &, const HookupI &);
     bool insert_after(const HookupI &, const HookupI &);
@@ -177,12 +189,11 @@ class RouterT { public:
     ElementClassT *get_type(const String &, int scope_cookie) const;
     void update_noutputs(int);
     void update_ninputs(int);
-    int add_element(const ElementT &);
+    ElementT *add_element(const ElementT &);
     void free_connection(int ci);
     void unlink_connection_from(int ci);
     void unlink_connection_to(int ci);
-    void finish_free_elements(Vector<int> &);
-    void expand_tunnel(Vector<HookupI> *port_expansions, const Vector<HookupI> &ports, bool is_output, int which, ErrorHandler *) const;
+    void expand_tunnel(Vector<Hookup> *port_expansions, const Vector<Hookup> &ports, bool is_output, int which, ErrorHandler *) const;
     String interpolate_arguments(const String &, const Vector<String> &) const;
 
 };
@@ -247,6 +258,32 @@ RouterT::first_element(ElementClassT *t)
     return type_iterator(this, t);
 }
 
+inline const ElementT *
+RouterT::element(const String &s) const
+{
+    int i = _element_name_map[s];
+    return (i >= 0 ? _elements[i] : 0);
+}
+
+inline const ElementT *
+RouterT::elt(const String &s) const
+{
+    return element(s);
+}
+
+inline ElementT *
+RouterT::element(const String &s)
+{
+    int i = _element_name_map[s];
+    return (i >= 0 ? _elements[i] : 0);
+}
+
+inline ElementT *
+RouterT::elt(const String &s)
+{
+    return element(s);
+}
+
 inline String
 RouterT::ename(int e) const
 {
@@ -284,14 +321,14 @@ RouterT::econfiguration(int e) const
 }
 
 inline bool
-RouterT::add_connection(int from_idx, int from_port, int to_idx, int to_port,
-			const String &landmark)
+RouterT::add_connection(ElementT *from_elt, int from_port, ElementT *to_elt,
+			int to_port, const String &landmark)
 {
-    return add_connection(HookupI(from_idx, from_port), HookupI(to_idx, to_port), landmark);
+    return add_connection(Hookup(from_elt, from_port), Hookup(to_elt, to_port), landmark);
 }
 
 inline bool
-RouterT::has_connection(const HookupI &hfrom, const HookupI &hto) const
+RouterT::has_connection(const Hookup &hfrom, const Hookup &hto) const
 {
     return find_connection(hfrom, hto) >= 0;
 }
@@ -307,5 +344,55 @@ RouterT::archive(const String &name) const
 {
     return _archive[_archive_map[name]];
 }
+
+inline bool
+RouterT::has_connection(const HookupI &hfrom, const HookupI &hto) const
+{
+    return has_connection(Hookup(hfrom, this), Hookup(hto, this));
+}
+
+inline int
+RouterT::find_connection(const HookupI &hfrom, const HookupI &hto) const
+{
+    return find_connection(Hookup(hfrom, this), Hookup(hto, this));
+}
+
+inline void
+RouterT::find_connections_from(const HookupI &h, Vector<Hookup> &v) const
+{
+    find_connections_from(Hookup(h, this), v);
+}
+
+inline void
+RouterT::find_connections_from(const HookupI &h, Vector<int> &v) const
+{
+    find_connections_from(Hookup(h, this), v);
+}
+
+inline void
+RouterT::find_connections_to(const HookupI &h, Vector<Hookup> &v) const
+{
+    find_connections_to(Hookup(h, this), v);
+}
+
+inline void
+RouterT::find_connections_to(const HookupI &h, Vector<int> &v) const
+{
+    find_connections_to(Hookup(h, this), v);
+}
+
+#if 0
+inline void
+RouterT::find_connection_vector_from(int ei, Vector<int> &v) const
+{
+    find_connection_vector_from(_elements[ei], v);
+}
+
+inline void
+RouterT::find_connection_vector_to(int ei, Vector<int> &v) const
+{
+    find_connection_vector_to(_elements[ei], v);
+}
+#endif
 
 #endif
