@@ -299,9 +299,27 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
      
      case 'c': {
        int c = va_arg(val, int);
-       numbuf[0] = c;
-       s1 = numbuf;
-       s2 = s1 + 1;
+       if (flags & ALTERNATE_FORM) {
+	 // assume ASCII
+	 if (c == '\n')
+	   strcpy(numbuf, "\\n");
+	 else if (c == '\t')
+	   strcpy(numbuf, "\\t");
+	 else if (c == '\r')
+	   strcpy(numbuf, "\\r");
+	 else if (c < 32)
+	   sprintf(numbuf, "^%c", c + 64);
+	 else if (c < 0177)
+	   sprintf(numbuf, "%c", c);
+	 else
+	   sprintf(numbuf, "\\%03o", c);
+	 s1 = numbuf;
+	 s2 = strchr(numbuf, 0);
+       } else {
+	 numbuf[0] = c;
+	 s1 = numbuf;
+	 s2 = s1 + 1;
+       }
        break;
      }
      
