@@ -172,6 +172,8 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 int
 ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 {
+    static StringAccum sa;
+    
     int fd;
     if (_filename == "-")
 	fd = STDOUT_FILENO;
@@ -185,7 +187,8 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
     // make a guess about how much data we'll need
-    StringAccum sa(_npkt * (_binary ? 28 : 40) + _note_text.length() + _nnote * 8 + _opt_info.length() + 16);
+    sa.clear();
+    sa.reserve(_npkt * (_binary ? 28 : 40) + _note_text.length() + _nnote * 8 + _opt_info.length() + 16);
     
     if (!_outputted) {
 	sa << "!IPSummaryDump 1.1\n!flowid "
@@ -668,6 +671,7 @@ ToIPFlowDumps::end_flow(Flow *f, ErrorHandler *errh)
     } else
 	f->unlink(errh);
     delete f;
+    _nflows--;
 }
 
 void
@@ -782,9 +786,10 @@ ToIPFlowDumps::find_aggregate(uint32_t agg, const Packet *p)
 
     if (f)
 	/* nada */;
-    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq, _binary, _ip_id, _tcp_opt, _tcp_window)))
+    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq, _binary, _ip_id, _tcp_opt, _tcp_window))) {
 	prev = f;
-    else
+	_nflows++;
+    } else
 	return 0;
 
     if (prev) {

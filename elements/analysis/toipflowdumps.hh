@@ -205,7 +205,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	
       private:
 
-	enum { NPKT = 512, NNOTE = 128 };
+	enum { NPKT = 128, NNOTE = 32 };
 	
 	Flow *_next;
 	IPFlowID _flowid;
@@ -237,6 +237,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     enum { FLOWMAP_BITS = 10, NFLOWMAP = 1 << FLOWMAP_BITS };
     Flow *_flowmap[NFLOWMAP];
+    int _nflows;
 
     String _filename_pattern;
     String _output_banner;
