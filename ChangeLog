@@ -1,3 +1,30 @@
+2002-12-17 Tuesday 18:39  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: bighashmap.cc (1.20), bighashmap.hh (1.16): add
+	BigHashMap::Pair and BigHashMap::iterator::pair()
+
+2002-12-17 Tuesday 17:42  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.36), ipsumdumpinfo.cc
+	(1.5), ipsumdumpinfo.hh (1.3), toipsumdump.cc (1.34),
+	toipsumdump.hh (1.29): add support for FIRST_TIMESTAMP_ANNO
+
+2002-12-17 Tuesday 17:42  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet_anno.hh (1.12): add FIRST_TIMESTAMP_ANNO
+
+2002-12-17 Tuesday 17:41  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet.hh (1.43): add more annotation space
+
+2002-12-17 Tuesday 17:41  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.29), aclocal.m4 (1.29): nits
+
+2002-12-17 Tuesday 17:40  Eddie Kohler <kohler@icir.org>
+
+	* .cvsignore (1.9): ignore newer autoconf crap
+
 2002-12-12 Thursday 00:56  Eddie Kohler <kohler@icir.org>
 
 	* etc/samplepackage/configure.in (1.7): include

@@ -1,3 +1,22 @@
+2002-12-17 Tuesday 18:39  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: bighashmap.cc, bighashmap.hh, bighashmap.cc,
+	bighashmap.hh: add BigHashMap::Pair and
+	BigHashMap::iterator::pair()
+
+2002-12-17 Tuesday 17:42  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet_anno.hh, packet_anno.hh: add
+	FIRST_TIMESTAMP_ANNO
+
+2002-12-17 Tuesday 17:41  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet.hh, packet.hh: add more annotation space
+
+2002-12-17 Tuesday 17:41  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4: nits
+
 2002-12-11 Wednesday 23:11  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4, acclick.m4: support version numbers with patchlevels
