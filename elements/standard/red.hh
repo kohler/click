@@ -1,7 +1,8 @@
-#ifndef RED_HH
-#define RED_HH
+// -*- mode: c++; c-basic-offset: 4 -*-
+#ifndef CLICK_RED_HH
+#define CLICK_RED_HH
 #include <click/element.hh>
-#include <click/ewma.hh>
+#include <click/ewma64.hh>
 class Storage;
 
 /*
@@ -74,61 +75,63 @@ Congestion Avoidance>. ACM Transactions on Networking, B<1>(4), August
 
 class RED : public Element { public:
 
-  RED();
-  ~RED();
-  
-  const char *class_name() const		{ return "RED"; }
-  const char *processing() const		{ return "a/ah"; }
-  RED *clone() const;
-  
-  int queue_size() const;
-  const DirectEWMA &average_queue_size() const	{ return _size; }
-  int drops() const				{ return _drops; }
+    RED();
+    ~RED();
 
-  void notify_noutputs(int);
-  int configure(const Vector<String> &, ErrorHandler *);
-  int check_thresh_and_p(unsigned, unsigned, unsigned, ErrorHandler *) const;
-  int initialize(ErrorHandler *);
-  void take_state(Element *, ErrorHandler *);
-  void configuration(Vector<String> &, bool *) const;
-  bool can_live_reconfigure() const		{ return true; }
-  int live_reconfigure(const Vector<String> &, ErrorHandler *);
-  void add_handlers();
-  
-  bool should_drop();
-  void handle_drop(Packet *);
-  void push(int port, Packet *);
-  Packet *pull(int port);
-  
- protected:
-  
-  Storage *_queue1;
-  Vector<Storage *> _queues;
-  
-  // Queue sizes are shifted by this much.
-  static const unsigned QUEUE_SCALE = 10;
+    const char *class_name() const		{ return "RED"; }
+    const char *processing() const		{ return "a/ah"; }
+    RED *clone() const;
 
-  unsigned _min_thresh;		// scaled by QUEUE_SCALE
-  unsigned _max_thresh;		// scaled by QUEUE_SCALE
-  unsigned _max_p;		// out of 0xFFFF
-  
-  DirectEWMA _size;
-  
-  unsigned _C1;
-  unsigned _C2;
-  int _count;
-  int _random_value;
-  int _last_jiffies;
-  
-  int _drops;
-  Vector<Element *> _queue_elements;
-  
-  void set_C1_and_C2();
+    int queue_size() const;
+    const DirectEWMA64 &average_queue_size() const { return _size; }
+    int drops() const				{ return _drops; }
 
-  static String read_stats(Element *, void *);
-  static String read_queues(Element *, void *);
-  static String read_parameter(Element *, void *);
-  
+    void notify_noutputs(int);
+    int configure(const Vector<String> &, ErrorHandler *);
+    int check_params(unsigned, unsigned, unsigned, unsigned, ErrorHandler *) const;
+    int initialize(ErrorHandler *);
+    void take_state(Element *, ErrorHandler *);
+    void configuration(Vector<String> &, bool *) const;
+    bool can_live_reconfigure() const		{ return true; }
+    int live_reconfigure(const Vector<String> &, ErrorHandler *);
+    void add_handlers();
+
+    bool should_drop();
+    void handle_drop(Packet *);
+    void push(int port, Packet *);
+    Packet *pull(int port);
+
+  protected:
+
+    Storage *_queue1;
+    Vector<Storage *> _queues;
+
+    // Queue sizes are shifted by this much.
+    static const unsigned QUEUE_SCALE = 10;
+
+    unsigned _min_thresh;
+    unsigned _max_thresh;
+    unsigned _max_p;		// out of 0xFFFF
+
+    DirectEWMA64 _size;
+
+    unsigned _C1;
+    unsigned _C2;
+    unsigned _G1;
+    unsigned _G2;
+    int _count;
+    int _random_value;
+    int _last_jiffies;
+
+    int _drops;
+    Vector<Element *> _queue_elements;
+
+    void set_C1_and_C2();
+
+    static String read_stats(Element *, void *);
+    static String read_queues(Element *, void *);
+    static String read_parameter(Element *, void *);
+
 };
 
 #endif
