@@ -1,3 +1,9 @@
+2003-01-21 Tuesday 02:07  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.40), ipsumdumpinfo.cc
+	(1.6), ipsumdumpinfo.hh (1.4), toipsumdump.cc (1.35),
+	toipsumdump.hh (1.30): add tcp_window type
+
 2003-01-18 Saturday 02:42  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.39), fromipsumdump.hh
