@@ -2,7 +2,7 @@
 
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 
-li :: LocationInfo(0, 0)
+li :: LocationInfo(POS_LAT, POS_LON)
 
 rh :: ReadHandlerCaller(1) 
 
@@ -22,7 +22,7 @@ to_linux :: Queue -> linux
 // hook it all up
 from_wvlan -> Classifier(GRID_ETH_PROTO) 
   -> check_grid :: CheckGridHeader
-  -> fr :: FilterByRange(1000, li) [0] 
+  -> fr :: FilterByRange(RANGE, li) [0] 
   -> [0] nb [0]
   -> Classifier(GRID_NBR_ENCAP_PROTO)
   -> [0] lr [0] -> to_wvlan
