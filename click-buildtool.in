@@ -591,12 +591,12 @@ END {
 	$awk "$awk_program"
     else
 	cat <<EOF >/tmp/click-buildtool-standards.$$
--	<click/standard/addressinfo.hh>	AddressInfo
--	<click/standard/alignmentinfo.hh>	AlignmentInfo
--	<click/standard/drivermanager.hh>	DriverManager
--	<click/standard/errorelement.hh>	ErrorElement
--	<click/standard/portinfo.hh>	PortInfo
--	<click/standard/scheduleinfo.hh>	ScheduleInfo
+-	<click/standard/addressinfo.hh>	AddressInfo-AddressInfo
+-	<click/standard/alignmentinfo.hh>	AlignmentInfo-AlignmentInfo
+-	<click/standard/drivermanager.hh>	DriverManager-DriverManager
+-	<click/standard/errorelement.hh>	ErrorElement-ErrorElement
+-	<click/standard/portinfo.hh>	PortInfo-PortInfo
+-	<click/standard/scheduleinfo.hh>	ScheduleInfo-ScheduleInfo
 EOF
 	cat - /tmp/click-buildtool-standards.$$ | $awk "$awk_program"
 	/bin/rm -f /tmp/click-buildtool-standards.$$
