@@ -225,38 +225,40 @@ inline void
 Task::fast_reschedule()
 {
     // should not be scheduled at this point
-    assert(_thread && !_prev);
+    assert(_thread);
 #if CLICK_LINUXMODULE
     // tasks never run at interrupt time
     assert(!in_interrupt());
 #endif
 
-    // increase pass
-    _pass += _stride;
+    if (!scheduled()) {
+	// increase pass
+	_pass += _stride;
 
 #if 0
-    // look for element before where we should be scheduled
-    Task *n = _thread->_prev;
-    while (n != _thread && !PASS_GT(_pass, n->_pass))
-	n = n->_prev;
+	// look for element before where we should be scheduled
+	Task *n = _thread->_prev;
+	while (n != _thread && !PASS_GT(_pass, n->_pass))
+	    n = n->_prev;
 
-    // schedule after `n'
-    _next = n->_next;
-    _prev = n;
-    n->_next = this;
-    _next->_prev = this;
+	// schedule after `n'
+	_next = n->_next;
+	_prev = n;
+	n->_next = this;
+	_next->_prev = this;
 #else
-    // look for element after where we should be scheduled
-    Task *n = _thread->_next;
-    while (n != _thread && !PASS_GT(n->_pass, _pass))
-	n = n->_next;
+	// look for element after where we should be scheduled
+	Task *n = _thread->_next;
+	while (n != _thread && !PASS_GT(n->_pass, _pass))
+	    n = n->_next;
     
-    // schedule before `n'
-    _prev = n->_prev;
-    _next = n;
-    _prev->_next = this;
-    n->_prev = this;
+	// schedule before `n'
+	_prev = n->_prev;
+	_next = n;
+	_prev->_next = this;
+	n->_prev = this;
 #endif
+    }
 }
 
 inline void
@@ -272,15 +274,17 @@ Task::fast_schedule()
 inline void
 Task::fast_reschedule()
 {
-    assert(_thread && !_prev);
+    assert(_thread);
 #if CLICK_LINUXMODULE
     // tasks never run at interrupt time
     assert(!in_interrupt());
 #endif
-    _prev = _thread->_prev;
-    _next = _thread;
-    _thread->_prev = this;
-    _thread->_next = this;
+    if (!scheduled()) {
+	_prev = _thread->_prev;
+	_next = _thread;
+	_thread->_prev = this;
+	_thread->_next = this;
+    }
 }
 
 inline void
