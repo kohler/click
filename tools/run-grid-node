@@ -10,9 +10,8 @@ $config_file = "";
 
 $click = "/userlevel/click";
 $click_debug = "cat";
-$click_config_name = "/grid.click";
-$clickdir = "..";
-$clickconfdir = "../conf";
+$click_config_name = "/conf/grid.click";
+$clickdir = ".."; # convention: clickdir doesn't end in `/', so all subdirs must start with `/'
 
 $grid_channel = "5";
 $grid_ssid = "grid";
@@ -21,8 +20,6 @@ $radio_type = "wavelan";
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
-# XXX bogus static loc DB for manually deployed nodes
-$LOC_DB = "18.26.7.1 .0006 .00005, 18.26.7.6  .0006   .00005, 18.26.7.7  .0004   .0002, 18.26.7.8  .0005   .0002, 18.26.7.9  .0002   .00007, 18.26.7.10 .0007   0, 18.26.7.11 .0003   .00003";
 $HEADROOM = "64"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
 $NUM_HOPS = "10";
 $POS_LAT = "0";
@@ -77,7 +74,7 @@ $grid_if = "lo";
 if ($ARGV[0] eq "-config") {
     $config_file = $ARGV[1];
     print "Using config file $config_file\n";
-    open(grid_config_file, $config_file) || die "can't open config file ", $config_file, "\n";
+    open(grid_config_file, "$config_file") || die "can't open config file ", $config_file, "\n";
     while(<grid_config_file>) {
 	if (/GW=(\d+\.\d+\.\d+\.\d+)/) {
 	    $GRID_GW = $1;
@@ -112,7 +109,6 @@ else {
 	if ($ARGV[$i] eq "-debug") {
 	    $debug = 1;
 	    $click = $click_debug;
-	    $clickdir = "";
 	    $CONTROL_RO = "false";
 	    print "Using DEBUG command\n";
 	    print "ControlSocket is write-enabled\n";
@@ -304,11 +300,20 @@ else {
 # fire up click, substituting appropriate values into the config file,
 # and piping it into click stdin.
 
-open(click_config_file, "$clickconfdir$click_config_name") || die "can't open click configuration ", "$clickdir$click_config_name", "\n";
+print "XXX clickdir $clickdir\n";
+open(click_config_file, "$clickdir$click_config_name") || die "can't open click configuration ", "$clickdir$click_config_name", "\n";
 
 $grid_addr_hex = ip_to_hex($grid_addr);
 
-open(P, "| $clickdir$click");
+
+$new_click = "$clickdir$click";
+if ($debug) {
+    $new_click = $click_debug;
+}
+
+print "XXX newclick $new_click\n";
+
+open(P, "| $new_click");
 while(<click_config_file>) {
 
     s/LOC_DB/$LOC_DB/;
