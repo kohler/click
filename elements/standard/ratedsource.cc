@@ -135,6 +135,13 @@ RatedSource::read_param(Element *e, void *vparam)
     return cp_unparse_bool(rs->_active) + "\n";
    case 4:			// count
     return String(rs->_count) + "\n";
+   case 6: {			// achieved_rate
+     struct timeval now, diff;
+     click_gettimeofday(&now);
+     timersub(&now, &rs->_start_time, &diff);
+     long r = diff.tv_sec / rs->_count;
+     return String(r) + " XXX\n";
+   }
    default:
     return "";
   }
@@ -218,6 +225,7 @@ RatedSource::add_handlers()
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
   add_write_handler("reset", change_param, (void *)5);
+  add_read_handler("achieved_rate", read_param, (void *)6);
 }
 
 EXPORT_ELEMENT(RatedSource)
