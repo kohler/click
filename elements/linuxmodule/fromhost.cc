@@ -302,5 +302,5 @@ iff_clear(struct ifreq *ifr, short flag)
  * Routing table management
  */
 
-ELEMENT_REQUIRES(AnyDevice linuxmodule)
+ELEMENT_REQUIRES(AnyDevice linuxmodule linux_2_2)
 EXPORT_ELEMENT(FromLinux)

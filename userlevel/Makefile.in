@@ -94,7 +94,7 @@ elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_srcdir)/click-buildtool
-	echo "userlevel@element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem) > elements.conf
+	echo "userlevel @element_groups@" | ./click-buildtool findelem -p $(top_srcdir) -r "@provisions@" > elements.conf
 elements.mk: elements.conf $(top_srcdir)/click-buildtool
 	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o) < elements.conf > elements.mk
 elements.cc: elements.conf $(top_srcdir)/click-buildtool
