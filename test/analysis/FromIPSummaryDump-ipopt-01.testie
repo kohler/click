@@ -1,0 +1,42 @@
+%script
+
+# read from a hand-written IPSummaryDump file; check headers, emit to a dump
+click -e "
+FromIPSummaryDump(IN1, STOP true, ZERO true)
+	-> SetIPChecksum
+	-> SetTCPChecksum
+	-> CheckIPHeader
+	-> CheckTCPHeader
+	-> ToDump(OUT1, ENCAP IP);
+"
+
+# use tcpdump to verify dump
+tcpdump -nn -t -v -r OUT1 > OUT2
+
+# read from dump to verify ToIPSummaryDump
+# NB: ToIPSummaryDump's ip_opt option DOES NOT write nop and eol
+click -e "
+FromDump(OUT1, FORCE_IP true, STOP true)
+	-> ToIPSummaryDump(OUT3, CONTENTS src sport dst dport proto ip_opt);
+"
+
+%file IN1
+!data src sport dst dport proto ip_opt
+18.26.4.44 30 10.0.0.4 40 T .
+18.26.4.44 30 10.0.0.4 40 T nop,nop,eol
+18.26.4.44 20 10.0.0.8 80 T ssrr{128.4.45.60:128.4.49.61}+2
+
+%file OUT1
+
+%expect OUT2
+18.26.4.44.30 > 10.0.0.4.40: . [tcp sum ok] win 0 [ttl 0] (id 0, len 40)
+18.26.4.44.30 > 10.0.0.4.40: . [tcp sum ok] win 0 [ttl 0] (id 0, len 44, optlen=4 NOP NOP EOL-1)
+18.26.4.44.20 > 10.0.0.8.80: . [tcp sum ok] win 0 [ttl 0] (id 0, len 60, optlen=20 SSRR{128.4.45.60 128.4.49.61#0.0.0.0 0.0.0.0} EOL)
+
+%expect OUT3
+18.26.4.44 30 10.0.0.4 40 T .
+18.26.4.44 30 10.0.0.4 40 T .
+18.26.4.44 20 10.0.0.8 80 T ssrr{128.4.45.60:128.4.49.61}+2
+
+%ignore
+!.*
