@@ -72,7 +72,6 @@ class KernelTap : public Element { public:
     const char *class_name() const	{ return "KernelTap"; }
     const char *processing() const	{ return "a/h"; }
     const char *flow_code() const	{ return "x/y"; }
-    KernelTap *clone() const;
     const char *flags() const		{ return "S3"; }
   
     int configure(Vector<String> &, ErrorHandler *);

@@ -33,7 +33,6 @@ class StaticSwitch : public Element {
   const char *class_name() const		{ return "StaticSwitch"; }
   const char *processing() const		{ return PUSH; }
   
-  StaticSwitch *clone() const;
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   

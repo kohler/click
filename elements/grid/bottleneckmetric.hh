@@ -35,7 +35,6 @@ public:
 
   const char *class_name() const { return "BottleneckMetric"; }
   const char *processing() const { return AGNOSTIC; }
-  BottleneckMetric *clone()  const { return new BottleneckMetric; } 
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }

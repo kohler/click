@@ -29,8 +29,6 @@ public:
   const char *class_name() const { return "LinkTestReceiver"; }
   const char *processing() const { return AGNOSTIC; }
 
-  LinkTestReceiver *clone() const { return new LinkTestReceiver; }
-
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

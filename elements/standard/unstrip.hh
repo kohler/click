@@ -30,7 +30,6 @@ class Unstrip : public Element {
   const char *class_name() const	{ return "Unstrip"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  Unstrip *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);

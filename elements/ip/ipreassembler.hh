@@ -56,7 +56,6 @@ class IPReassembler : public Element { public:
 
     const char *class_name() const	{ return "IPReassembler"; }
     const char *processing() const	{ return "a/ah"; }
-    IPReassembler *clone() const	{ return new IPReassembler; }
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);

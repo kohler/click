@@ -40,7 +40,6 @@ class CycleCountAccum : public Element { public:
   
   const char *class_name() const		{ return "CycleCountAccum"; }
   const char *processing() const		{ return AGNOSTIC; }
-  CycleCountAccum *clone() const;
 
   int initialize(ErrorHandler *);
   void add_handlers();

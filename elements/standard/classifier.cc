@@ -159,12 +159,6 @@ Classifier::~Classifier()
   MOD_DEC_USE_COUNT;
 }
 
-Classifier *
-Classifier::clone() const
-{
-  return new Classifier;
-}
-
 //
 // COMPILATION
 //

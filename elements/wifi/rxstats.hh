@@ -28,7 +28,6 @@ class RXStats : public Element { public:
   const char *class_name() const		{ return "RXStats"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  RXStats *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 

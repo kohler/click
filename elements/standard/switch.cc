@@ -33,12 +33,6 @@ Switch::~Switch()
   MOD_DEC_USE_COUNT;
 }
 
-Switch *
-Switch::clone() const
-{
-  return new Switch;
-}
-
 void
 Switch::notify_noutputs(int n)
 {

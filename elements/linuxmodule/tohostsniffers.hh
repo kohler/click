@@ -33,7 +33,6 @@ class ToHostSniffers : public ToHost { public:
     ~ToHostSniffers();
 
     const char *class_name() const		{ return "ToHostSniffers"; }
-    ToHostSniffers *clone() const;
   
 };
 

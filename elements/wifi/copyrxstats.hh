@@ -27,7 +27,6 @@ class CopyRXStats : public Element { public:
   const char *class_name() const		{ return "CopyRXStats"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  CopyRXStats *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 

@@ -42,12 +42,6 @@ IP6NDSolicitor::~IP6NDSolicitor()
   MOD_DEC_USE_COUNT;
 }
 
-IP6NDSolicitor *
-IP6NDSolicitor::clone() const
-{
-  return new IP6NDSolicitor;
-}
-
 void
 IP6NDSolicitor::notify_noutputs(int n)
 {

@@ -56,7 +56,6 @@ class KernelHandlerProxy : public HandlerProxy { public:
   ~KernelHandlerProxy();
 
   const char *class_name() const	{ return "KernelHandlerProxy"; }
-  KernelHandlerProxy *clone() const	{ return new KernelHandlerProxy; }
   void *cast(const char *);
 
   int configure(Vector<String> &, ErrorHandler *);

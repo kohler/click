@@ -35,7 +35,6 @@ class DelayUnqueue : public Element { public:
 
   const char *class_name() const	{ return "DelayUnqueue"; }
   const char *processing() const	{ return PULL_TO_PUSH; }
-  DelayUnqueue *clone() const		{ return new DelayUnqueue; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

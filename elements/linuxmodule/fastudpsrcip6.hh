@@ -92,8 +92,6 @@ class FastUDPSourceIP6 : public Element {
   const char *class_name() const	{ return "FastUDPSourceIP6"; }
   const char *processing() const	{ return PULL; }
   
-  FastUDPSourceIP6 *clone() const		{ return new FastUDPSourceIP6; }
-  
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

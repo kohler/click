@@ -36,12 +36,6 @@ PerfCountAccum::~PerfCountAccum()
   // no MOD_DEC_USE_COUNT; rely on PerfCountUser
 }
 
-PerfCountAccum *
-PerfCountAccum::clone() const
-{
-  return new PerfCountAccum();
-}
-
 void *
 PerfCountAccum::cast(const char *n)
 {

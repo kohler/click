@@ -60,7 +60,6 @@ public:
   ~LinkTable();
   void add_handlers();
   const char* class_name() const { return "LinkTable"; }
-  LinkTable *clone() const { return new LinkTable(); }
   int initialize(ErrorHandler *);
   void run_timer();
   int configure(Vector<String> &conf, ErrorHandler *errh);

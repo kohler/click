@@ -31,8 +31,6 @@ class Idle : public Element, public Notifier { public:
   const char *flags() const		{ return "S0"; }
   NotifierSignal notifier_signal();
   
-  Idle *clone() const			{ return new Idle; }
-  
   void push(int, Packet *);
   Packet *pull(int);
   

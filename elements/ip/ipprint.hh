@@ -101,7 +101,6 @@ class IPPrint : public Element { public:
   const char *class_name() const		{ return "IPPrint"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  IPPrint *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

@@ -36,7 +36,6 @@ class ProtocolTranslator46 : public Element {
   
   const char *class_name() const		{ return "ProtocolTranslator46"; }
   const char *processing() const	{ return AGNOSTIC; }
-  ProtocolTranslator46 *clone() const { return new ProtocolTranslator46; }
   int configure(Vector<String> &, ErrorHandler *);
   void push(int port, Packet *p);
   

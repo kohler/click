@@ -45,7 +45,6 @@ public:
 
   const char *class_name() const { return "E2ELossMetric"; }
   const char *processing() const { return AGNOSTIC; }
-  E2ELossMetric *clone()  const { return new E2ELossMetric; } 
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }

@@ -24,8 +24,6 @@ public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  B8B10 *clone() const { return(new B8B10()); }
-  
   Packet *simple_action(Packet *);
 
 private:

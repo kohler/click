@@ -267,7 +267,6 @@ public:
   const char *class_name() const { return "DSRRouteTable"; }
   const char *processing() const { return PUSH; }
   
-  DSRRouteTable *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
 
   int initialize(ErrorHandler *);

@@ -23,7 +23,6 @@ class SetCRC32 : public Element { public:
 
   const char *class_name() const	{ return "SetCRC32"; }
   const char *processing() const	{ return AGNOSTIC; }
-  SetCRC32 *clone() const		{ return new SetCRC32; }
   
   Packet *simple_action(Packet *);
 

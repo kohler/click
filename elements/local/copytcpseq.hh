@@ -33,7 +33,6 @@ public:
   
   const char *class_name() const	{ return "CopyTCPSeq"; }
   const char *processing() const	{ return AGNOSTIC; }
-  CopyTCPSeq *clone() const		{ return new CopyTCPSeq; }
 
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);

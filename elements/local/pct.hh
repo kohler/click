@@ -13,7 +13,6 @@ class Pct : public Element  {
 
   const char *class_name() const		{ return "Pct"; }
   const char *processing() const		{ return AGNOSTIC; }
-  Pct *clone() const                           { return new Pct; }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

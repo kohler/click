@@ -149,7 +149,6 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
   
     const char *class_name() const	{ return "ToIPFlowDumps"; }
     const char *processing() const	{ return AGNOSTIC; }
-    ToIPFlowDumps *clone() const	{ return new ToIPFlowDumps; }
 
     void notify_noutputs(int);
     enum { CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT };

@@ -45,12 +45,6 @@ Des::Des(int decrypt, unsigned char * key)
   memcpy(_key, key, 8);
 }
 
-Des *
-Des::clone() const
-{
-  return new Des(_op, (unsigned char *)_key);
-}
-
 int
 Des::configure(Vector<String> &conf, ErrorHandler *errh)
 {

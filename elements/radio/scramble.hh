@@ -23,8 +23,6 @@ public:
   const char *class_name() const		{ return "Scramble"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  Scramble *clone() const { return(new Scramble()); }
-  
   Packet *simple_action(Packet *);
 
 };

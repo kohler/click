@@ -24,7 +24,6 @@ class NullElement : public Element { public:
   
   const char *class_name() const	{ return "Null"; }
   const char *processing() const	{ return AGNOSTIC; }
-  NullElement *clone() const		{ return new NullElement; }
   
   Packet *simple_action(Packet *);
   
@@ -51,7 +50,6 @@ class PushNullElement : public Element { public:
   
   const char *class_name() const	{ return "PushNull"; }
   const char *processing() const	{ return PUSH; }
-  PushNullElement *clone() const	{ return new PushNullElement; }
   
   void push(int, Packet *);
   
@@ -78,7 +76,6 @@ class PullNullElement : public Element { public:
   
   const char *class_name() const	{ return "PullNull"; }
   const char *processing() const	{ return PULL; }
-  PullNullElement *clone() const	{ return new PullNullElement; }
   
   Packet *pull(int);
   

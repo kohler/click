@@ -36,12 +36,6 @@ SetPerfCount::~SetPerfCount()
   // no MOD_DEC_USE_COUNT; rely on PerfCountUser
 }
 
-SetPerfCount *
-SetPerfCount::clone() const
-{
-  return new SetPerfCount();
-}
-
 void *
 SetPerfCount::cast(const char *n)
 {

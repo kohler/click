@@ -121,12 +121,6 @@ LookupLocalGridRoute2::simple_action(Packet *packet)
   }
 }
 
-LookupLocalGridRoute2 *
-LookupLocalGridRoute2::clone() const
-{
-  return new LookupLocalGridRoute2;
-}
-
 
 void
 LookupLocalGridRoute2::add_handlers()

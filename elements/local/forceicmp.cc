@@ -52,12 +52,6 @@ ForceICMP::configure(Vector<String> &conf, ErrorHandler *errh)
   return(ret);
 }
 
-ForceICMP *
-ForceICMP::clone() const
-{
-  return new ForceICMP();
-}
-
 Packet *
 ForceICMP::simple_action(Packet *p_in)
 {

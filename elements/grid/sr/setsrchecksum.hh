@@ -23,7 +23,6 @@ public:
   
   const char *class_name() const		{ return "SetSRChecksum"; }
   const char *processing() const		{ return AGNOSTIC; }
-  SetSRChecksum *clone() const;
 
   Packet *simple_action(Packet *);
 };

@@ -24,7 +24,6 @@ class ScheduleLinux : public Element { public:
   
   const char *class_name() const		{ return "ScheduleLinux"; }
   
-  ScheduleLinux *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();

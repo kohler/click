@@ -55,7 +55,6 @@ class BandwidthMeter : public Element { protected:
   unsigned rate_scale() const			{ return _rate.scale; }
   unsigned rate_freq() const			{ return _rate.freq(); }
   
-  BandwidthMeter *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();

@@ -53,7 +53,6 @@ class FrontDropQueue : public NotifierQueue { public:
   
   const char *class_name() const		{ return "FrontDropQueue"; }
   void *cast(const char *);
-  FrontDropQueue *clone() const			{ return new FrontDropQueue; }
   
   int live_reconfigure(Vector<String> &, ErrorHandler *);
   void take_state(Element *, ErrorHandler *);

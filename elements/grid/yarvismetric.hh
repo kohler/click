@@ -35,7 +35,6 @@ public:
 
   const char *class_name() const { return "YarvisMetric"; }
   const char *processing() const { return AGNOSTIC; }
-  YarvisMetric *clone()  const { return new YarvisMetric; } 
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }

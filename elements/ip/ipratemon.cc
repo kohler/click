@@ -41,12 +41,6 @@ IPRateMonitor::~IPRateMonitor()
   MOD_DEC_USE_COUNT;
 }
 
-IPRateMonitor *
-IPRateMonitor::clone() const
-{
-  return new IPRateMonitor;
-}
-
 void
 IPRateMonitor::notify_ninputs(int n)
 {

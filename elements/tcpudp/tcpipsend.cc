@@ -38,12 +38,6 @@ TCPIPSend::~TCPIPSend()
   MOD_DEC_USE_COUNT;
 }
 
-TCPIPSend *
-TCPIPSend::clone() const
-{
-  return new TCPIPSend;
-}
-
 int
 TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {

@@ -50,12 +50,6 @@ EtherSwitch::notify_ninputs(int n)
 }
 
 
-EtherSwitch *
-EtherSwitch::clone() const
-{
-  return new EtherSwitch;
-}
-
 void
 EtherSwitch::broadcast(int source, Packet *p)
 {

@@ -72,7 +72,6 @@ class ToSocket : public Element { public:
 
   const char *class_name() const	{ return "ToSocket"; }
   const char *processing() const	{ return AGNOSTIC; }
-  ToSocket *clone() const		{ return new ToSocket; }
   
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -33,7 +33,6 @@ class IP6Print : public Element { public:
   const char *class_name() const		{ return "IP6Print"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  IP6Print *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

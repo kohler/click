@@ -42,12 +42,6 @@ PrintSR::~PrintSR()
   MOD_DEC_USE_COUNT;
 }
 
-PrintSR *
-PrintSR::clone() const
-{
-  return new PrintSR;
-}
-
 int
 PrintSR::configure(Vector<String> &conf, ErrorHandler* errh)
 {

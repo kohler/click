@@ -41,8 +41,6 @@ public:
   
   const char *class_name() const		{ return "AiroInfo"; }
 
-  AiroInfo *clone() const         { return new AiroInfo; }
-  
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

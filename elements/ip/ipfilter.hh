@@ -121,7 +121,6 @@ class IPFilter : public Classifier { public:
   const char *processing() const		{ return PUSH; }
 
   void notify_noutputs(int);
-  IPFilter *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);

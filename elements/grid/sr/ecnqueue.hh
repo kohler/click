@@ -25,7 +25,6 @@ class ECNQueue : public NotifierQueue { public:
     
     const char *class_name() const	{ return "ECNQueue"; }
     void *cast(const char *);
-    ECNQueue *clone() const		{ return new ECNQueue; }
     const char *processing() const	{ return "h/l"; }
     inline bool enq(Packet *p);
     void push(int port, Packet *);

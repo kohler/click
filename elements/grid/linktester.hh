@@ -92,8 +92,6 @@ public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 
-  LinkTester *clone() const { return new LinkTester(); }
-  
 private:
 
   void timer_hook();

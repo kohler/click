@@ -61,7 +61,6 @@ class ToSimDevice : public Element { public:
   const char *processing() const		{ return AGNOSTIC; }
   //const char *flags() const			{ return "S2"; }
   
-  ToSimDevice *clone() const;
   int configure_phase() const { return CONFIGURE_PHASE_DEFAULT; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -35,12 +35,6 @@ FixDstLoc::~FixDstLoc()
   MOD_DEC_USE_COUNT;
 }
 
-FixDstLoc *
-FixDstLoc::clone() const
-{
-  return new FixDstLoc;
-}
-
 int
 FixDstLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {

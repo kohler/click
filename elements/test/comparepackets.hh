@@ -54,7 +54,6 @@ class ComparePackets : public Element { public:
     ~ComparePackets();
 
     const char *class_name() const		{ return "ComparePackets"; }
-    ComparePackets *clone() const		{ return new ComparePackets; }
     const char *processing() const		{ return PULL; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

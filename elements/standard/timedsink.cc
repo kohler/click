@@ -33,12 +33,6 @@ TimedSink::~TimedSink()
   MOD_DEC_USE_COUNT;
 }
 
-TimedSink *
-TimedSink::clone() const
-{
-  return new TimedSink;
-}
-
 int
 TimedSink::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -59,12 +59,6 @@ FromSimDevice::~FromSimDevice()
   uninitialize();
 }
 
-FromSimDevice *
-FromSimDevice::clone() const
-{
-  return new FromSimDevice;
-}
-
 int
 FromSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -67,12 +67,6 @@ FromDevice::~FromDevice()
   MOD_DEC_USE_COUNT;
 }
 
-FromDevice *
-FromDevice::clone() const
-{
-  return new FromDevice;
-}
-
 int
 FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -54,7 +54,6 @@ class PrintGrid : public Element {
   const char *class_name() const		{ return "PrintGrid"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  PrintGrid *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

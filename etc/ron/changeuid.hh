@@ -27,7 +27,6 @@ class ChangeUID : public Element {
   const char *class_name() const		{ return "ChangeUID"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  ChangeUID *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

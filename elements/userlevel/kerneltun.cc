@@ -62,12 +62,6 @@ KernelTun::~KernelTun()
     MOD_DEC_USE_COUNT;
 }
 
-KernelTun *
-KernelTun::clone() const
-{
-    return new KernelTun();
-}
-
 void
 KernelTun::notify_ninputs(int n)
 {

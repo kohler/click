@@ -64,7 +64,6 @@ class FromSimDevice : public Element {
   const char *class_name() const	{ return "FromSimDevice"; }
   const char *processing() const	{ return PUSH; }
   
-  FromSimDevice *clone() const;
   int configure_phase() const		{ return CONFIGURE_PHASE_DEFAULT; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

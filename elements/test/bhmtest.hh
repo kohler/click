@@ -30,7 +30,6 @@ class BigHashMapTest : public Element { public:
     ~BigHashMapTest();
 
     const char *class_name() const		{ return "BigHashMapTest"; }
-    BigHashMapTest *clone() const		{ return new BigHashMapTest; }
 
     int initialize(ErrorHandler *);
 

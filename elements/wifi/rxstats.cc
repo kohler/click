@@ -38,12 +38,6 @@ RXStats::~RXStats()
   MOD_DEC_USE_COUNT;
 }
 
-RXStats *
-RXStats::clone() const
-{
-  return new RXStats;
-}
-
 int
 RXStats::configure(Vector<String> &conf, ErrorHandler *errh)
 {

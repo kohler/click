@@ -177,7 +177,6 @@ class FromDump : public Element { public:
 
     const char *class_name() const		{ return "FromDump"; }
     const char *processing() const		{ return "a/ah"; }
-    FromDump *clone() const			{ return new FromDump; }
     void *cast(const char *);
 
     void notify_noutputs(int);

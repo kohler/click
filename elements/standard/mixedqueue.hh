@@ -79,7 +79,6 @@ class MixedQueue : public NotifierQueue { public:
 
     const char *class_name() const	{ return "MixedQueue"; }
     void *cast(const char *);
-    MixedQueue *clone() const		{ return new MixedQueue; }
 
     void push(int port, Packet *);
     

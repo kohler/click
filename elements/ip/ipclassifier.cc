@@ -32,12 +32,6 @@ IPClassifier::~IPClassifier()
   // no MOD_DEC_USE_COUNT; rely on Classifier
 }
 
-IPClassifier *
-IPClassifier::clone() const
-{
-  return new IPClassifier;
-}
-
 int
 IPClassifier::configure(Vector<String> &conf, ErrorHandler *errh)
 {

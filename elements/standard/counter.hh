@@ -92,7 +92,6 @@ class Counter : public Element { public:
 
     void reset();
 
-    Counter *clone() const			{ return new Counter; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers();

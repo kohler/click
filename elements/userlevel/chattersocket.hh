@@ -104,7 +104,6 @@ class ChatterSocket : public Element { public:
   ~ChatterSocket();
 
   const char *class_name() const	{ return "ChatterSocket"; }
-  ChatterSocket *clone() const		{ return new ChatterSocket; }
   
   int configure_phase() const	 	{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &conf, ErrorHandler *);

@@ -36,7 +36,6 @@ class SetAnnoByte : public Element {
   
   const char *class_name() const		{ return "SetAnnoByte"; }
   const char *processing() const		{ return AGNOSTIC; }
-  SetAnnoByte *clone() const;
 
   bool can_live_reconfigure() const             { return true; }
   

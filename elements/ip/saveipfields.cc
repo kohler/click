@@ -34,12 +34,6 @@ SaveIPFields::~SaveIPFields()
   MOD_DEC_USE_COUNT;
 }
 
-SaveIPFields *
-SaveIPFields::clone() const
-{
-  return new SaveIPFields;
-}
-
 Packet *
 SaveIPFields::simple_action(Packet *p)
 {

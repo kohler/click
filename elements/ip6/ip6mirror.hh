@@ -33,7 +33,6 @@ class IP6Mirror : public Element {
   
   const char *class_name() const		{ return "IP6Mirror"; }
   const char *processing() const		{ return AGNOSTIC; }
-  IP6Mirror *clone() const			{ return new IP6Mirror; }
   
   Packet *simple_action(Packet *);
   

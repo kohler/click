@@ -14,7 +14,6 @@ class PI : public Element { public:
 
     const char *class_name() const		{ return "PI"; }
     const char *processing() const		{ return "a/ah"; }
-    PI *clone() const;
 
     int queue_size() const;
     const DirectEWMA64 &average_queue_size() const { return _size; }

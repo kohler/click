@@ -46,12 +46,6 @@ CheckUDPHeader::~CheckUDPHeader()
   delete[] _reason_drops;
 }
 
-CheckUDPHeader *
-CheckUDPHeader::clone() const
-{
-  return new CheckUDPHeader();
-}
-
 void
 CheckUDPHeader::notify_noutputs(int n)
 {

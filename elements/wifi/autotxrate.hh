@@ -55,7 +55,6 @@ class AutoTXRate : public Element { public:
   const char *class_name() const		{ return "AutoTXRate"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  AutoTXRate *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 

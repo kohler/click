@@ -25,7 +25,6 @@ class SetUDPChecksum : public Element { public:
   
     const char *class_name() const	{ return "SetUDPChecksum"; }
     const char *processing() const	{ return AGNOSTIC; }
-    SetUDPChecksum *clone() const	{ return new SetUDPChecksum; }
 
     Packet *simple_action(Packet *);
 

@@ -63,8 +63,6 @@ public:
   const char *class_name() const		{ return "LinkTracker"; }
   const char *processing() const		{ return "a/a"; }
   
-  LinkTracker *clone() const;
-
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);

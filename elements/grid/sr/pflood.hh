@@ -59,7 +59,6 @@ class PFlood : public Element {
   const char *class_name() const		{ return "PFlood"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  PFlood *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 

@@ -54,12 +54,6 @@ ToSimDevice::~ToSimDevice()
   uninitialize();
 }
 
-ToSimDevice *
-ToSimDevice::clone() const
-{
-  return new ToSimDevice;
-}
-
 int
 ToSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {

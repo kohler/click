@@ -76,7 +76,6 @@ class ScheduleInfo : public Element { public:
   
   const char *class_name() const	{ return "ScheduleInfo"; }
   
-  ScheduleInfo *clone() const		{ return new ScheduleInfo; }
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &, ErrorHandler *);
 

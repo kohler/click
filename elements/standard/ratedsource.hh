@@ -91,7 +91,6 @@ class RatedSource : public Element { public:
   const char *processing() const		{ return AGNOSTIC; }
   void add_handlers();
   
-  RatedSource *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

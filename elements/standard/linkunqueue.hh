@@ -64,7 +64,6 @@ class LinkUnqueue : public Element, public Storage { public:
     const char *class_name() const	{ return "LinkUnqueue"; }
     const char *processing() const	{ return PULL_TO_PUSH; }
     void *cast(const char *);
-    LinkUnqueue *clone() const		{ return new LinkUnqueue; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

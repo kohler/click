@@ -53,12 +53,6 @@ DSRArpTable::~DSRArpTable()
   MOD_DEC_USE_COUNT;
 }
 
-DSRArpTable *
-DSRArpTable::clone() const
-{
-  return new DSRArpTable;
-}
-
 int
 DSRArpTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {

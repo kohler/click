@@ -24,8 +24,6 @@ public:
   
   const char *class_name() const		{ return "IPAddressCounter"; }
   const char *processing() const		{ return AGNOSTIC; }
-  IPAddressCounter *clone() const;
-
 
   static int write_param(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 

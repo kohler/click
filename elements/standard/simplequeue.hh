@@ -73,7 +73,6 @@ class SimpleQueue : public Element, public Storage { public:
     const char *class_name() const		{ return "SimpleQueue"; }
     const char *processing() const		{ return PUSH_TO_PULL; }
     void *cast(const char *);
-    SimpleQueue *clone() const			{ return new SimpleQueue; }
   
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

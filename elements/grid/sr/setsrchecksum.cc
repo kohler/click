@@ -38,12 +38,6 @@ SetSRChecksum::~SetSRChecksum()
   MOD_DEC_USE_COUNT;
 }
 
-SetSRChecksum *
-SetSRChecksum::clone() const
-{
-  return new SetSRChecksum();
-}
-
 Packet *
 SetSRChecksum::simple_action(Packet *xp)
 {

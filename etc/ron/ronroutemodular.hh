@@ -41,7 +41,6 @@ public:
   
   const char *class_name() const		{ return "RONRouteModular"; }
   const char *processing() const		{ return PUSH; }
-  RONRouteModular *clone() const;
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -69,7 +69,6 @@ public:
 
   const char *class_name() const { return "GridLocationInfo2"; }
 
-  GridLocationInfo2 *clone() const { return new GridLocationInfo2; }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
   void *cast(const char *);

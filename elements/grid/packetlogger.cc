@@ -19,12 +19,6 @@ PacketLogger::~PacketLogger()
   MOD_DEC_USE_COUNT;
 }
 
-PacketLogger *
-PacketLogger::clone() const
-{
-  return new PacketLogger;
-}
-
 int
 PacketLogger::configure(Vector<String> &conf, ErrorHandler *errh)
 {

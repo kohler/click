@@ -58,7 +58,6 @@ class CheckTCPHeader : public Element { public:
   
   const char *class_name() const		{ return "CheckTCPHeader"; }
   const char *processing() const		{ return "a/ah"; }
-  CheckTCPHeader *clone() const;
   
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);

@@ -18,12 +18,6 @@ DupPath::~DupPath()
   MOD_DEC_USE_COUNT;
 }
 
-DupPath *
-DupPath::clone() const
-{
-  return new DupPath;
-}
-
 int 
 DupPath::initialize(ErrorHandler *errh)
 {

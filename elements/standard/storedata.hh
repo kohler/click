@@ -21,7 +21,6 @@ class StoreData : public Element { public:
     
     const char *class_name() const		{ return "StoreData"; }
     const char *processing() const		{ return AGNOSTIC; }
-    StoreData *clone() const			{ return new StoreData; }
     int configure(Vector<String> &, ErrorHandler *);
     
     Packet *simple_action(Packet *);

@@ -313,13 +313,6 @@ UpdateGridRoutes::simple_action(Packet *packet)
 
 
 
-UpdateGridRoutes *
-UpdateGridRoutes::clone() const
-{
-  return new UpdateGridRoutes;
-}
-
-
 static String 
 print_rtes(Element *e, void *)
 {

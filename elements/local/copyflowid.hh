@@ -32,7 +32,6 @@ public:
   
   const char *class_name() const	{ return "CopyFlowID"; }
   const char *processing() const	{ return AGNOSTIC; }
-  CopyFlowID *clone() const		{ return new CopyFlowID; }
 
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);

@@ -63,7 +63,6 @@ class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
 
     const char *class_name() const		{ return "Queue"; }
     void *cast(const char *);
-    NotifierQueue *clone() const		{ return new NotifierQueue; }
 
     int configure(Vector<String> &conf, ErrorHandler *);
     

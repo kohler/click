@@ -48,12 +48,6 @@ AutoTXRate::~AutoTXRate()
   MOD_DEC_USE_COUNT;
 }
 
-AutoTXRate *
-AutoTXRate::clone() const
-{
-  return new AutoTXRate();
-}
-
 int
 AutoTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {

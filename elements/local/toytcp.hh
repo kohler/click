@@ -30,7 +30,6 @@ class ToyTCP : public Element {
   const char *processing() const		{ return PUSH; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  ToyTCP *clone() const;
 
   Packet *simple_action(Packet *);
   void run_timer();

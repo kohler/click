@@ -43,7 +43,6 @@ class DecIP6HLIM : public Element {
   
   int drops()					{ return _drops; }
   
-  DecIP6HLIM *clone() const;
   void add_handlers();
 
   Packet *simple_action(Packet *);

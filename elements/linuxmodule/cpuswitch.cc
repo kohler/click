@@ -28,12 +28,6 @@ CPUSwitch::~CPUSwitch()
   MOD_DEC_USE_COUNT;
 }
 
-CPUSwitch *
-CPUSwitch::clone() const
-{
-  return new CPUSwitch;
-}
-
 void
 CPUSwitch::notify_noutputs(int i)
 {

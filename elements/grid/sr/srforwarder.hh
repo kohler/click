@@ -35,7 +35,6 @@ class SRForwarder : public Element {
   const char *class_name() const		{ return "SRForwarder"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  SRForwarder *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   /* handler stuff */

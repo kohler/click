@@ -34,7 +34,6 @@ class SimpleLocQuerier : public Element {
   const char *processing() const		{ return PUSH; }
   void add_handlers();
   
-  SimpleLocQuerier *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   

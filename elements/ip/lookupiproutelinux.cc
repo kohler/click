@@ -76,12 +76,6 @@ LinuxIPLookup::initialize(ErrorHandler *errh)
   return 0;
 }
 
-LinuxIPLookup *
-LinuxIPLookup::clone() const
-{
-  return new LinuxIPLookup;
-}
-
 #ifdef CLICK_LINUXMODULE
 
 int

@@ -68,12 +68,6 @@ ToHost::~ToHost()
 	unregister_netdevice_notifier(&device_notifier);
 }
 
-ToHost *
-ToHost::clone() const
-{
-    return new ToHost();
-}
-
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {

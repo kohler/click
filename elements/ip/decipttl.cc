@@ -41,12 +41,6 @@ DecIPTTL::notify_noutputs(int n)
   set_noutputs(n < 2 ? 1 : 2);
 }
 
-DecIPTTL *
-DecIPTTL::clone() const
-{
-  return new DecIPTTL;
-}
-
 void
 DecIPTTL::drop_it(Packet *p)
 {

@@ -41,7 +41,6 @@ public:
 
   const char *class_name() const { return "GridGatewayInfo"; }
   const char *processing() const		{ return AGNOSTIC; }
-  GridGatewayInfo *clone() const { return new GridGatewayInfo; } // ?
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }

@@ -139,7 +139,6 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
 
     const char *class_name() const	{ return "FromIPSummaryDump"; }
     const char *processing() const	{ return AGNOSTIC; }
-    FromIPSummaryDump *clone() const	{ return new FromIPSummaryDump; }
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

@@ -27,7 +27,6 @@ class CheckPaint : public Element { public:
   
   const char *class_name() const	{ return "CheckPaint"; }
   const char *processing() const	{ return "a/ah"; }
-  CheckPaint *clone() const		{ return new CheckPaint; }
 
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);

@@ -16,7 +16,6 @@ class EtherSwitch : public Element {
   const char *processing() const		{ return PUSH; }
   const char *flow_code() const			{ return "#/[^#]"; }
   
-  EtherSwitch *clone() const;
   void notify_ninputs(int);
 
   void push(int port, Packet* p);

@@ -84,7 +84,6 @@ class TimeFilter : public Element { public:
 
     const char *class_name() const	{ return "TimeFilter"; }
     const char *processing() const	{ return "a/ah"; }
-    TimeFilter *clone() const		{ return new TimeFilter; }
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);

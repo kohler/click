@@ -28,7 +28,6 @@ class TimedSink : public Element {
   const char *class_name() const		{ return "TimedSink"; }
   const char *processing() const		{ return PULL; }
   
-  TimedSink *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   

@@ -43,12 +43,6 @@ SnoopTCP::~SnoopTCP()
   MOD_DEC_USE_COUNT;
 }
 
-SnoopTCP *
-SnoopTCP::clone() const
-{
-  return new SnoopTCP;
-}
-
 int
 SnoopTCP::initialize(ErrorHandler *errh)
 {

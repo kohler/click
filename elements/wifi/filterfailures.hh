@@ -34,7 +34,6 @@ class FilterFailures : public Element { public:
   
   const char *class_name() const		{ return "FilterFailures"; }
   const char *processing() const		{ return "a/ah"; }
-  FilterFailures *clone() const;
 
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);

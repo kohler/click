@@ -31,12 +31,6 @@ RFC2507c::~RFC2507c()
   MOD_DEC_USE_COUNT;
 }
 
-RFC2507c *
-RFC2507c::clone() const
-{
-  return(new RFC2507c());
-}
-
 inline
 RFC2507c::tcpip::operator IPFlowID() const
 {

@@ -42,12 +42,6 @@ LookupIPRouteMP::~LookupIPRouteMP()
   MOD_DEC_USE_COUNT;
 }
 
-LookupIPRouteMP *
-LookupIPRouteMP::clone() const
-{
-  return new LookupIPRouteMP;
-}
-
 int
 LookupIPRouteMP::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -66,12 +66,6 @@ xokReader::~xokReader()
 }
 
 
-xokReader *
-xokReader::clone() const
-{
-  return new xokReader(*this);
-}
-
 
 
 //

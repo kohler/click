@@ -94,7 +94,6 @@ class InfiniteSource : public Element { public:
   const char *flags() const			{ return "S1"; }
   void add_handlers();
   
-  InfiniteSource *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }

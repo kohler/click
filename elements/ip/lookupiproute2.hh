@@ -24,7 +24,6 @@ public:
   
   const char *class_name() const		{ return "LookupIPRoute2"; }
   const char *processing() const		{ return AGNOSTIC; }
-  LookupIPRoute2 *clone() const			{ return new LookupIPRoute2; }
   int configure(Vector<String> &, ErrorHandler *);
 };
 

@@ -37,12 +37,6 @@ ARPFaker::~ARPFaker()
   MOD_DEC_USE_COUNT;
 }
 
-ARPFaker *
-ARPFaker::clone() const
-{
-  return new ARPFaker;
-}
-
 int
 ARPFaker::configure(Vector<String> &conf, ErrorHandler *errh)
 {

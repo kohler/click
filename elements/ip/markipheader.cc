@@ -32,12 +32,6 @@ MarkIPHeader::~MarkIPHeader()
   MOD_DEC_USE_COUNT;
 }
 
-MarkIPHeader *
-MarkIPHeader::clone() const
-{
-  return new MarkIPHeader();
-}
-
 int
 MarkIPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
 {

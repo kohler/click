@@ -50,12 +50,6 @@ CollisionDetection::~CollisionDetection()
   MOD_DEC_USE_COUNT;
 }
 
-CollisionDetection *
-CollisionDetection::clone() const
-{
-  return new CollisionDetection();
-}
-
 int
 CollisionDetection::initialize (ErrorHandler *)
 {

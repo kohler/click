@@ -40,12 +40,6 @@ PEP::~PEP()
   // no MOD_DEC_USE_COUNT; rely on GridLocationInfo
 }
 
-PEP *
-PEP::clone() const
-{
-  return new PEP;
-}
-
 void *
 PEP::cast(const char *name)
 {

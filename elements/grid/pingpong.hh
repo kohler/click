@@ -35,8 +35,6 @@ public:
   const char *class_name() const		{ return "PingPong"; }
   const char *processing() const		{ return "a/a"; }
   
-  PingPong *clone() const;
-
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

@@ -33,12 +33,6 @@ DebugBridge::~DebugBridge()
   MOD_DEC_USE_COUNT;
 }
 
-DebugBridge *
-DebugBridge::clone() const
-{
-  return new DebugBridge;
-}
-
 int
 DebugBridge::configure(Vector<String> &conf, ErrorHandler *errh)
 {

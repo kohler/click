@@ -50,7 +50,6 @@ class AggregateFirst : public Element, public AggregateListener { public:
   
     const char *class_name() const	{ return "AggregateFirst"; }
     const char *processing() const	{ return "a/ah"; }
-    AggregateFirst *clone() const	{ return new AggregateFirst; }
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);

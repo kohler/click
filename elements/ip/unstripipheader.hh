@@ -22,7 +22,6 @@ class UnstripIPHeader : public Element { public:
   ~UnstripIPHeader();
   
   const char *class_name() const		{ return "UnstripIPHeader"; }
-  UnstripIPHeader *clone() const		{ return new UnstripIPHeader; }
 
   Packet *simple_action(Packet *);
   

@@ -32,13 +32,6 @@ xokWriter::xokWriter(const String &ifname)
 }
 
 
-xokWriter *
-xokWriter::clone() const
-{
-  return new xokWriter(cardno);
-}
-
-
 int
 xokWriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -36,12 +36,6 @@ InfiniteSource::~InfiniteSource()
   MOD_DEC_USE_COUNT;
 }
 
-InfiniteSource *
-InfiniteSource::clone() const
-{
-  return new InfiniteSource;
-}
-
 int
 InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {

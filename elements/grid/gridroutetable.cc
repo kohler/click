@@ -924,12 +924,6 @@ GridRouteTable::simple_action(Packet *packet)
 }
 
 
-GridRouteTable *
-GridRouteTable::clone() const
-{
-  return new GridRouteTable;
-}
-
 
 String 
 GridRouteTable::print_rtes_v(Element *e, void *)

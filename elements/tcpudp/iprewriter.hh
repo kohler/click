@@ -175,7 +175,6 @@ class IPRewriter : public IPRw { public:
   const char *class_name() const		{ return "IPRewriter"; }
   void *cast(const char *);
   const char *processing() const		{ return PUSH; }
-  IPRewriter *clone() const			{ return new IPRewriter; }
   void notify_noutputs(int);
 
   int configure(Vector<String> &, ErrorHandler *);

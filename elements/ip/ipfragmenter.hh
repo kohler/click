@@ -64,7 +64,6 @@ class IPFragmenter : public Element {
   uint32_t drops() const			{ return _drops; }
   uint32_t fragments() const			{ return _fragments; }
   
-  IPFragmenter *clone() const;
   void add_handlers();
 
   void push(int, Packet *);

@@ -34,7 +34,6 @@ public:
   
   const char *class_name() const		{ return "TCPDemux"; }
   const char *processing() const		{ return PUSH; }
-  TCPDemux *clone() const			{ return new TCPDemux; }
 
   int configure(Vector<String> &conf, ErrorHandler *errh);
 

@@ -59,7 +59,6 @@ class CounterFlood : public Element {
   const char *class_name() const		{ return "CounterFlood"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  CounterFlood *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 

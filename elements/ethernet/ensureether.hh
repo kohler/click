@@ -44,7 +44,6 @@ class EnsureEther : public Element { public:
   ~EnsureEther();
 
   const char *class_name() const	{ return "EnsureEther"; }
-  EnsureEther *clone() const		{ return new EnsureEther; }
 
   const char *processing() const	{ return AGNOSTIC; }  
   int configure(Vector<String> &, ErrorHandler *);

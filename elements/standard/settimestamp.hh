@@ -27,7 +27,6 @@ class SetTimestamp : public Element { public:
   
   const char *class_name() const		{ return "SetTimestamp"; }
   const char *processing() const		{ return AGNOSTIC; }
-  SetTimestamp *clone() const;
 
   int configure(Vector<String> &, ErrorHandler *);
   

@@ -256,12 +256,6 @@ LookupLocalGridRoute::push(int port, Packet *packet)
   }
 }
 
-LookupLocalGridRoute *
-LookupLocalGridRoute::clone() const
-{
-  return new LookupLocalGridRoute;
-}
-
 
 void
 LookupLocalGridRoute::add_handlers()

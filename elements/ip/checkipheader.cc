@@ -137,12 +137,6 @@ CheckIPHeader::~CheckIPHeader()
   checkipheader_static_cleanup();
 }
 
-CheckIPHeader *
-CheckIPHeader::clone() const
-{
-  return new CheckIPHeader();
-}
-
 void
 CheckIPHeader::notify_noutputs(int n)
 {

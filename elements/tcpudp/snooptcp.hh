@@ -33,8 +33,6 @@ class SnoopTCP : public Element { public:
   const char *processing() const		{ return "aa/aahh"; }
   const char *flow_code() const			{ return "xyz/xy"; }
   
-  SnoopTCP *clone() const;
-
   int initialize(ErrorHandler *);
   
   void push(int port, Packet *);

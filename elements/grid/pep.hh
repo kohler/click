@@ -72,7 +72,6 @@ public:
   
   const char *class_name() const		{ return "PEP"; }
   const char *processing() const		{ return PUSH; }
-  PEP *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

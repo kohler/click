@@ -43,12 +43,6 @@ ARPQuerier::~ARPQuerier()
   MOD_DEC_USE_COUNT;
 }
 
-ARPQuerier *
-ARPQuerier::clone() const
-{
-  return new ARPQuerier;
-}
-
 void
 ARPQuerier::notify_noutputs(int n)
 {

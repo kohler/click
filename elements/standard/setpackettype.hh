@@ -28,7 +28,6 @@ class SetPacketType : public Element { public:
 
     const char *class_name() const		{ return "SetPacketType"; }
     const char *processing() const		{ return AGNOSTIC; }
-    SetPacketType *clone() const		{ return new SetPacketType; }
 
     static int parse_type(const String &);
     static const char *unparse_type(int);

@@ -61,12 +61,6 @@ SetSourceRoute::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-SetSourceRoute *
-SetSourceRoute::clone () const
-{
-  return new SetSourceRoute;
-}
-
 int
 SetSourceRoute::initialize (ErrorHandler *)
 {

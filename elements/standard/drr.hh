@@ -36,7 +36,6 @@ class DRRSched : public Element, public PassiveNotifier { public:
     const char *class_name() const		{ return "DRRSched"; }
     const char *processing() const		{ return PULL; }
     void *cast(const char *);
-    DRRSched *clone() const			{ return new DRRSched; }
   
     void notify_ninputs(int);
     int configure(Vector<String> &, ErrorHandler *);

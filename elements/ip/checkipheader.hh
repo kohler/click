@@ -110,7 +110,6 @@ class CheckIPHeader : public Element { public:
   
   const char *class_name() const		{ return "CheckIPHeader"; }
   const char *processing() const		{ return "a/ah"; }
-  CheckIPHeader *clone() const;
   
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);

@@ -37,12 +37,6 @@ SimpleLocQuerier::~SimpleLocQuerier()
   MOD_DEC_USE_COUNT;
 }
 
-SimpleLocQuerier *
-SimpleLocQuerier::clone() const
-{
-  return new SimpleLocQuerier;
-}
-
 
 int
 SimpleLocQuerier::configure(Vector<String> &conf, ErrorHandler *errh)

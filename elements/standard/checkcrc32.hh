@@ -26,8 +26,6 @@ public:
   const char *class_name() const		{ return "CheckCRC32"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  CheckCRC32 *clone() const			{ return new CheckCRC32; }
-  
   Packet *simple_action(Packet *);
 
 private:

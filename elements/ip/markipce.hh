@@ -27,7 +27,6 @@ class MarkIPCE : public Element { public:
   
   const char *class_name() const		{ return "MarkIPCE"; }
   const char *processing() const		{ return AGNOSTIC; }
-  MarkIPCE *clone() const			{ return new MarkIPCE; }
 
   int initialize(ErrorHandler *);
   void add_handlers();

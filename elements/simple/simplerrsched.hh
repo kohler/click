@@ -31,7 +31,6 @@ class SimpleRRSched : public Element { public:
   
     const char *class_name() const	{ return "SimpleRoundRobinSched"; }
     const char *processing() const	{ return PULL; }
-    SimpleRRSched *clone() const	{ return new SimpleRRSched; }
   
     void notify_ninputs(int);
   

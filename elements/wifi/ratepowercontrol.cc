@@ -35,12 +35,6 @@ RatePowerControl::~RatePowerControl()
   MOD_DEC_USE_COUNT;
 }
 
-RatePowerControl *
-RatePowerControl::clone() const
-{
-  return new RatePowerControl;
-}
-
 int
 RatePowerControl::configure(Vector<String> &conf, ErrorHandler *errh)
 {

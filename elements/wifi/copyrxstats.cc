@@ -19,12 +19,6 @@ CopyRXStats::~CopyRXStats()
   MOD_DEC_USE_COUNT;
 }
 
-CopyRXStats *
-CopyRXStats::clone() const
-{
-  return new CopyRXStats;
-}
-
 int
 CopyRXStats::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -83,7 +83,6 @@ public:
   const char *class_name() const	{ return "DSRArpTable"; }
   const char *processing() const	{ return "llh/llh"; }
   
-  DSRArpTable *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh); 
 

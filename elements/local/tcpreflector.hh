@@ -33,7 +33,6 @@ class TCPReflector : public Element {
   
   const char *class_name() const		{ return "TCPReflector"; }
   const char *processing() const		{ return AGNOSTIC; }
-  TCPReflector *clone() const { return new TCPReflector; }
 
   Packet *simple_action(Packet *);
   Packet *TCPReflector::tcp_input(Packet *xp);

@@ -39,12 +39,6 @@ CheckGridHeader::~CheckGridHeader()
   MOD_DEC_USE_COUNT;
 }
 
-CheckGridHeader *
-CheckGridHeader::clone() const
-{
-  return new CheckGridHeader();
-}
-
 void
 CheckGridHeader::notify_noutputs(int n)
 {

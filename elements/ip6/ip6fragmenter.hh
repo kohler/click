@@ -54,7 +54,6 @@ class IP6Fragmenter : public Element {
   int drops() const				{ return _drops; }
   int fragments() const				{ return _fragments; }
   
-  IP6Fragmenter *clone() const;
   void add_handlers();
 
   void push(int, Packet *p);

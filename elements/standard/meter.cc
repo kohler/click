@@ -30,12 +30,6 @@ Meter::~Meter()
   // no MOD_DEC_USE_COUNT; rely on BandwidthMeter
 }
 
-Meter *
-Meter::clone() const
-{
-  return new Meter;
-}
-
 void
 Meter::push(int, Packet *p)
 {

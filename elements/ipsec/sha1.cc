@@ -47,12 +47,6 @@ IPsecAuthSHA1::notify_noutputs(int n)
   set_noutputs(n);
 }
 
-IPsecAuthSHA1 *
-IPsecAuthSHA1::clone() const
-{
-  return new IPsecAuthSHA1();
-}
-
 int
 IPsecAuthSHA1::configure(Vector<String> &conf, ErrorHandler *errh)
 {

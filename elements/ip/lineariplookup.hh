@@ -76,7 +76,6 @@ class LinearIPLookup : public IPRouteTable { public:
 
     const char *class_name() const	{ return "LinearIPLookup"; }
     const char *processing() const	{ return PUSH; }
-    LinearIPLookup *clone() const	{ return new LinearIPLookup; }
 
     void notify_noutputs(int);
     int initialize(ErrorHandler *);

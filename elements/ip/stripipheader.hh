@@ -22,7 +22,6 @@ class StripIPHeader : public Element {
   ~StripIPHeader();
   
   const char *class_name() const		{ return "StripIPHeader"; }
-  StripIPHeader *clone() const			{ return new StripIPHeader; }
 
   Packet *simple_action(Packet *);
   

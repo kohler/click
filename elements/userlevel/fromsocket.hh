@@ -60,7 +60,6 @@ class FromSocket : public Element { public:
   ~FromSocket();
 
   const char *class_name() const	{ return "FromSocket"; }
-  FromSocket *clone() const		{ return new FromSocket; }
 
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -33,12 +33,6 @@ ScheduleLinux::~ScheduleLinux()
   MOD_DEC_USE_COUNT;
 }
 
-ScheduleLinux *
-ScheduleLinux::clone() const
-{
-  return new ScheduleLinux();
-}
-
 int
 ScheduleLinux::configure(Vector<String> &conf, ErrorHandler *errh)
 {

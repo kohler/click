@@ -25,7 +25,6 @@ class RandomSwitch : public Element { public:
 
     const char *class_name() const	{ return "RandomSwitch"; }
     const char *processing() const	{ return PUSH; }
-    RandomSwitch *clone() const		{ return new RandomSwitch; }
     void notify_noutputs(int);
   
     void push(int, Packet *);

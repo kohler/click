@@ -42,12 +42,6 @@ Print80211::~Print80211()
   MOD_DEC_USE_COUNT;
 }
 
-Print80211 *
-Print80211::clone() const
-{
-  return new Print80211;
-}
-
 int
 Print80211::configure(Vector<String> &conf, ErrorHandler* errh)
 {

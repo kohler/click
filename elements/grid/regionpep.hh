@@ -29,7 +29,6 @@ public:
   
   const char *class_name() const		{ return "EstimateRouterRegion"; }
   const char *processing() const		{ return PUSH; }
-  EstimateRouterRegion *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -79,7 +79,6 @@ class TimeSortedSched : public Element, public PassiveNotifier { public:
     const char *class_name() const	{ return "TimeSortedSched"; }
     const char *processing() const	{ return PULL; }
     void *cast(const char *);
-    TimeSortedSched *clone() const	{ return new TimeSortedSched; }
 
     void notify_ninputs(int);
     int configure(Vector<String> &, ErrorHandler *);

@@ -21,12 +21,6 @@ DropBroadcasts::notify_noutputs(int n)
   set_noutputs(n < 2 ? 1 : 2);
 }
 
-DropBroadcasts *
-DropBroadcasts::clone() const
-{
-  return new DropBroadcasts();
-}
-
 void
 DropBroadcasts::drop_it(Packet *p)
 {

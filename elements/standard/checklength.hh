@@ -28,7 +28,6 @@ class CheckLength : public Element { public:
   const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
   
-  CheckLength *clone() const			{ return new CheckLength; }
   int configure(Vector<String> &, ErrorHandler *);
   
   void push(int, Packet *);

@@ -25,7 +25,6 @@ class CheckIPHeader2 : public CheckIPHeader { public:
   ~CheckIPHeader2();
   
   const char *class_name() const		{ return "CheckIPHeader2"; }
-  CheckIPHeader2 *clone() const;
 
 };
 

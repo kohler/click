@@ -25,7 +25,6 @@ public:
   const char *class_name() const	{ return "IPsecESPUnencap"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  IPsecESPUnencap *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

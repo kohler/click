@@ -101,7 +101,6 @@ class TCPRewriter : public IPRw { public:
   
   const char *class_name() const		{ return "TCPRewriter"; }
   void *cast(const char *);
-  TCPRewriter *clone() const			{ return new TCPRewriter; }
   void notify_noutputs(int);
   const char *processing() const		{ return PUSH; }
 

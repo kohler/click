@@ -23,7 +23,6 @@ public:
   
   const char *class_name() const		{ return "SetGridChecksum"; }
   const char *processing() const		{ return AGNOSTIC; }
-  SetGridChecksum *clone() const;
 
   Packet *simple_action(Packet *);
 };

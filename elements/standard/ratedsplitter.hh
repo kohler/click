@@ -48,7 +48,6 @@ class RatedSplitter : public Element { protected:
 
   const char *class_name() const		{ return "RatedSplitter"; }
   const char *processing() const	        { return PUSH; }
-  RatedSplitter *clone() const			{ return new RatedSplitter; }
   void add_handlers();
  
   int configure(Vector<String> &, ErrorHandler *);

@@ -39,12 +39,6 @@ ICMPPingResponder::~ICMPPingResponder()
     MOD_DEC_USE_COUNT;
 }
 
-ICMPPingResponder *
-ICMPPingResponder::clone() const
-{
-    return new ICMPPingResponder;
-}
-
 void
 ICMPPingResponder::notify_noutputs(int n)
 {

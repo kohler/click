@@ -30,7 +30,6 @@ class Discard : public Element { public:
   const char *class_name() const		{ return "Discard"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  Discard *clone() const			{ return new Discard; }
   int initialize(ErrorHandler *);
   void add_handlers();
   

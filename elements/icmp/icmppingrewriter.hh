@@ -58,7 +58,6 @@ class ICMPPingRewriter : public Element { public:
 
   const char *class_name() const	{ return "ICMPPingRewriter"; }
   const char *processing() const	{ return PUSH; }
-  ICMPPingRewriter *clone() const	{ return new ICMPPingRewriter; }
   
   void notify_ninputs(int);
   void notify_noutputs(int);

@@ -80,7 +80,6 @@ public:
   const char *class_name() const		{ return "IPRateMonitor"; }
   const char *default_processing() const	{ return AGNOSTIC; }
 
-  IPRateMonitor *clone() const;
   void notify_ninputs(int);  
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

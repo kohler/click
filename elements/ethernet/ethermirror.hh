@@ -20,7 +20,6 @@ class EtherMirror : public Element { public:
   ~EtherMirror();
   
   const char *class_name() const		{ return "EtherMirror"; }
-  EtherMirror *clone() const			{ return new EtherMirror(); }
     
   Packet *simple_action(Packet *);
   

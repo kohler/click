@@ -148,7 +148,6 @@ class FromCapDump : public Element { public:
 
     const char *class_name() const	{ return "FromCapDump"; }
     const char *processing() const	{ return AGNOSTIC; }
-    FromCapDump *clone() const		{ return new FromCapDump; }
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

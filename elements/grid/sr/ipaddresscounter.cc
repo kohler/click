@@ -36,12 +36,6 @@ IPAddressCounter::~IPAddressCounter()
   MOD_DEC_USE_COUNT;
 }
 
-IPAddressCounter *
-IPAddressCounter::clone() const
-{
-  return new IPAddressCounter();
-}
-
 
 int
 IPAddressCounter::configure (Vector<String> &conf, ErrorHandler *errh)

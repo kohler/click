@@ -62,7 +62,6 @@ class FlashFlood : public Element {
   const char *class_name() const		{ return "FlashFlood"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  FlashFlood *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 

@@ -47,12 +47,6 @@ LookupIPRouteRON::~LookupIPRouteRON()
   _expire_timer.unschedule();
 }
 
-LookupIPRouteRON *
-LookupIPRouteRON::clone() const
-{
-  return new LookupIPRouteRON;
-}
-
 int
 LookupIPRouteRON::configure(const Vector<String> &conf, ErrorHandler *errh)
 {

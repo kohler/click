@@ -248,13 +248,6 @@ LookupGeographicGridRoute::get_next_geographic_hop(grid_location dest_loc, Ether
 
 
 
-LookupGeographicGridRoute *
-LookupGeographicGridRoute::clone() const
-{
-  return new LookupGeographicGridRoute;
-}
-
-
 void
 LookupGeographicGridRoute::add_handlers()
 {

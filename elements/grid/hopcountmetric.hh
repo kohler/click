@@ -24,7 +24,6 @@ public:
 
   const char *class_name() const { return "HopcountMetric"; }
   const char *processing() const { return AGNOSTIC; }
-  HopcountMetric *clone()  const { return new HopcountMetric; } 
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }

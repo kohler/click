@@ -20,7 +20,6 @@ class DiscardNotify : public Discard, public NotifiedElement { public:
   ~DiscardNotify();
 
   const char *class_name() const { return "DiscardNotify";}
-  DiscardNotify *clone()   const { return new DiscardNotify; }
   int initialize(ErrorHandler *);
 
   void notify(int signal);

@@ -51,11 +51,6 @@ LocQueryResponder::~LocQueryResponder()
   MOD_DEC_USE_COUNT;
 }
 
-LocQueryResponder *
-LocQueryResponder::clone() const
-{
-  return new LocQueryResponder;
-}
 int
 LocQueryResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {

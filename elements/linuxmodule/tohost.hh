@@ -86,7 +86,6 @@ class ToHost : public AnyDevice { public:
     const char *class_name() const	{ return "ToHost"; }
     const char *processing() const	{ return PUSH; }
     const char *flags() const		{ return "S2"; }
-    ToHost *clone() const;
 
     int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
     int configure(Vector<String> &, ErrorHandler *);

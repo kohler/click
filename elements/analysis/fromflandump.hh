@@ -145,7 +145,6 @@ class FromFlanDump : public Element { public:
 
     const char *class_name() const		{ return "FromFlanDump"; }
     const char *processing() const		{ return AGNOSTIC; }
-    FromFlanDump *clone() const			{ return new FromFlanDump; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

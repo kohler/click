@@ -55,7 +55,6 @@ public:
     const char *class_name() const { return "GridProxy"; }
     void *cast(const char *);
     const char *processing() const { return PUSH; }
-    GridProxy *clone() const {return new GridProxy; }
 
     const int ninputs ()   { return 2; }
     const int noutputs ()  { return 2; }

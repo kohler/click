@@ -46,12 +46,6 @@ SetTCPChecksum::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-SetTCPChecksum *
-SetTCPChecksum::clone() const
-{
-  return new SetTCPChecksum();
-}
-
 Packet *
 SetTCPChecksum::simple_action(Packet *p_in)
 {

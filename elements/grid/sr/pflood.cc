@@ -81,12 +81,6 @@ PFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-PFlood *
-PFlood::clone () const
-{
-  return new PFlood;
-}
-
 int
 PFlood::initialize (ErrorHandler *)
 {

@@ -56,7 +56,6 @@ class AverageCounter : public Element { protected:
   uint32_t ignore() const			{ return _ignore; }
   void reset();
   
-  AverageCounter *clone() const			{ return new AverageCounter; }
   int initialize(ErrorHandler *);
   void add_handlers();
   

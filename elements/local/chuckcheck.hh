@@ -90,7 +90,6 @@ class ChuckCheck : public Element {
   const char *processing() const		{ return AGNOSTIC; }
   void add_handlers();
   
-  ChuckCheck *clone() const			{ return new ChuckCheck; }
   int initialize(ErrorHandler *);
   
   void push(int, Packet *);

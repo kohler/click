@@ -91,8 +91,6 @@ class FastUDPSource : public Element {
   const char *class_name() const	{ return "FastUDPSource"; }
   const char *processing() const	{ return PULL; }
   
-  FastUDPSource *clone() const		{ return new FastUDPSource; }
-  
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

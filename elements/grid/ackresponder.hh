@@ -30,7 +30,6 @@ public:
   const char *class_name() const { return "ACKResponder"; }
   const char *processing() const { return "a/ah"; }
   const char *flow_code()  const { return "x/xy"; }
-  ACKResponder *clone()    const { return new ACKResponder; }
 
   int configure(Vector<String> &, ErrorHandler *);
 

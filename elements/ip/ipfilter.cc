@@ -244,12 +244,6 @@ IPFilter::~IPFilter()
   }
 }
 
-IPFilter *
-IPFilter::clone() const
-{
-  return new IPFilter;
-}
-
 //
 // CONFIGURATION
 //

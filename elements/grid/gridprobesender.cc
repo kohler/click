@@ -44,12 +44,6 @@ GridProbeSender::~GridProbeSender()
 }
 
 
-GridProbeSender *
-GridProbeSender::clone() const
-{
-  return new GridProbeSender;
-}
-
 int
 GridProbeSender::configure(Vector<String> &conf, ErrorHandler *errh)
 {

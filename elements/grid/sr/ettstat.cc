@@ -57,12 +57,6 @@ ETTStat::~ETTStat()
   MOD_DEC_USE_COUNT;
 }
 
-ETTStat *
-ETTStat::clone() const
-{
-  return new ETTStat();
-}
-
 void
 ETTStat::notify_noutputs(int n) 
 {

@@ -39,7 +39,6 @@ public:
   const char *class_name() const	{ return "IPsecESPEncap"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  IPsecESPEncap *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

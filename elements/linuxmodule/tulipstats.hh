@@ -140,7 +140,6 @@ class TulipStats : public AnyTaskDevice {
   ~TulipStats();
   
   const char *class_name() const	{ return "TulipStats"; }
-  TulipStats *clone() const		{ return new TulipStats; }
   
   int configure_phase() const	{ return FromHost::TODEVICE_CONFIGURE_PHASE; }
   int configure(Vector<String> &, ErrorHandler *);

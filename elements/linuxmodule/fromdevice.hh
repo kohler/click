@@ -73,7 +73,6 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 
     const char *class_name() const	{ return "FromDevice"; }
     const char *processing() const	{ return PUSH; }
-    FromDevice *clone() const		{ return new FromDevice; }
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

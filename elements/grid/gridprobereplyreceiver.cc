@@ -46,12 +46,6 @@ GridProbeReplyReceiver::~GridProbeReplyReceiver()
 }
 
 
-GridProbeReplyReceiver *
-GridProbeReplyReceiver::clone() const
-{
-  return new GridProbeReplyReceiver;
-}
-
 int
 GridProbeReplyReceiver::configure(Vector<String> &conf, ErrorHandler *errh)
 {

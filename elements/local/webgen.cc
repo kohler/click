@@ -93,12 +93,6 @@ WebGen::connhash (unsigned src, unsigned short sport)
   return (src ^ sport) & htmask;
 }
 
-WebGen *
-WebGen::clone () const
-{
-  return new WebGen;
-}
-
 int
 WebGen::initialize (ErrorHandler *)
 {

@@ -27,7 +27,6 @@ class SetIPAddress : public Element {
   
   const char *class_name() const		{ return "SetIPAddress"; }
   const char *processing() const		{ return AGNOSTIC; }
-  SetIPAddress *clone() const			{ return new SetIPAddress; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }

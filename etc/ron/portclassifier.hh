@@ -28,7 +28,6 @@ class PortClassifier : public Element { public:
   const char *class_name() const		{ return "PortClassifier"; }
   const char *processing() const		{ return PUSH; }
   
-  PortClassifier *clone() const;
   void notify_noutputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
   

@@ -196,7 +196,6 @@ class AggregateCounter : public Element { public:
   
     const char *class_name() const	{ return "AggregateCounter"; }
     const char *processing() const	{ return AGNOSTIC; }
-    AggregateCounter *clone() const	{ return new AggregateCounter; }
 
     void notify_ninputs(int);
     void notify_noutputs(int);

@@ -42,12 +42,6 @@ PrintGrid::~PrintGrid()
   MOD_DEC_USE_COUNT;
 }
 
-PrintGrid *
-PrintGrid::clone() const
-{
-  return new PrintGrid;
-}
-
 int
 PrintGrid::configure(Vector<String> &conf, ErrorHandler* errh)
 {

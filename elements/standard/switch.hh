@@ -44,7 +44,6 @@ class Switch : public Element { public:
   const char *processing() const		{ return PUSH; }
   void add_handlers();
   
-  Switch *clone() const;
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   void configuration(Vector<String> &) const;

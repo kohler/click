@@ -11,7 +11,6 @@ class DevirtualizeInfo : public Element {
   ~DevirtualizeInfo();
   
   const char *class_name() const	{ return "DevirtualizeInfo"; }
-  DevirtualizeInfo *clone() const	{ return new DevirtualizeInfo; }
   int configure(Vector<String> &, ErrorHandler *);
 
 };

@@ -41,7 +41,6 @@ class CheckIP6Header : public Element {
   const char *class_name() const		{ return "CheckIP6Header"; }
   const char *processing() const		{ return "a/ah"; }
 
-  CheckIP6Header *clone() const;
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   

@@ -38,12 +38,6 @@ IPInputCombo::~IPInputCombo()
   MOD_DEC_USE_COUNT;
 }
 
-IPInputCombo *
-IPInputCombo::clone() const
-{
-  return new IPInputCombo();
-}
-
 int
 IPInputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {

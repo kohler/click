@@ -128,12 +128,6 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-SRCR *
-SRCR::clone () const
-{
-  return new SRCR;
-}
-
 int
 SRCR::initialize (ErrorHandler *)
 {

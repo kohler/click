@@ -218,7 +218,6 @@ class IPClassifier : public IPFilter {
   const char *class_name() const		{ return "IPClassifier"; }
   const char *processing() const		{ return PUSH; }
   
-  IPClassifier *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
 };

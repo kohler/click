@@ -37,12 +37,6 @@ EtherSpanTree::~EtherSpanTree()
   MOD_DEC_USE_COUNT;
 }
 
-EtherSpanTree*
-EtherSpanTree::clone() const
-{
-  return new EtherSpanTree;
-}
-
 void
 EtherSpanTree::notify_ninputs(int n) {
   set_ninputs(n);

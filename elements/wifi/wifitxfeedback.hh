@@ -48,7 +48,6 @@ public:
     
     const char *class_name() const { return "WifiTXFeedback"; }
     const char *processing() const { return PUSH; }
-    WifiTXFeedback *clone() const { return new WifiTXFeedback; }
     
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *errh);

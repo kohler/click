@@ -33,12 +33,6 @@ PullSwitch::~PullSwitch()
   MOD_DEC_USE_COUNT;
 }
 
-PullSwitch *
-PullSwitch::clone() const
-{
-  return new PullSwitch;
-}
-
 void
 PullSwitch::notify_ninputs(int n)
 {

@@ -43,12 +43,6 @@ CheckIP6Header::~CheckIP6Header()
   delete[] _bad_src;
 }
 
-CheckIP6Header *
-CheckIP6Header::clone() const
-{
-  return new CheckIP6Header();
-}
-
 void
 CheckIP6Header::notify_noutputs(int n)
 {

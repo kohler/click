@@ -35,7 +35,6 @@ class GridProbeSender : public Element {
   
   const char *class_name() const		{ return "GridProbeSender"; }
   const char *processing() const		{ return PUSH; }
-  GridProbeSender *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   

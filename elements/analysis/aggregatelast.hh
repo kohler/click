@@ -68,7 +68,6 @@ class AggregateLast : public Element, public AggregateListener { public:
   
     const char *class_name() const	{ return "AggregateLast"; }
     const char *processing() const	{ return PUSH; }
-    AggregateLast *clone() const	{ return new AggregateLast; }
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);

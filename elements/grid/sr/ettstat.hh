@@ -303,8 +303,6 @@ private:
   const char *flow_code() const                 { return "x/y"; }
   void notify_noutputs(int);
   
-  ETTStat *clone() const;
-
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);

@@ -31,7 +31,6 @@ public:
   
   const char *class_name() const		{ return "FilterByRange"; }
   const char *processing() const		{ return PUSH; }
-  FilterByRange *clone() const                  { return new FilterByRange; }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -65,7 +65,6 @@ class QueueYankTest : public Element { public:
     ~QueueYankTest();
 
     const char *class_name() const		{ return "QueueYankTest"; }
-    QueueYankTest *clone() const		{ return new QueueYankTest; }
     const char *processing() const		{ return AGNOSTIC; }
 
     int configure(Vector<String> &, ErrorHandler *);

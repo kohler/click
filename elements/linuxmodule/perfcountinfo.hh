@@ -39,7 +39,6 @@ class PerfCountInfo : public PerfCountUser { public:
   ~PerfCountInfo();
 
   const char *class_name() const	{ return "PerfCountInfo"; }
-  PerfCountInfo *clone() const		{ return new PerfCountInfo; }
   void *cast(const char *);
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &, ErrorHandler *);

@@ -144,7 +144,6 @@ class ProgressBar : public Element { public:
     ~ProgressBar();
 
     const char *class_name() const		{ return "ProgressBar"; }
-    ProgressBar *clone() const			{ return new ProgressBar; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

@@ -79,12 +79,6 @@ DSRRouteTable::~DSRRouteTable()
   delete me;
 }
 
-DSRRouteTable *
-DSRRouteTable::clone() const
-{
-  return new DSRRouteTable;
-}
-
 int
 DSRRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {

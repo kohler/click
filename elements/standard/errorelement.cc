@@ -32,12 +32,6 @@ ErrorElement::~ErrorElement()
   MOD_DEC_USE_COUNT;
 }
 
-ErrorElement *
-ErrorElement::clone() const
-{
-  return new ErrorElement;
-}
-
 void
 ErrorElement::notify_ninputs(int i)
 {

@@ -15,7 +15,6 @@ public:
   void *cast(const char *);
   const char *processing() const { return "h/h"; }
   const char *flow_code() const { return "x/x"; }
-  GridSRForwarder *clone() const { return new GridSRForwarder; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   

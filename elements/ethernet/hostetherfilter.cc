@@ -61,12 +61,6 @@ HostEtherFilter::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-HostEtherFilter *
-HostEtherFilter::clone() const
-{
-  return new HostEtherFilter;
-}
-
 Packet *
 HostEtherFilter::drop(Packet *p)
 {

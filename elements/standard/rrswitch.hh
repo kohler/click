@@ -31,8 +31,6 @@ class RoundRobinSwitch : public Element {
   const char *processing() const	{ return PUSH; }
   void notify_noutputs(int);
   
-  RoundRobinSwitch *clone() const	{ return new RoundRobinSwitch; }
-  
   void push(int, Packet *);
   
 };

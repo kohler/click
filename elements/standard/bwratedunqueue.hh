@@ -23,7 +23,6 @@ class BandwidthRatedUnqueue : public RatedUnqueue { public:
   ~BandwidthRatedUnqueue();
   
   const char *class_name() const	{ return "BandwidthRatedUnqueue"; }
-  BandwidthRatedUnqueue *clone() const	{ return new BandwidthRatedUnqueue; }
   
   bool run_task();
   

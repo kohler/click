@@ -45,7 +45,6 @@ class AggregateLength : public Element { public:
     ~AggregateLength();
 
     const char *class_name() const	{ return "AggregateLength"; }
-    AggregateLength *clone() const	{ return new AggregateLength; }
 
     const char *processing() const	{ return AGNOSTIC; }
     int configure(Vector<String> &, ErrorHandler *);

@@ -40,7 +40,6 @@ class LocalBroadcast : public Element {
   const char *class_name() const		{ return "LocalBroadcast"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  LocalBroadcast *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 

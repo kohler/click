@@ -84,8 +84,6 @@ public:
   const char *flow_code() const                 { return "x/y"; }
   void notify_noutputs(int);
   
-  TXStat *clone() const;
-
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);

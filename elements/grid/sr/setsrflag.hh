@@ -31,7 +31,6 @@ class SetSRFlag : public Element {
   const char *class_name() const		{ return "SetSRFlag"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  SetSRFlag *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

@@ -31,7 +31,6 @@ class WebGen : public Element {
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
-  WebGen *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   Packet *simple_action(Packet *);

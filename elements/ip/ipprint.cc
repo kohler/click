@@ -49,12 +49,6 @@ IPPrint::~IPPrint()
   MOD_DEC_USE_COUNT;
 }
 
-IPPrint *
-IPPrint::clone() const
-{
-  return new IPPrint;
-}
-
 int
 IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 {

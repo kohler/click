@@ -37,7 +37,6 @@ class Suppressor : public Element {
   const char *flow_code() const			{ return "#/#"; }
   void notify_ninputs(int);
   
-  Suppressor *clone() const;
   int initialize(ErrorHandler *);
   void add_handlers();
   

@@ -40,12 +40,6 @@ RED::~RED()
     MOD_DEC_USE_COUNT;
 }
 
-RED *
-RED::clone() const
-{
-    return new RED;
-}
-
 void
 RED::notify_noutputs(int n)
 {

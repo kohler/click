@@ -41,7 +41,6 @@ class PullSwitch : public Element { public:
   
   const char *class_name() const		{ return "PullSwitch"; }
   const char *processing() const		{ return PULL; }
-  PullSwitch *clone() const;
 
   void notify_ninputs(int);
   int configure(Vector<String> &, ErrorHandler *);

@@ -42,7 +42,6 @@ class RIPSend : public Element {
   
   const char *class_name() const		{ return "RIPSend"; }
   const char *processing() const		{ return PUSH; }
-  RIPSend *clone() const { return new RIPSend(); }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

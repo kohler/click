@@ -39,12 +39,6 @@ LinkTracker::~LinkTracker()
   MOD_DEC_USE_COUNT;
 }
 
-LinkTracker *
-LinkTracker::clone() const
-{
-  return new LinkTracker();
-}
-
 
 int
 LinkTracker::configure(Vector<String> &conf, ErrorHandler *errh)

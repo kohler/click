@@ -34,12 +34,6 @@ SendPattern::~SendPattern()
   MOD_DEC_USE_COUNT;
 }
 
-SendPattern *
-SendPattern::clone() const
-{
-  return new SendPattern();
-}
-
 int
 SendPattern::configure(Vector<String> &conf, ErrorHandler *errh)
 {

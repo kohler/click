@@ -21,7 +21,6 @@ public:
   
   const char *class_name() const		{ return "ForceICMP"; }
   const char *processing() const		{ return AGNOSTIC; }
-  ForceICMP *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   Packet *simple_action(Packet *);

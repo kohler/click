@@ -52,11 +52,6 @@ RONRouteModular::~RONRouteModular(){
     delete(_policies[i]);
 }
 
-RONRouteModular *
-RONRouteModular::clone() const {
-  return new RONRouteModular;
-}
-
 int
 RONRouteModular::configure(const Vector<String> &conf, ErrorHandler *errh){
   return 0;

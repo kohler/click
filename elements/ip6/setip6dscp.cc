@@ -33,12 +33,6 @@ SetIP6DSCP::~SetIP6DSCP()
   MOD_DEC_USE_COUNT;
 }
 
-SetIP6DSCP *
-SetIP6DSCP::clone() const
-{
-  return new SetIP6DSCP;
-}
-
 int
 SetIP6DSCP::configure(const Vector<String> &conf, ErrorHandler *errh)
 {

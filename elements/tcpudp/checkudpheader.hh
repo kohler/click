@@ -58,7 +58,6 @@ class CheckUDPHeader : public Element { public:
   
   const char *class_name() const		{ return "CheckUDPHeader"; }
   const char *processing() const		{ return "a/ah"; }
-  CheckUDPHeader *clone() const;
   
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);

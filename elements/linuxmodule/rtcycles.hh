@@ -34,7 +34,6 @@ class RTCycles : public Element { public:
   
   const char *class_name() const	{ return "RoundTripCycleCount"; }
   const char *processing() const	{ return AGNOSTIC; }
-  RTCycles *clone() const		{ return new RTCycles; }
 
   void push(int, Packet *p);
   Packet *pull(int);

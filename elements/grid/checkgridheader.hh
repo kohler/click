@@ -30,7 +30,6 @@ class CheckGridHeader : public Element {
   const char *class_name() const		{ return "CheckGridHeader"; }
   const char *processing() const		{ return "a/ah"; }
   
-  CheckGridHeader *clone() const;
   void notify_noutputs(int);
 
   int drops() const				{ return _drops; }

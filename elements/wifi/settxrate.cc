@@ -35,12 +35,6 @@ SetTXRate::~SetTXRate()
   MOD_DEC_USE_COUNT;
 }
 
-SetTXRate *
-SetTXRate::clone() const
-{
-  return new SetTXRate;
-}
-
 int
 SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -23,12 +23,6 @@ FilterFailures::~FilterFailures()
   MOD_DEC_USE_COUNT;
 }
 
-FilterFailures *
-FilterFailures::clone() const
-{
-  return new FilterFailures();
-}
-
 void
 FilterFailures::notify_noutputs(int n) 
 {

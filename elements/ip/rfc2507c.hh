@@ -36,7 +36,6 @@ public:
 
   const char *class_name() const		{ return "RFC2507Comp"; }
   const char *processing() const		{ return AGNOSTIC; }
-  RFC2507c *clone() const;
 
   Packet *simple_action(Packet *);
 

@@ -39,12 +39,6 @@ IP6NDAdvertiser::~IP6NDAdvertiser()
   MOD_DEC_USE_COUNT;
 }
 
-IP6NDAdvertiser *
-IP6NDAdvertiser::clone() const
-{
-  return new IP6NDAdvertiser;
-}
-
 void
 IP6NDAdvertiser::add_map(const IP6Address &ipa, const IP6Address &mask, const EtherAddress &ena)
 {

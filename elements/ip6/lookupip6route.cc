@@ -35,12 +35,6 @@ LookupIP6Route::~LookupIP6Route()
   MOD_DEC_USE_COUNT;
 }
 
-LookupIP6Route *
-LookupIP6Route::clone() const
-{
-  return new LookupIP6Route;
-}
-
 int
 LookupIP6Route::configure(Vector<String> &conf, ErrorHandler *errh)
 {

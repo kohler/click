@@ -38,12 +38,6 @@ UDPIPEncap::~UDPIPEncap()
   MOD_DEC_USE_COUNT;
 }
 
-UDPIPEncap *
-UDPIPEncap::clone() const
-{
-  return new UDPIPEncap;
-}
-
 int
 UDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {

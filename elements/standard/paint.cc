@@ -35,12 +35,6 @@ Paint::~Paint()
   MOD_DEC_USE_COUNT;
 }
 
-Paint *
-Paint::clone() const
-{
-  return new Paint();
-}
-
 int
 Paint::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -35,12 +35,6 @@ SendGridLRHello::~SendGridLRHello()
   MOD_DEC_USE_COUNT;
 }
 
-SendGridLRHello *
-SendGridLRHello::clone() const
-{
-  return new SendGridLRHello;
-}
-
 int
 SendGridLRHello::configure(Vector<String> &conf, ErrorHandler *errh)
 {

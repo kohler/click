@@ -97,8 +97,6 @@ class FastTCPFlows : public Element {
   const char *class_name() const	{ return "FastTCPFlows"; }
   const char *processing() const	{ return PULL; }
   
-  FastTCPFlows *clone() const		{ return new FastTCPFlows; }
-  
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

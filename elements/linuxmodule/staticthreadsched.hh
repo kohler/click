@@ -31,7 +31,6 @@ class StaticThreadSched : public Element {
   
   const char *class_name() const	{ return "StaticThreadSched"; }
   
-  StaticThreadSched *clone() const	{ return new StaticThreadSched; }
   int configure(Vector<String> &, ErrorHandler *);
 
   int initialize(ErrorHandler *);

@@ -105,7 +105,6 @@ class AnonymizeIPAddr : public Element { public:
 
     const char *class_name() const	{ return "AnonymizeIPAddr"; }
     const char *processing() const	{ return AGNOSTIC; }
-    AnonymizeIPAddr *clone() const	{ return new AnonymizeIPAddr; }
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);

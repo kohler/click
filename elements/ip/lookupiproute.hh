@@ -30,7 +30,6 @@ class StaticIPLookup : public LinearIPLookup { public:
     ~StaticIPLookup();
 
     const char *class_name() const	{ return "StaticIPLookup"; }
-    StaticIPLookup *clone() const	{ return new StaticIPLookup; }
 
     void add_handlers();
     

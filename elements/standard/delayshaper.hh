@@ -39,7 +39,6 @@ class DelayShaper : public Element, public ActiveNotifier { public:
     const char *class_name() const	{ return "DelayShaper"; }
     const char *processing() const	{ return PULL; }
     void *cast(const char *);
-    DelayShaper *clone() const		{ return new DelayShaper; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

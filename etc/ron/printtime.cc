@@ -47,12 +47,6 @@ IPPrintTime::~IPPrintTime()
   MOD_DEC_USE_COUNT;
 }
 
-IPPrintTime *
-IPPrintTime::clone() const
-{
-  return new IPPrintTime;
-}
-
 int
 IPPrintTime::configure(Vector<String> &conf, ErrorHandler *errh)
 {

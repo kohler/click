@@ -183,7 +183,6 @@ public:
   ~GridLogger();
 
   const char *class_name() const { return "GridLogger"; }
-  GridLogger *clone() const { return new GridLogger; }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }
   void *cast(const char *);

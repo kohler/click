@@ -30,7 +30,6 @@ class EraseIPPayload : public Element { public:
   
     const char *class_name() const	{ return "EraseIPPayload"; }
     const char *processing() const	{ return AGNOSTIC; }
-    EraseIPPayload *clone() const	{ return new EraseIPPayload; }
 
     Packet *simple_action(Packet *);
   

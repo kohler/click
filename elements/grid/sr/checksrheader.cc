@@ -43,12 +43,6 @@ CheckSRHeader::~CheckSRHeader()
   MOD_DEC_USE_COUNT;
 }
 
-CheckSRHeader *
-CheckSRHeader::clone() const
-{
-  return new CheckSRHeader();
-}
-
 void
 CheckSRHeader::notify_noutputs(int n)
 {

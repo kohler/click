@@ -36,7 +36,6 @@ class SetSourceRoute : public Element {
   const char *class_name() const		{ return "SetSourceRoute"; }
   const char *processing() const		{ return AGNOSTIC; }
   int initialize(ErrorHandler *);
-  SetSourceRoute *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
   Packet *simple_action(Packet *);
 

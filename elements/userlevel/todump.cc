@@ -42,12 +42,6 @@ ToDump::~ToDump()
     MOD_DEC_USE_COUNT;
 }
 
-ToDump*
-ToDump::clone() const
-{
-    return new ToDump;
-}
-
 void
 ToDump::notify_noutputs(int n)
 {

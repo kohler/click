@@ -33,7 +33,6 @@ public:
   const char *class_name() const		{ return "CollisionDetection"; }
   const char *processing() const		{ return PUSH; }
 
-  CollisionDetection *clone() const;
   int initialize (ErrorHandler *);
   void add_handlers();
   

@@ -51,7 +51,6 @@ class CPUQueue : public Element {
   unsigned drops() const			{ return _drops; }
   unsigned capacity() const			{ return _capacity; }
   
-  CPUQueue *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);

@@ -32,7 +32,6 @@ class BandwidthShaper : public Shaper {
   ~BandwidthShaper();
   
   const char *class_name() const                { return "BandwidthShaper"; }
-  BandwidthShaper *clone() const;
 
   Packet *pull(int);
   

@@ -81,7 +81,6 @@ class WifiQueue : public Element, public Storage { public:
   const char *class_name() const		{ return "WifiQueue"; }
   const char *processing() const		{ return PUSH_TO_PULL; }
   void *cast(const char *);
-  WifiQueue *clone() const			{ return new WifiQueue; }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

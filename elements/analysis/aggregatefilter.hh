@@ -55,7 +55,6 @@ class AggregateFilter : public Element { public:
   
     const char *class_name() const	{ return "AggregateFilter"; }
     const char *processing() const	{ return PUSH; }
-    AggregateFilter *clone() const	{ return new AggregateFilter; }
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);

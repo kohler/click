@@ -187,7 +187,6 @@ class ControlSocket : public Element { public:
   ~ControlSocket();
 
   const char *class_name() const	{ return "ControlSocket"; }
-  ControlSocket *clone() const		{ return new ControlSocket; }
   
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);

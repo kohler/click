@@ -65,7 +65,6 @@ public:
   void notify_ninputs(int n);
   void notify_noutputs(int n);
 
-  DivertSocket *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
   void uninitialize();

@@ -119,7 +119,6 @@ class FromTcpdump : public Element, public IPSummaryDumpInfo { public:
 
     const char *class_name() const	{ return "FromTcpdump"; }
     const char *processing() const	{ return AGNOSTIC; }
-    FromTcpdump *clone() const		{ return new FromTcpdump; }
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

@@ -40,12 +40,6 @@ LinkFailureDetection::~LinkFailureDetection()
   MOD_DEC_USE_COUNT;
 }
 
-LinkFailureDetection *
-LinkFailureDetection::clone() const
-{
-  return new LinkFailureDetection;
-}
-
 int
 LinkFailureDetection::configure(Vector<String> &conf, ErrorHandler *errh)
 {

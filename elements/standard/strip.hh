@@ -25,7 +25,6 @@ class Strip : public Element { public:
 
     const char *class_name() const		{ return "Strip"; }
     const char *processing() const		{ return AGNOSTIC; }
-    Strip *clone() const			{ return new Strip; }
 
     int configure(Vector<String> &, ErrorHandler *);
 

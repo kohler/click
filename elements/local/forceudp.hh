@@ -22,7 +22,6 @@ public:
   
   const char *class_name() const		{ return "ForceUDP"; }
   const char *processing() const		{ return AGNOSTIC; }
-  ForceUDP *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   Packet *simple_action(Packet *);

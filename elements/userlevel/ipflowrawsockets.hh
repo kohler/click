@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.hh,v 1.2 2004/04/27 17:03:06 eddietwo Exp $
+ * $Id: ipflowrawsockets.hh,v 1.3 2004/05/03 06:05:02 eddietwo Exp $
  */
 
 #ifndef CLICK_IPFLOWRAWSOCKETS_HH
@@ -129,7 +129,6 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
     const char *class_name() const	{ return "IPFlowRawSockets"; }
     const char *processing() const	{ return "a/h"; }
     const char *flow_code() const	{ return "x/y"; }
-    IPFlowRawSockets *clone() const	{ return new IPFlowRawSockets; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

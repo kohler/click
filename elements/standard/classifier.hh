@@ -81,7 +81,6 @@ class Classifier : public Element { public:
   const char *class_name() const		{ return "Classifier"; }
   const char *processing() const		{ return PUSH; }
   
-  Classifier *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   void add_handlers();
 

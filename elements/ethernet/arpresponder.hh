@@ -61,7 +61,6 @@ class ARPResponder : public Element { public:
   
   const char *class_name() const		{ return "ARPResponder"; }
   const char *processing() const		{ return AGNOSTIC; }
-  ARPResponder *clone() const;
 
   int configure(Vector<String> &, ErrorHandler *);
   int live_reconfigure(Vector<String> &, ErrorHandler *);

@@ -47,7 +47,6 @@ class RandomBitErrors : public Element {
   bool on() const				{ return _on; }
   void set_bit_error(unsigned);	// out of 0xFFFF
   
-  RandomBitErrors *clone() const		{ return new RandomBitErrors; }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   void add_handlers();

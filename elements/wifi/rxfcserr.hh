@@ -19,7 +19,6 @@ public:
     
     const char *class_name() const { return "RXFCSErr"; }
     const char *processing() const { return PUSH; }
-    RXFCSErr *clone() const { return new RXFCSErr; }
     
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

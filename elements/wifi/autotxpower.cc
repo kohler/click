@@ -51,12 +51,6 @@ AutoTXPower::~AutoTXPower()
   MOD_DEC_USE_COUNT;
 }
 
-AutoTXPower *
-AutoTXPower::clone() const
-{
-  return new AutoTXPower;
-}
-
 int
 AutoTXPower::configure(Vector<String> &conf, ErrorHandler *errh)
 {

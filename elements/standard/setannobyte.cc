@@ -36,12 +36,6 @@ SetAnnoByte::~SetAnnoByte()
   MOD_DEC_USE_COUNT;
 }
 
-SetAnnoByte *
-SetAnnoByte::clone() const
-{
-  return new SetAnnoByte();
-}
-
 int
 SetAnnoByte::configure(Vector<String> &conf, ErrorHandler *errh)
 {

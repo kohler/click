@@ -34,12 +34,6 @@ HashSwitch::~HashSwitch()
   MOD_DEC_USE_COUNT;
 }
 
-HashSwitch *
-HashSwitch::clone() const
-{
-  return new HashSwitch;
-}
-
 void
 HashSwitch::notify_noutputs(int i)
 {

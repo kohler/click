@@ -33,12 +33,6 @@ Unstrip::~Unstrip()
   MOD_DEC_USE_COUNT;
 }
 
-Unstrip *
-Unstrip::clone() const
-{
-  return new Unstrip(_nbytes);
-}
-
 int
 Unstrip::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -30,8 +30,6 @@ public:
   const char *class_name() const	{ return "TCPIPSend"; }
   const char *processing() const	{ return PUSH; }
   
-  TCPIPSend *clone() const;
-
 private:
   void add_handlers();
   static int send_write_handler

@@ -98,12 +98,6 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
   return res;
 }
 
-SRForwarder *
-SRForwarder::clone () const
-{
-  return new SRForwarder;
-}
-
 int
 SRForwarder::initialize (ErrorHandler *)
 {

@@ -27,12 +27,6 @@ IP6Print::~IP6Print()
   MOD_DEC_USE_COUNT;
 }
 
-IP6Print *
-IP6Print::clone() const
-{
-  return new IP6Print;
-}
-
 int
 IP6Print::configure(Vector<String> &conf, ErrorHandler *errh)
 {

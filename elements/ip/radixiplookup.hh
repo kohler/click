@@ -29,7 +29,6 @@ class RadixIPLookup : public IPRouteTable { public:
 
     const char *class_name() const		{ return "RadixIPLookup"; }
     const char *processing() const		{ return PUSH; }
-    RadixIPLookup *clone() const		{ return new RadixIPLookup; }
 
     void notify_noutputs(int);
     void cleanup(CleanupStage);

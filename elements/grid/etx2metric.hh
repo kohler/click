@@ -31,7 +31,6 @@ public:
 
   const char *class_name() const { return "ETX2Metric"; }
   const char *processing() const { return AGNOSTIC; }
-  ETX2Metric *clone()  const { return new ETX2Metric; } 
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }

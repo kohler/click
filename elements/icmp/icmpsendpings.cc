@@ -38,12 +38,6 @@ ICMPPingSource::~ICMPPingSource()
   MOD_DEC_USE_COUNT;
 }
 
-ICMPPingSource *
-ICMPPingSource::clone() const
-{
-  return new ICMPPingSource;
-}
-
 int
 ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {

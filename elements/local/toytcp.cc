@@ -63,12 +63,6 @@ ToyTCP::~ToyTCP()
   MOD_DEC_USE_COUNT;
 }
 
-ToyTCP *
-ToyTCP::clone() const
-{
-  return new ToyTCP;
-}
-
 int
 ToyTCP::configure(Vector<String> &conf, ErrorHandler *errh)
 {

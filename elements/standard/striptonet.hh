@@ -32,7 +32,6 @@ class StripToNetworkHeader : public Element { public:
 
     const char *class_name() const	{ return "StripToNetworkHeader"; }
     const char *processing() const	{ return AGNOSTIC; }
-    StripToNetworkHeader *clone() const	{ return new StripToNetworkHeader; }
 
     Packet *simple_action(Packet *);
 

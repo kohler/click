@@ -32,12 +32,6 @@ SetIPChecksum::~SetIPChecksum()
   MOD_DEC_USE_COUNT;
 }
 
-SetIPChecksum *
-SetIPChecksum::clone() const
-{
-  return new SetIPChecksum();
-}
-
 Packet *
 SetIPChecksum::simple_action(Packet *p_in)
 {

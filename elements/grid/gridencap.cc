@@ -36,12 +36,6 @@ GridEncap::~GridEncap()
   MOD_DEC_USE_COUNT;
 }
 
-GridEncap *
-GridEncap::clone() const
-{
-  return new GridEncap;
-}
-
 int
 GridEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {

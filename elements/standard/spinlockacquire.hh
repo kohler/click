@@ -22,7 +22,6 @@ public:
 
   const char *class_name() const	{ return "SpinlockAcquire"; }
   const char *processing() const	{ return AGNOSTIC; }
-  SpinlockAcquire *clone() const	{ return new SpinlockAcquire; }
   
   void notify_ninputs(int n)		{ set_ninputs(n); }
   void notify_noutputs(int n)		{ set_noutputs(n); }

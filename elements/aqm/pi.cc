@@ -40,12 +40,6 @@ PI::~PI()
     MOD_DEC_USE_COUNT;
 }
 
-PI *
-PI::clone() const
-{
-    return new PI;
-}
-
 void
 PI::notify_noutputs(int n)
 {

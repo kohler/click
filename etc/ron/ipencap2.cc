@@ -37,12 +37,6 @@ IPEncap2::~IPEncap2()
   MOD_DEC_USE_COUNT;
 }
 
-IPEncap2 *
-IPEncap2::clone() const
-{
-  return new IPEncap2;
-}
-
 int
 IPEncap2::configure(Vector<String> &conf, ErrorHandler *errh)
 {

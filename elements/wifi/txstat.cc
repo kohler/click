@@ -40,12 +40,6 @@ TXStat::~TXStat()
   MOD_DEC_USE_COUNT;
 }
 
-TXStat *
-TXStat::clone() const
-{
-  return new TXStat();
-}
-
 void
 TXStat::notify_noutputs(int n) 
 {

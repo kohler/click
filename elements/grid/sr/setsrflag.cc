@@ -39,12 +39,6 @@ SetSRFlag::~SetSRFlag()
   MOD_DEC_USE_COUNT;
 }
 
-SetSRFlag *
-SetSRFlag::clone() const
-{
-  return new SetSRFlag;
-}
-
 int
 SetSRFlag::configure(Vector<String> &conf, ErrorHandler* errh)
 {

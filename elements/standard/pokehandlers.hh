@@ -78,7 +78,6 @@ class PokeHandlers : public Element { public:
     ~PokeHandlers();
 
     const char *class_name() const		{ return "PokeHandlers"; }
-    PokeHandlers *clone() const			{ return new PokeHandlers; }
     
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

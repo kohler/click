@@ -35,12 +35,6 @@ PrintOld::~PrintOld()
   MOD_DEC_USE_COUNT;
 }
 
-PrintOld *
-PrintOld::clone() const
-{
-  return new PrintOld;
-}
-
 int
 PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
 {

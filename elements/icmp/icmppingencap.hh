@@ -55,7 +55,6 @@ class ICMPPingEncap : public Element { public:
 
     const char *class_name() const		{ return "ICMPPingEncap"; }
     const char *processing() const		{ return AGNOSTIC; }
-    ICMPPingEncap *clone() const;
     
     int configure(Vector<String> &, ErrorHandler *);
 

@@ -40,11 +40,6 @@ ARPTable::~ARPTable()
   MOD_DEC_USE_COUNT;
 }
 
-ARPTable *
-ARPTable::clone() const
-{
-  return new ARPTable;
-}
 void *
 ARPTable::cast(const char *n)
 {

@@ -48,7 +48,6 @@ public:
   
   const char *class_name() const		{ return "TCPConn"; }
   const char *processing() const		{ return "hl/hlh"; }
-  TCPConn *clone() const			{ return new TCPConn; }
 
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

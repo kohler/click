@@ -37,12 +37,6 @@ CheckIPHeader2::~CheckIPHeader2()
   // other stuff belongs to CheckIPHeader
 }
 
-CheckIPHeader2 *
-CheckIPHeader2::clone() const
-{
-  return new CheckIPHeader2();
-}
-
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(CheckIPHeader)
 EXPORT_ELEMENT(CheckIPHeader2)

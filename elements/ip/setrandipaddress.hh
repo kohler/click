@@ -32,7 +32,6 @@ class SetRandIPAddress : public Element {
   
   const char *class_name() const	{ return "SetRandIPAddress"; }
   const char *processing() const	{ return AGNOSTIC; }
-  SetRandIPAddress *clone() const	{ return new SetRandIPAddress; }
   
   int configure(Vector<String> &, ErrorHandler *);
   

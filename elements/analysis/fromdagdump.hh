@@ -153,7 +153,6 @@ class FromDAGDump : public Element { public:
 
     const char *class_name() const		{ return "FromDAGDump"; }
     const char *processing() const		{ return "a/ah"; }
-    FromDAGDump *clone() const			{ return new FromDAGDump; }
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);

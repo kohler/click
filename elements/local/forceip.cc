@@ -34,12 +34,6 @@ ForceIP::~ForceIP()
   MOD_DEC_USE_COUNT;
 }
 
-ForceIP *
-ForceIP::clone() const
-{
-  return new ForceIP;
-}
-
 Packet *
 ForceIP::simple_action(Packet *p_in)
 {

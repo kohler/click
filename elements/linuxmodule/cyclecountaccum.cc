@@ -30,12 +30,6 @@ CycleCountAccum::~CycleCountAccum()
   MOD_DEC_USE_COUNT;
 }
 
-CycleCountAccum *
-CycleCountAccum::clone() const
-{
-  return new CycleCountAccum;
-}
-
 int
 CycleCountAccum::initialize(ErrorHandler *)
 {

@@ -41,12 +41,6 @@ LinkStat::~LinkStat()
   MOD_DEC_USE_COUNT;
 }
 
-LinkStat *
-LinkStat::clone() const
-{
-  return new LinkStat();
-}
-
 void
 LinkStat::notify_noutputs(int n) 
 {

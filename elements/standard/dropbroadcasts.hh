@@ -26,7 +26,6 @@ class DropBroadcasts : public Element {
   const char *class_name() const	{ return "DropBroadcasts"; }
   const char *processing() const	{ return "a/ah"; }
   void notify_noutputs(int);
-  DropBroadcasts *clone() const;
   void add_handlers();
 
   uint32_t drops() const		{ return _drops; }

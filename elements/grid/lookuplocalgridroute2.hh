@@ -64,7 +64,6 @@ public:
   const char *class_name() const		{ return "LookupLocalGridRoute2"; }
   void *cast(const char *);
   const char *processing() const		{ return AGNOSTIC; }
-  LookupLocalGridRoute2 *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

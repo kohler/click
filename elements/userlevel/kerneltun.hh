@@ -85,7 +85,6 @@ class KernelTun : public Element { public:
     const char *class_name() const	{ return "KernelTun"; }
     const char *processing() const	{ return "a/h"; }
     const char *flow_code() const	{ return "x/y"; }
-    KernelTun *clone() const;
     const char *flags() const		{ return "S3"; }
 
     void notify_ninputs(int);

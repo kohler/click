@@ -30,12 +30,6 @@ SetCycleCount::~SetCycleCount()
   MOD_DEC_USE_COUNT;
 }
 
-SetCycleCount *
-SetCycleCount::clone() const
-{
-  return new SetCycleCount();
-}
-
 void
 SetCycleCount::push(int, Packet *p)
 {

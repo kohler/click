@@ -38,7 +38,6 @@ public:
   
   const char *class_name() const	{ return "BufferConverter"; }
   const char *processing() const	{ return "lh/h"; }
-  BufferConverter *clone() const	{ return new BufferConverter; }
 
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);

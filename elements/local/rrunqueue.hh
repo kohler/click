@@ -29,7 +29,6 @@ class RoundRobinUnqueue : public Element { public:
   const char *class_name() const	{ return "RoundRobinUnqueue"; }
   const char *processing() const	{ return PULL_TO_PUSH; }
  
-  RoundRobinUnqueue *clone() const	{ return new RoundRobinUnqueue; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();

@@ -52,7 +52,6 @@ class DynamicUDPIPEncap : public Element {
   const char *class_name() const	{ return "DynamicUDPIPEncap"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  DynamicUDPIPEncap *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);

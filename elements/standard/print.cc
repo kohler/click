@@ -41,12 +41,6 @@ Print::~Print()
   MOD_DEC_USE_COUNT;
 }
 
-Print *
-Print::clone() const
-{
-  return new Print;
-}
-
 int
 Print::configure(Vector<String> &conf, ErrorHandler* errh)
 {

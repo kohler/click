@@ -21,7 +21,6 @@ class CheckPattern : public Element {
   const char *class_name() const		{ return "CheckPattern"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  CheckPattern *clone() const { return new CheckPattern; }
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

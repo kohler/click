@@ -28,7 +28,6 @@ class SortedIPLookup : public LinearIPLookup { public:
     ~SortedIPLookup();
 
     const char *class_name() const	{ return "SortedIPLookup"; }
-    SortedIPLookup *clone() const	{ return new SortedIPLookup; }
 
     void push(int port, Packet *p);
 

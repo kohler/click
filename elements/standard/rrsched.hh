@@ -32,7 +32,6 @@ class RRSched : public Element { public:
   
     const char *class_name() const	{ return "RoundRobinSched"; }
     const char *processing() const	{ return PULL; }
-    RRSched *clone() const		{ return new RRSched; }
   
     void notify_ninputs(int);
     int initialize(ErrorHandler *);

@@ -60,7 +60,6 @@ class PortInfo : public Element { public:
   
     const char *class_name() const	{ return "PortInfo"; }
   
-    PortInfo *clone() const		{ return new PortInfo; }
     int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
     int configure(Vector<String> &, ErrorHandler *);
 

@@ -32,12 +32,6 @@ Tee::~Tee()
   MOD_DEC_USE_COUNT;
 }
 
-Tee *
-Tee::clone() const
-{
-  return new Tee;
-}
-
 void
 Tee::notify_noutputs(int n)
 {
@@ -82,12 +76,6 @@ PullTee::PullTee()
 PullTee::~PullTee()
 {
   MOD_DEC_USE_COUNT;
-}
-
-PullTee *
-PullTee::clone() const
-{
-  return new PullTee;
 }
 
 void

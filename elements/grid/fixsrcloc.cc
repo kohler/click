@@ -36,12 +36,6 @@ FixSrcLoc::~FixSrcLoc()
   MOD_DEC_USE_COUNT;
 }
 
-FixSrcLoc *
-FixSrcLoc::clone() const
-{
-  return new FixSrcLoc;
-}
-
 int
 FixSrcLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -33,12 +33,6 @@ PaintTee::~PaintTee()
   MOD_DEC_USE_COUNT;
 }
 
-PaintTee *
-PaintTee::clone() const
-{
-  return new PaintTee();
-}
-
 int
 PaintTee::configure(Vector<String> &conf, ErrorHandler *errh)
 {

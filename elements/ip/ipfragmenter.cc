@@ -49,12 +49,6 @@ IPFragmenter::notify_noutputs(int n)
     set_noutputs(n < 2 ? 1 : 2);
 }
 
-IPFragmenter *
-IPFragmenter::clone() const
-{
-    return new IPFragmenter;
-}
-
 
 int
 IPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)

@@ -38,12 +38,6 @@ ICMPPingEncap::~ICMPPingEncap()
     MOD_DEC_USE_COUNT;
 }
 
-ICMPPingEncap *
-ICMPPingEncap::clone() const
-{
-    return new ICMPPingEncap;
-}
-
 int
 ICMPPingEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {

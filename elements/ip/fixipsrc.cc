@@ -36,12 +36,6 @@ FixIPSrc::~FixIPSrc()
   MOD_DEC_USE_COUNT;
 }
 
-FixIPSrc *
-FixIPSrc::clone() const
-{
-  return new FixIPSrc();
-}
-
 int
 FixIPSrc::configure(Vector<String> &conf, ErrorHandler *errh)
 {

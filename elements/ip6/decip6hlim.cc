@@ -42,12 +42,6 @@ DecIP6HLIM::notify_noutputs(int n)
   set_noutputs(n < 2 ? 1 : 2);
 }
 
-DecIP6HLIM *
-DecIP6HLIM::clone() const
-{
-  return new DecIP6HLIM;
-}
-
 void
 DecIP6HLIM::drop_it(Packet *p)
 {

@@ -71,7 +71,6 @@ public:
   const char *class_name() const { return "ACKRetrySender"; }
   const char *processing() const { return "la/hh"; }
   const char *flow_code()  const { return "xy/xx"; }
-  ACKRetrySender *clone()  const { return new ACKRetrySender; }
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);

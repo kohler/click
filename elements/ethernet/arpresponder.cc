@@ -38,12 +38,6 @@ ARPResponder::~ARPResponder()
     MOD_DEC_USE_COUNT;
 }
 
-ARPResponder *
-ARPResponder::clone() const
-{
-    return new ARPResponder;
-}
-
 void
 ARPResponder::add_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
 {

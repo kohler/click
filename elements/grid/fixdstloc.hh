@@ -25,7 +25,6 @@ public:
   
   const char *class_name() const		{ return "FixDstLoc"; }
   const char *processing() const		{ return AGNOSTIC; }
-  FixDstLoc *clone() const;
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

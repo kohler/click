@@ -44,7 +44,6 @@ class GatewaySelector : public Element {
   const char *class_name() const		{ return "GatewaySelector"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  GatewaySelector *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 

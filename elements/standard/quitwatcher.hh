@@ -33,7 +33,6 @@ class QuitWatcher : public Element { public:
   ~QuitWatcher();
   
   const char *class_name() const		{ return "QuitWatcher"; }
-  QuitWatcher *clone() const			{ return new QuitWatcher; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

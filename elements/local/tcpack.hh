@@ -66,7 +66,6 @@ public:
   
   const char *class_name() const		{ return "TCPAck"; }
   const char *processing() const		{ return "aa/aah"; }
-  TCPAck *clone() const				{ return new TCPAck; }
 
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);

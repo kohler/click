@@ -38,12 +38,6 @@ ChangeUID::~ChangeUID()
   MOD_DEC_USE_COUNT;
 }
 
-ChangeUID *
-ChangeUID::clone() const
-{
-  return new ChangeUID;
-}
-
 int
 ChangeUID::configure(const Vector<String> &conf, ErrorHandler *errh)
 {

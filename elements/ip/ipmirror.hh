@@ -34,7 +34,6 @@ class IPMirror : public Element {
   
   const char *class_name() const		{ return "IPMirror"; }
   const char *processing() const		{ return AGNOSTIC; }
-  IPMirror *clone() const			{ return new IPMirror; }
   
   Packet *simple_action(Packet *);
   

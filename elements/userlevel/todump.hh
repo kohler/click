@@ -78,7 +78,6 @@ class ToDump : public Element { public:
     const char *class_name() const	{ return "ToDump"; }
     const char *processing() const	{ return AGNOSTIC; }
     const char *flags() const		{ return "S2"; }
-    ToDump *clone() const;
 
     // configure after FromDevice and FromDump
     void notify_noutputs(int);

@@ -32,7 +32,6 @@ class DupeFilter : public Element {
   const char *class_name() const		{ return "DupeFilter"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  DupeFilter *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

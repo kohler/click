@@ -32,7 +32,6 @@ class IPRewriterPatterns : public Element {
   ~IPRewriterPatterns();
   
   const char *class_name() const	{ return "IPRewriterPatterns"; }
-  IPRewriterPatterns *clone() const	{ return new IPRewriterPatterns; }
 
   int configure_phase() const	{ return IPRw::CONFIGURE_PHASE_PATTERNS; }
   int configure(Vector<String> &, ErrorHandler *);

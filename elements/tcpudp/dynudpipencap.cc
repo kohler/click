@@ -38,12 +38,6 @@ DynamicUDPIPEncap::~DynamicUDPIPEncap()
   MOD_DEC_USE_COUNT;
 }
 
-DynamicUDPIPEncap *
-DynamicUDPIPEncap::clone() const
-{
-  return new DynamicUDPIPEncap;
-}
-
 int
 DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {

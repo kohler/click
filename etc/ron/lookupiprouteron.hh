@@ -78,7 +78,6 @@ public:
   
   const char *class_name() const		{ return "LookupIPRouteRON"; }
   const char *processing() const		{ return PUSH; }
-  LookupIPRouteRON *clone() const;
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

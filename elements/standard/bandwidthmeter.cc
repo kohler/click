@@ -34,12 +34,6 @@ BandwidthMeter::~BandwidthMeter()
   delete[] _meters;
 }
 
-BandwidthMeter *
-BandwidthMeter::clone() const
-{
-  return new BandwidthMeter;
-}
-
 int
 BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
 {

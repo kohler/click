@@ -54,12 +54,6 @@ ForceTCP::configure(Vector<String> &conf, ErrorHandler *errh)
   return(ret);
 }
 
-ForceTCP *
-ForceTCP::clone() const
-{
-  return new ForceTCP();
-}
-
 Packet *
 ForceTCP::simple_action(Packet *p_in)
 {

@@ -33,12 +33,6 @@ PaintSwitch::~PaintSwitch()
   MOD_DEC_USE_COUNT;
 }
 
-PaintSwitch *
-PaintSwitch::clone() const
-{
-  return new PaintSwitch;
-}
-
 void
 PaintSwitch::notify_noutputs(int n)
 {

@@ -118,7 +118,6 @@ class FromNetFlowSummaryDump : public Element { public:
 
     const char *class_name() const	{ return "FromNetFlowSummaryDump"; }
     const char *processing() const	{ return AGNOSTIC; }
-    FromNetFlowSummaryDump *clone() const { return new FromNetFlowSummaryDump;}
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

@@ -58,12 +58,6 @@ KernelTap::~KernelTap()
   MOD_DEC_USE_COUNT;
 }
 
-KernelTap *
-KernelTap::clone() const
-{
-  return new KernelTap();
-}
-
 int
 KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -144,7 +144,6 @@ public:
   const char *class_name() const		{ return "UpdateGridRoutes"; }
   void *cast(const char *);
   const char *processing() const		{ return AGNOSTIC; }
-  UpdateGridRoutes *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

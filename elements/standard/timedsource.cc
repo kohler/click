@@ -34,12 +34,6 @@ TimedSource::~TimedSource()
   MOD_DEC_USE_COUNT;
 }
 
-TimedSource *
-TimedSource::clone() const
-{
-  return new TimedSource;
-}
-
 int
 TimedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -29,7 +29,6 @@ public:
   
   const char *class_name() const		{ return "FixSrcLoc"; }
   const char *processing() const		{ return AGNOSTIC; }
-  FixSrcLoc *clone() const;
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -30,7 +30,6 @@ class CheckSRHeader : public Element {
   const char *class_name() const		{ return "CheckSRHeader"; }
   const char *processing() const		{ return "a/ah"; }
   
-  CheckSRHeader *clone() const;
   void notify_noutputs(int);
 
   int drops() const				{ return _drops; }

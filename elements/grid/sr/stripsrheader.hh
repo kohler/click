@@ -22,7 +22,6 @@ class StripSRHeader : public Element {
   ~StripSRHeader();
   
   const char *class_name() const		{ return "StripSRHeader"; }
-  StripSRHeader *clone() const			{ return new StripSRHeader; }
 
   Packet *simple_action(Packet *);
   

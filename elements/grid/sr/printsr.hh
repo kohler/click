@@ -32,7 +32,6 @@ class PrintSR : public Element {
   const char *class_name() const		{ return "PrintSR"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  PrintSR *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

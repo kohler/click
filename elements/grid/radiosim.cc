@@ -35,12 +35,6 @@ RadioSim::~RadioSim()
   MOD_DEC_USE_COUNT;
 }
 
-RadioSim *
-RadioSim::clone() const
-{
-  return new RadioSim;
-}
-
 int
 RadioSim::configure(Vector<String> &conf, ErrorHandler *errh)
 {

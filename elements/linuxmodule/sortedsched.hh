@@ -31,7 +31,6 @@ class SortedTaskSched : public Element {
   
   const char *class_name() const	{ return "SortedTaskSched"; }
   int configure(Vector<String> &, ErrorHandler *);
-  SortedTaskSched *clone() const	{ return new SortedTaskSched; }
 
   int initialize(ErrorHandler *);
   void run_timer();

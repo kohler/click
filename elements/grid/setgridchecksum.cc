@@ -37,12 +37,6 @@ SetGridChecksum::~SetGridChecksum()
   MOD_DEC_USE_COUNT;
 }
 
-SetGridChecksum *
-SetGridChecksum::clone() const
-{
-  return new SetGridChecksum();
-}
-
 Packet *
 SetGridChecksum::simple_action(Packet *xp)
 {

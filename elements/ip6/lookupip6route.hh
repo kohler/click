@@ -45,7 +45,6 @@ public:
   
   const char *class_name() const		{ return "LookupIP6Route"; }
   const char *processing() const		{ return AGNOSTIC; }
-  LookupIP6Route *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

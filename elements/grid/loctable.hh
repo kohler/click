@@ -39,7 +39,6 @@ public:
 
   const char *class_name() const { return "LocationTable"; }
 
-  LocationTable *clone() const { return new LocationTable; }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
 

@@ -15,7 +15,6 @@ public:
   
   const char *class_name() const		{ return "EtherSpanTree"; }
   const char *processing() const		{ return "h/h"; }
-  EtherSpanTree* clone() const;
   
   void notify_ninputs(int);
   

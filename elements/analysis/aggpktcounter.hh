@@ -94,7 +94,6 @@ class AggregatePacketCounter : public Element { public:
     const char *class_name() const	{ return "AggregatePacketCounter"; }
     const char *processing() const	{ return AGNOSTIC; }
     const char *flow_code() const	{ return "#/#"; }
-    AggregatePacketCounter *clone() const { return new AggregatePacketCounter; }
     void notify_ninputs(int);
 
     int configure(Vector<String> &, ErrorHandler *);

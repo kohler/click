@@ -30,7 +30,7 @@ CLICK_DECLS
  */
 
 //
-// $Id: siphmapper.hh,v 1.3 2004/03/03 07:54:51 eddietwo Exp $
+// $Id: siphmapper.hh,v 1.4 2004/05/03 06:04:27 eddietwo Exp $
 //
 
 //
@@ -197,7 +197,6 @@ class SourceIPHashMapper : public Element, public IPMapper { public:
   const char *class_name() const	{ return "SourceIPHashMapper"; }
   void *cast(const char *);
   
-  SourceIPHashMapper *clone() const	{ return new SourceIPHashMapper; }
   int configure_phase() const		{ return IPRw::CONFIGURE_PHASE_MAPPER;}
   int configure(Vector<String> &, ErrorHandler *);
   void cleanup(CleanupStage);

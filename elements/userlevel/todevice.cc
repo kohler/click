@@ -60,12 +60,6 @@ ToDevice::~ToDevice()
   MOD_DEC_USE_COUNT;
 }
 
-ToDevice *
-ToDevice::clone() const
-{
-  return new ToDevice;
-}
-
 void
 ToDevice::notify_noutputs(int n)
 {

@@ -48,7 +48,6 @@ class StoreIPAddress : public Element { public:
   
   const char *class_name() const		{ return "StoreIPAddress"; }
   const char *processing() const		{ return AGNOSTIC; }
-  StoreIPAddress *clone() const			{ return new StoreIPAddress; }
   
   int configure(Vector<String> &, ErrorHandler *);
   

@@ -55,7 +55,6 @@ class CheckICMPHeader : public Element { public:
   
   const char *class_name() const		{ return "CheckICMPHeader"; }
   const char *processing() const		{ return "a/ah"; }
-  CheckICMPHeader *clone() const		{ return new CheckICMPHeader; }
 
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);

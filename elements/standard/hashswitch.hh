@@ -36,7 +36,6 @@ class HashSwitch : public Element {
   const char *processing() const		{ return PUSH; }
   void notify_noutputs(int);
   
-  HashSwitch *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);

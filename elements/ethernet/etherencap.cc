@@ -33,12 +33,6 @@ EtherEncap::~EtherEncap()
   MOD_DEC_USE_COUNT;
 }
 
-EtherEncap *
-EtherEncap::clone() const
-{
-  return new EtherEncap;
-}
-
 int
 EtherEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -54,7 +54,6 @@ class Print : public Element { public:
   const char *class_name() const		{ return "Print"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  Print *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   

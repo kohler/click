@@ -36,12 +36,6 @@ Shaper::~Shaper()
     MOD_DEC_USE_COUNT;
 }
 
-Shaper *
-Shaper::clone() const
-{
-    return new Shaper;
-}
-
 int
 Shaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {

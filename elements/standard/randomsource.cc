@@ -35,12 +35,6 @@ RandomSource::~RandomSource()
   MOD_DEC_USE_COUNT;
 }
 
-RandomSource *
-RandomSource::clone() const
-{
-  return new RandomSource;
-}
-
 int
 RandomSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {

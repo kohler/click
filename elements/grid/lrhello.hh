@@ -38,7 +38,6 @@ public:
   
   const char *class_name() const		{ return "SendGridLRHello"; }
   const char *processing() const		{ return PUSH; }
-  SendGridLRHello *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

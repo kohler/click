@@ -56,7 +56,6 @@ class LookupGeographicGridRoute : public Element, public GridRouteActor {
   const char *class_name() const		{ return "LookupGeographicGridRoute"; }
   void *cast(const char *);
   const char *processing() const		{ return PUSH; }
-  LookupGeographicGridRoute *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -31,7 +31,6 @@ class TokenQueue : public NotifierQueue { public:
     
     const char *class_name() const	{ return "TokenQueue"; }
     void *cast(const char *);
-    TokenQueue *clone() const		{ return new TokenQueue; }
     const char *processing() const	{ return "hhh/lh"; }
     inline bool enq(Packet *p);
     Packet *pull(int);

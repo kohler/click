@@ -27,9 +27,6 @@ class IPDecapPaint : public Element {
   const char *class_name() const	{ return "IPDecapPaint"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-
-  IPDecapPaint *clone() const		{ return new IPDecapPaint; }
-
   Packet *simple_action(Packet *);
   void add_handlers();
 };

@@ -34,12 +34,6 @@ IPOutputCombo::~IPOutputCombo()
   MOD_DEC_USE_COUNT;
 }
 
-IPOutputCombo *
-IPOutputCombo::clone() const
-{
-  return new IPOutputCombo();
-}
-
 int
 IPOutputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {

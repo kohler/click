@@ -36,12 +36,6 @@ PingPong::~PingPong()
   MOD_DEC_USE_COUNT;
 }
 
-PingPong *
-PingPong::clone() const
-{
-  return new PingPong();
-}
-
 
 int
 PingPong::configure(Vector<String> &conf, ErrorHandler *errh)

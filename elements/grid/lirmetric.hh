@@ -36,7 +36,6 @@ public:
 
   const char *class_name() const { return "LIRMetric"; }
   const char *processing() const { return AGNOSTIC; }
-  LIRMetric *clone()  const { return new LIRMetric; } 
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }

@@ -35,8 +35,6 @@ class ForceIP : public Element {
   const char *class_name() const		{ return "ForceIP"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  ForceIP *clone() const;
-
   Packet *simple_action(Packet *);
   
 };

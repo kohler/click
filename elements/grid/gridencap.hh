@@ -40,7 +40,6 @@ class GridEncap : public Element { public:
   const char *class_name() const		{ return "GridEncap"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  GridEncap *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   int initialize(ErrorHandler *);

@@ -31,7 +31,6 @@ class BandwidthRatedSplitter : public RatedSplitter {
   ~BandwidthRatedSplitter();
 
   const char *class_name() const	{ return "BandwidthRatedSplitter"; }
-  BandwidthRatedSplitter *clone() const	{ return new BandwidthRatedSplitter; }
   
   void push(int port, Packet *);
 

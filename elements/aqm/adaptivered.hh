@@ -32,7 +32,6 @@ class AdaptiveRED : public RED { public:
     ~AdaptiveRED();
 
     const char *class_name() const		{ return "AdaptiveRED"; }
-    AdaptiveRED *clone() const			{ return new AdaptiveRED; }
     void *cast(const char *);
 
     int configure(Vector<String> &, ErrorHandler *);

@@ -38,7 +38,6 @@ class Block : public Element {
   
   Block();
   ~Block();
-  Block *clone() const;
 
   const char *class_name() const		{ return "Block"; }
   const char *processing() const	        { return AGNOSTIC; }

@@ -289,7 +289,6 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     const char *class_name() const	{ return "ToIPSummaryDump"; }
     const char *processing() const	{ return AGNOSTIC; }
     const char *flags() const		{ return "S2"; }
-    ToIPSummaryDump *clone() const	{ return new ToIPSummaryDump; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

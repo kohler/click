@@ -83,12 +83,6 @@ GridProbeHandler::~GridProbeHandler()
 }
 
 
-GridProbeHandler *
-GridProbeHandler::clone() const
-{
-  return new GridProbeHandler;
-}
-
 int
 GridProbeHandler::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -105,12 +105,6 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-GatewaySelector *
-GatewaySelector::clone () const
-{
-  return new GatewaySelector;
-}
-
 int
 GatewaySelector::initialize (ErrorHandler *)
 {

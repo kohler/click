@@ -48,7 +48,6 @@ class xokReader : public Element {
   const char *class_name() const		{ return "xokReader"; }
   const char *processing() const		{ return PUSH; }
   
-  xokReader *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   void selected(int fd);

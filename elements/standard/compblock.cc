@@ -34,12 +34,6 @@ CompareBlock::~CompareBlock()
   MOD_DEC_USE_COUNT;
 }
 
-CompareBlock *
-CompareBlock::clone() const
-{
-  return new CompareBlock;
-}
-
 int
 CompareBlock::configure(Vector<String> &conf, ErrorHandler *errh)
 {

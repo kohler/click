@@ -39,7 +39,6 @@ class RatePowerControl : public Element { public:
   const char *class_name() const		{ return "RatePowerControl"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  RatePowerControl *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();

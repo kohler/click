@@ -78,12 +78,6 @@ LocalBroadcast::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-LocalBroadcast *
-LocalBroadcast::clone () const
-{
-  return new LocalBroadcast;
-}
-
 int
 LocalBroadcast::initialize (ErrorHandler *)
 {

@@ -32,7 +32,6 @@ class PacketTest : public Element { public:
     ~PacketTest();
 
     const char *class_name() const		{ return "PacketTest"; }
-    PacketTest *clone() const			{ return new PacketTest; }
 
     int initialize(ErrorHandler *);
 

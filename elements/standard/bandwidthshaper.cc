@@ -31,12 +31,6 @@ BandwidthShaper::~BandwidthShaper()
   // no MOD_DEC_USE_COUNT; rely on Shaper
 }
 
-BandwidthShaper *
-BandwidthShaper::clone() const
-{
-  return new BandwidthShaper;
-}
-
 Packet *
 BandwidthShaper::pull(int)
 {

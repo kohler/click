@@ -37,7 +37,6 @@ class SRScheduler : public Element {
   const char *class_name() const		{ return "SRScheduler"; }
   const char *processing() const		{ return "hl/hl"; }
   int initialize(ErrorHandler *);
-  SRScheduler *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
   void push(int, Packet *);
   Packet *pull(int);

@@ -43,12 +43,6 @@ IPsecESPEncap::~IPsecESPEncap()
 {
 }
 
-IPsecESPEncap *
-IPsecESPEncap::clone() const
-{
-  return new IPsecESPEncap(_spi);
-}
-
 int
 IPsecESPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -46,12 +46,6 @@ IP6Fragmenter::notify_noutputs(int n)
   set_noutputs(n < 2 ? 1 : 2);
 }
 
-IP6Fragmenter *
-IP6Fragmenter::clone() const
-{
-  return new IP6Fragmenter;
-}
-
 
 int
 IP6Fragmenter::configure(Vector<String> &conf, ErrorHandler *errh)

@@ -32,12 +32,6 @@ RFC2507d::~RFC2507d()
   MOD_DEC_USE_COUNT;
 }
 
-RFC2507d *
-RFC2507d::clone() const
-{
-  return(new RFC2507d());
-}
-
 void
 RFC2507d::decode(const u_char * &in, unsigned short &x)
 {

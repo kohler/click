@@ -59,12 +59,6 @@ ToDeviceNotify::~ToDeviceNotify()
   uninitialize();
 }
 
-ToDeviceNotify *
-ToDeviceNotify::clone() const
-{
-  return new ToDeviceNotify;
-}
-
 int
 ToDeviceNotify::initialize(ErrorHandler *errh)
 {

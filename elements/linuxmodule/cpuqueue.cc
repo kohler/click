@@ -16,12 +16,6 @@ CPUQueue::~CPUQueue()
   MOD_DEC_USE_COUNT;
 }
 
-CPUQueue *
-CPUQueue::clone() const
-{
-  return new CPUQueue;
-}
-
 void
 CPUQueue::notify_noutputs(int i)
 {

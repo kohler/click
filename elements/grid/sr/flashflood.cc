@@ -108,12 +108,6 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-FlashFlood *
-FlashFlood::clone () const
-{
-  return new FlashFlood;
-}
-
 int
 FlashFlood::initialize (ErrorHandler *)
 {

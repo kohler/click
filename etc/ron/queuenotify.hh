@@ -41,7 +41,6 @@ class QueueNotify : public Queue { public:
 
   const char *class_name() const { return "QueueNotify";}
   void *cast(const char *);
-  QueueNotify *clone() const	{ return new QueueNotify; }
 
   void subscribe_notification(NotifiedElement *e);
   void notify_subscribers(int signal);

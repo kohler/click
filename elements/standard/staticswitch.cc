@@ -32,12 +32,6 @@ StaticSwitch::~StaticSwitch()
   MOD_DEC_USE_COUNT;
 }
 
-StaticSwitch *
-StaticSwitch::clone() const
-{
-  return new StaticSwitch;
-}
-
 void
 StaticSwitch::notify_noutputs(int n)
 {

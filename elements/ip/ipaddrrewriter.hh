@@ -100,7 +100,6 @@ class IPAddrRewriter : public IPRw { public:
     const char *class_name() const		{ return "IPAddrRewriter"; }
     void *cast(const char *);
     const char *processing() const		{ return PUSH; }
-    IPAddrRewriter *clone() const		{ return new IPAddrRewriter; }
     void notify_noutputs(int);
 
     int configure(Vector<String> &, ErrorHandler *);

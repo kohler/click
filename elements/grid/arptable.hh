@@ -23,7 +23,6 @@ class ARPTable : public Element { public:
   
   const char *class_name() const		{ return "ARPTable"; }
 
-  ARPTable *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   void *cast(const char *n);
   bool can_live_reconfigure() const		{ return true; }

@@ -33,7 +33,6 @@ class PaintSwitch : public Element { public:
   const char *class_name() const		{ return "PaintSwitch"; }
   const char *processing() const		{ return PUSH; }
   
-  PaintSwitch *clone() const;
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   void configuration(Vector<String> &) const;

@@ -20,7 +20,6 @@ class BIM : public Element {
   const char *class_name() const	{ return "BIM"; }
   const char *processing() const	{ return PULL_TO_PUSH; }
   
-  BIM *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

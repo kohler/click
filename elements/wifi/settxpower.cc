@@ -34,12 +34,6 @@ SetTXPower::~SetTXPower()
   MOD_DEC_USE_COUNT;
 }
 
-SetTXPower *
-SetTXPower::clone() const
-{
-  return new SetTXPower;
-}
-
 int
 SetTXPower::configure(Vector<String> &conf, ErrorHandler *errh)
 {

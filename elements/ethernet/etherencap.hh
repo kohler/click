@@ -50,7 +50,6 @@ class EtherEncap : public Element { public:
   const char *class_name() const	{ return "EtherEncap"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  EtherEncap *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
   void add_handlers();

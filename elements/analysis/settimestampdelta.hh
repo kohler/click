@@ -40,7 +40,6 @@ class SetTimestampDelta : public Element { public:
 
     const char *class_name() const	{ return "SetTimestampDelta"; }
     const char *processing() const	{ return AGNOSTIC; }
-    SetTimestampDelta *clone() const	{ return new SetTimestampDelta; }
 
     void add_handlers();
 

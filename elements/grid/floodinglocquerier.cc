@@ -47,13 +47,6 @@ FloodingLocQuerier::~FloodingLocQuerier()
 }
 
 
-FloodingLocQuerier *
-FloodingLocQuerier::clone() const
-{
-  return new FloodingLocQuerier;
-}
-
-
 int
 FloodingLocQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {

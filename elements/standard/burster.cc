@@ -33,12 +33,6 @@ Burster::~Burster()
   MOD_DEC_USE_COUNT;
 }
 
-Burster *
-Burster::clone() const
-{
-  return new Burster;
-}
-
 int
 Burster::configure(Vector<String> &conf, ErrorHandler *errh)
 {

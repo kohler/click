@@ -78,12 +78,6 @@ CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-CounterFlood *
-CounterFlood::clone () const
-{
-  return new CounterFlood;
-}
-
 int
 CounterFlood::initialize (ErrorHandler *)
 {

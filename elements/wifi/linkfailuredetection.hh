@@ -47,7 +47,6 @@ class LinkFailureDetection : public Element { public:
   const char *class_name() const		{ return "LinkFailureDetection"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  LinkFailureDetection *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 

@@ -32,12 +32,6 @@ PortClassifier::~PortClassifier()
   MOD_DEC_USE_COUNT;
 }
 
-PortClassifier *
-PortClassifier::clone() const
-{
-  return new PortClassifier;
-}
-
 void
 PortClassifier::notify_noutputs(int n)
 {

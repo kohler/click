@@ -100,12 +100,6 @@ SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-SRScheduler *
-SRScheduler::clone () const
-{
-  return new SRScheduler;
-}
-
 int
 SRScheduler::initialize (ErrorHandler *errh)
 {

@@ -47,7 +47,6 @@ public:
   
   const char *class_name() const		{ return "LookupIPRouteMP"; }
   const char *processing() const		{ return AGNOSTIC; }
-  LookupIPRouteMP *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

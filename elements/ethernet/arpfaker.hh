@@ -41,7 +41,6 @@ public:
   
   const char *class_name() const		{ return "ARPFaker"; }
   const char *processing() const		{ return PUSH; }
-  ARPFaker *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -31,7 +31,6 @@ public:
     
     const char *class_name() const  { return "TrieIPLookup"; }
     const char *processing() const  { return PUSH; }
-    TrieIPLookup *clone()    const  { return new TrieIPLookup; }
     
     void notify_noutputs(int);
     int initialize(ErrorHandler *);

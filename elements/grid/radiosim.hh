@@ -51,7 +51,6 @@ class RadioSim : public Element {
   
   const char *class_name() const		{ return "RadioSim"; }
   const char *processing() const		{ return PULL_TO_PUSH; }
-  RadioSim *clone() const;
   void notify_noutputs(int);
   void notify_ninputs(int);
   int configure(Vector<String> &, ErrorHandler *);

@@ -37,7 +37,6 @@ class ICMPPingResponder : public Element { public:
   
   const char *class_name() const	{ return "ICMPPingResponder"; }
   const char *processing() const	{ return "a/ah"; }  
-  ICMPPingResponder *clone() const;
 
   void notify_noutputs(int);
   

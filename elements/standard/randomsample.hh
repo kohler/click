@@ -69,7 +69,6 @@ class RandomSample : public Element { public:
 
     const char *class_name() const		{ return "RandomSample"; }
     const char *processing() const		{ return "a/ah"; }
-    RandomSample *clone() const			{ return new RandomSample; }
 
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);

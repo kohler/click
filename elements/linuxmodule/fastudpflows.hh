@@ -93,8 +93,6 @@ class FastUDPFlows : public Element {
   const char *class_name() const	{ return "FastUDPFlows"; }
   const char *processing() const	{ return PULL; }
   
-  FastUDPFlows *clone() const		{ return new FastUDPFlows; }
-  
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

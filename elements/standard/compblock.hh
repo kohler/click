@@ -40,7 +40,6 @@ class CompareBlock : public Element { public:
 
   const char *class_name() const		{ return "CompareBlock"; }
   const char *processing() const	        { return AGNOSTIC; }
-  CompareBlock *clone() const;
   void add_handlers();
   
   int configure(Vector<String> &, ErrorHandler *);

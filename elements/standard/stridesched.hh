@@ -38,7 +38,6 @@ class StrideSched : public Element { public:
 
   const char *class_name() const		{ return "StrideSched"; }
   const char *processing() const		{ return PULL; }
-  StrideSched *clone() const			{ return new StrideSched; }
   
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);

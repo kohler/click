@@ -27,7 +27,6 @@ class SetIP6Address : public Element {
   
   const char *class_name() const		{ return "SetIP6Address"; }
   const char *processing() const		{ return AGNOSTIC; }
-  SetIP6Address *clone() const                  { return new SetIP6Address; }
   
   int configure(Vector<String> &, ErrorHandler *);
   

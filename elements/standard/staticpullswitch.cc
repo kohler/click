@@ -32,12 +32,6 @@ StaticPullSwitch::~StaticPullSwitch()
   MOD_DEC_USE_COUNT;
 }
 
-StaticPullSwitch *
-StaticPullSwitch::clone() const
-{
-  return new StaticPullSwitch;
-}
-
 void
 StaticPullSwitch::notify_ninputs(int n)
 {

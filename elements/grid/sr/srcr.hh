@@ -40,7 +40,6 @@ class SRCR : public Element {
   const char *class_name() const		{ return "SRCR"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  SRCR *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 

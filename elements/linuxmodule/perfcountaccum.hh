@@ -41,7 +41,6 @@ class PerfCountAccum : public PerfCountUser { public:
   const char *class_name() const		{ return "PerfCountAccum"; }
   void *cast(const char *);
   const char *processing() const		{ return AGNOSTIC; }
-  PerfCountAccum *clone() const;
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

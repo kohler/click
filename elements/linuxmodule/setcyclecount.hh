@@ -28,7 +28,6 @@ class SetCycleCount : public Element { public:
   
   const char *class_name() const		{ return "SetCycleCount"; }
   const char *processing() const		{ return AGNOSTIC; }
-  SetCycleCount *clone() const;
   
   void push(int, Packet *p);
   Packet *pull(int);

@@ -52,7 +52,6 @@ public:
   
   const char *class_name() const	{ return "IndexTreesIPLookup"; }
   const char *processing() const	{ return AGNOSTIC; }
-  IndexTreesIPLookup *clone() const	{ return new IndexTreesIPLookup; }
   void cleanup(CleanupStage);
 
   String dump_routes();

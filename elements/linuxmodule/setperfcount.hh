@@ -33,7 +33,6 @@ class SetPerfCount : public PerfCountUser { public:
   const char *class_name() const		{ return "SetPerfCount"; }
   void *cast(const char *);
   const char *processing() const		{ return AGNOSTIC; }
-  SetPerfCount *clone() const;
 
   int configure(Vector<String> &, ErrorHandler *);
   

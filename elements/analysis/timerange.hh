@@ -61,7 +61,6 @@ class TimeRange : public Element { public:
 
     const char *class_name() const	{ return "TimeRange"; }
     const char *processing() const	{ return AGNOSTIC; }
-    TimeRange *clone() const		{ return new TimeRange; }
 
     int configure(Vector<String> &, ErrorHandler *);
     void add_handlers();

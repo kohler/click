@@ -79,12 +79,6 @@ FromHost::~FromHost()
     MOD_DEC_USE_COUNT;
 }
 
-FromHost *
-FromHost::clone() const
-{
-    return new FromHost;
-}
-
 net_device *
 FromHost::new_device(const char *name)
 {

@@ -40,7 +40,6 @@ class DecIPTTL : public Element { public:
   
   uint32_t drops()				{ return _drops; }
   
-  DecIPTTL *clone() const;
   void add_handlers();
 
   Packet *simple_action(Packet *);

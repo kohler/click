@@ -26,7 +26,6 @@ class InOrderQueue : public NotifierQueue { public:
     
     const char *class_name() const	{ return "InOrderQueue"; }
     void *cast(const char *);
-    InOrderQueue *clone() const		{ return new InOrderQueue; }
     const char *processing() const	{ return "h/h"; }
     inline bool enq(Packet *p);
     void push(int port, Packet *);

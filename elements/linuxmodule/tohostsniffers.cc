@@ -33,11 +33,5 @@ ToHostSniffers::~ToHostSniffers()
     // other stuff belongs to ToHost
 }
 
-ToHostSniffers *
-ToHostSniffers::clone() const
-{
-    return new ToHostSniffers;
-}
-
 ELEMENT_REQUIRES(linuxmodule ToHost)
 EXPORT_ELEMENT(ToHostSniffers)

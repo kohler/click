@@ -42,12 +42,6 @@ DupeFilter::~DupeFilter()
   MOD_DEC_USE_COUNT;
 }
 
-DupeFilter *
-DupeFilter::clone() const
-{
-  return new DupeFilter;
-}
-
 int
 DupeFilter::configure(Vector<String> &conf, ErrorHandler* errh)
 {

@@ -64,12 +64,6 @@ PrintAiro::~PrintAiro()
   MOD_DEC_USE_COUNT;
 }
 
-PrintAiro *
-PrintAiro::clone() const
-{
-  return new PrintAiro;
-}
-
 int
 PrintAiro::configure(Vector<String> &conf, ErrorHandler* errh)
 {

@@ -64,12 +64,6 @@ SetGateway::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-SetGateway *
-SetGateway::clone () const
-{
-  return new SetGateway;
-}
-
 int
 SetGateway::initialize (ErrorHandler *)
 {

@@ -51,7 +51,6 @@ class IncrementSeqNo : public Element  {
 
   const char *class_name() const		{ return "IncrementSeqNo"; }
   const char *processing() const		{ return AGNOSTIC; }
-  IncrementSeqNo *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

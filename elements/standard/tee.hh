@@ -32,7 +32,6 @@ class Tee : public Element {
   const char *class_name() const		{ return "Tee"; }
   const char *processing() const		{ return PUSH; }
   
-  Tee *clone() const;
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   
@@ -50,7 +49,6 @@ class PullTee : public Element {
   const char *class_name() const		{ return "PullTee"; }
   const char *processing() const		{ return "l/lh"; }
   
-  PullTee *clone() const;
   void notify_noutputs(int);
   int configure(Vector<String> &, ErrorHandler *);
   

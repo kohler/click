@@ -28,7 +28,6 @@ public:
   const char *class_name() const	{ return "IPsecAuthSHA1"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  IPsecAuthSHA1 *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void notify_noutputs(int n);

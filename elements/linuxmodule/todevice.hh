@@ -88,7 +88,6 @@ class ToDevice : public AnyTaskDevice { public:
   
   const char *class_name() const	{ return "ToDevice"; }
   const char *processing() const	{ return PULL; }
-  ToDevice *clone() const		{ return new ToDevice; }
   
   int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
   int configure(Vector<String> &, ErrorHandler *);

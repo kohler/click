@@ -59,7 +59,6 @@ public:
 
   const char *class_name() const { return "ThresholdMetric"; }
   const char *processing() const { return AGNOSTIC; }
-  ThresholdMetric *clone()  const { return new ThresholdMetric; } 
 
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }

@@ -37,12 +37,6 @@ RatedSource::~RatedSource()
   MOD_DEC_USE_COUNT;
 }
 
-RatedSource *
-RatedSource::clone() const
-{
-  return new RatedSource;
-}
-
 int
 RatedSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {

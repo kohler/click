@@ -29,7 +29,6 @@ class SetIP6DSCP : public Element {
   
   const char *class_name() const	{ return "SetIP6DSCP"; }
   const char *processing() const	{ return AGNOSTIC; }
-  SetIP6DSCP *clone() const;
 
   uint8_t dscp() const			{ return _dscp >> IP6_DSCP_SHIFT; }
   

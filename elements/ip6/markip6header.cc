@@ -33,12 +33,6 @@ MarkIP6Header::~MarkIP6Header()
   MOD_DEC_USE_COUNT;
 }
 
-MarkIP6Header *
-MarkIP6Header::clone() const
-{
-  return new MarkIP6Header();
-}
-
 int
 MarkIP6Header::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -34,7 +34,6 @@ class GetIP6Address : public Element {
   const char *class_name() const	{ return "GetIP6Address"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  GetIP6Address *clone() const { return new GetIP6Address; }
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

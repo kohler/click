@@ -41,7 +41,6 @@ class TimestampAccum : public Element { public:
   
     const char *class_name() const	{ return "TimestampAccum"; }
     const char *processing() const	{ return AGNOSTIC; }
-    TimestampAccum *clone() const	{ return new TimestampAccum; }
 
     int initialize(ErrorHandler *);
     void add_handlers();

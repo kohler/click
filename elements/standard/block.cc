@@ -33,12 +33,6 @@ Block::~Block()
   MOD_DEC_USE_COUNT;
 }
 
-Block *
-Block::clone() const
-{
-  return new Block;
-}
-
 int
 Block::configure(Vector<String> &conf, ErrorHandler *errh)
 {

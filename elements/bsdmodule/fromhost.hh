@@ -10,7 +10,6 @@ class FromHost : public AnyDevice {
     ~FromHost();
     const char *class_name() const      { return "FromHost"; }
     const char *processing() const      { return PUSH; }
-    FromHost *clone() const		{ return new FromHost; }
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);

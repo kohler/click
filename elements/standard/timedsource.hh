@@ -65,7 +65,6 @@ class TimedSource : public Element { public:
   const char *class_name() const		{ return "TimedSource"; }
   const char *processing() const		{ return PUSH; }
   
-  TimedSource *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

@@ -41,7 +41,6 @@ class Shaper : public Element { public:
     ~Shaper();
 
     const char *class_name() const	{ return "Shaper"; }
-    Shaper *clone() const;
     const char *processing() const	{ return PULL; }
     
     int configure(Vector<String> &, ErrorHandler *);

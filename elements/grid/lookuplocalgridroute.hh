@@ -75,7 +75,6 @@ class LookupLocalGridRoute : public Element, public GridRouteActor  {
   const char *class_name() const		{ return "LookupLocalGridRoute"; }
   void *cast(const char *);
   const char *processing() const		{ return PUSH; }
-  LookupLocalGridRoute *clone() const;
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -46,12 +46,6 @@ BIM::~BIM()
     close(_fd);
 }
 
-BIM *
-BIM::clone() const
-{
-  return new BIM();
-}
-
 int
 BIM::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -65,8 +65,6 @@ class TXFeedbackStats : public Element {
   const char *processing() const		{ return AGNOSTIC; }
   const char *flow_code()  const                { return "x/x"; }
   
-  TXFeedbackStats *clone() const                { return new TXFeedbackStats; }
-
   void add_handlers();
 
   int configure(Vector<String> &, ErrorHandler *);

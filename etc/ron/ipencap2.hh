@@ -49,7 +49,6 @@ class IPEncap2 : public Element {
   const char *class_name() const		{ return "IPEncap2"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  IPEncap2 *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void add_handlers();

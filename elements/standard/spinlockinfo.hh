@@ -32,7 +32,6 @@ public:
   SpinlockInfo();
   ~SpinlockInfo();
   const char *class_name() const	{ return "SpinlockInfo"; }
-  SpinlockInfo *clone() const		{ return new SpinlockInfo; }
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &, ErrorHandler *);
   void cleanup(CleanupStage);

@@ -40,7 +40,6 @@ public:
   const char *class_name() const	{ return "IPsecDES"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  Des *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
 

@@ -30,7 +30,6 @@ class AlignmentInfo : public Element { public:
   ~AlignmentInfo();
   
   const char *class_name() const	{ return "AlignmentInfo"; }
-  AlignmentInfo *clone() const		{ return new AlignmentInfo; }
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &, ErrorHandler *);
 

@@ -46,7 +46,6 @@ class SetTXRate : public Element { public:
   const char *class_name() const		{ return "SetTXRate"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  SetTXRate *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
 

@@ -22,7 +22,6 @@ class DupPath : public Element {
   const char *processing() const		{ return "h/hl"; }
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
-  DupPath *clone() const;
   
   void push(int port, Packet *);
   Packet *pull(int port);

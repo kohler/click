@@ -33,12 +33,6 @@ IncrementSeqNo::~IncrementSeqNo()
   MOD_DEC_USE_COUNT;
 }
 
-IncrementSeqNo *
-IncrementSeqNo::clone() const
-{
-  return new IncrementSeqNo();
-}
-
 Packet *
 IncrementSeqNo::simple_action(Packet *p)
 {

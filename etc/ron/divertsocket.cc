@@ -66,12 +66,6 @@ DivertSocket::~DivertSocket()
   uninitialize();
 }
 
-DivertSocket *
-DivertSocket::clone() const
-{
-  return new DivertSocket;
-}
-
 void
 DivertSocket::notify_ninputs(int n)
 {

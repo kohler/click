@@ -16,7 +16,6 @@ class DebugBridge : public Element {
   const char *class_name() const		{ return "DebugBridge"; }
   const char *processing() const	{ return AGNOSTIC; }
   
-  DebugBridge *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

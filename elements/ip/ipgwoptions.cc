@@ -60,12 +60,6 @@ IPGWOptions::notify_noutputs(int n)
   set_noutputs(n < 2 ? 1 : 2);
 }
 
-IPGWOptions *
-IPGWOptions::clone() const
-{
-  return new IPGWOptions();
-}
-
 Packet *
 IPGWOptions::handle_options(Packet *p)
 {

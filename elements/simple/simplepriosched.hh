@@ -28,7 +28,6 @@ class SimplePrioSched : public Element { public:
   
     const char *class_name() const	{ return "SimplePrioSched"; }
     const char *processing() const	{ return PULL; }
-    PrioSched *clone() const		{ return new SimplePrioSched; }
 
     void notify_ninputs(int);
   

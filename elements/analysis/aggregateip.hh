@@ -138,7 +138,6 @@ class AggregateIP : public Element { public:
     ~AggregateIP();
 
     const char *class_name() const	{ return "AggregateIP"; }
-    AggregateIP *clone() const		{ return new AggregateIP; }
 
     void notify_noutputs(int);
     const char *processing() const	{ return "a/ah"; }

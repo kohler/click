@@ -50,12 +50,6 @@ ForceUDP::configure(Vector<String> &conf, ErrorHandler *errh)
   return(ret);
 }
 
-ForceUDP *
-ForceUDP::clone() const
-{
-  return new ForceUDP();
-}
-
 Packet *
 ForceUDP::simple_action(Packet *p_in)
 {

@@ -74,7 +74,6 @@ public:
   const char *class_name() const		{ return "TCPBuffer"; }
   const char *processing() const		{ return PUSH_TO_PULL; }
   
-  TCPBuffer *clone() const			{ return new TCPBuffer; }
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);
   int configure(Vector<String> &conf, ErrorHandler *errh);

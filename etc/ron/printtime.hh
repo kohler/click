@@ -30,7 +30,6 @@ class IPPrintTime : public Element { public:
   const char *class_name() const		{ return "IPPrintTime"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  IPPrintTime *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();

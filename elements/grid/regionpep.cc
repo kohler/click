@@ -38,12 +38,6 @@ EstimateRouterRegion::~EstimateRouterRegion()
   // no MOD_DEC_USE_COUNT; rely on GridLocationInfo
 }
 
-EstimateRouterRegion *
-EstimateRouterRegion::clone() const
-{
-  return new EstimateRouterRegion;
-}
-
 void *
 EstimateRouterRegion::cast(const char *name)
 {

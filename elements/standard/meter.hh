@@ -45,7 +45,6 @@ class Meter : public BandwidthMeter { public:
   ~Meter();
   
   const char *class_name() const		{ return "Meter"; }
-  Meter *clone() const;
   
   void push(int port, Packet *);
   

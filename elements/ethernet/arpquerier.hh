@@ -67,7 +67,6 @@ class ARPQuerier : public Element { public:
   void notify_noutputs(int);
   void add_handlers();
   
-  ARPQuerier *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int live_reconfigure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }

@@ -39,12 +39,6 @@ Suppressor::notify_ninputs(int i)
   set_noutputs(i);
 }
 
-Suppressor *
-Suppressor::clone() const
-{
-  return new Suppressor;
-}
-
 bool
 Suppressor::set(int output, bool sup)
 {

@@ -76,7 +76,6 @@ class FromHost : public AnyDevice { public:
     ~FromHost();
 
     const char *class_name() const	{ return "FromHost"; }
-    FromHost *clone() const;
     const char *processing() const	{ return PUSH; }
 
     net_device_stats *stats()		{ return &_stats; }

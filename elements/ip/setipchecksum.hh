@@ -26,7 +26,6 @@ public:
   
   const char *class_name() const		{ return "SetIPChecksum"; }
   const char *processing() const		{ return AGNOSTIC; }
-  SetIPChecksum *clone() const;
 
   Packet *simple_action(Packet *);
 };

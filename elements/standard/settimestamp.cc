@@ -35,12 +35,6 @@ SetTimestamp::~SetTimestamp()
   MOD_DEC_USE_COUNT;
 }
 
-SetTimestamp *
-SetTimestamp::clone() const
-{
-  return new SetTimestamp();
-}
-
 int
 SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {

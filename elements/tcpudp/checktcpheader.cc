@@ -47,12 +47,6 @@ CheckTCPHeader::~CheckTCPHeader()
   delete[] _reason_drops;
 }
 
-CheckTCPHeader *
-CheckTCPHeader::clone() const
-{
-  return new CheckTCPHeader();
-}
-
 void
 CheckTCPHeader::notify_noutputs(int n)
 {

@@ -21,7 +21,6 @@ class SamplePackageElement : public Element { public:
   
   const char *class_name() const	{ return "SamplePackageElement"; }
   const char *processing() const	{ return AGNOSTIC; }
-  SamplePackageElement *clone() const	{ return new SamplePackageElement; }
 
   int initialize(ErrorHandler *);
   void add_handlers();

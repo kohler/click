@@ -57,7 +57,6 @@ class ICMPPingSource : public Element { public:
   const char *class_name() const		{ return "ICMPPingSource"; }
   const char *processing() const		{ return PUSH; }
   
-  ICMPPingSource *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   

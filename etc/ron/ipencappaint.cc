@@ -40,12 +40,6 @@ IPEncapPaint::~IPEncapPaint()
   MOD_DEC_USE_COUNT;
 }
 
-IPEncapPaint *
-IPEncapPaint::clone() const
-{
-  return new IPEncapPaint;
-}
-
 int
 IPEncapPaint::configure(Vector<String> &conf, ErrorHandler *errh)
 {

@@ -28,7 +28,6 @@ class ThreadMonitor : public Element {
   ~ThreadMonitor();
   
   const char *class_name() const	{ return "ThreadMonitor"; }
-  ThreadMonitor *clone() const	        { return new ThreadMonitor; }
   int configure(Vector<String> &, ErrorHandler *);
 
   int initialize(ErrorHandler *);
