@@ -1,3 +1,10 @@
+2001-12-02 Sunday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, click-buildtool: fixes for Brecht Vermeulen:
+	"click-buildtool -a" pretends that all requirements are available,
+	except for those explicitly specified with "-x" (= new --unprovide
+	option), and "false".
+
 2001-12-02 Sunday 14:37  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/addressinfo.cc, libsrc/alignmentinfo.cc,

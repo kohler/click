@@ -1,3 +1,14 @@
+2001-12-02 Sunday 16:29  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.texi (1.31): doc update for Task changes
+
+2001-12-02 Sunday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.31), click-buildtool (1.32): fixes for Brecht
+	Vermeulen: "click-buildtool -a" pretends that all requirements are
+	available, except for those explicitly specified with "-x" (= new
+	--unprovide option), and "false".
+
 2001-12-02 Sunday 14:37  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/addressinfo.cc (1.16),
