@@ -1,3 +1,10 @@
+2003-08-12 Tuesday 09:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* README (1.39), conf/grid.click (1.63), tools/build-grid-config.sh
+	(1.14), tools/run-grid (1.21): Grid doc nitlets in README; remove
+	outdated/broken grid tools & config, but keep grid.click for
+	historical interest
+
 2003-08-11 Monday 23:49  Eddie Kohler <kohler@icir.org>
 
 	* click-compile.in (1.24), ns/Makefile.in (1.9),
