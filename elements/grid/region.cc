@@ -66,4 +66,3 @@ RectRegion::expand(double l)
 }
 
 ELEMENT_REQUIRES(userlevel)
-
