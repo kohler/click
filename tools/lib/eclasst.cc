@@ -65,7 +65,7 @@ TraitsElementClassT::find_traits() const
 }
 
 ElementClassT *ElementClassT::the_unused_type = new TraitsElementClassT("<unused>", UNUSED_UID, Traits::D_REQUIREMENTS, "false", 0);
-ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel>", TUNNEL_UID, Traits::D_PROCESSING, "a/a", Traits::D_FLOW_CODE, "x/x", 0);
+ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel>", TUNNEL_UID, Traits::D_PROCESSING, "a/a", Traits::D_FLOW_CODE, "x/y", 0);
 
 
 ElementClassT::ElementClassT(const String &name)
