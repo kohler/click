@@ -3,7 +3,8 @@
 
 /*
  * =c
- * LookupIPRoute(DST1/MASK1 [GW1] OUT1, DST2/MASK2 [GW2] OUT2, ...)
+ * StaticIPLookup(DST1/MASK1 [GW1] OUT1, DST2/MASK2 [GW2] OUT2, ...)
+ * LookupIPRoute(DST1/MASK1 [GW1] OUT1, ...)
  * =s IP, classification
  * simple static IP routing table
  * =d
@@ -23,20 +24,20 @@
  * local interface, and all others via gateway 18.26.4.1:
  *
  *   ... -> GetIPAddress(16) -> rt;
- *   rt :: LookupIPRoute(18.26.4.24/32 0,
- *                       18.26.4.255/32 0,
- *                       18.26.4.0/32 0,
- *                       18.26.4.0/24 1,
- *                       0.0.0.0/0 18.26.4.1 1);
+ *   rt :: StaticIPLookup(18.26.4.24/32 0,
+ *                        18.26.4.255/32 0,
+ *                        18.26.4.0/32 0,
+ *                        18.26.4.0/24 1,
+ *                        0.0.0.0/0 18.26.4.1 1);
  *   rt[0] -> ToLinux;
  *   rt[1] -> ... -> ToDevice(eth0);
  *
  * =n
  * Only static routes are allowed. If you need a dynamic routing
  * protocol such as RIP, run it at user-level and use
- * LookupIPRouteLinux or LookupIPRoute2.
+ * LinuxIPLookup or RadixIPLookup.
  *
- * =a LookupIPRoute2, LookupIPRouteLinux
+ * =a LinuxIPLookup, RadixIPLookup
  */
 
 #include <click/element.hh>
@@ -44,14 +45,14 @@
 
 #define IP_RT_CACHE2 1
 
-class LookupIPRoute : public Element {
+class StaticIPLookup : public Element {
 public:
-  LookupIPRoute();
-  ~LookupIPRoute();
+  StaticIPLookup();
+  ~StaticIPLookup();
   
-  const char *class_name() const		{ return "LookupIPRoute"; }
+  const char *class_name() const		{ return "StaticIPLookup"; }
   const char *processing() const		{ return PUSH; }
-  LookupIPRoute *clone() const;
+  StaticIPLookup *clone() const;
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

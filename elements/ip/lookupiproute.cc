@@ -23,25 +23,25 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 
-LookupIPRoute::LookupIPRoute()
+StaticIPLookup::StaticIPLookup()
 {
   MOD_INC_USE_COUNT;
   add_input();
 }
 
-LookupIPRoute::~LookupIPRoute()
+StaticIPLookup::~StaticIPLookup()
 {
   MOD_DEC_USE_COUNT;
 }
 
-LookupIPRoute *
-LookupIPRoute::clone() const
+StaticIPLookup *
+StaticIPLookup::clone() const
 {
-  return new LookupIPRoute;
+  return new StaticIPLookup;
 }
 
 int
-LookupIPRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
+StaticIPLookup::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int maxout = -1;
   _t.clear();
@@ -81,7 +81,7 @@ LookupIPRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-LookupIPRoute::initialize(ErrorHandler *)
+StaticIPLookup::initialize(ErrorHandler *)
 {
   _last_addr = IPAddress();
 #ifdef IP_RT_CACHE2
@@ -91,7 +91,7 @@ LookupIPRoute::initialize(ErrorHandler *)
 }
 
 void
-LookupIPRoute::push(int, Packet *p)
+StaticIPLookup::push(int, Packet *p)
 {
 #define EXCHANGE(a,b,t) { t = a; a = b; b = t; }
   IPAddress a = p->dst_ip_anno();
@@ -135,9 +135,9 @@ LookupIPRoute::push(int, Packet *p)
       p->set_dst_ip_anno(IPAddress(gw));
     output(ifi).push(p);
   } else {
-    click_chatter("LookupIPRoute: no gw for %x", a.addr());
+    click_chatter("StaticIPLookup: no gw for %x", a.addr());
     p->kill();
   }
 }
 
-EXPORT_ELEMENT(LookupIPRoute)
+EXPORT_ELEMENT(StaticIPLookup LookupIPRoute=StaticIPLookup)
