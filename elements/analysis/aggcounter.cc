@@ -433,7 +433,7 @@ AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk
 
 enum {
     AC_FROZEN, AC_ACTIVE, AC_BANNER, AC_STOP, AC_REAGGREGATE, AC_CLEAR,
-    AC_CALL_AFTER_AGG, AC_CALL_AFTER_COUNT
+    AC_CALL_AFTER_AGG, AC_CALL_AFTER_COUNT, AC_NAGG
 };
 
 String
@@ -457,6 +457,8 @@ AggregateCounter::read_handler(Element *e, void *thunk)
 	    return "";
 	else
 	    return String(ac->_call_count) + " " + ac->_call_count_h->unparse(ac);
+      case AC_NAGG:
+	return String(ac->_num_nonzero) + "\n";
       default:
 	return "<error>";
     }
@@ -549,6 +551,7 @@ AggregateCounter::add_handlers()
     add_write_handler("call_after_agg", write_handler, (void *)AC_CALL_AFTER_AGG);
     add_read_handler("call_after_count", read_handler, (void *)AC_CALL_AFTER_COUNT);
     add_write_handler("call_after_count", write_handler, (void *)AC_CALL_AFTER_COUNT);
+    add_read_handler("nagg", read_handler, (void *)AC_NAGG);
 }
 
 ELEMENT_REQUIRES(userlevel)

@@ -152,6 +152,10 @@ Returns or sets the CALL_AFTER_AGG setting.
 
 Returns or sets the CALL_AFTER_COUNT setting.
 
+=h nagg read-only
+
+Returns the number of aggregates that have been seen so far.
+
 =n
 
 The aggregate identifier is stored in host byte order. Thus, the aggregate ID
