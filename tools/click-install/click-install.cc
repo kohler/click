@@ -53,10 +53,12 @@
 #define THREADS_OPT		308
 #define PRIVATE_OPT		309
 #define PRIORITY_OPT		310
+#define EXPRESSION_OPT		311
 
 static Clp_Option options[] = {
   { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
@@ -100,6 +102,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE          Read router configuration from FILE.\n\
+  -e, --expression EXPR    Use EXPR as router configuration.\n\
   -h, --hot-swap           Hot-swap install new configuration.\n\
   -u, --uninstall          Uninstall Click from kernel, then reinstall.\n\
   -n, --priority N         Set kernel thread priority to N (lower is better).\n", program_name);
@@ -321,6 +324,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  const char *expression = 0;
   bool uninstall = false;
   bool hotswap = false;
   int priority = -100;
@@ -357,11 +361,19 @@ particular purpose.\n");
       
      case ROUTER_OPT:
      case Clp_NotOption:
-      if (router_file) {
-	errh->error("router file specified twice");
+      if (router_file || expression) {
+	errh->error("router file or expression specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
+      break;
+
+     case EXPRESSION_OPT:
+      if (router_file || expression) {
+	errh->error("router file or expression specified twice");
+	goto bad_option;
+      }
+      expression = clp->arg;
       break;
 
 #if FOR_LINUXMODULE
@@ -415,7 +427,7 @@ particular purpose.\n");
   if (hotswap && uninstall)
     errh->warning("`--hotswap' and `--uninstall' are mutually exclusive");
   
-  RouterT *r = read_router_file(router_file, nop_errh);
+  RouterT *r = read_router(expression ? expression : router_file, expression, nop_errh);
   if (r)
     r->flatten(nop_errh);
   if (!r || errh->nerrors() > 0)
