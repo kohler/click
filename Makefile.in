@@ -154,7 +154,7 @@ distdir: $(srcdir)/configure
 	for i in `cat $(srcdir)/NODIST`; do \
 	  rm -rf $(distdir)/$$i; \
 	done; fi
-	@if grep -q benjie `find $(srcdir)/etc -maxdepth 1 -type f`; then \
+	@if grep -q 'Id:.*benjie' `find $(srcdir)/etc -maxdepth 1 -type f`; then \
 	  echo 'ERROR: Benjie must be punished!'; exit 1; \
 	fi
 
