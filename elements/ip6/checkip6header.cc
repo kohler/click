@@ -63,8 +63,8 @@ CheckIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
     return errh->error("too many arguments to `CheckIP6Header([ADDRS])'");
  
  Vector<String> ips; 
- ips.push_back("0::0"); //bad IP6 address "0::0"
- ips.push_back("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"); //another bad IP6 address
+ // ips.push_back("0::0"); // this address is only bad if we are a router
+ ips.push_back("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"); // bad IP6 address
 
   if (conf.size()) {
     Vector<String> words;
@@ -98,7 +98,7 @@ void
 CheckIP6Header::drop_it(Packet *p)
 {
   if (_drops == 0)
-    click_chatter("IP checksum failed");
+    click_chatter("IP6 header check failed");
   _drops++;
   
   if (noutputs() == 2) 
@@ -113,27 +113,17 @@ CheckIP6Header::simple_action(Packet *p)
   const click_ip6 *ip = reinterpret_cast <const click_ip6 *>( p->data());
   struct IP6Address src;
   
-  //check if the packet is smaller than ip6 header
-  if(p->length() < sizeof(click_ip6))  {
-    click_chatter("CheckIP6Header: packet length %d smaller than header 
-length %d", p->length(), sizeof(click_ip6));
+  // check if the packet is smaller than ip6 header
+  if(p->length() < sizeof(click_ip6))
     goto bad;
-  }
   
- //check version
-  if(ip->ip6_v != 6) {
+ // check version
+  if(ip->ip6_v != 6)
     goto bad;
-  }
 
-  //check if the PayloadLength field is valid
-   if(ntohs(ip->ip6_plen) > (p->length()-40)){
-     click_chatter("CheckIP6Header: payload length field in ip6 header  %d, 
-                   is greater than the payload length %d",
-                   ntohs(ip->ip6_plen),
-                   p->length() - 40);
+  // check if the PayloadLength field is valid
+   if(ntohs(ip->ip6_plen) > (p->length()-40))
      goto bad;
-   }
-   
 
   /*
    * discard illegal source addresses.
@@ -142,9 +132,8 @@ length %d", p->length(), sizeof(click_ip6));
    */
    src=ip->ip6_src;
    for(int i = 0; i < _n_bad_src; i++) {  
-     if(src == _bad_src[i]) {
+     if(src == _bad_src[i])
        goto bad;
-     }
    }
 
   /*
@@ -159,7 +148,6 @@ length %d", p->length(), sizeof(click_ip6));
   // shorten packet according to IP6 payload length field 
   if(ntohs(ip->ip6_plen) < (p->length()-40)) 
     p->take(p->length() - 40 - ip->ip6_plen); 
-
   return(p);
   
  bad:

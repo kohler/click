@@ -8,18 +8,16 @@
  * 
  * =d
  *
- * Expects IP6 packets as input. Checks that the packet's length is reasonable,
- * and that the IP6 version,  length, are
- * valid. Checks that the IP6 source address is a legal unicast address.
- * Shortens packets to the IP6 length, if the IP length is shorter than the
- * nominal packet length (due to Ethernet padding, for example). Pushes
- * invalid packets out on output 1, unless output 1 was unused; if so, drops
- * invalid packets.
+ * Expects IP6 packets as input. Checks that the packet's length is
+ * reasonable, and that the IP6 version,  length, are valid. Checks that the
+ * IP6 source address is a legal unicast address. Shortens packets to the IP6
+ * length, if the IP length is shorter than the nominal packet length (due to
+ * Ethernet padding, for example). Pushes invalid packets out on output 1,
+ * unless output 1 was unused; if so, drops invalid packets.
  *
- * The BADADDRS argument is a space-separated list of IP6 addresses
- * that are not to be tolerated as source addresses.
- * Usually consists of the subnet broadcast addresses on
- * each interface 
+ * The BADADDRS argument is a space-separated list of IP6 addresses that are
+ * not to be tolerated as source addresses. 0::0 is a bad address for routers,
+ * for example, but okay for link local packets.
  *
  * =a MarkIP6Header */
 
