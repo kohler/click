@@ -1,3 +1,13 @@
+2004-06-21 Monday 19:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/userlevel/ControlSocket-llrpc-01.testie (1.5): avoid usleep
+
+2004-06-21 Monday 19:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/: testie (1.30), testie (1.31): don't print line numbers
+	within shell functions; use /bin/sh -e, rather than trap ERR, since
+	it is more portable
+
 2004-06-21 Monday 16:03  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: probetxrate.cc (1.2), probetxrate.hh (1.2): fix
