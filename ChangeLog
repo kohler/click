@@ -1,3 +1,7 @@
+2004-12-01 Wednesday 14:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.56): --enable-wifi
+
 2004-12-01 Wednesday 11:31  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: madwifirate.cc (1.11), sr/ettstat.cc (1.14):
