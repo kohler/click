@@ -4505,10 +4505,9 @@ else
   enable_multithread=no
 fi;
 
-if test "$enable_multithread" = yes; then
-  enable_multithread=4
-fi
-if test "$enable_multithread" != no; then
+test "$enable_multithread" = yes && enable_multithread=4
+test "$enable_multithread" = no && enable_multithread=1
+if test "$enable_multithread" -gt 1; then
   cat >>confdefs.h <<_ACEOF
 #define NUM_CLICK_CPUS $enable_multithread
 _ACEOF
@@ -6470,7 +6469,7 @@ if test "${ac_cv_endian+set}" = set; then
 else
   	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6473 "configure"
+#line 6472 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -11258,6 +11257,10 @@ fi
 
 if test "x$HAVE_PCAP" = xyes; then
     provisions="pcap $provisions"
+fi
+
+if test "$enable_multithread" -gt 1; then
+    provisions="smpclick $provisions"
 fi
 
 
