@@ -186,7 +186,7 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far,
         return errh->error("FIONBIO failed");
       }
 
-#if defined(TUNSIFMODE) || defined(__FreeBSD__) || defined(__OpenBSD__)
+#if defined(TUNSIFMODE) || defined(__FreeBSD__)
       {
         int mode = IFF_BROADCAST;
         if(ioctl(fd, TUNSIFMODE, &mode) != 0){
