@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/string.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/string.hh" -*-
 /*
  * string.{cc,hh} -- a String class with shared substrings
  * Eddie Kohler
@@ -392,127 +392,137 @@ String::cc()
 String
 String::substring(int left, int len) const
 {
-  if (left < 0)
-    left += _length;
-  if (len < 0)
-    len = _length - left + len;
-  if (left + len > _length)
-    len = _length - left;
+    if (left < 0)
+	left += _length;
+    if (len < 0)
+	len = _length - left + len;
+    if (left + len > _length)
+	len = _length - left;
   
-  if (left < 0 || len <= 0)
-    return String();
-  else
-    return String(_data + left, len, _memo);
+    if (left < 0 || len <= 0)
+	return String();
+    else
+	return String(_data + left, len, _memo);
 }
 
 int
 String::find_left(int c, int start) const
 {
-  if (start < 0)
-    start = 0;
-  for (int i = start; i < _length; i++)
-    if ((unsigned char)_data[i] == c)
-      return i;
-  return -1;
+    if (start < 0)
+	start = 0;
+    for (int i = start; i < _length; i++)
+	if ((unsigned char)_data[i] == c)
+	    return i;
+    return -1;
 }
 
 int
 String::find_left(const String &s, int start) const
 {
-  if (start < 0)
-    start = 0;
-  if (start >= length())
+    if (start < 0)
+	start = 0;
+    if (start >= length())
+	return -1;
+    if (!s.length())
+	return 0;
+    int first_c = (unsigned char)s[0];
+    int pos = start, max_pos = length() - s.length();
+    for (pos = find_left(first_c, pos); pos >= 0 && pos <= max_pos;
+	 pos = find_left(first_c, pos + 1))
+	if (!memcmp(_data + pos, s._data, s.length()))
+	    return pos;
     return -1;
-  if (!s.length())
-    return 0;
-  int first_c = (unsigned char)s[0];
-  int pos = start, max_pos = length() - s.length();
-  for (pos = find_left(first_c, pos); pos >= 0 && pos <= max_pos;
-       pos = find_left(first_c, pos + 1))
-    if (!memcmp(_data + pos, s._data, s.length()))
-      return pos;
-  return -1;
 }
 
 int
 String::find_right(int c, int start) const
 {
-  if (start >= _length)
-    start = _length - 1;
-  for (int i = start; i >= 0; i--)
-    if ((unsigned char)_data[i] == c)
-      return i;
-  return -1;
+    if (start >= _length)
+	start = _length - 1;
+    for (int i = start; i >= 0; i--)
+	if ((unsigned char)_data[i] == c)
+	    return i;
+    return -1;
 }
 
 static String
 hard_lower(const String &s, int pos)
 {
-  String new_s(s.data(), s.length());
-  char *x = const_cast<char *>(new_s.data()); // know it's mutable
-  int len = s.length();
-  for (; pos < len; pos++)
-    x[pos] = tolower(x[pos]);
-  return new_s;
+    String new_s(s.data(), s.length());
+    char *x = const_cast<char *>(new_s.data()); // know it's mutable
+    int len = s.length();
+    for (; pos < len; pos++)
+	x[pos] = tolower(x[pos]);
+    return new_s;
 }
 
 String
 String::lower() const
 {
-  // avoid copies
-  for (int i = 0; i < _length; i++)
-    if (_data[i] >= 'A' && _data[i] <= 'Z')
-      return hard_lower(*this, i);
-  return *this;
+    // avoid copies
+    for (int i = 0; i < _length; i++)
+	if (_data[i] >= 'A' && _data[i] <= 'Z')
+	    return hard_lower(*this, i);
+    return *this;
 }
 
 static String
 hard_upper(const String &s, int pos)
 {
-  String new_s(s.data(), s.length());
-  char *x = const_cast<char *>(new_s.data()); // know it's mutable
-  int len = s.length();
-  for (; pos < len; pos++)
-    x[pos] = toupper(x[pos]);
-  return new_s;
+    String new_s(s.data(), s.length());
+    char *x = const_cast<char *>(new_s.data()); // know it's mutable
+    int len = s.length();
+    for (; pos < len; pos++)
+	x[pos] = toupper(x[pos]);
+    return new_s;
 }
 
 String
 String::upper() const
 {
-  // avoid copies
-  for (int i = 0; i < _length; i++)
-    if (_data[i] >= 'a' && _data[i] <= 'z')
-      return hard_upper(*this, i);
-  return *this;
+    // avoid copies
+    for (int i = 0; i < _length; i++)
+	if (_data[i] >= 'a' && _data[i] <= 'z')
+	    return hard_upper(*this, i);
+    return *this;
 }
 
 static String
 hard_printable(const String &s, int pos)
 {
-  StringAccum sa(s.length() * 2);
-  sa.append(s.data(), pos);
-  const unsigned char *x = reinterpret_cast<const unsigned char *>(s.data());
-  int len = s.length();
-  for (; pos < len; pos++) {
-    if (x[pos] >= 32 && x[pos] < 127)
-      sa << x[pos];
-    else if (x[pos] < 32)
-      sa << '^' << (unsigned char)(x[pos] + 64);
-    else if (char *buf = sa.extend(4, 1))
-      sprintf(buf, "\\%03o", x[pos]);
-  }
-  return sa.take_string();
+    StringAccum sa(s.length() * 2);
+    sa.append(s.data(), pos);
+    const unsigned char *x = reinterpret_cast<const unsigned char *>(s.data());
+    int len = s.length();
+    for (; pos < len; pos++) {
+	if (x[pos] >= 32 && x[pos] < 127)
+	    sa << x[pos];
+	else if (x[pos] < 32)
+	    sa << '^' << (unsigned char)(x[pos] + 64);
+	else if (char *buf = sa.extend(4, 1))
+	    sprintf(buf, "\\%03o", x[pos]);
+    }
+    return sa.take_string();
 }
 
 String
 String::printable() const
 {
-  // avoid copies
-  for (int i = 0; i < _length; i++)
-    if (_data[i] < 32 || _data[i] > 126)
-      return hard_printable(*this, i);
-  return *this;
+    // avoid copies
+    for (int i = 0; i < _length; i++)
+	if (_data[i] < 32 || _data[i] > 126)
+	    return hard_printable(*this, i);
+    return *this;
+}
+
+String
+String::trim_space() const
+{
+    for (int i = _length - 1; i >= 0; i--)
+	if (!isspace(_data[i]))
+	    return substring(0, i + 1);
+    // return out-of-memory string if input is out-of-memory string
+    return (_length ? String() : *this);
 }
 
 int

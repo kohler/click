@@ -86,9 +86,10 @@ class String { public:
   String substring(int, int) const;
   String substring(int left) const	{ return substring(left, _length); }
 
-  String lower() const;
-  String upper() const;
-  String printable() const;
+  String lower() const;			// lowercase 
+  String upper() const;			// uppercase
+  String printable() const;		// quote non-ASCII characters
+  String trim_space() const;		// trim space from right
   
   String &operator=(const String &);
   String &operator=(const char *);
