@@ -1,3 +1,13 @@
+2004-11-09 Tuesday 15:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/test/schedordertest.hh (1.2): documentation
+
+2004-11-09 Tuesday 14:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/schedorder1.click (1.1), elements/test/schedordertest.cc
+	(1.1), elements/test/schedordertest.hh (1.1): add SchedOrderTest
+	element and config that uses it
+
 2004-11-09 Tuesday 14:22  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/master.hh (1.8), include/click/routerthread.hh
