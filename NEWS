@@ -22,11 +22,6 @@ Version 1.0.5
    runs in a separate kernel thread, so we synchronize ToDevice send
    operations in kernel with a bit lock (dev->tbusy).
 
-   XXXXXXXXXXXXXXXXXXXXXXXX When Click is not running on top of a polling
-   capable kernel, it does not use a scheduler thread. In this case,
-   ToDevice only sends packets when Linux asks it to do so via a notifier.
-   Since Linux only calls the notifier in net_bh, there are no races.
-
 ** Every Linux kernel module now runs as a separate kernel thread, even if
    HAVE_POLLING is not defined.
 
