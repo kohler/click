@@ -1,8 +1,10 @@
 %info
 
-This test installs two fake devices in the kernel, then initiates a
-connection between two 'netcat' processes that bridges the two devices via
-FTPPortMapper and TCPRewriter.
+This test checks several ToHost properties: that a ToHost without a device
+will accept packets with a device annotation, and drop packets without such
+an annotation; and that ToHost(DEVICE) sets the device annotation
+appropriately; and that ToHost(SNIFFERS true) sends packets to sniffers.
+XXX It doesn't test whether SNIFFERS true sends packets to the kernel.
 
 %script
 click-install KERNELCONFIG
