@@ -1,3 +1,18 @@
+2001-07-24 Tuesday 18:31  Eddie Kohler <kohler@aciri.org>
+
+	* etc/libclick/: Makefile.in (1.3), lc-Makefile.in (1.4): libclick
+	crap
+
+2001-07-24 Tuesday 18:30  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fromdevice.cc (1.26), fromdevice.hh (1.13):
+	FromDevice: better timestamp plan (set timestamps from kernel), add
+	keyword arguments include FORCE_IP and BPF_FILTER
+
+2001-07-24 Tuesday 17:58  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.106): revert change, found a better way
+
 2001-07-24 Tuesday 15:54  Eddie Kohler <kohler@aciri.org>
 
 	* lib/router.cc (1.105): Router: cut out on first error unless
