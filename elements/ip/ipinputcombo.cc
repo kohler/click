@@ -52,12 +52,12 @@ IPInputCombo::configure(const Vector<String> &conf, ErrorHandler *errh)
   ips.push_back(0xffffffff);
 
   if (conf.size() > 1) {
-    String s = conf[1];
-    while (s) {
-      u_int a;
-      if (!cp_ip_address(s, (unsigned char *)&a, &s))
+    Vector<String> words;
+    u_int a;
+    cp_spacevec(conf[1], words);
+    for (int j = 0; j < words.size(); j++) {
+      if (!cp_ip_address(words[j], (unsigned char *)&a, this))
 	return errh->error("expects IPADDRESS");
-      cp_eat_space(s);
       for (int j = 0; j < ips.size(); j++)
 	if (ips[j] == a)
 	  goto repeat;

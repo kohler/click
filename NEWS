@@ -47,6 +47,9 @@ Version 1.1
 ** The `cp_DATATYPE' functions take pointers instead of references. This
    makes their use easier to read.
 
+** The `cp_DATATYPE' functions no longer take an optional `String *rest'
+   argument. They always parse their argument string entirely.
+
 ** Changed Element method `bool configure_first() const' to `int
    configure_phase() const'. Now element classes can specify their relative
    configuration and initialization order; for example, ToDevice specifies

@@ -361,14 +361,6 @@ particular purpose.\n");
   // initialize signatures
   Signatures sigs(router);
 
-  // follow instructions from command line
-  {
-    for (int i = 0; i < instruction_files.size(); i++)
-      parse_instruction_file(instruction_files[i], sigs, errh);
-    for (StringMap::Iterator iter = specializing.first(); iter; iter++)
-      sigs.specialize_class(iter.key(), iter.value());
-  }
-
   // follow instructions embedded in router definition
   int devirtualize_info_class = router->type_index("DevirtualizeInfo");
   for (int i = 0; i < router->nelements(); i++)
@@ -379,6 +371,14 @@ particular purpose.\n");
       for (int j = 0; j < args.size(); j++)
 	parse_instruction(args[j], sigs, errh);
     }
+
+  // follow instructions from command line
+  {
+    for (int i = 0; i < instruction_files.size(); i++)
+      parse_instruction_file(instruction_files[i], sigs, errh);
+    for (StringMap::Iterator iter = specializing.first(); iter; iter++)
+      sigs.specialize_class(iter.key(), iter.value());
+  }
 
   // analyze signatures to determine specialization
   sigs.analyze(full_elementmap);

@@ -43,17 +43,17 @@ LookupIP6Route::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
-    String arg = conf[i];
     IP6Address dst, mask, gw;
     int index;
-   
-    if (cp_ip6_address(arg, (unsigned char *)&dst, &arg) &&
-	cp_eat_space(arg) &&
-        cp_ip6_address(arg, (unsigned char *)&mask, &arg) &&
-	cp_eat_space(arg) &&
-        cp_ip6_address(arg, (unsigned char *)&gw, &arg) &&
-        cp_eat_space(arg) &&
-	cp_integer(arg, &index)) {
+
+    Vector<String> words;
+    cp_spacevec(conf[i], words);
+
+    if (words.size() == 4
+	&& cp_ip6_address(words[0], (unsigned char *)&dst)
+        && cp_ip6_address(words[1], (unsigned char *)&mask)
+        && cp_ip6_address(words[2], (unsigned char *)&gw)
+	&& cp_integer(words[3], &index)) {
       _t.add(dst, mask, gw, index);
    
       if(index > maxout)

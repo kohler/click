@@ -16,8 +16,14 @@
  *
  * The IP/MASK arguments are IP network addresses (IP address/netmask pairs).
  * The netmask can be specified in dotted decimal form
- * (`<tt>18.26.7.0/255.255.255.0</tt>') or CIDR form
- * (`<tt>18.26.7.0/24</tt>').
+ * (`C<18.26.7.0/255.255.255.0>') or CIDR form
+ * (`C<18.26.7.0/24>').
+ *
+ * =n
+ * AddressInfo elements can simplify the arguments to ARPResponder. In
+ * particular, if C<NAME> is shorthand for both an IP network address (or IP
+ * address) C<IP> and an Ethernet address C<ETH>, then C<ARPResponder(NAME)>
+ * is equivalent to C<ARPResponder(IP ETH)>.
  *
  * =e
  * Produce ARP replies for the local machine (18.26.4.24)
@@ -30,8 +36,7 @@
  *   ar -> ToDevice(eth0);
  *
  * =a
- * ARPQuerier, ARPFaker
- */
+ * ARPQuerier, ARPFaker, AddressInfo */
 
 #include "element.hh"
 #include "etheraddress.hh"

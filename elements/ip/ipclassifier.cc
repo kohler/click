@@ -523,14 +523,14 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 	       || wd == "(" || wd == ")") {
 	/* no extra data */
 	w--;
-      } else if (cp_ip_address(wd, (unsigned char *)&prim._u.ip)) {
+      } else if (cp_ip_address(wd, (unsigned char *)&prim._u.ip, this)) {
 	if (w < words.size() - 2 && words[w+1] == "mask"
-	    && cp_ip_address(words[w+2], (unsigned char *)&prim._u.ipnet.mask)) {
+	    && cp_ip_address(words[w+2], (unsigned char *)&prim._u.ipnet.mask, this)) {
 	  w += 2;
 	  prim._data = DATA_IPMASK;
 	} else
 	  prim._data = DATA_IP;
-      } else if (cp_ip_address_mask(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask))
+      } else if (cp_ip_address_mask(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
 	prim._data = DATA_IPMASK;
       else if (cp_integer(wd, &prim._u.i))
 	prim._data = DATA_INT;

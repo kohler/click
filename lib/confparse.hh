@@ -6,8 +6,10 @@ class ErrorHandler;
 #ifndef CLICK_TOOL
 class Element;
 # define CP_VA_PARSE_ARGS_REST Element *, ErrorHandler *, ...
+# define CP_CONTEXT , Element *context = 0
 #else
 # define CP_VA_PARSE_ARGS_REST ErrorHandler *, ...
+# define CP_CONTEXT
 #endif
 
 bool cp_eat_space(String &);
@@ -24,28 +26,28 @@ String cp_unquote(const String &);
 String cp_quote(const String &, bool allow_newlines = false);
 
 // numbers
-bool cp_bool(String, bool *, String *rest = 0);
-bool cp_integer(String, int *, String *rest = 0);
-bool cp_integer(String, int base, int *, String *rest = 0);
-bool cp_ulong(String, unsigned long *, String *rest = 0);
-bool cp_real(const String &, int frac_digits, int *, int *, String *rest = 0);
-bool cp_real(const String &, int frac_digits, int *, String *rest = 0);
-bool cp_real2(const String &, int frac_bits, int *, String *rest = 0);
-bool cp_milliseconds(const String &, int *, String *rest = 0);
+bool cp_bool(const String &, bool *);
+bool cp_integer(String, int *);
+bool cp_integer(String, int base, int *);
+bool cp_ulong(String, unsigned long *);
+bool cp_real(const String &, int frac_digits, int *, int *);
+bool cp_real(const String &, int frac_digits, int *);
+bool cp_real2(const String &, int frac_bits, int *);
+bool cp_milliseconds(const String &, int *);
 bool cp_word(const String &, String *, String *rest = 0);
 bool cp_string(const String &, String *, String *rest = 0);
 
 // network addresses
-bool cp_ip_address(const String &, unsigned char *, String *rest = 0);
-bool cp_ip6_address(const String &, unsigned char *, String *rest = 0);
-bool cp_ip_address_mask(String, unsigned char *, unsigned char *, String *rest = 0, bool allow_bare_address = false);
-bool cp_ethernet_address(const String &, unsigned char *, String *rest = 0);
+bool cp_ip_address(const String &, unsigned char *  CP_CONTEXT);
+bool cp_ip6_address(const String &, unsigned char *);
+bool cp_ip_address_mask(const String &, unsigned char *, unsigned char *, bool allow_bare_address = false  CP_CONTEXT);
+bool cp_ethernet_address(const String &, unsigned char *  CP_CONTEXT);
 #ifndef CLICK_TOOL
 class IPAddress; class IP6Address; class EtherAddress;
-bool cp_ip_address(const String &, IPAddress &, String *rest = 0);
-bool cp_ip6_address(const String &, IP6Address &, String *rest = 0);
-bool cp_ip_address_mask(String, IPAddress &, IPAddress &, String *rest = 0, bool allow_bare_address = false);
-bool cp_ethernet_address(String, EtherAddress &, String *rest = 0);
+bool cp_ip_address(const String &, IPAddress &  CP_CONTEXT);
+bool cp_ip6_address(const String &, IP6Address &);
+bool cp_ip_address_mask(const String &, IPAddress &, IPAddress &, bool allow_bare_address = false  CP_CONTEXT);
+bool cp_ethernet_address(const String &, EtherAddress &  CP_CONTEXT);
 Element *cp_element(const String &, Element *, ErrorHandler *);
 #endif
 
@@ -96,4 +98,5 @@ String cp_unparse_real(int, int frac_bits);
 String cp_unparse_ulonglong(unsigned long long, int base, bool uppercase);
 
 #undef CP_VA_ARGS_REST
+#undef CP_CONTEXT
 #endif

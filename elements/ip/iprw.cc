@@ -160,19 +160,19 @@ IPRw::Pattern::parse(const String &conf, Pattern **pstore,
   
   if (words[0] == "-")
     saddr = 0;
-  else if (!cp_ip_address(words[0], saddr))
+  else if (!cp_ip_address(words[0], saddr, e))
     return errh->error("bad source address `%s' in pattern spec", words[0].cc());
   
   if (words[1] == "-")
     sportl = sporth = 0;
   else {
-    String rest;
-    if (!cp_integer(words[1], &sportl, &rest))
+    int dash = words[1].find_left('-');
+    if (dash < 0) dash = words[1].length();
+    if (!cp_integer(words[1].substring(0, dash), &sportl))
       return errh->error("bad source port `%s' in pattern spec", words[1].cc());
-    if (rest) {
-      if (!cp_integer(rest, &sporth) || sporth > 0)
+    if (dash < words[1].length()) {
+      if (!cp_integer(words[1].substring(dash + 1), &sporth))
 	return errh->error("bad source port `%s' in pattern spec", words[1].cc());
-      sporth = -sporth;
     } else
       sporth = sportl;
   }
@@ -181,7 +181,7 @@ IPRw::Pattern::parse(const String &conf, Pattern **pstore,
 
   if (words[2] == "-")
     daddr = 0;
-  else if (!cp_ip_address(words[2], daddr))
+  else if (!cp_ip_address(words[2], daddr, e))
     return errh->error("bad destination address `%s' in pattern spec", words[2].cc());
   
   if (words[3] == "-")

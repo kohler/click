@@ -21,7 +21,8 @@ class Element : public ElementLink { public:
   static const char *AGNOSTIC, *PUSH, *PULL, *PUSH_TO_PULL, *PULL_TO_PUSH;
 
   enum ConfigurePhase {
-    CONFIGURE_PHASE_INFO = 0,
+    CONFIGURE_PHASE_ZERO = 0,
+    CONFIGURE_PHASE_INFO = 1,
     CONFIGURE_PHASE_DEFAULT = 100
   };
   

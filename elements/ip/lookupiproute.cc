@@ -43,18 +43,20 @@ LookupIPRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
-    String arg = conf[i];
     unsigned int dst, mask, gw;
     int output_num;
     bool ok = false;
-    if (cp_ip_address_mask(arg, (unsigned char *)&dst, (unsigned char *)&mask, &arg, true)) { // allow base IP addresses
-      cp_eat_space(arg);
-      if (cp_ip_address(arg, (unsigned char *)&gw, &arg)) {
-	ok = cp_eat_space(arg) && cp_integer(arg, &output_num);
-      } else {
-	gw = 0;
-	ok = cp_integer(arg, &output_num);
-      }
+
+    Vector<String> words;
+    cp_spacevec(conf[i], words);
+    
+    if ((words.size() == 2 || words.size() == 3)
+	&& cp_ip_address_mask(words[0], (unsigned char *)&dst, (unsigned char *)&mask, true, this) // allow base IP addresses
+	&& cp_integer(words.back(), &output_num)) {
+      if (words.size() == 3)
+	ok = cp_ip_address(words[1], (unsigned char *)&gw, this);
+      else
+	ok = true;
     }
 
     if (ok && output_num >= 0) {

@@ -4,13 +4,14 @@
 /*
  * =c
  * ARPQuerier(I, E)
+ * ARPQuerier(NAME)
  * =s
  * encapsulates IP packets in Ethernet headers found via ARP
  * V<encapsulation>
  * =d
  * Handles most of the ARP protocol. Argument I should be
  * this host's IP address, and E should be this host's
- * ethernet address.
+ * Ethernet address.
  *
  * Expects ordinary IP packets on input 0, each with a destination
  * address annotation. If an Ethernet address is already known
@@ -28,6 +29,9 @@
  * ARPQuerier may have one or two outputs. If it has two, then ARP queries
  * are sent to the second output.
  *
+ * In the one-argument form, NAME should be shorthand for
+ * both an IP and an Ethernet address; see AddressInfo(n).
+ *
  * =e
  *    c :: Classifier(12/0806 20/0001, 12/0800, ...);
  *    a :: ARPQuerier(18.26.4.24, 00:00:C0:AE:67:EF);
@@ -36,7 +40,7 @@
  *    a[0] -> ... -> ToDevice(eth0);
  *
  * =a
- * ARPResponder, ARPFaker
+ * ARPResponder, ARPFaker, AddressInfo
  */
 
 #include "element.hh"

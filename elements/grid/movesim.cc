@@ -44,29 +44,19 @@ int
 MovementSimulator::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
   for (int i = 0; i < conf.size(); i++) {
-    String rest;
     unsigned long t;
-    if (!cp_ulong(conf[i], &t, &rest))
-      return errh->error("%s: error parsing time offset for entry %d", id().cc(), i);
-    cp_eat_space(rest);
-    int j;
-    for (j = 0; j < rest.length() && !isspace(rest[j]); j++)
-      ; // do it
-    String name = rest.substring(0, j);
-    rest = rest.substring(j);
-    Element *el = cp_element(name, this, errh);
-    if (!el) 
-      return -1;
-    LocationInfo *li = (LocationInfo *) el->cast("LocationInfo");
-    if (!li) 
-      return errh->error("element is not a LocationInfo element in entry %d", i);
-    cp_eat_space(rest);
     int int_vlat, int_vlon;
-    if (!cp_real(rest, 7, &int_vlat, &rest))
-      return errh->error("error parsing new latitude velocity for entry %d", i);
-    cp_eat_space(rest);
-    if (!cp_real(rest, 7, &int_vlon, &rest))
-      return errh->error("error parsing new longitude velocity for entry %d", i);
+    Element *el = 0;
+    if (cp_va_space_parse(conf[i], this, errh,
+			  cpUnsignedLong, "movement interval (ms)", &t,
+			  cpElement, "LocationInfo", &el,
+			  cpReal, "latitude", 7, &int_vlat,
+			  cpReal, "longitude", 7, &int_vlon,
+			  0) < 0)
+      return -1;
+    LocationInfo *li = (LocationInfo *)el->cast("LocationInfo");
+    if (!li)
+      return errh->error("element is not a LocationInfo in entry %d", i);
     
     event_entry *new_entry;
     event_entry *prev;

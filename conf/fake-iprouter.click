@@ -115,7 +115,6 @@ rt[1] -> DropBroadcasts
       -> gio1 :: IPGWOptions(18.26.4.24)
       -> FixIPSrc(18.26.4.24)
       -> dt1 :: DecIPTTL
-      -> SetIPDSCP(9)
       -> fr1 :: IPFragmenter(300)
       -> [0]fake_arpq0;
 rt[2] -> DropBroadcasts

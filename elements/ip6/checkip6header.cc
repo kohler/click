@@ -62,21 +62,21 @@ CheckIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
  ips.push_back("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"); //another bad IP6 address
 
   if (conf.size()) {
-    String s = conf[0];
+    Vector<String> words;
+    cp_spacevec(conf[0], words);
     IP6Address a;
-    while (s) {
-      if (!cp_ip6_address(s, (unsigned char *)&a, &s)) { 
-	  return errh->error("expects IP6ADDRESS -a ");
-	}
+    for (int j = 0; j < words.size(); j++) {
+      if (!cp_ip6_address(words[j], (unsigned char *)&a)) { 
+	return errh->error("expects IP6ADDRESS -a ");
+      }
       click_chatter(a.s());
-      cp_eat_space(s);
       for (int j = 0; j < ips.size(); j++) {
-	IP6Address b= IP6Address(ips[j]);
+	IP6Address b = IP6Address(ips[j]);
 	if (b == a)
 	  goto repeat;
       }
       ips.push_back(a.s());
-    repeat: ;
+     repeat: ;
     }
   }
   

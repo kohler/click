@@ -22,6 +22,12 @@
 # include "ipaddress.hh"
 # include "ip6address.hh"
 # include "etheraddress.hh"
+# include "elements/standard/addressinfo.hh"
+# define CP_CONTEXT_ARG , Element *context = 0
+# define CP_PASS_CONTEXT , context
+#else
+# define CP_CONTEXT_ARG
+# define CP_PASS_CONTEXT
 #endif
 #include <stdarg.h>
 
@@ -464,7 +470,7 @@ cp_quote(const String &str, bool allow_newlines = false)
 }
 
 bool
-cp_bool(String str, bool *return_value, String *rest = 0)
+cp_bool(const String &str, bool *return_value)
 {
   const char *s = str.data();
   int len = str.length();
@@ -492,18 +498,16 @@ cp_bool(String str, bool *return_value, String *rest = 0)
   } else
     return false;
 
-  if (!rest && take != len)
+  if (take != len)
     return false;
   else {
-    if (rest)
-      *rest = str.substring(take);
     *return_value = value;
     return true;
   }
 }
 
 bool
-cp_integer(String str, int base, int *return_value, String *rest = 0)
+cp_integer(String str, int base, int *return_value)
 {
   int i = 0;
   const char *s = str.cc();
@@ -553,43 +557,42 @@ cp_integer(String str, int base, int *return_value, String *rest = 0)
       return false;
   }
 
-  if (!rest && end - s != len)
+  if (end - s != len)
     return false;
   else {
-    if (rest)
-      *rest = str.substring(end - s);
     *return_value = value;
     return true;
   }
 }
 
 bool
-cp_integer(String str, int *return_value, String *rest = 0)
+cp_integer(String str, int *return_value)
 {
-  return cp_integer(str, -1, return_value, rest);
+  return cp_integer(str, -1, return_value);
 }
 
 bool
-cp_ulong(String str, unsigned long *return_value, String *rest = 0)
+cp_ulong(String str, unsigned long *return_value)
 {
   const char *s = str.cc();
   int len = str.length();
   char *end;
-  *return_value = strtoul(s, &end, 10);
+
+  unsigned long value = strtoul(s, &end, 10);
+  
   if (end == s)        // no characters in integer
     return false;
-
-  if (rest) {
-    *rest = str.substring(end - s);
+  else if (end - s != len) 
+    return false;
+  else {
+    *return_value = value;
     return true;
-  } else
-    return end - s == len;
+  }
 }
 
 bool
 cp_real(const String &str, int frac_digits,
-	int *return_int_part, int *return_frac_part,
-	String *rest = 0)
+	int *return_int_part, int *return_frac_part)
 {
   const char *s = str.data();
   const char *last = s + str.length();
@@ -655,11 +658,9 @@ cp_real(const String &str, int frac_digits,
   if (negative) frac_part = -frac_part;
   
   // done!
-  if (!rest && s - str.data() != str.length())
+  if (s - str.data() != str.length())
     return false;
   else {
-    if (rest)
-      *rest = str.substring(s - str.data());
     *return_int_part = int_part;
     *return_frac_part = frac_part;
     return true;
@@ -667,12 +668,10 @@ cp_real(const String &str, int frac_digits,
 }
 
 bool
-cp_real(const String &str, int frac_digits,
-	int *return_value,
-	String *rest = 0)
+cp_real(const String &str, int frac_digits, int *return_value)
 {
   int int_part, frac_part;
-  if (!cp_real(str, frac_digits, &int_part, &frac_part, rest)) {
+  if (!cp_real(str, frac_digits, &int_part, &frac_part)) {
     cp_errno = CPE_FORMAT;
     return false;
   }
@@ -692,9 +691,7 @@ cp_real(const String &str, int frac_digits,
 }
 
 bool
-cp_real2(const String &str, int frac_bits,
-	 int *return_value,
-	 String *rest = 0)
+cp_real2(const String &str, int frac_bits, int *return_value)
 {
   int frac_digits = 1;
   int base_ten_one = 10;
@@ -702,7 +699,7 @@ cp_real2(const String &str, int frac_bits,
     frac_digits++;
   
   int int_part, frac_part;
-  if (!cp_real(str, frac_digits, &int_part, &frac_part, rest)) {
+  if (!cp_real(str, frac_digits, &int_part, &frac_part)) {
     cp_errno = CPE_FORMAT;
     return false;
   } else if (int_part < 0 || frac_part < 0) {
@@ -726,10 +723,10 @@ cp_real2(const String &str, int frac_bits,
 }
 
 bool
-cp_milliseconds(const String &str, int *return_value, String *rest = 0)
+cp_milliseconds(const String &str, int *return_value)
 {
   int v;
-  if (!cp_real(str, 3, &v, rest))
+  if (!cp_real(str, 3, &v))
     return false;
   else if (v < 0) {
     cp_errno = CPE_NEGATIVE;
@@ -806,7 +803,8 @@ cp_word(const String &str, String *return_value, String *rest = 0)
 }
 
 bool
-cp_ip_address(const String &str, unsigned char *return_value, String *rest = 0)
+cp_ip_address(const String &str, unsigned char *return_value
+	      CP_CONTEXT_ARG)
 {
   int pos = 0, part;
   const char *s = str.data();
@@ -817,54 +815,83 @@ cp_ip_address(const String &str, unsigned char *return_value, String *rest = 0)
     if (d && s[pos] == '.')
       pos++;
     if (pos >= len || !isdigit(s[pos]))
-      return false;
+      goto bad;
     for (part = 0; pos < len && isdigit(s[pos]) && part <= 255; pos++)
       part = part*10 + s[pos] - '0';
     if (part > 255)
-      return false;
+      goto bad;
     value[d] = part;
   }
-  
-  if (!rest && pos < len)
-    return false;
-  else {
-    if (rest)
-      *rest = str.substring(pos);
+
+  if (pos == len) {
     memcpy(return_value, value, 4);
     return true;
   }
+
+ bad:
+#ifndef CLICK_TOOL
+  return AddressInfo::query_ip(str, return_value, context);
+#else
+  return false;
+#endif
 }
 
 
+static bool
+bad_ip_address_mask(const String &str,
+		    unsigned char *return_value, unsigned char *return_mask,
+		    bool allow_bare_address
+		    CP_CONTEXT_ARG)
+{
+#ifndef CLICK_TOOL
+  if (AddressInfo::query_ip_mask(str, return_value, return_mask, context))
+    return true;
+  else if (allow_bare_address
+	   && AddressInfo::query_ip(str, return_value, context)) {
+    return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
+    return true;
+  }
+#else
+  // shut up, compiler!
+  (void)str, (void)return_value, (void)return_mask, (void)allow_bare_address;
+#endif
+  return false;
+}
+
 bool
-cp_ip_address_mask(String str,
+cp_ip_address_mask(const String &str,
 		   unsigned char *return_value, unsigned char *return_mask,
-		   String *rest, bool allow_bare_address)
+		   bool allow_bare_address
+		   CP_CONTEXT_ARG)
 {
   unsigned char value[4], mask[4];
+
+  int slash = str.find_left('/');
+  String ip_part, mask_part;
+  if (slash >= 0) {
+    ip_part = str.substring(0, slash);
+    mask_part = str.substring(slash + 1);
+  } else if (!allow_bare_address)
+    return bad_ip_address_mask(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
+  else
+    ip_part = str;
   
-  String mask_str;
-  if (!cp_ip_address(str, value, &mask_str))
-    return false;
+  if (!cp_ip_address(ip_part, value))
+    return bad_ip_address_mask(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
 
   // move past /
-  if (mask_str.length() && mask_str[0] == '/')
-    mask_str = mask_str.substring(1);
-  else if (allow_bare_address
-	   && (!mask_str.length() || (rest && isspace(mask_str[0])))) {
-    if (rest) *rest = mask_str;
+  if (allow_bare_address && !mask_part.length()) {
     memcpy(return_value, value, 4);
     return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
     return true;
-  } else
-    return false;
+  }
 
   // check for complete IP address
   int relevant_bits;
-  if (cp_ip_address(mask_str, mask, rest))
+  if (cp_ip_address(mask_part, mask))
     /* OK */;
   
-  else if (cp_integer(mask_str, &relevant_bits, rest)
+  else if (cp_integer(mask_part, &relevant_bits)
 	   && relevant_bits >= 0 && relevant_bits <= 32) {
     // set bits
     mask[0] = mask[1] = mask[2] = mask[3] = 0;
@@ -881,7 +908,7 @@ cp_ip_address_mask(String str,
     /* OK */;
     
   } else
-    return false;
+    return bad_ip_address_mask(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
 
   memcpy(return_value, value, 4);
   memcpy(return_mask, mask, 4);
@@ -890,21 +917,26 @@ cp_ip_address_mask(String str,
 
 #ifndef CLICK_TOOL
 bool
-cp_ip_address(const String &str, IPAddress &address, String *rest = 0)
+cp_ip_address(const String &str, IPAddress &address
+	      CP_CONTEXT_ARG)
 {
-  return cp_ip_address(str, address.data(), rest);
+  return cp_ip_address(str, address.data()
+		       CP_PASS_CONTEXT);
 }
 
 bool
-cp_ip_address_mask(String str, IPAddress &address, IPAddress &mask,
-		   String *rest = 0, bool allow_bare_address = false)
+cp_ip_address_mask(const String &str, IPAddress &address, IPAddress &mask,
+		   bool allow_bare_address
+		   CP_CONTEXT_ARG)
 {
-  return cp_ip_address_mask(str, address.data(), mask.data(), rest, allow_bare_address);
+  return cp_ip_address_mask(str, address.data(), mask.data(),
+			    allow_bare_address
+			    CP_PASS_CONTEXT);
 }
 #endif
 
 bool
-cp_ip6_address(const String &str, unsigned char *return_value, String *rest = 0)
+cp_ip6_address(const String &str, unsigned char *return_value)
 {
   unsigned short parts[8];
   int coloncolon = -1;
@@ -934,12 +966,11 @@ cp_ip6_address(const String &str, unsigned char *return_value, String *rest = 0)
   // check if address ends in IPv4 address
   if (pos < len && d <= 7 && s[pos] == '.') {
     unsigned char ip4a[4];
-    String rest;
-    if (cp_ip_address(str.substring(last_part_pos), ip4a, &rest)) {
+    if (cp_ip_address(str.substring(last_part_pos), ip4a)) {
       parts[d-1] = (ip4a[0]<<8) + ip4a[1];
       parts[d] = (ip4a[2]<<8) + ip4a[3];
       d++;
-      pos = len - rest.length();
+      pos = len;
     }
   }
 
@@ -955,11 +986,9 @@ cp_ip6_address(const String &str, unsigned char *return_value, String *rest = 0)
   }
 
   // return
-  if (!rest && pos < len)
+  if (pos < len)
     return false;
   else {
-    if (rest)
-      *rest = str.substring(pos);
     for (d = 0; d < 8; d++) {
       return_value[d<<1] = (parts[d]>>8) & 0xFF;
       return_value[(d<<1) + 1] = parts[d] & 0xFF;
@@ -970,99 +999,15 @@ cp_ip6_address(const String &str, unsigned char *return_value, String *rest = 0)
 
 #ifndef CLICK_TOOL
 bool
-cp_ip6_address(const String &str, IP6Address &address, String *rest = 0)
+cp_ip6_address(const String &str, IP6Address &address)
 {
-  return cp_ip6_address(str, address.data(), rest);
-}
-#endif
-
-#if 0
-//peilei
-bool
-cp_ip6_address(const String &str, unsigned char *return_value, String *rest = 0)
-{
-  int i = 0;
-  const char *s = str.cc();
-  int len = str.length();
-  int d1=0;
-  int d2=0;
-  int k1=0;
-  int k2=0;
-  
-  //check if double colon appears at the beginning of the string
-   if (s[0]==':' && s[1]==':'){
-	i=i+2;
-	k1=0;
-      }
-   else {
-     while (d1<8) {
-       char *end;
-       int value = strtol(s + i, &end, 16);
-      if ((end - s == i && s[i]!=':')|| value < 0 || value > 0xffff)
-	{ return false;}
-      if (s[i]==':') {
-	i++;
-	break;}
-      if (d1 != 7 && (end[0] != ':' || (!isxdigit(end[1]) && end[1]!=':'))) 
-	return false;
-      
-      return_value[2*d1+1] = value & 0xff;
-      return_value[2*d1] = (value >> 8) & 0xff;
-      i = (end - s) + 1;
-      d1++;
-     }
-     k1=d1+1;
-   }
-  
-   //if the string does have the double colon, then, we have to check
-   //the value after double colon, and fill "0" for those that double
-   //colon ommits.
-   if (k1!=9) {
-    unsigned char return_value2[16];
-    while (d2<8) {
-      char *end;
-      int value = strtol(s + i, &end, 16);
-      if (end - s == i || value < 0 || value > 0xffff)
-	{ 
-	  return false;}
-      if (d2 != 7 && ((end[0] != ':' && end[0]!='\0' && !isspace(end[0])) || (!isxdigit(end[1]) && end[0]!='\0' && !isspace(end[0]))))
-	{ 
-	  return false; }
-    
-      return_value2[(2*d2)+1] = value & 0xff;
-      return_value2[(2*d2)] = (value >> 8) & 0xff;
-      i = (end - s) + 1;
-      d2++;
-      
-      if (end[0] == '\0' || isspace(end[0]))
-	break;
-    }
-    k2=d2;
-    
-    for (int j= k1; j<8-k2; j++) {
-        return_value[2*j+1] = 0;
-	return_value[2*j] = 0;
-      }
-    for (int j=(8-k2); j<(8); j++) {
-	return_value[2*j+1] = return_value2[2*(j-(8-k2))+1];
-	return_value[2*j] = return_value2[2*(j-(8-k2))];
-      }
-  } 
-
-  if (!rest && i<len)
-    return false;
-  else {
-  if (rest) {
-    *rest = str.substring(i-1);
-   }
-  return true;
-  }
+  return cp_ip6_address(str, address.data());
 }
 #endif
 
 bool
-cp_ethernet_address(const String &str, unsigned char *return_value,
-		    String *rest = 0)
+cp_ethernet_address(const String &str, unsigned char *return_value
+		    CP_CONTEXT_ARG)
 {
   int i = 0;
   const char *s = str.data();
@@ -1077,29 +1022,34 @@ cp_ethernet_address(const String &str, unsigned char *return_value,
       value[d] = xvalue(s[i]);
       i += 1;
     } else
-      return false;
+      goto bad;
     if (d == 5) break;
     if (i >= len - 1 || s[i] != ':')
-      return false;
+      goto bad;
     i++;
   }
 
-  if (!rest && i < len)
-    return false;
-  else {
-    if (rest)
-      *rest = str.substring(i);
+  if (i == len) {
     memcpy(return_value, value, 6);
     return true;
   }
+
+ bad:
+#ifndef CLICK_TOOL
+  return AddressInfo::query_ethernet(str, return_value, context);
+#else
+  return false;
+#endif
 }
 
 
 #ifndef CLICK_TOOL
 bool
-cp_ethernet_address(String str, EtherAddress &address, String *rest = 0)
+cp_ethernet_address(const String &str, EtherAddress &address
+		    CP_CONTEXT_ARG)
 {
-  return cp_ethernet_address(str, address.data(), rest);
+  return cp_ethernet_address(str, address.data()
+			     CP_PASS_CONTEXT);
 }
 #endif
 
@@ -1297,8 +1247,9 @@ store_value(int cp_command, Values &v)
 static int
 cp_va_parsev(const Vector<String> &args,
 #ifndef CLICK_TOOL
-	     Element *element,
+	     Element *context,
 #endif
+	     const char *argname, const char *separator,
 	     ErrorHandler *errh, va_list val)
 {
   int argno = 0;
@@ -1347,7 +1298,7 @@ cp_va_parsev(const Vector<String> &args,
        v.store = va_arg(val, bool *);
        if (skip) break;
        if (!cp_bool(args[argno], &v.v.b))
-	 errh->error("argument %d should be %s (bool)", argno+1, desc);
+	 errh->error("%s %d should be %s (bool)", argname, argno+1, desc);
        break;
      }
      
@@ -1356,9 +1307,9 @@ cp_va_parsev(const Vector<String> &args,
        v.store = va_arg(val, unsigned char *);
        if (skip) break;
        if (!cp_integer(args[argno], &v.v.i))
-	 errh->error("argument %d should be %s (byte)", argno+1, desc);
+	 errh->error("%s %d should be %s (byte)", argname, argno+1, desc);
        if (v.v.i < 0 || v.v.i > 255)
-	 errh->error("argument %d (%s) must be >= 0 and < 256", argno+1, desc);
+	 errh->error("%s %d (%s) must be >= 0 and < 256", argname, argno+1, desc);
        break;
      }
      
@@ -1368,9 +1319,9 @@ cp_va_parsev(const Vector<String> &args,
        v.store = va_arg(val, int *);
        if (skip) break;
        if (!cp_integer(args[argno], &v.v.i))
-	 errh->error("argument %d should be %s (integer)", argno+1, desc);
+	 errh->error("%s %d should be %s (integer)", argname, argno+1, desc);
        else if (cp_command == cpUnsigned && v.v.i < 0)
-	 errh->error("argument %d (%s) must be >= 0", argno+1, desc);
+	 errh->error("%s %d (%s) must be >= 0", argname, argno+1, desc);
        break;
      }
 
@@ -1379,7 +1330,7 @@ cp_va_parsev(const Vector<String> &args,
        v.store = va_arg(val, int *);
        if (skip) break;
        if (!cp_ulong(args[argno], &v.v.ul))
-	 errh->error("argument %d should be %s (unsigned long)", argno+1, desc);
+	 errh->error("%s %d should be %s (unsigned long)", argname, argno+1, desc);
        break;
      }
      
@@ -1391,11 +1342,11 @@ cp_va_parsev(const Vector<String> &args,
        if (skip) break;
        if (!cp_real(args[argno], frac_digits, &v.v.i)) {
 	 if (cp_errno == CPE_OVERFLOW)
-	   errh->error("overflow on argument %d (%s)", argno+1, desc);
+	   errh->error("overflow on %s %d (%s)", argname, argno+1, desc);
 	 else
-	   errh->error("argument %d should be %s (real)", argno+1, desc);
+	   errh->error("%s %d should be %s (real)", argname, argno+1, desc);
        } else if (cp_command == cpNonnegReal && v.v.i < 0)
-	 errh->error("argument %d (%s) must be >= 0", argno+1, desc);
+	 errh->error("%s %d (%s) must be >= 0", argname, argno+1, desc);
        break;
      }
      
@@ -1405,11 +1356,11 @@ cp_va_parsev(const Vector<String> &args,
        if (skip) break;
        if (!cp_milliseconds(args[argno], &v.v.i)) {
 	 if (cp_errno == CPE_OVERFLOW)
-	   errh->error("overflow on argument %d (%s)", argno+1, desc);
+	   errh->error("overflow on %s %d (%s)", argname, argno+1, desc);
 	 else if (cp_errno == CPE_NEGATIVE)
-	   errh->error("argument %d (%s) must be >= 0", argno+1, desc);
+	   errh->error("%s %d (%s) must be >= 0", argname, argno+1, desc);
 	 else
-	   errh->error("argument %d should be %s (real)", argno+1, desc);
+	   errh->error("%s %d should be %s (real)", argname, argno+1, desc);
        }
        break;
      }
@@ -1423,11 +1374,11 @@ cp_va_parsev(const Vector<String> &args,
        
        if (!cp_real2(args[argno], frac_bits, &v.v.i)) {
 	 if (cp_errno == CPE_NEGATIVE)
-	   errh->error("argument %d (%s) must be >= 0", argno+1, desc);
+	   errh->error("%s %d (%s) must be >= 0", argname, argno+1, desc);
 	 else if (cp_errno == CPE_OVERFLOW)
-	   errh->error("overflow on argument %d (%s)", argno+1, desc);
+	   errh->error("overflow on %s %d (%s)", argname, argno+1, desc);
 	 else
-	   errh->error("argument %d should be %s (real)", argno+1, desc);
+	   errh->error("%s %d should be %s (real)", argname, argno+1, desc);
        }
        break;
      }
@@ -1437,7 +1388,7 @@ cp_va_parsev(const Vector<String> &args,
        v.store = va_arg(val, String *);
        if (skip) break;
        if (!cp_string(args[argno], &v.v_string))
-	 errh->error("argument %d should be %s (string)", argno+1, desc);
+	 errh->error("%s %d should be %s (string)", argname, argno+1, desc);
        break;
      }
      
@@ -1446,7 +1397,7 @@ cp_va_parsev(const Vector<String> &args,
        v.store = va_arg(val, String *);
        if (skip) break;
        if (!cp_word(args[argno], &v.v_string))
-	 errh->error("argument %d should be %s (word)", argno+1, desc);
+	 errh->error("%s %d should be %s (word)", argname, argno+1, desc);
        break;
      }
      
@@ -1462,8 +1413,8 @@ cp_va_parsev(const Vector<String> &args,
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, unsigned char *);
        if (skip) break;
-       if (!cp_ip_address(args[argno], v.v.address))
-	 errh->error("argument %d should be %s (IP address)", argno+1, desc);
+       if (!cp_ip_address(args[argno], v.v.address CP_PASS_CONTEXT))
+	 errh->error("%s %d should be %s (IP address)", argname, argno+1, desc);
        break;
      }     
     
@@ -1474,8 +1425,8 @@ cp_va_parsev(const Vector<String> &args,
        v.store2 = va_arg(val, unsigned char *);
        if (skip) break;
        bool mask_optional = (cp_command == cpIPAddressOptMask);
-       if (!cp_ip_address_mask(args[argno], v.v.address, v.v.address + 4, 0, mask_optional))
-	 errh->error("argument %d should be %s (IP address with netmask)", argno+1, desc);
+       if (!cp_ip_address_mask(args[argno], v.v.address, v.v.address + 4, mask_optional CP_PASS_CONTEXT))
+	 errh->error("%s %d should be %s (IP network address)", argname, argno+1, desc);
        break;
      }
      
@@ -1484,7 +1435,7 @@ cp_va_parsev(const Vector<String> &args,
       v.store = va_arg(val, unsigned char *);  
       if (skip) break;
       if (!cp_ip6_address(args[argno], (unsigned char *)v.v.address))
-	errh->error("argument %d should be %s (IP6 address)", argno+1, desc);
+	errh->error("%s %d should be %s (IP6 address)", argname, argno+1, desc);
       else
 	break;
      }
@@ -1493,8 +1444,8 @@ cp_va_parsev(const Vector<String> &args,
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, unsigned char *);
        if (skip) break;
-       if (!cp_ethernet_address(args[argno], v.v.address))
-	 errh->error("argument %d should be %s (Ethernet address)", argno+1,
+       if (!cp_ethernet_address(args[argno], v.v.address CP_PASS_CONTEXT))
+	 errh->error("%s %d should be %s (Ethernet address)", argname, argno+1,
 		     desc);
        break;
      }
@@ -1505,7 +1456,7 @@ cp_va_parsev(const Vector<String> &args,
        v.store = va_arg(val, unsigned char *);
        if (skip) break;
        if (!cp_des_cblock(args[argno], v.v.address))
-	 errh->error("argument %d should be %s (DES encryption block)",
+	 errh->error("%s %d should be %s (DES encryption block)", argname,
 		     argno+1, desc);
        break;
      }
@@ -1520,7 +1471,7 @@ cp_va_parsev(const Vector<String> &args,
        if (!name)
 	 v.v.element = 0;
        else
-	 v.v.element = cp_element(name, element, errh);
+	 v.v.element = cp_element(name, context, errh);
        break;
      }
 #endif
@@ -1542,26 +1493,20 @@ cp_va_parsev(const Vector<String> &args,
     if (optional < 0)
       optional = argno;
     for (int i = 0; i < optional; i++) {
-      if (i) signature += ", ";
+      if (i) signature += separator;
       signature += cp_command_name(cp_commands[i]);
     }
     if (optional < argno) {
       signature += (optional > 0 ? " [" : "[");
       for (int i = optional; i < argno; i++) {
-	if (i) signature += ", ";
+	if (i) signature += separator;
 	signature += cp_command_name(cp_commands[i]);
       }
       signature += "]";
     }
     
     const char *whoops = (too_few_args ? "few" : "many");
-    errh->error("too %s arguments; expected `%s(%s)'", whoops,
-#ifndef CLICK_TOOL
-		String(element->class_name()).cc(),
-#else
-		"??",
-#endif
-		signature.cc());
+    errh->error("too %s %ss; expected `%s'", whoops, argname, signature.cc());
   }
   
  done:
@@ -1580,16 +1525,16 @@ cp_va_parsev(const Vector<String> &args,
 int
 cp_va_parse(const Vector<String> &conf,
 #ifndef CLICK_TOOL
-	    Element *element,
+	    Element *context,
 #endif
 	    ErrorHandler *errh, ...)
 {
   va_list val;
   va_start(val, errh);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(conf, element, errh, val);
+  int retval = cp_va_parsev(conf, context, "argument", ", ", errh, val);
 #else
-  int retval = cp_va_parsev(conf, errh, val);
+  int retval = cp_va_parsev(conf, "argument", ", ", errh, val);
 #endif
   va_end(val);
   return retval;
@@ -1598,7 +1543,7 @@ cp_va_parse(const Vector<String> &conf,
 int
 cp_va_parse(const String &confstr,
 #ifndef CLICK_TOOL
-	    Element *element,
+	    Element *context,
 #endif
 	    ErrorHandler *errh, ...)
 {
@@ -1607,9 +1552,9 @@ cp_va_parse(const String &confstr,
   Vector<String> conf;
   cp_argvec(confstr, conf);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(conf, element, errh, val);
+  int retval = cp_va_parsev(conf, context, "argument", ", ", errh, val);
 #else
-  int retval = cp_va_parsev(conf, errh, val);
+  int retval = cp_va_parsev(conf, "argument", ", ", errh, val);
 #endif
   va_end(val);
   return retval;
@@ -1618,7 +1563,7 @@ cp_va_parse(const String &confstr,
 int
 cp_va_space_parse(const String &argument,
 #ifndef CLICK_TOOL
-		  Element *element,
+		  Element *context,
 #endif
 		  ErrorHandler *errh, ...)
 {
@@ -1627,9 +1572,9 @@ cp_va_space_parse(const String &argument,
   Vector<String> args;
   cp_spacevec(argument, args);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(args, element, errh, val);
+  int retval = cp_va_parsev(args, context, "word", " ", errh, val);
 #else
-  int retval = cp_va_parsev(args, errh, val);
+  int retval = cp_va_parsev(args, "word", " ", errh, val);
 #endif
   va_end(val);
   return retval;

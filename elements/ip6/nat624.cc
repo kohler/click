@@ -50,25 +50,20 @@ Nat624::configure(const Vector<String> &conf, ErrorHandler *errh)
   int before= errh->nerrors();
   for (int i = 0; i<conf.size(); i++) 
     {
-      String arg = conf[i];
       IP6Address ipa6;
       IPAddress ipa4;
-      
-      for (; arg; cp_eat_space(arg)) 
-	{
-	  if  (cp_ip_address(arg, (unsigned char *)&ipa4, &arg))
-	  { 
-	   
-	    if (cp_eat_space(arg) 
-		&& cp_ip6_address(arg, (unsigned char *)&ipa6, &arg))
-	      {
-		add_map(ipa4, ipa6, 1);
-	      }
-	    else 
-	      {
-		add_map(ipa4, IP6Address("::0"), 0); 
-	      }
-	  }
+
+      Vector<String> words;
+      cp_spacevec(conf[i], words);
+
+      for (int j = 0; j < words.size(); j++)
+	if (cp_ip_address(words[j], (unsigned char *)&ipa4)) {
+	  if (j < words.size() - 1
+	      && cp_ip6_address(words[j+1], (unsigned char *)&ipa6)) {
+	    add_map(ipa4, ipa6, 1);
+	    j++;
+	  } else
+	    add_map(ipa4, IP6Address("::0"), 0);
 	}
     }
   return (before ==errh->nerrors() ? 0: -1);
