@@ -80,10 +80,19 @@ class RTMDSR : public Element {
   int initialize(ErrorHandler *);
   RTMDSR *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
+  void add_handlers();
   
   void push(int, Packet *);
   void run_timer();
   static time_t time(void);
+
+  // Statistics for handlers.
+  int _queries;
+  int _querybytes;
+  int _replies;
+  int _replybytes;
+  int _datas;
+  int _databytes;
 
 private:
   int MaxSeen;   // Max size of table of already-seen queries.

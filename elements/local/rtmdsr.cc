@@ -25,7 +25,9 @@
 CLICK_DECLS
 
 RTMDSR::RTMDSR()
-  : _timer(this), _link_stat(0)
+  :  _queries(0), _querybytes(0),
+     _replies(0), _replybytes(0), _datas(0), _databytes(0),
+     _timer(this), _link_stat(0)
 {
   MOD_INC_USE_COUNT;
 
@@ -313,11 +315,20 @@ RTMDSR::send(WritablePacket *p)
   u_char type = pk->_type;
   if(type == PT_QUERY){
     memcpy(pk->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
+    _queries++;
+    _querybytes += p->length();
   } else if(type == PT_REPLY || type == PT_DATA){
     u_short next = ntohs(pk->_next);
     assert(next < MaxHops + 2);
     struct in_addr nxt = pk->_hops[next];
     find_arp(IPAddress(nxt), pk->ether_dhost);
+    if(type == PT_REPLY){
+      _replies++;
+      _replybytes += p->length();
+    } else {
+      _datas++;
+      _databytes += p->length();
+    }
   } else {
     assert(0);
     return;
@@ -595,6 +606,25 @@ RTMDSR::push(int port, Packet *p_in)
     got_pkt(p_in);
   }
   p_in->kill();
+}
+
+static String
+RTMDSR_read_stats(Element *f, void *)
+{
+  RTMDSR *d = (RTMDSR *) f;
+  return
+    String(d->_queries) + " queries sent\n" +
+    String(d->_querybytes) + " bytes of query sent\n" +
+    String(d->_replies) + " replies sent\n" +
+    String(d->_replybytes) + " bytes of reply sent\n" +
+    String(d->_datas) + " datas sent\n" +
+    String(d->_databytes) + " bytes of data sent\n";
+}
+
+void
+RTMDSR::add_handlers()
+{
+  add_read_handler("stats", RTMDSR_read_stats, 0);
 }
 
 // generate Vector template instance
