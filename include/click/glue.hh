@@ -241,6 +241,15 @@ unsigned click_jiffies();
 
 #ifndef CLICK_TIMEVAL_OPERATORS
 
+inline struct timeval
+make_timeval(int sec, int usec)
+{
+  struct timeval tv;
+  tv.tv_sec = sec;
+  tv.tv_usec = usec;
+  return tv;
+}
+
 inline bool
 operator==(const struct timeval &a, const struct timeval &b)
 {
