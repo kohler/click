@@ -1,3 +1,12 @@
+2002-05-22 Wednesday 13:53  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/ipreassembler.cc (1.13): CLICK_HZ oops
+
+2002-05-22 Wednesday 13:50  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: ipreassembler.cc (1.11), ipreassembler.hh (1.8),
+	ipreassembler.cc (1.12): add HIMEM checking back to IPReassembler
+
 2002-05-21 Tuesday 23:07  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.58), etc/libclick/DISTFILES (1.13): patch DISTFILES
