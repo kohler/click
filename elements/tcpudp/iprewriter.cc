@@ -352,17 +352,10 @@ IPRewriter::push(int port, Packet *p_in)
 	(_tcp_map, _tcp_done_timeout_interval, &_tcp_done, &_tcp_done_tail);
   }
   
-#if IPRW_SPINLOCKS
-  _spinlock.release();
-#endif
   m->apply(p);
-  output(m->output()).push(p);
-
+  
   // add to list for dropping TCP connections faster
   if (ip_p == IP_PROTO_TCP && !m->free_tracked()) {
-#if IPRW_SPINLOCKS
-    _spinlock.acquire();
-#endif
     click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
     if ((tcph->th_flags & (TH_FIN | TH_RST)) && m->session_over()) {
 #if 1
@@ -378,10 +371,12 @@ IPRewriter::push(int port, Packet *p_in)
       _tcp_done = m->add_to_free_tracked(_tcp_done);
 #endif
     }
-#if IPRW_SPINLOCKS
-    _spinlock.release();
-#endif
   }
+  
+#if IPRW_SPINLOCKS
+  _spinlock.release();
+#endif
+  output(m->output()).push(p);
 }
 
 
