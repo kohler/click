@@ -30,6 +30,11 @@
 
 CLICK_DECLS
 
+
+#define min(x,y)      ((x)<(y) ? (x) : (y))
+#define max(x,y)      ((x)>(y) ? (x) : (y))
+
+
 BeaconScanner::BeaconScanner()
   : Element(1, 1)
 {
@@ -107,7 +112,7 @@ BeaconScanner::simple_action(Packet *p)
   
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
-  uint8_t *ts = ptr;
+  //uint8_t *ts = ptr;
   ptr += 8;
 
   uint16_t beacon_int = le16_to_cpu(*(uint16_t *) ptr);

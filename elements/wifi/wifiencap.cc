@@ -26,6 +26,7 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
+
 WifiEncap::WifiEncap()
   : Element(1, 1)
 {
@@ -59,9 +60,6 @@ WifiEncap::simple_action(Packet *p)
 {
 
 
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
   EtherAddress src;
   EtherAddress dst;
   uint16_t ethtype;
@@ -128,7 +126,7 @@ WifiEncap::simple_action(Packet *p)
   default:
     click_chatter("%{element}: invalid mode %d\n",
 		  this,
-		  dir);
+		  _mode);
     p->kill();
     return 0;
   }

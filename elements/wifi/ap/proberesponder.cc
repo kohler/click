@@ -31,6 +31,10 @@
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 
+
+#define min(x,y)      ((x)<(y) ? (x) : (y))
+#define max(x,y)      ((x)>(y) ? (x) : (y))
+
 ProbeResponder::ProbeResponder()
   : Element(1, 1),
     _rtable(0)
@@ -75,7 +79,7 @@ ProbeResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-ProbeResponder::push(int port, Packet *p)
+ProbeResponder::push(int, Packet *p)
 {
 
   uint8_t dir;
@@ -204,10 +208,6 @@ ProbeResponder::send_probe_response(EtherAddress dst)
     return;
 
   struct click_wifi *w = (struct click_wifi *) p->data();
-
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
 
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_PROBE_RESP;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;

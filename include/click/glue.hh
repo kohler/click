@@ -384,6 +384,23 @@ operator/(const struct timeval &a, const struct timeval &b)
 
 #endif
 
+// byte order
+
+#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+
+#define le16_to_cpu(x) bswap_16((x))
+#define cpu_to_le16(x) bswap_16((x))
+#define le32_to_cpu(x) bswap_32((x))
+#define cpu_to_le32(x) bswap_32((x))
+
+#else
+
+#define le16_to_cpu(x) (x)
+#define cpu_to_le16(x) (x)
+#define le32_to_cpu(x) (x)
+#define cpu_to_le32(x) (x)
+
+#endif
 
 // CYCLE COUNTS
 

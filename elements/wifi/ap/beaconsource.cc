@@ -33,6 +33,10 @@
 
 CLICK_DECLS
 
+
+#define min(x,y)      ((x)<(y) ? (x) : (y))
+#define max(x,y)      ((x)>(y) ? (x) : (y))
+
 BeaconSource::BeaconSource()
   : Element(0, 1),
     _timer(this),
@@ -114,10 +118,6 @@ BeaconSource::send_beacon()
     return;
 
   struct click_wifi *w = (struct click_wifi *) p->data();
-
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
 
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_BEACON;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;

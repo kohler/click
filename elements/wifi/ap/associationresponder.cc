@@ -31,6 +31,9 @@
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 
+#define min(x,y)      ((x)<(y) ? (x) : (y))
+#define max(x,y)      ((x)>(y) ? (x) : (y))
+
 AssociationResponder::AssociationResponder()
   : Element(1, 1),
     _associd(0),
@@ -77,7 +80,6 @@ AssociationResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 void 
 AssociationResponder::recv_association_request(Packet *p)
 {
-  uint8_t dir;
   uint8_t type;
   uint8_t subtype;
 
@@ -94,7 +96,6 @@ AssociationResponder::recv_association_request(Packet *p)
   struct click_wifi *w = (struct click_wifi *) p->data();
 
 
-  dir = w->i_fc[1] & WIFI_FC1_DIR_MASK;
   type = w->i_fc[0] & WIFI_FC0_TYPE_MASK;
   subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
 
@@ -116,17 +117,16 @@ AssociationResponder::recv_association_request(Packet *p)
   
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
 
-
-  uint8_t *cap_info = ptr;
+    //uint8_t *cap_info = ptr;
   ptr += 2;
 
-  uint16_t capability = cap_info[0] + (cap_info[1] << 8);
+  //uint16_t capability = cap_info[0] + (cap_info[1] << 8);
 
 
-  uint8_t *lint_info = ptr;
+  //uint8_t *lint_info = ptr;
   ptr += 2;
 
-  uint16_t listen_interval = lint_info[0] + (lint_info[1] << 8);
+  //uint16_t listen_interval = lint_info[0] + (lint_info[1] << 8);
 
 
 
@@ -188,7 +188,7 @@ AssociationResponder::recv_association_request(Packet *p)
 
 
 void
-AssociationResponder::push(int port, Packet *p)
+AssociationResponder::push(int, Packet *p)
 {
 
   recv_association_request(p);
@@ -211,10 +211,6 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
     return;
 
   struct click_wifi *w = (struct click_wifi *) p->data();
-
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
 
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_ASSOC_RESP;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
@@ -281,10 +277,6 @@ AssociationResponder::send_disassociation(EtherAddress dst, uint16_t reason)
     return;
 
   struct click_wifi *w = (struct click_wifi *) p->data();
-
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
 
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_ASSOC_RESP;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;

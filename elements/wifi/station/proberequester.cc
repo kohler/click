@@ -32,6 +32,11 @@
 
 CLICK_DECLS
 
+
+#define min(x,y)      ((x)<(y) ? (x) : (y))
+#define max(x,y)      ((x)>(y) ? (x) : (y))
+
+
 ProbeRequester::ProbeRequester()
   : Element(0, 1),
     _rtable(0)  
@@ -81,10 +86,6 @@ ProbeRequester::send_probe_request()
     return;
 
   struct click_wifi *w = (struct click_wifi *) p->data();
-
-  uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
 
   w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_PROBE_REQ;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;

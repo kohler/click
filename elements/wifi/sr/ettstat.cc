@@ -29,8 +29,8 @@ CLICK_DECLS
 // packet data should be 4 byte aligned                                         
 #define ASSERT_ALIGNED(p) assert(((unsigned int)(p) % 4) == 0)
 
-#define MIN(x,y)      ((x)<(y) ? (x) : (y))
-#define MAX(x,y)      ((x)>(y) ? (x) : (y));
+#define min(x,y)      ((x)<(y) ? (x) : (y))
+#define max(x,y)      ((x)>(y) ? (x) : (y));
 
 
 ETTStat::ETTStat()
@@ -582,8 +582,8 @@ ETTStat::simple_action(Packet *p)
 int 
 ETTStat::get_etx(int fwd, int rev) {
 
-  fwd = MIN(fwd, 100);
-  rev = MIN(rev, 100);
+  fwd = min(fwd, 100);
+  rev = min(rev, 100);
   
   if (fwd > 0 && rev > 0) {
     if (fwd >= 80 && rev >= 80) {

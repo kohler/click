@@ -31,6 +31,9 @@
 
 CLICK_DECLS
 
+#define min(x,y)      ((x)<(y) ? (x) : (y))
+#define max(x,y)      ((x)>(y) ? (x) : (y))
+
 AssociationRequester::AssociationRequester()
   : Element(1, 1),
     _rtable(0)
@@ -130,7 +133,7 @@ AssociationRequester::send_assoc_req()
   output(0).push(p);
 }
 void
-AssociationRequester::push(int port, Packet *p)
+AssociationRequester::push(int, Packet *p)
 {
 
   uint8_t dir;
