@@ -1,3 +1,7 @@
+2001-08-10 Friday 17:00  Eddie Kohler <kohler@aciri.org>
+
+	* lib/confparse.cc (1.81): fix IP prefix parsing nitlet
+
 2001-08-10 Friday 13:58  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: divertsocket.cc (1.2), divertsocket.hh (1.2): added
