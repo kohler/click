@@ -399,13 +399,11 @@ FromIPSummaryDump::bang_binary(const String &line, ErrorHandler *errh)
 	error_helper(errh, "bad !binary specification");
     if (_save_char)
 	_buffer[_pos] = _save_char;
-    _binary_size = 0;
     for (int i = 0; i < _contents.size(); i++)
-	_binary_size += content_binary_size(_contents[i]);
-    if (_binary_size < 0) {
-	error_helper(errh, "contents incompatible with !binary");
-	_pos = 0xFFFFFFFFU;	// prevent reading more data
-    }
+	if (content_binary_size(_contents[i]) < 0) {
+	    error_helper(errh, "contents incompatible with !binary");
+	    _pos = 0xFFFFFFFFU;	// prevent reading more data
+	}
     _binary = true;
 }
 

@@ -173,7 +173,6 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool _binary : 1;
     Packet *_work_packet;
     uint32_t _multipacket_extra_length;
-    int _binary_size;
 
     Task _task;
     Vector<String> _words;	// for speed
