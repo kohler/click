@@ -57,10 +57,11 @@ class Lexer::Compound : public Element {
   mutable String _name;
   String _body;
   unsigned _lineno;
+  Vector<String> _arguments;
   
  public:
   
-  Compound(const String &, const String &, unsigned);
+  Compound(const String &, const String &, unsigned, const Vector<String> &);
   
   const char *class_name() const	{ return _name.cc(); }
   bool is_a(const char *) const;
@@ -68,12 +69,14 @@ class Lexer::Compound : public Element {
   
   const String &body() const		{ return _body; }
   unsigned lineno() const		{ return _lineno; }
+  int narguments() const		{ return _arguments.size(); }
+  const String &argument(int i) const	{ return _arguments[i]; }
   
 };
 
 Lexer::Compound::Compound(const String &name, const String &body,
-			  unsigned lineno)
-  : _name(name), _body(body), _lineno(lineno)
+			  unsigned lineno, const Vector<String> &args)
+  : _name(name), _body(body), _lineno(lineno), _arguments(args)
 {
 }
 
@@ -94,6 +97,7 @@ Lexer::Lexer(ErrorHandler *errh)
     _default_element_type(new ErrorElement),
     _tunnel_element_type(new ErrorElement),
     _reset_element_types(0),
+    _variable_map(-1),
     _element_map(-1),
     _definputs(0), _defoutputs(0),
     _errh(errh)
@@ -238,6 +242,7 @@ Lexer::next_lexeme()
   
   // find length of current word
   if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@') {
+    pos++;
     while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'
 			  || _data[pos] == '/' || _data[pos] == '@')) {
       if (_data[pos] == '/' && pos < _len - 1
@@ -255,6 +260,18 @@ Lexer::next_lexeme()
       return Lexeme(lexRequire, word);
     else
       return Lexeme(lexIdent, word);
+  }
+
+  // check for variable
+  if (_data[pos] == '$') {
+    pos++;
+    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'))
+      pos++;
+    if (pos > word_pos + 1) {
+      _pos = pos;
+      return Lexeme(lexVariable, _big_string.substring(word_pos, pos - word_pos));
+    } else
+      pos--;
   }
   
   if (pos < _len - 1) {
@@ -277,6 +294,9 @@ Lexer::lex_config()
   unsigned config_pos = _pos;
   unsigned pos = _pos;
   unsigned paren_depth = 1;
+  bool have_arguments = _variable_values.size() != 0;
+  String output;
+  
   for (; pos < _len; pos++)
     if (_data[pos] == '(')
       paren_depth++;
@@ -296,10 +316,25 @@ Lexer::lex_config()
 	pos = skip_line(pos + 2) - 1;
       else if (_data[pos+1] == '*')
 	pos = skip_slash_star(pos + 2) - 1;
+    } else if (_data[pos] == '$' && have_arguments) {
+      unsigned word_pos = pos;
+      for (pos++; isalnum(_data[pos]) || _data[pos] == '_'; pos++)
+	/* nada */;
+      String name = _big_string.substring(word_pos, pos - word_pos);
+      int variable = _variable_map[name];
+      if (variable >= 0) {
+	output += _big_string.substring(config_pos, word_pos - config_pos);
+	output += _variable_values[variable];
+	config_pos = pos;
+      }
+      pos--;
     }
   
   _pos = pos;
-  return _big_string.substring(config_pos, pos - config_pos);
+  if (!output)
+    return _big_string.substring(config_pos, pos - config_pos);
+  else
+    return output + _big_string.substring(config_pos, pos - config_pos);
 }
 
 String
@@ -343,6 +378,8 @@ Lexer::lexeme_string(int kind)
   char buf[12];
   if (kind == lexIdent)
     return "identifier";
+  else if (kind == lexIdent)
+    return "variable";
   else if (kind == lexArrow)
     return "`->'";
   else if (kind == lex2Colon)
@@ -586,9 +623,33 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
     name = anon_element_name(compound->class_name());
   // change `name' to not contain the current prefix
   name = name.substring(_element_prefix.length());
+
+  // handle configuration string
+  Vector<String> args;
+  cp_argvec_unsubst(conf, args);
+  int nargs = compound->narguments();
+  if (args.size() != nargs) {
+    const char *whoops = (args.size() < nargs ? "few" : "many");
+    String signature;
+    for (int i = 0; i < nargs; i++) {
+      if (i) signature += ", ";
+      signature += compound->argument(i);
+    }
+    lerror("too %s arguments to compound element `%s(%s)'", whoops,
+	   compound->class_name(), signature.cc());
+    for (int i = args.size(); i < nargs; i++)
+      args.push_back("");
+  }
   
-  if (conf)
-    lerror("compound element `%s' given configuration string", name.cc());
+  // store arguments
+  Vector<int> prev_variable_value;
+  for (int i = 0; i < nargs; i++) {
+    const String &name = compound->argument(i);
+    int prev = _variable_map[name];
+    _variable_values.push_back(args[i]);
+    prev_variable_value.push_back(prev);
+    _variable_map.insert(name, _variable_values.size() - 1);
+  }
 
   // `name_slash' is `name' constrained to end with a slash
   String name_slash;
@@ -650,6 +711,13 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   lexical_scoping_back(old_type_count, _element_types.size());
   lexical_scoping_forward(etype, old_type_count);
   
+  // lexical scoping of arguments
+  for (int i = nargs - 1; i >= 0; i--) {
+    const String &name = compound->argument(i);
+    _variable_map.insert(name, prev_variable_value[i]);
+  }
+  _variable_values.resize(_variable_values.size() - nargs);
+
   // get rid of new compound elements
   for (int i = old_type_count; i < _element_types.size(); i++)
     _element_types[i]->unuse();
@@ -930,20 +998,16 @@ void
 Lexer::yelementclass()
 {
   Lexeme tname = lex();
-  if (!tname.is(lexIdent)) {
+  String name;
+  if (tname.is(lexIdent))
+    name = tname.string();
+  else {
     unlex(tname);
     lerror("expected element type name");
   }
   
   expect('{');
-  unsigned original_lineno = _lineno;
-  String body = lex_compound_body();
-  expect('}');
-
-  if (tname.is(lexIdent)) {
-    String name = tname.string();
-    add_element_type(name, new Compound(name, body, original_lineno));
-  }
+  ylocal(name);
 }
 
 void
@@ -976,17 +1040,37 @@ Lexer::ytunnel()
 }
 
 int
-Lexer::ylocal()
+Lexer::ylocal(String name)
 {
   // OK because every used ylocal() corresponds to at least one element
-  String name = "@X" + String(_elements.size() - _anonymous_offset + 1);
+  if (!name)
+    name = "@X" + String(_elements.size() - _anonymous_offset + 1);
+
+  // check for arguments
+  Vector<String> arguments;
+  unsigned old_pos = _pos;
+  while (1) {
+    Lexeme t = lex();
+    if (!t.is(lexVariable))
+      break;
+    arguments.push_back(t.string());
+    old_pos = _pos;
+    const Lexeme &sep = lex();
+    if (sep.is('|')) {
+      old_pos = _pos;
+      break;
+    } else if (!sep.is(','))
+      break;
+  }
+  _pos = old_pos;
   
   // opening brace was already read
   unsigned original_lineno = _lineno;
   String body = lex_compound_body();
   expect('}');
 
-  return add_element_type(name, new Compound(name, body, original_lineno));
+  return add_element_type(name, new Compound(name, body, original_lineno,
+					     arguments));
 }
 
 void

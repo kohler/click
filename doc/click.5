@@ -426,6 +426,35 @@ elementclass B {
 .Re
 expands to `... -> B -> ...', not `... -> C -> ...'.
 '
+.SS "Configuration parameters"
+'
+Compound elements may take configuration parameters, which are expanded
+into the configuration strings of its components. The parameters must be
+named at the beginning of the compound element. Each parameter looks like
+a Perl variable\*Ea dollar sign followed by one or more letters, numbers,
+and underscores. For example,
+.Rs
+{ $a, $b | ... }
+.Re
+is a compound element taking two configuration parameters, named `$a' and
+`$b'.
+.PP
+When a compound element is used, its configuration string must have the
+same number of arguments as there are parameters. As the compound is
+expanded, its components' configuration strings are searched for references
+to the parameters. Any such references are replaced with the actual
+arguments. For example, this code:
+.Rs
+\&... -> { $a | input -> 
+.br
+\%           A(1, $a, 3) -> output } (100) -> ...
+.Re
+expands to this:
+.Rs
+\&... -> A(1, 100, 3) -> ...
+.Re
+You can avoid this substitution by quoting a dollar sign with a backslash.
+'
 .SH "CONNECTION TUNNELS"
 '
 A
@@ -554,6 +583,10 @@ an/identifier/with/slashes//too/many
 has an identifier `an/identifier/with/slashes' and a comment
 `//too/many'. No identifier contains two consecutive slashes.
 .PP
+Parameters, which are used in compound elements, look like Perl variables. A
+parameter consists of a dollar sign `$' followed by one or more letters,
+numbers, and underscores.
+.PP
 Configuration strings do not follow Click's usual lexical rules. A
 configuration string starts immediately following a left parenthesis `(',
 and continues up to the next unbalanced right parenthesis `)'. Backslash
@@ -630,7 +663,7 @@ installing the configuration itself.
 .br
 .IR elementclass " ::= identifier"
 .br
-.RI "    | ""{"" " stmts " ""}"""
+.RI "    | ""{"" " opt-formals " " stmts " ""}"""
 .br
 .IR opt-port " ::= " port " | " empty
 .br
@@ -644,7 +677,11 @@ installing the configuration itself.
 .br
 .IR elementclassstmt " ::= ""elementclass"" identifier "
 .br
-.RI "        ""{"" " stmts " ""}"""
+.RI "        ""{"" " opt-formals " " stmts " ""}"""
+.br
+.IR opt-formals " ::= " formals " ""|"" | " empty
+.br
+.IR formals " ::= parameter | " formals " "","" parameter"
 .br
 .IR requirestmt " ::= ""require"" ""("" configstring "")"""
 .br

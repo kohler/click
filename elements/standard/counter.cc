@@ -37,6 +37,15 @@ Counter::initialize(ErrorHandler *)
   return 0;
 }
 
+Packet *
+Counter::simple_action(Packet *p)
+{
+  _count++;
+  _rate.update(1);
+  return p;
+}
+
+/*
 void
 Counter::push(int, Packet *packet)
 {
@@ -55,7 +64,7 @@ Counter::pull(int)
   }
   return p;
 }
-
+*/
 
 static String
 counter_read_count_handler(Element *e, void *)

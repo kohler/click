@@ -8,6 +8,7 @@ class RouterT;
 enum {
   lexEOF = 0,
   lexIdent = 256,
+  lexVariable,
   lexArrow,
   lex2Colon,
   lexTunnel,
@@ -99,6 +100,7 @@ class LexerT { protected:
   bool yelement_upref(int &element);
   void ydeclaration(const String &first_element = "");
   bool yconnection();
+  void ycompound_arguments();
   void yelementclass();
   void ytunnel();
   int ylocal();

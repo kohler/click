@@ -585,9 +585,5 @@ particular purpose.\n");
   // write result
   if (write_router_file(r, output_file, errh) < 0)
     exit(1);
-  {
-    extern int ntry_match, nelement_match, nconnection_match;
-    printf("// %d %d %d %d %d %d\n", input_size, patterns_size, ntry_match, nelement_match, nconnection_match, nreplace);
-  }
   return 0;
 }

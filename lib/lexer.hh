@@ -8,6 +8,7 @@ class LexerExtra;
 enum Lexemes {
   lexEOF = 0,
   lexIdent = 256,
+  lexVariable,
   lexArrow,
   lex2Colon,
   lexTunnel,
@@ -69,6 +70,10 @@ class Lexer {
   Element *_default_element_type;
   Element *_tunnel_element_type;
   int _reset_element_types;
+
+  // configuration arguments for compounds
+  HashMap<String, int> _variable_map;
+  Vector<String> _variable_values;
   
   // elements
   HashMap<String, int> _element_map;
@@ -143,7 +148,7 @@ class Lexer {
   bool yconnection();
   void yelementclass();
   void ytunnel();
-  int ylocal();
+  int ylocal(String = "");
   void yrequire();
   bool ystatement(bool nested = false);
   

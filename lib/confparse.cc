@@ -271,47 +271,56 @@ cp_unargvec(const Vector<String> &args)
   return sa.take_string();
 }
 
-String
-cp_argprefix(const String &conf, int count)
+void
+cp_argvec_unsubst(const String &conf, Vector<String> &args)
 {
   const char *s = conf.data();
   int len = conf.length();
   int pos = 0;
-  if (count == 0)
-    return String();
+  int last_pos = 0;
+  bool nonblank = false;
+  if (!conf)			// common case
+    return;
   
   for (; pos < len; pos++)
     switch (s[pos]) {
       
      case ',':
-      count--;
-      if (count == 0) goto done; // break early so we don't include the `,'
+      args.push_back(conf.substring(last_pos, pos - last_pos));
+      last_pos = pos + 1;
       break;
       
      case '/':
-      if (pos < len - 1) {
-	if (s[pos+1] == '/')
-	  while (pos < len && s[pos] != '\n' && s[pos] != '\r')
-	    pos++;
-	else if (s[pos+1] == '*') {
+      if (pos < len - 1 && s[pos+1] == '/') {
+	while (pos < len && s[pos] != '\n' && s[pos] != '\r')
+	  pos++;
+      } else if (pos < len - 1 && s[pos+1] == '*') {
+	pos += 2;
+	while (pos < len && (s[pos] != '*' || pos == len - 1 || s[pos+1] != '/'))
+	  pos++;
+	if (pos < len - 1)
 	  pos += 2;
-	  while (pos < len && (s[pos] != '*' || pos == len - 1 || s[pos+1] != '/'))
-	    pos++;
-	  if (pos < len - 1)
-	    pos += 2;
-	}
-      }
+      } else
+	nonblank = true;
       break;
       
      case '\\':
       if (pos < len - 1)
 	pos++;
+      nonblank = true;
+      break;
+
+     case ' ': case '\t': case '\r': case '\n': case '\f': case '\v':
+      break;
+
+     default:
+      nonblank = true;
       break;
 
     }
 
- done:
-  return conf.substring(0, pos);
+  if (last_pos != 0 || nonblank)
+    args.push_back(conf.substring(last_pos, pos - last_pos));
 }
 
 String

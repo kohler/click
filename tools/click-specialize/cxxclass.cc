@@ -243,7 +243,7 @@ CxxClass::reach(int findex, Vector<int> &reached)
   if (findex < 0)
     return false;
   if (reached[findex])
-    return _reachable_rewritable[findex];
+    return _should_rewrite[findex];
   reached[findex] = true;
   
   // return true if reachable and rewritable
@@ -251,7 +251,7 @@ CxxClass::reach(int findex, Vector<int> &reached)
   const char *s = clean_body.data();
   int p = 0;
   int len = clean_body.length();
-  bool reachable_rewritable = _rewritable[findex];
+  bool should_rewrite = _has_push[findex] || _has_pull[findex];
 
   while (p < len) {
     
@@ -283,15 +283,15 @@ CxxClass::reach(int findex, Vector<int> &reached)
       String name = clean_body.substring(start_word_p, end_word_p - start_word_p);
       int findex2 = _fn_map[name];
       if (findex2 >= 0 && reach(findex2, reached))
-	reachable_rewritable = true;
+	should_rewrite = true;
     }
 
     // skip past word
     p = paren_p + 1;
   }
 
-  if (!reachable_rewritable && !_functions[findex].from_header_file()) {
-    // might still be reachable & rewritable if it's inlined, but from the
+  if (!should_rewrite && !_functions[findex].from_header_file()) {
+    // might still be rewritable if it's inlined from the
     // .cc file, which we can't #include
     const String &ret_type = _functions[findex].ret_type();
     const char *s = ret_type.data();
@@ -301,35 +301,42 @@ CxxClass::reach(int findex, Vector<int> &reached)
 	  && s[p+3] == 'i' && s[p+4] == 'n' && s[p+5] == 'e'
 	  && (p == 0 || isspace(s[p-1]))
 	  && (p == len-6 || isspace(s[p+6]))) {
-	reachable_rewritable = true;
+	should_rewrite = true;
 	break;
       }
   }
   
-  _reachable_rewritable[findex] = reachable_rewritable;
-  return reachable_rewritable;
+  _should_rewrite[findex] = should_rewrite;
+  return should_rewrite;
 }
 
-void
-CxxClass::mark_reachable_rewritable()
+bool
+CxxClass::find_should_rewrite()
 {
-  _rewritable.assign(nfunctions(), 0);
+  _has_push.assign(nfunctions(), 0);
+  _has_pull.assign(nfunctions(), 0);
   String push_pattern = compile_pattern("output(#0).push(#1)");
   String pull_pattern = compile_pattern("input(#0).pull()");
   String checked_push_pattern = compile_pattern("checked_push_output(#0,#1)");
   for (int i = 0; i < nfunctions(); i++) {
     if (_functions[i].find_expr(push_pattern)
-	|| _functions[i].find_expr(pull_pattern)
 	|| _functions[i].find_expr(checked_push_pattern))
-      _rewritable[i] = 1;
+      _has_push[i] = 1;
+    if (_functions[i].find_expr(pull_pattern))
+      _has_pull[i] = 1;
   }
 
-  _reachable_rewritable.assign(nfunctions(), 0);
+  _should_rewrite.assign(nfunctions(), 0);
   Vector<int> reached(nfunctions(), 0);
-  reach(_fn_map["push"], reached);
-  reach(_fn_map["pull"], reached);
-  reach(_fn_map["simple_action"], reached);
-  reach(_fn_map["run_scheduled"], reached);
+  bool any = reach(_fn_map["push"], reached);
+  any |= reach(_fn_map["pull"], reached);
+  any |= reach(_fn_map["run_scheduled"], reached);
+  int simple_action = _fn_map["simple_action"];
+  if (simple_action >= 0) {
+    reach(simple_action, reached);
+    _should_rewrite[simple_action] = any = true;
+  }
+  return any;
 }
 
 void
@@ -346,11 +353,13 @@ CxxClass::header_text(StringAccum &sa) const
   sa << " {\n public:\n";
   for (int i = 0; i < _functions.size(); i++) {
     const CxxFunction &fn = _functions[i];
-    sa << "  " << fn.ret_type() << " " << fn.name() << fn.args();
-    if (fn.in_header())
-      sa << " {" << fn.body() << "}\n";
-    else
-      sa << ";\n";
+    if (fn.alive()) {
+      sa << "  " << fn.ret_type() << " " << fn.name() << fn.args();
+      if (fn.in_header())
+	sa << " {" << fn.body() << "}\n";
+      else
+	sa << ";\n";
+    }
   }
   sa << "};\n";
 }
@@ -360,7 +369,7 @@ CxxClass::source_text(StringAccum &sa) const
 {
   for (int i = 0; i < _functions.size(); i++) {
     const CxxFunction &fn = _functions[i];
-    if (!fn.in_header()) {
+    if (fn.alive() && !fn.in_header()) {
       sa << fn.ret_type() << "\n" << _name << "::" << fn.name() << fn.args();
       sa << "\n{" << fn.body() << "}\n";
     }
@@ -635,7 +644,7 @@ CxxInfo::parse_class_definition(const String &text, int p,
     int p1 = p;
     while (p < len && (isalnum(s[p]) || s[p] == '_'))
       p++;
-    if (p > p1 && (p != p1 + 6 || strncmp(s+p, "public", 6) != 0)) {
+    if (p > p1 && (p != p1 + 6 || strncmp(s+p1, "public", 6) != 0)) {
       // XXX private or protected inheritance?
       CxxClass *parent = make_class(original.substring(p1, p - p1));
       cxxc->add_parent(parent);

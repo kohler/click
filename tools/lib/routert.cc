@@ -668,12 +668,71 @@ resolve_upref(const String &upref, String prefix, RouterT *r)
   return -1;
 }
 
+String
+RouterT::interpolate_arguments(const String &config,
+			       const Vector<String> &args) const
+{
+  const char *data = config.data();
+  int config_pos = 0;
+  int pos = 0;
+  int len = config.length();
+  String output;
+  
+  for (; pos < len; pos++)
+    if (data[pos] == '\\' && pos < len - 1)
+      pos++;
+    else if (data[pos] == '/' && pos < len - 1) {
+      if (data[pos+1] == '/') {
+	for (pos += 2; pos < len && data[pos] != '\n' && data[pos] != '\r'; )
+	  pos++;
+      } else if (data[pos+1] == '*') {
+	for (pos += 2; pos < len; pos++)
+	  if (data[pos] == '*' && pos < len - 1 && data[pos+1] == '/') {
+	    pos++;
+	    break;
+	  }
+      }
+    } else if (data[pos] == '$') {
+      unsigned word_pos = pos;
+      for (pos++; isalnum(data[pos]) || data[pos] == '_'; pos++)
+	/* nada */;
+      String name = config.substring(word_pos, pos - word_pos);
+      for (int variable = 0; variable < _formals.size(); variable++)
+	if (name == _formals[variable]) {
+	  output += config.substring(config_pos, word_pos - config_pos);
+	  output += args[variable];
+	  config_pos = pos;
+	}
+      pos--;
+    }
+
+  if (!output)
+    return config;
+  else
+    return output + config.substring(config_pos, pos - config_pos);
+}
+
 bool
 RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
 {
-  // complain about configuration string
-  if (compound.configuration && errh)
-    errh->lerror(compound.landmark, "compound element `%s' given configuration string", compound.name.cc());
+  // parse configuration string
+  Vector<String> args;
+  int nargs = _formals.size();
+  cp_argvec_unsubst(compound.configuration, args);
+  if (args.size() != nargs) {
+    const char *whoops = (args.size() < nargs ? "few" : "many");
+    String signature;
+    for (int i = 0; i < nargs; i++) {
+      if (i) signature += ", ";
+      signature += _formals[i];
+    }
+    if (errh)
+      errh->lerror(compound.landmark,
+		   "too %s arguments to compound element `%s(%s)'", whoops,
+		   compound.name.cc() /* XXX should be class_name */, signature.cc());
+    for (int i = args.size(); i < nargs; i++)
+      args.push_back("");
+  }
 
   // create prefix
   String prefix;
@@ -715,15 +774,19 @@ RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
 	&& r->_element_classes[ftypi])
       ftypi = r->get_anon_type_index(_element_type_names[e.type],
 				     _element_classes[e.type]);
+
+    // do configuration string
+    String config = e.configuration;
+    if (nargs) config = interpolate_arguments(config, args);
     
     // add element
     if (e.type == UPREF_TYPE)
       // add unresolved uprefs, but w/o prefix
       new_fidx[i] = r->get_anon_eindex
-	(e.name, UPREF_TYPE, e.configuration, e.landmark);
+	(e.name, UPREF_TYPE, config, e.landmark);
     else
       new_fidx[i] = r->get_eindex
-	(prefix + e.name, ftypi, e.configuration, e.landmark);
+	(prefix + e.name, ftypi, config, e.landmark);
   }
   
   // add hookup
@@ -751,30 +814,28 @@ void
 RouterT::remove_compound_elements(ErrorHandler *errh)
 {
   int neclass = _element_classes.size();
+  int nelem = _elements.size();
   Vector<int> removed_eclass(neclass, 0);
-  bool any_removed = false;
 
-  for (int i = 0; i < _elements.size(); i++) {
+  for (int i = 0; i < nelem; i++) {
     int t = _elements[i].type;
-    if (t >= 0 && t < neclass && _element_classes[t]
-	&& _element_classes[t]->expand_compound(_elements[i], this, errh)) {
-      removed_eclass[t] = -1;
-      any_removed = true;
+    if (t >= 0 && t < neclass && _element_classes[t]) {
+      if (_element_classes[t]->expand_compound(_elements[i], this, errh)) {
+	if (removed_eclass[t] == 0) removed_eclass[t] = -1;
+	// recalculate #s of elements & element classes; may have added some
+	neclass = _element_classes.size();
+	removed_eclass.resize(neclass, 0);
+	nelem = _elements.size();
+      } else
+	removed_eclass[t] = 1;
     }
   }
 
-  // quit early if you can
-  if (!any_removed) return;
-  
-  // remove bad elements and unused element classes (if you can)
-  remove_blank_elements(errh);
-
-  removed_eclass.resize(_element_classes.size(), 0);
-  for (int i = 0; i < _elements.size(); i++) {
-    int typ = _elements[i].type;
-    if (typ >= 0 && typ < removed_eclass.size())
-      removed_eclass[typ] = 0;
-  }
+  // remove those compound classes & any unused compound classes
+  for (int i = 0; i < neclass; i++)
+    if (removed_eclass[i] == 0 && _element_classes[i]
+	&& _element_classes[i]->cast_router())
+      removed_eclass[i] = -1;
   finish_remove_element_types(removed_eclass);
 }
 
@@ -809,159 +870,23 @@ RouterT::flatten(ErrorHandler *errh)
 }
 
 
-// MATCHES
-int ntry_match;
-int nelement_match;
-int nconnection_match;
-
-bool
-RouterT::next_element_match(RouterT *pat, Vector<int> &match) const
-{
-  int pnf = pat->nelements();
-  int nf = nelements();
-  
-  int match_idx;
-  int direction;
-  if (match.size() == 0) {
-    match.assign(pnf, -1);
-    int pnft = pat->ntypes();
-    for (int i = 0; i < pnf; i++) {
-      int t = pat->etype(i);
-      if (t == TUNNEL_TYPE)
-	match[i] = -2;		// don't match tunnels
-      else if (t < 0 || t >= pnft)
-	match[i] = -3;		// don't match bad types
-    }
-    match_idx = 0;
-    direction = 1;
-  } else {
-    match_idx = pnf - 1;
-    direction = -1;
-  }
-
-  while (match_idx >= 0 && match_idx < pnf) {
-    if (match[match_idx] < -1) {
-      match_idx += direction;
-      continue;
-    }
-    int want_t = type_index( pat->etype_name(match_idx) );
-    int rover = match[match_idx] + 1;
-    while (rover < nf) {
-      ntry_match++;
-      if (etype(rover) == want_t) {
-	for (int j = 0; j < match_idx; j++)
-	  if (match[j] == rover)
-	    goto not_match;
-	break;
-      }
-     not_match: rover++;
-    }
-    if (rover < nf) {
-      match[match_idx] = rover;
-      match_idx++;
-      direction = 1;
-    } else {
-      match[match_idx] = -1;
-      match_idx--;
-      direction = -1;
-    }
-  }
-
-  if (match_idx >= 0) nelement_match++;
-  return (match_idx >= 0 ? true : false);
-}
-
-bool
-RouterT::next_connection_match(RouterT *pat, Vector<int> &match) const
-{
-  int pnh = pat->_hookup_from.size();
-  while (1) {
-    if (!next_element_match(pat, match))
-      return false;
-
-    // check connections
-    for (int i = 0; i < pnh; i++) {
-      const Hookup &phf = pat->_hookup_from[i], &pht = pat->_hookup_to[i];
-      if (match[phf.idx] >= 0 && match[pht.idx] >= 0)
-	if (!has_connection(Hookup(match[phf.idx], phf.port),
-			    Hookup(match[pht.idx], pht.port)))
-	  goto not_match;
-    }
-    nconnection_match++;
-    return true;
-    
-   not_match: /* try again */;
-  }
-}
-
-static bool
-nonexclusive_output(const Hookup &hout, RouterT *pat, Vector<int> &match)
-{
-  const Vector<Hookup> &hfrom = pat->hookup_from();
-  const Vector<Hookup> &hto = pat->hookup_to();
-  for (int i = 0; i < hfrom.size(); i++)
-    if (hfrom[i] == hout && match[hto[i].idx] == -2)
-      return true;
-  return false;
-}
-
-static bool
-nonexclusive_input(const Hookup &hout, RouterT *pat, Vector<int> &match)
-{
-  const Vector<Hookup> &hfrom = pat->hookup_from();
-  const Vector<Hookup> &hto = pat->hookup_to();
-  for (int i = 0; i < hfrom.size(); i++)
-    if (hto[i] == hout && match[hfrom[i].idx] == -2)
-      return true;
-  return false;
-}
-
-bool
-RouterT::next_exclusive_connection_match(RouterT *pat, Vector<int> &match) const
-{
-  int pnf = pat->_elements.size();
-  int nf = _elements.size();
-  int nh = _hookup_from.size();
-  while (1) {
-    if (!next_connection_match(pat, match))
-      return false;
-
-    // create backmapping
-    Vector<int> back_match(nf, -1);
-    for (int i = 0; i < pnf; i++)
-      if (match[i] >= 0)
-	back_match[match[i]] = i;
-    
-    // check connections
-    for (int i = 0; i < nh; i++) {
-      const Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
-      int pf = back_match[hf.idx], pt = back_match[ht.idx];
-      if (pf >= 0 && pt >= 0) {
-	if (!pat->has_connection(Hookup(pf, hf.port), Hookup(pt, ht.port)))
-	  goto not_match;
-      } else if (pf >= 0 && pt < 0) {
-	if (!nonexclusive_output(Hookup(pf, hf.port), pat, match))
-	  goto not_match;
-      } else if (pf < 0 && pt >= 0) {
-	if (!nonexclusive_input(Hookup(pt, ht.port), pat, match))
-	  goto not_match;
-      } /* otherwise, connection between two non-match elements; don't care */
-    }
-    return true;
-    
-   not_match: /* try again */;
-  }
-}
-
-
 // PRINTING
 
 void
 RouterT::compound_declaration_string(StringAccum &sa, const String &name,
 				     const String &indent)
 {
-  sa << indent << "elementclass " << name << " {\n";
+  sa << indent << "elementclass " << name << " {";
+  
+  // print formals
+  for (int i = 0; i < _formals.size(); i++)
+    sa << (i ? ", " : " ") << _formals[i];
+  if (_formals.size())
+    sa << " |";
+  sa << "\n";
+
   configuration_string(sa, indent + "  ");
+  
   sa << indent << "}\n";
 }
 

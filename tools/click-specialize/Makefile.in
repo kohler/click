@@ -38,7 +38,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = cxxclass.o click-specialize.o
+OBJS = cxxclass.o specializer.o click-specialize.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@

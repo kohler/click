@@ -151,6 +151,7 @@ LexerT::next_lexeme()
   
   // find length of current word
   if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@') {
+    pos++;
     while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'
 			  || _data[pos] == '/' || _data[pos] == '@')) {
       if (_data[pos] == '/' && pos < _len - 1
@@ -169,7 +170,19 @@ LexerT::next_lexeme()
     else
       return Lexeme(lexIdent, word);
   }
-  
+
+  // check for variable
+  if (_data[pos] == '$') {
+    pos++;
+    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'))
+      pos++;
+    if (pos > word_pos + 1) {
+      _pos = pos;
+      return Lexeme(lexVariable, _big_string.substring(word_pos, pos - word_pos));
+    } else
+      pos--;
+  }
+
   if (pos < _len - 1) {
     if (_data[pos] == '-' && _data[pos+1] == '>') {
       _pos = pos + 2;
@@ -221,6 +234,8 @@ LexerT::lexeme_string(int kind)
   char buf[12];
   if (kind == lexIdent)
     return "identifier";
+  else if (kind == lexVariable)
+    return "variable";
   else if (kind == lexArrow)
     return "`->'";
   else if (kind == lex2Colon)
@@ -576,6 +591,27 @@ LexerT::yconnection()
 }
 
 void
+LexerT::ycompound_arguments()
+{
+  while (1) {
+    const Lexeme &tvar = lex();
+    if (!tvar.is(lexVariable)) {
+      unlex(tvar);
+      return;
+    }
+    _router->add_formal(tvar.string());
+    const Lexeme &tsep = lex();
+    if (tsep.is('|'))
+      return;
+    else if (!tsep.is(',')) {
+      lerror("expected `,' or `|'");
+      unlex(tsep);
+      return;
+    }
+  }
+}
+
+void
 LexerT::yelementclass()
 {
   Lexeme tname = lex();
@@ -599,6 +635,7 @@ LexerT::yelementclass()
   _router->get_eindex("output", RouterT::TUNNEL_TYPE);
   _anonymous_offset = 2;
 
+  ycompound_arguments();
   while (ystatement(true))
     /* nada */;
   
@@ -655,6 +692,7 @@ LexerT::ylocal()
   _router->get_eindex("output", RouterT::TUNNEL_TYPE);
   _anonymous_offset = 2;
 
+  ycompound_arguments();
   while (ystatement(true))
     /* nada */;
   

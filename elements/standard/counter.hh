@@ -39,8 +39,9 @@ class Counter : public Element { protected:
   int initialize(ErrorHandler *);
   void add_handlers(HandlerRegistry *);
   
-  void push(int port, Packet *);
-  Packet *pull(int port);
+  /*void push(int port, Packet *);
+    Packet *pull(int port);*/
+  Packet *simple_action(Packet *);
   
 };
 

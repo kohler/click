@@ -8,6 +8,7 @@
 class RouterT : public ElementClassT {
 
   RouterT *_enclosing_scope;
+  Vector<String> _formals;
   
   HashMap<String, int> _element_type_map;
   Vector<String> _element_type_names;
@@ -29,6 +30,7 @@ class RouterT : public ElementClassT {
   void finish_remove_element_types(Vector<int> &);
   void expand_tunnel(Vector<Hookup> *, bool is_input, int which,
 		     Vector<Hookup> &results) const;
+  String interpolate_arguments(const String &, const Vector<String> &) const;
 
  public:
 
@@ -39,6 +41,8 @@ class RouterT : public ElementClassT {
   RouterT(const RouterT &);
   virtual ~RouterT();
 
+  void add_formal(const String &n)	{ _formals.push_back(n); }
+  
   int ntypes() const			{ return _element_classes.size(); }
   const String &type_name(int i) const	{ return _element_type_names[i]; }
   ElementClassT *type_class(int i) const { return _element_classes[i]; }
@@ -97,10 +101,6 @@ class RouterT : public ElementClassT {
   bool insert_before(int fidx, const Hookup &);
   bool insert_after(int fidx, const Hookup &);
   
-  bool next_element_match(RouterT *, Vector<int> &) const;
-  bool next_connection_match(RouterT *, Vector<int> &) const;
-  bool next_exclusive_connection_match(RouterT *, Vector<int> &) const;
-
   void add_components_to(RouterT *, const String &prefix = String()) const;
 
   bool expand_compound(ElementT &, RouterT *, ErrorHandler *);

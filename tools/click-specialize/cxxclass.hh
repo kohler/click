@@ -28,6 +28,7 @@ class CxxFunction {
 	      const String &, const String &);
 
   String name() const			{ return _name; }
+  bool alive() const			{ return _name; }
   bool in_header() const		{ return _in_header; }
   bool from_header_file() const		{ return _from_header_file; }
   const String &ret_type() const	{ return _ret_type; }
@@ -36,6 +37,7 @@ class CxxFunction {
   const String &clean_body() const	{ return _clean_body; }
 
   void set_body(const String &b)	{ _body = b; _clean_body = String(); }
+  void kill()				{ _name = String(); }
   
   bool find_expr(const String &) const;
   bool replace_expr(const String &, const String &);
@@ -49,8 +51,9 @@ class CxxClass {
 
   HashMap<String, int> _fn_map;
   Vector<CxxFunction> _functions;
-  Vector<int> _rewritable;
-  Vector<int> _reachable_rewritable;
+  Vector<int> _has_push;
+  Vector<int> _has_pull;
+  Vector<int> _should_rewrite;
 
   bool reach(int, Vector<int> &);
 
@@ -69,8 +72,8 @@ class CxxClass {
   CxxFunction &defun(const CxxFunction &);
   void add_parent(CxxClass *);
 
-  void mark_reachable_rewritable();
-  bool reachable_rewritable(int i) const { return _reachable_rewritable[i]; }
+  bool find_should_rewrite();
+  bool should_rewrite(int i) const	{ return _should_rewrite[i]; }
 
   void header_text(StringAccum &) const;
   void source_text(StringAccum &) const;

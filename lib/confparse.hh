@@ -18,7 +18,7 @@ String cp_subst(const String &);
 String cp_unsubst(const String &);
 void cp_argvec(const String &, Vector<String> &);
 String cp_unargvec(const Vector<String> &);
-String cp_argprefix(const String &, int);
+void cp_argvec_unsubst(const String &, Vector<String> &);
 void cp_spacevec(const String &, Vector<String> &);
 
 // numbers
