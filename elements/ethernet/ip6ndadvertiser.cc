@@ -121,11 +121,8 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
   e->ether_type = htons(ETHERTYPE_IP6);
 
   //set ip6 header
-  ip6->ip6_v=6;
-  ip6->ip6_pri=0;
-  ip6->ip6_flow[0]=0;
-  ip6->ip6_flow[1]=0;
-  ip6->ip6_flow[2]=0;
+  ip6->ip6_flow = 0;		// set flow to 0 (includes version)
+  ip6->ip6_v = 6;		// then set version to 6
   ip6->ip6_plen=htons(sizeof(click_nd_adv));
   ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
   ip6->ip6_hlim=0xff; //indicate no router has processed it
@@ -173,7 +170,7 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
   } 
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
-  ip6=(click_ip6 *) (e+1);                                                                                               
+  ip6=(click_ip6 *) (e+1);
   ea = (click_nd_adv2 *) (ip6 + 1);
   
   //set ethernet header
@@ -182,11 +179,8 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
   e->ether_type = htons(ETHERTYPE_IP6);
 
   //set ip6 header
-  ip6->ip6_v=6;
-  ip6->ip6_pri=0;
-  ip6->ip6_flow[0]=0;
-  ip6->ip6_flow[1]=0;
-  ip6->ip6_flow[2]=0;
+  ip6->ip6_flow = 0;		// set flow to 0 (includes version)
+  ip6->ip6_v = 6;		// then set version to 6
   ip6->ip6_plen=htons(sizeof(click_nd_adv2));
   ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
   ip6->ip6_hlim=0xff; //indicate no router has processed it
@@ -221,7 +215,7 @@ IP6NDAdvertiser::lookup(const IP6Address &a, EtherAddress &ena) const
   int best = -1;
   for (int i = 0; i < _v.size(); i++)
     if (a.matches_prefix(_v[i].dst, _v[i].mask)) {
-      if (best < 0 || _v[i].mask.mask_more_specific(_v[best].mask))
+      if (best < 0 || _v[i].mask.mask_as_specific(_v[best].mask))
 	best = i;
     }
 

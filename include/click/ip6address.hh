@@ -28,7 +28,7 @@ class IP6Address { public:
   
   int mask_to_prefix_len() const;
   bool matches_prefix(const IP6Address &addr, const IP6Address &mask) const;
-  bool mask_more_specific(const IP6Address &) const;
+  bool mask_as_specific(const IP6Address &) const;
   
   bool ip4_address(IPAddress &) const;
   
@@ -79,6 +79,9 @@ operator!=(const IP6Address &a, const IP6Address &b)
   return ai[0] != bi[0] || ai[1] != bi[1] || ai[2] != bi[2] || ai[3] != bi[3];
 }
 
+class StringAccum;
+StringAccum &operator<<(StringAccum &, const IP6Address &);
+
 inline bool
 IP6Address::matches_prefix(const IP6Address &addr, const IP6Address &mask) const
 {
@@ -88,7 +91,7 @@ IP6Address::matches_prefix(const IP6Address &addr, const IP6Address &mask) const
 }
 
 inline bool
-IP6Address::mask_more_specific(const IP6Address &mask) const
+IP6Address::mask_as_specific(const IP6Address &mask) const
 {
   const unsigned *xi = data32(), *mi = mask.data32();
   return ((xi[0] & mi[0]) == mi[0] && (xi[1] & mi[1]) == mi[1]

@@ -116,10 +116,8 @@ FastUDPSourceIP6::initialize(ErrorHandler *)
   click_udp *udp = reinterpret_cast<click_udp *>(ip6 + 1);
   
   // set up IP6 header
+  ip6->ip6_flow = 0;
   ip6->ip6_v = 6;
-  ip6->ip6_pri = 0;
-  for (int i=0; i<3; i++)
-    ip6->ip6_flow[i]=0;
   ip6->ip6_plen = htons(_len - 14 - sizeof(click_ip6));
   ip6->ip6_nxt = IP_PROTO_UDP;
   ip6->ip6_hlim = 250; 

@@ -299,7 +299,7 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
 
 
 void
-ProtocolTranslator64::push(int port, Packet *p)
+ProtocolTranslator64::push(int, Packet *p)
 {
   handle_ip6(p);
 }

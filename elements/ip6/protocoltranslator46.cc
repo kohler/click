@@ -73,10 +73,8 @@ ProtocolTranslator46::make_translate46(IP6Address src,
   click_udp *udp = (click_udp *)(ip6+1);
  
   //set ipv6 header
-  ip6->ip6_v=6;
-  ip6->ip6_pri=0;
-  for (int i=0; i<3; i++)
-    ip6->ip6_flow[i]=0;
+  ip6->ip6_flow = 0;
+  ip6->ip6_v = 6;
   ip6->ip6_plen = htons(ntohs(ip->ip_len)-sizeof(click_ip));
   ip6->ip6_hlim = ip->ip_ttl + 0x40-0xff;
   ip6->ip6_src = src;
@@ -289,7 +287,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
 
 
 void
-ProtocolTranslator46::push(int port, Packet *p)
+ProtocolTranslator46::push(int, Packet *p)
 {
     handle_ip4(p);
 }

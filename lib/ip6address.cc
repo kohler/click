@@ -22,10 +22,12 @@
 #include <click/glue.hh>
 #include <click/ip6address.hh>
 #include <click/ipaddress.hh>
+#include <click/straccum.hh>
 #include <click/confparse.hh>
 
 IP6Address::IP6Address()
 {
+  static_assert(sizeof(struct click_ip6) == 40);
   for (int i = 0; i < 4; i++)
     _addr.s6_addr32[i] = 0;
 }
@@ -165,6 +167,12 @@ IP6Address::unparse_expanded() const
 	  ntohs(_addr.s6_addr16[4]), ntohs(_addr.s6_addr16[5]),
 	  ntohs(_addr.s6_addr16[6]), ntohs(_addr.s6_addr16[7]));
   return String(buf);
+}
+
+StringAccum &
+operator<<(StringAccum &sa, const IP6Address &a)
+{
+  return (sa << a.unparse());
 }
 
 

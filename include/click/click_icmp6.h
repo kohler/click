@@ -19,6 +19,8 @@
 #define ICMP6_GRP_MEM_REP 131
 #define ICMP6_GRP_MEM_RED 132
 
+#define ICMP6_REDIRECT_MESSAGE 137
+
 /* codes for spefic types of ICMP6 packets */
 /* ICMP6 Error Message - Type: 1 */
 #define ICMP6_CODE_NOROUTE_TO_DST 0
@@ -92,6 +94,16 @@ struct icmp6_group
   /* followed by multiacast address */
 };
 
+/* struct for redirect messages */
+struct icmp6_redirect
+{
+  unsigned char icmp6_type;
+  unsigned char icmp6_code;  
+  unsigned short icmp6_cksum;
+  unsigned int unused;
+  struct click_in6_addr target_address;
+  struct click_in6_addr destination_address;
+};
 
 /* different struct names for each type of packet */
 #define icmp6_dst_unreach icmp6_generic

@@ -1,5 +1,5 @@
-#ifndef ICMP6ERROR_HH
-#define ICMP6ERROR_HH
+#ifndef CLICK_ICMP6ERROR_HH
+#define CLICK_ICMP6ERROR_HH
 
 /*
  * =c
@@ -8,7 +8,7 @@
  * 
  * =d
  * need to rewrite the following comments.
- * Generate an ICMP6 error packet, with specified TYPE and CODE,
+ * Generate an ICMP6 error or redirect packet, with specified TYPE and CODE,
  * in response to an incoming IP6 packet. The output is an IP6/ICMP6 packet.
  * The ICMP6 packet's IP6 source address is set to IP6ADDR.
  * The error packet will include (as payload)
@@ -35,7 +35,7 @@
  * rate at which such messages can be sent to 10 per second:
  *
  *   dt : DecIP6HLIM();
- *   dt[1] -> ICMP6Error(18.26.4.24, 11, 0) -> m :: RatedSplitter(10) -> ...
+ *   dt[1] -> ICMP6Error(18.26.4.24, 3, 0) -> m :: RatedSplitter(10) -> ...
  *   m[1] -> Discard;
  *
  * =n
@@ -68,7 +68,8 @@ private:
   int _type;
   int _code;
 
-  bool is_error_type(int);
+  static bool is_error_type(int);
+  static bool is_redirect_type(int);
   bool unicast(const IP6Address &aa);
   bool valid_source(const IP6Address &aa);
   bool has_route_opt(const click_ip6 *ip);

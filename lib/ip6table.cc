@@ -35,7 +35,7 @@ IP6Table::lookup(const IP6Address &dst, IP6Address &gw, int &index) const
 
   for (int i = 0; i < _v.size(); i++)
     if (_v[i]._valid && dst.matches_prefix(_v[i]._dst, _v[i]._mask)) {
-      if (best < 0 || _v[i]._mask.mask_more_specific(_v[best]._mask))
+      if (best < 0 || _v[i]._mask.mask_as_specific(_v[best]._mask))
         best = i;
     }
 

@@ -11,7 +11,7 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/packet_anno.hh>
-#include <click/click_ip6.h>
+#include <click/ip6address.hh>
 
 #if CLICK_USERLEVEL
 # include <stdio.h>
@@ -73,43 +73,10 @@ IP6Print::simple_action(Packet *p)
   StringAccum sa;
   if (_label) 
     sa << _label << ": ";
-  for (int i=0; i<8; i++) {
-    short a = iph->ip6_src.in6_u.u6_addr16[i];
-    if (a != 0) {
-      if (i!=0)
-	sa << ":";
-      char buf[5];
-      sprintf(buf, "%04x", ntohs(a));
-      sa << buf;
-      zero = false;
-    } else {
-      if (zero == false)
-	sa << ":";
-      zero = true;
-    }
-  }
-  if (zero) 
-    sa << ":";
-  sa << " -> ";
-  for (int i=0; i<8; i++) {
-    short a = iph->ip6_dst.in6_u.u6_addr16[i];
-    if (a != 0) {
-      if (i!=0)
-	sa << ":";
-      char buf[5];
-      sprintf(buf, "%04x", ntohs(a));
-      sa << buf;
-      zero = false;
-    } else {
-      if (zero == false)
-	sa << ":";
-      zero = true;
-    }
-  }
-  if (zero) 
-    sa << ":";
-  
-  sa << " plen " << ntohs(iph->ip6_plen) 
+  sa << reinterpret_cast<const IP6Address &>(iph->ip6_src)
+     << " -> "
+     << reinterpret_cast<const IP6Address &>(iph->ip6_dst)
+     << " plen " << ntohs(iph->ip6_plen)
      << ", next " << (int)iph->ip6_nxt
      << ", hlim " << (int)iph->ip6_hlim << "\n";
   const unsigned char *data = p->data();

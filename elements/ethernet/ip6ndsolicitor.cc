@@ -163,11 +163,8 @@ IP6NDSolicitor::send_query_for(const u_char want_ip6[16])
   e->ether_type = htons(ETHERTYPE_IP6);
   
   // set ip6 header
-  ip6->ip6_v=6;
-  ip6->ip6_pri=0;
-  ip6->ip6_flow[0]=0;
-  ip6->ip6_flow[1]=0;
-  ip6->ip6_flow[2]=0;
+  ip6->ip6_flow = 0;		// set flow to 0 (includes version)
+  ip6->ip6_v = 6;		// then set version to 6
   ip6->ip6_plen=htons(sizeof(click_nd_sol));
   ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
   ip6->ip6_hlim=0xff; //indicate no router has processed it

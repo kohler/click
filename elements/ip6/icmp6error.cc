@@ -1,6 +1,6 @@
 /*
  * icmp6error.{cc,hh} -- element constructs ICMP6 error packets
- * Peilei Fan
+ * Peilei Fan, Frederik Scholaert
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
@@ -54,11 +54,16 @@ ICMP6Error::configure(Vector<String> &conf, ErrorHandler *errh)
 bool
 ICMP6Error::is_error_type(int type)
 {
-  return(type == ICMP6_DST_UNREACHABLE ||  	// 1
-         type == ICMP6_PKT_TOOBIG ||		// 2
-         type == ICMP6_TYPE_TIME_EXCEEDED ||	// 3
-	 type == ICMP6_PARAMETER_PROBLEM);       // 4
+  return (type == ICMP6_DST_UNREACHABLE
+	  || type == ICMP6_PKT_TOOBIG
+	  || type == ICMP6_TYPE_TIME_EXCEEDED
+	  || type == ICMP6_PARAMETER_PROBLEM);
+}
 
+bool
+ICMP6Error::is_redirect_type(int type)
+{
+  return (type == ICMP6_REDIRECT_MESSAGE);
 }
 
 int
@@ -66,8 +71,8 @@ ICMP6Error::initialize(ErrorHandler *errh)
 {
   if (_type < 0 || _code < 0 || (_src_ip == IP6Address()))
     return errh->error("not configured -a");
-  if(is_error_type(_type) == false)
-    return errh->error("ICMP6 type %d is not an error type", _type);
+  if (!is_error_type(_type) && !is_redirect_type(_type))
+    return errh->error("ICMP6 type %d is not an error or redirect type", _type);
   return 0;
 }
 
@@ -135,6 +140,7 @@ ICMP6Error::simple_action(Packet *p)
   const click_ip6 *ipp = p->ip6_header();
   click_ip6 *nip;
   struct icmp6_generic *icp;
+  struct icmp6_redirect *icpr;
   unsigned xlen;
 
 
@@ -166,17 +172,18 @@ ICMP6Error::simple_action(Packet *p)
   if (xlen > 568)
     xlen = 568;           
 
-  q = Packet::make(sizeof(struct click_ip6) + sizeof(struct icmp6_generic) + xlen);
+  if (_type != ICMP6_REDIRECT_MESSAGE)
+    q = Packet::make(sizeof(struct click_ip6) + sizeof(struct icmp6_generic) + xlen);
+  else
+    q = Packet::make(sizeof(struct click_ip6) + sizeof(struct icmp6_redirect) + xlen);
+  
   // guaranteed that packet data is aligned
   memset(q->data(), '\0', q->length());
   
   //set ip6 header
   nip = (click_ip6 *) q->data();
+  nip->ip6_flow = 0;
   nip->ip6_v = 6;
-  nip->ip6_pri=0;
-  nip->ip6_flow[0]=0;
-  nip->ip6_flow[1]=0;
-  nip->ip6_flow[2]=0;
   nip->ip6_plen = htons(q->length()-40);
   nip->ip6_nxt = IP_PROTO_ICMP6;  /* next header */ 
   nip->ip6_hlim = 0xff; //what hop limit shoud I set?
@@ -189,7 +196,7 @@ ICMP6Error::simple_action(Packet *p)
   icp->icmp6_code = _code;
 
     
-if(_type == 2 && _code == 0){
+  if(_type == ICMP6_PKT_TOOBIG && _code == 0){
     /* Set the mtu value. */
   ((struct icmp6_pkt_toobig *)icp)->icmp6_mtusize = 1500;
   }
@@ -200,8 +207,18 @@ if(_type == 2 && _code == 0){
     //the pointer should be 4 bytes, however, there's no space in Anno structure
     //temporarily use the same as the ICMP parameter pointer, will be dealt later
   }
-  
-  memcpy((void *)(icp + 1), p->data(), xlen);
+
+  if (_type == ICMP6_REDIRECT_MESSAGE && _code == 0) {
+    icpr = (struct icmp6_redirect *) (nip + 1);
+    icpr->target_address = p->dst_ip6_anno();
+    icpr->destination_address = ipp->ip6_dst;
+  }
+
+  if (_type != ICMP6_REDIRECT_MESSAGE)
+    memcpy((void *)(icp + 1), p->data(), xlen);
+  else
+    memcpy((void *)(icpr + 1), p->data(), xlen);
+
   icp->icmp6_cksum = htons(in6_fast_cksum(&nip->ip6_src, &nip->ip6_dst, nip->ip6_plen, nip->ip6_nxt, 0, (unsigned char *)icp, nip->ip6_plen));
   
   q->set_dst_ip6_anno(IP6Address(nip->ip6_dst));
