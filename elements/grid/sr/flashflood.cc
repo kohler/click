@@ -307,7 +307,6 @@ FlashFlood::forward(Broadcast *bcast) {
   bcast->_num_tx++;
   _packets_tx++;
   bcast->del_timer();
-  bcast->_rx_from = _ip;
   update_probs(bcast->_seq, _ip);
 }
 
@@ -755,6 +754,20 @@ FlashFlood::static_write_min_p(const String &arg, Element *e,
   return 0;
 }
 
+int
+FlashFlood::static_write_threshold(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  FlashFlood *n = (FlashFlood *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`threshold' must be a integer");
+
+  n->_threshold = b;
+  return 0;
+}
+
 String
 FlashFlood::static_print_debug(Element *f, void *)
 {
@@ -770,6 +783,15 @@ FlashFlood::static_print_min_p(Element *f, void *)
   StringAccum sa;
   FlashFlood *d = (FlashFlood *) f;
   sa << d->_min_p << "\n";
+  return sa.take_string();
+}
+
+String
+FlashFlood::static_print_threshold(Element *f, void *)
+{
+  StringAccum sa;
+  FlashFlood *d = (FlashFlood *) f;
+  sa << d->_threshold << "\n";
   return sa.take_string();
 }
 
@@ -815,10 +837,12 @@ FlashFlood::add_handlers()
   add_read_handler("debug", static_print_debug, 0);
   add_read_handler("packets", static_print_packets, 0);
   add_read_handler("min_p", static_print_min_p, 0);
+  add_read_handler("threshold", static_print_threshold, 0);
 
   add_write_handler("debug", static_write_debug, 0);
   add_write_handler("min_p", static_write_min_p, 0);
   add_write_handler("clear", static_write_clear, 0);
+  add_write_handler("threshold", static_write_threshold, 0);
 }
 
 // generate Vector template instance
