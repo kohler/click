@@ -107,11 +107,18 @@ RTMDSR::best_route(Dst *d)
   return 0;
 }
 
+time_t
+RTMDSR::time()
+{
+  timeval tv;
+  click_gettimeofday(&tv);
+  return tv.tv_sec;
+}
+
 void
 RTMDSR::start_query(Dst *d)
 {
-  time_t now;
-  time(&now);
+  time_t now = time();
   if(d->_when != 0 && now < d->_when + 10){
     // We sent a query less than 10 seconds ago, don't repeat.
     return;

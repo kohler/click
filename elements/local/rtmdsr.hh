@@ -92,6 +92,7 @@ private:
   Route *best_route(Dst *d);
   void RTMDSR::start_query(Dst *d);
   void got_pkt(Packet *p_in);
+  time_t time(void);
 };
 
 CLICK_ENDDECLS
