@@ -70,7 +70,7 @@ geo [0] -> to_wvlan;
 geo [1] -> Discard; // geo route can't handle
 geo [2] -> Discard; // bad packet
 
-// fr [1] -> Discard; // out of range
+fr [1] -> Discard; // out of range
 
 check_grid [1] -> Print(bad_grid_hdr) -> Discard;
 
