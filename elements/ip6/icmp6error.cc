@@ -58,9 +58,8 @@ ICMP6Error::is_error_type(int type)
 int
 ICMP6Error::initialize(ErrorHandler *errh)
 {
-  
-  if (_type < 0 || _code < 0 || !_src_ip)
-    return errh->error("not configured");
+  if (_type < 0 || _code < 0 || (_src_ip == IP6Address()))
+    return errh->error("not configured -a");
   if(is_error_type(_type) == false)
     return errh->error("ICMP6 type %d is not an error type", _type);
   return 0;
@@ -158,12 +157,12 @@ Packet *
 ICMP6Error::simple_action(Packet *p)
 {
   WritablePacket *q = 0;
-  click_ip6 *ipp = p->ip6_header();
+  const click_ip6 *ipp = p->ip6_header();
   click_ip6 *nip;
   struct icmp6_generic *icp;
   // unsigned hlen, xlen;
   unsigned xlen;
-  static int id = 1;
+  // static int id = 1;
 
   if (!ipp)
     goto out;
