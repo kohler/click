@@ -1,3 +1,13 @@
+2002-03-17 Sunday 13:03  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: portclassifier.cc (1.1), portclassifier.hh (1.1),
+	portswitch.cc (1.2), portswitch.hh (1.2), ronroutemodular.cc (1.2):
+	changed name
+
+2002-03-17 Sunday 12:49  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/changeuid.cc (1.2): works
+
 2002-03-17 Sunday 12:38  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: changeuid.cc (1.1), changeuid.hh (1.1), divertsocket.cc
