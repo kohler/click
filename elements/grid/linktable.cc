@@ -30,6 +30,7 @@ CLICK_DECLS
 #endif /* dsr_assert */
 
 LinkTable::LinkTable() 
+  : _timer(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -41,6 +42,22 @@ LinkTable::~LinkTable()
   MOD_DEC_USE_COUNT;
 }
 
+
+int
+LinkTable::initialize (ErrorHandler *) 
+{
+  _timer.initialize(this);
+  _timer.schedule_now();
+  return 0;
+}
+
+void
+LinkTable::run_timer() 
+{
+  clear_stale();
+  dijkstra();
+  _timer.schedule_after_ms(5000);
+}
 void *
 LinkTable::cast(const char *n)
 {
@@ -53,11 +70,16 @@ int
 LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
+  int stale_period = 60;
   ret = cp_va_parse(conf, this, errh,
                     cpIPAddress, "IP address", &_ip,
                     cpKeywords,
+		    "STALE", cpUnsigned, "Stale info timeout", &stale_period,
                     0);
   
+  _stale_timeout.tv_sec = stale_period;
+  _stale_timeout.tv_usec = 0;
+
   _hosts.insert(_ip, HostInfo(_ip));
   return ret;
 }
@@ -387,7 +409,6 @@ LinkTable::print_links()
 }
 
 
-
 String
 LinkTable::static_print_routes(Element *e, void *)
 {
@@ -448,10 +469,37 @@ LinkTable::print_hosts()
 
 
 
+void 
+LinkTable::clear_stale() {
+  struct timeval now;
+  struct timeval old;
+
+  click_gettimeofday(&now);
+  timersub(&now, &_stale_timeout, &old);
+
+  class LTable links;
+  for (LTIter iter = _links.begin(); iter; iter++) {
+    LinkInfo nfo = iter.value();
+    if (timercmp(&old, &nfo._last_updated, <)) {
+      links.insert(IPPair(nfo._from, nfo._to), nfo);
+    }
+  }
+  _links.clear();
+
+  for (LTIter iter = links.begin(); iter; iter++) {
+    LinkInfo nfo = iter.value();
+    _links.insert(IPPair(nfo._from, nfo._to), nfo);
+  }
+
+}
+
 
 void
 LinkTable::dijkstra() 
 {
+  struct timeval start;
+  struct timeval finish;
+  click_gettimeofday(&start);
   IPAddress src = _ip;
 
   typedef BigHashMap<IPAddress, bool> IPMap;
@@ -505,6 +553,10 @@ LinkTable::dijkstra()
 
   }
   
+  click_gettimeofday(&finish);
+  //StringAccum sa;
+  //sa << "dijstra took " << finish - start;
+  //click_chatter("%s: %s\n", id().cc(), sa.take_string().cc());
 }
 
 

@@ -75,7 +75,10 @@ SetSRCRChecksum::simple_action(Packet *xp)
   return p;
 
  bad:
-  click_chatter("%s: bad lengths", id().cc());
+  click_chatter("%s: bad lengths plen %d, tlen %d", 
+		id().cc(),
+		plen,
+		tlen);
   p->kill();
   return(0);
 }

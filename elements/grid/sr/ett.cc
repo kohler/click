@@ -159,7 +159,8 @@ ETT::start_query(IPAddress dstip)
   if (q->_count > 3 && dstip == _gw) {
     _gw = IPAddress("255.255.255.255");
   }
-  click_chatter("ETT %s : starting query for %s", 
+  click_chatter("ETT %s: start_query %s ->  %s", 
+		id().cc(),
 		_ip.s().cc(),
 		dstip.s().cc());
 
@@ -308,11 +309,7 @@ ETT::process_query(struct sr_pkt *pk1)
   
   if (dst == _ip || (dst == IPAddress("255.255.255.255") && _is_gw)) {
     /* query for me */
-    click_chatter("ETT %s: got a query for me from %s\n", 
-		  id().cc(),
-		  src.s().cc());
-    
-    start_reply(src, dst, seq);
+    start_reply(pk1);
   } else {
     _seen[si]._hops = hops;
     _seen[si]._metrics = metrics;
@@ -321,8 +318,7 @@ ETT::process_query(struct sr_pkt *pk1)
       return;
     } else {
       /* schedule timer */
-      int delay_time = random() % 500;
-      click_chatter("ETT %s: setting timer in %d milliseconds", _ip.s().cc(), delay_time);
+      int delay_time = random() % 750 + 1;
       ett_assert(delay_time > 0);
 
       struct timeval delay;
@@ -352,7 +348,7 @@ ETT::forward_query_hook()
 void
 ETT::forward_query(Seen *s)
 {
-  click_chatter("ETT %s: forward_query called for %s -> %s\n", 
+  click_chatter("ETT %s: forward_query %s -> %s\n", 
 		id().cc(),
 		s->_src.s().cc(),
 		s->_dst.s().cc());
@@ -394,7 +390,10 @@ ETT::forward_reply(struct sr_pkt *pk1)
   ett_assert(type == PT_REPLY);
 
   _link_table->dijkstra();
-  click_chatter("ETT %s: forwarding reply\n", _ip.s().cc());
+  click_chatter("ETT %s: forward_reply %s <- %s\n", 
+		id().cc(),
+		pk1->get_hop(0).s().cc(),
+		IPAddress(pk1->_qdst).s().cc());
   if(pk1->next() >= pk1->num_hops()) {
     click_chatter("ETT %s: forward_reply strange next=%d, nhops=%d", 
 		  _ip.s().cc(), 
@@ -439,47 +438,43 @@ ETT::forward_reply(struct sr_pkt *pk1)
 
 }
 
-void ETT::start_reply(IPAddress src, IPAddress dst, u_long seq)
+void ETT::start_reply(struct sr_pkt *pk_in)
 {
+
+  int len = sr_pkt::len_wo_data(pk_in->num_hops()+1);
   _link_table->dijkstra();
-  Path path = _link_table->best_route(src);
-  click_chatter("ETT %s: start_reply: found path to %s: [%s]\n", 
-		_ip.s().cc(),
-		src.s().cc(), path_to_string(path).cc());
-  if (!_link_table->valid_route(path)) {
-    click_chatter("ETT %s: no valid route to reply for %s\n",
-		  _ip.s().cc(),
-		  src.s().cc());
-    //start_query(src);
-
-    return;
-  }
-
-
-  int len = sr_pkt::len_wo_data(path.size());
+  click_chatter("ETT %s: star_reply %s <- %s\n",
+		id().cc(),
+		pk_in->get_hop(0).s().cc(),
+		IPAddress(pk_in->_qdst).s().cc());
   WritablePacket *p = Packet::make(len);
   if(p == 0)
     return;
+  struct sr_pkt *pk_out = (struct sr_pkt *) p->data();
+  memset(pk_out, '\0', len);
 
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
-  memset(pk, '\0', len);
-  pk->_version = _srcr_version;
-  pk->_type = PT_REPLY;
-  pk->_flags = 0;
-  pk->_qdst = dst;
-  pk->_seq = seq;
-  pk->set_next(path.size()-2);
-  pk->set_num_hops(path.size());
-  int i;
-  for(i = 0; i < path.size(); i++) {
-    pk->set_hop(i, path[path.size() - 1 - i]);
-    //click_chatter("reply: set hop %d to %s\n", i, pk->get_hop(i).s().cc());
-  }
 
-  for(i = 0; i < path.size() - 1; i++) {
-    int m = _link_table->get_hop_metric(pk->get_hop(i), pk->get_hop(i+1));
-    pk->set_metric(i, m);
+  pk_out->_version = _srcr_version;
+  pk_out->_type = PT_REPLY;
+  pk_out->_flags = 0;
+  pk_out->_seq = pk_in->_seq;
+  pk_out->set_num_hops(pk_in->num_hops()+1);
+  pk_out->set_next(pk_in->num_hops() - 1);
+  pk_out->_qdst = pk_in->_qdst;
+
+
+  for (int x = 0; x < pk_in->num_hops(); x++) {
+    IPAddress hop = pk_in->get_hop(x);
+    pk_out->set_hop(x, hop);
+    if (x < pk_in->num_hops() - 1) {
+      int m = pk_in->get_metric(x);
+      pk_out->set_metric(x, m);
+    }
   }
+  IPAddress prev = pk_in->get_hop(pk_in->num_hops()-1);
+  int last_hop_m = get_metric(prev);
+  pk_out->set_hop(pk_in->num_hops(), _ip);
+  pk_out->set_metric(pk_in->num_hops()-1, last_hop_m);
 
   send(p);
 }
@@ -492,8 +487,9 @@ ETT::got_reply(struct sr_pkt *pk)
 
   IPAddress dst = IPAddress(pk->_qdst);
 
-  click_chatter("ETT %s: got reply from %s\n", 
+  click_chatter("ETT %s: got_reply %s <- %s\n", 
 		id().cc(),
+		_ip.s().cc(),
 		dst.s().cc());
   _link_table->dijkstra();
   

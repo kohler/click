@@ -207,7 +207,7 @@ private:
   void start_query(IPAddress);
   void process_query(struct sr_pkt *pk);
   void forward_query(Seen *s);
-  void start_reply(IPAddress src, IPAddress dst, u_long seq);
+  void start_reply(struct sr_pkt *pk);
   void forward_reply(struct sr_pkt *pk);
   void got_reply(struct sr_pkt *pk);
   void start_data(const u_char *data, u_long len, Vector<IPAddress> r);

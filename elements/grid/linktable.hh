@@ -17,7 +17,7 @@ public:
 
   IPPair() : _to(), _from() { }
 
-  IPPair(IPAddress to, IPAddress from) {
+  IPPair(IPAddress from, IPAddress to) {
       _to = to;
       _from = from;
   }
@@ -55,6 +55,8 @@ public:
   void add_handlers();
   const char* class_name() const { return "LinkTable"; }
   LinkTable *clone() const { return new LinkTable(); }
+  int initialize(ErrorHandler *);
+  void run_timer();
   int configure(Vector<String> &conf, ErrorHandler *errh);
   void *cast(const char *n);
   /* read/write handlers */
@@ -81,6 +83,7 @@ public:
   bool valid_route(Vector<IPAddress> route);
   int get_route_metric(Vector<IPAddress> route);
   void dijkstra();
+  void clear_stale();
   Vector<IPAddress> best_route(IPAddress dst);
 
   Vector< Vector<IPAddress> > top_n_routes(IPAddress dst, int n);
@@ -136,7 +139,8 @@ private:
   class LTable _links;
 
   IPAddress _ip;
-
+  struct timeval _stale_timeout;
+  Timer _timer;
   static void _lt_assert_(const char *, int, const char *);
 };
   
