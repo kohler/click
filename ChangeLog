@@ -1,3 +1,14 @@
+2004-05-01 Saturday 17:00  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: counterflood.cc (1.8), counterflood.hh (1.7),
+	ettstat.cc (1.9), flashflood.cc (1.10), flashflood.hh (1.8),
+	gatewayselector.cc (1.16), gatewayselector.hh (1.15),
+	ipaddresscounter.cc (1.1), ipaddresscounter.hh (1.1), setgateway.cc
+	(1.6), srpacket.hh (1.11): mostly changes to handlers.
+	
+	also add ipaddresscounter, which counts the number of bytes from
+	individual hosts.  so I can track down bandwidth hogs on roofnet.
+
 2004-04-29 Thursday 01:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/: storedata.cc (1.1), storedata.hh (1.1): add
