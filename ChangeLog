@@ -1,3 +1,13 @@
+2003-01-16 Thursday 14:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.61): Add READONLY keyword for new
+	ControlSocket usage
+
+2003-01-16 Thursday 14:56  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/controlsocket.hh (1.28): nitlet: doc referred
+	to READONLY? arg which no longer exists
+
 2003-01-14 Tuesday 21:46  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/build-grid-config.sh (1.11): actually implement --m4 option
