@@ -46,7 +46,7 @@ class RouterThread : public Task { public:
 #else
   static const int MAX_DRIVER_COUNT = 10000;
 #endif
-  static const int PROFILE_ELEMENT = 200;
+  static const int PROFILE_ELEMENT = 20;
 
   Router *_router;
   int _id;

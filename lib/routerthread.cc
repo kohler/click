@@ -98,6 +98,7 @@ RouterThread::driver()
 	t->call_hook();
 	if (runs > PROFILE_ELEMENT) {
           cycles = click_get_cycles() - cycles;
+	  cycles = ((unsigned)cycles)/32 + ((unsigned)t->cycles())*31/32;
 	  t->update_cycles(cycles);
 	}
       }
