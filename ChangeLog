@@ -1,3 +1,30 @@
+2004-07-03 Saturday 11:37  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.18), configure.in (1.236), README (1.45), click.spec
+	(1.4): bump version number to 1.4.1
+
+2004-07-03 Saturday 11:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/: test-device.click (1.5), test.click (1.11), test2.click
+	(1.7), test3.click (1.2): add documentation on how error messages
+	appear when configurations are installed in the kernel
+
+2004-07-03 Saturday 11:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click.o.8 (1.14), linuxmodule/clickfs.cc (1.37),
+	linuxmodule/config.cc (1.16), linuxmodule/module.cc (1.86),
+	linuxmodule/modulepriv.hh (1.36), linuxmodule/proc_click.cc (1.53),
+	linuxmodule/sched.cc (1.49): add /click/messages, and add logic to
+	ensure that both /click/messages and /click/errors never grow
+	larger than 4K
+
+2004-07-03 Saturday 11:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/string.hh (1.32): add String::stable_string(const
+	char *, const char *) and String::append(const char *, const char
+	*) for consistency, and to prevent "const char *"s from being
+	mistakenly cast to ints
+
 2004-07-03 Saturday 00:22  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/userlevel/iprouter-01.testie (1.1): new test
