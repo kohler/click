@@ -69,8 +69,10 @@ ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     _encap_type = FAKE_DLT_EN10MB;
   else if (encap_type == "IP")
     _encap_type = FAKE_DLT_RAW;
+  else if (encap_type == "FDDI")
+    _encap_type = FAKE_DLT_FDDI;
   else
-    return errh->error("bad encapsulation type, expected `ETHER' or `IP'");
+    return errh->error("bad encapsulation type, expected `ETHER', `IP', or `FDDI'");
 
   return 0;
 }

@@ -23,8 +23,8 @@ which case ToDump writes to the standard output.
 Writes at most SNAPLEN bytes of each packet to the file. The default SNAPLEN
 is 2000. ENCAP specifies the first header each packet is expected to have.
 This information is stored in the file header, and must be correct or tcpdump
-won't be able to read the file correctly. It can be `C<IP>' or `C<ETHER>';
-default is `C<ETHER>'.
+won't be able to read the file correctly. It can be `C<IP>', `C<ETHER>', or
+`C<FDDI>'; default is `C<ETHER>'.
 
 Keyword arguments are:
 
