@@ -532,7 +532,10 @@ SRCR::process_data(Packet *p_in)
   }
   int ndx_me = i;
   srcr_assert(ndx_me != fwd.size());
-  srcr_assert(ndx_me != 0);
+  if (ndx_me == 0) {
+    /* came from me */
+    return;
+  }
   if (ndx_me == fwd.size()-1) {
     /* I'm the last hop */
     return;

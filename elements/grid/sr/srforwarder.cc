@@ -181,6 +181,13 @@ SRForwarder::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> 
     pk->set_hop(i, r[i]);
   }
   memcpy(pk->data(), payload, payload_len);
+
+
+  /* set the ip header anno */
+  const click_ip *ip = reinterpret_cast<const click_ip *>
+    (pk->data());
+  p->set_ip_header(ip, pk->data_len());
+
   return p;
 }
 
