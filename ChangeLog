@@ -1,3 +1,10 @@
+2005-04-01 Friday 11:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* aclocal.m4 (1.46), config-userlevel.h.in (1.26), configure
+	(1.52), elements/userlevel/fromdevice.cc (1.53),
+	elements/userlevel/fromdevice.hh (1.28), m4/click.m4 (1.47): fix
+	pcap library misuse, thanks Chema Gonzalez
+
 2005-03-30 Wednesday 18:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.95), INSTALL (1.37), configure (1.51), configure.in
