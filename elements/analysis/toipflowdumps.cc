@@ -102,7 +102,7 @@ ToIPFlowDumps::Flow::output(bool done, ErrorHandler *errh)
 		(_ip_p == IP_PROTO_TCP ? 'T' : 'U'),
 		_aggregate);
 	if (_ip_p == IP_PROTO_TCP)
-	    fprintf(f, "!data timestamp direction tcp_flags tcp_seq tcp_ack payload_len\n");
+	    fprintf(f, "!data timestamp direction tcp_flags tcp_seq payload_len tcp_ack\n");
 	else
 	    fprintf(f, "!data timestamp direction payload_len\n");
 	if (_have_first_seq[0] && _first_seq[0] && _ip_p == IP_PROTO_TCP)
@@ -135,7 +135,7 @@ ToIPFlowDumps::Flow::output(bool done, ErrorHandler *errh)
 			if (flags & (1 << flag))
 			    fputc(tcp_flags_word[flag], f);
 
-		fprintf(f, " %u %u %u\n", _pkt[pi].th_seq, _pkt[pi].th_ack, _pkt[pi].payload_len);
+		fprintf(f, " %u %u %u\n", _pkt[pi].th_seq, _pkt[pi].payload_len, _pkt[pi].th_ack);
 	    } else
 		fprintf(f, "%u\n", _pkt[pi].payload_len);
 
