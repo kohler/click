@@ -5,7 +5,7 @@ class Element;
 
 typedef void (*TimerHook)(unsigned long);
 
-#if defined(__KERNEL__) && !defined(HAVE_POLLING)
+#if 0 && defined(__KERNEL__) && !defined(HAVE_POLLING)
 #include <linux/timer.h>
 
 class Timer {

@@ -30,21 +30,16 @@
  * When used in userlevel or kernel polling mode, timer is maintained by
  * Click, so Timer::element_timer is called within click.
  */
+
 void
 Timer::element_timer(unsigned long thunk)
 {
   Element *f = (Element *)thunk;
   /* put itself on the work list */
-  f->join_scheduler();
-#ifdef __KERNEL__
-#ifndef HAVE_POLLING
-  /* run work list */
-  f->router()->driver();
-#endif
-#endif
+  f->schedule_immediately();	// might not have tickets
 }
 
-#if !defined(__KERNEL__) || defined(HAVE_POLLING)
+#if 1 || !defined(__KERNEL__) || defined(HAVE_POLLING)
 
 static Timer timer_head(0, (unsigned long)0);
 
