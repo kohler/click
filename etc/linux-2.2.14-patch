@@ -2,15 +2,17 @@
 Index: include/linux/netdevice.h
 --- include/linux/netdevice.h.orig	Mon Jun 26 12:44:10 2000
 +++ include/linux/netdevice.h	Tue Jul 18 17:25:50 2000
-@@ -317,6 +317,40 @@
+@@ -317,6 +317,42 @@
  	/* Semi-private data. Keep it at the end of device struct. */
  	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
  #endif
 +	
-+	/* Click: give kernel module controls of device operations */
-+#define POLLING_ON          2
-+#define POLLING_OFF         1
-+#define POLLING_UNSUPPORTED 0
++	/* Click polling support */
++	/*
++	 * polling is < 0 if the device does not support polling, == 0 if the
++	 * device supports polling but interrupts are on, and > 0 if polling
++	 * is on.
++	 */
 +	int 			polling;
 +	int			(*poll_on)(struct device *);
 +	int			(*poll_off)(struct device *);
@@ -43,7 +45,7 @@ Index: include/linux/netdevice.h
  };
  
  
-@@ -354,6 +388,11 @@
+@@ -354,6 +390,11 @@
  extern int		unregister_netdevice(struct device *dev);
  extern int 		register_netdevice_notifier(struct notifier_block *nb);
  extern int		unregister_netdevice_notifier(struct notifier_block *nb);
@@ -127,7 +129,7 @@ Index: net/core/dev.c
  		kfree(dev);
  		return NULL;
  	}
-+	dev->polling = POLLING_UNSUPPORTED;
++	dev->polling = -1;
  	return dev;
  }
  
@@ -471,7 +473,7 @@ Index: drivers/net/tulip.c
  	dev->irq = irq;
 +	
 +	/* Click - export routines that control device operations */
-+	dev->polling = POLLING_OFF;
++	dev->polling = 0;
 +	dev->rx_poll = tulip_rx_poll;
 +	dev->rx_refill = tulip_rx_refill;
 +	dev->tx_clean = tulip_tx_clean;
@@ -522,7 +524,7 @@ Index: drivers/net/tulip.c
 -	   done with atomic_swap(1, dev->tbusy), but set_bit() works as well. */
 +	
 +#if 0
-+	if (dev->polling == POLLING_ON) {
++	if (dev->polling > 0) {
 +	    printk("tulip_start_xmit when interrupt is off\n");
 +	}
 +#endif
@@ -615,7 +617,7 @@ Index: drivers/net/tulip.c
  		csr5 = inl(ioaddr + CSR5);
 +		
 +		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0) {
-+		    if (dev->polling == POLLING_ON) {
++		    if (dev->polling > 0) {
 +			    wastedintr++; 
 +				goto out;
 +			}
@@ -627,7 +629,7 @@ Index: drivers/net/tulip.c
  		/* Acknowledge all of the current interrupt sources ASAP. */
  		outl(csr5 & 0x0001ffff, ioaddr + CSR5);
 +		
-+		if (dev->polling == POLLING_ON) {
++		if (dev->polling > 0) {
 +			pollintr++;
 +			if (csr5 & RxDied) rxdied++;
 +			if (csr5 & TxDied) txdied++;
@@ -647,14 +649,14 @@ Index: drivers/net/tulip.c
 -		if (csr5 & (RxIntr | RxNoBuf)) {
 -			rx += tulip_rx(dev);
 -			tulip_refill_rx(dev);
-+		if ((csr5 & (RxIntr | RxNoBuf)) && dev->polling == POLLING_OFF) {
++		if ((csr5 & (RxIntr | RxNoBuf)) && !dev->polling) {
 +		    rx += tulip_rx(dev);
 +		    tulip_refill_rx(dev);
  		}
  
 -		if (csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) {
 +		if ((csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) 
-+			&& dev->polling == POLLING_OFF) {
++			&& !dev->polling) {
 +		  	/* part of following code duplicated at the end
 +			 * in tulip_tx_clean for the polling driver, changes
 +			 * here should propagate to there as well */
@@ -703,7 +705,7 @@ Index: drivers/net/tulip.c
  	} while (1);
  
 -	tulip_refill_rx(dev);
-+	if (dev->polling == POLLING_OFF) {
++	if (!dev->polling) {
 +		tulip_refill_rx(dev);
 +	}
  
@@ -1012,14 +1014,14 @@ Index: drivers/net/tulip.c
 +#ifdef DEMAND_POLLTX
 +    int csr0; 
 +#endif
-+	if (dev->polling == POLLING_OFF) {
++	if (!dev->polling) {
 +      csr7 = inl(ioaddr + CSR7) & ~(NormalIntr|RxNoBuf|RxIntr|TxIntr|TxNoBuf);
 +      outl(csr7, ioaddr+CSR7);
 +#ifdef DEMAND_POLLTX
 +      csr0 = (inl(ioaddr + CSR0) & ~(7<<17)) | (4<<17);
 +      outl(csr0, ioaddr+CSR0);
 +#endif
-+      dev->polling = POLLING_ON;
++      dev->polling = 1;
 +	}
 +	return 0;
 +}
@@ -1032,14 +1034,14 @@ Index: drivers/net/tulip.c
 +#ifdef DEMAND_POLLTX
 +    int csr0;
 +#endif
-+	if (dev->polling == POLLING_ON) {
++	if (dev->polling) {
 +#ifdef DEMAND_POLLTX
 +      csr0 = inl(ioaddr + CSR0) & ~(7<<17);
 +      outl(csr0, ioaddr+CSR0);
 +#endif
 +      csr7 = inl(ioaddr + CSR7) | (NormalIntr|RxNoBuf|RxIntr|TxIntr|TxNoBuf);
 +      outl(csr7, ioaddr+CSR7);
-+      dev->polling = POLLING_OFF;
++      dev->polling = 0;
 +	}
 +	return 0;
 +}

@@ -7,7 +7,7 @@ Index: include/linux/netdevice.h
  	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
  #endif
 +	
-+	/* Click: give kernel module controls of device operations */
++	/* Click polling support */
 +	/*
 +	 * polling is < 0 if the device does not support polling, == 0 if the
 +	 * device supports polling but interrupts are on, and > 0 if polling
