@@ -338,7 +338,7 @@ AggregateIP::Field::unparse(StringAccum &sa) const
     }
 
     if (found >= 0) {
-	HashMap<String, int>::Iterator iter = chunkmap->first();
+	HashMap<String, int>::iterator iter = chunkmap->first();
 	for (; iter; iter++)
 	    if (iter.value() == found) {
 		const Field &f = chunks[found];
