@@ -70,7 +70,7 @@ class Router { public:
   RouterThread *thread(int id) const		{ return _threads[id + 1]; }
   void add_thread(RouterThread *);
   void remove_thread(RouterThread *);
-  
+
   TimerList *timer_list()			{ return &_timer_list; }
   TaskList *task_list()				{ return &_task_list; }
 
@@ -79,6 +79,9 @@ class Router { public:
   int add_select(int fd, int element, int mask);
   int remove_select(int fd, int element, int mask);
 #endif
+
+  void *attachment(const String &) const;
+  void *set_attachment(const String &, void *);
   
   String flat_configuration_string() const;
   String element_list_string() const;
@@ -143,6 +146,9 @@ class Router { public:
   int _nhandlers;
   int _handlers_cap;
 
+  Vector<String> _attachment_names;
+  Vector<void *> _attachments;
+  
   Router(const Router &);
   Router &operator=(const Router &);
   
@@ -171,6 +177,7 @@ class Router { public:
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
   Element *find(String, const String &, ErrorHandler * = 0) const;
+  void initialize_handlers(bool);
   int find_ehandler(int, const String &, bool, bool);
   int put_handler(const Handler &);
   

@@ -787,13 +787,29 @@ Router::preinitialize()
   assert(!_selectors.size());
 #endif
   
-  // clear handler offsets
+  // clear attachments
+  _attachment_names.clear();
+  _attachments.clear();
+}
+
+void
+Router::initialize_handlers(bool ok_so_far)
+{
   _ehandler_first_by_element.assign(nelements(), -1);
-  assert(_ehandler_to_handler.size() == 0 && _ehandler_next.size() == 0
-	 && _handler_first_by_name.size() == 0
-	 && _handler_next_by_name.size() == 0
-	 && _handler_use_count.size() == 0
-	 && _nhandlers == 0);
+  _ehandler_to_handler.clear();
+  _ehandler_next.clear();
+
+  _handler_first_by_name.clear();
+  _handler_next_by_name.clear();
+  _handler_use_count.clear();
+
+  _nhandlers = 0;
+
+  for (int i = 0; i < _elements.size(); i++) {
+    _elements[i]->add_default_handlers(ok_so_far);
+    if (ok_so_far)
+      _elements[i]->add_handlers();
+  }
 }
 
 int
@@ -857,8 +873,9 @@ Router::initialize(ErrorHandler *errh)
   if (before != errh->nerrors())
     all_ok = false;
 
-  // Initialize elements that are OK so far.
+  // Initialize elements if OK so far.
   if (all_ok) {
+    initialize_handlers(true);
     for (int ord = 0; ord < _elements.size(); ord++) {
       int i = configure_order[ord];
       if (element_ok[i]) {
@@ -892,6 +909,7 @@ Router::initialize(ErrorHandler *errh)
     for (int i = 0; i < _elements.size(); i++)
       if (element_ok[i])
 	_elements[i]->uninitialize();
+    initialize_handlers(false);
     return -1;
   } else {
     _initialized = true;
@@ -1079,6 +1097,8 @@ Router::add_write_handler(int eindex, const String &name,
 int
 Router::find_handler(Element *element, const String &name)
 {
+  if (_ehandler_first_by_element.size() == 0) // handlers not configured
+    return -1;
   int eh = find_ehandler(element->eindex(), name, false, true);
   return (eh >= 0 ? _ehandler_to_handler[eh] : -1);
 }
@@ -1094,6 +1114,32 @@ Router::element_handlers(int eindex, Vector<int> &handlers) const
     if (h >= 0)
       handlers.push_back(h);
   }
+}
+
+
+// ATTACHMENTS
+
+void *
+Router::attachment(const String &name) const
+{
+  for (int i = 0; i < _attachments.size(); i++)
+    if (_attachment_names[i] == name)
+      return _attachments[i];
+  return 0;
+}
+
+void *
+Router::set_attachment(const String &name, void *value)
+{
+  for (int i = 0; i < _attachments.size(); i++)
+    if (_attachment_names[i] == name) {
+      void *v = _attachments[i];
+      _attachments[i] = value;
+      return v;
+    }
+  _attachment_names.push_back(name);
+  _attachments.push_back(value);
+  return 0;
 }
 
 
