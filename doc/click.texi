@@ -3318,16 +3318,16 @@ but only if @var{config_writable} is true and the
 
 The default handlers are as follows:
 
-@table @handler
-@item class
+@table @asis
+@item @handler{class}
 Returns the element's class name, as returned by @code{class_name()},
 followed by a newline. Example result: @strcode{"ARPQuerier\n"}.
 
-@item name
+@item @handler{name}
 Returns the element's name, as returned by @code{id()}, followed by a
 newline. Example result: @strcode{"arpq_0\n"}.
 
-@item config
+@item @handler{config}
 Returns the element's configuration string. If the configuration string
 does not end in @samp{\} or newline, the hander appends a newline
 itself. Example result: @strcode{"18.26.7.1, 00:00:C0:4F:71:EF\n"}.
