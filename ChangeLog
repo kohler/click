@@ -1,3 +1,28 @@
+2001-04-03 Tuesday 14:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: tolinux.cc, tolinuxsniffers.cc: be more
+	careful about locking (Mazu discovered a crash)
+
+2001-04-03 Tuesday 14:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/todevice.cc: nitlets
+
+2001-04-03 Tuesday 14:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/fromdevice.cc: bug fix: _burst was not
+	honored
+
+2001-04-03 Tuesday 14:11  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ip/iprw.cc, tcpudp/iprewriter.cc,
+	tcpudp/iprewriter.hh, tcpudp/tcprewriter.cc, tcpudp/tcprewriter.hh:
+	don't print messages on running out of ports; provide handlers
+	instead
+
+2001-04-03 Tuesday 14:10  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
 2001-04-02 Monday 16:02  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/confparse.hh, lib/confparse.cc: major update to
