@@ -1,3 +1,13 @@
+2004-10-07 Thursday 20:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.56),
+	tools/click-devirtualize/click-devirtualize.cc (1.44),
+	tools/click-devirtualize/specializer.cc (1.37),
+	tools/click-devirtualize/specializer.hh (1.11),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.65): fix
+	click-fastclassifier and click-devirtualize problems, reported by
+	Peter Lippens
+
 2004-10-05 Tuesday 14:55  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: autoratefallback.cc (1.9), linktable.cc (1.10),
