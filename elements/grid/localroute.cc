@@ -112,6 +112,9 @@ LocalRoute::push(int port, Packet *packet)
 	IPAddress dest_ip(encap->dst_ip);
 	if (dest_ip == _ipaddr) {
 	  // it's for us, send to higher level
+          click_chatter("%s: got an IP packet for us %s",
+                        id().cc(),
+                        dest_ip.s().cc());
 	  packet->pull(sizeof(click_ether) + gh->hdr_len + sizeof(grid_nbr_encap)); 
 	  output(1).push(packet);
 	  break;
@@ -177,8 +180,9 @@ LocalRoute::add_handlers()
 
 
 void
-LocalRoute::forward_grid_packet(Packet *packet, IPAddress dest_ip)
+LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 {
+  WritablePacket *packet = xp->uniqueify();
 
   /*
    * packet must have a MAC hdr, grid_hdr, and a grid_nbr_encap hdr on
@@ -194,7 +198,10 @@ LocalRoute::forward_grid_packet(Packet *packet, IPAddress dest_ip)
 
   struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
   if (encap->hops_travelled > _max_forwarding_hops) {
-    click_chatter("%s: dropping packet that has travelled too many hops", id().cc());
+    click_chatter("%s: ttl %d too high, dst %s",
+                  id().cc(),
+                  encap->hops_travelled,
+                  dest_ip.s().cc());
     packet->kill();
     return;
   }

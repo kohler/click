@@ -1,5 +1,5 @@
 /*
- * print.{cc,hh} -- print Grid packets, for debugging.
+ * printgrid.{cc,hh} -- print Grid packets, for debugging.
  * Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -69,7 +69,28 @@ PrintGrid::simple_action(Packet *p)
   else if(gh->type == GRID_NBR_ENCAP)
     type = "ENCAP";
 
-  click_chatter("PrintGrid%s%s : %s %s %s %s %.4f %.4f",
+  char *buf = 0;
+
+  if(gh->type == GRID_HELLO){
+    grid_hello *h = (grid_hello *) (gh + 1);
+    grid_nbr_entry *na = (grid_nbr_entry *) (h + 1);
+    buf = new char [h->num_nbrs * 100 + 1];
+    assert(buf);
+    buf[0] = '\0';
+    int i;
+    for(i = 0; i < h->num_nbrs; i++){
+      char tmp[100];
+      sprintf(tmp, "%s %s %d %f %f ",
+              IPAddress(na[i].ip).s().cc(),
+              IPAddress(na[i].next_hop_ip).s().cc(),
+              na[i].num_hops,
+              na[i].loc.lat(),
+              na[i].loc.lon());
+      strcat(buf, tmp);
+    }
+  }
+
+  click_chatter("PrintGrid%s%s : %s %s %s %s %.4f %.4f %s",
                 _label.cc()[0] ? " " : "",
                 _label.cc(),
                 seth.s().cc(),
@@ -77,7 +98,11 @@ PrintGrid::simple_action(Packet *p)
                 type,
                 xip.s().cc(),
                 gh->loc.lat(),
-                gh->loc.lon());
+                gh->loc.lon(),
+                buf ? buf : "");
+  
+  if(buf)
+    delete buf;
 
   return p;
 }

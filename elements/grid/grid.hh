@@ -73,7 +73,7 @@ struct grid_nbr_entry {
 struct grid_hello {
   unsigned char num_nbrs;
   unsigned char nbr_entry_sz;
-  // followed by num_nbrs grid_nbr structs
+  // followed by num_nbrs grid_nbr_entry structs
 
   grid_hello() : num_nbrs(0), nbr_entry_sz(sizeof(grid_nbr_entry)) { }
 };

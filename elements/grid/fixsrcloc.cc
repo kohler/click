@@ -61,10 +61,10 @@ FixSrcLoc::initialize(ErrorHandler *errh)
 
 
 Packet *
-FixSrcLoc::simple_action(Packet *p)
+FixSrcLoc::simple_action(Packet *xp)
 {
   assert(_locinfo);
-  assert(p);
+  WritablePacket *p = xp->uniqueify();
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   gh->loc = _locinfo->get_current_location();
 

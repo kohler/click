@@ -239,7 +239,10 @@ Neighbor::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
   if (ne != 0 && 
       (_timeout_jiffies < 0 || 
        jiff - ne->last_updated_jiffies <= _timeout_jiffies)) {    
-    click_chatter("found immediate nbr for next hop");
+    click_chatter("%s: found immediate nbr %s for next hop for %s",
+                  id().cc(),
+                  ne->ip.s().cc(),
+                  dest_ip.s().cc());
     *dest_eth = ne->eth;
     return true;
   }
@@ -253,7 +256,10 @@ Neighbor::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
 	 jiff - _nbrs[i].last_updated_jiffies <= _timeout_jiffies)) {
       // we know how to get to this dest, look up MAC addr for next hop
       ne = _addresses.findp(IPAddress(_nbrs[i].nbr.next_hop_ip));
-      click_chatter("trying to use next hop %s", ne->ip.s().cc());
+      click_chatter("%s: trying to use next hop %s for %s",
+                    id().cc(),
+                    ne->ip.s().cc(),
+                    dest_ip.s().cc());
       if (ne != 0 &&
 	  (_timeout_jiffies < 0 ||
 	   jiff - ne->last_updated_jiffies <= _timeout_jiffies)) {

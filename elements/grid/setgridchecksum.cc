@@ -37,8 +37,9 @@ SetGridChecksum::clone() const
 }
 
 Packet *
-SetGridChecksum::simple_action(Packet *p)
+SetGridChecksum::simple_action(Packet *xp)
 {
+  WritablePacket *p = xp->uniqueify();
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   unsigned plen = p->length();
   unsigned int tlen = gh->total_len;
