@@ -114,8 +114,6 @@ else
   AUTOCONF="$missing_dir/missing autoconf"
   AC_MSG_RESULT(missing)
 fi
-
-AC_SUBST(AUTOHEADER)
 AC_SUBST(AUTOCONF)
 
 dnl
