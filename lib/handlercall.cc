@@ -37,7 +37,7 @@ int
 HandlerCall::parse(const String &hdesc, bool write, Element *context, ErrorHandler *errh)
 {
     String s = hdesc;
-    bool ready = context->router()->nhandlers() >= 0;
+    bool ready = context->router()->handlers_ready();
     Element *e;
     int hi;
     String value;

@@ -1852,7 +1852,7 @@ cp_handler(const String &str, Element *context, bool need_read,
   if (hid < 0) {
     if (e != r->root_element()) {
       errh->error("element '%s' has no '%s' handler", e->id().cc(), hname.cc());
-      if (r->nhandlers() <= 0)
+      if (!r->handlers_ready())
 	errh->error("because handlers have not been added yet");
     } else
       errh->error("no global '%s' handler", hname.cc());

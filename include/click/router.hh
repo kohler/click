@@ -66,8 +66,7 @@ class Router { public:
 
     // HANDLERS
     enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
-    int nhandlers() const			{ return _nhandlers; }
-    static int nglobal_handlers();
+    bool handlers_ready() const	      { return _handler_first_by_name.size(); }
     static int hindex(const Element*, const String&);
     static void element_hindexes(const Element*, Vector<int>&);
 
@@ -184,8 +183,8 @@ class Router { public:
 
     enum { HANDLER_BUFSIZ = 256 };
     Handler** _handler_bufs;
-    int _n_handler_bufs;
-    int _nhandlers;
+    int _nhandlers_bufs;
+    int _free_handler;
 
     Vector<String> _attachment_names;
     Vector<void*> _attachments;
