@@ -16,7 +16,7 @@ to_wvlan :: FixSrcLoc(li) -> SetGridChecksum -> ToDevice(NET_DEVICE);
 
 
 // linux ip layer els
-linux :: KernelTap(GRID_IP/GRID_NETMASK, GRID_GW) -> from_linux :: Strip(14);
+linux :: KernelTap(GRID_IP/GRID_NETMASK, GRID_GW, HEADROOM) -> from_linux :: Strip(14);
 to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> linux;
 
 // hook it all up

@@ -17,7 +17,7 @@ tun1 :: KernelTap(GW_IP/GW_NETMASK, GW_REAL_IP); // gateway's regular address
 to_tun1 :: Queue -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun1;
 tun1 -> from_tun1 :: Strip(14);
 
-tun2 :: KernelTap(GRID_IP/GRID_NETMASK); // gateway's grid address
+tun2 :: KernelTap(GRID_IP/GRID_NETMASK, 0.0.0.0, HEADROOM); // gateway's grid address
 to_tun2 :: Queue -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun2;
 tun2 -> from_tun2 :: Strip(14);
 

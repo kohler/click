@@ -22,6 +22,7 @@ $radio_type = "wavelan";
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
+$HEADROOM = "44"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
 $NUM_HOPS = "10";
 $POS_LAT = "0";
 $POS_LON = "0";
@@ -380,6 +381,7 @@ $gw_net_hex = net_to_hex($lan_net);
 open(P, "| $click");
 while(<click_config_file>) {
 
+    s/HEADROOM/$HEADROOM/;
     s/NUM_HOPS/$NUM_HOPS/;
     s/CONTROL_PORT/$CONTROL_PORT/;
     s/CONTROL_RO/$CONTROL_RO/;
