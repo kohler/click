@@ -137,7 +137,7 @@ sub process_file ($) {
       push @doc_name, $doc_titles{$click_name[$i]};
   }
 
-  # process ELEMENT_REQUIRES and ELEMENT_PROVIDES
+  # process ELEMENT_REQUIRES, ELEMENT_PROVIDES, and EXPORT_ELEMENT
   if (!open(IN, $filename)) {
     print STDERR "$filename: $!\n";
     return;
@@ -145,22 +145,42 @@ sub process_file ($) {
   $text = <IN>;
   close IN;
 
-  my($req, $prov) = ('', '');
+  my($req, $prov, $exp) = ('', '', '');
   $req .= " " . $1 while $text =~ /^ELEMENT_REQUIRES\((.*)\)/mg;
   $prov .= " " . $1 while $text =~ /^ELEMENT_PROVIDES\((.*)\)/mg;
+  $exp .= " " . $1 while $text =~ /^EXPORT_ELEMENT\((.*)\)/mg;
   $req =~ s/^\s+//;
   $req =~ s/"/\\"/g;
   $prov =~ s/^\s+//;
   $prov =~ s/"/\\"/g;
 
+  # make copies of classes as required
+  while ($exp =~ /(\S+)-(\S+)/g) {
+      my($cxx, $click) = ($1, $2);
+      for ($i = $first; $i < @processing; $i++) {
+	  if ($cxx_name[$i] eq $cxx) {
+	      push @click_name, $click;
+	      push @cxx_name, $cxx;
+	      push @doc_name, $doc_name[$i];
+	      push @source_file, $source_file[$i];
+	      push @header_file, $header_file[$i];
+	      push @parents, $parents[$i];
+	      push @processing, $processing[$i];
+	      push @flow_code, $flow_code[$i];
+	      push @flags, $flags[$i];
+	      last;
+	  }
+      }
+  }
+  
   # add a fake class if there were no classes
   if (@cxx_name == $first && $prov) {
+    push @click_name, "";
     push @cxx_name, '""';
     push @doc_name, "";
     push @source_file, $filename;
     push @header_file, $headername;
     push @parents, [];
-    push @click_name, "";
     push @processing, "";
     push @flow_code, "";
     push @flags, undef;
