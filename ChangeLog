@@ -1,3 +1,18 @@
+2001-10-30 Tuesday 01:35  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.157), tools/click-align/Makefile.in (1.11),
+	tools/click-check/Makefile.in (1.7),
+	tools/click-combine/Makefile.in (1.7),
+	tools/click-devirtualize/Makefile.in (1.7),
+	tools/click-fastclassifier/Makefile.in (1.12),
+	tools/click-flatten/Makefile.in (1.3),
+	tools/click-install/Makefile.in (1.14),
+	tools/click-mkmindriver/Makefile.in (1.6),
+	tools/click-undead/Makefile.in (1.6), tools/click-xform/Makefile.in
+	(1.15), tools/lib/Makefile.in (1.16): add
+	--enable-tools={host,mixed,target} configuration switch; implement
+	Makefile magic to support that
+
 2001-10-30 Tuesday 00:21  Eddie Kohler <kohler@aciri.org>
 
 	* INSTALL (1.18): update INSTALL variables (thanks, Doug)
