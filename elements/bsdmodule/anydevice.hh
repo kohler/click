@@ -1,5 +1,6 @@
-#ifndef ANYDEVICE_HH
-#define ANYDEVICE_HH
+// -*- c-basic-offset: 4 -*-
+#ifndef CLICK_ANYDEVICE_HH
+#define CLICK_ANYDEVICE_HH
 #include <click/element.hh>
 #include <click/task.hh>
 
@@ -54,6 +55,7 @@ class AnyDevice : public Element { public:
     int _idles;
     AnyDevice *_next;
     struct ifnet *_dev;
+
 };
 
 inline int

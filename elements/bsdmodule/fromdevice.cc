@@ -204,7 +204,7 @@ FromDevice::initialize(ErrorHandler *errh)
     if (_promisc && device())
 	ifpromisc(device(), 1);
     
-    assert(_dev);
+    assert(device());
     int s = splimp();
     if (_inq == NULL) {
 	if (_readers != 0)
@@ -248,7 +248,7 @@ FromDevice::initialize(ErrorHandler *errh)
 void
 FromDevice::cleanup(CleanupStage)
 {
-    if (!_dev)
+    if (!device())
 	return;
 
     struct ifqueue *q = NULL;
