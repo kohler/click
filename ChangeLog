@@ -1,3 +1,9 @@
+2005-03-01 Tuesday 12:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* drivers/e1000-5.x/src/: e1000.h (1.2), e1000_ethtool.c (1.2),
+	e1000_main.c (1.2), e1000_param.c (1.2): port changes from 4.x
+	driver to 5.7.6 driver
+
 2005-03-01 Tuesday 11:37  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* drivers/e1000-5.x/: LICENSE (1.1), README (1.1), e1000.7 (1.1),
