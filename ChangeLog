@@ -1,6 +1,15 @@
+2002-08-30 Friday 15:15  Eddie Kohler <kohler@icir.org>
+
+	* doc/mkwebdoc.pl (1.35): whoops
+
 2002-08-30 Friday 14:41  Eddie Kohler <kohler@icir.org>
 
-	* lib/templatei.cc (1.11): adapt to const_iterators change
+	* elements/ip/iproutetable.hh (1.9): IPRouteTable documentation
+
+2002-08-30 Friday 14:41  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/dsdvroutetable.hh (1.18), lib/templatei.cc (1.11):
+	adapt to const_iterators change
 
 2002-08-30 Friday 14:39  Eddie Kohler <kohler@icir.org>
 
