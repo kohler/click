@@ -439,7 +439,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
        s = rbrace + 1;
        for (Conversion *item = error_items; item; item = item->next)
 	 if (item->name == name) {
-	   placeholder = item->hook(flags, &val);
+	   placeholder = item->hook(flags, VA_LIST_REF(val));
 	   s1 = placeholder.data();
 	   s2 = s1 + placeholder.length();
 	   goto got_result;
@@ -645,9 +645,9 @@ ErrorHandler::remove_conversion(ErrorHandler::Conversion *conv)
 
 #ifndef CLICK_TOOL
 static String
-element_error_hook(int, va_list *val)
+element_error_hook(int, VA_LIST_REF_T val)
 {
-  Element *e = va_arg(*val, Element *);
+  Element *e = va_arg(VA_LIST_DEREF(val), Element *);
   if (e)
     return e->declaration();
   else

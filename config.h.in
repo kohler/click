@@ -29,6 +29,9 @@
 #define CLICK_LITTLE_ENDIAN	1234
 #define CLICK_NO_ENDIAN		0
 
+/* Define if the va_list type is addressable. */
+#undef HAVE_ADDRESSABLE_VA_LIST
+
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__
 #undef NUM_CLICK_CPUS

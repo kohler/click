@@ -6,6 +6,15 @@
 # include <cstdio>
 #endif
 #include <cstdarg>
+#if HAVE_ADDRESSABLE_VA_LIST
+# define VA_LIST_REF_T		va_list *
+# define VA_LIST_DEREF(val)	(*(val))
+# define VA_LIST_REF(val)	(&(val))
+#else
+# define VA_LIST_REF_T		va_list
+# define VA_LIST_DEREF(val)	(val)
+# define VA_LIST_REF(val)	(val)
+#endif
 CLICK_DECLS
 
 class ErrorHandler { public:
@@ -80,7 +89,7 @@ class ErrorHandler { public:
 
   // error conversions
   struct Conversion;
-  typedef String (*ConversionHook)(int flags, va_list *);
+  typedef String (*ConversionHook)(int flags, VA_LIST_REF_T);
   enum ConversionFlags {
     ZERO_PAD = 1, PLUS_POSITIVE = 2, SPACE_POSITIVE = 4, LEFT_JUST = 8,
     ALTERNATE_FORM = 16, UPPERCASE = 32, SIGNED = 64, NEGATIVE = 128

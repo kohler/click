@@ -245,7 +245,7 @@ AC_LANG_CPLUSPLUS
 
 
 dnl
-dnl integer types
+dnl integer types, endianness, int64, addressable va_list
 dnl
 
 AC_ARG_ENABLE(int64, [  --disable-int64         disable 64-bit integer support], :, enable_int64=yes)
@@ -256,6 +256,7 @@ if test "x$enable_int64" = xyes; then
     CLICK_CHECK_INT64_TYPES
 fi
 CLICK_CHECK_ENDIAN
+CLICK_CHECK_ADDRESSABLE_VA_LIST
 
 
 dnl
