@@ -1,3 +1,13 @@
+2002-01-01 Tuesday 23:13  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-pretty/: click-pretty.cc (1.6), click-pretty.cc
+	(1.7): nitlets
+
+2002-01-01 Tuesday 23:09  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-pretty/click-pretty.cc (1.5): click-pretty reads a
+	template, and supports eindex
+
 2002-01-01 Tuesday 19:55  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-align/click-align.cc (1.40),
