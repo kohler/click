@@ -1,3 +1,10 @@
+2002-05-21 Tuesday 16:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridroutetable.cc (1.48), gridroutetable.hh
+	(1.27), lookuplocalgridroute.cc (1.35): fixed bug: 'sanity check'
+	in lookuplocalgridroute.cc was no longer valid with metric other
+	than hopcount
+
 2002-05-21 Tuesday 13:06  Eddie Kohler <kohler@aciri.org>
 
 	* AUTHORS (1.21), DISTFILES (1.56), README (1.31), configure.in
