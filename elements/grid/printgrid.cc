@@ -72,7 +72,7 @@ PrintGrid::simple_action(Packet *p)
     grid_nbr_entry *na = (grid_nbr_entry *) (h + 1);
     buf = new char [h->num_nbrs * 100 + 1];
     assert(buf);
-    buf[0] = '\0';
+    sprintf(buf, "%d ", h->num_nbrs);
     int i;
     for(i = 0; i < h->num_nbrs; i++){
       char tmp[100];

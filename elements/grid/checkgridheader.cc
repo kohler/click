@@ -74,7 +74,7 @@ CheckGridHeader::simple_action(Packet *p)
     goto bad;
   */
   
-  if (tlen > p->length())
+  if (tlen + sizeof(click_ether) != p->length())
     goto bad;
 
   if (in_cksum((unsigned char *) gh, tlen) != 0) {

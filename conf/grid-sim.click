@@ -15,7 +15,7 @@ elementclass GridNode {
     -> oq :: Queue
     -> output;
 
-  LocalRouteHello(10000, 2000, $ena, $ipa, nn) -> fl;
+  LocalRouteHello(1000, 200, $ena, $ipa, nn, 10) -> fl;
   Hello(500, 100, $ena, $ipa) -> fl;
 
   TimedSource(1000000) -> [1]lr;

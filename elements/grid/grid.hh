@@ -51,7 +51,7 @@ struct grid_location {
 };
 
 struct grid_hdr {
-  unsigned char hdr_len;    // sizeof(grid_hdr)
+  unsigned char hdr_len;    // sizeof(grid_hdr). Why do we need this?
 
   unsigned char type;
 #define GRID_HELLO     1    // no additional info in packet beyond header
@@ -61,6 +61,7 @@ struct grid_hdr {
   unsigned int ip;          // Sender's IP address.
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
   unsigned short total_len; // Of the whole packet, starting at grid_hdr.
+                            // Why do we need total_len? What about byte order?
   unsigned short cksum;     // Over the whole packet, starting at grid_hdr.
 
   grid_hdr()

@@ -290,7 +290,7 @@ Neighbor::get_nbrs(Vector<grid_nbr_entry> *retval) const
   int jiff = click_jiffies();
   for (int i = 0; i < _nbrs.size(); i++) 
     if (_timeout_jiffies < 0 ||
-	jiff - _nbrs[i].last_updated_jiffies > _timeout_jiffies)
+	jiff - _nbrs[i].last_updated_jiffies < _timeout_jiffies)
       retval->push_back(_nbrs[i].nbr);
 }
 
