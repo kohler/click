@@ -186,6 +186,7 @@ class AggregateCounter : public Element { public:
     void push(int, Packet *);
     Packet *pull(int);
 
+    void clear();
     int write_file(String, bool, ErrorHandler *) const;
     void reaggregate_counts();
     
@@ -224,6 +225,7 @@ class AggregateCounter : public Element { public:
     Node *make_peer(uint32_t, Node *, bool frozen);
     Node *find_node(uint32_t, bool frozen = false);
     void reaggregate_node(Node *);
+    void clear_node(Node *);
 
     static void write_nodes(Node *, FILE *, bool, uint32_t *, int &, int, ErrorHandler *);
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);

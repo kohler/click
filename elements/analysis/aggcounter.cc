@@ -137,16 +137,8 @@ AggregateCounter::initialize(ErrorHandler *errh)
 	return -1;
     if (_call_count_h && _call_count_h->initialize_write(this, errh) < 0)
 	return -1;
-    
-    if (!(_root = new_node())) {
-	uninitialize();
-	return errh->error("out of memory!");
-    }
-    _root->aggregate = 0;
-    _root->count = 0;
-    _root->child[0] = _root->child[1] = 0;
-    _num_nonzero = 0;
-    _count = 0;
+
+    clear();
     
     _frozen = false;
     _active = true;
@@ -290,9 +282,8 @@ AggregateCounter::update(Packet *p, bool frozen)
 	if (_num_nonzero == _call_nnz) {
 	    _call_nnz_h->call_write(this);
 	    _call_nnz = (uint32_t)(-1);
-	    // handler may have stopped or frozen us
-	    if (_frozen || !_active)
-		return false;
+	    // handler may have changed our state; reupdate
+	    return update(p, frozen || _frozen);
 	}
 	_num_nonzero++;
     }
@@ -322,21 +313,52 @@ AggregateCounter::pull(int port)
     return p;
 }
 
+
+// CLEAR, REAGGREGATE
+
+void
+AggregateCounter::clear_node(Node *n)
+{
+    if (n->child[0]) {
+	clear_node(n->child[0]);
+	clear_node(n->child[1]);
+    }
+    free_node(n);
+}
+
+void
+AggregateCounter::clear()
+{
+    if (_root)
+	clear_node(_root);
+    
+    if (!(_root = new_node())) {
+	uninitialize();
+	return errh->error("out of memory!");
+    }
+    _root->aggregate = 0;
+    _root->count = 0;
+    _root->child[0] = _root->child[1] = 0;
+    _num_nonzero = 0;
+    _count = 0;
+}
+
+
 void
 AggregateCounter::reaggregate_node(Node *n)
 {
-    if (n) {
-	Node *l = n->child[0], *r = n->child[1];
-	uint32_t count = n->count;
-	free_node(n);
-	
-	if ((n = find_node(count, false))) {
-	    if (!n->count)
-		_num_nonzero++;
-	    n->count++;
-	    _count++;
-	}
+    Node *l = n->child[0], *r = n->child[1];
+    uint32_t count = n->count;
+    free_node(n);
+    
+    if ((n = find_node(count, false))) {
+	if (!n->count)
+	    _num_nonzero++;
+	n->count++;
+	_count++;
+    }
 
+    if (l) {
 	reaggregate_node(l);
 	reaggregate_node(r);
     }
@@ -347,10 +369,12 @@ AggregateCounter::reaggregate_counts()
 {
     Node *old_root = _root;
     _root = 0;
-    _num_nonzero = 0;
-    _count = 0;
+    clear();
     reaggregate_node(old_root);
 }
+
+
+// HANDLERS
 
 static void
 write_batch(FILE *f, bool binary, uint32_t *buffer, int pos,
@@ -432,16 +456,20 @@ AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk
     return ac->write_file(fn, (thunk != 0), errh);
 }
 
+enum {
+    AC_FROZEN, AC_ACTIVE, AC_BANNER, AC_STOP, AC_REAGGREGATE, AC_CLEAR
+};
+
 String
 AggregateCounter::read_handler(Element *e, void *thunk)
 {
     AggregateCounter *ac = static_cast<AggregateCounter *>(e);
     switch ((int)thunk) {
-      case 0:
+      case AC_FROZEN:
 	return cp_unparse_bool(ac->_frozen) + "\n";
-      case 1:
+      case AC_ACTIVE:
 	return cp_unparse_bool(ac->_active) + "\n";
-      case 4:
+      case AC_BANNER:
 	return ac->_output_banner;
       default:
 	return "<error>";
@@ -454,33 +482,36 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
     AggregateCounter *ac = static_cast<AggregateCounter *>(e);
     String s = cp_uncomment(data);
     switch ((int)thunk) {
-      case 0: {
+      case AC_FROZEN: {
 	  bool val;
 	  if (!cp_bool(s, &val))
 	      return errh->error("argument to `frozen' should be bool");
 	  ac->_frozen = val;
 	  return 0;
       }
-      case 1: {
+      case AC_ACTIVE: {
 	  bool val;
 	  if (!cp_bool(s, &val))
 	      return errh->error("argument to `active' should be bool");
 	  ac->_active = val;
 	  return 0;
       }
-      case 2:
+      case AC_STOP:
 	ac->_active = false;
 	ac->router()->please_stop_driver();
 	return 0;
-      case 3:
+      case AC_REAGGREGATE:
 	ac->reaggregate_counts();
 	return 0;
-      case 4:
+      case AC_BANNER:
 	ac->_output_banner = data;
 	if (data && data.back() != '\n')
 	    ac->_output_banner += '\n';
 	else if (data && data.length() == 1)
 	    ac->_output_banner = "";
+	return 0;
+      case AC_CLEAR:
+	ac->clear();
 	return 0;
       default:
 	return errh->error("internal error");
@@ -492,14 +523,15 @@ AggregateCounter::add_handlers()
 {
     add_write_handler("write_ascii_file", write_file_handler, (void *)0);
     add_write_handler("write_file", write_file_handler, (void *)1);
-    add_read_handler("freeze", read_handler, (void *)0);
-    add_write_handler("freeze", write_handler, (void *)0);
-    add_read_handler("active", read_handler, (void *)1);
-    add_write_handler("active", write_handler, (void *)1);
-    add_write_handler("stop", write_handler, (void *)2);
-    add_write_handler("reaggregate_counts", write_handler, (void *)3);
-    add_read_handler("banner", read_handler, (void *)4);
-    add_write_handler("banner", write_handler, (void *)4);
+    add_read_handler("freeze", read_handler, (void *)AC_FREEZE);
+    add_write_handler("freeze", write_handler, (void *)AC_FREEZE);
+    add_read_handler("active", read_handler, (void *)AC_ACTIVE);
+    add_write_handler("active", write_handler, (void *)AC_ACTIVE);
+    add_write_handler("stop", write_handler, (void *)AC_STOP);
+    add_write_handler("reaggregate_counts", write_handler, (void *)AC_REAGGREGATE);
+    add_read_handler("banner", read_handler, (void *)AC_BANNER);
+    add_write_handler("banner", write_handler, (void *)AC_BANNER);
+    add_write_handler("clear", write_handler, (void *)AC_CLEAR);
 }
 
 ELEMENT_REQUIRES(userlevel HandlerCall)
