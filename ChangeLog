@@ -1,3 +1,8 @@
+2002-01-11 Friday 15:40  Eddie Kohler <kohler@aciri.org>
+
+	* drivers/e1000/e1000_kcompat.h (1.3): fixes for compilation under
+	2.2.19, from Brecht Vermeulen
+
 2002-01-11 Friday 02:42  Eddie Kohler <kohler@aciri.org>
 
 	* elements/aqm/adaptivered.cc (1.5), elements/aqm/pi.cc (1.2),
