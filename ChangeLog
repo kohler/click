@@ -1,3 +1,56 @@
+2004-03-30 Tuesday 20:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ethernet/arpquerier.hh (1.33),
+	elements/icmp/checkicmpheader.cc (1.16),
+	elements/icmp/checkicmpheader.hh (1.7),
+	elements/ip/checkipheader.cc (1.49), elements/ip/checkipheader.hh
+	(1.36), elements/ip/decipttl.hh (1.17), elements/ip/ipencap.hh
+	(1.24), elements/ip/ipfragmenter.hh (1.24),
+	elements/ip/ipgwoptions.hh (1.20), elements/ip/ipinputcombo.hh
+	(1.20), elements/ip/markipce.hh (1.5), elements/ipsec/esp.hh
+	(1.15), elements/ipsec/sha1.hh (1.9), elements/local/webgen.hh
+	(1.10), elements/standard/averagecounter.hh (1.13),
+	elements/standard/checkcrc32.hh (1.11),
+	elements/standard/dropbroadcasts.hh (1.18),
+	elements/standard/msqueue.hh (1.12),
+	elements/standard/randomsample.hh (1.6),
+	elements/standard/rrswitch.hh (1.13),
+	elements/tcpudp/checktcpheader.cc (1.15),
+	elements/tcpudp/checktcpheader.hh (1.7),
+	elements/tcpudp/checkudpheader.cc (1.15),
+	elements/tcpudp/checkudpheader.hh (1.7),
+	elements/tcpudp/dynudpipencap.hh (1.10),
+	elements/tcpudp/tcpipsend.cc (1.12), elements/tcpudp/udpipencap.hh
+	(1.10), include/click/routerthread.hh (1.21), linuxmodule/skbmgr.cc
+	(1.15): s/uatomic32_t/atomic_uint32_t/g
+
+2004-03-30 Tuesday 20:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/driver.cc (1.20), linuxmodule/module.cc (1.83): call
+	NotifierSignal::static_initialize()
+
+2004-03-30 Tuesday 20:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/notifier.hh (1.10), lib/notifier.cc (1.11):
+	NotifierSignal uses atomic_uint32_t for SMP/kernel niceness; and
+	the procedure for allocating a signal changed (use Router support)
+
+2004-03-30 Tuesday 20:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/router.hh (1.55), lib/router.cc (1.159): the list
+	of NotifierSignal words is per-Router
+
+2004-03-30 Tuesday 20:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/ip6address.hh (1.11): slight speed improvement with
+	^
+
+2004-03-30 Tuesday 20:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/atomic.hh (1.9): rename uatomic32_t ->
+	atomic_uint32_t (but keep old name for compatibility); add |= and
+	&= operators
+
 2004-03-27 Saturday 16:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/fromipsumdump.cc (1.59),
