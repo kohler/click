@@ -1,3 +1,10 @@
+2004-05-06 Thursday 16:35  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autotxpower.cc (1.4), autotxpower.hh (1.4),
+	ratepowercontrol.cc (1.3), ratepowercontrol.hh (1.3), settxpower.cc
+	(1.3), settxpower.hh (1.3), wifiqueue.cc (1.3), wifiqueue.hh (1.5):
+	cleanup these since they don't really work.
+
 2004-05-06 Thursday 14:14  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/sched.cc (1.47): add declaration for click_threads()
