@@ -10,10 +10,11 @@ CLICK_DECLS
  * =c
  * PacketLogger2(I<KEYWORKDS>)
  * 
- * =s grid
+ * =s Grid
  * Log packets for later dumping/analysis.
  * 
- * =d PacketLogger2 records the size, timestamp, user annotations, and
+ * =d 
+ * PacketLogger2 records the size, timestamp, user annotations, and
  * the first few bytes of every packet to pass through.  The list of
  * recorded data can be dumped (and cleared) by repeated calls to the
  * read handler 'log'.
