@@ -3,7 +3,7 @@ dnl Process this file with autoconf to produce a configure script.
 AC_INIT(pathvars.h.in)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-userlevel.h:config-userlevel.h.in)
 
-CLICK_VERSION=1.2.4a
+CLICK_VERSION=1.3pre1
 
 AC_SUBST(ac_configure_args)
 AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
@@ -25,6 +25,7 @@ AC_C_INLINE
 CLICK_PROG_CXX
 AC_PROG_CXXCPP
 
+ac_preset_ar="$AR"
 AC_CHECK_TOOL(AR, ar)
 AC_CHECK_TOOL(LD, ld)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
@@ -33,93 +34,10 @@ AC_CHECK_TOOL(STRIP, strip, :)
 conf_auxdir='$(top_srcdir)'
 AC_SUBST(conf_auxdir)
 
-
-dnl
-dnl check drivers to enable
-dnl
-
-AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
-AC_ARG_ENABLE(linuxmodule, [  --enable-linuxmodule    enable Linux kernel driver], :, enable_linuxmodule=no)
-AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver (EXPERIMENTAL)], :, enable_bsdmodule=no)
-
-
-dnl
-dnl How to build linuxmodule driver?
-dnl
-
-AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
-  [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
-  linuxdir=NONE)
-
-if test "x$linuxdir" = xNONE; then
-  if test -d /usr/src/linux; then
-    linuxdir=/usr/src/linux
-  elif test "x$enable_linuxmodule" = xyes; then
-    AC_MSG_WARN([
-=========================================
-
-I can't find /usr/src/linux, so I'm not compiling the linuxmodule driver.
-(You may need the --with-linux=DIR option.)
-
-=========================================])
-  fi
+if test -z "$ac_preset_ar" -a -z "$AR_CREATEFLAGS"; then
+    AR_CREATEFLAGS=cru
 fi
-
-if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
-  ac_have_linux_kernel=n
-  linuxdir=NONE
-elif test -r $linuxdir/include/linux/skbuff.h; then
-  ac_have_linux_kernel=y
-else
-  AC_MSG_ERROR([
-=========================================
-
-I can't find $linuxdir/include/linux/skbuff.h!
-Are you sure $linuxdir contains Linux kernel source?
-
-=========================================])
-fi
-AC_SUBST(linuxdir)
-AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
-
-
-dnl
-dnl How to build bsdmodule driver?
-dnl
-
-AC_ARG_WITH(freebsd, [  --with-freebsd[=DIR]    FreeBSD source code is in DIR [/usr/include]],
-  [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/inclde; fi],
-  freebsddir=NONE)
-
-if test "x$freebsddir" = xNONE; then
-  if test -d /usr/include; then
-    freebsddir=/usr/include
-  elif test "x$enable_bsdmodule" = xyes; then
-    AC_MSG_WARN([
-=========================================
-
-I can't find /usr/include, so I'm not compiling the bsdmodule driver.
-(You may need the --with-freebsd=DIR option.)
-
-=========================================])
-  fi
-fi
-
-if test "x$freebsddir" = xNONE -o "x$freebsddir" = xno -o "x$enable_bsdmodule" != xyes; then
-  ac_have_bsd_kernel=n
-  freebsddir=NONE
-elif test -r $freebsddir/net/if_var.h; then
-  ac_have_bsd_kernel=y
-else
-  AC_MSG_ERROR([
-=========================================
-
-I can't find $freebsddir/net/if_var.h!
-Are you sure $freebsddir contains FreeBSD kernel source?
-
-=========================================])
-fi
-AC_SUBST(freebsddir)
+AC_SUBST(AR_CREATEFLAGS)
 
 
 dnl
@@ -138,8 +56,7 @@ dnl multithread support?
 dnl
 
 AC_ARG_ENABLE(multithread,
-  [  --enable-multithread[=NUM]
-                          support kernel multithreading with NUM threads max],
+  [  --enable-multithread[[=NUM]] support kernel multithreading; NUM threads max],
   :, enable_multithread=no)
 
 if test "$enable_multithread" = yes; then
@@ -178,12 +95,11 @@ CLICK_CHECK_ENDIAN
 
 
 dnl
-dnl headers, dynamic linking, pcap
+dnl headers, dynamic linking
 dnl
 
 AC_CHECK_HEADERS(unistd.h termio.h)
 CLICK_CHECK_DYNAMIC_LINKING
-CLICK_CHECK_LIBPCAP
 
 
 dnl
@@ -231,20 +147,6 @@ fi])
 ELEMENTS_ARG_ENABLE(ipsec, [include IP security elements], no, AC_DEFINE(HAVE_IPSEC))
 ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements (EXPERIMENTAL)], no, AC_DEFINE(HAVE_IP6))
 
-elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
-AC_SUBST(elements_vpath)
-
-AC_ARG_ENABLE(greedy, [  --enable-greedy         kernel module keeps CPU forever (requires SMP;
-                          provides more predictable performance)], , enable_greedy=no)
-if test "x$enable_greedy" = xyes; then
-    AC_DEFINE(CLICK_GREEDY)
-fi
-
-AC_ARG_ENABLE(warp9, [  --enable-warp9          reduce PollDevice functionality for speed], , enable_warp9=no)
-if test "x$enable_warp9" = xyes; then
-    AC_DEFINE(CLICK_WARP9)
-fi
-
 
 dnl
 dnl objects required by element collections
@@ -266,7 +168,7 @@ dnl
 
 AC_ARG_ENABLE(intel-cpu, [  --enable-intel-cpu      enable Intel-specific machine instructions], :, enable_intel_cpu=no)
 if test $enable_intel_cpu = yes; then
-    AC_DEFINE_UNQUOTED(HAVE_INTEL_CPU, 1)
+    AC_DEFINE(HAVE_INTEL_CPU)
 fi
 
 
@@ -276,7 +178,19 @@ dnl
 
 AC_ARG_ENABLE(stride, [  --disable-stride        disable stride scheduler], :, enable_stride=yes)
 if test $enable_stride = yes; then
-    AC_DEFINE_UNQUOTED(HAVE_STRIDE_SCHED, 1)
+    AC_DEFINE(HAVE_STRIDE_SCHED)
+fi
+
+AC_ARG_ENABLE(adaptive, [  --enable-adaptive       use adaptive scheduler to flexibly arbitrate between    
+                          Click and the kernel (EXPERIMENTAL)], :, enable_adaptive=no)
+if test "x$enable_adaptive" = xyes; then
+    AC_DEFINE(HAVE_ADAPTIVE_SCHEDULER)
+fi
+
+AC_ARG_ENABLE(greedy, [  --enable-greedy         kernel module keeps CPU forever (requires SMP;
+                          provides more predictable performance)], :, enable_greedy=no)
+if test "x$enable_greedy" = xyes; then
+    AC_DEFINE(CLICK_GREEDY)
 fi
 
 
@@ -286,8 +200,17 @@ dnl
 
 AC_ARG_ENABLE(dmalloc, [  --enable-dmalloc        enable debugging malloc], :, enable_dmalloc=no)
 if test $enable_dmalloc = yes; then
-    AC_DEFINE_UNQUOTED(CLICK_DMALLOC, 1)
+    AC_DEFINE(CLICK_DMALLOC)
 fi
+
+
+dnl
+dnl pcap library
+dnl note: no longer need pcap under Linux
+dnl
+
+CLICK_CHECK_LIBPCAP
+AC_DEFINE(HAVE_USERLEVEL_DRIVER)
 
 
 dnl
@@ -298,6 +221,69 @@ CLICK_PROG_INSTALL
 CLICK_PROG_GMAKE
 CLICK_PROG_AUTOCONF
 CLICK_PROG_PERL5
+
+if test -z "$GMAKE"; then
+    AC_MSG_ERROR([
+==============================================
+
+I can't find GNU make. Either put "'`'"gmake' on your PATH and
+rerun "'`'"./configure', or set the GMAKE environment variable to
+GNU make's pathname.
+
+==============================================])
+fi
+
+
+dnl
+dnl Makeinfo, texi2dvi, install-info
+dnl
+
+AC_MSG_CHECKING(for working makeinfo)
+MAKEINFO=${MAKEINFO-makeinfo}
+if ($MAKEINFO --version) < /dev/null > conftest.out 2>&1; then
+  if test `head -1 conftest.out | sed 's/.* \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
+    AC_MSG_RESULT(found)
+  else
+    MAKEINFO='$(conf_auxdir)/missing makeinfo'
+    AC_MSG_RESULT(old)
+  fi
+else
+  MAKEINFO='$(conf_auxdir)/missing makeinfo'
+  AC_MSG_RESULT(missing)
+fi
+
+AC_MSG_CHECKING(for working texi2dvi)
+TEXI2DVI=${TEXI2DVI-texi2dvi}
+if ($TEXI2DVI --version) < /dev/null > conftest.out 2>&1; then
+  dnl Search for a good version of texi2dvi
+  if test `head -1 conftest.out | sed 's/.* \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
+    AC_MSG_RESULT(found)
+  else
+    TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
+    AC_MSG_RESULT(old)
+  fi
+else
+  TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
+  AC_MSG_RESULT(missing)
+fi
+
+dnl Assume any version of install-info is OK
+if test ${INSTALL_INFO-xxx} = xxx; then
+  AC_PATH_PROG(INSTALL_INFO, install-info, '$(conf_auxdir)/missing install-info',
+	$PATH:/sbin:/usr/sbin:/usr/local/sbin)
+fi
+AC_MSG_CHECKING(for working install-info)
+if ($INSTALL_INFO --version) < /dev/null > conftest.out 2>&1; then
+  AC_MSG_RESULT(found)
+else
+  INSTALL_INFO='$(conf_auxdir)/missing install-info'
+  AC_MSG_RESULT(missing)
+fi
+
+
+AC_SUBST(MAKEINFO)
+AC_SUBST(TEXI2DVI)
+AC_SUBST(INSTALL_INFO)
 
 
 dnl
@@ -329,6 +315,29 @@ AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
 AC_DEFINE_UNQUOTED(CLICK_SHAREDIR, "$datadir/click")
 AC_DEFINE_UNQUOTED(CLICK_INFODIR, "$infodir")
 
+dnl
+dnl Provisions
+dnl
+
+dnl start out with CPU
+provisions="$target_cpu"
+case "$target_cpu" in
+  i386) :;;
+  i486|i586) provisions="$provisions i386";;
+  i686|i786) provisions="$provisions i386 i586";;
+esac
+
+dnl add `int64' if 64-bit integers are available
+if test "x$have_int64_types" = xyes; then
+    provisions="int64 $provisions"
+fi
+
+dnl add `ip6' if ip6 elements are available
+if test "x$enable_ip6" = xyes; then
+    provisions="ip6 $provisions"
+fi
+
+AC_SUBST(provisions)
 
 dnl
 dnl Output
@@ -337,11 +346,11 @@ dnl
 test ! -d include && mkdir include
 config_files="Makefile click-compile libsrc/Makefile"
 
-AC_OUTPUT_COMMANDS(for ac_file in $CONFIG_HEADERS; do
+AC_OUTPUT_COMMANDS([for ac_file in $CONFIG_HEADERS; do
   test $ac_file = include/click/config.h:config.h.in && echo > stamp-h
 done
 for ac_file in $CONFIG_FILES; do
   test $ac_file = click-compile && chmod +x click-compile
   test -z "$GMAKE" && echo $ac_file | grep Makefile >/dev/null && $ac_given_srcdir/missing gmake $ac_file
-done, GMAKE="$GMAKE")
+done], GMAKE="$GMAKE")
 AC_OUTPUT($config_files)
