@@ -1,3 +1,9 @@
+2003-02-27 Thursday 12:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/local/: print80211.cc (1.1), print80211.hh (1.1),
+	printairo.cc (1.4), printairo.hh (1.2): 802.11 packet printing
+	elements, Print80211 requires freebsd for some useful header files
+
 2003-02-25 Tuesday 16:59  Eddie Kohler <kohler@icir.org>
 
 	* include/click/routerthread.hh (1.18): comment typo
