@@ -1,9 +1,119 @@
 Click NEWS
 
-Version
+Version 1.2.4   21.May.2002
+
+* Drivers
+
+** FreeBSD module updates from Luigi Rizzo.
+
+** The Linux kernel module can support its own /proc-like file system,
+   "clickfs". This file system is faster and takes less memory than the
+   default /proc/click filesystem, and it is not subject to arbitrary
+   limits on the number of files. Generally you will mount it under /click.
+   (Click-install takes care of file system mounting and unmounting.) Give
+   ./configure the --enable-clickfs option to enable clickfs (and disable
+   /proc/click). Currently, clickfs only works under Linux 2.2. In the next
+   release, it will also work under Linux 2.4, and --enable-clickfs will be
+   the default.
+
+** Fix several race conditions in the Linux kernel module.
+
+** The user-level driver works on Solaris. Thanks to David Scott Page
+   <page@cs.utexas.edu> for patches and suggestions.
+
+* Elements
+
+** Add notifier support. The NotifierQueue element acts like a Queue, but
+   can reschedule downstream Tasks when packets arrive on a previously
+   empty Queue. This can greatly reduce CPU usage. Several other elements
+   listen for notification, including DelayUnqueue, Discard, and ToDevice.
+
+** Rename FromLinux, ToLinux, and ToLinuxSniffers to FromHost, ToHost, and
+   ToHostSniffers. The old names are still available.
+
+** Classifier optimization algorithm changed. The new algorithm, based on
+   dominators, is much faster for medium-to-large Classifiers.
+
+** Add FromDAGDump element in the analysis package. This element reads DAG
+   dumps (see http://dag.cs.waikato.ac.nz/).
+
+** Add LinearIPLookup element, a version of StaticIPLookup that supports
+   dynamically adding and removing routes.
+
+** Add SortedIPLookup element, a version of LinearIPLookup that sorts its
+   routes.
+
+** Bug fixes and enhancements in AddressInfo, CheckIPHeader, DelayUnqueue,
+   DriverManager, Linux FromDevice, FromDump, FromIPSummaryDump,
+   FrontDropQueue, Grid elements, ICMPPingResponder, ICMPSendPings,
+   IPAddrRewriter, IPFragmenter, IPPrint, IPReassembler, IPRewriter,
+   IPRouteTable, RadixIPLookup, TCPRewriter, TimeFilter, ToIPSummaryDump,
+   etc.
+
+** Add RandomSwitch element.
+
+** Add preliminary elements that support regression testing, in
+   elements/test.
+
+* Tools
+
+** Add click-pretty tool, which pretty-prints Click configuration files as
+   HTML.
+
+** Click-install works for the FreeBSD kernel module.
+
+** Click-install exits with nonzero exit status if the configuration could
+   not be initialized.
+
+* Internals
+
+** The signatures for the Element::configure() and
+   Element::live_reconfigure() methods have changed. Formerly, these
+   methods took a "const Vector<String> &conf". Now, they take a
+   "Vector<String> &conf", and the methods may alter the "conf" argument
+   however they'd like. The old signatures still work for backward
+   compatibility, but they are deprecated, and will be removed in a future
+   release.
+
+** Deprecated Element::uninitialize() in favor of a new method,
+   "Element::cleanup(CleanupStage stage)". The "stage" argument, an
+   enumerated value, says how far the element was initialized: not at all
+   (CLEANUP_NO_ROUTER), configure() failed (CLEANUP_CONFIGURE_FAILED),
+   configure() succeeded but initialize() was not called
+   (CLEANUP_CONFIGURED), initialize() failed (CLEANUP_INITIALIZE_FAILED),
+   initialize() succeeded but the router as a whole failed
+   (CLEANUP_INITIALIZED), and the router initialized successfully,
+   including this element (CLEANUP_ROUTER_INITIALIZED). So uninitialize()
+   corresponded to "stage >= CLEANUP_INITIALIZED". Element::uninitialize()
+   works for now, but it will be removed in a future release.
+
+** The signature for the Element::configuration() method has also changed.
+   It no longer takes a "bool *" argument.
+
+** Add cp_va_parse_remove_keywords() function, which removes keywords from
+   an argument list.
 
 ** Renamed IPAddress::mask_more_specific() method to
    IPAddress::mask_as_specific(), to emphasize that it allows equality.
+
+** Changed click_ip6 header structure.
+
+** Tools substantially rewritten. The tool library is now much easier to
+   deal with, so tools should be easier to write, debug, and understand.
+
+** Better handling of out-of-memory events.
+
+** Improved Packet::uniqueify() implementation: it now copies only the
+   packet data, not both header and data.
+
+** Click identifiers can no longer end with a slash.
+
+* Acknowledgements
+
+** Thanks to the usual suspects (AUTHORS), and to David Scott Page
+   <page@cs.utexas.edu>, Luigi Rizzo <rizzo@aciri.org>, Eric Freudenthal
+   <eric.freudenthal@nyu.edu> and Tao Zhao <taozhao@cs.nyu.edu>, and Jose
+   Vasconcellos <jvasco@bellatlantic.net>.
 
 
 Version 1.2.3   4.Dec.2001

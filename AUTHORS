@@ -7,20 +7,12 @@ Douglas S. J. De Couto
 decouto@lcs.mit.edu
 user-level elements, Grid elements, ClickController, cross-compilation
 
-Peilei Fan
-peilei@mit.edu
-IPv6 elements
-
 Thomer Gil
 thomer@lcs.mit.edu
 dynamic IP routing table, IP rate monitoring elements
 
-Kyle Jamieson
-jamieson@mit.edu
-ARM fixes, 802.11 elements
-
 Eddie Kohler
-kohler@aciri.org
+kohler@icir.org
 design, core, language, Linux /proc interface, Linux kernel module,
 standard elements, tools, documentation, distribution, IP rewriting
 elements, ClickController, other elements, Tasks, Linux 2.4
@@ -38,12 +30,24 @@ Massimiliano Poletto
 maxp@mazunetworks.com
 IP rewriting elements, stride scheduling element, round robin scheduler
 
+Luigi Rizzo
+rizzo@icir.org
+FreeBSD kernel module
+
 Nickolai B. Zeldovich
 kolya@lcs.mit.edu
 Linux 2.4, BSD kernel module
 
 
 Thanks to:
+
+Peilei Fan
+peilei@mit.edu
+IPv6 elements
+
+Kyle Jamieson
+jamieson@mit.edu
+ARM fixes, 802.11 elements
 
 John Jannotti
 jj@lcs.mit.edu
@@ -56,6 +60,10 @@ initial design
 Alex Snoeren
 snoeren@lcs.mit.edu
 IP security elements
+
+Alexander Yip
+yipal@pdos.lcs.mit.edu
+IP reassembler, other changes
 
 
 Thanks for patches and comments:
@@ -71,6 +79,9 @@ gopalan@purdue.edu
 
 Kyle Jamieson
 jamieson@mit.edu
+
+David Scott Page
+page@cs.utexas.edu
 
 Kevin Mitchell
 kevin_mitchell@agilent.com

@@ -256,12 +256,14 @@ userlevel/click.cc
 
 linuxmodule
 linuxmodule/Makefile.in
-linuxmodule/kernelversion.c
 linuxmodule/clickfs.cc
 linuxmodule/config.cc
+linuxmodule/kernelversion.c
 linuxmodule/module.cc
 linuxmodule/modulepriv.hh
 linuxmodule/proc_click.cc
+linuxmodule/proclikefs.c
+linuxmodule/proclikefs.h
 linuxmodule/read-pmc.c
 linuxmodule/sched.cc
 linuxmodule/skbmgr.cc
