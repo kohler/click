@@ -33,7 +33,9 @@ proc_dir_entry *proc_click_entry = 0;
 int proc_click_mode_r, proc_click_mode_w, proc_click_mode_x;
 int proc_click_mode_dir;
 extern "C" int click_accessible();
+#if __MTCLICK__
 extern "C" int click_threads();
+#endif
 
 ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
@@ -94,8 +96,13 @@ install_current_router(Router *r)
   current_router = r;
   r->use();
   init_router_element_procs();
+#if __MTCLICK__
   if (r->initialized())
     start_click_sched(r, click_threads(), kernel_errh);
+#else
+  if (r->initialized())
+    start_click_sched(r, 1, kernel_errh);
+#endif
 }
 
 extern "C" void
