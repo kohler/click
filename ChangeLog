@@ -1,3 +1,36 @@
+2000-11-10 Friday 14:12  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/linuxmodule/fastudpsrc.cc: Chopped liver.
+
+2000-11-10 Friday 14:11  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/linuxmodule/todevice.cc: Fix a crash caused by ToDevice
+	calling qdisc_restart.
+
+2000-11-10 Friday 12:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/Element.3, include/click/confparse.hh,
+	include/click/ipflowid.hh, lib/confparse.cc, lib/ipflowid.cc:
+	nitlets (confparse header order, cp_uncomment: don't remove
+	internal spaces around comments, remove IPFlowID2)
+
+2000-11-10 Friday 12:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/: fakepcap.h, todump.cc, todump.hh: ToDump()
+	actually generated bad files -- fix that, and remove dependence on
+	libpcap (just write the file format independently) (Mazu)
+
+2000-11-10 Friday 12:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/todevice.cc: better locking to try to avoid
+	crash when Linux and Click both send packets on an SMP machine
+	(crash occurred at Mazu)
+
+2000-11-10 Friday 12:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: iprw.cc, iprw.hh: nitlet: clear out the table so
+	that it doesn't contain bad pointers (Mazu)
+
 2000-11-09 Thursday 21:28  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* DISTFILES, include/click/bighashmap.cc,
