@@ -1857,7 +1857,7 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_integer(arg, &v->v.i))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("overflow on %s (%s); max %d", argname, desc, v->v.i);
+      errh->error("%s (%s) too large; max %d", argname, desc, v->v.i);
     else if (v->v.i < underflower)
       errh->error("%s (%s) must be >= %d", argname, desc, underflower);
     else if (v->v.i > (int)overflower)
@@ -1868,7 +1868,7 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_unsigned(arg, &v->v.u))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("overflow on %s (%s); max %u", argname, desc, v->v.u);
+      errh->error("%s (%s) too large; max %u", argname, desc, v->v.u);
     else if (v->v.u > overflower)
       errh->error("%s (%s) must be <= %u", argname, desc, overflower);
     break;
@@ -1878,14 +1878,14 @@ default_parsefunc(cp_value *v, const String &arg,
     if (!cp_integer64(arg, &v->v.i64))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("overflow on %s (%s); max %lld", argname, desc, v->v.i64);
+      errh->error("%s (%s) too large; max %lld", argname, desc, v->v.i64);
     break;
 
    case cpiUnsigned64:
     if (!cp_unsigned64(arg, &v->v.u64))
       errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
-      errh->error("overflow on %s (%s); max %llu", argname, desc, v->v.u64);
+      errh->error("%s (%s) too large; max %llu", argname, desc, v->v.u64);
     break;
 #endif
 
@@ -1894,7 +1894,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes real (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.i, v->extra);
-      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
     }
     break;
 
@@ -1903,7 +1903,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes unsigned real (%s)", argname, desc);
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real10(v->v.u, v->extra);
-      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
     }
     break;
 
@@ -1915,7 +1915,7 @@ default_parsefunc(cp_value *v, const String &arg,
 	errh->error("%s takes time in seconds (%s)", argname, desc);
     } else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_milliseconds(v->v.i);
-      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
     }
     break;
 
@@ -1927,7 +1927,7 @@ default_parsefunc(cp_value *v, const String &arg,
        else
 	 errh->error("%s takes seconds since the epoch (%s)", argname, desc);
      } else if (cp_errno == CPE_OVERFLOW)
-       errh->error("overflow on %s (%s)", argname, desc);
+       errh->error("%s (%s) too large", argname, desc);
      else {
        v->v.i = tv.tv_sec;
        v->v2.i = tv.tv_usec;
@@ -1941,7 +1941,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes real (%s)", argname, desc);
     } else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_real2(v->v.i, v->extra);
-      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
     }
     break;
 
@@ -1951,7 +1951,7 @@ default_parsefunc(cp_value *v, const String &arg,
       errh->error("%s takes unsigned real (%s)", argname, desc);
     } else if (cp_errno == CPE_OVERFLOW) {
       String m  = cp_unparse_real2(v->v.u, v->extra);
-      errh->error("overflow on %s (%s); max %s", argname, desc, m.cc());
+      errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
     }
     break;
 
