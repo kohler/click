@@ -397,9 +397,14 @@ LexerT::force_element_type(String s)
 String
 LexerT::anon_element_name(const String &class_name) const
 {
-  char buf[100];
-  sprintf(buf, "@%d", _router->nelements() - _anonymous_offset + 1);
-  return _element_prefix + class_name + String(buf);
+  String prefix = _element_prefix + class_name + "@";
+  int anonymizer = _router->nelements() - _anonymous_offset + 1;
+  String name = prefix + String(anonymizer);
+  while (_router->eindex(name) >= 0) {
+    anonymizer++;
+    name = prefix + String(anonymizer);
+  }
+  return name;
 }
 
 int

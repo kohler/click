@@ -160,10 +160,14 @@ ScheduleInfo::join_scheduler(Element *e, ErrorHandler *errh)
 {
 #if !RR_SCHED
   int max_tickets = query(e, errh);
-  e->set_max_tickets(max_tickets);
-  e->set_tickets(max_tickets);
-#endif
+  if (max_tickets > 0) {
+    e->set_max_tickets(max_tickets);
+    e->set_tickets(max_tickets);
+    e->join_scheduler();
+  }
+#else
   e->join_scheduler();
+#endif
 }
 
 EXPORT_ELEMENT(ScheduleInfo)

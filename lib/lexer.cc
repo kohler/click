@@ -727,9 +727,14 @@ Lexer::get_element(String name, int etype, const String &conf,
 String
 Lexer::anon_element_name(const String &class_name) const
 {
-  char buf[100];
-  sprintf(buf, "@%d", _elements.size() - _anonymous_offset + 1);
-  return _element_prefix + class_name + String(buf);
+  String prefix = _element_prefix + class_name + "@";
+  int anonymizer = _elements.size() - _anonymous_offset + 1;
+  String name = prefix + String(anonymizer);
+  while (_element_map[name] >= 0) {
+    anonymizer++;
+    name = prefix + String(anonymizer);
+  }
+  return name;
 }
 
 void
