@@ -12,6 +12,10 @@ Version 1.0.7
    into a directory (directory path specified using -d option) or stdout on a
    regular basis (duration specified by argument to ReadHandlerCaller element).
 
+* Kernel driver
+
+** Added patch for Linux kernel 2.2.16.
+
 * Elements
 
 ** Added support for parsing CIDR-style [Classless Inter-Domain Routing]
