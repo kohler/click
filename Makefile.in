@@ -87,8 +87,8 @@ install-local-include: stamp-h
 install-include: install-local-include
 	@cd tools && $(MAKE) install-include
 install-lib:
-	@echo $(ALL_TARGETS) | grep userlevel >/dev/null 2>&1 && cd userlevel && $(MAKE) install-lib
-	@echo $(ALL_TARGETS) | grep tools >/dev/null 2>&1 && cd tools && $(MAKE) install-lib
+	@if echo $(ALL_TARGETS) | grep userlevel >/dev/null 2>&1; then cd userlevel && $(MAKE) install-lib; fi
+	@if echo $(ALL_TARGETS) | grep tools >/dev/null 2>&1; then cd tools && $(MAKE) install-lib; fi
 
 uninstall:
 	@for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) uninstall) || exit 1; done
