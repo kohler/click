@@ -236,12 +236,11 @@ FromDevice::run_scheduled()
 
 #ifndef RR_SCHED
 #ifdef ADJ_TICKETS
-  int adj = tickets() / 4;
+  int adj = tickets() / 8;
   if (adj < 4) adj = 4;
   
-  if (i == INPUT_MAX_PKTS_PER_RUN);
-  else if (i < INPUT_MAX_PKTS_PER_RUN/4) adj = 0 - adj;
-  else adj = 0;
+  if (i == INPUT_MAX_PKTS_PER_RUN) adj *= 2;
+  if (i < INPUT_MAX_PKTS_PER_RUN/4) adj = 0 - adj;
 
   adj_tickets(adj);
 #endif /* ADJ_TICKETS */
