@@ -1,3 +1,8 @@
+2003-08-28 Thursday 16:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/kerneltun.cc (1.45): move net/if.h include out
+	of ifdefs, it is needed to set mtu
+
 2003-08-27 Wednesday 14:21  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/arptable.cc (1.6): some bugfixes
