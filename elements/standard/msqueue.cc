@@ -129,7 +129,7 @@ String
 MSQueue::read_handler(Element *e, void *thunk)
 {
   MSQueue *q = static_cast<MSQueue *>(e);
-  int which = reinterpret_cast<int>(thunk);
+  int which = reinterpret_cast<intptr_t>(thunk);
   switch (which) {
    case 0:
     return String(q->size()) + "\n";
