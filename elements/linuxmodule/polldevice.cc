@@ -128,5 +128,6 @@ PollDevice::pull(int)
   return 0L;
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(PollDevice)
 
