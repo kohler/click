@@ -40,7 +40,6 @@ IP6Address::IP6Address(const unsigned char *data)
 
 IP6Address::IP6Address(const IPAddress ip)
 {
-  //const unsigned *udata = reinterpret_cast<const unsigned *>(ip.data());
   unsigned char *udata = ip.data();
   for (int i=0; i<10; i++)
     _addr.s6_addr[i] = 0;
