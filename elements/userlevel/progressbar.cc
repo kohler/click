@@ -26,6 +26,7 @@
 #include <termio.h>
 #endif
 #include <termios.h>
+#include <sys/ioctl.h>
 
 ProgressBar::ProgressBar()
     : _timer(this)
