@@ -177,7 +177,7 @@ AggregateCounter::make_peer(uint32_t a, Node *n, bool frozen)
     }
 
     // swivel is first bit 'a' and 'old->input' differ
-    int swivel = first_bit_set(a ^ n->aggregate);
+    int swivel = ffs_msb(a ^ n->aggregate);
     // bitvalue is the value of that bit of 'a'
     int bitvalue = (a >> (32 - swivel)) & 1;
     // mask masks off all bits before swivel
@@ -213,8 +213,8 @@ AggregateCounter::find_node(uint32_t a, bool frozen)
 	    n = make_peer(a, n, frozen);
 	else {
 	    // swivel is the first bit in which the two children differ
-	    int swivel = first_bit_set(n->child[0]->aggregate ^ n->child[1]->aggregate);
-	    if (first_bit_set(a ^ n->aggregate) < swivel) // input differs earlier
+	    int swivel = ffs_msb(n->child[0]->aggregate ^ n->child[1]->aggregate);
+	    if (ffs_msb(a ^ n->aggregate) < swivel) // input differs earlier
 		n = make_peer(a, n, frozen);
 	    else if (a & (1 << (32 - swivel)))
 		n = n->child[1];

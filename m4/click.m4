@@ -13,11 +13,12 @@ dnl If so, we don't screw with their choices later.
 dnl
 
 AC_DEFUN([CLICK_INIT], [
-    ac_user_cc= ; test -n "$CC" && ac_user_cc=y
-    ac_user_kernel_cc= ; test -n "$KERNEL_CC" && ac_user_kernel_cc=y
-    ac_user_cxx= ; test -n "$CXX" && ac_user_cxx=y
-    ac_user_build_cxx= ; test -n "$BUILD_CXX" && ac_user_build_cxx=y
-    ac_user_kernel_cxx= ; test -n "$KERNEL_CXX" && ac_user_kernel_cxx=y
+    ac_user_cc=; test -n "$CC" && ac_user_cc=y
+    ac_user_kernel_cc=; test -n "$KERNEL_CC" && ac_user_kernel_cc=y
+    ac_user_cxx=; test -n "$CXX" && ac_user_cxx=y
+    ac_user_build_cxx=; test -n "$BUILD_CXX" && ac_user_build_cxx=y
+    ac_user_kernel_cxx=; test -n "$KERNEL_CXX" && ac_user_kernel_cxx=y
+    ac_user_depcflags=; test -n "$DEPCFLAGS" && ac_user_depcflags=y
     ac_compile_with_warnings=y
 
     conf_auxdir=$1
@@ -37,8 +38,7 @@ AC_DEFUN([CLICK_PROG_CC], [
     test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
 	CC="$CC -W -Wall"
 
-    DEPCFLAGS=""
-    test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
+    test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" -a -z "$ac_user_depcflags" && \
 	DEPCFLAGS="-MD"
     AC_SUBST(DEPCFLAGS)
 
@@ -94,21 +94,21 @@ by setting the 'CXX' environment variable and rerunning me.
 
     dnl check for <new> and <new.h>
 
-    AC_CACHE_CHECK(whether <new> works, ac_cv_good_new_hdr,
-	AC_TRY_LINK([#include <new>], [
-  int a;
-  int *b = new(&a) int;
-  return 0;
-], ac_cv_good_new_hdr=yes, ac_cv_good_new_hdr=no))
+    AC_CACHE_CHECK([whether <new> works], [ac_cv_good_new_hdr], [
+	AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <new>]], [[
+    int a;
+    int *b = new(&a) int;
+    return 0;
+]])], [ac_cv_good_new_hdr=yes], [ac_cv_good_new_hdr=no])])
     if test "$ac_cv_good_new_hdr" = yes; then
 	AC_DEFINE([HAVE_NEW_HDR], [1], [Define if <new> exists and works.])
     else
-	AC_CACHE_CHECK(whether <new.h> works, ac_cv_good_new_h,
-	    AC_TRY_LINK([#include <new.h>], [
-  int a;
-  int *b = new(&a) int;
-  return 0;
-], ac_cv_good_new_h=yes, ac_cv_good_new_h=no))
+	AC_CACHE_CHECK([whether <new.h> works], [ac_cv_good_new_h], [
+	    AC_LINK_IFELSE([AC_LANG_PROGRAM([[#include <new.h>]], [[
+    int a;
+    int *b = new(&a) int;
+    return 0;
+]])], [ac_cv_good_new_h=yes], [ac_cv_good_new_h=no])])
 	if test "$ac_cv_good_new_h" = yes; then
 	    AC_DEFINE([HAVE_NEW_H], [1], [Define if <new.h> exists and works.])
 	fi
@@ -249,14 +249,14 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 
     HAVE_PCAP=yes
     if test "${PCAP_INCLUDES-NO}" = NO; then
-	AC_CACHE_CHECK(for pcap.h, ac_cv_pcap_header_path,
-	    AC_TRY_CPP([#include <pcap.h>],
+	AC_CACHE_CHECK(for pcap.h, ac_cv_pcap_header_path, [
+	    AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <pcap.h>]])],
 	    ac_cv_pcap_header_path="found",
-	    ac_cv_pcap_header_path='not found'
+	    [ac_cv_pcap_header_path='not found'
 	    test -r /usr/local/include/pcap/pcap.h && \
 		ac_cv_pcap_header_path='-I/usr/local/include/pcap'
 	    test -r /usr/include/pcap/pcap.h && \
-		ac_cv_pcap_header_path='-I/usr/include/pcap'))
+		ac_cv_pcap_header_path='-I/usr/include/pcap'])])
 	if test "$ac_cv_pcap_header_path" = 'not found'; then
 	    HAVE_PCAP=
 	elif test "$ac_cv_pcap_header_path" != 'found'; then
@@ -265,11 +265,11 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
     fi
 
     if test "$HAVE_PCAP" = yes; then
-	AC_CACHE_CHECK(whether pcap.h works, ac_cv_working_pcap_h,
+	AC_CACHE_CHECK(whether pcap.h works, ac_cv_working_pcap_h, [
 	    saveflags="$CPPFLAGS"
 	    CPPFLAGS="$saveflags $PCAP_INCLUDES"
-	    AC_TRY_CPP([#include <pcap.h>], ac_cv_working_pcap_h=yes, ac_cv_working_pcap_h=no)
-	    CPPFLAGS="$saveflags")
+	    AC_PREPROC_IFELSE([AC_LANG_SOURCE([[#include <pcap.h>]])], ac_cv_working_pcap_h=yes, ac_cv_working_pcap_h=no)
+	    CPPFLAGS="$saveflags"])
 	test "$ac_cv_working_pcap_h" != yes && HAVE_PCAP=
     fi
 
@@ -292,33 +292,26 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
 
     if test "$HAVE_PCAP" = yes; then
 	if test "${PCAP_LIBS-NO}" = NO; then
-	    AC_CACHE_CHECK(for -lpcap, 
-                ac_cv_pcap_library_path,
+	    AC_CACHE_CHECK([for -lpcap], [ac_cv_pcap_library_path], [
 		saveflags="$LDFLAGS"
 		savelibs="$LIBS"
 		LIBS="$savelibs -lpcap $SOCKET_LIBS"
 		AC_LANG_C
-		AC_TRY_LINK_FUNC(pcap_open_live, 
-                                ac_cv_pcap_library_path="found",
-				LDFLAGS="$saveflags -L/usr/local/lib"
-		                AC_TRY_LINK_FUNC(pcap_open_live, 
-				    ac_cv_pcap_library_path="-L/usr/local/lib",
-				    ac_cv_pcap_library_path="not found"))
+		AC_LINK_IFELSE([AC_LANG_CALL([[]], [[pcap_open_live]])], [ac_cv_pcap_library_path="found"],
+				[LDFLAGS="$saveflags -L/usr/local/lib"
+		                AC_LINK_IFELSE([AC_LANG_CALL([[]], [[pcap_open_live]])], [ac_cv_pcap_library_path="-L/usr/local/lib"], [ac_cv_pcap_library_path="not found"])])
 		LDFLAGS="$saveflags"
-		LIBS="$savelibs")
+		LIBS="$savelibs"])
 	else
-	    AC_CACHE_CHECK(for -lpcap in "$PCAP_LIBS", 
-                ac_cv_pcap_library_path,
+	    AC_CACHE_CHECK([for -lpcap in "$PCAP_LIBS"], [ac_cv_pcap_library_path], [
 		saveflags="$LDFLAGS"
 		LDFLAGS="$saveflags $PCAP_LIBS"
 		savelibs="$LIBS"
 		LIBS="$savelibs -lpcap $SOCKET_LIBS"
 		AC_LANG_C
-		AC_TRY_LINK_FUNC(pcap_open_live, 
-				ac_cv_pcap_library_path="$PCAP_LIBS",
-			        ac_cv_pcap_library_path="not found")
+		AC_LINK_IFELSE([AC_LANG_CALL([[]], [[pcap_open_live]])], [ac_cv_pcap_library_path="$PCAP_LIBS"], [ac_cv_pcap_library_path="not found"])
 		LDFLAGS="$saveflags"
-		LIBS="$savelibs")
+		LIBS="$savelibs"])
 	fi
         if test "$ac_cv_pcap_library_path" = "found"; then
 	    PCAP_LIBS='-lpcap'
@@ -447,8 +440,8 @@ dnl HAVE_INDIFFERENT_ALIGNMENT.
 dnl
 
 AC_DEFUN([CLICK_CHECK_ALIGNMENT], [
-    AC_CACHE_CHECK(whether machine is indifferent to alignment, ac_cv_alignment_indifferent,
-    [AC_TRY_RUN([#ifdef __cplusplus
+    AC_CACHE_CHECK([whether machine is indifferent to alignment], [ac_cv_alignment_indifferent],
+    [AC_RUN_IFELSE([AC_LANG_SOURCE([[#ifdef __cplusplus
 extern "C" void exit(int);
 #else
 void exit(int status);
@@ -469,8 +462,8 @@ int main(int argc, char *argv[]) {
 	    exit(1);
     }
     exit(0);
-}], ac_cv_alignment_indifferent=yes, ac_cv_alignment_indifferent=no,
-	ac_cv_alignment_indifferent=no)])
+}]])], [ac_cv_alignment_indifferent=yes], [ac_cv_alignment_indifferent=no],
+	[ac_cv_alignment_indifferent=no])])
     if test "x$ac_cv_alignment_indifferent" = xyes; then
 	AC_DEFINE([HAVE_INDIFFERENT_ALIGNMENT], [1], [Define if the machine is indifferent to alignment.])
     fi])
@@ -549,12 +542,11 @@ Compile with '--disable-int64'.
 
 	AC_CACHE_CHECK(whether long and int64_t are the same type,
 	    ac_cv_long_64, [AC_LANG_CPLUSPLUS
-	    AC_TRY_COMPILE([#include <$inttypes_hdr>
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <$inttypes_hdr>
 void f1(long) {
 }
 void f1(int64_t) { // will fail if long and int64_t are the same type
-}
-], [], ac_cv_long_64=no, ac_cv_long_64=yes)])
+}]], [[]])], ac_cv_long_64=no, ac_cv_long_64=yes)])
 	if test $ac_cv_long_64 = yes; then
 	    AC_DEFINE([HAVE_64_BIT_LONG], [1], [Define if '[unsigned] long' has 64 bits.])
 	fi
@@ -576,10 +568,10 @@ dnl autoconf 2.53 versus autoconf 2.13
 		    fi
 		    break, endian_hdr=no)
     if test "x$endian_hdr" != xno; then
-	AC_CACHE_CHECK(endianness, ac_cv_endian,
-	    dnl can't use AC_TRY_CPP because it throws out the results
+	AC_CACHE_CHECK(endianness, ac_cv_endian, [
+	    dnl can't use AC_PREPROC_IFELSE because it throws out the results
 	    ac_cv_endian=0
-	    [cat > conftest.$ac_ext <<EOF
+	    cat > conftest.$ac_ext <<EOF
 [#]line __oline__ "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
@@ -602,11 +594,10 @@ EOF
 		echo "configure: failed program was:" >&5
 		cat conftest.$ac_ext >&5
 	    fi
-	    rm -f conftest*]
-	)
+	    rm -f conftest*])
     elif test "x$cross_compiling" != xyes ; then
 	AC_CACHE_CHECK(endianness, ac_cv_endian,
-	    [AC_TRY_RUN([#ifdef __cplusplus
+	    [AC_RUN_IFELSE([AC_LANG_SOURCE([[#ifdef __cplusplus
 extern "C" void exit(int);
 #else
 void exit(int status);
@@ -620,8 +611,7 @@ int main(int argc, char *argv[]) {
     u.i = ('1') | ('2' << 8) | ('3' << 16) | ('4' << 24);
     fprintf(f, "%4.4s\n", u.c);
     exit(0);
-}	    ], ac_cv_endian=`cat conftestdata`, ac_cv_endian=0, ac_cv_endian=0)]
-	)
+}]])], [ac_cv_endian=`cat conftestdata`], [ac_cv_endian=0], [ac_cv_endian=0])])
     else
 	ac_cv_endian=0
     fi
@@ -631,15 +621,37 @@ int main(int argc, char *argv[]) {
 
 
 dnl
+dnl CLICK_CHECK_INTEGER_BUILTINS
+dnl Checks whether '__builtin_ffs' and '__builtin_ffsll' exist.
+dnl
+
+AC_DEFUN([CLICK_CHECK_INTEGER_BUILTINS], [
+    AC_CACHE_CHECK([for __builtin_ffs], [ac_cv_have___builtin_ffs],
+	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[volatile int x = 11;]], [[int y = __builtin_ffs(x);]])], [ac_cv_have___builtin_ffs=yes], [ac_cv_have___builtin_ffs=no])])
+    if test $ac_cv_have___builtin_ffs = yes; then
+	AC_DEFINE([HAVE___BUILTIN_FFS], [1], [Define if you have the __builtin_ffs function.])
+    fi
+    AC_CACHE_CHECK([for __builtin_ffsl], [ac_cv_have___builtin_ffsl],
+	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[volatile long x = 11;]], [[int y = __builtin_ffsl(x);]])], [ac_cv_have___builtin_ffsl=yes], [ac_cv_have___builtin_ffsl=no])])
+    if test $ac_cv_have___builtin_ffsl = yes; then
+	AC_DEFINE([HAVE___BUILTIN_FFSL], [1], [Define if you have the __builtin_ffsl function.])
+    fi
+    AC_CACHE_CHECK([for __builtin_ffsll], [ac_cv_have___builtin_ffsll],
+	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[volatile int x = 11;]], [[int y = __builtin_ffsll(x);]])], [ac_cv_have___builtin_ffsll=yes], [ac_cv_have___builtin_ffsll=no])])
+    if test $ac_cv_have___builtin_ffsll = yes; then
+	AC_DEFINE([HAVE___BUILTIN_FFSLL], [1], [Define if you have the __builtin_ffsll function.])
+    fi])
+
+
+dnl
 dnl CLICK_CHECK_ADDRESSABLE_VA_LIST
 dnl Checks whether the va_list type is addressable.
 dnl
 
 AC_DEFUN([CLICK_CHECK_ADDRESSABLE_VA_LIST], [
     AC_LANG_CPLUSPLUS
-    AC_CACHE_CHECK([for addressable va_list type], 
-	ac_cv_va_list_addr,
-	[AC_TRY_COMPILE([#include <stdarg.h>
+    AC_CACHE_CHECK([for addressable va_list type], [ac_cv_va_list_addr],
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <stdarg.h>
 void f(va_list *) {
 }
 void g(va_list val) {
@@ -650,7 +662,7 @@ void h(int a, ...) {
     va_start(val, a);
     g(val);
     va_end(val);
-}], [h(2, 3, 4);], ac_cv_va_list_addr=yes, ac_cv_va_list_addr=no)])
+}]], [[h(2, 3, 4);]])], ac_cv_va_list_addr=yes, ac_cv_va_list_addr=no)])
     if test "x$ac_cv_va_list_addr" = xyes; then
 	AC_DEFINE([HAVE_ADDRESSABLE_VA_LIST], [1], [Define if the va_list type is addressable.])
     fi
@@ -667,7 +679,7 @@ AC_DEFUN([CLICK_CHECK_LARGE_FILE_SUPPORT], [
     AC_LANG_C
     AC_CACHE_CHECK([for large file support in C library], 
 	ac_cv_large_file_support,
-	[AC_TRY_COMPILE([#define _LARGEFILE_SOURCE 1
+	[AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#define _LARGEFILE_SOURCE 1
 #define _FILE_OFFSET_BITS 64
 #include <unistd.h>
 #include <sys/types.h>
@@ -676,7 +688,7 @@ AC_DEFUN([CLICK_CHECK_LARGE_FILE_SUPPORT], [
 void h(off_t a) {
     int fd = open("/tmp/whatever", 0);
     lseek(fd, a, 0);
-}], [h(15);], ac_cv_large_file_support=yes, ac_cv_large_file_support=no)])
+}]], [[h(15);]])], ac_cv_large_file_support=yes, ac_cv_large_file_support=no)])
     if test "x$ac_cv_large_file_support" = xyes; then
 	AC_DEFINE([HAVE_LARGE_FILE_SUPPORT], [1], [Define if your C library contains large file support.])
     fi
@@ -699,13 +711,12 @@ dnl
 AC_DEFUN([CLICK_CHECK_POLL_H], [
     AC_CHECK_HEADER(poll.h, ac_cv_poll_h=yes, ac_cv_poll_h=no)
     if test "$ac_cv_poll_h" = yes; then
-	AC_CACHE_CHECK([whether <poll.h> is emulated], 
-	    ac_cv_emulated_poll_h,
-	    [AC_TRY_COMPILE([#include <poll.h>
+	AC_CACHE_CHECK([whether <poll.h> is emulated], [ac_cv_emulated_poll_h],
+	    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <poll.h>
 #ifdef _POLL_EMUL_H_
 # error "error"
 #endif
-], [], ac_cv_emulated_poll_h=no, ac_cv_emulated_poll_h=yes)])
+]], [[]])], ac_cv_emulated_poll_h=no, ac_cv_emulated_poll_h=yes)])
 	if test "x$ac_cv_emulated_poll_h" = xno; then
 	    AC_DEFINE([HAVE_POLL_H], [1], [Define if you have a non-emulated <poll.h> header file.])
 	fi

@@ -685,7 +685,7 @@ IPFilter::Primitive::add_comparison_exprs(Classifier *c, Vector<int> &tree, int 
 
   while (u < mask) {
     int high_bit = (u > (mask >> 1));
-    int first_different_bit = 33 - first_bit_set(high_bit ? ~(u+1) & mask : u);
+    int first_different_bit = 33 - ffs_msb(high_bit ? ~(u+1) & mask : u);
     uint32_t upper_mask;
     if (first_different_bit == 33)
       upper_mask = mask;

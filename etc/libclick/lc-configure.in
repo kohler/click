@@ -56,11 +56,11 @@ dnl
 dnl check whether target is Linux
 dnl
 
-AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
-  AC_TRY_COMPILE([], [#ifndef __linux__
+AC_CACHE_CHECK([whether we are compiling for Linux], [ac_cv_under_linux],
+    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[]], [[#ifndef __linux__
 #error "fuckers! fuckers!"
 #endif
-return 0;], ac_cv_under_linux=yes, ac_cv_under_linux=no))
+return 0;]])], ac_cv_under_linux=yes, ac_cv_under_linux=no)])
 
 
 dnl
@@ -68,18 +68,18 @@ dnl multithread support?
 dnl
 
 AC_ARG_ENABLE(multithread,
-  [  --enable-multithread[[=NUM]] support kernel multithreading, NUM threads max],
+  [[  --enable-multithread[=NUM] support kernel multithreading, NUM threads max]],
   :, enable_multithread=no)
 
 test "$enable_multithread" = yes && enable_multithread=4
 test "$enable_multithread" = no && enable_multithread=1
 if test "$enable_multithread" -gt 1; then
-  AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, $enable_multithread)
-  AC_DEFINE_UNQUOTED(__MTCLICK__, 1)
-  saveflags="$CPPFLAGS"
-  CPPFLAGS="$saveflags -D__MTCLICK__"
+    AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, $enable_multithread)
+    AC_DEFINE_UNQUOTED(__MTCLICK__, 1)
+    saveflags="$CPPFLAGS"
+    CPPFLAGS="$saveflags -D__MTCLICK__"
 else
-  AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, 1)
+    AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, 1)
 fi
 
 
@@ -104,10 +104,12 @@ AC_CHECK_SIZEOF(int)
 AC_CHECK_SIZEOF(long)
 CLICK_CHECK_INTEGER_TYPES
 if test "x$enable_int64" = xyes; then
+    AC_CHECK_SIZEOF(long long)
     CLICK_CHECK_INT64_TYPES
 fi
 CLICK_CHECK_ENDIAN
 CLICK_CHECK_ADDRESSABLE_VA_LIST
+CLICK_CHECK_INTEGER_BUILTINS
 
 
 dnl
@@ -248,7 +250,7 @@ if test -z "$GMAKE"; then
     AC_MSG_ERROR([
 ==============================================
 
-I can't find GNU make. Either put 'gmake' on your PATH and
+Can't find GNU make.  Either put 'gmake' on your PATH and
 rerun './configure', or set the GMAKE environment variable to
 GNU make's pathname.
 
@@ -263,43 +265,43 @@ dnl
 AC_MSG_CHECKING(for working makeinfo)
 MAKEINFO=${MAKEINFO-makeinfo}
 if ($MAKEINFO --version) < /dev/null > conftest.out 2>&1; then
-  if test `head -1 conftest.out | sed 's/^.* \([[0-9]][[0-9]]*\).*$/\1/'` -ge 4; then
-    AC_MSG_RESULT(found)
-  else
-    MAKEINFO='$(conf_auxdir)/missing makeinfo'
-    AC_MSG_RESULT(old)
-  fi
+    if test `head -1 conftest.out | sed 's/^.* \([[0-9]][[0-9]]*\).*$/\1/'` -ge 4; then
+	AC_MSG_RESULT(found)
+    else
+	MAKEINFO='$(conf_auxdir)/missing makeinfo'
+	AC_MSG_RESULT(old)
+    fi
 else
-  MAKEINFO='$(conf_auxdir)/missing makeinfo'
-  AC_MSG_RESULT(missing)
+    MAKEINFO='$(conf_auxdir)/missing makeinfo'
+    AC_MSG_RESULT(missing)
 fi
 
 AC_MSG_CHECKING(for working texi2dvi)
 TEXI2DVI=${TEXI2DVI-texi2dvi}
 if ($TEXI2DVI --version) < /dev/null > conftest.out 2>&1; then
-  dnl Search for a good version of texi2dvi
-  if test `head -1 conftest.out | sed 's/.*Texinfo \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
-    AC_MSG_RESULT(found)
-  else
-    TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
-    AC_MSG_RESULT(old)
-  fi
+    dnl Search for a good version of texi2dvi
+    if test `head -1 conftest.out | sed 's/.*Texinfo \([[0-9]][[0-9]]*\).*/\1/'` -ge 4; then
+	AC_MSG_RESULT(found)
+    else
+	TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
+	AC_MSG_RESULT(old)
+    fi
 else
-  TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
-  AC_MSG_RESULT(missing)
+    TEXI2DVI='$(conf_auxdir)/missing texi2dvi'
+    AC_MSG_RESULT(missing)
 fi
 
 dnl Assume any version of install-info is OK
 if test ${INSTALL_INFO-xxx} = xxx; then
-  AC_PATH_PROG(INSTALL_INFO, install-info, '$(conf_auxdir)/missing install-info',
+    AC_PATH_PROG(INSTALL_INFO, install-info, '$(conf_auxdir)/missing install-info',
 	$PATH:/sbin:/usr/sbin:/usr/local/sbin)
 fi
 AC_MSG_CHECKING(for working install-info)
 if ($INSTALL_INFO --version) < /dev/null > conftest.out 2>&1; then
-  AC_MSG_RESULT(found)
+    AC_MSG_RESULT(found)
 else
-  INSTALL_INFO='$(conf_auxdir)/missing install-info'
-  AC_MSG_RESULT(missing)
+    INSTALL_INFO='$(conf_auxdir)/missing install-info'
+    AC_MSG_RESULT(missing)
 fi
 
 
@@ -313,9 +315,9 @@ dnl set path variables
 dnl
 
 shell_expand () {
-  val=`eval echo '$'"$1"`
-  while echo "x$val" | fgrep '$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
-  eval "$1='$val'"
+    val=`eval echo '$'"$1"`
+    while echo "x$val" | fgrep '$' >/dev/null 2>&1; do val=`eval echo "$val"`; done
+    eval "$1='$val'"
 }
 
 dnl Preset $prefix and $exec_prefix.
@@ -324,7 +326,7 @@ test "x$exec_prefix" = xNONE && exec_prefix='${prefix}'
 
 dnl Expand 'infodir' to check for Red Hat
 if test x$infodir = 'x${prefix}/info'; then
-  test ! -d ${prefix}/info && test -d ${prefix}/share/info && infodir='${prefix}/share/info'
+    test ! -d ${prefix}/info && test -d ${prefix}/share/info && infodir='${prefix}/share/info'
 fi
 
 shell_expand bindir
@@ -344,9 +346,9 @@ dnl
 dnl start out with CPU
 provisions="$target_cpu"
 case "$target_cpu" in
-  i386) :;;
-  i486|i586) provisions="$provisions i386";;
-  i686|i786) provisions="$provisions i386 i586";;
+    i386) :;;
+    i486|i586) provisions="$provisions i386";;
+    i686|i786) provisions="$provisions i386 i586";;
 esac
 
 dnl add 'analysis' if analysis elements are available
@@ -392,15 +394,15 @@ dnl
 
 config_files="Makefile click-buildtool click-compile libsrc/Makefile"
 for ac_dir in include; do
-  test ! -d "$ac_dir" && mkdir "$ac_dir"
+    test ! -d "$ac_dir" && mkdir "$ac_dir"
 done
 
 AC_OUTPUT_COMMANDS([for ac_file in $CONFIG_HEADERS; do
-  test $ac_file = include/click/config.h:config.h.in && echo > stamp-h
+    test $ac_file = include/click/config.h:config.h.in && echo > stamp-h
 done
 for ac_file in $CONFIG_FILES; do
-  test $ac_file = click-buildtool && chmod +x click-buildtool
-  test $ac_file = click-compile && chmod +x click-compile
-  test -z "$GMAKE" && echo $ac_file | grep Makefile >/dev/null && $ac_given_srcdir/missing gmake $ac_file
+    test $ac_file = click-buildtool && chmod +x click-buildtool
+    test $ac_file = click-compile && chmod +x click-compile
+    test -z "$GMAKE" && echo $ac_file | grep Makefile >/dev/null && $ac_given_srcdir/missing gmake $ac_file
 done], GMAKE="$GMAKE")
 AC_OUTPUT($config_files)

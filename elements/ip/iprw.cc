@@ -26,7 +26,6 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
-#include <click/integers.hh>	// for first_bit_set
 
 #ifdef CLICK_LINUXMODULE
 #include <click/cxxprotect.h>

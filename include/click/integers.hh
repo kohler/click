@@ -20,9 +20,28 @@ inline uint64_t ntohq(uint64_t x) {
 #endif
 
 // MSB is bit #1
-int first_bit_set(uint32_t);
+#if HAVE___BUILTIN_FFS && SIZEOF_INT == 4
+inline int ffs_msb(uint32_t u) {
+    int ffs = __builtin_ffs(u);
+    return (ffs ? 33 - ffs : 0);
+}
+#else
+int ffs_msb(uint32_t);
+#endif
 #ifdef HAVE_INT64_TYPES
-int first_bit_set(uint64_t);
+# if HAVE___BUILTIN_FFSLL && SIZEOF_LONG_LONG == 8
+inline int ffs_msb(uint64_t x) {
+    int ffs = __builtin_ffsll(x);
+    return (ffs ? 65 - ffs : 0);
+}
+# elif HAVE___BUILTIN_FFSL && SIZEOF_LONG == 8
+inline int ffs_msb(uint64_t x) {
+    int ffs = __builtin_ffsl(x);
+    return (ffs ? 65 - ffs : 0);
+}
+# else
+int ffs_msb(uint64_t);
+# endif
 #endif
 
 uint32_t int_sqrt(uint32_t);

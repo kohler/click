@@ -17,8 +17,17 @@
 /* Define if PollDevice should run fast to get good benchmark numbers */
 #undef CLICK_WARP9
 
-/* Define if '[unsigned] long' has 64 bits. */
+/* Define if 'long' is the same type as 'int64_t'. */
 #undef HAVE_64_BIT_LONG
+
+/* Define if you have the __builtin_ffs function. */
+#undef HAVE___BUILTIN_FFS
+
+/* Define if you have the __builtin_ffsl function. */
+#undef HAVE___BUILTIN_FFSL
+
+/* Define if you have the __builtin_ffsll function. */
+#undef HAVE___BUILTIN_FFSLL
 
 /* Define if the va_list type is addressable. */
 #undef HAVE_ADDRESSABLE_VA_LIST
@@ -52,6 +61,9 @@
 
 /* The size of a `long', as computed by sizeof. */
 #undef SIZEOF_LONG
+
+/* The size of a `long long', as computed by sizeof. */
+#undef SIZEOF_LONG_LONG
 
 /* Define if you want to run multithreaded Click. */
 #undef __MTCLICK__

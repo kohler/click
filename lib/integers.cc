@@ -24,8 +24,9 @@ CLICK_DECLS
 
 // first_bit_set(uint32_t) borrowed from tcpdpriv
 
+#if !(HAVE___BUILTIN_FFS && SIZEOF_INT == 4)
 int
-first_bit_set(uint32_t value)
+ffs_msb(uint32_t value)
 {
     int add = 0;
     static uint8_t bvals[] = { 0, 4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 };
@@ -49,21 +50,20 @@ first_bit_set(uint32_t value)
 
     return add + bvals[value & 0xf];
 }
+#endif
 
 
-#ifdef HAVE_INT64_TYPES
-
+#if HAVE_INT64_TYPES && !(HAVE___BUILTIN_FFSLL && SIZEOF_LONG_LONG == 8) && !(HAVE___BUILTIN_FFSL && SIZEOF_LONG == 8)
 int
-first_bit_set(uint64_t value)
+ffs_msb(uint64_t value)
 {
     uint32_t hi = (uint32_t)(value >> 32);
     if (hi == 0) {
 	uint32_t lo = (uint32_t)value;
-	return (lo ? 32 + first_bit_set(lo) : 0);
+	return (lo ? 32 + ffs_msb(lo) : 0);
     } else
-	return first_bit_set(hi);
+	return ffs_msb(hi);
 }
-
 #endif
 
 uint32_t
