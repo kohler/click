@@ -39,7 +39,7 @@ CastElementFilter::CastElementFilter(const String &what)
 bool
 CastElementFilter::check_match(Element *e, int)
 {
-    return e->cast(_what) != 0;
+    return e->cast(_what.c_str()) != 0;
 }
 
 CLICK_ENDDECLS

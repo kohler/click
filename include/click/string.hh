@@ -60,7 +60,6 @@ class String { public:
   
   const char *cc();			// pointer returned is semi-transient
   const char *c_str()			{ return cc(); }
-  operator const char *()		{ return cc(); }
   
   char operator[](int e) const		{ return _data[e]; }
   char back() const			{ return _data[_length-1]; }

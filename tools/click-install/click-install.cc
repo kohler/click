@@ -145,9 +145,9 @@ prepare_tmpdir(RouterT *r, ErrorHandler *errh)
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].name.substring(-3) == ".hh") {
 	String filename = archive[i].name;
-	FILE *f = fopen(filename, "w");
+	FILE *f = fopen(filename.c_str(), "w");
 	if (!f)
-	  cerrh.warning("%s: %s", filename.cc(), strerror(errno));
+	  cerrh.warning("%s: %s", filename.c_str(), strerror(errno));
 	else {
 	  fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
 	  fclose(f);
@@ -187,9 +187,9 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     // write .cc file
     String filename = req + ".cc";
     String source_text = ae.data;
-    FILE *f = fopen(filename, "w");
+    FILE *f = fopen(filename.c_str(), "w");
     if (!f)
-      cerrh.fatal("%s: %s", filename.cc(), strerror(errno));
+      cerrh.fatal("%s: %s", filename.c_str(), strerror(errno));
     fwrite(source_text.data(), 1, source_text.length(), f);
     fclose(f);
     
@@ -266,9 +266,9 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
 	prepare_tmpdir(0, errh);
       const ArchiveElement &ae = r->archive(obj_aei);
       String tmpnam = tmpdir + insmod_name;
-      FILE *f = fopen(tmpnam.cc(), "w");
+      FILE *f = fopen(tmpnam.c_str(), "w");
       if (!f)
-	errh->fatal("%s: %s", tmpnam.cc(), strerror(errno));
+	errh->fatal("%s: %s", tmpnam.c_str(), strerror(errno));
       fwrite(ae.data.data(), 1, ae.data.length(), f);
       fclose(f);
 
@@ -441,7 +441,7 @@ particular purpose.\n");
     unload_click(errh);
   
   // install Click module if required
-  if (access(clickfs_packages, F_OK) < 0) {
+  if (access(clickfs_packages.c_str(), F_OK) < 0) {
 #if FOR_LINUXMODULE && HAVE_CLICKFS
     // find and install proclikefs.o
     StringMap modules(-1);
@@ -497,7 +497,7 @@ particular purpose.\n");
 #endif
 
     // check that all is well
-    if (access(clickfs_packages, F_OK) < 0)
+    if (access(clickfs_packages.c_str(), F_OK) < 0)
       errh->fatal("cannot install Click module");
   } else {
 #if FOR_LINUXMODULE
@@ -517,9 +517,9 @@ particular purpose.\n");
 
   // set priority
   if (priority > -100) {
-    FILE *f = fopen(clickfs_priority.cc(), "w");
+    FILE *f = fopen(clickfs_priority.c_str(), "w");
     if (!f)
-      errh->fatal("%s: %s", clickfs_priority.cc(), strerror(errno));
+      errh->fatal("%s: %s", clickfs_priority.c_str(), strerror(errno));
     fprintf(f, "%d\n", priority);
     fclose(f);
   }

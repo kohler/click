@@ -91,11 +91,9 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 FromIPSummaryDump::error_helper(ErrorHandler *errh, const char *x)
 {
-    if (errh)
-	errh->error("%s: %s", _filename.cc(), x);
-    else
-	click_chatter("%s: %s", id().cc(), x);
-    return -1;
+    if (!errh)
+	errh = ErrorHandler::default_handler();
+    return errh->error("%s: %s", _filename.cc(), x);
 }
 
 int
@@ -290,7 +288,7 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 	    _contents.push_back(what);
 	    all_contents |= (1 << (what - W_NONE - 1));
 	} else if (i > 0 || word != "!data") {
-	    error_helper(errh, "warning: unknown content type `" + word + "'");
+	    error_helper(errh, ("warning: unknown content type `" + word + "'").c_str());
 	    _contents.push_back(W_NONE);
 	}
     }

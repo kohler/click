@@ -460,9 +460,9 @@ particular purpose.\n");
 
     // write C++ file
     String cxx_filename = package_name + cc_suffix;
-    FILE *f = fopen(tmpdir + cxx_filename, "w");
+    FILE *f = fopen((tmpdir + cxx_filename).c_str(), "w");
     if (!f)
-      errh->fatal("%s: %s", (tmpdir + cxx_filename).cc(), strerror(errno));
+      errh->fatal("%s: %s", (tmpdir + cxx_filename).c_str(), strerror(errno));
     fwrite(out.data(), 1, out.length(), f);
     fclose(f);
 
@@ -471,9 +471,9 @@ particular purpose.\n");
     for (int i = 0; i < aelist.size(); i++)
       if (aelist[i].name.substring(-3) == ".hh") {
 	String filename = tmpdir + aelist[i].name;
-	f = fopen(filename, "w");
+	f = fopen(filename.c_str(), "w");
 	if (!f)
-	  errh->warning("%s: %s", filename.cc(), strerror(errno));
+	  errh->warning("%s: %s", filename.c_str(), strerror(errno));
 	else {
 	  fwrite(aelist[i].data.data(), 1, aelist[i].data.length(), f);
 	  fclose(f);

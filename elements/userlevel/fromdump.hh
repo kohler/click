@@ -211,7 +211,7 @@ class FromDump : public Element { public:
     FILE *_pipe;
     off_t _file_offset;
 
-    int error_helper(ErrorHandler *, const char *);
+    int error_helper(ErrorHandler *, const char *, const char * = 0);
 #ifdef ALLOW_MMAP
     int read_buffer_mmap(ErrorHandler *);
 #endif

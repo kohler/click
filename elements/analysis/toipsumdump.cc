@@ -106,7 +106,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 {
     assert(!_f);
     if (_filename != "-") {
-	_f = fopen(_filename, "wb");
+	_f = fopen(_filename.c_str(), "wb");
 	if (!_f)
 	    return errh->error("%s: %s", _filename.cc(), strerror(errno));
     } else {

@@ -976,7 +976,7 @@ run_template(const char *templ, RouterT *r, const String &r_config,
 	    eo.run(outf);
 	} else if (definitions[tag]) {
 	    String text = definitions[tag];
-	    run_template(text, r, r_config, emap, processing, outf);
+	    run_template(text.c_str(), r, r_config, emap, processing, outf);
 	}
     }
 }
@@ -1194,11 +1194,11 @@ particular purpose.\n");
   done:
     if (write_template) {
 	if (FILE *f = open_output_file(output_file, errh)) {
-	    fputs(html_template, f);
+	    fputs(html_template.c_str(), f);
 	    fclose(f);
 	}
     } else
-	pretty_process(router_file, file_is_expr, output_file, html_template, errh);
+	pretty_process(router_file, file_is_expr, output_file, html_template.c_str(), errh);
 	
     exit(errh->nerrors() > 0 ? 1 : 0);
 }

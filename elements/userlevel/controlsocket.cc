@@ -200,7 +200,7 @@ ControlSocket::cleanup(CleanupStage)
 #endif
     close(_socket_fd);
     if (_unix_pathname)
-      unlink(_unix_pathname);
+      unlink(_unix_pathname.c_str());
   }
   _socket_fd = -1;
   for (int i = 0; i < _flags.size(); i++)

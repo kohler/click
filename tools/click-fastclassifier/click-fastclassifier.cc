@@ -487,7 +487,7 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
 	Classifier_Insn e;
 	int crap, pos;
 	int v[4], m[4];
-	sscanf(step, "%d %d/%2x%2x%2x%2x%%%2x%2x%2x%2x yes->%n",
+	sscanf(step.c_str(), "%d %d/%2x%2x%2x%2x%%%2x%2x%2x%2x yes->%n",
 	       &crap, &e.offset, &v[0], &v[1], &v[2], &v[3],
 	       &m[0], &m[1], &m[2], &m[3], &pos);
 	for (int i = 0; i < 4; i++) {
@@ -497,24 +497,24 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
 	// read yes destination
 	step = step.substring(pos);
 	if (step[0] == '[') {
-	  sscanf(step, "[%d] no->%n", &e.yes, &pos);
+	  sscanf(step.c_str(), "[%d] no->%n", &e.yes, &pos);
 	  e.yes = -e.yes;
 	} else
-	  sscanf(step, "step %d no->%n", &e.yes, &pos);
+	  sscanf(step.c_str(), "step %d no->%n", &e.yes, &pos);
 	// read no destination
 	step = step.substring(pos);
 	if (step[0] == '[') {
-	  sscanf(step, "[%d]", &e.no);
+	  sscanf(step.c_str(), "[%d]", &e.no);
 	  e.no = -e.no;
 	} else
-	  sscanf(step, "step %d", &e.no);
+	  sscanf(step.c_str(), "step %d", &e.no);
 	// push expr onto list
 	prog.program.push_back(e);
-      } else if (sscanf(step, "all->[%d]", &prog.output_everything))
+      } else if (sscanf(step.c_str(), "all->[%d]", &prog.output_everything))
 	/* nada */;
-      else if (sscanf(step, "safe length %d", &prog.safe_length))
+      else if (sscanf(step.c_str(), "safe length %d", &prog.safe_length))
 	/* nada */;
-      else if (sscanf(step, "alignment offset %d", &prog.align_offset))
+      else if (sscanf(step.c_str(), "alignment offset %d", &prog.align_offset))
 	/* nada */;
     }
 
@@ -663,14 +663,14 @@ compile_classifiers(RouterT *r, const String &package_name,
       exit(1);
     
     String filename = tmpdir + package_name + ".hh";
-    FILE *f = fopen(filename, "w");
+    FILE *f = fopen(filename.c_str(), "w");
     if (!f)
-      errh->fatal("%s: %s", filename.cc(), strerror(errno));
+      errh->fatal("%s: %s", filename.c_str(), strerror(errno));
     fwrite(header.data(), 1, header.length(), f);
     fclose(f);
 
     String cxx_filename = package_name + ".cc";
-    f = fopen(tmpdir + cxx_filename, "w");
+    f = fopen((tmpdir + cxx_filename).c_str(), "w");
     if (!f)
       errh->fatal("%s%s: %s", tmpdir.cc(), cxx_filename.cc(), strerror(errno));
     fwrite(source.data(), 1, source.length(), f);

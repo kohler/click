@@ -132,9 +132,9 @@ ToDump::initialize(ErrorHandler *errh)
     // if OK, prepare files and move onward
     assert(!_fp);
     if (_filename != "-") {
-	_fp = fopen(_filename, "wb");
+	_fp = fopen(_filename.c_str(), "wb");
 	if (!_fp)
-	    return errh->error("%s: %s", _filename.cc(), strerror(errno));
+	    return errh->error("%s: %s", _filename.c_str(), strerror(errno));
     } else {
 	_fp = stdout;
 	_filename = "<stdout>";

@@ -147,13 +147,13 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 
     // if not found, create new device
     int res;
-    _dev = new_fromlinux_device(_devname);
+    _dev = new_fromlinux_device(_devname.c_str());
     if (!_dev)
-	return errh->error("out of memory!", res, _devname.cc());
+	return errh->error("out of memory!", res, _devname.c_str());
     else if ((res = register_netdev(_dev)) < 0) {
 	kfree(_dev);
 	_dev = 0;
-	return errh->error("error %d registering device `%s'", res, _devname.cc());
+	return errh->error("error %d registering device `%s'", res, _devname.c_str());
     }
 
     dev_hold(_dev);

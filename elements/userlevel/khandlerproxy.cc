@@ -212,7 +212,7 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
   const Router::Handler &h = r->handler(handleri);
 
   String fn = handler_name_to_file_name(h.name());
-  int fd = open(fn, O_WRONLY | O_TRUNC);
+  int fd = open(fn.c_str(), O_WRONLY | O_TRUNC);
   
   if (fd < 0)
     return khp->complain_about_open(errh, h.name(), errno);

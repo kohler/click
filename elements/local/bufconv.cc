@@ -110,7 +110,7 @@ BufferConverter::oput(const String &s)
     _obuf = "";
   }
   String ss = s;
-  memmove(data, (const char *)ss, dlen);
+  memmove(data, ss.data(), dlen);
   if (ss.length() > dlen)
     _obuf += ss.substring(dlen, ss.length()-dlen);
 

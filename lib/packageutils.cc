@@ -169,9 +169,9 @@ check_tmpdir(const Vector<ArchiveElement> *archive, ErrorHandler *errh)
     for (int i = 0; i < archive->size(); i++)
       if ((*archive)[i].name.substring(-3) == ".hh") {
 	String filename = tmpdir + (*archive)[i].name;
-	FILE *f = fopen(filename, "w");
+	FILE *f = fopen(filename.c_str(), "w");
 	if (!f)
-	  errh->warning("%s: %s", filename.cc(), strerror(errno));
+	  errh->warning("%s: %s", filename.c_str(), strerror(errno));
 	else {
 	  fwrite((*archive)[i].data.data(), 1, (*archive)[i].data.length(), f);
 	  fclose(f);
@@ -201,9 +201,9 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
   // write .cc file
   const ArchiveElement &ae = archive->at(ai);
   String filename = tmpdir + ae.name;
-  FILE *f = fopen(filename, "w");
+  FILE *f = fopen(filename.c_str(), "w");
   if (!f) {
-    cerrh.error("%s: %s", filename.cc(), strerror(errno));
+    cerrh.error("%s: %s", filename.c_str(), strerror(errno));
     return String();
   }
   fwrite(ae.data.data(), 1, ae.data.length(), f);
@@ -247,9 +247,9 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     if (!check_tmpdir(archive, &cerrh))
       return;
     package = tmpdir + "/" + name + suffix;
-    FILE *f = fopen(package.cc(), "wb");
+    FILE *f = fopen(package.c_str(), "wb");
     if (!f) {
-      cerrh.error("cannot open `%s': %s", package.cc(), strerror(errno));
+      cerrh.error("cannot open `%s': %s", package.c_str(), strerror(errno));
       package = String();
     } else {
       const ArchiveElement &ae = archive->at(ai);

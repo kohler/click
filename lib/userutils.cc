@@ -252,14 +252,14 @@ file_string(FILE *f, ErrorHandler *errh)
 }
 
 String
-file_string(const char *filename, ErrorHandler *errh)
+file_string(String filename, ErrorHandler *errh)
 {
   FILE *f;
-  if (filename && *filename && strcmp(filename, "-") != 0) {
-    f = fopen(filename, "rb");
+  if (filename && filename != "-") {
+    f = fopen(filename.c_str(), "rb");
     if (!f) {
       if (errh)
-	errh->error("%s: %s", filename, strerror(errno));
+	errh->error("%s: %s", filename.c_str(), strerror(errno));
       return String();
     }
   } else {
@@ -269,7 +269,7 @@ file_string(const char *filename, ErrorHandler *errh)
 
   String s;
   if (errh) {
-    IndentErrorHandler perrh(errh, filename + String(": "));
+    IndentErrorHandler perrh(errh, filename + ": ");
     s = file_string(f, &perrh);
   } else
     s = file_string(f);

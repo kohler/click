@@ -188,13 +188,11 @@ swap_packet_header(const fake_pcap_pkthdr *hp, fake_pcap_pkthdr *outp)
 }
 
 int
-FromDump::error_helper(ErrorHandler *errh, const char *x)
+FromDump::error_helper(ErrorHandler *errh, const char *x, const char *y)
 {
-    if (errh)
-	errh->error("%s: %s", _filename.cc(), x);
-    else
-	click_chatter("%s: %s", declaration().cc(), x);
-    return -1;
+    if (!errh)
+	errh = ErrorHandler::default_handler();
+    return errh->error("%s: %s%s", _filename.cc(), x, (y ? y : ""));
 }
 
 #ifdef ALLOW_MMAP
@@ -219,7 +217,7 @@ FromDump::read_buffer_mmap(ErrorHandler *errh)
     // get length of file
     struct stat statbuf;
     if (fstat(_fd, &statbuf) < 0)
-	return error_helper(errh, String("stat: ") + strerror(errno));
+	return error_helper(errh, "stat: ", strerror(errno));
 
     // check for end of file
     // But return -1 if we have not mmaped before: it might be a pipe, not
@@ -235,7 +233,7 @@ FromDump::read_buffer_mmap(ErrorHandler *errh)
     void *mmap_data = mmap(0, _len, PROT_READ, MAP_SHARED, _fd, _mmap_off);
 
     if (mmap_data == MAP_FAILED)
-	return error_helper(errh, String("mmap: ") + strerror(errno));
+	return error_helper(errh, "mmap: ", strerror(errno));
 
     _data_packet = Packet::make((unsigned char *)mmap_data, _len, munmap_destructor);
     _buffer = _data_packet->data();

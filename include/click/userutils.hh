@@ -15,7 +15,7 @@ int click_strcmp(const String &a, const String &b);
 const char *filename_landmark(const char *, bool file_is_expr = false);
 
 String file_string(FILE *, ErrorHandler * = 0);
-String file_string(const char *, ErrorHandler * = 0);
+String file_string(String, ErrorHandler * = 0);
 
 String unique_tmpnam(const String &, ErrorHandler * = 0);
 void remove_file_on_exit(const String &);

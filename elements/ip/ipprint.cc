@@ -115,9 +115,9 @@ IPPrint::initialize(ErrorHandler *errh)
 {
 #if CLICK_USERLEVEL
   if (_outfilename) {
-    _outfile = fopen(_outfilename, "wb");
+    _outfile = fopen(_outfilename.c_str(), "wb");
     if (!_outfile)
-      return errh->error("%s: %s", _outfilename.cc(), strerror(errno));
+      return errh->error("%s: %s", _outfilename.c_str(), strerror(errno));
   }
 #else
   (void) errh;

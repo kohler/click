@@ -153,7 +153,7 @@ ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     sa.sun_family = AF_UNIX;
     if (_unix_pathname.length() >= (int)sizeof(sa.sun_path))
       return errh->error("filename too long");
-    memcpy(sa.sun_path, _unix_pathname.cc(), _unix_pathname.length() + 1);
+    memcpy(sa.sun_path, _unix_pathname.c_str(), _unix_pathname.length() + 1);
     
     // open socket, set options
     _socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -231,7 +231,7 @@ ChatterSocket::cleanup(CleanupStage)
   if (_socket_fd >= 0) {
     close(_socket_fd);
     if (_unix_pathname)
-      unlink(_unix_pathname);
+      unlink(_unix_pathname.c_str());
   }
   _socket_fd = -1;
   

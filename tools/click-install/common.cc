@@ -60,7 +60,7 @@ read_package_string(const String &text, StringMap &packages)
 bool
 read_package_file(String filename, StringMap &packages, ErrorHandler *errh)
 {
-  if (!errh && access(filename.cc(), F_OK) < 0)
+  if (!errh && access(filename.c_str(), F_OK) < 0)
     return false;
   int before = errh->nerrors();
   String str = file_string(filename, errh);
@@ -101,7 +101,7 @@ kill_current_configuration(ErrorHandler *errh)
   String clickfs_config = clickfs_prefix + String("/config");
   String clickfs_threads = clickfs_prefix + String("/threads");
   
-  FILE *f = fopen(clickfs_config.cc(), "w");
+  FILE *f = fopen(clickfs_config.c_str(), "w");
   if (!f)
     errh->fatal("cannot uninstall configuration: %s", strerror(errno));
   fputs("// nothing\n", f);
@@ -166,11 +166,11 @@ remove_unneeded_packages(const StringMap &active_modules, const StringMap &packa
 
 #if FOR_LINUXMODULE
     String cmdline = "/sbin/rmmod" + to_remove + " 2>/dev/null";
-    (void) system(cmdline);
+    (void) system(cmdline.c_str());
 #elif FOR_BSDMODULE
     for (int i = 0; i < removals.size(); i++) {
       String cmdline = "/sbin/kldunload " + removals[i];
-      (void) system(cmdline);
+      (void) system(cmdline.c_str());
     }
 #endif
   }
@@ -182,7 +182,7 @@ unload_click(ErrorHandler *errh)
   String clickfs_packages = clickfs_prefix + String("/packages");
   
   // do nothing if Click not installed
-  if (access(clickfs_packages, F_OK) < 0)
+  if (access(clickfs_packages.c_str(), F_OK) < 0)
     return 0;
   
   // first, write nothing to /proc/click/config -- frees up modules
@@ -220,7 +220,7 @@ unload_click(ErrorHandler *errh)
 #endif
 
   // see if we successfully removed it
-  if (access(clickfs_packages, F_OK) >= 0) {
+  if (access(clickfs_packages.c_str(), F_OK) >= 0) {
     errh->warning("could not uninstall Click module");
     return -1;
   }
