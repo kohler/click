@@ -255,6 +255,9 @@ Specializer::create_class(SpecializedClass &spc)
     (CxxFunction("class_name", true, "const char *", "() const",
 		 String(" return \"") + spc.click_name + "\"; ", ""));
   new_cxxc->defun
+    (CxxFunction("clone", true, spc.cxx_name + " *", "() const",
+		 String(" return new ") + spc.cxx_name + "; ", ""));
+  new_cxxc->defun
     (CxxFunction("is_a", false, "bool", "(const char *n) const",
 		 "\n  return (strcmp(n, \"" + spc.click_name + "\") == 0\n\
 	  || strcmp(n, \"" + old_eti.click_name + "\") == 0\n\
