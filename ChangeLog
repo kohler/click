@@ -1,3 +1,13 @@
+2002-02-21 Thursday 10:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.35): update to calculate
+	correct metric when printing link info
+
+2002-02-21 Thursday 10:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid (1.13): set wireless card rate to 1 Mbps, enable
+	RTS/CST
+
 2002-02-20 Wednesday 18:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.50), elements/grid/gridroutetable.cc (1.34),
