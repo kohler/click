@@ -15,6 +15,7 @@
 #endif
 #include "router.hh"
 #include "bitvector.hh"
+#include "wq.hh"
 #include "error.hh"
 #include "straccum.hh"
 #include "elemfilter.hh"
@@ -52,7 +53,7 @@ Router::Router()
   _schedule_task.next = 0;
   _schedule_task.sync = 0;
   _schedule_task.routine = router_run_scheduled_task;
-  _schedule_task.data = 0;
+  _schedule_task.data = this;
 #endif
 }
 
@@ -707,6 +708,9 @@ Router::initialize(ErrorHandler *errh)
   
   for (int i = 0; i < _elements.size(); i++) {
     _elements[i]->set_number(i);
+    /* make all elements use Router as its link: subsequent calls to
+     * schedule_xxxx places elements on this link, therefore allow
+     * run_scheduled to see them */
     _elements[i]->initialize_link(this);
     configure_phase[i] = !_elements[i]->configure_first();
   }
@@ -791,6 +795,9 @@ void
 Router::wait()
 {
 #ifndef __KERNEL__
+  // Wait in select() for input or timer.
+  // And call relevant elements' selected() methods.
+  
   int i, n;
   bool any = false;
   fd_set mask;
@@ -825,6 +832,55 @@ Router::wait()
     if(fd >= 0 && FD_ISSET(fd, &mask))
       f->selected(fd);
   }
+#else
+
+#ifdef CLICK_POLLDEV
+  int go_waiting = 0;
+  Vector<ElementWaitQueue *> wqs;
+
+  /* set state to be interruptible, so if in between now and actually waiting
+   * someone triggers an event we want to wait on, it will be captured */
+
+  current->state = TASK_INTERRUPTIBLE;
+
+  for (int i = 0; i < _elements.size(); i++) {
+    Element *f = _elements[i];
+    struct wait_queue **wq = f->get_wait_queue();
+    if (wq)
+    {
+      go_waiting = 1;
+      ElementWaitQueue *ewq = new ElementWaitQueue;
+      ewq->element = f;
+      ewq->element_wq = wq;
+      ewq->thread_wq.task = current;
+      ewq->thread_wq.next = NULL;
+
+      wqs.push_back(ewq);
+
+      /* add current thread to this element's wait queue */
+      add_wait_queue(wq, &ewq->thread_wq);
+
+      /* now that we registered ourselves, we can let the element setup the
+       * event... doing an add_wait_queue prevents race between check and
+       * waiting. */
+      f->do_waiting();
+    }
+  }
+
+  /* go wait if haven't been woken up already */
+  if (!go_waiting) current->state = TASK_RUNNING;
+  else if (current->state != TASK_RUNNING) schedule();
+
+  /* remove current thread from wait queues */
+  for (int i = 0; i < wqs.size(); i++) 
+  {
+    ElementWaitQueue *ewq = wqs[i];
+    ewq->element->finish_waiting();
+    remove_wait_queue(ewq->element_wq, &ewq->thread_wq);
+    delete ewq;
+  }
+#endif /* CLICK_POLLDEV */
+
 #endif
 }
 
@@ -837,11 +893,21 @@ Router::run_scheduled()
   final.schedule_tail();
   for (ElementLink *fl = scheduled_next();
        fl != &final;
-       fl = scheduled_next()) {
+       fl = scheduled_next()) 
+  {
+    /* order of these two calls is important for scheduling: this order allow
+     * run_scheduled code to reschedule itself if it is not on the work list
+     * already */
     fl->unschedule();
     ((Element *)fl)->run_scheduled();
   }
   final.unschedule();
+
+  /* benjie: we NO LONGER want the following: our scheduler thread will now
+   * take over running driver(), which runs work list. the following crash bug
+   * possibly due to that fact thata schedule_task.data used to be set 0L, now
+   * changed to "this" in Router::Router(). */
+
 #if 0 && defined(__KERNEL__)
   // undefined because it seems to be causing a crash -- reentrancy?
   if (fl != this && !_please_stop_driver)
@@ -855,16 +921,12 @@ Router::driver()
 #ifndef __KERNEL__
   Timer::run_timers();
 #endif
-  
+
   // Alert outputs that they should pull because some upstream
   // Queue became non-empty.
   run_scheduled();
 
-#ifndef __KERNEL__
-  // Wait in select() for input or timer.
-  // And call relevant elements' selected() methods.
   wait();
-#endif
 
   return !_please_stop_driver;
 }
