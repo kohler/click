@@ -1,22 +1,18 @@
-Index: drivers/net/acenic.c
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/drivers/net/acenic.c,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** drivers/net/acenic.c	2000/10/27 16:31:13	1.1.1.1
---- drivers/net/acenic.c	2000/10/27 17:12:15	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/drivers/net/acenic.c ./drivers/net/acenic.c
+*** ../linux-2.2.17-pure/drivers/net/acenic.c	Wed Jun  7 14:26:43 2000
+--- ./drivers/net/acenic.c	Tue Jun 19 23:30:09 2001
 ***************
-*** 396,402 ****
+*** 396,401 ****
 --- 396,464 ----
   
   static int probed __initdata = 0;
   
 + /* Click - polling extension */
-+ static int ace_tx_queue(struct sk_buff *skb, struct device *dev);
++ static int ace_tx_queue(struct device *dev, struct sk_buff *skb);
 + static int ace_tx_start(struct device *dev);
-+ static int ace_rx_refill(struct device *dev);
-+ static int ace_tx_clean(struct device *dev);
++ static int ace_tx_eob(struct device *dev);
++ static int ace_rx_refill(struct device *dev, struct sk_buff **);
++ static struct sk_buff *ace_tx_clean(struct device *dev);
 + static struct sk_buff *ace_rx_poll(struct device *dev, int *want);
 + static int ace_poll_on(struct device *dev);
 + static int ace_poll_off(struct device *dev);
@@ -73,14 +69,13 @@ diff -c -r1.1.1.1 -r1.2
 + 	}
 + 	if (skb != 0) dev_kfree_skb(skb);
 + }
-  
 + 
+  
   #ifdef NEW_NETINIT
   int __init acenic_probe (void)
-  #else
 ***************
 *** 468,473 ****
---- 530,545 ----
+--- 531,547 ----
   		dev->set_mac_address = &ace_set_mac_addr;
   		dev->change_mtu = &ace_change_mtu;
   
@@ -91,6 +86,7 @@ diff -c -r1.1.1.1 -r1.2
 + 		dev->tx_clean = ace_tx_clean;
 + 		dev->tx_queue = ace_tx_queue;
 + 		dev->tx_start = ace_tx_start;
++ 		dev->tx_eob = ace_tx_eob;
 + 		dev->poll_off = ace_poll_off;
 + 		dev->poll_on = ace_poll_on;
 + 
@@ -99,7 +95,7 @@ diff -c -r1.1.1.1 -r1.2
   		{
 ***************
 *** 1567,1572 ****
---- 1639,1645 ----
+--- 1641,1647 ----
   {
   	struct ace_regs *regs;
   	short i, idx;
@@ -118,7 +114,7 @@ diff -c -r1.1.1.1 -r1.2
   
   		/*
   		 * Make sure IP header starts on a fresh cache line.
---- 1650,1663 ----
+--- 1652,1665 ----
   		struct rx_desc *rd;
   		dma_addr_t mapping;
   
@@ -151,7 +147,7 @@ diff -c -r1.1.1.1 -r1.2
   		struct ring_info *rip;
   		struct sk_buff *skb;
   		struct rx_desc *rxdesc, *retdesc;
---- 1915,1924 ----
+--- 1917,1926 ----
   	return evtcsm;
   }
   
@@ -171,7 +167,7 @@ diff -c -r1.1.1.1 -r1.2
   			break;
   		case BD_FLG_JUMBO:
   			rip = &ap->skb->rx_jumbo_skbuff[skbidx];
---- 1942,1948 ----
+--- 1944,1950 ----
   			rip = &ap->skb->rx_std_skbuff[skbidx];
   			mapsize = ACE_STD_BUFSIZE - (2 + 16);
   			rxdesc = &ap->rx_std_ring[skbidx];
@@ -194,7 +190,7 @@ diff -c -r1.1.1.1 -r1.2
   		}
   
   		skb = rip->skb;
---- 1954,1966 ----
+--- 1956,1968 ----
   			rip = &ap->skb->rx_mini_skbuff[skbidx];
   			mapsize = ACE_MINI_BUFSIZE - (2 + 16);
   			rxdesc = &ap->rx_mini_ring[skbidx];
@@ -221,7 +217,7 @@ diff -c -r1.1.1.1 -r1.2
   		idx = (idx + 1) % RX_RETURN_RING_ENTRIES;
   	}
   
---- 1992,2020 ----
+--- 1994,2022 ----
   		else
   			skb->ip_summed = CHECKSUM_NONE;
   
@@ -253,7 +249,7 @@ diff -c -r1.1.1.1 -r1.2
   
 ***************
 *** 1949,1954 ****
---- 2039,2096 ----
+--- 2041,2098 ----
   	goto out;
   }
   
@@ -314,7 +310,7 @@ diff -c -r1.1.1.1 -r1.2
   {
 ***************
 *** 1970,1975 ****
---- 2112,2120 ----
+--- 2114,2122 ----
   	if (!(readl(&regs->HostCtrl) & IN_INT))
   		return;
   
@@ -325,7 +321,7 @@ diff -c -r1.1.1.1 -r1.2
   	 * Tell the card not to generate interrupts while we are in here.
   	 */
 ***************
-*** 1985,2029 ****
+*** 1985,1997 ****
   	rxretprd = *ap->rx_ret_prd;
   	rxretcsm = ap->cur_rx;
   
@@ -334,44 +330,12 @@ diff -c -r1.1.1.1 -r1.2
   
   	txcsm = *ap->tx_csm;
   	idx = ap->tx_ret_csm;
-- 
-- 	if (txcsm != idx) {
-- 		do {
-- 			struct sk_buff *skb;
-- 
-- 			skb = ap->skb->tx_skbuff[idx].skb;
-- 			if (skb) {
-- 				dma_addr_t mapping;
-- 
-- 				mapping = ap->skb->tx_skbuff[idx].mapping;
-- 
-- 				ap->stats.tx_packets++;
-- 				ap->stats.tx_bytes += skb->len;
-- 				pci_unmap_single(ap->pdev, mapping, skb->len,
-- 						 PCI_DMA_TODEVICE);
-- 				dev_kfree_skb_irq(skb);
-- 
-- 				ap->skb->tx_skbuff[idx].skb = NULL;
-- 			}
-- 
-- 			/*
-- 			 * Question here is whether one should not skip
-- 			 * these writes - I have never seen any errors
-- 			 * caused by the NIC actually trying to access
-- 			 * these incorrectly.
-- 			 */
-- #if (BITS_PER_LONG == 64)
-- 			writel(0, &ap->tx_ring[idx].addr.addrhi);
-- #endif
-- 			writel(0, &ap->tx_ring[idx].addr.addrlo);
-- 			writel(0, &ap->tx_ring[idx].flagsize);
   
-! 			idx = (idx + 1) % TX_RING_ENTRIES;
-! 		} while (idx != txcsm);
+! 	if (txcsm != idx) {
+  		do {
+  			struct sk_buff *skb;
   
-  		/*
-  		 * Once we actually get to this point the tx ring has
---- 2130,2143 ----
+--- 2132,2144 ----
   	rxretprd = *ap->rx_ret_prd;
   	rxretcsm = ap->cur_rx;
   
@@ -382,13 +346,12 @@ diff -c -r1.1.1.1 -r1.2
   	idx = ap->tx_ret_csm;
   
 ! 	if (txcsm != idx && !dev->polling) {
-! 		ace_service_tx(dev, 0);
+  		do {
+  			struct sk_buff *skb;
   
-  		/*
-  		 * Once we actually get to this point the tx ring has
 ***************
 *** 2054,2059 ****
---- 2168,2175 ----
+--- 2201,2208 ----
   	evtprd = *ap->evt_prd;
   
   	if (evtcsm != evtprd) {
@@ -406,7 +369,7 @@ diff -c -r1.1.1.1 -r1.2
   		int cur_size;
   		int run_bh = 0;
   
---- 2178,2184 ----
+--- 2211,2217 ----
   	 * This has to go last in the interrupt handler and run with
   	 * the spin lock released ... what lock?
   	 */
@@ -430,7 +393,7 @@ diff -c -r1.1.1.1 -r1.2
   	/*
   	 * ARGH, there is just no pretty way to do this
   	 */
---- 2382,2424 ----
+--- 2415,2457 ----
   	return 0;
   }
   
@@ -459,12 +422,12 @@ diff -c -r1.1.1.1 -r1.2
 ! 	ace_set_txprd(regs, ap, idx);
 ! 	return idx;
 ! }
+! 
+! static int ace_start_xmit(struct sk_buff *skb, struct net_device *dev)
+! {
+! 	struct ace_private *ap = dev->priv;
+! 	u32 idx;
   
-+ static int ace_start_xmit(struct sk_buff *skb, struct net_device *dev)
-+ {
-+ 	struct ace_private *ap = dev->priv;
-+ 	u32 idx;
-+ 
 + 	/* polling extension: we have to use tbusy to prevent ace_start_xmit from
 + 	 * colliding with ace_tx_queue */
 + #if 1
@@ -476,7 +439,7 @@ diff -c -r1.1.1.1 -r1.2
   	 */
 ***************
 *** 2283,2288 ****
---- 2428,2434 ----
+--- 2461,2467 ----
   #else
   	netif_stop_queue(dev);
   #endif
@@ -485,7 +448,7 @@ diff -c -r1.1.1.1 -r1.2
   	idx = ap->tx_prd;
   
 ***************
-*** 2295,2317 ****
+*** 2295,2316 ****
   		return 1;
   	}
   
@@ -502,14 +465,13 @@ diff -c -r1.1.1.1 -r1.2
 ! 	writel(flagsize, &ap->tx_ring[idx].flagsize);
 ! 	wmb();
 ! 	idx = (idx + 1) % TX_RING_ENTRIES;
+! 
+! 	ap->tx_prd = idx;
+! 	ace_set_txprd(regs, ap, idx);
   
-- 	ap->tx_prd = idx;
-- 	ace_set_txprd(regs, ap, idx);
-- 
   	/*
   	 * tx_csm is set by the NIC whereas we set tx_ret_csm which
-  	 * is always trying to catch tx_csm
---- 2441,2448 ----
+--- 2474,2480 ----
   		return 1;
   	}
   
@@ -517,7 +479,6 @@ diff -c -r1.1.1.1 -r1.2
   
   	/*
   	 * tx_csm is set by the NIC whereas we set tx_ret_csm which
-  	 * is always trying to catch tx_csm
 ***************
 *** 2966,2974 ****
   	goto out;
@@ -529,7 +490,7 @@ diff -c -r1.1.1.1 -r1.2
    * compile-command: "gcc -D__SMP__ -D__KERNEL__ -DMODULE -I../../include -Wall -Wstrict-prototypes -O2 -fomit-frame-pointer -pipe -fno-strength-reduce -DMODVERSIONS -include ../../include/linux/modversions.h   -c -o acenic.o acenic.c"
    * End:
    */
---- 3097,3358 ----
+--- 3130,3399 ----
   	goto out;
   }
   
@@ -575,7 +536,7 @@ diff -c -r1.1.1.1 -r1.2
 + // #define SELECTIVE_INTR 1
 + 
 + static int 
-+ ace_tx_queue(struct sk_buff *skb, struct device *dev)
++ ace_tx_queue(struct device *dev, struct sk_buff *skb)
 + {
 + 	struct ace_private *ap = dev->priv;
 + 	u32 idx;
@@ -612,7 +573,7 @@ diff -c -r1.1.1.1 -r1.2
 + 	return 1;
 + }
 + 
-+ static int 
++ static struct sk_buff*
 + ace_tx_clean(struct device *dev)
 + {
 + 	struct ace_private *ap = dev->priv;
@@ -634,14 +595,17 @@ diff -c -r1.1.1.1 -r1.2
 + 		ap->tx_ret_csm = txcsm;
 + 		wmb();
 + 	}
++ #if 0
 + 	if (ap->tx_prd < ap->tx_ret_csm) 
 + 	  return ap->tx_prd + TX_RING_ENTRIES - ap->tx_ret_csm;
 + 	else 
 + 	  return ap->tx_prd - ap->tx_ret_csm;
++ #endif
++ 	return 0;
 + }
 + 
 + static int 
-+ ace_rx_refill(struct device *dev)
++ ace_rx_refill(struct device *dev, struct sk_buff **skb_list)
 + {
 +     u32 evtcsm, evtprd;
 + 	struct ace_private *ap = dev->priv;
@@ -756,7 +720,7 @@ diff -c -r1.1.1.1 -r1.2
 + 		stat |= MASK_INTS;
 + 		writel(stat, &regs->HostCtrl);
 + #endif
-+ 		dev->polling = 1;
++ 		dev->polling = 2;
 + 	}
 + 	return 0;
 + }
@@ -791,15 +755,15 @@ diff -c -r1.1.1.1 -r1.2
 + 	return 0;
 + }
 + 
++ static int ace_tx_eob(struct device *dev)
++ {
++   return 0;
++ }
 + 
-Index: drivers/net/acenic.h
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/drivers/net/acenic.h,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** drivers/net/acenic.h	2000/10/27 16:31:13	1.1.1.1
---- drivers/net/acenic.h	2000/10/27 17:12:15	1.2
++ 
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/drivers/net/acenic.h ./drivers/net/acenic.h
+*** ../linux-2.2.17-pure/drivers/net/acenic.h	Wed Jun  7 14:26:43 2000
+--- ./drivers/net/acenic.h	Tue Jun 19 23:30:09 2001
 ***************
 *** 251,256 ****
 --- 251,259 ----
@@ -812,14 +776,9 @@ diff -c -r1.1.1.1 -r1.2
   #define ACE_FATAL		0x40000000
   
   
-Index: drivers/net/tulip.c
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/drivers/net/tulip.c,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** drivers/net/tulip.c	2000/10/27 16:31:11	1.1.1.1
---- drivers/net/tulip.c	2000/10/27 17:12:15	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/drivers/net/tulip.c ./drivers/net/tulip.c
+*** ../linux-2.2.17-pure/drivers/net/tulip.c	Wed May  3 17:16:43 2000
+--- ./drivers/net/tulip.c	Tue Jun 19 23:30:09 2001
 ***************
 *** 26,34 ****
   
@@ -846,39 +805,67 @@ diff -c -r1.1.1.1 -r1.2
   #define test_and_set_bit(val, addr) set_bit(val, addr)
 --- 145,150 ----
 ***************
-*** 194,199 ****
---- 187,205 ----
-  static int tulip_debug = 1;
-  #endif
+*** 494,508 ****
+  };
   
-+ /* Polling extensions and extensions for recycling sk_buffs. */
-+ /* set to 0 if don't want to do recycle */
-+ #define SKB_RECYCLED	128
-+ /* demand polling */
-+ #define DEMAND_POLLTX	1
-+ /* prefetching of descriptor data */
-+ #define PREFETCH   	1
-+ 
-+ static unsigned tulip_recycled_skb_size;
-+ static int tulip_recycled_skb_cnt;
-+ static unsigned long tulip_recycle_skb_lock;
-+ static struct sk_buff *tulip_recycled_skbs[SKB_RECYCLED];
-+ 
-  /*
-  				Theory of Operation
+  struct tulip_private {
+! 	char devname[8];			/* Used only for kernel debugging. */
+! 	const char *product_name;
+! 	struct device *next_module;
+  	struct tulip_rx_desc rx_ring[RX_RING_SIZE];
+  	struct tulip_tx_desc tx_ring[TX_RING_SIZE];
+  	/* The saved address of a sent-in-place packet/buffer, for skfree(). */
+  	struct sk_buff* tx_skbuff[TX_RING_SIZE];
+! 	/* The addresses of receive-in-place skbuffs. */
+! 	struct sk_buff* rx_skbuff[RX_RING_SIZE];
+  	char *rx_buffs;				/* Address of temporary Rx buffers. */
+  	u16 setup_frame[96];		/* Pseudo-Tx frame to init address table. */
+  	int chip_id;
+--- 487,507 ----
+  };
   
+  struct tulip_private {
+!   	unsigned int cur_rx, dirty_rx;
+! 	unsigned int rx_reserved[6];
+  	struct tulip_rx_desc rx_ring[RX_RING_SIZE];
++ 	/* The addresses of receive-in-place skbuffs. */
++ 	struct sk_buff* rx_skbuff[RX_RING_SIZE];
++ 
++ 	unsigned int cur_tx, dirty_tx;
++ 	unsigned int tx_reserved[6];
+  	struct tulip_tx_desc tx_ring[TX_RING_SIZE];
+  	/* The saved address of a sent-in-place packet/buffer, for skfree(). */
+  	struct sk_buff* tx_skbuff[TX_RING_SIZE];
+! 
+! 	char devname[8];			/* Used only for kernel debugging. */
+! 	const char *product_name;
+! 	struct device *next_module;
+  	char *rx_buffs;				/* Address of temporary Rx buffers. */
+  	u16 setup_frame[96];		/* Pseudo-Tx frame to init address table. */
+  	int chip_id;
+***************
+*** 511,518 ****
+  	struct net_device_stats stats;
+  	struct timer_list timer;	/* Media selection timer. */
+  	int interrupt;				/* In-interrupt flag. */
+- 	unsigned int cur_rx, cur_tx;		/* The next free ring entry */
+- 	unsigned int dirty_rx, dirty_tx;	/* The ring entries to be free()ed. */
+  	unsigned int tx_full:1;				/* The Tx queue is full. */
+  	unsigned int full_duplex:1;			/* Full-duplex operation requested. */
+  	unsigned int full_duplex_lock:1;
+--- 510,515 ----
 ***************
 *** 565,570 ****
---- 571,586 ----
+--- 562,577 ----
   #endif
   static void set_rx_mode(struct device *dev);
   
 + /* device polling stuff */
-+ static int tulip_tx_queue(struct sk_buff *skb, struct device *dev);
++ static int tulip_tx_queue(struct device *dev, struct sk_buff *skb);
++ static int tulip_tx_eob(struct device *dev);
 + static int tulip_tx_start(struct device *dev);
-+ static int tulip_rx_refill(struct device *dev);
-+ static int tulip_reuse_skbs(struct sk_buff *skb, struct device *dev);
-+ static int tulip_tx_clean(struct device *dev);
++ static int tulip_rx_refill(struct device *dev, struct sk_buff **);
++ static struct sk_buff *tulip_tx_clean(struct device *dev);
 + static struct sk_buff *tulip_rx_poll(struct device *dev, int *want);
 + static int tulip_poll_on(struct device *dev);
 + static int tulip_poll_off(struct device *dev);
@@ -888,7 +875,7 @@ diff -c -r1.1.1.1 -r1.2
   /* A list of all installed Tulip devices. */
 ***************
 *** 812,817 ****
---- 828,844 ----
+--- 819,835 ----
   
   	dev->base_addr = ioaddr;
   	dev->irq = irq;
@@ -897,27 +884,15 @@ diff -c -r1.1.1.1 -r1.2
 + 	dev->polling = 0;
 + 	dev->rx_poll = tulip_rx_poll;
 + 	dev->rx_refill = tulip_rx_refill;
-+ 	dev->reuse_skbs = tulip_reuse_skbs;
 + 	dev->tx_clean = tulip_tx_clean;
 + 	dev->tx_queue = tulip_tx_queue;
 + 	dev->tx_start = tulip_tx_start;
++ 	dev->tx_eob = tulip_tx_eob;
 + 	dev->poll_off = tulip_poll_off;
 + 	dev->poll_on = tulip_poll_on;
   
   	tp->pci_bus = pci_bus;
   	tp->pci_devfn = pci_devfn;
-***************
-*** 2521,2526 ****
---- 2548,2556 ----
-  		tp->rx_skbuff[i] = skb;
-  		if (skb == NULL)
-  			break;
-+ 		/* Click: save the size we need for these rings */
-+ 		if (tulip_recycled_skb_size == 0)
-+ 			tulip_recycled_skb_size = skb->truesize;
-  		skb->dev = dev;			/* Mark as being used by this device. */
-  		tp->rx_ring[i].status = cpu_to_le32(DescOwned);	/* Owned by Tulip chip */
-  		tp->rx_ring[i].buffer1 = virt_to_le32desc(skb->tail);
 ***************
 *** 2537,2558 ****
   	tp->tx_ring[i-1].buffer2 = virt_to_le32desc(&tp->tx_ring[0]);
@@ -942,12 +917,12 @@ diff -c -r1.1.1.1 -r1.2
   	/* Caution: the write order is important here, set the field
   	   with the ownership bits last. */
   
---- 2567,2602 ----
+--- 2555,2590 ----
   	tp->tx_ring[i-1].buffer2 = virt_to_le32desc(&tp->tx_ring[0]);
   }
   
 + /* start the tulip transmit process by doing an outb */
-  static int
++ static int
 + tulip_tx_start(struct device *dev)
 + { 
 +   if (dev->polling <= 0)
@@ -957,7 +932,7 @@ diff -c -r1.1.1.1 -r1.2
 +   return 0;
 + }
 + 
-+ static int
+  static int
   tulip_start_xmit(struct sk_buff *skb, struct device *dev)
   {
   	struct tulip_private *tp = (struct tulip_private *)dev->priv;
@@ -997,7 +972,7 @@ diff -c -r1.1.1.1 -r1.2
   }
   
   /* The interrupt handler does all of the Rx thread work and cleans up
---- 2620,2651 ----
+--- 2608,2639 ----
   		flag = 0xe0000000 | DESC_RING_WRAP;
   
   	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
@@ -1045,7 +1020,7 @@ diff -c -r1.1.1.1 -r1.2
   
   #if defined(__i386__) && defined(SMP_CHECK)
   	if (test_and_set_bit(0, (void*)&dev->interrupt)) {
---- 2657,2669 ----
+--- 2645,2657 ----
   	long ioaddr = dev->base_addr;
   	int csr5;
   	int entry;
@@ -1070,10 +1045,10 @@ diff -c -r1.1.1.1 -r1.2
   		if (tulip_debug > 4)
   			printk(KERN_DEBUG "%s: interrupt  csr5=%#8.8x new csr5=%#8.8x.\n",
   				   dev->name, csr5, inl(dev->base_addr + CSR5));
-- 
-- 		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0)
-- 			break;
   
+! 		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0)
+! 			break;
+! 
 ! 		if (csr5 & (RxIntr | RxNoBuf)) {
 ! 			rx += tulip_rx(dev);
 ! 			tulip_refill_rx(dev);
@@ -1083,7 +1058,7 @@ diff -c -r1.1.1.1 -r1.2
   			unsigned int dirty_tx;
   
   			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
---- 2685,2723 ----
+--- 2673,2711 ----
   
   	do {
   		csr5 = inl(ioaddr + CSR5);
@@ -1139,7 +1114,7 @@ diff -c -r1.1.1.1 -r1.2
   		}
   
   		/* Log errors. */
---- 2782,2796 ----
+--- 2770,2784 ----
   			}
   
   			tp->dirty_tx = dirty_tx;
@@ -1165,7 +1140,7 @@ diff -c -r1.1.1.1 -r1.2
   				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
   			}
   			if (csr5 & (TPLnkPass | TPLnkFail | 0x08000000)) {
---- 2809,2819 ----
+--- 2797,2807 ----
   				outl(0, ioaddr + CSR1);
   			}
   			if (csr5 & RxDied) {		/* Missed a Rx frame. */
@@ -1186,7 +1161,7 @@ diff -c -r1.1.1.1 -r1.2
   
   	/* check if we card is in suspend mode */
   	entry = tp->dirty_rx % RX_RING_SIZE;
---- 2853,2861 ----
+--- 2841,2849 ----
   		}
   	} while (1);
   
@@ -1198,7 +1173,7 @@ diff -c -r1.1.1.1 -r1.2
   	entry = tp->dirty_rx % RX_RING_SIZE;
 ***************
 *** 2790,2803 ****
---- 2873,2889 ----
+--- 2861,2877 ----
   		}
   	}
   
@@ -1226,7 +1201,7 @@ diff -c -r1.1.1.1 -r1.2
   
   	del_timer(&tp->timer);
   
---- 3029,3040 ----
+--- 3017,3028 ----
   	if (tp->chip_id == DC21040)
   		outl(0x00000004, ioaddr + CSR13);
   
@@ -1240,30 +1215,28 @@ diff -c -r1.1.1.1 -r1.2
   	del_timer(&tp->timer);
   
 ***************
-*** 2986,2995 ****
-  {
+*** 2987,2995 ****
   	struct tulip_private *tp = (struct tulip_private *)dev->priv;
   	long ioaddr = dev->base_addr;
-- 
-- 	if (dev->start)
-- 		tp->stats.rx_missed_errors += inl(ioaddr + CSR8) & 0xffff;
   
+! 	if (dev->start)
+! 		tp->stats.rx_missed_errors += inl(ioaddr + CSR8) & 0xffff;
+! 
   	return &tp->stats;
   }
   
---- 3076,3090 ----
-  {
+--- 3065,3078 ----
   	struct tulip_private *tp = (struct tulip_private *)dev->priv;
   	long ioaddr = dev->base_addr;
   
-+ 	if (dev->start) {
-+   		unsigned csr8status = inl(ioaddr+CSR8);
-+         unsigned fifostatus = csr8status>>17;
-+ 		unsigned missed = csr8status & 0x1ffff;
-+ 		tp->stats.rx_dropped += missed & 0x10000 ? 0x10000 : missed;
-+ 	  	tp->stats.rx_missed_errors += csr8status&0xffff;
-+         tp->stats.rx_fifo_errors += fifostatus&0x7ff;
-+ 	}
+! 	if (dev->start) {
+!   		unsigned csr8status = inl(ioaddr+CSR8);
+!         unsigned fifostatus = csr8status>>17;
+! 		unsigned missed = csr8status & 0x1ffff;
+! 		tp->stats.rx_dropped += missed & 0x10000 ? 0x10000 : missed;
+! 	  	tp->stats.rx_missed_errors += csr8status&0xffff;
+!         tp->stats.rx_fifo_errors += fifostatus&0x7ff;
+! 	}
   	return &tp->stats;
   }
   
@@ -1276,7 +1249,7 @@ diff -c -r1.1.1.1 -r1.2
   
   			save_flags(flags); cli();
   			entry = tp->cur_tx++ % TX_RING_SIZE;
---- 3281,3287 ----
+--- 3269,3275 ----
   			/* Same setup recently queued, we need not add it. */
   		} else {
   			unsigned long flags;
@@ -1286,7 +1259,7 @@ diff -c -r1.1.1.1 -r1.2
   			entry = tp->cur_tx++ % TX_RING_SIZE;
 ***************
 *** 3197,3203 ****
---- 3292,3303 ----
+--- 3280,3291 ----
   				tp->tx_ring[entry].length =
   					(entry == TX_RING_SIZE-1) ? cpu_to_le32(DESC_RING_WRAP) : 0;
   				tp->tx_ring[entry].buffer1 = 0;
@@ -1301,7 +1274,7 @@ diff -c -r1.1.1.1 -r1.2
   
 ***************
 *** 3212,3217 ****
---- 3312,3321 ----
+--- 3300,3309 ----
   				set_bit(0, (void*)&dev->tbusy);
   				tp->tx_full = 1;
   			}
@@ -1314,7 +1287,7 @@ diff -c -r1.1.1.1 -r1.2
   			outl(0, ioaddr + CSR1);
 ***************
 *** 3356,3358 ****
---- 3460,3786 ----
+--- 3448,3728 ----
    *  tab-width: 4
    * End:
    */
@@ -1336,80 +1309,39 @@ diff -c -r1.1.1.1 -r1.2
 +  * also to synchronize tx queueing.
 +  */
 + 
-+ /* WARNING: these functions are not reentrant! */
-+ static inline struct sk_buff*
-+ tulip_get_recycled_skb(void)
-+ {
-+   	struct sk_buff* skb = 0;
-+   	if (tulip_recycled_skb_cnt > 0) {
-+ 	  	while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock)) {
-+ 			while(tulip_recycle_skb_lock) 
-+ 			  	asm volatile("" ::: "memory");
-+ 		}
-+       	if (tulip_recycled_skb_cnt > 0) {
-+        		tulip_recycled_skb_cnt--;
-+        		skb = tulip_recycled_skbs[tulip_recycled_skb_cnt];
-+       	}
-+ 		clear_bit(0, (void*)&tulip_recycle_skb_lock);
-+ 	}
-+ 	return skb;
-+ }
-+ /* tries to recycle an skb. if not successful, the skb passed in is freed */
-+ static inline int
-+ tulip_recycle_or_free_skb(struct sk_buff *skb)
-+ {
-+     int recycled = 0; 
-+    	if (skb->truesize == tulip_recycled_skb_size) {
-+    		if (tulip_recycled_skb_cnt < SKB_RECYCLED) {
-+ 	  		while (test_and_set_bit(0, (void*)&tulip_recycle_skb_lock)) {
-+ 		  		while(tulip_recycle_skb_lock) 
-+ 			  		asm volatile("" ::: "memory");
-+ 			}
-+    			if (tulip_recycled_skb_cnt < SKB_RECYCLED) {
-+       			if (skb_recycle(skb)) {
-+ 					tulip_recycled_skbs[tulip_recycled_skb_cnt] = skb;
-+ 					tulip_recycled_skb_cnt++;
-+ 					recycled = 1;
-+       			}
-+ 				skb = 0;
-+ 			}
-+ 			clear_bit(0, (void*)&tulip_recycle_skb_lock);
-+     	}
-+ 	}
-+ 	if (skb != 0) dev_kfree_skb(skb);
-+ 	return recycled;
-+ }
++ /* demand polling */
++ #define DEMAND_POLLTX	1
 + 
-+ int 
-+ tulip_rx_refill(struct device *dev)
++ int
++ tulip_rx_refill(struct device *dev, struct sk_buff **skbs)
 + {
 +   	struct tulip_private *tp = (struct tulip_private *)dev->priv;
++ 	struct sk_buff *skb_list;
 + 	
++ 	if (skbs == 0)
++ 	  return tp->cur_rx - tp->dirty_rx;
++ 
++     skb_list = *skbs;
 +   	/* Refill the Rx ring buffers. */
-+   	for (; tp->cur_rx - tp->dirty_rx > 0; tp->dirty_rx++) { 
++   	for (; (tp->cur_rx-tp->dirty_rx) > 0 && skb_list != 0L; tp->dirty_rx++) { 
 + 		int entry = tp->dirty_rx % RX_RING_SIZE;
-+ #ifdef PREFETCH
-+     	int next_entry = (entry+1) % RX_RING_SIZE;
-+     	volatile int next_status;
-+     	next_status = tp->rx_ring[next_entry].status;
-+ #endif
-+ 
 +     	if (tp->rx_skbuff[entry] == NULL) {
-+       		struct sk_buff *skb = tulip_get_recycled_skb();
-+ 
-+ 			if (skb)
-+         		tp->rx_skbuff[entry] = skb;
-+ 			else {
-+         		skb = tp->rx_skbuff[entry] = dev_alloc_skb(PKT_BUF_SZ);
-+         		if (skb == NULL)
-+ 					return 1;
-+       		}
++       		struct sk_buff *skb = skb_list;
++ 			skb_list = skb_list->next;
++ 			skb->prev = NULL;
++ 			skb->next = NULL;
++ 			skb->list = NULL;
++         	tp->rx_skbuff[entry] = skb;
 +       		skb->dev = dev; /* mark as being used by this device. */
 +       		tp->rx_ring[entry].buffer1 = virt_to_le32desc(skb->tail);
 +     	}
 +     	tp->rx_ring[entry].status = cpu_to_le32(DescOwned);
 +   	}
-+   	return 0;
++ 	if (skb_list == 0)
++ 	  *skbs = 0;
++ 	else
++ 	  *skbs = skb_list;
++   	return tp->cur_rx - tp->dirty_rx;
 + }
 + 
 + static struct sk_buff *
@@ -1425,11 +1357,6 @@ diff -c -r1.1.1.1 -r1.2
 + 
 +   	while (! (tp->rx_ring[entry].status & cpu_to_le32(DescOwned))) {
 +     	s32 status = le32_to_cpu(tp->rx_ring[entry].status);
-+ #ifdef PREFETCH
-+     	int next_entry = (entry+1) % RX_RING_SIZE;
-+     	volatile int next_status;
-+     	next_status = tp->rx_ring[next_entry].status;
-+ #endif
 +     	if (--rx_work_limit < 0 || got == *want) break; 
 + 
 +     	if ((status & 0x38008300) != 0x0300) {
@@ -1457,11 +1384,11 @@ diff -c -r1.1.1.1 -r1.2
 +       		/* Omit the four octet CRC from the length. */ 
 +       		short pkt_len = ((status >> 16) & 0x7ff) - 4; 
 +       		struct sk_buff *skb = tp->rx_skbuff[entry]; 
++ 			int p;
 +       		tp->rx_skbuff[entry] = NULL;
 + 
 +       		skb_put(skb, pkt_len); 
-+       		skb->protocol = eth_type_trans(skb, dev); 
-+ 
++         	skb->protocol = eth_type_trans(skb, dev);
 +       		tp->stats.rx_packets++;
 +       		tp->stats.rx_bytes += pkt_len;
 + 
@@ -1501,7 +1428,7 @@ diff -c -r1.1.1.1 -r1.2
 + 		csr0 = (inl(ioaddr + CSR0) & ~(7<<17)) | (4<<17);
 + 		outl(csr0, ioaddr+CSR0);
 + #endif
-+ 		dev->polling = 1;
++ 		dev->polling = 2;
 + 	}
 + 	return 0;
 + }
@@ -1527,7 +1454,7 @@ diff -c -r1.1.1.1 -r1.2
 + }
 + 
 + static int
-+ tulip_tx_queue(struct sk_buff *skb, struct device *dev)
++ tulip_tx_queue(struct device *dev, struct sk_buff *skb)
 + {
 +   	struct tulip_private *tp = (struct tulip_private *)dev->priv;
 +   	int entry;
@@ -1576,80 +1503,75 @@ diff -c -r1.1.1.1 -r1.2
 + }
 + 
 + /* clean up tx dma ring */
-+ static int
++ static struct sk_buff*
 + tulip_tx_clean(struct device *dev)
-+ { 
++ {
++ 	struct sk_buff *skb_head, *skb_last;
 +   	struct tulip_private *tp; 
 +   	unsigned int dirty_tx; 
-+ 	int ret;
 +   	tp = (struct tulip_private *)dev->priv; 
++ 	skb_head = skb_last = 0;
 + 	
 +   	for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0; dirty_tx++) {
-+ 	    	int entry = dirty_tx % TX_RING_SIZE; 
-+ 	    	int status = le32_to_cpu(tp->tx_ring[entry].status);
-+ #ifdef PREFETCH
-+ 	    	int next_entry = (dirty_tx+1) % TX_RING_SIZE;
-+ 	    	volatile int next_status;
-+     		next_status = tp->tx_ring[next_entry].status;
-+ #endif
++ 	    int entry = dirty_tx % TX_RING_SIZE; 
++ 	    int status = le32_to_cpu(tp->tx_ring[entry].status);
++ 		struct sk_buff *skb;
 +     
-+ 	    	if (status < 0) break; /* It still hasn't been Txed */ 
++ 	    if (status < 0) break; /* It still hasn't been Txed */ 
 +     
-+     		/* Check for Rx filter setup frames. */ 
-+ 	    	if (tp->tx_skbuff[entry] == NULL) continue;
++     	/* Check for Rx filter setup frames. */ 
++ 	    if (tp->tx_skbuff[entry] == NULL) continue;
 + 
-+ 	    	if (status & 0x8000) { 
-+       			/* There was an major error, log it. */
-+ 	      		tp->stats.tx_errors++; 
-+       			if (status & 0x4104) tp->stats.tx_aborted_errors++; 
-+       			if (status & 0x0C00) tp->stats.tx_carrier_errors++; 
-+ 	      		if (status & 0x0200) tp->stats.tx_window_errors++;
-+       			if (status & 0x0002) tp->stats.tx_fifo_errors++;
-+       			if ((status & 0x0080) && tp->full_duplex == 0) 
-+ 				tp->stats.tx_heartbeat_errors++;
-+ 	    	} else {
-+       			tp->stats.tx_bytes += tp->tx_ring[entry].length & 0x7ff; 
-+       			tp->stats.collisions += (status >> 3) & 15; 
-+ 	      		tp->stats.tx_packets++; 
-+     		}
++ 	    if (status & 0x8000) { 
++       		/* There was an major error, log it. */
++ 	      	tp->stats.tx_errors++; 
++       		if (status & 0x4104) tp->stats.tx_aborted_errors++; 
++       		if (status & 0x0C00) tp->stats.tx_carrier_errors++; 
++ 	      	if (status & 0x0200) tp->stats.tx_window_errors++;
++       		if (status & 0x0002) tp->stats.tx_fifo_errors++;
++       		if ((status & 0x0080) && tp->full_duplex == 0) 
++ 			tp->stats.tx_heartbeat_errors++;
++ 	   	} else {
++       		tp->stats.tx_bytes += tp->tx_ring[entry].length & 0x7ff; 
++       		tp->stats.collisions += (status >> 3) & 15; 
++ 	   		tp->stats.tx_packets++;
++     	}
 + 
-+ 		tulip_recycle_or_free_skb(tp->tx_skbuff[entry]);
-+ 	      	tp->tx_skbuff[entry] = 0; 
++ 		skb = tp->tx_skbuff[entry];
++ 	   	tp->tx_skbuff[entry] = 0; 
++       		
++ 		if (skb_head == 0) {
++ 		  skb_head = skb;
++ 		  skb_last = skb;
++ 		  skb_last->next = NULL;
++ 		  skb_last->prev = NULL;
++ 		} else {
++ 		  skb_last->next = skb;
++ 		  skb->prev = skb_last;
++ 		  skb->next = NULL;
++ 		  skb_last = skb;
++ 		}
 +   	}
 + 
 +   	if (tp->tx_full && dev->tbusy && tp->cur_tx-dirty_tx < TX_RING_SIZE-2) { 
-+ 		/* The ring is no longer full, clear tbusy. */ 
-+ 	    	tp->tx_full = 0; 
-+ 		clear_bit(0, (void*)&dev->tbusy);
++ 	    /* The ring is no longer full, clear tbusy. */ 
++ 	    tp->tx_full = 0; 
++         clear_bit(0, (void*)&dev->tbusy);
 +   	}
 + 
 +   	tp->dirty_tx = dirty_tx; 
-+ 	ret = tp->cur_tx - tp->dirty_tx;
-+ 	
-+   	return ret;
++ 	// ret = tp->cur_tx - tp->dirty_tx;
++   	return skb_head;
 + }
 + 
-+ /* reuse skbs */
-+ static int
-+ tulip_reuse_skbs(struct sk_buff *skb, struct device *dev)
++ static int tulip_tx_eob(struct device *dev)
 + {
-+ 	while (skb) {
-+ 		struct sk_buff *b = skb;
-+ 		skb = skb->next;
-+ 		b->next = b->prev = 0L;
-+ 		tulip_recycle_or_free_skb(b);
-+ 	}
-+ 	return 0;
++   return 0;
 + }
 + 
-Index: fs/proc/inode.c
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/fs/proc/inode.c,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** fs/proc/inode.c	2000/10/27 16:30:56	1.1.1.1
---- fs/proc/inode.c	2000/10/29 23:08:27	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/fs/proc/inode.c ./fs/proc/inode.c
+*** ../linux-2.2.17-pure/fs/proc/inode.c	Mon Sep  4 10:39:27 2000
+--- ./fs/proc/inode.c	Tue Jun 19 23:30:09 2001
 ***************
 *** 265,270 ****
 --- 265,275 ----
@@ -1664,21 +1586,16 @@ diff -c -r1.1.1.1 -r1.2
   	inode->u.generic_ip = (void *) de;
   	if (de) {
   		if (de->mode) {
-Index: include/linux/netdevice.h
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/include/linux/netdevice.h,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** include/linux/netdevice.h	2000/10/27 16:31:00	1.1.1.1
---- include/linux/netdevice.h	2000/10/27 17:12:15	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/include/linux/netdevice.h ./include/linux/netdevice.h
+*** ../linux-2.2.17-pure/include/linux/netdevice.h	Tue Jan  4 10:12:25 2000
+--- ./include/linux/netdevice.h	Tue Jun 19 23:31:27 2001
 ***************
 *** 317,322 ****
 --- 317,363 ----
   	/* Semi-private data. Keep it at the end of device struct. */
   	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
   #endif
-+ 	
++ 
 + 	/* Click polling support */
 + 	/*
 + 	 * polling is < 0 if the device does not support polling, == 0 if the
@@ -1694,56 +1611,49 @@ diff -c -r1.1.1.1 -r1.2
 + 	 * packets wanted. on return, the want argument specifies the number
 + 	 * of packets actually returned.
 + 	 */
-+ 	struct sk_buff *	(*rx_poll)(struct device *, int *want);
++ 	struct sk_buff *	(*rx_poll)(struct device*, int *want);
 + 	/* 
-+ 	 * refill rx dma ring. returns 0 if successful, 1 otherwise
++ 	 * refill rx dma ring using the given sk_buff list. returns 0 if
++ 	 * successful, or if there are more entries need to be cleaned,
++ 	 * returns the number of dirty entries. the ptr to the sk_buff list is
++ 	 * updated by the driver to point to any unused skbs.
 + 	 */
-+ 	int			(*rx_refill)(struct device *);
-+ 	/*
-+ 	 * reuse skbuffs. returns 0 if successful, 1 otherwise
-+ 	 */
-+ 	int 			(*reuse_skbs)(struct sk_buff *skb,
-+ 	    				      struct device *dev);
++ 	int			(*rx_refill)(struct device*, struct sk_buff**);
 + 	/* 
-+ 	 * place a skbuff on the transmit ring, returns 0 if successful, 1
++ 	 * place sk_buff on the transmit ring. returns 0 if successful, 1
 + 	 * otherwise 
 + 	 */
-+ 	int			(*tx_queue)(struct sk_buff *skb, 
-+ 					    struct device *dev);
++ 	int			(*tx_queue)(struct device *, struct sk_buff *);
 + 	/* 
-+ 	 * clean tx dma ring. returns the number of unsent packets pending on
-+ 	 * the tx ring 
++ 	 * clean tx dma ring. returns the list of skb objects cleaned
 + 	 */
-+ 	int			(*tx_clean)(struct device *);
++ 	struct sk_buff*		(*tx_clean)(struct device *);
 + 	/* 
 + 	 * start transmission. returns 0 if successful, 1 otherwise
 + 	 */
-+ 	int			(*tx_start)(struct device *dev);
++ 	int			(*tx_start)(struct device *);
++ 	/* 
++ 	 * tell device the end of a batch of packets
++ 	 */
++ 	int			(*tx_eob)(struct device *);
   };
   
   
 ***************
 *** 354,359 ****
---- 395,405 ----
+--- 395,403 ----
   extern int		unregister_netdevice(struct device *dev);
   extern int 		register_netdevice_notifier(struct notifier_block *nb);
   extern int		unregister_netdevice_notifier(struct notifier_block *nb);
 + extern int 		register_net_in(struct notifier_block *nb); /* Click */
 + extern int		unregister_net_in(struct notifier_block *nb); /* Click */
-+ extern int 		register_net_out(struct notifier_block *nb); /* Click */
-+ extern int		unregister_net_out(struct notifier_block *nb); /* Click */
 + extern void		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
   extern int		dev_new_index(void);
   extern struct device	*dev_get_by_index(int ifindex);
   extern int		dev_restart(struct device *dev);
-Index: include/linux/signal.h
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/include/linux/signal.h,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** include/linux/signal.h	2000/10/27 16:30:59	1.1.1.1
---- include/linux/signal.h	2000/10/27 17:12:16	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/include/linux/signal.h ./include/linux/signal.h
+*** ../linux-2.2.17-pure/include/linux/signal.h	Tue May 11 10:35:43 1999
+--- ./include/linux/signal.h	Tue Jun 19 23:30:09 2001
 ***************
 *** 189,195 ****
   		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
@@ -1778,20 +1688,116 @@ diff -c -r1.1.1.1 -r1.2
   	}
   }
   
-Index: include/linux/skbuff.h
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/include/linux/skbuff.h,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** include/linux/skbuff.h	2000/10/27 16:31:00	1.1.1.1
---- include/linux/skbuff.h	2000/10/27 17:12:16	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/include/linux/skbuff.h ./include/linux/skbuff.h
+*** ../linux-2.2.17-pure/include/linux/skbuff.h	Thu May 13 10:33:17 1999
+--- ./include/linux/skbuff.h	Tue Jun 19 23:30:09 2001
+***************
+*** 36,49 ****
+  					   for using debugging */
+  };
+  
+  struct sk_buff {
+  	struct sk_buff	* next;			/* Next buffer in list 				*/
+  	struct sk_buff	* prev;			/* Previous buffer in list 			*/
+  	struct sk_buff_head * list;		/* List we are on				*/
+! 	struct sock	*sk;			/* Socket we are owned by 			*/
+! 	struct timeval	stamp;			/* Time we arrived				*/
+  	struct device	*dev;			/* Device we arrived on/are leaving by		*/
+! 
+  	/* Transport layer header */
+  	union
+  	{
+--- 36,65 ----
+  					   for using debugging */
+  };
+  
++ /* Click: overload sk_buff.pkt_type to contain information about whether
++    a packet is clean. Clean packets have the following fields zero:
++    dst, destructor, pkt_bridged, prev, list, sk, security, priority. */
++ #define PACKET_CLEAN		128		/* Is packet clean? */
++ #define PACKET_TYPE_MASK	127		/* Actual packet type */
++ 
++ /* Click: change sk_buff structure so all fields used for router are grouped
++  * together on one cache line, we hope */
+  struct sk_buff {
+  	struct sk_buff	* next;			/* Next buffer in list 				*/
+  	struct sk_buff	* prev;			/* Previous buffer in list 			*/
+  	struct sk_buff_head * list;		/* List we are on				*/
+! 	unsigned int 	len;			/* Length of actual data			*/
+! 	unsigned char	*data;			/* Data head pointer				*/
+! 	unsigned char	*tail;			/* Tail pointer					*/
+  	struct device	*dev;			/* Device we arrived on/are leaving by		*/
+! 	unsigned char	is_clone,		/* We are a clone				*/
+! 			cloned, 		/* head may be cloned (check refcnt to be sure). */
+!   			pkt_type,		/* Packet class					*/
+!   			ip_summed;		/* Driver fed us an IP checksum			*/
+! 	atomic_t	users;			/* User count - see datagram.c,tcp.c 		*/
+! 	unsigned int	truesize;		/* Buffer size 					*/
+! 	unsigned char	*head;			/* Head of buffer 				*/
+! 	unsigned char 	*end;			/* End pointer					*/
+  	/* Transport layer header */
+  	union
+  	{
+***************
+*** 72,101 ****
+  	  	struct ethhdr	*ethernet;
+  	  	unsigned char 	*raw;
+  	} mac;
+  
+  	struct  dst_entry *dst;
+  
+! 	char		cb[48];	 
+! 
+! 	unsigned int 	len;			/* Length of actual data			*/
+! 	unsigned int	csum;			/* Checksum 					*/
+  	volatile char 	used;			/* Data moved to user and not MSG_PEEK		*/
+! 	unsigned char	is_clone,		/* We are a clone				*/
+! 			cloned, 		/* head may be cloned (check refcnt to be sure). */
+!   			pkt_type,		/* Packet class					*/
+!   			pkt_bridged,		/* Tracker for bridging 			*/
+!   			ip_summed;		/* Driver fed us an IP checksum			*/
+  	__u32		priority;		/* Packet queueing priority			*/
+- 	atomic_t	users;			/* User count - see datagram.c,tcp.c 		*/
+  	unsigned short	protocol;		/* Packet protocol from driver. 		*/
+  	unsigned short	security;		/* Security level of packet			*/
+- 	unsigned int	truesize;		/* Buffer size 					*/
+- 
+- 	unsigned char	*head;			/* Head of buffer 				*/
+- 	unsigned char	*data;			/* Data head pointer				*/
+- 	unsigned char	*tail;			/* Tail pointer					*/
+- 	unsigned char 	*end;			/* End pointer					*/
+- 	void 		(*destructor)(struct sk_buff *);	/* Destruct function		*/
+  #ifdef CONFIG_IP_FIREWALL
+          __u32           fwmark;                 /* Label made by fwchains, used by pktsched	*/
+  #endif
+--- 88,107 ----
+  	  	struct ethhdr	*ethernet;
+  	  	unsigned char 	*raw;
+  	} mac;
++ 	
++ 	char		cb[48];	 
+  
+  	struct  dst_entry *dst;
+  
+! 	void 		(*destructor)(struct sk_buff *);	/* Destruct function		*/
+! 	struct sock	*sk;			/* Socket we are owned by 			*/
+! 	struct timeval	stamp;			/* Time we arrived				*/
+  	volatile char 	used;			/* Data moved to user and not MSG_PEEK		*/
+!   	unsigned char	pkt_bridged;		/* Tracker for bridging 			*/
+! 	unsigned int	csum;			/* Checksum 					*/
+  	__u32		priority;		/* Packet queueing priority			*/
+  	unsigned short	protocol;		/* Packet protocol from driver. 		*/
+  	unsigned short	security;		/* Security level of packet			*/
+  #ifdef CONFIG_IP_FIREWALL
+          __u32           fwmark;                 /* Label made by fwchains, used by pktsched	*/
+  #endif
 ***************
 *** 145,150 ****
---- 145,151 ----
+--- 151,158 ----
   extern struct sk_buff *		skb_peek_copy(struct sk_buff_head *list);
   extern struct sk_buff *		alloc_skb(unsigned int size, int priority);
   extern struct sk_buff *		dev_alloc_skb(unsigned int size);
++ extern void			skb_recycled_init(struct sk_buff *buf);
 + extern struct sk_buff *		skb_recycle(struct sk_buff *buf);
   extern void			kfree_skbmem(struct sk_buff *skb);
   extern struct sk_buff *		skb_clone(struct sk_buff *skb, int priority);
@@ -1805,7 +1811,7 @@ diff -c -r1.1.1.1 -r1.2
   {
   	skb->len-=len;
   	return 	skb->data+=len;
---- 492,498 ----
+--- 499,505 ----
   	return skb->data;
   }
   
@@ -1825,7 +1831,7 @@ diff -c -r1.1.1.1 -r1.2
   	return skb;
   }
   
---- 552,566 ----
+--- 559,573 ----
   extern __inline__ struct sk_buff *dev_alloc_skb(unsigned int length)
   {
   	struct sk_buff *skb;
@@ -1841,50 +1847,22 @@ diff -c -r1.1.1.1 -r1.2
   	return skb;
   }
   
-Index: net/netsyms.c
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/net/netsyms.c,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** net/netsyms.c	2000/10/27 16:31:08	1.1.1.1
---- net/netsyms.c	2000/10/27 17:12:16	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/include/net/neighbour.h ./include/net/neighbour.h
+*** ../linux-2.2.17-pure/include/net/neighbour.h	Tue May 11 10:36:38 1999
+--- ./include/net/neighbour.h	Tue Jun 19 23:30:09 2001
 ***************
-*** 454,459 ****
---- 454,468 ----
-  EXPORT_SYMBOL(unregister_inetaddr_notifier);
-  #endif
+*** 50,55 ****
+--- 50,56 ----
+  #define NUD_VALID	(NUD_PERMANENT|NUD_NOARP|NUD_REACHABLE|NUD_PROBE|NUD_STALE|NUD_DELAY)
+  #define NUD_CONNECTED	(NUD_PERMANENT|NUD_NOARP|NUD_REACHABLE)
   
-+ /* Click */
-+ EXPORT_SYMBOL(register_net_in);
-+ EXPORT_SYMBOL(unregister_net_in);
-+ EXPORT_SYMBOL(register_net_out);
-+ EXPORT_SYMBOL(unregister_net_out);
-+ EXPORT_SYMBOL(ptype_dispatch);
-+ struct inet_protocol *inet_get_protocol(unsigned char prot);
-+ EXPORT_SYMBOL(inet_get_protocol);
-+ 
-  /* support for loadable net drivers */
-  #ifdef CONFIG_NET
-  EXPORT_SYMBOL(loopback_dev);
-***************
-*** 477,482 ****
---- 486,492 ----
-  EXPORT_SYMBOL(eth_copy_and_sum);
-  EXPORT_SYMBOL(alloc_skb);
-  EXPORT_SYMBOL(__kfree_skb);
-+ EXPORT_SYMBOL(skb_recycle);
-  EXPORT_SYMBOL(skb_clone);
-  EXPORT_SYMBOL(skb_copy);
-  EXPORT_SYMBOL(netif_rx);
-Index: net/core/dev.c
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/net/core/dev.c,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** net/core/dev.c	2000/10/27 16:31:08	1.1.1.1
---- net/core/dev.c	2000/10/27 17:12:16	1.2
++ struct neighbour;
+  struct neigh_parms
+  {
+  	struct neigh_parms *next;
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/net/core/dev.c ./net/core/dev.c
+*** ../linux-2.2.17-pure/net/core/dev.c	Mon Sep  4 10:39:29 2000
+--- ./net/core/dev.c	Tue Jun 19 23:30:09 2001
 ***************
 *** 152,157 ****
 --- 152,160 ----
@@ -2023,6 +2001,17 @@ diff -c -r1.1.1.1 -r1.2
    *	When we are called the queue is ready to grab, the interrupts are
    *	on and hardware can interrupt and queue to the receive queue as we
 ***************
+*** 849,856 ****
+   
+  void net_bh(void)
+  {
+- 	struct packet_type *ptype;
+- 	struct packet_type *pt_prev;
+  	unsigned short type;
+  	unsigned long start_time = jiffies;
+  #ifdef CONFIG_CPU_IS_SLOW
+--- 950,955 ----
+***************
 *** 951,1016 ****
   		handle_bridge(skb, type); 
   #endif
@@ -2032,21 +2021,21 @@ diff -c -r1.1.1.1 -r1.2
 ! 		 * 	list. There are two lists. The ptype_all list of taps (normally empty)
 ! 		 *	and the main protocol list which is hashed perfectly for normal protocols.
 ! 		 */
-  
-- 		pt_prev = NULL;
-- 		for (ptype = ptype_all; ptype!=NULL; ptype=ptype->next)
-- 		{
-- 			if (!ptype->dev || ptype->dev == skb->dev) {
-- 				if(pt_prev)
-- 				{
-- 					struct sk_buff *skb2=skb_clone(skb, GFP_ATOMIC);
-- 					if(skb2)
-- 						pt_prev->func(skb2,skb->dev, pt_prev);
-- 				}
-- 				pt_prev=ptype;
-- 			}
-- 		}
-  
+! 
+! 		pt_prev = NULL;
+! 		for (ptype = ptype_all; ptype!=NULL; ptype=ptype->next)
+! 		{
+! 			if (!ptype->dev || ptype->dev == skb->dev) {
+! 				if(pt_prev)
+! 				{
+! 					struct sk_buff *skb2=skb_clone(skb, GFP_ATOMIC);
+! 					if(skb2)
+! 						pt_prev->func(skb2,skb->dev, pt_prev);
+! 				}
+! 				pt_prev=ptype;
+! 			}
+! 		}
+! 
 ! 		for (ptype = ptype_base[ntohs(type)&15]; ptype != NULL; ptype = ptype->next) 
 ! 		{
 ! 			if (ptype->type == type && (!ptype->dev || ptype->dev==skb->dev))
@@ -2061,10 +2050,10 @@ diff -c -r1.1.1.1 -r1.2
   
 - 					skb2=skb_clone(skb, GFP_ATOMIC);
   
-- 					/*
-- 					 *	Kick the protocol handler. This should be fast
-- 					 *	and efficient code.
-- 					 */
+! 					/*
+! 					 *	Kick the protocol handler. This should be fast
+! 					 *	and efficient code.
+! 					 */
   
 - 					if(skb2)
 - 						pt_prev->func(skb2, skb->dev, pt_prev);
@@ -2073,11 +2062,11 @@ diff -c -r1.1.1.1 -r1.2
 - 				pt_prev=ptype;
 - 			}
 - 		} /* End of protocol list loop */
-- 
+  
 - 		/*
 - 		 *	Is there a last item to send to ?
 - 		 */
-- 
+  
 - 		if(pt_prev)
 - 			pt_prev->func(skb, skb->dev, pt_prev);
 - 		/*
@@ -2090,7 +2079,7 @@ diff -c -r1.1.1.1 -r1.2
     	}	/* End of queue loop */
     	
     	/*
---- 1052,1070 ----
+--- 1050,1068 ----
   		handle_bridge(skb, type); 
   #endif
   
@@ -2110,132 +2099,82 @@ diff -c -r1.1.1.1 -r1.2
     	}	/* End of queue loop */
     	
     	/*
-Index: net/core/skbuff.c
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/net/core/skbuff.c,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** net/core/skbuff.c	2000/10/27 16:31:08	1.1.1.1
---- net/core/skbuff.c	2000/10/27 17:12:16	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/net/core/skbuff.c ./net/core/skbuff.c
+*** ../linux-2.2.17-pure/net/core/skbuff.c	Sun Mar  7 10:12:18 1999
+--- ./net/core/skbuff.c	Tue Jun 19 23:30:09 2001
 ***************
-*** 258,263 ****
---- 258,306 ----
+*** 257,262 ****
+--- 257,300 ----
+  	return n;
   }
   
-  /*
-+  * Click: recycle a sk_buff by resetting it. if it can be recycled, return it.
-+  */
++ 
++ /* Click: attempts to recycle a sk_buff. if it can be recycled, return it
++  * without reinitializing any bits */
 + struct sk_buff *skb_recycle(struct sk_buff *skb)
 + { 
 +   if (atomic_dec_and_test(&skb->users)) { 
 + 
-+     if (skb->list) 
-+       printk(KERN_WARNING 
-+ 	     "Warning: kfree_skb passed an skb still on a list (from %p).\n", 
-+ 	     __builtin_return_address(0));
-+ 	
 +     dst_release(skb->dst); 
-+     if(skb->destructor) skb->destructor(skb);
-+     skb_headerinit(skb, NULL, 0);  /* clean state */ 
-+ 	
++     if (skb->destructor)
++       skb->destructor(skb);
++     skb_headerinit(skb, NULL, 0);
++ 
 +     if (!skb->cloned || atomic_dec_and_test(skb_datarefp(skb))) {
-+       /* Load the data pointers. */ 
-+       skb->data = skb->head; 
-+       skb->tail = skb->data; 
++       /* Load the data pointers. */
++       skb->data = skb->head;
++       skb->tail = skb->data;
 +       /* end and truesize should have never changed */
 +       /* skb->end = skb->data + skb->truesize; */
 + 
-+       /* set up other state */ 
-+       skb->len = 0; 
-+       skb->is_clone = 0; 
++       /* set up other state */
++       skb->len = 0;
++       skb->is_clone = 0;
 +       skb->cloned = 0;
-+     
-+       atomic_set(&skb->users, 1); 
++ 
++       atomic_set(&skb->users, 1);
 +       atomic_set(skb_datarefp(skb), 1);
-+     
++ 
 +       return skb;
-+     } 
-+     
-+     else { 
-+ 	  kmem_cache_free(skbuff_head_cache, skb); 
-+ 	  atomic_dec(&net_skbcount);
-+ 	}
++     }
++ 
++     kmem_cache_free(skbuff_head_cache, skb); 
++     atomic_dec(&net_skbcount); 
 +   }
++ 
 +   return 0;
 + }
 + 
 + 
-+ /*
+  /*
    *	This is slower, and copies the whole data area 
    */
-   
-Index: net/sched/sch_generic.c
-===================================================================
-RCS file: /home/mazu/cvsroot/linux-mazu-2.2.17/net/sched/sch_generic.c,v
-retrieving revision 1.1.1.1
-retrieving revision 1.2
-diff -c -r1.1.1.1 -r1.2
-*** net/sched/sch_generic.c	2000/10/27 16:31:10	1.1.1.1
---- net/sched/sch_generic.c	2000/10/27 17:12:16	1.2
+diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/net/netsyms.c ./net/netsyms.c
+*** ../linux-2.2.17-pure/net/netsyms.c	Wed Jun  7 14:26:44 2000
+--- ./net/netsyms.c	Tue Jun 19 23:30:09 2001
 ***************
-*** 76,81 ****
---- 76,99 ----
-  	return q->q.qlen;
-  }
+*** 454,459 ****
+--- 454,466 ----
+  EXPORT_SYMBOL(unregister_inetaddr_notifier);
+  #endif
   
-+ /*
-+  * Click hooks to be notified when a network device
-+  * is idle and could send a packet.
-+  */
-+ static struct notifier_block *net_out_chain = 0;
++ /* Click */
++ EXPORT_SYMBOL(register_net_in);
++ EXPORT_SYMBOL(unregister_net_in);
++ EXPORT_SYMBOL(ptype_dispatch);
++ struct inet_protocol *inet_get_protocol(unsigned char prot);
++ EXPORT_SYMBOL(inet_get_protocol);
 + 
-+ int
-+ register_net_out(struct notifier_block *nb)
-+ {
-+   return(notifier_chain_register(&net_out_chain, nb));
-+ }
-+ 
-+ int
-+ unregister_net_out(struct notifier_block *nb)
-+ {
-+   return(notifier_chain_unregister(&net_out_chain, nb));
-+ }
-+ 
-  /* Scan transmission queue and kick devices.
-  
-     Deficiency: slow devices (ppp) and fast ones (100Mb ethernet)
+  /* support for loadable net drivers */
+  #ifdef CONFIG_NET
+  EXPORT_SYMBOL(loopback_dev);
 ***************
-*** 93,101 ****
---- 111,124 ----
-  	hp = &qdisc_head.forw;
-  	while ((h = *hp) != &qdisc_head) {
-  		int res = -1;
-+                 int res1 = -1;
-  		struct Qdisc *q = (struct Qdisc*)h;
-  		struct device *dev = q->dev;
-  
-+                 /* Click */
-+                 if(dev->tbusy == 0)
-+                   res1 = notifier_call_chain(&net_out_chain, 0, dev);
-+ 
-  		while (!dev->tbusy && (res = qdisc_restart(dev)) < 0)
-  			/* NOTHING */;
-  
-***************
-*** 108,114 ****
-  		   No problem, we will unlink it during the next round.
-  		 */
-  
-! 		if (res == 0 && *hp == h) {
-  			*hp = h->forw;
-  			h->forw = NULL;
-  			continue;
---- 131,137 ----
-  		   No problem, we will unlink it during the next round.
-  		 */
-  
-! 		if (res1 == 0 && res == 0 && *hp == h) {
-  			*hp = h->forw;
-  			h->forw = NULL;
-  			continue;
+*** 477,482 ****
+--- 484,490 ----
+  EXPORT_SYMBOL(eth_copy_and_sum);
+  EXPORT_SYMBOL(alloc_skb);
+  EXPORT_SYMBOL(__kfree_skb);
++ EXPORT_SYMBOL(skb_recycle);
+  EXPORT_SYMBOL(skb_clone);
+  EXPORT_SYMBOL(skb_copy);
+  EXPORT_SYMBOL(netif_rx);
