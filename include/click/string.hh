@@ -41,6 +41,7 @@ class String { public:
   static String garbage_string(int n);	// n garbage characters
   static String stable_string(const char *, int = -1); // stable read-only mem.
   
+  bool out_of_memory() const		{ return _memo == oom_memo; }
   static int out_of_memory_count();
   
   int length() const			{ return _length; }
@@ -140,10 +141,11 @@ class String { public:
   void assign(PermString);
 #endif
   void deref();
-  void out_of_memory();
+  void make_out_of_memory();
   
   static Memo *null_memo;
   static Memo *permanent_memo;
+  static Memo *oom_memo;
   static String *null_string_p;
   
   static String claim_string(char *, int, int); // claim memory
@@ -172,7 +174,8 @@ String::assign(const String &s)
 inline void
 String::deref()
 {
-  if (--_memo->_refcount == 0) delete _memo;
+  if (--_memo->_refcount == 0)
+    delete _memo;
 }
 
 inline

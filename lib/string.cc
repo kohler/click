@@ -25,6 +25,7 @@
 
 String::Memo *String::null_memo = 0;
 String::Memo *String::permanent_memo = 0;
+String::Memo *String::oom_memo = 0;
 String *String::null_string_p = 0;
 static int out_of_memory_flag = 0;
 
@@ -120,7 +121,11 @@ String
 String::claim_string(char *str, int len, int capacity)
 {
   assert(str && len > 0 && capacity >= len);
-  return String(str, len, new Memo(str, len, capacity));
+  Memo *new_memo = new Memo(str, len, capacity);
+  if (new_memo)
+    return String(str, len, new_memo);
+  else
+    return String(oom_memo->_real_data, 0, oom_memo);
 }
 
 String
@@ -143,11 +148,14 @@ String::garbage_string(int len)
 }
 
 void
-String::out_of_memory()
+String::make_out_of_memory()
 {
-  if (_memo) deref();
-  _memo = null_memo;
+  if (_memo)
+    deref();
+  _memo = oom_memo;
   _memo->_refcount++;
+  _data = _memo->_real_data;
+  _length = 0;
   out_of_memory_flag++;
 }
 
@@ -167,7 +175,7 @@ String::assign(const char *str, int len)
     len = strlen(str);
   
   if (len == 0) {
-    _memo = null_memo;
+    _memo = (str == oom_memo->_real_data ? oom_memo : null_memo);
     _memo->_refcount++;
     
   } else {
@@ -175,7 +183,7 @@ String::assign(const char *str, int len)
     int capacity = (len + 16) & ~15;
     _memo = new Memo(len, capacity);
     if (!_memo || !_memo->_real_data) {
-      out_of_memory();
+      make_out_of_memory();
       return;
     }
     memcpy(_memo->_real_data, str, len);
@@ -194,8 +202,13 @@ String::append(const char *suffix, int suffix_len)
   } else if (suffix_len < 0)
     suffix_len = strlen(suffix);
 
-  if (suffix_len == 0)
+  // Appending "out of memory" to a regular string makes it "out of memory",
+  // and appending anything to "out of memory" leaves it as "out of memory"
+  if (suffix_len == 0 || _memo == oom_memo) {
+    if (suffix == oom_memo->_real_data)
+      make_out_of_memory();
     return;
+  }
   
   // If we can, append into unused space. First, we check that there's enough
   // unused space for `suffix_len' characters to fit; then, we check that the
@@ -219,7 +232,7 @@ String::append(const char *suffix, int suffix_len)
   Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
   if (!new_memo || !new_memo->_real_data) {
     delete new_memo;
-    out_of_memory();
+    make_out_of_memory();
     return;
   }
 
@@ -237,7 +250,7 @@ void
 String::append_fill(int c, int suffix_len)
 {
   assert(suffix_len >= 0);
-  if (suffix_len == 0)
+  if (suffix_len == 0 || _memo == oom_memo)
     return;
   
   // If we can, append into unused space. First, we check that there's enough
@@ -262,7 +275,7 @@ String::append_fill(int c, int suffix_len)
   Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
   if (!new_memo || !new_memo->_real_data) {
     delete new_memo;
-    out_of_memory();
+    make_out_of_memory();
     return;
   }
 
@@ -280,7 +293,7 @@ void
 String::append_garbage(int suffix_len)
 {
   assert(suffix_len >= 0);
-  if (suffix_len == 0)
+  if (suffix_len == 0 || _memo == oom_memo)
     return;
   
   // If we can, append into unused space. First, we check that there's enough
@@ -524,17 +537,23 @@ hashcode(const String &s)
 bool
 String::equals(const char *s, int len) const
 {
-  if (len < 0) len = strlen(s);
-  if (_length != len) return false;
-  if (_data == s) return true;
+  if (len < 0)
+    len = strlen(s);
+  // "out-of-memory" strings compare unequal to anything, even themselves
+  if (_length != len || s == oom_memo->_real_data || _memo == oom_memo)
+    return false;
+  if (_data == s)
+    return true;
   return memcmp(_data, s, len) == 0;
 }
 
 int
 String::compare(const char *s, int len) const
 {
-  if (len < 0) len = strlen(s);
-  if (_data == s && _length == len) return 0;
+  if (len < 0)
+    len = strlen(s);
+  if (_data == s && _length == len)
+    return 0;
   if (_length == len)
     return memcmp(_data, s, len);
   else if (_length < len) {
@@ -561,6 +580,8 @@ String::static_initialize()
     null_memo->_refcount++;
     permanent_memo = new Memo;
     permanent_memo->_refcount++;
+    oom_memo = new Memo(0, 1);
+    oom_memo->_real_data[0] = '\0';
     null_string_p = new String;
   }
 }
@@ -571,8 +592,12 @@ String::static_cleanup()
   if (null_string_p) {
     delete null_string_p;
     null_string_p = 0;
-    if (--null_memo->_refcount == 0) delete null_memo;
-    if (--permanent_memo->_refcount == 0) delete permanent_memo;
-    null_memo = permanent_memo = 0;
+    if (--null_memo->_refcount == 0)
+      delete null_memo;
+    if (--permanent_memo->_refcount == 0)
+      delete permanent_memo;
+    if (--oom_memo->_refcount == 0)
+      delete oom_memo;
+    null_memo = permanent_memo = oom_memo = 0;
   }
 }

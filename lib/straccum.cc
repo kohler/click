@@ -27,13 +27,23 @@
 bool
 StringAccum::grow(int want)
 {
+  // can't append to out-of-memory strings
+  if (_cap < 0)
+    return false;
+  
   int ncap = (_cap ? _cap * 2 : 128);
   while (ncap <= want)
     ncap *= 2;
   
   unsigned char *n = new unsigned char[ncap];
-  if (!n)
+  if (!n) {
+    // mark StringAccum as out-of-memory
+    delete[] _s;
+    _s = 0;
+    _cap = -1;
+    _len = 0;
     return false;
+  }
   
   if (_s)
     memcpy(n, _s, _cap);
@@ -46,8 +56,8 @@ StringAccum::grow(int want)
 const char *
 StringAccum::c_str()
 {
-  append('\0');
-  pop_back();
+  if (_len < _cap || grow(_len))
+    _s[_len] = '\0';
   return reinterpret_cast<char *>(_s);
 }
 
