@@ -22,6 +22,7 @@
 #include "processingt.hh"
 #include <click/error.hh>
 #include <click/bitvector.hh>
+#include <click/straccum.hh>
 #include "elementmap.hh"
 #include <ctype.h>
 #include <string.h>
@@ -207,7 +208,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 	    int opidx = _output_pidx[ei];
 	    int noutputs = _output_pidx[ei+1] - opidx;
 	    forward_flow(e->type()->traits().flow_code(),
-			 port, noutputs, &bv);
+			 port, noutputs, &bv, errh);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
 		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), "<agnostic>"));
@@ -360,23 +361,17 @@ ProcessingT::reset(const RouterT *r, ErrorHandler *errh)
 bool
 ProcessingT::same_processing(int a, int b) const
 {
-  int ai = _input_pidx[a], bi = _input_pidx[b];
-  int ao = _output_pidx[a], bo = _output_pidx[b];
-  int ani = _input_pidx[a+1] - ai, bni = _input_pidx[b+1] - bi;
-  int ano = _output_pidx[a+1] - ao, bno = _output_pidx[b+1] - bo;
-  if (ani != bni || ano != bno)
-    return false;
-  if (ani && memcmp(&_input_processing[ai], &_input_processing[bi], sizeof(int) * ani) != 0)
-    return false;
-  if (ano && memcmp(&_output_processing[ao], &_output_processing[bo], sizeof(int) * ano) != 0)
-    return false;
-  return true;
-}
-
-bool
-ProcessingT::is_internal_flow(int, int, int) const
-{
-  return true;
+    int ai = _input_pidx[a], bi = _input_pidx[b];
+    int ao = _output_pidx[a], bo = _output_pidx[b];
+    int ani = _input_pidx[a+1] - ai, bni = _input_pidx[b+1] - bi;
+    int ano = _output_pidx[a+1] - ao, bno = _output_pidx[b+1] - bo;
+    if (ani != bni || ano != bno)
+	return false;
+    if (ani && memcmp(&_input_processing[ai], &_input_processing[bi], sizeof(int) * ani) != 0)
+	return false;
+    if (ano && memcmp(&_output_processing[ao], &_output_processing[bo], sizeof(int) * ano) != 0)
+	return false;
+    return true;
 }
 
 // FLOW CODES
@@ -384,138 +379,348 @@ ProcessingT::is_internal_flow(int, int, int) const
 static void
 skip_flow_code(const char *&p, const char *last)
 {
-  if (p != last && *p != '/') {
-    if (*p == '[') {
-      for (p++; p != last && *p != ']'; p++)
-	/* nada */;
-      if (p != last)
-	p++;
-    } else
-      p++;
-  }
+    if (p != last && *p != '/') {
+	if (*p == '[') {
+	    for (p++; p != last && *p != ']'; p++)
+		/* nada */;
+	    if (p != last)
+		p++;
+	} else
+	    p++;
+    }
 }
 
 static int
 next_flow_code(const char *&p, const char *last,
 	       int port, Bitvector &code, ErrorHandler *errh)
 {
-  if (p == last || *p == '/') {
-    // back up to last code character
-    if (p[-1] == ']') {
-      for (p -= 2; *p != '['; p--)
-	/* nada */;
-    } else
-      p--;
-  }
+    if (p == last || *p == '/') {
+	// back up to last code character
+	if (p[-1] == ']') {
+	    for (p -= 2; *p != '['; p--)
+		/* nada */;
+	} else
+	    p--;
+    }
 
-  code.assign(256, false);
+    code.assign(256, false);
 
-  if (*p == '[') {
-    bool negated = false;
-    if (p[1] == '^')
-      negated = true, p++;
-    for (p++; p != last && *p != ']'; p++) {
-      if (isalpha(*p))
+    if (*p == '[') {
+	bool negated = false;
+	if (p[1] == '^')
+	    negated = true, p++;
+	for (p++; p != last && *p != ']'; p++) {
+	    if (isalpha(*p))
+		code[*p] = true;
+	    else if (*p == '#')
+		code[port + 128] = true;
+	    else if (errh)
+		errh->error("flow code: invalid character `%c'", *p);
+	}
+	if (negated)
+	    code.negate();
+	if (p == last) {
+	    if (errh)
+		errh->error("flow code: missing `]'");
+	    p--;		// don't skip over final '\0'
+	}
+    } else if (isalpha(*p))
 	code[*p] = true;
-      else if (*p == '#')
+    else if (*p == '#')
 	code[port + 128] = true;
-      else if (errh)
-	errh->error("flow code: invalid character `%c'", *p);
+    else {
+	if (errh)
+	    errh->error("flow code: invalid character `%c'", *p);
+	p++;
+	return -1;
     }
-    if (negated)
-      code.negate();
-    if (p == last) {
-      if (errh)
-	errh->error("flow code: missing `]'");
-      p--;			// don't skip over final '\0'
-    }
-  } else if (isalpha(*p))
-    code[*p] = true;
-  else if (*p == '#')
-    code[port + 128] = true;
-  else {
-    if (errh)
-      errh->error("flow code: invalid character `%c'", *p);
-    p++;
-    return -1;
-  }
 
-  p++;
-  return 0;
+    p++;
+    return 0;
 }
 
 int
 ProcessingT::forward_flow(const String &flow_code, int input_port,
-			  int noutputs, Bitvector *bv)
+			  int noutputs, Bitvector *bv, ErrorHandler *errh)
 {
-  if (input_port < 0) {
+    if (input_port < 0) {
+	bv->assign(noutputs, false);
+	return 0;
+    } else if (!flow_code || (flow_code.length() == 3 && flow_code == "x/x")) {
+	bv->assign(noutputs, true);
+	return 0;
+    }
+
     bv->assign(noutputs, false);
+
+    int slash_pos = flow_code.find_left('/');
+    if (slash_pos <= 0 || slash_pos == flow_code.length() - 1 || flow_code[slash_pos + 1] == '/')
+	return (errh ? errh->error("flow code: missing or bad `/'") : -1);
+
+    const char *f_in = flow_code.data();
+    const char *f_out = f_in + slash_pos + 1;
+    const char *f_last = f_in + flow_code.length();
+
+    Bitvector in_code;
+    for (int i = 0; i < input_port; i++)
+	skip_flow_code(f_in, f_last);
+    next_flow_code(f_in, f_last, input_port, in_code, errh);
+
+    Bitvector out_code;
+    for (int i = 0; i < noutputs; i++) {
+	next_flow_code(f_out, f_last, i, out_code, errh);
+	if (in_code.nonzero_intersection(out_code))
+	    (*bv)[i] = true;
+    }
+
     return 0;
-  } else if (!flow_code || (flow_code.length() == 3 && flow_code == "x/x")) {
-    bv->assign(noutputs, true);
-    return 0;
-  }
-
-  bv->assign(noutputs, false);
-  ErrorHandler *errh = ErrorHandler::default_handler();
-
-  int slash_pos = flow_code.find_left('/');
-  if (slash_pos <= 0 || slash_pos == flow_code.length() - 1 || flow_code[slash_pos + 1] == '/')
-    return errh->error("flow code: missing or bad `/'");
-
-  const char *f_in = flow_code.data();
-  const char *f_out = f_in + slash_pos + 1;
-  const char *f_last = f_in + flow_code.length();
-  
-  Bitvector in_code;
-  for (int i = 0; i < input_port; i++)
-    skip_flow_code(f_in, f_last);
-  next_flow_code(f_in, f_last, input_port, in_code, errh);
-
-  Bitvector out_code;
-  for (int i = 0; i < noutputs; i++) {
-    next_flow_code(f_out, f_last, i, out_code, errh);
-    if (in_code.nonzero_intersection(out_code))
-      (*bv)[i] = true;
-  }
-
-  return 0;
 }
 
 int
 ProcessingT::backward_flow(const String &flow_code, int output_port,
-			   int ninputs, Bitvector *bv)
+			   int ninputs, Bitvector *bv, ErrorHandler *errh)
 {
-  if (output_port < 0) {
+    if (output_port < 0) {
+	bv->assign(ninputs, false);
+	return 0;
+    } else if (!flow_code || (flow_code.length() == 3 && flow_code == "x/x")) {
+	bv->assign(ninputs, true);
+	return 0;
+    }
+
     bv->assign(ninputs, false);
+
+    int slash_pos = flow_code.find_left('/');
+    if (slash_pos <= 0 || slash_pos == flow_code.length() - 1 || flow_code[slash_pos + 1] == '/')
+	return (errh ? errh->error("flow code: missing or bad `/'") : -1);
+
+    const char *f_in = flow_code.data();
+    const char *f_out = f_in + slash_pos + 1;
+    const char *f_last = f_in + flow_code.length();
+
+    Bitvector out_code;
+    for (int i = 0; i < output_port; i++)
+	skip_flow_code(f_out, f_last);
+    next_flow_code(f_out, f_last, output_port, out_code, errh);
+
+    Bitvector in_code;
+    for (int i = 0; i < ninputs; i++) {
+	next_flow_code(f_in, f_last, i, in_code, errh);
+	if (in_code.nonzero_intersection(out_code))
+	    (*bv)[i] = true;
+    }
+
     return 0;
-  } else if (!flow_code || (flow_code.length() == 3 && flow_code == "x/x")) {
-    bv->assign(ninputs, true);
-    return 0;
-  }
+}
 
-  bv->assign(ninputs, false);
-  ErrorHandler *errh = ErrorHandler::default_handler();
+void
+ProcessingT::set_connected_inputs(const Bitvector &outputs, Bitvector &inputs) const
+{
+    assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
+    const Vector<ConnectionT> &conn = _router->connections();
+    for (int i = 0; i < conn.size(); i++)
+	if (outputs[output_pidx(conn[i])])
+	    inputs[input_pidx(conn[i])] = true;
+}
 
-  int slash_pos = flow_code.find_left('/');
-  if (slash_pos <= 0 || slash_pos == flow_code.length() - 1 || flow_code[slash_pos + 1] == '/')
-    return errh->error("flow code: missing or bad `/'");
+void
+ProcessingT::set_connected_outputs(const Bitvector &inputs, Bitvector &outputs) const
+{
+    assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
+    const Vector<ConnectionT> &conn = _router->connections();
+    for (int i = 0; i < conn.size(); i++)
+	if (inputs[input_pidx(conn[i])])
+	    outputs[output_pidx(conn[i])] = true;
+}
 
-  const char *f_in = flow_code.data();
-  const char *f_out = f_in + slash_pos + 1;
-  const char *f_last = f_in + flow_code.length();
-  
-  Bitvector out_code;
-  for (int i = 0; i < output_port; i++)
-    skip_flow_code(f_out, f_last);
-  next_flow_code(f_out, f_last, output_port, out_code, errh);
+void
+ProcessingT::set_connected_inputs(const PortT &port, Bitvector &inputs) const
+{
+    assert(port.router() == _router && inputs.size() == ninput_pidx());
+    const Vector<ConnectionT> &conn = _router->connections();
+    for (int i = 0; i < conn.size(); i++)
+	if (conn[i].from() == port)
+	    inputs[input_pidx(conn[i])] = true;
+}
 
-  Bitvector in_code;
-  for (int i = 0; i < ninputs; i++) {
-    next_flow_code(f_in, f_last, i, in_code, errh);
-    if (in_code.nonzero_intersection(out_code))
-      (*bv)[i] = true;
-  }
+void
+ProcessingT::set_connected_outputs(const PortT &port, Bitvector &outputs) const
+{
+    assert(port.router() == _router && outputs.size() == noutput_pidx());
+    const Vector<ConnectionT> &conn = _router->connections();
+    for (int i = 0; i < conn.size(); i++)
+	if (conn[i].to() == port)
+	    outputs[output_pidx(conn[i])] = true;
+}
 
-  return 0;
+void
+ProcessingT::set_flowed_inputs(const Bitvector &outputs, Bitvector &inputs, ErrorHandler *errh) const
+{
+    assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
+    Bitvector bv;
+    // for speed with sparse Bitvectors, look into the Bitvector implementation
+    const uint32_t *output_udata = outputs.u_data();
+    for (int i = 0; i <= outputs.u_max(); i++)
+	if (output_udata[i]) {
+	    int m = (i*8 + 8 > outputs.size() ? outputs.size() : i*8 + 8);
+	    for (int j = i*8; j < m; j++)
+		if (outputs[j]) {
+		    PortT p = output_port(j);
+		    (void) backward_flow(p, &bv, errh);
+		    inputs.or_at(bv, _input_pidx[p.elt->idx()]);
+		}
+	}
+}
+
+void
+ProcessingT::set_flowed_outputs(const Bitvector &inputs, Bitvector &outputs, ErrorHandler *errh) const
+{
+    assert(outputs.size() == noutput_pidx() && inputs.size() == ninput_pidx());
+    Bitvector bv;
+    // for speed with sparse Bitvectors, look into the Bitvector implementation
+    const uint32_t *input_udata = inputs.u_data();
+    for (int i = 0; i <= inputs.u_max(); i++)
+	if (input_udata[i]) {
+	    int m = (i*8 + 8 > inputs.size() ? inputs.size() : i*8 + 8);
+	    for (int j = i*8; j < m; j++)
+		if (inputs[j]) {
+		    PortT p = input_port(j);
+		    (void) forward_flow(p, &bv, errh);
+		    outputs.or_at(bv, _output_pidx[p.elt->idx()]);
+		}
+	}
+}
+
+void
+ProcessingT::forward_reachable_inputs(Bitvector &inputs, ErrorHandler *errh) const
+{
+    assert(inputs.size() == ninput_pidx());
+    Bitvector outputs(noutput_pidx(), false);
+    Bitvector new_inputs(ninput_pidx(), false), diff(inputs);
+    while (1) {
+	set_flowed_outputs(diff, outputs, errh);
+	set_connected_inputs(outputs, new_inputs);
+	inputs.or_with_difference(new_inputs, diff);
+	if (!diff)
+	    return;
+    }
+}
+
+String
+ProcessingT::compound_processing_code() const
+{
+    ElementT *input = const_cast<ElementT *>(_router->element("input"));
+    ElementT *output = const_cast<ElementT *>(_router->element("output"));
+    assert(input && output && input->tunnel() && output->tunnel());
+    
+    // read input and output codes
+    StringAccum icode, ocode;
+    for (int i = 0; i < input->noutputs(); i++) {
+	int p = output_processing(PortT(input, i));
+	icode << processing_letters[p];
+    }
+    for (int i = 0; i < output->ninputs(); i++) {
+	int p = input_processing(PortT(output, i));
+	ocode << processing_letters[p];
+    }
+
+    // streamline codes, ensure at least one character per half
+    while (icode.length() > 1 && icode[icode.length() - 2] == icode.back())
+	icode.pop_back();
+    while (ocode.length() > 1 && ocode[ocode.length() - 2] == ocode.back())
+	ocode.pop_back();
+    if (!icode.length())
+	icode << 'a';
+    if (!ocode.length())
+	ocode << 'a';
+    
+    icode << '/' << ocode;
+    return icode.take_string();
+}
+
+String
+ProcessingT::compound_flow_code(ErrorHandler *errh) const
+{
+    ElementT *input = const_cast<ElementT *>(_router->element("input"));
+    ElementT *output = const_cast<ElementT *>(_router->element("output"));
+    assert(input && output && input->tunnel() && output->tunnel());
+
+    // skip calculation in common case
+    int ninputs = input->noutputs(), noutputs = output->ninputs();
+    if (ninputs == 0 || noutputs == 0)
+	return "x/y";
+
+    // read flow codes, create `codes' array
+    Bitvector *codes = new Bitvector[noutputs](ninputs, false);
+    Bitvector input_vec(ninput_pidx(), false);
+    int opidx = input_pidx(PortT(output, 0));
+    for (int i = 0; i < ninputs; i++) {
+	if (i)
+	    input_vec.clear();
+	set_connected_inputs(PortT(input, i), input_vec);
+	forward_reachable_inputs(input_vec, errh);
+	for (int p = 0; p < noutputs; p++)
+	    if (input_vec[opidx + p])
+		codes[p][i] = true;
+    }
+
+    // combine flow codes
+    Vector<int> codeid;
+    const char *cur_code = "xyzabcdefghijklmnopqrstuvwXYZABCDEFGHIJKLMNOPQRSTUVW0123456789_";
+    codeid.push_back(*cur_code++);
+    for (int i = 1; i < ninputs; i++) {
+	
+	// look for flow codes common among all outputs with this code, and
+	// flow codes present in any output without this code
+	Bitvector common(ninputs, true);
+	Bitvector disjoint(ninputs, false);
+	int found = 0;
+	for (int j = 0; j < noutputs; j++)
+	    if (codes[j][i]) {
+		common &= codes[j];
+		found++;
+	    } else
+		disjoint |= codes[j];
+	disjoint.negate();
+
+	common &= disjoint;
+	for (int j = 0; j < i; j++)
+	    if (common[j]) {
+		codeid.push_back(codeid[j]);
+		// turn off reference
+		for (int k = 0; k < noutputs; k++)
+		    codes[k][i] = false;
+		goto found;
+	    }
+	assert(*cur_code);
+	codeid.push_back(*cur_code++);
+	
+      found: ;
+    }
+
+    // generate flow code
+    assert(*cur_code);
+    StringAccum sa;
+    for (int i = 0; i < ninputs; i++)
+	sa << (char)codeid[i];
+    sa << '/';
+    for (int i = 0; i < noutputs; i++)
+	if (!codes[i])
+	    sa << *cur_code;
+	else {
+	    int pos = sa.length();
+	    sa << '[';
+	    for (int j = 0; j < ninputs; j++)
+		if (codes[i][j])
+		    sa << (char)codeid[j];
+	    if (sa.length() == pos + 2) {
+		sa[pos] = sa[pos + 1];
+		sa.pop_back();
+	    } else
+		sa << ']';
+	}
+
+    // return
+    delete[] codes;
+    return sa.take_string();
 }

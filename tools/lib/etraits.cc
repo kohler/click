@@ -170,6 +170,22 @@ ElementTraits::parse_component(const String &s)
 	return D_NONE;
 }
 
+ElementTraits
+ElementTraits::make(int component, ...)
+{
+    va_list val;
+    va_start(val, component);
+    ElementTraits t;
+    while (component != D_NONE) {
+	const char *x = va_arg(val, const char *);
+	if (String *c = t.component(component))
+	    *c = x;
+	component = va_arg(val, int);
+    }
+    va_end(val);
+    return t;
+}
+
 // template instance
 #include <click/vector.cc>
 template class Vector<ElementTraits>;

@@ -23,6 +23,7 @@
 #include "eclasst.hh"
 #include "routert.hh"
 #include "elementmap.hh"
+#include "processingt.hh"
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 #include <click/variableenv.hh>
@@ -32,8 +33,40 @@ static String::Initializer string_initializer;
 static HashMap<String, int> default_class_map(-1);
 static Vector<ElementClassT *> default_classes;
 static int unique_id_storage = ElementClassT::UNUSED_UID;
-ElementClassT *ElementClassT::the_unused_type = new ElementClassT("<unused>", UNUSED_UID);
-ElementClassT *ElementClassT::the_tunnel_type = new ElementClassT("<tunnel>", TUNNEL_UID);
+
+typedef ElementTraits Traits;
+
+class TraitsElementClassT : public ElementClassT { public:
+    TraitsElementClassT(const String &, int uid, int component, ...);
+    const ElementTraits *find_traits() const;
+  private:
+    ElementTraits _the_traits;
+};
+
+TraitsElementClassT::TraitsElementClassT(const String &name, int uid, int component, ...)
+    : ElementClassT(name, uid)
+{
+    *(_the_traits.component(Traits::D_CLASS)) = name;
+    va_list val;
+    va_start(val, component);
+    while (component > Traits::D_NONE) {
+	const char *x = va_arg(val, const char *);
+	if (String *val = _the_traits.component(component))
+	    *val = x;
+	component = va_arg(val, int);
+    }
+    va_end(val);
+}
+
+const ElementTraits *
+TraitsElementClassT::find_traits() const
+{
+    return &_the_traits;
+}
+
+ElementClassT *ElementClassT::the_unused_type = new TraitsElementClassT("<unused>", UNUSED_UID, Traits::D_REQUIREMENTS, "false", 0);
+ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel>", TUNNEL_UID, Traits::D_PROCESSING, "a/a", Traits::D_FLOW_CODE, "x/x", 0);
+
 
 ElementClassT::ElementClassT(const String &name)
     : _name(name), _use_count(1), _unique_id(unique_id_storage++),
@@ -74,16 +107,12 @@ ElementClassT::default_class(const String &name)
 }
 
 
-const ElementTraits &
+const ElementTraits *
 ElementClassT::find_traits() const
 {
-    _traits_version = default_element_map_version;
     ElementMap *em = ElementMap::default_map();
     assert(em);
-    if (!simple())
-	return *(_traits = &ElementTraits::null_traits());
-    else
-	return *(_traits = &em->traits(_name));
+    return &em->traits(_name);
 }
 
 const String &
@@ -201,7 +230,8 @@ ElementClassT::complex_expand_element(
 void
 ElementClassT::collect_primitive_classes(HashMap<String, int> &m)
 {
-    m.insert(_name, 1);
+    if (_unique_id > TUNNEL_UID)
+	m.insert(_name, 1);
 }
 
 void
@@ -253,6 +283,12 @@ SynonymElementClassT::unparse_declaration(StringAccum &sa, const String &indent)
     sa << indent << "elementclass " << name() << " " << _eclass->name() << ";\n";
 }
 
+const ElementTraits *
+SynonymElementClassT::find_traits() const
+{
+    return _eclass->find_traits();
+}
+
 CompoundElementClassT *
 SynonymElementClassT::cast_compound()
 {
@@ -264,6 +300,11 @@ SynonymElementClassT::cast_router()
 {
     return _eclass->cast_router();
 }
+
+
+//
+// Compound
+//
 
 CompoundElementClassT::CompoundElementClassT
 	(const String &name, ElementClassT *next, int depth,
@@ -285,6 +326,7 @@ CompoundElementClassT::CompoundElementClassT(const String &name, RouterT *r)
       _next(0), _circularity_flag(false)
 {
     _router->use();
+    *(_traits.component(Traits::D_CLASS)) = name;
 }
 
 CompoundElementClassT::~CompoundElementClassT()
@@ -454,6 +496,18 @@ CompoundElementClassT::collect_primitive_classes(HashMap<String, int> &m)
     _router->collect_primitive_classes(m);
     if (_next)
 	_next->collect_primitive_classes(m);
+}
+
+const ElementTraits *
+CompoundElementClassT::find_traits() const
+{
+    if (ElementMap::default_map()) {
+	ErrorHandler *errh = ErrorHandler::silent_handler();
+	ProcessingT pt(_router, errh);
+	*(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
+	*(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code(errh);
+    }
+    return &_traits;
 }
 
 void

@@ -50,6 +50,7 @@ struct ElementTraits {
 	D_FIRST_DEFAULT = D_CLASS, D_LAST_DEFAULT = D_PROVISIONS
     };
     static int parse_component(const String &);
+    static ElementTraits make(int, ...);
 
   private:
     

@@ -35,6 +35,8 @@ class ElementClassT { public:
     static const int TUNNEL_UID = 0;
 
     const ElementTraits &traits() const;
+    virtual const ElementTraits *find_traits() const;
+    
     const String &processing_code() const;
     const String &flow_code() const;
     bool requires(const String &) const;
@@ -59,7 +61,11 @@ class ElementClassT { public:
     virtual RouterT *cast_router()		{ return 0; }
 
     static String signature(const String &, int, int, int);
-  
+
+  protected:
+
+    ElementClassT(const String &, int);
+    
   private:
 
     String _name;
@@ -72,11 +78,9 @@ class ElementClassT { public:
     static ElementClassT *the_unused_type;
     static ElementClassT *the_tunnel_type;
     
-    ElementClassT(const String &, int);
     ElementClassT(const ElementClassT &);
     ElementClassT &operator=(const ElementClassT &);
 
-    const ElementTraits &find_traits() const;
     ElementT *direct_expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
 };
@@ -92,6 +96,8 @@ class SynonymElementClassT : public ElementClassT { public:
     void unparse_declaration(StringAccum &, const String &);
 
     bool simple() const			{ return false; }
+    const ElementTraits *find_traits() const;
+    
     CompoundElementClassT *cast_compound();
     RouterT *cast_router();
   
@@ -120,6 +126,8 @@ class CompoundElementClassT : public ElementClassT { public:
     void unparse_declaration(StringAccum &, const String &);
     
     bool simple() const			{ return false; }
+    const ElementTraits *find_traits() const;
+    
     CompoundElementClassT *cast_compound() { return this; }
     RouterT *cast_router()		{ return _router; }
 
@@ -137,7 +145,9 @@ class CompoundElementClassT : public ElementClassT { public:
     ElementClassT *_next;
 
     bool _circularity_flag;
-  
+
+    mutable ElementTraits _traits;
+    
     int actual_expand(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
   
 };
@@ -162,10 +172,11 @@ ElementClassT::unused_type()
 inline const ElementTraits &
 ElementClassT::traits() const
 {
-    if (_traits_version == default_element_map_version)
-	return *_traits;
-    else
-	return find_traits();
+    if (_traits_version != default_element_map_version) {
+	_traits_version = default_element_map_version;
+	_traits = find_traits();
+    }
+    return *_traits;
 }
 
 inline const String &

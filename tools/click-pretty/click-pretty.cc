@@ -868,6 +868,10 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port, bool is_ou
 		_sa << _sep << "pull";
 	    else
 		_sa << _sep << "??";
+	} else if (tag == "processingcode") {
+	    _sa << _sep << t->processing_code();
+	} else if (tag == "flowcode") {
+	    _sa << _sep << t->flow_code();
 	} else if (tag == "if") {
 	    String s = expand(attrs["test"], e, port, is_output);
 	    bool result;
