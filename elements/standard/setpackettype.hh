@@ -1,0 +1,46 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
+#ifndef CLICK_SETPACKETTYPE_HH
+#define CLICK_SETPACKETTYPE_HH
+#include <click/element.hh>
+
+/*
+=c
+
+SetPacketType(TYPE)
+
+=s annotations
+
+sets packet type annotation
+
+=d
+
+SetPacketType sets passing packets' packet type annotations to TYPE. The
+packet type annotation tells Linux about the packet's link-level
+characteristics. For example, was the packet sent directly to this host, or
+was it broadcast? TYPE should be one of `C<HOST>', `C<BROADCAST>',
+`C<MULTICAST>', `C<OTHERHOST>', `C<OUTGOING>', or `C<LOOPBACK>'. */
+
+class SetPacketType : public Element { public:
+
+    SetPacketType();
+    ~SetPacketType();
+
+    const char *class_name() const		{ return "SetPacketType"; }
+    const char *processing() const		{ return AGNOSTIC; }
+    SetPacketType *clone() const		{ return new SetPacketType; }
+
+    static int parse_type(const String &);
+    static const char *unparse_type(int);
+    
+    int configure(const Vector<String> &, ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
+    
+    Packet *simple_action(Packet *);
+
+  protected:
+  
+    Packet::PacketType _ptype;
+
+};
+
+#endif
