@@ -179,7 +179,7 @@ ToDevice::selected(int)
     const char *syscall;
     
 #if TODEVICE_WRITE
-    retval = (write(_fd, p->data(), p->length()) == p->length() ? 0 : -1);
+    retval = ((uint32_t) write(_fd, p->data(), p->length()) == p->length() ? 0 : -1);
     syscall = "write";
 #elif TODEVICE_SEND
     retval = send(_fd, p->data(), p->length(), 0);
