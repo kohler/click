@@ -46,8 +46,7 @@
  * expanding at "level" (0-3) for the IPAddress, until "when" (seconds).  For
  * example, if "18.26.4.0 2 100" is specified, IPRateMonitor will stop
  * expanding when 18.26.4 is reached for the next 100 seconds. After 100
- * seconds, any level below 18.26.4 may be reached again. Timers for any
- * higher levels, e.g. 18.26, are canceled.
+ * seconds, any level below 18.26.4 may be reached again.
  *
  * =e Example: 
  * = IPRateMonitor(PACKETS, 0, 0.5, 256, 600);
@@ -95,25 +94,19 @@ public:
 
 private:
 
-  // if you change which timer to use and what the scale is, update look read
-  // handler and the annotation code accordingly
   typedef RateEWMAX<5, 10, 2, HalfSecondsTimer> MyEWMA;
-  // fwd_rate is 0, rev_rate is 1
   
-  // Counter: one Counter for each address in a subnet
-  static const int MAX_COUNTERS = 256;
   struct Stats;
   struct Counter {
-    // two rates must use same EWMA class
+    // fwd_and_rev_rate.average[0] is forward rate
+    // fwd_and_rev_rate.average[1] is reverse rate
     MyEWMA fwd_and_rev_rate;
     Stats *next_level;
     unsigned anno_this;
   };
 
-  //
-  // Stats
-  //
   // one Stats for each subnet
+  static const int MAX_COUNTERS = 256;
   struct Stats {
     Counter *_parent;               // equals NULL for _base->_parent
     Stats *_prev, *_next;           // to maintain age-list
@@ -139,26 +132,22 @@ protected:
 private:
 
   static const int MAX_SHIFT = 24;
-  static const int PERIODIC_FOLD_INIT = 8192; // every n packets, a fold() is done
+  // every n packets, a fold() is done
+  static const int PERIODIC_FOLD_INIT = 8192; 
   static const unsigned MEMMAX_MIN = 100; // kbytes
-
-  Spinlock* _lock;		// synchronize handlers and update
-
+  
+  bool _anno_packets;		// annotate packets?
   bool _count_packets;		// packets or bytes
   int _offset;			// offset in packet
   int _thresh;			// threshold, when to split
-
-
   unsigned int _memmax;		// max. memory usage
   unsigned int _ratio;		// inspect 1 in how many packets?
-  bool _anno_packets;		// annotate packets?
+  Spinlock* _lock;		// synchronize handlers and update
 
-  struct Stats *_base;              // first level stats
+  struct Stats *_base;          // first level stats
   long unsigned int _resettime;     // time of last reset
   unsigned int _alloced_mem;        // total allocated memory
   struct Stats *_first, *_last;     // first and last element in age list
-
-
   // HACK! For interaction between fold() and ~Stats()
   Stats *_prev_deleted, *_next_deleted;
 
@@ -203,9 +192,10 @@ IPRateMonitor::set_anno_level(IPAddress saddr, unsigned level, unsigned when)
 
     if (level == 0) {
       c->anno_this = when;
+      delete c->next_level;
+      c->next_level = 0;
       return;
-    } else
-      c->anno_this = 0;
+    }
 
     if (!c->next_level)
       return;
@@ -228,7 +218,6 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
   int bitshift;
   unsigned now = MyEWMA::now();
   static unsigned prev_fold_time = now;
-  bool annotated = false;
 
   // zoom in to deepest opened level
   for (bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
@@ -248,27 +237,22 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
         c->fwd_and_rev_rate.update(val,1);
     }
     
-    if (_anno_packets && !annotated && (c->anno_this > now || !c->next_level)) {
-      annotated = true;
-
-      // annotate packet with fwd and rev rates for inspection by CompareBlock
-      int scale = c->fwd_and_rev_rate.scale;
-      int freq = c->fwd_and_rev_rate.freq();
-
-      int fwd_rate = c->fwd_and_rev_rate.average(0); 
-      p->set_fwd_rate_anno((fwd_rate * freq) >> scale);
-      int rev_rate = c->fwd_and_rev_rate.average(1); 
-      p->set_rev_rate_anno((rev_rate * freq) >> scale);
-    }
-
     // zoom in on subnet or host
     if (!c->next_level)
       break;
     s = c->next_level;
   }
-  
+    
   int fwd_rate = c->fwd_and_rev_rate.average(0); 
   int rev_rate = c->fwd_and_rev_rate.average(1); 
+
+  if (_anno_packets) {
+    // annotate packet with fwd and rev rates for inspection by CompareBlock
+    int scale = c->fwd_and_rev_rate.scale;
+    int freq = c->fwd_and_rev_rate.freq();
+    p->set_fwd_rate_anno((fwd_rate * freq) >> scale);
+    p->set_rev_rate_anno((rev_rate * freq) >> scale);
+  }
 
   //
   // Zoom in if a rate exceeds _thresh, but only if
@@ -276,14 +260,13 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
   //    (in other words: zooming in more is not possible)
   // 2. allocating a child will not cause a memory limit violation.
   //
-  // next_byte is the record-index in the next level Stats. That Counter record
-  // in Stats will get the EWMA value of its parent. XXX: should we divide EWMA
-  // value by the number of siblings to give it more realistic value or will it
-  // drop fast enough by itself if it has a lot of siblings?
+  // next_byte is the record-index in the next level Stats. That Counter
+  // record in Stats will get the EWMA value of its parent.
   //
-  if ((fwd_rate >= _thresh || rev_rate >= _thresh) &&
-     ((bitshift < MAX_SHIFT) &&
-     (!_memmax || (_alloced_mem + sizeof(Counter) + sizeof(Stats)) <= _memmax)))
+  if (c->anno_this < now &&
+      (fwd_rate >= _thresh || rev_rate >= _thresh) &&
+      ((bitshift < MAX_SHIFT) &&
+      (!_memmax || (_alloced_mem+sizeof(Counter)+sizeof(Stats)) <= _memmax)))
   {
     unsigned char next_byte = (addr >> (bitshift+8)) & 0x000000ff;
     if (!(c->next_level = new Stats(this)) ||
@@ -306,7 +289,6 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
     _last = c->next_level;
   }
 
-  // Force a fold roughly once per CLICK_HZ jiffies (i.e., once per second)
   if(now - prev_fold_time >= MyEWMA::freq()) {
     fold(_thresh);
     prev_fold_time = now;
