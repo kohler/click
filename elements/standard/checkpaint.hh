@@ -3,30 +3,40 @@
 #include <click/element.hh>
 
 /*
- * =c
- * CheckPaint(X)
- * =s duplication
- * old name for PaintTee
- * =d
- * This is the old name for the PaintTee element. You should use PaintTee
- * instead.
- * =a PaintTee */
+=c
 
-class CheckPaint : public Element {
-  int _color;
-  
- public:
-  
+CheckPaint(COLOR)
+
+=s checking
+
+checks packets' paint annotation
+
+=d
+
+Checks that incoming packets have paint annotation equal to COLOR. If their
+paints are not equal to COLOR, then they are dropped or emitted on output 1,
+depending on how many outputs were used.
+
+=a Paint, PaintTee */
+
+class CheckPaint : public Element { public:
+
   CheckPaint();
   ~CheckPaint();
   
   const char *class_name() const	{ return "CheckPaint"; }
   const char *processing() const	{ return "a/ah"; }
-  
-  CheckPaint *clone() const;
+  CheckPaint *clone() const		{ return new CheckPaint; }
+
+  void notify_noutputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
   
-  Packet *simple_action(Packet *);
+  void push(int, Packet *);
+  Packet *pull(int);
+  
+ private:
+  
+  unsigned char _color;
   
 };
 

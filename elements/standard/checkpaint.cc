@@ -28,7 +28,7 @@
 #include <click/packet_anno.hh>
 
 CheckPaint::CheckPaint()
-  : Element(1, 2)
+  : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
 }
@@ -38,29 +38,38 @@ CheckPaint::~CheckPaint()
   MOD_DEC_USE_COUNT;
 }
 
-CheckPaint *
-CheckPaint::clone() const
+void
+CheckPaint::notify_noutputs(int n)
 {
-  return new CheckPaint();
+  set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
 CheckPaint::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  errh->error("CheckPaint has been renamed; use PaintTee instead\n(CheckPaint will be removed entirely in the next release.)");
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "color", &_color,
-		  0) < 0)
-    return -1;
-  return 0;
+  return cp_va_parse(conf, this, errh,
+		     cpByte, "color", &_color,
+		     0);
+}
+
+void
+CheckPaint::push(int, Packet *p)
+{
+  if (PAINT_ANNO(p) != _color)
+    checked_push_output(1, p);
+  else
+    output(0).push(p);
 }
 
 Packet *
-CheckPaint::simple_action(Packet *p)
+CheckPaint::pull(int)
 {
-  if (PAINT_ANNO(p) == _color)
-    output(1).push(p->clone());
-  return(p);
+  Packet *p = input(0).pull();
+  if (p && PAINT_ANNO(p) != _color) {
+    checked_push_output(1, p);
+    p = 0;
+  }
+  return p;
 }
 
 EXPORT_ELEMENT(CheckPaint)
