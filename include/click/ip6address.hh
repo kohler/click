@@ -26,6 +26,7 @@ class IP6Address { public:
   const unsigned *data32() const	{ return &_addr.s6_addr32[0]; }
   
   // int *hashcode() const	{ return (unsigned *)&(_addr); }
+  unsigned hashcode() const	        { return _addr.s6_addr32[3]; }
   int mask_to_prefix_bits() const;
   bool matches_prefix(const IP6Address &addr, const IP6Address &mask) const;
   bool mask_more_specific(const IP6Address &) const;
