@@ -47,6 +47,12 @@ spinlock_t click_thread_spinlock;
 int click_thread_priority = DEF_PRIO;
 Vector<int> *click_thread_pids;
 
+static void
+soft_spin_lock(spinlock_t *l) {
+  while (!spin_trylock(l))
+    schedule();
+}
+
 static int
 click_sched(void *thunk)
 {
@@ -61,14 +67,15 @@ click_sched(void *thunk)
   
   rt->router()->unuse();
 
-  spin_lock(&click_thread_spinlock);
+  soft_spin_lock(&click_thread_spinlock);
   if (click_thread_pids) {
-    for (int i = 0; i < click_thread_pids->size(); i++)
+    for (int i = 0; i < click_thread_pids->size(); i++) {
       if ((*click_thread_pids)[i] == current->pid) {
 	(*click_thread_pids)[i] = click_thread_pids->back();
 	click_thread_pids->pop_back();
 	break;
       }
+    }
   }
   spin_unlock(&click_thread_spinlock);
   
@@ -89,7 +96,7 @@ start_click_sched(Router *r, int threads, ErrorHandler *kernel_errh)
 	          NUM_CLICK_CPUS, smp_num_cpus);
 #endif
 
-  spin_lock(&click_thread_spinlock);
+  soft_spin_lock(&click_thread_spinlock);
   if (threads < 1)
     threads = 1;
   click_chatter((threads == 1 ? "starting %d thread" : "starting %d threads"), threads);
@@ -134,7 +141,7 @@ cleanup_click_sched()
   unsigned long out_jiffies = jiffies + 5 * HZ;
   int num_threads;
   do {
-    spin_lock(&click_thread_spinlock);
+    soft_spin_lock(&click_thread_spinlock);
     num_threads = click_thread_pids->size();
     spin_unlock(&click_thread_spinlock);
     if (num_threads > 0)
@@ -143,7 +150,7 @@ cleanup_click_sched()
 
   if (num_threads > 0) {
     printk("<1>click: Following threads still active, expect a crash:\n", num_threads);
-    spin_lock(&click_thread_spinlock);
+    soft_spin_lock(&click_thread_spinlock);
     for (int i = 0; i < click_thread_pids->size(); i++)
       printk("<1>click:   router thread pid %d\n", (*click_thread_pids)[i]);
     spin_unlock(&click_thread_spinlock);
