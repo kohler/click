@@ -1,3 +1,8 @@
+2002-01-04 Friday 18:14  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: add doc_name component to elementmaps; use it in
+	click-pretty
+
 2002-01-04 Friday 14:53  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/userutils.cc: update click-pretty manual page, and
