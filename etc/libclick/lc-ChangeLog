@@ -1,3 +1,37 @@
+2002-05-21 Tuesday 20:36  Eddie Kohler <kohler@aciri.org>
+
+	* README, README, README: more README nits
+
+2002-05-21 Tuesday 20:35  Eddie Kohler <kohler@aciri.org>
+
+	* README: add include/ to README
+
+2002-05-21 Tuesday 20:04  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in, libsrc/glue.cc, libsrc/ip6flowid.cc,
+	libsrc/ipflowid.cc: adapt to <clicknet/*.h> change
+
+2002-05-21 Tuesday 20:03  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: avoid warnings
+
+2002-05-21 Tuesday 20:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/: click/click_icmp.h, click/click_icmp6.h,
+	click/click_ip.h, click/click_ip6.h, click/click_tcp.h,
+	click/click_udp.h, click/fddi.h, click/click_icmp.h,
+	click/click_icmp6.h, click/click_ip.h, click/click_ip6.h,
+	click/click_tcp.h, click/click_udp.h, click/fddi.h,
+	click/ip6address.hh, click/ipaddress.hh, click/rfc1483.h,
+	clicknet/ether.h, clicknet/fddi.h, clicknet/icmp.h,
+	clicknet/icmp6.h, clicknet/ip.h, clicknet/ip6.h,
+	clicknet/rfc1483.h, click/ip6address.hh, click/ipaddress.hh,
+	click/rfc1483.h, clicknet/ether.h, clicknet/fddi.h,
+	clicknet/icmp.h, clicknet/icmp6.h, clicknet/ip.h, clicknet/ip6.h,
+	clicknet/rfc1483.h, clicknet/tcp.h, clicknet/udp.h, clicknet/tcp.h,
+	clicknet/udp.h: move network-header definitions to <clicknet/*.h>;
+	old #include files point into <clicknet>
+
 2002-05-21 Tuesday 13:06  Eddie Kohler <kohler@aciri.org>
 
 	* AUTHORS, README, configure.in: prepare for 1.2.4 release

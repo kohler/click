@@ -1,3 +1,152 @@
+2002-05-21 Tuesday 20:36  Eddie Kohler <kohler@aciri.org>
+
+	* README (1.33), README (1.34), README (1.35): more README nits
+
+2002-05-21 Tuesday 20:35  Eddie Kohler <kohler@aciri.org>
+
+	* README (1.32): add include/ to README
+
+2002-05-21 Tuesday 20:14  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.105), tools/Makefile.in (1.46),
+	tools/lib/Makefile.in (1.26): install tool #includes in
+	<clicktool/>, not <click/>
+
+2002-05-21 Tuesday 20:03  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.57), Makefile.in (1.104),
+	elements/analysis/anonipaddr.cc (1.5),
+	elements/analysis/fromdagdump.cc (1.6),
+	elements/analysis/fromipsumdump.cc (1.18),
+	elements/analysis/fromnetflowsumdump.cc (1.8),
+	elements/analysis/toipsumdump.cc (1.14),
+	elements/app/ftpportmapper.cc (1.22),
+	elements/bsdmodule/fastudpsrc.cc (1.6),
+	elements/bsdmodule/fastudpsrc.hh (1.7),
+	elements/ethernet/arpfaker.cc (1.20),
+	elements/ethernet/arpquerier.cc (1.44),
+	elements/ethernet/arpresponder.cc (1.39),
+	elements/ethernet/ensureether.hh (1.3),
+	elements/ethernet/etherencap.hh (1.18),
+	elements/ethernet/ethermirror.cc (1.12),
+	elements/ethernet/hostetherfilter.cc (1.12),
+	elements/ethernet/ip6ndadvertiser.cc (1.15),
+	elements/ethernet/ip6ndsolicitor.cc (1.17),
+	elements/etherswitch/etherswitch.cc (1.14),
+	elements/grid/airoinfo.cc (1.5), elements/grid/checkgridheader.cc
+	(1.22), elements/grid/filterbyhops.cc (1.12),
+	elements/grid/filterbyrange.cc (1.25), elements/grid/fixdstloc.cc
+	(1.10), elements/grid/fixsrcloc.cc (1.26),
+	elements/grid/floodinglocquerier.cc (1.31),
+	elements/grid/gridheaderinfo.cc (1.5), elements/grid/gridlogger.hh
+	(1.11), elements/grid/gridprobehandler.cc (1.12),
+	elements/grid/gridprobereplyreceiver.cc (1.10),
+	elements/grid/gridprobesender.cc (1.7),
+	elements/grid/gridroutetable.cc (1.49), elements/grid/hello.cc
+	(1.39), elements/grid/linkstat.cc (1.9),
+	elements/grid/linktracker.cc (1.7),
+	elements/grid/locqueryresponder.cc (1.21),
+	elements/grid/lookupgeogridroute.cc (1.22),
+	elements/grid/lookuplocalgridroute.cc (1.36),
+	elements/grid/lrhello.cc (1.24), elements/grid/pingpong.cc (1.3),
+	elements/grid/printgrid.cc (1.22), elements/grid/setgridchecksum.cc
+	(1.19), elements/grid/simplelocquerier.cc (1.13),
+	elements/grid/updateroutes.cc (1.26),
+	elements/icmp/checkicmpheader.cc (1.12), elements/icmp/icmperror.cc
+	(1.10), elements/icmp/icmppingresponder.cc (1.9),
+	elements/icmp/icmppingrewriter.cc (1.13),
+	elements/icmp/icmppingrewriter.hh (1.7),
+	elements/icmp/icmprewriter.cc (1.11), elements/icmp/icmprewriter.hh
+	(1.5), elements/icmp/icmpsendpings.cc (1.16),
+	elements/ip/checkipheader.cc (1.44), elements/ip/checkipheader2.cc
+	(1.28), elements/ip/decipttl.cc (1.22), elements/ip/fixipsrc.cc
+	(1.21), elements/ip/getipaddress.cc (1.18),
+	elements/ip/ipaddrrewriter.cc (1.14), elements/ip/ipencap.hh
+	(1.22), elements/ip/ipfilter.cc (1.32), elements/ip/ipfragmenter.cc
+	(1.28), elements/ip/ipgwoptions.cc (1.28),
+	elements/ip/ipinputcombo.cc (1.27), elements/ip/ipmirror.cc (1.18),
+	elements/ip/ipoutputcombo.hh (1.13), elements/ip/ipprint.cc (1.33),
+	elements/ip/ipratemon.hh (1.63), elements/ip/ipreassembler.hh
+	(1.7), elements/ip/iprw.cc (1.43), elements/ip/iprw.hh (1.23),
+	elements/ip/markipce.cc (1.7), elements/ip/markipheader.cc (1.15),
+	elements/ip/oldipreassembler.hh (1.2), elements/ip/rfc2507c.hh
+	(1.11), elements/ip/rfc2507d.hh (1.11), elements/ip/ripsend.cc
+	(1.28), elements/ip/saveipfields.cc (1.13),
+	elements/ip/setipchecksum.cc (1.16), elements/ip/setipdscp.cc
+	(1.25), elements/ip/stripipheader.cc (1.10),
+	elements/ip/unstripipheader.cc (1.9),
+	elements/ip6/addresstranslator.cc (1.13),
+	elements/ip6/checkip6header.cc (1.21), elements/ip6/decip6hlim.cc
+	(1.11), elements/ip6/getip6address.cc (1.11),
+	elements/ip6/icmp6error.cc (1.22), elements/ip6/ip6fragmenter.cc
+	(1.10), elements/ip6/ip6mirror.cc (1.7),
+	elements/ip6/markip6header.cc (1.10),
+	elements/ip6/protocoltranslator46.cc (1.7),
+	elements/ip6/protocoltranslator64.cc (1.9),
+	elements/ip6/setip6dscp.cc (1.2), elements/ip6/setip6dscp.hh (1.2),
+	elements/ipsec/esp.cc (1.26), elements/ipsec/sha1.cc (1.6),
+	elements/linuxmodule/fasttcpflows.cc (1.10),
+	elements/linuxmodule/fasttcpflows.hh (1.4),
+	elements/linuxmodule/fastudpflows.cc (1.11),
+	elements/linuxmodule/fastudpflows.hh (1.6),
+	elements/linuxmodule/fastudpsrc.cc (1.16),
+	elements/linuxmodule/fastudpsrc.hh (1.9),
+	elements/linuxmodule/fastudpsrcip6.cc (1.16),
+	elements/linuxmodule/fastudpsrcip6.hh (1.5),
+	elements/local/bufconv.cc (1.6), elements/local/bufconv.hh (1.4),
+	elements/local/chuckcheck.cc (1.14), elements/local/copyflowid.cc
+	(1.5), elements/local/copytcpseq.cc (1.5),
+	elements/local/copytcpseq.hh (1.5), elements/local/duppath.cc
+	(1.5), elements/local/forceicmp.cc (1.7), elements/local/forceip.hh
+	(1.5), elements/local/forcetcp.cc (1.16),
+	elements/local/forceudp.cc (1.7), elements/local/tcpack.cc (1.12),
+	elements/local/tcpack.hh (1.8), elements/local/tcpbuffer.cc (1.8),
+	elements/local/tcpbuffer.hh (1.8), elements/local/tcpconn.cc (1.8),
+	elements/local/tcpconn.hh (1.7), elements/local/tcpdemux.cc (1.8),
+	elements/local/tcpdemux.hh (1.5), elements/local/tcpreflector.cc
+	(1.2), elements/local/toytcp.cc (1.19), elements/local/webgen.cc
+	(1.10), elements/standard/compblock.cc (1.18),
+	elements/tcpudp/checktcpheader.cc (1.11),
+	elements/tcpudp/checkudpheader.cc (1.11),
+	elements/tcpudp/dynudpipencap.cc (1.11),
+	elements/tcpudp/dynudpipencap.hh (1.6),
+	elements/tcpudp/iprewriter.cc (1.34),
+	elements/tcpudp/settcpchecksum.cc (1.8),
+	elements/tcpudp/snooptcp.hh (1.6), elements/tcpudp/tcpipsend.cc
+	(1.8), elements/tcpudp/tcpipsend.hh (1.3),
+	elements/tcpudp/tcprewriter.cc (1.24),
+	elements/tcpudp/tcprewriter.hh (1.12),
+	elements/tcpudp/udpipencap.cc (1.13), elements/tcpudp/udpipencap.hh
+	(1.7), elements/userlevel/chattersocket.cc (1.11),
+	elements/userlevel/fakepcap.cc (1.7),
+	elements/userlevel/kerneltap.cc (1.31), etc/libclick/DISTFILES
+	(1.12), etc/libclick/lc-Makefile.in (1.8), etc/ron/changeuid.hh
+	(1.2), etc/ron/divertsocket.cc (1.20), etc/ron/ipdecappaint.cc
+	(1.2), etc/ron/ipencap2.hh (1.3), etc/ron/ipencappaint.hh (1.3),
+	etc/ron/lookupiprouteron.cc (1.28), etc/ron/policyprobe.cc (1.11),
+	etc/ron/portclassifier.cc (1.5), etc/ron/printtime.cc (1.2),
+	etc/ron/ronroutemodular.cc (1.11), etc/samplepackage/acclick.m4
+	(1.7), etc/samplepackage/aclocal.m4 (1.3), lib/glue.cc (1.33),
+	lib/ip6flowid.cc (1.7), lib/ipflowid.cc (1.15),
+	tools/lib/Makefile.in (1.25): adapt to <clicknet/*.h> change
+
+2002-05-21 Tuesday 20:03  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap (1.19): avoid warnings
+
+2002-05-21 Tuesday 20:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/: click/click_icmp.h (1.5), click/click_icmp6.h (1.4),
+	click/click_ip.h (1.14), click/click_ip6.h (1.9), click/click_tcp.h
+	(1.6), click/click_udp.h (1.3), click/fddi.h (1.5),
+	click/ip6address.hh (1.8), click/ipaddress.hh (1.23),
+	click/rfc1483.h (1.4), clicknet/ether.h (1.1), clicknet/fddi.h
+	(1.1), clicknet/icmp.h (1.1), clicknet/icmp6.h (1.1), clicknet/ip.h
+	(1.1), clicknet/ip6.h (1.1), clicknet/rfc1483.h (1.1),
+	clicknet/tcp.h (1.1), clicknet/udp.h (1.1): move network-header
+	definitions to <clicknet/*.h>; old #include files point into
+	<clicknet>
+
 2002-05-21 Tuesday 16:53  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridroutetable.cc (1.48), gridroutetable.hh
