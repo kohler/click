@@ -1,5 +1,5 @@
 .\" -*- mode: nroff -*-
-.ds V 1.0.5
+.ds V 1.2
 .ds D 27/Apr/2000
 .ds E " \-\- 
 .if t .ds E \(em
@@ -92,6 +92,30 @@ Uninstall and reinstall the Click kernel module.
 and
 .B \-\-uninstall
 are mutually exclusive.
+'
+.Sp
+.TP 5
+.BR \-n ", " "\-\-priority=\fIN\fP"
+Set the Click kernel thread's priority to
+.IR N .
+Lower numbers have higher priority. A typical range for priority values is
+-20 (highest) to +19 (lowest). If you do not give a
+.B \-\-priority
+option, then the current priority is left unchanged.
+'
+.Sp
+.TP 5
+.BR \-p ", " "\-\-private"
+Make the /proc/click directory hierarchy readable only by root. Generally,
+files under /proc/click are writable only by root, but readable by
+everyone. Works only when simultaneously loading a Click kernel module; see
+.BR \-\-uninstall .
+'
+.Sp
+.TP 5
+.BR \-m ", " \-\-map
+If a Click kernel module is installed, write its load map to standard
+output. This can make it easier to debug kernel panics.
 '
 .Sp
 .TP 5

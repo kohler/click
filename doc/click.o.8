@@ -135,6 +135,16 @@ per line.
 Read-only. Cycle count and memory usage statistics.
 '
 .TP
+.B /proc/click/threads
+Read-only. The PIDs of any currently running Click kernel threads, listed
+one per line.
+'
+.TP
+.B /proc/click/priority
+Read/write. The CPU priority for Click kernel threads. Lower values have
+higher priority.
+'
+.TP
 .B /proc/click/version
 Read-only. The kernel module's version number.
 '
@@ -179,18 +189,24 @@ they are connected to.
 Read-only. Lists the element's handlers, one per line. Each line has the
 handler name and, after a tab, a permissions word. The permissions word is
 currently "r" (read-only), "w" (write-only), or "rw" (read/write).
+'
+.PP
+Elements which are also tasks have at least two additional handlers:
+'
+.TP 5
+.BI /proc/click/xxx/scheduled
+Read-only. A Boolean value: "true" if the element is currently on the task
+list, "false" if it is not.
 .TP
 .BI /proc/click/xxx/tickets
-Read-only. Describes the element's scheduler-related state. Contains a
-single line of the form "\fItickets\fP \fImaxtickets\fP \fIscheduled?\fP",
-where
+Read-only. Describes the element's tickets, which influence task scheduling
+priority: the more tickets a task has, the more often it will be scheduled
+relative to other tasks. The handler's value is a single line of the form
+"\fItickets\fP \fImaxtickets\fP", where
 .I tickets
 and
 .I maxtickets
-are integer numbers of tickets and
-.I scheduled?
-is either "scheduled", if the element is currently scheduled for later
-processing, or "unscheduled", if it is not.
+are integer numbers of tickets.
 '
 .PP
 Particular elements may add additional handlers to their directories. For

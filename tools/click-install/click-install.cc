@@ -47,6 +47,7 @@
 #define VERBOSE_OPT		306
 #define THREADS_OPT		307
 #define PRIVATE_OPT		308
+#define PRIORITY_OPT		309
 
 static Clp_Option options[] = {
   { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
@@ -54,6 +55,7 @@ static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "map", 'm', MAP_OPT, 0, 0 },
+  { "priority", 'n', PRIORITY_OPT, Clp_ArgInt, 0 },
   { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
   { "threads", 't', THREADS_OPT, Clp_ArgUnsigned, 0 },
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
@@ -82,15 +84,16 @@ usage()
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
-  -f, --file FILE             Read router configuration from FILE.\n\
-  -h, --hot-swap              Hot-swap install new configuration.\n\
-  -u, --uninstall             Uninstall Click from kernel, then reinstall.\n\
-  -m, --map                   Print load map to the standard output.\n\
-  -p, --private               Make /proc/click readable only by root.\n\
-  -t, --threads N             Use N threads (multithreaded Click only).\n\
-  -V, --verbose               Print information about files installed.\n\
-      --help                  Print this message and exit.\n\
-  -v, --version               Print version number and exit.\n\
+  -f, --file FILE          Read router configuration from FILE.\n\
+  -h, --hot-swap           Hot-swap install new configuration.\n\
+  -u, --uninstall          Uninstall Click from kernel, then reinstall.\n\
+  -m, --map                Print load map to the standard output.\n\
+  -n, --priority N         Set kernel thread priority to N (lower is better).\n\
+  -p, --private            Make /proc/click readable only by root.\n\
+  -t, --threads N          Use N threads (multithreaded Click only).\n\
+  -V, --verbose            Print information about files installed.\n\
+      --help               Print this message and exit.\n\
+  -v, --version            Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -369,6 +372,7 @@ main(int argc, char **argv)
   bool uninstall = false;
   bool hotswap = false;
   bool accessible = true;
+  int priority = -100;
   output_map = false;
   
   while (1) {
@@ -410,6 +414,10 @@ particular purpose.\n");
 
      case PRIVATE_OPT:
       accessible = clp->negated;
+      break;
+
+     case PRIORITY_OPT:
+      priority = clp->val.i;
       break;
 
      case UNINSTALL_OPT:
@@ -506,7 +514,16 @@ particular purpose.\n");
 
   // install required packages
   install_required_packages(r, packages, active_modules, errh);
-  
+
+  // set priority
+  if (priority > -100) {
+    FILE *f = fopen("/proc/click/priority", "w");
+    if (!f)
+      errh->fatal("cannot open /proc/click/priority: %s", strerror(errno));
+    fprintf(f, "%d\n", priority);
+    fclose(f);
+  }
+
   // write flattened configuration to /proc/click/config
   const char *config_place = (hotswap ? "/proc/click/hotconfig" : "/proc/click/config");
   if (verbose)

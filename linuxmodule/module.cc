@@ -181,8 +181,15 @@ read_meminfo(Element *, void *)
 static String
 read_threads(Element *, void *)
 {
-  int x = atomic_read(&num_click_threads);
-  return String(x) + "\n";
+  StringAccum sa;
+  spin_lock(&click_thread_spinlock);
+  if (click_thread_pids)
+    for (int i = 0; i < click_thread_pids->size(); i++)
+      sa << (*click_thread_pids)[i] << '\n';
+  spin_unlock(&click_thread_spinlock);
+  return sa.take_string();
+  //int x = atomic_read(&num_click_threads);
+  //return String(x) + "\n";
 }
 
 static String
@@ -234,6 +241,40 @@ read_requirements(Element *, void *)
     return sa.take_string();
   } else
     return "";
+}
+
+static String
+read_priority(Element *, void *)
+{
+  return String(DEF_PRIORITY - click_thread_priority) + "\n";
+}
+
+static int
+write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
+{
+  int priority;
+  if (!cp_integer(cp_uncomment(conf), &priority))
+    return errh->error("priority must be integer");
+
+  priority = DEF_PRIORITY - priority;
+  if (priority < 1) {
+    priority = 1;
+    errh->warning("priority pinned at %d", DEF_PRIORITY - priority);
+  } else if (priority > 2*DEF_PRIORITY) {
+    priority = 2*DEF_PRIORITY;
+    errh->warning("priority pinned at %d", DEF_PRIORITY - priority);
+  }
+
+  spin_lock(&click_thread_spinlock);
+  click_thread_priority = priority;
+  for (int i = 0; i < click_thread_pids->size(); i++) {
+    struct task_struct *task = find_task_by_pid((*click_thread_pids)[i]);
+    if (task)
+      task->priority = priority;
+  }
+  spin_unlock(&click_thread_spinlock);
+  
+  return 0;
 }
 
 
@@ -339,7 +380,8 @@ init_module()
   next_root_handler("meminfo", read_meminfo, 0, 0, 0);
   next_root_handler("cycles", read_cycles, 0, 0, 0);
   next_root_handler("threads", read_threads, 0, 0, 0);
-  
+  next_root_handler("priority", read_priority, 0, write_priority, 0);
+
   return 0;
 }
 
@@ -380,10 +422,11 @@ cleanup_module()
   cp_va_static_cleanup();
   
   ErrorHandler::static_cleanup();
-  skbmgr_cleanup();
   delete kernel_errh;
   delete syslog_errh;
   kernel_errh = syslog_errh = 0;
+  
+  skbmgr_cleanup();
   
   printk("<1>click module exiting\n");
     
