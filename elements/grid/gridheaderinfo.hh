@@ -21,11 +21,24 @@
  * approach is broken and I should just write a GridClassifier... but
  * then what's the point of a generic classifier?  I am confused...
  *
+ * The following handler documentation may not be exhaustive, or may
+ * be out of date; use the ``handlers'' handler to see what is
+ * actually available.
  *
  * =h grid_hdr_version               read-only
- * Return the Grid header version as a hexadecimal number.
+ * Return the Grid header version as a hexadecimal number (no preceding 0x)
  *
- * 
+ * =h grid_ether_proto               read-only
+ * Return the Grid ethernet protocol number as four hexadecimal digits (no preceding 0x)
+ *
+ * =h grid_proto_hello              read-only
+ * Each grid_proto_foo returns the the C<GRID_FOO> protocol number as two hexadecimal digits (no preceding 0x)
+ * =h grid_proto_lr_hello           read-only
+ * =h grid_proto_nbr_encap          read-only
+ * =h grid_proto_loc_query          read-only
+ * =h grid_proto_loc_reply          read-only 
+ * =h grid_proto_route_probe        read-only
+ * =h grid_proto_route_reply        read-only 
  *
  * =h sizeof_grid_location           read-only
  * Each sizeof_foo handler returns C<sizeof(foo)>.
@@ -37,7 +50,6 @@
  * =h sizeof_grid_route_probe        read-only
  * =h sizeof_grid_route_reply        read-only
  * 
- *
  * =h offsetof_grid_hdr_version      read-only
  * Each offsetof_grid_hdr_foo handler returns C<offsetof(grid_hdr, foo)>
  * =h offsetof_grid_hdr_type         read-only
@@ -48,8 +60,7 @@
  * Returns C<offsetof(grid_nbr_encap, dst_ip)>
  *
  * =h offsetof_grid_loc_query_dst_ip read-only
- * Returns C<offsetof(grid_loc_query, dst_ip)>
- */
+ * Returns C<offsetof(grid_loc_query, dst_ip)> */
 
 #include <click/element.hh>
 #include "grid.hh"
@@ -72,26 +83,11 @@ public:
   void add_handlers();
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
 
-  enum {
-    grid_hdr_version,             
-                                  
-    sizeof_grid_location,         
-    sizeof_grid_hdr,              
-    sizeof_grid_nbr_entry,        
-    sizeof_grid_hello,            
-    sizeof_grid_nbr_encap,        
-    sizeof_grid_loc_query,        
-    sizeof_grid_route_probe,      
-    sizeof_grid_route_reply,      
-                                  
-    offsetof_grid_hdr_version,    
-    offsetof_grid_hdr_type,       
-    offsetof_grid_hdr_ip,         
-    offsetof_grid_hdr_tx_ip,      
-                                  
-    offsetof_grid_nbr_encap_dst_ip,
-                                  
-    offsetof_grid_loc_query_dst_ip
+  struct info_t {
+    char name[100];
+    unsigned int val;
+    char base; // 'd' or 'h' for decimal or hexadecimal
+    int width; // number of digits; -1 means no width specifier
   };
 };
 

@@ -19,6 +19,48 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#include <click/click_ether.h>
+
+
+/*
+ * At this point, I have to ask myself, ``is this really making your
+ * life easier?''.  Also, of course, WWRD (what would Roger do?).  
+ */
+
+static const GridHeaderInfo::info_t
+handler_info_array[] = {
+  { "grid_hdr_version"               , grid_hdr::GRID_VERSION           , 'h', -1 },
+
+  { "grid_ether_proto"               , ETHERTYPE_GRID                   , 'h',  4 },
+  
+  { "grid_proto_hello"               , grid_hdr::GRID_HELLO             , 'h',  2 },
+  { "grid_proto_lr_hello"            , grid_hdr::GRID_LR_HELLO          , 'h',  2 },
+  { "grid_proto_nbr_encap"           , grid_hdr::GRID_NBR_ENCAP         , 'h',  2 },
+  { "grid_proto_loc_query"           , grid_hdr::GRID_LOC_QUERY         , 'h',  2 },
+  { "grid_proto_loc_reply"           , grid_hdr::GRID_LOC_REPLY         , 'h',  2 },
+  { "grid_proto_route_probe"         , grid_hdr::GRID_ROUTE_PROBE       , 'h',  2 },
+  { "grid_proto_route_reply"         , grid_hdr::GRID_ROUTE_REPLY       , 'h',  2 },
+
+  { "sizeof_grid_location"           , sizeof(grid_location)            , 'd', -1 },
+  { "sizeof_grid_hdr"                , sizeof(grid_hdr)			, 'd', -1 },
+  { "sizeof_grid_nbr_entry"          , sizeof(grid_nbr_entry)		, 'd', -1 },
+  { "sizeof_grid_hello"              , sizeof(grid_hello)		, 'd', -1 },
+  { "sizeof_grid_nbr_encap"          , sizeof(grid_nbr_encap)		, 'd', -1 },
+  { "sizeof_grid_loc_query"          , sizeof(grid_loc_query)		, 'd', -1 },
+  { "sizeof_grid_route_probe"        , sizeof(grid_route_probe)		, 'd', -1 },
+  { "sizeof_grid_route_reply"        , sizeof(grid_route_reply)		, 'd', -1 },
+ 	
+  { "offsetof_grid_hdr_version"      , offsetof(grid_hdr, version)	, 'd', -1 },
+  { "offsetof_grid_hdr_type"         , offsetof(grid_hdr, type)		, 'd', -1 },
+  { "offsetof_grid_hdr_ip"           , offsetof(grid_hdr, ip)		, 'd', -1 },
+  { "offsetof_grid_hdr_tx_ip"        , offsetof(grid_hdr, tx_ip)	, 'd', -1 },
+ 	
+  { "offsetof_grid_nbr_encap_dst_ip" , offsetof(grid_nbr_encap, dst_ip)	, 'd', -1 },
+ 	
+  { "offsetof_grid_loc_query_dst_ip" , offsetof(grid_loc_query, dst_ip) , 'd', -1 },
+};
+
+
 
 GridHeaderInfo::GridHeaderInfo()
 {
@@ -45,37 +87,24 @@ GridHeaderInfo::configure(const Vector<String> &, ErrorHandler *)
 static String
 ghi_read_handler(Element *, void *v)
 {
-  int what = (int) v;
-  int answer;
+  int num_handlers = sizeof(handler_info_array) / sizeof(GridHeaderInfo::info_t);
+  int handler_index = (int) v;
+  if (handler_index < 0 || handler_index >= num_handlers)
+    return String("An non-existent handler was specified\n");
+
+  GridHeaderInfo::info_t info = handler_info_array[handler_index];
+
+  /* Gross */
+  char fmt[10];
+  if (info.width > 0)
+    snprintf(fmt, sizeof(fmt), "%%0%d%c", info.width, (info.base == 'h') ? 'x' : 'u');
+  else
+    snprintf(fmt, sizeof(fmt), "%%%c", (info.base == 'h') ? 'x' : 'u');
+
   char buf[80];
+  snprintf(buf, sizeof(buf), fmt, info.val);
 
-  switch (what) {
-
-  case GridHeaderInfo::grid_hdr_version:               
-    snprintf(buf, sizeof(buf), "0x%x\n", grid_hdr::GRID_VERSION);
-    return buf;
-    break;
-       
-  case GridHeaderInfo::sizeof_grid_location:           answer = sizeof(grid_location); break;
-  case GridHeaderInfo::sizeof_grid_hdr:                answer = sizeof(grid_hdr); break;
-  case GridHeaderInfo::sizeof_grid_nbr_entry:          answer = sizeof(grid_nbr_entry); break;
-  case GridHeaderInfo::sizeof_grid_hello:              answer = sizeof(grid_hello); break;
-  case GridHeaderInfo::sizeof_grid_nbr_encap:          answer = sizeof(grid_nbr_encap); break;
-  case GridHeaderInfo::sizeof_grid_loc_query:          answer = sizeof(grid_loc_query); break;
-  case GridHeaderInfo::sizeof_grid_route_probe:        answer = sizeof(grid_route_probe); break;
-  case GridHeaderInfo::sizeof_grid_route_reply:        answer = sizeof(grid_route_reply); break;
-       
-  case GridHeaderInfo::offsetof_grid_hdr_version:      answer = offsetof(grid_hdr, version); break;
-  case GridHeaderInfo::offsetof_grid_hdr_type:         answer = offsetof(grid_hdr, type); break;
-  case GridHeaderInfo::offsetof_grid_hdr_ip:           answer = offsetof(grid_hdr, ip); break;
-  case GridHeaderInfo::offsetof_grid_hdr_tx_ip:        answer = offsetof(grid_hdr, tx_ip); break;
-       
-  case GridHeaderInfo::offsetof_grid_nbr_encap_dst_ip: answer = offsetof(grid_nbr_encap, dst_ip); break;
-       
-  case GridHeaderInfo::offsetof_grid_loc_query_dst_ip: answer = offsetof(grid_loc_query, dst_ip); break;
-      default: answer = -1;
-  }
-  return String(answer) + "\n";  
+  return String(buf) + "\n";
 }
 
 
@@ -86,31 +115,8 @@ GridHeaderInfo::add_handlers()
 {
   add_default_handlers(true);
  
-  /*
-   * surely there is a better way to implement all of these handlers,
-   * and this just shows i am a dumb hack when it comes to C++.  If
-   * you have a better idea, please inform me!  decouto. 
-   */
-
-  add_read_handler("grid_hdr_version"                , ghi_read_handler, (void *)     grid_hdr_version             );	 
-  
-  add_read_handler("sizeof_grid_location"	     , ghi_read_handler, (void *)     sizeof_grid_location         );
-  add_read_handler("sizeof_grid_hdr"		     , ghi_read_handler, (void *)     sizeof_grid_hdr              );
-  add_read_handler("sizeof_grid_nbr_entry"	     , ghi_read_handler, (void *)     sizeof_grid_nbr_entry        );
-  add_read_handler("sizeof_grid_hello"	             , ghi_read_handler, (void *)     sizeof_grid_hello            );
-  add_read_handler("sizeof_grid_nbr_encap"	     , ghi_read_handler, (void *)     sizeof_grid_nbr_encap        );
-  add_read_handler("sizeof_grid_loc_query"	     , ghi_read_handler, (void *)     sizeof_grid_loc_query        );
-  add_read_handler("sizeof_grid_route_probe"	     , ghi_read_handler, (void *)     sizeof_grid_route_probe      );
-  add_read_handler("sizeof_grid_route_reply"	     , ghi_read_handler, (void *)     sizeof_grid_route_reply      );
-  
-  add_read_handler("offsetof_grid_hdr_version"       , ghi_read_handler, (void *)     offsetof_grid_hdr_version    );
-  add_read_handler("offsetof_grid_hdr_type"	     , ghi_read_handler, (void *)     offsetof_grid_hdr_type       );
-  add_read_handler("offsetof_grid_hdr_ip"	     , ghi_read_handler, (void *)     offsetof_grid_hdr_ip         );
-  add_read_handler("offsetof_grid_hdr_tx_ip"	     , ghi_read_handler, (void *)     offsetof_grid_hdr_tx_ip      );
-  
-  add_read_handler("offsetof_grid_nbr_encap_dst_ip" , ghi_read_handler, (void *)     offsetof_grid_nbr_encap_dst_ip);
-  
-  add_read_handler("offsetof_grid_loc_query_dst_ip" , ghi_read_handler, (void *)     offsetof_grid_loc_query_dst_ip);	
+  for (unsigned int i = 0; i < sizeof(handler_info_array)/sizeof(GridHeaderInfo::info_t); i++) 
+    add_read_handler(handler_info_array[i].name, ghi_read_handler, (void *) i);
 }
 
 ELEMENT_REQUIRES(userlevel)
