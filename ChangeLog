@@ -1,3 +1,26 @@
+2004-07-10 Saturday 16:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/analysis/IPSummaryDump-01.testie (1.1): add test for new
+	ToIPSummaryDump truncation
+
+2004-07-10 Saturday 16:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/strip.hh (1.17): mention Truncate
+
+2004-07-10 Saturday 16:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/test/: truncate.cc (1.1), truncate.hh (1.1): add
+	Truncate element (mirror image of Strip)
+
+2004-07-10 Saturday 16:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromipsumdump.cc (1.67), ipsumdumpinfo.cc
+	(1.15), ipsumdumpinfo.hh (1.10), toipsumdump.cc (1.53),
+	toipsumdump.hh (1.44): IPSummaryDump truncated packet rewrite: Now
+	ToIPSummaryDump will emit a dash only if the particular field was
+	not captured. Requested by Vern.  Also add tcp_urp type.  Hopefully
+	not too many bugs introduced here.
+
 2004-07-10 Saturday 03:14  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipclassifier.hh (1.32), ipfilter.cc (1.47),
