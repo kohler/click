@@ -22,15 +22,18 @@
 #define CLASSES_OPT		307
 #define ELEMENTS_OPT		308
 #define DECLARATIONS_OPT	309
+#define EXPR_OPT		310
 
 static Clp_Option options[] = {
   { "classes", 'c', CLASSES_OPT, 0, 0 },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "decls", 'd', DECLARATIONS_OPT, 0, 0 },
   { "declarations", 'd', DECLARATIONS_OPT, 0, 0 },
-  { "elements", 'e', ELEMENTS_OPT, 0, 0 },
+  { "elements", 'n', ELEMENTS_OPT, 0, 0 },
+  { "expression", 'e', EXPR_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
+  { "names", 'n', ELEMENTS_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
@@ -57,9 +60,10 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -c, --classes             Output list of classes used by configuration.\n\
-  -e, --elements            Output list of element names in flat config.\n\
+  -n, --names               Output list of element names in flat config.\n\
   -d, --declarations        Output list of declarations in flat config.\n\
   -f, --file FILE           Read router configuration from FILE.\n\
+  -e, --expression EXPR     Use EXPR as router configuration.\n\
   -o, --output FILE         Write output configuration to FILE.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
@@ -103,6 +107,7 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
+  String router_expr;
   int action = FLATTEN_OPT;
   
   while (1) {
@@ -142,10 +147,18 @@ particular purpose.\n");
       output_file = clp->arg;
       break;
 
+     case EXPR_OPT:
+      if (router_file || router_expr) {
+	errh->error("router configuration specified twice");
+	goto bad_option;
+      }
+      router_expr = clp->arg;
+      break;
+
      case Clp_NotOption:
      case ROUTER_OPT:
-      if (router_file) {
-	errh->error("router file specified twice");
+      if (router_file || router_expr) {
+	errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
@@ -164,7 +177,11 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *router = read_router_file(router_file, errh);
+  RouterT *router;
+  if (router_expr)
+    router = read_router_string(router_expr, "<expr>", errh);
+  else
+    router = read_router_file(router_file, errh);
   if (router)
     router->flatten(errh);
   if (!router || errh->nerrors() > 0)
