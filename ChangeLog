@@ -1,3 +1,17 @@
+2005-03-27 Sunday 14:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.127), click-buildtool.in (1.64), click-compile.in
+	(1.34), click-mkelemmap (1.36), configure (1.48), configure.in
+	(1.258), doc/Makefile.in (1.57), etc/elementmap.xsl (1.4),
+	etc/samplepackage/Makefile.in (1.47),
+	etc/samplepackage/configure.in (1.11), lib/driver.cc (1.27),
+	tools/click-devirtualize/click-devirtualize.cc (1.47),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.69),
+	tools/click-install/click-install.cc (1.57),
+	tools/click2xml/clickconfig.dtd (1.7): build process stuff.  Rename
+	--target to --driver; add click-buildtool provides -l; add
+	click-mkelemmap --drivers; fix samplepackage
+
 2005-03-24 Thursday 23:10  John Bicket <jbicket@mit.edu>
 
 	* conf/wifi/README (1.2): more documentation.
