@@ -1,3 +1,29 @@
+2004-02-10 Tuesday 18:21  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/fromdevice.cc (1.76): FromDevice goes to
+	sleep when packets arent around
+
+2004-02-10 Tuesday 17:58  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/addressinfo.cc (1.29),
+	elements/standard/drivermanager.cc (1.24),
+	elements/userlevel/fromdump.cc (1.87), elements/userlevel/todump.cc
+	(1.51), include/click/driver.hh (1.3), include/click/lexer.hh
+	(1.15), include/click/master.hh (1.2), include/click/router.hh
+	(1.52), include/click/routerthread.hh (1.19), include/click/task.hh
+	(1.25), include/click/timer.hh (1.21),
+	include/click/standard/drivermanager.hh (1.12), lib/driver.cc
+	(1.18), lib/lexer.cc (1.71), lib/master.cc (1.3), lib/router.cc
+	(1.154), lib/routerthread.cc (1.36), lib/task.cc (1.25),
+	lib/timer.cc (1.31), linuxmodule/clickfs.cc (1.36),
+	linuxmodule/config.cc (1.12), linuxmodule/module.cc (1.82),
+	linuxmodule/modulepriv.hh (1.35), linuxmodule/sched.cc (1.44),
+	ns/nsclick.cc (1.17), tools/click-install/common.cc (1.18),
+	userlevel/click.cc (1.87): large scheduling rewrite: now Master
+	owns RouterThreads, not individual Routers. Changes the way
+	hotswaps work; now kernel module threads are persistent; other
+	benefits.
+
 2004-02-10 Tuesday 16:43  Eddie Kohler <kohler@icir.org>
 
 	* conf/grid.click (1.64), conf/mazu-nat.click (1.11),
