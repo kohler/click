@@ -23,12 +23,7 @@ ReadHandlerCaller::configure(const String &conf, ErrorHandler *errh)
 int
 ReadHandlerCaller::initialize(ErrorHandler *errh)
 {
-#ifndef RR_SCHED
-  int max_tickets = ScheduleInfo::query(this,errh);
-  set_max_tickets(max_tickets);
-  set_tickets(max_tickets);
-#endif
-  join_scheduler();
+  ScheduleInfo::join_scheduler(this, errh);
   _last_time = click_jiffies();
   return 0;
 }

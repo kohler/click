@@ -103,12 +103,7 @@ FromBPF::initialize(ErrorHandler *errh)
   errh->warning("can't get packets: not compiled with pcap support");
 #endif
 
-#ifndef RR_SCHED
-  int max_tickets = ScheduleInfo::query(this,errh);
-  set_max_tickets(max_tickets);
-  set_tickets(max_tickets);
-#endif
-  join_scheduler();
+  SchedulerInfo::join_scheduler(this, errh);
   
   return 0;
 }
