@@ -5,20 +5,21 @@ thread, device driver updates
 
 Douglas S. J. DeCouto
 decouto@lcs.mit.edu
-user level elements
+user level elements, Grid elements, ControlSocket Java programs
+
+Peilei Fan
+peilei@mit.edu
+IPv6 elements
 
 Thomer Gil
 thomer@lcs.mit.edu
-dynamic IP routing table
-
-John Jannotti
-jj@lcs.mit.edu
-design, Ethernet switch elements, user-level pcap/BPF elements
+dynamic IP routing table, IP rate monitoring elements
 
 Eddie Kohler
 eddietwo@lcs.mit.edu
-design, core, Linux /proc interface, standard elements, tools, documentation, 
-distribution, other elements
+design, core, language, Linux /proc interface, Linux kernel module,
+standard elements, tools, documentation, distribution, IP rewriting
+elements, Ethernet, IP, and userlevel element updates, other elements
 
 Robert Morris
 rtm@lcs.mit.edu
@@ -29,12 +30,12 @@ Massimiliano Poletto
 maxp@lcs.mit.edu
 IP rewriting elements, stride scheduling element, round robin scheduler
 
-Alex Snoeren
-snoeren@lcs.mit.edu
-IP security elements
-
 
 Thanks to:
+
+John Jannotti
+jj@lcs.mit.edu
+initial design work, Ethernet switch elements, user-level pcap/BPF elements
 
 M. Frans Kaashoek
 kaashoek@lcs.mit.edu
