@@ -8,7 +8,7 @@ CLICK_DECLS
 /*
  * =c
  * PrintSRCR([TAG] [, KEYWORDS])
- * =s debuggin
+ * =s debugging
  * =d
  * Assumes input packets are DSR packets (ie a sr_pkt struct from 
  * SRCR.hh). Prints out a description of those packets.
