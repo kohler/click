@@ -65,8 +65,13 @@ int WifiTXFeedback::got_skb(struct sk_buff *skb) {
   //skb_push(skb, skb->data - skb->mac.raw);
 
   Packet *p = Packet::make(skb);
+  int success = WIFI_TX_SUCCESS_ANNO(p);
   if (p) {
-    output(0).push(p);
+    if (noutputs() == 2 && !success) {
+      output(1).push(p);
+    } else {
+      output(0).push(p);
+    }
   }
 }
 

@@ -37,6 +37,7 @@ public:
     void add_handlers();
     int configure_phase() const { return (CONFIGURE_PHASE_LAST-1); }
     
+    void notify_noutputs(int);
     
     int got_skb(struct sk_buff *);
     static int static_got_skb(struct sk_buff *, void *arg);
