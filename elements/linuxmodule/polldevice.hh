@@ -47,9 +47,8 @@ class PollDevice : public Element {
   int got_skb(struct sk_buff *);
 
   bool still_busy() const;
-  struct wait_queue** get_wait_queue(); 
-  void do_waiting();
-  void finish_waiting();
+  void set_wakeup_when_busy();
+  void woke_up();
 
   Packet *pull(int port);
   
@@ -59,6 +58,7 @@ class PollDevice : public Element {
   int _idle;
   String _devname;
   struct device *_dev;
+  struct wait_queue _self_wq;
 };
 
 #endif 

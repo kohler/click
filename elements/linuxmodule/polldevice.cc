@@ -151,29 +151,26 @@ PollDevice::still_busy() const
   return _idle <= 100;
 }
 
-struct wait_queue** 
-PollDevice::get_wait_queue()
+void
+PollDevice::set_wakeup_when_busy()
 {
-  if (_idle > 100) 
-    return &_dev->intr_wq;
-  else
-    return NULL;
-}
+  /* put self on intr wait queue */
+  _self_wq.task = current;
+  _self_wq.next = NULL;
+  add_wait_queue(&(_dev->intr_wq), &_self_wq);
 
-void 
-PollDevice::do_waiting()
-{ 
+  /* turn interrupts back on */
   _total_intr_wait++;
   _dev->intr_on(_dev);
 }
 
 void
-PollDevice::finish_waiting()
+PollDevice::woke_up()
 {
   _dev->intr_off(_dev);
+  remove_wait_queue(&(_dev->intr_wq), &_self_wq);
 }
 
 
-ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(PollDevice)
 

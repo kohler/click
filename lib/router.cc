@@ -21,10 +21,6 @@
 #include "confparse.hh"
 #ifndef __KERNEL__
 # include "timer.hh"
-#else /* __KERNEL__ */
-# ifdef CLICK_POLLDEV
-#  include "wq.hh"
-# endif
 #endif
 #include <stdarg.h>
 #include <unistd.h>
@@ -838,10 +834,8 @@ Router::wait()
 #else
 
 #ifdef CLICK_POLLDEV
-  Vector<ElementWaitQueue *> wqs;
 
   /* if any element is still busy, don't wait */
-
   for (int i = 0; i < _elements.size(); i++) 
   {
     Element *f = _elements[i];
@@ -857,53 +851,20 @@ Router::wait()
   for (int i = 0; i < _elements.size(); i++) 
   {
     Element *f = _elements[i];
-    struct wait_queue **wq = f->get_wait_queue();
-    if (wq)
-    {
-      ElementWaitQueue *ewq = new ElementWaitQueue;
-      ewq->element = f;
-      ewq->element_wq = wq;
-      ewq->thread_wq.task = current;
-      ewq->thread_wq.next = NULL;
-
-      wqs.push_back(ewq);
-
-      /* add current thread to this element's wait queue */
-      add_wait_queue(wq, &ewq->thread_wq);
-
-      /* now that we registered ourselves, we can let the element setup the
-       * event... doing an add_wait_queue prevents race between check and
-       * waiting. */
-      f->do_waiting();
-    }
+    f->set_wakeup_when_busy();
   }
 
-  /* if element is no longer busy while we were dealing with the wait queue,
-   * don't wait */
+  if (current->state != TASK_RUNNING) 
+  {
+    schedule();
+  }
   
   for (int i = 0; i < _elements.size(); i++) 
   {
     Element *f = _elements[i];
-    if (f->still_busy()) 
-    {
-      current->state = TASK_RUNNING;
-      break;
-    }
-  }
-  
-  if (current->state != TASK_RUNNING) 
-  {
-      schedule();
+    f->woke_up();
   }
 
-  /* remove current thread from wait queues */
-  for (int i = 0; i < wqs.size(); i++) 
-  {
-    ElementWaitQueue *ewq = wqs[i];
-    ewq->element->finish_waiting();
-    remove_wait_queue(ewq->element_wq, &ewq->thread_wq);
-    delete ewq;
-  }
 #endif /* CLICK_POLLDEV */
 
 #endif

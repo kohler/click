@@ -47,9 +47,6 @@ class Queue : public Storage {
 
   Element *_puller1;
   Vector<Element *> _pullers;
-#ifdef CLICK_POLLDEV
-  struct wait_queue *queue_not_empty_wq;
-#endif
   
   int next_i(int i) const			{ return (i!=_max ? i+1 : 0); }
   
@@ -79,14 +76,6 @@ class Queue : public Storage {
   
   void push(int port, Packet *);
   Packet *pull(int port);
-
-#ifdef CLICK_POLLDEV
-  bool still_busy() const;
-  struct wait_queue** get_wait_queue(); 
-  void do_waiting();
-  void finish_waiting();
-#endif
-  
 };
 
 

@@ -165,48 +165,7 @@ Queue::push(int, Packet *packet)
     _drops++;
     packet->kill();
   }
-
-#ifdef CLICK_POLLDEV
-  wake_up(&queue_not_empty_wq);
-#endif
 }
-
-
-#ifdef CLICK_POLLDEV
-
-bool
-Queue::still_busy() const
-{
-  return size() > 0;
-}
-
-struct wait_queue** 
-Queue::get_wait_queue()
-{
-  queue_not_empty_wq = NULL;
-  if (size()==0) 
-    return &queue_not_empty_wq;
-  else
-    return NULL;
-}
-
-void 
-Queue::do_waiting()
-{ 
-  /* if we told router we weren't busy, but then a packet came in, we can
-   * still wake the router up here... if a packet comes in after now, it will
-   * wake the router up in push() */
-  if (size() > 0)
-    wake_up(&queue_not_empty_wq);
-}
-
-void
-Queue::finish_waiting()
-{
-}
-
-#endif
-
 
 
 Packet *

@@ -101,11 +101,14 @@ class Element : public ElementLink { public:
   virtual void selected(int)		{ }
 
 #ifdef CLICK_POLLDEV
-  // for Router::wait() to use to set up event waiting
+  /* for Router::wait() to use to wait for non-click events (e.g. interrupts) */
   virtual bool still_busy() const	{ return false; }
-  virtual struct wait_queue** get_wait_queue() { return 0; }
-  virtual void do_waiting()		{ }
-  virtual void finish_waiting()		{ }
+  /* this function should tell elements to wait for an event using the current
+   * thread, and it MUST wake up the current thread when the event occurs */
+  virtual void set_wakeup_when_busy()   { }
+  /* we can get rid of this if we knew who woke up, but we don't... may be we
+   * need a better "waiting" interface all together */
+  virtual void woke_up()		{ }
 #endif
   
   // Hooks for a non-empty Queue to tell an output driver to pull().
