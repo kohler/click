@@ -54,6 +54,7 @@ grid_demux :: Classifier(15/GRID_NBR_ENCAP_PROTO,  // encapsulated packets
 from_wvlan -> Classifier(12/GRID_ETH_PROTO) 
   -> check_grid :: CheckGridHeader
   -> fr :: FilterByRange(RANGE, li) [0] 
+  -> HostEtherFilter(GRID_MAC_ADDR, 1)
   -> grid_demux [0] 
   -> [0] lr [0] 
   -> to_wvlan;
