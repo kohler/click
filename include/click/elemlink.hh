@@ -27,10 +27,11 @@ class ElementLink {
   static const int MAX_TICKETS = 1U<<15;
   
   ElementLink()				
-    : _prev(0), _next(0)
+    : _prev(0), _next(0),
 #ifndef RR_SCHED
-    , _pass(0), _stride(0), _tickets(-1), _max_tickets(-1)
+      _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
 #endif
+      _list(0)
     { }
 
   bool scheduled() const		{ return _prev; }
