@@ -1,3 +1,12 @@
+2001-12-12 Wednesday 22:14  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/elementt.cc (1.20): more fixes
+
+2001-12-12 Wednesday 21:34  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: elementmap.cc (1.3), elementt.cc (1.19), etraits.cc
+	(1.2), routert.cc (1.50): fix bugs in tools
+
 2001-12-12 Wednesday 19:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid (1.12): jinyang added support for linux as a node
