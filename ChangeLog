@@ -1,3 +1,12 @@
+2003-11-20 Thursday 16:38  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.20), linktable.hh (1.18),
+	sr/ettmetric.cc (1.2), sr/ettmetric.hh (1.2), sr/gatewayselector.cc
+	(1.14), sr/gatewayselector.hh (1.13), sr/linkmetric.hh (1.2),
+	sr/srcr.cc (1.30), sr/srcr.hh (1.26), sr/srcrstat.cc (1.8),
+	sr/srcrstat.hh (1.5), sr/srforwarder.cc (1.12), sr/srforwarder.hh
+	(1.8): fixes for bi-directional sr packets.
+
 2003-11-18 Tuesday 11:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: e2elossmetric.cc (1.2), e2elossmetric.hh (1.2),
