@@ -14,7 +14,7 @@ $click_config_name = "/grid.click";
 $clickdir = "..";
 $clickconfdir = "../conf";
 
-$grid_channel = "6";
+$grid_channel = "5";
 $grid_ssid = "grid";
 $radio_type = "wavelan";
 
