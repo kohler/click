@@ -1,3 +1,13 @@
+2004-02-23 Monday 00:30  max
+
+	* conf/: click-mkclgw.pl (1.1), example.clgw (1.1): click-mkclgw --
+	Make cluster gateway.  If you have a cluster of servers in their
+	own 10.0.0.0/8 and listen to a much smaller block of real IPs, then
+	this can help you to make firewalls, reverse nat mappings through
+	the firewalls, and also load-balanced clusters.
+	
+	example shows some of the features.
+
 2004-02-22 Sunday 17:30  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/ipfilter.cc (1.41): nits
