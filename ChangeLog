@@ -1,3 +1,9 @@
+2002-07-23 Tuesday 20:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/todevice.cc (1.127): polling ToDevice does
+	not listen for notification, since we need it to clean the transmit
+	ring
+
 2002-07-23 Tuesday 13:21  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromdagdump.cc (1.8),
