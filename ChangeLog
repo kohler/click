@@ -1,3 +1,27 @@
+2004-09-16 Thursday 23:12  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: ipsumdump_anno.cc (1.3), ipsumdump_ip.cc
+	(1.2), ipsumdump_tcp.cc (1.2), ipsumdumpinfo.cc (1.19),
+	ipsumdumpinfo.hh (1.14): naming nit
+
+2004-09-16 Thursday 23:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: ipsumdump_anno.cc (1.2), toipsumdump.hh
+	(1.48): IPSummaryDump "link" and "direction" types are different,
+	although they discuss the same information: "link" is always a
+	number
+
+2004-09-16 Thursday 23:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromnetflowsumdump.cc (1.21),
+	fromnetflowsumdump.hh (1.17), fromnlanrdump.cc (1.7),
+	fromnlanrdump.hh (1.5): set paint annotation from link number
+
+2004-09-16 Thursday 23:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/lc-configure.in (1.33): update libclick version
+	number to 1.4.2
+
 2004-09-16 Thursday 18:08  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/analysis/: countfecbytes.cc (1.1), countfecbytes.hh
