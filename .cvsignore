@@ -3,7 +3,6 @@ config.h
 click-compile elementmap elementmap.xml
 Makefile
 stamp-h stamp-egroup
-notes
-notes/*
 bin
 man
+autom4te*
