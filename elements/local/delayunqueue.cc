@@ -45,6 +45,7 @@ int
 DelayUnqueue::initialize(ErrorHandler *errh)
 {
   _p = 0;
+  _delay *= 1000;
   ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
@@ -60,11 +61,18 @@ DelayUnqueue::uninitialize()
 }
 
 static inline unsigned
-elapsed_ms(struct timeval tv)
+elapsed_us(struct timeval tv)
 {
   struct timeval t;
+  unsigned e = 0;
   click_gettimeofday(&t);
-  return (t.tv_sec*1000+t.tv_usec/1000)-(tv.tv_sec*1000+tv.tv_usec/1000);
+  e = (t.tv_sec - tv.tv_sec)*1000000;
+  if (t.tv_usec < tv.tv_usec) {
+    t.tv_usec += 1000000;
+    e -= 1000000;
+  }
+  e += t.tv_usec-tv.tv_usec;
+  return e;
 }
 
 void
@@ -75,10 +83,11 @@ DelayUnqueue::run_scheduled()
       _p = input(0).pull();
     if (!_p)
       break;
-    if ((_p && elapsed_ms(_p->timestamp_anno()) >= _delay) || 0) {
+    unsigned t = elapsed_us(_p->timestamp_anno());
+    if (t >= _delay) {
       output(0).push(_p);
       _p = 0;
-    }
+    } 
   } while(!_p);
 
   _task.fast_reschedule();
