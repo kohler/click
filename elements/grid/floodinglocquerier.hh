@@ -52,7 +52,7 @@ class FloodingLocQuerier : public Element {
   void uninitialize();
   
   void push(int port, Packet *);
-  
+
   struct LocEntry {
     IPAddress ip;
     grid_location loc;
@@ -60,11 +60,14 @@ class FloodingLocQuerier : public Element {
     bool loc_good;
     unsigned int loc_seq_no;;
     int last_response_jiffies;
-    unsigned ok: 1;
-    unsigned polling: 1;
-    Packet *p;
-    struct LocEntry *next;
+    Packet *p; 
+    // if p == 0, we have sent the last p, and are now caching the
+    // data; p == 0 ==> this data is valid at some time.  p != 0 ==>
+    // this data is not valid, and packet p is waiting to be sent.
   };
+
+  typedef BigHashMap<IPAddress, LocEntry> qmap;
+  qmap _queries; // outstanding and cached query results.
 
   // statistics
   unsigned int _loc_queries;
@@ -72,12 +75,15 @@ class FloodingLocQuerier : public Element {
   
 
  private:
-
-  typedef BigHashMap<IPAddress, unsigned int> seq_map;
+  
+  struct seq_t {
+    unsigned int seq_no;
+    int last_response_jiffies;
+    seq_t(unsigned int s, int j) : seq_no(s), last_response_jiffies(j) { }
+    seq_t() : seq_no(0), last_response_jiffies(0) { }
+  };
+  typedef BigHashMap<IPAddress, seq_t> seq_map;
   seq_map _query_seqs;
-
-  static const int NMAP = 256;
-  LocEntry *_map[NMAP];
 
   EtherAddress _my_en;
   IPAddress _my_ip;
@@ -90,6 +96,7 @@ class FloodingLocQuerier : public Element {
   void handle_query(Packet *);
 
   static const int EXPIRE_TIMEOUT_MS = 15 * 1000;
+  int _timeout_jiffies;
   static void expire_hook(unsigned long);
   static String read_table(Element *, void *);
   
