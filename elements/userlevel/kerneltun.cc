@@ -102,11 +102,9 @@ KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
 #endif
 
   for (int i = 0; i < 1 /*32*/; i++) {
-    click_chatter("fuck 0 i=%d", i);
     sprintf(tmp, "/dev/%s%d", dev_prefix, i);
     fd = open(tmp, O_RDWR | O_NONBLOCK);
     if (fd < 0) {
-      click_chatter("fuck 1 errno=%d", errno);
       if (saved_errno == 0 || errno != ENOENT)
         saved_errno = errno;
       continue;
@@ -239,7 +237,6 @@ KernelTap::selected(int fd)
       return;
     }
     memcpy(p->data() + sizeof(click_ether), b + 4, cc - 4);
-    output(0).push(p);
 #elif defined (__linux__)
 #if 0
     // Linux prefixes packet with 2 extra bytes for alignment, then ether_header.
@@ -251,9 +248,15 @@ KernelTap::selected(int fd)
        tell click to ignore them. */
     Packet *p = Packet::make(_headroom, b, cc, 0);
     p->pull(2);
+#endif
+#endif
+
+  struct timeval tv;
+  int res = gettimeofday(&tv, 0);
+  if (res == 0) 
+    p->set_timestamp_anno(tv);
+
     output(0).push(p);
-#endif
-#endif
   } else {
     perror("KernelTap read");
   }

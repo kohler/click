@@ -290,6 +290,11 @@ FromDevice::get_packet(u_char* clientdata,
     else
       p->set_packet_type_anno(Packet::MULTICAST);
   }
+
+  struct timeval tv;
+  int res = gettimeofday(&tv, 0);
+  if (res == 0) 
+    p->set_timestamp_anno(tv);
   
   fd->output(0).push(p);
 }
@@ -319,6 +324,10 @@ FromDevice::selected(int)
       Packet *p = Packet::make(_packetbuf, len + 2);
       p->pull(2);
       p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
+      struct timeval tv;
+      int res = gettimeofday(&tv, 0);
+      if (res == 0) 
+	p->set_timestamp_anno(tv);
       output(0).push(p);
     }
   } else if (errno != EAGAIN)
