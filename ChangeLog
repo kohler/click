@@ -1,3 +1,24 @@
+2003-08-21 Thursday 16:55  Eddie Kohler <kohler@icir.org>
+
+	* tools/lib/toolutils.cc (1.49): do not artificially limit how much
+	data may be returned by shell_command_string
+
+2003-08-21 Thursday 16:55  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-fastclassifier/: click-fastclassifier.cc (1.56),
+	click-fastclassifier.hh (1.4), fc_classifier.cc (1.4),
+	fc_ipclassifier.cc (1.4): add --verbose option, and support
+	classifier types that need to add #includes
+
+2003-08-21 Thursday 16:55  Eddie Kohler <kohler@icir.org>
+
+	* lib/userutils.cc (1.31): packages are loaded with RTLD_GLOBAL, so
+	one package can depend on symbols found in another package
+
+2003-08-21 Thursday 16:54  Eddie Kohler <kohler@icir.org>
+
+	* etc/diagrams/samp04_iprouter.mp (1.4): more up-to-date IP router
+
 2003-08-21 Thursday 13:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/ratedunqueue.hh (1.14): man page nitlet
