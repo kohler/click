@@ -1,3 +1,9 @@
+2003-07-22 Tuesday 01:55  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.65), dsdvroutetable.hh
+	(1.45): spread out route ads over multiple packets if they are too
+	big
+
 2003-07-21 Monday 23:26  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: arptable.cc (1.3), arptable.hh (1.2), esrcr.cc
