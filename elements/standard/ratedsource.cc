@@ -55,13 +55,20 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
     "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   unsigned rate = 10;
   int limit = -1;
-  bool active = true;
+  bool active = true, stop = false;
+  
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpString, "packet data", &data,
 		  cpUnsigned, "sending rate (packets/s)", &rate,
 		  cpInteger, "total packet count", &limit,
 		  cpBool, "active?", &active,
+		  cpKeywords,
+		  "DATA", cpString, "packet data", &data,
+		  "RATE", cpUnsigned, "sending rate (packets/s)", &rate,
+		  "LIMIT", cpInteger, "total packet count", &limit,
+		  "ACTIVE", cpBool, "active?", &active,
+		  "STOP", cpBool, "stop driver when done?", &stop,
 		  0) < 0)
     return -1;
   
@@ -69,6 +76,7 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   _rate.set_rate(rate, errh);
   _limit = (limit >= 0 ? limit : NO_LIMIT);
   _active = active;
+  _stop = stop;
   
   if (_packet) _packet->kill();
   // note: if you change `headroom', change `click-align'
@@ -99,8 +107,13 @@ RatedSource::uninitialize()
 void
 RatedSource::run_scheduled()
 {
-  if (!_active || (_limit != NO_LIMIT && _count >= _limit))
+  if (!_active)
     return;
+  if (_limit != NO_LIMIT && _count >= _limit) {
+    if (_stop)
+      router()->please_stop_driver();
+    return;
+  }
   
   struct timeval now;
   click_gettimeofday(&now);
@@ -118,8 +131,12 @@ RatedSource::run_scheduled()
 Packet *
 RatedSource::pull(int)
 {
-  if (!_active || (_limit != NO_LIMIT && _count >= _limit))
+  if (!_active)
     return 0;
+  if (_limit != NO_LIMIT && _count >= _limit) {
+    router()->please_stop_driver();
+    return 0;
+  }
 
   struct timeval now;
   click_gettimeofday(&now);

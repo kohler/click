@@ -74,7 +74,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpString, "label", &_label,
-		  cpKeywords,
+		  cpUnmixedKeywords,
 		  "CONTENTS", cpWord, "print packet contents (no/hex/ascii)", &contents,
 		  "NBYTES", cpInteger, "number of bytes to dump", &_bytes,
 		  "ID", cpBool, "print IP ID?", &print_id,

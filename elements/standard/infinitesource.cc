@@ -26,6 +26,7 @@
 #include "infinitesource.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/router.hh>
 #include "scheduleinfo.hh"
 #include <click/glue.hh>
 
@@ -53,7 +54,7 @@ InfiniteSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   int limit = -1;
   int burstsize = 1;
-  bool active = true;
+  bool active = true, stop = false;
   
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
@@ -61,6 +62,11 @@ InfiniteSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpInteger, "total packet count", &limit,
 		  cpInteger, "burst size (packets per scheduling)", &burstsize,
 		  cpBool, "active?", &active,
+		  cpKeywords,
+		  "DATA", cpString, "packet data", &data,
+		  "LIMIT", cpInteger, "total packet count", &limit,
+		  "ACTIVE", cpBool, "active?", &active,
+		  "STOP", cpBool, "stop driver when done?", &stop,
 		  0) < 0)
     return -1;
   if (burstsize < 1)
@@ -71,6 +77,7 @@ InfiniteSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   _burstsize = burstsize;
   _count = 0;
   _active = active;
+  _stop = stop;
   if (_packet) _packet->kill();
   _packet = Packet::make(_data.data(), _data.length());
   return 0;
@@ -104,14 +111,20 @@ InfiniteSource::run_scheduled()
       output(0).push(_packet->clone());
     _count += n;
     reschedule();
-  }
+  } else if (_stop)
+    router()->please_stop_driver();
 }
 
 Packet *
 InfiniteSource::pull(int)
 {
-  if (!_active || (_limit >= 0 && _count + 1 >= _limit))
+  if (!_active)
     return 0;
+  if (_limit >= 0 && _count + 1 >= _limit) {
+    if (_stop)
+      router()->please_stop_driver();
+    return 0;
+  }
   _count++;
   return _packet->clone();
 }
