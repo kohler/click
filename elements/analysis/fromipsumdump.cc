@@ -616,6 +616,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    if (_binary) {
 		switch (_contents[i]) {
 		  case W_TIMESTAMP:
+		  case W_FIRST_TIMESTAMP:
 		    u1 = GET4(data + pos);
 		    u2 = GET4(data + pos + 4);
 		    pos += 8;
@@ -670,6 +671,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	    switch (_contents[i]) {
 
 	      case W_TIMESTAMP:
+	      case W_FIRST_TIMESTAMP:
 		u1 = strtoul(data + pos, &next, 10);
 		if (next > data + pos) {
 		    pos = next - data;
@@ -922,6 +924,15 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 
 	      case W_AGGREGATE:
 		SET_AGGREGATE_ANNO(q, u1), ok++;
+		break;
+
+	      case W_FIRST_TIMESTAMP:
+		if (u2 < 1000000) {
+		    struct timeval tv;
+		    tv.tv_sec = u1; tv.tv_usec = u2;
+		    SET_FIRST_TIMESTAMP_ANNO(q, tv);
+		    ok++;
+		}
 		break;
 
 	    }

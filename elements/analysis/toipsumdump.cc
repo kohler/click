@@ -526,6 +526,9 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	  case W_AGGREGATE:
 	    sa << AGGREGATE_ANNO(p);
 	    break;
+	  case W_FIRST_TIMESTAMP:
+	    sa << FIRST_TIMESTAMP_ANNO(p);
+	    break;
 	  no_data:
 	  default:
 	    sa << '-';
@@ -615,13 +618,11 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	    pos += 8;
 	    break;
 	  case W_TIMESTAMP_SEC:
-	    PUT4(buf + pos, p->timestamp_anno().tv_sec);
-	    pos += 4;
-	    break;
+	    v = p->timestamp_anno().tv_sec;
+	    goto output_4_host;
 	  case W_TIMESTAMP_USEC:
-	    PUT4(buf + pos, p->timestamp_anno().tv_usec);
-	    pos += 4;
-	    break;
+	    v = p->timestamp_anno().tv_usec;
+	    goto output_4_host;
 	  case W_SRC:
 	    if (iph)
 		v = iph->ip_src.s_addr;
@@ -717,6 +718,11 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	  case W_AGGREGATE:
 	    v = AGGREGATE_ANNO(p);
 	    goto output_4_host;
+	  case W_FIRST_TIMESTAMP:
+	    PUT4(buf + pos, FIRST_TIMESTAMP_ANNO(p).tv_sec);
+	    PUT4(buf + pos + 4, FIRST_TIMESTAMP_ANNO(p).tv_usec);
+	    pos += 8;
+	    break;
 	  output_1:
 	    PUT1(buf + pos, v);
 	    pos++;

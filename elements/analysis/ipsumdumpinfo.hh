@@ -8,12 +8,12 @@ class IPSummaryDumpInfo { public:
 
     enum { MAJOR_VERSION = 1, MINOR_VERSION = 1 };
     
-    enum Content {	// must agree with ToIPSummaryDump
+    enum Content {
 	W_NONE, W_TIMESTAMP, W_TIMESTAMP_SEC, W_TIMESTAMP_USEC,	W_SRC,
 	W_DST, W_LENGTH, W_PROTO, W_IPID, W_SPORT,
 	W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PAYLOAD_LENGTH,
 	W_COUNT, W_FRAG, W_FRAGOFF, W_PAYLOAD, W_LINK,
-	W_AGGREGATE, W_TCP_SACK, W_TCP_OPT,
+	W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_FIRST_TIMESTAMP,
 	W_LAST
     };
     static int parse_content(const String &);
