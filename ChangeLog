@@ -1,3 +1,9 @@
+2001-08-24 Friday 19:02  Eddie Kohler <kohler@aciri.org>
+
+	* elements/local/: mergebyts.cc (1.1), mergebyts.hh (1.1): add
+	MergeByTimestamp element: combine packet streams, sorting by
+	timestamp
+
 2001-08-24 Friday 17:48  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/: addressinfo.hh (1.12), alignmentinfo.hh
