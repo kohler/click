@@ -1,8 +1,8 @@
 elementclass GridNode {
   $ena, $ipa, $lat, $lon | 
 
-#  li :: LocationInfo($lat, $lon, 0);
-  li :: LocFromFile($ipa);
+  li :: LocationInfo($lat, $lon, 0);
+//  li :: LocFromFile($ipa);
 
   input
     -> HostEtherFilter($ena)
@@ -16,7 +16,7 @@ elementclass GridNode {
     -> oq :: Queue
     -> output;
 
-#  Hello(2000, 100, $ena, $ipa) -> fl;
+//  Hello(2000, 100, $ena, $ipa) -> fl;
 
   TimedSource(1000000) -> [1]lr;
   lr[1] -> Print(fromLR) -> Discard;
@@ -39,7 +39,7 @@ elementclass LAN3 {
   t[2] -> [2]output;
 };
 
-lan :: LAN3;
+lan :: RadioSim;
 
 gn1 :: GridNode(0:0:0:0:0:1, 1.0.0.1, 0, 0);
 gn2 :: GridNode(0:0:0:0:0:2, 1.0.0.2, 0, .002);

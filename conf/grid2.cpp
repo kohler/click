@@ -4,7 +4,9 @@
 
 // use like: gcc -E -P grid2.cpp | click
 
+#ifndef GRID_IP
 #include "grid-node-info.h"
+#endif
 
 li :: LocationInfo(0, 0)
 
