@@ -1,3 +1,10 @@
+2005-01-25 Tuesday 14:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.cc (1.1), directiplookup.hh (1.1):
+	add DirectIPLookup element: lookups in ~145 clock cycles on
+	average, for ~5.5M lookups per second!, with a simple config. 
+	(Marko Zec, after Gupta, Lin, and McKeown (1998))
+
 2005-01-25 Tuesday 14:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click-elem2man (1.30): fix blank lines in verbatim sections
