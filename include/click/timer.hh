@@ -20,7 +20,7 @@ class Timer { public:
     ~Timer()				{ if (scheduled()) unschedule(); }
 
     bool initialized() const		{ return _router != 0; }
-    bool scheduled() const		{ return _prev != 0; }
+    bool scheduled() const		{ return _schedpos >= 0; }
     const timeval &expiry() const	{ return _expiry; }
   
     inline void initialize(Router *);
@@ -43,8 +43,7 @@ class Timer { public:
   
   private:
   
-    Timer *_prev;
-    Timer *_next;
+    int _schedpos;
     timeval _expiry;
     TimerHook _hook;
     void *_thunk;
@@ -52,10 +51,6 @@ class Timer { public:
 
     Timer(const Timer &);
     Timer &operator=(const Timer &);
-
-    // list functions
-    void make_list();
-    void unmake_list();
 
     friend class Master;
   

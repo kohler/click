@@ -29,20 +29,20 @@ class Master { public:
     void unuse();
 
     int nthreads() const			{ return _threads.size() - 1; }
-    inline RouterThread *thread(int id) const;
+    inline RouterThread* thread(int id) const;
 
-    const volatile int *runcount_ptr() const	{ return &_runcount; }
+    const volatile int* runcount_ptr() const	{ return &_runcount; }
     
-    int timer_delay(struct timeval *);
+    int timer_delay(struct timeval*);
     void run_timers();
     
 #if CLICK_USERLEVEL
-    int add_select(int fd, Element *, int mask);
-    int remove_select(int fd, Element *, int mask);
+    int add_select(int fd, Element*, int mask);
+    int remove_select(int fd, Element*, int mask);
     void run_selects(bool more_tasks);
 #endif
 
-    void remove_router(Router *);
+    void remove_router(Router*);
     
 #if CLICK_NS
     void initialize_ns(simclick_sim, simclick_click);
@@ -58,21 +58,33 @@ class Master { public:
 
     Spinlock _master_lock;
     volatile int _master_paused;
-    Router *_routers;
+
+    // ROUTERS
+    Router* _routers;
     int _refcount;
+    void register_router(Router*);
+    void run_router(Router*, bool foreground);
 
-    Vector<RouterThread *> _threads;
+    // THREADS
+    Vector<RouterThread*> _threads;
 
+    // DRIVERMANAGER
     Spinlock _runcount_lock;
     volatile int _runcount;
-    
+    bool check_driver();
+
+    // PENDING TASKS
     Task _task_list;
     SpinlockIRQ _task_lock;
-    
-    Timer _timer_list;
+    void process_pending(RouterThread*);
+
+    // TIMERS
+    Vector<Timer*> _timer_list;
     Spinlock _timer_lock;
-    
+    void timer_reheapify_from(int);
+
 #if CLICK_USERLEVEL
+    // SELECT
 # if !HAVE_POLL_H
     struct pollfd {
 	int fd;
@@ -83,9 +95,10 @@ class Master { public:
     int _max_select_fd;
 # endif
     Vector<struct pollfd> _pollfds;
-    Vector<Element *> _read_poll_elements;
-    Vector<Element *> _write_poll_elements;
+    Vector<Element*> _read_poll_elements;
+    Vector<Element*> _write_poll_elements;
     Spinlock _select_lock;
+    void remove_pollfd(int);
 #endif
 
 #if CLICK_NS
@@ -93,17 +106,9 @@ class Master { public:
     simclick_click _clickinst;
 #endif
     
-    Master(const Master &);
-    Master &operator=(const Master &);
-    
-    void register_router(Router *);
-    void run_router(Router *, bool foreground);
-
-    void remove_pollfd(int);
-
-    bool check_driver();
-    void process_pending(RouterThread *);
-    
+    Master(const Master&);
+    Master& operator=(const Master&);
+        
     friend class Task;
     friend class Timer;
     friend class RouterThread;
@@ -111,7 +116,7 @@ class Master { public:
     
 };
 
-inline RouterThread *
+inline RouterThread*
 Master::thread(int id) const
 {
     // return the requested thread, or the quiescent thread if there's no such

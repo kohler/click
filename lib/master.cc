@@ -31,7 +31,7 @@ enum { POLLIN = Element::SELECT_READ, POLLOUT = Element::SELECT_WRITE };
 #endif
 
 Master::Master(int nthreads)
-    : _master_paused(0), _routers(0), _task_list(0, 0), _timer_list(0, 0)
+    : _master_paused(0), _routers(0), _task_list(0, 0)
 {
     _refcount = 0;
     _runcount = 0;
@@ -40,7 +40,6 @@ Master::Master(int nthreads)
 	_threads.push_back(new RouterThread(this, tid));
     
     _task_list.make_list();
-    _timer_list.make_list();
     
 #if CLICK_USERLEVEL
 # if !HAVE_POLL_H
@@ -66,7 +65,6 @@ Master::~Master()
 {
     for (int i = 0; i < _threads.size(); i++)
 	delete _threads[i];
-    _timer_list.unmake_list();
 }
 
 void
@@ -205,18 +203,13 @@ Master::remove_router(Router *router)
     // Remove timers
     {
 	_timer_lock.acquire();
-	Timer *prev = &_timer_list;
-	for (Timer *t = _timer_list._next; t != &_timer_list; t = t->_next)
-	    if (t->_router == router) {
+	for (int i = _timer_list.size() - 1; i >= 0; i--)
+	    if (_timer_list.at_u(i)->_router == router) {
+		Timer* t = _timer_list.at_u(i);
+		timer_reheapify_from(i);
 		t->_router = 0;
-		t->_prev = 0;
-	    } else {
-		prev->_next = t;
-		t->_prev = prev;
-		prev = t;
+		t->_schedpos = -1;
 	    }
-	prev->_next = &_timer_list;
-	_timer_list._prev = prev;
 	_timer_lock.release();
     }
 
@@ -241,7 +234,7 @@ Master::remove_router(Router *router)
     FD_ZERO(&_read_select_fd_set);
     FD_ZERO(&_write_select_fd_set);
     _max_select_fd = -1;
-    for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++) {
+    for (struct pollfd* p = _pollfds.begin(); p < _pollfds.end(); p++) {
 	if (p->events & POLLIN)
 	    FD_SET(p->fd, &_read_select_fd_set);
 	if (p->events & POLLOUT)
@@ -258,7 +251,7 @@ Master::remove_router(Router *router)
     _master_lock.release();
 
     // something has happened, so wake up threads
-    for (RouterThread **tp = _threads.begin(); tp < _threads.end(); tp++)
+    for (RouterThread** tp = _threads.begin(); tp < _threads.end(); tp++)
 	(*tp)->unsleep();
 }
 
@@ -274,8 +267,8 @@ Master::check_driver()
 
     if (_runcount <= 0) {
 	_runcount = -0x7FFFFFFF;
-	for (Router *r = _routers; r; ) {
-	    Router *next_router = r->_next_router;
+	for (Router* r = _routers; r; ) {
+	    Router* next_router = r->_next_router;
 	    if (r->_runcount <= 0 && r->_running >= Router::RUNNING_BACKGROUND) {
 		DriverManager *dm = (DriverManager *)(r->attachment("DriverManager"));
 		if (dm)
@@ -316,7 +309,7 @@ Master::process_pending(RouterThread *thread)
 	    // added them
 	    Task *prev = &_task_list;
 	    while (t != &_task_list) {
-		Task *next = t->_pending_next;
+		Task* next = t->_pending_next;
 		t->_pending_next = prev;
 		prev = t;
 		t = next;
@@ -324,7 +317,7 @@ Master::process_pending(RouterThread *thread)
 
 	    // process list
 	    for (t = prev; t != &_task_list; ) {
-		Task *next = t->_pending_next;
+		Task* next = t->_pending_next;
 		t->_pending_next = 0;
 		t->process_pending(thread);
 		t = next;
@@ -337,22 +330,49 @@ Master::process_pending(RouterThread *thread)
 
 // TIMERS
 
+void
+Master::timer_reheapify_from(int pos)
+{
+    // MUST be called with _timer_lock held
+    int ntimers = _timer_list.size() - 1;
+    Timer* t = _timer_list.at_u(ntimers);
+
+    while (1) {
+	Timer* largest = t;
+	int npos = pos*2 + 1;
+	if (npos < ntimers && _timer_list.at_u(npos)->_expiry <= t->_expiry)
+	    largest = _timer_list.at_u(npos);
+	if (npos + 1 < ntimers && _timer_list.at_u(npos + 1)->_expiry <= largest->_expiry)
+	    largest = _timer_list.at_u(npos + 1), npos++;
+
+	largest->_schedpos = pos;
+	_timer_list.at_u(pos) = largest;
+
+	if (largest == t)
+	    break;
+
+	pos = npos;
+    }
+
+    _timer_list.pop_back();
+}
+
 // How long until next timer expires.
 
 int
-Master::timer_delay(struct timeval *tv)
+Master::timer_delay(struct timeval* tv)
 {
     int retval;
     _timer_lock.acquire();
-    if (_timer_list._next == &_timer_list) {
+    if (_timer_list.size() == 0) {
 	tv->tv_sec = 1000;
 	tv->tv_usec = 0;
 	retval = 0;
     } else {
 	struct timeval now;
 	click_gettimeofday(&now);
-	if (timercmp(&_timer_list._next->_expiry, &now, >)) {
-	    timersub(&_timer_list._next->_expiry, &now, tv);
+	if (timercmp(&_timer_list.at_u(0)->_expiry, &now, >)) {
+	    timersub(&_timer_list.at_u(0)->_expiry, &now, tv);
 	} else {
 	    tv->tv_sec = 0;
 	    tv->tv_usec = 0;
@@ -370,13 +390,12 @@ Master::run_timers()
 	if (_master_paused == 0 && _timer_lock.attempt()) {
 	    struct timeval now;
 	    click_gettimeofday(&now);
-	    while (_timer_list._next != &_timer_list
-		   && !timercmp(&_timer_list._next->_expiry, &now, >)
+	    while (_timer_list.size()
+		   && !timercmp(&_timer_list.at_u(0)->_expiry, &now, >)
 		   && _runcount > 0) {
-		Timer *t = _timer_list._next;
-		_timer_list._next = t->_next;
-		_timer_list._next->_prev = &_timer_list;
-		t->_prev = 0;
+		Timer* t = _timer_list.at_u(0);
+		timer_reheapify_from(0);
+		t->_schedpos = -1;		
 		t->_hook(t, t->_thunk);
 	    }
 	    _timer_lock.release();

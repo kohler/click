@@ -34,84 +34,62 @@ CLICK_DECLS
  */
 
 static void
-element_hook(Timer *, void *thunk)
+element_hook(Timer*, void* thunk)
 {
-    Element *e = (Element *)thunk;
+    Element* e = (Element*)thunk;
     e->run_timer();
 }
 
 static void
-task_hook(Timer *, void *thunk)
+task_hook(Timer*, void* thunk)
 {
-    Task *task = (Task *)thunk;
+    Task* task = (Task*)thunk;
     task->reschedule();
 }
 
-static void
-list_hook(Timer *, void *)
-{
-    assert(0);
-}
 
-
-Timer::Timer(TimerHook hook, void *thunk)
-    : _prev(0), _next(0), _hook(hook), _thunk(thunk), _router(0)
+Timer::Timer(TimerHook hook, void* thunk)
+    : _schedpos(-1), _hook(hook), _thunk(thunk), _router(0)
 {
 }
 
-Timer::Timer(Element *e)
-    : _prev(0), _next(0), _hook(element_hook), _thunk(e), _router(0)
+Timer::Timer(Element* e)
+    : _schedpos(-1), _hook(element_hook), _thunk(e), _router(0)
 {
 }
 
-Timer::Timer(Task *t)
-    : _prev(0), _next(0), _hook(task_hook), _thunk(t), _router(0)
+Timer::Timer(Task* t)
+    : _schedpos(-1), _hook(task_hook), _thunk(t), _router(0)
 {
 }
 
 void
-Timer::make_list()
-{
-    assert(!scheduled());
-    _hook = list_hook;
-    _prev = _next = this;
-}
-
-void
-Timer::unmake_list()
-{
-    assert(_hook == list_hook);
-    _prev = _next = 0;
-}
-
-void
-Timer::schedule_at(const timeval &when)
+Timer::schedule_at(const timeval& when)
 {
     // acquire lock, unschedule
     assert(_router && initialized());
     Master *master = _router->master();
     master->_timer_lock.acquire();
-    if (scheduled())
-	unschedule();
 
     // set expiration timer
     _expiry = when;
 
-    // manipulate list
-    Timer *head = &master->_timer_list;
-    Timer *prev = head;
-    Timer *trav = prev->_next;
-    while (trav != head && timercmp(&_expiry, &trav->_expiry, >)) {
-	prev = trav;
-	trav = trav->_next;
+    // manipulate list; this is essentially a "decrease-key" operation
+    if (scheduled())
+	master->timer_reheapify_from(_schedpos);
+    int pos = master->_timer_list.size();
+    master->_timer_list.push_back(0);
+    while (pos > 0 && master->_timer_list.at_u((pos-1) >> 1)->_expiry > _expiry) {
+	Timer* tt = master->_timer_list.at_u((pos-1) >> 1);
+	tt->_schedpos = pos;
+	master->_timer_list.at_u(pos) = tt;
+	pos = (pos-1) >> 1;
     }
-    _prev = prev;
-    _next = trav;
-    _prev->_next = this;
-    trav->_prev = this;
+    _schedpos = pos;
+    master->_timer_list.at_u(pos) = this;
 
     // if we changed the timeout, wake up the first thread
-    if (head->_next == this)
+    if (_schedpos == 0)
 	master->_threads[1]->unsleep();
 
     // done
@@ -149,11 +127,10 @@ void
 Timer::unschedule()
 {
     if (scheduled()) {
-	Master *master = _router->master();
+	Master* master = _router->master();
 	master->_timer_lock.acquire();
-	_prev->_next = _next;
-	_next->_prev = _prev;
-	_prev = _next = 0;
+	master->timer_reheapify_from(_schedpos);
+	_schedpos = -1;
 	master->_timer_lock.release();
     }
 }
