@@ -11,7 +11,7 @@ CLICK_DECLS
 
 class RouterThread : public Task { public:
 
-  RouterThread(Router*);
+  RouterThread(Router *);
   ~RouterThread();
   
   Router *router() const		{ return _router; }
@@ -35,6 +35,7 @@ class RouterThread : public Task { public:
   int _id;
 
   Spinlock _task_lock;
+  uatomic32_t _task_lock_waiting;
   
   Spinlock _taskreq_lock;
   Vector<unsigned> _taskreq_ops;
@@ -57,6 +58,8 @@ class RouterThread : public Task { public:
   };
   void add_task_request(TaskRequest, Task *);
   void process_task_requests();
+
+  inline void nice_lock_tasks();
   void wait(int iter);
   
   friend class Task;
@@ -74,7 +77,9 @@ RouterThread::empty() const
 inline void
 RouterThread::lock_tasks()
 {
+  _task_lock_waiting++;
   _task_lock.acquire();
+  _task_lock_waiting--;
 }
 
 inline bool

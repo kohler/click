@@ -58,6 +58,7 @@ RouterThread::RouterThread(Router *r)
 #ifdef CLICK_BSDMODULE
   _wakeup_list = 0;
 #endif
+  _task_lock_waiting = 0;
   router()->add_thread(this);
   // add_thread() will call this->set_thread_id()
 }
@@ -113,6 +114,19 @@ RouterThread::process_task_requests()
   }
 }
 
+inline void
+RouterThread::nice_lock_tasks()
+{
+#if CLICK_LINUXMODULE
+  if (_task_lock_waiting > 0) {
+    unsigned long done_jiffies = click_jiffies() + CLICK_HZ;
+    while (_task_lock_waiting > 0 && click_jiffies() < done_jiffies)
+      /* XXX schedule() instead of spinlock? */;
+  }
+#endif
+  lock_tasks();
+}
+
 #if __MTCLICK__
 
 void
@@ -123,7 +137,7 @@ RouterThread::driver()
   int iter = 0;
   Task *t;
   
-  lock_tasks();
+  nice_lock_tasks();
 
   do {
     
@@ -172,7 +186,7 @@ RouterThread::driver()
   int iter = 0;
   Task *t;
   
-  lock_tasks();
+  nice_lock_tasks();
 
   do {
     
@@ -271,7 +285,7 @@ RouterThread::wait(int iter)
 #endif  /* CLICK_LINUXMODULE */
 #endif  /* CLICK_GREEDY */
 #endif  /* !CLICK_USERLEVEL */
-    lock_tasks();
+    nice_lock_tasks();
   }
 
   if (iter % DRIVER_ITER_TIMERS == 0) {
@@ -299,4 +313,5 @@ RouterThread::unschedule_all_tasks()
     t->fast_unschedule();
   unlock_tasks();
 }
+
 CLICK_ENDDECLS
