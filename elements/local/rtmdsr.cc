@@ -68,6 +68,15 @@ RTMDSR::initialize (ErrorHandler *)
 void
 RTMDSR::run_timer ()
 {
+  // Delete stale entries from list of queries we've seen.
+  time_t now = time();
+  Vector<Seen> v;
+  int i;
+  for(i = 0; i < _seen.size(); i++)
+    if(_seen[i]._when + QueryLife >= now)
+      v.push_back(_seen[i]);
+  _seen = v;
+
   _timer.schedule_after_ms(1000);
 }
 
@@ -163,24 +172,22 @@ RTMDSR::start_query(IPAddress dstip)
   Dst &d = _dsts[di];  
 
   time_t now = time();
-  if(d._when != 0 && now < d._when + 10){
+  if(d._when != 0 && now < d._when + QueryInterval){
     // We sent a query less than 10 seconds ago, don't repeat.
     return;
   }
 
-  char buf[1024];
-  memset(buf, '\0', sizeof(buf));
-  struct pkt *pk = (struct pkt *) buf;
+  int len = pkt::hlen1(1);
+  WritablePacket *p = Packet::make(len);
+  if(p == 0)
+    return;
+  struct pkt *pk = (struct pkt *) p->data();
+  memset(pk, '\0', len);
   pk->_type = htonl(PT_QUERY);
   pk->_qdst = d._ip;
   pk->_seq = htonl(d._seq + 1);
   pk->_nhops = htons(1);
   pk->_hops[0] = _ip.in_addr();
-  int len = pk->len();
-  WritablePacket *p = Packet::make(len);
-  if(p == 0)
-    return;
-  memcpy(p->data(), (const void *) pk, len);
   
   d._seq += 1;
   d._when = now;
@@ -207,7 +214,7 @@ RTMDSR::forward(const struct pkt *pk1)
     assert(0);
   }
 
-  if(next < 0 || next >= nhops)
+  if(next >= nhops)
     return;
 
   int len = pk1->len();
@@ -264,10 +271,12 @@ RTMDSR::forward_query(struct pkt *pk1)
     }
   }
 
+  if(_seen.size() > MaxSeen)
+     return;
   _seen.push_back(Seen(src, pk1->_seq));
 
   u_short nhops = ntohs(pk1->_nhops);
-  if(nhops > 30)
+  if(nhops > MaxHops)
     return;
 
   int len = pkt::hlen1(nhops + 1);
@@ -380,14 +389,13 @@ RTMDSR::got_pkt(Packet *p_in)
   u_long type = ntohl(pk->_type);
   u_short nhops = ntohs(pk->_nhops);
   u_short next = ntohs(pk->_next);
-  u_long seq = ntohl(pk->_seq);
 
   if(type == PT_QUERY && nhops >= 1){
-    click_chatter("DSR %s: query qdst=%s src=%s seq=%d nh=%d",
+    click_chatter("DSR %s: query for %s from %s seq=%d hops=%d",
                   _ip.s().cc(),
                   IPAddress(pk->_qdst).s().cc(),
                   IPAddress(pk->_hops[0]).s().cc(),
-                  seq,
+                  ntohl(pk->_seq),
                   nhops);
     if(pk->_qdst == _ip.in_addr()){
       start_reply(pk);

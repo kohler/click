@@ -21,7 +21,10 @@ CLICK_DECLS
  *
  * To Do:
  * Assumes just one network interface.
- * Doesn't delete old items from already-seen cache.
+ * Save the packet we're querying for, like ARP does.
+ * Signal broken links &c.
+ * Test multiple routes, metrics.
+ * Integrate with tx count machinery.
  * =e
  */
 
@@ -42,6 +45,12 @@ class RTMDSR : public Element {
   static time_t time(void);
 
 private:
+  static const int
+    MaxSeen = 200,  // Max size of table of already-seen queries.
+    MaxHops = 30,   // Max hop count for queries.
+    QueryInterval = 10, // Don't re-query a dead dst too often.
+    QueryLife = 3;  // Forget already-seen queries this often.
+
   Timer _timer;
   IPAddress _ip; // Our IP address.
 
@@ -69,11 +78,10 @@ private:
     in_addr _hops[];
 
     // How long should the packet be?
-    size_t hlen() const { return hlen1(_nhops); }
-    size_t len() const { return len1(_nhops, _dlen); }
+    size_t hlen() const { return hlen1(ntohs(_nhops)); }
+    size_t len() const { return len1(ntohs(_nhops), ntohs(_dlen)); }
     static size_t hlen1(int nhops) {
-      return sizeof(struct pkt)
-        + ntohs(nhops) * sizeof(in_addr);
+      return sizeof(struct pkt) + nhops * sizeof(in_addr);
     }
     static size_t len1(int nhops, int dlen) {
       return hlen1(nhops) + dlen;
