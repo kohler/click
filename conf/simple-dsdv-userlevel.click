@@ -57,7 +57,7 @@ grid_data_demux :: IPClassifier(dst host GRID_IP,                      // ip for
 FromGridDev(REAL_NET_DEVICE, GRID_MAC_ADDR) -> Paint(0) -> grid_demux
 dev0 :: ToGridDev(REAL_NET_DEVICE);
 
-grid_demux [0] -> Align(4, 2) -> CheckIPHeader( , OFFSET_ENCAP_IP) -> grid_data_demux;
+grid_demux [0] -> Align(4, 2) -> CheckIPHeader(OFFSET_ENCAP_IP) -> grid_data_demux;
 grid_demux [1] -> nb -> dev0;
 
 host_tun :: KernelTun(GRID_IP/GRID_NETMASK, HEADROOM TUN_INPUT_HEADROOM) -> CheckIPHeader -> GetIPAddress(16) -> ip_demux;

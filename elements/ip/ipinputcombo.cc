@@ -18,7 +18,6 @@
 #include <click/config.h>
 #include "ipinputcombo.hh"
 #include <clicknet/ip.h>
-#include <click/ipaddressset.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -27,7 +26,6 @@
 CLICK_DECLS
 
 IPInputCombo::IPInputCombo()
-  : _bad_src(0)
 {
   MOD_INC_USE_COUNT;
   _drops = 0;
@@ -38,7 +36,6 @@ IPInputCombo::IPInputCombo()
 IPInputCombo::~IPInputCombo()
 {
   MOD_DEC_USE_COUNT;
-  delete[] _bad_src;
 }
 
 IPInputCombo *
@@ -50,19 +47,16 @@ IPInputCombo::clone() const
 int
 IPInputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  IPAddressSet ips;
-  ips.insert(0);
-  ips.insert(0xFFFFFFFFU);
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color", &_color,
 		  cpOptional,
-		  cpIPAddressSet, "bad source addresses", &ips,
+		  "CheckIPHeader.BADSRC_OLD", "bad source addresses", &_bad_src,
+		  cpKeywords,
+		  "INTERFACES", "CheckIPHeader.INTERFACES", "router interface addresses", &_bad_src, &_good_dst,
+		  "BADSRC", "CheckIPHeader.BADSRC", "bad source addresses", &_bad_src,
+		  "GOODDST", "CheckIPHeader.BADSRC", "good destination addresses", &_good_dst,
 		  0) < 0)
     return -1;
-
-  delete[] _bad_src;
-  _n_bad_src = ips.size();
-  _bad_src = ips.list_copy();
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
@@ -83,7 +77,6 @@ IPInputCombo::configure(Vector<String> &conf, ErrorHandler *errh)
 inline Packet *
 IPInputCombo::smaction(Packet *p)
 {
-  unsigned int src;
 
   /* Paint */
   SET_PAINT_ANNO(p, _color);
@@ -130,10 +123,9 @@ IPInputCombo::smaction(Packet *p)
    * Configuration string should have listed all subnet
    * broadcast addresses known to this router.
    */
-  src = ip->ip_src.s_addr;
-  for(int i = 0; i < _n_bad_src; i++)
-    if(src == _bad_src[i])
-      goto bad;
+  if (_bad_src.contains(ip->ip_src)
+      && !_good_dst.contains(ip->ip_dst))
+    goto bad;
 
   /*
    * RFC1812 4.2.3.1: discard illegal destinations.
@@ -189,5 +181,6 @@ IPInputCombo::add_handlers()
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(CheckIPHeader)
 EXPORT_ELEMENT(IPInputCombo)
 ELEMENT_MT_SAFE(IPInputCombo)

@@ -19,7 +19,6 @@
 #include <click/config.h>
 #include <clicknet/icmp.h>
 #include <clicknet/ip.h>
-#include <click/ipaddressset.hh>
 #include "icmperror.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
@@ -34,7 +33,6 @@ ICMPError::ICMPError()
   add_input();
   add_output();
   _code = _type = -1;
-  _bad_addrs = 0;
   if (cp_register_stringlist_argtype("ICMP.type", "ICMP message type", cpArgAllowNumbers) == 0)
     cp_extend_stringlist_argtype("ICMP.type",
 				 "echo-reply", ICMP_ECHOREPLY,
@@ -74,7 +72,6 @@ ICMPError::ICMPError()
 ICMPError::~ICMPError()
 {
   MOD_DEC_USE_COUNT;
-  delete[] _bad_addrs;
   cp_unregister_argtype("ICMP.type");
   cp_unregister_argtype("ICMP.code");
 }
@@ -83,7 +80,6 @@ int
 ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String bad_addr_str;
-  IPAddressSet bad_addrs;
   _code = 0;
   _mtu = 576;
   if (cp_va_parse(conf, this, errh,
@@ -91,19 +87,14 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
                   "ICMP.type", "ICMP error type", &_type,
 		  cpOptional,
                   "ICMP.code", "ICMP error code", &_code,
-		  cpIPAddressSet, "bad IP addresses", &bad_addrs,
+		  cpIPAddressList, "bad IP addresses", &_bad_addrs,
 		  cpKeywords,
-		  "BADADDRS", cpIPAddressSet, "bad IP addresses", &bad_addrs,
+		  "BADADDRS", cpIPAddressList, "bad IP addresses", &_bad_addrs,
 		  "MTU", cpUnsigned, "MTU", &_mtu,
 		  0) < 0)
     return -1;
   if (_type < 0 || _type > 255 || _code < 0 || _code > 255)
     return errh->error("ICMP type and code must be between 0 and 255");
-
-  delete[] _bad_addrs;
-  _n_bad_addrs = bad_addrs.size();
-  _bad_addrs = bad_addrs.list_copy();
-
   return 0;
 }
 
@@ -131,8 +122,8 @@ ICMPError::initialize(ErrorHandler *errh)
 bool
 ICMPError::unicast(struct in_addr aa) const
 {
-  unsigned int a = aa.s_addr;
-  unsigned int ha = ntohl(a);
+  uint32_t a = aa.s_addr;
+  uint32_t ha = ntohl(a);
 
   /* limited broadcast */
   if(ha == 0xffffffff)
@@ -143,9 +134,8 @@ ICMPError::unicast(struct in_addr aa) const
     return(0);
 
   /* limited broadcast */
-  for (int i = 0; i < _n_bad_addrs; i++)
-    if (a == _bad_addrs[i])
-      return 0;
+  if (_bad_addrs.contains(a))
+    return 0;
   
   return(1);
 }

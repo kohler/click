@@ -25,7 +25,7 @@
 #include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/ipaddress.hh>
-#include <click/ipaddressset.hh>
+#include <click/ipaddresslist.hh>
 #include <click/etheraddress.hh>
 #ifdef HAVE_IP6
 # include <click/ip6address.hh>
@@ -1449,20 +1449,24 @@ cp_ip_prefix(const String &str, IPAddress *address, IPAddress *mask
 }
 
 bool
-cp_ip_address_set(const String &str, IPAddressSet *set
-		  CP_CONTEXT_ARG)
+cp_ip_address_list(const String &str, IPAddressList *l
+		   CP_CONTEXT_ARG)
 {
   Vector<String> words;
   cp_spacevec(str, words);
-  Vector<unsigned> additions;
+  StringAccum sa;
   IPAddress ip;
   for (int i = 0; i < words.size(); i++) {
     if (!cp_ip_address(words[i], &ip  CP_PASS_CONTEXT))
       return false;
-    additions.push_back(ip);
+    if (char *x = sa.extend(4))
+      *reinterpret_cast<uint32_t *>(x) = ip.addr();
+    else {
+      cp_errno = CPE_MEMORY;
+      return false;
+    }
   }
-  for (int i = 0; i < additions.size(); i++)
-    set->insert(IPAddress(additions[i]));
+  l->assign(words.size(), reinterpret_cast<uint32_t *>(sa.take_bytes()));
   return true;
 }
 
@@ -1928,7 +1932,7 @@ CpVaParseCmd
   cpIPAddress		= "ip_addr",
   cpIPPrefix		= "ip_prefix",
   cpIPAddressOrPrefix	= "ip_addr_or_prefix",
-  cpIPAddressSet	= "ip_addr_set",
+  cpIPAddressList	= "ip_addr_list",
   cpEthernetAddress	= "ether_addr",
   cpEtherAddress	= "ether_addr", // synonym
   cpElement		= "element",
@@ -1978,7 +1982,7 @@ enum {
   cpiIPAddress,
   cpiIPPrefix,
   cpiIPAddressOrPrefix,
-  cpiIPAddressSet,
+  cpiIPAddressList,
   cpiEthernetAddress,
   cpiElement,
   cpiHandlerName,
@@ -2015,7 +2019,8 @@ find_argtype(const char *command)
 
 static int
 cp_register_argtype(const char *name, const char *desc, int flags,
-		    cp_parsefunc parse, cp_storefunc store, int internal)
+		    cp_parsefunc parse, cp_storefunc store, int internal,
+		    void *user_data = 0)
 {
   if (cp_argtype *t = find_argtype(name)) {
     t->use_count++;
@@ -2033,7 +2038,7 @@ cp_register_argtype(const char *name, const char *desc, int flags,
     t->name = name;
     t->parse = parse;
     t->store = store;
-    t->user_data = 0;
+    t->user_data = user_data;
     t->flags = flags;
     t->description = desc;
     t->internal = internal;
@@ -2048,9 +2053,9 @@ cp_register_argtype(const char *name, const char *desc, int flags,
 
 int
 cp_register_argtype(const char *name, const char *desc, int flags,
-		    cp_parsefunc parse, cp_storefunc store)
+		    cp_parsefunc parse, cp_storefunc store, void *user_data)
 {
-  return cp_register_argtype(name, desc, flags, parse, store, -1);
+  return cp_register_argtype(name, desc, flags, parse, store, -1, user_data);
 }
 
 
@@ -2250,12 +2255,12 @@ default_parsefunc(cp_value *v, const String &arg,
      break;
    }
 
-   case cpiIPAddressSet: {
-     IPAddressSet crap;
-     if (!cp_ip_address_set(arg, &crap CP_PASS_CONTEXT))
+   case cpiIPAddressList: {
+     IPAddressList l;
+     if (!cp_ip_address_list(arg, &l CP_PASS_CONTEXT))
        errh->error("%s takes set of IP addresses (%s)", argname, desc);
      break;
-   }     
+   }
 
 #ifdef HAVE_IP6
    case cpiIP6Address:
@@ -2479,10 +2484,10 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    }
 #endif
 
-   case cpiIPAddressSet: {
+   case cpiIPAddressList: {
      // oog... parse set into stored set only when we know there are no errors
-     IPAddressSet *setstore = (IPAddressSet *)v->store;
-     cp_ip_address_set(v->v_string, setstore  CP_PASS_CONTEXT);
+     IPAddressList *liststore = (IPAddressList *)v->store;
+     cp_ip_address_list(v->v_string, liststore  CP_PASS_CONTEXT);
      break;
    }
 
@@ -3335,7 +3340,7 @@ cp_va_static_initialize()
   cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);
   cp_register_argtype(cpIPPrefix, "IP address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPPrefix);
   cp_register_argtype(cpIPAddressOrPrefix, "IP address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPAddressOrPrefix);
-  cp_register_argtype(cpIPAddressSet, "set of IP addresses", 0, default_parsefunc, default_storefunc, cpiIPAddressSet);
+  cp_register_argtype(cpIPAddressList, "list of IP addresses", 0, default_parsefunc, default_storefunc, cpiIPAddressList);
   cp_register_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc, cpiEthernetAddress);
 #ifndef CLICK_TOOL
   cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);

@@ -13,7 +13,7 @@ InfiniteSource(DATA \<00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
 01 00 00 00  54 53 00 00  54 e3 04 08  54 e3 04 08  
 d8 01 00 00>, LIMIT 600000, STOP true)
 	-> Strip(14)
-	-> CheckIPHeader(18.26.4.255 2.255.255.255 1.255.255.255)
+	-> CheckIPHeader(BADSRC 18.26.4.255 2.255.255.255 1.255.255.255)
 	-> RED(10, 100, .5)
 	-> Queue
 	-> Discard;

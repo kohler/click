@@ -72,7 +72,7 @@ FromGridDev(REAL_NET_DEVICE, GRID_MAC_ADDR) -> Paint(0) -> grid_demux
 dev0 :: ToGridDev(REAL_NET_DEVICE);
 
 
-grid_demux [0] -> Align(4, 2) -> CheckIPHeader( , OFFSET_ENCAP_IP) -> grid_data_demux;
+grid_demux [0] -> Align(4, 2) -> CheckIPHeader(OFFSET_ENCAP_IP) -> grid_data_demux;
 grid_demux [1] -> nb -> dev0;
 
 to_host :: ToHost(grid0);

@@ -54,7 +54,7 @@ fd_cl[2] -> th
 
 // Packets arriving from the Internet from the test network must have their 
 // destination addresses changed, to our fake address
-fd_cl[1] -> CheckIPHeader(, 14)
+fd_cl[1] -> CheckIPHeader(14)
 	// check for responses from the test network
 	-> ipc :: IPClassifier(src net TEST_NETWORK, -)
 	// replace the real destination address with the fake address

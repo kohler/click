@@ -1,9 +1,10 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/ipaddressset.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/ipaddresslist.hh" -*-
 /*
- * ipaddressset.{cc,hh} -- a set of IP addresses
+ * ipaddresslist.{cc,hh} -- a list of IP addresses
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
+ * Copyright (c) 2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -17,40 +18,41 @@
  */
 
 #include <click/config.h>
-#include <click/ipaddressset.hh>
+#include <click/ipaddresslist.hh>
 #include <click/glue.hh>
-#include <click/confparse.hh>
 CLICK_DECLS
 
 void
-IPAddressSet::insert(IPAddress ip)
+IPAddressList::push_back(IPAddress a)
 {
-  unsigned ipu = ip;
-  for (int i = 0; i < _s.size(); i++)
-    if (_s[i] == ipu)
-      return;
-  _s.push_back(ipu);
+    if (uint32_t *v2 = new uint32_t[_n + 1]) {
+	memcpy(v2, _v, _n * sizeof(uint32_t));
+	v2[_n] = a;
+	delete[] _v;
+	_v = v2;
+	_n++;
+    }
 }
 
-bool
-IPAddressSet::find(IPAddress ip) const
+void
+IPAddressList::insert(IPAddress a)
 {
-  unsigned ipu = ip;
-  for (int i = 0; i < _s.size(); i++)
-    if (_s[i] == ipu)
-      return true;
-  return false;
+    if (!contains(a))
+	push_back(a);
 }
 
-unsigned *
-IPAddressSet::list_copy()
+extern "C" {
+static int
+ipaddress_compar(const void *va, const void *vb)
 {
-  if (!_s.size())
-    return 0;
-  unsigned *x = new unsigned[_s.size()];
-  if (x)
-    memcpy(x, &_s[0], sizeof(unsigned) * _s.size());
-  return x;
+    return *reinterpret_cast<const uint32_t *>(va) - *reinterpret_cast<const uint32_t *>(vb);
+}
+}
+
+void
+IPAddressList::sort()
+{
+    click_qsort(_v, _n, sizeof(uint32_t), ipaddress_compar);
 }
 
 CLICK_ENDDECLS

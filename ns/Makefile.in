@@ -42,7 +42,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
-	ipaddress.o ipaddressset.o ipflowid.o etheraddress.o \
+	ipaddress.o ipaddresslist.o ipflowid.o etheraddress.o \
 	packet.o \
 	error.o glue.o task.o timer.o atomic.o gaprate.o \
 	element.o \

@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/atomic.hh>
+#include <click/ipaddresslist.hh>
 CLICK_DECLS
 
 /*
@@ -33,14 +34,7 @@ CLICK_DECLS
  *
  * =a IPDstOptions, ICMPError */
 
-class IPGWOptions : public Element {
-  
-  uatomic32_t _drops;
-  struct in_addr _my_ip;
-  unsigned *_other_ips;
-  int _n_other_ips;
-
- public:
+class IPGWOptions : public Element { public:
   
   IPGWOptions();
   ~IPGWOptions();
@@ -57,6 +51,12 @@ class IPGWOptions : public Element {
   Packet *handle_options(Packet *);
   Packet *simple_action(Packet *);
   
+ private:
+  
+  uatomic32_t _drops;
+  struct in_addr _preferred_addr;
+  IPAddressList _my_addrs;
+
 };
 
 CLICK_ENDDECLS

@@ -59,7 +59,7 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 		-> [0]pt
 		-> Print(after-PT, 200)
 		
-		-> CheckIPHeader(18.26.4.255)
+		-> CheckIPHeader(BADSRC 18.26.4.255)
 		-> rt::StaticIPLookup(18.26.4.116/32 0,
  			18.26.4.255/32 0,
  			18.26.4.0/32 0,

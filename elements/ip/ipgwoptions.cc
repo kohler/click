@@ -20,7 +20,6 @@
 #include <click/config.h>
 #include "ipgwoptions.hh"
 #include <clicknet/ip.h>
-#include <click/ipaddressset.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -31,7 +30,6 @@ IPGWOptions::IPGWOptions()
 {
   MOD_INC_USE_COUNT;
   _drops = 0;
-  _other_ips = 0;
   add_input();
   add_output();
 }
@@ -39,28 +37,18 @@ IPGWOptions::IPGWOptions()
 IPGWOptions::~IPGWOptions()
 {
   MOD_DEC_USE_COUNT;
-  delete[] _other_ips;
 }
 
 int
 IPGWOptions::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  IPAddress my_ip;
-  IPAddressSet ips;
   if (cp_va_parse(conf, this, errh,
-                  cpIPAddress, "local IP address", &my_ip,
+                  cpIPAddress, "local IP address", &_preferred_addr,
 		  cpOptional,
-		  cpIPAddressSet, "other interface IP addresses", &ips,
+		  cpIPAddressList, "other interface IP addresses", &_my_addrs,
 		  0) < 0)
     return -1;
-  
-  _my_ip = my_ip.in_addr();
-  
-  ips.insert(my_ip);
-  delete[] _other_ips;
-  _n_other_ips = ips.size();
-  _other_ips = ips.list_copy();
-  
+  _my_addrs.insert(_preferred_addr);
   return 0;
 }
 
@@ -123,7 +111,7 @@ IPGWOptions::handle_options(Packet *p)
        */
       int p = oa[oi+2] - 1;
       if (p >= 3 && p + 4 <= xlen) {
-        memcpy(woa + oi + p, &_my_ip, 4);
+        memcpy(woa + oi + p, &_preferred_addr, 4);
         woa[oi+2] += 4;
       } else if (p != xlen) {
 	oi += 2;
@@ -157,18 +145,16 @@ IPGWOptions::handle_options(Packet *p)
       } else if(flg == 1){
         /* ip address followed by timestamp */
         if(p+8 <= xlen){
-          memcpy(woa + oi + p, &_my_ip, 4);
+          memcpy(woa + oi + p, &_preferred_addr, 4);
           memcpy(woa + oi + p + 4, &ms, 4);
           woa[oi+2] += 8;
         } else
           overflowed = 1;
       } else if (flg == 3 && p + 8 <= xlen) {
-	unsigned addr, doit = 0;
+	unsigned addr;
 	memcpy(&addr, oa + oi + p, 4);
-	for (int i = 0; !doit && i < _n_other_ips; i++)
-	  doit = (addr == _other_ips[i]);
         /* only if it's my address */
-	if (doit) {
+	if (_my_addrs.contains(addr)) {
           memcpy(woa + oi + p + 4, &ms, 4);
           woa[oi+2] += 8;
         }

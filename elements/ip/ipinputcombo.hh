@@ -1,40 +1,48 @@
 #ifndef CLICK_IPINPUTCOMBO_HH
 #define CLICK_IPINPUTCOMBO_HH
 #include <click/element.hh>
-#include <click/glue.hh>
+#include <click/ipaddresslist.hh>
 #include <click/atomic.hh>
 CLICK_DECLS
 
 /*
- * =c
- * IPInputCombo(COLOR [, BADADDRS])
- * =s IP
- * input combo for IP routing
- * =d
- * A single element encapsulating common tasks on an IP router's input path.
- * Effectively equivalent to
- *
- *   elementclass IPInputCombo { $COLOR, $BADADDRS |
- *     input[0] -> Paint($COLOR)
- *           -> Strip(14)
- *           -> CheckIPHeader($BADADDRS)
- *           -> GetIPAddress(16)
- *           -> [0]output;
- *   }
- *
- * =a Paint, CheckIPHeader, Strip, GetIPAddress, IPOutputCombo
- */
+=c
+
+IPInputCombo(COLOR [, BADSRC, I<keywords> INTERFACES, BADSRC, GOODDST])
+
+=s IP
+
+input combo for IP routing
+
+=d
+
+A single element encapsulating common tasks on an IP router's input path.
+Effectively equivalent to
+
+  elementclass IPInputCombo { $COLOR, $BADADDRS |
+    input[0] -> Paint($COLOR)
+          -> Strip(14)
+          -> CheckIPHeader($BADADDRS)
+          -> GetIPAddress(16)
+          -> [0]output;
+  }
+
+The INTERFACES, BADSRC, and GOODDST keyword arguments correspond to
+CheckIPHeader's versions.
+
+=a Paint, CheckIPHeader, Strip, GetIPAddress, IPOutputCombo
+*/
 
 class IPInputCombo : public Element {
   
   uatomic32_t _drops;
   int _color;
-
-  int _n_bad_src;
-  unsigned *_bad_src; // array of illegal IP src addresses.
+  
+  IPAddressList _bad_src;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned;
 #endif
+  IPAddressList _good_dst;
 
  public:
   

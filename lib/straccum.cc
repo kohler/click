@@ -67,13 +67,23 @@ StringAccum::c_str()
   return reinterpret_cast<char *>(_s);
 }
 
+unsigned char *
+StringAccum::take_bytes()
+{
+  unsigned char *str = _s;
+  erase();
+  return str;
+}
+
 String
 StringAccum::take_string()
 {
   int len = length();
   if (len) {
     int capacity = _cap;
-    return String::claim_string(take(), len, capacity);
+    unsigned char *str = _s;
+    erase();
+    return String::claim_string(reinterpret_cast<char *>(str), len, capacity);
   } else if (out_of_memory())
     return String::out_of_memory_string();
   else

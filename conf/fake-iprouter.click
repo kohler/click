@@ -96,7 +96,7 @@ rt :: StaticIPLookup(18.26.4.24/32 0,
 // CheckIPHeader checks all the lengths and length fields
 // for sanity.
 ip ::   Strip(14)
-     -> CheckIPHeader(18.26.4.255 1.255.255.255)
+     -> CheckIPHeader(INTERFACES 18.26.4.1/24 18.26.7.1/24)
      -> [0]rt;
 c0[2] -> Paint(1) -> ip;
 c1[2] -> Paint(2) -> ip;

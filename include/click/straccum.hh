@@ -53,10 +53,8 @@ class StringAccum { public:
   StringAccum &snprintf(int, const char *, ...);
 #endif
   
-  void take(unsigned char *&s, int &l)	{ s = _s; l = _len; erase(); }
-  char *take();
-  unsigned char *take_bytes();
-  String take_string();
+  unsigned char *take_bytes();		// returns array allocated by new[]
+  String take_string();			// returns String
 
   // see also operator<< declarations below
   
@@ -167,20 +165,6 @@ inline void
 StringAccum::append(const unsigned char *s, int len)
 {
   append(reinterpret_cast<const char *>(s), len);
-}
-
-inline unsigned char *
-StringAccum::take_bytes()
-{
-  unsigned char *str = _s;
-  erase();
-  return str;
-}
-
-inline char *
-StringAccum::take()
-{
-  return reinterpret_cast<char *>(take_bytes());
 }
 
 inline void

@@ -1,6 +1,7 @@
 #ifndef CLICK_ICMPERROR_HH
 #define CLICK_ICMPERROR_HH
 #include <click/element.hh>
+#include <click/ipaddresslist.hh>
 CLICK_DECLS
 
 /*
@@ -89,8 +90,7 @@ private:
   IPAddress _src_ip;
   int _type;
   int _code;
-  unsigned *_bad_addrs;
-  int _n_bad_addrs;
+  IPAddressList _bad_addrs;
   unsigned _mtu;
 
   static bool is_error_type(int);

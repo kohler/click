@@ -41,7 +41,8 @@ enum CpErrors {
     CPE_FORMAT,
     CPE_NEGATIVE,
     CPE_OVERFLOW,
-    CPE_INVALID
+    CPE_INVALID,
+    CPE_MEMORY
 };
 extern int cp_errno;
 
@@ -95,14 +96,14 @@ String cp_unparse_interval(const struct timeval &);
 
 // network addresses
 class IPAddress;
-class IPAddressSet;
+class IPAddressList;
 bool cp_ip_address(const String &, unsigned char *  CP_OPT_CONTEXT);
 bool cp_ip_address(const String &, IPAddress *  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String &, IPAddress *, IPAddress *, bool allow_bare_address  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String &, unsigned char *, unsigned char *  CP_OPT_CONTEXT);
 bool cp_ip_prefix(const String &, IPAddress *, IPAddress *  CP_OPT_CONTEXT);
-bool cp_ip_address_set(const String &, IPAddressSet *  CP_OPT_CONTEXT);
+bool cp_ip_address_list(const String &, IPAddressList *  CP_OPT_CONTEXT);
 
 #ifdef HAVE_IP6
 class IP6Address;
@@ -174,7 +175,7 @@ extern CpVaParseCmd
     cpIPAddress,	//			IPAddress *
     cpIPPrefix,		//			IPAddress *a, IPAddress *mask
     cpIPAddressOrPrefix,//			IPAddress *a, IPAddress *mask
-    cpIPAddressSet,	//			IPAddressSet *
+    cpIPAddressList,	//			IPAddressList *
     cpEthernetAddress,	//			EtherAddress *
     cpElement,		//			Element **
     cpHandlerName,	//			Element **e, String *hname
@@ -223,7 +224,7 @@ typedef void (*cp_storefunc)(cp_value *  CP_CONTEXT);
 
 enum { cpArgNormal = 0, cpArgStore2 = 1, cpArgExtraInt = 2, cpArgAllowNumbers = 4 };
 int cp_register_argtype(const char *name, const char *description,
-			int flags, cp_parsefunc, cp_storefunc);
+			int flags, cp_parsefunc, cp_storefunc, void *user_data = 0);
 void cp_unregister_argtype(const char *name);
 
 int cp_register_stringlist_argtype(const char *name, const char *description,

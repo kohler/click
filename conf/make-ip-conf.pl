@@ -78,7 +78,7 @@ for($i = 0; $i < $nifs; $i++){
 }
 
 # Set up the routing table.
-my(@routes, @invalid_src);
+my(@routes, @interfaces);
 
 # For delivery to the local host
 for($i = 0; $i < $nifs; $i++){
@@ -89,7 +89,8 @@ for($i = 0; $i < $nifs; $i++){
 
     my $dirbcast = ($ii & $mask) | ~$mask;	# Directed broadcast.
     push @routes, sprintf("%s/32 0", i2ip($dirbcast));
-    push @invalid_src, i2ip($dirbcast);
+    
+    push @interfaces, $ifs->[$i]->[2] . '/' . $ifs->[$i]->[3];
 
     push @routes, sprintf("%s/32 0", i2ip($ii & $mask));
     						# Directed broadcast (obsolete).
@@ -107,7 +108,6 @@ for($i = 0; $i < $nifs; $i++){
 
 # For remaining broadcast addresses
 push @routes, "255.255.255.255/32 0.0.0.0 0";	# Limited broadcast.
-push @invalid_src, "255.255.255.255";
 
 push @routes, "0.0.0.0/32 0";			# Limited broadcast (obsolete).
 
@@ -128,9 +128,9 @@ for ($i = 0; $i < $nsrts; $i++) {
 }
 
 print "\n// Shared IP input path and routing table\n";
-print "ip :: Strip(14);\n";
-print "rt :: StaticIPLookup(\n\t", join(",\n\t", @routes), ");\n";
-print "ip -> CheckIPHeader(", join(' ', @invalid_src), ") -> rt;\n";
+print "ip :: Strip(14)
+    -> CheckIPHeader(INTERFACES ", join(' ', @interfaces), ")
+    -> rt :: StaticIPLookup(\n\t", join(",\n\t", @routes), ");\n";
 
 # Link-level devices, classification, and ARP
 print "\n// ARP responses are copied to each ARPQuerier and the host.\n";
