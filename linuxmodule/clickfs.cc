@@ -105,7 +105,7 @@ click_inode(struct super_block *sb, ino_t ino)
 {
     // Must be called with click_config_lock held.
 
-    if (click_ino.prepare(click_router, click_config_generation) < 0) {
+    if (click_ino.prepare(click_router, click_config_generation) < 0)
 	return 0;
     
     //MDEBUG("i_get");
