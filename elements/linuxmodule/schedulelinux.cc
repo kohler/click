@@ -35,9 +35,6 @@ void
 ScheduleLinux::run_scheduled()
 {
   schedule();
-  if (signal_pending(current)) {
-    router()->please_stop_driver();
-  }
   reschedule();
 }
 

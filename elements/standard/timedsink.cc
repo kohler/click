@@ -51,12 +51,6 @@ TimedSink::uninitialize()
   _timer.unschedule();
 }
 
-bool
-TimedSink::wants_packet_upstream() const
-{
-  return true;
-}
-
 void
 TimedSink::run_scheduled()
 {

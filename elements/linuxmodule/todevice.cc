@@ -328,12 +328,6 @@ ToDevice::push(int port, Packet *p)
   }
 }
 
-bool
-ToDevice::wants_packet_upstream() const
-{
-  return input_is_pull(0);
-}
-
 void
 ToDevice::run_scheduled()
 {

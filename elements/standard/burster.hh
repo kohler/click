@@ -39,7 +39,6 @@ class Burster : public Element {
   int initialize(ErrorHandler *);
   void uninitialize();
 
-  bool wants_packet_upstream() const;
   void run_scheduled();
   
 };

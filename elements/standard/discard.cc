@@ -28,12 +28,6 @@ Discard::push(int, Packet *p)
   p->kill();
 }
 
-bool
-Discard::wants_packet_upstream() const
-{
-  return input_is_pull(0);
-}
-
 void
 Discard::run_scheduled()
 {

@@ -82,13 +82,6 @@ xokWriter::push(int port, Packet *p)
 }
 
 
-bool
-xokWriter::wants_packet_upstream() const
-{
-  return input_is_pull(0);
-}
-
-
 void
 xokWriter::run_scheduled()
 {

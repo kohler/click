@@ -3,7 +3,7 @@
 
 /*
  * =c
- * ElementSched(ELEMENT SCHEDULING_PARAM, ...)
+ * ScheduleInfo(ELEMENT SCHEDULING_PARAM, ...)
  * =io
  * None
  * =d
@@ -20,7 +20,7 @@ class ElementSched : public Element {
   
   ElementSched();
   
-  const char *class_name() const		{ return "ElementSched"; }
+  const char *class_name() const		{ return "ScheduleInfo"; }
   ElementSched *clone() const			{ return new ElementSched; }
 
   int configure(const String &, ErrorHandler *);

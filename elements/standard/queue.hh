@@ -45,9 +45,6 @@ class Queue : public Storage {
   int _drops;
   int _max_length;
 
-  Element *_puller1;
-  Vector<Element *> _pullers;
-  
   int next_i(int i) const			{ return (i!=_max ? i+1 : 0); }
   
  public:

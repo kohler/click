@@ -62,12 +62,6 @@ Burster::uninitialize()
   _timer.unschedule();
 }
 
-bool
-Burster::wants_packet_upstream() const
-{
-  return true;
-}
-
 void
 Burster::run_scheduled()
 {
@@ -78,10 +72,12 @@ Burster::run_scheduled()
   
   for (int i = 0; i < _npackets; i++) {
     Packet *p = input(0).pull();
-    if (!p)
-      // no packets left; return w/o resetting timer. rely on PACKET_UPSTREAM
-      // scheduling to wake us up later
+    if (!p) {
+      reschedule();
+      click_chatter("burster: warning: rescheduling because no packets left.\n"
+		    "                  Used to rely on packet_upstream.\n");
       return;
+    }
     output(0).push(p);
   }
 

@@ -23,7 +23,6 @@ class PullToPush : public Element {
   
   PullToPush *clone() const			{ return new PullToPush; }
   
-  bool wants_packet_upstream() const;
   void run_scheduled();
 
 #ifdef __KERNEL__

@@ -24,13 +24,4 @@ class IsaElementFilter : public ElementFilter {
   
 };
 
-class WantsPacketUpstreamElementFilter : public ElementFilter {
-
- public:
-  
-  WantsPacketUpstreamElementFilter()	{ }
-  bool match(Element *);
-  
-};
-
 #endif

@@ -164,12 +164,6 @@ ToBPF::push(int, Packet *p)
   p->kill();
 }
 
-bool
-ToBPF::wants_packet_upstream() const
-{
-  return input_is_pull(0);
-}
-
 void
 ToBPF::run_scheduled()
 {

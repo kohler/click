@@ -342,9 +342,7 @@ write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
     return -EINVAL;
   }
   printk("driving %d times\n", num);
-  for (int i = 0; i < num; i++)
-    if (!current_router->driver())
-      break;
+  current_router->driver(num);
   return 0;
 }
 
@@ -420,7 +418,9 @@ init_module()
   kfr.add_read("classes", read_classes, 0);
   kfr.add_read("packages", read_packages, 0);
   kfr.add_read("requirements", read_requirements, 0);
+#ifndef CLICK_POLLDEV
   kfr.add_write("driver", write_driver, 0);
+#endif
 
   return 0;
 }

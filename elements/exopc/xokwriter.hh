@@ -31,7 +31,6 @@ class xokWriter : public Element {
   
   void push(int port, Packet *);
 
-  bool wants_packet_upstream() const;
   void run_scheduled();
   
 };

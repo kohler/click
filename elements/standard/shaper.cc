@@ -57,18 +57,7 @@ int
 Shaper::initialize(ErrorHandler *)
 {
   _rate.initialize();
-  
-  _pullers.clear();
-  _puller1 = 0;
-  
-  WantsPacketUpstreamElementFilter ppff;
-  if (router()->downstream_elements(this, 0, &ppff, _pullers) < 0)
-    return -1;
-  ppff.filter(_pullers);
 
-  if (_pullers.size() == 1)
-    _puller1 = _pullers[0];
-  
   return 0;
 }
 
@@ -79,6 +68,7 @@ Shaper::pull(int)
   
   int r = _rate.average();
   if (r >= _meter1) {
+#if 0
     if (_puller1)
       _puller1->run_scheduled();
     else {
@@ -86,6 +76,7 @@ Shaper::pull(int)
       for (int i = 0; i < n; i++)
 	_pullers[i]->run_scheduled();
     }
+#endif
     return 0;
   } else {
     Packet *p = input(0).pull();

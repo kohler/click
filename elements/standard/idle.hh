@@ -32,7 +32,6 @@ class Idle : public Element {
   void push(int, Packet *);
   Packet *pull(int);
 
-  bool wants_packet_upstream() const;
   void run_scheduled();
   
 };

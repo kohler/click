@@ -496,12 +496,6 @@ Element::simple_action(Packet *p)
   return p;
 }
 
-bool
-Element::wants_packet_upstream() const
-{
-  return false;
-}
-
 void
 Element::run_scheduled()
 {

@@ -57,17 +57,6 @@ Queue::configure(const String &conf, ErrorHandler *errh)
 int
 Queue::initialize(ErrorHandler *errh)
 {
-  _pullers.clear();
-  _puller1 = 0;
-  
-  WantsPacketUpstreamElementFilter ppff;
-  if (router()->downstream_elements(this, 0, &ppff, _pullers) < 0)
-    return -1;
-  ppff.filter(_pullers);
-
-  if (_pullers.size() == 1)
-    _puller1 = _pullers[0];
-  
   assert(!_q);
   _q = new Packet *[_max + 1];
   if (_q == 0)
@@ -131,7 +120,6 @@ Queue::push(int, Packet *packet)
   
   // should this stuff be in Queue::enq?
   if (next != _head) {
-    bool was_empty = (_head == _tail);
     _q[_tail] = packet;
     _tail = next;
 
@@ -146,6 +134,7 @@ Queue::push(int, Packet *packet)
     // even though packets are Queued. So cause output idleness
     // every 16 packets as well as when we go non-empty. */
 #ifndef CLICK_POLLDEV
+#if 0
     if (was_empty) {
       if (_puller1)
         _puller1->join_scheduler();
@@ -155,6 +144,7 @@ Queue::push(int, Packet *packet)
           _pullers[i]->join_scheduler();
       }
     }
+#endif
 #endif
     
     int s = size();

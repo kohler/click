@@ -34,6 +34,7 @@ PacketShaper::pull(int)
   
   int r = _rate.average();
   if (r >= _meter1) {
+#if 0
     if (_puller1)
       _puller1->join_scheduler();
     else {
@@ -41,6 +42,7 @@ PacketShaper::pull(int)
       for (int i = 0; i < n; i++)
         _pullers[i]->join_scheduler();
     }
+#endif
     return 0;
   } else {
     Packet *p = input(0).pull();

@@ -64,6 +64,8 @@ class Router : public ElementLink {
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
 
+  static const unsigned int _max_driver_count = 10000;
+
  public:
   
   Router();
@@ -100,20 +102,16 @@ class Router : public ElementLink {
   
   int live_reconfigure(int, const String &, ErrorHandler *);
   
+  void driver(unsigned count = _max_driver_count);
   void wait();
-  bool driver();
   
   void print_structure(ErrorHandler *);
   String flat_configuration_string() const;
   String element_list_string() const;
   String element_inputs_string(int) const;
   String element_outputs_string(int) const;
-
-  bool any_scheduled() const;
-  void run_scheduled();
   
   void please_stop_driver()		{ _please_stop_driver = 1; }
-  
 };
 
 
@@ -141,12 +139,5 @@ Router::find(const String &name, ErrorHandler *errh) const
 {
   return find("", name, errh);
 }
-
-inline bool
-Router::any_scheduled() const
-{
-  return scheduled_next() != (ElementLink *)this;
-}
-  
 
 #endif

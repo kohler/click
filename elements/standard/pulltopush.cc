@@ -17,12 +17,6 @@
 #include "pulltopush.hh"
 
 
-bool
-PullToPush::wants_packet_upstream() const
-{
-  return true;
-}
-
 void
 PullToPush::run_scheduled()
 {

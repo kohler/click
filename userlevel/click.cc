@@ -455,10 +455,8 @@ particular purpose.\n");
   gettimeofday(&before_time, 0);
 
   // run driver
-  if (!quit_immediately) {
-    while (router->driver())
-      /* nada */;
-  }
+  if (!quit_immediately)
+    router->driver();
   
   gettimeofday(&after_time, 0);
   getrusage(RUSAGE_SELF, &after);

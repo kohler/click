@@ -36,10 +36,3 @@ IsaElementFilter::match(Element *f)
 {
   return f->is_a(_what);
 }
-
-
-bool
-WantsPacketUpstreamElementFilter::match(Element *f)
-{
-  return f->wants_packet_upstream();
-}

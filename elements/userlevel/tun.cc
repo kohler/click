@@ -87,12 +87,6 @@ Tun::selected(int fd)
   }
 }
 
-bool
-Tun::wants_packet_upstream() const
-{
-  return input_is_pull(0);
-}
-
 void
 Tun::run_scheduled()
 {

@@ -100,12 +100,6 @@ ToDump::uninitialize()
   _timer.unschedule();
 }
 
-bool
-ToDump::wants_packet_upstream() const
-{
-  return true;
-}
-
 void
 ToDump::run_scheduled()
 {

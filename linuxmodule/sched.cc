@@ -49,9 +49,7 @@ click_sched(void *thunk)
     current->pgrp = 1;
     sprintf(current->comm, "click");
    
-    while(current_router->driver()) {
-	if (signal_pending(current)) break; 
-    }
+    current_router->driver();
 
     click_sched_pid = -1;
     printk("click: router stopped, exiting!\n");

@@ -684,7 +684,7 @@ Router::initialize(ErrorHandler *errh)
     _elements[i]->set_number(i);
     /* make all elements use Router as its link: subsequent calls to
      * schedule_xxxx places elements on this link, therefore allow
-     * run_scheduled to see them */
+     * driver to see them */
     _elements[i]->initialize_link(this);
     configure_phase[i] = !_elements[i]->configure_first();
   }
@@ -812,6 +812,11 @@ Router::wait()
         f->selected(fd);
     }
   }
+  Timer::run_timers();
+#else
+  schedule();
+  if (signal_pending(current))
+    please_stop_driver();
 #endif
 }
 
@@ -819,35 +824,22 @@ Router::wait()
 // WORK LIST
 
 void
-Router::run_scheduled()
+Router::driver(unsigned count)
 {
+  unsigned c = count;
   ElementLink *fl;
- 
   while (fl=scheduled_next(), fl != this && !_please_stop_driver) {
-    // click_chatter("running %s", ((Element*)fl)->declaration().cc());
     fl->unschedule();
     ((Element *)fl)->run_scheduled();
-  }
-}
-
-bool
-Router::driver()
-{
-#ifndef __KERNEL__
-  Timer::run_timers();
+    if (count-- == 0) {
+#if !defined(__KERNEL__) || defined(CLICK_POLLDEV)
+      count = c;
+      wait();
+#else
+      break;
 #endif
-
-#ifdef CLICK_POLLDEV
-  {
-    extern pid_t click_sched_pid;
-    assert(current->pid == click_sched_pid);
+    }
   }
-#endif
-
-  run_scheduled();
-  wait();
-
-  return !_please_stop_driver;
 }
 
 // PRINTING

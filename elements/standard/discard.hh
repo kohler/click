@@ -25,7 +25,6 @@ class Discard : public Element {
   
   void push(int, Packet *);
   
-  bool wants_packet_upstream() const;
   void run_scheduled();
   
 };

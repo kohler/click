@@ -62,15 +62,6 @@ Idle::pull(int)
   return 0;
 }
 
-bool
-Idle::wants_packet_upstream() const
-{
-  for (int i = 0; i < ninputs(); i++)
-    if (input_is_pull(i))
-      return true;
-  return false;
-}
-
 void
 Idle::run_scheduled()
 {

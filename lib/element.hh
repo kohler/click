@@ -101,8 +101,6 @@ class Element : public ElementLink { public:
   virtual int select_fd()		{ return(-1); }
   virtual void selected(int)		{ }
 
-  // Hooks for a non-empty Queue to tell an output driver to pull().
-  virtual bool wants_packet_upstream() const;
   virtual void run_scheduled();
   
   virtual void push(int port, Packet *);

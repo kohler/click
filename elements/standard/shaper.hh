@@ -23,9 +23,6 @@ class Shaper : public Element { protected:
   
   int _meter1;
 
-  Element *_puller1;
-  Vector<Element *> _pullers;
-
  public:
   
   Shaper();

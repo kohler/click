@@ -26,7 +26,7 @@ Timer::element_timer(unsigned long thunk)
 #ifdef __KERNEL__
 #ifndef CLICK_POLLDEV
   // run work list
-  f->router()->run_scheduled();
+  f->router()->driver();
 #endif
 #endif
 }

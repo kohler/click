@@ -40,7 +40,6 @@ class Tun : public Element {
   void selected(int fd);
 
   void push(int port, Packet *);
-  bool wants_packet_upstream() const;
   void run_scheduled();
 
  private:

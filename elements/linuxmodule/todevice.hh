@@ -49,7 +49,6 @@ class ToDevice : public Element {
   void uninitialize();
   void add_handlers(HandlerRegistry *);
   
-  bool wants_packet_upstream() const;
   void run_scheduled();
   
   void push(int port, Packet *);

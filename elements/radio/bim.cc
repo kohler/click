@@ -166,12 +166,6 @@ BIM::got_char(int c)
   }
 }
 
-bool
-BIM::wants_packet_upstream() const
-{
-  return input_is_pull(0);
-}
-
 void
 BIM::run_scheduled()
 {
