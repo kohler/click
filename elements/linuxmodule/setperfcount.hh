@@ -1,5 +1,6 @@
 #ifndef SETPERFCOUNT_HH
 #define SETPERFCOUNT_HH
+#include "elements/linuxmodule/perfcountuser.hh"
 
 /*
  * =c
@@ -23,8 +24,6 @@
  * C<L2_LINES_OUTM>, and C<L2_RQSTS>.
  * 
  * =a PerfCountAccum, SetCycleCount, CycleCountAccum */
-
-#include "elements/linuxmodule/perfcountuser.hh"
 
 class SetPerfCount : public PerfCountUser { public:
   

@@ -9,7 +9,7 @@ class PerfCountUser : public Element { public:
 
   bool is_base() const		{ return _metric0 > -2; }
   
-  int prepare(const String &, ErrorHandler *);
+  int prepare(const String &, ErrorHandler *, int force = -1);
   int initialize(ErrorHandler *);
 
  private:

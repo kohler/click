@@ -26,7 +26,7 @@ my(%section_takes_args) =
     ( 'head1' => 1, 'c' => 0, 's' => 2, 'io' => 0, 'processing' => 0,
       'd' => 0, 'n' => 0, 'e' => 0, 'h' => 1, 'a' => 2, 'title' => 1 );
 my(%section_takes_text) =
-    ( 'head1' => 1, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
+    ( 'head1' => 2, 'c' => 1, 's' => 1, 'io' => 1, 'processing' => 1,
       'd' => 1, 'n' => 1, 'e' => 1, 'h' => 1, 'a' => 2, 'title' => 0 );
 my(%xsection_takes_args) =
     ( 'head1' => 1, 'head2' => 1, 'item' => 1, 'over' => 1, 'back' => 0,
@@ -286,6 +286,7 @@ sub do_section_x($$$) {
 sub do_section($$$) {
   my($name, $args, $text) = @_;
   my(@text) = split(/^(=\w.*)$/m, $text);
+  push @text, '' if !@text;
   my($i);
   @Over = ();
   undef $Begun;

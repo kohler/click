@@ -64,7 +64,7 @@ string_to_perfctr(const String &name_in)
 }
 
 int
-PerfCountUser::prepare(const String &name, ErrorHandler *errh)
+PerfCountUser::prepare(const String &name, ErrorHandler *errh, int force)
 {
   int which = string_to_perfctr(name);
   if (which == -1)
@@ -84,14 +84,18 @@ PerfCountUser::prepare(const String &name, ErrorHandler *errh)
     base = this;
   }
 
-  if (base->_metric0 < 0 || base->_metric0 == which) {
+  if ((force < 0 || force == 0)
+      && (base->_metric0 < 0 || base->_metric0 == which)) {
     base->_metric0 = which;
     return 0;
-  } else if (base->_metric1 < 0 || base->_metric1 == which) {
+  } else if ((force < 0 || force == 1)
+	     && (base->_metric1 < 0 || base->_metric1 == which)) {
     base->_metric1 = which;
     return 1;
-  } else
-    return errh->error("configuration uses too many performance metrics\n(I can only keep track of two different metrics, maximum.)");
+  } else if (force < 0)
+    return errh->error("configuration uses too many performance metrics\n(I can keep track of at most two different metrics.)");
+  else
+    return errh->error("performance metric %d already used", force);
 }
 
 int
