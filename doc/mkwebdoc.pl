@@ -49,14 +49,14 @@ close MK;
 if ($INSTALL) {
     mysystem("/bin/rm -rf /tmp/%click-webdoc");
     mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-man EXTRA_PROVIDES='linuxmodule i586 i686 linux_2_2 linux_2_4' && gmake install-local EXTRA_PROVIDES='linuxmodule i586 i686 linux_2_2 linux_2_4'");
-    mysystem("cd click-$VERSION/tools/click-pretty && gmake install");
+    mysystem("cd tools/click-pretty && gmake install");
     mysystem("cd /tmp/%click-webdoc/share/click && echo '\$webdoc ../doc/%s.n.html' | cat - elementmap > emap2 && mv emap2 elementmap");
 }
 
 # 1.5. install examples
-my(@examples) = ([ 'test.click', 'Simple Test' ],
-		 [ 'test2.click', 'Simple Test' ],
-		 [ 'test3.click', 'Simple Test' ],
+my(@examples) = ([ 'test.click', 'Trivial Test Configuration' ],
+		 [ 'test2.click', 'Simple RED Example' ],
+		 [ 'test3.click', 'Simple Scheduler Example' ],
 		 [ 'test-device.click', 'Device Test' ],
 		 [ 'test-tap.click', 'KernelTap Test' ],
 		 [ 'udpgen.click', 'UDP Generator' ],
@@ -65,8 +65,8 @@ my(@examples) = ([ 'test.click', 'Simple Test' ],
 foreach $i (@examples) {
     my($fn, $title) = ('"' . $i->[0] . '"', '"' . $i->[1] . '"');
     my($html) = $fn;
-    $html =~ s/\.click$/.html/;
-    mysystem("/tmp/%click-webdoc/bin/click-pretty -t $EXDIR/template -dfilename=$fn -dtitle=$title click-$VERSION/conf/$fn > $EXDIR/$html || true");
+    $html =~ s/\.click\"$/.html\"/;
+    mysystem("click-pretty -C /tmp/%click-webdoc -t $EXDIR/template -dfilename=$fn -dtitle=$title click-$VERSION/conf/$fn > $EXDIR/$html || true");
 }
 
 # 2.0. read elementmap
