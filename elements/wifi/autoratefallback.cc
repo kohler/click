@@ -22,6 +22,7 @@
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include <clicknet/wifi.h>
 #include <elements/wifi/availablerates.hh>
 #include "autoratefallback.hh"
 
@@ -75,8 +76,11 @@ AutoRateFallback::process_feedback(Packet *p_in)
   }
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
-  int status = WIFI_TX_STATUS_ANNO(p_in);  
-  int rate = WIFI_RATE_ANNO(p_in);
+  struct click_wifi_extra *eh = (struct click_wifi_extra *) p_in->all_user_anno();
+  bool success = !(eh->flags & WIFI_EXTRA_TX_FAIL);
+  bool used_alt_rate = !(eh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
+  int rate = eh->rate;
+  int alt_rate = eh->alt_rate;
 
   struct timeval now;
   click_gettimeofday(&now);
@@ -90,7 +94,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     /* rate wasn't set */
     return;
   }
-  if (!status && p_in->length() < _packet_size_threshold) {
+  if (success && p_in->length() < _packet_size_threshold) {
     /* 
      * don't deal with short packets, 
      * since they can skew what rate we should be at 
@@ -108,18 +112,17 @@ AutoRateFallback::process_feedback(Packet *p_in)
     return;
   }
 
-  if ((status & WIFI_FAILURE)) {
-    click_chatter("%{element} packet failed %s status %d rate %d alt %d\n",
+  if (!success || used_alt_rate) {
+    click_chatter("%{element} packet failed %s rate %d alt %d\n",
 		  this,
 		  dst.s().cc(),
-		  status,
 		  rate,
-		  WIFI_ALT_RATE_ANNO(p_in)
+		  alt_rate
 		  );
   }
 
 
-  if (status == 0) {
+  if (success && !used_alt_rate) {
     nfo->_successes++;
     if (nfo->_successes > _stepup && 
 	nfo->_current_index != nfo->_rates.size() - 1) {
@@ -160,14 +163,16 @@ AutoRateFallback::assign_rate(Packet *p_in)
 
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
-  SET_WIFI_FROM_CLICK(p_in);
+
+    struct click_wifi_extra *eh = (struct click_wifi_extra *) p_in->all_user_anno();
+  eh->magic = WIFI_EXTRA_MAGIC;
 
   if (dst == _bcast) {
     Vector<int> rates = _rtable->lookup(_bcast);
     if (rates.size()) {
-      SET_WIFI_RATE_ANNO(p_in, rates[0]);
+      eh->rate = rates[0];
     } else {
-      SET_WIFI_RATE_ANNO(p_in, 2);
+      eh->rate = 2;
     }
     return;
   }
@@ -189,12 +194,10 @@ AutoRateFallback::assign_rate(Packet *p_in)
   int alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
   int max_retries = (_alt_rate) ? 4 : 8;
   int alt_max_retries = (_alt_rate) ? 4 : 0;
-  SET_WIFI_RATE_ANNO(p_in, rate);
-  SET_WIFI_MAX_RETRIES_ANNO(p_in, max_retries);
-
-
-  SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);
-  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, alt_max_retries);
+  eh->rate = rate;
+  eh->max_retries = max_retries;
+  eh->alt_rate = alt_rate;
+  eh->alt_max_retries = alt_max_retries;
   return;
   
 }

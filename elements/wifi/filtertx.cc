@@ -42,21 +42,15 @@ FilterTX::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 FilterTX::simple_action(Packet *p)
 {
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
   
-  u_int32_t *ptr = (u_int32_t *) p->data();
-  
-  if (ptr[0] == DIDmsg_lnxind_wlansniffrm) {
-    wlan_ng_prism2_header *ph = (wlan_ng_prism2_header *) p->data();
-   
-    if (ph->istx.data) {
-      if (noutputs() == 2) {
-	output(1).push(p);
-      } else {
-	p->kill();
-      }
-      return 0;
+  if (ceh->flags & WIFI_EXTRA_TX) {
+    if (noutputs() == 2) {
+      output(1).push(p);
+    } else {
+      p->kill();
     }
-
+    return 0;
   }
   
   return p;

@@ -22,6 +22,7 @@
 #include <click/packet_anno.hh>
 #include "settxpower.hh"
 #include <clicknet/ether.h>
+#include <clicknet/wifi.h>
 #include <click/etheraddress.hh>
 CLICK_DECLS
 
@@ -55,8 +56,9 @@ Packet *
 SetTXPower::simple_action(Packet *p_in)
 {
   if (p_in) {
-    SET_WIFI_FROM_CLICK(p_in);
-    SET_WIFI_TX_POWER_ANNO(p_in, _power);  
+    struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
+    ceh->magic = WIFI_EXTRA_MAGIC;
+    ceh->power = _power;
     return p_in;
   }
   return 0;

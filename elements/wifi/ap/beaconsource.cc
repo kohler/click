@@ -220,7 +220,6 @@ BeaconSource::send_beacon(EtherAddress dst, bool probe)
   actual_length += 2 + 4;
 
   p->take(max_len - actual_length);
-  SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 

@@ -194,6 +194,7 @@ BeaconScanner::simple_action(Packet *p)
     ap->_ssid = "";
   }
 
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
   
   ap->_eth = bssid;
   if (ssid != "") {
@@ -201,7 +202,7 @@ BeaconScanner::simple_action(Packet *p)
     ap->_ssid = ssid;
   }
   ap->_channel = (ds_l) ? ds_l[2] : -1;
-  ap->_rssi = WIFI_SIGNAL_ANNO(p);
+  ap->_rssi = ceh->rssi;
 
   ap->_capability = capability;
   ap->_beacon_int = beacon_int;

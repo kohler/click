@@ -4,6 +4,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
+#include <clicknet/wifi.h>
 #include "filterfailures.hh"
 
 CLICK_DECLS
@@ -48,7 +49,8 @@ Packet *
 FilterFailures::simple_action(Packet *p)
 {
 
-  int success = WIFI_SUCCESS(WIFI_TX_STATUS_ANNO(p));
+  click_wifi_extra *eh = (click_wifi_extra *) p->all_user_anno();
+  int success = !(eh->flags & WIFI_EXTRA_TX_FAIL);
   if (success) {
     if (_allow_success) {
       return p;
@@ -60,11 +62,6 @@ FilterFailures::simple_action(Packet *p)
     }
     _drops++;
     return 0;
-  }
-
-
-  if (WIFI_NUM_FAILURES(p) <= _max_failures) {
-    return p;
   }
 
   _drops++;

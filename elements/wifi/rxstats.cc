@@ -22,6 +22,7 @@
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include <clicknet/wifi.h>
 #include "rxstats.hh"
 CLICK_DECLS
 
@@ -55,10 +56,7 @@ RXStats::simple_action(Packet *p_in)
 {
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress src = EtherAddress(eh->ether_shost);
-
-  int rate = WIFI_RATE_ANNO(p_in);
-  int signal = WIFI_SIGNAL_ANNO(p_in);
-  int noise = WIFI_NOISE_ANNO(p_in);
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
     
   DstInfo *nfo = _neighbors.findp(src);
   if (!nfo) {
@@ -67,14 +65,14 @@ RXStats::simple_action(Packet *p_in)
     nfo = _neighbors.findp(src);
   }
 
-  nfo->_rate = rate;
-  nfo->_signal = signal;
-  nfo->_noise = noise;
+  nfo->_rate = ceh->rate;
+  nfo->_signal = ceh->rssi;
+  nfo->_noise = ceh->silence;
   click_gettimeofday(&nfo->_last_received);
 
 
-  _sum_signal += signal;
-  _sum_noise += noise;
+  _sum_signal += ceh->rssi;
+  _sum_noise += ceh->silence;
   _packets++;
 
   return p_in;

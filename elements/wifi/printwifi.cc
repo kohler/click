@@ -162,14 +162,15 @@ PrintWifi::simple_action(Packet *p)
     sa << "unknown-type-" << (int) (wh->i_fc[0] & WIFI_FC0_TYPE_MASK) << " ";
   }
 
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
   sa << EtherAddress(wh->i_addr2);
   sa << " -> ";
   sa << " " << EtherAddress(wh->i_addr1);
   sa << " (" <<EtherAddress(wh->i_addr3) << ") ";
   
-  sa << (int) WIFI_RATE_ANNO(p) << " Mbps ";
+  sa << (int) ceh->rate << " Mbps ";
 
-  sa << "+" << (int) WIFI_SIGNAL_ANNO(p) << "/" <<  (int) WIFI_NOISE_ANNO(p);
+  sa << "+" << (int) ceh->rssi << "/" <<  (int) ceh->silence;
 
   uint8_t *ptr;
   ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);

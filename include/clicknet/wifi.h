@@ -13,6 +13,39 @@
 
 #define ARPHRD_80211    801       /* wifi      */
 
+#define WIFI_EXTRA_MAGIC  0x7492
+
+enum {
+  WIFI_EXTRA_TX                    = 1,
+  WIFI_EXTRA_TX_FAIL               = 2,
+  WIFI_EXTRA_TX_USED_ALT_RATE      = 3,
+  WIFI_EXTRA_RX_ERR                = 4,
+  WIFI_EXTRA_RX_MORE               = 5
+};
+
+
+
+CLICK_SIZE_PACKED_STRUCTURE(
+struct click_wifi_extra {,
+  u_int32_t magic;
+  u_int32_t flags;
+
+  u_int8_t rssi;
+  u_int8_t silence;
+  u_int8_t power;
+  u_int8_t pad;
+
+  u_int8_t rate;
+  u_int8_t max_retries;
+  u_int8_t alt_rate; 
+  u_int8_t alt_max_retries;
+
+  u_int8_t virt_col;
+  u_int8_t retries;
+  u_int8_t pad2;
+  u_int8_t pad3;
+});
+
 
 /*
  * generic definitions for IEEE 802.11 frames
@@ -332,32 +365,32 @@ static inline unsigned calc_usecs_wifi_packet_tries(int length,
   if (!rate || !length || try0 > tryN) {
     return 1;
   }
-
+  
+  /* pg 205 ieee.802.11.pdf */
   unsigned pbcc = 0;
   unsigned t_plcp_header = 96;
   unsigned t_slot = 20;
-  unsigned t_ack = 304;
-  unsigned t_difs = 50;
-  unsigned t_sifs = 10;
-  unsigned cw_min = 31;
-  unsigned cw_max = 1023;
+  unsigned t_ack = 304; // 192 + 14*8/1
+  unsigned t_difs = 50; 
+  unsigned t_sifs = 10; 
+  unsigned cw_min = 31; 
+  unsigned cw_max = 1023; 
 
 
   switch (rate) {
   case 2:
-    /* short preamble at 1 mbit/s */
+    /* there is no short preamble at 1 mbit/s */
     t_plcp_header = 192;
     /* fallthrough */
   case 4:
   case 11:
   case 22:
-    t_ack = 304; //(192+(14*8/1))
     break;
   default:
     /* with 802.11g, things are at 6 mbit/s */
     t_plcp_header = 46;
     t_slot = 9;
-    t_ack = 64; //(46+(14*8/6))
+    t_ack = 64; // 46 + 14*8/6
     t_difs = 28;
   }
   unsigned packet_tx_time = (2 * (t_plcp_header + (((length + pbcc) * 8))))/ rate;
@@ -366,7 +399,18 @@ static inline unsigned calc_usecs_wifi_packet_tries(int length,
   unsigned expected_backoff = 0;
 
   
-  return cw_min * t_slot + t_difs + 
+  /* there is backoff, even for the first packet */
+  for (int x = 0; x < try0; x++) {
+    expected_backoff += t_slot * cw / 2;
+    cw = MIN(cw_max, (cw + 1) * 2);
+  }
+
+  for (int x = try0; x <= tryN; x++) {
+    expected_backoff += t_slot * cw / 2;
+    cw = MIN(cw_max, (cw + 1) * 2);
+  }
+
+  return expected_backoff + t_difs + 
     (tryN - try0 + 1) * (packet_tx_time + 
 			 t_sifs + t_ack);
 }

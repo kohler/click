@@ -177,7 +177,6 @@ OpenAuthRequester::send_auth_request()
   *(uint16_t *)ptr = cpu_to_le16(0);
   ptr += 2;
 
-  SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 

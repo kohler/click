@@ -22,6 +22,7 @@
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include <clicknet/wifi.h>
 #include <click/router.hh>
 #include "linkfailuredetection.hh"
 CLICK_DECLS
@@ -90,7 +91,8 @@ LinkFailureDetection::simple_action(Packet *p_in)
     /* don't record bcast packets */
     return p_in;
   }
-  int success = WIFI_SUCCESS(WIFI_TX_STATUS_ANNO(p_in));
+  click_wifi_extra *ceh = (click_wifi_extra *) p_in->all_user_anno();
+  bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
 
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {
@@ -107,10 +109,9 @@ LinkFailureDetection::simple_action(Packet *p_in)
     StringAccum sa;
     sa  << nfo->_last_received;
     if (0 == nfo->_successive_failures % _threshold) {
-      click_chatter("%{element}: succ. failure %d, packet %d ethtype %x %s at %s\n",
+      click_chatter("%{element}: succ. packet %d ethtype %x %s at %s\n",
 		    this,
 		    nfo->_successive_failures,
-		    WIFI_NUM_FAILURES(p_in),
 		    ntohs(eh->ether_type),
 		    nfo->_eth.s().cc(),
 		    sa.take_string().cc());

@@ -291,7 +291,7 @@ class ProbeTXRate : public Element { public:
 	  continue;
 	}
 
-	if (_total_success[x] + _total_fail[x] < min_sample) {
+	if (_total_success[x] + _total_fail[x] < (int) min_sample) {
 	  possible_rates.push_back(_rates[x]);
 	}
       }

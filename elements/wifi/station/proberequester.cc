@@ -142,7 +142,6 @@ ProbeRequester::send_probe_request()
   }  
 
   p->take(max_len - actual_length);
-  SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 

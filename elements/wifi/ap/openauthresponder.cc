@@ -185,7 +185,6 @@ OpenAuthResponder::send_auth_response(EtherAddress dst, uint16_t seq, uint16_t s
   *(uint16_t *)ptr = cpu_to_le16(status);
   ptr += 2;
 
-  SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 

@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
+#include <clicknet/wifi.h>
 #include "phyerrfilter.hh"
 
 CLICK_DECLS
@@ -59,9 +60,9 @@ PhyErrFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 PhyErrFilter::simple_action(Packet *p)
 {
-
-  int status = WIFI_RX_STATUS_ANNO(p);
-  if (!status & WIFI_RX_ERROR) {
+  
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
+  if (!ceh->flags & WIFI_EXTRA_RX_ERR) {
     return p;
   } 
 

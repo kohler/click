@@ -280,7 +280,6 @@ ProbeResponder::send_probe_response(EtherAddress dst)
   ptr[5] = 0; //paritial virtual bitmap
   ptr += 2 + 4;
 
-  SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 

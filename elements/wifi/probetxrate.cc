@@ -104,14 +104,14 @@ ProbeTXRate::assign_rate(Packet *p_in) {
 
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
-  SET_WIFI_FROM_CLICK(p_in);
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
 
   if (dst == _bcast) {
     Vector<int> rates = _rtable->lookup(_bcast);
     if (rates.size()) {
-      SET_WIFI_RATE_ANNO(p_in, rates[0]);
+      ceh->rate = rates[0];
     } else {
-      SET_WIFI_RATE_ANNO(p_in, 2);
+      ceh->rate = 2;
     }
     return;
   }
@@ -127,15 +127,11 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   timersub(&now, &_rate_window, &old);
   nfo->trim(old);
   //nfo->check();
-  int rate = nfo->pick_rate(_min_sample);
-  int retries = (_alt_rate) ? _original_retries : MAX_RETRIES;
-  int alt_rate = (_alt_rate) ? nfo->pick_alt_rate(_aggressive_alt_rate) : 0;
-  int alt_retries = (_alt_rate) ? MAX_RETRIES - _original_retries : 0;
+  ceh->rate = nfo->pick_rate(_min_sample);
+  ceh->max_retries = (_alt_rate) ? _original_retries : MAX_RETRIES;
+  ceh->alt_rate = (_alt_rate) ? nfo->pick_alt_rate(_aggressive_alt_rate) : 0;
+  ceh->alt_max_retries = (_alt_rate) ? MAX_RETRIES - _original_retries : 0;
 
-  SET_WIFI_RATE_ANNO(p_in, rate);
-  SET_WIFI_MAX_RETRIES_ANNO(p_in, retries);
-  SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);
-  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, alt_retries);
   return;
 }
 
@@ -148,12 +144,12 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   }
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
-  int status = WIFI_TX_STATUS_ANNO(p_in);  
-  int retries = _alt_rate ? MIN(_original_retries, WIFI_RETRIES_ANNO(p_in)) :
-    WIFI_RETRIES_ANNO(p_in);
-  int alt_retries = WIFI_RETRIES_ANNO(p_in) - retries;
-  int rate = WIFI_RATE_ANNO(p_in);
-  int alt_rate = WIFI_ALT_RATE_ANNO(p_in);
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
+  bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
+  bool used_alt_rate = ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE;
+  int retries = _alt_rate ? MIN(_original_retries, ceh->retries) :
+    ceh->retries;
+  int alt_retries = ceh->retries - retries;
 
   struct timeval now;
   click_gettimeofday(&now);
@@ -168,7 +164,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     return;
   }
 
-  if (0 == rate) {
+  if (0 == ceh->rate) {
     /* rate wasn't set */
     if (_debug) {
           click_chatter("%{element} no rate set for %s\n",
@@ -178,7 +174,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     return;
   }
   
-  if (!status && p_in->length() < _packet_size_threshold) {
+  if (!success && p_in->length() < _packet_size_threshold) {
     /* 
      * don't deal with short packets, 
      * since they can skew what rate
@@ -202,41 +198,33 @@ ProbeTXRate::process_feedback(Packet *p_in) {
     return;
   }
 
-  if (_debug && (status & WIFI_TX_STATUS_USED_ALT_RATE)) {
-    click_chatter("%{element} used alt rate status %d\n",
-		  this,
-		  status);
-  }
-  bool success = (status & WIFI_FAILURE) == 0;
   if (!success) {
-    click_chatter("%{element} packet failed %s status %d retries %d rate %d alt %d\n",
+    click_chatter("%{element} packet failed %s retries %d rate %d alt %d\n",
 		  this,
 		  dst.s().cc(),
-		  status,
 		  retries,
-		  rate,
-		  WIFI_ALT_RATE_ANNO(p_in));
+		  ceh->rate,
+		  ceh->alt_rate);
   }
-  bool packet_failed_original_rate = status & WIFI_TX_STATUS_USED_ALT_RATE;
 
   unsigned time = 0;
   unsigned alt_time = 0;
-  if (_alt_rate && packet_failed_original_rate) {
-    alt_time = calc_usecs_wifi_packet_tries(1500, alt_rate, 
+  if (_alt_rate && used_alt_rate) {
+    alt_time = calc_usecs_wifi_packet_tries(1500, ceh->alt_rate, 
 					     _original_retries, _original_retries + alt_retries);
   }
-  time = calc_usecs_wifi_packet(1500, rate, retries);
+  time = calc_usecs_wifi_packet(1500, ceh->rate, retries);
 
   if (0) {
     click_chatter(" rate %d retries %d time %d alt_time %d alt_rate %d alt_retries %d\n",
-		  rate, retries, time, alt_time,
-		  alt_rate, alt_retries);
+		  ceh->rate, retries, time, alt_time,
+		  ceh->alt_rate, alt_retries);
   }
-  nfo->add_result(now, rate, success, time + alt_time);
+  nfo->add_result(now, ceh->rate, success, time + alt_time);
 
-  if (!success && alt_rate) {
+  if (!success && used_alt_rate) {
     /* packet actually failed */
-    nfo->add_result(now, alt_rate, false, alt_time);
+    nfo->add_result(now, ceh->alt_rate, false, alt_time);
   }
  
   //nfo->check();

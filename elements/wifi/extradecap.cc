@@ -1,5 +1,5 @@
 /*
- * prism2decap.{cc,hh} -- decapsultates 802.11 packets
+ * extradecap.{cc,hh} -- decapsultates 802.11 packets
  * John Bicket
  *
  * Copyright (c) 2004 Massachusetts Institute of Technology
@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "prism2decap.hh"
+#include "extradecap.hh"
 #include <click/etheraddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -26,19 +26,19 @@
 #include <clicknet/llc.h>
 CLICK_DECLS
 
-Prism2Decap::Prism2Decap()
+ExtraDecap::ExtraDecap()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
 }
 
-Prism2Decap::~Prism2Decap()
+ExtraDecap::~ExtraDecap()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-Prism2Decap::configure(Vector<String> &conf, ErrorHandler *errh)
+ExtraDecap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
@@ -52,23 +52,15 @@ Prism2Decap::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-Prism2Decap::simple_action(Packet *p)
+ExtraDecap::simple_action(Packet *p)
 {
 
   u_int32_t *ptr = (u_int32_t *) p->data();
 
-  if (ptr[0] == DIDmsg_lnxind_wlansniffrm) {
-    wlan_ng_prism2_header *ph = (wlan_ng_prism2_header *) p->data();
-    struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
-    ceh->rssi = ph->rssi.data;
-    ceh->silence = ph->noise.data;
-    ceh->rate = ph->rate.data;
-    if (ph->istx.data) {
-      ceh->flags |= WIFI_EXTRA_TX;
-    } else {
-      ceh->flags &= ~WIFI_EXTRA_TX;
-    }
-    p->pull(sizeof(wlan_ng_prism2_header));
+  if (ptr[0] == WIFI_EXTRA_MAGIC) {
+    click_wifi_extra *eh = (click_wifi_extra *) p->data();
+    memcpy(p->all_user_anno(), p->data(), sizeof(click_wifi_extra));
+    p->pull(sizeof(click_wifi_extra));
   }
 
   return p;
@@ -78,9 +70,9 @@ Prism2Decap::simple_action(Packet *p)
 enum {H_DEBUG};
 
 static String 
-Prism2Decap_read_param(Element *e, void *thunk)
+ExtraDecap_read_param(Element *e, void *thunk)
 {
-  Prism2Decap *td = (Prism2Decap *)e;
+  ExtraDecap *td = (ExtraDecap *)e;
     switch ((uintptr_t) thunk) {
       case H_DEBUG:
 	return String(td->_debug) + "\n";
@@ -89,10 +81,10 @@ Prism2Decap_read_param(Element *e, void *thunk)
     }
 }
 static int 
-Prism2Decap_write_param(const String &in_s, Element *e, void *vparam,
+ExtraDecap_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
-  Prism2Decap *f = (Prism2Decap *)e;
+  ExtraDecap *f = (ExtraDecap *)e;
   String s = cp_uncomment(in_s);
   switch((int)vparam) {
   case H_DEBUG: {    //debug
@@ -107,13 +99,13 @@ Prism2Decap_write_param(const String &in_s, Element *e, void *vparam,
 }
  
 void
-Prism2Decap::add_handlers()
+ExtraDecap::add_handlers()
 {
   add_default_handlers(true);
 
-  add_read_handler("debug", Prism2Decap_read_param, (void *) H_DEBUG);
+  add_read_handler("debug", ExtraDecap_read_param, (void *) H_DEBUG);
 
-  add_write_handler("debug", Prism2Decap_write_param, (void *) H_DEBUG);
+  add_write_handler("debug", ExtraDecap_write_param, (void *) H_DEBUG);
 }
 CLICK_ENDDECLS
-EXPORT_ELEMENT(Prism2Decap)
+EXPORT_ELEMENT(ExtraDecap)

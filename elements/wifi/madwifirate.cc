@@ -22,6 +22,7 @@
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include <clicknet/wifi.h>
 #include <elements/wifi/availablerates.hh>
 #include "madwifirate.hh"
 
@@ -73,9 +74,10 @@ MadwifiRate::process_feedback(Packet *p_in)
   }
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
-  int status = WIFI_TX_STATUS_ANNO(p_in);  
-  int rate = WIFI_RATE_ANNO(p_in);
-  int retries = WIFI_RETRIES_ANNO(p_in);
+
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
+  bool success = !(ceh->flags & WIFI_EXTRA_TX_FAIL);
+  bool used_alt_rate = !(ceh->flags & WIFI_EXTRA_TX_USED_ALT_RATE);
 
   struct timeval now;
   click_gettimeofday(&now);
@@ -85,11 +87,11 @@ MadwifiRate::process_feedback(Packet *p_in)
     return;
   }
 
-  if (0 == rate) {
+  if (0 == ceh->rate) {
     /* rate wasn't set */
     return;
   }
-  if (!status && p_in->length() < _packet_size_threshold) {
+  if (success && p_in->length() < _packet_size_threshold) {
     /* 
      * don't deal with short packets, 
      * since they can skew what rate we should be at 
@@ -103,24 +105,24 @@ MadwifiRate::process_feedback(Packet *p_in)
   }
 
 
-  if (nfo->pick_rate() != rate) {
+  if (nfo->pick_rate() != ceh->rate) {
     return;
   }
 
-  if ((status & WIFI_FAILURE)) {
-    click_chatter("%{element} packet failed %s status %d rate %d alt %d\n",
+  if (!success) {
+    click_chatter("%{element} packet failed %s success %d rate %d alt %d\n",
 		  this,
 		  dst.s().cc(),
-		  status,
-		  rate,
-		  WIFI_ALT_RATE_ANNO(p_in)
+		  success,
+		  ceh->rate,
+		  ceh->alt_rate
 		  );
   }
 
 
-  if (status == 0) {
+  if (success && (!_alt_rate || !used_alt_rate)) {
     nfo->_successes++;
-    nfo->_retries += retries;
+    nfo->_retries += ceh->retries;
   } else {
     nfo->_failures++;
     nfo->_retries += 4;
@@ -188,14 +190,15 @@ MadwifiRate::assign_rate(Packet *p_in)
 
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
-  SET_WIFI_FROM_CLICK(p_in);
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
+
 
   if (dst == _bcast) {
     Vector<int> rates = _rtable->lookup(_bcast);
     if (rates.size()) {
-      SET_WIFI_RATE_ANNO(p_in, rates[0]);
+      ceh->rate = rates[0];
     } else {
-      SET_WIFI_RATE_ANNO(p_in, 2);
+      ceh->rate = 2;
     }
     return;
   }
@@ -215,15 +218,10 @@ MadwifiRate::assign_rate(Packet *p_in)
 		  nfo->_rates[nfo->_current_index]);
   }
 
-  int rate = nfo->pick_rate();
-  int retries = (_alt_rate) ? 3 : 8;
-  int alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
-  int alt_retries = (_alt_rate) ? 4 : 0;
-
-  SET_WIFI_RATE_ANNO(p_in, rate);
-  SET_WIFI_MAX_RETRIES_ANNO(p_in, retries);
-  SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);
-  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, alt_retries);
+  ceh->rate = nfo->pick_rate();
+  ceh->max_retries = (_alt_rate) ? 3 : 8;
+  ceh->alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
+  ceh->alt_max_retries = (_alt_rate) ? 4 : 0;
   return;
   
 }

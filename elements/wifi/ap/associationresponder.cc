@@ -339,7 +339,6 @@ AssociationResponder::send_association_response(EtherAddress dst, uint16_t statu
 
   p->take(max_len - actual_length);
 
-  SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 
@@ -378,7 +377,6 @@ AssociationResponder::send_disassociation(EtherAddress dst, uint16_t reason)
   *(uint16_t *)ptr = cpu_to_le16(reason);
   ptr += 2;
 
-  SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 

@@ -163,7 +163,6 @@ AssociationRequester::send_assoc_req()
   }  
 
   p->take(max_len - actual_length);
-  SET_WIFI_FROM_CLICK(p);
   _associated = false;
   output(0).push(p);
 }
@@ -204,9 +203,10 @@ AssociationRequester::process_response(Packet *p)
     }
   }
 
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
   StringAccum sa;
   sa << bssid << " ";
-  int rssi = WIFI_SIGNAL_ANNO(p);
+  int rssi = ceh->rssi;
   sa << "+" << rssi << " ";
   
   sa << "[ ";

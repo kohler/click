@@ -5,6 +5,7 @@
 #include <click/packet_anno.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
+#include <clicknet/wifi.h>
 #include "copyrxstats.hh"
 CLICK_DECLS
 
@@ -33,9 +34,11 @@ CopyRXStats::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 CopyRXStats::simple_action(Packet *p_in)
 {
-  uint8_t rate = WIFI_RATE_ANNO(p_in);
-  uint8_t signal = WIFI_SIGNAL_ANNO(p_in);
-  uint8_t noise = WIFI_NOISE_ANNO(p_in);
+  struct click_wifi_extra *eh = (struct click_wifi_extra *) p_in->all_user_anno();
+  
+  uint8_t rate = eh->rate;
+  uint8_t signal = eh->rssi;
+  uint8_t noise = eh->silence;
   
   WritablePacket *p = p_in->uniqueify();
   if (!p) { return 0; }

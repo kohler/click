@@ -78,9 +78,11 @@ SetTXRate::simple_action(Packet *p_in)
   if (_et && eh->ether_type != htons(_et)) {
     return p_in;
   }
-  SET_WIFI_FROM_CLICK(p_in);
-  SET_WIFI_RATE_ANNO(p_in, _rate ? _rate : 2);
-  SET_WIFI_MAX_RETRIES_ANNO(p_in, 7);
+
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p_in->all_user_anno();
+  ceh->magic = WIFI_EXTRA_MAGIC;
+  ceh->rate = _rate ? _rate : 2;
+  ceh->max_retries = 7;
 
   if (_auto) {
     EtherAddress dst = EtherAddress(eh->ether_dhost);
@@ -90,7 +92,7 @@ SetTXRate::simple_action(Packet *p_in)
     }
     
     if (rate) {
-      SET_WIFI_RATE_ANNO(p_in, rate);  
+      ceh->rate = rate;
       return p_in;
     }
   }

@@ -117,14 +117,7 @@ PrintSR::simple_action(Packet *p)
   if (_print_checksum) {
     sa << " cksum " << (unsigned long) ntohs(pk->_cksum);
   }
-  if (_print_anno) {
-    int failures = WIFI_NUM_FAILURES(p);
-    sa << " failures " << failures;
-    int status = WIFI_TX_STATUS_ANNO(p);
-    sa << " status " << status;
-    int rate = WIFI_RATE_ANNO(p);
-    sa << " rate " << rate;
-  }
+
   if (pk->_type == PT_DATA) {
     sa << " dataseq " << pk->data_seq();
   }

@@ -24,7 +24,7 @@
 #include "ettstat.hh"
 #include "ettmetric.hh"
 #include "txcountmetric.hh"
-#include <click/packet_anno.hh>
+#include <clicknet/wifi.h>
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 // packet data should be 4 byte aligned                                         
@@ -363,10 +363,11 @@ ETTStat::send_probe()
   lp->cksum = click_in_cksum((unsigned char *) lp, lp->psz);
   
 
-  SET_WIFI_FROM_CLICK(p);
-  SET_WIFI_RATE_ANNO(p, rate);
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
+  ceh->magic = WIFI_EXTRA_MAGIC;
+  ceh->rate = rate;
   if (rate == 0) {
-    SET_WIFI_RATE_ANNO(p, 2);
+    ceh->rate = 2;
   }
   checked_output_push(0, p);
 }
@@ -463,8 +464,8 @@ ETTStat::simple_action(Packet *p)
     _arp_table->insert(ip, EtherAddress(eh->ether_shost));
     _rev_arp.insert(EtherAddress(eh->ether_shost), ip);
   }
-
-  uint8_t rate = WIFI_RATE_ANNO(p);
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();
+  uint8_t rate = ceh->rate;
   probe_t probe(now, lp->seq, lp->rate, lp->size);
   int new_period = lp->period;
   probe_list_t *l = _bcast_stats.findp(ip);

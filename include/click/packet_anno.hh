@@ -40,56 +40,6 @@
 #define GRID_ROUTE_CB_ANNO(p)           ((p)->user_anno_c(11))
 #define SET_GRID_ROUTE_CB_ANNO(p, v)    ((p)->set_user_anno_c(11, (v)))
 
-// bytes 8 - 15
-#define WIFI_NUM_FAILURES(p)           ((p)->user_anno_c(8))
-#define SET_WIFI_NUM_FAILURES(p, v)    ((p)->set_user_anno_c(8, (v)))
-
-#define WIFI_FROM_CLICK(p)           ((p)->user_anno_c(9) == 0xaa)
-#define SET_WIFI_FROM_CLICK(p)    ((p)->set_user_anno_c(9, (0xaa)))
-
-#define WIFI_TX_STATUS_USED_ALT_RATE  0x2
-#define WIFI_FAILURE 0x1
-
-#define WIFI_SUCCESS(p) ((p & 0x1 == 0x0))
-
-#define WIFI_TX_STATUS_ANNO(p)           ((p)->user_anno_c(10))
-#define SET_WIFI_TX_STATUS_ANNO(p, v)    ((p)->set_user_anno_c(10, (v)))
-
-#define WIFI_TX_POWER_ANNO(p)           ((p)->user_anno_c(11))
-#define SET_WIFI_TX_POWER_ANNO(p, v)    ((p)->set_user_anno_c(11, (v)))
-
-#define WIFI_RATE_ANNO(p)           ((p)->user_anno_c(12))
-#define SET_WIFI_RATE_ANNO(p, v)    ((p)->set_user_anno_c(12, (v)))
-
-#define WIFI_RETRIES_ANNO(p)           ((p)->user_anno_c(13))
-#define SET_WIFI_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(13, (v)))
-
-#define WIFI_SIGNAL_ANNO(p)           ((p)->user_anno_c(14))
-#define SET_WIFI_SIGNAL_ANNO(p, v)    ((p)->set_user_anno_c(14, (v)))
-
-#define WIFI_NOISE_ANNO(p)           ((p)->user_anno_c(15))
-#define SET_WIFI_NOISE_ANNO(p, v)    ((p)->set_user_anno_c(15, (v)))
-
-#define WIFI_ALT_RATE_ANNO(p)       ((p)->user_anno_c(16))
-#define SET_WIFI_ALT_RATE_ANNO(p, v)    ((p)->set_user_anno_c(16, (v)))
-
-#define WIFI_ALT_MAX_RETRIES_ANNO(p)    ((p)->user_anno_c(17))
-#define SET_WIFI_ALT_MAX_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(17, (v)))
-
-#define WIFI_MAX_RETRIES_ANNO(p)    ((p)->user_anno_c(18))
-#define SET_WIFI_MAX_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(18, (v)))
-
-enum {
-  WIFI_RX_ERROR = 0x1,
-  WIFI_RX_MORE = 0x2,
-};
-
-#define WIFI_RX_STATUS_ANNO(p) ((p)->user_anno_c(19))
-#define SET_RX_STATUS_ANNO(p, v)    ((p)->set_user_anno_c(19, (v)))
-
-// defunct for now 
-#define WIFI_RX_ERR_ANNO(p) ((p)->user_anno_c(20))
-
 // bytes 12-15
 #define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(3))
 #define SET_EXTRA_LENGTH_ANNO(p, v)	((p)->set_user_anno_u(3, (v)))

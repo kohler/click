@@ -63,6 +63,7 @@ Prism2Encap::simple_action(Packet *p)
 
   p_out->push(sizeof(wlan_ng_prism2_header));
   wlan_ng_prism2_header *ph = (wlan_ng_prism2_header *) p_out->data();
+  struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
 
   memset(ph, 0, sizeof(wlan_ng_prism2_header));
   ph->msgcode = DIDmsg_lnxind_wlansniffrm;
@@ -83,7 +84,7 @@ Prism2Encap::simple_action(Packet *p)
   ph->istx.did = DIDmsg_lnxind_wlansniffrm_istx;
   ph->istx.status = 0;
   ph->istx.len = 4;
-  ph->istx.data = P80211ENUM_truth_false;
+  ph->istx.data = 1;
   
   ph->frmlen.did = DIDmsg_lnxind_wlansniffrm_frmlen;
   ph->frmlen.status = 0;
@@ -103,12 +104,12 @@ Prism2Encap::simple_action(Packet *p)
   ph->signal.did = DIDmsg_lnxind_wlansniffrm_signal;
   ph->signal.status = 0;
   ph->signal.len = 4;
-  ph->signal.data = WIFI_SIGNAL_ANNO(p);
+  ph->signal.data = ceh->rssi;
   
   ph->rate.did = DIDmsg_lnxind_wlansniffrm_rate;
   ph->rate.status = 0;
   ph->rate.len = 4;
-  ph->rate.data = WIFI_RATE_ANNO(p);
+  ph->rate.data = ceh->rate;
   
   return p;
 }

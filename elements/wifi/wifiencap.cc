@@ -141,9 +141,17 @@ WifiEncap::simple_action(Packet *p)
     return 0;
   }
 
-  SET_WIFI_FROM_CLICK(p_out);
-  return p_out;
+  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_DATA;
+  w->i_fc[1] = 0;
+  w->i_fc[1] |= (WIFI_FC1_DIR_MASK & _mode);
 
+  w->i_dur[0] = 0;
+  w->i_dur[1] = 0;
+
+  w->i_seq[0] = 0;
+  w->i_seq[1] = 0;
+  
+  return p_out;
 }
 
 
