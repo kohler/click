@@ -110,7 +110,7 @@ clean itself up before the driver is stopped. It waits for the first driver
 pause, then calls C<k>'s C<cleanup> handler, waits for a tenth of a second,
 and stops the driver.
 
-  DriverManager(wait_pause, write k.cleanup, wait 0.1, stop);
+  DriverManager(wait_pause, write k.cleanup, wait_for 0.1, stop);
 
 Use this idiom when one of your elements must emit a last packet or two before
 the router configuration is destroyed.
