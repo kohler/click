@@ -1,3 +1,8 @@
+2002-08-26 Monday 12:59  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.32), toipsumdump.cc
+	(1.27), toipsumdump.hh (1.25): buglet
+
 2002-08-26 Monday 04:37  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.31), fromipsumdump.hh
