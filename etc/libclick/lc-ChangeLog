@@ -1,3 +1,8 @@
+2002-10-29 Tuesday 09:46  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/addressinfo.cc: adapt to loss of String::operator const
+	char *()
+
 2002-10-24 Thursday 17:32  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/glue.cc: __cxa_pure_virtual required by newer GCCs
