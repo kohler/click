@@ -9,17 +9,19 @@
 #include <click/vector.hh>
 #include <click/ip6address.hh>
 
-class IP6Table {
-public:
+class IP6Table { public:
+  
   IP6Table();
   ~IP6Table();
 
-  bool lookup(IP6Address dst, IP6Address &gw, int &index);
-  void add(IP6Address dst, IP6Address mask, IP6Address gw, int index);
-  void del(IP6Address dst, IP6Address mask);
-  void clear() { _v.clear(); }
+  bool lookup(const IP6Address &dst, IP6Address &gw, int &index) const;
+  
+  void add(const IP6Address &dst, const IP6Address &mask, const IP6Address &gw, int index);
+  void del(const IP6Address &dst, const IP6Address &mask);
+  void clear()				{ _v.clear(); }
 
-private:
+ private:
+  
   struct Entry {
     IP6Address _dst;
     IP6Address _mask;
@@ -28,6 +30,7 @@ private:
     int _valid;
   };
   Vector<Entry> _v;
+  
 };
 
 #endif
