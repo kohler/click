@@ -1,11 +1,11 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "glue.hh"
 #include "element.hh"
 #include "bitvector.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "glue.hh"
 #include "router.hh"
 #include "straccum.hh"
 #include <errno.h>

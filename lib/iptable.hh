@@ -5,6 +5,7 @@
 // Lookup by longest prefix.
 // Each entry contains a gateway and an output index.
 
+#include "glue.hh"
 #include "vector.hh"
 
 class IPTable {

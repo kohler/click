@@ -1,8 +1,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "vector.hh"
 #include "glue.hh"
+#include "vector.hh"
 
 Vector<void *>::Vector(const Vector<void *> &o)
   : _l(0), _n(0), _cap(0)

@@ -1,5 +1,6 @@
 #ifndef ELEMENT_HH
 #define ELEMENT_HH
+#include "glue.hh"
 #include "vector.hh"
 #include "string.hh"
 #include "packet.hh"

@@ -1,5 +1,5 @@
-#include "vector.hh"
 #include "glue.hh"
+#include "vector.hh"
 
 template <class T>
 Vector<T>::Vector(const Vector<T> &o)
