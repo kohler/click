@@ -1,0 +1,30 @@
+#!/usr/local/bin/perl -w
+
+# make-linux-patch
+
+# Make a patch file for a Linux kernel that adds our hooks.
+# The resulting output can be used thus:
+#  cd /usr/src/linux
+#  patch -p0 -b < patch-file
+
+# Directory of patched kernel source:
+my $nd = "/home/ny2/rtm/linux-2.2.10";
+
+# List of files that we modified and that should be patched.
+# Each must be accompanied by a file.orig.
+my @files = (
+             "include/linux/netdevice.h",
+             "net/core/dev.c",
+             "net/sched/sch_generic.c",
+             "net/netsyms.c",
+             "include/linux/signal.h"
+             );
+
+chdir($nd);
+
+$| = 1;
+my $f;
+foreach $f (@files) {
+    print "\nIndex: $f\n";
+    system("diff -u ${f}.orig $f");
+}
