@@ -40,6 +40,11 @@ RTMDSR::RTMDSR()
   QueryLife = 3;
   ARPLife = 30;
 
+  // Pick a starting sequence number that we have not used before.
+  struct timeval tv;
+  click_gettimeofday(&tv);
+  _seq = tv.tv_usec;
+
   _no_route = Route();
 }
 
@@ -161,7 +166,7 @@ RTMDSR::start_data(const u_char *payload, u_long payload_len, Route &r)
   WritablePacket *p = Packet::make(len);
   struct pkt *pk = (struct pkt *) p->data();
   memset(pk, '\0', len);
-  pk->_type = htonl(PT_DATA);
+  pk->_type = htons(PT_DATA);
   pk->_dlen = htons(payload_len);
   pk->_nhops = htons(hops);
   pk->_next = htons(0);
@@ -194,20 +199,21 @@ RTMDSR::start_query(IPAddress dstip)
     return;
   }
 
+  d._seq = ++_seq;
+
   int len = pkt::hlen1(1);
   WritablePacket *p = Packet::make(len);
   if(p == 0)
     return;
   struct pkt *pk = (struct pkt *) p->data();
   memset(pk, '\0', len);
-  pk->_type = htonl(PT_QUERY);
+  pk->_type = htons(PT_QUERY);
   pk->_qdst = d._ip;
-  pk->_seq = htonl(d._seq + 1);
+  pk->_seq = htonl(d._seq);
   pk->_metric = htons(0);
   pk->_nhops = htons(1);
   pk->_hops[0] = _ip.in_addr();
   
-  d._seq += 1;
   d._when = now;
   _seen.push_back(Seen(_ip.in_addr(), pk->_seq, now));
 
@@ -221,7 +227,7 @@ RTMDSR::start_query(IPAddress dstip)
 void
 RTMDSR::forward(const struct pkt *pk1)
 {
-  u_long type = ntohl(pk1->_type);
+  u_short type = ntohs(pk1->_type);
   u_short next = ntohs(pk1->_next);
   u_short nhops = ntohs(pk1->_nhops);
   if(type == PT_REPLY){
@@ -303,7 +309,7 @@ RTMDSR::send(WritablePacket *p)
   pk->ether_type = _et;
   memcpy(pk->ether_shost, _en.data(), 6);
 
-  u_long type = ntohl(pk->_type);
+  u_short type = ntohs(pk->_type);
   if(type == PT_QUERY){
     memcpy(pk->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
   } else if(type == PT_REPLY || type == PT_DATA){
@@ -432,7 +438,7 @@ RTMDSR::start_reply(struct pkt *pk1)
   struct pkt *pk = (struct pkt *) p->data();
   
   memcpy(pk, pk1, len);
-  pk->_type = htonl(PT_REPLY);
+  pk->_type = htons(PT_REPLY);
   pk->_nhops = htons(nhops + 1);
   pk->_hops[nhops] = _ip.in_addr();
   pk->_metric = htons(ntohs(pk->_metric) +
@@ -493,7 +499,7 @@ RTMDSR::got_pkt(Packet *p_in)
     return;
   }
 
-  u_long type = ntohl(pk->_type);
+  u_short type = ntohs(pk->_type);
   u_short nhops = ntohs(pk->_nhops);
   u_short next = ntohs(pk->_next);
 

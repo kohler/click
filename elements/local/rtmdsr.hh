@@ -79,13 +79,13 @@ class RTMDSR : public Element {
   static time_t time(void);
 
 private:
-  int MaxSeen; // Max size of table of already-seen queries.
-
+  int MaxSeen;   // Max size of table of already-seen queries.
   int MaxHops;   // Max hop count for queries.
   int QueryInterval; // Don't re-query a dead dst too often.
-  int QueryLife;  // Forget already-seen queries this often.
+  int QueryLife; // Forget already-seen queries this often.
   int ARPLife;   // ARP cache timeout.
   
+  u_long _seq;      // Next query sequence number to use.
   Timer _timer;
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
@@ -102,7 +102,7 @@ private:
     uint8_t	ether_shost[6];
     uint16_t	ether_type;
 
-    u_long _type;  // PacketType
+    u_short _type;  // PacketType
 
     // PT_QUERY
     in_addr _qdst; // Who are we looking for?
