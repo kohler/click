@@ -597,7 +597,7 @@ Router::check_driver()
       }
   }
   bool more = (_driver_runcount > 0);
-  
+
   _runcount_lock.release();
   return more;
 }
