@@ -29,7 +29,6 @@
 # endif
 # define __KERNEL__
 # define MODULE
-# define PACKET_IS_SKB 1
 # define NDEBUG 1
 #endif
 
