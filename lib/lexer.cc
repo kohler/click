@@ -96,33 +96,30 @@ Lexer::Lexer(ErrorHandler *errh)
     _element_type_map(-1),
     _default_element_type(new ErrorElement),
     _tunnel_element_type(new ErrorElement),
-    _reset_element_types(0),
+    _last_element_type(-1),
+    _free_element_type(-1),
     _variable_map(-1),
     _element_map(-1),
     _definputs(0), _defoutputs(0),
     _errh(errh)
 {
   if (!_errh) _errh = ErrorHandler::default_handler();
-  clear();
+  end_parse(-1);		// clear private state
   add_element_type("<default>", _default_element_type);
   add_element_type("<tunnel>", _tunnel_element_type);
   add_element_type(new ErrorElement);
-  save_element_types();
 }
 
 Lexer::~Lexer()
 {
-  _reset_element_types = 0;
-  clear();
-  // _default_element_type and _tunnel_element_type removed by clear()
+  end_parse(-1);
+  // _default_element_type and _tunnel_element_type removed by end_parse()
 }
 
-void
-Lexer::reset(const String &data, const String &filename,
-	     LexerExtra *lextra)
+int
+Lexer::begin_parse(const String &data, const String &filename,
+		   LexerExtra *lextra)
 {
-  clear();
-  
   _big_string = data;
   _data = _big_string.data();
   _len = _big_string.length();
@@ -136,14 +133,13 @@ Lexer::reset(const String &data, const String &filename,
   _lineno = 1;
 
   _lextra = lextra;
+  return _last_element_type;
 }
 
 void
-Lexer::clear()
+Lexer::end_parse(int cookie)
 {
-  for (int i = _reset_element_types; i < _element_types.size(); i++)
-    remove_element_type(i);
-  
+  lexical_scoping_out(cookie);
   for (int i = 0; i < _elements.size(); i++)
     if (_elements[i])
       _elements[i]->unuse();
@@ -463,16 +459,25 @@ Lexer::add_element_type(Element *f)
 }
 
 int
-Lexer::add_element_type(const String &name, Element *f)
+Lexer::add_element_type(const String &name, Element *e)
 {
-  int old_ftid = _element_type_map[name];
-  int ftid = _element_types.size();
-  _element_type_map.insert(name, ftid);
-  _element_types.push_back(f);
-  _element_type_names.push_back(name);
-  _prev_element_type.push_back(old_ftid);
-  f->use();
-  return ftid;
+  int tid;
+  if (_free_element_type < 0) {
+    tid = _element_types.size();
+    _element_types.push_back(e);
+    _element_type_names.push_back(name);
+    _element_type_next.push_back(_last_element_type);
+  } else {
+    tid = _free_element_type;
+    _free_element_type = _element_type_next[tid];
+    _element_types[tid] = e;
+    _element_type_names[tid] = name;
+    _element_type_next[tid] = _last_element_type;
+  }
+  _element_type_map.insert(name, tid);
+  e->use();
+  _last_element_type = tid;
+  return tid;
 }
 
 int
@@ -491,44 +496,76 @@ Lexer::force_element_type(String s)
   return add_element_type(s, _default_element_type);
 }
 
-void
-Lexer::save_element_types()
+int
+Lexer::lexical_scoping_in() const
 {
-  _reset_element_types = _element_types.size();
+  return _last_element_type;
 }
 
 void
-Lexer::remove_element_type(int j)
+Lexer::lexical_scoping_out(int last)
 {
-  if (j > 2 && j < _element_types.size() && _element_types[j]) {
-    // fix up element name orders
-    const String &name = _element_type_names[j];
-    int p = _prev_element_type[j];
-    if (_element_type_map[name] == j)
-      _element_type_map.insert(name, p);
-    else
-      for (int i = 0; i < _element_types.size(); i++)
-	if (_prev_element_type[i] == j)
-	  _prev_element_type[i] = p;
-    
-    _element_types[j]->unuse();
-    _element_types[j] = 0;
-    
-    for (int i = j + 1; i < _element_types.size(); i++)
-      if (_element_types[i])
-	return;
-    _element_types.resize(j);
-    _element_type_names.resize(j);
-    _prev_element_type.resize(j);
+  if (last != -1) {
+    for (int t = _last_element_type; t >= 0; t = _element_type_next[t])
+      if (t == last)
+	goto ok;
+    return;
   }
+
+ ok:
+  while (_last_element_type != last)
+    remove_element_type(_last_element_type);
+}
+
+void
+Lexer::remove_element_type(int removed)
+{
+  // patch next array
+  int prev = -1, trav = _last_element_type;
+  while (trav != removed && trav >= 0) {
+    prev = trav;
+    trav = _element_type_next[trav];
+  }
+  if (trav < 0)
+    return;
+  if (prev >= 0)
+    _element_type_next[prev] = _element_type_next[removed];
+  else
+    _last_element_type = _element_type_next[removed];
+
+  // fix up element type name map
+  const String &name = _element_type_names[removed];
+  if (_element_type_map[name] == removed) {
+    for (trav = _element_type_next[removed];
+	 trav >= 0 && _element_type_names[trav] != name;
+	 trav = _element_type_next[trav])
+      /* nada */;
+    _element_type_map.insert(name, trav);
+  }
+
+  // remove stuff
+  _element_type_names[removed] = String();
+  _element_types[removed]->unuse();
+  _element_types[removed] = 0;
+  _element_type_next[removed] = _free_element_type;
+  _free_element_type = removed;
 }
 
 void
 Lexer::element_type_names(Vector<String> &v) const
 {
-  for (int i = FIRST_REAL_TYPE; i < _reset_element_types; i++)
-    if (_element_types[i] && _element_type_map[_element_type_names[i]] == i)
-      v.push_back(_element_type_names[i]);
+  for (int t = _last_element_type; t >= 0; t = _element_type_next[t]) {
+    const String &name = _element_type_names[t];
+    if (_element_type_map[name] == t)
+      v.push_back(String());
+  }
+
+  int pos = v.size() - 1;
+  for (int t = _last_element_type; t >= 0; t = _element_type_next[t]) {
+    const String &name = _element_type_names[t];
+    if (_element_type_map[name] == t)
+      v[pos--] = _element_type_names[t];
+  }
 }
 
 
@@ -570,7 +607,7 @@ Lexer::get_element(String name, int etype, const String &conf)
   // check type
   Element *e;
   Element *et = _element_types[etype];
-  if (etype == DEFAULT_TYPE || etype == TUNNEL_TYPE)
+  if (etype == TUNNEL_TYPE)
     e = et;
   else if ((e = et->clone())) {
     e->set_id(name);
@@ -600,19 +637,30 @@ Lexer::anon_element_name(const String &class_name) const
 }
 
 void
-Lexer::lexical_scoping_back(int first, int last)
+Lexer::lexical_scoping_back(int first, Vector<int> &insertions)
 {
-  // must go backwards in case more than one new element class with the same
-  // name -- want to restore earliest one last, to get oldest definition
-  for (int i = last - 1; i >= first; i--)
-    _element_type_map.insert(_element_type_names[i], _prev_element_type[i]);
+  for (int t = _last_element_type; t >= 0; t = _element_type_next[t]) {
+    const String &name = _element_type_names[t];
+    if (_element_type_map[name] == t) {
+      // remove it from map
+      int prev = _element_type_next[first];
+      while (prev >= 0 && _element_type_names[prev] != name)
+	prev = _element_type_next[prev];
+      _element_type_map.insert(name, prev);
+      insertions.push_back(t);
+    }
+    if (t == first)
+      break;
+  }
 }
 
 void
-Lexer::lexical_scoping_forward(int first, int last)
+Lexer::lexical_scoping_forward(const Vector<int> &insertions)
 {
-  for (int i = first; i < last; i++)
-    _element_type_map.insert(_element_type_names[i], i);
+  for (int i = 0; i < insertions.size(); i++) {
+    int j = insertions[i];
+    _element_type_map.insert(_element_type_names[j], j);
+  }
 }
 
 int
@@ -673,7 +721,6 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   int old_tpos = _tpos;
   int old_tfull = _tfull;
   int old_anonymous_offset = _anonymous_offset;
-  int old_type_count = _element_types.size();
 
   // reparse the saved compound element's body!
   _element_prefix += name_slash;
@@ -687,8 +734,11 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   // compound have identical suffixes
   int old_elements_size = _elements.size();
   _anonymous_offset = _elements.size();
+  
   // lexical scoping of types
-  lexical_scoping_back(etype, old_type_count);
+  int cookie = lexical_scoping_in();
+  Vector<int> lexical_scoping_help;
+  lexical_scoping_back(etype, lexical_scoping_help);
   
   while (ystatement())
     /* do nothing */;
@@ -708,8 +758,8 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
     - old_elements_size + 2;
 
   // lexical scoping fixup
-  lexical_scoping_back(old_type_count, _element_types.size());
-  lexical_scoping_forward(etype, old_type_count);
+  lexical_scoping_out(cookie);
+  lexical_scoping_forward(lexical_scoping_help);
   
   // lexical scoping of arguments
   for (int i = nargs - 1; i >= 0; i--) {
@@ -718,11 +768,6 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   }
   _variable_values.resize(_variable_values.size() - nargs);
 
-  // get rid of new compound elements
-  for (int i = old_type_count; i < _element_types.size(); i++)
-    _element_types[i]->unuse();
-  _element_types.resize(old_type_count);
-  
   return fake_index;
 }
 
@@ -837,7 +882,7 @@ Lexer::yelement(int &element, bool comma_ok)
   String configuration;
   const Lexeme &tparen = lex();
   if (tparen.is('(')) {
-    if (!etype) etype = force_element_type(name);
+    if (etype < 0) etype = force_element_type(name);
     configuration = lex_config();
     expect(')');
   } else
@@ -1069,8 +1114,8 @@ Lexer::ylocal(String name)
   String body = lex_compound_body();
   expect('}');
 
-  return add_element_type(name, new Compound(name, body, original_lineno,
-					     arguments));
+  return add_element_type
+    (name, new Compound(name, body, original_lineno, arguments));
 }
 
 void

@@ -190,9 +190,7 @@ click_unprovide(const char *package)
 extern "C" int
 click_add_element_type(const char *ename, Element *e)
 {
-  int c = lexer->add_element_type(ename, e);
-  lexer->save_element_types();
-  return c;
+  return lexer->add_element_type(ename, e);
 }
 
 extern "C" void
@@ -377,7 +375,6 @@ particular purpose.\n");
   // prepare lexer (for packages)
   lexer = new Lexer(errh);
   export_elements(lexer);
-  lexer->save_element_types();
   
   // XXX locals should override
 #if HAVE_DYNAMIC_LINKING
@@ -417,12 +414,11 @@ particular purpose.\n");
   }
 
   // lex
-  lexer->reset(config_str, filename);
+  int cookie = lexer->begin_parse(config_str, filename, 0);
   while (lexer->ystatement())
     /* do nothing */;
-  
   router = lexer->create_router();
-  lexer->clear();
+  lexer->end_parse(cookie);
   
   signal(SIGINT, catch_sigint);
 

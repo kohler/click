@@ -24,6 +24,9 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 #define HELP_OPT		300
@@ -383,15 +386,32 @@ particular purpose.\n");
   // report errors
   {
     char buf[1024];
-    FILE *f = fopen("/proc/click/errors", "r");
-    if (!f)
+    int fd = open("/proc/click/errors", O_RDONLY | O_NONBLOCK);
+    if (fd < 0)
       errh->warning("/proc/click/errors: %s", strerror(errno));
     else {
-      while (!feof(f)) {
-	size_t s = fread(buf, 1, 1024, f);
-	fwrite(buf, 1, s, stderr);
+      off_t pos = 0;
+      struct stat s;
+      while (1) {
+	if (fstat(fd, &s) < 0) { // find length of errors file
+	  errh->error("/proc/click/errors: %s", strerror(errno));
+	  break;
+	}
+	if (pos >= s.st_size)
+	  break;
+	size_t want = s.st_size - pos;
+	if (want > 1024 || want <= 0)
+	  want = 1024;
+	ssize_t got = read(fd, buf, want);
+	if (got >= 0) {
+	  fwrite(buf, 1, got, stderr);
+	  pos += got;
+	} else if (errno != EINTR && errno != EAGAIN) {
+	  errh->error("/proc/click/errors: %s", strerror(errno));
+	  break;
+	}
       }
-      fclose(f);
+      close(fd);
     }
   }
 

@@ -66,10 +66,11 @@ class Lexer {
   HashMap<String, int> _element_type_map;
   Vector<Element *> _element_types;
   Vector<String> _element_type_names;
-  Vector<int> _prev_element_type;
+  Vector<int> _element_type_next;
   Element *_default_element_type;
   Element *_tunnel_element_type;
-  int _reset_element_types;
+  int _last_element_type;
+  int _free_element_type;
 
   // configuration arguments for compounds
   HashMap<String, int> _variable_map;
@@ -101,8 +102,10 @@ class Lexer {
 
   String anon_element_name(const String &) const;
   int get_element(String, int, const String & = String());
-  void lexical_scoping_back(int, int);
-  void lexical_scoping_forward(int, int);
+  int lexical_scoping_in() const;
+  void lexical_scoping_out(int);
+  void lexical_scoping_back(int, Vector<int> &);
+  void lexical_scoping_forward(const Vector<int> &);
   int make_compound_element(String, int, const String &);
   void add_router_connections(int, const Vector<int> &, Router *);
   
@@ -115,8 +118,8 @@ class Lexer {
   Lexer(ErrorHandler * = 0);
   virtual ~Lexer();
   
-  void reset(const String &data, const String &filename = String(),
-	     LexerExtra * = 0);
+  int begin_parse(const String &data, const String &filename, LexerExtra *);
+  void end_parse(int);
   
   const Lexeme &lex();
   void unlex(const Lexeme &);
@@ -130,7 +133,6 @@ class Lexer {
   int add_element_type(const String &, Element *);
   int element_type(const String &) const;
   int force_element_type(String);
-  void save_element_types();
 
   void element_type_names(Vector<String> &) const;
   
@@ -151,8 +153,6 @@ class Lexer {
   int ylocal(String = "");
   void yrequire();
   bool ystatement(bool nested = false);
-  
-  void clear();
   
   void find_connections(const Hookup &, bool, Vector<Hookup> &) const;
   void expand_connection(const Hookup &, bool, Vector<Hookup> &) const;

@@ -83,17 +83,19 @@ initialize_router(String s)
   kill_click_sched(kernel_errh);
 #endif
   
-  LexerExtra lextra;
-  lexer->reset(s, "line ", &lextra);
   cleanup_router_element_procs();
   reset_proc_click_errors();
   delete current_router;
+  
+  LexerExtra lextra;
+  int cookie = lexer->begin_parse(s, "line ", &lextra);
   
   while (lexer->ystatement())
     /* do nothing */;
   
   current_router = lexer->create_router();
-  lexer->clear();
+  
+  lexer->end_parse(cookie);
   
   if (current_router) {
     current_router->initialize(kernel_errh);
@@ -370,9 +372,7 @@ click_unprovide(const char *name)
 extern "C" int
 click_add_element_type(const char *name, Element *e)
 {
-  int i = lexer->add_element_type(name, e);
-  lexer->save_element_types();
-  return i;
+  return lexer->add_element_type(name, e);
 }
 
 extern "C" void
@@ -398,7 +398,6 @@ init_module()
   click_chatter_errh = kernel_errh;
   lexer = new Lexer(kernel_errh);
   export_elements(lexer);
-  lexer->save_element_types();
   
   current_router = 0;
   
