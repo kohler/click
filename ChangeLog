@@ -1,3 +1,26 @@
+2000-11-09 Thursday 21:28  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES, include/click/bighashmap.cc,
+	include/click/bighashmap.hh, include/click/bighashmap_arena.hh,
+	lib/bighashmap_arena.cc, linuxmodule/Makefile.in,
+	userlevel/Makefile.in: added BigHashMap_Arena and template
+	specializations for BigHashMap to reduce code bloat (Mazu)
+
+2000-11-09 Thursday 21:28  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: configure --help syntax
+
+2000-11-09 Thursday 21:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: addressinfo.cc, addressinfo.hh: now
+	AddressInfo supports combined address-prefix arguments like
+	1.0.0.59/24
+
+2000-11-09 Thursday 21:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: added keyword
+	support to cp_va_parse() and friends (Mazu)
+
 2000-11-08 Wednesday 14:33  Peilei Fan <peilei@lcs.mit.edu>
 
 	* elements/ip6/addresstranslator.cc: fix bug in lookup function.
