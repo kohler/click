@@ -23,10 +23,13 @@
 #include "timer.hh"
 #include <stdarg.h>
 #include <unistd.h>
-
+#ifdef CLICK_USERLEVEL
+# include <errno.h>
+#endif
 
 Router::Router()
-  : _closed(0), _initialized(0), _have_connections(0), _have_hookpidx(0),
+  : _refcount(0),
+    _closed(0), _initialized(0), _have_connections(0), _have_hookpidx(0),
     _handlers(0), _nhandlers(0), _handlers_cap(0), _please_stop_driver(0)
 {
   initialize_head();
@@ -44,6 +47,13 @@ Router::~Router()
   initialize_head();		// get rid of scheduled wait queue
   _please_stop_driver = true;	// XXX races?
 #endif
+}
+
+void
+Router::unuse()
+{
+  if (--_refcount <= 0)
+    delete this;
 }
 
 
@@ -740,6 +750,24 @@ Router::initialize(ErrorHandler *errh)
 }
 
 
+// steal state
+
+void
+Router::take_state(Router *r, ErrorHandler *errh)
+{
+  assert(_initialized);
+  for (int i = 0; i < _elements.size(); i++) {
+    Element *e = _elements[i];
+    Element *other = r->find(e->id());
+    if (other) {
+      ContextErrorHandler cerrh
+	(errh, context_message(i, "While hot-swapping state into"));
+      e->take_state(other, &cerrh);
+    }
+  }
+}
+
+
 // HANDLERS
 
 int
@@ -837,13 +865,11 @@ Router::wait()
   // Wait in select() for input or timer.
   // And call relevant elements' selected() methods.
   
-  int i, n;
-  bool any = false;
   fd_set mask;
-  struct timeval tv;
+  bool any = false;
 
   FD_ZERO(&mask);
-  for (i = 0; i < _elements.size(); i++) {
+  for (int i = 0; i < _elements.size(); i++) {
     Element *f = _elements[i];
     int fd = f->select_fd();
     if (fd >= 0) {
@@ -852,36 +878,34 @@ Router::wait()
     }
   }
 
-  tv.tv_sec = 1;
+  struct timeval tv;
+  // do not wait if anything is scheduled
+  tv.tv_sec = (scheduled_next() == this ? 0 : 1);
   tv.tv_usec = 0;
   if (!any && !Timer::get_next_delay(&tv))
     return;
   
-  n = select(FD_SETSIZE, &mask, (fd_set*)0, (fd_set*)0, &tv);
+  int n = select(FD_SETSIZE, &mask, (fd_set*)0, (fd_set*)0, &tv);
   
-  if (n < 0) {
+  if (n < 0 && errno != EINTR)
     perror("select");
-    sleep(1);
-  } else {
-    for (i = 0; i < _elements.size(); i++) {
+  else if (n > 0) {
+    for (int i = 0; i < _elements.size(); i++) {
       Element *f = _elements[i];
       int fd = f->select_fd();
       if (fd >= 0 && FD_ISSET(fd, &mask))
         f->selected(fd);
     }
   }
-  Timer::run_timers();
   
 #else /* __KERNEL__ */
- 
-#ifdef HAVE_POLLING
-  /* kernel polling mode needs to run its own timers */ 
-  Timer::run_timers();
-#endif
 
   schedule();
-  if (signal_pending(current)) please_stop_driver();
+
 #endif
+  
+  // always run timers
+  Timer::run_timers();
 }
 
 
@@ -890,23 +914,19 @@ Router::wait()
 void
 Router::driver()
 {
-  unsigned c = 10000;
-  ElementLink *fl;
-#ifndef __KERNEL__
-  while (!_please_stop_driver) {
-#endif
-    while (fl = scheduled_next(), fl != this && !_please_stop_driver) {
-      fl->unschedule();
-      ((Element *)fl)->run_scheduled();
-      if (c-- == 0) {
-        c = 10000;
-        wait();
-      }
+  ElementLink *l;
+  while (1) {
+    int c = 10000;
+    while (l = scheduled_next(), l != this && !_please_stop_driver && c >= 0) {
+      l->unschedule();
+      ((Element *)l)->run_scheduled();
+      c--;
     }
-#ifndef __KERNEL__
-    wait();
+    if (_please_stop_driver)
+      break;
+    else
+      wait();
   }
-#endif
 }
 
 void
@@ -914,10 +934,10 @@ Router::driver_once()
 {
   if (_please_stop_driver)
     return;
-  ElementLink *fl = scheduled_next();
-  if (fl != this) {
-    fl->unschedule();
-    ((Element *)fl)->run_scheduled();
+  ElementLink *l = scheduled_next();
+  if (l != this) {
+    l->unschedule();
+    ((Element *)l)->run_scheduled();
   }
 }
 

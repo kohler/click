@@ -343,6 +343,11 @@ Element::live_reconfigure(const String &conf, ErrorHandler *errh)
     return -1;
 }
 
+void
+Element::take_state(Element *, ErrorHandler *)
+{
+}
+
 // HANDLERS
 
 static String

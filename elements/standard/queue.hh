@@ -51,6 +51,7 @@ class Queue : public Element, public Storage {
   int _max_length;
 
   int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
+  int prev_i(int i) const		{ return (i!=0 ? i-1 : _capacity); }
   
  public:
   
@@ -74,6 +75,7 @@ class Queue : public Element, public Storage {
   void uninitialize();
   bool can_live_reconfigure() const		{ return true; }
   int live_reconfigure(const String &, ErrorHandler *);
+  void take_state(Element *, ErrorHandler *);
   void add_handlers();
   
   void push(int port, Packet *);

@@ -16,8 +16,6 @@
 #include "queue.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "router.hh"
-#include "elemfilter.hh"
 
 Queue::Queue()
   : _q(0)
@@ -100,6 +98,37 @@ Queue::live_reconfigure(const String &conf, ErrorHandler *errh)
   _tail = j;
   _capacity = new_capacity;
   return 0;
+}
+
+void
+Queue::take_state(Element *e, ErrorHandler *errh)
+{
+  Queue *q = (Queue *)e->cast("Queue");
+  if (!q) return;
+  
+  if (_tail != _head || _head != 0) {
+    errh->error("already have packets enqueued, can't take state");
+    return;
+  }
+  
+  _tail = _capacity;
+  int i = _capacity, j = q->_tail;
+  while (i > 0 && j != q->_head) {
+    i--;
+    j = q->prev_i(j);
+    _q[i] = q->_q[j];
+  }
+  _head = i;
+  _max_length = size();
+
+  if (j != q->_head)
+    errh->warning("some packets lost (old length %d, new capacity %d)",
+		  q->size(), _capacity);
+  while (j != q->_head) {
+    j = q->prev_i(j);
+    q->_q[j]->kill();
+  }
+  q->_head = q->_tail = 0;
 }
 
 void

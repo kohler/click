@@ -9,6 +9,8 @@ class Router : public ElementLink {
   struct Hookup;
   struct Handler;
   typedef Element::Connection Connection;
+
+  int _refcount;
   
   Vector<Element *> _elements;
   Vector<String> _configurations;
@@ -76,6 +78,8 @@ class Router : public ElementLink {
   
   Router();
   ~Router();
+  void use()					{ _refcount++; }
+  void unuse();
   
   int add(Element *, const String &);
   int connect(int from_idx, int from_port, int to_idx, int to_port);
@@ -105,6 +109,7 @@ class Router : public ElementLink {
   int upstream_elements(Element *, Vector<Element *> &);
   
   int initialize(ErrorHandler *);
+  void take_state(Router *, ErrorHandler *);
 
   void add_read_handler(Element *, const char *, int, ReadHandler, void *);
   void add_write_handler(Element *, const char *, int, WriteHandler, void *);

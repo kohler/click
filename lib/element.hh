@@ -88,6 +88,7 @@ class Element : public ElementLink { public:
   // LIVE CONFIGURATION
   virtual bool can_live_reconfigure() const;
   virtual int live_reconfigure(const String &, ErrorHandler *);
+  virtual void take_state(Element *, ErrorHandler *);
   
   // HANDLERS
   void add_read_handler(const char *, ReadHandler, void *);
