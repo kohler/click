@@ -2,7 +2,7 @@
 # run-grid-node
 # Douglas S. J. De Couto
 
-# $Id: run-grid-node,v 1.6 2000/08/06 00:58:05 decouto Exp $
+# $Id: run-grid-node,v 1.7 2000/08/06 00:59:45 decouto Exp $
 
 # usage: run-grid-node <ip-addr> [-no-gw -debug]
 
@@ -168,7 +168,9 @@ $grid_addr_hex = ip_to_hex($grid_addr);
 
 open(P, "| $click");
 while(<click_config_file>) {
-    
+
+    s/CONTROL_PORT/$CONTROL_PORT/;
+    s/CONTROL_RO/$CONTROL_RO/;
     s/GRID_NETMASK/$GRID_NETMASK/;
     s/GRID_NET_HEX/$GRID_NET_HEX/;
     s/NBR_TIMEOUT/$NBR_TIMEOUT/;
@@ -209,3 +211,14 @@ if ($do_cleanup) {
 	exit 1;
     }
 }
+
+
+
+
+
+
+
+
+
+
+
