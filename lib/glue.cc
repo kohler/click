@@ -363,7 +363,7 @@ return __res;
 
 #endif /* !__KERNEL__ */
 
-#if defined(CLICK_USERLEVEL) || defined(CLICK_BSDMODULE)
+#if defined(CLICK_USERLEVEL)
 
 unsigned
 click_jiffies()

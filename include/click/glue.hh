@@ -168,8 +168,8 @@ click_get_cycles()
 }
 
 #define	CLICK_HZ hz
-#define click_gettimeofday(tvp)	(microtime(tvp))
-extern unsigned click_jiffies();
+#define click_gettimeofday(tvp)	(getmicrotime(tvp))
+#define click_jiffies()		((unsigned)ticks)
 
 #define	memmove(dst, src, len)		bcopy((src), (dst), (len))
 
