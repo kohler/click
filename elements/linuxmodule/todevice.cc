@@ -120,11 +120,12 @@ ToDevice::initialize(ErrorHandler *errh)
 
   to_device_map.insert(this);
   
+  ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
 #ifdef HAVE_STRIDE_SCHED
   /* start out with max number of tickets */
-  _max_tickets = ScheduleInfo::query(this, errh);
+  _max_tickets = _task.tickets();
+  _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
-  _task.initialize(this, _dev != 0);
 
   reset_counts();
   return 0;

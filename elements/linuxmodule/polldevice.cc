@@ -144,11 +144,12 @@ PollDevice::initialize(ErrorHandler *errh)
 	  return errh->error("PollDevice detected wrong version of polling patch");
   }
   
+  ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
 #ifdef HAVE_STRIDE_SCHED
   /* start out with default number of tickets, inflate up to max */
-  _max_tickets = ScheduleInfo::query(this, errh);
+  _max_tickets = _task.tickets();
+  _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
-  _task.initialize(this, _dev != 0);
 
   reset_counts();
   return 0;

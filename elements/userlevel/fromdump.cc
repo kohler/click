@@ -318,7 +318,7 @@ FromDump::initialize(ErrorHandler *errh)
     }
 
     if (output_is_push(0))
-	ScheduleInfo::join_scheduler(this, &_task, _active, errh);
+	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     return 0;
 }
 
