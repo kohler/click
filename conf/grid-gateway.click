@@ -36,19 +36,21 @@ to_eth :: ToDevice(GW_NET_DEVICE);
 
 
 wvlan :: FromDevice(WI_NET_DEVICE, 0);
-to_wvlan :: GWTTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> ToDevice(WI_NET_DEVICE);
+to_wvlan :: GWTTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> IPPrint(to_wvlan, TIMESTAMP true) -> PrintOld(to_wvlan_po) -> ToDevice(WI_NET_DEVICE);
 connectiontunnel to_ip_cl/in -> to_ip_cl/out;
 to_wvlan [1] -> to_ip_cl/in;
 
 
 // IP interfaces on gateway machine
 tun1 :: KernelTap(GW_IP/GW_NETMASK, GW_REAL_IP, HEADROOM); // gateway's regular address
-to_tun1 :: Queue -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun1;
-tun1 -> from_tun1 :: Strip(14);
+// to_tun1 :: Queue -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun1;
+to_tun1 :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun1;
+tun1 -> Strip(14) -> from_tun1 :: MarkIPHeader;
 
 tun2 :: KernelTap(GRID_IP/GRID_NETMASK, 0.0.0.0, HEADROOM); // gateway's grid address
-to_tun2 :: Queue -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun2;
-tun2 -> from_tun2 :: Strip(14);
+// to_tun2 :: Queue -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun2;
+to_tun2 :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tun2;
+tun2 -> Strip(14) -> from_tun2 :: MarkIPHeader;
 
 // get IP for this machine's wired address, its grid address, any grid node, *
 ip_cl :: Classifier(16/GW_HEX_IP, // ip for us as wired node
@@ -86,7 +88,12 @@ eth -> eth_demux :: Classifier(12/0806 20/0001, // arp request, for proxy reply
 wvlan -> wvlan_demux :: Classifier(12/GRID_ETH_PROTO, -);
 
 eth_demux [0] -> ARPResponder(GW_IP GW_MAC_ADDR,
-		              GRID_NET/24 GW_MAC_ADDR) -> to_eth;
+			      GRID_IP GW_MAC_ADDR,
+			      GRID_NET/24 GW_MAC_ADDR) -> to_eth;
+
+//eth_demux [0] -> ARPResponder(GW_IP GW_MAC_ADDR,
+//			      GRID_IP GW_MAC_ADDR) -> to_eth;
+
 eth_demux [1] -> [1] arpq :: ARPQuerier(GW_IP, GW_MAC_ADDR) -> to_eth;
 
 eth_demux [2] -> Strip(14) -> Discard; // linux picks up for us XXX but BSD?
