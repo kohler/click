@@ -89,7 +89,7 @@ print "\n";
 
 print "// ------------- Divert Sockets ---------------\n";
 print "// Outgoing TCP Packets\n";
-print "DivertSocket(", $device, ", 4000, 50, 6, ", $meIP, ", 40020-40023, 0.0.0.0/0, out)\n";
+print "DivertSocket(4000)\n";
 print "//\t-> Print(OUT_TCP)\n";
 print "\t-> MarkIPHeader\n";
 print "\t-> SetIPChecksum\n";
@@ -100,7 +100,7 @@ print "\t-> [0]iprw;\n";
 print "\n";
 
 print "// Incoming TCP Packets\n";
-print "DivertSocket(", $device, ", 4001, 50, 6, 0.0.0.0/0, ", $meIP, ", 40020-40023, in)\n";
+print "DivertSocket(4001)\n";
 print "\t-> sIn[1]\n";
 print "\t-> CheckIPHeader\n";
 print "//\t-> Print(IN__TCP)\n";
@@ -109,7 +109,7 @@ print "\t-> [1]iprw;\n";
 print "\n";
 
 print "// Incoming UDP Encapsulated Packets\n";
-print "DivertSocket(", $device, ", 4002, 50, 17, 0.0.0.0/0, 4001, ", $meIP, ", 4001, in)\n";
+print "DivertSocket(4002)\n";
 print "\t-> CheckIPHeader\n";
 print "//\t-> Print(IN-ENCAP-RAW)\n";
 print "\t-> GetIPAddress(16)\n";
