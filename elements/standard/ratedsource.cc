@@ -1,6 +1,6 @@
 /*
  * ratedsource.{cc,hh} -- generates configurable rated stream of packets.
- * Benjie Chen (some code stolen from udpgen.o by Eddie Kohler)
+ * Benjie Chen, Eddie Kohler (based on udpgen.o)
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -221,4 +221,3 @@ RatedSource::add_handlers()
 }
 
 EXPORT_ELEMENT(RatedSource)
-

@@ -245,7 +245,7 @@ FromDevice::run_scheduled()
 	
   adj_tickets(adj);
 #endif
-
+  
   reschedule();
 }
 
