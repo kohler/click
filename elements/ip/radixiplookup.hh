@@ -1,9 +1,9 @@
-#ifndef IPLOOKUPRADIX_HH
-#define IPLOOKUPRADIX_HH
+#ifndef RADIXIPLOOKUP_HH
+#define RADIXIPLOOKUP_HH
 
 /*
  * =c
- * IPLookupRadix()
+ * RadixIPLookup()
  * =s IP, classification
  * IP lookup using a radix table
  * =d
@@ -47,14 +47,14 @@ private:
   static const int KEYSIZE = 32;
 };
 
-class IPLookupRadix : public Element {
+class RadixIPLookup : public Element {
 public:
-  IPLookupRadix();
-  ~IPLookupRadix();
+  RadixIPLookup();
+  ~RadixIPLookup();
   
-  const char *class_name() const		{ return "IPLookupRadix"; }
+  const char *class_name() const		{ return "RadixIPLookup"; }
   const char *processing() const		{ return AGNOSTIC; }
-  IPLookupRadix *clone() const			{ return new IPLookupRadix; }
+  RadixIPLookup *clone() const			{ return new RadixIPLookup; }
   void uninitialize();
 
   String dump_routes();

@@ -47,7 +47,7 @@
  * =h look read-only
  * Returns the contents of the routing table.
  *
- * =a LookupIPRoute, IPLookupRadix, IPLookupIndexTree, IPLookupStrideTrie.
+ * =a LookupIPRoute, RadixIPLookup
  */
 
 #include <click/glue.hh>
@@ -60,7 +60,7 @@ public:
   
   const char *class_name() const	{ return "IPRouteTable"; }
   const char *processing() const	{ return PUSH; }
-  virtual int initialize(ErrorHandler *);
+  virtual int initialize(ErrorHandler *){ return 0; }
 
   virtual IPRouteTable *clone() const	{ return new IPRouteTable; }
   virtual int configure(const Vector<String> &, ErrorHandler *)

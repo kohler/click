@@ -39,7 +39,7 @@ LookupIPRoute2::~LookupIPRoute2()
 int
 LookupIPRoute2::configure(const Vector<String> &, ErrorHandler *errh)
 {
-  return errh->error("LookupIPRoute2 has been renamed as IPLookupRadix");
+  return errh->error("LookupIPRoute2 has been renamed as RadixIPLookup");
 }
 
 EXPORT_ELEMENT(LookupIPRoute2)

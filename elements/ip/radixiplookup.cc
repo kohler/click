@@ -1,5 +1,5 @@
 /*
- * iplookupradix.{cc,hh} -- looks up next-hop address in radix table
+ * radixiplookup.{cc,hh} -- looks up next-hop address in radix table
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
@@ -21,9 +21,9 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include "iplookupradix.hh"
+#include "radixiplookup.hh"
 
-IPLookupRadix::IPLookupRadix()
+RadixIPLookup::RadixIPLookup()
   : _entries(0)
 {
   MOD_INC_USE_COUNT;
@@ -32,14 +32,14 @@ IPLookupRadix::IPLookupRadix()
   _radix = new Radix;
 }
 
-IPLookupRadix::~IPLookupRadix()
+RadixIPLookup::~RadixIPLookup()
 {
   MOD_DEC_USE_COUNT;
   uninitialize();
 }
 
 void
-IPLookupRadix::uninitialize()
+RadixIPLookup::uninitialize()
 {
   for(int i=0; i < _v.size(); i++) {
     if (_v[i])
@@ -52,7 +52,7 @@ IPLookupRadix::uninitialize()
 }
 
 String
-IPLookupRadix::dump_routes()
+RadixIPLookup::dump_routes()
 {
   String ret;
   unsigned dst, mask, gw, port;
@@ -75,7 +75,7 @@ IPLookupRadix::dump_routes()
 }
 
 void
-IPLookupRadix::add_route(IPAddress d, IPAddress m, IPAddress g, int port)
+RadixIPLookup::add_route(IPAddress d, IPAddress m, IPAddress g, int port)
 {
   unsigned dst = d.addr();
   unsigned mask = m.addr();
@@ -100,7 +100,7 @@ IPLookupRadix::add_route(IPAddress d, IPAddress m, IPAddress g, int port)
 }
 
 void
-IPLookupRadix::remove_route(IPAddress d, IPAddress m)
+RadixIPLookup::remove_route(IPAddress d, IPAddress m)
 {
   unsigned dst = d.addr();
   unsigned mask = m.addr();
@@ -116,7 +116,7 @@ IPLookupRadix::remove_route(IPAddress d, IPAddress m)
 }
 
 int
-IPLookupRadix::lookup_route(IPAddress d, IPAddress &gw)
+RadixIPLookup::lookup_route(IPAddress d, IPAddress &gw)
 {
   unsigned dst = d.addr();
   int index;
@@ -136,7 +136,7 @@ nomatch:
 }
 
 bool
-IPLookupRadix::get
+RadixIPLookup::get
 (int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned &port)
 {
   assert(i >= 0 && i < _v.size());
@@ -153,7 +153,7 @@ IPLookupRadix::get
 
 // generate Vector template instance
 #include <click/vector.cc>
-template class Vector<IPLookupRadix::Entry>;
+template class Vector<RadixIPLookup::Entry>;
 
-EXPORT_ELEMENT(IPLookupRadix)
+EXPORT_ELEMENT(RadixIPLookup)
 

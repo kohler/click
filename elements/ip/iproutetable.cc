@@ -37,12 +37,6 @@ IPRouteTable::~IPRouteTable()
 }
 
 int
-IPRouteTable::initialize(ErrorHandler *)
-{
-  return 0;
-}
-
-int
 IPRouteTable::ctrl_handler
 (const String &conf, Element *e, void *, ErrorHandler *errh)
 {

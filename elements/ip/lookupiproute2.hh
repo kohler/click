@@ -9,9 +9,9 @@
  * simple dynamic IP routing table
  * =d
  * 
- * This element has been renamed as IPLookupRadix.
+ * This element has been renamed as RadixIPLookup.
  *
- * =a IPLookupRadix
+ * =a RadixIPLookup
  */
 
 #include <click/glue.hh>
