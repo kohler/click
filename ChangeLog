@@ -1,3 +1,9 @@
+2004-06-19 Saturday 16:08  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: sortedsched.cc (1.9), sortedsched.hh
+	(1.7), staticthreadsched.hh (1.7), threadmonitor.hh (1.6): rename
+	BalanceThreadSched -> BalancedThreadSched
+
 2004-06-19 Saturday 14:44  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/: sortedsched.cc (1.8), sortedsched.hh
