@@ -13,7 +13,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "../../elements/standard/scheduleinfo.hh"
+#include "scheduleinfo.hh"
 #include "timedsource.hh"
 #include "confparse.hh"
 #include "error.hh"
