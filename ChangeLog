@@ -1,3 +1,9 @@
+2003-03-11 Tuesday 02:06  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/sched.cc (1.41): be more careful abut holding
+	references to the router while a click_sched thread is active;
+	found at Mazu by Chip Coldwell
+
 2003-03-10 Monday 15:46  Eddie Kohler <kohler@icir.org>
 
 	* include/click/packet.hh (1.47): fix relational expressions (found
