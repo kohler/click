@@ -64,6 +64,22 @@ class UpdateGridRoutes : public Element {
 
 public:
 
+/* NOTE ON TIMEOUTS: there are two different timeouts.  The `age' of a
+   routing entry is approximately how much time has passed since the
+   entry was originally produced by the node it points too.  The age
+   is increased everytime an entry is propagated, as well as with the
+   passage of time, to prevent stale data from sticking around
+   (actually, the age is set, and then decremented, the entry is
+   thrown away when it's age is ~0). 
+
+   The ``jiffies' of an entry are how long that entry has been in this
+   particular routing table, we discard entries that are too old here
+   also.  It could be that the age makes jiffies redundant. 
+
+   of course, we are comforted with this: jiffies are a local
+   decision, while age is decided by the initiator of the entry */
+
+
   class NbrEntry {
     bool _init;
   public:
@@ -132,7 +148,7 @@ public:
   
   Packet *simple_action(Packet *);
 
-  void get_rtes(Vector<grid_nbr_entry> *retval) const;
+  void get_rtes(Vector<grid_nbr_entry> *retval);
 
   IPAddress _ipaddr;
   EtherAddress _ethaddr;
