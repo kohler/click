@@ -21,7 +21,6 @@ struct click_wifi {,
 	u_int8_t	i_addr2[6];
 	u_int8_t	i_addr3[6];
 	u_int8_t	i_seq[2];
-        u_int8_t        i_addr4[6];
 });
 
 #define	WIFI_FC0_VERSION_MASK		0x03
@@ -139,14 +138,19 @@ struct wifi_information {
 	} challenge;
 };
 
-#define	WIFI_ELEMID_SSID			0
-#define	WIFI_ELEMID_RATES			1
+
+#define WIFI_RATES_MAXSIZE              15
+#define WIFI_NWID_MAXSIZE               32
+#define	WIFI_ELEMID_SSID		0
+#define	WIFI_ELEMID_RATES		1
 #define	WIFI_ELEMID_FHPARMS		2
 #define	WIFI_ELEMID_DSPARMS		3
 #define	WIFI_ELEMID_CFPARMS		4
 #define	WIFI_ELEMID_TIM			5
 #define	WIFI_ELEMID_IBSSPARMS		6
 #define	WIFI_ELEMID_CHALLENGE		16
+#define	WIFI_ELEMID_ERP		        42
+#define	WIFI_ELEMID_VENDOR	        221
 
 /*
  * AUTH management packets
@@ -251,5 +255,8 @@ struct wifi_nwkey {
 #define WIFI_POWERSAVE_PSP		2
 #define WIFI_POWERSAVE_PSP_CAM	3
 #define WIFI_POWERSAVE_ON		WIFI_POWERSAVE_CAM
+
+#define	WIFI_RATE_BASIC			0x80
+#define	WIFI_RATE_VAL			0x7f
 
 #endif /* !_CLICKNET_WIFI_H_ */
