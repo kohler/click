@@ -332,5 +332,6 @@ ICMPPingRewriter::add_handlers()
   add_read_handler("mappings", dump_mappings_handler, (void *)0);
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(ICMPPingRewriter)
+#include <click/bighashmap.cc>
+CLICK_ENDDECLS
