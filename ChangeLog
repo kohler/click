@@ -1,3 +1,7 @@
+2003-04-01 Tuesday 02:30  Eddie Kohler <kohler@icir.org>
+
+	* userlevel/click.cc (1.80): be more careful with signals
+
 2003-04-01 Tuesday 01:24  Eddie Kohler <kohler@icir.org>
 
 	* elements/test/bhmtest.cc (1.2): oopslet
