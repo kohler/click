@@ -1,3 +1,7 @@
+2004-08-23 Monday 02:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.55): add "click-buildtool prefix" support
+
 2004-08-20 Friday 02:50  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/master.hh (1.7), include/click/timer.hh (1.23),
