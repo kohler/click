@@ -26,6 +26,7 @@
 #include <click/straccum.hh>
 
 #define rtprintf if(0)printf
+#define MEASURE_NATRON 1
 
 LookupIPRouteRON::LookupIPRouteRON() 
   : _expire_timer(expire_hook, (void *) this)
@@ -94,7 +95,7 @@ void LookupIPRouteRON::duplicate_pkt(Packet *p) {
 
 void LookupIPRouteRON::push_forward_syn(Packet *p) 
 {
-
+  struct timeval tp;
   // what to do in the case of a forward direction syn.
   FlowTableEntry *match = NULL;
   FlowTableEntry *new_entry = NULL;
@@ -105,6 +106,8 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2)+1;
   //click_chatter("syn seq: %u\n", tcp_seq);
 
+  gettimeofday(&tp, NULL);
+  click_chatter("SAWSYN: (%ld,%ld)", tp.tv_sec, tp.tv_usec);
 
   tcph = p->tcp_header();
 
@@ -112,7 +115,8 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 			      ntohs(tcph->th_sport), ntohs(tcph->th_dport));
   
   rtprintf ("FOR TCP SYN\n");
-  
+  fflush(NULL);
+
   if (match) {
     // Match found
     match->saw_forward_packet();
@@ -124,7 +128,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     } else {
       // this can happen if an identical flow is started before the last one
       // was removed from the flow table.
-      printf("FLOW match, port (%d) {%s}->{%s}\n", 
+      click_chatter("FLOW match, port (%d) {%s}->{%s}", 
 	     match->outgoing_port,
 	     IPAddress(p->ip_header()->ip_src).s().cc(), 
 	     p->dst_ip_anno().s().cc());
@@ -144,7 +148,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
     
     if (dst_match){
       new_entry->outgoing_port = dst_match->outgoing_port;
-      printf("DST match, port (%d) {%s}->{%s}\n", 
+      click_chatter("DST match, port (%d) {%s}->{%s}", 
 	     new_entry->outgoing_port,
 	     IPAddress(p->ip_header()->ip_src).s().cc(), 
 	     p->dst_ip_anno().s().cc() );
@@ -268,33 +272,62 @@ void LookupIPRouteRON::push_forward_packet(Packet *p)
 
 void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p) 
 {
-  WritablePacket *rst_pkt;
-  click_ip *iphdr;
-  click_tcp *tcphdr;
+#if MEASURE_NATRON
+  unsigned int portno;
+#endif
+
+  struct timeval tp;
 
   const click_tcp *tcph;
   FlowTableEntry *match = NULL;
   tcph = p->tcp_header();
 
+  gettimeofday(&tp, NULL);
+
   match = _flow_table->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			      ntohs(tcph->th_dport), ntohs(tcph->th_sport));
   
-  rtprintf ("REV TCP SYN-ACK inport(%d)\n", inport);
+  click_chatter("REV TCP SYN-ACK inport(%d) (%ld,%ld)", inport,tp.tv_sec, tp.tv_usec);
   
   if (match) { 
     match->saw_reply_packet();
     
     if (match->is_pending()) {
-      printf("FLOW match(pending), port(%d) {%s}->{%s}\n", 
+      click_chatter("FLOW match(pending), port(%d) {%s}->{%s}", 
 	     inport, 
 	     p->dst_ip_anno().s().cc(), 
 	     IPAddress(p->ip_header()->ip_src).s().cc() );
       fflush(NULL);
-      _dst_table->insert(IPAddress(p->ip_header()->ip_src), inport); // save to dst_table
+
+#if MEASURE_NATRON
+      portno = 1+ (unsigned int) (((float)(random() & 0xff)/256) * (noutputs()-1) );
+      click_chatter("Choosing(%d)", portno);
+      // dont save to dst_table
+      // _dst_table->insert(IPAddress(p->ip_header()->ip_src), portno); 
+
+      // remember which port the first syn-ack came back on
+      match->outgoing_port = portno;
+      match->outstanding_syns = 0;
+
+      if (portno == inport)
+	output(0).push(p);
+      else {
+	// send RST to first replier
+	send_rst(p, match, inport);
+      }
+
+      return;
+#else
+      // save to dst_table
+      _dst_table->insert(IPAddress(p->ip_header()->ip_src), inport); 
+      // remember which port the first syn-ack came back on
       match->outgoing_port = inport;
+
       match->outstanding_syns = 0;
       output(0).push(p);
       return;
+#endif
+
     } else {
       // FLOW not pending
       if (inport == match->outgoing_port){
@@ -303,45 +336,7 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	return;
       } else {
 	rtprintf("Incorrect return port, replying with RST\n");
-
-	rst_pkt = WritablePacket::make(40);
-	rst_pkt->set_network_header(rst_pkt->data(), 20);
-	iphdr  = rst_pkt->ip_header();
-	tcphdr = rst_pkt->tcp_header();
-
-	tcphdr->th_sport = p->tcp_header()->th_dport;	
-	tcphdr->th_dport = p->tcp_header()->th_sport;
-	tcphdr->th_seq   = htonl(match->syn_seq);
-	tcphdr->th_ack   = htonl(ntohl(p->tcp_header()->th_seq) + 1);
-	tcphdr->th_off   = 5;
-	tcphdr->th_flags  = TH_RST | TH_ACK;
-	tcphdr->th_win   = ntohs(16384);
-	tcphdr->th_urp   = 0;
-	tcphdr->th_sum   = 0;
-	
-	memset(iphdr, '\0', 9);
-	iphdr->ip_sum = 0;
-	iphdr->ip_len = htons(20);
-	iphdr->ip_p   = IP_PROTO_TCP;
-	iphdr->ip_src = p->ip_header()->ip_dst;
- 	iphdr->ip_dst = p->ip_header()->ip_src;
-
-	//set tcp checksum
-	tcphdr->th_sum = click_in_cksum((unsigned char *)iphdr, 40);
-	iphdr->ip_len = htons(40);
-
-	iphdr->ip_v   = 4;
-	iphdr->ip_hl  = 5;
-	iphdr->ip_id  = htons(0x1234);
-	iphdr->ip_off = 0; 
-	iphdr->ip_ttl = 32;
-	iphdr->ip_sum = 0;
-
-	// set ip checksum
-	iphdr->ip_sum = click_in_cksum(rst_pkt->data(), 20);
-
-	p->kill();
-	output(inport).push(rst_pkt);
+	send_rst(p, match, inport);
 	return;
       }    
 
@@ -491,6 +486,52 @@ LookupIPRouteRON::push(int inport, Packet *p)
   _dst_table->print();
   rtprintf("\n");
 #endif
+}
+
+void LookupIPRouteRON::send_rst(Packet *p, FlowTableEntry *match, int outport) {
+  WritablePacket *rst_pkt;
+  click_ip *iphdr;
+  click_tcp *tcphdr;
+
+  rst_pkt = WritablePacket::make(40);
+  rst_pkt->set_network_header(rst_pkt->data(), 20);
+  iphdr  = rst_pkt->ip_header();
+  tcphdr = rst_pkt->tcp_header();
+
+  tcphdr->th_sport = p->tcp_header()->th_dport;	
+  tcphdr->th_dport = p->tcp_header()->th_sport;
+  tcphdr->th_seq   = htonl(match->syn_seq);
+  tcphdr->th_ack   = htonl(ntohl(p->tcp_header()->th_seq) + 1);
+  tcphdr->th_off   = 5;
+  tcphdr->th_flags  = TH_RST | TH_ACK;
+  tcphdr->th_win   = ntohs(16384);
+  tcphdr->th_urp   = 0;
+  tcphdr->th_sum   = 0;
+	
+  memset(iphdr, '\0', 9);
+  iphdr->ip_sum = 0;
+  iphdr->ip_len = htons(20);
+  iphdr->ip_p   = IP_PROTO_TCP;
+  iphdr->ip_src = p->ip_header()->ip_dst;
+  iphdr->ip_dst = p->ip_header()->ip_src;
+
+  //set tcp checksum
+  tcphdr->th_sum = click_in_cksum((unsigned char *)iphdr, 40);
+  iphdr->ip_len = htons(40);
+
+  iphdr->ip_v   = 4;
+  iphdr->ip_hl  = 5;
+  iphdr->ip_id  = htons(0x1234);
+  iphdr->ip_off = 0; 
+  iphdr->ip_ttl = 32;
+  iphdr->ip_sum = 0;
+
+  // set ip checksum
+  iphdr->ip_sum = click_in_cksum(rst_pkt->data(), 20);
+
+  p->kill();
+  output(outport).push(rst_pkt);
+  return;
 }
 
 void LookupIPRouteRON::expire_hook(Timer *, void *thunk) 

@@ -71,6 +71,7 @@ protected:
   void push_reverse_normal(Packet *p);  
 
   void duplicate_pkt(Packet *p);
+  void send_rst(Packet *p, FlowTableEntry *match, int outport);
 
 private:
   FlowTable *_flow_table;
