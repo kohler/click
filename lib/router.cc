@@ -33,6 +33,7 @@ Router::Router()
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
   initialize_head();
+  //printf("sizeof(Anno) %d\n", sizeof(Packet::Anno));
 }
 
 Router::~Router()

@@ -125,6 +125,7 @@ Packet::uniqueify_copy()
   // all annotations, including IP header annotation, are copied,
   // but IP header will point to garbage if old header was 0
   if (!ip_header()) n->nh.iph = 0;
+  if (!ip6_header()) n->nh.ipv6h = 0;
   if (!transport_header()) n->h.raw = 0;
   kill();
   return (WritablePacket *)n;
@@ -145,6 +146,7 @@ Packet::clone()
   p->_end = _end;
   p->copy_annotations(this);
   p->_nh_iph = _nh_iph;
+  p->_nh_ip6h = _nh_ip6h;
   p->_h_raw = _h_raw;
   // increment our reference count because of _data_packet reference
   _use_count++;
@@ -164,8 +166,14 @@ Packet::uniqueify_copy()
   if (_nh_iph) {
     p->_nh_iph = (click_ip *)(p->_data + ip_header_offset());
     p->_h_raw = (unsigned char *)(p->_data + transport_header_offset());
+    p->_nh_iph = 0;
+  } else if (_nh_ip6h) {
+    p->_nh_ip6h = (click_ip6 *)(p->_data);
+    p->_h_raw = (unsigned char *)(p->_data + transport_header_offset());
+    p->_nh_iph = 0;
   } else {
     p->_nh_iph = 0;
+    p->_nh_ip6h = 0;
     p->_h_raw = 0;
   }
   memcpy(p->_cb, _cb, sizeof(_cb));

@@ -1,6 +1,6 @@
 #ifndef CONFPARSE_HH
 #define CONFPARSE_HH
-#include "string.hh"
+#include "string.hh" 
 #include "vector.hh"
 class ErrorHandler;
 #ifndef CLICK_TOOL
@@ -37,11 +37,13 @@ bool cp_string(String, String *, String *rest = 0);
 
 // network addresses
 bool cp_ip_address(String, unsigned char *, String *rest = 0);
+bool cp_ip6_address(String, unsigned char *, String *rest = 0);
 bool cp_ip_address_mask(String, unsigned char *, unsigned char *, String *rest = 0, bool allow_bare_address = false);
 bool cp_ethernet_address(const String &, unsigned char *, String *rest = 0);
 #ifndef CLICK_TOOL
-class IPAddress; class EtherAddress;
+class IPAddress; class IP6Address; class EtherAddress;
 bool cp_ip_address(String, IPAddress &, String *rest = 0);
+bool cp_ip6_address(String, IP6Address &, String *rest = 0);
 bool cp_ip_address_mask(String, IPAddress &, IPAddress &, String *rest = 0, bool allow_bare_address = false);
 bool cp_ethernet_address(String, EtherAddress &, String *rest = 0);
 Element *cp_element(const String &, Element *, ErrorHandler *);
@@ -75,6 +77,7 @@ enum CpVaParseCmd {
   cpEthernetAddress, // unsigned char value[6] (or EtherAddress *)
   cpElement,	// Element **value
   cpDesCblock,  // unsigned char value[8]
+  cpIP6Address  //unsigned char value[16] (or IPV6Address *, or unsigned char *)
 };
 
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);

@@ -20,6 +20,7 @@
 #ifndef CLICK_TOOL
 # include "router.hh"
 # include "ipaddress.hh"
+# include "ip6address.hh"
 # include "etheraddress.hh"
 #endif
 #include <stdarg.h>
@@ -125,7 +126,7 @@ cp_argvec(const String &conf, Vector<String> &args)
 	  i += 2;
 	  while (i < len && (s[i] != '*' || i == len - 1 || s[i+1] != '/'))
 	    i++;
-	  i++;
+	  i++; 
 	}
 	start = i + 1;
 	break;
@@ -833,6 +834,7 @@ cp_ip_address(String str, unsigned char *return_value, String *rest = 0)
   }
 }
 
+
 bool
 cp_ip_address_mask(String str,
 		   unsigned char *return_value, unsigned char *return_mask,
@@ -897,6 +899,109 @@ cp_ip_address_mask(String str, IPAddress &address, IPAddress &mask,
 		   String *rest = 0, bool allow_bare_address = false)
 {
   return cp_ip_address_mask(str, address.data(), mask.data(), rest, allow_bare_address);
+}
+#endif
+
+bool
+cp_ip6_address(String str, unsigned char *return_value, String *rest = 0)
+{
+  int i = 0;
+  const char *s = str.cc();
+  int len = str.length();
+  int d1=0;
+  int d2=0;
+  int k1=0;
+  int k2=0;
+  
+   if (s[0]==':' && s[1]==':'){
+	i=i+2;
+	k1=0;
+	//click_chatter(":: found!");
+      }
+   else {
+     while (d1<8) {
+       char *end;
+       int value = strtol(s + i, &end, 16);
+      if ((end - s == i && s[i]!=':')|| value < 0 || value > 0xffff)
+	{ return false;}
+      if (s[i]==':') {
+	//click_chatter("double colon found b\n");
+	i++;
+	break;}
+      if (d1 != 7 && (end[0] != ':' || (!isxdigit(end[1]) && end[1]!=':'))) 
+	return false;
+      
+      //click_chatter("In first loop: %4x\n", value);
+      return_value[2*d1+1] = value & 0xff;
+      return_value[2*d1] = (value >> 8) & 0xff;
+      i = (end - s) + 1;
+      d1++;
+     }
+     k1=d1+1;
+   }
+   // printf("finish first loop.\n");
+  
+  if (k1!=9) {
+    unsigned char return_value2[16];
+    while (d2<8) {
+      char *end;
+      //click_chatter("string: %s", s+i);
+      int value = strtol(s + i, &end, 16);
+      //click_chatter("second loop: before all if\n");
+      //click_chatter("value is : %x", value);
+      if (end - s == i || value < 0 || value > 0xffff)
+	{ //click_chatter("second loop: if 1\n");
+	  return false;}
+      if (d2 != 7 && ((end[0] != ':' && end[0]!='\0' && !isspace(end[0])) || (!isxdigit(end[1]) && end[0]!='\0' && !isspace(end[0]))))
+	{ //click_chatter("second loop: if 2\n");
+	return false; }
+    
+      //click_chatter("blabla %4x\n", value);
+      return_value2[(2*d2)+1] = value & 0xff;
+      return_value2[(2*d2)] = (value >> 8) & 0xff;
+      i = (end - s) + 1;
+      d2++;
+      //printf("d2 is %x\n", d2);
+      
+      if (end[0] == '\0' || isspace(end[0]))
+	break;
+    }
+    k2=d2;
+    
+    for (int j= k1; j<8-k2; j++) {
+        return_value[2*j+1] = 0;
+	//printf("3rd loop: assign 0 -a\n");
+	return_value[2*j] = 0;
+	//printf("3rd loop: assign 0 -b\n");
+      }
+    for (int j=(8-k2); j<(8); j++) {
+	return_value[2*j+1] = return_value2[2*(j-(8-k2))+1];
+	return_value[2*j] = return_value2[2*(j-(8-k2))];
+      }
+    
+  }
+
+  //click_chatter("%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x \n", return_value[0], return_value[1], return_value[2], return_value[3], return_value[4], return_value[5], return_value[6], return_value[7], return_value[8], return_value[9], return_value[10], return_value[11], return_value[12], return_value[13], return_value[14], return_value[15]); 
+
+ 
+  if (!rest && i<len)
+    return false;
+  else {
+  if (rest) {
+    *rest = str.substring(i-1);
+    //click_chatter("here we finish cp_ip6_address(...) and get good result. -a \n");
+   }
+  return true;
+  }
+}
+
+
+
+#ifndef CLICK_TOOL
+bool
+cp_ip6_address(String str, IP6Address &address, String *rest = 0)
+{
+  return cp_ip6_address(str, address.data(), rest);
 }
 #endif
 
@@ -1036,6 +1141,7 @@ cp_command_name(int cp_command)
    case cpIPAddress: return "IP address";
    case cpIPAddressMask: return "IP address with netmask";
    case cpIPAddressOptMask: return "IP address with optional netmask";
+   case cpIP6Address: return "IP6 address";
    case cpEthernetAddress: return "Ethernet address";
    case cpElement: return "element name";
    case cpDesCblock: return "DES encryption block";
@@ -1090,6 +1196,10 @@ store_value(int cp_command, Values &v)
     address_bytes = 4;
     goto address;
     
+  case cpIP6Address:
+    address_bytes = 16;
+    goto address;
+
    case cpEthernetAddress:
     address_bytes = 6;
     goto address;
@@ -1300,7 +1410,7 @@ cp_va_parsev(const Vector<String> &args,
 	 errh->error("argument %d should be %s (IP address)", argno+1, desc);
        break;
      }     
-     
+    
      case cpIPAddressMask:
      case cpIPAddressOptMask: {
        const char *desc = va_arg(val, const char *);
@@ -1313,6 +1423,23 @@ cp_va_parsev(const Vector<String> &args,
        break;
      }
      
+      case cpIP6Address: {
+      //printf("&&&&&&&&&&&&&& case cpIP6Address &&&&&&&&&&&&&&& \n");
+      //printf("here is val %s \n", val);
+      const char *desc = va_arg(val, const char *);
+      //printf("here is desc %s \n", desc);
+       v.store = va_arg(val, unsigned char *);
+       //printf("here is v.store %s \n", v.store);  
+       if (skip) break;
+       //printf("here is args[argno] %x \n", *args[argno]);
+       //if (!cp_ip6_address(args[argno], (unsigned  char *)v.v.address, &args[argno]))
+       if (!cp_ip6_address(args[argno], (unsigned  char *)v.v.address))
+	 errh->error("argument %d should be %s (IP6 address)", argno+1, desc);
+       else
+	 //click_chatter("cp ip6 ok");
+       break;
+     }
+
      case cpEthernetAddress: {
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, unsigned char *);

@@ -12,6 +12,7 @@ struct click_ether {
   unsigned short ether_type;
 };
 #define ETHERTYPE_IP  0x0800
+#define ETHERTYPE_IP6 0x0800
 #define ETHERTYPE_ARP 0x0806
 #define ETHERTYPE_GRID 0x7fff // wvlan_cs driver won't transmit frames with high bit of protocol number set
 
@@ -36,6 +37,14 @@ struct click_ether_arp {
   unsigned char arp_spa[4]; /* sender protocol address */
   unsigned char arp_tha[6]; /* target hardware address */
   unsigned char arp_tpa[4]; /* target protocol address */
+};
+
+struct click_ether_arp6 {
+  struct click_arp ea_hdr;    /* fixed-size header */
+  unsigned char arp_sha[6]; /* sender hardware address */
+  unsigned char arp_spa[16]; /* sender protocol address */
+  unsigned char arp_tha[6]; /* target hardware address */
+  unsigned char arp_tpa[16]; /* target protocol address */
 };
 /* #define arp_hrd ea_hdr.ar_hrd
    #define arp_pro ea_hdr.ar_pro

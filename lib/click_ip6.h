@@ -1,41 +1,36 @@
-#ifndef CLICK_IP_H
-#define CLICK_IP_H
+#ifndef CLICK_IP6_H
+#define CLICK_IP6_H
 #include "glue.hh"
+#include "ip6address.hh"
 
 /*
- * click_ip.h -- our own definitions of IP headers
+ * click_ip6.h -- our own definitions of IP6 headers
  * based on a file from one of the BSDs
  */
 
-#define IPVERSION 4
+#define IPVERSION 6
 
 #ifndef __BYTE_ORDER
 #define __LITTLE_ENDIAN 1234
 #define __BYTE_ORDER __LITTLE_ENDIAN
+//#define __BYTE_ORDER __BIG_ENDIAN
 #endif
 
-struct click_ip {
+struct click_ip6 {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  unsigned char ip_hl:4;		/* 0     header length */
-  unsigned char ip_v:4;			/*       & version */
+    unsigned char ip6_pri:4;			/* 0   priority */
+    unsigned char ip6_v:4;			/*     version */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-  unsigned char ip_v:4;			/* 0     version */
-  unsigned char ip_hl:4;		/*       & header length */
+    unsigned char ip6_v:4;			/* 0   version */
+    unsigned char ip6_pri:4;			/*     priority */
 #endif
-  unsigned char ip_tos;			/* 1     type of service */
-  unsigned short ip_len;		/* 2-3   total length */
-  unsigned short ip_id;			/* 4-5   identification */
-  unsigned short ip_off;		/* 6-7   fragment offset field */
-#define	IP_RF 0x8000			/* reserved fragment flag */
-#define	IP_DF 0x4000			/* dont fragment flag */
-#define	IP_MF 0x2000			/* more fragments flag */
-#define	IP_OFFMASK 0x1fff		/* mask for fragmenting bits */
-  unsigned char ip_ttl;			/* 8     time to live */
-  unsigned char ip_p;			/* 9     protocol */
-  unsigned short ip_sum;		/* 10-11 checksum */
-  struct in_addr ip_src;		/* 12-15 source address */
-  struct in_addr ip_dst;		/* 16-19 destination address */
+    uint8_t ip6_flow[3];             /* 1-3   flow label -follow the example from ip6.h*/
+    unsigned short ip6_plen;         /* 4-5   payload length */
+    unsigned char ip6_nxt;           /* 6     next header */
+    unsigned char ip6_hlim;          /* 7     hop limit  */
+    IP6Address ip6_src;              /* 8-23  source address 16 bytes */
+    IP6Address ip6_dst;              /* 24-39 dest address - 16 bytes */
 };
 
 /* ip_protocol */
@@ -96,9 +91,7 @@ struct click_ip {
 
 #ifdef CLICK_LINUXMODULE
 # define new xxx_new
-extern "C" {
 # include <net/checksum.h>
-}
 # undef new
 # define in_cksum(addr, len)	ip_compute_csum(addr, len)
 #else

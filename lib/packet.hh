@@ -1,8 +1,10 @@
 #ifndef PACKET_HH
 #define PACKET_HH
 #include "ipaddress.hh"
+#include "ip6address.hh"
 #include "glue.hh"
 struct click_ip;
+struct click_ip6;
 class WritablePacket;
 
 class Packet {
@@ -10,7 +12,8 @@ class Packet {
 public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
-    IPAddress dst_ip;
+    IPAddress dst_ip; 
+    IP6Address dst_ip6;
     bool mac_broadcast : 1; // flag: MAC address was a broadcast or multicast
     bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
     char param_off;     // for ICMP Parameter Problem, byte offset of error
@@ -40,6 +43,7 @@ private:
   unsigned char *_end;  /* one beyond end of allocated buffer */
   unsigned char _cb[48];
   click_ip *_nh_iph;
+  click_ip6 *_nh_ip6h;
   unsigned char *_h_raw;
 #endif
   
@@ -121,21 +125,30 @@ private:
 
 #ifdef __KERNEL__
   const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
+  const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
   const unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
   const click_ip *ip_header() const		{ return _nh_iph; }
+  const click_ip6 *ip6_header() const           {return _nh_ip6h; }
   const unsigned char *transport_header() const	{ return _h_raw; }
 #endif
   void set_ip_header(const click_ip *, unsigned);
   unsigned ip_header_offset() const;
   unsigned ip_header_length() const;
+  void set_ip6_header(const click_ip6 *);
+  void set_ip6_header(const click_ip6 *, unsigned);
+  unsigned ip6_header_length() const;
+  
   unsigned transport_header_offset() const;
 
   void copy_annotations(Packet *);
   void zero_annotations();
   
   IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
+  IP6Address dst_ip6_anno() const	{ return anno()->dst_ip6; }
   void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
+  void set_dst_ip6_anno(IP6Address a)	{ anno()->dst_ip6 = IP6Address(a.addr()); }
+
   bool mac_broadcast_anno() const	{ return anno()->mac_broadcast; }
   void set_mac_broadcast_anno(bool b)	{ anno()->mac_broadcast = b; }
   bool fix_ip_src_anno() const		{ return anno()->fix_ip_src; }
@@ -165,10 +178,12 @@ class WritablePacket : public Packet { public:
 #ifdef __KERNEL__
   unsigned char *data() const			{ return skb()->data; }
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
+  click_ip6 *ip6_header() const         {return (click_ip6 *)skb()->nh.ipv6h; }
   unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
   unsigned char *data() const			{ return _data; }
   click_ip *ip_header() const			{ return _nh_iph; }
+  click_ip6 *ip6_header() const                 {return _nh_ip6h; }
   unsigned char *transport_header() const	{ return _h_raw; }
 #endif
 
@@ -284,6 +299,24 @@ Packet::set_ip_header(const click_ip *iph, unsigned len)
 #endif
 }
 
+inline void
+Packet::set_ip6_header(const click_ip6 *ip6h)
+{ 
+  set_ip6_header(ip6h, 10);
+}
+
+inline void
+Packet::set_ip6_header(const click_ip6 *ip6h, unsigned len)
+{
+#ifdef __KERNEL__
+  skb()->nh.ipv6h = (struct ipv6hdr *)ip6h;
+  skb()->h.raw = (unsigned char *)ip6h + len;
+#else
+  _nh_ip6h = (click_ip6 *)ip6h;
+  _h_raw = (unsigned char *)ip6h + len;
+#endif
+}
+
 inline unsigned
 Packet::ip_header_offset() const
 {
@@ -294,6 +327,12 @@ inline unsigned
 Packet::ip_header_length() const
 {
   return (const unsigned char *)transport_header() - (const unsigned char *)ip_header();
+}
+
+inline unsigned
+Packet::ip6_header_length() const
+{
+  return (const unsigned char *)transport_header() - (const unsigned char *)ip6_header();
 }
 
 inline unsigned
