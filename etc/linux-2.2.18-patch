@@ -659,37 +659,17 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/acenic.h ./drivers/net/acenic.h
  
 diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 --- ../linux-2.2.18-clean/drivers/net/eepro100.c	Sun Dec 10 19:49:42 2000
-+++ ./drivers/net/eepro100.c	Thu Jun 28 17:33:05 2001
++++ ./drivers/net/eepro100.c	Mon Jul  2 18:16:01 2001
 @@ -48,7 +48,7 @@
  /*#define USE_IO*/
  static const char *version =
  "eepro100.c:v1.09j-t 9/29/99 Donald Becker http://cesdis.gsfc.nasa.gov/linux/drivers/eepro100.html\n"
--"eepro100.c: $Revision: 1.5 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
-+"eepro100.c: $Revision: 1.5 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
+-"eepro100.c: $Revision: 1.20.2.10 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
++"eepro100.c: $Revision: 1.2 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
  "eepro100.c: VA Linux custom, Dragan Stancevic <visitor@valinux.com> 2000/11/15\n";
  
  /* A few user-configurable values that apply to all boards.
-@@ -393,6 +393,7 @@
-    All accesses need not be longword aligned. */
- enum speedo_offsets {
- 	SCBStatus = 0, SCBCmd = 2,	/* Rx/Command Unit command and status. */
-+	SCBIntr = 3,				/* Interrupt control. */
- 	SCBPointer = 4,				/* General purpose pointer. */
- 	SCBPort = 8,				/* Misc. commands and operands.  */
- 	SCBflash = 12, SCBeeprom = 14, /* EEPROM and flash memory control. */
-@@ -432,6 +433,11 @@
-      RxResumeNoResources=0x0007,
- };
- 
-+enum SCBIntrBits {
-+	SCBIntrDisable = 0x01,		/* Mask all interrupts */
-+	SCBIntrEnable = 0x00,		/* Enable all */
-+};
-+
- enum SCBPort_cmds {
- 	PortReset=0, PortSelfTest=1, PortPartialReset=2, PortDump=3,
- };
-@@ -587,6 +593,16 @@
+@@ -587,6 +587,16 @@
  static void set_rx_mode(struct net_device *dev);
  static void speedo_show_state(struct net_device *dev);
  
@@ -706,7 +686,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  
  
  #ifdef honor_default_port
-@@ -751,6 +767,7 @@
+@@ -751,6 +761,7 @@
  	   This takes less than 10usec and will easily finish before the next
  	   action. */
  	outl(PortReset, ioaddr + SCBPort);
@@ -714,7 +694,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  	/* Honor PortReset timing. */
  	udelay(10);
  
-@@ -778,7 +795,7 @@
+@@ -778,7 +789,7 @@
  		/* The self-test results must be paragraph aligned. */
  		s32 str[6], *volatile self_test_results;
  		int boguscnt = 16000;	/* Timeout for set-test. */
@@ -723,7 +703,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  			printk(KERN_INFO "  Receiver lock-up bug exists -- enabling"
  				   " work-around.\n");
  		printk(KERN_INFO "  Board assembly %4.4x%2.2x-%3.3d, Physical"
-@@ -839,6 +856,7 @@
+@@ -839,6 +850,7 @@
  #endif  /* kernel_bloat */
  
  	outl(PortReset, ioaddr + SCBPort);
@@ -731,7 +711,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  	/* Honor PortReset timing. */
  	udelay(10);
  
-@@ -889,6 +907,17 @@
+@@ -889,6 +901,17 @@
  	dev->set_multicast_list = &set_rx_mode;
  	dev->do_ioctl = &speedo_ioctl;
  
@@ -749,7 +729,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  	return dev;
  }
  
-@@ -1062,6 +1091,9 @@
+@@ -1062,6 +1085,9 @@
  	/* Set the segment registers to '0'. */
  	wait_for_cmd_done(ioaddr + SCBCmd);
  	outl(0, ioaddr + SCBPointer);
@@ -759,7 +739,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  	outb(RxAddrLoad, ioaddr + SCBCmd);
  	wait_for_cmd_done(ioaddr + SCBCmd);
  	outb(CUCmdBase, ioaddr + SCBCmd);
-@@ -1106,7 +1138,8 @@
+@@ -1106,7 +1132,8 @@
  		 ioaddr + SCBPointer);
  	/* We are not ACK-ing FCP and ER in the interrupt handler yet so they should
  	   remain masked --Dragan */
@@ -769,7 +749,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  }
  
  /* Media monitoring and control. */
-@@ -1313,7 +1346,8 @@
+@@ -1313,7 +1340,8 @@
  			   dev->name);
  		outl(virt_to_bus(&sp->tx_ring[sp->dirty_tx % TX_RING_SIZE]),
  			 ioaddr + SCBPointer);
@@ -779,6 +759,19 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  		reset_mii(dev);
  	} else {
  #else
+@@ -1360,6 +1388,12 @@
+ 	long ioaddr = dev->base_addr;
+ 	int entry;
+ 
++	if (dev->polling > 0) {
++		printk(KERN_ERR "%s: start_xmit while polling\n",
++		       dev->name);
++		return 1;
++	}
++
+ #if ! defined(HAS_NETIF_QUEUE)
+ 	if (test_bit(0, (void*)&dev->tbusy) != 0) {
+ 		int tickssofar = jiffies - dev->trans_start;
 @@ -1372,7 +1406,8 @@
  			command atomic.  --SAW */
  			spin_lock_irqsave(&sp->lock, flags);
@@ -794,7 +787,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  	struct speedo_private *sp = (struct speedo_private *)dev->priv;
  
 +	if (dev->polling) {
-+		printk(KERN_INFO "%s: speedo_tx_buffer_gc while polling\n",
++		printk(KERN_ERR "%s: speedo_tx_buffer_gc while polling\n",
 +		       dev->name);
 +		return;
 +	}
@@ -807,7 +800,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  #endif
  
 +	if (dev->polling)
-+		printk(KERN_DEBUG "%s: interrupt while polling\n", dev->name);
++		printk(KERN_ERR "%s: interrupt while polling\n", dev->name);
 +
  	ioaddr = dev->base_addr;
  	sp = (struct speedo_private *)dev->priv;
@@ -817,15 +810,28 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
  	struct speedo_private *sp = (struct speedo_private *)dev->priv;
  
 +	if (dev->polling) {
-+		printk(KERN_INFO "%s: speedo_refill_rx_buffers called "
-+		       "while polling", dev->name);
++		printk(KERN_ERR "%s: speedo_refill_rx_buffers called "
++		       "while polling\n", dev->name);
 +		return;
 +	}
 +
  	/* Refill the RX ring. */
  	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 &&
  			speedo_refill_rx_buf(dev, force) != -1);
-@@ -2213,3 +2263,343 @@
+@@ -1730,6 +1780,12 @@
+ 	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
+ 	int alloc_ok = 1;
+ 
++	if (dev->polling) {
++		printk(KERN_ERR "%s: in speedo_rx() while polling\n",
++		       dev->name);
++		return 0;
++	}
++
+ 	if (speedo_debug > 4)
+ 		printk(KERN_DEBUG " In speedo_rx().\n");
+ 	/* If we own the next entry, it's a new packet. Send it up. */
+@@ -2213,3 +2269,368 @@
   *  tab-width: 4
   * End:
   */
@@ -838,6 +844,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +static int speedo_rx_refill(struct net_device *dev, struct sk_buff **skbs) {
 +	struct speedo_private *sp = (struct speedo_private *)dev->priv;
 +	struct sk_buff *skb_list;
++	int dirty_rx = sp->dirty_rx;
 +
 +	/* If the list is empty, return the number of skb's we want */
 +	if (skbs == 0)
@@ -869,12 +876,29 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +			skb_reserve(skb, sizeof(struct RxFD));
 +
 +			rxf = sp->rx_ringp[entry];
-+			rxf->rx_buf_addr = virt_to_bus(skb->tail);
++			rxf->rx_buf_addr = (uint32_t)0xffffffff;
 +		} else {
 +			rxf = sp->rx_ringp[entry];
 +		}
 +		speedo_rx_link(dev, entry, rxf);
 +		sp->dirty_rx++;
++	}
++
++	/*
++	 * Check if the RU is stopped -- restart it, if so.
++	 */
++	if ((inw(dev->base_addr + SCBStatus) & 0x003c) == 0x0008) {
++		wait_for_cmd_done(dev->base_addr + SCBCmd);
++
++		/*
++		 * If the RU stopped, it's because there aren't
++		 * any DMA buffers left, so the first DMA buffer
++		 * we've just refilled is where we should start
++		 * receiving.
++		 */
++		outl(virt_to_bus(sp->rx_ringp[dirty_rx % RX_RING_SIZE]),
++		     dev->base_addr + SCBPointer);
++		outb(RxStart, dev->base_addr + SCBCmd);
 +	}
 +
 +	/*
@@ -972,6 +996,14 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +		sp->rx_ring_state &= ~RrPostponed;
 +	}
 +
++	if (got == 0 && (inw(dev->base_addr + SCBStatus) & 0x003c) == 0x0008) {
++		wait_for_cmd_done(dev->base_addr + SCBCmd);
++
++		outl(virt_to_bus(sp->rx_ringp[sp->cur_rx % RX_RING_SIZE]),
++		     dev->base_addr + SCBPointer);
++		outb(RxStart, dev->base_addr + SCBCmd);
++	}
++
 +	sp->last_rx_time = jiffies;
 +	*want = got;
 +	return skb_head;
@@ -1023,8 +1055,6 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +	sp->tx_skbuff[entry] = skb;
 +	sp->tx_ring[entry].status =
 +		cpu_to_le32(CmdSuspend | CmdTx | CmdTxFlex);
-+	if (!(entry & ((TX_RING_SIZE>>2)-1)))
-+		sp->tx_ring[entry].status |= cpu_to_le32(CmdIntr);
 +	sp->tx_ring[entry].link =
 +		virt_to_le32desc(&sp->tx_ring[sp->cur_tx % TX_RING_SIZE]);
 +	sp->tx_ring[entry].tx_desc_addr =
@@ -1039,7 +1069,6 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +	wait_for_cmd_done(ioaddr + SCBCmd);
 +	clear_suspend(sp->last_cmd);
 +
-+	outb(CUResume, ioaddr + SCBCmd);
 +	sp->last_cmd = (struct descriptor *)&sp->tx_ring[entry];
 +
 +	/* Leave room for set_rx_mode(). If there is no more space than
@@ -1056,6 +1085,8 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +}
 +
 +static int speedo_tx_eob(struct net_device *dev) {
++	/* Start the DMA going again */
++	outb(CUResume, dev->base_addr + SCBCmd);
 +	return 0;
 +}
 +
@@ -1148,7 +1179,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +
 +	if (dev->polling == 0) {
 +		/* Mask all interrupts */
-+		outb(SCBIntrDisable, ioaddr + SCBIntr);
++		outw(SCBMaskAll, ioaddr + SCBCmd);
 +
 +		dev->polling = 2;
 +	}
@@ -1161,7 +1192,7 @@ diff -u -r ../linux-2.2.18-clean/drivers/net/eepro100.c ./drivers/net/eepro100.c
 +
 +	if (dev->polling > 0) {
 +		/* Enable interrupts */
-+		outb(SCBIntrEnable, ioaddr + SCBIntr);
++		outw(0, ioaddr + SCBCmd);
 +
 +		dev->polling = 0;
 +	}
