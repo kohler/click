@@ -1,3 +1,13 @@
+2003-06-18 Wednesday 15:21  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/: simplequeue.cc (1.4), simplequeue.hh (1.4):
+	Add yank() function which allows other elements to remove packets
+	from the queue that match an arbitrary filter function.  Useful for
+	e.g. repairing packet routes in adhoc networks when links break. 
+	Implemented by Dan & Doug utilizing state-of-the-art XP pair
+	programming, so no doubt no bugs remain, especially if you never
+	use the yank() function...
+
 2003-06-17 Tuesday 17:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/: pokehandlers.cc (1.31), pokehandlers.hh
