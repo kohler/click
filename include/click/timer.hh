@@ -21,7 +21,7 @@ class Timer { public:
 
   bool initialized() const		{ return _head != 0; }
   bool scheduled() const		{ return _prev != 0; }
-  const struct timeval &when() const	{ return _expires; }
+  const struct timeval &expiry() const	{ return _expiry; }
   bool is_list() const;
   
   void initialize(TimerList *);
@@ -34,8 +34,10 @@ class Timer { public:
   void reschedule_at(const struct timeval &);		// synonym
 
   void schedule_now();
+  void schedule_after(const struct timeval &);
   void schedule_after_s(uint32_t);
   void schedule_after_ms(uint32_t);
+  void reschedule_after(const struct timeval &);
   void reschedule_after_s(uint32_t);
   void reschedule_after_ms(uint32_t);
 
@@ -45,7 +47,7 @@ class Timer { public:
   
   Timer *_prev;
   Timer *_next;
-  struct timeval _expires;
+  struct timeval _expiry;
   TimerHook _hook;
   void *_thunk;
   TimerList *_head;
@@ -61,7 +63,7 @@ class TimerList : public Timer { public:
 
   TimerList();
 
-  void run();
+  void run(const volatile int * = 0);
   int get_next_delay(struct timeval *tv);
 
   void unschedule_all();
@@ -95,6 +97,12 @@ inline void
 Timer::schedule_now()
 {
   schedule_after_ms(0);
+}
+
+inline void
+Timer::reschedule_after(const struct timeval &delta)
+{
+  schedule_at(_expiry + delta);
 }
 
 inline void

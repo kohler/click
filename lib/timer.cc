@@ -96,12 +96,12 @@ Timer::schedule_at(const struct timeval &when)
     unschedule();
 
   // set expiration timer
-  _expires = when;
+  _expiry = when;
 
   // manipulate list
   Timer *prev = _head;
   Timer *trav = prev->_next;
-  while (trav != _head && timercmp(&_expires, &trav->_expires, >)) {
+  while (trav != _head && timercmp(&_expiry, &trav->_expiry, >)) {
     prev = trav;
     trav = trav->_next;
   }
@@ -137,7 +137,7 @@ Timer::schedule_after_ms(uint32_t ms)
 void
 Timer::reschedule_after_s(uint32_t s)
 {
-  struct timeval t = _expires;
+  struct timeval t = _expiry;
   t.tv_sec += s;
   schedule_at(t);
 }
@@ -145,7 +145,7 @@ Timer::reschedule_after_s(uint32_t s)
 void
 Timer::reschedule_after_ms(uint32_t ms)
 {
-  struct timeval t = _expires;
+  struct timeval t = _expiry;
   struct timeval interval;
   interval.tv_sec = ms / 1000;
   interval.tv_usec = (ms % 1000) * 1000;
@@ -166,12 +166,17 @@ Timer::unschedule()
 }
 
 void
-TimerList::run()
+TimerList::run(const volatile int *runcount)
 {
+  static int one = 1;
   if (attempt_lock()) {
     struct timeval now;
     click_gettimeofday(&now);
-    while (_next != this && !timercmp(&_next->_expires, &now, >)) {
+    if (!runcount)
+      runcount = &one;
+    while (_next != this
+	   && !timercmp(&_next->_expiry, &now, >)
+	   && *runcount > 0) {
       Timer *t = _next;
       _next = t->_next;
       _next->_prev = this;
@@ -196,8 +201,8 @@ TimerList::get_next_delay(struct timeval *tv)
   } else {
     struct timeval now;
     click_gettimeofday(&now);
-    if (timercmp(&_next->_expires, &now, >)) {
-      timersub(&_next->_expires, &now, tv);
+    if (timercmp(&_next->_expiry, &now, >)) {
+      timersub(&_next->_expiry, &now, tv);
     } else {
       tv->tv_sec = 0;
       tv->tv_usec = 0;
