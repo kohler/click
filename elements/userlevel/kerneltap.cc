@@ -238,9 +238,18 @@ KernelTap::selected(int fd)
     memcpy(p->data() + sizeof(click_ether), b + 4, cc - 4);
     output(0).push(p);
 #elif defined (__linux__)
+#if 0
     // Linux prefixes packet with 2 extra bytes for alignment, then ether_header.
     Packet *p = Packet::make(_headroom, b + 2, cc - 2, 0);
     output(0).push(p);
+#else // do this way for alignment
+    /* Linux prefixes packet with 2 bytes of 0, then ether_header.  We
+       will leave the 2 padding bytes in the buffer for alignment, but
+       tell click to ignore them. */
+    Packet *p = Packet::make(_headroom, b, cc, 0);
+    p->pull(2);
+    output(0).push(p);
+#endif
 #endif
   } else {
     perror("KernelTap read");

@@ -233,7 +233,7 @@ FromDevice::initialize(ErrorHandler *errh)
     _was_promisc = promisc_ok;
 
   // create packet buffer
-  _packetbuf = new unsigned char[_packetbuf_size];
+  _packetbuf = new unsigned char[_packetbuf_size + 2]; // +2 for ether header alignment
   if (!_packetbuf) {
     close(_fd);
     return errh->error("out of memory");
@@ -296,11 +296,18 @@ FromDevice::selected(int)
   struct sockaddr_ll sa;
   //memset(&sa, 0, sizeof(sa));
   socklen_t fromlen = sizeof(sa);
-  int len = recvfrom(_fd, _packetbuf, _packetbuf_size, 0,
+  // store data offset 2 bytes into _packetbuf, assuming that first 14
+  // bytes are ether header, and that we want remaining data to be
+  // 4-byte aligned.  this assumes that _packetbuf is 4-byte aligned,
+  // and that the buffer allocated by Packet::make is also 4-byte
+  // aligned.  Actually, it doesn't matter if _packetbuf is 4-byte
+  // aligned; perhpas there is some efficiency aspect?  who cares....
+  int len = recvfrom(_fd, _packetbuf + 2, _packetbuf_size - 2, 0,
 		     (sockaddr *)&sa, &fromlen);
   if (len > 0) {
     if (sa.sll_pkttype != PACKET_OUTGOING) {
-      Packet *p = Packet::make(_packetbuf, len);
+      Packet *p = Packet::make(_packetbuf, len + 2);
+      p->pull(2);
       set_annotations(p);
       output(0).push(p);
     }
