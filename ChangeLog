@@ -1,3 +1,7 @@
+2003-01-24 Friday 19:04  Eddie Kohler <kohler@icir.org>
+
+	* lib/confparse.cc (1.107): nitlet
+
 2003-01-24 Friday 01:10  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/: tohost.cc (1.36), tohostsniffers.cc

@@ -1,3 +1,7 @@
+2003-01-24 Friday 19:04  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/confparse.cc: nitlet
+
 2002-12-19 Thursday 18:20  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/addressinfo.cc: fix device reference count bug
