@@ -674,7 +674,7 @@ FromTcpdump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel FromFile IPSummaryDumpInfo)
+ELEMENT_REQUIRES(userlevel FromFile)
 EXPORT_ELEMENT(FromTcpdump)
 #include <click/bighashmap.cc>
 CLICK_ENDDECLS

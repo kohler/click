@@ -112,7 +112,7 @@ When written, sets `active' to false and stops the driver.
 
 tcpdump(1), FromDump, FromIPSummaryDump */
 
-class FromTcpdump : public Element, public IPSummaryDumpInfo { public:
+class FromTcpdump : public Element { public:
 
     FromTcpdump();
     ~FromTcpdump();

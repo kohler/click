@@ -50,5 +50,6 @@ BandwidthRatedUnqueue::run_task()
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(RatedUnqueue)
 EXPORT_ELEMENT(BandwidthRatedUnqueue)
 ELEMENT_MT_SAFE(BandwidthRatedUnqueue)

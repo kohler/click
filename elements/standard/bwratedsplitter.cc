@@ -43,4 +43,5 @@ BandwidthRatedSplitter::push(int, Packet *p)
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(RatedSplitter)
 EXPORT_ELEMENT(BandwidthRatedSplitter)

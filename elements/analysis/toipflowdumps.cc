@@ -906,5 +906,5 @@ ToIPFlowDumps::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel AggregateNotifier)
 EXPORT_ELEMENT(ToIPFlowDumps)

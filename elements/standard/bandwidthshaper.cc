@@ -46,4 +46,5 @@ BandwidthShaper::pull(int)
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(Shaper)
 EXPORT_ELEMENT(BandwidthShaper)

@@ -225,6 +225,6 @@ AggregateLast::add_handlers()
     add_write_handler("clear", write_handler, (void *)H_CLEAR);
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel AggregateNotifier)
 EXPORT_ELEMENT(AggregateLast)
 CLICK_ENDDECLS

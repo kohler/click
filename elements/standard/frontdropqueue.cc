@@ -132,5 +132,5 @@ FrontDropQueue::push(int, Packet *p)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(SimpleQueue)
+ELEMENT_REQUIRES(NotifierQueue)
 EXPORT_ELEMENT(FrontDropQueue)

@@ -52,4 +52,5 @@ Meter::push(int, Packet *p)
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(BandwidthMeter)
 EXPORT_ELEMENT(Meter)

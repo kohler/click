@@ -269,6 +269,6 @@ KernelHandlerProxy::llrpc(unsigned command, void *data)
     return Element::llrpc(command, data);
 }
 
-CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel HandlerProxy)
 EXPORT_ELEMENT(KernelHandlerProxy)
+CLICK_ENDDECLS

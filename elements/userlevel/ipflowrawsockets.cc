@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.cc,v 1.5 2004/06/22 16:54:39 eddietwo Exp $
+ * $Id: ipflowrawsockets.cc,v 1.6 2004/07/07 16:06:08 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -441,5 +441,5 @@ IPFlowRawSockets::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel analysis pcap)
+ELEMENT_REQUIRES(userlevel AggregateNotifier pcap)
 EXPORT_ELEMENT(IPFlowRawSockets)
