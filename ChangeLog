@@ -1,3 +1,8 @@
+2001-11-06 Tuesday 00:00  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/lookuplocalgridroute.cc (1.28): on gateway, kill
+	packets sent from external network to special gateway IP
+
 2001-11-05 Monday 12:15  Eddie Kohler <kohler@aciri.org>
 
 	* lib/packageutils.cc (1.4): fix typo in error message
