@@ -24,7 +24,7 @@ with a mask, such as C<"ip src/8"> or C<"ip[8, 2] & 0x3F0">. (Note that the
 offset-length form contains a comma, which you must protect with single or
 double quotes.)
 
-The aggregate annotation value is in host byte order.
+The aggregate annotation value uses host byte order.
 
 Valid header field names are C<"ip vers">, C<"ip hl">, C<"ip tos">, C<"ip
 dscp">, C<"ip ecn">, C<"ip len">, C<"ip id">, C<"ip off"> (the entire
