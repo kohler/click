@@ -50,7 +50,7 @@ public:
   ~LookupIPRoute();
   
   const char *class_name() const		{ return "LookupIPRoute"; }
-  const char *processing() const		{ return AGNOSTIC; }
+  const char *processing() const		{ return PUSH; }
   LookupIPRoute *clone() const;
   
   int configure(const Vector<String> &, ErrorHandler *);
