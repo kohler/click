@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/integers.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/integers.hh" -*-
 /*
  * integers.{cc,hh} -- unaligned/network-order "integers"
  * Eddie Kohler
@@ -21,3 +21,48 @@
 #include <click/config.h>
 #include <click/glue.hh>
 #include <click/integers.hh>
+
+
+// first_bit_set(uint32_t) borrowed from tcpdpriv
+
+int
+first_bit_set(uint32_t value)
+{
+    int add = 0;
+    static uint8_t bvals[] = { 0, 4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 };
+
+    if ((value & 0xFFFF0000) == 0) {
+	if (value == 0)		/* zero input ==> zero output */
+	    return 0;
+	add += 16;
+    } else
+	value >>= 16;
+
+    if ((value & 0xFF00) == 0)
+	add += 8;
+    else
+	value >>= 8;
+
+    if ((value & 0xF0) == 0)
+	add += 4;
+    else
+	value >>= 4;
+
+    return add + bvals[value & 0xf];
+}
+
+
+#ifdef HAVE_INT64_TYPES
+
+int
+first_bit_set(uint64_t value)
+{
+    uint32_t hi = (uint32_t)(value >> 32);
+    if (hi == 0) {
+	uint32_t lo = (uint32_t)value;
+	return (lo ? 32 + first_bit_set(lo) : 0);
+    } else
+	return first_bit_set(hi);
+}
+
+#endif
