@@ -5,11 +5,10 @@
 
 /*
  * =c
- * Print(tag)
+ * Print(TAG [, MAX_BYTES])
  * =d
- * Moves each packet from input 0 to output 0.
- * Prints the first few bytes, in hex, of each packet,
- * preceded by the tag text.
+ * Prints up to MAX_BYTES bytes of data from each packet's header, in hex,
+ * preceded by the TAG text. Default MAX_BYTES is 24.
  */
 
 class Print : public Element {
@@ -21,11 +20,10 @@ class Print : public Element {
  public:
   
   Print();
-  Print(const String &label);
   ~Print();
   
   const char *class_name() const		{ return "Print"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   Print *clone() const;
   int configure(const String &, ErrorHandler *);
