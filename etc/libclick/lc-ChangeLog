@@ -1,3 +1,8 @@
+2002-10-09 Wednesday 08:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* acclick.m4: handle difference between autonconf version 2.53 and
+	2.13 in endianness header check
+
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: task.hh, task.hh: remove unused method

@@ -1,3 +1,8 @@
+2002-10-09 Wednesday 08:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* acclick.m4 (1.21), aclocal.m4 (1.21): handle difference between
+	autonconf version 2.53 and 2.13 in endianness header check
+
 2002-10-06 Sunday 14:09  Eddie Kohler <kohler@icir.org>
 
 	* elements/tcpudp/tcprewriter.cc (1.29): fix htonl bug reported by
