@@ -89,6 +89,9 @@ bool cp_ethernet_address(const String &, EtherAddress *  CP_OPT_CONTEXT);
 
 #ifndef CLICK_TOOL
 Element *cp_element(const String &, Element *, ErrorHandler *);
+bool cp_handler(const String &, Element *, Element **, String *, ErrorHandler *);
+bool cp_handler(const String &, Element *, Element **, int *, ErrorHandler *);
+bool cp_handler(const String &, Element *, bool need_r, bool need_w, Element **, int *, ErrorHandler *);
 #endif
 
 #ifdef HAVE_IPSEC
@@ -99,36 +102,39 @@ typedef const char * const CpVaParseCmd;
 static CpVaParseCmd cpEnd = 0;
 extern CpVaParseCmd
   cpOptional,
-  cpUnmixedKeywords,
-  cpMixedKeywords,
   cpKeywords,
+  cpMandatoryKeywords,
   cpIgnore,
   cpIgnoreRest,
-  cpArgument,	// String *value
-  cpString,	// String *value
-  cpWord,	// String *value
-  cpBool,	// bool *value
-  cpByte,	// unsigned char *value
-  cpShort,	// short *value
-  cpUnsignedShort, // unsigned short *value
-  cpInteger,	// int *value
-  cpUnsigned,	// unsigned *value
-  cpReal2,	  // int frac_bits, int *value
-  cpNonnegReal2,  // int frac_bits, unsigned *value
-  cpReal10,	  // int frac_digits, int *value
-  cpNonnegReal10, // int frac_digits, unsigned *value
-  cpMilliseconds, // int *value_milliseconds
-  cpTimeval,	// struct timeval *value
-  cpIPAddress,	// unsigned char value[4] (or IPAddress *, or unsigned int *)
-  cpIPPrefix,	// unsigned char value[4], unsigned char mask[4]
-  cpIPAddressOrPrefix,	// unsigned char value[4], unsigned char mask[4]
-  cpIPAddressSet,	// IPAddressSet *
-  cpEthernetAddress,	// unsigned char value[6] (or EtherAddress *)
-  cpElement,	// Element **value
-  cpIP6Address,	// unsigned char value[16] (or IP6Address *)
-  cpIP6Prefix,	// unsigned char value[16], unsigned char mask[16]
-  cpIP6AddressOrPrefix,	// unsigned char value[16], unsigned char mask[16]
-  cpDesCblock;	// unsigned char value[8]
+  cpArgument,	// String *result
+  cpArguments,	// Vector<String> *result
+  cpString,	// String *result
+  cpWord,	// String *result
+  cpBool,	// bool *result
+  cpByte,	// unsigned char *result
+  cpShort,	// short *result
+  cpUnsignedShort,	// unsigned short *result
+  cpInteger,	// int *result
+  cpUnsigned,	// unsigned *result
+  cpReal2,	  // int frac_bits, int *result
+  cpNonnegReal2,  // int frac_bits, unsigned *result
+  cpReal10,	  // int frac_digits, int *result
+  cpNonnegReal10, // int frac_digits, unsigned *result
+  cpMilliseconds, // int *result (user writes "1.02", result is 1020)
+  cpTimeval,	// struct timeval *result
+  cpIPAddress,	// unsigned char result[4] (or IPAddress *, or unsigned int *)
+  cpIPPrefix,	// unsigned char result[4], unsigned char result_mask[4]
+  cpIPAddressOrPrefix,	// unsigned char result[4], unsigned char res_mask[4]
+  cpIPAddressSet,	// IPAddressSet *result
+  cpEthernetAddress,	// unsigned char result[6] (or EtherAddress *)
+  cpElement,	  // Element **result
+  cpHandler,	  // Element **result_element, int *result_hid
+  cpReadHandler,  // Element **result_element, int *result_hid
+  cpWriteHandler, // Element **result_element, int *result_hid
+  cpIP6Address,	// unsigned char result[16] (or IP6Address *)
+  cpIP6Prefix,	// unsigned char result[16], unsigned char result_mask[16]
+  cpIP6AddressOrPrefix,	// unsigned char result[16], unsigned char res_mask[16]
+  cpDesCblock;		// unsigned char result[8]
 
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
@@ -138,7 +144,7 @@ int cp_va_parse_keyword(const String &, CP_VA_PARSE_ARGS_REST);
 //        cpOptional, cpKeywords, cpIgnore...	manipulators
 //        CpVaParseCmd type_id,			actual argument
 //		const char *description,
-//		[[from table above; usually T *value_store]]
+//		[[from table above; usually T *result]]
 // Stores no values in the value_store arguments on error.
 
 void cp_va_static_initialize();
@@ -181,13 +187,14 @@ struct cp_value {
     bool b;
     int i;
     unsigned u;
-    unsigned char address[32];
-    int is[8];
+    unsigned char address[16];
+    int is[4];
 #ifndef CLICK_TOOL
     Element *element;
 #endif
-  } v;
+  } v, v2;
   String v_string;
+  String v2_string;
 };
 
 #undef CP_VA_ARGS_REST

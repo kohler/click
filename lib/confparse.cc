@@ -3,7 +3,8 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2000 Mazu Networks, Inc.
+ * Copyright (c) 2000-2001 Mazu Networks, Inc.
+ * Copyright (c) 2001 ACIRI
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -1398,13 +1399,14 @@ cp_ethernet_address(const String &str, EtherAddress *address
 
 
 #ifndef CLICK_TOOL
-Element *
-cp_element(const String &name, Element *owner, ErrorHandler *errh)
+static Element *
+element_helper(const String &name, Element *owner, ErrorHandler *errh)
 {
   String id = owner->id();
   Router *router = owner->router();
   int i = id.length();
   const char *data = id.data();
+  
   while (true) {
     for (i--; i >= 0 && data[i] != '/'; i--)
       /* nothing */;
@@ -1414,7 +1416,84 @@ cp_element(const String &name, Element *owner, ErrorHandler *errh)
     if (Element *e = router->find(n, 0))
       return e;
   }
+  
   return router->find(name, errh);
+}
+
+Element *
+cp_element(const String &text_in, Element *owner, ErrorHandler *errh)
+{
+  String name;
+  if (!cp_string(text_in, &name)) {
+    errh->error("bad name format");
+    return 0;
+  } else
+    return element_helper(name, owner, errh);
+}
+
+bool
+cp_handler(const String &str, Element *context, Element **result_element,
+	   String *result_hname, ErrorHandler *errh)
+{
+  String text;
+  if (!cp_string(str, &text)) {
+    errh->error("bad name format");
+    return false;
+  }
+
+  int leftmost_dot = text.find_left('.');
+  if (leftmost_dot < 0) {
+    errh->error("handler name syntax error: should have contained a dot `.'");
+    return false;
+  } else if (leftmost_dot == text.length() - 1) {
+    errh->error("empty handler name");
+    return false;
+  }
+
+  Element *e = element_helper(text.substring(0, leftmost_dot), context, errh);
+  if (!e)
+    return false;
+
+  *result_element = e;
+  *result_hname = text.substring(leftmost_dot + 1);
+  return true;
+}
+
+bool
+cp_handler(const String &str, Element *context, bool need_read,
+	   bool need_write, Element **result_element, int *result_hid,
+	   ErrorHandler *errh)
+{
+  Element *e;
+  String hname;
+
+  if (!cp_handler(str, context, &e, &hname, errh))
+    return false;
+
+  int hid = context->router()->find_handler(e, hname);
+  if (hid < 0) {
+    errh->error("element `%s' has no `%s' handler", e->id().cc(), hname.cc());
+    return false;
+  }
+
+  const Router::Handler &h = context->router()->handler(hid);
+  if (need_read && !h.read) {
+    errh->error("`%s.%s' is not a read handler", e->id().cc(), hname.cc());
+    return false;
+  } else if (need_write && !h.write) {
+    errh->error("`%s.%s' is not a write handler", e->id().cc(), hname.cc());
+    return false;
+  } else {
+    *result_element = e;
+    *result_hid = hid;
+    return true;
+  }
+}
+
+bool
+cp_handler(const String &str, Element *context, Element **result_element, int *result_hid, ErrorHandler *errh)
+{
+  return cp_handler(str, context, false, false, result_element, result_hid, errh);
 }
 #endif
 
@@ -1451,14 +1530,17 @@ cp_des_cblock(const String &str, unsigned char *return_value)
 // CP_VA_PARSE AND FRIENDS
 //
 
+// parse commands; those which must be recognized inside a keyword section
+// must begin with "\377"
+
 CpVaParseCmd
   cpOptional		= "OPTIONAL",
-  cpUnmixedKeywords	= "UNMIXED_KEYWORDS",
-  cpMixedKeywords	= "MIXED_KEYWORDS",
-  cpKeywords		= "KEYWORDS",
+  cpKeywords		= "\377KEYWORDS",
+  cpMandatoryKeywords	= "\377MANDATORY_KEYWORDS",
   cpIgnore		= "IGNORE",
-  cpIgnoreRest		= "IGNORE_REST",
+  cpIgnoreRest		= "\377IGNORE_REST",
   cpArgument		= "arg",
+  cpArguments		= "args",
   cpString		= "string",
   cpWord		= "word",
   cpBool		= "bool",
@@ -1479,6 +1561,9 @@ CpVaParseCmd
   cpIPAddressSet	= "ip_addr_set",
   cpEthernetAddress	= "ether_addr",
   cpElement		= "element",
+  cpHandler		= "handler",
+  cpReadHandler		= "read_handler",
+  cpWriteHandler	= "write_handler",
   cpIP6Address		= "ip6_addr",
   cpIP6Prefix		= "ip6_prefix",
   cpIP6AddressOrPrefix	= "ip6_addr_or_prefix",
@@ -1487,11 +1572,12 @@ CpVaParseCmd
 enum {
   cpiEnd = 0,
   cpiOptional,
-  cpiUnmixedKeywords,
-  cpiMixedKeywords,
+  cpiKeywords,
+  cpiMandatoryKeywords,
   cpiIgnore,
   cpiIgnoreRest,
   cpiArgument,
+  cpiArguments,
   cpiString,
   cpiWord,
   cpiBool,
@@ -1512,6 +1598,9 @@ enum {
   cpiIPAddressSet,
   cpiEthernetAddress,
   cpiElement,
+  cpiHandler,
+  cpiReadHandler,
+  cpiWriteHandler,
   cpiIP6Address,
   cpiIP6Prefix,
   cpiIP6AddressOrPrefix,
@@ -1606,7 +1695,8 @@ default_parsefunc(cp_value *v, const String &arg,
   switch (argtype->internal) {
     
    case cpiArgument:
-    v->v_string = arg;
+   case cpiArguments:
+    // nothing to do
     break;
     
    case cpiString:
@@ -1699,8 +1789,8 @@ default_parsefunc(cp_value *v, const String &arg,
      } else if (cp_errno == CPE_OVERFLOW)
        errh->error("overflow on %s (%s)", argname, desc);
      else {
-       v->v.is[0] = tv.tv_sec;
-       v->v.is[1] = tv.tv_usec;
+       v->v.i = tv.tv_sec;
+       v->v2.i = tv.tv_usec;
      }
      break;
    }
@@ -1735,7 +1825,7 @@ default_parsefunc(cp_value *v, const String &arg,
    case cpiIPPrefix:
    case cpiIPAddressOrPrefix: {
      bool mask_optional = (argtype->internal == cpiIPAddressOrPrefix);
-     if (!cp_ip_prefix(arg, v->v.address, v->v.address + 4, mask_optional CP_PASS_CONTEXT))
+     if (!cp_ip_prefix(arg, v->v.address, v->v2.address, mask_optional CP_PASS_CONTEXT))
        errh->error("%s takes IP address prefix (%s)", argname, desc);
      break;
    }
@@ -1744,8 +1834,6 @@ default_parsefunc(cp_value *v, const String &arg,
      IPAddressSet crap;
      if (!cp_ip_address_set(arg, &crap CP_PASS_CONTEXT))
        errh->error("%s takes set of IP addresses (%s)", argname, desc);
-     else
-       v->v_string = arg;
      break;
    }     
 
@@ -1757,7 +1845,7 @@ default_parsefunc(cp_value *v, const String &arg,
    case cpiIP6Prefix:
    case cpiIP6AddressOrPrefix: {
      bool mask_optional = (argtype->internal == cpiIP6AddressOrPrefix);
-     if (!cp_ip6_prefix(arg, v->v.address, v->v.address + 16, mask_optional CP_PASS_CONTEXT))
+     if (!cp_ip6_prefix(arg, v->v.address, v->v2.address, mask_optional CP_PASS_CONTEXT))
        errh->error("%s takes IPv6 address prefix (%s)", argname, desc);
      break;
    }
@@ -1775,12 +1863,21 @@ default_parsefunc(cp_value *v, const String &arg,
 #endif
 
 #ifndef CLICK_TOOL
-   case cpiElement:
-    if (!arg)
-      v->v.element = 0;
-    else
-      v->v.element = cp_element(arg, context, errh);
-    break;
+   case cpiElement: {
+     ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
+     v->v.element = cp_element(arg, context, &cerrh);
+     break;
+   }
+   
+   case cpiHandler:
+   case cpiReadHandler:
+   case cpiWriteHandler: {
+     ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
+     cp_handler(arg, context, argtype->internal == cpiReadHandler,
+		argtype->internal == cpiWriteHandler,
+		&v->v.element, &v->v2.i, &cerrh);
+     break;
+   }
 #endif
     
   }
@@ -1837,8 +1934,8 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 
    case cpiTimeval: {
      struct timeval *tvstore = (struct timeval *)v->store;
-     tvstore->tv_sec = v->v.is[0];
-     tvstore->tv_usec = v->v.is[1];
+     tvstore->tv_sec = v->v.i;
+     tvstore->tv_usec = v->v2.i;
      break;
    }
 
@@ -1847,6 +1944,20 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiArgument: {
      String *sstore = (String *)v->store;
      *sstore = v->v_string;
+     break;
+   }
+
+   case cpiArguments: {
+     Vector<String> *vstore = (Vector<String> *)v->store;
+     int pos = 0, pos2;
+     for (int len_pos = 0; len_pos < v->v2_string.length(); ) {
+       int next = v->v2_string.find_left(' ', pos);
+       cp_integer(v->v2_string.substring(len_pos, next - len_pos), &pos2);
+       vstore->push_back(v->v_string.substring(pos, pos2 - pos));
+       pos = pos2;
+       len_pos = next + 1;
+     }
+     vstore->push_back(v->v_string.substring(pos));
      break;
    }
 
@@ -1879,7 +1990,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      unsigned char *addrstore = (unsigned char *)v->store;
      memcpy(addrstore, v->v.address, 4);
      unsigned char *maskstore = (unsigned char *)v->store2;
-     memcpy(maskstore, v->v.address + 4, 4);
+     memcpy(maskstore, v->v2.address, 4);
      break;
    }
 
@@ -1888,7 +1999,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      unsigned char *addrstore = (unsigned char *)v->store;
      memcpy(addrstore, v->v.address, 16);
      unsigned char *maskstore = (unsigned char *)v->store2;
-     memcpy(maskstore, v->v.address + 16, 16);
+     memcpy(maskstore, v->v2.address, 16);
      break;
    }
 
@@ -1903,6 +2014,16 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiElement: {
      Element **elementstore = (Element **)v->store;
      *elementstore = v->v.element;
+     break;
+   }
+
+   case cpiHandler:
+   case cpiReadHandler:
+   case cpiWriteHandler: {
+     Element **elementstore = (Element **)v->store;
+     int *hidstore = (int *)v->store2;
+     *elementstore = v->v.element;
+     *hidstore = v->v2.i;
      break;
    }
 #endif
@@ -1922,8 +2043,33 @@ enum {
   kwSuccess = 0,
   kwDupKeyword = -1,
   kwNoKeyword = -2,
-  kwUnkKeyword = -3
+  kwUnkKeyword = -3,
+  kwMissingKeyword = -4
 };
+
+static inline bool
+special_argtype_for_keyword(const cp_argtype *t)
+{
+  return t->internal == cpiArguments;
+}
+
+static int
+handle_special_argtype_for_keyword(cp_value *val, const String &rest)
+{
+  if (val->argtype->internal == cpiArguments) {
+    if (val->v.i > 0) {
+      val->v2_string += String(val->v_string.length()) + " ";
+      val->v_string += rest;
+    } else {
+      val->v.i = 1;
+      val->v_string = rest;
+    }
+    return kwSuccess;
+  } else {
+    assert(0);
+    return kwUnkKeyword;
+  }
+}
 
 static int
 assign_keyword_argument(const String &arg, int npositional, int nvalues)
@@ -1939,12 +2085,18 @@ assign_keyword_argument(const String &arg, int npositional, int nvalues)
   // look for keyword value
   for (int i = npositional; i < nvalues; i++)
     if (keyword == cp_values[i].keyword) {
-      // do not report error if keyword used already
-      // if (cp_values[i].v.i)
-      //   return kwDupKeyword;
-      cp_values[i].v.i = 1;
-      cp_values[i].v_string = rest;
-      return kwSuccess;
+      cp_value *val = &cp_values[i];
+      // handle special types differently
+      if (special_argtype_for_keyword(val->argtype))
+	return handle_special_argtype_for_keyword(val, rest);
+      else {
+	// do not report error if keyword used already
+	// if (cp_values[i].v.i > 0)
+	//   return kwDupKeyword;
+	val->v.i = 1;
+	val->v_string = rest;
+	return kwSuccess;
+      }
     }
   // no keyword found
   return kwUnkKeyword;
@@ -1970,6 +2122,21 @@ add_keyword_error(StringAccum &sa, int err, const String &arg,
 }
 
 static int
+finish_keyword_error(const char *format, const char *bad_keywords,
+		     int npositional, int nvalues, ErrorHandler *errh)
+{
+  StringAccum keywords_sa;
+  for (int i = npositional; i < nvalues; i++) {
+    if (i > npositional)
+      keywords_sa << ", ";
+    keywords_sa << cp_values[i].keyword;
+  }
+  errh->error(format, bad_keywords, keywords_sa.cc());
+  return -1;
+}
+
+
+static int
 cp_va_parsev(const Vector<String> &args,
 #ifndef CLICK_TOOL
 	     Element *context,
@@ -1984,7 +2151,7 @@ cp_va_parsev(const Vector<String> &args,
   int nvalues = 0;
   int nrequired = -1;
   int npositional = -1;
-  bool mixed_keywords = false;
+  bool mandatory_keywords = false;
   bool ignore_rest = false;
   int nerrors_in = errh->nerrors();
   
@@ -2002,15 +2169,21 @@ cp_va_parsev(const Vector<String> &args,
     cp_value *v = &cp_values[nvalues];
     v->argtype = 0;
     v->keyword = 0;
+    const char *command_name = 0;
     
     if (npositional >= 0) {
-      // read keyword if necessary
+      // read keyword if necessary; be careful of special "cp" values,
+      // which begin with "\377"
       v->keyword = va_arg(val, const char *);
       if (v->keyword == 0)
 	goto done;
+      else if (v->keyword[0] == '\377')
+	command_name = v->keyword;
     }
 
-    const char *command_name = va_arg(val, const char *);
+    // read command name
+    if (command_name == 0)
+      command_name = va_arg(val, const char *);
     if (command_name == 0)
       goto done;
 
@@ -2026,13 +2199,13 @@ cp_va_parsev(const Vector<String> &args,
       if (nrequired < 0)
 	nrequired = nvalues;
       continue;
-    } else if (argtype->internal == cpiUnmixedKeywords
-	       || argtype->internal == cpiMixedKeywords) {
+    } else if (argtype->internal == cpiKeywords
+	       || argtype->internal == cpiMandatoryKeywords) {
       if (nrequired < 0)
 	nrequired = nvalues;
       if (npositional < 0)
 	npositional = nvalues;
-      mixed_keywords = (argtype->internal == cpiMixedKeywords);
+      mandatory_keywords = (argtype->internal == cpiMandatoryKeywords);
       continue;
     } else if (argtype->internal == cpiIgnore) {
       v->argtype = argtype;
@@ -2053,7 +2226,7 @@ cp_va_parsev(const Vector<String> &args,
     v->store = va_arg(val, void *);
     if (argtype->extra == cpArgStore2)
       v->store2 = va_arg(val, void *);
-    v->v.i = 0;
+    v->v.i = (mandatory_keywords ? -1 : 0);
     nvalues++;
   }
 
@@ -2067,51 +2240,46 @@ cp_va_parsev(const Vector<String> &args,
   // assign arguments to positions
   int npositional_supplied = 0;
   StringAccum keyword_error_sa;
+  bool any_keywords = false;
+  
   for (int i = 0; i < args.size(); i++) {
-    // past positional arguments? keyword or skip
-    if (npositional_supplied >= npositional) {
+    // check for keyword if past mandatory positional arguments
+    if (npositional_supplied >= nrequired) {
       int result = assign_keyword_argument(args[i], npositional, nvalues);
-      if (result == kwDupKeyword)
-	add_keyword_error(keyword_error_sa, result, args[i], argname, i);
-      else if (result == kwSuccess || ignore_rest)
+      if (result == kwSuccess)
+	any_keywords = true;
+      else if (!any_keywords)
+	goto positional_argument; // optional argument, or too many arguments
+      else if (ignore_rest)
 	/* no error */;
-      else if (result == kwNoKeyword)
-	npositional_supplied++;	// signature error later
       else
 	add_keyword_error(keyword_error_sa, result, args[i], argname, i);
       continue;
     }
 
-    // check for mixed-in keyword
-    if (mixed_keywords) {
-      int result = assign_keyword_argument(args[i], npositional, nvalues);
-      if (result >= 0)
-	continue;
-      else if (result == kwDupKeyword) {
-	add_keyword_error(keyword_error_sa, result, args[i], argname, i);
-	continue;
-      }
-    }
-
     // otherwise, assign positional argument
-    cp_values[npositional_supplied].v_string = args[i];
+   positional_argument:
+    if (npositional_supplied < npositional)
+      cp_values[npositional_supplied].v_string = args[i];
     npositional_supplied++;
   }
   
   // report keyword argument errors
-  if (keyword_error_sa.length() && !keywords_only) {
-    StringAccum keywords_sa;
-    for (int i = npositional; i < nvalues; i++) {
-      if (i > npositional)
-	keywords_sa << ", ";
-      keywords_sa << cp_values[i].keyword;
+  if (keyword_error_sa.length() && !keywords_only)
+    return finish_keyword_error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.cc(), npositional, nvalues, errh);
+  
+  // report missing mandatory keywords
+  for (int i = npositional; i < nvalues; i++)
+    if (cp_values[i].v.i < 0) {
+      if (keyword_error_sa.length()) keyword_error_sa << ", ";
+      keyword_error_sa << cp_values[i].keyword;
     }
-    errh->error("bad keyword(s) %s\n(valid keywords are %s)", keyword_error_sa.cc(), keywords_sa.cc());
-    return -1;
-  }
+  if (keyword_error_sa.length())
+    return errh->error("missing mandatory keyword(s) %s", keyword_error_sa.cc());
   
   // if wrong number of arguments, print signature
-  if (npositional_supplied < nrequired || npositional_supplied > npositional) {
+  if (npositional_supplied < nrequired
+      || (npositional_supplied > npositional && !ignore_rest)) {
     StringAccum signature;
     for (int i = 0; i < npositional; i++) {
       if (i == nrequired)
@@ -2145,7 +2313,7 @@ cp_va_parsev(const Vector<String> &args,
   for (int i = npositional_supplied; i < npositional; i++)
     cp_values[i].argtype = 0;
   for (int i = npositional; i < nvalues; i++)
-    if (!cp_values[i].v.i)
+    if (cp_values[i].v.i <= 0)
       cp_values[i].argtype = 0;
   
   // parse arguments
@@ -2422,13 +2590,13 @@ cp_va_static_initialize()
   assert(!cp_values);
   
   cp_register_argtype(cpOptional, "<optional arguments marker>", 0, default_parsefunc, default_storefunc, cpiOptional);
-  cp_register_argtype(cpUnmixedKeywords, "<unmixed keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiUnmixedKeywords);
-  cp_register_argtype(cpMixedKeywords, "<intermixed keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiMixedKeywords);
-  cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiMixedKeywords);
+  cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiKeywords);
+  cp_register_argtype(cpMandatoryKeywords, "<mandatory keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiMandatoryKeywords);
   cp_register_argtype(cpIgnore, "<ignored argument>", 0, default_parsefunc, default_storefunc, cpiIgnore);
   cp_register_argtype(cpIgnoreRest, "<ignore rest marker>", 0, default_parsefunc, default_storefunc, cpiIgnoreRest);
   
-  cp_register_argtype(cpArgument, "??", 0, default_parsefunc, default_storefunc, cpiArgument);
+  cp_register_argtype(cpArgument, "arg", 0, default_parsefunc, default_storefunc, cpiArgument);
+  cp_register_argtype(cpArguments, "args", 0, default_parsefunc, default_storefunc, cpiArguments);
   cp_register_argtype(cpString, "string", 0, default_parsefunc, default_storefunc, cpiString);
   cp_register_argtype(cpWord, "word", 0, default_parsefunc, default_storefunc, cpiWord);
   cp_register_argtype(cpBool, "bool", 0, default_parsefunc, default_storefunc, cpiBool);
@@ -2448,7 +2616,12 @@ cp_va_static_initialize()
   cp_register_argtype(cpIPAddressOrPrefix, "IP address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPAddressOrPrefix);
   cp_register_argtype(cpIPAddressSet, "set of IP addresses", 0, default_parsefunc, default_storefunc, cpiIPAddressSet);
   cp_register_argtype(cpEthernetAddress, "Ethernet address", 0, default_parsefunc, default_storefunc, cpiEthernetAddress);
+#ifndef CLICK_TOOL
   cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
+  cp_register_argtype(cpHandler, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandler);
+  cp_register_argtype(cpReadHandler, "read handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiReadHandler);
+  cp_register_argtype(cpWriteHandler, "write handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiWriteHandler);
+#endif
   cp_register_argtype(cpIP6Address, "IPv6 address", 0, default_parsefunc, default_storefunc, cpiIP6Address);
   cp_register_argtype(cpIP6Prefix, "IPv6 address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6Prefix);
   cp_register_argtype(cpIP6AddressOrPrefix, "IPv6 address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIP6AddressOrPrefix);
