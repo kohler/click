@@ -1,3 +1,9 @@
+2003-08-05 Tuesday 14:58  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/linktable.cc (1.11): minor tweaks to handlers for
+	linktable add random delay to query forwarding to avoid broadcast
+	storms finished route errors
+
 2003-08-03 Sunday 13:57  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: arptable.cc (1.5), arptable.hh (1.4): added
