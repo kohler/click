@@ -1,5 +1,5 @@
 /*
- * gridroutecb.hh -- Grid route acction callback interface
+ * gridroutecb.hh -- Grid route action callback interface
  * Douglas S. J. De Couto
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
