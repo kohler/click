@@ -1,3 +1,23 @@
+2005-03-02 Wednesday 02:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/iprw.cc (1.60), elements/ip/lookupiproutemp.cc
+	(1.16), elements/linuxmodule/cpuqueue.cc (1.16),
+	elements/linuxmodule/cpuswitch.cc (1.11),
+	elements/standard/print.cc (1.28), include/click/atomic.hh (1.13),
+	include/click/glue.hh (1.48), include/click/nameinfo.hh (1.3),
+	include/click/packet.hh (1.52), include/click/sync.hh (1.16),
+	lib/glue.cc (1.47), linuxmodule/proclikefs.c (1.13),
+	linuxmodule/proclikefs.h (1.3), linuxmodule/sched.cc (1.51),
+	linuxmodule/skbmgr.cc (1.17), elements/linuxmodule/anydevice.cc
+	(1.30), elements/linuxmodule/fromhost.cc (1.51),
+	elements/linuxmodule/tohost.cc (1.45): partial Linux 2.6 support
+	merge
+
+2005-03-02 Wednesday 02:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/aggregateip.hh (1.15): change documented field
+	names
+
 2005-03-01 Tuesday 23:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.63): call each static_initialize function
