@@ -1,3 +1,20 @@
+2001-11-09 Friday 22:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.42), tools/build-grid-config.sh (1.2),
+	tools/grid-params.m4 (1.2): modified scripts and config files to
+	properly use newly modified GridLocationInfo.  UNTESTED, SO SHOOT
+	MExterm &!
+
+2001-11-09 Friday 22:12  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.41), elements/grid/fixsrcloc.cc (1.24),
+	elements/grid/gridgatewayinfo.hh (1.2),
+	elements/grid/gridheaderinfo.hh (1.4),
+	elements/grid/gridlocationinfo.cc (1.8),
+	elements/grid/gridlocationinfo.hh (1.4): modified GridLocationInfo
+	to properly support notions of loc-bad'' and error-radius''. 
+	Modified FixSrcLoc to also handle this.
+
 2001-11-08 Thursday 16:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.40), tools/build-grid-config.sh (1.1),
