@@ -30,14 +30,6 @@ Keyword arguments are:
 
 =over 8
 
-=item SAMPLE
-
-Unsigned real number between 0 and 1. FromIPSummaryDump will output each
-packet with probability SAMPLE. Default is 1. FromIPSummaryDump uses
-fixed-point arithmetic, so the actual sampling probability may differ
-substantially from the requested sampling probability. Use the
-C<sampling_prob> handler to find out the actual probability.
-
 =item STOP
 
 Boolean. If true, then FromIPSummaryDump will ask the router to stop when it
