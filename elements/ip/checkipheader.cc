@@ -62,6 +62,7 @@ CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "IP header offset", &_offset,
 		  0) < 0)
     return -1;
+  
   delete[] _bad_src;
   _n_bad_src = ips.size();
   _bad_src = ips.list_copy();
