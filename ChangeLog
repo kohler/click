@@ -1,3 +1,7 @@
+2004-09-03 Friday 18:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/iproutetable.hh (1.10): nit
+
 2004-09-03 Friday 14:52  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.86), etc/libclick/DISTFILES (1.24): DISTFILES
