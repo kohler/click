@@ -29,13 +29,15 @@ Keyword arguments are:
 
 =over 8
 
-=item SAMPLE
+=item STOP
 
-Unsigned real number between 0 and 1. FromDAGDump will output each packet with
-probability SAMPLE. Default is 1. FromDAGDump uses fixed-point arithmetic, so
-the actual sampling probability may differ substantially from the requested
-sampling probability. Use the C<sampling_prob> handler to find out the actual
-probability.
+Boolean. If true, then FromDAGDump will ask the router to stop when it is done
+reading its tcpdump file. Default is false.
+
+=item ACTIVE
+
+Boolean. If false, then FromDAGDump will not emit packets (until the
+`C<active>' handler is written). Default is true.
 
 =item FORCE_IP
 
@@ -43,11 +45,6 @@ Boolean. If true, then FromDAGDump will emit only IP packets with their IP
 header annotations correctly set. (If FromDAGDump has two outputs, non-IP
 packets are pushed out on output 1; otherwise, they are dropped.) Default is
 false.
-
-=item STOP
-
-Boolean. If true, then FromDAGDump will ask the router to stop when it is done
-reading its tcpdump file. Default is false.
 
 =item START
 
@@ -81,15 +78,18 @@ seconds after the first packet output.
 Specify the handler to call, instead of stopping FromDAGDump, once the end
 time is reached.
 
+=item SAMPLE
+
+Unsigned real number between 0 and 1. FromDAGDump will output each packet with
+probability SAMPLE. Default is 1. FromDAGDump uses fixed-point arithmetic, so
+the actual sampling probability may differ substantially from the requested
+sampling probability. Use the C<sampling_prob> handler to find out the actual
+probability.
+
 =item TIMING
 
 Boolean. If true, then FromDAGDump tries to maintain the inter-packet timing
 of the original packet stream. False by default.
-
-=item ACTIVE
-
-Boolean. If false, then FromDAGDump will not emit packets (until the
-`C<active>' handler is written). Default is true.
 
 =item MMAP
 
@@ -108,10 +108,6 @@ Only available in user-level processes.
 
 =n
 
-By default, `tcpdump -w FILENAME' dumps only the first 68 bytes of
-each packet. You probably want to run `tcpdump -w FILENAME -s 2000' or some
-such.
-
 FromDAGDump sets packets' extra length annotations to any additional length
 recorded in the dump.
 
@@ -127,14 +123,18 @@ Value is a Boolean.
 
 Returns the file's encapsulation type.
 
+=h filename read-only
+
+Returns the filename supplied to FromDAGDump.
+
 =h filesize read-only
 
-Returns the length of the FromDAGDump file, in bytes, or "-" if that
-length cannot be determined.
+Returns the length of the FromDAGDump file, in bytes, or "-" if that length
+cannot be determined (because the file was compressed, for example).
 
 =h filepos read-only
 
-Returns FromDAGDump's position in the file, in bytes.
+Returns FromDAGDump's position in the (uncompressed) file, in bytes.
 
 =h extend_interval write-only
 

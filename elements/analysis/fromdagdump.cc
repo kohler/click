@@ -78,10 +78,8 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_ff.filename(),
 		    cpKeywords,
-		    "TIMING", cpBool, "use original packet timing?", &timing,
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
-		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
 		    "START", cpTimeval, "starting time", &first_time,
 		    "START_AFTER", cpTimeval, "starting time offset", &first_time_off,
@@ -89,6 +87,8 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimeval, "time interval", &interval,
 		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_last_time_h,
+		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
+		    "TIMING", cpBool, "use original packet timing?", &timing,
 		    0) < 0)
 	return -1;
 
@@ -104,7 +104,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _first_time_relative = _last_time_relative = _last_time_interval = false;
     
     if ((timerisset(&first_time) != 0) + (timerisset(&first_time_off) != 0) > 1)
-	return errh->error("`START' and `START_AFTER' are mutually exclusive");
+	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
     else if (timerisset(&first_time))
 	_first_time = first_time;
     else if (timerisset(&first_time_off))
@@ -115,7 +115,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     }
     
     if ((timerisset(&last_time) != 0) + (timerisset(&last_time_off) != 0) + (timerisset(&interval) != 0) > 1)
-	return errh->error("`END', `END_AFTER', and `INTERVAL' are mutually exclusive");
+	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
     else if (timerisset(&last_time))
 	_last_time = last_time;
     else if (timerisset(&last_time_off))
@@ -346,8 +346,7 @@ FromDAGDump::pull(int)
 }
 
 enum {
-    SAMPLING_PROB_THUNK, ACTIVE_THUNK, ENCAP_THUNK, STOP_THUNK,
-    EXTEND_INTERVAL_THUNK
+    H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP, H_EXTEND_INTERVAL
 };
 
 String
@@ -355,11 +354,11 @@ FromDAGDump::read_handler(Element *e, void *thunk)
 {
     FromDAGDump *fd = static_cast<FromDAGDump *>(e);
     switch ((intptr_t)thunk) {
-      case SAMPLING_PROB_THUNK:
+      case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
-      case ACTIVE_THUNK:
+      case H_ACTIVE:
 	return cp_unparse_bool(fd->_active) + "\n";
-      case ENCAP_THUNK:
+      case H_ENCAP:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
       default:
 	return "<error>\n";
@@ -372,19 +371,19 @@ FromDAGDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
     FromDAGDump *fd = static_cast<FromDAGDump *>(e);
     String s = cp_uncomment(s_in);
     switch ((intptr_t)thunk) {
-      case ACTIVE_THUNK: {
+      case H_ACTIVE: {
 	  bool active;
 	  if (cp_bool(s, &active)) {
 	      fd->set_active(active);
 	      return 0;
 	  } else
-	      return errh->error("`active' should be Boolean");
+	      return errh->error("'active' should be Boolean");
       }
-      case STOP_THUNK:
+      case H_STOP:
 	fd->set_active(false);
 	fd->router()->please_stop_driver();
 	return 0;
-      case EXTEND_INTERVAL_THUNK: {
+      case H_EXTEND_INTERVAL: {
 	  struct timeval tv;
 	  if (cp_timeval(s, &tv)) {
 	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
@@ -392,7 +391,7 @@ FromDAGDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 		  fd->_have_last_time = true, fd->set_active(true);
 	      return 0;
 	  } else
-	      return errh->error("`extend_interval' takes a time interval");
+	      return errh->error("'extend_interval' takes a time interval");
       }
       default:
 	return -EINVAL;
@@ -402,12 +401,12 @@ FromDAGDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 void
 FromDAGDump::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, (void *)SAMPLING_PROB_THUNK);
-    add_read_handler("active", read_handler, (void *)ACTIVE_THUNK);
-    add_write_handler("active", write_handler, (void *)ACTIVE_THUNK);
-    add_read_handler("encap", read_handler, (void *)ENCAP_THUNK);
-    add_write_handler("stop", write_handler, (void *)STOP_THUNK);
-    add_write_handler("extend_interval", write_handler, (void *)EXTEND_INTERVAL_THUNK);
+    add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
+    add_read_handler("active", read_handler, (void *)H_ACTIVE);
+    add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("encap", read_handler, (void *)H_ENCAP);
+    add_write_handler("stop", write_handler, (void *)H_STOP);
+    add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
     _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);
