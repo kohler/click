@@ -1,3 +1,13 @@
+2003-04-25 Friday 11:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: hello.cc (1.42), lrhello.cc (1.27): remove
+	spurious dependencies
+
+2003-04-25 Friday 11:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: kerneltun.cc (1.42), kerneltun.hh (1.18):
+	Mac OSX support for KernelTun, thanks to Scott Torborg
+
 2003-04-24 Thursday 20:46  Eddie Kohler <kohler@icir.org>
 
 	* elements/tcpudp/dynudpipencap.hh (1.8): nitlet
