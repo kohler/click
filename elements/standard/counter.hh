@@ -38,16 +38,16 @@ exceeds I<N>, call the write handler I<HANDLER> with value I<VALUE>.
 
 =h count read-only
 
-Returns the number of packets that have passed through.
+Returns the number of packets that have passed through since the last reset.
 
 =h byte_count read-only
 
-Returns the number of packets that have passed through.
+Returns the number of bytes that have passed through since the last reset.
 
 =h rate read-only
 
-Returns the recent arrival rate (measured by exponential
-weighted moving average) in packets/bytes per second.
+Returns the recent arrival rate, measured by exponential
+weighted moving average, in packets per second.
 
 =h reset write-only
 
