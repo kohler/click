@@ -1,3 +1,32 @@
+2004-12-03 Friday 16:17  John Bicket <jbicket@mit.edu>
+
+	* elements/: grid/packetlogger.hh (1.4), wifi/availablerates.hh
+	(1.3), wifi/linkfailuredetection.hh (1.5),
+	wifi/analysis/counterrors.hh (1.3), wifi/analysis/countfecbytes.hh
+	(1.2), wifi/analysis/countfragbytes.hh (1.4),
+	wifi/analysis/errorthreshold.hh (1.2),
+	wifi/analysis/locationhistogram.hh (1.2),
+	wifi/ap/associationresponder.hh (1.3), wifi/ap/beaconsource.hh
+	(1.4), wifi/ap/openauthresponder.hh (1.3),
+	wifi/ap/proberesponder.hh (1.3), wifi/ap/stationtable.hh (1.2),
+	wifi/frag/checkfragment.hh (1.2), wifi/frag/defragment.hh (1.3),
+	wifi/frag/fragment.hh (1.2), wifi/frag/fragmentack.hh (1.3),
+	wifi/frag/fragmentdecap.hh (1.2), wifi/frag/fragmentdupefilter.hh
+	(1.2), wifi/frag/fragmentencap.hh (1.2),
+	wifi/frag/fragmentresender.hh (1.2), wifi/frag/printfragment.hh
+	(1.2), wifi/sr/checksrheader.hh (1.3), wifi/sr/counterflood.hh
+	(1.2), wifi/sr/ettstat.hh (1.11), wifi/sr/flashflood.hh (1.2),
+	wifi/sr/gatewayselector.hh (1.5), wifi/sr/ipaddresscounter.hh
+	(1.2), wifi/sr/localbroadcast.hh (1.2), wifi/sr/metricflood.hh
+	(1.2), wifi/sr/setsourceroute.hh (1.2), wifi/sr/setsrchecksum.hh
+	(1.2), wifi/sr/srforwarder.hh (1.5), wifi/sr/srquerier.hh (1.4),
+	wifi/sr/srqueryforwarder.hh (1.4), wifi/sr/srqueryresponder.hh
+	(1.5), wifi/sr/stripsrheader.hh (1.2),
+	wifi/station/associationrequester.hh (1.4),
+	wifi/station/beaconscanner.hh (1.4),
+	wifi/station/openauthrequester.hh (1.2),
+	wifi/station/proberequester.hh (1.3): more documentation fixes.
+
 2004-12-03 Friday 15:11  John Bicket <jbicket@mit.edu>
 
 	* elements/: ip6/setip6dscp.hh (1.5), wifi/arptable.hh (1.3),
