@@ -80,7 +80,7 @@ print "-);\n\n";
 
 
 print "// Incoming Encapsulated Packets\n";
-print "DivertSocket(", $device, ", 3000, 2, 17, 0.0.0.0/0, 4000, ", $meIP, ", 4000, in)\n";
+print "DivertSocket(3000)\n";
 print "\t-> CheckIPHeader\n";
 #//	-> Print(IN-ENCAP-RAW)
 print "\t-> ipc;\n\n";
@@ -99,7 +99,7 @@ for($i=0; $i<$n; $i++) {
 print "ipc[", $n, "] -> Discard\n";
 
 print "// Incoming NAT reply packets\n";
-print "DivertSocket(", $device, ", 3001, 2, 6, 0.0.0.0/0, ", $meIP, ", 50000-", 50099+($n-1)*100, ", in)\n";
+print "DivertSocket(3001)\n";
 print "\t-> CheckIPHeader\n";
 print "//\t-> IPPrint(IN-NAT______)\n";
 print "\t-> fragA :: IPFragmenter(1400, false)\n";
