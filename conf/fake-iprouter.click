@@ -35,7 +35,7 @@ c1 :: Classifier(12/0806 20/0001,
 
 
 Idle -> [0]c0;
-InfiniteSource(\<
+InfiniteSource(DATA \<
   // Ethernet header
   00 00 c0 ae 67 ef  00 00 00 00 00 00  08 00
   // IP header
@@ -47,7 +47,7 @@ InfiniteSource(\<
   01 00 00 00  00 00 00 00  00 80 04 08  00 80 04 08  53 53 00 00
   53 53 00 00  05 00 00 00  00 10 00 00  01 00 00 00  54 53 00 00
   54 e3 04 08  54 e3 04 08  d8 01 00 00
->, 600000, 5) -> [0]c1;
+>, LIMIT 600000, BURST 5, STOP true) -> [0]c1;
 out0 :: Queue(200) -> Discard;
 out1 :: Queue(200) -> Discard;
 tol :: Discard;
