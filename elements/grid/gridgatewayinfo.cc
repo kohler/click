@@ -40,12 +40,13 @@ int
 GridGatewayInfo::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-			cpElement, "DSDVRouteTable element", &_dsdv,
+			cpElement, "GridGenericRouteTable element", &_rt,
 			cpBool, "is this node a gateway?", &_is_gateway,
 			0);
-  if (0 == _dsdv) {
-    return errh->error("No dsdv elemetn specified, !");
-  }
+  if (_rt == 0) 
+    return errh->error("No route table specified");
+  if (_rt->cast("GridGenericRouteTable") == 0)
+    return errh->error("Route table element is not the right type");
   return res;
 
 }
@@ -73,9 +74,9 @@ GridGatewayInfo::print_best_gateway(Element *f, void *)
   GridGatewayInfo *l = (GridGatewayInfo *) f;
   String s;
   
-  IPAddress gw;
-  if (l->_dsdv->best_gateway(gw)) {
-    s += gw.s();
+  GridGenericRouteTable::RouteEntry gw;
+  if (l->_rt->current_gateway(gw)) {
+    s += gw.dest_ip.s();
   } else {
     s += "none\n";
   }
@@ -95,13 +96,13 @@ GridGatewayInfo::add_handlers()
 Packet *
 GridGatewayInfo::simple_action(Packet *p) 
 {
-  IPAddress gw;
-  if (_dsdv->best_gateway(gw)) {
-    p->set_dst_ip_anno(gw);
+  GridGenericRouteTable::RouteEntry gw;
+  if (_rt->current_gateway(gw)) {
+    p->set_dst_ip_anno(gw.dest_ip);
     return p;
   } else {
     /* we couldn't find a gateway, so drop the packet */
-    click_chatter("GridGatwayInfo: couldn't find a gateway. dropping packet");
+    click_chatter("GridGatewayInfo: couldn't find a gateway. dropping packet");
     p->kill();
     return(0);
   }

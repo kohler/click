@@ -221,19 +221,7 @@ DSDVRouteTable::initialize(ErrorHandler *)
 }
 
 bool
-DSDVRouteTable::current_gateway(RouteEntry &entry)
-{
-  for (RTIter i = _rtes.begin(); i; i++) {
-    if (i.value().is_gateway) {
-      entry = i.value();
-      return true;
-    }
-  }
-  return false;
-}
-
-bool
-DSDVRouteTable::best_gateway(IPAddress &gw_ip)
+DSDVRouteTable::current_gateway(RouteEntry &gw)
 {
   RTEntry best;
   bool found_gateway = false;
@@ -244,11 +232,8 @@ DSDVRouteTable::best_gateway(IPAddress &gw_ip)
     }
   }
   if (found_gateway) {
-    gw_ip = best.dest_ip;
-  } else {
-
-  }
-
+    gw = best;
+  } 
   return found_gateway;
 }
 

@@ -2,7 +2,7 @@
 #define GRIDGATEWAYINFO_HH
 #include <click/element.hh>
 #include "grid.hh"
-#include "dsdvroutetable.hh"
+#include "gridgenericrt.hh"
 CLICK_DECLS
 
 /*
@@ -43,7 +43,7 @@ public:
   static String print_best_gateway(Element *f, void *);
 
   Packet *simple_action(Packet *);
-  class DSDVRouteTable *_dsdv;
+  class GridGenericRouteTable *_rt;
 protected:
 
   bool _is_gateway;
