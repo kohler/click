@@ -24,7 +24,14 @@ class Vector { public:
   T &operator[](int i)			{ return at(i); }
   T &back()				{ return at(_n - 1); }
   T &at_u(int i)			{ return _l[i]; }
-  
+
+  typedef T *iterator;
+  typedef const T *const_iterator;
+  iterator begin()			{ return _l; }
+  const_iterator begin() const		{ return _l; }
+  iterator end()			{ return _l + _n; }
+  const_iterator end() const		{ return _l + _n; }
+
   void push_back(const T &);
   void pop_back();
   
@@ -89,6 +96,13 @@ class Vector<void *> { public:
   void *&operator[](int i)		{ return at(i); }
   void *&back()				{ return at(_n - 1); }
   void *&at_u(int i)			{ return _l[i]; }
+
+  typedef void **iterator;
+  typedef void * const *const_iterator;
+  iterator begin()			{ return _l; }
+  const_iterator begin() const		{ return _l; }
+  iterator end()			{ return _l + _n; }
+  const_iterator end() const		{ return _l + _n; }
   
   void push_back(void *);
   void pop_back();
@@ -153,6 +167,13 @@ class Vector<T *>: private Vector<void *> {
   T *&at(int i)			{ return (T *&)(Base::at(i)); }
   T *&back()			{ return (T *&)(Base::back()); }
   T *&at_u(int i)		{ return (T *&)(Base::at_u(i)); }
+
+  typedef T **iterator;
+  typedef T * const *const_iterator;
+  iterator begin()		{ return (iterator)(Base::begin()); }
+  const_iterator begin() const	{ return (const_iterator)(Base::begin()); }
+  iterator end()		{ return (iterator)(Base::end()); }
+  const_iterator end() const	{ return (const_iterator)(Base::end()); }
   
   void push_back(T *e)		{ Base::push_back((void *)e); }
   void pop_back()		{ Base::pop_back(); }

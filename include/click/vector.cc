@@ -15,6 +15,9 @@
  * legally binding.
  */
 
+#ifndef CLICK_VECTOR_CC
+#define CLICK_VECTOR_CC
+
 CLICK_ENDDECLS
 #include <click/glue.hh>
 #include <click/vector.hh>
@@ -128,3 +131,5 @@ Vector<T>::swap(Vector<T> &o)
   o._n = n;
   o._cap = cap;
 }
+
+#endif
