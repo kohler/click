@@ -1,3 +1,8 @@
+2003-03-22 Saturday 11:08  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
+
+	* ns/nsclick.cc (1.11): #ifdef out a couple of functions which
+	aren't needed anymore
+
 2003-03-17 Monday 14:34  Eddie Kohler <kohler@icir.org>
 
 	* lib/driver.cc (1.13): another attempt at OS X compilation fix
