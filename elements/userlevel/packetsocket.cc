@@ -10,10 +10,18 @@
  * distribution.
  */
 
+/*
+ * RTM asks "why isn't there just one user-level FromDevice that does
+ * the right thing (or is compiled from the right file) for each O/S?"
+ */
+
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
 #include "packetsocket.hh"
+
+#ifdef __linux__
+
 #include "error.hh"
 #include "packet.hh"
 #include "confparse.hh"
@@ -167,5 +175,19 @@ PacketSocket::push(int, Packet *p)
   if (res < 0)
     perror("PacketSocket::push");
 }
+
+#else /* not __linux__ */
+PacketSocket::PacketSocket()
+{
+}
+PacketSocket::~PacketSocket()
+{
+}
+PacketSocket *
+PacketSocket::clone() const
+{
+  return new PacketSocket();
+}
+#endif
 
 EXPORT_ELEMENT(PacketSocket)
