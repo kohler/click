@@ -3,7 +3,7 @@
  * click-pretty.cc -- pretty-print Click configurations
  * Eddie Kohler
  *
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2001-2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,7 @@
 #include <click/error.hh>
 #include <click/driver.hh>
 #include <click/straccum.hh>
+#include <click/confparse.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include "processingt.hh"
@@ -44,66 +45,92 @@
 #define ROUTER_OPT		303
 #define OUTPUT_OPT		304
 #define CLASS_URLS_OPT		305
-#define HTML_BOILERPLATE_OPT	306
+#define TEMPLATE_OPT		306
 
 static Clp_Option options[] = {
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
     { "class-urls", 'u', CLASS_URLS_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
-    { "html-boilerplate", 'h', HTML_BOILERPLATE_OPT, 0, Clp_Negate },
     { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+    { "template", 't', TEMPLATE_OPT, Clp_ArgString, 0 },
     { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
 static String::Initializer string_initializer;
 static const char *program_name;
-static bool html_boilerplate = false;
 
-static const char *html_header = "\
+static const char *default_template = "\
 <!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\
 <html><head>\n\
 <meta http-equiv='Content-Type' content='text/html; charset=ISO-8859-1'>\n\
 <meta http-equiv='Content-Style-Type' content='text/css'>\n\
 <style type='text/css'><!--\n\
-SPAN.click-kw {\n\
+SPAN.c-kw {\n\
   font-weight: bold;\n\
 }\n\
-SPAN.click-cdecl {\n\
+SPAN.c-cdecl {\n\
   font-style: italic;\n\
 }\n\
-SPAN.click-cstr {\n\
+SPAN.c-cstr {\n\
   color: green;\n\
 }\n\
-SPAN.click-cmt {\n\
+SPAN.c-cmt {\n\
   color: gray;\n\
 }\n\
-SPAN.click-err {\n\
+SPAN.c-err {\n\
   color: red;\n\
   font-weight: bold;\n\
 }\n\
-SPAN.click-err:hover {\n\
+SPAN.c-err:hover {\n\
   color: black;\n\
   font-weight: bold;\n\
   background-color: #000;\n\
 }\n\
-SPAN.click-et-decl {\n\
+SPAN.c-et-decl {\n\
   font-weight: bold;\n\
-  font-family: monospace;\n\
+  background: yellow;\n\
+  foreground: black;\n\
 }\n\
-SPAN.click-et-port {\n\
+SPAN.c-et-port {\n\
   font-family: monospace;\n\
   font-style: italic;\n\
   font-size: small;\n\
 }\n\
-SPAN.click-et-conn {\n\
+SPAN.c-et-conn {\n\
   font-family: monospace;\n\
   font-size: small;\n\
 }\n\
+P.c-ei, P.c-eit {\n\
+  margin-top: 0px;\n\
+  margin-bottom: 0px;\n\
+  text-indent: -2em;\n\
+  margin-left: 2em;\n\
+}\n\
+P.c-eite {\n\
+  margin-top: 0px;\n\
+  margin-bottom: 0px;\n\
+  margin-left: 3em;\n\
+}\n\
+SPAN.c-eih {\n\
+  font-weight: bold;\n\
+}\n\
+SPAN.c-ei-class {\n\
+}\n\
 --></style>\n\
-<body>\n";
-
-static const char *html_footer = "\
+<body>\n\
+<h1>Configuration</h1>\n\
+<!-- click-pretty:config /-->\n\
+<h1>Element index</h1>\n\
+<table cellspacing='0' cellpadding='0' border='0'>\n\
+<tr valign='top'>\n\
+<td><!-- click-pretty:eindex types configlink=' (<i>config</i>, ' etablelink='<i>table</i>)' column='1/2' /--></td>\n\
+<td width='15'>&nbsp;</td>\n\
+<td><!-- click-pretty:eindex types configlink=' (<i>config</i>, ' etablelink='<i>table</i>)' column='2/2' /--></td>\n\
+</tr>\n\
+</table>\n\
+<h1>Element tables</h1>\n\
+<!-- click-pretty:etables configlink=' (<i>config</i>)' /-->\n\
 </body>\n\
 </html>\n";
 
@@ -314,20 +341,20 @@ class PrettyLexerTInfo : public LexerTInfo { public:
     PrettyLexerTInfo()				{ }
   
     void notify_comment(int pos1, int pos2) {
-	add_item(pos1, "<span class='click-cmt'>", pos2, "</span>");
+	add_item(pos1, "<span class='c-cmt'>", pos2, "</span>");
     }
     void notify_error(const String &what, int pos1, int pos2) {
-	add_item(pos1, "<span class='click-err' title='" + url_attr_quote(what) + "'>", pos2, "</span>");
+	add_item(pos1, "<span class='c-err' title='" + url_attr_quote(what) + "'>", pos2, "</span>");
     }
     void notify_keyword(const String &, int pos1, int pos2) {
-	add_item(pos1, "<span class='click-kw'>", pos2, "</span>");
+	add_item(pos1, "<span class='c-kw'>", pos2, "</span>");
     }
     void notify_config_string(int pos1, int pos2) {
-	add_item(pos1, "<span class='click-cstr'>", pos2, "</span>");
+	add_item(pos1, "<span class='c-cstr'>", pos2, "</span>");
     }
     void notify_class_declaration(ElementClassT *ec, bool anonymous, int decl_pos1, int name_pos1, int) {
 	if (!anonymous)
-	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='click-cdecl'>", name_pos1 + ec->name().length(), "</span></a>");
+	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='c-cdecl'>", name_pos1 + ec->name().length(), "</span></a>");
 	else
 	    add_item(decl_pos1, "<a name='" + link_class_decl(ec) + "'>", decl_pos1 + 1, "</a>");
 	add_class_href(ec->unique_id(), "#" + link_class_decl(ec));
@@ -365,7 +392,7 @@ void
 usage()
 {
     printf("\
-`Click-pretty' checks a Click router configuration for correctness and reports\n\
+`C-pretty' checks a Click router configuration for correctness and reports\n\
 any error messages to standard error.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
@@ -530,6 +557,23 @@ output_config(String r_config, FILE *outf)
 }
 
 
+static bool
+parse_columns(const String &s, int &which, int &count)
+{
+    which = count = 1; 
+    int slash = s.find_left('/');
+    if (slash < 0)
+	return false;
+    if (!cp_integer(s.substring(0, slash), &which)
+	|| !cp_integer(s.substring(slash + 1), &count)
+	|| which <= 0 || which > count) {
+	which = count = 1;
+	return false;
+    } else
+	return true;
+}
+
+
 extern "C" {
 static const Vector<ConnectionT> *conn_compar_connvec;
 static bool conn_compar_from;
@@ -546,10 +590,46 @@ conn_compar(const void *v1, const void *v2)
     else
 	return click_strcmp(p1.elt->name(), p2.elt->name());
 }
+
+static int
+element_name_compar(const void *v1, const void *v2)
+{
+    const ElementT **e1 = (const ElementT **)v1, **e2 = (const ElementT **)v2;
+    return click_strcmp((*e1)->name(), (*e2)->name());
+}
+}
+
+
+static void
+link_around(StringAccum &sa, const String &href, const String &text)
+{
+    if (!text)
+	return;
+    
+    int offset = 0;
+    if (isspace(text[0]) || text[0] == ',' || text[0] == '(') {
+	offset = 1;
+	while (offset < text.length() && (isspace(text[offset]) || text[offset] == '('))
+	    offset++;
+	if (offset >= text.length())
+	    offset = 0;
+    } else if (text.substring(0, 6) == "&nbsp;" && text.length() > 6)
+	offset = 6;
+
+    int back_offset = text.length();
+    while (back_offset > offset + 1
+	   && (text[back_offset-1] == ')' || text[back_offset-1] == ','
+	       || isspace(text[back_offset-1])))
+	back_offset--;
+
+    sa << text.substring(0, offset) << "<a href='" << href << "'>"
+       << text.substring(offset, back_offset - offset) << "</a>"
+       << text.substring(back_offset);
 }
 
 static void
-output_element_connections(ElementT *e, RouterT *r, FILE *outf)
+output_element_table(ElementT *e, RouterT *r, FILE *outf,
+		     const String &config_link)
 {
     StringAccum sa;
 
@@ -565,7 +645,7 @@ output_element_connections(ElementT *e, RouterT *r, FILE *outf)
     sa << "<table cellspacing='0' cellpadding='1' border='0'>\n";
     
     // output declaration and link
-    sa << "<tr valign='top'><td colspan='2' align='left'><span class='click-et-decl'>"
+    sa << "<tr valign='top'><td colspan='2' align='left'><span class='c-et-decl'>"
        << "<a name='" + link_element_table(e, 0 /* XXX */) + "'>"
        << e->name() << "</a> :: ";
     String h = class_href(e->type());
@@ -573,8 +653,10 @@ output_element_connections(ElementT *e, RouterT *r, FILE *outf)
 	sa << "<a href='" << h << "'>" << e->type_name() << "</a>";
     else
 	sa << e->type_name();
-    sa << "</span> <a href='#" << link_element_decl(e, 0 /* XXX */)
-       << "'>*</a><br></td></tr>\n"
+    sa << "</span>";
+    if (config_link)
+	link_around(sa, link_element_decl(e, 0 /* XXX */), config_link);
+    sa << "<br></td></tr>\n"
        << "<tr valign='top'><td width='15'>&nbsp;</td>\n"
        << "<td>";
 
@@ -586,13 +668,13 @@ output_element_connections(ElementT *e, RouterT *r, FILE *outf)
     for (int i = 0; i < e->ninputs(); i++) {
 	r->find_connections_to(PortT(e, i), conn);
 	sa << "<tr valign='top'>"
-	   << "<td align='left'><span class='click-et-port'>input&nbsp;&nbsp;</span></td>\n"
-	   << "<td align='right'><span class='click-et-port'>" << i << "</span></td>\n";
+	   << "<td align='left'><span class='c-et-port'>input&nbsp;&nbsp;</span></td>\n"
+	   << "<td align='right'><span class='c-et-port'>" << i << "</span></td>\n";
 	if (conn.size()) {
-	    sa << "<td align='center'><span class='click-et-conn'>&nbsp;&lt;-&nbsp;</span></td>\n<td align='left'><span class='click-et-conn'>";
+	    sa << "<td align='center'><span class='c-et-conn'>&nbsp;&lt;-&nbsp;</span></td>\n<td align='left'><span class='c-et-conn'>";
 	    qsort(&conn[0], conn.size(), sizeof(int), conn_compar);
 	} else
-	    sa << "<td align='left' colspan='2'><span class='click-et-conn'>&nbsp;not connected";
+	    sa << "<td align='left' colspan='2'><span class='c-et-conn'>&nbsp;not connected";
 	for (int j = 0; j < conn.size(); j++) {
 	    const ConnectionT &c = r->connection(conn[j]);
 	    if (j)
@@ -605,20 +687,20 @@ output_element_connections(ElementT *e, RouterT *r, FILE *outf)
     }
     if (e->ninputs() == 0)
 	sa << "<tr valign='top'>"
-	   << "<td colspan='4'><span class='click-et-port'>no inputs<br></span></td></tr>\n";
+	   << "<td colspan='4'><span class='c-et-port'>no inputs<br></span></td></tr>\n";
 
     // outputs
     conn_compar_from = false;
     for (int i = 0; i < e->noutputs(); i++) {
 	r->find_connections_from(PortT(e, i), conn);
 	sa << "<tr valign='top'>"
-	   << "<td align='left'><span class='click-et-port'>output&nbsp;</span></td>\n"
-	   << "<td align='right'><span class='click-et-port'>" << i << "</span></td>\n";
+	   << "<td align='left'><span class='c-et-port'>output&nbsp;</span></td>\n"
+	   << "<td align='right'><span class='c-et-port'>" << i << "</span></td>\n";
 	if (conn.size()) {
-	    sa << "<td align='center'><span class='click-et-conn'>&nbsp;-&gt;&nbsp;</span></td>\n<td align='left'><span class='click-et-conn'>";
+	    sa << "<td align='center'><span class='c-et-conn'>&nbsp;-&gt;&nbsp;</span></td>\n<td align='left'><span class='c-et-conn'>";
 	    qsort(&conn[0], conn.size(), sizeof(int), conn_compar);
 	} else
-	    sa << "<td align='left' colspan='2'><span class='click-et-conn'>&nbsp;not connected";
+	    sa << "<td align='left' colspan='2'><span class='c-et-conn'>&nbsp;not connected";
 	for (int j = 0; j < conn.size(); j++) {
 	    const ConnectionT &c = r->connection(conn[j]);
 	    if (j)
@@ -631,24 +713,270 @@ output_element_connections(ElementT *e, RouterT *r, FILE *outf)
     }
     if (e->noutputs() == 0)
 	sa << "<tr valign='top'>"
-	   << "<td colspan='3'><span class='click-et-port'>no outputs<br></span></td></tr>\n";
+	   << "<td colspan='3'><span class='c-et-port'>no outputs<br></span></td></tr>\n";
 
     sa << "</table></td></tr></table>\n";
     fputs(sa.cc(), outf);
 }
 
-
-extern "C" {
-static int
-element_name_compar(const void *v1, const void *v2)
+static void
+output_etables(const Vector<ElementT *> &elements, RouterT *r, FILE *outf,
+	       const HashMap<String, String> &attrs)
 {
-    const ElementT **e1 = (const ElementT **)v1, **e2 = (const ElementT **)v2;
-    return click_strcmp((*e1)->name(), (*e2)->name());
+    String config_link = attrs["configlink"];
+    for (int i = 0; i < elements.size(); i++)
+	output_element_table(elements[i], r, outf, config_link);
 }
+
+
+static String
+eindex_string(ElementT *e, const String &config_link, const String &etable_link)
+{
+    StringAccum sa;
+    sa << "<p class='c-ei'><span class='c-eih'><span class='c-ei-elt'>" << e->name() << "</span></span>"
+       << "<span class='c-ei-class'> :: " << e->type_name() << "</span>";
+    if (config_link)
+	link_around(sa, "#" + link_element_decl(e, 0 /*XXX*/), config_link);
+    if (etable_link)
+	link_around(sa, "#" + link_element_table(e, 0 /*XXX*/), etable_link);
+    sa << "</p>\n";
+    return sa.take_string();
+}
+
+static String
+eindex_type_string(ElementClassT *type, const Vector<ElementT *> &elements, const String &fake_landmark, const String &, const String &)
+{
+    StringAccum sa;
+    sa << "<p class='c-eit'><span class='c-eih'><span class='c-ei-class'>" << type->name() << "</span></span> (type):</p>";
+    sa << "<p class='c-eite'><i>see</i> ";
+    const char *sep = "";
+    for (int i = 0; i < elements.size(); i++)
+	if (elements[i]->type() == type && elements[i]->landmark() != fake_landmark) {
+	    ElementT *e = elements[i];
+	    sa << sep << "<span class='c-eite-elt'>" << e->name() << "</span>";
+	    //if (config_link)
+	    //link_around(sa, "#" + link_element_decl(e, 0 /*XXX*/), config_link);
+	    //if (etable_link)
+	    //link_around(sa, "#" + link_element_table(e, 0 /*XXX*/), etable_link);
+	    sep = ", ";
+	}
+    sa << "</p>\n";
+    return sa.take_string();
 }
 
 static void
-pretty_process(const char *infile, const char *outfile, ErrorHandler *errh)
+output_eindex(RouterT *r, FILE *outf,
+	      const HashMap<String, String> &attrs)
+{
+    String config_link = attrs["configlink"];
+    String etable_link = attrs["etablelink"];
+    int which_col, ncol;
+    parse_columns(attrs["column"], which_col, ncol);
+    bool do_types = (attrs["types"] && attrs["types"] != "0");
+
+    // get list of elements
+    Vector<ElementT *> elements, free_elements;
+    HashMap<int, int> done_types(-1);
+    String fake_landmark = "<<fake>>";
+    
+    for (RouterT::iterator x = r->first_element(); x; x++) {
+	elements.push_back(x);
+	if (do_types && done_types[x->type_uid()] < 0) {
+	    ElementT *fake = new ElementT(x->type_name(), x->type(), "", fake_landmark);
+	    elements.push_back(fake);
+	    free_elements.push_back(fake);
+	    done_types.insert(x->type_uid(), 1);
+	}
+    }
+    
+    if (elements.size())
+	qsort(&elements[0], elements.size(), sizeof(ElementT *), element_name_compar);
+
+    // divide into columns
+    int per_col = ((elements.size() - 1) / ncol) + 1;
+    int first = (which_col - 1) * per_col;
+    int last = (which_col == ncol ? elements.size() : which_col * per_col);
+    
+    for (int i = first; i < last; i++) {
+	String s;
+	if (elements[i]->landmark() == fake_landmark)
+	    s = eindex_type_string(elements[i]->type(), elements, fake_landmark, config_link, etable_link);
+	else
+	    s = eindex_string(elements[i], config_link, etable_link);
+	fputs(s, outf);
+    }
+
+    // clean up
+    for (int i = 0; i < free_elements.size(); i++)
+	delete free_elements[i];
+}
+
+
+
+static const char *
+skip_comment(const char *x)
+{
+    while (1) {
+	if (!*x)
+	    return x;
+	else if (*x == '>')
+	    return x + 1;
+	else if (x[0] == '-' && x[1] == '-') {
+	    for (x += 2; *x && (x[0] != '-' || x[1] != '-'); x++)
+		/* nada */;
+	    if (*x)		// skip whitespace after comment
+		for (x += 2; isspace(*x); x++)
+		    /* nada */;
+	} else {		// should not happen
+	    for (x++; *x && (x[0] != '-' || x[1] != '-') && *x != '>'; x++)
+		/* nada */;
+	}
+    }
+}
+
+static HashMap<String, String> html_entities;
+
+static String
+html_unquote(const char *x, const char *end)
+{
+    if (!html_entities["&amp"]) {
+	html_entities.insert("&amp", "&");
+	html_entities.insert("&quot", "\"");
+	html_entities.insert("&lt", "<");
+	html_entities.insert("&gt", ">");
+    }
+    
+    StringAccum sa;
+    while (x < end) {
+	if (*x == '&') {
+	    if (x < end - 2 && x[1] == '#') {
+		int val = 0;
+		for (x += 2; x < end && isdigit(*x); x++)
+		    val = (val * 10) + *x - '0';
+		sa << (char)val;
+		if (x < end && *x == ';')
+		    x++;
+	    } else {
+		const char *start = x;
+		for (x++; x < end && isalnum(*x); x++)
+		    /* nada */;
+		String entity_name = String(start, x - start);
+		String entity_value = html_entities[entity_name];
+		sa << (entity_value ? entity_value : entity_name);
+		if (x < end && *x == ';' && entity_value)
+		    x++;
+	    }
+	} else
+	    sa << *x++;
+    }
+    return sa.take_string();
+}
+
+static const char *
+process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
+	    bool &ended)
+{
+    // process tag
+    while (isspace(*x))
+	x++;
+    const char *tag_start = x;
+    while (*x && *x != '>' && !isspace(*x))
+	x++;
+    tag = String(tag_start, x - tag_start).lower();
+    ended = false;
+    
+    // process attributes
+    while (1) {
+	while (isspace(*x))
+	    x++;
+	if (*x == 0)
+	    return x;
+	else if (*x == '>')
+	    return x + 1;
+	else if (x[0] == '-' && x[1] == '-' && x[2] == '>')
+	    return x + 3;
+	else if (*x == '/') {
+	    ended = true;
+	    x++;
+	    continue;
+	}
+
+	// calculate attribute start
+	const char *attr_start = x;
+	while (*x && *x != '>' && !isspace(*x) && *x != '=')
+	    x++;
+	String attr_name = html_unquote(attr_start, x).lower();
+
+	// look for '=' if any
+	while (isspace(*x))
+	    x++;
+	if (*x != '=') {
+	    attrs.insert(attr_name, attr_name);
+	    continue;
+	}
+
+	// attribute value
+	String attr_value;
+	for (x++; isspace(*x); x++)
+	    /* nada */;
+	if (*x == '\'') {
+	    const char *value_start = x + 1;
+	    for (x++; *x && *x != '\''; x++)
+		/* nada */;
+	    attr_value = html_unquote(value_start, x);
+	    if (*x)
+		x++;
+	} else if (*x == '\"') {
+	    const char *value_start = x + 1;
+	    for (x++; *x && *x != '\"'; x++)
+		/* nada */;
+	    attr_value = html_unquote(value_start, x);
+	    if (*x)
+		x++;
+	} else {
+	    const char *value_start = x;
+	    for (; *x && !isspace(*x) && *x != '>'; x++)
+		/* nada */;
+	    attr_value = html_unquote(value_start, x);
+	}
+	attrs.insert(attr_name, attr_value);
+    }
+}
+
+static const char *
+output_template_until_tag(const char *templ, FILE *outf,
+			  String &tag, HashMap<String, String> &attrs,
+			  bool &ended)
+{
+    // skip to next directive
+    const char *x = templ;
+    int q;
+    while (*x) {
+	if (x[0] == '<' && x[1] == '!') {
+	    if (memcmp(x + 2, "-- click-pretty:", 16) == 0) {
+		fwrite(templ, 1, x - templ, outf);
+		return process_tag(x + 18, tag, attrs, ended);
+	    } else
+		x = skip_comment(x + 2);
+	} else if (x[0] == '<') {
+	    for (x++; *x && *x != '>'; x++)
+		if (*x == '\'' || *x == '\"') {
+		    for (x++, q = *x; *x && *x != q; x++)
+			/* nada */;
+		    x--;
+		}
+	} else
+	    x++;
+    }
+
+    fwrite(templ, 1, x - templ, outf);
+    tag = String();
+    return 0;
+}
+
+static void
+pretty_process(const char *infile, const char *outfile,
+	       const char *templ, ErrorHandler *errh)
 {
     String r_config;
     RouterT *r = pretty_read_router(infile, errh, r_config);
@@ -666,25 +994,27 @@ pretty_process(const char *infile, const char *outfile, ErrorHandler *errh)
 	}
     }
 
-    if (html_boilerplate)
-	fputs(html_header, outf);
-
-    // output configuration
-    output_config(r_config, outf);
-
     // get list of elements
     Vector<ElementT *> elements;
     for (RouterT::iterator x = r->first_element(); x; x++)
 	elements.push_back(x);
     if (elements.size())
 	qsort(&elements[0], elements.size(), sizeof(ElementT *), element_name_compar);
-    
-    // output connections
-    for (int i = 0; i < elements.size(); i++)
-	output_element_connections(elements[i], r, outf);
-    
-    if (html_boilerplate)
-	fputs(html_footer, outf);
+
+    // process template
+    while (templ) {
+	String tag;
+	HashMap<String, String> attrs;
+	bool ended;
+	templ = output_template_until_tag(templ, outf, tag, attrs, ended);
+
+	if (tag == "config")
+	    output_config(r_config, outf);
+	else if (tag == "etables")
+	    output_etables(elements, r, outf, attrs);
+	else if (tag == "eindex")
+	    output_eindex(r, outf, attrs);
+    }
     
     // close files, return
     if (outf != stdout)
@@ -698,7 +1028,7 @@ main(int argc, char **argv)
     String::static_initialize();
     ErrorHandler::static_initialize(new FileErrorHandler(stderr));
     ErrorHandler *errh = ErrorHandler::default_handler();
-    ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-check: ");
+    ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-pretty: ");
     CLICK_DEFAULT_PROVIDES;
 
     // read command line arguments
@@ -709,6 +1039,7 @@ main(int argc, char **argv)
 
     const char *router_file = 0;
     const char *output_file = 0;
+    String html_template = default_template;
     bool output = false;
 
     while (1) {
@@ -722,7 +1053,7 @@ main(int argc, char **argv)
 
 	  case VERSION_OPT:
 	    printf("click-pretty (Click) %s\n", CLICK_VERSION);
-	    printf("Copyright (c) 2001 International Computer Science Institute\n\
+	    printf("Copyright (c) 2001-2002 International Computer Science Institute\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -737,10 +1068,10 @@ particular purpose.\n");
 	    default_class_href = clp->arg;
 	    break;
 
-	  case HTML_BOILERPLATE_OPT:
-	    html_boilerplate = !clp->negated;
+	  case TEMPLATE_OPT:
+	    html_template = file_string(clp->arg, p_errh);
 	    break;
-	    
+
 	  case ROUTER_OPT:
 	  case Clp_NotOption:
 	    if (router_file) {
@@ -772,7 +1103,7 @@ particular purpose.\n");
     }
 
   done:
-    pretty_process(router_file, output_file, errh);
+    pretty_process(router_file, output_file, html_template, errh);
     exit(errh->nerrors() > 0 ? 1 : 0);
 }
 
