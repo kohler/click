@@ -1,3 +1,8 @@
+2005-03-09 Wednesday 15:59  Nikitas Liogkas <nikitas@cs.ucla.edu>
+
+	* drivers/e1000-5.x/src/: e1000.h (1.3), e1000_main.c (1.7): Added
+	Kevin Lahey's patch for PollDevice's "buffers_reused" count.
+
 2005-03-08 Tuesday 14:02  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/directiplookup.hh (1.13), elements/ip/iproutetable.hh
