@@ -17,6 +17,5 @@
 
 #include <click/config.h>
 
-#include <click/config.h>
 #include <click/glue.hh>
 #include <click/atomic.hh>
