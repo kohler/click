@@ -8,7 +8,7 @@
  * =s sends packets to stride-scheduled outputs V<classifies>
  * =d
  * Has one input and N outputs.  Performs simple packet-based stride
- * switching, assigning TICKETSI<i> to output I<i> for each input.
+ * switching, assigning TICKETSI<i> to output I<i>.
  * 
  * Each time a packet arrives on the input, StrideSwitch sends the packet to
  * the next scheduled output according to the stride scheduling algorithm.

@@ -87,6 +87,12 @@ sub unentity ($) {
   }
 }
 
+sub fixfP ($$) {
+  my($x, $f) = @_;
+  $x =~ s/\\fP/\\f$f/g;
+  $x;
+}
+
 sub nroffize_text ($) {
   my($t) = @_;
   my($i);
@@ -114,7 +120,7 @@ sub nroffize_text ($) {
   while ($maxnest-- && $t =~ /[A-Z]</) {
     
     # can't do C font here
-    $t =~ s/([BIR])<($nonest)>/\\f$1$2\\fP/g;
+    $t =~ s/([BIR])<($nonest)>/"\\f$1" . fixfP($2, $1) . "\\fP"/eg;
     
     # files and filelike refs in italics
     $t =~ s/F<($nonest)>/I<$1>/g;
@@ -138,11 +144,15 @@ sub nroffize_text ($) {
     $t =~ s/N<>(\n?)/\n.br\n/g;
 
     # comes last because not subject to reprocessing
-    $t =~ s/C<($nonest)>/\\f(CW$1\\fP/g;
+    $t =~ s/C<($nonest)>/"\\f(CW" . fixfP($1, 'R') . "\\fP"/eg;
   }
 
   # replace entities
   $t =~ s/\305\274([^\276]*)\276/unentity($1)/ge;
+  
+  # fix fonts
+  $t =~ s/\\fP/\\fR/g;
+    
   $t =~ s/\n+/\n/sg;
   $t =~ s/^\n+//;
   $t =~ s/\n+$//;
@@ -162,6 +172,7 @@ sub nroffize ($) {
       $o .= nroffize_text($x[$i]) . "\n" if $x[$i];
       if ($x[$i+1]) {
 	$x[$i+1] =~ s/\t/        /g;
+	$x[$i+1] =~ s/\\/\\e/g;
 	$o .= ".nf\n\\&" . $x[$i+1] . "\n.fi\n.PP\n";
       }
     }
