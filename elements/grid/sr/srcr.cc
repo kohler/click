@@ -1062,6 +1062,7 @@ SRCR::add_handlers()
   add_read_handler("stats", static_print_stats, 0);
   add_read_handler("path_cache", static_print_path_cache, 0);
   add_read_handler("debug", static_print_debug, 0);
+  add_read_handler("ip", static_print_ip, 0);
 
   add_write_handler("debug", static_write_debug, 0);
   add_write_handler("clear", static_clear, 0);
