@@ -39,7 +39,7 @@ MAKE_KPACKAGE = @HAVE_LINUXMODULE_TARGET@
 
 # Set `STRIP_UPACKAGE' to `strip -g' to strip debugging symbols from the
 # userlevel package before installing.
-STRIP_UPACKAGE = :
+STRIP_UPACKAGE = true
 #STRIP_UPACKAGE = $(STRIP) -g
 
 # Set these variables as required.
