@@ -450,8 +450,12 @@ Specializer::fix_elements()
 }
 
 void
-Specializer::output_includes(const ElementTypeInfo &eti, StringAccum &out)
+Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
 {
+  // don't write includes twice for the same class
+  if (eti.wrote_includes)
+    return;
+  
   // must massage includes.
   // we may have something like `#include "element.hh"', relying on the
   // assumption that we are compiling `element.cc'. must transform this
@@ -520,6 +524,8 @@ Specializer::output_includes(const ElementTypeInfo &eti, StringAccum &out)
     out << includes.substring(start, p2 + 1 - start);
     p = p2 + 1;
   }
+
+  eti.wrote_includes = true;
 }
 
 void

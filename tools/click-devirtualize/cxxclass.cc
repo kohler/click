@@ -512,6 +512,8 @@ remove_crap(const String &original_text)
 	
       } else if (*s == '\"' || *s == '\'') {
 	// literal
+	// XXX I am not sure why the closing quote,
+	// and any characters preceded by backslash, are turned into $.
 	char stopper = *s;
 	*o++ = ' ', s++;
 	while (s < end_s && *s != stopper) {
@@ -745,29 +747,67 @@ CxxInfo::parse_file(const String &original_text, bool header,
   CxxFunction::parsing_header_file = header;
   parse_class(clean_text, 0, original_text, 0);
 
-  // save initial comments and #defines and #includes for replication
-  // also skip over `extern "C" { ... }'
+  // save initial comments and #defines and #includes for replication.
+  // Also skip over `CLICK_CXX_whatever', enum definitions, typedefs,
+  // and `extern "C" { }' blocks enclosing headers only.
+  // XXX Should save up to an arbitrary comment or something
   if (store_includes) {
     const char *s = clean_text.data();
     int p = 0;
     int len = clean_text.length();
-    int extern_depth = 0;
     while (1) {
       while (p < len && isspace(s[p]))
 	p++;
-      if (p < len && s[p] == '}' && extern_depth) {
-	extern_depth--;
+
+      if (p < len && s[p] == ';') {
+	// mop up stray semicolons
 	p++;
-      } else if (p + 6 < len && s[p] == 'e' && s[p+1] == 'x' && s[p+2] == 't'
-		 && s[p+3] == 'e' && s[p+4] == 'r' && s[p+5] == 'n') {
+	
+      } else if (p + 7 < len && memcmp(s + p, "extern", 6) == 0
+		 && isspace(s[p+6])) {
+	// include `extern ["C"] { -HEADERS- }'
 	int p1 = p + 6;
 	while (p1 < len && (isspace(s[p1]) || s[p1] == '$'))
 	  p1++;
-	if (p1 < len && s[p1] == '{') {
-	  extern_depth++;
-	  p = p1 + 1;
-	} else
+	if (p1 >= len || s[p1] != '{')
 	  break;
+	for (p1++; p1 < len && isspace(s[p1]); p1++)
+	  /* nada */;
+	if (p1 >= len || s[p1] != '}')
+	  break;
+	p = p1 + 1;
+	
+      } else if (p + 5 < len && memcmp(s + p, "enum", 4) == 0
+		 && isspace(s[p+4])) {
+	// include `enum [IDENTIFIER] { ... }'
+	int p1 = p + 5;
+	while (p1 < len && isspace(s[p1]))
+	  p1++;
+	if (p1 < len && (isalnum(s[p1]) || s[p1] == '_')) {
+	  while (p1 < len && (isalnum(s[p1]) || s[p1] == '_'))
+	    p1++;
+	  while (p1 < len && isspace(s[p1]))
+	    p1++;
+	}
+	if (p1 >= len || s[p1] != '{')
+	  break;
+	for (p1++; p1 < len && s[p1] != '}'; p1++)
+	  /* nada */;
+	if (p1 >= len)
+	  break;
+	p = p1 + 1;
+	
+      } else if (p + 8 < len && memcmp(s + p, "typedef", 7) == 0
+		 && isspace(s[p+7])) {
+	// include typedefs
+	for (p += 8; p < len && s[p] != ';'; p++)
+	  /* nada */;
+	
+      } else if (p + 9 < len && memcmp(s + p, "CLICK_CXX", 9) == 0) {
+	// include `CLICK_CXX' (used in <click/cxxprotect.h>)
+	for (p += 9; p < len && (isalnum(s[p]) || s[p] == '_'); p++)
+	  /* nada */;
+	
       } else
 	break;
     }

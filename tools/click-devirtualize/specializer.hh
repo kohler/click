@@ -18,6 +18,7 @@ struct ElementTypeInfo {
   String found_header_file;
   String includes;
   bool read_source;
+  bool wrote_includes;
 
   ElementTypeInfo();
   void locate_header_file(RouterT *, ErrorHandler *);
@@ -84,13 +85,13 @@ class Specializer { public:
   void do_simple_action(SpecializedClass &);
   void create_connector_methods(SpecializedClass &);
 
-  void output_includes(const ElementTypeInfo &, StringAccum &);
+  void output_includes(ElementTypeInfo &, StringAccum &);
 
 };
 
 inline
 ElementTypeInfo::ElementTypeInfo()
-  : read_source(false)
+  : read_source(false), wrote_includes(false)
 {
 }
 
