@@ -109,7 +109,8 @@ class ProbeTXRate : public Element { public:
     Vector<int> _total_success;
     Vector<int> _total_fail;
     Vector<int> _perfect_time;
-    
+
+
     unsigned _count;
     DstInfo() { 
     }
@@ -122,7 +123,8 @@ class ProbeTXRate : public Element { public:
       _total_success = Vector<int>(_rates.size(), 0);
       _total_fail = Vector<int>(_rates.size(), 0);
       _perfect_time = Vector<int>(_rates.size(), 0);
-      
+
+
       _count = 0;
       for (int x = 0; x < _rates.size(); x++) {
 	_perfect_time[x] = calc_usecs_wifi_packet(1500, _rates[x], 0);
@@ -216,6 +218,15 @@ class ProbeTXRate : public Element { public:
 	
       }
     }
+
+    int average(int ndx) {
+      if (!_total_success[ndx]) {
+	return 0;
+      }
+      
+      return _total_time[ndx] / _total_success[ndx];
+    }
+
     int best_rate_ndx() {
       int best_ndx = -1;
       int best_time = 0;
@@ -250,8 +261,7 @@ class ProbeTXRate : public Element { public:
 	return _rates;
       }
       
-      int best_time = _total_time[best_ndx] / _total_success[best_ndx];
-      
+      int best_time = average(best_ndx);
       Vector<int> possible_rates;
       for (int x = 0; x < _rates.size(); x++) {
 	if (best_time < _perfect_time[x]) {
@@ -262,8 +272,10 @@ class ProbeTXRate : public Element { public:
 	if (_total_fail[x] > 3 && !_total_success[x]) {
 	  continue;
 	}
-
-	if (_total_success[x] + _total_fail[x] < (int) min_sample) {
+	int avg = average(x);
+	if (_total_success[x] + _total_fail[x] < (int) min_sample ||
+	    (avg && avg - best_time <= best_time / 15 &&
+	     _total_success[x] + _total_fail[x] < (int) min_sample * 2)) {
 	  possible_rates.push_back(_rates[x]);
 	}
       }

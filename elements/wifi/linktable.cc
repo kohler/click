@@ -412,6 +412,15 @@ LinkTable::print_links()
   return sa.take_string();
 }
 
+extern "C" {
+  static int ipaddr_sorter(const void *va, const void *vb) {
+    IPAddress *a = (IPAddress *)va, *b = (IPAddress *)vb;
+    if (a->addr() == b->addr()) {
+      return 0;
+    } 
+    return (ntohl(a->addr()) < ntohl(b->addr())) ? -1 : 1;
+  }
+}
 
 
 String 
@@ -419,16 +428,15 @@ LinkTable::print_routes(bool from_me)
 {
   StringAccum sa;
 
-  typedef HashMap<IPAddress, bool> IPMap;
-  IPMap ip_addrs;
-
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    HostInfo n = iter.value();
-    ip_addrs.insert(n._ip, true);
-  }
+  Vector<IPAddress> ip_addrs;
   
-  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
-    const IPAddress &ip = i.key();
+  for (HTIter iter = _hosts.begin(); iter; iter++)
+    ip_addrs.push_back(iter.key());
+  
+  click_qsort(ip_addrs.begin(), ip_addrs.size(), sizeof(IPAddress), ipaddr_sorter);
+  
+  for (int x = 0; x < ip_addrs.size(); x++) {
+    IPAddress ip = ip_addrs[x];
     Vector <IPAddress> r = best_route(ip, from_me);
     if (valid_route(r)) {
       sa << ip.s().cc() << " ";
@@ -453,10 +461,16 @@ String
 LinkTable::print_hosts() 
 {
   StringAccum sa;
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    HostInfo n = iter.value();
-    sa << n._ip.s().cc() << "\n";
-  }
+  Vector<IPAddress> ip_addrs;
+  
+  for (HTIter iter = _hosts.begin(); iter; iter++)
+    ip_addrs.push_back(iter.key());
+  
+  click_qsort(ip_addrs.begin(), ip_addrs.size(), sizeof(IPAddress), ipaddr_sorter);
+  
+  for (int x = 0; x < ip_addrs.size(); x++)
+    sa << ip_addrs[x] << "\n";
+
   return sa.take_string();
 }
 

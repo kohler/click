@@ -299,6 +299,12 @@ SRForwarder::push(int port, Packet *p_in)
   uint32_t seq = (_link_table) ? _link_table->get_link_seq(_ip, prev) : 0;
   uint32_t age = (_link_table) ? _link_table->get_link_age(_ip, prev) : 0;
 
+  pk->set_link(pk->next()-1,
+	       pk->get_link_node(pk->next()-1), _ip,
+	       prev_fwd_metric, prev_rev_metric,
+	       seq,age);
+
+
   if(pk->next() == pk->num_links()){
     // I'm the ultimate consumer of this data.
     /*
@@ -309,11 +315,6 @@ SRForwarder::push(int port, Packet *p_in)
     output(1).push(p);
     return;
   } 
-
-  pk->set_link(pk->next()-1,
-	       pk->get_link_node(pk->next()-1), _ip,
-	       prev_fwd_metric, prev_rev_metric,
-	       seq,age);
 
   pk->set_next(pk->next() + 1);
   IPAddress nxt = pk->get_link_node(pk->next());

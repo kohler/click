@@ -35,7 +35,7 @@ class PrintSR : public Element {
   int configure(Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
-
+  static String sr_to_string(struct srpacket *);
   bool _print_anno;
   bool _print_checksum;
 };

@@ -12,26 +12,36 @@ WifiEncap(MODE, BSSID)
 
 =s Wifi, Encapsulation
 
-Converts ethernet packets to 802.11 packets.
+Converts ethernet packets to 802.11 packets, with a LLC header.
 
 =d
 
-Keyword arguments are:
+Arguments are:
 
 =over 8
-=item MODE
-Mode is one of:
-0x00 STA->STA
-0x01 STA->AP
-0x02 AP->STA
-0x03 AP->AP
-
 =item BSSID 
+is an ethernet address. This ususally the access point's ethernet address.
+If you are using Mode 0, this is usually set to 00:00:00:00:00:00 for
+"psuedo-ibss" mode.
 
-is an ethernet address
+=item MODE
+This specifies which address field the BSSID field is located at (for
+instance, the BSSID is the destination when MODE is 1, because the
+packet is going to the access point).
+It should be one of:
+N<>0 station -> station
+N<>1 station -> access point
+N<>2 access point -> station
+N<>3 access point -> access point
 
 =back 8
 
+
+=h mode read/write
+Same as MODE argument
+
+=h bssid read/write
+Same as BSSID argument
 
 =e
   wifi_cl :: Classifier (0/00%0c, 

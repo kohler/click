@@ -73,7 +73,8 @@ class MadwifiRate : public Element { public:
     
     EtherAddress _eth;
     Vector<int> _rates;
-    
+
+    int _credits;
     
     int _current_index;
 
@@ -129,6 +130,7 @@ class MadwifiRate : public Element { public:
   AvailableRates *_rtable;
   bool _alt_rate;
   bool _active;
+  int _period;
 };
 
 CLICK_ENDDECLS

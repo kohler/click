@@ -61,9 +61,11 @@ int
 AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _active = true;
+  _adaptive_stepup = true;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
 			"OFFSET", cpUnsigned, "offset", &_offset,
+			"ADAPTIVE_STEPUP", cpBool, "offset", &_adaptive_stepup,
 			"STEPUP", cpInteger, "0-100", &_stepup,
 			"STEPDOWN", cpInteger, "0-100", &_stepdown,
 			"RT", cpElement, "availablerates", &_rtable,
@@ -131,14 +133,29 @@ AutoRateFallback::process_feedback(Packet *p_in)
 		    nfo->_rates[nfo->_current_index],
 		    nfo->_rates[next_index]);
     }
+    
+    if (nfo->_wentup && _adaptive_stepup) {
+      /* backoff the stepup */
+      nfo->_stepup *= 2;
+      nfo->_wentup = false;
+    } else {
+      nfo->_stepup = _stepup;
+    }
+
     nfo->_successes = 0;
     nfo->_current_index = next_index;
+
     return;
   }
 
-
+  if (nfo->_wentup) {
+    /* reset adaptive stepup on a success */
+    nfo->_stepup = _stepup;
+  }
+  nfo->_wentup = false;
   nfo->_successes++;
-  if (nfo->_successes > _stepup && 
+  if (nfo->_successes > nfo->_stepup && 
+
       nfo->_current_index != nfo->_rates.size() - 1) {
     if (_debug) {
       click_chatter("%{element} steping up for %s from %d to %d\n",
@@ -150,6 +167,7 @@ AutoRateFallback::process_feedback(Packet *p_in)
     }
     nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
     nfo->_successes = 0;
+    nfo->_wentup = true;
   }
   return;
 }
@@ -185,7 +203,8 @@ AutoRateFallback::assign_rate(Packet *p_in)
     nfo = _neighbors.findp(dst);
     nfo->_rates = _rtable->lookup(dst);
     nfo->_successes = 0;
-    
+    nfo->_wentup = false;
+    nfo->_stepup = _stepup;
     /* start at the highest rate */
     nfo->_current_index = nfo->_rates.size() - 1;
     if (_debug) {

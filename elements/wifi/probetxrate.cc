@@ -288,13 +288,7 @@ ProbeTXRate::print_rates()
       sa << " fail " << nfo._total_fail[x];
       sa << " total_usecs " << nfo._total_time[x];
       sa << " perfect_usecs " << nfo._perfect_time[x];
-      sa << " average_usecs ";
-      if (nfo._total_success[x]) {
-	int usecs = nfo._total_time[x] / nfo._total_success[x];
-	sa << usecs;
-      } else {
-	sa << "*";
-      }
+      sa << " average_usecs " << nfo.average(x);
       sa << "\n";
     }
   }

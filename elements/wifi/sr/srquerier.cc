@@ -97,6 +97,23 @@ SRQuerier::initialize (ErrorHandler *)
 
 
 void
+SRQuerier::send_query(IPAddress dst)
+{
+
+  DstInfo *nfo = _queries.findp(dst);
+  if (!nfo) {
+    _queries.insert(dst, DstInfo(dst));
+    nfo = _queries.findp(dst);
+  }
+  click_gettimeofday(&nfo->_last_query);
+  nfo->_count++;
+
+  WritablePacket *p = Packet::make((unsigned)0);
+  p->set_dst_ip_anno(dst);
+  output(1).push(p);
+}
+
+void
 SRQuerier::push(int, Packet *p_in)
 {
 
@@ -115,7 +132,7 @@ SRQuerier::push(int, Packet *p_in)
   bool best_valid = _link_table->valid_route(best);
   int best_metric = _link_table->get_route_metric(best);
   
-  bool send_query = false;
+  bool do_query = false;
 
   DstInfo *q = _queries.findp(dst);
   if (!q) {
@@ -123,7 +140,7 @@ SRQuerier::push(int, Packet *p_in)
     _queries.insert(dst, foo);
     q = _queries.findp(dst);
     q->_best_metric = 0;
-    send_query = true;
+    do_query = true;
   }
   sr_assert(q);
 
@@ -172,7 +189,7 @@ SRQuerier::push(int, Packet *p_in)
 
   
   if (!best_valid) {
-    send_query = true;
+    do_query = true;
   } else {  
     if (!q->_best_metric) {
       q->_best_metric = best_metric;
@@ -188,19 +205,17 @@ SRQuerier::push(int, Packet *p_in)
        * send another query if the route got crappy
        */
       q->_best_metric = best_metric;
-      send_query = true;
+      do_query = true;
     }
   }
   
-  if (send_query) {
+  if (do_query) {
     struct timeval n;
     click_gettimeofday(&n);
     struct timeval expire;
     timeradd(&q->_last_query, &_query_wait, &expire);
     if (timercmp(&expire, &n, <)) {
-      WritablePacket *p = Packet::make((unsigned)0);
-      p->set_dst_ip_anno(dst);
-      output(1).push(p);
+      send_query(dst);
     }
   }
   return;
@@ -208,10 +223,10 @@ SRQuerier::push(int, Packet *p_in)
   
 }
 
-enum {H_DEBUG, H_PATH_CACHE, H_CLEAR, H_QUERIES};
+enum {H_DEBUG, H_PATH_CACHE, H_RESET, H_QUERIES, H_QUERY};
 
 static String 
-SRQuerier_read_param(Element *e, void *thunk)
+read_param(Element *e, void *thunk)
 {
   SRQuerier *td = (SRQuerier *)e;
     switch ((uintptr_t) thunk) {
@@ -224,7 +239,6 @@ SRQuerier_read_param(Element *e, void *thunk)
 	for (SRQuerier::DstTable::const_iterator iter = td->_queries.begin(); iter; iter++) {
 	  SRQuerier::DstInfo dst = iter.value();
 	  sa << dst._ip;
-	  sa << " seq " << dst._seq;
 	  sa << " query_count " << dst._count;
 	  sa << " best_metric " << dst._best_metric;
 	  sa << " last_query_ago " << now - dst._last_query;
@@ -250,7 +264,7 @@ SRQuerier_read_param(Element *e, void *thunk)
     }
 }
 static int 
-SRQuerier_write_param(const String &in_s, Element *e, void *vparam,
+write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
   SRQuerier *f = (SRQuerier *)e;
@@ -263,7 +277,14 @@ SRQuerier_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
-  case H_CLEAR:
+  case H_QUERY: {    //
+    IPAddress dst;
+    if (!cp_ip_address(s, &dst)) 
+      return errh->error("query parameter must be IPAddress");
+    f->send_query(dst);
+    break;
+  }
+  case H_RESET:
     f->_queries.clear();
     break;
   }
@@ -273,11 +294,12 @@ SRQuerier_write_param(const String &in_s, Element *e, void *vparam,
 void
 SRQuerier::add_handlers()
 {
-  add_read_handler("queries", SRQuerier_read_param, (void *) H_QUERIES);
-  add_read_handler("debug", SRQuerier_read_param, (void *) H_DEBUG);
+  add_read_handler("queries", read_param, (void *) H_QUERIES);
+  add_read_handler("debug", read_param, (void *) H_DEBUG);
 
-  add_write_handler("debug", SRQuerier_write_param, (void *) H_DEBUG);
-  add_write_handler("clear", SRQuerier_write_param, (void *) H_CLEAR);
+  add_write_handler("debug", write_param, (void *) H_DEBUG);
+  add_write_handler("reset", write_param, (void *) H_RESET);
+  add_write_handler("query", write_param, (void *) H_QUERY);
 }
 
 // generate Vector template instance

@@ -54,19 +54,10 @@ PrintSR::configure(Vector<String> &conf, ErrorHandler* errh)
   return ret;
 }
 
-Packet *
-PrintSR::simple_action(Packet *p)
+String 
+PrintSR::sr_to_string(struct srpacket *pk) 
 {
-  click_ether *eh = (click_ether *) p->data();
-  struct srpacket *pk = (struct srpacket *) (eh+1);
-
   StringAccum sa;
-  if (_label[0] != 0) {
-    sa << _label.cc() << ": ";
-  } else {
-      sa << "PrintSR ";
-  }
-
   String type;
   switch (pk->_type) {
   case PT_QUERY:
@@ -114,10 +105,6 @@ PrintSR::simple_action(Packet *p)
     sa << " len " << pk->hlen_wo_data();
   }
 
-  if (_print_checksum) {
-    sa << " cksum " << (unsigned long) ntohs(pk->_cksum);
-  }
-
   if (pk->_type == PT_DATA) {
     sa << " dataseq " << pk->data_seq();
   }
@@ -152,8 +139,26 @@ PrintSR::simple_action(Packet *p)
   sa << " "<< pk->get_link_node(pk->num_links()).s().cc() << " ";
   sa << "]";
 
+  return sa.take_string();
+
+}
+Packet *
+PrintSR::simple_action(Packet *p)
+{
+  StringAccum sa;
+  if (_label[0] != 0) {
+    sa << _label.cc() << ": ";
+  } else {
+      sa << "PrintSR ";
+  }
+
+  click_ether *eh = (click_ether *) p->data();
+  struct srpacket *pk = (struct srpacket *) (eh+1);
+
+
+  sa << PrintSR::sr_to_string(pk);
   
-  click_chatter("%s", sa.cc());
+  click_chatter("%s", sa.take_string().cc());
 
   return p;
 }

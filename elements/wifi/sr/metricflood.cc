@@ -180,11 +180,11 @@ MetricFlood::forward_query(Seen *s)
   }
 
   if (_debug) {
-    click_chatter("%{element}: forward_query %d %s -> %s\n", 
+     click_chatter("%{element}: forward_query %s -> %s %d\n", 
 		  this,
-		  s->_seq,
 		  s->_src.s().cc(),
-		  s->_dst.s().cc());
+		  s->_dst.s().cc(),
+		  s->_seq);
   }
 
   int links = best.size() - 1;
@@ -251,6 +251,14 @@ MetricFlood::start_flood(Packet *p_in) {
   pk->set_num_links(0);
   pk->set_link_node(0,_ip);
   pk->set_data_len(dlen);
+
+
+  if (_debug) {
+    click_chatter("%{element} start_query %s %d\n",
+		  this, qdst.s().cc(), _seq);
+
+  }
+
   output(0).push(p);
 }
 

@@ -31,6 +31,9 @@ CLICK_DECLS
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
+#define CREDITS_FOR_RAISE 10
+#define STEPUP_RETRY_THRESHOLD 10
+
 MadwifiRate::MadwifiRate()
   : Element(2, 1),
     _stepup(0),
@@ -50,7 +53,7 @@ MadwifiRate::MadwifiRate()
 void
 MadwifiRate::run_timer()
 {
-  _timer.schedule_after_ms(1000);
+  _timer.schedule_after_ms(_period);
   adjust_all();
 
 }
@@ -76,6 +79,7 @@ MadwifiRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _alt_rate = false;
   _active = true;
+  _period = 1000;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
 			"OFFSET", cpUnsigned, "offset", &_offset,
@@ -83,6 +87,7 @@ MadwifiRate::configure(Vector<String> &conf, ErrorHandler *errh)
 			"THRESHOLD", cpUnsigned, "xxx", &_packet_size_threshold,
 			"ALT_RATE", cpBool, "xxx", &_alt_rate,
 			"ACTIVE", cpBool, "xxx", &_active,
+			"PERIOD", cpUnsigned, "xxx", &_period,
 			0);
   return ret;
 }
@@ -119,7 +124,8 @@ MadwifiRate::adjust(EtherAddress dst)
     stepdown = true;
 
   /* no error and less than 10% of packets need retry */
-  if (enough && nfo->_failures == 0 && nfo->_successes > nfo->_retries * 10)
+  if (enough && nfo->_failures == 0 && 
+      nfo->_retries < (nfo->_successes * STEPUP_RETRY_THRESHOLD) / 100)
     stepup = true;
 
   if (stepdown) {
@@ -131,16 +137,25 @@ MadwifiRate::adjust(EtherAddress dst)
 		    nfo->_rates[max(0, nfo->_current_index - 1)]);
     }
     nfo->_current_index = max(nfo->_current_index - 1, 0);
+    nfo->_credits = 0;
   } else if (stepup) {
-    if (_debug) {
-      click_chatter("%{element} steping up for %s from %d to %d\n",
-		    this,
-		    nfo->_eth.s().cc(),
-		    nfo->_rates[nfo->_current_index],
-		    nfo->_rates[min(nfo->_rates.size() - 1, 
-				    nfo->_current_index + 1)]);
+    nfo->_credits++;
+    if (nfo->_credits >= CREDITS_FOR_RAISE) {
+      if (_debug) {
+	click_chatter("%{element} steping up for %s from %d to %d\n",
+		      this,
+		      nfo->_eth.s().cc(),
+		      nfo->_rates[nfo->_current_index],
+		      nfo->_rates[min(nfo->_rates.size() - 1, 
+				      nfo->_current_index + 1)]);
+      }
+      nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
+      nfo->_credits = 0;
     }
-    nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
+  } else {
+    if (enough && nfo->_credits > 0) {
+      nfo->_credits--;
+    }
   }
   nfo->_successes = 0;
   nfo->_failures = 0;
@@ -243,6 +258,7 @@ MadwifiRate::assign_rate(Packet *p_in)
     ndx = ndx > 0 ? ndx : nfo->rate_index(22);
     ndx = max(ndx, 0);
     nfo->_current_index = ndx;
+    nfo->_credits = 0;
     if (_debug) {
       click_chatter("%{element} initial rate for %s is %d\n",
 		    this,
@@ -308,6 +324,8 @@ MadwifiRate::print_rates()
       sa << " successes " << nfo._successes;
       sa << " failures " << nfo._failures;
       sa << " retries " << nfo._retries;
+      sa << " credits " << nfo._credits;
+
     }
     sa << "\n";
   }
@@ -316,7 +334,7 @@ MadwifiRate::print_rates()
 
 
 enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, 
-      H_OFFSET, H_ACTIVE,
+      H_OFFSET, H_ACTIVE, H_PERIOD,
       H_ALT_RATE};
 
 
@@ -342,6 +360,8 @@ MadwifiRate_read_param(Element *e, void *thunk)
   }
   case H_ACTIVE: 
     return String(td->_active) + "\n";
+  case H_PERIOD: 
+    return String(td->_period) + "\n";
   default:
     return String();
   }
@@ -393,6 +413,13 @@ MadwifiRate_write_param(const String &in_s, Element *e, void *vparam,
     if (!cp_unsigned(s, &m)) 
       return errh->error("offset parameter must be unsigned");
     f->_offset = m;
+    break;
+  }
+  case H_PERIOD: {
+    unsigned m;
+    if (!cp_unsigned(s, &m)) 
+      return errh->error("period parameter must be unsigned");
+    f->_period = m;
     break;
   }
   case H_RESET: 

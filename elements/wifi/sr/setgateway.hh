@@ -39,6 +39,7 @@ class SetGateway : public Element {
   
   const char *class_name() const		{ return "SetGateway"; }
   const char *processing() const		{ return PUSH; }
+  const char *flow_code() const			{ return "#/#"; }
   int initialize(ErrorHandler *);
   int configure(Vector<String> &conf, ErrorHandler *errh);
 

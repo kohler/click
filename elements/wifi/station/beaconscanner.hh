@@ -3,6 +3,8 @@
 #include <click/element.hh>
 #include <clicknet/ether.h>
 #include <click/etheraddress.hh>
+#include <elements/wifi/availablerates.hh>
+#include <elements/wifi/wirelessinfo.hh>
 CLICK_DECLS
 
 /*

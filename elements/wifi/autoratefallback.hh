@@ -74,6 +74,9 @@ class AutoRateFallback : public Element { public:
     int _current_index;
     int _successes;
 
+    int _stepup;
+    bool _wentup;
+
     DstInfo() { 
     }
 
@@ -124,6 +127,7 @@ class AutoRateFallback : public Element { public:
   AvailableRates *_rtable;
   bool _alt_rate;
   bool _active;
+  bool _adaptive_stepup;
 };
 
 CLICK_ENDDECLS

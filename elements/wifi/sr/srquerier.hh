@@ -44,13 +44,12 @@ class SRQuerier : public Element {
   void add_handlers();
 
   void push(int, Packet *);
-
+  void send_query(IPAddress);
   class DstInfo {
   public:
     DstInfo() {memset(this, 0, sizeof(*this)); }
     DstInfo(IPAddress ip) {memset(this, 0, sizeof(*this)); _ip = ip;}
     IPAddress _ip;
-    u_long _seq;
     int _best_metric;
     int _count;
     struct timeval _last_query;
