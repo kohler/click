@@ -22,9 +22,12 @@ verbatimtex %&latex
 etex;
 picture emptyqueue; emptyqueue := btex \phantom{\elementlabel{Queue}} etex;
 picture vemptyqueue; vemptyqueue := emptyqueue rotated 90 xscaled .4;
+color defaultecolor; defaultecolor := white;
 
 %% 1
 %% Our most impressive figure: The uniprocessor Click IP router.
+%% Uncomment the following line for a color figure.
+%defaultecolor := (191/255,255/255,255/255);
 
 vardef icmperrorit@#(expr p) =
   save defaultscale; defaultscale := 0.6;
@@ -92,11 +95,10 @@ beginfig(1);
 
   velementit.strip(btex \element{Strip(14)} etex, 1, 1, agnostic_push);
   velementit.checkheader(btex \element{CheckIPHeader(...)} etex, 1, 1, agnostic_push);
-  velementit.getaddress(btex \element{GetIPAddress(16)} etex, 1, 1, agnostic_push);
-  strip.width = checkheader.width = getaddress.width;
-  checkheader.s - getaddress.n = strip.s - checkheader.n = (0,8);
+  strip.width = checkheader.width;
+  strip.s - checkheader.n = (0,8);
 
-  getaddress.s - route.n = (0,20);
+  checkheader.s - route.n = (0,20);
   xpart(strip.c) = xpart(0.5[gio.A.c, gio.B.c]);
   
   % input interfaces
@@ -135,8 +137,11 @@ beginfig(1);
     from.A,from.B,paint.A,paint.B,c.A,c.B,
     arpq.A,outq.A,todev.A,arpq.B,outq.B,todev.B,
     arpr.A,arpr.B,
-    route,getaddress,strip,checkheader);
+    route,checkheader,strip);
 
+  fillelement(from.A,from.B,c.A,c.B,
+    arpq.A,outq.A,todev.A,arpq.B,outq.B,todev.B,
+    arpr.A,arpr.B)(defaultecolor);
   drawelement(from.A,from.B,c.A,c.B,
     arpq.A,outq.A,todev.A,arpq.B,outq.B,todev.B,
     arpr.A,arpr.B);
@@ -149,8 +154,7 @@ beginfig(1);
   drawconnect(c.B,2,0,paint.B);
   
   drawconnect(strip,0,0,checkheader);
-  drawconnect(checkheader,0,0,getaddress);
-  drawconnect(getaddress,0,0,route);
+  drawconnect(checkheader,0,0,route);
 
   drawarrow route.out[1]{down} .. tension 2 .. {down}dropbroadcasts.A.in[0] withpen connectionpen;
   drawarrow route.out[0]{down} .. route.out[0]-(10,10) withpen connectionpen;
@@ -198,15 +202,13 @@ beginfig(1);
     gio.B,fr.B,dt.B,fixipsrc.B,cp.B,dropbroadcasts.B,
     icmp.B.a,icmp.B.b,icmp.B.c,icmp.B.d,
     paint.A,paint.B,strip,
-    checkheader,getaddress,route
-    )(white);
+    checkheader,route)(defaultecolor);
   drawelement(gio.A,fr.A,dt.A,fixipsrc.A,cp.A,dropbroadcasts.A,
     icmp.A.a,icmp.A.b,icmp.A.c,icmp.A.d,
     gio.B,fr.B,dt.B,fixipsrc.B,cp.B,dropbroadcasts.B,
     icmp.B.a,icmp.B.b,icmp.B.c,icmp.B.d,
     paint.A,paint.B,strip,
-    checkheader,getaddress,route
-    );
+    checkheader,route);
   
   drawconnect(fr.A,0,0,arpq.A);
   drawconnect(arpq.A,0,0,outq.A);
