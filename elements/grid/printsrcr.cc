@@ -110,6 +110,7 @@ PrintSRCR::simple_action(Packet *p)
     sa << "dlen=" << ntohs(pk->_dlen) << " ";
   }
 
+  sa << "seq=" << pk->_seq << " ";
   sa << "nhops=" << ntohs(pk->_nhops) << " ";
   sa << "next=" << ntohs(pk->_next) << " ";
 

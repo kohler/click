@@ -22,9 +22,9 @@
 #include <click/glue.hh>
 #include <click/timer.hh>
 #include <click/straccum.hh>
+#include <click/packet_anno.hh>
 #include <elements/grid/srcr.hh>
 #include <elements/grid/txstat.hh>
-#include <elements/grid/wifitxfeedback.hh>
 CLICK_DECLS
 
 TXStat::TXStat()
@@ -92,10 +92,10 @@ TXStat::simple_action(Packet *p_in)
   }
   
   
-  int long_retries = p_in->user_anno_c (TX_ANNO_LONG_RETRIES);
-  int success = p_in->user_anno_c (TX_ANNO_SUCCESS);
-  int short_retries = p_in->user_anno_c (TX_ANNO_SHORT_RETRIES);
-  int rate = p_in->user_anno_c (TX_ANNO_RATE);
+  //int long_retries = p_in->user_anno_c (TX_ANNO_LONG_RETRIES);
+  int success = WIFI_TX_SUCCESS_ANNO(p_in);
+  int short_retries = WIFI_RETRIES_ANNO(p_in);
+  int rate = WIFI_RATE_ANNO(p_in);
   TXNeighborInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {
     TXNeighborInfo foo = TXNeighborInfo(dst);
@@ -104,7 +104,7 @@ TXStat::simple_action(Packet *p_in)
   }
   
   nfo->_packets_sent++;
-  nfo->_long_retries += long_retries;
+  //nfo->_long_retries += long_retries;
   nfo->_short_retries += short_retries;
   nfo->_rate = rate;
   //click_chatter("TXStat %s: long=%d, short=%d, fail=%s", 

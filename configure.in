@@ -487,6 +487,23 @@ if test $enable_kassert = yes; then
     AC_DEFINE(HAVE_KERNEL_ASSERT)
 fi
 
+AC_ARG_ENABLE(wifi, [  --enable-wifi            build with linux kernel wifi support], :, enable_wifi=yes)
+if test "x$enable_wifi" = xyes; then
+if test ! -f $linuxdir/include/linux/click_wifi.h; then
+AC_MSG_ERROR([
+=========================================
+
+You used --enable-wifi but I can't find '$linuxdir/click_wifi.h'!
+
+=========================================])
+fi
+    AC_DEFINE(HAVE_WIFI)
+    HAVE_WIFI=1
+else
+    HAVE_WIFI=0
+fi
+AC_SUBST(HAVE_WIFI)
+
 
 dnl
 dnl kernel interfaces

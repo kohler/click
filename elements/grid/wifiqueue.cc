@@ -21,7 +21,7 @@
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <click/straccum.hh>
-#include "wifitxfeedback.hh"
+#include <click/packet_anno.hh>
 CLICK_DECLS
 
 
@@ -157,9 +157,9 @@ WifiQueue::feedback(Packet *p)
     return;
   }
 
-  int txcount = 1 + p->user_anno_c (TX_ANNO_SHORT_RETRIES);
-  int success = p->user_anno_c (TX_ANNO_SUCCESS);
-  int rate = p->user_anno_c (TX_ANNO_RATE);
+  int txcount = 1 + WIFI_RETRIES_ANNO(p);
+  int success = WIFI_TX_SUCCESS_ANNO(p);
+  int rate = WIFI_RATE_ANNO(p);
   click_chatter("rate was %d, txcount %d for dst %s\n", rate, txcount, dst.s().cc());
   int metric = (rate * 50) / txcount;
   if (!n->metric) {

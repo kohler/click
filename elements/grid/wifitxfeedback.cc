@@ -1,140 +1,123 @@
+#include <linux/click_wifi.h>
 #include <click/config.h>
+#include <click/error.hh>
+#include <click/confparse.hh>
+#include <click/standard/scheduleinfo.hh>
 #include "wifitxfeedback.hh"
+
 CLICK_DECLS
 
+
 WifiTXFeedback::WifiTXFeedback()
-  : Element(0, 1)
+  : Element(0, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
-  _print_bits = false;
+  _head = _tail = 0;
 }
 
 WifiTXFeedback::~WifiTXFeedback()
 {
   MOD_DEC_USE_COUNT;
-
-  // does this go here or in cleanup?  in both, i guess...
-  register_airo_tx_callback (NULL, NULL);
-  register_airo_tx_completed_callback (NULL, NULL);
 }
 
-static int wifi_tx_feedback_ctr;
 
 int
-WifiTXFeedback::configure(Vector<String> &, ErrorHandler *)
+WifiTXFeedback::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-
+    _burst = 8;
+    if (cp_va_parse(conf, this, errh, 
+		    cpOptional,
+		    cpUnsigned, "burst size", &_burst,
+		    cpKeywords,
+		    "BURST", cpUnsigned, "burst size", &_burst,
+		    cpEnd) < 0) {
+      return -1;
+    }
   return 0;
 }
 
 int
 WifiTXFeedback::initialize(ErrorHandler *errh)
 {
-  int i;
-  
-  // need some static initialization stuff to make sure we're instantiated only once
-  if (wifi_tx_feedback_ctr > 0) {
-    printk ("WifiTXFeedback:  already initialized!  this will almost certainly break.\n");
-  }
-  wifi_tx_feedback_ctr++;
- 
-  printk ("WifiTXFeedback:  initializing\n");
-  
-  for (i = 0 ; i < AIRO_MAX_FIDS ; i++) {
-    airo_queued_packets[i] = NULL;
-  }
-  register_airo_tx_callback (&airo_tx_cb_stub, this);
-  register_airo_tx_completed_callback (&airo_tx_completed_cb_stub, this);
+  ScheduleInfo::initialize_task(this, &_task, true, errh);
+  register_click_wifi_tx_cb(&static_got_skb, this);
+  _capacity = QSIZE;
+  _drops = 0;
+  return 0;
+
 }
 
 void
 WifiTXFeedback::cleanup()
 {
-  printk ("WifiTXFeedback:  cleaning up\n");
-  
-  register_airo_tx_callback (NULL, NULL);
-  register_airo_tx_completed_callback (NULL, NULL);
+  register_click_wifi_tx_cb(NULL, NULL);
+  for (unsigned i = _head; i != _tail; i = next_i(i))
+    _queue[i]->kill();
+  _head = _tail = 0;    
 
-  wifi_tx_feedback_ctr--;
 }
 
-void
-WifiTXFeedback::airo_tx_cb_stub(struct sk_buff *skb, int fid, void *arg)
+/*
+ * Per-FromDevice packet input routine.
+ */
+int
+WifiTXFeedback::static_got_skb(struct sk_buff *skb, void *arg)
 {
-  ((WifiTXFeedback *)arg)->airo_tx_cb (skb, fid);
-}
-
-void
-WifiTXFeedback::airo_tx_completed_cb_stub(char *result, int fid, void *arg)
-{
-  ((WifiTXFeedback *)arg)->airo_tx_completed_cb (result, fid);
-}
-
-void
-WifiTXFeedback::airo_tx_cb(struct sk_buff *skb, int fid)
-{
-  Packet *p = airo_queued_packets[fid];
-  
-  //printk ("WifiTXFeedback::tx_cb:  called\n");
-
-  if (p != NULL) {
-    printk ("WifiTXFeedback::tx_cb:  fid %d already has a packet!\n", fid);
-    p->kill ();
+  if (arg) {
+    ((WifiTXFeedback *) arg)->got_skb(skb);
+  } else {
+    click_chatter("WifiTxFeedback: arg is null!");
   }
-  airo_queued_packets[fid] = Packet::make(skb);
 }
+int WifiTXFeedback::got_skb(struct sk_buff *skb) {
+    unsigned next = next_i(_tail);
 
-void
-WifiTXFeedback::airo_tx_completed_cb(char *result, int fid)
-{
-  Packet *p;
+    if (next != _head) { /* ours */
+	assert(skb_shared(skb) == 0); /* else skb = skb_clone(skb, GFP_ATOMIC); */
 
-  if (airo_queued_packets[fid] == NULL) {
-    printk ("WifiTXFeedback::airo_tx_completed_cb:  no packet for completion on fid %d!\n", fid);
-    return;
-  }
+	/* Retrieve the MAC header. */
+	//skb_push(skb, skb->data - skb->mac.raw);
 
-  p = airo_queued_packets[fid];
-  airo_queued_packets[fid] = NULL;
-    
+	Packet *p = Packet::make(skb);
+	_queue[_tail] = p; /* hand it to run_task */
+	_tail = next;
 
-  if (_print_bits) {
-    char buf[30];
-    memset(buf, 0, 28);
-    int pos = 0;
-    for (int i =0; i < 16; i++) {
-      sprintf(buf + pos, "%02x", result[i] & 0xff);
-      pos += 2;
-      if ((i % 4) == 3) buf[pos++] = ' ';
+    } else {
+	/* queue full, drop */
+	kfree_skb(skb);
+	_drops++;
     }
-    
-    click_chatter("WifiTXFeedback: %s", buf);
-  }
 
+    return 1;
+}
 
-  bool success = !(((unsigned char)result[0x04]) & 0x02);
-  int long_retries = (unsigned char) result[0x0d];
-  int short_retries = (unsigned char) result[0x0c];
-  int rate =  (((unsigned char) result[0x0f]) & ~(1<<7));
-   
-  
-  tx_completed(p, success, long_retries, short_retries, rate);
+bool
+WifiTXFeedback::run_task()
+{
+    int npq = 0;
+    while (npq < _burst && _head != _tail) {
+	Packet *p = _queue[_head];
+	_head = next_i(_head);
+	output(0).push(p);
+	npq++;
+    }
+#if CLICK_DEVICE_ADJUST_TICKETS
+    adjust_tickets(npq);
+#endif
+    _task.fast_reschedule();
+    return npq > 0;
 }
 
 void
-WifiTXFeedback::tx_completed(Packet *p, bool success, int long_retries, int short_retries, int rate)
+WifiTXFeedback::add_handlers()
 {
-
-  p->set_user_anno_c (TX_ANNO_SUCCESS, success);
-  p->set_user_anno_c (TX_ANNO_LONG_RETRIES, long_retries);
-  p->set_user_anno_c (TX_ANNO_SHORT_RETRIES, short_retries);
-  p->set_user_anno_c (TX_ANNO_RATE, rate);
-  
-  output(0).push(p);
-
+  add_task_handlers(&_task);
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(WifiTXFeedback)
 ELEMENT_REQUIRES(linuxmodule)
+ELEMENT_REQUIRES(HAVE_WIFI)
+EXPORT_ELEMENT(WifiTXFeedback)
+
+
 
