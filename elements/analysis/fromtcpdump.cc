@@ -350,7 +350,7 @@ FromTcpdump::read_tcp_line(WritablePacket *&q, const String &line, const char *s
 	    record->init_seq[!rev] = ack_seq - 1;
 	} else {
 	    if (_absolute_seq < 0) // heuristic
-		_absolute_seq = (ack_seq >= record->init_seq[!rev] || ack_seq > 8000);
+		_absolute_seq = (SEQ_GEQ(ack_seq, record->init_seq[!rev]) && ack_seq > 8000);
 	    if (seq == 0 && end_seq == 0)
 		seq = end_seq = record->last_seq[rev];
 	    else if (!_absolute_seq) {
