@@ -351,13 +351,13 @@ static inline unsigned calc_usecs_wifi_packet_tries(int length,
   case 4:
   case 11:
   case 22:
-    t_ack = 304;
+    t_ack = 304; //(192+(14*8/1))
     break;
   default:
     /* with 802.11g, things are at 6 mbit/s */
     t_plcp_header = 46;
     t_slot = 9;
-    t_ack = 20;
+    t_ack = 64; //(46+(14*8/6))
     t_difs = 28;
   }
   unsigned packet_tx_time = (2 * (t_plcp_header + (((length + pbcc) * 8))))/ rate;
@@ -366,20 +366,9 @@ static inline unsigned calc_usecs_wifi_packet_tries(int length,
   unsigned expected_backoff = 0;
 
   
-  /* there is backoff, even for the first packet */
-  for (int x = 0; x < try0; x++) {
-    expected_backoff += t_slot * cw / 2;
-    cw = MAX(cw_max, (cw + 1) * 2);
-  }
-
-  for (int x = try0; x <= tryN; x++) {
-    expected_backoff += t_slot * cw / 2;
-    cw = MAX(cw_max, (cw + 1) * 2);
-  }
-
-  return expected_backoff + t_difs + (tryN - try0 + 1) * (
-					     packet_tx_time + 
-					     t_sifs + t_ack);
+  return cw_min * t_slot + t_difs + 
+    (tryN - try0 + 1) * (packet_tx_time + 
+			 t_sifs + t_ack);
 }
 
 
