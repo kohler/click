@@ -879,7 +879,7 @@ my(@Links, $Text);
 
 sub one_summary ($@) {
     my($name, @elts) = @_;
-    print STDERR "click-elem2man: warning: category '", $name, "' begins with a lowercase letter\n" if $name =~ /^[a-z]/;
+    print STDERR "click-elem2man: warning: category '", $name, "' begins with a lowercase letter (used in @elts)\n" if $name =~ /^[a-z]/;
     my($a) = $name;
     $a =~ s{([+\&\#\"\000-\037\177-\377])}{sprintf("%%%02X", $1)}eg;
     $a =~ tr/ /+/;
