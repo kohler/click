@@ -3169,6 +3169,18 @@ cp_unparse_microseconds(uint32_t us)
     return cp_unparse_real10(us, 6) + "s";
 }
 
+String
+cp_unparse_interval(const struct timeval &tv)
+{
+  if (!tv.tv_sec)
+    return cp_unparse_microseconds(tv.tv_usec);
+  else {
+    StringAccum sa;
+    sa << tv << 's';
+    return sa.take_string();
+  }
+}
+
 
 // initialization and cleanup
 

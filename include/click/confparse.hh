@@ -87,6 +87,7 @@ String cp_unparse_real10(int32_t, int frac_digits);
 String cp_unparse_real10(uint32_t, int frac_digits);
 String cp_unparse_milliseconds(uint32_t);
 String cp_unparse_microseconds(uint32_t);
+String cp_unparse_interval(const struct timeval &);
 
 // network addresses
 class IPAddress;
