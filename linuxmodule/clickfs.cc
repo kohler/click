@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * clickfs_core.cc -- the Click filesystem
+ * clickfs.cc -- the Click filesystem
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute

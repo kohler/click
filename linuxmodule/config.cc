@@ -1,5 +1,5 @@
 /*
- * proc_config.cc -- support /proc/click/config
+ * config.cc -- parsing and installing configurations
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology

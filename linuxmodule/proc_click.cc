@@ -1,5 +1,5 @@
 /*
- * proc_element.cc -- support /proc/click/ELEMENT directories
+ * proc_click.cc -- the /proc/click filesystem
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
