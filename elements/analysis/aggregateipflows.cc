@@ -91,7 +91,7 @@ AggregateIPFlows::cleanup(CleanupStage)
 void
 AggregateIPFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
 {
-    FlowInfo *to_free = 0;
+    const Map::Pair *to_free = 0;
     timeout = _active_sec - timeout;
     done_timeout = _active_sec - done_timeout;
 
@@ -100,15 +100,16 @@ AggregateIPFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
 	    FlowInfo *finfo = const_cast<FlowInfo *>(&iter.value());
 	    // circular comparison
 	    if ((int32_t)(finfo->uu.active_sec - (finfo->flow_over == 3 ? done_timeout : timeout)) < 0) {
-		finfo->uu.other = to_free;
-		to_free = finfo;
+		finfo->uu.thunk = (Map::Pair *) to_free;
+		to_free = iter.pair();
 	    }
 	}
 
     while (to_free) {
-	FlowInfo *next = to_free->uu.other;
-	notify(to_free->_aggregate, AggregateListener::DELETE_AGG, 0);
-	IPFlowID flow = table.key_of_value(to_free);
+	const FlowInfo &finfo = to_free->value;
+	const Map::Pair *next = (Map::Pair *) finfo.uu.other;
+	notify(finfo._aggregate, AggregateListener::DELETE_AGG, 0);
+	IPFlowID flow = to_free->key;
 	table.remove(flow);
 	table.remove(flow.rev());
 	to_free = next;

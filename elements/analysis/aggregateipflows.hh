@@ -130,6 +130,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 	union {
 	    unsigned active_sec;
 	    FlowInfo *other;
+	    void *thunk;
 	} uu;
 	unsigned flow_over : 2;
 	bool _reverse : 1;
