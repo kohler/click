@@ -1,3 +1,10 @@
+2003-06-04 Wednesday 13:30  Eddie Kohler <kohler@icir.org>
+
+	* click-mkelemmap (1.23), doc/click-elem2man (1.23),
+	etc/samplepackage/Makefile.in (1.35): elem2man can also read
+	elementmap.xml files; improve error message generation; reduce
+	uninitialized-variable errors in mkelemmap
+
 2003-06-04 Wednesday 02:55  Eddie Kohler <kohler@icir.org>
 
 	* etc/samplepackage/Makefile.in (1.34): nit
