@@ -78,7 +78,7 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-devirtualize
+install: $(LIBCLICKTOOL) all-local
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-devirtualize $(bindir)/click-devirtualize
 install-man:

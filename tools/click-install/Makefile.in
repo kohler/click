@@ -82,7 +82,7 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-install click-uninstall
+install: $(LIBCLICKTOOL) all-local
 	$(mkinstalldirs) $(sbindir)
 	$(INSTALL) click-install $(sbindir)/click-install
 	$(INSTALL) click-uninstall $(sbindir)/click-uninstall

@@ -146,10 +146,10 @@ TABLE.conntable {\n\
        </table></td></tr>\n\
     </table>'\n\
   configlink='<small>(<i>config</i>)</small>'\n\
-  inputentry='<tr valign=\"top\"><td><~processing>&nbsp;input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
-  noinputentry='<tr valign=\"top\"><td colspan=\"4\">no inputs</td></tr>'\n\
-  outputentry='<tr valign=\"top\"><td><~processing>&nbsp;output&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
-  nooutputentry='<tr valign=\"top\"><td colspan=\"4\">no outputs</td></tr>'\n\
+  inputentry='<tr valign=\"top\"><td>input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td align=\"center\">&nbsp;(<~processing>)</td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
+  noinputentry='<tr valign=\"top\"><td colspan=\"5\">no inputs</td></tr>'\n\
+  outputentry='<tr valign=\"top\"><td>output&nbsp;</td><td align=\"right\"><~port></td><td align=\"center\">&nbsp;(<~processing>)</td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
+  nooutputentry='<tr valign=\"top\"><td colspan=\"5\">no outputs</td></tr>'\n\
   inputconnection='<a href=\"#et-<~name>\"><~name></a>&nbsp;[<~port>]'\n\
   outputconnection='[<~port>]&nbsp;<a href=\"#et-<~name>\"><~name></a>'\n\
   noinputconnection='not connected'\n\
@@ -166,10 +166,10 @@ TABLE.conntable {\n\
        </table></td></tr>\n\
     </table>'\n\
   configlink='<small>(<i>config</i>)</small>'\n\
-  inputentry='<tr valign=\"top\"><td><~processing>&nbsp;input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
-  noinputentry='<tr valign=\"top\"><td colspan=\"4\">no inputs</td></tr>'\n\
-  outputentry='<tr valign=\"top\"><td><~processing>&nbsp;output&nbsp;</td><td align=\"right\"><~port></td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
-  nooutputentry='<tr valign=\"top\"><td colspan=\"4\">no outputs</td></tr>'\n\
+  inputentry='<tr valign=\"top\"><td>input&nbsp;&nbsp;</td><td align=\"right\"><~port></td><td align=\"center\">&nbsp;(<~processing>)</td><td>&nbsp;&lt;-&nbsp;</td><td><~inputconnections sep=\", \"></td></tr>'\n\
+  noinputentry='<tr valign=\"top\"><td colspan=\"5\">no inputs</td></tr>'\n\
+  outputentry='<tr valign=\"top\"><td>output&nbsp;</td><td align=\"right\"><~port></td><td align=\"center\">&nbsp;(<~processing>)</td><td>&nbsp;-&gt;&nbsp;</td><td><~outputconnections sep=\", \"></td></tr>'\n\
+  nooutputentry='<tr valign=\"top\"><td colspan=\"5\">no outputs</td></tr>'\n\
   inputconnection='<a href=\"#et-<~name>\"><~name></a>&nbsp;[<~port>]'\n\
   outputconnection='[<~port>]&nbsp;<a href=\"#et-<~name>\"><~name></a>'\n\
   noinputconnection='not connected'\n\
@@ -211,9 +211,9 @@ class_href(ElementClassT *ec)
 	add_class_href(ec->unique_id(), href);
 	return href;
     } else if (String doc_name = ec->documentation_name()) {
-	String package_href = package_hrefs[ec->package()];
+	String package_href = package_hrefs["x" + ec->package()];
 	if (!package_href)
-	    package_href = package_hrefs[""];
+	    package_href = package_hrefs["x"];
 	String href = percent_substitute(package_href, 's', doc_name.cc(), 0);
 	add_class_href(ec->unique_id(), href);
 	return href;
@@ -1103,7 +1103,7 @@ particular purpose.\n");
 	    break;
 
 	  case CLASS_URLS_OPT:
-	    package_hrefs.insert("", clp->arg);
+	    package_hrefs.insert("x", clp->arg);
 	    break;
 
 	  case PACKAGE_URLS_OPT: {
@@ -1113,7 +1113,7 @@ particular purpose.\n");
 		  p_errh->error("`--package-urls' option must contain an equals sign");
 		  goto bad_option;
 	      }
-	      package_hrefs.insert(s.substring(0, equals), s.substring(equals + 1));
+	      package_hrefs.insert("x" + s.substring(0, equals), s.substring(equals + 1));
 	      break;
 	  }
 

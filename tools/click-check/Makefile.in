@@ -78,7 +78,7 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-check
+install: $(LIBCLICKTOOL) all-local
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-check $(bindir)/click-check
 install-man:

@@ -78,7 +78,7 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-align
+install: $(LIBCLICKTOOL) all-local
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-align $(bindir)/click-align
 install-man:

@@ -78,7 +78,7 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-pretty
+install: $(LIBCLICKTOOL) all-local
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-pretty $(bindir)/click-pretty
 install-man:

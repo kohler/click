@@ -82,7 +82,7 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-combine click-uncombine
+install: $(LIBCLICKTOOL) all-local
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click-combine $(bindir)/click-combine
 	$(INSTALL) click-uncombine $(bindir)/click-uncombine
