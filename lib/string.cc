@@ -127,9 +127,10 @@ String::claim_string(char *str, int len)
 }
 
 String
-String::stable_string(const char *str)
+String::stable_string(const char *str, int len)
 {
-  int len = (str ? strlen(str) : 0);
+  if (len < 0)
+    len = (str ? strlen(str) : 0);
   if (len == 0)
     return String();
   else

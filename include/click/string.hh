@@ -35,7 +35,7 @@ class String { public:
   
   static const String &null_string()	{ return *null_string_p; }
   static String claim_string(char *, int = -1); // claim memory
-  static String stable_string(const char *); // stable read-only memory
+  static String stable_string(const char *, int = -1); // stable read-only mem.
   
   static int out_of_memory_count();
   
@@ -67,8 +67,10 @@ class String { public:
   bool equals(const char *, int) const;
   // bool operator==(const String &, const String &);
   // bool operator==(const String &, const char *);
+  // bool operator==(const char *, const String &);
   // bool operator!=(const String &, const String &);
-  // etc.
+  // bool operator!=(const String &, const char *);
+  // bool operator!=(const char *, const String &);
   
   String substring(int, int) const;
   String substring(int left) const	{ return substring(left, _length); }
@@ -94,7 +96,7 @@ class String { public:
 
   // String operator+(String, const String &);
   // String operator+(String, const char *);
-  // String operator+(const char *, String);
+  // String operator+(const char *, const String &);
   // String operator+(String, PermString);
   // String operator+(PermString, String);
   // String operator+(PermString, const char *);
