@@ -27,6 +27,7 @@
 
 @syncodeindex vr cp
 @syncodeindex fn cp
+@syncodeindex tp cp
 
 @titlepage
 @title Programming the Click Modular Router
@@ -154,9 +155,9 @@ Element Initialization
 * configure::                   
 * processing::                  
 * flow_code::                   
+* add_handlers::                
 * initialize::                  
 * uninitialize::                
-* add_handlers::                
 * Initialization Phases::       
 
 Element Runtime
@@ -198,7 +199,8 @@ Parsing Functions
 * Parsing IP Addresses::        
 * Parsing IPv6 Addresses::      
 * Parsing Ethernet Addresses::  
-* Parsing Element Names::       
+* Parsing Elements::            
+* Parsing Handlers::            
 * Parsing Miscellaneous::       
 
 Tasks
@@ -256,9 +258,10 @@ and so forth. They may also be added together. The underlying character
 arrays are dynamically allocated; operations on @code{String}s allocate
 and free memory as needed. A @code{String} and its substrings will
 generally share memory. @code{String}s may be assigned, stored, and
-passed to functions at will.
+passed to functions.
 
 @menu
+* String Initialization::
 * String Constructors::         
 * String Contents::             
 * String Characters::           
@@ -267,6 +270,52 @@ passed to functions at will.
 * String Comparison::           
 * String Out-of-Memory::        
 @end menu
+
+@node String Initialization
+@subsection Class Initialization
+
+The @code{String} class maintains some global state that must be
+explicitly initialized with the @code{static_initialize} static method.
+You can explicitly clean up this state with @code{static_cleanup}, if
+you'd like. String also provides a helper class,
+@code{String::Initializer}, that initializes @code{String}'s global
+state in its constructor.
+
+@deftypeop {Static Method} String {void} static_initialize ()
+Call this function exactly once, at the beginning of the program, before
+any Strings are created or other String functions called.
+@end deftypeop
+
+@deftypeop {Static Method} String {void} static_cleanup ()
+Call this function exactly once, just before the program exits, to clean
+up String-related memory. It is an error to call any @code{String}
+method, except for @code{String} destructors, after calling
+@code{static_cleanup}.
+@end deftypeop
+
+@deftp {Class} {String::Initializer}
+Declare a @code{String::Initializer} object in any source file that
+contains a global string object. The constructor for the
+@code{String::Initializer} will call @code{String::static_initialize} if
+necessary. For example, this source file is in error, since it declares
+a global string without a corresponding @code{Initializer}:
+
+@example
+#include <click/string.hh>
+String foo = "bar";
+int main(int, char **) @{ /* ... */ @}
+@end example
+
+To fix it, declare a @code{String::Initializer} before the
+global string.
+
+@example
+#include <click/string.hh>
+String::Initializer string_initializer;
+String foo = "bar";
+int main(int, char **) @{ /* ... */ @}
+@end example
+@end deftp
 
 @node String Constructors, String Contents, String, String
 @subsection Constructors
@@ -303,13 +352,13 @@ equals @code{"20"}. The @code{double} constructor is not available in
 the kernel.
 @end deftypeop
 
-@deftypeop {Static method} String {const String &} null_string ()
+@deftypeop {Static Method} String {const String &} null_string ()
 Returns a const reference to a string with no characters. Useful in
 situations where you wish to avoid unnecessary memory operations by
 returning string references instead of @code{String}s.
 @end deftypeop
 
-@deftypeop {Static method} String String claim_string @w{(char *@var{s},} @w{int @var{len})}
+@deftypeop {Static Method} String String claim_string @w{(char *@var{s},} @w{int @var{len})}
 Creates and returns a string containing the @var{len} bytes of data
 starting at @var{s}. If @var{len} is negative, then this function treats
 @var{s} as a C string, effectively setting @var{len} to
@@ -320,7 +369,7 @@ this memory is destroyed, the memory itself will be freed by calling
 @code{new[]}.)
 @end deftypeop
 
-@deftypeop {Static method} String String stable_string @w{(const char *@var{s},} @w{int @var{len})}
+@deftypeop {Static Method} String String stable_string @w{(const char *@var{s},} @w{int @var{len})}
 Creates and returns a string containing the @var{len} bytes of data
 starting at @var{s}. If @var{len} is negative, then this function treats
 @var{s} as a C string, effectively setting @var{len} to
@@ -551,7 +600,7 @@ to an empty string.
 The @code{out_of_memory_count} static method can help detect whether a
 @code{String} operation has run out of memory.
 
-@deftypeop {Static method} String int out_of_memory_count ()
+@deftypeop {Static Method} String int out_of_memory_count ()
 Returns the number of times that the @code{String} implementation has
 encountered an out-of-memory condition. The result is normally zero.
 @end deftypeop
@@ -892,26 +941,25 @@ with error veneers, and how to write new @code{ErrorHandler}s.
 
 
 @node ErrorHandler Initialization, Reporting Errors, ErrorHandler, ErrorHandler
-@subsection Initialization
+@subsection Class Initialization
 
 The @code{ErrorHandler} class maintains some global state that must be
 initialized by calling @code{static_initialize} at the beginning of the
 program, and may be freed by calling @code{static_cleanup} when
 execution is complete.
 
-@deftypeop {Static method} ErrorHandler void static_initialize (ErrorHandler *@var{default_errh})
-This function should be called exactly once, at the beginning of the
-program, before any error messages are reported to any
-@code{ErrorHandler}. It is OK to create arbitrary @code{ErrorHandler}
-objects before calling this method, however. The @var{default_errh}
-argument becomes the default @code{ErrorHandler}; see @ref{Basic
-ErrorHandlers}.
+@deftypeop {Static Method} ErrorHandler void static_initialize (ErrorHandler *@var{default_errh})
+Call this function exactly once, at the beginning of the program, before
+any error messages are reported to any @code{ErrorHandler}. It is OK to
+create arbitrary @code{ErrorHandler} objects before calling this method,
+however. The @var{default_errh} argument becomes the default
+@code{ErrorHandler}; see @ref{Basic ErrorHandlers}.
 @end deftypeop
 
-@deftypeop {Static method} ErrorHandler void static_cleanup ()
-This function should be called exactly once, just before the program
-exits. Destroys the default and silent @code{ErrorHandler}s and cleans
-up other @code{ErrorHandler}-related memory. It is an error to call any
+@deftypeop {Static Method} ErrorHandler void static_cleanup ()
+Call this function exactly once, just before the program exits. Destroys
+the default and silent @code{ErrorHandler}s and cleans up other
+@code{ErrorHandler}-related memory. It is an error to call any
 @code{ErrorHandler} method after calling @code{static_cleanup}.
 @end deftypeop
 
@@ -1183,17 +1231,17 @@ the @dfn{default @code{ErrorHandler}}, returned by
 @dfn{silent @code{ErrorHandler}}, returned by @code{silent_handler},
 which ignores any error messages it receives.
 
-@deftypeop {Static method} ErrorHandler {ErrorHandler *} default_handler ()
+@deftypeop {Static Method} ErrorHandler {ErrorHandler *} default_handler ()
 Returns the default @code{ErrorHandler}.
 @end deftypeop
 
-@deftypeop {Static method} ErrorHandler void set_default_handler (@w{ErrorHandler *errh})
+@deftypeop {Static Method} ErrorHandler void set_default_handler (@w{ErrorHandler *errh})
 Sets the default @code{ErrorHandler} to @var{errh}. The
 @code{static_initialize} method also sets the default
 @code{ErrorHandler}; see @ref{ErrorHandler Initialization}.
 @end deftypeop
 
-@deftypeop {Static method} ErrorHandler {ErrorHandler *} silent_handler ()
+@deftypeop {Static Method} ErrorHandler {ErrorHandler *} silent_handler ()
 Returns the silent @code{ErrorHandler}. This handler ignores any error
 messages it receives. It maintains correct @code{nwarnings} and
 @code{nerrors} counts, however.
@@ -1212,7 +1260,7 @@ message is prepended by @var{prefix}.
 
 
 @node Error Veneers, Writing ErrorHandlers, Basic ErrorHandlers, ErrorHandler
-@subsection Error Veneers---Adding Context to Error Messages
+@subsection Error Veneers
 
 @dfn{Error veneers} wrap around basic @code{ErrorHandler} objects and
 change how error text is generated. An error veneer generally changes
@@ -1441,7 +1489,7 @@ string in ASCII. For example, @var{text} might equal
 string, the resulting @code{IPAddress} equals 0.0.0.0.
 @end deftypemethod
 
-@deftypeop {Static method} IPAddress IPAddress make_prefix (int @var{k})
+@deftypeop {Static Method} IPAddress IPAddress make_prefix (int @var{k})
 Creates and returns an IP address with the upper @var{k} bits on and all
 other bits off. @var{k} must be between 0 and 32, inclusive. For
 example, @code{make_prefix(0)} equals 0.0.0.0, @code{make_prefix(8)}
@@ -1712,18 +1760,18 @@ packet buffer is given extra tailroom to bump the buffer length up to
 64}.
 
 
-@deftypeop {Static method} Packet {WritablePacket *} make (unsigned @var{len})
+@deftypeop {Static Method} Packet {WritablePacket *} make (unsigned @var{len})
 Returns a new packet containing @var{len} bytes of undefined data.
 @end deftypeop
 
-@deftypeop {Static method} Packet {WritablePacket *} make @w{(const char *@var{data}, unsigned @var{len})}
-@deftypeopx {Static method} Packet {WritablePacket *} make @w{(const unsigned char *@var{data}}, unsigned @var{len})
+@deftypeop {Static Method} Packet {WritablePacket *} make @w{(const char *@var{data}, unsigned @var{len})}
+@deftypeopx {Static Method} Packet {WritablePacket *} make @w{(const unsigned char *@var{data}}, unsigned @var{len})
 Returns a new packet whose contents equal the first @var{len} bytes of
 @var{data}. @var{data} may be a null pointer, in which case the packet
 contains @var{len} bytes of undefined data.
 @end deftypeop
 
-@deftypeop {Static method} Packet {WritablePacket *} make (unsigned @var{headroom}, @w{const unsigned char *@var{data}}, unsigned @var{len}, unsigned @var{tailroom})
+@deftypeop {Static Method} Packet {WritablePacket *} make (unsigned @var{headroom}, @w{const unsigned char *@var{data}}, unsigned @var{len}, unsigned @var{tailroom})
 Returns a new packet containing @var{headroom} bytes of headroom,
 @var{len} bytes of contents, and at least @var{tailroom} bytes of
 tailroom. The packet contents will equal the first @var{len} bytes of
@@ -1734,7 +1782,7 @@ contents are undefined.
 The following @code{make} method is only available in the user-level
 driver.
 
-@deftypeop {Static method} Packet {WritablePacket *} make (@w{unsigned char *@var{data}}, @w{unsigned @var{len}}, @w{void (*@var{destructor})(unsigned char *, size_t)})
+@deftypeop {Static Method} Packet {WritablePacket *} make (@w{unsigned char *@var{data}}, @w{unsigned @var{len}}, @w{void (*@var{destructor})(unsigned char *, size_t)})
 Returns a new packet that uses @var{data} as a buffer. That is, the new
 packet will have the following characteristics:
 
@@ -1792,7 +1840,7 @@ although the data buffers they point to may be shared.
 The @code{make}, @code{skb}, and @code{steal_skb} methods described in
 this section convert @code{Packet}s to @code{sk_buff}s and vice versa.
 
-@deftypeop {Static method} Packet {Packet *} make (@w{struct sk_buff *@var{skb}})
+@deftypeop {Static Method} Packet {Packet *} make (@w{struct sk_buff *@var{skb}})
 Returns a new packet equivalent to the @code{sk_buff} @var{skb}. All of
 @var{skb}'s data pointers and annotations are left unchanged. This
 method generally does nothing, since @code{Packet}s and @code{sk_buff}s
@@ -2785,7 +2833,7 @@ Inside the @code{notify_ninputs} and @code{notify_noutputs} methods.
 Inside the @code{configure} method.
 
 @item init
-Inside the @code{initialize}, @code{add_handlers}, and
+Inside the @code{add_handlers}, @code{initialize}, and
 @code{uninitialize} methods.
 
 @item run
@@ -2814,9 +2862,9 @@ successfully complete one phase before the next phase begins.
 * configure::                   
 * processing::                  
 * flow_code::                   
+* add_handlers::                
 * initialize::                  
 * uninitialize::                
-* add_handlers::                
 * Initialization Phases::       
 @end menu
 
@@ -3036,7 +3084,7 @@ class ARPQuerier : public Element @{ public: // ...
 @end example
 
 
-@node flow_code, initialize, processing, Element Initialization
+@node flow_code, add_handlers, processing, Element Initialization
 @section @code{flow_code}---Packet Flow Within an Element
 
 Connections determine how packets flow between elements in a router
@@ -3195,103 +3243,26 @@ conservative when assigning flow codes. About 96% of the Click
 distribution's elements use @code{COMPLETE_FLOW}.
 
 
-@node initialize, uninitialize, flow_code, Element Initialization
-@section @code{initialize}---Element Initialization
-
-The @code{initialize} method is called just before the router is placed
-on line. It performs any final initialization, and provides the last
-chance to abort router installation with an error.
-
-@deftypemethod Element {virtual int} initialize (ErrorHandler *@var{errh})
-Any errors, warnings, or messages should be reported to @var{errh}.
-Messages should not specify the element name; this information will be
-supplied externally.
-
-This method should return zero if initialization succeeds, or a negative
-number if it fails. Returning a negative number prevents the router from
-initializing.
-
-The default @code{initialize} method simply returns zero.
-@end deftypemethod
-
-An element's @code{initialize} method may check whether its input or
-output ports are push or pull, or query the router for information about
-its neighbors. It may not create or destroy input or output ports.
-
-If every element's @code{initialize} method succeeds, then the router is
-installed, and will remain installed until another router replaces it.
-Any errors that occur later than @code{initialize}---during a
-@code{push} or @code{pull} method, perhaps---will not take the router
-off line.
-
-Common tasks performed in @code{initialize} methods include:
-
-@itemize @bullet
-@item
-Initializing @code{Task}s (@pxref{Task Initialization}).
-
-@item
-Allocating memory.
-
-@item
-Opening files.
-@end itemize
-
-
-@node uninitialize, add_handlers, initialize, Element Initialization
-@section @code{uninitialize}---Removing Initialization State
-
-The @code{uninitialize} method should undo any effects of
-initialization---for example, it should close any open files, free up
-memory, and unhook from network devices. Every element's
-@code{uninitialize} method is called when a successfully initialized
-router is taken off line. @code{uninitialize} is also called on certain
-elements in an aborted router, namely those that did successfully
-initialize.
-
-@deftypemethod Element {virtual void} uninitialize ()
-This method takes no arguments and returns no results. It should never
-report errors to any source.
-
-The default @code{uninitialize} method does nothing.
-@end deftypemethod
-
-An element's @code{uninitialize} method will be called by Click if and
-only if its @code{initialize} method succeeded (returned zero).
-Furthermore, it will be called by Click exactly once. However, it often
-makes sense to write @code{uninitialize} so that it may be called from
-other places---from the element's destructor, for example, or from
-a partially completed @code{initialize}.
-
-@code{uninitialize} serves some of the same functions as an element's
-destructor and, in the normal case, it is called immediately before the
-element is destroyed. However, @code{uninitialize} may be called long
-before destruction. Elements that are part of an erroneous router are
-uninitialized, but kept around for debugging purposes until another
-router is installed.
-
-
-@node add_handlers, Initialization Phases, uninitialize, Element Initialization
+@node add_handlers, initialize, flow_code, Element Initialization
 @section @code{add_handlers}---Adding Handlers
 
-If a router configuration successfully initializes, the driver will call
-every element's @code{add_handlers} method. This method should create
-any handlers the element provides. @xref{Handlers}, for more information
-on handlers.
+After successfully configuring every element and assigning ports to push
+or pull, the driver calls every element's @code{add_handlers} method.
+This method should create any handlers the element provides.
+@xref{Handlers}, for more information on handlers.
 
 @deftypemethod Element {virtual void} add_handlers ()
-This method takes no arguments and returns no results. It is called
-after the router has successfully initialized, and is expected to create
-the element's class-specific handlers. Most @code{add_handlers} methods
-simply call @code{add_read_handler} and @code{add_write_handler} one or
-more times (@pxref{add_read_handler add_write_handler}), and possibly
-@code{add_task_handlers} (@pxref{Task Handlers}). The
-@code{add_handlers} method should not change the element's state.
+This method takes no arguments and returns no results. Its only side
+effect should be to create the element's class-specific handlers. Most
+@code{add_handlers} methods simply call @code{add_read_handler} and
+@code{add_write_handler} one or more times (@pxref{add_read_handler
+add_write_handler}), and possibly @code{add_task_handlers} (@pxref{Task
+Handlers}).
 
 The default implementation does nothing.
 @end deftypemethod
 
-@anchor{add_default_handlers} The driver will also call every element's
+@anchor{add_default_handlers} The driver also calls every element's
 @code{add_default_handlers} method. This nonvirtual method adds the
 default handlers that every element shares: @handler{class},
 @handler{name}, @handler{config}, @handler{ports}, and
@@ -3380,7 +3351,83 @@ class   r
 @end table
 
 
-@node Initialization Phases,  , add_handlers, Element Initialization
+@node initialize, uninitialize, add_handlers, Element Initialization
+@section @code{initialize}---Element Initialization
+
+The @code{initialize} method is called just before the router is placed
+on line. It performs any final initialization, and provides the last
+chance to abort router installation with an error.
+
+@deftypemethod Element {virtual int} initialize (ErrorHandler *@var{errh})
+Any errors, warnings, or messages should be reported to @var{errh}.
+Messages should not specify the element name; this information will be
+supplied externally.
+
+This method should return zero if initialization succeeds, or a negative
+number if it fails. Returning a negative number prevents the router from
+initializing.
+
+The default @code{initialize} method simply returns zero.
+@end deftypemethod
+
+An element's @code{initialize} method may check whether its input or
+output ports are push or pull, or query the router for information about
+its neighbors. It may not create or destroy input or output ports.
+
+If every element's @code{initialize} method succeeds, then the router is
+installed, and will remain installed until another router replaces it.
+Any errors that occur later than @code{initialize}---during a
+@code{push} or @code{pull} method, perhaps---will not take the router
+off line.
+
+Common tasks performed in @code{initialize} methods include:
+
+@itemize @bullet
+@item
+Initializing @code{Task}s (@pxref{Task Initialization}).
+
+@item
+Allocating memory.
+
+@item
+Opening files.
+@end itemize
+
+
+@node uninitialize, Initialization Phases, initialize, Element Initialization
+@section @code{uninitialize}---Removing Initialization State
+
+The @code{uninitialize} method should undo any effects of
+initialization---for example, it should close any open files, free up
+memory, and unhook from network devices. Every element's
+@code{uninitialize} method is called when a successfully initialized
+router is taken off line. @code{uninitialize} is also called on certain
+elements in an aborted router, namely those that did successfully
+initialize.
+
+@deftypemethod Element {virtual void} uninitialize ()
+This method takes no arguments and returns no results. It should never
+report errors to any source.
+
+The default @code{uninitialize} method does nothing.
+@end deftypemethod
+
+An element's @code{uninitialize} method will be called by Click if and
+only if its @code{initialize} method succeeded (returned zero).
+Furthermore, it will be called by Click exactly once. However, it often
+makes sense to write @code{uninitialize} so that it may be called from
+other places---from the element's destructor, for example, or from
+a partially completed @code{initialize}.
+
+@code{uninitialize} serves some of the same functions as an element's
+destructor and, in the normal case, it is called immediately before the
+element is destroyed. However, @code{uninitialize} may be called long
+before destruction. Elements that are part of an erroneous router are
+uninitialized, but kept around for debugging purposes until another
+router is installed.
+
+
+@node Initialization Phases,  , uninitialize, Element Initialization
 @section Initialization Phases
 
 @enumerate
@@ -3428,16 +3475,6 @@ once.
 Checks that no input or output port goes unused.
 
 @item
-If there have been no errors up to this point, then calls each element's
-@code{initialize} method. The elements are initialized according to the
-configuration order. No @code{initialize} methods are called if there
-were any errors in any previous phase.
-
-@item
-If there were no errors, then router initialization has succeeded.
-
-@enumerate a
-@item
 Calls every element's @code{add_handlers} method.
 
 @item
@@ -3445,22 +3482,28 @@ Calls every element's @code{add_default_handlers} method. The
 @handler{config} handler may be read-write.
 
 @item
-Places the router on line.
-@end enumerate
+If there have been no errors up to this point, then calls each element's
+@code{initialize} method. The elements are initialized according to the
+configuration order. No @code{initialize} methods are called if there
+were any errors in any previous phase.
+
+@item
+If there were no errors, then router initialization has succeeded, and
+the router is placed on line.
 
 @item
 If there were errors, then router initialization has failed.
 
 @enumerate a
 @item
-Calls the @code{uninitialize} method on each element whose
-@code{initialize} method returned successfully.
-
-@item
-Some drivers, such as the Linux kernel driver, call every element's
-@code{add_default_handlers} method to make information about the
+Removes all handlers, then calls every element's
+@code{add_default_handlers} again to make information about the
 erroneous configuration available for debugging. The @handler{config}
 handler is always read-only.
+
+@item
+Calls the @code{uninitialize} method on each element whose
+@code{initialize} method returned successfully.
 @end enumerate
 @end enumerate
 
@@ -3627,13 +3670,13 @@ a,    b          , c
 @end example
 
 @noindent
-Leading and trailing spaces are trimmed from each argument.
+Leading and trailing whitespace is trimmed from each argument.
 
 Configuration strings can contain two kinds of @dfn{comments} and three
 kinds of @dfn{quoted strings}. Comments let you document a configuration
 string; they behave like spaces. With quoted strings, you can protect
-special characters like spaces, commas, and comment-starting sequences
-from interpretation.
+special characters like whitespace, commas, and comment-starting
+sequences from interpretation.
 
 @table @asis
 @item @samp{//} comments
@@ -3660,18 +3703,18 @@ single quote in a single-quoted string.
 @item Double-quoted strings @samp{" @dots{} "}
 Begins with a double-quote character @samp{"} and continues up to the
 next unescaped double quote. Backslash @samp{\} acts as an escape
-character inside double quotes, as in C. Click's escape sequences are
+character inside double quotes, as in C@. Click's escape sequences are
 described below. Comments and single quotes have no special meaning
 inside double quotes. @samp{\<} retains its usual meaning, however.
 
 @item Hex strings @samp{\< @dots{} >}
 The @samp{\<} sequence begins a string of hexadecimal digits terminated
 by @samp{>}. Each pair of digits expands to the corresponding character
-value. For example, @samp{\<48454c4c4F>} expands to @samp{HELLO}. Spaces
-and comments (either @samp{//} or @samp{/*} style) may be arbitrarily
-interleaved with the hex digits; any @samp{>} characters inside comments
-are ignored. Characters other than spaces, hex digits, comments, and
-@samp{>} should not appear inside a hex string.
+value. For example, @samp{\<48454c4c4F>} expands to @samp{HELLO}.
+Whitespace and comments (either @samp{//} or @samp{/*} style) may be
+arbitrarily interleaved with the hex digits; any @samp{>} characters
+inside comments are ignored. Characters other than whitespace, hex
+digits, comments, and @samp{>} should not appear inside a hex string.
 
 Hex strings may be placed within double-quoted strings.
 @end table
@@ -3727,31 +3770,31 @@ eventually change.
 
 These functions interpret quote sequences and comments in configuration
 strings. @code{cp_uncomment} removes comments and leading and trailing
-spaces, but does not expand quote sequences. @code{cp_unquote} both
+whitespace, but does not expand quote sequences. @code{cp_unquote} both
 removes comments and expands quote sequences. Finally, @code{cp_quote}
-protects special characters, such as spaces and commas, within double
-quotes.
+protects special characters, such as whitespace and commas, within
+double quotes.
 
 @deftypefun String cp_uncomment (@w{const String &@var{str}})
 Replaces any comments in @var{str} by single spaces, then removes any
-leading and trailing space and returns the result.
+leading and trailing whitespace and returns the result.
 @end deftypefun
 
 @deftypefun String cp_unquote (@w{const String &@var{str}})
 Replaces any comments in @var{str} by single spaces, then removes any
-leading and trailing space. Finally, replaces every quoted string by its
-expansion and returns the result.
+leading and trailing whitespace. Finally, replaces every quoted string
+by its expansion and returns the result.
 @end deftypefun
 
 @deftypefun String cp_quote (@w{const String &@var{str}}, @w{bool @var{allow_newlines} = false})
-Returns a quoted version of @var{str}. Any spaces, commas, comments,
+Returns a quoted version of @var{str}. Any whitespace, commas, comments,
 quote sequences, and non-ASCII characters in @var{str} are protected
 within double quotes. If @var{allow_newlines} is true, then the result
 may contain newline characters (within double quotes); otherwise, any
-newline characters in @var{str} are replaced by @samp{\n} sequences.
-The returned result is never empty (unless Click has run out of memory).
-If @var{str} is the empty string, @code{cp_quote} will return @samp{""}
-(a string containing two double quotes).
+newline characters in @var{str} are replaced by @samp{\n} sequences. The
+returned result is never empty (unless Click has run out of memory). If
+@var{str} is the empty string, @code{cp_quote} will return @samp{""} (a
+string containing two double quotes).
 @end deftypefun
 
 For example:
@@ -3767,18 +3810,19 @@ For example:
 
 @deftypefun void cp_argvec (@w{const String &@var{str}}, @w{Vector<String> &@var{conf}})
 Splits @var{str} into arguments by breaking it at every comma not part
-of a quote or comment. Comments and leading and trailing spaces are
+of a quote or comment. Comments and leading and trailing whitespace are
 removed from each argument, as by @code{cp_uncomment}, and the results
 are pushed, in order, onto the vector @var{conf}. If @var{str} contains
-only spaces and comments, nothing is pushed onto @var{conf}.
+only whitespace and comments, nothing is pushed onto @var{conf}.
 @end deftypefun
 
 @deftypefun void cp_spacevec (@w{const String &@var{str}}, @w{Vector<String> &@var{conf}})
 Splits @var{str} into arguments by breaking it at every sequence of
-spaces and/or comments. Leading and trailing spaces are removed from
-each argument, as by @code{cp_uncomment}, and the results are pushed, in
-order, onto the vector @var{conf}. If @var{str} contains only spaces and
-comments, nothing is pushed onto @var{conf}.
+whitespace characters and/or comments. Leading and trailing whitespace
+is removed from each argument, as by @code{cp_uncomment}, and the
+results are pushed, in order, onto the vector @var{conf}. If @var{str}
+contains only whitespace and comments, nothing is pushed onto
+@var{conf}.
 @end deftypefun
 
 For example:
@@ -3866,7 +3910,8 @@ parsing succeeds.
 
 @item
 Most parsing functions expect to parse the entire supplied string. Any
-extraneous characters, such as spaces, cause parsing to fail.
+extraneous characters, such as trailing whitespace, cause parsing to
+fail.
 
 @item
 Parsing functions never report errors to any source; they simply return
@@ -3881,7 +3926,8 @@ false when parsing fails.
 * Parsing IP Addresses::        
 * Parsing IPv6 Addresses::      
 * Parsing Ethernet Addresses::  
-* Parsing Element Names::       
+* Parsing Elements::            
+* Parsing Handlers::            
 * Parsing Miscellaneous::       
 @end menu
 
@@ -3901,9 +3947,9 @@ quotes and hex strings (@samp{\< @dots{} >}), which are processed as by
 @code{cp_unquote} (@pxref{Quoting}).
 
 If the @var{rest} argument is null and @var{str} contains any unquoted
-spaces, then parsing will fail. If @var{rest} is not null, then parsing
-stops at the first unquoted space, and the remains of @var{str},
-starting at that unquoted space, are stored in @code{*@var{rest}}.
+whitespace, then parsing will fail. If @var{rest} is not null, then
+parsing stops at the first unquoted whitespace character, and any
+leftover portion of @var{str} is stored in @code{*@var{rest}}.
 
 For example:
 
@@ -3925,18 +3971,18 @@ For example:
 @deftypefn {Parsing Function} bool cp_word (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
 Parses a word from the beginning of @var{str} and stores the result in
 @code{*@var{result}}. A @dfn{word} is a string that does not contain
-spaces, control characters, non-ASCII characters (with values 127 or
+whitespace, control characters, non-ASCII characters (with values 127 or
 higher), or special characters (@samp{'}, @samp{"}, @samp{\}, or
 @samp{,}). @var{str} may contain single and double quotes and hex
 strings (@samp{\< @dots{} >}), which are processed as by
 @code{cp_unquote} (@pxref{Quoting}). The unquoted result must not
-contain quote marks, spaces, or other special characters, however.
+contain quote marks, whitespace, or other special characters, however.
 Returns true if and only if @var{str} contained a valid word.
 
 If the @var{rest} argument is null and @var{str} contains any unquoted
-spaces, then parsing will fail. If @var{rest} is not null, then parsing
-stops at the first unquoted space, and the remains of @var{str},
-starting at that unquoted space, are stored in @code{*@var{rest}}.
+whitespace, then parsing will fail. If @var{rest} is not null, then
+parsing stops at the first unquoted whitespace character, and any
+leftover portion of @var{str} is stored in @code{*@var{rest}}.
 
 For example:
 
@@ -3959,9 +4005,9 @@ substrings---@samp{'}, @samp{"}, and @samp{\<} are not allowed. Returns
 true if and only if @var{str} contained a valid keyword.
 
 If the @var{rest} argument is null and @var{str} contains any unquoted
-spaces, then parsing will fail. If @var{rest} is not null, then parsing
-stops at the first unquoted space, and the remains of @var{str},
-starting at that unquoted space, are stored in @code{*@var{rest}}.
+whitespace, then parsing will fail. If @var{rest} is not null, then
+parsing stops at the first unquoted whitespace character, and any
+leftover portion of @var{str} is stored in @code{*@var{rest}}.
 
 For example:
 
@@ -4006,10 +4052,10 @@ Parses @var{str} into a Boolean value and stores the result in
 
 @table @asis
 @item @samp{0}, @samp{false}, @samp{no}
-The result is false.
+@code{*@var{result}} becomes false.
 
 @item @samp{1}, @samp{true}, @samp{yes}
-The result is true.
+@code{*@var{result}} becomes true.
 @end table
 
 @noindent
@@ -4023,17 +4069,16 @@ The words must be all lower case.
 @code{cp_integer} and @code{cp_unsigned} parse strings into @code{int}
 and @code{unsigned int} values, respectively. 
 
-Each function comes in two variants, one that specifies the relevant
-base with a @var{base} parameter, and one that does not. If @var{base}
-is 0 or unspecified, then the string is examined to determine the base.
-Strings beginning with @samp{0x} or @samp{0X} (after the optional sign)
-use base 16; other strings beginning with @samp{0} use base 8; and all
-other strings use base 10. Nonzero @var{base}s must be at least 2 and no
-more than 36.
+Each function comes in two variants, one with a @var{base} parameter and
+one without. If @var{base} is 0 or unspecified, then the function
+examines the string to determine the relevant base. Strings beginning
+with @samp{0x} or @samp{0X} (after the optional sign) use base 16; other
+strings beginning with @samp{0} use base 8; and all other strings use
+base 10. Nonzero @var{base}s must be at least 2 and no more than 36.
 
-The functions accept the same strings as C's @code{strtol} function
-(almost---@code{strtol} will accept leading space and trailing
-characters that are not part of the parsed integer). The string should
+The functions accept the same strings as C's @code{strtol} function,
+except that @code{strtol} will accept leading whitespace and trailing
+characters that are not part of the parsed integer. The string should
 contain, in order:
 
 @itemize @bullet
@@ -4076,7 +4121,7 @@ For example:
 @t{cp_integer(}@samp{-0x8000}@t{, @var{result})} @result{} true
        @t{*@var{result}} = @math{-32768}, @t{cp_errno} = @t{CPE_OK}
 @t{cp_integer(}@samp{-0x8000 }@t{, @var{result})} @result{} false
-       (trailing space not allowed)
+       (trailing whitespace not allowed)
 @t{cp_unsigned(}@samp{3333333333333333}@t{, 4, @var{result})} @result{} true
        @t{*@var{result}} = @math{4294967295}, @t{cp_errno} = @t{CPE_OK}
 @t{cp_unsigned(}@samp{33333333333333333}@t{, 4, @var{result})} @result{} true
@@ -4246,13 +4291,14 @@ are allowed if and only if @var{allow_bare_addr} is true. The netmask
 corresponding to a bare address is 255.255.255.255.
 @end deftypefn
 
-Finally, the @code{cp_ip_address_set} function parses a space-separated
-list of IP addresses into to an @code{IPAddressSet} object.
+Finally, the @code{cp_ip_address_set} function parses a
+whitespace-separated list of IP addresses into to an @code{IPAddressSet}
+object.
 
 @deftypefn {Parsing Function} bool cp_ip_address_set (@w{const String &@var{str}}, @w{IPAddressSet *@var{result}}, @w{Element *@var{context} = 0})
 Parses @var{str} into a set of IP addresses and stores the result in
-@code{*@var{result}}. @var{str} must be a space-separated list of IP
-addresses, which can take any of the forms accepted by
+@code{*@var{result}}. @var{str} must be a whitespace-separated list of
+IP addresses, which can take any of the forms accepted by
 @code{cp_ip_address}.
 @end deftypefn
 
@@ -4273,7 +4319,7 @@ abbreviated with two colons, as in @samp{1080::8:800:200C:417A}, and an
 address may end in an embedded IPv4 address, as in @samp{::13.1.68.3}
 and @samp{::FFFF:129.144.52.38}. IPv6 prefixes are written in
 @samp{@var{address}/@var{prefixlen}} form, like
-@samp{12AB:0:0:CD30::/60}. Click also supports the
+@samp{12AB:0:0:CD30::/60}. Click also supports
 @samp{@var{address}/@var{netmask}} syntax, where @var{netmask} is an
 IPv6 address. @var{netmask} must correspond to some contiguous prefix,
 however: @samp{12AB:0:0:CD30::/60} and
@@ -4312,7 +4358,7 @@ corresponding to the resulting prefix length in
 @end deftypefn
 
 
-@node Parsing Ethernet Addresses, Parsing Element Names, Parsing IPv6 Addresses, Parsing Functions
+@node Parsing Ethernet Addresses, Parsing Elements, Parsing IPv6 Addresses, Parsing Functions
 @subsection Ethernet Addresses
 
 The @code{cp_ethernet_address} functions parse strings into Ethernet
@@ -4332,8 +4378,8 @@ Parses @var{str} into an Ethernet address and stores the result in
 @end deftypefn
 
 
-@node Parsing Element Names, Parsing Miscellaneous, Parsing Ethernet Addresses, Parsing Functions
-@subsection Element Names
+@node Parsing Elements, Parsing Handlers, Parsing Ethernet Addresses, Parsing Functions
+@subsection Elements
 
 @code{cp_element} parses an element name into a pointer to an element in
 some router configuration. It differs from other parsing functions in two
@@ -4341,13 +4387,18 @@ important ways. First, it returns its result, or a null pointer on
 error; parsing functions store their results in some pointer. Second, it
 reports errors to the supplied @code{ErrorHandler}.
 
-The @var{context} argument supplies the relevant router configuration
-and any compound element context. Inside a compound element named
-@samp{x}, the string @samp{y} parses to an element named @samp{x/y}, if
-such an element exists. Click will check for an element named @samp{y}
-only after checking for @samp{x/y}. More explicitly, the
-@code{cp_element} function uses the following procedure to search for an
-element named @var{str}:
+The @code{cp_element} function follows lexical scoping rules when called
+from a compound element: it will check for components of that compound
+element first. For instance, say you've called @code{cp_element} on the
+string @samp{e}. Normally, this would check the router for an element
+named, simply, @samp{e}. However, if called within a compound element
+@samp{x}, @code{cp_element} will first check for an element named
+@samp{x/e} before looking for the global @samp{e} element. The function
+uses its @var{context} argument, an element pointer, to determine both
+the relevant router object and any compound element context.
+
+More explicitly, the @code{cp_element} function uses the following
+procedure to search for an element named @var{str}:
 
 @enumerate
 @item
@@ -4368,17 +4419,80 @@ Otherwise, return to step 2.
 
 @deftypefn {Function} {Element *} cp_element (@w{const String &@var{str}}, @w{Element *@var{context}}, @w{ErrorHandler *@var{errh}})
 Returns a element named @var{str} in @var{context}'s router
-configuration. @var{context} determines both the relevant router
-configuration and any compound element context. Returns a null pointer
-if no element is found; if @var{errh} is nonnull and no element is
-found, additionally reports an error to @var{errh}.
+configuration. @var{str} is first processed as by @code{cp_unquote}.
+@var{context} determines both the relevant router configuration and any
+compound element context. Returns a null pointer if no element is found;
+if @var{errh} is nonnull and no element is found, additionally reports
+an error to @var{errh}.
 @end deftypefn
 
-@node Parsing Miscellaneous,  , Parsing Element Names, Parsing Functions
+A variant function does not perform a lexically scoped search, so its
+@var{str} argument must contain a fully-qualified element name.
+
+@deftypefn {Function} {Element *} cp_element (@w{const String &@var{str}}, @w{Router *@var{router}}, @w{ErrorHandler *@var{errh}})
+Returns a element named @var{str} in @var{router}. @var{str} is first
+processed as by @code{cp_unquote}. Returns a null pointer if no element
+is found; if @var{errh} is nonnull and no element is found, additionally
+reports an error to @var{errh}.
+@end deftypefn
+
+
+@node Parsing Handlers, Parsing Miscellaneous, Parsing Elements, Parsing Functions
+@subsection Handlers
+
+The @code{cp_handler} functions parse a handler specification, such as
+@samp{e.config}, into the relevant pair of element and handler ID.
+Unlike most other parsing functions, it can report errors to an
+@code{ErrorHandler}, if one is supplied.
+
+A handler specification consists of an element name and a handler name
+separated by a period: @samp{@var{element}.@var{handler}}. The simplest
+@code{cp_handler} function parses such a specification into an element
+pointer, corresponding to @var{element}, and the handler name,
+@var{handler}. Like @code{cp_element} (@pxref{Parsing Elements}),
+@code{cp_handler} uses a lexically-scoped search to find the element
+corresponding to a given name.
+
+@deftypefn {Parsing Function} {bool} cp_handler (@w{const String &@var{str}}, @w{Element *@var{context}}, @w{Element **@var{result_element}}, @w{String *@var{result_hname}}, @w{ErrorHandler *@var{errh}})
+Parses @var{str} into a handler specification, storing the resulting
+element in @code{*@var{result_element}} and handler name in
+@code{*@var{result_hname}}. @var{str} is first processed as by
+@code{cp_unquote}. @var{context} determines both the relevant router
+configuration and any compound element context. Returns true if and only
+if @var{str} contained a valid handler specification whose element part
+named an actual element. Note that this function will not check whether
+@code{*@var{result_element}} actually has a handler named
+@code{*@var{result_hname}}.
+@end deftypefn
+
+The other @code{cp_handler} variants ensure that the input string names
+an actual handler. These variants are useless until handlers are added
+to the router configuration. Therefore, they should be called in
+elements' @code{initialize} methods, not their @code{configure} methods,
+since handlers are not added until @code{initialize} time
+(@pxref{Initialization Phases}).
+
+@deftypefn {Parsing Function} {bool} cp_handler (@w{const String &@var{str}}, @w{Element *@var{context}}, @w{Element **@var{result_element}}, @w{int *@var{result_hid}}, @w{ErrorHandler *@var{errh}})
+Parses @var{str} into a handler specification, storing the resulting
+element in @code{*@var{result_element}} and handler ID in
+@code{*@var{result_hid}}. This function just calls the simpler
+@code{cp_handler}, above, then checks that the resulting element has the
+named handler.
+@end deftypefn
+
+@deftypefn {Parsing Function} {bool} cp_handler (@w{const String &@var{str}}, @w{Element *@var{context}}, @w{bool @var{need_read}}, @w{bool @var{need_write}}, @w{Element **@var{result_element}}, @w{int *@var{result_hid}}, @w{ErrorHandler *@var{errh}})
+Similar, but additionally checks for read and/or write handlers. If
+@var{need_read} is true, then @var{str} must name a valid read handler;
+if @var{need_write} is true, then @var{str} must name a valid write
+handler. Returns false if these checks aren't met.
+@end deftypefn
+
+
+@node Parsing Miscellaneous,  , Parsing Handlers, Parsing Functions
 @subsection Miscellaneous
 
 The @code{cp_milliseconds} and @code{cp_timeval} functions parse strings
-into types related to time.
+into time.
 
 @deftypefn {Parsing Function} bool cp_milliseconds (@w{const String &@var{str}}, @w{int *@var{result}})
 Parses @var{str} as a real number with 3 decimal digits of fraction.
@@ -4395,6 +4509,212 @@ result in @code{@var{result}->tv_sec} and the fraction part in
 @code{cp_unparse_real10(@var{str}, 6, &@var{result}->tv_sec,
 &@var{result}->tv_usec)}.
 @end deftypefn
+
+
+@node cp_va
+@section Parsing Argument Lists
+
+@cindex cp_va
+
+@node cp_va Concepts
+@subsection Concepts
+
+@node cp_va Initialization
+@subsection Global Initialization
+
+The @code{cp_va} functions maintain some private global state---for
+example, a list of the data types they understand. You must explicitly
+initialize this state with @code{cp_va_static_initialize} before calling
+any other @code{cp_va} function. You can free this state, if you'd like,
+with @code{cp_va_static_cleanup}.
+
+@deftypefun void cp_va_static_initialize ()
+Call this function exactly once, at the beginning of the program, before
+calling any other @code{cp_va} functions.
+@end deftypefun
+
+@deftypefun void cp_va_static_cleanup ()
+Call this function exactly once, at the end of the program. It is an
+error to call any @code{cp_va} function after calling
+@code{cp_va_static_cleanup}.
+@end deftypefun
+
+@multitable @columnfractions .3 .7
+@item @strong{Constant}
+@tab @strong{Storage Arguments}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpArgument}
+@tab @code{String *@var{result}}
+@item @code{cpString}
+@tab @code{String *@var{result}}
+@item @code{cpWord}
+@tab @code{String *@var{result}}
+@item @code{cpKeyword}
+@tab @code{String *@var{result}}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpByte}
+@tab @code{unsigned char *@var{result}}
+@item @code{cpShort}
+@tab @code{short *@var{result}}
+@item @code{cpUnsignedShort}
+@tab @code{unsigned short *@var{result}}
+@item @code{cpInteger}
+@tab @code{int *@var{result}}
+@item @code{cpUnsigned}
+@tab @code{unsigned *@var{result}}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpReal2}
+@tab @code{@w{int @var{frac_bits}}, @w{int *@var{result}}}
+@item @code{cpUnsignedReal2}
+@tab @code{@w{int @var{frac_bits}}, @w{unsigned *@var{result}}}
+@item @code{cpReal10}
+@tab @code{@w{int @var{frac_digits}}, @w{int *@var{result}}}
+@item @code{cpUnsignedReal10}
+@tab @code{@w{int @var{frac_digits}}, @w{unsigned *@var{result}}}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpIPAddress}
+@tab @code{IPAddress *@var{result}}
+@item @code{cpIPPrefix}
+@tab @code{@w{IPAddress *@var{result_address}}, @w{IPAddress *@var{result_mask}}}
+@item @code{cpIPAddressOrPrefix}
+@tab @code{@w{IPAddress *@var{result_address}}, @w{IPAddress *@var{result_mask}}}
+@item @code{cpIPAddressSet}
+@tab @code{@w{IPAddressSet *@var{result}}}
+@item @code{cpEtherAddress}
+@tab @code{@w{EtherAddress *@var{result}}}
+@item @code{cpIP6Address}
+@tab @code{IP6Address *@var{result}}
+@item @code{cpIP6Prefix}
+@tab @code{@w{IP6Address *@var{result_address}}, @w{IP6Address *@var{result_mask}}}
+@item @code{cpIP6AddressOrPrefix}
+@tab @code{@w{IP6Address *@var{result_address}}, @w{IP6Address *@var{result_mask}}}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpElement}
+@tab @code{@w{Element **@var{result}}}
+@item @code{cpHandlerName}
+@tab @code{@w{Element **@var{result_element}},} @code{@w{String
+*@var{result_hname}}}
+@item @code{cpHandler}
+@tab @code{@w{Element **@var{result_element}}, @w{int *@var{result_hid}}}
+@item @code{cpReadHandler}
+@tab @code{@w{Element **@var{result_element}}, @w{int *@var{result_hid}}}
+@item @code{cpWriteHandler}
+@tab @code{@w{Element **@var{result_element}}, @w{int *@var{result_hid}}}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpBool}
+@tab @code{@w{bool *@var{result}}}
+@item @code{cpMilliseconds}
+@tab @code{@w{int *@var{result}}}
+@item @code{cpTimeval}
+@tab @code{@w{struct timeval *@var{result}}}
+@end multitable
+
+
+
+@multitable @columnfractions .3 .7
+@item @strong{Constant}
+@tab @strong{Corresponding Parsing Function}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpArgument}
+@tab @code{*@var{result} = arg}
+@item @code{cpString}
+@tab @code{cp_string(arg, @var{result})}
+@item @code{cpWord}
+@tab @code{cp_string(arg, @var{result})}
+@item @code{cpKeyword}
+@tab @code{cp_keyword(arg, @var{result})}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpByte}
+@tab @code{cp_unsigned(arg, &tmp)}, check range, store in
+@var{result}
+@item @code{cpShort}
+@tab @code{cp_integer(arg, &tmp)}, check range, store in
+@var{result}
+@item @code{cpUnsignedShort}
+@tab @code{cp_unsigned(arg, &tmp)}, check range, store in
+@var{result}
+@item @code{cpInteger}
+@tab @code{cp_integer(arg, @var{result})}
+@item @code{cpUnsigned}
+@tab @code{cp_unsigned(arg, @var{result})}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpReal2}
+@tab @code{cp_real2(arg, @var{frac_bits}, @var{result})}
+@item @code{cpUnsignedReal2}
+@tab @code{cp_unsigned_real2(arg, @var{frac_bits}, @var{result})}
+@item @code{cpReal10}
+@tab @code{cp_real10(arg, @var{frac_digits}, @var{result})}
+@item @code{cpUnsignedReal10}
+@tab @code{cp_unsigned_real10(arg, @var{frac_digits}, @var{result})}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpIPAddress}
+@tab @code{cp_ip_address(arg, @var{result}, context)}
+@item @code{cpIPPrefix}
+@tab @code{cp_ip_prefix(arg, @var{result_address},
+@var{result_mask}, false, context)}
+@item @code{cpIPAddressOrPrefix}
+@tab @code{cp_ip_prefix(arg, @var{result_address},
+@var{result_mask}, true, context)}
+@item @code{cpIPAddressSet}
+@tab @code{cp_ip_address_set(arg, @var{result}, context)}
+@item @code{cpEtherAddress}
+@tab @code{cp_ether_address(arg, @var{result}, context)}
+@item @code{cpIP6Address}
+@tab @code{cp_ip6_address(arg, @var{result}, context)}
+@item @code{cpIP6Prefix}
+@tab @code{cp_ip6_prefix(arg, @var{result_address},
+@var{result_mask}, false, context)}
+@item @code{cpIP6AddressOrPrefix}
+@tab @code{cp_ip6_prefix(arg, @var{result_address},
+@var{result_mask}, false, context)}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpElement}
+@tab @code{cp_element(arg, context, @var{result})}
+@item @code{cpHandlerName}
+@tab @code{cp_handler(arg, context, @var{result_element},
+@var{result_hname})}
+@item @code{cpHandler}
+@tab @code{cp_handler(arg, context, @var{result_element},
+@var{result_hid})}
+@item @code{cpReadHandler}
+@tab @code{cp_handler(arg, context, true, false, @var{result_element},
+@var{result_hid})}
+@item @code{cpWriteHandler}
+@tab @code{cp_handler(arg, context, false, true, @var{result_element},
+@var{result_hid})}
+@end multitable
+
+@multitable @columnfractions .3 .7
+@item @code{cpBool}
+@tab @code{cp_bool(arg, @var{result})}
+@item @code{cpMilliseconds}
+@tab @code{cp_milliseconds(arg, @var{result})}
+@item @code{cpTimeval}
+@tab @code{cp_timeval(arg, @var{result})}
+@end multitable
+
 
 @node Tasks, Timers, Configuration Strings, Top
 @chapter Tasks
@@ -4466,7 +4786,7 @@ task's scheduling parameters, then calls @code{Task::initialize} to
 schedule the task. The @code{ScheduleInfo::join_scheduler} method is
 defined in the @code{"elements/standard/scheduleinfo.hh"} header file.
 
-@deftypeop {Static method} ScheduleInfo void join_scheduler (Element *@var{e}, Task *@var{task}, ErrorHandler *@var{errh})
+@deftypeop {Static Method} ScheduleInfo void join_scheduler (Element *@var{e}, Task *@var{task}, ErrorHandler *@var{errh})
 Sets @var{task}'s scheduling parameters as specified by any
 @click{ScheduleInfo} elements in the router configuration. The element
 @var{e} is used to find the correct router, and provides the relevant
