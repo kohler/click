@@ -9,8 +9,8 @@
  * =d 
  *
  * Store a 32-bit unsigned integer sequence number in packets, at a
- * specified offset.  The number is stored in network byte order, and
- * is incremented with each packet that passes through the element.
+ * specified offset.  The number is incremented with each packet that
+ * passes through the element.
  *
  * Keywords are:
  *
@@ -24,6 +24,11 @@
  * =item FIRST
  *
  * Unsigned integer.  First sequence number to use.  Defaults to 0.
+ *
+ * =item NET_BYTE_ORDER
+ *
+ * Boolean.  Should the sequence number be stored in network byte
+ * order?  If not, host byte order is used.  Defaults to false.
  *
  * =back
  *
@@ -52,6 +57,8 @@ class IncrementSeqNo : public Element  {
   int initialize(ErrorHandler *);
 
   void add_handlers();
+
+  bool can_live_reconfigure() const		{ return true; }
   
   Packet *simple_action(Packet *);
 
@@ -61,6 +68,7 @@ private:
 
   uint32_t _seqno;
   unsigned int _offset;
+  bool _use_net_byteorder;
 };
 
 CLICK_ENDDECLS
