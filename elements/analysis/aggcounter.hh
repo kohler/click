@@ -7,7 +7,7 @@
 
 AggregateCounter([I<KEYWORDS>])
 
-=s statistics
+=s measurement
 
 maintains information about aggregate annotations
 
