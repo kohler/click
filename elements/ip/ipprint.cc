@@ -60,8 +60,10 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _bytes = 1500;
   String contents = "no";
+  String payload = "no";
   _label = "";
   _swap = false;
+  _payload = false;
   bool print_id = false;
   bool print_time = true;
   bool print_paint = false;
@@ -75,7 +77,8 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpOptional,
 		  cpString, "label", &_label,
 		  cpKeywords,
-		  "CONTENTS", cpWord, "print packet contents (no/hex/ascii)", &contents,
+		  "CONTENTS", cpWord, "print packet contents (false/hex/ascii)", &contents,
+		  "PAYLOAD", cpWord, "print packet payload (false/hex/ascii)", &payload,
 		  "NBYTES", cpInteger, "max data bytes to print", &_bytes,
 		  "ID", cpBool, "print IP ID?", &print_id,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &print_time,
@@ -102,6 +105,22 @@ IPPrint::configure(Vector<String> &conf, ErrorHandler *errh)
   else
     return errh->error("bad contents value `%s'; should be `false', `hex', or `ascii'", contents.cc());
 
+  int payloadv;
+  payload = payload.upper();
+  if (payload == "NO" || payload == "FALSE")
+    payloadv = 0;
+  else if (payload == "YES" || payload == "TRUE" || payload == "HEX")
+    payloadv = 1;
+  else if (payload == "ASCII")
+    payloadv = 2;
+  else
+    return errh->error("bad payload value `%s'; should be `false', `hex', or `ascii'", contents.cc());
+
+  if (payloadv > 0 && _contents > 0)
+    return errh->error("specify at most one of PAYLOAD and CONTENTS");
+  else if (payloadv > 0)
+    _contents = payloadv, _payload = true;
+  
   _print_id = print_id;
   _print_timestamp = print_time;
   _print_paint = print_paint;
@@ -162,11 +181,14 @@ IPPrint::simple_action(Packet *p)
     sa << p->timestamp_anno() << ": ";
 
   if (_print_aggregate)
-    sa << AGGREGATE_ANNO(p) << ": ";
+    sa << '#' << AGGREGATE_ANNO(p);
+  if (_print_paint)
+    sa << (_print_aggregate ? "." : "paint ") << (int)PAINT_ANNO(p);
+  if (_print_aggregate || _print_paint)
+    sa << ": ";
+  
   if (_print_id)
     sa << "id " << ntohs(iph->ip_id) << ' ';
-  if (_print_paint)
-    sa << "paint " << (int)PAINT_ANNO(p) << ' ';
   if (_print_ttl)
     sa << "ttl " << (int)iph->ip_ttl << ' ';
   if (_print_tos)
@@ -258,33 +280,42 @@ IPPrint::simple_action(Packet *p)
        << ((iph->ip_off & htons(IP_MF)) ? "+" : "") << ')';
 
   // print payload
-  const unsigned char *data = p->data();
   if (_contents > 0) {
     int amt = 3*_bytes + (_bytes/4+1) + 3*(_bytes/24+1) + 1;
 
-    sa << "\n  ";
     char *buf = sa.reserve(amt);
     char *orig_buf = buf;
 
+    const uint8_t *data;
+    if (_payload) {
+      if (IP_FIRSTFRAG(iph) && iph->ip_p == IP_PROTO_TCP)
+	data = p->transport_header() + (p->tcp_header()->th_off << 2);
+      else if (IP_FIRSTFRAG(iph) && iph->ip_p == IP_PROTO_UDP)
+	data = p->transport_header() + sizeof(click_udp);
+      else
+	data = p->transport_header();
+    } else
+      data = p->data();
+
     if (buf && _contents == 1) {
-      for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
-	sprintf(buf, "%02x", data[i] & 0xff);
-	buf += 2;
-	if ((i % 24) == 23) {
+      for (unsigned i = 0; i < _bytes && data < p->end_data(); i++, data++) {
+	if ((i % 24) == 0) {
 	  *buf++ = '\n'; *buf++ = ' '; *buf++ = ' ';
-	} else if ((i % 4) == 3)
+	} else if ((i % 4) == 0)
 	  *buf++ = ' ';
+	sprintf(buf, "%02x", *data & 0xff);
+	buf += 2;
       }
     } else if (buf && _contents == 2) {
-      for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
-	if (data[i] < 32 || data[i] > 126)
+      for (unsigned i = 0; i < _bytes && data < p->end_data(); i++, data++) {
+	if ((i % 48) == 0) {
+	  *buf++ = '\n'; *buf++ = ' '; *buf++ = ' ';
+	} else if ((i % 8) == 0)
+	  *buf++ = ' ';
+	if (*data < 32 || *data > 126)
 	  *buf++ = '.';
 	else
-	  *buf++ = data[i];
-	if ((i % 48) == 47) {
-	  *buf++ = '\n'; *buf++ = ' '; *buf++ = ' ';
-	} else if ((i % 8) == 7)
-	  *buf++ = ' ';
+	  *buf++ = *data;
       }
     }
 

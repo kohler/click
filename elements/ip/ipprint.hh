@@ -31,6 +31,11 @@ Determines whether the packet data is printed. It may be `false' (do not print
 packet data), `hex' (print packet data in hexadecimal), or `ascii' (print
 packet data in plaintext). Default is `false'.
 
+=item PAYLOAD
+
+Like CONTENTS, but prints only the packet payload, rather than the entire
+packet. Specify at most one of CONTENTS and PAYLOAD.
+
 =item NBYTES
 
 If CONTENTS is `hex' or `ascii', then NBYTES determines the number of bytes to
@@ -115,6 +120,7 @@ class IPPrint : public Element { public:
   bool _print_ttl : 1;
   bool _print_len : 1;
   bool _print_aggregate : 1;
+  bool _payload : 1;		// '_contents' refers to payload
   unsigned _contents : 2;	// Whether to dump packet contents
 
 #if CLICK_USERLEVEL
