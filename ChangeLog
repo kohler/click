@@ -1,4 +1,4 @@
-2001-06-28 Thursday 11:37  yipal
+2001-06-28 Thursday 11:37  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* elements/ip/: ipdecappaint.cc (1.1), ipdecappaint.hh (1.1),
 	ipencap2.cc (1.1), ipencap2.hh (1.1), ipencappaint.cc (1.1),
