@@ -215,7 +215,7 @@ RTMDSR::start_query(IPAddress dstip)
   pk->_hops[0] = _ip.in_addr();
   
   d._when = now;
-  _seen.push_back(Seen(_ip.in_addr(), pk->_seq, now));
+  _seen.push_back(Seen(_ip.in_addr(), pk->_seq, 0, now));
 
   send(p);
 }
@@ -355,17 +355,31 @@ void
 RTMDSR::forward_query(struct pkt *pk1)
 {
   IPAddress src(pk1->_hops[0]);
-  int i;
-  for(i = 0; i < _seen.size(); i++){
-    if(src == _seen[i]._src && pk1->_seq == _seen[i]._seq){
-      _seen[i]._when = time();
-      return;
+  u_short metric = ntohs(pk1->_metric);
+  int si;
+  bool new_query = true;
+  for(si = 0; si < _seen.size(); si++){
+    if(src == _seen[si]._src && pk1->_seq == _seen[si]._seq){
+      _seen[si]._when = time();
+      if(metric < _seen[si]._metric){
+        // OK, pass this new better route.
+        click_chatter("DSR %s: better old=%d new=[%s]",
+                      _ip.s().cc(),
+                      _seen[si]._metric,
+                      Route(pk1).s().cc());
+        _seen[si]._metric = metric;
+        new_query = false;
+        break;
+      } else {
+        return;
+      }
     }
   }
 
   if(_seen.size() > MaxSeen)
      return;
-  _seen.push_back(Seen(src, pk1->_seq, time()));
+  if(new_query == true)
+    _seen.push_back(Seen(src, pk1->_seq, metric, time()));
 
   u_short nhops = ntohs(pk1->_nhops);
   if(nhops > MaxHops)
@@ -380,8 +394,7 @@ RTMDSR::forward_query(struct pkt *pk1)
 
   pk->_nhops = htons(nhops + 1);
   pk->_hops[nhops] = _ip.in_addr();
-  pk->_metric = htons(ntohs(pk->_metric) +
-                      get_metric(IPAddress(pk->_hops[nhops-1])));
+  pk->_metric = htons(metric + get_metric(IPAddress(pk->_hops[nhops-1])));
 
   send(p);
 }

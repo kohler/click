@@ -20,6 +20,7 @@ CLICK_DECLS
  * Test script in ~rtm/scripts/rtmdsr.pl
  *
  * To Do:
+ * Delete or re-check old routes? (Maybe not, maybe wait for failure.)
  * Work sensibly with multiple network interfaces.
  * Save the packet we're querying for, like ARP does.
  * Signal broken links &c.
@@ -45,6 +46,11 @@ CLICK_DECLS
  * Be sensitive to congestion? If dst receives packets out of order along
  *   different paths, prefer paths that delivered packets first?
  *   Maybe use expected transmission *time*.
+ * Observations on the indoor Grid net (w/o "forward if better"):
+ *   Queries often arrive out of order -- longer paths first.
+ *   Very common to end up with one direction sub-optimal e.g.
+ *     [m=430 1.0.0.26 1.0.0.18 1.0.0.19 1.0.0.37]
+ *     [m=273 1.0.0.37 1.0.0.28 1.0.0.26]
 =e
 kt :: KernelTun(1.0.0.1/24);
 ls :: LinkStat(ETH 00:20:e0:8b:5d:d6, IP 1.0.0.1);
@@ -143,7 +149,7 @@ private:
   class Route {
   public:
     time_t _when; // When we learned about this route.
-    int _metric;
+    u_short _metric;
     Vector<Hop> _hops;
     String s();
     Route() { _when = 0; _metric = 9999; };
@@ -170,8 +176,9 @@ private:
     IPAddress _src;
     u_long _seq;
     time_t _when;
-    Seen(IPAddress src, u_long seq, time_t now) {
-      _src = src; _seq = seq; _when = now;
+    u_short _metric; // To help us pass queries that are better.
+    Seen(IPAddress src, u_long seq, u_short metric, time_t now) {
+      _src = src; _seq = seq; _metric = metric; _when = now;
     }
   };
   Vector<Seen> _seen;
