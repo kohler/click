@@ -9,7 +9,6 @@
 #if CLICK_NS
 # include <click/simclick.h>
 #endif
-
 CLICK_DECLS
 class Master;
 class ElementFilter;
@@ -21,7 +20,6 @@ class Handler;
 
 class Router { public:
 
-    typedef ::CLICK_NAME(Handler) Handler;
     struct Hookup {
 	int idx;
 	int port;
