@@ -25,7 +25,10 @@ sub mac_addr_from_dev($) {
     }
     my @tmp = split(/\s+/, $output);
     my $mac = $tmp[4];
-    return uc($mac);
+    $mac =~ s/-/:/g;
+    my @hex = split(/:/, $mac);
+    
+    return uc (join ":", @hex[0 .. 5]);
 }
 
 
@@ -195,10 +198,16 @@ elementclass LinuxIPHost {
 elementclass SniffDevice {
     \$device, \$promisc|
   from_dev :: FromDevice(\$device, PROMISC \$promisc)
+  -> t1 :: Tee
   -> output;
 
+    t1 [1] -> ToHostSniffers(\$device);
+
   input
+  -> t2 :: PullTee
   -> to_dev :: ToDevice(\$device);
+
+    t2 [1] -> ToHostSniffers(\$device);
 }
 
 sniff_dev :: SniffDevice($dev, false);
@@ -331,6 +340,7 @@ srcr_data_ck :: SetSRChecksum()
 
 srcr_host 
 -> SetTimestamp()
+-> counter_incoming :: IPAddressCounter(USE_DST true)
 -> srcr_host_cl :: IPClassifier(dst net $srcr_ip mask $srcr_nm,
 				-)
 -> srcr_querier
@@ -358,6 +368,7 @@ srcr_forwarder[1] //ip packets to me
   -> CheckIPHeader()
   -> from_gw_cl :: IPClassifier(src net $srcr_net mask $srcr_nm,
 				-)
+  -> counter_outgoing :: IPAddressCounter(USE_SRC true)
   -> srcr_host;
 
 from_gw_cl [1] -> [1] srcr_set_gw [1] -> srcr_host;
