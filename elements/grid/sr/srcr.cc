@@ -34,7 +34,7 @@ CLICK_DECLS
 
 
 SRCR::SRCR()
-  :  Element(3,2),
+  :  Element(3,1),
      _timer(this), 
      _ip(),
      _en(),

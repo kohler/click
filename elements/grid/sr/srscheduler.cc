@@ -54,7 +54,7 @@ int
 SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
-  unsigned duration_ms = 0;
+  unsigned int duration_ms = 0;
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "DURATION", cpUnsigned, "ms", &duration_ms,
@@ -66,6 +66,12 @@ SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
   if (!_ps) 
     return errh->error("PullSwitch PS must be specified");
 
+
+  timerclear(&_duration);
+  /* convert path_duration from ms to a struct timeval */
+  _duration.tv_sec = duration_ms/1000;
+  _duration.tv_usec = (duration_ms % 1000) * 1000;
+  
   return ret;
 }
 
