@@ -22,9 +22,11 @@
 #include "glue.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : Element(2,2), _pb(COUNT_PACKETS), _offset(0), _annobydst(true), 
-    _period(1), _base(NULL)
+  : Element(1,1), _pb(COUNT_PACKETS), _offset(0), _annobydst(true), 
+    _period(1), _thresh(1), _base(NULL)
 {
+  for (int i=0; i<MAX_PORT_PAIRS; i++)
+    _anno[i] = false;
 }
 
 IPRateMonitor::~IPRateMonitor()
@@ -39,38 +41,52 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() != 5)
+  if(args.size() < 6)
     return errh->error("too few or too many arguments.");
 
+  // N of PORT PAIRS
+  int n;
+  if(!cp_integer(args[0], n) || n < 1 || n > MAX_PORT_PAIRS)
+    return errh->error
+      ("number of port pairs should be between 1 and %d", MAX_PORT_PAIRS);
+  set_ninputs(n);
+  set_noutputs(n);
+
   // PACKETS/BYTES
-  if(args[0] == "PACKETS")
+  if(args[1] == "PACKETS")
     _pb = COUNT_PACKETS;
-  else if(args[0] == "BYTES")
+  else if(args[1] == "BYTES")
     _pb = COUNT_BYTES;
   else
-    return errh->error("first argument should be \"PACKETS\" or \"BYTES\".");
+    return errh->error("second argument should be \"PACKETS\" or \"BYTES\".");
 
   // OFFSET
-  int offset;
-  if(!cp_integer(args[1], offset))
+  if(!cp_integer(args[2], _offset) || _offset < 0)
     return errh->error
-      ("second argument (OFFSET) should be a non-negative integer.");
-  _offset = (unsigned int) offset;
+      ("offset should be a non-negative integer.");
 
   // THRESH
-  if(!cp_integer(args[2], _thresh))
+  if(!cp_integer(args[3], _thresh) || _thresh < 0)
     return errh->error
-      ("third argument (THRESH) should be non-negative integer.");
+      ("thresh should be non-negative integer.");
  
   // PERIOD
-  if(!cp_integer(args[3], _period))
+  if(!cp_integer(args[4], _period) || _period < 0)
     return errh->error
-      ("forth argument (PERIOD) should be non-negative integer.");
+      ("period should be non-negative integer.");
 
-  // ANNOBYDST
-  if(!cp_bool(args[4], _annobydst))
-    return errh->error
-      ("fifth argument (ANNOBYDST) should be boolean.");
+  // ANNOBY
+  if(args[5] == "DST")
+    _annobydst = true;
+  else if(args[5] == "SRC")
+    _annobydst = false;
+  else
+    return errh->error("ANNOBY should be \"DST\" or \"SRC\".");
+
+  for(int i=6; i < args.size() && i < n+6; i++) {
+    if (!cp_bool(args[i], _anno[i-6]))
+      return errh->error("ANNO_PORT arguments must be bool.");
+  }
 
   set_resettime();
 
@@ -96,7 +112,7 @@ IPRateMonitor::clone() const
 void
 IPRateMonitor::push(int port, Packet *p)
 {
-  p = update_rates(p, port == 0);
+  p = update_rates(p, port);
   if (p) output(port).push(p);
 }
 
@@ -104,7 +120,7 @@ Packet *
 IPRateMonitor::pull(int port)
 {
   Packet *p = input(port).pull();
-  if (p) p = update_rates(p, port == 0);
+  if (p) p = update_rates(p, port);
   return p;
 }
 
@@ -183,7 +199,6 @@ IPRateMonitor::set_resettime()
   _resettime = click_jiffies();
 }
 
-
 String
 IPRateMonitor::look_read_handler(Element *e, void *)
 {
@@ -193,25 +208,12 @@ IPRateMonitor::look_read_handler(Element *e, void *)
   return ret + me->print(me->_base);
 }
 
-
 String
 IPRateMonitor::thresh_read_handler(Element *e, void *)
 {
   IPRateMonitor *me = (IPRateMonitor *) e;
   return String(me->_thresh);
 }
-
-
-String
-IPRateMonitor::what_read_handler(Element *e, void *)
-{
-  IPRateMonitor *me = (IPRateMonitor *) e;
-  String ab;
-  if (me->_annobydst) ab = String("Annotate by DST\n");
-  else ab = String("Annotate by SRC\n");
-  return (me->_pb == COUNT_PACKETS ? "PACKETS, " : "BYTES, ")+ab;
-}
-
 
 String
 IPRateMonitor::period_read_handler(Element *e, void *)
@@ -230,12 +232,10 @@ IPRateMonitor::reset_write_handler
   return 0;
 }
 
-
 void
 IPRateMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
-  add_read_handler("what", what_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
   add_read_handler("period", period_read_handler, 0);
 

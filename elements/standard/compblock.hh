@@ -9,9 +9,9 @@
  * DST_WEIGHT and SRC_WEIGHT are integers
  *
  * Splits packets based on the rate annotation set by IPRateMonitor. If
- * DST_WEIGHT * dst rate annotation < SRC_WEIGHT * src rate annotation, the
- * packet is pushed on output 0, otherwise on 1. By default, DST_WEIGHT is 0,
- * and SRC_WEIGHT is 1 (all packets go to output 0).
+ * DST_WEIGHT*dst_rate_anno() <= SRC_WEIGHT*src_rate_anno(), the packet is
+ * pushed on output 0, otherwise on 1. By default, DST_WEIGHT is 0, and
+ * SRC_WEIGHT is 1 (all packets go to output 0).
  *
  * =e
  * = b :: CompareBlock(5,2);

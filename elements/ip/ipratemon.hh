@@ -3,34 +3,37 @@
 
 /*
  * =c
- * IPRateMonitor(PB, OFF, THRESH, T, ANNOBYDST)
+ * IPRateMonitor(N, PB, OFF, THRESH, T, ANNOBY [,ANNO_PORT0, ANNO_PORT1, ... ])
  * =d
  *
  * Monitors network traffic rates. Can monitor either packet or byte rate (per
  * second) to and from an address. When the to or from rate for a particular
  * address exceeds the threshold, rates will then be kept for host or subnet
- * addresses within that address. For packets going into input 0, update each
- * packet's dst_rate_anno and src_rate_anno with the rates for dst IP address.
+ * addresses within that address. May update each packet's dst_rate_anno and
+ * src_rate_anno with the rates for dst or src IP address (specified by the
+ * ANNOBY argument).
  *
- * PB: PACKETS or BYTES. Count number of packets or bytes.
+ * N (default to 1): number of input/output port pairs.
  *
- * OFF: offset in packet where IP header starts
+ * PB (default to PACKETS): PACKETS or BYTES. Count number of packets or bytes.
  *
- * THRESH: IPRateMonitor further splits a subnet if rate is over THRESH number
- * packets or bytes per second.
+ * OFF (default to 0): offset in packet where IP header starts
  *
- * T: duration (in seconds) which the rate is kept for (e.g. last 60 seconds).
+ * THRESH (default to 10): IPRateMonitor further splits a subnet if rate is
+ * over THRESH number packets or bytes per second.
  *
- * ANNOBYDST: if true (default), annotate by DST IP address. otherwise,
- * annotate by SRC IP address.
+ * T (default to 1 second): duration (in seconds) which the rate is kept for
+ * (e.g. last 60 seconds).
+ *
+ * ANNOBY (default to DST): DST or SRC. Annotate by DST or SRC IP address.
+ *
+ * ANNO_PORTX (default to false): true or false. if true, annotate packet
+ * going through port X.
  * 
  * =h look (read)
  * Returns the rate of counted to and from a cluster of IP addresses. The
  * first printed line is the number of 'jiffies' that have past since the last
  * reset. There are 100 jiffies in one second.
- *
- * =h what (read)
- * Returns value of PB and ANNOBYDST
  *
  * =h thresh (read)
  * Returns THRESH.
@@ -44,11 +47,13 @@
  * =e
  * Example: 
  *
- * IPRateMonitor(PACKETS, 0, 256, 1);
+ * IPRateMonitor(1, PACKETS, 0, 256, 1, DST, true);
  *
- * Monitors packet rates. When rate for a network address (e.g. 18.26.*.*)
- * exceeds 1000 packets per second, start monitor subnet or host addresses
- * (e.g. 18.26.4.*). Keep packet per second rate for the past 1 second. 
+ * Monitors packet rates for packets coming in on one port. When rate for a
+ * network address (e.g. 18.26.*.*) exceeds 1000 packets per second, start
+ * monitor subnet or host addresses (e.g. 18.26.4.*). Keep packet per second
+ * rate for the past 1 second. Annotate packet's rate annotations with rates
+ * for the DST IP address.
  *
  * =a IPFlexMonitor
  */
@@ -64,6 +69,7 @@
 #endif
 #define MAX_SHIFT ((BYTES-1)*8)
 #define MAX_COUNTERS 256
+#define MAX_PORT_PAIRS 16
 
 class IPRateMonitor : public Element { public:
 
@@ -86,8 +92,9 @@ private:
 #define COUNT_PACKETS 0
 #define COUNT_BYTES 1
 
-  unsigned char _offset;
+  int _offset;
   bool _annobydst;
+  bool _anno[MAX_PORT_PAIRS];
 
   // one for each input
   struct _inp {
@@ -117,9 +124,9 @@ private:
   long unsigned int _resettime;       // time of last reset
 
   void set_resettime();
-  Packet *update_rates(Packet *, bool anno);
+  Packet *update_rates(Packet *, int port);
   void update(IPAddress dstaddr, IPAddress srcaddr, 
-              int val, Packet *p, bool anno);
+              int val, Packet *p, int port);
 
   String print(_stats *s, String ip = "");
   void clean(_stats *s);
@@ -140,7 +147,7 @@ private:
 //
 inline void
 IPRateMonitor::update(IPAddress dstaddr, IPAddress srcaddr, 
-                      int val, Packet *p, bool anno)
+                      int val, Packet *p, int port)
 {
   unsigned int saddr = dstaddr.saddr();
   unsigned int dst = true;
@@ -185,7 +192,7 @@ _restart:
   int cr;
   if (dst) {
     cr = (c->dst_rate.average()*CLICK_HZ) >> c->dst_rate.scale();
-    if (anno && _annobydst) {
+    if (_anno[port] && _annobydst) {
       p->set_dst_rate_anno(cr);
       p->set_src_rate_anno
 	((c->src_rate.average()*CLICK_HZ)>>c->src_rate.scale());
@@ -193,7 +200,7 @@ _restart:
   }
   else {
     cr = (c->src_rate.average()*CLICK_HZ) >> c->src_rate.scale();
-    if (anno && !_annobydst) {
+    if (_anno[port] && !_annobydst) {
       p->set_dst_rate_anno
 	((c->dst_rate.average()*CLICK_HZ)>>c->dst_rate.scale());
       p->set_src_rate_anno(cr);
@@ -218,7 +225,7 @@ _restart:
 }
 
 inline Packet *
-IPRateMonitor::update_rates(Packet *p, bool anno)
+IPRateMonitor::update_rates(Packet *p, int port)
 {
   IPAddress dstaddr, srcaddr;
   click_ip *ip = (click_ip *) (p->data() + _offset);
@@ -226,7 +233,7 @@ IPRateMonitor::update_rates(Packet *p, bool anno)
   
   dstaddr = IPAddress(ip->ip_dst);
   srcaddr = IPAddress(ip->ip_src);
-  update(dstaddr, srcaddr, val, p, anno);
+  update(dstaddr, srcaddr, val, p, port);
 
   return p;
 }

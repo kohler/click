@@ -60,7 +60,7 @@ void
 CompareBlock::push(int, Packet *packet)
 {
   if(_dst_weight == 0 || 
-     _dst_weight*packet->dst_rate_anno() < _src_weight*packet->src_rate_anno())
+     _dst_weight*packet->dst_rate_anno() <= _src_weight*packet->src_rate_anno())
     output(0).push(packet);
   else
     output(1).push(packet);
