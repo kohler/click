@@ -23,6 +23,35 @@
 #include <click/routerthread.hh>
 #include <click/task.hh>
 
+/*
+ * element_hook is a callback that gets called when a Timer,
+ * constructed with just an Element instance, expires. 
+ * 
+ * When used in userlevel or kernel polling mode, timer is maintained by
+ * Click, so element_hook is called within Click.
+ */
+
+static void
+element_hook(Timer *, void *thunk)
+{
+  Element *e = (Element *)thunk;
+  e->run_scheduled();
+}
+
+static void
+task_hook(Timer *, void *thunk)
+{
+  Task *task = (Task *)thunk;
+  task->reschedule();
+}
+
+static void
+list_hook(Timer *, void *)
+{
+  assert(0);
+}
+
+
 Timer::Timer(TimerHook hook, void *thunk)
   : _prev(0), _next(0), _hook(hook), _thunk(thunk), _head(0)
 {
@@ -42,34 +71,6 @@ TimerList::TimerList()
   : Timer(list_hook, 0)
 {
   _prev = _next = _head = this;
-}
-
-void
-TimerList::list_hook(Timer *, void *)
-{
-  assert(0);
-}
-
-/*
- * Timer::element_hook is a callback that gets called when a Timer,
- * constructed with just an Element instance, expires. 
- * 
- * When used in userlevel or kernel polling mode, timer is maintained by
- * Click, so Timer::element_hook is called within Click.
- */
-
-void
-Timer::element_hook(Timer *, void *thunk)
-{
-  Element *e = (Element *)thunk;
-  e->run_scheduled();
-}
-
-void
-Timer::task_hook(Timer *, void *thunk)
-{
-  Task *task = (Task *)thunk;
-  task->reschedule();
 }
 
 void
@@ -103,19 +104,19 @@ void
 Timer::schedule_at(const struct timeval &when)
 {
   assert(!is_list() && initialized());
-  _head->_lock.acquire();
+  _head->acquire_lock();
   if (scheduled())
     unschedule();
   _expires = when;
   finish_schedule();
-  _head->_lock.release();
+  _head->release_lock();
 }
 
 void
 Timer::schedule_after_ms(int ms)
 {
   assert(!is_list() && initialized());
-  _head->_lock.acquire();
+  _head->acquire_lock();
   if (scheduled())
     unschedule();
   click_gettimeofday(&_expires);
@@ -124,14 +125,14 @@ Timer::schedule_after_ms(int ms)
   interval.tv_usec = (ms % 1000) * 1000;
   timeradd(&_expires, &interval, &_expires);
   finish_schedule();
-  _head->_lock.release();
+  _head->release_lock();
 }
 
 void
 Timer::reschedule_after_ms(int ms)
 {
   assert(!is_list() && initialized());
-  _head->_lock.acquire();
+  _head->acquire_lock();
   if (scheduled())
     unschedule();
   struct timeval interval;
@@ -139,27 +140,25 @@ Timer::reschedule_after_ms(int ms)
   interval.tv_usec = (ms % 1000) * 1000;
   timeradd(&_expires, &interval, &_expires);
   finish_schedule();
-  _head->_lock.release();
+  _head->release_lock();
 }
 
 void
 Timer::unschedule()
 {
-  if (_head) 
-    _head->_lock.acquire();
   if (scheduled()) {
+    _head->acquire_lock();
     _prev->_next = _next;
     _next->_prev = _prev;
     _prev = _next = 0;
+    _head->release_lock();
   }
-  if (_head) 
-    _head->_lock.release();
 }
 
 void
 TimerList::run()
 {
-  if (_lock.attempt()) {
+  if (attempt_lock()) {
     struct timeval now;
     click_gettimeofday(&now);
     while (_next != this && !timercmp(&_next->_expires, &now, >)) {
@@ -169,7 +168,7 @@ TimerList::run()
       t->_prev = 0;
       t->_hook(t, t->_thunk);
     }
-    _lock.release();
+    release_lock();
   }
 }
 
@@ -179,7 +178,7 @@ int
 TimerList::get_next_delay(struct timeval *tv)
 {
   int retval;
-  _lock.acquire();
+  acquire_lock();
   if (_next == this) {
     tv->tv_sec = 1000;
     tv->tv_usec = 0;
@@ -195,6 +194,6 @@ TimerList::get_next_delay(struct timeval *tv)
     }
     retval = 1;
   }
-  _lock.release();
+  release_lock();
   return retval;
 }

@@ -18,7 +18,6 @@ class Timer { public:
   Timer(Task *);			// call task->reschedule()
   ~Timer()				{ if (scheduled()) unschedule(); }
 
-  // functions on Timers
   bool initialized() const		{ return _head != 0; }
   bool scheduled() const		{ return _prev != 0; }
   bool is_list() const;
@@ -26,7 +25,7 @@ class Timer { public:
   void initialize(TimerList *);
   void initialize(Router *);
   void initialize(Element *);
-  void uninitialize();			// equivalent to unschedule()
+  void uninitialize()			{ unschedule(); }
 
   void schedule_now();
   void schedule_at(const struct timeval &);
@@ -48,9 +47,6 @@ class Timer { public:
 
   void finish_schedule();
   
-  static void element_hook(Timer *, void *);
-  static void task_hook(Timer *, void *);
-
   friend class TimerList;
   
 };
@@ -66,7 +62,9 @@ class TimerList : public Timer { public:
 
   Spinlock _lock;
   
-  static void list_hook(Timer *, void *);
+  void acquire_lock()			{ _lock.acquire(); }
+  bool attempt_lock()			{ return _lock.attempt(); }
+  void release_lock()			{ _lock.release(); }
 
   friend class Timer;
   
@@ -77,12 +75,6 @@ Timer::initialize(TimerList *t)
 {
   assert(!initialized());
   _head = t;
-}
-
-inline void
-Timer::uninitialize()
-{
-  unschedule();
 }
 
 inline bool
