@@ -98,6 +98,8 @@ Version 1.2.0   3.May.2001
 
 ** Renamed `Element::Connection' class to `Element::Port'.
 
+** Other changes.
+
 
 Version 1.1   15.Dec.2000
 
