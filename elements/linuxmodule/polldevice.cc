@@ -35,6 +35,7 @@
 
 extern "C" {
 #include <linux/netdevice.h>
+#include <linux/sched.h>
 #include <unistd.h>
 }
 
@@ -217,7 +218,7 @@ PollDevice::run_scheduled()
 		    _perfcnt1_poll, _perfcnt2_poll, _time_poll);
   if (got > 0)
     _activations++;
-  else
+  else if (_activations > 0)
     _idle_calls++;
 #endif
   

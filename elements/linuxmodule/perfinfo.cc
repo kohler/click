@@ -21,7 +21,7 @@
 #endif
 #include <click/config.h>
 #include <click/package.hh>
-#include "perfctr.hh"
+#include <click/perfctr.hh>
 #include "perfinfo.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -105,5 +105,5 @@ PerfInfo::uninitialize()
   _init = 0;
 }
 
-ELEMENT_REQUIRES(linuxmodule false)
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(PerfInfo)
