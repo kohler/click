@@ -38,6 +38,7 @@ CLICKDIR/elements/tcpudp	... for TCP and UDP elements
 CLICKDIR/elements/userlevel	... for user-level-specific elements
 CLICKDIR/etc			Linux patches and other files
 CLICKDIR/etc/samplepackage	sample source code for Click element package
+CLICKDIR/etc/samplellrpc	sample source code for reading Click LLRPCs
 CLICKDIR/etc/diagrams		files for drawing Click diagrams
 CLICKDIR/lib			common non-element source code
 CLICKDIR/linuxmodule		source code for Linux kernel module driver

@@ -78,6 +78,11 @@ etc/samplepackage/sampleelt.hh
 etc/samplepackage/sampleelt.cc
 etc/samplepackage/test.click
 
+etc/samplellrpc
+etc/samplellrpc/Makefile
+etc/samplellrpc/README
+etc/samplellrpc/click-readcounter.c
+
 include
 include/click
 include/click/archive.hh

@@ -1,0 +1,38 @@
+A SAMPLE LLRPC USER
+===================
+
+    There are two ways to communicate with a Click kernel module from user
+level. The first, handlers, uses a simple file-based model: you read and
+write files in /proc/click or /proc/click/ELEMENTNAME. Generally, these
+files are ASCII. For example, to read the current count from a counter
+named `c', you might read `/proc/click/c/count', then parse the result (a
+simple string like "2003") into an integer. To change the RED min_thresh
+parameter, you might write a string like "10" to the file
+`/proc/click/red/min_thresh'.
+
+    Handlers are a heavyweight mechanism -- all that file opening and
+closing and data parsing and unparsing -- although relatively easy to use.
+The other communication method, LLRPCs (low-level remote procedure calls),
+is much faster, although less safe; it's suitable for heavy-duty
+kernel/user communication.
+
+    A Click LLRPC is implemented by ioctl. A user-level program opens any
+of the element's handler files -- for example, its
+`/proc/click/ELEMENT/name' handler -- then calls ioctl(), passing in the
+file descriptor, one of the LLRPC IDs from <click/llrpc.h>, and the
+relevant data. For example, the CLICK_LLRPC_GET_COUNT LLRPC takes a pointer
+to an integer. On input, this integer identifies the counter of interest.
+On output, its value is set to the relevant count. This is much less
+expensive than using an ASCII `count' handler.
+
+    Several of our elements provide LLRPC interfaces; for example, check
+out the Counter element in elements/standard/counter.cc. These interfaces
+are generally documented in the element manual pages -- for example, `man
+Counter'.
+
+    Sometimes, you may want to keep a file descriptor open for a long time
+for making LLRPC calls. Remember that this file descriptor will become
+invalid if someone installs another Click configuration! All LLRPC calls on
+the old file descriptor will return EINVAL. One reasonable behavior is to
+close and reopen the file descriptor on error, and only complain if the
+ioctl fails both times.
