@@ -6,7 +6,7 @@
 
 /*
  * =c
- * TCPAck([HEARTBEAT])
+ * TCPAck([ACK_DELAY])
  * =s TCP
  * acknowledge TCP packets
  * =d
@@ -28,8 +28,8 @@
  * finally, output port 2 is used to send scheduled ACKs. TCPAck uses the
  * latest seq number it sees across input/output port 1 as the sequence number
  * for the acknowledgement. an ACK is generated on this output only if after
- * HEARTBEAT number of ms a triggered acknowledge was not sent. by default,
- * HEARTBEAT is set to 20.
+ * ACK_DELAY number of ms a triggered acknowledge was not sent. by default,
+ * ACK_DELAY is set to 20.
  *
  * TCPAck only deals with DATA packets. it doesn't try to acknowledge SYN and
  * FIN packets. TCPAck starts using ack no from the first SYN ACK packet it
@@ -43,11 +43,12 @@ private:
   Timer _timer;
 
   bool _synack;
+  bool _needack;
   unsigned _seq_nxt;
   unsigned _ack_nxt;
   TCPBuffer *_tcpbuffer;
 
-  unsigned _heartbeat_ms;
+  unsigned _ackdelay_ms;
   
   bool iput(Packet *);
   bool oput(Packet *);

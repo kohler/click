@@ -39,10 +39,10 @@ TCPAck::~TCPAck()
 int
 TCPAck::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  _heartbeat_ms = 20;
+  _ackdelay_ms = 20;
   return cp_va_parse(conf, this, errh, 
                      cpOptional, 
-		     cpUnsigned, "heartebat (ms)", &_heartbeat_ms, 0);
+		     cpUnsigned, "ack delay (ms)", &_ackdelay_ms, 0);
 }
 
 
@@ -67,8 +67,9 @@ TCPAck::initialize(ErrorHandler *errh)
     return errh->error("no TCPBuffer element found!", tcpbuffers[0]->id().cc());
 
   _synack = false;
+  _needack = false;
   _timer.initialize(this);
-  _timer.schedule_after_ms(_heartbeat_ms);
+  _timer.schedule_after_ms(_ackdelay_ms);
   return 0;
 }
 
@@ -132,6 +133,10 @@ TCPAck::iput(Packet *p)
   } else {
     click_chatter("seqno != ack_nxt: out of order or loss packet");
   }
+  _needack = true;
+  if (!_timer.scheduled()) 
+    _timer.schedule_after_ms(_ackdelay_ms);
+
   click_chatter("next ack: got %u, ack_nxt %u, seq_nxt %u", 
                 TCPBuffer::seqno(p), _ack_nxt, _seq_nxt);
   return true;
@@ -153,13 +158,20 @@ TCPAck::oput(Packet *p)
   if (!_synack)
     return false;
   _seq_nxt = TCPBuffer::seqno(p)+TCPBuffer::seqlen(p);
+  _needack = false;
+  click_tcp *tcph_new =
+    reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
+  tcph_new->th_ack = htonl(_ack_nxt);
   return true;
 }
 
 void
 TCPAck::run_scheduled()
 {
-  _timer.reschedule_after_ms(_heartbeat_ms);
+  if (_needack) {
+    // TODO send a plain ACK packet
+    _needack = false;
+  }
 }
 
 EXPORT_ELEMENT(TCPAck)
