@@ -265,22 +265,43 @@ private:
   static String print_ip(Element *e, void *);
   static String print_eth(Element *e, void *);
   static String print_metric_type(Element *e, void *);
-
   static int write_metric_type(const String &, Element *, void *, ErrorHandler *);
+  static String print_metric_range(Element *e, void *);
+  static int write_metric_range(const String &, Element *, void *, ErrorHandler *);
 
   static int check_metric_type(const String &);
   
+  unsigned int qual_to_pct(int q);
+  unsigned int sig_to_pct(int s);
 
   enum MetricType {
     MetricHopCount = 0,            // unsigned int hop count
     MetricCumulativeDeliveryRate,  // unsigned int percentage (0-100)
     MetricMinDeliveryRate,         // unsigned int percentage (0-100)
     MetricMinSigStrength,          // unsigned int negative dBm.  e.g. -40 dBm is 40
-    MetricMinSigQuality            // unsigned int ``quality''
+    MetricMinSigQuality,           // unsigned int ``quality''
+    MetricCumulativeQualPct,       // unsigned int percentage (0-100) of range
+    MetricCumulativeSigPct         // unsigned int percentage (0-100) of range
   };
 
   int _metric_type;
-    
+  
+  /* top and bottom of ranges for qual/sig pct */
+  int _max_metric;
+  int _min_metric;
+  
+  /* default ranges taken from experiments -- from approx 144 million received packets! */
+  /*
+   * +-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+
+   * | min(signal) | max(signal) | std(signal) | avg(signal) | min(quality) | max(quality) | std(quality) | avg(quality) |
+   * +-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+
+   * |        -100 |         -13 |     13.0719 |    -69.8756 |            0 |          130 |       3.6859 |       6.7074 |
+   * +-------------+-------------+-------------+-------------+--------------+--------------+--------------+--------------+
+   */
+  static const int _max_qual = 130; 
+  static const int _min_qual = 0;
+  static const int _max_sig = -13; 
+  static const int _min_sig = -100;
 
 };
 

@@ -35,7 +35,8 @@ GridRouteTable::GridRouteTable() :
   _max_hops(3), 
   _expire_timer(expire_hook, this),
   _hello_timer(hello_hook, this),
-  _metric_type(MetricHopCount)
+  _metric_type(MetricHopCount),
+  _max_metric(0), _min_metric(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -175,6 +176,32 @@ operator- (const timeval &a, const timeval &b)
   return ts;
 }
 
+unsigned int
+GridRouteTable::qual_to_pct(int q)
+{
+  /* smaller quality is better, so should be a higher pct when closer to min quality */
+  if (q > _max_metric)
+    return 0;
+  else if (q < _min_metric) 
+    return 100;
+
+  int delta = _max_metric - _min_metric;
+  return (100 * (_max_metric - q)) / delta;
+}
+
+unsigned int
+GridRouteTable::sig_to_pct(int s)
+{
+  /* large signal is better, so should be a higher pct when closer to max sig */
+  if (s > _max_metric)
+    return 100;
+  else if (s < _min_metric) 
+    return 0;
+
+  int delta = _max_metric - _min_metric;
+  return (100 * (s - _min_metric)) / delta;
+}
+
 void
 GridRouteTable::init_metric(RTEntry &r)
 {
@@ -192,7 +219,9 @@ GridRouteTable::init_metric(RTEntry &r)
     r.metric_valid = true;
     break;
   case MetricMinSigStrength:
-  case MetricMinSigQuality: {
+  case MetricMinSigQuality: 
+  case MetricCumulativeQualPct:
+  case MetricCumulativeSigPct: {
     int sig = 0;
     int qual = 0;
     struct timeval last;
@@ -217,8 +246,12 @@ GridRouteTable::init_metric(RTEntry &r)
     }
     if (_metric_type == MetricMinSigQuality) 
       r.metric = (unsigned int) qual;
-    else // _metric_type == MetricMinSigStrength
+    else if (_metric_type == MetricMinSigStrength)
       r.metric = (unsigned int) -sig; // deal in -dBm
+    else if (_metric_type == MetricCumulativeQualPct) 
+      r.metric = qual_to_pct(qual);
+    else // _metric_type == MetricCumulativeSigPct
+      r.metric = sig_to_pct(sig);
     r.metric_valid = true;
   }
   break;
@@ -254,6 +287,8 @@ GridRouteTable::update_metric(RTEntry &r)
     r.metric_valid = true;
     break;
   case MetricCumulativeDeliveryRate:
+  case MetricCumulativeQualPct:
+  case MetricCumulativeSigPct:
     r.metric = (r.metric * next_hop->metric) / 100;
     r.metric_valid = true;
     break;
@@ -289,6 +324,8 @@ GridRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
     // smaller -dBm is stronger signal
     // *or* prefer smaller quality number
     return r1.metric < r2.metric; 
+  case MetricCumulativeQualPct:
+  case MetricCumulativeSigPct:
   default:
     assert(0);
   }
@@ -652,6 +689,8 @@ GridRouteTable::print_metric_type(Element *e, void *)
   case MetricMinDeliveryRate: return "min_delivery_rate\n"; break;
   case MetricMinSigStrength: return "min_sig_strength\n"; break;
   case MetricMinSigQuality: return "min_sig_quality\n"; break;
+  case MetricCumulativeQualPct: return "cumulative_qual_pct\n"; break;
+  case MetricCumulativeSigPct: return "cumulative_sig_pct\n"; break;
   default: 
     assert(0);
     return "";
@@ -672,6 +711,10 @@ GridRouteTable::check_metric_type(const String &s)
     return MetricMinSigStrength;
   else if (s2 == "min_sig_quality")
     return MetricMinSigQuality;
+  else if (s2 == "cumulative_qual_pct")
+    return MetricCumulativeQualPct;
+  else if (s2 == "cumulative_sig_pct")
+    return MetricCumulativeSigPct;
   else
     return -1;
 }
@@ -687,6 +730,17 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
   
   if (type != rt->_metric_type) {
     rt->_metric_type = type;
+
+    if (type == MetricCumulativeSigPct) {
+      rt->_max_metric = _max_sig;
+      rt->_min_metric = _min_sig;
+    }
+    else if (type == MetricCumulativeQualPct) {
+      rt->_max_metric = _max_qual;
+      rt->_min_metric = _min_qual;
+    }
+    else
+      rt->_max_metric = rt->_min_metric = 0;
 
     /* make sure we don't try to use the old metric for a route */
     
@@ -705,6 +759,39 @@ GridRouteTable::write_metric_type(const String &arg, Element *el,
   return 0;
 }
 
+String
+GridRouteTable::print_metric_range(Element *e, void *)
+{
+  GridRouteTable *rt = (GridRouteTable *) e;
+  
+  return "max=" + String(rt->_max_metric) + " min=" + String(rt->_min_metric) + "\n";
+}
+
+int
+GridRouteTable::write_metric_range(const String &arg, Element *el, 
+				   void *, ErrorHandler *errh)
+{
+  GridRouteTable *rt = (GridRouteTable *) el;
+  int max, min;
+  int res = cp_va_space_parse(arg, rt, errh,
+			      cpInteger, "metric range max", &max,
+			      cpInteger, "metric range min", &min,
+			      0);
+  if (res < 0)
+    return -1;
+
+  if (max < min) {
+    int t = max;
+    max = min;
+    min = t;
+  }
+
+  rt->_max_metric = max;
+  rt->_min_metric = min;
+
+  return 0;
+}
+
 void
 GridRouteTable::add_handlers()
 {
@@ -717,6 +804,8 @@ GridRouteTable::add_handlers()
   add_read_handler("eth", print_eth, 0);
   add_read_handler("metric_type", print_metric_type, 0);
   add_write_handler("metric_type", write_metric_type, 0);
+  add_read_handler("metric_range", print_metric_range, 0);
+  add_write_handler("metric_range", write_metric_range, 0);
 }
 
 
