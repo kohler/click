@@ -55,4 +55,5 @@ StaticThreadSched::initial_thread_preference(Task *task, bool scheduled)
 	return THREAD_PREFERENCE_UNKNOWN;
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(StaticThreadSched)

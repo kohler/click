@@ -120,6 +120,6 @@ CPUQueue::add_handlers()
   add_read_handler("drops", read_handler, (void *)1);
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(CPUQueue)
 ELEMENT_MT_SAFE(CPUQueue)
-

@@ -285,4 +285,3 @@ FastUDPSource::add_handlers()
 
 ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(FastUDPSource)
-

@@ -48,6 +48,6 @@ CPUSwitch::push(int, Packet *p)
   output(n).push(p);
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(CPUSwitch)
 ELEMENT_MT_SAFE(CPUSwitch)
-
