@@ -12,10 +12,12 @@ CLICK_DECLS
  * None
  * =d
  *
- * LinkStat is this node's LinkStat element.  The LinkStat loss-rate
- * information is used to calculate the ETX metric.
+ * Child class of GridGenericMetric that implements the estimate
+ * transmission count (`ETX') metric.
  *
- * Child class of GridGenericMetric that implements the estimate transmission count (`ETX') metric.
+ * LinkStat is this node's LinkStat element, which is needed to obtain
+ * the link delivery ratios used to calculate the metric.
+ *
  * =a HopcountMetric, LinkStat */
 
 class LinkStat;
