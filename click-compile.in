@@ -118,7 +118,7 @@ if test ! -d "$includedir"; then
   exit 1
 elif test -z "$include_source"; then
   if test -z "$quiet"; then
-    echo "click-compile: warning: cannot find Click sources" 1>&2
+    echo "click-compile: warning: cannot find full Click source" 1>&2
   fi
 fi
 

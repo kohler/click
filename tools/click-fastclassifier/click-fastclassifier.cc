@@ -50,6 +50,7 @@
 #define REVERSE_OPT		309
 #define COMBINE_OPT		310
 #define COMPILE_OPT		311
+#define QUIET_OPT		312
 
 static Clp_Option options[] = {
   { "classes", 0, COMPILE_OPT, 0, Clp_Negate },
@@ -60,6 +61,7 @@ static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "quiet", 'q', QUIET_OPT, 0, Clp_Negate },
   { "reverse", 'r', REVERSE_OPT, 0, Clp_Negate },
   { "source", 's', SOURCE_OPT, 0, Clp_Negate },
   { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
@@ -99,6 +101,7 @@ Options:\n\
   -s, --source                  Write source code only.\n\
   -c, --config                  Write new configuration only.\n\
   -r, --reverse                 Reverse transformation.\n\
+  -q, --quiet                   Compile any packages quietly.\n\
   -C, --clickpath PATH          Use PATH for CLICKPATH.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
@@ -777,6 +780,7 @@ main(int argc, char **argv)
   bool source_only = false;
   bool config_only = false;
   bool reverse = false;
+  bool quiet = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -846,6 +850,10 @@ particular purpose.\n");
       compile_user = !clp->negated;
       break;
 
+     case QUIET_OPT:
+      quiet = !clp->negated;
+      break;
+
      bad_option:
      case Clp_BadOption:
       short_usage();
@@ -889,6 +897,8 @@ particular purpose.\n");
   // find Click binaries
   runclick_prog = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
   click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
+  if (quiet)
+    click_compile_prog += " -q";
 
   // find Classifiers
   Vector<int> classifiers;
