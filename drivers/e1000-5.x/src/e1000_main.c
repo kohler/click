@@ -3458,9 +3458,9 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 	int i, len, offset, txd_needed;
 	uint32_t txd_upper, txd_lower, max_per_txd = E1000_MAX_DATA_PER_TXD;
 
-	if(!netif_carrier_ok(netdev)) {
+	if(unlikely(!netif_carrier_ok(netdev))) {
 		netif_stop_queue(netdev);
-		return 1;
+		return NETDEV_TX_BUSY;
 	}
 
 	txd_needed = TXD_USE_COUNT(skb->len, max_txd_pwr);
@@ -3469,7 +3469,7 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 	if(E1000_DESC_UNUSED(&adapter->tx_ring) <= (txd_needed + 1)) {
 		adapter->net_stats.tx_dropped++;
 		netif_stop_queue(netdev);
-		return 1;
+		return NETDEV_TX_BUSY;
 	}
 
 	txd_upper = 0;
@@ -3488,9 +3488,10 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 
 	adapter->tx_ring.buffer_info[i].length = len;
 	adapter->tx_ring.buffer_info[i].dma =
-		pci_map_page(pdev, virt_to_page(skb->data + offset),
-			     (unsigned long) (skb->data + offset) & ~PAGE_MASK, len,
-			     PCI_DMA_TODEVICE);
+		pci_map_single(pdev,
+			       skb->data + offset,
+			       size,
+			       PCI_DMA_TODEVICE);
 
 	tx_desc->buffer_addr = cpu_to_le64(adapter->tx_ring.buffer_info[i].dma);
 	tx_desc->lower.data = cpu_to_le32(txd_lower | len);
