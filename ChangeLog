@@ -1,3 +1,13 @@
+2002-06-24 Monday 18:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridsrforwarder.cc (1.2): packet headers are in
+	network byte order, stupid
+
+2002-06-24 Monday 16:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridsrforwarder.cc (1.1), gridsrforwarder.hh
+	(1.1): [no log message]
+
 2002-06-21 Friday 15:33  Eddie Kohler <kohler@icir.org>
 
 	* elements/bsdmodule/fromhost.cc (1.4): cleanup bug
