@@ -134,12 +134,11 @@ class DriverManager : public Element { public:
     ~DriverManager();
 
     const char *class_name() const	{ return "DriverManager"; }
-
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
 
     void run_timer();
-    bool handle_stopped_driver();
+    virtual bool handle_stopped_driver();
 
     int stopped_count() const		{ return _stopped_count; }
 
