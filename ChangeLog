@@ -1,3 +1,13 @@
+2004-07-22 Thursday 21:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.119): reduce crap involved in calling
+	click-mkelemmap
+
+2004-07-22 Thursday 21:47  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.29): click-mkelemmap can handle cases where a
+	class's open-brace is on a different line from the "class" keyword
+
 2004-07-22 Thursday 21:14  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-compile.in (1.31), click-mkelemmap (1.28), configure
