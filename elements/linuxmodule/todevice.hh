@@ -73,7 +73,6 @@ ToHostSniffers
 */
 
 #include "elements/linuxmodule/anydevice.hh"
-#include "elements/linuxmodule/fromhost.hh"
 #include <click/notifier.hh>
 
 class ToDevice : public AnyTaskDevice { public:
@@ -85,7 +84,7 @@ class ToDevice : public AnyTaskDevice { public:
   const char *processing() const	{ return PULL; }
   ToDevice *clone() const		{ return new ToDevice; }
   
-  int configure_phase() const	{ return FromHost::CONFIGURE_PHASE_TODEVICE; }
+  int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void cleanup(CleanupStage);

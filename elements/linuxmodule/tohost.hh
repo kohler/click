@@ -1,7 +1,7 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef CLICK_TOHOST_HH
 #define CLICK_TOHOST_HH
-#include "elements/linuxmodule/fromhost.hh"
+#include "elements/linuxmodule/anydevice.hh"
 
 /*
  * =c
@@ -79,12 +79,12 @@ class ToHost : public AnyDevice { public:
     ToHost();
     ~ToHost();
 
-    const char *class_name() const		{ return "ToHost"; }
-    const char *processing() const		{ return PUSH; }
-    const char *flags() const			{ return "S2"; }
+    const char *class_name() const	{ return "ToHost"; }
+    const char *processing() const	{ return PUSH; }
+    const char *flags() const		{ return "S2"; }
     ToHost *clone() const;
 
-    int configure_phase() const	{ return FromHost::CONFIGURE_PHASE_TODEVICE; }
+    int configure_phase() const		{ return CONFIGURE_PHASE_TODEVICE; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);

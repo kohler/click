@@ -72,9 +72,6 @@ class EtherAddress;
 
 class FromHost : public AnyDevice { public:
 
-    enum { CONFIGURE_PHASE_FROMHOST = CONFIGURE_PHASE_DEFAULT,
-	   CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMHOST + 1 };
-
     FromHost();
     ~FromHost();
 

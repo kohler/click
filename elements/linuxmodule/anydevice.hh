@@ -75,6 +75,10 @@ class AnyDeviceMap;
 
 class AnyDevice : public Element { public:
 
+    enum { CONFIGURE_PHASE_FROMHOST = CONFIGURE_PHASE_DEFAULT - 2,
+	   CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_DEFAULT - 1,
+	   CONFIGURE_PHASE_POLLDEVICE = CONFIGURE_PHASE_DEFAULT };
+
     AnyDevice();
     ~AnyDevice();
 
