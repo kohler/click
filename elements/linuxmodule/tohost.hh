@@ -29,6 +29,8 @@
  *
  * Keyword arguments are:
  *
+ * =over 8
+ *
  * =item SNIFFERS
  *
  * Boolean. If true, then ToHost will send packets to the kernel so that only
@@ -41,6 +43,8 @@
  * the router is initialized, then ToHost will report a warning (rather than
  * an error). Later, while the router is running, if a device named DEVNAME
  * appears, ToHost will seamlessly begin using it. Default is false.
+ *
+ * =back
  *
  * =n
  *
