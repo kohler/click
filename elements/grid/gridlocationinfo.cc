@@ -39,7 +39,7 @@ GridLocationInfo::GridLocationInfo() : _seq_no(0), _logging_timer(logging_hook, 
   _tag = "<unknown>";
 
   _loc_err = 0;
-  _loc_good = true;
+  _loc_good = false;
 }
 
 GridLocationInfo::~GridLocationInfo()
