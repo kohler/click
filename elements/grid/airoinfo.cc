@@ -82,6 +82,11 @@ AiroInfo::initialize(ErrorHandler *errh)
   memset(&_ifr, 0, sizeof(_ifr));
   strncpy(_ifr.ifr_name, _ifname.cc(), sizeof(_ifr.ifr_name));
   _ifr.ifr_name[sizeof(_ifr.ifr_name) - 1] = 0;
+#ifdef __linux__
+  memset(&_ifr2, 0, sizeof(_ifr2));
+  strncpy(_ifr2.ifr_name, _ifname.cc(), sizeof(_ifr2.ifr_name));
+  _ifr2.ifr_name[sizeof(_ifr2.ifr_name) - 1] = 0;
+#endif
 
   _fd = socket(AF_INET, SOCK_DGRAM, 0);
   if (_fd < 0) 
@@ -161,7 +166,7 @@ AiroInfo::get_tx_stats(const EtherAddress &e, int &num_successful, int &num_fail
 }
 
 bool
-AiroInfo::get_noise(int &avg_over_sec, int &avg_over_minute, int &max_over_minute)
+AiroInfo::get_noise(int &max_over_sec, int &avg_over_minute, int &max_over_minute)
 {
   struct an_req areq;
   memset(&areq, 0, sizeof(areq));
@@ -187,7 +192,7 @@ AiroInfo::get_noise(int &avg_over_sec, int &avg_over_minute, int &max_over_minut
 
   u_int8_t *base = (u_int8_t *) _ifr.ifr_data;
   u_int8_t *u8 = base + 0x7B;
-  avg_over_sec = *u8;
+  max_over_sec = *u8;
 
   u8 = base + 0x7D;
   avg_over_minute = *u8;
@@ -197,7 +202,7 @@ AiroInfo::get_noise(int &avg_over_sec, int &avg_over_minute, int &max_over_minut
 
   return true;
 }
-#endif
+#endif // __OpenBSD__
 
 #ifdef __linux__
 bool
@@ -236,12 +241,43 @@ AiroInfo::get_tx_stats(const EtherAddress &, int &, int &)
   return false;
 }
 
+
+#define AIROIOCTL SIOCDEVPRIVATE
+#define AIROGSTAT 8
+
+struct aironet_ioctl_t {
+  unsigned short command;	// What to do
+  unsigned short len;		// Len of data
+  unsigned char *data;		// d-data
+};
+
+
 bool
-AiroInfo::get_noise(int &, int &, int &)
+AiroInfo::get_noise(int &max_over_sec, int &avg_over_minute, int &max_over_minute)
 {
-  return false;
+  u_int8_t buf[0x80];
+  memset(buf, 69, sizeof(buf));
+
+  aironet_ioctl_t airo_cmd;
+  airo_cmd.command = AIROGSTAT;
+  airo_cmd.data = buf;
+  airo_cmd.len = sizeof(buf);
+  _ifr2.ifr_data = (char *) &airo_cmd;
+  
+  int res = ioctl(_fd, AIROIOCTL, &_ifr2);
+  if (res == -1) {
+    click_chatter("AiroInfo: ioctl(AIROIOCTL) error when reading noise info: %s\n", 
+		  strerror(errno));
+    return false;
+  }
+
+  max_over_sec = -buf[0x7B];
+  avg_over_minute = -buf[0x7D];
+  max_over_minute = -buf[0x7F];
+
+  return true;
 }
-#endif
+#endif // __linux__
 
 
 #if !defined(__linux__) && !defined(__OpenBSD__)

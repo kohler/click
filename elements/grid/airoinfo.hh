@@ -58,7 +58,7 @@ public:
 
   /* If possible, place the card's background noise measurements (in
      dBm) into the arguments, and return true.  Else return false */
-  bool get_noise(int &avg_over_sec, int &avg_over_minute, int &max_over_minute);
+  bool get_noise(int &max_over_sec, int &avg_over_minute, int &max_over_minute);
   
   /* Clear all link-layer transmission statistics on the card */
   void clear_tx_stats();
@@ -70,6 +70,7 @@ private:
 
 #ifdef __linux__
   struct iwreq _ifr;
+  struct ifreq _ifr2;
 #else
   struct ifreq _ifr;
 #endif
