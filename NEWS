@@ -22,6 +22,9 @@ Version 1.1
    packets (rather than IP), as the Ethernet type field lets it handle IPv6
    packets as well as IPv4.
 
+** Changed the third argument to RatedSource. Used to be a duration to send
+   packets; now it is the number of packets to send.
+
 ** Renamed the SetIPAddress element to StoreIPAddress. Added a different
    SetIPAddress element.
 
@@ -181,6 +184,9 @@ Version 1.1
 ** Modified kernel ToDevice: ToDevice now sends Linux's packets when the
    device is idle. This prevents Click from starving out packets sent by
    other processes or Linux.
+
+** Shaper and BandwidthShaper work significantly better. They are less
+   bursty and can correctly shape traffic to low rates. 
 
 ** Improved Classifier optimizations.
 

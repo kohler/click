@@ -54,7 +54,7 @@ Shaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   _ugap = one_sec / rate;
   _count = 0;
-  _meter = rate;
+  _rate = rate;
   return 0;
 }
 
@@ -78,7 +78,7 @@ Shaper::pull(int)
   if (now.tv_sec > _tv_sec) {
     _tv_sec = now.tv_sec;
     if (_count > 0)
-      _count -= _meter;
+      _count -= _rate;
   }
 
   unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;

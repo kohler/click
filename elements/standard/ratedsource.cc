@@ -37,23 +37,30 @@ int
 RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String data = 
-    "Random bullshit in a packet, at least 64 byte long.  Well, now it is.";
-  int rate = 10;
-  int time_ms = -1;
+    "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
+  unsigned rate = 10;
+  int limit = -1;
   bool active = true;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpString, "packet data", &data,
 		  cpUnsigned, "sending rate (packets/s)", &rate,
-		  cpMilliseconds, "sending time", &time_ms,
+		  cpInteger, "total packet count", &limit,
 		  cpBool, "active?", &active,
 		  0) < 0)
     return -1;
+  
+  unsigned one_sec = 1000000 << UGAP_SHIFT;
+  if (rate > one_sec) {
+    // must have _ugap > 0, so limit rate to 1e6<<UGAP_SHIFT
+    errh->error("rate too large; lowered to %u", one_sec);
+    rate = one_sec;
+  }
 
   _data = data;
   _rate = rate;
-  _ugap = (rate ? 1000000 / rate : 1000000);
-  _limit = (time_ms >= 0 ? time_ms*rate / 1000 : -1);
+  _ugap = one_sec / (rate > 1 ? rate : 1);
+  _limit = (limit >= 0 ? limit : NO_LIMIT);
   _active = active;
   
   if (_packet) _packet->kill();
@@ -62,26 +69,15 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   _packet = Packet::make(headroom, (const unsigned char *)_data.data(), 
       			 _data.length(), 
 			 Packet::default_tailroom(_data.length()));
-  
   return 0;
 }
 
 int
 RatedSource::initialize(ErrorHandler *errh)
 {
-  _count = 0;
-  
-#ifndef RR_SCHED
-  /* start out with default number of tickets, inflate up to max */
-  int max_tickets = ScheduleInfo::query(this, errh);
-  set_max_tickets(max_tickets);
-  set_tickets(ScheduleInfo::DEFAULT);
-#endif
-  join_scheduler();
-
-  click_gettimeofday(&_start_time);
-  _inactive_time = _start_time;
-  
+  _count = _sec_count = 0;
+  _tv_sec = -1;
+  ScheduleInfo::join_scheduler(this, errh);
   return 0;
 }
 
@@ -96,35 +92,40 @@ RatedSource::uninitialize()
 void
 RatedSource::run_scheduled()
 {
-  if (!_active) {
-    click_gettimeofday(&_inactive_time);
+  if (!_active || (_limit != NO_LIMIT && _count >= _limit))
     return;
-  }
   
-  if (_limit < 0 || _count < _limit) {
-    struct timeval now, diff;
-    click_gettimeofday(&now);
-    timersub(&now, &_start_time, &diff);
+  struct timeval now;
+  click_gettimeofday(&now);
   
-    // how many packets should we have sent by now?
-    int need = diff.tv_sec * _rate;
-    need += diff.tv_usec / _ugap;
-
-    // send one if we've fallen behind.
-    if (need > _count) {
-      output(0).push(_packet->clone());
-      _count++;
-    }
-
-    // prevent overflow, we reset
-    if (_count > (int)(_rate * 600)) {
-      _count = 0;
-      _start_time = now;
-    }
-
-    reschedule();
+  if (_tv_sec < 0) {
+    _tv_sec = now.tv_sec;
+    _sec_count = (now.tv_usec << UGAP_SHIFT) / _ugap;
+  } else if (now.tv_sec > _tv_sec) {
+    _tv_sec = now.tv_sec;
+    if (_sec_count > 0)
+      _sec_count -= _rate;
   }
+
+  unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;
+  if ((int)need > _sec_count) {
+#if DEBUG_RATEDSOURCE
+    static struct timeval last;
+    if (last.tv_sec) {
+      struct timeval diff;
+      timersub(&now, &last, &diff);
+      click_chatter("%d.%06d  (%d)", diff.tv_sec, diff.tv_usec, now.tv_sec);
+    }
+    last = now;
+#endif
+    output(0).push(_packet->clone());
+    _count++;
+    _sec_count++;
+  }
+
+  reschedule();
 }
+
 
 String
 RatedSource::read_param(Element *e, void *vparam)
@@ -136,18 +137,11 @@ RatedSource::read_param(Element *e, void *vparam)
    case 1:			// rate
     return String(rs->_rate) + "\n";
    case 2:			// limit
-    return String(rs->_limit) + "\n";
+    return (rs->_limit != NO_LIMIT ? String(rs->_limit) + "\n" : String("-1\n"));
    case 3:			// active
     return cp_unparse_bool(rs->_active) + "\n";
    case 4:			// count
     return String(rs->_count) + "\n";
-   case 6: {			// achieved_rate
-     struct timeval now, diff;
-     click_gettimeofday(&now);
-     timersub(&now, &rs->_start_time, &diff);
-     unsigned long r = rs->_count / (diff.tv_sec ? diff.tv_sec : 1);
-     return String(r) + " (approximate)\n";
-   }
    default:
     return "";
   }
@@ -162,23 +156,17 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
   switch ((int)vparam) {
 
    case 1: {			// rate
-     int rate;
-     if (!cp_integer(s, &rate) || rate < 0)
+     unsigned rate;
+     if (!cp_unsigned(s, &rate))
        return errh->error("rate parameter must be integer >= 0");
-     rs->set_configuration_argument(1, s);
+     unsigned one_sec = 1000000 << UGAP_SHIFT;
+     if (rate > one_sec)
+       // must have _ugap > 0, so limit rate to 1e6<<UGAP_SHIFT
+       return errh->error("rate too large (max is %u)", one_sec);
+     rs->set_configuration_argument(1, in_s);
      rs->_rate = rate;
-     rs->_ugap = (rate ? 1000000 / rate : 1000000);
-     if (!rate) break;
-     // change _start_time to get a smooth transition
-     struct timeval now;
-     click_gettimeofday(&now);
-     int sec = rs->_count / rate;
-     int usec = (rs->_count % rate) * 1000000 / rate;
-     struct timeval diff;
-     diff.tv_sec = sec + (usec / 1000000);
-     diff.tv_usec = usec % 1000000;
-     timersub(&now, &diff, &rs->_start_time);
-     rs->_inactive_time = rs->_start_time;
+     rs->_ugap = one_sec / (rate > 1 ? rate : 1);
+     rs->_tv_sec = -1;
      break;
    }
 
@@ -186,7 +174,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
      int limit;
      if (!cp_integer(s, &limit))
        return errh->error("limit parameter must be integer");
-     rs->_limit = limit;
+     rs->_limit = (limit < 0 ? NO_LIMIT : limit);
      break;
    }
    
@@ -196,11 +184,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
        return errh->error("active parameter must be boolean");
      rs->_active = active;
      if (!rs->scheduled() && active) {
-       // change _start_time to avoid flood of packets when turned on
-       struct timeval now, diff;
-       click_gettimeofday(&now);
-       timersub(&now, &rs->_inactive_time, &diff);
-       timeradd(&rs->_start_time, &diff, &rs->_start_time);
+       rs->_tv_sec = -1;
        rs->reschedule();
      }
      break;
@@ -208,7 +192,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
 
    case 5: {			// reset
      rs->_count = 0;
-     click_gettimeofday(&rs->_start_time);
+     rs->_tv_sec = -1;
      if (!rs->scheduled() && rs->_active)
        rs->reschedule();
      break;
@@ -231,7 +215,6 @@ RatedSource::add_handlers()
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
   add_write_handler("reset", change_param, (void *)5);
-  add_read_handler("achieved_rate", read_param, (void *)6);
 }
 
 EXPORT_ELEMENT(RatedSource)

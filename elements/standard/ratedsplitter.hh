@@ -38,7 +38,14 @@
  * =a Tee, ProbSplitter, Meter, Shaper, SlowShaper */
 
 class RatedSplitter : public Element {
+
+  static const unsigned UGAP_SHIFT = 12;
   
+  unsigned _rate;
+  unsigned _ugap;
+  int _sec_count;
+  int _tv_sec;
+
  public:
   
   RatedSplitter() : Element(1,2)		{}
@@ -52,15 +59,8 @@ class RatedSplitter : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   void push(int port, Packet *);
   
-  int get_rate() const				{ return _meter; }
-  void set_rate(int r);
-
- private:
-
-  unsigned _meter;
-  unsigned _ugap;
-  unsigned _total;
-  struct timeval _start;
+  unsigned get_rate() const			{ return _rate; }
+  void set_rate(unsigned r, ErrorHandler * = 0);
 
 };
 

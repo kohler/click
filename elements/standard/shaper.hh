@@ -25,7 +25,7 @@ class Shaper : public Element { protected:
   
   unsigned _ugap;
   int _count;
-  unsigned _meter;
+  unsigned _rate;
   int _tv_sec;
 
  public:

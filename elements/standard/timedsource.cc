@@ -19,7 +19,7 @@
 #include "glue.hh"
 
 TimedSource::TimedSource()
-  : _data("Random bullshit in a packet, at least 64 byte long.  Well, now it is."),
+  : _data("Random bullshit in a packet, at least 64 bytes long. Well, now it is."),
     _timer(this)
 {
   add_output();

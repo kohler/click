@@ -14,7 +14,7 @@
 //
 //	$device		name of device to generate traffic on
 //	$rate		rate to generate traffic (packets/s)
-//	$time		generate traffic for this many seconds
+//	$limit		total number of packets to send
 //	$saddr		this machine's IP address
 //	$sport		source port for generated traffic
 //	$saddr_ethernet	the Ethernet address of $device
@@ -28,12 +28,12 @@
 
 
 elementclass UDPGen {
-  $device, $rate, $time,
+  $device, $rate, $limit,
   $saddr, $sport, $saddr_ethernet, 
   $daddr, $dport, $daddr_ethernet |
 
   source :: RatedSource(\<00000000111111112222222233333333444444445555>,
-	$rate, $time);
+	$rate, $limit);
   out :: Queue(8192);
   counter :: Counter;
   class :: Classifier(12/0806 20/0001, -);
@@ -62,6 +62,6 @@ elementclass UDPGen {
 
 // create a UDPGen
 
-u :: UDPGen(eth0, 10, .1,
+u :: UDPGen(eth0, 10, 100,
 	1.0.0.2, 1234, 00:e0:29:05:e2:d4,
 	2.0.0.2, 1234, 00:c0:95:e2:09:14);

@@ -1,6 +1,6 @@
 /*
  * ratedsplitter.{cc,hh} -- split packets at a given rate.
- * Benjie Chen
+ * Benjie Chen, Eddie Kohler
  * 
  * Copyright (c) 2000 Mazu Networks, Inc.
  * 
@@ -25,21 +25,25 @@ RatedSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (cp_va_parse(conf, this, errh, 
 	          cpUnsigned, "split rate", &r, 0) < 0) 
     return -1;
-  set_rate(r);
+  set_rate(r, errh);
   return 0;
 }
 
 void
-RatedSplitter::set_rate(int r)
+RatedSplitter::set_rate(unsigned r, ErrorHandler *errh)
 {
-  _meter = r;
-  
-  if (r > 0) _ugap = 1000000 / r;
-  else _ugap = 1;
+  unsigned one_sec = 1000000 << UGAP_SHIFT;
+  if (r > one_sec) {
+    // must have _ugap > 0, so limit rate to 1e6<<UGAP_SHIFT
+    if (errh)
+      errh->error("rate too large; lowered to %u", one_sec);
+    r = one_sec;
+  }
 
-  _total = 0;
-  _start.tv_sec = 0;
-  _start.tv_usec = 0;
+  _rate = r;
+  _ugap = one_sec / (r > 1 ? r : 1);
+  _sec_count = 0;
+  _tv_sec = -1;
 }
 
 void
@@ -47,26 +51,31 @@ RatedSplitter::push(int, Packet *p)
 {
   struct timeval now;
   click_gettimeofday(&now);
-
-  if (_start.tv_sec == 0) _start = now;
-  else {
-    struct timeval diff;
-    timersub(&now, &_start, &diff);
-    
-    unsigned need = diff.tv_sec * _meter;
-    need += diff.tv_usec / _ugap;
-
-    if (need > _total && _meter > 0) {
-      _total++;
-      output(0).push(p);
-    } else
-      output(1).push(p);
-
-    if (_total > _meter * 360) {
-      _total = 0;
-      _start = now;
-    }
+  
+  if (_tv_sec < 0) {
+    _tv_sec = now.tv_sec;
+    _sec_count = (now.tv_usec << UGAP_SHIFT) / _ugap;
+  } else if (now.tv_sec > _tv_sec) {
+    _tv_sec = now.tv_sec;
+    if (_sec_count > 0)
+      _sec_count -= _rate;
   }
+
+  unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;
+  if ((int)need > _sec_count) {
+#if DEBUG_RATEDSPLITTER
+    static struct timeval last;
+    if (last.tv_sec) {
+      struct timeval diff;
+      timersub(&now, &last, &diff);
+      click_chatter("%d.%06d  (%d)", diff.tv_sec, diff.tv_usec, now.tv_sec);
+    }
+    last = now;
+#endif
+    output(0).push(p);
+    _sec_count++;
+  } else
+    output(1).push(p);
 }
 
 
@@ -75,18 +84,12 @@ RatedSplitter::push(int, Packet *p)
 static int
 rate_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-  RatedSplitter* me = (RatedSplitter *) e;
-
-  if(args.size() != 1)
-    return errh->error("expecting one number");
-
-  int r;
-  if (!cp_integer(args[0], &r))
+  RatedSplitter *me = (RatedSplitter *)e;
+  unsigned r;
+  if (!cp_unsigned(cp_uncomment(conf), &r))
     return errh->error("rate must be an integer");
-  
   me->set_rate(r);
+  me->set_configuration_argument(0, conf);
   return 0;
 }
 
@@ -105,5 +108,3 @@ RatedSplitter::add_handlers()
 }
 
 EXPORT_ELEMENT(RatedSplitter)
-
-

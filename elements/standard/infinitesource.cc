@@ -35,7 +35,7 @@ InfiniteSource::clone() const
 int
 InfiniteSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  String data = "Random bullshit in a packet, at least 64 byte long.  Well, now it is.";
+  String data = "Random bullshit in a packet, at least 64 bytes long. Well, now it is.";
   int limit = -1;
   int burstsize = 1;
   bool active = true;

@@ -123,7 +123,7 @@ if test $linuxdir = NONE; then
 fi
 
 ac_under_linux=n
-if test $linuxdir != NONE && test $linuxdir != no; then
+if test $linuxdir != NONE -a $linuxdir != no; then
   if test -r $linuxdir/include/linux/skbuff.h; then
     ac_under_linux=y
   else
