@@ -1,3 +1,20 @@
+2003-09-03 Wednesday 15:13  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.53), fromipsumdump.hh
+	(1.30), fromnetflowsumdump.cc (1.14), fromnetflowsumdump.hh (1.11),
+	toipsumdump.cc (1.46): MULTIPACKET spreads out packets between
+	FIRST_TIMESTAMP_ANNO() and timestamp_anno(). Additionally,
+	FromNetFlowSummaryDump sets packet lengths correctly, sets
+	FIRST_TIMESTAMP_ANNO(), sets th_flags2 to 0, and sets th_flags from
+	the dump.
+
+2003-09-03 Wednesday 15:11  Eddie Kohler <kohler@icir.org>
+
+	* include/click/glue.hh (1.37): add userlevel operations on
+	timevals-as-doubles: timeval2double(), double2timeval(), timeval
+	operator*(timeval, double), timeval operator/(timeval, double), and
+	double operator/(timeval, timeval)
+
 2003-09-03 Wednesday 13:41  Eddie Kohler <kohler@icir.org>
 
 	* lib/lexer.cc (1.68): fix bug: re-allow anonymous compound
