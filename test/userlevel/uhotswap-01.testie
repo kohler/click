@@ -1,0 +1,36 @@
+%script
+
+usleep () {
+   click -e "DriverManager(wait $1us)"
+}
+
+click -R -p 8000 -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle" &
+clicktodie=$!
+usleep 50
+cat CSIN | nc localhost 8000 >CSOUT
+
+%file CSIN
+read s.switch
+write hotconfig Idle -> s :: Switch(1) -> Idle; s[1] -> Idle
+read s.config
+write hotconfig Print
+read s.switch
+write stop true
+
+%expect CSOUT
+Click::ControlSocket/1.{{\d+}}
+200 Read handler{{.*}}
+DATA 2
+0
+200 Write handler{{.*}}
+200 Read handler{{.*}}
+DATA 2
+1
+520-Write handler{{.*}}error:
+520-{{.*}}Print' input 0 unused
+520-{{.*}}Print' output 0 unused
+520 Router could not be initialized!
+200 Read handler{{.*}}
+DATA 2
+1
+200 Write handler{{.*}}
