@@ -25,6 +25,7 @@ clickdatadir=${datadir}/click
 
 verbose=""
 elem2=""
+default_provisions="@provisions@"
 
 # find a good version of awk
 if test -x /usr/bin/gawk; then
@@ -43,7 +44,7 @@ Try 'click-buildtool findelem --help' for more information." 1>&2
     exit 1
 }
 
-findelem_elementmap_provisions () {
+elementmap_provisions () {
     elementmap="$1"
     $awk '/^<elementmap( .* | )provides="([^"]*)"/ {
   sub(/.* provides="/, "", $0);
@@ -74,7 +75,6 @@ findelem () {
     prefix=
     all=
     provisions=
-    default_provisions="@provisions@"
     filenames=
     standards=
     unprovisions='false 0'
@@ -119,18 +119,18 @@ $unprovisions"; shift 1;;
 $unprovisions"; shift 1;;
     -e|--e|--el|--ele|--elem|--eleme|--elemen|--element|--elementm|--elementma|--elementmap)
 	if test $# -lt 2; then findelem_usage; fi
-	shift 1; provisions=`findelem_elementmap_provisions $1`"
+	shift 1; provisions=`elementmap_provisions $1`"
 $provisions"; shift 1;;
     -e*)
 	emap=`echo "$1" | sed 's/^-e//'`
-	provisions=`findelem_elementmap_provisions $emap`"
+	provisions=`elementmap_provisions $emap`"
 $provisions"; shift 1;;
     --e=*|--el=*|--ele=*|--elem=*|--eleme=*|--elemen=*|--element=*|--elementm=*|--elementma=*|--elementmap=*)
 	emap=`echo "$1" | sed 's/^[^=]*=//'`
-	provisions=`findelem_elementmap_provisions $emap`"
+	provisions=`elementmap_provisions $emap`"
 $provisions"; shift 1;;
     -P|--pa|--pac|--pack|--packa|--packag|--package)
-	provisions=`findelem_elementmap_provisions ${clickdatadir}/elementmap.xml`"
+	provisions=`elementmap_provisions ${clickdatadir}/elementmap.xml`"
 $provisions"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
@@ -618,12 +618,87 @@ EOF
 }
 
 
+provides_usage () {
+    echo "Usage: click-buildtool provides [PROVISIONS]" 1>&2
+    echo "Try 'click-buildtool provides --help' for more information." 1>&2
+    exit 1
+}
+
+provides () {
+    provisions="$default_provisions
+"`elementmap_provisions ${clickdatadir}/elementmap.xml`
+    requirements=""
+    stdin=n; query=n
+    while [ x"$1" != x ]; do
+    case $1 in
+    -q|--q|--qu|--que|--quer|--query)
+	query=y; shift 1;;
+    -r|--p|--pr|--pro|--prov|--provi|--provid|--provide)
+	if test $# -lt 2; then findelem_usage; fi
+	shift 1; provisions="$1
+$provisions"; shift 1;;
+    -r*)
+	provisions=`echo "$1" | sed 's/^-r//'`"
+$provisions"; shift 1;;
+    --p=*|--pr=*|--pro=*|--prov=*|--provi=*|--provid=*|--provide=*)
+	provisions=`echo "$1" | sed 's/^[^=]*=//'`"
+$provisions"; shift 1;;
+    -e|--e|--el|--ele|--elem|--eleme|--elemen|--element|--elementm|--elementma|--elementmap)
+	if test $# -lt 2; then findelem_usage; fi
+	shift 1; provisions=`elementmap_provisions $1`"
+$provisions"; shift 1;;
+    -e*)
+	emap=`echo "$1" | sed 's/^-e//'`
+	provisions=`elementmap_provisions $emap`"
+$provisions"; shift 1;;
+    --e=*|--el=*|--ele=*|--elem=*|--eleme=*|--elemen=*|--element=*|--elementm=*|--elementma=*|--elementmap=*)
+	emap=`echo "$1" | sed 's/^[^=]*=//'`
+	provisions=`elementmap_provisions $emap`"
+$provisions"; shift 1;;
+    -h|--h|--he|--hel|--help)
+	cat <<'EOF' 1>&2
+'Click-buildtool provides' exits with status 0 if the Click installation
+provides all requirement(s) in REQ arguments, and status 1 otherwise.
+
+Usage: click-buildtool provides [OPTIONS] [REQ...]
+
+Options:
+  -q, --query                Print provisions to standard output instead.
+  -r, --provide REQ          Provide requirement(s) in REQ.
+  -e, --elementmap EMAP      Provide requirement(s) from EMAP.
+  -h, --help                 Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+	exit 0;;
+    -)
+	stdin=y; shift 1;;
+    -*)
+	provides_usage;;
+    *)
+	requirements="$1
+$requirements"; shift 1;;
+    esac
+    done
+
+    [ $stdin = y ] && requirements=`cat`" $requirements"
+    provisions=`echo "$provisions" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`
+    [ $query = y ] && echo "$provisions"
+    requirements=`echo "$requirements" | tr -s ' \011\015\014\013' '\012' | grep . | sort | uniq`
+    awk_provisions=`echo "$provisions" | sed 's/\(..*\)/dep["\1"]=1;/'`
+    echo "$requirements" | $awk -F: 'BEGIN {
+'"$awk_provisions"'
+}
+/./ { if (!dep[$1]) exit 1; }' >/dev/null 2>&1
+    exit $?
+}
+
+
 quietlink_usage () {
     echo "Usage: click-buildtool quietlink" 1>&2
     echo "Try 'click-buildtool quietlink --help' for more information." 1>&2
     exit 1
 }
-
 
 quietlink () {
     while [ x"$1" != x ]; do
@@ -636,7 +711,7 @@ package. Specifically, it removes undefined reference complaints.
 Usage: ld ... 2>&1 | click-buildtool quietlink
 
 Options:
-  -h, --help               Print this message and exit.
+  -h, --help                 Print this message and exit.
 
 Report bugs to <click@pdos.lcs.mit.edu>.
 EOF
@@ -702,6 +777,7 @@ Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
    or: click-buildtool elem2make [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool elem2export [-V] [-p PREFIX] < [ELEMENTS]
    or: click-buildtool elem2package [-V] [-p PREFIX] PACKAGENAME < [ELEMENTS]
+   or: click-buildtool provides [REQS]
    or: click-buildtool quietlink
 
 Options:
@@ -720,6 +796,8 @@ EOF
      elem2="export"; shift 1; elem2xxx "$@"; exit 0;;
   elem2package)
      elem2="package"; shift 1; elem2xxx "$@"; exit 0;;
+  provides)
+     shift 1; provides "$@"; exit 0;;
   quietlink)
      shift 1; quietlink "$@"; exit 0;;
   *)
