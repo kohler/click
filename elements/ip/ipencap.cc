@@ -88,7 +88,6 @@ IPEncap::simple_action(Packet *p)
     /* We want to preserve the DF flag if set */
     ip->ip_off = htons(p->ip_off_anno() & IP_RF);
   } else {
-    click_chatter("IPEncap: Packet not annotated");
     ip->ip_ttl = 250; //rtm
   }
 
