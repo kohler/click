@@ -22,7 +22,8 @@
 #include "glue.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _base(NULL), _alloced_mem(0)
+  : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _base(NULL), _alloced_mem(0),
+    _first(0), _last(0), _packet_counter(0), _prev_deleted(0)
 {
 }
 
@@ -51,6 +52,7 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 		  cpString, "monitor type", &count_what,
 		  cpUnsigned, "offset", &_offset,
 		  cpUnsigned, "threshold", &_thresh,
+		  cpUnsigned, "refresh", &_refresh,
 		  0) < 0)
     return -1;
   if (count_what == "PACKETS")
@@ -71,6 +73,7 @@ IPRateMonitor::initialize(ErrorHandler *errh)
   _base = new Stats(this);
   if(!_base)
     return errh->error("cannot allocate data structure.");
+  _first = _last = _base;
   return 0;
 }
 
@@ -98,6 +101,52 @@ IPRateMonitor::pull(int port)
 }
 
 
+void
+IPRateMonitor::fold(void)
+{
+  // Go backwards through the age list, starting at longest non-touched.
+  _prev_deleted = 0;
+  Stats *s = _last;
+  while(true) {
+    int now = MyEWMA::now();
+    if(!s->_parent) {
+      assert(s == _base);
+      _prev_deleted = s->_prev;
+      goto done;
+    }
+
+    // Below threshold?
+    s->_parent->fwd_rate.update(now, 0);
+    s->_parent->rev_rate.update(now, 0);
+    if(s->_parent->fwd_rate.average() < _thresh &&
+       s->_parent->rev_rate.average() < _thresh)
+      delete s;   // sets _prev_deleted
+    else
+      _prev_deleted = s->_prev;
+
+done:
+    if(!(s = _prev_deleted))
+      break;
+  }
+}
+
+
+void
+IPRateMonitor::show_agelist(void)
+{
+  click_chatter("SHOW ALL LIST\n----------------");
+  click_chatter("_first: %p, _last = %p\n", _first, _last);
+  Stats *prev_r = 0;
+  for(Stats *r = _first; r; r = r->_next) {
+    click_chatter("r = %p, r->_prev = %p, r->_next = %p", r, r->_prev, r->_next);
+    prev_r = r;
+  }
+
+  if(prev_r != _last)
+    click_chatter("FUCKY");
+}
+
+
 //
 // Recursively destroys tables.
 //
@@ -105,6 +154,8 @@ IPRateMonitor::Stats::Stats(IPRateMonitor *m)
 {
   _rm = m;
   _rm->update_alloced_mem(sizeof(*this));
+  _parent = 0;
+  _next = _prev = 0;
 
   for (int i = 0; i < MAX_COUNTERS; i++) {
     counter[i].fwd_rate.initialize();
@@ -118,6 +169,8 @@ IPRateMonitor::Stats::Stats(IPRateMonitor *m,
 {
   _rm = m;
   _rm->update_alloced_mem(sizeof(*this));
+  _parent = 0;
+  _next = _prev = 0;
 
   for (int i = 0; i < MAX_COUNTERS; i++) {
     counter[i].fwd_rate = fwd;
@@ -126,12 +179,36 @@ IPRateMonitor::Stats::Stats(IPRateMonitor *m,
   }
 }
 
+
+
+// Deletes stats structure cleanly.
+//
+// Removes all children.
+// Removes itself from linked list.
+// Tells IPRateMonitor where preceding element in list is.
 IPRateMonitor::Stats::~Stats()
 {
   for (int i = 0; i < MAX_COUNTERS; i++)
-    if (counter[i].next_level) 
+    if(counter[i].next_level)
       delete counter[i].next_level;
 
+  // Untangle _prev
+  if(this->_prev) {
+    this->_prev->_next = this->_next;
+    _rm->set_prev(this->_prev);
+  } else {
+    _rm->set_first(this->_next);
+    _rm->set_prev(0);
+  }
+
+  // Untangle _next
+  if(this->_next)
+    this->_next->_prev = this->_prev;
+  else
+    _rm->set_last(this->_prev);
+
+  // Unset pointer to this in parent
+  this->_parent->next_level = 0;
   _rm->update_alloced_mem(-sizeof(*this));
 }
 
@@ -185,12 +262,6 @@ IPRateMonitor::print(Stats *s, String ip = "")
 }
 
 
-inline void
-IPRateMonitor::set_resettime()
-{
-  _resettime = MyEWMA::now();
-}
-
 String
 IPRateMonitor::look_read_handler(Element *e, void *)
 {
@@ -214,6 +285,13 @@ IPRateMonitor::mem_read_handler(Element *e, void *)
   return String(me->_alloced_mem) + "\n";
 }
 
+String
+IPRateMonitor::refresh_read_handler(Element *e, void *)
+{
+  IPRateMonitor *me = (IPRateMonitor *) e;
+  return String(me->_refresh) + "\n";
+}
+
 int
 IPRateMonitor::reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
@@ -224,14 +302,38 @@ IPRateMonitor::reset_write_handler
   return 0;
 }
 
+
+int
+IPRateMonitor::refresh_write_handler
+(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+  Vector<String> args;
+  cp_argvec(conf, args);
+  IPRateMonitor* me = (IPRateMonitor *) e;
+
+  if(args.size() != 1) {
+    errh->error("expecting 1 integer");
+    return -1;
+  }
+  int refresh;
+  if(!cp_integer(args[0], refresh)) {
+    errh->error("not an integer");
+    return -1;
+  }
+  me->_refresh = refresh;
+  return 0;
+}
+
 void
 IPRateMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
   add_read_handler("mem", mem_read_handler, 0);
+  add_read_handler("refresh", refresh_read_handler, 0);
 
   add_write_handler("reset", reset_write_handler, 0);
+  add_write_handler("refresh", refresh_write_handler, 0);
 }
 
 EXPORT_ELEMENT(IPRateMonitor)
