@@ -278,7 +278,8 @@ private:
   unsigned int qual_to_pct(int q);
   unsigned int sig_to_pct(int s);
 
-  bool est_delivery_rate(const IPAddress, double &);
+  bool est_forward_delivery_rate(const IPAddress, double &);
+  bool est_reverse_delivery_rate(const IPAddress, double &);
 
   enum MetricType {
     MetricUnknown = -1,

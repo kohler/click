@@ -74,7 +74,9 @@ nb :: GridRouteTable(ROUTE_TIMEOUT,
 		     ggi, 
                      lt,
                      ls,
-		     MAX_HOPS NUM_HOPS);
+		     MAX_HOPS NUM_HOPS,
+                     METRIC est_tx_count);
+
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb, li);
 

@@ -34,7 +34,7 @@ GridRouteTable::GridRouteTable() :
   _max_hops(3), 
   _expire_timer(expire_hook, this),
   _hello_timer(hello_hook, this),
-  _metric_type(MetricHopCount),
+  _metric_type(MetricEstTxCount),
   _max_metric(0), _min_metric(0),
   _est_type(EstByMeas)
 {
@@ -84,7 +84,7 @@ int
 GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String chan("routelog");
-  String metric("hopcount");
+  String metric("est_tx_count");
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "entry timeout (msec)", &_timeout,
 			cpInteger, "route broadcast period (msec)", &_period,
@@ -190,7 +190,7 @@ GridRouteTable::sig_to_pct(int s)
 }
 
 bool
-GridRouteTable::est_delivery_rate(const IPAddress ip, double &rate)
+GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
 {
   switch (_est_type) {
   case EstBySig:
@@ -225,6 +225,38 @@ GridRouteTable::est_delivery_rate(const IPAddress ip, double &rate)
     struct timeval last;
     bool res = _link_tracker->get_bcast_stat(ip, rate, last);
     return res;
+    break;
+  }
+  default:
+    return false;
+  }
+}
+
+bool
+GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
+{
+  switch (_est_type) {
+  case EstBySig:
+  case EstByQual: 
+  case EstBySigQual: {
+    return false;
+    break;
+  }
+  case EstByMeas: {
+    struct timeval last;
+    RTEntry *r = _rtes.findp(ip);
+    if (r == 0 || r->num_hops > 1)
+      return false;
+    unsigned int window = 0;
+    unsigned int num_rx = 0;
+    unsigned int num_expected = 0;
+    bool res = _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
+    if (!res)
+      return false;
+    double num_rx_ = num_rx;
+    double num_expected_ = num_expected;
+    rate = (num_rx_ - 0.5) / num_expected_;
+    return true;
     break;
   }
   default:
@@ -287,10 +319,12 @@ GridRouteTable::init_metric(RTEntry &r)
   }
   break;
   case MetricEstTxCount: {
-    double rate = 0;
-    bool res = est_delivery_rate(r.next_hop_ip, rate);
-    if (res) {
-      r.metric = (int) (100 / rate);
+    double fwd_rate = 0;
+    double rev_rate = 0;
+    bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
+    bool res2 = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
+    if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
+      r.metric = (int) (100 / (fwd_rate * rev_rate));
       r.metric_valid = true;
     } 
     else {
@@ -516,8 +550,14 @@ GridRouteTable::simple_action(Packet *packet)
   if (ntohl(hlo->ttl) > 0) {
     RTEntry new_r(ipaddr, ethaddr, gh, hlo, jiff);
     init_metric(new_r);
-    if (r == 0 || should_replace_old_route(*r, new_r))
+    if (r == 0 || should_replace_old_route(*r, new_r)) {
 	_rtes.insert(ipaddr, new_r);
+	if (new_r.num_hops > 1 && r && r->num_hops == 1) {
+	  /* clear old 1-hop stats */
+	  _link_tracker->remove_all_stats(r->dest_ip);
+	  _link_stat->remove_all_stats(r->next_hop_eth);
+	}
+    }
   }
   
   /*
@@ -598,8 +638,14 @@ GridRouteTable::simple_action(Packet *packet)
     /* 
      * regular route entry -- should we stick it in the table?
      */
-    if (our_rte == 0 || should_replace_old_route(*our_rte, route))
+    if (our_rte == 0 || should_replace_old_route(*our_rte, route)) {
       _rtes.insert(route.dest_ip, route);
+      if (route.num_hops > 1 && our_rte && our_rte->num_hops == 1) {
+	/* clear old 1-hop stats */
+	_link_tracker->remove_all_stats(our_rte->dest_ip);
+	_link_stat->remove_all_stats(our_rte->next_hop_eth);
+      }
+    }
   }
 
   /* delete broken routes */
@@ -976,6 +1022,7 @@ GridRouteTable::expire_routes()
 	expired_next_hops.insert(i.value().dest_ip, true);
 	/* clear link stats */
 	_link_tracker->remove_all_stats(i.value().dest_ip);
+	_link_stat->remove_all_stats(i.value().next_hop_eth);
       }
     }
   }

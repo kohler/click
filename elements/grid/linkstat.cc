@@ -96,6 +96,14 @@ LinkStat::simple_action(Packet *p)
   return p;
 }
 
+void
+LinkStat::remove_all_stats(const EtherAddress &e)
+{
+  _stats.remove(e);
+  _bcast_stats.remove(e);
+
+}
+
 bool
 LinkStat::get_bcast_stats(const EtherAddress &e, struct timeval &last, unsigned int &window,
 			  unsigned int &num_rx, unsigned int &num_expected)
