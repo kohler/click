@@ -81,21 +81,17 @@ PerfCountUser::prepare(const String &name, ErrorHandler *errh)
     }
   }
   if (!base) {
-    _metric0 = -1;
+    _metric0 = _metric1 = -1;
     base = this;
   }
 
-  if (_metric0 < 0) {
-    _metric0 = which;
+  if (base->_metric0 < 0 || base->_metric0 == which) {
+    base->_metric0 = which;
     return 0;
-  } else if (_metric0 == which)
-    return 0;
-  else if (_metric1 < 0) {
-    _metric1 = which;
+  } else if (base->_metric1 < 0 || base->_metric1 == which) {
+    base->_metric1 = which;
     return 1;
-  } else if (_metric1 == which)
-    return 1;
-  else
+  } else
     return errh->error("configuration uses too many performance metrics\n(I can only keep track of two different metrics, maximum.)");
 }
 
