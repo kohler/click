@@ -1,3 +1,17 @@
+2005-03-29 Tuesday 22:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.50), configure.in (1.260), pathvars.h.in (1.7),
+	etc/linux-2.6.11.6-patch (1.2), linuxmodule/Makefile.in (1.97),
+	linuxmodule/clickfs.cc (1.42), linuxmodule/proclikefs.c (1.14),
+	linuxmodule/proclikefs.h (1.4),
+	tools/click-install/click-install.cc (1.58): better proclikefs:
+	rather than calling make_bad_inode, just do it ourselves, on the
+	existing file_operations and inode_operations structures.  Then
+	theres no need to keep track of individual inodes.  make install
+	(in linuxmodule) installs under the Click $prefix, not
+	/lib/modules.  Very cool: click-install and stuff all work!  Havent
+	tried to route however.
+
 2005-03-29 Tuesday 16:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool.in (1.65), configure (1.49), configure.in
