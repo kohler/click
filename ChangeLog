@@ -1,3 +1,10 @@
+2001-10-16 Tuesday 16:55  Eddie Kohler <kohler@aciri.org>
+
+	* elements/aqm/: adaptivered.cc (1.4), adaptivered.hh (1.4), red.cc
+	(1.36), red.hh (1.31): AdaptiveRED uses a TARGET_Q parameter, not
+	MIN_THRESH and MAX_THRESH; get rid of keywords (they were useless
+	anyways); cleanup
+
 2001-10-16 Tuesday 16:25  Eddie Kohler <kohler@aciri.org>
 
 	* config-userlevel.h.in (1.2), include/click/confparse.hh (1.21),
