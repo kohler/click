@@ -64,6 +64,10 @@
  * some device, that packet may have some other type. Use SetPacketType to
  * reset the type appropriately.
  *
+ * Finally, IPv4 packets should have a destination IP address corresponding
+ * to DEVNAME, and a routable source address. Otherwise Linux will silently
+ * drop the packets.
+ *
  * =h drops read-only
  *
  * Reports the number of packets ToHost has dropped because they had a null
