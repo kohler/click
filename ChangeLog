@@ -1,3 +1,9 @@
+2004-07-22 Thursday 21:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-compile.in (1.31), click-mkelemmap (1.28), configure
+	(1.23), configure.in (1.241), elements/grid/dsrroutetable.hh (1.8),
+	linuxmodule/Makefile.in (1.91): fix wifi-related build process
+
 2004-07-22 Thursday 19:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/wifi/linkfailuredetection.cc (1.9): fix order of
