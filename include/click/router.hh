@@ -62,21 +62,23 @@ class Router { public:
   void take_state(Router *, ErrorHandler *);
 
   // handlers
-  int nhandlers() const				{ return _nhandlers; }
-  static bool handler_ok(const Router *, int);
-  bool handler_ok(int hi) const			{ return handler_ok(this, hi);}
+  static const Handler *handlerp(const Router *, int);
+  const Handler *handlerp(int hi) const		{ return handlerp(this,hi); }
+  static bool handler_ok(const Router *r, int hi) { return handlerp(r,hi)!=0; }
+  bool handler_ok(int hi) const			{ return handlerp(this,hi)!=0;}
   static const Handler &handler(const Router *, int);
-  const Handler &handler(int hi) const		{ return handler(this, hi); }
+  const Handler &handler(int) const;
   static void element_handlers(const Router *, int, Vector<int> &);
   void element_handlers(int, Vector<int> &) const;
+  int nhandlers() const				{ return _nhandlers; }
+
   void add_read_handler(int, const String &, ReadHandler, void *);
   void add_write_handler(int, const String &, WriteHandler, void *);
   static int change_handler_flags(Element *, const String &, uint32_t clear_flags, uint32_t set_flags);
   
   enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
+  static const Handler &global_handler(int hi)	{ return *handlerp(0, hi); }
   static int nglobal_handlers();
-  static bool global_handler_ok(int);
-  static const Handler &global_handler(int);
   static void add_global_read_handler(const String &, ReadHandler, void *);
   static void add_global_write_handler(const String &, WriteHandler, void *);
   static void cleanup_global_handlers();
@@ -304,13 +306,19 @@ Router::find(const String &name, ErrorHandler *errh) const
 }
 
 inline const Router::Handler &
-Router::handler(const Router *r, int i)
+Router::handler(const Router *r, int hi)
 {
-  if (i < FIRST_GLOBAL_HANDLER) {
-    assert(r && i >= 0 && i < r->_nhandlers);
-    return r->_handlers[i];
+  if (hi < FIRST_GLOBAL_HANDLER) {
+    assert(r && hi >= 0 && hi < r->_nhandlers);
+    return r->_handlers[hi];
   } else
-    return global_handler(i);
+    return global_handler(hi);
+}
+
+inline const Router::Handler &
+Router::handler(int hi) const
+{
+  return handler(this, hi);
 }
 
 inline int

@@ -315,16 +315,6 @@ clickfs_readdir(struct vop_readdir_args *ap)
     return error;
 }
 
-static const Router::Handler *
-find_handler(int eindex, int handlerno)
-{
-    if (click_router && click_router->handler_ok(handlerno))
-	return &click_router->handler(handlerno);
-    if (Router::global_handler_ok(handlerno))
-	return &Router::global_handler(handlerno);
-    return 0;
-}
-
 const Router::Handler *
 clickfs_int_get_handler(struct clickfs_node *cp)
 {
@@ -339,7 +329,7 @@ clickfs_int_get_handler(struct clickfs_node *cp)
     }
     int *handler_params = (int *) cp->dirent->param;
     int eindex = handler_params[1];
-    const Router::Handler *h = find_handler(eindex, handler_params[0]);
+    const Router::Handler *h = Router::handlerp(click_router, handler_params[0]);
 
     return h;
 }

@@ -462,15 +462,6 @@ free_handler_string(int hs)
     spin_unlock(&handler_strings_lock);
 }
 
-static const Router::Handler *
-find_handler(int eindex, int handlerno)
-{
-    if (Router::handler_ok(click_router, handlerno))
-	return &Router::handler(click_router, handlerno);
-    else
-	return 0;
-}
-
 extern "C" {
 
 static int
@@ -491,7 +482,7 @@ handler_open(struct inode *inode, struct file *filp)
 	retval = -EACCES;
     else if (inode_out_of_date(inode))
 	retval = -EIO;
-    else if (!(h = find_handler(INO_ELEMENTNO(inode->i_ino), INO_HANDLERNO(inode->i_ino))))
+    else if (!(h = Router::handlerp(click_router, INO_HANDLERNO(inode->i_ino))))
 	retval = -EIO;
     else if ((reading && !h->read_visible())
 	     || (writing && !h->write_visible()))
@@ -528,7 +519,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	const Router::Handler *h;
 	struct inode *inode = filp->f_dentry->d_inode;
 	if (inode_out_of_date(inode)
-	    || !(h = find_handler(INO_ELEMENTNO(inode->i_ino), INO_HANDLERNO(inode->i_ino))))
+	    || !(h = Router::handlerp(click_router, INO_HANDLERNO(inode->i_ino))))
 	    retval = -EIO;
 	else if (!h->read_visible())
 	    retval = -EPERM;
@@ -613,7 +604,7 @@ handler_flush(struct file *filp)
 	const Router::Handler *h;
 	
 	if (inode_out_of_date(inode)
-	    || !(h = find_handler(INO_ELEMENTNO(inode->i_ino), INO_HANDLERNO(inode->i_ino)))
+	    || !(h = Router::handlerp(click_router, INO_HANDLERNO(inode->i_ino)))
 	    || !h->write_visible())
 	    retval = -EIO;
 	else if (handler_strings[stringno].out_of_memory())

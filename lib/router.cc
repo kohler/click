@@ -1272,13 +1272,6 @@ Router::nglobal_handlers()
   return ::nglobalh;
 }
 
-const Router::Handler &
-Router::global_handler(int hi)
-{
-  assert(hi >= FIRST_GLOBAL_HANDLER && hi < FIRST_GLOBAL_HANDLER + nglobalh);
-  return globalh[hi - FIRST_GLOBAL_HANDLER];
-}
-
 void
 Router::cleanup_global_handlers()
 {
@@ -1287,18 +1280,17 @@ Router::cleanup_global_handlers()
   nglobalh = globalh_cap = 0;
 }
 
-bool
-Router::handler_ok(const Router *r, int i)
+const Router::Handler *
+Router::handlerp(const Router *r, int hi)
 {
-  return ((r && i >= 0 && i < r->_nhandlers) ||
-	  (i >= FIRST_GLOBAL_HANDLER && i < FIRST_GLOBAL_HANDLER + nglobalh));
+  if (r && hi >= 0 && hi < r->_nhandlers)
+    return &r->_handlers[hi];
+  else if (hi >= FIRST_GLOBAL_HANDLER && hi < FIRST_GLOBAL_HANDLER + nglobalh)
+    return &globalh[hi - FIRST_GLOBAL_HANDLER];
+  else
+    return 0;
 }
 
-bool
-Router::global_handler_ok(int i)
-{
-  return (i >= FIRST_GLOBAL_HANDLER && i < FIRST_GLOBAL_HANDLER + nglobalh);
-}
 
 // ATTACHMENTS
 
