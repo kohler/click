@@ -116,7 +116,12 @@ LinkStat::send_hook()
   glp->tau = htonl(_tau);
   
   unsigned min_packet_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_link_probe);
-  unsigned max_entries = (1500 - min_packet_sz) / sizeof(grid_link_entry);
+  unsigned max_entries = (_probe_size - min_packet_sz) / sizeof(grid_link_entry);
+  static bool size_warning = false;
+  if (!size_warning && max_entries < (unsigned) _bcast_stats.size()) {
+    size_warning = true;
+    click_chatter("LinkStat %s: WARNING, probe packet is too small to contain all link stats", id().cc());
+  }
   unsigned num_entries = max_entries < (unsigned) _bcast_stats.size() ? max_entries : _bcast_stats.size();
   glp->num_links = htonl(num_entries);
   grid_link_entry *e = (grid_link_entry *) (glp + 1);
@@ -232,7 +237,17 @@ LinkStat::simple_action(Packet *p)
   struct timeval now;
   click_gettimeofday(&now);
   grid_link_entry *le = (grid_link_entry *) (lp + 1);
-  for (unsigned i = 0; i < htonl(lp->num_links); i++, le++) {
+  unsigned int max_entries = (p->length() - sizeof(*eh) - sizeof(*gh) - sizeof(*lp)) / sizeof(*le);
+  unsigned int num_entries = htonl(lp->num_links);
+  static bool warn_num_entries = false;
+  if (num_entries > max_entries) {
+    num_entries = max_entries;
+    if (!warn_num_entries) {
+      warn_num_entries = true;
+      click_chatter("LinkStat %s: WARNING, probe packets contains fewer link entries than claimed", id().cc());
+    }
+  }
+  for (unsigned i = 0; i < num_entries; i++, le++) {
 #ifdef SMALL_GRID_PROBES
     if ((ntohl(_ip.addr()) & 0xff) == le->ip) {
 #else

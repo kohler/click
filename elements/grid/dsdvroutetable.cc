@@ -1092,7 +1092,15 @@ DSDVRouteTable::simple_action(Packet *packet)
   bool need_full_update = false;
   int entry_sz = hlo->nbr_entry_sz;
   char *entry_ptr = (char *) (hlo + 1);
-  for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
+  unsigned max_entries = (packet->length() - sizeof(*gh) - sizeof(*gh) - sizeof(*hlo)) / entry_sz;
+  unsigned num_entries = hlo->num_nbrs;
+  if (num_entries > max_entries) {
+    num_entries = max_entries;
+    click_chatter("DSDVRouteTable %s: route ad from %s contains fewer routes than claimed",
+		  id().cc(), ipaddr.s().cc());
+  }
+
+  for (unsigned i = 0; i < num_entries; i++, entry_ptr += entry_sz) {
     
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
     RTEntry route(ipaddr, ethaddr, curr, PAINT_ANNO(packet), jiff); 
