@@ -41,7 +41,8 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = click2xml.o
+CLICK2XML_OBJS = click2xml.o
+XML2CLICK_OBJS = xml2click.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_TOOL
 CFLAGS = @CFLAGS@
@@ -49,9 +50,9 @@ CXXFLAGS = @CXXFLAGS@
 
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(top_srcdir)/tools/lib -I$(srcdir)
+	-I$(top_srcdir)/tools/lib -I$(srcdir) @EXPAT_INCLUDES@
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ $(DL_LIBS)
+LIBS = @LIBS@ @EXPAT_LIBS@ $(DL_LIBS)
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -61,13 +62,16 @@ CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: $(LIBCLICKTOOL) all-local
-all-local: click2xml
+all-local: click2xml @XML2CLICK@
 
 $(LIBCLICKTOOL):
 	@cd ../lib; $(MAKE) $(LIBCLICKTOOL)
 
-click2xml: Makefile $(OBJS) ../lib/$(LIBCLICKTOOL)
-	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
+click2xml: Makefile $(CLICK2XML_OBJS) ../lib/$(LIBCLICKTOOL)
+	$(CXXLINK) -rdynamic $(CLICK2XML_OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
+
+xml2click: Makefile $(XML2CLICK_OBJS) ../lib/$(LIBCLICKTOOL)
+	$(CXXLINK) -rdynamic $(XML2CLICK_OBJS) $(LIBS) ../lib/$(LIBCLICKTOOL)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -81,10 +85,11 @@ endif
 install: $(LIBCLICKTOOL) all-local
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL) click2xml $(bindir)/click2xml
+	test -n "@XML2CLICK@" && $(INSTALL) xml2click $(bindir)/xml2click
 install-man:
 
 clean:
-	rm -f *.d *.o click2xml
+	rm -f *.d *.o click2xml xml2click
 distclean: clean
 	-rm -f Makefile
 

@@ -19,6 +19,7 @@
 #include <click/config.h>
 #include <click/pathvars.h>
 
+#include <expat.h>
 #include "routert.hh"
 #include "lexert.hh"
 #include "lexertinfo.hh"
@@ -64,18 +65,6 @@ static int specified_driver = -1;
 //
 // main loop
 //
-
-static FILE *
-open_output_file(const char *outfile, ErrorHandler *errh)
-{
-    FILE *outf = stdout;
-    if (outfile && strcmp(outfile, "-") != 0) {
-	outf = fopen(outfile, "w");
-	if (!outf)
-	    errh->error("%s: %s", outfile, strerror(errno));
-    }
-    return outf;
-}
 
 static HashMap<int, int> generated_types(0);
 
@@ -211,20 +200,22 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
 
 static ErrorHandler *xml_errh;
 static String xml_file;
+static RouterT *router;
 
 static inline String
 xml_landmark(XML_Parser parser)
 {
-    return xml_file + String(XML_GetCurrentLineNumber(parser));
+    return xml_file + ":" + String(XML_GetCurrentLineNumber(parser));
 }
 
 static int
 xml_error(XML_Parser parser, const char *format, ...)
 {
     va_list val;
-    va_start(format, val);
+    va_start(val, format);
     xml_errh->verror(ErrorHandler::ERR_ERROR, xml_landmark(parser), format, val);
     va_end(val);
+    return -EINVAL;
 }
 
 
@@ -246,6 +237,7 @@ struct CxConnection {
     String to;
     int toport;
     String xml_landmark;
+    CxConnection()		: fromport(0), toport(0) { }
 };
 
 struct CxState {
@@ -255,6 +247,42 @@ struct CxState {
 };
 
 static CxState *xstate;
+
+
+static RouterT *
+complete(CxState *cx, ErrorHandler *errh)
+{
+    RouterT *r = new RouterT;
+
+    for (int i = 0; i < cx->elements.size(); i++) {
+	CxElement &e = cx->elements[i];
+	if (ElementT *old_e = r->elt(e.name)) {
+	    int which = (int)(old_e->user_data());
+	    ElementT::redeclaration_error(errh, "element", e.name, e.xml_landmark, cx->elements[which].xml_landmark);
+	} else {
+	    ElementClassT *eclass = r->get_type(e.class_name);
+	    ElementT *ne = r->get_element(e.name, eclass, e.config, (e.landmark ? e.landmark : e.xml_landmark));
+	    ne->set_user_data((void *)i);
+	}
+    }
+
+    for (int i = 0; i < cx->connections.size(); i++) {
+	CxConnection &c = cx->connections[i];
+	ElementT *frome = r->elt(c.from);
+	if (!frome) {
+	    errh->lerror(c.xml_landmark, "undeclared element '%s' (first use this block)", c.from.cc());
+	    frome = r->get_element(c.from, ElementClassT::default_class("Error"), String(), c.xml_landmark);
+	}
+	ElementT *toe = r->elt(c.to);
+	if (!toe) {
+	    errh->lerror(c.xml_landmark, "undeclared element '%s' (first use this block)", c.to.cc());
+	    toe = r->get_element(c.to, ElementClassT::default_class("Error"), String(), c.xml_landmark);
+	}
+	r->add_connection(frome, c.fromport, toe, c.toport, c.xml_landmark);
+    }
+
+    return r;
+}
 
 
 extern "C" {
@@ -272,22 +300,23 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 	
     } else if (strcmp(name, "element") == 0) {
 	if (!xstate) {
-	    xml_error("<element> tag meaningless outside of <configuration>");
+	    xml_errh->lerror(landmark, "<element> tag meaningless outside of <configuration>");
 	    return;
 	}
 	
 	CxElement e;
 	e.xml_landmark = landmark;
+	bool ok = true;
 	
 	String file, line;
 	for (const XML_Char **a = attrs; *a; a += 2)
 	    if (strcmp(a[0], "name") == 0) {
 		if (!cp_is_click_id(a[1]))
-		    errh->lerror(landmark, "'name' attribute should be a Click identifier");
+		    xml_errh->lerror(landmark, "'name' attribute is not a valid Click identifier");
 		e.name = a[1];
 	    } else if (strcmp(a[0], "classname") == 0) {
 		if (!cp_is_click_id(a[1]))
-		    errh->lerror(landmark, "'classname' attribute should be a Click identifier");
+		    xml_errh->lerror(landmark, "'classname' attribute is not a valid Click identifier");
 		e.class_name = a[1];
 	    } else if (strcmp(a[0], "classid") == 0)
 		e.class_id = a[1];
@@ -299,10 +328,10 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 		line = a[1];
 	    else if (strcmp(a[0], "ninputs") == 0) {
 		if (!cp_integer(a[1], &e.ninputs))
-		    errh->lerror(landmark, "'ninputs' should be an integer number of ports");
+		    xml_errh->lerror(landmark, "'ninputs' should be an integer number of ports");
 	    } else if (strcmp(a[0], "noutputs") == 0) {
 		if (!cp_integer(a[1], &e.ninputs))
-		    errh->lerror(landmark, "'noutputs' should be an integer number of ports");
+		    xml_errh->lerror(landmark, "'noutputs' should be an integer number of ports");
 	    }
 	
 	if (file && line)
@@ -313,20 +342,29 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 	    e.landmark = "line " + line;
 
 	if (e.class_name && e.class_id) {
-	    errh->lerror(landmark, "cannot specify both 'classname' and 'classid'");
+	    xml_errh->lerror(landmark, "cannot specify both 'classname' and 'classid'");
 	    e.class_name = String();
+	} else if (!e.class_name && !e.class_id) {
+	    xml_errh->lerror(landmark, "element declared without a class");
+	    ok = false;
 	}
-	
-	xstate->elements.push_back(e);
+	if (!e.name) {
+	    xml_errh->lerror(landmark, "element declared without a name");
+	    ok = false;
+	}
+
+	if (ok)
+	    xstate->elements.push_back(e);
 	
     } else if (strcmp(name, "connection") == 0) {
 	if (!xstate) {
-	    xml_error("<connection> tag meaningless outside of <configuration>");
+	    xml_errh->lerror(landmark, "<connection> tag meaningless outside of <configuration>");
 	    return;
 	}
 	
 	CxConnection e;
 	e.xml_landmark = landmark;
+	bool ok = true;
 	
 	for (const XML_Char **a = attrs; *a; a += 2)
 	    if (strcmp(a[0], "from") == 0)
@@ -335,13 +373,19 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 		e.to = a[1];
 	    else if (strcmp(a[0], "fromport") == 0) {
 		if (!cp_integer(a[1], &e.fromport) && e.fromport >= 0)
-		    errh->lerror(landmark, "bad 'fromport' attribute; expected port number");
+		    xml_errh->lerror(landmark, "bad 'fromport' attribute; expected port number");
 	    } else if (strcmp(a[0], "toport") == 0) {
 		if (!cp_integer(a[1], &e.toport) && e.toport >= 0)
-		    errh->lerror(landmark, "bad 'fromport' attribute; expected port number");
+		    xml_errh->lerror(landmark, "bad 'fromport' attribute; expected port number");
 	    }
 
-	xstate->connections.push_back(e);
+	if (!e.from || !e.to) {
+	    xml_errh->lerror(landmark, "connection lacks 'from' or 'to' attribute");
+	    ok = false;
+	}
+	
+	if (ok)
+	    xstate->connections.push_back(e);
     }
 }
 
@@ -352,6 +396,7 @@ end_element_handler(void *, const XML_Char *name)
 	// XXX
 	CxState *xs = xstate;
 	xstate = xs->prev;
+	router = complete(xs, xml_errh);
 	delete xs;
     }
 }
@@ -362,77 +407,36 @@ static void
 process(const char *infile, bool file_is_expr, const char *outfile,
 	ErrorHandler *errh)
 {
+    int before = errh->nerrors();
+    
     String contents;
     if (file_is_expr)
 	contents = infile;
     else {
-	int before = errh->nerrors();
 	contents = file_string(infile, errh);
-	if (!contents && errh->nerrors() > before)
+	if (!contents && errh->nerrors() != before)
 	    return;
     }
     
     XML_Parser parser = XML_ParserCreateNS(0, '|');
     XML_SetElementHandler(parser, start_element_handler, end_element_handler);
+    XML_UseParserAsHandlerArg(parser);
     xml_errh = errh;
-    xml_file = filename_landmark(infile, file_is_expr) + String(":");
+    xml_file = filename_landmark(infile, file_is_expr);
 
     if (XML_Parse(parser, contents.data(), contents.length(), 1) == 0) {
 	xml_error(parser, "XML parse error: %s", XML_ErrorString(XML_GetErrorCode(parser)));
 	return;
     }
-    
-    RouterT *r = read_router(infile, file_is_expr, errh);
-    if (!r)
-	return;
-    //r->flatten(errh);
 
+    if (!router && errh->nerrors() == before)
+	errh->lerror(xml_file, "no configuration section");
+    
     // open output file
-    FILE *outf = open_output_file(outfile, errh);
-    if (!outf) {
-	delete r;
-	return;
-    }
-
-    // get element map and processing
-    ElementMap emap;
-    emap.parse_all_files(r, CLICK_SHAREDIR, errh);
-
-    int driver = specified_driver;
-    if (driver < 0) {
-	int driver_mask = 0;
-	for (int d = 0; d < Driver::COUNT; d++)
-	    if (emap.driver_compatible(r, d))
-		driver_mask |= 1 << d;
-	if (driver_mask == 0)
-	    errh->warning("configuration not compatible with any driver");
-	else {
-	    for (int d = Driver::COUNT - 1; d >= 0; d--)
-		if (driver_mask & (1 << d))
-		    driver = d;
-	    // don't complain if only a single driver works
-	    if ((driver_mask & (driver_mask - 1)) != 0
-		&& !emap.driver_indifferent(r, driver_mask, errh))
-		errh->warning("configuration not indifferent to driver, picking %s\n(You might want to specify a driver explicitly.)", Driver::name(driver));
-	}
-    } else if (!emap.driver_compatible(r, driver))
-	errh->warning("configuration not compatible with %s driver", Driver::name(driver));
-
-    emap.set_driver(driver);
-    ElementMap::push_default(&emap);
-
-    fprintf(outf, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n\
-<!DOCTYPE configuration SYSTEM \"http://www.icir.org/kohler/clickconfig.dtd\">\n\
-<configuration>\n");
-    generate_router(r, outf, "", true, errh);
-    fprintf(outf, "</configuration>\n");
+    if (errh->nerrors() == before && router)
+	write_router_file(router, outfile, errh);
     
-    ElementMap::pop_default();
-    
-    // close files, return
-    if (outf != stdout)
-	fclose(outf);
-    delete r;
+    delete router;
 }
 
 void
@@ -447,15 +451,15 @@ void
 usage()
 {
     printf("\
-`Click2xml' reads a Click router configuration and outputs an XML file\n\
-corresponding to that configuration.\n\
+`Xml2click' reads an XML description of a Click router configuration and\n\
+outputs a Click-language file corresponding to that configuration.\n\
 \n\
-Usage: %s [OPTION]... [ROUTERFILE]\n\
+Usage: %s [OPTION]... [XMLFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
-  -e, --expression EXPR       Use EXPR as router configuration.\n\
-  -o, --output FILE           Write HTML output to FILE.\n\
+  -e, --expression EXPR       Use EXPR as XML router configuration.\n\
+  -o, --output FILE           Write output to FILE.\n\
   -C, --clickpath PATH        Use PATH for CLICKPATH.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\

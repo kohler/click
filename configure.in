@@ -506,6 +506,48 @@ pcap.h and/or -lpcap not found; user-level driver can't steal packets
 fi
 
 
+dnl
+dnl expat library
+dnl
+
+explicit_expat=yes
+AC_ARG_WITH(expat, [  --with-expat[=PREFIX]   Prefix where expat library is installed (optional)],
+  [expatprefix=$withval; if test -z "$withval" -o "$withval" = yes; then expatprefix=; fi],
+  expatprefix=; explicit_expat=no)
+
+XML2CLICK=
+if test "$expatprefix" != no; then
+    saveflags="$CPPFLAGS"; test -n "$expatprefix" && CPPFLAGS="$CPPFLAGS -I$expatprefix/include"
+    AC_CHECK_HEADER(expat.h, have_expat_h=yes, have_expat_h=no)
+    CPPFLAGS="$saveflags"
+    
+    AC_LANG_C
+    saveflags="$LDFLAGS"; test -n "$expatprefix" && LDFLAGS="$LDFLAGS -L$expatprefix/lib"
+    AC_CHECK_LIB(expat, XML_ParserCreateNS, have_libexpat=yes, have_libexpat=no)
+    LDFLAGS="$saveflags"
+
+    if test $have_expat_h = yes -a $have_libexpat = yes; then
+	AC_DEFINE(HAVE_EXPAT)
+	XML2CLICK=xml2click
+	test -n "$expatprefix" && EXPAT_INCLUDES="-I$expatprefix/include" && EXPAT_LIBS="-L$expatprefix/lib"
+	EXPAT_LIBS="$EXPAT_LIBS -lexpat"
+    elif test $explicit_expat = yes; then
+	EXPAT_INCLUDES= EXPAT_LIBS=
+	AC_MSG_ERROR([
+=========================================
+
+You explicitly specified --with-expat, but I can't find the expat headers
+and/or libraries where you said they would be. Run again supplying
+--without-expat or --with-expat=PREFIX.
+
+=========================================])
+    fi
+fi
+AC_SUBST(XML2CLICK)
+AC_SUBST(EXPAT_INCLUDES)
+AC_SUBST(EXPAT_LIBS)
+
+
 dnl check linuxmodule for Linux
 
 if test $ac_have_linux_kernel = y; then

@@ -29,4 +29,7 @@
 /* Define if the Click kernel module should provide clickfs. */
 #undef HAVE_CLICKFS
 
+/* Define if the expat library is available. */
+#undef HAVE_EXPAT
+
 #endif

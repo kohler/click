@@ -30,7 +30,7 @@
 
 ElementT::ElementT()
     : flags(0), _idx(-1), _type(0), _tunnel_input(0), _tunnel_output(0),
-      _owner(0)
+      _owner(0), _user_data(0)
 {
 }
 
@@ -39,7 +39,7 @@ ElementT::ElementT(const String &n, ElementClassT *eclass,
     : flags(0), _idx(-1), _name(n),
       _type(eclass), _configuration(config), _landmark(lm),
       _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0),
-      _owner(0)
+      _owner(0), _user_data(0)
 {
     assert(_type);
     assert(name_ok(_name, true));
@@ -50,7 +50,7 @@ ElementT::ElementT(const ElementT &o)
     : flags(o.flags), _idx(-1), _name(o._name),
       _type(o._type), _configuration(o._configuration), _landmark(o._landmark),
       _ninputs(0), _noutputs(0), _tunnel_input(0), _tunnel_output(0),
-      _owner(0)
+      _owner(0), _user_data(o._user_data)
 {
     if (_type)
 	_type->use();

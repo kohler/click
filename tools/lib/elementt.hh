@@ -50,6 +50,9 @@ struct ElementT {
     
     String declaration() const;
 
+    void *user_data() const		{ return _user_data; }
+    void set_user_data(void *v)		{ _user_data = v; }
+
     static bool name_ok(const String &, bool allow_anon_names = false);
     static void redeclaration_error(ErrorHandler *, const char *type, String name, const String &landmark, const String &old_landmark);
     
@@ -65,6 +68,7 @@ struct ElementT {
     ElementT *_tunnel_input;
     ElementT *_tunnel_output;
     RouterT *_owner;
+    void *_user_data;
 
     ElementT(const ElementT &);
     ElementT &operator=(const ElementT &);

@@ -37,6 +37,7 @@
 #define ROUTER_OPT		303
 #define EXPRESSION_OPT		304
 #define OUTPUT_OPT		305
+#define FLATTEN_OPT		306
 
 #define FIRST_DRIVER_OPT	1000
 #define USERLEVEL_OPT		(1000 + Driver::USERLEVEL)
@@ -48,6 +49,7 @@ static Clp_Option options[] = {
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
     { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+    { "flatten", 'F', FLATTEN_OPT, 0, Clp_Negate },
     { "help", 0, HELP_OPT, 0, 0 },
     { "kernel", 'k', LINUXMODULE_OPT, 0, 0 },
     { "linuxmodule", 'l', LINUXMODULE_OPT, 0, 0 },
@@ -195,7 +197,7 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
 	    if (e->ninputs() || e->noutputs())
 		fprintf(f, " processing=\"%s\"", processing.processing_code(e).cc());
 	    if (e->config())
-		fprintf(f, " config=\"%s\"", xml_quote(e->config()));
+		fprintf(f, " config=\"%s\"", xml_quote(e->config()).cc());
 	    fprintf(f, " />\n");
 	}
 
@@ -212,13 +214,14 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
 }
 
 static void
-process(const char *infile, bool file_is_expr, const char *outfile,
-	ErrorHandler *errh)
+process(const char *infile, bool file_is_expr, bool flatten,
+	const char *outfile, ErrorHandler *errh)
 {
     RouterT *r = read_router(infile, file_is_expr, errh);
     if (!r)
 	return;
-    //r->flatten(errh);
+    if (flatten)
+	r->flatten(errh);
 
     // open output file
     FILE *outf = open_output_file(outfile, errh);
@@ -288,7 +291,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
   -e, --expression EXPR       Use EXPR as router configuration.\n\
-  -o, --output FILE           Write HTML output to FILE.\n\
+  -o, --output FILE           Write XML output to FILE.\n\
   -C, --clickpath PATH        Use PATH for CLICKPATH.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\
@@ -314,6 +317,7 @@ main(int argc, char **argv)
     const char *router_file = 0;
     bool file_is_expr = false;
     const char *output_file = 0;
+    bool flatten = false;
 
     while (1) {
 	int opt = Clp_Next(clp);
@@ -366,6 +370,10 @@ particular purpose.\n");
 	    specified_driver = opt - FIRST_DRIVER_OPT;
 	    break;
 
+	  case FLATTEN_OPT:
+	    flatten = !clp->negated;
+	    break;
+	    
 	  bad_option:
 	  case Clp_BadOption:
 	    short_usage();
@@ -379,7 +387,7 @@ particular purpose.\n");
     }
 
   done:
-    process(router_file, file_is_expr, output_file, errh);
+    process(router_file, file_is_expr, flatten, output_file, errh);
 	
     exit(errh->nerrors() > 0 ? 1 : 0);
 }

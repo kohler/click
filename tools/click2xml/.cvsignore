@@ -1,0 +1,2 @@
+Makefile *.d
+click2xml xml2click
