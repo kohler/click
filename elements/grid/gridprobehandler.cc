@@ -175,6 +175,7 @@ GridProbeHandler::push(int port, Packet *p)
       _cached_reply_pkt = q;
       set_route_cb_bit(p, _gf_cb_id);
       set_route_cb_bit(p, _lr_cb_id);
+      set_route_cb_bit(p, _fq_cb_id);
     }
     else {
       /* we are probe's final dest, there will be no routing action
