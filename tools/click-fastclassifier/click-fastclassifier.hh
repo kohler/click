@@ -25,6 +25,9 @@ struct Classifier_Program {
   Vector<Classifier_Insn> program;
   int type;
   int type_index;
+  Vector<String> handler_names;
+  Vector<String> handler_values;
+  const String &handler_value(const String &name) const;
 };
 
 bool operator==(const Classifier_Insn &, const Classifier_Insn &);
@@ -37,5 +40,6 @@ int add_classifier_type(const String &name, int guaranteed_packet_length,
 	void (*checked_body)(const Classifier_Program &, StringAccum &),
 	void (*unchecked_body)(const Classifier_Program &, StringAccum &),
 	void (*push_body)(const Classifier_Program &, StringAccum &));
+void add_interesting_handler(const String &name);
 
 #endif

@@ -240,6 +240,15 @@ get_string_from_process(String cmdline, const String &input,
  * FastClassifier structures
  */
 
+const String &
+Classifier_Program::handler_value(const String &name) const
+{
+  for (int i = 0; i < handler_names.size(); i++)
+    if (handler_names[i] == name)
+      return handler_values[i];
+  return String::null_string();
+}
+
 bool
 operator!=(const Classifier_Insn &s1, const Classifier_Insn &s2)
 {
@@ -269,6 +278,11 @@ operator==(const Classifier_Program &c1, const Classifier_Program &c2)
   for (int i = 0; i < c1.program.size(); i++)
     if (c1.program[i] != c2.program[i])
       return false;
+  if (c1.handler_names.size() != c2.handler_names.size())
+    return false;
+  for (int i = 0; i < c1.handler_names.size(); i++)
+    if (c1.handler_values[i] != c2.handler_value(c1.handler_names[i]))
+      return false;
   return true;
 }
 
@@ -293,6 +307,7 @@ struct FastClassifier_Cid {
 
 static HashMap<String, int> cid_name_map(-1);
 static Vector<FastClassifier_Cid *> cids;
+static Vector<String> interesting_handler_names;
 
 int
 add_classifier_type(const String &name, int guaranteed_packet_length,
@@ -309,6 +324,12 @@ add_classifier_type(const String &name, int guaranteed_packet_length,
   cids.push_back(cid);
   cid_name_map.insert(cid->name, cids.size() - 1);
   return cids.size() - 1;
+}
+
+void
+add_interesting_handler(const String &name)
+{
+  interesting_handler_names.push_back(name);
 }
 
 
@@ -370,6 +391,9 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
   // set up new router
   RouterT nr;
   int idle_nei = nr.get_anon_eindex(nr.get_type_index("Idle"));
+  const Vector<String> &old_requirements = r->requirements();
+  for (int i = 0; i < old_requirements.size(); i++)
+    nr.add_requirement(old_requirements[i]);
   
   // copy AlignmentInfos and AddressInfos
   copy_elements(r, &nr, "AlignmentInfo");
@@ -377,6 +401,7 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
 
   // copy all classifiers
   HashMap<String, int> classifier_map(-1);
+  Vector<Classifier_Program> iprograms;
   for (int i = 0; i < classifier_ei.size(); i++) {
     int c = classifier_ei[i];
     classifier_map.insert(r->ename(c), i);
@@ -394,40 +419,92 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
     int noutputs = r->noutputs(c);
     for (int j = 0; j < noutputs; j++)
       nr.add_connection(classifier_nei, j, 0, idle_nei);
+
+    // add program
+    iprograms.push_back(Classifier_Program());
   }
 
-  // get the resulting programs from user-level `click'
-  String router_str = nr.configuration_string();
-  String programs = get_string_from_process(runclick_prog + " -h '*.program' -q", router_str, errh);
+  // read the relevant handlers from user-level `click'
+  String handler_text;
+  {
+    StringAccum cmd_sa;
+    cmd_sa << runclick_prog;
+    for (int i = 0; i < interesting_handler_names.size(); i++)
+      cmd_sa << " -h '*." << interesting_handler_names[i] << "'";
+    cmd_sa << " -q";
+    handler_text = get_string_from_process(cmd_sa.take_string(), nr.configuration_string(), errh);
+  }
 
-  // parse the programs
-  while (1) {
+  // assign handlers to programs; assume handler results contain no par breaks
+  {
+    const char *s = handler_text.data();
+    int len = handler_text.length();
+    int pos = 0;
+    String ename, hname, hvalue;
+    while (pos < len) {
+      // read element name
+      int pos1 = pos;
+      while (pos1 < len && s[pos1] != '.' && !isspace(s[pos1]))
+	pos1++;
+      ename = handler_text.substring(pos, pos1 - pos);
+      bool ok = false;
+      
+      // read handler name
+      if (pos1 < len && s[pos1] == '.') {
+	pos1 = pos = pos1 + 1;
+	while (pos1 < len && s[pos1] != ':' && !isspace(s[pos1]))
+	  pos1++;
+	hname = handler_text.substring(pos, pos1 - pos);
+	
+	// skip to EOL; data is good
+	if (pos1 < len && s[pos1] == ':') {
+	  for (pos1++; pos1 < len && s[pos1]!='\n' && s[pos1]!='\r'; pos1++)
+	    /* nada */;
+	  if (pos1 < len - 1 && s[pos1] == '\r' && s[pos1+1] == '\n')
+	    pos1++;
+	  pos1++;
+	  ok = true;
+	}
+      }
+      
+      // skip to paragraph break
+      int lb = pos1 - 2;
+      for (pos = pos1; pos1 < len; pos1++)
+	if (s[pos1] == '\r' || s[pos1] == '\n') {
+	  bool done = (pos1 == lb);
+	  if (pos1 < len - 1 && s[pos1] == '\r' && s[pos1+1] == '\n')
+	    pos1++;
+	  lb = pos1 + 1;
+	  if (done)
+	    break;
+	}
+      hvalue = handler_text.substring(pos, pos1 - pos);
 
-    // skip to next '.program' handler
-    const char *data = programs.data();
-    int first_handler = programs.find_left(".program:");
-    if (first_handler < 0)
-      break;
-    int second_handler = programs.find_left(".program:", first_handler + 9);
-    if (second_handler >= 0) {
-      while (second_handler > first_handler + 9 && data[second_handler] != '\n')
-	second_handler--;
-      second_handler++;
-    } else
-      second_handler = programs.length();
+      // skip remaining whitespace
+      for (pos = pos1; pos < len && isspace(s[pos]); pos++)
+	/* nada */;
 
-    String element_name = programs.substring(0, first_handler);
-    String program = programs.substring(first_handler + 10, second_handler - first_handler - 10);
-    programs = programs.substring(second_handler);
-    
+      // assign value to program if appropriate
+      int prog_index = (ok ? classifier_map[ename] : -1);
+      if (prog_index >= 0) {
+	iprograms[prog_index].handler_names.push_back(hname);
+	iprograms[prog_index].handler_values.push_back(hvalue);
+      }
+    }
+  }
+
+  // now parse each program
+  for (int ci = 0; ci < iprograms.size(); ci++) {
     // check if valid handler
-    int ci = classifier_map[element_name];
-    if (ci < 0)
+    String program = iprograms[ci].handler_value("program");
+    if (!program) {
+      program_map.push_back(-1);
       continue;
+    }
     int cei = classifier_ei[ci];
 
     // yes: valid handler; now parse program
-    Classifier_Program c;
+    Classifier_Program &c = iprograms[ci];
     String classifier_tname = r->etype_name(cei);
     c.type = cid_name_map[classifier_tname];
     assert(c.type >= 0);
@@ -498,6 +575,13 @@ analyze_classifiers(RouterT *r, const Vector<int> &classifier_ei,
       program_map.push_back(all_programs.size() - 1);
     }
   }
+
+  // complain if any programs missing
+  for (int i = 0; i < iprograms.size(); i++)
+    if (program_map[i] < 0) {
+      int cei = classifier_ei[i];
+      errh->fatal("classifier program missing for `%s :: %s'!", r->ename(cei).cc(), r->etype_name(cei).cc());
+    }
 }
 
 static void
@@ -556,8 +640,6 @@ compile_classifiers(RouterT *r, const String &package_name,
 		    Vector<int> &classifiers,
 		    bool compile_kernel, bool compile_user, ErrorHandler *errh)
 {
-  r->add_requirement(package_name);
-
   // create C++ files
   StringAccum header, source;
   header << "#ifndef CLICK_" << package_name << "_HH\n"
@@ -570,7 +652,10 @@ compile_classifiers(RouterT *r, const String &package_name,
 
   // analyze Classifiers into programs
   analyze_classifiers(r, classifiers, errh);
-  
+
+  // add requirement
+  r->add_requirement(package_name);
+
   // write Classifier programs
   for (int i = 0; i < all_programs.size(); i++)
     output_classifier_program(i, header, source, errh);
@@ -760,6 +845,7 @@ int
 main(int argc, char **argv)
 {
   String::static_initialize();
+  cp_va_static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = new PrefixErrorHandler
     (ErrorHandler::default_handler(), "click-fastclassifier: ");
@@ -891,6 +977,7 @@ particular purpose.\n");
   }
 
   // install classifier handlers
+  add_interesting_handler("program");
   add_fast_classifiers_1();
   add_fast_classifiers_2();
   
