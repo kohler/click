@@ -83,18 +83,23 @@ int DivertSocket::parse_ports(const String &param, ErrorHandler *errh,
   if (dash < 0) 
     dash = param.length();
 
-  if (!cp_integer(param.substring(0,dash), portl))
-    return errh->error("bad port in rule spec");
+  if (!cp_integer(param.substring(0,dash), portl)){
+    //errh->error("bad port in rule spec");
+    return -1;
+  }
 
   if (dash < param.length()) {
-    if (!cp_integer(param.substring(dash+1), porth))
-      return errh->error("bad port in rule spec");
+    if (!cp_integer(param.substring(dash+1), porth)) {
+      //errh->error("bad port in rule spec");
+      return -1;
+    }
   } else 
     *porth = *portl;
 
-  if (*portl > *porth || *portl < 0 || *porth > 0xFFFF)
-    return errh->error("port(s) %d-%d out of range in rule spec", portl, porth);
-
+  if (*portl > *porth || *portl < 0 || *porth > 0xFFFF) {
+    //errh->error("port(s) %d-%d out of range in rule spec", portl, porth);
+    return -1;
+  }
   return 0;
 }
 
@@ -167,16 +172,18 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
 
   // parse dst ports
-  if (_protocol == IP_PROTO_UDP || _protocol == IP_PROTO_TCP) {
-    if (parse_ports(conf[confindex], errh, &_dportl, &_dporth) < 0)
-      _have_dport = false;
-    else {
-      _have_dport = true;
-      confindex++;
+  if (conf.size() == confindex + 1) {
+    if (_protocol == IP_PROTO_UDP || _protocol == IP_PROTO_TCP) {
+      if (parse_ports(conf[confindex], errh, &_dportl, &_dporth) < 0)
+	_have_dport = false;
+      else {
+	_have_dport = true;
+	confindex++;
+      }
+    } else if (parse_ports(conf[confindex], errh, &_dportl, &_dporth) >= 0) {
+      errh->error("ports not required for non TCP/UDP rules");
+      return -1;
     }
-  } else if (parse_ports(conf[confindex], errh, &_dportl, &_dporth) >= 0) {
-    errh->error("ports not required for non TCP/UDP rules");
-    return -1;
   }
 
 
@@ -198,14 +205,28 @@ int
 DivertSocket::initialize(ErrorHandler *errh) 
 {
   int ret;
-  char tmp[512];
-  char sport[32], dport[32], prot[8];
   struct sockaddr_in bindPort; //, sin;
 
-#ifdef __linux__
+
+#if defined(__FreeBSD__)
+  char tmp[512];
+  char sport[32], dport[32], prot[8];
+#elif defined(__linux__)
   char *fw_policy="DIVERT";
-  char *fw_chain[32];
+  char fw_chain[32];
 #endif
+
+
+  printf("Device  : \t%s\n", _device.cc());
+  printf("DIV port: \t%u\n", _divertport);
+  printf("Rule Num: \t%u\n", _rulenumber);
+  printf("Protocol: \t%d\n", _protocol);
+  printf("src/mask: \t%s / %s\n", _saddr.s().cc(), _smask.s().cc());
+  printf("dst/mask: \t%s / %s\n", _daddr.s().cc(), _dmask.s().cc());
+  printf("sport   : \t%u - %u\n", _sportl, _sporth);
+  printf("dport   : \t%u - %u\n", _dportl, _dporth);
+  printf("in/out  : \t%s\n", _inout.cc());
+
 
   // Setup socket
   _fd = socket(AF_INET, SOCK_RAW, IPPROTO_DIVERT);
@@ -259,7 +280,6 @@ DivertSocket::initialize(ErrorHandler *errh)
 	  _daddr.s().cc(), _dmask.s().cc(), dport, _inout.cc(), _device.cc() );
   printf("%s\n", tmp);
 
-  //if (system("/sbin/ipfw add 50 divert 2002 ip from 18.26.4.104 to me in via fxp0") != 0) {
   if (system(tmp) != 0) {
     close (_fd);
     errh->error("ipfw failed");
@@ -271,64 +291,68 @@ DivertSocket::initialize(ErrorHandler *errh)
   bzero(&fw, sizeof (struct ip_fw));
   fw.fw_proto= _protocol;
   fw.fw_redirpt=htons(bindPort.sin_port);
+  //fw.fw_redirpt=bindPort.sin_port;
 
   fw.fw_spts[0]=_sportl;
   fw.fw_spts[1]=_sporth;
-  fw.fw_dpts[1]=_dportl;
+  fw.fw_dpts[0]=_dportl;
   fw.fw_dpts[1]=_dporth;
 
-  fw.fw_outputsize=0xffff;
+  
 
-  fw.fw_src.s_addr = htonl(_saddr.in_addr());
-  fw.fw_smsk.s_addr= htonl(_smask.in_addr());
+  fw.fw_src.s_addr = _saddr.in_addr().s_addr;
+  fw.fw_smsk.s_addr= _smask.in_addr().s_addr;
 
-  fw.fw_dst.s_addr = htonl(_daddr.in_addr());
-  fw.fw_dmsk.s_addr= htonl(_dmask.in_addr());
+  fw.fw_dst.s_addr = _daddr.in_addr().s_addr;
+  fw.fw_dmsk.s_addr= _dmask.in_addr().s_addr;
+
   strcpy(fw.fw_vianame, _device.cc() );
+
 
   /* fill in the fwuser structure */
   ipfu.ipfw=fw;
   memcpy(ipfu.label, fw_policy, strlen(fw_policy));
 
 
+  /* fill in the fwnew structure */
+  ipfc.fwn_rule=ipfu;
+  ipfc.fwn_rulenum = _rulenumber;
+
+
   /* open a socket */
   if ((fw_sock=socket(AF_INET, SOCK_RAW, IPPROTO_RAW))==-1) {
-    fprintf(stderr, "%s: could not create a raw socket: %s\n", argv[0], strerror(errno));
-    exit(2);
+    errh->error("could not create raw socket for firewall setup");
+    return -1;
   }
 
-  /* fill in the fwchange structure */
-  ipfc.fwc_rule=ipfu;
+
   if (_inout == "in") {
     strcpy(fw_chain, "input");
-    memcpy(ipfc.fwc_label, fw_chain, strlen(fw_chain));
+    memcpy(ipfc.fwn_label, fw_chain, strlen(fw_chain));
 
   } else if (_inout == "out") {
     strcpy(fw_chain, "output");
-    memcpy(ipfc.fwc_label, fw_chain, strlen(fw_chain));
+    memcpy(ipfc.fwn_label, fw_chain, strlen(fw_chain));
 
   } else {
     memcpy(&ipfc2, &ipfc, sizeof(ipfc));
     strcpy(fw_chain, "input");
-    memcpy(ipfc.fwc_label, fw_chain, strlen(fw_chain));
+    memcpy(ipfc.fwn_label, fw_chain, strlen(fw_chain));
     strcpy(fw_chain, "output");
-    memcpy(ipfc2.fwc_label, fw_chain, strlen(fw_chain));
+    memcpy(ipfc2.fwn_label, fw_chain, strlen(fw_chain));
 
     /* write a rule into it */
-    if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_APPEND, &ipfc2, sizeof(ipfc2))==-1) {
-      errh->error("could not set output rule");
-      exit(2);
+    if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_INSERT, &ipfc2, sizeof(ipfc2))==-1) {
+      errh->error("could not set output firewall rule: %s", strerror(errno));
+      return -1;
     }
   }
 
   /* write a rule into it */
-  if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_APPEND, &ipfc, sizeof(ipfc))==-1) {
-    errh->error("could not set input rule");
-    exit(2);
+  if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_INSERT, &ipfc, sizeof(ipfc))==-1) {
+    errh->error("could not set firewall rule: %s",strerror(errno));
+    return -1;
   }
-       
-  /* install signal handler to delete the rule */
-  //signal(SIGINT, intHandler);
 
 #else 
   close(_fd);
@@ -337,16 +361,6 @@ DivertSocket::initialize(ErrorHandler *errh)
   
 
 #endif
-
-  printf("Device  : \t%s\n", _device.cc());
-  printf("DIV port: \t%u\n", _divertport);
-  printf("Rule Num: \t%u\n", _rulenumber);
-  printf("Protocol: \t%d\n", _protocol);
-  printf("src/mask: \t%s / %s\n", _saddr.s().cc(), _smask.s().cc());
-  printf("dst/mask: \t%s / %s\n", _daddr.s().cc(), _dmask.s().cc());
-  printf("sport   : \t%u - %u\n", _sportl, _sporth);
-  printf("dport   : \t%u - %u\n", _dportl, _dporth);
-  printf("in/out  : \t%s\n", _inout.cc());
 
   add_select(_fd, SELECT_READ);
   return 0;
@@ -358,19 +372,28 @@ DivertSocket::uninitialize()
 {
 
   if (_fd >= 0) {
-
+    
 #if defined(__FreeBSD__)
     char tmp[64];
     sprintf(tmp, "/sbin/ipfw delete %u", _rulenumber);
     system(tmp);
-
+    
 #elif defined(__linux__) 
-    if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE, &ipfc, sizeof(ipfc))==-1) {
+    struct ip_fwdelnum ipfwd;
+    
+    ipfwd.fwd_rulenum = ipfc.fwn_rulenum;
+    strcpy(ipfwd.fwd_label, ipfc.fwn_label);
+
+
+    if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE_NUM, &ipfwd, sizeof(ipfwd))==-1) {
       fprintf(stderr, "could not remove firewall rule");
     }
-
+    
     if (_inout == "") {
-      if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE, &ipfc2, sizeof(ipfc))==-1) {
+      ipfwd.fwd_rulenum = ipfc2.fwn_rulenum;
+      strcpy(ipfwd.fwd_label, ipfc2.fwn_label);
+
+      if (setsockopt(fw_sock, IPPROTO_IP, IP_FW_DELETE_NUM, &ipfwd, sizeof(ipfwd))==-1) {
 	fprintf(stderr, "could not remove output firewall rule");
       }
     }

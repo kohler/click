@@ -24,6 +24,27 @@ or going out of this machine.
 
 #include <click/element.hh>
 
+#if defined(__linux__)
+# include <getopt.h>
+# include <netdb.h>
+# include <netinet/in.h>
+# include <sys/types.h>
+# include <linux/types.h>
+# include <signal.h>
+
+# include <netinet/ip.h>
+# include <netinet/tcp.h>
+# include <netinet/udp.h>
+# include <net/if.h>
+# include <sys/param.h>
+
+# include <linux/types.h>
+# include <linux/icmp.h>
+# include <linux/ip_fw.h>
+
+# define IPPROTO_DIVERT 254
+
+#endif
 
 class DivertSocket : public Element {
 
@@ -57,7 +78,7 @@ private:
 #ifdef __linux__
   struct ip_fw fw, fw2;
   struct ip_fwuser ipfu, ipfu2;
-  struct ip_fwchange ipfc, ipfc2;
+  struct ip_fwnew ipfc, ipfc2;
 
 
   int fw_sock;
