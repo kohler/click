@@ -91,6 +91,8 @@ void _leaving_ipb(void);
   (((a)->tv_sec == (b)->tv_sec) ?		\
    ((a)->tv_usec CMP (b)->tv_usec) :		\
    ((a)->tv_sec CMP (b)->tv_sec))
+#endif
+#ifndef timeradd
 # define timeradd(a, b, result)						      \
   do {									      \
     (result)->tv_sec = (a)->tv_sec + (b)->tv_sec;			      \
@@ -101,6 +103,8 @@ void _leaving_ipb(void);
 	(result)->tv_usec -= 1000000;					      \
       }									      \
   } while (0)
+#endif
+#ifndef timersub
 # define timersub(a, b, result)						      \
   do {									      \
     (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;			      \
