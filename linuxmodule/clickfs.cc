@@ -809,14 +809,14 @@ cleanup_clickfs()
 
     // clean up handler_strings
     MDEBUG("cleaning up handler strings");
-    spin_lock(&handler_strings_lock);
+    SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
     delete[] handler_strings;
     delete[] handler_strings_info;
     handler_strings = 0;
     handler_strings_info = 0;
     handler_strings_cap = -1;
     handler_strings_free = -1;
-    spin_unlock(&handler_strings_lock);
+    SPIN_UNLOCK(&handler_strings_lock, __FILE__, __LINE__);
 
     MDEBUG("click_ino cleanup");
     click_ino.cleanup();
