@@ -2678,7 +2678,7 @@ e1000_rx_refill(struct net_device *dev, struct sk_buff **skbs)
   struct sk_buff *skb_list;
 
   if(skbs == 0)
-    return E1000_DESC_UNUSED(&adapter->rx_ring);
+    return E1000_RX_DESC_UNUSED(&adapter->rx_ring);
 
   i = adapter->rx_ring.next_to_use;
   skb_list = *skbs;
@@ -2727,7 +2727,7 @@ e1000_rx_refill(struct net_device *dev, struct sk_buff **skbs)
     e1000_watchdog_1(adapter);
   }
 
-  return E1000_DESC_UNUSED(&adapter->rx_ring);
+  return E1000_RX_DESC_UNUSED(&adapter->rx_ring);
 }
 
 static int
