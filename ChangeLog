@@ -1,3 +1,43 @@
+2001-03-11 Sunday 20:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/.cvsignore: ignore Texinfo-related crap
+
+2001-03-11 Sunday 20:53  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi, lib/router.cc: added first cut at Texinfo
+	documentation
+
+2001-03-11 Sunday 20:52  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/task.hh, lib/routerthread.cc, lib/task.cc: remove
+	Task::Task() constructor; add private Task(const Task &) and
+	operator= functions to prevent misuse
+
+2001-03-11 Sunday 20:51  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/glue.hh, linuxmodule/module.cc: get rid of
+	entering_ipb()/leaving_ipb() crap, which was unused
+
+2001-03-11 Sunday 20:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, lib/element.cc: nitlets: declaration
+	types
+
+2001-03-11 Sunday 20:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/tcpudp/: iprewriter.cc, iprewriter.hh: use
+	IPRW_SPINLOCKS symbol
+
+2001-03-11 Sunday 20:49  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/schedulelinux.cc: must construct Task with
+	"this"
+
+2001-03-11 Sunday 20:49  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: fromlinux.hh, todevice.hh, tolinux.hh,
+	tolinuxsniffers.hh: nitlets: constant names
+
 2001-03-10 Saturday 15:41  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/binpackingsched.cc,
