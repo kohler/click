@@ -7,23 +7,8 @@ class Router;
 
 typedef void (*TimerHook)(unsigned long);
 
-class Timer {
-  
-  Timer *_prev;
-  Timer *_next;
-  struct timeval _expires;
-  TimerHook _hook;
-  unsigned long _thunk;
-  Timer *_head;
+class Timer { public:
 
-  Timer(const Timer &);
-  Timer &operator=(const Timer &);
-
-  static void element_hook(unsigned long);
-  static void head_hook(unsigned long);
-  
- public:
-  
   Timer();				// create head
   Timer(Timer *, TimerHook, unsigned long);
   Timer(TimerHook, unsigned long);
@@ -36,6 +21,7 @@ class Timer {
   void attach(Timer *);
   void attach(Router *);
   void attach(Element *);
+  void schedule_at(const struct timeval &);
   void schedule_after_ms(int);
   void unschedule();
 
@@ -43,6 +29,23 @@ class Timer {
   bool is_head() const			{ return _hook == head_hook; }
   void run();
   int get_next_delay(struct timeval *tv);
+  
+ private:
+  
+  Timer *_prev;
+  Timer *_next;
+  struct timeval _expires;
+  TimerHook _hook;
+  unsigned long _thunk;
+  Timer *_head;
+
+  Timer(const Timer &);
+  Timer &operator=(const Timer &);
+
+  void finish_schedule();
+  
+  static void element_hook(unsigned long);
+  static void head_hook(unsigned long);
   
 };
 

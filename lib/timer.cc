@@ -81,6 +81,31 @@ Timer::attach(Element *e)
   attach(e->router()->timer_head());
 }
 
+inline void
+Timer::finish_schedule()
+{
+  Timer *prev = _head;
+  Timer *trav = prev->_next;
+  while (trav != _head && timercmp(&_expires, &trav->_expires, >)) {
+    prev = trav;
+    trav = trav->_next;
+  }
+  _prev = prev;
+  _next = trav;
+  _prev->_next = this;
+  trav->_prev = this;
+}
+
+void
+Timer::schedule_at(const struct timeval &when)
+{
+  assert(!is_head() && attached());
+  if (scheduled())
+    unschedule();
+  _expires = when;
+  finish_schedule();
+}
+
 void
 Timer::schedule_after_ms(int ms)
 {
@@ -92,16 +117,7 @@ Timer::schedule_after_ms(int ms)
   interval.tv_sec = ms / 1000;
   interval.tv_usec = (ms % 1000) * 1000;
   timeradd(&_expires, &interval, &_expires);
-  Timer *prev = _head;
-  Timer *trav = prev->_next;
-  while (trav != _head && timercmp(&_expires, &trav->_expires, >)) {
-    prev = trav;
-    trav = trav->_next;
-  }
-  _prev = prev;
-  _next = trav;
-  _prev->_next = this;
-  trav->_prev = this;
+  finish_schedule();
 }
 
 void
