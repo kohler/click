@@ -66,18 +66,18 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .c.uo:
 	$(U_COMPILE) -c $< -o $@
-	@/bin/sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+	@sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
 .cc.uo:
 	$(U_CXXCOMPILE) -c $< -o $@
-	@/bin/sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+	@sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
 .cc.uii:
 	$(U_CXXCOMPILE) -E $< > $@
 .c.ko:
 	$(K_COMPILE) -c $< -o $@
-	@/bin/sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+	@sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
 .cc.ko:
 	$(K_CXXCOMPILE) -c $< -o $@
-	@/bin/sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+	@sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
 .cc.kii:
 	$(K_CXXCOMPILE) -E $< > $@
 
