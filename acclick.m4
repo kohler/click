@@ -664,7 +664,7 @@ dnl HAVE_LARGE_FILE_SUPPORT.
 dnl
 
 AC_DEFUN([CLICK_CHECK_LARGE_FILE_SUPPORT], [
-    AC_LANG_CPLUSPLUS
+    AC_LANG_C
     AC_CACHE_CHECK([for large file support in C library], 
 	ac_cv_large_file_support,
 	[AC_TRY_COMPILE([#define _LARGEFILE_SOURCE 1
