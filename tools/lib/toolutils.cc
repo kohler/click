@@ -309,7 +309,7 @@ String
 ElementMap::unparse() const
 {
   StringAccum sa;
-  for (int i = 1; i < size(); i++) {
+  for (int i = 1; i < _name.size(); i++) {
     if (!_name[i] && !_cxx[i])
       continue;
     sa << cp_quote(_name[i]) << '\t'

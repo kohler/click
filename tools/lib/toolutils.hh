@@ -40,7 +40,6 @@ class ElementMap {
   ElementMap();
   ElementMap(const String &);
 
-  int size() const				{ return _name.size(); }
   const String &name(int i) const		{ return _name[i]; }
   const String &cxx(int i) const		{ return _cxx[i]; }
   const String &header_file(int i) const	{ return _header_file[i]; }
@@ -56,6 +55,7 @@ class ElementMap {
 
   int find(const String &n) const		{ return _name_map[n]; }
   int find_cxx(const String &n) const		{ return _cxx_map[n]; }
+  HashMap<String, int>::Iterator first() const	{ return _name_map.first(); }
 
   int add(const String &name, const String &cxx, const String &header_file,
 	  const String &processing_code, const String &flags,

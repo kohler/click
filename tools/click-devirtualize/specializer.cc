@@ -39,8 +39,10 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
   }
 
   // prepare from element map
-  for (int i = 0; i < em.size(); i++)
-    add_type_info(em.name(i), em.cxx(i), em.header_file(i));
+  for (StringMap::Iterator x = em.first(); x; x++) {
+    int i = x.value();
+    add_type_info(x.key(), em.cxx(i), em.header_file(i));
+  }
 }
 
 inline ElementTypeInfo &
