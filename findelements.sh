@@ -76,9 +76,10 @@ fi
 # from the list of good files
 bad_files=''
 while true; do
-  exports1=`grep -h '^EXPORT_ELEMENT\|^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/'`
-  exports2=`echo "$files" | sed 's/^elements\/\([^\/]*\)\/.*/\1/'`
-  awk_exports=`echo "$exports1$exports2" | sed 's/\(.*\)/dep["\1"]=1;/'`
+  exports1=`grep '^EXPORT_ELEMENT' $files | sed 's/.*(\(.*\)).*/\1/'`
+  exports2=`grep '^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/'`
+  exports3=`echo "$files" | sed 's/^elements\/\([^\/]*\)\/.*/\1/'`
+  awk_exports=`echo "$exports1 $exports2 $exports3" | sed 's/\(.*\)/dep["\1"]=1;/'`
   new_bad_files=`grep '^ELEMENT_REQUIRES' $files | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
 {
   sub(/ELEMENT_REQUIRES\(/, "", $2);
