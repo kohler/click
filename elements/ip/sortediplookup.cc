@@ -172,5 +172,5 @@ SortedIPLookup::push(int, Packet *p)
 
 #include <click/vector.cc>
 
-ELEMENT_REQUIRES(LinearIPLookup false)
+ELEMENT_REQUIRES(LinearIPLookup)
 EXPORT_ELEMENT(SortedIPLookup)
