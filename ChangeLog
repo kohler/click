@@ -1,3 +1,15 @@
+2001-10-15 Monday 17:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* configure.in (1.151), elements/bsdmodule/anydevice.hh (1.3),
+	elements/bsdmodule/fastudpsrc.cc (1.2),
+	elements/bsdmodule/fastudpsrc.hh (1.3),
+	elements/bsdmodule/fromdevice.cc (1.5),
+	elements/bsdmodule/fromdevice.hh (1.5),
+	elements/bsdmodule/polldevice.cc (1.3),
+	elements/bsdmodule/todevice.hh (1.4), etc/freebsd-4.3-patch (1.8),
+	include/click/packet.hh (1.26): Merging of some BSD cleanup from
+	Luigi Rizzo, with a few optimizations and fixes.
+
 2001-10-15 Monday 14:54  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.40), Makefile.in (1.101), acclick.m4 (1.5),

@@ -1,3 +1,8 @@
+2001-10-15 Monday 17:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: packet.hh, packet.hh: Merging of some BSD cleanup
+	from Luigi Rizzo, with a few optimizations and fixes.
+
 2001-10-15 Monday 14:54  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4, config-bsdmodule.h.in, config.h.in,
