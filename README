@@ -73,20 +73,16 @@ packets. The language describes a graph of "elements", or packet processing
 modules. See the `doc/click.5' manual page for a detailed description, or
 check the `conf' directory for some simple examples.
 
-    Click can be compiled as a user-level program, which (when run as the
-superuser) can get copies of arriving packets via the pcap library; or as a
-Linux kernel module, which lives in the kernel and steals packets directly
-from devices.
+    Click can be compiled as a user-level program or as a kernel module for
+Linux. Either driver can receive and send packets; the kernel module
+directly interacts with device drivers, while the user-level driver uses
+packet sockets (on Linux) or the pcap library (everywhere else).
 
 User-Level Program
 ------------------
 
     Run the user-level program by giving it the name of a configuration
-file: `click CONFIGFILE'. If you have compiled Click with pcap support,
-you'll want to use the FromDevice and ToDevice elements too. You can still
-play around with Click even without pcap support: check out the
-InfiniteSource, TimedSource, FromDump, and ToDump elements, or write your
-own packet-generation element.
+file: `click CONFIGFILE'.
 
 Linux Kernel Module
 -------------------

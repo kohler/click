@@ -52,12 +52,13 @@ The `conf' directory in this distribution has a few sample configuration
 files.
 
 The configure script may not be able to find your pcap library if it's in a
-nonstandard place. To fix this, set your `PCAP_HEADER_PATH' and
-`PCAP_LIBRARY_PATH' environment variables and rerun `./configure'. The
-`PCAP_HEADER_PATH' variable contains options that tell the C preprocessor
-where to find `pcap.h'; the `PCAP_LIBRARY_PATH' variable contains options
-that tell the linker where to find `libpcap.a'. One example setting would
-be `PCAP_HEADER_PATH=-I/usr/local/include/pcap' and
+nonstandard place. It will report an error in this case. To fix the error,
+set your `PCAP_HEADER_PATH' and `PCAP_LIBRARY_PATH' environment variables
+and rerun `./configure'. The `PCAP_HEADER_PATH' variable contains options
+that tell the C preprocessor where to find `pcap.h'; the
+`PCAP_LIBRARY_PATH' variable contains options that tell the linker where to
+find `libpcap.a'. One example setting would be
+`PCAP_HEADER_PATH=-I/usr/local/include/pcap' and
 `PCAP_LIBRARY_PATH=-L/usr/local/lib/pcap'.
 
 LINUX MODULE
@@ -72,15 +73,14 @@ and running Linux kernels.
     This is in case something goes wrong and you need to revert to an old
     kernel.
 
- 2. Get a copy of the Linux 2.2.17 kernel source distribution, for example
-    from www.kernel.org. The 2.2.16 kernel also works. Unpack this
-    distribution into /usr/src/linux. (Save the old kernel source tree, if
-    you had one.)
+ 2. Get a copy of the Linux 2.2.18 kernel source distribution, for example
+    from www.kernel.org. Unpack this distribution into /usr/src/linux.
+    (Save the old kernel source tree, if you had one.)
 
  3. Install the Click Linux kernel patch:
 
 	cd /usr/src/linux
-	patch -p0 -b < CLICKDIR/etc/linux-2.2.17-patch
+	patch -p0 -b < CLICKDIR/etc/linux-2.2.18-patch
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
@@ -93,7 +93,7 @@ and running Linux kernels.
     configuration, or you can do the usual `make menuconfig'.
 
  5. If your archived, working kernel has the same version number as the
-    patched kernel (they're both 2.2.17, for example), then it is a good
+    patched kernel (they're both 2.2.18, for example), then it is a good
     idea to change the patched kernel's `EXTRAVERSION'. This way, the
     modules for the new kernel won't overwrite the old, working modules.
     Edit /usr/src/linux/Makefile and change the line `EXTRAVERSION =' to
