@@ -1,3 +1,8 @@
+2002-05-15 Wednesday 18:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet.hh, packet.hh: add another word of user
+	annotation
+
 2002-05-05 Sunday 02:39  Eddie Kohler <kohler@aciri.org>
 
 	* INSTALL: remove older Linux 2.2 patches, and check in Linux
