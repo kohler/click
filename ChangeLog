@@ -1,3 +1,34 @@
+2003-02-15 Saturday 03:26  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/delayunqueue.cc (1.16),
+	elements/standard/discard.cc (1.25),
+	elements/standard/discardnofree.cc (1.21),
+	elements/standard/frontdropqueue.cc (1.13),
+	elements/standard/frontdropqueue.hh (1.12),
+	elements/standard/infinitesource.cc (1.40),
+	elements/standard/mixedqueue.cc (1.1),
+	elements/standard/mixedqueue.hh (1.1),
+	elements/standard/notifierqueue.cc (1.6),
+	elements/standard/notifierqueue.hh (1.7),
+	elements/standard/randomsource.cc (1.18),
+	elements/standard/ratedsource.cc (1.47),
+	elements/standard/ratedunqueue.cc (1.20),
+	elements/standard/simplequeue.cc (1.3),
+	elements/standard/simplequeue.hh (1.3),
+	elements/standard/unqueue.cc (1.23), elements/standard/unqueue2.cc
+	(1.12), include/click/glue.hh (1.34),
+	include/click/standard/scheduleinfo.hh (1.18),
+	test/MixedQueue/t01.testie (1.1), test/MixedQueue/t02.testie (1.1):
+	add MixedQueue element, and lifo_enq() to SimpleQueue; add tests
+	for MixedQueue; make FrontDropQueue plausibly work again; use
+	initialize_task(), not join_scheduler(); Unqueue(ACTIVE false)
+	would crash: fixed; nits
+
+2003-02-15 Saturday 03:22  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/: queue.cc (1.44), queue.hh (1.33): remove old
+	Queue definition
+
 2003-02-14 Friday 12:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridencap.hh (1.2): doc formatting nitlet

@@ -1,3 +1,12 @@
+2003-02-15 Saturday 03:26  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: glue.hh, standard/scheduleinfo.hh, glue.hh,
+	standard/scheduleinfo.hh, standard/scheduleinfo.hh: add MixedQueue
+	element, and lifo_enq() to SimpleQueue; add tests for MixedQueue;
+	make FrontDropQueue plausibly work again; use initialize_task(),
+	not join_scheduler(); Unqueue(ACTIVE false) would crash: fixed;
+	nits
+
 2003-02-14 Friday 00:44  Eddie Kohler <kohler@icir.org>
 
 	* libsrc/ino.cc: nit
