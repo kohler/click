@@ -564,6 +564,9 @@ dnl check bsdmodule for BSD
 
 if test $ac_have_bsd_kernel = y; then
   TARGETS="$TARGETS bsdmodule"
+  if echo "$TARGETS" | grep linuxmodule >/dev/null 2>&1; then :; else
+    TOOL_TARGETS="$TOOL_TARGETS click-install"
+  fi
   AC_DEFINE(HAVE_BSDMODULE_DRIVER)
 fi
 
