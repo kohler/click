@@ -43,9 +43,13 @@ public:
   void push(int, Packet *);
 
   // add new flow to flow table; returns false if key already exists, true
-  // otherwise. the (key, value) pair is added to table in either case
+  // otherwise. entry is not added to table in the former case
   bool add_flow(IPAddress sa, unsigned short sp, 
                 IPAddress da, unsigned short dp, unsigned port);
+
+  // remove flow from table; returns true if removed an entry, false otherwise
+  bool remove_flow(IPAddress sa, unsigned short sp, 
+                   IPAddress da, unsigned short dp);
 };
 
 #endif

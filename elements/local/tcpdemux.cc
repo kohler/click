@@ -109,8 +109,21 @@ bool
 TCPDemux::add_flow(IPAddress sa, unsigned short sp, 
                    IPAddress da, unsigned short dp, unsigned port)
 {
-  return _flows.insert(IPFlowID(sa, sp, da, dp), port);
+  if (_flows.findp(IPFlowID(sa, sp, da, dp)))
+    return false;
+  else
+    return _flows.insert(IPFlowID(sa, sp, da, dp), port);
 }
+
+
+bool
+TCPDemux::remove_flow(IPAddress sa, unsigned short sp, 
+                      IPAddress da, unsigned short dp)
+{
+  return _flows.remove(IPFlowID(sa, sp, da, dp));
+}
+
+
 
 #include <click/bighashmap.cc>
 template class BigHashMap<IPFlowID, int>;

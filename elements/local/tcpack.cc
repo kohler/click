@@ -64,7 +64,7 @@ TCPAck::initialize(ErrorHandler *errh)
       break;
   }
   if (!_tcpbuffer)
-    return errh->error("no TCPBuffer element found!", tcpbuffers[0]->id().cc());
+    return errh->error("no TCPBuffer element found!");
 
   _synack = false;
   _needack = false;
