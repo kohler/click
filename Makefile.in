@@ -35,10 +35,12 @@ datadir = @datadir@/click
 
 all: @TARGETS@ tools Makefile
 
-linuxmodule: Makefile stamp-h
-	@cd linuxmodule && $(MAKE) all
 bsdmodule: Makefile stamp-h
 	@cd bsdmodule && $(MAKE) all
+linuxmodule: Makefile stamp-h
+	@cd linuxmodule && $(MAKE) all
+ns: Makefile stamp-h
+	@cd ns && $(MAKE) all
 userlevel: Makefile click-compile stamp-h
 	@cd userlevel && $(MAKE) all
 exopc: Makefile stamp-h
@@ -101,7 +103,7 @@ Makefile: config.status $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
 config.h: stamp-h
-stamp-h: $(srcdir)/config.h.in $(srcdir)/config-bsdmodule.h.in $(srcdir)/config-linuxmodule.h.in $(srcdir)/config-userlevel.h.in config.status
+stamp-h: $(srcdir)/config.h.in $(srcdir)/config-bsdmodule.h.in $(srcdir)/config-linuxmodule.h.in $(srcdir)/config-ns.h.in $(srcdir)/config-userlevel.h.in config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES= $(SHELL) ./config.status
 	echo > stamp-h
@@ -170,6 +172,6 @@ distdir: $(srcdir)/configure
 
 
 .PHONY: all always elemlist elemlists \
-	bsdmodule exopc linuxmodule tools userlevel \
+	bsdmodule exopc linuxmodule ns tools userlevel \
 	clean distclean dist distdir \
 	install install-doc install-man install-local install-include install-local-include

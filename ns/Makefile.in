@@ -1,0 +1,113 @@
+## Click NS driver Makefile ##
+SHELL = @SHELL@
+
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+top_builddir = ..
+subdir = ns
+conf_auxdir = @conf_auxdir@
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libdir = @libdir@
+
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/ns@elements_vpath@
+
+CC = @CC@
+CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+AR_CREATE = @AR@ @AR_CREATEFLAGS@
+RANLIB = @RANLIB@
+INSTALL = @INSTALL@
+mkinstalldirs = $(conf_auxdir)/mkinstalldirs
+
+.SUFFIXES:
+.SUFFIXES: .S .c .cc .o .s .ii
+
+.c.o:
+	$(COMPILE) -c $<
+.s.o:
+	$(COMPILE) -c $<
+.S.o:
+	$(COMPILE) -c $<
+.cc.o:
+	$(CXXCOMPILE) -c $<
+.cc.ii:
+	$(CXXCOMPILE) -E $< > $@
+
+
+GENERIC_OBJS = string.o straccum.o \
+	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
+	ipaddress.o ip6address.o ipaddressset.o ipflowid.o etheraddress.o \
+	packet.o \
+	error.o glue.o task.o timer.o atomic.o gaprate.o \
+	element.o routerthread.o \
+	confparse.o variableenv.o lexer.o archive.o elemfilter.o router.o \
+	packageutils.o crc32.o in_cksum.o iptable.o ip6table.o \
+	userutils.o handlercall.o notifier.o integers.o crc32.o \
+	in_cksum.o
+
+-include elements.mk
+
+LIBOBJS = $(GENERIC_OBJS) \
+	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o clp.o \
+	$(ELEMENT_OBJS) simclick.o elements.o
+OBJS = $(ELEMENT_OBJS)
+
+CPPFLAGS = @CPPFLAGS@ -DCLICK_NS
+CFLAGS = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@
+
+DEFS = @DEFS@
+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(srcdir) -I$(top_srcdir) @PCAP_INCLUDES@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@ `$(top_builddir)/click-compile --libs`
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+all: libnsclick.a
+
+libnsclick.a: Makefile $(LIBOBJS)
+	$(AR_CREATE) libnsclick.a $(LIBOBJS)
+	$(RANLIB) libnsclick.a
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+elemlist:
+	@/bin/rm -f elements.conf
+	@$(MAKE) elements.conf
+elements.conf: $(top_builddir)/config.status $(top_srcdir)/click-buildtool
+	echo "ns @element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem) > elements.conf
+elements.mk: elements.conf $(top_srcdir)/click-buildtool
+	$(top_srcdir)/click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o < elements.conf > elements.mk
+elements.cc: elements.conf $(top_srcdir)/click-buildtool
+	$(top_srcdir)/click-buildtool elem2export < elements.conf > elements.cc
+	@rm -f elements.d
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+install: libnsclick.a
+	$(mkinstalldirs) $(libdir)
+	$(INSTALL) libnsclick.a $(libdir)/libnsclick.a
+install-man:
+
+clean:
+	rm -f *.d *.o elements.mk elements.cc elements.conf libnsclick.a
+distclean: clean
+	-rm -f Makefile
+
+.PHONY: all clean distclean elemlist install install-man

@@ -4,8 +4,8 @@
 
 struct Driver {
     enum {
-	USERLEVEL = 0, LINUXMODULE = 1, BSDMODULE = 2,
-	ALLMASK = 0x7, COUNT = 3
+	USERLEVEL = 0, LINUXMODULE = 1, BSDMODULE = 2, NSMODULE = 3,
+	ALLMASK = 0xF, COUNT = 4
     };
     static const char *name(int);
     static const char *requirement(int);

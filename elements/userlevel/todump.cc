@@ -226,5 +226,5 @@ ToDump::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel FakePcap)
+ELEMENT_REQUIRES(userlevel|nsmodule FakePcap)
 EXPORT_ELEMENT(ToDump)

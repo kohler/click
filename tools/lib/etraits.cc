@@ -40,6 +40,8 @@ Driver::name(int d)
 	return "userlevel";
     else if (d == BSDMODULE)
 	return "bsdmodule";
+    else if (d == NSMODULE)
+	return "nsmodule";
     else
 	return "??";
 }
@@ -53,6 +55,8 @@ Driver::requirement(int d)
 	return "userlevel";
     else if (d == BSDMODULE)
 	return "bsdmodule";
+    else if (d == NSMODULE)
+	return "nsmodule";
     else
 	return "";
 }
@@ -123,6 +127,8 @@ ElementTraits::calculate_driver_mask()
 	driver_mask |= 1 << Driver::USERLEVEL;
     if (requirement_contains(requirements, "bsdmodule"))
 	driver_mask |= 1 << Driver::BSDMODULE;
+    if (requirement_contains(requirements, "nsmodule"))
+	driver_mask |= 1 << Driver::NSMODULE;
     if (driver_mask == 0)
 	driver_mask = Driver::ALLMASK;
 }

@@ -96,4 +96,9 @@
 # include <click/config-userlevel.h>
 #endif
 
+/* Define stuff under nsclick. */
+#ifdef CLICK_NS
+# include <click/config-ns.h>
+#endif
+
 #endif /* CLICK_CONFIG_H */
