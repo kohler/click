@@ -193,6 +193,9 @@ UpdateGridRoutes::simple_action(Packet *packet)
 						   sizeof(grid_hdr) + sizeof(grid_hello) +
 						   i * entry_sz);
 
+	if (IPAddress(curr->ip) == _ipaddr)
+	  continue; // we already know how to get to ourself -- don't want to advertise some other strange route to us!
+
 	if (IPAddress(curr->next_hop_ip) == _ipaddr)
 	  continue; // pseduo-split-horizon: ignore routes from nbrs that go back through us
 

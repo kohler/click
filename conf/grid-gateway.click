@@ -27,7 +27,7 @@ ip_cl :: Classifier(16/GW_HEX_IP, // ip for us as wired node
 		    16/GRID_NET_HEX, // ip for our grid net
 		    -); // ip for the wired net or outside world
 
-nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, GRID_MAC_ADDR, GRID_IP);
+nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, GRID_MAC_ADDR, GRID_IP, NUM_HOPS);
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
 

@@ -16,10 +16,13 @@ $click_config_name = "../conf/grid-gateway.click";
 
 
 $grid_channel = "5";
+$grid_ssid = "grid";
+$radio_type = "wavelan";
 
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
+$NUM_HOPS = "10";
 $POS_LAT = "0";
 $POS_LON = "0";
 $RANGE = "250";
@@ -109,7 +112,16 @@ for ($i = 2; $i < @ARGV; $i++) {
     }
 }
 
-print "Running Grid gateway with Grid address $grid_addr on interface $grid_if, ad-hoc channel $grid_channel.\n";
+if (-e "/proc/aironet/$grid_if") {
+    $radio_type = "aironet";
+}
+
+if (!($grid_addr =~ /18.26.7.\d+/)) {
+    print "Bad Grid address `$grid_addr'; must be 18.26.7.<host>\n";
+    exit 1;
+}
+
+print "Running Grid gateway with Grid address $grid_addr on interface $grid_if ($radio_type), ad-hoc channel $grid_channel.\n";
 
 # get MAC address and other net info for figuring out gateway info and
 # restoring setting after click ends.
@@ -307,7 +319,18 @@ if ($system_type =~ /Linux/) {
     my_system "ifconfig $grid_if 0";
 
     # set the adapter to ad-hoc mode
-    my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
+    if ($radio_type eq "wavelan") {
+	my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
+    }
+    elsif ($radio_type eq "aironet") {
+	my_system "echo \"Mode: adhoc\" > /proc/aironet/$grid_if/Config";
+	my_system "echo \"Channel: $grid_channel\" > /proc/aironet/$grid_if/Config";
+	my_system "echo \"$grid_ssid\" > /proc/aironet/$grid_if/SSID";
+    }
+    else {
+	print stderr "Radio type $radio_type is not supported\n";
+	exit 1;
+    }
 
     # remove LAN device routes
     my_system "ifconfig $lan_if down";
@@ -320,8 +343,18 @@ elsif ($system_type =~ /FreeBSD/) {
     my_system "ifconfig $grid_if 0";
 
     # set the adapter to ad-hoc mode
-    my_system "wicontrol -i $grid_if -p 3";
-    my_system "wicontrol -i $grid_if -f $grid_channel";
+    if ($radio_type eq "wavelan") {
+	my_system "wicontrol -i $grid_if -p 3";
+	my_system "wicontrol -i $grid_if -f $grid_channel";
+    }
+    elsif ($radio_type eq "aironet") {
+	print stderr "Radio type $radio_type is not supported yet on freebsd\n";
+	exit 1;
+    }
+    else {
+	print stderr "Radio type $radio_type is not supported\n";
+	exit 1;
+    }
 
     # remove default route
     my_system, "route -n delete default";
@@ -333,6 +366,7 @@ else {
     exit 1;
 }
 
+print("firing up click...\n");
 
 # fire up click, substituting appropriate values into the config file,
 # and piping it into click stdin.
@@ -346,6 +380,7 @@ $gw_net_hex = net_to_hex($lan_net);
 open(P, "| $click");
 while(<click_config_file>) {
 
+    s/NUM_HOPS/$NUM_HOPS/;
     s/CONTROL_PORT/$CONTROL_PORT/;
     s/CONTROL_RO/$CONTROL_RO/;
     s/RANGE/$RANGE/;
@@ -387,7 +422,19 @@ if ($do_cleanup) {
 
     if ($system_type =~ /Linux/) {
 	my_system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
-	my_system "iwconfig $grid_if mode managed";	
+
+	if ($radio_type eq "wavelan") {
+	    my_system "iwconfig $grid_if mode managed";	
+	}
+	elsif ($radio_type eq "aironet") {
+	    my_system "echo \"Mode: ESS\" > /proc/aironet/$grid_if/Config\n";
+	    my_system "echo \"Chaos\" > /proc/aironet/$grid_if/SSID";
+	}
+	else {
+	    print stderr "Radio type $radio_type is not supported\n";
+	    exit 1;
+	}
+
 	my_system "ifconfig $lan_if $lan_addr netmask $old_lan_netmask broadcast $old_lan_bcast";
 	my_system "route add default gw $lan_gw";
 	if ($old_grid_dev_gw) {
@@ -397,7 +444,19 @@ if ($do_cleanup) {
 
     elsif ($system_type =~ /FreeBSD/) {
 	my_system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
-	my_system "wicontrol -i $grid_if -p 1";
+
+	if ($radio_type eq "wavelan") {
+	    my_system "wicontrol -i $grid_if -p 1";
+	}
+	elsif ($radio_type eq "aironet") {
+	    print stderr "Radio type $radio_type is not supported yet on freebsd\n";
+	    exit 1;
+	}
+	else {
+	    print stderr "Radio type $radio_type is not supported\n";
+	    exit 1;
+	}
+
 	my_system "ifconfig $lan_if $lan_addr netmask $old_lan_netmask broadcast $old_lan_bcast";
 	my_system "route delete default";
 	my_system "route add default $lan_gw";

@@ -20,6 +20,7 @@ $radio_type = "wavelan";
 $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
+$NUM_HOPS = "10";
 $POS_LAT = "0";
 $POS_LON = "0";
 $RANGE = "250";
@@ -293,6 +294,7 @@ $grid_addr_hex = ip_to_hex($grid_addr);
 open(P, "| $clickdir$click");
 while(<click_config_file>) {
 
+    s/NUM_HOPS/$NUM_HOPS/;
     s/CONTROL_PORT/$CONTROL_PORT/;
     s/CONTROL_RO/$CONTROL_RO/;
     s/RANGE/$RANGE/;
@@ -329,7 +331,7 @@ if ($do_cleanup) {
 	}
 	elsif ($radio_type eq "aironet") {
 	    my_system "echo \"Mode: ESS\" > /proc/aironet/$grid_if/Config\n";
-	    my_system "echo \"\" > /proc/aironet/$grid_if/SSID";
+	    my_system "echo \"Chaos\" > /proc/aironet/$grid_if/SSID";
 	}
 	else {
 	    print stderr "Radio type $radio_type is not supported\n";

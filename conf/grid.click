@@ -6,7 +6,7 @@ ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 li :: LocationInfo(POS_LAT, POS_LON);
 
 // protocol els
-nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, MAC_ADDR, GRID_IP);
+nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, MAC_ADDR, GRID_IP, NUM_HOPS);
 lr :: LookupLocalGridRoute(MAC_ADDR, GRID_IP, nb);
 geo :: LookupGeographicGridRoute(MAC_ADDR, GRID_IP, nb);
 
