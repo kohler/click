@@ -32,8 +32,9 @@ Keyword arguments are:
 
 =item STOP
 
-Boolean. If true, stop the driver when there are no packets available
-upstream. Default is false.
+Boolean. If true, stop the driver when there are no packets available (and the
+upstream notifiers indicate that no packets will become available soon).
+Default is false.
 
 =back
 
@@ -42,12 +43,12 @@ upstream. Default is false.
 This example merges multiple tcpdump(1) files into a single, time-sorted
 stream, and stops the driver when all the files are exhausted.
 
-  m :: TimeSortedSched(STOP true);
-  FromDump(FILE1) -> [0] m;
-  FromDump(FILE2) -> [1] m;
-  FromDump(FILE3) -> [2] m;
+  tss :: TimeSortedSched(STOP true);
+  FromDump(FILE1) -> [0] tss;
+  FromDump(FILE2) -> [1] tss;
+  FromDump(FILE3) -> [2] tss;
   // ...
-  m -> ...;
+  tss -> ...;
 
 =a
 
