@@ -1,3 +1,20 @@
+2005-02-24 Thursday 12:21  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.158), elements/analysis/ipsumdumpinfo.cc (1.21),
+	elements/analysis/ipsumdumpinfo.hh (1.18), elements/ip/ipfilter.cc
+	(1.52), elements/standard/pokehandlers.cc (1.35),
+	elements/userlevel/chattersocket.cc (1.19),
+	elements/userlevel/chattersocket.hh (1.12),
+	elements/userlevel/controlsocket.cc (1.57),
+	elements/userlevel/controlsocket.hh (1.38),
+	elements/userlevel/progressbar.cc (1.29), include/click/glue.hh
+	(1.47), include/click/master.hh (1.12), include/click/packet.hh
+	(1.51), include/click/router.hh (1.72), include/click/sync.hh
+	(1.15), lib/master.cc (1.27), lib/router.cc (1.176), lib/task.cc
+	(1.36), linuxmodule/config.cc (1.20): small updates that came up
+	during the Click merge, including most significantly an update to
+	the Master/Router registration procedure
+
 2005-02-22 Tuesday 15:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/packet_anno.hh (1.27): nit
