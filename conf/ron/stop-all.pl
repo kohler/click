@@ -46,27 +46,33 @@ sub main {
 
     
     for($i=0; $i<scalar(@name); $i++) {
-	print "Working on $name[$i]\n";
+	$n = $name[$i];
+	if ($name[$i] =~ /(\S+).ron.lcs.mit.edu/) {
+	    $n = $1;
+	}
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-traceroute.sh";
+	printf stderr  "Working on $name[$i]\n";
+	printf stderr  " stoping traceroute ";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-traceroute.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-server.sh";
+	printf stderr  " stoping server ";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-server.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-client.sh";
+	printf stderr  " stoping client ";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-client.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-datacollect.sh";
+	printf stderr  " stoping datacollection ";
+	$command = "ssh $name[$i] -l ron yipal/click-export/conf/stop-datacollect.sh $n";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
-
 
 	sleep 1;
-	
     }
 }
 
