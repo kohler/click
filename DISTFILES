@@ -182,6 +182,7 @@ include/click/iptable.hh
 include/click/ip6table.hh
 include/click/lexer.hh
 include/click/llrpc.h
+include/click/notifier.hh
 include/click/package.hh
 include/click/packet.hh
 include/click/packet_anno.hh
@@ -235,6 +236,7 @@ lib/iptable.cc
 lib/iptable2.cc
 lib/ip6table.cc
 lib/lexer.cc
+lib/notifier.cc
 lib/packageutils.cc
 lib/packet.cc
 lib/router.cc

@@ -64,6 +64,7 @@ include/click/iptable.hh
 include/click/ip6table.hh
 include/click/lexer.hh
 include/click/llrpc.h
+include/click/notifier.hh
 include/click/package.hh
 include/click/packet.hh
 include/click/packet_anno.hh
@@ -117,6 +118,7 @@ lib/ipflowid.cc:libsrc/ipflowid.cc
 lib/iptable.cc:libsrc/iptable.cc
 lib/ip6table.cc:libsrc/ip6table.cc
 lib/lexer.cc:libsrc/lexer.cc
+lib/notifier.cc:libsrc/notifier.cc
 lib/packageutils.cc:libsrc/packageutils.cc
 lib/packet.cc:libsrc/packet.cc
 lib/router.cc:libsrc/router.cc
