@@ -1,3 +1,27 @@
+2000-12-15 Friday 02:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* README: mentioned anonymous CVS repository
+
+2000-12-15 Friday 02:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: linuxmodule/anydevice.hh, linuxmodule/polldevice.cc,
+	linuxmodule/polldevice.hh, linuxmodule/todevice.cc,
+	linuxmodule/todevice.hh, userlevel/fromdevice.cc: temporary
+	reversion to old-style kernel module device handling elements
+
+2000-12-15 Friday 02:07  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES, FAQ, INSTALL, NODIST, README, elements/ip/iprw.cc,
+	elements/ip/iprw.hh, elements/linuxmodule/fromlinux.cc,
+	elements/linuxmodule/fromlinux.hh,
+	elements/standard/ratedsource.cc, elements/tcpudp/iprewriter.cc,
+	elements/tcpudp/iprewriter.hh, elements/tcpudp/tcprewriter.cc,
+	elements/tcpudp/tcprewriter.hh, etc/linux-2.2.18-patch,
+	include/click/glue.hh: IP rewriter: added faster garbage collection
+	for completed TCP sessions, other fixes. Also nitlets; RatedSource
+	sets timestamp annotation on its generated packets; documentation;
+	and a new Linux patch.
+
 2000-12-11 Monday 16:50  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* README, configure.in, elements/app/ftpportmapper.hh,
@@ -363,136 +387,6 @@
 
 	* elements/ip/: ipprint.cc, ipprint.hh: changed IPPrint to keyword
 	arguments, and added ID keyword, plus bug fixes
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_proc.h: file e1000_proc.h was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_vendor_info.h: file e1000_vendor_info.h was
-	initially added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_phy.h: file e1000_phy.h was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_proc.c: file e1000_proc.c was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_phy.c: file e1000_phy.c was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_main.c.orig: file e1000_main.c.orig was
-	initially added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_main.c: file e1000_main.c was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_kcompat.h: file e1000_kcompat.h was initially
-	added on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_fxhw.h: file e1000_fxhw.h was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000_fxhw.c: file e1000_fxhw.c was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000.h.orig: file e1000.h.orig was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/e1000.h: file e1000.h was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/base_comm.h: file base_comm.h was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_os.h: file ans_os.h was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_os.c: file ans_os.c was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_hw.h: file ans_hw.h was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_hw.c: file ans_hw.c was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_driver.h: file ans_driver.h was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans_driver.c: file ans_driver.c was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans.h: file ans.h was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/README-rtm: file README-rtm was initially added on
-	branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/ans.c: file ans.c was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/README: file README was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/Makefile.orig: file Makefile.orig was initially added
-	on branch smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/Makefile: file Makefile was initially added on branch
-	smp_click.
-
-2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
-
-	* tools/e1000/LICENSE: file LICENSE was initially added on branch
-	smp_click.
 
 2000-11-16 Thursday 09:59  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -1820,12 +1714,12 @@
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.hh: file msqueue.hh was initially added
+	* elements/standard/msqueue.cc: file msqueue.cc was initially added
 	on branch smp-benjie.
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.cc: file msqueue.cc was initially added
+	* elements/standard/msqueue.hh: file msqueue.hh was initially added
 	on branch smp-benjie.
 
 2000-10-05 Thursday 13:01  Eddie Kohler <eddietwo@lcs.mit.edu>
@@ -2193,12 +2087,12 @@
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.hh: file spinlockinfo.hh was
+	* elements/standard/spinlockinfo.cc: file spinlockinfo.cc was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.cc: file spinlockinfo.cc was
+	* elements/standard/spinlockinfo.hh: file spinlockinfo.hh was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
@@ -7149,12 +7043,9 @@
 	click-devirtualize/specializer.cc,
 	click-devirtualize/specializer.hh,
 	click-fastclassifier/click-fastclassifier.cc,
-	click-install/click-install.cc, click-specialize/.cvsignore,
-	click-specialize/Makefile.in, click-specialize/click-specialize.cc,
-	click-specialize/cxxclass.cc, click-specialize/cxxclass.hh,
-	click-specialize/specializer.cc, click-specialize/specializer.hh,
-	click-xform/click-xform.cc, lib/routert.cc, lib/routert.hh,
-	lib/toolutils.cc, lib/toolutils.hh: thing
+	click-install/click-install.cc, click-xform/click-xform.cc,
+	lib/routert.cc, lib/routert.hh, lib/toolutils.cc, lib/toolutils.hh:
+	thing
 
 2000-03-29 Wednesday 10:38  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -7276,10 +7167,8 @@
 	linuxmodule/proc_element.cc, tools/Makefile.in,
 	tools/click-align/Makefile.in,
 	tools/click-fastclassifier/Makefile.in,
-	tools/click-install/Makefile.in,
-	tools/click-specialize/Makefile.in,
-	tools/click-specialize/specializer.cc,
-	tools/click-xform/Makefile.in: red fix
+	tools/click-install/Makefile.in, tools/click-xform/Makefile.in: red
+	fix
 
 2000-03-15 Wednesday 00:56  Max Poletto <maxp@lcs.mit.edu>
 
@@ -7494,10 +7383,7 @@
 	tools/click-fastclassifier/click-fastclassifier.cc,
 	tools/click-install/.cvsignore, tools/click-install/Makefile.in,
 	tools/click-install/click-install.cc,
-	tools/click-install/click-uninstall.cc,
-	tools/click-specialize/click-specialize.cc,
-	tools/click-specialize/cxxclass.cc,
-	tools/click-specialize/specializer.cc: fastclassifier | specialize
+	tools/click-install/click-uninstall.cc: fastclassifier | specialize
 	+ uninstall
 
 2000-02-05 Saturday 00:14  Benjie Chen <benjie@lcs.mit.edu>
@@ -7511,21 +7397,7 @@
 	elements/standard/classifier.cc, tools/Makefile.in,
 	tools/click-install/Makefile.in,
 	tools/click-install/click-install.cc,
-	tools/click-install/click-uninstall.cc,
-	tools/click-specialize/specializer.cc: sp[ecializer fix
-
-2000-02-04 Friday 21:19  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/specializer.cc: fadsjfadsjfads
-
-2000-02-04 Friday 20:47  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/: specializer.cc, specializer.cc: not an
-	idiot
-
-2000-02-04 Friday 20:38  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/specializer.cc: click-specialize/
+	tools/click-install/click-uninstall.cc: sp[ecializer fix
 
 2000-02-04 Friday 20:02  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -7540,24 +7412,9 @@
 	* lib/packet.hh, tools/click-compile.in: added -S to click-compile;
 	fixed anno(), which formerly did not inline skb()
 
-2000-02-04 Friday 13:06  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/: cxxclass.cc, cxxclass.hh,
-	specializer.cc: smaction oops
-
 2000-02-04 Friday 13:04  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/: netdev.h, polldevice.cc: [no log message]
-
-2000-02-04 Friday 12:50  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/specializer.cc: dont generate functions
-	that dont matter; also less checking
-
-2000-02-04 Friday 12:36  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/specializer.cc: better push_output and
-	pull_input functions
 
 2000-02-04 Friday 12:12  Eddie Kohler <eddietwo@lcs.mit.edu>
 
@@ -7568,9 +7425,6 @@
 	* doc/click-install.1, tools/click-align/click-align.cc,
 	tools/click-fastclassifier/click-fastclassifier.cc,
 	tools/click-install/click-install.cc,
-	tools/click-specialize/click-specialize.cc,
-	tools/click-specialize/specializer.cc,
-	tools/click-specialize/specializer.hh,
 	tools/click-xform/click-xform.cc, tools/lib/routert.hh,
 	tools/lib/toolutils.cc, tools/lib/toolutils.hh: tools updates
 
@@ -7585,10 +7439,6 @@
 	tools/click-fastclassifier/click-fastclassifier.cc: fastclassifier
 	updates: first, it works at all (this is new); second, it only
 	generates code for 1 of a series of identical classifiers
-
-2000-02-03 Thursday 21:00  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/click-specialize.cc: minibug
 
 2000-02-03 Thursday 20:55  Eddie Kohler <eddietwo@lcs.mit.edu>
 
@@ -7612,26 +7462,12 @@
 
 	* conf/fake-iprouter.click, conf/make-ip-conf.pl,
 	elements/standard/specializerinfo.cc,
-	elements/standard/specializerinfo.hh,
-	tools/click-specialize/click-specialize.cc,
-	tools/click-specialize/specializer.cc: fixed click-specialize,
-	added SpecializerInfo
-
-2000-02-03 Thursday 19:26  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/: click-specialize.cc, specializer.cc,
-	specializer.hh: added instructions possibility to specializer; fix
-	bugs
-
-2000-02-03 Thursday 17:01  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/cxxclass.cc: fixed bug in compiling;
-	invovled #if 0
+	elements/standard/specializerinfo.hh: fixed click-specialize, added
+	SpecializerInfo
 
 2000-02-03 Thursday 16:34  Eddie Kohler <eddietwo@lcs.mit.edu>
 
-	* tools/: Makefile.in, click-specialize/specializer.cc: specializer
-	fix
+	* tools/Makefile.in: specializer fix
 
 2000-02-03 Thursday 16:16  Eddie Kohler <eddietwo@lcs.mit.edu>
 
@@ -7715,12 +7551,6 @@
 	* doc/click.5, elements/standard/counter.cc,
 	elements/standard/counter.hh, lib/confparse.cc, lib/confparse.hh,
 	lib/lexer.cc, lib/lexer.hh, tools/Makefile.in,
-	tools/click-specialize/Makefile.in,
-	tools/click-specialize/click-specialize.cc,
-	tools/click-specialize/cxxclass.cc,
-	tools/click-specialize/cxxclass.hh,
-	tools/click-specialize/specializer.cc,
-	tools/click-specialize/specializer.hh,
 	tools/click-xform/click-xform.cc, tools/lib/lexert.cc,
 	tools/lib/lexert.hh, tools/lib/routert.cc, tools/lib/routert.hh:
 	specializer updates; compounds take formal parameters!
@@ -7760,10 +7590,8 @@
 	tools/click-fastclassifier/click-fastclassifier.cc,
 	tools/click-install/Makefile.in,
 	tools/click-install/click-install.cc,
-	tools/click-specialize/Makefile.in,
-	tools/click-specialize/click-specialize.cc,
-	tools/click-specialize/cxxclass.cc, tools/click-xform/Makefile.in,
-	tools/lib/toolutils.cc, tools/lib/toolutils.hh: speclaizeilsi zmera
+	tools/click-xform/Makefile.in, tools/lib/toolutils.cc,
+	tools/lib/toolutils.hh: speclaizeilsi zmera
 
 2000-01-26 Wednesday 19:00  Eddie Kohler <eddietwo@lcs.mit.edu>
 
@@ -7780,15 +7608,6 @@
 2000-01-26 Wednesday 18:34  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/: netdev.h, polldevice.cc: [no log message]
-
-2000-01-26 Wednesday 18:33  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/click-specialize1.pl: bye bye perl
-
-2000-01-26 Wednesday 18:33  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/: click-specialize.cc, cxxclass.cc,
-	cxxclass.hh: another convenient checkin point
 
 2000-01-26 Wednesday 17:14  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -7821,11 +7640,6 @@
 
 	* elements/linuxmodule/todevice.cc: [no log message]
 
-2000-01-26 Wednesday 13:24  Eddie Kohler <eddietwo@lcs.mit.edu>
-
-	* tools/click-specialize/: Makefile.in, click-specialize.cc,
-	cxxclass.cc, cxxclass.hh: adding files
-
 2000-01-25 Tuesday 18:02  Max Poletto <maxp@lcs.mit.edu>
 
 	* elements/ip/: lookupiproute.cc, lookupiproute.hh: [no log
@@ -7851,9 +7665,8 @@
 2000-01-25 Tuesday 15:32  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* configure.in, elements/standard/scheduleinfo.cc, lib/elemlink.cc,
-	lib/elemlink.hh, lib/error.cc, lib/error.hh,
-	tools/click-specialize/Makefile.in: error gets lmessage(); added
-	set_tickets function; removed set_tickets functionality from
+	lib/elemlink.hh, lib/error.cc, lib/error.hh: error gets lmessage();
+	added set_tickets function; removed set_tickets functionality from
 	set-max_tickets
 
 2000-01-25 Tuesday 13:16  Max Poletto <maxp@lcs.mit.edu>
@@ -8239,11 +8052,9 @@
 	tools/Makefile.in, tools/click-compile.in,
 	tools/click-align/Makefile.in,
 	tools/click-fastclassifier/Makefile.in,
-	tools/click-install/Makefile.in,
-	tools/click-specialize/click-specialize1.pl,
-	tools/click-xform/Makefile.in, tools/lib/.cvsignore,
-	tools/lib/Makefile.in, tools/lib/routert.cc, tools/lib/routert.hh,
-	userlevel/Makefile.in: changed making
+	tools/click-install/Makefile.in, tools/click-xform/Makefile.in,
+	tools/lib/.cvsignore, tools/lib/Makefile.in, tools/lib/routert.cc,
+	tools/lib/routert.hh, userlevel/Makefile.in: changed making
 
 1999-12-21 Tuesday 17:36  Peilei Fan <peilei@lcs.mit.edu>
 
@@ -8414,7 +8225,6 @@
 	elements/ip/bigin.cc, elements/ip/bigin.hh,
 	elements/standard/queue.cc, elements/standard/queue.hh,
 	elements/standard/red.cc, elements/standard/red.hh,
-	tools/click-specialize/click-specialize1.pl,
 	tools/click-xform/click-xform.cc, tools/lib/routert.cc,
 	tools/lib/routert.hh: tool fixes for speed (6.854), updated queue
 	to be a Storable, updated BigIn to be correct
@@ -8464,8 +8274,6 @@
 	tools/click-fastclassifier/click-fastclassifier.cc,
 	tools/click-install/Makefile.in,
 	tools/click-install/click-install.cc,
-	tools/click-specialize/.cvsignore,
-	tools/click-specialize/click-specialize1.pl,
 	tools/click-xform/click-xform.cc, userlevel/Makefile.in,
 	userlevel/click.cc: beginning click-specialize; added handlers
 	section to element man pages; dynamic linking in user-level click;
