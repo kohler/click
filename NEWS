@@ -2,6 +2,58 @@ Click NEWS
 
 Version 1.2.2
 
+* General
+
+** Added `etc/diagrams' directory, containing source code we use to
+   generate Click diagrams.
+
+** Added `etc/samplellrpc' directory, a simple program demonstrating how to
+   poke a Linux kernel Click's LLRPC handlers with ioctl() calls.
+
+** Added `etc/libclick' directory, which contains a self-sufficient
+   distribution for building the Click user-level library.
+
+** Added `--enable-warp9' configuration option, which loosens element
+   specifications to enable high-speed tests. For example, with
+   `--enable-warp9' on, PollDevice does not set timestamps on packets it
+   receives.
+
+** Time arguments understand suffixes like "ms", for milliseconds, and
+   "us", for microseconds. So you can say `1ms' or `2sec' or `5000usec'.
+
+** Many bug fixes.
+
+* Drivers
+
+** Add polling support for EEpro 100 devices (Nickolai B. Zeldovich), and
+   improve polling support for Tulip and Acenic (Benjie Chen, Nickolai).
+
+* Elements
+
+** FromDump is significantly faster, supports new keyword arguments, and
+   can read Linux tcpdump files. Also, FromDump and user-level FromDevice
+   have preliminary support for FDDI encapsulation.
+
+** ToDump can write to standard output.
+
+** Removed deprecated elements HashDemux, PullToPush, FromBPF, and ToBPF.
+
+** Fix bugs in Linux kernel module device elements: avoid dereferencing
+   null devices, and be careful about device reference counts for Linux
+   2.4.
+
+** Bug fixes to IPRewriter, TCPRewriter, Switch, PullSwitch, ....
+
+** Added functionality to ControlSocket, RED,
+
+* Internal
+
+** The format of `elements.conf' files has changed.
+
+** The header files for ScheduleInfo, AddressInfo, AlignmentInfo, Error,
+   and DriverManager are stored in `C<include/click/standard>'. This makes
+   it simpler to distribute a self-contained Click library.
+
 
 Version 1.2.1   26.Jun.2001
 

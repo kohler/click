@@ -602,26 +602,41 @@ sub process_file ($) {
 
 # main program: parse options
 sub read_files_from ($) {
-  my($fn) = @_;
-  if (open(IN, ($fn eq '-' ? "<&STDIN" : $fn))) {
-    my(@a, @b, $t);
-    $t = <IN>;
-    close IN;
-    $t =~ s/^#.*//mg;
-    @a = split(/\s+/, $t);
-    foreach $t (@a) {
-      next if $t eq '';
-      if ($t =~ /[*?\[]/) {
-	push @b, glob($t);
-      } else {
-	push @b, $t;
-      }
+    my($fn) = @_;
+    if (open(IN, ($fn eq '-' ? "<&STDIN" : $fn))) {
+	my(@a, @b, $t);
+	$t = <IN>;
+	close IN;
+	
+	# Parse file; click-buildtool gets special treatment
+	if ($t =~ /\A#.*click-buildtool findelem/) {
+	    $t =~ s/^#.*//mg;
+	    @a = map {
+		if (/^(\S+)\s+(\S+)/) {
+		    "$1:$2";
+		} else {
+		    $_;
+		}
+	    } split(/\n+/, $t);
+	} else {
+	    $t =~ s/^#.*//mg;
+	    @a = split(/\s+/, $t);
+	}
+	
+	foreach $t (@a) {
+	    next if $t eq '';
+	    if ($t =~ /[*?\[]/) {
+		push @b, glob($t);
+	    } else {
+		push @b, $t;
+	    }
+	}
+	
+	@b;
+    } else {
+	print STDERR "$fn: $!\n";
+	();
     }
-    @b;
-  } else {
-    print STDERR "$fn: $!\n";
-    ();
-  }
 }
 
 sub usage () {
@@ -632,7 +647,7 @@ Try \`click-elem2man --help' for more information.\n";
 
 sub help () {
   print STDERR <<'EOD;';
-`Click-elem2man' translates Click element documentation into manual pages.
+\`Click-elem2man' translates Click element documentation into manual pages.
 
 Usage: click-elem2man [-l | -L] [-d DIRECTORY] [-f FILE | FILE]...
 
@@ -651,39 +666,43 @@ EOD;
 }
 
 undef $/;
-my(@files, $fn, $elementlist);
+my(@files, $fn, $elementlist, $any_files);
 while (@ARGV) {
-  $_ = shift @ARGV;
-  if (/^-d$/ || /^--directory$/) {
-    usage() if !@ARGV;
-    $directory = shift @ARGV;
-  } elsif (/^--directory=(.*)$/) {
-    $directory = $1;
-  } elsif (/^-f$/ || /^--files$/) {
-    usage() if !@ARGV;
-    push @files, read_files_from(shift @ARGV);
-  } elsif (/^--files=(.*)$/) {
-    push @files, read_files_from($1);
-  } elsif (/^-l$/ || /^--list$/) {
-    $elementlist = 1;
-  } elsif (/^-L$/ || /^--extend-list$/) {
-    $elementlist = 2;
-  } elsif (/^-h$/ || /^--help$/) {
-    help();
-  } elsif (/^-./) {
-    usage();
-  } elsif (/^-$/) {
-    push @files, "-";
-  } else {
-    push @files, glob($_);
-  }
+    $_ = shift @ARGV;
+    if (/^-d$/ || /^--directory$/) {
+	usage() if !@ARGV;
+	$directory = shift @ARGV;
+    } elsif (/^--directory=(.*)$/) {
+	$directory = $1;
+    } elsif (/^-f$/ || /^--files$/) {
+	usage() if !@ARGV;
+	push @files, read_files_from(shift @ARGV);
+	$any_files = 1;
+    } elsif (/^--files=(.*)$/) {
+	push @files, read_files_from($1);
+	$any_files = 1;
+    } elsif (/^-l$/ || /^--list$/) {
+	$elementlist = 1;
+    } elsif (/^-L$/ || /^--extend-list$/) {
+	$elementlist = 2;
+    } elsif (/^-h$/ || /^--help$/) {
+	help();
+    } elsif (/^-./) {
+	usage();
+    } elsif (/^-$/) {
+	push @files, "-";
+	$any_files = 1;
+    } else {
+	push @files, glob($_);
+	$any_files = 1;
+    }
 }
-push @files, "-" if !@files;
+push @files, "-" if !$any_files;
 
 umask(022);
 open(OUT, ">&STDOUT") if !$directory;
 foreach $fn (@files) {
-  process_file($fn);
+    process_file($fn);
 }
 close OUT if !$directory;
 
