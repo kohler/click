@@ -10,7 +10,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-#define DEBUG 2
+#define DEBUG 0
 #define KEEP_GOOD_ASSIGNMENT 1
 
 
@@ -80,7 +80,7 @@ ReverseSortedTaskSched::run_scheduled()
   for(i=0; i<n; i++) {
     unsigned diff = avg_load>load[i] ? avg_load-load[i] : load[i]-avg_load;
     if (diff > (avg_load>>3)) {
-#if DEBUG > 2
+#if DEBUG > 1
       click_chatter("load balance, avg %u, diff %u", avg_load, diff);
 #endif
       break;
