@@ -1,3 +1,7 @@
+2003-02-03 Monday 17:34  Eddie Kohler <kohler@icir.org>
+
+	* click-buildtool (1.39): fix findelem bug report by Mr. DeCouto
+
 2003-02-03 Monday 10:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: floodinglocquerier.cc (1.37),
