@@ -21,6 +21,7 @@ exec_prefix=@exec_prefix@
 includedir=@includedir@
 srcdir=@datadir@/click/src
 linuxdir=@linuxdir@
+freebsddir=@freebsddir@
 
 # determine mode
 directory=.
@@ -193,17 +194,19 @@ if test "x$package" != "xNONE"; then
     trap 'rm -f $vfile.c $vfile.o' 0
     trap 'rm -f $vfile.c $vfile.o; exit 1' 1 2 15
     cat > $vfile.c << EOF
-#define __KERNEL__
-#define MODULE
+#include <click/config.h>
 #include <linux/module.h>
 /* a new version of EXPORT_NO_SYMBOLS that works */
 const int __ksymtab_nothing[0] __attribute__((section("__ksymtab"))) = { };
 EOF
-    exec_command "${CC-@CC@ -w} -I${linuxdir}/include -c $vfile.c"
+    compile_file $vfile.c
     exec_command "ld -r -o $package $files $vfile.o"
     exit 0 
   elif test $target = userlevel -o $target = tool; then
     exec_command "ld -shared -o $package $files"
+    exit 0
+  elif test $target = bsdmodule; then
+    exec_command "ld -Bshareable -o $package $files"
     exit 0
   fi
 else
