@@ -1,6 +1,7 @@
 #ifndef CLICK_TASK_HH
 #define CLICK_TASK_HH
 #include <click/element.hh>
+#include <click/sync.hh>
 #if __MTCLICK__
 # include <click/ewma.hh>
 #endif
@@ -8,6 +9,7 @@
 #define PASS_GT(a, b)	((int)(a - b) > 0)
 
 typedef void (*TaskHook)(void *);
+class RouterThread;
 class TaskList;
 
 class Task { public:
@@ -22,13 +24,16 @@ class Task { public:
 
   bool initialized() const		{ return _all_prev; }
   bool scheduled() const		{ return _prev; }
+  bool have_scheduler() const		{ return _list; }
+
+  TaskHook hook() const			{ return _hook; }
+  void *thunk() const			{ return _thunk; }
+  Element *element() const;
   
   Task *scheduled_next() const		{ return _next; }
   Task *scheduled_prev() const		{ return _prev; }
-  TaskList *scheduled_list() const	{ return _list; }
-
-  bool is_list() const;
-
+  RouterThread *scheduled_list() const	{ return _list; }
+  
 #ifndef RR_SCHED
   int tickets() const			{ return _tickets; }
   int max_tickets() const		{ return _max_tickets; }
@@ -38,24 +43,15 @@ class Task { public:
   void adj_tickets(int);
 #endif
 
-  bool urgent() const			{ return _urgent; }
-  void set_urgent(bool v)		{ _urgent = v; }
-
-  void initialize(TaskList *);
-  void initialize(Element *);
-  void initialize(Router *);
+  void initialize(Element *, bool scheduled);
+  void initialize(Router *, bool scheduled);
   void uninitialize();
 
-  void join_scheduler(TaskList *);
-  void join_scheduler(Element *);
-  void join_scheduler(Router *);
-  
   void reschedule();
   void unschedule();
-  void schedule_immediately();
 
   void fast_reschedule();
-  void fast_unschedule();
+  int fast_unschedule();
 
   void call_hook();
 
@@ -82,23 +78,27 @@ class Task { public:
   int _tickets;
   int _max_tickets;
 #endif
-
+  
   TaskHook _hook;
   void *_thunk;
-  bool _urgent;
   
 #if __MTCLICK__
   DirectEWMA _cycles;
   int _thread_preference;
+  int _update_cycle_runs;
 #endif
 
-  TaskList *_list;
-
+  RouterThread *_list;
+  
   Task *_all_prev;
   Task *_all_next;
+  TaskList *_all_list;
+
+  void join_scheduler(RouterThread *);
 
   friend class TaskList;
-
+  friend class RouterThread;
+  
 };
 
 class TaskList : public Task { public:
@@ -107,14 +107,19 @@ class TaskList : public Task { public:
 
   bool empty() const;
 
-  void lock()				{ }
-  void unlock()				{ }
-  
+  void lock();
+  void unlock();
+  bool attempt_lock();
+
  private:
 
-  friend class Task;
+  Spinlock _lock;
   
 };
+
+
+// need RouterThread's definition for inline functions
+#include <click/routerthread.hh>
 
 
 inline
@@ -123,11 +128,11 @@ Task::Task()
 #ifndef RR_SCHED
     _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
 #endif
-    _hook(0), _thunk(0), _urgent(false),
+    _hook(0), _thunk(0),
 #if __MTCLICK__
-    _thread_preference(-1),
+    _thread_preference(0), _update_cycle_runs(0),
 #endif
-    _list(0), _all_prev(0), _all_next(0)
+    _list(0), _all_prev(0), _all_next(0), _all_list(0)
 {
 }
 
@@ -137,11 +142,11 @@ Task::Task(TaskHook hook, void *thunk)
 #ifndef RR_SCHED
     _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
 #endif
-    _hook(hook), _thunk(thunk), _urgent(false),
+    _hook(hook), _thunk(thunk),
 #if __MTCLICK__
-    _thread_preference(-1),
+    _thread_preference(0), _update_cycle_runs(0),
 #endif
-    _list(0), _all_prev(0), _all_next(0)
+    _list(0), _all_prev(0), _all_next(0), _all_list(0)
 {
 }
 
@@ -151,27 +156,27 @@ Task::Task(Element *e)
 #ifndef RR_SCHED
     _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
 #endif
-    _hook(0), _thunk(e), _urgent(false),
+    _hook(0), _thunk(e),
 #if __MTCLICK__
-    _thread_preference(-1),
+    _thread_preference(0), _update_cycle_runs(0),
 #endif
-    _list(0), _all_prev(0), _all_next(0)
+    _list(0), _all_prev(0), _all_next(0), _all_list(0)
 {
 }
 
 inline bool
 TaskList::empty() const
-{
-  return _next == const_cast<Task*>(reinterpret_cast<const Task*>(this));
+{ 
+  return (const Task *)_next == this; 
 }
 
-inline bool
-Task::is_list() const
-{
-  return _list == this;
+inline Element *
+Task::element()	const
+{ 
+  return _hook ? 0 : reinterpret_cast<Element*>(_thunk); 
 }
 
-inline void
+inline int
 Task::fast_unschedule()
 {
   if (_next) {
@@ -179,6 +184,11 @@ Task::fast_unschedule()
     _prev->_next = _next;
   }
   _next = _prev = 0;
+#if __MTCLICK__
+  return _update_cycle_runs;
+#else
+  return 0;
+#endif
 }
 
 #ifndef RR_SCHED
@@ -205,13 +215,7 @@ inline void
 Task::fast_reschedule()
 {
   // should not be scheduled at this point
-  assert(!_next);
-#if 0
-  if (_next) {
-    _next->_prev = _prev;
-    _prev->_next = _next;
-  }
-#endif
+  assert(have_scheduler() && !_next);
 
   // increase pass
   _pass += _stride;
@@ -246,6 +250,7 @@ Task::fast_reschedule()
 inline void
 Task::fast_reschedule()
 {
+  assert(have_scheduler() && !_next);
   _prev = _list->_prev;
   _next = _list;
   _list->_prev = this;
@@ -255,22 +260,11 @@ Task::fast_reschedule()
 #endif /* RR_SCHED */
 
 inline void
-Task::join_scheduler(TaskList *task_list)
-{
-  assert(initialized() && !_prev && !_next && task_list->is_list());
-  _list = task_list;
-  reschedule();
-}
-
-inline void
-Task::join_scheduler(Element *e)
-{
-  join_scheduler(e->router());
-}
-
-inline void
 Task::call_hook()
 {
+#if __MTCLICK__
+  _update_cycle_runs++;
+#endif
   if (!_hook)
     ((Element *)_thunk)->run_scheduled();
   else
@@ -288,7 +282,26 @@ inline void
 Task::update_cycles(unsigned c) 
 {
   _cycles.update_with(c);
+  _update_cycle_runs = 0;
 }
 #endif
+
+inline void
+TaskList::lock()
+{
+  _lock.acquire();
+}
+
+inline void
+TaskList::unlock()
+{
+  _lock.release();
+}
+
+inline bool 
+TaskList::attempt_lock()
+{
+  return _lock.attempt();
+}
 
 #endif
