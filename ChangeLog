@@ -1,3 +1,14 @@
+2003-04-04 Friday 19:11  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/Makefile.in (1.79), ns/Makefile.in (1.5),
+	userlevel/Makefile.in (1.68): support Scott Page's concerns over
+	click-mkmindriver and a different autoconf
+
+2003-04-04 Friday 19:03  Eddie Kohler <kohler@icir.org>
+
+	* include/click/hashmap.cc (1.16): remove floating-point operation
+	(found by Petros Zerfos)
+
 2003-04-03 Thursday 14:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/simple-dsdv-userlevel.click (1.2): in process of
