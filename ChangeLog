@@ -1,3 +1,31 @@
+2004-12-01 Wednesday 15:05  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/samplepackage/: aclocal.m4 (1.14), m4/click.m4 (1.4):
+	samplepackage gets new click.m4
+
+2004-12-01 Wednesday 15:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-mkelemmap (1.30): allow spaces after ELEMENT_REQUIRES etc
+
+2004-12-01 Wednesday 15:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: cpuqueue.cc (1.13), cpuswitch.cc (1.9),
+	fasttcpflows.cc (1.13), fastudpsrc.cc (1.19), staticthreadsched.cc
+	(1.9): add explicit require(linuxmodule)
+
+2004-12-01 Wednesday 15:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.58): copyright years
+
+2004-12-01 Wednesday 15:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.57): nitlet
+
+2004-12-01 Wednesday 15:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.124): include $(EXTRA_PROVIDES) in make
+	elementmap.xml
+
 2004-12-01 Wednesday 14:33  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/mkwebdoc.pl (1.56): --enable-wifi
