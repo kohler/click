@@ -2124,6 +2124,580 @@ diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.19-pure/net/core/skbuff.
   /*
    *	This is slower, and copies the whole data area 
    */
+
+Index: drivers/net/eepro100.c
+--- drivers/net/eepro100.c.orig	Sun Mar 25 19:49:42 2001
++++ drivers/net/eepro100.c	Thu Jan 24 14:23:44 2002
+@@ -49,14 +49,21 @@
+ static const char *version =
+ "eepro100.c:v1.09j-t 9/29/99 Donald Becker http://cesdis.gsfc.nasa.gov/linux/drivers/eepro100.html\n"
+ "eepro100.c: $Revision: 1.20.2.10 $ 2000/05/31 Modified by Andrey V. Savochkin <saw@saw.sw.com.sg> and others\n"
+-"eepro100.c: VA Linux custom, Dragan Stancevic <visitor@valinux.com> 2000/11/15\n";
++"eepro100.c: VA Linux custom, Dragan Stancevic <visitor@valinux.com> 2000/11/15\n"
++"eepro100.c: MIT click polling extensions\n";
++
+
+ /* A few user-configurable values that apply to all boards.
+    First set is undocumented and spelled per Intel recommendations. */
+
+-static int congenb = 0;		/* Enable congestion control in the DP83840. */
+-static int txfifo = 0;		/* Tx FIFO threshold in 4 byte units, 0-15 */
+-static int rxfifo = 0xF;		/* Rx FIFO threshold, default 32 bytes. */
++ /*
++ * benjie: i am setting txfifo to 8 and rxfifo to 8 as they are in the
++ * 2.4.9 linux kernel
++*/
++static int congenb = 0;	/* Enable congestion control in the DP83840. */
++static int txfifo = 8;	/* Tx FIFO threshold in 4 byte units, 0-15 */
++static int rxfifo = 8;	/* Rx FIFO threshold, default 32 bytes. */
++
+ /* Tx/Rx DMA burst length, 0-127, 0 == no preemption, tx==128 -> disabled. */
+ static int txdmacount = 128;
+ static int rxdmacount = 0;
+@@ -587,6 +594,16 @@
+ static void set_rx_mode(struct net_device *dev);
+ static void speedo_show_state(struct net_device *dev);
+
++/* device polling stuff */
++static int speedo_tx_queue(struct net_device *dev, struct sk_buff *skb);
++static int speedo_tx_eob(struct net_device *dev);
++static int speedo_tx_start(struct net_device *dev);
++static int speedo_rx_refill(struct net_device *dev, struct sk_buff **);
++static struct sk_buff *speedo_tx_clean(struct net_device *dev);
++static struct sk_buff *speedo_rx_poll(struct net_device *dev, int *want);
++static int speedo_poll_on(struct net_device *dev);
++static int speedo_poll_off(struct net_device *dev);
++
+ 
+
+ #ifdef honor_default_port
+@@ -891,6 +908,17 @@
+ 	dev->set_multicast_list = &set_rx_mode;
+ 	dev->do_ioctl = &speedo_ioctl;
+
++	/* Click: polling support */
++	dev->polling = 0;
++	dev->poll_on = &speedo_poll_on;
++	dev->poll_off = &speedo_poll_off;
++	dev->rx_poll = &speedo_rx_poll;
++	dev->rx_refill = &speedo_rx_refill;
++	dev->tx_queue = &speedo_tx_queue;
++	dev->tx_clean = &speedo_tx_clean;
++	dev->tx_start = &speedo_tx_start;
++	dev->tx_eob = &speedo_tx_eob;
++
+ 	return dev;
+ }
+ 
+@@ -1111,7 +1139,8 @@
+ 		 ioaddr + SCBPointer);
+ 	/* We are not ACK-ing FCP and ER in the interrupt handler yet so they should
+ 	   remain masked --Dragan */
+-	outw(CUStart | SCBMaskEarlyRx | SCBMaskFlowCtl, ioaddr + SCBCmd);
++	outw(CUStart | SCBMaskEarlyRx | SCBMaskFlowCtl |
++	     (dev->polling ? SCBMaskAll : 0), ioaddr + SCBCmd);
+ }
+
+ /* Media monitoring and control. */
+@@ -1318,7 +1347,8 @@
+ 			   dev->name);
+ 		outl(virt_to_bus(&sp->tx_ring[sp->dirty_tx % TX_RING_SIZE]),
+ 			 ioaddr + SCBPointer);
+-		outw(CUStart, ioaddr + SCBCmd);
++		outw(CUStart | (dev->polling ? SCBMaskAll : 0),
++		     ioaddr + SCBCmd);
+ 		reset_mii(dev);
+ 	} else {
+ #else
+@@ -1365,6 +1395,14 @@
+ 	long ioaddr = dev->base_addr;
+ 	int entry;
+
++#if 0
++	if (dev->polling > 0) {
++		printk(KERN_ERR "%s: start_xmit while polling\n",
++		       dev->name);
++		return 1;
++	}
++#endif
++
+ #if ! defined(HAS_NETIF_QUEUE)
+ 	if (test_bit(0, (void*)&dev->tbusy) != 0) {
+ 		int tickssofar = jiffies - dev->trans_start;
+@@ -1377,7 +1415,8 @@
+ 			command atomic.  --SAW */
+ 			spin_lock_irqsave(&sp->lock, flags);
+ 			wait_for_cmd_done(ioaddr + SCBCmd);
+-			outw(SCBTriggerIntr, ioaddr + SCBCmd);
++			outw(SCBTriggerIntr | ((dev->polling>0) ? SCBMaskAll : 0),
++			     ioaddr + SCBCmd);
+ 			spin_unlock_irqrestore(&sp->lock, flags);
+ 			return 1;
+ 		}
+@@ -1388,7 +1427,6 @@
+
+ 	{	/* Prevent interrupts from changing the Tx ring from underneath us. */
+ 		unsigned long flags;
+-
+ 		spin_lock_irqsave(&sp->lock, flags);
+
+ 		/* Check if there are enough space. */
+@@ -1436,7 +1474,6 @@
+ 	}
+
+ 	dev->trans_start = jiffies;
+-
+ 	return 0;
+ }
+
+@@ -1445,6 +1482,12 @@
+ 	unsigned int dirty_tx;
+ 	struct speedo_private *sp = (struct speedo_private *)dev->priv;
+
++	if (dev->polling) {
++		printk(KERN_ERR "%s: speedo_tx_buffer_gc while polling\n",
++		       dev->name);
++		return;
++	}
++
+ 	dirty_tx = sp->dirty_tx;
+ 	while ((int)(sp->cur_tx - dirty_tx) > 0) {
+ 		int entry = dirty_tx % TX_RING_SIZE;
+@@ -1510,6 +1553,9 @@
+ 	}
+ #endif
+
++	if (dev->polling)
++		printk(KERN_ERR "%s: interrupt while polling\n", dev->name);
++
+ 	ioaddr = dev->base_addr;
+ 	sp = (struct speedo_private *)dev->priv;
+
+@@ -1539,10 +1585,12 @@
+ 			break;
+
+ 		/* Always check if all rx buffers are allocated.  --SAW */
+-		speedo_refill_rx_buffers(dev, 0);
++		if (!dev->polling)
++			speedo_refill_rx_buffers(dev, 0);
+
+-		if ((status & 0x5000) ||	/* Packet received, or Rx error. */
+-			(sp->rx_ring_state&(RrNoMem|RrPostponed)) == RrPostponed)
++		if (!dev->polling &&
++			((status & 0x5000) ||	/* Packet received, or Rx error. */
++			(sp->rx_ring_state&(RrNoMem|RrPostponed)) == RrPostponed))
+ 									/* Need to gather the postponed packet. */
+ 			speedo_rx(dev);
+
+@@ -1612,7 +1660,7 @@
+ 		}
+
+ 		/* User interrupt, Command/Tx unit interrupt or CU not active. */
+-		if (status & 0xA400) {
++		if (!dev->polling && (status & 0xA400)) {
+ 			spin_lock(&sp->lock);
+ 			speedo_tx_buffer_gc(dev);
+ 			if (sp->tx_full
+@@ -1721,6 +1769,12 @@
+ {
+ 	struct speedo_private *sp = (struct speedo_private *)dev->priv;
+
++	if (dev->polling) {
++		printk(KERN_ERR "%s: speedo_refill_rx_buffers called "
++		       "while polling\n", dev->name);
++		return;
++	}
++
+ 	/* Refill the RX ring. */
+ 	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 &&
+ 			speedo_refill_rx_buf(dev, force) != -1);
+@@ -1735,6 +1789,12 @@
+ 	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
+ 	int alloc_ok = 1;
+
++	if (dev->polling) {
++		printk(KERN_ERR "%s: in speedo_rx() while polling\n",
++		       dev->name);
++		return 0;
++	}
++
+ 	if (speedo_debug > 4)
+ 		printk(KERN_DEBUG " In speedo_rx().\n");
+ 	/* If we own the next entry, it's a new packet. Send it up. */
+@@ -2218,3 +2278,372 @@
+  *  tab-width: 4
+  * End:
+  */
++
++/*
++ * Click: Polling extensions.  Most of this code has been copied
++ * from various routines above with slight modifications.
++ */
++
++static int speedo_rx_refill(struct net_device *dev, struct sk_buff **skbs) {
++	struct speedo_private *sp = (struct speedo_private *)dev->priv;
++	struct sk_buff *skb_list;
++	int dirty_rx = sp->dirty_rx;
++
++	/* If the list is empty, return the number of skb's we want */
++	if (skbs == 0)
++		return sp->cur_rx - sp->dirty_rx;
++
++	skb_list = *skbs;
++
++	/*
++	 * Refill the RX ring with supplied skb's.  Unlike
++	 * speedo_refill_rx_buf routine, we don't have to
++	 * worry about failed allocations.
++	 */
++	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 && skb_list) {
++		int entry;
++		struct RxFD *rxf;
++		struct sk_buff *skb;
++
++		entry = sp->dirty_rx % RX_RING_SIZE;
++		if (sp->rx_skbuff[entry] == NULL) {
++			skb = skb_list;
++			skb_list = skb_list->next;
++			skb->prev = skb->next = NULL;
++			skb->list = NULL;
++
++			sp->rx_skbuff[entry] = skb;
++			sp->rx_ringp[entry] = (struct RxFD *) skb->tail;
++
++			skb->dev = dev;
++			skb_reserve(skb, sizeof(struct RxFD));
++
++			rxf = sp->rx_ringp[entry];
++			rxf->rx_buf_addr = (uint32_t)0xffffffff;
++		} else {
++			rxf = sp->rx_ringp[entry];
++		}
++		speedo_rx_link(dev, entry, rxf);
++		sp->dirty_rx++;
++	}
++
++	/*
++	 * Check if the RU is stopped -- restart it, if so.
++	 */
++	if ((inw(dev->base_addr + SCBStatus) & 0x003c) == 0x0008) {
++		wait_for_cmd_done(dev->base_addr + SCBCmd);
++
++		/*
++		 * If the RU stopped, it's because there aren't
++		 * any DMA buffers left, so the first DMA buffer
++		 * we've just refilled is where we should start
++		 * receiving.
++		 */
++		outl(virt_to_bus(sp->rx_ringp[dirty_rx % RX_RING_SIZE]),
++		     dev->base_addr + SCBPointer);
++		outb(RxStart, dev->base_addr + SCBCmd);
++	}
++
++	/*
++	 * Clear error flags on the RX ring, write back the remaining
++	 * skb's that we haven't used, and return the number of dirty
++	 * buffers remaining.
++	 */
++	sp->rx_ring_state &= ~(RrNoMem|RrOOMReported);
++	*skbs = skb_list;
++	return sp->cur_rx - sp->dirty_rx;
++}
++
++static struct sk_buff *speedo_rx_poll(struct net_device *dev, int *want) {
++	struct speedo_private *sp = (struct speedo_private *)dev->priv;
++	int entry = sp->cur_rx % RX_RING_SIZE;
++	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
++	struct sk_buff *skb_head, *skb_last;
++	int got = 0;
++
++	skb_head = skb_last = NULL;
++
++	/* If we own the next entry, it's a new packet. Send it up. */
++	while (sp->rx_ringp[entry] != NULL) {
++		int status = le32_to_cpu(sp->rx_ringp[entry]->status);
++		int pkt_len = le32_to_cpu(sp->rx_ringp[entry]->count) & 0x3fff;
++
++		/* If the packet hasn't been received, bail out. */
++		if ((status & RxComplete) == 0)
++			break;
++
++		/* If we've already received too many packets, bail out. */
++		if (got == *want || --rx_work_limit < 0)
++			break;
++
++		/* Check for a rare out-of-memory case: the current buffer is
++		   the last buffer allocated in the RX ring.  --SAW */
++		if (sp->last_rxf == sp->rx_ringp[entry]) {
++			/*
++			 * Postpone the packet.  It'll be reaped next time
++			 * when this packet is no longer the last packet
++			 * in the ring.
++			 */
++			sp->rx_ring_state |= RrPostponed;
++			break;
++		}
++
++		if ((status & (RxErrTooBig|RxOK|0x0f90)) != RxOK) {
++			if (status & RxErrTooBig) {
++				printk(KERN_ERR "%s: Ethernet frame overran "
++				       "the Rx buffer, status %8.8x!\n",
++				       dev->name, status);
++			} else if (! (status & RxOK)) {
++				/*
++				 * There was a fatal error.  This *should*
++				 * be impossible.
++				 */
++				sp->stats.rx_errors++;
++				printk(KERN_ERR "%s: Anomalous event in "
++				       "speedo_rx_poll(), status %8.8x.\n",
++				       dev->name, status);
++			}
++		} else {
++			struct sk_buff *skb = sp->rx_skbuff[entry];
++
++			if (skb == NULL) {
++				printk(KERN_ERR "%s: Inconsistent Rx "
++				       "descriptor chain.\n", dev->name);
++				break;
++			}
++
++			/* Remove skbuff from RX ring */
++			sp->rx_skbuff[entry] = NULL;
++			sp->rx_ringp[entry] = NULL;
++			skb_put(skb, pkt_len);
++
++			skb->protocol = eth_type_trans(skb, dev);
++			sp->stats.rx_packets++;
++			sp->stats.rx_bytes += pkt_len;
++
++			/* Append the skb to the received list */
++			if (got == 0) {
++				skb_head = skb_last = skb;
++				skb->next = skb->prev = NULL;
++			} else {
++				skb_last->next = skb;
++				skb->prev = skb_last;
++				skb->next = NULL;
++				skb_last = skb;
++			}
++
++			got++;
++		}
++
++		entry = (++sp->cur_rx) % RX_RING_SIZE;
++		sp->rx_ring_state &= ~RrPostponed;
++	}
++
++	if (got == 0 && (inw(dev->base_addr + SCBStatus) & 0x003c) == 0x0008) {
++		wait_for_cmd_done(dev->base_addr + SCBCmd);
++
++		outl(virt_to_bus(sp->rx_ringp[sp->cur_rx % RX_RING_SIZE]),
++		     dev->base_addr + SCBPointer);
++		outb(RxStart, dev->base_addr + SCBCmd);
++	}
++
++	sp->last_rx_time = jiffies;
++	*want = got;
++	return skb_head;
++}
++
++static int speedo_tx_queue(struct net_device *dev, struct sk_buff *skb) {
++	struct speedo_private *sp = (struct speedo_private *)dev->priv;
++	long ioaddr = dev->base_addr;
++	int entry;
++	unsigned flags;
++
++#if ! defined(HAS_NETIF_QUEUE)
++	if (test_bit(0, (void*)&dev->tbusy) != 0) {
++		int tickssofar = jiffies - dev->trans_start;
++		if (tickssofar < TX_TIMEOUT - 2)
++			return 1;
++		if (tickssofar < TX_TIMEOUT) {
++			/* Reap sent packets from the full Tx queue. */
++			unsigned long flags;
++			/* Take a spinlock to make wait_for_cmd_done and
++			 * sending the command atomic.  --SAW
++			 */
++			spin_lock_irqsave(&sp->lock, flags);
++			wait_for_cmd_done(ioaddr + SCBCmd);
++			outw(SCBTriggerIntr | (dev->polling ? SCBMaskAll : 0),
++			     ioaddr + SCBCmd);
++			spin_unlock_irqrestore(&sp->lock, flags);
++			return 1;
++		}
++		speedo_tx_timeout(dev);
++		return 1;
++	}
++#endif
++
++    spin_lock_irqsave(&sp->lock, flags);
++
++	/* Check if there are enough space. */
++	if ((int)(sp->cur_tx - sp->dirty_tx) >= TX_QUEUE_LIMIT) {
++		printk(KERN_ERR "%s: incorrect tbusy state, fixed.\n",
++		       dev->name);
++		netif_stop_queue(dev);
++		spin_unlock_irqrestore(&sp->lock, flags);
++		sp->tx_full = 1;
++		return 1;
++	}
++
++	/* Calculate the Tx descriptor entry. */
++	entry = sp->cur_tx++ % TX_RING_SIZE;
++
++	sp->tx_skbuff[entry] = skb;
++	sp->tx_ring[entry].link =
++		virt_to_le32desc(&sp->tx_ring[sp->cur_tx % TX_RING_SIZE]);
++	sp->tx_ring[entry].tx_desc_addr =
++		virt_to_le32desc(&sp->tx_ring[entry].tx_buf_addr0);
++
++	/* The data region is always in one buffer descriptor. */
++	sp->tx_ring[entry].count = cpu_to_le32(sp->tx_threshold);
++	sp->tx_ring[entry].tx_buf_addr0 = virt_to_le32desc(skb->data);
++	sp->tx_ring[entry].tx_buf_size0 = cpu_to_le32(skb->len);
++
++	sp->tx_ring[entry].status =
++		cpu_to_le32(CmdSuspend | CmdTx | CmdTxFlex);
++
++	/* Trigger the command unit resume. */
++	clear_suspend(sp->last_cmd);
++	sp->last_cmd = (struct descriptor *)&sp->tx_ring[entry];
++
++	/* Leave room for set_rx_mode(). If there is no more space than
++	 * reserved for multicast filter mark the ring as full.
++	 */
++	if ((int)(sp->cur_tx - sp->dirty_tx) >= TX_QUEUE_LIMIT) {
++		netif_stop_queue(dev);
++		sp->tx_full = 1;
++	}
++
++	spin_unlock_irqrestore(&sp->lock, flags);
++	return 0;
++}
++
++static int speedo_tx_eob(struct net_device *dev)
++{
++	/* Start the DMA going again */
++#if 1
++#if 0 // benjie
++	wait_for_cmd_done(ioaddr + SCBCmd);
++#endif
++	outb(CUResume, dev->base_addr + SCBCmd);
++#endif
++	return 0;
++}
++
++static int speedo_tx_start(struct net_device *dev) {
++	printk("hard tx_start\n");
++	/* must have been suspended before the last queued DMA ring, so
++	 * this mindless CUResume is probably okay */
++	outb(CUResume, dev->base_addr + SCBCmd);
++	dev->trans_start = jiffies;
++	return 0;
++}
++
++static struct sk_buff *speedo_tx_clean(struct net_device *dev) {
++	unsigned int dirty_tx;
++	struct speedo_private *sp = (struct speedo_private *)dev->priv;
++	struct sk_buff *skb_head, *skb_last;
++
++	skb_head = skb_last = NULL;
++
++	dirty_tx = sp->dirty_tx;
++	while ((int)(sp->cur_tx - dirty_tx) > 0) {
++		int entry = dirty_tx % TX_RING_SIZE;
++		int status = le32_to_cpu(sp->tx_ring[entry].status);
++
++		if ((status & StatusComplete) == 0)
++			break;		/* It still hasn't been processed. */
++
++		if (status & TxUnderrun)
++			if (sp->tx_threshold < 0x01e08000) {
++				if (speedo_debug > 2)
++					printk(KERN_DEBUG "%s: TX underrun, "
++					       "threshold adjusted.\n",
++					       dev->name);
++				sp->tx_threshold += 0x00040000;
++			}
++
++		/* Put the original skb on the return list. */
++		if (sp->tx_skbuff[entry]) {
++			struct sk_buff *skb = sp->tx_skbuff[entry];
++
++			sp->stats.tx_packets++;	/* Count only user packets. */
++			sp->stats.tx_bytes += sp->tx_skbuff[entry]->len;
++			sp->tx_skbuff[entry] = 0;
++
++			if (skb_head == NULL) {
++				skb_head = skb_last = skb;
++				skb->next = skb->prev = NULL;
++			} else {
++				skb_last->next = skb;
++				skb->prev = skb_last;
++				skb->next = NULL;
++				skb_last = skb;
++			}
++		}
++		dirty_tx++;
++	}
++
++	if (speedo_debug && (int)(sp->cur_tx - dirty_tx) > TX_RING_SIZE) {
++		printk(KERN_ERR "out-of-sync dirty pointer, %d vs. %d,"
++			   " full=%d.\n",
++			   dirty_tx, sp->cur_tx, sp->tx_full);
++		dirty_tx += TX_RING_SIZE;
++	}
++
++	while (sp->mc_setup_head != NULL
++		   && (int)(dirty_tx - sp->mc_setup_head->tx - 1) > 0) {
++		struct speedo_mc_block *t;
++		if (speedo_debug > 1)
++			printk(KERN_DEBUG "%s: freeing mc frame.\n", dev->name);
++		t = sp->mc_setup_head->next;
++		kfree(sp->mc_setup_head);
++		sp->mc_setup_head = t;
++	}
++	if (sp->mc_setup_head == NULL)
++		sp->mc_setup_tail = NULL;
++
++	sp->dirty_tx = dirty_tx;
++
++	if (sp->tx_full && (int)(sp->cur_tx - sp->dirty_tx) < TX_QUEUE_UNFULL) {
++		/* The ring is no longer full. */
++		sp->tx_full = 0;
++		netif_wake_queue(dev); /* Attention: under a spinlock.  --SAW */
++	}
++	return skb_head;
++}
++
++static int speedo_poll_on(struct net_device *dev) {
++	long ioaddr = dev->base_addr;
++
++	if (dev->polling == 0) {
++		/* Mask all interrupts */
++		outw(SCBMaskAll, ioaddr + SCBCmd);
++
++		dev->polling = 2;
++	}
++
++	return 0;
++}
++
++static int speedo_poll_off(struct net_device *dev) {
++	long ioaddr = dev->base_addr;
++
++	if (dev->polling > 0) {
++		/* Enable interrupts */
++		outw(0, ioaddr + SCBCmd);
++
++		dev->polling = 0;
++	}
++
++	return 0;
++}
++
+
 diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.19-pure/net/netsyms.c ./net/netsyms.c
 *** ../linux-2.2.19-pure/net/netsyms.c	Sun Mar 25 08:37:41 2001
 --- ./net/netsyms.c	Sat May 26 00:29:15 2001

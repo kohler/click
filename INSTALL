@@ -6,16 +6,25 @@ C++ compiler (version 2.95 or above); and GNU Make. The `./configure'
 script should complain if it cannot find software it needs.
 
 The user-level version of Click should compile and run on any Intel x86
-Unix system that has the pcap library. (The pcap library is necessary to
-communicate with the network. See the end of this document for portability
-notes for other architectures.) The Linux kernel module requires a patched
-Linux 2.2 system; we've tested on the recent 2.2.19 Linux kernels. We also
-distribute a Linux 2.4 patch, which we are working on, but as of now, Linux
-2.4 support is not as stable as Linux 2.2 support. Finally, the preliminary
-FreeBSD Click kernel module compiles against unpatched FreeBSD-STABLE
-versions after 440002.
+Unix system that has the pcap library, which is necessary to communicate
+with the network. See the end of this document for portability notes for
+other architectures.
 
-First, run
+The Linux kernel module requires a patched Linux 2.2 system. We provide
+tested patches for Linux 2.2.18, 2.2.19, and 2.2.20. We also distribute a
+Linux 2.4 patch, which we are working on, but as of now, Linux 2.4 support
+is not as stable as Linux 2.2 support.
+
+Finally, the preliminary FreeBSD Click kernel module compiles against
+unpatched FreeBSD-STABLE versions after 440002.
+
+CONFIGURING
+-----------
+
+If you plan to use the Linux kernel module, you must patch your kernel
+first. See the `Linux module' section below.
+
+Run
 
 	./configure [--prefix=PREFIX]
 
@@ -29,11 +38,11 @@ to see more options for `./configure'.
 
    Notes: You can also build Click in a different directory than the source
           directory. Just change into the build directory and run
-          `PATH_TO_SRCDIR/configure'.)
+          `PATH_TO_SRCDIR/configure'.
 
           If the distribution does not contain a `configure' script, you
-          probably checked out the distribution from CVS. Change into the
-          source directory and run `autoconf', then continue as above.)
+          probably checked it out from CVS. Change into the source
+          directory and run `autoconf', then continue as above.
 
 After running `./configure', the `make install' command will install the
 user-level executable `click', the kernel module `click.o', the
@@ -79,17 +88,20 @@ and running Linux kernels.
     This is in case something goes wrong and you need to revert to an old
     kernel.
 
- 2. Get a copy of the Linux 2.2.18 kernel source distribution, for example
-    from www.kernel.org. Unpack this distribution into /usr/src/linux.
-    (Save the old kernel source tree, if you had one.)
+ 2. Get a suitable Linux kernel source distribution, for example from
+    www.kernel.org. Unpack this distribution into /usr/src/linux. (Save the
+    old kernel source tree, if you had one.)
 
-    We also supply patches for Linux 2.2.17, 2.2.19, and a preliminary
-    patch for Linux 2.4.9.
+    We supply patches for Linux 2.2.17, 2.2.18, 2.2.19, 2.2.20, and a
+    preliminary patch for Linux 2.4.9.
 
  3. Install the Click Linux kernel patch:
 
 	cd /usr/src/linux
-	patch -p0 -b < CLICKDIR/etc/linux-2.2.18-patch
+	patch -p0 -b < CLICKDIR/etc/linux-VERSION-patch
+
+    VERSION is generally the kernel version you chose, but for Linux
+    2.2.20, use `linux-2.2.19-patch'.
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
@@ -102,7 +114,7 @@ and running Linux kernels.
     configuration, or you can do the usual `make menuconfig'.
 
  5. If your archived, working kernel has the same version number as the
-    patched kernel (they're both 2.2.18, for example), then it is a good
+    patched kernel (they're both 2.2.20, for example), then it is a good
     idea to change the patched kernel's `EXTRAVERSION'. This way, the
     modules for the new kernel won't overwrite the old, working modules.
     Edit /usr/src/linux/Makefile and change the line `EXTRAVERSION =' to
