@@ -217,6 +217,7 @@ private:
   unsigned int _seq_no;
   unsigned int _fake_seq_no;
   unsigned int _bcast_count;
+  unsigned int _seq_delay;
 
   /* local DSDV radius */
   int _max_hops;
@@ -276,6 +277,9 @@ private:
 
   static String print_est_type(Element *e, void *);
   static int write_est_type(const String &, Element *, void *, ErrorHandler *);
+
+  static String print_seq_delay(Element *e, void *);
+  static int write_seq_delay(const String &, Element *, void *, ErrorHandler *);
 
   unsigned int qual_to_pct(int q);
   unsigned int sig_to_pct(int s);

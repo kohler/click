@@ -28,11 +28,11 @@
 #include "gridroutetable.hh"
 #include "timeutils.hh"
 
-#define SEQ_DELAY 25
 
 GridRouteTable::GridRouteTable() : 
   Element(1, 1), 
   _seq_no(0), _fake_seq_no(0), _bcast_count(0),
+  _seq_delay(1),
   _max_hops(3), 
   _expire_timer(expire_hook, this),
   _hello_timer(hello_hook, this),
@@ -1031,6 +1031,25 @@ GridRouteTable::write_est_type(const String &arg, Element *el,
 
 
 String
+GridRouteTable::print_seq_delay(Element *e, void *)
+{
+  GridRouteTable *rt = (GridRouteTable *) e;
+  
+  return String(rt->_seq_delay) + "\n";
+}
+
+int
+GridRouteTable::write_seq_delay(const String &arg, Element *el, 
+				   void *, ErrorHandler *)
+{
+  GridRouteTable *rt = (GridRouteTable *) el;
+  rt->_seq_delay = atoi(((String) arg).cc());
+
+  return 0;
+}
+
+
+String
 GridRouteTable::print_links(Element *e, void *)
 {
   GridRouteTable *rt = (GridRouteTable *) e;
@@ -1087,6 +1106,8 @@ GridRouteTable::add_handlers()
   add_write_handler("metric_range", write_metric_range, 0);
   add_read_handler("est_type", print_est_type, 0);
   add_write_handler("est_type", write_est_type, 0);
+  add_read_handler("seq_delay", print_seq_delay, 0);
+  add_write_handler("seq_delay", write_seq_delay, 0);
 }
 
 
@@ -1308,7 +1329,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   assert(!(_seq_no & 1));
   if (update_seq) {
     _fake_seq_no++;
-    if ((_fake_seq_no % SEQ_DELAY) == 0)
+    if ((_fake_seq_no % _seq_delay) == 0)
       _seq_no += 2;
   }
   
