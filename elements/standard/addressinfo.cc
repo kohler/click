@@ -299,17 +299,17 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 
   // if it's a device name, return its Ethernet address
 #ifdef CLICK_LINUXMODULE
+  // in the Linux kernel, just look at the device list
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 #  define dev_put(dev) /* nada */
 # endif
-  // in the Linux kernel, just look at the device list
   net_device *dev = dev_get_by_name(s.cc());
   if (dev && dev->type == ARPHRD_ETHER) {
     memcpy(store, dev->dev_addr, 6);
     dev_put(dev);
     return true;
   } else if (dev)
-    dev_put(dev)
+    dev_put(dev);
 #elif defined(__linux__) && CLICK_USERLEVEL
   // on Linux userlevel, call ioctl on a socket opened for the purpose
   // -- based on patch from Jose Vasconcellos <jvasco@bellatlantic.net>
