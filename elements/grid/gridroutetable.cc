@@ -319,6 +319,27 @@ GridRouteTable::clone() const
 
 
 String 
+GridRouteTable::print_rtes_v(Element *e, void *)
+{
+  GridRouteTable *n = (GridRouteTable *) e;
+
+  String s;
+  for (RTIter i = n->_rtes.first(); i; i++) {
+    const RTEntry &f = i.value();
+    s += f.dest_ip.s() 
+      + " next=" + f.next_hop_ip.s() 
+      + " hops=" + String((int) f.num_hops) 
+      + " gw=" + (f.is_gateway ? "y" : "n")
+      + " loc=" + f.loc.s()
+      + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
+      + " seq=" + String(f.seq_no)
+      + "\n";
+  }
+  
+  return s;
+}
+
+String 
 GridRouteTable::print_rtes(Element *e, void *)
 {
   GridRouteTable *n = (GridRouteTable *) e;
@@ -357,6 +378,7 @@ GridRouteTable::print_nbrs(Element *e, void *)
   return s;
 }
 
+
 String
 GridRouteTable::print_ip(Element *e, void *)
 {
@@ -378,6 +400,7 @@ GridRouteTable::add_handlers()
 {
   add_default_handlers(false);
   add_read_handler("nbrs", print_nbrs, 0);
+  add_read_handler("rtes_v", print_rtes_v, 0);
   add_read_handler("rtes", print_rtes, 0);
   add_read_handler("ip", print_ip, 0);
   add_read_handler("eth", print_eth, 0);
