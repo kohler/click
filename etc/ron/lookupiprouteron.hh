@@ -30,8 +30,8 @@
 #include <click/vector.hh>
 #include <click/timer.hh>
 
-#define ROUTE_TIMEOUT 30*1000
-#define WAIT_TIMEOUT 3*1000   // These are arbitrary values
+#define ROUTE_TIMEOUT 30*100
+#define WAIT_TIMEOUT 3*100   // These are arbitrary values
 
 class LookupIPRouteRON : public Element {
 public:
