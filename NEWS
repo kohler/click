@@ -135,6 +135,11 @@ Version 1.1
    FromDevice, ToDevice, and ControlSocket; kernel module ToLinuxSniffers;
    generic SetIPAddress, StoreIPAddress.
 
+** Added AddressInfo element, which supports network address mnemonics. For
+   example, you can now say `AddressInfo(butt 18.26.4.44); IPEncap(6, butt,
+   18.26.4.15);'; `butt' in IPEncap's configuration string then means
+   `18.26.4.44'.
+
 ** Added experimental IPv6 elements; `./configure --enable-ip6' to compile
    them.
 
