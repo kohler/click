@@ -22,6 +22,7 @@ includedir=@includedir@
 srcdir=@datadir@/click/src
 linuxdir=@linuxdir@
 freebsd_includedir=@freebsd_includedir@
+CLICK_VERSION=@CLICK_VERSION@
 
 # determine mode
 directory=.
@@ -30,6 +31,7 @@ package=NONE
 cflags=
 compileflag=-c
 quiet=
+gpl=y
 while true; do
   bad=x
   case $1 in
@@ -53,8 +55,10 @@ while true; do
       package=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
     -q|--q|--qu|--qui|--quie|--quiet)
       quiet=y; shift 1;;
+    --no-g|--no-gp|--no-gpl)
+      gpl=n; shift 1;;
     -h|--h|--he|--hel|--help)
-      cat <<'EOF' 1>&2
+      cat <<'EOF'
 `Click-compile' compiles a Click source file, or outputs any compiler options
 relevant for userlevel Click drivers.
 
@@ -68,10 +72,22 @@ Options:
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
   -d, --directory DIR     Change to directory DIR.
   -q, --quiet             Be quiet (don't echo commands or print warnings).
+      --no-gpl            Omit "BSD/GPL" declaration from kernel package.
   -h, --help              Print this message and exit.
+  -v, --version           Print version number and exit.
   Other options are passed to the compiler unchanged.
 
 Report bugs to <click@pdos.lcs.mit.edu>.
+EOF
+      exit 0;;
+    -v|--v|--ve|--ver|--vers|--versi|--versio|--version)
+      echo click-compile '(Click)' $CLICK_VERSION
+      cat <<"EOF"
+Copyright (C) 1999-2001 Massachusetts Institute of Technology
+Copyright (C) 2002 International Computer Science Institute
+This is free software; see the source for copying conditions.
+There is NO warranty, not even for merchantability or fitness for any
+particular purpose.
 EOF
       exit 0;;
     -*)
@@ -201,12 +217,19 @@ if test "x$package" != "xNONE"; then
     test -f $vfile.c && echo "click-compile: A file \`$vfile.c' already exists in this directory!" 1>&2 && echo "click-compile: You must remove it, or run me somewhere else." 1>&2 && exit 1
     trap 'rm -f $vfile.c $vfile.o' 0
     trap 'rm -f $vfile.c $vfile.o; exit 1' 1 2 15
-    cat > $vfile.c << EOF
+    cat > $vfile.c <<EOF
 #include <click/config.h>
 #include <linux/module.h>
 /* a new version of EXPORT_NO_SYMBOLS that works */
 const int __ksymtab_nothing[0] __attribute__((section("__ksymtab"))) = { };
 EOF
+    if test $gpl = y; then
+	cat >> $vfile.c <<EOF
+#ifdef MODULE_LICENSE
+MODULE_LICENSE("Dual BSD/GPL");
+#endif
+EOF
+    fi
     exec_command $c_command $vfile.c
     exec_command "ld -r -o $package $files $vfile.o"
     exit 0 
