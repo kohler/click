@@ -669,7 +669,7 @@ IPRw::incr_clean_map_free_tracked(Map &table,
 				  uint32_t last_jif)
 {
   Mapping *m = free_head;
-  if (m->session_over()) {
+  if (!m->session_over()) {
     // has been recycled; remove from free-tracked list
     free_head = m->free_next();
     if (!free_head)
