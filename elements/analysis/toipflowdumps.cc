@@ -143,7 +143,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
     else if (create_directories(_filename, errh) < 0)
 	return -1;
     else
-	fd = open(_filename.cc(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	fd = open(_filename.cc(), O_WRONLY | O_CREAT | O_TRUNC, 0666);
     if (fd < 0)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
