@@ -175,7 +175,7 @@ sub _read_file_section ($$$$) {
     my(@args) = split(/\s+/, $args);
 
     # assert that we understand $secname
-    die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv' && $secname ne 'ignore';
+    die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv' && $secname ne 'expectx' && $secname ne 'ignore';
 
     # check for length
     my($length);
@@ -187,7 +187,7 @@ sub _read_file_section ($$$$) {
     # make sure there are filenames
     if (!@args) {
 	push @args, "stdin" if $secname eq 'file';
-	push @args, "stdout" if $secname eq 'expect' || $secname eq 'expectv';
+	push @args, "stdout" if $secname eq 'expect' || $secname eq 'expectv' || $secname eq 'expectx';
 	push @args, "all" if $secname eq 'ignore';
     }
 
@@ -260,6 +260,8 @@ sub read (*;$) {
 		$t = _read_file_section($fh, $tt, $args, 'expect');
 	    } elsif ($command eq 'expect') {
 		$t = _read_file_section($fh, $tt, $args, 'expect');
+	    } elsif ($command eq 'expectx') {
+		$t = _read_file_section($fh, $tt, $args, 'expectx');
 	    } elsif ($command eq 'expectv' || $command eq 'expect_verbatim'
 		     || $command eq 'verbatim') {
 		$t = _read_file_section($fh, $tt, $args, 'expectv');
@@ -307,7 +309,7 @@ sub script_text ($&) {
 
     # develop file-replacing subroutine
     my($subbody, $var, $val) = '';
-    foreach $var (@{$tt->{'file'}}, @{$tt->{'expect'}}, @{$tt->{'expectv'}}, @{$tt->{'ignore'}}) {
+    foreach $var (@{$tt->{'file'}}, @{$tt->{'expect'}}, @{$tt->{'expectx'}}, @{$tt->{'expectv'}}, @{$tt->{'ignore'}}) {
 	next if $_special_filenames{$var};
 	$val = quotemeta($filename_subr->($var));
 	next if !defined($val);
@@ -412,8 +414,8 @@ sub output_error ($$) {
     1;
 }
 
-sub _output_expectation_error ($$$) {
-    my($fn, $efn, $lineno) = @_;
+sub _output_expectation_error ($$$$$) {
+    my($fn, $efn, $lineno, $wanted, $got) = @_;
     
     # output message
     if ($efn eq 'stdout') {
@@ -423,6 +425,15 @@ sub _output_expectation_error ($$$) {
     } else {
 	print STDERR "$fn: file $efn has unexpected value starting at line $lineno\n";
     }
+
+    # output '$wanted' and '$got' if possible
+    $wanted = "<end of file>" if $wanted eq "\376";
+    $wanted =~ s/\r?\n?\Z//;
+    $got = "<end of file>" if $got eq "\376";
+    $got =~ s/\r?\n?\Z//;
+    if ($wanted =~ /\A[\t\040-\176]*\Z/ && $got =~ /\A[\t\040-\176]*\Z/) {
+	print STDERR "$fn: $efn:$lineno: expected '$wanted'\n$fn: $efn:$lineno: but got  '$got'\n";
+    }
 }
 
 sub check_expects ($$) {
@@ -430,9 +441,15 @@ sub check_expects ($$) {
     my($fn) = $tt->filename;
     local($/) = undef;
     my($retval) = 0;
+    my($expectx) = 0;
 
     # check expected files
-    foreach my $efn (@{$tt->{'expect'}}) {
+    foreach my $efn (@{$tt->{'expect'}}, '', @{$tt->{'expectx'}}) {
+	if ($efn eq '') {
+	    $expectx = 1;
+	    next;
+	}
+	
 	if (!open(IN, $filename_subr->($efn))) {
 	    print STDERR "$fn: ---$!\n";
 	    $retval = 1;
@@ -484,7 +501,9 @@ sub check_expects ($$) {
 	    $tp++ while $tl[$tp] eq "\377";
 
 	    # compare lines
-	    if ($el[$ep] =~ /\{\{/) {
+	    if ($expectx) {
+		last if $tl[$tp] !~ m/\A$el[$ep]\Z/;
+	    } elsif ($el[$ep] =~ /\{\{/) {
 		my($t, $re) = ($el[$ep], '');
 		while ($t =~ /\A(.*?)\{\{(.*?)\}\}(.*)\Z/) {
 		    $re .= quotemeta($1) . $2;
@@ -500,7 +519,7 @@ sub check_expects ($$) {
 	}
 	next if $tp >= @tl || $ep >= @el;
 
-	_output_expectation_error($fn, $efn, $tp + 1);
+	_output_expectation_error($fn, $efn, $tp + 1, $el[$ep], $tl[$tp]);
 
 	$retval = 1;
     }
@@ -523,7 +542,7 @@ sub check_expects ($$) {
 	my(@el) = split(/\n/, $tt->{"e:$efn"});
 	my($p) = 0;
 	$p++ while ($p < @tl && $p < @el && $tl[$p] eq $el[$p]);
-	_output_expectation_error($fn, $efn, $p + 1);
+	_output_expectation_error($fn, $efn, $p + 1, $el[$p], $tl[$p]);
 
 	$retval = 1;
     }
@@ -798,9 +817,9 @@ starting with %. There must be, at least, a %script section.
 
 The shell script (in sh syntax) that controls the test. Testie will run
 each command in sequence. Every command must succeed, with exit status 0,
-or the test will fail. Any FILENAMEs from %file, %expect, and %expectv
-sections will be replaced by the actual filenames, except within single
-quotes.
+or the test will fail. Any FILENAMEs from %file, %expect, %expectv, and
+%expectx sections will be replaced by the actual filenames, except within
+single quotes.
 
 =item %info
 
@@ -842,6 +861,11 @@ sets of braces; so the %expect line
 
 matches either `foo' or `foobar'.
 
+=item %expectx [+LENGTH] FILENAME...
+
+%expectx is just like %expect, except that every line is treated as a
+regular expression (so there is no need for the "{{ }}" escapes).
+
 =item %stdin [+LENGTH]
 
 Same as `%file stdin [+LENGTH]'.
@@ -853,11 +877,11 @@ Same as `%expect stdout [+LENGTH]'.
 =item %ignore [[+LENGTH] FILENAME]
 
 Lines in script output that should be ignored, and not considered for
-%expect matches. Each line in the %ignore section should be a Perl regular
-expression. Lines in the supplied FILENAME that match any of those regular
-expressions will not be considered when comparing files with %expect data.
-FILENAME may be 'all', in which case the regular expressions will apply to
-all %expect files.
+%expect and %expectx matches. Each line in the %ignore section should be a
+Perl regular expression. Lines in the supplied FILENAME that match any of
+those regular expressions will not be considered when comparing files with
+%expect[x] data. FILENAME may be 'all', in which case the regular
+expressions will apply to all %expect[x] files.
 
 =item %eof
 
