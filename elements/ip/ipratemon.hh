@@ -104,9 +104,9 @@ private:
     Counter *_parent;
     Stats *_prev, *_next;
 
-    Counter counter[MAX_COUNTERS];
+    Counter* counter[MAX_COUNTERS];
     Stats(IPRateMonitor *m);
-    Stats(IPRateMonitor *m, const MyEWMA &, const MyEWMA &);
+    // Stats(IPRateMonitor *m, const MyEWMA &, const MyEWMA &);
     ~Stats();
     void clear();
 
@@ -161,25 +161,32 @@ IPRateMonitor::update(IPAddress saddr, int val,
 		      Packet *p, bool forward)
 {
   unsigned int addr = saddr.addr();
-  int now = MyEWMA::now();
-
   struct Stats *s = _base;
   Counter *c = 0;
   int bitshift;
 
+  int now = MyEWMA::now();
+
   // find entry on correct level
-  unsigned char byte;
   for (bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
-    byte = (addr >> bitshift) & 0x000000ff;
-    c = &(s->counter[byte]);
+    unsigned char byte = (addr >> bitshift) & 0x000000ff;
+
+    // Allocate Counter record if it doesn't exist yet.
+    if(!(c = s->counter[byte])) {
+      c = s->counter[byte] = new Counter;
+      c->fwd_rate.initialize();
+      c->rev_rate.initialize();
+      c->next_level = 0;
+    }
+
     if (forward)
       c->fwd_rate.update(now, val);
     else
       c->rev_rate.update(now, val);
 
-    // Move to front of list
-    move_to_front(s);
-
+    // Move this Stats struct to front of age list
+    if(s != _first)
+      move_to_front(s);
     if(!c->next_level)
       break;
     s = c->next_level;
@@ -194,7 +201,7 @@ IPRateMonitor::update(IPAddress saddr, int val,
   // did value get larger than THRESH in the specified period?
   if (fwd_rate >= _thresh || rev_rate >= _thresh) {
     if (bitshift < MAX_SHIFT) {
-      c->next_level = new Stats(this, c->fwd_rate, c->rev_rate);
+      c->next_level = new Stats(this);
       if(!c->next_level) {
         // Clean up and try again
       }
@@ -207,24 +214,19 @@ IPRateMonitor::update(IPAddress saddr, int val,
 }
 
 
+//
+// NB: Should not be called when already first in list!
+//
 inline void
 IPRateMonitor::move_to_front(Stats *s)
 {
-  // Untangle prev
-  if(s->_prev)
-    s->_prev->_next = s->_next;
-  else {
-    // Already first in list
-    assert(s == _first);
-    return;
-  }
+  // s->_prev has valid value, because never called when s == _first.
+  s->_prev->_next = s->_next;
 
   // Untangle next. Only executed when not first.
   if(s->_next)
     s->_next->_prev = s->_prev;
   else {
-    // This stats was last in age list, make preceding last.
-    assert(s == _last);
     _last = s->_prev;
     _last->_next = 0;
   }
@@ -237,7 +239,6 @@ IPRateMonitor::move_to_front(Stats *s)
 inline void
 IPRateMonitor::prepend_to_front(Stats *s)
 {
-  assert(_first->_prev == 0);
   _first->_prev = s;
   s->_prev = 0;
   s->_next = _first;
@@ -255,7 +256,7 @@ IPRateMonitor::update_rates(Packet *p, bool forward)
   else
     update(IPAddress(ip->ip_dst), val, p, false);
 
-  if(_packet_counter++ == _refresh) {
+  if(++_packet_counter == _refresh) {
     fold();
     _packet_counter = 0;
   }

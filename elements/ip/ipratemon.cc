@@ -157,26 +157,8 @@ IPRateMonitor::Stats::Stats(IPRateMonitor *m)
   _parent = 0;
   _next = _prev = 0;
 
-  for (int i = 0; i < MAX_COUNTERS; i++) {
-    counter[i].fwd_rate.initialize();
-    counter[i].rev_rate.initialize();
-    counter[i].next_level = 0;
-  }
-}
-
-IPRateMonitor::Stats::Stats(IPRateMonitor *m, 
-			    const MyEWMA &fwd, const MyEWMA &rev)
-{
-  _rm = m;
-  _rm->update_alloced_mem(sizeof(*this));
-  _parent = 0;
-  _next = _prev = 0;
-
-  for (int i = 0; i < MAX_COUNTERS; i++) {
-    counter[i].fwd_rate = fwd;
-    counter[i].rev_rate = rev;
-    counter[i].next_level = 0;
-  }
+  for (int i = 0; i < MAX_COUNTERS; i++)
+    counter[i] = 0;
 }
 
 
@@ -185,12 +167,17 @@ IPRateMonitor::Stats::Stats(IPRateMonitor *m,
 //
 // Removes all children.
 // Removes itself from linked list.
-// Tells IPRateMonitor where preceding element in list is.
+// Tells IPRateMonitor where preceding element in list is (set_prev).
 IPRateMonitor::Stats::~Stats()
 {
-  for (int i = 0; i < MAX_COUNTERS; i++)
-    if(counter[i].next_level)
-      delete counter[i].next_level;
+  for (int i = 0; i < MAX_COUNTERS; i++) {
+    if(counter[i]) {
+      // Deallocate child AND record
+      delete counter[i]->next_level;
+      delete counter[i];
+      counter[i] = 0;
+    }
+  }
 
   // Untangle _prev
   if(this->_prev) {
@@ -207,9 +194,9 @@ IPRateMonitor::Stats::~Stats()
   else
     _rm->set_last(this->_prev);
 
-  // Unset pointer to this in parent
   if(this->_parent)
     this->_parent->next_level = 0;
+
   _rm->update_alloced_mem(-sizeof(*this));
 }
 
@@ -217,13 +204,13 @@ void
 IPRateMonitor::Stats::clear()
 {
   for (int i = 0; i < MAX_COUNTERS; i++) {
-    if(counter[i].next_level) {
-      delete counter[i].next_level;
-      counter[i].next_level = 0;
+    if(counter[i]->next_level) {
+      delete counter[i]->next_level;
+      counter[i]->next_level = 0;
     }
 
-    counter[i].rev_rate.initialize();
-    counter[i].fwd_rate.initialize();
+    counter[i]->rev_rate.initialize();
+    counter[i]->fwd_rate.initialize();
   }
 }
 
@@ -236,8 +223,8 @@ IPRateMonitor::print(Stats *s, String ip = "")
   int jiffs = MyEWMA::now();
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
-    Counter &c = s->counter[i];
-    if (c.rev_rate.average() > 0 || c.fwd_rate.average() > 0) {
+    Counter *c = s->counter[i];
+    if (c->rev_rate.average() > 0 || c->fwd_rate.average() > 0) {
       String this_ip;
       if (ip)
         this_ip = ip + "." + String(i);
@@ -245,18 +232,16 @@ IPRateMonitor::print(Stats *s, String ip = "")
         this_ip = String(i);
       ret += this_ip;
 
-      c.fwd_rate.update(jiffs, 0);
-      c.rev_rate.update(jiffs, 0);
+      c->fwd_rate.update(jiffs, 0);
+      c->rev_rate.update(jiffs, 0);
       ret += "\t"; 
-      ret += String(c.fwd_rate.average());
-      //      ret += cp_unparse_real(c.fwd_rate.average()*CLICK_HZ, c.fwd_rate.scale);
+      ret += String(c->fwd_rate.average());
       ret += "\t"; 
-      ret += String(c.rev_rate.average());
-      //      ret += cp_unparse_real(c.rev_rate.average()*CLICK_HZ, c.rev_rate.scale);
+      ret += String(c->rev_rate.average());
       
       ret += "\n";
-      if (c.next_level) 
-        ret += print(c.next_level, "\t" + this_ip);
+      if (c->next_level) 
+        ret += print(c->next_level, "\t" + this_ip);
     }
   }
   return ret;
@@ -341,3 +326,26 @@ EXPORT_ELEMENT(IPRateMonitor)
 
 // template instances
 #include "ewma.cc"
+
+
+
+#if 0
+IPRateMonitor::Stats::Stats(IPRateMonitor *m,
+			    const MyEWMA &fwd, const MyEWMA &rev)
+{
+  _rm = m;
+  _rm->update_alloced_mem(sizeof(*this));
+  _parent = 0;
+  _next = _prev = 0;
+
+  for (int i = 0; i < MAX_COUNTERS; i++) {
+    // counter[i].fwd_rate = fwd;
+    // counter[i].fwd_rate = 0;
+    // counter[i].rev_rate = rev;
+    // counter[i].rev_rate = 0;
+    // counter[i].next_level = 0;
+    counter[i] = 0;
+  }
+}
+#endif
+
