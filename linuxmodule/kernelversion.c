@@ -45,8 +45,10 @@ click_accessible(void)
   return accessible;
 }
 
+#if __MTCLICK__
 int
 click_threads(void)
 {
   return threads;
 }
+#endif
