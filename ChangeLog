@@ -1,3 +1,40 @@
+2005-02-17 Thursday 01:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/directiplookup.cc (1.7): nit
+
+2005-02-17 Thursday 01:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.hh (1.8), iproutetable.cc (1.12),
+	iproutetable.hh (1.15), lineariplookup.hh (1.10), lookupiproute.hh
+	(1.26), radixiplookup.hh (1.15), trieiplookup.hh (1.11): more IP
+	routing changes: documentation updates
+
+2005-02-17 Thursday 01:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/directiplookup.cc (1.6),
+	elements/ip/directiplookup.hh (1.7), elements/ip/iproutetable.cc
+	(1.11), elements/ip/iproutetable.hh (1.14),
+	elements/ip/lineariplookup.cc (1.10), elements/ip/lineariplookup.hh
+	(1.9), elements/ip/lookupiproute.cc (1.31),
+	elements/ip/lookupiproute.hh (1.25), elements/ip/radixiplookup.cc
+	(1.14), elements/ip/radixiplookup.hh (1.14),
+	elements/ip/sortediplookup.cc (1.9), elements/ip/sortediplookup.hh
+	(1.5), elements/ip/trieiplookup.cc (1.12),
+	elements/ip/trieiplookup.hh (1.10), test/ip/RadixIPLookup-01.testie
+	(1.1): IP routing changes: RadixIPLookup may work (and is really a
+	trie); add a test for it.  The "ctrl" handler implements
+	transactions with rollback (untested).
+
+2005-02-17 Thursday 01:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/handlercall.hh (1.14): HandlerCall can call
+	read-with-parameters handlers
+
+2005-02-17 Thursday 01:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/ipaddress.hh (1.28): simpler calculation for
+	IPAddress::mask_more_specific
+
 2005-02-16 Wednesday 15:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: directiplookup.cc (1.5), directiplookup.hh (1.6),
