@@ -79,13 +79,13 @@ while (<IN>) {
     } elsif (/^<!-- clickdoc: esubject (\d+)\/(\d+)/) {
 	print OUT;
 	my($num, $total) = ($1, $2);
-	my($amt) = int((@esubj - 1) / $2) + 1;
+	my($amt) = int((@esubj + 2*@esections - 1) / $2) + 1;
 	my($index) = ($num - 1) * $amt;
 
 	# find first section number
 	my($secno, $secno2);
 	for ($secno = 0; $secno < @esections; $secno++) {
-	    my($diffa, $diffb) = ($esections[$secno]->[1] - $index, $esections[$secno]->[2] - $index);
+	    my($diffa, $diffb) = ($esections[$secno]->[1] + 2*$secno - $index, $esections[$secno]->[2] + 2*($secno + 1) - $index);
 	    last if $diffa >= 0;
 	    last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
 	}
@@ -93,7 +93,7 @@ while (<IN>) {
 	# find last section number
 	$index += $amt;
 	for ($secno2 = $secno; $secno2 < @esections; $secno2++) {
-	    my($diffa, $diffb) = ($esections[$secno2]->[1] - $index, $esections[$secno2]->[2] - $index);
+	    my($diffa, $diffb) = ($esections[$secno2]->[1] + 2*$secno - $index, $esections[$secno2]->[2] + 2*($secno + 1) - $index);
 	    last if $diffa >= 0;
 	    last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
 	}
