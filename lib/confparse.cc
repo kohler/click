@@ -814,7 +814,7 @@ cp_ip_address(const String &str, unsigned char *return_value
 
   unsigned char value[4];
   for (int d = 0; d < 4; d++) {
-    if (d && s[pos] == '.')
+    if (d && pos < len && s[pos] == '.')
       pos++;
     if (pos >= len || !isdigit(s[pos]))
       goto bad;
