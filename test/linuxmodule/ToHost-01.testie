@@ -6,6 +6,9 @@ an annotation; and that ToHost(DEVICE) sets the device annotation
 appropriately; and that ToHost(SNIFFERS true) sends packets to sniffers.
 XXX It doesn't test whether SNIFFERS true sends packets to the kernel.
 
+%require
+[ `whoami` = root ]
+
 %script
 click-install KERNELCONFIG
 tcpdump -n -i fake0 >FAKE0 2>&1 &

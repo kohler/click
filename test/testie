@@ -3,6 +3,8 @@ use Symbol 'qualify_to_ref';
 no locale;
 use bytes;
 
+($attempts, $internal_errors, $errors, $require_errors) = (0, 0, 0, 0);
+
 ## utilities
 
 sub index2 ($$;$) {
@@ -40,8 +42,8 @@ sub lineno ($$) {
 }
 
 # return a command at a given line number
-sub command_at ($$) {
-    my($tt, $lineno) = @_;
+sub command_at ($$;$) {
+    my($tt, $lineno, $script_type) = @_;
     return undef if !defined($lineno);
     $lineno =~ s/^\s*|\s*$//g;
     if ($lineno =~ /^(.*):(.*)$/) {
@@ -50,9 +52,11 @@ sub command_at ($$) {
     } elsif ($lineno =~ /^line (.*)$/) {
 	$lineno = $2;
     }
-    my($lineno_arr) = $tt->{'script_lineno'};
+
+    $script_type = 'script' if !defined($script_type);
+    my($lineno_arr) = $tt->{$script_type . '_lineno'};
     for ($i = 0; $i < @$lineno_arr; $i++) {
-	return $tt->{'script'}->[$i] if $lineno_arr->[$i] == $lineno;
+	return $tt->{$script_type}->[$i] if $lineno_arr->[$i] == $lineno;
     }
     undef;
 }
@@ -157,13 +161,13 @@ sub _read_text_into ($$$) {
     $t;
 }
 
-sub _read_script_section ($$$) {
-    my($fh, $tt, $args) = @_;
-    $tt->file_err("arguments to '%script' ignored") if $args ne '';
-    $tt->file_err("multiple '%script' sections defined") if $tt->{'script'};
+sub _read_script_section ($$$$) {
+    my($fh, $tt, $args, $script_type) = @_;
+    $tt->file_err("arguments to '\%$script_type' ignored") if $args ne '';
+    $tt->file_err("multiple '\%$script_type' sections defined") if $tt->{$script_type};
     my($r, $t) = _read_text($fh);
-    my($what) = _shell_split(@{$tt->{'script'}}, @{$tt->{'script_lineno'}}, $r, $.);
-    $tt->file_err("$what in '%script'") if $what ne '';
+    my($what) = _shell_split(@{$tt->{$script_type}}, @{$tt->{$script_type . '_lineno'}}, $r, $.);
+    $tt->file_err("$what in '\%$script_type'") if $what ne '';
     $t;
 }
 
@@ -248,7 +252,9 @@ sub read (*;$) {
 	    my($command) = lc($1);
 	    my($args) = $2;
 	    if ($command eq 'script' || $command eq 'test') {
-		$t = _read_script_section($fh, $tt, $args);
+		$t = _read_script_section($fh, $tt, $args, 'script');
+	    } elsif ($command eq 'require') {
+		$t = _read_script_section($fh, $tt, $args, 'require');
 	    } elsif ($command eq 'info') {
 		$tt->file_err("arguments to '\%info' ignored") if $args ne '';
 		$t = _read_text_into($fh, $tt, 'info');
@@ -317,8 +323,8 @@ sub save_files ($&) {
     }
 }
 
-sub script_text ($&) {
-    my($tt, $fileref_subr) = @_;
+sub script_text ($&$) {
+    my($tt, $fileref_subr, $script_type) = @_;
     my($subbody, $var, $val) = '';
 
     # add variables
@@ -337,9 +343,10 @@ testie_failed () {
     exit 1
 }
 EOD
-    
-    foreach my $i (0..$#{$tt->{'script'}}) {
-	my($ln, $text) = ($tt->{'script_lineno'}[$i], $tt->{'script'}[$i]);
+
+    my($scriptarr, $linenoarr) = ($tt->{$script_type}, $tt->{$script_type . "_lineno"});
+    foreach my $i (0..$#{$tt->{$script_type}}) {
+	my($ln, $text) = ($linenoarr->[$i], $scriptarr->[$i]);
 	$t .= "echo >&2; echo testie_lineno:$ln >&2\n";
 	my(@c, @d);
 	_shell_split(@c, @d, $text, 0, $code);
@@ -356,13 +363,14 @@ EOD
     $t;
 }
 
-sub output_error ($$) {
-    my($tt, $fileref_subr) = @_;
+sub output_error ($$;$) {
+    my($tt, $fileref_subr, $script_type) = @_;
     my($fp) = $tt->{'errprefix'};
     
     if (!open(ERR, $fileref_subr->('stderr'))) {
 	print STDERR $fp, $!, "\n";
-	return -1;
+	$::internal_errors++;
+	return;
     }
     
     my($errortext, $t, $lineno, $failure) = ('');
@@ -386,10 +394,16 @@ sub output_error ($$) {
     } else {
 	$failure_text = "error $failure";
     }
+    if (defined($script_type) && $script_type eq 'require') {
+	$failure_text = "requirement $failure_text";
+	$::require_errors++;
+    } else {
+	$::errors++;
+    }
 
     $errortext =~ s/\s*\Z//;
     
-    my($cmd) = $tt->command_at($lineno);
+    my($cmd) = $tt->command_at($lineno, $script_type);
     if ($fp =~ /: $/) {
 	chop $fp;
     } else {
@@ -443,13 +457,15 @@ sub _output_expectation_error ($$$$$) {
     if ($wanted =~ /\A[\t\040-\176]*\Z/ && $got =~ /\A[\t\040-\176]*\Z/) {
 	print STDERR $fp, "$efn:$lineno: expected '$wanted'\n", $fp, "$efn:$lineno: but got  '$got'\n";
     }
+
+    # maintain error count
+    $::errors++;
 }
 
 sub check_expects ($$) {
     my($tt, $fileref_subr) = @_;
     my($fp) = $tt->{'errprefix'};
     local($/) = undef;
-    my($retval) = 0;
     my($expectx) = 0;
 
     # check expected files
@@ -460,8 +476,8 @@ sub check_expects ($$) {
 	}
 	
 	if (!open(IN, $fileref_subr->($efn))) {
-	    print STDERR $fp, "---", $!, "\n";
-	    $retval = 1;
+	    print STDERR $fp, $!, "\n";
+	    $::errors++;
 	    next;
 	}
 	my($text) = <IN>;
@@ -530,15 +546,13 @@ sub check_expects ($$) {
 	next if $tp >= @tl || $ep >= @el;
 
 	_output_expectation_error($fp, $efn, $tp + 1, $el[$ep], $tl[$tp]);
-
-	$retval = 1;
     }
 
     # check expectv files
     foreach my $efn (@{$tt->{'expectv'}}) {
 	if (!open(IN, $fileref_subr->($efn))) {
 	    print STDERR $fp, $!, "\n";
-	    $retval = 1;
+	    $::errors++;
 	    next;
 	}
 	my($text) = <IN>;
@@ -553,11 +567,7 @@ sub check_expects ($$) {
 	my($p) = 0;
 	$p++ while ($p < @tl && $p < @el && $tl[$p] eq $el[$p]);
 	_output_expectation_error($fp, $efn, $p + 1, $el[$p], $tl[$p]);
-
-	$retval = 1;
     }
-
-    $retval;
 }
 
 
@@ -579,6 +589,9 @@ sub execute_test ($$$) {
     my($tt, $fn, $verbose) = @_;
     my($f);
 
+    # count attempt
+    $::attempts++;
+
     # print description in superverbose mode
     if ($verbose > 1) {
 	return 0 if $tt->empty;
@@ -597,9 +610,26 @@ sub execute_test ($$$) {
     # save the files it names
     $tt->save_files(\&out_script_fn_to_fn);
 
+    # check requirements
+    if (exists $tt->{'require'}) {
+	open(SCR, ">$dir/+require+") || die "$dir/+require+: $!\n";
+	print SCR $tt->script_text(\&script_fn_to_fn, 'require');
+	close SCR;
+	
+	my($actual_stderr) = script_fn_to_fn('stderr');
+	my($exitval) = system("cd $dir; /bin/sh ./+require+ </dev/null >/dev/null 2>$actual_stderr");
+
+	# if it exited with a bad value, quit
+	if ($exitval) {
+	    return $tt->output_error(\&out_script_fn_to_fn, 'require');
+	} elsif ($verbose) {
+	    print STDERR $tt->{'errprefix'}, "Requirements OK\n";
+	}
+    }
+    
     # save the script
     open(SCR, ">$dir/+script+") || die "$dir/+script+: $!\n";
-    print SCR $tt->script_text(\&script_fn_to_fn);
+    print SCR $tt->script_text(\&script_fn_to_fn, 'script');
     close SCR;
 
     # run the script
@@ -807,8 +837,6 @@ if (-d $dir) {
 }
 mkdir $dir || die "cannot create $dir directory: $!\n";
 
-my($exitvalue) = 0;
-
 # check @show for stdout/stderr
 foreach my $s (@show) {
     $show_stdout = 1 if $s eq 'stdout';
@@ -817,12 +845,18 @@ foreach my $s (@show) {
 
 push @tests, '-' if !@tests;
 foreach my $test (@tests) {
-    my($retval) = run_test($test, $verbose);
-    $exitvalue = ($retval < 0 ? 2 : 1) if $retval != 0;
+    run_test($test, $verbose);
 }
 
 system("/bin/rm -rf $dir") if !$preserve_temporaries;
-exit($exitvalue);
+if ($internal_errors > 0) {
+    exit(2);
+} elsif ($attempts == 0
+	 || ($errors == 0 && $require_errors < $attempts)) {
+    exit(0);
+} else {
+    exit(1);
+}
 
 
 =pod
@@ -848,7 +882,9 @@ names of directories, which are recursively searched for
 'F<*.testie>' files.
 
 Return status is 0 if all tests succeed, 1 if any test fails, and 2 if a
-test fails due to an internal error.
+test fails due to an internal error. Tests whose prerequisites fail do not
+affect the return status, except that if all tests' prerequisites fail, the
+return status is 1 instead of 0.
 
 =head1 OPTIONS
 
@@ -906,6 +942,12 @@ mentioned in %file or %expect* are placed in that directory.
 The shell script (in sh syntax) that controls the test. Testie will run
 each command in sequence. Every command must succeed, with exit status 0,
 or the test will fail.
+
+=item %require
+
+Another shell script (in sh syntax) specifying prerequisites that must be
+satisfied before the test can run. Every command must succeed, with exit
+status 0, for the test to run.
 
 =item %desc
 
