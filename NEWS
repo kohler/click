@@ -22,6 +22,8 @@ Version 1.3pre1   5.Mar.2003
    LookupIPRouteLinux, FromLinux, ToLinux, ToLinuxSniffers, PeekHandlers,
    ProbSplitter, and RandomLossage.
 
+** Removed user-level Click driver's '--stop' option.
+
 ** The 'void Element::run_scheduled()' method has been deprecated; use
    'bool Element::run_task()' or 'void Element::run_timer()' instead.
    'run_task()'s bool return value should be true iff the task managed to
@@ -100,8 +102,8 @@ Version 1.3pre1   5.Mar.2003
 
 ** FromIPSummaryDump and ToIPSummaryDump: Add optional binary format to
    save space and speed processing. Add 'aggregate', 'tcp_opt', 'tcp_sack',
-   'tcp_window', and 'first_timestamp' content types. FromIPSummaryDump
-   understands '!flowid' and '!aggregate' lines.
+   'tcp_window', 'first_timestamp', and 'ip_opt' content types.
+   FromIPSummaryDump understands '!flowid' and '!aggregate' lines.
 
 ** FromDump and friends support 802.11 link types and the IPv6 Ethernet type.
 
@@ -119,7 +121,7 @@ Version 1.3pre1   5.Mar.2003
 ** Bug fixes to FromIPSummaryDump, ToIPSummaryDump, IPReassembler,
    FromDump, ICMPRewriter, ICMPPingRewriter, ProgressBar, TCPRewriter,
    AddressInfo, ARPResponder, ToHost, ToHostSniffers, Classifier,
-   InfiniteSource, IPGWOptions, ICMPError, IPOutputCombo.
+   InfiniteSource, IPGWOptions, ICMPError, IPOutputCombo, SetTCPChecksum.
 
 * Tools
 
@@ -146,7 +148,7 @@ Version 1.3pre1   5.Mar.2003
 ** At user-level, ErrorHandler supports '%[efgEFG]' conversions for
    doubles. To print an element declaration, say '%{element}' (not '%e').
 
-** Bug fixes to CLP, BigHashMap,
+** Bug fixes to CLP, BigHashMap, ...
 
 ** Compiles cleanly on machines with 64-bit longs.
 
