@@ -22,7 +22,7 @@ to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> linux;
 // hook it all up
 from_wvlan -> Classifier(12/GRID_ETH_PROTO) 
   -> check_grid :: CheckGridHeader
-  -> fr :: FilterByRange(RANGE, li) [0] 
+//  -> fr :: FilterByRange(RANGE, li) [0] 
   -> [0] nb [0]
   -> Classifier(15/GRID_NBR_ENCAP_PROTO)
   -> [0] lr [0] -> to_wvlan;
