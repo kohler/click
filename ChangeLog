@@ -1,3 +1,8 @@
+2001-11-11 Sunday 18:08  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.12), lookupiprouteron.hh (1.8):
+	added RST replies for unchosen paths
+
 2001-11-11 Sunday 15:08  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/lookupiprouteron.cc (1.11): added set_ip_header and
