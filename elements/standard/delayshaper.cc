@@ -44,10 +44,8 @@ DelayShaper::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 DelayShaper::cleanup(CleanupStage)
 {
-  if (_p) {
+  if (_p)
     _p->kill();
-    _p = 0;
-  }
 }
 
 static inline unsigned

@@ -16,9 +16,7 @@
  * error messages.
  */
 
-class Idle : public Element, public AbstractNotifier {
-
- public:
+class Idle : public Element, public AbstractNotifier { public:
   
   Idle();
   ~Idle();

@@ -162,7 +162,15 @@ class FromFlanDump : public Element { public:
     static const uint32_t BUFFER_SIZE = 32768;
     static const int SAMPLING_SHIFT = 28;
     
-    struct FlanFile {
+    class FlanFile { public:
+	FlanFile();
+	~FlanFile();
+	int open(const String &basename, const String &filename, int record_size, ErrorHandler *);
+	int read_more(off_t);
+	off_t last_record() const;
+	uint16_t read_uint16(off_t) const;
+	uint32_t read_uint32(off_t) const;
+      private:
 	int _fd;
 	const uint8_t *_buffer;
 	off_t _offset;
@@ -170,12 +178,7 @@ class FromFlanDump : public Element { public:
 	FILE *_pipe;
 	bool _my_buffer;
 	int _record_size;
-	FlanFile();
-	~FlanFile();
-	int open(const String &basename, const String &filename, int record_size, ErrorHandler *);
-	off_t last_record() const;
-	uint16_t read_uint16(off_t) const;
-	uint32_t read_uint32(off_t) const;
+	enum { BUFFER_SIZE = 65536 };
     };
 
     enum { FF_FLID = 0, FF_TIME, FF_SIZE, FF_FLAGS,
@@ -189,16 +192,11 @@ class FromFlanDump : public Element { public:
     off_t _last_record;
 
     bool _flows : 1;
-    bool _swapped : 1;
-    bool _timing : 1;
     bool _stop : 1;
-    bool _force_ip : 1;
     bool _active;
-    unsigned _sampling_prob;
 
     Task _task;
 
-    struct timeval _time_offset;
     String _dirname;
 
     int error_helper(ErrorHandler *, const char *);

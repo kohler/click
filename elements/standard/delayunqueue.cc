@@ -58,10 +58,8 @@ DelayUnqueue::initialize(ErrorHandler *errh)
 void
 DelayUnqueue::cleanup(CleanupStage)
 {
-  if (_p) {
+  if (_p)
     _p->kill();
-    _p = 0;
-  }
 }
 
 void

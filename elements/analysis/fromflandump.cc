@@ -131,6 +131,35 @@ FromFlanDump::FlanFile::open(const String &basename, const String &filename, int
 	return errh->error("%s: no such file", path.cc());
 }
 
+int
+FromFlanDump::FlanFile::read_more(off_t start_off)
+{
+    if (_offset + _len != start_off)
+	if (lseek(_fd, start_off, SEEK_SET) == (off_t)-1) {
+	    _offset = _len = 0;
+	    // XXX
+	    return -1;
+	}
+
+    // read data
+    if (!_buffer && !(_buffer = new uint8_t[BUFFER_SIZE]))
+	return -ENOMEM;
+
+    _offset += _len;
+    _len = 0;
+    
+    while (_len < BUFFER_SIZE) {
+	ssize_t got = read(_fd, _buffer + _len, BUFFER_SIZE - _len);
+	if (got > 0)
+	    _len += got;
+	else if (got == 0)	// premature end of file
+	    return 0;
+	else if (got < 0 && errno != EINTR && errno != EAGAIN)
+	    return -1; //XXX error_helper(errh, strerror(errno));
+    }
+
+    return 0;
+}
 
 int
 FromFlanDump::error_helper(ErrorHandler *errh, const char *x)
@@ -140,60 +169,6 @@ FromFlanDump::error_helper(ErrorHandler *errh, const char *x)
     else
 	click_chatter("%s: %s", declaration().cc(), x);
     return -1;
-}
-
-int
-FromFlanDump::read_buffer(ErrorHandler *errh)
-{
-    if (_data_packet)
-	_data_packet->kill();
-    _data_packet = 0;
-
-    _file_offset += _len;
-    _pos -= _len;		// adjust _pos by _len: it might validly point
-				// beyond _len
-    _len = 0;
-    
-    _data_packet = Packet::make(0, 0, BUFFER_SIZE, 0);
-    if (!_data_packet)
-	return errh->error("out of memory!");
-    _buffer = _data_packet->data();
-    unsigned char *data = _data_packet->data();
-    assert(_data_packet->headroom() == 0);
-    
-    while (_len < BUFFER_SIZE) {
-	ssize_t got = read(_fd, data + _len, BUFFER_SIZE - _len);
-	if (got > 0)
-	    _len += got;
-	else if (got == 0)	// premature end of file
-	    return _len;
-	else if (got < 0 && errno != EINTR && errno != EAGAIN)
-	    return error_helper(errh, strerror(errno));
-    }
-    
-    return _len;
-}
-
-int
-FromFlanDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
-{
-    unsigned char *data = reinterpret_cast<unsigned char *>(vdata);
-    uint32_t dpos = 0;
-
-    while (dpos < dlen) {
-	if (_pos < _len) {
-	    uint32_t howmuch = dlen - dpos;
-	    if (howmuch > _len - _pos)
-		howmuch = _len - _pos;
-	    memcpy(data + dpos, _buffer + _pos, howmuch);
-	    dpos += howmuch;
-	    _pos += howmuch;
-	}
-	if (dpos < dlen && read_buffer(errh) <= 0)
-	    return dpos;
-    }
-
-    return dlen;
 }
 
 int
@@ -275,24 +250,6 @@ FromFlanDump::set_active(bool active)
     }
 }
 
-static inline uint64_t
-swapq(uint64_t q)
-{
-#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-    return ((q & 0xff00000000000000LL) >> 56)
-	| ((q & 0x00ff000000000000LL) >> 40)
-	| ((q & 0x0000ff0000000000LL) >> 24)
-	| ((q & 0x000000ff00000000LL) >>  8)
-	| ((q & 0x00000000ff000000LL) <<  8)
-	| ((q & 0x0000000000ff0000LL) << 24)
-	| ((q & 0x000000000000ff00LL) << 40)
-	| ((q & 0x00000000000000ffLL) << 56);
-#elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-    return q;
-#else
-#error "neither big nor little endian"
-#endif
-}
 
 Packet *
 FromFlanDump::read_flow_packet()
@@ -330,7 +287,7 @@ FromFlanDump::read_flow_packet()
 	tcph->th_sport = _ff[FF_SPORT]->read_uint16(_record);
     if (_ff[FF_DPORT])
 	tcph->th_dport = _ff[FF_DPORT]->read_uint16(_record);
-	
+    
 }
 
 bool

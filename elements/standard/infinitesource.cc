@@ -89,7 +89,6 @@ InfiniteSource::cleanup(CleanupStage)
 {
   if (_packet)
     _packet->kill();
-  _packet = 0;
 }
 
 void
