@@ -51,6 +51,7 @@ class RXStats : public Element { public:
   class DstInfo {
   public:
     EtherAddress _eth;
+    bool _rate_guessed;
     int _rate;
     int _noise;
     int _signal;
@@ -71,6 +72,7 @@ class RXStats : public Element { public:
 
   class NeighborTable _neighbors;
   EtherAddress _bcast;
+  int _tau;
 };
 
 CLICK_ENDDECLS
