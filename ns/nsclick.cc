@@ -18,8 +18,6 @@
  */
 
 #include <click/config.h>
-#include <stl.h>
-#include <hash_map.h>
 #include <click/pathvars.h>
 
 #include <cstdio>

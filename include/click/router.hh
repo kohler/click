@@ -8,11 +8,8 @@
 #include <click/task.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
-#endif
-#ifdef CLICK_NS
-#include <click/simclick.h>
-#include <hash_map>
-#include <vector>
+#elif CLICK_NS
+# include <click/simclick.h>
 #endif
 
 CLICK_DECLS
@@ -140,24 +137,26 @@ class Router { public:
   bool check_driver();
   const volatile int *driver_runcount_ptr() const { return &_driver_runcount; }
 
-#ifdef CLICK_NS
-  int sim_get_ifid(const char* ifname);
-  int sim_listen(int ifid,int element);
+#if CLICK_NS
+  int sim_get_ifid(const char *ifname);
+  int sim_listen(int ifid, int element);
   int sim_if_ready(int ifid);
-  int sim_write(int ifid,int ptype,const unsigned char* data,int len,
-  simclick_simpacketinfo* pinfo);
-  int sim_incoming_packet(int ifid,int ptype,const unsigned char* data,int len,
+  int sim_write(int ifid, int ptype, const unsigned char *, int len,
+		simclick_simpacketinfo *pinfo);
+  int sim_incoming_packet(int ifid, int ptype, const unsigned char *, int len,
                           simclick_simpacketinfo* pinfo);
   void set_siminst(simclick_sim newinst) { _siminst = newinst; }
-  simclick_sim get_siminst() { return _siminst; }
+  simclick_sim get_siminst() const	{ return _siminst; }
 
   void set_clickinst(simclick_click newinst) { _clickinst = newinst; }
-  simclick_click get_clickinst() { return _clickinst; }
+  simclick_click get_clickinst() const	{ return _clickinst; }
 
  protected:
   simclick_sim _siminst;
   simclick_click _clickinst;
-  hash_map< int,vector<int> > _ifidmap;
+  Vector<Vector<int> *> _listenvecs;
+
+  Vector<int> *sim_listenvec(int ifid);
 #endif
   
  private:

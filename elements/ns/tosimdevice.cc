@@ -29,9 +29,6 @@
  ****************************************************************************/
 
 
-#include <stl.h>
-#include <hash_map.h>
-
 #include <click/config.h>
 #include <click/package.hh>
 #include "fromsimdevice.hh"

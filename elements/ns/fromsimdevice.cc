@@ -34,8 +34,6 @@
 #include <click/package.hh>
 #include <sys/time.h>
 #include <unistd.h>
-#include <stl.h>
-#include <hash_map.h>
 #include <click/simclick.h>
 #include "fromsimdevice.hh"
 #include "tosimdevice.hh"

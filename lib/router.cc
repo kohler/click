@@ -1674,25 +1674,27 @@ Router::sim_get_ifid(const char* ifname) {
   return simclick_sim_ifid_from_name(_siminst,ifname);
 }
 
+Vector<int> *
+Router::sim_listenvec(int ifid) {
+  for (int i = 0; i < _listenvecs.size(); i++)
+    if (_listenvecs[i]->at(0) == ifid)
+      return _listenvecs[i];
+  Vector<int> *new_vec = new Vector<int>(1, ifid);
+  if (new_vec)
+    _listenvecs.push_back(new_vec);
+  return new_vec;
+}
+
 int
-Router::sim_listen(int ifid,int element) {
-  int result = 0;
-
-  // Got a vector for the ifid? Add the element to it
-  // if it isn't there already.
-  int n = _ifidmap[ifid].size();
-  int i = 0;
-  for (i=0;i<n;i++) {
-    if (element == _ifidmap[ifid][i]) {
-      break;
-    }
-  }
-
-  if (i>=n) {
-    //fprintf(stderr,"router %d element %d listening to ifid %d\n",(int)this,element,ifid);
-    _ifidmap[ifid].push_back(element);
-  }
-  return result;
+Router::sim_listen(int ifid, int element) {
+  if (Vector<int> *vec = sim_listenvec(ifid)) {
+    for (int i = 1; i < vec->size(); i++)
+      if ((*vec)[i] == element)
+	return 0;
+    vec->push_back(element);
+    return 0;
+  } else
+    return -1;
 }
 
 int
@@ -1707,18 +1709,13 @@ Router::sim_if_ready(int ifid) {
 }
 
 int
-Router::sim_incoming_packet(int ifid,int ptype,const unsigned char* data,
-			       int len,simclick_simpacketinfo* pinfo) {
-  int result = 0;
-  vector<int> ifidlist = _ifidmap[ifid];
-  int n = ifidlist.size();
-  int i = 0;
-  for (i=0;i<n;i++) {
-    // XXX Should really use rtti casting
-    ((FromSimDevice*)element(ifidlist[i]))->incoming_packet(ifid,ptype,data,
-							    len,pinfo);
-  }
-  return result;
+Router::sim_incoming_packet(int ifid, int ptype, const unsigned char* data,
+			    int len, simclick_simpacketinfo* pinfo) {
+  if (Vector<int> *vec = sim_listenvec(ifid))
+    for (int i = 1; i < vec->size(); i++)
+      ((FromSimDevice *)element((*vec)[i]))->incoming_packet(ifid, ptype, data,
+							     len, pinfo);
+  return 0;
 }
 #endif // CLICK_NS
 
