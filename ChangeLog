@@ -1,3 +1,13 @@
+2001-06-19 Tuesday 13:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/delayunqueue.hh (1.2): 1 more line of comment
+
+2001-06-19 Tuesday 13:36  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/delayunqueue.cc (1.5): added delayunqueue element
+	to simulate delay in a pipe. there will be a corresponding
+	delayshaper element soon
+
 2001-06-19 Tuesday 00:22  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/delayunqueue.cc (1.4): [no log message]
