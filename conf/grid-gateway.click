@@ -85,13 +85,21 @@ reply_demux :: Classifier(62/GRID_HEX_IP, // loc reply for us
 grid_demux [1] -> query_demux;
 grid_demux [2] -> reply_demux; 
 
-reply_demux [0] -> [1] fq; // handle reply to our loc query
+reply_demux [0] -> PrintGrid(rd0) -> [1] fq; // handle reply to our loc query
 reply_demux [1] -> [0] lr; // forward query reply packets like encap packets
 
-loc_repl -> [0] lr; // forward loc reply packets initiated by us
+loc_repl 
+-> PrintGrid(loc_repl) 
+-> [0] lr; // forward loc reply packets initiated by us
 
-query_demux [0] -> PrintGrid(qd0) -> loc_repl; // reply to this query
-query_demux [1] -> PrintGrid(qd1) -> [1] fq [1] -> to_wvlan; // propagate this loc query, or initiate a new loc query
+query_demux [0] 
+//-> PrintGrid(qd0) 
+-> loc_repl; // reply to this query
+query_demux [1] 
+//-> PrintGrid(qd1) 
+-> [1] fq [1] 
+//-> PrintGrid(fq1) 
+-> to_wvlan; // propagate this loc query, or initiate a new loc query
 
 
 ip_cl [0] -> to_tun1;

@@ -33,10 +33,10 @@ from_wvlan -> Classifier(12/GRID_ETH_PROTO)
   -> grid_demux [0] 
   -> [0] lr [0] -> to_wvlan;
 
-query_demux :: Classifier(70/GRID_HEX_IP, // loc query for us
+query_demux :: Classifier(62/GRID_HEX_IP, // loc query for us
 			  -);
 
-repl_demux :: Classifier(70/GRID_HEX_IP, // loc reply for us
+repl_demux :: Classifier(62/GRID_HEX_IP, // loc reply for us
 			  -);
 
 grid_demux [1] -> query_demux;
@@ -54,8 +54,6 @@ query_demux [1] -> PrintGrid(qd1) -> [1] fq [1] -> to_wvlan; // propagate this l
 
 lr [2] -> [0] fq [0] -> [0] geo; // packets for geo fwding
 lr [3] -> Discard; // bad packets
-
-fq [1] -> to_wvlan;
 
 geo [0] -> to_wvlan;
 geo [1] -> Discard; // geo route can't handle
