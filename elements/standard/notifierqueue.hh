@@ -2,7 +2,7 @@
 #ifndef CLICK_NOTIFIERQUEUE_HH
 #define CLICK_NOTIFIERQUEUE_HH
 #include <click/element.hh>
-#include "activity.hh"
+#include <click/notifier.hh>
 #include "queue.hh"
 
 /*
@@ -53,7 +53,7 @@ When written, drops all packets in the queue.
 
 =a Queue */
 
-class NotifierQueue : public Queue, public ActivityNotifier { public:
+class NotifierQueue : public Queue, public Notifier { public:
 
     NotifierQueue();
     ~NotifierQueue();

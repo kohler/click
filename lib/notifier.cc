@@ -1,6 +1,6 @@
-// -*- c-basic-offset: 4 -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/notifier.hh" -*-
 /*
- * activity.{cc,hh} -- activity notification
+ * notifier.{cc,hh} -- activity notification
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
@@ -17,7 +17,7 @@
  */
 
 #include <click/config.h>
-#include "activity.hh"
+#include <click/notifier.hh>
 #include <click/router.hh>
 #include <click/element.hh>
 #include <click/elemfilter.hh>
@@ -25,20 +25,20 @@
 #define NUM_SIGNALS 4096
 static uint32_t signals[NUM_SIGNALS / 32];
 
-uint32_t ActivitySignal::true_value = 0xFFFFFFFFU;
+uint32_t NotifierSignal::true_value = 0xFFFFFFFFU;
 
-ActivityNotifier::ActivityNotifier()
+Notifier::Notifier()
     : _listener1(0), _listeners(0)
 {
 }
 
 int
-ActivityNotifier::initialize(Router *r)
+Notifier::initialize(Router *r)
 {
-    void *&val = r->force_attachment("ActivitySignal count");
+    void *&val = r->force_attachment("NotifierSignal count");
     uint32_t nsignals = (uint32_t) val;
     if (nsignals < NUM_SIGNALS) {
-	_signal = ActivitySignal(&signals[nsignals / 32], 1 << (nsignals % 32));
+	_signal = NotifierSignal(&signals[nsignals / 32], 1 << (nsignals % 32));
 	val = (void *)(nsignals + 1);
 	return 0;
     } else
@@ -46,7 +46,7 @@ ActivityNotifier::initialize(Router *r)
 }
 
 int
-ActivityNotifier::add_listener(Task *new_l)
+Notifier::add_listener(Task *new_l)
 {
     if (!_listener1 && !_listeners) {
 	_listener1 = new_l;
@@ -62,7 +62,7 @@ ActivityNotifier::add_listener(Task *new_l)
     
     Task **new_list = new Task *[n + 2];
     if (!new_list) {
-	click_chatter("out of memory in ActivityNotifier::add_listener!");
+	click_chatter("out of memory in Notifier::add_listener!");
 	return -1;
     }
     memcpy(new_list, old_list, sizeof(Task *) * 1);
@@ -74,7 +74,7 @@ ActivityNotifier::add_listener(Task *new_l)
 }
 
 void
-ActivityNotifier::remove_listener(Task *bad_l)
+Notifier::remove_listener(Task *bad_l)
 {
     if (!bad_l)
 	/* nada */;
@@ -94,10 +94,10 @@ ActivityNotifier::remove_listener(Task *bad_l)
     }
 }
 
-ActivitySignal
-ActivityNotifier::listen_upstream_pull(Element *e, int port, Task *t)
+NotifierSignal
+Notifier::upstream_pull_signal(Element *e, int port, Task *t)
 {
-    CastElementFilter notifier_filter("ActivityNotifier");
+    CastElementFilter notifier_filter("Notifier");
     OutputProcessingElementFilter push_filter(true);
     DisjunctionElementFilter filter;
     filter.add(&notifier_filter);
@@ -109,14 +109,14 @@ ActivityNotifier::listen_upstream_pull(Element *e, int port, Task *t)
     // All bets are off if filter ran into a push output. That means there was
     // a regular Queue in the way (for example).
     if (push_filter.match_count())
-	return ActivitySignal();
+	return NotifierSignal();
     
     notifier_filter.filter(v);
 
-    ActivitySignal signal;
+    NotifierSignal signal;
     if (ok >= 0 && v.size()) {
 	for (int i = 0; ok >= 0 && i < v.size(); i++) {
-	    ActivityNotifier *n = (ActivityNotifier *) (v[i]->cast("ActivityNotifier"));
+	    Notifier *n = (Notifier *) (v[i]->cast("Notifier"));
 	    n->add_listener(t);
 	    if (i == 0)
 		signal = n->activity_signal();
@@ -127,5 +127,3 @@ ActivityNotifier::listen_upstream_pull(Element *e, int port, Task *t)
 
     return signal;
 }
-
-ELEMENT_PROVIDES(ActivityNotifier)

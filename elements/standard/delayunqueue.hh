@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include <click/task.hh>
 #include <click/timer.hh>
-#include "activity.hh"
+#include <click/notifier.hh>
 
 /*
 =c
@@ -43,7 +43,7 @@ class DelayUnqueue : public Element { public:
 
   Packet *_p;
   struct timeval _delay;
-  ActivitySignal _signal;
+  NotifierSignal _signal;
   Task _task;
   Timer _timer;
   

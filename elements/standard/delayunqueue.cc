@@ -51,7 +51,7 @@ DelayUnqueue::initialize(ErrorHandler *errh)
   if (_delay.tv_sec > 0 || _delay.tv_usec >= 100000)
     _timer.initialize(this);
   
-  _signal = ActivityNotifier::listen_upstream_pull(this, 0, &_task);
+  _signal = Notifier::upstream_pull_signal(this, 0, &_task);
   return 0;
 }
 
@@ -83,7 +83,7 @@ DelayUnqueue::run_scheduled()
       output(0).push(_p);
       _p = 0;
     }
-  } else if (!_signal.active())
+  } else if (!_signal)
     return;			// without rescheduling
 
   _task.fast_reschedule();

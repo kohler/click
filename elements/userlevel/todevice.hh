@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/string.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 #include "elements/userlevel/fromdevice.hh"
 
 /*
@@ -82,6 +83,7 @@ private:
   String _ifname;
   int _fd;
   bool _my_fd;
+  NotifierSignal _signal;
   
 #if TODEVICE_BSD_DEV_BPF
   pcap_t *_pcap;

@@ -1,18 +1,19 @@
-// -*- c-basic-offset: 4 -*-
-#ifndef CLICK_ACTIVITY_HH
-#define CLICK_ACTIVITY_HH
+// -*- c-basic-offset: 4; related-file-name: "../../lib/notifier.cc" -*-
+#ifndef CLICK_NOTIFIER_HH
+#define CLICK_NOTIFIER_HH
 #include <click/task.hh>
 
-class ActivitySignal { public:
+class NotifierSignal { public:
 
-    ActivitySignal();		// always true
-    ActivitySignal(volatile uint32_t *value, uint32_t mask);
+    NotifierSignal();		// always true
+    NotifierSignal(volatile uint32_t *value, uint32_t mask);
 
     bool active() const			{ return (*_value & _mask) != 0; }
+    operator bool() const		{ return active(); }
 
     void set_active(bool a);
 
-    ActivitySignal &operator+=(const ActivitySignal &);
+    NotifierSignal &operator+=(const NotifierSignal &);
 
   private:
 
@@ -23,48 +24,48 @@ class ActivitySignal { public:
 
 };
 
-class ActivityNotifier { public:
+class Notifier { public:
 
-    ActivityNotifier();
-    ~ActivityNotifier()		{ delete[] _listeners; }
+    Notifier();
+    ~Notifier()				{ delete[] _listeners; }
 
     int initialize(Router *);
     
     int add_listener(Task *);	// complains on out of memory
     void remove_listener(Task *);
 
-    static ActivitySignal listen_upstream_pull(Element *, int port, Task *);
+    static NotifierSignal upstream_pull_signal(Element *, int port, Task *);
 
     bool listeners_awake() const	{ return _signal.active(); }
     bool listeners_asleep() const	{ return !_signal.active(); }
     void wake_listeners();
     void sleep_listeners();
 
-    const ActivitySignal &activity_signal() const { return _signal; }
+    const NotifierSignal &activity_signal() const { return _signal; }
     
   private:
     
     Task *_listener1;
     Task **_listeners;
-    ActivitySignal _signal;
+    NotifierSignal _signal;
 
 };
 
 
 inline
-ActivitySignal::ActivitySignal()
+NotifierSignal::NotifierSignal()
     : _value(&true_value), _mask(1)
 {
 }
 
 inline
-ActivitySignal::ActivitySignal(volatile uint32_t *value, uint32_t mask)
+NotifierSignal::NotifierSignal(volatile uint32_t *value, uint32_t mask)
     : _value(value), _mask(mask)
 {
 }
 
 inline void
-ActivitySignal::set_active(bool b)
+NotifierSignal::set_active(bool b)
 {
     if (b)
 	*_value |= _mask;
@@ -72,8 +73,8 @@ ActivitySignal::set_active(bool b)
 	*_value = (*_value & ~_mask);
 }
 
-inline ActivitySignal &
-ActivitySignal::operator+=(const ActivitySignal &o)
+inline NotifierSignal &
+NotifierSignal::operator+=(const NotifierSignal &o)
 {
     if (_value == o._value)
 	_mask |= o._mask;
@@ -82,20 +83,20 @@ ActivitySignal::operator+=(const ActivitySignal &o)
     return *this;
 }
 
-inline ActivitySignal
-operator+(ActivitySignal a, const ActivitySignal &b)
+inline NotifierSignal
+operator+(NotifierSignal a, const NotifierSignal &b)
 {
     return a += b;
 }
 
 inline void
-ActivityNotifier::sleep_listeners()
+Notifier::sleep_listeners()
 {
     _signal.set_active(false);
 }
 
 inline void
-ActivityNotifier::wake_listeners()
+Notifier::wake_listeners()
 {
     if (_listener1)
 	_listener1->reschedule();

@@ -35,8 +35,8 @@ NotifierQueue::cast(const char *n)
 {
     if (strcmp(n, "NotifierQueue") == 0)
 	return (NotifierQueue *)this;
-    else if (strcmp(n, "ActivityNotifier") == 0)
-	return (ActivityNotifier *)this;
+    else if (strcmp(n, "Notifier") == 0)
+	return (Notifier *)this;
     else
 	return Queue::cast(n);
 }
@@ -44,7 +44,7 @@ NotifierQueue::cast(const char *n)
 int
 NotifierQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    ActivityNotifier::initialize(router());
+    Notifier::initialize(router());
     return Queue::configure(conf, errh);
 }
 
@@ -73,5 +73,5 @@ NotifierQueue::pull(int)
 
 // XXX reset?
 
-ELEMENT_REQUIRES(ActivityNotifier Queue)
+ELEMENT_REQUIRES(Queue)
 EXPORT_ELEMENT(NotifierQueue)
