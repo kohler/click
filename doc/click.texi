@@ -71,6 +71,7 @@ that use existing elements.
 * Configuration Strings::       
 * Tasks::                       
 * Timers::                      
+* Notification::                
 * Coding Standards::            
 * Index::                       Index.
 
@@ -241,7 +242,7 @@ Parsing Argument Lists
 Tasks
 
 * Task Initialization::         
-* Scheduling a Task::           
+* Scheduling Tasks::            
 * Tickets::                     
 * Task Thread Choice::          
 * Task Status::                 
@@ -251,8 +252,9 @@ Tasks
 Timers
 
 * Timer Initialization::        
-* Scheduling a Timer::          
+* Scheduling Timers::           
 * Timer Status Methods::        
+* Timer Cleanup::               
 
 Coding Standards
 
@@ -5148,7 +5150,7 @@ file.
 
 @menu
 * Task Initialization::         
-* Scheduling a Task::           
+* Scheduling Tasks::            
 * Tickets::                     
 * Task Thread Choice::          
 * Task Status::                 
@@ -5157,7 +5159,7 @@ file.
 @end menu
 
 
-@node Task Initialization, Scheduling a Task, Tasks, Tasks
+@node Task Initialization, Scheduling Tasks, Tasks, Tasks
 @section Task Initialization
 
 Task initialization is a two-step process. First, when a @code{Task}
@@ -5236,8 +5238,8 @@ Here, @code{_task}, a @code{Task} object, is one of @code{SomeElement}'s
 instance variables.
 
 
-@node Scheduling a Task, Tickets, Task Initialization, Tasks
-@section Scheduling a Task
+@node Scheduling Tasks, Tickets, Task Initialization, Tasks
+@section Scheduling Tasks
 
 The user may take a task off its task queue with the @code{unschedule}
 method, and place it back onto its task queue with the @code{reschedule}
@@ -5307,7 +5309,7 @@ method only from within its callback function.
 @end deftypemethod
 
 
-@node Tickets, Task Thread Choice, Scheduling a Task, Tasks
+@node Tickets, Task Thread Choice, Scheduling Tasks, Tasks
 @section Tickets
 
 Click tasks are scheduled using the flexible, lightweight stride
@@ -5448,7 +5450,7 @@ Cleans up the @code{Task} object.
 @end deftypemethod
 
 
-@node Timers, Coding Standards, Tasks, Top
+@node Timers, Notification, Tasks, Top
 @chapter Timers
 
 Click @dfn{timers}, like Click tasks, represent callback functions that
@@ -5456,17 +5458,24 @@ the driver calls when appropriate. Unlike tasks, however, you schedule
 timers to go off at a specified time. Timers are intended for more
 infrequent and/or slower tasks.
 
-Timers are scheduled with microsecond precision, but on current
+As with @code{Task}, most @code{Timer} objects are declared as instance
+variables of elements and scheduled when needed.
+
+Timers may be scheduled with microsecond precision, but on current
 hardware, only millisecond precision is likely to be achievable.
+
+The @code{Timer} class is defined in the @code{<click/timer.hh>} header
+file.
 
 @menu
 * Timer Initialization::        
-* Scheduling a Timer::          
+* Scheduling Timers::           
 * Timer Status Methods::        
+* Timer Cleanup::               
 @end menu
 
 
-@node Timer Initialization, Scheduling a Timer, Timers, Timers
+@node Timer Initialization, Scheduling Timers, Timers, Timers
 @section Timer Initialization
 
 Timer initialization resembles task initialization. When the timer is
@@ -5499,8 +5508,8 @@ calls @code{Timer::initialize}, and possibly one of the @code{schedule}
 functions described below.
 
 
-@node Scheduling a Timer, Timer Status Methods, Timer Initialization, Timers
-@section Scheduling a Timer
+@node Scheduling Timers, Timer Status Methods, Timer Initialization, Timers
+@section Scheduling Timers
 
 A variety of methods schedule timers to go off at specified times. The
 basic method is @code{schedule_at}, which schedules the timer for a
@@ -5511,6 +5520,17 @@ methods). Finally, @code{unschedule} unschedules the timer.
 
 All @code{schedule} and @code{reschedule} functions first unschedule the
 timer if it was already scheduled.
+
+The @code{reschedule} methods are particularly useful for timers that
+should occur periodically. For example, this callback function will
+cause its timer to go off at 20-second intervals:
+
+@example
+void timer_callback(Timer *t, void *) @{
+    t->reschedule_after_s(20);
+@}
+@end example
+
 
 @deftypemethod Timer void schedule_at (@w{const struct timeval &@var{when}})
 Schedule the timer to go off at @var{when}. You must have initialized
@@ -5546,7 +5566,7 @@ Unschedules the timer, if it was scheduled.
 @end deftypemethod
 
 
-@node Timer Status Methods,  , Scheduling a Timer, Timers
+@node Timer Status Methods, Timer Cleanup, Scheduling Timers, Timers
 @section Timer Status Methods
 
 These methods return information about a timer, including when it is
@@ -5564,16 +5584,31 @@ future.
 
 @deftypemethod Timer {const struct timeval &} when () const
 Returns the time that the timer is set to expire. If the timer has never
-been scheduled, the value is garbage. If the timer has already expired,
-the value is most recent last expiry time.
+been scheduled, the value is garbage. If the timer was scheduled but is
+not scheduled currently, the value is most recently set expiry time.
 @end deftypemethod
  
 
-@node Timer Cleanup
+@node Timer Cleanup,  , Timer Status Methods, Timers
 @section Timer Cleanup
 
+You don't need to worry about cleaning up @code{Timer} objects. They are
+automatically unscheduled and removed when the @code{Router} is
+destroyed, and deleting a @code{Timer} automatically removes it from any
+relevant lists. The following function is nevertheless provided for
+consistency with @code{Task}s, which do need to be cleaned up in certain
+circumstances (@pxref{Task Cleanup}).
 
-@node Coding Standards, Index, Timers, Top
+@deftypemethod Timer void cleanup ()
+Cleans up the @code{Timer} object.
+@end deftypemethod
+
+
+@node Notification, Coding Standards, Timers, Top
+@chapter Notification
+
+
+@node Coding Standards, Index, Notification, Top
 @chapter Coding Standards
 
 
