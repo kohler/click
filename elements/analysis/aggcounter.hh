@@ -64,9 +64,11 @@ packets) has reached or exceeded I<n>. Default is never to freeze.
 
 Argument is a filename, or `C<->', meaning standard out. Write a packed binary
 file containing all current data to the specified filename. The format is a
-couple ASCII lines, followed by a line containing `C<$packed>', followed by N
-8-byte records. In each record, bytes 1-4 are the aggregate, and bytes 5-8 are
-the count. Both values are 32-bit integers in host byte order.
+couple ASCII lines, followed by a line containing `C<$packed_le>' or
+`C<$packed_be>', followed by N 8-byte records. In each record, bytes 1-4 are
+the aggregate, and bytes 5-8 are the count. Both values are 32-bit integers.
+The byte order is indicated by the `C<$packed>' line: `C<$packed_le>' means
+little-endian, `C<$packed_be>' means big-endian.
 
 =h write_ascii_file write-only
 

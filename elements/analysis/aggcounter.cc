@@ -288,8 +288,15 @@ AggregateCounter::write_file(String where, bool binary,
 	return errh->error("%s: %s", where.cc(), strerror(errno));
     
     fprintf(f, "$num_nonzero %u\n", _num_nonzero);
+#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     if (binary)
-	fprintf(f, "$packed\n");
+	fprintf(f, "$packed_be\n");
+#elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
+    if (binary)
+	fprintf(f, "$packed_le\n");
+#else
+    binary = false;
+#endif
     
     uint32_t buf[1024];
     int pos = 0;
