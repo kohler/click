@@ -16,10 +16,6 @@
 #endif
 #include "pulltopush.hh"
 
-PullToPush::PullToPush()
-  : Element(1, 1)
-{
-}
 
 bool
 PullToPush::wants_packet_upstream() const
@@ -30,6 +26,9 @@ PullToPush::wants_packet_upstream() const
 void
 PullToPush::run_scheduled()
 {
+  /* puts itself on run queue if not scheduled already: can do this because
+   * run_scheduled unschedules first before calling run_scheduled */
+  if (!scheduled()) schedule_tail();
   while (Packet *p = input(0).pull())
     output(0).push(p);
 }
