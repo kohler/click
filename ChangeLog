@@ -1,3 +1,8 @@
+2004-12-08 Wednesday 16:47  John Bicket <jbicket@mit.edu>
+
+	* elements/test/: upstreamnotifier.cc (1.1), upstreamnotifier.hh
+	(1.1): test upstream notification element
+
 2004-12-07 Tuesday 15:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/bsdmodule/anydevice.hh (1.9), lib/master.cc (1.17):
