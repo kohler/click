@@ -11073,16 +11073,16 @@ if test -z "$GMAKE"; then
     { { echo "$as_me:$LINENO: error:
 ==============================================
 
-I can't find GNU make. Either put \"'\`'\"gmake' on your PATH and
-rerun \"'\`'\"./configure', or set the GMAKE environment variable to
+I can't find GNU make. Either put 'gmake' on your PATH and
+rerun './configure', or set the GMAKE environment variable to
 GNU make's pathname.
 
 ==============================================" >&5
 echo "$as_me: error:
 ==============================================
 
-I can't find GNU make. Either put \"'\`'\"gmake' on your PATH and
-rerun \"'\`'\"./configure', or set the GMAKE environment variable to
+I can't find GNU make. Either put 'gmake' on your PATH and
+rerun './configure', or set the GMAKE environment variable to
 GNU make's pathname.
 
 ==============================================" >&2;}

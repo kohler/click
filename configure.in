@@ -759,8 +759,8 @@ if test -z "$GMAKE"; then
     AC_MSG_ERROR([
 ==============================================
 
-I can't find GNU make. Either put "'`'"gmake' on your PATH and
-rerun "'`'"./configure', or set the GMAKE environment variable to
+I can't find GNU make. Either put 'gmake' on your PATH and
+rerun './configure', or set the GMAKE environment variable to
 GNU make's pathname.
 
 ==============================================])
@@ -870,27 +870,27 @@ if test $ac_have_linux_kernel = y; then
     fi
 fi
 
-dnl add `int64' if 64-bit integers are available
+dnl add 'int64' if 64-bit integers are available
 if test "x$have_int64_types" = xyes; then
     provisions="int64 $provisions"
 fi
 
-dnl add `analysis' if analysis elements are available
+dnl add 'analysis' if analysis elements are available
 if test "x$enable_analysis" = xyes; then
     provisions="analysis $provisions"
 fi
 
-dnl add `ip6' if ip6 elements are available
+dnl add 'ip6' if ip6 elements are available
 if test "x$enable_ip6" = xyes; then
     provisions="ip6 $provisions"
 fi
 
-dnl add `wifi' if wifi elements are available
+dnl add 'wifi' if wifi elements are available
 if test "x$enable_wifi" = xyes; then
     provisions="wifi $provisions"
 fi
 
-dnl add `pcap' if libpcap is available
+dnl add 'pcap' if libpcap is available
 if test "x$HAVE_PCAP" = xyes; then
     provisions="pcap $provisions"
 fi

@@ -7,7 +7,7 @@ README
 
 etc/libclick/lc-Makefile.in:Makefile.in
 acclick.m4
-click-buildtool
+click-buildtool.in
 click-compile.in
 click-mkelemmap
 config.guess
