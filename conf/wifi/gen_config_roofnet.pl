@@ -137,11 +137,10 @@ if (-f "/sbin/iwconfig") {
 }
 
 system "$iwconfig $dev mode Ad-Hoc";
-system "$iwconfig $dev channel $channel";
 
 
 #system "/sbin/ifconfig $dev $safe_ip";
-system "/sbin/ifconfig $dev mtu 1650";
+system "/sbin/ifconfig $dev mtu 1800";
 
 
 if ($dev =~ /wlan/) {
@@ -159,27 +158,19 @@ if ($dev =~ /wlan/) {
 
 if ($dev =~ /ath/) {
     system "/sbin/ifconfig ath0 txqueuelen 5";
-    if ($mode =~ /a/) {
-	system "/sbin/iwpriv ath0 mode 1 1>&2";
-    } elsif ($mode=~ /g/) {
-	system "/sbin/iwpriv ath0 mode 3 1>&2";
-    } else {
-	# default b mode
-	print STDERR "in b mode\n";
-	system "/sbin/iwpriv ath0 mode 2 1>&2";
-    }
 }
 
+system "$iwconfig $dev channel $channel";
 
+system "/sbin/modprobe tun > /dev/null 2>&1";
 my $probes = "2 60 2 1500 4 1500 11 1500 22 1500";
 
-if (0) {
-    if ($mode =~ /g/) {
-	$probes = "2 60 12 60 2 1500 4 1500 11 1500 22 1500 12 1500 18 1500 24 1500 36 1500 48 1500 72 1500 96 1500";
-    } elsif ($mode =~ /a/) {
-	$probes = "12 60 2 60 12 1500 24 1500 48 1500 72 1500 96 1500 108 1500";
-    }
+if ($mode =~ /g/) {
+    $probes = "2 60 12 60 2 1500 4 1500 11 1500 22 1500 12 1500 18 1500 24 1500 36 1500 48 1500 72 1500 96 1500";
+} elsif ($mode =~ /a/) {
+    $probes = "12 60 2 60 12 1500 24 1500 48 1500 72 1500 96 1500 108 1500";
 }
+
 
 
 my $srcr_es_ethtype = "0941";  # broadcast probes
@@ -187,21 +178,29 @@ my $srcr_forwarder_ethtype = "0943"; # data
 my $srcr_ethtype = "0944";  # queries and replies
 my $srcr_gw_ethtype = "092c"; # gateway ads
 
-if (0 && $mode =~ /g/) {
+if ($mode =~ /g/) {
     print "rates :: AvailableRates(DEFAULT 2 4 11 12 18 22 24 36 48 72 96 108,
 $wireless_mac 2 4 11 12 18 22 24 36 48 72 96 108);\n\n";
-} elsif (0 && $mode =~ /a/) {
+} elsif ($mode =~ /a/) {
     print "rates :: AvailableRates(DEFAULT 12 18 24 36 48 72 96 108,
 $wireless_mac 12 18 24 36 48 72 96 108);\n\n";
 } else {
     print "rates :: AvailableRates(DEFAULT 2 4 11 22);\n\n";
 }
 
+
+
+my $data = "";
+for (my $x = 0; $x < 1500; $x++) {
+    $data .= "ff";
+}
+
+$data = "\\<$data>";
+
+
 system "cat /home/roofnet/scripts/srcr.click";
 system "cat /home/roofnet/scripts/etx.click";
 
-
-if ($kernel) {
 print <<EOF;
 // has one input and one output
 // takes and spits out ip packets
@@ -211,6 +210,12 @@ elementclass LinuxHost {
     input -> ToHost(\$dev);
     FromHost(\$dev, \$ip/\$nm, ETHER \$mac) -> output;
 }
+
+
+EOF
+
+if ($kernel) {
+print <<EOF;
 
 elementclass LinuxIPHost {
     \$dev, \$ip, \$nm |
@@ -263,19 +268,12 @@ elementclass SniffDevice {
 EOF
 } else {
     print <<EOF;
-
-
-elementclass LinuxHost {
-    \$dev, \$ip, \$nm, \$mac |
-
-    input -> KernelTap(\$ip/\$nm, MTU 1500, ETHER \$mac) -> output;
-}
 // has one input and one output
 // takes and spits out ip packets
 elementclass LinuxIPHost {
     \$dev, \$ip, \$nm |
 
-  input -> KernelTun(\$ip/\$nm, MTU 1500) 
+  input -> KernelTun(\$ip/\$nm, MTU 1500, DEV_NAME \$dev) 
   -> MarkIPHeader(0)
   -> CheckIPHeader()
   -> output;
@@ -284,10 +282,8 @@ elementclass LinuxIPHost {
 
 elementclass SniffDevice {
     \$device, \$promisc|
-  from_dev :: FromDevice(\$device, PROMISC \$promisc)
-  -> output;
-  input
-  -> to_dev :: ToDevice(\$device);
+  from_dev :: FromDevice(\$device, PROMISC \$promisc) -> output;
+  input -> to_dev :: ToDevice(\$device);
 }
 
 EOF
@@ -308,10 +304,10 @@ sched :: PrioSched()
 //-> Print ("to_dev", TIMESTAMP true)
 -> sniff_dev;
 
-route_q :: NotifierQueue(50) 
+route_q :: FullNoteQueue(10) 
 -> [0] sched;
 
-data_q :: NotifierQueue(50)
+data_q :: FullNoteQueue(10)
 -> data_static_rate :: SetTXRate(RATE 2)
 -> data_madwifi_rate :: MadwifiRate(OFFSET 4,
 			       ALT_RATE true,
@@ -319,7 +315,6 @@ data_q :: NotifierQueue(50)
 			       ACTIVE true)
 -> data_arf_rate :: AutoRateFallback(OFFSET 4,
 				STEPUP 25,
-				ALT_RATE false,
 				RT rates,
 				ACTIVE false)
 -> data_probe_rate :: ProbeTXRate(OFFSET 4,
@@ -333,30 +328,6 @@ data_q :: NotifierQueue(50)
 Idle -> [1] data_probe_rate;
 Idle -> [1] data_madwifi_rate;
 Idle -> [1] data_arf_rate;
-
-
-rate_q :: NotifierQueue(50)
--> rate_static_rate :: SetTXRate(RATE 2)
--> rate_madwifi_rate :: MadwifiRate(OFFSET 4,
-			       ALT_RATE true,
-			       RT rates,
-			       ACTIVE false)
--> rate_arf_rate :: AutoRateFallback(OFFSET 4,
-				STEPUP 25,
-				ALT_RATE false,
-				RT rates,
-				ACTIVE false)
--> rate_probe_rate :: ProbeTXRate(OFFSET 4,
-			     WINDOW 20000,
-			     ALT_RATE true,
-			     RT rates,
-			     ACTIVE false)
-
--> [2] sched;
-
-Idle -> [1] rate_probe_rate;
-Idle -> [1] rate_madwifi_rate;
-Idle -> [1] rate_arf_rate;
 
 
 
@@ -400,46 +371,36 @@ print <<EOF;
 
 sniff_dev 
 -> prism2_decap :: Prism2Decap()
+-> phyerr_filter :: FilterPhyErr()
 -> extra_decap :: ExtraDecap()
--> phyerr_filter :: PhyErrFilter()
 //-> PrintWifi(fromdev)
--> tx_filter :: FilterTX()
--> dupe :: WifiDupeFilter(WINDOW 20) 
--> wifi_cl :: Classifier(0/00%0c 0/08%f0, //beacons
-			 0/08%0c, //data
-			 );
-
-
-wifi_cl [0] 
--> bs :: BeaconScanner(RT rates) 
+-> beacon_cl :: Classifier(0/00%0c 0/80%f0, //beacons
+			    -)
+-> bs :: BeaconScanner(RT rates)
 -> Discard;
 
-wifi_cl [1]
+beacon_cl [1]
+-> Classifier(0/08%0c) //data
+-> rate_cl :: Classifier(30/9000,-); //rate packets
+
+rate_cl [1] 
+-> tx_filter :: FilterTX()
+-> dupe :: WifiDupeFilter() 
 -> WifiDecap()
 -> HostEtherFilter($wireless_mac, DROP_OTHER true, DROP_OWN true) 
 -> rxstats :: RXStats()
 -> ncl :: Classifier(
 		     12/09??,
 		     12/0a??,
-		     12/0106,
-		     12/0100,
 		     -);
 
 
 ncl [0] -> srcr;
 ncl [1] -> etx;
 
-rate_host :: LinuxHost(rate, $rate_ip, 255.255.255.0, $wireless_mac);
+
 
 ncl[2] 
--> StoreData(12,\\<0806>) 
--> rate_host;
-
-ncl[3] 
--> StoreData(12,\\<0800>) 
--> rate_host;
-
-ncl[4] 
 EOF
 
 if ($kernel) {
@@ -448,57 +409,97 @@ if ($kernel) {
     print "-> Discard;\n";
 }
 
-print <<EOF;
-
-rate_host
--> arp_cl :: Classifier(12/0806,
-			12/0800);
-arp_cl [0] 
--> StoreData(12, \\<0106>)
--> WifiEncap(0x0, 00:00:00:00:00:00)
--> SetTXRate(RATE 2)
--> route_q;
-
-arp_cl [1] 
--> StoreData(12, \\<0100>)
--> SetTXRate(RATE 2)
--> WifiEncap(0x0, 00:00:00:00:00:00)
--> rate_q;
-
-EOF
     if ($txf) {
 print <<EOF;
 tx_filter [1] 
 //-> PrintWifi(txf)
--> rate_cl :: Classifier(30/0100, 
-			 -);
-
-
-rate_cl 
--> txf_t :: Tee(4)
--> PushAnno() 
-EOF
-if ($kernel) {
-    print "-> ToHost(rate-txf);\n";
-    print "FromHost(rate-txf, 1.1.1.1/32)\n";
-}
-print <<EOF;
--> Discard;
-
-
-rate_cl [1] 
 -> txf_t2 :: Tee(3);
 
 txf_t2 [0] -> [1] data_arf_rate;
 txf_t2 [1] -> [1] data_madwifi_rate;
 txf_t2 [2] -> [1] data_probe_rate;
 
-txf_t [1] -> [1] rate_arf_rate;
-txf_t [2] -> [1] rate_madwifi_rate;
-txf_t [3] -> [1] rate_probe_rate;
-
 EOF
 }
 
 
 
+print <<EOF;
+
+
+
+rate_arf_rate :: AutoRateFallback(OFFSET 4,
+                             ACTIVE false,
+                             STEPUP 10,
+                             THRESHOLD 0,
+                             ADAPTIVE_STEPUP false,
+                             RT rates);
+rate_aarf_rate :: AutoRateFallback(OFFSET 4,
+                             ACTIVE false,
+                             STEPUP 10,
+                             THRESHOLD 0,
+                             ADAPTIVE_STEPUP true,
+			      RT rates);
+
+rate_madwifi_rate :: MadwifiRate(OFFSET 4,
+                            ACTIVE false,
+                            THRESHOLD 0,
+                            RT rates);
+rate_probe_rate :: ProbeTXRate(OFFSET 4,
+                          ACTIVE false,
+                          WINDOW 10000,
+                          MIN_SAMPLE 35,
+                          THRESHOLD 0,
+                          FILTER_LOW_RATES 1,
+                          FILTER_NEVER_SUCCESS 1,
+                          AGGRESSIVE_ALT_RATE 1,
+                          RT rates);
+rate_static_rate :: SetTXRate(RATE 2);
+
+
+
+rate_cl [0] 
+-> rate_tx_filter :: FilterTX()
+-> rate_dupe :: WifiDupeFilter() 
+//-> Print(fromdev, 60)
+-> WifiDecap()
+-> HostEtherFilter($wireless_mac, DROP_OTHER true, DROP_OWN true) 
+-> rate_rxstats :: RXStats()
+-> rate_count :: Counter()
+-> Discard;
+
+rate_inf_src :: InfiniteSource(DATA $data, LIMIT -1, ACTIVE false)
+//-> seq :: IncrementSeqNo(FIRST 0)
+-> rate_ee :: EtherEncap(0x9000, $wireless_mac, ff:ff:ff:ff:ff:ff)
+-> rate_wifi_encap :: WifiEncap(0x00, 0:0:0:0:0:0)
+-> rate_static_rate
+-> rate_arf_rate
+-> rate_aarf_rate
+-> rate_madwifi_rate
+-> rate_probe_rate
+-> [2] sched;
+
+rate_poke :: PokeHandlers(pause,
+                     write rate_inf_src.active true,
+                     wait 30,
+                     write rate_inf_src.active false,
+                     loop);
+
+
+rate_static_poke :: PokeHandlers(pause,
+                     write rate_inf_src.active true,
+                     wait 1,
+                     write rate_inf_src.active false,
+		     loop);
+
+
+rate_tx_filter[1]
+//-> Print(txf, 60)
+-> [1] rate_arf_rate [1]
+-> [1] rate_aarf_rate [1]
+-> [1] rate_madwifi_rate [1]
+-> [1] rate_probe_rate [1]
+-> FilterFailures()
+-> rate_send_count :: Counter()
+-> Discard;
+EOF
