@@ -237,12 +237,12 @@ ICMPPingRewriter::apply_pattern(const IPFlowID &flow)
 
   if (forward && reverse) {
     IPFlowID new_flow(_new_src, _identifier, _new_dst, _identifier);
-    _identifier++;
     if (!_new_src)
       new_flow.set_saddr(flow.saddr());
     if (!_new_dst)
       new_flow.set_daddr(flow.daddr());
     Mapping::make_pair(flow, new_flow, forward, reverse);
+    _identifier++;
 
     _request_map.insert(flow, forward);
     _reply_map.insert(new_flow.rev(), reverse);
