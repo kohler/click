@@ -25,22 +25,25 @@ class ErrorHandler {
   virtual void reset_counts() = 0;
   
   // all error functions always return -1
-  virtual void vmessage(Seriousness, const String &) = 0;
   int verror(Seriousness, const String &, const char *, va_list);
-  virtual String verror_text(Seriousness, const String &, const char *,
-			     va_list);
 
-  int lmessage(const String &, const char *, ...);
+  void lmessage(const String &, const char *, ...);
   int lwarning(const String &, const char *, ...);
   int lerror(const String &, const char *, ...);
   int lfatal(const String &, const char *, ...);
   static String fix_landmark(const String &);
   
-  void message(const String &);
   void message(const char *, ...);
   int warning(const char *, ...);
   int error(const char *, ...);
   int fatal(const char *, ...);
+
+  String make_text(Seriousness, const char *, ...);
+  virtual String make_text(Seriousness, const char *, va_list);
+  virtual String apply_landmark(const String &, const String &);
+  virtual void handle_text(Seriousness, const String &) = 0;
+
+  static String prepend_lines(const String &, const String &);
   
 };
 
@@ -60,15 +63,32 @@ class FileErrorHandler : public ErrorHandler {
   int nerrors() const;
   void reset_counts();
   
-  void vmessage(Seriousness, const String &);
+  void handle_text(Seriousness, const String &);
   
 };
 #endif
 
-class ContextErrorHandler : public ErrorHandler {
+class ErrorVeneer : public ErrorHandler { protected:
+
+  ErrorHandler *_errh;
+
+ public:
+
+  ErrorVeneer(ErrorHandler *errh)	: _errh(errh) { }
+
+  int nwarnings() const;
+  int nerrors() const;
+  void reset_counts();
+
+  String make_text(Seriousness, const char *, va_list);
+  String apply_landmark(const String &, const String &);
+  void handle_text(Seriousness, const String &);
+
+};
+
+class ContextErrorHandler : public ErrorVeneer {
   
   String _context;
-  ErrorHandler *_errh;
   String _indent;
   
  public:
@@ -76,28 +96,19 @@ class ContextErrorHandler : public ErrorHandler {
   ContextErrorHandler(ErrorHandler *, const String &context = "",
 		      const String &indent = "  ");
   
-  int nwarnings() const			{ return _errh->nwarnings(); }
-  int nerrors() const			{ return _errh->nerrors(); }
-  void reset_counts();
-  
-  void vmessage(Seriousness, const String &);
+  String make_text(Seriousness, const char *, va_list);
   
 };
 
-class PrefixErrorHandler : public ErrorHandler {
+class PrefixErrorHandler : public ErrorVeneer {
   
   String _prefix;
-  ErrorHandler *_errh;
   
  public:
   
   PrefixErrorHandler(ErrorHandler *, const String &prefix);
   
-  int nwarnings() const			{ return _errh->nwarnings(); }
-  int nerrors() const			{ return _errh->nerrors(); }
-  void reset_counts();
-  
-  void vmessage(Seriousness, const String &);
+  void handle_text(Seriousness, const String &);
   
 };
 

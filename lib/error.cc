@@ -29,12 +29,6 @@
 #include <click/confparse.hh>
 
 void
-ErrorHandler::message(const String &message)
-{
-  vmessage(Message, message);
-}
-
-void
 ErrorHandler::message(const char *format, ...)
 {
   va_list val;
@@ -73,14 +67,13 @@ ErrorHandler::fatal(const char *format, ...)
   return -1;
 }
 
-int
+void
 ErrorHandler::lmessage(const String &where, const char *format, ...)
 {
   va_list val;
   va_start(val, format);
   verror(Message, where, format, val);
   va_end(val);
-  return -1;
 }
 
 int
@@ -111,6 +104,16 @@ ErrorHandler::lfatal(const String &where, const char *format, ...)
   verror(Fatal, where, format, val);
   va_end(val);
   return -1;
+}
+
+String
+ErrorHandler::make_text(Seriousness seriousness, const char *format, ...)
+{
+  va_list val;
+  va_start(val, format);
+  String s = make_text(seriousness, format, val);
+  va_end(val);
+  return s;
 }
 
 #define ZERO_PAD 1
@@ -176,31 +179,7 @@ do_number_flags(char *pos, char *after_last, int base, int flags,
 }
 
 String
-ErrorHandler::fix_landmark(const String &landmark)
-{
-  if (!landmark)
-    return landmark;
-  // find first nonspace
-  int i, len = landmark.length();
-  for (i = len - 1; i >= 0; i--)
-    if (!isspace(landmark[i]))
-      break;
-  if (i < 0 || (i < len - 1 && landmark[i] == ':'))
-    return landmark;
-  // change landmark
-  String lm = landmark.substring(0, i + 1);
-  if (landmark[i] != ':')
-    lm += ':';
-  if (i < len - 1)
-    lm += landmark.substring(i);
-  else
-    lm += ' ';
-  return lm;
-}
-
-String
-ErrorHandler::verror_text(Seriousness seriousness, const String &where,
-			  const char *s, va_list val)
+ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 {
   StringAccum msg;
   char numbuf[NUMBUF_SIZE];	// for numerics
@@ -210,20 +189,12 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
   
   if (seriousness == Warning) {
     // prepend `warning: ' to every line
-    StringAccum ns;
-    while (const char *nl = strchr(s, '\n')) {
-      ns << "warning: ";
-      ns.push(s, nl - s + 1);
-      s = nl + 1;
-    }
-    if (*s)
-      ns << "warning: " << s;
-    s_placeholder = ns.take_string();
+    s_placeholder = prepend_lines("warning: ", s);
     s = s_placeholder.cc();
   }
   
-  if (where)
-    msg << fix_landmark(where);
+  /*if (where)
+    msg << fix_landmark(where);*/
 
   // declare and initialize these here to make gcc shut up about possible 
   // use before initialization
@@ -433,12 +404,54 @@ ErrorHandler::verror_text(Seriousness seriousness, const String &where,
   return String::claim_string(msg.take(), len);
 }
 
+String
+ErrorHandler::apply_landmark(const String &landmark, const String &text)
+{
+  if (!landmark)
+    return text;
+
+  // special-purpose landmarks begin and end with a backslash `\'; ignore them
+  if (landmark.length() > 2 && landmark[0] == '\\' && landmark.back() == '\\')
+    return text;
+
+  // fix landmark: skip trailing spaces and trailing colon
+  int i, len = landmark.length();
+  for (i = len - 1; i >= 0; i--)
+    if (!isspace(landmark[i]))
+      break;
+  if (i >= 0 && landmark[i] == ':')
+    i--;
+
+  // return new text
+  return prepend_lines(landmark.substring(0, i+1) + ": ", text);
+}
+
 int
 ErrorHandler::verror(Seriousness seriousness, const String &where,
 		     const char *s, va_list val)
 {
-  vmessage(seriousness, verror_text(seriousness, where, s, val));
+  String text = make_text(seriousness, s, val);
+  text = apply_landmark(where, text);
+  handle_text(seriousness, text);
   return -1;
+}
+
+String
+ErrorHandler::prepend_lines(const String &prepend, const String &text)
+{
+  if (!prepend)
+    return text;
+  
+  StringAccum sa;
+  int pos = 0, nl;
+  while ((nl = text.find_left('\n', pos)) >= 0) {
+    sa << prepend << text.substring(pos, nl - pos + 1);
+    pos = nl + 1;
+  }
+  if (pos < text.length())
+    sa << prepend << text.substring(pos);
+  
+  return sa.take_string();
 }
 
 #ifndef __KERNEL__
@@ -470,7 +483,7 @@ FileErrorHandler::reset_counts()
 }
 
 void
-FileErrorHandler::vmessage(Seriousness seriousness, const String &message)
+FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
   if (seriousness == Message) /* do nothing */;
   else if (seriousness == Warning) _nwarnings++;
@@ -510,12 +523,12 @@ class SilentErrorHandler : public ErrorHandler {
   int nerrors() const			{ return _nerrors; }
   void reset_counts()			{ _nwarnings = _nerrors = 0; }
 
-  void vmessage(Seriousness, const String &);
+  void handle_text(Seriousness, const String &);
   
 };
 
 void
-SilentErrorHandler::vmessage(Seriousness seriousness, const String &)
+SilentErrorHandler::handle_text(Seriousness seriousness, const String &)
 {
   if (seriousness == Warning)
     _nwarnings++;
@@ -562,36 +575,66 @@ ErrorHandler::silent_handler()
 
 
 //
+// ERROR VENEER
+//
+
+int
+ErrorVeneer::nwarnings() const
+{
+  return _errh->nwarnings();
+}
+
+int
+ErrorVeneer::nerrors() const
+{
+  return _errh->nerrors();
+}
+
+void
+ErrorVeneer::reset_counts()
+{
+  _errh->reset_counts();
+}
+
+String
+ErrorVeneer::make_text(Seriousness seriousness, const char *s, va_list val)
+{
+  return _errh->make_text(seriousness, s, val);
+}
+
+String
+ErrorVeneer::apply_landmark(const String &landmark, const String &text)
+{
+  return _errh->apply_landmark(landmark, text);
+}
+
+void
+ErrorVeneer::handle_text(Seriousness seriousness, const String &text)
+{
+  _errh->handle_text(seriousness, text);
+}
+
+
+//
 // CONTEXT ERROR HANDLER
 //
 
 ContextErrorHandler::ContextErrorHandler(ErrorHandler *errh,
 					 const String &context,
 					 const String &indent)
-  : _context(context), _errh(errh), _indent(indent)
+  : ErrorVeneer(errh), _context(context), _indent(indent)
 {
 }
 
-void
-ContextErrorHandler::reset_counts()
-{
-  _errh->reset_counts();
-}
-
-void
-ContextErrorHandler::vmessage(Seriousness seriousness, const String &message)
+String
+ContextErrorHandler::make_text(Seriousness seriousness, const char *format, va_list val)
 {
   if (_context) {
-    _errh->vmessage(Message, _context);
+    _errh->message("%s", _context.cc());
     _context = String();
   }
-  int pos = 0, nl;
-  while ((nl = message.find_left('\n', pos)) >= 0) {
-    _errh->vmessage(seriousness, _indent + message.substring(pos, nl - pos));
-    pos = nl + 1;
-  }
-  if (pos < message.length())
-    _errh->vmessage(seriousness, _indent + message.substring(pos));
+  String text = _errh->make_text(seriousness, format, val);
+  return prepend_lines(_indent, text);
 }
 
 
@@ -601,24 +644,12 @@ ContextErrorHandler::vmessage(Seriousness seriousness, const String &message)
 
 PrefixErrorHandler::PrefixErrorHandler(ErrorHandler *errh,
 				       const String &prefix)
-  : _prefix(prefix), _errh(errh)
+  : ErrorVeneer(errh), _prefix(prefix)
 {
 }
 
 void
-PrefixErrorHandler::reset_counts()
+PrefixErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  _errh->reset_counts();
-}
-
-void
-PrefixErrorHandler::vmessage(Seriousness seriousness, const String &message)
-{
-  int pos = 0, nl;
-  while ((nl = message.find_left('\n', pos)) >= 0) {
-    _errh->vmessage(seriousness, _prefix + message.substring(pos, nl - pos));
-    pos = nl + 1;
-  }
-  if (pos < message.length())
-    _errh->vmessage(seriousness, _prefix + message.substring(pos));
+  _errh->handle_text(seriousness, prepend_lines(_prefix, message));
 }

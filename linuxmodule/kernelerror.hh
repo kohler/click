@@ -15,7 +15,7 @@ class KernelErrorHandler : public ErrorHandler {
   int nerrors() const			{ return _nerrors; }
   void reset_counts()			{ _nwarnings = _nerrors = 0; }
   
-  void vmessage(Seriousness, const String &);
+  void handle_text(Seriousness, const String &);
   
 };
 
@@ -28,7 +28,7 @@ class SyslogErrorHandler : public ErrorHandler {
   int nerrors() const			{ return 0; }
   void reset_counts()			{ }
   
-  void vmessage(Seriousness, const String &);
+  void handle_text(Seriousness, const String &);
   
 };
 

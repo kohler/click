@@ -68,12 +68,6 @@ static void
 update_proc_click_errors()
 {
   unsigned len = (all_errors ? all_errors->length() : 0);
-  
-  // change inode status
-  /* if (inode *ino = proc_click_errors_entry.inode) {
-    ino->i_mtime = ino->i_ctime = CURRENT_TIME;
-    ino->i_size = len;
-    }*/
   proc_click_errors_entry->size = len;
   
   // wake up anyone waiting for errors
@@ -82,7 +76,7 @@ update_proc_click_errors()
 
 
 void
-KernelErrorHandler::vmessage(Seriousness seriousness, const String &message)
+KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
   if (seriousness == Message) /* do nothing */;
   else if (seriousness == Warning) _nwarnings++;
@@ -97,7 +91,7 @@ KernelErrorHandler::vmessage(Seriousness seriousness, const String &message)
 }
 
 void
-SyslogErrorHandler::vmessage(Seriousness seriousness, const String &message)
+SyslogErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
   syslog_message(message);
 }

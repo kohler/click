@@ -61,12 +61,12 @@ struct ControlSocketErrorHandler : public ErrorHandler {
   void reset_counts()			{ _nwarnings = _nerrors = 0; }
   const Vector<String> &messages() const { return _messages; }
   
-  void vmessage(Seriousness, const String &);
+  void handle_text(Seriousness, const String &);
   
 };
 
 void
-ControlSocketErrorHandler::vmessage(Seriousness seriousness, const String &m)
+ControlSocketErrorHandler::handle_text(Seriousness seriousness, const String &m)
 {
   switch (seriousness) {
    case Warning: _nwarnings++; break;
