@@ -278,9 +278,11 @@ proc_element_handler_write(struct file *filp, const char *buffer, size_t count, 
     return -EINVAL;
   String &s = handler_strings[stringno];
   int old_length = s.length();
-  
+
+#ifdef LARGEST_HANDLER_WRITE
   if (f_pos + count > LARGEST_HANDLER_WRITE)
     return -EFBIG;
+#endif
   
   if (f_pos + count > old_length) {
     int out_of_memory = String::out_of_memory_count();
