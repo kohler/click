@@ -57,6 +57,7 @@ fromdev_static_cleanup()
 FromDevice::FromDevice()
   : _registered(false), _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
+  _promisc = 0;
   fromdev_static_initialize();
   add_output();
 }
