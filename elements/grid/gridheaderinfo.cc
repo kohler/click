@@ -66,13 +66,13 @@ ghi_read_handler(Element *, void *v)
   case GridHeaderInfo::sizeof_grid_route_reply:        answer = sizeof(grid_route_reply); break;
        
   case GridHeaderInfo::offsetof_grid_hdr_version:      answer = offsetof(grid_hdr, version); break;
-  case GridHeaderInfo::offsetof_grid_hdr_type:         answer = sizeof(grid_hdr); break;
-  case GridHeaderInfo::offsetof_grid_hdr_ip:           answer = sizeof(grid_hdr); break;
-  case GridHeaderInfo::offsetof_grid_hdr_tx_ip:        answer = sizeof(grid_hdr); break;
+  case GridHeaderInfo::offsetof_grid_hdr_type:         answer = offsetof(grid_hdr, type); break;
+  case GridHeaderInfo::offsetof_grid_hdr_ip:           answer = offsetof(grid_hdr, ip); break;
+  case GridHeaderInfo::offsetof_grid_hdr_tx_ip:        answer = offsetof(grid_hdr, tx_ip); break;
        
-  case GridHeaderInfo::offsetof_grid_nbr_encap_dst_ip: answer = sizeof(grid_hdr); break;
+  case GridHeaderInfo::offsetof_grid_nbr_encap_dst_ip: answer = offsetof(grid_nbr_encap, dst_ip); break;
        
-  case GridHeaderInfo::offsetof_grid_loc_query_dst_ip: answer = sizeof(grid_hdr); break;
+  case GridHeaderInfo::offsetof_grid_loc_query_dst_ip: answer = offsetof(grid_loc_query, dst_ip); break;
       default: answer = -1;
   }
   return String(answer) + "\n";  

@@ -5,24 +5,51 @@
  * =c
  * GridHeaderInfo
  * =s Grid
- *
- * This element can be used by scripts to find out various sizes and
- * offsets of the grid protocol headers.
- *
- * The point of this element is to provide information that can be
- * used to properly build Grid click configurations -- some of the
- * Classifiers etc. require offset information.  Probably this whole
- * approach is broken and I should just write a GridClassifier... but
- * then what's the point of a generic classifier?  I am confused...
+ * Provide information about Grid header version, header sizes, and offsets 
+ * for the current router exectuable.
  *
  * =io
  * None
  * =d
  *
- * =h
- * Returns or sets boolean value of whether or not this node is a
- * gateway. */
-
+ * This element can be used by scripts to find out various sizes and
+ * offsets of the Grid protocol headers.
+ *
+ * The point of this element is to provide information that can be
+ * used to properly build Grid click configurations -- some of the
+ * classifiers etc. require offset information.  Probably this whole
+ * approach is broken and I should just write a GridClassifier... but
+ * then what's the point of a generic classifier?  I am confused...
+ *
+ *
+ * =h grid_hdr_version               read-only
+ * Return the Grid header version as a hexadecimal number.
+ *
+ * 
+ *
+ * =h sizeof_grid_location           read-only
+ * Each sizeof_foo handler returns C<sizeof(foo)>.
+ * =h sizeof_grid_hdr                read-only
+ * =h sizeof_grid_nbr_entry          read-only
+ * =h sizeof_grid_hello              read-only
+ * =h sizeof_grid_nbr_encap          read-only
+ * =h sizeof_grid_loc_query          read-only
+ * =h sizeof_grid_route_probe        read-only
+ * =h sizeof_grid_route_reply        read-only
+ * 
+ *
+ * =h offsetof_grid_hdr_version      read-only
+ * Each offsetof_grid_hdr_foo handler returns C<offsetof(grid_hdr, foo)>
+ * =h offsetof_grid_hdr_type         read-only
+ * =h offsetof_grid_hdr_ip           read-only
+ * =h offsetof_grid_hdr_tx_ip        read-only
+ * 
+ * =h offsetof_grid_nbr_encap_dst_ip read-only
+ * Returns C<offsetof(grid_nbr_encap, dst_ip)>
+ *
+ * =h offsetof_grid_loc_query_dst_ip read-only
+ * Returns C<offsetof(grid_loc_query, dst_ip)>
+ */
 
 #include <click/element.hh>
 #include "grid.hh"
