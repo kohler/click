@@ -1,3 +1,28 @@
+2002-04-04 Thursday 19:17  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/ip6ndadvertiser.cc (1.14),
+	elements/ethernet/ip6ndsolicitor.cc (1.15),
+	elements/ip6/icmp6error.cc (1.20), elements/ip6/icmp6error.hh
+	(1.10), elements/ip6/ip6print.cc (1.4),
+	elements/ip6/protocoltranslator46.cc (1.6),
+	elements/ip6/protocoltranslator64.cc (1.8),
+	elements/ip6/setip6dscp.cc (1.1), elements/ip6/setip6dscp.hh (1.1),
+	elements/linuxmodule/fastudpsrcip6.cc (1.13),
+	include/click/click_icmp6.h (1.3), include/click/click_ip6.h (1.6),
+	include/click/ip6address.hh (1.7), lib/ip6address.cc (1.26),
+	lib/ip6table.cc (1.10): IPv6 updates, inspired by, and some code
+	from, Frederik Scholaert <Frederik.Scholaert@rug.ac.be>: change
+	click_ip6 header structure to have correct definitions of flow and
+	class members (20 and 8 bits, respectively), inspired by Linux/BSD
+	header files; add operator<<(StringAccum &, const IP6Address &);
+	rename IP6Address::mask_more_specific() to mask_as_specific();
+	adapt other elements to these changes; add SetIP6DSCP and add
+	Redirect support to ICMP6Error, from Frederik
+
+2002-04-04 Thursday 19:15  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.119): nitlet: set _preinitialized correctly
+
 2002-04-04 Thursday 15:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* apps/ClickController/Util.java (1.6): fixed Util.assert()
