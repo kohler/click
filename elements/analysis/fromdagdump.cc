@@ -464,7 +464,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	    error_helper(errh, "out of memory!");
 	    return false;
 	}
-	p->change_headroom_and_length(_pos - sizeof(DAGCell) + DAGCell::PAYLOAD_OFFSET, sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET);
+	p->shrink_data(&cell->payload[0], sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET);
 	p->set_timestamp_anno(tv);
 	
     } else {
