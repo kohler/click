@@ -207,18 +207,21 @@ FromSocket::handle(int fd)
   WritablePacket *p = _packets[fd];
   _packets[fd] = NULL;
   assert(p);
-  int r;
-  do {
-    while ((r = read(fd, p->end_data(), p->tailroom())) > 0) {
-      p = p->put(r);
-      assert(p);
-    }
-  } while (r < 0 && errno == EINTR);
 
-  // unrecoverable error
-  if (r < 0 && errno != EAGAIN) {
-    click_chatter("%s: read: %s", declaration().cc(), strerror(errno));
-    goto err;
+  // read data from socket
+  int len = read(fd, p->end_data(), p->tailroom());
+
+  if (len > 0) {
+    p = p->put(len);
+    if (!p)
+      return NULL;
+  } else {
+    p->kill();
+    if (len <= 0 && errno != EAGAIN) {
+      click_chatter("%s: read: %s", declaration().cc(), strerror(errno));
+      goto err;
+    }
+    return NULL;
   }
 
   // check framing mark

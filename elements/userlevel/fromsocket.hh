@@ -5,8 +5,6 @@
 CLICK_DECLS
 
 /*
-=title FromSocket.u
-
 =c
 
 FromSocket("TCP", IP, PORTNUMBER [, I<KEYWORDS>])
@@ -76,7 +74,7 @@ class FromSocket : public Element { public:
   int _socktype;
   int _protocol;
   IPAddress _ip;
-  int _port;
+  unsigned short _port;
   String _pathname;
   unsigned _snaplen;
   bool _frame;
