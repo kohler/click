@@ -47,7 +47,27 @@ click -e "FromIPSummaryDump(OUT4, STOP true)
 
 %file OUT1 OUT4
 
+%info
+
+Note the {{.*?}} checks in place of real TCP checksums -- tcpdump 3.8.x
+calculates TCP checksums incorrectly in the presence of EOL/NOP IP options.
+
 %expect OUT2
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 40) 18.26.4.44.30 > 10.0.0.4.40: . [tcp sum ok] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 44, optlength: 4 ( NOP NOP EOL-1 )) 18.26.4.44.30 > 10.0.0.4.40: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 60, optlength: 20 ( SSRR{128.4.45.60 128.4.49.61#1.1.1.1 2.2.2.2} EOL )) 18.26.4.44.20 > 10.0.0.8.80: . [tcp sum ok] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 60, optlength: 20 ( SSRR{128.4.45.60 128.4.49.61#1.1.1.1 2.2.2.2} EOL )) 18.26.4.44.20 > 10.0.0.8.80: . [tcp sum ok] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 60, optlength: 20 ( RR{2.3.4.5#0.0.0.0 0.0.0.0 0.0.0.0} EOL )) 18.26.4.44.10 > 10.0.0.8.80: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 48, optlength: 8 ( RR{#0.0.0.0} EOL )) 18.26.4.44.11 > 10.0.0.8.80: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 60, optlength: 20 ( TS{TS+ADDR -2147475328@1.0.0.1 8321@1.0.0.2 ^  [5 hops not recorded]}  )) 18.26.4.44.12 > 10.0.0.1.80: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 60, optlength: 20 ( TS{TS+ADDR -2147475328@1.0.0.1 8321@1.0.0.2 ^  [5 hops not recorded]}  )) 18.26.4.44.12 > 10.0.0.1.80: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 76, optlength: 36 ( TS{PRESPEC 1@1.0.0.1 ^ 0@1.0.0.3 0@1.0.0.4 0@0.0.0.0} )) 18.26.4.44.13 > 10.0.0.1.80: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 76, optlength: 36 ( TS{PRESPEC 1@1.0.0.1 ^ 0@1.0.0.3 0@1.0.0.4 0@0.0.0.0} )) 18.26.4.44.13 > 10.0.0.1.80: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 64, optlength: 24 ( TS{TSONLY 1@ 10000@ -2147483603@ ^ 0@ 0@} )) 18.26.4.44.14 > 10.0.0.1.80: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 72, optlength: 32 ( TS{TSONLY 1@ 10000@ -2147483603@ ^ 0@ 0@} RR{#0.0.0.0} EOL )) 18.26.4.44.15 > 10.0.0.1.80: . [{{.*?}}] win 0
+IP (tos 0x0, id 0, offset 0, flags [none], proto 6, length: 64, optlength: 24 ( TS{TSONLY 1@ 10000@ -2147483603@ ^ 0@ 0@} )) 18.26.4.44.15 > 10.0.0.1.80: . [{{.*?}}] win 0
+
+%expect -a OUT2
 18.26.4.44.30 > 10.0.0.4.40: . [tcp sum ok] win 0 [ttl 0] (id 0, len 40)
 18.26.4.44.30 > 10.0.0.4.40: . [tcp sum ok] win 0 [ttl 0] (id 0, len 44, optlen=4 NOP NOP EOL-1)
 18.26.4.44.20 > 10.0.0.8.80: . [tcp sum ok] win 0 [ttl 0] (id 0, len 60, optlen=20 SSRR{128.4.45.60 128.4.49.61#1.1.1.1 2.2.2.2} EOL)
