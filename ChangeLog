@@ -1,3 +1,7 @@
+2004-11-13 Saturday 23:32  John Bicket <jbicket@mit.edu>
+
+	* include/clicknet/wifi.h (1.14): a few more comments
+
 2004-11-13 Saturday 16:48  John Bicket <jbicket@mit.edu>
 
 	* elements/standard/: infinitesource.cc (1.47), infinitesource.hh
