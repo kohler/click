@@ -22,12 +22,14 @@
 #include "router.hh"
 #include "elemfilter.hh"
 #include "elements/standard/scheduleinfo.hh"
-#include "perfcount.hh"
 
 extern "C" {
 #include <linux/netdevice.h>
 #include <unistd.h>
 }
+
+#include "perfcount.hh"
+#include "asm/msr.h"
 
 PollDevice::PollDevice()
   : _dev(0), _last_rx(0)
@@ -177,9 +179,9 @@ PollDevice::run_scheduled()
   while(got<POLLDEV_MAX_PKTS_PER_RUN) {
     unsigned long tt;
 
-    if (got == 0) tt = get_cycles();
+    if (got == 0 && _activations>0) tt = get_cycles();
     skb = _dev->rx_poll(_dev);
-    if (got == 0) _time_first_recv += get_cycles()-tt;
+    if (got == 0 && _activations>0) _time_first_recv += get_cycles()-tt;
 
     if (!skb) break;
 
@@ -201,8 +203,8 @@ PollDevice::run_scheduled()
   rdpmc(0, low01, high);
   rdpmc(1, low11, high);
 
-  _dcu_cycles_rx += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-  _l2misses_rx += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+  if (got > 0) _dcu_cycles_rx += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+  if (got > 0) _l2misses_rx += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
   
   rdpmc(0, low00, high);
   rdpmc(1, low10, high);
@@ -211,13 +213,13 @@ PollDevice::run_scheduled()
   /* if POLLDEV_MAX_PKTS_PER_RUN is greater than RX ring size, we need to fill
    * more often... */
   _dev->rx_refill(_dev);
-  _time_clean += get_cycles()-tt;
+  if (got> 0)_time_clean += get_cycles()-tt;
   
   rdpmc(0, low01, high);
   rdpmc(1, low11, high);
   
-  _dcu_cycles_clean += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-  _l2misses_clean += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+  if (got > 0) _dcu_cycles_clean += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+  if (got > 0) _l2misses_clean += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
 
 #if DEV_KEEP_STATS
   if (_activations > 0 || got > 0) {
@@ -245,8 +247,8 @@ PollDevice::run_scheduled()
     rdpmc(0, low01, high);
     rdpmc(1, low11, high);
   
-    _dcu_cycles_touch += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-    _l2misses_touch += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+    if (got > 0) _dcu_cycles_touch += (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    if (got > 0) _l2misses_touch += (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
 
     output(0).push(new_pkts[i]);
   }
@@ -295,7 +297,7 @@ PollDevice_read_calls(Element *f, void *)
     String(kw->_time_recv) + " cycles rx\n" +
     String(kw->_time_pushing) + " cycles pushing\n" +
     String(kw->_time_running) + " cycles running\n" +
-    String(kw->_time_first_recv) + " cycles frist rx\n" +
+    String(kw->_time_first_recv) + " cycles first rx\n" +
     String(kw->_time_clean) + " cycles cleaning\n" +
     String(kw->_l2misses_rx) + " l2 misses rx\n" +
     String(kw->_dcu_cycles_rx) + " dcu cycles rx\n" +

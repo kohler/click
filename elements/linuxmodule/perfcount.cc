@@ -79,10 +79,6 @@ PerfCount::initialize(ErrorHandler *errh)
 {
   if (_idx > 1)
     return errh->error("index must be 0 or 1");
-
-  // Count metric0 on counter 0, metric1 on counter 1
-  wrmsr(MSR_EVNTSEL0, _metric0|MSR_FLAGS0, 0);
-  wrmsr(MSR_EVNTSEL1, _metric1|MSR_FLAGS1, 0);
   return 0;
 }
 
@@ -90,13 +86,24 @@ inline void
 PerfCount::smaction(Packet *p)
 {
   unsigned low, high;
+  unsigned oldlow0, oldhigh0;
+  unsigned oldlow1, oldhigh1;
+
+  rdmsr(MSR_EVNTSEL0, oldlow0, oldhigh0);
+  rdmsr(MSR_EVNTSEL1, oldlow1, oldhigh1);
+  
+  // Count metric0 on counter 0, metric1 on counter 1
+  wrmsr(MSR_EVNTSEL0, _metric0|MSR_FLAGS0, 0);
+  wrmsr(MSR_EVNTSEL1, _metric1|MSR_FLAGS1, 0);
 
   rdpmc(0, low, high);
   p->set_metric0_anno(_idx, low);
 
   rdpmc(1, low, high);
   p->set_metric1_anno(_idx, low);
-
+  
+  wrmsr(MSR_EVNTSEL0, oldlow0, oldhigh0);
+  wrmsr(MSR_EVNTSEL1, oldlow1, oldhigh1);
 }
 
 void
