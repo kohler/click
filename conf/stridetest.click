@@ -5,18 +5,19 @@ i4 :: InfiniteSource(\<44444444>, -1, 5)
 i5 :: InfiniteSource(\<55555555>, -1, 5)
 i6 :: InfiniteSource(\<66666666>, -1, 5)
 i7 :: InfiniteSource(\<77777777>, -1, 5)
-i8 :: InfiniteSource(\<88888888>, -1, 5)
+i8 :: InfiniteSource(\<88888888>, -1, 7)
 
-i1 -> q1::Queue
+ss :: StrideSched(10,20,30,40,50,60,70,1000000)
+
+i1 -> Print(i1) -> q1::Queue
 i2 -> q2::Queue
 i3 -> q3::Queue
 i4 -> q4::Queue
 i5 -> q5::Queue
 i6 -> q6::Queue
 i7 -> q7::Queue
-i8 -> q8::Queue
-
-ss :: StrideSched(10,20,30,40,50,60,70,80)
+i8 -> Print(i8) -> q8::Queue
+//i9::InfiniteSource(\<99999999>, -1, 9) -> Queue ->  [8]ss
 
 q1 -> [0]ss;
 q2 -> [1]ss;

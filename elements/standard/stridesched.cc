@@ -62,30 +62,38 @@ StrideSched::uninitialize(void)
 Packet *
 StrideSched::pull(int)
 {
-  int n = ninputs();
-  Client *_tmp = new Client();
-  _tmp->make_head();
+  int j, n = ninputs();
+  Client *tmp = new Client();
+  tmp->make_head();
 
-  for (int j = 0; j < n; j++) {
-    // If an input does not produce a packet, it is added to the _tmp
+  for (j = 0; j < n; j++) {
+    // If an input does not produce a packet, it is added to the tmp
     // list and is not checked again in this pass even if its stride 
     // is such that it would be checked in a normal stride scheduler.
     Client *c = _list->remove_min();
     Packet *p = input(c->id()).pull();
-    _tmp->insert(c);
+    tmp->insert(c);
     if (p) {
-      // If an input does produce a packet, all inputs on the _tmp list
+      // If an input does produce a packet, all inputs on the tmp list
       // are incremented with a stride and added back to the main _list
       // before the packet is returned.
       Client *x;
-      while ((x = _tmp->remove_min())) {
+      while ((x = tmp->remove_min())) {
 	x->stride();
 	_list->insert(x);
       }
-      delete _tmp;
+      delete tmp;
       return p;
     }
   }
+  if (j == n) {
+    Client *x;
+    while ((x = tmp->remove_min())) {
+      x->stride();
+      _list->insert(x);
+    }
+  }
+  delete tmp;
   return 0;
 }
 

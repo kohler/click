@@ -12,7 +12,6 @@
  */
 
 class Discard : public Element {
-  int _idle;
   
  public:
   

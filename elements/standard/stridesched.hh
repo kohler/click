@@ -26,7 +26,7 @@ class StrideSched : public Element {
   static const int stride1 = 100000;
   static const long long max_pass = 1LL<<61;
 
-  class Client {
+  struct Client {
 
     Client *_p;
     Client *_n;

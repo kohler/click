@@ -20,7 +20,6 @@
 Discard::Discard()
   : Element(1, 0)
 {
-  _idle = 0;
 }
 
 void
@@ -38,17 +37,9 @@ Discard::wants_packet_upstream() const
 void
 Discard::run_scheduled()
 {
-  Packet *p;
-  int i = 0;
-
-  _idle++;
-  while ((p = input(0).pull()) && i<8) {
-    _idle = 0;
+  Packet *p = input(0).pull();
+  if (p)
     p->kill();
-    i++;
-  }
-
-  if (_idle > 32) return;
   reschedule();
 }
 
