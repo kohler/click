@@ -1,3 +1,8 @@
+2001-04-23 Monday 23:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: settimestamp.cc, settimestamp.hh: set the
+	packet's timestamp annotation
+
 2001-04-23 Monday 17:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node.openbsd: [no log message]
