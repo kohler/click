@@ -134,7 +134,7 @@ cp_argvec(const String &conf, Vector<String> &args, bool split_comma)
 	    i++;
 	} else {
 	  i += 2;
-	  while (i < len && (s[i] != '*' || i == len - 1 || s[i+1] != '/'))
+	  while (i < len - 1 && (s[i] != '*' || s[i+1] != '/'))
 	    i++;
 	  i++; 
 	}
@@ -246,7 +246,7 @@ cp_spacevec(const String &conf, Vector<String> &vec)
 	  i++;
       } else {
 	i += 2;
-	while (i < len && (s[i] != '*' || i == len - 1 || s[i+1] != '/'))
+	while (i < len - 1 && (s[i] != '*' || s[i+1] != '/'))
 	  i++;
 	i++;
       }
@@ -386,7 +386,21 @@ cp_unquote(const String &str)
 	       c = c*16 + s[i] - 'A' + 10;
 	     else if (s[i] >= 'a' && s[i] <= 'f')
 	       c = c*16 + s[i] - 'a' + 10;
-	     else
+	     else if (i < len - 1 && s[i] == '/') {
+	       // skip comments inside '\<...>'
+	       if (s[i+1] == '/') {
+		 while (i < len && s[i] != '\n' && s[i] != '\r')
+		   i++;
+		 if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
+		   i++;
+	       } else if (s[i+1] == '*') {
+		 i += 2;
+		 while (i < len - 1 && (s[i] != '*' || s[i+1] != '/'))
+		   i++;
+		 i++;
+	       }
+	       continue;
+	     } else
 	       continue;	// space (ignore it) or random (error)
 	     if (++d == 2) {
 	       sa << (char)c;
@@ -1876,9 +1890,9 @@ assign_keyword_argument(const String &arg, int npositional, int nvalues)
   // look for keyword value
   for (int i = npositional; i < nvalues; i++)
     if (keyword == cp_values[i].keyword) {
-      // report error if keyword used already
-      if (cp_values[i].v.i)
-	return kwDupKeyword;
+      // do not report error if keyword used already
+      // if (cp_values[i].v.i)
+      //   return kwDupKeyword;
       cp_values[i].v.i = 1;
       cp_values[i].v_string = rest;
       return kwSuccess;
