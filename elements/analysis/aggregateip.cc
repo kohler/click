@@ -344,10 +344,11 @@ AggregateIP::Field::unparse(StringAccum &sa) const
 		sa << ' ' << iter.key();
 		if (_offset == f._offset && _length == f._length)
 		    /* nada */;
-		else if (_offset == f._offset && f._length == 32)
+		else if (_offset == f._offset)
 		    sa << '/' << _length;
 		else {
-		    uint32_t val = (((1 << _length) - 1) << (f._offset + f._length - _offset - _length));
+		    uint32_t mask = (_length == 32 ? 0xFFFFFFFF : (1 << _length) - 1);
+		    uint32_t val = (mask << (f._offset + f._length - _offset - _length));
 		    if (char *x = sa.reserve(20)) {
 			int n;
 			sprintf(x, " & 0x%X%n", val, &n);
@@ -447,13 +448,13 @@ AggregateIP::handle_packet(Packet *p)
 	break;
       case AG_TRANSP:
 	if (ntohs(iph->ip_off) & IP_OFFMASK)
-	    /* bad */;
-	if (iph->ip_p == _f.proto() || protos_compatible(iph->ip_p, _f.proto()))
+	    /* bad; will be thrown away below */;
+	else if (iph->ip_p == _f.proto() || protos_compatible(iph->ip_p, _f.proto()))
 	    offset = p->transport_header_offset();
 	break;
       case AG_PAYLOAD:
 	if (ntohs(iph->ip_off) & IP_OFFMASK)
-	    /* bad */;
+	    /* bad; will be thrown away below */;
 	else if (iph->ip_p == IPPROTO_TCP && p->transport_header_offset() + sizeof(click_tcp) <= p->length()) {
 	    const click_tcp *tcph = (const click_tcp *)p->transport_header();
 	    offset = p->transport_header_offset() + (tcph->th_off << 2);
