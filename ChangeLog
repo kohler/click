@@ -1,3 +1,7 @@
+2003-01-27 Monday 19:03  Eddie Kohler <kohler@icir.org>
+
+	* etc/linux-2.4.20-patch (1.3): nitlet: fix AppleTalk function
+
 2003-01-27 Monday 17:57  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/: fromdump.cc (1.72), fromdump.hh (1.40): add
