@@ -1,3 +1,17 @@
+2001-08-27 Monday 17:48  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-server-ron.pl (1.2): Generalized for device name
+
+2001-08-27 Monday 17:46  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-client-ron.pl (1.1): Initial add
+
+2001-08-27 Monday 17:25  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: standard/classifier.cc (1.35), standard/classifier.hh
+	(1.23), userlevel/fakepcap.h (1.8): remove useless stuff from
+	fakepcap
+
 2001-08-25 Saturday 14:27  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: click_ether.h (1.5), click_ip.h (1.8): nitlets
