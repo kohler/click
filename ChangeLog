@@ -1,3 +1,9 @@
+2004-06-09 Wednesday 22:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.79), conf/print-pings.click (1.1), doc/mkwebdoc.pl
+	(1.51), conf/print-pings.click (1.2): add print-pings.click
+	(inspired by Chao-Kuo Lin)
+
 2004-06-09 Wednesday 22:18  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* conf/test-tap.click (1.5): use new Message element to print a
