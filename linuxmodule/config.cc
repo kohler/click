@@ -93,12 +93,8 @@ static void
 install_router(const String &config, Router *r)
 {
     click_router = r;
-    if (click_router) {
+    if (click_router)
 	click_router->use();
-#ifdef HAVE_PROC_CLICK
-	init_router_element_procs();
-#endif
-    }
     *current_config = config;
     click_config_generation++;
 }
@@ -107,9 +103,6 @@ static void
 kill_router()
 {
     if (click_router) {
-#ifdef HAVE_PROC_CLICK
-	cleanup_router_element_procs();
-#endif
 	click_router->unuse();
 	click_router = 0;
     }

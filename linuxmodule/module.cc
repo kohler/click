@@ -207,15 +207,6 @@ click_clear_error_log()
 extern "C" int
 init_module()
 {
-#ifdef HAVE_PROC_CLICK
-  // check for another click module already existing
-  for (proc_dir_entry *de = proc_root.subdir; de; de = de->next)
-    if (de->low_ino && de->namelen == 5 && memcmp(de->name, "click", 5) == 0) {
-      printk("<1>Some Click module is already installed! You must remove it.\n");
-      return -EBUSY;
-    }
-#endif
-  
   // C++ static initializers
   String::static_initialize();
   cp_va_static_initialize();
@@ -260,12 +251,7 @@ init_module()
   click_mode_w = S_IWUSR | S_IWGRP;
   click_mode_dir = S_IFDIR | click_mode_r | click_mode_x;
 
-#ifdef HAVE_CLICKFS
   init_clickfs();
-#endif
-#ifdef HAVE_PROC_CLICK
-  init_proc_click();
-#endif
 
   return 0;
 }
@@ -279,12 +265,7 @@ cleanup_module()
   extern int click_outstanding_news; /* glue.cc */
   
   // filesystem interface
-#ifdef HAVE_CLICKFS
   cleanup_clickfs();
-#endif
-#ifdef HAVE_PROC_CLICK
-  cleanup_proc_click();
-#endif
 
   // extra packages, global handlers
   click_cleanup_packages();

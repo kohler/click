@@ -4,16 +4,9 @@
 #include <click/router.hh>
 #include <click/driver.hh>
 #include <click/error.hh>
-#include <click/pathvars.h>	/* for HAVE_CLICKFS */
-#ifndef HAVE_CLICKFS
-# define HAVE_PROC_CLICK 1	/* if not clickfs, then /proc/click */
-#endif
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#ifdef HAVE_PROC_CLICK
-# include <linux/proc_fs.h>
-#endif
 #include <asm/uaccess.h>
 #include <linux/poll.h>
 CLICK_CXX_UNPROTECT
@@ -68,16 +61,7 @@ int click_cleanup_sched();
 
 extern int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 
-#ifdef HAVE_CLICKFS
 int init_clickfs();
 void cleanup_clickfs();
-#endif
-
-#ifdef HAVE_PROC_CLICK
-int init_proc_click();
-void cleanup_proc_click();
-void init_router_element_procs();
-void cleanup_router_element_procs();
-#endif
 
 #endif

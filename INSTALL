@@ -182,7 +182,7 @@ and running Linux kernels.
 
 	CLICKPREFIX/sbin/click-install ROUTERCONFIGFILE
 
-    Alternatively you could use /sbin/insmod by hand.
+    Alternatively you could use /sbin/insmod by hand; see click.o(8).
 
 PORTABILITY
 -----------

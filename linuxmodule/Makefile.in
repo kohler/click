@@ -48,7 +48,7 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 
 ifndef INSTALLOBJS
-INSTALLOBJS = click.o
+INSTALLOBJS = click.o proclikefs.o
 endif
 
 GENERIC_OBJS = string.o straccum.o \
@@ -66,16 +66,8 @@ GENERIC_OBJS = string.o straccum.o \
 STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o drivermanager.o \
 	errorelement.o portinfo.o scheduleinfo.o
 
-HAVE_CLICKFS = @HAVE_CLICKFS@
-ifeq ($(HAVE_CLICKFS),1)
-CLICKFS_OBJS = ino.o clickfs.o
-INSTALLOBJS += proclikefs.o
-else
-CLICKFS_OBJS = proc_click.o
-endif
-
 LINUXMODULE_OBJS = kernelversion.o config.o sched.o module.o \
-	$(CLICKFS_OBJS) read-pmc.o
+	ino.o clickfs.o read-pmc.o
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 

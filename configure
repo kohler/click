@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath HAVE_WIFI wifidir freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS HAVE_CLICKFS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath HAVE_WIFI wifidir freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -882,7 +882,6 @@ Optional Features:
   --enable-multithread[=NUM] support kernel multithreading, NUM threads max
   --disable-int64         disable 64-bit integer support
   --enable-warp9          reduce PollDevice functionality for speed
-  --disable-clickfs       disable Click filesystem (use /proc instead)
   --enable-intel-cpu      enable Intel-specific machine instructions
   --disable-stride        disable stride scheduler
   --enable-adaptive       use adaptive scheduler to flexibly arbitrate between
@@ -6741,7 +6740,7 @@ if test "${ac_cv_endian+set}" = set; then
 else
   	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 6744 "configure"
+#line 6743 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -9428,22 +9427,9 @@ _ACEOF
 
 fi
 
-# Check whether --enable-clickfs or --disable-clickfs was given.
-if test "${enable_clickfs+set}" = set; then
-  enableval="$enable_clickfs"
-  :
-else
-  enable_clickfs=yes
-fi;
-if test "x$enable_clickfs" = xyes; then
-    cat >>confdefs.h <<\_ACEOF
+cat >>confdefs.h <<\_ACEOF
 #define HAVE_CLICKFS 1
 _ACEOF
-
-    HAVE_CLICKFS=1
-else
-    HAVE_CLICKFS=0
-fi
 
 
 
@@ -12059,7 +12045,6 @@ s,@DL_LIBS@,$DL_LIBS,;t t
 s,@LDMODULEFLAGS@,$LDMODULEFLAGS,;t t
 s,@BUILD_DL_LIBS@,$BUILD_DL_LIBS,;t t
 s,@SOCKET_LIBS@,$SOCKET_LIBS,;t t
-s,@HAVE_CLICKFS@,$HAVE_CLICKFS,;t t
 s,@EXTRA_DRIVER_OBJS@,$EXTRA_DRIVER_OBJS,;t t
 s,@EXTRA_TOOL_OBJS@,$EXTRA_TOOL_OBJS,;t t
 s,@POSSIBLE_TARGETS@,$POSSIBLE_TARGETS,;t t
