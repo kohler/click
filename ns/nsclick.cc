@@ -113,6 +113,7 @@ static bool started = 0;
 static String::Initializer crap_initializer;
 static String configuration_string;
 
+#if 0
 extern "C" int
 click_add_element_type(const char *, Element *)
 {
@@ -127,7 +128,7 @@ click_remove_element_type(int)
   //lexer->remove_element_type(which);
   fprintf(stderr,"Hey! Need to do click_remove_element_type!\n");
 }
-
+#endif
 
 // global handlers for ControlSocket
 
