@@ -97,6 +97,7 @@ WifiTXFeedback::WifiTXFeedback()
   : Element(0, 1),
     _successes(0),
     _failures(0),
+    _runs(0),
     _task(this)
 {
   MOD_INC_USE_COUNT;
@@ -139,6 +140,9 @@ WifiTXFeedback::initialize(ErrorHandler *errh)
 		  _map_index);
     return -1;
   }
+
+
+  _capacity = QSIZE;
   return 0;
 
 }
@@ -170,13 +174,13 @@ WifiTXFeedback::got_skb(struct sk_buff *skb) {
     Packet *p = Packet::make(skb);
     _queue[_tail] = p;
     _tail = next;
-    
-    _task.reschedule();
   } else {
     kfree_skb(skb);
     _drops++;
   }
-    
+      
+  _task.reschedule();
+
 }
 
 
@@ -218,6 +222,11 @@ WifiTXFeedback::static_print_stats(Element *e, void *)
   StringAccum sa;
   sa << "successes " << n->_successes;
   sa << " failures " << n->_failures;
+  sa << " head " << n->_head;
+  sa << " tail " << n->_tail;
+  sa << " txf_count " << txf_count;
+  sa << " runs " << n->_runs;
+  sa << " scheduled " << n->_task.scheduled();
   sa << "\n";
   return sa.take_string();
 }
