@@ -77,16 +77,14 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   // update sequence numbers
   uint32_t csum_delta = _udp_csum_delta;
   
-  uint32_t oldval = ntohl(tcph->th_seq);
-  uint32_t newval = htonl(oldval + delta_for(oldval));
+  uint32_t newval = htonl(new_seq(ntohl(tcph->th_seq)));
   if (tcph->th_seq != newval) {
     csum_delta += (~tcph->th_seq >> 16) + (~tcph->th_seq & 0xFFFF)
       + (newval >> 16) + (newval & 0xFFFF);
     tcph->th_seq = newval;
   }
 
-  oldval = ntohl(tcph->th_ack);
-  newval = htonl(oldval - reverse()->delta_for(oldval));
+  newval = htonl(reverse()->new_ack(ntohl(tcph->th_ack)));
   if (tcph->th_ack != newval) {
     csum_delta += (~tcph->th_ack >> 16) + (~tcph->th_ack & 0xFFFF)
       + (newval >> 16) + (newval & 0xFFFF);

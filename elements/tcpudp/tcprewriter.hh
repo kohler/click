@@ -83,7 +83,8 @@ class TCPRewriter : public IPRw { public:
     TCPMapping *reverse() const		{ return static_cast<TCPMapping *>(_reverse); }
 
     int update_seqno_delta(tcp_seq_t old_seqno, int32_t delta);
-    int32_t delta_for(tcp_seq_t) const;
+    tcp_seq_t new_seq(tcp_seq_t) const;
+    tcp_seq_t new_ack(tcp_seq_t) const;
     
     void apply(WritablePacket *p);
 
@@ -150,10 +151,17 @@ TCPRewriter::get_mapping(int ip_p, const IPFlowID &in) const
     return 0;
 }
 
-inline int32_t
-TCPRewriter::TCPMapping::delta_for(tcp_seq_t seqno) const
+inline tcp_seq_t
+TCPRewriter::TCPMapping::new_seq(tcp_seq_t seqno) const
 {
-  return (SEQ_GEQ(seqno, _trigger) ? _delta : _old_delta);
+  return seqno + (SEQ_GEQ(seqno, _trigger) ? _delta : _old_delta);
+}
+
+inline tcp_seq_t
+TCPRewriter::TCPMapping::new_ack(tcp_seq_t ackno) const
+{
+  tcp_seq_t mod_ackno = ackno - _delta;
+  return (SEQ_GEQ(mod_ackno, _trigger) ? mod_ackno : ackno - _old_delta);
 }
 
 CLICK_ENDDECLS
