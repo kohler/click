@@ -1,3 +1,28 @@
+2003-02-09 Sunday 02:49  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet_anno.hh, packet_anno.hh: adapt to new ICMP
+	header definitions, and ICMPError element accepts mnemonic names
+	for error types and codes; configurations take advantage of this
+
+2003-02-09 Sunday 02:48  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet.hh, packet.hh: add icmp_header()
+	convenience functions
+
+2003-02-09 Sunday 02:48  Eddie Kohler <kohler@icir.org>
+
+	* include/clicknet/icmp.h, include/clicknet/icmp6.h,
+	include/clicknet/icmp.h, include/clicknet/icmp6.h, libsrc/glue.cc:
+	regularize ICMP header names and #define names
+
+2003-02-09 Sunday 02:46  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cp_register_stringlist_argtype(), generic
+	handling for argument types where strings that correspond to
+	integers; also, cp_register_argtype() returns 0 iff it added a new
+	argtype
+
 2003-02-03 Monday 17:34  Eddie Kohler <kohler@icir.org>
 
 	* click-buildtool: fix findelem bug report by Mr. DeCouto

@@ -1,3 +1,52 @@
+2003-02-09 Sunday 03:16  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/: icmperror.cc (1.13), icmperror.hh (1.5): BADADDRS
+	is a keyword argument to ICMPError
+
+2003-02-09 Sunday 03:01  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: ipreassembler.cc (1.17), ipreassembler.hh (1.13):
+	IPReassembler emits dead fragments to output 1, if available; hook
+	up an ICMPError there
+
+2003-02-09 Sunday 02:49  Eddie Kohler <kohler@icir.org>
+
+	* conf/fake-iprouter.click (1.15), conf/make-ip-conf.pl (1.20),
+	elements/icmp/checkicmpheader.cc (1.15), elements/icmp/icmperror.cc
+	(1.12), elements/icmp/icmperror.hh (1.4),
+	elements/icmp/icmppingresponder.cc (1.11),
+	elements/icmp/icmppingrewriter.cc (1.21),
+	elements/icmp/icmprewriter.cc (1.14), elements/icmp/icmprewriter.hh
+	(1.8), elements/icmp/icmpsendpings.cc (1.20),
+	elements/ip/ipclassifier.hh (1.26), elements/ip/ipfilter.cc (1.35),
+	elements/ip/ipgwoptions.cc (1.31), elements/ip/ipoutputcombo.cc
+	(1.20), elements/ip/ipprint.cc (1.38),
+	elements/ip6/addresstranslator.cc (1.18),
+	elements/ip6/icmp6error.cc (1.24),
+	elements/ip6/protocoltranslator46.cc (1.9),
+	elements/ip6/protocoltranslator64.cc (1.11),
+	elements/local/forceicmp.cc (1.9), include/click/packet_anno.hh
+	(1.13): adapt to new ICMP header definitions, and ICMPError element
+	accepts mnemonic names for error types and codes; configurations
+	take advantage of this
+
+2003-02-09 Sunday 02:48  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet.hh (1.44): add icmp_header() convenience
+	functions
+
+2003-02-09 Sunday 02:48  Eddie Kohler <kohler@icir.org>
+
+	* include/clicknet/icmp.h (1.2), include/clicknet/icmp6.h (1.2),
+	lib/glue.cc (1.41): regularize ICMP header names and #define names
+
+2003-02-09 Sunday 02:46  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh (1.35), lib/confparse.cc (1.108): add
+	cp_register_stringlist_argtype(), generic handling for argument
+	types where strings that correspond to integers; also,
+	cp_register_argtype() returns 0 iff it added a new argtype
+
 2003-02-07 Friday 20:35  Eddie Kohler <kohler@icir.org>
 
 	* etc/: linux-2.4.18-patch (1.4), linux-2.4.20-patch (1.4): adapt
