@@ -61,7 +61,7 @@ AC_DEFUN([CLICK_PROG_CXX], [
 =========================================
 
 Your C++ compiler ($CXX) is not a GNU C++ compiler!
-Either set the "'`'"CXX' environment variable to tell me where
+Either set the 'CXX' environment variable to tell me where
 a GNU C++ compiler is, or compile at your own risk.
 (This code uses a few GCC extensions and GCC-specific compiler options,
 and Linux header files are GCC-specific.)
@@ -81,7 +81,7 @@ and Linux header files are GCC-specific.)
 
 Your GNU C++ compiler ($CXX) is too old!
 Either download a newer compiler, or tell me to use a different compiler
-by setting the "'`'"CXX' environment variable and rerunning me.
+by setting the 'CXX' environment variable and rerunning me.
 
 =========================================])
 	fi
@@ -524,7 +524,7 @@ changequote(<<,>>)<<(^|[^a-zA-Z_0-9])u_?int64_t[^a-zA-Z_0-9]>>changequote([,]),
 =========================================
 
 int64_t types not defined by $inttypes_hdr!
-Compile with "'`'"--disable-int64'.
+Compile with '--disable-int64'.
 
 =========================================])
     else
