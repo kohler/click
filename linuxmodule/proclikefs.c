@@ -107,6 +107,8 @@ proclikefs_register_filesystem(const char *name,
 	newfs->fs.next = 0;
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 	newfs->fs.owner = THIS_MODULE;
+#endif
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
 	INIT_LIST_HEAD(&newfs->fs.fs_supers);
 #endif
 	newfs_is_new = 1;
@@ -120,7 +122,7 @@ proclikefs_register_filesystem(const char *name,
 	register_filesystem(&newfs->fs); /* XXX check return value */
     else if (reread_super) {
 	/* transfer superblocks */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
 	struct list_head *p;
 	spin_lock(&sb_lock);
 	for (p = newfs->fs.fs_supers.next; p != &newfs->fs.fs_supers; p = p->next) {
@@ -247,7 +249,7 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     }
     
     /* clear out superblock operations */
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
     spin_lock(&sb_lock);
     for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
 	sb = list_entry(p, struct super_block, s_instances);
