@@ -29,6 +29,7 @@ extern "C" {
 #define new xxx_new
 #include <net/dst.h>
 #include <linux/if_ether.h>
+#include <linux/etherdevice.h>
 #include <linux/netdevice.h>
 #undef new
 }
@@ -39,17 +40,9 @@ ToLinux::ToLinux()
   MOD_INC_USE_COUNT;
 }
 
-#if 0
-static unsigned long linux_cycles = 0;
-static unsigned long linux_pkts = 0;
-#endif
-
 ToLinux::~ToLinux()
 {
   MOD_DEC_USE_COUNT;
-#if 0
-  click_chatter("%d pkts in %u cycles", linux_pkts, linux_cycles);
-#endif
 }
 
 ToLinux *
@@ -84,13 +77,15 @@ ToLinux::push(int port, Packet *p)
   struct sk_buff *skb = p->steal_skb();
   if (!skb) return;
   
-  skb->mac.raw = skb->data;
-  skb->protocol = skb->mac.ethernet->h_proto;
-  /* skb->pkt_type = ???; */
-
   // set device if specified
-  if (_dev)
+  if (_dev) 
     skb->dev = _dev;
+
+  // remove PACKET_CLEAN bit -- packet is becoming dirty
+  skb->pkt_type &= PACKET_TYPE_MASK;
+
+  if (skb->dev) 
+    skb->protocol = eth_type_trans(skb, skb->dev);
 
   // skb->dst may be set if the packet came from Linux originally. In this
   // case, we must clear skb->dst so Linux finds the correct dst.
@@ -108,20 +103,11 @@ ToLinux::push(int port, Packet *p)
 #endif
   }
   
-  /* skip past ether header */
-  skb_pull(skb, 14);
 #ifdef HAVE_CLICK_KERNEL
   skb->nh.raw = skb->data;
   skb->h.raw = 0;
   start_bh_atomic();
-#if 0
-  unsigned long c0 = click_get_cycles();
-#endif
   ptype_dispatch(skb, skb->protocol);
-#if 0
-  linux_cycles += click_get_cycles() - c0;
-  linux_pkts ++;
-#endif
   end_bh_atomic();
 #endif
 }

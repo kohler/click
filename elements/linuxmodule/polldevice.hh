@@ -3,13 +3,14 @@
 
 /*
  * =c
- * PollDevice(DEVNAME [, PROMISC])
+ * PollDevice(DEVNAME [, PROMISC, BURST])
  * =s devices
  * polls packets from network device (kernel)
  * =d
  * Poll packets received by the Linux network interface named DEVNAME.
  * Packets will be pushed to output 0. The packets include the link-level
- * header.
+ * header. Each time PollDevice is called, it push at most BURST number of
+ * packets. By default, BURST is 8. 
  *
  * If PROMISC is set (by default, it is not), then the device is put into
  * promiscuous mode.
@@ -59,12 +60,16 @@ class PollDevice : public AnyDevice {
   unsigned long _npackets;
 #if CLICK_DEVICE_STATS
   unsigned long long _time_poll;
+  unsigned long long _time_allocskb;
   unsigned long long _time_refill;
+
   unsigned long long _perfcnt1_poll;
   unsigned long long _perfcnt1_refill;
+  unsigned long long _perfcnt1_allocskb;
   unsigned long long _perfcnt1_pushing;
   unsigned long long _perfcnt2_poll;
   unsigned long long _perfcnt2_refill;
+  unsigned long long _perfcnt2_allocskb;
   unsigned long long _perfcnt2_pushing;
   unsigned long _activations;
 #endif
@@ -76,7 +81,7 @@ class PollDevice : public AnyDevice {
 
   bool _registered;
   bool _promisc;
-
+  unsigned _burst;
 };
 
 #endif 

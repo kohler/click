@@ -30,13 +30,13 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
-#include <click/elemfilter.hh>
 #include "elements/standard/scheduleinfo.hh"
 
 extern "C" {
 #include <linux/netdevice.h>
 #include <linux/sched.h>
 #include <unistd.h>
+#include <click/skbmgr.h>
 }
 
 #include <asm/msr.h>
@@ -61,7 +61,7 @@ polldev_static_cleanup()
 }
 
 PollDevice::PollDevice()
-  : _registered(false), _promisc(false)
+  : _registered(false)
 {
   // no MOD_INC_USE_COUNT; rely on AnyDevice
   add_output();
@@ -79,10 +79,13 @@ PollDevice::~PollDevice()
 int
 PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  _burst = 8;
+  _promisc = false;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_devname,
 		  cpOptional,
 		  cpBool, "promiscuous mode", &_promisc,
+		  cpUnsigned, "burst", &_burst,
 		  cpEnd) < 0)
     return -1;
 #if HAVE_POLLING
@@ -133,7 +136,7 @@ PollDevice::initialize(ErrorHandler *errh)
   if (l->next() == 0) {
     /* turn off interrupt if interrupts weren't already off */
     _dev->poll_on(_dev);
-    if (_dev->polling != 1)
+    if (_dev->polling != 2)
       return errh->error("PollDevice detected wrong version of polling patch");
   }
  
@@ -141,7 +144,8 @@ PollDevice::initialize(ErrorHandler *errh)
 
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
-  int max_tickets = ScheduleInfo::query(this, errh);
+  int max_tickets;
+  max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
   set_tickets(ScheduleInfo::DEFAULT);
 #endif
@@ -165,11 +169,14 @@ PollDevice::reset_counts()
   _activations = 0;
   _time_poll = 0;
   _time_refill = 0;
+  _time_allocskb = 0;
   _perfcnt1_poll = 0;
   _perfcnt1_refill = 0;
+  _perfcnt1_allocskb = 0;
   _perfcnt1_pushing = 0;
   _perfcnt2_poll = 0;
   _perfcnt2_refill = 0;
+  _perfcnt2_allocskb = 0;
   _perfcnt2_pushing = 0;
 #endif
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
@@ -206,7 +213,7 @@ PollDevice::run_scheduled()
 
   SET_STATS(low00, low10, time_now);
 
-  got = INPUT_BATCH;
+  got = _burst;
   skb_list = _dev->rx_poll(_dev, &got);
 
 #if CLICK_DEVICE_STATS
@@ -216,29 +223,51 @@ PollDevice::run_scheduled()
   if (got > 0)
     _activations++;
 #endif
-  
-  _dev->rx_refill(_dev);
-  
+
+  int nskbs = got;
+  if (got == 0) 
+    nskbs = _dev->rx_refill(_dev, 0);
+
+  if (nskbs > 0) {
+    struct sk_buff *new_skbs = skbmgr_allocate_skbs(1536, &nskbs);
+
 #if CLICK_DEVICE_STATS
-  if (_activations > 0)
-    GET_STATS_RESET(low00, low10, time_now, 
-		    _perfcnt1_refill, _perfcnt2_refill, _time_refill);
+    if (_activations > 0) 
+      GET_STATS_RESET(low00, low10, time_now, 
+	              _perfcnt1_allocskb, _perfcnt2_allocskb, _time_allocskb);
 #endif
+
+    nskbs = _dev->rx_refill(_dev, &new_skbs);
+
+#if CLICK_DEVICE_STATS
+    if (_activations > 0) 
+      GET_STATS_RESET(low00, low10, time_now, 
+	              _perfcnt1_refill, _perfcnt2_refill, _time_refill);
+#endif
+
+    if (new_skbs) {
+      click_chatter("too much skbs for refill");
+      skbmgr_recycle_skbs(new_skbs, 0);
+    }
+  }
 
   for (int i = 0; i < got; i++) {
     skb = skb_list;
     skb_list = skb_list->next;
-    skb->next = skb->prev = NULL;
-   
-#if 0
-    assert(skb);
-    assert(skb->data - skb->head >= 14);
-    assert(skb->mac.raw == skb->data - 14);
-    assert(skb_shared(skb) == 0);
-#endif
+    skb->next = NULL;
+ 
+    if (skb_list) {
+      // prefetch annotation area, and first 2 cache
+      // lines that contain ethernet and ip headers.
+      asm volatile("prefetcht0 %0" : : "m" (skb_list->cb[0]));
+      asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data)));
+      asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data+32)));
+    }
 
     /* Retrieve the ether header. */
     skb_push(skb, 14);
+    if (skb->pkt_type == PACKET_HOST)
+      skb->pkt_type |= PACKET_CLEAN;
 
     Packet *p = Packet::make(skb);
 
@@ -273,16 +302,19 @@ PollDevice_read_calls(Element *f, void *)
 {
   PollDevice *kw = (PollDevice *)f;
   return
-#if CLICK_DEVICE_STATS
     String(kw->_npackets) + " packets received\n" +
+#if CLICK_DEVICE_STATS
     String(kw->_time_poll) + " cycles poll\n" +
     String(kw->_time_refill) + " cycles refill\n" +
+    String(kw->_time_allocskb) + " cycles allocskb\n" +
     String(kw->_push_cycles) + " cycles pushing\n" +
     String(kw->_perfcnt1_poll) + " perfctr1 poll\n" +
     String(kw->_perfcnt1_refill) + " perfctr1 refill\n" +
+    String(kw->_perfcnt1_allocskb) + " perfctr1 allocskb\n" +
     String(kw->_perfcnt1_pushing) + " perfctr1 pushing\n" +
     String(kw->_perfcnt2_poll) + " perfctr2 poll\n" +
     String(kw->_perfcnt2_refill) + " perfctr2 refill\n" +
+    String(kw->_perfcnt2_allocskb) + " perfctr2 allocskb\n" +
     String(kw->_perfcnt2_pushing) + " perfctr2 pushing\n" +
     String(kw->_activations) + " activations\n";
 #else

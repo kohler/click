@@ -28,7 +28,7 @@
 #include <click/confparse.hh>
 
 AnyDevice::AnyDevice()
-  : _dev(0), _next(0)
+  : _dev(0), _next(0), _idles(0)
 {
   MOD_INC_USE_COUNT;
 }

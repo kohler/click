@@ -3,7 +3,7 @@
 
 /*
  * =c
- * FromDevice(DEVNAME [, PROMISC])
+ * FromDevice(DEVNAME [, PROMISC, BURST])
  * =s devices
  * reads packets from network device (kernel)
  * =d
@@ -14,7 +14,8 @@
  * 
  * Intercepts all packets received by the Linux network interface
  * named DEVNAME and pushes them out output 0.
- * The packets include the link-level header.
+ * The packets include the link-level header. Each time FromDevice is called,
+ * at most BURST number of packets are sent. BURST is 8 by default.
  *
  * If PROMISC is set (by default, it is not), then the device is put into
  * promiscuous mode.
@@ -35,6 +36,7 @@ class FromDevice : public AnyDevice {
   
   bool _registered;
   bool _promisc;
+  unsigned _burst;
   unsigned _drops;
   unsigned _puller_ptr;
   unsigned _pusher_ptr;

@@ -3,7 +3,7 @@
 
 /*
  * =c
- * ToDevice(DEVNAME)
+ * ToDevice(DEVNAME [, BURST])
  * =s devices
  * sends packets to network device (kernel)
  * =d
@@ -11,7 +11,10 @@
  * This manual page describes the Linux kernel module version of the ToDevice
  * element. For the user-level element, read the ToDevice.u manual page.
  *
- * Sends packets out the Linux network interface named DEVNAME.
+ * Sends up to BURST number of packets out the Linux network interface named
+ * DEVNAME. By default, BURST is 16. For good performance, you should set
+ * BURST to be 8 times the number of elements that could generate packets for
+ * this device.
  *
  * Packets must have a link header. For ethernet, ToDevice
  * makes sure every packet is at least 60 bytes long.
@@ -62,14 +65,16 @@ class ToDevice : public AnyDevice {
 
 #if CLICK_DEVICE_STATS
   // Statistics.
-  unsigned long long _linux_pkts_sent;
   unsigned long long _time_clean;
+  unsigned long long _time_freeskb;
   unsigned long long _time_queue;
   unsigned long long _perfcnt1_pull;
   unsigned long long _perfcnt1_clean;
+  unsigned long long _perfcnt1_freeskb;
   unsigned long long _perfcnt1_queue;
   unsigned long long _perfcnt2_pull;
   unsigned long long _perfcnt2_clean;
+  unsigned long long _perfcnt2_freeskb;
   unsigned long long _perfcnt2_queue;
   unsigned long _activations; 
 #endif
@@ -87,6 +92,7 @@ class ToDevice : public AnyDevice {
 
   bool _registered;
   bool _polling;
+  unsigned _burst;
   int _dev_idle;
   
   int queue_packet(Packet *p);

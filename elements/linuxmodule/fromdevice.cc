@@ -83,10 +83,12 @@ FromDevice::~FromDevice()
 int
 FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  _burst = 8;
   if (cp_va_parse(conf, this, errh, 
 	          cpString, "interface name", &_devname, 
 		  cpOptional,
 		  cpBool, "promiscuous", &_promisc,
+		  cpUnsigned, "burst", &_burst,
 		  cpEnd) < 0)
     return -1;
   _dev = dev_get(_devname.cc());
@@ -133,8 +135,9 @@ FromDevice::initialize(ErrorHandler *errh)
   if (_promisc) dev_set_promiscuity(_dev, 1);
   
 #ifndef RR_SCHED
-    // start out with default number of tickets, inflate up to max
-  int max_tickets = ScheduleInfo::query(this, errh);
+  // start out with default number of tickets, inflate up to max
+  int max_tickets;
+  max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
   set_tickets(ScheduleInfo::DEFAULT);
 #endif
@@ -230,24 +233,17 @@ FromDevice::got_skb(struct sk_buff *skb)
 void
 FromDevice::run_scheduled()
 {
-  int npq = 0;
-  while (npq < INPUT_BATCH && _puller_ptr != _pusher_ptr) {
+  int i=0;
+  int sent = 0;
+  while (i < _burst && _puller_ptr != _pusher_ptr) {
     Packet *p = _queue[_puller_ptr];
     _puller_ptr = next_i(_puller_ptr);
     output(0).push(p);
-    npq++;
+    sent++;
   }
-
 #if CLICK_DEVICE_ADJUST_TICKETS
-  int adj = tickets() / 8;
-  if (adj < 4) adj = 4;
-  
-  if (npq == INPUT_BATCH) adj *= 2;
-  if (npq < INPUT_BATCH/4) adj = -adj;
-  
-  adj_tickets(adj);
+  adjust_tickets(sent);
 #endif
-  
   reschedule();
 }
 

@@ -41,6 +41,7 @@ extern "C" {
 #undef new
 #undef class
 #undef delete
+#include <click/skbmgr.h>
 }
 
 #include <asm/msr.h>
@@ -63,8 +64,11 @@ ToDevice::~ToDevice()
 int
 ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  _burst = 16;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_devname,
+		  cpOptional,
+		  cpUnsigned, "burst", &_burst,
 		  cpEnd) < 0)
     return -1;
   _dev = dev_get(_devname.cc());
@@ -82,13 +86,13 @@ ToDevice::initialize(ErrorHandler *errh)
   errh->warning("not compiled for a Click kernel");
 #endif
 
-  /* see if a PollDevice with the same device exists: if so, use polling
-   * extensions */
-  // need to do it this way because ToDevice may not have been initialized
-  for (int fi = 0; fi < router()->nelements(); fi++) {
-    Element *e = router()->element(fi);
+  // see if a PollDevice with the same device exists: if so, use polling
+  // extensions. Also look for duplicate ToDevices; but beware: ToDevice may
+  // not have been initialized
+  for (int ei = 0; ei < router()->nelements(); ei++) {
+    Element *e = router()->element(ei);
     if (e == this) continue;
-    if (ToDevice *td=(ToDevice *) (e->cast("ToDevice"))) {
+    if (ToDevice *td = (ToDevice *)(e->cast("ToDevice"))) {
       if (td->ifindex() == ifindex())
 	return errh->error("duplicate ToDevice for `%s'", _devname.cc());
     } else if (PollDevice *pd = (PollDevice *)(e->cast("PollDevice"))) {
@@ -101,13 +105,15 @@ ToDevice::initialize(ErrorHandler *errh)
 
 #ifndef RR_SCHED
   /* start out with max number of tickets */
-  int max_tickets = ScheduleInfo::query(this, errh);
+  int max_tickets;
+  max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
   set_tickets(ScheduleInfo::DEFAULT);
 #endif
   join_scheduler();
 
   reset_counts();
+
   return 0;
 }
 
@@ -119,14 +125,16 @@ ToDevice::reset_counts()
   _busy_returns = 0; 
 #if CLICK_DEVICE_STATS
   _activations = 0;
-  _linux_pkts_sent = 0; 
   _time_clean = 0;
+  _time_freeskb = 0;
   _time_queue = 0;
   _perfcnt1_pull = 0;
   _perfcnt1_clean = 0;
+  _perfcnt1_freeskb = 0;
   _perfcnt1_queue = 0;
   _perfcnt2_pull = 0;
   _perfcnt2_clean = 0;
+  _perfcnt2_freeskb = 0;
   _perfcnt2_queue = 0;
 #endif
 #if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
@@ -143,19 +151,16 @@ ToDevice::uninitialize()
 }
 
 /*
- * The kernel thinks our device is idle.
- * Pull a packet and try to stuff it into the device.
- * 
- * Serious problem: Linux drivers aren't required to
+ * Problem: Linux drivers aren't required to
  * accept a packet even if they've marked themselves
  * as idle. What do we do with a rejected packet?
  */
-bool
-ToDevice::tx_intr()
+
+void
+ToDevice::run_scheduled()
 {
   int busy;
   int sent = 0;
-  int queued_pkts;
   
 #if CLICK_DEVICE_STATS
   unsigned low00, low10;
@@ -166,90 +171,73 @@ ToDevice::tx_intr()
  
 #if HAVE_POLLING
   if (_polling) {
-    queued_pkts = _dev->tx_clean(_dev);
+    struct sk_buff *skbs = _dev->tx_clean(_dev);
 
 #if CLICK_DEVICE_STATS
-    if (_activations > 0) {
-    GET_STATS_RESET(low00, low10, time_now, 
-		    _perfcnt1_clean, _perfcnt2_clean, _time_clean);
+    if (_activations > 0 && skbs) {
+      GET_STATS_RESET(low00, low10, time_now, 
+		      _perfcnt1_clean, _perfcnt2_clean, _time_clean);
+    }
+#endif
+
+    if (skbs) skbmgr_recycle_skbs(skbs, 1);
+    
+#if CLICK_DEVICE_STATS
+    if (_activations > 0 && skbs) {
+      GET_STATS_RESET(low00, low10, time_now, 
+		      _perfcnt1_freeskb, _perfcnt2_freeskb, _time_freeskb);
     }
 #endif
   }
 #endif
+  
+  SET_STATS(low00, low10, time_now);
 
   /* try to send from click */
-  while (sent < OUTPUT_BATCH && (busy=_dev->tbusy) == 0) {
+  while (sent < _burst && (busy = _dev->tbusy) == 0) {
+
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
     unsigned long long before_pull_cycles = click_get_cycles();
 #endif
+  
+    Packet *p = input(0).pull();
+    if (!p)
+      break;
     
-    if (Packet *p = input(0).pull()) {
-      
-      _npackets++;
+    _npackets++;
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
-      _pull_cycles += click_get_cycles() - before_pull_cycles - CLICK_CYCLE_COMPENSATION;
+    _pull_cycles += click_get_cycles() - before_pull_cycles - CLICK_CYCLE_COMPENSATION;
 #endif
     
-      GET_STATS_RESET(low00, low10, time_now, 
-	              _perfcnt1_pull, _perfcnt2_pull, _pull_cycles);
-      
-      int r = queue_packet(p);
-      
-      GET_STATS_RESET(low00, low10, time_now, 
-	              _perfcnt1_queue, _perfcnt2_queue, _time_queue);
+    GET_STATS_RESET(low00, low10, time_now, 
+		    _perfcnt1_pull, _perfcnt2_pull, _pull_cycles);
+    
+    int r = queue_packet(p);
+    
+    GET_STATS_RESET(low00, low10, time_now, 
+		    _perfcnt1_queue, _perfcnt2_queue, _time_queue);
 
-      if (r < 0) break;
-      sent++;
-    }
-    else break;
+    if (r < 0) break;
+    sent++;
   }
 
-#if 1 && HAVE_POLLING
+#if HAVE_POLLING
+  if (_polling && sent > 0)
+    _dev->tx_eob(_dev);
+
   // If Linux tried to send a packet, but saw tbusy, it will
   // have left it on the queue. It'll just sit there forever
   // (or until Linux sends another packet) unless we poke
   // net_bh(), which calls qdisc_restart(). We are not allowed
   // to call qdisc_restart() ourselves, outside of net_bh().
-  if(_polling && !busy && _dev->qdisc->q.qlen)
+  if (_polling && !busy && _dev->qdisc->q.qlen) {
+    _dev->tx_eob(_dev);
     mark_bh(NET_BH);
-#endif
-
-#if 0 && HAVE_POLLING
-This code causes crashes in pfifo_fast_dequeue, because qdisc_restart()
-should only be called from net_bh().
-  // only try to send from Linux if the device's queue is nonempty. This is
-  // an optimistic check that we use to avoid the expensive spin_lock_irqsave
-  // below.
-  if (_polling && sent < OUTPUT_BATCH && _dev->qdisc->q.qlen && !busy) {
-    
-    start_bh_atomic();
-    // lock the skb_queue_lock
-    unsigned long flags;
-    spin_lock_irqsave(&skb_queue_lock, flags);
-    
-    while (sent < OUTPUT_BATCH && (busy=_dev->tbusy) == 0) {
-      int r = qdisc_restart(_dev);
-      if (r < 0) {
-	/* if qdisc_restart returns -1, that means a packet is sent as long as
-	 * dev->tbusy is not set... see net/sched/sch_generic.c in linux src
-	 * code */
-	sent++;
-#if CLICK_DEVICE_STATS
-        _linux_pkts_sent++;
-#endif
-      } else
-	break;
-    }
-
-    /* unlock */
-    spin_unlock_irqrestore(&skb_queue_lock, flags);
-    end_bh_atomic();
-    
   }
 #endif
 
 #if CLICK_DEVICE_STATS
-  if (sent > 0 || _activations > 0) _activations++;
+  if (sent > 0) _activations++;
 #endif
 
   if (busy) _busy_returns++;
@@ -291,13 +279,14 @@ ToDevice::queue_packet(Packet *p)
       kfree_skb(skb1);
       return -1;
     }
+    // printk("padding %d:%d:%d\n", skb1->truesize, skb1->len, 60-skb1->len);
     skb_put(skb1, 60 - skb1->len);
   }
 
   int ret;
 #if HAVE_POLLING
   if (_polling)
-    ret = _dev->tx_queue(skb1, _dev); 
+    ret = _dev->tx_queue(_dev, skb1);
   else 
 #endif
   {
@@ -313,12 +302,6 @@ ToDevice::queue_packet(Packet *p)
   return ret;
 }
 
-void
-ToDevice::run_scheduled()
-{
-  tx_intr();
-}
-
 static String
 ToDevice_read_calls(Element *f, void *)
 {
@@ -329,15 +312,17 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_busy_returns) + " device busy returns\n" +
     String(td->_npackets) + " packets sent\n" +
 #if CLICK_DEVICE_STATS
-    String(td->_linux_pkts_sent) + " linux packets sent\n" +
     String(td->_pull_cycles) + " cycles pull\n" +
     String(td->_time_clean) + " cycles clean\n" +
+    String(td->_time_freeskb) + " cycles freeskb\n" +
     String(td->_time_queue) + " cycles queue\n" +
     String(td->_perfcnt1_pull) + " perfctr1 pull\n" +
     String(td->_perfcnt1_clean) + " perfctr1 clean\n" +
+    String(td->_perfcnt1_freeskb) + " perfctr1 freeskb\n" +
     String(td->_perfcnt1_queue) + " perfctr1 queue\n" +
     String(td->_perfcnt2_pull) + " perfctr2 pull\n" +
     String(td->_perfcnt2_clean) + " perfctr2 clean\n" +
+    String(td->_perfcnt2_freeskb) + " perfctr2 freeskb\n" +
     String(td->_perfcnt2_queue) + " perfctr2 queue\n" +
     String(td->_activations) + " transmit activations\n";
 #else

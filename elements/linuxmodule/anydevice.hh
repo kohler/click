@@ -7,19 +7,11 @@ extern "C" {
 
 #define MAX_DEVICES	1024
 
-/* we found that a 2 to 1 ratio prevents polldev from pulling too much stuff
- * for the transmit device. these two numbers must also be less than the rx
- * and tx dma ring size (64 and 16, respectively), so that cleaning the device
- * dma queues only need to happen once per run */
-
-#define INPUT_BATCH     8
-#define OUTPUT_BATCH    16
-
 // #define CLICK_DEVICE_CYCLES 1
 // #define CLICK_DEVICE_PRFCTR 1
 // #define CLICK_DEVICE_THESIS_STATS 1
 // #define _DEV_OVRN_STATS_ 1
-#define CLICK_CYCLE_COMPENSATION 54
+#define CLICK_CYCLE_COMPENSATION 0
 
 #ifndef RR_SCHED
 # define CLICK_DEVICE_ADJUST_TICKETS 1
@@ -75,7 +67,8 @@ class AnyDevice : public Element { protected:
   String _devname;
   struct device *_dev;
   AnyDevice *_next;
- 
+
+  int _idles;
   void adjust_tickets(int work);
 
  public:
@@ -95,12 +88,21 @@ inline void
 AnyDevice::adjust_tickets(int work)
 {
 #if CLICK_DEVICE_ADJUST_TICKETS  
-  // simple additive increase multiplicative decrease scheme
   int adj = 0;
-  if (work > 2)
+  // simple additive increase damped multiplicative decrease scheme
+  if (work > 2) {
     adj = work;
-  else if (work == 0)
-    adj = 0-(tickets()>>4);
+    _idles = 0;
+  }
+  else if (work == 0) {
+    _idles ++;
+    if (_idles >= 64) {
+      adj = 0-(tickets()>>5);
+      if (adj == 0) 
+	adj = -2;
+      _idles = 0;
+    }
+  }
   adj_tickets(adj);
 #endif
 }
