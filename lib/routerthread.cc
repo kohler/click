@@ -33,25 +33,7 @@ CLICK_DECLS
 
 #define DEBUG_RT_SCHED		0
 
-#ifdef HAVE_ADAPTIVE_SCHEDULER
-# define DRIVER_TASKS_PER_ITER	128
-#elif defined(CLICK_NS)
-# define DRIVER_TASKS_PER_ITER	256
-#else
-# define DRIVER_TASKS_PER_ITER	128
-#endif
 #define PROFILE_ELEMENT		20
-
-#ifdef CLICK_NS
-# define DRIVER_ITER_TIMERS	1
-#else
-# define DRIVER_ITER_TIMERS	32
-#endif
-#ifdef CLICK_USERLEVEL
-# define DRIVER_ITER_OS		64	/* iterations per select() */
-#else
-# define DRIVER_ITER_OS		256	/* iterations per OS schedule() */
-#endif
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER
 # define DRIVER_TOTAL_TICKETS	128	/* # tickets shared between clients */
@@ -78,6 +60,24 @@ RouterThread::RouterThread(Master *m, int id)
     _min_click_share = Task::MAX_UTILIZATION / 200;
     _cur_click_share = 0;	// because we aren't yet running
 #endif
+
+
+
+#if defined(CLICK_NS)
+    _tasks_per_iter = 256;
+    _iters_per_timers = 1;
+#else
+    _tasks_per_iter = 128;
+    _iters_per_timers = 32;
+#endif
+
+#ifdef CLICK_USERLEVEL
+    _iters_per_os = 64;           /* iterations per select() */
+#else
+    _iters_per_os = 2;          /* iterations per OS schedule() */
+#endif
+
+
 }
 
 RouterThread::~RouterThread()
@@ -251,7 +251,6 @@ RouterThread::run_os()
     _sleeper = current;
     current->state = TASK_INTERRUPTIBLE;
 #endif
-    
     unlock_tasks();
 
 #if CLICK_USERLEVEL
@@ -317,11 +316,11 @@ RouterThread::driver()
 	
 #ifndef HAVE_ADAPTIVE_SCHEDULER	/* Adaptive scheduler runs OS itself. */
 	// WHat the fuck?!?
-	if (/* thread_id() == 0 && */ (iter % DRIVER_ITER_OS) == 0)
+	if (/* thread_id() == 0 && */ (iter % _iters_per_os) == 0)
 	    run_os();
 #endif
 
-	if (iter % DRIVER_ITER_TIMERS == 0) {
+	if (iter % _iters_per_timers == 0) {
 	    _master->run_timers();
 #ifdef CLICK_NS
 	    // If there's another timer, tell the simulator to make us
@@ -340,15 +339,16 @@ RouterThread::driver()
     if (_pending)
 	_master->process_pending(this);
     
+
 #ifndef HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
-    run_tasks(DRIVER_TASKS_PER_ITER);
+    run_tasks(_tasks_per_iter);
 #else
     click_gettimeofday(&t_before);
     int client;
     if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass)) {
 	client = C_CLICK;
-	run_tasks(DRIVER_TASKS_PER_ITER);
+	run_tasks(_tasks_per_iter);
     } else {
 	client = C_KERNEL;
 	run_os();
@@ -385,7 +385,7 @@ RouterThread::driver()
 	    goto driver_loop;
     }
 #endif
-    
+
     unlock_tasks();
 
 #ifdef HAVE_ADAPTIVE_SCHEDULER

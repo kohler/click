@@ -250,6 +250,80 @@ write_cpu_share(const String &conf, Element *, void *thunk, ErrorHandler *errh)
 
 #endif
 
+enum { H_TASKS_PER_ITER, H_ITERS_PER_TIMERS, H_ITERS_PER_OS };
+
+
+static String
+read_sched_param(Element *, void *thunk) 
+{
+    switch ((int)thunk) {
+    case H_TASKS_PER_ITER: {
+	if (click_router) {
+	    String s;
+	    for (int i = 0; i < click_master->nthreads(); i++)
+		s += String(click_master->thread(i)->_tasks_per_iter) + "\n";
+	return s;
+	}
+    }
+
+    case H_ITERS_PER_TIMERS: {
+	if (click_router) {
+	    String s;
+	    for (int i = 0; i < click_master->nthreads(); i++)
+		s += String(click_master->thread(i)->_iters_per_timers) + "\n";
+	return s;
+	}
+    }
+    case H_ITERS_PER_OS: {
+	if (click_router) {
+	    String s;
+	    for (int i = 0; i < click_master->nthreads(); i++)
+		s += String(click_master->thread(i)->_iters_per_os) + "\n";
+	return s;
+	}
+    }
+    }
+    return String("0\n");
+
+}
+static int
+write_sched_param(const String &conf, Element *e, void *thunk, ErrorHandler *errh) 
+{
+
+    switch((int)thunk) {
+
+    case H_TASKS_PER_ITER: {
+	unsigned x;
+	if (!cp_unsigned(conf, &x)) 
+	    return errh->error("tasks_per_iter must be unsigned\n");
+	
+	// change current thread priorities
+	for (int i = 0; i < click_master->nthreads(); i++)
+	    click_master->thread(i)->_tasks_per_iter = x;
+    }
+
+    case H_ITERS_PER_TIMERS: {
+	unsigned x;
+	if (!cp_unsigned(conf, &x)) 
+	    return errh->error("tasks_per_iter_timers must be unsigned\n");
+	
+	// change current thread priorities
+	for (int i = 0; i < click_master->nthreads(); i++)
+	    click_master->thread(i)->_iters_per_timers = x;
+    }
+
+    case H_ITERS_PER_OS: {
+	unsigned x;
+	if (!cp_unsigned(conf, &x)) 
+	    return errh->error("tasks_per_iter_os must be unsigned\n");
+	
+	// change current thread priorities
+	for (int i = 0; i < click_master->nthreads(); i++)
+	    click_master->thread(i)->_iters_per_os = x;
+    }
+    }
+    return 0;
+}
 
 /********************** Initialization and cleanup ***************************/
 #if __MTCLICK__
@@ -295,6 +369,21 @@ click_init_sched(ErrorHandler *errh)
   Router::add_read_handler(0, "max_cpu_share", read_cpu_share, (void *)1);
   Router::add_write_handler(0, "max_cpu_share", write_cpu_share, (void *)1);
   Router::add_read_handler(0, "cpu_share", read_cur_cpu_share, 0);
+#else 
+  Router::add_read_handler(0, "tasks_per_iter", read_sched_param, 
+			   (void *)H_TASKS_PER_ITER);
+  Router::add_read_handler(0, "iters_per_timers", read_sched_param, 
+			   (void *)H_ITERS_PER_TIMERS);
+  Router::add_read_handler(0, "iters_per_os", read_sched_param, 
+			   (void *)H_ITERS_PER_OS);
+
+  Router::add_write_handler(0, "tasks_per_iter", write_sched_param, 
+			    (void *)H_TASKS_PER_ITER);
+  Router::add_write_handler(0, "iters_per_timers", write_sched_param, 
+			    (void *)H_ITERS_PER_TIMERS);
+  Router::add_write_handler(0, "iters_per_os", write_sched_param, 
+			    (void *)H_ITERS_PER_OS);
+
 #endif
 #if CLICK_DEBUG_MASTER
   Router::add_read_handler(0, "master_info", read_master_info, 0);

@@ -45,6 +45,13 @@ class RouterThread : public Task { public:
 
     inline void unsleep();
 
+
+
+    unsigned _tasks_per_iter;
+    unsigned _iters_per_timers;
+    unsigned _iters_per_os;
+
+
   private:
     
     Master *_master;
