@@ -26,8 +26,8 @@ class HandlerCall { public:
 
     static String call_read(Router *, const String &, const String &, ErrorHandler * = 0);
     static String call_read(Router *, Element *, const String &, ErrorHandler * = 0);
-    static int call_write(Router *, const String &, const String &, const String &, ErrorHandler * = 0);
-    static int call_write(Router *, Element *, const String &, const String &, ErrorHandler * = 0);
+    static int call_write(Router *, const String &, const String &, const String & = String(), ErrorHandler * = 0);
+    static int call_write(Router *, Element *, const String &, const String & = String(), ErrorHandler * = 0);
 
     String unparse(const Element *context) const;
     

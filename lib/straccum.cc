@@ -67,8 +67,7 @@ StringAccum &
 operator<<(StringAccum &sa, long i)
 {
   if (char *x = sa.reserve(24)) {
-    int len;
-    len = sprintf(x, "%ld", i);
+    int len = sprintf(x, "%ld", i);
     sa.forward(len);
   }
   return sa;
@@ -78,8 +77,7 @@ StringAccum &
 operator<<(StringAccum &sa, unsigned long u)
 {
   if (char *x = sa.reserve(24)) {
-    int len;
-    len = sprintf(x, "%lu", u);
+    int len = sprintf(x, "%lu", u);
     sa.forward(len);
   }
   return sa;
@@ -106,8 +104,7 @@ StringAccum &
 operator<<(StringAccum &sa, double d)
 {
   if (char *x = sa.reserve(256)) {
-    int len;
-    len = sprintf(x, "%g", d);
+    int len = sprintf(x, "%g", d);
     sa.forward(len);
   }
   return sa;
@@ -118,8 +115,7 @@ StringAccum &
 operator<<(StringAccum &sa, const struct timeval &tv)
 {
   if (char *x = sa.reserve(30)) {
-    int len;
-    len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
+    int len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
     sa.forward(len);
   }
   return sa;
