@@ -1,14 +1,24 @@
 Click NEWS
 
+Version
 
 * Added `click-specialize' tool.
 
-* Added polling.
+* Added `click-uninstall' tool.
+
+* Added polling support.
+
+* Added PokeHandlers element so you can test write handlers at user level.
 
 * Fixed lexer bug: compound elements with `{' are accepted everywhere.
 
 * Rearranged directory structure. (Include files placed in
   PREFIX/include/click, not directly in PREFIX/include.)
+
+* Improved several elements, including ARPQuerier.
+
+* Changed interface for registering handlers. See
+  `elements/standard/red.cc' or the Element.3 manual page for examples.
 
 
 Version 0.6   11.Dec.1999
