@@ -63,6 +63,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
   _bytes = 1500;
   String contents = "no";
   _label = "";
+  _swap = false;
   bool print_id = false;
   bool print_time = false;
   bool print_paint = false;
@@ -76,6 +77,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  "ID", cpBool, "print IP ID?", &print_id,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &print_time,
 		  "PAINT", cpBool, "print paint?", &print_paint,
+		  "SWAP", cpBool, "swap ICMP values when printing?", &_swap,
 #if CLICK_USERLEVEL
 		  "OUTFILE", cpString, "output filename", &_outfilename,
 #endif
@@ -207,16 +209,18 @@ IPPrint::simple_action(Packet *p)
     sa << src << '.' << srcp << " > " << dst << '.' << dstp << ": udp " << len;
     break;
   }
+
+#define swapit(x) (_swap ? ((((x) & 0xff) << 8) | ((x) >> 8)) : (x))
   
   case IP_PROTO_ICMP: {
     sa << src << " > " << dst << ": icmp";
     const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
     if (icmph->icmp_type == ICMP_ECHO_REPLY) {
       const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
-      sa << ": echo reply (" << ntohs(seqh->identifier) << ", " << ntohs(seqh->sequence) << ")";
+      sa << ": echo reply (" << swapit(seqh->identifier) << ", " << swapit(seqh->sequence) << ")";
     } else if (icmph->icmp_type == ICMP_ECHO) {
       const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
-      sa << ": echo request (" << ntohs(seqh->identifier) << ", " << ntohs(seqh->sequence) << ")";
+      sa << ": echo request (" << swapit(seqh->identifier) << ", " << swapit(seqh->sequence) << ")";
     } else
       sa << ": type " << (int)icmph->icmp_type;
     break;

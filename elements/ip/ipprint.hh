@@ -45,6 +45,15 @@ false.
 Boolean. Determines whether to print each packet's timestamp in seconds since
 1970. Default is false.
 
+=item SWAP
+
+Boolean.  Determines whether to swap bytes before printing the values
+of ICMP sequence and ID numbers.  Default is false.  The RFC does not
+require these two-byte values to be sent in any particular byte order.
+For example, OpenBSD/i386 writes ping (ICMP echo) sequence numbers in
+network byte order, while Linux/i386 writes them in host byte order
+(little-endian).
+
 =item OUTFILE
 
 String. Only available at user level. Print information to the file specified
@@ -71,6 +80,7 @@ class IPPrint : public Element { public:
 
  private:
 
+  bool _swap;
   String _label;
   char *_buf;			// To hold hex dump message
   unsigned _bytes;		// Number of bytes to dump
