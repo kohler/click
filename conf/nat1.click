@@ -5,6 +5,7 @@
 // become a ipv4 packet. Next it should passed to CheckIPHeader, GetIPAddress, 
 // LookupIPRoute.
 //FromDevice(eth0, 1)
+//ToDevice(eth0);
 
 InfiniteSource( \<0000c043 71ef0090 27e0231f  86dd
 60 00 00 00  00 50 11 40  3f fe 1c e1  00 02 00 00
@@ -59,6 +60,6 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 	rt[1]   -> dt::DecIPTTL
 		-> Print(rt1, 200)
 		-> [0]arp;
-	arp[0]  -> ToDevice(eth0);
+	arp[0]  ->Discard;
 	dt[1]   -> Discard;
 	rt6[3] 	-> Print(route3-ok, 200) -> Discard;
