@@ -31,12 +31,12 @@ Version 1.0.7
 
 Version 1.0.6   6.May.2000
 
-* Kernel and user-level drivers
+* Kernel driver
 
 ** Fixed kernel Packet::expensive_push. Patch by Richard Mortier
    <rmm1002@cam.ac.uk>.
 
-** Kernel driver: Added /proc/click/version.
+** Added /proc/click/version.
 
 * Elements
 

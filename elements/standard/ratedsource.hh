@@ -45,8 +45,6 @@ class RatedSource : public Element { protected:
   String _data;
   unsigned _rate;
   int _count;
-  int _schedcount;
-  int _need;
   int _limit;
   unsigned _ugap;
   bool _active;

@@ -69,7 +69,6 @@ int
 RatedSource::initialize(ErrorHandler *errh)
 {
   _count = 0;
-  _schedcount = 0;
   
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
@@ -110,14 +109,12 @@ RatedSource::run_scheduled()
     // how many packets should we have sent by now?
     int need = diff.tv_sec * _rate;
     need += diff.tv_usec / _ugap;
-    _need = need;
 
     // send one if we've fallen behind.
     if (need > _count) {
       output(0).push(_packet->clone());
       _count++;
     }
-    _schedcount++;
 
     reschedule();
   }
@@ -137,17 +134,18 @@ RatedSource::read_param(Element *e, void *vparam)
    case 3:			// active
     return cp_unparse_bool(rs->_active) + "\n";
    case 4:			// count
-    return String(rs->_count) + "\n" + String(rs->_schedcount) + "\n" + String(rs->_need) + "\n";
+    return String(rs->_count) + "\n";
    default:
     return "";
   }
 }
 
 int
-RatedSource::change_param(const String &s, Element *e, void *vparam,
+RatedSource::change_param(const String &in_s, Element *e, void *vparam,
 			  ErrorHandler *errh)
 {
   RatedSource *rs = (RatedSource *)e;
+  String s = cp_subst(in_s);
   switch ((int)vparam) {
 
    case 1: {			// rate
@@ -161,8 +159,8 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
      // change _start_time to get a smooth transition
      struct timeval now;
      click_gettimeofday(&now);
-     int sec = rate / rs->_count;
-     int usec = (rate % rs->_count) * 1000000 / rate;
+     int sec = rs->_count / rate;
+     int usec = (rs->_count % rate) * 1000000 / rate;
      struct timeval diff;
      diff.tv_sec = sec + (usec / 1000000);
      diff.tv_usec = usec % 1000000;

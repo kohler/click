@@ -8,7 +8,7 @@
  * =d
  * Creates packets consisting of DATA. Pushes BURSTSIZE such packets
  * out its single output every time it is scheduled (which will be often).
- * After LIMIT packets are sent, stops the driver; but if LIMIT is negative,
+ * Stops sending after LIMIT packets are generated; but if LIMIT is negative,
  * sends packets forever.
  * Will send packets only if ACTIVE is true. (ACTIVE is true by default.)
  * Default DATA is at least 64 bytes long. Default LIMIT is -1 (send packets
