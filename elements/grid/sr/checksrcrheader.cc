@@ -68,8 +68,8 @@ CheckSRCRHeader::drop_it(Packet *p)
 Packet *
 CheckSRCRHeader::simple_action(Packet *p)
 {
-
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   unsigned int tlen = 0;
 
   if (!pk)

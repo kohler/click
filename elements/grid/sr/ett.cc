@@ -159,10 +159,11 @@ ETT::start_query(IPAddress dstip)
 		dstip.s().cc());
 
   int len = sr_pkt::len_wo_data(1);
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   memset(pk, '\0', len);
   pk->_version = _srcr_version;
   pk->_type = PT_QUERY;
@@ -182,21 +183,22 @@ ETT::start_query(IPAddress dstip)
 void
 ETT::send(WritablePacket *p)
 {
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
 
-  pk->ether_type = htons(_et);
-  memcpy(pk->ether_shost, _en.data(), 6);
+  eh->ether_type = htons(_et);
+  memcpy(eh->ether_shost, _en.data(), 6);
 
   u_char type = pk->_type;
   if(type == PT_QUERY){
-    memset(pk->ether_dhost, 0xff, 6);
+    memset(eh->ether_dhost, 0xff, 6);
     _num_queries++;
     _bytes_queries += p->length();
   } else if(type == PT_REPLY){
     int next = pk->next();
     ett_assert(next < MaxHops);
     EtherAddress eth_dest = _arp_table->lookup(pk->get_hop(next));
-    memcpy(pk->ether_dhost, eth_dest.data(), 6);
+    memcpy(eh->ether_dhost, eth_dest.data(), 6);
     _num_replies++;
     _bytes_replies += p->length();
   } else {
@@ -352,10 +354,11 @@ ETT::forward_query(Seen *s)
 
   //click_chatter("forward query called");
   int len = sr_pkt::len_wo_data(nhops);
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   memset(pk, '\0', len);
   pk->_version = _srcr_version;
   pk->_type = PT_QUERY;
@@ -420,10 +423,11 @@ ETT::forward_reply(struct sr_pkt *pk1)
 
 
   int len = pk1->hlen_wo_data();
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   memcpy(pk, pk1, len);
 
   pk->set_next(pk1->next() - 1);
@@ -441,10 +445,11 @@ void ETT::start_reply(struct sr_pkt *pk_in)
 		id().cc(),
 		pk_in->get_hop(0).s().cc(),
 		IPAddress(pk_in->_qdst).s().cc());
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
-  struct sr_pkt *pk_out = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk_out = (struct sr_pkt *) (eh+1);
   memset(pk_out, '\0', len);
 
 
@@ -511,7 +516,8 @@ ETT::process_data(Packet *p_in)
 {
   Path fwd;
   Path rev;
-  struct sr_pkt *pk_in = (struct sr_pkt *) p_in->data();
+  click_ether *eh_in = (click_ether *) p_in->data();
+  struct sr_pkt *pk_in = (struct sr_pkt *) (eh_in+1);
   
   IPAddress dst = pk_in->get_hop(pk_in->next());
 
@@ -567,14 +573,15 @@ ETT::process_data(Packet *p_in)
   rev_info->_last_packet = now;
 
   int len = sr_pkt::len_wo_data(fwd.size());
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0) {
     click_chatter("ETT %s: couldn't make packet in process_data\n",
 		  id().cc());
     return;
   }
   
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   memset(pk, '\0', len);
   pk->_version = _srcr_version;
   pk->_type = PT_REPLY;
@@ -653,15 +660,17 @@ ETT::push(int port, Packet *p_in)
 
     
   } else if (port ==  0) {
-    struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
-    if(pk->ether_type != htons(_et)) {
+    
+    click_ether *eh = (click_ether *) p_in->data();
+    struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+    if(eh->ether_type != htons(_et)) {
       click_chatter("ETT %s: bad ether_type %04x",
 		    _ip.s().cc(),
-		    ntohs(pk->ether_type));
+		    ntohs(eh->ether_type));
       p_in->kill();
       return;
     }
-    if (pk->get_shost() == _en) {
+    if (EtherAddress(eh->ether_shost) == _en) {
       click_chatter("ETT %s: packet from me");
       p_in->kill();
       return;
@@ -701,7 +710,7 @@ ETT::push(int port, Packet *p_in)
       _neighbors_v.push_back(neighbor);
     }
 
-    _arp_table->insert(neighbor, pk->get_shost());
+    _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
     update_link(_ip, neighbor, get_metric(neighbor));
     if(type == PT_QUERY){
       process_query(pk);

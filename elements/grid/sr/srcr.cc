@@ -116,14 +116,15 @@ SRCR::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
   int hops = r.size();
   int len = sr_pkt::len_with_data(hops, payload_len);
   srcr_assert(r.size() > 1);
-  WritablePacket *p = Packet::make(len);
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   memset(pk, '\0', len);
 
-  memcpy(pk->ether_shost, _eth.data(), 6);
+  memcpy(eh->ether_shost, _eth.data(), 6);
   EtherAddress eth_dest = _arp_table->lookup(r[1]);
-  memcpy(pk->ether_dhost, eth_dest.data(), 6);
-  pk->ether_type = htons(_et);
+  memcpy(eh->ether_dhost, eth_dest.data(), 6);
+  eh->ether_type = htons(_et);
   pk->_version = _srcr_version;
   pk->_type = PT_DATA;
   pk->_dlen = htons(payload_len);
@@ -154,12 +155,13 @@ SRCR::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
+  click_ether *eh = (click_ether *) p_in->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
 
-  if(pk->ether_type != htons(_et)){
+  if(eh->ether_type != htons(_et)){
     click_chatter("SRCR %s: bad ether_type %04x",
                   _ip.s().cc(),
-                  ntohs(pk->ether_type));
+                  ntohs(eh->ether_type));
     p_in->kill();
     return;
   }
@@ -175,7 +177,7 @@ SRCR::push(int port, Packet *p_in)
 
 
   if(port == 0 && pk->get_hop(pk->next()) != _ip){
-    if (pk->get_dhost() != _bcast) {
+    if (EtherAddress(eh->ether_dhost) != _bcast) {
       /* 
        * if the arp doesn't have a ethernet address, it
        * will broadcast the packet. in this case,
@@ -186,7 +188,7 @@ SRCR::push(int port, Packet *p_in)
 		    pk->next(),
 		    pk->num_hops(),
 		    pk->get_hop(pk->next()).s().cc(),
-		    pk->get_dhost().s().cc());
+		    EtherAddress(eh->ether_dhost).s().cc());
     }
     p_in->kill();
     return;
@@ -216,7 +218,7 @@ SRCR::push(int port, Packet *p_in)
   
 
   IPAddress prev = pk->get_hop(pk->next()-1);
-  _arp_table->insert(prev, pk->get_shost());
+  _arp_table->insert(prev, EtherAddress(eh->ether_shost));
 
   int prev_metric = get_metric(prev);
   update_link(_ip, prev, prev_metric);
@@ -238,18 +240,19 @@ SRCR::push(int port, Packet *p_in)
   } 
 
   int len = pk->hlen_with_data();
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0) {
     click_chatter("SRCR %s: couldn't make packet\n", id().cc());
     p_in->kill();
     return ;
   }
-  struct sr_pkt *pk_out = (struct sr_pkt *) p->data();
+  click_ether *eh_out = (click_ether *) p_in->data();
+  struct sr_pkt *pk_out = (struct sr_pkt *) (eh_out+1);
   memcpy(pk_out, pk, len);
 
   pk_out->set_metric(pk_out->next() - 1, prev_metric);
   pk_out->set_next(pk->next() + 1);
-  pk_out->ether_type = htons(_et);
+  eh_out->ether_type = htons(_et);
 
   srcr_assert(pk->next() < 8);
   IPAddress nxt = pk_out->get_hop(pk_out->next());
@@ -269,8 +272,8 @@ SRCR::push(int port, Packet *p_in)
 
 
   EtherAddress eth_dest = _arp_table->lookup(nxt);
-  memcpy(pk_out->ether_dhost, eth_dest.data(), 6);
-  memcpy(pk_out->ether_shost, _eth.data(), 6);
+  memcpy(eh_out->ether_dhost, eth_dest.data(), 6);
+  memcpy(eh_out->ether_shost, _eth.data(), 6);
 
   /* set the ip header anno */
   const click_ip *ip = reinterpret_cast<const click_ip *>

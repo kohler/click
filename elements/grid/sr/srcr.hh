@@ -37,49 +37,33 @@ enum SRCRPacketFlags {
   FLAG_UPDATE = (1<<0),
 };
 
-static const uint8_t _srcr_version = 0x04;
+static const uint8_t _srcr_version = 0x06;
 
 // Packet format.
 struct sr_pkt {
-  uint8_t       ether_dhost[6];
-  uint8_t       ether_shost[6];
-  uint16_t      ether_type;
-
   uint8_t _version; /* see _srcr_version */
-  uint16_t _ttl;
-  uint16_t _cksum;
-
   uint8_t _type;  /* see enum SRCRPacketType */
-  uint16_t _flags; 
-
-  // PT_DATA
-  uint16_t _dlen;
-  
-  // PT_QUERY
-  in_addr _qdst; // Who are we looking for?
-  
-  in_addr _random_from;
-  in_addr _random_to;
-  uint16_t _random_metric;
-  
-  uint32_t _seq;   // Originator's sequence number.
-
   uint8_t _nhops;
   uint8_t _next;   // Index of next node who should process this packet.
 
 
-  EtherAddress get_dhost() {
-    return EtherAddress(ether_dhost);
-  }
-  EtherAddress get_shost() {
-    return EtherAddress(ether_shost);
-  }
-  void set_dhost(EtherAddress _eth) {
-    memcpy(ether_dhost, _eth.data(), 6);
-  }
-  void set_shost(EtherAddress _eth) {
-    memcpy(ether_shost, _eth.data(), 6);
-  }
+  uint16_t _ttl;
+  uint16_t _cksum;
+  uint16_t _flags; 
+  uint16_t _dlen;
+
+  uint16_t _random_metric;
+
+  // PT_QUERY
+  in_addr _qdst; // Who are we looking for?
+  in_addr _random_from;
+  in_addr _random_to;
+  uint32_t _seq;   // Originator's sequence number.
+
+  
+  
+
+
   void set_random_from(IPAddress ip) {
     _random_from = ip;
   }
@@ -155,7 +139,7 @@ struct sr_pkt {
   }
   
   /* remember that if you call this you must have set the number of hops in this packet! */
-  u_char *data() { return (ether_dhost + len_wo_data(num_hops())); }
+  u_char *data() { return (((u_char *)this) + len_wo_data(num_hops())); }
   String s();
 };
 

@@ -48,7 +48,8 @@ Packet *
 SetSRCRChecksum::simple_action(Packet *xp)
 {
   WritablePacket *p = xp->uniqueify();
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   unsigned plen = p->length();
   unsigned int tlen = 0;
 
@@ -64,7 +65,7 @@ SetSRCRChecksum::simple_action(Packet *xp)
   if (plen < sizeof(struct sr_pkt))
     goto bad;
 
-  if (tlen > plen)
+  if (tlen > plen - sizeof(click_ether))
     goto bad;
 
   pk->_version = _srcr_version;

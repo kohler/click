@@ -141,10 +141,11 @@ void
 GatewaySelector::start_ad()
 {
   int len = sr_pkt::len_wo_data(1);
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   memset(pk, '\0', len);
   pk->_version = _srcr_version;
   pk->_type = PT_GATEWAY;
@@ -164,10 +165,10 @@ GatewaySelector::start_ad()
 void
 GatewaySelector::send(WritablePacket *p)
 {
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
-  pk->ether_type = htons(_et);
-  memcpy(pk->ether_shost, _en.data(), 6);
-  memset(pk->ether_dhost, 0xff, 6);
+  click_ether *eh = (click_ether *) p->data();
+  eh->ether_type = htons(_et);
+  memcpy(eh->ether_shost, _en.data(), 6);
+  memset(eh->ether_dhost, 0xff, 6);
   output(0).push(p);
 }
 
@@ -223,10 +224,11 @@ GatewaySelector::forward_ad(Seen *s)
   gatewayselector_assert(s->_hops.size() == s->_metrics.size()+1);
 
   int len = sr_pkt::len_wo_data(nhops);
-  WritablePacket *p = Packet::make(len);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
   memset(pk, '\0', len);
   pk->_version = _srcr_version;
   pk->_type = PT_GATEWAY;
@@ -328,12 +330,12 @@ GatewaySelector::push(int port, Packet *p_in)
     return;
   }
 
-
-  struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
-  if(pk->ether_type != htons(_et)) {
+  click_ether *eh = (click_ether *) p_in->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
+  if(eh->ether_type != htons(_et)) {
     click_chatter("GatewaySelector %s: bad ether_type %04x",
 		  _ip.s().cc(),
-		  ntohs(pk->ether_type));
+		  ntohs(eh->ether_type));
     p_in->kill();
     return;
   }
@@ -343,7 +345,7 @@ GatewaySelector::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  if (pk->get_shost() == _en) {
+  if (EtherAddress(eh->ether_shost) == _en) {
     click_chatter("GatewaySelector %s: packet from me");
     p_in->kill();
     return;
@@ -368,7 +370,7 @@ GatewaySelector::push(int port, Packet *p_in)
   IPAddress neighbor = IPAddress();
   neighbor = pk->get_hop(pk->num_hops()-1);
 
-  _arp_table->insert(neighbor, pk->get_shost());
+  _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
   update_link(_ip, neighbor, get_metric(neighbor));
 
 

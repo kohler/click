@@ -59,7 +59,8 @@ PrintSRCR::configure(Vector<String> &conf, ErrorHandler* errh)
 Packet *
 PrintSRCR::simple_action(Packet *p)
 {
-  struct sr_pkt *pk = (struct sr_pkt *) p->data();
+  click_ether *eh = (click_ether *) p->data();
+  struct sr_pkt *pk = (struct sr_pkt *) (eh+1);
 
   StringAccum sa;
   sa << "PrintSRCR ";
