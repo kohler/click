@@ -101,20 +101,20 @@ the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
 
 class IPRouteTable : public Element { public:
 
-    void *cast(const char *);
-    int configure(Vector<String> &, ErrorHandler *);
+    void* cast(const char*);
+    int configure(Vector<String>&, ErrorHandler*);
 
     virtual int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler*);
-    virtual int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
-    virtual int lookup_route(IPAddress, IPAddress &) const = 0;
+    virtual int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler*);
+    virtual int lookup_route(IPAddress, IPAddress&) const = 0;
     virtual String dump_routes() const;
 
-    void push(int port, Packet *p);
+    void push(int port, Packet* p);
 
-    static int add_route_handler(const String &, Element *, void *, ErrorHandler *);
-    static int remove_route_handler(const String &, Element *, void *, ErrorHandler *);
-    static int ctrl_handler(const String &, Element *, void *, ErrorHandler *);
-    static String table_handler(Element *, void *);
+    static int add_route_handler(const String&, Element*, void*, ErrorHandler*);
+    static int remove_route_handler(const String&, Element*, void*, ErrorHandler*);
+    static int ctrl_handler(const String&, Element*, void*, ErrorHandler*);
+    static String table_handler(Element*, void*);
 
 };
 
