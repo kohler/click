@@ -121,6 +121,13 @@ class ClickController extends JPanel {
         mi = createMenuItem(connMenu, "Open...", 'O', new OpenAction(this));
 	mi.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, Event.CTRL_MASK));
 
+	mi = createMenuItem(connMenu, "Refresh", 'R', new AbstractAction() {
+		public void actionPerformed(ActionEvent e) {
+		    setControlSocket(_cs);
+		}
+	    });
+	mi.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_R, Event.CTRL_MASK));
+
         _closeItem = createMenuItem(connMenu, "Close", 'C', new AbstractAction() {
 		public void actionPerformed(ActionEvent e) {
 		    if (countControllers() > 1) {

@@ -231,10 +231,9 @@ public class ControlSocket {
 	int i;
 	for (i = 0; i < buf.length && buf[i] != '\n'; i++)
 	    ; // do it
-	if (i == buf.length)
-	    throw new ControlSocketException("Bad element list from ControlSocket");
+
 	int numElements = 0;
-	try { 
+	try {
 	    numElements = Integer.parseInt(new String(buf, 0, i));
 	} catch (NumberFormatException ex) { 
 	    throw new ControlSocketException("Bad element list from ControlSocket"); 
@@ -567,12 +566,12 @@ public class ControlSocket {
      */
     private Vector makeList(char buf[], int offset) {
 	Vector v = new Vector();
-	if (buf.length == 0)
+	if (offset >= buf.length)
 	    return v;
 	int i = offset;
 	while (true) {
 	    int j;
-	    for (j = i; j < buf.length &&  buf[j] != '\n'; j++)
+	    for (j = i; j < buf.length && buf[j] != '\n'; j++)
 		; // find '\n' terminator
 	    if (j == buf.length) 
 		return null;
