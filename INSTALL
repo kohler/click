@@ -10,8 +10,7 @@ The user-level version of Click should compile and run on any Intel x86
 Unix system that has the pcap library. (The pcap library is necessary to
 communicate with the network. See the end of this document for portability
 notes for other architectures.) The Linux kernel module requires a patched
-Linux 2.2 system; we've tested on recent Linux kernels like 2.2.10 and
-2.2.11.
+Linux 2.2 system; we've tested on the recent 2.2.14 Linux kernel.
 
 First, run
 
@@ -69,28 +68,28 @@ and running Linux kernels.
     This is in case something goes wrong and you need to revert to an old
     kernel.
 
- 2. Get a copy of the Linux 2.2.x kernel source distribution, for example
-    from www.kernel.org. Unpack this distribution into /usr/src/linux.
-    (Save the old kernel source tree, if you had one.)
+ 2. Get a copy of the Linux 2.2.14 kernel source distribution, for example
+    from www.kernel.org. A later 2.2 kernel may also work. Unpack this
+    distribution into /usr/src/linux. (Save the old kernel source tree, if
+    you had one.)
 
  3. Install the Click Linux kernel patch:
 
 	cd /usr/src/linux
-	patch -p0 -b < CLICKDIR/etc/linux-2.2-patch
+	patch -p0 -b < CLICKDIR/etc/linux-2.2.14-patch
 
-    The patch has been tested with 2.2.10 and 2.2.11 kernels; it probably
-    works for other 2.2 kernels. The patch fixes syntax errors in several
-    header files (the C++ compiler doesn't accept them) and adds several
-    new functions. It does not change any kernel data structures.
-    Therefore, if you compiled your old kernel without module versioning,
-    you don't strictly need to recompile modules.
+    The patch fixes syntax errors in several header files (the C++ compiler
+    doesn't accept them), adds several new functions, and changes the
+    `struct device' kernel data structure. Therefore, if you compiled your
+    old kernel without module versioning, you WILL need to recompile
+    modules.
 
  4. Configure the new kernel. The Click patch does not add any
     configuration options, so you can start from your old 2.2
     configuration, or you can do the usual `make menuconfig'.
 
  5. If your archived, working kernel has the same version number as the
-    patched kernel (they're both 2.2.11, for example), then it is a good
+    patched kernel (they're both 2.2.14, for example), then it is a good
     idea to change the patched kernel's `EXTRAVERSION'. This way, the
     modules for the new kernel won't overwrite the old, working modules.
     Edit /usr/src/linux/Makefile and change the line `EXTRAVERSION =' to
@@ -131,16 +130,16 @@ At this point you can load a configuration file (see doc/click.5) with
 PORTABILITY
 -----------
 
-To run a Click configuration on a non-x86 machine, you will need to worry
-about alignment. By default, Click configurations assume that unaligned
-accesses are OK (for instance, that it is OK to load a word from an address
-that isn't start on a four-byte boundary). On most architectures, however,
-unaligned accesses cause problems. To run Click on such an architecture,
-you'll need to run your configurations through the `click-align' tool
-before installing them. `Click-align' (see doc/click-align.1) figures out
-what alignment is required and adds elements as necessary to make that
-alignment happen. It also adds an `AlignmentInfo' element to tell every
-element what kind of alignment it can expect.
+    To run a Click configuration on a non-x86 machine, you will need to
+worry about alignment. By default, Click configurations assume that
+unaligned accesses are OK (for instance, that it is OK to load a word from
+an address that isn't start on a four-byte boundary). On most
+architectures, however, unaligned accesses cause problems. To run Click on
+such an architecture, you'll need to run your configurations through the
+`click-align' tool before installing them. `Click-align' (see
+doc/click-align.1) figures out what alignment is required and adds elements
+as necessary to make that alignment happen. It also adds an `AlignmentInfo'
+element to tell every element what kind of alignment it can expect.
 
     Note that some parts of the system have not yet been updated for
 non-x86 portability. In particular, IP checksums appear to be computed
