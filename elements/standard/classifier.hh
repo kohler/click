@@ -87,7 +87,7 @@ class Classifier : public Element { public:
   // creating Exprs
   enum { NEVER = -2147483647, FAILURE, SUCCESS };
   void add_expr(Vector<int> &, const Expr &);
-  void add_expr(Vector<int> &, int offset, unsigned value, unsigned mask);
+  void add_expr(Vector<int> &, int offset, uint32_t value, uint32_t mask);
   void init_expr_subtree(Vector<int> &);
   void start_expr_subtree(Vector<int> &);
   void negate_expr_subtree(Vector<int> &);
@@ -99,11 +99,11 @@ class Classifier : public Element { public:
     int offset;
     union {
       unsigned char c[4];
-      unsigned u;
+      uint32_t u;
     } mask;
     union {
       unsigned char c[4];
-      unsigned u;
+      uint32_t u;
     } value;
     int yes;
     int no;

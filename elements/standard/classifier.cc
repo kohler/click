@@ -28,7 +28,7 @@
 // CLASSIFIER::EXPR OPERATIONS
 //
 
-#define UBYTES ((int)sizeof(unsigned))
+#define UBYTES ((int)sizeof(uint32_t))
 
 bool
 Classifier::Expr::implies(const Expr &e) const
@@ -38,7 +38,7 @@ Classifier::Expr::implies(const Expr &e) const
     return true;
   else if (e.offset != offset)
     return false;
-  unsigned both_mask = mask.u & e.mask.u;
+  uint32_t both_mask = mask.u & e.mask.u;
   return both_mask == e.mask.u
     && (value.u & both_mask) == e.value.u;
 }
@@ -59,7 +59,7 @@ Classifier::Expr::implies_not(const Expr &e) const
 {
   if (!e.mask.u || e.offset != offset)
     return false;
-  unsigned both_mask = mask.u & e.mask.u;
+  uint32_t both_mask = mask.u & e.mask.u;
   return both_mask == e.mask.u
     && (value.u & both_mask) != (e.value.u & both_mask);
 }
@@ -72,7 +72,7 @@ Classifier::Expr::not_implies_not(const Expr &e) const
     return true;
   else if (e.offset != offset)
     return false;
-  unsigned both_mask = mask.u & e.mask.u;
+  uint32_t both_mask = mask.u & e.mask.u;
   return both_mask == mask.u
     && (value.u & both_mask) == (e.value.u & both_mask);
 }
@@ -84,7 +84,7 @@ Classifier::Expr::compatible(const Expr &e) const
     return true;
   else if (e.offset != offset)
     return false;
-  unsigned both_mask = mask.u & e.mask.u;
+  uint32_t both_mask = mask.u & e.mask.u;
   return (value.u & both_mask) == (e.value.u & both_mask);
 }
 
@@ -682,7 +682,7 @@ Classifier::add_expr(Vector<int> &tree, const Expr &e)
 }
 
 void
-Classifier::add_expr(Vector<int> &tree, int offset, unsigned value, unsigned mask)
+Classifier::add_expr(Vector<int> &tree, int offset, uint32_t value, uint32_t mask)
 {
   Expr e;
   e.offset = offset;
@@ -1099,7 +1099,7 @@ Classifier::length_checked_push(Packet *p)
       goto check_length;
     
    length_ok:
-    if ((*((unsigned *)(packet_data + ex[pos].offset)) & ex[pos].mask.u)
+    if ((*((uint32_t *)(packet_data + ex[pos].offset)) & ex[pos].mask.u)
 	== ex[pos].value.u)
       pos = ex[pos].yes;
     else
@@ -1139,7 +1139,7 @@ Classifier::push(int, Packet *p)
   }
   
   do {
-    if ((*((unsigned *)(packet_data + ex[pos].offset)) & ex[pos].mask.u)
+    if ((*((uint32_t *)(packet_data + ex[pos].offset)) & ex[pos].mask.u)
 	== ex[pos].value.u)
       pos = ex[pos].yes;
     else
