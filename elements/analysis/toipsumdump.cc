@@ -133,7 +133,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
     // data description
     fprintf(_f, "!data ");
     for (int i = 0; i < _contents.size(); i++)
-	fprintf(_f, (i ? " '%s'" : "'%s'"), FromIPSummaryDump::unparse_content(_contents[i]));
+	fprintf(_f, (i ? " %s" : "%s"), FromIPSummaryDump::unparse_content(_contents[i]));
     fprintf(_f, "\n");
 
     _output_count = 0;

@@ -35,24 +35,24 @@ Space-separated list of field names. Each line of the summary dump will
 contain those fields. Valid field names, with examples, are:
 
    timestamp    Packet timestamp: `996033261.451094'
-   ts sec       Seconds portion of timestamp: `996033261'
-   ts usec      Microseconds portion of timestamp: `451094'
-   ip src       IP source address: `192.150.187.37'
-   ip dst       IP destination address: `192.168.1.100'
-   ip frag      IP fragment: `F' (1st frag), `f' (2nd or
+   ts_sec       Seconds portion of timestamp: `996033261'
+   ts_usec      Microseconds portion of timestamp: `451094'
+   ip_src       IP source address: `192.150.187.37'
+   ip_dst       IP destination address: `192.168.1.100'
+   ip_frag      IP fragment: `F' (1st frag), `f' (2nd or
                 later frag), or `.' (not frag)
-   ip fragoff   IP fragmentation offset: `0', `0+' (suffix
+   ip_fragoff   IP fragmentation offset: `0', `0+' (suffix
                 `+' means MF is set; offset in bytes)
    len          Packet length: `132'
    proto        IP protocol: `10', or `I' for ICMP, `T' for
                 TCP, `U' for UDP
-   ip id        IP ID: `48759'
+   ip_id        IP ID: `48759'
    sport        TCP/UDP source port: `22'
    dport        TCP/UDP destination port: `2943'
-   tcp seq      TCP sequence number: `93167339'
-   tcp ack      TCP acknowledgement number: `93178192'
-   tcp flags    TCP flags: `SA', `.'
-   payload len  Payload length (not including IP/TCP/UDP
+   tcp_seq      TCP sequence number: `93167339'
+   tcp_ack      TCP acknowledgement number: `93178192'
+   tcp_flags    TCP flags: `SA', `.'
+   payload_len  Payload length (not including IP/TCP/UDP
                 headers): `34'
    count        Number of packets: `1'
    direction    Link number (PAINT_ANNO): '2', or '>'/'L'
@@ -62,8 +62,9 @@ contain those fields. Valid field names, with examples, are:
 If a field does not apply to a particular packet -- for example, `C<sport>' on
 an ICMP packet -- ToIPSummaryDump prints a single dash for that value.
 
-Default CONTENTS is `src dst'. You must quote field names that contain a
-space -- for example, `C<src dst "tcp seq">'.
+Default CONTENTS is `src dst'. You may also use spaces instead of underscores,
+in which case you must quote field names that contain a space -- for example,
+`C<src dst "tcp seq">'.
 
 =item VERBOSE
 

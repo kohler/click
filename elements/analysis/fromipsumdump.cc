@@ -859,10 +859,10 @@ FromIPSummaryDump::add_handlers()
 
 
 static const char *content_names[] = {
-    "??", "timestamp", "ts sec", "ts usec",
-    "ip src", "ip dst", "ip len", "ip proto", "ip id",
-    "sport", "dport", "tcp seq", "tcp ack", "tcp flags",
-    "payload len", "count", "ip frag", "ip fragoff",
+    "??", "timestamp", "ts_sec", "ts_usec",
+    "ip_src", "ip_dst", "ip_len", "ip_proto", "ip_id",
+    "sport", "dport", "tcp_seq", "tcp_ack", "tcp_flags",
+    "payload_len", "count", "ip_frag", "ip_fragoff",
     "payload", "direction", "aggregate"
 };
 
@@ -880,37 +880,37 @@ FromIPSummaryDump::parse_content(const String &word)
 {
     if (word == "timestamp" || word == "ts")
 	return W_TIMESTAMP;
-    else if (word == "sec" || word == "ts sec")
+    else if (word == "sec" || word == "ts_sec")
 	return W_TIMESTAMP_SEC;
-    else if (word == "usec" || word == "ts usec")
+    else if (word == "usec" || word == "ts_usec")
 	return W_TIMESTAMP_USEC;
-    else if (word == "src" || word == "ip src")
+    else if (word == "src" || word == "ip_src")
 	return W_SRC;
-    else if (word == "dst" || word == "ip dst")
+    else if (word == "dst" || word == "ip_dst")
 	return W_DST;
     else if (word == "sport")
 	return W_SPORT;
     else if (word == "dport")
 	return W_DPORT;
-    else if (word == "frag" || word == "ip frag")
+    else if (word == "frag" || word == "ip_frag")
 	return W_FRAG;
-    else if (word == "fragoff" || word == "ip fragoff")
+    else if (word == "fragoff" || word == "ip_fragoff")
 	return W_FRAGOFF;
-    else if (word == "len" || word == "length" || word == "ip len")
+    else if (word == "len" || word == "length" || word == "ip_len")
 	return W_LENGTH;
-    else if (word == "id" || word == "ip id")
+    else if (word == "id" || word == "ip_id")
 	return W_IPID;
-    else if (word == "proto" || word == "ip proto")
+    else if (word == "proto" || word == "ip_proto")
 	return W_PROTO;
-    else if (word == "tcp seq" || word == "tcp seqno")
+    else if (word == "tcp_seq" || word == "tcp_seqno")
 	return W_TCP_SEQ;
-    else if (word == "tcp ack" || word == "tcp ackno")
+    else if (word == "tcp_ack" || word == "tcp_ackno")
 	return W_TCP_ACK;
-    else if (word == "tcp flags")
+    else if (word == "tcp_flags")
 	return W_TCP_FLAGS;
-    else if (word == "payload len" || word == "payload length")
+    else if (word == "payload_len" || word == "payload_length")
 	return W_PAYLOAD_LENGTH;
-    else if (word == "count" || word == "pkt count" || word == "packet count")
+    else if (word == "count" || word == "pkt_count" || word == "packet_count")
 	return W_COUNT;
     else if (word == "payload")
 	return W_PAYLOAD;
@@ -918,9 +918,9 @@ FromIPSummaryDump::parse_content(const String &word)
 	return W_LINK;
     else if (word == "aggregate" || word == "agg")
 	return W_AGGREGATE;
-    else if (word.find_left('_') >= 0) {
-	int underscore = word.find_left('_');
-	return parse_content(word.substring(0, underscore) + " " + word.substring(underscore + 1));
+    else if (word.find_left(' ') >= 0) {
+	int space = word.find_left(' ');
+	return parse_content(word.substring(0, space) + "_" + word.substring(space + 1));
     } else
 	return W_NONE;
 }
