@@ -45,12 +45,14 @@
 #define HOTSWAP_OPT		304
 #define MAP_OPT			305
 #define VERBOSE_OPT		306
+#define THREADS_OPT		307
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "map", 'm', MAP_OPT, 0, 0 },
+  { "threads", 't', THREADS_OPT, Clp_ArgUnsigned, 0 },
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, Clp_Negate },
@@ -81,6 +83,7 @@ Options:\n\
   -h, --hot-swap                Hot-swap install new configuration.\n\
   -u, --uninstall               Uninstall Click from kernel, then reinstall.\n\
   -m, --map                     Print load map to the standard output.\n\
+  -t, --threads N               use N threads (multithreaded Click only).\n\
   -V, --verbose                 Print information about files installed.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
@@ -358,6 +361,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  int threads = 1;
   bool uninstall = false;
   bool hotswap = false;
   output_map = false;
@@ -389,6 +393,14 @@ particular purpose.\n");
 	goto bad_option;
       }
       router_file = clp->arg;
+      break;
+     
+     case THREADS_OPT:
+      threads = clp->val.u;
+      if (threads < 1) {
+        errh->error("must have at least one thread");
+	goto bad_option;
+      }
       break;
 
      case UNINSTALL_OPT:
@@ -466,6 +478,10 @@ particular purpose.\n");
     if (output_map)
       cmdline += "-m ";
     cmdline += click_o;
+    if (threads > 1) {
+      cmdline += " threads=";
+      cmdline += String(threads);
+    }
     (void) system(cmdline);
     if (access("/proc/click/version", F_OK) < 0)
       errh->fatal("cannot install Click module");
