@@ -89,8 +89,17 @@ public:
   // LinkStat packets have a link_probe header immediately following
   // the ethernet header.  num_links link_entries follow the
   // link_probe header.
+
+#define FUCKED_GCC_2_96  
+#ifdef FUCKED_GCC_2_96
+  enum {
+    ETHERTYPE_LINKSTAT = 0x7ffe,
+    ETHERTYPE_LINKSTAT2 = 0x7ffd
+  };
+#else
   static const unsigned short ETHERTYPE_LINKSTAT = 0x7ffe;
   static const unsigned short ETHERTYPE_LINKSTAT2 = 0x7ffd;
+#endif
   
   struct link_probe {
     static const int size = 20;
