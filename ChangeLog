@@ -1,3 +1,8 @@
+2003-10-31 Friday 18:07  Eddie Kohler <kohler@icir.org>
+
+	* lib/router.cc (1.150): fix issue brought up by Peter Swain:
+	adding or removing selects from select handlers would crash
+
 2003-10-31 Friday 15:50  Eddie Kohler <kohler@icir.org>
 
 	* conf/test-tun.click (1.11), elements/userlevel/kerneltun.cc
