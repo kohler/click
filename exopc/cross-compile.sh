@@ -1,4 +1,4 @@
-#!/bin/sh -a
+#! /bin/sh -a
 
 CROSSBIN=$CROSSDIR
 CROSSINC=$CROSSDIR/include
