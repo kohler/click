@@ -1,3 +1,8 @@
+2004-05-15 Saturday 15:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/icmp/: icmppingencap.hh (1.3), icmpsendpings.hh (1.11):
+	doc updates
+
 2004-05-14 Friday 19:12  John Bicket <jbicket@mit.edu>
 
 	* include/click/task.hh (1.29): make task.hh compile (?)
