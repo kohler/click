@@ -1,3 +1,7 @@
+2001-10-30 Tuesday 12:42  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdump.cc (1.56): missed an mmap symbol
+
 2001-10-30 Tuesday 12:29  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4 (1.8), aclocal.m4 (1.8), acclick.m4 (1.9), aclocal.m4
