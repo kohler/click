@@ -1,9 +1,10 @@
 // -*- c-basic-offset: 4; related-file-name: "../include/click/driver.hh" -*-
 /*
- * packageutils.cc -- support for packages
+ * driver.cc -- support for packages
  * Eddie Kohler
  *
  * Copyright (c) 2001 Mazu Networks, Inc.
+ * Copyright (c) 2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),

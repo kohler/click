@@ -58,7 +58,7 @@ GENERIC_OBJS = string.o straccum.o \
 	confparse.o variableenv.o lexer.o elemfilter.o \
 	routerthread.o router.o handlercall.o notifier.o \
 	integers.o crc32.o iptable.o ewma64.o \
-	packageutils.o skbmgr.o \
+	driver.o skbmgr.o \
 	$(EXTRA_DRIVER_OBJS) \
 	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
 	drivermanager.o

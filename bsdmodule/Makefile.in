@@ -57,7 +57,7 @@ GENERIC_OBJS = string.o straccum.o \
 	confparse.o variableenv.o lexer.o elemfilter.o \
 	routerthread.o router.o handlercall.o notifier.o \
 	integers.o crc32.o iptable.o ewma64.o \
-	packageutils.o \
+	driver.o \
 	$(EXTRA_DRIVER_OBJS)
 
 BSDMODULE_OBJS = config.o sched.o module.o \
