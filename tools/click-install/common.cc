@@ -81,7 +81,7 @@ read_active_modules(StringMap &packages, ErrorHandler *errh)
 #endif
 }
 
-void
+static void
 kill_current_configuration(ErrorHandler *errh)
 {
   if (verbose)
