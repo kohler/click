@@ -1,3 +1,13 @@
+2003-05-17 Saturday 10:23  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.11), rtmdsr.hh (1.12): Now actually
+	attached to LinkStat, tries to use best TxCount.
+
+2003-05-17 Saturday 10:04  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.10), rtmdsr.hh (1.11): Put metric
+	field in query packet format.
+
 2003-05-14 Wednesday 17:42  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.9), rtmdsr.hh (1.10): Fix bug with
