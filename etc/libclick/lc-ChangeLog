@@ -1,3 +1,8 @@
+2001-12-07 Friday 03:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/userutils.hh, include/click/userutils.hh,
+	libsrc/userutils.cc: add percent_substitute function
+
 2001-12-05 Wednesday 14:04  Eddie Kohler <kohler@aciri.org>
 
 	* config-bsdmodule.h.in, config-linuxmodule.h.in, libsrc/glue.cc:

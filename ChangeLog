@@ -1,3 +1,46 @@
+2001-12-07 Friday 03:16  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-align/alignclass.cc (1.12),
+	tools/click-align/alignclass.hh (1.7),
+	tools/click-align/click-align.cc (1.35),
+	tools/click-check/click-check.cc (1.21),
+	tools/click-combine/click-combine.cc (1.22),
+	tools/click-combine/click-uncombine.cc (1.18),
+	tools/click-devirtualize/click-devirtualize.cc (1.26),
+	tools/click-devirtualize/signature.cc (1.8),
+	tools/click-devirtualize/signature.hh (1.4),
+	tools/click-devirtualize/specializer.cc (1.22),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.43),
+	tools/click-fastclassifier/click-fastclassifier.hh (1.3),
+	tools/click-flatten/click-flatten.cc (1.6),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.17),
+	tools/click-pretty/Makefile.in (1.1),
+	tools/click-pretty/click-pretty.cc (1.1),
+	tools/click-undead/click-undead.cc (1.19),
+	tools/click-xform/adjacency.cc (1.13),
+	tools/click-xform/adjacency.hh (1.7),
+	tools/click-xform/click-xform.cc (1.37), tools/lib/Makefile.in
+	(1.22), tools/lib/eclasst.cc (1.1), tools/lib/eclasst.hh (1.1),
+	tools/lib/elementmap.cc (1.1), tools/lib/elementmap.hh (1.1),
+	tools/lib/elementt.cc (1.17), tools/lib/elementt.hh (1.14),
+	tools/lib/hashmapi.cc (1.8), tools/lib/lexert.cc (1.38),
+	tools/lib/lexert.hh (1.20), tools/lib/lexertinfo.cc (1.1),
+	tools/lib/lexertinfo.hh (1.2), tools/lib/processingt.cc (1.12),
+	tools/lib/routert.cc (1.47), tools/lib/routert.hh (1.39),
+	tools/lib/toolutils.cc (1.41), tools/lib/toolutils.hh (1.29),
+	userlevel/click.cc (1.63): Great Tools Rewrite: remove some integer
+	indirections, because they make programming hard. In particular,
+	there is no longer any complete "element class" list per RouterT;
+	people deal with ElementClassT directly. LexerT notifies an object
+	when interesting things happen. Add click-pretty program to pretty
+	print a Click program. Update tools to use new interfaces. If they
+	dont work, old code is available on branch nov01_tools.
+
+2001-12-07 Friday 03:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/userutils.hh (1.7), lib/userutils.cc (1.18): add
+	percent_substitute function
+
 2001-12-05 Wednesday 14:04  Eddie Kohler <kohler@aciri.org>
 
 	* config-bsdmodule.h.in (1.3), config-linuxmodule.h.in (1.2),
