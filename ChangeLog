@@ -1,3 +1,8 @@
+2001-10-05 Friday 09:34  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* apps/csclient/: csclient.cc (1.3), csclient.hh (1.2):
+	implementation finished & compiles, but.. it is UNTESTEDls!
+
 2001-10-04 Thursday 17:20  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* include/click/packet.hh (1.25): Deal with chained mbuf's, even if
