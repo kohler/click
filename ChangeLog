@@ -1,3 +1,8 @@
+2003-07-31 Thursday 13:26  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/linkstat.cc (1.24): made multi-hop work and tested
+	it.  --jbicket
+
 2003-07-30 Wednesday 15:02  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.32), aclocal.m4 (1.32),
