@@ -1,3 +1,8 @@
+2001-04-29 Sunday 20:27  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/: revsortedsched.cc, revsortedsched.hh,
+	sortedsched.cc, sortedsched.hh: name change
+
 2001-04-27 Friday 19:21  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ip/ipclassifier.hh, lib/error.cc: buglet
