@@ -1,5 +1,5 @@
 /*
- * switch.{cc,hh} -- learning, forwarding Ethernet bridge
+ * etherswitch.{cc,hh} -- learning, forwarding Ethernet bridge
  * John Jannotti
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -13,7 +13,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "switch.hh"
+#include "etherswitch.hh"
 #include "click_ether.h"
 #include "etheraddress.hh"
 #include "glue.hh"

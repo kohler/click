@@ -1,5 +1,5 @@
-#ifndef SWITCH_HH
-#define SWITCH_HH
+#ifndef ETHERSWITCH_HH
+#define ETHERSWITCH_HH
 #include "element.hh"
 #include "etheraddress.hh"
 #include "hashmap.hh"
