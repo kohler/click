@@ -68,7 +68,7 @@ private:
   static const int IPFRAG_HIGH_THRESH = 256 * 1024;
   static const int IPFRAG_LOW_THRESH  = 192 * 1024;
   static const int EXPIRE_TIMEOUT = 30; // seconds
-  static const int EXPIRE_TIMEOUT_MS = EXPIRE_TIMEOUT * 1000; // ms
+  static const int EXPIRE_TIMEOUT_MS = EXPIRE_TIMEOUT * 100; // ms
   
   int _mem_used;
   static const int NMAP = 256;
