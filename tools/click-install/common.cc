@@ -33,6 +33,7 @@
 #elif FOR_LINUXMODULE && HAVE_CLICKFS
 # include <sys/mount.h>
 #endif
+#include <sys/wait.h>
 
 #if FOR_BSDMODULE || (FOR_LINUXMODULE && HAVE_CLICKFS)
 const char *clickfs_prefix = "/click";
