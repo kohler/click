@@ -64,3 +64,16 @@ A. Sure you can. Just use FromDevice elements instead of PollDevice
    performance a bit better on a non-polling system. We removed those hacks
    for Click 1.0, now that we know how to make a high-performance system:
    use polling.
+
+
+SECTION 3: QUESTIONS ABOUT BPF
+------------------------------
+
+Q. ToBPF doesn't seem to work. Why?
+
+A. If you have a Linux 2.2 machine, make sure that you are using a recent
+   version of libpcap. We recommend using an RPM, as the source code from
+   Lawrence Berkeley Labs does not include some patches that Click depends
+   upon (the Alexey Kuznetsov patches, archived at
+   ftp://ftp.inr.ac.ru/ip-routing/lbl-tools/ as of July 2000). We welcome
+   patches to ToBPF that would let it work with an unmodified libpcap.

@@ -27,11 +27,24 @@
 #include <errno.h>
 
 #if defined(__FreeBSD__) && defined(HAVE_PCAP)
-#include <fcntl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/ioctl.h>
-#include <net/if.h>
+# include <fcntl.h>
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <sys/ioctl.h>
+# include <net/if.h>
+#endif
+
+#ifdef __linux__
+# include <sys/socket.h>
+# include <sys/ioctl.h>
+# include <net/if.h>
+# include <net/if_packet.h>
+# include <features.h>
+# if __GLIBC__ >= 2 && __GLIBC_MINOR__ >= 1
+#  include <netpacket/packet.h>
+# else
+#  include <linux/if_packet.h>
+# endif
 #endif
 
 ToBPF::ToBPF()
@@ -105,6 +118,9 @@ ToBPF::initialize(ErrorHandler *errh)
    * Try to find a FromBPF with the same device and re-use its _pcap.
    * If we don't, Linux will give ToBPF's packets to FromBPF.
    */
+
+  /* XXX will need to be redone if libpcap ever starts using PF_SOCKET
+     rather than SOCK_PACKET */
   for(int fi = 0; fi < router()->nelements(); fi++){
     Element *f = router()->element(fi);
     FromBPF *lr = (FromBPF *)f->cast("FromBPF");
@@ -115,9 +131,9 @@ ToBPF::initialize(ErrorHandler *errh)
   if (_fd < 0) {
     char ebuf[PCAP_ERRBUF_SIZE];
     _pcap = pcap_open_live(_ifname.mutable_c_str(),
-                           12000, /* XXX snaplen */
-                           0,     /* not promiscuous */
-                           0,     /* don't batch packets */
+                           12000, // XXX snaplen
+			   0,     // not promiscuous
+                           0,     // don't batch packets
                            ebuf);
 # ifdef HAVE_PCAP
     if (!_pcap)
@@ -127,7 +143,40 @@ ToBPF::initialize(ErrorHandler *errh)
 # endif
     _fd = pcap_fileno(_pcap);
   }
-  
+
+# ifdef __linux__
+  {
+#  if 1 /* Kuznetsov patch */
+    struct ifreq ifr;
+    strcpy(ifr.ifr_name, _ifname);
+    if (ioctl(_fd, SIOCGIFINDEX, &ifr) < 0) {
+      int err = errno;
+      if (_pcap) pcap_close(_pcap);
+      return errh->error("bad ioctl: %s", strerror(err));
+    }
+
+    struct sockaddr_ll sll;
+    sll.sll_family = AF_PACKET;
+    sll.sll_ifindex = ifr.ifr_ifindex;
+    sll.sll_protocol = 0;
+    if (bind(_fd, (struct sockaddr *)&sll, sizeof(sll)) < 0) {
+      int err = errno;
+      if (_pcap) pcap_close(_pcap);
+      return errh->error("cannot bind: %s", strerror(err));
+    }
+
+#  else
+    struct sockaddr sa;
+    strcpy(sa.sa_data, _ifname);
+    if (bind(_fd, &sa, sizeof(sa) < 0)) {
+      int err = errno;
+      if (_pcap) pcap_close(_pcap);
+      return errh->error("cannot bind: %s", strerror(err));
+    }
+#  endif
+  }
+# endif
+
 #endif
 
   if (input_is_pull(0))
@@ -142,13 +191,6 @@ ToBPF::uninitialize()
   unschedule();
 }
 
-#ifdef HAVE_PCAP
-extern "C" {
-extern int pcap_inject(pcap_t *p, const void *buf, size_t len);
-extern int errno;
-}
-#endif
-
 void
 ToBPF::push(int, Packet *p)
 {
@@ -156,13 +198,8 @@ ToBPF::push(int, Packet *p)
 
 #ifdef HAVE_PCAP
 # ifdef __linux__
-  sockaddr sa;
-  sa.sa_family = AF_INET;
-  strcpy(sa.sa_data, _ifname);
-  if (sendto(_fd, p->data(), p->length(),
-	     0, &sa, sizeof(sa)) < 0) {
-    perror("ToBPF: sendto to pcap");
-  }
+  if (send(_fd, p->data(), p->length(), 0) < 0)
+    click_chatter("ToBPF(%s) send: %s", _ifname.cc(), strerror(errno));
 # endif
 
 # if defined(__FreeBSD__) || defined(__OpenBSD__)
@@ -184,12 +221,6 @@ ToBPF::run_scheduled()
   if (Packet *p = input(0).pull())
     push(0, p); 
   reschedule();
-}
-
-void
-ToBPF::selected(int)
-{
-  run_scheduled();
 }
 
 EXPORT_ELEMENT(ToBPF)

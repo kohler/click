@@ -5,25 +5,25 @@
 
 /*
  * =c
- * ToBPF(devname)
+ * ToBPF(DEVNAME)
  * =d
- * Pulls packets and sends them out the named device using
- * the Berkeley Packet Filter (or Linux equivalent).
  *
- * Incoming packets should already have the link-level
+ * Pulls packets and sends them out the named device using
+ * Berkeley Packet Filters (or Linux equivalent).
+ *
+ * Packets sent via ToBPF should already have a link-level
  * header prepended. This means that ARP processing,
  * for example, must already have been done.
  *
- * Under Linux, tries to re-use the file descriptor of a
- * previously declared FromBPF, so that the latter
- * won't see packets sent by us.
+ * Under Linux, a FromBPF element will not receive packets sent by a ToBPF
+ * element for the same device. Under other operating systems, your mileage
+ * may vary.
  *
  * This element is only available at user level.
  * 
  * =a FromBPF
  * =a FromDump
- * =a ToDump
- */
+ * =a ToDump */
 
 #ifdef HAVE_PCAP
 extern "C" {
@@ -58,9 +58,6 @@ class ToBPF : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  
-  int select_fd()		{ return (_pcap?pcap_fileno(_pcap):-1); }
-  void selected(int);
   
   void push(int port, Packet *);
   void run_scheduled();

@@ -10,14 +10,13 @@
  * device named DEVNAME.
  * Puts the device in promiscuous mode if PROMISC? (a Boolean) is true.
  *
- * If a ToBPF is defined with the same device name
- * subsequently, that ToBPF will share a file descriptor
- * with the FromBPF. Under Linux that causes the FromBPF
- * to not see packets sent by the ToBPF.
- *
  * The kernel networking code sees all of the packets that
  * FromBPF produces; be careful that at most one of Click
  * and the kernel forwards each packet.
+ *
+ * Under Linux, a FromBPF element will not receive packets sent by a ToBPF
+ * element for the same device. Under other operating systems, your mileage
+ * may vary.
  *
  * This element is only available at user level.
  * 
@@ -51,9 +50,6 @@ class FromBPF : public Element {
   FromBPF *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  
-  //int select_fd()		{ return (_pcap?pcap_fileno(_pcap):-1); }
-  //void selected(int);
   
   void run_scheduled();
 

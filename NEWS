@@ -12,6 +12,8 @@ Version 1.0.7
    into a directory (directory path specified using -d option) or stdout on a
    regular basis (duration specified by argument to ReadHandlerCaller element).
 
+** Fixed FromBPF and ToBPF, finally.
+
 * Kernel driver
 
 ** Added patch for Linux kernel 2.2.16 and PCMCIA Card Services 3.1.16.

@@ -75,7 +75,7 @@ FromBPF::initialize(ErrorHandler *errh)
   _pcap = pcap_open_live(ifname,
                          12000, /* XXX snaplen */
                          _promisc,
-                         2,     /* timeout: don't wait for packets */
+                         1,     /* timeout: don't wait for packets */
                          ebuf);
   if (!_pcap)
     return errh->error("%s: %s", ifname, ebuf);
@@ -123,25 +123,13 @@ FromBPF::get_packet(u_char* clientdata,
 }
 #endif
 
-#if 0
-void
-FromBPF::selected(int)
-{
-  /*
-   * Read and push() one buffer of packets.
-   */
-  pcap_dispatch(_pcap, -1, FromBPF::get_packet, (u_char *) this);
-}
-#endif
-
 void
 FromBPF::run_scheduled()
 {
   /*
-   * Read and push() one buffer of packets.
+   * Read and push() at most one packet.
    */
   pcap_dispatch(_pcap, 1, FromBPF::get_packet, (u_char *) this);
-  //selected(0);
   reschedule();
 }
 
