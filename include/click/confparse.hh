@@ -133,62 +133,64 @@ bool cp_filename(const String &, String *);
 #endif
 
 typedef const char * const CpVaParseCmd;
-static CpVaParseCmd cpEnd = 0;
+static const CpVaParseCmd cpEnd = 0;
 extern CpVaParseCmd
   cpOptional,
   cpKeywords,
+  cpConfirmKeywords,
   cpMandatoryKeywords,
   cpIgnore,
   cpIgnoreRest,
-  cpArgument,	// String *result
-  cpArguments,	// Vector<String> *result
-  cpString,	// String *result
-  cpWord,	// String *result
-  cpKeyword,	// String *result
-  cpBool,	// bool *result
-  cpByte,	// unsigned char *result
-  cpShort,	// short *result
-  cpUnsignedShort, // unsigned short *result
-  cpInteger,	// int *result
-  cpUnsigned,	// unsigned *result
+			// HELPER		RESULT
+  cpArgument,		//			String *
+  cpArguments,		//			Vector<String> *
+  cpString,		//			String *
+  cpWord,		//			String *
+  cpKeyword,		//			String *
+  cpBool,		//			bool *
+  cpByte,		//			unsigned char *
+  cpShort,		//			short *
+  cpUnsignedShort,	//			unsigned short *
+  cpInteger,		//			int *
+  cpUnsigned,		//			unsigned *
 #ifdef HAVE_INT64_TYPES
-  cpInteger64,	// int64_t *result
-  cpUnsigned64,	// uint64_t *result
+  cpInteger64,		//			int64_t *
+  cpUnsigned64,		//			uint64_t *
 #endif
-  cpUnsignedReal2,  // int frac_bits, unsigned *result
-  cpReal10,	    // int frac_digits, int *result
-  cpUnsignedReal10, // int frac_digits, unsigned *result
+  cpUnsignedReal2,	// int frac_bits	unsigned *
+  cpReal10,		// int frac_digits	int *
+  cpUnsignedReal10,	// int frac_digits	unsigned *
 #ifdef HAVE_FLOAT_TYPES
-  cpDouble,	// double *result
+  cpDouble,		//			double *
 #endif
-  cpSeconds,	    // int *result
-  cpSecondsAsMilli, // int *result_milli
-  cpSecondsAsMicro, // int *result_micro
-  cpTimeval,	// struct timeval *result
-  cpInterval,	// struct timeval *result
-  cpIPAddress,	// unsigned char result[4] (or IPAddress *, or unsigned int *)
-  cpIPPrefix,	// unsigned char result[4], unsigned char result_mask[4]
-  cpIPAddressOrPrefix,	// unsigned char result[4], unsigned char res_mask[4]
-  cpIPAddressSet,	// IPAddressSet *result
-  cpEthernetAddress,	// unsigned char result[6] (or EtherAddress *)
-  cpElement,	  // Element **result
-  cpHandlerName,  // Element **result_e, String *result_hname
-  cpHandler,	  // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
-  cpReadHandler,  // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
-  cpWriteHandler, // Element **result_e, int *result_hid (INITIALIZE TIME ONLY)
-  cpReadHandlerCall,  // HandlerCall **result
-  cpWriteHandlerCall, // HandlerCall **result
-  cpIP6Address,	// unsigned char result[16] (or IP6Address *)
-  cpIP6Prefix,	// unsigned char result[16], unsigned char result_mask[16]
-  cpIP6AddressOrPrefix,	// unsigned char result[16], unsigned char res_mask[16]
-  cpDesCblock,		// unsigned char result[8]
-  cpFilename,	// String *result
+  cpSeconds,		//			int *
+  cpSecondsAsMilli,	//			int *milliseconds
+  cpSecondsAsMicro,	//			int *microseconds
+  cpTimeval,		//			struct timeval *
+  cpInterval,		//			struct timeval *
+  cpIPAddress,		//			IPAddress *
+  cpIPPrefix,		//			IPAddress *a, IPAddress *mask
+  cpIPAddressOrPrefix,	//			IPAddress *a, IPAddress *mask
+  cpIPAddressSet,	//			IPAddressSet *
+  cpEthernetAddress,	//			EtherAddress *
+  cpElement,		//			Element **
+  cpHandlerName,	//			Element **e, String *hname
+  cpHandler,		//			Element **e, int *hid (INITIALIZE TIME)
+  cpReadHandler,	//			Element **e, int *hid (INITIALIZE TIME)
+  cpWriteHandler,	//			Element **e, int *hid (INITIALIZE TIME)
+  cpReadHandlerCall,	//			HandlerCall **
+  cpWriteHandlerCall,	//			HandlerCall **
+  cpIP6Address,		//			IP6Address *
+  cpIP6Prefix,		//			IP6Address *a, IP6Address *mask
+  cpIP6AddressOrPrefix,	//			IP6Address *a, IP6Address *mask
+  cpDesCblock,		//			uint8_t[8]
+  cpFilename,		//			String *
   // old names, here for compatibility:
-  cpMilliseconds, // int *result (user writes "1.02", result is 1020)
-  cpUnsignedLongLong,	// uint64_t *result
-  cpNonnegReal2,  // int frac_bits, unsigned *result
-  cpNonnegReal10, // int frac_digits, unsigned *result
-  cpEtherAddress; // unsigned char result[6] (or EtherAddress *)
+  cpMilliseconds,	//			int *milliseconds
+  cpUnsignedLongLong,	//			uint64_t *
+  cpNonnegReal2,	// int frac_bits	unsigned *
+  cpNonnegReal10,	// int frac_digits	unsigned *
+  cpEtherAddress;	//			EtherAddress *
 
 int cp_va_parse(const Vector<String> &, CP_VA_PARSE_ARGS_REST);
 int cp_va_parse(const String &, CP_VA_PARSE_ARGS_REST);
@@ -199,7 +201,9 @@ int cp_va_parse_remove_keywords(Vector<String> &, int, CP_VA_PARSE_ARGS_REST);
 //        cpOptional, cpKeywords, cpIgnore...	manipulators
 //        CpVaParseCmd type_id,			actual argument
 //		const char *description,
-//		[[from table above; usually T *result]]
+//		[[any HELPER arguments from table; usually none]],
+//		[[if cpConfirmKeywords, bool *confirm_keyword_given]],
+//		[[RESULT arguments from table; usually T *]]
 // Returns the number of result arguments set, or negative on error.
 // Stores no values in the result arguments on error.
 
@@ -238,6 +242,7 @@ struct cp_value {
   int extra;
   void *store;
   void *store2;
+  bool *store_confirm;
   // set by parsefunc, used by storefunc:
   union {
     bool b;

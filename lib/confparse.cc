@@ -1863,6 +1863,7 @@ cp_filename(const String &str, String *return_value)
 CpVaParseCmd
   cpOptional		= "OPTIONAL",
   cpKeywords		= "\377KEYWORDS",
+  cpConfirmKeywords	= "\377CONFIRM_KEYWORDS",
   cpMandatoryKeywords	= "\377MANDATORY_KEYWORDS",
   cpIgnore		= "IGNORE",
   cpIgnoreRest		= "\377IGNORE_REST",
@@ -1916,6 +1917,7 @@ enum {
   cpiEnd = 0,
   cpiOptional,
   cpiKeywords,
+  cpiConfirmKeywords,
   cpiMandatoryKeywords,
   cpiIgnore,
   cpiIgnoreRest,
@@ -2315,6 +2317,9 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
   int address_bytes;
   const cp_argtype *argtype = v->argtype;
   
+  if (v->store_confirm)
+    *v->store_confirm = true;
+  
   switch (argtype->internal) {
     
    case cpiBool: {
@@ -2324,7 +2329,7 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    }
    
    case cpiByte: {
-     unsigned char *ucstore = (unsigned char *)v->store;
+     uint8_t *ucstore = (uint8_t *)v->store;
      *ucstore = v->v.i;
      break;
    }
@@ -2626,6 +2631,7 @@ cp_va_parsev(const Vector<String> &args,
   int nvalues = 0;
   int nrequired = -1;
   int npositional = -1;
+  bool confirm_keywords = false;
   bool mandatory_keywords = false;
   bool ignore_rest = false;
   int nerrors_in = errh->nerrors();
@@ -2679,11 +2685,13 @@ cp_va_parsev(const Vector<String> &args,
 	nrequired = nvalues;
       continue;
     } else if (argtype->internal == cpiKeywords
+	       || argtype->internal == cpiConfirmKeywords
 	       || argtype->internal == cpiMandatoryKeywords) {
       if (nrequired < 0)
 	nrequired = nvalues;
       if (npositional < 0)
 	npositional = nvalues;
+      confirm_keywords = (argtype->internal == cpiConfirmKeywords);
       mandatory_keywords = (argtype->internal == cpiMandatoryKeywords);
       continue;
     } else if (argtype->internal == cpiIgnore) {
@@ -2702,6 +2710,7 @@ cp_va_parsev(const Vector<String> &args,
     v->description = va_arg(val, const char *);
     if (argtype->extra == cpArgExtraInt)
       v->extra = va_arg(val, int);
+    v->store_confirm = (confirm_keywords ? va_arg(val, bool *) : 0);
     v->store = va_arg(val, void *);
     if (argtype->extra == cpArgStore2)
       v->store2 = va_arg(val, void *);
@@ -3195,6 +3204,7 @@ cp_va_static_initialize()
   
   cp_register_argtype(cpOptional, "<optional arguments marker>", 0, default_parsefunc, default_storefunc, cpiOptional);
   cp_register_argtype(cpKeywords, "<keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiKeywords);
+  cp_register_argtype(cpConfirmKeywords, "<confirmed keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiConfirmKeywords);
   cp_register_argtype(cpMandatoryKeywords, "<mandatory keyword arguments marker>", 0, default_parsefunc, default_storefunc, cpiMandatoryKeywords);
   cp_register_argtype(cpIgnore, "<ignored argument>", 0, default_parsefunc, default_storefunc, cpiIgnore);
   cp_register_argtype(cpIgnoreRest, "<ignore rest marker>", 0, default_parsefunc, default_storefunc, cpiIgnoreRest);
