@@ -37,6 +37,7 @@
 
 #include <click/string.hh>
 
+#if 0
 inline bool
 operator== (const timeval &a, const timeval &b)
 {
@@ -106,6 +107,7 @@ operator- (const timeval &a, const timeval &b)
   }
   return tv;
 }
+#endif
 
 inline timeval
 hton(const timeval &tv) {
