@@ -1444,6 +1444,11 @@ Router::remove_select(int fd, int element, int mask)
       if (!p->events) {
 	*p = _pollfds.back();
 	_pollfds.pop_back();
+	// 31.Oct.2003 - Peter Swain: keep fds and elements in sync
+	_write_poll_elements[pi]  = _write_poll_elements.back();
+	_write_poll_elements.pop_back();
+	_read_poll_elements[pi]  = _read_poll_elements.back();
+	_read_poll_elements.pop_back();
 #if !HAVE_POLL_H
 	if (!_pollfds.size())
 	  _max_select_fd = -1;
@@ -1519,6 +1524,8 @@ Router::run_selects(bool more_tasks)
 	if (write_elt >= 0 && write_elt != read_elt)
 	  _elements[write_elt]->selected(fd);
 
+	// 31.Oct.2003 - Peter Swain: _pollfds may have grown or shrunk!
+	p = _pollfds.begin() + pi;
 	if (p < _pollfds.end() && fd != p->fd)
 	  p--;
       }
@@ -1550,6 +1557,8 @@ Router::run_selects(bool more_tasks)
 	if (write_elt >= 0 && write_elt != read_elt)
 	  _elements[write_elt]->selected(fd);
 
+	// 31.Oct.2003 - Peter Swain: _pollfds may have grown or shrunk!
+	p = _pollfds.begin() + pi;
 	if (p < _pollfds.end() && fd != p->fd)
 	  p--;
       }
