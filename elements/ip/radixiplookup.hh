@@ -19,7 +19,8 @@ class Radix;
  *
  * Warning: This element does not work.
  *
- * =a IPRouteTable
+ * =a StaticIPLookup, LinearIPLookup, TrieIPLookup, DirectIPLookup,
+ * IPRouteTable
  */
 
 class RadixIPLookup : public IPRouteTable { public:

@@ -7,19 +7,52 @@ CLICK_DECLS
 
 /*
 =c
-TrieIPLookup()
+
+TrieIPLookup(ADDR1/MASK1 [GW1] OUT1, ADDR2/MASK2 [GW2] OUT2, ...)
 
 =s IP, classification
+
 IP lookup using an array of hashmaps
 
 =d
-Performs IP lookup using an array of hashmaps in logarithmic time,
-using the IPRouteTable interface, at the cost of approximately n log n
-initialization time.  See IPRouteTable for description.
+
+Performs IP lookup using an array of hashmaps in logarithmic time, at the cost
+of approximately n log n initialization time.
+
+Expects a destination IP address annotation with each packet. Looks up that
+address in its routing table, using longest-prefix-match, sets the destination
+annotation to the corresponding GW (if specified), and emits the packet on the
+indicated OUTput port.
+
+Each argument is a route, specifying a destination and mask, an optional
+gateway IP address, and an output port.
+
+Uses the IPRouteTable interface; see IPRouteTable for description.
 
 Warning: This element is experimental.
 
-=a IPRouteTable
+=h table read-only
+
+Outputs a human-readable version of the current routing table.
+
+=h add write-only
+
+Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'.
+
+=h remove write-only
+
+Removes a route from the table. Format should be `C<ADDR/MASK>'.
+
+=h ctrl write-only
+
+Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
+`C<remove ADDR/MASK>' to remove a route.
+
+=h flush write-only
+
+Clears the entire routing table in a single atomic operation.
+
+=a IPRouteTable, StaticIPLookup, LinearIPLookup, RadixIPLookup, TrieIPLookup
 */
 
 class TrieIPLookup : public IPRouteTable {
@@ -33,11 +66,9 @@ public:
     const char *processing() const  { return PUSH; }
     
     void notify_noutputs(int);
-    int initialize(ErrorHandler *);
-    void add_handlers();
-    
     int configure(Vector<String> &, ErrorHandler *);
-    
+    void add_handlers();
+        
     int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
     int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
     int lookup_route(IPAddress, IPAddress &) const;
@@ -151,7 +182,6 @@ public:
 
 protected:
     // helper methods
-    inline void configure_route_vector();
     inline int binary_search(const Vector<Prefix> &vec, const Prefix &pf);
 
      // build methods
@@ -184,8 +214,9 @@ protected:
     LengthHash _lengths_array[33];     // array containing a hashmap for each length + 0
     Vector<Prefix> _route_vector;      // vector of all routes we know about
                                        // must be sorted and no duplicates
-
-    Vector<TrieNode> _trie_vector;      // used only during build
+    bool _active;		       // true once trie is active
+    Vector<TrieNode> _trie_vector;     // used only during build
+    
 };
 
 CLICK_ENDDECLS

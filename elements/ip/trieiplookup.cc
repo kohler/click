@@ -47,71 +47,15 @@ void TrieIPLookup::notify_noutputs(int n)
 }
 
 int
-TrieIPLookup::initialize(ErrorHandler *)
-{
-    return 0;
-}
-
-int
 TrieIPLookup::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    int before = errh->nerrors();
-    for (int i = 0; i < conf.size(); i++) {
-        Vector<String> words;
-        cp_spacevec(conf[i], words);
-
-        IPAddress dst, mask, gw;
-        int32_t port;
-        bool ok = false;
-        if ((words.size() == 2 || words.size() == 3)
-            && cp_ip_prefix(words[0], &dst, &mask, true, this)
-            && cp_integer(words.back(), &port)) {
-            if (words.size() == 3)
-                ok = cp_ip_address(words[1], &gw, this);
-            else
-                ok = true;
-        }
-
-        if (ok && port >= 0) {
-            if (port >= noutputs())
-                errh->error("port number out of range");
-
-            dst &= mask;
-            _route_vector.push_back(Prefix(dst, mask, gw, port));
-        } else
-            errh->error("argument %d should be `DADDR/MASK [GATEWAY] OUTPUT'", i+1);
+    _active = false;
+    int r = IPRouteTable::configure(conf, errh);
+    if (r >= 0) {
+	_active = true;
+	build_main();
     }
-
-    if (errh->nerrors() == before) {
-        configure_route_vector();
-        build_main();
-        return 0;
-    } else
-        return -1;
-}
-
-inline void
-TrieIPLookup::configure_route_vector()
-{
-    // sort _route_vector
-    click_qsort(&_route_vector[0], _route_vector.size(), sizeof(Prefix), prefix_order_compar);
-
-    // get rid of duplicates in _route_vector
-    int n_last = 0;
-    int n_current = 1;
-    while (n_current < _route_vector.size()) {
-        if (_route_vector[n_last].addr != _route_vector[n_current].addr ||
-            _route_vector[n_last].mask != _route_vector[n_current].mask) {
-            n_last++;
-            if (n_last < n_current)
-                _route_vector[n_last] = _route_vector[n_current];
-        }
-        n_current++;
-    }
-
-    for (int i = 0; i < _route_vector.size() - n_last - 1; i++) {
-        _route_vector.pop_back();
-    }
+    return r;
 }
 
 inline void
@@ -488,7 +432,8 @@ TrieIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
     }
 
     // build the rest of the data structure
-    build_main();
+    if (_active)
+	build_main();
     return 0;
 }
 
@@ -515,7 +460,8 @@ TrieIPLookup::remove_route(IPAddress addr, IPAddress mask, IPAddress gw,
     _route_vector.pop_back();
 
     // rebuild the rest of the data structure
-    build_main();
+    if (_active)
+	build_main();
     return 0;
 }
 
@@ -579,14 +525,8 @@ TrieIPLookup::print_trie(const TrieNode& tn) const
 void
 TrieIPLookup::check_route_vector_sorted()
 {
-    if (_route_vector.size() == 0) return;
-
-    // sorted and no duplicates
-    Prefix last_prefix = _route_vector[0];
-
-    for (int i = 1; i < _route_vector.size(); i++) {
-        assert(prefix_order_compar(&last_prefix, &_route_vector[i]) < 0);
-    }
+    for (int i = 1; i < _route_vector.size(); i++)
+        assert(prefix_order_compar(&_route_vector[i - 1], &_route_vector[i]) < 0);
 }
 
 void

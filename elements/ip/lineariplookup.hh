@@ -65,7 +65,7 @@ prefix (that is, all routes with the same ADDR and MASK).
 Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
 `C<remove ADDR/MASK [[GW] OUT]>' to remove a route.
 
-=a StaticIPLookup, RadixIPLookup */
+=a StaticIPLookup, RadixIPLookup, DirectIPLookup, TrieIPLookup */
 
 #define IP_RT_CACHE2 1
 
