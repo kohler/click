@@ -151,25 +151,14 @@ extern unsigned char _ctype[];
 #define	__ismask(x)	(_ctype[(int)(unsigned char)(x)])
 #define	isalnum(c)	((__ismask(c)&(_U|_L|_D)) != 0)
 
-#define	strchr(s, c)			index(s, c)
+#define	strchr(s, c)		index(s, c)
 
-__inline__ uint64_t
-click_get_cycles()
-{
-  uint32_t low, high;
-  uint64_t x;
-  __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
-  x = high;
-  x <<= 32;
-  x |= low;
-  return x;
-}
-
+#define click_get_cycles()	rdtsc()
 #define	CLICK_HZ hz
 #define click_gettimeofday(tvp)	(getmicrotime(tvp))
 #define click_jiffies()		((unsigned)ticks)
 
-#define	memmove(dst, src, len)		bcopy((src), (dst), (len))
+#define	memmove(dst, src, len)	bcopy((src), (dst), (len))
 
 typedef struct ifnet net_device;
 
