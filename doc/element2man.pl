@@ -377,7 +377,7 @@ sub process_comment ($$) {
 	if $section_args[$i];
     if ($section_text[$i] =~ /\A\s*(.*?)(\n\s*\n.*\Z|\Z)/s) {
       my($bit, $last) = ($1, $2);
-      while ($bit =~ m{([-\w@.+=]+)([,\s]|\Z)}g) {
+      while ($bit =~ m{(\b[A-Z][-\w@.+=]+)([,\s]|\Z)}g) {
 	$RelatedSource{$1} = 'n';
       }
       $bit =~ s{([-\w@.+=]+)([,\s]|\Z)}{$1(n)$2}g;
@@ -554,24 +554,51 @@ sub read_files_from ($) {
   }
 }
 
+sub usage () {
+  print STDERR "Usage: element2man.pl [OPTIONS] FILES...
+Try \`element2man.pl --help' for more information.\n";
+  exit 1;
+}
+
+sub help () {
+  print STDERR <<'EOD;';
+`Element2man.pl' translates Click element documentation into manual pages.
+
+Usage: element2man.pl [-l] [-d DIRECTORY] [-f FILE | FILE]...
+
+Each FILE is a Click header file. `-' means standard input.
+
+Options:
+  -l, --list              Generate the elements(n) manual page as well.
+  -d, --directory DIR     Place generated manual pages in directory DIR.
+  -f, --files FILE        Read header filenames from FILE.
+  -h, --help              Print this message and exit.
+
+Report bugs to <click@pdos.lcs.mit.edu>.
+EOD;
+  exit 0;
+}
+
 undef $/;
 my(@files, $fn, $elementlist);
 while (@ARGV) {
   $_ = shift @ARGV;
   if (/^-d$/ || /^--directory$/) {
-    die "not enough arguments" if !@ARGV;
+    usage() if !@ARGV;
     $directory = shift @ARGV;
   } elsif (/^--directory=(.*)$/) {
     $directory = $1;
   } elsif (/^-f$/ || /^--files$/) {
-    die "not enough arguments" if !@ARGV;
+    usage() if !@ARGV;
     push @files, read_files_from(shift @ARGV);
   } elsif (/^--files=(.*)$/) {
     push @files, read_files_from($1);
   } elsif (/^-l$/ || /^--list$/) {
     $elementlist = 1;
+  } elsif (/^-h$/ || /^--help$/) {
+    help();
   } elsif (/^-./) {
-    die "unknown option `$_'\n";
+    usage();
   } elsif (/^-$/) {
     push @files, "-";
   } else {
