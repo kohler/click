@@ -282,7 +282,12 @@ PollDevice::run_scheduled()
     if (skb->pkt_type == PACKET_HOST)
       skb->pkt_type |= PACKET_CLEAN;
 
-    Packet *p = Packet::make(skb);
+    Packet *p = Packet::make(skb); 
+   
+#ifndef CLICK_WARP9
+    struct timeval &tv = p->timestamp_anno(); 
+    click_gettimeofday(&tv);
+#endif
 
     _npackets++;
 #if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
