@@ -15,6 +15,10 @@ Thomer Gil
 thomer@lcs.mit.edu
 dynamic IP routing table, IP rate monitoring elements
 
+Kyle Jamieson
+jamieson@mit.edu
+ARM fixes, 802.11 elements
+
 Eddie Kohler
 kohler@aciri.org
 design, core, language, Linux /proc interface, Linux kernel module,
@@ -36,7 +40,7 @@ IP rewriting elements, stride scheduling element, round robin scheduler
 
 Nickolai B. Zeldovich
 kolya@lcs.mit.edu
-Linux 2.4, BSD
+Linux 2.4, BSD kernel module
 
 
 Thanks to:
