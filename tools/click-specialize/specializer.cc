@@ -389,15 +389,50 @@ Specializer::create_connector_methods(SpecializedClass &spc)
 
   // create input_pull and output_push bodies
   StringAccum sa;
+  Vector<int> range1, range2;
   for (int i = 0; i < _ninputs[eindex]; i++)
-    sa << "\n  if (i == " << i << ") return " << input_function[i] << "("
-       << "input(" << i << ").element(), " << input_port[i] << ");";
+    if (i > 0 && input_function[i] == input_function[i-1]
+	&& input_port[i] == input_port[i-1])
+      range2.back() = i;
+    else {
+      range1.push_back(i);
+      range2.push_back(i);
+    }
+  for (int i = 0; i < range1.size(); i++) {
+    int r1 = range1[i], r2 = range2[i];
+    if (r1 == r2)
+      sa << "\n  if (i == " << r1 << ") return "
+	 << input_function[r1] << "(input(" << r1 << ").element(), "
+	 << input_port[r1] << ");";
+    else
+      sa << "\n  if (i >= " << r1 << " && i <= " << r2 << ") return "
+	 << input_function[r1] << "(input(i).element(), "
+	 << input_port[r1] << ");";
+  }
   sa << "\n  return 0;\n";
   cxxc->find("pull_input")->set_body(sa.take_string());
-  
+
+  range1.clear();
+  range2.clear();
   for (int i = 0; i < _noutputs[eindex]; i++)
-    sa << "\n  if (i == " << i << ") { " << output_function[i] << "("
-       << "output(" << i << ").element(), " << output_port[i] << ", p); return; }";
+    if (i > 0 && output_function[i] == output_function[i-1]
+	&& output_port[i] == output_port[i-1])
+      range2.back() = i;
+    else {
+      range1.push_back(i);
+      range2.push_back(i);
+    }
+  for (int i = 0; i < range1.size(); i++) {
+    int r1 = range1[i], r2 = range2[i];
+    if (r1 == r2)
+      sa << "\n  if (i == " << r1 << ") { "
+	 << output_function[r1] << "(output(" << r1 << ").element(), "
+	 << output_port[r1] << ", p); return; }";
+    else
+      sa << "\n  if (i >= " << r1 << " && i <= " << r2 << ") { "
+	 << output_function[r1] << "(output(i).element(), "
+	 << output_port[r1] << ", p); return; }";
+  }
   sa << "\n  p->kill();\n";
   cxxc->find("push_output")->set_body(sa.take_string());
 
