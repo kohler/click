@@ -102,6 +102,10 @@ address:
 	AggregateIP("ip{96, 8}")
 	AggregateIP(ip{96-103})
 
+=a
+
+AggregateLength, AggregateCounter
+
 */
 
 class AggregateIP : public Element { public:

@@ -25,9 +25,10 @@ AggregateCounters only update existing counters; they do not create new
 counters for previously unseen aggregate values.
 
 AggregateCounter may have one or two inputs. The optional second input is
-always frozen. (It is only useful when the element is push.) If it has two
-inputs, it may also have two outputs. If so, then packets from the second
-input are emitted on the second output.
+always frozen. (It is only useful when the element is push.) It may also have
+two outputs. If so, and the element is push, then packets that were counted
+are emitted on the first output, while other packets are emitted on the second
+output.
 
 Keyword arguments are:
 
@@ -148,7 +149,7 @@ class AggregateCounter : public Element { public:
     void uninitialize();
     void add_handlers();
 
-    inline void update(Packet *, bool frozen = false);
+    inline bool update(Packet *, bool frozen = false);
     void push(int, Packet *);
     Packet *pull(int);
 

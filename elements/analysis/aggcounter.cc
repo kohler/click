@@ -62,7 +62,7 @@ AggregateCounter::notify_ninputs(int n)
 void
 AggregateCounter::notify_noutputs(int n)
 {
-    set_noutputs(n <= 1 || ninputs() == 1 ? 1 : 2);
+    set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
@@ -150,7 +150,7 @@ AggregateCounter::uninitialize()
 }
 
 // from tcpdpriv
-int
+static int
 bi_ffs(uint32_t value)
 {
     int add = 0;
@@ -249,51 +249,56 @@ AggregateCounter::find_node(uint32_t a, bool frozen)
     return 0;
 }
 
-inline void
+inline bool
 AggregateCounter::update(Packet *p, bool frozen)
 {
+    if (!_active)
+	return false;
+    
     // AGGREGATE_ANNO is already in host byte order!
     uint32_t agg = AGGREGATE_ANNO(p);
-    if (Node *n = find_node(agg, frozen)) {
-	uint32_t amount;
-	if (!_bytes)
-	    amount = (_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
-	else
-	    amount = p->length() + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
-	
-	// update _num_nonzero; possibly call handler
-	if (amount && !n->count) {
-	    if (_num_nonzero == _call_nnz) {
-		_call_nnz_h->call_write(this);
-		_call_nnz = (uint32_t)(-1);
-		// handler may have stopped or frozen us
-		if (_frozen || !_active)
-		    return;
-	    }
-	    _num_nonzero++;
+    Node *n = find_node(agg, frozen);
+    if (!n)
+	return false;
+    
+    uint32_t amount;
+    if (!_bytes)
+	amount = (_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
+    else
+	amount = p->length() + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
+    
+    // update _num_nonzero; possibly call handler
+    if (amount && !n->count) {
+	if (_num_nonzero == _call_nnz) {
+	    _call_nnz_h->call_write(this);
+	    _call_nnz = (uint32_t)(-1);
+	    // handler may have stopped or frozen us
+	    if (_frozen || !_active)
+		return false;
 	}
-	
-	n->count += amount;
-	_count += amount;
-	if (_count >= _call_count) {
-	    _call_count_h->call_write(this);
-	    _call_count = (uint64_t)(-1);
-	}
+	_num_nonzero++;
     }
+    
+    n->count += amount;
+    _count += amount;
+    if (_count >= _call_count) {
+	_call_count_h->call_write(this);
+	_call_count = (uint64_t)(-1);
+    }
+    return true;
 }
 
 void
 AggregateCounter::push(int port, Packet *p)
 {
-    if (_active)
-	update(p, _frozen || (port == 1));
-    output(port == 0 ? 0 : noutputs() - 1).push(p);
+    port = update(p, _frozen || (port == 1));
+    output(noutputs() == 1 ? 0 : port).push(p);
 }
 
 Packet *
 AggregateCounter::pull(int port)
 {
-    Packet *p = input(port).pull();
+    Packet *p = input(ninputs() == 1 ? 0 : port).pull();
     if (p && _active)
 	update(p, _frozen || (port == 1));
     return p;
