@@ -220,7 +220,7 @@ class FromDump : public Element { public:
     HandlerCall *_last_time_h;
     
     Task _task;
-    Notifier _notifier;
+    ActiveNotifier _notifier;
 
     struct timeval _time_offset;
     String _filename;

@@ -21,7 +21,8 @@ the current time.
 DelayUnqueue listens for upstream notification, such as that available from
 Queue.
 
-=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue, SetTimestamp */
+=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue, DelayShaper,
+SetTimestamp */
 
 class DelayUnqueue : public Element { public:
   

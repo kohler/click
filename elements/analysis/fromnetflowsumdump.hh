@@ -139,7 +139,7 @@ class FromNetFlowSummaryDump : public Element { public:
     uint32_t _multipacket_extra_length;
 
     Task _task;
-    Notifier _notifier;
+    ActiveNotifier _notifier;
 
     struct timeval _time_offset;
     String _filename;

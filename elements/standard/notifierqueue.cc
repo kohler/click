@@ -37,7 +37,7 @@ NotifierQueue::cast(const char *n)
     if (strcmp(n, "Queue") == 0)
 	return (NotifierQueue *)this;
     else if (strcmp(n, "Notifier") == 0)
-	return (Notifier *)this;
+	return static_cast<Notifier *>(this);
     else
 	return SimpleQueue::cast(n);
 }
@@ -45,7 +45,7 @@ NotifierQueue::cast(const char *n)
 int
 NotifierQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    Notifier::initialize(router());
+    ActiveNotifier::initialize(router());
     return SimpleQueue::configure(conf, errh);
 }
 
@@ -62,7 +62,7 @@ NotifierQueue::push(int, Packet *p)
 	int s = size();
 	if (s > _highwater_length)
 	    _highwater_length = s;
-	if (s == 1 && listeners_asleep())
+	if (s == 1 && !signal_active())
 	    wake_listeners();
 
     } else {
@@ -85,6 +85,34 @@ NotifierQueue::pull(int)
     
     return p;
 }
+
+#if NOTIFIERQUEUE_DEBUG
+#include <click/straccum.hh>
+
+String
+NotifierQueue::read_handler(Element *e, void *)
+{
+    StringAccum sa;
+    NotifierQueue *nq = static_cast<NotifierQueue *>(e);
+    sa << "notifier " << (nq->signal_active() ? "on" : "off") << '\n';
+    Vector<Task *> v;
+    nq->listeners(v);
+    for (int i = 0; i < v.size(); i++) {
+	sa << "task " << ((void *)v[i]) << ' ';
+	if (Element *e = v[i]->element())
+	    sa << '[' << e->declaration() << "] ";
+	sa << (v[i]->scheduled() ? "scheduled\n" : "unscheduled\n");
+    }
+    return sa.take_string();
+}
+
+void
+NotifierQueue::add_handlers()
+{
+    add_read_handler("notifier_state", read_handler, 0);
+    SimpleQueue::add_handlers();
+}
+#endif
 
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(SimpleQueue)

@@ -52,7 +52,7 @@ FromNetFlowSummaryDump::cast(const char *n)
 {
     if (strcmp(n, "Notifier") == 0 && !output_is_push(0)) {
 	_notifier.initialize(router());
-	return &_notifier;
+	return static_cast<Notifier *>(&_notifier);
     } else
 	return Element::cast(n);
 }

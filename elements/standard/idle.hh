@@ -17,7 +17,7 @@ CLICK_DECLS
  * error messages.
  */
 
-class Idle : public Element, public AbstractNotifier { public:
+class Idle : public Element, public Notifier { public:
   
   Idle();
   ~Idle();
@@ -29,7 +29,7 @@ class Idle : public Element, public AbstractNotifier { public:
   void notify_ninputs(int);
   void notify_noutputs(int);
   const char *flags() const		{ return "S0"; }
-  NotifierSignal notifier_signal()	{ return NotifierSignal(false); }
+  NotifierSignal notifier_signal();
   
   Idle *clone() const			{ return new Idle; }
   

@@ -184,7 +184,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     uint32_t _multipacket_extra_length;
 
     Task _task;
-    Notifier _notifier;
+    ActiveNotifier _notifier;
 
     String _filename;
     FILE *_pipe;

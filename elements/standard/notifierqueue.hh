@@ -56,7 +56,7 @@ When written, drops all packets in the queue.
 
 =a SimpleQueue, MixedQueue, FrontDropQueue */
 
-class NotifierQueue : public SimpleQueue, public Notifier { public:
+class NotifierQueue : public SimpleQueue, public ActiveNotifier { public:
 
     NotifierQueue();
     ~NotifierQueue();
@@ -70,12 +70,20 @@ class NotifierQueue : public SimpleQueue, public Notifier { public:
     void push(int port, Packet *);
     Packet *pull(int port);
 
+#if NOTIFIERQUEUE_DEBUG
+    void add_handlers();
+#endif
+
   private:
 
     enum { SLEEPINESS_TRIGGER = 8 };
     int _sleepiness;
 
     friend class MixedQueue;
+
+#if NOTIFIERQUEUE_DEBUG
+    static String read_handler(Element *, void *);
+#endif
     
 };
 

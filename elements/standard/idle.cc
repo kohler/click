@@ -32,12 +32,18 @@ Idle::~Idle()
 void *
 Idle::cast(const char *name)
 {
-  if (strcmp(name, "AbstractNotifier") == 0)
-    return static_cast<AbstractNotifier *>(this);
+  if (strcmp(name, "Notifier") == 0)
+    return static_cast<Notifier *>(this);
   else if (strcmp(name, "Idle") == 0)
     return this;
   else
     return Element::cast(name);
+}
+
+NotifierSignal
+Idle::notifier_signal()
+{
+  return NotifierSignal::always_inactive_signal();
 }
 
 void
