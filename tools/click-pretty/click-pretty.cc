@@ -75,10 +75,10 @@ static const char *default_template = "\
 SPAN.c-kw {\n\
   font-weight: bold;\n\
 }\n\
-SPAN.c-cdecl {\n\
+SPAN.c-cd {\n\
   font-style: italic;\n\
 }\n\
-SPAN.c-cstr {\n\
+SPAN.c-cfg {\n\
   color: green;\n\
 }\n\
 SPAN.c-cmt {\n\
@@ -355,11 +355,11 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	add_item(pos1, "<span class='c-kw'>", pos2, "</span>");
     }
     void notify_config_string(int pos1, int pos2) {
-	add_item(pos1, "<span class='c-cstr'>", pos2, "</span>");
+	add_item(pos1, "<span class='c-cfg'>", pos2, "</span>");
     }
     void notify_class_declaration(ElementClassT *ec, bool anonymous, int decl_pos1, int name_pos1, int) {
 	if (!anonymous)
-	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='c-cdecl'>", name_pos1 + ec->name().length(), "</span></a>");
+	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='c-cd'>", name_pos1 + ec->name().length(), "</span></a>");
 	else
 	    add_item(decl_pos1, "<a name='" + link_class_decl(ec) + "'>", decl_pos1 + 1, "</a>");
 	add_class_href(ec->unique_id(), "#" + link_class_decl(ec));
@@ -376,6 +376,7 @@ class PrettyLexerTInfo : public LexerTInfo { public:
     }
     void notify_element_declaration(ElementT *e, int pos1, int pos2, int decl_pos2) {
 	add_item(pos1, "<a name='" + link_element_decl(e) + "'>", pos2, "</a>");
+	add_item(pos1, "<span class='c-ed'>", decl_pos2, "</span>");
 	notify_element_reference(e, pos1, decl_pos2);
     }
     void notify_element_reference(ElementT *e, int pos1, int pos2) {
@@ -559,7 +560,6 @@ parse_columns(const String &s, int &which, int &count)
 	return true;
 }
 
-
 extern "C" {
 static const Vector<ConnectionT> *conn_compar_connvec;
 static bool conn_compar_from;
@@ -613,12 +613,14 @@ class ElementsOutput { public:
 
     RouterT *_router;
     const HashMap<String, String> &_main_attrs;
+    Vector<ElementT *> _entries;
     Vector<ElementT *> _elements;
 
     StringAccum _sa;
     String _sep;
 
     void run_template(String, ElementT *, int);
+    String expand(const String &, ElementT *, int);
     
 };
 
@@ -632,11 +634,12 @@ ElementsOutput::ElementsOutput(RouterT *r, const HashMap<String, String> &main_a
     // get list of elements and/or types
     HashMap<int, int> done_types(-1);
     for (RouterT::iterator x = r->first_element(); x; x++) {
+	_elements.push_back(x);
 	if (do_elements)
-	    _elements.push_back(x);
+	    _entries.push_back(x);
 	if (do_types && done_types[x->type_uid()] < 0) {
 	    ElementT *fake = new ElementT(x->type_name(), x->type(), "", type_landmark);
-	    _elements.push_back(fake);
+	    _entries.push_back(fake);
 	    done_types.insert(x->type_uid(), 1);
 	}
     }
@@ -644,13 +647,15 @@ ElementsOutput::ElementsOutput(RouterT *r, const HashMap<String, String> &main_a
     // sort by name
     if (_elements.size())
 	qsort(&_elements[0], _elements.size(), sizeof(ElementT *), element_name_compar);
+    if (_entries.size())
+	qsort(&_entries[0], _entries.size(), sizeof(ElementT *), element_name_compar);
 }
 
 ElementsOutput::~ElementsOutput()
 {
-    for (int i = 0; i < _elements.size(); i++)
-	if (_elements[i]->landmark() == type_landmark)
-	    delete _elements[i];
+    for (int i = 0; i < _entries.size(); i++)
+	if (_entries[i]->landmark() == type_landmark)
+	    delete _entries[i];
 }
 
 void
@@ -667,6 +672,8 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 	templ = output_template_until_tag(templ, _sa, tag, attrs, true, &_sep);
 
 	String next_sep;
+	int pre_expansion_pos = _sa.length();
+	
 	if (tag == "name") {
 	    String href, link = attrs["link"].lower();
 	    if (link == "type" || (is_type && link))
@@ -691,26 +698,28 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 	    if (limit && config.length() > limit)
 		config = config.substring(0, limit) + "...";
 	    if (config && attrs["parens"])
-		_sa << _sep << '(' << html_quote_attr(config) << ')';
+		_sa << _sep << '(' << html_quote_text(config) << ')';
 	    else if (config)
-		_sa << _sep << html_quote_attr(config);
-	    else
-		next_sep = _sep;
+		_sa << _sep << html_quote_text(config);
 	} else if (tag == "typerefs") {
 	    String subsep = attrs["sep"];
-	    String text = _main_attrs["typeref"];
+	    String text = attrs["entry"];
+	    if (!text)
+		text = _main_attrs["typeref"];
 	    for (int i = 0; i < _elements.size(); i++)
-		if (_elements[i]->type() == t && _elements[i]->landmark() != type_landmark) {
+		if (_elements[i]->type() == t) {
 		    run_template(text, _elements[i], -1);
 		    _sep = subsep;
 		}
 	} else if (tag == "configlink" && !is_type) {
-	    if (String text = _main_attrs["configlink"]) {
+	    String text = attrs["text"];
+	    if (!text)
+		text = _main_attrs["configlink"];
+	    if (text) {
 		text = "<a href='#" + link_element_decl(e) + "'>" + text + "</a>";
-		run_template(text, e, -1);
+		run_template(text, e, port);
 		next_sep = attrs["sep"];
-	    } else
-		next_sep = _sep;
+	    }
 	} else if (tag == "ninputs" && !is_type) {
 	    _sa << _sep << e->ninputs();
 	    if (attrs["english"])
@@ -720,22 +729,32 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 	    if (attrs["english"])
 		_sa << (e->noutputs() == 1 ? " output" : " outputs");
 	} else if (tag == "inputs" && !is_type) {
-	    if (e->ninputs() == 0)
-		run_template(_main_attrs["noinputentry"], e, -1);
-	    else {
+	    if (e->ninputs() == 0) {
+		String text = attrs["noentry"];
+		if (!text)
+		    text = _main_attrs["noinputentry"];
+		run_template(text, e, -1);
+	    } else {
 		String subsep = attrs["sep"];
-		String text = _main_attrs["inputentry"];
+		String text = attrs["entry"];
+		if (!text)
+		    text = _main_attrs["inputentry"];
 		for (int i = 0; i < e->ninputs(); i++) {
 		    run_template(text, e, i);
 		    _sep = subsep;
 		}
 	    }
 	} else if (tag == "outputs" && !is_type) {
-	    if (e->noutputs() == 0)
-		run_template(_main_attrs["nooutputentry"], e, -1);
-	    else {
+	    if (e->noutputs() == 0) {
+		String text = attrs["noentry"];
+		if (!text)
+		    text = _main_attrs["nooutputentry"];
+		run_template(text, e, -1);
+	    } else {
 		String subsep = attrs["sep"];
-		String text = _main_attrs["outputentry"];
+		String text = attrs["entry"];
+		if (!text)
+		    text = _main_attrs["outputentry"];
 		for (int i = 0; i < e->noutputs(); i++) {
 		    run_template(text, e, i);
 		    _sep = subsep;
@@ -744,12 +763,17 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 	} else if (tag == "inputconnections" && port >= 0) {
 	    Vector<int> conn;
 	    _router->find_connections_to(PortT(e, port), conn);
-	    if (conn.size() == 0)
-		run_template(_main_attrs["noinputconnection"], e, port);
-	    else {
+	    if (conn.size() == 0) {
+		String text = attrs["noentry"];
+		if (!text)
+		    text = _main_attrs["noinputconnection"];
+		run_template(text, e, port);
+	    } else {
 		sort_connections(_router, conn, true);
 		String subsep = attrs["sep"];
-		String text = _main_attrs["inputconnection"];
+		String text = attrs["entry"];
+		if (!text)
+		    text = _main_attrs["inputconnection"];
 		for (int i = 0; i < conn.size(); i++) {
 		    const ConnectionT &c = _router->connection(conn[i]);
 		    run_template(text, c.from_elt(), c.from_port());
@@ -759,12 +783,17 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 	} else if (tag == "outputconnections" && port >= 0) {
 	    Vector<int> conn;
 	    _router->find_connections_from(PortT(e, port), conn);
-	    if (conn.size() == 0)
-		run_template(_main_attrs["nooutputconnection"], e, port);
-	    else {
+	    if (conn.size() == 0) {
+		String text = attrs["noentry"];
+		if (!text)
+		    text = _main_attrs["nooutputconnection"];
+		run_template(text, e, port);
+	    } else {
 		sort_connections(_router, conn, false);
 		String subsep = attrs["sep"];
-		String text = _main_attrs["outputconnection"];
+		String text = attrs["entry"];
+		if (!text)
+		    text = _main_attrs["outputconnection"];
 		for (int i = 0; i < conn.size(); i++) {
 		    const ConnectionT &c = _router->connection(conn[i]);
 		    run_template(text, c.to_elt(), c.to_port());
@@ -773,13 +802,49 @@ ElementsOutput::run_template(String templ_str, ElementT *e, int port)
 	    }
 	} else if (tag == "port" && port >= 0) {
 	    _sa << _sep << port;
+	} else if (tag == "if") {
+	    String s = expand(attrs["test"], e, port);
+	    bool result;
+	    if (attrs["eq"])
+		result = (expand(attrs["eq"], e, port) == s);
+	    else if (attrs["ne"])
+		result = (expand(attrs["ne"], e, port) != s);
+	    else if (attrs["gt"])
+		result = (click_strcmp(s, expand(attrs["gt"], e, port)) > 0);
+	    else if (attrs["lt"])
+		result = (click_strcmp(s, expand(attrs["lt"], e, port)) < 0);
+	    else if (attrs["ge"])
+		result = (click_strcmp(s, expand(attrs["ge"], e, port)) >= 0);
+	    else if (attrs["le"])
+		result = (click_strcmp(s, expand(attrs["le"], e, port)) <= 0);
+	    else
+		result = (s.length() > 0);
+
+	    if (result)
+		run_template(attrs["then"], e, port);
+	    else
+		run_template(attrs["else"], e, port);
+	} else if (_main_attrs[tag]) {
+	    String text = attrs[tag];
+	    run_template(text, e, port);
 	} else if (definitions[tag]) {
 	    String text = definitions[tag];
 	    run_template(text, e, port);
-	} else
-	    next_sep = _sep;
-	_sep = next_sep;
+	}
+
+	if (_sa.length() != pre_expansion_pos)
+	    _sep = next_sep;
     }
+}
+
+String
+ElementsOutput::expand(const String &s, ElementT *e, int port)
+{
+    int pos = _sa.length();
+    run_template(s, e, port);
+    String result(_sa.data() + pos, _sa.length() - pos);
+    _sa.pop_back(_sa.length() - pos);
+    return result;
 }
 
 void
@@ -799,15 +864,15 @@ ElementsOutput::run(FILE *f)
     // divide into columns
     int which_col, ncol;
     parse_columns(_main_attrs["column"], which_col, ncol);
-    int per_col = ((_elements.size() - 1) / ncol) + 1;
+    int per_col = ((_entries.size() - 1) / ncol) + 1;
     int first = (which_col - 1) * per_col;
     int last = which_col * per_col;
-    if (which_col == ncol || last > _elements.size())
-	last = _elements.size();
+    if (which_col == ncol || last > _entries.size())
+	last = _entries.size();
 
     // actually do output
     for (int i = first; i < last; i++)
-	run(_elements[i], f);
+	run(_entries[i], f);
 }
 
 

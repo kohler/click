@@ -44,6 +44,7 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/click-flatten.1 $(mandir)/man1/click-flatten.1
 	$(INSTALL_DATA) $(srcdir)/click-install.1 $(mandir)/man1/click-install.1
 	$(INSTALL_DATA) $(srcdir)/click-mkmindriver.1 $(mandir)/man1/click-mkmindriver.1
+	$(INSTALL_DATA) $(srcdir)/click-pretty.1 $(mandir)/man1/click-pretty.1
 	$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(mandir)/man1/click-uncombine.1
 	$(INSTALL_DATA) $(srcdir)/click-undead.1 $(mandir)/man1/click-undead.1
 	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(mandir)/man1/click-uninstall.1

@@ -38,6 +38,7 @@ doc/click-fastclassifier.1
 doc/click-flatten.1
 doc/click-install.1
 doc/click-mkmindriver.1
+doc/click-pretty.1
 doc/click-uncombine.1
 doc/click-undead.1
 doc/click-uninstall.1
@@ -343,6 +344,12 @@ tools/click-install/click-uninstall.cc
 tools/click-mkmindriver
 tools/click-mkmindriver/Makefile.in
 tools/click-mkmindriver/click-mkmindriver.cc
+
+tools/click-pretty
+tools/click-pretty/Makefile.in
+tools/click-pretty/click-pretty.cc
+tools/click-pretty/html.cc
+tools/click-pretty/html.hh
 
 tools/click-undead
 tools/click-undead/Makefile.in

@@ -189,9 +189,9 @@ click_strcmp(const String &a, const String &b)
 	    else if ((ad - iad) != (bd - ibd))
 		return (bd - ibd) - (ad - iad);
 	} else if (isdigit(*ad))
-	    return (*bd == '@' ? 1 : -1);
+	    return (isalpha(*bd) ? -1 : 1);
 	else if (isdigit(*bd))
-	    return (*ad == '@' ? -1 : 1);
+	    return (isalpha(*ad) ? 1 : -1);
 	else {
 	    int d = tolower(*ad) - tolower(*bd);
 	    if (d != 0)

@@ -6,6 +6,7 @@
 #include <stdio.h>
 
 String html_quote_attr(const String &);
+String html_quote_text(const String &);
 String html_unquote(const String &);
 String html_unquote(const char *x, const char *end);
 

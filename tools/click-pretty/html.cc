@@ -61,6 +61,35 @@ html_quote_attr(const String &what)
 }
 
 String
+html_quote_text(const String &what)
+{
+    StringAccum sa;
+    int pos = 0;
+    while (1) {
+	int npos = pos;
+	while (npos < what.length() && what[npos] != '&'
+	       && what[npos] != '<' && what[npos] != '>')
+	    npos++;
+	if (npos >= what.length())
+	    break;
+	sa << what.substring(pos, npos - pos);
+	if (what[npos] == '&')
+	    sa << "&amp;";
+	else if (what[npos] == '<')
+	    sa << "&lt;";
+	else /* what[npos] == '>' */
+	    sa << "&gt;";
+	pos = npos + 1;
+    }
+    if (pos == 0)
+	return what;
+    else {
+	sa << what.substring(pos);
+	return sa.take_string();
+    }
+}
+
+String
 html_unquote(const char *x, const char *end)
 {
     if (!html_entities["&amp"]) {
@@ -212,7 +241,7 @@ output_template_until_tag(const char *templ, FILE *outf,
 			  bool unquote = true, String *sep = 0)
 {
     StringAccum sa;
-    templ = output_template_until_tag(templ, outf, tag, attrs, unquote, sep);
+    templ = output_template_until_tag(templ, sa, tag, attrs, unquote, sep);
     fputs(sa.cc(), outf);
     return templ;
 }
