@@ -1,3 +1,21 @@
+2002-06-07 Friday 12:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/grid-params.m4 (1.6), conf/grid.click (1.59): removed last
+	hard-coded params from grid config
+
+2002-06-07 Friday 12:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.9), dsdvroutetable.hh
+	(1.10): more debugging done; added explicit invariant checks
+
+2002-06-07 Friday 12:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/printgrid.cc (1.24): add more detail (ttl field)
+
+2002-06-07 Friday 12:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridroutetable.hh (1.32): doc nitlet
+
 2002-06-07 Friday 08:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.58), tools/build-grid-config.sh (1.9): doc
