@@ -3,6 +3,8 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2000-2002 Mazu Networks, Inc.
+ * Copyright (c) 2001-2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -204,7 +206,7 @@ click_config_flush(struct file *filp)
   int success = -EINVAL;
   bool out_of_memory = (!build_config || build_config->out_of_memory());
   
-  if (build_config && current_config) {
+  if (build_config && current_config && !out_of_memory) {
     reset_proc_click_errors();
     unsigned my_ino = filp->f_dentry->d_inode->i_ino;
 
