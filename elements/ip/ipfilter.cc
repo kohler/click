@@ -2,7 +2,7 @@
  * ipfilter.{cc,hh} -- IP-packet filter with tcpdumplike syntax
  * Eddie Kohler
  *
- * Copyright (c) 2000-2001 Mazu Networks, Inc.
+ * Copyright (c) 2000-2004 Mazu Networks, Inc.
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -25,6 +25,7 @@
 #include <clicknet/tcp.h>
 #include <clicknet/icmp.h>
 #include <click/hashmap.hh>
+#include <click/integers.hh>
 CLICK_DECLS
 
 static HashMap<String, int> *wordmap;
@@ -282,16 +283,6 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
   // the upper bits against 0, and those that boil down to checking the upper
   // bits against ~0.
   if (_op == OP_GT || _op == OP_LT) {
-    // Check for power of 2 -- compare upper bits against 0.
-    uint32_t data_x = (_op == OP_GT ? data + 1 : data);
-    if ((data_x & (data_x - 1)) == 0 && (data_x - 1) <= full_mask && data_x <= full_mask) {
-      _u.u = 0;
-      _mask.u = (full_mask & ~(data_x - 1)) << shift;
-      if (_op == OP_GT)
-	_op_negated = !_op_negated;
-      return 0;
-    }
-
     // Check for comparisons that are always true.
     if ((_op == OP_LT && data == 0 && _op_negated)
 	|| (_op == OP_LT && data > full_mask && !_op_negated)
@@ -300,6 +291,7 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
 	errh->warning("relation `%s %u' is always true (range 0-%u)", unparse_op().cc(), data, full_mask);
       _u.u = _mask.u = 0;
       _op_negated = false;
+      _op = OP_EQ;
       return 0;
     }
 
@@ -309,38 +301,20 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
       errh->warning("relation `%s %u' is always false (range 0-%u)", unparse_op().cc(), data, full_mask);
       _u.u = _mask.u = 0;
       _op_negated = true;
+      _op = OP_EQ;
       return 0;
     }
 
-    // Check for (full_mask - [power of 2]) -- compare upper bits against ~0.
-    // 8-bit field: can do > 191/<= 191, >= 192/< 192.
-    uint32_t data_x_comp = (~data_x & full_mask) + 1;
-    if ((data_x_comp & (data_x_comp - 1)) == 0 && data_x <= full_mask) {
-      _u.u = data_x << shift;
-      _mask.u = (full_mask & data_x) << shift;
-      if (_op == OP_LT)
-	_op_negated = !_op_negated;
-      return 0;
+    // value < X == !(value > (X - 1))
+    if (_op == OP_LT) {
+      _u.u--;
+      _op_negated = !_op_negated;
+      _op = OP_GT;
     }
 
-    // Remaining possibility is too-complex expression; print helpful message.
-    uint32_t below_x_1 = 0, above_x_1 = 0, below_x_2 = 0, above_x_2 = 0;
-    for (int i = 31; i >= 0; i--)
-      if (data_x & (1 << i)) {
-	below_x_1 = 1 << i;
-	above_x_1 = below_x_1 << 1;
-	if (above_x_1 > full_mask || above_x_1 == 0)
-	  for (int j = i - 1; j >= 0; j--)
-	    if (!(data_x & (1 << j))) {
-	      below_x_2 = data_x & ~((2 << j) - 1);
-	      above_x_2 = below_x_2 | (1 << j);
-	      break;
-	    }
-	break;
-      }
-    uint32_t below_x = (below_x_2 && (data_x - below_x_2 < data_x - below_x_1) ? below_x_2 : below_x_1) - (_op == OP_GT ? 1 : 0);
-    uint32_t above_x = (above_x_2 && (above_x_2 - data_x < above_x_1 - data_x) ? above_x_2 : above_x_1) - (_op == OP_GT ? 1 : 0);
-    return errh->error("relation `%s %u' too hard\n(Closest possibilities are `%s %u' and `%s %u'.)", unparse_op().cc(), data, unparse_op().cc(), below_x, unparse_op().cc(), above_x);
+    _u.u = (_u.u << shift) | ((1 << shift) - 1);
+    _mask.u = (full_mask << shift) | ((1 << shift) - 1);
+    return 0;
   }
 
   if (data > full_mask)
@@ -514,7 +488,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       _mask.u = 0xFF;
     } else if (set_mask(0xFF, 0, errh) < 0)
       return -1;
-    if (_mask.u == 0xFF && !_op_negated) // set _transp_proto if allowed
+    if (_op == OP_EQ && _mask.u == 0xFF && !_op_negated) // set _transp_proto if allowed
       _transp_proto = _u.i;
     break;
 
@@ -647,10 +621,75 @@ add_exprs_for_proto(int32_t proto, int32_t mask, Classifier *c, Vector<int> &tre
 }
 
 void
+IPFilter::Primitive::add_comparison_exprs(Classifier *c, Vector<int> &tree, int offset, int shift, bool swapped) const
+{
+  assert(_op == IPFilter::OP_EQ || _op == IPFilter::OP_GT);
+
+  uint32_t mask = _mask.u;
+  uint32_t u = _u.u & mask;
+  if (swapped) {
+    mask = ntohl(mask);
+    u = ntohl(u);
+  }
+
+  if (_op == IPFilter::OP_EQ) {
+    c->add_expr(tree, offset, htonl(u << shift), htonl(mask << shift));
+    if (_op_negated)
+      c->negate_expr_subtree(tree);
+    return;
+  }
+
+  // To implement a greater-than test for "input > U/MASK":
+  // Check the top bit of U/MASK.
+  // If the top bit is 0, then:
+  //    Find TOPMASK, the top bits of MASK s.t. U/TOPMASK == 0.
+  //    If "input/TOPMASK == 0", continue testing with lower bits of U & MASK;
+  //    combine with OR.
+  //    Otherwise, succeed.
+  // If the top bit is 1, then:
+  //    Find TOPMASK, the top bits of MASK s.t. (U+1)/TOPMASK == TOPMASK.
+  //    If "input/TOPMASK == TOPMASK", continue testing with lower bits of
+  //    U & MASK; combine with AND.
+  //    Otherwise, fail.
+  // Stop testing when U >= MASK.
+  
+  int high_bit_record = 0;
+  int count = 0;
+
+  while (u < mask) {
+    int high_bit = (u > (mask >> 1));
+    int first_different_bit = 33 - first_bit_set(high_bit ? ~(u+1) & mask : u);
+    uint32_t upper_mask;
+    if (first_different_bit == 33)
+      upper_mask = mask;
+    else
+      upper_mask = mask & ~((1 << first_different_bit) - 1);
+    uint32_t upper_u = (high_bit ? 0xFFFFFFFF & upper_mask : 0);
+
+    c->start_expr_subtree(tree);
+    c->add_expr(tree, offset, htonl(upper_u << shift), htonl(upper_mask << shift));
+    if (!high_bit)
+      c->negate_expr_subtree(tree);
+    high_bit_record = (high_bit_record << 1) | high_bit;
+    count++;
+
+    mask &= ~upper_mask;
+    u &= mask;
+  }
+
+  while (count > 0) {
+    c->finish_expr_subtree(tree, (high_bit_record & 1 ? Classifier::C_AND : Classifier::C_OR));
+    high_bit_record >>= 1;
+    count--;
+  }
+
+  if (_op_negated)
+    c->negate_expr_subtree(tree);
+}
+
+void
 IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 {
-  Expr e;
-
   c->start_expr_subtree(tree);
 
   // enforce first fragment: fragmentation offset == 0
@@ -659,95 +698,60 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
   
   // handle transport protocol uniformly
-  if (_type == TYPE_PROTO)
-    add_exprs_for_proto(_u.i, _mask.i, c, tree);
-  else if (_transp_proto != UNKNOWN)
+  if (_transp_proto != UNKNOWN)
     add_exprs_for_proto(_transp_proto, 0xFF, c, tree);
 
   // handle other types
   switch (_type) {
 
-   case TYPE_HOST: {
-     e.mask.u = _mask.u;
-     e.value.u = _u.u & _mask.u;
-     c->start_expr_subtree(tree);
-     if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
-       c->add_expr(tree, 12, e.value.u, e.mask.u);
-       if (_op_negated) c->negate_expr_subtree(tree);
-     }
-     if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
-       c->add_expr(tree, 16, e.value.u, e.mask.u);
-       if (_op_negated) c->negate_expr_subtree(tree);
-     }
-     c->finish_expr_subtree(tree, (_srcdst == SD_OR ? C_OR : C_AND));
-     break;
-   }
-
-   case TYPE_PROTO:
-    // do nothing
+   case TYPE_HOST:
+    c->start_expr_subtree(tree);
+    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
+      add_comparison_exprs(c, tree, 12, 0, true);
+    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
+      add_comparison_exprs(c, tree, 16, 0, true);
+    c->finish_expr_subtree(tree, (_srcdst == SD_OR ? C_OR : C_AND));
     break;
 
-   case TYPE_TOS: {
-     c->start_expr_subtree(tree);
-     c->add_expr(tree, 0, htonl(_u.u << 16), htonl(_mask.u << 16));
-     c->finish_expr_subtree(tree);
-     if (_op_negated) c->negate_expr_subtree(tree);
-     break;
-   }
+   case TYPE_PROTO:
+    if (_transp_proto != IP_PROTO_TCP_OR_UDP)
+      add_comparison_exprs(c, tree, 8, 16);
+    break;
 
-   case TYPE_TTL: {
-     c->start_expr_subtree(tree);
-     c->add_expr(tree, 8, htonl(_u.u << 24), htonl(_mask.u << 24));
-     c->finish_expr_subtree(tree);
-     if (_op_negated) c->negate_expr_subtree(tree);
-     break;
-   }
+   case TYPE_TOS:
+    add_comparison_exprs(c, tree, 0, 16);
+    break;
 
-   case TYPE_IPFRAG: {
-     c->start_expr_subtree(tree);
-     c->add_expr(tree, 4, 0, htonl(0x00003FFF));
-     c->finish_expr_subtree(tree);
-     if (!_op_negated) c->negate_expr_subtree(tree);
-     break;
-   }
+   case TYPE_TTL:
+    add_comparison_exprs(c, tree, 8, 24);
+    break;
 
-   case TYPE_IPLEN: {
-     c->start_expr_subtree(tree);
-     c->add_expr(tree, 0, htonl(_u.u), htonl(_mask.u));
-     c->finish_expr_subtree(tree);
-     if (_op_negated) c->negate_expr_subtree(tree);
-     break;
-   }
+   case TYPE_IPFRAG:
+    c->add_expr(tree, 4, 0, htonl(0x00003FFF));
+    if (!_op_negated)
+      c->negate_expr_subtree(tree);
+    break;
 
-   case TYPE_PORT: {
-     uint32_t mask = (htons(_mask.u) << 16) | htons(_mask.u);
-     uint32_t ports = (htons(_u.u) << 16) | htons(_u.u);
-    
-     c->start_expr_subtree(tree);
-     if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
-       c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0xFFFF0000));
-       if (_op_negated) c->negate_expr_subtree(tree);
-     }
-     if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR) {
-       c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0x0000FFFF));
-       if (_op_negated) c->negate_expr_subtree(tree);
-     }
-     c->finish_expr_subtree(tree, (_srcdst == SD_OR ? C_OR : C_AND));
-     break;
-   }
+   case TYPE_IPLEN:
+    add_comparison_exprs(c, tree, 0, 0);
+    break;
 
-   case TYPE_TCPOPT: {
-     c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, htonl(_u.u << 16), htonl(_mask.u << 16));
-     break;
-   }
+   case TYPE_PORT:
+    c->start_expr_subtree(tree);
+    if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR)
+      add_comparison_exprs(c, tree, TRANSP_FAKE_OFFSET, 16);
+    if (_srcdst == SD_DST || _srcdst == SD_AND || _srcdst == SD_OR)
+      add_comparison_exprs(c, tree, TRANSP_FAKE_OFFSET, 0);
+    c->finish_expr_subtree(tree, (_srcdst == SD_OR ? C_OR : C_AND));
+    break;
 
-   case TYPE_ICMP_TYPE: {
-     c->start_expr_subtree(tree);
-     c->add_expr(tree, TRANSP_FAKE_OFFSET, htonl(_u.u << 24), htonl(_mask.u << 24));
-     c->finish_expr_subtree(tree);
-     if (_op_negated) c->negate_expr_subtree(tree);
-     break;
-   }
+   case TYPE_TCPOPT:
+    c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, htonl(_u.u << 16), htonl(_mask.u << 16));
+    break;
+
+   case TYPE_ICMP_TYPE:
+    add_comparison_exprs(c, tree, TRANSP_FAKE_OFFSET, 24);
+    break;
 
    default:
     assert(0);

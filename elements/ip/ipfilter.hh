@@ -200,6 +200,10 @@ class IPFilter : public Classifier { public:
     String unparse_op() const;
     static String unparse_type(int srcdst, int type);
     static String unparse_transp_proto(int transp_proto);
+
+   private:
+
+    void add_comparison_exprs(Classifier *, Vector<int> &tree, int offset, int shift, bool swapped = false) const;
     
   };
 
