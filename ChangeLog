@@ -1,3 +1,24 @@
+2003-01-24 Friday 01:10  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: tohost.cc (1.36), tohostsniffers.cc
+	(1.31), tohost.cc (1.37), tohostsniffers.cc (1.32): hold device
+	when you pass a packet to Linux
+
+2003-01-24 Friday 01:10  Eddie Kohler <kohler@icir.org>
+
+	* etc/linux-2.4.20-patch (1.1): add initial 2.4.20 patch
+
+2003-01-24 Friday 01:01  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.194): use register_net_in to check for Click
+	kernel, since ptype_dispatch disappeared in 2.4.20; probably should
+	use a symbol with "click" in the name
+
+2003-01-24 Friday 00:52  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/: tohost.cc (1.35), tohostsniffers.cc
+	(1.30): use netif_receive_skb on Linux 2.4.20
+
 2003-01-23 Thursday 16:56  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/ethernet/arpquerier.hh (1.32): doc nitlet: ARP responses
