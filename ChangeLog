@@ -1,3 +1,9 @@
+2003-03-11 Tuesday 10:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.46), linkstat.cc (1.20):
+	Don't believe everything you read: sanity check packet size vs
+	number of entries in route and probe pkts
+
 2003-03-11 Tuesday 02:06  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/sched.cc (1.41): be more careful abut holding
