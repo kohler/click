@@ -41,10 +41,10 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 .cc.o:
 	$(CXXCOMPILE) -c $<
 .c.ho:
-	$(COMPILE) -c $<
+	$(COMPILE) -c $< -o $@
 	@sed 's/\.o:/\.ho:/' < $*.d > $*.hd; /bin/rm -f $*.d
 .cc.ho:
-	$(CXXCOMPILE) -c $<
+	$(CXXCOMPILE) -c $< -o $@
 	@sed 's/\.o:/\.ho:/' < $*.d > $*.hd; /bin/rm -f $*.d
 
 
