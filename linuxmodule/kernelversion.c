@@ -26,14 +26,27 @@
 
 #define __KERNEL__
 #define MODULE
+#include <click/config.h>
 #include <linux/module.h>
 
 static int accessible = 1;
 MODULE_PARM(accessible, "i");
 MODULE_PARM_DESC(accessible, "make /proc/click world-readable [1]");
 
+#if __MTCLICK__
+static int threads = 1;
+MODULE_PARM(threads, "i");
+MODULE_PARM_DESC(threads, "number of Click threads per router [1]");
+#endif
+
 int
 click_accessible(void)
 {
   return accessible;
+}
+
+int
+click_threads(void)
+{
+  return threads;
 }

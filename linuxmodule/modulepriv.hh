@@ -38,9 +38,8 @@ void reset_proc_click_errors();
 extern spinlock_t click_thread_spinlock;
 extern Vector<int> *click_thread_pids;
 extern int click_thread_priority;
-int start_click_sched(Router *, ErrorHandler *);
-void kill_click_sched(Router *);
 void init_click_sched();
+int start_click_sched(Router *, int, ErrorHandler *);
 int cleanup_click_sched();
 
 #define ROOT_HANDLERS_CAP 16

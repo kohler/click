@@ -45,7 +45,8 @@ GENERIC_OBJS = string.o straccum.o \
 	packet.o \
 	error.o glue.o task.o timer.o atomic.o gaprate.o \
 	element.o \
-	confparse.o variableenv.o lexer.o elemfilter.o router.o \
+	confparse.o variableenv.o lexer.o elemfilter.o \
+	routerthread.o router.o \
 	crc32.o iptable.o iptable2.o ip6table.o radix.o skbmgr.o
 
 LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \

@@ -24,6 +24,7 @@
 #endif
 #include "modulepriv.hh"
 #include "kernelerror.hh"
+#include <click/routerthread.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
 extern "C" {
@@ -46,16 +47,16 @@ Vector<int> *click_thread_pids;
 static int
 click_sched(void *thunk)
 {
-  Router *router = (Router *)thunk;
+  RouterThread *rt = (RouterThread *)thunk;
   current->session = 1;
   current->pgrp = 1;
   current->priority = click_thread_priority;
   sprintf(current->comm, "click");
-  printk("<1>click: starting router %p\n", router);
+  printk("<1>click: starting router thread %p on %d\n", rt, current->pid);
 
-  router->driver();
-
-  router->unuse();
+  rt->driver();
+  
+  rt->router()->unuse();
 
   spin_lock(&click_thread_spinlock);
   if (click_thread_pids) {
@@ -68,38 +69,52 @@ click_sched(void *thunk)
   }
   spin_unlock(&click_thread_spinlock);
   
-  printk("<1>click: stopping router %p\n", router);
+  printk("<1>click: stopping router thread %p\n", rt);
   return 0;
 }
 
 int
-start_click_sched(Router *r, ErrorHandler *kernel_errh)
+start_click_sched(Router *r, int threads, ErrorHandler *kernel_errh)
 {
   /* no thread if no router */
   if (r->nelements() == 0)
     return 0;
 
-  spin_lock(&click_thread_spinlock);
-  r->use();
-  pid_t pid = kernel_thread
-    (click_sched, r, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
-  if (pid < 0) {
-    r->unuse();
-    spin_unlock(&click_thread_spinlock);
-    kernel_errh->error("cannot create kernel thread!"); 
-    return -1;
-  } else {
-    if (click_thread_pids)
-      click_thread_pids->push_back(pid);
-    spin_unlock(&click_thread_spinlock);
-    return 0;
-  }
-}
+#ifdef __SMP__
+  if (smp_num_cpus > NUM_CLICK_CPUS)
+    click_chatter("warning: click compiled for %d cpus, machine allows %d", 
+	          NUM_CLICK_CPUS, smp_num_cpus);
+#endif
 
-void
-kill_click_sched(Router *r)
-{
-  r->please_stop_driver();
+  spin_lock(&click_thread_spinlock);
+  if (threads < 1)
+    threads = 1;
+  click_chatter("starting %d threads", threads); 
+
+  while (threads > 0) {
+    RouterThread *rt;
+    if (threads > 1) 
+      rt = new RouterThread(r);
+    else
+      rt = r->thread(0);
+    r->use();
+    pid_t pid = kernel_thread 
+      (click_sched, rt, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
+    if (pid < 0) {
+      r->unuse();
+      delete rt;
+      spin_unlock(&click_thread_spinlock);
+      kernel_errh->error("cannot create kernel thread!"); 
+      return -1;
+    } else {
+      if (click_thread_pids)
+        click_thread_pids->push_back(pid);
+    }
+    threads--;
+  }
+
+  spin_unlock(&click_thread_spinlock);
+  return 0;
 }
 
 void
