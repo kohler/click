@@ -2,7 +2,7 @@
 #define CLICK_SRPAKCET_HH
 #include <click/ipaddress.hh>
 #include <elements/grid/sr/path.hh>
-
+CLICK_DECLS
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -273,5 +273,5 @@ sr_assert_(const char *file, int line, const char *expr)
 }
 
 
-
+CLICK_ENDDECLS
 #endif /* CLICK_SRPACKET_HH */

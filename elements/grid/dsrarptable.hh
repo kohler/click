@@ -5,6 +5,7 @@
 #include "dsrroutetable.hh"
 
 #include <click/bighashmap.hh>
+CLICK_DECLS
 
 
 /*
@@ -106,5 +107,6 @@ private:
   EtherAddress lookup_ip(IPAddress);
   bool _debug;
 };
+CLICK_ENDDECLS
 #endif
 

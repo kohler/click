@@ -376,7 +376,7 @@ RouterThread::wait(int iter)
 	// If there's another timer, tell the simulator to make us
 	// run when it's due to go off.
 	struct timeval now, nextdelay, nexttime;
-	if (router()->timer_list()->get_next_delay(&nextdelay)) {
+	if (router()->master()->timer_list()->get_next_delay(&nextdelay)) {
 	    click_gettimeofday(&now);
 	    timeradd(&now, &nextdelay, &nexttime);
 	    simclick_sim_schedule(router()->get_siminst(),

@@ -33,6 +33,7 @@
 #include "dsrarptable.hh"
 #include "dsr.hh"
 
+CLICK_DECLS
 #define DEBUG_CHATTER  if (_debug) click_chatter
 
 DSRArpTable::DSRArpTable()

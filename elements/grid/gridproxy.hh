@@ -5,7 +5,6 @@
 #include <click/glue.hh>
 #include <click/atomic.hh>
 #include <click/hashmap.hh>
-#include <click/hashmap.cc>
 #include <clicknet/ip.h>
 CLICK_DECLS
 
@@ -74,6 +73,6 @@ public:
     
 };
 
-
+#include <click/hashmap.cc>
 CLICK_ENDDECLS
 #endif

@@ -447,4 +447,5 @@ inline unsigned int hashcode(const DSRRouteTable::ForwardedReqKey &f) {
 			 f._id));
 }
 
+CLICK_ENDDECLS
 #endif

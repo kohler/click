@@ -3,6 +3,8 @@
 
 /* #include <netinet/in.h> */
 
+CLICK_DECLS
+
 struct click_dsr { // DSR options header -- exactly one per packet
   unsigned char dsr_next_header; // original IP protocol field
   unsigned char dsr_reserved;
@@ -140,5 +142,7 @@ struct click_dsr_source {
 #define SET_DSR_LAST_HOP_ETH_ANNO1(p, v)	((p)->set_user_anno_us( 9, (v)))
 #define SET_DSR_LAST_HOP_ETH_ANNO2(p, v)	((p)->set_user_anno_us(11, (v)))
 #define SET_DSR_LAST_HOP_ETH_ANNO3(p, v)	((p)->set_user_anno_us(13, (v)))
+
+CLICK_ENDDECLS
 
 #endif
