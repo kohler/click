@@ -1,3 +1,14 @@
+2002-06-11 Tuesday 11:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.12): doc nitlets.	bugs fixed
+	in expire processing.  buglets in hello timer scheduling.
+
+2002-06-11 Tuesday 11:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridlogger.hh (1.16): add more careful error
+	checks; add asserts to catch clients that make wrong sequence of
+	calls; add support for more info when logging route insertions.
+
 2002-06-11 Tuesday 10:05  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromflandump.cc (1.2), fromflandump.hh (1.2):
