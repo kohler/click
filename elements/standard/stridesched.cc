@@ -61,7 +61,7 @@ StrideSched::configure(const String &conf, ErrorHandler *errh)
 }
 
 void
-StrideSched::uninitialize(void)
+StrideSched::uninitialize()
 {
   Client *c;
   while ((c = _list->remove_min())) {
