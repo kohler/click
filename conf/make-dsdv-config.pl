@@ -16,8 +16,9 @@ my $rt_min_period = 1000;
 my $rt_hops = 100; 
 my $probe_size = 148; # total bytes, including ethernet header
 
-my @allowable_metrics = ("ETX", "hopcount");
+my @allowable_metrics = ("etx", "hopcount", "lir", "thresh", "e2eloss");
 my $metric = "hopcount";
+my $metric_config = "";
 
 sub usage() {
     print "usage: $prog -i IF -a ADDR [OPTIONS]
@@ -40,9 +41,11 @@ Options:
    --max-jitter J      Jitter route ad timing up to J milliseconds.  Defaults to $rt_jitter.
    --min-period M      Don't send route ads more than once every M milliseconds.  Defaults to $rt_min_period.
    --max-hops H        Only propagate routes for H hops.  Defaults to $rt_hops.
-   --metric M          Use metric M.  Allowable values are ";
+   --metric M          Use metric M.  
+      Possible metrics are ";
     print join ", ", @allowable_metrics;
 print ".  Defaults to $metric.
+   --metric-config C   Pass extra configuration string C to metric element.
    --probe-size N      Use N-byte link probes.  Ignored for hopcount metric.  Defaults to $probe_size.
    --force-probes      Send link probes even if the metric doesn't require them.
 
@@ -128,6 +131,9 @@ while (scalar(@ARGV) > 0) {
     }
     elsif ($arg eq "--metric") {
 	$metric = get_arg();
+    }
+    elsif ($arg eq "--metric-config") {
+	$metric_config = get_arg();
     }
     else {
 	print STDERR "$prog: Unknown argument `$arg'\n";
@@ -235,21 +241,39 @@ else {
 }
 
 
-my $probeswitcharg = -1;
-if ($metric eq "ETX" || $force_probes) {
+# construct metric element part of configuration
+my $metric_el = "";
+if ($metric_config !~ /\S+/) { $metric_config = ""; } # convert all-white-space config to empty string
+my $comma_metric_config = ($metric_config eq "") ? "" : ", $metric_config"; # don't prepend empty string with comma
+
+my $probeswitcharg = -1; # disable probes by default
+
+if ($metric eq "etx") {
+    $metric_el = "ETXMetric(ls $comma_metric_config)";
     $probeswitcharg = 0;
 }
-
-my $metric_el = "";
-if ($metric eq "ETX") {
-    $metric_el = "ETXMetric(ls)";
-}
 elsif ($metric eq "hopcount") {
-    $metric_el = "HopcountMetric";
+    $metric_el = "HopcountMetric($metric_config)";
+}
+elsif ($metric eq "thresh") {
+    $metric_el = "ThresholdMetric(ls $comma_metric_config)";
+    $probeswitcharg = 0;
+}
+elsif ($metric eq "e2eloss") {
+    $metric_el = "E2ELossMetric(ls $comma_metric_config)";
+    $probeswitcharg = 0;
+}
+elsif ($metric eq "lir") {
+    $metric_el = "LIRMetric(nb $comma_metric_config)";
 }
 else {
     die;
 }
+
+if ($force_probes) {
+    $probeswitcharg = 0;
+}
+
 
 print "
 // This file automatically generated at $now with the following command:
