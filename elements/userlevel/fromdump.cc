@@ -159,7 +159,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	simclick_sim mysiminst = myrouter->get_siminst();
 	char tmp[255];
 	simclick_sim_get_node_name(mysiminst,tmp,255);
-	_ff._filename = String(tmp) + String("_") +  _ff._filename;
+	_ff.filename() = String(tmp) + String("_") +  _ff.filename();
     }
 #endif
 
