@@ -157,7 +157,8 @@ mappings for completed TCP sessions.
 ICMPRewriter, ICMPPingRewriter */
 
 #if defined(__KERNEL__) && __MTCLICK__
-# define IPRW_SPINLOCKS 1
+# define IPRW_SPINLOCKS 0
+# define IPRW_RWLOCKS 1
 #endif
 
 class IPRewriter : public IPRw { public:
@@ -208,6 +209,9 @@ class IPRewriter : public IPRw { public:
 
 #if IPRW_SPINLOCKS
   Spinlock _spinlock;
+#endif
+#if IPRW_RWLOCKS
+  ReadWriteLock _rwlock;
 #endif
 
   int _nmapping_failures;

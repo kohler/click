@@ -195,11 +195,16 @@ IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_tcp_gc_interval;
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+  if (rw->_rwlock.attempt_write()) {
+#elif IPRW_SPINLOCKS
   if (rw->_spinlock.attempt()) {
 #endif
   rw->clean_map(rw->_tcp_map, rw->_tcp_timeout_interval);
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+  rw->_rwlock.release_write();
+  } else wait = 20;
+#elif IPRW_SPINLOCKS
   rw->_spinlock.release();
   } else wait = 20;
 #endif
@@ -211,13 +216,18 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_tcp_done_gc_interval;
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+  if (rw->_rwlock.attempt_write()) {
+#elif IPRW_SPINLOCKS
   if (rw->_spinlock.attempt()) {
 #endif
   rw->clean_map_free_ordered_tracked 
     (rw->_tcp_map, rw->_tcp_done_timeout_interval, 
      &rw->_tcp_done, &rw->_tcp_done_tail);
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+  rw->_rwlock.release_write();
+  } else wait = 20;
+#elif IPRW_SPINLOCKS
   rw->_spinlock.release();
   } else wait = 20;
 #endif
@@ -229,11 +239,16 @@ IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_udp_gc_interval;
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+  if (rw->_rwlock.attempt_write()) {
+#elif IPRW_SPINLOCKS
   if (rw->_spinlock.attempt()) {
 #endif
   rw->clean_map(rw->_udp_map, rw->_udp_timeout_interval);
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+  rw->_rwlock.release_write();
+  } else wait = 20;
+#elif IPRW_SPINLOCKS
   rw->_spinlock.release();
   } else wait = 20;
 #endif
@@ -283,6 +298,9 @@ IPRewriter::push(int port, Packet *p_in)
   WritablePacket *p = p_in->uniqueify();
   IPFlowID flow(p);
   click_ip *iph = p->ip_header();
+#if IPRW_RWLOCKS
+  bool has_lock = false;
+#endif
 
   // handle non-TCP and non-first fragments
   int ip_p = iph->ip_p;
@@ -295,18 +313,31 @@ IPRewriter::push(int port, Packet *p_in)
     return;
   }
  
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+  _rwlock.acquire_read();
+#elif IPRW_SPINLOCKS
   _spinlock.acquire();
 #endif
   Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : 
                                        _udp_map.find(flow));
+
+#if IPRW_RWLOCKS
+  _rwlock.release_read();
+#endif
   
   if (!m) {			// create new mapping
     const InputSpec &is = _input_specs[port];
+#if IPRW_RWLOCKS
+    _rwlock.acquire_write();
+    has_lock = true;
+#endif
     switch (is.kind) {
 
      case INPUT_SPEC_NOCHANGE:
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+      _rwlock.release_write();
+      has_lock = false;
+#elif IPRW_SPINLOCKS
       _spinlock.release();
 #endif
       output(is.u.output).push(p);
@@ -337,7 +368,10 @@ IPRewriter::push(int port, Packet *p_in)
       
     }
     if (!m) {
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+      _rwlock.release_write();
+      has_lock = false;
+#elif IPRW_SPINLOCKS
       _spinlock.release();
 #endif
       p->kill();
@@ -345,35 +379,43 @@ IPRewriter::push(int port, Packet *p_in)
     }
   }
 
-  if (_tcp_done_gc_incr && ip_p == IP_PROTO_TCP) {
-    click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
-    if (tcph->th_flags & TH_SYN)
-      clean_map_free_ordered_tracked
-	(_tcp_map, _tcp_done_timeout_interval, &_tcp_done, &_tcp_done_tail);
-  }
-  
   m->apply(p);
-  
-  // add to list for dropping TCP connections faster
-  if (ip_p == IP_PROTO_TCP && !m->free_tracked()) {
+
+  if (ip_p == IP_PROTO_TCP) {
     click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
-    if ((tcph->th_flags & (TH_FIN | TH_RST)) && m->session_over()) {
-#if 1
-      if (_tcp_done == 0) {
-        _tcp_done = m->add_to_free_tracked(_tcp_done);
-	_tcp_done_tail = _tcp_done;
-      } else {
-	Mapping *madd = m->is_reverse() ? m->reverse() : m;
-	_tcp_done_tail = _tcp_done_tail->add_to_free_tracked(madd);
-	_tcp_done_tail = _tcp_done_tail->free_next();
+    if (tcph->th_flags & (TH_SYN | TH_FIN | TH_RST)) {
+#if IPRW_RWLOCKS
+      if (!has_lock) {
+        _rwlock.acquire_write();
+        has_lock = true;
       }
-#else
-      _tcp_done = m->add_to_free_tracked(_tcp_done);
 #endif
+      if (_tcp_done_gc_incr && (tcph->th_flags & TH_SYN))
+        clean_map_free_ordered_tracked 
+	  (_tcp_map, _tcp_done_timeout_interval, &_tcp_done, &_tcp_done_tail); 
+  
+      // add to list for dropping TCP connections faster
+      if (!m->free_tracked()) { 
+	if ((tcph->th_flags & (TH_FIN | TH_RST)) && m->session_over()) {
+          if (_tcp_done == 0) {
+            _tcp_done = m->add_to_free_tracked(_tcp_done);
+	    _tcp_done_tail = _tcp_done;
+          } else {
+	    Mapping *madd = m->is_reverse() ? m->reverse() : m;
+	    _tcp_done_tail = _tcp_done_tail->add_to_free_tracked(madd);
+	    _tcp_done_tail = _tcp_done_tail->free_next();
+          }
+	}
+      }
     }
   }
   
-#if IPRW_SPINLOCKS
+#if IPRW_RWLOCKS
+  if (has_lock) {
+    _rwlock.release_write();
+    has_lock = false;
+  }
+#elif IPRW_SPINLOCKS
   _spinlock.release();
 #endif
   output(m->output()).push(p);
