@@ -656,131 +656,131 @@ ControlSocket::parse_command(int fd, const String &line)
 void
 ControlSocket::flush_write(int fd, bool read_needs_processing)
 {
-  assert(_flags[fd] >= 0);
-  if (!(_flags[fd] & WRITE_CLOSED)) {
-    int w = 0;
-    while (_out_texts[fd].length()) {
-      const char *x = _out_texts[fd].data();
-      w = write(fd, x, _out_texts[fd].length());
-      if (w < 0 && errno != EINTR)
-	break;
-      if (w > 0)
-	_out_texts[fd] = _out_texts[fd].substring(w);
+    assert(_flags[fd] >= 0);
+    if (!(_flags[fd] & WRITE_CLOSED)) {
+	int w = 0;
+	while (_out_texts[fd].length()) {
+	    const char *x = _out_texts[fd].data();
+	    w = write(fd, x, _out_texts[fd].length());
+	    if (w < 0 && errno != EINTR)
+		break;
+	    if (w > 0)
+		_out_texts[fd] = _out_texts[fd].substring(w);
+	}
+	if (w < 0 && errno == EPIPE)
+	    _flags[fd] |= WRITE_CLOSED;
+	// don't select writes unless we have data to write (or read needs more
+	// processing)
+	if (_out_texts[fd].length() || read_needs_processing)
+	    add_select(fd, SELECT_WRITE);
+	else
+	    remove_select(fd, SELECT_WRITE);
     }
-    if (w < 0 && errno == EPIPE)
-      _flags[fd] |= WRITE_CLOSED;
-    // don't select writes unless we have data to write (or read needs more
-    // processing)
-    if (_out_texts[fd].length() || read_needs_processing)
-      add_select(fd, SELECT_WRITE);
-    else
-      remove_select(fd, SELECT_WRITE);
-  }
 }
 
 void
 ControlSocket::selected(int fd)
 {
-  if (fd == _socket_fd) {
-    union { struct sockaddr_in in; struct sockaddr_un un; } sa;
+    if (fd == _socket_fd) {
+	union { struct sockaddr_in in; struct sockaddr_un un; } sa;
 #ifdef __APPLE__
-    int sa_len;
+	int sa_len;
 #else
-    socklen_t sa_len;
+	socklen_t sa_len;
 #endif
-    sa_len = sizeof(sa);
-    int new_fd = accept(_socket_fd, (struct sockaddr *)&sa, &sa_len);
+	sa_len = sizeof(sa);
+	int new_fd = accept(_socket_fd, (struct sockaddr *)&sa, &sa_len);
 
-    if (new_fd < 0) {
-      if (errno != EAGAIN)
-	click_chatter("%s: accept: %s", declaration().cc(), strerror(errno));
-      return;
+	if (new_fd < 0) {
+	    if (errno != EAGAIN)
+		click_chatter("%s: accept: %s", declaration().cc(), strerror(errno));
+	    return;
+	}
+
+	if (_verbose) {
+	    if (_tcp_socket)
+		click_chatter("%s: opened connection %d from %s.%d", declaration().cc(), new_fd, IPAddress(sa.in.sin_addr).unparse().cc(), ntohs(sa.in.sin_port));
+	    else
+		click_chatter("%s: opened connection %d", declaration().cc(), new_fd);
+	}
+
+	fcntl(new_fd, F_SETFL, O_NONBLOCK);
+	fcntl(new_fd, F_SETFD, FD_CLOEXEC);
+	add_select(new_fd, SELECT_READ | SELECT_WRITE);
+	
+	while (new_fd >= _in_texts.size()) {
+	    _in_texts.push_back(String());
+	    _out_texts.push_back(String());
+	    _flags.push_back(-1);
+	}
+	_in_texts[new_fd] = String();
+	_out_texts[new_fd] = String();
+	_flags[new_fd] = 0;
+
+	fd = new_fd;
+	_out_texts[new_fd] = "Click::ControlSocket/" + String(protocol_version) + "\r\n";
     }
 
-    if (_verbose) {
-      if (_tcp_socket)
-	click_chatter("%s: opened connection %d from %s.%d", declaration().cc(), new_fd, IPAddress(sa.in.sin_addr).unparse().cc(), ntohs(sa.in.sin_port));
-      else
-	click_chatter("%s: opened connection %d", declaration().cc(), new_fd);
+    // find file descriptor
+    if (fd >= _in_texts.size() || _flags[fd] < 0)
+	return;
+
+    // read commands from socket (but only a bit on each select)
+    if (!(_flags[fd] & READ_CLOSED)) {
+	char buf[2048];
+	int r = read(fd, buf, 2048);
+	if (r > 0)
+	    _in_texts[fd].append(buf, r);
+	else if (r == 0 || (r < 0 && errno != EAGAIN && errno != EINTR))
+	    _flags[fd] |= READ_CLOSED;
     }
-
-    fcntl(new_fd, F_SETFL, O_NONBLOCK);
-    fcntl(new_fd, F_SETFD, FD_CLOEXEC);
-    add_select(new_fd, SELECT_READ | SELECT_WRITE);
-
-    while (new_fd >= _in_texts.size()) {
-      _in_texts.push_back(String());
-      _out_texts.push_back(String());
-      _flags.push_back(-1);
-    }
-    _in_texts[new_fd] = String();
-    _out_texts[new_fd] = String();
-    _flags[new_fd] = 0;
-
-    fd = new_fd;
-    _out_texts[new_fd] = "Click::ControlSocket/" + String(protocol_version) + "\r\n";
-  }
-
-  // find file descriptor
-  if (fd >= _in_texts.size() || _flags[fd] < 0)
-    return;
-
-  // read commands from socket (but only a bit on each select)
-  if (!(_flags[fd] & READ_CLOSED)) {
-    char buf[2048];
-    int r = read(fd, buf, 2048);
-    if (r > 0)
-      _in_texts[fd].append(buf, r);
-    else if (r == 0 || (r < 0 && errno != EAGAIN && errno != EINTR))
-      _flags[fd] |= READ_CLOSED;
-  }
   
-  // parse commands
-  // 16.Jun.2004: process only one command each time through
-  bool blocked = false;
-  if (_in_texts[fd].length()) {
-    const char *in_text = _in_texts[fd].data();
-    int len = _in_texts[fd].length();
-    int pos = 0;
-    while (pos < len && in_text[pos] != '\r' && in_text[pos] != '\n')
-      pos++;
-    if (pos < len || (_flags[fd] & READ_CLOSED)) {
-      // have a complete command, parse it
+    // parse commands
+    // 16.Jun.2004: process only one command each time through
+    bool blocked = false;
+    if (_in_texts[fd].length()) {
+	const char *in_text = _in_texts[fd].data();
+	int len = _in_texts[fd].length();
+	int pos = 0;
+	while (pos < len && in_text[pos] != '\r' && in_text[pos] != '\n')
+	    pos++;
+	if (pos < len || (_flags[fd] & READ_CLOSED)) {
+	    // have a complete command, parse it
 
-      // include end of line
-      if (pos < len - 1 && in_text[pos] == '\r' && in_text[pos+1] == '\n')
-	pos += 2;
-      else if (pos < len)	// '\r' or '\n' alone
-	pos++;
+	    // include end of line
+	    if (pos < len - 1 && in_text[pos] == '\r' && in_text[pos+1] == '\n')
+		pos += 2;
+	    else if (pos < len)	// '\r' or '\n' alone
+		pos++;
     
-      // grab string
-      String old_text = _in_texts[fd];
-      String line = old_text.substring(0, pos);
-      _in_texts[fd] = old_text.substring(pos);
+	    // grab string
+	    String old_text = _in_texts[fd];
+	    String line = old_text.substring(0, pos);
+	    _in_texts[fd] = old_text.substring(pos);
 
-      // parse each individual command
-      if (parse_command(fd, line) > 0) {
-	// more data to come, so wait
-	_in_texts[fd] = old_text;
-	blocked = true;
-      }
+	    // parse each individual command
+	    if (parse_command(fd, line) > 0) {
+		// more data to come, so wait
+		_in_texts[fd] = old_text;
+		blocked = true;
+	    }
+	}
     }
-  }
 
-  // write data until blocked
-  // The 2nd argument causes write events to remain selected when commands
-  // remain to be processed (whether or not CS has data to write).
-  flush_write(fd, _in_texts[fd].length() && !blocked);
+    // write data until blocked
+    // The 2nd argument causes write events to remain selected when commands
+    // remain to be processed (whether or not CS has data to write).
+    flush_write(fd, _in_texts[fd].length() && !blocked);
 
-  // maybe close out
-  if (((_flags[fd] & READ_CLOSED) && !_in_texts[fd].length() && !_out_texts[fd].length())
-      || (_flags[fd] & WRITE_CLOSED)) {
-    close(fd);
-    remove_select(fd, SELECT_READ | SELECT_WRITE);
-    if (_verbose)
-      click_chatter("%s: closed connection %d", declaration().cc(), fd);
-    _flags[fd] = -1;
-  }
+    // maybe close out
+    if (((_flags[fd] & READ_CLOSED) && !_in_texts[fd].length() && !_out_texts[fd].length())
+	|| (_flags[fd] & WRITE_CLOSED)) {
+	close(fd);
+	remove_select(fd, SELECT_READ | SELECT_WRITE);
+	if (_verbose)
+	    click_chatter("%s: closed connection %d", declaration().cc(), fd);
+	_flags[fd] = -1;
+    }
 }
 
 
