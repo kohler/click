@@ -20,6 +20,7 @@ class String { public:
   inline String(const String &);
   String(const char *cc)		{ assign(cc, -1); }
   String(const char *cc, int l)		{ assign(cc, l); }
+  String(const char *s1, const char *s2) { assign(s1, s2 - s1); }
 #ifdef HAVE_PERMSTRING
   inline String(PermString p);
 #endif
@@ -70,6 +71,7 @@ class String { public:
   
   char operator[](int i) const		{ return _data[i]; }
   char at(int i) const			{ assert(i>=0&&i<_length); return _data[i]; }
+  char front() const			{ return _data[0]; }
   char back() const			{ return _data[_length-1]; }
   int find_left(int c, int start = 0) const;
   int find_left(const String &s, int start = 0) const;
@@ -90,7 +92,8 @@ class String { public:
   // bool operator<=(const String &, const String &);
   // bool operator>(const String &, const String &);
   // bool operator>=(const String &, const String &);
-  
+
+  String substring(const char *begin, const char *end) const;
   String substring(int pos, int len) const;
   String substring(int pos) const	{ return substring(pos, _length); }
   
@@ -224,6 +227,15 @@ inline bool
 String::data_shared() const
 {
   return !_memo->_capacity || _memo->_refcount != 1;
+}
+
+inline String
+String::substring(const char *s1, const char *s2) const
+{
+    if (s1 < s2 && s1 >= _data && s2 <= _data + _length)
+	return String(s1, s2 - s1, _memo);
+    else
+	return String();
 }
 
 inline int
@@ -460,6 +472,20 @@ operator+(PermString p1, PermString p2)
 #endif
 
 int hashcode(const String &);
+
+// find methods
+
+inline const char *find(const char *a, const char *b, char c)
+{
+  while (a < b && *a != c)
+    a++;
+  return a;
+}
+
+inline const char *find(const String &s, char c)
+{
+  return find(s.begin(), s.end(), c);
+}
 
 CLICK_ENDDECLS
 #endif
