@@ -11,7 +11,7 @@ CLICK_DECLS
  * 
  * =d
  * Copies 16 bytes from the packet , starting at OFFSET, to the destination IP6 
- * address annotation.  The offset is usually 16, to fetch the dst address from
+ * address annotation.  The offset is usually 24, to fetch the dst address from
  * an IP6 packet (w/o ether header).
  *
  * The destination address annotation is used by elements
