@@ -530,7 +530,8 @@ GridRouteTable::init_metric(RTEntry &r)
 void 
 GridRouteTable::update_metric(RTEntry &r)
 {
-  assert(r.num_hops > 1);
+  if (r.num_hops == 0)
+    return; // is broken route ad
 
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {

@@ -721,7 +721,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
 
   if (was_sender)
     init_metric(new_r);
-  else
+  else if (new_r.good())
     update_metric(new_r);
 
   RTEntry *old_r = _rtes.findp(new_r.dest_ip);
