@@ -1,3 +1,14 @@
+2004-01-14 Wednesday 21:01  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/kerneltap.cc (1.39), lib/userutils.cc (1.36):
+	more warnings begone
+
+2004-01-14 Wednesday 20:52  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.35), aclocal.m4 (1.35): fix configure logic on
+	#include <stdlib.h>: in fact we WANT stdlib.h, unless we are in the
+	kernel
+
 2004-01-14 Wednesday 20:18  Eddie Kohler <kohler@icir.org>
 
 	* Makefile.in (1.112), bsdmodule/Makefile.in (1.28),
