@@ -20,9 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipmirror.hh"
 #include <click/click_ip.h>
 #include <click/click_udp.h>
+
+IPMirror::IPMirror()
+  : Element(1, 1)
+{
+  MOD_INC_USE_COUNT;
+}
+
+IPMirror::~IPMirror()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 Packet *
 IPMirror::simple_action(Packet *p_in)

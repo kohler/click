@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "hashswitch.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
@@ -28,7 +30,13 @@
 HashSwitch::HashSwitch()
   : _offset(-1)
 {
+  MOD_INC_USE_COUNT;
   set_ninputs(1);
+}
+
+HashSwitch::~HashSwitch()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 HashSwitch *

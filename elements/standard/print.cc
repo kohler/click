@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "print.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -28,11 +30,13 @@
 Print::Print()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
   _buf = 0;
 }
 
 Print::~Print()
 {
+  MOD_DEC_USE_COUNT;
   delete[] _buf;
 }
 

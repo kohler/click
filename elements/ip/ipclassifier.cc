@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipclassifier.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
@@ -27,10 +29,12 @@
 
 IPClassifier::IPClassifier()
 {
+  // no MOD_INC_USE_COUNT; rely on Classifier
 }
 
 IPClassifier::~IPClassifier()
 {
+  // no MOD_DEC_USE_COUNT; rely on Classifier
 }
 
 IPClassifier *

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ip6ndsolicitor.hh"
 #include <click/click_ether.h>
 #include <click/etheraddress.hh>
@@ -32,6 +34,7 @@
 IP6NDSolicitor::IP6NDSolicitor()
 : _expire_timer(expire_hook, (unsigned long)this)
 {
+  MOD_INC_USE_COUNT;
   add_input(); /* IP6 packets */
   add_input(); /* ether/N.Advertisement responses */
   add_output();/* ether/IP6 and ether/N.Solicitation queries */
@@ -41,6 +44,7 @@ IP6NDSolicitor::IP6NDSolicitor()
 
 IP6NDSolicitor::~IP6NDSolicitor()
 {
+  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

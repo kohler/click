@@ -3,7 +3,7 @@
 class Element;
 extern "C" {
 
-#if defined(CLICK_LINUXMODULE) && !defined(CLICK_DRIVER)
+#if defined(CLICK_LINUXMODULE) && defined(CLICK_PACKAGE)
 # define __NO_VERSION__
 # define new linux_new
 # include <linux/module.h>

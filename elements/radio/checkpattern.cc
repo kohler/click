@@ -20,19 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "checkpattern.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
 
 CheckPattern::CheckPattern()
+  : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
   _len = 1;
-  add_input();
-  add_output();
 }
 
 CheckPattern::~CheckPattern()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -28,7 +28,8 @@ class ChuckCheck : public Element {
   
  public:
   
-  ChuckCheck()					{ add_input(); add_output(); }
+  ChuckCheck();
+  ~ChuckCheck();
   
   const char *class_name() const		{ return "ChuckCheck"; }
   const char *processing() const		{ return AGNOSTIC; }

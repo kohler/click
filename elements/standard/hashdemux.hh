@@ -21,6 +21,7 @@ class HashDemux : public Element {
  public:
   
   HashDemux();
+  ~HashDemux();
   
   const char *class_name() const		{ return "HashDemux"; }
   const char *processing() const		{ return PUSH; }

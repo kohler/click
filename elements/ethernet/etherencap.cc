@@ -1,6 +1,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "etherencap.hh"
 #include <click/etheraddress.hh>
 #include <click/confparse.hh>
@@ -10,6 +12,12 @@
 EtherEncap::EtherEncap()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+EtherEncap::~EtherEncap()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 EtherEncap *

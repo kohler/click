@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "perfcountaccum.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,8 +30,14 @@
 
 PerfCountAccum::PerfCountAccum()
 {
+  // no MOD_INC_USE_COUNT; rely on PerfCountUser
   add_input();
   add_output();
+}
+
+PerfCountAccum::~PerfCountAccum()
+{
+  // no MOD_DEC_USE_COUNT; rely on PerfCountUser
 }
 
 PerfCountAccum *

@@ -21,7 +21,8 @@ class RatedUnqueue : public Element { protected:
 
  public:
   
-  RatedUnqueue() : Element(1, 1)		{ }
+  RatedUnqueue();
+  ~RatedUnqueue();
   
   const char *class_name() const		{ return "RatedUnqueue"; }
   const char *processing() const		{ return PULL_TO_PUSH; }

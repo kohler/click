@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "tcpipsend.hh"
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
@@ -31,12 +33,14 @@
 #endif
 
 TCPIPSend::TCPIPSend()
+  : Element(0, 1)
 {
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 TCPIPSend::~TCPIPSend()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 TCPIPSend *

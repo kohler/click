@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "checkip6header.hh"
 #include <click/click_ip6.h>
 #include <click/ip6address.hh>
@@ -36,12 +38,14 @@
 CheckIP6Header::CheckIP6Header()
   : _bad_src(0), _drops(0)
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 CheckIP6Header::~CheckIP6Header()
 {
+  MOD_DEC_USE_COUNT;
   delete[] _bad_src;
 }
 

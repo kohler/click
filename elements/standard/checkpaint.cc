@@ -20,9 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "checkpaint.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+
+CheckPaint::CheckPaint()
+  : Element(1, 2)
+{
+  MOD_INC_USE_COUNT;
+}
+
+CheckPaint::~CheckPaint()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 CheckPaint *
 CheckPaint::clone() const

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "decip6hlim.hh"
 #include <click/click_ip6.h>
 #include <click/glue.hh>
@@ -27,12 +29,14 @@
 DecIP6HLIM::DecIP6HLIM()
   : _drops(0)
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 DecIP6HLIM::~DecIP6HLIM()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

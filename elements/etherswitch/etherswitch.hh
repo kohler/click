@@ -15,7 +15,6 @@ class EtherSwitch : public Element {
   const char *class_name() const		{ return "EtherSwitch"; }
   const char *processing() const		{ return "h/h"; }
   void notify_ninputs(int);
-  void notify_noutputs(int);
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   void push(int port, Packet* p);

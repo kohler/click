@@ -18,15 +18,22 @@
  */
 
 #ifdef HAVE_CONFIG_H
-#include <config.h>
+# include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "unstripipheader.hh"
 #include <click/click_ip.h>
 
 UnstripIPHeader::UnstripIPHeader()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
+}
+
+UnstripIPHeader::~UnstripIPHeader()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 Packet *

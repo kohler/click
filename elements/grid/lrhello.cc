@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "lrhello.hh"
 #include <click/click_ether.h>
 #include <click/confparse.hh>
@@ -32,10 +34,12 @@
 SendGridLRHello::SendGridLRHello()
   : Element(0, 1), _timer(this), _nbr(0), _hops(1)
 {
+  MOD_INC_USE_COUNT;
 }
 
 SendGridLRHello::~SendGridLRHello()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 SendGridLRHello *

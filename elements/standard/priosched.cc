@@ -20,15 +20,19 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "priosched.hh"
 
 PrioSched::PrioSched()
 {
+  MOD_INC_USE_COUNT;
   add_output();
 }
 
 PrioSched::~PrioSched()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

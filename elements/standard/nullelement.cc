@@ -20,11 +20,19 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "nullelement.hh"
 
 NullElement::NullElement()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+NullElement::~NullElement()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 NullElement *

@@ -22,16 +22,10 @@
 
 #include <click/element.hh>
 
-class AlignmentInfo : public Element {
+class AlignmentInfo : public Element { public:
 
-  Vector<int> _elem_offset;
-  Vector<int> _elem_icount;
-  Vector<int> _chunks;
-  Vector<int> _offsets;
-  
- public:
-  
   AlignmentInfo();
+  ~AlignmentInfo();
   
   const char *class_name() const	{ return "AlignmentInfo"; }
   
@@ -41,6 +35,13 @@ class AlignmentInfo : public Element {
 
   bool query1(Element *, int port, int &chunk, int &offset) const;
   static bool query(Element *, int port, int &chunk, int &offset);
+
+ private:
+  
+  Vector<int> _elem_offset;
+  Vector<int> _elem_icount;
+  Vector<int> _chunks;
+  Vector<int> _offsets;
   
 };
 

@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include <click/glue.hh>
 #include "polldevice.hh"
 #include "fromdevice.hh"
@@ -60,12 +62,14 @@ polldev_static_cleanup()
 PollDevice::PollDevice()
   : _registered(false), _promisc(false)
 {
+  // no MOD_INC_USE_COUNT; rely on AnyDevice
   add_output();
   polldev_static_initialize();
 }
 
 PollDevice::~PollDevice()
 {
+  // no MOD_DEC_USE_COUNT; rely on AnyDevice
   assert(!_registered);
   polldev_static_cleanup();
 }

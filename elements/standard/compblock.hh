@@ -31,15 +31,14 @@
  * =a Block, IPRateMonitor
  */
 
-class CompareBlock : public Element {
-  
- public:
+class CompareBlock : public Element { public:
   
   CompareBlock();
-  CompareBlock *clone() const;
+  ~CompareBlock();
 
   const char *class_name() const		{ return "CompareBlock"; }
   const char *processing() const	        { return AGNOSTIC; }
+  CompareBlock *clone() const;
   void add_handlers();
   
   int configure(const Vector<String> &, ErrorHandler *);

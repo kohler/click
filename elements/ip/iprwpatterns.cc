@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "iprwpatterns.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
@@ -28,6 +30,12 @@
 IPRewriterPatterns::IPRewriterPatterns()
   : _name_map(-1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+IPRewriterPatterns::~IPRewriterPatterns()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

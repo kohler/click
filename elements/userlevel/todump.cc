@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include <click/glue.hh>
 #include "todump.hh"
 #include <click/confparse.hh>
@@ -43,13 +45,14 @@ extern "C" {
 #endif
 
 ToDump::ToDump()
-  : _fp(0)
+  : Element(1, 0), _fp(0)
 {
-  add_input();
+  MOD_INC_USE_COUNT;
 }
 
 ToDump::~ToDump()
 {
+  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "fromdevice.hh"
 #include "todevice.hh"
 #include <click/error.hh>
@@ -46,9 +48,9 @@
 #endif
 
 FromDevice::FromDevice()
-  : _promisc(0), _packetbuf_size(0)
+  : Element(0, 1), _promisc(0), _packetbuf_size(0)
 {
-  add_output();
+  MOD_INC_USE_COUNT;
 #if FROMDEVICE_PCAP
   _pcap = 0;
 #endif
@@ -60,6 +62,7 @@ FromDevice::FromDevice()
 
 FromDevice::~FromDevice()
 {
+  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

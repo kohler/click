@@ -29,6 +29,7 @@ class GetIPAddress : public Element {
  public:
   
   GetIPAddress();
+  ~GetIPAddress();
   
   const char *class_name() const		{ return "GetIPAddress"; }
   const char *processing() const		{ return AGNOSTIC; }

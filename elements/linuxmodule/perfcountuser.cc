@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "perfcountuser.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -30,7 +32,13 @@
 
 PerfCountUser::PerfCountUser()
 {
+  MOD_INC_USE_COUNT;
   _metric0 = _metric1 = -2;
+}
+
+PerfCountUser::~PerfCountUser()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 static int

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "fromdump.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
@@ -28,13 +30,14 @@
 #include <click/glue.hh>
 
 FromDump::FromDump()
-  : _pcap(0), _pending_packet(0)
+  : Element(0, 1), _pcap(0), _pending_packet(0)
 {
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 FromDump::~FromDump()
 {
+  MOD_DEC_USE_COUNT;
   assert(!_pcap && !_pending_packet);
 }
 

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "alignmentinfo.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -28,6 +30,12 @@
 
 AlignmentInfo::AlignmentInfo()
 {
+  MOD_INC_USE_COUNT;
+}
+
+AlignmentInfo::~AlignmentInfo()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

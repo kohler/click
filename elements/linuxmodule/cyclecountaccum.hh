@@ -33,6 +33,7 @@
 class CycleCountAccum : public Element { public:
   
   CycleCountAccum();
+  ~CycleCountAccum();
   
   const char *class_name() const		{ return "CycleCountAccum"; }
   const char *processing() const		{ return AGNOSTIC; }

@@ -20,14 +20,21 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "markipheader.hh"
 #include <click/confparse.hh>
 #include <click/click_ip.h>
 
 MarkIPHeader::MarkIPHeader()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
+}
+
+MarkIPHeader::~MarkIPHeader()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 MarkIPHeader *

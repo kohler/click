@@ -27,7 +27,8 @@ class StaticSwitch : public Element {
 
  public:
   
-  StaticSwitch()				{ add_input(); }
+  StaticSwitch();
+  ~StaticSwitch();
   
   const char *class_name() const		{ return "StaticSwitch"; }
   const char *processing() const		{ return PUSH; }

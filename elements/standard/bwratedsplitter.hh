@@ -27,7 +27,8 @@ class BandwidthRatedSplitter : public RatedSplitter {
 
  public:
   
-  BandwidthRatedSplitter()		{ }
+  BandwidthRatedSplitter();
+  ~BandwidthRatedSplitter();
 
   const char *class_name() const	{ return "BandwidthRatedSplitter"; }
   BandwidthRatedSplitter *clone() const	{ return new BandwidthRatedSplitter; }

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "tolinux.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -29,8 +31,9 @@ extern "C" {
 }
 
 ToLinux::ToLinux()
+  : Element(1, 0)
 {
-  add_input();
+  MOD_INC_USE_COUNT;
 }
 
 #if 0
@@ -40,6 +43,7 @@ static unsigned long linux_pkts = 0;
 
 ToLinux::~ToLinux()
 {
+  MOD_DEC_USE_COUNT;
 #if 0
   click_chatter("%d pkts in %u cycles", linux_pkts, linux_cycles);
 #endif

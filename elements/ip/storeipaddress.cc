@@ -21,12 +21,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "storeipaddress.hh"
 #include <click/confparse.hh>
 
 StoreIPAddress::StoreIPAddress()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+StoreIPAddress::~StoreIPAddress()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -21,7 +21,8 @@ class Unqueue : public Element {
 
  public:
   
-  Unqueue() : Element(1, 1)			{ }
+  Unqueue();
+  ~Unqueue();
   
   const char *class_name() const		{ return "Unqueue"; }
   const char *processing() const		{ return PULL_TO_PUSH; }

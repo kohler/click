@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "locfromfile.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -28,12 +30,14 @@
 
 LocFromFile::LocFromFile()
 {
+  // no MOD_INC_USE_COUNT; rely on GridLocationInfo
   _next = 0;
   _move = 1;
 }
 
 LocFromFile::~LocFromFile()
 {
+  // no MOD_DEC_USE_COUNT; rely on GridLocationInfo
 }
 
 void *

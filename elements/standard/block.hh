@@ -35,6 +35,7 @@ class Block : public Element {
  public:
   
   Block();
+  ~Block();
   Block *clone() const;
 
   const char *class_name() const		{ return "Block"; }

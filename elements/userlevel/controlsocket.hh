@@ -131,7 +131,8 @@ class ControlSocket : public Element {
 
  public:
 
-  ControlSocket()			{ }
+  ControlSocket();
+  ~ControlSocket();
 
   const char *class_name() const	{ return "ControlSocket"; }
   ControlSocket *clone() const		{ return new ControlSocket; }

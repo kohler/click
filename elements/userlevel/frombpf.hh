@@ -16,10 +16,10 @@
 
 #include <click/element.hh>
 
-class FromBPF : public Element {
- public:
+class FromBPF : public Element { public:
 
   FromBPF();
+  ~FromBPF();
   
   const char *class_name() const	{ return "FromBPF"; }
   FromBPF *clone() const;

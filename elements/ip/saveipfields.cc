@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "saveipfields.hh"
 #include <click/click_ip.h>
 #include <click/confparse.hh>
@@ -29,6 +31,12 @@
 SaveIPFields::SaveIPFields()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+SaveIPFields::~SaveIPFields()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 SaveIPFields *

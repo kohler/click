@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "simplelocquerier.hh"
 #include <click/click_ether.h>
 #include <click/etheraddress.hh>
@@ -32,10 +34,12 @@
 SimpleLocQuerier::SimpleLocQuerier()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
 }
 
 SimpleLocQuerier::~SimpleLocQuerier()
 {
+  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

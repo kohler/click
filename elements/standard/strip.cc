@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "strip.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,10 +30,12 @@
 Strip::Strip(unsigned nbytes)
   : Element(1, 1), _nbytes(nbytes)
 {
+  MOD_INC_USE_COUNT;
 }
 
 Strip::~Strip()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 Strip *

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "tolinuxsniffers.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -33,12 +35,14 @@ extern "C" {
 // unsigned long i0 = 0;
 
 ToLinuxSniffers::ToLinuxSniffers()
+  : Element(1, 0)
 {
-  add_input();
+  MOD_INC_USE_COUNT;
 }
 
 ToLinuxSniffers::~ToLinuxSniffers()
 {
+  MOD_DEC_USE_COUNT;
   // click_chatter("%d %d", c0, i0);
 }
 

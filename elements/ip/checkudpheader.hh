@@ -26,6 +26,7 @@ class CheckUDPHeader : public Element {
  public:
   
   CheckUDPHeader();
+  ~CheckUDPHeader();
   
   const char *class_name() const		{ return "CheckUDPHeader"; }
   const char *processing() const		{ return "a/ah"; }

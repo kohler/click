@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "toytcp.hh"
 #include <click/click_tcp.h>
 #include <click/click_ip.h>
@@ -31,11 +33,12 @@
 ToyTCP::ToyTCP()
   : _timer(this)
 {
-  struct timeval tv;
+  MOD_INC_USE_COUNT;
 
   add_input();
   add_output();
 
+  struct timeval tv;
   click_gettimeofday(&tv);
 
   _sport = htons(1024 + (tv.tv_usec % 60000));
@@ -55,6 +58,7 @@ ToyTCP::ToyTCP()
 
 ToyTCP::~ToyTCP()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 ToyTCP *

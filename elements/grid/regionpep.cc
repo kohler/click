@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "regionpep.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,6 +30,7 @@
 EstimateRouterRegion::EstimateRouterRegion()
   : _timer(this)
 {
+  // no MOD_INC_USE_COUNT; rely on GridLocationInfo
   add_input();
   add_output();
   _fixed = false;
@@ -37,6 +40,7 @@ EstimateRouterRegion::EstimateRouterRegion()
 
 EstimateRouterRegion::~EstimateRouterRegion()
 {
+  // no MOD_DEC_USE_COUNT; rely on GridLocationInfo
 }
 
 EstimateRouterRegion *

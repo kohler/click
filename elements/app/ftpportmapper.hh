@@ -100,6 +100,7 @@ class FTPPortMapper : public Element {
  public:
 
   FTPPortMapper();
+  ~FTPPortMapper();
 
   const char *class_name() const	{ return "FTPPortMapper"; }
   

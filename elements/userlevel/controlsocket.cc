@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "controlsocket.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -80,6 +82,16 @@ ControlSocketErrorHandler::vmessage(Seriousness seriousness, const String &m)
     _messages.push_back(m.substring(pos));
 }
 
+
+ControlSocket::ControlSocket()
+{
+  MOD_INC_USE_COUNT;
+}
+
+ControlSocket::~ControlSocket()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 int
 ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)

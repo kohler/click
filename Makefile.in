@@ -26,16 +26,16 @@ datadir = @datadir@/click
 
 all: @TARGETS@ tools Makefile
 
-linuxmodule: stamp-h stamp-egroup
+linuxmodule: Makefile stamp-h
 	@cd linuxmodule && $(MAKE) all
-userlevel: stamp-h stamp-egroup
+userlevel: Makefile stamp-h
 	@cd userlevel && $(MAKE) all
-exopc: stamp-h stamp-egroup
+exopc: Makefile stamp-h
 	@cd exopc && $(MAKE) all
 tools: Makefile
 	@cd tools && $(MAKE) all
 
-install: stamp-h stamp-egroup
+install: stamp-h
 	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-include
 install-local: elementmap $(srcdir)/click-buildtool click-compile $(srcdir)/click-mkelemmap
@@ -54,9 +54,10 @@ install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
 install-include:
 	$(mkinstalldirs) $(includedir)
-	$(INSTALL_DATA) $(top_builddir)/config.h $(srcdir)/include/click/*.* $(includedir)
+	$(INSTALL_DATA) $(srcdir)/include/click/*.* $(includedir)
+	$(INSTALL_DATA) $(top_builddir)/config.h $(includedir)
 
-elemlist elemlists: stamp-egroup
+elemlist elemlists:
 	for dir in @TARGETS@; do \
 	  echo $$dir @element_groups@ | (cd $(top_srcdir); ./click-buildtool findelem) > $$dir/elements.conf; \
 	done
@@ -78,13 +79,11 @@ $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
 Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
-stamp-h: Makefile
-	@echo 'creating stamp-h' 1>&2
-	@echo "/* Created on" `date` "*/" > stamp-h
-	@if test ! -r stamp-egroup || test "@element_groups" != "`cat stamp-egroup`"; then echo "@element_groups@" > stamp-egroup; fi
-stamp-egroup:
-	@/bin/rm -f stamp-h
-	@$(MAKE) stamp-h
+config.h: stamp-h
+stamp-h: $(srcdir)/config.h.in config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES= CONFIG_HEADERS='config.h include/click/config.h:config.h.in' $(SHELL) ./config.status
+	echo > stamp-h
 
 check-filenames:
 	@a=`find . \( -name \*.cc -or -name \*.c \) -print | sed 's/.*\/\(.*\)\.c*$$/\1.o/' | grep -v 'elements\.o' | sort | uniq -d`; \
@@ -96,7 +95,7 @@ clean:
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f config.h Makefile config.status
-	-rm -f config.cache config.log click-compile stamp-h stamp-egroup
+	-rm -f config.cache config.log click-compile stamp-h
 
 
 distdir = $(PACKAGE)-$(VERSION)

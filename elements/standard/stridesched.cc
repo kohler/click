@@ -20,18 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "stridesched.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
 StrideSched::StrideSched()
 {
+  MOD_INC_USE_COUNT;
   _list = new Client;
   _list->make_head();
 }
 
 StrideSched::~StrideSched()
 {
+  MOD_DEC_USE_COUNT;
   delete _list;
 }
 

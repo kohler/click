@@ -22,19 +22,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "shaper.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 
 Shaper::Shaper()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 Shaper::~Shaper()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 Shaper *

@@ -35,6 +35,7 @@ class AverageCounter : public Element { protected:
  public:
 
   AverageCounter();
+  ~AverageCounter();
   
   const char *class_name() const		{ return "AverageCounter"; }
   const char *processing() const		{ return AGNOSTIC; }
@@ -49,6 +50,7 @@ class AverageCounter : public Element { protected:
   void add_handlers();
   
   Packet *simple_action(Packet *);
+  
 };
 
 #endif

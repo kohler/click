@@ -23,11 +23,11 @@ class MarkIPHeader : public Element {
  public:
   
   MarkIPHeader();
+  ~MarkIPHeader();
   
   const char *class_name() const		{ return "MarkIPHeader"; }
-  int configure(const Vector<String> &, ErrorHandler *);
-  
   MarkIPHeader *clone() const;
+  int configure(const Vector<String> &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
   

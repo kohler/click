@@ -26,7 +26,8 @@ class StaticPullSwitch : public Element {
   
  public:
   
-  StaticPullSwitch()				{ add_output(); }
+  StaticPullSwitch();
+  ~StaticPullSwitch();
   
   const char *class_name() const		{ return "StaticPullSwitch"; }
   const char *processing() const		{ return PULL; }

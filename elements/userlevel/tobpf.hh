@@ -16,10 +16,10 @@
  * 
  * =a ToDevice.u */
 
-class ToBPF : public Element {
- public:
+class ToBPF : public Element { public:
   
   ToBPF();
+  ~ToBPF();
   
   const char *class_name() const		{ return "ToBPF"; }
   ToBPF *clone() const;

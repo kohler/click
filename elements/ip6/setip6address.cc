@@ -21,12 +21,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "setip6address.hh"
 #include <click/confparse.hh>
 
 SetIP6Address::SetIP6Address()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+SetIP6Address::~SetIP6Address()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

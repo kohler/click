@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "block.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
@@ -27,6 +29,12 @@
 Block::Block()
   : Element(1, 2)
 {
+  MOD_INC_USE_COUNT;
+}
+
+Block::~Block()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 Block *

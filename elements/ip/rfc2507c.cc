@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #ifdef __linux__
 # define _BSD_SOURCE
 #endif
@@ -30,12 +32,14 @@ extern "C" long int random(void);
 
 RFC2507c::RFC2507c()
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 RFC2507c::~RFC2507c()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 RFC2507c *

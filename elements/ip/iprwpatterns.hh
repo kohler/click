@@ -29,6 +29,7 @@ class IPRewriterPatterns : public Element {
  public:
 
   IPRewriterPatterns();
+  ~IPRewriterPatterns();
   
   const char *class_name() const	{ return "IPRewriterPatterns"; }
   IPRewriterPatterns *clone() const	{ return new IPRewriterPatterns; }

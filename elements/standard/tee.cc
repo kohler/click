@@ -20,9 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "tee.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+
+Tee::Tee()
+{
+  MOD_INC_USE_COUNT;
+  add_input();
+}
+
+Tee::~Tee()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 Tee *
 Tee::clone() const
@@ -63,6 +76,17 @@ Tee::push(int, Packet *p)
 //
 // PULLTEE
 //
+
+PullTee::PullTee()
+{
+  MOD_INC_USE_COUNT;
+  add_input();
+}
+
+PullTee::~PullTee()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 PullTee *
 PullTee::clone() const

@@ -18,11 +18,12 @@ class DiscardNoFree : public Element {
  public:
   
   DiscardNoFree();
+  ~DiscardNoFree();
   
   const char *class_name() const		{ return "DiscardNoFree"; }
   const char *processing() const		{ return AGNOSTIC; }
-  
   DiscardNoFree *clone() const			{ return new DiscardNoFree; }
+  
   int initialize(ErrorHandler *);
   void uninitialize();
   

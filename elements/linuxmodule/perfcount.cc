@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "perfcount.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -27,14 +29,15 @@
 #include "asm/msr.h"
 
 PerfCount::PerfCount()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
   _m0 = _m1 = _packets = 0;
 }
 
 PerfCount::~PerfCount()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 PerfCount *

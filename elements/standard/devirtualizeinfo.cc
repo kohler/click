@@ -20,11 +20,19 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "devirtualizeinfo.hh"
 #include <click/glue.hh>
 
 DevirtualizeInfo::DevirtualizeInfo()
 {
+  MOD_INC_USE_COUNT;
+}
+
+DevirtualizeInfo::~DevirtualizeInfo()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -22,6 +22,7 @@ class ICMPPing : public Element {
  public:
   
   ICMPPing();
+  ~ICMPPing();
   
   const char *class_name() const		{ return "ICMPPing"; }
   const char *processing() const		{ return AGNOSTIC; }

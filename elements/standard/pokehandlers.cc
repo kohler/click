@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "pokehandlers.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,10 +30,12 @@
 PokeHandlers::PokeHandlers()
   : _timer(timer_hook, (unsigned long)this)
 {
+  MOD_INC_USE_COUNT;
 }
 
 PokeHandlers::~PokeHandlers()
 {
+  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

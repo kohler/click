@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "hashdemux.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
@@ -28,7 +30,13 @@
 HashDemux::HashDemux()
   : _offset(-1)
 {
+  MOD_INC_USE_COUNT;
   set_ninputs(1);
+}
+
+HashDemux::~HashDemux()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 HashDemux *

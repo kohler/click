@@ -24,6 +24,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include <click/glue.hh>
 #include "fromdevice.hh"
 #include <click/error.hh>
@@ -64,13 +66,15 @@ fromdev_static_cleanup()
 FromDevice::FromDevice()
   : _registered(false), _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
+  // no MOD_INC_USE_COUNT; rely on AnyDevice
+  add_output();
   _promisc = 0;
   fromdev_static_initialize();
-  add_output();
 }
 
 FromDevice::~FromDevice()
 {
+  // no MOD_DEC_USE_COUNT; rely on AnyDevice
   if (_registered) uninitialize();
   fromdev_static_cleanup();
 }

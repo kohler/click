@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "radiosim.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,6 +30,12 @@
 
 RadioSim::RadioSim()
 {
+  MOD_INC_USE_COUNT;
+}
+
+RadioSim::~RadioSim()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 RadioSim *

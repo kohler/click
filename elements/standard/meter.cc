@@ -21,10 +21,18 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "meter.hh"
 
 Meter::Meter()
 {
+  // no MOD_INC_USE_COUNT; rely on BandwidthMeter
+}
+
+Meter::~Meter()
+{
+  // no MOD_DEC_USE_COUNT; rely on BandwidthMeter
 }
 
 Meter *

@@ -23,6 +23,7 @@ class ICMPSendPings : public Element {
  public:
   
   ICMPSendPings();
+  ~ICMPSendPings();
   
   const char *class_name() const		{ return "ICMPSendPings"; }
   const char *processing() const		{ return PUSH; }

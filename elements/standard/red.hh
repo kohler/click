@@ -78,6 +78,7 @@ class RED : public Element {
  public:
   
   RED();
+  ~RED();
   
   const char *class_name() const		{ return "RED"; }
   const char *processing() const		{ return AGNOSTIC; }

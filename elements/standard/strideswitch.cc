@@ -21,16 +21,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "strideswitch.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
 StrideSwitch::StrideSwitch()
 {
+  // no MOD_INC_USE_COUNT; rely on StrideSched
 }
 
 StrideSwitch::~StrideSwitch()
 {
+  // no MOD_DEC_USE_COUNT; rely on StrideSched
 }
 
 int

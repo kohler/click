@@ -27,12 +27,12 @@ class ProbSplitter : public Element {
   
  public:
   
-  ProbSplitter() : Element(1,2)			{}
-  ~ProbSplitter() 				{}
-  ProbSplitter *clone() const			{ return new ProbSplitter; }
+  ProbSplitter();
+  ~ProbSplitter();
 
   const char *class_name() const		{ return "ProbSplitter"; }
   const char *processing() const	        { return PUSH; }
+  ProbSplitter *clone() const			{ return new ProbSplitter; }
   void add_handlers();
   
   int configure(const Vector<String> &, ErrorHandler *);

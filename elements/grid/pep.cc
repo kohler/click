@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "pep.hh"
 #include "amoeba.hh"
 #include <click/confparse.hh>
@@ -30,6 +32,7 @@
 PEP::PEP()
   : _timer(this)
 {
+  // no MOD_INC_USE_COUNT; rely on GridLocationInfo
   add_input();
   add_output();
   _fixed = 0;
@@ -39,6 +42,7 @@ PEP::PEP()
 
 PEP::~PEP()
 {
+  // no MOD_DEC_USE_COUNT; rely on GridLocationInfo
 }
 
 PEP *

@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "spantree.hh"
 #include <click/confparse.hh>
 #include "elements/standard/suppressor.hh"
@@ -32,10 +34,12 @@ EtherSpanTree::EtherSpanTree()
     _long_cache_timeout(5*60),
     _hello_timer(hello_hook, (unsigned long)this)
 {
+  MOD_INC_USE_COUNT;
 }
 
 EtherSpanTree::~EtherSpanTree()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 EtherSpanTree*
@@ -47,14 +51,8 @@ EtherSpanTree::clone() const
 void
 EtherSpanTree::notify_ninputs(int n) {
   set_ninputs(n);
-  // the rest is redundant with notify_noutputs below
-  _port.resize(n);
-}
-
-void
-EtherSpanTree::notify_noutputs(int n) {
   set_noutputs(n);
-  // the rest is redundant with notify_ninputs above
+  // the rest is redundant with notify_noutputs below
   _port.resize(n);
 }
 

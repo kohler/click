@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipencap.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
@@ -30,10 +32,12 @@
 IPEncap::IPEncap()
   : Element(1, 1), _ip_p(-1)
 {
+  MOD_INC_USE_COUNT;
 }
 
 IPEncap::~IPEncap()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 IPEncap *

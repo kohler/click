@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "addressinfo.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -29,6 +31,12 @@
 AddressInfo::AddressInfo()
   : _map(-1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+AddressInfo::~AddressInfo()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

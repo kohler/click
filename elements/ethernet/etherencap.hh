@@ -33,6 +33,7 @@
 class EtherEncap : public Element { public:
   
   EtherEncap();
+  ~EtherEncap();
 
   const char *class_name() const	{ return "EtherEncap"; }
   const char *processing() const	{ return AGNOSTIC; }

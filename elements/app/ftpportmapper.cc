@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ftpportmapper.hh"
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
@@ -29,10 +31,14 @@
 #include <click/error.hh>
 
 FTPPortMapper::FTPPortMapper()
-  : _pattern(0)
+  : Element(1, 1), _pattern(0)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
+}
+
+FTPPortMapper::~FTPPortMapper()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

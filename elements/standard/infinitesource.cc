@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "infinitesource.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,9 +30,15 @@
 #include <click/glue.hh>
 
 InfiniteSource::InfiniteSource()
+  : Element(0, 1)
 {
+  MOD_INC_USE_COUNT;
   _packet = 0;
-  add_output();
+}
+
+InfiniteSource::~InfiniteSource()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 InfiniteSource *

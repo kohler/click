@@ -20,39 +20,38 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "etherswitch.hh"
+
 #include <click/click_ether.h>
 #include <click/etheraddress.hh>
 #include <click/glue.hh>
 #include <click/bitvector.hh>
+
+EtherSwitch::EtherSwitch()
+  : _table(0), _timeout(300)
+{
+  MOD_INC_USE_COUNT;
+}
+
+EtherSwitch::~EtherSwitch()
+{
+  MOD_DEC_USE_COUNT;
+  for (Table::Iterator iter = _table.first(); iter; iter++)
+    delete iter.value();
+  _table.clear();
+}
 
 EtherSwitch::AddrInfo::AddrInfo(int p, const timeval& s)
   : port(p), stamp(s)
 {
 }
 
-EtherSwitch::EtherSwitch()
-  : _table(0), _timeout(300)
-{
-}
-
-
-EtherSwitch::~EtherSwitch()
-{
-  for (Table::Iterator iter = _table.first(); iter; iter++)
-    delete iter.value();
-  _table.clear();
-}
-
 void
 EtherSwitch::notify_ninputs(int n)
 {
   set_ninputs(n);
-}
-
-void
-EtherSwitch::notify_noutputs(int n)
-{
   set_noutputs(n);
 }
 

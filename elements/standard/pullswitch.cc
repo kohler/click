@@ -20,9 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "pullswitch.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+
+PullSwitch::PullSwitch()
+{
+  MOD_INC_USE_COUNT;
+  add_output();
+}
+
+PullSwitch::~PullSwitch()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 PullSwitch *
 PullSwitch::clone() const

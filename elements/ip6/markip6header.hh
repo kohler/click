@@ -24,6 +24,7 @@ class MarkIP6Header : public Element {
  public:
   
   MarkIP6Header();
+  ~MarkIP6Header();
   
   const char *class_name() const		{ return "MarkIP6Header"; }
   int configure(const Vector<String> &, ErrorHandler *);

@@ -20,19 +20,21 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "queue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
 Queue::Queue()
-  : _q(0)
+  : Element(1, 1), _q(0)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 Queue::~Queue()
 {
+  MOD_DEC_USE_COUNT;
   if (_q) uninitialize();
 }
 

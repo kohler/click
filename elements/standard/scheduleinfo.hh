@@ -73,6 +73,7 @@ class ScheduleInfo : public Element {
   static const int DEFAULT = 1<<FRAC_BITS;
   
   ScheduleInfo();
+  ~ScheduleInfo();
   
   const char *class_name() const	{ return "ScheduleInfo"; }
   

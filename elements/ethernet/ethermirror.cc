@@ -20,8 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ethermirror.hh"
 #include <click/click_ether.h>
+
+EtherMirror::EtherMirror()
+{
+  MOD_INC_USE_COUNT;
+  add_input();
+  add_output();
+}
+
+EtherMirror::~EtherMirror()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 Packet *
 EtherMirror::simple_action(Packet *p)

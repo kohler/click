@@ -21,23 +21,25 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "movesim.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
 
-
-
 MovementSimulator::MovementSimulator() 
   : _event_timer(event_hook, (unsigned long) this)
 {
+  MOD_INC_USE_COUNT;
   _events = new event_entry;
   _events->next = _events;
 }
 
 MovementSimulator::~MovementSimulator()
 {
+  MOD_DEC_USE_COUNT;
   event_entry *cur = _events->next;
   event_entry *next;
   while (cur != _events) {

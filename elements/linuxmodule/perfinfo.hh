@@ -45,8 +45,8 @@ class PerfInfo : public Element {
 
  public:
   
-  PerfInfo() {}
-  ~PerfInfo() {}
+  PerfInfo();
+  ~PerfInfo();
   PerfInfo *clone() const;
   
   const char *class_name() const		{ return "PerfInfo"; }

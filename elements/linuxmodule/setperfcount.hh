@@ -29,6 +29,7 @@
 class SetPerfCount : public PerfCountUser { public:
   
   SetPerfCount();
+  ~SetPerfCount();
   
   const char *class_name() const		{ return "SetPerfCount"; }
   void *cast(const char *);

@@ -21,19 +21,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "b8b10.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>
 
 B8B10::B8B10()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 B8B10::~B8B10()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 /*

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "forcetcp.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
@@ -27,14 +29,15 @@
 #include <click/click_tcp.h>
 
 ForceTCP::ForceTCP()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
   _count = 0;
 }
 
 ForceTCP::~ForceTCP()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 ForceTCP *

@@ -23,6 +23,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include <click/glue.hh>
 #include "polldevice.hh"
 #include "todevice.hh"
@@ -48,11 +50,13 @@ ToDevice::ToDevice()
     _dev_idle(0), _last_tx(0), _last_busy(0), 
     _rejected(0), _hard_start(0)
 {
+  // no MOD_INC_USE_COUNT; rely on AnyDevice
   add_input();
 }
 
 ToDevice::~ToDevice()
 {
+  // no MOD_DEC_USE_COUNT; rely on AnyDevice
   if (_registered) uninitialize();
 }
 

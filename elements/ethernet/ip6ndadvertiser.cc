@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ip6ndadvertiser.hh"
 #include <click/click_ether.h>
 #include <click/click_ip6.h>
@@ -30,15 +32,16 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 
-
 IP6NDAdvertiser::IP6NDAdvertiser()
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 IP6NDAdvertiser::~IP6NDAdvertiser()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 IP6NDAdvertiser *

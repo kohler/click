@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "arpresponder.hh"
 #include <click/click_ether.h>
 #include <click/etheraddress.hh>
@@ -29,13 +31,14 @@
 #include <click/glue.hh>
 
 ARPResponder::ARPResponder()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 ARPResponder::~ARPResponder()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 ARPResponder *

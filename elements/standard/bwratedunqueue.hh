@@ -16,11 +16,10 @@
  *
  * =a RatedUnqueue, Unqueue, BandwidthShaper, BandwidthRatedSplitter */
 
-class BandwidthRatedUnqueue : public RatedUnqueue {
-
- public:
+class BandwidthRatedUnqueue : public RatedUnqueue { public:
   
-  BandwidthRatedUnqueue()		{ }
+  BandwidthRatedUnqueue();
+  ~BandwidthRatedUnqueue();
   
   const char *class_name() const	{ return "BandwidthRatedUnqueue"; }
   BandwidthRatedUnqueue *clone() const	{ return new BandwidthRatedUnqueue; }

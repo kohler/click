@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipprint.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -32,11 +34,13 @@
 IPPrint::IPPrint()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
   _buf = 0;
 }
 
 IPPrint::~IPPrint()
 {
+  MOD_DEC_USE_COUNT;
   delete[] _buf;
 }
 

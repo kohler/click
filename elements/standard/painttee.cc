@@ -20,9 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "painttee.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+
+PaintTee::PaintTee()
+  : Element(1, 2)
+{
+  MOD_INC_USE_COUNT;
+}
+
+PaintTee::~PaintTee()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 PaintTee *
 PaintTee::clone() const

@@ -43,9 +43,8 @@
 #include <click/ipaddress.hh>
 #include <click/vector.hh>
 
-class ARPResponder : public Element {
-
- public:
+class ARPResponder : public Element { public:
+  
   ARPResponder();
   ~ARPResponder();
   

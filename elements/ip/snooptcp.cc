@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #ifdef __linux__
 # define _BSD_SOURCE
 #endif
@@ -39,10 +41,12 @@
 SnoopTCP::SnoopTCP()
   : Element(2, 4)
 {
+  MOD_INC_USE_COUNT;
 }
 
 SnoopTCP::~SnoopTCP()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 Bitvector

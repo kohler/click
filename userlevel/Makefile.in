@@ -51,13 +51,13 @@ USERLEVEL_OBJS = clp.o click.o
 
 OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(USERLEVEL_OBJS) elements.o
 
-CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL -DCLICK_DRIVER
+CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
 DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"' -DCLICK_LIBDIR='"$(libdir)"'
-INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
-	-I$(top_srcdir)/include @PCAP_HEADER_PATH@
+INCLUDES = -I$(top_builddir) -I$(top_builddir)/include -I$(srcdir) \
+	-I$(top_srcdir) -I$(top_srcdir)/include @PCAP_HEADER_PATH@
 LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
 LIBS = @LIBS@ @PCAP_LIBRARY@ @DL_LIBRARY@ @SOCKET_LIBS@
 
@@ -80,7 +80,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
-elements.conf: $(top_builddir)/stamp-egroup
+elements.conf: $(top_builddir)/config.status
 	echo "userlevel@element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem) > elements.conf
 elements.mk: elements.conf $(top_srcdir)/click-buildtool
 	(cd $(top_srcdir); ./click-buildtool elem2make) < elements.conf > elements.mk

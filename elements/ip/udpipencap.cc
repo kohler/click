@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include <click/click_ip.h>
 #include "udpipencap.hh"
 #include <click/confparse.hh>
@@ -31,13 +33,14 @@
 #endif
 
 UDPIPEncap::UDPIPEncap()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 UDPIPEncap::~UDPIPEncap()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 UDPIPEncap *

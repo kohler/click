@@ -20,15 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "timedsink.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 
 TimedSink::TimedSink()
-  : _timer(this)
+  : Element(1, 0), _timer(this)
 {
-  add_input();
+  MOD_INC_USE_COUNT;
+}
+
+TimedSink::~TimedSink()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 TimedSink *

@@ -21,9 +21,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "unqueue.hh"
 #include <click/confparse.hh>
 #include "elements/standard/scheduleinfo.hh"
+
+Unqueue::Unqueue()
+  : Element(1, 1)
+{
+  MOD_INC_USE_COUNT;
+}
+
+Unqueue::~Unqueue()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 int
 Unqueue::configure(const Vector<String> &conf, ErrorHandler *errh)

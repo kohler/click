@@ -39,11 +39,10 @@
  *
  * =a BandwidthMeter, RatedSplitter, Shaper, BandwidthShaper */
 
-class Meter : public BandwidthMeter {
-
- public:
+class Meter : public BandwidthMeter { public:
   
   Meter();
+  ~Meter();
   
   const char *class_name() const		{ return "Meter"; }
   Meter *clone() const;

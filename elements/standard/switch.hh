@@ -29,7 +29,8 @@ class Switch : public Element {
   
  public:
   
-  Switch()					{ add_input(); }
+  Switch();
+  ~Switch();
   
   const char *class_name() const		{ return "Switch"; }
   const char *processing() const		{ return PUSH; }

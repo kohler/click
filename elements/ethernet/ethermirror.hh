@@ -13,15 +13,14 @@
  * addresses are swapped before they are output.
  * */
 
-class EtherMirror : public Element {
+class EtherMirror : public Element { public:
 
- public:
-
-  EtherMirror() 				{ add_input(); add_output(); }
-  EtherMirror *clone() const			{ return new EtherMirror(); }
+  EtherMirror();
+  ~EtherMirror();
   
   const char *class_name() const		{ return "EtherMirror"; }
-  
+  EtherMirror *clone() const			{ return new EtherMirror(); }
+    
   Packet *simple_action(Packet *);
   
 };

@@ -20,9 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "chuckcheck.hh"
 #include <click/straccum.hh>
 #include <click/click_ip.h>
+
+ChuckCheck::ChuckCheck()
+  : Element(1, 1)
+{
+  MOD_INC_USE_COUNT;
+}
+
+ChuckCheck::~ChuckCheck()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 int
 ChuckCheck::initialize(ErrorHandler *)

@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "bim.hh"
 #include <click/error.hh>
 #include <click/packet.hh>
@@ -35,9 +37,9 @@
 #include <sys/ioctl.h>
 
 BIM::BIM()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
   _speed = 9600;
   _fd = -1;
   _len = _started = _escaped = 0;
@@ -45,6 +47,7 @@ BIM::BIM()
 
 BIM::~BIM()
 {
+  MOD_DEC_USE_COUNT;
   if(_fd >= 0)
     close(_fd);
 }

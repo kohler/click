@@ -22,14 +22,14 @@ class Null1 : public Element {
   
  public:
   
-  Null1()					{ add_input(); add_output(); }
+  Null1()				: Element(1, 1) { MOD_INC_USE_COUNT; }
+  ~Null1()				{ MOD_DEC_USE_COUNT; }
   
-  const char *class_name() const		{ return "Null1"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  Null1 *clone() const				{ return new Null1; }
+  const char *class_name() const	{ return "Null1"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  Null1 *clone() const			{ return new Null1; }
 
-  Packet *simple_action(Packet *p)		{ return p; }
+  Packet *simple_action(Packet *p)	{ return p; }
   
 };
 
@@ -37,14 +37,14 @@ class Null2 : public Element {
   
  public:
   
-  Null2()					{ add_input(); add_output(); }
+  Null2()				: Element(1, 1) { MOD_INC_USE_COUNT; }
+  ~Null2()				{ MOD_DEC_USE_COUNT; }
   
-  const char *class_name() const		{ return "Null2"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  Null2 *clone() const				{ return new Null2; }
+  const char *class_name() const	{ return "Null2"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  Null2 *clone() const			{ return new Null2; }
 
-  Packet *simple_action(Packet *p)		{ return p; }
+  Packet *simple_action(Packet *p)	{ return p; }
   
 };
 
@@ -52,14 +52,14 @@ class Null3 : public Element {
   
  public:
   
-  Null3()					{ add_input(); add_output(); }
+  Null3()				: Element(1, 1) { MOD_INC_USE_COUNT; }
+  ~Null3()				{ MOD_DEC_USE_COUNT; }
   
-  const char *class_name() const		{ return "Null3"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  Null3 *clone() const				{ return new Null3; }
+  const char *class_name() const	{ return "Null3"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  Null3 *clone() const			{ return new Null3; }
 
-  Packet *simple_action(Packet *p)		{ return p; }
+  Packet *simple_action(Packet *p)	{ return p; }
   
 };
 
@@ -67,14 +67,14 @@ class Null4 : public Element {
   
  public:
   
-  Null4()					{ add_input(); add_output(); }
+  Null4()				: Element(1, 1) { MOD_INC_USE_COUNT; }
+  ~Null4()				{ MOD_DEC_USE_COUNT; }
   
-  const char *class_name() const		{ return "Null4"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  Null4 *clone() const				{ return new Null4; }
+  const char *class_name() const	{ return "Null4"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  Null4 *clone() const			{ return new Null4; }
 
-  Packet *simple_action(Packet *p)		{ return p; }
+  Packet *simple_action(Packet *p)	{ return p; }
   
 };
 
@@ -82,14 +82,14 @@ class Null5 : public Element {
   
  public:
   
-  Null5()					{ add_input(); add_output(); }
+  Null5()				: Element(1, 1) { MOD_INC_USE_COUNT; }
+  ~Null5()				{ MOD_DEC_USE_COUNT; }
   
-  const char *class_name() const		{ return "Null5"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  Null5 *clone() const				{ return new Null5; }
+  const char *class_name() const	{ return "Null5"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  Null5 *clone() const			{ return new Null5; }
 
-  Packet *simple_action(Packet *p)		{ return p; }
+  Packet *simple_action(Packet *p)	{ return p; }
   
 };
 
@@ -97,14 +97,14 @@ class Null6 : public Element {
   
  public:
   
-  Null6()					{ add_input(); add_output(); }
+  Null6()				: Element(1, 1) { MOD_INC_USE_COUNT; }
+  ~Null6()				{ MOD_DEC_USE_COUNT; }
   
-  const char *class_name() const		{ return "Null6"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  Null6 *clone() const				{ return new Null6; }
+  const char *class_name() const	{ return "Null6"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  Null6 *clone() const			{ return new Null6; }
 
-  Packet *simple_action(Packet *p)		{ return p; }
+  Packet *simple_action(Packet *p)	{ return p; }
   
 };
 
@@ -112,14 +112,14 @@ class Null7 : public Element {
   
  public:
   
-  Null7()					{ add_input(); add_output(); }
+  Null7()				: Element(1, 1) { MOD_INC_USE_COUNT; }
+  ~Null7()				{ MOD_DEC_USE_COUNT; }
   
-  const char *class_name() const		{ return "Null7"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  Null7 *clone() const				{ return new Null7; }
+  const char *class_name() const	{ return "Null7"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  Null7 *clone() const			{ return new Null7; }
 
-  Packet *simple_action(Packet *p)		{ return p; }
+  Packet *simple_action(Packet *p)	{ return p; }
   
 };
 
@@ -127,14 +127,14 @@ class Null8 : public Element {
   
  public:
   
-  Null8()					{ add_input(); add_output(); }
+  Null8()				: Element(1, 1) { MOD_INC_USE_COUNT; }
+  ~Null8()				{ MOD_DEC_USE_COUNT; }
   
-  const char *class_name() const		{ return "Null8"; }
-  const char *processing() const		{ return AGNOSTIC; }
-  
-  Null8 *clone() const				{ return new Null8; }
+  const char *class_name() const	{ return "Null8"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  Null8 *clone() const			{ return new Null8; }
 
-  Packet *simple_action(Packet *p)		{ return p; }
+  Packet *simple_action(Packet *p)	{ return p; }
   
 };
 

@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "filterbyhops.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -32,10 +34,12 @@
 
 FilterByGridHops::FilterByGridHops() : Element(1, 2)
 {
+  MOD_INC_USE_COUNT;
 }
 
 FilterByGridHops::~FilterByGridHops()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 int

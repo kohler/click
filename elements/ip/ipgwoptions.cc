@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipgwoptions.hh"
 #include <click/click_ip.h>
 #include <click/ipaddressset.hh>
@@ -30,6 +32,7 @@
 
 IPGWOptions::IPGWOptions()
 {
+  MOD_INC_USE_COUNT;
   _drops = 0;
   _other_ips = 0;
   add_input();
@@ -38,6 +41,7 @@ IPGWOptions::IPGWOptions()
 
 IPGWOptions::~IPGWOptions()
 {
+  MOD_DEC_USE_COUNT;
   delete[] _other_ips;
 }
 

@@ -18,11 +18,12 @@ class IPMirror : public Element {
 
  public:
 
-  IPMirror() 					{ add_input(); add_output(); }
-  IPMirror *clone() const			{ return new IPMirror(); }
+  IPMirror();
+  ~IPMirror();
   
   const char *class_name() const		{ return "IPMirror"; }
   const char *processing() const		{ return AGNOSTIC; }
+  IPMirror *clone() const			{ return new IPMirror; }
   
   Packet *simple_action(Packet *);
   

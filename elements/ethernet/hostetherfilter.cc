@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "hostetherfilter.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -29,12 +31,14 @@
 
 HostEtherFilter::HostEtherFilter() : _drop_own(false)
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 HostEtherFilter::~HostEtherFilter()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

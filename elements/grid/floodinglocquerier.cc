@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "floodinglocquerier.hh"
 #include <click/click_ether.h>
 #include <click/etheraddress.hh>
@@ -33,6 +35,7 @@
 FloodingLocQuerier::FloodingLocQuerier()
   : _expire_timer(expire_hook, (unsigned long)this)
 {
+  MOD_INC_USE_COUNT;
   add_input(); /* GRID_NBR_ENCAP packets */
   add_input(); /* flooding queries and responses */
   add_output(); /* GRID_NBR_ENCAP packets  */
@@ -41,6 +44,7 @@ FloodingLocQuerier::FloodingLocQuerier()
 
 FloodingLocQuerier::~FloodingLocQuerier()
 {
+  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

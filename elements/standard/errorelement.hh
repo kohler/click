@@ -13,11 +13,10 @@
  * spurious error messages about bad configuration strings or connections.
  */
 
-class ErrorElement : public Element {
-  
- public:
+class ErrorElement : public Element { public:
   
   ErrorElement();
+  ~ErrorElement();
   
   const char *class_name() const		{ return "Error"; }
   const char *processing() const		{ return AGNOSTIC; }

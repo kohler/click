@@ -23,7 +23,8 @@ class BandwidthShaper : public Shaper {
 
  public:
   
-  BandwidthShaper()				{ }
+  BandwidthShaper();
+  ~BandwidthShaper();
   
   const char *class_name() const                { return "BandwidthShaper"; }
   BandwidthShaper *clone() const;

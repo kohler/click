@@ -21,8 +21,21 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "staticswitch.hh"
 #include <click/confparse.hh>
+
+StaticSwitch::StaticSwitch()
+{
+  MOD_INC_USE_COUNT;
+  add_input();
+}
+
+StaticSwitch::~StaticSwitch()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 StaticSwitch *
 StaticSwitch::clone() const

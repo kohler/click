@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "align.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -28,6 +30,12 @@
 Align::Align()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+Align::~Align()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

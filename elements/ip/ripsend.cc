@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ripsend.hh"
 #include <click/confparse.hh>
 #include <click/glue.hh>
@@ -29,7 +31,13 @@
 RIPSend::RIPSend()
   : _timer(this)
 {
+  MOD_INC_USE_COUNT;
   add_output();
+}
+
+RIPSend::~RIPSend()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

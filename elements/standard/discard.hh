@@ -19,7 +19,7 @@ class Discard : public Element {
  public:
   
   Discard();
-  ~Discard()					{ }
+  ~Discard();
   
   const char *class_name() const		{ return "Discard"; }
   const char *processing() const		{ return AGNOSTIC; }

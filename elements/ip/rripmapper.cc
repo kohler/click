@@ -20,9 +20,21 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "rripmapper.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+
+RoundRobinIPMapper::RoundRobinIPMapper()
+{
+  MOD_INC_USE_COUNT;
+}
+
+RoundRobinIPMapper::~RoundRobinIPMapper()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 void *
 RoundRobinIPMapper::cast(const char *name)

@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "lookuplocalgridroute.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -33,10 +35,12 @@
 
 LookupLocalGridRoute::LookupLocalGridRoute() : Element(2, 4), _nbr(0)
 {
+  MOD_INC_USE_COUNT;
 }
 
 LookupLocalGridRoute::~LookupLocalGridRoute()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void *

@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "tcprewriter.hh"
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
@@ -119,10 +121,12 @@ TCPRewriter::TCPMapping::s() const
 TCPRewriter::TCPRewriter()
   : _tcp_map(0), _timer(this)
 {
+  // no MOD_INC_USE_COUNT; rely on IPRw
 }
 
 TCPRewriter::~TCPRewriter()
 {
+  // no MOD_DEC_USE_COUNT; rely on IPRw
   assert(!_timer.scheduled());
 }
 

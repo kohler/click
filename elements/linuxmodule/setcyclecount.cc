@@ -20,13 +20,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "setcyclecount.hh"
 #include <click/glue.hh>
 
 SetCycleCount::SetCycleCount()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
+}
+
+SetCycleCount::~SetCycleCount()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 SetCycleCount *

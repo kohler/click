@@ -38,15 +38,17 @@ class RIPSend : public Element {
  public:
   
   RIPSend();
+  ~RIPSend();
   
   const char *class_name() const		{ return "RIPSend"; }
   const char *processing() const		{ return PUSH; }
-
   RIPSend *clone() const { return new RIPSend(); }
+  
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
   void run_scheduled();
+  
 };
 
 #endif

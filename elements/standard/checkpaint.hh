@@ -18,7 +18,8 @@ class CheckPaint : public Element {
   
  public:
   
-  CheckPaint()				: Element(1, 2) { }
+  CheckPaint();
+  ~CheckPaint();
   
   const char *class_name() const	{ return "CheckPaint"; }
   const char *processing() const	{ return "a/ah"; }

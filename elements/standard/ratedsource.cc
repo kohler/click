@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ratedsource.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -29,9 +31,15 @@
 #include <click/glue.hh>
 
 RatedSource::RatedSource()
+  : Element(0, 1)
 {
+  MOD_INC_USE_COUNT;
   _packet = 0;
-  add_output();
+}
+
+RatedSource::~RatedSource()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 RatedSource *

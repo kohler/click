@@ -20,10 +20,23 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ratedsplitter.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
 #include <click/confparse.hh>
+
+RatedSplitter::RatedSplitter()
+  : Element(1, 2)
+{
+  MOD_INC_USE_COUNT;
+}
+
+RatedSplitter::~RatedSplitter()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 int
 RatedSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)

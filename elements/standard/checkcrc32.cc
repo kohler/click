@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "checkcrc32.hh"
 
 extern "C" {
@@ -27,14 +29,15 @@ extern "C" {
 }
 
 CheckCRC32::CheckCRC32()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
   _drops = 0;
 }
 
 CheckCRC32::~CheckCRC32()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 Packet *

@@ -98,7 +98,7 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
-elements.conf: $(top_builddir)/stamp-egroup
+elements.conf: $(top_builddir)/config.status
 	echo "exopc@element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem) > elements.conf
 elements.mk: elements.conf $(top_srcdir)/click-buildtool
 	(cd $(top_srcdir); ./click-buildtool elem2make) < elements.conf > elements.mk

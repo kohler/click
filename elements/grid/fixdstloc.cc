@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "fixdstloc.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -30,10 +32,12 @@
 
 FixDstLoc::FixDstLoc() : Element(1, 1), _loctab(0)
 {
+  MOD_INC_USE_COUNT;
 }
 
 FixDstLoc::~FixDstLoc()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 FixDstLoc *

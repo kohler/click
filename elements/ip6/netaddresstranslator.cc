@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "netaddresstranslator.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -32,15 +34,16 @@
 
 NetAddressTranslator::NetAddressTranslator()
 {
+  MOD_INC_USE_COUNT;
   add_input(); /*IPv6 packets */
   add_input();  /*IPv4 packets */
   add_output(); /* IPv4 packets */
   add_output(); /* IPv6 packets */
 }
 
-
 NetAddressTranslator::~NetAddressTranslator()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -21,11 +21,19 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "errorelement.hh"
 #include <click/bitvector.hh>
 
 ErrorElement::ErrorElement()
 {
+  MOD_INC_USE_COUNT;
+}
+
+ErrorElement::~ErrorElement()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 ErrorElement *

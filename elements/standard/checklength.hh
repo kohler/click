@@ -20,7 +20,8 @@ class CheckLength : public Element { protected:
   
  public:
   
-  CheckLength()					: Element(1, 1) { }
+  CheckLength();
+  ~CheckLength();
   
   const char *class_name() const		{ return "CheckLength"; }
   const char *processing() const		{ return "a/ah"; }

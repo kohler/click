@@ -36,6 +36,7 @@
 class PerfCountAccum : public PerfCountUser { public:
   
   PerfCountAccum();
+  ~PerfCountAccum();
   
   const char *class_name() const		{ return "PerfCountAccum"; }
   void *cast(const char *);

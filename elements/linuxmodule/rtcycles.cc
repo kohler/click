@@ -19,16 +19,23 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "rtcycles.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 
 RTCycles::RTCycles()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
   _accum = _npackets = 0;
+}
+
+RTCycles::~RTCycles()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 void

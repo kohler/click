@@ -21,14 +21,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "sendpattern.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
 SendPattern::SendPattern()
+  : Element(0, 1)
 {
-  add_output();
+  MOD_INC_USE_COUNT;
   _len = 1;
+}
+
+SendPattern::~SendPattern()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 SendPattern *

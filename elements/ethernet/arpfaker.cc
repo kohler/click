@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "arpfaker.hh"
 #include <click/click_ether.h>
 #include <click/etheraddress.hh>
@@ -31,11 +33,13 @@
 ARPFaker::ARPFaker()
   : _timer(this)
 {
+  MOD_INC_USE_COUNT;
   add_output();
 }
 
 ARPFaker::~ARPFaker()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 ARPFaker *

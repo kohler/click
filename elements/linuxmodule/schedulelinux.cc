@@ -19,6 +19,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include <click/router.hh>
 #include "elements/standard/scheduleinfo.hh"
 #include "schedulelinux.hh"
@@ -27,6 +29,16 @@
 #include <click/glue.hh>
 #include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
+
+ScheduleLinux::ScheduleLinux()
+{
+  MOD_INC_USE_COUNT;
+}
+
+ScheduleLinux::~ScheduleLinux()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 ScheduleLinux *
 ScheduleLinux::clone() const

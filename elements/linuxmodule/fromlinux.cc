@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include <click/router.hh>
 #include "fromlinux.hh"
 #include <click/confparse.hh>
@@ -57,13 +59,14 @@ fromlinux_static_cleanup()
 
 FromLinux::FromLinux()
 {
+  // no MOD_INC_USE_COUNT; rely on AnyDevice
   _dev = 0; _rt = 0;
-  add_output();
   fromlinux_static_initialize();
 }
 
 FromLinux::~FromLinux()
 {
+  // no MOD_DEC_USE_COUNT; rely on AnyDevice
   fromlinux_static_cleanup();
 }
 

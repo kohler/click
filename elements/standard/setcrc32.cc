@@ -20,19 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "setcrc32.hh"
 extern "C" {
 #include <click/crc32.h>
 }
 
 SetCRC32::SetCRC32()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 SetCRC32::~SetCRC32()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 Packet *

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "iprewriter.hh"
 #include "elements/ip/iprwpatterns.hh"
 #include <click/click_ip.h>
@@ -35,10 +37,12 @@
 IPRewriter::IPRewriter()
   : _tcp_map(0), _udp_map(0), _timer(this)
 {
+  // no MOD_INC_USE_COUNT; rely on IPRw
 }
 
 IPRewriter::~IPRewriter()
 {
+  // no MOD_DEC_USE_COUNT; rely on IPRw
   assert(!_timer.scheduled());
 }
 

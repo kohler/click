@@ -21,9 +21,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "probsplitter.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
+
+ProbSplitter::ProbSplitter()
+  : Element(1, 2)
+{
+  MOD_INC_USE_COUNT;
+}
+
+ProbSplitter::~ProbSplitter()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 int
 ProbSplitter::configure(const Vector<String> &conf, ErrorHandler *errh)

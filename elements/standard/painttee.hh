@@ -30,7 +30,8 @@ class PaintTee : public Element {
   
  public:
   
-  PaintTee()				: Element(1, 2) { }
+  PaintTee();
+  ~PaintTee();
   
   const char *class_name() const	{ return "PaintTee"; }
   const char *processing() const	{ return "a/ah"; }

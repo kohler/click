@@ -20,9 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "switch.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+
+Switch::Switch()
+{
+  MOD_INC_USE_COUNT;
+  add_input();
+}
+
+Switch::~Switch()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 Switch *
 Switch::clone() const

@@ -77,7 +77,8 @@ class AnyDevice : public Element { protected:
 
  public:
 
-  AnyDevice()				: _dev(0), _next(0) { }
+  AnyDevice();
+  ~AnyDevice();
 
   const String &devname() const		{ return _devname; }
   int ifindex() const			{ return _dev ? _dev->ifindex : -1; }

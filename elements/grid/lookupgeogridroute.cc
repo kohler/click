@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "lookupgeogridroute.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -34,10 +36,12 @@
 
 LookupGeographicGridRoute::LookupGeographicGridRoute() : Element(1, 3), _rt(0)
 {
+  MOD_INC_USE_COUNT;
 }
 
 LookupGeographicGridRoute::~LookupGeographicGridRoute()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void *

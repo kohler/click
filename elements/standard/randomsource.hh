@@ -20,7 +20,8 @@ class RandomSource : public Element { protected:
  public:
   
   RandomSource();
-  
+  ~RandomSource(); 
+ 
   const char *class_name() const		{ return "RandomSource"; }
   const char *processing() const		{ return PUSH; }
   RandomSource *clone() const;

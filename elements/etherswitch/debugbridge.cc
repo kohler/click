@@ -20,7 +20,10 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "debugbridge.hh"
+
 #include <click/glue.hh>
 #include <click/confparse.hh>
 
@@ -29,21 +32,18 @@
 DebugBridge::DebugBridge()
   : Element(1, 1)
 {
-}
-
-DebugBridge::DebugBridge(const String &label)
-  : Element(1, 1), _label(label)
-{
+  MOD_INC_USE_COUNT;
 }
 
 DebugBridge::~DebugBridge()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 DebugBridge *
 DebugBridge::clone() const
 {
-  return new DebugBridge(_label);
+  return new DebugBridge;
 }
 
 int

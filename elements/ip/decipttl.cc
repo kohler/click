@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "decipttl.hh"
 #include <click/click_ip.h>
 #include <click/glue.hh>
@@ -27,12 +29,14 @@
 DecIPTTL::DecIPTTL()
   : _drops(0)
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 DecIPTTL::~DecIPTTL()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

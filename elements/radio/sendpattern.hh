@@ -19,7 +19,7 @@ class SendPattern : public Element {
  public:
   
   SendPattern();
-  ~SendPattern()					{ }
+  ~SendPattern();
   
   const char *class_name() const		{ return "SendPattern"; }
   const char *processing() const	{ return PULL; }

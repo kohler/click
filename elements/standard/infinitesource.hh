@@ -54,6 +54,7 @@ class InfiniteSource : public Element { protected:
  public:
   
   InfiniteSource();
+  ~InfiniteSource();
   
   const char *class_name() const		{ return "InfiniteSource"; }
   const char *processing() const		{ return PUSH; }

@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "filterbyrange.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -31,10 +33,12 @@
 
 FilterByRange::FilterByRange() : Element(1, 2), _locinfo(0)
 {
+  MOD_INC_USE_COUNT;
 }
 
 FilterByRange::~FilterByRange()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 int

@@ -26,6 +26,7 @@ class CheckTCPHeader : public Element {
  public:
   
   CheckTCPHeader();
+  ~CheckTCPHeader();
   
   const char *class_name() const		{ return "CheckTCPHeader"; }
   const char *processing() const		{ return "a/ah"; }

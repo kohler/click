@@ -10,7 +10,6 @@ class DebugBridge : public Element {
  public:
   
   DebugBridge();
-  DebugBridge(const String &label);
   ~DebugBridge();
   
   const char *class_name() const		{ return "DebugBridge"; }

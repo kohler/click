@@ -32,6 +32,7 @@ class Align : public Element {
  public:
   
   Align();
+  ~Align();
   
   const char *class_name() const		{ return "Align"; }
   const char *processing() const		{ return AGNOSTIC; }

@@ -16,12 +16,10 @@
  *
  * =a ScheduleInfo */
 
-class ScheduleLinux : public Element {
+class ScheduleLinux : public Element { public:
   
- public:
-  
-  ScheduleLinux()  {}
-  ~ScheduleLinux() {}
+  ScheduleLinux();
+  ~ScheduleLinux();
   
   const char *class_name() const		{ return "ScheduleLinux"; }
   

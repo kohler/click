@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "iprw.hh"
 #include "elements/ip/iprwpatterns.hh"
 #include <click/click_ip.h>
@@ -351,10 +353,12 @@ IPMapper::get_map(IPRw *, bool, const IPFlowID &)
 
 IPRw::IPRw()
 {
+  MOD_INC_USE_COUNT;
 }
 
 IPRw::~IPRw()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "icmpsendpings.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,10 +30,16 @@
 #include <click/click_icmp.h>
 
 ICMPSendPings::ICMPSendPings()
-    : _timer(this)
+  : _timer(this)
 {
+  MOD_INC_USE_COUNT;
   add_output();
   _id = 1;
+}
+
+ICMPSendPings::~ICMPSendPings()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 ICMPSendPings *

@@ -16,10 +16,11 @@
  * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
  */
 
-
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "perfctr.hh"
 #include "perfinfo.hh"
 #include <click/confparse.hh>
@@ -30,6 +31,16 @@
 unsigned PerfInfo::_init = 0;
 unsigned PerfInfo::_metric0 = 0;
 unsigned PerfInfo::_metric1 = 0;
+
+PerfInfo::PerfInfo()
+{
+  MOD_INC_USE_COUNT;
+}
+
+PerfInfo::~PerfInfo()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 PerfInfo *
 PerfInfo::clone() const

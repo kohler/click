@@ -20,12 +20,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "tobpf.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
 ToBPF::ToBPF()
 {
+  MOD_INC_USE_COUNT;
+}
+
+ToBPF::~ToBPF()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 ToBPF *

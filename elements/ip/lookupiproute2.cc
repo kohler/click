@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "lookupiproute2.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
@@ -29,12 +31,14 @@
 
 LookupIPRoute2::LookupIPRoute2()
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 LookupIPRoute2::~LookupIPRoute2()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 LookupIPRoute2 *

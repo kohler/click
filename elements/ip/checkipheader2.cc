@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "checkipheader2.hh"
 #include <click/click_ip.h>
 #include <click/ipaddressset.hh>
@@ -31,6 +33,7 @@
 CheckIPHeader2::CheckIPHeader2()
   : _drops(0)
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
   _bad_src = 0;
@@ -39,6 +42,7 @@ CheckIPHeader2::CheckIPHeader2()
 
 CheckIPHeader2::~CheckIPHeader2()
 {
+  MOD_DEC_USE_COUNT;
   delete[] _bad_src;
 }
 

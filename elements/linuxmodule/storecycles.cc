@@ -19,20 +19,23 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "storecycles.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 
 StoreCycles::StoreCycles()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
   _sum = _pkt_cnt = 0;
 }
 
 StoreCycles::~StoreCycles()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 StoreCycles *

@@ -26,7 +26,8 @@ class Tee : public Element {
   
  public:
   
-  Tee()						{ add_input(); }
+  Tee();
+  ~Tee();
   
   const char *class_name() const		{ return "Tee"; }
   const char *processing() const		{ return PUSH; }
@@ -43,7 +44,8 @@ class PullTee : public Element {
   
  public:
   
-  PullTee()					{ add_input(); }
+  PullTee();
+  ~PullTee();
   
   const char *class_name() const		{ return "PullTee"; }
   const char *processing() const		{ return "l/lh"; }

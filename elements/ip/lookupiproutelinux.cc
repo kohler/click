@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "lookupiproutelinux.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
@@ -38,6 +40,7 @@ extern "C" {
 
 LookupIPRouteLinux::LookupIPRouteLinux()
 {
+  MOD_INC_USE_COUNT;
   add_input();
 
   _nout = 0;
@@ -48,6 +51,7 @@ LookupIPRouteLinux::LookupIPRouteLinux()
 
 LookupIPRouteLinux::~LookupIPRouteLinux()
 {
+  MOD_DEC_USE_COUNT;
 #ifdef __KERNEL__
   if(_out2dev)
     delete[] _out2dev;

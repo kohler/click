@@ -4,7 +4,7 @@ AC_SUBST(ac_configure_args)
 CLICK_VERSION=1.1b1
 AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
 AC_SUBST(CLICK_VERSION)
-AC_CONFIG_HEADER(config.h)
+AC_CONFIG_HEADER(config.h include/click/config.h:config.h.in)
 
 AC_PROG_CC
 AC_PROG_CPP
@@ -476,8 +476,11 @@ done
 for dir in $TOOLDIRS; do
   config_files="$config_files tools/$dir/Makefile"
 done
-if test ! -d etc; then
-  /bin/mkdir etc
-fi
+for ac_dir in etc include; do
+  test ! -d "$ac_dir" && mkdir "$ac_dir"
+done
 
+AC_OUTPUT_COMMANDS(for ac_file in $CONFIG_HEADERS; do
+  test $ac_file = config.h && echo > stamp-h
+done)
 AC_OUTPUT($config_files)

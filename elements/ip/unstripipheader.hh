@@ -17,16 +17,16 @@
 
 #include <click/element.hh>
 
-class UnstripIPHeader : public Element {
-
- public:
+class UnstripIPHeader : public Element { public:
   
   UnstripIPHeader();
+  ~UnstripIPHeader();
   
   const char *class_name() const		{ return "UnstripIPHeader"; }
   UnstripIPHeader *clone() const		{ return new UnstripIPHeader; }
 
   Packet *simple_action(Packet *);
+  
 };
 
 #endif

@@ -17,7 +17,6 @@ public:
   EtherSpanTree* clone() const;
   
   void notify_ninputs(int);
-  void notify_noutputs(int);
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

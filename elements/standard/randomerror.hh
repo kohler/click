@@ -37,6 +37,7 @@ class RandomBitErrors : public Element {
  public:
   
   RandomBitErrors();
+  ~RandomBitErrors();
   
   const char *class_name() const		{ return "RandomBitErrors"; }
   const char *processing() const		{ return AGNOSTIC; }

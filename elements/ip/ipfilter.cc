@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipfilter.hh"
 #include <click/glue.hh>
 #include <click/error.hh>
@@ -31,10 +33,12 @@
 
 IPFilter::IPFilter()
 {
+  // no MOD_INC_USE_COUNT; rely on Classifier
 }
 
 IPFilter::~IPFilter()
 {
+  // no MOD_DEC_USE_COUNT; rely on Classifier
 }
 
 IPFilter *

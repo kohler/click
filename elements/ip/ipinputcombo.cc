@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipinputcombo.hh"
 #include <click/click_ip.h>
 #include <click/ipaddressset.hh>
@@ -31,12 +33,14 @@
 IPInputCombo::IPInputCombo()
   : _drops(0), _bad_src(0)
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 IPInputCombo::~IPInputCombo()
 {
+  MOD_DEC_USE_COUNT;
   delete[] _bad_src;
 }
 

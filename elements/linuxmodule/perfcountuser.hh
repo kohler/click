@@ -5,6 +5,7 @@
 class PerfCountUser : public Element { public:
 
   PerfCountUser();
+  ~PerfCountUser();
 
   bool is_base() const		{ return _metric0 > -2; }
   

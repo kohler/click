@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "randomerror.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -78,6 +80,12 @@ static unsigned char bit_flip_array[] = {
 RandomBitErrors::RandomBitErrors()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+RandomBitErrors::~RandomBitErrors()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "arpquerier.hh"
 #include <click/click_ether.h>
 #include <click/etheraddress.hh>
@@ -32,6 +34,7 @@
 ARPQuerier::ARPQuerier()
   : _expire_timer(expire_hook, (unsigned long)this)
 {
+  MOD_INC_USE_COUNT;
   add_input(); /* IP packets */
   add_input(); /* ether/ARP responses */
   add_output();/* ether/IP and ether/ARP queries */
@@ -41,6 +44,7 @@ ARPQuerier::ARPQuerier()
 
 ARPQuerier::~ARPQuerier()
 {
+  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

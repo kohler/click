@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "fixipsrc.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -28,12 +30,14 @@
 
 FixIPSrc::FixIPSrc()
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 FixIPSrc::~FixIPSrc()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 FixIPSrc *

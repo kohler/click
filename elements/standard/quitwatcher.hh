@@ -25,6 +25,7 @@ class QuitWatcher : public Element {
  public:
   
   QuitWatcher();
+  ~QuitWatcher();
   
   const char *class_name() const		{ return "QuitWatcher"; }
   QuitWatcher *clone() const			{ return new QuitWatcher; }

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "suppressor.hh"
 #include <click/bitvector.hh>
 #include <click/confparse.hh>
@@ -27,10 +29,12 @@
 
 Suppressor::Suppressor()
 {
+  MOD_INC_USE_COUNT;
 }
 
 Suppressor::~Suppressor()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

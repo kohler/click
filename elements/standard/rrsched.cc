@@ -20,16 +20,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "rrsched.hh"
 
 RRSched::RRSched()
 {
+  MOD_INC_USE_COUNT;
   add_output();
   _next = 0;
 }
 
 RRSched::~RRSched()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

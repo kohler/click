@@ -21,10 +21,23 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "pulltopush.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "elements/standard/scheduleinfo.hh"
+
+PullToPush::PullToPush()
+  : Element(1, 1)
+{
+  MOD_INC_USE_COUNT;
+}
+
+PullToPush::~PullToPush()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 int
 PullToPush::configure(const Vector<String> &conf, ErrorHandler *errh)

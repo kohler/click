@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "averagecounter.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
@@ -29,6 +31,12 @@
 AverageCounter::AverageCounter()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+AverageCounter::~AverageCounter()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 void

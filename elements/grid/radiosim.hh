@@ -34,6 +34,7 @@ class RadioSim : public Element {
  public:
   
   RadioSim();
+  ~RadioSim();
   
   const char *class_name() const		{ return "RadioSim"; }
   const char *processing() const		{ return PULL_TO_PUSH; }

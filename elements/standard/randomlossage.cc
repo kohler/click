@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "randomlossage.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -27,6 +29,12 @@
 RandomLossage::RandomLossage()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+RandomLossage::~RandomLossage()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 RandomLossage *

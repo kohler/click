@@ -31,6 +31,7 @@ class Counter : public Element { protected:
  public:
 
   Counter();
+  ~Counter();
   
   const char *class_name() const		{ return "Counter"; }
   const char *processing() const		{ return AGNOSTIC; }

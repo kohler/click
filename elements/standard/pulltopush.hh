@@ -19,7 +19,8 @@ class PullToPush : public Element {
 
  public:
   
-  PullToPush() : Element(1, 1)			{ }
+  PullToPush();
+  ~PullToPush();
   
   const char *class_name() const		{ return "PullToPush"; }
   const char *processing() const		{ return PULL_TO_PUSH; }

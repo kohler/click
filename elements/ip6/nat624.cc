@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "nat624.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -32,12 +34,14 @@
 
 Nat624::Nat624()
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 Nat624::~Nat624()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

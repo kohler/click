@@ -20,9 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "checklength.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+
+CheckLength::CheckLength()
+  : Element(1, 1)
+{
+  MOD_INC_USE_COUNT;
+}
+
+CheckLength::~CheckLength()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 void
 CheckLength::notify_noutputs(int n)

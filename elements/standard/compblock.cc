@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "compblock.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
@@ -29,6 +31,12 @@
 CompareBlock::CompareBlock()
   : Element(1, 2), _fwd_weight(0), _rev_weight(1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+CompareBlock::~CompareBlock()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 CompareBlock *

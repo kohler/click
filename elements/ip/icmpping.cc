@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "icmpping.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -31,6 +33,12 @@
 ICMPPing::ICMPPing()
   : Element(1,1)
 {
+  MOD_INC_USE_COUNT;
+}
+
+ICMPPing::~ICMPPing()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 

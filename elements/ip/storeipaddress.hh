@@ -19,6 +19,7 @@ class StoreIPAddress : public Element {
  public:
   
   StoreIPAddress();
+  ~StoreIPAddress();
   
   const char *class_name() const		{ return "StoreIPAddress"; }
   const char *processing() const		{ return AGNOSTIC; }

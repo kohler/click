@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "loctable.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -28,10 +30,12 @@
 
 LocationTable::LocationTable()
 {
+  MOD_INC_USE_COUNT;
 }
 
 LocationTable::~LocationTable()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 int

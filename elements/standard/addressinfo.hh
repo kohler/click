@@ -79,6 +79,7 @@ class AddressInfo : public Element {
  public:
   
   AddressInfo();
+  ~AddressInfo();
   
   const char *class_name() const	{ return "AddressInfo"; }
   

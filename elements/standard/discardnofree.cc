@@ -20,12 +20,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "discardnofree.hh"
 #include "scheduleinfo.hh"
 
 DiscardNoFree::DiscardNoFree()
   : Element(1, 0)
 {
+  MOD_INC_USE_COUNT;
+}
+
+DiscardNoFree::~DiscardNoFree()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

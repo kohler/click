@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "counter.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -29,6 +31,12 @@ static String counter_read_rate_handler(Element *, void *);
 Counter::Counter()
   : Element(1, 1), _count(0)
 {
+  MOD_INC_USE_COUNT;
+}
+
+Counter::~Counter()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 void

@@ -29,7 +29,8 @@ class PullSwitch : public Element {
   
  public:
   
-  PullSwitch()					{ add_output(); }
+  PullSwitch();
+  ~PullSwitch();
   
   const char *class_name() const		{ return "PullSwitch"; }
   const char *processing() const		{ return PULL; }

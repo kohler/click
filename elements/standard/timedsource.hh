@@ -29,6 +29,7 @@ class TimedSource : public Element {
  public:
   
   TimedSource();
+  ~TimedSource();
   
   const char *class_name() const		{ return "TimedSource"; }
   const char *processing() const		{ return PUSH; }

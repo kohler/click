@@ -21,9 +21,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include <click/glue.hh>
 #include "anydevice.hh"
 #include <click/confparse.hh>
+
+AnyDevice::AnyDevice()
+  : _dev(0), _next(0)
+{
+  MOD_INC_USE_COUNT;
+}
+
+AnyDevice::~AnyDevice()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 void
 AnyDeviceMap::initialize()

@@ -21,19 +21,21 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "burster.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
 Burster::Burster()
-  : _npackets(0), _timer(this)
+  : Element(1, 1), _npackets(0), _timer(this)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 Burster::~Burster()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 Burster *

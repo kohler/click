@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "settcpchecksum.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -28,14 +30,14 @@
 #include <click/click_tcp.h>
 
 SetTCPChecksum::SetTCPChecksum()
+  : Element(1, 1), _fixoff(false)
 {
-  add_input();
-  add_output();
-  _fixoff = false;
+  MOD_INC_USE_COUNT;
 }
 
 SetTCPChecksum::~SetTCPChecksum()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 int

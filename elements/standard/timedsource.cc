@@ -20,16 +20,24 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "timedsource.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 
 TimedSource::TimedSource()
-  : _data("Random bullshit in a packet, at least 64 bytes long. Well, now it is."),
+  : Element(0, 1),
+    _data("Random bullshit in a packet, at least 64 bytes long. Well, now it is."),
     _timer(this)
 {
-  add_output();
+  MOD_INC_USE_COUNT;
+}
+
+TimedSource::~TimedSource()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 TimedSource *

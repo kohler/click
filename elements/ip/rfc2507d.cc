@@ -20,17 +20,21 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "rfc2507d.hh"
 #include <click/glue.hh>
 
 RFC2507d::RFC2507d()
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 RFC2507d::~RFC2507d()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 RFC2507d *

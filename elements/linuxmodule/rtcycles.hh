@@ -31,6 +31,7 @@
 class RTCycles : public Element { public:
   
   RTCycles();
+  ~RTCycles();
   
   const char *class_name() const	{ return "RoundTripCycleCount"; }
   const char *processing() const	{ return AGNOSTIC; }

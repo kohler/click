@@ -30,6 +30,7 @@ class HashSwitch : public Element {
  public:
   
   HashSwitch();
+  ~HashSwitch();
   
   const char *class_name() const		{ return "HashSwitch"; }
   const char *processing() const		{ return PUSH; }

@@ -22,6 +22,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipratemon.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
@@ -36,10 +38,12 @@ IPRateMonitor::IPRateMonitor()
     _base(NULL), _alloced_mem(0), _first(0), 
     _last(0), _prev_deleted(0)
 {
+  MOD_INC_USE_COUNT;
 }
 
 IPRateMonitor::~IPRateMonitor()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 IPRateMonitor *

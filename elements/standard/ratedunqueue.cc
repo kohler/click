@@ -21,10 +21,23 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ratedunqueue.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "elements/standard/scheduleinfo.hh"
+
+RatedUnqueue::RatedUnqueue()
+  : Element(1, 1)
+{
+  MOD_INC_USE_COUNT;
+}
+
+RatedUnqueue::~RatedUnqueue()
+{
+  MOD_DEC_USE_COUNT;
+}
 
 int
 RatedUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)

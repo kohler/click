@@ -20,15 +20,22 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "setipdscp.hh"
 #include <click/click_ip.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
 
 SetIPDSCP::SetIPDSCP()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
+}
+
+SetIPDSCP::~SetIPDSCP()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 SetIPDSCP *

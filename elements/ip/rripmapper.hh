@@ -30,7 +30,8 @@ class RoundRobinIPMapper : public Element, public IPMapper {
   
  public:
 
-  RoundRobinIPMapper()			{ }
+  RoundRobinIPMapper();
+  ~RoundRobinIPMapper();
 
   const char *class_name() const	{ return "RoundRobinIPMapper"; }
   void *cast(const char *);

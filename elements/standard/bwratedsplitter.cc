@@ -20,7 +20,19 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "bwratedsplitter.hh"
+
+BandwidthRatedSplitter::BandwidthRatedSplitter()
+{
+  // no MOD_INC_USE_COUNT; rely on RatedSplitter
+}
+
+BandwidthRatedSplitter::~BandwidthRatedSplitter()
+{
+  // no MOD_DEC_USE_COUNT; rely on RatedSplitter
+}
 
 void
 BandwidthRatedSplitter::push(int, Packet *p)

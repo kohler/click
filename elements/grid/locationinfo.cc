@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "elements/grid/gridlocationinfo.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
@@ -28,6 +30,7 @@
 
 LocationInfo::LocationInfo() : _seq_no(0)
 {
+  MOD_INC_USE_COUNT;
   _move = 0;
   _lat0 = 32.2816;  // Doug's house in Bermuda.
   _lon0 = -64.7685;
@@ -39,6 +42,7 @@ LocationInfo::LocationInfo() : _seq_no(0)
 
 LocationInfo::~LocationInfo()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 int

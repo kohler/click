@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "discard.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
@@ -28,6 +30,12 @@
 Discard::Discard()
   : Element(1, 0)
 {
+  MOD_INC_USE_COUNT;
+}
+
+Discard::~Discard()
+{
+  MOD_DEC_USE_COUNT;
 }
 
 int

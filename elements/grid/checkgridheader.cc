@@ -22,6 +22,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "checkgridheader.hh"
 #include <click/glue.hh>
 #include "grid.hh"
@@ -31,12 +33,14 @@
 CheckGridHeader::CheckGridHeader()
   : _drops(0)
 {
+  MOD_INC_USE_COUNT;
   add_input();
   add_output();
 }
 
 CheckGridHeader::~CheckGridHeader()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 CheckGridHeader *

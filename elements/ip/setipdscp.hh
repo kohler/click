@@ -23,6 +23,7 @@ class SetIPDSCP : public Element {
  public:
   
   SetIPDSCP();
+  ~SetIPDSCP();
   
   const char *class_name() const		{ return "SetIPDSCP"; }
   const char *processing() const		{ return AGNOSTIC; }

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "kerneltap.hh"
 #include <click/error.hh>
 #include <click/bitvector.hh>
@@ -38,14 +40,15 @@
 #endif
 
 KernelTap::KernelTap()
+  : Element(1, 1)
 {
-  add_input();
-  add_output();
+  MOD_INC_USE_COUNT;
   _fd = -1;
 }
 
 KernelTap::~KernelTap()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 KernelTap *

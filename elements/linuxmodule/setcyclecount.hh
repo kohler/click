@@ -24,6 +24,7 @@
 class SetCycleCount : public Element { public:
   
   SetCycleCount();
+  ~SetCycleCount();
   
   const char *class_name() const		{ return "SetCycleCount"; }
   const char *processing() const		{ return AGNOSTIC; }

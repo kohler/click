@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "todevice.hh"
 #include <click/error.hh>
 #include <click/etheraddress.hh>
@@ -54,6 +56,7 @@
 ToDevice::ToDevice()
   : Element(1, 0), _fd(-1), _my_fd(false)
 {
+  MOD_INC_USE_COUNT;
 #if TODEVICE_BSD_DEV_BPF
   _pcap = 0;
 #endif
@@ -61,6 +64,7 @@ ToDevice::ToDevice()
 
 ToDevice::~ToDevice()
 {
+  MOD_DEC_USE_COUNT;
   uninitialize();
 }
 

@@ -43,12 +43,12 @@ class RatedSplitter : public Element { protected:
 
  public:
   
-  RatedSplitter() : Element(1, 2)		{ }
-  ~RatedSplitter() 				{ }
-  RatedSplitter *clone() const			{ return new RatedSplitter; }
+  RatedSplitter();
+  ~RatedSplitter();
 
   const char *class_name() const		{ return "RatedSplitter"; }
   const char *processing() const	        { return PUSH; }
+  RatedSplitter *clone() const			{ return new RatedSplitter; }
   void add_handlers();
  
   int configure(const Vector<String> &, ErrorHandler *);

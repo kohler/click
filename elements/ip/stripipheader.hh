@@ -20,6 +20,7 @@ class StripIPHeader : public Element {
  public:
   
   StripIPHeader();
+  ~StripIPHeader();
   
   const char *class_name() const		{ return "StripIPHeader"; }
   StripIPHeader *clone() const			{ return new StripIPHeader; }

@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "forceip.hh"
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -28,11 +30,13 @@
 ForceIP::ForceIP()
   : Element(1, 1)
 {
+  MOD_INC_USE_COUNT;
   _count = 0;
 }
 
 ForceIP::~ForceIP()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 ForceIP *

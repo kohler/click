@@ -35,6 +35,7 @@ class RandomLossage : public Element {
  public:
   
   RandomLossage();
+  ~RandomLossage();
   
   const char *class_name() const		{ return "RandomLossage"; }
   const char *processing() const		{ return "a/ah"; }

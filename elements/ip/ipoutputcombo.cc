@@ -20,6 +20,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "ipoutputcombo.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -28,10 +30,12 @@
 IPOutputCombo::IPOutputCombo()
   : Element(1, 5)
 {
+  MOD_INC_USE_COUNT;
 }
 
 IPOutputCombo::~IPOutputCombo()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 IPOutputCombo *

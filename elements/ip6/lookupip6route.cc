@@ -21,6 +21,8 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "lookupip6route.hh"
 #include <click/ip6address.hh>
 #include <click/confparse.hh>
@@ -29,11 +31,13 @@
  
 LookupIP6Route::LookupIP6Route()
 {
+  MOD_INC_USE_COUNT;
   add_input();
 }
 
 LookupIP6Route::~LookupIP6Route()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 LookupIP6Route *

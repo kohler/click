@@ -20,17 +20,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include <click/config.h>
+#include <click/package.hh>
 #include "idle.hh"
 #include <click/bitvector.hh>
 #include "scheduleinfo.hh"
 
 Idle::Idle() 
 {
-  add_output();
+  MOD_INC_USE_COUNT;
 }
 
 Idle::~Idle()
 {
+  MOD_DEC_USE_COUNT;
 }
 
 void

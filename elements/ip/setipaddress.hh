@@ -21,6 +21,7 @@ class SetIPAddress : public Element {
  public:
   
   SetIPAddress();
+  ~SetIPAddress();
   
   const char *class_name() const		{ return "SetIPAddress"; }
   const char *processing() const		{ return AGNOSTIC; }

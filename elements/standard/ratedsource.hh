@@ -56,6 +56,7 @@ class RatedSource : public Element { protected:
  public:
   
   RatedSource();
+  ~RatedSource();
   
   const char *class_name() const		{ return "RatedSource"; }
   const char *processing() const		{ return PUSH; }
