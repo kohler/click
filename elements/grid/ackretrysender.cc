@@ -219,7 +219,7 @@ ACKRetrySender::print_summary(Element *e, void *)
   ACKRetrySender *a = (ACKRetrySender *) e;
   unsigned num_succ = 0;
   unsigned num_fail = 0;
-  double sum_tx = 0;
+  unsigned sum_tx = 0;
   unsigned max_tx = 0;
   unsigned min_tx = 0;
   int n = a->_history.size();
@@ -239,9 +239,9 @@ ACKRetrySender::print_summary(Element *e, void *)
     sum_tx += i->num_tx;
   }
 
-  double txc = 0;
+  unsigned txc = 0;
   if (n > 0)
-    txc = sum_tx / n;
+    txc = (1000 * sum_tx) / n;
  
   StringAccum s;
   s << "packets: " << n << "\n"
@@ -249,7 +249,7 @@ ACKRetrySender::print_summary(Element *e, void *)
     << "fail: " << num_fail << "\n"
     << "min_txc: " << min_tx << "\n"
     << "max_txc: " << max_tx << "\n"
-    << "avg_txc: " << txc << "\n";
+    << "avg_txc: " << cp_unparse_real10(txc, 3) << "\n";
   return s.take_string();
 }
 

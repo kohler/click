@@ -56,7 +56,7 @@ ACKRetrySender2::push(int port, Packet *p)
   }
 
   // was this response for the packet we have?
-  IPAddress src(p->data());
+  // IPAddress src(p->data());
   IPAddress dst(p->data() + 4);
   if (dst != _ip) {
     // no, it wasn't for our packet...
@@ -216,9 +216,9 @@ ACKRetrySender2::print_summary(Element *e, void *)
 {
   ACKRetrySender2 *a = (ACKRetrySender2 *) e;
 
-  double txc = 0;
+  unsigned txc = 0; // scale by 1000 to get fraction
   if (a->num_pkts > 0)
-    txc = (double) a->sum_tx / a->num_pkts;
+    txc = (1000 * a->sum_tx) / a->num_pkts;
  
   StringAccum s;
   s << "packets: " << a->num_pkts << "\n"
@@ -226,7 +226,7 @@ ACKRetrySender2::print_summary(Element *e, void *)
     << "fail: " << a->num_fail << "\n"
     << "min_txc: " << a->min_txc << "\n"
     << "max_txc: " << a->max_txc << "\n"
-    << "avg_txc: " << txc << "\n";
+    << "avg_txc: " << cp_unparse_real10(txc, 3) << "\n";
   return s.take_string();
 }
 
