@@ -1,3 +1,25 @@
+2001-07-26 Thursday 01:04  Eddie Kohler <kohler@aciri.org>
+
+	* doc/Makefile.in (1.35): forgot flags for the new click-buildtool
+
+2001-07-26 Thursday 01:04  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.92): dont forget to install vector.cc and the like
+
+2001-07-26 Thursday 01:03  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.24): protect against crap before or after
+	EXPORT_ELEMENT and friends
+
+2001-07-26 Thursday 01:03  Eddie Kohler <kohler@aciri.org>
+
+	* lib/error.cc (1.32): revert change
+
+2001-07-26 Thursday 00:56  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/userutils.hh (1.5), lib/userutils.cc (1.16): revert
+	incorrect change
+
 2001-07-25 Wednesday 15:45  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* include/click/error.hh (1.11), include/click/straccum.hh (1.13),
