@@ -110,7 +110,7 @@ void click_qsort(void *base, size_t n, size_t size, int (*compar)(const void *, 
 
 // OTHER
 
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
 
 // provide a definition for net_device for kernel compatibility
 # if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
@@ -165,10 +165,6 @@ extern unsigned char _ctype[];
 typedef struct ifnet net_device;
 
 #else /* not CLICK_LINUXMODULE || CLICK_BSDMODULE */
-
-/*
- * User-space glue.
- */
 
 // provide a definition for net_device
 typedef struct device net_device;

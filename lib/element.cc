@@ -689,7 +689,7 @@ Element::add_default_handlers(bool allow_write_config)
 static String
 read_task_tickets(Element *e, void *thunk)
 {
-  Task *task = (Task *)((uint8_t *)e + (int)thunk);
+  Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
   return String(task->tickets()) + "\n";
 }
 #endif
@@ -697,7 +697,7 @@ read_task_tickets(Element *e, void *thunk)
 static String
 read_task_scheduled(Element *e, void *thunk)
 {
-  Task *task = (Task *)((uint8_t *)e + (int)thunk);
+  Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
   return String(task->scheduled() ? "true\n" : "false\n");
 }
 
@@ -705,7 +705,7 @@ read_task_scheduled(Element *e, void *thunk)
 static String
 read_task_thread_preference(Element *e, void *thunk)
 {
-  Task *task = (Task *)((uint8_t *)e + (int)thunk);
+  Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
   return String(task->thread_preference())+String("\n");
 }
 #endif
@@ -713,7 +713,7 @@ read_task_thread_preference(Element *e, void *thunk)
 void
 Element::add_task_handlers(Task *task, const String &prefix)
 {
-  int task_offset = (uint8_t *)task - (uint8_t *)this;
+  intptr_t task_offset = (uint8_t *)task - (uint8_t *)this;
   void *thunk = (void *)task_offset;
 #ifdef HAVE_STRIDE_SCHED
   add_read_handler(prefix + "tickets", read_task_tickets, thunk);

@@ -167,7 +167,7 @@ printable_where(Chunk *c)
 # endif
 
 void *
-operator new(unsigned int sz) throw ()
+operator new(unsigned sz) throw ()
 {
   click_new_count++;
   click_outstanding_news++;
@@ -187,7 +187,7 @@ operator new(unsigned int sz) throw ()
 }
 
 void *
-operator new[](unsigned int sz) throw ()
+operator new[](unsigned sz) throw ()
 {
   click_new_count++;
   click_outstanding_news++;
@@ -286,37 +286,37 @@ click_dmalloc_cleanup()
 void
 click_random_srandom()
 {
-  static const int bufsiz = 16;
-  uint32_t buf[bufsiz];
-  int pos = 0;
-  click_gettimeofday((struct timeval *)(buf + pos));
-  pos += sizeof(struct timeval) / sizeof(uint32_t);
+    static const int bufsiz = 16;
+    uint32_t buf[bufsiz];
+    int pos = 0;
+    click_gettimeofday((struct timeval *)(buf + pos));
+    pos += sizeof(struct timeval) / sizeof(uint32_t);
 #ifdef CLICK_USERLEVEL
 # ifdef O_NONBLOCK
-  int fd = open("/dev/random", O_RDONLY | O_NONBLOCK);
+    int fd = open("/dev/random", O_RDONLY | O_NONBLOCK);
 # elif defined(O_NDELAY)
-  int fd = open("/dev/random", O_RDONLY | O_NDELAY);
+    int fd = open("/dev/random", O_RDONLY | O_NDELAY);
 # else
-  int fd = open("/dev/random", O_RDONLY);
+    int fd = open("/dev/random", O_RDONLY);
 # endif
-  if (fd >= 0) {
-    int amt = read(fd, buf + pos, sizeof(uint32_t) * (bufsiz - pos));
-    close(fd);
-    if (amt > 0)
-      pos += (amt / sizeof(uint32_t));
-  }
-  if (pos < bufsiz)
-    buf[pos++] = getpid();
-  if (pos < bufsiz)
-    buf[pos++] = getuid();
+    if (fd >= 0) {
+	int amt = read(fd, buf + pos, sizeof(uint32_t) * (bufsiz - pos));
+	close(fd);
+	if (amt > 0)
+	    pos += (amt / sizeof(uint32_t));
+    }
+    if (pos < bufsiz)
+	buf[pos++] = getpid();
+    if (pos < bufsiz)
+	buf[pos++] = getuid();
 #endif
 
-  uint32_t result = 0;
-  for (int i = 0; i < pos; i++) {
-    result ^= buf[i];
-    result = (result << 1) | (result >> 31);
-  }
-  srandom(result);
+    uint32_t result = 0;
+    for (int i = 0; i < pos; i++) {
+	result ^= buf[i];
+	result = (result << 1) | (result >> 31);
+    }
+    srandom(result);
 }
 
 #if CLICK_LINUXMODULE
@@ -428,9 +428,9 @@ click_jiffies()
 
 // OTHER
 
-#if defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)
+#if CLICK_LINUXMODULE || CLICK_BSDMODULE
 
-#ifdef CLICK_BSDMODULE
+#if CLICK_BSDMODULE
 
 /*
  * Character types glue for isalnum() et al, from Linux.
