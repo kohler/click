@@ -54,7 +54,7 @@ class IPOutputCombo : public Element {
   ~IPOutputCombo();
   
   const char *class_name() const		{ return "IPOutputCombo"; }
-  const char *processing() const	{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   IPOutputCombo *clone() const;
   int configure(const String &, ErrorHandler *);

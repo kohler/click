@@ -24,15 +24,6 @@ IPEncap::IPEncap()
 {
 }
 
-IPEncap::IPEncap(int ip_p, struct in_addr ip_src, struct in_addr ip_dst)
-{
-  add_input();
-  add_output();
-  _ip_p = ip_p;
-  _ip_src = ip_src;
-  _ip_dst = ip_dst;
-}
-
 IPEncap::~IPEncap()
 {
 }
@@ -40,7 +31,7 @@ IPEncap::~IPEncap()
 IPEncap *
 IPEncap::clone() const
 {
-  return new IPEncap(_ip_p, _ip_src, _ip_dst);
+  return new IPEncap;
 }
 
 int

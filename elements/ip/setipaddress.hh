@@ -19,12 +19,12 @@ class SetIPAddress : public Element {
   
  public:
   
-  SetIPAddress(unsigned offset = 0);
+  SetIPAddress();
   
   const char *class_name() const		{ return "SetIPAddress"; }
-  const char *processing() const	{ return AGNOSTIC; }
-
-  SetIPAddress *clone() const;
+  const char *processing() const		{ return AGNOSTIC; }
+  SetIPAddress *clone() const			{ return new SetIPAddress; }
+  
   int configure(const String &, ErrorHandler *);
   
   Packet *simple_action(Packet *);

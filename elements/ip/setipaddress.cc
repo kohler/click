@@ -18,15 +18,9 @@
 #include "confparse.hh"
 #include <string.h>
 
-SetIPAddress::SetIPAddress(unsigned offset = 0)
-  : Element(1, 1), _offset(offset)
+SetIPAddress::SetIPAddress()
+  : Element(1, 1)
 {
-}
-
-SetIPAddress *
-SetIPAddress::clone() const
-{
-  return new SetIPAddress(_offset);
 }
 
 int

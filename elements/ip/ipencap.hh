@@ -36,11 +36,10 @@
 class IPEncap : public Element {
 public:
   IPEncap();
-  IPEncap(int ip_p, struct in_addr ip_src, struct in_addr ip_dst);
   ~IPEncap();
   
   const char *class_name() const		{ return "IPEncap"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
   IPEncap *clone() const;
   int configure(const String &, ErrorHandler *);

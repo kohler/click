@@ -29,12 +29,12 @@ class GetIPAddress : public Element {
   
  public:
   
-  GetIPAddress(int = 0);
+  GetIPAddress();
   
   const char *class_name() const		{ return "GetIPAddress"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   
-  GetIPAddress *clone() const;
+  GetIPAddress *clone() const			{ return new GetIPAddress; }
   int configure(const String &, ErrorHandler *);
 
   Packet *simple_action(Packet *);

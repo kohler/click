@@ -17,8 +17,6 @@
 #include "click_ip.h"
 #include "click_tcp.h"
 #include "click_udp.h"
-#include "elemfilter.hh"
-#include "router.hh"
 #include "confparse.hh"
 #include "error.hh"
 

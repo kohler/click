@@ -19,15 +19,9 @@
 #include "error.hh"
 #include "click_ip.h"
 
-GetIPAddress::GetIPAddress(int offset = 0)
-  : Element(1, 1), _offset(offset)
+GetIPAddress::GetIPAddress()
+  : Element(1, 1)
 {
-}
-
-GetIPAddress *
-GetIPAddress::clone() const
-{
-  return new GetIPAddress(_offset);
 }
 
 int
