@@ -51,6 +51,7 @@ extern spinlock_t inode_lock;
 extern spinlock_t sb_lock;
 
 static struct super_operations proclikefs_null_super_operations;
+static struct inode_operations proclikefs_null_root_inode_operations;
 
 EXPORT_SYMBOL(proclikefs_register_filesystem);
 EXPORT_SYMBOL(proclikefs_unregister_filesystem);
@@ -65,6 +66,12 @@ proclikefs_null_read_super(struct super_block *sb, void *data, int silent)
     DEBUG("null_read_super");
     sb->s_dev = 0;
     return 0;
+}
+
+static struct dentry *
+proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
+{
+    return (struct dentry *)(ERR_PTR(-ENOENT));
 }
 
 struct proclikefs_file_system *
@@ -154,8 +161,9 @@ proclikefs_register_filesystem(const char *name,
 static void
 proclikefs_kill_super(struct super_block *sb, struct inode *dummy_inode)
 {
-    struct dentry *dentry, *all_dentries;
+    struct dentry *dentry_tree;
     struct list_head *p;
+    struct inode *old_root;
 
     DEBUG("killing files");
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
@@ -176,29 +184,35 @@ proclikefs_kill_super(struct super_block *sb, struct inode *dummy_inode)
     /* will not create new dentries any more */
 
     /* clear out dentries, starting from the root */
+    /* Develop a linked list corresponding to depth-first search, through
+       the d_fsdata fields. */
     /* XXX locking? */
     
     DEBUG("killing dentries");
-    all_dentries = sb->s_root;
-    if (all_dentries) {
-	d_drop(all_dentries);
-	all_dentries->d_op = 0;
-	all_dentries->d_fsdata = 0;
+    dentry_tree = sb->s_root;
+    if (dentry_tree) {
+	/* Do not d_drop(root) */
+	dentry_tree->d_fsdata = 0;
     }
-    while (all_dentries) {
+    while (dentry_tree) {
 	struct list_head *next;
-	dentry = all_dentries;
-	all_dentries = (struct dentry *)dentry->d_fsdata;
-	next = dentry->d_subdirs.next;
-	while (next != &dentry->d_subdirs) {
+	struct dentry *active = dentry_tree;
+	/* Process this dentry, move to next */
+	active->d_op = 0;
+	dentry_tree = (struct dentry *)active->d_fsdata;
+	/* Prepend children to dentry_tree */
+	next = active->d_subdirs.next;
+	while (next != &active->d_subdirs) {
 	    struct dentry *child = list_entry(next, struct dentry, d_child);
 	    next = next->next;
 	    d_drop(child);
-	    child->d_op = 0;
-	    child->d_fsdata = (void *)all_dentries;
-	    all_dentries = child;
+	    child->d_fsdata = (void *)dentry_tree;
+	    dentry_tree = child;
 	}
     }
+
+    /* But the root inode can't be a dead inode */
+    sb->s_root->d_inode->i_op = &proclikefs_null_root_inode_operations;
 
     unlock_super(sb);
     DEBUG("done killing super");
@@ -214,7 +228,8 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     
     if (!pfs)
 	return;
-    
+
+    DEBUG("unregister_filesystem entry");
     spin_lock(&fslist_lock);
 
     /* Borrow make_bad_inode's file operations. */
@@ -241,6 +256,7 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
     spin_lock(&pfs->lock);
 
     /* clear out inode operations */
+    DEBUG("clearing inode operations");
     {
 	struct list_head *next = pfs->i_list.next;
 	while (next != &pfs->i_list) {
@@ -250,9 +266,11 @@ proclikefs_unregister_filesystem(struct proclikefs_file_system *pfs)
 	    make_bad_inode(inode);
 	}
     }
+    INIT_LIST_HEAD(&pfs->i_list); /* we've made all the inodes bad */
     
     /* clear out superblock operations */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+    DEBUG("clearing superblocks");
     spin_lock(&sb_lock);
     for (p = pfs->fs.fs_supers.next; p != &pfs->fs.fs_supers; p = p->next) {
 	sb = list_entry(p, struct super_block, s_instances);
@@ -335,6 +353,7 @@ init_module(void)
     proclikefs_null_super_operations.read_inode = proclikefs_read_inode;
     proclikefs_null_super_operations.delete_inode = proclikefs_delete_inode;
     proclikefs_null_super_operations.put_super = proclikefs_put_super;
+    proclikefs_null_root_inode_operations.lookup = proclikefs_null_root_lookup;
     spin_lock_init(&fslist_lock);
     return 0;
 }

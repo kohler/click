@@ -16,13 +16,9 @@
  * legally binding.
  */
 
-#define USE_PROCLIKEFS 1
-
 #include <click/config.h>
 #include "modulepriv.hh"
-#if USE_PROCLIKEFS
-# include "proclikefs.h"
-#endif
+#include "proclikefs.h"
 
 #include <click/router.hh>
 #include <click/error.hh>
@@ -44,11 +40,7 @@ static struct inode_operations click_dir_inode_ops;
 static struct file_operations click_handler_file_ops;
 static struct inode_operations click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
-#if USE_PROCLIKEFS
 static struct proclikefs_file_system *clickfs;
-#else
-static struct file_system_type *clickfs;
-#endif
 
 static spinlock_t config_write_lock;
 static atomic_t config_read_count;
@@ -97,9 +89,7 @@ unlock_config_write()
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
 
 struct ClickInodeInfo {
-#if USE_PROCLIKEFS
     struct proclikefs_inode_info padding;
-#endif
     uint32_t config_generation;
 };
 
@@ -137,7 +127,6 @@ click_inode(struct super_block *sb, ino_t ino)
     if (click_ino.prepare(click_router, click_config_generation) < 0)
 	return 0;
     
-    MDEBUG("i_get");
     struct inode *inode = new_inode(sb);
     if (!inode)
 	return 0;
@@ -163,7 +152,6 @@ click_inode(struct super_block *sb, ino_t ino)
 	    panic("click_inode");
 	}
     } else {
-	MDEBUG("got a directory");
 	inode->i_mode = click_mode_dir;
 	inode->i_uid = inode->i_gid = 0;
 	inode->i_op = &click_dir_inode_ops;
@@ -174,9 +162,7 @@ click_inode(struct super_block *sb, ino_t ino)
     }
 
     inode->i_mtime = inode->i_atime = inode->i_ctime = CURRENT_TIME;
-#if USE_PROCLIKEFS
     proclikefs_read_inode(inode);
-#endif
 	
     MDEBUG("%lx:%p:%p: leaving click_inode", ino, inode, inode->i_op);
     return inode;
@@ -356,9 +342,7 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     // XXX options
 
     MDEBUG("got root directory");
-#if USE_PROCLIKEFS
     proclikefs_read_super(sb);
-#endif
     MDEBUG("done click_read_super");
     return sb;
 
@@ -745,10 +729,8 @@ init_clickfs()
     click_superblock_ops.write_inode = click_write_inode;
     click_superblock_ops.put_inode = click_put_inode;
 #endif
-#if USE_PROCLIKEFS
     click_superblock_ops.delete_inode = proclikefs_delete_inode;
     click_superblock_ops.put_super = proclikefs_put_super;
-#endif
     // XXX statfs
 
     click_dentry_ops.d_delete = click_delete_dentry;
@@ -783,22 +765,7 @@ init_clickfs()
     atomic_set(&config_read_count, 0);
     click_ino.initialize();
 
-#if USE_PROCLIKEFS
     clickfs = proclikefs_register_filesystem("click", click_read_super, click_reread_super);
-#else
-    clickfs = new file_system_type;
-    clickfs->name = "click";
-    clickfs->next = 0;
-    clickfs->read_super = click_read_super;
-    clickfs->fs_flags = 0;
-    clickfs->owner = THIS_MODULE;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
-    INIT_LIST_HEAD(&clickfs->fs_supers);
-# endif
-    int err = register_filesystem(clickfs);
-    if (err < 0)
-	printk("<1>click: registering fs[%p]: error %d\n", clickfs, -err);
-#endif
     if (!clickfs) {
 	printk("<1>click: could not initialize clickfs!\n");
 	return -EINVAL;
@@ -818,20 +785,18 @@ init_clickfs()
 void
 cleanup_clickfs()
 {
+    MDEBUG("cleanup_clickfs");
 #if defined(LINUX_2_4) || defined(LINUX_2_2)
     // remove the `/proc/click' directory
     remove_proc_entry("click", 0);
 #endif
 
     // kill filesystem
-#if USE_PROCLIKEFS
+    MDEBUG("proclikefs_unregister_filesystem");
     proclikefs_unregister_filesystem(clickfs);
-#else
-    unregister_filesystem(clickfs);
-    delete clickfs;
-#endif
 
     // clean up handler_strings
+    MDEBUG("cleaning up handler strings");
     spin_lock(&handler_strings_lock);
     delete[] handler_strings;
     delete[] handler_strings_info;
@@ -840,6 +805,7 @@ cleanup_clickfs()
     handler_strings_cap = -1;
     handler_strings_free = -1;
     spin_unlock(&handler_strings_lock);
-    
+
+    MDEBUG("click_ino cleanup");
     click_ino.cleanup();
 }
