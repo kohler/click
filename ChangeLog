@@ -1,3 +1,26 @@
+2004-10-04 Monday 22:36  John Bicket <jbicket@mit.edu>
+
+	* elements/: grid/dsrroutetable.cc (1.11), wifi/autoratefallback.cc
+	(1.8), wifi/linktable.cc (1.9), wifi/linktable.hh (1.7),
+	wifi/madwifirate.cc (1.6), wifi/probetxrate.cc (1.11),
+	wifi/probetxrate.hh (1.9), wifi/txfeedbackstats.cc (1.5),
+	wifi/sr/checksrheader.cc (1.3), wifi/sr/checksrheader.hh (1.2),
+	wifi/sr/ettmetric.cc (1.7), wifi/sr/ettmetric.hh (1.8),
+	wifi/sr/ettstat.cc (1.9), wifi/sr/ettstat.hh (1.7),
+	wifi/sr/flashflood.cc (1.6), wifi/sr/gatewayselector.cc (1.6),
+	wifi/sr/gatewayselector.hh (1.3), wifi/sr/linkmetric.hh (1.4),
+	wifi/sr/localbroadcast.cc (1.4), wifi/sr/printsr.cc (1.4),
+	wifi/sr/srforwarder.cc (1.7), wifi/sr/srforwarder.hh (1.4),
+	wifi/sr/srpacket.hh (1.6), wifi/sr/srquerier.cc (1.6),
+	wifi/sr/srqueryforwarder.cc (1.5), wifi/sr/srqueryforwarder.hh
+	(1.3), wifi/sr/srqueryresponder.cc (1.5),
+	wifi/sr/srqueryresponder.hh (1.3): - link table stores both
+	forward/reverse routes - don't use asserts for stupid fialures,
+	only for real emergencies - additional header stuffing - link
+	sequence numbers and timestamps - general code maintenance -
+	queries, forwards store most "optimal" route, not route that
+	queries follow
+
 2004-10-04 Monday 10:08  John Bicket <jbicket@mit.edu>
 
 	* conf/gen_config_roofnet.pl (1.8): update for new elements; don't
