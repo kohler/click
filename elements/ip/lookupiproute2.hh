@@ -6,28 +6,22 @@
  * LookupIPRoute2()
  * =d
  * Input: IP packets (no ether header).
- * Expects a destination IP address annotation with each packet.
- * Looks up the address, sets the destination annotation to
- * the corresponding GW (if non-zero), and emits the packet
- * on its only output.
+ * Expects a destination IP address annotation with each packet. Looks up the
+ * address, sets the destination annotation to the corresponding GW (if
+ * non-zero), and emits the packet on its only output.
  *
  * Sets destination annotation based on pokeable routing table.
  *
- * =e
- * This example delivers broadcasts and packets addressed to the local
- * host (18.26.4.24) to itself, packets to net 18.26.4 to the
- * local interface, and all others via gateway 18.26.4.1:
+ * =h add write
+ * Adds an entry to the routing table. Expects DST MASK GW.
  *
- * = ... -> GetIPAddress(16) -> rt;
- * = rt :: LookupIPRoute2();
- * = rt -> ... -> ToDevice(eth0);
+ * =h del write
+ * Removes an entry from the routing table. Expects DST MASK.
  *
- * =n
- * Encapsultated routing table is pokeable via /proc. Its handlers are called
- * 'add', 'del' and 'look'.
+ * =h look read-only
+ * Returns the contents of the routing table.
  *
  * =a LookupIPRoute
- * =a LookupIPRoute2
  */
 
 #include "glue.hh"
