@@ -51,6 +51,7 @@ Unqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Unqueue::initialize(ErrorHandler *errh)
 {
+  _packets = 0;
   ScheduleInfo::join_scheduler(this, errh);
   return 0;
 }
@@ -64,11 +65,43 @@ Unqueue::uninitialize()
 void
 Unqueue::run_scheduled()
 {
-  // XXX reduce # of tickets if idle
-  for (int i = 0; i < _burst; i++)
-    if (Packet *p = input(0).pull())
-      output(0).push(p);
+  int sent = 0;
+  Packet *p_next = input(0).pull();
+  
+  while (p_next) {
+    Packet *p = p_next;
+    sent++;
+    if (sent < _burst || _burst == 0) {
+      p_next = input(0).pull();
+    }
+    else 
+      p_next = 0;
+#ifdef __KERNEL__
+    if (p_next) {
+      struct sk_buff *skb = p_next->steal_skb();
+      asm volatile("prefetcht0 %0" : : "m" (skb->len));
+      asm volatile("prefetcht0 %0" : : "m" (skb->cb[0]));
+    }
+#endif
+    output(0).push(p);
+    _packets++;
+  }
   reschedule();
 }
 
+String
+Unqueue::read_param(Element *e, void *junk)
+{
+  Unqueue *u = (Unqueue *)e;
+  return String(u->_packets) + " packets\n";
+}
+
+void
+Unqueue::add_handlers()
+{
+  add_read_handler("packets", read_param, (void *)0);
+}
+
 EXPORT_ELEMENT(Unqueue)
+ELEMENT_MT_SAFE(Unqueue)
+
