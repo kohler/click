@@ -1,3 +1,12 @@
+2003-08-07 Thursday 13:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.66), linkstat.cc (1.26),
+	linkstat.hh (1.13), printgrid.cc (1.33), printgrid.hh (1.10):
+	Create new ethernet packet type for LinkStat broadcast probes, to
+	decouple LinkStat from specific routing protocol.  Modify PrintGrid
+	to understand new LinkStat packets.  Modify routing protocols to
+	work with new LinkStat for metrics
+
 2003-08-06 Wednesday 21:12  jastr
 
 	* elements/analysis/aggregateipflows.cc (1.22): check whole
