@@ -66,7 +66,8 @@ FixSrcLoc::simple_action(Packet *xp)
   assert(_locinfo);
   WritablePacket *p = xp->uniqueify();
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-  gh->loc = _locinfo->get_current_location();
+  gh->loc = _locinfo->get_current_location(&gh->loc_seq_no);
+  gh->loc_seq_no = htonl(gh->loc_seq_no);
   gh->loc_err = 0;
   return p;
 }

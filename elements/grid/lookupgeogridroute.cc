@@ -168,7 +168,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
 
 bool 
-LookupGeographicGridRoute::get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, 
+LookupGeographicGridRoute::get_next_geographic_hop(IPAddress, grid_location dest_loc, 
 						   EtherAddress *dest_eth) const
 {
   /*

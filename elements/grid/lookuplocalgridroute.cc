@@ -247,6 +247,9 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     struct grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
     gh->ip = _ipaddr.addr();
     encap->hops_travelled++;
+    // don't bother setting location information for destinations
+    // to which we have a local route
+    encap->dst_loc_err = htonl(grid_hdr::BAD_LOC);
     // leave src location update to FixSrcLoc element
     output(0).push(packet);
   }

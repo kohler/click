@@ -168,13 +168,17 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	_rtes.insert(ipaddr, far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1, ntohl(hlo->seq_no))));
 	fe = _rtes.findp(ipaddr);
 	fe->nbr.loc = gh->loc;
+	fe->nbr.loc_err = ntohl(gh->loc_err);
 	fe->nbr.age = decr_age(ntohl(hlo->age), grid_hello::MIN_AGE_DECREMENT);
       } else { 
+	/* i guess we always overwrite existing info, because we heard
+           this info directly from the node... */
 	// update pre-existing information
 	fe->last_updated_jiffies = jiff;
 	fe->nbr.num_hops = 1;
 	fe->nbr.next_hop_ip = gh->ip;
 	fe->nbr.loc = gh->loc;
+	fe->nbr.loc_err = ntohl(gh->loc_err);
 	fe->nbr.seq_no = ntohl(hlo->seq_no);
 	fe->nbr.age = decr_age(ntohl(hlo->age), grid_hello::MIN_AGE_DECREMENT);
       }
@@ -251,6 +255,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	  _rtes.insert(curr_ip, far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, curr->num_hops + 1, ntohl(curr->seq_no))));
 	  fe =_rtes.findp(curr_ip);
 	  fe->nbr.loc = curr->loc;
+	  fe->nbr.loc_err = ntohl(curr->loc_err);
 	  fe->nbr.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
 	}
 	else { 
@@ -261,6 +266,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	    fe->nbr.num_hops = curr->num_hops + 1;
 	    fe->nbr.next_hop_ip = gh->ip;
 	    fe->nbr.loc = curr->loc;
+	    fe->nbr.loc_err = ntohl(curr->loc_err);
 	    fe->nbr.seq_no = curr_seq;
 	    fe->last_updated_jiffies = jiff;
 	    fe->nbr.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
@@ -528,7 +534,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
 
   // Update the sequence number for periodic updates, but not
   // for triggered updates.
-  if(update_seq){
+  if(update_seq) {
     /* originating sequence numbers are even, starting at 0.  odd
        numbers are reserved for other nodes to advertise a broken route
        to us.  from DSDV paper. */

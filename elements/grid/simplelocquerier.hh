@@ -14,7 +14,9 @@
  * Expects GRID_NBR_ENCAP packet with MAC headers as input, which will
  * be output with the destination location filled in to match the
  * header's destination address.
- * */
+ * 
+ * =a FloodingLocQuerier
+ */
 
 #include "element.hh"
 #include "ipaddress.hh"

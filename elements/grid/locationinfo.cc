@@ -19,7 +19,7 @@
 #include "router.hh"
 #include "error.hh"
 
-LocationInfo::LocationInfo()
+LocationInfo::LocationInfo() : _seq_no(0)
 {
   _move = 0;
   _lat0 = 32.2816;  // Doug's house in Bermuda.
@@ -117,7 +117,7 @@ LocationInfo::choose_new_leg(double *nlat, double *nlon, double *nt)
 }
 
 grid_location
-LocationInfo::get_current_location()
+LocationInfo::get_current_location(unsigned int *seq_no)
 {
   double t = now();
 
@@ -131,15 +131,19 @@ LocationInfo::get_current_location()
     _vlat = (nlat - _lat0) / (nt - _t0);
     _vlon = (nlon - _lon0) / (nt - _t0);
     _t1 = nt;
+    _seq_no++;
   }
 
   if (_move == 2) {
     _lat0 = xlat();
     _lon0 = xlon();
     _t0 = t;
+    _seq_no++;
   }
 
   grid_location gl(xlat(), xlon());
+  if (seq_no != 0)
+    *seq_no = _seq_no;
   return(gl);
 }
 

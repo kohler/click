@@ -39,7 +39,9 @@ public:
   int configure(const Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
 
-  grid_location get_current_location();
+  // seq_no is incremented when location changes ``enough to make a
+  // difference''
+  grid_location get_current_location(unsigned int *seq_no = 0);
 
   void add_handlers();
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
@@ -61,6 +63,8 @@ protected:
   double xlon();
   double uniform();
   virtual void choose_new_leg(double *, double *, double *);
+
+  unsigned int _seq_no;
 };
 
 #endif

@@ -60,10 +60,14 @@ struct grid_hdr {
   static const int GRID_HELLO     = 1;  // no additional info in packet beyond header
   static const int GRID_LR_HELLO  = 2;  // followed by grid_hello and grid_nbr_entries
   static const int GRID_NBR_ENCAP = 3;  // followed by grid_nbr_encap
+  static const int GRID_FLOOD_LOC_QUERY = 4; // followed by grid_flood_loc_query
+  static const int GRID_FLOOD_LOC_REPLY = 5; // followed by grid_nbr_encap header 
 
   unsigned int ip;          // Sender's IP address.
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
   int loc_err;              // Error radius of position, in metres.  if negative, don't believe loc
+  static const int BAD_LOC = -1;
+  unsigned int loc_seq_no;  
   unsigned short total_len; // Of the whole packet, starting at grid_hdr.
                             // Why do we need total_len? What about byte order? -- for cksum.  network order.
   unsigned short cksum;     // Over the whole packet, starting at grid_hdr.
@@ -110,6 +114,12 @@ struct grid_nbr_encap {
   struct grid_location dst_loc;
   int dst_loc_err;
   unsigned char hops_travelled;
+};
+
+struct grid_flood_loc_query {
+  unsigned int src_ip; // because gh->ip gets rewritten by every sender
+  unsigned int dst_ip;
+  unsigned int seq_no;
 };
 
 
