@@ -68,27 +68,27 @@ CLICK_CXX_UNPROTECT
 
 class AnyDevice : public Element { public:
 
-  AnyDevice();
-  ~AnyDevice();
+    AnyDevice();
+    ~AnyDevice();
 
-  const String &devname() const		{ return _devname; }
-  int ifindex() const			{ return _dev ? _dev->ifindex : -1; }
-  AnyDevice *next() const		{ return _next; }
-  void set_next(AnyDevice *d)		{ _next = d; }
+    const String &devname() const	{ return _devname; }
+    int ifindex() const			{ return _dev ? _dev->ifindex : -1; }
+    AnyDevice *next() const		{ return _next; }
+    void set_next(AnyDevice *d)		{ _next = d; }
 
-  void adjust_tickets(int work);
+    void adjust_tickets(int work);
   
- protected:
+  protected:
 
-  String _devname;
-  net_device *_dev;
+    String _devname;
+    net_device *_dev;
 
-  Task _task;
-  int _max_tickets;
-  int _idles;
-  
-  AnyDevice *_next;
-  
+    Task _task;
+    int _max_tickets;
+    int _idles;
+
+    AnyDevice *_next;
+
 };
 
   
@@ -121,17 +121,19 @@ AnyDevice::adjust_tickets(int work)
 #endif
 }
 
-class AnyDeviceMap {
+class AnyDeviceMap { public:
 
-  AnyDevice *_map[MAX_DEVICES];
+    void initialize();
+    AnyDevice *lookup(unsigned);
+    AnyDevice *lookup_unknown(net_device *);
+    int insert(AnyDevice *);
+    void remove(AnyDevice *);
 
- public:
+  private:
 
-  void initialize();
-  AnyDevice *lookup(unsigned);
-  int insert(AnyDevice *);
-  void remove(AnyDevice *);
-  
+    AnyDevice *_unknown_map;
+    AnyDevice *_map[MAX_DEVICES];
+
 };
 
 inline AnyDevice *

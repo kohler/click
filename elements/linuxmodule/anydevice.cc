@@ -35,41 +35,67 @@ AnyDevice::~AnyDevice()
 void
 AnyDeviceMap::initialize()
 {
-  for (int i = 0; i < MAX_DEVICES; i++)
-    _map[i] = 0;
+    _unknown_map = 0;
+    for (int i = 0; i < MAX_DEVICES; i++)
+	_map[i] = 0;
 }
 
 int
 AnyDeviceMap::insert(AnyDevice *d)
 {
-  int ifi = d->ifindex();
-  if (ifi < 0 || ifi >= MAX_DEVICES)
-    return -1;
-  // put new devices first on the list
-  d->set_next(_map[ifi]);
-  _map[ifi] = d;
-  return 0;
+    int ifi = d->ifindex();
+    AnyDevice **head;
+    if (ifi < 0)
+	head = &_unknown_map;
+    else if (ifi < MAX_DEVICES)
+	head = &_map[ifi];
+    else
+	return -1;
+    // put new devices first on the list
+    d->set_next(*head);
+    *head = d;
+    return 0;
 }
 
 void
 AnyDeviceMap::remove(AnyDevice *d)
 {
-  int ifi = d->ifindex();
-  if (ifi < 0 || ifi >= MAX_DEVICES)
-    return;
+    int ifi = d->ifindex();
+    AnyDevice **head = (ifi >= 0 && ifi < MAX_DEVICES ? &_map[ifi] : &_unknown_map);
 
-  AnyDevice *prev = 0;
-  AnyDevice *trav = _map[ifi];
-  while (trav && trav != d) {
-    prev = trav;
-    trav = trav->next();
-  }
-  if (trav) {
-    if (prev)
-      prev->set_next(trav->next());
-    else
-      _map[ifi] = trav->next();
-  }
+    AnyDevice *prev = 0;
+    AnyDevice *trav = *head;
+    while (trav && trav != d) {
+	prev = trav;
+	trav = trav->next();
+    }
+    if (trav) {
+	if (prev)
+	    prev->set_next(trav->next());
+	else
+	    *head = trav->next();
+    }
+}
+
+AnyDevice *
+AnyDeviceMap::lookup_unknown(net_device *dev)
+{
+    // look first by device names
+    String dev_name = dev->name;
+    for (AnyDevice *d = _unknown_map; d; d = d->next())
+	if (d->devname() == dev_name)
+	    return d;
+
+    // then by Ethernet addresses
+    if (dev->type == ARPHRD_ETHER) {
+	unsigned char en[6];
+	for (AnyDevice *d = _unknown_map; d; d = d->next())
+	    if (cp_ethernet_address(d->devname(), en, d))
+		if (memcmp(en, dev->dev_addr, 6) == 0)
+		    return d;
+    }
+
+    return 0;
 }
 
 
