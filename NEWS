@@ -33,6 +33,16 @@ Version 1.4.2
   click-devirtualize (kohler), and fix the linuxmodule bug that led to
   errors like "wmem_alloc != 0" (jbicket).
 
+* Fixes to wireless source routing elements (element/wifi/sr/) -
+  gives each link a sequence number and age to prevent old linkstate
+  from floating around in the network.  Also more documentation.
+  (jbicket)
+
+* Add header (click_wifi_extra) to replace prism header. Communicates
+  with the device driver (things like transmission status, bitrate, 
+  retries, etc).  See ExtraEncap and ExtraDecap as well as FilterTX.
+  (jbicket)
+
 * Internal changes (kohler)
 
 ** Handler class rewritten. 
