@@ -586,7 +586,8 @@ IPRw::clean_map(Map &table)
   Vector<Mapping *> to_free;
 
   while (1) {
-    
+
+    // XXX BUGGY!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     for (Map::Iterator iter = table.first(); iter; iter++)
       if (Mapping *m = iter.value()) {
 	if (!m->used() && !m->reverse()->used() && !m->is_reverse()) {
