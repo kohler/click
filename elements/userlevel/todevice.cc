@@ -103,10 +103,11 @@ ToDevice::initialize(ErrorHandler *errh)
   ifr.ifr_name[sizeof(ifr.ifr_name) - 1] = 0;
   if (ioctl(_fd, BIOCSETIF, (caddr_t)&ifr) < 0)
     return errh->error("BIOCSETIF %s failed", ifr.ifr_name);
-#ifdef BIOCSHDRCMPLT
-  if (ioctl(_fd, BIOCSHDRCMPLT, 1))
+# ifdef BIOCSHDRCMPLT
+  int yes = 1;
+  if (ioctl(_fd, BIOCSHDRCMPLT, (caddr_t)&yes) < 0)
       errh->warning("BIOCSHDRCMPLT %s failed", ifr.ifr_name);
-#endif
+# endif
   _my_fd = true;
 
 #elif TODEVICE_LINUX || TODEVICE_PCAP
