@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath WIFI_INCLUDES freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS ac_configure_args CLICK_VERSION conf_auxdir build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os CC ac_ct_CC CXX ac_ct_CXX CFLAGS LDFLAGS CPPFLAGS EXEEXT OBJEXT DEPCFLAGS CFLAGS_NDEBUG CPP CXXFLAGS CXXFLAGS_NDEBUG CXXCPP KERNEL_CC KERNEL_CXX AR ac_ct_AR LD ac_ct_LD RANLIB ac_ct_RANLIB STRIP ac_ct_STRIP AR_CREATEFLAGS linuxdir element_groups elements_vpath freebsd_srcdir freebsd_includedir BUILD_CC BUILD_CXX BUILD_AR BUILD_RANLIB HOST_TOOLS LIBOBJS EGREP DL_LIBS LDMODULEFLAGS BUILD_DL_LIBS SOCKET_LIBS EXTRA_DRIVER_OBJS EXTRA_TOOL_OBJS POSSIBLE_TARGETS TARGETS OTHER_TARGETS TOOLDIRS TOOL_TARGETS PCAP_INCLUDES PCAP_LIBS XML2CLICK EXPAT_INCLUDES EXPAT_LIBS INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA INSTALL_IF_CHANGED SUBMAKE AUTOCONF perl5 localperl5 PERL INSTALL_INFO MAKEINFO TEXI2DVI provisions LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -877,7 +877,7 @@ Optional Features:
   --disable-standard      do not include standard elements
   --disable-tcpudp        do not include TCP and UDP elements
   --enable-test           include regression test elements
-  --enable-wifi           include wifi linuxmodule support (EXPERIMENTAL)
+  --enable-wifi           include wifi support
   --enable-tools=WHERE    enable tools (host/build/mixed/no) [mixed]
   --enable-multithread[=NUM] support kernel multithreading, NUM threads max
   --disable-int64         disable 64-bit integer support
@@ -897,7 +897,6 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]
   --with-linux-map[=FILE] filename for Linux System.map [LINUXDIR/System.map]
-  --with-wifi[=DIR]       Wifi driver (madwifi.stripped) source code is in DIR
   --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
                           include directory is INC [/usr/include]
   --with-expat[=PREFIX]   Prefix where expat library is installed (optional)
@@ -4361,62 +4360,6 @@ elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -type
 
 
 
-# Check whether --with-wifi or --without-wifi was given.
-if test "${with_wifi+set}" = set; then
-  withval="$with_wifi"
-  wifidir=$withval
-else
-  wifidir=NONE
-fi;
-WIFI_INCLUDES=
-
-if test "x$enable_wifi" = xyes -a "x$enable_linuxmodule" = xyes; then
-    if test "$wifidir" != NONE && expr "_$wifidir" : '_[^/\\]' >/dev/null; then
-	{ { echo "$as_me:$LINENO: error:
-=========================================
-
-The --with-wifi directory $wifidir is relative.
-You must supply an absolute path starting with /.
-
-=========================================" >&5
-echo "$as_me: error:
-=========================================
-
-The --with-wifi directory $wifidir is relative.
-You must supply an absolute path starting with /.
-
-=========================================" >&2;}
-   { (exit 1); exit 1; }; }
-    elif test -f $wifidir/click_wifi/click_wifi.h; then
-	WIFI_INCLUDES=-I$wifidir/click_wifi
-	    else
-	{ { echo "$as_me:$LINENO: error:
-=========================================
-
-You used --enable-wifi and --enable-linuxmodule but
-'$wifidir/click_wifi/click_wifi.h' can't be found.  You must download
-the madwifi.stripped driver and supply the correct argument to
---with-wifi.
-
-=========================================" >&5
-echo "$as_me: error:
-=========================================
-
-You used --enable-wifi and --enable-linuxmodule but
-'$wifidir/click_wifi/click_wifi.h' can't be found.  You must download
-the madwifi.stripped driver and supply the correct argument to
---with-wifi.
-
-=========================================" >&2;}
-   { (exit 1); exit 1; }; }
-    fi
-fi
-
-
-
-
-
-
 # Check whether --with-freebsd or --without-freebsd was given.
 if test "${with_freebsd+set}" = set; then
   withval="$with_freebsd"
@@ -7147,7 +7090,7 @@ else
 
 	    	    ac_cv_endian=0
 	    cat > conftest.$ac_ext <<EOF
-#line 7150 "configure"
+#line 7093 "configure"
 #include "confdefs.h"
 #include <$endian_hdr>
 #ifdef __BYTE_ORDER
@@ -12920,7 +12863,6 @@ s,@AR_CREATEFLAGS@,$AR_CREATEFLAGS,;t t
 s,@linuxdir@,$linuxdir,;t t
 s,@element_groups@,$element_groups,;t t
 s,@elements_vpath@,$elements_vpath,;t t
-s,@WIFI_INCLUDES@,$WIFI_INCLUDES,;t t
 s,@freebsd_srcdir@,$freebsd_srcdir,;t t
 s,@freebsd_includedir@,$freebsd_includedir,;t t
 s,@BUILD_CC@,$BUILD_CC,;t t

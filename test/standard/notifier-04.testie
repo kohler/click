@@ -9,7 +9,7 @@ click CONFIG3 -h c.count > OUT3
 %file CONFIG
 i :: InfiniteSource(LIMIT 15)
   -> c :: Counter
-  -> q :: Queue(5)
+  -> q :: NotifierQueue(5)
   -> Idle;
 DriverManager(wait 0.1s, stop)
 
