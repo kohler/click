@@ -17,7 +17,6 @@
 
 #include <click/config.h>
 
-#include <stdio.h>
 #include <click/radix.hh>
 
 
