@@ -28,7 +28,7 @@ class Counter : public Element { protected:
   Counter();
   
   const char *class_name() const		{ return "Counter"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   
   int count() const				{ return _count; }
   int rate() const				{ return _rate.average(); }
