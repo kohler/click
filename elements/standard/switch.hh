@@ -13,7 +13,7 @@
  * write handler. Switch has an unlimited number of outputs.
  *
  * =h switch read/write
- * Set or change the K parameter.
+ * Return or set the K parameter.
  *
  * =a StrideSwitch
  * =a PullSwitch */
