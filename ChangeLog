@@ -1,3 +1,14 @@
+2004-08-05 Thursday 11:13  Max Krohn <krohn@mit.edu>
+
+	* conf/click-mkclgw.pl (1.12): Removed unneeded ports for HP ILO;
+	Fixed telnet so it works.
+
+2004-08-05 Thursday 10:52  Max Krohn <krohn@mit.edu>
+
+	* conf/click-mkclgw.pl (1.11): added telnet port and also a port
+	for HP ILO virtual media.  Not sure if it talks UDP or TCP yet,
+	though..
+
 2004-08-05 Thursday 10:29  Max Krohn <krohn@mit.edu>
 
 	* etc/debian-2.4.26-patch (1.2): Included patch for
