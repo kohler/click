@@ -519,6 +519,12 @@ static int was_default_configuration;
 void
 Element::configuration(Vector<String> &conf) const
 {
+  configuration(conf, (bool *)0);
+}
+
+void
+Element::configuration(Vector<String> &conf, bool *) const
+{
   // Handle configuration(void) requests specially by preserving whitespace.
   String s = router()->default_configuration_string(eindex());
   if (store_default_configuration)
@@ -526,12 +532,6 @@ Element::configuration(Vector<String> &conf) const
   else
     cp_argvec(s, conf);
   was_default_configuration = 1;
-}
-
-void
-Element::configuration(Vector<String> &conf, bool *) const
-{
-  configuration(conf);
 }
 
 String
