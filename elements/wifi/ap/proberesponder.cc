@@ -1,5 +1,5 @@
 /*
- * beaconsource.{cc,hh} -- sends 802.11 beacon packets
+ * proberesponder.{cc,hh} -- sends 802.11 probe responses from requests.
  * John Bicket
  *
  * Copyright (c) 2004 Massachusetts Institute of Technology
@@ -26,26 +26,24 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include <click/packet_anno.hh>
-#include <click/timer.hh>
 #include <click/error.hh>
-#include "beaconsource.hh"
+#include "proberesponder.hh"
 
 CLICK_DECLS
 
-BeaconSource::BeaconSource()
-  : Element(0, 1),
-    _timer(this)
+ProbeResponder::ProbeResponder()
+  : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
 }
 
-BeaconSource::~BeaconSource()
+ProbeResponder::~ProbeResponder()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-BeaconSource::configure(Vector<String> &conf, ErrorHandler *errh)
+ProbeResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
   _debug = false;
@@ -77,23 +75,118 @@ BeaconSource::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-int
-BeaconSource::initialize (ErrorHandler *)
-{
-  _timer.initialize(this);
-  _timer.schedule_after_ms(_interval_ms);
-  return 0;
-}
-
 void
-BeaconSource::run_timer() 
+ProbeResponder::push(int port, Packet *p)
 {
-  send_beacon();
-  _timer.schedule_after_ms(_interval_ms);
-}
 
+  uint8_t dir;
+  uint8_t type;
+  uint8_t subtype;
+
+  if (p->length() < sizeof(struct click_wifi)) {
+    click_chatter("%{element}: packet too small: %d vs %d\n",
+		  this,
+		  p->length(),
+		  sizeof(struct click_wifi));
+
+    p->kill();
+    return;
+	      
+  }
+  struct click_wifi *w = (struct click_wifi *) p->data();
+
+
+  dir = w->i_fc[1] & WIFI_FC1_DIR_MASK;
+  type = w->i_fc[0] & WIFI_FC0_TYPE_MASK;
+  subtype = w->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
+
+  if (type != WIFI_FC0_TYPE_MGT) {
+    click_chatter("%{element}: received non-management packet\n",
+		  this);
+    p->kill();
+    return;
+  }
+
+  if (subtype != WIFI_FC0_SUBTYPE_PROBE_REQ) {
+    click_chatter("%{element}: received non-probe-req packet\n",
+		  this);
+    p->kill();
+    return;
+  }
+
+  uint8_t *ptr;
+  
+  ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
+
+  uint8_t *end  = (uint8_t *) p->data() + p->length();
+
+  uint8_t *ssid_l = NULL;
+  uint8_t *rates_l = NULL;
+
+  while (ptr < end) {
+    switch (*ptr) {
+    case WIFI_ELEMID_SSID:
+      ssid_l = ptr;
+      break;
+    case WIFI_ELEMID_RATES:
+      rates_l = ptr;
+      break;
+    default:
+      if (_debug) {
+	click_chatter("%{element}: ignored element id %u %u \n",
+		      this,
+		      *ptr,
+		      ptr[1]);
+      }
+    }
+    ptr += ptr[1] + 2;
+
+  }
+
+  StringAccum sa;
+  String ssid;
+  if (ssid_l && ssid_l[1]) {
+    ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
+  } else {
+    /* there was no element or it has zero length */
+    ssid = "";
+  }
+
+
+  if (ssid != _ssid) {
+    p->kill();
+    return;
+  }
+  EtherAddress src = EtherAddress(w->i_addr2);
+
+  sa << "ProbeReq: " << src << " ssid " << ssid << " ";
+
+  sa << "rates {";
+  if (rates_l) {
+    for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
+      uint8_t rate = rates_l[x + 2];
+      
+      if (rate & WIFI_RATE_BASIC) {
+	sa << " * " << (int) (rate ^ WIFI_RATE_BASIC);
+      } else {
+	sa << " " << (int) rate;
+      }
+    }
+  }
+  sa << " }";
+
+  if (_debug) {
+    click_chatter("%{element}: %s\n",
+		  this,
+		  sa.take_string().cc());
+  }
+  send_probe_response(src);
+  
+  p->kill();
+  return;
+}
 void
-BeaconSource::send_beacon()
+ProbeResponder::send_probe_response(EtherAddress dst)
 {
 
   int len = sizeof (struct click_wifi) + 
@@ -117,10 +210,10 @@ BeaconSource::send_beacon()
   uint8_t type;
   uint8_t subtype;
 
-  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_BEACON;
+  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_MGT | WIFI_FC0_SUBTYPE_PROBE_RESP;
   w->i_fc[1] = WIFI_FC1_DIR_NODS;
 
-  memset(w->i_addr1, 0xff, 6);
+  memcpy(w->i_addr1, dst.data(), 6);
   memcpy(w->i_addr2, _bssid.data(), 6);
   memcpy(w->i_addr3, _bssid.data(), 6);
 
@@ -173,7 +266,6 @@ BeaconSource::send_beacon()
 
 
   /* tim */
-
   ptr[0] = WIFI_ELEMID_TIM;
   ptr[1] = 4;
 
@@ -191,9 +283,9 @@ BeaconSource::send_beacon()
 enum {H_DEBUG, H_BSSID, H_SSID, H_CHANNEL, H_RATES, H_CLEAR_RATES, H_INTERVAL};
 
 static String 
-BeaconSource_read_param(Element *e, void *thunk)
+ProbeResponder_read_param(Element *e, void *thunk)
 {
-  BeaconSource *td = (BeaconSource *)e;
+  ProbeResponder *td = (ProbeResponder *)e;
   switch ((uintptr_t) thunk) {
   case H_DEBUG:
     return String(td->_debug) + "\n";
@@ -217,10 +309,10 @@ BeaconSource_read_param(Element *e, void *thunk)
   }
 }
 static int 
-BeaconSource_write_param(const String &in_s, Element *e, void *vparam,
+ProbeResponder_write_param(const String &in_s, Element *e, void *vparam,
 		      ErrorHandler *errh)
 {
-  BeaconSource *f = (BeaconSource *)e;
+  ProbeResponder *f = (ProbeResponder *)e;
   String s = cp_uncomment(in_s);
   switch((int)vparam) {
   case H_DEBUG: {    //debug
@@ -270,24 +362,24 @@ BeaconSource_write_param(const String &in_s, Element *e, void *vparam,
 }
  
 void
-BeaconSource::add_handlers()
+ProbeResponder::add_handlers()
 {
   add_default_handlers(true);
 
-  add_read_handler("debug", BeaconSource_read_param, (void *) H_DEBUG);
-  add_read_handler("bssid", BeaconSource_read_param, (void *) H_BSSID);
-  add_read_handler("ssid", BeaconSource_read_param, (void *) H_SSID);
-  add_read_handler("channel", BeaconSource_read_param, (void *) H_CHANNEL);
-  add_read_handler("rates", BeaconSource_read_param, (void *) H_RATES);
-  add_read_handler("interval", BeaconSource_read_param, (void *) H_INTERVAL);
+  add_read_handler("debug", ProbeResponder_read_param, (void *) H_DEBUG);
+  add_read_handler("bssid", ProbeResponder_read_param, (void *) H_BSSID);
+  add_read_handler("ssid", ProbeResponder_read_param, (void *) H_SSID);
+  add_read_handler("channel", ProbeResponder_read_param, (void *) H_CHANNEL);
+  add_read_handler("rates", ProbeResponder_read_param, (void *) H_RATES);
+  add_read_handler("interval", ProbeResponder_read_param, (void *) H_INTERVAL);
 
-  add_write_handler("debug", BeaconSource_write_param, (void *) H_DEBUG);
-  add_write_handler("bssid", BeaconSource_write_param, (void *) H_BSSID);
-  add_write_handler("ssid", BeaconSource_write_param, (void *) H_SSID);
-  add_write_handler("channel", BeaconSource_write_param, (void *) H_CHANNEL);
-  add_write_handler("rates", BeaconSource_write_param, (void *) H_RATES);
-  add_write_handler("rates_reset", BeaconSource_write_param, (void *) H_CLEAR_RATES);
-  add_write_handler("interval", BeaconSource_write_param, (void *) H_INTERVAL);
+  add_write_handler("debug", ProbeResponder_write_param, (void *) H_DEBUG);
+  add_write_handler("bssid", ProbeResponder_write_param, (void *) H_BSSID);
+  add_write_handler("ssid", ProbeResponder_write_param, (void *) H_SSID);
+  add_write_handler("channel", ProbeResponder_write_param, (void *) H_CHANNEL);
+  add_write_handler("rates", ProbeResponder_write_param, (void *) H_RATES);
+  add_write_handler("rates_reset", ProbeResponder_write_param, (void *) H_CLEAR_RATES);
+  add_write_handler("interval", ProbeResponder_write_param, (void *) H_INTERVAL);
 }
 
 
@@ -297,4 +389,4 @@ BeaconSource::add_handlers()
 #if EXPLICIT_TEMPLATE_INSTANCES
 #endif
 CLICK_ENDDECLS
-EXPORT_ELEMENT(BeaconSource)
+EXPORT_ELEMENT(ProbeResponder)

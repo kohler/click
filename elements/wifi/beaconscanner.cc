@@ -1,5 +1,5 @@
 /*
- * beaconscanner.{cc,hh} -- decapsultates 802.11 packets
+ * beaconscanner.{cc,hh} -- tracks 802.11 beacon sources
  * John Bicket
  *
  * Copyright (c) 2004 Massachusetts Institute of Technology
@@ -109,13 +109,12 @@ BeaconScanner::simple_action(Packet *p)
   uint8_t *ts = ptr;
   ptr += 8;
 
-  uint8_t *beacon_interval = ptr;
+  uint16_t beacon_int = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
 
-  uint8_t *cap_info = ptr;
+  uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
   ptr += 2;
 
-  uint16_t capability = cap_info[0] + (cap_info[1] << 8);
 
   uint8_t *end  = (uint8_t *) p->data() + p->length();
 
@@ -186,6 +185,7 @@ BeaconScanner::simple_action(Packet *p)
   ap->_rssi = WIFI_SIGNAL_ANNO(p);
 
   ap->_capability = capability;
+  ap->_beacon_int = beacon_int;
   ap->_basic_rates.clear();
   ap->_rates.clear();
   click_gettimeofday(&ap->_last_rx);
@@ -220,7 +220,7 @@ BeaconScanner::scan_string()
     sa << "ssid " << ap._ssid << " ";
     sa << "last_rx " << now - ap._last_rx << " ";
     sa << "+" << ap._rssi << " ";
-
+    sa << "beacon_interval " << ap._beacon_int << " ";
     sa << "[ ";
     if (ap._capability & WIFI_CAPINFO_ESS) {
       sa << "ESS ";

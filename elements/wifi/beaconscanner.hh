@@ -65,6 +65,7 @@ class BeaconScanner : public Element { public:
     String _ssid;
     int _channel;
     uint16_t _capability;
+    uint16_t _beacon_int;
     Vector<int> _rates;
     Vector<int> _basic_rates;
     int _rssi;

@@ -65,23 +65,6 @@ PrintWifi::simple_action(Packet *p)
       sa << "PrintWifi ";
   }
 
-
-
-  switch (wh->i_fc[0] & WIFI_FC0_TYPE_MASK) {
-  case WIFI_FC0_TYPE_MGT:
-    sa << "mgt ";
-    break;
-  case WIFI_FC0_TYPE_CTL:
-    sa << "ctl ";
-    break;
-  case WIFI_FC0_TYPE_DATA:
-    sa << "data ";
-    break;
-  default:
-    sa << "??? ";
-  }
-
-
   switch (wh->i_fc[1] & WIFI_FC1_DIR_MASK) {
   case WIFI_FC1_DIR_NODS:
     sa << "NODS ";
@@ -98,6 +81,62 @@ PrintWifi::simple_action(Packet *p)
   default:
     sa << "??? ";
   }
+
+
+
+  switch (wh->i_fc[0] & WIFI_FC0_TYPE_MASK) {
+  case WIFI_FC0_TYPE_MGT:
+    sa << "mgt ";
+
+    switch (wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK) {
+    case WIFI_FC0_SUBTYPE_ASSOC_REQ:
+      sa << "assoc_req ";
+      break;
+    case WIFI_FC0_SUBTYPE_ASSOC_RESP:
+      sa << "assoc_resp ";
+      break;
+    case WIFI_FC0_SUBTYPE_REASSOC_REQ:
+      sa << "reassoc_req ";
+      break;
+    case WIFI_FC0_SUBTYPE_REASSOC_RESP:
+      sa << "reassoc_resp ";
+      break;
+    case WIFI_FC0_SUBTYPE_PROBE_REQ:
+      sa << "probe_req ";
+      break;
+    case WIFI_FC0_SUBTYPE_PROBE_RESP:
+      sa << "probe_resp ";
+      break;
+    case WIFI_FC0_SUBTYPE_BEACON:
+      sa << "beacon ";
+      break;
+    case WIFI_FC0_SUBTYPE_ATIM:
+      sa << "atim ";
+      break;
+    case WIFI_FC0_SUBTYPE_DISASSOC:
+      sa << "disassco ";
+      break;
+    case WIFI_FC0_SUBTYPE_AUTH:
+      sa << "auth ";
+      break;
+    case WIFI_FC0_SUBTYPE_DEAUTH:
+      sa << "deauth ";
+      break;
+    defuault:
+      sa << "??unknown subtype";
+      break;
+    }
+    break;
+  case WIFI_FC0_TYPE_CTL:
+    sa << "ctl ";
+    break;
+  case WIFI_FC0_TYPE_DATA:
+    sa << "data ";
+    break;
+  default:
+    sa << "??? ";
+  }
+
 
   sa << EtherAddress(wh->i_addr2);
   sa << " -> ";
