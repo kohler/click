@@ -28,7 +28,9 @@
 ScheduleInfo::ScheduleInfo()
 {
   MOD_INC_USE_COUNT;
+#ifndef RR_SCHED
   static_assert((1 << FRAC_BITS) == Task::DEFAULT_TICKETS);
+#endif
 }
 
 ScheduleInfo::~ScheduleInfo()
@@ -110,6 +112,7 @@ ScheduleInfo::query_prefixes(const String &id, int &scaled_tickets,
 int
 ScheduleInfo::query(Element *e, ErrorHandler *errh)
 {
+#ifndef RR_SCHED
   // check prefixes in order of increasing length
   Router *r = e->router();
   String id = e->id();
@@ -152,6 +155,9 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
   
   // return the result you've got
   return tickets;
+#else
+  return 1;
+#endif
 }
 
 void
