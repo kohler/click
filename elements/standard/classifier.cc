@@ -22,7 +22,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
-#include "elements/standard/alignmentinfo.hh"
+#include <click/standard/alignmentinfo.hh>
 
 //
 // CLASSIFIER::EXPR OPERATIONS

@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "alignmentinfo.hh"
+#include <click/standard/alignmentinfo.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/router.hh>
@@ -109,3 +109,4 @@ AlignmentInfo::query(Element *e, int port, int &chunk, int &offset)
 }
 
 EXPORT_ELEMENT(AlignmentInfo)
+ELEMENT_HEADER(<click/standard/alignmentinfo.hh>)

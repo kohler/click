@@ -23,7 +23,7 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "elements/standard/alignmentinfo.hh"
+#include <click/standard/alignmentinfo.hh>
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif

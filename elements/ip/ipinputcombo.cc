@@ -23,7 +23,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
-#include "elements/standard/alignmentinfo.hh"
+#include <click/standard/alignmentinfo.hh>
 
 IPInputCombo::IPInputCombo()
   : _bad_src(0)
