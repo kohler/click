@@ -14,22 +14,33 @@
 #define _CLICK_IOC_VOID		0x20000000
 #define _CLICK_IOC_OUT		0x40000000
 #define _CLICK_IOC_IN		0x80000000
+#define _CLICK_IOC_SAFE		0x00008000
 
-#define _CLICK_IOX(d, g, n, sz)	((d) | ((sz) << 16) | ((g) << 8) | (n))
-#define _CLICK_IO(n)		_CLICK_IOX(_CLICK_IOC_VOID, 0xC7, (n), 0)
-#define _CLICK_IOR(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT, 0xC7, (n), (sz))
-#define _CLICK_IOW(n, sz)	_CLICK_IOX(_CLICK_IOC_IN, 0xC7, (n), (sz))
-#define _CLICK_IOWR(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT, 0xC7, (n), (sz))
+/* "Non-safe" LLRPCs will not be performed in parallel with other LLRPCs or
+   handlers. */
+#define _CLICK_IOX(d, n, sz)	((d) | ((sz) << 16) | (n))
+#define _CLICK_IO(n)		_CLICK_IOX(_CLICK_IOC_VOID, (n), 0)
+#define _CLICK_IOR(n, sz)	_CLICK_IOX(_CLICK_IOC_OUT, (n), (sz))
+#define _CLICK_IOW(n, sz)	_CLICK_IOX(_CLICK_IOC_IN, (n), (sz))
+#define _CLICK_IOWR(n, sz)	_CLICK_IOX(_CLICK_IOC_IN|_CLICK_IOC_OUT, (n), (sz))
 
-#define CLICK_LLRPC_GET_RATE			_CLICK_IOWR(0, 4)
-#define CLICK_LLRPC_GET_RATES			_CLICK_IO(1)
-#define CLICK_LLRPC_GET_COUNT			_CLICK_IOWR(2, 4)
-#define CLICK_LLRPC_GET_COUNTS			_CLICK_IO(3)
-#define CLICK_LLRPC_GET_SWITCH			_CLICK_IOR(4, 4)
+/* "Safe" LLRPCs may be performed in parallel with read handlers and other
+   safe LLRPCs, but not with write handlers or unsafe LLRPCs. */
+#define _CLICK_IOXS(d, n, sz)	((d) | ((sz) << 16) | (n) | _CLICK_IOC_SAFE)
+#define _CLICK_IOS(n)		_CLICK_IOXS(_CLICK_IOC_VOID, (n), 0)
+#define _CLICK_IORS(n, sz)	_CLICK_IOXS(_CLICK_IOC_OUT, (n), (sz))
+#define _CLICK_IOWS(n, sz)	_CLICK_IOXS(_CLICK_IOC_IN, (n), (sz))
+#define _CLICK_IOWRS(n, sz)	_CLICK_IOXS(_CLICK_IOC_IN|_CLICK_IOC_OUT, (n), (sz))
+
+#define CLICK_LLRPC_GET_RATE			_CLICK_IOWRS(0, 4)
+#define CLICK_LLRPC_GET_RATES			_CLICK_IOS(1)
+#define CLICK_LLRPC_GET_COUNT			_CLICK_IOWRS(2, 4)
+#define CLICK_LLRPC_GET_COUNTS			_CLICK_IOS(3)
+#define CLICK_LLRPC_GET_SWITCH			_CLICK_IORS(4, 4)
 #define CLICK_LLRPC_SET_SWITCH			_CLICK_IOW(5, 4)
 #define CLICK_LLRPC_MAP_IPADDRESS		_CLICK_IOWR(6, 4)
-#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWR(7, 12)
-#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWR(8, 12)
+#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWRS(7, 12)
+#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWRS(8, 12)
 #define CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG	_CLICK_IO(9)
 #define CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG	_CLICK_IO(10)
 #define CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG	_CLICK_IO(11)
