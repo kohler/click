@@ -63,7 +63,7 @@ GridRouteTable::log_route_table ()
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &f = i.value();
     
-    sprintf(str, 
+    snprintf(str, sizeof(str), 
 	    "%s %f %f %s %d %c %u\n", 
 	    f.dest_ip.s().cc(),
 	    f.loc.lat(),
@@ -81,15 +81,17 @@ GridRouteTable::log_route_table ()
 int
 GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  String chan("routelog");
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "entry timeout (msec)", &_timeout,
-			cpInteger, "Hello broadcast period (msec)", &_period,
-			cpInteger, "Hello broadcast jitter (msec)", &_jitter,
+			cpInteger, "route broadcast period (msec)", &_period,
+			cpInteger, "route broadcast jitter (msec)", &_jitter,
 			cpEthernetAddress, "source Ethernet address", &_eth,
 			cpIPAddress, "source IP address", &_ip,
 			cpElement, "GridGatewayInfo element", &_gw_info,
 			cpOptional,
 			cpInteger, "max hops", &_max_hops,
+			cpString, "log channel name", &chan,
 			0);
 
   // convert msecs to jiffies
@@ -112,7 +114,7 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (_max_hops < 0)
     return errh->error("max hops must be greater than 0");
 
-  _extended_logging_errh = router()->chatter_channel(String("routelog"));
+  _extended_logging_errh = router()->chatter_channel(chan);
 
   return res;
 }
@@ -599,7 +601,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   for (int i = 0; i < num_rtes; i++, curr++) {
 
     const RTEntry &f = rte_info[i];
-    sprintf (str, 
+    snprintf(str, sizeof(str), 
 	     "%s %f %f %s %d %c %u\n", 
 	     f.dest_ip.s().cc(),
 	     f.loc.lat(),

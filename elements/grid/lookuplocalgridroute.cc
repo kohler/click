@@ -117,31 +117,42 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 
     case grid_hdr::GRID_NBR_ENCAP:
     case grid_hdr::GRID_LOC_REPLY:
-      {/* 
+    case grid_hdr::GRID_ROUTE_PROBE:
+    case grid_hdr::GRID_ROUTE_REPLY:
+      {
+	/* 
 	* try to either receive the packet or forward it
 	*/
 	struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + gh->hdr_len);
 	IPAddress dest_ip(encap->dst_ip);
 #if NOISY
- 	click_chatter("lr: got packet for %s; I am %s; agi=%s, is_gw = %d\n",
+ 	click_chatter("lr %s: got %s packet for %s; I am %s; agi=%s, is_gw = %d\n",
+		      id.cc(),
+		      grid_hdr::type_string(gh->type).cc(),
 		      dest_ip.s().cc(), 
 		      _ipaddr.s().cc(),
 		      _any_gateway_ip.s().cc(),
-		      _gw_info->is_gateway () ? 1 : 0);
+		      _gw_info->is_gateway() ? 1 : 0);
 #endif
- 	if ((dest_ip == _any_gateway_ip && _gw_info->is_gateway ())
-	    || (dest_ip == _ipaddr)) {
-	  // it's for us, send to higher level
+	// is the packet for us?
+	if ((dest_ip == _ipaddr) ||
+	    (dest_ip == _any_gateway_ip && _gw_info->is_gateway())) {
+	  // is it IP data?  If so, send it to IP input path.
+	  if (gh->type == grid_hdr::GRID_NBR_ENCAP) {
 #if NOISY
-	  click_chatter("%s: got an IP packet for us %s",
-                        id().cc(),
-                        dest_ip.s().cc());
+	    click_chatter("%s: got an IP packet for us %s",
+			  id().cc(),
+			  dest_ip.s().cc());
 #endif
-	  packet->pull(sizeof(click_ether) + gh->hdr_len + sizeof(grid_nbr_encap)); 
-	  output(1).push(packet);
-	  break;
-	} else {
-	  // try to forward it!
+	    packet->pull(sizeof(click_ether) + gh->hdr_len + sizeof(grid_nbr_encap)); 
+	    output(1).push(packet);
+	  }
+	  else
+	    click_chatter("%s: got %s packet for us, but don't know how to handle it",
+			  id().cc(), grid_hdr::type_string(gh->type).cc());
+	} 
+	else {
+	  // packet is not for us, try to forward it!
 	  forward_grid_packet(packet, encap->dst_ip);
 	}
       }
@@ -162,7 +173,8 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     // check to see is the desired dest is our neighbor
     IPAddress dst = packet->dst_ip_anno();
 #if NOISY
-    click_chatter("lr: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
+    click_chatter("lr %s: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
+		  id.cc(),
 		  dst.s().cc(), 
 		  _ipaddr.s().cc(),
 		  _any_gateway_ip.s().cc(),
@@ -196,6 +208,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;
       encap->dst_ip = dst;
+      encap->dst_loc_good = false;
 
       forward_grid_packet(new_packet, dst);
     }
@@ -263,8 +276,13 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
    * packet must have a MAC hdr, grid_hdr, and a grid_nbr_encap hdr on
    * it.  This function will update the hop count, transmitter ip and
    * loc (us) and dst/src MAC addresses.  Sender ip and loc info will
-   * not be touched, so if we are orinigating the packet, those have
-   * to be setup before calling this function.  
+   * not be touched, so if we are originating the packet, those have
+   * to be setup before calling this function.  Similarly, the
+   * destination ip and loc info must be set by whoever (or whatever
+   * element) originates the packet.  The originator should probably
+   * set the nb->dst_loc_good to false, so that if we don't find a
+   * local route the loc querier will know to lookup the destination
+   * location before using geographic forwarding.
    */
 
   if (_rtes == 0) {

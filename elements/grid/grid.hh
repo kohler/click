@@ -213,8 +213,8 @@ struct grid_route_probe {
 
 struct grid_route_reply {
   unsigned int nonce;
-  unsigned int reply_hop;
   unsigned int probe_dest;
+  unsigned char reply_hop;
 };
 
 

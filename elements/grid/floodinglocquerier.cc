@@ -395,7 +395,7 @@ FloodingLocQuerier::read_table(Element *e, void *)
     int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
     if (e.p == 0) {
       char locbuf[255];
-      sprintf(locbuf, " lat=%f lon=%f", e.loc.lat(), e.loc.lon());
+      snprintf(locbuf, sizeof(locbuf), " lat=%f lon=%f", e.loc.lat(), e.loc.lon());
       s += e.ip.s() + locbuf
 	+ " seq=" + String(e.loc_seq_no) + " age=" + String(age) + "\n";
     }
