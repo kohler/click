@@ -48,7 +48,6 @@
 AddressInfo(
   intern 	10.0.0.1	10.0.0.0/8	00:50:ba:85:84:a9,
   extern	209.6.198.213	209.6.198.0/24	00:e0:98:09:ab:af,
-  // extern	XX.XX.XX.XX	XX.XX.XX.0/24	00:e0:98:09:ab:af,
   extern_next_hop				02:00:0a:11:22:1f,
   intern_server	10.0.0.10
 );
