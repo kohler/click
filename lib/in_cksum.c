@@ -6,13 +6,13 @@
 #include <click/config.h>
 #include <click/click_ip.h>
 
-unsigned short
+uint16_t
 click_in_cksum(const unsigned char *addr, int len)
 {
   int nleft = len;
-  const unsigned short *w = (const unsigned short *)addr;
-  unsigned sum = 0;
-  unsigned short answer = 0;
+  const uint16_t *w = (const uint16_t *)addr;
+  uint32_t sum = 0;
+  uint16_t answer = 0;
     
   /*
    * Our algorithm is simple, using a 32 bit accumulator (sum), we add

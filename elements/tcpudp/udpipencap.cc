@@ -118,15 +118,16 @@ UDPIPEncap::simple_action(Packet *p_in)
   // set up UDP header
   udp->uh_sport = htons(_sport);
   udp->uh_dport = htons(_dport);
-  unsigned short len = p->length() - sizeof(click_ip);
+  uint16_t len = p->length() - sizeof(click_ip);
   udp->uh_ulen = htons(len);
+  udp->uh_sum = 0;
   if (_cksum) {
     unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
 #ifdef __KERNEL__
     udp->uh_sum = csum_tcpudp_magic(_saddr.s_addr, _daddr.s_addr,
 				    len, IP_PROTO_UDP, csum);
 #else
-    unsigned short *words = (unsigned short *)&ip->ip_src;
+    const uint16_t *words = (const uint16_t *)&ip->ip_src;
     csum += words[0];
     csum += words[1];
     csum += words[2];
@@ -137,9 +138,8 @@ UDPIPEncap::simple_action(Packet *p_in)
       csum = (csum & 0xFFFF) + (csum >> 16);
     udp->uh_sum = ~csum & 0xFFFF;
 #endif
-  } else
-    udp->uh_sum = 0;
- 
+  }
+  
   return p;
 }
 

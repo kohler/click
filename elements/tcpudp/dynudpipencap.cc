@@ -122,6 +122,7 @@ DynamicUDPIPEncap::simple_action(Packet *p_in)
   udp->uh_dport = htons(_dport);
   unsigned short len = p->length() - sizeof(click_ip);
   udp->uh_ulen = htons(len);
+  udp->uh_sum = 0;
   if (_cksum) {
     unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
 #ifdef __KERNEL__
@@ -139,8 +140,7 @@ DynamicUDPIPEncap::simple_action(Packet *p_in)
       csum = (csum & 0xFFFF) + (csum >> 16);
     udp->uh_sum = ~csum & 0xFFFF;
 #endif
-  } else
-    udp->uh_sum = 0;
+  }
  
   unsigned old_count = _count.read_and_add(1);
   if (old_count == _interval-1 && _interval > 0) {
