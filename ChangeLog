@@ -29,6 +29,10 @@
 	* elements/standard/: queue.cc (1.44), queue.hh (1.33): remove old
 	Queue definition
 
+2003-02-15 Saturday 03:15  kohler
+
+	* test/: testie (1.8), testie (1.9): add --show option
+
 2003-02-14 Friday 12:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridencap.hh (1.2): doc formatting nitlet
@@ -201,6 +205,11 @@
 2003-02-09 Sunday 18:06  Eddie Kohler <kohler@icir.org>
 
 	* lib/error.cc (1.42): nit
+
+2003-02-09 Sunday 18:05  kohler
+
+	* test/testie (1.7): use bytes, and support commands in the
+	background
 
 2003-02-09 Sunday 03:16  Eddie Kohler <kohler@icir.org>
 
@@ -981,18 +990,6 @@
 	(1.1), src/kcompat.c (1.1), src/kcompat.h (1.1): add new e1000
 	driver (4.3.15, works on Linux 2.4)
 
-2002-11-22 Friday 12:12  Eddie Kohler <kohler@icir.org>
-
-	* drivers/e1000/: LICENSE (1.3), Makefile (1.7), Makefile.orig
-	(1.3), README (1.3), README-rtm (1.3), ans.c (1.3), ans.h (1.3),
-	ans_driver.c (1.3), ans_driver.h (1.3), ans_hw.c (1.3), ans_hw.h
-	(1.3), ans_os.c (1.3), ans_os.h (1.3), base_comm.h (1.3), e1000.h
-	(1.3), e1000.h.orig (1.3), e1000_fxhw.c (1.3), e1000_fxhw.h (1.3),
-	e1000_kcompat.h (1.4), e1000_main.c (1.6), e1000_main.c.orig (1.3),
-	e1000_phy.c (1.3), e1000_phy.h (1.3), e1000_proc.c (1.3),
-	e1000_proc.h (1.3), e1000_vendor_info.h (1.3): remove old e1000
-	driver
-
 2002-11-21 Thursday 18:32  Eddie Kohler <kohler@icir.org>
 
 	* elements/ns/fromsimdevice.cc (1.4), elements/ns/tosimdevice.cc
@@ -1170,6 +1167,10 @@
 	* etc/samplellrpc/click-readcounter.c (1.4): oops, not a C++
 	program
 
+2002-10-18 Friday 16:14  kohler
+
+	* test/: testie (1.5), testie (1.6): variables on the command line
+
 2002-10-18 Friday 14:32  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/toipsumdump.cc (1.30): nitlet
@@ -1261,13 +1262,13 @@
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
-	typename where required by later GCCs
+	* include/click/packet.hh (1.42): add end_data() function (= data()
+	+ length())
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/packet.hh (1.42): add end_data() function (= data()
-	+ length())
+	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
+	typename where required by later GCCs
 
 2002-10-14 Monday 20:26  Eddie Kohler <kohler@icir.org>
 
@@ -1340,13 +1341,13 @@
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
-	* include/click/task.hh (1.19): remove unused method
-
-2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
-
 	* include/click/routerthread.hh (1.12), lib/routerthread.cc (1.26):
 	RouterThread::driver() gives waiting threads a chance before
 	restarting (Mz)
+
+2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
+
+	* include/click/task.hh (1.19): remove unused method
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
@@ -1554,6 +1555,10 @@
 	(1.10), lib/router.cc (1.132): add reference counting to
 	BHM_Arenas, to support the swap operation
 
+2002-09-05 Thursday 02:10  kohler
+
+	* test/testie (1.4): first working testicle
+
 2002-09-03 Tuesday 07:26  Eddie Kohler <kohler@icir.org>
 
 	* lib/bitvector.cc (1.17): nitlet
@@ -1677,7 +1682,7 @@
 	(1.18), toipsumdump.cc (1.21), toipsumdump.hh (1.19): support
 	"aggregate" and "!aggregate"
 
-2002-08-19 Monday 18:52  mneufeld
+2002-08-19 Monday 18:52  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* elements/standard/addressinfo.cc (1.21),
 	elements/userlevel/fromdump.cc (1.70), elements/userlevel/todump.cc
@@ -1722,20 +1727,20 @@
 	* lib/clp.c (1.10): fix subtle use of uninitialized memory found by
 	Anne Dudfield <anne@mazunetworks.com> using valgrind; rad!
 
-2002-08-16 Friday 17:49  mneufeld
+2002-08-16 Friday 17:49  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* ns/: Makefile.in (1.3), nsclick.cc (1.2): Added an element search
 	path to Makefile.in, removed an extra (but harmless) semicolon from
 	nsclick.cc
 
-2002-08-16 Friday 17:48  mneufeld
+2002-08-16 Friday 17:48  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* elements/ns/: fromsimdevice.cc (1.2), fromsimdevice.hh (1.2),
 	tosimdevice.cc (1.2), tosimdevice.hh (1.2), tosimdump.cc (1.2),
 	tosimdump.hh (1.2): Got rid of tosimdump, fixed a couple of minor
 	things in simdevice
 
-2002-08-14 Wednesday 15:00  mneufeld
+2002-08-14 Wednesday 15:00  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
 	* include/click/simclick.h (1.1): Generic Click/simulator interface
 	header
@@ -5134,6 +5139,18 @@
 
 	* include/click/router.hh (1.27), lib/router.cc (1.115): nitlet
 
+2002-02-12 Tuesday 13:16  kohler
+
+	* test/testie (1.3): updates
+
+2002-02-11 Monday 13:39  kohler
+
+	* test/testie (1.2): testicle update
+
+2002-02-09 Saturday 16:09  kohler
+
+	* test/testie (1.1): starting to try
+
 2002-02-08 Friday 18:09  Eddie Kohler <kohler@icir.org>
 
 	* tools/lib/lexert.hh (1.23): nitlet
@@ -5892,8 +5909,8 @@
 
 2002-01-11 Friday 15:40  Eddie Kohler <kohler@icir.org>
 
-	* drivers/: e1000/e1000_kcompat.h (1.3), e1000-2.x/e1000_kcompat.h
-	(1.3): fixes for compilation under 2.2.19, from Brecht Vermeulen
+	* drivers/e1000-2.x/e1000_kcompat.h (1.3): fixes for compilation
+	under 2.2.19, from Brecht Vermeulen
 
 2002-01-11 Friday 02:42  Eddie Kohler <kohler@icir.org>
 
