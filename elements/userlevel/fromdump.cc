@@ -54,7 +54,7 @@ FromDump::initialize(ErrorHandler *errh)
   if (!_filename)
     return errh->error("filename not set");
 
-  timerclear(&_offset);
+  timerclear(&_bpf_offset);
   
 #ifdef HAVE_PCAP
   char ebuf[PCAP_ERRBUF_SIZE];
@@ -97,10 +97,18 @@ FromDump::pcap_packet_hook(u_char* clientdata,
 
   // If first time called, set up offset for syncing up real time with
   // the time of the dump.
-  if (!timerisset(&e->_offset)) {
-    click_gettimeofday(&e->_offset);
-    timersub(&e->_offset, &pkthdr->ts, &e->_offset);
-    e->_init = pkthdr->ts;
+  if (!timerisset(&e->_bpf_offset)) {
+    struct timeval now;
+    click_gettimeofday(&now);
+
+    e->_bpf_init = pkthdr->ts;
+    e->_bpf_offset.tv_sec = pkthdr->ts.tv_sec - (bpf_u_int32)now.tv_sec;
+    int32_t tv_usec = (int32_t)(pkthdr->ts.tv_usec - (bpf_u_int32)now.tv_usec);
+    if (tv_usec < 0) {
+      --e->_bpf_init.tv_sec;
+      e->_bpf_init.tv_usec = (bpf_u_int32)(tv_usec + 1000000);
+    } else
+      e->_bpf_init.tv_usec = (bpf_u_int32)tv_usec;
   }
 
   e->_pending_packet = Packet::make(data, pkthdr->caplen);
@@ -128,7 +136,7 @@ FromDump::pcap_packet_hook(u_char* clientdata,
   }
 #endif
 
-  timeradd(&e->_pending_pkthdr.ts, &e->_offset, &e->_pending_pkthdr.ts);
+  timeradd(&e->_pending_pkthdr.ts, &e->_bpf_offset, &e->_pending_pkthdr.ts);
 }
 #endif
 
@@ -138,7 +146,12 @@ FromDump::run_scheduled()
 #ifdef HAVE_PCAP
   timeval now;
   click_gettimeofday(&now);
-  if (!_timing || timercmp(&now, &_pending_pkthdr.ts, >)) {
+
+  bpf_timeval bpf_now;
+  bpf_now.tv_sec = now.tv_sec;
+  bpf_now.tv_usec = now.tv_usec;
+  
+  if (!_timing || timercmp(&bpf_now, &_pending_pkthdr.ts, >)) {
     output(0).push(_pending_packet);
     _pending_packet = 0;
     pcap_dispatch(_pcap, 1, &pcap_packet_hook, (u_char *)this);

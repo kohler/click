@@ -91,16 +91,16 @@ ARPResponder::make_response(u_char tha[6], /* him */
                             u_char sha[6], /* me */
                             u_char spa[4])
 {
-  struct ether_header *e;
-  struct ether_arp *ea;
+  click_ether *e;
+  click_ether_arp *ea;
   Packet *q = Packet::make(sizeof(*e) + sizeof(*ea));
   if (q == 0) {
     click_chatter("in arp responder: cannot make packet!");
     assert(0);
   } 
   memset(q->data(), '\0', q->length());
-  e = (struct ether_header *) q->data();
-  ea = (struct ether_arp *) (e + 1);
+  e = (click_ether *) q->data();
+  ea = (click_ether_arp *) (e + 1);
   memcpy(e->ether_dhost, tha, 6);
   memcpy(e->ether_shost, sha, 6);
   e->ether_type = htons(ETHERTYPE_ARP);
@@ -140,14 +140,14 @@ ARPResponder::lookup(IPAddress a, EtherAddress &ena)
 Packet *
 ARPResponder::simple_action(Packet *p)
 {
-  struct ether_header *e = (struct ether_header *) p->data();
-  struct ether_arp *ea = (struct ether_arp *) (e + 1);
+  click_ether *e = (click_ether *) p->data();
+  click_ether_arp *ea = (click_ether_arp *) (e + 1);
   unsigned int tpa;
   memcpy(&tpa, ea->arp_tpa, 4);
   IPAddress ipa = IPAddress(tpa);
   
   Packet *q = 0;
-  if (p->length() >= sizeof(*e) + sizeof(struct ether_arp) &&
+  if (p->length() >= sizeof(*e) + sizeof(click_ether_arp) &&
       ntohs(e->ether_type) == ETHERTYPE_ARP &&
       ntohs(ea->ea_hdr.ar_hrd) == ARPHRD_ETHER &&
       ntohs(ea->ea_hdr.ar_pro) == ETHERTYPE_IP &&

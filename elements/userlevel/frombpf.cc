@@ -20,6 +20,7 @@
 #include "../standard/scheduleinfo.hh"
 #include "glue.hh"
 #include <unistd.h>
+#include <fcntl.h>
 
 FromBPF::FromBPF()
   : _promisc(0), _pcap(0)
@@ -74,10 +75,14 @@ FromBPF::initialize(ErrorHandler *errh)
   _pcap = pcap_open_live(ifname,
                          12000, /* XXX snaplen */
                          _promisc,
-                         1,     /* don't batch packets */
+                         2,     /* timeout: don't wait for packets */
                          ebuf);
   if (!_pcap)
     return errh->error("%s: %s", ifname, ebuf);
+
+  // nonblocking I/O on the packet socket so we can poll
+  int fd = pcap_fileno(_pcap);
+  fcntl(fd, F_SETFL, O_NONBLOCK);
 
   bpf_u_int32 netmask;
   bpf_u_int32 localnet;
@@ -98,13 +103,11 @@ FromBPF::initialize(ErrorHandler *errh)
     return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
   }
 
-
 #else
   errh->warning("can't get packets: not compiled with pcap support");
 #endif
 
   ScheduleInfo::join_scheduler(this, errh);
-  
   return 0;
 }
 
@@ -120,6 +123,7 @@ FromBPF::get_packet(u_char* clientdata,
 }
 #endif
 
+#if 0
 void
 FromBPF::selected(int)
 {
@@ -128,13 +132,17 @@ FromBPF::selected(int)
    */
   pcap_dispatch(_pcap, -1, FromBPF::get_packet, (u_char *) this);
 }
+#endif
 
 void
 FromBPF::run_scheduled()
 {
-  selected(0);
+  /*
+   * Read and push() one buffer of packets.
+   */
+  pcap_dispatch(_pcap, 1, FromBPF::get_packet, (u_char *) this);
+  //selected(0);
   reschedule();
 }
-
 
 EXPORT_ELEMENT(FromBPF)

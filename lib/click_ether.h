@@ -6,7 +6,7 @@
  * based on a file from one of the BSDs
  */
 
-struct ether_header {
+struct click_ether {
   unsigned char ether_dhost[6];
   unsigned char ether_shost[6];
   unsigned short ether_type;
@@ -15,7 +15,7 @@ struct ether_header {
 #define ETHERTYPE_ARP 0x0806
 #define ETHERTYPE_GRID 0xBABE
 
-struct arp_header {
+struct click_arp {
   unsigned short int ar_hrd;  /* Format of hardware address.  */
   unsigned short int ar_pro;  /* Format of protocol address.  */
   unsigned char ar_hln;       /* Length of hardware address.  */
@@ -30,17 +30,17 @@ struct arp_header {
 #define ARPOP_REQUEST   1       /* ARP request          */
 #define ARPOP_REPLY 2       /* ARP reply            */
 
-struct ether_arp {
-  struct arp_header ea_hdr;    /* fixed-size header */
+struct click_ether_arp {
+  struct click_arp ea_hdr;    /* fixed-size header */
   unsigned char arp_sha[6]; /* sender hardware address */
   unsigned char arp_spa[4]; /* sender protocol address */
   unsigned char arp_tha[6]; /* target hardware address */
   unsigned char arp_tpa[4]; /* target protocol address */
 };
-#define arp_hrd ea_hdr.ar_hrd
-#define arp_pro ea_hdr.ar_pro
-#define arp_hln ea_hdr.ar_hln
-#define arp_pln ea_hdr.ar_pln
-#define arp_op  ea_hdr.ar_op
+/* #define arp_hrd ea_hdr.ar_hrd
+   #define arp_pro ea_hdr.ar_pro
+   #define arp_hln ea_hdr.ar_hln
+   #define arp_pln ea_hdr.ar_pln
+   #define arp_op  ea_hdr.ar_op */
 
 #endif

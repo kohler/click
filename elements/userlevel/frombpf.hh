@@ -52,8 +52,8 @@ class FromBPF : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   
-  int select_fd()		{ return (_pcap?pcap_fileno(_pcap):-1); }
-  void selected(int);
+  //int select_fd()		{ return (_pcap?pcap_fileno(_pcap):-1); }
+  //void selected(int);
   
   void run_scheduled();
 

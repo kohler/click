@@ -148,16 +148,16 @@ ARPQuerier::expire_hook(unsigned long thunk)
 void
 ARPQuerier::send_query_for(const IPAddress &want_ip)
 {
-  struct ether_header *e;
-  struct ether_arp *ea;
+  click_ether *e;
+  click_ether_arp *ea;
   Packet *q = Packet::make(sizeof(*e) + sizeof(*ea));
   if (q == 0) {
     click_chatter("in arp querier: cannot make packet!");
     assert(0);
   } 
   memset(q->data(), '\0', q->length());
-  e = (struct ether_header *) q->data();
-  ea = (struct ether_arp *) (e + 1);
+  e = (click_ether *) q->data();
+  ea = (click_ether_arp *) (e + 1);
   memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
   memcpy(e->ether_shost, _my_en.data(), 6);
   e->ether_type = htons(ETHERTYPE_ARP);
@@ -196,8 +196,8 @@ ARPQuerier::handle_ip(Packet *p)
     }
     
     if (ae->ok) {
-      Packet *q = p->push(sizeof(struct ether_header));
-      struct ether_header *e = (struct ether_header *)q->data();
+      Packet *q = p->push(sizeof(click_ether));
+      click_ether *e = (click_ether *)q->data();
       memcpy(e->ether_shost, _my_en.data(), 6);
       memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP);
@@ -230,11 +230,11 @@ ARPQuerier::handle_ip(Packet *p)
 void
 ARPQuerier::handle_response(Packet *p)
 {
-  if (p->length() < sizeof(struct ether_header) + sizeof(struct ether_arp))
+  if (p->length() < sizeof(click_ether) + sizeof(click_ether_arp))
     return;
   
-  struct ether_header *ethh = (struct ether_header *) p->data();
-  struct ether_arp *arph = (struct ether_arp *) (ethh + 1);
+  click_ether *ethh = (click_ether *) p->data();
+  click_ether_arp *arph = (click_ether_arp *) (ethh + 1);
   IPAddress ipa = IPAddress(arph->arp_spa);
   EtherAddress ena = EtherAddress(arph->arp_sha);
   if (ntohs(ethh->ether_type) == ETHERTYPE_ARP

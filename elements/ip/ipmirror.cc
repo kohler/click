@@ -1,6 +1,6 @@
 /*
  * ipmirror.{cc,hh} -- rewrites IP packet a->b to b->a
- * Max Poletto
+ * Max Poletto, Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
  *

@@ -84,12 +84,12 @@ ARPFaker::make_response(u_char tha[6], /* him */
                             u_char sha[6], /* me */
                             u_char spa[4])
 {
-  struct ether_header *e;
-  struct ether_arp *ea;
+  click_ether *e;
+  click_ether_arp *ea;
   Packet *q = Packet::make(sizeof(*e) + sizeof(*ea));
   memset(q->data(), '\0', q->length());
-  e = (struct ether_header *) q->data();
-  ea = (struct ether_arp *) (e + 1);
+  e = (click_ether *) q->data();
+  ea = (click_ether_arp *) (e + 1);
   memcpy(e->ether_dhost, tha, 6);
   memcpy(e->ether_shost, sha, 6);
   e->ether_type = htons(ETHERTYPE_ARP);

@@ -102,8 +102,12 @@ void
 ToDump::write_packet(Packet *p)
 {
 #if HAVE_PCAP
+  struct timeval now;
+  click_gettimeofday(&now);
+  
   struct pcap_pkthdr h;
-  click_gettimeofday(&h.ts);
+  h.ts.tv_sec = now.tv_sec;
+  h.ts.tv_usec = now.tv_usec;
   h.caplen = p->length();
   h.len = p->length();
   

@@ -37,7 +37,7 @@ ICMPPing::clone() const
 void
 ICMPPing::make_echo_response(Packet *p)
 {
-  struct ether_header *eth_header = (struct ether_header *) p->data();
+  click_ether *eth_header = (click_ether *) p->data();
   click_ip *ip_header = (click_ip *) (eth_header+1);
   struct icmp_echo *icmp = (struct icmp_echo *) (ip_header+1);
 
@@ -65,7 +65,7 @@ ICMPPing::make_echo_response(Packet *p)
   /* calculate ICMP checksum */
   icmp->icmp_cksum = in_cksum((unsigned char *)icmp, sizeof(struct icmp_echo));
 
-  int pktlen = sizeof(struct ether_header)+ntohs(ip_header->ip_len);
+  int pktlen = sizeof(click_ether)+ntohs(ip_header->ip_len);
   p->take(p->length()-pktlen);
 }
 
@@ -73,7 +73,7 @@ ICMPPing::make_echo_response(Packet *p)
 Packet *
 ICMPPing::simple_action(Packet *p)
 {
-  struct ether_header *eth_header = (struct ether_header *) p->data();
+  click_ether *eth_header = (click_ether *) p->data();
   click_ip *ip_header = (click_ip *) (eth_header+1);
   struct icmp_generic *icmp = (struct icmp_generic *) (ip_header+1);
 

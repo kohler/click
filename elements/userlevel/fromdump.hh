@@ -38,8 +38,8 @@ class FromDump : public Element {
   pcap_pkthdr _pending_pkthdr;
 #endif
   Packet* _pending_packet;
-  timeval _offset;
-  timeval _init;
+  bpf_timeval _bpf_offset;
+  bpf_timeval _bpf_init;
   String _filename;
   bool _timing;
 

@@ -75,9 +75,9 @@ Hello::run_scheduled()
 Packet *
 Hello::make_hello()
 {
-  Packet *p = Packet::make(sizeof(struct ether_header));
+  Packet *p = Packet::make(sizeof(click_ether));
   memset(p->data(), 0, p->length());
-  struct ether_header *eh = (struct ether_header *) p->data();
+  click_ether *eh = (click_ether *) p->data();
   memset(eh->ether_dhost, 0xff, 6);
   eh->ether_type = htons(ETHERTYPE_GRID);
   memcpy(eh->ether_shost, _from.data(), 6);

@@ -85,7 +85,7 @@ EtherSwitch::broadcast(int source, Packet *p)
 void
 EtherSwitch::push(int source, Packet *p)
 {
-  ether_header* e = (ether_header*) p->data();
+  click_ether* e = (click_ether*) p->data();
 
   timeval t;
   click_gettimeofday(&t);

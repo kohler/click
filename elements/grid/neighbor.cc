@@ -37,7 +37,7 @@ Neighbor::cast(const char *n)
 }
 
 int
-Neighbor::configure(const String &conf, ErrorHandler *errh)
+Neighbor::configure(const String &, ErrorHandler *)
 {
   return 0;
 }
@@ -85,7 +85,7 @@ Neighbor::clone() const
 }
 
 static String
-print_nbrs(Element *f, void *thunk)
+print_nbrs(Element *f, void *)
 {
   Neighbor *n = (Neighbor *) f;
 
