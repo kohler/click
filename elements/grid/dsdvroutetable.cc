@@ -1300,7 +1300,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   const char *c = entry_ptr;
   for (unsigned i = 0; i < num_entries; i++, c += entry_sz) {
     const grid_nbr_entry *e = (const grid_nbr_entry *) c;
-    if (e->ip == _ip.addr() && e->num_hops > 0) {
+    if (e->ip == _ip.addr() && e->num_hops == 1) {
       sender_saw_us = true;
       break;
     }
