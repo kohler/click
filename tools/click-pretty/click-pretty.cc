@@ -653,7 +653,7 @@ output_element_table(ElementT *e, RouterT *r, FILE *outf,
 	sa << e->type_name();
     sa << "</span>";
     if (config_link)
-	link_around(sa, link_element_decl(e, 0 /* XXX */), config_link);
+	link_around(sa, "#" + link_element_decl(e, 0 /* XXX */), config_link);
     sa << "<br></td></tr>\n"
        << "<tr valign='top'><td width='15'>&nbsp;</td>\n"
        << "<td>";
