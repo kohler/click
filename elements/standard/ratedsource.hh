@@ -31,8 +31,6 @@ class RatedSource : public Element { protected:
   Packet *_packet;
   struct timeval _tv1, _tv2, _diff;
 
-  Timer _timer;
-  
  public:
   
   RatedSource();
