@@ -1,3 +1,7 @@
+2003-07-21 Monday 00:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/grid.hh (1.49): increase max ttl
+
 2003-07-17 Thursday 00:11  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.64), dsdvroutetable.hh
