@@ -103,5 +103,6 @@ kill_click_sched()
 	    schedule();
 	    asm volatile ("" : : : "memory");
 	}
+	tulip_print_stats();
     }
 }

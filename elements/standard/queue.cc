@@ -160,8 +160,8 @@ Queue::push(int, Packet *packet)
       _max_length = s;
     
   } else {
-    if (_drops == 0)
-      click_chatter("Queue overflow");
+    if (!(_drops % 100))
+      click_chatter("Queue overflow, dropped 100 packets");
     _drops++;
     packet->kill();
   }

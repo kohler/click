@@ -29,7 +29,12 @@ PullToPush::run_scheduled()
 #ifdef __KERNEL__
   if (!scheduled()) schedule_tail();
 #endif
-  while (Packet *p = input(0).pull())
+
+  /* poll 8 packets at a time, giving the receiver a 
+   * chance to do catch up work
+   */
+  Packet *p;
+  for (int i=0; i<8 && (p = input(0).pull()); i++)
     output(0).push(p);
 }
 
