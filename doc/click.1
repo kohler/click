@@ -135,28 +135,34 @@ read handler named
 .IR handler ,
 or the global read handler named
 .IR handler ,
-and print the result to standard output. Each element has several generic
+and print the result to standard output.  Each element has several generic
 handlers\*Efor example,
 .BR config
 returns the element's configuration string and
 .BR class
-returns the element's class name. Some elements have additional handlers;
+returns the element's class name.  Some elements have additional handlers;
 .M Counter n ,
 for example, has
 .BR count " and " rate
 handlers that return the number of packets arrived and the recent arrival
-rate in packets per second. See
+rate in packets per second.  See
 .M click.o 8
 for more information on generic handlers, and the element documentation for
 more information on element-specific handlers.
 .Sp
 .I element
-may also be a pattern that uses the shell's globbing syntax (*, ?, and
-[...]). In this case,
+may be a pattern that uses the shell's globbing syntax (*, ?, and
+[...]).  In this case,
 .B click
-will run every handler whose name is
+will run each
 .I handler
-and whose element's name matches the pattern.
+whose element's name matches the pattern.
+.I element
+may also be an element class or interface name, such as "Queue" or "Storage";
+.B click
+will run each
+.I handler
+whose element has that class or interface.
 '
 .Sp
 .TP

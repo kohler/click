@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * click.cc -- user-level Click main program
  * Eddie Kohler
@@ -164,56 +165,66 @@ call_read_handler(Element *e, String handler_name,
   return 0;
 }
 
-static bool
-expand_handler_elements(const String &pattern, const String &handler_name,
-			Vector<Element *> &elements, Router *router)
+static int
+expand_handler_elements(const String& pattern, const String& handler_name,
+			Vector<Element*>& elements, Router* router)
 {
-  int nelem = router->nelements();
-  bool any_elements = false;
-  for (int i = 0; i < nelem; i++) {
-    const String &id = router->ename(i);
-    if (glob_match(id, pattern)) {
-      any_elements = true;
-      if (const Handler *h = Router::handler(router->element(i), handler_name))
-	if (h->read_visible())
-	  elements.push_back(router->element(i));
+    // first try element name
+    if (Element* e = router->find(pattern)) {
+	elements.push_back(e);
+	return 1;
     }
-  }
-  return any_elements;
+    // check if we have a pattern
+    bool is_pattern = false;
+    for (const char* s = pattern.begin(); s < pattern.end(); s++)
+	if (*s == '?' || *s == '*' || *s == '[') {
+	    is_pattern = true;
+	    break;
+	}
+    // check pattern or type
+    bool any = false;
+    for (int i = 0; i < router->nelements(); i++)
+	if (is_pattern
+	    ? glob_match(router->ename(i), pattern)
+	    : router->element(i)->cast(pattern.c_str()) != 0) {
+	    any = true;
+	    const Handler* h = Router::handler(router->element(i), handler_name);
+	    if (h && h->read_visible())
+		elements.push_back(router->element(i));
+	}
+    if (!any)
+	return errh->error((is_pattern ? "no element matching '%s'" : "no element '%s'"), pattern.c_str());
+    else
+	return 2;
 }
 
 static int
 call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 {
-  Vector<Element *> handler_elements;
-  Vector<String> handler_names;
-  bool print_names = (handlers.size() > 1);
-  int before = errh->nerrors();
+    Vector<Element *> handler_elements;
+    Vector<String> handler_names;
+    bool print_names = (handlers.size() > 1);
+    int before = errh->nerrors();
 
-  // expand handler names
-  for (int i = 0; i < handlers.size(); i++) {
-    const char *dot = find(handlers[i], '.');
-    if (dot == handlers[i].end()) {
-      call_read_handler(router->root_element(), handlers[i], print_names, errh);
-      continue;
-    }
+    // expand handler names
+    for (int i = 0; i < handlers.size(); i++) {
+	const char *dot = find(handlers[i], '.');
+	if (dot == handlers[i].end()) {
+	    call_read_handler(router->root_element(), handlers[i], print_names, errh);
+	    continue;
+	}
     
-    String element_name = handlers[i].substring(handlers[i].begin(), dot);
-    String handler_name = handlers[i].substring(dot + 1, handlers[i].end());
+	String element_name = handlers[i].substring(handlers[i].begin(), dot);
+	String handler_name = handlers[i].substring(dot + 1, handlers[i].end());
 
-    Vector<Element *> elements;
-    if (Element *e = router->find(element_name))
-      elements.push_back(e);
-    else if (expand_handler_elements(element_name, handler_name, elements, router))
-      print_names = true;
-    else
-      errh->error("no element matching '%s'", element_name.cc());
+	Vector<Element*> elements;
+	int retval = expand_handler_elements(element_name, handler_name, elements, router);
+	if (retval >= 0)
+	    for (int j = 0; j < elements.size(); j++)
+		call_read_handler(elements[j], handler_name, print_names || retval > 1, errh);
+    }
 
-    for (int j = 0; j < elements.size(); j++)
-      call_read_handler(elements[j], handler_name, print_names, errh);
-  }
-
-  return (errh->nerrors() == before ? 0 : -1);
+    return (errh->nerrors() == before ? 0 : -1);
 }
 
 
