@@ -18,7 +18,7 @@ struct grid_location {
 
   // Convert milliseconds to degrees.
   static double toDeg(long ms) {
-    return(ntohl(ms) / (1000.0 * 60.0 * 60.0));
+    return(((long)ntohl(ms)) / (1000.0 * 60.0 * 60.0));
   }
 
   // Convert degrees to milliseconds.

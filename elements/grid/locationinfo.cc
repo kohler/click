@@ -115,8 +115,8 @@ LocationInfo::get_current_location()
     _lon0 = xlon();
     _t0 = t;
     _t1 = _t0 + 10 * uniform();
-    _vlat = uniform() * 0.0002;
-    _vlon = uniform() * 0.0002;
+    _vlat = 0.0001 - (uniform() * 0.0002);
+    _vlon = 0.0001 - (uniform() * 0.0002);
   }
 
   grid_location gl(xlat(), xlon());
