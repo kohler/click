@@ -113,6 +113,17 @@ public class ControlSocket {
     public String socketName() {
 	return _sock.getInetAddress().toString() + ":" + _sock.getPort();
     }
+  
+    /**
+     * Returns the same String as socketName
+     *
+     * @return Socket description
+     * @see #socketName
+     */
+    public String toString() {
+	return socketName();
+    }
+  
 
     /**
      * Gets a String containing the router's configuration. 
