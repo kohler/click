@@ -306,7 +306,7 @@ inline void
 IPRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
 {
   const click_ip *ip = p->ip_header();
-  int val = _count_packets ? 1 : ip->ip_len;
+  int val = _count_packets ? 1 : ntohs(ip->ip_len);
 
   if (forward)
     update(ip->ip_src.s_addr, val, p, true, update_ewma);
