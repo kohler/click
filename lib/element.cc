@@ -576,7 +576,7 @@ static String
 read_config_handler(Element *e, void *)
 {
     String s = e->configuration();
-    if (!s.length() || (s.back() != '\n' && s.back() != '\\'))
+    if (s.length() && s.back() != '\n')
 	return s + "\n";
     else
 	return s;
