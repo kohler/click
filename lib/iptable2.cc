@@ -18,7 +18,7 @@
 
 
 IPTable2::IPTable2()
-  : entries(0)
+  : entries(0), dirty(true)
 {
   radix = new Radix;
 }
@@ -88,9 +88,41 @@ IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
   if(!entries)
     return false;
 
+  // Use timer.
+  if(dirty)
+    build();
+
   index = radix->lookup(dst);
-  gw = _v[index]._gw;
-  return true;
+
+  // Consider this a match if dst is part of range described by routing table.
+  if((dst & _v[index]._mask) == (_v[index]._dst & _v[index]._mask)) {
+    gw = _v[index]._gw;
+    return true;
+  }
+
+  gw = index = 0;
+  return false;
+}
+
+
+void
+IPTable2::build()
+{
+  radix = new Radix;
+  Vector<Entry> newv;
+
+  for(int i = 0; i < _v.size(); i++)
+    if(_v[i]._valid)
+      newv.push_back(_v[i]);
+
+  _v.clear();
+  for(int i = 0; i < newv.size(); i++) {
+    _v.push_back(newv[i]);
+    radix->insert((_v[i]._dst & _v[i]._mask), i);
+  }
+
+  entries = _v.size();
+  dirty = false;
 }
 
 // generate Vector template instance

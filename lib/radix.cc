@@ -30,7 +30,7 @@ Radix::~Radix()
 }
 
 void
-Radix::insert(KEYTYPE v, int info)
+Radix::insert(KEYTYPE v, INFOTYPE info)
 {
   struct node *t, *p;
   int i;
@@ -80,7 +80,7 @@ Radix::insert(KEYTYPE v, int info)
 
 
 // Returns info based on key
-int
+INFOTYPE
 Radix::lookup(KEYTYPE v)
 {
   return(node_lookup(v)->info);
@@ -107,6 +107,7 @@ Radix::node_lookup(KEYTYPE v)
 
 
 
+// Returns j bytes which appear k from rhe right. Rightmost bit has index 0.
 inline KEYTYPE
 Radix::bits(KEYTYPE x, KEYTYPE k, unsigned char j)
 {

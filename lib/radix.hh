@@ -7,21 +7,24 @@
 #define KEYTYPE   unsigned
 #define KEYSIZE   32
 
+#define INFOTYPE  int
+
 
 class Radix {
 public:
   Radix();
   ~Radix();
 
-  void insert(KEYTYPE v, int info);
-  int lookup(KEYTYPE v);
+  void insert(KEYTYPE v, INFOTYPE info);
+  INFOTYPE lookup(KEYTYPE v);
 
 private:
   struct node {
     KEYTYPE key;
-    int info;
     int bit_idx;
     struct node *left, *right;
+
+    INFOTYPE info;
   };
 
   struct node *root;

@@ -20,7 +20,7 @@ public:
   bool get(int i, unsigned &dst, unsigned &mask, unsigned &gw);
   void clear() { _v.clear(); entries = 0; }
   int size() const { return entries; }
-
+  void build();
 
 
 private:
@@ -37,7 +37,7 @@ private:
 
   Radix *radix;
 
-  // is fast routing table up-to-date?
+  // is radix up-to-date?
   bool dirty;
 };
 
