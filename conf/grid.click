@@ -6,11 +6,11 @@ ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 li :: GridLocationInfo(POS_LAT, POS_LON);
 
 // protocol els
-nb :: GridRouteTable(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, MAC_ADDR, GRID_IP, NUM_HOPS);
-lr :: LookupLocalGridRoute(MAC_ADDR, GRID_IP, nb);
-geo :: LookupGeographicGridRoute(MAC_ADDR, GRID_IP, nb);
-fq :: FloodingLocQuerier(MAC_ADDR, GRID_IP);
-loc_repl :: LocQueryResponder(MAC_ADDR, GRID_IP);
+nb :: GridRouteTable(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, GRID_MAC_ADDR, GRID_IP, NUM_HOPS);
+lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
+geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
+fq :: FloodingLocQuerier(GRID_MAC_ADDR, GRID_IP);
+loc_repl :: LocQueryResponder(GRID_MAC_ADDR, GRID_IP);
 
 elementclass TTLChecker {
   // expects grid packets with MAC headers --- place on output path to
@@ -34,8 +34,8 @@ elementclass TTLChecker {
 
 
 // device layer els
-from_wvlan :: FromDevice(NET_DEVICE, 0);
-to_wvlan :: TTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> ToDevice(NET_DEVICE);
+from_wvlan :: FromDevice(WI_NET_DEVICE, 0);
+to_wvlan :: TTLChecker [0] -> FixSrcLoc(li) -> SetGridChecksum -> ToDevice(WI_NET_DEVICE);
 connectiontunnel to_ip_cl/in -> to_ip_cl/out;
 to_wvlan [1] -> to_ip_cl/in;
 
