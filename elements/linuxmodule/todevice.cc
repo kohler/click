@@ -287,7 +287,7 @@ ToDevice::run_scheduled()
 #endif
   
   adjust_tickets(sent);
-  if (_sent > 0 || _signal)
+  if (sent > 0 || _signal)
       _task.fast_reschedule();
 }
 
