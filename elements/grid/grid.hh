@@ -136,7 +136,7 @@ private:
 struct grid_hdr {
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
-  static const unsigned int GRID_VERSION = 0xfed3;
+  static const unsigned int GRID_VERSION = 0xfed4;
 
   unsigned int version;     // which version of the grid protocol we are using
 
@@ -222,6 +222,7 @@ struct grid_nbr_entry {
   unsigned char num_hops; 
   /* 0 for num_hops indicate that this dest. is unreachable.  if so,
      loc fields are meaningless */
+
   struct grid_location loc;
   unsigned short loc_err;
   bool loc_good;
@@ -235,6 +236,7 @@ struct grid_nbr_entry {
   unsigned int metric;
   bool metric_valid;
 
+#ifndef SMALL_GRID_HEADERS
   /* ping-pong stats, valid only for 1-hop nbrs */
   /* 
    * in our route advertisement packet these stats reflect _our_
@@ -247,6 +249,7 @@ struct grid_nbr_entry {
   unsigned char num_rx;
   unsigned char num_expected;
   struct timeval last_bcast;
+#endif
 
   grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0L, 0L, 0L), seq_no(0) 
   { assert(sizeof(grid_nbr_entry) % 4 == 0); }
@@ -346,15 +349,16 @@ struct grid_geocast {
 struct grid_link_probe {
   unsigned int seq_no;
   unsigned int period;      // period of this node's probe broadcasts, in msecs
-  unsigned int num_links;   // number of grid_link_info entries following
+  unsigned int num_links;   // number of grid_link_entry entries following
   unsigned int window;      // this node's linkstat window, in msecs
 };
 
 struct grid_link_entry {
   unsigned int ip;
-  unsigned int period;      // period of node's probe broadcasts, in msecs
-  struct timeval last;      // time of most recent broadcast received from node
-  unsigned int num_rx;      // number of probe bcasts received from node during window
+  unsigned int period;         // period of node's probe broadcasts, in msecs
+  struct timeval last_rx_time; // time of most recent probe received from node
+  unsigned int last_seq_no;    // seqno of most recent probe received from this host
+  unsigned int num_rx;         // number of probe bcasts received from node during window
 };
 
 inline String

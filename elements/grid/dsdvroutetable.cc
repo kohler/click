@@ -940,11 +940,13 @@ DSDVRouteTable::simple_action(Packet *packet)
     // ping-ponging in route ads as well as pigybacking on unicast
     // data, in case we aren't sending data to that destination.
 #ifdef CLICK_USERLEVEL
+#ifndef SMALL_GRID_HEADERS
     if (curr->ip == (unsigned int) _ip && curr->num_hops == 1 && _link_tracker) {
       _link_tracker->add_stat(ipaddr, ntohl(curr->link_sig), ntohl(curr->link_qual), 
 			      ntoh(curr->measurement_time));
       _link_tracker->add_bcast_stat(ipaddr, curr->num_rx, curr->num_expected, ntoh(curr->last_bcast));
     }
+#endif
 #endif
 
     RTEntry route(ipaddr, ethaddr, curr, PAINT_ANNO(packet), jiff); 
@@ -1432,6 +1434,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
   nb->ttl = htonl(decr_ttl(ttl, max(ttl_decrement, grid_hello::MIN_TTL_DECREMENT)));
   
   /* ping-pong link stats back to sender */
+#ifndef SMALL_GRID_HEADERS
   nb->link_qual = 0;
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
@@ -1473,6 +1476,9 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
       nb->last_bcast = hton(nb->last_bcast);
     }
   }
+#else
+  ls = 0; // supress warning
+#endif
 }
 
 void

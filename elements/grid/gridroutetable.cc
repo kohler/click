@@ -752,9 +752,11 @@ GridRouteTable::simple_action(Packet *packet)
    * set of links. 
    */
 
-  /* look for ping-pong link stats about us */
   int entry_sz = hlo->nbr_entry_sz;
   char *entry_ptr = (char *) (hlo + 1);
+
+  /* look for ping-pong link stats about us */
+#ifndef SMALL_GRID_HEADERS
   for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
     if (_ip == curr->ip && curr->num_hops == 1) {
@@ -766,6 +768,7 @@ GridRouteTable::simple_action(Packet *packet)
       break;
     }
   }
+#endif
 
   if (ntohl(hlo->ttl) > 0) {
     RTEntry new_r(ipaddr, ethaddr, gh, hlo, jiff);
@@ -1582,6 +1585,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
   nb->ttl = htonl(ttl);
   
   /* ping-pong link stats back to sender */
+#ifndef SMALL_GRID_HEADERS
   nb->link_qual = 0;
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
@@ -1623,6 +1627,9 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
       nb->last_bcast = hton(nb->last_bcast);
     }
   }
+#else
+  ls = 0; // supress compiler warning
+#endif
 }
 
 ELEMENT_REQUIRES(userlevel)
