@@ -1,3 +1,7 @@
+2001-09-24 Monday 17:02  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-client-ron.pl (1.4): changed to UDP encap
+
 2001-09-21 Friday 20:48  Eddie Kohler <kohler@aciri.org>
 
 	* etc/libclick/DISTFILES (1.5): use libclick-specific ChangeLog
