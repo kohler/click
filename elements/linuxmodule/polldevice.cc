@@ -266,10 +266,10 @@ PollDevice::run_scheduled()
 #if CLICK_DEVICE_ADJUST_TICKETS  
   // simple additive increase multiplicative decrease scheme
   int adj = 0;
-  if (got > 4)
+  if (got > 3)
     adj = got;
   else if (got == 0)
-    adj = 0-(tickets()>>3);
+    adj = 0-(tickets()>>4);
 
   adj_tickets(adj);
 #endif
