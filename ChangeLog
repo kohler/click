@@ -1,3 +1,20 @@
+2004-02-25 Wednesday 23:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: packetlogger2.cc (1.1), packetlogger2.hh (1.1):
+	second version of PacketLogger: logs annotations, doesn't care
+	about packet format, logs packet size.	Needs variable size storage
+	for packet data....
+
+2004-02-25 Wednesday 22:45  max
+
+	* conf/click-mkclgw.pl (1.3): bugfix; now you can deactivate the
+	last node in the cluster.
+
+2004-02-25 Wednesday 22:42  max
+
+	* conf/: click-mkclgw.pl (1.2), example.clgw (1.2): natp --> napt
+	duh
+
 2004-02-25 Wednesday 13:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: ackretrysender.cc (1.5), ackretrysender2.cc
