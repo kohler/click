@@ -64,9 +64,9 @@ GridLocationInfo2::read_args(const Vector<String> &conf, ErrorHandler *errh)
   const int msec_per_deg = 1000 * 60 * 60;
 
   if (lat > 90*msec_per_deg || lat < -90*msec_per_deg)
-    return errh->error("%s: latitude must be between +/- 90 degrees (+/- %d milliseconds)", id().cc(), 90*msec_per_deg);
-  if (lon > 180 || lon < -180*msec_per_deg)
-    return errh->error("%s: longitude must be between +/- 180 degrees (+/- %d milliseconds)", id().cc(), 180*msec_per_deg);
+    return errh->error("%s: latitude arg %d must be between +/- 90 degrees (+/- %d milliseconds)", id().cc(), lat, 90*msec_per_deg);
+  if (lon > 180*msec_per_deg || lon < -180*msec_per_deg)
+    return errh->error("%s: longitude arg %d must be between +/- 180 degrees (+/- %d milliseconds)", id().cc(), lon, 180*msec_per_deg);
 
   _loc = grid_location((long) lat, (long) lon, (long) h);
   return res;

@@ -40,6 +40,8 @@ handler_info_array[] = {
   { "grid_proto_loc_reply"           , grid_hdr::GRID_LOC_REPLY         , 'h',  2 },
   { "grid_proto_route_probe"         , grid_hdr::GRID_ROUTE_PROBE       , 'h',  2 },
   { "grid_proto_route_reply"         , grid_hdr::GRID_ROUTE_REPLY       , 'h',  2 },
+  { "grid_proto_geocast"             , grid_hdr::GRID_GEOCAST           , 'h',  2 },
+  { "grid_proto_link_probe"          , grid_hdr::GRID_LINK_PROBE        , 'h',  2 },
 
   { "sizeof_grid_location"           , sizeof(grid_location)            , 'd', -1 },
   { "sizeof_grid_hdr"                , sizeof(grid_hdr)			, 'd', -1 },

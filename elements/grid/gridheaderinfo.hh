@@ -42,6 +42,8 @@ CLICK_DECLS
  * =h grid_proto_loc_reply          read-only 
  * =h grid_proto_route_probe        read-only
  * =h grid_proto_route_reply        read-only 
+ * =h grid_proto_geocast            read-only
+ * =h grid_proto_link_probe         read-only 
  *
  * =h sizeof_grid_location           read-only
  * Each sizeof_foo handler returns C<sizeof(foo)>.

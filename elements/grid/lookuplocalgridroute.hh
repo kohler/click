@@ -3,7 +3,7 @@
 
 /*
  * =c
- * LookupLocalGridRoute(MAC-ADDRESS, IP-ADDRESS, GenericGridRouteTable, GridGatewayInfo, LinkTracker, I<KEYWORDS>)
+ * LookupLocalGridRoute(MAC-ADDRESS, IP-ADDRESS, GenericGridRouteTable, I<KEYWORDS>)
  *
  * =s Grid
  * =d 
@@ -31,9 +31,20 @@
  *
  * =over 8
  *
+ * =item GWI
+ *
+ * GridGatewayInfo element.  If provided, and indicates this node is a
+ * gateway, send incoming packets for the generic gateway address to
+ * output 1.
+ *
  * =item LOG
  *
  * GridGenericLogger element.  Object to log events to.
+ *
+ * =item LT
+ *
+ * LinkTracker element.  If provided, used to obtain link stats for
+ * route callbacks.  Confused?  Me too!
  *
  * =back
  *
@@ -90,6 +101,8 @@ private:
   Task _task;
 
   GridGenericLogger *_log;
+
+  bool is_gw();
 };
 
 CLICK_ENDDECLS

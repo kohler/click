@@ -67,9 +67,9 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
                         cpElement, "GenericGridRouteTable element", &_rtes,
-                        cpElement, "GridGatewayInfo element", &_gw_info,
-			cpElement, "LinkTracker element", &_link_tracker,
 			cpKeywords,
+                        "GWI", cpElement, "GridGatewayInfo element", &_gw_info,
+			"LT", cpElement, "LinkTracker element", &_link_tracker,
 			"LOG", cpElement, "GridGenericLogger element", &_log,
 			0);
   _any_gateway_ip = htonl((ntohl(_ipaddr.addr()) & 0xFFffFF00) | 254);
@@ -93,19 +93,13 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
     return errh->error("%s: GridGatewayInfo argument %s has the wrong type",
 		       id().cc(),
 		       _gw_info->id().cc());
-  } else if (_gw_info == 0) {
-    return errh->error("%s: no GridGatewayInfo element given",
-		       id().cc());
-  }
+  } 
 
   if (_link_tracker && _link_tracker->cast("LinkTracker") == 0) {
     return errh->error("%s: LinkTracker argument %s has the wrong type",
 		       id().cc(),
 		       _link_tracker->id().cc());
-  } else if (_link_tracker == 0) {
-    return errh->error("%s: no GridGatewayInfo element given",
-		       id().cc());
-  }
+  } 
 
   if (_log && _log->cast("GridGenericLogger") == 0) {
     return errh->error("%s: GridGenericLogger element %s has the wrong type",
@@ -127,6 +121,13 @@ LookupLocalGridRoute::run_task()
   _task.fast_reschedule();
   return p != 0;
 }
+
+bool
+LookupLocalGridRoute::is_gw()
+{
+  return _gw_info && _gw_info->is_gateway(); 
+}
+
 
 typedef GridRouteActionCallback GRCB;
 
@@ -164,11 +165,11 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 		      dest_ip.s().cc(), 
 		      _ipaddr.s().cc(),
 		      _any_gateway_ip.s().cc(),
-		      _gw_info->is_gateway() ? 1 : 0);
+		      is_gw() ? 1 : 0);
 #endif
 	// is the packet for us?
 	if ((dest_ip == _ipaddr) ||
-	    (dest_ip == _any_gateway_ip && _gw_info->is_gateway())) {
+	    (dest_ip == _any_gateway_ip && is_gw())) {
 	  // is it IP data?  If so, send it to IP input path.
 	  if (gh->type == grid_hdr::GRID_NBR_ENCAP) {
 #if NOISY
@@ -212,10 +213,9 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 		  dst.s().cc(), 
 		  _ipaddr.s().cc(),
 		  _any_gateway_ip.s().cc(),
-		  _gw_info->is_gateway () ? 1 : 0);
+		  is_gw() ? 1 : 0);
 #endif
-    if (dst == _any_gateway_ip && _gw_info->is_gateway()) {
-      //     output();
+    if (dst == _any_gateway_ip && is_gw()) {
       packet->kill();
     } else if (dst == _ipaddr) {
       click_chatter("%s: got IP packet from us for our address; looping it back.  Check the configuration.", id().cc());
@@ -345,7 +345,8 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     int qual = 0;
     struct timeval tv = { 0, 0 };
 #ifdef CLICK_USERLEVEL
-    _link_tracker->get_stat(next_hop_ip, sig, qual, tv);
+    if (_link_tracker)
+      _link_tracker->get_stat(next_hop_ip, sig, qual, tv);
 #endif
     unsigned int data2 = (qual << 16) | ((-sig) & 0xFFff);
     notify_route_cbs(packet, dest_ip, GRCB::ForwardDSDV, next_hop_ip, data2);
