@@ -133,7 +133,8 @@ void		Clp_SaveParser(Clp_Parser *, Clp_ParserState *);
 void		Clp_RestoreParser(Clp_Parser *, Clp_ParserState *);
 
 int		Clp_OptionError(Clp_Parser *, const char *, ...);
-int		Clp_CurOptionName(Clp_Parser *, char *buf, int buflen);
+int		Clp_CurOptionNameBuf(Clp_Parser *, char *buf, int buflen);
+const char *	Clp_CurOptionName(Clp_Parser *); /* uses static memory */
 
 #ifdef __cplusplus
 }

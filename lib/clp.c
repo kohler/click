@@ -1435,7 +1435,7 @@ copy_string(char *buf, int buflen, int bufpos, const char *what)
 }
 
 int
-Clp_CurOptionName(Clp_Parser *clp, char *buf, int buflen)
+Clp_CurOptionNameBuf(Clp_Parser *clp, char *buf, int buflen)
 {
   Clp_Internal *cli = clp->internal;
   Clp_Option *opt = cli->current_option;
@@ -1456,6 +1456,14 @@ Clp_CurOptionName(Clp_Parser *clp, char *buf, int buflen)
   }
   buf[pos] = 0;
   return pos;
+}
+
+const char *
+Clp_CurOptionName(Clp_Parser *clp)
+{
+  static char buf[256];
+  Clp_CurOptionNameBuf(clp, buf, 256);
+  return buf;
 }
 
 #ifdef __cplusplus
