@@ -1238,13 +1238,22 @@ Router::element_hindexes(const Element* e, Vector<int>& handlers)
 
 // Public functions for storing handlers
 
+Router::Handler*
+Router::add_blank_handler(const Element* e, const String& name)
+{
+    Handler to_add(name);
+    store_handler(e, to_add);
+    const Handler* h = handler(e, name);
+    assert(h->_use_count == 1);
+    return const_cast<Handler*>(h);
+}
+
 void
 Router::add_read_handler(const Element* e, const String& name,
 			 ReadHandler read, void* thunk)
 {
     Handler to_add = fetch_handler(e, name);
-    to_add._read = read;
-    to_add._read_thunk = thunk;
+    to_add.set_read(read, thunk);
     store_handler(e, to_add);
 }
 
@@ -1253,8 +1262,7 @@ Router::add_write_handler(const Element* e, const String& name,
 			  WriteHandler write, void* thunk)
 {
     Handler to_add = fetch_handler(e, name);
-    to_add._write = write;
-    to_add._write_thunk = thunk;
+    to_add.set_write(write, thunk);
     store_handler(e, to_add);
 }
 
@@ -1263,8 +1271,7 @@ Router::add_select_handler(const Element* e, const String& name,
 			   SelectHandler select, void* thunk)
 {
     Handler to_add = fetch_handler(e, name);
-    to_add._select = select;
-    to_add._select_thunk = thunk;
+    to_add.set_select(select, thunk);
     store_handler(e, to_add);
 }
 
@@ -1274,7 +1281,7 @@ Router::change_handler_flags(const Element* e, const String& name,
 {
     Handler to_add = fetch_handler(e, name);
     if (to_add._use_count > 0) {	// only modify existing handlers
-	to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
+	to_add.set_flags((to_add.flags() & ~clear_flags) | set_flags);
 	store_handler(e, to_add);
 	return 0;
     } else
@@ -1293,7 +1300,7 @@ Router::nglobal_handlers()
 
 // ATTACHMENTS
 
-void *
+void*
 Router::attachment(const String &name) const
 {
     for (int i = 0; i < _attachments.size(); i++)
@@ -1302,7 +1309,7 @@ Router::attachment(const String &name) const
     return 0;
 }
 
-void *&
+void*&
 Router::force_attachment(const String &name)
 {
     for (int i = 0; i < _attachments.size(); i++)

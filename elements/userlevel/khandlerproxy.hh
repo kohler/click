@@ -1,7 +1,6 @@
 #ifndef CLICK_KERNELHANDLERPROXY_HH
 #define CLICK_KERNELHANDLERPROXY_HH
 #include "elements/userlevel/handlerproxy.hh"
-#include <click/straccum.hh>
 CLICK_DECLS
 
 /*
@@ -70,7 +69,6 @@ class KernelHandlerProxy : public HandlerProxy { public:
 
     bool _detailed_error_message;
     bool _verbose;
-    StringAccum _name_sa;
   
     static String read_handler(Element*, void*);
     static int write_handler(const String&, Element*, void*, ErrorHandler*);

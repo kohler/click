@@ -76,7 +76,8 @@ class Router { public:
     static const Handler* handler(const Element*, int);
     const Handler* handler(int) const;
     static const Handler* handler(const Element*, const String&);
-  
+
+    Handler* add_blank_handler(const Element*, const String&);
     static void add_read_handler(const Element*, const String&, ReadHandler, void*);
     static void add_write_handler(const Element*, const String&, WriteHandler, void*);
     static void add_select_handler(const Element*, const String&, SelectHandler, void*);
@@ -274,6 +275,11 @@ class Router::Handler { public:
     String unparse_name(Element*) const;
     static String unparse_name(Element*, const String&);
 
+    inline void set_read(ReadHandler, void*);
+    inline void set_write(WriteHandler, void*);
+    inline void set_select(SelectHandler, void*);
+    inline void set_flags(uint32_t);
+
   private:
   
     String _name;
@@ -363,6 +369,33 @@ Router::Handler::compatible(const Handler& h) const
 	    && _write == h._write && _write_thunk == h._write_thunk
 	    && _select == h._select && _select_thunk == h._select_thunk
 	    && _flags == h._flags);
+}
+
+inline void
+Router::Handler::set_read(ReadHandler h, void* thunk)
+{
+    _read = h;
+    _read_thunk = thunk;
+}
+
+inline void
+Router::Handler::set_write(WriteHandler h, void* thunk)
+{
+    _write = h;
+    _write_thunk = thunk;
+}
+
+inline void
+Router::Handler::set_select(SelectHandler h, void* thunk)
+{
+    _select = h;
+    _select_thunk = thunk;
+}
+
+inline void
+Router::Handler::set_flags(uint32_t flags)
+{
+    _flags = flags;
 }
 
 inline HashMap_ArenaFactory*

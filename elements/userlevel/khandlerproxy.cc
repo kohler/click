@@ -147,10 +147,9 @@ KernelHandlerProxy::star_write_handler(const String &str, Element *e, void *, Er
     KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
     if (khp->check_handler_name(str, errh) < 0)
 	return -1;
-    intptr_t pos = khp->_name_sa.length();
-    khp->_name_sa << str << '\0';
-    e->add_read_handler(str, read_handler, (void*) pos);
-    e->add_write_handler(str, write_handler, (void*) pos);
+    Router::Handler* h = khp->router()->add_blank_handler(e, str);
+    h->set_read(read_handler, (void*) h);
+    h->set_write(write_handler, (void*) h);
     return Router::hindex(e, str);
 }
 
@@ -183,7 +182,8 @@ String
 KernelHandlerProxy::read_handler(Element *e, void *thunk)
 {
   KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
-  const char* hname = (const char*) (khp->_name_sa.data() + (intptr_t) thunk);
+  const Router::Handler* h = static_cast<const Router::Handler*>(thunk);
+  const String& hname = h->name();
 
   errno = 0;
   String fn = handler_name_to_file_name(hname);
@@ -204,7 +204,8 @@ int
 KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh)
 {
   KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
-  const char* hname = (const char*) (khp->_name_sa.data() + (intptr_t) thunk);
+  const Router::Handler* h = static_cast<const Router::Handler*>(thunk);
+  const String& hname = h->name();
 
   String fn = handler_name_to_file_name(hname);
   int fd = open(fn.c_str(), O_WRONLY | O_TRUNC);
