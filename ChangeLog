@@ -1,3 +1,8 @@
+2003-07-07 Monday 23:26  Eddie Kohler <kohler@icir.org>
+
+	* elements/ethernet/ip6ndadvertiser.cc (1.18): fix neighbor
+	advertisement flags (Simona Fischera suggestion)
+
 2003-07-07 Monday 20:34  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/: clickfs.cc (1.34), proclikefs.c (1.11),
