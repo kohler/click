@@ -13,7 +13,6 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "scheduleinfo.hh"
 #include "timedsource.hh"
 #include "confparse.hh"
 #include "error.hh"
@@ -43,9 +42,8 @@ TimedSource::configure(const String &conf, ErrorHandler *errh)
 }
 
 int
-TimedSource::initialize(ErrorHandler *errh)
+TimedSource::initialize(ErrorHandler *)
 {
-  ScheduleInfo::join_scheduler(this, errh);
   _timer.schedule_after_ms(_interval);
   return 0;
 }
