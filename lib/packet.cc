@@ -165,21 +165,17 @@ Packet::expensive_uniqueify()
 Packet *
 Packet::clone()
 {
-  Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
-  if (!p) return 0;
-  p->_use_count = 1;
-  p->_data_packet = this;
-  p->_head = _head;
-  p->_data = _data;
-  p->_tail = _tail;
-  p->_end = _end;
-  p->_destructor = 0;
-  p->copy_annotations(this);
-  p->_nh.raw = _nh.raw;
-  p->_h_raw = _h_raw;
-  // increment our reference count because of _data_packet reference
-  _use_count++;
-  return p;
+    // timing: .31-.39 normal, .43-.55 two allocs, .55-.58 two memcpys
+    Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
+    if (!p)
+	return 0;
+    memcpy(p, this, sizeof(Packet));
+    p->_use_count = 1;
+    p->_data_packet = this;
+    p->_destructor = 0;
+    // increment our reference count because of _data_packet reference
+    _use_count++;
+    return p;
 }
 
 WritablePacket *
