@@ -62,9 +62,26 @@ NotifierQueue::push(int, Packet *p)
 	int s = size();
 	if (s > _highwater_length)
 	    _highwater_length = s;
-	if (s == 1 && !signal_active())
-	    wake_listeners();
+	
+#if defined(__MTCLICK__)
+#if 1
+        // This can leave a single packet in the queue indefinitely!
+        if (!signal_active()) 
+	    wake_listeners(); 
 
+#else   // with locking
+        if (s == 1) {
+            _lock.acquire();
+	    if (!signal_active())
+	        wake_listeners();
+	    _lock.release();
+	}
+#endif
+
+#else
+        if (s == 1 && !signal_active())
+	    wake_listeners(); 
+#endif
     } else {
 	if (_drops == 0)
 	    click_chatter("%{element}: overflow", this);
@@ -81,8 +98,23 @@ NotifierQueue::pull(int)
     if (p)
 	_sleepiness = 0;
     else if (++_sleepiness == SLEEPINESS_TRIGGER)
-	sleep_listeners();
-    
+    {
+#if defined(__MTCLICK__)  
+#if 1
+        sleep_listeners();
+
+#else   // with locking
+	_lock.acquire();
+	if ( _head == _tail)  // if still empty...
+	    sleep_listeners();
+	_lock.release();
+#endif
+
+#else
+        sleep_listeners();
+#endif
+    }
+
     return p;
 }
 
