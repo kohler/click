@@ -588,7 +588,7 @@ sub check_expects ($$) {
 package main;
 
 my($dir, @show, $show_stdout, $show_stderr, $any_tests_done);
-my($SHELL) = "/bin/sh -e -m";
+my($SHELL) = "/bin/sh -e";
 
 sub script_fn_to_fn ($) {
     my($fn) = @_;
