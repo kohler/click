@@ -290,11 +290,7 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, const VariableEnvironment 
   
   // `name_slash' is `name' constrained to end with a slash
   String ename = lexer->_element_names[which];
-  String ename_slash;
-  if (ename[ename.length() - 1] == '/')
-    ename_slash = ename;
-  else
-    ename_slash = ename + "/";
+  String ename_slash = ename + "/";
 
   assert(_element_names[0] == "input" && _element_names[1] == "output");
 
@@ -584,14 +580,12 @@ Lexer::next_lexeme()
   
   // find length of current word
   if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@') {
+   more_word_characters:
     pos++;
-    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'
-			  || _data[pos] == '/' || _data[pos] == '@')) {
-      if (_data[pos] == '/' && pos < _len - 1
-	  && (_data[pos+1] == '/' || _data[pos+1] == '*'))
-	break;
+    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@'))
       pos++;
-    }
+    if (pos < _len - 1 && _data[pos] == '/' && (isalnum(_data[pos+1]) || _data[pos+1] == '_' || _data[pos+1] == '@'))
+      goto more_word_characters;
     _pos = pos;
     String word = _big_string.substring(word_pos, pos - word_pos);
     if (word.length() == 16 && word == "connectiontunnel")

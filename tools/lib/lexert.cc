@@ -275,14 +275,12 @@ LexerT::next_lexeme()
   
   // find length of current word
   if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@') {
+   more_word_characters:
     pos++;
-    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'
-			  || _data[pos] == '/' || _data[pos] == '@')) {
-      if (_data[pos] == '/' && pos < _len - 1
-	  && (_data[pos+1] == '/' || _data[pos+1] == '*'))
-	break;
+    while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '@'))
       pos++;
-    }
+    if (pos < _len - 1 && _data[pos] == '/' && (isalnum(_data[pos+1]) || _data[pos+1] == '_' || _data[pos+1] == '@'))
+      goto more_word_characters;
     _pos = pos;
     String word = _big_string.substring(word_pos, pos - word_pos);
     if (word.length() == 16 && word == "connectiontunnel") {
