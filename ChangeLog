@@ -1,3 +1,27 @@
+2004-03-18 Thursday 19:50  Eddie Kohler <kohler@icir.org>
+
+	* lib/lexer.cc (1.74), tools/lib/lexert.cc (1.57): copyright nits
+
+2004-03-18 Thursday 19:49  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/: config.cc (1.13), sched.cc (1.45): spacing nits
+
+2004-03-18 Thursday 19:48  Eddie Kohler <kohler@icir.org>
+
+	* include/click/ip6flowid.hh (1.5), lib/confparse.cc (1.120),
+	lib/ip6flowid.cc (1.9): rename IP6FlowID::s() to unparse(), and
+	play a linker trick to convince the linker to include the object
+
+2004-03-18 Thursday 19:47  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplepackage/Makefile.in (1.41): let click-compile use its
+	own C[XX]FLAGS
+
+2004-03-18 Thursday 19:47  Eddie Kohler <kohler@icir.org>
+
+	* click-compile.in (1.29): include @DEPCFLAGS@ in -t linuxmodule
+	compilations by default
+
 2004-03-18 Thursday 18:47  Eddie Kohler <kohler@icir.org>
 
 	* test/compound/overload-01.testie (1.1): overload compound
