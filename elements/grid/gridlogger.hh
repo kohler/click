@@ -179,19 +179,14 @@ class GridLogger : public GridGenericLogger {
 
 public:
 
-  GridLogger() : _state(WAITING), _fd(-1), _bufptr(0) { MOD_INC_USE_COUNT; }
-
-  ~GridLogger() { 
-    MOD_DEC_USE_COUNT;
-    if (log_is_open())
-      close_log();
-  }
+  GridLogger();
+  ~GridLogger();
 
   const char *class_name() const { return "GridLogger"; }
   GridLogger *clone() const { return new GridLogger; }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return false; }
-  void cast(const char *);
+  void *cast(const char *);
   void add_handlers();
 
   // handlers

@@ -353,7 +353,7 @@ LookupGeographicGridRoute::get_dest_loc(const Packet *p) const
     struct grid_nbr_encap *encap = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + gh->hdr_len);
     return encap->dst_loc;
 #else
-    return grid_location(0, 0, 0);
+    return grid_location(0L, 0L, 0L);
 #endif
     break;
   }
@@ -366,7 +366,7 @@ LookupGeographicGridRoute::get_dest_loc(const Packet *p) const
     assert(0);
     break;
   }
-  return grid_location(0, 0, 0);
+  return grid_location(0L, 0L, 0L);
 }
 
 

@@ -1,5 +1,7 @@
 #ifndef GRID_HH
 #define GRID_HH
+#include <click/glue.hh>
+#include <click/string.hh>
 CLICK_DECLS
 
 // defining this will break lots of shit
@@ -24,6 +26,7 @@ public:
   // default: all zeroes
   grid_location() : _mslat(0), _mslon(0), _h(0) { };
 
+#ifdef CLICK_USERLEVEL
   // lat, lon in degrees, height in metres
   grid_location(double lat, double lon, double h = 0) 
   { set(lat, lon, h); }
@@ -40,20 +43,33 @@ public:
 
   // Height in metres.
   double h() const {
-    return (double) _h / 1000.0;
+    return (double) ntohl(_h) / 1000.0;
   }
 
-#ifdef CLICK_USERLEVEL
   // What is the distance between l1 and l2 in meters?
   // (definition in gridlocationinfo.cc)
   static double calc_range(const grid_location &l1, const grid_location &l2);    
-#endif
 
   String s() const {
     char buf[255];
     snprintf(buf, 255, "%.5f,%.5f,%.3f", lat(), lon(), h());
     return String(buf);
   }
+#else // CLICK_USERLEVEL
+  String s() const {
+    char buf[255];
+    snprintf(buf, 255, "%ld,%ld,%ld", lat_ms(), lon_ms(), h_mm());
+    return String(buf);
+  }
+#endif
+
+  // lat, lon in milliseconds, height in millimeters
+  grid_location(long lat, long lon, long h = 0)
+  { set(lat, lon, h); }
+
+  long lat_ms() const { return ntohl(_mslat); }
+  long lon_ms() const { return ntohl(_mslon); }
+  long h_mm()   const { return ntohl(_h);   }
 
 private:
   // Internally, we remember positions as lat/lon in milliseconds,
@@ -61,18 +77,18 @@ private:
   long _mslat;
   long _mslon;
 
-  // heights as millimetres.  we don't really have a good height datum.
+  // heights as millimetres.  we don't really have a good height
+  // datum.  network byte order.
   long _h;
 
-  //  long _pad; // XXX ???
-
-  // Convert milliseconds to degrees.
+#ifdef CLICK_USERLEVEL
+  // Convert network byte order milliseconds to host byte order degrees
   static double toDeg(long ms) {
     return(((long)ntohl(ms)) / (1000.0 * 60.0 * 60.0));
   }
 
-  // Convert degrees to milliseconds.
-  static long toMS(double d){
+  // Convert host byte order degrees to network byte order milliseconds
+  static long toMS(double d) {
     assert(d >= -180.0 && d <= 180.0);
     return(htonl((long)(d * 1000 * 60 * 60)));
   }
@@ -81,13 +97,18 @@ private:
   void set(double lat, double lon, double h) {
     _mslat = toMS(lat);
     _mslon = toMS(lon);
-    _h = (long) (h * 1000);
+    _h = htonl((long) (h * 1000));
   }
 
   static int sign(double x) { return (((x) < 0) ? -1 : 1); }
+#endif
 
+  void set(long lat, long lon, long h) {
+    _mslat = htonl(lat);
+    _mslon = htonl(lon);
+    _h = htonl(h);
+  }
 };
-
 
 // regions for geocast
 struct grid_region {
@@ -227,11 +248,11 @@ struct grid_nbr_entry {
   unsigned char num_expected;
   struct timeval last_bcast;
 
-  grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) 
+  grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0L, 0L, 0L), seq_no(0) 
   { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 
   grid_nbr_entry(unsigned int _ip, unsigned int _nhip, unsigned char h, unsigned int s)
-    : ip(_ip), next_hop_ip(_nhip), num_hops(h), loc(0, 0), seq_no(s)
+    : ip(_ip), next_hop_ip(_nhip), num_hops(h), loc(0L, 0L, 0L), seq_no(s)
     { assert(sizeof(grid_nbr_entry) % 4 == 0); }
 };
 

@@ -191,7 +191,7 @@ EstimateRouterRegion::make_PEP()
     f->fix_id = _my_ip.addr();
     f->fix_seq = htonl(_seq++);
     f->fix_loc = grid_location(_lat, _lon);
-    f->fix_dim = grid_location(0, 0);
+    f->fix_dim = grid_location(0L, 0L);
     f->fix_hops = htonl(0);
   }
   else if (_entries.size() > 0) {
