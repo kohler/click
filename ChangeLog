@@ -1,3 +1,9 @@
+2001-12-03 Monday 22:05  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/Makefile.in (1.10), bsdmodule/clickfs.cc (1.5),
+	bsdmodule/module.cc (1.4), elements/bsdmodule/fromdevice.cc (1.7):
+	partial merge of Luigi's Click patch for BSD
+
 2001-12-02 Sunday 23:14  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.42): update NEWS for Grid
