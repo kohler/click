@@ -895,9 +895,12 @@ GridRouteTable::print_links(Element *e, void *)
     bool res3 = rt->_link_tracker->get_bcast_stat(r.dest_ip, bcast_rate, last);
 
     char buf[255];
+    double tx_rate = num_rx;
+    tx_rate -= 0.5;
+    tx_rate /= num_expected;
     snprintf(buf, 255, "%s %s metric=%u (%s) rx_sig=%d rx_qual=%d rx_rate=%d tx_sig=%d tx_qual=%d tx_rate=%d\n",
 	     r.dest_ip.s().cc(), r.next_hop_eth.s().cc(), r.metric, r.metric_valid ? "valid" : "invalid",
-	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? ((int) (100 * num_rx / num_expected)) : -1,
+	     s1 ? s1->sig : -1, s1 ? s1->qual : -1, res1 ? ((int) (100 * tx_rate)) : -1,
 	     res2 ? tx_sig : -1, res2 ? tx_qual : -1, res3 ? (int) (100 * bcast_rate) : -1);
     s += buf;
   }
