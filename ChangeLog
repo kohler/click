@@ -1,3 +1,9 @@
+2004-08-12 Thursday 00:37  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: counterrors.cc (1.1), counterrors.hh (1.1),
+	pushanno.cc (1.1), pushanno.hh (1.1), readanno.cc (1.1),
+	readanno.hh (1.1): stuff for error analysis.
+
 2004-08-11 Wednesday 01:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/toipsumdump.hh (1.45): update documentation
