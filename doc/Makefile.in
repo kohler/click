@@ -72,7 +72,7 @@ uninstall-man:
 uninstall-info: $(srcdir)/click.info
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
 	  if test -f $(srcdir)/$$f; then \
-	    echo "/bin/rm -f (infodir)/$$f"; \
+	    echo "/bin/rm -f $(infodir)/$$f"; \
 	    /bin/rm -f $(infodir)/$$f; fi; \
 	done
 
