@@ -78,6 +78,7 @@ class TimeFilter : public Element { public:
     void notify_noutputs(int);
     int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
+    void add_handlers();
 
     Packet *simple_action(Packet *);
     
@@ -90,11 +91,13 @@ class TimeFilter : public Element { public:
     bool _first_relative : 1;
     bool _last_relative : 1;
     bool _last_interval : 1;
+    bool _last_h_ready : 1;
     HandlerCall *_last_h;
 
     void first_packet(const struct timeval &);
     Packet *kill(Packet *);
-    
+
+    static int write_handler(const String &, Element *, void*, ErrorHandler *);
 };
 
 #endif

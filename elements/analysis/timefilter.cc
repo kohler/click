@@ -98,6 +98,7 @@ TimeFilter::initialize(ErrorHandler *errh)
 {
     if (_last_h && _last_h->initialize_write(this, errh) < 0)
 	return -1;
+    _last_h_ready = (_last_h != 0);
     return 0;
 }
 
@@ -131,13 +132,42 @@ TimeFilter::simple_action(Packet *p)
     else if (timercmp(&tv, &_last, <))
 	return p;
     else {
-	if (_last_h) {
+	if (_last_h && _last_h_ready) {
+	    _last_h_ready = false;
 	    (void) _last_h->call_write(this);
-	    delete _last_h;
-	    _last_h = 0;
 	}
 	return kill(p);
     }
+}
+
+
+enum { H_EXTEND_INTERVAL };
+
+int
+TimeFilter::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh)
+{
+    TimeFilter *tf = static_cast<TimeFilter *>(e);
+    String s = cp_uncomment(s_in);
+    switch ((int)thunk) {
+      case H_EXTEND_INTERVAL: {
+	  struct timeval tv;
+	  if (cp_timeval(s, &tv)) {
+	      timeradd(&tf->_last, &tv, &tf->_last);
+	      if (tf->_last_h)
+		  tf->_last_h_ready = true;
+	      return 0;
+	  } else
+	      return errh->error("`extend_interval' takes a time interval");
+      }
+      default:
+	return -EINVAL;
+    }
+}
+
+void
+TimeFilter::add_handlers()
+{
+    add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
 }
 
 EXPORT_ELEMENT(TimeFilter)
