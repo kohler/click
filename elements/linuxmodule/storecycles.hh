@@ -9,6 +9,7 @@
  * Each packet stores 4 cycle counts. StoreCycles accumulates the difference
  * between cycle counts X1 and X2 for all packets, together with a packet
  * count. Total and average statistics are printed in /proc.
+ * =a CycleCount
  */
 
 class StoreCycles : public Element {

@@ -8,6 +8,7 @@
  * =d
  * Assign cycle counter to a packet's cycle counters. Each packet can store 4
  * cycle counts, X specifies which storage to use.
+ * =a StoreCycles
  */
 
 class CycleCount : public Element {
