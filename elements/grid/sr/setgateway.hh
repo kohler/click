@@ -77,6 +77,18 @@ private:
     FlowTableEntry() {
       _all_answered = true;
     }
+
+    FlowTableEntry(const FlowTableEntry &e) : 
+      _id(e._id),
+      _gw(e._gw),
+      _oldest_unanswered(e._oldest_unanswered),
+      _last_reply(e._last_reply),
+      _outstanding_syns(e._outstanding_syns),
+      _fwd_alive(e._fwd_alive),
+      _rev_alive(e._rev_alive),
+      _all_answered(e._all_answered)
+    { }
+
     void saw_forward_packet() {
       if (_all_answered) {
 	click_gettimeofday(&_oldest_unanswered);
@@ -88,6 +100,18 @@ private:
       _all_answered = true;
     }
     bool is_pending() const    { return (_outstanding_syns > 0);}
+
+    struct timeval age() {
+      struct timeval age;
+      struct timeval now;
+      timerclear(&age);
+      if (_fwd_alive || _rev_alive) {
+	return age;
+      }
+      click_gettimeofday(&now);
+      timersub(&now, &_last_reply, &age);
+      return age;
+    }
   };
 
   typedef BigHashMap<IPFlowID, FlowTableEntry> FlowTable;
@@ -96,7 +120,7 @@ private:
 
   void push_fwd(Packet *, IPAddress);
   void push_rev(Packet *);
-
+  void cleanup();
   void setgateway_assert_(const char *, int, const char *) const;
   String print_flows();
 };

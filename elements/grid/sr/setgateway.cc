@@ -80,6 +80,8 @@ SetGateway::initialize (ErrorHandler *)
 void
 SetGateway::run_timer ()
 {
+  cleanup();
+  _timer.schedule_after_ms(60*1000);
 }
 
 void 
@@ -115,11 +117,11 @@ SetGateway::push_fwd(Packet *p_in, IPAddress best_gw)
     output(0).push(p_in);
     return;
   } 
-  
-  click_chatter("SetGateway %s: new flow for %s to %s\n",
-		id().cc(),
-		flowid.s().cc(),
-		best_gw.s().cc());
+
+  if (!best_gw) {
+    p_in->kill();
+    return;
+  }
 
   /* no match */
   _flow_table.insert(flowid, FlowTableEntry());
@@ -189,7 +191,8 @@ SetGateway::push_rev(Packet *p_in)
   match = _flow_table.findp(flowid);
   match->_id = flowid;
   match->_gw = MISC_IP_ANNO(p_in);
-  match->saw_forward_packet();
+  match->saw_reply_packet();
+
   output(1).push(p_in);
   return;
 }
@@ -223,7 +226,26 @@ SetGateway::push(int port, Packet *p_in)
   }
 }
 
+void 
+SetGateway::cleanup() {
+  FlowTable new_table;
+  struct timeval timeout;
+  timeout.tv_sec = 1*60;
+  timeout.tv_usec = 0;
 
+  for(FTIter i = _flow_table.begin(); i; i++) {
+    FlowTableEntry f = i.value();
+    struct timeval age = f.age();
+    if (timercmp(&age, &timeout, <)) {
+      new_table.insert(f._id, f);
+    }
+  }
+  _flow_table.clear();
+  for(FTIter i = new_table.begin(); i; i++) {
+    FlowTableEntry f = i.value();
+    _flow_table.insert(f._id, f);
+  }
+}
 String
 SetGateway::static_print_flows(Element *f, void *) 
 {
@@ -238,7 +260,8 @@ SetGateway::print_flows()
   click_gettimeofday(&now);
   for(FTIter iter = _flow_table.begin(); iter; iter++) {
     FlowTableEntry f = iter.value();
-    sa << f._id << " gw " << f._gw << "\n";
+    struct timeval age = f.age();
+    sa << f._id << " gw " << f._gw << " age " << age << "\n";
   }
 
   return sa.take_string();
