@@ -1,3 +1,154 @@
+2000-11-01 Wednesday 20:10  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-gateway.click: finally got the traceroute / decrement
+	ttl support really working.
+
+2000-11-01 Wednesday 19:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-elem2man, doc/elementdoc.7,
+	elements/app/ftpportmapper.hh, elements/ethernet/arpfaker.hh,
+	elements/ethernet/arpquerier.hh, elements/ethernet/arpresponder.hh,
+	elements/ethernet/etherencap.hh, elements/ethernet/ethermirror.hh,
+	elements/ethernet/hostetherfilter.hh,
+	elements/ethernet/ip6ndadvertiser.hh,
+	elements/ethernet/ip6ndsolicitor.hh,
+	elements/grid/checkgridheader.hh, elements/grid/filterbyhops.hh,
+	elements/grid/filterbyrange.hh, elements/grid/fixdstloc.hh,
+	elements/grid/fixsrcloc.hh, elements/grid/floodinglocquerier.hh,
+	elements/grid/gridlocationinfo.hh, elements/grid/hello.hh,
+	elements/grid/locationinfo.hh, elements/grid/locfromfile.hh,
+	elements/grid/locqueryresponder.hh, elements/grid/loctable.hh,
+	elements/grid/lookupgeogridroute.hh,
+	elements/grid/lookuplocalgridroute.hh, elements/grid/lrhello.hh,
+	elements/grid/movesim.hh, elements/grid/pep.hh,
+	elements/grid/printgrid.hh, elements/grid/radiosim.hh,
+	elements/grid/regionpep.hh, elements/grid/setgridchecksum.hh,
+	elements/grid/simplelocquerier.hh, elements/grid/updateroutes.hh,
+	elements/ip/checkipheader.hh, elements/ip/checkipheader2.hh,
+	elements/ip/checktcpheader.hh, elements/ip/checkudpheader.hh,
+	elements/ip/decipttl.hh, elements/ip/fixipsrc.hh,
+	elements/ip/getipaddress.hh, elements/ip/icmperror.hh,
+	elements/ip/icmpping.hh, elements/ip/icmpsendpings.hh,
+	elements/ip/ipclassifier.hh, elements/ip/ipencap.hh,
+	elements/ip/ipfragmenter.hh, elements/ip/ipgwoptions.hh,
+	elements/ip/ipinputcombo.hh, elements/ip/ipmirror.hh,
+	elements/ip/ipoutputcombo.hh, elements/ip/ipprint.hh,
+	elements/ip/ipratemon.hh, elements/ip/iprewriter.hh,
+	elements/ip/iprwpatterns.hh, elements/ip/lookupiproute.hh,
+	elements/ip/lookupiproute2.hh, elements/ip/lookupiproutelinux.hh,
+	elements/ip/markipheader.hh, elements/ip/ripsend.hh,
+	elements/ip/rripmapper.hh, elements/ip/saveipfields.hh,
+	elements/ip/setipaddress.hh, elements/ip/setipchecksum.hh,
+	elements/ip/setipdscp.hh, elements/ip/settcpchecksum.hh,
+	elements/ip/storeipaddress.hh, elements/ip/stripipheader.hh,
+	elements/ip/tcpipsend.hh, elements/ip/tcprewriter.hh,
+	elements/ip/udpipencap.hh, elements/ip/unstripipheader.hh,
+	elements/ip6/addresstranslator.hh, elements/ip6/checkip6header.hh,
+	elements/ip6/decip6hlim.hh, elements/ip6/getip6address.hh,
+	elements/ip6/icmp6error.hh, elements/ip6/ip6fragmenter.hh,
+	elements/ip6/lookupip6route.hh, elements/ip6/markip6header.hh,
+	elements/ip6/setip6address.hh, elements/linuxmodule/anydevice.cc,
+	elements/linuxmodule/cyclecount.hh,
+	elements/linuxmodule/cyclecountaccum.hh,
+	elements/linuxmodule/fastudpsrc.hh,
+	elements/linuxmodule/fromdevice.hh,
+	elements/linuxmodule/fromlinux.hh,
+	elements/linuxmodule/perfcount.hh,
+	elements/linuxmodule/perfcountaccum.hh,
+	elements/linuxmodule/perfinfo.hh,
+	elements/linuxmodule/polldevice.hh,
+	elements/linuxmodule/rtcycles.hh,
+	elements/linuxmodule/setcyclecount.hh,
+	elements/linuxmodule/setperfcount.hh,
+	elements/linuxmodule/storecycles.hh,
+	elements/linuxmodule/todevice.hh, elements/linuxmodule/tolinux.hh,
+	elements/linuxmodule/tolinuxsniffers.hh,
+	elements/linuxmodule/tulipstats.hh, elements/local/forceip.hh,
+	elements/local/forcetcp.hh, elements/standard/addressinfo.hh,
+	elements/standard/align.hh, elements/standard/alignmentinfo.hh,
+	elements/standard/averagecounter.hh,
+	elements/standard/bandwidthmeter.hh,
+	elements/standard/bandwidthshaper.hh, elements/standard/block.hh,
+	elements/standard/burster.hh, elements/standard/bwratedsplitter.hh,
+	elements/standard/bwratedunqueue.hh,
+	elements/standard/checkcrc32.hh, elements/standard/checklength.hh,
+	elements/standard/checkpaint.hh, elements/standard/classifier.hh,
+	elements/standard/compblock.hh, elements/standard/counter.hh,
+	elements/standard/discard.hh, elements/standard/discardnofree.hh,
+	elements/standard/dropbroadcasts.hh,
+	elements/standard/errorelement.hh,
+	elements/standard/frontdropqueue.hh,
+	elements/standard/hashdemux.hh, elements/standard/hashswitch.hh,
+	elements/standard/idle.hh, elements/standard/infinitesource.hh,
+	elements/standard/meter.hh, elements/standard/nullelement.hh,
+	elements/standard/nulls.hh, elements/standard/paint.hh,
+	elements/standard/painttee.hh, elements/standard/peekhandlers.hh,
+	elements/standard/pokehandlers.hh, elements/standard/print.hh,
+	elements/standard/priosched.hh, elements/standard/probsplitter.hh,
+	elements/standard/pullswitch.hh, elements/standard/pulltopush.hh,
+	elements/standard/queue.hh, elements/standard/quitwatcher.hh,
+	elements/standard/randomerror.hh,
+	elements/standard/randomlossage.hh,
+	elements/standard/randomsource.hh,
+	elements/standard/ratedsource.hh,
+	elements/standard/ratedsplitter.hh,
+	elements/standard/ratedunqueue.hh, elements/standard/red.hh,
+	elements/standard/rrsched.hh, elements/standard/rrswitch.hh,
+	elements/standard/scheduleinfo.hh, elements/standard/setcrc32.hh,
+	elements/standard/shaper.hh, elements/standard/staticpullswitch.hh,
+	elements/standard/staticswitch.hh,
+	elements/standard/stridesched.hh,
+	elements/standard/strideswitch.hh, elements/standard/strip.hh,
+	elements/standard/suppressor.hh, elements/standard/switch.hh,
+	elements/standard/tee.hh, elements/standard/timedsink.hh,
+	elements/standard/timedsource.hh, elements/standard/unqueue.hh,
+	elements/userlevel/controlsocket.hh, elements/userlevel/frombpf.hh,
+	elements/userlevel/fromdevice.hh, elements/userlevel/fromdump.hh,
+	elements/userlevel/kerneltap.hh, elements/userlevel/tobpf.hh,
+	elements/userlevel/todevice.hh, elements/userlevel/todump.cc,
+	elements/userlevel/todump.hh, etc/samplepackage/Makefile.in,
+	etc/samplepackage/sampleelt.hh, include/click/llrpc.h:
+	documentation changes: changed the way summary sections are handled
+	(they now follow "-s", as in "-s IPv6"), changed all elements to
+	conform. Also changed click-elem2man so generating manual pages
+	from a package does not clobber the old list of manual pages (new
+	-L option). (Mazu)
+
+2000-11-01 Wednesday 19:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipfilter.cc, ipfilter.hh: small modifications to
+	IPFilter to support using IPFilter::Primitive even outside an
+	IPFilter object (Mazu)
+
+2000-11-01 Wednesday 19:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/straccum.hh, lib/straccum.cc: add
+	StringAccum::operator<<(const StringAccum &)
+
+2000-11-01 Wednesday 17:06  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click: debugged support for decrementing ttl and
+	supporting traceroute
+
+2000-11-01 Wednesday 14:32  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid-gateway.click: trying to add traceroute support via IP
+	TTL decrementing...
+
+2000-11-01 Wednesday 13:55  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: fromdevice.cc, fromdevice.hh: set packet
+	type annotation
+
+2000-11-01 Wednesday 13:53  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/dropbroadcasts.hh: [no log message]
+
+2000-11-01 Wednesday 08:29  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/linuxmodule/todevice.cc: Make ToDevice quieter when
+	driver rejects packets.
+
 2000-11-01 Wednesday 00:21  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/todevice.cc: [no log message]
