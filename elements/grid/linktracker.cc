@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include <click/confparse.hh>
 #include <click/click_ether.h>
+#include <click/error.hh>
 #include "linktracker.hh"
 #include <click/glue.hh>
 #include <sys/time.h>
@@ -202,6 +203,15 @@ LinkTracker::simple_action(Packet *p)
 }
 
 String
+LinkTracker::read_tau(Element *xf, void *)
+{
+  LinkTracker *f = (LinkTracker *) xf;
+  int tau = (int) (f->_tau * 1000);
+  return String(tau) + "\n";
+}
+
+
+String
 LinkTracker::read_stats(Element *xf, void *)
 {
   LinkTracker *f = (LinkTracker *) xf;
@@ -218,10 +228,30 @@ LinkTracker::read_stats(Element *xf, void *)
   return s;
 }
 
+int
+LinkTracker::write_tau(const String &arg, Element *el, 
+		       void *, ErrorHandler *errh)
+{
+  LinkTracker *e = (LinkTracker *) el;
+  double tau = atof(((String) arg).cc());
+  if (tau < 0)
+    return errh->error("tau must be >= 0");
+  e->_tau = tau * 0.001;
+
+  /* clear all stats to avoid confusing data averaged underone time
+     constant to data averaged under a different time constant. */
+  e->_stats.clear();
+
+  return 0;
+}
+
+
 void
 LinkTracker::add_handlers()
 {
   add_read_handler("stats", read_stats, 0);
+  add_read_handler("tau", read_tau, 0);
+  add_write_handler("tau", write_tau, 0);
 }
 
 ELEMENT_REQUIRES(userlevel)

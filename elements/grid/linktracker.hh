@@ -26,6 +26,8 @@ class LinkTracker : public Element {
   double _tau;
 
   static String read_stats(Element *, void *);
+  static String read_tau(Element *, void *);
+  static int write_tau(const String &, Element *, void *, ErrorHandler *);
 
   struct stat_t {
     double qual_top;
