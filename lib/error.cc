@@ -22,8 +22,16 @@
 #ifndef CLICK_TOOL
 # include <click/element.hh>
 #endif
+#include <click/hashmap.hh>
 #include <click/confparse.hh>
 CLICK_DECLS
+
+struct ErrorHandler::Conversion {
+  String name;
+  ConversionHook hook;
+  Conversion *next;
+};
+static ErrorHandler::Conversion *error_items;
 
 const int ErrorHandler::OK_RESULT;
 const int ErrorHandler::ERROR_RESULT = -EINVAL;
@@ -134,22 +142,14 @@ ErrorHandler::make_text(Seriousness seriousness, const char *format, ...)
   return s;
 }
 
-#define ZERO_PAD 1
-#define PLUS_POSITIVE 2
-#define SPACE_POSITIVE 4
-#define LEFT_JUST 8
-#define ALTERNATE_FORM 16
-#define UPPERCASE 32
-#define SIGNED 64
-#define NEGATIVE 128
-
-#define NUMBUF_SIZE 128
+#define NUMBUF_SIZE	128
+#define ErrH		ErrorHandler
 
 static char *
 do_number(unsigned long num, char *after_last, int base, int flags)
 {
   const char *digits =
-    ((flags & UPPERCASE) ? "0123456789ABCDEF" : "0123456789abcdef");
+    ((flags & ErrH::UPPERCASE) ? "0123456789ABCDEF" : "0123456789abcdef");
   char *pos = after_last;
   while (num) {
     *--pos = digits[num % base];
@@ -165,36 +165,37 @@ do_number_flags(char *pos, char *after_last, int base, int flags,
 		int precision, int field_width)
 {
   // remove ALTERNATE_FORM for zero results in base 16
-  if ((flags & ALTERNATE_FORM) && base == 16 && *pos == '0')
-    flags &= ~ALTERNATE_FORM;
+  if ((flags & ErrH::ALTERNATE_FORM) && base == 16 && *pos == '0')
+    flags &= ~ErrH::ALTERNATE_FORM;
   
   // account for zero padding
   if (precision >= 0)
     while (after_last - pos < precision)
       *--pos = '0';
-  else if (flags & ZERO_PAD) {
-    if ((flags & ALTERNATE_FORM) && base == 16)
+  else if (flags & ErrH::ZERO_PAD) {
+    if ((flags & ErrH::ALTERNATE_FORM) && base == 16)
       field_width -= 2;
-    if ((flags & NEGATIVE) || (flags & (PLUS_POSITIVE | SPACE_POSITIVE)))
+    if ((flags & ErrH::NEGATIVE)
+	|| (flags & (ErrH::PLUS_POSITIVE | ErrH::SPACE_POSITIVE)))
       field_width--;
     while (after_last - pos < field_width)
       *--pos = '0';
   }
   
   // alternate forms
-  if ((flags & ALTERNATE_FORM) && base == 8 && pos[1] != '0')
+  if ((flags & ErrH::ALTERNATE_FORM) && base == 8 && pos[1] != '0')
     *--pos = '0';
-  else if ((flags & ALTERNATE_FORM) && base == 16) {
-    *--pos = ((flags & UPPERCASE) ? 'X' : 'x');
+  else if ((flags & ErrH::ALTERNATE_FORM) && base == 16) {
+    *--pos = ((flags & ErrH::UPPERCASE) ? 'X' : 'x');
     *--pos = '0';
   }
   
   // sign
-  if (flags & NEGATIVE)
+  if (flags & ErrH::NEGATIVE)
     *--pos = '-';
-  else if (flags & PLUS_POSITIVE)
+  else if (flags & ErrH::PLUS_POSITIVE)
     *--pos = '+';
-  else if (flags & SPACE_POSITIVE)
+  else if (flags & ErrH::SPACE_POSITIVE)
     *--pos = ' ';
   
   return pos;
@@ -335,19 +336,6 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
        break;
      }
 
-#ifndef CLICK_TOOL
-     case 'E': {
-       Element *e = va_arg(val, Element *);
-       if (e)
-	 placeholder = e->declaration();
-       else
-	 placeholder = "(null)";
-       s1 = placeholder.data();
-       s2 = s1 + placeholder.length();
-       break;
-     }
-#endif
-     
      case 'd':
      case 'i':
       flags |= SIGNED;
@@ -414,6 +402,45 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
 			    precision, field_width);
        break;
      }
+
+#if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
+     case 'e': case 'f': case 'g':
+     case 'E': case 'F': case 'G': {
+       char format[80], *f = format, new_numbuf[NUMBUF_SIZE];
+       *f++ = '%';
+       if (flags & ALTERNATE_FORM)
+	 *f++ = '#';
+       if (precision >= 0)
+	 f += sprintf(f, ".%d", precision);
+       *f++ = s[-1];
+       *f++ = 0;
+
+       int len = sprintf(new_numbuf, format, va_arg(val, double));
+
+       s2 = numbuf + NUMBUF_SIZE;
+       s1 = s2 - len;
+       memcpy((char *)s1, new_numbuf, len); // note: no terminating \0
+       s1 = do_number_flags((char *)s1, (char *)s2, 10, flags & ~ALTERNATE_FORM, -1, field_width);
+       break;
+     }
+#endif
+     
+     case '{': {
+       const char *rbrace = strchr(s, '}');
+       if (!rbrace || rbrace == s)
+	 assert(0 && "Bad %{ in error");
+       String name(s, rbrace - s);
+       s = rbrace + 1;
+       for (Conversion *item = error_items; item; item = item->next)
+	 if (item->name == name) {
+	   placeholder = item->hook(flags, &val);
+	   s1 = placeholder.data();
+	   s2 = s1 + placeholder.length();
+	   goto got_result;
+	 }
+       assert(0 && "Bad %{ in error");
+       break;
+     }
      
      default:
       assert(0 && "Bad % in error");
@@ -422,6 +449,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
     }
 
     // add result of conversion
+   got_result:
     int slen = s2 - s1;
     if (slen > field_width) field_width = slen;
     char *dest = msg.extend(field_width);
@@ -606,11 +634,52 @@ SilentErrorHandler::handle_text(Seriousness seriousness, const String &)
 static ErrorHandler *the_default_handler = 0;
 static ErrorHandler *the_silent_handler = 0;
 
+ErrorHandler::Conversion *
+ErrorHandler::add_conversion(const String &name, ConversionHook hook)
+{
+  if (Conversion *c = new Conversion) {
+    c->name = name;
+    c->hook = hook;
+    c->next = error_items;
+    error_items = c;
+    return c;
+  } else
+    return 0;
+}
+
+int
+ErrorHandler::remove_conversion(ErrorHandler::Conversion *conv)
+{
+  Conversion **pprev = &error_items;
+  for (Conversion *c = error_items; c; pprev = &c->next, c = *pprev)
+    if (c == conv) {
+      *pprev = c->next;
+      delete c;
+      return 0;
+    }
+  return -1;
+}
+
+#ifndef CLICK_TOOL
+static String
+error_element_hook(int, va_list *val)
+{
+  Element *e = va_arg(*val, Element *);
+  if (e)
+    return e->declaration();
+  else
+    return "(null)";
+}
+#endif
+
 void
 ErrorHandler::static_initialize(ErrorHandler *default_handler)
 {
   the_default_handler = default_handler;
   the_silent_handler = new SilentErrorHandler;
+#ifndef CLICK_TOOL
+  add_conversion("element", error_element_hook);
+#endif
 }
 
 void
@@ -619,6 +688,11 @@ ErrorHandler::static_cleanup()
   delete the_default_handler;
   delete the_silent_handler;
   the_default_handler = the_silent_handler = 0;
+  while (error_items) {
+    Conversion *next = error_items->next;
+    delete error_items;
+    error_items = next;
+  }
 }
 
 bool

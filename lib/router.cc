@@ -336,9 +336,9 @@ Router::check_hookup_range(ErrorHandler *errh)
     int before = errh->nerrors();
     
     if (hfrom.port >= _elements[hfrom.idx]->noutputs())
-      hookup_error(hfrom, true, "`%E' has no %s %d", errh);
+      hookup_error(hfrom, true, "`%{element}' has no %s %d", errh);
     if (hto.port >= _elements[hto.idx]->ninputs())
-      hookup_error(hto, false, "`%E' has no %s %d", errh);
+      hookup_error(hto, false, "`%{element}' has no %s %d", errh);
     
     // remove the connection if there were errors
     if (errh->nerrors() != before) {
@@ -365,10 +365,10 @@ Router::check_hookup_completeness(ErrorHandler *errh)
     int to_pidx = _input_pidx[hto.idx] + hto.port;
     if (used_outputs[from_pidx]
 	&& _elements[hfrom.idx]->output_is_push(hfrom.port))
-      hookup_error(hfrom, true, "can't reuse `%E' push %s %d", errh);
+      hookup_error(hfrom, true, "can't reuse `%{element}' push %s %d", errh);
     else if (used_inputs[to_pidx]
 	     && _elements[hto.idx]->input_is_pull(hto.port))
-      hookup_error(hto, false, "can't reuse `%E' pull %s %d", errh);
+      hookup_error(hto, false, "can't reuse `%{element}' pull %s %d", errh);
     
     // remove the connection if there were errors
     if (errh->nerrors() != before) {
@@ -384,12 +384,12 @@ Router::check_hookup_completeness(ErrorHandler *errh)
   for (int i = 0; i < ninput_pidx(); i++)
     if (!used_inputs[i]) {
       Hookup h(input_pidx_element(i), input_pidx_port(i));
-      hookup_error(h, false, "`%E' %s %d unused", errh);
+      hookup_error(h, false, "`%{element}' %s %d unused", errh);
     }
   for (int i = 0; i < noutput_pidx(); i++)
     if (!used_outputs[i]) {
       Hookup h(output_pidx_element(i), output_pidx_port(i));
-      hookup_error(h, true, "`%E' %s %d unused", errh);
+      hookup_error(h, true, "`%{element}' %s %d unused", errh);
     }
 }
 
@@ -471,11 +471,11 @@ Router::processing_error(const Hookup &hfrom, const Hookup &hto, bool aggie,
   const char *type1 = (processing_from == Element::VPUSH ? "push" : "pull");
   const char *type2 = (processing_from == Element::VPUSH ? "pull" : "push");
   if (!aggie)
-    errh->error("`%E' %s output %d connected to `%E' %s input %d",
+    errh->error("`%{element}' %s output %d connected to `%{element}' %s input %d",
 		_elements[hfrom.idx], type1, hfrom.port,
 		_elements[hto.idx], type2, hto.port);
   else
-    errh->error("agnostic `%E' in mixed context: %s input %d, %s output %d",
+    errh->error("agnostic `%{element}' in mixed context: %s input %d, %s output %d",
 		_elements[hfrom.idx], type2, hto.port, type1, hfrom.port);
   return -1;
 }

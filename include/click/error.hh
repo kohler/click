@@ -58,6 +58,16 @@ class ErrorHandler { public:
   virtual void set_error_code(int);
 
   static String prepend_lines(const String &, const String &);
+
+  // error conversions
+  struct Conversion;
+  typedef String (*ConversionHook)(int flags, va_list *);
+  enum ConversionFlags {
+    ZERO_PAD = 1, PLUS_POSITIVE = 2, SPACE_POSITIVE = 4, LEFT_JUST = 8,
+    ALTERNATE_FORM = 16, UPPERCASE = 32, SIGNED = 64, NEGATIVE = 128
+  };
+  static Conversion *add_conversion(const String &, ConversionHook);
+  static int remove_conversion(Conversion *);
   
 };
 

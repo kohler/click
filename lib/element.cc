@@ -282,13 +282,13 @@ next_flow_code(const char *&p, int port, Bitvector &code,
       else if (*p == '#')
 	code[port + 128] = true;
       else if (errh)
-	errh->error("`%E' flow code: invalid character `%c'", e, *p);
+	errh->error("`%{element}' flow code: invalid character `%c'", e, *p);
     }
     if (negated)
       code.negate();
     if (!*p) {
       if (errh)
-	errh->error("`%E' flow code: missing `]'", e);
+	errh->error("`%{element}' flow code: missing `]'", e);
       p--;			// don't skip over final '\0'
     }
   } else if (isalpha(*p))
@@ -297,7 +297,7 @@ next_flow_code(const char *&p, int port, Bitvector &code,
     code[port + 128] = true;
   else {
     if (errh)
-      errh->error("`%E' flow code: invalid character `%c'", e, *p);
+      errh->error("`%{element}' flow code: invalid character `%c'", e, *p);
     p++;
     return -1;
   }
@@ -324,7 +324,7 @@ Element::forward_flow(int input_port, Bitvector *bv) const
   const char *f_in = f;
   const char *f_out = strchr(f, '/');
   if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
-    errh->error("`%E' flow code: missing or bad `/'", this);
+    errh->error("`%{element}' flow code: missing or bad `/'", this);
     return;
   }
   f_out++;
@@ -360,7 +360,7 @@ Element::backward_flow(int output_port, Bitvector *bv) const
   const char *f_in = f;
   const char *f_out = strchr(f, '/');
   if (!f_out || f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
-    errh->error("`%E' flow code: missing or bad `/'", this);
+    errh->error("`%{element}' flow code: missing or bad `/'", this);
     return;
   }
   f_out++;
@@ -490,7 +490,7 @@ Element::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
   if (can_live_reconfigure())
     return configure(conf, errh);
   else
-    return errh->error("cannot reconfigure %E live", this);
+    return errh->error("cannot reconfigure %{element} live", this);
 }
 
 void
