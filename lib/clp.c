@@ -524,8 +524,11 @@ parse_int(Clp_Parser *clp, const char *arg, int complain, void *thunk)
 #if HAVE_STRTOUL
     clp->val.u = strtoul(arg, &val, base);
 #else
-    /* don't bother trying to do it right */
-    clp->val.u = strtol(arg, &val, base);
+    /* don't bother really trying to do it right */
+    if (arg[0] == '-')
+      val = arg;
+    else
+      clp->val.u = strtol(arg, &val, base);
 #endif
   } else
     clp->val.i = strtol(arg, &val, base);

@@ -199,6 +199,7 @@ dnl strerror
 dnl
 
 AC_REPLACE_FUNCS(strerror)
+AC_CHECK_FUNCS(strtoul)
 
 dnl
 dnl dynamic linking
