@@ -1,3 +1,27 @@
+2001-01-14 Sunday 18:13  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/addresstranslator.cc: [no log message]
+
+2001-01-14 Sunday 18:11  Peilei Fan <peilei@lcs.mit.edu>
+
+	* conf/: ip601.click, ip64-nat.click, ip64-nat2.click:
+	configurations for IPv6 router, GNAT for ipv4/6 translation.
+
+2001-01-14 Sunday 15:37  Peilei Fan <peilei@lcs.mit.edu>
+
+	* lib/ip6address.cc: changed get_ip4address so it can get ip4
+	address from both IPv4-mapped IPv6 address (::ffff:18.26.4.116) and
+	IPv4-compatible IPv6 addresses (::18.26.4.125).
+
+2001-01-14 Sunday 15:33  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/icmp6error.cc: [no log message]
+
+2001-01-14 Sunday 14:59  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ethernet/: ip6ndadvertiser.cc, ip6ndadvertiser.hh,
+	ip6ndsolicitor.cc, ip6ndsolicitor.hh: [no log message]
+
 2001-01-14 Sunday 01:23  Peilei Fan <peilei@lcs.mit.edu>
 
 	* elements/ip6/: icmp6error.cc, protocoltranslator.cc: [no log
