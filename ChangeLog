@@ -1,3 +1,42 @@
+2003-12-23 Tuesday 18:27  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/controlsocket.cc (1.48),
+	elements/userlevel/khandlerproxy.cc (1.14), lib/confparse.cc
+	(1.114), lib/error.cc (1.48), lib/userutils.cc (1.35),
+	lib/variableenv.cc (1.9), linuxmodule/module.cc (1.81),
+	elements/analysis/aggregatefilter.cc (1.4),
+	elements/analysis/ipsumdumpinfo.cc (1.11),
+	elements/analysis/toipflowdumps.cc (1.31),
+	elements/standard/scheduleinfo.cc (1.39), ns/nsclick.cc (1.16),
+	tools/click-combine/click-combine.cc (1.36),
+	tools/click-combine/click-uncombine.cc (1.31),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.62),
+	tools/click-install/common.cc (1.17),
+	tools/click-pretty/click-pretty.cc (1.25),
+	tools/click2xml/click2xml.cc (1.14), tools/lib/elementmap.cc
+	(1.13), tools/lib/processingt.cc (1.31), userlevel/click.cc (1.86),
+	elements/ip/iprw.cc (1.50): use new String functionality
+
+2003-12-23 Tuesday 18:22  Eddie Kohler <kohler@icir.org>
+
+	* include/click/string.hh (1.30): make String a bit more STLish:
+	add String(const char *begin, const char *end) constructor,
+	String::substring(const char *begin, const char *end) method, and
+	find(const String &, char) and find(const char *begin, const char
+	*end, char) methods, and String::front()
+
+2003-12-23 Tuesday 18:20  Eddie Kohler <kohler@icir.org>
+
+	* include/click/error.hh (1.24): documentation nit
+
+2003-12-23 Tuesday 18:18  Eddie Kohler <kohler@icir.org>
+
+	* elements/: analysis/fromlinefile.cc (1.1),
+	analysis/fromlinefile.hh (1.1), userlevel/fromfile.cc (1.1),
+	userlevel/fromfile.hh (1.1): separate file-handling functionality
+	from From*Dump elements, move into FromFile (for binary files) and
+	FromLineFile (for text files)
+
 2003-12-21 Sunday 11:54  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: etx2metric.cc (1.1), etx2metric.hh (1.1),
