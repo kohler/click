@@ -40,9 +40,8 @@ Hello::clone() const
 int
 Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  // XXX make src MAC optionally override actual hardware MAC
   return cp_va_parse(conf, this, errh,
-		     cpInteger, "period (sec)", &_period,
+		     cpInteger, "period (msec)", &_period,
 		     cpEthernetAddress, "source Ethernet address", &_from_eth,
 		     cpIPAddress, "source IP address", &_from_ip,
 		     0);
@@ -51,21 +50,9 @@ Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Hello::initialize(ErrorHandler *errh)
 {
-#if 0
-  // find downstream ToBPF 
-  for (int fi = 0; fi < router()->nelements(); fi++) {
-    Element *f = router()->element(fi);
-    ToBPF *to = (ToBPF *)f->cast("ToBPF");
-    if (to) {
-      _from_eth = to->get_mac();
-      break;
-    }
-  } // XXX way broken, what if not using ToBPF, or if ToBPF initialized after us?
-#endif
-
   ScheduleInfo::join_scheduler(this, errh);
   _timer.attach(this);
-  _timer.schedule_after_ms(_period * 1000); // Send Grid HELLO periodically
+  _timer.schedule_after_ms(_period); // Send Grid HELLO periodically
   return 0;
 }
 
