@@ -522,7 +522,7 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
 }
 
 void
-Specializer::output(StringAccum& out)
+Specializer::output(StringAccum& out_header, StringAccum& out)
 {
   // output headers
   for (int i = 0; i < _specials.size(); i++) {
@@ -530,9 +530,9 @@ Specializer::output(StringAccum& out)
     if (spc.eindex >= 0) {
       ElementTypeInfo &eti = etype_info(spc.eindex);
       if (eti.found_header_file)
-	out << "#include \"" << eti.found_header_file << "\"\n";
+	out_header << "#include \"" << eti.found_header_file << "\"\n";
       if (spc.special())
-	spc.cxxc->header_text(out);
+	spc.cxxc->header_text(out_header);
     }
   }
 
@@ -553,9 +553,9 @@ Specializer::output_package(const String &package_name, StringAccum &out, ErrorH
     StringAccum elem2package, cmd_sa;
     for (int i = 0; i < _specials.size(); i++)
 	if (_specials[i].special())
-	    elem2package <<  "-\t-\t" << _specials[i].cxx_name << '-' << _specials[i].click_name << '\n';
+	    elem2package <<  "-\t\"" << package_name << ".hh\"\t" << _specials[i].cxx_name << '-' << _specials[i].click_name << '\n';
     String click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
-    cmd_sa << click_buildtool_prog << " elem2package -I " << package_name;
+    cmd_sa << click_buildtool_prog << " elem2package " << package_name;
     out << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);    
 }
 

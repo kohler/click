@@ -4,7 +4,7 @@ SHELL = @SHELL@
 
 # THESE VARIABLES MAY CHANGE BETWEEN PACKAGES
 
-# Set `package' to the name of your package.
+# Set 'package' to the name of your package.
 package := sample
 
 # Set these variables appropriately.
@@ -12,34 +12,34 @@ top_builddir := .
 subdir := .
 
 # The Click prefix. Set this to affect other variables.
-# Generally, you will provide a `--with-click=CLICKPREFIX' option, and set:
+# Generally, you will provide a '--with-click=CLICKPREFIX' option, and set:
 clickprefix := @clickprefix@
 
-# Set `clicksharedir' to the Click share directory.
+# Set 'clicksharedir' to the Click share directory.
 # Generally, you will set:
 clicksharedir := $(clickprefix)/share/click
 
-# Set `clicksrcdir' to the Click source directory.
+# Set 'clicksrcdir' to the Click source directory.
 # Generally, you will set:
 clicksrcdir := $(clicksharedir)/src
 
-# Set `clickbindir' to the Click binary directory.
+# Set 'clickbindir' to the Click binary directory.
 # Generally, you will set:
 clickbindir := $(clickprefix)/bin
 
-# Set `clickincludedir' to the Click include directory.
+# Set 'clickincludedir' to the Click include directory.
 # Generally, you will set:
 clickincludedir := $(clickprefix)/include
 
 
-# Set `MAKE_UPACKAGE', `MAKE_KPACKAGE', and `MAKE_BPACKAGE' to `0' or `1' 
+# Set 'MAKE_UPACKAGE', 'MAKE_KPACKAGE', and 'MAKE_BPACKAGE' to '0' or '1' 
 # to determine whether to build userlevel, linuxmodule, and bsdmodule
 # packages, respectively.
 MAKE_UPACKAGE = @HAVE_USERLEVEL_TARGET@
 MAKE_KPACKAGE = @HAVE_LINUXMODULE_TARGET@
 MAKE_BPACKAGE = @HAVE_BSDMODULE_TARGET@
 
-# Set `STRIP_UPACKAGE' to `strip -g' to strip debugging symbols from the
+# Set 'STRIP_UPACKAGE' to 'strip -g' to strip debugging symbols from the
 # userlevel package before installing.
 STRIP_UPACKAGE = true
 #STRIP_UPACKAGE = $(STRIP) -g
@@ -49,6 +49,11 @@ DEFS = @DEFS@
 U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir)
 K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir)
 B_INCLUDES = -I. -I$(top_builddir) -I$(srcdir)
+
+# Set this variable to force 'click-elem2package' to include a header,
+# such as your package's '<config.h>', if necessary.
+ELEM2PACKAGE_INCLUDES =
+#ELEM2PACKAGE_INCLUDES = -i'<config.h>'
 
 # END OF VARIABLES THAT MAY CHANGE BETWEEN PACKAGES
 
@@ -74,6 +79,7 @@ VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)
 
 CLICK_COMPILE = $(clickbindir)/click-compile
 CLICK_BUILDTOOL = $(clickbindir)/click-buildtool
+CLICK_ELEM2PACKAGE = $(CLICK_BUILDTOOL) elem2package $(ELEM2PACKAGE_INCLUDES)
 
 U_CPPFLAGS =
 K_CPPFLAGS =
@@ -180,13 +186,13 @@ elements.mk: $(CONFFILES) $(CLICK_BUILDTOOL)
 	[ ! -f kelements.conf ] || $(CLICK_BUILDTOOL) elem2make -t linuxmodule < kelements.conf >> elements.mk
 	[ ! -f belements.conf ] || $(CLICK_BUILDTOOL) elem2make -t bsdmodule < belements.conf >> elements.mk
 upackage.cc: uelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) elem2package $(package) < uelements.conf > upackage.cc
+	$(CLICK_ELEM2PACKAGE) $(package) < uelements.conf > upackage.cc
 	@rm -f upackage.ud
 kpackage.cc: kelements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) elem2package $(package) < kelements.conf > kpackage.cc
+	$(CLICK_ELEM2PACKAGE) $(package) < kelements.conf > kpackage.cc
 	@rm -f kpackage.kd
 bpackage.cc: belements.conf $(CLICK_BUILDTOOL)
-	$(CLICK_BUILDTOOL) elem2package $(package) < belements.conf > bpackage.cc
+	$(CLICK_ELEM2PACKAGE) $(package) < belements.conf > bpackage.cc
 	@rm -f bpackage.bd
 
 elementmap-$(package).xml: $(clickbindir)/click-mkelemmap always

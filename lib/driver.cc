@@ -205,7 +205,7 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
 #endif
   
     ContextErrorHandler cerrh
-	(errh, "While compiling package `" + package_file + "':");
+	(errh, "While compiling package '" + package_file + "':");
 
     // write .cc file
     const ArchiveElement &ae = archive->at(ai);
@@ -223,11 +223,11 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
     errh->message("%s", compile_command.cc());
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
-	cerrh.error("could not run `%s'", compile_command.cc());
+	cerrh.error("could not run '%s'", compile_command.cc());
     else if (compile_retval < 0)
-	cerrh.error("could not run `%s': %s", compile_command.cc(), strerror(errno));
+	cerrh.error("could not run '%s': %s", compile_command.cc(), strerror(errno));
     else if (compile_retval != 0)
-	cerrh.error("`%s' failed", compile_command.cc());
+	cerrh.error("'%s' failed", compile_command.cc());
     else
 	return tmpdir + package_file;
 
@@ -241,7 +241,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
     if (!p || p->loaded)
 	return;
 
-    ContextErrorHandler cerrh(errh, "While loading package `" + name + "':");
+    ContextErrorHandler cerrh(errh, "While loading package '" + name + "':");
 
 #ifdef CLICK_TOOL
     String suffix = ".to", cxx_suffix = ".t.cc";
@@ -258,7 +258,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 	package = tmpdir + "/" + name + suffix;
 	FILE *f = fopen(package.c_str(), "wb");
 	if (!f) {
-	    cerrh.error("cannot open `%s': %s", package.c_str(), strerror(errno));
+	    cerrh.error("cannot open '%s': %s", package.c_str(), strerror(errno));
 	    package = String();
 	} else {
 	    const ArchiveElement &ae = archive->at(ai);
@@ -275,7 +275,7 @@ clickdl_load_requirement(String name, const Vector<ArchiveElement> *archive, Err
 	if (!package)
 	    package = clickpath_find_file(name + ".o", "lib", CLICK_LIBDIR);
 	if (!package)
-	    cerrh.error("can't find required package `%s%s'\nin CLICKPATH or `%s'", name.cc(), suffix.cc(), CLICK_LIBDIR);
+	    cerrh.error("can't find required package '%s%s'\nin CLICKPATH or '%s'", name.cc(), suffix.cc(), CLICK_LIBDIR);
     }
 
     p->loaded = true;
@@ -309,7 +309,7 @@ RequireLexerExtra::require(String name, ErrorHandler *errh)
 	clickdl_load_requirement(name, _archive, errh);
 # endif
     if (!click_has_provision(name.c_str()))
-	errh->error("requirement `%s' not available", name.cc());
+	errh->error("requirement '%s' not available", name.cc());
 }
 
 }

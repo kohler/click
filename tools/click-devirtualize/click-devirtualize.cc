@@ -379,7 +379,7 @@ particular purpose.\n");
   // choose driver for output
   full_elementmap.check_completeness(router, p_errh);
 
-  String cc_suffix = ".cc";
+  String suffix = "";
   String driver_requirement = "";
   if (!full_elementmap.driver_indifferent(router)) {
     bool linuxmodule_ok = full_elementmap.driver_compatible
@@ -394,11 +394,11 @@ particular purpose.\n");
     else if (!userlevel_ok && compile_user > 0)
       p_errh->fatal("configuration incompatible with user-level driver");
     else if (compile_kernel > 0 || (linuxmodule_ok && compile_user <= 0)) {
-      cc_suffix = ".k.cc";
+      suffix = ".k";
       driver_requirement = "linuxmodule ";
       full_elementmap.set_driver(Driver::LINUXMODULE);
     } else {
-      cc_suffix = ".u.cc";
+      suffix = ".u";
       driver_requirement = "userlevel ";
       full_elementmap.set_driver(Driver::USERLEVEL);
     }
@@ -420,29 +420,33 @@ particular purpose.\n");
     exit(0);
   }
   
-  // output
-  StringAccum out;
-  out << "/** click-compile: -w -fno-access-control */\n\
-#include <click/config.h>\n\
-#include <click/package.hh>\n";
-  specializer.output(out);
-  
   // find name of package
   String package_name = "devirtualize";
   int uniqueifier = 1;
   while (1) {
-    if (router->archive_index(package_name + cc_suffix) < 0)
+    if (router->archive_index(package_name + suffix + ".cc") < 0)
       break;
     uniqueifier++;
     package_name = "devirtualize" + String(uniqueifier);
   }
   router->add_requirement(package_name);
 
-  specializer.output_package(package_name, out, errh);
+  // output
+  StringAccum header, source;
+  source << "/** click-compile: -w -fno-access-control */\n";
+  header << "#ifndef CLICK_" << package_name << suffix << "_HH\n"
+	 << "#define CLICK_" << package_name << suffix << "_HH\n"
+	 << "#include <click/package.hh>\n#include <click/element.hh>\n";
+  
+  specializer.output_package(package_name, source, errh);
+  specializer.output(header, source);
+
+  header << "#endif\n";
 
   // output source code if required
   if (source_only) {
-    fwrite(out.data(), 1, out.length(), outf);
+    fwrite(header.data(), 1, header.length(), outf);
+    fwrite(source.data(), 1, source.length(), outf);
     fclose(outf);
     exit(0);
   }
@@ -457,12 +461,20 @@ particular purpose.\n");
     // find Click binaries
     String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
 
+    // write header file
+    String hh_filename = package_name + suffix + ".hh";
+    FILE *f = fopen((tmpdir + hh_filename).c_str(), "w");
+    if (!f)
+	errh->fatal("%s: %s", (tmpdir + hh_filename).c_str(), strerror(errno));
+    fwrite(header.data(), 1, header.length(), f);
+    fclose(f);
+    
     // write C++ file
-    String cxx_filename = package_name + cc_suffix;
-    FILE *f = fopen((tmpdir + cxx_filename).c_str(), "w");
+    String cxx_filename = package_name + suffix + ".cc";
+    f = fopen((tmpdir + cxx_filename).c_str(), "w");
     if (!f)
       errh->fatal("%s: %s", (tmpdir + cxx_filename).c_str(), strerror(errno));
-    fwrite(out.data(), 1, out.length(), f);
+    fwrite(source.data(), 1, source.length(), f);
     fclose(f);
 
     // write any archived headers
@@ -509,10 +521,14 @@ particular purpose.\n");
   
   // read .cc and .?o files, add them to archive
   {
-    ArchiveElement ae = init_archive_element(package_name + cc_suffix, 0600);
-    ae.data = out.take_string();
+    ArchiveElement ae = init_archive_element(package_name + suffix + ".cc", 0600);
+    ae.data = source.take_string();
     router->add_archive(ae);
 
+    ae.name = package_name + suffix + ".hh";
+    ae.data = header.take_string();
+    router->add_archive(ae);
+    
     if (compile_kernel > 0) {
       ae.name = package_name + ".ko";
       ae.data = file_string(tmpdir + ae.name, errh);
@@ -532,7 +548,7 @@ particular purpose.\n");
       router->add_archive(init_archive_element("elementmap-devirtualize.xml", 0600));
     ArchiveElement &ae = router->archive("elementmap-devirtualize.xml");
     ElementMap em(ae.data);
-    specializer.output_new_elementmap(full_elementmap, em, package_name + cc_suffix, driver_requirement);
+    specializer.output_new_elementmap(full_elementmap, em, package_name + suffix + ".cc", driver_requirement);
     ae.data = em.unparse("devirtualize");
   }
 

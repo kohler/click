@@ -616,140 +616,138 @@ compile_classifiers(RouterT *r, const String &package_name,
 		    bool compile_kernel, bool compile_user, ErrorHandler *errh)
 {
     // create C++ files
-    StringAccum header, source;
+    StringAccum header, source, source_body;
     header << "#ifndef CLICK_" << package_name << "_HH\n"
 	   << "#define CLICK_" << package_name << "_HH\n"
 	   << "#include <click/package.hh>\n#include <click/element.hh>\n";
-    source << "#include <click/config.h>\n\
-#include \"" << package_name << ".hh\"\n\
-#include <click/glue.hh>\n\
-/** click-compile: -w */\n";
 
-  // analyze Classifiers into programs
-  analyze_classifiers(r, classifiers, errh);
+    // analyze Classifiers into programs
+    analyze_classifiers(r, classifiers, errh);
 
-  // add requirement
-  r->add_requirement(package_name);
+    // add requirement
+    r->add_requirement(package_name);
 
-  // write Classifier programs
-  for (int i = 0; i < all_programs.size(); i++)
-    output_classifier_program(i, header, source, errh);
+    // write Classifier programs
+    for (int i = 0; i < all_programs.size(); i++)
+	output_classifier_program(i, header, source_body, errh);
 
-  // change element landmarks and types
-  for (int i = 0; i < classifiers.size(); i++) {
-    ElementT *classifier_e = classifiers[i];
-    const Classifier_Program &prog = all_programs[program_map[i]];
-    classifier_e->set_type(prog.eclass);
-    classifier_e->set_configuration(String());
-    change_landmark(classifier_e);
-  }
+    // change element landmarks and types
+    for (int i = 0; i < classifiers.size(); i++) {
+	ElementT *classifier_e = classifiers[i];
+	const Classifier_Program &prog = all_programs[program_map[i]];
+	classifier_e->set_type(prog.eclass);
+	classifier_e->set_configuration(String());
+	change_landmark(classifier_e);
+    }
   
     // write final text
     header << "#endif\n";
+    source << "/** click-compile: -w */\n";
     {
 	StringAccum elem2package, cmd_sa;
 	int nclasses = gen_cxxclass_names.size();
 	for (int i = 0; i < nclasses; i++)
-	    elem2package <<  "-\t-\t" << gen_cxxclass_names[i] << '-' << gen_eclass_names[i] << '\n';
-	cmd_sa << click_buildtool_prog << " elem2package -I fastclassifier";
-	source << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);    
+	    elem2package <<  "-\t\"" << package_name << ".hh\"\t" << gen_cxxclass_names[i] << '-' << gen_eclass_names[i] << '\n';
+	cmd_sa << click_buildtool_prog << " elem2package fastclassifier";
+	source << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);
     }
+    source << "CLICK_DECLS\n" << source_body << "CLICK_ENDDECLS\n";
 
-  // compile files if required
-  String tmpdir;
+    // compile files if required
+    String tmpdir;
   
-  if (compile_kernel || compile_user) {
-    // create temporary directory
-    if (!(tmpdir = click_mktmpdir(errh)))
-      exit(1);
+    if (compile_kernel || compile_user) {
+	// create temporary directory
+	if (!(tmpdir = click_mktmpdir(errh)))
+	    exit(1);
     
-    String filename = tmpdir + package_name + ".hh";
-    FILE *f = fopen(filename.c_str(), "w");
-    if (!f)
-      errh->fatal("%s: %s", filename.c_str(), strerror(errno));
-    fwrite(header.data(), 1, header.length(), f);
-    fclose(f);
+	String filename = tmpdir + package_name + ".hh";
+	FILE *f = fopen(filename.c_str(), "w");
+	if (!f)
+	    errh->fatal("%s: %s", filename.c_str(), strerror(errno));
+	fwrite(header.data(), 1, header.length(), f);
+	fclose(f);
 
-    String cxx_filename = package_name + ".cc";
-    f = fopen((tmpdir + cxx_filename).c_str(), "w");
-    if (!f)
-      errh->fatal("%s%s: %s", tmpdir.cc(), cxx_filename.cc(), strerror(errno));
-    fwrite(source.data(), 1, source.length(), f);
-    fclose(f);
+	String cxx_filename = package_name + ".cc";
+	f = fopen((tmpdir + cxx_filename).c_str(), "w");
+	if (!f)
+	    errh->fatal("%s%s: %s", tmpdir.cc(), cxx_filename.cc(), strerror(errno));
+	fwrite(source.data(), 1, source.length(), f);
+	fclose(f);
     
-    // compile kernel module
-    if (compile_kernel) {
-      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
-      int compile_retval = system(compile_command.cc());
-      if (compile_retval == 127)
-	errh->fatal("could not run '%s'", compile_command.cc());
-      else if (compile_retval < 0)
-	errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
-      else if (compile_retval != 0)
-	errh->fatal("'%s' failed", compile_command.cc());
+	// compile kernel module
+	if (compile_kernel) {
+	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
+	    int compile_retval = system(compile_command.cc());
+	    if (compile_retval == 127)
+		errh->fatal("could not run '%s'", compile_command.cc());
+	    else if (compile_retval < 0)
+		errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
+	    else if (compile_retval != 0)
+		errh->fatal("'%s' failed", compile_command.cc());
+	}
+
+	// compile userlevel
+	if (compile_user) {
+	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=user --package=" + package_name + ".uo " + cxx_filename;
+	    int compile_retval = system(compile_command.cc());
+	    if (compile_retval == 127)
+		errh->fatal("could not run '%s'", compile_command.cc());
+	    else if (compile_retval < 0)
+		errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
+	    else if (compile_retval != 0)
+		errh->fatal("'%s' failed", compile_command.cc());
+	}
     }
 
-    // compile userlevel
-    if (compile_user) {
-      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=user --package=" + package_name + ".uo " + cxx_filename;
-      int compile_retval = system(compile_command.cc());
-      if (compile_retval == 127)
-	errh->fatal("could not run '%s'", compile_command.cc());
-      else if (compile_retval < 0)
-	errh->fatal("could not run '%s': %s", compile_command.cc(), strerror(errno));
-      else if (compile_retval != 0)
-	errh->fatal("'%s' failed", compile_command.cc());
+    // add .cc, .hh and .?o files to archive
+    {
+	ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
+	ae.data = source.take_string();
+	r->add_archive(ae);
+
+	ae.name = package_name + ".hh";
+	ae.data = header.take_string();
+	r->add_archive(ae);
+
+	if (compile_kernel) {
+	    ae.name = package_name + ".ko";
+	    ae.data = file_string(tmpdir + ae.name, errh);
+	    r->add_archive(ae);
+	}
+	
+	if (compile_user) {
+	    ae.name = package_name + ".uo";
+	    ae.data = file_string(tmpdir + ae.name, errh);
+	    r->add_archive(ae);
+	}
     }
-  }
 
-  // add .cc, .hh and .?o files to archive
-  {
-    ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
-    ae.data = source.take_string();
-    r->add_archive(ae);
-
-    ae.name = package_name + ".hh";
-    ae.data = header.take_string();
-    r->add_archive(ae);
-
-    if (compile_kernel) {
-      ae.name = package_name + ".ko";
-      ae.data = file_string(tmpdir + ae.name, errh);
-      r->add_archive(ae);
+    // add elementmap to archive
+    {
+	if (r->archive_index("elementmap-fastclassifier.xml") < 0)
+	    r->add_archive(init_archive_element("elementmap-fastclassifier.xml", 0600));
+	ArchiveElement &ae = r->archive("elementmap-fastclassifier.xml");
+	ElementMap em(ae.data);
+	String header_file = package_name + ".hh";
+	for (int i = 0; i < gen_eclass_names.size(); i++)
+	    em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h", "x/x");
+	ae.data = em.unparse("fastclassifier");
     }
-    
-    if (compile_user) {
-      ae.name = package_name + ".uo";
-      ae.data = file_string(tmpdir + ae.name, errh);
-      r->add_archive(ae);
-    }
-  }
 
-  // add elementmap to archive
-  {
-    if (r->archive_index("elementmap-fastclassifier.xml") < 0)
-      r->add_archive(init_archive_element("elementmap-fastclassifier.xml", 0600));
-    ArchiveElement &ae = r->archive("elementmap-fastclassifier.xml");
-    ElementMap em(ae.data);
-    String header_file = package_name + ".hh";
-    for (int i = 0; i < gen_eclass_names.size(); i++)
-      em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h", "x/x");
-    ae.data = em.unparse("fastclassifier");
-  }
-
-  // add classifier configurations to archive
-  {
-    if (r->archive_index("fastclassifier_info") < 0)
-      r->add_archive(init_archive_element("fastclassifier_info", 0600));
-    ArchiveElement &ae = r->archive("fastclassifier_info");
-    StringAccum sa;
-    for (int i = 0; i < gen_eclass_names.size(); i++) {
-      sa << gen_eclass_names[i] << '\t'
-	 << cids[all_programs[i].type]->name << '\t'
-	 << cp_quote(old_configurations[i]) << '\n';
+    // add classifier configurations to archive
+    {
+	if (r->archive_index("fastclassifier_info") < 0)
+	    r->add_archive(init_archive_element("fastclassifier_info", 0600));
+	ArchiveElement &ae = r->archive("fastclassifier_info");
+	StringAccum sa;
+	for (int i = 0; i < gen_eclass_names.size(); i++) {
+	    sa << gen_eclass_names[i] << '\t'
+	       << cids[all_programs[i].type]->name << '\t'
+	       << cp_quote(old_configurations[i]) << '\n';
+	}
+	ae.data += sa.take_string();
     }
-    ae.data += sa.take_string();
-  }
 }
 
 

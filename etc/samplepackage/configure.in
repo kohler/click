@@ -16,7 +16,7 @@ dnl
 dnl the usual `configure.in' boilerplate
 dnl
 
-AC_INIT(config.h.in)
+AC_INIT(sampleelt.cc)
 AC_CONFIG_HEADER(config.h)
 AC_SUBST(ac_configure_args)
 
