@@ -1,3 +1,9 @@
+2003-01-29 Wednesday 11:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: todevice.hh (1.20), todevice.cc (1.31): add
+	IGNORE_QUEUE_OVERFLOWS keyword argument, to optionally suppress
+	some click chatter
+
 2003-01-28 Tuesday 23:43  Eddie Kohler <kohler@icir.org>
 
 	* elements/standard/classifier.cc (1.44): Classifier optimizer bug:
