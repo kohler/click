@@ -5,7 +5,6 @@ NEWS
 README
 
 etc/libclick/lc-Makefile.in:Makefile.in
-acclick.m4
 click-buildtool.in
 click-compile.in
 click-mkelemmap
@@ -15,6 +14,8 @@ config-userlevel.h.in
 config.sub
 etc/libclick/lc-configure.in:configure.in
 install-sh
+m4
+m4/click.m4
 missing
 mkinstalldirs
 pathvars.h.in

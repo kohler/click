@@ -72,6 +72,7 @@ distdir: always
 	done
 	cd $(distdir) && $(PERL) -pi -e 's/enable_linuxmodule=yes/enable_linuxmodule=no/;' configure.in
 	cd $(distdir) && $(ACLOCAL) && $(AUTOCONF)
+	cd $(distdir) && rm -rf autom4te*
 	echo configure >>$(distdir)/DISTFILES
 
 always:
