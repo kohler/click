@@ -168,6 +168,40 @@ Classifier::clone() const
 
 // DOMINATOR OPTIMIZER
 
+/* Optimize Classifier decision trees by removing useless branches. If we have
+   a path like:
+
+   0: x>=5?  ---Y-->  1: y==2?  ---Y-->  2: x>=6?  ---Y-->  3: ...
+       \
+        --N-->...
+
+   and every path to #1 leads from #0, then we can move #1's "Y" branch to
+   point at state #3, since we know that the test at state #2 will always
+   succeed.
+
+   There's an obvious exponential-time algorithm to check this. Namely, given
+   a state, enumerate all paths that could lead you to that state; then check
+   the test against all tests on those paths. This terminates -- the
+   classifier structure is a DAG -- but clearly in exptime.
+
+   We reduce the algorithm to polynomial time by storing a bounded number of
+   paths per state. For every state S, we maintain a set of up to
+   MAX_DOMLIST==4 path subsets D1...D4, so *every* path to state S is a
+   superset of at least one Di. (There is no requirement that S contains Di as
+   a contiguous subpath. Rather, Di might leave out edges.) We can then shift
+   edges as follows. Given an edge S.x-->T, check whether T is resolved (to
+   the same answer) by every one of the path subsets D1...D4 corresponding to
+   S. If so, then the edge S.x-->T is redundant; shift it to destination
+   corresponding to the answer to T. (In the example above, we shift #1.Y to
+   point to #3, since that is the destination of the #2.Y edge.)
+
+   _dom holds all the Di sets for all states.
+   _dom_start[k] says where, in _dom, a given Di begins.
+   _domlist_start[S] says where, in _dom_start, the list of dominator sets
+   for state S begins.
+*/
+
+
 Classifier::DominatorOptimizer::DominatorOptimizer(Classifier *c)
   : _c(c)
 {
@@ -300,9 +334,10 @@ Classifier::DominatorOptimizer::calculate_dom(int state)
     intersect_lists(_dom, pdom, pdom_end, 0, pdom.size(), _dom);
     _dom.push_back(brno(state, false));
     _dom_start.push_back(_dom.size());
-    pdom_pos = pdom.size();
+    pdom_pos = pdom.size();	// skip loop
   }
 
+  // Our dominators equal predecessors' dominators.
   for (int p = pdom_pos; p < pdom.size(); p++) {
     for (int i = pdom[p]; i < pdom_end[p]; i++) {
       int x = _dom[i];
@@ -318,6 +353,8 @@ Classifier::DominatorOptimizer::calculate_dom(int state)
 
 void
 Classifier::DominatorOptimizer::intersect_lists(const Vector<int> &in, const Vector<int> &start, const Vector<int> &end, int pos1, int pos2, Vector<int> &out)
+  /* Define subvectors V1...Vk as in[start[i] ... end[i]-1] for each pos1 <= i
+     < pos2. This code places an intersection of V1...Vk in 'out'. */
 {
   assert(pos1 <= pos2 && pos2 <= start.size() && pos2 <= end.size());
   if (pos1 == pos2)
@@ -327,15 +364,21 @@ Classifier::DominatorOptimizer::intersect_lists(const Vector<int> &in, const Vec
       out.push_back(in[i]);
   } else {
     Vector<int> pos(start);
+    
     // Be careful about lists that end with something <= 0.
-    int x = -1;
+    int x = -1;			// 'x' describes the intersection path.
+    
     while (1) {
       int p = pos1, k = 0;
+      // Search for an 'x' that is on all of V1...Vk. We step through V1...Vk
+      // in parallel, using the 'pos' array (initialized to 'start'). On
+      // reaching the end of any of the arrays, exit.
       while (k < pos2 - pos1) {
 	while (pos[p] < end[p] && in[pos[p]] < x)
 	  pos[p]++;
 	if (pos[p] >= end[p])
 	  goto done;
+	// Stepped past 'x'; current value is a new candidate
 	if (in[pos[p]] > x)
 	  x = in[pos[p]], k = 0;
 	p++;
@@ -343,6 +386,9 @@ Classifier::DominatorOptimizer::intersect_lists(const Vector<int> &in, const Vec
 	  p = pos1;
 	k++;
       }
+      // Went through all of V1...Vk without changing x, so it's on all lists
+      // (0 will definitely be the first such); add it to 'out' and step
+      // through again
       out.push_back(x);
       x++;
     }
