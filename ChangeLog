@@ -1,3 +1,29 @@
+2002-09-16 Monday 01:30  Eddie Kohler <kohler@icir.org>
+
+	* elements/etherswitch/etherswitch.cc (1.17),
+	elements/grid/dsdvroutetable.cc (1.23),
+	elements/grid/dsdvroutetable.hh (1.19),
+	elements/grid/floodinglocquerier.cc (1.35),
+	elements/grid/gridroutetable.cc (1.59), elements/grid/linkstat.cc
+	(1.12), elements/grid/linktracker.cc (1.11),
+	elements/grid/locqueryresponder.cc (1.24),
+	elements/grid/loctable.cc (1.13), elements/grid/simplelocquerier.cc
+	(1.15), elements/grid/updateroutes.cc (1.29),
+	elements/icmp/icmppingrewriter.cc (1.18),
+	elements/ip/ipaddrrewriter.cc (1.17), elements/ip/iprw.cc (1.47),
+	elements/ip6/addresstranslator.cc (1.17),
+	elements/tcpudp/iprewriter.cc (1.39),
+	elements/tcpudp/tcprewriter.cc (1.28), include/click/bighashmap.hh
+	(1.14), include/click/hashmap.cc (1.13), include/click/hashmap.hh
+	(1.11), lib/lexer.cc (1.60), lib/templatei.cc (1.12),
+	tools/click-devirtualize/click-devirtualize.cc (1.33),
+	tools/click-flatten/click-flatten.cc (1.10),
+	tools/click-install/common.cc (1.9),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.22),
+	tools/click-xform/click-xform.cc (1.48), tools/lib/elementmap.cc
+	(1.8), tools/lib/hashmapi.cc (1.9), tools/lib/routert.cc (1.60):
+	STL compatibility for HashMap iterators
+
 2002-09-13 Friday 14:46  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.19), aclocal.m4 (1.19), config-userlevel.h.in

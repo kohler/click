@@ -1,3 +1,11 @@
+2002-09-16 Monday 01:30  Eddie Kohler <kohler@icir.org>
+
+	* include/click/bighashmap.hh, include/click/hashmap.cc,
+	include/click/bighashmap.hh, include/click/hashmap.cc,
+	include/click/hashmap.hh, include/click/hashmap.hh,
+	libsrc/lexer.cc, libsrc/templatei.cc: STL compatibility for HashMap
+	iterators
+
 2002-09-13 Friday 14:46  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4, config-userlevel.h.in: #include <new> preferred to
