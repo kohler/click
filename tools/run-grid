@@ -266,10 +266,6 @@ if ($ENABLE_GF) {
 }
 
 my_system("$BUILDSCRIPT $GRID_IP $GRID_NETMASK $GRID_IF $GW_OPTIONS $LOC_OPTION $LOC_TAG_OPTION $GF_OPTION --config $CLICK_CONFIG --params $GRID_PARAMS --click $REAL_CLICK > $CLICK_CONFIG_OUT");
-$CLICK_CONFIG_CMD = "cpp -DCPP_IS_GATEWAY=$IS_GATEWAY $CLICK_CONFIG";
-
-
-# $OLDFH = select(P); $| = 1; select($OLDFH);
 
 if ( fork () ) {
     my_system "$CLICK $CLICK_CONFIG_OUT";
@@ -552,7 +548,7 @@ sub setup_net_info {
 	# decrease mtu on the kerneltap so we don't get packets too big to encapsulate.  
 	# this is hacky, maybe it should be in the kerneltap code with the ifconfig/route calls.  
 	# but i forget why those are in there at all...
-	my_system "/sbin/ifconfig tap1 mtu 1400";
+	my_system "/sbin/ifconfig tap0 mtu 1400";
 
     } else {
 	
