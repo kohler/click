@@ -19,6 +19,14 @@ sub shquote ($) {
     "'$t'";
 }
 
+sub min (@) {
+    my($m) = pop @_;
+    foreach my $mm (@_) {
+	$m = $mm if $mm < $m;
+    }
+    $m;
+}
+
 
 ## read file
 
@@ -72,8 +80,8 @@ sub file_err ($$) {
 sub _shell_split (\@\@$$;$) {
     my($arr, $lineno_arr, $text, $lineno, $rewrite_sub) = @_;
     $rewrite_sub = sub { $_[0] } if !defined($rewrite_sub);
-    my($qf, $qb, $out) = (0, 0, '');
-    my($sq, $dq, $bq, $nl, $hh) = (-2, -2, -2, -2, -2);
+    my($qf, $qb, $func, $out) = (0, 0, 0, '');
+    my($sq, $dq, $bq, $nl, $hh, $lb, $rb) = (-2, -2, -2, -2, -2, -2, -2);
     my($first, $pos) = (0, 0);
     $lineno -= ($text =~ tr/\n//);
     
@@ -83,6 +91,8 @@ sub _shell_split (\@\@$$;$) {
 	$bq = ::index2($text, "\`", $pos) if $bq < $pos;
 	$nl = ::index2($text, "\n", $pos) if $nl < $pos;
 	$hh = ::index2($text, "#", $pos) if $hh < $pos;
+	$lb = ::index2($text, "{", $pos) if $lb < $pos;
+	$rb = ::index2($text, "}", $pos) if $rb < $pos;
 	
 	if ($qf == 1) {
 	    $qf = 0 if $sq < length $text;
@@ -97,9 +107,7 @@ sub _shell_split (\@\@$$;$) {
 	}
 
 	# find minimum
-	my($min, $min1) = (($sq < $dq ? $sq : $dq), ($bq < $nl ? $bq : $nl));
-	$min1 = ($min1 < $hh ? $min1 : $hh);
-	$min = $min1 if $min > $min1;
+	my($min) = ::min($sq, $dq, $bq, $nl, $hh, $lb, $rb);
 	$out .= $rewrite_sub->(substr($text, $pos, $min - $pos), 0) . substr($text, $min, 1);
 	
 	if ($sq == $min) {
@@ -111,11 +119,17 @@ sub _shell_split (\@\@$$;$) {
 	} elsif ($bq == $min) {
 	    $qb = !$qb;
 	    $pos = $bq + 1;
+	} elsif ($lb == $min) {
+	    $func++;
+	    $pos = $lb + 1;
+	} elsif ($rb == $min) {
+	    $func--;
+	    $pos = $rb + 1;
 	} elsif ($hh == $min) {
 	    $out .= substr($text, $min + 1, $nl - $min);
 	    $lineno++;
 	    $pos = $nl + 1;
-	} elsif (!$qb && ($nl == $pos || substr($text, $nl - 1, 1) ne "\\")) {
+	} elsif (!$qb && !$func && ($nl == $pos || substr($text, $nl - 1, 1) ne "\\")) {
 	    push @$arr, $out;
 	    push @$lineno_arr, $lineno;
 	    $out = '';
@@ -339,10 +353,11 @@ sub script_text ($&$) {
 
     my($t) = <<'EOD';
 testie_failed () {
-    echo >&2; echo testie_failure:$? >&2
-    exit 1
+    exitval=$?
+    test $exitval = 0 || (echo; echo testie_failure:$exitval) >&2
+    exit $exitval
 }
-trap testie_failed ERR
+trap testie_failed EXIT
 EOD
 
     my($scriptarr, $linenoarr) = ($tt->{$script_type}, $tt->{$script_type . "_lineno"});
@@ -573,6 +588,7 @@ sub check_expects ($$) {
 package main;
 
 my($dir, @show, $show_stdout, $show_stderr, $any_tests_done);
+my($SHELL) = "/bin/sh -e -m";
 
 sub script_fn_to_fn ($) {
     my($fn) = @_;
@@ -613,7 +629,7 @@ sub execute_test ($$$) {
 	close SCR;
 	
 	my($actual_stderr) = script_fn_to_fn('stderr');
-	my($exitval) = system("cd $dir; /bin/sh ./+require+ </dev/null >/dev/null 2>$actual_stderr");
+	my($exitval) = system("cd $dir; $SHELL ./+require+ </dev/null >/dev/null 2>$actual_stderr");
 
 	# if it exited with a bad value, quit
 	if ($exitval) {
@@ -635,7 +651,7 @@ sub execute_test ($$$) {
     my($actual_stdin) = ($tt->have_file('stdin') ? script_fn_to_fn('stdin') : "/dev/null");
     my($actual_stdout) = ($show_stdout || $tt->have_file('stdout') ? script_fn_to_fn('stdout') : "/dev/null");
     my($actual_stderr) = script_fn_to_fn('stderr');
-    my($exitval) = system("cd $dir; /bin/sh ./+script+ <$actual_stdin >$actual_stdout 2>$actual_stderr");
+    my($exitval) = system("cd $dir; $SHELL ./+script+ <$actual_stdin >$actual_stdout 2>$actual_stderr");
     $any_tests_done = 1;
 
     # echo files
