@@ -121,8 +121,6 @@ class _BigHashMap_iterator : public _BigHashMap_const_iterator<K, V> { public:
   _BigHashMap_iterator(BigHashMap<K, V> *m) : inherited(m) { }
 
   V &value() const		{ return const_cast<V &>(inherited::value()); }
-  typedef typename BigHashMap<K, V>::Pair Pair;
-  Pair *pair() const		{ return const_cast<Pair *>(inherited::pair()); }
   
 };
 
@@ -277,8 +275,6 @@ class _BigHashMap_iterator<K, void *> : public _BigHashMap_const_iterator<K, voi
   _BigHashMap_iterator(BigHashMap<K, void *> *m) : inherited(m) { }
   
   void *&value() const			{ return _elt->value; }
-  typedef typename BigHashMap<K, void *>::Pair Pair;
-  Pair *pair() const			{ return _elt; }
 
 };
 
@@ -347,7 +343,7 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
   T *find(const K &k) const { return reinterpret_cast<T *>(inherited::find(k)); }
   T **findp(const K &k) const { return reinterpret_cast<T **>(inherited::findp(k)); }
   T *operator[](const K &k) const { return reinterpret_cast<T *>(inherited::operator[](k)); }
-  T *&find_force(const K &k) { return reinterpret_cast<T *>(inherited::find_force(k)); }
+  T *&find_force(const K &k) { return reinterpret_cast<T *&>(inherited::find_force(k)); }
   
   bool insert(const K &k, T *v)		{ return inherited::insert(k, v); }
   // bool remove(const K &)		inherited
@@ -398,8 +394,6 @@ class _BigHashMap_iterator<K, T *> : public _BigHashMap_const_iterator<K, T *> {
   _BigHashMap_iterator(BigHashMap<K, T *> *t) : inherited(t) { }
 
   T *&value() const	{ return reinterpret_cast<T *&>(_elt->value); }
-  typedef typename BigHashMap<K, T *>::Pair Pair;
-  Pair *pair() const	{ return const_cast<Pair *>(inherited::pair()); }
   
 };
 
