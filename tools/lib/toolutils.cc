@@ -190,9 +190,11 @@ const char *
 ElementMap::driver_name(int d)
 {
   if (d == DRIVER_LINUXMODULE)
-    return "kernel";
+    return "linuxmodule";
   else if (d == DRIVER_USERLEVEL)
-    return "user-level";
+    return "userlevel";
+  else if (d == DRIVER_BSDMODULE)
+    return "bsdmodule";
   else
     return "??";
 }
@@ -204,6 +206,8 @@ ElementMap::driver_requirement(int d)
     return "linuxmodule";
   else if (d == DRIVER_USERLEVEL)
     return "userlevel";
+  else if (d == DRIVER_BSDMODULE)
+    return "bsdmodule";
   else
     return "";
 }
@@ -214,8 +218,9 @@ requirement_contains(const String &req, const String &n)
   int pos = 0;
   while ((pos = req.find_left(n)) >= 0) {
     int rpos = pos + n.length();
-    if ((pos == 0 || isspace(req[pos - 1]))
-	&& (rpos == req.length() || isspace(req[rpos])))
+    // XXX should be more careful about '|' bars
+    if ((pos == 0 || isspace(req[pos - 1]) || req[pos - 1] == '|')
+	&& (rpos == req.length() || isspace(req[rpos]) || req[rpos] == '|'))
       return true;
     pos = rpos;
   }
@@ -297,14 +302,16 @@ ElementMap::package(int i) const
 }
 
 int
-ElementMap::get_driver(const String &requirements)
+ElementMap::get_driver_mask(const String &requirements)
 {
+  int driver_mask = 0;
   if (requirement_contains(requirements, "linuxmodule"))
-    return DRIVER_LINUXMODULE;
-  else if (requirement_contains(requirements, "userlevel"))
-    return DRIVER_USERLEVEL;
-  else
-    return -1;
+    driver_mask |= 1 << DRIVER_LINUXMODULE;
+  if (requirement_contains(requirements, "userlevel"))
+    driver_mask |= 1 << DRIVER_USERLEVEL;
+  if (requirement_contains(requirements, "bsdmodule"))
+    driver_mask |= 1 << DRIVER_BSDMODULE;
+  return (driver_mask ? driver_mask : ALL_DRIVERS);
 }
 
 int
@@ -315,7 +322,7 @@ ElementMap::add(const Elt &e)
   
   Elt &my_e = _e.back();
   if (my_e.requirements)
-    my_e.driver = get_driver(my_e.requirements);
+    my_e.driver_mask = get_driver_mask(my_e.requirements);
   my_e.name_next = _name_map[e.name];
   my_e.cxx_next = _cxx_map[e.name];
   
@@ -536,11 +543,11 @@ ElementMap::map_indexes(const RouterT *r, Vector<int> &map_indexes,
 }
 
 bool
-ElementMap::driver_indifferent(const Vector<int> &map_indexes) const
+ElementMap::driver_indifferent(const Vector<int> &map_indexes, int driver_mask = ALL_DRIVERS) const
 {
   for (int i = 0; i < map_indexes.size(); i++) {
     int idx = map_indexes[i];
-    if (idx > 0 && _e[idx].driver >= 0)
+    if (idx > 0 && (_e[idx].driver_mask & driver_mask) != driver_mask)
       return false;
   }
   return true;
@@ -549,19 +556,18 @@ ElementMap::driver_indifferent(const Vector<int> &map_indexes) const
 bool
 ElementMap::driver_compatible(const Vector<int> &map_indexes, int driver) const
 {
+  int mask = 1 << driver;
   for (int i = 0; i < map_indexes.size(); i++) {
     int idx = map_indexes[i];
-    if (idx <= 0 || _e[idx].driver < 0)
-      continue;
-    bool any = false;
-    while (idx > 0 && !any) {
-      if (_e[idx].driver < 0 || _e[idx].driver == driver)
-	any = true;
-      else
+    if (idx > 0 && !(_e[idx].driver_mask & mask)) {
+      while (idx > 0) {
+	if (_e[idx].driver_mask & mask)
+	  goto found;
 	idx = _e[idx].name_next;
-    }
-    if (!any)
+      }
       return false;
+    }
+   found: ;
   }
   return true;
 }
@@ -577,14 +583,15 @@ ElementMap::driver_compatible(const RouterT *router, int driver, ErrorHandler *e
 void
 ElementMap::limit_driver(int driver)
 {
+  int mask = 1 << driver;
   for (HashMap<String, int>::Iterator i = _name_map.first(); i; i++) {
     int t = i.value();
-    while (t > 0 && _e[t].driver >= 0 && _e[t].driver != driver)
+    while (t > 0 && !(_e[t].driver_mask & mask))
       t = i.value() = _e[t].name_next;
   }
   for (HashMap<String, int>::Iterator i = _cxx_map.first(); i; i++) {
     int t = i.value();
-    while (t > 0 && _e[t].driver >= 0 && _e[t].driver != driver)
+    while (t > 0 && !(_e[t].driver_mask & mask))
       t = i.value() = _e[t].cxx_next;
   }
 }

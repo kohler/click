@@ -62,7 +62,7 @@ Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
 Options:
       --defs              Outputs preprocessor options for userlevel drivers.
       --libs              Outputs link options for userlevel drivers.
-  -t, --target TARGET     Sets target to `kernel', `user', or `tool'.
+  -t, --target TARGET     Sets target to `linuxmodule', `userlevel', or `tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
   -d, --directory DIR     Change to directory DIR.
   -q, --quiet             Be quiet (don't echo commands or print warnings).
@@ -134,18 +134,24 @@ fi
 
 
 case $target in
-  k|ke|ker|kern|kerne|kernel|m|mo|mod|modu|modul|module)
+  k|ke|ker|kern|kerne|kernel|l|li|lin|linu|linux|linuxm|linuxmo|linuxmod|linuxmodu|linuxmodul|linuxmodule)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
     iincludes="${include_source} -I${includedir} -I${linuxdir}/include"
     icxxflags="@CXXFLAGS_NDEBUG@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
-    target=module;;
-  u|us|use|user)
+    target=linuxmodule;;
+  u|us|use|user|userl|userle|userlev|userleve|userlevel)
     idefs="@DEFS@ -DCLICK_USERLEVEL"
     iincludes="${include_source} -I${includedir}"
     icxxflags="@CXXFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
-    target=user;;
+    target=userlevel;;
+  b|bs|bsd|bsdm|bsdmo|bsdmod|bsdmodu|bsdmodul|bsdmodule)
+    idefs="@DEFS@ -DCLICK_BSDMODULE"
+    iincludes="${include_source} -I${includedir}"
+    icxxflags="@CXXFLAGS_NDEBUG@"
+    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
+    target=bsdmodule;;
   t|to|too|tool)
     idefs="@DEFS@ -DCLICK_TOOL"
     iincludes="${include_source} -I${includedir}"
@@ -155,7 +161,7 @@ case $target in
   "")
     echo "click-compile: you must specify a target" 1>&2; exit 1;;
   *)
-    echo "click-compile: acceptable targets are \`kernel', \`user', and \`tool'" 1>&2; exit 1;;
+    echo "click-compile: acceptable targets are \`linuxmodule', \`userlevel', and \`tool'" 1>&2; exit 1;;
 esac
 
 exec_command () {
@@ -180,7 +186,7 @@ if test "x$package" != "xNONE"; then
     compile_file $file
     files="$files "`echo $file | sed 's/\.c*$/\.o/;s/^.*\///'`
   done
-  if test $target = module; then
+  if test $target = linuxmodule; then
     vfile=kernelversion
     test -f $vfile.c && echo "click-compile: A file \`$vfile.c' already exists in this directory!" 1>&2 && echo "click-compile: You must remove it, or run me somewhere else." 1>&2 && exit 1
     trap 'rm -f $vfile.c $vfile.o' 0
@@ -195,7 +201,7 @@ EOF
     exec_command "${CC-@CC@ -w} -I${linuxdir}/include -c $vfile.c"
     exec_command "ld -r -o $package $files $vfile.o"
     exit 0 
-  elif test $target = user -o $target = tool; then
+  elif test $target = userlevel -o $target = tool; then
     exec_command "ld -shared -o $package $files"
     exit 0
   fi

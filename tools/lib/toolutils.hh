@@ -25,17 +25,20 @@ class ElementMap { public:
     String requirements;
     String provisions;
     int def_index;
-    int driver;
+    int driver_mask;
     int name_next;
     int cxx_next;
 
     Elt();
+    bool allows_driver(int d) const	{ return (driver_mask&(1<<d)) != 0; }
     String *component(int);
   };
 
   static const int DRIVER_LINUXMODULE = 0;
   static const int DRIVER_USERLEVEL = 1;
-  static const int NDRIVERS = 2;
+  static const int DRIVER_BSDMODULE = 2;
+  static const int ALL_DRIVERS = 0x7;
+  static const int NDRIVERS = 3;
   static const char *driver_name(int);
   static const char *driver_requirement(int);
   
@@ -94,7 +97,7 @@ class ElementMap { public:
   
   void map_indexes(const RouterT *, Vector<int> &, ErrorHandler * = 0) const;
   
-  bool driver_indifferent(const Vector<int> &map_indexes) const;
+  bool driver_indifferent(const Vector<int> &map_indexes, int driver_mask = ALL_DRIVERS) const;
   bool driver_compatible(const Vector<int> &map_indexes, int driver) const;
   bool driver_compatible(const RouterT *, int driver, ErrorHandler * =0) const;
   void limit_driver(int driver);
@@ -109,7 +112,7 @@ class ElementMap { public:
   Vector<String> _def_compile_flags;
   Vector<String> _def_package;
 
-  int get_driver(const String &);
+  int get_driver_mask(const String &);
 
   enum {
     D_NONE,
@@ -124,7 +127,7 @@ class ElementMap { public:
 
 inline
 ElementMap::Elt::Elt()
-  : def_index(0), driver(-1), name_next(0), cxx_next(0)
+  : def_index(0), driver_mask(ALL_DRIVERS), name_next(0), cxx_next(0)
 {
 }
 

@@ -25,6 +25,15 @@ my(@source_file, @header_file, @click_name, @cxx_name,
    %click_name_to_id, %cxx_name_to_id);
 my(@includes) = ( '.' );
 
+sub driver_mask ($) {
+    my($m) = 0;
+    # XXX "|" syntax?
+    $m |= 1 if $_[0] =~ /\blinuxmodule\b/;
+    $m |= 2 if $_[0] =~ /\buserlevel\b/;
+    $m |= 4 if $_[0] =~ /\bbsdmodule\b/;
+    $m;
+}
+
 sub process_file ($) {
   my($filename) = @_;
   my($headername, $headerfile, $i);
@@ -120,14 +129,15 @@ sub process_file ($) {
     # check to see if overloading is valid
     if ($click_name[$i] && exists($click_name_to_id{$click_name[$i]})) {
       my($j) = $click_name_to_id{$click_name[$i]};
-      if (($requirements[$i] =~ /\blinuxmodule\b/ && $requirements[$j] =~ /\buserlevel\b/)
-	  || ($requirements[$i] =~ /\buserlevel\b/ && $requirements[$j] =~ /\blinuxmodule\b/)) {
+      my($dm_a) = driver_mask($requirements[$i]);
+      my($dm_b) = driver_mask($requirements[$j]);
+      if (($dm_a & $dm_b) == 0) {
 	# ok
       } else {
 	print STDERR "invalid multiple definition of element class \`$click_name[$i]'\n";
 	print STDERR $header_file[$j], ": first definition here\n";
 	print STDERR $header_file[$i], ": second definition here\n";
-	print STDERR "(Two classes may share a name only if one of them is valid only at userlevel\nand the other is valid only in the Linux kernel module. Add explicit\nELEMENT_REQUIRES(linuxmodule) and ELEMENT_REQUIRES(userlevel) statements.)\n";
+	print STDERR "(Two classes may share a name only if they work in disjoint drivers.\nAdd explicit ELEMENT_REQUIRES() statements.)\n";
       }
     }
     $click_name_to_id{$click_name[$i]} = $i;

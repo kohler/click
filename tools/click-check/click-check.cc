@@ -42,17 +42,24 @@
 #define ROUTER_OPT		303
 #define OUTPUT_OPT		304
 #define FILTER_OPT		305
-#define KERNEL_OPT		306
-#define USERLEVEL_OPT		307
+#define QUIET_OPT		306
+
+#define FIRST_DRIVER_OPT	1000
+#define LINUXMODULE_OPT		(1000 + ElementMap::DRIVER_LINUXMODULE)
+#define USERLEVEL_OPT		(1000 + ElementMap::DRIVER_USERLEVEL)
+#define BSDMODULE_OPT		(1000 + ElementMap::DRIVER_BSDMODULE)
 
 static Clp_Option options[] = {
+  { "bsdmodule", 'b', BSDMODULE_OPT, 0, Clp_Negate },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "filter", 'p', FILTER_OPT, 0, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
+  { "kernel", 'k', LINUXMODULE_OPT, 0, Clp_Negate },
+  { "linuxmodule", 'l', LINUXMODULE_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
-  { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
+  { "quiet", 'q', QUIET_OPT, 0, Clp_Negate },
+  { "userlevel", 'u', USERLEVEL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -81,8 +88,9 @@ Options:\n\
   -f, --file FILE           Read router configuration from FILE.\n\
   -o, --output FILE         If valid, write configuration to FILE.\n\
   -p, --filter              If valid, write configuration to standard output.\n\
-  -k, --kernel              Check kernel driver version of configuration.\n\
-  -u, --user                Check user-level driver version of configuration.\n\
+  -b, --bsdmodule           Check for bsdmodule driver.\n\
+  -l, --linuxmodule         Check for linuxmodule driver.\n\
+  -u, --userlevel           Check for userlevel driver.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
   -v, --version             Print version number and exit.\n\
@@ -97,8 +105,13 @@ check_once(const RouterT *r, const char *filename,
 	   bool indifferent, bool print_context, bool print_ok_message,
 	   ErrorHandler *full_errh)
 {
+  const char *driver_name = ElementMap::driver_name(driver);
+  
   if (!indifferent && !full_elementmap.driver_compatible(elementmap_indexes, driver)) {
-    full_errh->error("%s: configuration incompatible with %s driver", filename, ElementMap::driver_name(driver));
+    if (!full_elementmap.provides(0, driver_name))
+      full_errh->error("%s: Click compiled without support for %s driver", filename, driver_name);
+    else
+      full_errh->error("%s: configuration incompatible with %s driver", filename, driver_name);
     return;
   }
   
@@ -110,7 +123,7 @@ check_once(const RouterT *r, const char *filename,
   }
   ErrorHandler *errh = full_errh;
   if (print_context)
-    errh = new ContextErrorHandler(errh, "While checking configuration for " + String(ElementMap::driver_name(driver)) + " driver:");
+    errh = new ContextErrorHandler(errh, "While checking configuration for " + String(driver_name) + " driver:");
   int before = errh->nerrors();
   int before_warnings = errh->nwarnings();
 
@@ -119,7 +132,7 @@ check_once(const RouterT *r, const char *filename,
   // ... it will report errors as required
 
   if (print_ok_message && errh->nerrors() == before && errh->nwarnings() == before_warnings)
-    full_errh->message("%s: configuration OK in %s driver", filename, ElementMap::driver_name(driver));
+    full_errh->message("%s: configuration OK in %s driver", filename, driver_name);
   if (!indifferent)
     delete em;
   if (print_context)
@@ -144,8 +157,9 @@ main(int argc, char **argv)
   const char *router_file = 0;
   const char *output_file = 0;
   bool output = false;
-  int check_kernel = -1;
-  int check_userlevel = -1;
+  bool quiet = false;
+  int driver_indifferent_mask = ElementMap::ALL_DRIVERS;
+  int driver_mask = 0;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -197,13 +211,18 @@ particular purpose.\n");
       output = true;
       break;
 
-     case KERNEL_OPT:
-      check_kernel = (clp->negated ? 0 : 1);
+     case QUIET_OPT:
+      quiet = !clp->negated;
       break;
-      
+
+     case LINUXMODULE_OPT:
      case USERLEVEL_OPT:
-      check_userlevel = (clp->negated ? 0 : 1);
-      break;
+     case BSDMODULE_OPT: {
+       int dm = 1 << (opt - FIRST_DRIVER_OPT);
+       driver_mask = (clp->negated ? driver_mask & ~dm : driver_mask | dm);
+       driver_indifferent_mask &= ~dm;
+       break;
+     }
       
      bad_option:
      case Clp_BadOption:
@@ -242,28 +261,18 @@ particular purpose.\n");
   Vector<int> elementmap_indexes;
   elementmap.map_indexes(r, elementmap_indexes, errh);
   bool indifferent = elementmap.driver_indifferent(elementmap_indexes);
-  if (indifferent) {
-    if (check_kernel < 0 && check_userlevel < 0)
-      // only bother to check one of them
-      check_kernel = 0, check_userlevel = 1;
-  } else {
-    if (check_kernel < 0 && check_userlevel < 0) {
-      check_kernel = elementmap.driver_compatible(elementmap_indexes, ElementMap::DRIVER_LINUXMODULE);
-      check_userlevel = elementmap.driver_compatible(elementmap_indexes, ElementMap::DRIVER_USERLEVEL);
-    }
+  if (driver_indifferent_mask == ElementMap::ALL_DRIVERS) {
+    for (int d = 0; d < ElementMap::NDRIVERS; d++)
+      if (elementmap.driver_compatible(elementmap_indexes, d))
+	driver_mask |= 1 << d;
   }
 
   // actually check the drivers
-  if (check_kernel > 0)
-    check_once(r, router_file, elementmap_indexes, elementmap,
-	       ElementMap::DRIVER_LINUXMODULE, indifferent,
-	       check_userlevel > 0, !output,
-	       errh);
-  if (check_userlevel > 0)
-    check_once(r, router_file, elementmap_indexes, elementmap,
-	       ElementMap::DRIVER_USERLEVEL, indifferent,
-	       check_kernel > 0, !output,
-	       errh);
+  for (int d = 0; d < ElementMap::NDRIVERS; d++)
+    if (driver_mask & (1 << d))
+      check_once(r, router_file, elementmap_indexes, elementmap,
+		 d, indifferent, driver_mask & ~(1 << d), !output && !quiet,
+		 errh);
   
   // write configuration
   if (errh->nerrors() != 0)
