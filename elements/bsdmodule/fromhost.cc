@@ -27,10 +27,13 @@
 #include <net/if_var.h>
 #include <net/ethernet.h>
 
+static AnyDeviceMap fromhost_map;
+
 FromHost::FromHost()
-    : Element(0, 1), _inq(0)
+	: _inq(0)
 {
     MOD_INC_USE_COUNT;
+    add_output();
 }
 
 FromHost::~FromHost()
@@ -46,9 +49,11 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (cp_va_parse(conf, this, errh,
                     cpString, "interface name", &_devname,
-                    cpEnd) < 0 )
+                    cpEnd) < 0 ) {
+printf ("FromHost 1\n");
         return -1;
-    if (find_device(false, errh) < 0)
+    }
+    if (find_device(false, &fromhost_map, errh) < 0)
         return -1;
     return 0;
 }

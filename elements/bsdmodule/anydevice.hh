@@ -22,10 +22,13 @@ CLICK_CXX_UNPROTECT
 #define GET_STATS_RESET(a,b,c,d,e,f)	/* nothing */
 #define SET_STATS(a,b,c)		/* nothing */
 
+class AnyDeviceMap;
+
 class AnyDevice : public Element { public:
 
-    enum { CONFIGURE_PHASE_FROMOS = CONFIGURE_PHASE_DEFAULT,
-	   CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMOS + 1 };
+    enum { CONFIGURE_PHASE_FROMHOST = CONFIGURE_PHASE_DEFAULT - 2,
+           CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_DEFAULT - 1,
+           CONFIGURE_PHASE_POLLDEVICE = CONFIGURE_PHASE_DEFAULT };
 
     AnyDevice();
     ~AnyDevice();
@@ -33,6 +36,10 @@ class AnyDevice : public Element { public:
     const String &devname() const	{ return _devname; }
     struct ifnet *device() const	{ return _dev; }
     int ifindex() const			{ return _dev ? _dev->if_index : -1; }
+
+    bool promisc() const                { return _promisc; }
+    void set_promisc()                  { _promisc = true; }
+
     AnyDevice *next() const		{ return _next; }
     void set_next(AnyDevice *d)		{ _next = d; }
     void set_max_tickets(int t)		{ _max_tickets = t; }
@@ -40,21 +47,25 @@ class AnyDevice : public Element { public:
     void set_need_wakeup()		{ _need_wakeup = true; }
     void clear_need_wakeup()		{ _need_wakeup = false; }
 
-    int find_device(bool, ErrorHandler *);
+    int find_device(bool, AnyDeviceMap *, ErrorHandler *);
+    void set_device(net_device *, AnyDeviceMap *);
+    void clear_device(AnyDeviceMap *);
     void adjust_tickets(int work);
 
   protected:
 
     String _devname;
+    struct ifnet *_dev;
     Task _task;
+
+    bool _promisc : 1;
+    AnyDevice *_next;
 
   private:
 
     bool _need_wakeup;
     int _max_tickets;
     int _idles;
-    AnyDevice *_next;
-    struct ifnet *_dev;
 
 };
 
@@ -63,7 +74,8 @@ AnyDevice::wakeup()
 {
     if (_need_wakeup) {
 	_need_wakeup = false;
-	_task.wakeup();
+	/* _task.wakeup(); MARKO XXX */
+	_task.reschedule(); /* MARKO XXX */
 	return 1;
     } else
 	return 0;

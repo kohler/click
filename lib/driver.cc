@@ -130,7 +130,7 @@ click_public_packages(CLICK_NAME(Vector)<CLICK_NAME(String)> &v)
 	    v.push_back(provisions[i].name);
 }
 
-#ifdef CLICK_LINUXMODULE
+#if defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)
 extern "C" void
 click_cleanup_packages()
 {

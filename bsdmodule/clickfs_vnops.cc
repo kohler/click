@@ -1,10 +1,11 @@
 /* -*- c-basic-offset: 4 -*- */
 /*
  * clickfs_vnops.cc -- Click configuration filesystem for BSD
- * Nickolai Zeldovich, Luigi Rizzo, Eddie Kohler
+ * Nickolai Zeldovich, Luigi Rizzo, Eddie Kohler, Marko Zec
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
- * Copyright (c) 2001-2002 International Computer Science Institute
+ * Copyright (c) 2001-2004 International Computer Science Institute
+ * Copyright (c) 2004 University of Zagreb
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -35,60 +36,32 @@ CLICK_CXX_UNPROTECT
 #include <click/error.hh>
 
 #define UIO_MX			32
-#define	CLICKFS_DEBUG		0
-#define	CLICKFS_DEBUG_DEF	0
 
 vop_t **clickfs_vnops;
 
 static enum vtype clickfs_vtype[] = {
     VDIR,		/* CLICKFS_DIRENT_DIR */
-    VREG,		/* CLICKFS_DIRENT_EHANDLE */
-    VLNK,		/* CLICKFS_DIRENT_ELINK */
-    VREG		/* CLICKFS_DIRENT_CONFIG */
+    VREG,		/* CLICKFS_DIRENT_HANDLE */
+    VLNK,		/* CLICKFS_DIRENT_SYMLINK */
 };
 
-struct clickfs_node {
-    struct clickfs_dirent *dirent;	/* Directory tree node */
-    String	*wbuf;
-    off_t	w_offset;
-    String	*rbuf;
-    off_t	r_offset;
-    off_t	next_read;		/* pos. of next read */
-};
-
-#define	VTON(vn)	((struct clickfs_node *)(vn)->v_data)
-
-static struct clickfs_node *
-new_clickfs_node()
-{
-    struct clickfs_node *cp;
-    cp = (struct clickfs_node *) malloc(sizeof(*cp), M_TEMP, M_WAITOK);
-    if (cp) {
-	cp->dirent = NULL;
-	cp->wbuf = cp->rbuf = NULL;
-	cp->w_offset = cp->r_offset = 0;
-    }
-    return cp;
-}
+#define	VTOCDE(vn)	((struct clickfs_dirent *)(vn)->v_data)
 
 int
 clickfs_rootvnode(struct mount *mp, struct vnode **vpp)
 {
-    int ret;
     struct vnode *vp;
-    struct clickfs_node *cp;
+    struct clickfs_dirent *de;
+    int error;
 
-    ret = getnewvnode(VT_NON, mp, clickfs_vnops, vpp);
-    if (ret)
-	return ret;
+    error = getnewvnode(VT_NON, mp, clickfs_vnops, vpp);
+    if (error)
+	return error;
+    de = clickfs_tree_root;
+
     vp = *vpp;
-
-    cp = new_clickfs_node();
-    cp->dirent = clickfs_tree_root;
-    clickfs_tree_ref_dirent(cp->dirent);
-
-    vp->v_data = cp;
-    vp->v_type = clickfs_vtype[cp->dirent->type];
+    vp->v_data = de;
+    vp->v_type = clickfs_vtype[de->type];
     vp->v_flag = VROOT;
     return 0;
 }
@@ -102,9 +75,7 @@ clickfs_lookup(struct vop_lookup_args *ap)
     char *pname = cnp->cn_nameptr;
     int plen = cnp->cn_namelen;
     struct proc *p = cnp->cn_proc;
-    struct clickfs_node *cp = VTON(dvp);
-    struct clickfs_dir *cdp;
-    struct clickfs_dirent *cde;
+    struct clickfs_dirent *cde= VTOCDE(dvp);
     int error = 0;
 
     *vpp = NULLVP;
@@ -115,32 +86,19 @@ clickfs_lookup(struct vop_lookup_args *ap)
 	return EROFS;
     VOP_UNLOCK(dvp, 0, p);
 
-#if CLICKFS_DEBUG
-    {
-	char *p;
-	int i;
-
-	printf("lookup(");
-	for (p=pname, i=0; *p && i<plen; p++, i++)
-	    printf("%c", *p);
-	printf(") on a %d type node\n", cp->dirent->type);
-    }
-#endif
-
     if (plen == 1 && *pname == '.') {
 	*vpp = dvp;
 	VREF(dvp);
-	goto done;
+	return (0);
     }
 
-    cdp = (struct clickfs_dir *)cp->dirent->param;
-    cde = cdp->ent_head;
-    while (cde) {
-	if (plen == strlen(cde->name) &&
-	    !strncmp(pname, cde->name, plen)) break;
-
-	cde = cde->next;
-    }
+    if (cnp->cn_flags & ISDOTDOT)
+	cde = cde->data.dir.parent;
+    else
+	for (cde = cde->data.dir.head; cde; cde = cde->next)
+	    if (plen == strlen(cde->name) &&
+		!strncmp(pname, cde->name, plen))
+		break;
 
     if (!cde) {
 	error = (cnp->cn_nameiop == LOOKUP) ? ENOENT : EROFS;
@@ -150,11 +108,11 @@ clickfs_lookup(struct vop_lookup_args *ap)
     error = getnewvnode(VT_NON, dvp->v_mount, clickfs_vnops, vpp);
     if (error)
 	goto done;
-    (*vpp)->v_data = cp = new_clickfs_node();
 
-    clickfs_tree_ref_dirent(cde);
-    cp->dirent = cde;
-    (*vpp)->v_type = clickfs_vtype[cp->dirent->type];
+    (*vpp)->v_data = cde;
+    (*vpp)->v_type = clickfs_vtype[cde->type];
+    if (cde == clickfs_tree_root)
+	(*vpp)->v_flag = VROOT;
     vn_lock(*vpp, LK_SHARED | LK_RETRY, p);
     return 0;
 
@@ -167,16 +125,31 @@ int
 clickfs_getattr(struct vop_getattr_args *ap)
 {
     struct vnode *vp = ap->a_vp;
-    struct clickfs_node *cp = VTON(vp);
     struct vattr *vap = ap->a_vap;
+    struct clickfs_dirent *cde = VTOCDE(vp);
 
-    bzero(vap, sizeof(*vap));
+    VATTR_NULL(vap);
     vap->va_type = vp->v_type;
-    vap->va_mode = cp->dirent->perm;
-    vap->va_nlink = 1;
-    vap->va_fsid = VNOVAL;
-    vap->va_fileid = VNOVAL;
-    vap->va_blocksize = 1024;
+    vap->va_mode = cde->perm;
+    vap->va_fileid = cde->fileno;
+    vap->va_nlink = cde->file_refcnt;
+    vap->va_flags = 0;
+    vap->va_blocksize = PAGE_SIZE;
+    vap->va_fsid = vp->v_mount->mnt_stat.f_fsid.val[0];
+    nanotime(&vap->va_ctime);
+    vap->va_atime = vap->va_mtime = vap->va_ctime;
+    vap->va_uid = vap->va_gid = 0;
+    switch (cde->type) {
+	case CLICKFS_DIRENT_DIR:
+	    vap->va_bytes = vap->va_size = (cde->file_refcnt-2)*sizeof(*cde);
+	    break;
+	case CLICKFS_DIRENT_HANDLE:
+	    vap->va_bytes = vap->va_size = 0;
+	    break;
+	case CLICKFS_DIRENT_SYMLINK:
+	    vap->va_bytes = vap->va_size = strlen(cde->data.slink.name);
+	    break;
+    }
 
     return 0;
 }
@@ -184,10 +157,6 @@ clickfs_getattr(struct vop_getattr_args *ap)
 int
 clickfs_setattr(struct vop_setattr_args *ap)
 {
-    struct vnode *vp = ap->a_vp;
-    struct clickfs_node *cp = VTON(vp);
-    struct vattr *vap = ap->a_vap;
-
     /*
      * This doesn't do anything, so we just pretend that it worked.
      */
@@ -197,20 +166,6 @@ clickfs_setattr(struct vop_setattr_args *ap)
 int
 clickfs_reclaim(struct vop_reclaim_args *ap)
 {
-    struct vnode *vp = ap->a_vp;
-    struct clickfs_node *cp = VTON(vp);
-
-    if (cp) {
-	if (cp->wbuf)
-	    delete cp->wbuf;
-	if (cp->rbuf)
-	    delete cp->rbuf;
-	if (cp->dirent)
-	    clickfs_tree_put_dirent(cp->dirent);
-	free(cp, M_TEMP);
-    }
-    vp->v_data = NULL;
-
     return 0;
 }
 
@@ -218,15 +173,11 @@ int
 clickfs_inactive(struct vop_inactive_args *ap)
 {
     struct vnode *vp = ap->a_vp;
-    struct clickfs_node *cp = VTON(vp);
+    struct clickfs_dirent *cde = VTOCDE(vp);
 
-    if (cp) {
-	if (cp->dirent) {
-	    clickfs_tree_put_dirent(cp->dirent);
-	    cp->dirent = NULL;
-	}
-    }
-
+    if (cde->type == CLICKFS_DIRENT_HANDLE)
+	cde->data.handle.r_offset = cde->data.handle.w_offset = 0;
+    vp->v_data = NULL;
     vp->v_type = VNON;
     VOP_UNLOCK(vp, 0, ap->a_p);
 
@@ -236,13 +187,12 @@ clickfs_inactive(struct vop_inactive_args *ap)
 int
 clickfs_access(struct vop_access_args *ap)
 {
+    struct vnode *vp = ap->a_vp;
     struct ucred *cred = ap->a_cred;
     mode_t mode = ap->a_mode;
-    struct clickfs_node *cp = VTON(ap->a_vp);
-    int perm = cp->dirent->perm;
+    struct clickfs_dirent *cde = VTOCDE(vp);
+    int perm = cde->perm;
 
-printf("access: mode 0x%08x perm 0x%08x VR %d RD %d\n",
-	mode, perm, VREAD, VWRITE);
     /* XXX fixme: also allow others, not just root */
     if (cred->cr_uid != 0)
 	return EPERM;
@@ -254,15 +204,15 @@ printf("access: mode 0x%08x perm 0x%08x VR %d RD %d\n",
 }
 
 static int
-clickfs_int_send_dirent(char *name, int *skip, int *filecnt, struct uio *uio)
+clickfs_int_send_dirent(char *name, int *skip, int fileno, struct uio *uio)
 {
     struct dirent d;
 
-    bzero((caddr_t) &d, UIO_MX);
+    bzero((caddr_t) &d, sizeof(d));
     d.d_namlen = strlen(name);
-    bcopy(name, d.d_name, d.d_namlen+1);
+    bcopy(name, d.d_name, d.d_namlen + 1);
     d.d_reclen = UIO_MX;
-    d.d_fileno = ((*filecnt)++) + 3;
+    d.d_fileno = fileno;
     d.d_type = DT_UNKNOWN;
 
     if (*skip > 0) {
@@ -270,22 +220,18 @@ clickfs_int_send_dirent(char *name, int *skip, int *filecnt, struct uio *uio)
 	return 0;
     }
 
+    uio->uio_offset += UIO_MX;
     return uiomove((caddr_t) &d, UIO_MX, uio);
 }
 
 int
 clickfs_readdir(struct vop_readdir_args *ap)
 {
-    int skip, filecnt, off, error = 0;
+    int skip, off, error = 0;
     struct uio *uio = ap->a_uio;
     struct vnode *vp = ap->a_vp;
-    struct clickfs_node *cp = VTON(vp);
-    struct clickfs_dir *dp;
+    struct clickfs_dirent *cde = VTOCDE(vp);
     struct clickfs_dirent *de;
-
-#if CLICKFS_DEBUG
-    printf("clickfs_readdir(type=%d)\n", cp->dirent->type);
-#endif
 
     if (vp->v_type != VDIR)
 	return ENOTDIR;
@@ -295,83 +241,57 @@ clickfs_readdir(struct vop_readdir_args *ap)
 	return EINVAL;
 
     skip = (u_int) off / UIO_MX;
-    filecnt = 0;
 
+    de = cde->data.dir.head;
+    error = clickfs_int_send_dirent(".", &skip, cde->fileno, uio);
     if (!error)
-	error = clickfs_int_send_dirent(".", &skip, &filecnt, uio);
-#if 0 /* XXX check this, it does not work! */
-    if (!error)
-	error = clickfs_int_send_dirent("..", &skip, &filecnt, uio);
-#endif
-    dp = (struct clickfs_dir *)cp->dirent->param;
-    de = dp->ent_head;
+	error = clickfs_int_send_dirent("..", &skip, 2, uio);
     while (de && !error) {
-	error = clickfs_int_send_dirent(de->name, &skip, &filecnt, uio);
+	error = clickfs_int_send_dirent(de->name, &skip, de->fileno, uio);
 	de = de->next;
     }
- 
-    uio->uio_offset = filecnt * UIO_MX;
 
     return error;
 }
 
 const Router::Handler *
-clickfs_int_get_handler(struct clickfs_node *cp)
+clickfs_int_get_handler(struct clickfs_dirent *cde)
 {
-    printf("clickfs_int_get_handler 1\n");
-    if (cp->dirent == NULL) {
-	printf("clickfs_int_get_handler: null dirent\n");
-	return NULL;
-    }
-    if (cp->dirent->param == NULL) {
-	printf("clickfs_int_get_handler: null param\n");
-	return NULL;
-    }
-    int *handler_params = (int *) cp->dirent->param;
-    int eindex = handler_params[1];
-    const Router::Handler *h = Router::handlerp(click_router, handler_params[0]);
-
+    int handle = cde->data.handle.handle;
+    const Router::Handler *h = Router::handler(click_router, handle);
     return h;
 }
 
 static Element *
-clickfs_int_get_element(struct clickfs_node *cp)
+clickfs_int_get_element(struct clickfs_dirent *cde)
 {
-    int *handler_params = (int *) cp->dirent->param;
-    int eindex = handler_params[1];
+    int eindex = cde->data.handle.eindex;
     Element *e = eindex >= 0 ? click_router->element(eindex) : 0;
 
     return e;
 }
 
-#if 0
 int
 clickfs_open(struct vop_open_args *ap)
 {
     struct vnode *vp = ap->a_vp;
-    struct clickfs_node *cp = VTON(vp);
-    cp->mode = ap->a_mode;
+    struct clickfs_dirent *cde = VTOCDE(vp);
 
-printf("file has perm 0x%08x opened in mode 0x%08x\n",
-	cp->dirent->perm, ap->a_mode);
-
-    if (cp->dirent->type == CLICKFS_DIRENT_CONFIG) {
-	/* nothing to do here */
-    } else if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
-	Element *e = clickfs_int_get_element(cp);
-	const Router::Handler *h = clickfs_int_get_handler(cp);
+    if (cde->type == CLICKFS_DIRENT_HANDLE) {
+	Element *e = clickfs_int_get_element(cde);
+	const Router::Handler *h = clickfs_int_get_handler(cde);
 
 	if (!h)
 	    return ENOENT;
     }
     return 0;
 }
-#endif
 
 int
 clickfs_read(struct vop_read_args *ap)
 {
-    struct clickfs_node *cp = VTON(ap->a_vp);
+    struct vnode *vp = ap->a_vp;
+    struct clickfs_dirent *cde = VTOCDE(vp);
     struct uio *uio = ap->a_uio;
     int len, off;
 
@@ -380,143 +300,126 @@ clickfs_read(struct vop_read_args *ap)
      */
     if (ap->a_vp->v_type != VREG)
 	return EOPNOTSUPP;
-    off = uio->uio_offset - cp->r_offset;
+
+    off = uio->uio_offset - cde->data.handle.r_offset;
     if (off < 0) {
 	/*
 	 * seek back. Free the old string and reload.
 	 */
-	if (cp->rbuf) {
-	    delete cp->rbuf;
-	    cp->rbuf = NULL;
+	if (cde->data.handle.rbuf) {
+	    delete cde->data.handle.rbuf;
+	    cde->data.handle.rbuf = NULL;
 	}
-	cp->r_offset = uio->uio_offset;
+	cde->data.handle.r_offset = uio->uio_offset;
     }
-    if (!cp->rbuf) {   /* try to read */
-	if (cp->dirent->type == CLICKFS_DIRENT_CONFIG) {
-	    int h = Router::find_global_handler("config");
-	    cp->rbuf = new String(Router::global_handler(h).call_read(0));
-	} else if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
-	    Element *e = clickfs_int_get_element(cp);
-	    const Router::Handler *h = clickfs_int_get_handler(cp);
-	    if (!h)
-		return ENOENT;
-	    if (!h->read_visible())
-		return EPERM;
-	    cp->rbuf = new String(h->call_read(e));
-	}
+    if (!cde->data.handle.rbuf) {   /* try to read */
+	Element *e = clickfs_int_get_element(cde);
+	const Router::Handler *h = clickfs_int_get_handler(cde);
+	if (!h)
+	    return ENOENT;
+	if (!h->read_visible())
+	    return EPERM;
+	cde->data.handle.rbuf = new String(h->call_read(e));
     }
-    if (!cp->rbuf || cp->rbuf->out_of_memory()) {
-	delete cp->rbuf;
-	cp->rbuf = 0;
+    if (!cde->data.handle.rbuf || cde->data.handle.rbuf->out_of_memory()) {
+	delete cde->data.handle.rbuf;
+	cde->data.handle.rbuf = NULL;
 	return ENOMEM;
     }
 
-    len = cp->rbuf->length();
+    len = cde->data.handle.rbuf->length();
     if (off >= len) {
 	/*
 	 * no more data. Return 0, but get rid of the string
 	 * so future reads will refresh the data.
 	 */
-	if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
-	    cp->r_offset += len ;
-	    delete cp->rbuf;
-	    cp->rbuf = NULL;
-	}
+	cde->data.handle.r_offset += len ;
+	delete cde->data.handle.rbuf;
+	cde->data.handle.rbuf = NULL;
 	return 0;
     }
-    len = uiomove((char *)cp->rbuf->data() + off, len - off, uio);
+    len = uiomove((char *)cde->data.handle.rbuf->data() + off, len - off, uio);
     return len;
 }
 
 int
 clickfs_write(struct vop_write_args *ap)
 {
-    struct clickfs_node *cp = VTON(ap->a_vp);
+    struct vnode *vp = ap->a_vp;
+    struct clickfs_dirent *cde = VTOCDE(vp);
     struct uio *uio = ap->a_uio;
-    int off = uio->uio_offset - cp->w_offset;
+    int off = uio->uio_offset - cde->data.handle.w_offset;
     int len = uio->uio_resid;
 
-    printf("clickfs_write: 1\n");
-    if (cp->wbuf == NULL) {
-	if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
-	    const Router::Handler *h = clickfs_int_get_handler(cp);
+    /*
+     * can only write to regular files
+     */
+    if (ap->a_vp->v_type != VREG)
+	return EOPNOTSUPP;
 
-	    if (!h)
-		return ENOENT;
-	    if (!h->write_visible())
-		return EPERM;
-	}
-	cp->wbuf = new String();
-	if (cp->wbuf == NULL)
+    if (cde->data.handle.wbuf == NULL) {
+	const Router::Handler *h = clickfs_int_get_handler(cde);
+
+	if (!h)
+	    return ENOENT;
+	if (!h->write_visible())
+	    return EPERM;
+
+	cde->data.handle.wbuf = new String();
+	if (cde->data.handle.wbuf == NULL)
 	    return ENOMEM;
     }
-    printf("clickfs_write: 3\n");
 
-    int last_len = cp->wbuf->length();
+    int last_len = cde->data.handle.wbuf->length();
     int end_pos = off + len;
     if (end_pos > last_len)
-	cp->wbuf->append_fill(0, end_pos - last_len);
+	cde->data.handle.wbuf->append_fill(0, end_pos - last_len);
 
-    char *x = cp->wbuf->mutable_data() + off;
+    char *x = cde->data.handle.wbuf->mutable_data() + off;
     if (end_pos > last_len)
 	memset(x, 0, end_pos - last_len);
     return uiomove(x, len, uio);
 }
 
 int
-clickfs_fsync_body(struct clickfs_node *cp)
+clickfs_fsync_body(struct clickfs_dirent *cde)
 {
     int retval = 0;
 
-    printf("clickfs_fsync_body: 1\n");
-    if (cp->dirent->type == CLICKFS_DIRENT_CONFIG) {
-	/*
-	 * config is special. If reading, do not write,
-	 */
-	if (cp->rbuf)
-	    return 0;
-	if (cp->wbuf == NULL)
-	    cp->wbuf = new String("");
-
-	int h = Router::find_global_handler("config");
-	retval = Router::global_handler(h).call_write(*cp->wbuf, 0, click_logged_errh);
-	retval = (retval >= 0 ? 0 : -retval);
-
-	printf("clickfs_fsync_body: 2\n");
-    } else if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
-	const Router::Handler *h = clickfs_int_get_handler(cp);
+    if (cde->type == CLICKFS_DIRENT_HANDLE) {
+	const Router::Handler *h = clickfs_int_get_handler(cde);
  
-	if (cp->rbuf == NULL && cp->wbuf == NULL) {
+	if (cde->data.handle.rbuf == NULL && cde->data.handle.wbuf == NULL) {
 	    // empty write, prepare something.
-	    cp->wbuf = new String("");
+	    cde->data.handle.wbuf = new String("");
 	}
 	if (!h || !h->writable())
 	    retval = EINVAL;
-	else if (cp->wbuf != NULL) {
-	    Element *e = clickfs_int_get_element(cp);
+	else if (cde->data.handle.wbuf != NULL) {
+	    Element *e = clickfs_int_get_element(cde);
 	    String context_string = "In write handler `" + h->name() + "'";
 	    if (e)
 		context_string += String(" for `") + e->declaration() + "'";
 	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
 
-	    retval = h->call_write(*cp->wbuf, e, &cerrh);
+	    retval = h->call_write(*cde->data.handle.wbuf, e, &cerrh);
 	    retval = (retval >= 0 ? 0 : -retval);
 	}
 	/*
 	 * now dispose read buffer if any
 	 */
-	if (cp->rbuf) {
-	    delete cp->rbuf;
-	    cp->rbuf = NULL;
+	if (cde->data.handle.rbuf) {
+	    delete cde->data.handle.rbuf;
+	    cde->data.handle.rbuf = NULL;
 	}
-    }
-    /*
-     * skip current buffer
-     */
-    if (cp->wbuf) {
-	cp->w_offset += cp->wbuf->length();
-	delete cp->wbuf;
-	cp->wbuf = NULL;
+	/*
+	 * skip current buffer
+	 */
+	if (cde->data.handle.wbuf) {
+	    cde->data.handle.w_offset += cde->data.handle.wbuf->length();
+	    delete cde->data.handle.wbuf;
+	    cde->data.handle.wbuf = NULL;
+	}
     }
 
     return retval;
@@ -525,61 +428,43 @@ clickfs_fsync_body(struct clickfs_node *cp)
 int
 clickfs_close(struct vop_close_args *ap)
 {
-    struct clickfs_node *cp = VTON(ap->a_vp);
+    struct vnode *vp = ap->a_vp;
+    struct clickfs_dirent *cde = VTOCDE(vp);
     int flags = ap->a_fflag;
     int retval = 0;
 
-    printf("clickfs_close(): %s node %p\n",
-	ap->a_desc->vdesc_name, cp);
-
     if (flags & FWRITE)
-	retval = clickfs_fsync_body(cp);
+	retval = clickfs_fsync_body(cde);
+
     return retval;
 }
-
 
 int
 clickfs_readlink(struct vop_readlink_args *ap)
 {
-    struct clickfs_node *cp = VTON(ap->a_vp);
+    struct vnode *vp = ap->a_vp;
+    struct clickfs_dirent *cde = VTOCDE(vp);
 
-    if (cp->dirent->type == CLICKFS_DIRENT_SYMLINK)
-	return uiomove(cp->dirent->lnk_name,
-		       strlen(cp->dirent->lnk_name), ap->a_uio);
+    if (cde->type != CLICKFS_DIRENT_SYMLINK)
+	return EINVAL;
 
-    return EINVAL;
-}
-
-int
-clickfs_ioctl(struct vop_ioctl_args *ap)
-{   
-    struct clickfs_node *cp = VTON(ap->a_vp);
-
-    printf("clickfs_ioctl(): %s node %p\n",
-	    ap->a_desc->vdesc_name, cp);
-    return EINVAL;
+    return uiomove(cde->data.slink.name,
+		   strlen(cde->data.slink.name), ap->a_uio);
 }
 
 int
 clickfs_fsync(struct vop_fsync_args *ap)
 {   
-    struct clickfs_node *cp = VTON(ap->a_vp);
-    int retval = 0;
+    struct vnode *vp = ap->a_vp;
+    struct clickfs_dirent *cde = VTOCDE(vp);
 
-    printf("clickfs_fsync(): %s node %p\n",
-	    ap->a_desc->vdesc_name, cp);
-    retval = clickfs_fsync_body(cp);
-    return retval;
+    return(clickfs_fsync_body(cde));
 }
 
 int
 clickfs_default(struct vop_generic_args *ap)
 {
-    int ret = vop_defaultop(ap);
-#if 0
-    printf("clickfs_default: %s() = %d\n", ap->a_desc->vdesc_name, ret);
-#endif
-    return ret;
+    return(vop_defaultop(ap));
 }
 
 static struct vnodeopv_entry_desc clickfs_root_vnop_entries[] =
@@ -592,11 +477,10 @@ static struct vnodeopv_entry_desc clickfs_root_vnop_entries[] =
     { &vop_inactive_desc,		(vop_t *) clickfs_inactive	},
     { &vop_access_desc,			(vop_t *) clickfs_access	},
     { &vop_readdir_desc,		(vop_t *) clickfs_readdir	},
-//  { &vop_open_desc,			(vop_t *) clickfs_open		},
+    { &vop_open_desc,			(vop_t *) clickfs_open		},
     { &vop_read_desc,			(vop_t *) clickfs_read		},
     { &vop_write_desc,			(vop_t *) clickfs_write		},
     { &vop_close_desc,			(vop_t *) clickfs_close		},
-    { &vop_ioctl_desc,			(vop_t *) clickfs_ioctl		},
     { &vop_fsync_desc,			(vop_t *) clickfs_fsync		},
     { &vop_readlink_desc,		(vop_t *) clickfs_readlink	},
     { (struct vnodeop_desc *) NULL,	(int (*) (void *)) NULL		}

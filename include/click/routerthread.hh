@@ -11,6 +11,13 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
+#if CLICK_BSDMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <sys/systm.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
+#endif
 
 #define CLICK_DEBUG_SCHEDULING 0
 
@@ -78,6 +85,8 @@ class RouterThread : public Task { public:
     
 #ifdef CLICK_BSDMODULE
     // XXX FreeBSD
+    u_int64_t _old_tsc; /* MARKO - temp. */
+    void *_sleep_ident;
     Task *_wakeup_list;
 #endif
 
@@ -160,6 +169,9 @@ RouterThread::unsleep()
 #ifdef CLICK_LINUXMODULE
     if (_sleeper)
 	wake_up_process(_sleeper);
+#endif
+#ifdef CLICK_BSDMODULE
+    wakeup_one(&_sleep_ident);
 #endif
 }
 

@@ -88,7 +88,7 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _burst = 16;
     bool allow_nonexistent = false;
     if (cp_va_parse(conf, this, errh,
-		    cpString, "interface name", &_devname,
+		    cpString, "device name", &_devname,
 		    cpOptional,
 		    cpUnsigned, "burst size", &_burst,
 		    cpKeywords,
@@ -97,7 +97,7 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpEnd) < 0)
 	return -1;
 
-    if (find_device(allow_nonexistent, errh) < 0)
+    if (find_device(allow_nonexistent, &to_device_map, errh) < 0)
 	return -1;
     return 0;
 }

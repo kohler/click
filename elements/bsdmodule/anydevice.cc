@@ -52,13 +52,10 @@ unlock_kernel()
 }
 
 int
-AnyDevice::find_device(bool allow_nonexistent, ErrorHandler *errh)
+AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
+                       ErrorHandler *errh)
 {
     _dev = ifunit((char *) _devname.cc());
-    if (!_dev) {	// XXX move this test later.
-	errh->warning("Unable to load device\n");
-	return 0;
-    }
     if (!_dev)
 	_dev = find_device_by_ether_address(_devname, this);
     if (!_dev) {
@@ -71,8 +68,29 @@ AnyDevice::find_device(bool allow_nonexistent, ErrorHandler *errh)
 	errh->warning("device `%s' is down", _devname.cc());
 	_dev = 0;
     }
+
     return 0;
 }
+
+void
+AnyDevice::clear_device(AnyDeviceMap *adm)
+{
+#if 0 /* MARKO XXX */
+    if (_dev && _promisc)
+        dev_set_promiscuity(_dev, -1);
+#endif
+
+    if (adm)
+        adm->remove(this);
+    _dev = 0;
+}
+
+#if 0 /* MARKO XXX */
+AnyTaskDevice::AnyTaskDevice()
+    : _task(this), _idles(0)
+{
+}
+#endif
 
 void
 AnyDeviceMap::initialize()

@@ -59,6 +59,7 @@ click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 {
     if (ifp->if_poll_intren == NULL)	// not for click.
 	return ;
+
     struct mbuf *m = *mp;
     if (m->m_pkthdr.rcvif == NULL) {	// Special case: from click to FreeBSD
 	m->m_pkthdr.rcvif = ifp;	// Reset rcvif to correct value, and
@@ -175,7 +176,7 @@ FromDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpEnd) < 0)
 	return -1;
 
-    if (find_device(allow_nonexistent, errh) < 0)
+    if (find_device(allow_nonexistent, &from_device_map, errh) < 0)
 	return -1;
     return 0;
 }
@@ -212,7 +213,7 @@ FromDevice::initialize(ErrorHandler *errh)
 		   _readers);
 	_inq = (struct ifqueue *)
 	    malloc(sizeof (struct ifqueue), M_DEVBUF, M_NOWAIT|M_ZERO);
-	assert(inq);
+	assert(_inq);
 	_inq->ifq_maxlen = QSIZE;
 	(FromDevice *)(device()->if_poll_intren) = this;
     } else {

@@ -6,6 +6,10 @@
 
 #include <click/config.h>
 #include <clicknet/ip.h>
+#if CLICK_BSDMODULE
+# include <sys/param.h>
+# include <sys/proc.h>
+#endif
 #if CLICK_LINUXMODULE
 # include <linux/string.h>
 #else

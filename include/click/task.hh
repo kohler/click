@@ -9,6 +9,21 @@
 #endif
 CLICK_DECLS
 
+#ifdef CLICK_BSDMODULE
+#include <machine/cpu.h>
+#include <assert.h>	/* MARKO XXX */
+#endif
+
+#ifdef CLICK_BSDMODULE
+#define SPLCHECK				\
+	int s = splimp();			\
+	if (s == 0)				\
+	    panic("not spl'ed: %d\n", s);	\
+	splx(s);
+#else
+#define SPLCHECK
+#endif
+
 #define PASS_GT(a, b)	((int)(a - b) > 0)
 
 typedef bool (*TaskHook)(Task *, void *);
@@ -189,11 +204,18 @@ Task::fast_unschedule()
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
+#if CLICK_BSDMODULE
+    assert(!intr_nesting_level);
+    SPLCHECK
+#endif
     if (_prev) {
 	_next->_prev = _prev;
 	_prev->_next = _next;
 	_next = _prev = 0;
     }
+#if CLICK_BSDMODULE
+    splx(s);
+#endif
 #if __MTCLICK__
     return _cycle_runs;
 #else
@@ -230,6 +252,10 @@ Task::fast_reschedule()
     // tasks never run at interrupt time
     assert(!in_interrupt());
 #endif
+#if CLICK_BSDMODULE
+    // assert(!intr_nesting_level); it happens all the time from fromdevice!
+    SPLCHECK
+#endif
 
     if (!scheduled()) {
 	// increase pass
@@ -249,7 +275,11 @@ Task::fast_reschedule()
 #else
 	// look for 'n' immediately after where we should be scheduled
 	Task *n = _thread->_next;
+#ifdef CLICK_BSDMODULE /* XXX MARKO a race occured here when not spl'ed */
+	while (n->_next != NULL && n != _thread && !PASS_GT(n->_pass, _pass))
+#else
 	while (n != _thread && !PASS_GT(n->_pass, _pass))
+#endif
 	    n = n->_next;
     
 	// schedule before 'n'
@@ -264,6 +294,7 @@ Task::fast_reschedule()
 inline void
 Task::fast_schedule()
 {
+    SPLCHECK
     assert(_tickets >= 1);
     _pass = _thread->_next->_pass;
     fast_reschedule();
@@ -278,6 +309,10 @@ Task::fast_reschedule()
 #if CLICK_LINUXMODULE
     // tasks never run at interrupt time
     assert(!in_interrupt());
+#endif
+#if CLICK_BSDMODULE
+    assert(!intr_nesting_level);
+    SPLCHECK
 #endif
     if (!scheduled()) {
 	_prev = _thread->_prev;
@@ -298,6 +333,7 @@ Task::fast_schedule()
 inline void
 Task::reschedule()
 {
+    SPLCHECK
     assert(_thread);
     if (!scheduled())
 	true_reschedule();
@@ -311,6 +347,7 @@ Task::wakeup()
 {
     assert(_thread && !_prev);
     int s = splimp();
+printf("Task::wakeup() - how did we get here?\n"); /* XXX MARKO */
     _next = _thread->_wakeup_list;
     _thread->_wakeup_list = this;
     splx(s);

@@ -25,7 +25,9 @@
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
+#ifdef CLICK_LINUXMODULE
 #include <linux/sched.h>
+#endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 

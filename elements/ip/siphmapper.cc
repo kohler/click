@@ -1,7 +1,7 @@
 /*
  * sourceipmapper.{cc,hh} -- source IP mapper (using consistent hashing)
  *
- * $Id: siphmapper.cc,v 1.3 2004/03/19 09:26:48 eddietwo Exp $
+ * $Id: siphmapper.cc,v 1.4 2004/10/05 18:49:56 eddietwo Exp $
  *
  */
 
@@ -11,6 +11,10 @@
 #include <click/glue.hh>
 #if CLICK_USERLEVEL
 # include <limits.h>
+#else 
+#if CLICK_BSDMODULE
+# include <machine/limits.h>
+#endif
 #endif
 #include "siphmapper.hh"
 CLICK_DECLS

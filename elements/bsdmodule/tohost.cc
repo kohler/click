@@ -1,9 +1,10 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * tohost.{cc,hh} -- element passes packets to kernel
- * Luigi Rizzo
+ * Luigi Rizzo, Marko Zec
  *
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2001-2004 International Computer Science Institute
+ * Copyright (c) 2004 University of Zagreb
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,7 +23,38 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 
+// for watching when devices go offline
+static AnyDeviceMap to_host_map;
+#if 0 /* MARKO XXX not yet in BSD */
+static struct notifier_block device_notifier;
+extern "C" {
+static int device_notifier_hook(struct notifier_block *nb, unsigned long val, vo
+id *v);
+}
+#endif
+
+void
+ToHost::static_initialize()
+{
+    to_host_map.initialize();
+#if 0 /* MARKO XXX not yet ready */
+    device_notifier.notifier_call = device_notifier_hook;
+    device_notifier.priority = 1;
+    device_notifier.next = 0;
+    register_netdevice_notifier(&device_notifier);
+#endif
+}
+
+void
+ToHost::static_cleanup()
+{
+#if 0 /* MARKO XXX */
+    unregister_netdevice_notifier(&device_notifier);
+#endif
+}
+
 ToHost::ToHost()
+    : _sniffers(false), _allow_nonexistent(false), _drops(0)
 {
     MOD_INC_USE_COUNT;
     add_input();
@@ -36,27 +68,70 @@ ToHost::~ToHost()
 int
 ToHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    if (cp_va_parse(conf, this, errh,
-		    cpString, "interface name", &_devname,
-		    cpEnd) < 0 )
-	return -1;
-    if (find_device(false, errh) < 0)
-        return -1;
-    return 0;
+    return cp_va_parse(conf, this, errh,
+                       cpOptional,
+                       cpString, "device name", &_devname,
+                       cpKeywords,
+                       "SNIFFERS", cpBool, "send packets to sniffers only?", &_sniffers,
+                       "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?",
+ &_allow_nonexistent,
+                       cpEnd);
+
+}
+
+int
+ToHost::initialize(ErrorHandler *errh)
+{
+    // We find the device here, rather than in 'initialize', to avoid warnings
+    // about "device down" with FromHost devices -- FromHost brings up its
+    // device during initialize().
+    return (_devname ? find_device(_allow_nonexistent, &to_host_map, errh) : 0);
+}
+
+void
+ToHost::cleanup(CleanupStage)
+{
+    clear_device(&to_host_map);
 }
 
 void
 ToHost::push(int, Packet *p)
 {
+    struct ifnet *ifp = _dev;
     struct mbuf *m = p->steal_m();
     struct ether_header *eh = mtod(m, struct ether_header *);
     if (m == NULL) {
 	click_chatter("ToHost: steal_m failed");
 	return ;
     }
+
+    if (!ifp)
+	ifp = m->m_pkthdr.rcvif;
+
+    // check that device exists
+    if (!ifp) {
+	if (++_drops == 1)
+	    click_chatter("%{element}: device not set and packet has rcvif=NULL, dropping", this);
+	m_freem(m);
+	return;
+    }
+	
     m->m_pkthdr.rcvif = NULL; // tell click-ether-input to ignore this
     m_adj(m, ETHER_HDR_LEN);
-    ether_input(device(), eh, m) ;
+    ether_input(ifp, eh, m);
+}
+
+String
+ToHost::read_handler(Element *e, void *)
+{
+    ToHost *th = static_cast<ToHost *>(e);
+    return String(th->_drops) + "\n";
+}
+
+void
+ToHost::add_handlers()
+{
+    add_read_handler("drops", read_handler, 0);
 }
 
 ELEMENT_REQUIRES(AnyDevice bsdmodule)

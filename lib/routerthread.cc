@@ -29,6 +29,13 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
+#ifdef CLICK_BSDMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <sys/kthread.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
+#endif
 CLICK_DECLS
 
 #define DEBUG_RT_SCHED		0
@@ -310,13 +317,11 @@ RouterThread::run_os()
 	}
     }
     SET_STATE(S_RUNNING);
-# else				/* BSD kernel module */
-    extern int click_thread_priority;
-    int s = splhigh();
-    curproc->p_priority = curproc->p_usrpri = click_thread_priority;
-    setrunqueue(curproc);
-    mi_switch();
-    splx(s);
+# elif defined(CLICK_BSDMODULE)
+    /*yield(curproc, NULL);*/
+    tsleep(&_sleep_ident, PPAUSE, "pause", 1);
+# else
+#  error "Compiling for unknown target."
 # endif
 #endif
     
@@ -385,7 +390,13 @@ RouterThread::driver()
 
 #ifndef HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
+#ifdef CLICK_BSDMODULE  /* XXX MARKO */
+    int s = splimp();
+#endif
     run_tasks(_tasks_per_iter);
+#ifdef CLICK_BSDMODULE  /* XXX MARKO */
+    splx(s);
+#endif
 #else
     click_gettimeofday(&t_before);
     int client;
@@ -405,10 +416,15 @@ RouterThread::driver()
     // wake up tasks that went to sleep, waiting on packets
     if (_wakeup_list) {
 	int s = splimp();
+	int c = 100; /* XXX MARKO */
 	Task *t;
 	while ((t = _wakeup_list) != 0) {
 	    _wakeup_list = t->_next;
 	    t->reschedule();
+	    if (!c--) {
+		printf("driver _wakeup_list loop takes too long, givig up!\n");
+		break;
+	    }
 	}
 	splx(s);
     }
@@ -451,6 +467,9 @@ RouterThread::driver_once()
     if (!_master->check_driver())
 	return;
   
+#ifdef CLICK_BSDMODULE  /* XXX MARKO */
+    int s = splimp();
+#endif
     lock_tasks();
     Task *t = scheduled_next();
     if (t != this) {
@@ -458,6 +477,9 @@ RouterThread::driver_once()
 	t->call_hook();
     }
     unlock_tasks();
+#ifdef CLICK_BSDMODULE  /* XXX MARKO */
+    splx(s);
+#endif
 }
 
 void

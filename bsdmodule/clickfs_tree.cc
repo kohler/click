@@ -1,8 +1,10 @@
 /*
  * clickfs_tree.cc -- Click configuration filesystem for BSD
- * Nickolai Zeldovich
+ * Nickolai Zeldovich, Marko Zec
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
+ * Copyright (c) 2004 International Computer Science Institute
+ * Copyright (c) 2004 University of Zagreb
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -22,172 +24,181 @@
 #include <click/string.hh>
 #include <click/straccum.hh>
 
-struct clickfs_dirent *clickfs_tree_root;
+MALLOC_DEFINE(M_CLICKFS, "clickfs", "Click filesystem node");
 
-int
+struct clickfs_dirent *clickfs_tree_root;
+uint32_t clickfs_ino;		/* Just assume it will never rewind */
+
+void
 clickfs_tree_init()
 {
-    struct clickfs_dir *d;
     struct clickfs_dirent *de;
 
-    MALLOC(d, struct clickfs_dir *, sizeof(*d), M_TEMP, M_WAITOK);
-    d->ent_head = NULL;
+    clickfs_ino = 3;		/* Eddie will like this one ;^) */
 
-    MALLOC(de, struct clickfs_dirent *, sizeof(*de), M_TEMP, M_WAITOK);
+    MALLOC(de, struct clickfs_dirent *, sizeof(*de), M_CLICKFS, M_WAITOK);
+    bzero(de, sizeof(*de));
+    de->data.dir.head = NULL;	/* Empty dir */
+    de->data.dir.parent = NULL;	/* Root dir has no parent */
     de->type = CLICKFS_DIRENT_DIR;
     de->perm = 0755;
     *de->name = '\0';		/* The root doesn't have a useful name */
-    de->param = d;
     de->next = NULL;
-    de->refcnt = 1;
+    de->file_refcnt = 1;	/* "." and ".." count as one in root dir */
+    de->fileno = 1;
     clickfs_tree_root = de;
 
-    clickfs_tree_add_file(d, "config", CLICKFS_DIRENT_CONFIG, 0644, 0);
-
-    return 0;
+    /*
+     * Create global handlers in clickfs root dir.
+     */
+    Vector<int> handlers;
+    handlers.clear();
+    click_router->element_hindexes(0, handlers);
+    for (int h_idx=0; h_idx < handlers.size(); h_idx++)
+	clickfs_tree_add_handle(de,
+		Router::handler(click_router, handlers[h_idx]),
+		0, handlers[h_idx]);
 }
 
-struct clickfs_dir *
-clickfs_tree_add_dir(struct clickfs_dir *d, char *name, int perm)
+static struct clickfs_dirent *
+clickfs_tree_find_file(struct clickfs_dirent *cde, char *name)
 {
-    struct clickfs_dir *nd;
     struct clickfs_dirent *de;
 
-    /* Create a new directory.. */
-    MALLOC(nd, struct clickfs_dir *, sizeof(*nd), M_TEMP, M_WAITOK);
-    nd->ent_head = NULL;
+    for (de = cde->data.dir.head; de; de = de->next)
+	if (!strcmp(name, de->name)) {
+	    if (de->type == CLICKFS_DIRENT_SYMLINK) {
+		/* Our symlinks can only include ".." in the path */
+		char *np = de->data.slink.name;
+		while (!strncmp(np, "../", 3)) {
+		    cde = cde->data.dir.parent;
+		    np += 3;
+		}
+		return(clickfs_tree_find_file(cde, np));
+	    } else
+		return(de);
+	}
+    return NULL;
+}
 
-    /* Create a new directory entry that will correspond to the new
-     * directory, and add it to the parent directory.
-     */
-    MALLOC(de, struct clickfs_dirent *, sizeof(*de), M_TEMP, M_WAITOK);
+struct clickfs_dirent *
+clickfs_tree_add_dir(struct clickfs_dirent *cde, char *name, int perm)
+{
+    struct clickfs_dirent *de, *tde;
+    char *cp;
+
+    /* If name contains a '/' character, recursively add the whole path. */
+    if (cp = rindex(name, '/')) {
+	*cp = '\0';
+	cde = clickfs_tree_add_dir(cde, name, perm);
+	*cp = '/';
+	name = cp + 1;
+    }
+    
+    /* Check if a directory node with the same name already exists */
+    for (de = cde->data.dir.head; de; de = de->next)
+	if ((tde = clickfs_tree_find_file(cde, name)) &&
+	    tde->type == CLICKFS_DIRENT_DIR)
+	    return(tde);
+
+    /* Create a new directory entry and add/link it to the parent. */
+    MALLOC(de, struct clickfs_dirent *, sizeof(*de), M_CLICKFS, M_WAITOK);
+    bzero(de, sizeof(*de));
+    de->data.dir.head = NULL;	/* Empty dir */
+    de->data.dir.parent = cde;	/* Parent to the new dir */
     de->type = CLICKFS_DIRENT_DIR;
     strncpy(de->name, name, sizeof(de->name));
     de->perm = perm;
-    de->param = nd;
-    de->next = d->ent_head;
-    de->refcnt = 1;
-    d->ent_head = de;
+    de->next = cde->data.dir.head;
+    cde->data.dir.head = de;
+    de->file_refcnt = 2;	/* count both "." and ".." */
+    de->fileno = clickfs_ino++;
+    cde->file_refcnt++;
 
-    return nd;
+    return de;
 }
 
-int
-clickfs_tree_add_file(struct clickfs_dir *d, char *name,
-		      enum clickfs_dirent_type t, int perm, void *param)
+void
+clickfs_tree_add_handle(struct clickfs_dirent *cde,
+			const Router::Handler *h,
+			int eindex, int handle)
+{
+    struct clickfs_dirent *de;
+    String name = h->name();
+
+    if (!h->read_visible() && !h->write_visible())
+	return;
+
+    MALLOC(de, struct clickfs_dirent *, sizeof(*de), M_CLICKFS, M_WAITOK);
+    bzero(de, sizeof(*de));
+    de->type = CLICKFS_DIRENT_HANDLE;
+    if (h->read_visible()) de->perm |= 0444;
+    if (h->write_visible()) de->perm |= 0200;
+    strncpy(de->name, name.cc(), sizeof(de->name));
+    de->next = cde->data.dir.head;
+    cde->data.dir.head = de;
+    de->file_refcnt = 1;
+    de->fileno = clickfs_ino++;
+    cde->file_refcnt++;
+    de->data.handle.handle = handle;
+    de->data.handle.eindex = eindex;
+}
+
+void
+clickfs_tree_add_link(struct clickfs_dirent *cde, char *name, char *lnk_name)
 {
     struct clickfs_dirent *de;
 
-    MALLOC(de, struct clickfs_dirent *, sizeof(*de), M_TEMP, M_WAITOK);
-    de->type = t;
-    de->perm = perm;
-    de->param = param;
-    strncpy(de->name, name, sizeof(de->name));
-    de->next = d->ent_head;
-    de->refcnt = 1;
-    d->ent_head = de;
+    /* Do nothing if there's already a file with the same name */
+    if (clickfs_tree_find_file(cde, name))
+	return;
 
-    return 0;
-}
-
-int
-clickfs_tree_add_link(struct clickfs_dir *d, char *name, char *lnk_name)
-{
-    struct clickfs_dirent *de;
-
-    MALLOC(de, struct clickfs_dirent *, sizeof(*de), M_TEMP, M_WAITOK);
+    MALLOC(de, struct clickfs_dirent *, sizeof(*de), M_CLICKFS, M_WAITOK);
+    bzero(de, sizeof(*de));
     de->type = CLICKFS_DIRENT_SYMLINK;
     de->perm = 0777;
     strncpy(de->name, name, sizeof(de->name));
-    strncpy(de->lnk_name, lnk_name, sizeof(de->lnk_name));
-    de->param = NULL;
-    de->next = d->ent_head;
-    de->refcnt = 1;
-    d->ent_head = de;
-
-    return 0;
+    strncpy(de->data.slink.name, lnk_name, sizeof(de->data.slink.name));
+    de->next = cde->data.dir.head;
+    cde->data.dir.head = de;
+    de->file_refcnt = 1;
+    de->fileno = clickfs_ino++;
+    cde->file_refcnt++;
 }
 
 static void
-clickfs_tree_int_free_dirent(struct clickfs_dirent *de)
+clickfs_tree_free_dirent_r(struct clickfs_dirent *cde)
 {
-    if (!de) {
-	printf("clickfs_tree: trying to free null dirent!\n");
-	return;
-    }
-
-    if (de->refcnt)
-	printf("clickfs_tree: nonzero refcnt %d for a dirent!\n", de->refcnt);
-    if (de->param)
-	FREE(de->param, M_TEMP);
-    FREE(de, M_TEMP);
-}
-
-int
-clickfs_tree_put_dirent(struct clickfs_dirent *de)
-{
-    if (--de->refcnt <= 0)
-	clickfs_tree_int_free_dirent(de);
-}
-
-int
-clickfs_tree_ref_dirent(struct clickfs_dirent *de)
-{
-    de->refcnt++;
-}
-
-static void
-clickfs_tree_int_put_dirent_r(struct clickfs_dirent *de)
-{
-    if (de->type == CLICKFS_DIRENT_DIR) {
+    if (cde->type == CLICKFS_DIRENT_DIR) {
 	/*
 	 * Must traverse the directory list and free all the
 	 * sub-directory entries.
 	 */
-	struct clickfs_dir *dp = (struct clickfs_dir *)de->param;
-	struct clickfs_dirent *tde = dp->ent_head;
-
-	while (tde) {
-	    struct clickfs_dirent *nde = tde->next;
-	    clickfs_tree_unlink(dp, tde->name);
-	    tde = nde;
-	}
+	while (cde->data.dir.head)
+	    clickfs_tree_unlink(cde, cde->data.dir.head->name);
     }
-
-    clickfs_tree_put_dirent(de);
+    FREE(cde, M_CLICKFS);
 }
 
-int
-clickfs_tree_unlink(struct clickfs_dir *d, char *name)
+void
+clickfs_tree_unlink(struct clickfs_dirent *cde, char *name)
 {
-    struct clickfs_dirent **depp;
+    struct clickfs_dirent *de, *prev = NULL;
 
-    depp = &d->ent_head;
-    while (*depp) {
-	if (!strcmp(name, (*depp)->name)) {
-	    struct clickfs_dirent *tde;
-	    tde = *depp;
-	    *depp = tde->next;
-
-	    clickfs_tree_int_put_dirent_r(tde);
-	    return 0;
+    for (de = cde->data.dir.head; de; de = (prev=de)->next)
+	if (!strcmp(name, de->name)) {
+	    if (prev)
+		prev->next = de->next;
+	    else
+		cde->data.dir.head = de->next;
+	    clickfs_tree_free_dirent_r(de);
+	    cde->file_refcnt--;
+	    return;
 	}
-
-	depp = &((*depp)->next);
-    }
-
-    return ENOENT;
 }
 
-struct clickfs_dir *
-clickfs_tree_rootdir()
-{
-    return (clickfs_dir *) clickfs_tree_root->param;
-}
-
-int
+void
 clickfs_tree_cleanup()
 {
-    clickfs_tree_unlink(clickfs_tree_rootdir(), "config");
-    clickfs_tree_put_dirent(clickfs_tree_root);
+    clickfs_tree_free_dirent_r(clickfs_tree_root);
 }

@@ -163,6 +163,10 @@ Task::unschedule()
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
+#if CLICK_BSDMODULE
+    assert(!intr_nesting_level);
+    SPLCHECK
+#endif
     if (_thread) {
 	lock_tasks();
 	fast_unschedule();
@@ -180,6 +184,9 @@ Task::true_reschedule()
     if (in_interrupt())
 	/* nada */;
     else
+#endif
+#if CLICK_BSDMODULE
+    SPLCHECK
 #endif
     if (attempt_lock_tasks()) {
 	if (_router->_running >= Router::RUNNING_BACKGROUND) {
@@ -201,6 +208,10 @@ Task::strong_unschedule()
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
+#if CLICK_BSDMODULE
+    assert(!intr_nesting_level);
+    SPLCHECK
+#endif
     // unschedule() and move to the quiescent thread, so that subsequent
     // reschedule()s won't have any effect
     if (_thread) {
@@ -219,6 +230,10 @@ Task::strong_reschedule()
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
 #endif
+#if CLICK_BSDMODULE
+    assert(!intr_nesting_level);
+    SPLCHECK
+#endif
     assert(_thread);
     lock_tasks();
     fast_unschedule();
@@ -233,6 +248,10 @@ Task::change_thread(int new_preference)
 {
 #if CLICK_LINUXMODULE
     assert(!in_interrupt());
+#endif
+#if CLICK_BSDMODULE
+    assert(!intr_nesting_level);
+    SPLCHECK
 #endif
     _thread_preference = new_preference;
     // no need to verify _thread_preference; Master::thread() returns the
@@ -259,6 +278,10 @@ Task::process_pending(RouterThread *thread)
 {
     // must be called with thread->lock held
 
+#if CLICK_BSDMODULE
+    int s = splimp();
+#endif
+
     if (_thread == thread) {
 	if (_pending & CHANGE_THREAD) {
 	    // see also change_thread() above
@@ -277,6 +300,10 @@ Task::process_pending(RouterThread *thread)
 
     if (_pending)
 	add_pending(0);
+
+#if CLICK_BSDMODULE
+    splx(s);
+#endif
 }
 
 CLICK_ENDDECLS

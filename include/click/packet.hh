@@ -17,6 +17,7 @@ struct click_udp;
 # include <click/simclick.h>
 #endif
 
+
 CLICK_DECLS
 
 class IP6Address;
@@ -440,8 +441,6 @@ Packet::assimilate_mbuf(Packet *p)
   struct mbuf *m = p->m();
 
   if (!m) return;
-  if (m->m_pkthdr.len != m->m_len)
-    click_chatter("assimilate_mbuf(): inconsistent lengths, %d vs. %d", m->m_pkthdr.len, m->m_len);
 
   p->_head = (unsigned char *)
 	     (m->m_flags & M_EXT    ? m->m_ext.ext_buf :
@@ -466,14 +465,14 @@ Packet::make(struct mbuf *m)
 {
   if (!(m->m_flags & M_PKTHDR))
     panic("trying to construct Packet from a non-packet mbuf");
-  if (m->m_next)
-    click_chatter("Yow, constructing Packet from an mbuf chain!");
 
   Packet *p = new Packet;
   if (m->m_pkthdr.len != m->m_len) {
     /* click needs contiguous data */
-    click_chatter("m_pulldown, Click needs contiguous data");
-    m = m_pulldown(m, 0, m->m_pkthdr.len, NULL);
+    // click_chatter("m_pulldown, Click needs contiguous data");
+
+    if (m_pulldown(m, 0, m->m_pkthdr.len, NULL) == NULL)
+	panic("m_pulldown failed");
   }
   p->_m = m;
   assimilate_mbuf(p);
