@@ -1,15 +1,14 @@
-/* -*- c-basic-offset: 2 -*- */
-#ifndef CLICK_ICMPSENDPINGS_HH
-#define CLICK_ICMPSENDPINGS_HH
+// -*- c-basic-offset: 4 -*-
+#ifndef CLICK_ICMPPINGENCAP_HH
+#define CLICK_ICMPPINGENCAP_HH
 #include <click/element.hh>
 #include <click/timer.hh>
-#include <click/ipaddress.hh>
 CLICK_DECLS
 
 /*
 =c
 
-ICMPPingSource(SADDR, DADDR, I<KEYWORDS>)
+ICMPPingEncap(SADDR, DADDR, I<KEYWORDS>)
 
 =s ICMP, sources
 
@@ -49,31 +48,29 @@ String. Extra data in emitted pings. Default is the empty string (nothing).
 
 ICMPPingResponder, ICMPPingRewriter */
 
-class ICMPPingSource : public Element { public:
+class ICMPPingEncap : public Element { public:
+
+    ICMPPingEncap();
+    ~ICMPPingEncap();
+
+    const char *class_name() const		{ return "ICMPPingEncap"; }
+    const char *processing() const		{ return AGNOSTIC; }
+    ICMPPingEncap *clone() const;
+    
+    int configure(Vector<String> &, ErrorHandler *);
+
+    Packet *simple_action(Packet *);
+
+  private:
   
-  ICMPPingSource();
-  ~ICMPPingSource();
-  
-  const char *class_name() const		{ return "ICMPPingSource"; }
-  const char *processing() const		{ return PUSH; }
-  
-  ICMPPingSource *clone() const;
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  
-  void run_timer();
-  
- private:
-  
-  struct in_addr _src;
-  struct in_addr _dst;
-  int _count;
-  int _limit;
-  uint16_t _icmp_id;
-  int _interval;
-  Timer _timer;
-  String _data;
-  
+    struct in_addr _src;
+    struct in_addr _dst;
+    uint16_t _icmp_id;
+    uint16_t _ip_id;
+#if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
+    bool _aligned;
+#endif
+
 };
 
 CLICK_ENDDECLS

@@ -26,26 +26,26 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
-ICMPSendPings::ICMPSendPings()
+ICMPPingSource::ICMPPingSource()
   : _limit(-1), _timer(this)
 {
   MOD_INC_USE_COUNT;
   add_output();
 }
 
-ICMPSendPings::~ICMPSendPings()
+ICMPPingSource::~ICMPPingSource()
 {
   MOD_DEC_USE_COUNT;
 }
 
-ICMPSendPings *
-ICMPSendPings::clone() const
+ICMPPingSource *
+ICMPPingSource::clone() const
 {
-  return new ICMPSendPings;
+  return new ICMPPingSource;
 }
 
 int
-ICMPSendPings::configure(Vector<String> &conf, ErrorHandler *errh)
+ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _icmp_id = 0;
   _interval = 1000;
@@ -66,7 +66,7 @@ ICMPSendPings::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-ICMPSendPings::initialize(ErrorHandler *)
+ICMPPingSource::initialize(ErrorHandler *)
 {
   _count = 0;
   _timer.initialize(this);
@@ -76,7 +76,7 @@ ICMPSendPings::initialize(ErrorHandler *)
 }
 
 void
-ICMPSendPings::run_timer()
+ICMPPingSource::run_timer()
 {
   WritablePacket *q = Packet::make(sizeof(click_ip) + sizeof(struct click_icmp_echo) + _data.length());
   memset(q->data(), '\0', sizeof(click_ip) + sizeof(struct click_icmp_echo));
@@ -119,4 +119,4 @@ ICMPSendPings::run_timer()
 }
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(ICMPSendPings)
+EXPORT_ELEMENT(ICMPPingSource ICMPPingSource-ICMPSendPings)
