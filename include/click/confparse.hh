@@ -164,6 +164,7 @@ extern CpVaParseCmd
   cpSecondsAsMilli, // int *result_milli
   cpSecondsAsMicro, // int *result_micro
   cpTimeval,	// struct timeval *result
+  cpInterval,	// struct timeval *result
   cpIPAddress,	// unsigned char result[4] (or IPAddress *, or unsigned int *)
   cpIPPrefix,	// unsigned char result[4], unsigned char result_mask[4]
   cpIPAddressOrPrefix,	// unsigned char result[4], unsigned char res_mask[4]
