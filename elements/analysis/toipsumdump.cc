@@ -361,6 +361,9 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 		  sa << link;
 	      break;
 	  }
+	  case W_AGGREGATE:
+	    sa << AGGREGATE_ANNO(p);
+	    break;
 	  no_data:
 	  default:
 	    sa << '-';

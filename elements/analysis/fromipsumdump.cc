@@ -91,7 +91,7 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _active = active;
     _zero = zero;
     _multipacket = multipacket;
-    _have_flowid = false;
+    _have_flowid = _have_aggregate = _use_flowid = _use_aggregate = false;
     if (default_contents)
 	bang_data(default_contents, errh);
     if (default_flowid)
@@ -288,28 +288,29 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
 	    if (_contents[i] == W_FRAG)
 		_contents[i] = W_NONE;
 
-    // recheck whether to use `!flowid'
-    check_flowid();
+    // recheck whether to use `!flowid' and `!aggregate'
+    check_defaults();
 }
 
 void
-FromIPSummaryDump::check_flowid()
+FromIPSummaryDump::check_defaults()
 {
     _use_flowid = false;
-    if (_have_flowid) {
-	_flowid = _given_flowid;
-	for (int i = 0; i < _contents.size(); i++)
-	    if (_contents[i] == W_SRC)
-		_flowid.set_saddr(IPAddress());
-	    else if (_contents[i] == W_DST)
-		_flowid.set_daddr(IPAddress());
-	    else if (_contents[i] == W_SPORT)
-		_flowid.set_sport(0);
-	    else if (_contents[i] == W_DPORT)
-		_flowid.set_dport(0);
-	if (_flowid || _flowid.sport() || _flowid.dport())
-	    _use_flowid = true;
-    }
+    _flowid = (_have_flowid ? _given_flowid : IPFlowID());
+    _use_aggregate = _have_aggregate;
+    for (int i = 0; i < _contents.size(); i++)
+	if (_contents[i] == W_SRC)
+	    _flowid.set_saddr(IPAddress());
+	else if (_contents[i] == W_DST)
+	    _flowid.set_daddr(IPAddress());
+	else if (_contents[i] == W_SPORT)
+	    _flowid.set_sport(0);
+	else if (_contents[i] == W_DPORT)
+	    _flowid.set_dport(0);
+	else if (_contents[i] == W_AGGREGATE)
+	    _use_aggregate = false;
+    if (_flowid || _flowid.sport() || _flowid.dport())
+	_use_flowid = true;
 }
 
 void
@@ -344,9 +345,25 @@ FromIPSummaryDump::bang_flowid(const String &line, click_ip *iph,
 	}
 	_given_flowid = IPFlowID(src, htons(sport), dst, htons(dport));
 	_have_flowid = true;
-	check_flowid();
+	check_defaults();
 	if (iph)
 	    iph->ip_p = _default_proto;
+    }
+}
+
+void
+FromIPSummaryDump::bang_aggregate(const String &line, ErrorHandler *errh)
+{
+    Vector<String> words;
+    cp_spacevec(line, words);
+
+    if (words.size() != 2
+	|| !cp_unsigned(words[1], &_aggregate)) {
+	error_helper(errh, "bad !aggregate specification");
+	_have_aggregate = _use_aggregate = false;
+    } else {
+	_have_aggregate = true;
+	check_defaults();
     }
 }
 
@@ -380,16 +397,17 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	const char *data = line.data();
 	int len = line.length();
 
-	if (len >= 6 && memcmp(data, "!data", 5) == 0 && isspace(data[5])) {
-	    bang_data(line, errh);
+	if (len == 0)
 	    continue;
-	} else if (len >= 7 && memcmp(data, "!proto", 6) == 0 && isspace(data[6])) {
-	    //handle_proto_line(line, errh);
+	else if (data[0] == '!') {
+	    if (len >= 6 && memcmp(data, "!data", 5) == 0 && isspace(data[5]))
+		bang_data(line, errh);
+	    else if (len >= 8 && memcmp(data, "!flowid", 7) == 0 && isspace(data[7]))
+		bang_flowid(line, iph, errh);
+	    else if (len >= 11 && memcmp(data, "!aggregate", 10) == 0 && isspace(data[10]))
+		bang_aggregate(line, errh);
 	    continue;
-	} else if (len >= 8 && memcmp(data, "!flowid", 7) == 0 && isspace(data[7])) {
-	    bang_flowid(line, iph, errh);
-	    continue;
-	} else if (len == 0 || data[0] == '!' || data[0] == '#')
+	} else if (data[0] == '#')
 	    continue;
 
 	int ok = 0;
@@ -433,6 +451,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_TCP_SEQ:
 	      case W_TCP_ACK:
 	      case W_COUNT:
+	      case W_AGGREGATE:
 		u1 = strtoul(data + pos, &next, 0);
 		pos = next - data;
 		break;
@@ -638,6 +657,10 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		SET_PAINT_ANNO(q, u1), ok++;
 		break;
 
+	      case W_AGGREGATE:
+		SET_AGGREGATE_ANNO(q, u1), ok++;
+		break;
+
 	    }
 	}
 
@@ -840,7 +863,7 @@ static const char *content_names[] = {
     "ip src", "ip dst", "ip len", "ip proto", "ip id",
     "sport", "dport", "tcp seq", "tcp ack", "tcp flags",
     "payload len", "count", "ip frag", "ip fragoff",
-    "payload", "direction"
+    "payload", "direction", "aggregate"
 };
 
 const char *
@@ -893,6 +916,8 @@ FromIPSummaryDump::parse_content(const String &word)
 	return W_PAYLOAD;
     else if (word == "link" || word == "direction")
 	return W_LINK;
+    else if (word == "aggregate" || word == "agg")
+	return W_AGGREGATE;
     else
 	return W_NONE;
 }

@@ -142,7 +142,7 @@ class FromIPSummaryDump : public Element { public:
 	W_SRC, W_DST, W_LENGTH, W_PROTO, W_IPID,
 	W_SPORT, W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS,
 	W_PAYLOAD_LENGTH, W_COUNT, W_FRAG, W_FRAGOFF,
-	W_PAYLOAD, W_LINK,
+	W_PAYLOAD, W_LINK, W_AGGREGATE,
 	W_LAST
     };
     static int parse_content(const String &);
@@ -166,6 +166,7 @@ class FromIPSummaryDump : public Element { public:
     uint16_t _default_proto;
     uint32_t _sampling_prob;
     IPFlowID _flowid;
+    uint32_t _aggregate;
 
     bool _stop : 1;
     bool _format_complaint : 1;
@@ -174,6 +175,8 @@ class FromIPSummaryDump : public Element { public:
     bool _multipacket : 1;
     bool _have_flowid : 1;
     bool _use_flowid : 1;
+    bool _have_aggregate : 1;
+    bool _use_aggregate : 1;
     Packet *_work_packet;
     uint32_t _multipacket_extra_length;
 
@@ -192,7 +195,8 @@ class FromIPSummaryDump : public Element { public:
 
     void bang_data(const String &, ErrorHandler *);
     void bang_flowid(const String &, click_ip *, ErrorHandler *);
-    void check_flowid();
+    void bang_aggregate(const String &, ErrorHandler *);
+    void check_defaults();
     Packet *read_packet(ErrorHandler *);
     Packet *handle_multipacket(Packet *);
 
