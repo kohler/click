@@ -1,3 +1,8 @@
+2001-07-03 Tuesday 14:08  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/linux-2.4.4-patch (1.4): Pull up fixes and improvements for
+	eepro100 driver to 2.4 kernels.
+
 2001-07-03 Tuesday 12:05  Benjie Chen <benjie@lcs.mit.edu>
 
 	* config.h.in (1.7), configure.in (1.128): --enable-warp9 feature:
