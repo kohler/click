@@ -120,6 +120,8 @@ CLICK_DECLS
 #define MAX_SEQ_HISTORY 3
 #define OLD_SEQS_NEEDED 2
 
+#define ONE_WAY_TXC_METRIC 1
+
 class GridGatewayInfo;
 class LinkStat;
 
@@ -454,8 +456,12 @@ private:
     MetricDeliveryRateProduct    =  2, // unsigned int product of fwd delivery rates, * 100
     MetricRevDeliveryRateProduct =  3, // unsigned int product of rev delivery rates, * 100
 #if SEQ_METRIC
-    MetricDSDVSeqs                = 4
+    MetricDSDVSeqs               =  4,
 #endif
+#if ONE_WAY_TXC_METRIC
+    MetricOneWayTxCount          =  5,
+#endif
+    MetricLast                   = 99
   };
 
   static String metric_type_to_string(MetricType t);
