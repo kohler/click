@@ -23,7 +23,7 @@ BridgeMessage::s(String tag) const {
   char* buf = new char[256];
   String s;
 
-  sprintf(buf, "%s %016s:%04hx: %2s  %x -> %016s  m/h/d: %hx/%hx/%hx",
+  sprintf(buf, "%s %16s:%04hx: %2s  %x -> %16s  m/h/d: %hx/%hx/%hx",
 	  tag.cc(),
 	  cp_unparse_ulonglong(_bridge_id,16,false).cc(), _port_id,
 	  _tc ? "TC" : "tc",
@@ -169,7 +169,7 @@ BridgeMessage::wire::s(String tag) const {
   if (type == 128)
     sprintf(buf, "%s TCM", tag.cc());
   else
-    sprintf(buf, "%s %3s %016s:%04hx: %3s %2s  %08x -> %016s  "
+    sprintf(buf, "%s %3s %16s:%04hx: %3s %2s  %08x -> %16s  "
 	    "a/m/h/d: %hx/%hx/%hx/%hx",
 	    tag.cc(),
 	    type ? "???" : "CFG",
