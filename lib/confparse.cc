@@ -2943,7 +2943,7 @@ cp_va_parse_remove_keywords(Vector<String> &conf, int first,
   if (retval >= 0) {
     int delta = 0;
     for (int i = first; i < conf.size(); i++)
-      if (!(*cp_parameter_used)[i - first])
+      if ((*cp_parameter_used)[i - first])
 	delta++;
       else if (delta)
 	conf[i - delta] = conf[i];
