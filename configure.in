@@ -674,6 +674,21 @@ AC_DEFINE_UNQUOTED(CLICK_SHAREDIR, "$datadir")
 AC_DEFINE_UNQUOTED(CLICK_INFODIR, "$infodir")
 
 dnl
+dnl Provisions
+dnl
+
+provisions=''
+if test $ac_have_linux_kernel = y; then
+  ac_linux_version_code=`grep LINUX_VERSION_CODE $linuxdir/include/linux/version.h | sed 's/^.*CODE //'`
+  if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
+    provisions="linux_2_2 $provisions"
+  elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then
+    provisions="linux_2_4 $provisions"
+  fi
+fi
+AC_SUBST(provisions)
+
+dnl
 dnl Output
 dnl
 
