@@ -146,13 +146,6 @@ include/click/bitvector.hh
 include/click/bighashmap.cc
 include/click/bighashmap.hh
 include/click/bighashmap_arena.hh
-include/click/click_ether.h
-include/click/click_icmp.h
-include/click/click_icmp6.h
-include/click/click_ip.h
-include/click/click_ip6.h
-include/click/click_tcp.h
-include/click/click_udp.h
 include/click/clp.h
 include/click/confparse.hh
 include/click/crc32.h
