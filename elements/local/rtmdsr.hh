@@ -19,25 +19,28 @@ CLICK_DECLS
  * Output 1: ethernet packets.
  *
  * To Do:
- * Need something like ARP to avoid broadcasting data, and to get ACKs
  * Assumes just one network interface.
  * Save the packet we're querying for, like ARP does.
  * Signal broken links &c.
  * Integrate with tx count machinery.
+ * Stall each query long enough to find best path, not just first.
+ * Accumulate current path quality in each packet, re-query if it's
+ *   too much worse that original quality.
+ * Be aware if path to some other destination reveals potentially
+ *   useful better links.
+ * If you learn about multiple disjoint paths, use them for multi-path
+ *   routing.
+ * Be sensitive to congestion? If dst receives packets out of order along
+ *   different paths, prefer paths that delivered packets first?
 =e
 kt :: KernelTun(1.0.0.1/24);
-dsr :: RTMDSR(1.0.0.1);
-fd :: FromDevice(wi0, 1);
+dsr :: RTMDSR(1.0.0.1, 00:20:e0:8b:5d:d6, 0x0807);
+fd :: FromDevice(wi0, 0);
 td :: ToDevice(wi0);
 kt -> [0]dsr;
-dsr[0] -> CheckIPHeader -> kt;
-fd -> Classifier(12/0807) -> Strip(14) -> [1]dsr;
-dsr[1]
-  -> EtherEncap(0x0807, 1:2:3:4:5:6, ff:ff:ff:ff:ff:ff)
-  -> td;
-dsr[2]
-  -> EtherEncap(0x0807, 1:2:3:4:5:6, ff:ff:ff:ff:ff:ff)
-  -> td;
+dsr[0] -> CheckIPHeader -> Print(x, 100) -> kt;
+fd -> Classifier(12/0807) -> [1]dsr;
+dsr[1] -> td;
  */
 
 class RTMDSR : public Element {
@@ -164,6 +167,8 @@ private:
     }
   };
   Vector<ARP> _arp;
+
+  Route _dummy;
 
   int find_dst(IPAddress ip, bool create);
   Route &best_route(IPAddress);

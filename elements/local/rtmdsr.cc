@@ -39,6 +39,7 @@ RTMDSR::RTMDSR()
   QueryLife = 3;
   ARPLife = 30;
 
+  _dummy = Route();
 }
 
 RTMDSR::~RTMDSR()
@@ -120,14 +121,13 @@ RTMDSR::find_dst(IPAddress ip, bool create)
 RTMDSR::Route &
 RTMDSR::best_route(IPAddress dstip)
 {
-  Route junk;
   int i;
   int bm = -1;
   int bi = -1;
 
   int di = find_dst(dstip, false);
   if(di < 0)
-    return junk; // Oops
+    return _dummy; // Oops
 
   Dst &d = _dsts[di];
   for(i = 0; i < d._routes.size(); i++){
@@ -139,7 +139,7 @@ RTMDSR::best_route(IPAddress dstip)
 
   if(bi != -1)
     return d._routes[bi];
-  return junk; // Oops
+  return _dummy; // Oops
 }
 
 time_t
