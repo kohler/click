@@ -512,24 +512,25 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
   int jiff = click_jiffies();
 
-  Vector<RTEntry> &rte_info = rtes_to_send;
+  Vector<RTEntry> rte_info = Vector<RTEntry>();
+
   /* 
    * if requested by caller, calculate the ttls each route entry
    * should be sent with.  Each entry's ttl must be decremeneted by a
    * minimum amount.  Only send the routes with valid ttls (> 0).
    */
-  if (check_ttls) {
-    rte_info = Vector<RTEntry>();
-    for (int i = 0; i < rtes_to_send.size(); i++) {
-      RTEntry &r = rtes_to_send[i];
+  for (int i = 0; i < rtes_to_send.size(); i++) {
+    RTEntry &r = rtes_to_send[i];
+    if (check_ttls) {
       unsigned int age = jiff_to_msec(jiff - r.last_updated_jiffies);
       unsigned int new_ttl = decr_ttl(r.ttl, (age > grid_hello::MIN_TTL_DECREMENT ? age : grid_hello::MIN_TTL_DECREMENT));
       if (new_ttl > 0) {
+	r.ttl = new_ttl;
 	rte_info.push_back(r);
-	rte_info.back().ttl = new_ttl;
       }
+    } else {
+      rte_info.push_back(r);
     }
-
   }
 
   int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
