@@ -93,7 +93,7 @@ for($i = 0; $i < $nifs; $i++){
     $ipharg .= i2ip(($ii & $mask) | ~$mask) . " ";
 }
 
-print "rt :: LookupIPRoute(\n";
+print "rt :: StaticIPLookup(\n";
 for($i = 0; $i < $nifs; $i++){
     my $ii = ip2i($ifs->[$i]->[2]);
     my $mask = ip2i($ifs->[$i]->[3]);

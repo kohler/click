@@ -156,4 +156,3 @@ RadixIPLookup::get
 template class Vector<RadixIPLookup::Entry>;
 
 EXPORT_ELEMENT(RadixIPLookup)
-

@@ -1,6 +1,6 @@
 Click NEWS
 
-Version 1.2.2
+Version 1.2.2   1.Sep.2001
 
 * General
 
@@ -55,7 +55,7 @@ Version 1.2.2
 
 ** Added functionality to ControlSocket, RED, FromLinux, FromDump, ....
 
-** Add SetPacketType, IPLookupRadix, ....
+** Added SetPacketType, IPLookupRadix, ....
 
 ** Renamed LookupIPRoute to StaticIPLookup, LookupIPRoute2 to
    RadixIPLookup, and LookupIPRouteLinux to LinuxIPLookup. The old names
@@ -73,7 +73,8 @@ Version 1.2.2
    from which they were initialized. Reported by Kyle Jamieson
    <jamieson@mit.edu>.
 
-** Made most Click configuration tests into Autoconf macros.
+** Made most Click configuration tests into Autoconf macros in
+   `acclick.m4'. This file may be shared among "Click-like" packages.
 
 ** Check for byte order, and provide CLICK_BYTE_ORDER configuration
    constant.

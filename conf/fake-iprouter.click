@@ -82,7 +82,7 @@ c1[0] -> ar1 -> out1;
 // 1: packets for 18.26.4.
 // 2: packets for 18.26.7.
 // All other packets are sent to output 1, with 18.26.4.1 as the gateway.
-rt :: LookupIPRoute(18.26.4.24/32 0,
+rt :: StaticIPLookup(18.26.4.24/32 0,
 		    18.26.4.255/32 0,
 		    18.26.4.0/32 0,
 		    18.26.7.1/32 0,

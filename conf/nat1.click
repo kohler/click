@@ -3,7 +3,7 @@
 // is passed through the route table and be recognized its destination is 
 //actually a ipv4 node, and go through Nat624 (the 6-to-4 translator) 
 // become a ipv4 packet. Next it should passed to CheckIPHeader, GetIPAddress, 
-// LookupIPRoute.
+// StaticIPLookup.
 //FromDevice(eth0, 1)
 //ToDevice(eth0);
 
@@ -49,7 +49,7 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 		-> Print(after-Nat624, 200)
 		-> CheckIPHeader()
 		-> GetIPAddress(16)
-		-> rt::LookupIPRoute(18.26.4.116/32 0,
+		-> rt::StaticIPLookup(18.26.4.116/32 0,
  			18.26.4.255/32 0,
  			18.26.4.0/32 0,
  			18.26.4.0 255.255.255.0 1,

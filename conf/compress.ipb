@@ -12,7 +12,7 @@ fi[0]   -> Strip(14)
         -> RFC2507Decomp
         -> ipencap
         -> GetIPAddress(16)
-        -> LookupIPRoute(18.23.10.84 18.26.4.1)
+        -> StaticIPLookup(18.23.10.84 18.26.4.1)
         -> [0]aq
         -> out
 

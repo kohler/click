@@ -69,7 +69,7 @@ beginfig(1);
   %
 
   boxjoin();
-  velementit.route(btex \element{LookupIPRoute(...)} etex, 1, 3, push);
+  velementit.route(btex \element{StaticIPLookup(...)} etex, 1, 3, push);
   ypart(route.s - dropbroadcasts.A.n) = 36;
 
   % ip input

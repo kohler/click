@@ -45,7 +45,7 @@ c :: Classifier(
 	12/0800 30/01000001,
 	-);
 
-rt :: LookupIPRoute(
+rt :: StaticIPLookup(
 	18.26.4.116/32 0,
 	18.26.4.255/32 0,
 	18.26.4.0/32 0,

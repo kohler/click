@@ -210,12 +210,12 @@ beginfig(4);
   drawconnarrow arpr.out[0]{down} .. arpr.out[0]+(-12,-12);
   label.lft(btex to Linux etex scaled 0.8, arpr.out[0]+(-12,-11));
   %drawconnarrow ipr.out[1]{down} .. ipr.out[1]+(12,-12);
-  %label.rt(btex to \element{LookupIPRoute} etex scaled 0.8, ipr.out[1]+(12,-11));
+  %label.rt(btex to \element{StaticIPLookup} etex scaled 0.8, ipr.out[1]+(12,-11));
   
   z.crud = (xpart ipr.e + 10, ypart c.in[0] + 11);
   drawconnarrow ipr.out[1]{down} .. (.5[x.crud, xpart ipr.out[1]], ypart ipr.out[1] - 30){right} .. tension 1.5 .. {up}z.crud;
   %drawconnarrow ipr.out[1]{down} .. ipr.se + (6,-6) .. {up}z.crud;
-  label.top(btex to \element{LookupIPRoute} etex scaled 0.8, z.crud);
+  label.top(btex to \element{StaticIPLookup} etex scaled 0.8, z.crud);
 endfig;
 
 

@@ -51,7 +51,7 @@ isad[0] -> Strip(20)
         -> DeEsp
 	-> Print(rtun)
         -> GetIPAddress(16)
-        -> LookupIPRoute(18.26.4.200 18.26.4.200)
+        -> StaticIPLookup(18.26.4.200 18.26.4.200)
 	-> [0]arpq;
 
 isad[1] -> Discard;
@@ -63,7 +63,7 @@ osad[0] -> Print(tun)
         -> Des(0, FFFFFFFFFFFFFFFF, 0123456789abcdef)
         -> IPEncap(50, 18.26.4.10, 18.26.4.97)
         -> GetIPAddress(16)
-        -> LookupIPRoute(18.26.4.97 18.26.4.97)
+        -> StaticIPLookup(18.26.4.97 18.26.4.97)
         -> [0]arpq;
 
 osad[1] -> Print("How'd we get here?")
