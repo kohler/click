@@ -199,7 +199,7 @@ String
 IPRateMonitor::print(_stats *s, String ip = "")
 {
   String ret = "";
-  int jiffs = click_jiffies();
+  // int jiffs = click_jiffies();
   for(int i = 0; i < MAX_COUNTERS; i++) {
     if (s->counter[i].flags != CLEAN) {
       bool nonzero = false;
@@ -217,8 +217,7 @@ IPRateMonitor::print(_stats *s, String ip = "")
 
       if (nonzero) {
 	for(int j = 1; j < _no_of_rates; j++) { 
-	  if (jiffs - s->counter[i].last_update > CLICK_HZ) 
-	    s->counter[i].values[j].update(0);
+	  s->counter[i].values[j].update(0);
 	  ret += "\t"; 
 	  ret += cp_unparse_real 
 	    (s->counter[i].values[j].average() * CLICK_HZ, 
