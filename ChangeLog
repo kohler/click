@@ -1,3 +1,15 @@
+2001-11-01 Thursday 19:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridheaderinfo.cc (1.2), gridheaderinfo.hh (1.2):
+	update man page info, fixed some incomplete code
+
+2001-11-01 Thursday 18:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: checkgridheader.cc (1.20), grid.hh (1.31),
+	gridheaderinfo.cc (1.1), gridheaderinfo.hh (1.1),
+	setgridchecksum.cc (1.17): added new element to provide grid header
+	size and offset information, including version number
+
 2001-11-01 Thursday 15:40  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/packet.hh (1.27): add Packet::addr_anno(), for le
