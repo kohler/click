@@ -1,5 +1,5 @@
 #ifndef FROMBPF_HH
-#define FROMPPF_HH
+#define FROMBPF_HH
 
 /*
  * =c
