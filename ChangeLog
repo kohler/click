@@ -1,3 +1,12 @@
+2004-03-03 Wednesday 02:58  Eddie Kohler <kohler@icir.org>
+
+	* lib/master.cc (1.5): nit
+
+2004-03-03 Wednesday 02:54  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/siphmapper.hh (1.3): remove <limits.h>, which isnt
+	suitable for the kernel
+
 2004-03-03 Wednesday 02:34  Eddie Kohler <kohler@icir.org>
 
 	* lib/master.cc (1.4): attempt to fix Doug's reported problems with
