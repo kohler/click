@@ -7,99 +7,106 @@ CLICK_DECLS
 /*
 =c
 
-IPRewriter(INPUTSPEC1, ..., INPUTSPECn [, KEYWORDS])
+IPRewriter(INPUTSPEC1, ..., INPUTSPECn [, I<keywords>])
 
 =s TCP
 
-rewrites UDP/TCP packets' addresses and ports
+rewrites TCP/UDP packets' addresses and ports
 
 =d
 
-Rewrites UDP and TCP flows by changing their source address, source port,
-destination address, and/or destination port.
+Rewrites the source address, source port, destination address, and/or
+destination port on TCP and UDP packets, along with their checksums.
+IPRewriter implements the functionality of a network address/port translator
+E<lparen>NAPT).  See also IPAddrRewriter and IPAddrPairRewriter, which
+implement Basic NAT, and TCPRewriter, which implements NAPT plus sequence
+number changes for TCP packets.
 
-Has one or more inputs and one or more outputs. Input packets must have their
-IP header annotations set. Output packets are valid IP packets; for instance,
-rewritten packets have their checksums incrementally updated. IPRewriter also
-changes the destination IP address annotation; see the DST_ANNO keyword
-argument below.
+IPRewriter maintains a I<mapping table> that records how packets are
+rewritten.  The mapping table is indexed by I<flow identifier>, the quintuple
+of source address, source port, destination address, destination port, and IP
+protocol (TCP or UDP).  Each mapping contains a new flow identifier and an
+output port.  Input packets with the indexed flow identifier are rewritten to
+use the new flow identifier, then emitted on the output port.  A mapping is
+written as follows:
 
-A flow is identified by its (source address, source port, destination
-address, destination port) quadruple, called its I<flow identifier>.
-IPRewriter maintains a set of I<mappings>, which say that one flow
-identifier should be rewritten into another. A mapping consists of an input
-flow ID, an output flow ID, a protocol, and an output port number. For
-example, an IPRewriter might contain the mapping (1.0.0.1, 20, 2.0.0.2, 30)
-=> (1.0.0.1, 20, 5.0.0.5, 80) with protocol TCP and output 4. Say a TCP
-packet with flow ID (1.0.0.1, 20, 2.0.0.2, 30) arrived on one of that
-IPRewriter's input ports. (Thus, the packet is going from port 20 on
-machine 1.0.0.1 to port 30 on machine 2.0.0.2.) Then the IPRewriter will
-change that packet's data so the packet has flow ID (1.0.0.1, 20, 5.0.0.5,
-80). The packet is now heading to machine 5.0.0.5. It will then output the
-packet on output port 4. Furthermore, if reply packets from 5.0.0.5 go
-through the IPRewriter, they will be rewritten to look as if they came from
-2.0.0.2; this corresponds to a reverse mapping (5.0.0.5, 80, 1.0.0.1, 20)
-=> (2.0.0.2, 30, 1.0.0.1, 20).
+    (SA, SP, DA, DP, PROTO) => (SA', SP', DA', DP') [OUTPUT]
 
-When it is first initialized, IPRewriter has no mappings.  Mappings are
-created on the fly as new flows are encountered in the form of packets with
-unknown flow IDs.  This process is controlled by the INPUTSPECs.  There are as
-many input ports as INPUTSPEC configuration arguments.  Each INPUTSPEC
-specifies whether and how a mapping should be created when a new flow is
-encountered on the corresponding input port.  There are six forms of
-INPUTSPEC:
+When IPRewriter receives a packet, it first looks up that packet in the
+mapping table by flow identifier.  If the table contains a mapping for the
+input packet, then the packet is rewritten according to the mapping and
+emitted on the specified output port.  If there was no mapping, the packet is
+handled by the INPUTSPEC corresponding to the input port on which the packet
+arrived.  (There are as many input ports as INPUTSPECs.)  Most INPUTSPECs
+install new mappings, so that future packets from the same TCP or UDP flow are
+handled by the mapping table rather than some INPUTSPEC.  The six forms of
+INPUTSPEC handle input packets as follows:
 
 =over 5
 
-=item `drop'
+=item 'drop'
 
-Packets with no existing mapping are dropped.
+Discards input packets.
 
-=item `pass OUTPUT'
+=item 'pass OUTPUT'
 
-Packets with no existing mapping are sent to output port OUTPUT. No mappings
-are installed.
+Sends input packets to output port OUTPUT.  No mappings are installed.
 
-=item `keep FOUTPUT ROUTPUT'
+=item 'keep FOUTPUT ROUTPUT'
 
-Creates a mapping that preserves the flow ID.  Request packets are sent to
-FOUTPUT, reply packets to ROUTPUT.
+Installs mappings that preserve the input packet's flow ID.  Specifically,
+given an input packet with flow ID (SA, SP, DA, DP, PROTO), two mappings are
+installed:
 
-=item `pattern SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT'
+    (SA, SP, DA, DP, PROTO) => (SA, SP, DA, DP) [FOUTPUT]
+    (DA, DP, SA, SP, PROTO) => (DA, DP, SA, SP) [ROUTPUT]
+
+Thus, the input packet is emitted on output port FOUTPUT unchanged, and
+packets from the reply flow are emitted on output port ROUTPUT unchanged.
+
+=item 'pattern SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT'
 
 Creates a mapping according to the given pattern, 'SADDR SPORT DADDR DPORT'.
 Any pattern field may be a dash '-', in which case the packet's corresponding
-field is left unchanged.  Packets whose flow is like the input packet's are
-rewritten and sent to FOUTPUT; packets in the reply flow are rewritten and
-sent to ROUTPUT.
+field is left unchanged.  For instance, the pattern '1.0.0.1 20 - -' will
+rewrite input packets' source address and port, but leave its destination
+address and port unchanged.  SPORT may be a port range 'L-H'; IPRewriter will
+choose a source port in that range so that the resulting mappings don't
+conflict with any existing mappings.  If no source port is available, the
+packet is dropped.  Normally source ports are chosen randomly within the
+range.  To allocate source ports sequentially (which can make testing easier),
+append a pound sign to the range, as in '1024-65535#'.
 
-SPORT may be a port range 'L-H'.  IPRewriter will choose a source port in that
-range so that the resulting mappings don't conflict with any existing
-mappings.  If no source port is available, the packet is dropped.  Normally
-source ports are chosen randomly from within the range.  To allocate source
-ports sequentially (which can make testing easier), append a pound sign to the
-range, as in '1024-65535#'.
+Say a packet with flow ID (SA, SP, DA, DP, PROTO) is received, and the
+corresponding new flow ID is (SA', SP', DA', DP').  Then two mappings are
+installed:
 
-=item `pattern PATNAME FOUTPUT ROUTPUT'
+    (SA, SP, DA, DP, PROTO) => (SA', SP', DA', DP') [FOUTPUT]
+    (DA', DP', SA', SP', PROTO) => (DA, DP, SA, SP) [ROUTPUT]
 
-Packets with no existing mapping are rewritten according to the pattern
-PATNAME, which was specified in an IPRewriterPatterns element. Use this
-form if two or more INPUTSPECs (possibly in different IPRewriter elements)
-share a single port range, and reusing a live mapping would be an error.
+Thus, the input packet is rewritten and sent to FOUTPUT, and packets from the
+reply flow are rewritten to look like part of the original flow and sent to
+ROUTPUT.
 
-=item `ELEMENTNAME'
+=item 'pattern PATNAME FOUTPUT ROUTPUT'
 
-Packets with no existing mapping are rewritten as the element ELEMENTNAME
-suggests. When a new flow is detected, the element is given a chance to
-provide a mapping for that flow. This is called a I<mapping request>. This
-element must implement the IPMapper interface. One example mapper is
+Like 'pattern' above, but refers to named patterns defined by an
+IPRewriterPatterns element.
+
+=item 'ELEMENTNAME'
+
+Creates mappings according to instructions from the element ELEMENTNAME.  This
+element must implement the IPMapper interface.  One example mapper is
 RoundRobinIPMapper.
 
 =back
 
-IPRewriter drops all fragments except the first, unless those fragments
-arrived on an input port with a `pass OUTPUT' specification. In that
-case, the fragments are emitted on output OUTPUT.
+IPRewriter has no mappings when first initialized.
+
+Input packets must have their IP header annotations set.  Non-TCP and UDP
+packets, and second and subsequent fragments, are dropped unless they arrive
+on a 'pass' input port.  IPRewriter changes IP packet data and, optionally,
+destination IP address annotations; see the DST_ANNO keyword argument below.
 
 Keyword arguments determine how often stale mappings should be removed.
 

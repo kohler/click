@@ -15,55 +15,57 @@ rewrites IP packets' addresses
 
 =d
 
-Rewrites IP packets by changing their source and/or destination addresses.
-
-Has one or more inputs and one or more outputs. Input packets must have their
-IP header annotations set. Output packets are valid IP packets; for instance,
-rewritten packets have their checksums incrementally updated. However,
-IPAddrRewriter does not change the destination IP address annotation.
-
-IPAddrRewriter implements Basic NAT, where internal hosts are assigned
-temporary IP addresses as they access the Internet. Basic NAT works for any IP
-protocol, but the number of internal hosts that can access the Internet
+Rewrites the source and/or destination addresses on IP packets, along with
+their checksums.  IPAddrRewriter implements the functionality of a network
+address translator E<lparen>Basic NAT), where internal hosts are assigned
+temporary IP addresses as they access the Internet.  Basic NAT works for any
+IP protocol, but the number of internal hosts that can access the Internet
 simultaneously is limited by the number of external IP addresses available.
-For NAPT (network address port translation), the more commonly implemented
-version of NAT nowadays, see IPRewriter and TCPRewriter.
+See also IPRewriter and TCPRewriter, which implement network address/port
+translation (NAPT).
 
-When it is first initialized, IPAddrRewriter has no mappings. Mappings are
-created on the fly as new flows are encountered in the form of packets with
-unknown IP addresses. This process is controlled by the INPUTSPECs. There are
-as many input ports as INPUTSPEC configuration arguments. Each INPUTSPEC
-specifies whether and how a mapping should be created when a new flow is
-encountered on the corresponding input port. There are six forms of
-INPUTSPEC:
+IPAddrRewriter maintains a I<mapping table> that records how addresses are
+rewritten.  On receiving a packet, IPAddrRewriter first looks up that packet
+in the mapping table by source or destination address.  If the table contains
+a mapping for either address, then the packet is rewritten according to the
+mapping and emitted on the specified output port.  If there was no mapping,
+the packet is handled by the INPUTSPEC corresponding to the input port on
+which the packet arrived.  (There are as many input ports as INPUTSPECs.)
+Most INPUTSPECs install new mappings, so that future packets from the same
+address are handled by the mapping table rather than some INPUTSPEC.  The six
+forms of INPUTSPEC handle input packets as follows:
 
 =over 5
 
-=item `drop', `nochange OUTPUT', `keep FOUTPUT ROUTPUT', `ELEMENTNAME'
+=item 'drop', 'pass OUTPUT', 'keep FOUTPUT ROUTPUT', 'ELEMENTNAME'
 
 These INPUTSPECs behave like those in IPRewriter.
 
-=item `pattern SADDR[-SADDR2] DADDR FOUTPUT ROUTPUT'
+=item 'pattern SADDR[-SADDR2] DADDR FOUTPUT ROUTPUT'
 
-Packets with no existing mapping are rewritten according to the given pattern.
-IPAddrRewriter patterns are like IPRewriter patterns minus the source and
-destination ports. The source address can also be a range of IP addresses,
-SADDR-SADDR2, in which case a new IP address is chosen for each unique source
-address.
+Creates a mapping according to the given pattern, 'SADDR DADDR'.  Either
+pattern field may be a dash '-', in which case the corresponding field is left
+unchanged.  For instance, the pattern '1.0.0.1 -' will rewrite input packets'
+source address, but leave its destination address unchanged.  SADDR may be a
+range 'L-H' or prefix 'ADDR/PFX'; IPRewriter will choose an unallocated
+address in that range, or drop the packet if no address is available.
+Normally addresses are chosen randomly within the range.  To allocate
+addresses sequentially (which can make testing easier), append a pound sign to
+the range, as in '1.0.0.1-1.255.255.254#'.
 
-Packets with source address like the input packet's are rewritten and sent to
-FOUTPUT; packets sent to the resulting source address are rewritten and sent
-to ROUTPUT.  For example, consider the INPUTSPEC 'pattern 3.0.0.1-3.0.255.254
-- 0 1'.  Then a packet from 1.0.0.1 might get rewritten to have source address
-3.0.0.3; after which packets sent to 3.0.0.3 would get rewritten to have
-destination address 1.0.0.1.
+Packets sent from the old source address are rewritten and sent to FOUTPUT,
+and packets sent to the new source address are rewritten back and sent to
+ROUTPUT.
 
-=item `pattern PATNAME FOUTPUT ROUTPUT'
+=item 'pattern PATNAME FOUTPUT ROUTPUT'
 
 Behaves like the version in IPRewriter, except that PATNAME must name an
 IPAddrRewriter-like pattern.
 
 =back
+
+Input packets must have their IP header annotations set.  IPAddrRewriter
+changes IP packet data and destination IP address annotations.
 
 =h mappings read-only
 

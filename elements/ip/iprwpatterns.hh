@@ -14,8 +14,8 @@ CLICK_DECLS
  * =d
  *
  * This element stores information about shared patterns that IPRewriter and
- * related elements can use. Each configuration argument is a name and a
- * pattern, `NAME SADDR SPORT DADDR DPORT'. The NAMEs for every argument in
+ * related elements can use.  Each configuration argument is a name and a
+ * pattern, 'NAME SADDR SPORT DADDR DPORT'.  The NAMEs for every argument in
  * every IPRewriterPatterns element in the configuration must be distinct.
  *
  * =a IPRewriter
