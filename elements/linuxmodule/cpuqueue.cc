@@ -4,7 +4,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 
-CPUQueue::CPUQueue() : _last(0)
+CPUQueue::CPUQueue() : _last(0), _drops(0)
 {
   MOD_INC_USE_COUNT;
   set_ninputs(1);
@@ -47,6 +47,8 @@ CPUQueue::initialize(ErrorHandler *errh)
     _q[i]._head = 0;
     _q[i]._tail = 0;
   }
+  _drops = 0;
+  _last = 0;
   return 0;
 }
 
@@ -80,8 +82,10 @@ CPUQueue::push(int, Packet *p)
   if (next != _q[n]._head) {
     _q[n]._q[_q[n]._tail] = p;
     _q[n]._tail = next;
-  } else
+  } else {
     p->kill();
+    _drops++;
+  }
 }
 
 Packet *
@@ -98,6 +102,28 @@ CPUQueue::pull(int port)
       return p;
     }
   }
+}
+
+String
+CPUQueue::read_handler(Element *e, void *thunk)
+{
+  CPUQueue *q = static_cast<CPUQueue *>(e);
+  int which = reinterpret_cast<int>(thunk);
+  switch (which) {
+   case 0:
+    return String(q->capacity()) + "\n";
+   case 1:
+    return String(q->drops()) + "\n";
+   default:
+    return "";
+  }
+}
+
+void
+CPUQueue::add_handlers()
+{
+  add_read_handler("capacity", read_handler, (void *)0);
+  add_read_handler("drops", read_handler, (void *)1);
 }
 
 EXPORT_ELEMENT(CPUQueue)

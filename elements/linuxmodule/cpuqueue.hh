@@ -29,10 +29,13 @@ class CPUQueue : public Element {
 
   unsigned _last;
   unsigned _capacity;
+  unsigned _drops;
   
   int next_i(int i) const { return (i!=_capacity ? i+1 : 0); }
   int prev_i(int i) const { return (i!=0 ? i-1 : _capacity); }
   Packet *deq(int);
+
+  static String read_handler(Element *, void *);
 
  public:
   
@@ -44,12 +47,17 @@ class CPUQueue : public Element {
   void notify_noutputs(int);
   int initialize(ErrorHandler *);
   void uninitialize();
+
+  unsigned drops() const			{ return _drops; }
+  unsigned capacity() const			{ return _capacity; }
   
   CPUQueue *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);
   Packet *pull(int port);
+
+  void add_handlers();
 };
 
 #endif
