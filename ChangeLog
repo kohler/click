@@ -1,3 +1,38 @@
+2001-08-17 Friday 16:16  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/: Makefile.in (1.2), clickfs.cc (1.2),
+	clickfs_element.cc (1.1), clickfs_tree.cc (1.1), clickfs_tree.hh
+	(1.1), clickfs_vnops.cc (1.2), module.cc (1.2), modulepriv.hh
+	(1.2): Somewhat more functional click filesystem for BSD
+
+2001-08-17 Friday 16:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/.cvsignore (1.2): Ignore some of the auto-generated
+	files during the BSD module build.
+
+2001-08-17 Friday 16:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* elements/bsdmodule/: polldevice.cc (1.2), todevice.hh (1.2): Use
+	HAVE_BSD_POLLING instead of HAVE_POLLING
+
+2001-08-17 Friday 16:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* config.h.in (1.12), configure.in (1.137): Check for polling on
+	BSD and use HAVE_BSD_POLLING instead.
+
+2001-08-17 Friday 15:55  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/.cvsignore (1.1): Copy the .cvsignore file from
+	linuxmodule
+
+2001-08-17 Friday 15:05  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/divertsocket.cc (1.9): fixed parsing bug
+
+2001-08-17 Friday 14:45  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/divertsocket.cc (1.8): fixed null port ranges
+
 2001-08-17 Friday 13:42  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/: anydevice.cc (1.22), anydevice.hh (1.33),
