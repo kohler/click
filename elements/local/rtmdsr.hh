@@ -69,6 +69,75 @@ ncl[1] -> ls;
 ls -> td;
  */
 
+
+enum DSRPacketType { PT_QUERY = 0x11,
+		     PT_REPLY = 0x22,
+		     PT_DATA  = 0x33 };
+
+enum DSRPacketFlags { PF_BETTER = 1 };
+
+
+
+// Packet format.
+struct sr_pkt {
+  uint8_t	ether_dhost[6];
+  uint8_t	ether_shost[6];
+  uint16_t	ether_type;
+  
+  u_char _type;  // PacketType
+  u_char _flags; // PacketFlags
+  
+  // PT_QUERY
+  in_addr _qdst; // Who are we looking for?
+  u_long _seq;   // Originator's sequence number.
+  
+  // PT_REPLY
+  // The data is in the PT_QUERY fields.
+  
+  // PT_DATA
+  u_short _dlen;
+  
+  // Route
+  u_short _nhops;
+  u_short _next;   // Index of next node who should process this packet.
+  
+  // How long should the packet be?
+  size_t hlen_wo_data() const { return len_wo_data(ntohs(_nhops)); }
+  size_t hlen_with_data() const { return len_with_data(ntohs(_nhops), ntohs(_dlen)); }
+  
+  static size_t len_wo_data(int nhops) {
+    return sizeof(struct sr_pkt) + nhops * sizeof(in_addr) + nhops * sizeof(u_short);
+  }
+  static size_t len_with_data(int nhops, int dlen) {
+    return len_wo_data(nhops) + dlen;
+  }
+  
+  
+  
+  /* yes, I'm that nasty */
+  in_addr get_hop(int h) { 
+    in_addr *ndx = (in_addr *) (ether_dhost + sizeof(struct sr_pkt));
+    return ndx[h];
+  }
+  u_short get_metric(int h) { 
+    u_short *ndx = (u_short *) (ether_dhost + sizeof(struct sr_pkt) + _nhops * sizeof(in_addr));
+    return ntohs(ndx[h]);
+  }
+  
+  void  set_hop(int hop, in_addr s) { 
+    in_addr *ndx = (in_addr *) (ether_dhost + sizeof(struct sr_pkt));
+    ndx[hop] = s;
+  }
+  void set_metric(int hop, u_short s) { 
+    u_short *ndx = (u_short *) (ether_dhost + sizeof(struct sr_pkt) + _nhops * sizeof(in_addr));
+    ndx[hop] = htons(s);
+  }
+  
+  u_char *data() { return ether_dhost + len_wo_data(_nhops); }
+  String s();
+};
+
+
 class RTMDSR : public Element {
  public:
   
@@ -110,77 +179,20 @@ private:
   uint16_t _et;     // This protocol's ethertype.
   class LinkStat *_link_stat;
 
-  enum PacketType { PT_QUERY = 0x11,
-                    PT_REPLY = 0x22,
-                    PT_DATA  = 0x33 };
-
-  enum PacketFlags { PF_BETTER = 1 };
-
-
-  // Packet format.
-  struct pkt {
-    uint8_t	ether_dhost[6];
-    uint8_t	ether_shost[6];
-    uint16_t	ether_type;
-
-    u_char _type;  // PacketType
-    u_char _flags; // PacketFlags
-
-    // PT_QUERY
-    in_addr _qdst; // Who are we looking for?
-    u_long _seq;   // Originator's sequence number.
-    u_short _metric; // Path metric so far.
-    
-    // PT_REPLY
-    // The data is in the PT_QUERY fields.
-
-    // PT_DATA
-    u_short _dlen;
-
-    // Route
-    u_short _nhops;
-    u_short _next;   // Index of next node who should process this packet.
-    in_addr _hops[];
-
-    // How long should the packet be?
-    size_t hlen() const { return hlen1(ntohs(_nhops)); }
-    size_t len() const { return len1(ntohs(_nhops), ntohs(_dlen)); }
-    static size_t hlen1(int nhops) {
-      return sizeof(struct pkt) + nhops * sizeof(in_addr);
-    }
-    static size_t len1(int nhops, int dlen) {
-      return hlen1(nhops) + dlen;
-    }
-    u_char *data() { return ether_dhost + hlen(); }
-  };
-
-  struct DelayPacket{
-  public:
-    struct pkt *p;
-    timeval t;
-    DelayPacket(pkt *pp, timeval then) : p(pp), t(then) { }
-  };
-
-  Vector<DelayPacket> _query_packets;
-
-
-  // Description of a single hop in a route.
-  class Hop {
-  public:
-    IPAddress _ip;
-    Hop(IPAddress ip) { _ip = ip; }
-  };
-
   // Description of a route to a destination.
   class Route {
   public:
     timeval _when; // When we learned about this route.
-    u_short _metric;
-    Vector<Hop> _hops;
+    u_short _metric;  // metric from the query/reply
+    u_short _data_metric; // metric from latest data packets
+    Vector<IPAddress> _hops;
     String s();
-    Route() { _when.tv_sec = 0; _when.tv_usec = 0; _metric = 9999; };
-    Route(const struct pkt *pk);
+    Route() { _when.tv_sec = 0; _when.tv_usec = 0; _metric = 9999;  _data_metric = 9999; };
+    Route(struct sr_pkt *pk);
+
+
   };
+
 
   // State of a destination.
   // We might have a request outstanding for this destination.
@@ -203,12 +215,15 @@ private:
     IPAddress _dst;
     u_long _seq;
     timeval _when;
-    u_short _metric; // To help us pass queries that are better.
-    Vector<Hop> _hops; // the best route we've seen so far
+    u_short _metric;
+    Vector<u_short> _metrics; // The hop-by-hop
+    Vector<IPAddress> _hops;  // the best route seen for this <src, dst, seq>
     u_short _nhops;
     bool _forwarded;
-    Seen(IPAddress src, IPAddress dst, u_long seq, timeval now, u_short metric, Vector<Hop> hops, u_short nhops) {
-      _src = src; _dst = dst; _seq = seq; _metric = metric; _when = now; _hops = hops; _nhops = nhops; _forwarded = false;
+    Seen(IPAddress src, IPAddress dst, u_long seq, timeval now, 
+	 u_short metric, Vector<u_short> metrics, Vector<IPAddress> hops, u_short nhops) {
+      _src = src; _dst = dst; _seq = seq; _metric = metric; _metrics = metrics; 
+      _when = now; _hops = hops; _nhops = nhops; _forwarded = false;
     }
     String s();
     
@@ -242,23 +257,23 @@ private:
   bool find_arp(IPAddress ip, u_char en[6]);
   void got_arp(IPAddress ip, u_char xen[6]);
   u_short get_metric(IPAddress other);
-  void got_pkt(Packet *p_in);
+  void got_sr_pkt(Packet *p_in);
   void start_query(IPAddress);
-  void process_query(struct pkt *pk);
+  void process_query(struct sr_pkt *pk);
   void forward_query(Seen s);
-  void start_reply(struct pkt *pk1);
-  void forward_reply(struct pkt *pk);
-  void got_reply(struct pkt *pk);
+  void start_reply(struct sr_pkt *pk1);
+  void forward_reply(struct sr_pkt *pk);
+  void got_reply(struct sr_pkt *pk);
   void start_data(const u_char *data, u_long len, Route &r);
-  void got_data(struct pkt *pk);
-  void forward_data(struct pkt *pk);
+  void got_data(struct sr_pkt *pk);
+  void forward_data(struct sr_pkt *pk);
   void send(WritablePacket *);
-  void forward(const struct pkt *pk1);
 
   void query_hook(Timer *t);
 
   void dsr_assert_(const char *, int, const char *) const;
 };
+
 
 CLICK_ENDDECLS
 #endif
