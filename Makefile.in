@@ -105,6 +105,7 @@ clean:
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f config.h Makefile config.status
+	-rm -f include/click/config.h include/click/pathvars.h
 	-rm -f config.cache config.log click-compile stamp-h
 
 
