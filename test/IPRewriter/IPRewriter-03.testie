@@ -1,0 +1,53 @@
+%script
+click -e "
+rw :: IPRewriter(pattern 1.0.0.1 1024-1026# - - 0 1, drop);
+FromIPSummaryDump(IN1, STOP true)
+	-> [0]rw[0]
+	-> ToIPSummaryDump(OUT1, CONTENTS src sport dst dport proto tcp_seq);
+f2 :: FromIPSummaryDump(IN2, ACTIVE false, STOP true)
+	-> [1]rw[1]
+	-> ToIPSummaryDump(OUT2, CONTENTS src sport dst dport proto);
+DriverManager(wait_stop, write f2.active true, wait_stop)
+"
+
+%file IN1
+!data src sport dst dport proto tcp_seq
+18.26.4.44 1 10.0.0.4 1 T 1
+18.26.4.44 2 10.0.0.8 2 T 2
+18.26.4.44 3 10.0.0.4 3 T 3
+18.26.4.44 4 10.0.0.8 2 T 4
+18.26.4.44 5 10.0.0.8 2 T 5
+18.26.4.44 6 10.0.0.8 2 T 6
+18.26.4.44 1 10.0.0.4 1 T 7
+18.26.4.44 2 10.0.0.8 2 T 8
+18.26.4.44 3 10.0.0.4 3 T 9
+18.26.4.44 5 10.0.0.8 2 T 10
+
+%file IN2
+!data src sport dst dport proto
+10.0.0.4 1 1.0.0.1 1024 T 
+10.0.0.8 2 1.0.0.1 1024 T
+10.0.0.4 1 1.0.0.1 1024 T 
+10.0.0.8 2 1.0.0.1 1025 T
+10.0.0.8 2 1.0.0.1 1026 T
+
+%ignore
+!.*
+
+%expect OUT1
+1.0.0.1 1024 10.0.0.4 1 T 1
+1.0.0.1 1025 10.0.0.8 2 T 2
+1.0.0.1 1026 10.0.0.4 3 T 3
+1.0.0.1 1024 10.0.0.8 2 T 4
+1.0.0.1 1026 10.0.0.8 2 T 5
+1.0.0.1 1024 10.0.0.4 1 T 7
+1.0.0.1 1025 10.0.0.8 2 T 8
+1.0.0.1 1026 10.0.0.4 3 T 9
+1.0.0.1 1026 10.0.0.8 2 T 10
+
+%expect OUT2
+10.0.0.4 1 18.26.4.44 1 T 
+10.0.0.8 2 18.26.4.44 4 T
+10.0.0.4 1 18.26.4.44 1 T 
+10.0.0.8 2 18.26.4.44 2 T
+10.0.0.8 2 18.26.4.44 5 T
