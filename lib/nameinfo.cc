@@ -212,17 +212,20 @@ NameInfo::namedb(uint32_t type, int data, const String &prefix, NameDB *install)
     db = _namedb_roots[m];
     NameDB *closest = 0;
     while (db) {
-	if (db->_prefix == prefix) {
-	    assert(data < 0 || db->_data == data);
-	    return db;
-	} else if (db->_prefix.length() < prefix.length()
-		   && memcmp(db->_prefix.data(), prefix.data(), db->_prefix.length()) == 0) {
+	if (db->_prefix.length() <= prefix.length()
+	    && memcmp(db->_prefix.data(), prefix.data(), db->_prefix.length()) == 0) {
 	    closest = db;
 	    db = db->_prefix_child;
 	} else
 	    db = db->_prefix_sibling;
     }
 
+    // prefix found?
+    if (closest && closest->_prefix == prefix) {
+	assert(data < 0 || closest->_data == data);
+	return closest;
+    }
+    
     // prefix not found
     if (install == install_dynamic_sentinel())
 	install = new DynamicNameDB(type, prefix, data);
@@ -276,8 +279,16 @@ void
 NameInfo::installdb(NameDB *db, const Element *prefix)
 {
     NameInfo *ni = (prefix ? prefix->router()->force_name_info() : the_name_info);
-    if (ni->namedb(db->type(), db->data(), db->prefix(), db) != db)
-	delete db;
+    NameDB *curdb = ni->namedb(db->type(), db->data(), db->prefix(), db);
+    if (curdb != db) {
+	assert(!curdb->_prefix_child || curdb->_prefix_child->prefix().length() > db->prefix().length());
+	db->_prefix_child = curdb->_prefix_child;
+	db->_prefix_parent = curdb;
+	curdb->_prefix_child = db;
+	for (NameDB *child = db->_prefix_child; child; child = child->_prefix_sibling)
+	    child->_prefix_parent = db;
+	ni->_namedbs.push_back(db);
+    }
 }
 
 void
@@ -414,7 +425,7 @@ NameInfo::checkdb(NameDB *db, NameDB *parent, ErrorHandler *errh)
     // check parent relationships
     if (db->_prefix_parent != parent)
 	perrh.error("bad parent (%p/%p)", db->_prefix_parent, parent);
-    else if (parent && (db->_prefix.length() <= parent->_prefix.length()
+    else if (parent && (db->_prefix.length() < parent->_prefix.length()
 			|| db->_prefix.substring(0, parent->_prefix.length()) != parent->_prefix))
 	perrh.error("parent prefix (%s) disagrees with prefix", parent->_prefix.c_str());
     if (db->_prefix && db->_prefix.back() != '/')
