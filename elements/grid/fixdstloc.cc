@@ -53,12 +53,12 @@ FixDstLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 FixDstLoc::initialize(ErrorHandler *errh)
 {
-  if(_locinfo && _locinfo->cast("LocationTable") == 0){
+  if(_loctab && _loctab->cast("LocationTable") == 0){
     errh->warning("%s: LocationTable argument %s has the wrong type",
                   id().cc(),
-                  _locinfo->id().cc());
-    _locinfo = 0;
-  } else if(_locinfo == 0) {
+                  _loctab->id().cc());
+    _loctab = 0;
+  } else if(_loctab == 0) {
     return errh->error("no LocationTable argument");
   }
   return 0;
@@ -69,14 +69,25 @@ Packet *
 FixDstLoc::simple_action(Packet *xp)
 {
   assert(_loctab); 
+  grid_hdr *gh = (grid_hdr *) (xp->data() + sizeof(click_ether));
+  if (gh->type != grid_hdr::GRID_NBR_ENCAP) {
+    click_chatter("FixDstLoc %s: not an encapsulated data packet; not modifying it\n", id().cc());
+    return xp;
+  }
+
+#ifndef SMALL_GRID_HEADERS
   WritablePacket *p = xp->uniqueify();
   grid_nbr_encap *nb = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
   IPAddress dst(nb->dst_ip);
   grid_location loc;
   nb->dst_loc_good = _loctab.get_location(dst, nb->dst_loc, nb->dst_loc_err);
+
   return p;
+#else
+  return xp;
+#endif
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel LocationTable/)
+ELEMENT_REQUIRES(LocationTable)
 EXPORT_ELEMENT(FixDstLoc)

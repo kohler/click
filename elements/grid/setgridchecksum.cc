@@ -72,5 +72,4 @@ SetGridChecksum::simple_action(Packet *xp)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(SetGridChecksum)

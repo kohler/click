@@ -1,5 +1,5 @@
-#ifndef GRIDLOCATIONINFO_HH
-#define GRIDLOCATIONINFO_HH
+#ifndef GRIDLOCATIONINFO2_HH
+#define GRIDLOCATIONINFO2_HH
 #include <click/element.hh>
 #include <click/timer.hh>
 #include "gridgenericlocinfo.hh"
@@ -7,37 +7,22 @@ CLICK_DECLS
 
 /*
  * =c
- * GridLocationInfo(LATITUDE, LONGITUDE [, HEIGHT, I<KEYWORDS>])
+ * GridLocationInfo2(LATITUDE, LONGITUDE [, HEIGHT, I<KEYWORDS>])
  * =s Grid
  * =io
  * None
  * =d
  *
- * This element implements the GridGenericLocInfo interface.
+ * This element implements the GridGenericLocInfo interface.  Unlike
+ * GridLocationInfo, this element can work in the kernel.
  *
- * LATITUDE and LONGITUDE are in decimal degrees (Real).  Positive is
- * North and East, negative is South and West.  HEIGHT is in metres,
- * positive is up.
- *
- * Only 5 fractional digits are used for latitude and longitude, the
- * rest are ignored and rounding is not performed on the remaining
- * digits.  This should provide about 1 metre of precision near the
- * equator.  Only 3 fractional digits are used for the height, giving
- * 1 millimetre precision in height.
- *
+ * LATITUDE and LONGITUDE are in milliseconds.  Positive is North and
+ * East, negative is South and West.  HEIGHT is in millimetres,
+ * positive is up.  All are integers.
  *
  * Keyword arguments are:
  *
  * =over 8
- *
- * =item MOVESIM
- *
- * Integer.  If the optional move parameter is 1, the node will move
- * randomly at a few meters per second.
- *
- * If the optional move parameter is 2, the node will accept external
- * ``set_new_dest'' directives for setting its speed etc.
- * 
  *
  * =item LOC_GOOD
  *
@@ -74,17 +59,17 @@ CLICK_DECLS
  * Read/write the location tag.  Read format is: ``tag=<tag>''.
  *
  * =a
- * FixSrcLoc, GridLocationInfo2 */
+ * FixSrcLoc, GridLocationInfo */
 
-class GridLocationInfo : public GridGenericLocInfo {
+class GridLocationInfo2 : public GridGenericLocInfo {
   
 public:
-  GridLocationInfo();
-  ~GridLocationInfo();
+  GridLocationInfo2();
+  ~GridLocationInfo2();
 
-  const char *class_name() const { return "GridLocationInfo"; }
+  const char *class_name() const { return "GridLocationInfo2"; }
 
-  GridLocationInfo *clone() const { return new GridLocationInfo; }
+  GridLocationInfo2 *clone() const { return new GridLocationInfo2; }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
   void *cast(const char *);
@@ -95,8 +80,6 @@ public:
 
   void add_handlers();
   int read_args(const Vector<String> &conf, ErrorHandler *errh);
-
-  void set_new_dest(double v_lat, double v_lon);
 
   unsigned int seq_no() { return _seq_no; }
   bool loc_good() { return _loc_good; }
@@ -109,26 +92,7 @@ protected:
 
   bool _loc_good; // if false, don't believe loc
   unsigned short _loc_err; // error radius in metres
-
-  int _move;    // Should we move?
-  double _lat0; // Where we started.
-  double _lon0;
-  double _h0;
-  double _t0;   // When we started.
-  double _t1;   // When we're to pick new velocities.
-  double _vlat; // Latitude velocity (in degrees).
-  double _vlon; // Longitude velocity.
-
-  double now();
-  double xlat();
-  double xlon();
-  double uniform();
-  virtual void choose_new_leg(double *, double *, double *);
-
-  ErrorHandler *_extended_logging_errh;
-  Timer _logging_timer;
-  static void logging_hook(Timer *, void *);
-
+  grid_location _loc;
 };
 
 CLICK_ENDDECLS

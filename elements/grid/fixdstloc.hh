@@ -12,7 +12,7 @@ CLICK_DECLS
  * =d
  *
  * Expects a GRID_NBR_ENCAP packet with MAC header as input.  Sets the
- * packet's destination according to the destination IP address.  Take
+ * packet's destination according to the destination IP address.  Takes
  * a LocationTable element as its argument.
  *
  * =a */
@@ -33,7 +33,7 @@ public:
   Packet *simple_action(Packet *);
 
 private:
-  LocationTale *_loctab;
+  LocationTable *_loctab;
 };
 
 CLICK_ENDDECLS

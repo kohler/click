@@ -148,4 +148,5 @@ GridLogger::close_log() {
 
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
+ELEMENT_PROVIDES(GridGenericLogger)
 EXPORT_ELEMENT(GridLogger)

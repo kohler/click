@@ -9,16 +9,17 @@
  *
  * Expects a Grid MAC layer packet as input.  Sets the packet's source
  * location to the Grid node's location.  This element uses the
- * GridLocationInfo element named LOCINFO.
+ * GridGenericLocInfo element named LOCINFO.
  *
  * =a
- * GridLocationInfo 
+ * GridLocationInfo , GridLocationInfo2
  */
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include "elements/grid/gridlocationinfo.hh"
 CLICK_DECLS
+
+class GridGenericLocInfo;
 
 class FixSrcLoc : public Element {
 
@@ -36,7 +37,7 @@ public:
   Packet *simple_action(Packet *);
 
 private:
-  GridLocationInfo *_locinfo;
+  GridGenericLocInfo *_locinfo;
 };
 
 CLICK_ENDDECLS

@@ -48,6 +48,15 @@ GridLocationInfo::~GridLocationInfo()
   MOD_DEC_USE_COUNT;
 }
 
+void *
+GridLocationInfo::cast(const char *n)
+{
+  if (strcmp(n, "GridLocationInfo") == 0 ||
+      strcmp(n, "GridGenericLocInfo") == 0)
+    return this;
+  return 0;
+}
+
 void
 GridLocationInfo::logging_hook(Timer *, void *thunk) {
   // extended logging
@@ -346,5 +355,6 @@ grid_location::calc_range(const grid_location &l1, const grid_location &l2)
 }
 
 CLICK_ENDDECLS
+ELEMENT_PROVIDES(GridGenericLocInfo)
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridLocationInfo)

@@ -1627,6 +1627,7 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridRouteTable)
+ELEMENT_PROVIDES(GridGenericRouteTable)
 
 #include <click/bighashmap.cc>
 #include <click/vector.cc>

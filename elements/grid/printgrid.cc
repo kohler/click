@@ -243,5 +243,4 @@ PrintGrid::get_entries(grid_hello *gh)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(PrintGrid)

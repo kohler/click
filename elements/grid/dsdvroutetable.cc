@@ -1547,6 +1547,7 @@ DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
 }
 
 ELEMENT_REQUIRES(userlevel)
+ELEMENT_PROVIDES(GridGenericRouteTable)
 EXPORT_ELEMENT(DSDVRouteTable)
 
 #include <click/bighashmap.cc>

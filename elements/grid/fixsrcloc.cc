@@ -23,6 +23,7 @@
 #include "grid.hh"
 #include <click/router.hh>
 #include <clicknet/ether.h>
+#include "gridgenericlocinfo.hh"
 CLICK_DECLS
 
 FixSrcLoc::FixSrcLoc() : Element(1, 1), _locinfo(0)
@@ -45,7 +46,7 @@ int
 FixSrcLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
-                        cpElement, "GridLocationInfo element", &_locinfo,
+                        cpElement, "GridGenericLocInfo element", &_locinfo,
 			0);
   return res;
 }
@@ -53,13 +54,13 @@ FixSrcLoc::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 FixSrcLoc::initialize(ErrorHandler *errh)
 {
-  if(_locinfo && _locinfo->cast("GridLocationInfo") == 0){
-    errh->warning("%s: GridLocationInfo argument %s has the wrong type",
+  if(_locinfo && _locinfo->cast("GridGenericLocInfo") == 0){
+    errh->warning("%s: GridGenericLocInfo argument %s has the wrong type",
                   id().cc(),
                   _locinfo->id().cc());
     _locinfo = 0;
   } else if(_locinfo == 0){
-    return errh->error("no GridLocationInfo argument");
+    return errh->error("no GridGenericLocInfo argument");
   }
 
   return 0;
@@ -78,7 +79,6 @@ FixSrcLoc::simple_action(Packet *xp)
   gh->tx_loc_good = _locinfo->loc_good();
   // only fill in packet originator info if we are originating...
   if (gh->ip == gh->tx_ip) {
-    // click_chatter("FixSrcLoc %s: rewriting gh->loc info", id().cc());
     gh->loc = gh->tx_loc;
     gh->loc_seq_no = gh->tx_loc_seq_no;
     gh->loc_err = gh->tx_loc_err;
@@ -88,5 +88,5 @@ FixSrcLoc::simple_action(Packet *xp)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(GridLocationInfo)
+ELEMENT_REQUIRES(GridGenericLocInfo)
 EXPORT_ELEMENT(FixSrcLoc)
