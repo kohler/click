@@ -63,7 +63,7 @@ AggregateFlows::simple_action(Packet *p)
     else
 	flow = IPFlowID(iph->ip_src, 0, iph->ip_dst, 0);
 
-    Map &m = (iph->ip_p == IP_PROTO_TCP ? _tcp_map : _udp_map);
+    Map &m = (iph->ip_p == IP_PROTO_TCP && _ports ? _tcp_map : _udp_map);
     
     uint32_t agg = m.find(flow);
     if (!agg && _bidi)
