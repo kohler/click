@@ -1,5 +1,5 @@
 /*
- * flexmon.{cc,hh} -- counts packets clustered by src/dst addr.
+ * ipflexmon.{cc,hh} -- counts packets clustered by src/dst addr.
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -13,23 +13,23 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "flexmon.hh"
+#include "ipflexmon.hh"
 #include "confparse.hh"
 #include "click_ip.h"
 #include "error.hh"
 #include "glue.hh"
 
-FlexMonitor::FlexMonitor()
+IPFlexMonitor::IPFlexMonitor()
   : Element(1,1), _pb(COUNT_PACKETS), _offset(0), _base(NULL)
 {
 }
 
-FlexMonitor::~FlexMonitor()
+IPFlexMonitor::~IPFlexMonitor()
 {
 }
 
 int
-FlexMonitor::configure(const String &conf, ErrorHandler *errh)
+IPFlexMonitor::configure(const String &conf, ErrorHandler *errh)
 {
 #if IPVERSION == 4
   Vector<String> args;
@@ -114,20 +114,20 @@ FlexMonitor::configure(const String &conf, ErrorHandler *errh)
   set_resettime();
   return 0;
 #else
-  click_chatter("FlexMonitor doesn't know how to handle non-IPv4!");
+  click_chatter("IPFlexMonitor doesn't know how to handle non-IPv4!");
   return -1;
 #endif
 }
 
 
-FlexMonitor *
-FlexMonitor::clone() const
+IPFlexMonitor *
+IPFlexMonitor::clone() const
 {
-  return new FlexMonitor;
+  return new IPFlexMonitor;
 }
 
 void
-FlexMonitor::push(int port, Packet *p)
+IPFlexMonitor::push(int port, Packet *p)
 {
   IPAddress a;
 
@@ -135,7 +135,7 @@ FlexMonitor::push(int port, Packet *p)
   if(_inputs[port]->srcdst == SRC)
     a = IPAddress(ip->ip_src);
   else
-    a = p->dst_ip_anno();
+    a = IPAddress(ip->ip_dst);
 
   // Measuring # of packets or # of bytes?
   int val = _inputs[port]->change;
@@ -153,7 +153,7 @@ FlexMonitor::push(int port, Packet *p)
 // XXX: Make this interrupt driven.
 //
 int
-FlexMonitor::update(IPAddress a, int val)
+IPFlexMonitor::update(IPAddress a, int val)
 {
   int ret;
   unsigned int saddr = a.saddr();
@@ -196,7 +196,7 @@ FlexMonitor::update(IPAddress a, int val)
 
 
 void
-FlexMonitor::clean(_stats *s, int value = 0, bool recurse = false)
+IPFlexMonitor::clean(_stats *s, int value = 0, bool recurse = false)
 {
   int jiffs = click_jiffies();
 
@@ -213,7 +213,7 @@ FlexMonitor::clean(_stats *s, int value = 0, bool recurse = false)
 
 
 String
-FlexMonitor::print(_stats *s, String ip = "")
+IPFlexMonitor::print(_stats *s, String ip = "")
 {
   String ret = "";
   for(int i = 0; i < 256; i++) {
@@ -235,7 +235,7 @@ FlexMonitor::print(_stats *s, String ip = "")
 
 
 inline void
-FlexMonitor::set_resettime()
+IPFlexMonitor::set_resettime()
 {
   _resettime = click_jiffies();
 }
@@ -249,9 +249,9 @@ FlexMonitor::set_resettime()
 // address = string of form v[.w[.x[.y]]] denoting a (partial) IP address
 // number = integer denoting the value associated with this IP address group
 String
-FlexMonitor::look_read_handler(Element *e, void *)
+IPFlexMonitor::look_read_handler(Element *e, void *)
 {
-  FlexMonitor *me = (FlexMonitor*) e;
+  IPFlexMonitor *me = (IPFlexMonitor*) e;
 
   String ret = String(click_jiffies() - me->_resettime) + "\n";
   return ret + me->print(me->_base);
@@ -259,26 +259,26 @@ FlexMonitor::look_read_handler(Element *e, void *)
 
 
 String
-FlexMonitor::thresh_read_handler(Element *e, void *)
+IPFlexMonitor::thresh_read_handler(Element *e, void *)
 {
-  FlexMonitor *me = (FlexMonitor *) e;
+  IPFlexMonitor *me = (IPFlexMonitor *) e;
   return String(me->_thresh) + "\n";
 }
 
 String
-FlexMonitor::what_read_handler(Element *e, void *)
+IPFlexMonitor::what_read_handler(Element *e, void *)
 {
-  FlexMonitor *me = (FlexMonitor *) e;
+  IPFlexMonitor *me = (IPFlexMonitor *) e;
   return (me->_pb == COUNT_PACKETS ? "PACKETS\n" : "BYTES\n");
 }
 
 
 int
-FlexMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+IPFlexMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  FlexMonitor* me = (FlexMonitor *) e;
+  IPFlexMonitor* me = (IPFlexMonitor *) e;
 
   if(args.size() != 1) {
     errh->error("expecting 1 integer");
@@ -296,11 +296,11 @@ FlexMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorH
 
 
 int
-FlexMonitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+IPFlexMonitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  FlexMonitor* me = (FlexMonitor *) e;
+  IPFlexMonitor* me = (IPFlexMonitor *) e;
 
   if(args.size() != 1) {
     errh->error("expecting 1 integer");
@@ -318,7 +318,7 @@ FlexMonitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHa
 
 
 void
-FlexMonitor::add_handlers()
+IPFlexMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
   add_write_handler("thresh", thresh_write_handler, 0);
@@ -329,4 +329,4 @@ FlexMonitor::add_handlers()
   add_write_handler("reset", reset_write_handler, 0);
 }
 
-EXPORT_ELEMENT(FlexMonitor)
+EXPORT_ELEMENT(IPFlexMonitor)

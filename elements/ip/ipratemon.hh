@@ -1,9 +1,9 @@
-#ifndef RATEMON_HH
-#define RATEMON_HH
+#ifndef IPRATEMON_HH
+#define IPRATEMON_HH
 
 /*
  * =c
- * RateMonitor(DS, OFF, PB, THRESH/PERIOD, T1, T2, ...)
+ * IPRateMonitor(DS, OFF, PB, THRESH/PERIOD, T1, T2, ...)
  * =d
  *
  * See FlexMonitor.
@@ -12,7 +12,7 @@
  * OFF: offset in packet where IP header starts
  * PB: count packets or bytes
  * THRESH/PERIOD: THRESH per PERIOD seconds causes a split
- * T1, T2: Instructs RateMonitor to keep track of last Tx seconds
+ * T1, T2: Instructs IPRateMonitor to keep track of last Tx seconds
  *
  * =h look (read)
  * Returns the rate of counted to/from a cluster of IP addresses. The first
@@ -39,15 +39,15 @@
 #include "vector.hh"
 
 
-class RateMonitor : public Element {
+class IPRateMonitor : public Element {
 public:
-  RateMonitor();
-  ~RateMonitor();
+  IPRateMonitor();
+  ~IPRateMonitor();
   
-  const char *class_name() const		{ return "RateMonitor"; }
+  const char *class_name() const		{ return "IPRateMonitor"; }
   const char * default_processing() const	{ return AGNOSTIC; }
   int configure(const String &conf, ErrorHandler *errh);
-  RateMonitor *clone() const;
+  IPRateMonitor *clone() const;
   // void push(int port, Packet *p);
   Packet *simple_action(Packet *);
 
@@ -119,4 +119,4 @@ private:
   static int reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
 };
 
-#endif /* MONITOR_HH */
+#endif /* IPRATEMON_HH */

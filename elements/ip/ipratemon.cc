@@ -1,5 +1,5 @@
 /*
- * ratemon.{cc,hh} -- counts packets clustered by src/dst addr.
+ * ipratemon.{cc,hh} -- counts packets clustered by src/dst addr.
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -13,23 +13,23 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "ratemon.hh"
+#include "ipratemon.hh"
 #include "confparse.hh"
 #include "click_ip.h"
 #include "error.hh"
 #include "glue.hh"
 
-RateMonitor::RateMonitor()
+IPRateMonitor::IPRateMonitor()
   : Element(1,1), _sd(SRC), _pb(COUNT_PACKETS), _offset(0), _base(NULL)
 {
 }
 
-RateMonitor::~RateMonitor()
+IPRateMonitor::~IPRateMonitor()
 {
 }
 
 int
-RateMonitor::configure(const String &conf, ErrorHandler *errh)
+IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 {
 #if IPVERSION == 4
   Vector<String> args;
@@ -83,7 +83,7 @@ RateMonitor::configure(const String &conf, ErrorHandler *errh)
     if(cp_integer(arg, rate) && rate > 0)
       _rates.push_back(rate);
     else {
-      errh->error("Rates should be a positive integer");
+      errh->error("IPRates should be a positive integer");
       return -1;
     }
   }
@@ -101,20 +101,20 @@ RateMonitor::configure(const String &conf, ErrorHandler *errh)
 
   return 0;
 #else
-  click_chatter("RateMonitor doesn't know how to handle non-IPv4!");
+  click_chatter("IPRateMonitor doesn't know how to handle non-IPv4!");
   return -1;
 #endif
 }
 
 
-RateMonitor *
-RateMonitor::clone() const
+IPRateMonitor *
+IPRateMonitor::clone() const
 {
-  return new RateMonitor;
+  return new IPRateMonitor;
 }
 
 Packet *
-RateMonitor::simple_action(Packet *p)
+IPRateMonitor::simple_action(Packet *p)
 {
   IPAddress a;
 
@@ -122,7 +122,7 @@ RateMonitor::simple_action(Packet *p)
   if(_sd == SRC)
     a = IPAddress(ip->ip_src);
   else
-    a = p->dst_ip_anno();
+    a = IPAddress(ip->ip_dst);
 
   // Measuring # of packets or # of bytes?
   int val = (_pb == COUNT_PACKETS) ? 1 : ip->ip_len;
@@ -138,7 +138,7 @@ RateMonitor::simple_action(Packet *p)
 // XXX: Make this interrupt driven.
 //
 void
-RateMonitor::update(IPAddress a, int val)
+IPRateMonitor::update(IPAddress a, int val)
 {
   unsigned int saddr = a.saddr();
 
@@ -184,7 +184,7 @@ RateMonitor::update(IPAddress a, int val)
 // Recursively destroys tables.
 //
 void
-RateMonitor::destroy(_stats *s)
+IPRateMonitor::destroy(_stats *s)
 {
   for(int i = 0; i < 256; i++) {
     if(s->counter[i].flags & SPLIT) {
@@ -202,7 +202,7 @@ RateMonitor::destroy(_stats *s)
 // Cleans entry
 //
 void
-RateMonitor::clean(_stats *s)
+IPRateMonitor::clean(_stats *s)
 {
   int jiffs = click_jiffies();
   for(int i = 0; i < 256; i++) {
@@ -214,7 +214,7 @@ RateMonitor::clean(_stats *s)
 
 
 bool
-RateMonitor::set_thresh(String str)
+IPRateMonitor::set_thresh(String str)
 {
   int len = str.length();
   const char *s = str.data();
@@ -256,7 +256,7 @@ RateMonitor::set_thresh(String str)
 // Prints out nice data.
 //
 String
-RateMonitor::print(_stats *s, String ip = "")
+IPRateMonitor::print(_stats *s, String ip = "")
 {
   String ret = "";
   for(int i = 0; i < 256; i++) {
@@ -284,7 +284,7 @@ RateMonitor::print(_stats *s, String ip = "")
 
 
 inline void
-RateMonitor::set_resettime()
+IPRateMonitor::set_resettime()
 {
   _resettime = click_jiffies();
 }
@@ -298,9 +298,9 @@ RateMonitor::set_resettime()
 // address = string of form v[.w[.x[.y]]] denoting a (partial) IP address
 // number = integer denoting the value associated with this IP address group
 String
-RateMonitor::look_read_handler(Element *e, void *)
+IPRateMonitor::look_read_handler(Element *e, void *)
 {
-  RateMonitor *me = (RateMonitor*) e;
+  IPRateMonitor *me = (IPRateMonitor*) e;
 
   String ret = String(click_jiffies() - me->_resettime) + "\n";
   return ret + me->print(me->_base);
@@ -308,35 +308,35 @@ RateMonitor::look_read_handler(Element *e, void *)
 
 
 String
-RateMonitor::thresh_read_handler(Element *e, void *)
+IPRateMonitor::thresh_read_handler(Element *e, void *)
 {
-  RateMonitor *me = (RateMonitor *) e;
+  IPRateMonitor *me = (IPRateMonitor *) e;
   return String(me->_thresh) + "/" + String(me->_rates[0]) + "\n";
 }
 
 
 String
-RateMonitor::srcdst_read_handler(Element *e, void *)
+IPRateMonitor::srcdst_read_handler(Element *e, void *)
 {
-  RateMonitor *me = (RateMonitor *) e;
+  IPRateMonitor *me = (IPRateMonitor *) e;
   return (me->_sd == SRC) ? "SRC\n" : "DST\n";
 }
 
 
 String
-RateMonitor::what_read_handler(Element *e, void *)
+IPRateMonitor::what_read_handler(Element *e, void *)
 {
-  RateMonitor *me = (RateMonitor *) e;
+  IPRateMonitor *me = (IPRateMonitor *) e;
   return (me->_pb == COUNT_PACKETS ? "PACKETS\n" : "BYTES\n");
 }
 
 
 int
-RateMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+IPRateMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  RateMonitor* me = (RateMonitor *) e;
+  IPRateMonitor* me = (IPRateMonitor *) e;
 
   if(args.size() != 1) {
     errh->error("expecting 1 string");
@@ -352,9 +352,9 @@ RateMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorH
 
 
 int
-RateMonitor::reset_write_handler(const String &, Element *e, void *, ErrorHandler *)
+IPRateMonitor::reset_write_handler(const String &, Element *e, void *, ErrorHandler *)
 {
-  RateMonitor* me = (RateMonitor *) e;
+  IPRateMonitor* me = (IPRateMonitor *) e;
   me->destroy(me->_base);
   me->set_resettime();
   return 0;
@@ -362,7 +362,7 @@ RateMonitor::reset_write_handler(const String &, Element *e, void *, ErrorHandle
 
 
 void
-RateMonitor::add_handlers()
+IPRateMonitor::add_handlers()
 {
   add_read_handler("thresh", thresh_read_handler, 0);
   add_write_handler("thresh", thresh_write_handler, 0);
@@ -377,4 +377,4 @@ RateMonitor::add_handlers()
 #include "vector.cc"
 template class Vector<EWMA>;
 
-EXPORT_ELEMENT(RateMonitor)
+EXPORT_ELEMENT(IPRateMonitor)

@@ -1,9 +1,9 @@
-#ifndef FLEXMON_HH
-#define FLEXMON_HH
+#ifndef IPFLEXMON_HH
+#define IPFLEXMON_HH
 
 /*
  * =c
- * FlexMonitor(PB, OFFSET, THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]])
+ * IPFlexMonitor(PB, OFFSET, THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]])
  * =d
  * Input: IP packets (no ether header).
  *
@@ -16,10 +16,10 @@
  * Monitors traffic by counting the number of packets going to/coming from
  * (a cluster of) IP addresses.
  *
- * In its simplest form (i.e. "FlexMonitor(PACKETS, 0, 100, DST 1)"),
- * FlexMonitor gets IP packets and uses the first byte of the destination IP
+ * In its simplest form (i.e. "IPFlexMonitor(PACKETS, 0, 100, DST 1)"),
+ * IPFlexMonitor gets IP packets and uses the first byte of the destination IP
  * address of each packet to index into a table (with, of course, 256 records)
- * and increases the value in that record by 1. In other words, the FlexMonitor
+ * and increases the value in that record by 1. In other words, the IPFlexMonitor
  * clusters destination addresses by the their first byte. As soon as the value
  * associated with such a cluster increases with more than THRESH (100 in this
  * example) per second, then the entry is marked and subsequent packets to that
@@ -27,10 +27,10 @@
  * table. This can go up to the 4th byte.
  *
  * When BYTES is used in stead of PACKETS, then VARx is multiplied with the
- * packet length in bytes. In other words: FlexMonitor can be used to either count
+ * packet length in bytes. In other words: IPFlexMonitor can be used to either count
  * number of packets or load going to/coming from IP addresses.
  *
- * Everytime a packet passes the FlexMonitor, the sibling annotation is set denoting
+ * Everytime a packet passes the IPFlexMonitor, the sibling annotation is set denoting
  * the number of packets from the same cluster that preceded this packet. The
  * Block element drops packets based on this sibling annotation.
  *
@@ -38,13 +38,13 @@
  * associated with a cluster of IP addresses increases with more than THRESH per
  * second, it is split.
  *
- * The number of inputs for FlexMonitor equals n in VARn. Each SDx and VARx are
- * related to one input (i.e. x). The "SRC" or "DST" tells the FlexMonitor to use
+ * The number of inputs for IPFlexMonitor equals n in VARn. Each SDx and VARx are
+ * related to one input (i.e. x). The "SRC" or "DST" tells the IPFlexMonitor to use
  * either the source or the destination IP address to index into the described
  * table(s). VARx is the amount by which the value associated with a cluster
  * should be increased or decreased.
  *
- * FlexMonitor should be used together with Classifier to count packets with
+ * IPFlexMonitor should be used together with Classifier to count packets with
  * specific features.
  *
  * =h look (read)
@@ -66,7 +66,7 @@
  * =
  * = ... -> c;
  *
- * = m :: FlexMonitor(PACKETS, 10, DST 1, DST -1);
+ * = m :: IPFlexMonitor(PACKETS, 10, DST 1, DST -1);
  * =
  * = c[0] -> [0]m -> ...
  * = c[1] -> [1]m -> ...
@@ -87,18 +87,18 @@
 #include "vector.hh"
 
 
-class FlexMonitor : public Element {
+class IPFlexMonitor : public Element {
 public:
-  FlexMonitor();
-  ~FlexMonitor();
+  IPFlexMonitor();
+  ~IPFlexMonitor();
   
-  const char *class_name() const		{ return "FlexMonitor"; }
+  const char *class_name() const		{ return "IPFlexMonitor"; }
   const char * default_processing() const	{ return AGNOSTIC; }
   int configure(const String &conf, ErrorHandler *errh);
 
   // XXX: Do we want this?
   // bool can_live_reconfigure() const		{ return true; }
-  FlexMonitor *clone() const;
+  IPFlexMonitor *clone() const;
   
   void push(int port, Packet *p);
 
