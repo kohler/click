@@ -41,8 +41,10 @@ class StringAccum { public:
   void append(char);
   void append(unsigned char);
   void append(const char *, int);
+  void append(const unsigned char *, int);
 
   char *reserve(int);
+  void set_length(int l)	{ assert(l>=0 && _len<=_cap);	_len = l; }
   void forward(int n)		{ assert(n>=0 && _len+n<=_cap);	_len += n; }
   void pop_back(int n = 1)	{ assert(n>=0 && _len>=n);	_len -= n; }
 
@@ -158,6 +160,12 @@ StringAccum::append(const char *s, int len)
   else if (len == 0 && s == String::out_of_memory_string().data())
     make_out_of_memory();
   safe_append(s, len);
+}
+
+inline void
+StringAccum::append(const unsigned char *s, int len)
+{
+  append(reinterpret_cast<const char *>(s), len);
 }
 
 inline unsigned char *
