@@ -27,7 +27,7 @@
 RoundRobinSwitch::RoundRobinSwitch()
 {
   MOD_INC_USE_COUNT;
-  add_output();
+  add_input();
   _next = 0;
 }
 
