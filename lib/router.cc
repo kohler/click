@@ -681,11 +681,11 @@ String
 Router::context_message(int element_no, const char *message) const
 {
   Element *e = _elements[element_no];
-  String s;
+  StringAccum sa;
   if (e->landmark())
-    s = e->landmark() + ": ";
-  s += String(message) + " `" + e->declaration() + "':";
-  return s;
+    sa << e->landmark() << ": ";
+  sa << message << " `" << e->declaration() << "':";
+  return sa.take_string();
 }
 
 static void

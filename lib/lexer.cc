@@ -825,9 +825,9 @@ Lexer::remove_element_type(int removed)
   }
 
   // remove stuff
-  _element_type_names[removed] = String();
   delete _element_types[removed];
   _element_types[removed] = 0;
+  _element_type_names[removed] = String();
   _element_type_next[removed] = _free_element_type;
   _free_element_type = removed;
 }
