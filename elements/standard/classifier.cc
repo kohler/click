@@ -579,12 +579,12 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
       if (s[i] == '!') {
 	negated = true;
 	i++;
+	while (i < len && isspace(s[i]))
+	  i++;
       }
       
-      if (!isdigit(s[i])) {
-	errh->error("expected a digit, got `%c'", s[i]);
-	return -1;
-      }
+      if (i >= len || !isdigit(s[i]))
+	return errh->error("slot %d: expected a digit", slot);
 
       // read offset
       int offset = 0;
@@ -594,10 +594,8 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
 	i++;
       }
       
-      if (i >= len || s[i] != '/') {
-	errh->error("expected `/'");
-	return -1;
-      }
+      if (i >= len || s[i] != '/')
+	return errh->error("slot %d: expected `/'", slot);
       i++;
 
       // scan past value
@@ -619,18 +617,18 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
 
       // check lengths
       if (value_end - value_pos < 2) {
-	errh->error("slot %d value has less than 2 hex digits", slot);
+	errh->error("slot %d: value has less than 2 hex digits", slot);
 	value_end = value_pos;
 	mask_end = mask_pos;
       }
       if ((value_end - value_pos) % 2 != 0) {
-	errh->error("slot %d value has odd number of hex digits", slot);
+	errh->error("slot %d: value has odd number of hex digits", slot);
 	value_end--;
 	mask_end--;
       }
       if (mask_pos >= 0 && (mask_end - mask_pos) != (value_end - value_pos)) {
 	bool too_many = (mask_end - mask_pos) > (value_end - value_pos);
-	errh->error("slot %d mask has too %s hex digits", slot,
+	errh->error("slot %d: mask has too %s hex digits", slot,
 		    (too_many ? "many" : "few"));
 	if (too_many)
 	  mask_end = mask_pos + value_end - value_pos;
