@@ -1,3 +1,16 @@
+2004-06-18 Friday 02:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.116), click-buildtool (1.51), click-buildtool.in
+	(1.51), click-mkelemmap (1.26), configure (1.10), configure.in
+	(1.229), etc/libclick/lc-Makefile.in (1.11),
+	etc/libclick/lc-configure.in (1.29), etc/samplepackage/Makefile.in
+	(1.43), bsdmodule/Makefile.in (1.30), doc/Makefile.in (1.47),
+	etc/samplepackage/sampleelt.cc (1.8), linuxmodule/Makefile.in
+	(1.87), ns/Makefile.in (1.14), userlevel/Makefile.in (1.80):
+	click-buildtool is generated from click-buildtool.in, so it can
+	include a list of the default requirements (useful when building
+	ipsumdump)
+
 2004-06-17 Thursday 20:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: fromipsumdump.cc (1.64), ipsumdumpinfo.cc
