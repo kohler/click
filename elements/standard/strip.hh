@@ -15,7 +15,7 @@ CLICK_DECLS
  * Use this to get rid of the Ethernet header:
  *
  *   Strip(14)
- * =a StripToNetworkHeader, EtherEncap, IPEncap, Truncate
+ * =a StripToNetworkHeader, StripIPHeader, EtherEncap, IPEncap, Truncate
  */
 
 class Strip : public Element { public:
