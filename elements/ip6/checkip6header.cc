@@ -101,15 +101,10 @@ CheckIP6Header::drop_it(Packet *p)
     click_chatter("IP checksum failed");
   _drops++;
   
-  if (noutputs() == 2) {
-      output(1).push(p);
-      click_chatter("noutputs()=2");
-  }
-  else { 
-      p->kill();
-    click_chatter("killed");
-  }
-
+  if (noutputs() == 2) 
+    output(1).push(p);
+  else 
+    p->kill();
 }
 
 Packet *
