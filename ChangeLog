@@ -1,3 +1,16 @@
+2003-02-01 Saturday 01:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.29), fixdstloc.cc (1.12),
+	fixdstloc.hh (1.6), fixsrcloc.cc (1.29), fixsrcloc.hh (1.9),
+	gridgenericlocinfo.hh (1.1), gridlocationinfo.cc (1.20),
+	gridlocationinfo.hh (1.13), gridlocationinfo2.cc (1.1),
+	gridlocationinfo2.hh (1.1), gridlogger.cc (1.7), gridroutetable.cc
+	(1.63), printgrid.cc (1.28), setgridchecksum.cc (1.21): Make more
+	elements kernel-compatible; add GridGenericLocInfo element
+	interface and kernel-compatible GridLocationInfo2 element;
+	resuscitate FixDstLoc; make explicit some element interface
+	dependencies using ELEMENT_REQUIRES and ELEMENT_PROVIDES
+
 2003-02-01 Saturday 00:16  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.hh (1.23), grid.hh (1.43),
