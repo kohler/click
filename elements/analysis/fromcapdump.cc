@@ -157,7 +157,7 @@ Packet *
 FromCapDump::read_packet(ErrorHandler *errh)
 {
     // ensure puts will succeed
-    WritablePacket *q = Packet::make(0, (const unsigned char *)0, sizeof(click_ip) + sizeof(click_tcp), 40);
+    WritablePacket *q = Packet::make(0, (const unsigned char *)0, sizeof(click_ip) + sizeof(click_tcp), 60);
     if (!q) {
 	_ff.error(errh, strerror(ENOMEM));
 	return 0;
