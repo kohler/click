@@ -50,7 +50,8 @@ SRCR::SRCR()
      _num_queries_rx(0),
      _bytes_queries_rx(0),
      _num_replies_rx(0), 
-     _bytes_replies_rx(0)
+     _bytes_replies_rx(0),
+     _time_before_switch_sec(0)
 
 {
   MOD_INC_USE_COUNT;
@@ -88,6 +89,7 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
   int ret;
   _debug = false;
   _route_dampening = true;
+  _time_before_switch_sec = 10;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -100,6 +102,7 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "LM", cpElement, "LinkMetric element", &_metric,
 		    "DEBUG", cpBool, "Debug", &_debug,
 		    "ROUTE_DAMPENING", cpBool, "Enable Route Dampening", &_route_dampening,
+		    "TIME_BEFORE_SWITCH", cpUnsigned, "", &_time_before_switch_sec,
                     0);
 
   if (!_et) 
@@ -718,7 +721,7 @@ SRCR::push(int port, Packet *p_in)
       click_gettimeofday(&now);
 
       struct timeval max_switch;
-      max_switch.tv_sec = 10;
+      max_switch.tv_sec = _time_before_switch_sec;
       max_switch.tv_usec = 0;
       timeradd(&current_path->_last_switch, &max_switch, &expire);
 

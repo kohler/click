@@ -215,7 +215,7 @@ private:
   bool _route_dampening;
   bool _debug;
 
-
+  int _time_before_switch_sec;
 
 
   int find_dst(IPAddress ip, bool create);
