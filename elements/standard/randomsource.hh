@@ -22,14 +22,15 @@ class RandomSource : public Element { protected:
   ~RandomSource(); 
  
   const char *class_name() const		{ return "RandomSource"; }
-  const char *processing() const		{ return PUSH; }
+  const char *processing() const		{ return AGNOSTIC; }
   RandomSource *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 
   void run_scheduled();
-  
+  Packet *pull(int);
+  Packet *make_packet();
 };
 
 #endif

@@ -64,7 +64,8 @@ RandomSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 RandomSource::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, errh);
+  if (output_is_push(0)) 
+    ScheduleInfo::join_scheduler(this, errh);
   return 0;
 }
 
@@ -74,8 +75,8 @@ RandomSource::uninitialize()
   unschedule();
 }
 
-void
-RandomSource::run_scheduled()
+Packet *
+RandomSource::make_packet()
 {
   int i;
   WritablePacket *p = Packet::make(34, (const unsigned char *) 0,
@@ -87,9 +88,24 @@ RandomSource::run_scheduled()
     *(int*)(d + i) = random();
   for( ; i < _length; i++)
     *(d + i) = random();
+
+  return(p);
+}
+
+void
+RandomSource::run_scheduled()
+{
+  Packet *p = make_packet();
+
   output(0).push(p);
 
   reschedule();
+}
+
+Packet *
+RandomSource::pull(int)
+{
+  return(make_packet());
 }
 
 EXPORT_ELEMENT(RandomSource)
