@@ -14,7 +14,7 @@
  * 
  * BandwidthRatedSplitter has two output ports. All incoming packets up to a
  * maximum of R bytes per second are emitted on output port 0. Any remaining
- * packets are emitted on output port 1. Unlike BandwidthMeter, R packets per
+ * packets are emitted on output port 1. Unlike BandwidthMeter, R bytes per
  * second are emitted on output port 0 even when the input rate is greater
  * than R.
  *

@@ -58,6 +58,13 @@ etc
 etc/linux-2.2.14-patch
 etc/linux-2.2.16-patch
 
+etc/samplepackage
+etc/samplepackage/Makefile.in
+etc/samplepackage/sampleelt.hh
+etc/samplepackage/sampleelt.cc
+etc/samplepackage/kernelversion.c
+etc/samplepackage/test.click
+
 lib
 lib/archive.cc
 lib/archive.hh

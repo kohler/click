@@ -162,12 +162,15 @@ load_package(String package, ErrorHandler *errh)
 static String::Initializer crap_initializer;
 static Lexer *lexer;
 static Vector<String> packages;
+static HashMap<String, int> package_map(0);
 static String configuration_string;
 
 extern "C" void
 click_provide(const char *package)
 {
   packages.push_back(package);
+  int &count = package_map.find_force(package);
+  count++;
 }
 
 extern "C" void
@@ -178,6 +181,8 @@ click_unprovide(const char *package)
     if (packages[i] == s) {
       packages[i] = packages.back();
       packages.pop_back();
+      int &count = package_map.find_force(s);
+      count--;
       return;
     }
 }
@@ -425,6 +430,36 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
 #endif
 
 
+// include requirements
+
+class RequireLexerExtra : public LexerExtra { public:
+
+  RequireLexerExtra()			{ }
+
+  void require(String, ErrorHandler *);
+  
+};
+
+void
+RequireLexerExtra::require(String name, ErrorHandler *errh)
+{
+  if (package_map[name] == 0) {
+#if HAVE_DYNAMIC_LINKING
+    String package = clickpath_find_file(name + ".uo", "lib", CLICK_LIBDIR);
+    if (!package)
+      package = clickpath_find_file(name + ".o", "lib", CLICK_LIBDIR);
+    if (!package) {
+      errh->message("cannot find required package `%s.uo'", name.cc());
+      errh->fatal("in CLICKPATH or `%s'", CLICK_LIBDIR);
+    }
+    load_package(package, errh);
+#endif
+    if (package_map[name] == 0)
+      errh->error("requirement `%s' not available", name.cc());
+  }
+}
+
+
 // main
 
 extern void export_elements(Lexer *);
@@ -584,7 +619,8 @@ particular purpose.\n");
   ::configuration_string = config_str;
 
   // lex
-  int cookie = lexer->begin_parse(config_str, router_file, 0);
+  RequireLexerExtra lextra;
+  int cookie = lexer->begin_parse(config_str, router_file, &lextra);
   while (lexer->ystatement())
     /* do nothing */;
   router = lexer->create_router();

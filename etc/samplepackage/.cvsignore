@@ -1,0 +1,3 @@
+Makefile *.d *.ko *.uo
+kelements.conf uelements.conf elements.mk
+kpackage.cc upackage.cc

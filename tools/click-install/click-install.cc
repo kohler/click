@@ -245,6 +245,12 @@ packages_to_remove(const StringMap &active_modules, const StringMap &packages)
 	String s = key.substring(p);
 	if (s && packages[s] >= 0)
 	  to_remove += " " + key;
+	else if (key.length() > 3 && key.substring(key.length() - 3) == ".ko") {
+	  // check for .ko packages
+	  s = key.substring(0, key.length() - 3);
+	  if (s && packages[s] >= 0)
+	    to_remove += " " + key;
+	}
       }
     }
   return to_remove;
@@ -462,7 +468,7 @@ particular purpose.\n");
 	  package = clickpath_find_file
 	    (key + ".o", "lib", CLICK_LIBDIR);
 	if (!package) {
-	  errh->message("cannot find required package `%s.o'", key.cc());
+	  errh->message("cannot find required package `%s.ko'", key.cc());
 	  errh->fatal("in CLICKPATH or `%s'", CLICK_LIBDIR);
 	}
 	if (verbose)

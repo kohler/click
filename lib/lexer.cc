@@ -561,14 +561,16 @@ int
 Lexer::add_element_type(Element *e)
 {
   // Lexer now owns `e'
-  return add_element_type(e->class_name(), e);
+  return add_element_type("", e);
 }
 
 int
-Lexer::add_element_type(const String &name, Element *e)
+Lexer::add_element_type(String name, Element *e)
 {
   // Lexer now owns `e'
   int tid;
+  if (!name)
+    name = e->class_name();
   if (_free_element_type < 0) {
     tid = _element_types.size();
     _element_types.push_back(e);
@@ -1403,7 +1405,7 @@ Lexer::create_router()
 //
 
 void
-LexerExtra::require(const String &, ErrorHandler *)
+LexerExtra::require(String, ErrorHandler *)
 {
 }
 

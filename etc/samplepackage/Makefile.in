@@ -1,0 +1,129 @@
+SHELL = @SHELL@
+
+
+# THESE VARIABLES WILL CHANGE FOR EVERY PACKAGE
+
+# SET `clicksrcdir' TO THE TOP-LEVEL CLICK SOURCE DIRECTORY.
+# If you are making a standalone package, provide a `--with-click=CLICKPREFIX'
+# configuration option, and set
+#	clicksrcdir := @clickprefix@/share/click/src
+clicksrcdir := @top_srcdir@
+
+# SET `package' TO THE NAME OF YOUR PACKAGE.
+package := sample
+
+# SET `TARGETS' TO ONE OR MORE OF `$(package).ko' AND `$(package).uo'.
+# The `.ko' version makes a package for the Linux kernel module. `.uo' is a
+# package for the user-level driver.
+TARGETS = $(package).ko $(package).uo
+
+
+# Set these variables appropriately.
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
+top_builddir := ../..
+subdir := etc/samplepackage
+
+
+# Everything below here should stay unchanged
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libdir = @libdir@
+linuxdir = @linuxdir@
+
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)
+
+K_CC = @CC@
+U_CC = @CC@
+CPP = @CPP@
+K_CXX = @KERNEL_CXX@
+U_CXX = @CXX@
+CXXCPP = @CXXCPP@
+VERSION = @VERSION@
+INSTALL = @INSTALL@
+mkinstalldirs = @top_srcdir@/mkinstalldirs
+
+.SUFFIXES:
+.SUFFIXES: .c .cc .o .ko .uo .ii
+
+.c.uo:
+	$(U_COMPILE) -c $< -o $@
+.cc.uo:
+	$(U_CXXCOMPILE) -c $< -o $@
+.c.ko:
+	$(K_COMPILE) -c $< -o $@
+.cc.ko:
+	$(K_CXXCOMPILE) -c $< -o $@
+.cc.ii:
+	$(U_CXXCOMPILE) -E $< > $@
+
+
+-include elements.mk
+
+K_OBJS = $(K_ELEMENT_OBJS) kpackage.ko kernelversion.ko
+U_OBJS = $(U_ELEMENT_OBJS) upackage.uo
+
+K_CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
+U_CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL
+CFLAGS = @CFLAGS_NDEBUG@
+CXXFLAGS = @CXXFLAGS_NDEBUG@
+
+DEFS = @DEFS@ 
+K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clicksrcdir) -I$(clicksrcdir)/lib -I$(linuxdir)/include
+U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clicksrcdir) -I$(clicksrcdir)/lib
+
+K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS)
+U_CXXCOMPILE = $(U_CXX) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS)
+K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS)
+U_COMPILE = $(U_CC) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CFLAGS)
+
+all: $(TARGETS)
+
+$(package).ko: Makefile $(K_OBJS)
+	ld -r -o $(package).ko $(K_OBJS)
+	strip -g $(package).ko
+
+$(package).uo: Makefile $(U_OBJS)
+	ld -shared -o $(package).uo $(U_OBJS)
+	strip -g $(package).uo
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+
+elemlist:
+	echo . | sh $(clicksrcdir)/findelements.sh -r linuxmodule > kelements.conf
+	echo . | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
+kelements.conf:
+	echo . | sh $(clicksrcdir)/findelements.sh -r linuxmodule > kelements.conf
+uelements.conf:
+	echo . | sh $(clicksrcdir)/findelements.sh -r userlevel > uelements.conf
+elements.mk: kelements.conf uelements.conf $(clicksrcdir)/mkelemconf.sh
+	$(clicksrcdir)/mkelemconf.sh -m -d k < kelements.conf > elements.mk
+	$(clicksrcdir)/mkelemconf.sh -m -d u < uelements.conf >> elements.mk
+kpackage.cc: kelements.conf $(clicksrcdir)/mkelemconf.sh
+	$(clicksrcdir)/mkelemconf.sh -k $(package) < kelements.conf > kpackage.cc
+	@rm -f kpackage.d
+upackage.cc: uelements.conf $(clicksrcdir)/mkelemconf.sh
+	$(clicksrcdir)/mkelemconf.sh -k $(package) < uelements.conf > upackage.cc
+	@rm -f upackage.d
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+install: $(TARGETS)
+	$(mkinstalldirs) $(libdir)
+	for i in $(TARGETS); do $(INSTALL) $$i $(libdir)/$$i; done
+install-man:
+
+clean:
+	-rm -f *.d *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf
+distclean: clean
+	-rm -f Makefile
+
+.PHONY: all clean distclean elemlist install install-man

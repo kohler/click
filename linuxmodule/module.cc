@@ -50,16 +50,16 @@ static Vector<String> *packages;
 
 class LinuxModuleLexerExtra : public LexerExtra { public:
   LinuxModuleLexerExtra() { }
-  void require(const String &, ErrorHandler *);
+  void require(String, ErrorHandler *);
 };
 
 void
-LinuxModuleLexerExtra::require(const String &r, ErrorHandler *errh)
+LinuxModuleLexerExtra::require(String r, ErrorHandler *errh)
 {
   for (int i = 0; i < packages->size(); i++)
     if (packages->at(i) == r)
       return;
-  errh->error("unsatisfied requirement `%s'", String(r).cc());
+  errh->error("unsatisfied requirement `%s'", r.cc());
 }
 
 Router *

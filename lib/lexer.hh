@@ -132,7 +132,7 @@ class Lexer {
   bool expect(int, bool report_error = true);
   
   int add_element_type(Element *);
-  int add_element_type(const String &, Element *);
+  int add_element_type(String, Element *);
   int element_type(const String &) const;
   int force_element_type(String);
 
@@ -168,7 +168,7 @@ class LexerExtra { public:
   LexerExtra()				{ }
   virtual ~LexerExtra()			{ }
   
-  virtual void require(const String &, ErrorHandler *);
+  virtual void require(String, ErrorHandler *);
 
 };
   

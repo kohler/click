@@ -395,7 +395,7 @@ EstimateRouterRegion::add_handlers()
   add_read_handler("status", pep_read_handler, (void *) 0);
 }
 
-ELEMENT_REQUIRES(GridLocationInfo)
+ELEMENT_REQUIRES(GridLocationInfo Amoeba RectRegion)
 EXPORT_ELEMENT(EstimateRouterRegion)
 
 #include "vector.cc"

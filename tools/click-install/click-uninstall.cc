@@ -109,6 +109,12 @@ packages_to_remove(const StringMap &active_modules, const StringMap &packages)
 	String s = key.substring(p);
 	if (s && packages[s] >= 0)
 	  to_remove += " " + key;
+	else if (key.length() > 3 && key.substring(key.length() - 3) == ".ko") {
+	  // check for .ko packages
+	  s = key.substring(0, key.length() - 3);
+	  if (s && packages[s] >= 0)
+	    to_remove += " " + key;
+	}
       }
     }
   return to_remove;

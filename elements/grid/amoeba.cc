@@ -247,4 +247,5 @@ main()
 }
 #endif
 
+ELEMENT_PROVIDES(Amoeba)
 ELEMENT_REQUIRES(userlevel)

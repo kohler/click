@@ -17,7 +17,7 @@
  * emitted on output port 0 even when the input rate is greater than R.
  *
  * =e
- *   RatedSplitter(2000);
+ *   rs :: RatedSplitter(2000);
  * Split packets on port 0 at 2000 packets per second.
  *
  *   elementclass RatedSampler {
@@ -52,6 +52,7 @@ class RatedSplitter : public Element { protected:
   void add_handlers();
  
   int configure(const Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const		{ return true; }
   void push(int port, Packet *);
   
   unsigned rate() const				{ return _rate.rate(); }
