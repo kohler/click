@@ -1,3 +1,8 @@
+2001-10-09 Tuesday 16:57  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: add -S/--standards option to click-buildtool
+	findelem: mark that standard elements are indeed available
+
 2001-10-09 Tuesday 11:57  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/glue.cc: use nonblocking I/O to read /dev/random in
