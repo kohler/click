@@ -221,6 +221,7 @@ void
 FromDAGDump::stamp_to_timeval(uint64_t stamp, struct timeval &tv) const
 {
     tv.tv_sec = (uint32_t) (stamp >> 32);
+    // based on a code description in an Endace document
     stamp = (stamp & 0xFFFFFFFFULL) * 1000000;
     stamp += (stamp & 0x80000000ULL) << 1; // rounding
     tv.tv_usec = (uint32_t) (stamp >> 32);
