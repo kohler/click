@@ -61,6 +61,9 @@ ETT::ETT()
   _black_list_timeout.tv_sec = 60;
   _black_list_timeout.tv_usec = 0;
 
+  _rev_path_update.tv_sec = 10;
+  _rev_path_update.tv_usec = 0;
+
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
 }
@@ -121,6 +124,10 @@ ETT::run_timer ()
 {
   if (_warmup <= _warmup_period) {
     _warmup++;
+    if (_warmup > _warmup_period) {
+      click_chatter("ETT %s: warmup finished\n",
+		    id().cc());
+    }
   }
   _timer.schedule_after_ms(1000);
 }
@@ -209,33 +216,30 @@ ETT::send(WritablePacket *p)
 int
 ETT::get_metric(IPAddress other)
 {
-  u_short dft = 0; // default metric
-
   BadNeighbor *n = _black_list.findp(other);
-
-  if (n &&  n->still_bad()) {
-    return 9999;
-  }
-  if(_link_stat && _arp_table){
+  int metric = 0;
+  if (n && n->still_bad() ) {
+    metric = 9999;
+  } else if (!_link_stat || !_arp_table) {
+    metric = 9999;
+  } else {
     unsigned int tau;
     struct timeval tv;
     unsigned int frate, rrate;
-    bool res = _link_stat->get_forward_rate(_arp_table->lookup(other), &frate, &tau, &tv);
-    if(res == false) {
-      return dft;
-    }
-    res = _link_stat->get_reverse_rate(_arp_table->lookup(other), &rrate, &tau);
-    if(res == false) {
-      return dft;
-    }
-    if(frate == 0 || rrate == 0) {
-      return dft;
-    }
-    u_short m = 100 * 100 * 100 / (frate * (int) rrate);
-    return m;
-  } else {
-    return dft;
+    if(!_link_stat->get_forward_rate(_arp_table->lookup(other), 
+				     &frate, &tau, &tv)) {
+      metric = 9999;
+    } else if (!_link_stat->get_reverse_rate(_arp_table->lookup(other), 
+					     &rrate, &tau)) {
+      metric = 9999;
+    } else if (frate == 0 || rrate == 0) {
+      metric = 9999;
+    } else {
+      metric = 100 * 100 * 100 / (frate * (int) rrate);
+    } 
   }
+  update_link(_ip, other, metric);
+  return metric;
 }
 
 void
@@ -399,6 +403,29 @@ ETT::forward_reply(struct sr_pkt *pk1)
     return;
   }
 
+  Path fwd;
+  Path rev;
+  for (int i = 0; i < pk1->num_hops(); i++) {
+    fwd.push_back(pk1->get_hop(i));
+  }
+  rev = reverse_path(fwd);
+  struct timeval now;
+  click_gettimeofday(&now);
+
+  PathInfo *fwd_info = _paths.findp(fwd);
+  if (!fwd_info) {
+    _paths.insert(fwd, PathInfo(fwd));
+    fwd_info = _paths.findp(fwd);
+  }
+  PathInfo *rev_info = _paths.findp(rev);
+  if (!rev_info) {
+    _paths.insert(rev, PathInfo(rev));
+    rev_info = _paths.findp(rev);
+  }
+  fwd_info->_last_packet = now;
+  rev_info->_last_packet = now;
+
+
   int len = pk1->hlen_wo_data();
   WritablePacket *p = Packet::make(len);
   if(p == 0)
@@ -495,54 +522,67 @@ ETT::got_reply(struct sr_pkt *pk)
 }
 
 
-String 
-ETT::route_to_string(Vector<IPAddress> s) 
-{
-  StringAccum sa;
-  sa << "[ ";
-  for (int i=0; i<s.size(); i++) {
-    sa << s[i] << " ";
-  }
-  sa << "]";
-  return sa.take_string();
-}
-
 void
 ETT::process_data(Packet *p_in)
 {
+  Path fwd;
+  Path rev;
   struct sr_pkt *pk_in = (struct sr_pkt *) p_in->data();
   
   IPAddress dst = pk_in->get_hop(pk_in->next());
-  IPAddress src = pk_in->get_hop(0);
-  BadNeighbor *n = _black_list.findp(dst);
-  if (!n || !n->still_bad()) {
+
+  for (int x = 0; x < pk_in->num_hops(); x++) {
+    fwd.push_back(pk_in->get_hop(x));
+  }
+
+  int i = 0;
+  for (i = 0; i < fwd.size(); i++) {
+    if (fwd[i] == _ip) {
+      break;
+    }
+  }
+  int ndx_me = i;
+  ett_assert(ndx_me != fwd.size());
+  ett_assert(ndx_me != 0);
+  if (ndx_me == fwd.size()-1) {
+    /* I'm the last hop */
     return;
   }
-  int *count = n->_errors_sent.findp(src);
-  if (!count) {
-    n->_errors_sent.insert(src, 0);
-    count = n->_errors_sent.findp(src);
+
+
+  struct timeval now;
+  click_gettimeofday(&now);
+
+  PathInfo *fwd_info = _paths.findp(fwd);
+  if (!fwd_info) {
+    _paths.insert(fwd, PathInfo(fwd));
+    fwd_info = _paths.findp(fwd);
   }
-  ett_assert(count);
-  n->_errors_sent.insert(src, *count + 1);
-  if (*count % 10 != 0) {
+  fwd_info->_last_packet = now;
+
+  rev = reverse_path(fwd);
+  PathInfo *rev_info = _paths.findp(rev);
+  if (!rev_info) {
+    _paths.insert(rev, PathInfo(rev));
+    rev_info = _paths.findp(rev);
+    rev_info->_last_packet = now;
+  }
+  
+  struct timeval expire;
+  timeradd(&rev_info->_last_packet, &_rev_path_update, &expire);
+  if (!timercmp(&expire, &now, <)) {
     return;
   }
   
-  Path path = _link_table->best_route(pk_in->get_hop(0));
-
-  if (!_link_table->valid_route(path)) {
-    click_chatter("ETT %s: couldn't send error to %s about neighbor %s,no route\n",
-		  id().cc(),
-		  pk_in->get_hop(0).s().cc(),
-		  dst.s().cc());
+  if (random() % (fwd.size() - ndx_me + 1) != 0) {
+    return;
   }
-  click_chatter("ETT %s: sending err to %s about neighbor %s\n",
-		id().cc(),
-		pk_in->get_hop(0).s().cc(),
-		dst.s().cc());
 
-  int len = sr_pkt::len_wo_data(path.size()+1);
+  /* send an update */
+
+  rev_info->_last_packet = now;
+
+  int len = sr_pkt::len_wo_data(fwd.size());
   WritablePacket *p = Packet::make(len);
   if(p == 0) {
     click_chatter("ETT %s: couldn't make packet in process_data\n",
@@ -550,24 +590,23 @@ ETT::process_data(Packet *p_in)
     return;
   }
   
-  /* send error */
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
   memset(pk, '\0', len);
   pk->_version = _srcr_version;
   pk->_type = PT_REPLY;
-  pk->_flags = FLAG_ERROR;
+  pk->_flags = FLAG_UPDATE;
   pk->_qdst = dst;
   pk->_seq = 0;
-  pk->set_next(path.size()-2);
-  pk->set_num_hops(path.size()+1);
-  int i;
-  for(i = 0; i < path.size(); i++) {
-    pk->set_hop(i, path[path.size() - 1 - i]);
-    pk->set_metric(i,0);
-    //click_chatter("reply: set hop %d to %s\n", i, pk->get_hop(i).s().cc());
+  pk->set_next(ndx_me-1);
+  pk->set_num_hops(fwd.size());
+  for(i = 0; i < fwd.size(); i++) {
+    pk->set_hop(i, fwd[i]);
+    if (i < ndx_me) {
+      pk->set_metric(i, _link_table->get_hop_metric(fwd[i],fwd[i+1]));
+    }
   }
-  pk->set_hop(path.size(), dst);
-  pk->set_metric(path.size()-1, 9999);
+  
+  pk->set_metric(ndx_me, get_metric(fwd[ndx_me+1]));
 
   send(p);
   return;
@@ -577,10 +616,10 @@ void
 ETT::push(int port, Packet *p_in)
 {
   if (_warmup < _warmup_period) {
-    click_chatter("ETT %s: still warming up, dropping packet\n", id().cc());
     p_in->kill();
     return;
   }
+
   if (port == 1) {
     process_data(p_in);
     p_in->kill();

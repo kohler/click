@@ -326,7 +326,7 @@ SRCR::srcr_assert_(const char *file, int line, const char *expr) const
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class HashMap<Path, SRCR::PathInfo>;
+
 #endif
 
 CLICK_ENDDECLS

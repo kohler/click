@@ -5,10 +5,10 @@
 #include <click/timer.hh>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
-#include <click/straccum.hh>
 #include <elements/grid/linktable.hh>
 #include <click/vector.hh>
 #include "ett.hh"
+#include <elements/grid/sr/path.hh>
 #include <elements/wifi/rxstats.hh>
 CLICK_DECLS
 
@@ -33,6 +33,7 @@ enum SRCRPacketType { PT_QUERY = (1<<0),
 
 enum SRCRPacketFlags {
   FLAG_ERROR = (1<<0),
+  FLAG_UPDATE = (1<<0),
 };
 
 static const uint8_t _srcr_version = 0x04;
@@ -159,45 +160,6 @@ struct sr_pkt {
 
 
 
-typedef Vector<IPAddress> Path;
-inline unsigned
-hashcode(const Path &p)
-{
-  unsigned h = 0;
-  for (int x = 0; x < p.size(); x++) {
-    h = h ^ hashcode(p[x]);
-  }
-  return h;
-}
-
-inline bool
-operator==(const Path &p1, const Path &p2)
-{
-  if (p1.size() != p2.size()) {
-    return false;
-  }
-  for (int x = 0; x < p1.size(); x++) {
-    if (p1[x] != p2[x]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-inline String path_to_string(const Path &p) 
-{
-  StringAccum sa;
-  for(int x = 0; x < p.size(); x++) {
-    sa << p[x].s().cc();
-    if (x != p.size() - 1) {
-      sa << " ";
-    }
-  }
-  return sa.take_string();
-}
-
-
-
 class SRCR : public Element {
  public:
   
@@ -231,19 +193,7 @@ private:
   int _databytes;
 
   EtherAddress _bcast;
-  class PathInfo {
-  public:
-    Path _p;
-    int _count;
-    PathInfo() {
-      memset(this, 0, sizeof(*this));
-    }
-  };
 
-  typedef BigHashMap<Path, PathInfo> PathTable;
-  typedef PathTable::const_iterator PIter;
-  
-  class PathTable _paths;
   class LinkTable *_link_table;
   IPAddress _ls_net;
   class ARPTable *_arp_table;

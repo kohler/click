@@ -380,8 +380,7 @@ LinkTable::print_links()
   click_gettimeofday(&now);
   for (LTIter iter = _links.begin(); iter; iter++) {
     LinkInfo n = iter.value();
-    sa << "link: ";
-    sa << n._from.s().cc() << " " << n._to.s().cc() << " : ";
+    sa << n._from.s().cc() << " " << n._to.s().cc() << " ";
     sa << n._metric << " " << " " << now - n._last_updated << "\n";
   }
   return sa.take_string();

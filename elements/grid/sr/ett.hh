@@ -10,6 +10,7 @@
 #include <click/dequeue.hh>
 #include <elements/grid/linktable.hh>
 #include <elements/grid/arptable.hh>
+#include <elements/grid/sr/path.hh>
 #include "srcr.hh"
 #include <elements/wifi/rxstats.hh>
 CLICK_DECLS
@@ -81,7 +82,6 @@ class ETT : public Element {
 
   int get_metric(IPAddress other);
   void update_link(IPAddress from, IPAddress to, int metric);
-  static String route_to_string(Vector<IPAddress> s);
   void forward_query_hook();
   IPAddress get_random_neighbor();
 private:
@@ -137,7 +137,20 @@ private:
     }
 
 
-};
+  };
+
+  class PathInfo {
+  public:
+    Path _p;
+    struct timeval _last_packet;
+    int count;
+    PathInfo() {memset(this,0,sizeof(*this)); }
+    PathInfo(Path p) { _p = p; }
+  };
+
+  typedef BigHashMap<Path, PathInfo> PathTable;
+  PathTable _paths;
+
 
   typedef HashMap<IPAddress, BadNeighbor> BlackList;
   BlackList _black_list;
@@ -155,6 +168,7 @@ private:
   int MaxHops;   // Max hop count for queries.
   struct timeval _query_wait;
   struct timeval _black_list_timeout;
+  struct timeval _rev_path_update;
   u_long _seq;      // Next query sequence number to use.
   Timer _timer;
   int _warmup;
