@@ -20,6 +20,7 @@ class IP6Table { public:
   void add(const IP6Address &dst, const IP6Address &mask, const IP6Address &gw, int index);
   void del(const IP6Address &dst, const IP6Address &mask);
   void clear()				{ _v.clear(); }
+  String dump();
 
  private:
   

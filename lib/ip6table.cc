@@ -18,6 +18,7 @@
 
 #include <click/config.h>
 #include <click/ip6table.hh>
+#include <click/straccum.hh>
 CLICK_DECLS
 
 IP6Table::IP6Table()
@@ -54,11 +55,14 @@ IP6Table::add(const IP6Address &dst, const IP6Address &mask,
 {
   struct Entry e;
 
-  e._dst = dst;
+  e._dst = dst & mask;
   e._mask = mask;
   e._gw = gw;
   e._index = index;
   e._valid = 1;
+
+  // Just in case, so we never encounter duplicate routes...
+  del(dst, mask);
 
   for (int i = 0; i < _v.size(); i++)
     if (!_v[i]._valid) {
@@ -71,9 +75,26 @@ IP6Table::add(const IP6Address &dst, const IP6Address &mask,
 void
 IP6Table::del(const IP6Address &dst, const IP6Address &mask)
 {
+  IP6Address dstnet = dst & mask;
+
   for (int i = 0; i < _v.size(); i++)
-    if (_v[i]._valid && (_v[i]._dst == dst) && (_v[i]._mask == mask))
+    if (_v[i]._valid && (_v[i]._dst == dstnet) && (_v[i]._mask == mask))
       _v[i]._valid = 0;
+}
+
+String
+IP6Table::dump()
+{
+    StringAccum sa;
+    if (_v.size())
+        sa << "# Active routes\n";
+    for (int i = 0; i < _v.size(); i++)
+        if (_v[i]._valid) {
+            sa << _v[i]._dst << '/' << _v[i]._mask.mask_to_prefix_len();
+            sa << '	' << _v[i]._gw ;
+	    sa << '	' << _v[i]._index << '\n';
+	}
+    return sa.take_string();
 }
 
 // generate Vector template instance
