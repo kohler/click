@@ -41,7 +41,8 @@ class ARPTable : public Element { public:
   IPAddress reverse_lookup(EtherAddress eth);
 
   int insert(IPAddress ip, EtherAddress eth);
- private:
+  EtherAddress _bcast;
+private:
   
   // Poor man's ARP cache. 
   class DstInfo {
@@ -65,8 +66,6 @@ class ARPTable : public Element { public:
   
   ATable _table;
   RTable _rev_table;
-  EtherAddress _bcast;
-  
 };
 
 CLICK_ENDDECLS
