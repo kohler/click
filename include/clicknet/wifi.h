@@ -263,6 +263,64 @@ typedef u_int8_t *	wifi_mgt_auth_t;
 #endif
 
 
+
+/* ARPHRD_IEEE80211_PRISM uses a bloated version of Prism2 RX frame header
+ * (from linux-wlan-ng) */
+
+/*
+ * For packet capture, define the same physical layer packet header
+ * structure as used in the wlan-ng driver
+ */
+enum {
+  DIDmsg_lnxind_wlansniffrm               = 0x00000044,
+  DIDmsg_lnxind_wlansniffrm_hosttime      = 0x00010044,
+  DIDmsg_lnxind_wlansniffrm_mactime       = 0x00020044,
+  DIDmsg_lnxind_wlansniffrm_channel       = 0x00030044,
+  DIDmsg_lnxind_wlansniffrm_rssi          = 0x00040044,
+  DIDmsg_lnxind_wlansniffrm_sq            = 0x00050044,
+  DIDmsg_lnxind_wlansniffrm_signal        = 0x00060044,
+  DIDmsg_lnxind_wlansniffrm_noise         = 0x00070044,
+  DIDmsg_lnxind_wlansniffrm_rate          = 0x00080044,
+  DIDmsg_lnxind_wlansniffrm_istx          = 0x00090044,
+  DIDmsg_lnxind_wlansniffrm_frmlen        = 0x000A0044
+};
+enum {
+        P80211ENUM_msgitem_status_no_value      = 0x00
+};
+enum {
+        P80211ENUM_truth_false                  = 0x00
+};
+
+
+typedef struct {
+  u_int32_t did;
+  u_int16_t status;
+  u_int16_t len;
+  u_int32_t data;
+} p80211item_uint32_t;
+
+typedef struct {
+  u_int32_t msgcode;
+  u_int32_t msglen;
+#define WLAN_DEVNAMELEN_MAX 16
+  u_int8_t devname[WLAN_DEVNAMELEN_MAX];
+  p80211item_uint32_t hosttime;
+  p80211item_uint32_t mactime;
+  p80211item_uint32_t channel;
+  p80211item_uint32_t rssi;
+  p80211item_uint32_t sq;
+  p80211item_uint32_t signal;
+  p80211item_uint32_t noise;
+  p80211item_uint32_t rate;
+  p80211item_uint32_t istx;
+  p80211item_uint32_t frmlen;
+} wlan_ng_prism2_header;
+
+
+#define LWNG_CAP_DID_BASE   (4 | (1 << 6)) /* section 4, group 1 */
+#define LWNG_CAPHDR_VERSION 0x80211001
+
+
 static inline unsigned calc_usecs_wifi_packet(int length, int rate, int retries) {
   assert(rate);
   assert(length);
@@ -315,6 +373,8 @@ static inline unsigned calc_usecs_wifi_packet(int length, int rate, int retries)
 					     packet_tx_time + 
 					     t_sifs + t_ack);
 }
+
+
 
 
 

@@ -1,0 +1,44 @@
+#ifndef CLICK_PRISM2DECAP_HH
+#define CLICK_PRISM2DECAP_HH
+#include <click/element.hh>
+#include <clicknet/ether.h>
+CLICK_DECLS
+
+/*
+=c
+
+Prism2Decap()
+
+=s decapsulation, Prism2 -> 802.11
+
+Removes the prism2 header and sets the corresponding wifi packet annotations (RSSI, NOISE, and RATE).
+=d
+
+=a
+
+EtherEncap */
+
+class Prism2Decap : public Element { public:
+  
+  Prism2Decap();
+  ~Prism2Decap();
+
+  const char *class_name() const	{ return "Prism2Decap"; }
+  const char *processing() const	{ return AGNOSTIC; }
+  
+  int configure(Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const	{ return true; }
+
+  Packet *simple_action(Packet *);
+
+
+  void add_handlers();
+
+
+  bool _debug;
+ private:
+
+};
+
+CLICK_ENDDECLS
+#endif
