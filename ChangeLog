@@ -1,3 +1,8 @@
+2001-08-21 Tuesday 21:17  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* configure.in (1.141): Change test for BSD kernel patches because
+	that part of the code changed.
+
 2001-08-21 Tuesday 20:25  Eddie Kohler <kohler@aciri.org>
 
 	* tools/lib/toolutils.cc (1.39): nitlet to improve compilability on
