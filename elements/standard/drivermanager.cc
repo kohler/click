@@ -84,8 +84,10 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	} else if (insn_name == "write" || insn_name == "write_skip" || insn_name == "call") {
 	    int insn = (insn_name == "write_skip" ? INSN_WRITE_SKIP : INSN_WRITE);
 	    if (words.size() == 2)
+		add_insn(insn, 0, words[1]);
+	    else if (words.size() == 3)
 		add_insn(insn, 0, words[1] + " " + cp_unquote(words[2]));
-	    else if (words.size() > 2)
+	    else if (words.size() > 3)
 		add_insn(insn, 0, cp_unspacevec(words.begin()+1, words.end()));
 	    else
 		errh->error("expected '%s ELEMENT.HANDLER [ARGS]'", insn_name.cc());

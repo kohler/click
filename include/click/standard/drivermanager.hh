@@ -67,7 +67,8 @@ handler, such as 'C<config>', or an element handler, such as 'C<c.count>'.
 =item 'C<write> HANDLER [ARG]'
 
 Call a write handler, passing it ARG; then go to the next instruction.  ARG, a
-string, is unquoted before being passed to HANDLER.
+string, is unquoted before being passed to HANDLER.  ARG may be omitted, in
+which case the handler is passed the empty string.
 
 =item 'C<write> HANDLER ARG ARG...'
 
