@@ -48,10 +48,13 @@ IP6Address::IP6Address(const unsigned char *data)
 IP6Address::IP6Address(IPAddress ip)
 {
   const unsigned char *udata = ip.data();
-  for (int i=0; i<10; i++)
-    _addr.s6_addr[i] = 0;
-  _addr.s6_addr[10]=0xff;
-  _addr.s6_addr[11]=0xff;
+  //  for (int i=0; i<10; i++)
+//      _addr.s6_addr[i] = 0;
+//    _addr.s6_addr[10]=0xff;
+//    _addr.s6_addr[11]=0xff;
+
+  for (int i=0; i<12; i++)
+      _addr.s6_addr[i] = 0;
   for (int i=0; i<4; i++)
     _addr.s6_addr[12+i] = udata[i];
 }
@@ -77,16 +80,19 @@ IP6Address::make_prefix(int prefix)
 bool
 IP6Address::get_ip4address(unsigned char ip4[4]) const
 {
-  if (_addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0xFFFF) {
-    ip4[0] = _addr.s6_addr[12];
-    ip4[1] = _addr.s6_addr[13];
-    ip4[2] = _addr.s6_addr[14];
-    ip4[3] = _addr.s6_addr[15];
-    return true;
-  }
- else 
-   return false;
-    
+  if ((_addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0xFFFF ) 
+      || ( _addr.s6_addr16[0] == 0 && _addr.s6_addr16[1] == 0 
+	   && _addr.s6_addr16[2] == 0 && _addr.s6_addr16[3] == 0 
+	   && _addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0)) 
+    {
+      ip4[0] = _addr.s6_addr[12];
+      ip4[1] = _addr.s6_addr[13];
+      ip4[2] = _addr.s6_addr[14];
+      ip4[3] = _addr.s6_addr[15];
+      return true;
+    }
+  else 
+    return false;  
 }
 
 String
@@ -104,6 +110,13 @@ IP6Address::s() const
       return String(buf);
     } else if (_addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0xFFFF) {
       sprintf(buf, "::FFFF:%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
+	      _addr.s6_addr[14], _addr.s6_addr[15]);
+      return String(buf);
+    }
+    else if ( _addr.s6_addr16[0] == 0 && _addr.s6_addr16[1] == 0 
+	   && _addr.s6_addr16[2] == 0 && _addr.s6_addr16[3] == 0 
+	   && _addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0)  {
+      sprintf(buf, "::%d.%d.%d.%d", _addr.s6_addr[12], _addr.s6_addr[13],
 	      _addr.s6_addr[14], _addr.s6_addr[15]);
       return String(buf);
     }
@@ -170,11 +183,13 @@ in_ip4_cksum(const unsigned  saddr,
 	csum += carry;
       
 	//get the sum of other fields:  packet length, protocal
-	csum += len;
+	//  csum += len;
+	csum += ntohs(len);
 	csum += proto;
 	
 	//get the sum of the upper layer package
-	unsigned short nleft = len2;
+	//unsigned short nleft = len2;
+	unsigned short nleft = ntohs(len2);
 	const unsigned short *w = (const unsigned short *)addr;
 	while (nleft > 1)  { 
 	    unsigned short w2=*w++;
@@ -187,7 +202,8 @@ in_ip4_cksum(const unsigned  saddr,
 	  *(unsigned char *)(&answer) = *(const unsigned char *)w ;
 	  csum += ntohs(answer); 	 
 	}  
-	csum -= ori_csum; //get rid of the effect of ori_csum in the calculation
+	//csum -= ori_csum; //get rid of the effect of ori_csum in the calculation
+	csum -= ntohs(ori_csum);
         
 	// fold >=32-bit csum to 16-bits 
 	while (csum>>16) {
