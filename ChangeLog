@@ -1,3 +1,7 @@
+2002-01-24 Thursday 14:20  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipflowid.hh (1.9): IPFlowID nitlets
+
 2002-01-24 Thursday 09:43  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: lookupiprouteron.cc (1.21), lookupiprouteron.hh (1.16):
