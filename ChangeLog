@@ -1,3 +1,7 @@
+2004-06-22 Tuesday 04:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/in_cksum.c (1.15): fix bonehead checksum calculation error
+
 2004-06-22 Tuesday 03:02  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/analysis/FromIPSummaryDump-ipopt-01.testie (1.9): update
