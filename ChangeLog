@@ -1,3 +1,16 @@
+2004-05-04 Tuesday 00:50  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/standard/StrideSched-01.testie (1.1): add StrideSched test
+
+2004-05-04 Tuesday 00:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: stridesched.cc (1.21), stridesched.hh (1.22):
+	fix bug reported by Roy Shea
+
+2004-05-04 Tuesday 00:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/simplequeue.cc (1.7): nits
+
 2004-05-03 Monday 23:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/: linux-2.4.20-patch (1.8), linux-2.4.21-patch (1.4): patches
