@@ -9,9 +9,9 @@
  * connections. Generate them with random source IP addresses
  * starting with PREFIX.
  * =e
- * kt :: KernelTap(127.1.0.0/16);
+ * kt :: KernelTap(11.11.0.0/16);
  * kt -> Strip(14)
- *    -> WebGen(127.1.0.0/16, 127.0.0.1)
+ *    -> WebGen(11.11.0.0/16, 10.0.0.1)
  *    -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
  *    -> kt;
  */
