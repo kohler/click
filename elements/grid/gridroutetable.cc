@@ -46,6 +46,8 @@ GridRouteTable::GridRouteTable() :
 GridRouteTable::~GridRouteTable()
 {
   MOD_DEC_USE_COUNT;
+  if (_log)
+    delete _log;
 }
 
 
