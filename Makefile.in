@@ -53,10 +53,11 @@ install-doc:
 	@cd doc && $(MAKE) install
 install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
-install-include:
+# note: install-include installs include/click/config.h, not config.h
+install-include: stamp-h
 	$(mkinstalldirs) $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.* $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/config.h $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/config.h $(includedir)
 
 elemlist elemlists:
 	for dir in @TARGETS@; do \
