@@ -1,3 +1,8 @@
+2002-05-17 Friday 15:01  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/todevice.hh (1.18): __sparc is for hardware,
+	__sun is for software, says Scott Page
+
 2002-05-16 Thursday 14:50  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/: ipfragmenter.cc (1.27), ipfragmenter.hh (1.21):
