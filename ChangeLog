@@ -1,3 +1,11 @@
+2001-06-20 Wednesday 13:53  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: anydevice.cc (1.18), anydevice.hh (1.29),
+	fromdevice.cc (1.59), fromdevice.hh (1.26): AnyDevice, FromDevice:
+	listen to the netdevice notifier chain, so we can tell when
+	interfaces go up or come down. Also add keyword arguments to
+	FromDevice, including ALLOW_NONEXISTENT
+
 2001-06-20 Wednesday 11:21  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/standard/peekhandlers.cc (1.18),
