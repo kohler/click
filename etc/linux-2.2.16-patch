@@ -127,8 +127,8 @@ Index: include/linux/skbuff.h
 
 Index: net/core/skbuff.c
 --- net/core/skbuff.c.orig	Sun Mar  7 13:12:18 1999
-+++ net/core/skbuff.c	Mon Oct 30 15:23:15 2000
-@@ -257,6 +257,82 @@
++++ net/core/skbuff.c	Mon Oct 30 18:42:56 2000
+@@ -257,6 +257,66 @@
  	return n;
  }
  
@@ -138,30 +138,18 @@ Index: net/core/skbuff.c
 +skb_recycled_init(struct sk_buff *skb)
 +{
 +  // copied from skb_headerinit
-+  if (skb->destructor)
-+    skb->destructor = NULL;
-+  if (skb->pkt_type != PACKET_HOST) 
-+    skb->pkt_type = PACKET_HOST;    /* Default type */
-+  if (skb->pkt_bridged != 0)
-+    skb->pkt_bridged = 0;           /* Not bridged */
-+  if (skb->prev != NULL)
-+    skb->prev = NULL;
-+  if (skb->next != NULL)
-+    skb->next = NULL;
-+  if (skb->list != NULL) 
-+    skb->list = NULL;
-+  if (skb->sk != NULL)
-+    skb->sk = NULL;
-+  if (skb->stamp.tv_sec != 0)
-+    skb->stamp.tv_sec=0;    /* No idea about time */
-+  if (skb->ip_summed != 0) 
-+    skb->ip_summed = 0;
-+  if (skb->security != 0)
-+    skb->security = 0;      /* By default packets are insecure */
-+  if (skb->dst != NULL)
-+    skb->dst = NULL;
-+  if (skb->priority != 0) 
-+    skb->priority = 0;
++  skb->destructor = NULL;
++  skb->pkt_type = PACKET_HOST;    /* Default type */
++  skb->pkt_bridged = 0;           /* Not bridged */
++  skb->prev = NULL;
++  skb->next = NULL;
++  skb->list = NULL;
++  skb->sk = NULL;
++  skb->stamp.tv_sec=0;    /* No idea about time */
++  skb->ip_summed = 0;
++  skb->security = 0;      /* By default packets are insecure */
++  skb->dst = NULL;
++  skb->priority = 0;
 +  memset(skb->cb, 0, sizeof(skb->cb));
 +
 +  /* Load the data pointers. */
@@ -172,15 +160,11 @@ Index: net/core/skbuff.c
 +
 +  /* set up other state */
 +  skb->len = 0;
-+  if (skb->is_clone != 0) 
-+    skb->is_clone = 0;
-+  if (skb->cloned != 0) 
-+    skb->cloned = 0;
++  skb->is_clone = 0;
++  skb->cloned = 0;
 +
-+  if (atomic_read(&skb->users) != 1) 
-+    atomic_set(&skb->users, 1);
-+  if (atomic_read(skb_datarefp(skb)) != 1) 
-+    atomic_set(skb_datarefp(skb), 1);
++  atomic_set(&skb->users, 1);
++  atomic_set(skb_datarefp(skb), 1);
 +}
 +
 +/* Click: attempts to recycle a sk_buff. if it can be recycled, return it. */
@@ -504,7 +488,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Wed May  3 20:16:43 2000
-+++ drivers/net/tulip.c	Mon Oct 30 18:29:57 2000
++++ drivers/net/tulip.c	Mon Oct 30 18:55:54 2000
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
