@@ -23,7 +23,7 @@ CLICK_DECLS
  *
  * MAC-ADDRESS and IP-ADDRESS are this node's ethernet and IP
  * addresses, respectively.  Sets the ethernet type to the Grid
- * ethertype; sets the ethernet dest to MAC-ADDRESS.  Sets the Grid
+ * ethertype; sets the ethernet source address to MAC-ADDRESS.  Sets the Grid
  * src and tx IP to be IP-ADDRESS.  Sets all locations to invalid.
  * Does not set checksum.
  * 
