@@ -1,3 +1,32 @@
+2001-07-31 Tuesday 04:05  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4 (1.2), aclocal.m4 (1.2): CLICK_CHECK_LIBPCAP nitlet
+
+2001-07-31 Tuesday 03:56  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.35), Makefile.in (1.93), acclick.m4 (1.1),
+	aclocal.m4 (1.1), click-compile.in (1.13), configure.in (1.133),
+	doc/Makefile.in (1.36), etc/libclick/DISTFILES (1.2),
+	etc/libclick/Makefile.in (1.4), etc/libclick/lc-Makefile.in (1.6),
+	etc/libclick/lc-configure.in (1.6),
+	etc/libclick/lc-libsrc-Makefile.in (1.4),
+	etc/samplepackage/.cvsignore (1.4), etc/samplepackage/Makefile.in
+	(1.22), etc/samplepackage/acclick.m4 (1.1),
+	etc/samplepackage/configure.in (1.2), linuxmodule/Makefile.in
+	(1.59), tools/Makefile.in (1.44), tools/click-align/Makefile.in
+	(1.10), tools/click-check/Makefile.in (1.6),
+	tools/click-combine/Makefile.in (1.6),
+	tools/click-devirtualize/Makefile.in (1.6),
+	tools/click-fastclassifier/Makefile.in (1.11),
+	tools/click-flatten/Makefile.in (1.2),
+	tools/click-install/Makefile.in (1.13),
+	tools/click-mkmindriver/Makefile.in (1.5),
+	tools/click-undead/Makefile.in (1.5), tools/click-xform/Makefile.in
+	(1.14), tools/lib/Makefile.in (1.15), tools/udpgen/Makefile.in
+	(1.5), userlevel/Makefile.in (1.57): configuration refactoring:
+	place common configure.in tests in acclick.m4, include that
+	elsewhere.
+
 2001-07-30 Monday 21:32  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/glue.hh (1.15), lib/glue.cc (1.24): add srandom()
