@@ -1,3 +1,7 @@
+2002-02-23 Saturday 23:37  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.37): [no log message]
+
 2002-02-23 Saturday 15:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.51), elements/grid/gridroutetable.cc (1.36),
