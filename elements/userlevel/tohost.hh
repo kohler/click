@@ -40,7 +40,7 @@ CLICK_DECLS
  *
  * =a
  *
- * Fromhost.u, FromHost
+ * FromHost.u, FromHost
  * 
  */
 

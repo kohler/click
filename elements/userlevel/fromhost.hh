@@ -18,9 +18,9 @@ CLICK_DECLS
  * 
  * =s devices
  *
- *user-level interface to /dev/tap or ethertap
+ * user-level interface to /dev/tap or ethertap
  *
- *=d
+ * =d
  *
  * Reads packets from and writes packets through the universal TUN/TAP
  * module in linux (the /dev/net/tun device).  This allows a
@@ -61,14 +61,14 @@ CLICK_DECLS
  * queries in order to receive any IP packets, but you can obviously respond
  * with any Ethernet address you'd like. Here is one common idiom:
  *
- * tap0 :: FromHost(192.0.0.1/8)
+ * tap0 :: FromHost(fake, 192.0.0.1/8)
  * -> fromhost_cl :: Classifier(12/0806, 12/0800);
  * fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> tap0;
  * fromhost_cl[1] -> ... // IP packets
  *  
  *  =e
  *
- *  FromHost(192.0.0.1/8) -> ...;
+ *  FromHost(fake, 192.0.0.1/8) -> ...;
  * 
  * An error like "could not allocate a /dev/tap* device : No such file or
  * directory" usually means that you have not enabled /dev/tap* in your
@@ -77,7 +77,11 @@ CLICK_DECLS
  * =h dev_name read-only
  * Returns the name of the device that this element is using.
  *
- * =a ToLinux, ifconfig(8) */
+ * =a 
+ * 
+ * ToHost.u, ToHost ifconfig(8) 
+ * 
+ */
 
 class FromHost : public Element { public:
 
