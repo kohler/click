@@ -12,7 +12,7 @@ $debug = 0;
 
 $click = "../userlevel/click";
 $click_debug = "cat";
-$click_config_name = "../conf/grid-gateway2.click";
+$click_config_name = "../conf/grid-gateway.click";
 
 
 $grid_channel = "5";
