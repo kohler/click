@@ -379,7 +379,7 @@ RouterThread::run_os()
 	schedule();
     } else if (Timestamp wait = _master->next_timer_expiry()) {
 	wait -= Timestamp::now();
-	if (!(wait._sec > 0 || wait._subsec > (Timestamp::SUBSEC_PER_SEC / CLICK_HZ)))
+	if (!(wait._sec > 0 || (wait._sec == 0 && wait._subsec > (Timestamp::SUBSEC_PER_SEC / CLICK_HZ))))
 	    goto short_pause;
 	SET_STATE(S_TIMER);
 	if (wait._sec >= LONG_MAX / CLICK_HZ - 1)
