@@ -1,3 +1,30 @@
+2004-05-02 Sunday 02:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool (1.48), elements/local/forceudp.cc (1.9),
+	include/click/element.hh (1.32), include/click/lexer.hh (1.16),
+	include/click/package.hh (1.9), lib/driver.cc (1.21), lib/lexer.cc
+	(1.77), linuxmodule/config.cc (1.14), ns/nsclick.cc (1.19):
+	click-buildtool rewrite: remove need for Element::clone and the
+	attendant wasted memory
+
+2004-05-02 Sunday 02:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/: standard/DelayShaper-notifier-01.testie (1.2),
+	standard/LinkUnqueue-01.testie (1.2), standard/MixedQueue-01.testie
+	(1.2), standard/MixedQueue-02.testie (1.2),
+	standard/Queue-yank-01.testie (1.2), tools/lexer-02.testie (1.3),
+	userlevel/ControlSocket-llrpc-02.testie (1.5): use new "wait_time"
+	DriverManager syntax
+
+2004-05-02 Sunday 02:53  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/click.cc (1.91): user-level global handlers work
+
+2004-05-02 Sunday 02:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.29): re-support "wait Ns"
+	syntax
+
 2004-05-01 Saturday 17:00  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/sr/: counterflood.cc (1.8), counterflood.hh (1.7),
