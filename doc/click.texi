@@ -101,6 +101,7 @@ Tasks
 * Tickets::                     
 * Multiple Task Queues::        
 * Task Status::                 
+* Task Handlers::               
 * Destroying a Task::           
 
 @end detailmenu
@@ -1174,8 +1175,8 @@ The default implementation for @code{Element::processing} returns
 @code{AGNOSTIC}.
 
 The @code{processing} method should be declared as an inline function in
-the element's C class definition. It should return a C string constant
-or one of the five mnemonic names above. This makes the element's
+the element's class definition. It should return a C string constant or
+one of the five mnemonic names above. This makes the element's
 processing code easy to automatically extract from the source code.
 
 
@@ -1268,8 +1269,8 @@ The default implementation for @code{Element::processing} returns
 @code{COMPLETE_FLOW}.
 
 The @code{flow_code} method should be declared as an inline function in
-the element's C class definition. It should return a C string constant
-or @code{COMPLETE_FLOW}. This makes the element's flow code easy to
+the element's class definition. It should return a C string constant or
+@code{COMPLETE_FLOW}. This makes the element's flow code easy to
 automatically extract from the source code.
 
 
@@ -1338,13 +1339,15 @@ The following basic configure phase constants are defined in
 
 @table @code
 @item CONFIGURE_PHASE_FIRST
-Configure first.
+Configure before most other elements. Only used by @click{AddressInfo}
+in the Click distribution.
 @item CONFIGURE_PHASE_INFO
 Configure early. Appropriate for most information elements.
 @item CONFIGURE_PHASE_DEFAULT
 Default configuration phase. Appropriate for most elements.
 @item CONFIGURE_PHASE_LAST
-Configure last.
+Configure after most other elements. No elements in the Click
+distribution use this configure phase.
 @end table
 
 @code{configure_phase} may also return a number based on these
@@ -1493,8 +1496,9 @@ file.
 * Task Initialization::         
 * Scheduling a Task::           
 * Tickets::                     
-* Multiple Task Queues::        
+* Choosing a Thread::           
 * Task Status::                 
+* Task Handlers::               
 * Destroying a Task::           
 @end menu
 
@@ -1605,7 +1609,7 @@ method avoids locking overhead, so it is faster than @code{reschedule}.
 @quotation
 @strong{Caution}: You may call a @code{Task}'s @code{fast_reschedule}
 method only from within its callback function. For instance, if an
-element has a task, @code{_task}, that calls the element's
+element has a task, @w{@code{_task}}, that calls the element's
 @code{run_scheduled} method when scheduled, and if @code{run_scheduled}
 is called only by that task's callback, then that element's
 @code{run_scheduled} method should call @code{_task.fast_reschedule()}
@@ -1614,7 +1618,7 @@ instead of @code{_task.reschedule()}.
 @end deftypemethod
 
 
-@node Tickets, Multiple Task Queues, Scheduling a Task, Tasks
+@node Tickets, Choosing a Task Queue, Scheduling a Task, Tasks
 @section Tickets
 
 Click tasks are scheduled using the flexible, lightweight stride
@@ -1644,11 +1648,34 @@ Equivalent to @code{set_tickets(tickets() + @var{delta})}.
 @end deftypemethod
 
 
-@node Multiple Task Queues, Task Status, Tickets, Tasks
-@section Multiple Task Queues
+@node Task Thread Choice, Task Status, Tickets, Tasks
+@section Choosing a Thread
+
+Each task belongs to some task queue, which generally corresponds to a
+thread of control. Single-threaded Click has one active thread, and
+therefore one task queue, but multithreaded Click can have an arbitrary
+number of threads. Every task starts out belonging to the first thread,
+@w{thread 0}. The @code{change_thread} method moves a task to another
+thread.
+
+@deftypemethod Task void change_thread (int @var{thread_id})
+Move this task to thread @var{thread_id}, which should be a number
+between @math{-1} and the relevant @code{Router}'s @code{nthreads()}.
+
+The task is scheduled on the new task queue if and only if it was
+scheduled on the old task queue.
+@end deftypemethod
+
+Like @code{unschedule} and @code{reschedule}, @code{change_thread} must
+lock the task queue before manipulating it. (Unlike those methods,
+@code{change_thread} must lock two task queues, the old and the new.) If
+@code{change_thread} cannot lock a task queue, then it registers a task
+request that will be executed in the near future. This implies that a
+task may remain on the same thread, or become unscheduled, for some time
+after @code{change_thread} is called.
 
 
-@node Task Status, Destroying a Task, Multiple Task Queues, Tasks
+@node Task Status, Task Handlers, Choosing a Task Queue, Tasks
 @section Task Status Methods
 
 These methods let a user check various properties of a task---for
@@ -1686,7 +1713,11 @@ element. Otherwise, returns a null pointer.
 @end deftypemethod
 
 
-@node Destroying a Task,  , Task Status, Tasks
+@node Task Handlers, Destroying a Task, Task Status, Tasks
+@section Task Handlers
+
+
+@node Destroying a Task,  , Task Handlers, Tasks
 @section Destroying a Task
 
 
