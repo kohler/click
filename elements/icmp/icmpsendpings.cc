@@ -90,8 +90,13 @@ ICMPSendPings::run_scheduled()
   icmp_sequenced *icp = (struct icmp_sequenced *) (nip + 1);
   icp->icmp_type = ICMP_ECHO;
   icp->icmp_code = 0;
+#ifdef __linux__
+  icp->identifier = _icmp_id;
+  icp->sequence = _ip_id;
+#else
   icp->identifier = htons(_icmp_id);
   icp->sequence = htons(_ip_id);
+#endif
 
   icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(struct icmp_sequenced) + _data.length());
 
