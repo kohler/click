@@ -58,31 +58,31 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
-  -u, --uninstall               Uninstall Click from the Linux kernel.\n\
+  -u, --uninstall               Uninstall Click first.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
-static void
-read_packages(HashMap<String, int> &packages, ErrorHandler *errh)
+static bool
+read_package_file(String filename, HashMap<String, int> &packages,
+		  ErrorHandler *errh)
 {
-  packages.clear();
-  FILE *f = fopen("/proc/click/packages", "r");
-  if (!f)
-    errh->warning("cannot read /proc/click/packages: %s", strerror(errno));
-  else {
-    char buf[1024];
-    while (fgets(buf, 1024, f)) {
-      String p = buf;
-      if (p[p.length()-1] != '\n')
-	errh->warning("/proc/click/packages: line too long");
-      else
-	packages.insert(p.substring(0, -1), 0);
-    }
-    fclose(f);
+  if (!errh && access(filename.cc(), F_OK) < 0)
+    return false;
+  String text = file_string(filename, errh);
+  const char *s = text.data();
+  int pos = 0;
+  int len = text.length();
+  while (pos < len) {
+    int start = pos;
+    while (pos < len && !isspace(s[pos]))
+      pos++;
+    packages.insert(text.substring(start, pos - start), 0);
+    pos = text.find_left('\n', pos) + 1;
   }
+  return (bool)text;
 }
 
 static String
@@ -125,10 +125,11 @@ main(int argc, char **argv)
   // read command line arguments
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+  Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
-  bool uninstall = 0;
+  bool uninstall = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -141,7 +142,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-install (Click) %s\n", VERSION);
-      printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
+      printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -174,51 +175,18 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *r = 0;
-  if (uninstall) {
-    if (router_file)
-      errh->warning("`-u' and router file don't mix");
-  } else {
-    r = read_router_file(router_file, errh);
-    if (!r || errh->nerrors() > 0)
-      exit(1);
-    r->flatten(errh);
-  }
-
-  // check for Click module; install it if not available
-  {
-    if (access("/proc/click", F_OK) < 0) {
-      if (uninstall)
-	exit(0);
-      // try to install module
-      String click_o =
-	clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
-      String cmdline = "/sbin/insmod " + click_o;
-      (void) system(cmdline);
-      if (access("/proc/click", F_OK) < 0)
-	errh->fatal("cannot install Click module");
-    }
-  }
-
-  // find active modules
-  HashMap<String, int> active_modules(-1);
-  {
-    String s = file_string("/proc/modules", errh);
-    int p = 0;
-    while (p < s.length()) {
-      int start = p;
-      while (!isspace(s[p])) p++;
-      active_modules.insert(s.substring(start, p - start), 0);
-      p = s.find_left('\n', p) + 1;
-    }
-  }
-  
-  // find current packages
-  HashMap<String, int> packages(-1);
-  read_packages(packages, errh);
+  RouterT *r = read_router_file(router_file, errh);
+  if (!r || errh->nerrors() > 0)
+    exit(1);
+  r->flatten(errh);
 
   // if uninstall, get rid of everything
-  if (uninstall) {
+  if (uninstall && access("/proc/click", F_OK) >= 0) {
+    // find current packages
+    HashMap<String, int> active_modules(-1);
+    HashMap<String, int> packages(-1);
+    read_package_file("/proc/modules", active_modules, errh);
+    read_package_file("/proc/click/packages", packages, errh);
     String to_remove = packages_to_remove(active_modules, packages);
     if (to_remove) {
       String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
@@ -226,14 +194,26 @@ particular purpose.\n");
     }
     String cmdline = "/sbin/rmmod click 2>/dev/null";
     (void) system(cmdline);
-    if (access("/proc/click", F_OK) < 0)
-      exit(0);
-    else {
-      errh->error("couldn't uninstall");
-      exit(1);
-    }
+    if (access("/proc/click", F_OK) >= 0)
+      errh->warning("could not uninstall Click module; continuing");
   }
   
+  // check for Click module; install it if not available
+  if (access("/proc/click", F_OK) < 0) {
+    String click_o =
+      clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
+    String cmdline = "/sbin/insmod " + click_o;
+    (void) system(cmdline);
+    if (access("/proc/click", F_OK) < 0)
+      errh->fatal("cannot install Click module");
+  }
+
+  // find current packages
+  HashMap<String, int> active_modules(-1);
+  HashMap<String, int> packages(-1);
+  read_package_file("/proc/modules", active_modules, errh);
+  read_package_file("/proc/click/packages", packages, errh);
+
   // install archived objects. mark them with leading underscores.
   // may require renaming to avoid clashes in `insmod'
   {
@@ -302,7 +282,7 @@ particular purpose.\n");
     char buf[1024];
     FILE *f = fopen("/proc/click/errors", "r");
     if (!f)
-      errh->warning("cannot read /proc/click/errors: %s", strerror(errno));
+      errh->warning("/proc/click/errors: %s", strerror(errno));
     else {
       while (!feof(f)) {
 	size_t s = fread(buf, 1, 1024, f);

@@ -136,13 +136,21 @@ Specializer::read_source(ElementTypeInfo &etinfo, ErrorHandler *errh)
     return;
   }
 
-  String filename = String(CLICK_SHAREDIR) + "/src/" + etinfo.header_file;
-  String file_text = file_string(filename, errh);
-  _cxxinfo.parse_file(file_text, true);
+  // parse source text
+  String text, filename = etinfo.header_file;
   if (filename.substring(-2) == "hh") {
-    file_text = file_string(filename.substring(0, -2) + "cc", errh);
-    _cxxinfo.parse_file(file_text, false, &etinfo.includes);
+    if (_router->archive_index(filename) >= 0)
+      text = _router->archive(filename).data;
+    else
+      text = file_string(CLICK_SHAREDIR "/src/" + filename);
+    _cxxinfo.parse_file(text, true);
+    filename = filename.substring(0, -2) + "cc";
   }
+  if (_router->archive_index(filename) >= 0)
+    text = _router->archive(filename).data;
+  else
+    text = file_string(CLICK_SHAREDIR "/src/" + filename);
+  _cxxinfo.parse_file(text, false, &etinfo.includes);
 
   // now, read source for the element class's parents
   CxxClass *cxxc = _cxxinfo.find_class(etinfo.cxx_name);
@@ -276,11 +284,11 @@ Specializer::create_class(SpecializedClass &spc)
     for (int i = 0; i < old_cxxc->nfunctions(); i++)
       if (old_cxxc->should_rewrite(i)) {
 	CxxFunction &new_fn = new_cxxc->defun(old_cxxc->function(i));
-	new_fn.replace_expr(ninputs_pat, ninputs_repl);
-	new_fn.replace_expr(noutputs_pat, noutputs_repl);
-	new_fn.replace_expr(push_pat, push_repl);
-	new_fn.replace_expr(checked_push_pat, push_repl);
-	new_fn.replace_expr(pull_pat, pull_repl);
+	while (new_fn.replace_expr(ninputs_pat, ninputs_repl)) ;
+	while (new_fn.replace_expr(noutputs_pat, noutputs_repl)) ;
+	while (new_fn.replace_expr(push_pat, push_repl)) ;
+	while (new_fn.replace_expr(checked_push_pat, push_repl)) ;
+	while (new_fn.replace_expr(pull_pat, pull_repl)) ;
       }
   }
 }
@@ -528,6 +536,16 @@ Specializer::output_package(const String &package_name, StringAccum &out)
   for (int i = 0; i < _specials.size(); i++)
     out << "  MOD_INC_USE_COUNT;\n  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
   out << "  click_unprovide(\"" << package_name << "\");\n}\n";
+}
+
+String
+Specializer::output_new_elementmap(const String &filename) const
+{
+  StringAccum out;
+  for (int i = 0; i < _specials.size(); i++)
+    out << _specials[i].click_name << '\t' << _specials[i].cxx_name << '\t'
+	<< filename << '\n';
+  return out.take_string();
 }
 
 // Vector template instantiation

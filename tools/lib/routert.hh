@@ -90,8 +90,10 @@ class RouterT : public ElementClassT {
   const HashMap<String, int> &requirement_map() const { return _require_map; }
 
   void add_archive(const ArchiveElement &);
-  int archive(const String &s) const		{ return _archive_map[s]; }
+  int archive_index(const String &s) const	{ return _archive_map[s]; }
   const Vector<ArchiveElement> &archive() const	{ return _archive; }
+  ArchiveElement &archive(int i)		{ return _archive[i]; }
+  ArchiveElement &archive(const String &s);
   
   bool has_connection(const Hookup &, const Hookup &) const;
   void find_connections_from(const Hookup &, Vector<Hookup> &) const;
@@ -179,6 +181,12 @@ inline bool
 RouterT::add_connection(int fidx, int fport, int tport, int tidx)
 {
   return add_connection(Hookup(fidx, fport), Hookup(tidx, tport));
+}
+
+inline ArchiveElement &
+RouterT::archive(const String &name)
+{
+  return _archive[_archive_map[name]];
 }
 
 #endif

@@ -174,6 +174,7 @@ main(int argc, char **argv)
   // read command line arguments
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+  Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
@@ -196,7 +197,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-specialize (Click) %s\n", VERSION);
-      printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
+      printf("Copyright (C) 2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -302,6 +303,12 @@ particular purpose.\n");
     }
   }
 
+  // parse `elementmap' from router archive
+  if (router->archive_index("elementmap") >= 0) {
+    const ArchiveElement &ae = router->archive("elementmap");
+    specializer.parse_elementmap(ae.data);
+  }
+  
   // follow instructions embedded in router definition
   int specializer_info_class = router->type_index("SpecializerInfo");
   for (int i = 0; i < router->nelements(); i++)
@@ -344,7 +351,7 @@ particular purpose.\n");
   String package_name = "specialize";
   int uniqueifier = 1;
   while (1) {
-    if (router->archive(package_name) < 0)
+    if (router->archive_index(package_name) < 0)
       break;
     uniqueifier++;
     package_name = "specialize" + String(uniqueifier);
@@ -352,11 +359,10 @@ particular purpose.\n");
   router->add_requirement(package_name);
 
   specializer.output_package(package_name, out);
-  out << '\0';
 
   // output source code if required
   if (source_only) {
-    fputs(out.data(), outf);
+    fwrite(out.data(), 1, out.length(), outf);
     fclose(outf);
     return 0;
   }
@@ -369,12 +375,27 @@ particular purpose.\n");
       errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
     
     // write C++ file
-    String cxx_filename = package_name + "x.cc";
+    String cxx_filename = package_name + ".cc";
     FILE *f = fopen(cxx_filename, "w");
     if (!f)
       errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
-    fputs(out.data(), f);
+    fwrite(out.data(), 1, out.length(), f);
     fclose(f);
+
+    // write any archived headers
+    const Vector<ArchiveElement> &aelist = router->archive();
+    for (int i = 0; i < aelist.size(); i++)
+      if (aelist[i].name.substring(-3) == ".hh") {
+	String filename = aelist[i].name;
+	f = fopen(filename, "w");
+	if (!f)
+	  errh->warning("%s: %s", filename.cc(), strerror(errno));
+	else {
+	  errh->message("%s", filename.cc());
+	  fwrite(aelist[i].data.data(), 1, aelist[i].data.length(), f);
+	  fclose(f);
+	}
+      }
     
     // compile kernel module
     if (compile_kernel > 0) {
@@ -406,13 +427,7 @@ particular purpose.\n");
   
   // read .cc and .?o files, add them to archive
   {
-    ArchiveElement ae;
-    ae.name = package_name + ".cc";
-    ae.date = time(0);
-    ae.uid = geteuid();
-    ae.gid = getegid();
-    ae.mode = 0600;
-    out.pop();			// get rid of trailing `\0'
+    ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
     ae.data = out.take_string();
 
     if (!config_only)
@@ -420,15 +435,23 @@ particular purpose.\n");
 
     if (compile_kernel > 0) {
       ae.name = package_name + ".ko";
-      ae.data = file_string(package_name + ".ko", errh);
+      ae.data = file_string(ae.name, errh);
       router->add_archive(ae);
     }
     
     if (compile_user > 0) {
       ae.name = package_name + ".uo";
-      ae.data = file_string(package_name + ".uo", errh);
+      ae.data = file_string(ae.name, errh);
       router->add_archive(ae);
     }
+  }
+  
+  // add elementmap to archive
+  {
+    if (router->archive_index("elementmap") < 0)
+      router->add_archive(init_archive_element("elementmap", 0600));
+    ArchiveElement &ae = router->archive("elementmap");
+    ae.data += specializer.output_new_elementmap(package_name + ".cc");
   }
   
   // write configuration

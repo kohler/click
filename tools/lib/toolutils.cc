@@ -16,7 +16,6 @@
 #include "straccum.hh"
 #include "routert.hh"
 #include "lexert.hh"
-#include "archive.hh"
 #include "toolutils.hh"
 #include <errno.h>
 #include <string.h>
@@ -366,4 +365,17 @@ click_mktmpdir(ErrorHandler *errh = 0)
     }
     uniqueifier++;
   }
+}
+
+ArchiveElement
+init_archive_element(const String &name, int mode)
+{
+  ArchiveElement ae;
+  ae.name = name;
+  ae.date = time(0);
+  ae.uid = geteuid();
+  ae.gid = getegid();
+  ae.mode = mode;
+  ae.data = String();
+  return ae;
 }

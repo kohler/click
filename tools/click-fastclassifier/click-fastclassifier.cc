@@ -37,8 +37,10 @@
 #define KERNEL_OPT		304
 #define USERLEVEL_OPT		305
 #define SOURCE_OPT		306
+#define CONFIG_OPT		307
 
 static Clp_Option options[] = {
+  { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
@@ -76,6 +78,7 @@ Options:\n\
   -k, --kernel                Create Linux kernel module code (on by default).\n\
   -u, --user                  Create user-level code (on by default).\n\
   -s, --source                Write source code only.\n\
+  -c, --config                Write new configuration only.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\
 \n\
@@ -179,11 +182,10 @@ translate_class_name(const String &s)
 }
 
 static void
-write_checked_program(FILE *f, const Classificand &c)
+write_checked_program(const Classificand &c, StringAccum &source)
 {
-  fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", c.align_offset);
-  fprintf(f, "  int l = p->length();\n");
-  fprintf(f, "  assert(l < %d);\n", c.safe_length);
+  source << "  const unsigned *data = (const unsigned *)(p->data() - " << c.align_offset << ");\n";
+  source << "  int l = p->length();\n  assert(l < " << c.safe_length << ");\n";
 
   for (int i = 0; i < c.program.size(); i++) {
     const ProgramStep &e = c.program[i];
@@ -201,7 +203,7 @@ write_checked_program(FILE *f, const Classificand &c)
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
-    fprintf(f, " lstep_%d:\n", i);
+    source << " lstep_" << i << ":\n";
     
     if (want_l >= c.safe_length) {
       branch2 = e.no;
@@ -209,32 +211,33 @@ write_checked_program(FILE *f, const Classificand &c)
     }
     
     if (switched)
-      fprintf(f, "  if (l < %d || (data[%d] & 0x%xU) != 0x%xU)",
-	      want_l, e.offset/4, e.mask.u, e.value.u);
+      source << "  if (l < " << want_l << " || (data[" << e.offset/4
+	     << "] & " << e.mask.u << "U) != " << e.value.u << "U)";
     else
-      fprintf(f, "  if (l >= %d && (data[%d] & 0x%xU) == 0x%xU)",
-	      want_l, e.offset/4, e.mask.u, e.value.u);
+      source << "  if (l >= " << want_l << " && (data[" << e.offset/4
+	     << "] & " << e.mask.u << "U) == " << e.value.u << "U)";
     if (branch1 <= -c.noutputs)
-      fprintf(f, " {\n    p->kill();\n    return;\n  }\n");
+      source << " {\n    p->kill();\n    return;\n  }\n";
     else if (branch1 <= 0)
-      fprintf(f, " {\n    output(%d).push(p);\n    return;\n  }\n", -branch1);
+      source << " {\n    output(" << -branch1 << ").push(p);\n    return;\n  }\n";
     else
-      fprintf(f, "\n    goto lstep_%d;\n", branch1);
+      source << "\n    goto lstep_" << branch1 << ";\n";
     
    output_branch2:
     if (branch2 <= -c.noutputs)
-      fprintf(f, "  p->kill();\n  return;\n");
+      source << "  p->kill();\n  return;\n";
     else if (branch2 <= 0)
-      fprintf(f, "  output(%d).push(p);\n  return;\n", -branch2);
+      source << "  output(" << -branch2 << ").push(p);\n  return;\n";
     else if (branch2 != i + 1)
-      fprintf(f, "  goto lstep_%d;\n", branch2);
+      source << "  goto lstep_" << branch2 << ";\n";
   }
 }
 
 static void
-write_unchecked_program(FILE *f, const Classificand &c)
+write_unchecked_program(const Classificand &c, StringAccum &source)
 {
-  fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", c.align_offset);
+  source << "  const unsigned *data = (const unsigned *)(p->data() - "
+	 << c.align_offset << ");\n";
 
   for (int i = 0; i < c.program.size(); i++) {
     const ProgramStep &e = c.program[i];
@@ -242,26 +245,26 @@ write_unchecked_program(FILE *f, const Classificand &c)
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
-    fprintf(f, " step_%d:\n", i);
+    source << " step_" << i << ":\n";
       
     if (switched)
-      fprintf(f, "  if ((data[%d] & 0x%xU) != 0x%xU)",
-	      e.offset/4, e.mask.u, e.value.u);
+      source << "  if ((data[" << e.offset/4 << "] & " << e.mask.u
+	     << "U) != " << e.value.u << "U)";
     else
-      fprintf(f, "  if ((data[%d] & 0x%xU) == 0x%xU)",
-	      e.offset/4, e.mask.u, e.value.u);
+      source << "  if ((data[" << e.offset/4 << "] & " << e.mask.u
+	     << "U) == " << e.value.u << "U)";
     if (branch1 <= -c.noutputs)
-      fprintf(f, " {\n    p->kill();\n    return;\n  }\n");
+      source << " {\n    p->kill();\n    return;\n  }\n";
     else if (branch1 <= 0)
-      fprintf(f, " {\n    output(%d).push(p);\n    return;\n  }\n", -branch1);
+      source << " {\n    output(" << -branch1 << ").push(p);\n    return;\n  }\n";
     else
-      fprintf(f, "\n    goto step_%d;\n", branch1);
+      source << "\n    goto step_" << branch1 << ";\n";
     if (branch2 <= -c.noutputs)
-      fprintf(f, "  p->kill();\n  return;\n");
+      source << "  p->kill();\n  return;\n";
     else if (branch2 <= 0)
-      fprintf(f, "  output(%d).push(p);\n  return;\n", -branch2);
+      source << "  output(" << -branch2 << ").push(p);\n  return;\n";
     else if (branch2 != i + 1)
-      fprintf(f, "  goto step_%d;\n", branch2);
+      source << "  goto step_" << branch2 << ";\n";
   }
 }
 
@@ -271,7 +274,9 @@ static Vector<String> gen_cxxclass_names;
 static Vector<Classificand> all_programs;
 
 static void
-analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
+analyze_classifier(RouterT *r, int classifier_ei,
+		   StringAccum &header, StringAccum &source,
+		   ErrorHandler *errh)
 {
   // count number of output ports
   Vector<String> args;
@@ -366,38 +371,34 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
   gen_eclass_names.push_back(class_name);
   gen_cxxclass_names.push_back(cxx_name);
 
-  fprintf(f, "class %s : public Element { public:\n\
-  %s() : Element(1, %d) { MOD_INC_USE_COUNT; }\n\
-  ~%s() { MOD_DEC_USE_COUNT; }\n\
-  const char *class_name() const { return \"%s\"; }\n\
-  Processing default_processing() const { return PUSH; }\n\
-  %s *clone() const { return new %s; }\n",
-	  cxx_name.cc(), cxx_name.cc(), noutputs, cxx_name.cc(),
-	  class_name.cc(), cxx_name.cc(), cxx_name.cc());
+  header << "class " << cxx_name << " : public Element { public:\n  "
+	 << cxx_name << "() : Element(1, " << noutputs
+	 << ") { MOD_INC_USE_COUNT; }\n  ~"
+	 << cxx_name << "() { MOD_DEC_USE_COUNT; }\n\
+  const char *class_name() const { return \"" << class_name << "\"; }\n\
+  Processing default_processing() const { return PUSH; }\n  "
+	 << cxx_name << " *clone() const { return new " << cxx_name << "; }\n";
 
   if (c.output_everything >= 0) {
-    fprintf(f, "  void push(int, Packet *);\n};\n\
-void\n%s::push(int, Packet *p)\n{\n",
-	    cxx_name.cc());
+    header << "  void push(int, Packet *);\n};\n";
+    source << "void\n" << cxx_name << "::push(int, Packet *p)\n{\n";
     if (c.output_everything < noutputs)
-      fprintf(f, "  output(%d).push(p);\n", c.output_everything);
+      source << "  output(" << c.output_everything << ").push(p);\n";
     else
-      fprintf(f, "  p->kill();\n");
-    fprintf(f, "}\n");
+      source << "  p->kill();\n";
+    source << "}\n";
   } else {
-    fprintf(f, "  void length_checked_push(Packet *);\n\
+    header << "  void length_checked_push(Packet *);\n\
   inline void length_unchecked_push(Packet *);\n\
-  void push(int, Packet *);\n};\n\
-void\n%s::length_checked_push(Packet *p)\n{\n",
-	    cxx_name.cc());
-    write_checked_program(f, c);
-    fprintf(f, "}\ninline void\n%s::length_unchecked_push(Packet *p)\n{\n",
-	    cxx_name.cc());
-    write_unchecked_program(f, c);
-    fprintf(f, "}\nvoid\n%s::push(int, Packet *p)\n{\n\
-  if (p->length() < %d)\n    length_checked_push(p);\n\
-  else\n    length_unchecked_push(p);\n}\n",
-	    cxx_name.cc(), c.safe_length);
+  void push(int, Packet *);\n};\n";
+    source << "void\n" << cxx_name << "::length_checked_push(Packet *p)\n{\n";
+    write_checked_program(c, source);
+    source << "}\ninline void\n" << cxx_name
+	   << "::length_unchecked_push(Packet *p)\n{\n";
+    write_unchecked_program(c, source);
+    source << "}\nvoid\n" << cxx_name << "::push(int, Packet *p)\n{\n\
+  if (p->length() < " << c.safe_length << ")\n    length_checked_push(p);\n\
+  else\n    length_unchecked_push(p);\n}\n";
   }
 
   // add type to router `r' and change element
@@ -420,13 +421,15 @@ main(int argc, char **argv)
   // read command line arguments
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+  Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
   const char *output_file = 0;
   int compile_kernel = -1;
   int compile_user = -1;
-  int source_only = 0;
+  bool source_only = false;
+  bool config_only = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -439,7 +442,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-fastclassifier (Click) %s\n", VERSION);
-      printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
+      printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -465,6 +468,10 @@ particular purpose.\n");
 
      case SOURCE_OPT:
       source_only = !clp->negated;
+      break;
+      
+     case CONFIG_OPT:
+      config_only = !clp->negated;
       break;
       
      case KERNEL_OPT:
@@ -537,106 +544,140 @@ particular purpose.\n");
   String package_name = "fastclassifier";
   int uniqueifier = 1;
   while (1) {
-    if (r->archive(package_name) < 0)
+    if (r->archive_index(package_name) < 0)
       break;
     uniqueifier++;
     package_name = "fastclassifier" + String(uniqueifier);
   }
   r->add_requirement(package_name);
 
+  // create C++ files
+  StringAccum header, source;
+  header << "#ifndef CLICKSOURCE_" << package_name << "_HH\n"
+	 << "#define CLICKSOURCE_" << package_name << "_HH\n"
+	 << "#include \"clickpackage.hh\"\n#include \"element.hh\"\n";
+  source << "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n"
+	 << "#include \"" << package_name << ".hh\"\n";
+  
+  // write Classifier programs
+  for (int i = 0; i < nclassifiers; i++)
+    analyze_classifier(r, classifiers[i], header, source, errh);
+
+  // write final text
+  {
+    header << "#endif\n";
+    int nclasses = gen_cxxclass_names.size();
+    source << "static int hatred_of_rebecca[" << nclasses << "];\n"
+	   << "extern \"C\" int\ninit_module()\n{\n\
+  click_provide(\""
+	   << package_name << "\");\n";
+    for (int i = 0; i < nclasses; i++)
+      source << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
+	     << gen_eclass_names[i] << "\", new "
+	     << gen_cxxclass_names[i] << ");\n\
+  MOD_DEC_USE_COUNT;\n";
+    source << "  return 0;\n}\nextern \"C\" void\ncleanup_module()\n{\n";
+    for (int i = 0; i < nclasses; i++)
+      source << "  MOD_INC_USE_COUNT;\n\
+  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
+    source << "  click_unprovide(\"" << package_name << "\");\n}\n";
+  }
+
   // open `f' for C++ output
-  FILE *f;
-  String cxx_filename;
-  if (!source_only) {
+  if (source_only) {
+    fwrite(header.data(), 1, header.length(), outf);
+    fwrite(source.data(), 1, source.length(), outf);
+    if (outf != stdout)
+      fclose(outf);
+    exit(0);
+  } else if (config_only) {
+    String config = r->configuration_string();
+    fwrite(config.data(), 1, config.length(), outf);
+    if (outf != stdout)
+      fclose(outf);
+    exit(0);
+  }
+
+  // otherwise, compile files
+  if (compile_kernel > 0 || compile_user > 0) {
     // create temporary directory
     String tmpdir = click_mktmpdir(errh);
     if (!tmpdir) exit(1);
     if (chdir(tmpdir.cc()) < 0)
       errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+    
+    String filename = package_name + ".hh";
+    FILE *f = fopen(filename, "w");
+    if (!f)
+      errh->fatal("%s: %s", filename.cc(), strerror(errno));
+    fwrite(header.data(), 1, header.length(), f);
+    fclose(f);
 
-    cxx_filename = package_name + "x.cc";
+    String cxx_filename = package_name + ".cc";
     f = fopen(cxx_filename, "w");
     if (!f)
       errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
-  } else
-    f = outf;
-
-  // write C++ file to `f'
-  fprintf(f, "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n\
-#include \"clickpackage.hh\"\n#include \"element.hh\"\n");
-  
-  // write Classifier programs
-  for (int i = 0; i < nclassifiers; i++)
-    analyze_classifier(r, classifiers[i], f, errh);
-
-  // write final text
-  {
-    int nclasses = gen_cxxclass_names.size();
-    fprintf(f, "static int hatred_of_rebecca[%d];\n\
-extern \"C\" int\ninit_module()\n{\n\
-  click_provide(\"%s\");\n",
-	    nclasses, package_name.cc());
-    for (int i = 0; i < nclasses; i++)
-      fprintf(f, "  hatred_of_rebecca[%d] = click_add_element_type(\"%s\", new %s);\n\
-  MOD_DEC_USE_COUNT;\n",
-	      i, gen_eclass_names[i].cc(), gen_cxxclass_names[i].cc());
-    fprintf(f, "  return 0;\n}\nextern \"C\" void\ncleanup_module()\n{\n");
-    for (int i = 0; i < nclasses; i++)
-      fprintf(f, "  MOD_INC_USE_COUNT;\n\
-  click_remove_element_type(hatred_of_rebecca[%d]);\n",
-	      i);
-    fprintf(f, "  click_unprovide(\"%s\");\n}\n", package_name.cc());
+    fwrite(source.data(), 1, source.length(), f);
     fclose(f);
-    if (source_only)
-      exit(0);
-  }
+    
+    // compile kernel module
+    if (compile_kernel > 0) {
+      String compile_command = click_compile_prog + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
+      int compile_retval = system(compile_command.cc());
+      if (compile_retval == 127)
+	errh->fatal("could not run `%s'", compile_command.cc());
+      else if (compile_retval < 0)
+	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+      else if (compile_retval != 0)
+	errh->fatal("`%s' failed", compile_command.cc());
+    }
 
-  // compile kernel module
-  if (compile_kernel > 0) {
-    String compile_command = click_compile_prog + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
-    int compile_retval = system(compile_command.cc());
-    if (compile_retval == 127)
-      errh->fatal("could not run `%s'", compile_command.cc());
-    else if (compile_retval < 0)
-      errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
-    else if (compile_retval != 0)
-      errh->fatal("`%s' failed", compile_command.cc());
-  }
-
-  // compile userlevel
-  if (compile_user > 0) {
-    String compile_command = click_compile_prog + " --target=user --package=" + package_name + ".uo -w " + cxx_filename;
-    int compile_retval = system(compile_command.cc());
-    if (compile_retval == 127)
-      errh->fatal("could not run `%s'", compile_command.cc());
-    else if (compile_retval < 0)
-      errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
-    else if (compile_retval != 0)
-      errh->fatal("`%s' failed", compile_command.cc());
+    // compile userlevel
+    if (compile_user > 0) {
+      String compile_command = click_compile_prog + " --target=user --package=" + package_name + ".uo -w " + cxx_filename;
+      int compile_retval = system(compile_command.cc());
+      if (compile_retval == 127)
+	errh->fatal("could not run `%s'", compile_command.cc());
+      else if (compile_retval < 0)
+	errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+      else if (compile_retval != 0)
+	errh->fatal("`%s' failed", compile_command.cc());
+    }
   }
 
   // read .cc and .?o files, add them to archive
   {
-    ArchiveElement ae;
-    ae.name = package_name + ".cc";
-    ae.date = time(0);
-    ae.uid = geteuid();
-    ae.gid = getegid();
-    ae.mode = 0600;
-    ae.data = file_string(cxx_filename, errh);
+    ArchiveElement ae = init_archive_element(package_name + ".cc", 0600);
+    ae.data = source.take_string();
+    r->add_archive(ae);
+
+    ae.name = package_name + ".hh";
+    ae.data = header.take_string();
     r->add_archive(ae);
 
     if (compile_kernel > 0) {
       ae.name = package_name + ".ko";
-      ae.data = file_string(package_name + ".ko", errh);
+      ae.data = file_string(ae.name, errh);
       r->add_archive(ae);
     }
     
     if (compile_user > 0) {
       ae.name = package_name + ".uo";
-      ae.data = file_string(package_name + ".uo", errh);
+      ae.data = file_string(ae.name, errh);
       r->add_archive(ae);
     }
+  }
+
+  // add elementmap to archive
+  {
+    if (r->archive_index("elementmap") < 0)
+      r->add_archive(init_archive_element("elementmap", 0600));
+    ArchiveElement &ae = r->archive("elementmap");
+    StringAccum sa;
+    for (int i = 0; i < gen_eclass_names.size(); i++)
+      sa << gen_eclass_names[i] << '\t' << gen_cxxclass_names[i] << '\t'
+	 << package_name << ".hh\n";
+    ae.data += sa.take_string();
   }
   
   // write configuration

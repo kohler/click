@@ -243,6 +243,7 @@ main(int argc, char **argv)
   // read command line arguments
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+  Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;

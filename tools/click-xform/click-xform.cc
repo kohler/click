@@ -463,6 +463,7 @@ main(int argc, char **argv)
   // read command line arguments
   Clp_Parser *clp =
     Clp_NewParser(argc, argv, sizeof(options) / sizeof(options[0]), options);
+  Clp_SetOptionChar(clp, '+', Clp_ShortNegated);
   program_name = Clp_ProgramName(clp);
 
   int num_nondash_args = 0;
@@ -480,7 +481,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-xform (Click) %s\n", VERSION);
-      printf("Copyright (C) 1999 Massachusetts Institute of Technology\n\
+      printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");

@@ -77,6 +77,7 @@ class Specializer {
   
   void output(StringAccum &);
   void output_package(const String &, StringAccum &);
+  String output_new_elementmap(const String &) const;
   
 };
 
