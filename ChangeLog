@@ -1,3 +1,13 @@
+2004-06-23 Wednesday 00:34  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: autoratefallback.cc (1.1), autoratefallback.hh
+	(1.1), probetxrate.cc (1.3), probetxrate.hh (1.3), settxrate.cc
+	(1.14), settxrate.hh (1.10): fixes for rate control.
+
+2004-06-23 Wednesday 00:24  John Bicket <jbicket@mit.edu>
+
+	* linuxmodule/Makefile.in (1.89): make it work with click_wifi.
+
 2004-06-22 Tuesday 13:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/unqueue.cc (1.26): fix Unqueue bug: the count
