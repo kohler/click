@@ -1,3 +1,39 @@
+2004-06-21 Monday 13:09  John Bicket <jbicket@mit.edu>
+
+	* configure.in (1.232), elements/wifi/autotxrate.cc (1.8),
+	elements/wifi/availablerates.cc (1.1),
+	elements/wifi/availablerates.hh (1.1),
+	elements/wifi/filterfailures.cc (1.5),
+	elements/wifi/linkfailuredetection.cc (1.7),
+	elements/wifi/probetxrate.cc (1.1), elements/wifi/probetxrate.hh
+	(1.1), elements/wifi/rxfcserr.cc (1.2), elements/wifi/txstat.cc
+	(1.4), include/click/packet_anno.hh (1.21),
+	elements/wifi/wifitxfeedback.cc (1.12),
+	elements/wifi/ap/associationresponder.cc (1.2),
+	elements/wifi/ap/associationresponder.hh (1.2),
+	elements/wifi/ap/beaconsource.cc (1.3),
+	elements/wifi/ap/beaconsource.hh (1.2),
+	elements/wifi/ap/proberesponder.cc (1.3),
+	elements/wifi/ap/proberesponder.hh (1.2),
+	elements/wifi/sr/ecnqueue.hh (1.2), elements/wifi/sr/printsr.cc
+	(1.2), elements/wifi/station/associationrequester.cc (1.2),
+	elements/wifi/station/associationrequester.hh (1.2),
+	elements/wifi/station/beaconscanner.cc (1.2),
+	elements/wifi/station/proberequester.cc (1.2),
+	elements/wifi/station/proberequester.hh (1.2): change wifi so there
+	is no more wifi patch; you just download the driver at
+	http://www.pdos.lcs.mit.edu/~jbicket/madwifi.stripped/
+	
+	and other wifi additions.
+	
+	--john
+
+2004-06-21 Monday 13:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: sortedsched.cc (1.10), sortedsched.hh
+	(1.8), threadmonitor.cc (1.8): fix multithreading elements
+	(Nikitas)
+
 2004-06-19 Saturday 16:08  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/: sortedsched.cc (1.9), sortedsched.hh
