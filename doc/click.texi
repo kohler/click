@@ -177,7 +177,8 @@ Element Initialization
 * flow_code::                   
 * add_handlers::                
 * initialize::                  
-* uninitialize::                
+* cleanup::                     
+* static_initialize static_cleanup::  
 * Initialization Phases::       
 
 Element Runtime
@@ -206,7 +207,7 @@ Handlers
 Accessing Handlers Internally
 
 * Handler Objects::             
-* Handlers By Name or Index::             
+* Handlers By Name or Index::   
 
 Live Reconfiguration
 
@@ -2928,7 +2929,8 @@ successfully complete one phase before the next phase begins.
 * flow_code::                   
 * add_handlers::                
 * initialize::                  
-* uninitialize::                
+* cleanup::                     
+* static_initialize static_cleanup::  
 * Initialization Phases::       
 @end menu
 
@@ -3346,7 +3348,7 @@ but only if @var{config_writable} is true and the
 @end deftypemethod
 
 
-@node initialize, uninitialize, add_handlers, Element Initialization
+@node initialize, cleanup, add_handlers, Element Initialization
 @section @code{initialize}---Element Initialization
 
 The @code{initialize} method is called just before the router is placed
@@ -3389,40 +3391,98 @@ Opening files.
 @end itemize
 
 
-@node uninitialize, Initialization Phases, initialize, Element Initialization
-@section @code{uninitialize}---Removing Initialization State
+@node cleanup, static_initialize static_cleanup, initialize, Element Initialization
+@section @code{cleanup}---Cleaning Up State
 
-The @code{uninitialize} method should undo any effects of
-initialization---for example, it should close any open files, free up
-memory, and unhook from network devices. Every element's
-@code{uninitialize} method is called when a successfully initialized
-router is taken off line. @code{uninitialize} is also called on certain
-elements in an aborted router, namely those that did successfully
-initialize.
+The @code{cleanup} method should clean up any state allocated by the
+initialization process.  For example, it should close any open files,
+free up memory, and unhook from network devices.  Click calls
+@code{cleanup} when it determines that an element's state is no longer
+needed, either because a router configuration is about to be removed
+or because the router configuration failed to initialize properly.
+Click will call the @code{cleanup} method exactly once on every
+element it creates.
 
-@deftypemethod Element {virtual void} uninitialize ()
-This method takes no arguments and returns no results. It should never
-report errors to any source.
+@deftypemethod Element {virtual void} cleanup (CleanupStage @var{stage})
+Clean up state related to this element.  The method should never
+report errors to any source.  The @var{stage} parameter is an
+enumeration indicating how far the element made it through the
+initialization process.  Its values are, in increasing order:
 
-The default @code{uninitialize} method does nothing.
+@table @code
+@item CLEANUP_NO_ROUTER
+The element was never attached to a router.
+
+@item CLEANUP_CONFIGURE_FAILED
+The element's @code{configure} method was called, but it failed.
+
+@item CLEANUP_CONFIGURED
+The element's @code{configure} method was called and succeeded, but
+its @code{initialize} method was not called (because some other
+element's @code{configure} method failed).
+
+@item CLEANUP_INITIALIZE_FAILED
+The element's @code{configure} and @code{initialize} methods were
+called.  @code{configure} succeeded, but @code{initialize} failed.
+
+@item CLEANUP_INITIALIZED
+The element's @code{configure} and @code{initialize} methods were
+called and succeeded, but its router was never installed (because some
+other element's @code{initialize} method failed).
+
+@item CLEANUP_ROUTER_INITIALIZED
+The element's @code{configure} and @code{initialize} methods were
+called and succeeded, and the router of which it is a part was
+successfully installed.
+
+@item CLEANUP_MANUAL
+Never used by Click.  Intended for use when element code calls
+@code{cleanup} explicitly.
+@end table
+
+The default @code{cleanup} method does nothing.
 @end deftypemethod
 
-An element's @code{uninitialize} method will be called by Click if and
-only if its @code{initialize} method succeeded (returned zero).
-Furthermore, it will be called by Click exactly once. However, it often
-makes sense to write @code{uninitialize} so that it may be called from
-other places---from the element's destructor, for example, or from
-a partially completed @code{initialize}.
-
-@code{uninitialize} serves some of the same functions as an element's
-destructor and, in the normal case, it is called immediately before the
-element is destroyed. However, @code{uninitialize} may be called long
-before destruction. Elements that are part of an erroneous router are
-uninitialized, but kept around for debugging purposes until another
+@code{cleanup} serves some of the same functions as an element's
+destructor, and it's usually called immediately before the element is
+destroyed.  However, @code{cleanup} may be called long before
+destruction.  Elements that are part of an erroneous router are
+cleaned up, but kept around for debugging purposes until another
 router is installed.
 
 
-@node Initialization Phases,  , uninitialize, Element Initialization
+@node static_initialize static_cleanup, Initialization Phases, cleanup, Element Initialization
+@section @code{static_initialize} and @code{static_cleanup}
+
+Use the @code{static_initialize} and @code{static_cleanup} methods to
+set up and remove any global state required by an element.  Click
+calls each element's @code{static_initialize} method as the element
+code is loaded (before any elements are created), and calls its
+@code{static_cleanup} method as the element code is unloaded
+(generally when the driver exits).  Each method is called exactly
+once.  @code{static_initialize} is suitable for installing
+configuration string parsing routines, for example.
+
+@deftypeop {Static Method} Element {void} static_initialize ()
+The default implementation does nothing.
+@end deftypeop
+
+@deftypeop {Static Method} Element {void} static_cleanup ()
+The default implementation does nothing.
+@end deftypeop
+
+Care is required when inheriting from elements that have
+@code{static_initialize} and/or @code{static_cleanup} methods.  In
+particular, if an element @code{Derived} inherits from an element
+@code{Base} that has a @code{static_initialize} method, then
+@code{Derived} @emph{must} provide its own @code{static_initialize}
+method, to ensure that @code{Base::static_initialize} doesn't get
+called twice.  Generally @code{Derived::static_initialize} will do
+nothing.  A similar statement holds for @code{static_cleanup}.  See
+the @code{CheckIPHeader2} element source code for an example.
+
+
+@node Initialization Phases,  , static_initialize static_cleanup, Element Initialization
 @section Initialization Phases
 
 @enumerate
@@ -3843,7 +3903,7 @@ given handler names.
 
 @menu
 * Handler Objects::             
-* Handlers By Name or Index::             
+* Handlers By Name or Index::   
 @end menu
 
 @node Handler Objects, Handlers By Name or Index, Accessing Handlers Internally, Accessing Handlers Internally
