@@ -2863,7 +2863,7 @@ configuration topology call @code{Router}'s @code{upstream_elements} and
 
 This chart shows when it is OK to call particular @code{Element}
 methods. Methods not mentioned here are generally not called by the
-user; for example, most users won't need to call @code{clone}.
+user.
 
 @example
   Method Name                    constr notify config  init   run  
