@@ -20,7 +20,7 @@
 #include "glue.hh"
 
 Monitor::Monitor()
-  : Element(1,1), _pb(PACKETS), _base(NULL)
+  : Element(1,1), _pb(COUNT_PACKETS), _base(NULL)
 {
 }
 
@@ -43,9 +43,9 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
 
   // PACKETS/BYTES
   if(args[0] == "PACKETS")
-    _pb = PACKETS;
+    _pb = COUNT_PACKETS;
   else if(args[0] == "BYTES")
-    _pb = BYTES;
+    _pb = COUNT_BYTES;
   else {
     errh->error("first argument should be \"PACKETS\" or \"BYTES\"");
     return -1;
@@ -133,7 +133,7 @@ Monitor::push(int port, Packet *p)
 
   // Measuring # of packets or # of bytes?
   int val = _inputs[port]->change;
-  if(_pb == BYTES)
+  if(_pb == COUNT_BYTES)
     val *= ip->ip_len;
 
   p->set_siblings_anno(update(a, val));
@@ -173,10 +173,9 @@ Monitor::update(IPAddress a, int val)
   c->value += val;
   ret = c->value;
 
-
   // Did value get larger than THRESH within one second?
   if(c->value >= _thresh) {
-    int jiffdiff = c->last_update - click_jiffies();
+    int jiffdiff = click_jiffies() - c->last_update;
     if(jiffdiff < 100) {        // 100 jiffs per second
       if(bitshift) {            // can't split last level
         c->flags |= SPLIT;

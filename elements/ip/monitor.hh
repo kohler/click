@@ -111,8 +111,8 @@ private:
 #define DST 1
 
   unsigned char _pb;
-#define PACKETS 0
-#define BYTES 1
+#define COUNT_PACKETS 0
+#define COUNT_BYTES 1
 
   // One of these associated with each input.
   struct _inp {
