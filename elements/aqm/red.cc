@@ -3,6 +3,7 @@
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
+ * Copyright (c) 2001 ACIRI
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -48,6 +49,12 @@ RED::clone() const
 }
 
 void
+RED::notify_noutputs(int n)
+{
+  set_noutputs(n <= 1 ? 1 : 2);
+}
+
+void
 RED::set_C1_and_C2()
 {
   if (_min_thresh >= _max_thresh) {
@@ -63,6 +70,24 @@ RED::set_C1_and_C2()
 }
 
 int
+RED::check_thresh_and_p(int min_thresh, int max_thresh, int max_p,
+			ErrorHandler *errh) const
+{
+  int max_allow_thresh = (0xFFFFFFFF<<QUEUE_SCALE) & ~0x80000000;
+  
+  if (min_thresh > max_allow_thresh)
+    return errh->error("`min_thresh' too large (max %d)", max_allow_thresh);
+  if (max_thresh > max_allow_thresh)
+    return errh->error("`max_thresh' too large (max %d)", max_allow_thresh);
+  if (min_thresh > max_thresh)
+    return errh->error("`min_thresh' greater than `max_thresh'");
+  if (max_p > 0x10000)
+    return errh->error("`max_p' parameter must be between 0 and 1");
+
+  return 0;
+}
+
+int
 RED::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int min_thresh, max_thresh, max_p;
@@ -73,24 +98,22 @@ RED::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpNonnegFixed, "max_p drop probability", 16, &max_p,
 		  cpOptional,
 		  cpArgument, "relevant queues", &queues_string,
+		  cpKeywords,
+		  "MIN_THRESH", cpUnsigned, "min_thresh queue length", &min_thresh,
+		  "MAX_THRESH", cpUnsigned, "max_thresh queue length", &max_thresh,
+		  "MAX_P", cpNonnegFixed, "max_p drop probability", 16, &max_p,
+		  "QUEUES", cpArgument, "relevant queues", &queues_string,
 		  0) < 0)
     return -1;
-  
-  int max_allow_thresh = (0xFFFFFFFF<<QUEUE_SCALE) & ~0x80000000;
-  if (min_thresh > max_allow_thresh)
-    return errh->error("`min_thresh' too large (max %d)", max_allow_thresh);
-  if (max_thresh > max_allow_thresh)
-    return errh->error("`max_thresh' too large (max %d)", max_allow_thresh);
-  if (min_thresh > max_thresh)
-    return errh->error("`min_thresh' greater than `max_thresh'");
-  
-  if (max_p > 0x10000)
-    return errh->error("`max_p' parameter must be between 0 and 1");
+
+  if (check_thresh_and_p(min_thresh, max_thresh, max_p, errh) < 0)
+    return -1;
 
   // check queues_string
   if (queues_string) {
     Vector<String> eids;
     cp_spacevec(queues_string, eids);
+    _queue_elements.clear();
     for (int i = 0; i < eids.size(); i++)
       if (Element *e = router()->find(this, eids[i], errh))
 	_queue_elements.push_back(e);
@@ -171,7 +194,7 @@ RED::queue_size() const
 }
 
 bool
-RED::drop()
+RED::should_drop()
 {
   // calculate the new average queue size
   int s = queue_size();
@@ -212,28 +235,35 @@ RED::drop()
   return false;
 }
 
-void
-RED::push(int, Packet *packet)
+inline void
+RED::handle_drop(Packet *p)
 {
-  if (drop()) {
-    packet->kill();
-    _drops++;
-    if (_drops == 1)
-      click_chatter("RED drop");
-  } else
-    return output(0).push(packet);
+  if (noutputs() == 1)
+    p->kill();
+  else
+    output(1).push(p);
+  _drops++;
+}
+
+void
+RED::push(int, Packet *p)
+{
+  if (should_drop())
+    handle_drop(p);
+  else
+    output(0).push(p);
 }
 
 Packet *
 RED::pull(int)
 {
   while (true) {
-    Packet *packet = input(0).pull();
-    if (!packet || !drop())
-      return packet;
-    packet->kill();
-    _drops++;
-    click_chatter("RED drop");
+    Packet *p = input(0).pull();
+    if (!p)
+      return 0;
+    else if (!should_drop())
+      return p;
+    handle_drop(p);
   }
 }
 
