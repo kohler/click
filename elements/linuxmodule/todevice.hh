@@ -1,7 +1,5 @@
 #ifndef TODEVICE_HH
 #define TODEVICE_HH
-#include "element.hh"
-#include "string.hh"
 
 /*
  * =c
@@ -26,9 +24,9 @@
  * =a ToLinux
  */
 
-#define TODEV_IDLE_LIMIT 32
-#define TODEV_MAX_PKTS_PER_RUN 32
-
+#include "element.hh"
+#include "string.hh"
+#include "netdev.h"
 
 class ToDevice : public Element {
   
@@ -41,7 +39,7 @@ class ToDevice : public Element {
   static void static_cleanup();
   
   const char *class_name() const		{ return "ToDevice"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const	{ return PULL; }
   
   ToDevice *clone() const;
   int configure(const String &, ErrorHandler *);
@@ -51,23 +49,33 @@ class ToDevice : public Element {
   
   void run_scheduled();
   
-  void push(int port, Packet *);
-  
   bool tx_intr();
 
   // Statistics.
   int _idle_calls;   // # of times called because driver was idle.
   int _busy_returns; // # of times returned because dev->tbusy.
-  int _rejected;     // # of packets rejected by hard_start_xmit().
-  int _pkts_sent;    // # number of packet sent
-  int _activations;  // # number of activations
+  int _hard_start;   // # of hard xmit starts
+  unsigned long long _activations;  // # number of activations
+  unsigned long long _pkts_on_dma;  // # number of packet left on tx ring
+  unsigned long long _pkts_sent;    // # number of packet sent
+  unsigned long long _tks_allocated;
+
+  unsigned long long _dma_full_resched;
+  unsigned long long _q_burst_resched;
+  unsigned long long _q_full_resched;
+  unsigned long long _q_empty_resched;
   
  private:
+
+  void queue_packet(Packet *p);
 
   String _devname;
   struct device *_dev;
   int _registered;
-  int _idle; 	     // # of times pull didn't get a packet
+  int _dev_idle;
+  int _last_dma_length;
+  int _last_tx;
+  int _last_busy;
 };
 
 #endif

@@ -13,6 +13,7 @@
 # include <config.h>
 #endif
 #include "router.hh"
+#include "elements/standard/scheduleinfo.hh"
 #include "schedulelinux.hh"
 #include "confparse.hh"
 #include "error.hh"

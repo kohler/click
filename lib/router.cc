@@ -811,8 +811,7 @@ Router::wait()
   Timer::run_timers();
 #else
   schedule();
-  if (signal_pending(current))
-    please_stop_driver();
+  if (signal_pending(current)) please_stop_driver();
 #endif
 }
 

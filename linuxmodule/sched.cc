@@ -40,52 +40,57 @@ pid_t click_sched_pid = -1;  /* kernel thread ID for click scheduler */
 extern "C" void start_click_sched(ErrorHandler *);
 extern "C" void kill_click_sched();
 
+void 
+click_sched_die(int signo)
+{
+  extern Router *current_router;
+  printk("click: caught signal %d\n", signo);
+  current_router->please_stop_driver();
+}
 
 static int
 click_sched(void *thunk)
 {
-    Router *current_router = (Router*) thunk;
-    current->session = 1;
-    current->pgrp = 1;
-    sprintf(current->comm, "click");
-   
-    current_router->driver();
+  Router *router = (Router*) thunk;
+  current->session = 1;
+  current->pgrp = 1;
+  sprintf(current->comm, "click");
 
-    click_sched_pid = -1;
-    printk("click: router stopped, exiting!\n");
-    return 0;
+  router->driver();
+
+  click_sched_pid = -1;
+  printk("click: router stopped, exiting!\n");
+  return 0;
 }
 
-    
 extern "C" void
 start_click_sched(ErrorHandler *kernel_errh)
 {
-    extern Router *current_router;
+  extern Router *current_router;
 
-    if (click_sched_pid > 0) {
-	kernel_errh->error("another click thread running.\n");
-	return;
-    }
-    click_sched_pid = kernel_thread
-	(click_sched, current_router, CLONE_FS | CLONE_FILES | CLONE_SIGHAND);
-    if (click_sched_pid < 0) {
-	kernel_errh->error
-	    ("cannot create kernel thread.\n");
-	return;
-    }
+  if (click_sched_pid > 0) { 
+    kernel_errh->error("another click thread running.\n"); 
+    return; 
+  } 
+  click_sched_pid = kernel_thread 
+    (click_sched, current_router, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
+  if (click_sched_pid < 0) { 
+    kernel_errh->error("cannot create kernel thread.\n"); 
+    return; 
+  }
 }
 
 
 extern "C" void
 kill_click_sched()
 {
-    if (click_sched_pid > 0) {
-	kill_proc(click_sched_pid, SIGKILL, 1);
-
-	/* wait for thread to die - paranoid =) */
-	while(click_sched_pid > 0) {
-	    schedule();
-	    asm volatile ("" : : : "memory");
-	}
-    }
+  if (click_sched_pid > 0) { 
+    kill_proc(click_sched_pid, SIGTERM, 1); 
+    /* wait for thread to die - paranoid =) */ 
+    while(click_sched_pid > 0) { 
+      schedule(); 
+      asm volatile ("" : : : "memory"); 
+    } 
+  }
+  tulip_print_stats();
 }

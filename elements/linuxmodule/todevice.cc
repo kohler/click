@@ -42,16 +42,28 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0),
-    _idle_calls(0), _busy_returns(0), _rejected(0), 
-    _idle(0), _pkts_sent(0), _activations(0)
+    _idle_calls(0), _busy_returns(0), _hard_start(0), 
+    _dev_idle(0), _last_dma_length(0), _last_tx(0),
+    _activations(0), _pkts_on_dma(0), _pkts_sent(0),
+    _tks_allocated(0)
 {
+  _dma_full_resched = 0;
+  _q_burst_resched = 0;
+  _q_full_resched = 0;
+  _q_empty_resched = 0;
 }
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
-    _idle_calls(0), _busy_returns(0), _rejected(0), 
-    _idle(0), _pkts_sent(0), _activations(0)
+    _idle_calls(0), _busy_returns(0), _hard_start(0), 
+    _dev_idle(0), _last_dma_length(0), _last_tx(0),
+    _activations(0), _pkts_on_dma(0), _pkts_sent(0),
+    _tks_allocated(0)
 {
+  _dma_full_resched = 0;
+  _q_burst_resched = 0;
+  _q_full_resched = 0;
+  _q_empty_resched = 0;
 }
 
 ToDevice::~ToDevice()
@@ -203,11 +215,8 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
   int retval = 0;
   int ifindex_off = dev->ifindex - min_ifindex;
   if (ifindex_off >= 0 && ifindex_off < ifindex_map->size())
-    if (ToDevice *kw = (*ifindex_map)[ifindex_off]) {
-
-      kw->_idle_calls++;
+    if (ToDevice *kw = (*ifindex_map)[ifindex_off])
       retval = kw->tx_intr();
-    }
   
 #if CLICK_STATS > 0 || XCYC > 0
   leaving_ipb();
@@ -227,33 +236,43 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
 bool
 ToDevice::tx_intr()
 {
-#if CLICK_STATS >= 2
-  unsigned long long c0 = click_get_cycles();
-#endif
   int busy;
   int sent = 0;
+  int queued_pkts;
  
 #if CLICK_POLLDEV
-  _dev->clean_tx(_dev);
+  queued_pkts = _dev->clean_tx(_dev);
+  _pkts_on_dma += queued_pkts;
 #endif
 
   while (sent<TODEV_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
     Packet *p;
     if (p = input(0).pull()) {
-      _idle = 0;
+      queue_packet(p);
       sent++;
-      push(0, p);
     } 
     else break;
   }
-  if (sent > 0) _activations++;
-  _pkts_sent+=sent;
-  _idle++;
   
-#if CLICK_POLLDEV
-  int tx_left = _dev->clean_tx(_dev);
-#endif
+  if (_activations > 0 || sent > 0) {
+    _activations++;
+    _tks_allocated += ntickets();
+    if (sent == 0 && !busy) _idle_calls++;
+  }
+  
+  if (sent > 0) _pkts_sent+=sent;
 
+  if (queued_pkts == _last_dma_length + _last_tx && queued_pkts != 0) {
+    _dev_idle++;
+    if (_dev_idle==1024) {
+      /* device didn't send anything, ping it */
+      _dev->start_tx(_dev);
+      _hard_start++;
+      _dev_idle=0;
+    }
+  } else
+    _dev_idle = 0;
+  
   /*
    * If we have packets left in the queue, arrange for
    * net_bh()/qdisc_run_queues() to call us when the
@@ -272,30 +291,51 @@ ToDevice::tx_intr()
   if (busy)
     _busy_returns++;
 
-#if CLICK_STATS >= 2
-  unsigned long long c1 = click_get_cycles();
-  _calls += 1;
-  _self_cycles += c1 - c0;
-#endif
-  
-  if (busy)
-    adj_tickets(max_ntickets());
-  else if (_idle > 2) {
-    int n = ntickets()/4;
-    if (n==0) n=1;
-    adj_tickets(0-n);
+  /* adjusting tickets */
+
+  int adj = 0;
+  int dmal = _dev->tx_dma_length;
+  int dma_thresh = dmal-dmal/4;
+
+  /* tx dma ring was fairly full, and it was full last time as well, so we
+   * should slow down */
+  if (busy && queued_pkts > dma_thresh && _last_dma_length > dma_thresh) {
+    adj = 0-ntickets()/4; 
+    if (adj==0) adj=-1;
+    if (_activations>0) _dma_full_resched++;
   }
 
-#ifdef CLICK_POLLDEV
+  /* not much there upstream, so slow down */
+  else if (!busy && sent < dmal/8) {
+    adj = 0-ntickets()/8;
+    if (adj==0) adj=-1;
+    if (_activations>0) _q_empty_resched++;
+  }
+  
+  /* handle burstiness */
+  else if (sent > dmal/2) {
+    adj = ntickets()/2;
+    if (adj<4) adj=4;
+    if (_activations>0) _q_burst_resched++;
+  }
+  
+  /* prevent backlog and also try to keep device occupied */
+  else if (sent > dmal/3) {
+    adj = ntickets()/8;
+    if (adj==0) adj=1;
+    if (_activations>0) _q_full_resched++;
+  }
+
+  adj_tickets(adj);
+  _last_dma_length = queued_pkts;
+  _last_tx = sent;
+  _last_busy = busy;
+
   reschedule();
-#else
-  if (busy || _idle <= TODEV_IDLE_LIMIT)
-    reschedule();
-#endif
 }
 
 void
-ToDevice::push(int port, Packet *p)
+ToDevice::queue_packet(Packet *p)
 {
   struct sk_buff *skb1 = p->steal_skb();
   
@@ -315,19 +355,9 @@ ToDevice::push(int port, Packet *p)
     skb_put(skb1, 60 - skb1->len);
   }
 
-#if CLICK_STATS > 0  
-  extern int rtm_opackets;
-  extern unsigned long long rtm_obytes;
-  rtm_opackets++;
-  rtm_obytes += skb1->len;
-#endif
-  
-  int ret = _dev->hard_start_xmit(skb1, _dev);
+  int ret = _dev->queue_tx(skb1, _dev);
   if(ret != 0){
-    /* device rejected the packet */
-    if(_rejected == 0)
-      printk("<1>ToDevice %s tx oops\n", _dev->name);
-    _rejected += 1;
+    printk("<1>ToDevice %s tx oops\n", _dev->name);
     kfree_skb(skb1);
   }
 }
@@ -343,11 +373,18 @@ ToDevice_read_calls(Element *f, void *)
 {
   ToDevice *kw = (ToDevice *)f;
   return
-    String(kw->_idle_calls) + " tx ready calls\n" +
+    String(kw->max_ntickets()) + " maximum number of tickets\n" +
+    String(kw->_hard_start) + " hard transmit start\n" +
+    String(kw->_idle_calls) + " idle tx calls\n" +
     String(kw->_busy_returns) + " device busy returns\n" +
-    String(kw->_rejected) + " hard_start rejections\n" +
-    String(kw->_activations) + " transmit activations\n" +
-    String(kw->_pkts_sent) + " packets sent\n";
+    String(kw->_pkts_on_dma) + " packets seen pending on DMA ring\n" +
+    String(kw->_tks_allocated) + " total tickets seen\n" +
+    String(kw->_dma_full_resched) + " dma full resched\n" +
+    String(kw->_q_burst_resched) + " q burst resched\n" +
+    String(kw->_q_full_resched) + " q full resched\n" +
+    String(kw->_q_empty_resched) + " q empty resched\n" +
+    String(kw->_pkts_sent) + " packets sent\n" +
+    String(kw->_activations) + " transmit activations\n";
 }
 
 void

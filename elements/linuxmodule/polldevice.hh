@@ -23,9 +23,7 @@
 #include "element.hh"
 #include "string.hh"
 #include "glue.hh"
-
-#define POLLDEV_IDLE_LIMIT 32
-#define POLLDEV_MAX_PKTS_PER_RUN 8
+#include "netdev.h"
 
 class PollDevice : public Element {
  public:
@@ -52,17 +50,17 @@ class PollDevice : public Element {
   void run_scheduled();
  
   // statistics
-  int _total_intr_wait;
-  int _pkts_received;
+  unsigned long long _pkts_received;
+  unsigned long long _pkts_on_dma;
+  unsigned long long _activations;
+  unsigned long long _tks_allocated;
+  unsigned long long _dma_full_resched;
+  unsigned long long _dma_empty_resched;
   
  private:
-  int _idle;
   String _devname;
   struct device *_dev;
-  struct wait_queue _self_wq;
-
-  static int num_polldevices;
-  static int num_idle_polldevices;
+  int _last_dma_length;
 };
 
 #endif 

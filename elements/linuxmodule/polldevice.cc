@@ -29,24 +29,27 @@ extern "C" {
 #include <unistd.h>
 }
 
-static int PollDevice::num_polldevices = 0;
-static int PollDevice::num_idle_polldevices = 0;
-
 PollDevice::PollDevice()
-  : _dev(0)
+  : _dev(0), _last_dma_length(0),
+    _pkts_received(0), _pkts_on_dma(0), _activations(0),
+    _tks_allocated(0)
 {
   add_output();
-  _pkts_received=0;
+  _dma_full_resched = 0;
+  _dma_empty_resched = 0;
 }
 
 PollDevice::PollDevice(const String &devname)
-  : _devname(devname), _dev(0)
+  : _devname(devname), _dev(0), _last_dma_length(0),
+    _pkts_received(0), _pkts_on_dma(0), _activations(0),
+    _tks_allocated(0)
 {
 #ifdef CLICK_BENCHMARK
   _bm_done = 0;
 #endif
   add_output();
-  _pkts_received=0;
+  _dma_full_resched = 0;
+  _dma_empty_resched = 0;
 }
 
 PollDevice::~PollDevice()
@@ -56,7 +59,6 @@ PollDevice::~PollDevice()
 void
 PollDevice::static_initialize()
 {
-  num_polldevices = num_idle_polldevices = 0;
 }
 
 void
@@ -94,13 +96,8 @@ PollDevice::initialize(ErrorHandler *errh)
     return errh->error("device `%s' not pollable", _devname.cc());
 
   _dev->intr_off(_dev);
-  _dev->intr_defer = 1;
-  _idle = 0;
-  _total_intr_wait = 0;
-  
   ScheduleInfo::join_scheduler(this, errh);
   
-  num_polldevices++;
   return 0;
 }
 
@@ -108,15 +105,9 @@ PollDevice::initialize(ErrorHandler *errh)
 void
 PollDevice::uninitialize()
 {
-  if (_dev) { 
-    num_polldevices--;
-    if (_idle >= POLLDEV_IDLE_LIMIT) 
-      num_idle_polldevices--;
-    _idle = 0;
-
+  if (_dev) {
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
-    
     unschedule();
   }
 }
@@ -124,21 +115,14 @@ PollDevice::uninitialize()
 void
 PollDevice::run_scheduled()
 {
-  extern int rtm_ipackets;
-  extern unsigned long long rtm_ibytes;
   struct sk_buff *skb;
   int got=0;
+
+  _dev->clean_tx(_dev);
 
   /* order of && clauses important */
   while(got<POLLDEV_MAX_PKTS_PER_RUN && (skb = _dev->rx_poll(_dev))) {
     _pkts_received++;
-#if 0
-    if (_idle >= POLLDEV_IDLE_LIMIT)
-      num_idle_polldevices--; 
-#endif
-    _idle = 0;
-    rtm_ipackets++;
-    rtm_ibytes += skb->len;
 
     assert(skb->data - skb->head >= 14);
     assert(skb->mac.raw == skb->data - 14);
@@ -154,20 +138,39 @@ PollDevice::run_scheduled()
     output(0).push(p);
     got++;
   }
+  
+  if (_activations > 0 || got > 0) {
+    _activations++;
+    _tks_allocated += ntickets();
+  }
+
   /* !!! careful: if POLLDEV_MAX_PKTS_PER_RUN is greater than RX ring size, we
    * need to fill_rx more often... by default, RX ring size is 32, and we set
-   * POLLDEV_MAX_PKTS_PER_RUN to 8, so we can fill once per run */
-  _dev->fill_rx(_dev);
-  _dev->clean_tx(_dev);
-  _idle++;
+   * POLLDEV_MAX_PKTS_PER_RUN to 16, so we can fill once per run */
+  int queued_pkts = _dev->clean_rx(_dev);
+  _pkts_on_dma += queued_pkts;
 
-  if (got == POLLDEV_MAX_PKTS_PER_RUN)
-    adj_tickets(max_ntickets());
-  else if (_idle > 2) {
-    int n = ntickets()/4;
-    if (n==0) n=1;
-    adj_tickets(0-n);
+  /* adjusting tickets */
+  int adj = 0;
+  int dmal = _dev->rx_dma_length;
+
+  /* rx dma ring is fairly full, schedule ourselves more */
+  if (queued_pkts > (dmal-dmal/3)-got) {
+    adj = ntickets()/2;
+    if (adj==0) adj=1;
+    if (_activations>0) _dma_full_resched++;
   }
+ 
+  /* rx dma ring was fairly empty, schedule ourselves less */
+  else if (queued_pkts+got < dmal/4) {
+    adj = 0-ntickets()/4;
+    if (adj==0) adj=-1;
+    if (_activations>0) _dma_empty_resched++;
+  }
+
+  adj_tickets(adj);
+  _last_dma_length = queued_pkts;
+
   reschedule();
 }
  
@@ -176,8 +179,13 @@ PollDevice_read_calls(Element *f, void *)
 {
   PollDevice *kw = (PollDevice *)f;
   return
+    String(kw->max_ntickets()) + " maximum number of tickets\n" + 
     String(kw->_pkts_received) + " packets received\n" +
-    String(kw->_total_intr_wait) + " waits with interrupts on\n";
+    String(kw->_pkts_on_dma) + " packets seen pending on DMA ring\n" +
+    String(kw->_dma_full_resched) + " dma full resched\n" +
+    String(kw->_dma_empty_resched) + " dma empty resched\n" +
+    String(kw->_tks_allocated) + " total tickets seen\n" +
+    String(kw->_activations) + " activations\n";
 }
 
 void
