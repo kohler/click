@@ -120,8 +120,8 @@ private:
     typedef HashMap<IPAddress, int> IPCount;
     IPCount _errors_sent;
 
-    BadNeighbor() {memset(this, 0, sizeof(*this)); }
-    BadNeighbor(IPAddress ip) {memset(this, 0, sizeof(*this)); _ip = ip;}
+    BadNeighbor() : _ip(), _when(), _timeout() { }
+    BadNeighbor(IPAddress ip) : _ip(ip), _when(), _timeout() { }
     bool still_bad() {
       struct timeval expire;
       struct timeval now;
