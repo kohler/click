@@ -1,3 +1,10 @@
+2001-12-30 Sunday 12:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh, include/click/straccum.hh,
+	include/click/string.hh, include/click/string.hh,
+	libsrc/straccum.cc, libsrc/string.cc: more out-of-memory checks in
+	StringAccum (unhappy: causes minor code expansion)
+
 2001-12-27 Thursday 16:25  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/drivermanager.cc: DriverManager bug fixes, continued

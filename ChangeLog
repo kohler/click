@@ -1,3 +1,21 @@
+2001-12-30 Sunday 13:25  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-undead/click-undead.cc (1.24),
+	click-xform/click-xform.cc (1.41), lib/elementt.cc (1.23),
+	lib/elementt.hh (1.18), lib/processingt.cc (1.16), lib/routert.cc
+	(1.53), lib/routert.hh (1.43): ConnectionT contains Hookups, not
+	HookupIs
+
+2001-12-30 Sunday 12:47  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.texi (1.35): doc updates
+
+2001-12-30 Sunday 12:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh (1.17), include/click/string.hh (1.19),
+	lib/straccum.cc (1.24), lib/string.cc (1.35): more out-of-memory
+	checks in StringAccum (unhappy: causes minor code expansion)
+
 2001-12-30 Sunday 05:23  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/: fromnetflowsumdump.hh (1.4), toipsumdump.cc
