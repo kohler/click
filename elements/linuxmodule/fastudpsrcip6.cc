@@ -143,7 +143,7 @@ FastUDPSourceIP6::initialize(ErrorHandler *)
   } else
     udp->uh_sum = 0;
     
-  _skb = _packet->steal_skb();
+  _skb = _packet->skb();
   return 0;
 }
 

@@ -297,7 +297,7 @@ ToDevice::run_task()
 int
 ToDevice::queue_packet(Packet *p)
 {
-  struct sk_buff *skb1 = p->steal_skb();
+  struct sk_buff *skb1 = p->skb();
   
   /*
    * Ensure minimum ethernet packet size (14 hdr + 46 data).

@@ -82,9 +82,7 @@ ToHost::cleanup(CleanupStage)
 void
 ToHost::push(int port, Packet *p)
 {
-    struct sk_buff *skb = p->steal_skb();
-    if (!skb)
-	return;
+    struct sk_buff *skb = p->skb();
   
     // set device if specified
     if (_dev) 

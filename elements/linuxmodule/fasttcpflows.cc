@@ -127,8 +127,8 @@ FastTCPFlows::get_packet()
     for (unsigned i=0; i<_nflows; i++) {
       if (_flows[i].flow_count != _flowsize) {
 	_flows[i].flow_count = _flowsize;
-        atomic_inc(&(_flows[i].fin_packet->steal_skb())->users);
-        return reinterpret_cast<Packet *>(_flows[i].fin_packet->steal_skb());
+        atomic_inc(&(_flows[i].fin_packet->skb())->users);
+        return reinterpret_cast<Packet *>(_flows[i].fin_packet->skb());
       }
     }
     _sent_all_fins = true;
@@ -142,16 +142,16 @@ FastTCPFlows::get_packet()
     }
     _flows[flow].flow_count++;
     if (_flows[flow].flow_count == 1) {
-      atomic_inc(&(_flows[flow].syn_packet->steal_skb())->users);
-      return reinterpret_cast<Packet *>(_flows[flow].syn_packet->steal_skb());
+      atomic_inc(&(_flows[flow].syn_packet->skb())->users);
+      return reinterpret_cast<Packet *>(_flows[flow].syn_packet->skb());
     }
     else if (_flows[flow].flow_count == _flowsize) {
-      atomic_inc(&(_flows[flow].fin_packet->steal_skb())->users);
-      return reinterpret_cast<Packet *>(_flows[flow].fin_packet->steal_skb());
+      atomic_inc(&(_flows[flow].fin_packet->skb())->users);
+      return reinterpret_cast<Packet *>(_flows[flow].fin_packet->skb());
     }
     else {
-      atomic_inc(&(_flows[flow].data_packet->steal_skb())->users);
-      return reinterpret_cast<Packet *>(_flows[flow].data_packet->steal_skb());
+      atomic_inc(&(_flows[flow].data_packet->skb())->users);
+      return reinterpret_cast<Packet *>(_flows[flow].data_packet->skb());
     }
   }
 }

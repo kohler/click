@@ -159,7 +159,7 @@ FastUDPFlows::initialize(ErrorHandler *)
 				      len, IP_PROTO_UDP, csum);
     } else
       udp->uh_sum = 0;
-    _flows[i].skb = _flows[i].packet->steal_skb();
+    _flows[i].skb = _flows[i].packet->skb();
     _flows[i].flow_count = 0;
   }
   _last_flow = 0;

@@ -38,7 +38,6 @@ class Packet { public:
   static Packet *make(struct sk_buff *);
   struct sk_buff *skb()			{ return (struct sk_buff *)this; }
   const struct sk_buff *skb() const	{ return (const struct sk_buff*)this; }
-  struct sk_buff *steal_skb()		{ return skb(); }
   void kill();
 #elif CLICK_BSDMODULE
   // Packet::make(mbuf *) wraps a Packet around an existing mbuf.
