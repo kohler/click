@@ -56,7 +56,7 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 	  a.have |= INFO_IP;
 	  a.ip.u = scrap.ip.u;
 	  
-	} else if (cp_ip_prefix(parts[j], &scrap.ip.c[0], &scrap.ip_mask.c[0])) {
+	} else if (cp_ip_prefix(parts[j], &scrap.ip.c[0], &scrap.ip_mask.c[0], false)) {
 	  if ((a.have & (INFO_IP | INFO_IP_PREFIX))
 	      && (scrap.ip.u & scrap.ip_mask.u) != (a.ip.u & scrap.ip_mask.u))
 	    errh->warning("\"%s\" IP address and IP address prefix conflict", name.cc());
@@ -78,7 +78,7 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 	  a.have |= INFO_IP6;
 	  a.ip6 = scrap.ip6;
 	  
-	} else if (cp_ip6_prefix(parts[j], scrap.ip6.data(), &scrap.ip6_prefix)) {
+	} else if (cp_ip6_prefix(parts[j], scrap.ip6.data(), &scrap.ip6_prefix, false)) {
 	  IP6Address m = IP6Address::make_prefix(scrap.ip6_prefix);
 	  if ((a.have & (INFO_IP6 | INFO_IP6_PREFIX))
 	      && (scrap.ip6 & m) != (a.ip6 & m))
