@@ -1,3 +1,64 @@
+2000-11-19 Sunday 17:53  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/variableenv.hh, lib/variableenv.cc: forgot to add
+	VariableEnvironment, whoops (Mz)
+
+2000-11-19 Sunday 17:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* AUTHORS, DISTFILES, doc/click.5, elements/standard/nulls.hh,
+	include/click/lexer.hh, lib/confparse.cc, lib/lexer.cc,
+	linuxmodule/Makefile.in, tools/click-align/click-align.cc,
+	tools/click-check/click-check.cc,
+	tools/click-combine/click-combine.cc,
+	tools/click-combine/click-uncombine.cc,
+	tools/click-devirtualize/click-devirtualize.cc,
+	tools/click-fastclassifier/click-fastclassifier.cc,
+	tools/click-install/click-install.cc,
+	tools/click-undead/click-undead.cc,
+	tools/click-xform/click-xform.cc, tools/lib/Makefile.in,
+	tools/lib/elementt.cc, tools/lib/elementt.hh, tools/lib/lexert.cc,
+	tools/lib/lexert.hh, tools/lib/processingt.cc,
+	tools/lib/routert.cc, tools/lib/routert.hh, userlevel/Makefile.in:
+	Lots of parsing-related changes. Many error message improvements
+	and more careful coding in the tools. Biggest user-visible change:
+	added overloading to compound elements. (Mazu)
+
+2000-11-19 Sunday 17:48  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ethernet/arpresponder.cc,
+	elements/ethernet/arpresponder.hh, lib/iptable.cc, lib/iptable2.cc:
+	fixed bugs caused by bad assumption. Code assumed that after
+	cp_ip_prefix(str, &ip, &mask), you must have (ip & ~mask) == 0.
+	This was NOT in fact true. So added some explicit maskings
+	(basically, ip &= mask).
+
+2000-11-19 Sunday 17:46  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/etheraddress.hh, include/click/ipaddress.hh,
+	lib/etheraddress.cc: added operator<<(StringAccum &, const
+	EtherAddress &) and operator&(IPAddress, IPAddress)
+
+2000-11-19 Sunday 17:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/gaprate.hh: small change so that rates of 1pps work
+	correctly (Mazu; reported by Jessie)
+
+2000-11-19 Sunday 17:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/error.hh, lib/error.cc: more ErrorHandler changes
+	for better consistency of result messages
+
+2000-11-19 Sunday 17:43  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipclassifier.hh, ipfilter.cc, ipfilter.hh:
+	refactored IPFilter's internals for better extensibility; also
+	added a couple of port numbers and fixed some bugs (Mazu)
+
+2000-11-19 Sunday 17:42  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipprint.cc, ipprint.hh: changed IPPrint to keyword
+	arguments, and added ID keyword, plus bug fixes
+
 2000-11-16 Thursday 18:17  Benjie Chen <benjie@lcs.mit.edu>
 
 	* tools/e1000/e1000_vendor_info.h: file e1000_vendor_info.h was
