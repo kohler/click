@@ -26,6 +26,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+#include <click/integers.hh>	// for first_bit_set
 
 #ifdef CLICK_LINUXMODULE
 extern "C" {
@@ -235,20 +236,17 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
   // check that top 16 bits agree
   int sportl = 0, sporth = 0;
   if (saddr1 != saddr2) {
-    for (int pbits = 16; pbits < 32; pbits++) {
-      IPAddress prefix = IPAddress::make_prefix(pbits);
-      if ((saddr1 & prefix) != (saddr2 & prefix)) {
-	if (pbits == 16)
+      // gcc-2.96 unhappy with combined expression
+      uint32_t xorval = ntohl(saddr1.addr()) ^ ntohl(saddr2.addr());
+      int first_different = first_bit_set(xorval);
+      if (first_different <= 16)
 	  return errh->error("source addresses `%s' and `%s' too far apart;\nmust agree in at least top 16 bits", saddr1.s().cc(), saddr2.s().cc());
-	prefix = ~IPAddress::make_prefix(pbits - 1);
-	sportl = ntohl((unsigned)(saddr1 & prefix));
-	sporth = ntohl((unsigned)(saddr2 & prefix));
-	if (sportl > sporth)
+      IPAddress prefix = ~IPAddress::make_prefix(first_different - 1);
+      sportl = ntohl((unsigned)(saddr1 & prefix));
+      sporth = ntohl((unsigned)(saddr2 & prefix));
+      if (sportl > sporth)
 	  return errh->error("lower source address should come first");
-	saddr1 &= ~prefix;
-	break;
-      }
-    }
+      saddr1 &= ~prefix;
   }
 
   IPAddress daddr;
@@ -379,7 +377,7 @@ IPRw::Pattern::create_mapping(int ip_p, const IPFlowID &in,
     }
   }
 
-  if (_sportl)
+  if (_sportl && _is_napt)
     out.set_sport(htons(new_sport));
 
   if (_daddr)
@@ -418,29 +416,36 @@ String
 IPRw::Pattern::s() const
 {
   StringAccum sa;
-  if (_saddr)
-    sa << _saddr.s() << ' ';
+  if (!_is_napt && _sportl != _sporth)
+      sa << IPAddress(htonl(ntohl(_saddr.addr()) + _sportl)).s() << '-'
+	 << IPAddress(htonl(ntohl(_saddr.addr()) + _sporth)).s();
+  else if (_saddr)
+      sa << _saddr.s();
   else
-    sa << "- ";
-  
-  if (!_sporth)
-    sa << "- ";
+      sa << '-';
+
+  if (!_is_napt)
+      /* nada */;
+  else if (!_sporth)
+      sa << " -";
   else if (_sportl == _sporth)
-    sa << _sporth << ' ';
+      sa << ' ' << _sporth;
   else
-    sa << _sportl << "-" << _sporth << ' ';
+      sa << ' ' << _sportl << '-' << _sporth;
 
   if (_daddr)
-    sa << _daddr.s() << ' ';
+      sa << ' ' << _daddr.s();
   else
-    sa << "- ";
+    sa << " -";
 
-  if (!_dport)
-    sa << "- ";
+  if (!_is_napt)
+      /* nada */;
+  else if (!_dport)
+      sa << " -";
   else
-    sa << _dport << ' ';
+      sa << ' ' << _dport;
 
-  sa << '[' << _nmappings << ']';
+  sa << " [" << _nmappings << ']';
 
   return sa.take_string();
 }

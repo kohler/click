@@ -17,9 +17,10 @@ rewrites UDP/TCP packets' addresses and ports
 Rewrites UDP and TCP flows by changing their source address, source port,
 destination address, and/or destination port.
 
-Has one or more inputs and one or more outputs. Input packets must have
-their IP header annotations set. Output packets are valid IP packets; for
-instance, rewritten packets have their checksums incrementally updated.
+Has one or more inputs and one or more outputs. Input packets must have their
+IP header annotations set. Output packets are valid IP packets; for instance,
+rewritten packets have their checksums incrementally updated. However,
+IPRewriter does not change the destination IP address annotation.
 
 A flow is identified by its (source address, source port, destination
 address, destination port) quadruple, called its I<flow identifier>.
@@ -38,13 +39,12 @@ through the IPRewriter, they will be rewritten to look as if they came from
 2.0.0.2; this corresponds to a reverse mapping (5.0.0.5, 80, 1.0.0.1, 20)
 => (2.0.0.2, 30, 1.0.0.1, 20).
 
-When it is first initialized, IPRewriter has no mappings. Mappings are
-created on the fly as new flows are encountered in the form of packets with
-unknown flow IDs. This process is controlled by the INPUTSPECs. There are
-as many input ports as INPUTSPEC configuration arguments. Each INPUTSPEC
-specifies whether and how a mapping should be created when a new flow is
-encountered on the corresponding input port. There are five forms of
-INPUTSPEC:
+When it is first initialized, IPRewriter has no mappings. Mappings are created
+on the fly as new flows are encountered in the form of packets with unknown
+flow IDs. This process is controlled by the INPUTSPECs. There are as many
+input ports as INPUTSPEC configuration arguments. Each INPUTSPEC specifies
+whether and how a mapping should be created when a new flow is encountered on
+the corresponding input port. There are six forms of INPUTSPEC:
 
 =over 5
 
@@ -65,18 +65,18 @@ mapped to ROUTPUT.
 
 =item `pattern SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT'
 
-Packets with no existing mapping are rewritten according to the given
-pattern, `SADDR SPORT DADDR DPORT'. The SADDR and DADDR portions may be
-fixed IP addresses (in which case the corresponding packet field is set to
-that address) or a dash `-' (in which case the corresponding packet field
-is left unchanged). Similarly, DPORT is a port number or `-'. The SPORT
-field may be a port number, `-', or a port range `L-H', in which case a
-port number in the range L-H is chosen. IPRewriter makes sure that the
-chosen port number was not used by any of that pattern's existing mappings.
-If there is no such port number, the packet is dropped. (However, two
-different patterns with matching SADDR, SPORT, and DADDR and overlapping
-DPORT ranges might pick the same destination port number, resulting in an
-ambiguous mapping. You should probably avoid this situation.)
+Packets with no existing mapping are rewritten according to the given pattern,
+`SADDR SPORT DADDR DPORT'. The SADDR and DADDR portions may be fixed IP
+addresses (in which case the corresponding packet field is set to that
+address) or a dash `-' (in which case the corresponding packet field is left
+unchanged). Similarly, DPORT is a port number or `-'. The SPORT field may be a
+port number, `-', or a port range `L-H', in which case a port number in the
+range L-H is chosen. IPRewriter makes sure that the chosen port number was not
+used by any of that pattern's existing mappings. If all ports are in use, the
+packet is dropped. (Two different patterns with matching SADDR, SPORT, and
+DADDR and overlapping DPORT ranges might pick the same destination port
+number, resulting in an ambiguous mapping. You should probably avoid this
+situation.)
 
 A new mapping is installed. Packets whose flow is like the input packet's
 are rewritten and sent to FOUTPUT; packets in the reply flow are rewritten

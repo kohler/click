@@ -10,105 +10,73 @@ IPAddrRewriter(INPUTSPEC1, ..., INPUTSPECn)
 
 =s TCP
 
-rewrites UDP/TCP packets' addresses and ports
+rewrites IP packets' addresses
 
 =d
 
-Rewrites UDP and TCP flows by changing their source address, source port,
-destination address, and/or destination port.
+Rewrites IP packets by changing their source and/or destination addresses.
 
-Has one or more inputs and one or more outputs. Input packets must have
-their IP header annotations set. Output packets are valid IP packets; for
-instance, rewritten packets have their checksums incrementally updated.
+Has one or more inputs and one or more outputs. Input packets must have their
+IP header annotations set. Output packets are valid IP packets; for instance,
+rewritten packets have their checksums incrementally updated. However,
+IPAddrRewriter does not change the destination IP address annotation.
 
-A flow is identified by its (source address, source port, destination
-address, destination port) quadruple, called its I<flow identifier>.
-IPAddrRewriter maintains a set of I<mappings>, which say that one flow
-identifier should be rewritten into another. A mapping consists of an input
-flow ID, an output flow ID, a protocol, and an output port number. For
-example, an IPAddrRewriter might contain the mapping (1.0.0.1, 20, 2.0.0.2, 30)
-=> (1.0.0.1, 20, 5.0.0.5, 80) with protocol TCP and output 4. Say a TCP
-packet with flow ID (1.0.0.1, 20, 2.0.0.2, 30) arrived on one of that
-IPAddrRewriter's input ports. (Thus, the packet is going from port 20 on
-machine 1.0.0.1 to port 30 on machine 2.0.0.2.) Then the IPAddrRewriter will
-change that packet's data so the packet has flow ID (1.0.0.1, 20, 5.0.0.5,
-80). The packet is now heading to machine 5.0.0.5. It will then output the
-packet on output port 4. Furthermore, if reply packets from 5.0.0.5 go
-through the IPAddrRewriter, they will be rewritten to look as if they came from
-2.0.0.2; this corresponds to a reverse mapping (5.0.0.5, 80, 1.0.0.1, 20)
-=> (2.0.0.2, 30, 1.0.0.1, 20).
+IPAddrRewriter implements Basic NAT, where internal hosts are assigned
+temporary IP addresses as they access the Internet. Basic NAT works for any IP
+protocol, but the number of internal hosts that can access the Internet
+simultaneously is limited by the number of external IP addresses available.
+For NAPT (network address port translation), the more commonly implemented
+version of NAT nowadays, see IPRewriter and TCPRewriter.
 
 When it is first initialized, IPAddrRewriter has no mappings. Mappings are
 created on the fly as new flows are encountered in the form of packets with
-unknown flow IDs. This process is controlled by the INPUTSPECs. There are
+unknown IP addresses. This process is controlled by the INPUTSPECs. There are
 as many input ports as INPUTSPEC configuration arguments. Each INPUTSPEC
 specifies whether and how a mapping should be created when a new flow is
-encountered on the corresponding input port. There are five forms of
+encountered on the corresponding input port. There are six forms of
 INPUTSPEC:
 
 =over 5
 
-=item `drop'
+=item `drop', `nochange OUTPUT', `keep FOUTPUT ROUTPUT', `ELEMENTNAME'
 
-Packets with no existing mapping are dropped.
+These INPUTSPECs behave like those in IPRewriter.
 
-=item `nochange OUTPUT'
+=item `pattern SADDR[-SADDR2] DADDR FOUTPUT ROUTPUT'
 
-Packets with no existing mapping are sent to output port OUTPUT. No mappings
-are installed.
+Packets with no existing mapping are rewritten according to the given pattern.
+IPAddrRewriter patterns are like IPRewriter patterns minus the source and
+destination ports. Additionally, the source address can be a range of IP
+addresses, SADDR-SADDR2, in which case a new IP address is chosen for each
+unique source address. The two addresses SADDR and SADDR2 must lie within a
+single /16 network.
 
-=item `keep FOUTPUT ROUTPUT'
-
-Packets with no existing mapping are sent to output port FOUTPUT. A mapping
-is installed that keeps the packet's flow ID the same. Reply packets are
-mapped to ROUTPUT.
-
-=item `pattern SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT'
-
-Packets with no existing mapping are rewritten according to the given
-pattern, `SADDR SPORT DADDR DPORT'. The SADDR and DADDR portions may be
-fixed IP addresses (in which case the corresponding packet field is set to
-that address) or a dash `-' (in which case the corresponding packet field
-is left unchanged). Similarly, DPORT is a port number or `-'. The SPORT
-field may be a port number, `-', or a port range `L-H', in which case a
-port number in the range L-H is chosen. IPAddrRewriter makes sure that the
-chosen port number was not used by any of that pattern's existing mappings.
-If there is no such port number, the packet is dropped. (However, two
-different patterns with matching SADDR, SPORT, and DADDR and overlapping
-DPORT ranges might pick the same destination port number, resulting in an
-ambiguous mapping. You should probably avoid this situation.)
-
-A new mapping is installed. Packets whose flow is like the input packet's
-are rewritten and sent to FOUTPUT; packets in the reply flow are rewritten
-and sent to ROUTPUT.
+A new mapping is installed. Packets with source address like the input
+packet's are rewritten and sent to FOUTPUT; packets sent to the input packet's
+source address are rewritten and sent to ROUTPUT.
 
 =item `pattern PATNAME FOUTPUT ROUTPUT'
 
-Packets with no existing mapping are rewritten according to the pattern
-PATNAME, which was specified in an IPAddrRewriterPatterns element. Use this
-form if two or more INPUTSPECs (possibly in different IPAddrRewriter elements)
-share a single port range, and reusing a live mapping would be an error.
-
-=item `ELEMENTNAME'
-
-Packets with no existing mapping are rewritten as the element ELEMENTNAME
-suggests. When a new flow is detected, the element is given a chance to
-provide a mapping for that flow. This is called a I<mapping request>. This
-element must implement the IPMapper interface. One example mapper is
-RoundRobinIPMapper.
+Behaves like the version in IPRewriter, except that PATNAME must name an
+IPAddrRewriter-like pattern.
 
 =back
-
-IPAddrRewriter drops all fragments except the first, unless those fragments
-arrived on an input port with a `nochange OUTPUT' specification. In that case,
-the fragments are emitted on output OUTPUT.
 
 =h mappings read-only
 
 Returns a human-readable description of the IPAddrRewriter's current set of
 mappings.
 
-=a TCPRewriter, IPAddrRewriterPatterns, RoundRobinIPMapper, FTPPortMapper,
+=h nmappings read-only
+
+Returns the number of currently installed mappings.
+
+=h patterns read-only
+
+Returns a human-readable description of the patterns associated with this
+IPAddrRewriter.
+
+=a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper,
 ICMPRewriter, ICMPPingRewriter */
 
 class IPAddrRewriter : public IPRw { public:
@@ -166,10 +134,13 @@ class IPAddrRewriter : public IPRw { public:
 
 
 inline IPRw::Mapping *
-IPAddrRewriter::get_mapping(int, const IPFlowID &in) const
+IPAddrRewriter::get_mapping(int, const IPFlowID &in_flow) const
 {
-    IPFlowID flow_no_ports(in.saddr(), 0, in.daddr(), 0);
-    return _map[flow_no_ports];
+    IPFlowID flow(in_flow.saddr(), 0, IPAddress(0), 0);
+    if (IPRw::Mapping *m = _map[flow])
+	return m;
+    IPFlowID rev(IPAddress(0), 0, in_flow.daddr(), 0);
+    return _map[rev];
 }
 
 #endif

@@ -23,6 +23,7 @@
 #include <click/click_ip.h>
 #include <click/click_udp.h>
 #include <click/llrpc.h>
+#include <click/integers.hh>	// for first_bit_set
 #ifdef CLICK_USERLEVEL
 #include <unistd.h>
 #include <time.h>
@@ -160,34 +161,6 @@ AnonymizeIPAddr::uninitialize()
     _blocks.clear();
 }
 
-// from tcpdpriv
-int
-bi_ffs(uint32_t value)
-{
-    int add = 0;
-    static uint8_t bvals[] = { 0, 4, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1 };
-
-    if ((value & 0xFFFF0000) == 0) {
-	if (value == 0) {	/* zero input ==> zero output */
-	    return 0;
-	}
-	add += 16;
-    } else {
-	value >>= 16;
-    }
-    if ((value & 0xFF00) == 0) {
-	add += 8;
-    } else {
-	value >>= 8;
-    }
-    if ((value & 0xF0) == 0) {
-	add += 4;
-    } else {
-	value >>= 4;
-    }
-    return add + bvals[value & 0xf];
-}
-
 uint32_t
 AnonymizeIPAddr::make_output(uint32_t old_output, int swivel) const
 {
@@ -225,7 +198,7 @@ AnonymizeIPAddr::make_peer(uint32_t a, Node *n)
     }
 
     // swivel is first bit 'a' and 'old->input' differ
-    int swivel = bi_ffs(a ^ n->input);
+    int swivel = first_bit_set(a ^ n->input);
     // bitvalue is the value of that bit of 'a'
     int bitvalue = (a >> (32 - swivel)) & 1;
 
@@ -255,8 +228,8 @@ AnonymizeIPAddr::find_node(uint32_t a)
 	    n = make_peer(a, n);
 	else {
 	    // swivel is the first bit in which the two children differ
-	    int swivel = bi_ffs(n->child[0]->input ^ n->child[1]->input);
-	    if (bi_ffs(a ^ n->input) < swivel) // input differs earlier
+	    int swivel = first_bit_set(n->child[0]->input ^ n->child[1]->input);
+	    if (first_bit_set(a ^ n->input) < swivel) // input differs earlier
 		n = make_peer(a, n);
 	    else if (a & (1 << (32 - swivel)))
 		n = n->child[1];

@@ -24,8 +24,6 @@
 #include <click/error.hh>
 #include <click/llrpc.h>
 
-#include <limits.h>
-
 void
 IPAddrRewriter::IPAddrMapping::apply(WritablePacket *p)
 {
@@ -38,7 +36,7 @@ IPAddrRewriter::IPAddrMapping::apply(WritablePacket *p)
   else
     iph->ip_dst = _mapto.daddr();
 
-  unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
+  uint32_t sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
   sum = (sum & 0xFFFF) + (sum >> 16);
   iph->ip_sum = ~(sum + (sum >> 16));
   
@@ -166,7 +164,6 @@ IPAddrRewriter::apply_pattern(Pattern *pattern, int,
       goto failure;
 
     IPFlowID reverse_flow = forward->flow_id().rev();
-    reverse_flow.set_dport(0);	// old 'sport' (crap) is new 'dport'
     _map.insert(flow, forward);
     _map.insert(reverse_flow, reverse);
     return forward;
@@ -222,7 +219,7 @@ IPAddrRewriter::push(int port, Packet *p_in)
        m = static_cast<IPAddrMapping *>(is.u.mapper->get_map(this, 0, flow, p));
        break;
      }
-      
+     
     }
     if (!m) {
       p->kill();
