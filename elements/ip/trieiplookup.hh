@@ -57,7 +57,7 @@ public:
         bool operator==(const HashIPAddress& a)
         { return (a.addr == addr) && (a.is_real == is_real); }
         operator bool() const { return is_real; }
-        operator int() const { return addr; }
+        operator unsigned() const { return addr; }
         String unparse() const
         {
             const unsigned char *p = (unsigned char *)(&addr);

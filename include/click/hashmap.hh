@@ -122,12 +122,6 @@ HashMap<K, V>::findp(const K &key) const
   return _e[i].k ? &_e[i].v : 0;
 }
 
-inline int
-hashcode(int i)
-{
-  return i;
-}
-
 inline unsigned
 hashcode(unsigned u)
 {
