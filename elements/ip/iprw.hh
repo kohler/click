@@ -84,7 +84,6 @@ class IPRw::Mapping { public:
   
   bool used(unsigned interval) const;
   void mark_used()			{ _used = click_jiffies(); }
-  void clear_used()			{ _used = 0; }
   
   bool marked() const			{ return _marked; }
   void mark()				{ _marked = true; }

@@ -622,14 +622,6 @@ IPRw::clean_map(Map &table, unsigned interval_ms)
     delete to_free;
     to_free = next;
   }
-
-#if 0
-  for (Map::Iterator iter = table.first(); iter; iter++)
-    if (Mapping *m = iter.value()) {
-      if (!m->free_tracked())
-	m->clear_used();
-    }
-#endif
 }
 
 void
@@ -666,13 +658,6 @@ IPRw::clean_map_free_tracked
     delete to_free;
     to_free = next;
   }
-
-#if 0
-  for (m = *free_tracked; m; m = m->free_next()) {
-    m->clear_used();
-    m->reverse()->clear_used();
-  }
-#endif
 }
 
 void
