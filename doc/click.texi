@@ -3031,7 +3031,7 @@ The @code{configure} method is passed the element's configuration
 string. This method is expected to parse the configuration string,
 report any errors, and initialize the element's internal state.
 
-@deftypemethod Element {virtual int} configure (const Vector<String> &@var{conf}, ErrorHandler *@var{errh})
+@deftypemethod Element {virtual int} configure (Vector<String> &@var{conf}, ErrorHandler *@var{errh})
 The @var{conf} argument is the element's configuration string, divided
 into configuration arguments by splitting at commas, and with comments
 and leading and trailing whitespace removed. If @var{conf} is empty, the
@@ -3048,6 +3048,8 @@ initializing.
 
 The default @code{configure} method succeeds if and only if there are no
 configuration arguments.
+
+The method may modify @var{conf} however it would like.
 @end deftypemethod
 
 @code{configure} is called relatively early in the initialization
