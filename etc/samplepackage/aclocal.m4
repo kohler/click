@@ -688,3 +688,26 @@ void h(off_t a) {
 #include <stdio.h>
 #include <sys/types.h>])
 ])
+
+
+dnl
+dnl CLICK_CHECK_POLL_H
+dnl Check whether <poll.h> is available and not emulated.  Defines
+dnl HAVE_POLL_H.
+dnl
+
+AC_DEFUN([CLICK_CHECK_POLL_H], [
+    AC_CHECK_HEADER(poll.h, ac_cv_poll_h=yes, ac_cv_poll_h=no)
+    if test "$ac_cv_poll_h" = yes; then
+	AC_CACHE_CHECK([whether <poll.h> is emulated], 
+	    ac_cv_emulated_poll_h,
+	    [AC_TRY_COMPILE([#include <poll.h>
+#ifdef _POLL_EMUL_H_
+# error "error"
+#endif
+], [], ac_cv_emulated_poll_h=no, ac_cv_emulated_poll_h=yes)])
+	if test "x$ac_cv_emulated_poll_h" = xno; then
+	    AC_DEFINE(HAVE_POLL_H)
+	fi
+    fi
+])

@@ -14,7 +14,7 @@ subdir = .
 conf_auxdir = @conf_auxdir@
 
 AUTOCONF = @AUTOCONF@
-ACLOCAL = cp acclick.m4 aclocal.m4
+ACLOCAL = cp m4/click.m4 aclocal.m4
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
@@ -116,7 +116,7 @@ click-compile: $(srcdir)/click-compile.in config.status
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
 
-$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acclick.m4
+$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/m4/click.m4
 	cd $(srcdir) && $(ACLOCAL) && $(AUTOCONF)
 config.status: $(srcdir)/configure
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
@@ -152,7 +152,9 @@ dist: distdir
 	-rm -rf $(distdir)
 distdir: $(srcdir)/configure
 	cd doc && $(MAKE) info
-	cp $(srcdir)/acclick.m4 $(srcdir)/aclocal.m4 $(srcdir)/etc/samplepackage; cd $(srcdir)/etc/samplepackage; $(AUTOCONF)
+	cp $(srcdir)/m4/click.m4 $(srcdir)/etc/samplepackage/m4
+	cp $(srcdir)/aclocal.m4 $(srcdir)/etc/samplepackage
+	cd $(srcdir)/etc/samplepackage && $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	chmod 777 $(distdir)

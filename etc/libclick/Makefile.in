@@ -14,7 +14,7 @@ subdir = etc/libclick
 conf_auxdir = @conf_auxdir@
 
 AUTOCONF = @AUTOCONF@
-ACLOCAL = cp acclick.m4 aclocal.m4
+ACLOCAL = cp m4/click.m4 aclocal.m4
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@

@@ -9,7 +9,6 @@ LICENSE
 Makefile.in
 NEWS
 README
-acclick.m4
 aclocal.m4
 apps
 bsdmodule
@@ -35,6 +34,7 @@ include
 install-sh
 lib
 linuxmodule
+m4
 missing
 mkinstalldirs
 ns
@@ -244,17 +244,20 @@ click-readcounter.c
 ./etc/samplepackage:
 Makefile.in
 README
-acclick.m4
 aclocal.m4
 config.h.in
 configure
 configure.in
 install-sh
+m4
 missing
 mkinstalldirs
 sampleelt.cc
 sampleelt.hh
 test.click
+
+./etc/samplepackage/m4:
+click.m4
 
 ./include:
 click
@@ -393,12 +396,14 @@ config.cc
 kernelversion.c
 module.cc
 modulepriv.hh
-proc_click.cc
 proclikefs.c
 proclikefs.h
 read-pmc.c
 sched.cc
 skbmgr.cc
+
+./m4:
+click.m4
 
 ./ns:
 CUT_BinHeap.h
