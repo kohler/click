@@ -32,7 +32,7 @@ public:
   ~DivertSocket();
 
   const char *class_name() const     { return "DivertSocket"; }
-  const char *processing() const     {return PUSH;}
+  const char *processing() const     { return PUSH;}
 
   DivertSocket *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
@@ -44,7 +44,18 @@ public:
 
 private:
 
+  bool _have_sport;
+  bool _have_dport;
+  
   int _fd;
+  unsigned char _protocol;
+  IPAddress _saddr, _smask, _daddr, _dmask;
+  int32_t _sportl, _sporth, _dportl, _dporth;
+  String _inout;
+
+  int parse_ports(const String &param, ErrorHandler *errh, 
+		  int32_t *sportl, int32_t  *sporth);
+  
   
 };
 
