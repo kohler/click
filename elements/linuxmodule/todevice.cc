@@ -71,7 +71,7 @@ ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (!_dev)
     _dev = find_device_by_ether_address(_devname, this);
   if (!_dev)
-    return errh->error("no device `%s'", _devname.cc());
+    return errh->error("unknown device `%s'", _devname.cc());
   return 0;
 }
 

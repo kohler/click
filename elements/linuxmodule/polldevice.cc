@@ -90,7 +90,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (!_dev)
     _dev = find_device_by_ether_address(_devname, this);
   if (!_dev)
-    return errh->error("no device `%s'", _devname.cc());
+    return errh->error("unknown device `%s'", _devname.cc());
   // must check both _dev->polling and _dev->poll_on as some drivers
   // memset() their device structures to all zero
   if (_dev->polling < 0 || !_dev->poll_on)

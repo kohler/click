@@ -63,7 +63,7 @@ ToLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (!_dev)
       _dev = find_device_by_ether_address(devname, this);
     if (!_dev)
-      return errh->error("no such device `%s'", devname.cc());
+      return errh->error("unknown device `%s'", devname.cc());
   } else
     _dev = 0;
   return 0;
