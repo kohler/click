@@ -1,3 +1,26 @@
+2001-04-23 Monday 17:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid-node.openbsd: [no log message]
+
+2001-04-23 Monday 17:08  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/printold.cc: [no log message]
+
+2001-04-23 Monday 17:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: floodinglocquerier.cc, hello.cc,
+	locqueryresponder.cc, lrhello.cc, updateroutes.cc: all elements
+	that originate packets set the timestamp
+
+2001-04-23 Monday 16:47  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: printold.cc, printold.hh: added element to
+	print out packets if they have spent too much time in the router!
+
+2001-04-23 Monday 16:45  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/unqueue2.cc: fix compile warnings
+
 2001-04-23 Monday 16:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: fromdevice.cc, kerneltap.cc: added support
