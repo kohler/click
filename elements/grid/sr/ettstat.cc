@@ -122,7 +122,7 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 
 
 void
-ETTStat::take_state(Element *e, ErrorHandler *)
+ETTStat::take_state(Element *e, ErrorHandler *errh)
 {
   /* 
    * take_state gets called after 
@@ -133,7 +133,10 @@ ETTStat::take_state(Element *e, ErrorHandler *)
    * screwed up.
   */
   ETTStat *q = (ETTStat *)e->cast("ETTStat");
-  if (!q) return;
+  if (!q) {
+    errh->error("Couldn't cast old ETTStat");
+    return;
+  }
   
   _neighbors = q->_neighbors;
   _bcast_stats = q->_bcast_stats;
@@ -142,29 +145,33 @@ ETTStat::take_state(Element *e, ErrorHandler *)
   _sent = q->_sent;
   _start = q->_start;
 
-  if (_timer_small->scheduled()) {
+  struct timeval now;
+  click_gettimeofday(&now);
+
+  if (timercmp(&now, &q->_next_small, <)) {
     _timer_small->unschedule();
     _timer_small->schedule_at(q->_next_small);
     _next_small = q->_next_small;
   }
 
-  if (_timer_1->scheduled()) {
+  if (timercmp(&now, &q->_next_1, <)) {
     _timer_1->unschedule();
     _timer_1->schedule_at(q->_next_1);
     _next_1 = q->_next_1;
   }
-
-  if (_timer_2->scheduled()) {
+  
+  if (timercmp(&now, &q->_next_2, <)) {
     _timer_2->unschedule();
     _timer_2->schedule_at(q->_next_2);
     _next_2 = q->_next_2;
   }
-  if (_timer_5->scheduled()) {
+  
+  if (timercmp(&now, &q->_next_5, <)) {
     _timer_5->unschedule();
     _timer_5->schedule_at(q->_next_5);
     _next_5 = q->_next_5;
   }
-  if (_timer_11->scheduled()) {
+  if (timercmp(&now, &q->_next_11, <)) {
     _timer_11->unschedule();
     _timer_11->schedule_at(q->_next_11);
     _next_11 = q->_next_11;

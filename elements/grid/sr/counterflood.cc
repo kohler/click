@@ -285,9 +285,10 @@ CounterFlood::print_stats()
 {
   StringAccum sa;
 
-  sa << "originated " << _packets_originated << "\n";
-  sa << "tx " << _packets_tx << "\n";
-  sa << "rx " << _packets_rx << "\n";
+  sa << "originated " << _packets_originated;
+  sa << " tx " << _packets_tx;
+  sa << " rx " << _packets_rx;
+  sa << "\n";
   return sa.take_string();
 }
 
