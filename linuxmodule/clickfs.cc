@@ -21,7 +21,6 @@
 #include "proclikefs.h"
 
 #include <click/router.hh>
-#include <click/error.hh>
 #include <click/llrpc.h>
 #include <click/ino.hh>
 

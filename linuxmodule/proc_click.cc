@@ -21,7 +21,6 @@
 #include "modulepriv.hh"
 
 #include <click/router.hh>
-#include <click/error.hh>
 #include <click/llrpc.h>
 
 #include <click/cxxprotect.h>

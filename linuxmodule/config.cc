@@ -24,7 +24,6 @@
 
 #include <click/straccum.hh>
 #include <click/router.hh>
-#include <click/error.hh>
 #include <click/lexer.hh>
 
 static String *current_config = 0;

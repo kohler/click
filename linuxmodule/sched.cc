@@ -24,7 +24,6 @@
 #include <click/routerthread.hh>
 #include <click/glue.hh>
 #include <click/router.hh>
-#include <click/error.hh>
 #include <click/straccum.hh>
 #include <click/master.hh>
 

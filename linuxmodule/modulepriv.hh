@@ -3,6 +3,7 @@
 #define WANT_MOD_USE_COUNT 1	/* glue.hh should use the actual macros */
 #include <click/router.hh>
 #include <click/driver.hh>
+#include <click/error.hh>
 #include <click/pathvars.h>	/* for HAVE_CLICKFS */
 #ifndef HAVE_CLICKFS
 # define HAVE_PROC_CLICK 1	/* if not clickfs, then /proc/click */
@@ -35,7 +36,25 @@ CLICK_CXX_UNPROTECT
 #define HANDLER_SPECIAL_INODE		(Router::Handler::DRIVER_FLAG_2)
 #define HANDLER_WRITE_UNLIMITED		(Router::Handler::DRIVER_FLAG_3)
 
-extern ErrorHandler *click_logged_errh;
+
+class KernelErrorHandler : public BaseErrorHandler { public:
+  
+  KernelErrorHandler()			: _pos(0), _generation(0) { }
+  void handle_text(Seriousness, const String &);
+  void clear_log()			{ _pos = 0; _generation += 2; }
+  inline String stable_string() const;
+  
+ private:
+  
+  enum { LOGBUF_SIZ = 4096, LOGBUF_SAVESIZ = 2048 };
+  char _logbuf[LOGBUF_SIZ];
+  int _pos;
+  unsigned _generation;
+  void log_line(const char *begin, const char *end);
+  
+};
+
+extern KernelErrorHandler *click_logged_errh;
 void click_clear_error_log();
 
 void click_init_config();

@@ -24,7 +24,6 @@
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
-#include <click/error.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/notifier.hh>
 
@@ -33,7 +32,8 @@ int click_mode_r, click_mode_w, click_mode_x, click_mode_dir;
 extern "C" int click_accessible();
 extern "C" int click_cleanup_packages();
 
-ErrorHandler *click_logged_errh = 0;
+KernelErrorHandler *click_logged_errh = 0;
+static KernelErrorHandler *syslog_errh = 0;
 Router *click_router = 0;
 Master *click_master = 0;
 
@@ -122,14 +122,37 @@ write_assert_stop(const String &s, Element *, void *, ErrorHandler *errh)
 
 /****************************** Error handlers *******************************/
 
-class KernelErrorHandler : public BaseErrorHandler { public:
-  KernelErrorHandler(bool log)		: _log(log) { }
-  void handle_text(Seriousness, const String &);
- private:
-  bool _log;
-};
+void
+KernelErrorHandler::log_line(const char *begin, const char *end)
+{
+  static_assert(LOGBUF_SIZ == LOGBUF_SAVESIZ * 2);
 
-static StringAccum *error_log;
+  // ensure begin <= end
+  if (begin > end)
+    begin = end;
+  
+  // skip "chatter: " for message log
+  if (begin + 9 <= end && memcmp(begin, "chatter: ", 9) == 0)
+    begin += 9;
+
+  // manipulate log buffer to prevent memory overflow
+  if (_pos + end - begin > LOGBUF_SIZ - 1 && _pos >= LOGBUF_SAVESIZ) {
+    memcpy(&_logbuf[0], &_logbuf[LOGBUF_SAVESIZ], _pos - LOGBUF_SAVESIZ);
+    _pos -= LOGBUF_SAVESIZ;
+    _generation++;
+  }
+  if (_pos + end - begin > LOGBUF_SIZ - 1) {
+    _pos = 0;
+    _generation += 2;
+  }
+  if (_pos + end - begin > LOGBUF_SIZ - 1)
+    begin = end - (LOGBUF_SIZ - 1);
+
+  // log line
+  memcpy(&_logbuf[_pos], begin, end - begin);
+  _pos += end - begin;
+  _logbuf[_pos++] = '\n';
+}
 
 void
 KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
@@ -138,27 +161,32 @@ KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
   const char *begin = message.begin();
   const char *end = message.end();
   while (begin < end) {
-    String x = message.substring(begin, find(begin, end, '\n'));
-    begin = x.end() + 1;
-    printk("<1>%s\n", x.c_str());
+    const char *newline = find(begin, end, '\n');
+    printk("<1>%.*s\n", newline - begin, begin);
+    log_line(begin, newline);
+    begin = newline + 1;
   }
 
-  // log message if required
-  if (_log && error_log)
-    *error_log << message << "\n";
-  
+  // panic on fatal errors
   if (seriousness >= ERR_MIN_FATAL)
     panic("click");
 }
 
-static String
-read_errors(Element *, void *)
+inline String
+KernelErrorHandler::stable_string() const
 {
-  if (error_log)
+  return String::stable_string(&_logbuf[0], &_logbuf[_pos]);
+}
+
+static String
+read_errors(Element *, void *thunk)
+{
+  KernelErrorHandler *errh = (thunk ? syslog_errh : click_logged_errh);
+  if (errh)
     // OK to return a stable_string, even though the data is not really
     // stable, because we use it for a very short time (HANDLER_REREAD).
     // Problems are possible, of course.
-    return String::stable_string(error_log->data(), error_log->length());
+    return errh->stable_string();
   else
     return String::out_of_memory_string();
 }
@@ -166,15 +194,15 @@ read_errors(Element *, void *)
 void
 click_clear_error_log()
 {
-  if (error_log)
-    error_log->clear();
+  if (click_logged_errh)
+    click_logged_errh->clear_log();
+  if (syslog_errh)
+    syslog_errh->clear_log();
 }
 
 
 
 /******************** Module initialization and cleanup **********************/
-
-static ErrorHandler *syslog_errh;
 
 extern "C" int
 init_module()
@@ -193,10 +221,9 @@ init_module()
   cp_va_static_initialize();
 
   // error initialization
-  syslog_errh = new KernelErrorHandler(false);
-  click_logged_errh = new KernelErrorHandler(true);
+  syslog_errh = new KernelErrorHandler;
+  click_logged_errh = new KernelErrorHandler;
   ErrorHandler::static_initialize(new LandmarkErrorHandler(syslog_errh, "chatter"));
-  error_log = new StringAccum;
 
   // default provisions
   Router::static_initialize();
@@ -214,6 +241,8 @@ init_module()
   Router::add_read_handler(0, "cycles", read_cycles, 0);
   Router::add_read_handler(0, "errors", read_errors, 0);
   Router::change_handler_flags(0, "errors", 0, HANDLER_REREAD);
+  Router::add_read_handler(0, "messages", read_errors, (void *)1);
+  Router::change_handler_flags(0, "messages", 0, HANDLER_REREAD);
 #if HAVE_KERNEL_ASSERT
   Router::add_read_handler(0, "assert_stop", read_assert_stop, 0);
   Router::add_write_handler(0, "assert_stop", write_assert_stop, 0);
@@ -272,7 +301,6 @@ cleanup_module()
   ErrorHandler::static_cleanup();
   delete click_logged_errh;
   delete syslog_errh;
-  delete error_log;
   click_logged_errh = syslog_errh = 0;
   
   printk("<1>click module exiting\n");
