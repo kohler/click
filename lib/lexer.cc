@@ -115,7 +115,7 @@ class Lexer::Compound : public Element { public:
   void swap_router(Lexer *);
   void finish(Lexer *, ErrorHandler *);
 
-  Element *find_relevant_class(int, int, Vector<String> &, ErrorHandler *, const String &landmark);
+  Element *resolve(int, int, Vector<String> &, ErrorHandler *, const String &landmark);
   void expand_into(Lexer *, int, const VariableEnvironment &);
   
   const char *class_name() const	{ return _name.cc(); }
@@ -247,7 +247,7 @@ Lexer::Compound::overload_compound() const
 }
 
 Element *
-Lexer::Compound::find_relevant_class(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
+Lexer::Compound::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *errh, const String &landmark)
 {
   // Try to return an element class, even if it is wrong -- the error messages
   // are friendlier
@@ -1586,7 +1586,7 @@ Lexer::expand_compound_element(int which, const VariableEnvironment &ve)
       outputs_used = hf.port + 1;
   }
   
-  Element *found_c = c->find_relevant_class(inputs_used, outputs_used, args, _errh, landmark());
+  Element *found_c = c->resolve(inputs_used, outputs_used, args, _errh, landmark());
   if (!found_c) {
     _elements[which] = ERROR_TYPE;
     return;
