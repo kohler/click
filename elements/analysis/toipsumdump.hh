@@ -215,7 +215,7 @@ Single TCP option fields have the following representations.
     SACK permitted  `sackok'
     SACK            `sack95:98'; each SACK block
                     is listed separately
-    Timestamp       `timestamp669063908:38382731'
+    Timestamp       `ts669063908:38382731'
     Other options   `98' (option 98, no data),
                     `99=0:5:10' (option with data, data
 		    octets separated by colons)

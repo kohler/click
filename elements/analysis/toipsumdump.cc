@@ -262,7 +262,7 @@ ToIPSummaryDump::store_tcp_opt_ascii(const uint8_t *opt, int opt_len, int conten
 		  goto bad_opt;
 	      uint32_t buf[2];
 	      memcpy(&buf[0], opt + 2, 8);
-	      sa << sep << "timestamp" << ntohl(buf[0]) << ':' << ntohl(buf[1]);
+	      sa << sep << "ts" << ntohl(buf[0]) << ':' << ntohl(buf[1]);
 	      opt += TCPOLEN_TIMESTAMP;
 	      sep = ",";
 	      break;

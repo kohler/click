@@ -474,9 +474,9 @@ FromIPSummaryDump::parse_tcp_opt_ascii(const char *data, int pos, String *result
 		pos = (next + 5) - data;
 	    }
 	    sa[sa_pos + 1] = (char)(sa.length() - sa_pos);
-	} else if (strncmp(data + pos, "timestamp", 9) == 0
+	} else if (strncmp(data + pos, "ts", 2) == 0
 		   && (contents & DO_TCPOPT_TIMESTAMP)) {
-	    u1 = strtoul(data + pos + 9, &next, 0);
+	    u1 = strtoul(data + pos + 2, &next, 0);
 	    if (*next != ':')
 		goto bad_opt;
 	    u2 = strtoul(next + 1, &next, 0);
