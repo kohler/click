@@ -42,6 +42,8 @@ fake_pcap_parse_dlt(const String &str)
 	return FAKE_DLT_LINUX_SLL;
     else if (str == "AIRONET")
 	return FAKE_DLT_AIRONET_HEADER;
+    else if (str == "HDLC")
+	return FAKE_DLT_C_HDLC;
     else
 	return -1;
 }
@@ -64,6 +66,8 @@ fake_pcap_unparse_dlt(int dlt)
 	return "SLL";
       case FAKE_DLT_AIRONET_HEADER:
 	return "AIRONET";
+      case FAKE_DLT_C_HDLC:
+	return "HDLC";
       default:
 	return "??";
     }
@@ -76,7 +80,7 @@ fake_pcap_dlt_force_ipable(int dlt)
 {
     return (dlt == FAKE_DLT_RAW || dlt == FAKE_DLT_EN10MB
 	    || dlt == FAKE_DLT_FDDI || dlt == FAKE_DLT_ATM_RFC1483
-	    || dlt == FAKE_DLT_LINUX_SLL);
+	    || dlt == FAKE_DLT_LINUX_SLL || dlt == FAKE_DLT_C_HDLC);
 }
 
 #if HAVE_INDIFFERENT_ALIGNMENT
@@ -147,6 +151,18 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	  if (p->length() >= sizeof(linux_sll) &&
 	      IP_ETHERTYPE(sllh->sll_protocol))
 	      iph = (const click_ip *)(sllh + 1);
+	  break;
+      }
+
+      case FAKE_DLT_C_HDLC: {
+	  struct click_pcap_hdlc {
+	      uint16_t hdlc_address;
+	      uint16_t hdlc_protocol;
+	  };
+	  const click_pcap_hdlc *hdlch = (const click_pcap_hdlc *) p->data();
+	  if (p->length() >= sizeof(click_pcap_hdlc) &&
+	      IP_ETHERTYPE(hdlch->hdlc_protocol))
+	      iph = (const click_ip *)(hdlch + 1);
 	  break;
       }
       
