@@ -77,6 +77,7 @@ static Clp_Option options[] = {
 static const char *program_name;
 static String::Initializer string_initializer;
 static String runclick_prog;
+static String click_buildtool_prog;
 static String click_compile_prog;
 static bool verbose;
 
@@ -614,12 +615,12 @@ compile_classifiers(RouterT *r, const String &package_name,
 		    Vector<ElementT *> &classifiers,
 		    bool compile_kernel, bool compile_user, ErrorHandler *errh)
 {
-  // create C++ files
-  StringAccum header, source;
-  header << "#ifndef CLICK_" << package_name << "_HH\n"
-	 << "#define CLICK_" << package_name << "_HH\n"
-	 << "#include <click/package.hh>\n#include <click/element.hh>\n";
-  source << "#include <click/config.h>\n\
+    // create C++ files
+    StringAccum header, source;
+    header << "#ifndef CLICK_" << package_name << "_HH\n"
+	   << "#define CLICK_" << package_name << "_HH\n"
+	   << "#include <click/package.hh>\n#include <click/element.hh>\n";
+    source << "#include <click/config.h>\n\
 #include \"" << package_name << ".hh\"\n\
 #include <click/glue.hh>\n\
 /** click-compile: -w */\n";
@@ -643,27 +644,16 @@ compile_classifiers(RouterT *r, const String &package_name,
     change_landmark(classifier_e);
   }
   
-  // write final text
-  {
+    // write final text
     header << "#endif\n";
-    int nclasses = gen_cxxclass_names.size();
-    source << "static int hatred_of_rebecca[" << nclasses << "];\n"
-	   << "extern \"C\" int\ninit_module()\n{\n\
-  click_provide(\""
-	   << package_name << "\");\n";
-    
-    for (int i = 0; i < nclasses; i++)
-      source << "  CLICK_DMALLOC_REG(\"FC" << i << "  \");\n"
-	     << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
-	     << gen_eclass_names[i] << "\", new "
-	     << gen_cxxclass_names[i] << ");\n";
-    
-    source << "  CLICK_DMALLOC_REG(\"FCxx\");\n  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;\n}\n";
-    source << "extern \"C\" void\ncleanup_module()\n{\n";
-    for (int i = 0; i < nclasses; i++)
-      source << "  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
-    source << "  click_unprovide(\"" << package_name << "\");\n}\n";
-  }
+    {
+	StringAccum elem2package, cmd_sa;
+	int nclasses = gen_cxxclass_names.size();
+	for (int i = 0; i < nclasses; i++)
+	    elem2package <<  "-\t-\t" << gen_cxxclass_names[i] << '-' << gen_eclass_names[i] << '\n';
+	cmd_sa << click_buildtool_prog << " elem2package -I fastclassifier";
+	source << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);    
+    }
 
   // compile files if required
   String tmpdir;
@@ -959,6 +949,7 @@ particular purpose.\n");
   
   // find Click binaries
   runclick_prog = clickpath_find_file("click", "bin", CLICK_BINDIR, errh);
+  click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
   click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
   if (quiet)
     click_compile_prog += " -q";

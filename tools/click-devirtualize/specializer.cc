@@ -17,6 +17,7 @@
  */
 
 #include <click/config.h>
+#include <click/pathvars.h>
 
 #include "specializer.hh"
 #include "routert.hh"
@@ -526,7 +527,7 @@ Specializer::output_includes(ElementTypeInfo &eti, StringAccum &out)
 }
 
 void
-Specializer::output(StringAccum &out)
+Specializer::output(StringAccum& out)
 {
   // output headers
   for (int i = 0; i < _specials.size(); i++) {
@@ -552,30 +553,15 @@ Specializer::output(StringAccum &out)
 }
 
 void
-Specializer::output_package(const String &package_name, StringAccum &out)
+Specializer::output_package(const String &package_name, StringAccum &out, ErrorHandler* errh)
 {
-  // output boilerplate package stuff
-  out << "static int hatred_of_rebecca[" << _specials.size() << "];\n";
-
-  // init_module()
-  out << "extern \"C\" int\ninit_module()\n{\n\
-  click_provide(\""
-      << package_name
-      << "\");\n";
-  for (int i = 0; i < _specials.size(); i++)
-    if (_specials[i].special())
-      out << "  hatred_of_rebecca[" << i << "] = click_add_element_type(\""
-	  << _specials[i].click_name << "\", new " << _specials[i].cxx_name
-	  << ");\n";
-  out << "  while (MOD_IN_USE > 1)\n    MOD_DEC_USE_COUNT;\n  return 0;\n}\n";
-
-  // cleanup_module()
-  out << "extern \"C\" void\ncleanup_module()\n{\n";
-  for (int i = 0; i < _specials.size(); i++)
-    if (_specials[i].special())
-      out << "  click_remove_element_type(hatred_of_rebecca[" << i << "]);\n";
-  out << "  click_unprovide(\"" << package_name << "\");\n";
-  out << "}\n";
+    StringAccum elem2package, cmd_sa;
+    for (int i = 0; i < _specials.size(); i++)
+	if (_specials[i].special())
+	    elem2package <<  "-\t-\t" << _specials[i].cxx_name << '-' << _specials[i].click_name << '\n';
+    String click_buildtool_prog = clickpath_find_file("click-buildtool", "bin", CLICK_BINDIR, errh);
+    cmd_sa << click_buildtool_prog << " elem2package -I " << package_name;
+    out << shell_command_output_string(cmd_sa.take_string(), elem2package.take_string(), errh);    
 }
 
 void

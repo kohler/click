@@ -438,7 +438,7 @@ particular purpose.\n");
   }
   router->add_requirement(package_name);
 
-  specializer.output_package(package_name, out);
+  specializer.output_package(package_name, out, errh);
 
   // output source code if required
   if (source_only) {
