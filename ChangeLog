@@ -1,3 +1,7 @@
+2001-09-01 Saturday 13:09  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/acclick.m4 (1.3): acclick update
+
 2001-08-31 Friday 13:31  Eddie Kohler <kohler@aciri.org>
 
 	* Makefile.in (1.99): do not punish Benjie without reason
