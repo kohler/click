@@ -64,6 +64,10 @@ ChangeUID::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 ChangeUID::initialize(ErrorHandler *)
 {
+  // Schedule my timer
+  _timer.initialize(this);
+  _timer.schedule_after_ms(_timeout);
+
   return 0;
 }
 
