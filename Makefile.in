@@ -83,7 +83,6 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	findelements.sh mkelemlist.sh.in mkelemconf.sh \
 	etc/linux-2.2.14-patch \
 	etc/linux-2.2.16-patch \
-	etc/pcmcia-cs-3.1.16-patch \
 	lib/archive.cc lib/archive.hh \
 	lib/bitvector.cc lib/bitvector.hh \
 	lib/bighashmap.cc lib/bighashmap.hh \

@@ -7,7 +7,7 @@ Version 1.1
 ** Added support for parsing CIDR-style [Classless Inter-Domain Routing]
    netmasks in element configuration strings. Old-style netmasks are still
    supported, but you must use a slash, not a space. So for the 18.26.7
-   subnet, you can write either `18.26.7.0/255.255.255.0' or
+   IP prefix, you can write either `18.26.7.0/255.255.255.0' or
    `18.26.7.0/24'. You will need to change the arguments to any
    ARPResponder, FromLinux, LookupIPRoute, LookupIPRoute2, and RIPSend
    elements in your configuration files.
@@ -16,10 +16,10 @@ Version 1.1
    the arguments to FromDevice and ToDevice are the same as FromBPF and
    ToBPF.)
 
-** The Tun device no longer takes a device name as the first argument;
-   it chooses between /dev/tun and /dev/tap automatically. Tun also
-   expects and produces ethernet-encapsulated packets (rather than
-   IP); the point is that ether type field lets Tun handle IPv6
+** The KernelTap element (formerly Tun) no longer takes a device name as
+   the first argument; it chooses between /dev/tun and /dev/tap
+   automatically. KernelTap also expects and produces ethernet-encapsulated
+   packets (rather than IP), as the Ethernet type field lets it handle IPv6
    packets as well as IPv4.
 
 ** Renamed the SetIPAddress element to StoreIPAddress. Added a different
