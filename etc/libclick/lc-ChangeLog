@@ -1,3 +1,12 @@
+2002-10-10 Thursday 20:06  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4, libsrc/element.cc, libsrc/error.cc, libsrc/router.cc:
+	%E to print an element, not %e
+
+2002-10-10 Thursday 20:04  Eddie Kohler <kohler@icir.org>
+
+	* click-compile.in: --version and --no-gpl
+
 2002-10-09 Wednesday 08:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* acclick.m4: handle difference between autonconf version 2.53 and
