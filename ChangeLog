@@ -1,3 +1,11 @@
+2003-01-31 Friday 15:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.28), dsdvroutetable.hh
+	(1.21), grid.hh (1.41), gridroutetable.cc (1.62), linkstat.cc
+	(1.13), linkstat.hh (1.6): Added new grid link probe packet type;
+	changed LinkStat to broadcast and listen for these link probe
+	packets, keeping track of probes it has received
+
 2003-01-30 Thursday 17:41  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/: kerneltap.cc (1.36), kerneltun.cc (1.39):
