@@ -46,7 +46,7 @@ GENERIC_OBJS = string.o straccum.o \
 	error.o glue.o timer.o atomic.o gaprate.o \
 	elemlink.o element.o \
 	confparse.o variableenv.o lexer.o elemfilter.o router.o \
-	crc32.o iptable.o iptable2.o ip6table.o radix.o
+	crc32.o iptable.o iptable2.o ip6table.o radix.o skbmgr.o
 
 LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \
 	proc_config.o proc_element.o proc_mgr.o read-pmc.o
