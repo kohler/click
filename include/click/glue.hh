@@ -96,8 +96,8 @@ extern void srandom(uint32_t);
 inline uint32_t
 random()
 {
-  click_random_seed = click_random_seed*69069L + 1;
-  return (click_random_seed ^ jiffies) & RAND_MAX;
+    click_random_seed = click_random_seed*69069L + 1;
+    return (click_random_seed ^ jiffies) & RAND_MAX;
 }
 }
 #endif
