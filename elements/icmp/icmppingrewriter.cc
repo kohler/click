@@ -65,7 +65,7 @@ ICMPPingRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (conf[1] == "-")
     _new_dst = IPAddress();
-  else if (!cp_ip_address(conf[0], &_new_dst, this))
+  else if (!cp_ip_address(conf[1], &_new_dst, this))
     ok = errh->error("argument 2 should be new destination address (IP address)");
 
   return ok;
