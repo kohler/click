@@ -1,3 +1,7 @@
+2003-06-30 Monday 18:28  Eddie Kohler <kohler@icir.org>
+
+	* exopc/cross-compile.sh (1.2): shell nit
+
 2003-06-30 Monday 17:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.54), dsdvroutetable.hh
