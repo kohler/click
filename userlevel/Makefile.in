@@ -57,7 +57,7 @@ GENERIC_OBJS = string.o straccum.o \
 
 LIBOBJS = $(GENERIC_OBJS) \
 	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
-	clp.o
+	drivermanager.o clp.o
 OBJS = $(ELEMENT_OBJS) elements.o click.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
@@ -96,7 +96,7 @@ elemlist:
 elements.conf: $(top_builddir)/config.status $(top_srcdir)/click-buildtool
 	echo "userlevel@element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem) > elements.conf
 elements.mk: elements.conf $(top_srcdir)/click-buildtool
-	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o) < elements.conf > elements.mk
+	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o) < elements.conf > elements.mk
 elements.cc: elements.conf $(top_srcdir)/click-buildtool
 	(cd $(top_srcdir); ./click-buildtool elem2export) < elements.conf > elements.cc
 	@rm -f elements.d

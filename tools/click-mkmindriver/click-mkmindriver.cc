@@ -209,7 +209,7 @@ print_u_makefile(const String &directory, const String &pkg, ErrorHandler *errh)
   sa << "INSTALLPROGS = " << pkg << "click\n\
 include Makefile\n\n";
   sa << "elements_" << pkg << ".mk: elements_" << pkg << ".conf $(top_srcdir)/click-buildtool\n\
-	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -v ELEMENT_OBJS_" << pkg << ") < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
+	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o -v ELEMENT_OBJS_" << pkg << ") < elements_" << pkg << ".conf > elements_" << pkg << ".mk\n\
 elements_" << pkg << ".cc: elements_" << pkg << ".conf $(top_srcdir)/click-buildtool\n\
 	(cd $(top_srcdir); ./click-buildtool elem2export) < elements_" << pkg << ".conf > elements_" << pkg << ".cc\n\
 	@rm -f elements_" << pkg << ".d\n";
@@ -346,6 +346,7 @@ particular purpose.\n");
   initial_requirements.insert("AlignmentInfo", 1);
   initial_requirements.insert("Error", 1);
   initial_requirements.insert("ScheduleInfo", 1);
+  initial_requirements.insert("DriverManager", 1);
   if (driver == ElementMap::DRIVER_USERLEVEL) {
     initial_requirements.insert("QuitWatcher", 1);
     initial_requirements.insert("ControlSocket", 1);
