@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * tolinux.{cc,hh} -- element sends packets to Linux for default processing
+ * tohost.{cc,hh} -- element sends packets to Linux for default processing
  * Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -17,7 +17,7 @@
  */
 
 #include <click/config.h>
-#include "tolinux.hh"
+#include "tohost.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
@@ -34,26 +34,26 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-ToLinux::ToLinux()
+ToHost::ToHost()
     : Element(1, 0), _dev(0)
 {
     MOD_INC_USE_COUNT;
 }
 
-ToLinux::~ToLinux()
+ToHost::~ToHost()
 {
     uninitialize();		// might need to dev_put
     MOD_DEC_USE_COUNT;
 }
 
-ToLinux *
-ToLinux::clone() const
+ToHost *
+ToHost::clone() const
 {
-  return new ToLinux();
+  return new ToHost();
 }
 
 int
-ToLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToHost::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String devname;
   if (cp_va_parse(conf, this, errh,
@@ -73,7 +73,7 @@ ToLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-ToLinux::uninitialize()
+ToHost::uninitialize()
 {
     if (_dev)
 	dev_put(_dev);
@@ -81,7 +81,7 @@ ToLinux::uninitialize()
 }
 
 void
-ToLinux::push(int port, Packet *p)
+ToHost::push(int port, Packet *p)
 {
   struct sk_buff *skb = p->steal_skb();
   if (!skb) return;
@@ -140,4 +140,4 @@ ToLinux::push(int port, Packet *p)
 }
 
 ELEMENT_REQUIRES(linuxmodule)
-EXPORT_ELEMENT(ToLinux)
+EXPORT_ELEMENT(ToHost ToHost-ToLinux)

@@ -1,10 +1,10 @@
-#ifndef TOLINUXSNIFFERS_HH
-#define TOLINUXSNIFFERS_HH
-#include "elements/linuxmodule/fromlinux.hh"
+#ifndef CLICK_TOHOSTSNIFFERS_HH
+#define CLICK_TOHOSTSNIFFERS_HH
+#include "elements/linuxmodule/fromhost.hh"
 
 /*
  * =c
- * ToLinuxSniffers([DEVNAME])
+ * ToHostSniffers([DEVNAME])
  * =s sinks
  * sends packets to Linux packet sniffers
  * =d
@@ -19,19 +19,19 @@
  * 
  * This element is only available in the Linux kernel module.
  *
- * =a ToLinux, FromLinux, FromDevice, PollDevice, ToDevice */
+ * =a ToHost, FromLinux, FromDevice, PollDevice, ToDevice */
 
-class ToLinuxSniffers : public Element { public:
+class ToHostSniffers : public Element { public:
 
-  ToLinuxSniffers();
-  ~ToLinuxSniffers();
+  ToHostSniffers();
+  ~ToHostSniffers();
   
-  const char *class_name() const		{ return "ToLinuxSniffers"; }
+  const char *class_name() const		{ return "ToHostSniffers"; }
   const char *processing() const		{ return PUSH; }
   const char *flags() const			{ return "S2"; }
-  ToLinuxSniffers *clone() const;
+  ToHostSniffers *clone() const;
 
-  int configure_phase() const	{ return FromLinux::CONFIGURE_PHASE_TODEVICE; }
+  int configure_phase() const	{ return FromHost::CONFIGURE_PHASE_TODEVICE; }
   int configure(const Vector<String> &, ErrorHandler *);
   void uninitialize();
   

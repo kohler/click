@@ -1,7 +1,7 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * tolinuxsniffers.{cc,hh} -- element sends packets to Linux sniffers
- * Eddie Kohler; based on tolinux.cc
+ * tohostsniffers.{cc,hh} -- element sends packets to Linux sniffers
+ * Eddie Kohler; based on tohost.cc
  *
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
@@ -18,7 +18,7 @@
  */
 
 #include <click/config.h>
-#include "tolinuxsniffers.hh"
+#include "tohostsniffers.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "elements/linuxmodule/anydevice.hh"
@@ -35,26 +35,26 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-ToLinuxSniffers::ToLinuxSniffers()
+ToHostSniffers::ToHostSniffers()
     : Element(1, 0), _dev(0)
 {
     MOD_INC_USE_COUNT;
 }
 
-ToLinuxSniffers::~ToLinuxSniffers()
+ToHostSniffers::~ToHostSniffers()
 {
     uninitialize();		// might need to dev_put
     MOD_DEC_USE_COUNT;
 }
 
-ToLinuxSniffers *
-ToLinuxSniffers::clone() const
+ToHostSniffers *
+ToHostSniffers::clone() const
 {
-    return new ToLinuxSniffers();
+    return new ToHostSniffers();
 }
 
 int
-ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToHostSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String devname;
   if (cp_va_parse(conf, this, errh,
@@ -74,7 +74,7 @@ ToLinuxSniffers::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-ToLinuxSniffers::uninitialize()
+ToHostSniffers::uninitialize()
 {
     if (_dev)
 	dev_put(_dev);
@@ -82,7 +82,7 @@ ToLinuxSniffers::uninitialize()
 }
 
 void
-ToLinuxSniffers::push(int port, Packet *p)
+ToHostSniffers::push(int port, Packet *p)
 {
   struct sk_buff *skb = p->steal_skb();
   if (!skb) return;
@@ -133,4 +133,4 @@ ToLinuxSniffers::push(int port, Packet *p)
 }
 
 ELEMENT_REQUIRES(linuxmodule AnyDevice)
-EXPORT_ELEMENT(ToLinuxSniffers)
+EXPORT_ELEMENT(ToHostSniffers ToHostSniffers-ToLinuxSniffers)

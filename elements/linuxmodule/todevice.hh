@@ -1,5 +1,5 @@
-#ifndef TODEVICE_HH
-#define TODEVICE_HH
+#ifndef CLICK_TODEVICE_HH
+#define CLICK_TODEVICE_HH
 
 /*
 =c
@@ -66,7 +66,7 @@ Resets C<packets> counter to zero when written.
 =a FromDevice, PollDevice, FromLinux, ToLinux, ToDevice.u */
 
 #include "elements/linuxmodule/anydevice.hh"
-#include "elements/linuxmodule/fromlinux.hh"
+#include "elements/linuxmodule/fromhost.hh"
 
 class ToDevice : public AnyDevice {
   
@@ -79,7 +79,7 @@ class ToDevice : public AnyDevice {
   const char *processing() const	{ return PULL; }
   ToDevice *clone() const		{ return new ToDevice; }
   
-  int configure_phase() const	{ return FromLinux::CONFIGURE_PHASE_TODEVICE; }
+  int configure_phase() const	{ return FromHost::CONFIGURE_PHASE_TODEVICE; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();

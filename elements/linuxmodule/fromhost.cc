@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * fromlinux.{cc,hh} -- receives packets from Linux
+ * fromhost.{cc,hh} -- receives packets from Linux
  * Max Poletto, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -20,7 +20,7 @@
 
 #include <click/config.h>
 #include <click/router.hh>
-#include "fromlinux.hh"
+#include "fromhost.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 
@@ -62,7 +62,7 @@ fromlinux_static_cleanup()
     from_linux_count--;
 }
 
-FromLinux::FromLinux()
+FromHost::FromHost()
     : _macaddr((const unsigned char *)"\000\001\002\003\004\005"),
       _wakeup_timer(fl_wakeup, this)
 {
@@ -72,17 +72,17 @@ FromLinux::FromLinux()
     memset(&_stats, 0, sizeof(_stats));
 }
 
-FromLinux::~FromLinux()
+FromHost::~FromHost()
 {
     uninitialize();
     fromlinux_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
 
-FromLinux *
-FromLinux::clone() const
+FromHost *
+FromHost::clone() const
 {
-    return new FromLinux;
+    return new FromHost;
 }
 
 static net_device *
@@ -115,7 +115,7 @@ new_fromlinux_device(const char *name)
 }
 
 int
-FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromHost::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
     if (cp_va_parse(conf, this, errh,
 		    cpString, "interface name", &_devname,
@@ -128,9 +128,9 @@ FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 	return errh->error("device name `%s' too long", _devname.cc());
 
     // check for duplicate element
-    void *&used = router()->force_attachment("FromLinux_" + _devname);
+    void *&used = router()->force_attachment("FromHost_" + _devname);
     if (used)
-	return errh->error("duplicate FromLinux for device `%s'", _devname.cc());
+	return errh->error("duplicate FromHost for device `%s'", _devname.cc());
     used = this;
     
     // check for existing device
@@ -174,7 +174,7 @@ dev_locks(int up)
 }
     
 int
-FromLinux::set_device_addresses(ErrorHandler *errh)
+FromHost::set_device_addresses(ErrorHandler *errh)
 {
     int res;
     struct ifreq ifr;
@@ -223,7 +223,7 @@ dev_updown(net_device *dev, int up, ErrorHandler *errh)
 }
 
 int
-FromLinux::initialize(ErrorHandler *errh)
+FromHost::initialize(ErrorHandler *errh)
 {
     int res;
     if (_dev->flags & IFF_UP) {
@@ -242,7 +242,7 @@ FromLinux::initialize(ErrorHandler *errh)
 }
 
 void
-FromLinux::uninitialize()
+FromHost::uninitialize()
 {
     fromlinux_map.remove(this);
     if (_dev) {
@@ -263,7 +263,7 @@ FromLinux::uninitialize()
 static void
 fl_wakeup(Timer *, void *thunk)
 {
-    FromLinux *fl = (FromLinux *)thunk;
+    FromHost *fl = (FromHost *)thunk;
     PrefixErrorHandler errh(ErrorHandler::default_handler(), fl->declaration() + ": ");
     net_device *dev = fl->device();
 
@@ -296,7 +296,7 @@ fl_close(net_device *dev)
 static int
 fl_tx(struct sk_buff *skb, net_device *dev)
 {
-    if (FromLinux *fl = (FromLinux *)fromlinux_map.lookup(dev, 0)) {
+    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0)) {
 	Packet *p = Packet::make(skb);
 	fl->push(0, p);
 	return 0;
@@ -307,7 +307,7 @@ fl_tx(struct sk_buff *skb, net_device *dev)
 static net_device_stats *
 fl_stats(net_device *dev)
 {
-    if (FromLinux *fl = (FromLinux *)fromlinux_map.lookup(dev, 0))
+    if (FromHost *fl = (FromHost *)fromlinux_map.lookup(dev, 0))
 	return fl->stats();
     return 0;
 }
@@ -317,4 +317,4 @@ fl_stats(net_device *dev)
  */
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)
-EXPORT_ELEMENT(FromLinux)
+EXPORT_ELEMENT(FromHost FromHost-FromLinux)

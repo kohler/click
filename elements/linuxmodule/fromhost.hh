@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
-#ifndef FROMLINUX_HH
-#define FROMLINUX_HH
+#ifndef CLICK_FROMHOST_HH
+#define CLICK_FROMHOST_HH
 #include <click/element.hh>
 #include <click/etheraddress.hh>
 #include <click/timer.hh>
@@ -8,7 +8,7 @@
 /*
 =c
 
-FromLinux(DEVNAME, ADDR/MASK [, I<KEYWORDS>])
+FromHost(DEVNAME, ADDR/MASK [, I<KEYWORDS>])
 
 =s sources
 
@@ -49,14 +49,14 @@ Linux will send ARP queries to the fake device. You must respond to these
 queries in order to receive any IP packets, but you can obviously respond
 with any Ethernet address you'd like. Here is one common idiom:
 
-  FromLinux(fake0, 192.0.0.1/8)
+  FromHost(fake0, 192.0.0.1/8)
     -> fromlinux_cl :: Classifier(12/0806, 12/0800);
   fromlinux_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> ToLinux;
   fromlinux_cl[1] -> ... // IP packets
 
 =e
 
-  FromLinux(fake0, 192.0.0.1/8) -> ...;
+  FromHost(fake0, 192.0.0.1/8) -> ...;
 
 =a ToLinux, FromDevice, PollDevice, ToDevice */
 
@@ -70,21 +70,21 @@ CLICK_CXX_UNPROTECT
 #include "elements/linuxmodule/anydevice.hh"
 class EtherAddress;
 
-class FromLinux : public AnyDevice { public:
+class FromHost : public AnyDevice { public:
 
-    enum { CONFIGURE_PHASE_FROMLINUX = CONFIGURE_PHASE_DEFAULT,
-	   CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMLINUX + 1 };
+    enum { CONFIGURE_PHASE_FROMHOST = CONFIGURE_PHASE_DEFAULT,
+	   CONFIGURE_PHASE_TODEVICE = CONFIGURE_PHASE_FROMHOST + 1 };
 
-    FromLinux();
-    ~FromLinux();
+    FromHost();
+    ~FromHost();
 
-    const char *class_name() const	{ return "FromLinux"; }
-    FromLinux *clone() const;
+    const char *class_name() const	{ return "FromHost"; }
+    FromHost *clone() const;
     const char *processing() const	{ return PUSH; }
 
     net_device_stats *stats()		{ return &_stats; }
 
-    int configure_phase() const		{ return CONFIGURE_PHASE_FROMLINUX; }
+    int configure_phase() const		{ return CONFIGURE_PHASE_FROMHOST; }
     int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void uninitialize();
