@@ -216,5 +216,3 @@ ToDevice::add_handlers()
 CLICK_ENDDECLS
 ELEMENT_REQUIRES(FromDevice userlevel)
 EXPORT_ELEMENT(ToDevice)
-
-
