@@ -360,7 +360,7 @@ Packet::assimilate_mbuf()
 inline Packet *
 Packet::make(struct mbuf *m)
 {
-  if (0 == m->m_flags & M_PKTHDR)
+  if (!(m->m_flags & M_PKTHDR))
     panic("trying to construct Packet from a non-packet mbuf");
   if (m->m_next)
     click_chatter("Yow, constructing Packet from an mbuf chain!");
