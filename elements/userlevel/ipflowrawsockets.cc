@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.cc,v 1.4 2004/04/28 17:21:00 eddietwo Exp $
+ * $Id: ipflowrawsockets.cc,v 1.5 2004/06/22 16:54:39 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -33,6 +33,7 @@
 #include <netinet/in.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#include <sys/ioctl.h>
 
 #include <click/straccum.hh>
 
@@ -66,7 +67,7 @@ IPFlowRawSockets::Flow::~Flow()
 }
 
 int
-IPFlowRawSockets::Flow::initialize(ErrorHandler *errh, int snaplen)
+IPFlowRawSockets::Flow::initialize(ErrorHandler *errh, int snaplen, bool usepcap)
 {
     struct sockaddr_in sin;
 
@@ -92,6 +93,12 @@ IPFlowRawSockets::Flow::initialize(ErrorHandler *errh, int snaplen)
     // nonblocking I/O and close-on-exec for the socket
     fcntl(_wd, F_SETFL, O_NONBLOCK);
     fcntl(_wd, F_SETFD, FD_CLOEXEC);
+
+    // don't use libpcap to capture
+    if (!usepcap) {
+	_rd = _wd;
+	return 0;
+    }
 
     char ebuf[PCAP_ERRBUF_SIZE];
     _pcap = pcap_open_live("any", snaplen, false,
@@ -186,10 +193,12 @@ IPFlowRawSockets::configure(Vector<String> &conf, ErrorHandler *errh)
     Element *e = 0;
 
     _snaplen = 2046;
+    _usepcap = true;
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
 		    "SNAPLEN", cpUnsigned, "maximum packet length", &_snaplen,
+		    "PCAP", cpBool, "use libpcap", &_usepcap,
 		    cpEnd) < 0)
 	return -1;
 
@@ -251,7 +260,7 @@ IPFlowRawSockets::find_aggregate(uint32_t agg, const Packet *p)
     if (f)
 	/* nada */;
     else if (p && (f = new Flow(p))) {
-	if (f->initialize(ErrorHandler::default_handler(), _snaplen)) {
+	if (f->initialize(ErrorHandler::default_handler(), _snaplen, _usepcap)) {
 	    delete f;
 	    return 0;
 	}
@@ -308,44 +317,58 @@ void
 IPFlowRawSockets::selected(int fd)
 {
     ErrorHandler *errh = ErrorHandler::default_handler();
-
-    // allocate packet
-    WritablePacket *p = Packet::make(_snaplen);
-    if (!p)
-	return;
-    p->take(p->length());
+    WritablePacket *p;
+    int len;
 
     assert(fd < _flows.size());
     Flow *f = _flows[fd];
     assert(f);
+
     if (f->pcap()) {
 	// Read and push() at most one packet.
+	p = Packet::make(_snaplen);
+	if (!p)
+	    return;
+	p->take(p->length());
+
 	pcap_dispatch(f->pcap(), 1, IPFlowRawSockets_get_packet, (u_char *) p);
-	if (fake_pcap_force_ip(p, f->datalink())) {
+	if (p->length() && fake_pcap_force_ip(p, f->datalink())) {
 	    // Pull off the link header
 	    p->pull((unsigned)p->ip_header() - (unsigned)p->data());
 	    output(0).push(p);
 	} else
 	    p->kill();
-	return;
+    } else {
+	// Read as many packets as are buffered.
+	do {
+	    p = Packet::make(_snaplen);
+	    if (!p)
+		break;
+	    p->take(p->length());
+
+	    // read data from socket
+	    len = read(fd, p->end_data(), p->tailroom());
+
+	    if (len > 0) {
+		p = p->put(len);
+		if (!p)
+		    break;
+#ifdef SIOCGSTAMP
+		// set timestamp
+		(void) ioctl(fd, SIOCGSTAMP, &p->timestamp_anno());
+#endif
+		// set IP annotations
+		if (fake_pcap_force_ip(p, FAKE_DLT_RAW)) {
+		    output(0).push(p);
+		    continue;
+		}
+	    }
+
+	    p->kill();
+	    if (len <= 0 && errno != EAGAIN)
+		errh->error("%s: read: %s", declaration().cc(), strerror(errno));
+	} while (len > 0);
     }
-
-    // set timestamp
-    click_gettimeofday(&p->timestamp_anno());
-
-    // read data from socket
-    int r;
-    do {
-	while ((r = read(fd, p->end_data(), p->tailroom())) > 0) {
-	    p = p->put(r);
-	    assert(p);
-	}
-    } while (r < 0 && errno == EINTR);
-    if (r < 0 && errno != EAGAIN) {
-	errh->error("read: %s", strerror(errno));
-	p->kill();
-    } else
-	output(0).push(p);
 }
 
 bool

@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.hh,v 1.3 2004/05/03 06:05:02 eddietwo Exp $
+ * $Id: ipflowrawsockets.hh,v 1.4 2004/06/22 16:54:39 eddietwo Exp $
  */
 
 #ifndef CLICK_IPFLOWRAWSOCKETS_HH
@@ -80,6 +80,11 @@ for an example usage of this element.
 Unsigned integer. Maximum receive packet length. This value represents
 the MRU of the IPFlowSocket. Packets larger than SNAPLEN will be
 truncated.
+
+=item PCAP
+
+Boolean. Whether to use libpcap for packet capture. Libpcap is
+unnecessary for capturing packets on PlanetLab Linux. Default is true.
 
 =back
 
@@ -147,7 +152,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
 	Flow(const Packet *);
 	~Flow();
 
-	int initialize(ErrorHandler *, int snaplen);
+	int initialize(ErrorHandler *, int snaplen, bool usepcap);
 
 	uint32_t aggregate() const	{ return _aggregate; }
 	Flow *next() const		{ return _next; }
@@ -188,6 +193,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
     Vector<uint32_t> _gc_aggs;
 
     int _snaplen;
+    bool _usepcap;
 
     Flow *find_aggregate(uint32_t, const Packet * = 0);
     void end_flow(Flow *, ErrorHandler *);
