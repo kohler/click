@@ -37,7 +37,7 @@ eth -> eth_demux :: Classifier(12/0806 20/0001, // arp request, for proxy reply
 			       12/0800 30/121a07, // ip for 18.26.7.*
 			       12/BABE) // grid protocol	
 
-eth_demux [0] -> ARPResponder(18.26.7.0/24 18.26.4.25 00:90:27:E0:23:03) -> to_eth
+eth_demux [0] -> ARPResponder(18.26.7.0/24 00:90:27:E0:23:03, 18.26.4.25 00:90:27:E0:23:03) -> to_eth
 eth_demux [1] -> [1] arpq :: ARPQuerier(18.26.4.25, 00:90:27:E0:23:03) -> to_eth
 eth_demux [2] -> Strip(14) -> Discard // linux handles 
 Idle -> to_tun1

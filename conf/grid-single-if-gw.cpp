@@ -32,7 +32,7 @@ eth -> eth_demux :: Classifier(12/0806 20/0001, // arp request, for proxy reply
 			       12/0800 GW_GRID_NET_HEX_ETHER, // ip for 18.26.7.*
 			       GRID_ETH_PROTO) // grid protocol	
 
-eth_demux [0] -> ARPResponder(GW_GRID_NET_ADDR GW_IP MAC_ADDR) -> to_eth
+eth_demux [0] -> ARPResponder(GW_GRID_NET_ADDR MAC_ADDR, GW_IP MAC_ADDR) -> to_eth
 eth_demux [1] -> [1] arpq :: ARPQuerier(GW_IP, MAC_ADDR) -> to_eth
 eth_demux [2] -> Strip(14) -> Discard // linux handles 
 Idle -> to_tun1
