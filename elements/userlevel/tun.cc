@@ -225,7 +225,7 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
       if (_gw) {
 #if defined(__linux__)
 	sprintf(tmp, "route -n add default gw %s", _gw.s().cc());
-#elif defined(__FreeBSD) || defined(__OpenBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 	sprintf(tmp, "route -n add default %s", _gw.s().cc());
 #else
 #error Not supported on this system
