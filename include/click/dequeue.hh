@@ -36,36 +36,37 @@ public:
   T &back()				{ return at(_n - 1); }
   T &at_u(int i)			{ return _l[idx(i)]; }
 
-  template <class ref, class ptr> struct _iterator {
-    DEQueue &_q;
-    int _pos;
-    typedef _iterator<const T &, const T *> const_iter;
-    typedef _iterator<T &, T *>             iter;
-    typedef _iterator<ref, ptr>             my_type;
+    struct const_iterator {
+	const DEQueue &_q;
+	int _pos;
 
-    _iterator(DEQueue<T> &q, int p) : _q(q), _pos(p)  { }
-    _iterator(const iter &i) : _q(i._q), _pos(i._pos) { }
-    my_type &operator++() { _pos++; return *this; }
-    my_type &operator--() { _pos--; return *this; }
-    my_type operator++(int) { my_type t = *this; ++*this; return t; }
-    my_type operator--(int) { my_type t = *this; --*this; return t; }
-    my_type &operator+=(int n) { _pos += n; return *this; }
-    my_type &operator-=(int n) { _pos -= n; return *this; }
-    ref operator[](int n) const { return _q[_pos + n]; }
-    bool operator==(const my_type &i) const { return _pos == i._pos && _q._l == i._q._l;  }
-    bool operator!=(const my_type &i) const { return _pos != i._pos || _q._l != i._q._l;  }
-    ref operator*()  const { return _q[_pos];  }
-    ptr operator->() const { return &_q[_pos]; }
-  };
+	const_iterator(const DEQueue<T> &q, int p) : _q(q), _pos(p)  { }
+	const_iterator(const const_iterator &i) : _q(i._q), _pos(i._pos) { }
+	const_iterator &operator++() { _pos++; return *this; }
+	const_iterator &operator--() { _pos--; return *this; }
+	const_iterator operator++(int) { const_iterator t = *this; ++*this; return t; }
+	const_iterator operator--(int) { const_iterator t = *this; --*this; return t; }
+	const_iterator &operator+=(int n) { _pos += n; return *this; }
+	const_iterator &operator-=(int n) { _pos -= n; return *this; }
+	const T &operator[](int n) const { return _q[_pos + n]; }
+	bool operator==(const const_iterator &i) const { return _pos == i._pos && _q._l == i._q._l;  }
+	bool operator!=(const const_iterator &i) const { return _pos != i._pos || _q._l != i._q._l;  }
+	const T &operator*()  const { return _q[_pos];  }
+	const T *operator->() const { return &_q[_pos]; }
+    };
 
-  typedef _iterator<T &, T *>             iterator;
-  typedef _iterator<const T &, const T *> const_iterator;
+    struct iterator : public const_iterator {
+	iterator(DEQueue<T> &q, int p) : const_iterator(q, p) { }
+	iterator(const iterator &i) : const_iterator(i._q, i._pos) { }
+	T &operator[](int n) const { return const_cast<T &>(const_iterator::operator[](n)); }
+	T &operator*() const { return const_cast<T &>(const_iterator::operator*()); }
+	T *operator->() const { return const_cast<T *>(const_iterator::operator->()); }
+    };
   
-  iterator begin()			{ return iterator(*this, 0); }
-  const_iterator begin() const		{ return const_iterator((DEQueue<T> &) *this, 0); }
-  iterator end()			{ return iterator(*this, _n); }
-  const_iterator end() const		{ return const_iterator((DEQueue<T> &) *this, _n); }
-
+    iterator begin()			{ return iterator(*this, 0); }
+    const_iterator begin() const	{ return const_iterator((DEQueue<T> &) *this, 0); }
+    iterator end()			{ return iterator(*this, _n); }
+    const_iterator end() const		{ return const_iterator((DEQueue<T> &) *this, _n); }
 
   void push_back(const T &);
   void pop_back();
