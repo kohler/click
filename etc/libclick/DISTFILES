@@ -49,7 +49,7 @@ include/click/hashmap.hh
 include/click/integers.hh
 include/click/ipaddress.hh
 include/click/ip6address.hh
-include/click/ipaddressset.hh
+include/click/ipaddresslist.hh
 include/click/ip6flowid.hh
 include/click/ipflowid.hh
 include/click/iptable.hh
@@ -116,7 +116,7 @@ lib/in_cksum.c:libsrc/in_cksum.c
 lib/integers.cc:libsrc/integers.cc
 lib/ipaddress.cc:libsrc/ipaddress.cc
 lib/ip6address.cc:libsrc/ip6address.cc
-lib/ipaddressset.cc:libsrc/ipaddressset.cc
+lib/ipaddresslist.cc:libsrc/ipaddresslist.cc
 lib/ip6flowid.cc:libsrc/ip6flowid.cc
 lib/ipflowid.cc:libsrc/ipflowid.cc
 lib/iptable.cc:libsrc/iptable.cc

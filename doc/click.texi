@@ -206,8 +206,7 @@ Handlers
 Accessing Handlers Internally
 
 * Handler Objects::             
-* Handler Indexes::             
-* Locating Handlers::           
+* Handlers By Name or Index::             
 
 Live Reconfiguration
 
@@ -3742,15 +3741,16 @@ is accessed, @var{func} will be called with the relevant data,
 To create a read/write handler, call @code{add_read_handler} and
 @code{add_write_handler} and supply the same handler name.
 
-Similar static methods on the @code{Router} class add global read and
-write handlers to the system.
+These methods simply forward their requests to static
+@code{add_read_handler} and @code{add_write_handler} methods on the
+@code{Router} class. Call those methods directly to add handlers to
+other elements, or to add global handlers.
 
-@deftypeop {Static Method} Router void add_global_read_handler (@w{const String &@var{name}}, @w{ReadHandler @var{func}}, @w{void *@var{thunk}})
-@deftypeopx {Static Method} Router void add_global_write_handler (@w{const String &@var{name}}, @w{WriteHandler @var{func}}, @w{void *@var{thunk}})
-Adds a global read or write handler to the system. When the handler is
-accessed, @var{func} will be called with a null pointer for
-@var{element}. All its other arguments will be the same as in the
-element handler case.
+@deftypeop {Static Method} Router void add_read_handler (@w{const Element *@var{element}}, @w{const String &@var{name}}, @w{ReadHandler @var{func}}, @w{void *@var{thunk}})
+@deftypeopx {Static Method} Router void add_write_handler (@w{const Element *@var{element}}, @w{const String &@var{name}}, @w{WriteHandler @var{func}}, @w{void *@var{thunk}})
+Adds a read or write handler for @var{element}, or a global read or
+write handler if @var{element} is null. The handler is named
+@var{name}.
 @end deftypeop
 
 The @code{change_handler_flags} method lets you change a handler's flags
@@ -3851,23 +3851,22 @@ class   r
 @subsection Accessing Handlers Internally
 
 Element handlers are stored in the relevant @code{Router} as objects
-with type @code{Router::Handler}. (This design allows handler objects to
+of type @code{Router::Handler}. (This design allows handler objects to
 be shared between elements when possible.) Handlers are often referred
 to by index; indexes between 0 and @code{Router::FIRST_GLOBAL_HANDLER
 @minus{} 1} refer to element handlers, while indexes above
 @code{Router::FIRST_GLOBAL_HANDLER} refer to global handlers. Indexes
 less than 0 are used for error returns, such as nonexistent handlers.
 @code{Router} methods translate between handler indexes and
-@code{Router::Handler} objects, and find handler indexes given handler
-names.
+@code{Router::Handler} objects, and find handlers or handler indexes
+given handler names.
 
 @menu
 * Handler Objects::             
-* Handler Indexes::             
-* Locating Handlers::           
+* Handlers By Name or Index::             
 @end menu
 
-@node Handler Objects, Handler Indexes, Accessing Handlers Internally, Accessing Handlers Internally
+@node Handler Objects, Handlers By Name or Index, Accessing Handlers Internally, Accessing Handlers Internally
 @subsubsection The Router::Handler Type
 
 The @code{Router::Handler} type allows you to check a handler's
@@ -3922,6 +3921,11 @@ element @samp{e}'s @samp{foo} handler would return @samp{e.foo}, while
 calling it on a global @samp{bar} handler would return @samp{bar}.
 @end deftypemethod
 
+@deftypeop {Static Method} Router::Handler String unparse_name (@w{Element *@var{element}}, @w{const String &@var{name}})
+Returns a string representing @var{element}'s hypothetical @var{name}
+handler, or the global @var{name} handler if @var{element} is null.
+@end deftypeop
+
 @deftypemethod Router::Handler String call_read (@w{Element *@var{element}}) const
 Calls this read handler on @var{element} and returns the result. Do not
 use this method unless you know the handler is @code{readable()}.
@@ -3934,67 +3938,59 @@ know the handler is @code{writable()}.
 @end deftypemethod
 
 
-@node Handler Indexes, Locating Handlers, Handler Objects, Accessing Handlers Internally
-@subsubsection Handler Indexes
+@node Handlers By Name or Index,  , Handler Objects, Accessing Handlers Internally
+@subsubsection Handlers By Name or Index
 
-These @code{Router} methods check handler indexes for validity, and
-translate handler indexes into @code{Router::Handler} objects. Each
-method comes in a pair: one static method that takes a possibly-null
-@w{@code{Router *}} argument, and one non-static method that does the
-same thing.
+These @code{Router} methods locate handlers by name, returning either
+a pointer to a handler object or a handler index. The methods are
+static to allow access to global handlers outside the context of a
+running router.
 
-@deftypeop {Static Method} Router bool handler_ok (@w{const Router *@var{router}}, @w{int @var{handler_index}})
-Returns true if @var{handler_index} is a valid global handler index, or
-if @var{router} is non-null and @var{handler_index} is a valid element
-handler index for @var{router}.
+@deftypeop {Static Method} Router {const Router::Handler *} handler (@w{const Element *@var{element}}, @w{const String &@var{name}})
+Returns a pointer to the handler object for @var{element}'s handler
+named @var{name}, or null if no such handler exists. @var{Element} may
+be null, in which case the method looks for a global handler named
+@var{name}.
 @end deftypeop
 
-@deftypemethod Router bool handler_ok (@w{int @var{handler_index}}) const
-Same as @code{handler_ok(this, @var{handler_index})}.
+@quotation
+@strong{Caution}: Handler pointers returned by @code{Router::handler}
+and similar methods should be treated as transient, since they may
+become invalid when new handlers are added.
+@end quotation
+
+@deftypeop {Static Method} Router int hindex (@w{const Element *@var{element}}, @w{const String &@var{name}})
+Like @code{Router::handler}, above, but returns an integer handler
+index for the named handler, or a negative number if no such handler
+exists. All valid handler indexes are nonnegative.
+@end deftypeop
+
+@deftypeop {Static Method} Router {const Router::Handler *} handler (@w{const Router *@var{router}}, @w{int @var{hindex}})
+Returns @var{router}'s handler object corresponding to @var{hindex},
+or a null pointer if @var{hindex} is invalid with respect to
+@var{router}. There are three possibilities: (1) @var{hindex}
+coresponds to a valid global handler, which is returned. In this case,
+@var{router} need not be valid. (2) @var{hindex} corresponds to a
+valid local handler in class @var{router}, which is returned. (3)
+Otherwise, a null pointer is returned.
+@end deftypeop
+
+@deftypeop {Static Method} Router {const Router::Handler *} handler (@w{const Element *@var{element}}, @w{int @var{hindex}})
+Convenience function equivalent to
+@code{handler(@var{element}->router(), @var{hindex})}. Note that
+@var{hindex} need not refer to one of @var{element}'s handlers.
+@end deftypeop
+
+@deftypemethod Router {const Router::Handler *} handler (@w{int @var{hindex}}) const
+Convenience function equivalent to @code{handler(this, @var{hindex})}.
 @end deftypemethod
 
-@deftypeop {Static Method} Router {const Router::Handler &} handler (@w{const Router *@var{router}}, @w{int @var{handler_index}})
-Returns the handler with index @var{handler_index}. Do not call this
-method unless @code{handler_ok(@var{router}, @var{handler_index})} would
-return true.
-@end deftypeop
+Finally, the @code{element_hindexes} static method returns all the
+handler indices that apply to a given element.
 
-@deftypemethod Router {const Router::Handler &} handler (@w{int @var{handler_index}}) const
-Same as @code{handler(this, @var{handler_index})}.
-@end deftypemethod
-
-@deftypeop {Static Method} Router {const Router::Handler *} handlerp (@w{const Router *@var{router}}, @w{int @var{handler_index}})
-Returns a pointer to the handler with index @var{handler_index}, using
-@var{router} if @var{handler_index} refers to an element handler.
-Returns a null pointer if @var{handler_index} is not a valid handler
-index (for instance, if it is an element handler index and @var{router}
-is null). The pointer returned by @code{handlerp} should be treated as
-transient, since it may become invalid as new handlers are added.
-@end deftypeop
-
-@deftypemethod Router {const Router::Handler *} handler (@w{int @var{handler_index}}) const
-Same as @code{handlerp(this, @var{handler_index})}.
-@end deftypemethod
-
-
-@node Locating Handlers,  , Handler Indexes, Accessing Handlers Internally
-@subsubsection Locating Handlers
-
-These methods find the handler index corresponding to a given handler
-name, or list all handlers for a given element. They are static methods
-so that you don't need a @code{Router} object to investigate global
-handlers.
-
-@deftypeop {Static Method} Router int find_handler (@w{Element *@var{element}}, @w{const String &@var{name}})
-Returns the handler index for @var{element}'s @var{name} handler, or the
-global @var{name} handler if @var{element} is null, or @math{-1} if
-there is no such handler.
-@end deftypeop
-
-@deftypeop {Static Method} Router void element_handlers (@w{const Router *@var{router}}, @w{int @var{eindex}}, @w{Vector<int> &@var{results}})
-Adds to @var{results} a list of all the handler indexes for handlers
-supported by @var{router}'s element number @var{eindex}, or all global
-handlers if @math{@var{eindex} < 0}.
+@deftypeop {Static Method} Router void element_hindexes (@w{const Element *@var{element}}, @w{Vector<int> &@var{results}})
+Appends to @var{results} all the handler indexes for @var{element}'s
+handlers, or all global handlers if @var{element} is null.
 @end deftypeop
 
 
