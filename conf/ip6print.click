@@ -7,6 +7,12 @@ c [0]
   -> Strip(14)
   -> MarkIPHeader
   -> IP6Print(v6, NBYTES 512, CONTENTS true) 
+  -> ck :: CheckIP6Header;
+
+ck [0]
+  -> Discard;
+ck [1]
+  -> IP6Print(cksum)
   -> Discard;
 
 c [1] 
