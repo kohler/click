@@ -417,8 +417,6 @@ slow_output_packet(struct udpgen_opt *uopt)
     skb = skb_clone(skb, GFP_KERNEL);
     uopt->slow_path_sent++;
     result = rt->u.dst.output(skb);
-    dst_release(skb->dst);
-    skb->dst = 0;
   }
 
   dst_release(&rt->u.dst);
