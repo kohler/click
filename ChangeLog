@@ -1,3 +1,13 @@
+2003-01-29 Wednesday 14:22  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/: clickfs.cc (1.29), clickfs.cc (1.30): clickfs file
+	operations are owned by no one, since proclikefs takes care of them
+
+2003-01-29 Wednesday 13:55  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/: clickfs.cc (1.26), clickfs.cc (1.27), clickfs.cc
+	(1.28): clickfs: easily available debug-printfs for locking
+
 2003-01-29 Wednesday 11:42  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/: todevice.hh (1.20), todevice.cc (1.31): add
