@@ -234,8 +234,9 @@ PrintGrid::get_probe_entries(const grid_link_probe *lp) const
   grid_link_entry *le = (grid_link_entry *) (lp + 1);
   for (unsigned i = 0; i < ntohl(lp->num_links); i++, le++) {
     sa << "\n\t" << IPAddress(le->ip);
-    sa << " period=" << ntohl(le->period);
     sa << " num_rx=" << ntohl(le->num_rx);
+#ifndef SMALL_GRID_PROBES
+    sa << " period=" << ntohl(le->period);
     sa << " last_seq_no=" << ntohl(le->last_seq_no);
     sa << " last_rx_time=" << ntoh(le->last_rx_time);
     unsigned pct = 0;
@@ -245,6 +246,7 @@ PrintGrid::get_probe_entries(const grid_link_probe *lp) const
 	pct = 100 * htonl(le->num_rx) / num_expected;
     }
     sa << " pct=" << pct;
+#endif
   }
 
   return sa.take_string();

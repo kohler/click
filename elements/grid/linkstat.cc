@@ -90,6 +90,9 @@ LinkStat::send_hook()
 
   struct timeval tv;
   click_gettimeofday(&tv);
+#if 0
+  click_chatter("XXX tv = %u.%06u\n", tv.tv_sec, tv.tv_usec);
+#endif
   p->set_timestamp_anno(tv);
   
   /* fill in ethernet header */
@@ -125,20 +128,35 @@ LinkStat::send_hook()
       num_entries++;
       continue;
     }
+#ifndef SMALL_GRID_PROBES
     e->ip = val.ip;
     e->period = htonl(val.period);
     const probe_t &p = val.probes.back();
     e->last_rx_time = hton(p.when);
     e->last_seq_no = htonl(p.seq_no);
     e->num_rx = htonl(count_rx(&val));
+#else
+    e->ip = ntohl(val.ip) & 0xff;
+    e->num_rx = count_rx(&val);
+#endif
   }
   
-  checked_output_push(0, p);
-
   unsigned max_jitter = _period / 10;
   long r2 = random();
   unsigned j = (unsigned) ((r2 >> 1) % (max_jitter + 1));
-  _send_timer->schedule_after_ms((r2 & 1) ? _period - j : _period + j);
+#if 0
+  click_chatter("XXX %s:  max_j %u, j %u, -/+ %ld\n", id().cc(), max_jitter, j, r2 & 1);
+#endif
+  unsigned int delta_us = 1000 * ((r2 & 1) ? _period - j : _period + j);
+  _next_bcast.tv_usec += delta_us;
+  _next_bcast.tv_sec +=  _next_bcast.tv_usec / 1000000;
+  _next_bcast.tv_usec = (_next_bcast.tv_usec % 1000000);
+  _send_timer->schedule_at(_next_bcast);
+#if 0
+  click_chatter("XXX delta = %u, _period = %u\n", delta_ms, _period);
+#endif
+
+  checked_output_push(0, p);
 }
 
 unsigned int
@@ -190,7 +208,9 @@ LinkStat::initialize(ErrorHandler *errh)
       return errh->error("Source IP and Ethernet address must be specified to send probes");
     _send_timer = new Timer(static_send_hook, this);
     _send_timer->initialize(this);
-    _send_timer->schedule_after_ms(_period);
+    click_gettimeofday(&_next_bcast);
+    _next_bcast.tv_sec++;
+    _send_timer->schedule_at(_next_bcast);
   }
   return 0;
 }
@@ -224,7 +244,11 @@ LinkStat::simple_action(Packet *p)
   click_gettimeofday(&now);
   grid_link_entry *le = (grid_link_entry *) (lp + 1);
   for (unsigned i = 0; i < htonl(lp->num_links); i++, le++) {
+#ifdef SMALL_GRID_PROBES
+    if ((ntohl(_ip.addr()) & 0xff) == le->ip) {
+#else
     if (_ip == le->ip && _period == ntohl(le->period)) {
+#endif
       _rev_bcast_stats.insert(EtherAddress(eh->ether_shost), 
 			      outgoing_link_entry_t(le, now, ntohl(lp->tau)));
       break;
@@ -377,7 +401,7 @@ LinkStat::read_bcast_stats(Element *xf, void *)
     sa << "fwd ";
     if (ol) {
       struct timeval age = now - ol->received_at;
-      sa << "age=" << age << " tau=" << ol->tau << " num_rx=" << ol->num_rx 
+      sa << "age=" << age << " tau=" << ol->tau << " num_rx=" << (unsigned) ol->num_rx 
 	 << " period=" << e->_period << " pct=" << calc_pct(ol->tau, e->_period, ol->num_rx);
     }
     else

@@ -104,11 +104,16 @@ private:
     outgoing_link_entry_t() { memset(this, 0, sizeof(*this)); }
     outgoing_link_entry_t(grid_link_entry *l, const struct timeval &now, unsigned int t) 
       : received_at(now), tau(t) {
+#ifndef SMALL_GRID_PROBES
       ip = l->ip;
       period = ntohl(l->period);
+      num_rx = ntohl(l->num_rx);
       last_rx_time = ntoh(l->last_rx_time);
       last_seq_no = ntohl(l->last_seq_no);
-      num_rx = ntohl(l->num_rx);
+#else
+      ip = l->ip & 0xff;
+      num_rx = l->num_rx;
+#endif
     }
   };
 
@@ -139,6 +144,7 @@ private:
   void send_hook();
 
   Timer *_send_timer;
+  struct timeval _next_bcast;
 
   static unsigned int calc_pct(unsigned tau, unsigned period, unsigned num_rx);
 

@@ -54,6 +54,8 @@ CLICK_DECLS
  * =h sizeof_grid_loc_query          read-only
  * =h sizeof_grid_route_probe        read-only
  * =h sizeof_grid_route_reply        read-only
+ * =h sizeof_grid_link_probe         read-only
+ * =h sizeof_grid_link_entry         read-only
  * 
  * =h offsetof_grid_hdr_version      read-only
  * Each offsetof_grid_hdr_foo handler returns C<offsetof(grid_hdr, foo)>

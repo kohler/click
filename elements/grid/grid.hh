@@ -6,6 +6,7 @@ CLICK_DECLS
 
 // defining this will break lots of shit
 #define SMALL_GRID_HEADERS
+#define SMALL_GRID_PROBES
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
@@ -354,11 +355,16 @@ struct grid_link_probe {
 };
 
 struct grid_link_entry {
+#ifdef SMALL_GRID_PROBES
+  unsigned char ip;            // last byte of IP address
+  unsigned char num_rx;
+#else
   unsigned int ip;
   unsigned int period;         // period of node's probe broadcasts, in msecs
   struct timeval last_rx_time; // time of most recent probe received from node
   unsigned int last_seq_no;    // seqno of most recent probe received from this host
   unsigned int num_rx;         // number of probe bcasts received from node during last tau msecs
+#endif
 };
 
 inline String

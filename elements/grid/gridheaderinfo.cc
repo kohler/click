@@ -51,6 +51,8 @@ handler_info_array[] = {
   { "sizeof_grid_loc_query"          , sizeof(grid_loc_query)		, 'd', -1 },
   { "sizeof_grid_route_probe"        , sizeof(grid_route_probe)		, 'd', -1 },
   { "sizeof_grid_route_reply"        , sizeof(grid_route_reply)		, 'd', -1 },
+  { "sizeof_grid_link_probe"         , sizeof(grid_link_probe)		, 'd', -1 },
+  { "sizeof_grid_link_entry"         , sizeof(grid_link_entry)		, 'd', -1 },
  	
   { "offsetof_grid_hdr_version"      , offsetof(grid_hdr, version)	, 'd', -1 },
   { "offsetof_grid_hdr_type"         , offsetof(grid_hdr, type)		, 'd', -1 },
