@@ -49,14 +49,15 @@ private:
   int _state;
   int _grow;
   int _wc;
+  int _reset;
 
-  bool _done;  // Have we received an RST?
   int _ingood;
   int _inbad;
   int _out;
 
   void tcp_output(Packet *);
   void tcp_input(Packet *);
+  void restart();
 };
 
 #endif

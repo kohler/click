@@ -38,22 +38,29 @@ ToyTCP::ToyTCP()
   add_input();
   add_output();
 
-  struct timeval tv;
-  click_gettimeofday(&tv);
-
-  _sport = htons(1024 + (tv.tv_usec % 60000));
   _dport = 0;
-  _state = 0;
-  _irs = 0;
-  _iss = tv.tv_sec & 0x0fffffff;
-  _snd_nxt = _iss;
-  _grow = 0;
-  _wc = 0;
-  _done = 0;
 
   _ingood = 0;
   _inbad = 0;
   _out = 0;
+
+  restart();
+}
+
+void
+ToyTCP::restart()
+{
+  struct timeval tv;
+  click_gettimeofday(&tv);
+
+  _iss = tv.tv_sec & 0x0fffffff;
+  _irs = 0;
+  _snd_nxt = _iss;
+  _sport = htons(1024 + (tv.tv_usec % 60000));
+  _state = 0;
+  _grow = 0;
+  _wc = 0;
+  _reset = 0;
 }
 
 ToyTCP::~ToyTCP()
@@ -95,12 +102,12 @@ ToyTCP::initialize(ErrorHandler *)
 void
 ToyTCP::run_scheduled()
 {
-  if(_done == false){
-    tcp_output(0);
-    _timer.schedule_after_ms(1000);
-    click_chatter("ToyTCP: %d good in, %d bad in, %d out",
-                  _ingood, _inbad, _out);
-  }
+  if(_reset)
+    restart();
+  tcp_output(0);
+  _timer.schedule_after_ms(1000);
+  click_chatter("ToyTCP: %d good in, %d bad in, %d out",
+                _ingood, _inbad, _out);
 }
 
 void
@@ -116,7 +123,7 @@ ToyTCP::tcp_input(Packet *p)
   seq = ntohl(th->th_seq);
   ack = ntohl(th->th_ack);
 
-  if((th->th_flags & TH_ACK) &&
+  if((th->th_flags & (TH_ACK|TH_RST)) == TH_ACK &&
      ack == _iss + 1 &&
      _state == 0){
     _snd_nxt = _iss + 1;
@@ -127,11 +134,11 @@ ToyTCP::tcp_input(Packet *p)
   }
 
   if(th->th_flags & TH_RST){
-    if(_done == false)
-      click_chatter("ToyTCP: RST, in %d, out %d",
-                    _ingood, _out);
-    _done = true;
+    click_chatter("ToyTCP: RST from port %d, in %d, out %d",
+                  ntohs(th->th_sport),
+                  _ingood, _out);
     _inbad++;
+    _reset = 1;
   } else {
     _ingood++;
   }
@@ -140,7 +147,7 @@ ToyTCP::tcp_input(Packet *p)
 Packet *
 ToyTCP::simple_action(Packet *p)
 {
-  if(_done){
+  if(_reset){
     p->kill();
   } else {
     tcp_input(p);
