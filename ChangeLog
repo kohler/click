@@ -1,3 +1,7 @@
+2003-04-24 Thursday 20:46  Eddie Kohler <kohler@icir.org>
+
+	* elements/tcpudp/dynudpipencap.hh (1.8): nitlet
+
 2003-04-24 Thursday 20:26  Eddie Kohler <kohler@icir.org>
 
 	* elements/ethernet/ip6ndsolicitor.hh (1.12): 54/, not 53/; thanks
