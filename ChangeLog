@@ -1,3 +1,14 @@
+2003-06-04 Wednesday 02:55  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplepackage/Makefile.in (1.34): nit
+
+2003-06-04 Wednesday 02:52  Eddie Kohler <kohler@icir.org>
+
+	* click-buildtool (1.41), etc/samplepackage/Makefile.in (1.33):
+	click-buildtool findelem supports "-e ELEMENTMAP.xml", which adds
+	as provisions everything provided by ELEMENTMAP.xml; samplepackage
+	uses it
+
 2003-06-01 Sunday 00:50  jbicket
 
 	* elements/grid/: linktable.cc (1.3), linktable.hh (1.3),
