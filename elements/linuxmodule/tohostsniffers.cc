@@ -79,10 +79,22 @@ ToLinuxSniffers::push(int port, Packet *p)
   if (_dev) 
     skb->dev = _dev;
 
+  // remove PACKET_CLEAN bit -- packet is becoming dirty
   skb->pkt_type &= PACKET_TYPE_MASK;
 
-  if (skb->dev) 
-    skb->protocol = eth_type_trans(skb, skb->dev);
+  // do not call eth_type_trans; it changes pkt_type! Instead, do its work
+  // directly.
+  skb->mac.raw = skb->data;
+  skb_pull(skb, 14);
+
+  const ethhdr *eth = skb->mac.ethernet;
+  if (ntohs(eth->h_proto) >= 1536)
+    skb->protocol = eth->h_proto;
+  else {
+    const unsigned short *crap = (const unsigned short *)skb->data;
+    // "magic hack to spot IPX packets"
+    skb->protocol = (*crap == 0xFFFF ? htons(ETH_P_802_3) : htons(ETH_P_802_2));
+  }
 
   // be nice to libpcap
   if (skb->stamp.tv_sec == 0) {
