@@ -19,6 +19,7 @@
 #include "aggcounter.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/packet_anno.hh>
 #include <packet_anno.hh>
 
 AggregateCounter::AggregateCounter()
@@ -51,11 +52,20 @@ AggregateCounter::new_node_block()
 int
 AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-    _bytes = false;
-    return cp_va_parse(conf, this, errh,
-		       cpKeywords,
-		       "BYTES", cpBool, "count bytes?", &_bytes,
-		       0);
+    bool bytes = false;
+    bool packet_count = true;
+    bool extra_length = true;
+    if (cp_va_parse(conf, this, errh,
+		    cpKeywords,
+		    "BYTES", cpBool, "count bytes?", &bytes,
+		    "MULTIPACKET", cpBool, "use packet count annotation?", &packet_count,
+		    "EXTRA_LENGTH", cpBool, "use extra length annotation?", &extra_length,
+		    0) < 0)
+	return -1;
+    _bytes = bytes;
+    _packet_count = packet_count;
+    _extra_length = extra_length;
+    return 0;
 }
 
 int
@@ -178,14 +188,14 @@ AggregateCounter::simple_action(Packet *p)
     // AGGREGATE_ANNO is already in host byte order!
     uint32_t agg = AGGREGATE_ANNO(p);
     if (Node *n = find_node(agg)) {
-	if (!_bytes)
+	if (!_bytes) {
 	    n->count++;
-	else {
-	    const click_ip *iph = p->ip_header();
-	    if (iph && iph->ip_v == 4)
-		n->count += ntohs(iph->ip_len);
-	    else
-		n->count += p->length();
+	    if (_packet_count && PACKET_COUNT_ANNO(p))
+		n->count += PACKET_COUNT_ANNO(p) - 1;
+	} else {
+	    n->count += p->length();
+	    if (_extra_length)
+		n->count += EXTRA_LENGTH_ANNO(p);
 	}
     }
     return p;
@@ -240,9 +250,11 @@ AggregateCounter::write_file(String where, bool binary,
     if (!f)
 	return errh->error("%s: %s", where.cc(), strerror(errno));
     
-    bool seekable = (fseek(f, 0, SEEK_SET) >= 0);
-    if (seekable)
+    bool seekable = (fseek(f, 1, SEEK_SET) >= 0);
+    if (seekable) {
+	rewind(f);
 	fprintf(f, "$num_nonzero            \n");
+    }
     if (binary)
 	fprintf(f, "$packed\n");
     

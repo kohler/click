@@ -35,7 +35,9 @@ class AggregateCounter : public Element { public:
 	Node *child[2];
     };
 
-    bool _bytes;
+    bool _bytes : 1;
+    bool _packet_count : 1;
+    bool _extra_length : 1;
     
     Node *_root;
     Node *_free;
