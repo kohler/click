@@ -1,3 +1,17 @@
+2003-02-10 Monday 13:49  Eddie Kohler <kohler@icir.org>
+
+	* etc/: linux-2.4.18-patch (1.7), linux-2.4.20-patch (1.7): more
+	systematic replacement of :: in asm statements with : :
+
+2003-02-10 Monday 13:16  Eddie Kohler <kohler@icir.org>
+
+	* etc/: linux-2.4.18-patch (1.6), linux-2.4.20-patch (1.6): Empty
+	structures ALWAYS contain "int gcc_is_buggy". Bart Samwel
+	<bsamwel@liacs.nl> provided the fix and clearly explained why it
+	was necessary. Problem: in regular Linux, GCC-2.x compilation adds
+	"int gcc_is_buggy", but our patch added "int gcc_is_buggy" only on
+	GCC-1.x and 3.x. Solution: always add "int gcc_is_buggy".
+
 2003-02-10 Monday 01:32  Eddie Kohler <kohler@icir.org>
 
 	* etc/: linux-2.4.18-patch (1.5), linux-2.4.20-patch (1.5):
