@@ -31,8 +31,7 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 AnyDevice::AnyDevice()
-    : _dev(0), _task(this), _idles(0),
-      _promisc(false), _in_map(false), _next(0)
+    : _dev(0), _promisc(false), _in_map(false), _next(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -65,8 +64,9 @@ AnyDevice::find_device(bool allow_nonexistent, AnyDeviceMap *adm,
 
     if (_dev && _promisc)
 	dev_set_promiscuity(_dev, 1);
-    
-    adm->insert(this);
+
+    if (adm)
+	adm->insert(this);
 
     return 0;
 }
@@ -111,6 +111,14 @@ AnyDevice::clear_device(AnyDeviceMap *adm)
 	dev_put(_dev);
     _dev = 0;
 }
+
+
+AnyTaskDevice::AnyTaskDevice()
+    : _task(this), _idles(0)
+{
+    MOD_INC_USE_COUNT;
+}
+
 
 void
 AnyDeviceMap::initialize()

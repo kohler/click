@@ -118,7 +118,7 @@ int
 FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     if (cp_va_parse(conf, this, errh,
-		    cpString, "interface name", &_devname,
+		    cpString, "device name", &_devname,
 		    cpIPPrefix, "destination IP prefix", &_destaddr, &_destmask,
 		    cpKeywords,
 		    "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,

@@ -69,7 +69,7 @@ Resets C<packets> counter to zero when written.
 
 #include "elements/linuxmodule/anydevice.hh"
 
-class PollDevice : public AnyDevice { public:
+class PollDevice : public AnyTaskDevice { public:
   
   PollDevice();
   ~PollDevice();

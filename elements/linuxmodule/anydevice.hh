@@ -95,10 +95,6 @@ class AnyDevice : public Element { public:
     String _devname;
     net_device *_dev;
 
-    Task _task;
-    int _max_tickets;
-    int _idles;
-
     bool _promisc : 1;
     bool _in_map : 1;
     AnyDevice *_next;
@@ -107,33 +103,47 @@ class AnyDevice : public Element { public:
 
 };
 
+class AnyTaskDevice : public AnyDevice { public:
+
+    AnyTaskDevice();
+
+    void adjust_tickets(int work);
+
+  protected:
+
+    Task _task;
+    int _max_tickets;
+    int _idles;
+
+};
+
 
 inline void
-AnyDevice::adjust_tickets(int work)
+AnyTaskDevice::adjust_tickets(int work)
 {
 #if CLICK_DEVICE_ADJUST_TICKETS
-  int tix = _task.tickets();
-  
-  // simple additive increase damped multiplicative decrease scheme
-  if (work > 2) {
-    tix += work;
-    if (tix > _max_tickets)
-      tix = _max_tickets;
-    _idles = 0;
-  } else if (work == 0) {
-    _idles++;
-    if (_idles >= 64) {
-      if (tix > 64)
-	tix -= (tix >> 5);
-      else
-	tix -= 2;
-      if (tix < 1)
-	tix = 1;
-      _idles = 0;
-    }
-  }
+    int tix = _task.tickets();
 
-  _task.set_tickets(tix);
+    // simple additive increase damped multiplicative decrease scheme
+    if (work > 2) {
+	tix += work;
+	if (tix > _max_tickets)
+	    tix = _max_tickets;
+	_idles = 0;
+    } else if (work == 0) {
+	_idles++;
+	if (_idles >= 64) {
+	    if (tix > 64)
+		tix -= (tix >> 5);
+	    else
+		tix -= 2;
+	    if (tix < 1)
+		tix = 1;
+	    _idles = 0;
+	}
+    }
+
+    _task.set_tickets(tix);
 #endif
 }
 

@@ -1,10 +1,11 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef CLICK_TOHOSTSNIFFERS_HH
 #define CLICK_TOHOSTSNIFFERS_HH
-#include "elements/linuxmodule/fromhost.hh"
+#include "elements/linuxmodule/tohost.hh"
 
 /*
  * =c
- * ToHostSniffers([DEVNAME])
+ * ToHostSniffers([DEVNAME, I<keywords> SNIFFERS, ALLOW_NONEXISTENT])
  * =s sinks
  * sends packets to Linux packet sniffers
  * =d
@@ -19,27 +20,20 @@
  * 
  * This element is only available in the Linux kernel module.
  *
+ * =n
+ *
+ * ToHostSniffers behaves exactly like ToHost, except that the SNIFFERS
+ * keyword argument defaults to true.
+ *
  * =a ToHost, FromHost, FromDevice, PollDevice, ToDevice */
 
-class ToHostSniffers : public Element { public:
+class ToHostSniffers : public ToHost { public:
 
-  ToHostSniffers();
-  ~ToHostSniffers();
-  
-  const char *class_name() const		{ return "ToHostSniffers"; }
-  const char *processing() const		{ return PUSH; }
-  const char *flags() const			{ return "S2"; }
-  ToHostSniffers *clone() const;
+    ToHostSniffers();
+    ~ToHostSniffers();
 
-  int configure_phase() const	{ return FromHost::CONFIGURE_PHASE_TODEVICE; }
-  int configure(Vector<String> &, ErrorHandler *);
-  void cleanup(CleanupStage);
-  
-  void push(int port, Packet *);
-
- private:
-
-  net_device *_dev;
+    const char *class_name() const		{ return "ToHostSniffers"; }
+    ToHostSniffers *clone() const;
   
 };
 

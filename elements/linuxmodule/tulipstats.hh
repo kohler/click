@@ -132,7 +132,7 @@
 #include "elements/linuxmodule/anydevice.hh"
 #include "elements/linuxmodule/fromhost.hh"
 
-class TulipStats : public AnyDevice {
+class TulipStats : public AnyTaskDevice {
   
  public:
   

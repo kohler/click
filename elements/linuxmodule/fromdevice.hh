@@ -66,7 +66,7 @@ polling-capable device, use PollDevice instead.
 #include "elements/linuxmodule/anydevice.hh"
 #include <click/standard/storage.hh>
 
-class FromDevice : public AnyDevice, public Storage { public:
+class FromDevice : public AnyTaskDevice, public Storage { public:
     
     FromDevice();
     ~FromDevice();

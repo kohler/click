@@ -87,7 +87,7 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     bool promisc = false;
     bool allow_nonexistent = false;
     if (cp_va_parse(conf, this, errh,
-		    cpString, "interface name", &_devname,
+		    cpString, "device name", &_devname,
 		    cpOptional,
 		    cpBool, "enter promiscuous mode?", &promisc,
 		    cpUnsigned, "burst size", &_burst,
@@ -95,7 +95,7 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "PROMISC", cpBool, "enter promiscuous mode?", &promisc,
 		    "PROMISCUOUS", cpBool, "enter promiscuous mode?", &promisc,
 		    "BURST", cpUnsigned, "burst size", &_burst,
-		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
+		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
 		    cpEnd) < 0)
 	return -1;
     if (promisc)

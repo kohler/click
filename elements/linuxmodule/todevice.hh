@@ -76,7 +76,7 @@ ToHostSniffers
 #include "elements/linuxmodule/fromhost.hh"
 #include <click/notifier.hh>
 
-class ToDevice : public AnyDevice { public:
+class ToDevice : public AnyTaskDevice { public:
   
   ToDevice();
   ~ToDevice();

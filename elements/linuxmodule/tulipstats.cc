@@ -133,7 +133,7 @@ int
 TulipStats::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-		  cpString, "interface name", &_devname,
+		  cpString, "device name", &_devname,
 		  cpEnd) < 0)
     return -1;
   _dev = dev_get_by_name(_devname.cc());

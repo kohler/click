@@ -87,12 +87,12 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
     _burst = 16;
     bool allow_nonexistent = false;
     if (cp_va_parse(conf, this, errh,
-		    cpString, "interface name", &_devname,
+		    cpString, "device name", &_devname,
 		    cpOptional,
 		    cpUnsigned, "burst size", &_burst,
 		    cpKeywords,
 		    "BURST", cpUnsigned, "burst size", &_burst,
-		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
+		    "ALLOW_NONEXISTENT", cpBool, "allow nonexistent device?", &allow_nonexistent,
 		    cpEnd) < 0)
 	return -1;
     return find_device(allow_nonexistent, &to_device_map, errh);
