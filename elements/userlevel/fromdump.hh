@@ -133,6 +133,10 @@ cannot be determined.
 
 Returns FromDump's position in the file, in bytes.
 
+=h packet_filepos read-only
+
+Returns the file position of the last packet emitted, in bytes.
+
 =h extend_interval write-only
 
 Text is a time interval. If END_TIME or one of its cousins was specified, then
@@ -210,6 +214,7 @@ class FromDump : public Element { public:
     String _filename;
     FILE *_pipe;
     off_t _file_offset;
+    off_t _packet_filepos;
 
     int error_helper(ErrorHandler *, const char *, const char * = 0);
 #ifdef ALLOW_MMAP

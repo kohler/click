@@ -388,6 +388,7 @@ FromDump::initialize(ErrorHandler *errh)
     
     // done
     _pos = sizeof(fake_pcap_file_header);
+    _packet_filepos = 0;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     return 0;
@@ -451,6 +452,9 @@ FromDump::read_packet(ErrorHandler *errh)
     tries++;
     if ((tries % 16) == 0 && output_is_push(0))
 	return true;
+
+    // record file position
+    _packet_filepos = _file_offset + _pos;
     
     // we may need to read bits of the file
     if (_pos + sizeof(*ph) <= _len) {
@@ -634,7 +638,7 @@ FromDump::pull(int)
 
 enum {
     H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP,
-    H_FILESIZE, H_FILEPOS, H_EXTEND_INTERVAL
+    H_FILESIZE, H_FILEPOS, H_PACKET_FILEPOS, H_EXTEND_INTERVAL
 };
 
 String
@@ -658,10 +662,8 @@ FromDump::read_handler(Element *e, void *thunk)
       }
       case H_FILEPOS:
 	return String(fd->_file_offset + fd->_pos) + "\n";
-#else
-    case H_FILESIZE: 
-    case H_FILEPOS:
-	return "<error: 64-bit types not suppported>\n";
+      case H_PACKET_FILEPOS:
+	return String(fd->_packet_filepos) + "\n";
 #endif
       default:
 	return "<error>\n";
@@ -709,8 +711,11 @@ FromDump::add_handlers()
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
     add_read_handler("encap", read_handler, (void *)H_ENCAP);
     add_write_handler("stop", write_handler, (void *)H_STOP);
+#ifdef HAVE_INT64_TYPES
     add_read_handler("filesize", read_handler, (void *)H_FILESIZE);
     add_read_handler("filepos", read_handler, (void *)H_FILEPOS);
+    add_read_handler("packet_filepos", read_handler, (void *)H_PACKET_FILEPOS);
+#endif
     add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
     if (output_is_push(0))
 	add_task_handlers(&_task);
