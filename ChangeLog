@@ -1,3 +1,10 @@
+2003-07-22 Tuesday 17:25  Eddie Kohler <kohler@icir.org>
+
+	* include/click/ipaddress.hh (1.25), lib/ipaddress.cc (1.27):
+	change matches_prefix to match John Bicket's intuition: the "a"
+	argument is not necessarily a network address (in otherwords, "a &
+	~mask" is not necessarily 0
+
 2003-07-22 Tuesday 01:55  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.65), dsdvroutetable.hh
