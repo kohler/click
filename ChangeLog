@@ -1,3 +1,28 @@
+2004-05-03 Monday 10:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/mkwebdoc.pl (1.49): add test elements to element list
+
+2004-05-03 Monday 10:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/samplepackage/: acclick.m4 (1.16), aclocal.m4 (1.12): update
+	samplepackage configury
+
+2004-05-03 Monday 10:57  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/standard/: notifier-02.testie (1.1), notifier-03.testie
+	(1.1): add two notifier test cases
+
+2004-05-03 Monday 10:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/local/: pad.cc (1.1), pad.hh (1.1): add Pad element
+	(fill out the packet with crap data to absorb the extra length)
+
+2004-05-03 Monday 10:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: icmp/checkicmpheader.hh (1.9), ip/checkipheader.hh
+	(1.38), tcpudp/checktcpheader.hh (1.9), tcpudp/checkudpheader.hh
+	(1.9): documentation fixes (reported by Nikitas)
+
 2004-05-03 Monday 02:08  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* FAQ (1.17), doc/click.texi (1.58),
