@@ -5,9 +5,9 @@
  * =c
  * BigIn(color)
  * =d
- * Paint(color) -> Strip(14) -> CheckIPChecksum -> GetIPAddress(16)
+ * Paint(color) -> Strip(14) -> CheckIPHeader -> GetIPAddress(16)
  * =a Paint
- * =a CheckIPChecksum
+ * =a CheckIPHeader
  * =a Strip
  * =a GetIPAddress
  */

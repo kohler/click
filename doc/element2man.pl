@@ -238,7 +238,7 @@ sub make_elementlist () {
 $prologue
 .TH "ELEMENTS" $section "$today" "Click"
 .SH "NAME"
-elements \- list of documented Click element classes
+elements \- documented Click element classes
 .SH "DESCRIPTION"
 This page lists all Click element classes that have manual page documentation.
 .SH "SEE ALSO"

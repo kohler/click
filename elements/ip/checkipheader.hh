@@ -13,10 +13,10 @@
  * Pushes invalid packets out on output 1, unless output 1 was unused;
  * if so, drops invalid packets.
  *
- * The argument is a comma-separated list of IP addresses
+ * The argument is a space-separated list of IP addresses
  * that are not to be tolerated as source addresses.
  * Usually consists of the subnet broadcast addresses on
- * each interface. RFC1812 5.3.7.
+ * each interface (RFC1812 5.3.7).
  *
  * =a SetIPChecksum
  * =a DecIPTTL

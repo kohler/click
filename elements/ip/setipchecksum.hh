@@ -6,12 +6,10 @@
  * SetIPChecksum()
  * =d
  * Expects an IP packet as input.
- * Calculates and sets the IP header checksum.
- *
- * This element is mostly used after DecIPTTL,
- * which modifies the IP header.
- * 
- * =a CheckIPChecksum
+ * Calculates the IP header's checksum and sets the checksum header field.
+ * You will not normally need SetIPChecksum. Many elements that modify an
+ * IP header, like DecIPTTL, already update the checksum incrementally.
+ * =a CheckIPHeader
  * =a DecIPTTL
  */
 

@@ -17,11 +17,11 @@
  * =e
  * This is a typical IP input processing sequence:
  *
- * = ... -> CheckIPChecksum -> dt::DecIPTTL -> ...
+ * = ... -> CheckIPHeader -> dt::DecIPTTL -> ...
  * = dt[1] -> ICMPError(18.26.4.24, 11, 0) -> ...
  *
  * =a ICMPError
- * =a CheckIPChecksum
+ * =a CheckIPHeader
  */
 
 #include "element.hh"
