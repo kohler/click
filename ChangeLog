@@ -1,3 +1,7 @@
+2002-10-17 Thursday 14:39  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplepackage/Makefile.in (1.30): forgot
+
 2002-10-16 Wednesday 23:01  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromdagdump.cc (1.11),
