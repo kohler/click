@@ -137,11 +137,13 @@ LinkStat::simple_action(Packet *p)
   stat_t s;
   click_gettimeofday(&s.when);
 
+#ifdef CLICK_USERLEVEL
   bool res1 = _ai->get_signal_info(ea, s.sig, s.qual);
   int t1, t2;
   bool res2 = _ai->get_noise(s.noise, t1, t2); 
   if (res1 || res2)
     _stats.insert(ea, s);
+#endif
 
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
     click_chatter("LinkStat %s: got non-Grid packet type", id().cc());

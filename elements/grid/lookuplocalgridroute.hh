@@ -33,7 +33,7 @@
  *
  * =item LOG
  *
- * GridLogger element.  Object to log events to.
+ * GridGenericLogger element.  Object to log events to.
  *
  * =back
  *
@@ -43,16 +43,17 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
-#include "gridgenericrt.hh"
-#include "gridroutecb.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
-#include "gridlogger.hh"
-#include "linktracker.hh"
+
+#include <elements/grid/gridroutecb.hh>
 CLICK_DECLS
 
 class GridGatewayInfo;
+class LinkTracker;
+class GridGenericLogger;
+class GridGenericRouteTable;
 
 class LookupLocalGridRoute : public Element, public GridRouteActor  {
   public:
@@ -77,7 +78,7 @@ class LookupLocalGridRoute : public Element, public GridRouteActor  {
 private:
 
   bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, 
-		    IPAddress *next_hop_ip, unsigned char *next_ho_interface) const;
+		    IPAddress *next_hop_ip, unsigned char *next_hop_interface) const;
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 
   GridGatewayInfo *_gw_info;
@@ -88,7 +89,7 @@ private:
   IPAddress _any_gateway_ip;
   Task _task;
 
-  GridLogger *_log;
+  GridGenericLogger *_log;
 };
 
 CLICK_ENDDECLS

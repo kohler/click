@@ -16,17 +16,21 @@
  */
 
 #include <click/config.h>
-#include <cstddef>
-#include "lookuplocalgridroute.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
 #include <click/standard/scheduleinfo.hh>
-#include "grid.hh"
 #include <click/router.hh>
 #include <click/glue.hh>
-#include "gridgatewayinfo.hh"
+
+#include <elements/grid/grid.hh>
+#include <elements/grid/gridgatewayinfo.hh>
+#include <elements/grid/lookuplocalgridroute.hh>
+#include <elements/grid/linktracker.hh>
+#include <elements/grid/gridgenericrt.hh>
+#include <elements/grid/gridgenericlogger.hh>
+
 CLICK_DECLS
 
 int GridRouteActor::_next_free_cb = 0;
@@ -66,7 +70,7 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpElement, "GridGatewayInfo element", &_gw_info,
 			cpElement, "LinkTracker element", &_link_tracker,
 			cpKeywords,
-			"LOG", cpElement, "GridLogger element", &_log,
+			"LOG", cpElement, "GridGenericLogger element", &_log,
 			0);
   _any_gateway_ip = htonl((ntohl(_ipaddr.addr()) & 0xFFffFF00) | 254);
   return res;
@@ -98,9 +102,15 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
     return errh->error("%s: LinkTracker argument %s has the wrong type",
 		       id().cc(),
 		       _link_tracker->id().cc());
-  } else if (_gw_info == 0) {
+  } else if (_link_tracker == 0) {
     return errh->error("%s: no GridGatewayInfo element given",
 		       id().cc());
+  }
+
+  if (_log && _log->cast("GridGenericLogger") == 0) {
+    return errh->error("%s: GridGenericLogger element %s has the wrong type",
+		       id().cc(),
+		       _log->id().cc());
   }
 
   if (input_is_pull(0))
@@ -333,8 +343,10 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     // leave src location update to FixSrcLoc element
     int sig = 0;
     int qual = 0;
-    struct timeval tv;
+    struct timeval tv = { 0, 0 };
+#ifdef CLICK_USERLEVEL
     _link_tracker->get_stat(next_hop_ip, sig, qual, tv);
+#endif
     unsigned int data2 = (qual << 16) | ((-sig) & 0xFFff);
     notify_route_cbs(packet, dest_ip, GRCB::ForwardDSDV, next_hop_ip, data2);
     SET_PAINT_ANNO(packet, next_hop_interface);
@@ -349,7 +361,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     notify_route_cbs(packet, dest_ip, GRCB::FallbackToGF, 0, 0);
 
     struct timeval tv = { 0, 0 };
-    gettimeofday(&tv, 0);
+    click_gettimeofday(&tv);
     if (_log)
       _log->log_no_route(packet, tv);
 
@@ -358,5 +370,5 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+
 EXPORT_ELEMENT(LookupLocalGridRoute)
