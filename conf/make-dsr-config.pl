@@ -32,9 +32,11 @@ Options:
    --blacklist         Use DSR link blacklist.  Enabled by default.
    --no-blacklist      Don't use DSR link blacklist.
    --feedback          Use TX failure feedback to trigger route queries.  
-                        Enabled by default; requires running in kernel.
+                        Requires running in kernel.
+                        Enabled by default in kernel configurations.
+                        Disabled by default in userlevel configurations.
    --airo              Use AironetTXFeedback instead of WifiTXFeedback
-   --no-feedback       Don't use TX failure feedback.
+   --no-feedback       Don't use TX failure feedback.  Implied by --userlevel.
    --metric M          Use metric M.  Allowable values are ";
     print join ", ", @allowable_metrics;
 print ".  Defaults to $metric.
@@ -72,6 +74,8 @@ my $eth = "";
 my $force_probes = 0;
 my $use_blacklist = 1;
 my $use_feedback = 1;
+my $request_use_feedback = 0;
+my $request_no_feedback = 0;
 my $airo = 0;
 
 while (scalar(@ARGV) > 0) {
@@ -109,9 +113,11 @@ while (scalar(@ARGV) > 0) {
 	$use_blacklist = 0;
     }
     elsif ($arg eq "--feedback") {
+	$request_use_feedback = 1;
 	$use_feedback = 1;
     }
     elsif ($arg eq "--no-feedback") {
+	$request_no_feedback = 1;
 	$use_feedback = 0;
     }
     elsif ($arg eq "--probe-size") {
@@ -138,8 +144,12 @@ if ($eth ne "" && $eth !~ /([a-f0-9][a-f0-9]?:){5}[a-f0-9][a-f0-9]?/i) {
     bail("Ethernet address `$eth' has a bad format"); 
 }
 
-if ($use_feedback && !$in_kernel) {
+if ($request_use_feedback && !$in_kernel) {
     bail("Can't use TX feedback at userlevel");
+}
+
+if (!$in_kernel) { 
+    $use_feedback = 0;
 }
 
 sub check_param($$$) {
@@ -224,8 +234,8 @@ in_cl[0] -> dsr_ls;
 
 if ($in_kernel) {
     print "
-// [1]dsr_arp takes incoming packets, and passes them through
-// unchanged to output 1, adding entries to an ARP table
+// [2]dsr_arp takes incoming packets, and passes them through
+// unchanged to output 2, adding entries to an ARP table
 
 // in the kernel we need to explicitly copy packets going to and
 // from the device to hostsniffers.
@@ -307,13 +317,13 @@ ls_prio :: PrioSched -> ToDevice(${ifname});
 
 print "
     
-dsr_filter[0] -> CheckIPHeader(14) -> [1]dsr_arp;
+dsr_filter[0] -> CheckIPHeader(14) -> [2]dsr_arp;
 
 // drop packets with my ethernet source address
 dsr_filter[1] -> // Print(Mine) ->
                  Discard;
 
-dsr_arp[1] -> Print(_in, NBYTES 192) ->
+dsr_arp[2] -> Print(_in, NBYTES 192) ->
               Strip(14) ->
               IPPrint ->
               CheckIPHeader() ->
@@ -333,6 +343,8 @@ td_prio :: PrioSched;
 dsr_rt[1] -> rt_q1 :: Queue(20) -> [0]td_prio;
 dsr_rt[2] -> rt_q2 -> [1]td_prio;
 td_prio -> [0]dsr_arp;
+
+Idle -> [1] dsr_arp [1] -> Idle;
 
 ";
 
