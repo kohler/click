@@ -90,6 +90,29 @@ IP6Address::mask_to_prefix_len() const
   return (swing_bits >= 0 ? bits + swing_bits : -1);
 }
 
+bool 
+IP6Address::ether_address(EtherAddress &mac) const
+{
+  /* 
+   * embedded mac address look like this:
+   * nnnn:nnnn:nnnn:nnnn:xxxx:xxFF:FExx:xxxx
+   * where xx's are the mac address.
+   */
+  if ((_addr.s6_addr[11] & 0xFF) == 0xFF &&
+      (_addr.s6_addr[12] & 0xFF) == 0xFE) {
+    unsigned char *d = mac.data();
+    d[0] = _addr.s6_addr[8];
+    d[1] = _addr.s6_addr[9];
+    d[2] = _addr.s6_addr[10];
+    d[3] = _addr.s6_addr[13];
+    d[4] = _addr.s6_addr[14];
+    d[5] = _addr.s6_addr[15];
+    return true;
+  } else {
+    return false;
+  }
+
+}
 bool
 IP6Address::ip4_address(IPAddress &ip4) const
 {

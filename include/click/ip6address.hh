@@ -4,6 +4,7 @@
 #include <click/string.hh>
 #include <clicknet/ip6.h>
 #include <click/ipaddress.hh>
+#include <click/etheraddress.hh>
 CLICK_DECLS
 
 class IP6Address { public:
@@ -31,6 +32,7 @@ class IP6Address { public:
   bool matches_prefix(const IP6Address &addr, const IP6Address &mask) const;
   bool mask_as_specific(const IP6Address &) const;
   
+  bool ether_address(EtherAddress &) const;
   bool ip4_address(IPAddress &) const;
   
   // bool operator==(const IP6Address &, const IP6Address &);
@@ -87,8 +89,10 @@ inline bool
 IP6Address::matches_prefix(const IP6Address &addr, const IP6Address &mask) const
 {
   const unsigned *xi = data32(), *ai = addr.data32(), *mi = mask.data32();
-  return ((xi[0] & mi[0]) == ai[0] && (xi[1] & mi[1]) == ai[1]
-	  && (xi[2] & mi[2]) == ai[2] && (xi[3] & mi[3]) == ai[3]);
+  return ((xi[0] & mi[0]) == (ai[0] & mi[0]) && 
+	  (xi[1] & mi[1]) == (ai[1] & mi[1]) &&
+	  (xi[2] & mi[2]) == (ai[2] & mi[2]) && 
+	  (xi[3] & mi[3]) == (ai[3] & mi[3]));
 }
 
 inline bool
