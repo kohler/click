@@ -614,7 +614,7 @@ Packet::take(uint32_t nbytes)
   m()->m_len -= nbytes;
   m()->m_pkthdr.len -= nbytes;
 # endif
-#endif    
+#endif
 }
 
 #ifdef CLICK_USERLEVEL
