@@ -1,3 +1,12 @@
+2005-02-16 Wednesday 02:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.hh (1.5), iproutetable.cc (1.9),
+	iproutetable.hh (1.12), lineariplookup.cc (1.8), lineariplookup.hh
+	(1.7), lookupiproute.hh (1.23), lookupiproutelinux.hh (1.18),
+	trieiplookup.hh (1.8): "ctrl" handler can take multiple route
+	requests; and remove LinearIPLookup's odd "redundant routes"
+	behavior (Marko Zec)
+
 2005-02-14 Monday 05:53  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.92): DISTFILES
