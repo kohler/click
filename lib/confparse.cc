@@ -1331,8 +1331,11 @@ cp_bandwidth(const String &str, uint32_t *return_value)
   if (*return_value > 0xFFFFFFFFU / factor) {
     cp_errno = CPE_OVERFLOW;
     *return_value = 0xFFFFFFFFU;
-  } else
+  } else {
+    if (after_unit == str.end())
+      cp_errno = CPE_NOUNITS;
     *return_value *= factor;
+  }
   return true;
 }
 
@@ -2311,7 +2314,8 @@ default_parsefunc(cp_value *v, const String &arg,
     else if (cp_errno == CPE_OVERFLOW) {
       String m = cp_unparse_bandwidth(v->v.u);
       errh->error("%s (%s) too large; max %s", argname, desc, m.cc());
-    }
+    } else if (cp_errno == CPE_NOUNITS)
+      errh->warning("no units on bandwidth %s (%s), assuming Bps", argname, desc);
     break;
 
    case cpiReal2:
@@ -3524,7 +3528,7 @@ cp_unparse_bandwidth(uint32_t bw)
   else if (bw >= 125000)
     return cp_unparse_real10(bw * 8, 6) + "Mbps";
   else
-    return cp_unparse_real10(bw * 8, 3) + "Kbps";
+    return cp_unparse_real10(bw * 8, 3) + "kbps";
 }
 
 

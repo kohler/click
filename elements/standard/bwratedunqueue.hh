@@ -14,7 +14,7 @@ CLICK_DECLS
  * =d
  * 
  * Pulls packets at the given bandwidth RATE, and pushes them out its single
- * output.  RATE is a bandwidth with default units of bytes per second.
+ * output.  RATE is a bandwidth, such as "384 kbps".
  *
  * =a RatedUnqueue, Unqueue, BandwidthShaper, BandwidthRatedSplitter */
 

@@ -50,6 +50,8 @@ BandwidthMeter::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("argument %d should be bandwidth (rate)", i+1);
     else if (i > 0 && vals[i] <= vals[i-1])
       return errh->error("rate %d must be > rate %d", i+1, i);
+    else if (cp_errno == CPE_NOUNITS)
+      errh->warning("no units for bandwidth argument %d, assuming Bps", i+1);
 
   unsigned max_value = 0xFFFFFFFF >> _rate.scale;
   for (int i = 0; i < conf.size(); i++) {

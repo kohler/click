@@ -45,7 +45,8 @@ enum CpErrors {
     CPE_NEGATIVE,
     CPE_OVERFLOW,
     CPE_INVALID,
-    CPE_MEMORY
+    CPE_MEMORY,
+    CPE_NOUNITS
 };
 extern int cp_errno;
 

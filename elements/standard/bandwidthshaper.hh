@@ -14,8 +14,8 @@ CLICK_DECLS
  * =d
  *
  * BandwidthShaper is a pull element that allows a maximum bandwidth of
- * RATE to pass through.  That is, output traffic is shaped to RATE bytes
- * per second.  If a BandwidthShaper receives a large number of
+ * RATE to pass through.  That is, output traffic is shaped to RATE.
+ * If a BandwidthShaper receives a large number of
  * evenly-spaced pull requests, then it will emit packets at the specified
  * RATE with low burstiness.
  *

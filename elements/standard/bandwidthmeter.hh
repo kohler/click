@@ -17,7 +17,7 @@ CLICK_DECLS
  * second.)
  * 
  * The configuration string consists of one or more RATE arguments.  Each
- * RATE is a bandwidth, with default units of bytes per second.  Earlier
+ * RATE is a bandwidth, such as "384 kbps".  Earlier
  * rates in the list must be less than later rates. A Meter with I<n> rate
  * arguments will have I<n>+1 outputs. It sends packets out the output
  * corresponding to the current rate. If the rate is less than RATE1
@@ -30,7 +30,7 @@ CLICK_DECLS
  * This configuration fragment drops the input stream when it is generating
  * more than 20,000 bytes per second.
  *
- *   ... -> m :: BandwidthMeter(20000) -> ...;
+ *   ... -> m :: BandwidthMeter(20kBps) -> ...;
  *   m[1] -> Discard;
  *
  * =a Meter, BandwidthShaper, Shaper, RatedSplitter */

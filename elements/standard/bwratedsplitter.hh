@@ -15,8 +15,8 @@ CLICK_DECLS
  * 
  * BandwidthRatedSplitter has two output ports.  All incoming packets up to a
  * maximum of RATE are emitted on output port 0.  Any remaining packets are
- * emitted on output port 1.  RATE is a bandwidth with default units of bytes
- * per second.  Unlike BandwidthMeter, the base RATE is emitted on output port
+ * emitted on output port 1.  RATE is a bandwidth, such as "384 kbps".
+ * Unlike BandwidthMeter, the base RATE is emitted on output port
  * 0 even when the input rate is greater than RATE.
  *
  * =h rate read/write
