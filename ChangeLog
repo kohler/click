@@ -1,3 +1,10 @@
+2003-06-10 Tuesday 13:35  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/: icmppingencap.cc (1.1), icmppingencap.hh (1.1),
+	icmpsendpings.cc (1.24), icmpsendpings.hh (1.9): rename
+	ICMPSendPings to ICMPPingSource (old name still available, but
+	deprecated), and add ICMPPingEncap
+
 2003-06-10 Tuesday 02:04  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.14): testie outputs offending lines if they appear
@@ -15,8 +22,8 @@
 
 2003-06-10 Tuesday 01:16  Eddie Kohler <kohler@icir.org>
 
-	* test/: testie (1.13), FTPPortMapper/local01.testie (1.3): %expect
-	stderr works now (because it ignores testie output)
+	* test/: testie (1.13), IPRewriter/FTPPortMapper-01.testie (1.3):
+	%expect stderr works now (because it ignores testie output)
 
 2003-06-10 Tuesday 01:04  Eddie Kohler <kohler@icir.org>
 
@@ -580,6 +587,11 @@
 	* lib/driver.cc (1.14): missing "config" section in an archive
 	causes failure
 
+2003-04-14 Monday 18:35  Eddie Kohler <kohler@icir.org>
+
+	* test/IPRewriter/RoundRobinIPMapper-01.testie (1.1): add
+	RoundRobinIPMapper tests
+
 2003-04-14 Monday 18:24  Eddie Kohler <kohler@icir.org>
 
 	* tools/lib/toolutils.cc (1.48): raise limit on
@@ -751,8 +763,8 @@
 
 2003-03-16 Sunday 17:03  Eddie Kohler <kohler@icir.org>
 
-	* test/: testie (1.12), FromIPSummaryDump/ipopt01.testie (1.6):
-	better testie semantics: allow %file FILE1 FILE2 and the like
+	* test/testie (1.12): better testie semantics: allow %file FILE1
+	FILE2 and the like
 
 2003-03-16 Sunday 17:02  Eddie Kohler <kohler@icir.org>
 
@@ -788,12 +800,10 @@
 
 2003-03-09 Sunday 20:02  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/fromipsumdump.cc (1.49),
-	elements/analysis/toipsumdump.cc (1.43),
-	elements/analysis/toipsumdump.hh (1.36),
-	test/FromIPSummaryDump/ipopt01.testie (1.5): change IP and TCP
-	option formats (especially: use ; as a separator, not ,); plus
-	parsing bug fixes from test
+	* elements/analysis/: fromipsumdump.cc (1.49), toipsumdump.cc
+	(1.43), toipsumdump.hh (1.36): change IP and TCP option formats
+	(especially: use ; as a separator, not ,); plus parsing bug fixes
+	from test
 
 2003-03-09 Sunday 20:01  Eddie Kohler <kohler@icir.org>
 
@@ -806,12 +816,9 @@
 
 2003-03-07 Friday 01:05  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/fromipsumdump.cc (1.48),
-	elements/analysis/fromipsumdump.hh (1.27),
-	elements/analysis/toipsumdump.cc (1.42),
-	elements/analysis/toipsumdump.hh (1.35),
-	test/FromIPSummaryDump/ipopt01.testie (1.4): add TS option to
-	IPSummaryDump (more to go)
+	* elements/analysis/: fromipsumdump.cc (1.48), fromipsumdump.hh
+	(1.27), toipsumdump.cc (1.42), toipsumdump.hh (1.35): add TS option
+	to IPSummaryDump (more to go)
 
 2003-03-06 Thursday 21:04  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
@@ -875,24 +882,17 @@
 
 2003-03-04 Tuesday 16:19  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/fromipsumdump.cc (1.47),
-	elements/analysis/toipsumdump.cc (1.41),
-	test/FromIPSummaryDump/ipopt01.testie (1.3),
-	test/ICMPError/sr01.testie (1.1): update ipopt01 test for empty
-	options and the like; improve output for SSRR and LSRR (show
-	pointer as *); add ICMPError source routing test
+	* elements/analysis/: fromipsumdump.cc (1.47), toipsumdump.cc
+	(1.41): update ipopt01 test for empty options and the like; improve
+	output for SSRR and LSRR (show pointer as *); add ICMPError source
+	routing test
 
 2003-03-04 Tuesday 15:53  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/toipsumdump.cc (1.40), test/testie (1.11),
-	test/FromIPSummaryDump/ipopt01.testie (1.2): update regression test
-	for binary options; fix testie against perl bugs; and regression
-	test found bug with binary option handling (fixed)
-
-2003-03-04 Tuesday 15:27  Eddie Kohler <kohler@icir.org>
-
-	* test/FromIPSummaryDump/ipopt01.testie (1.1): test for IP options
-	stuff (ASCII only)
+	* elements/analysis/toipsumdump.cc (1.40), test/testie (1.11):
+	update regression test for binary options; fix testie against perl
+	bugs; and regression test found bug with binary option handling
+	(fixed)
 
 2003-03-04 Tuesday 15:27  Eddie Kohler <kohler@icir.org>
 
@@ -1124,7 +1124,7 @@
 
 2003-02-19 Wednesday 22:38  Eddie Kohler <kohler@icir.org>
 
-	* test/handlers/k01.testie (1.2): add some tests
+	* test/handlers/kernel-01.testie (1.2): add some tests
 
 2003-02-19 Wednesday 22:37  Eddie Kohler <kohler@icir.org>
 
@@ -1176,13 +1176,13 @@
 
 2003-02-15 Saturday 23:10  Eddie Kohler <kohler@icir.org>
 
-	* test/IPRewriter/t01.testie (1.1): another test
+	* test/IPRewriter/IPRewriter-01.testie (1.1): another test
 
 2003-02-15 Saturday 23:09  Eddie Kohler <kohler@icir.org>
 
 	* AUTHORS (1.23), FAQ (1.14), NEWS (1.140), README (1.37),
-	configure.in (1.200), test/handlers/k01.testie (1.1): expand NEWS
-	and the like for 1.3pre1; bump version number to 1.3pre1
+	configure.in (1.200), test/handlers/kernel-01.testie (1.1): expand
+	NEWS and the like for 1.3pre1; bump version number to 1.3pre1
 
 2003-02-15 Saturday 23:08  Eddie Kohler <kohler@icir.org>
 
@@ -1213,12 +1213,11 @@
 	elements/standard/simplequeue.hh (1.3),
 	elements/standard/unqueue.cc (1.23), elements/standard/unqueue2.cc
 	(1.12), include/click/glue.hh (1.34),
-	include/click/standard/scheduleinfo.hh (1.18),
-	test/MixedQueue/t01.testie (1.1), test/MixedQueue/t02.testie (1.1):
-	add MixedQueue element, and lifo_enq() to SimpleQueue; add tests
-	for MixedQueue; make FrontDropQueue plausibly work again; use
-	initialize_task(), not join_scheduler(); Unqueue(ACTIVE false)
-	would crash: fixed; nits
+	include/click/standard/scheduleinfo.hh (1.18): add MixedQueue
+	element, and lifo_enq() to SimpleQueue; add tests for MixedQueue;
+	make FrontDropQueue plausibly work again; use initialize_task(),
+	not join_scheduler(); Unqueue(ACTIVE false) would crash: fixed;
+	nits
 
 2003-02-15 Saturday 03:22  Eddie Kohler <kohler@icir.org>
 
@@ -1390,11 +1389,11 @@
 
 2003-02-10 Monday 01:21  Eddie Kohler <kohler@icir.org>
 
-	* test/FTPPortMapper/local01.testie (1.2): test nitlet
+	* test/IPRewriter/FTPPortMapper-01.testie (1.2): test nitlet
 
 2003-02-09 Sunday 18:13  Eddie Kohler <kohler@icir.org>
 
-	* test/FTPPortMapper/local01.testie (1.1): add a workable
+	* test/IPRewriter/FTPPortMapper-01.testie (1.1): add a workable
 	FTPPortMapper test
 
 2003-02-09 Sunday 18:11  Eddie Kohler <kohler@icir.org>
