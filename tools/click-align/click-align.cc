@@ -93,11 +93,12 @@ RouterAlign::have_input()
   int nialign = _ialign.size();
 
   Vector<Alignment> new_ialign(nialign, Alignment());
-  for (int i = 0; i < nh; i++) {
-    int ioff = _ioffset[ht[i].idx] + ht[i].port;
-    int ooff = _ooffset[hf[i].idx] + hf[i].port;
-    new_ialign[ioff] |= _oalign[ooff];
-  }
+  for (int i = 0; i < nh; i++)
+    if (hf[i].idx >= 0) {
+      int ioff = _ioffset[ht[i].idx] + ht[i].port;
+      int ooff = _ooffset[hf[i].idx] + hf[i].port;
+      new_ialign[ioff] |= _oalign[ooff];
+    }
 
   // see if anything happened
   bool changed = false;
@@ -126,11 +127,12 @@ RouterAlign::want_output()
   int noalign = _oalign.size();
 
   Vector<Alignment> new_oalign(noalign, Alignment());
-  for (int i = 0; i < nh; i++) {
-    int ioff = _ioffset[ht[i].idx] + ht[i].port;
-    int ooff = _ooffset[hf[i].idx] + hf[i].port;
-    new_oalign[ooff] &= _ialign[ioff];
-  }
+  for (int i = 0; i < nh; i++)
+    if (hf[i].idx >= 0) {
+      int ioff = _ioffset[ht[i].idx] + ht[i].port;
+      int ooff = _ooffset[hf[i].idx] + hf[i].port;
+      new_oalign[ooff] &= _ialign[ioff];
+    }
   for (int i = 0; i < noalign; i++)
     if (new_oalign[i].bad())
       new_oalign[i] = Alignment();
@@ -345,7 +347,8 @@ particular purpose.\n");
     const Vector<Hookup> &ht = router->hookup_to();
     int nhook = hf.size();
     for (int i = 0; i < nhook; i++)
-      if (router->etype(ht[i].idx) == align_tindex
+      if (hf[i].idx >= 0
+	  && router->etype(ht[i].idx) == align_tindex
 	  && router->etype(hf[i].idx) == align_tindex) {
 	// skip over hf[i]
 	Vector<Hookup> above, below;
@@ -377,7 +380,7 @@ particular purpose.\n");
     const Vector<Hookup> &ht = router->hookup_to();
     int nhook = hf.size();
     for (int i = 0; i < nhook; i++)
-      if (router->etype(ht[i].idx) == align_tindex) {
+      if (hf[i].idx >= 0 && router->etype(ht[i].idx) == align_tindex) {
 	Alignment have = ral._oalign[ ral._ooffset[hf[i].idx] + hf[i].port ];
 	Alignment want = ral._oalign[ ral._ooffset[ht[i].idx] ];
 	if (have <= want) {
@@ -392,7 +395,6 @@ particular purpose.\n");
 
     if (!changed) break;
     
-    router->remove_bad_connections();
     router->remove_duplicate_connections();
   }
 
