@@ -70,6 +70,8 @@ DelayUnqueue::run_scheduled()
   do {
     if (!_p) 
       _p = input(0).pull();
+    if (!_p)
+      break;
     if (_p && elapsed_ms(_p->timestamp_anno()) >= _delay) {
 #if 0
       {
