@@ -1,3 +1,14 @@
+2003-06-13 Friday 19:37  Eddie Kohler <kohler@icir.org>
+
+	* etc/diagrams/README (1.2): additional text
+
+2003-06-13 Friday 19:37  Eddie Kohler <kohler@icir.org>
+
+	* etc/diagrams/: elements.mp (1.6), elemfig.sty (1.4),
+	samp01_examples.mp (1.2), samp02_processing.mp (1.2),
+	samp03_routers.mp (1.4), samp04_iprouter.mp (1.3), samp05_other.mp
+	(1.2): fix buglet, and add explicit copyrights
+
 2003-06-13 Friday 02:43  Eddie Kohler <kohler@icir.org>
 
 	* include/click/router.hh (1.48), lib/router.cc (1.144): * handlers
