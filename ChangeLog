@@ -1,3 +1,11 @@
+2004-03-06 Saturday 17:50  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh (1.53), lib/master.cc (1.6),
+	lib/router.cc (1.157), lib/task.cc (1.26): attempt to fix Doug's
+	scheduling problems: ensure that, even given an interrupt or
+	handler or something outside our control, Tasks wont get
+	rescheduled
+
 2004-03-05 Friday 19:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/: ratedsource.cc (1.48), ratedsource.hh (1.29):
