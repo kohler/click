@@ -283,7 +283,7 @@ AddressTranslator::lookup(IP6Address &iai, unsigned short &ipi, IP6Address &mai,
       if ((_v[i]._binding == false ) || ((_v[i]._t < t) && (!_v[i]._static)))
 	{
 	  
-	  if (lookup_direction = 0) //outward packet
+	  if (lookup_direction == 0) //outward packet
 	    {
 	      _v[i]._iai = iai;
 	      _v[i]._ipi = ipi;
@@ -407,6 +407,7 @@ AddressTranslator::handle_outward(Packet *p)
        click_tcp *tcp_new  = (click_tcp *)(ip6_new+1);
        th_sport = ntohs(tcp_new->th_sport);
        th_dport = ntohs(tcp_new->th_dport);
+
       if (lookup(ip6_src, th_sport, ip6_msrc, th_mport, ip6_dst, th_dport, _direction))
 	{
 	  ip6_new->ip6_src = ip6_msrc;
