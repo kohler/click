@@ -28,7 +28,7 @@
 CLICK_DECLS
 
 PrintGrid::PrintGrid()
-  : Element(1, 1), _print_routes(false), _verbose(true)
+  : Element(1, 1), _print_routes(false), _verbose(true), _timestamp(false)
 {
   MOD_INC_USE_COUNT;
   _label = "";
