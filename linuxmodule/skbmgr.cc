@@ -77,17 +77,15 @@ class RecycledSkbPool { public:
   
   void lock();
   void unlock();
-  struct sk_buff *allocate(unsigned, int, int *);
+  struct sk_buff *allocate(unsigned hr, unsigned sz, int, int *);
   void recycle(struct sk_buff *, bool);
 
 #ifdef __MTCLICK__ 
   static int find_producer(int, int);
 #endif
   
-  friend  struct sk_buff * 
-    skbmgr_allocate_skbs(unsigned size, int *want);
-  friend void 
-    skbmgr_recycle_skbs(struct sk_buff *skbs, int dirty);
+  friend struct sk_buff *skbmgr_allocate_skbs(unsigned, unsigned, int *);
+  friend void skbmgr_recycle_skbs(struct sk_buff *, int);
 };
 
 
@@ -335,10 +333,9 @@ RecycledSkbPool::recycle(struct sk_buff *skbs, bool dirty)
 }
 
 struct sk_buff *
-RecycledSkbPool::allocate(unsigned size, int want, int *store_got)
+RecycledSkbPool::allocate(unsigned headroom, unsigned size, int want, int *store_got)
 {
-  size += SKBMGR_DEF_HEADSZ + SKBMGR_DEF_TAILSZ;
-  int bucket = size_to_higher_bucket(size);
+  int bucket = size_to_higher_bucket(headroom + size);
 
   struct sk_buff *head;
   struct sk_buff **prev = &head;
@@ -352,7 +349,7 @@ RecycledSkbPool::allocate(unsigned size, int want, int *store_got)
 #if DEBUG_SKBMGR
       _recycle_allocated++;
 #endif
-      skb_reserve(skb, SKBMGR_DEF_HEADSZ);
+      skb_reserve(skb, headroom);
       *prev = skb;
       prev = &skb->next;
       got++;
@@ -360,7 +357,7 @@ RecycledSkbPool::allocate(unsigned size, int want, int *store_got)
     unlock();
   }
 
-  size = size_to_higher_bucket_size(size);
+  size = size_to_higher_bucket_size(headroom + size);
   while (got < want) {
     struct sk_buff *skb = alloc_skb(size, GFP_ATOMIC);
 #if DEBUG_SKBMGR
@@ -370,7 +367,7 @@ RecycledSkbPool::allocate(unsigned size, int want, int *store_got)
       printk("<1>oops, kernel could not allocate memory for skbuff\n"); 
       break;
     }
-    skb_reserve(skb, SKBMGR_DEF_HEADSZ);
+    skb_reserve(skb, headroom);
     *prev = skb;
     prev = &skb->next;
     got++;
@@ -380,8 +377,6 @@ RecycledSkbPool::allocate(unsigned size, int want, int *store_got)
   *store_got = got;
   return head;
 }
-
-extern "C" {
 
 void
 skbmgr_init()
@@ -394,7 +389,7 @@ skbmgr_init()
 }
 
 void
-skbmgr_cleanup(void)
+skbmgr_cleanup()
 {
 #ifdef __MTCLICK__
   for(int i=0; i<NR_CPUS; i++) pool[i].cleanup();
@@ -404,13 +399,16 @@ skbmgr_cleanup(void)
 }
 
 struct sk_buff *
-skbmgr_allocate_skbs(unsigned size, int *want)
+skbmgr_allocate_skbs(unsigned headroom, unsigned size, int *want)
 {
+  if (headroom < SKBMGR_DEF_HEADSZ)
+    headroom = SKBMGR_DEF_HEADSZ;
+  
 #ifdef __MTCLICK__
   int cpu = current->processor;
   int producer = cpu;
   size += (SKBMGR_DEF_HEADSZ+SKBMGR_DEF_TAILSZ);
-  int bucket = RecycledSkbPool::size_to_higher_bucket(size);
+  int bucket = RecycledSkbPool::size_to_higher_bucket(headroom + size);
 
   int w = *want;
   if (pool[producer].bucket(bucket).size() < w) {
@@ -420,9 +418,9 @@ skbmgr_allocate_skbs(unsigned size, int *want)
     if (pool[cpu]._last_producer >= 0)
       producer = pool[cpu]._last_producer;
   }
-  return pool[producer].allocate(size, w, want);
+  return pool[producer].allocate(headroom, size, w, want);
 #else
-  return pool.allocate(size, *want, want);
+  return pool.allocate(headroom, size, *want, want);
 #endif
 }
 
@@ -436,6 +434,3 @@ skbmgr_recycle_skbs(struct sk_buff *skbs, int dirty)
   pool.recycle(skbs, dirty);
 #endif
 }
-
-}
-
