@@ -619,6 +619,7 @@ IPRateMonitor::llrpc(unsigned command, void *data)
 }
 
 EXPORT_ELEMENT(IPRateMonitor)
+ELEMENT_REQUIRES(userlevel)
 
 // template instances
 #include <click/ewma.cc>
