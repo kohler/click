@@ -41,8 +41,6 @@ Boolean.  If true, don't print more than one error message when
 there are queue overflows error when sending/receiving packets
 to/from the tun device (e.g. there was an ENOBUFS error).  Default is false.
 
-=back
-
 =item ETHER
 
 Ethernet address. Specifies the fake device's Ethernet address. Default is
@@ -61,16 +59,16 @@ tap0 :: KernelTap(192.0.0.1/8)
 fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> tap0;
 fromhost_cl[1] -> ... // IP packets
  
- =e
+=e
  
  KernelTap(192.0.0.1/8) -> ...;
-=n
+
 
 An error like "could not allocate a /dev/tap* device : No such file or
 directory" usually means that you have not enabled /dev/tap* in your
 kernel. 
 
-=a ToLinux, ifconfig(8) */
+=a ToHost, ifconfig(8) */
 
 class KernelTap : public Element { public:
   
