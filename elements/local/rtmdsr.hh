@@ -40,30 +40,33 @@ private:
   Timer _timer;
   IPAddress _ip; // Our IP address.
 
-  enum PacketType { PT_QUERY=90991 };
+  enum PacketType { PT_QUERY=0x01010101, PT_REPLY=0x02020202 };
 
   // Packet format.
   struct pkt {
-    PacketType _type;
+    u_long _type; // PacketType
 
     // PT_QUERY
-    in_addr _dst; // Who are we looking for?
-    int _metric;  // Path metric so far.
-    int _seq;     // Originator's sequence number.
+    in_addr _qdst; // Who are we looking for?
+    u_long _seq;     // Originator's sequence number.
     
+    // PT_REPLY
+    // The data is in the PT_QUERY fields.
+
     // Route
-    int _nhops;
+    u_short _nhops;
+    u_short _next;   // Index of next node who should process this packet.
     in_addr _hops[];
 
-    int len() { return sizeof(struct pkt) +
-                  ntohl(_nhops) * sizeof(in_addr); }
+    size_t len() { return sizeof(struct pkt) +
+                     ntohs(_nhops) * sizeof(_hops[0]); }
   };
 
   // Description of a single hop in a route.
   class Hop {
   public:
     IPAddress _ip;
-    int _linkmetric;
+    Hop(IPAddress ip) { _ip = ip; }
   };
 
   // Description of a route to a destination.
@@ -72,6 +75,8 @@ private:
     time_t _when; // When we learned about this route.
     int _pathmetric;
     Vector<Hop> _hops;
+    String s();
+    Route() { _when = 0; _pathmetric = 9999; };
   };
 
   // State of a destination.
@@ -81,18 +86,23 @@ private:
   public:
     Dst(IPAddress ip) { _ip = ip; _seq = 0; _when = 0; }
     IPAddress _ip;
-    int _seq; // Of last query sent out.
+    u_long _seq; // Of last query sent out.
     time_t _when; // When we sent last query.
     Vector<Route> _routes;
   };
 
   Vector<Dst> _dsts;
 
-  Dst *find_dst(IPAddress ip, bool create);
-  Route *best_route(Dst *d);
-  void RTMDSR::start_query(Dst *d);
+  int find_dst(IPAddress ip, bool create);
+  Route &best_route(IPAddress);
+  void RTMDSR::start_query(IPAddress);
   void got_pkt(Packet *p_in);
   time_t time(void);
+  void send_reply(struct pkt *pk1);
+  void forward_query(struct pkt *pk);
+  bool already_seen(in_addr src, u_long seq);
+  void got_reply(struct pkt *pk);
+  void forward_reply(struct pkt *pk);
 };
 
 CLICK_ENDDECLS

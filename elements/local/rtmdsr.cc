@@ -31,6 +31,7 @@ RTMDSR::RTMDSR()
   add_input();
   add_input();
   add_output();
+  add_output();
 }
 
 RTMDSR::~RTMDSR()
@@ -69,42 +70,50 @@ RTMDSR::run_timer ()
   _timer.schedule_after_ms(1000);
 }
 
-RTMDSR::Dst *
+// Returns an index into the _dsts[] array, or -1.
+int
 RTMDSR::find_dst(IPAddress ip, bool create)
 {
   int i;
 
   for(i = 0; i < _dsts.size(); i++)
     if(_dsts[i]._ip == ip)
-      return & _dsts[i];
+      return i;
 
   if(create){
     _dsts.push_back(Dst(ip));
-    Dst *d = find_dst(ip, false);
-    assert(d);
-    return d;
+    i = find_dst(ip, false);
+    assert(i >= 0);
+    return i;
   }
 
-  return 0;
+  return -1;
 }
 
-RTMDSR::Route *
-RTMDSR::best_route(Dst *d)
+// Returns the best route, or a dummy zero-hop route.
+RTMDSR::Route &
+RTMDSR::best_route(IPAddress dstip)
 {
+  static Route junk;
   int i;
   int bm = -1;
   int bi = -1;
 
-  for(i = 0; i < d->_routes.size(); i++){
-    if(bi == -1 || d->_routes[i]._pathmetric < bm){
+  int di = find_dst(dstip, false);
+  if(di < 0)
+    return junk; // Oops
+
+  Dst &d = _dsts[di];
+  for(i = 0; i < d._routes.size(); i++){
+    if(bi == -1 || d._routes[i]._pathmetric < bm){
       bi = i;
-      bm = d->_routes[i]._pathmetric;
+      bm = d._routes[i]._pathmetric;
     }
   }
 
   if(bi != -1)
-    return & d->_routes[bi];
-  return 0;
+    return d._routes[bi];
+  return junk; // Oops
 }
 
 time_t
@@ -116,10 +125,13 @@ RTMDSR::time()
 }
 
 void
-RTMDSR::start_query(Dst *d)
+RTMDSR::start_query(IPAddress dstip)
 {
+  int di = find_dst(dstip, true);
+  Dst &d = _dsts[di];  
+
   time_t now = time();
-  if(d->_when != 0 && now < d->_when + 10){
+  if(d._when != 0 && now < d._when + 10){
     // We sent a query less than 10 seconds ago, don't repeat.
     return;
   }
@@ -127,41 +139,163 @@ RTMDSR::start_query(Dst *d)
   char buf[1024];
   memset(buf, '\0', sizeof(buf));
   struct pkt *pk = (struct pkt *) buf;
-  pk->_type = (PacketType) htonl(PT_QUERY);
-  pk->_dst = d->_ip;
-  pk->_metric = 0;
-  pk->_seq = htonl(d->_seq + 1);
-  pk->_nhops = htonl(1);
+  pk->_type = htonl(PT_QUERY);
+  pk->_qdst = d._ip;
+  pk->_seq = htonl(d._seq + 1);
+  pk->_nhops = htons(1);
   pk->_hops[0] = _ip.in_addr();
   int len = pk->len();
   WritablePacket *p = Packet::make(len);
   if(p == 0)
     return;
   memcpy(p->data(), (const void *) pk, len);
-  output(0).push(p);
+  
+  d._seq += 1;
+  d._when = now;
 
-  d->_seq += 1;
-  d->_when = now;
+  output(0).push(p);
+}
+
+// Have we seen a particular query already?
+bool
+RTMDSR::already_seen(in_addr src, u_long seq)
+{
+  return false;
+}
+
+// Continue flooding a query by broadcast.
+void
+RTMDSR::forward_query(struct pkt *pk)
+{
+}
+
+// Continue unicasting a reply packet.
+void
+RTMDSR::forward_reply(struct pkt *pk)
+{
+}
+
+String
+RTMDSR::Route::s()
+{
+  String s("");
+  int i;
+  for(i = 0; i < _hops.size(); i++){
+    s = s + _hops[i]._ip.s();
+    if(i + 1 < _hops.size())
+      s = s + " ";
+  }
+  return s;
+}
+
+void
+RTMDSR::send_reply(struct pkt *pk1)
+{
+  int len = pk1->len();
+  WritablePacket *p = Packet::make(len);
+  if(p == 0)
+    return;
+  struct pkt *pk = (struct pkt *) p->data();
+  
+  memcpy(pk, pk1, len);
+  pk->_type = htonl(PT_REPLY);
+  int nh = ntohs(pk->_nhops);
+  pk->_next = htons(nh - 1); // Indicates next hop.
+  p->set_dst_ip_anno(pk->_hops[nh - 1]); // For ARP.
+  output(1).push(p);
+}
+
+// Got a reply packet whose ultimate consumer is us.
+// Make a routing table entry if appropriate.
+void
+RTMDSR::got_reply(struct pkt *pk)
+{
+  int di = find_dst(pk->_qdst, false);
+  if(di < 0){
+    click_chatter("DSR %s: reply but no Dst %s",
+                  _ip.s().cc(),
+                  IPAddress(pk->_qdst).s().cc());
+    return;
+  }
+  Dst &dst = _dsts[di];
+  if(ntohl(pk->_seq) != dst._seq){
+    click_chatter("DSR %s: reply but wrong seq %d %d",
+                  _ip.s().cc(),
+                  ntohl(pk->_seq),
+                  dst._seq);
+    return;
+  }
+
+  Route r;
+  r._when = time();
+  r._pathmetric = ntohs(pk->_nhops); // XXX
+  int i;
+  for(i = 1; i < ntohs(pk->_nhops); i++){
+    r._hops.push_back(Hop(pk->_hops[i]));
+  }
+  r._hops.push_back(Hop(dst._ip));
+  dst._routes.push_back(r);
+  click_chatter("DSR %s: installed route to %s via %s",
+                _ip.s().cc(),
+                dst._ip.s().cc(),
+                r.s().cc());
 }
 
 // Process a packet from the net, sent by a different RTMDSR.
 void
 RTMDSR::got_pkt(Packet *p_in)
 {
-  if(p_in->length() < sizeof(int))
-    return;
-
   struct pkt *pk = (struct pkt *) p_in->data();
-  if(pk->_type == (PacketType) htonl(PT_QUERY)){
-    click_chatter("DSR %s: query dst=%s nh=%d",
+  if(p_in->length() < 20 || p_in->length() < pk->len()){
+    click_chatter("DSR %s: bad pkt len %d",
                   _ip.s().cc(),
-                  IPAddress(pk->_dst).s().cc(),
-                  ntohl(pk->_nhops));
-  } else {
-    click_chatter("DSR %s: odd type %x",
-                  _ip.s().cc(),
-                  ntohl(pk->_type));
+                  p_in->length());
+    return;
   }
+
+  u_long type = ntohl(pk->_type);
+  u_short nhops = ntohs(pk->_nhops);
+  u_short next = ntohs(pk->_next);
+  u_long seq = ntohl(pk->_seq);
+
+  if(type == PT_QUERY && nhops >= 1){
+    click_chatter("DSR %s: query qdst=%s src=%s seq=%d nh=%d",
+                  _ip.s().cc(),
+                  IPAddress(pk->_qdst).s().cc(),
+                  IPAddress(pk->_hops[0]).s().cc(),
+                  seq,
+                  nhops);
+    if(pk->_qdst == _ip.in_addr()){
+      send_reply(pk);
+    } else if(!already_seen(pk->_hops[0], seq)){
+      forward_query(pk);
+    } else {
+      click_chatter("DSR %s: already seen query",
+                    _ip.s().cc());
+    }
+  } else if(type == PT_REPLY && next < nhops){
+    if(pk->_hops[next] != _ip.in_addr()){
+      // it's not for me. these are supposed to be unicast,
+      // so how did this get to me?
+      click_chatter("DSR %s: reply not for me %s",
+                    _ip.s().cc(),
+                    IPAddress(pk->_hops[next]).s().cc());
+      return;
+    }
+    if(next == 0){
+      // I'm the ultimate consumer of this reply. Add to routing tbl.
+      got_reply(pk);
+    } else {
+      // Forward the reply.
+      forward_reply(pk);
+    }
+  } else {
+    click_chatter("DSR %s: bad pkt type=%x",
+                  _ip.s().cc(),
+                  type);
+  }
+
+  return;
 }
 
 void
@@ -169,15 +303,13 @@ RTMDSR::push(int port, Packet *p_in)
 {
   if(port == 0){
     // Packet from upper layers in same host.
-    Dst *d = find_dst(p_in->dst_ip_anno(), true);
-    Route *r = best_route(d);
-    click_chatter("DSR %s: dst %s %x %x",
+    Route &r = best_route(p_in->dst_ip_anno());
+    click_chatter("DSR %s: data to %s via [%s]",
                   _ip.s().cc(),
                   p_in->dst_ip_anno().s().cc(),
-                  d,
-                  r);
-    if(r == 0)
-      start_query(d);
+                  r.s().cc());
+    if(r._hops.size() == 0)
+      start_query(p_in->dst_ip_anno());
   } else {
     got_pkt(p_in);
   }
