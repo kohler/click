@@ -104,6 +104,8 @@ ToDevice::configure(const String &conf, ErrorHandler *errh)
     return -1;
   _dev = dev_get(_devname.cc());
   if (!_dev)
+    _dev = find_device_by_ether_address(_devname);
+  if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
   return 0;
 }

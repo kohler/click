@@ -89,4 +89,6 @@ AnyDeviceMap::lookup(unsigned ifi)
     return _map[ifi];
 }
 
+struct device *find_device_by_ether_address(const String &);
+
 #endif

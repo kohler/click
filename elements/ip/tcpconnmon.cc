@@ -74,7 +74,7 @@ TCPConnectionMonitor::push(int port_number, Packet *p)
     unsigned short sport = tcp->th_sport;
     unsigned short dport = tcp->th_dport;
 
-    // Find all half open connections for this flid. May be 0.
+    // Find all half open connections for this src/dst. May be 0.
     HalfOpenConnections *hocs = _hoc.find(flid);
 
     // For SYN packets : insert half-open connection.
@@ -122,9 +122,9 @@ TCPConnectionMonitor::look_read_handler(Element *e, void *)
         HalfOpenPorts hops;
         if(hocs->half_open_ports(j, hops))
           ret += String(flid.saddr().saddr()) + "\t" +
-                 String(flid.daddr().saddr()) + "\t" + \
-                 String(hops.sport) + "\t" + \
-                 String(hops.dport) + "\n";
+                 String(flid.daddr().saddr()) + "\t" +
+                 String((int) hops.sport) + "\t" +
+                 String((int) hops.dport) + "\n";
       }
 
   return ret;
@@ -203,6 +203,9 @@ void
 TCPConnectionMonitor::HalfOpenConnections::add(unsigned short sport,
                                            unsigned short dport)
 {
+  if(_amount == MAX_HALF_OPEN)
+    return;
+
   short index = _free_slots[MAX_HALF_OPEN - _amount - 1];
   assert(_hops[index] == 0);
   _hops[index] = new HalfOpenPorts;
@@ -220,7 +223,7 @@ TCPConnectionMonitor::HalfOpenConnections::del(unsigned short sport,
 {
   assert(_amount > 0);
 
-  // Go through all occupied slots.
+  // Go through all occupied slots. DUMB DUMB DUMB. Make hash.
   for(short i = 0; i < MAX_HALF_OPEN; i++) {
     if(_hops[i] == 0)
       continue;

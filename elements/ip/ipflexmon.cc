@@ -142,6 +142,7 @@ IPFlexMonitor::push(int port, Packet *p)
   if(_pb == COUNT_BYTES)
     val *= ip->ip_len;
 
+  update(a, val);
   output(port).push(p);
 }
 

@@ -15,6 +15,7 @@
 #endif
 #include "glue.hh"
 #include "anydevice.hh"
+#include "confparse.hh"
 
 void
 AnyDeviceMap::initialize()
@@ -54,6 +55,19 @@ AnyDeviceMap::remove(AnyDevice *d)
     else
       _map[ifi] = trav->next();
   }
+}
+
+
+struct device *
+find_device_by_ether_address(const String &name)
+{
+  unsigned char en[6];
+  if (!cp_ethernet_address(name, en))
+    return 0;
+  for (struct device *dev = dev_base; dev; dev = dev->next)
+    if (dev->addr_len == 6 && memcmp(en, dev->dev_addr, 6) == 0)
+      return dev;
+  return 0;
 }
 
 ELEMENT_PROVIDES(AnyDevice)

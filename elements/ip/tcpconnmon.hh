@@ -3,13 +3,18 @@
 
 /*
  * =c
- * TCPConnectionMonitor(THRESH)
+ * TCPConnectionMonitor()
  * =d
  *
- * Keeps track of half-open connections.
+ * Keeps track of all half-open connections or all open connections.
  *
  * Input 0 : SYNs.
- * Input 1 : ACKs.
+ * Input 1 : SYN/ACKs.
+ *
+ * or
+ *
+ * Input 0 : SYNs.
+ * Input 1 : FINs.
  *
  * =e
  * = c :: Classifier(33/12, 33/?2, 33/1?, -);
@@ -19,6 +24,8 @@
  * = c[1] -> [0]t;      // SYN
  * = c[2] -> [1]t;      // ACK
  * = c[3] -> ...        // other
+ *
+ * Keeps track of half-open connections.
  *
  * =a
  */
@@ -44,7 +51,7 @@ public:
 
 
 private:
-#define MAX_HALF_OPEN   32
+#define MAX_HALF_OPEN   1024
 
   struct HalfOpenPorts {
     unsigned short sport;
@@ -69,7 +76,7 @@ private:
       unsigned int _daddr;
       int _amount;                         // no. of half-open connections
 
-      // Ports associated with this src and dst
+      // Ports associated with this src/dst combination
       HalfOpenPorts *_hops[MAX_HALF_OPEN];
       short _free_slots[MAX_HALF_OPEN];
   };

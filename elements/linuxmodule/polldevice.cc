@@ -83,6 +83,8 @@ PollDevice::configure(const String &conf, ErrorHandler *errh)
 #if HAVE_POLLING
   _dev = dev_get(_devname.cc());
   if (!_dev)
+    _dev = find_device_by_ether_address(_devname);
+  if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
   if (!_dev->pollable) 
     return errh->error("device `%s' not pollable", _devname.cc());
