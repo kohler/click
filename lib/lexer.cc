@@ -524,10 +524,6 @@ Lexer::element_type_names(Vector<String> &v) const
   for (int i = FIRST_REAL_TYPE; i < _reset_element_types; i++)
     if (_element_types[i] && _element_type_map[_element_type_names[i]] == i)
       v.push_back(_element_type_names[i]);
-  /*  int thunk = 0, value; String key;
-  while (_element_type_map.each(thunk, key, value))
-    if (value >= 0 && value < _reset_element_types && key[0] != '<')
-    v.push_back(key);*/
 }
 
 
@@ -1241,8 +1237,9 @@ Lexer::TunnelEnd::find(const Router::Hookup &h)
   }
   // didn't find the particular port pair; make a new one if possible
   if (parent) {
+    Hookup other(parent->_other->_port.idx, h.port);
     TunnelEnd *new_me = new TunnelEnd(h, _output, parent->_next);
-    TunnelEnd *new_other = new TunnelEnd(h, !_output, parent->_other->_next);
+    TunnelEnd *new_other = new TunnelEnd(other, !_output, parent->_other->_next);
     new_me->pair_with(new_other);
     parent->_next = new_me;
     parent->_other->_next = new_other;
