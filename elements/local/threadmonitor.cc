@@ -69,13 +69,14 @@ ThreadMonitor::run_scheduled()
 	Element *e = t->element(); 
 	if (e) 
 	  click_chatter("%u: %s, cycles %d, on %d", 
-	                tnow, e->declaration().cc(), 
+	                tnow, e->id().cc(), 
 		        t->cycles(), t->thread_preference());
 	else
           click_chatter("%u: with hook, cycles %d, on %d", 
 	                tnow, t->cycles(), t->thread_preference());
       }
     }
+    click_chatter("\n");
   }
 
   _timer.schedule_after_ms(_interval);

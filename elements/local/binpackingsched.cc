@@ -10,7 +10,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-#define DEBUG 0
+#define DEBUG 1
 
 BinPackingScheduler::BinPackingScheduler()
   : _timer(this)
@@ -51,10 +51,13 @@ BinPackingScheduler::run_scheduled()
 {
 #if __MTCLICK__
   Vector<Task*> tasks;
+  unsigned total_load = 0;
+  unsigned avg_load;
   TaskList *task_list = router()->task_list();
   task_list->lock();
   Task *t = task_list->initialized_next();
   while (t != task_list) {
+    total_load += t->cycles();
     tasks.push_back(t);
     t = t->initialized_next();
   }
@@ -65,7 +68,7 @@ BinPackingScheduler::run_scheduled()
   int high = 0;
 #endif
 
-  // need to implement a better sorting algorithm
+  // slow sorting algorithm, but works okay for small number of tasks
   Vector<Task*> sorted;
   for (int i=0; i<tasks.size(); i++) {
     int max = 0;
@@ -85,14 +88,14 @@ BinPackingScheduler::run_scheduled()
   }
 
 #if DEBUG > 0
-  if (high > 1000 && !((random()>>2)%50)) {
+  if (high >= 500) {
     print = 1;
     unsigned now = click_jiffies();
     for(int i=0; i<sorted.size(); i++) {
 	Element *e = sorted[i]->element();
-	if (e) 
+	if (e && 0)
 	  click_chatter("%u: %s %d, was on %d", 
-	                now, e->declaration().cc(), 
+	                now, e->id().cc(), 
 			sorted[i]->cycles(), 
 			sorted[i]->thread_preference());
     }
@@ -102,17 +105,21 @@ BinPackingScheduler::run_scheduled()
   int n = router()->nthreads();
   int load[n];
   Vector<Task*> schedule[n];
+  avg_load = total_load / n;
 
   for(int i=0; i<n; i++) load[i] = 0;
+  // for(int i=0; i<sorted.size(); i++) {
   for(int i=sorted.size()-1; i>=0; i--) {
     int min = -1;
     int which = 0;
+    
     for (int j=0; j<n; j++) {
       if (load[j] < min || min < 0) {
 	which = j;
 	min = load[j];
       }
     }
+
     load[which] += sorted[i]->cycles();
     schedule[which].push_back(sorted[i]);
     int old = sorted[i]->thread_preference();
@@ -131,12 +138,13 @@ BinPackingScheduler::run_scheduled()
     for(int i=0; i<sorted.size(); i++) {
 	Element *e = sorted[i]->element();
 	if (e) 
-	  click_chatter("%u: %s %d, now on %d", 
-	                now, e->declaration().cc(), 
+	  click_chatter("%u: %s %d, now on %d (%d)", 
+	                now, e->id().cc(), 
 			sorted[i]->cycles(), 
-			sorted[i]->thread_preference());
+			sorted[i]->thread_preference(), avg_load);
     }
     print = 0;
+    click_chatter("\n");
   }
 #endif
 

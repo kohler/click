@@ -8,9 +8,9 @@
  * bin packing scheduler
  * =d
  *
- * Use a minimizing largest bin type of bin packing algorithm to load balance
- * elements onto threads. INTERVAL specifies the number of ms between each
- * load balance. By default it is 1000 (1 second).
+ * Bin pack tasks onto threads by minimizing variance in load.  INTERVAL
+ * specifies the number of ms between each load balance. By default it is 1000
+ * (1 second).
  */
 
 #include <click/element.hh>
