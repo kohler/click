@@ -25,10 +25,12 @@ clickbindir := @clickprefix@/bin
 clickincludedir := @clickprefix@/include
 
 
-# Set `MAKE_UPACKAGE' and `MAKE_KPACKAGE' to `0' or `1' to determine
-# whether to build userlevel and kernel driver packages, respectively.
+# Set `MAKE_UPACKAGE', `MAKE_KPACKAGE', and `MAKE_BPACKAGE' to `0' or `1' 
+# to determine whether to build userlevel, linuxmodule, and bsdmodule
+# packages, respectively.
 MAKE_UPACKAGE = @HAVE_USERLEVEL_TARGET@
 MAKE_KPACKAGE = @HAVE_LINUXMODULE_TARGET@
+MAKE_BPACKAGE = @HAVE_BSDMODULE_TARGET@
 
 # Set `STRIP_UPACKAGE' to `strip -g' to strip debugging symbols from the
 # userlevel package before installing.
@@ -37,8 +39,9 @@ STRIP_UPACKAGE = true
 
 # Set these variables as required.
 DEFS = @DEFS@ 
-K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(linuxdir)/include
 U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir)
+K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(linuxdir)/include
+B_INCLUDES = -nostdinc -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(freebsddir)
 
 # END OF VARIABLES THAT MAY CHANGE BETWEEN PACKAGES
 
@@ -54,17 +57,20 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
-linuxdir = @linuxdir@
 mandir = @mandir@
 datadir = @datadir@/click
+linuxdir = @linuxdir@
+freebsddir = @freebsddir@
 
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)
 
-K_CC = @CC@
 U_CC = @CC@
+K_CC = @CC@
+B_CC = @CC@
 CPP = @CPP@
-K_CXX = @KERNEL_CXX@
 U_CXX = @CXX@
+K_CXX = @KERNEL_CXX@
+B_CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@
 LD = @LD@
 STRIP = @STRIP@
@@ -73,7 +79,7 @@ INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 .SUFFIXES:
-.SUFFIXES: .c .cc .o .ko .uo .kii .uii
+.SUFFIXES: .c .cc .o .uo .ko .bo .uii .kii .bii
 
 .c.uo:
 	$(U_COMPILE) -c $< -o $@
@@ -91,24 +97,36 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	@sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
 .cc.kii:
 	$(K_CXXCOMPILE) -E $< > $@
+.c.bo:
+	$(B_COMPILE) -c $< -o $@
+	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+.cc.bo:
+	$(B_CXXCOMPILE) -c $< -o $@
+	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+.cc.bii:
+	$(B_CXXCOMPILE) -E $< > $@
 
 
 -include elements.mk
 
-K_OBJS = $(K_ELEMENT_OBJS) kpackage.ko kernelversion.ko
 U_OBJS = $(U_ELEMENT_OBJS) upackage.uo
+K_OBJS = $(K_ELEMENT_OBJS) kpackage.ko kernelversion.ko
+B_OBJS = setdef0.bo $(B_ELEMENT_OBJS) bpackage.bo setdef1.bo
 
-K_CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_LINUXMODULE -DCLICK_PACKAGE
 U_CPPFLAGS = @CPPFLAGS@ -g -MD -DCLICK_USERLEVEL -DCLICK_PACKAGE
+K_CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_LINUXMODULE -DCLICK_PACKAGE
+B_CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_BSDMODULE -DCLICK_PACKAGE
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
 
-K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS)
 U_CXXCOMPILE = $(U_CXX) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS)
-K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS) -D__KERNEL__
+K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS)
+B_CXXCOMPILE = $(B_CXX) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CXXFLAGS)
 U_COMPILE = $(U_CC) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CFLAGS)
+K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS) -D__KERNEL__
+B_COMPILE = $(B_CC) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CFLAGS) -DKERNEL -D_KERNEL -DKLD_MODULE
 
-# set TARGETS, etc. based on MAKE_UPACKAGE and MAKE_KPACKAGE
+# set TARGETS, etc. based on MAKE_UPACKAGE, MAKE_KPACKAGE, and MAKE_BPACKAGE
 ifeq ($(MAKE_UPACKAGE),1)
 TARGETS += $(package).uo
 CONFFILES += uelements.conf
@@ -119,16 +137,25 @@ TARGETS += $(package).ko
 CONFFILES += kelements.conf
 DRIVERS += linuxmodule
 endif
+ifeq ($(MAKE_BPACKAGE),1)
+TARGETS += $(package).bo
+CONFFILES += belements.conf
+DRIVERS += bsdmodule
+endif
 
 all: $(TARGETS)
+
+$(package).uo: Makefile $(U_OBJS)
+	$(LD) -shared -o $(package).uo $(U_OBJS)
+	$(STRIP_UPACKAGE) $(package).uo
 
 $(package).ko: Makefile $(K_OBJS)
 	$(LD) -r -o $(package).ko $(K_OBJS)
 	$(STRIP) -g $(package).ko
 
-$(package).uo: Makefile $(U_OBJS)
-	$(LD) -shared -o $(package).uo $(U_OBJS)
-	$(STRIP_UPACKAGE) $(package).uo
+$(package).bo: Makefile $(B_OBJS)
+	$(LD) -Bshareable -o $(package).bo $(B_OBJS)
+	$(STRIP) -g $(package).bo
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
@@ -137,27 +164,40 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 elemlist:
 	@rm -f $(CONFFILES)
 	@$(MAKE) $(CONFFILES)
-kelements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r $(package) > kelements.conf
 uelements.conf: $(clickbindir)/click-buildtool
 	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel -r $(package) > uelements.conf
+kelements.conf: $(clickbindir)/click-buildtool
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r $(package) > kelements.conf
+belements.conf: $(clickbindir)/click-buildtool
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r bsdmodule -r $(package) > kelements.conf
 elements.mk: $(CONFFILES) $(clickbindir)/click-buildtool
 	@rm -f elements.mk
-	[ ! -f kelements.conf ] || $(clickbindir)/click-buildtool elem2make -t kernel < kelements.conf >> elements.mk
-	[ ! -f uelements.conf ] || $(clickbindir)/click-buildtool elem2make -t user < uelements.conf >> elements.mk
-kpackage.cc: kelements.conf $(clickbindir)/click-buildtool
-	$(clickbindir)/click-buildtool elem2package $(package) < kelements.conf > kpackage.cc
-	@rm -f kpackage.kd
+	[ ! -f uelements.conf ] || $(clickbindir)/click-buildtool elem2make -t userlevel < uelements.conf >> elements.mk
+	[ ! -f kelements.conf ] || $(clickbindir)/click-buildtool elem2make -t linuxmodule < kelements.conf >> elements.mk
+	[ ! -f belements.conf ] || $(clickbindir)/click-buildtool elem2make -t bsdmodule < belements.conf >> elements.mk
 upackage.cc: uelements.conf $(clickbindir)/click-buildtool
 	$(clickbindir)/click-buildtool elem2package $(package) < uelements.conf > upackage.cc
 	@rm -f upackage.ud
+kpackage.cc: kelements.conf $(clickbindir)/click-buildtool
+	$(clickbindir)/click-buildtool elem2package $(package) < kelements.conf > kpackage.cc
+	@rm -f kpackage.kd
+bpackage.cc: belements.conf $(clickbindir)/click-buildtool
+	$(clickbindir)/click-buildtool elem2package $(package) < belements.conf > bpackage.cc
+	@rm -f bpackage.bd
 
 elementmap.$(package): $(clickbindir)/click-mkelemmap always
 	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$$r" | $(clickbindir)/click-mkelemmap -r "$$r" > elementmap.$(package)
 always:
 	@:
 
-DEPFILES := $(wildcard *.d *.kd *.ud)
+# BSD-specific module objects
+setdef0.bo: setdef0.c
+setdef1.bo: setdef1.c
+setdef0.c setdef1.c: bpackage.bo
+	gensetdefs bpackage.bo
+
+
+DEPFILES := $(wildcard *.d *.ud *.kd *.bd)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
@@ -174,8 +214,8 @@ install-man: always
 	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -p $(package) -f -
 
 clean:
-	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package) conftest.*
+	-rm -f *.d *.ud *.kd *.bd *.o *.uo *.ko *.bo elements.mk upackage.cc kpackage.cc bpackage.cc uelements.conf kelements.conf belements.conf elementmap.$(package) conftest.*
 distclean: clean
-	-rm -f Makefile config.h config.status config.cache config.log 
+	-rm -f Makefile config.h config.status config.cache config.log
 
 .PHONY: all always clean distclean elemlist install install-obj install-man
