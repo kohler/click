@@ -1,176 +1,205 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_ATOMIC_HH
 #define CLICK_ATOMIC_HH
 CLICK_DECLS
 
-#if defined(__KERNEL__) && defined(__SMP__) /* && defined(__MTCLICK__) */
+#ifdef __KERNEL__
+# ifdef __SMP__
+#  define LOCK "lock ; "
+# else
+#  define LOCK ""
+# endif
 
-class uatomic32_t { public:
+class atomic_uint32_t { public:
 
-  // No constructors because, unfortunately, they cause GCC to generate worse
-  // code. Use operator= instead.
+    // No constructors because, unfortunately, GCC generates worse code. Use
+    // operator= instead.
   
-  operator uint32_t() const		{ return atomic_read(&_val); }
-  uint32_t value() const		{ return atomic_read(&_val); }
+    operator uint32_t() const		{ return atomic_read(&_val); }
+    uint32_t value() const		{ return atomic_read(&_val); }
   
-  uatomic32_t &operator=(uint32_t u)	{ atomic_set(&_val, u); return *this; }
-  uatomic32_t &operator+=(int x)	{ atomic_add(x, &_val); return *this; }
-  uatomic32_t &operator-=(int x)	{ atomic_sub(x, &_val); return *this; }
-  void operator++(int)			{ atomic_inc(&_val); }
-  void operator--(int)			{ atomic_dec(&_val); }
+    atomic_uint32_t &operator=(uint32_t u) { atomic_set(&_val, u); return *this;}
 
-  // returns true if value is 0 after decrement
-  bool dec_and_test()			{ return atomic_dec_and_test(&_val); }
+    atomic_uint32_t &operator+=(int x)	{ atomic_add(x, &_val); return *this; }
+    atomic_uint32_t &operator-=(int x)	{ atomic_sub(x, &_val); return *this; }
+    inline atomic_uint32_t &operator|=(uint32_t);
+    inline atomic_uint32_t &operator&=(uint32_t);
 
-  uint32_t read_and_add(int x);
-  uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
+    void operator++(int)		{ atomic_inc(&_val); }
+    void operator--(int)		{ atomic_dec(&_val); }
+
+    // returns true if value is 0 after decrement
+    bool dec_and_test()			{ return atomic_dec_and_test(&_val); }
+
+    inline uint32_t read_and_add(int x);
+    inline uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
   
- private:
+  private:
 
-  atomic_t _val;
+    atomic_t _val;
 
 };
 
-inline uint32_t
-uatomic32_t::read_and_add(int x)
+inline atomic_uint32_t &
+atomic_uint32_t::operator|=(uint32_t u)
 {
-#ifdef __i386__
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-  asm volatile ("lock\n" "\txaddl %0,%1\n"
-                : "=r" (x), "=m" (_val.counter) 
-		: "0" (x), "m" (_val.counter));
-# else
-  asm volatile ("lock\n" "\txaddl %0,%1\n"
-                : "=r" (x), "=m" (__atomic_fool_gcc(&_val)) 
-		: "0" (x), "m" (__atomic_fool_gcc(&_val)));
-# endif
-#else
-  StaticAssert("no support for SMP on non-i386 machines");
-#endif
-  return x;
+    atomic_clear_mask(u, &_val);
+    return *this;
+}
+
+inline atomic_uint32_t &
+atomic_uint32_t::operator&=(uint32_t u)
+{
+    atomic_set_mask(u, &_val);
+    return *this;
 }
 
 inline uint32_t
-uatomic32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
+atomic_uint32_t::read_and_add(int x)
 {
-#ifdef __i386__
-  int result;
-# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
-  asm ("lock\n"
-       "\tcmpxchgl %2, %0\n"
-       : "=m" (_val.counter), "=a" (result)
-       : "r" (new_value), "m" (_val.counter), "a" (old_value)
-       // : "eax", "cc", "memory");
-       : "cc", "memory");
+# ifdef __i386__
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+    asm volatile (LOCK "xaddl %0,%1"
+		  : "=r" (x), "=m" (_val.counter) 
+		  : "0" (x), "m" (_val.counter));
+#  else
+    asm volatile (LOCK "xaddl %0,%1"
+		  : "=r" (x), "=m" (__atomic_fool_gcc(&_val)) 
+		  : "0" (x), "m" (__atomic_fool_gcc(&_val)));
+#  endif
 # else
-  asm ("lock\n"
-       "\tcmpxchgl %2, %0\n"
-       : "=m" (__atomic_fool_gcc(&_val)), "=a" (result)
-       : "r" (new_value), "m" (__atomic_fool_gcc(&_val)), "a" (old_value)
-       // : "eax", "cc", "memory");
-       : "cc", "memory");
+    static_assert("no support for SMP on non-i386 machines");
 # endif
-  // return old value: compare and swap fails if old value is different from
-  // val, succeeds otherwise.
-  return result;
-#else
-  StaticAssert("no support for SMP on non-i386 machines");
-  return 0;
-#endif
+    return x;
 }
 
-#else
+inline uint32_t
+atomic_uint32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
+{
+# ifdef __i386__
+    int result;
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+    asm (LOCK "cmpxchgl %2,%0"
+	 : "=m" (_val.counter), "=a" (result)
+	 : "r" (new_value), "m" (_val.counter), "a" (old_value)
+	 // : "eax", "cc", "memory");
+	 : "cc", "memory");
+#  else
+    asm (LOCK "cmpxchgl %2,%0"
+	 : "=m" (__atomic_fool_gcc(&_val)), "=a" (result)
+	 : "r" (new_value), "m" (__atomic_fool_gcc(&_val)), "a" (old_value)
+	 // : "eax", "cc", "memory");
+	 : "cc", "memory");
+#  endif
+    // return old value: compare and swap fails if old value is different from
+    // val, succeeds otherwise.
+    return result;
+# else
+    static_assert("no support for SMP on non-i386 machines");
+    return 0;
+# endif
+}
 
-class uatomic32_t { public:
-  
-  // No constructors because, unfortunately, they cause GCC to generate worse
-  // code. Use operator= instead.
-  
-  operator uint32_t() const		{ return _val; }
-  uint32_t value() const		{ return _val; }
+# undef LOCK
+#else /* !__KERNEL__ */
 
-  uatomic32_t &operator=(uint32_t u)	{ _val = u; return *this; }
-  uatomic32_t &operator+=(int x)	{ _val += x; return *this; }
-  uatomic32_t &operator-=(int x)	{ _val -= x; return *this; }
-  void operator++(int)			{ _val++; }
-  void operator--(int)			{ _val--; }
+class atomic_uint32_t { public:
   
-  uint32_t read_and_add(int x);
-  uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
+    // No constructors because, unfortunately, GCC generates worse code. Use
+    // operator= instead.
+  
+    operator uint32_t() const		{ return _val; }
+    uint32_t value() const		{ return _val; }
+
+    atomic_uint32_t &operator=(uint32_t u) { _val = u; return *this; }
+  
+    atomic_uint32_t &operator+=(int x)	{ _val += x; return *this; }
+    atomic_uint32_t &operator-=(int x)	{ _val -= x; return *this; }
+    atomic_uint32_t &operator&=(uint32_t u) { _val &= u; return *this; }
+    atomic_uint32_t &operator|=(uint32_t u) { _val |= u; return *this; }
+  
+    void operator++(int)		{ _val++; }
+    void operator--(int)		{ _val--; }
+  
+    inline uint32_t read_and_add(int x);
+    inline uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
  
-  // returns true if value is 0 after decrement
-  bool dec_and_test()			{ _val--; return _val == 0; }
+    // returns true if value is 0 after decrement
+    bool dec_and_test()			{ _val--; return _val == 0; }
 
- private:
+  private:
 
-  uint32_t _val;
+    volatile uint32_t _val;
   
 };
 
 inline uint32_t
-uatomic32_t::read_and_add(int x)
+atomic_uint32_t::read_and_add(int x)
 {
-  uint32_t ov = _val;
-  _val += x;
-  return ov;
+    uint32_t ov = _val;
+    _val += x;
+    return ov;
 }
 
 inline uint32_t
-uatomic32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
+atomic_uint32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
 {
-  uint32_t ov = _val;
-  if (_val == old_value) _val = new_value;
-  return ov;
+    uint32_t ov = _val;
+    if (_val == old_value) _val = new_value;
+    return ov;
 }
 
-#endif
-
-inline uint32_t
-operator+(const uatomic32_t &a, const uatomic32_t &b)
-{
-  return a.value() + b.value();
-}
+#endif /* __KERNEL__ */
 
 inline uint32_t
-operator-(const uatomic32_t &a, const uatomic32_t &b)
+operator+(const atomic_uint32_t &a, const atomic_uint32_t &b)
 {
-  return a.value() - b.value();
+    return a.value() + b.value();
+}
+
+inline uint32_t
+operator-(const atomic_uint32_t &a, const atomic_uint32_t &b)
+{
+    return a.value() - b.value();
 }
 
 inline bool
-operator==(const uatomic32_t &a, const uatomic32_t &b)
+operator==(const atomic_uint32_t &a, const atomic_uint32_t &b)
 {
-  return a.value() == b.value();
+    return a.value() == b.value();
 }
 
 inline bool
-operator!=(const uatomic32_t &a, const uatomic32_t &b)
+operator!=(const atomic_uint32_t &a, const atomic_uint32_t &b)
 {
-  return a.value() != b.value();
+    return a.value() != b.value();
 }
 
 inline bool
-operator>(const uatomic32_t &a, const uatomic32_t &b)
+operator>(const atomic_uint32_t &a, const atomic_uint32_t &b)
 {
-  return a.value() > b.value();
+    return a.value() > b.value();
 }
 
 inline bool
-operator<(const uatomic32_t &a, const uatomic32_t &b)
+operator<(const atomic_uint32_t &a, const atomic_uint32_t &b)
 {
-  return a.value() < b.value();
+    return a.value() < b.value();
 }
 
 inline bool
-operator>=(const uatomic32_t &a, const uatomic32_t &b)
+operator>=(const atomic_uint32_t &a, const atomic_uint32_t &b)
 {
-  return a.value() >= b.value();
+    return a.value() >= b.value();
 }
 
 inline bool
-operator<=(const uatomic32_t &a, const uatomic32_t &b)
+operator<=(const atomic_uint32_t &a, const atomic_uint32_t &b)
 {
-  return a.value() <= b.value();
+    return a.value() <= b.value();
 }
+
+typedef atomic_uint32_t uatomic32_t;
 
 CLICK_ENDDECLS
 #endif
