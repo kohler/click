@@ -1,6 +1,7 @@
 // -*- c-basic-offset: 4 -*-
 /*
- * toipflowdumps.{cc,hh} -- creates separate trace files for each flow
+ * aggpktcounter.{cc,hh} -- element counts packets per packet number and
+ * aggregate annotation
  * Eddie Kohler
  *
  * Copyright (c) 2002 International Computer Science Institute
@@ -298,32 +299,18 @@ AggregatePacketCounter::flow_handler(uint32_t aggregate, FlowFunc func)
     return sa.take_string();
 }
 
-String
-AggregatePacketCounter::received_read_handler(Element *e, void *thunk)
-{
-    AggregatePacketCounter *apc = static_cast<AggregatePacketCounter *>(e);
-    return apc->flow_handler((uintptr_t) thunk, &Flow::received);
-}
-
-String
-AggregatePacketCounter::undelivered_read_handler(Element *e, void *thunk)
-{
-    AggregatePacketCounter *apc = static_cast<AggregatePacketCounter *>(e);
-    return apc->flow_handler((uintptr_t) thunk, &Flow::undelivered);
-}
-
 int
-AggregatePacketCounter::star_write_handler(const String &s, Element *e, void *, ErrorHandler *)
+AggregatePacketCounter::thing_read_handler(int, String& s, Element* e, const Handler* h, ErrorHandler* errh)
 {
-    uint32_t u;
-    if (s.substring(0, 11) == "undelivered" && cp_unsigned(s.substring(11), &u) && u > 0 && e->ninputs() > 1) {
-	e->add_read_handler(s, undelivered_read_handler, (void *)((uintptr_t)u));
-	return 0;
-    } else if (s.substring(0, 8) == "received" && cp_unsigned(s.substring(8), &u) && u > 0) {
-	e->add_read_handler(s, received_read_handler, (void *)((uintptr_t)u));
-	return 0;
-    } else
-	return -1;
+    uint32_t aggregate;
+    if (!s)
+	aggregate = 0;
+    else if (!cp_unsigned(cp_uncomment(s), &aggregate))
+	return errh->error("argument should be aggregate number");
+    FlowFunc ff = (h->thunk() ? &Flow::undelivered : &Flow::received);
+    AggregatePacketCounter *apc = static_cast<AggregatePacketCounter *>(e);
+    s = apc->flow_handler(aggregate, ff);
+    return 0;
 }
 
 void
@@ -331,7 +318,8 @@ AggregatePacketCounter::add_handlers()
 {
     add_write_handler("clear", write_handler, (void *)H_CLEAR);
     add_read_handler("count", read_handler, (void *)H_COUNT);
-    add_write_handler("*", star_write_handler, 0);
+    set_handler("received", Handler::OP_READ | Handler::READ_PARAM, thing_read_handler, 0);
+    set_handler("undelivered", Handler::OP_READ | Handler::READ_PARAM, thing_read_handler, (void*) 1);
 }
 
 CLICK_ENDDECLS

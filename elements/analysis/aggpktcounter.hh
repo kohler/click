@@ -149,10 +149,8 @@ class AggregatePacketCounter : public Element { public:
     static String read_handler(Element *, void *);
     typedef void (Flow::*FlowFunc)(Vector<uint32_t> &, const AggregatePacketCounter *) const;
     String flow_handler(uint32_t aggregate, FlowFunc func);
-    static String received_read_handler(Element *, void *);
-    static String undelivered_read_handler(Element *, void *);
+    static int thing_read_handler(int, String&, Element*, const Handler*, ErrorHandler*);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
-    static int star_write_handler(const String &, Element *, void *, ErrorHandler *);
     
 };
 
