@@ -393,7 +393,7 @@ IPRw::Pattern::accept_mapping(Mapping *m)
 }
 
 inline void
-IPRw::Pattern::mapping_freed(Mapping *m)
+IPRw::Pattern::mapping_freed(Mapping *)
 {
     _nmappings--;
 }
