@@ -109,58 +109,6 @@ Classifier::clone() const
 
 // OPTIMIZATION
 
-#if 0
-
-int
-Classifier::check_path(int ei, int interested, int eventual,
-		       bool first, bool yet) const
-{
-  if (ei > interested && ei != eventual && !yet)
-    return FAILURE;
-  if (ei < 0 || (ei == 0 && !first))
-    return (!yet ? FAILURE : ei);
-
-  const Expr &e = _exprs[ei];
-  const Expr &interest = _exprs[interested];
-  bool interest_yes = (interest.yes == eventual);
-  if (ei == eventual)
-    yet = true;
-
-  int yes_answer = FAILURE, no_answer = FAILURE;
-  if (ei < interested || (interest_yes ? !interest.implies_not(e) : !interest.not_implies_not(e)))
-    yes_answer = check_path(e.yes, interested, eventual, false, yet);
-  if (ei < interested || (interest_yes ? !interest.implies(e) : !interest.not_implies(e)))
-    no_answer = check_path(e.no, interested, eventual, false, yet);
-
-  //fprintf(stderr, "   %d -> (%d,%d) ", ei, yes_answer, no_answer);
-
-  if (yes_answer >= eventual) {
-    const Expr &event = _exprs[yes_answer];
-    if (e.implies(event))
-      yes_answer = event.yes;
-    else if (e.implies_not(event))
-      yes_answer = event.no;
-  }
-  if (no_answer >= eventual) {
-    const Expr &event = _exprs[no_answer];
-    if (e.not_implies(event))
-      no_answer = event.yes;
-    else if (e.not_implies_not(event))
-      no_answer = event.no;
-  }
-  
-  //fprintf(stderr, "(%d,%d)\n", yes_answer, no_answer);
-
-  if (ei == interested)
-    return (e.yes == eventual ? yes_answer : no_answer);
-  else if (yes_answer != FAILURE && no_answer != FAILURE && yes_answer != no_answer)
-    return (ei >= eventual ? ei : eventual);
-  else
-    return (yes_answer != FAILURE ? yes_answer : no_answer);
-}
-
-#else
-
 int
 Classifier::check_path(const Vector<int> &path,
 		       int ei, int interested, int eventual,
@@ -172,9 +120,6 @@ Classifier::check_path(const Vector<int> &path,
     return (!yet ? FAILURE : ei);
 
   const Expr &e = _exprs[ei];
-  if (ei == eventual)
-    yet = true;
-
   Vector<int> new_path(path);
   new_path.push_back(ei);
   
@@ -186,7 +131,8 @@ Classifier::check_path(const Vector<int> &path,
       yes_answer = FAILURE;
   }
   if (!yes_answer)
-    yes_answer = check_path(new_path, e.yes, interested, eventual, false, yet);
+    yes_answer = check_path(new_path, e.yes, interested, eventual, false,
+			    yet || (ei == interested && e.yes == eventual));
   
   int no_answer = 0;
   for (int i = 0; i < new_path.size() - 1 && !no_answer; i++) {
@@ -196,9 +142,12 @@ Classifier::check_path(const Vector<int> &path,
       no_answer = FAILURE;
   }
   if (!no_answer)
-    no_answer = check_path(new_path, e.no, interested, eventual, false, yet);
+    no_answer = check_path(new_path, e.no, interested, eventual, false,
+			   yet || (ei == interested && e.no == eventual));
 
-  //fprintf(stderr, "(%d,%d)\n", yes_answer, no_answer);
+  //fprintf(stderr, "      ");
+  //for (int i=0; i<new_path.size(); i++) fprintf(stderr, " %d", new_path[i]);
+  //fprintf(stderr, "%s -> [%d, %d]\n", (yet?"*":""), yes_answer, no_answer);
   
   if (ei == interested)
     return (e.yes == eventual ? yes_answer : no_answer);
@@ -207,8 +156,6 @@ Classifier::check_path(const Vector<int> &path,
   else
     return (yes_answer != FAILURE ? yes_answer : no_answer);
 }
-
-#endif
 
 int
 Classifier::check_path(int ei, bool yes) const
