@@ -568,6 +568,8 @@ sub check_expects ($$) {
 	$p++ while ($p < @tl && $p < @el && $tl[$p] eq $el[$p]);
 	_output_expectation_error($fp, $efn, $p + 1, $el[$p], $tl[$p]);
     }
+
+    0;
 }
 
 
@@ -659,11 +661,12 @@ sub execute_test ($$$) {
     }
 
     # check files
+    my $old_errors = $::errors;
     if ($exitval = $tt->check_expects(\&out_script_fn_to_fn)) {
 	return $exitval;
     }
 
-    if ($verbose && !$tt->empty) {
+    if ($verbose && !$tt->empty && $old_errors == $::errors) {
 	print STDERR $tt->{'errprefix'}, "Success!\n";
     }
 
