@@ -114,7 +114,7 @@ get_string_from_process(String cmdline, const String &input,
   return sa.take_string();
 }
 
-struct Classifion {
+struct ProgramStep {
   int yes;
   int no;
   int offset;
@@ -127,6 +127,40 @@ struct Classifion {
     unsigned u;
   } value;
 };
+
+static bool
+operator!=(const ProgramStep &s1, const ProgramStep &s2)
+{
+  return (s1.yes != s2.yes
+	  || s1.no != s2.no
+	  || s1.offset != s2.offset
+	  || s1.mask.u != s2.mask.u
+	  || s1.value.u != s2.value.u);
+}
+
+struct Classificand {
+  int safe_length;
+  int output_everything;
+  int align_offset;
+  int noutputs;
+  Vector<ProgramStep> program;
+  int type_index;
+};
+
+static bool
+operator==(const Classificand &c1, const Classificand &c2)
+{
+  if (c1.safe_length != c2.safe_length
+      || c1.output_everything != c2.output_everything
+      || c1.noutputs != c2.noutputs
+      || c1.align_offset != c2.align_offset
+      || c1.program.size() != c2.program.size())
+    return false;
+  for (int i = 0; i < c1.program.size(); i++)
+    if (c1.program[i] != c2.program[i])
+      return false;
+  return true;
+}
 
 static String
 translate_class_name(const String &s)
@@ -145,15 +179,14 @@ translate_class_name(const String &s)
 }
 
 static void
-write_checked_program(FILE *f, const Vector<Classifion> &cls,
-		      int noutputs, int safe_length, int align_offset)
+write_checked_program(FILE *f, const Classificand &c)
 {
-  fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", align_offset);
+  fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", c.align_offset);
   fprintf(f, "  int l = p->length();\n");
-  fprintf(f, "  assert(l < %d);\n", safe_length);
+  fprintf(f, "  assert(l < %d);\n", c.safe_length);
 
-  for (int i = 0; i < cls.size(); i++) {
-    const Classifion &e = cls[i];
+  for (int i = 0; i < c.program.size(); i++) {
+    const ProgramStep &e = c.program[i];
     
     int want_l = e.offset + 4;
     if (!e.mask.c[3]) {
@@ -170,7 +203,7 @@ write_checked_program(FILE *f, const Vector<Classifion> &cls,
     int branch2 = (switched ? e.yes : e.no);
     fprintf(f, " lstep_%d:\n", i);
     
-    if (want_l >= safe_length) {
+    if (want_l >= c.safe_length) {
       branch2 = e.no;
       goto output_branch2;
     }
@@ -181,7 +214,7 @@ write_checked_program(FILE *f, const Vector<Classifion> &cls,
     else
       fprintf(f, "  if (l >= %d && (data[%d] & 0x%xU) == 0x%xU)",
 	      want_l, e.offset/4, e.mask.u, e.value.u);
-    if (branch1 <= -noutputs)
+    if (branch1 <= -c.noutputs)
       fprintf(f, " {\n    p->kill();\n    return;\n  }\n");
     else if (branch1 <= 0)
       fprintf(f, " {\n    output(%d).push(p);\n    return;\n  }\n", -branch1);
@@ -189,7 +222,7 @@ write_checked_program(FILE *f, const Vector<Classifion> &cls,
       fprintf(f, "\n    goto lstep_%d;\n", branch1);
     
    output_branch2:
-    if (branch2 <= -noutputs)
+    if (branch2 <= -c.noutputs)
       fprintf(f, "  p->kill();\n  return;\n");
     else if (branch2 <= 0)
       fprintf(f, "  output(%d).push(p);\n  return;\n", -branch2);
@@ -199,13 +232,12 @@ write_checked_program(FILE *f, const Vector<Classifion> &cls,
 }
 
 static void
-write_unchecked_program(FILE *f, const Vector<Classifion> &cls,
-			int noutputs, int align_offset)
+write_unchecked_program(FILE *f, const Classificand &c)
 {
-  fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", align_offset);
+  fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", c.align_offset);
 
-  for (int i = 0; i < cls.size(); i++) {
-    const Classifion &e = cls[i];
+  for (int i = 0; i < c.program.size(); i++) {
+    const ProgramStep &e = c.program[i];
     
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
@@ -218,13 +250,13 @@ write_unchecked_program(FILE *f, const Vector<Classifion> &cls,
     else
       fprintf(f, "  if ((data[%d] & 0x%xU) == 0x%xU)",
 	      e.offset/4, e.mask.u, e.value.u);
-    if (branch1 <= -noutputs)
+    if (branch1 <= -c.noutputs)
       fprintf(f, " {\n    p->kill();\n    return;\n  }\n");
     else if (branch1 <= 0)
       fprintf(f, " {\n    output(%d).push(p);\n    return;\n  }\n", -branch1);
     else
       fprintf(f, "\n    goto step_%d;\n", branch1);
-    if (branch2 <= -noutputs)
+    if (branch2 <= -c.noutputs)
       fprintf(f, "  p->kill();\n  return;\n");
     else if (branch2 <= 0)
       fprintf(f, "  output(%d).push(p);\n  return;\n", -branch2);
@@ -235,6 +267,8 @@ write_unchecked_program(FILE *f, const Vector<Classifion> &cls,
 
 static Vector<String> gen_eclass_names;
 static Vector<String> gen_cxxclass_names;
+
+static Vector<Classificand> all_programs;
 
 static void
 analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
@@ -256,7 +290,7 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
   int idle_nei = nr.get_anon_eindex(idle_nti);
   nr.add_connection(idle_nei, 0, 0, classifier_nei);
   for (int i = 0; i < noutputs; i++)
-    nr.add_connection(classifier_nei, i, 0, idle_nei);
+    nr.add_connection(classifier_nei, i, i, idle_nei);
 
   // copy AlignmentInfos
   int alignmentinfo_ti = r->get_type_index("AlignmentInfo");
@@ -272,10 +306,9 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
   String program = get_string_from_process(runclick_prog + " -h " + handler + " -q", router_str, errh);
 
   // parse the program
-  Vector<Classifion> cls;
-  int safe_length = -1;
-  int output_everything = -1;
-  int align_offset = -1;
+  Classificand c;
+  c.safe_length = c.output_everything = c.align_offset = -1;
+  c.noutputs = noutputs;
   while (program) {
     // find step
     int newline = program.find_left('\n');
@@ -284,7 +317,7 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
     // check for many things
     if (isdigit(step[0])) {
       // real step
-      Classifion e;
+      ProgramStep e;
       int crap, pos;
       int v[4], m[4];
       sscanf(step, "%d %d/%2x%2x%2x%2x%%%2x%2x%2x%2x yes->%n",
@@ -309,15 +342,24 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
       } else
 	sscanf(step, "step %d", &e.no);
       // push expr onto list
-      cls.push_back(e);
-    } else if (sscanf(step, "all->[%d]", &output_everything))
+      c.program.push_back(e);
+    } else if (sscanf(step, "all->[%d]", &c.output_everything))
       /* nada */;
-    else if (sscanf(step, "safe length %d", &safe_length))
+    else if (sscanf(step, "safe length %d", &c.safe_length))
       /* nada */;
-    else if (sscanf(step, "alignment offset %d", &align_offset))
+    else if (sscanf(step, "alignment offset %d", &c.align_offset))
       /* nada */;
   }
 
+  // search for an existing fast classifier with the same program
+  for (int i = 0; i < all_programs.size(); i++)
+    if (c == all_programs[i]) {
+      ElementT &classifier_e = r->element(classifier_ei);
+      classifier_e.type = all_programs[i].type_index;
+      classifier_e.configuration = String();
+      return;
+    }
+  
   // output corresponding code
   String class_name = "FastClassifier@@" + r->ename(classifier_ei);
   String cxx_name = translate_class_name(class_name);
@@ -332,13 +374,13 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
   %s *clone() const { return new %s; }\n",
 	  cxx_name.cc(), cxx_name.cc(), noutputs, cxx_name.cc(),
 	  class_name.cc(), cxx_name.cc(), cxx_name.cc());
-  
-  if (output_everything >= 0) {
+
+  if (c.output_everything >= 0) {
     fprintf(f, "  void push(int, Packet *);\n};\n\
 void\n%s::push(int, Packet *p)\n{\n",
 	    cxx_name.cc());
-    if (output_everything < noutputs)
-      fprintf(f, "  output(%d).push(p);\n", output_everything);
+    if (c.output_everything < noutputs)
+      fprintf(f, "  output(%d).push(p);\n", c.output_everything);
     else
       fprintf(f, "  p->kill();\n");
     fprintf(f, "}\n");
@@ -348,21 +390,22 @@ void\n%s::push(int, Packet *p)\n{\n",
   void push(int, Packet *);\n};\n\
 void\n%s::length_checked_push(Packet *p)\n{\n",
 	    cxx_name.cc());
-    write_checked_program(f, cls, noutputs, safe_length, align_offset);
+    write_checked_program(f, c);
     fprintf(f, "}\ninline void\n%s::length_unchecked_push(Packet *p)\n{\n",
 	    cxx_name.cc());
-    write_unchecked_program(f, cls, noutputs, align_offset);
+    write_unchecked_program(f, c);
     fprintf(f, "}\nvoid\n%s::push(int, Packet *p)\n{\n\
   if (p->length() < %d)\n    length_checked_push(p);\n\
   else\n    length_unchecked_push(p);\n}\n",
-	    cxx_name.cc(), safe_length);
+	    cxx_name.cc(), c.safe_length);
   }
 
   // add type to router `r' and change element
-  int nclassifier_ti = r->get_type_index(class_name);
+  c.type_index = r->get_type_index(class_name);
   ElementT &classifier_e = r->element(classifier_ei);
-  classifier_e.type = nclassifier_ti;
+  classifier_e.type = c.type_index;
   classifier_e.configuration = String();
+  all_programs.push_back(c);
 }
 
 
@@ -479,9 +522,10 @@ particular purpose.\n");
 	if (r->etype(i) == t)
 	  classifiers.push_back(i);
   }
+  int nclassifiers = classifiers.size();
 
   // quit early if no Classifiers
-  if (classifiers.size() == 0) {
+  if (nclassifiers == 0) {
     if (source_only)
       errh->message("no Classifiers in router");
     else
@@ -522,7 +566,7 @@ particular purpose.\n");
 #include \"clickpackage.hh\"\n#include \"element.hh\"\n");
   
   // write Classifier programs
-  for (int i = 0; i < classifiers.size(); i++)
+  for (int i = 0; i < nclassifiers; i++)
     analyze_classifier(r, classifiers[i], f, errh);
 
   // write final text
@@ -602,4 +646,5 @@ extern \"C\" int\ninit_module()\n{\n\
 
 // generate Vector template instance
 #include "vector.cc"
-template class Vector<Classifion>;
+template class Vector<ProgramStep>;
+template class Vector<Classificand>;
