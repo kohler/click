@@ -1,11 +1,7 @@
-elements/ip/ipflexmon.hh
-elements/ip/ipflexmon.cc
-elements/ip/kinkyratemon.hh
-elements/ip/kinkyratemon.cc
+elements/grid/amoeba.hh
+elements/grid/amoeba.cc
 elements/ip/tcpipsend.hh
 elements/ip/tcpipsend.cc
-elements/ip/tcpconnmon.hh
-elements/ip/tcpconnmon.cc
 elements/ipsec/des.hh
 elements/ipsec/des.cc
 elements/ipsec/desp.hh
@@ -22,6 +18,3 @@ elements/ip6/markip6header.hh
 elements/ip6/markip6header.cc
 elements/ip6/setip6address.hh
 elements/ip6/setip6address.cc
-elements/grid/amoeba.hh
-elements/grid/amoeba.cc
-
