@@ -1,3 +1,8 @@
+2003-12-09 Tuesday 19:58  Eddie Kohler <kohler@icir.org>
+
+	* lib/router.cc (1.152): patch from Peter Swain: watch for POLLERR
+	and POLLHUP as well, to avoid a tight loop on poll()
+
 2003-12-09 Tuesday 00:01  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.218): specify license
