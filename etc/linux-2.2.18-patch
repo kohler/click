@@ -1783,8 +1783,33 @@ Index: drivers/net/tulip.c
 
 Index: drivers/net/acenic.c
 --- drivers/net/acenic.c.orig	Sun Dec 10 19:49:42 2000
-+++ drivers/net/acenic.c	Mon Aug 20 16:19:02 2001
-@@ -409,6 +409,69 @@
++++ drivers/net/acenic.c	Tue Aug 28 17:43:06 2001
+@@ -343,8 +343,8 @@
+  * one running the interrupt handler just got the slab code hot in its
+  * cache.
+  */
+-#define RX_RING_SIZE		72
+-#define RX_MINI_SIZE		64
++#define RX_RING_SIZE		128
++#define RX_MINI_SIZE		128
+ #define RX_JUMBO_SIZE		48
+ 
+ #define RX_PANIC_STD_THRES	16
+@@ -376,10 +376,10 @@
+  * on whether or not the user enables Jumbo frames. It's assumed that if
+  * Jumbo frames are enabled, the user wants optimal tuning for that case.
+  */
+-#define DEF_TX_COAL		400 /* 996 */
++#define DEF_TX_COAL			400 /* 996 */
+ #define DEF_TX_MAX_DESC		40
+-#define DEF_RX_COAL		120 /* 1000 */
+-#define DEF_RX_MAX_DESC		25
++#define DEF_RX_COAL		    120 /* 1000 */
++#define DEF_RX_MAX_DESC     25
+ #define DEF_TX_RATIO		21 /* 24 */
+ 
+ #define DEF_JUMBO_TX_COAL	20
+@@ -409,6 +409,15 @@
  
  static int probed __initdata = 0;
  
@@ -1797,64 +1822,10 @@ Index: drivers/net/acenic.c
 +static struct sk_buff *ace_rx_poll(struct device *dev, int *want);
 +static int ace_poll_on(struct device *dev);
 +static int ace_poll_off(struct device *dev);
-+
-+/* 
-+ * only recycle normal size pkts... no jumbo frames.
-+ * set to 0 if don't want to do recycle.
-+ */
-+#define SKB_RECYCLED	256
-+
-+unsigned acenic_recycled_skb_size = 0;
-+static int acenic_recycled_skb_cnt = 0;
-+static unsigned long acenic_recycle_skb_lock = 0;
-+static struct sk_buff *acenic_recycled_skbs[SKB_RECYCLED];
-+
-+/* WARNING: these functions are not reentrant! */
-+static inline struct sk_buff*
-+acenic_get_recycled_skb(void)
-+{
-+  	struct sk_buff* skb = 0;
-+  	if (acenic_recycled_skb_cnt > 0) {
-+	  	while (test_and_set_bit(0, (void*)&acenic_recycle_skb_lock)) {
-+			while(acenic_recycle_skb_lock) 
-+			  	asm volatile("" ::: "memory");
-+		}
-+      	if (acenic_recycled_skb_cnt > 0) {
-+       		acenic_recycled_skb_cnt--;
-+       		skb = acenic_recycled_skbs[acenic_recycled_skb_cnt];
-+      	}
-+		clear_bit(0, (void*)&acenic_recycle_skb_lock);
-+	}
-+	return skb;
-+}
-+
-+/* tries to recycle an skb. if not successful, the skb passed in is freed */
-+static inline void
-+acenic_recycle_or_free_skb(struct sk_buff *skb)
-+{
-+   	if (skb->truesize == acenic_recycled_skb_size) {
-+   		if (acenic_recycled_skb_cnt < SKB_RECYCLED) {
-+	  		while (test_and_set_bit(0, (void*)&acenic_recycle_skb_lock)) {
-+		  		while(acenic_recycle_skb_lock) 
-+			  		asm volatile("" ::: "memory");
-+			}
-+   			if (acenic_recycled_skb_cnt < SKB_RECYCLED) {
-+      			if (skb_recycle(skb)) {
-+					acenic_recycled_skbs[acenic_recycled_skb_cnt] = skb;
-+					acenic_recycled_skb_cnt++;
-+      			}
-+				skb = 0;
-+			}
-+			clear_bit(0, (void*)&acenic_recycle_skb_lock);
-+    	}
-+	}
-+	if (skb != 0) dev_kfree_skb(skb);
-+}
-+
  
  #ifdef NEW_NETINIT
  int __init acenic_probe (void)
-@@ -482,6 +545,17 @@
+@@ -482,6 +491,17 @@
  		dev->set_mac_address = &ace_set_mac_addr;
  		dev->change_mtu = &ace_change_mtu;
  
@@ -1872,31 +1843,15 @@ Index: drivers/net/acenic.c
  		/* display version info if adapter is found */
  		if (!version_disp)
  		{
-@@ -1579,6 +1653,7 @@
- {
- 	struct ace_regs *regs;
- 	short i, idx;
-+	extern unsigned acenic_recycled_skb_size;
- 
- 	regs = ap->regs;
- 
-@@ -1589,9 +1664,14 @@
- 		struct rx_desc *rd;
- 		dma_addr_t mapping;
- 
--		skb = alloc_skb(ACE_STD_BUFSIZE, GFP_ATOMIC);
-+		if (acenic_recycled_skb_size == 0 ||
-+			(skb = acenic_get_recycled_skb()) == 0L)
-+		 	skb = alloc_skb(ACE_STD_BUFSIZE, GFP_ATOMIC);
+@@ -1592,7 +1612,6 @@
+ 		skb = alloc_skb(ACE_STD_BUFSIZE, GFP_ATOMIC);
  		if (!skb)
  			break;
-+		/* Click: save the size of the skb we need for the std rx ring. */
-+		if (acenic_recycled_skb_size == 0)
-+		  acenic_recycled_skb_size = skb->truesize;
- 
+-
  		/*
  		 * Make sure IP header starts on a fresh cache line.
-@@ -1862,16 +1942,10 @@
+ 		 */
+@@ -1862,16 +1881,10 @@
  	return evtcsm;
  }
  
@@ -1916,7 +1871,7 @@ Index: drivers/net/acenic.c
  		struct ring_info *rip;
  		struct sk_buff *skb;
  		struct rx_desc *rxdesc, *retdesc;
-@@ -1895,7 +1969,7 @@
+@@ -1895,7 +1908,7 @@
  			rip = &ap->skb->rx_std_skbuff[skbidx];
  			mapsize = ACE_STD_BUFSIZE - (2 + 16);
  			rxdesc = &ap->rx_std_ring[skbidx];
@@ -1925,7 +1880,7 @@ Index: drivers/net/acenic.c
  			break;
  		case BD_FLG_JUMBO:
  			rip = &ap->skb->rx_jumbo_skbuff[skbidx];
-@@ -1907,13 +1981,13 @@
+@@ -1907,13 +1920,13 @@
  			rip = &ap->skb->rx_mini_skbuff[skbidx];
  			mapsize = ACE_MINI_BUFSIZE - (2 + 16);
  			rxdesc = &ap->rx_mini_ring[skbidx];
@@ -1941,7 +1896,7 @@ Index: drivers/net/acenic.c
  		}
  
  		skb = rip->skb;
-@@ -1945,11 +2019,29 @@
+@@ -1945,11 +1958,29 @@
  		else
  			skb->ip_summed = CHECKSUM_NONE;
  
@@ -1973,7 +1928,7 @@ Index: drivers/net/acenic.c
  		idx = (idx + 1) % RX_RETURN_RING_ENTRIES;
  	}
  
-@@ -1974,6 +2066,58 @@
+@@ -1974,6 +2005,53 @@
  	goto out;
  }
  
@@ -2002,12 +1957,7 @@ Index: drivers/net/acenic.c
 +			ap->stats.tx_bytes += skb->len;
 +			pci_unmap_single(ap->pdev, mapping, skb->len,
 +					 PCI_DMA_TODEVICE);
-+			if (!polling_ext) {
-+				dev_kfree_skb_irq(skb);
-+			} else {
-+				acenic_recycle_or_free_skb(skb);
-+			}
-+
++			dev_kfree_skb_irq(skb);
 +			ap->skb->tx_skbuff[idx].skb = NULL;
 +		}
 +
@@ -2032,17 +1982,17 @@ Index: drivers/net/acenic.c
  
  static void ace_interrupt(int irq, void *dev_id, struct pt_regs *ptregs)
  {
-@@ -1995,6 +2139,9 @@
- 	if (!(readl(&regs->HostCtrl) & IN_INT))
- 		return;
+@@ -1987,6 +2065,9 @@
+ 	ap = dev->priv;
+ 	regs = ap->regs;
  
 +	if (dev->polling)
 +	  	ace_poll_intr++;
 +
  	/*
- 	 * Tell the card not to generate interrupts while we are in here.
- 	 */
-@@ -2010,13 +2157,13 @@
+ 	 * In case of PCI shared interrupts or spurious interrupts,
+ 	 * we want to make sure it is actually our interrupt before
+@@ -2010,13 +2091,13 @@
  	rxretprd = *ap->rx_ret_prd;
  	rxretcsm = ap->cur_rx;
  
@@ -2058,7 +2008,7 @@ Index: drivers/net/acenic.c
  		do {
  			struct sk_buff *skb;
  
-@@ -2092,6 +2239,8 @@
+@@ -2092,6 +2173,8 @@
  	evtprd = *ap->evt_prd;
  
  	if (evtcsm != evtprd) {
@@ -2067,7 +2017,7 @@ Index: drivers/net/acenic.c
  		evtcsm = ace_handle_event(dev, evtcsm, evtprd);
  		writel(evtcsm, &regs->EvtCsm);
  	}
-@@ -2100,7 +2249,7 @@
+@@ -2100,7 +2183,7 @@
  	 * This has to go last in the interrupt handler and run with
  	 * the spin lock released ... what lock?
  	 */
@@ -2076,7 +2026,7 @@ Index: drivers/net/acenic.c
  		int cur_size;
  		int run_bh = 0;
  
-@@ -2304,14 +2453,43 @@
+@@ -2304,14 +2387,42 @@
  	return 0;
  }
  
@@ -2092,8 +2042,7 @@ Index: drivers/net/acenic.c
 +	
 +	ap->skb->tx_skbuff[idx].skb = skb;
 +	ap->skb->tx_skbuff[idx].mapping =
-+		pci_map_single(ap->pdev, skb->data, skb->len,
-+			       PCI_DMA_TODEVICE);
++	  pci_map_single(ap->pdev, skb->data, skb->len, PCI_DMA_TODEVICE);
 +	addr = (unsigned long) ap->skb->tx_skbuff[idx].mapping;
 +#if (BITS_PER_LONG == 64)
 +	writel(addr >> 32, &ap->tx_ring[idx].addr.addrhi);
@@ -2108,12 +2057,12 @@ Index: drivers/net/acenic.c
 +	ace_set_txprd(regs, ap, idx);
 +	return idx;
 +}
-+
+ 
 +static int ace_start_xmit(struct sk_buff *skb, struct net_device *dev)
 +{
 +	struct ace_private *ap = dev->priv;
 +	u32 idx;
- 
++
 +	/* polling extension: we have to use tbusy to prevent ace_start_xmit from
 +	 * colliding with ace_tx_queue */
 +#if 1
@@ -2123,7 +2072,7 @@ Index: drivers/net/acenic.c
  	/*
  	 * ARGH, there is just no pretty way to do this
  	 */
-@@ -2321,6 +2499,7 @@
+@@ -2321,6 +2432,7 @@
  #else
  	netif_stop_queue(dev);
  #endif
@@ -2131,7 +2080,7 @@ Index: drivers/net/acenic.c
  
  	idx = ap->tx_prd;
  
-@@ -2333,22 +2512,7 @@
+@@ -2333,22 +2445,7 @@
  		return 1;
  	}
  
@@ -2155,7 +2104,7 @@ Index: drivers/net/acenic.c
  
  	/*
  	 * tx_csm is set by the NIC whereas we set tx_ret_csm which
-@@ -3004,9 +3168,270 @@
+@@ -3004,9 +3101,413 @@
  	goto out;
  }
  
@@ -2199,16 +2148,17 @@ Index: drivers/net/acenic.c
 + * counter is the number of buffer refilled onto each ring.
 + */
 +
-+// #define SELECTIVE_INTR 1
++#define SELECTIVE_INTR 0
 +
 +static int 
 +ace_tx_queue(struct device *dev, struct sk_buff *skb)
 +{
 +	struct ace_private *ap = dev->priv;
-+	u32 idx;
++	unsigned long addr;
++	u32 flagsize, idx;
 +     
-+	/* polling extension: we have to use tbusy to prevent ace_start_xmit from
-+	 * colliding with ace_tx_queue */
++	/* polling extension: we have to use tbusy to prevent
++	 * ace_start_xmit from colliding with ace_tx_queue */
 +	if (test_and_set_bit(0, (void*)&dev->tbusy))
 +		return 1;
 +
@@ -2220,15 +2170,35 @@ Index: drivers/net/acenic.c
 +		return 1;
 +	}
 +	
-+	idx = ace_queue_skb(skb, dev, idx);
++	ap->skb->tx_skbuff[idx].skb = skb;
++	ap->skb->tx_skbuff[idx].mapping =
++	  pci_map_single(ap->pdev, skb->data, skb->len, PCI_DMA_TODEVICE);
++	addr = (unsigned long) ap->skb->tx_skbuff[idx].mapping;
++#if (BITS_PER_LONG == 64)
++	writel(addr >> 32, &ap->tx_ring[idx].addr.addrhi);
++#endif
++	writel(addr & 0xffffffff, &ap->tx_ring[idx].addr.addrlo);
++	flagsize = (skb->len << 16) | (BD_FLG_END) ;
++	writel(flagsize, &ap->tx_ring[idx].flagsize);
++	wmb();
++	idx = (idx + 1) % TX_RING_ENTRIES;
++	ap->tx_prd = idx;
 +
-+	if ((idx + 2) % TX_RING_ENTRIES == ap->tx_ret_csm) {
++	if ((idx + 2) % TX_RING_ENTRIES == ap->tx_ret_csm)
 +		ap->tx_full = 1;
-+	} else {
++	else
 +		clear_bit(0, (void*)&dev->tbusy);
-+	}
 +
 +	dev->trans_start = jiffies;
++	return 0;
++}
++
++static int
++ace_tx_eob(struct device *dev)
++{
++	struct ace_private *ap = dev->priv;
++	struct ace_regs *regs = ap->regs;
++	ace_set_txprd(regs, ap, ap->tx_prd);
 +	return 0;
 +}
 +
@@ -2243,16 +2213,66 @@ Index: drivers/net/acenic.c
 +ace_tx_clean(struct device *dev)
 +{
 +	struct ace_private *ap = dev->priv;
++	struct sk_buff *skb_head, *skb_last;
 +	u32 txcsm = *ap->tx_csm; 
 +
++	skb_head = skb_last = NULL;
 +	if (txcsm != ap->tx_ret_csm) {
-+	  	ace_service_tx(dev, 1);
++		struct ace_private *ap;
++		struct ace_regs *regs;
++		u32 txcsm, idx;
++	
++		ap = dev->priv; 
++		regs = ap->regs;
++	
++		txcsm = *ap->tx_csm; 
++		idx = ap->tx_ret_csm;
++
++		do {
++			struct sk_buff *skb;
++
++			skb = ap->skb->tx_skbuff[idx].skb;
++			if (skb) {
++				dma_addr_t mapping;
++
++				mapping = ap->skb->tx_skbuff[idx].mapping;
++
++				ap->stats.tx_packets++;
++				ap->stats.tx_bytes += skb->len;
++				pci_unmap_single(ap->pdev, mapping, skb->len, PCI_DMA_TODEVICE);
++				ap->skb->tx_skbuff[idx].skb = NULL;
++
++				if (skb_head == NULL) {
++				  	skb_head = skb_last = skb;
++					skb->next = skb->prev = NULL;
++				} else {
++				  	skb_last->next = skb;
++					skb->prev = skb_last;
++					skb->next = NULL;
++					skb_last = skb;
++				}
++			}
++
++			/*
++			 * Question here is whether one should not skip these
++			 * writes - I have never seen any errors caused by the NIC
++			 * actually trying to access these incorrectly.
++		 	 */
++#if (BITS_PER_LONG == 64)
++			writel(0, &ap->tx_ring[idx].addr.addrhi);
++#endif
++			writel(0, &ap->tx_ring[idx].addr.addrlo);
++			writel(0, &ap->tx_ring[idx].flagsize);
++
++			idx = (idx + 1) % TX_RING_ENTRIES;
++
++		} while (idx != txcsm);
 +
 +		/* only clear the tbusy bit if tx_full is set, so we don't
 +		 * accidentally allow two start_xmit or tx_queue to go on w/o
-+		 * synchronization. if tx_full is set, then neither start_xmit nor
-+		 * tx_queue is executing, or one is executing but the producer pointer
-+		 * has already been updated. 
++		 * synchronization. if tx_full is set, then neither start_xmit
++		 * nor tx_queue is executing, or one is executing but the
++		 * producer pointer has already been updated. 
 +		 */
 +		if (ap->tx_full) {
 +			clear_bit(0, (void*)&ap->tx_full);
@@ -2261,33 +2281,117 @@ Index: drivers/net/acenic.c
 +		ap->tx_ret_csm = txcsm;
 +		wmb();
 +	}
-+#if 0
-+	if (ap->tx_prd < ap->tx_ret_csm) 
-+	  return ap->tx_prd + TX_RING_ENTRIES - ap->tx_ret_csm;
-+	else 
-+	  return ap->tx_prd - ap->tx_ret_csm;
-+#endif
-+	return 0;
++	return skb_head;
 +}
 +
 +static int 
-+ace_rx_refill(struct device *dev, struct sk_buff **skb_list)
++ace_rx_refill(struct device *dev, struct sk_buff **skbs)
 +{
 +    u32 evtcsm, evtprd;
 +	struct ace_private *ap = dev->priv;
 +	struct ace_regs *regs = ap->regs;
++	int cur_size = atomic_read(&ap->cur_rx_bufs);
++	struct sk_buff *skb_list;
 +
-+	/* this seems like what we wanted: while it does clear the bh_pending bit
-+	 * for ace, but bh_pending is only set when rx rings need to be filled, so
-+	 * we should be fine.
-+	 *
-+	 * ace_bh return type is void, so we always return 0, even if ace_bh says
-+	 * there are no more memory to refill the rings... I guess that is really
-+	 * a fatalistic condition anyways...
-+	 */ 
-+	ace_bh(dev);
-+  
-+#ifndef SELECTIVE_INTR
++	if (skbs == 0)
++		return (RX_RING_SIZE-atomic_read(&ap->cur_rx_bufs))+
++		       (RX_MINI_SIZE-atomic_read(&ap->cur_mini_bufs));
++	skb_list = *skbs;
++
++	if (!test_and_set_bit(0, &ap->std_refill_busy)) {
++	  	short nr_bufs = RX_RING_SIZE - cur_size;
++		short i = 0, idx;
++		idx = ap->rx_std_skbprd;
++
++		for (; i < nr_bufs && skb_list; i++) {
++			struct sk_buff *skb;
++			struct rx_desc *rd;
++			dma_addr_t mapping;
++
++			skb = skb_list;
++			skb_list = skb->next;
++			skb->prev = skb->next = NULL;
++			skb->list = NULL;
++
++			/* make sure IP header starts on a fresh cache line. */
++			skb_reserve(skb, 2 + 16);
++			mapping = pci_map_single(ap->pdev, skb->data,
++			                         ACE_STD_BUFSIZE - (2 + 16),
++			                         PCI_DMA_FROMDEVICE);
++			ap->skb->rx_std_skbuff[idx].skb = skb;
++			ap->skb->rx_std_skbuff[idx].mapping = mapping;
++			rd = &ap->rx_std_ring[idx];
++			set_aceaddr(&rd->addr, mapping);
++			rd->size = ACE_STD_MTU + ETH_HLEN + 4;
++			rd->idx = idx;
++			idx = (idx + 1) % RX_STD_RING_ENTRIES;
++		}
++	
++		atomic_add(i, &ap->cur_rx_bufs);
++		ap->rx_std_skbprd = idx;
++	
++		if (ACE_IS_TIGON_I(ap)) {
++			struct cmd cmd;
++			cmd.evt = C_SET_RX_PRD_IDX;
++			cmd.code = 0;
++			cmd.idx = ap->rx_std_skbprd;
++			ace_issue_cmd(regs, &cmd);
++		} else {
++			writel(idx, &regs->RxStdPrd);
++			wmb();
++		}
++		clear_bit(0, &ap->std_refill_busy);
++	}
++
++	if (ap->version >= 2 && !test_and_set_bit(0, &ap->mini_refill_busy)) {
++	  	short nr_bufs, i = 0, idx;
++		
++		cur_size = atomic_read(&ap->cur_mini_bufs);
++		nr_bufs = RX_MINI_SIZE - cur_size;
++		idx = ap->rx_mini_skbprd;
++
++		for (; i < nr_bufs && skb_list; i++) {
++			struct sk_buff *skb;
++			struct rx_desc *rd;
++			dma_addr_t mapping;
++			
++			skb = skb_list;
++			skb_list = skb->next;
++			skb->prev = skb->next = NULL;
++			skb->list = NULL;
++
++			skb_reserve(skb, 2 + 16);
++			mapping = pci_map_single(ap->pdev, skb->data,
++			                         ACE_MINI_BUFSIZE - (2 + 16),
++			                         PCI_DMA_FROMDEVICE);
++			ap->skb->rx_mini_skbuff[idx].skb = skb;
++			ap->skb->rx_mini_skbuff[idx].mapping = mapping;
++			rd = &ap->rx_mini_ring[idx];
++			set_aceaddr(&rd->addr, mapping);
++			rd->size = ACE_MINI_SIZE;
++			rd->idx = idx;
++			idx = (idx + 1) % RX_MINI_RING_ENTRIES;
++		}
++	
++		atomic_add(i, &ap->cur_mini_bufs);
++		ap->rx_mini_skbprd = idx;
++	
++		writel(idx, &regs->RxMiniPrd);
++		wmb();
++	
++		clear_bit(0, &ap->mini_refill_busy);
++	}
++
++	cur_size = atomic_read(&ap->cur_jumbo_bufs);
++	if (ap->jumbo && (cur_size < RX_LOW_JUMBO_THRES) &&
++	    !test_and_set_bit(0, &ap->jumbo_refill_busy))
++		ace_load_jumbo_rx_ring(ap, RX_JUMBO_SIZE - cur_size);
++
++	ap->bh_pending = 0;
++
++#if SELECTIVE_INTR
++	/* if this worked, we don't need to handle events */
++#else
 +	/* handle events... since we can't selectively mask out rx and tx
 +	 * interrupts...
 +	 */
@@ -2299,7 +2403,10 @@ Index: drivers/net/acenic.c
 +        writel(evtcsm, &regs->EvtCsm);
 +    }
 +#endif	
-+	return 0;
++
++	*skbs = skb_list;
++	return (RX_RING_SIZE-atomic_read(&ap->cur_rx_bufs))+
++	       (RX_MINI_SIZE-atomic_read(&ap->cur_mini_bufs));
 +}
 +
 +static struct sk_buff *
@@ -2343,16 +2450,7 @@ Index: drivers/net/acenic.c
 +		atomic_sub(mini_count, &ap->cur_mini_bufs);
 +
 + out:
-+	/*
-+	 * According to the documentation RxRetCsm is obsolete with
-+	 * the 12.3.x Firmware - my Tigon I NICs seem to disagree!
-+	 */
-+	if (ACE_IS_TIGON_I(ap)) {
-+		struct ace_regs *regs = ap->regs;
-+		writel(idx, &regs->RxRetCsm);
-+	}
 +	ap->cur_rx = idx;
-+
 +	*want = got;
 +	return skb_head;
 +
@@ -2373,7 +2471,7 @@ Index: drivers/net/acenic.c
 +		ap = d->priv;
 +		regs = ap->regs;
 +
-+#ifdef SELECTIVE_INTR
++#if SELECTIVE_INTR
 +		/* okay, for some reason, below code segment did not turn off rx and
 +		 * tx interrupts... so we need to mask interrupts completely and
 +		 * depend on rx_refill to manage events.
@@ -2403,7 +2501,7 @@ Index: drivers/net/acenic.c
 +		ap = d->priv;
 +		regs = ap->regs;
 +
-+#ifdef SELECTIVE_INTR
++#if SELECTIVE_INTR
 +		stat = readl(&regs->ModeStat); 
 +		stat &= ~(ACE_DONT_RUPT_SENDS | ACE_DONT_RUPT_RECVS); 
 +		writel(stat, &regs->ModeStat);
@@ -2420,12 +2518,6 @@ Index: drivers/net/acenic.c
 +	}
 +	return 0;
 +}
-+
-+static int ace_tx_eob(struct device *dev)
-+{
-+  return 0;
-+}
-+
 +
 
 Index: drivers/net/acenic.h
