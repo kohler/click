@@ -223,6 +223,7 @@ static void e1000_netpoll (struct net_device *netdev);
 
 /* For Click polling */
 static int e1000_tx_pqueue(struct net_device *dev, struct sk_buff *skb);
+static int e1000_xmit_frame_clickpoll(struct net_device *netdev, struct sk_buff *skb);
 static int e1000_tx_start(struct net_device *dev);
 static int e1000_rx_refill(struct net_device *dev, struct sk_buff **);
 static int e1000_tx_eob(struct net_device *dev);
@@ -3456,14 +3457,14 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 	struct pci_dev *pdev = adapter->pdev;
 	struct e1000_tx_desc *tx_desc;
 	int i, len, offset, txd_needed;
-	uint32_t txd_upper, txd_lower, max_per_txd = E1000_MAX_DATA_PER_TXD;
+	uint32_t txd_upper, txd_lower;
 
 	if(unlikely(!netif_carrier_ok(netdev))) {
 		netif_stop_queue(netdev);
 		return NETDEV_TX_BUSY;
 	}
 
-	txd_needed = TXD_USE_COUNT(skb->len, max_txd_pwr);
+	txd_needed = TXD_USE_COUNT(skb->len, E1000_MAX_TXD_PWR);
 
 	/* make sure there are enough Tx descriptors available in the ring */
 	if(E1000_DESC_UNUSED(&adapter->tx_ring) <= (txd_needed + 1)) {
@@ -3490,7 +3491,7 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 	adapter->tx_ring.buffer_info[i].dma =
 		pci_map_single(pdev,
 			       skb->data + offset,
-			       size,
+			       len,
 			       PCI_DMA_TODEVICE);
 
 	tx_desc->buffer_addr = cpu_to_le64(adapter->tx_ring.buffer_info[i].dma);
@@ -3512,6 +3513,151 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 	
 	return 0;
 }
+
+
+
+static inline void
+e1000_tx_queue_clickpoll(struct e1000_adapter *adapter, int count, int tx_flags)
+{
+	struct e1000_desc_ring *tx_ring = &adapter->tx_ring;
+	struct e1000_tx_desc *tx_desc = NULL;
+	struct e1000_buffer *buffer_info;
+	uint32_t txd_upper = 0, txd_lower = E1000_TXD_CMD_IFCS;
+	unsigned int i;
+
+	if(likely(tx_flags & E1000_TX_FLAGS_TSO)) {
+		txd_lower |= E1000_TXD_CMD_DEXT | E1000_TXD_DTYP_D |
+		             E1000_TXD_CMD_TSE;
+		txd_upper |= (E1000_TXD_POPTS_IXSM | E1000_TXD_POPTS_TXSM) << 8;
+	}
+
+	if(likely(tx_flags & E1000_TX_FLAGS_CSUM)) {
+		txd_lower |= E1000_TXD_CMD_DEXT | E1000_TXD_DTYP_D;
+		txd_upper |= E1000_TXD_POPTS_TXSM << 8;
+	}
+
+	if(unlikely(tx_flags & E1000_TX_FLAGS_VLAN)) {
+		txd_lower |= E1000_TXD_CMD_VLE;
+		txd_upper |= (tx_flags & E1000_TX_FLAGS_VLAN_MASK);
+	}
+
+	i = tx_ring->next_to_use;
+
+	while(count--) {
+		buffer_info = &tx_ring->buffer_info[i];
+		tx_desc = E1000_TX_DESC(*tx_ring, i);
+		tx_desc->buffer_addr = cpu_to_le64(buffer_info->dma);
+		tx_desc->lower.data =
+			cpu_to_le32(txd_lower | buffer_info->length);
+		tx_desc->upper.data = cpu_to_le32(txd_upper);
+		if(unlikely(++i == tx_ring->count)) i = 0;
+	}
+
+	tx_desc->lower.data |= cpu_to_le32(adapter->txd_cmd);
+
+	tx_ring->next_to_use = i;
+}
+
+static int
+e1000_xmit_frame_clickpoll(struct net_device *netdev, struct sk_buff *skb)
+{
+	struct e1000_adapter *adapter = netdev->priv;
+	unsigned int first, max_per_txd = E1000_MAX_DATA_PER_TXD;
+	unsigned int max_txd_pwr = E1000_MAX_TXD_PWR;
+	unsigned int tx_flags = 0;
+	unsigned int len = skb->len;
+	unsigned int nr_frags = 0;
+	unsigned int mss = 0;
+	int count = 0;
+#ifdef MAX_SKB_FRAGS
+	unsigned int f;
+	len -= skb->data_len;
+#endif
+
+	if(unlikely(skb->len <= 0)) {
+		dev_kfree_skb_any(skb);
+		return NETDEV_TX_OK;
+	}
+
+#ifdef NETIF_F_TSO
+	mss = skb_shinfo(skb)->tso_size;
+	/* The controller does a simple calculation to
+	 * make sure there is enough room in the FIFO before
+	 * initiating the DMA for each buffer.  The calc is:
+	 * 4 = ceil(buffer len/mss).  To make sure we don't
+	 * overrun the FIFO, adjust the max buffer len if mss
+	 * drops. */
+	if(mss) {
+		max_per_txd = min(mss << 2, max_per_txd);
+		max_txd_pwr = fls(max_per_txd) - 1;
+	}
+
+	if((mss) || (skb->ip_summed == CHECKSUM_HW))
+		count++;
+	count++;	/* for sentinel desc */
+#else
+	if(skb->ip_summed == CHECKSUM_HW)
+		count++;
+#endif
+	count += TXD_USE_COUNT(len, max_txd_pwr);
+
+	if(adapter->pcix_82544)
+		count++;
+
+#ifdef MAX_SKB_FRAGS
+	nr_frags = skb_shinfo(skb)->nr_frags;
+	for(f = 0; f < nr_frags; f++)
+		count += TXD_USE_COUNT(skb_shinfo(skb)->frags[f].size,
+				       max_txd_pwr);
+	if(adapter->pcix_82544)
+		count += nr_frags;
+#endif
+
+	/* need: count + 2 desc gap to keep tail from touching
+	 * head, otherwise try next time */
+	if(unlikely(E1000_DESC_UNUSED(&adapter->tx_ring) < count + 2)) {
+		netif_stop_queue(netdev);
+		return NETDEV_TX_BUSY;
+	}
+
+	if(unlikely(adapter->hw.mac_type == e1000_82547)) {
+		if(unlikely(e1000_82547_fifo_workaround(adapter, skb))) {
+			netif_stop_queue(netdev);
+			mod_timer(&adapter->tx_fifo_stall_timer, jiffies);
+			return NETDEV_TX_BUSY;
+		}
+	}
+
+#ifdef NETIF_F_HW_VLAN_TX
+	if(unlikely(adapter->vlgrp && vlan_tx_tag_present(skb))) {
+		tx_flags |= E1000_TX_FLAGS_VLAN;
+		tx_flags |= (vlan_tx_tag_get(skb) << E1000_TX_FLAGS_VLAN_SHIFT);
+	}
+#endif
+
+	first = adapter->tx_ring.next_to_use;
+	
+	if(likely(e1000_tso(adapter, skb)))
+		tx_flags |= E1000_TX_FLAGS_TSO;
+	else if(likely(e1000_tx_csum(adapter, skb)))
+		tx_flags |= E1000_TX_FLAGS_CSUM;
+
+	e1000_tx_queue_clickpoll(adapter,
+		e1000_tx_map(adapter, skb, first, max_per_txd, nr_frags, mss),
+		tx_flags);
+
+	netdev->trans_start = jiffies;
+
+#ifdef NETIF_F_LLTX
+	/* Make sure there is space in the ring for the next send. */
+	if(unlikely(E1000_DESC_UNUSED(&adapter->tx_ring) < MAX_SKB_FRAGS + 2))
+		netif_stop_queue(netdev);
+#endif
+
+	return NETDEV_TX_OK;
+}
+
+
 
 static int
 e1000_tx_eob(struct net_device *dev)
