@@ -1,3 +1,18 @@
+2002-03-28 Thursday 00:08  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/userutils.cc, include/click/userutils.hh,
+	include/click/userutils.hh: add compressed_data() and
+	open_uncompress_pipe() functions to localize uncompression handling
+
+2002-03-27 Wednesday 23:06  Eddie Kohler <kohler@aciri.org>
+
+	* README: add elements/test directory, for testing elements
+
+2002-03-27 Wednesday 23:04  Eddie Kohler <kohler@aciri.org>
+
+	* config-linuxmodule.h.in: define uintptr_t in linuxmodule
+	(<linux/types.h> doesn't define it
+
 2002-03-26 Tuesday 20:50  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4: update endianness test; it failed on Solaris

@@ -1,3 +1,47 @@
+2002-03-28 Thursday 00:09  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: analysis/fromdagdump.cc (1.4), userlevel/fromdump.cc
+	(1.61), analysis/fromipsumdump.cc (1.15),
+	analysis/fromnetflowsumdump.cc (1.6): use compressed_data() etc.
+	functions
+
+2002-03-28 Thursday 00:08  Eddie Kohler <kohler@aciri.org>
+
+	* lib/userutils.cc (1.22), include/click/userutils.hh (1.9): add
+	compressed_data() and open_uncompress_pipe() functions to localize
+	uncompression handling
+
+2002-03-27 Wednesday 23:10  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click-elem2man (1.19), elements/test/checkpacket.cc (1.1),
+	elements/test/checkpacket.hh (1.1), elements/test/packettest.cc
+	(1.1), elements/test/packettest.hh (1.1): add test elements
+
+2002-03-27 Wednesday 23:07  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/: acclick.m4 (1.6), aclocal.m4 (1.2): update
+	acclick.m4/aclocal.m4 from top-level directory
+
+2002-03-27 Wednesday 23:05  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-install/common.cc (1.4): click-uninstall bug fix:
+	read /proc/click/threads as you should
+
+2002-03-27 Wednesday 23:05  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click-install.1 (1.10), tools/click-install/click-install.cc
+	(1.45): click-install supports --expression
+
+2002-03-27 Wednesday 23:04  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.179), doc/click-elem2man (1.18), README (1.30):
+	add elements/test directory, for testing elements
+
+2002-03-27 Wednesday 23:04  Eddie Kohler <kohler@aciri.org>
+
+	* config-linuxmodule.h.in (1.6): define uintptr_t in linuxmodule
+	(<linux/types.h> doesn't define it
+
 2002-03-26 Tuesday 20:50  Eddie Kohler <kohler@aciri.org>
 
 	* acclick.m4 (1.12), aclocal.m4 (1.12): update endianness test; it
