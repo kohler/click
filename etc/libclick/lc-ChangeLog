@@ -1,3 +1,8 @@
+2002-01-14 Monday 20:39  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc:
+	add ErrorHandler::ERROR_RESULT and OK_RESULT constants
+
 2002-01-11 Friday 02:42  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/confparse.cc: s/ACIRI/ICSI/g

@@ -1,3 +1,18 @@
+2002-01-14 Monday 20:39  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh (1.15), lib/error.cc (1.37): add
+	ErrorHandler::ERROR_RESULT and OK_RESULT constants
+
+2002-01-14 Monday 20:39  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: progressbar.hh (1.10), todump.hh (1.22):
+	documentation typos
+
+2002-01-14 Monday 20:38  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/todevice.cc (1.18): rearrange declaration
+	order
+
 2002-01-14 Monday 10:59  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: discardnotify.cc (1.1), discardnotify.hh (1.1),
