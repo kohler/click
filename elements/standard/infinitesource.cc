@@ -79,8 +79,10 @@ InfiniteSource::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 InfiniteSource::initialize(ErrorHandler *errh)
 {
-  if (output_is_push(0))
+  if (output_is_push(0)) {
     ScheduleInfo::initialize_task(this, &_task, errh);
+    _nonfull_signal = Notifier::downstream_nonfull_signal(this, 0, &_task);
+  }
   return 0;
 }
 
@@ -94,7 +96,7 @@ InfiniteSource::cleanup(CleanupStage)
 bool
 InfiniteSource::run_task()
 {
-  if (!_active)
+  if (!_active || !_nonfull_signal)
     return false;
   int n = _burstsize;
   if (_limit >= 0 && _count + n >= _limit)

@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/etheraddress.hh>
 #include <click/timer.hh>
+#include <click/notifier.hh>
 
 /*
 =c
@@ -102,6 +103,7 @@ class FromHost : public AnyDevice { public:
     Timer _wakeup_timer;
 
     Packet *_queue;		// to prevent race conditions
+    NotifierSignal _nonfull_signal;
 
     static net_device *new_device(const char *);
     static int fl_tx(struct sk_buff *, net_device *);

@@ -2,6 +2,7 @@
 #define CLICK_INFINITESOURCE_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
@@ -65,6 +66,8 @@ in conjunction with PokeHandlers.
 Useful for profiling and experiments.  Packets' timestamp annotations are set
 to the current time.
 
+InfiniteSource listens for downstream full notification.
+
 =h count read-only
 Returns the total number of packets that have been generated.
 =h reset write-only
@@ -116,6 +119,7 @@ class InfiniteSource : public Element { public:
   bool _stop : 1;
   Task _task;
   String _data;
+  NotifierSignal _nonfull_signal;
   
   static String read_param(Element *, void *);
   static int change_param(const String &, Element *, void *, ErrorHandler *);

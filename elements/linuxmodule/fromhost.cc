@@ -212,6 +212,7 @@ int
 FromHost::initialize(ErrorHandler *errh)
 {
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
+    _nonfull_signal = Notifier::downstream_nonfull_signal(this, 0, &_task);
     if (_dev->flags & IFF_UP) {
 	_wakeup_timer.initialize(this);
 	_wakeup_timer.schedule_now();
@@ -317,7 +318,9 @@ fl_stats(net_device *dev)
 bool
 FromHost::run_task()
 {
-    if (Packet *p = _queue) {
+    if (!_nonfull_signal)
+	return false;
+    else if (Packet *p = _queue) {
 	_queue = 0;
 	netif_wake_queue(_dev);
 	output(0).push(p);
