@@ -54,6 +54,25 @@ class SRQueryResponder : public Element {
   EtherAddress _en; // My ethernet address.
   uint32_t _et;     // This protocol's ethertype
 
+
+
+  class Seen {
+  public:
+    IPAddress _src;
+    IPAddress _dst;
+    uint32_t _seq;
+
+    Path last_path_response;
+    Seen(IPAddress src, IPAddress dst, uint32_t seq) {
+      _src = src;
+      _dst = dst;
+      _seq = seq;
+    }
+    Seen();
+  };
+
+  DEQueue<Seen> _seen;
+
   class LinkTable *_link_table;
   class ARPTable *_arp_table;
 
@@ -65,7 +84,7 @@ class SRQueryResponder : public Element {
   EtherAddress find_arp(IPAddress ip);
   void got_arp(IPAddress ip, EtherAddress en);
 
-  void start_reply(struct srpacket *pk);
+  void start_reply(IPAddress src, IPAddress qdst, uint32_t seq);
   void forward_reply(struct srpacket *pk);
   void got_reply(struct srpacket *pk);
 

@@ -279,7 +279,8 @@ MadwifiRate::print_rates()
 
 
 enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, 
-      H_OFFSET, H_ACTIVE};
+      H_OFFSET, H_ACTIVE,
+      H_ALT_RATE};
 
 
 static String
@@ -297,6 +298,8 @@ MadwifiRate_read_param(Element *e, void *thunk)
     return String(td->_packet_size_threshold) + "\n";
   case H_OFFSET:
     return String(td->_offset) + "\n";
+  case H_ALT_RATE:
+    return String(td->_alt_rate) + "\n";
   case H_RATES: {
     return td->print_rates();
   }
@@ -318,6 +321,13 @@ MadwifiRate_write_param(const String &in_s, Element *e, void *vparam,
     if (!cp_bool(s, &debug)) 
       return errh->error("debug parameter must be boolean");
     f->_debug = debug;
+    break;
+  }
+  case H_ALT_RATE: {
+    bool alt_rate;
+    if (!cp_bool(s, &alt_rate)) 
+      return errh->error("alt_rate parameter must be boolean");
+    f->_alt_rate = alt_rate;
     break;
   }
   case H_STEPUP: {
@@ -376,6 +386,7 @@ MadwifiRate::add_handlers()
   add_read_handler("stepdown", MadwifiRate_read_param, (void *) H_STEPDOWN);
   add_read_handler("offset", MadwifiRate_read_param, (void *) H_OFFSET);
   add_read_handler("active", MadwifiRate_read_param, (void *) H_ACTIVE);
+  add_read_handler("alt_rate", MadwifiRate_read_param, (void *) H_ALT_RATE);
 
   add_write_handler("debug", MadwifiRate_write_param, (void *) H_DEBUG);
   add_write_handler("threshold", MadwifiRate_write_param, (void *) H_THRESHOLD);
@@ -384,6 +395,7 @@ MadwifiRate::add_handlers()
   add_write_handler("offset", MadwifiRate_write_param, (void *) H_OFFSET);
   add_write_handler("reset", MadwifiRate_write_param, (void *) H_RESET);
   add_write_handler("active", MadwifiRate_write_param, (void *) H_ACTIVE);
+  add_write_handler("alt_rate", MadwifiRate_write_param, (void *) H_ALT_RATE);
 
 }
 // generate Vector template instance

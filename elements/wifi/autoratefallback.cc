@@ -245,7 +245,7 @@ AutoRateFallback::print_rates()
 
 
 enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, 
-      H_OFFSET, H_ACTIVE};
+      H_OFFSET, H_ACTIVE, H_ALT_RATE};
 
 
 static String
@@ -268,6 +268,8 @@ AutoRateFallback_read_param(Element *e, void *thunk)
   }
   case H_ACTIVE: 
     return String(td->_active) + "\n";
+  case H_ALT_RATE: 
+    return String(td->_alt_rate) + "\n";
   default:
     return String();
   }
@@ -324,6 +326,13 @@ AutoRateFallback_write_param(const String &in_s, Element *e, void *vparam,
     f->_active = active;
     break;
   }
+ case H_ALT_RATE: {
+    bool alt_rate;
+    if (!cp_bool(s, &alt_rate)) 
+      return errh->error("alt_rate must be boolean");
+    f->_alt_rate = alt_rate;
+    break;
+  }
   }
   return 0;
 }
@@ -341,6 +350,7 @@ AutoRateFallback::add_handlers()
   add_read_handler("stepdown", AutoRateFallback_read_param, (void *) H_STEPDOWN);
   add_read_handler("offset", AutoRateFallback_read_param, (void *) H_OFFSET);
   add_read_handler("active", AutoRateFallback_read_param, (void *) H_ACTIVE);
+  add_read_handler("alt_rate", AutoRateFallback_read_param, (void *) H_ALT_RATE);
 
   add_write_handler("debug", AutoRateFallback_write_param, (void *) H_DEBUG);
   add_write_handler("threshold", AutoRateFallback_write_param, (void *) H_THRESHOLD);
@@ -349,7 +359,7 @@ AutoRateFallback::add_handlers()
   add_write_handler("reset", AutoRateFallback_write_param, (void *) H_RESET);
   add_write_handler("offset", AutoRateFallback_write_param, (void *) H_OFFSET);
   add_write_handler("active", AutoRateFallback_write_param, (void *) H_ACTIVE);
-
+  add_write_handler("alt_rate", AutoRateFallback_write_param, (void *) H_ALT_RATE);
 }
 // generate Vector template instance
 #include <click/bighashmap.cc>

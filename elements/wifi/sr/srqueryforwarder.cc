@@ -175,7 +175,7 @@ SRQueryForwarder::process_query(struct srpacket *pk1)
 
   
   /* schedule timer */
-  int delay_time = random() % 750 + 1;
+  int delay_time = random() % 1750 + 1;
   sr_assert(delay_time > 0);
   
   struct timeval delay;
@@ -185,7 +185,7 @@ SRQueryForwarder::process_query(struct srpacket *pk1)
   _seen[si]._forwarded = false;
   Timer *t = new Timer(static_forward_query_hook, (void *) this);
   t->initialize(this);
-  t->schedule_at(_seen[si]._to_send);
+  t->schedule_after_ms(delay_time);
 
 }
 void
@@ -203,9 +203,21 @@ void
 SRQueryForwarder::forward_query(Seen *s)
 {
 
+  s->_forwarded = true;
+  _link_table->dijkstra(false);
+  if (0) {
+    struct timeval now;
+    click_gettimeofday(&now);
+    StringAccum sa;
+    sa << now - s->_when;
+    click_chatter("%{element} :: %s :: waited %s\n",
+		  this,
+		  __func__,
+		  sa.take_string().cc());
+  }
+
   IPAddress src = s->_src;
   Path best = _link_table->best_route(src, false);
-  
   bool best_valid = _link_table->valid_route(best);
 
   if (!best_valid) {
@@ -249,7 +261,6 @@ SRQueryForwarder::forward_query(Seen *s)
 		 _link_table->get_link_age(best[i], best[i+1]));
   }
 	       
-  s->_forwarded = true;
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
   memset(eh->ether_dhost, 0xff, 6);

@@ -166,13 +166,42 @@ SRQueryResponder::forward_reply(struct srpacket *pk1)
 
 }
 
-void SRQueryResponder::start_reply(struct srpacket *pk_in)
+void SRQueryResponder::start_reply(IPAddress src, IPAddress qdst, uint32_t seq)
 {
   _link_table->dijkstra(false);
-  IPAddress src = pk_in->get_link_node(0);
   Path best = _link_table->best_route(src, false);
   bool best_valid = _link_table->valid_route(best);
 
+  
+  int si = 0;
+  
+  for(si = 0; si < _seen.size(); si++){
+    if(src == _seen[si]._src && seq == _seen[si]._seq) {
+      break;
+    }
+  }
+
+  if (si == _seen.size()) {
+    if (_seen.size() >= 100) {
+      _seen.pop_front();
+    }
+    _seen.push_back(Seen(src, qdst, seq));
+    si = _seen.size() - 1;
+  }
+
+  if (best == _seen[si].last_path_response) {
+    /*
+     * only send replies if the "best" path is different
+     * from the last reply
+     */
+    return;
+  }
+
+  _seen[si]._src = src;
+  _seen[si]._dst = qdst;
+  _seen[si]._seq = seq;
+  _seen[si].last_path_response = best;
+  
   if (!best_valid) {
     click_chatter("%{element} :: %s :: invalid route for src %s: %s\n",
 		  this,
@@ -186,8 +215,8 @@ void SRQueryResponder::start_reply(struct srpacket *pk_in)
   if (_debug) {
     click_chatter("%{element}: start_reply %s <- %s\n",
 		  this,
-		  pk_in->get_link_node(0).s().cc(),
-		  IPAddress(pk_in->_qdst).s().cc());
+		  src.s().cc(),
+		  qdst.s().cc());
   }
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
@@ -200,10 +229,10 @@ void SRQueryResponder::start_reply(struct srpacket *pk_in)
   pk_out->_version = _sr_version;
   pk_out->_type = PT_REPLY;
   pk_out->_flags = 0;
-  pk_out->set_seq(pk_in->seq());
+  pk_out->set_seq(seq);
   pk_out->set_num_links(links);
   pk_out->set_next(links-1);
-  pk_out->_qdst = pk_in->_qdst;
+  pk_out->_qdst = qdst;
 
   
   for (int i = 0; i < links; i++) {
@@ -262,7 +291,7 @@ SRQueryResponder::push(int, Packet *p_in)
   
   if (type == PT_QUERY) {
     if (dst == _ip) {
-      start_reply(pk);
+      start_reply(pk->get_link_node(0), pk->_qdst, pk->seq());
     }
     p_in->kill();
     return;

@@ -188,11 +188,22 @@ GatewaySelector::forward_ad_hook()
 void
 GatewaySelector::forward_ad(Seen *s)
 {
-  int links = s->_hops.size();
 
-  assert(s->_hops.size() == s->_fwd_metrics.size()+1);
-  assert(s->_hops.size() == s->_rev_metrics.size()+1);
-  assert(s->_hops.size() == s->_seqs.size()+1);
+  s->_forwarded = true;
+  _link_table->dijkstra(false);
+  IPAddress src = s->_gw;
+  Path best = _link_table->best_route(src, false);
+  bool best_valid = _link_table->valid_route(best);
+  
+  if (!best_valid) {
+    click_chatter("%{element} :: %s :: invalid route from src %s\n",
+		  this,
+		  __func__,
+		  src.s().cc());
+    return;
+  }
+
+  int links = best.size() - 1;
 
   int len = srpacket::len_wo_data(links);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
@@ -208,24 +219,21 @@ GatewaySelector::forward_ad(Seen *s)
   pk->_seq = htonl(s->_seq);
   pk->set_num_links(links);
 
-  for(int i=0; i < links-1; i++) {
-    assert(i + 1 < s->_hops.size());
-    pk->set_link(i,
-		 s->_hops[i], s->_hops[i+1],
-		 s->_fwd_metrics[i], s->_rev_metrics[i],
-		 s->_seqs[i],
-		 0);
+  for(int i=0; i < links; i++) {
+    if (_link_table) {
+      pk->set_link(i,
+		   best[i], best[i+1],
+		   _link_table->get_link_metric(best[i], best[i+1]),
+		   _link_table->get_link_metric(best[i+1], best[i]),
+		   _link_table->get_link_seq(best[i], best[i+1]),
+		   _link_table->get_link_age(best[i], best[i+1]));
+    } else {
+      pk->set_link(i,
+		   best[i], best[i+1],
+		   0,0,0,0);
+    }
   }
 
-  assert(links-1 < s->_hops.size());
-  IPAddress neighbor = s->_hops[links-1];
-  pk->set_link(links-1,
-	       neighbor, _ip,
-	       (_link_table) ? _link_table->get_link_metric(neighbor, _ip) : 0,
-	       (_link_table) ? _link_table->get_link_metric(_ip, neighbor) : 0,
-	       (_link_table) ? _link_table->get_link_seq(_ip, neighbor) : 0,
-	       (_link_table) ? _link_table->get_link_age(_ip, neighbor) : 0);
-  s->_forwarded = true;
   send(p);
 }
 
@@ -315,31 +323,18 @@ GatewaySelector::push(int port, Packet *p_in)
     return;
   }
     
-  Vector<IPAddress> hops;
-  Vector<int> fwd_metrics;
-  Vector<int> rev_metrics;
-  Vector<uint32_t> seqs;
-  int fwd_metric = 0;
-  int rev_metric = 0;
   for(int i = 0; i < pk->num_links(); i++) {
     IPAddress a = pk->get_link_node(i);
     IPAddress b = pk->get_link_node(i+1);
-    hops.push_back(a);
-    if (a == _ip) {
-      /* I'm already in this route! */
-      p_in->kill();
-      return;
-    }
-
     uint32_t fwd_m = pk->get_link_fwd(i);
     uint32_t rev_m = pk->get_link_rev(i);
     uint32_t seq = pk->get_link_seq(i);
-    fwd_metrics.push_back(fwd_m);
-    rev_metrics.push_back(rev_m);
-    seqs.push_back(seq);
-    fwd_metric += fwd_m;
-    rev_metric += rev_m;
-
+    
+    if (a == _ip || b == _ip || 
+	!fwd_m || !rev_m || !seq) {
+      p_in->kill();
+      return;
+    }
 
     /* don't update my immediate neighbor. see below */
     if (fwd_m && !update_link(a,b,seq,fwd_m)) {
@@ -361,17 +356,10 @@ GatewaySelector::push(int port, Packet *p_in)
   }
 
   IPAddress neighbor = pk->get_link_node(pk->num_links());
-  hops.push_back(neighbor);
   if (_arp_table) {
     _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
   }
   
-  /* also get the metric from the neighbor */
-  int fwd_m =  (_link_table) ? _link_table->get_link_metric(neighbor, _ip) : 0;
-  int rev_m =  (_link_table) ? _link_table->get_link_metric(_ip, neighbor) : 0;
-  fwd_metric += fwd_m;
-  rev_metric += rev_m;
-
   IPAddress gw = pk->_qdst;
   sr_assert(gw);
   GWInfo *nfo = _gateways.findp(gw);
@@ -381,13 +369,19 @@ GatewaySelector::push(int port, Packet *p_in)
   }
   nfo->_ip = gw;
   click_gettimeofday(&nfo->_last_update);
-  
+
+  if (_is_gw) {
+    p_in->kill();
+    return;
+  }
 
   int si = 0;
   uint32_t seq = pk->seq();
   for(si = 0; si < _seen.size(); si++){
     if(gw == _seen[si]._gw && seq == _seen[si]._seq){
-      break;
+      _seen[si]._count++;
+      p_in->kill();
+      return;
     }
   }
 
@@ -399,40 +393,21 @@ GatewaySelector::push(int port, Packet *p_in)
     _seen.push_back(Seen(gw, seq, 0, 0));
   }
   _seen[si]._count++;
-  if (_seen[si]._rev_metric && _seen[si]._rev_metric <= rev_metric) {
-    /* the metric is worse that what we've seen*/
-    p_in->kill();
-    return;
-  }
-
-  click_gettimeofday(&_seen[si]._when);
-  _seen[si]._hops = hops;
-  _seen[si]._fwd_metric = fwd_metric;
-  _seen[si]._rev_metric = rev_metric;
-  _seen[si]._fwd_metrics = fwd_metrics;
-  _seen[si]._rev_metrics = rev_metrics;
-  _seen[si]._seqs = seqs;
 
 
-  if (timercmp(&_seen[si]._when, &_seen[si]._to_send, <)) {
-    /* a timer has already been scheduled */
-    p_in->kill();
-    return;
-  } else {
-    /* schedule timer */
-    int delay_time = (random() % 750) + 1;
-    sr_assert(delay_time > 0);
-    
-    struct timeval delay;
-    delay.tv_sec = 0;
-    delay.tv_usec = delay_time*1000;
-    timeradd(&_seen[si]._when, &delay, &_seen[si]._to_send);
-    _seen[si]._forwarded = false;
-    Timer *t = new Timer(static_forward_ad_hook, (void *) this);
-    t->initialize(this);
-    
-    t->schedule_at(_seen[si]._to_send);
-  }
+  /* schedule timer */
+  int delay_time = (random() % 2000) + 1;
+  sr_assert(delay_time > 0);
+  
+  struct timeval delay;
+  delay.tv_sec = 0;
+  delay.tv_usec = delay_time*1000;
+  timeradd(&_seen[si]._when, &delay, &_seen[si]._to_send);
+  _seen[si]._forwarded = false;
+  Timer *t = new Timer(static_forward_ad_hook, (void *) this);
+  t->initialize(this);
+  
+  t->schedule_after_ms(delay_time);
   
 
   p_in->kill();

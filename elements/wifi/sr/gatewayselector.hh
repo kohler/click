@@ -71,18 +71,14 @@ private:
   public:
     IPAddress _gw;
     u_long _seq;
-    int _fwd_metric;
-    int _rev_metric;
     int _count;
     struct timeval _when; /* when we saw the first query */
     struct timeval _to_send;
     bool _forwarded;
-    Vector<IPAddress> _hops;
-    Vector<int> _fwd_metrics;
-    Vector<int> _rev_metrics;
-    Vector<uint32_t> _seqs;
     Seen(IPAddress gw, u_long seq, int fwd, int rev) {
-      _gw = gw; _seq = seq; _count = 0; _rev_metric = rev; _fwd_metric = fwd;
+      _gw = gw; 
+      _seq = seq; 
+      _count = 0;
     }
     Seen();
   };
