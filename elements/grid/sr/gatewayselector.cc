@@ -89,9 +89,14 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
 
   struct timeval now;
   struct timeval warmup;
-
+  struct timeval warmup_forward;
   click_gettimeofday(&now);
-  warmup.tv_sec = warmup_period;
+
+  warmup_forward.tv_sec = warmup_period;
+  warmup_forward.tv_usec = 0;
+  timeradd(&now, &warmup, &_warmup_forward_expire);
+
+  warmup.tv_sec = warmup_period*2;
   warmup.tv_usec = 0;
   timeradd(&now, &warmup, &_warmup_expire);
 
@@ -292,19 +297,20 @@ GatewaySelector::push(int port, Packet *p_in)
   click_gettimeofday(&now);
   
   
-  if (timercmp(&now, &_warmup_expire, <)) {
-    p_in->kill();
-    return;
-  }
-  
-  static bool warmup_finished = false;
-  if (!warmup_finished) {
-    click_chatter("GatewaySelector %s: warmup finished\n",
-		  id().cc());
-    warmup_finished = true;
-  }
-
   if (port == 1) {
+
+    if (timercmp(&now, &_warmup_expire, <)) {
+      p_in->kill();
+      return;
+    }
+    
+    static bool warmup_finished = false;
+    if (!warmup_finished) {
+      click_chatter("GatewaySelector %s: warmup finished\n",
+		    id().cc());
+      warmup_finished = true;
+    }
+    
     if (!valid_gateway(_current_gateway)) {
       if (!pick_new_gateway()) {
 	click_chatter("%s: couldn't find a valid gateway!\n", id().cc());
@@ -317,6 +323,10 @@ GatewaySelector::push(int port, Packet *p_in)
     return;
   }
 
+  if (timercmp(&now, &_warmup_forward_expire, <)) {
+    p_in->kill();
+    return;
+  }
 
 
   struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
