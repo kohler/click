@@ -1,3 +1,10 @@
+2004-05-04 Tuesday 13:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/bandwidthshaper.cc (1.13),
+	elements/standard/bandwidthshaper.hh (1.10),
+	include/click/gaprate.hh (1.6), lib/gaprate.cc (1.8): whitespace
+	nits
+
 2004-05-04 Tuesday 00:50  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/standard/StrideSched-01.testie (1.1): add StrideSched test
