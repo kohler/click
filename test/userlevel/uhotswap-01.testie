@@ -4,17 +4,15 @@ usleep () {
    click -e "DriverManager(wait $1us)"
 }
 
-click -R -p 8000 -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle" &
-clicktodie=$!
-usleep 50
-cat CSIN | nc localhost 8000 >CSOUT
+(usleep 5000 && nc localhost 8000 <CSIN >CSOUT) &
+click -R -p 8000 -e "Idle -> s :: Switch(0) -> Idle; s[1] -> Idle; DriverManager(wait 1s, stop)"
 
 %file CSIN
-read s.switch
-write hotconfig Idle -> s :: Switch(1) -> Idle; s[1] -> Idle
+read s.config
+write hotconfig Idle -> s :: Switch(1) -> Idle; s[1] -> Idle; DriverManager(wait_stop, wait 0.01s, stop)
 read s.config
 write hotconfig Print
-read s.switch
+read s.config
 write stop true
 
 %expect CSOUT
