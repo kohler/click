@@ -14,7 +14,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "lookupgridroute.hh"
+#include "lookuplocalgridroute.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "click_ether.h"
