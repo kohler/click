@@ -1,3 +1,9 @@
+2005-03-14 Monday 12:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fromsocket.cc (1.5), fromsocket.hh (1.4),
+	tosocket.hh (1.4): ensure FromSocket initializes before ToSocket
+	(Nick Weaver)
+
 2005-03-14 Monday 12:32  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/master.cc (1.28): comment out warning, since we fall back
