@@ -12,7 +12,7 @@ c [0]
 ck [0]
   -> Discard;
 ck [1]
-  -> IP6Print(cksum)
+  -> IP6Print(ip6hl)
   -> Discard;
 
 c [1] 
