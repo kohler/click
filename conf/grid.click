@@ -65,7 +65,7 @@ rps :: GridProbeSender(GRID_MAC_ADDR, GRID_IP);
 rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP, lr, geo, fq);
 rpr :: GridProbeReplyReceiver(PROBE_CHANNEL);
 
-ai :: AiroInfo(an0);
+ai :: AiroInfo(GRID_NET_DEVICE);
 lt :: LinkTracker(2000);
 
 nb :: GridRouteTable(ROUTE_TIMEOUT,
@@ -115,16 +115,23 @@ to_tun0 :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
 
 from_grid_if 
   -> Classifier(12/GRID_ETH_PROTO)
-  //  -> Print("grid")
   -> HostEtherFilter(GRID_MAC_ADDR, 1)
   -> check_grid :: CheckGridHeader
+//  -> PrintGrid("XXX")
   -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0]
+//  -> PrintGrid("post_fr")
   -> ls :: LinkStat(ai, 20000)
+//  -> PrintGrid("post_ls")
   -> lt
+//  -> PrintGrid("post_lt")
+//  -> Print("post_lt", 80)
   -> grid_demux;
 
 grid_demux [0]
-//	       -> Print("gd0 ")
+//	       -> PrintGrid("gd0 ")
+//               -> Print("gd0", 80)
+               -> Align(4, 2)
+//               -> Print("after_gd0_align")
 	       -> [0] lr;
 grid_demux [1]
 //	       -> Print("gd1 ")
@@ -216,7 +223,7 @@ lr [0]
 //       -> Print ("lr0 ")
        -> to_grid_if; // grid packets being local routed
 lr [1]
-//       -> Print ("lr1 ")
+//       -> IPPrint ("lr1_out")
        -> check :: CheckIPHeader; // IP packets getting passed up to kernel
 lr [2]
 //       -> Print ("lr2 ") // packets for GF
@@ -241,7 +248,9 @@ cl [0]
 //     -> Print("cl0 ")
        -> to_tun0;
 
-get_ip :: GetIPAddress(16) -> [1] lr;
+get_ip :: GetIPAddress(16) 
+  // -> IPPrint("lr1_in") 
+-> [1] lr;
 
 cl [1] 
 //     -> Print ("cl1 ")
