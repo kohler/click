@@ -8,9 +8,12 @@
 
 /* Click low-level RPC interface */
 
-#define _CLICK_IOC_VOID	0x20000000
-#define _CLICK_IOC_OUT	0x40000000
-#define _CLICK_IOC_IN	0x80000000
+/* We want consistent ioctl numbers across platforms, so we choose FreeBSD's
+   numbering system (Linux doesn't seem to apply semantics to its numbering
+   system, which switches IOC_OUT and IOC_IN). */
+#define _CLICK_IOC_VOID		0x20000000
+#define _CLICK_IOC_OUT		0x40000000
+#define _CLICK_IOC_IN		0x80000000
 
 #define _CLICK_IOX(d, g, n, sz)	((d) | ((sz) << 16) | ((g) << 8) | (n))
 #define _CLICK_IO(n)		_CLICK_IOX(_CLICK_IOC_VOID, 0xC7, (n), 0)
