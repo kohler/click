@@ -30,7 +30,7 @@ class RandomLossage : public Element {
   
   int _p_drop;			// out of 0xFFFF
   bool _on;
-  u_atomic32_t _drops;
+  uatomic32_t _drops;
   
  public:
   

@@ -100,7 +100,7 @@ class IPEncap : public Element { public:
   bool _aligned;
 #endif
 
-  u_atomic32_t _id;
+  uatomic32_t _id;
 
   static String read_handler(Element *, void *);
   

@@ -48,7 +48,7 @@ public:
 private:
 
   int _spi;
-  u_atomic32_t _rpl;
+  uatomic32_t _rpl;
   static const unsigned int _blks = 8;
 };
 

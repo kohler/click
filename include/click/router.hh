@@ -139,7 +139,7 @@ class Router { public:
   Spinlock _wait_lock;
 #endif
 
-  u_atomic32_t _refcount;
+  uatomic32_t _refcount;
   
   Vector<Element *> _elements;
   Vector<String> _element_names;

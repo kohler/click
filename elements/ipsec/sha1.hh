@@ -41,7 +41,7 @@ public:
 private:
 
   int _op;
-  u_atomic32_t _drops;
+  uatomic32_t _drops;
 
   static const int COMPUTE_AUTH = 0;
   static const int VERIFY_AUTH = 1;

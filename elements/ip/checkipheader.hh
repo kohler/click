@@ -84,8 +84,8 @@ class CheckIPHeader : public Element { public:
   bool _aligned : 1;
 #endif
   bool _verbose : 1;
-  u_atomic32_t _drops;
-  u_atomic32_t *_reason_drops;
+  uatomic32_t _drops;
+  uatomic32_t *_reason_drops;
 
   enum Reason {
     MINISCULE_PACKET,

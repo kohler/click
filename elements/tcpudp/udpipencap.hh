@@ -49,7 +49,7 @@ class UDPIPEncap : public Element { public:
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   bool _aligned : 1;
 #endif
-  u_atomic32_t _id;
+  uatomic32_t _id;
 
 };
 

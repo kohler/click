@@ -32,7 +32,7 @@ public:
 
 private:
 
-  u_atomic32_t _drops;
+  uatomic32_t _drops;
 
 };
 

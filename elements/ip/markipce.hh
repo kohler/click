@@ -38,7 +38,7 @@ class MarkIPCE : public Element { public:
 
  private:
 
-  u_atomic32_t _drops;
+  uatomic32_t _drops;
 
   static String read_handler(Element *, void *);
   

@@ -30,9 +30,9 @@
 class MSQueue : public Element {
 
   int _capacity;
-  u_atomic32_t _head;
-  u_atomic32_t _tail;
-  u_atomic32_t _drops;
+  uatomic32_t _head;
+  uatomic32_t _tail;
+  uatomic32_t _drops;
   Packet **_q;
   Spinlock _lock;
 
@@ -56,7 +56,7 @@ class MSQueue : public Element {
   
   int size() const; 
   int capacity() const                          { return _capacity; }
-  u_atomic32_t drops() const			{ return _drops; }
+  uatomic32_t drops() const			{ return _drops; }
 
   Packet *head() const;
 

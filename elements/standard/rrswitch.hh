@@ -19,7 +19,7 @@
 
 class RoundRobinSwitch : public Element {
 
-  u_atomic32_t _next;
+  uatomic32_t _next;
   
  public:
   

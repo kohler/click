@@ -35,7 +35,7 @@
 
 class IPGWOptions : public Element {
   
-  u_atomic32_t _drops;
+  uatomic32_t _drops;
   struct in_addr _my_ip;
   unsigned *_other_ips;
   int _n_other_ips;

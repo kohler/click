@@ -88,7 +88,7 @@ CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   _verbose = verbose;
   if (details)
-    _reason_drops = new u_atomic32_t[NREASONS];
+    _reason_drops = new uatomic32_t[NREASONS];
 
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment

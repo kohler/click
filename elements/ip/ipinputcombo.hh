@@ -27,7 +27,7 @@
 
 class IPInputCombo : public Element {
   
-  u_atomic32_t _drops;
+  uatomic32_t _drops;
   int _color;
 
   int _n_bad_src;

@@ -35,9 +35,9 @@
 
 class AverageCounter : public Element { protected:
   
-  u_atomic32_t _count;
-  u_atomic32_t _first;
-  u_atomic32_t _last;
+  uatomic32_t _count;
+  uatomic32_t _first;
+  uatomic32_t _last;
   uint32_t _ignore;
   
  public:

@@ -40,8 +40,8 @@ class DynamicUDPIPEncap : public Element {
   unsigned short _dport;
   bool _cksum : 1;
   bool _aligned : 1;
-  u_atomic32_t _id;
-  u_atomic32_t _count;
+  uatomic32_t _id;
+  uatomic32_t _count;
   unsigned _interval;
 
  public:

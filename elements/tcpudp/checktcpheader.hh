@@ -72,8 +72,8 @@ class CheckTCPHeader : public Element { public:
  private:
   
   bool _verbose : 1;
-  u_atomic32_t _drops;
-  u_atomic32_t *_reason_drops;
+  uatomic32_t _drops;
+  uatomic32_t *_reason_drops;
 
   enum Reason {
     NOT_TCP,

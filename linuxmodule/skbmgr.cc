@@ -61,7 +61,7 @@ class RecycledSkbPool { public:
   atomic_t _lock;
 #if __MTCLICK__
   int _last_producer;
-  u_atomic32_t _consumers;
+  uatomic32_t _consumers;
 #else
   int _pad2[2];
 #endif

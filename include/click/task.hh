@@ -86,7 +86,7 @@ class Task { public:
   
 #if __MTCLICK__
   DirectEWMA _cycles;
-  u_atomic32_t _thread_preference;
+  uatomic32_t _thread_preference;
   int _update_cycle_runs;
 #endif
 

@@ -34,7 +34,7 @@ class DropBroadcasts : public Element {
   Packet *simple_action(Packet *);
 
 private:
-  u_atomic32_t _drops;
+  uatomic32_t _drops;
 };
 
 #endif
