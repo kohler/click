@@ -98,7 +98,8 @@ ARPResponder6::make_response(u_char dha[6],   /*  des eth address */
 			     u_char sha[6],   /*  src eth address */
 			     u_char dpa[16],  /*  dst IP6 address */
 			     u_char spa[16],  /*  src IP6 address */
-			     u_char tpa[16])  /*  target eth address */
+			     u_char tpa[16],  /*  target IP6 address */
+			     u_char tha[6])   /*  target eth address */
 
 {
   click_ether *e;
@@ -146,11 +147,75 @@ ARPResponder6::make_response(u_char dha[6],   /*  des eth address */
   }
   
   memcpy(ea->arp_tpa, tpa, 16);
+  ea->option_type = 0x2;
+  ea->option_length = 0x1;
+  memcpy(ea->arp_tha, tha, 6);
   ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), sizeof(click_arp6resp)));
   
   //click_chatter("set checksum of neigh adv messag as : %x", ntohs(ea->checksum));
   return q;
 }
+
+Packet *
+ARPResponder6::make_response2(u_char dha[6],   /*  des eth address */
+			     u_char sha[6],   /*  src eth address */
+			     u_char dpa[16],  /*  dst IP6 address */
+			     u_char spa[16],  /*  src IP6 address */
+			     u_char tpa[16])  /*  target IP6 address */
+			     
+{
+  click_ether *e;
+  click_ip6 *ip6;
+  click_arp6resp2 *ea;
+  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ip6)+ sizeof(*ea));
+  if (q == 0) {
+    click_chatter("in arp responder: cannot make packet!");
+    assert(0);
+  } 
+  memset(q->data(), '\0', q->length());
+  e = (click_ether *) q->data();
+  ip6=(click_ip6 *) (e+1);
+  ea = (click_arp6resp2 *) (ip6 + 1);
+  
+  //set ethernet header
+  memcpy(e->ether_dhost, dha, 6);
+  memcpy(e->ether_shost, sha, 6);
+  e->ether_type = htons(ETHERTYPE_IP6);
+
+  //set ip6 header
+  ip6->ip6_v=6;
+  ip6->ip6_pri=0;
+  ip6->ip6_flow[0]=0;
+  ip6->ip6_flow[1]=0;
+  ip6->ip6_flow[2]=0;
+  ip6->ip6_plen=htons(sizeof(click_arp6resp2));
+  ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
+  ip6->ip6_hlim=0xff; //indicate no router has processed it
+  ip6->ip6_src = IP6Address(spa);
+  ip6->ip6_dst = IP6Address(dpa);
+
+ 
+  //set Neighborhood Solicitation Validation Message
+  ea->type = 0x88; 
+  ea->code =0;
+ 
+  ea->flags = 0x40; //  this is the same as setting the following
+                    //  ea->sender_is_router = 0;
+                    //  ea->solicited =1;
+                    //  ea->override = 0;
+  
+  for (int i=0; i<3; i++) {
+    ea->reserved[i] = 0;
+  }
+  
+  memcpy(ea->arp_tpa, tpa, 16);
+ 
+  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), sizeof(click_arp6resp2)));
+  
+  //click_chatter("set checksum of neigh adv messag as : %x", ntohs(ea->checksum));
+  return q;
+}
+
 
 bool
 ARPResponder6::lookup(IP6Address a, EtherAddress &ena)
@@ -206,8 +271,15 @@ ARPResponder6::simple_action(Packet *p)
 	{
 	  memcpy(&spa, ipa.data(), 16); 
 	  memcpy(&host_ether, ena.data(),6);
+	  if ((e->ether_dhost[0]==0x33) && (e->ether_dhost[1]==0x33)) {
+	    click_chatter("this is multicast neigh. solitation msg");
 	  //use the finded ip6address as its source ip6 address in the header in neighborhood advertisement message packet
-	  q = make_response(e->ether_shost, host_ether, dpa, spa, tpa);
+	  
+	    q = make_response(e->ether_shost, host_ether, dpa, spa, tpa, host_ether);
+	  }
+	  else {
+	    q = make_response2(e->ether_shost, host_ether, dpa, spa, tpa); 
+	  }
 	}
     } 
   

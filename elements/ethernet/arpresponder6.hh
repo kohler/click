@@ -49,7 +49,16 @@ public:
   
   //void set_map(IP6Address dst, IP6Address mask, EtherAddress);
 
+  //response to multicast neighborhood solitation message 
+  // which is querying the ethernet address of the targest IP6 address
   Packet *make_response(unsigned char dha[6], unsigned char sha[6],
+                        unsigned char dpa[16], unsigned char spa[16],
+			unsigned char tpa[16], unsigned char tha[6]);
+
+
+  //response to unicast neighborhood solitation message 
+  //which is veryfying the ethernet address of the targest IP6 address
+  Packet *make_response2(unsigned char dha[6], unsigned char sha[6],
                         unsigned char dpa[16], unsigned char spa[16],
 			unsigned char tpa[16]);
 
