@@ -1,5 +1,3 @@
-elements/ip/ipratemon.hh
-elements/ip/ipratemon.cc
 elements/ip/ipflexmon.hh
 elements/ip/ipflexmon.cc
 elements/ip/kinkyratemon.hh
@@ -16,6 +14,4 @@ elements/ipsec/esp.hh
 elements/ipsec/esp.cc
 elements/standard/block.hh
 elements/standard/block.cc
-elements/standard/compblock.hh
-elements/standard/compblock.cc
 elements/grid
