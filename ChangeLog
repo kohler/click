@@ -1,3 +1,12 @@
+2005-01-20 Thursday 11:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fromhost.hh (1.5): man page title nit
+
+2005-01-20 Thursday 11:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/IPRewriter/IPAddrRewriter-02.testie (1.2): add test for IP
+	header correctness
+
 2005-01-20 Thursday 02:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/: ip/ipaddrpairrewriter.cc (1.2), ip/ipaddrrewriter.cc
