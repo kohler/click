@@ -515,7 +515,7 @@ Router::check_push_and_pull(ErrorHandler *errh)
   for (int e = 0; e < nelements(); e++) {
     Subvector<int> i(input_pers, _input_pidx[e], _elements[e]->ninputs());
     Subvector<int> o(output_pers, _output_pidx[e], _elements[e]->noutputs());
-    _elements[e]->set_processing_vector(i, o);
+    _elements[e]->initialize_ports(i, o);
   }
   return 0;
 }
@@ -1336,13 +1336,13 @@ Router::element_ports_string(int fi) const
   for (int i = 0; i < f->ninputs(); i++) {
     // processing
     const char *persid = (f->input_is_pull(i) ? "pull" : "push");
-    if (in_pers[i] == Element::VAGNOSTIC) sa << "(" << persid << ")\t";
+    if (in_pers[i] == Element::VAGNOSTIC) sa << persid << "-\t";
     else sa << persid << "\t";
     
     // counts
 #if CLICK_STATS >= 1
     if (f->input_is_pull(i) || CLICK_STATS >= 2)
-      sa << f->input(i).packet_count() << "\t";
+      sa << f->input(i).npackets() << "\t";
     else
 #endif
       sa << "-\t";
@@ -1354,7 +1354,7 @@ Router::element_ports_string(int fi) const
       if (_hookup_to[c] == h) {
 	sa << sep << _element_names[_hookup_from[c].idx];
 	sa << " [" << _hookup_from[c].port << "]";
-	sep = " ";
+	sep = ", ";
       }
     sa << "\n";
   }
@@ -1369,7 +1369,7 @@ Router::element_ports_string(int fi) const
     // counts
 #if CLICK_STATS >= 1
     if (f->output_is_push(i) || CLICK_STATS >= 2)
-      sa << f->output(i).packet_count() << "\t";
+      sa << f->output(i).npackets() << "\t";
     else
 #endif
       sa << "-\t";
@@ -1381,7 +1381,7 @@ Router::element_ports_string(int fi) const
       if (_hookup_from[c] == h) {
 	sa << sep << "[" << _hookup_to[c].port << "] ";
 	sa << _element_names[_hookup_to[c].idx];
-	sep = " ";
+	sep = ", ";
       }
     sa << "\n";
   }
