@@ -1,3 +1,7 @@
+2004-04-17 Saturday 20:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-compile.in (1.30): nitlet
+
 2004-04-17 Saturday 12:28  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.114), etc/libclick/Makefile.in (1.9),
