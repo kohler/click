@@ -20,7 +20,7 @@ class String { public:
   inline String(const String &);
   String(const char *cc)		{ assign(cc, -1); }
   String(const char *cc, int l)		{ assign(cc, l); }
-  String(const char *s1, const char *s2) { assign(s1, s2 - s1); }
+  String(const char *s1, const char *s2) { assign(s1, (s2>s1 ? s2-s1 : 0)); }
 #ifdef HAVE_PERMSTRING
   inline String(PermString p);
 #endif
