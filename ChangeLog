@@ -1,3 +1,25 @@
+2001-08-20 Monday 22:12  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/iprw.cc (1.37): nitlet
+
+2001-08-20 Monday 22:05  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: ip/iprw.cc (1.36), ip/iprw.hh (1.17),
+	tcpudp/iprewriter.cc (1.24), tcpudp/iprewriter.hh (1.13),
+	tcpudp/tcprewriter.cc (1.13), tcpudp/tcprewriter.hh (1.5): NAT
+	elements: improve free_tracked usage; bug fixes; minor performance
+	issues
+
+2001-08-20 Monday 22:05  Eddie Kohler <kohler@aciri.org>
+
+	* elements/tcpudp/tcpipsend.cc (1.6): TCPIPSend: remember to set IP
+	header annotation
+
+2001-08-20 Monday 22:04  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipflowid.hh (1.6), lib/ipflowid.cc (1.12): add
+	IPFlowID::unparse() method for name consistency
+
 2001-08-20 Monday 18:03  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* etc/: linux-2.4.9-patch (1.2), make-linux24-patch (1.2),
