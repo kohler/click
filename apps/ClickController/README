@@ -1,4 +1,4 @@
-This Java program is a graphical user interface for interacting with
+    This Java program is a graphical user interface for interacting with
 user-level Click configurations via the ControlSocket(n) element. Say a
 Click configuration is running on host HOSTNAME with a ControlSocket
 element listening on port PORT. Then you can start ClickController with the
@@ -8,6 +8,17 @@ command line
 
 to see the configuration, including its elements and their handlers.
 
-The ClickController program is preliminary and is being provided "as is".
+    The ClickController program is preliminary and is being provided "as is".
 Would you like to hack on it? Please do! Compiling it requires Java-1.2 or
 above, including the Swing elements.
+
+COMPILING AND RUNNING
+---------------------
+
+    ClickController requires the Java-1.2 or later runtime. You can
+download one version of this runtime from Sun's web site, java.sun.com. On
+Linux, for example, you can install the j2re-1.3.1 package, then run
+`jikes' and `java' as follows:
+
+	jikes -classpath /usr/java/jre1.3.1/lib/rt.jar:. *.java
+	/usr/java/jre1.3.1/bin/java ClickController [ARGS]
