@@ -16,6 +16,7 @@ class Packet {
     char fix_ip_src;    // flag: asks FixIPSrc to set ip_src.
     char param_off;     // for ICMP Parameter Problem, byte offset of error.
     char color;         // one of 255 colors set by Paint element.
+    int siblings;       // written by Monitor, read by Block
 #ifdef __KERNEL__
     union {
       cycles_t cycles[4];
@@ -140,6 +141,8 @@ class Packet {
   char param_off_anno() const		{ return anno()->param_off; }
   void set_color_anno(char c)		{ anno()->color = c; }
   char color_anno() const		{ return anno()->color; }
+  void set_siblings_anno(int s)	        { anno()->siblings = s; }
+  int siblings_anno() const		{ return anno()->siblings; }
 #ifdef __KERNEL__
   void set_cycle_anno(int i, cycles_t v) { anno()->p.cycles[i] = v; }
   void set_metric0_anno(int i, unsigned v) { anno()->p.perf.m0[i] = v; }

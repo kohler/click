@@ -53,6 +53,7 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
     return -1;
   }
   clean(_base);
+  _base->base = 0;
 
   // SD1 VAL1, ..., SDx VALx
   int change;
@@ -92,6 +93,7 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
     _inputs.push_back(inp);
   }
 
+  set_since();
   return 0;
 #else
   click_chatter("Monitor doesn't know how to handle non-IPv4!");
@@ -119,7 +121,7 @@ Monitor::push(int port, Packet *p)
   } else
     a = p->dst_ip_anno();
 
-  update(a, _inputs[port]->change);
+  p->set_siblings_anno(update(a, _inputs[port]->change));
   output(port).push(p);
 }
 
@@ -129,10 +131,11 @@ Monitor::push(int port, Packet *p)
 //
 // XXX: Make this interrupt driven.
 //
-void
+int
 Monitor::update(IPAddress a, int val)
 {
   assert(_base != NULL);
+  int ret;
   unsigned int saddr = a.saddr();
 
   struct _stats *s = _base;
@@ -140,7 +143,6 @@ Monitor::update(IPAddress a, int val)
   int bitshift;
   for(bitshift = ((BYTES-1)*8); bitshift >= 0; bitshift -= 8) {
     unsigned char byte = ((saddr >> bitshift) & 0x000000ff);
-    // click_chatter("byte is %d", byte);
     c = &(s->counter[byte]);
 
     if(c->flags & SPLIT)
@@ -154,6 +156,8 @@ Monitor::update(IPAddress a, int val)
   assert(!(c->flags & SPLIT));
 
   c->value += val;
+  ret = c->value;
+
 
   // Did value get larger than THRESH within one second?
   if(c->value >= _thresh) {
@@ -161,14 +165,19 @@ Monitor::update(IPAddress a, int val)
     if(jiffdiff < 100) {        // 100 jiffs per second
       if(bitshift) {            // can't split last level
         c->flags |= SPLIT;
-        c->next_level = new struct _stats;
-        clean(c->next_level);
+        struct _stats *tmp = new struct _stats;
+        clean(tmp);
+        tmp->base = c->value;
+        c->next_level = tmp;
       }
     } else {
       c->value = 0;
+      ret = 0;
       c->last_update = click_jiffies();
     }
   }
+
+  return ret;
 }
 
 
@@ -202,7 +211,7 @@ Monitor::print(_stats *s, String ip = "")
 
 
     if(s->counter[i].flags & SPLIT) {
-      ret += this_ip + "\t*\n";
+      ret += this_ip + "\t*\t" + String(s->counter[i].next_level->base) + "\n";
       ret += print(s->counter[i].next_level, "\t" + this_ip);
     } else if(s->counter[i].value != 0)
       ret += this_ip + "\t" + String(s->counter[i].value) + "\n";
@@ -210,6 +219,14 @@ Monitor::print(_stats *s, String ip = "")
   return ret;
 }
 
+
+inline void
+Monitor::set_since()
+{
+  struct timeval t;
+  click_gettimeofday(&t);
+  _since = t.tv_sec;
+}
 
 
 String
@@ -225,6 +242,14 @@ Monitor::thresh_read_handler(Element *e, void *)
 {
   Monitor *me = (Monitor *) e;
   return String(me->_thresh) + "\n";
+}
+
+
+String
+Monitor::since_read_handler(Element *e, void *)
+{
+  Monitor *me = (Monitor *) e;
+  return String(me->_since) + "\n";
 }
 
 
@@ -248,6 +273,8 @@ Monitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandl
   return 0;
 }
 
+
+
 int
 Monitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
@@ -265,6 +292,7 @@ Monitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandle
     return -1;
   }
   me->clean(me->_base, init, true);
+  me->set_since();
   return 0;
 }
 
@@ -277,6 +305,7 @@ Monitor::add_handlers()
 
   add_write_handler("reset", reset_write_handler, 0);
   add_read_handler("look", look_read_handler, 0);
+  add_read_handler("since", since_read_handler, 0);
 }
 
 EXPORT_ELEMENT(Monitor)
