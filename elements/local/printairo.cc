@@ -209,4 +209,4 @@ PrintAiro::simple_action(Packet *p)
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(PrintAiro)
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel false)

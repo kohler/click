@@ -11,8 +11,8 @@
 #endif
 #ifdef CLICK_NS
 #include <click/simclick.h>
-#include <stl.h>
-#include <hash_map.h>
+#include <hash_map>
+#include <vector>
 #endif
 
 CLICK_DECLS

@@ -34,12 +34,8 @@ class RouterThread : public Task { public:
   Router *_router;
   int _id;
 
-  Spinlock _task_lock;
   uatomic32_t _task_lock_waiting;
-  
-  Spinlock _taskreq_lock;
-  Vector<unsigned> _taskreq_ops;
-  Vector<Task *> _taskreq_tasks;
+  uatomic32_t _pending;
 
   void set_thread_id(int i)		{ _id = i; }
 
@@ -49,14 +45,7 @@ class RouterThread : public Task { public:
 #endif
 
   // task request IDs
-  enum TaskRequest {
-    SCHEDULE_TASK = 1,
-    UNSCHEDULE_TASK = 2
-#if __MTCLICK__
-    , MOVE_TASK = 3
-#endif
-  };
-  void add_task_request(TaskRequest, Task *);
+  void add_pending()			{ _pending++; }
   void process_task_requests();
 
   inline void nice_lock_tasks();
@@ -78,20 +67,20 @@ inline void
 RouterThread::lock_tasks()
 {
   _task_lock_waiting++;
-  _task_lock.acquire();
+  _lock.acquire();
   _task_lock_waiting--;
 }
 
 inline bool
 RouterThread::attempt_lock_tasks()
 {
-  return _task_lock.attempt();
+  return _lock.attempt();
 }
 
 inline void
 RouterThread::unlock_tasks()
 {
-  _task_lock.release();
+  _lock.release();
 }
 
 CLICK_ENDDECLS

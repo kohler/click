@@ -54,11 +54,12 @@ CLICK_DECLS
 RouterThread::RouterThread(Router *r)
   : Task(Task::error_hook, 0), _router(r)
 {
-  _prev = _next = _list = this;
+  _prev = _next = _thread = this;
 #ifdef CLICK_BSDMODULE
   _wakeup_list = 0;
 #endif
   _task_lock_waiting = 0;
+  _pending = 0;
   router()->add_thread(this);
   // add_thread() will call this->set_thread_id()
 }
@@ -69,48 +70,21 @@ RouterThread::~RouterThread()
   router()->remove_thread(this);
 }
 
-void
-RouterThread::add_task_request(TaskRequest op, Task *t)
-{
-  _taskreq_lock.acquire();
-  _taskreq_ops.push_back(op);
-  _taskreq_tasks.push_back(t);
-  _taskreq_lock.release();
-}
-
 inline void
 RouterThread::process_task_requests()
 {
-  Vector<unsigned> ops;
-  Vector<Task *> tasks;
+  TaskList *task_list = router()->task_list();
+  task_list->lock();
+  Task *t = task_list->_pending_next;
+  task_list->_pending_next = task_list;
+  _pending = 0;
+  task_list->unlock();
 
-  _taskreq_lock.acquire();
-  ops.swap(_taskreq_ops);
-  tasks.swap(_taskreq_tasks);
-  _taskreq_lock.release();
-
-  for (int i = 0; i < ops.size(); i++) {
-    Task *t = tasks[i];
-    switch (ops[i]) {
-      
-     case SCHEDULE_TASK:
-      if (t->scheduled_list() == this)
-	t->reschedule();
-      break;
-      
-     case UNSCHEDULE_TASK:
-      if (t->scheduled() && t->scheduled_list() == this) 
-	t->fast_unschedule();
-      break;
-
-#if __MTCLICK__
-     case MOVE_TASK:
-      if (t->scheduled_list() == this)
-	t->fast_change_thread();
-      break;
-#endif
-
-    }
+  while (t != task_list) {
+    Task *next = t->_pending_next;
+    t->_pending_next = 0;
+    t->process_pending(this);
+    t = next;
   }
 }
 
@@ -163,7 +137,7 @@ RouterThread::driver()
 	break;
 
       // run task requests
-      if (_taskreq_ops.size())
+      if (_pending)
 	process_task_requests();
 
       // run occasional tasks: task requests, timers, select, etc.
@@ -220,7 +194,7 @@ RouterThread::driver()
 	break;
 
       // run task requests
-      if (_taskreq_ops.size())
+      if (_pending)
 	process_task_requests();
 
       // run occasional tasks: timers, select, etc.

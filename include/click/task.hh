@@ -35,7 +35,7 @@ class Task { public:
 
   Task *scheduled_next() const		{ return _next; }
   Task *scheduled_prev() const		{ return _prev; }
-  RouterThread *scheduled_list() const	{ return _list; }
+  RouterThread *scheduled_list() const	{ return _thread; }
   
 #ifdef HAVE_STRIDE_SCHED
   int tickets() const			{ return _tickets; }
@@ -48,17 +48,17 @@ class Task { public:
   void cleanup();
   void uninitialize()			{ cleanup(); } // deprecated
 
-  void reschedule();
   void unschedule();
-  void unschedule_soon();
+  void reschedule();
 
-#if __MTCLICK__
+  int fast_unschedule();
+  void fast_reschedule();
+
+  void strong_unschedule();
+  void strong_reschedule();
+
   int thread_preference() const		{ return _thread_preference; }
   void change_thread(int);
-#endif
-
-  void fast_reschedule();
-  int fast_unschedule();
 
 #ifdef CLICK_BSDMODULE
   void wakeup();
@@ -92,22 +92,28 @@ class Task { public:
   
 #if __MTCLICK__
   DirectEWMA _cycles;
-  uatomic32_t _thread_preference;
   int _update_cycle_runs;
 #endif
 
-  RouterThread *_list;
+  RouterThread *_thread;
+  int _thread_preference;
   
   Task *_all_prev;
   Task *_all_next;
   TaskList *_all_list;
 
+  enum { RESCHEDULE = 1, CHANGE_THREAD = 2 };
+  unsigned _pending;
+  Task *_pending_next;
+
+  Spinlock _lock;
+
   Task(const Task &);
   Task &operator=(const Task &);
-  
-#if __MTCLICK__
-  void fast_change_thread();
-#endif
+
+  void add_pending(int);
+  void process_pending(RouterThread *);
+  void fast_schedule();
 
   static void error_hook(Task *, void *);
   
@@ -124,10 +130,6 @@ class TaskList : public Task { public:
 
   void lock();
   void unlock();
-  
- private:
-
-  Spinlock _lock;
   
 };
 
@@ -148,7 +150,9 @@ Task::Task(TaskHook hook, void *thunk)
 #if __MTCLICK__
     _update_cycle_runs(0),
 #endif
-    _list(0), _all_prev(0), _all_next(0), _all_list(0)
+    _thread(0), _thread_preference(-1),
+    _all_prev(0), _all_next(0), _all_list(0),
+    _pending(0), _pending_next(0)
 {
 }
 
@@ -162,7 +166,9 @@ Task::Task(Element *e)
 #if __MTCLICK__
     _update_cycle_runs(0),
 #endif
-    _list(0), _all_prev(0), _all_next(0), _all_list(0)
+    _thread(0), _thread_preference(-1),
+    _all_prev(0), _all_next(0), _all_list(0),
+    _pending(0), _pending_next(0)
 {
 }
 
@@ -217,15 +223,15 @@ inline void
 Task::fast_reschedule()
 {
   // should not be scheduled at this point
-  assert(_list && !_prev);
+  assert(_thread && !_prev);
 
   // increase pass
   _pass += _stride;
 
 #if 0
   // look for element before where we should be scheduled
-  Task *n = _list->_prev;
-  while (n != _list && !PASS_GT(_pass, n->_pass))
+  Task *n = _thread->_prev;
+  while (n != _thread && !PASS_GT(_pass, n->_pass))
     n = n->_prev;
 
   // schedule after `n'
@@ -235,8 +241,8 @@ Task::fast_reschedule()
   _next->_prev = this;
 #else
   // look for element after where we should be scheduled
-  Task *n = _list->_next;
-  while (n != _list && !PASS_GT(n->_pass, _pass))
+  Task *n = _thread->_next;
+  while (n != _thread && !PASS_GT(n->_pass, _pass))
     n = n->_next;
 
   // schedule before `n'
@@ -247,16 +253,30 @@ Task::fast_reschedule()
 #endif
 }
 
+inline void
+Task::fast_schedule()
+{
+  assert(_tickets >= 1);
+  _pass = _thread->_next->_pass;
+  fast_reschedule();
+}
+
 #else /* !HAVE_STRIDE_SCHED */
 
 inline void
 Task::fast_reschedule()
 {
-  assert(_list && !_prev);
-  _prev = _list->_prev;
-  _next = _list;
-  _list->_prev = this;
-  _prev->_next = this;
+  assert(_thread && !_prev);
+  _prev = _thread->_prev;
+  _next = _thread;
+  _thread->_prev = this;
+  _thread->_next = this;
+}
+
+inline void
+Task::fast_schedule()
+{
+  fast_reschedule();
 }
 
 #endif /* HAVE_STRIDE_SCHED */
@@ -267,10 +287,10 @@ Task::fast_reschedule()
 inline void
 Task::wakeup()
 {
-    assert(_list && !_prev);
+    assert(_thread && !_prev);
     int s = splimp();
-    _next = _list->_wakeup_list;
-    _list->_wakeup_list = this;
+    _next = _thread->_wakeup_list;
+    _thread->_wakeup_list = this;
     splx(s);
 }
 #endif

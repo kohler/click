@@ -337,12 +337,12 @@ ToDevice::queue_packet(Packet *p)
 void
 ToDevice::change_device(net_device *dev)
 {
-    _task.unschedule();
+    _task.strong_unschedule();
     
     set_device(dev, &to_device_map);
 
     if (_dev)
-	_task.reschedule();
+	_task.strong_reschedule();
 }
 
 extern "C" {
