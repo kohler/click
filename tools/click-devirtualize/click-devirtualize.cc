@@ -173,7 +173,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   for (int i = 0; i < r->narchive(); i++) {
     ArchiveElement &ae = r->archive(i);
     if (ae.name.substring(0, 12) == "devirtualize"
-	|| ae.name == "elementmap.devirtualize")
+	|| ae.name == "elementmap-devirtualize.xml")
       ae.name = String();
   }
 }
@@ -353,7 +353,7 @@ particular purpose.\n");
     exit(0);
   }
 
-  // find and parse `elementmap'
+  // find and parse elementmap
   ElementMap full_elementmap;
   full_elementmap.parse_all_files(router, CLICK_SHAREDIR, errh);
 
@@ -529,12 +529,12 @@ particular purpose.\n");
   
   // add elementmap to archive
   {
-    if (router->archive_index("elementmap.devirtualize") < 0)
-      router->add_archive(init_archive_element("elementmap.devirtualize", 0600));
-    ArchiveElement &ae = router->archive("elementmap.devirtualize");
+    if (router->archive_index("elementmap-devirtualize.xml") < 0)
+      router->add_archive(init_archive_element("elementmap-devirtualize.xml", 0600));
+    ArchiveElement &ae = router->archive("elementmap-devirtualize.xml");
     ElementMap em(ae.data);
     specializer.output_new_elementmap(full_elementmap, em, package_name + cc_suffix, driver_requirement);
-    ae.data = em.unparse();
+    ae.data = em.unparse("devirtualize");
   }
 
   // add devirtualize_info to archive

@@ -24,6 +24,7 @@ class RouterT { public:
     ElementClassT *try_type(const String &) const;
     ElementClassT *get_type(const String &);
     ElementClassT *get_type(ElementClassT *, bool install_name = false);
+    ElementClassT *get_enclosing_type(const String &) const;
     void collect_primitive_classes(HashMap<String, int> &) const;
     void collect_active_types(Vector<ElementClassT *> &) const;
 
@@ -155,7 +156,7 @@ class RouterT { public:
     int _scope_cookie;
     
     StringMap _etype_map;
-    Vector<ElementType> _etypes;
+    Vector<ElementType> _etypes; // Might not contain every element's type.
 
     StringMap _element_name_map;
     Vector<ElementT *> _elements;

@@ -152,29 +152,33 @@ ElementTraits::component(int what)
     }
 }
 
+static HashMap<String, int> components(ElementTraits::D_NONE);
+static bool components_initialized = false;
+
 int
 ElementTraits::parse_component(const String &s)
 {
-    if (s == "class")
-	return D_CLASS;
-    else if (s == "cxx_class")
-	return D_CXX_CLASS;
-    else if (s == "header_file")
-	return D_HEADER_FILE;
-    else if (s == "source_file")
-	return D_SOURCE_FILE;
-    else if (s == "processing")
-	return D_PROCESSING;
-    else if (s == "flow_code")
-	return D_FLOW_CODE;
-    else if (s == "requirements")
-	return D_REQUIREMENTS;
-    else if (s == "provisions")
-	return D_PROVISIONS;
-    else if (s == "doc_name")
-	return D_DOC_NAME;
-    else
-	return D_NONE;
+    if (!components_initialized) {
+	components.insert("name", D_CLASS);
+	components.insert("cxxclass", D_CXX_CLASS);
+	components.insert("headerfile", D_HEADER_FILE);
+	components.insert("sourcefile", D_SOURCE_FILE);
+	components.insert("processing", D_PROCESSING);
+	components.insert("flowcode", D_FLOW_CODE);
+	components.insert("requires", D_REQUIREMENTS);
+	components.insert("provides", D_PROVISIONS);
+	components.insert("docname", D_DOC_NAME);
+	// for compatibility
+	components.insert("class", D_CLASS);
+	components.insert("cxx_class", D_CXX_CLASS);
+	components.insert("header_file", D_HEADER_FILE);
+	components.insert("source_file", D_SOURCE_FILE);
+	components.insert("requirements", D_REQUIREMENTS);
+	components.insert("provisions", D_PROVISIONS);
+	components.insert("doc_name", D_DOC_NAME);
+    }
+
+    return components[s];
 }
 
 ElementTraits

@@ -1,6 +1,6 @@
 configure config.log config.cache config.status
 config.h
-click-compile elementmap
+click-compile elementmap elementmap.xml
 Makefile
 stamp-h stamp-egroup
 notes

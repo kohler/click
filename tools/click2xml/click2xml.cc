@@ -117,11 +117,11 @@ static void
 print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
 {
     if (c->simple())
-	fprintf(f, "%sclassname='%s'", prefix, String(c->name()).cc());
+	fprintf(f, "%sclassname=\"%s\"", prefix, String(c->name()).cc());
     else if (c->name())
-	fprintf(f, "%sclassname='%s' %sclassid='c%d'", prefix, String(c->name()).cc(), prefix, c->uid());
+	fprintf(f, "%sclassname=\"%s\" %sclassid=\"c%d\"", prefix, String(c->name()).cc(), prefix, c->uid());
     else
-	fprintf(f, "%sclassid='c%d'", prefix, c->uid());
+	fprintf(f, "%sclassid=\"c%d\"", prefix, c->uid());
 }
 
 static void
@@ -129,7 +129,7 @@ print_landmark_attributes(FILE *f, const String &landmark)
 {
     int colon = landmark.find_left(':');
     if (colon >= 0 && landmark.substring(colon + 1) != "0")
-	fprintf(f, " file='%s' line='%s'", landmark.substring(0, colon).cc(), landmark.substring(colon + 1).cc());
+	fprintf(f, " file=\"%s\" line=\"%s\"", landmark.substring(0, colon).cc(), landmark.substring(colon + 1).cc());
 }
 
 static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);
@@ -160,12 +160,12 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 	    fprintf(f, " ");
 	    print_class_reference(f, prev, "prev");
 	}
-	fprintf(f, " ninputs='%d' noutputs='%d' nformals='%d'>\n",
+	fprintf(f, " ninputs=\"%d\" noutputs=\"%d\" nformals=\"%d\">\n",
 		compound->ninputs(), compound->noutputs(), compound->nformals());
 
 	String new_indent = add_indent(indent, 4);
 	for (int i = 0; i < compound->nformals(); i++)
-	    fprintf(f, "%s<formal number='%d' name='%s' />\n",
+	    fprintf(f, "%s<formal number=\"%d\" name=\"%s\" />\n",
 		    new_indent.cc(), i, compound->formals()[i].substring(1).cc());
 	generate_router(compound->cast_router(), f, new_indent, false, errh);
 	
@@ -187,13 +187,13 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
     
     for (RouterT::iterator e = r->begin_elements(); e; e++)
 	if (!e->tunnel()) {
-	    fprintf(f, "%s<element name='%s' ", indent.cc(), e->name_cc());
+	    fprintf(f, "%s<element name=\"%s\" ", indent.cc(), e->name_cc());
 	    print_class_reference(f, e->type(), "");
 	    print_landmark_attributes(f, e->landmark());
-	    fprintf(f, " ninputs='%d' noutputs='%d'",
+	    fprintf(f, " ninputs=\"%d\" noutputs=\"%d\"",
 		    e->ninputs(), e->noutputs());
 	    if (e->ninputs() || e->noutputs())
-		fprintf(f, " processing='%s'", processing.processing_code(e).cc());
+		fprintf(f, " processing=\"%s\"", processing.processing_code(e).cc());
 	    fprintf(f, " />\n");
 	}
 
@@ -201,7 +201,7 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
     const Vector<ConnectionT> &conn = r->connections();
     for (int i = 0; i < conn.size(); i++) {
 	int p = processing.output_processing(conn[i].from());
-	fprintf(f, "%s<connection from='%s' fromport='%d' to='%s' toport='%d' processing='%c' />\n",
+	fprintf(f, "%s<connection from=\"%s\" fromport=\"%d\" to=\"%s\" toport=\"%d\" processing=\"%c\" />\n",
 		indent.cc(),
 		conn[i].from_elt()->name_cc(), conn[i].from_port(),
 		conn[i].to_elt()->name_cc(), conn[i].to_port(),
@@ -252,7 +252,9 @@ process(const char *infile, bool file_is_expr, const char *outfile,
     emap.set_driver(driver);
     ElementMap::push_default(&emap);
 
-    fprintf(outf, "<configuration>\n");
+    fprintf(outf, "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\"?>\n\
+<!DOCTYPE configuration SYSTEM \"http://www.icir.org/kohler/clickconfig.dtd\">\n\
+<configuration>\n");
     generate_router(r, outf, "", true, errh);
     fprintf(outf, "</configuration>\n");
     

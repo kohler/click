@@ -247,8 +247,10 @@ ElementClassT::collect_prerequisites(Vector<ElementClassT *> &)
 }
 
 void
-ElementClassT::unparse_declaration(StringAccum &, const String &)
+ElementClassT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind uk, ElementClassT *)
 {
+    if (uk == UNPARSE_OVERLOAD)
+	sa << " ...\n";
 }
 
 String
@@ -298,9 +300,12 @@ SynonymElementClassT::collect_prerequisites(Vector<ElementClassT *> &v)
 }
 
 void
-SynonymElementClassT::unparse_declaration(StringAccum &sa, const String &indent)
+SynonymElementClassT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind uk, ElementClassT *)
 {
-    sa << indent << "elementclass " << name() << " " << _eclass->name() << ";\n";
+    if (uk == UNPARSE_OVERLOAD)
+	sa << " ...\n";
+    else if (uk == UNPARSE_NAMED)
+	sa << indent << "elementclass " << name() << " " << _eclass->name() << ";\n";
 }
 
 const ElementTraits *
@@ -542,12 +547,28 @@ CompoundElementClassT::find_traits() const
 }
 
 void
-CompoundElementClassT::unparse_declaration(StringAccum &sa, const String &indent)
+CompoundElementClassT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind uk, ElementClassT *stop)
 {
-    assert(!_circularity_flag);
+    assert(!_circularity_flag && (name() || uk != UNPARSE_NAMED));
+
+    // stop early: scope control
+    if (stop == this) {
+	if (uk == UNPARSE_OVERLOAD)
+	    sa << " ...\n";
+	return;
+    }
+    
     _circularity_flag = true;
 
-    sa << indent << "elementclass " << name() << " {";
+    if (uk == UNPARSE_NAMED)
+	sa << indent << "elementclass " << name() << " {";
+    else if (uk == UNPARSE_ANONYMOUS)
+	sa << '{';
+
+    if (_prev) {
+	_prev->unparse_declaration(sa, indent, UNPARSE_OVERLOAD, stop);
+	sa << indent << "||";
+    }
 
     // print formals
     for (int i = 0; i < _formals.size(); i++)
@@ -558,6 +579,10 @@ CompoundElementClassT::unparse_declaration(StringAccum &sa, const String &indent
 
     _router->unparse(sa, indent + "  ");
 
-    sa << indent << "}\n";
+    if (uk == UNPARSE_NAMED)
+	sa << indent << "}\n";
+    else if (uk == UNPARSE_ANONYMOUS)
+	sa << indent << '}';
+
     _circularity_flag = false;
 }

@@ -53,7 +53,8 @@ class ElementClassT { public:
     virtual void collect_primitive_classes(HashMap<String, int> &);
     virtual void collect_prerequisites(Vector<ElementClassT *> &);
 
-    virtual void unparse_declaration(StringAccum &, const String &);
+    enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
+    virtual void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *stop);
 
     virtual bool simple() const			{ return true; }
     virtual String landmark() const		{ return String(); }
@@ -99,7 +100,7 @@ class SynonymElementClassT : public ElementClassT { public:
     void collect_primitive_classes(HashMap<String, int> &);
     void collect_prerequisites(Vector<ElementClassT *> &);
 
-    void unparse_declaration(StringAccum &, const String &);
+    void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
 
     bool simple() const			{ return false; }
     const ElementTraits *find_traits() const;
@@ -136,7 +137,7 @@ class CompoundElementClassT : public ElementClassT { public:
     void collect_primitive_classes(HashMap<String, int> &);
     void collect_prerequisites(Vector<ElementClassT *> &);
 
-    void unparse_declaration(StringAccum &, const String &);
+    void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
     
     bool simple() const			{ return false; }
     String landmark() const		{ return _landmark; }

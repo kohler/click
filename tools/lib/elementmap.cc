@@ -168,11 +168,202 @@ ElementMap::remove_at(int i)
     incr_version();
 }
 
+static const char *
+parse_xml_attrs(HashMap<String, String> &attrs,
+		const char *s, const char *ends, bool *closed,
+		const HashMap<String, String> &entities,
+		ErrorHandler *errh)
+{
+    while (s < ends) {
+	while (s < ends && isspace(*s))
+	    s++;
+	
+	if (s >= ends)
+	    return s;
+	else if (*s == '/') {
+	    *closed = true;
+	    return s;
+	} else if (*s == '>')
+	    return s;
+
+	// get attribute name
+	const char *attrstart = s;
+	while (s < ends && !isspace(*s) && *s != '=')
+	    s++;
+	if (s == attrstart) {
+	    errh->error("XML parse error: missing attribute name");
+	    return s;
+	}
+	String attrname(attrstart, s - attrstart);
+
+	// skip whitespace and equals sign
+	while (s < ends && isspace(*s))
+	    s++;
+	if (s >= ends || *s != '=') {
+	    errh->error("XML parse error: missing '='");
+	    return s;
+	}
+	s++;
+	while (s < ends && isspace(*s))
+	    s++;
+
+	// parse attribute value
+	if (s >= ends || (*s != '\'' && *s != '\"')) {
+	    errh->error("XML parse error: missing attribute value");
+	    return s;
+	}
+	char quote = *s;
+	const char *first = s + 1;
+	StringAccum attrvalue;
+	for (s++; s < ends && *s != quote; s++)
+	    if (*s == '&') {
+		// dump on normal text
+		attrvalue.append(first, s - first);
+		
+		if (s + 3 < ends && s[1] == '#' && s[2] == 'x') {
+		    // hex character reference
+		    int c = 0;
+		    for (s += 3; isxdigit(*s); s++)
+			if (isdigit(*s))
+			    c = (c * 16) + *s - '0';
+			else
+			    c = (c * 16) + tolower(*s) - 'a' + 10;
+		} else if (s + 2 < ends && s[1] == '#') {
+		    // decimal character reference
+		    int c = 0;
+		    for (s += 2; isdigit(*s); s++)
+			c = (c * 10) + *s - '0';
+		} else {
+		    // named entity
+		    const char *t;
+		    for (t = s + 1; t < ends && *t != quote && *t != ';'; t++)
+			/* nada */;
+		    if (t < ends && *t == ';') {
+			String entity_name(s + 1, t - s - 1);
+			attrvalue << entities[entity_name];
+			s = t;
+		    }
+		}
+
+		// check entity ended correctly
+		if (s >= ends || *s != ';') {
+		    errh->error("XML parse error: bad entity name");
+		    return s;
+		}
+
+		first = s + 1;
+	    }
+	attrvalue.append(first, s - first);
+	if (s >= ends)
+	    errh->error("XML parse error: unterminated attribute value");
+	else
+	    s++;
+
+	attrs.insert(attrname, attrvalue.take_string());
+    }
+    return s;
+}
+
 void
-ElementMap::parse(const String &str, const String &package_name)
+ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandler *errh)
+{
+    if (!errh)
+	errh = ErrorHandler::silent_handler();
+
+    // prepare entities
+    HashMap<String, String> entities;
+    entities.insert("lt", "<");
+    entities.insert("amp", "&");
+    entities.insert("gt", ">");
+    entities.insert("quot", "\"");
+    entities.insert("apos", "'");
+    
+    const char *s = str.data();
+    const char *ends = s + str.length();
+    bool in_elementmap = false;
+
+    while (s < ends) {
+	// skip to '<'
+	while (s < ends && *s != '<')
+	    s++;
+	for (s++; s < ends && isspace(*s); s++)
+	    /* nada */;
+	bool closed = false;
+	if (s < ends && *s == '/') {
+	    closed = true;
+	    for (s++; s < ends && isspace(*s); s++)
+		/* nada */;
+	}
+
+	// which tag
+	if (s + 10 < ends && memcmp(s, "elementmap", 10) == 0
+	    && (isspace(s[10]) || s[10] == '>' || s[10] == '/')) {
+	    // parse elementmap tag
+	    if (!closed) {
+		if (in_elementmap)
+		    errh->error("XML elementmap parse error: nested <elementmap> tags");
+		HashMap<String, String> attrs;
+		s = parse_xml_attrs(attrs, s + 10, ends, &closed, entities, errh);
+		Globals g;
+		g.package = (attrs["package"] ? attrs["package"] : package_name);
+		g.srcdir = attrs["sourcedir"];
+		g.webdoc = attrs["webdoc"];
+		if (attrs["provides"])
+		    _e[0].provisions += " " + attrs["provides"];
+		_def.push_back(g);
+		in_elementmap = true;
+	    }
+	    if (closed)
+		in_elementmap = false;
+	    
+	} else if (s + 5 < ends && memcmp(s, "entry", 5) == 0
+		   && (isspace(s[5]) || s[5] == '>' || s[5] == '/')
+		   && !closed && in_elementmap) {
+	    // parse entry tag
+	    HashMap<String, String> attrs;
+	    s = parse_xml_attrs(attrs, s + 5, ends, &closed, entities, errh);
+	    Traits elt;
+	    for (HashMap<String, String>::iterator i = attrs.begin(); i; i++)
+		if (String *sp = elt.component(i.key()))
+		    *sp = i.value();
+	    if (elt.provisions || elt.name) {
+		elt.def_index = _def.size() - 1;
+		(void) add(elt);
+	    }
+
+	} else if (s + 7 < ends && memcmp(s, "!ENTITY", 7) == 0
+		 && (isspace(s[7]) || s[7] == '>' || s[7] == '/')) {
+	    // parse entity declaration
+	    for (s += 7; isspace(*s); s++)
+		/* nada */;
+	} else if (s + 8 < ends && memcmp(s, "![CDATA[", 8) == 0) {
+	    // skip CDATA section
+	    for (s += 8; s < ends; s++)
+		if (*s == ']' && s + 3 <= ends && memcmp(s, "]]>", 3) == 0)
+		    break;
+	} else if (s + 3 < ends && memcmp(s, "!--", 3) == 0) {
+	    // skip comment
+	    for (s += 3; s < ends; s++)
+		if (*s == '-' && s + 3 <= ends && memcmp(s, "-->", 3) == 0)
+		    break;
+	}
+
+	// skip to '>'
+	while (s < ends && *s != '>')
+	    s++;
+    }
+}
+
+void
+ElementMap::parse(const String &str, const String &package_name, ErrorHandler *errh)
 {
     int p, len = str.length();
     int endp = 0;
+
+    if (len > 0 && str[0] == '<') {
+	parse_xml(str, package_name, errh);
+	return;
+    }
 
     int def_index = 0;
     if (package_name != _def[0].package) {
@@ -243,16 +434,74 @@ ElementMap::parse(const String &str, const String &package_name)
 }
 
 void
-ElementMap::parse(const String &str)
+ElementMap::parse(const String &str, ErrorHandler *errh)
 {
-    parse(str, String());
+    parse(str, String(), errh);
+}
+
+static String
+xml_quote(const String &str)
+{
+    const char *s = str.data();
+    const char *ends = s + str.length();
+    const char *first = s;
+    StringAccum sa;
+    for (; s < ends; s++)
+	if (*s == '&' || *s == '<' || *s == '\"') {
+	    sa.append(first, s - first);
+	    sa << '&' << (*s == '&' ? "amp" : (*s == '<' ? "lt" : "quot")) << ';';
+	    first = s + 1;
+	}
+    if (sa) {
+	sa.append(first, s - first);
+	return sa.take_string();
+    } else
+	return str;
 }
 
 String
-ElementMap::unparse() const
+ElementMap::unparse(const String &package) const
 {
     StringAccum sa;
-    sa << "$data\tclass\tcxx_class\tdoc_name\theader_file\tprocessing\tflow_code\tflags\trequirements\tprovisions\n";
+    sa << "<?xml version=\"1.0\" standalone=\"yes\"?>\n\
+<elementmap xmlns=\"http://www.lcdf.org/click/xml/\"";
+    if (package)
+	sa << " package=\"" << xml_quote(package) << "\"";
+    sa << ">\n";
+    for (int i = 1; i < _e.size(); i++) {
+	const Traits &e = _e[i];
+	if (!e.name && !e.cxx)
+	    continue;
+	sa << "  <entry";
+	if (e.name)
+	    sa << " name=\"" << xml_quote(e.name) << "\"";
+	if (e.cxx)
+	    sa << " cxxclass=\"" << xml_quote(e.cxx) << "\"";
+	if (e.documentation_name)
+	    sa << " docname=\"" << xml_quote(e.documentation_name) << "\"";
+	if (e.header_file)
+	    sa << " headerfile=\"" << xml_quote(e.header_file) << "\"";
+	if (e.source_file)
+	    sa << " sourcefile=\"" << xml_quote(e.source_file) << "\"";
+	sa << " processing=\"" << e.processing_code()
+	   << "\" flowcode=\"" << e.flow_code() << "\"";
+	if (e.flags)
+	    sa << " flags=\"" << xml_quote(e.flags) << "\"";
+	if (e.requirements)
+	    sa << " requires=\"" << xml_quote(e.requirements) << "\"";
+	if (e.provisions)
+	    sa << " provides=\"" << xml_quote(e.provisions) << "\"";
+	sa << " />\n";
+    }
+    sa << "</elementmap>\n";
+    return sa.take_string();
+}
+
+String
+ElementMap::unparse_nonxml() const
+{
+    StringAccum sa;
+    sa << "$data\tname\tcxxclass\tdocname\theaderfile\tprocessing\tflowcode\tflags\trequires\tprovides\n";
     for (int i = 1; i < _e.size(); i++) {
 	const Traits &e = _e[i];
 	if (!e.name && !e.cxx)
@@ -344,7 +593,9 @@ ElementMap::set_driver_mask(int driver_mask)
 bool
 ElementMap::parse_default_file(const String &default_path, ErrorHandler *errh)
 {
-    String default_fn = clickpath_find_file("elementmap", "share/click", default_path);
+    String default_fn = clickpath_find_file("elementmap.xml", "share/click", default_path);
+    if (!default_fn)
+	default_fn = clickpath_find_file("elementmap", "share/click", default_path);
     if (default_fn) {
 	String text = file_string(default_fn, errh);
 	parse(text);
@@ -361,7 +612,9 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
     String not_found;
 
     // try elementmap in archive
-    int defaultmap_aei = r->archive_index("elementmap");
+    int defaultmap_aei = r->archive_index("elementmap.xml");
+    if (defaultmap_aei < 0)
+	defaultmap_aei = r->archive_index("elementmap");
     if (defaultmap_aei >= 0)
 	parse(r->archive(defaultmap_aei).data, "<archive>");
 
@@ -369,22 +622,28 @@ ElementMap::parse_requirement_files(RouterT *r, const String &default_path, Erro
     const Vector<String> &requirements = r->requirements();
     for (int i = 0; i < requirements.size(); i++) {
 	String req = requirements[i];
-	String mapname = "elementmap." + req;
+	String mapname = "elementmap-" + req + ".xml";
+	String mapname2 = "elementmap." + req;
 
 	// look for elementmap in archive
 	int map_aei = r->archive_index(mapname);
-	if (map_aei >= 0)
+	if (map_aei < 0)
+	    map_aei = r->archive_index(mapname2);
+	if (map_aei >= 0) {
 	    parse(r->archive(map_aei).data, req);
-	else {
-	    String fn = clickpath_find_file(mapname, "share/click", default_path);
-	    if (fn) {
-		String text = file_string(fn, errh);
-		parse(text, req);
-	    } else {
-		if (not_found)
-		    not_found += ", ";
-		not_found += "`" + req + "'";
-	    }
+	    continue;
+	}
+
+	String fn = clickpath_find_file(mapname, "share/click", default_path);
+	if (!fn)
+	    fn = clickpath_find_file(mapname2, "share/click", default_path);
+	if (fn) {
+	    String text = file_string(fn, errh);
+	    parse(text, req);
+	} else {
+	    if (not_found)
+		not_found += ", ";
+	    not_found += "`" + req + "'";
 	}
     }
 

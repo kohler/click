@@ -39,6 +39,7 @@ struct ElementTraits {
     int flag_value(int) const;
     
     String *component(int);
+    String *component(const String &);
 
     void calculate_driver_mask();
 
@@ -70,6 +71,12 @@ inline
 ElementTraits::ElementTraits()
     : def_index(0), driver_mask(Driver::ALLMASK), name_next(0)
 {
+}
+
+inline String *
+ElementTraits::component(const String &s)
+{
+    return component(parse_component(s));
 }
 
 #endif

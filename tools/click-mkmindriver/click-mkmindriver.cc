@@ -109,7 +109,7 @@ handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *e
   else if (!filename || strcmp(filename, "-") == 0)
     filename = "<stdin>";
   
-  // find and parse `elementmap'
+  // find and parse elementmap
   ElementMap emap(default_map);
   emap.parse_requirement_files(router, CLICK_SHAREDIR, errh);
 

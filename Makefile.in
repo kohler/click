@@ -51,13 +51,13 @@ tools: Makefile
 install: click-compile stamp-h
 	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-local-include
-install-local: elementmap $(srcdir)/click-buildtool click-compile
+install-local: elementmap.xml $(srcdir)/click-buildtool click-compile
 	$(mkinstalldirs) $(bindir)
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-buildtool $(bindir)/click-buildtool
 	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
 	$(mkinstalldirs) $(datadir)
-	$(INSTALL_DATA) elementmap $(datadir)/elementmap
+	$(INSTALL_DATA) elementmap.xml $(datadir)/elementmap.xml
 	(cd $(top_srcdir); pwd) > $(datadir)/srcdir
 	/bin/rm -rf $(datadir)/src
 	/bin/ln -s `cd $(top_srcdir); pwd` $(datadir)/src
@@ -83,8 +83,8 @@ install-include: install-local-include
 elemlist elemlists:
 	@for d in @TARGETS@; do (cd $$d && $(MAKE) elemlist) || exit 1; done
 
-elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@ @TARGETS@ $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "$(PROVISIONS) @TARGETS@" | $(PERL) ./click-mkelemmap -r "$(PROVISIONS) $$t" -Iinclude) > elementmap
+elementmap.xml: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
+	t="@element_groups@ @TARGETS@ $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "$(PROVISIONS) @TARGETS@" | $(PERL) ./click-mkelemmap -r "$(PROVISIONS) $$t" -Iinclude) > elementmap.xml
 always:
 	@:
 
@@ -112,13 +112,13 @@ check-filenames:
 
 clean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) clean); done
-	-rm -f elementmap conftest.*
+	-rm -f elementmap.xml conftest.*
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f Makefile config.status etc/libclick/Makefile
 	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
 	-rm -f config.cache config.log click-compile stamp-h
-	-rm -f elementmap conftest.*
+	-rm -f elementmap.xml conftest.*
 
 
 distdir = $(PACKAGE)-$(VERSION)

@@ -102,7 +102,7 @@ distdir: $(srcdir)/configure
 
 clean:
 	@cd libsrc && $(MAKE) clean
-	-rm -rf elementmap $(distdir) $(distdir).tar.gz
+	-rm -rf elementmap.xml $(distdir) $(distdir).tar.gz
 distclean:
 	@cd libsrc && $(MAKE) distclean
 	-rm -f config.h Makefile config.status

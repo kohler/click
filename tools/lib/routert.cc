@@ -70,12 +70,19 @@ RouterT::check() const
 	    assert(_etypes[i].name() == iter.key());
 	    assert(_etypes[i].prev_name < i);
 	    assert(_etypes[i].scope_cookie <= sc);
-	    sc = _etypes[i].scope_cookie;
+	    sc = _etypes[i].scope_cookie - 1;
 	    nt_found++;
 	}
     }
     assert(nt_found == nt);
 
+    // check element types
+    HashMap<int, int> type_uid_map(-1);
+    for (int i = 0; i < nt; i++) {
+	assert(type_uid_map[_etypes[i].eclass->uid()] < 0);
+	type_uid_map.insert(_etypes[i].eclass->uid(), i);
+    }
+    
     // check element names
     for (StringMap::iterator iter = _element_name_map.begin(); iter; iter++) {
 	String key = iter.key();
@@ -164,11 +171,17 @@ RouterT::try_type(const String &name) const
 ElementClassT *
 RouterT::get_type(ElementClassT *ec, bool install_name)
 {
-    if (install_name && try_type(ec->name()) != ec) {
-	int i = _etype_map[ec->name()];
-	_etypes.push_back(ElementType(ec, _scope_cookie, i));
-	_etype_map.insert(ec->name(), _etypes.size() - 1);
+    if (install_name) {
 	ec->use();
+	if (!ec->name())
+	    _etypes.push_back(ElementType(ec, _scope_cookie, -1));
+	else if (try_type(ec->name()) != ec) {
+	    int prev = _etype_map[ec->name()];
+	    if (prev >= 0)	// increment scope_cookie if redefining class
+		_scope_cookie++;
+	    _etypes.push_back(ElementType(ec, _scope_cookie, prev));
+	    _etype_map.insert(ec->name(), _etypes.size() - 1);
+	}
     }
     return ec;
 }
@@ -193,6 +206,12 @@ RouterT::get_type(const String &name, int scope_cookie) const
     for (int i = _etype_map[name]; i >= 0; i = _etypes[i].prev_name)
 	if (_etypes[i].scope_cookie <= scope_cookie)
 	    return _etypes[i].eclass;
+    return get_enclosing_type(name);
+}
+
+ElementClassT *
+RouterT::get_enclosing_type(const String &name) const
+{
     if (_enclosing_scope)
 	return _enclosing_scope->get_type(name, _enclosing_scope_cookie);
     else
@@ -1119,7 +1138,7 @@ RouterT::unparse_classes(StringAccum &sa, const String &indent) const
     int nelemtype = _etypes.size();
     int old_sa_len = sa.length();
     for (int i = 0; i < nelemtype; i++)
-	_etypes[i].eclass->unparse_declaration(sa, indent);
+	_etypes[i].eclass->unparse_declaration(sa, indent, ElementClassT::UNPARSE_NAMED, 0);
     if (sa.length() != old_sa_len)
 	sa << "\n";
 }
@@ -1128,32 +1147,75 @@ void
 RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 {
     int nelements = _elements.size();
+    int ntypes = _etypes.size();
+    check();
 
+    // We may need to interleave element class declarations and element
+    // declarations because of scope issues.
+
+    // uid_to_scope[] maps each type name to the latest scope in which it is
+    // good.
+    HashMap<int, int> uid_to_scope(-2);
+    for (int i = 0; i < ntypes; i++) {
+	const ElementType &t = _etypes[i];
+	uid_to_scope.insert(t.eclass->uid(), _scope_cookie);
+	if (t.prev_name >= 0) {
+	    const ElementType &pt = _etypes[t.prev_name];
+	    uid_to_scope.insert(pt.eclass->uid(), pt.scope_cookie);
+	}
+    }
+    // XXX FIXME
+    for (const_iterator e = begin_elements(); e; e++)
+	assert(e->tunnel() || uid_to_scope[e->type_uid()] >= -1);
+
+    // For each scope:
+    // First print the element class declarations with that scope,
+    // then print the elements whose classes are good only at that scope.
+    int print_state = 0;
+    for (int scope = -1; scope <= _scope_cookie; scope++) {
+	for (int i = 0; i < ntypes; i++)
+	    if (_etypes[i].scope_cookie == scope && _etypes[i].name()
+		&& !_etypes[i].eclass->simple()) {
+		ElementClassT *stop_class;
+		if (_etypes[i].prev_name >= 0)
+		    stop_class = _etypes[ _etypes[i].prev_name ].eclass;
+		else
+		    stop_class = get_enclosing_type(_etypes[i].eclass->name());
+		if (print_state == 2)
+		    sa << "\n";
+		_etypes[i].eclass->unparse_declaration(sa, indent, ElementClassT::UNPARSE_NAMED, stop_class);
+		print_state = 1;
+	    }
+
+	for (const_iterator e = begin_elements(); e; e++) {
+	    if (e->dead() || e->tunnel()
+		|| uid_to_scope[e->type_uid()] != scope)
+		continue;
+	    if (print_state == 1)
+		sa << "\n";
+	    add_line_directive(sa, e->landmark());
+	    sa << indent << e->name() << " :: ";
+	    if (e->type()->name())
+		sa << e->type()->name();
+	    else
+		e->type()->unparse_declaration(sa, indent, ElementClassT::UNPARSE_ANONYMOUS, 0);
+	    if (e->configuration())
+		sa << "(" << e->configuration() << ")";
+	    sa << ";\n";
+	    print_state = 2;
+	}
+    }
+    
     // print tunnel pairs
-    int old_sa_len = sa.length();
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->tunnel() && _elements[i]->tunnel_output()) {
 	    add_line_directive(sa, _elements[i]->landmark());
+	    if (print_state > 0)
+		sa << "\n";
 	    sa << indent << "connectiontunnel " << _elements[i]->name()
 	       << " -> " << _elements[i]->tunnel_output()->name() << ";\n";
+	    print_state = 3;
 	}
-    if (sa.length() != old_sa_len)
-	sa << "\n";
-
-    // print element declarations
-    old_sa_len = sa.length();
-    for (int i = 0; i < nelements; i++) {
-	const ElementT &e = *_elements[i];
-	if (e.dead() || e.tunnel())
-	    continue;		// skip tunnels
-	add_line_directive(sa, e.landmark());
-	sa << indent << e.name() << " :: " << e.type()->name();
-	if (e.configuration())
-	    sa << "(" << e.configuration() << ")";
-	sa << ";\n";
-    }
-    if (sa.length() != old_sa_len)
-	sa << "\n";
 }
 
 void
@@ -1187,7 +1249,7 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
     }
 
     // count line numbers so we can give reasonable error messages
-    {
+    if (nc) {
 	int lineno = 1;
 	const char *s = sa.data();
 	int len = sa.length();
@@ -1239,7 +1301,6 @@ void
 RouterT::unparse(StringAccum &sa, const String &indent) const
 {
     unparse_requirements(sa, indent);
-    unparse_classes(sa, indent);
     unparse_declarations(sa, indent);
     unparse_connections(sa, indent);
 }

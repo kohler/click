@@ -172,8 +172,8 @@ particular purpose.\n");
   
  done:
   RouterT *router = read_router(router_file, file_is_expr, errh);
-  if (router)
-    router->flatten(errh);
+  //  if (router)
+  //router->flatten(errh);
   if (!router || errh->nerrors() > 0)
     exit(1);
 

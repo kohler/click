@@ -44,13 +44,15 @@ class ElementMap { public:
 	    const String &processing_code, const String &flow_code);
     void remove_at(int);
 
-    void parse(const String &data);
-    void parse(const String &data, const String &package_name);
+    void parse(const String &data, ErrorHandler * = 0);
+    void parse(const String &data, const String &package_name, ErrorHandler * = 0);
+    void parse_xml(const String &data, const String &package_name, ErrorHandler *);
     bool parse_default_file(const String &default_path, ErrorHandler *);
     bool parse_requirement_files(RouterT *, const String &default_path, ErrorHandler *, String *not_found = 0);
     bool parse_all_files(RouterT *, const String &default_path, ErrorHandler *);
     static void report_file_not_found(String default_path, bool found_default, ErrorHandler *);
-    String unparse() const;
+    String unparse(const String &package = String()) const;
+    String unparse_nonxml() const;
 
     int check_completeness(const RouterT *, ErrorHandler *) const;
     bool driver_indifferent(const RouterT *, int driver_mask = Driver::ALLMASK, ErrorHandler * = 0) const;

@@ -726,14 +726,14 @@ compile_classifiers(RouterT *r, const String &package_name,
 
   // add elementmap to archive
   {
-    if (r->archive_index("elementmap.fastclassifier") < 0)
-      r->add_archive(init_archive_element("elementmap.fastclassifier", 0600));
-    ArchiveElement &ae = r->archive("elementmap.fastclassifier");
+    if (r->archive_index("elementmap-fastclassifier.xml") < 0)
+      r->add_archive(init_archive_element("elementmap-fastclassifier.xml", 0600));
+    ArchiveElement &ae = r->archive("elementmap-fastclassifier.xml");
     ElementMap em(ae.data);
     String header_file = package_name + ".hh";
     for (int i = 0; i < gen_eclass_names.size(); i++)
       em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h", "x/x");
-    ae.data = em.unparse();
+    ae.data = em.unparse("fastclassifier");
   }
 
   // add classifier configurations to archive
@@ -793,7 +793,7 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   for (int i = 0; i < r->narchive(); i++) {
     ArchiveElement &ae = r->archive(i);
     if (ae.name.substring(0, 14) == "fastclassifier"
-	|| ae.name == "elementmap.fastclassifier")
+	|| ae.name == "elementmap-fastclassifier.xml")
       ae.name = String();
   }
 }

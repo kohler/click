@@ -177,7 +177,7 @@ sub process_file ($) {
   # add a fake class if there were no classes
   if (@cxx_name == $first && $prov) {
     push @click_name, "";
-    push @cxx_name, '""';
+    push @cxx_name, "";
     push @doc_name, "";
     push @source_file, $filename;
     push @header_file, $headername;
@@ -382,41 +382,42 @@ open(OUT, ">&STDOUT");
 
 my($sourcedir) = `/bin/pwd`;
 $sourcedir =~ s{\s+$}{}s;
-print OUT "\$sourcedir \"$sourcedir\"\n";
-print OUT "\$provides \"", join(' ', @provides), "\"\n";
-print OUT "\$data class cxx_class doc_name header_file source_file processing flow_code flags requirements provisions\n";
+print OUT "<?xml version=\"1.0\" standalone=\"yes\"?>
+<elementmap sourcedir=\"$sourcedir\" provides=\"", join(' ', @provides),
+    "\">\n";
 
 foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
-  my($n) = $click_name[$id];
-  $n = '""' if !$n;
+    print OUT "<entry";
 
-  my($docname) = $doc_name[$id];
-  $docname = '""' if !$docname;
+    print OUT " name=\"", $click_name[$id], "\"" if $click_name[$id];
+    print OUT " cxxclass=\"", $cxx_name[$id], "\"" if $cxx_name[$id];
+    print OUT " docname=\"", $doc_name[$id], "\"" if $doc_name[$id];
   
-  my($hf) = $header_file[$id];
-  $hf =~ s/^$prefix\/*//;
+    my($hf) = $header_file[$id];
+    $hf =~ s/^$prefix\/*//;
+    print OUT " headerfile=\"", $hf, "\"" if $hf;
 
-  my($sf) = $source_file[$id];
-  $sf =~ s/^$prefix\/*//;
+    my($sf) = $source_file[$id];
+    $sf =~ s/^$prefix\/*//;
+    print OUT " sourcefile=\"", $sf, "\"" if $sf;
 
-  my($p) = $processing[$id];
-  $p = parents_processing($id) if !$p;
-  $p = '""' if !$p;
+    my($p) = $processing[$id];
+    $p = parents_processing($id) if !$p;
+    print OUT " processing=\"", $p, "\"" if $p;
 
-  my($flow) = $flow_code[$id];
-  $flow = parents_flow_code($id) if !$flow;
-  $flow = '""' if !$flow;
+    my($flow) = $flow_code[$id];
+    $flow = parents_flow_code($id) if !$flow;
+    print OUT " flowcode=\"", $flow, "\"" if $flow;
 
-  my($flags) = $flags[$id];
-  $flags = parents_flags($id) if !defined($flags);
-  $flags = "" if !defined($flags);
+    my($flags) = $flags[$id];
+    $flags = parents_flags($id) if !defined($flags);
+    print OUT " flags=\"", $flags, "\"" if defined($flags);
   
-  my($req) = $requirements[$id];
-  my($prov) = $provisions[$id];
-  
-  print OUT $n, " ", $cxx_name[$id], " ", $docname, " ", $hf, " ", $sf, " ", $p, " ", $flow;
-  print OUT ' "', $flags, '" "', $req, '" "', $prov, '"'
-      if $flags || $req || $prov;
-  print OUT "\n";
+    print OUT " requires=\"", $requirements[$id], "\"" if $requirements[$id];
+    print OUT " provides=\"", $provisions[$id], "\"" if $provisions[$id];
+
+    print OUT " />\n";
 }
+
+print OUT "</elementmap>\n";
 close OUT;
