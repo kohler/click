@@ -65,7 +65,7 @@ elementmap: $(srcdir)/mkelementmap.pl
 
 click-compile: $(srcdir)/click-compile.in
 	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
 
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
@@ -78,7 +78,7 @@ Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
 stamp-h: Makefile
 	@echo 'creating stamp-h' 1>&2
 	@echo "/* Created on" `date` "*/" > stamp-h
-	@if test "@element_groups@" != "`cat stamp-egroup`"; then echo "@element_groups@" > stamp-egroup; fi
+	@if test ! -r stamp-egroup || test "@element_groups" != "`cat stamp-egroup`"; then echo "@element_groups@" > stamp-egroup; fi
 stamp-egroup:
 	@/bin/rm -f stamp-h
 	@$(MAKE) stamp-h
@@ -93,7 +93,7 @@ clean:
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f config.h Makefile config.status
-	-rm -f config.cache config.log click-compile
+	-rm -f config.cache config.log click-compile stamp-h stamp-egroup
 
 
 distdir = $(PACKAGE)-$(VERSION)
