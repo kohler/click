@@ -85,7 +85,7 @@ class ErrorHandler { public:
 
   virtual void set_error_code(int);
 
-  static String prepend_lines(const String &, const String &);
+  static String prepend_lines(const String &prefix, const String &text);
 
   // error conversions
   struct Conversion;
