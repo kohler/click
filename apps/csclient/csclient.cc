@@ -49,8 +49,9 @@ ControlSocketClient::configure(unsigned int ip, unsigned short port)
   if (res < 0) 
     return -1;
   
-  int major, minor, slash, dot;
-  
+  int major, minor;
+  unsigned int slash, dot;
+
   /* 
    * check that we get the expected banner
    */
@@ -118,7 +119,7 @@ ControlSocketClient::get_resp_code(string line)
 int
 ControlSocketClient::get_data_len(string line)
 {
-  int i;
+  unsigned int i;
   for (i = 0; i < line.size() && !isdigit(line[i]); i++)
     ; // scan string
   if (i == line.size())
@@ -142,7 +143,7 @@ ControlSocketClient::read(string name, string handler, string &response)
   int res = write(_fd, cmd.c_str(), cmd.size());
   if (res < 0)
     return -1;
-  assert(res == cmd.size());
+  assert(res == (int) cmd.size());
 
   string cmd_resp;
   string line;
