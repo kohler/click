@@ -275,6 +275,7 @@ ControlSocket::cleanup(CleanupStage)
   }
   for (int i = 0; i < _flags.size(); i++)
     if (_flags[i] >= 0) {
+      flush_write(i, false);	// try one last time to emit all data
       close(i);
       _flags[i] = -1;
     }
