@@ -397,7 +397,9 @@ The first lines of a
 .B take_state
 method usually call
 .B cast()
-to check \fIold_element\fP's class.
+to check \fIold_element\fP's class. It is acceptable to remove state from
+\fIold_element\fP and place it into this element\*Ecopying the state is not
+required.
 .Sp
 Any warnings should be reported to the \fIerrh\fP ErrorHandler. (The new
 router will definitely be installed, so error messages, which would

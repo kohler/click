@@ -59,7 +59,8 @@ IPLoadBalancingMapper::configure(const String &conf, ErrorHandler *errh)
 }
 
 void
-IPLoadBalancingMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &v) const
+IPLoadBalancingMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &v,
+				       IPRewriter *) const
 {
   for (int i = 0; i < _patterns.size(); i++)
     v.push_back(_patterns[i]);

@@ -239,8 +239,8 @@ IPRewriter::Pattern::definite_conflict(const Pattern &o) const
 {
   if (_saddr && _sportl && _daddr && _dport
       && _saddr == o._saddr && _daddr == o._daddr && _dport == o._dport
-      && ((_sportl <= o._sportl && o._sportl <= _sporth)
-	  || (o._sportl <= _sportl && _sportl <= o._sporth)))
+      && ((_sportl <= o._sportl && o._sporth <= _sporth)
+	  || (o._sportl <= _sportl && _sporth <= o._sporth)))
     return true;
   else
     return false;
@@ -256,7 +256,7 @@ IPRewriter::Pattern::find_sport()
   Mapping *r = _rover;
   unsigned short this_sport = ntohs(r->sport());
   do {
-    Mapping *next = _rover->pat_next();
+    Mapping *next = r->pat_next();
     unsigned short next_sport = ntohs(next->sport());
     if (next_sport > this_sport + 1)
       goto found;
@@ -318,7 +318,47 @@ IPRewriter::Pattern::mapping_freed(Mapping *m)
   m->pat_unlink();
 }
 
-inline String
+bool
+IPRewriter::Pattern::accept_mapping(const IPFlowID &in, const IPFlowID &out,
+				    Mapping *&forward, Mapping *&reverse)
+{
+  if ((in.saddr() == out.saddr() && !_saddr)
+      || out.saddr() == _saddr) {
+    if ((in.sport() == out.sport() && !_sportl)
+	|| out.sport() >= _sportl && out.sport() <= _sporth) {
+      if ((in.daddr() == out.daddr() && !_daddr)
+	  || out.daddr() == _daddr) {
+	if ((in.dport() == out.dport() && !_dport)
+	    || out.dport() == _dport)
+	  return true;
+      }
+    }
+  }
+
+  unsigned short want_sport = out.sport();
+  if (_rover) {
+    Mapping *r = _rover;
+    Mapping *p = 0;
+    do {
+      if (r->sport() == want_sport)
+	return false;
+      else if (r->sport() < want_sport && (!p || p->sport() < r->sport()))
+	p = r;
+      r = r->pat_next();
+    } while (r != _rover);
+    _rover = p;
+  }
+
+  if (Mapping::make_pair(in, out, this, _forward_output, _reverse_output,
+			 forward, reverse)) {
+    forward->pat_insert_after(_rover);
+    _rover = forward;
+    return true;
+  } else
+    return false;
+}
+
+String
 IPRewriter::Pattern::s() const
 {
   String saddr, sport, daddr, dport;
@@ -339,7 +379,7 @@ IPRewriter::Pattern::s() const
 //
 
 void
-IPMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &) const
+IPMapper::mapper_patterns(Vector<IPRewriter::Pattern *> &, IPRewriter *) const
 {
 }
 
@@ -369,6 +409,28 @@ IPRewriter::notify_noutputs(int n)
   set_noutputs(n < 1 ? 1 : n);
 }
 
+void
+IPRewriter::collect_patterns(Vector<Pattern *> &pv, Vector<int> &sv)
+{
+  for (int i = 0; i < _input_specs.size(); i++)
+    switch (_input_specs[i].kind) {
+      
+     case INPUT_SPEC_PATTERN:
+      pv.push_back(_input_specs[i].u.pattern);
+      sv.push_back(i);
+      break;
+      
+     case INPUT_SPEC_MAPPER:
+      _input_specs[i].u.mapper->mapper_patterns(pv, this);
+      sv.resize(pv.size(), i);
+      break;
+      
+     default:
+      break;
+      
+    }
+}
+
 int
 IPRewriter::configure(const String &conf, ErrorHandler *errh)
 {
@@ -378,10 +440,7 @@ IPRewriter::configure(const String &conf, ErrorHandler *errh)
     return errh->error("too few arguments; expected `IPRewriter(INPUTSPEC, ...)'");
   set_ninputs(args.size());
 
-  // check patterns for conflicts
-  Vector<Pattern *> all_pat;
-  Vector<int> all_pat_source;
-  
+  // parse arguments
   int before = errh->nerrors();
   for (int i = 0; i < args.size(); i++) {
     String word, rest;
@@ -408,11 +467,8 @@ IPRewriter::configure(const String &conf, ErrorHandler *errh)
 
     } else if (word == "pattern") {
       if (Pattern *p = Pattern::make(rest, errh)) {
-	_patterns.push_back(p);
 	is.kind = INPUT_SPEC_PATTERN;
 	is.u.pattern = p;
-	all_pat.push_back(p);
-	all_pat_source.push_back(i);
       }
 
     } else if (Element *e = cp_element(word, this, 0)) {
@@ -422,8 +478,6 @@ IPRewriter::configure(const String &conf, ErrorHandler *errh)
       else {
 	is.kind = INPUT_SPEC_MAPPER;
 	is.u.mapper = mapper;
-	mapper->mapper_patterns(all_pat);
-	all_pat_source.resize(all_pat.size(), i);
       }
       
     } else
@@ -433,6 +487,9 @@ IPRewriter::configure(const String &conf, ErrorHandler *errh)
   }
 
   // check patterns for conflicts
+  Vector<Pattern *> all_pat;
+  Vector<int> all_pat_source;
+  collect_patterns(all_pat, all_pat_source);
   for (int i = 0; i < all_pat.size(); i++)
     for (int j = 0; j < i; j++) {
       if (all_pat[j]->definite_conflict(*all_pat[i]))
@@ -477,11 +534,55 @@ IPRewriter::initialize(ErrorHandler *errh)
 }
 
 void
+IPRewriter::take_map_state(bool is_tcp,
+			   const HashMap<IPFlowID, Mapping *> &omap,
+			   const Vector<Pattern *> &all_pat,
+			   const Vector<int> &, ErrorHandler *errh)
+{
+  bool warned = false;
+  
+  int i = 0;
+  IPFlowID flow;
+  Mapping *m;
+  while (omap.each(i, flow, m))
+    if (m && m->is_forward()) {
+      Mapping *new_f = 0, *new_r = 0;
+      for (int j = 0; j < all_pat.size() && !new_f; j++)
+	all_pat[j]->accept_mapping(flow, m->flow_id(), new_f, new_r);
+      if (new_f)
+	install(is_tcp, new_f, new_r);
+      else if (!warned) {
+	errh->warning("not all old %s mappings could be transferred",
+		      (is_tcp ? "TCP" : "UDP"));
+	warned = true;
+      }
+    }
+}
+
+void
+IPRewriter::take_state(Element *e, ErrorHandler *errh)
+{
+  IPRewriter *rw = (IPRewriter *)e->cast("IPRewriter");
+  if (!rw) return;
+
+  Vector<Pattern *> all_pat;
+  Vector<int> all_pat_source;
+  collect_patterns(all_pat, all_pat_source);
+  take_map_state(false, rw->_udp_map, all_pat, all_pat_source, errh);
+  take_map_state(true, rw->_tcp_map, all_pat, all_pat_source, errh);
+}
+
+void
 IPRewriter::uninitialize()
 {
   _timer.unschedule();
-  for (int i = 0; i < _patterns.size(); i++)
-    delete _patterns[i];
+
+  clear_map(_tcp_map);
+  clear_map(_udp_map);
+
+  for (int i = 0; i < _input_specs.size(); i++)
+    if (_input_specs[i].kind == INPUT_SPEC_PATTERN)
+      delete _input_specs[i].u.pattern;
 }
 
 void
@@ -504,7 +605,28 @@ IPRewriter::mark_live_tcp()
 }
 
 void
-IPRewriter::clean_one_map(HashMap<IPFlowID, Mapping *> &h)
+IPRewriter::clear_map(HashMap<IPFlowID, Mapping *> &h)
+{
+  Vector<Mapping *> to_free;
+  
+  int i = 0;
+  IPFlowID flow;
+  Mapping *m;
+  while (h.each(i, flow, m))
+    if (m && m->is_forward())
+      to_free.push_back(m);
+
+  for (i = 0; i < to_free.size(); i++) {
+    Mapping *m = to_free[i];
+    if (Pattern *p = m->pattern())
+      p->mapping_freed(m);
+    delete m->reverse();
+    delete m;
+  }
+}
+
+void
+IPRewriter::clean_map(HashMap<IPFlowID, Mapping *> &h)
 {
   Vector<Mapping *> to_free;
   
@@ -533,8 +655,8 @@ IPRewriter::clean_one_map(HashMap<IPFlowID, Mapping *> &h)
 void
 IPRewriter::clean()
 {
-  clean_one_map(_tcp_map);
-  clean_one_map(_udp_map);
+  clean_map(_tcp_map);
+  clean_map(_udp_map);
 }
 
 void
@@ -607,7 +729,7 @@ IPRewriter::push(int port, Packet *p)
 }
 
 
-inline String
+String
 IPRewriter::dump_table()
 {
   String tcps, udps;
@@ -631,12 +753,13 @@ IPRewriter::dump_table()
     return String();
 }
 
-inline String
+String
 IPRewriter::dump_patterns()
 {
   String s;
-  for (int i = 0; i < _patterns.size(); i++)
-    s += _patterns[i]->s() + "\n";
+  for (int i = 0; i < _input_specs.size(); i++)
+    if (_input_specs[i].kind == INPUT_SPEC_PATTERN)
+      s += _input_specs[i].u.pattern->s() + "\n";
   return s;
 }
 

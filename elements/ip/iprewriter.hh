@@ -71,7 +71,6 @@ class IPRewriter : public Element {
   };
   
   Vector<InputSpec> _input_specs;
-  Vector<Pattern *> _patterns;
   HashMap<IPFlowID, Mapping *> _tcp_map;
   HashMap<IPFlowID, Mapping *> _udp_map;
 
@@ -80,8 +79,13 @@ class IPRewriter : public Element {
   static const int GC_INTERVAL_SEC = 10;
 
   void mark_live_tcp();
-  void clean_one_map(HashMap<IPFlowID, Mapping *> &);
+  void clean_map(HashMap<IPFlowID, Mapping *> &);
   void clean();
+  void clear_map(HashMap<IPFlowID, Mapping *> &);
+  void collect_patterns(Vector<Pattern *> &, Vector<int> &);
+  void take_map_state(bool, const HashMap<IPFlowID, Mapping *> &,
+		      const Vector<Pattern *> &, const Vector<int> &,
+		      ErrorHandler *);
 
  public:
 
@@ -95,6 +99,7 @@ class IPRewriter : public Element {
   
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
+  void take_state(Element *, ErrorHandler *);
   void uninitialize();
   void add_handlers();
   void run_scheduled();
@@ -134,6 +139,7 @@ class IPRewriter : public Element {
     const IPFlowID &flow_id() const	{ return _mapto; }
     Pattern *pattern() const		{ return _pat; }
     int output() const 			{ return _out; }
+    bool is_forward() const		{ return !_is_reverse; }
     bool is_reverse() const		{ return _is_reverse; }
     Mapping *reverse() const		{ return _reverse; }
     bool used() const			{ return _used; }
@@ -178,14 +184,15 @@ class IPRewriter : public Element {
     Pattern(const IPAddress &, int, int, const IPAddress &, int, int, int);
     static Pattern *make(const String &, ErrorHandler *);
     
-    bool possible_conflict(const Pattern &) const;
-    bool definite_conflict(const Pattern &) const;
-    
     operator bool() const { return _saddr || _sporth || _daddr || _dport; }
     int forward_output() const			{ return _forward_output; }
     int reverse_output() const			{ return _reverse_output; }
     
+    bool possible_conflict(const Pattern &) const;
+    bool definite_conflict(const Pattern &) const;
+    
     bool create_mapping(const IPFlowID &, Mapping *&, Mapping *&);
+    bool accept_mapping(const IPFlowID &, const IPFlowID &, Mapping *&, Mapping *&);    
     void mapping_freed(Mapping *);
     
     String s() const;
@@ -203,7 +210,7 @@ class IPMapper {
   IPMapper()				{ }
   virtual ~IPMapper()			{ }
 
-  void mapper_patterns(Vector<IPRewriter::Pattern *> &) const;
+  void mapper_patterns(Vector<IPRewriter::Pattern *> &, IPRewriter *) const;
   IPRewriter::Mapping *get_map(bool, const IPFlowID &, IPRewriter *);
   
 };
