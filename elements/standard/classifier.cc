@@ -963,11 +963,8 @@ Classifier::length_checked_push(Packet *p)
   int packet_length = p->length() + _align_offset; // XXX >= MAXINT?
   Expr *ex = &_exprs[0];	// avoid bounds checking
   int pos = 0;
-  goto start;
   
-  while (pos > 0) {
-    
-   start:
+  do {
     if (ex[pos].offset+UBYTES > packet_length)
       goto check_length;
     
@@ -988,7 +985,7 @@ Classifier::length_checked_push(Packet *p)
 	goto length_ok;
     }
     pos = ex[pos].no;
-  }
+  } while (pos > 0);
   
   checked_output_push(-pos, p);
 }
