@@ -305,18 +305,6 @@ dnl
 dnl kernel features
 dnl
 
-AC_ARG_ENABLE(adaptive, [  --enable-adaptive       use adaptive scheduler to flexibly arbitrate between    
-                          Click and the kernel (EXPERIMENTAL)], :, enable_adaptive=no)
-if test "x$enable_adaptive" = xyes; then
-    AC_DEFINE(HAVE_ADAPTIVE_SCHEDULER)
-fi
-
-AC_ARG_ENABLE(greedy, [  --enable-greedy         kernel module keeps CPU forever (requires SMP;
-                          provides more predictable performance)], :, enable_greedy=no)
-if test "x$enable_greedy" = xyes; then
-    AC_DEFINE(CLICK_GREEDY)
-fi
-
 AC_ARG_ENABLE(warp9, [  --enable-warp9          reduce PollDevice functionality for speed], :, enable_warp9=no)
 if test "x$enable_warp9" = xyes; then
     AC_DEFINE(CLICK_WARP9)
@@ -463,6 +451,18 @@ dnl
 AC_ARG_ENABLE(stride, [  --disable-stride        disable stride scheduler], :, enable_stride=yes)
 if test $enable_stride = yes; then
     AC_DEFINE(HAVE_STRIDE_SCHED)
+fi
+
+AC_ARG_ENABLE(adaptive, [  --enable-adaptive       use adaptive scheduler to flexibly arbitrate between    
+                          Click and the kernel (EXPERIMENTAL)], :, enable_adaptive=no)
+if test "x$enable_adaptive" = xyes; then
+    AC_DEFINE(HAVE_ADAPTIVE_SCHEDULER)
+fi
+
+AC_ARG_ENABLE(greedy, [  --enable-greedy         kernel module keeps CPU forever (requires SMP;
+                          provides more predictable performance)], :, enable_greedy=no)
+if test "x$enable_greedy" = xyes; then
+    AC_DEFINE(CLICK_GREEDY)
 fi
 
 

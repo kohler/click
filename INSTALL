@@ -6,17 +6,17 @@ C++ compiler (version 2.95 or above); and GNU Make. The `./configure'
 script should complain if it cannot find software it needs.
 
 The user-level version of Click should compile and run on any Intel x86
-Unix system that has the pcap library, which is necessary to communicate
-with the network. See the end of this document for portability notes for
-other architectures.
+Unix system. The pcap library may be necessary to communicate with the
+network. See the end of this document for portability notes for other
+architectures.
 
-The Linux kernel module requires a patched Linux 2.2 system. We provide
-patches for Linux 2.2.18 through 2.2.21. We also distribute a Linux 2.4
-patch, which we are working on, but as of now, Linux 2.4 support is not as
-stable as Linux 2.2 support.
+The Linux kernel module requires a patched Linux 2.2 or 2.4 system. We
+provide patches for Linux 2.2.18 through 2.2.21 and 2.4.18 through 2.4.20.
 
-Finally, the preliminary FreeBSD Click kernel module compiles against
-unpatched FreeBSD-STABLE versions after 440002.
+The preliminary FreeBSD Click kernel module compiles against unpatched
+FreeBSD-STABLE versions after 440002.
+
+The clickns module for XXX.
 
 CONFIGURING
 -----------
@@ -45,10 +45,10 @@ to see more options for `./configure'.
           directory and run `autoconf', then continue as above.
 
 After running `./configure', the `make install' command will install the
-user-level executable `click', the kernel module `click.o', the
-configuration optimizer `click-xform', and manual pages for the Click
-language, the kernel module, and many of the element classes, all under
-PREFIX (which defaults to /usr/local).
+user-level executable `click', the kernel module `click.o', configuration
+optimizers like `click-xform' and other tools, and manual pages for the
+Click language, the kernel module, and many of the element classes, all
+under PREFIX (which defaults to /usr/local).
 
 USERLEVEL
 ---------
@@ -70,10 +70,9 @@ files.
 The configure script may not be able to find your pcap library if it's in a
 nonstandard place. It will report an error in this case. To fix the error,
 set your `PCAP_INCLUDES' and `PCAP_LIBS' environment variables and rerun
-`./configure'. The `PCAP_INCLUDES' variable contains options that tell the
-C preprocessor where to find `pcap.h'; the `PCAP_LIBS' variable contains
-options that tell the linker where to find `libpcap.a'. One example setting
-would be `PCAP_INCLUDES=-I/usr/local/include/pcap' and
+`./configure'. `PCAP_INCLUDES' tells the C preprocessor where to find
+`pcap.h', and `PCAP_LIBS' tells the linker where to find `libpcap.a'. One
+example setting would be `PCAP_INCLUDES=-I/usr/local/include/pcap' and
 `PCAP_LIBS=-L/usr/local/lib/pcap'.
 
 LINUX MODULE
@@ -110,8 +109,8 @@ and running Linux kernels.
     modules.
 
  4. Configure the new kernel. The Click patch does not add any
-    configuration options, so you can start from your old 2.2
-    configuration, or you can do the usual `make menuconfig'.
+    configuration options, so you can start from your old configuration, or
+    you can do the usual `make menuconfig'.
 
  5. If your archived, working kernel has the same version number as the
     patched kernel (they're both 2.2.21, for example), then it is a good
@@ -138,20 +137,22 @@ Now you are ready to compile and install the Click module. Rerun
 
 	rm -f config.cache ; ./configure [OPTIONS]
 
-Then build the module:
+If your Linux source is not in /usr/src/linux, give `./configure' the
+`--with-linux=LINUXDIR' option. If your System.map file is not in
+LINUXDIR/System.map, give it the `--with-linux-map=MAPFILE' option.
 
-	cd linuxmodule
-	gmake
+Then build and install the click module, its companion proclikefs module,
+and the language tools:
 
-Eventually, this will create a module object file, `click.o'. Install this
-module with
+	gmake install
 
-	/sbin/insmod click.o
+This will create two module object files, `linuxmodule/click.o' and
+`linuxmodule/proclikefs.o', and place them in `CLICKPREFIX/lib'. To install
+these module and a router configuration, run
 
-(or use the click-install(1) program). At this point you can load a
-configuration file (see doc/click.5) with
+	CLICKPREFIX/sbin/click-install ROUTERCONFIGFILE
 
-        cat xxx.click > /proc/click/config
+Alternatively you could use /sbin/insmod by hand.
 
 PORTABILITY
 -----------

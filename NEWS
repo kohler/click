@@ -31,13 +31,14 @@ Version 1.3pre1
    accessing handlers from a Router object.
 
 ** Element map files now use an XML format, and are called 'elementmap.xml'
-   or 'elementmap-PACKAGE.xml', not 'elementmap' or 'elementmap.PACKAGE'.
+   and 'elementmap-PACKAGE.xml', not 'elementmap' and 'elementmap.PACKAGE'.
 
 ** LLRPCs now explicitly encode the amount of data they transfer to and
-   from the caller, using the same mechanism as ioctl(). This made it
-   possible to remove the local_llrpc() virtual method.
+   from the caller, using the same mechanism as ioctl(). The local_llrpc()
+   virtual method has been removed.
 
-** Removed deprecated header files like <click/click_ip.h>.
+** Removed deprecated header files like <click/click_ip.h> (use
+   <clicknet/ip.h> and similar).
 
 ** Changed ICMP structure and macro names in <clicknet/icmp.h>.
 
@@ -63,6 +64,12 @@ Version 1.3pre1
    Linux kernel module, on a uniprocessor, for running user-level programs
    (tcpdump, for instance) as well as Click.
 
+** Integrated the 'nsclick' driver from the University of Colorado, and
+   particularly by Michael Neufeld. This driver lets you integrate a Click
+   router with an ns simulation; Click can accept ns packets and return
+   packets to ns. See configure's '--enable-ns' option and the 'ns'
+   subdirectory.
+
 ** Add support for Linux 2.4.20 and a newer Intel E1000 driver (4.3.15).
 
 ** Linux kernel module driver notices when other processes are waiting to
@@ -76,12 +83,6 @@ Version 1.3pre1
 ** Add 'Task::strong_unschedule()', which moves tasks to the quiescent
    thread; that way, tasks will not run even if they are rescheduled.
    Useful in the presence of notification.
-
-** Integrated the 'nsclick' driver from the University of Colorado, and
-   particularly by Michael Neufeld. This driver lets you integrate a Click
-   router with an ns simulation; Click can accept ns packets and return
-   packets to ns. See configure's '--enable-ns' option and the 'ns'
-   subdirectory.
 
 ** Improve performance of add_select() and remove_select() at user level.
 
