@@ -323,7 +323,9 @@ static Lexer *click_lexer;
 extern "C" int
 click_add_element_type(const char *ename, Element *e)
 {
-    if (ename)
+    if (!click_lexer && !(click_lexer = new Lexer))
+	return -99;
+    else if (ename)
 	return click_lexer->add_element_type(ename, e);
     else
 	return click_lexer->add_element_type(e);
@@ -332,7 +334,8 @@ click_add_element_type(const char *ename, Element *e)
 extern "C" void
 click_remove_element_type(int which)
 {
-    click_lexer->remove_element_type(which);
+    if (click_lexer)
+	click_lexer->remove_element_type(which);
 }
 
 
@@ -421,10 +424,8 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
     }
 
     // lex
-    if (!click_lexer) {
+    if (!click_lexer)
 	click_lexer = new Lexer;
-	click_export_elements(click_lexer);
-    }
     RequireLexerExtra lextra(&archive);
     int cookie = click_lexer->begin_parse(config_str, filename, &lextra, errh);
     while (click_lexer->ystatement())
