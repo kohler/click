@@ -12,7 +12,7 @@ eth :: FromDevice(GW_NET_DEVICE, 0)
 to_eth :: ToDevice(GW_NET_DEVICE)
 
 wvlan :: FromDevice(NET_DEVICE, 1)
-to_wvlan :: FixSrcLoc -> ToDevice(NET_DEVICE)
+to_wvlan :: FixSrcLoc -> SetGridChecksum -> ToDevice(NET_DEVICE)
 
 // IP interfaces on gateway machine
 tun1 :: Tun(TUN_DEVICE, GW_IP, GW_NETMASK) // gateway's regular address
@@ -48,7 +48,10 @@ Idle -> to_tun1
 eth_demux [3] -> Strip(14) -> Discard // linux handles -> to_tun2
 eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] nb
 
-wvlan_demux [0] -> fr :: FilterByRange(1000) [0] -> [0] nb
+wvlan_demux [0] -> check_grid :: CheckGridHeader [0]
+                -> fr :: FilterByRange(1000) [0] 
+                -> [0] nb
+check_grid [1]-> Print(bad_grid_hdr) -> Discard
 fr [1] -> Print(out_of_range) -> Discard
 wvlan_demux [1] -> Discard
 
