@@ -1,3 +1,44 @@
+2004-06-22 Tuesday 03:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/analysis/FromIPSummaryDump-ipopt-01.testie (1.9): update
+	test for newer tcpdump (unfortunately, bugs in tcpdump mean we skip
+	a lot of TCP checksum checks)
+
+2004-06-22 Tuesday 03:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: analysis/fromcapdump.cc (1.7),
+	analysis/fromipsumdump.cc (1.65), analysis/fromtcpdump.cc (1.6),
+	app/ftpportmapper.cc (1.25), tcpudp/checktcpheader.cc (1.17),
+	tcpudp/checkudpheader.cc (1.17), tcpudp/dynudpipencap.cc (1.16),
+	tcpudp/settcpchecksum.cc (1.13), tcpudp/setudpchecksum.cc (1.4),
+	tcpudp/tcpipsend.cc (1.14), tcpudp/udpipencap.cc (1.18): use new
+	click_in_cksum_pseudohdr
+
+2004-06-22 Tuesday 03:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/ip.h (1.4), lib/in_cksum.c (1.14): update click
+	pseudoheader story.  Source routing options change how the TCP/UDP
+	pseudoheader should be constructed; in particular, the last address
+	in the option is used, not the IP header value.  The
+	click_in_cksum_pseudohdr function now does this calculation.  The
+	old click_in_cksum_pseudohdr is available as ..._raw.
+
+2004-06-22 Tuesday 03:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/glue.hh (1.40), lib/glue.cc (1.43): click_chatter
+	is extern "C", making it accessible from C
+
+2004-06-22 Tuesday 02:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/Makefile.in (1.88): include in_cksum (for
+	click_in_cksum_pseudohdr_hard)
+
+2004-06-22 Tuesday 02:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/testie (1.33): support -a and -d arguments to
+	%file/%expect*.  -a is particularly useful: provide multiple
+	expected values; test succeeds if any of them match.
+
 2004-06-21 Monday 23:29  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/testie (1.32): use setpgrp() to form a new process group,
