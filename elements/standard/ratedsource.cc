@@ -128,7 +128,7 @@ RatedSource::pull(int)
 {
   if (!_active)
     return 0;
-  if (_limit != NO_LIMIT && _count >= _limit) {
+  if (_limit != NO_LIMIT && _count >= _limit && _stop) {
     router()->please_stop_driver();
     return 0;
   }
