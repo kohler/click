@@ -1,3 +1,14 @@
+2001-10-09 Tuesday 19:56  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdevice.cc (1.36): clean up pcap error
+	messages
+
+2001-10-09 Tuesday 19:47  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdevice.cc (1.35): FromDevice.u: when
+	compiling a BPF filter, use mutable_c_str(), not mutable_data(), to
+	ensure that \0 is appended
+
 2001-10-09 Tuesday 16:57  Eddie Kohler <kohler@aciri.org>
 
 	* click-buildtool (1.29): add -S/--standards option to
