@@ -17,7 +17,7 @@
 #define EXPORT_ELEMENT(x)
 
 /* Define to 1 if <new.h> exists and works. */
-#define HAVE_NEW_H 1
+#undef HAVE_NEW_H
 
 @TOP@
 @BOTTOM@
