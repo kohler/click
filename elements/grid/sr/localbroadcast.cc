@@ -99,20 +99,6 @@ LocalBroadcast::run_timer ()
   _timer.schedule_after_ms(1000);
 }
 
-// Send a packet.
-// fills in ethernet header
-void
-LocalBroadcast::send(WritablePacket *p)
-{
-  click_ether *eh = (click_ether *) p->data();
-
-  eh->ether_type = htons(_et);
-  memcpy(eh->ether_shost, _en.data(), 6);
-  memset(eh->ether_dhost, 0xff, 6);
-  _packets_tx++;
-  output(0).push(p);
-}
-
 void
 LocalBroadcast::push(int port, Packet *p_in)
 {
@@ -127,6 +113,10 @@ LocalBroadcast::push(int port, Packet *p_in)
       return;
 
     click_ether *eh = (click_ether *) p->data();
+    eh->ether_type = htons(_et);
+    memcpy(eh->ether_shost, _en.data(), 6);
+    memset(eh->ether_dhost, 0xff, 6);
+
     struct srpacket *pk = (struct srpacket *) (eh+1);
 
     memset(pk, '\0', srpacket::len_wo_data(hops));
@@ -139,15 +129,15 @@ LocalBroadcast::push(int port, Packet *p_in)
     pk->set_num_hops(hops);
     pk->set_hop(0,_ip);
     pk->set_next(0);
-    _packets_originated++;
-    send(p);
 
-    return;
+    _packets_tx++;
+    _packets_originated++;
+
+    output(0).push(p);
 
   } else {
     _packets_rx++;
     output(1).push(p_in);
-    return;
   }
 
 }

@@ -291,12 +291,37 @@ PFlood::static_write_debug(const String &arg, Element *e,
   n->_debug = b;
   return 0;
 }
+
+
+int
+PFlood::static_write_p(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  PFlood *n = (PFlood *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`p' must be an integer");
+
+  n->_p = b;
+  return 0;
+}
+
 String
 PFlood::static_print_debug(Element *f, void *)
 {
   StringAccum sa;
   PFlood *d = (PFlood *) f;
   sa << d->_debug << "\n";
+  return sa.take_string();
+}
+
+String
+PFlood::static_print_p(Element *f, void *)
+{
+  StringAccum sa;
+  PFlood *d = (PFlood *) f;
+  sa << d->_p << "\n";
   return sa.take_string();
 }
 
@@ -329,8 +354,10 @@ PFlood::add_handlers()
   add_read_handler("stats", static_print_stats, 0);
   add_read_handler("debug", static_print_debug, 0);
   add_read_handler("packets", static_print_packets, 0);
+  add_read_handler("p", static_print_p, 0);
 
   add_write_handler("debug", static_write_debug, 0);
+  add_write_handler("p", static_write_p, 0);
 }
 
 // generate Vector template instance

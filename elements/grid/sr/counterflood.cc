@@ -92,7 +92,16 @@ CounterFlood::initialize (ErrorHandler *)
 
 void
 CounterFlood::forward(Broadcast *bcast) {
+
+  if (_debug) {
+    click_chatter("%{element} forwarding seq %d\n",
+		  this,
+		  bcast->_seq);
+  }
   Packet *p_in = bcast->_p;
+  if (!p_in) {
+    return;
+  }
   click_ether *eh_in = (click_ether *) p_in->data();
   struct srpacket *pk_in = (struct srpacket *) (eh_in+1);
 
@@ -150,14 +159,14 @@ CounterFlood::forward_hook()
   struct timeval now;
   click_gettimeofday(&now);
   for (int x = 0; x < _packets.size(); x++) {
-    if (timercmp(&_packets[x]._to_send, &now, <=)) {
+    if (timercmp(&now, &_packets[x]._to_send, >)) {
       /* this timer has expired */
       if (!_packets[x]._forwarded && 
 	  (!_count || _packets[x]._num_rx < _count)) {
 	/* we haven't forwarded this packet yet */
 	forward(&_packets[x]);
       }
-      _packets[x]._forwarded= true;
+      _packets[x]._forwarded = true;
     }
   }
 }
@@ -166,6 +175,7 @@ CounterFlood::forward_hook()
 void
 CounterFlood::trim_packets() {
   /* only keep track of the last _max_packets */
+
   while ((_packets.size() > _history)) {
     /* unschedule and remove packet*/
     if (_debug) {
@@ -174,11 +184,12 @@ CounterFlood::trim_packets() {
 		    _packets[0]._seq);
     }
     _packets[0].del_timer();
-    if (_packets[0]._p) {
+    if (_packets[0]._p != 0) {
       _packets[0]._p->kill();
     }
     _packets.pop_front();
   }
+
 }
 void
 CounterFlood::push(int port, Packet *p_in)
@@ -193,13 +204,20 @@ CounterFlood::push(int port, Packet *p_in)
     _packets.push_back(Broadcast());
     _packets[index]._seq = random();
     _packets[index]._originated = true;
-    _packets[index]._p = p_in;
+    _packets[index]._p = p_in->clone();
     _packets[index]._num_rx = 0;
     _packets[index]._first_rx = now;
     _packets[index]._forwarded = true;
     _packets[index]._actually_sent = false;
     _packets[index].t = NULL;
     _packets[index]._to_send = now;
+    if (_debug) {
+      click_chatter("%{element} original packet %d, seq %d\n",
+		    this,
+		    _packets_originated,
+		    _packets[index]._seq);
+    }
+    p_in->kill();
     forward(&_packets[index]);
   } else {
     _packets_rx++;
@@ -223,7 +241,7 @@ CounterFlood::push(int port, Packet *p_in)
       _packets.push_back(Broadcast());
       _packets[index]._seq = seq;
       _packets[index]._originated = false;
-      _packets[index]._p = p_in;
+      _packets[index]._p = p_in->clone();
       _packets[index]._num_rx = 1;
       _packets[index]._first_rx = now;
       _packets[index]._forwarded = false;
@@ -243,8 +261,7 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index].t->schedule_at(_packets[index]._to_send);
 
       /* finally, clone the packet and push it out */
-      Packet *p_out = p_in->clone();
-      output(1).push(p_out);
+      output(1).push(p_in);
     } else {
       /* we've seen this packet before */
       p_in->kill();
@@ -274,6 +291,21 @@ CounterFlood::print_stats()
   return sa.take_string();
 }
 
+String
+CounterFlood::static_print_count(Element *f, void *)
+{
+  CounterFlood *d = (CounterFlood *) f;
+  return d->print_count();
+}
+
+String
+CounterFlood::print_count()
+{
+  StringAccum sa;
+  sa << _count << "\n";
+  return sa.take_string();
+}
+
 int
 CounterFlood::static_write_debug(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
@@ -285,6 +317,20 @@ CounterFlood::static_write_debug(const String &arg, Element *e,
     return errh->error("`debug' must be a boolean");
 
   n->_debug = b;
+  return 0;
+}
+
+int
+CounterFlood::static_write_count(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  CounterFlood *n = (CounterFlood *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`count' must be a integer");
+
+  n->_count = b;
   return 0;
 }
 String
@@ -325,8 +371,10 @@ CounterFlood::add_handlers()
   add_read_handler("stats", static_print_stats, 0);
   add_read_handler("debug", static_print_debug, 0);
   add_read_handler("packets", static_print_packets, 0);
+  add_read_handler("count", static_print_count, 0);
 
   add_write_handler("debug", static_write_debug, 0);
+  add_write_handler("count", static_write_count, 0);
 }
 
 // generate Vector template instance

@@ -57,7 +57,6 @@ class LocalBroadcast : public Element {
   void add_handlers();
 private:
 
-  void send(WritablePacket *p);
   u_long _seq;      // Next query sequence number to use.
   Timer _timer;
   IPAddress _ip;    // My IP address.

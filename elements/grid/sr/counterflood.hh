@@ -67,8 +67,13 @@ class CounterFlood : public Element {
   static int static_write_debug(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 
 
+  static int static_write_count(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
+
   static String static_print_stats(Element *e, void *);
   String print_stats();
+  static String static_print_count(Element *e, void *);
+  String print_count();
 
   static String static_print_packets(Element *e, void *);
   String print_packets();

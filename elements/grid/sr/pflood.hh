@@ -64,7 +64,11 @@ class PFlood : public Element {
 
 
   static String static_print_debug(Element *f, void *);
+  static String static_print_p(Element *f, void *);
   static int static_write_debug(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
+
+  static int static_write_p(const String &arg, Element *e,
 				void *, ErrorHandler *errh); 
 
   static String static_print_stats(Element *e, void *);

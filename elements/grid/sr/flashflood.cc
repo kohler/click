@@ -61,7 +61,7 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
                     "BCAST_IP", cpIPAddress, "IP address", &_bcast_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
 		    "ETT", cpElement, "ETTMetric", &_ett_metric,
-		    "MIN_P", cpUnsigned, "Min P", &_min_p,
+		    "MIN_P", cpInteger, "Min P", &_min_p,
 		    /* below not required */
 		    "DEBUG", cpBool, "Debug", &_debug,
 		    "HISTORY", cpUnsigned, "history", &_history,
@@ -375,12 +375,36 @@ FlashFlood::static_write_debug(const String &arg, Element *e,
   n->_debug = b;
   return 0;
 }
+
+int
+FlashFlood::static_write_min_p(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  FlashFlood *n = (FlashFlood *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`min_p' must be a integer");
+
+  n->_min_p = b;
+  return 0;
+}
+
 String
 FlashFlood::static_print_debug(Element *f, void *)
 {
   StringAccum sa;
   FlashFlood *d = (FlashFlood *) f;
   sa << d->_debug << "\n";
+  return sa.take_string();
+}
+
+String
+FlashFlood::static_print_min_p(Element *f, void *)
+{
+  StringAccum sa;
+  FlashFlood *d = (FlashFlood *) f;
+  sa << d->_min_p << "\n";
   return sa.take_string();
 }
 
@@ -407,14 +431,18 @@ FlashFlood::static_print_packets(Element *f, void *)
   return d->print_packets();
 }
 
+
+
 void
 FlashFlood::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
   add_read_handler("debug", static_print_debug, 0);
   add_read_handler("packets", static_print_packets, 0);
+  add_read_handler("min_p", static_print_min_p, 0);
 
   add_write_handler("debug", static_write_debug, 0);
+  add_write_handler("min_p", static_write_min_p, 0);
 }
 
 // generate Vector template instance
