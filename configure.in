@@ -84,7 +84,7 @@ if test "x$linuxdir" = xNONE; then
     AC_MSG_WARN([
 =========================================
 
-I can't find /usr/src/linux, so I'm not compiling the linuxmodule driver.
+Can't find /usr/src/linux, so I'm not compiling the linuxmodule driver.
 (You may need the --with-linux=DIR option.)
 
 =========================================])
@@ -94,13 +94,21 @@ fi
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
   ac_have_linux_kernel=n
   linuxdir=NONE
+elif expr "$linuxdir" : '[[^/\\]]' >/dev/null; then 
+  AC_MSG_ERROR([
+=========================================
+
+The --with-linux directory $linuxdir is relative.
+You must supply an absolute path starting with /.
+
+=========================================])
 elif test -r $linuxdir/include/linux/skbuff.h; then
   ac_have_linux_kernel=y
 else
   AC_MSG_ERROR([
 =========================================
 
-I can't find $linuxdir/include/linux/skbuff.h!
+Can't find $linuxdir/include/linux/skbuff.h.
 Are you sure $linuxdir contains Linux kernel source?
 
 =========================================])
@@ -205,8 +213,8 @@ if test "x$freebsddir" = xNONE; then
     AC_MSG_WARN([
 =========================================
 
-I can't find /usr/src/sys and/or /usr/include, so I'm not compiling
-the bsdmodule driver. (You may need the --with-freebsd=DIR option.)
+Can't find /usr/src/sys and/or /usr/include, so I'm not compiling
+the bsdmodule driver.  (You may need the --with-freebsd=DIR option.)
 
 =========================================])
   fi
@@ -218,14 +226,22 @@ freebsd_includedir=`echo "$freebsddir,/usr/include," | sed -e 's/^[[^,]]*,\([[^,
 if test "x$freebsddir" = xNONE -o "x$freebsddir" = xno -o "x$enable_bsdmodule" != xyes; then
   ac_have_bsd_kernel=n
   freebsddir=NONE
+elif expr '(' "$freebsd_includedir" : '[[^/\\]]' ')' '|' '(' "$freebsd_srcdir" : '[[^/\\]]' ')'; then 
+  AC_MSG_ERROR([
+=========================================
+
+The --with-freebsd directories $freebsd_srcdir,$freebsd_includedir
+are relative.  You must supply absolute paths starting with /.
+
+=========================================])
 elif test -r $freebsd_includedir/net/if_var.h -a -r $freebsd_srcdir/kern/vnode_if.pl; then
   ac_have_bsd_kernel=y
 else
   AC_MSG_ERROR([
 =========================================
 
-I can't find $freebsd_includedir/net/if_var.h and/or
-$freebsd_srcdir/kern/vnode_if.pl! Are you sure $freebsd_srcdir
+Can't find $freebsd_includedir/net/if_var.h and/or
+$freebsd_srcdir/kern/vnode_if.pl.  Are you sure $freebsd_srcdir
 and $freebsd_includedir contain FreeBSD kernel source?
 
 =========================================])
@@ -259,7 +275,7 @@ if test "$enable_tools" != mixed -a "$enable_tools" != host -a "$enable_tools" !
   AC_MSG_ERROR([
 =========================================
 
-Bad value for --enable-tools! Try 'host', 'build', 'mixed', or 'no'.
+Bad value for --enable-tools.  Try 'host', 'build', 'mixed', or 'no'.
 
 =========================================])
 elif test "$enable_tools" = no; then
@@ -417,7 +433,7 @@ if test ! -f $linux_system_map; then
     AC_MSG_ERROR([
 =========================================
 
-Can't find Linux System.map file '$linux_system_map'!
+Can't find Linux System.map file '$linux_system_map'.
 
 =========================================])
 fi
@@ -495,7 +511,7 @@ else
     AC_MSG_WARN([
 =========================================
 
-Your version of FreeBSD is old. Click works with FreeBSD 4.5 and later.
+Your version of FreeBSD is old.  Click works with FreeBSD 4.5 and later.
 
 =========================================])
 fi
@@ -603,7 +619,7 @@ if test "$enable_userlevel" = yes; then
 	AC_MSG_WARN([
 =========================================
 
-pcap.h and/or -lpcap not found; user-level driver can't steal packets
+pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 
 =========================================])
     fi
@@ -641,7 +657,7 @@ if test "$expatprefix" != no; then
 =========================================
 
 You explicitly specified --with-expat, but I can't find the expat headers
-and/or libraries where you said they would be. Run again supplying
+and/or libraries where you said they would be.  Run again supplying
 --without-expat or --with-expat=PREFIX.
 
 =========================================])
@@ -780,7 +796,7 @@ if test -z "$GMAKE"; then
     AC_MSG_ERROR([
 ==============================================
 
-I can't find GNU make. Either put 'gmake' on your PATH and
+Can't find GNU make.  Either put 'gmake' on your PATH and
 rerun './configure', or set the GMAKE environment variable to
 GNU make's pathname.
 
