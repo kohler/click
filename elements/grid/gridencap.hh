@@ -19,7 +19,7 @@ CLICK_DECLS
  * (GRID_NBR_ENCAP), including ethernet, Grid, and grid data encap
  * headers.
  *
- *  =d
+ * =d
  *
  * MAC-ADDRESS and IP-ADDRESS are this node's ethernet and IP
  * addresses, respectively.  Sets the ethernet type to the Grid
