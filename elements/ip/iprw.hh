@@ -46,9 +46,9 @@ class IPRw : public Element { public:
   
   int parse_input_spec(const String &, InputSpec &, String, ErrorHandler *);
   
-  virtual void notify_pattern(Pattern *);
-  virtual Mapping *apply_pattern(Pattern *, int, int, bool tcp, const IPFlowID &) = 0;
-  virtual Mapping *get_mapping(bool tcp, const IPFlowID &) const = 0;
+  virtual int notify_pattern(Pattern *, ErrorHandler *);
+  virtual Mapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int) = 0;
+  virtual Mapping *get_mapping(int ip_p, const IPFlowID &) const = 0;
   
  protected:
 
@@ -78,6 +78,7 @@ class IPRw::Mapping { protected:
     
   bool _used : 1;
   bool _is_reverse : 1;
+  unsigned char _ip_p;
   
   Pattern *_pat;
   Mapping *_pat_prev;
@@ -87,8 +88,8 @@ class IPRw::Mapping { protected:
 
   Mapping();
   
-  void initialize(const IPFlowID &, const IPFlowID &, int, bool, Mapping *);
-  static void make_pair(const IPFlowID &, const IPFlowID &,
+  void initialize(int ip_p, const IPFlowID &, const IPFlowID &, int, bool, Mapping *);
+  static void make_pair(int ip_p, const IPFlowID &, const IPFlowID &,
 			int, int, Mapping *, Mapping *);
     
   const IPFlowID &flow_id() const	{ return _mapto; }
@@ -116,7 +117,7 @@ class IPRw::Mapping { protected:
 };
 
 
-class IPRw::Pattern {
+class IPRw::Pattern { public:
   
   // Pattern is <saddr/sport[-sport2]/daddr/dport>.
   // It is associated with a IPRewriter output port.
@@ -124,6 +125,30 @@ class IPRw::Pattern {
   // to obtain a new IPFlowID rewritten according to the Pattern.
   // Any Pattern component can be '-', which means that the corresponding
   // IPFlowID component is left unchanged. 
+  
+  Pattern(const IPAddress &, int, int, const IPAddress &, int);
+  static int parse(const String &, Pattern **, Element *, ErrorHandler *);
+  static int parse_with_ports(const String &, Pattern **,
+			      int *, int *, Element *, ErrorHandler *);
+
+  void use()			{ _refcount++; }
+  void unuse()			{ if (--_refcount <= 0) delete this; }
+  
+  operator bool() const { return _saddr || _sporth || _daddr || _dport; }
+  bool allow_nat() const	{ return !_is_napt || _sportl == _sporth; }
+  bool allow_napt() const	{ return _is_napt || _sportl == _sporth; }
+  
+  bool can_accept_from(const Pattern &) const;
+
+  bool create_mapping(int ip_p, const IPFlowID &, int fport, int rport, Mapping *, Mapping *);
+  void accept_mapping(Mapping *);
+  void mapping_freed(Mapping *);
+    
+  String s() const;
+  operator String() const	{ return s(); }
+
+ public:
+
   IPAddress _saddr;
   int _sportl;			// host byte order
   int _sporth;			// host byte order
@@ -131,6 +156,7 @@ class IPRw::Pattern {
   int _dport;			// host byte order
 
   Mapping *_rover;		// walks along circular list ordered by port
+  bool _is_napt;
 
   int _refcount;
 
@@ -138,28 +164,10 @@ class IPRw::Pattern {
   Pattern &operator=(const Pattern &);
   
   unsigned short find_sport();
-    
- public:
-    
-  Pattern(const IPAddress &, int, int, const IPAddress &, int);
-  static int parse(const String &, Pattern **, Element *, ErrorHandler *);
-  static int parse_with_ports(const String &, Pattern **, int *, int *,
-			      Element *, ErrorHandler *);
 
-  void use()			{ _refcount++; }
-  void unuse()			{ if (--_refcount <= 0) delete this; }
-  
-  operator bool() const { return _saddr || _sporth || _daddr || _dport; }
-    
-  bool can_accept_from(const Pattern &) const;
+  static int parse_napt(Vector<String> &, Pattern **, Element *, ErrorHandler *);
+  static int parse_nat(Vector<String> &, Pattern **, Element *, ErrorHandler *);
 
-  bool create_mapping(const IPFlowID &, int, int, Mapping *, Mapping *);
-  void accept_mapping(Mapping *);
-  void mapping_freed(Mapping *);
-    
-  String s() const;
-  operator String() const	{ return s(); }
-    
 };
 
 
@@ -171,7 +179,7 @@ class IPMapper {
   virtual ~IPMapper()			{ }
 
   void notify_rewriter(IPRw *, ErrorHandler *);
-  IPRw::Mapping *get_map(IPRw *, bool, const IPFlowID &);
+  IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &);
   
 };
 

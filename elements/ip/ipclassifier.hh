@@ -127,8 +127,8 @@ src port ftp').
 =n
 
 Valid IP port names: `discard', `daytime', `chargen', `ftp-data', `ftp',
-`ssh', `telnet', `smtp', `domain', `dns', `finger', `www', `auth', `https',
-`pop3', `imap3', `pop3s', `imaps'
+`ssh', `telnet', `smtp', `domain', `dns', `finger', `www', `auth', `nntp',
+`ntp', `https', `pop3', `imap3', `pop3s', `imaps'
 
 Valid IP protocol names: `icmp', `igmp', `ipip', `tcp', `udp'
 

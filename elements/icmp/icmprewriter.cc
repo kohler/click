@@ -107,7 +107,11 @@ ICMPRewriter::push(int, Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
   click_ip *iph = p->ip_header();
-  assert(iph->ip_p == IP_PROTO_ICMP);
+  
+  if (iph->ip_p != IP_PROTO_ICMP) {
+    p_in->kill();
+    return;
+  }
   
   icmp_generic *icmph = reinterpret_cast<icmp_generic *>(p->transport_header());
   switch (icmph->icmp_type) {
@@ -125,13 +129,7 @@ ICMPRewriter::push(int, Packet *p_in)
        goto bad;
 
      // check protocol
-     bool is_tcp;
-     if (embedded_iph->ip_p == IP_PROTO_TCP)
-       is_tcp = true;
-     else if (embedded_iph->ip_p == IP_PROTO_UDP)
-       is_tcp = false;
-     else
-       goto unmapped;
+     int embedded_p = embedded_iph->ip_p;
 
      // create flow ID
      click_udp *embedded_udph = reinterpret_cast<click_udp *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
@@ -139,7 +137,7 @@ ICMPRewriter::push(int, Packet *p_in)
      
      IPRw::Mapping *mapping = 0;
      for (int i = 0; i < _maps.size() && !mapping; i++)
-       mapping = _maps[i]->get_mapping(is_tcp, flow.rev());
+       mapping = _maps[i]->get_mapping(embedded_p, flow.rev());
      if (!mapping)
        goto unmapped;
      

@@ -14,6 +14,7 @@ class IPAddress {
   IPAddress(unsigned);	// network byte order IP address
   explicit IPAddress(const String &);	// "18.26.4.99"
   explicit IPAddress(struct in_addr);
+  static IPAddress make_prefix(int);
   
   operator bool() const		{ return _addr != 0; }
   operator unsigned() const	{ return _addr; }
@@ -26,6 +27,9 @@ class IPAddress {
   const unsigned char *data() const;
   
   unsigned hashcode() const	{ return _addr; }
+
+  IPAddress &operator&=(IPAddress);
+  IPAddress &operator|=(IPAddress);
   
   operator String() const	{ return s(); }
   String s() const;
@@ -89,6 +93,32 @@ inline IPAddress
 operator&(IPAddress a, IPAddress b)
 {
   return IPAddress(a.addr() & b.addr());
+}
+
+inline IPAddress &
+IPAddress::operator&=(IPAddress a)
+{
+  _addr &= a._addr;
+  return *this;
+}
+
+inline IPAddress
+operator|(IPAddress a, IPAddress b)
+{
+  return IPAddress(a.addr() | b.addr());
+}
+
+inline IPAddress &
+IPAddress::operator|=(IPAddress a)
+{
+  _addr |= a._addr;
+  return *this;
+}
+
+inline IPAddress
+operator~(IPAddress a)
+{
+  return IPAddress(~a.addr());
 }
 
 #endif

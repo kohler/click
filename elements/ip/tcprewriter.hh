@@ -73,8 +73,9 @@ class TCPRewriter : public IPRw { public:
   
   void run_scheduled();
 
-  TCPMapping *apply_pattern(Pattern *, int, int, bool tcp, const IPFlowID &);
-  TCPMapping *get_mapping(bool, const IPFlowID &) const;
+  int notify_pattern(Pattern *, ErrorHandler *);
+  TCPMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
+  TCPMapping *get_mapping(int ip_p, const IPFlowID &) const;
   
   void push(int, Packet *);
 
@@ -110,9 +111,12 @@ TCPRewriter::TCPMapping::update_ackno_delta(int d)
 }
 
 inline TCPRewriter::TCPMapping *
-TCPRewriter::get_mapping(bool tcp, const IPFlowID &in) const
+TCPRewriter::get_mapping(int ip_p, const IPFlowID &in) const
 {
-  return (tcp ? static_cast<TCPMapping *>(_tcp_map[in]) : 0);
+  if (ip_p == IP_PROTO_TCP)
+    return static_cast<TCPMapping *>(_tcp_map[in]);
+  else
+    return 0;
 }
 
 #endif

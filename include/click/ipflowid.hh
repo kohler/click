@@ -29,6 +29,8 @@ class IPFlowID {
 
   void set_saddr(IPAddress a)		{ _saddr = a; }
   void set_daddr(IPAddress a)		{ _daddr = a; }
+  void set_sport(unsigned short p)	{ _sport = p; }
+  void set_dport(unsigned short p)	{ _dport = p; }
   
   IPFlowID rev() const;
 

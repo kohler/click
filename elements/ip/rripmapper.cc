@@ -85,12 +85,12 @@ RoundRobinIPMapper::notify_rewriter(IPRw *rw, ErrorHandler *errh)
   for (int i = 0; i < _patterns.size(); i++) {
     if (_forward_outputs[i] >= no || _reverse_outputs[i] >= no)
       errh->error("port in `%s' out of range for `%s'", declaration().cc(), rw->declaration().cc());
-    rw->notify_pattern(_patterns[i]);
+    rw->notify_pattern(_patterns[i], errh);
   }
 }
 
 IPRw::Mapping *
-RoundRobinIPMapper::get_map(IPRw *rw, bool tcp, const IPFlowID &flow)
+RoundRobinIPMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow)
 {
   int first_pattern = _last_pattern;
   do {
@@ -98,7 +98,7 @@ RoundRobinIPMapper::get_map(IPRw *rw, bool tcp, const IPFlowID &flow)
     int fport = _forward_outputs[_last_pattern];
     int rport = _reverse_outputs[_last_pattern];
     _last_pattern++;
-    if (IPRw::Mapping *m = rw->apply_pattern(p, fport, rport, tcp, flow))
+    if (IPRw::Mapping *m = rw->apply_pattern(p, ip_p, flow, fport, rport))
       return m;
   } while (_last_pattern != first_pattern);
   return 0;

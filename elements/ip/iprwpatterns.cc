@@ -49,10 +49,9 @@ IPRewriterPatterns::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   for (int i = 0; i < conf.size(); i++) {
     String word, rest;
-    if (!cp_word(conf[i], &word, &rest)) {
-      errh->error("pattern %d empty", i);
+    // allow empty patterns for convenience
+    if (!cp_word(conf[i], &word, &rest))
       continue;
-    }
     cp_eat_space(rest);
 
     if (_name_map[word] >= 0) {

@@ -47,15 +47,16 @@ extern struct proto tcp_prot;
 //
 
 IPRw::Mapping::Mapping()
-  : _used(false), _pat(0), _pat_prev(0), _pat_next(0)
+  : _used(false), _ip_p(0), _pat(0), _pat_prev(0), _pat_next(0)
 {
 }
 
 void
-IPRw::Mapping::initialize(const IPFlowID &in, const IPFlowID &out,
+IPRw::Mapping::initialize(int ip_p, const IPFlowID &in, const IPFlowID &out,
 			  int output, bool is_reverse, Mapping *reverse)
 {
   // set fields
+  _ip_p = ip_p;
   _mapto = out;
   _output = output;
   _is_reverse = is_reverse;
@@ -81,12 +82,12 @@ IPRw::Mapping::initialize(const IPFlowID &in, const IPFlowID &out,
 }
 
 void
-IPRw::Mapping::make_pair(const IPFlowID &inf, const IPFlowID &outf,
+IPRw::Mapping::make_pair(int ip_p, const IPFlowID &inf, const IPFlowID &outf,
 			 int foutput, int routput,
 			 Mapping *in_map, Mapping *out_map)
 {
-  in_map->initialize(inf, outf, foutput, false, out_map);
-  out_map->initialize(outf.rev(), inf.rev(), routput, true, in_map);
+  in_map->initialize(ip_p, inf, outf, foutput, false, out_map);
+  out_map->initialize(ip_p, outf.rev(), inf.rev(), routput, true, in_map);
 }
 
 void
@@ -104,21 +105,23 @@ IPRw::Mapping::apply(WritablePacket *p)
   iph->ip_sum = ~(sum + (sum >> 16));
 
   // UDP/TCP header
-  if (iph->ip_p == IP_PROTO_TCP) {
-    click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
-    tcph->th_sport = _mapto.sport();
-    tcph->th_dport = _mapto.dport();
-    unsigned sum2 = (~tcph->th_sum & 0xFFFF) + _udp_csum_delta;
-    sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-    tcph->th_sum = ~(sum2 + (sum2 >> 16));
-  } else {
-    click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
-    udph->uh_sport = _mapto.sport();
-    udph->uh_dport = _mapto.dport();
-    if (udph->uh_sum) {		// 0 checksum is no checksum
-      unsigned sum2 = (~udph->uh_sum & 0xFFFF) + _udp_csum_delta;
+  if (IP_FIRSTFRAG(iph)) {
+    if (_ip_p == IP_PROTO_TCP) {
+      click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+      tcph->th_sport = _mapto.sport();
+      tcph->th_dport = _mapto.dport();
+      unsigned sum2 = (~tcph->th_sum & 0xFFFF) + _udp_csum_delta;
       sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-      udph->uh_sum = ~(sum2 + (sum2 >> 16));
+      tcph->th_sum = ~(sum2 + (sum2 >> 16));
+    } else if (_ip_p == IP_PROTO_UDP) {
+      click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
+      udph->uh_sport = _mapto.sport();
+      udph->uh_dport = _mapto.dport();
+      if (udph->uh_sum) {		// 0 checksum is no checksum
+	unsigned sum2 = (~udph->uh_sum & 0xFFFF) + _udp_csum_delta;
+	sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
+	udph->uh_sum = ~(sum2 + (sum2 >> 16));
+      }
     }
   }
   
@@ -138,29 +141,17 @@ IPRw::Mapping::s() const
 IPRw::Pattern::Pattern(const IPAddress &saddr, int sportl, int sporth,
 		       const IPAddress &daddr, int dport)
   : _saddr(saddr), _sportl(sportl), _sporth(sporth), _daddr(daddr),
-    _dport(dport), _rover(0), _refcount(0)
+    _dport(dport), _rover(0), _is_napt(true), _refcount(0)
 {
 }
 
 int
-IPRw::Pattern::parse(const String &conf, Pattern **pstore,
-		     Element *e, ErrorHandler *errh)
+IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
+			  Element *e, ErrorHandler *errh)
 {
-  Vector<String> words;
-  cp_spacevec(conf, words);
-
-  // check for IPRewriterPatterns reference
-  if (words.size() == 1) {
-    if (Pattern *p = IPRewriterPatterns::find(e, cp_unquote(words[0]), errh)) {
-      *pstore = p;
-      return 0;
-    } else
-      return -1;
-  }
-
   // otherwise, pattern definition
   if (words.size() != 4)
-    return errh->error("bad pattern spec: should be `NAME FOUTPUT ROUTPUT' or\n`SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT'");
+    return errh->error("bad pattern spec: should be `NAME' or `SADDR SPORT DADDR DPORT'");
   
   IPAddress saddr, daddr;
   int sportl, sporth, dport;
@@ -200,6 +191,86 @@ IPRw::Pattern::parse(const String &conf, Pattern **pstore,
 
   *pstore = new Pattern(saddr, sportl, sporth, daddr, dport);
   return 0;
+}
+
+int
+IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
+			 Element *e, ErrorHandler *errh)
+{
+  // otherwise, pattern definition
+  if (words.size() != 2)
+    return errh->error("bad pattern spec: should be `NAME' or `SADDR/PREFIX DADDR'");
+  
+  IPAddress saddr1, saddr2;  
+  if (words[0] == "-")
+    saddr1 = saddr2 = 0;
+  else if (cp_ip_address(words[0], &saddr1, e))
+    saddr2 = saddr1;
+  else if (cp_ip_prefix(words[0], &saddr1, &saddr2, e)) {
+    unsigned s1 = saddr1 & saddr2;
+    unsigned s2 = saddr1 | ~saddr2;
+    // don't count xxxx.0 and xxxx.255
+    saddr1 = htonl(ntohl(s1) + 1);
+    saddr2 = htonl(ntohl(s2) - 1);
+  } else {
+    int dash = words[0].find_left('-');
+    if (dash >= 0
+	&& cp_ip_address(words[0].substring(0, dash), &saddr1, e)
+	&& cp_ip_address(words[0].substring(dash+1), &saddr2, e))
+      /* ok */;
+    else
+      return errh->error("bad source address `%s' in pattern spec", words[0].cc());
+  }
+
+  // check that top 16 bits agree
+  int sportl = 0, sporth = 0;
+  if (saddr1 != saddr2) {
+    for (int pbits = 16; pbits < 32; pbits++) {
+      IPAddress prefix = IPAddress::make_prefix(pbits);
+      if ((saddr1 & prefix) != (saddr2 & prefix)) {
+	if (pbits == 16)
+	  return errh->error("source addresses `%s' and `%s' too far apart;\nmust agree in at least top 16 bits", saddr1.s().cc(), saddr2.s().cc());
+	prefix = ~IPAddress::make_prefix(pbits - 1);
+	sportl = ntohl((unsigned)(saddr1 & prefix));
+	sporth = ntohl((unsigned)(saddr2 & prefix));
+	if (sportl > sporth)
+	  return errh->error("lower source address should come first");
+	saddr1 &= ~prefix;
+	break;
+      }
+    }
+  }
+
+  IPAddress daddr;
+  if (words[1] == "-")
+    daddr = 0;
+  else if (!cp_ip_address(words[1], &daddr, e))
+    return errh->error("bad destination address `%s' in pattern spec", words[2].cc());
+  
+  *pstore = new Pattern(saddr1, sportl, sporth, daddr, 0);
+  (*pstore)->_is_napt = false;
+  return 0;
+}
+
+int
+IPRw::Pattern::parse(const String &conf, Pattern **pstore,
+		     Element *e, ErrorHandler *errh)
+{
+  Vector<String> words;
+  cp_spacevec(conf, words);
+
+  // check for IPRewriterPatterns reference
+  if (words.size() == 1) {
+    String name = cp_unquote(words[0]);
+    if (Pattern *p = IPRewriterPatterns::find(e, name, errh)) {
+      *pstore = p;
+      return 0;
+    } else
+      return -1;
+  } else if (words.size() == 2)
+    return parse_nat(words, pstore, e, errh);
+  else
+    return parse_napt(words, pstore, e, errh);
 }
 
 int
@@ -243,7 +314,7 @@ inline unsigned short
 IPRw::Pattern::find_sport()
 {
   if (_sportl == _sporth || !_rover)
-    return htons((short)_sportl);
+    return _sportl;
 
   // search for empty port number starting at `_rover'
   Mapping *r = _rover;
@@ -270,29 +341,46 @@ IPRw::Pattern::find_sport()
 
  found:
   _rover = r;
-  return htons(this_sport + 1);
+  return this_sport + 1;
 }
 
 bool
-IPRw::Pattern::create_mapping(const IPFlowID &in, int fport, int rport,
-				    Mapping *fmap, Mapping *rmap)
+IPRw::Pattern::create_mapping(int ip_p, const IPFlowID &in,
+			      int fport, int rport,
+			      Mapping *fmap, Mapping *rmap)
 {
-  unsigned short new_sport;
-  if (!_sportl)
-    new_sport = in.sport();
-  else {
+  unsigned short new_sport = 0;
+  if (_sportl) {
     new_sport = find_sport();
     if (!new_sport)
       return false;
   }
+  
+  IPFlowID out(in);
 
-  // convoluted logic avoids internal compiler errors in gcc-2.95.2
-  unsigned short new_dport = (_dport ? htons((short)_dport) : in.dport());
-  IPFlowID out(_saddr, new_sport, _daddr, new_dport);
-  if (!_saddr) out.set_saddr(in.saddr());
-  if (!_daddr) out.set_daddr(in.daddr());
+  if (_saddr) {
+    if (_is_napt || _sportl == _sporth)
+      out.set_saddr(_saddr);
+    else {
+      assert(ip_p == 0);
+      unsigned new_saddr = ntohl((unsigned)_saddr);
+      new_saddr |= new_sport;
+      out.set_saddr(htonl(new_saddr));
+    }
+  }
 
-  Mapping::make_pair(in, out, fport, rport, fmap, rmap);
+  if (_sportl)
+    out.set_sport(htons(new_sport));
+
+  if (_daddr)
+    out.set_daddr(_daddr);
+
+  if (_dport) {
+    unsigned short new_dport = htons((short)_dport);
+    out.set_dport(new_dport);
+  }
+
+  Mapping::make_pair(ip_p, in, out, fport, rport, fmap, rmap);
   fmap->pat_insert_after(this, _rover);
   _rover = fmap;
   return true;
@@ -342,7 +430,7 @@ IPMapper::notify_rewriter(IPRw *, ErrorHandler *)
 }
 
 IPRw::Mapping *
-IPMapper::get_map(IPRw *, bool, const IPFlowID &)
+IPMapper::get_map(IPRw *, int, const IPFlowID &)
 {
   return 0;
 }
@@ -361,19 +449,20 @@ IPRw::~IPRw()
   MOD_DEC_USE_COUNT;
 }
 
-void
-IPRw::notify_pattern(Pattern *p)
+int
+IPRw::notify_pattern(Pattern *p, ErrorHandler *)
 {
   for (int i = 0; i < _all_patterns.size(); i++)
     if (_all_patterns[i] == p)
-      return;
+      return 0;
   _all_patterns.push_back(p);
+  return 0;
 }
 
 
 int
-IPRw::parse_input_spec(const String &line, InputSpec &is, String name,
-		       ErrorHandler *errh)
+IPRw::parse_input_spec(const String &line, InputSpec &is,
+		       String name, ErrorHandler *errh)
 {
   String word, rest;
   if (!cp_word(line, &word, &rest))
@@ -387,7 +476,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is, String name,
     if (rest && !cp_integer(rest, &outnum))
       return errh->error("%s: syntax error; expected `nochange [OUTPUT]'", name.cc());
     else if (outnum < 0 || outnum >= noutputs())
-      return errh->error("%s: port out of range", name.cc());
+      return errh->error("%s: output port out of range", name.cc());
     is.kind = INPUT_SPEC_NOCHANGE;
     is.u.output = outnum;
     
@@ -398,7 +487,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is, String name,
 		    0) < 0)
       return errh->error("%s: syntax error; expected `keep FOUTPUT ROUTPUT'", name.cc());
     if (is.u.keep.fport >= noutputs() || is.u.keep.rport >= noutputs())
-      return errh->error("%s: port out of range", name.cc());
+      return errh->error("%s: output port out of range", name.cc());
     is.kind = INPUT_SPEC_KEEP;
     
   } else if (word == "drop") {
@@ -406,14 +495,14 @@ IPRw::parse_input_spec(const String &line, InputSpec &is, String name,
       return errh->error("%s: syntax error; expected `drop'", name.cc());
     
   } else if (word == "pattern") {
-    if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport,
-				  &is.u.pattern.rport, this, errh) < 0)
+    if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport, &is.u.pattern.rport, this, errh) < 0)
       return -1;
     if (is.u.pattern.fport >= noutputs() || is.u.pattern.rport >= noutputs())
-      return errh->error("%s: port out of range", name.cc());
+      return errh->error("%s: output port out of range", name.cc());
     is.u.pattern.p->use();
     is.kind = INPUT_SPEC_PATTERN;
-    notify_pattern(is.u.pattern.p);
+    if (notify_pattern(is.u.pattern.p, errh) < 0)
+      return -1;
     
   } else if (Element *e = cp_element(word, this, 0)) {
     IPMapper *mapper = (IPMapper *)e->cast("IPMapper");

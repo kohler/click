@@ -23,7 +23,6 @@
 #include <click/config.h>
 #include <click/package.hh>
 #include "iprewriter.hh"
-#include "elements/ip/iprwpatterns.hh"
 #include <click/click_ip.h>
 #include <click/click_tcp.h>
 #include <click/click_udp.h>
@@ -109,6 +108,14 @@ IPRewriter::uninitialize()
   _input_specs.clear();
 }
 
+int
+IPRewriter::notify_pattern(Pattern *p, ErrorHandler *errh)
+{
+  if (!p->allow_napt())
+    return errh->error("IPRewriter cannot accept IPAddrRewriter patterns");
+  return IPRw::notify_pattern(p, errh);
+}
+
 void
 IPRewriter::take_state(Element *e, ErrorHandler *errh)
 {
@@ -150,21 +157,25 @@ IPRewriter::run_scheduled()
 }
 
 IPRw::Mapping *
-IPRewriter::apply_pattern(Pattern *pattern, int fport, int rport,
-			  bool is_tcp, const IPFlowID &flow)
+IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
+			  int fport, int rport)
 {
   assert(fport >= 0 && fport < noutputs() && rport >= 0 && rport < noutputs());
+  
+  if (ip_p != IP_PROTO_TCP && ip_p != IP_PROTO_UDP)
+    return 0;
+  
   Mapping *forward = new Mapping;
   Mapping *reverse = new Mapping;
 
   if (forward && reverse) {
     if (!pattern)
-      Mapping::make_pair(flow, flow, fport, rport, forward, reverse);
-    else if (!pattern->create_mapping(flow, fport, rport, forward, reverse))
+      Mapping::make_pair(ip_p, flow, flow, fport, rport, forward, reverse);
+    else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse))
       goto failure;
 
     IPFlowID reverse_flow = forward->flow_id().rev();
-    if (is_tcp) {
+    if (ip_p == IP_PROTO_TCP) {
       _tcp_map.insert(flow, forward);
       _tcp_map.insert(reverse_flow, reverse);
     } else {
@@ -188,8 +199,8 @@ IPRewriter::push(int port, Packet *p_in)
   click_ip *iph = p->ip_header();
 
   // handle non-TCP and non-first fragments
-  bool tcp = iph->ip_p == IP_PROTO_TCP;
-  if ((!tcp && iph->ip_p != IP_PROTO_UDP) || !IP_FIRSTFRAG(iph)) {
+  int ip_p = iph->ip_p;
+  if ((ip_p != IP_PROTO_TCP && ip_p != IP_PROTO_UDP) || !IP_FIRSTFRAG(iph)) {
     const InputSpec &is = _input_specs[port];
     if (is.kind == INPUT_SPEC_NOCHANGE)
       output(is.u.output).push(p);
@@ -198,7 +209,7 @@ IPRewriter::push(int port, Packet *p_in)
     return;
   }
   
-  Mapping *m = (tcp ? _tcp_map.find(flow) : _udp_map.find(flow));
+  Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : _udp_map.find(flow));
   
   if (!m) {			// create new mapping
     const InputSpec &is = _input_specs[port];
@@ -214,7 +225,7 @@ IPRewriter::push(int port, Packet *p_in)
      case INPUT_SPEC_KEEP: {
        int fport = is.u.keep.fport;
        int rport = is.u.keep.rport;
-       m = IPRewriter::apply_pattern(0, fport, rport, tcp, flow);
+       m = IPRewriter::apply_pattern(0, ip_p, flow, fport, rport);
        break;
      }
 
@@ -222,12 +233,12 @@ IPRewriter::push(int port, Packet *p_in)
        Pattern *pat = is.u.pattern.p;
        int fport = is.u.pattern.fport;
        int rport = is.u.pattern.rport;
-       m = IPRewriter::apply_pattern(pat, fport, rport, tcp, flow);
+       m = IPRewriter::apply_pattern(pat, ip_p, flow, fport, rport);
        break;
      }
 
      case INPUT_SPEC_MAPPER: {
-       m = is.u.mapper->get_map(this, tcp, flow);
+       m = is.u.mapper->get_map(this, ip_p, flow);
        break;
      }
       
@@ -312,7 +323,7 @@ IPRewriter::llrpc(unsigned command, void *data)
     IPFlowID flowid;
     if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
       return -EFAULT;
-    Mapping *m = get_mapping(true, flowid);
+    Mapping *m = get_mapping(IP_PROTO_TCP, flowid);
     if (!m)
       return -EAGAIN;
     flowid = m->flow_id();
@@ -331,7 +342,7 @@ IPRewriter::llrpc(unsigned command, void *data)
     IPFlowID flowid;
     if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
       return -EFAULT;
-    Mapping *m = get_mapping(false, flowid);
+    Mapping *m = get_mapping(IP_PROTO_UDP, flowid);
     if (!m)
       return -EAGAIN;
     flowid = m->flow_id();

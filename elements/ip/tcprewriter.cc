@@ -190,6 +190,14 @@ TCPRewriter::uninitialize()
   _input_specs.clear();
 }
 
+int
+TCPRewriter::notify_pattern(Pattern *p, ErrorHandler *errh)
+{
+  if (!p->allow_napt())
+    return errh->error("TCPRewriter cannot accept IPAddrRewriter patterns");
+  return IPRw::notify_pattern(p, errh);
+}
+
 void
 TCPRewriter::take_state(Element *e, ErrorHandler *errh)
 {
@@ -228,18 +236,18 @@ TCPRewriter::run_scheduled()
 }
 
 TCPRewriter::TCPMapping *
-TCPRewriter::apply_pattern(Pattern *pattern, int fport, int rport,
-			   bool tcp, const IPFlowID &flow)
+TCPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
+			   int fport, int rport)
 {
   assert(fport >= 0 && fport < noutputs() && rport >= 0 && rport < noutputs()
-	 && tcp);
+	 && ip_p == IP_PROTO_TCP);
   TCPMapping *forward = new TCPMapping;
   TCPMapping *reverse = new TCPMapping;
 
   if (forward && reverse) {
     if (!pattern)
-      Mapping::make_pair(flow, flow, fport, rport, forward, reverse);
-    else if (!pattern->create_mapping(flow, fport, rport, forward, reverse))
+      Mapping::make_pair(ip_p, flow, flow, fport, rport, forward, reverse);
+    else if (!pattern->create_mapping(ip_p, flow, fport, rport, forward, reverse))
       goto failure;
     
     IPFlowID reverse_flow = forward->flow_id().rev();
@@ -260,10 +268,9 @@ TCPRewriter::push(int port, Packet *p_in)
   WritablePacket *p = p_in->uniqueify();
   IPFlowID flow(p);
   click_ip *iph = p->ip_header();
-  assert(iph->ip_p == IP_PROTO_TCP);
 
   // handle non-first fragments
-  if (!IP_FIRSTFRAG(iph)) {
+  if (!IP_FIRSTFRAG(iph) || iph->ip_p != IP_PROTO_TCP) {
     const InputSpec &is = _input_specs[port];
     if (is.kind == INPUT_SPEC_NOCHANGE)
       output(is.u.output).push(p);
@@ -288,7 +295,7 @@ TCPRewriter::push(int port, Packet *p_in)
      case INPUT_SPEC_KEEP: {
        int fport = is.u.keep.fport;
        int rport = is.u.keep.rport;
-       m = TCPRewriter::apply_pattern(0, fport, rport, true, flow);
+       m = TCPRewriter::apply_pattern(0, IP_PROTO_TCP, flow, fport, rport);
        break;
      }
 
@@ -296,15 +303,15 @@ TCPRewriter::push(int port, Packet *p_in)
        Pattern *pat = is.u.pattern.p;
        int fport = is.u.pattern.fport;
        int rport = is.u.pattern.rport;
-       m = TCPRewriter::apply_pattern(pat, fport, rport, true, flow);
+       m = TCPRewriter::apply_pattern(pat, IP_PROTO_TCP, flow, fport, rport);
        break;
      }
 
      case INPUT_SPEC_MAPPER: {
-       m = static_cast<TCPMapping *>(is.u.mapper->get_map(this, true, flow));
+       m = static_cast<TCPMapping *>(is.u.mapper->get_map(this, IP_PROTO_TCP, flow));
        break;
      }
-      
+     
     }
     if (!m) {
       p->kill();
@@ -362,7 +369,7 @@ TCPRewriter::llrpc(unsigned command, void *data)
     IPFlowID flowid;
     if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
       return -EFAULT;
-    TCPMapping *m = get_mapping(true, flowid);
+    TCPMapping *m = get_mapping(IP_PROTO_TCP, flowid);
     if (!m)
       return -EAGAIN;
     flowid = m->flow_id();

@@ -43,6 +43,16 @@ IPAddress::IPAddress(const String &str)
     _addr = 0;
 }
 
+IPAddress
+IPAddress::make_prefix(int prefix)
+{
+  assert(prefix >= 0 && prefix <= 32);
+  unsigned umask = 0;
+  if (prefix > 0)
+    umask = 0xFFFFFFFFU << (32 - prefix);
+  return IPAddress(htonl(umask));
+}
+
 String
 IPAddress::s() const
 {

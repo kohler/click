@@ -68,7 +68,8 @@ FTPPortMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
 				      &_reverse_port, this, errh) < 0)
     return -1;
   _pattern->use();
-  _data_rewriter->notify_pattern(_pattern);
+  if (_data_rewriter->notify_pattern(_pattern, errh) < 0)
+    return -1;
   
   if (_forward_port >= _data_rewriter->noutputs()
       || _reverse_port >= _data_rewriter->noutputs())
@@ -157,11 +158,11 @@ FTPPortMapper::simple_action(Packet *p)
 		IPAddress(iph->ip_dst), dst_data_port);
 
   // check for existing mapping
-  IPRw::Mapping *forward = _data_rewriter->get_mapping(true, flow);
+  IPRw::Mapping *forward = _data_rewriter->get_mapping(IP_PROTO_TCP, flow);
   if (!forward) {
     // create new mapping
-    forward = _data_rewriter->apply_pattern(_pattern, _forward_port,
-					    _reverse_port, true, flow);
+    forward = _data_rewriter->apply_pattern(_pattern, IP_PROTO_TCP, flow,
+					    _forward_port, _reverse_port);
     if (!forward)
       return p;
   }
@@ -211,7 +212,7 @@ FTPPortMapper::simple_action(Packet *p)
 
   // update sequence numbers in old mapping
   IPFlowID p_flow(p);
-  if (TCPRewriter::TCPMapping *p_mapping = _control_rewriter->get_mapping(true, p_flow)) {
+  if (TCPRewriter::TCPMapping *p_mapping = _control_rewriter->get_mapping(IP_PROTO_TCP, p_flow)) {
     // don't re-change sequence numbers on a retransmit
     unsigned last_seq = p_mapping->interesting_seqno();
     unsigned cur_seq = ntohl(wp_tcph->th_seq);
