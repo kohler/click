@@ -37,7 +37,7 @@ operator==(const AggregateIPFlows::HostPair &a, const AggregateIPFlows::HostPair
 static inline uint32_t
 hashcode(const AggregateIPFlows::HostPair &a)
 {
-    return a.a ^ a.b;
+    return (a.a << 12) + a.b + ((a.a >> 20) & 0x1F);
 }
 
 static inline uint32_t
