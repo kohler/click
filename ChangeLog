@@ -1,3 +1,13 @@
+2004-06-14 Monday 17:23  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: beaconscanner.cc (1.3), beaconscanner.hh (1.3),
+	printwifi.cc (1.2), ap/associationresponder.cc (1.1),
+	ap/associationresponder.hh (1.1), ap/beaconsource.cc (1.2),
+	ap/proberesponder.cc (1.1), ap/proberesponder.hh (1.1),
+	ap/simpleauthenticator.cc (1.1), ap/simpleauthenticator.hh (1.1),
+	ap/stationtable.cc (1.1), ap/stationtable.hh (1.1): have a working
+	access point configuration.
+
 2004-06-13 Sunday 15:22  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/beaconscanner.cc (1.2), include/clicknet/wifi.h
