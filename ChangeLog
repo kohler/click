@@ -1,3 +1,7 @@
+2003-12-09 Tuesday 00:01  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.218): specify license
+
 2003-12-08 Monday 18:49  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.217): add AC_PREREQ for newer autoconf
