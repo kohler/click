@@ -169,7 +169,7 @@ SetTXRate::add_handlers()
   add_read_handler("rate", rate_read_handler, 0);
   add_write_handler("rate", rate_write_handler, 0);
   add_read_handler("auto", auto_read_handler, 0);
-  add_write_handler("auto", rate_write_handler, 0);
+  add_write_handler("auto", auto_write_handler, 0);
 }
 
 CLICK_ENDDECLS
