@@ -1,3 +1,18 @@
+2002-05-28 Tuesday 15:39  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* conf/grid.click (1.56), elements/grid/gridroutetable.cc (1.50),
+	elements/grid/gridroutetable.hh (1.28),
+	elements/grid/lookupgeogridroute.cc (1.23),
+	elements/grid/lookuplocalgridroute.cc (1.38),
+	elements/grid/lookuplocalgridroute.hh (1.12): route tale cleanup:
+	started to separate route table internals from other classes, so
+	that we can drop in new route tables with different policies
+
+2002-05-28 Tuesday 15:01  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.60), FAQ (1.13), INSTALL (1.23), etc/README (1.1):
+	add README about Linux patches; update for 2.2.21
+
 2002-05-28 Tuesday 13:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/lookuplocalgridroute.cc (1.37): [no log message]

@@ -1,3 +1,7 @@
+2002-05-28 Tuesday 15:01  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: add README about Linux patches; update for 2.2.21
+
 2002-05-22 Wednesday 18:19  Eddie Kohler <kohler@aciri.org>
 
 	* click-buildtool: click-buildtool update: Take requirements only
