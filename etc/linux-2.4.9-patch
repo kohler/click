@@ -1,2169 +1,1830 @@
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/Makefile ./Makefile
-*** ../linux-2.4.9-pure/Makefile	Thu Aug 16 11:12:49 2001
---- ./Makefile	Fri Aug 17 17:29:11 2001
-***************
-*** 1,7 ****
-  VERSION = 2
-  PATCHLEVEL = 4
-  SUBLEVEL = 9
-! EXTRAVERSION =
-  
-  KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
-  
---- 1,7 ----
-  VERSION = 2
-  PATCHLEVEL = 4
-  SUBLEVEL = 9
-! EXTRAVERSION = -Click
-  
-  KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
-  
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/drivers/net/eepro100.c ./drivers/net/eepro100.c
-*** ../linux-2.4.9-pure/drivers/net/eepro100.c	Mon Jul  2 14:03:04 2001
---- ./drivers/net/eepro100.c	Fri Aug 17 16:52:49 2001
-***************
-*** 545,550 ****
---- 545,560 ----
-  static void set_rx_mode(struct net_device *dev);
-  static void speedo_show_state(struct net_device *dev);
-  
-+ /* device polling stuff */
-+ static int speedo_tx_queue(struct net_device *dev, struct sk_buff *skb);
-+ static int speedo_tx_eob(struct net_device *dev);
-+ static int speedo_tx_start(struct net_device *dev);
-+ static int speedo_rx_refill(struct net_device *dev, struct sk_buff **);
-+ static struct sk_buff *speedo_tx_clean(struct net_device *dev);
-+ static struct sk_buff *speedo_rx_poll(struct net_device *dev, int *want);
-+ static int speedo_poll_on(struct net_device *dev);
-+ static int speedo_poll_off(struct net_device *dev);
-+ 
-  
-  
-  #ifdef honor_default_port
-***************
-*** 835,840 ****
---- 845,861 ----
-  	dev->set_multicast_list = &set_rx_mode;
-  	dev->do_ioctl = &speedo_ioctl;
-  
-+ 	/* Click: polling support */
-+ 	dev->polling = 0;
-+ 	dev->poll_on = &speedo_poll_on;
-+ 	dev->poll_off = &speedo_poll_off;
-+ 	dev->rx_poll = &speedo_rx_poll;
-+ 	dev->rx_refill = &speedo_rx_refill;
-+ 	dev->tx_queue = &speedo_tx_queue;
-+ 	dev->tx_clean = &speedo_tx_clean;
-+ 	dev->tx_start = &speedo_tx_start;
-+ 	dev->tx_eob = &speedo_tx_eob;
-+ 
-  	return 0;
-  }
-  
-***************
-*** 1058,1064 ****
-  		 ioaddr + SCBPointer);
-  	/* We are not ACK-ing FCP and ER in the interrupt handler yet so they should
-  	   remain masked --Dragan */
-! 	outw(CUStart | SCBMaskEarlyRx | SCBMaskFlowCtl, ioaddr + SCBCmd);
-  }
-  
-  /* Media monitoring and control. */
---- 1079,1086 ----
-  		 ioaddr + SCBPointer);
-  	/* We are not ACK-ing FCP and ER in the interrupt handler yet so they should
-  	   remain masked --Dragan */
-! 	outw(CUStart | SCBMaskEarlyRx | SCBMaskFlowCtl |
-! 	     (dev->polling ? SCBMaskAll : 0), ioaddr + SCBCmd);
-  }
-  
-  /* Media monitoring and control. */
-***************
-*** 1285,1291 ****
-  			   dev->name);
-  		outl(TX_RING_ELEM_DMA(sp, dirty_tx % TX_RING_SIZE]),
-  			 ioaddr + SCBPointer);
-! 		outw(CUStart, ioaddr + SCBCmd);
-  		reset_mii(dev);
-  	} else {
-  #else
---- 1307,1314 ----
-  			   dev->name);
-  		outl(TX_RING_ELEM_DMA(sp, dirty_tx % TX_RING_SIZE]),
-  			 ioaddr + SCBPointer);
-! 		outw(CUStart | (dev->polling ? SCBMaskAll : 0),
-! 		     ioaddr + SCBCmd);
-  		reset_mii(dev);
-  	} else {
-  #else
-***************
-*** 1329,1334 ****
---- 1352,1363 ----
-  	long ioaddr = dev->base_addr;
-  	int entry;
-  
-+ 	if (dev->polling) {
-+ 		printk(KERN_ERR "%s: start_xmit while polling\n",
-+ 		       dev->name);
-+ 		return 1;
-+ 	}
-+ 
-  	{	/* Prevent interrupts from changing the Tx ring from underneath us. */
-  		unsigned long flags;
-  
-***************
-*** 1390,1395 ****
---- 1419,1430 ----
-  	unsigned int dirty_tx;
-  	struct speedo_private *sp = (struct speedo_private *)dev->priv;
-  
-+ 	if (dev->polling) {
-+ 		printk(KERN_ERR "%s: speedo_tx_buffer_gc while polling\n",
-+ 		       dev->name);
-+ 		return;
-+ 	}
-+ 
-  	dirty_tx = sp->dirty_tx;
-  	while ((int)(sp->cur_tx - dirty_tx) > 0) {
-  		int entry = dirty_tx % TX_RING_SIZE;
-***************
-*** 1460,1465 ****
---- 1495,1503 ----
-  	}
-  #endif
-  
-+ 	if (dev->polling)
-+ 		printk(KERN_ERR "%s: interrupt while polling\n", dev->name);
-+ 
-  	ioaddr = dev->base_addr;
-  	sp = (struct speedo_private *)dev->priv;
-  
-***************
-*** 1677,1682 ****
---- 1715,1726 ----
-  {
-  	struct speedo_private *sp = (struct speedo_private *)dev->priv;
-  
-+ 	if (dev->polling) {
-+ 		printk(KERN_ERR "%s: speedo_refill_rx_buffers called "
-+ 		       "while polling\n", dev->name);
-+ 		return;
-+ 	}
-+ 
-  	/* Refill the RX ring. */
-  	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 &&
-  			speedo_refill_rx_buf(dev, force) != -1);
-***************
-*** 1690,1695 ****
---- 1734,1745 ----
-  	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
-  	int alloc_ok = 1;
-  
-+ 	if (dev->polling) {
-+ 		printk(KERN_ERR "%s: in speedo_rx() while polling\n",
-+ 		       dev->name);
-+ 		return 0;
-+ 	}
-+ 
-  	if (speedo_debug > 4)
-  		printk(KERN_DEBUG " In speedo_rx().\n");
-  	/* If we own the next entry, it's a new packet. Send it up. */
-***************
-*** 2273,2275 ****
---- 2323,2690 ----
-   *  tab-width: 4
-   * End:
-   */
-+ 
-+ /*
-+  * Click: Polling extensions.  Most of this code has been copied
-+  * from various routines above with slight modifications.
-+  */
-+ 
-+ static int speedo_rx_refill(struct net_device *dev, struct sk_buff **skbs) {
-+ 	struct speedo_private *sp = (struct speedo_private *)dev->priv;
-+ 	struct sk_buff *skb_list;
-+ 	int dirty_rx = sp->dirty_rx;
-+ 
-+ 	/* If the list is empty, return the number of skb's we want */
-+ 	if (skbs == 0)
-+ 		return sp->cur_rx - sp->dirty_rx;
-+ 
-+ 	skb_list = *skbs;
-+ 
-+ 	/*
-+ 	 * Refill the RX ring with supplied skb's.  Unlike
-+ 	 * speedo_refill_rx_buf routine, we don't have to
-+ 	 * worry about failed allocations.
-+ 	 */
-+ 	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 && skb_list) {
-+ 		int entry;
-+ 		struct RxFD *rxf;
-+ 		struct sk_buff *skb;
-+ 
-+ 		entry = sp->dirty_rx % RX_RING_SIZE;
-+ 		if (sp->rx_skbuff[entry] == NULL) {
-+ 			skb = skb_list;
-+ 			skb_list = skb->next;
-+ 			skb->prev = skb->next = NULL;
-+ 			skb->list = NULL;
-+ 
-+ 			sp->rx_skbuff[entry] = skb;
-+ 			rxf = sp->rx_ringp[entry] = (struct RxFD *)skb->tail;
-+ 			sp->rx_ring_dma[entry] = pci_map_single(sp->pdev, rxf,
-+ 				PKT_BUF_SZ + sizeof(struct RxFD),
-+ 				PCI_DMA_FROMDEVICE);
-+ 
-+ 			skb->dev = dev;
-+ 			skb_reserve(skb, sizeof(struct RxFD));
-+ 			rxf->rx_buf_addr = 0xffffffff;
-+ 			pci_dma_sync_single(sp->pdev, sp->rx_ring_dma[entry],
-+ 					    sizeof(struct RxFD),
-+ 					    PCI_DMA_TODEVICE);
-+ 		} else {
-+ 			rxf = sp->rx_ringp[entry];
-+ 		}
-+ 		speedo_rx_link(dev, entry, rxf, sp->rx_ring_dma[entry]);
-+ 		sp->dirty_rx++;
-+ 	}
-+ 
-+ 	/*
-+ 	 * Check if the RU is stopped -- restart it, if so.
-+ 	 */
-+ 	if ((inw(dev->base_addr + SCBStatus) & 0x003c) == 0x0008) {
-+ 		wait_for_cmd_done(dev->base_addr + SCBCmd);
-+ 
-+ 		/*
-+ 		 * If the RU stopped, it's because there aren't
-+ 		 * any DMA buffers left, so the first DMA buffer
-+ 		 * we've just refilled is where we should start
-+ 		 * receiving.
-+ 		 */
-+ 		outl(virt_to_bus(sp->rx_ringp[dirty_rx % RX_RING_SIZE]),
-+ 		     dev->base_addr + SCBPointer);
-+ 		outb(RxStart, dev->base_addr + SCBCmd);
-+ 	}
-+ 
-+ 	/*
-+ 	 * Clear error flags on the RX ring, write back the remaining
-+ 	 * skb's that we haven't used, and return the number of dirty
-+ 	 * buffers remaining.
-+ 	 */
-+ 	sp->rx_ring_state &= ~(RrNoMem|RrOOMReported);
-+ 	*skbs = skb_list;
-+ 	return sp->cur_rx - sp->dirty_rx;
-+ }
-+ 
-+ static struct sk_buff *speedo_rx_poll(struct net_device *dev, int *want) {
-+ 	struct speedo_private *sp = (struct speedo_private *)dev->priv;
-+ 	int entry = sp->cur_rx % RX_RING_SIZE;
-+ 	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
-+ 	struct sk_buff *skb_head, *skb_last;
-+ 	int got = 0;
-+ 
-+ 	skb_head = skb_last = NULL;
-+ 
-+ 	/* If we own the next entry, it's a new packet. Send it up. */
-+ 	while (sp->rx_ringp[entry] != NULL) {
-+ 		int status;
-+ 		int pkt_len;
-+ 
-+ 		pci_dma_sync_single(sp->pdev, sp->rx_ring_dma[entry],
-+ 			sizeof(struct RxFD), PCI_DMA_FROMDEVICE);
-+ 		status = le32_to_cpu(sp->rx_ringp[entry]->status);
-+ 		pkt_len = le32_to_cpu(sp->rx_ringp[entry]->count) & 0x3fff;
-+ 
-+ 		if (!(status & RxComplete))
-+ 			break;
-+ 
-+ 		if (--rx_work_limit < 0 || got == *want)
-+ 			break;
-+ 
-+ 		/* Check for a rare out-of-memory case: the current buffer is
-+ 		   the last buffer allocated in the RX ring.  --SAW */
-+ 		if (sp->last_rxf == sp->rx_ringp[entry]) {
-+ 			/*
-+ 			 * Postpone the packet.  It'll be reaped next time
-+ 			 * when this packet is no longer the last packet
-+ 			 * in the ring.
-+ 			 */
-+ 			if (speedo_debug > 2)
-+ 				printk(KERN_DEBUG "%s: RX packet postponed!\n",
-+ 					   dev->name);
-+ 			sp->rx_ring_state |= RrPostponed;
-+ 			break;
-+ 		}
-+ 
-+ 		if ((status & (RxErrTooBig|RxOK|0x0f90)) != RxOK) {
-+ 			if (status & RxErrTooBig) {
-+ 				printk(KERN_ERR "%s: Ethernet frame overran "
-+ 				       "the Rx buffer, status %8.8x!\n",
-+ 				       dev->name, status);
-+ 			} else if (! (status & RxOK)) {
-+ 				/*
-+ 				 * There was a fatal error.  This *should*
-+ 				 * be impossible.
-+ 				 */
-+ 				sp->stats.rx_errors++;
-+ 				printk(KERN_ERR "%s: Anomalous event in "
-+ 				       "speedo_rx_poll(), status %8.8x.\n",
-+ 				       dev->name, status);
-+ 			}
-+ 		} else {
-+ 			struct sk_buff *skb = sp->rx_skbuff[entry];
-+ 
-+ 			if (skb == NULL) {
-+ 				printk(KERN_ERR "%s: Inconsistent Rx "
-+ 				       "descriptor chain.\n", dev->name);
-+ 				break;
-+ 			}
-+ 
-+ 			/* Remove skbuff from RX ring. */
-+ 			sp->rx_skbuff[entry] = NULL;
-+ 			sp->rx_ringp[entry] = NULL;
-+ 			skb_put(skb, pkt_len);
-+ 			pci_unmap_single(sp->pdev, sp->rx_ring_dma[entry],
-+ 				PKT_BUF_SZ + sizeof(struct RxFD),
-+ 				PCI_DMA_FROMDEVICE);
-+ 
-+ 			skb->protocol = eth_type_trans(skb, dev);
-+ 			sp->stats.rx_packets++;
-+ 			sp->stats.rx_bytes += pkt_len;
-+ 
-+ 			/* Append the skb to the received list */
-+ 			if (got == 0) {
-+ 				skb_head = skb_last = skb;
-+ 				skb->next = skb->prev = NULL;
-+ 			} else {
-+ 				skb_last->next = skb;
-+ 				skb->prev = skb_last;
-+ 				skb->next = NULL;
-+ 				skb_last = skb;
-+ 			}
-+ 
-+ 			got++;
-+ 		}
-+ 
-+ 		entry = (++sp->cur_rx) % RX_RING_SIZE;
-+ 		sp->rx_ring_state &= ~RrPostponed;
-+ 	}
-+ 
-+ 	if (got == 0 && (inw(dev->base_addr + SCBStatus) & 0x003c) == 0x0008) {
-+ 		wait_for_cmd_done(dev->base_addr + SCBCmd);
-+ 
-+ 		outl(virt_to_bus(sp->rx_ringp[sp->cur_rx % RX_RING_SIZE]),
-+ 		     dev->base_addr + SCBPointer);
-+ 		outb(RxStart, dev->base_addr + SCBCmd);
-+ 	}
-+ 
-+ 	sp->last_rx_time = jiffies;
-+ 	*want = got;
-+ 	return skb_head;
-+ }
-+ 
-+ static int speedo_tx_queue(struct net_device *dev, struct sk_buff *skb) {
-+ 	struct speedo_private *sp = (struct speedo_private *)dev->priv;
-+ 	int entry;
-+ 
-+ 	spin_lock(&sp->lock);
-+ 
-+ 	/* Check if there are enough space. */
-+ 	if ((int)(sp->cur_tx - sp->dirty_tx) >= TX_QUEUE_LIMIT) {
-+ 		printk(KERN_ERR "%s: incorrect tbusy state, fixed.\n",
-+ 		       dev->name);
-+ 		netif_stop_queue(dev);
-+ 		sp->tx_full = 1;
-+ 		spin_unlock(&sp->lock);
-+ 		return 1;
-+ 	}
-+ 
-+ 	/* Calculate the Tx descriptor entry. */
-+ 	entry = sp->cur_tx++ % TX_RING_SIZE;
-+ 
-+ 	sp->tx_skbuff[entry] = skb;
-+ 	sp->tx_ring[entry].status =
-+ 		cpu_to_le32(CmdSuspend | CmdTx | CmdTxFlex);
-+ 	sp->tx_ring[entry].link =
-+ 		cpu_to_le32(TX_RING_ELEM_DMA(sp, sp->cur_tx % TX_RING_SIZE));
-+ 	sp->tx_ring[entry].tx_desc_addr =
-+ 		cpu_to_le32(TX_RING_ELEM_DMA(sp, entry) + TX_DESCR_BUF_OFFSET);
-+ 
-+ 	/* The data region is always in one buffer descriptor. */
-+ 	sp->tx_ring[entry].count = cpu_to_le32(sp->tx_threshold);
-+ 	sp->tx_ring[entry].tx_buf_addr0 =
-+ 		cpu_to_le32(pci_map_single(sp->pdev, skb->data,
-+ 					   skb->len, PCI_DMA_TODEVICE));
-+ 	sp->tx_ring[entry].tx_buf_size0 = cpu_to_le32(skb->len);
-+ 
-+ 	/* Clear the suspend bit on the last command */
-+ 	clear_suspend(sp->last_cmd);
-+ 
-+ 	sp->last_cmd = (struct descriptor *)&sp->tx_ring[entry];
-+ 
-+ 	/* Leave room for set_rx_mode(). If there is no more space than
-+ 	 * reserved for multicast filter mark the ring as full.
-+ 	 */
-+ 	if ((int)(sp->cur_tx - sp->dirty_tx) >= TX_QUEUE_LIMIT) {
-+ 		netif_stop_queue(dev);
-+ 		sp->tx_full = 1;
-+ 	}
-+ 
-+ 	spin_unlock(&sp->lock);
-+ 
-+ 	return 0;
-+ }
-+ 
-+ static int speedo_tx_eob(struct net_device *dev) {
-+ 	/* Start the DMA going again */
-+ 	wait_for_cmd_done(dev->base_addr + SCBCmd);
-+ 	outb(CUResume, dev->base_addr + SCBCmd);
-+ 
-+ 	/* Bump the trans_start time to keep the net watchdog happy */
-+ 	dev->trans_start = jiffies;
-+ 	return 0;
-+ }
-+ 
-+ static int speedo_tx_start(struct net_device *dev) {
-+ 	/* Just bump the trans_start time.. */
-+ 	dev->trans_start = jiffies;
-+ 	return 0;
-+ }
-+ 
-+ static struct sk_buff *speedo_tx_clean(struct net_device *dev) {
-+ 	unsigned int dirty_tx;
-+ 	struct speedo_private *sp = (struct speedo_private *)dev->priv;
-+ 	struct sk_buff *skb_head, *skb_last;
-+ 
-+ 	spin_lock(&sp->lock);
-+ 
-+ 	skb_head = skb_last = NULL;
-+ 
-+ 	dirty_tx = sp->dirty_tx;
-+ 	while ((int)(sp->cur_tx - dirty_tx) > 0) {
-+ 		int entry = dirty_tx % TX_RING_SIZE;
-+ 		int status = le32_to_cpu(sp->tx_ring[entry].status);
-+ 
-+ 		if ((status & StatusComplete) == 0)
-+ 			break;		/* It still hasn't been processed. */
-+ 
-+ 		if (status & TxUnderrun)
-+ 			if (sp->tx_threshold < 0x01e08000) {
-+ 				if (speedo_debug > 2)
-+ 					printk(KERN_DEBUG "%s: TX underrun, "
-+ 					       "threshold adjusted.\n",
-+ 					       dev->name);
-+ 				sp->tx_threshold += 0x00040000;
-+ 			}
-+ 
-+ 		/* Put the original skb on the return list. */
-+ 		if (sp->tx_skbuff[entry]) {
-+ 			struct sk_buff *skb = sp->tx_skbuff[entry];
-+ 
-+ 			sp->stats.tx_packets++;	/* Count only user packets. */
-+ 			sp->stats.tx_bytes += sp->tx_skbuff[entry]->len;
-+ 			pci_unmap_single(sp->pdev,
-+ 				le32_to_cpu(sp->tx_ring[entry].tx_buf_addr0),
-+ 				sp->tx_skbuff[entry]->len, PCI_DMA_TODEVICE);
-+ 			sp->tx_skbuff[entry] = 0;
-+ 
-+ 			if (skb_head == NULL) {
-+ 				skb_head = skb_last = skb;
-+ 				skb->next = skb->prev = NULL;
-+ 			} else {
-+ 				skb_last->next = skb;
-+ 				skb->prev = skb_last;
-+ 				skb->next = NULL;
-+ 				skb_last = skb;
-+ 			}
-+ 		}
-+ 		dirty_tx++;
-+ 	}
-+ 
-+ 	if (speedo_debug && (int)(sp->cur_tx - dirty_tx) > TX_RING_SIZE) {
-+ 		printk(KERN_ERR "out-of-sync dirty pointer, %d vs. %d,"
-+ 				" full=%d.\n",
-+ 				dirty_tx, sp->cur_tx, sp->tx_full);
-+ 		dirty_tx += TX_RING_SIZE;
-+ 	}
-+ 
-+ 	while (sp->mc_setup_head != NULL
-+ 		   && (int)(dirty_tx - sp->mc_setup_head->tx - 1) > 0) {
-+ 		struct speedo_mc_block *t;
-+ 		if (speedo_debug > 1)
-+ 			printk(KERN_DEBUG "%s: freeing mc frame.\n", dev->name);
-+ 		pci_unmap_single(sp->pdev, sp->mc_setup_head->frame_dma,
-+ 				sp->mc_setup_head->len, PCI_DMA_TODEVICE);
-+ 		t = sp->mc_setup_head->next;
-+ 		kfree(sp->mc_setup_head);
-+ 		sp->mc_setup_head = t;
-+ 	}
-+ 	if (sp->mc_setup_head == NULL)
-+ 		sp->mc_setup_tail = NULL;
-+ 
-+ 	sp->dirty_tx = dirty_tx;
-+ 
-+ 	if (sp->tx_full && (int)(sp->cur_tx - sp->dirty_tx) < TX_QUEUE_UNFULL) {
-+ 		/* The ring is no longer full. */
-+ 		sp->tx_full = 0;
-+ 		netif_wake_queue(dev); /* Attention: under a spinlock.  --SAW */
-+ 	}
-+ 
-+ 	spin_unlock(&sp->lock);
-+ 
-+ 	return skb_head;
-+ }
-+ 
-+ static int speedo_poll_on(struct net_device *dev) {
-+ 	long ioaddr = dev->base_addr;
-+ 
-+ 	if (dev->polling == 0) {
-+ 		/* Mask all interrupts */
-+ 		outw(SCBMaskAll, ioaddr + SCBCmd);
-+ 
-+ 		dev->polling = 2;
-+ 	}
-+ 
-+ 	return 0;
-+ }
-+ 
-+ static int speedo_poll_off(struct net_device *dev) {
-+ 	long ioaddr = dev->base_addr;
-+ 
-+ 	if (dev->polling > 0) {
-+ 		/* Enable interrupts */
-+ 		outw(0, ioaddr + SCBCmd);
-+ 
-+ 		dev->polling = 0;
-+ 	}
-+ 
-+ 	return 0;
-+ }
-+ 
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/drivers/net/tulip/interrupt.c ./drivers/net/tulip/interrupt.c
-*** ../linux-2.4.9-pure/drivers/net/tulip/interrupt.c	Wed Jun 20 11:15:44 2001
---- ./drivers/net/tulip/interrupt.c	Fri Aug 17 17:07:40 2001
-***************
-*** 292,297 ****
---- 292,301 ----
-  }
-  
-  
-+ /* Polling extensions -- interrupt stats */
-+ void (*tulip_interrupt_hook)(struct net_device *, unsigned);
-+ 
-+ 
-  /* The interrupt handler does all of the Rx thread work and cleans up
-     after the Tx thread. */
-  void tulip_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
-***************
-*** 301,307 ****
-  	long ioaddr = dev->base_addr;
-  	int csr5;
-  	int entry;
-- 	int missed;
-  	int rx = 0;
-  	int tx = 0;
-  	int oi = 0;
---- 305,310 ----
-***************
-*** 309,314 ****
---- 312,318 ----
-  	int maxtx = TX_RING_SIZE;
-  	int maxoi = TX_RING_SIZE;
-  	unsigned int work_count = tulip_max_interrupt_work;
-+ 	int first_time = 1;
-  
-  	/* Let's see whether the interrupt really is for us */
-  	csr5 = inl(ioaddr + CSR5);
-***************
-*** 319,332 ****
-  	tp->nir++;
-  
-  	do {
-  		/* Acknowledge all of the current interrupt sources ASAP. */
-  		outl(csr5 & 0x0001ffff, ioaddr + CSR5);
-  
-  		if (tulip_debug > 4)
-  			printk(KERN_DEBUG "%s: interrupt  csr5=%#8.8x new csr5=%#8.8x.\n",
-  				   dev->name, csr5, inl(dev->base_addr + CSR5));
-  
-! 		if (csr5 & (RxIntr | RxNoBuf)) {
-  #ifdef CONFIG_NET_HW_FLOWCONTROL
-                          if ((!tp->fc_bit) ||
-  			    (!test_bit(tp->fc_bit, &netdev_fc_xoff)))
---- 323,355 ----
-  	tp->nir++;
-  
-  	do {
-+ 		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0) {
-+ 			if (dev->polling > 0)
-+ 				goto out;
-+ 			if (first_time)
-+ 				goto out;
-+ 			else
-+ 				break;
-+ 		}
-+ 		first_time = 0;
-+ 
-  		/* Acknowledge all of the current interrupt sources ASAP. */
-  		outl(csr5 & 0x0001ffff, ioaddr + CSR5);
-  
-+ 		/* Notify tulip_interrupt_hook */
-+ 		if (tulip_interrupt_hook)
-+ 			tulip_interrupt_hook(dev, CSR5);
-+ 
-+ 		if (dev->polling > 0) {
-+ 			if ((csr5 & (TxDied|TimerInt|AbnormalIntr)) == 0)
-+ 				goto out;
-+ 		}
-+ 
-  		if (tulip_debug > 4)
-  			printk(KERN_DEBUG "%s: interrupt  csr5=%#8.8x new csr5=%#8.8x.\n",
-  				   dev->name, csr5, inl(dev->base_addr + CSR5));
-  
-! 		if ((csr5 & (RxIntr | RxNoBuf)) && (dev->polling == 0)) {
-  #ifdef CONFIG_NET_HW_FLOWCONTROL
-                          if ((!tp->fc_bit) ||
-  			    (!test_bit(tp->fc_bit, &netdev_fc_xoff)))
-***************
-*** 335,341 ****
-  			tulip_refill_rx(dev);
-  		}
-  
-! 		if (csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) {
-  			unsigned int dirty_tx;
-  
-  			spin_lock(&tp->lock);
---- 358,370 ----
-  			tulip_refill_rx(dev);
-  		}
-  
-! 		if ((csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) &&
-! 		    (dev->polling == 0)) {
-! 			/*
-! 			 * part of the following code is duplicated at the end
-! 			 * in tulip_tx_clean for the polling driver; changes
-! 			 * here should propagate to there as well.
-! 			 */
-  			unsigned int dirty_tx;
-  
-  			spin_lock(&tp->lock);
-***************
-*** 343,349 ****
-  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-  				 dirty_tx++) {
-  				int entry = dirty_tx % TX_RING_SIZE;
-! 				int status = le32_to_cpu(tp->tx_ring[entry].status);
-  
-  				if (status < 0)
-  					break;			/* It still has not been Txed */
---- 372,378 ----
-  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-  				 dirty_tx++) {
-  				int entry = dirty_tx % TX_RING_SIZE;
-! v				int status = le32_to_cpu(tp->tx_ring[entry].status);
-  
-  				if (status < 0)
-  					break;			/* It still has not been Txed */
-***************
-*** 403,418 ****
-  				netif_wake_queue(dev);
-  
-  			tp->dirty_tx = dirty_tx;
-- 			if (csr5 & TxDied) {
-- 				if (tulip_debug > 2)
-- 					printk(KERN_WARNING "%s: The transmitter stopped."
-- 						   "  CSR5 is %x, CSR6 %x, new CSR6 %x.\n",
-- 						   dev->name, csr5, inl(ioaddr + CSR6), tp->csr6);
-- 				tulip_restart_rxtx(tp);
-- 			}
-  			spin_unlock(&tp->lock);
-  		}
-  
-  		/* Log errors. */
-  		if (csr5 & AbnormalIntr) {	/* Abnormal error summary bit. */
-  			if (csr5 == 0xffffffff)
---- 432,448 ----
-  				netif_wake_queue(dev);
-  
-  			tp->dirty_tx = dirty_tx;
-  			spin_unlock(&tp->lock);
-  		}
-  
-+ 		if (csr5 & TxDied) { /* XXX move after loop? */
-+ 			if (tulip_debug > 2)
-+ 				printk(KERN_WARNING "%s: The transmitter stopped."
-+ 				       "  CSR5 is %x, CSR6 %x, new CSR6 %x.\n",
-+ 				       dev->name, csr5, inl(ioaddr + CSR6), tp->csr6);
-+ 			tulip_restart_rxtx(tp);
-+ 		}
-+ 
-  		/* Log errors. */
-  		if (csr5 & AbnormalIntr) {	/* Abnormal error summary bit. */
-  			if (csr5 == 0xffffffff)
-***************
-*** 434,440 ****
-  				}
-  			}
-  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
-!                                 tp->stats.rx_missed_errors += inl(ioaddr + CSR8) & 0xffff;
-  #ifdef CONFIG_NET_HW_FLOWCONTROL
-  				if (tp->fc_bit && !test_bit(tp->fc_bit, &netdev_fc_xoff)) {
-  					tp->stats.rx_errors++;
---- 464,473 ----
-  				}
-  			}
-  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
-! 				unsigned csr8status = inl(ioaddr + CSR8);
-! 				unsigned fifostatus = csr8status >> 17;
-!                                 tp->stats.rx_missed_errors += csr8status & 0xffff;
-! 				tp->stats.rx_fifo_errors += fifostatus & 0x7ff;
-  #ifdef CONFIG_NET_HW_FLOWCONTROL
-  				if (tp->fc_bit && !test_bit(tp->fc_bit, &netdev_fc_xoff)) {
-  					tp->stats.rx_errors++;
-***************
-*** 525,531 ****
-  		csr5 = inl(ioaddr + CSR5);
-  	} while ((csr5 & (NormalIntr|AbnormalIntr)) != 0);
-  
-! 	tulip_refill_rx(dev);
-  
-  	/* check if the card is in suspend mode */
-  	entry = tp->dirty_rx % RX_RING_SIZE;
---- 558,566 ----
-  		csr5 = inl(ioaddr + CSR5);
-  	} while ((csr5 & (NormalIntr|AbnormalIntr)) != 0);
-  
-! 	if (dev->polling == 0) {
-! 		tulip_refill_rx(dev);
-! 	}
-  
-  	/* check if the card is in suspend mode */
-  	entry = tp->dirty_rx % RX_RING_SIZE;
-***************
-*** 548,559 ****
---- 583,812 ----
-  		}
-  	}
-  
-+ #if 0
-  	if ((missed = inl(ioaddr + CSR8) & 0x1ffff)) {
-  		tp->stats.rx_dropped += missed & 0x10000 ? 0x10000 : missed;
-  	}
-+ #endif
-  
-  	if (tulip_debug > 4)
-  		printk(KERN_DEBUG "%s: exiting interrupt, csr5=%#4.4x.\n",
-  			   dev->name, inl(ioaddr + CSR5));
-  
-+ out:
-+ }
-+ 
-+ /* Click: polling support routines */
-+ 
-+ int tulip_rx_refill(struct net_device *dev, struct sk_buff **skbs) {
-+ 	struct tulip_private *tp = (struct tulip_private *)dev->priv;
-+ 	struct sk_buff *skb_list;
-+ 
-+ 	if (skbs == NULL)
-+ 		return tp->cur_rx - tp->dirty_rx;
-+ 
-+ 	skb_list = *skbs;
-+ 
-+ 	/* Refill the Rx ring buffers. */
-+ 	for (; tp->cur_rx - tp->dirty_rx > 0 && skb_list; tp->dirty_rx++) {
-+ 		int entry = tp->dirty_rx % RX_RING_SIZE;
-+ 		if (tp->rx_buffers[entry].skb == NULL) {
-+ 			struct sk_buff *skb;
-+ 			dma_addr_t mapping;
-+ 
-+ 			/* Grab an skb from the list we were given */
-+ 			skb = skb_list;
-+ 			skb_list = skb_list->next;
-+ 			skb->prev = NULL;
-+ 			skb->next = NULL;
-+ 			skb->list = NULL;
-+ 
-+ 			tp->rx_buffers[entry].skb = skb;
-+ 
-+ 			mapping = pci_map_single(tp->pdev, skb->tail, PKT_BUF_SZ,
-+ 						 PCI_DMA_FROMDEVICE);
-+ 			tp->rx_buffers[entry].mapping = mapping;
-+ 
-+ 			skb->dev = dev;	/* Mark as being used by this device. */
-+ 			tp->rx_ring[entry].buffer1 = cpu_to_le32(mapping);
-+ 		}
-+ 		tp->rx_ring[entry].status = cpu_to_le32(DescOwned);
-+ 	}
-+ 	if(tp->chip_id == LC82C168) {
-+ 		if(((inl(dev->base_addr + CSR5)>>17)&0x07) == 4) {
-+ 			/* Rx stopped due to out of buffers,
-+ 			 * restart it
-+ 			 */
-+ 			outl(0x01, dev->base_addr + CSR2);
-+ 		}
-+ 	}
-+ 
-+ 	/* Return the unused skb's */
-+ 	*skbs = skb_list;
-+ 
-+ 	return tp->cur_rx - tp->dirty_rx;
-+ }
-+ 
-+ struct sk_buff *tulip_tx_clean(struct net_device *dev) {
-+ 	struct tulip_private *tp = (struct tulip_private *)dev->priv;
-+ 	struct sk_buff *skb_head, *skb_last;
-+ 	unsigned int dirty_tx;
-+ 
-+ 	skb_head = skb_last = 0;
-+ 
-+ 	spin_lock(&tp->lock);
-+ 
-+ 	for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0; dirty_tx++) {
-+ 		int entry = dirty_tx % TX_RING_SIZE;
-+ 		int status = le32_to_cpu(tp->tx_ring[entry].status);
-+ 		struct sk_buff *skb;
-+ 
-+ 		if (status < 0)
-+ 			break;			/* It still has not been Txed */
-+ 
-+ 		/* Check for Rx filter setup frames. */
-+ 		if (tp->tx_buffers[entry].skb == NULL) {
-+ 			/* test because dummy frames not mapped */
-+ 			if (tp->tx_buffers[entry].mapping)
-+ 				pci_unmap_single(tp->pdev,
-+ 					 tp->tx_buffers[entry].mapping,
-+ 					 sizeof(tp->setup_frame),
-+ 					 PCI_DMA_TODEVICE);
-+ 			continue;
-+ 		}
-+ 
-+ 		if (status & 0x8000) {
-+ 			/* There was an major error, log it. */
-+ #ifndef final_version
-+ 			if (tulip_debug > 1)
-+ 				printk(KERN_DEBUG "%s: Transmit error, Tx status %8.8x.\n",
-+ 					   dev->name, status);
-+ #endif
-+ 			tp->stats.tx_errors++;
-+ 			if (status & 0x4104) tp->stats.tx_aborted_errors++;
-+ 			if (status & 0x0C00) tp->stats.tx_carrier_errors++;
-+ 			if (status & 0x0200) tp->stats.tx_window_errors++;
-+ 			if (status & 0x0002) tp->stats.tx_fifo_errors++;
-+ 			if ((status & 0x0080) && tp->full_duplex == 0)
-+ 				tp->stats.tx_heartbeat_errors++;
-+ 		} else {
-+ 			tp->stats.tx_bytes +=
-+ 				tp->tx_buffers[entry].skb->len;
-+ 			tp->stats.collisions += (status >> 3) & 15;
-+ 			tp->stats.tx_packets++;
-+ 		}
-+ 
-+ 		pci_unmap_single(tp->pdev, tp->tx_buffers[entry].mapping,
-+ 				 tp->tx_buffers[entry].skb->len,
-+ 				 PCI_DMA_TODEVICE);
-+ 
-+ 		/* Remove from buffer list */
-+ 		skb = tp->tx_buffers[entry].skb;
-+ 
-+ 		tp->tx_buffers[entry].skb = NULL;
-+ 		tp->tx_buffers[entry].mapping = 0;
-+ 
-+ 		/* Put the skb onto the return list */
-+ 		if (skb_head == 0) {
-+ 			skb_head = skb;
-+ 			skb_last = skb;
-+ 			skb_last->next = NULL;
-+ 			skb_last->prev = NULL;
-+ 		} else {
-+ 			skb_last->next = skb;
-+ 			skb->prev = skb_last;
-+ 			skb->next = NULL;
-+ 			skb_last = skb;
-+ 		}
-+ 	}
-+ 
-+ #ifndef final_version
-+ 	if (tp->cur_tx - dirty_tx > TX_RING_SIZE) {
-+ 		printk(KERN_ERR "%s: Out-of-sync dirty pointer, %d vs. %d.\n",
-+ 			   dev->name, dirty_tx, tp->cur_tx);
-+ 		dirty_tx += TX_RING_SIZE;
-+ 	}
-+ #endif
-+ 
-+ #if 0
-+ 	if (tp->cur_tx - dirty_tx < TX_RING_SIZE - 2)
-+ 		netif_wake_queue(dev);
-+ #endif
-+ 
-+ 	tp->dirty_tx = dirty_tx;
-+ 	spin_unlock(&tp->lock);
-+ 
-+ 	return skb_head;
-+ }
-+ 
-+ struct sk_buff *tulip_rx_poll(struct net_device *dev, int *want) {
-+ 	struct tulip_private *tp = (struct tulip_private *)dev->priv;
-+ 	int entry = tp->cur_rx % RX_RING_SIZE;
-+ 	int rx_work_limit = tp->dirty_rx + RX_RING_SIZE - tp->cur_rx;
-+ 	struct sk_buff *skb_head, *skb_last;
-+ 	int got = 0;
-+ 
-+ 	skb_head = skb_last = NULL;
-+ 
-+ 	while ( ! (tp->rx_ring[entry].status & cpu_to_le32(DescOwned))) {
-+ 		s32 status = le32_to_cpu(tp->rx_ring[entry].status);
-+ 
-+ 		if (--rx_work_limit < 0 || got == *want) break;
-+ 
-+ 		if ((status & 0x38008300) != 0x0300) {
-+ 			if ((status & 0x38000300) != 0x0300) {
-+ 				/* Ignore earlier buffers. */
-+ 				if ((status & 0xffff) != 0x7fff) {
-+ 					if (tulip_debug > 1)
-+ 						printk(KERN_WARNING "%s: Oversized Ethernet frame "
-+ 							   "spanned multiple buffers, status %8.8x!\n",
-+ 							   dev->name, status);
-+ 					tp->stats.rx_length_errors++;
-+ 				}
-+ 			} else if (status & RxDescFatalErr) {
-+ 				/* There was a fatal error. */
-+ 				if (tulip_debug > 2)
-+ 					printk(KERN_DEBUG "%s: Receive error, Rx status %8.8x.\n",
-+ 						   dev->name, status);
-+ 				tp->stats.rx_errors++; /* end of a packet.*/
-+ 				if (status & 0x0890) tp->stats.rx_length_errors++;
-+ 				if (status & 0x0004) tp->stats.rx_frame_errors++;
-+ 				if (status & 0x0002) tp->stats.rx_crc_errors++;
-+ 				if (status & 0x0001) tp->stats.rx_fifo_errors++;
-+ 			}
-+ 		} else {
-+ 			/* Omit the four octet CRC from the length. */
-+ 			short pkt_len = ((status >> 16) & 0x7ff) - 4;
-+ 			struct sk_buff *skb = tp->rx_buffers[entry].skb;
-+ 
-+ 			pci_unmap_single(tp->pdev,
-+ 					 tp->rx_buffers[entry].mapping,
-+ 					 PKT_BUF_SZ, PCI_DMA_FROMDEVICE);
-+ 
-+ 			tp->rx_buffers[entry].skb = NULL;
-+ 			tp->rx_buffers[entry].mapping = 0;
-+ 
-+ 			skb_put(skb, pkt_len);
-+ 			skb->protocol = eth_type_trans(skb, dev);
-+ 			tp->stats.rx_packets++;
-+ 			tp->stats.rx_bytes += pkt_len;
-+ 
-+ 			if (got == 0) {
-+ 				skb_head = skb;
-+ 				skb_last = skb;
-+ 				skb->next = skb->prev = NULL;
-+ 			} else {
-+ 				skb_last->next = skb;
-+ 				skb->prev = skb_last;
-+ 				skb->next = NULL;
-+ 				skb_last = skb;
-+ 			}
-+ 			got++;
-+ 		}
-+ 		entry = (++tp->cur_rx) % RX_RING_SIZE;
-+ 	}
-+ 
-+ 	dev->last_rx = jiffies;
-+ 	*want = got;
-+ 	return skb_head;
-  }
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/drivers/net/tulip/tulip_core.c ./drivers/net/tulip/tulip_core.c
-*** ../linux-2.4.9-pure/drivers/net/tulip/tulip_core.c	Tue Aug  7 08:30:50 2001
---- ./drivers/net/tulip/tulip_core.c	Fri Aug 17 16:57:04 2001
-***************
-*** 245,250 ****
---- 245,260 ----
-  static void set_rx_mode(struct net_device *dev);
-  
-  
-+ /* Click: polling support */
-+ static int tulip_tx_queue(struct net_device *dev, struct sk_buff *skb);
-+ static int tulip_tx_eob(struct net_device *dev);
-+ static int tulip_tx_start(struct net_device *dev);
-+ int tulip_rx_refill(struct net_device *dev, struct sk_buff **);
-+ struct sk_buff *tulip_tx_clean(struct net_device *dev);
-+ struct sk_buff *tulip_rx_poll(struct net_device *dev, int *want);
-+ static int tulip_poll_on(struct net_device *dev);
-+ static int tulip_poll_off(struct net_device *dev);
-+ 
-  
-  static void tulip_set_power_state (struct tulip_private *tp,
-  				   int sleep, int snooze)
-***************
-*** 693,698 ****
---- 703,719 ----
-  }
-  
-  static int
-+ tulip_tx_start(struct net_device *dev) {
-+ 	/* Trigger an immediate transmit demand unless polling */
-+ 	if (dev->polling <= 0)
-+ 		outl(0, dev->base_addr + CSR1);
-+ 
-+ 	dev->trans_start = jiffies;
-+ 
-+ 	return 0;
-+ }
-+ 
-+ static int
-  tulip_start_xmit(struct sk_buff *skb, struct net_device *dev)
-  {
-  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
-***************
-*** 727,739 ****
-  	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
-  	/* if we were using Transmit Automatic Polling, we would need a
-  	 * wmb() here. */
-  	tp->tx_ring[entry].status = cpu_to_le32(DescOwned);
-  	wmb();
-  
-  	tp->cur_tx++;
-  
-! 	/* Trigger an immediate transmit demand. */
-! 	outl(0, dev->base_addr + CSR1);
-  
-  	spin_unlock_irq(&tp->lock);
-  
---- 748,760 ----
-  	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
-  	/* if we were using Transmit Automatic Polling, we would need a
-  	 * wmb() here. */
-+ 	wmb();
-  	tp->tx_ring[entry].status = cpu_to_le32(DescOwned);
-  	wmb();
-  
-  	tp->cur_tx++;
-  
-! 	tulip_tx_start(dev);
-  
-  	spin_unlock_irq(&tp->lock);
-  
-***************
-*** 742,747 ****
---- 763,781 ----
-  	return 0;
-  }
-  
-+ static __inline__ unsigned long long
-+ tulip_get_cycles(void)
-+ {
-+ 	unsigned long low, high;
-+ 	unsigned long long x;
-+ 
-+ 	__asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
-+ 	x = high;
-+ 	x <<= 32;
-+ 	x |= low;
-+ 	return(x);
-+ }
-+ 
-  static void tulip_clean_tx_ring(struct tulip_private *tp)
-  {
-  	unsigned int dirty_tx;
-***************
-*** 804,811 ****
-  	if (tp->chip_id == DC21040)
-  		outl (0x00000004, ioaddr + CSR13);
-  
-! 	if (inl (ioaddr + CSR6) != 0xffffffff)
-! 		tp->stats.rx_missed_errors += inl (ioaddr + CSR8) & 0xffff;
-  
-  	spin_unlock_irqrestore (&tp->lock, flags);
-  
---- 838,849 ----
-  	if (tp->chip_id == DC21040)
-  		outl (0x00000004, ioaddr + CSR13);
-  
-! 	if (inl (ioaddr + CSR6) != 0xffffffff) {
-! 		unsigned csr8status = inl(ioaddr + CSR8);
-! 		unsigned fifostatus = csr8status >> 17;
-! 		tp->stats.rx_missed_errors += csr8status & 0xffff;
-! 		tp->stats.rx_fifo_errors += fifostatus & 0x7ff;
-! 	}
-  
-  	spin_unlock_irqrestore (&tp->lock, flags);
-  
-***************
-*** 884,893 ****
-  
-  	if (netif_running(dev)) {
-  		unsigned long flags;
-  
-  		spin_lock_irqsave (&tp->lock, flags);
-  
-! 		tp->stats.rx_missed_errors += inl(ioaddr + CSR8) & 0xffff;
-  
-  		spin_unlock_irqrestore(&tp->lock, flags);
-  	}
---- 922,935 ----
-  
-  	if (netif_running(dev)) {
-  		unsigned long flags;
-+ 		unsigned csr8status, fifostatus;
-  
-  		spin_lock_irqsave (&tp->lock, flags);
-  
-! 		csr8status = inl(ioaddr + CSR8);
-! 		fifostatus = csr8status >> 17;
-! 		tp->stats.rx_missed_errors += csr8status & 0xffff;
-! 		tp->stats.rx_fifo_errors += fifostatus & 0x7ff;
-  
-  		spin_unlock_irqrestore(&tp->lock, flags);
-  	}
-***************
-*** 1668,1673 ****
---- 1710,1726 ----
-  	dev->do_ioctl = private_ioctl;
-  	dev->set_multicast_list = set_rx_mode;
-  
-+ 	/* Click polling for this device */
-+ 	dev->polling = 0;
-+ 	dev->rx_poll = tulip_rx_poll;
-+ 	dev->rx_refill = tulip_rx_refill;
-+ 	dev->tx_clean = tulip_tx_clean;
-+ 	dev->tx_queue = tulip_tx_queue;
-+ 	dev->tx_start = tulip_tx_start;
-+ 	dev->tx_eob = tulip_tx_eob;
-+ 	dev->poll_on = tulip_poll_on;
-+ 	dev->poll_off = tulip_poll_off;
-+ 
-  	if (register_netdev(dev))
-  		goto err_out_free_ring;
-  
-***************
-*** 1872,1874 ****
---- 1925,2033 ----
-  
-  module_init(tulip_init);
-  module_exit(tulip_cleanup);
-+ 
-+ /*
-+  * Click polling extensions
-+  */
-+ 
-+ /* Demand polling */
-+ #define	DEMAND_POLLTX	1
-+ 
-+ static int
-+ tulip_poll_on(struct net_device *dev)
-+ {
-+ 	long ioaddr = dev->base_addr;
-+ 	int csr7;
-+ #if DEMAND_POLLTX
-+ 	int csr0;
-+ #endif
-+ 
-+ 	if (dev->polling == 0) {
-+ 		csr7 = inl(ioaddr + CSR7) & ~(NormalIntr|RxNoBuf|\
-+ 					      RxIntr|TxIntr|TxNoBuf);
-+ 		outl(csr7, ioaddr + CSR7);
-+ 
-+ #if DEMAND_POLLTX
-+ 		csr0 = (inl(ioaddr + CSR0) & ~(7<<17)) | (4<<17);
-+ 		outl(csr0, ioaddr + CSR0);
-+ #endif
-+ 
-+ 		dev->polling = 2;
-+ 	}
-+ 
-+ 	return 0;
-+ }
-+ 
-+ static int
-+ tulip_poll_off(struct net_device *dev)
-+ {
-+ 	long ioaddr = dev->base_addr;
-+ 	int csr7;
-+ #if DEMAND_POLLTX
-+ 	int csr0;
-+ #endif
-+ 
-+ 	if (dev->polling > 0) {
-+ 		csr7 = inl(ioaddr + CSR7) | (NormalIntr|RxNoBuf|\
-+ 					     RxIntr|TxIntr|TxNoBuf);
-+ 		outl(csr7, ioaddr + CSR7);
-+ 
-+ #if DEMAND_POLLTX
-+ 		csr0 = inl(ioaddr + CSR0) & ~(7<<17);
-+ 		outl(csr0, ioaddr + CSR0);
-+ #endif
-+ 
-+ 		dev->polling = 0;
-+ 	}
-+ 
-+ 	return 0;
-+ }
-+ 
-+ static int tulip_tx_queue(struct net_device *dev, struct sk_buff *skb) {
-+ 	struct tulip_private *tp = (struct tulip_private *)dev->priv;
-+ 	int entry;
-+ 	u32 flag;
-+ 	dma_addr_t mapping;
-+ 
-+ 	spin_lock_irq(&tp->lock);
-+ 
-+ 	/* Calculate the next Tx descriptor entry. */
-+ 	entry = tp->cur_tx % TX_RING_SIZE;
-+ 
-+ 	tp->tx_buffers[entry].skb = skb;
-+ 	mapping = pci_map_single(tp->pdev, skb->data,
-+ 				 skb->len, PCI_DMA_TODEVICE);
-+ 	tp->tx_buffers[entry].mapping = mapping;
-+ 	tp->tx_ring[entry].buffer1 = cpu_to_le32(mapping);
-+ 
-+ 	flag = 0x60000000; /* No interrupt */
-+ 
-+ 	if (entry == TX_RING_SIZE-1)
-+ 		flag = 0xe0000000 | DESC_RING_WRAP;
-+ 
-+ 	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
-+ 	/* if we were using Transmit Automatic Polling, we would need a
-+ 	 * wmb() here. */
-+ 	wmb();
-+ 	tp->tx_ring[entry].status = cpu_to_le32(DescOwned);
-+ 	wmb();
-+ 
-+ 	tp->cur_tx++;
-+ 
-+ #if !(DEMAND_POLLTX)
-+ 	outl(0, dev->base_addr + CSR1);
-+ 	dev->trans_start = jiffies;
-+ #endif
-+ 
-+ 	/* If we've almost filled up the transmit ring, signal busy */
-+ 	if (tp->cur_tx - tp->dirty_tx >= TX_RING_SIZE - 2)
-+ 		netif_stop_queue(dev);
-+ 
-+ 	spin_unlock_irq(&tp->lock);
-+ 
-+ 	return 0;
-+ }
-+ 
-+ static int tulip_tx_eob(struct net_device *dev) {
-+ 	return 0;
-+ }
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/fs/proc/inode.c ./fs/proc/inode.c
-*** ../linux-2.4.9-pure/fs/proc/inode.c	Tue Apr 17 23:16:39 2001
---- ./fs/proc/inode.c	Fri Aug 17 16:52:49 2001
-***************
-*** 147,152 ****
---- 147,157 ----
-  	if (!inode)
-  		goto out_fail;
-  	
-+ 	/* Click change: don't double-increment de's use count if the inode
-+ 	 * existed already */
-+ 	if (inode->u.generic_ip == (void *) de)
-+ 		de_put(de);
-+ 
-  	inode->u.generic_ip = (void *) de;
-  	if (de) {
-  		if (de->mode) {
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
-*** ../linux-2.4.9-pure/include/asm-i386/highmem.h	Wed Aug 15 14:21:21 2001
---- ./include/asm-i386/highmem.h	Fri Aug 17 17:21:15 2001
-***************
-*** 88,94 ****
-  	if (page < highmem_start_page)
-  		return page_address(page);
-  
-! 	idx = type + KM_TYPE_NR*smp_processor_id();
-  	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
-  #if HIGHMEM_DEBUG
-  	if (!pte_none(*(kmap_pte-idx)))
---- 88,94 ----
-  	if (page < highmem_start_page)
-  		return page_address(page);
-  
-! 	idx = (enum fixed_addresses) (type + KM_TYPE_NR*smp_processor_id());
-  	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
-  #if HIGHMEM_DEBUG
-  	if (!pte_none(*(kmap_pte-idx)))
-***************
-*** 104,110 ****
-  {
-  #if HIGHMEM_DEBUG
-  	unsigned long vaddr = (unsigned long) kvaddr;
-! 	enum fixed_addresses idx = type + KM_TYPE_NR*smp_processor_id();
-  
-  	if (vaddr < FIXADDR_START) // FIXME
-  		return;
---- 104,111 ----
-  {
-  #if HIGHMEM_DEBUG
-  	unsigned long vaddr = (unsigned long) kvaddr;
-! 	enum fixed_addresses idx =
-! 		(enum fixed_addresses) (type + KM_TYPE_NR*smp_processor_id());
-  
-  	if (vaddr < FIXADDR_START) // FIXME
-  		return;
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/asm-i386/rwlock.h ./include/asm-i386/rwlock.h
-*** ../linux-2.4.9-pure/include/asm-i386/rwlock.h	Fri Sep 22 14:07:43 2000
---- ./include/asm-i386/rwlock.h	Fri Aug 17 16:52:49 2001
-***************
-*** 28,34 ****
-  		     "2:\tcall " helper "\n\t" \
-  		     "jmp 1b\n" \
-  		     ".previous" \
-! 		     ::"a" (rw) : "memory")
-  
-  #define __build_read_lock_const(rw, helper)   \
-  	asm volatile(LOCK "subl $1,%0\n\t" \
---- 28,34 ----
-  		     "2:\tcall " helper "\n\t" \
-  		     "jmp 1b\n" \
-  		     ".previous" \
-! 		     : : "a" (rw) : "memory")
-  
-  #define __build_read_lock_const(rw, helper)   \
-  	asm volatile(LOCK "subl $1,%0\n\t" \
-***************
-*** 58,64 ****
-  		     "2:\tcall " helper "\n\t" \
-  		     "jmp 1b\n" \
-  		     ".previous" \
-! 		     ::"a" (rw) : "memory")
-  
-  #define __build_write_lock_const(rw, helper) \
-  	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",(%0)\n\t" \
---- 58,64 ----
-  		     "2:\tcall " helper "\n\t" \
-  		     "jmp 1b\n" \
-  		     ".previous" \
-! 		     : : "a" (rw) : "memory")
-  
-  #define __build_write_lock_const(rw, helper) \
-  	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",(%0)\n\t" \
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/asm-i386/string.h ./include/asm-i386/string.h
-*** ../linux-2.4.9-pure/include/asm-i386/string.h	Wed Aug 15 14:21:11 2001
---- ./include/asm-i386/string.h	Fri Aug 17 17:21:02 2001
-***************
-*** 29,34 ****
---- 29,35 ----
-   *		consider these trivial functions to be PD.
-   */
-  
-+ #if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
-  #define __HAVE_ARCH_STRCPY
-  static inline char * strcpy(char * dest,const char *src)
-  {
-***************
-*** 42,47 ****
---- 43,49 ----
-  	:"0" (src),"1" (dest) : "memory");
-  return dest;
-  }
-+ #endif
-  
-  #define __HAVE_ARCH_STRNCPY
-  static inline char * strncpy(char * dest,const char *src,size_t count)
-***************
-*** 102,107 ****
---- 104,110 ----
-  return dest;
-  }
-  
-+ #if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
-  #define __HAVE_ARCH_STRCMP
-  static inline int strcmp(const char * cs,const char * ct)
-  {
-***************
-*** 122,127 ****
---- 125,131 ----
-  		     :"1" (cs),"2" (ct));
-  return __res;
-  }
-+ #endif
-  
-  #define __HAVE_ARCH_STRNCMP
-  static inline int strncmp(const char * cs,const char * ct,size_t count)
-***************
-*** 182,187 ****
---- 186,192 ----
-  return __res;
-  }
-  
-+ #if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
-  #define __HAVE_ARCH_STRLEN
-  static inline size_t strlen(const char * s)
-  {
-***************
-*** 195,200 ****
---- 200,206 ----
-  	:"=c" (__res), "=&D" (d0) :"1" (s),"a" (0), "0" (0xffffffff));
-  return __res;
-  }
-+ #endif
-  
-  static inline void * __memcpy(void * to, const void * from, size_t n)
-  {
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/linux/highmem.h ./include/linux/highmem.h
-*** ../linux-2.4.9-pure/include/linux/highmem.h	Wed Aug 15 14:21:21 2001
---- ./include/linux/highmem.h	Fri Aug 17 17:21:15 2001
-***************
-*** 18,24 ****
-  
-  static inline char *bh_kmap(struct buffer_head *bh)
-  {
-! 	return kmap(bh->b_page) + bh_offset(bh);
-  }
-  
-  static inline void bh_kunmap(struct buffer_head *bh)
---- 18,24 ----
-  
-  static inline char *bh_kmap(struct buffer_head *bh)
-  {
-! 	return (char *)kmap(bh->b_page) + bh_offset(bh);
-  }
-  
-  static inline void bh_kunmap(struct buffer_head *bh)
-***************
-*** 61,67 ****
-  
-  	if (offset + size > PAGE_SIZE)
-  		BUG();
-! 	kaddr = kmap(page);
-  	memset(kaddr + offset, 0, size);
-  	kunmap(page);
-  }
---- 61,67 ----
-  
-  	if (offset + size > PAGE_SIZE)
-  		BUG();
-! 	kaddr = (char *) kmap(page);
-  	memset(kaddr + offset, 0, size);
-  	kunmap(page);
-  }
-***************
-*** 75,81 ****
-  
-  	if (offset + size > PAGE_SIZE)
-  		BUG();
-! 	kaddr = kmap(page);
-  	memset(kaddr + offset, 0, size);
-  	flush_page_to_ram(page);
-  	kunmap(page);
---- 75,81 ----
-  
-  	if (offset + size > PAGE_SIZE)
-  		BUG();
-! 	kaddr = (char *) kmap(page);
-  	memset(kaddr + offset, 0, size);
-  	flush_page_to_ram(page);
-  	kunmap(page);
-***************
-*** 85,92 ****
-  {
-  	char *vfrom, *vto;
-  
-! 	vfrom = kmap(from);
-! 	vto = kmap(to);
-  	copy_user_page(vto, vfrom, vaddr);
-  	kunmap(from);
-  	kunmap(to);
---- 85,92 ----
-  {
-  	char *vfrom, *vto;
-  
-! 	vfrom = (char *) kmap(from);
-! 	vto = (char *) kmap(to);
-  	copy_user_page(vto, vfrom, vaddr);
-  	kunmap(from);
-  	kunmap(to);
-***************
-*** 96,103 ****
-  {
-  	char *vfrom, *vto;
-  
-! 	vfrom = kmap(from);
-! 	vto = kmap(to);
-  	copy_page(vto, vfrom);
-  	kunmap(from);
-  	kunmap(to);
---- 96,103 ----
-  {
-  	char *vfrom, *vto;
-  
-! 	vfrom = (char *) kmap(from);
-! 	vto = (char *) kmap(to);
-  	copy_page(vto, vfrom);
-  	kunmap(from);
-  	kunmap(to);
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/linux/inetdevice.h ./include/linux/inetdevice.h
-*** ../linux-2.4.9-pure/include/linux/inetdevice.h	Thu Jul 26 13:52:39 2001
---- ./include/linux/inetdevice.h	Fri Aug 17 16:52:49 2001
-***************
-*** 122,128 ****
-  	struct in_device *in_dev;
-  
-  	read_lock(&inetdev_lock);
-! 	in_dev = dev->ip_ptr;
-  	if (in_dev)
-  		atomic_inc(&in_dev->refcnt);
-  	read_unlock(&inetdev_lock);
---- 122,128 ----
-  	struct in_device *in_dev;
-  
-  	read_lock(&inetdev_lock);
-! 	in_dev = (struct in_device *) dev->ip_ptr;
-  	if (in_dev)
-  		atomic_inc(&in_dev->refcnt);
-  	read_unlock(&inetdev_lock);
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/linux/mm.h ./include/linux/mm.h
-*** ../linux-2.4.9-pure/include/linux/mm.h	Wed Aug 15 14:21:11 2001
---- ./include/linux/mm.h	Fri Aug 17 18:29:47 2001
-***************
-*** 516,522 ****
-  
-  extern unsigned long do_brk(unsigned long, unsigned long);
-  
-- struct zone_t;
-  /* filemap.c */
-  extern void remove_inode_page(struct page *);
-  extern unsigned long page_unuse(struct page *);
---- 516,521 ----
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/linux/netdevice.h ./include/linux/netdevice.h
-*** ../linux-2.4.9-pure/include/linux/netdevice.h	Wed Aug 15 14:21:32 2001
---- ./include/linux/netdevice.h	Fri Aug 17 18:29:47 2001
-***************
-*** 407,412 ****
---- 407,452 ----
-  	/* this will get initialized at each interface type init routine */
-  	struct divert_blk	*divert;
-  #endif /* CONFIG_NET_DIVERT */
-+ 
-+ 	/* Click polling support */
-+ 	/*
-+ 	 * polling is < 0 if the device does not support polling, == 0 if the
-+ 	 * device supports polling but interrupts are on, and > 0 if polling
-+ 	 * is on.
-+ 	 */
-+ 	int			polling;
-+ 	int			(*poll_on)(struct net_device *);
-+ 	int			(*poll_off)(struct net_device *);
-+ 	/*
-+ 	 * rx_poll returns to caller a linked list of sk_buff objects received
-+ 	 * by the device. on call, the want argument specifies the number of
-+ 	 * packets wanted. on return, the want argument specifies the number
-+ 	 * of packets actually returned.
-+ 	 */
-+ 	struct sk_buff *	(*rx_poll)(struct net_device*, int *want);
-+ 	/* refill rx dma ring using the given sk_buff list. returns 0 if
-+ 	 * successful, or if there are more entries need to be cleaned,
-+ 	 * returns the number of dirty entries. the ptr to the sk_buff list is
-+ 	 * updated by the driver to point to any unused skbs.
-+ 	 */
-+ 	int			(*rx_refill)(struct net_device*, struct sk_buff**);
-+ 	/*
-+ 	 * place sk_buff on the transmit ring. returns 0 if successful, 1
-+ 	 * otherwise
-+ 	 */
-+ 	int			(*tx_queue)(struct net_device *, struct sk_buff *);
-+ 	/*
-+ 	 * clean tx dma ring. returns the list of skb objects cleaned
-+ 	 */
-+ 	struct sk_buff*		(*tx_clean)(struct net_device *);
-+ 	/*
-+ 	 * start transmission. returns 0 if successful, 1 otherwise
-+ 	 */
-+ 	int			(*tx_start)(struct net_device *);
-+ 	/*
-+ 	 * tell device the end of a batch of packets
-+ 	 */
-+ 	int			(*tx_eob)(struct net_device *);
-  };
-  
-  
-***************
-*** 445,450 ****
---- 485,493 ----
-  extern int		unregister_netdevice(struct net_device *dev);
-  extern int 		register_netdevice_notifier(struct notifier_block *nb);
-  extern int		unregister_netdevice_notifier(struct notifier_block *nb);
-+ extern int		register_net_in(struct notifier_block *nb); /* Click */
-+ extern int		unregister_net_in(struct notifier_block *nb); /* Click */
-+ extern int		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
-  extern int		dev_new_index(void);
-  extern struct net_device	*dev_get_by_index(int ifindex);
-  extern struct net_device	*__dev_get_by_index(int ifindex);
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/linux/skbuff.h ./include/linux/skbuff.h
-*** ../linux-2.4.9-pure/include/linux/skbuff.h	Wed Aug 15 14:21:30 2001
---- ./include/linux/skbuff.h	Fri Aug 17 18:29:47 2001
-***************
-*** 124,138 ****
-  	skb_frag_t	frags[MAX_SKB_FRAGS];
-  };
-  
-  struct sk_buff {
-  	/* These two members must be first. */
-  	struct sk_buff	* next;			/* Next buffer in list 				*/
-  	struct sk_buff	* prev;			/* Previous buffer in list 			*/
-  
-! 	struct sk_buff_head * list;		/* List we are on				*/
-! 	struct sock	*sk;			/* Socket we are owned by 			*/
-! 	struct timeval	stamp;			/* Time we arrived				*/
-  	struct net_device	*dev;		/* Device we arrived on/are leaving by		*/
-  
-  	/* Transport layer header */
-  	union
---- 124,154 ----
-  	skb_frag_t	frags[MAX_SKB_FRAGS];
-  };
-  
-+ /* Click: overload sk_buff.pkt_type to contain information about whether
-+    a packet is clean. Clean packets have the following fields zero:
-+    dst, destructor, pkt_bridged, prev, list, sk, security, priority. */
-+ #define PACKET_CLEAN		128		/* Is packet clean? */
-+ #define PACKET_TYPE_MASK	127		/* Actual packet type */
-+ 
-+ /* Click: change sk_buff structure so all fields used for router are grouped
-+  * together on one cache line, we hope */
-  struct sk_buff {
-  	/* These two members must be first. */
-  	struct sk_buff	* next;			/* Next buffer in list 				*/
-  	struct sk_buff	* prev;			/* Previous buffer in list 			*/
-  
-! 	unsigned int 	len;			/* Length of actual data			*/
-! 	unsigned char	*data;			/* Data head pointer				*/
-! 	unsigned char	*tail;			/* Tail pointer					*/
-  	struct net_device	*dev;		/* Device we arrived on/are leaving by		*/
-+ 	unsigned char 	__unused,		/* Dead field, may be reused			*/
-+ 			cloned, 		/* head may be cloned (check refcnt to be sure). */
-+   			pkt_type,		/* Packet class					*/
-+   			ip_summed;		/* Driver fed us an IP checksum			*/
-+ 	atomic_t	users;			/* User count - see datagram.c,tcp.c 		*/
-+ 	unsigned int	truesize;		/* Buffer size 					*/
-+ 	unsigned char	*head;			/* Head of buffer 				*/
-+ 	unsigned char 	*end;			/* End pointer					*/
-  
-  	/* Transport layer header */
-  	union
-***************
-*** 163,170 ****
-  	  	unsigned char 	*raw;
-  	} mac;
-  
-- 	struct  dst_entry *dst;
-- 
-  	/* 
-  	 * This is the control buffer. It is free to use for every
-  	 * layer. Please put your private variables there. If you
---- 179,184 ----
-***************
-*** 173,195 ****
-  	 */ 
-  	char		cb[48];	 
-  
-! 	unsigned int 	len;			/* Length of actual data			*/
-   	unsigned int 	data_len;
-  	unsigned int	csum;			/* Checksum 					*/
-- 	unsigned char 	__unused,		/* Dead field, may be reused			*/
-- 			cloned, 		/* head may be cloned (check refcnt to be sure). */
--   			pkt_type,		/* Packet class					*/
--   			ip_summed;		/* Driver fed us an IP checksum			*/
-  	__u32		priority;		/* Packet queueing priority			*/
-- 	atomic_t	users;			/* User count - see datagram.c,tcp.c 		*/
-  	unsigned short	protocol;		/* Packet protocol from driver. 		*/
-  	unsigned short	security;		/* Security level of packet			*/
-- 	unsigned int	truesize;		/* Buffer size 					*/
-- 
-- 	unsigned char	*head;			/* Head of buffer 				*/
-- 	unsigned char	*data;			/* Data head pointer				*/
-- 	unsigned char	*tail;			/* Tail pointer					*/
-- 	unsigned char 	*end;			/* End pointer					*/
-  
-  	void 		(*destructor)(struct sk_buff *);	/* Destruct function		*/
-  #ifdef CONFIG_NETFILTER
---- 187,203 ----
-  	 */ 
-  	char		cb[48];	 
-  
-! 	struct  dst_entry *dst;
-! 
-! 	struct sk_buff_head * list;		/* List we are on				*/
-! 	struct sock	*sk;			/* Socket we are owned by 			*/
-! 	struct timeval	stamp;			/* Time we arrived				*/
-! 
-   	unsigned int 	data_len;
-  	unsigned int	csum;			/* Checksum 					*/
-  	__u32		priority;		/* Packet queueing priority			*/
-  	unsigned short	protocol;		/* Packet protocol from driver. 		*/
-  	unsigned short	security;		/* Security level of packet			*/
-  
-  	void 		(*destructor)(struct sk_buff *);	/* Destruct function		*/
-  #ifdef CONFIG_NETFILTER
-***************
-*** 231,236 ****
---- 239,246 ----
-  extern void			kfree_skbmem(struct sk_buff *skb);
-  extern struct sk_buff *		skb_clone(struct sk_buff *skb, int priority);
-  extern struct sk_buff *		skb_copy(const struct sk_buff *skb, int priority);
-+ extern void			skb_recycled_init(struct sk_buff *buf);
-+ extern struct sk_buff *		skb_recycle(struct sk_buff *buf);
-  extern struct sk_buff *		pskb_copy(struct sk_buff *skb, int gfp_mask);
-  extern int			pskb_expand_head(struct sk_buff *skb, int nhead, int ntail, int gfp_mask);
-  extern struct sk_buff *		skb_realloc_headroom(struct sk_buff *skb, unsigned int headroom);
-***************
-*** 820,826 ****
-  	return skb->data;
-  }
-  
-! static inline char *__skb_pull(struct sk_buff *skb, unsigned int len)
-  {
-  	skb->len-=len;
-  	if (skb->len < skb->data_len)
---- 830,836 ----
-  	return skb->data;
-  }
-  
-! static inline unsigned char *__skb_pull(struct sk_buff *skb, unsigned int len)
-  {
-  	skb->len-=len;
-  	if (skb->len < skb->data_len)
-***************
-*** 848,854 ****
-  
-  extern unsigned char * __pskb_pull_tail(struct sk_buff *skb, int delta);
-  
-! static inline char *__pskb_pull(struct sk_buff *skb, unsigned int len)
-  {
-  	if (len > skb_headlen(skb) &&
-  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
---- 858,864 ----
-  
-  extern unsigned char * __pskb_pull_tail(struct sk_buff *skb, int delta);
-  
-! static inline unsigned char *__pskb_pull(struct sk_buff *skb, unsigned int len)
-  {
-  	if (len > skb_headlen(skb) &&
-  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/linux/swap.h ./include/linux/swap.h
-*** ../linux-2.4.9-pure/include/linux/swap.h	Wed Aug 15 14:21:11 2001
---- ./include/linux/swap.h	Fri Aug 17 18:29:30 2001
-***************
-*** 96,102 ****
-  struct vm_area_struct;
-  struct sysinfo;
-  
-! struct zone_t;
-  
-  /* linux/mm/swap.c */
-  extern int memory_pressure;
---- 96,102 ----
-  struct vm_area_struct;
-  struct sysinfo;
-  
-! struct zone_struct;
-  
-  /* linux/mm/swap.c */
-  extern int memory_pressure;
-***************
-*** 111,117 ****
-  extern void swap_setup(void);
-  
-  /* linux/mm/vmscan.c */
-! extern struct page * reclaim_page(zone_t *);
-  extern wait_queue_head_t kswapd_wait;
-  extern wait_queue_head_t kreclaimd_wait;
-  extern int page_launder(int, int);
---- 111,117 ----
-  extern void swap_setup(void);
-  
-  /* linux/mm/vmscan.c */
-! extern struct page * reclaim_page(struct zone_struct *);
-  extern wait_queue_head_t kswapd_wait;
-  extern wait_queue_head_t kreclaimd_wait;
-  extern int page_launder(int, int);
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/include/net/route.h ./include/net/route.h
-*** ../linux-2.4.9-pure/include/net/route.h	Wed Aug 15 14:21:32 2001
---- ./include/net/route.h	Fri Aug 17 18:29:47 2001
-***************
-*** 131,137 ****
---- 131,143 ----
-  static inline int ip_route_output(struct rtable **rp,
-  				      u32 daddr, u32 saddr, u32 tos, int oif)
-  {
-+ #ifdef __cplusplus
-+ 	struct rt_key key = { daddr, saddr };
-+ 	key.oif = oif;
-+ 	key.tos = tos;
-+ #else
-  	struct rt_key key = { dst:daddr, src:saddr, oif:oif, tos:tos };
-+ #endif
-  
-  	return ip_route_output_key(rp, &key);
-  }
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/net/core/dev.c ./net/core/dev.c
-*** ../linux-2.4.9-pure/net/core/dev.c	Tue Jul 31 10:34:02 2001
---- ./net/core/dev.c	Fri Aug 17 16:52:49 2001
-***************
-*** 172,177 ****
---- 172,180 ----
-   
-  static struct notifier_block *netdev_chain=NULL;
-  
-+ /* Click: input packet handlers, might steal packets from net_rx_action. */
-+ static struct notifier_block *net_in_chain = 0;
-+ 
-  /*
-   *	Device drivers call our routines to queue packets here. We empty the
-   *	queue in the local softnet handler.
-***************
-*** 1365,1370 ****
---- 1368,1389 ----
-  	br_write_unlock_bh(BR_NETPROTO_LOCK);
-  }
-  
-+ /*
-+  * Click: Allow Click to ask to intercept input packets.
-+  */
-+ int
-+ register_net_in(struct notifier_block *nb)
-+ {
-+   return notifier_chain_register(&net_in_chain, nb);
-+ }
-+ 
-+ int
-+ unregister_net_in(struct notifier_block *nb)
-+ {
-+   return notifier_chain_unregister(&net_in_chain, nb);
-+ }
-+ 
-+ 
-  #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
-  void (*br_handle_frame_hook)(struct sk_buff *skb) = NULL;
-  #endif
-***************
-*** 1398,1403 ****
---- 1417,1502 ----
-  #endif   /* CONFIG_NET_DIVERT */
-  
-  
-+ /*
-+  * Click: Hand a packet to the ordinary Linux protocol stack.
-+  * Broke this out from net_tx_action so that Click can call it.
-+  * Always frees the skb one way or another.
-+  *
-+  * skb->pkt_type needs to be set to PACKET_{BROADCAST,MULTICAST,OTHERHOST}
-+  * maybe skb->mac.raw must point to ether header.
-+  * skb->protocol must be set to a htons(ETHERTYPE_?).
-+  * skb->data must point to the ethernet payload (e.g. the IP header).
-+  * skb->nh.raw must point to the ethernet payload also.
-+  *
-+  * Returns 1 if caller should skip bugdet, etc.
-+  */
-+ int ptype_dispatch(struct sk_buff *skb, unsigned short type)
-+ {
-+ 	struct packet_type *ptype, *pt_prev;
-+ 
-+ 	pt_prev = NULL;
-+ 	for (ptype = ptype_all; ptype; ptype = ptype->next) {
-+ 		if (!ptype->dev || ptype->dev == skb->dev) {
-+ 			if (pt_prev) {
-+ 				if (!pt_prev->data) {
-+ 					deliver_to_old_ones(pt_prev, skb, 0);
-+ 				} else {
-+ 					atomic_inc(&skb->users);
-+ 					pt_prev->func(skb,
-+ 						      skb->dev,
-+ 						      pt_prev);
-+ 				}
-+ 			}
-+ 			pt_prev = ptype;
-+ 		}
-+ 	}
-+ 
-+ 	/* Click: exit if sniffers only */
-+ 	if (type == 0xFFFF)
-+ 		goto done;
-+ 	
-+ #ifdef CONFIG_NET_DIVERT
-+ 	if (skb->dev->divert && skb->dev->divert->divert)
-+ 		handle_diverter(skb);
-+ #endif /* CONFIG_NET_DIVERT */
-+ 
-+ 			
-+ #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
-+ 	if (skb->dev->br_port != NULL &&
-+ 	    br_handle_frame_hook != NULL) {
-+ 		handle_bridge(skb, pt_prev);
-+ 		return 1;
-+ 	}
-+ #endif
-+ 
-+ 	for (ptype=ptype_base[ntohs(type)&15];ptype;ptype=ptype->next) {
-+ 		if (ptype->type == type &&
-+ 		    (!ptype->dev || ptype->dev == skb->dev)) {
-+ 			if (pt_prev) {
-+ 				if (!pt_prev->data)
-+ 					deliver_to_old_ones(pt_prev, skb, 0);
-+ 				else {
-+ 					atomic_inc(&skb->users);
-+ 					pt_prev->func(skb,
-+ 						      skb->dev,
-+ 						      pt_prev);
-+ 				}
-+ 			}
-+ 			pt_prev = ptype;
-+ 		}
-+ 	}
-+ 
-+ done:
-+ 	if (pt_prev) {
-+ 		if (!pt_prev->data)
-+ 			deliver_to_old_ones(pt_prev, skb, 1);
-+ 		else
-+ 			pt_prev->func(skb, skb->dev, pt_prev);
-+ 	} else
-+ 		kfree_skb(skb);
-+ 	return 0;
-+ }
-+ 
-  static void net_rx_action(struct softirq_action *h)
-  {
-  	int this_cpu = smp_processor_id();
-***************
-*** 1410,1415 ****
---- 1509,1515 ----
-  	for (;;) {
-  		struct sk_buff *skb;
-  		struct net_device *rx_dev;
-+ 		int backlog;
-  
-  		local_irq_disable();
-  		skb = __skb_dequeue(&queue->input_pkt_queue);
-***************
-*** 1431,1496 ****
-  		}
-  #endif
-  		skb->h.raw = skb->nh.raw = skb->data;
-- 		{
-- 			struct packet_type *ptype, *pt_prev;
-- 			unsigned short type = skb->protocol;
-- 
-- 			pt_prev = NULL;
-- 			for (ptype = ptype_all; ptype; ptype = ptype->next) {
-- 				if (!ptype->dev || ptype->dev == skb->dev) {
-- 					if (pt_prev) {
-- 						if (!pt_prev->data) {
-- 							deliver_to_old_ones(pt_prev, skb, 0);
-- 						} else {
-- 							atomic_inc(&skb->users);
-- 							pt_prev->func(skb,
-- 								      skb->dev,
-- 								      pt_prev);
-- 						}
-- 					}
-- 					pt_prev = ptype;
-- 				}
-- 			}
-  
-! #ifdef CONFIG_NET_DIVERT
-! 			if (skb->dev->divert && skb->dev->divert->divert)
-! 				handle_diverter(skb);
-! #endif /* CONFIG_NET_DIVERT */
-! 
-! 			
-! #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
-! 			if (skb->dev->br_port != NULL &&
-! 			    br_handle_frame_hook != NULL) {
-! 				handle_bridge(skb, pt_prev);
-! 				dev_put(rx_dev);
-! 				continue;
-! 			}
-! #endif
-! 
-! 			for (ptype=ptype_base[ntohs(type)&15];ptype;ptype=ptype->next) {
-! 				if (ptype->type == type &&
-! 				    (!ptype->dev || ptype->dev == skb->dev)) {
-! 					if (pt_prev) {
-! 						if (!pt_prev->data)
-! 							deliver_to_old_ones(pt_prev, skb, 0);
-! 						else {
-! 							atomic_inc(&skb->users);
-! 							pt_prev->func(skb,
-! 								      skb->dev,
-! 								      pt_prev);
-! 						}
-! 					}
-! 					pt_prev = ptype;
-! 				}
-! 			}
-  
-! 			if (pt_prev) {
-! 				if (!pt_prev->data)
-! 					deliver_to_old_ones(pt_prev, skb, 1);
-! 				else
-! 					pt_prev->func(skb, skb->dev, pt_prev);
-! 			} else
-! 				kfree_skb(skb);
-  		}
-  
-  		dev_put(rx_dev);
---- 1531,1549 ----
-  		}
-  #endif
-  		skb->h.raw = skb->nh.raw = skb->data;
-  
-! 		/* Click: may want to steal the packet */
-!                 if (notifier_call_chain(&net_in_chain,
-! 					skb_queue_len(&queue->input_pkt_queue),
-! 					skb) & NOTIFY_STOP_MASK) {
-!                 	dev_put(rx_dev);
-! 			continue;
-! 		}
-  
-! 		/* Click: dispatch based on protocol type */
-! 		if (ptype_dispatch(skb, skb->protocol)) {
-! 			dev_put(rx_dev);
-! 			continue;
-  		}
-  
-  		dev_put(rx_dev);
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/net/core/skbuff.c ./net/core/skbuff.c
-*** ../linux-2.4.9-pure/net/core/skbuff.c	Tue Aug  7 08:30:50 2001
---- ./net/core/skbuff.c	Fri Aug 17 16:52:49 2001
-***************
-*** 444,449 ****
---- 444,508 ----
-  #endif
-  }
-  
-+ /* Click: attempts to recycle a sk_buff. if it can be recycled, return it
-+  * without reinitializing any bits */
-+ struct sk_buff *skb_recycle(struct sk_buff *skb)
-+ {
-+ 	if (atomic_dec_and_test(&skb->users)) { 
-+ 
-+ 		if (skb->list) {
-+ 		 	printk(KERN_WARNING "Warning: kfree_skb passed an skb still "
-+ 			       "on a list (from %p).\n", NET_CALLER(skb));
-+ 			BUG();
-+ 		}
-+ 
-+ 		dst_release(skb->dst); 
-+ 		if(skb->destructor) {
-+ 			if (in_irq()) {
-+ 				printk(KERN_WARNING "Warning: kfree_skb on hard IRQ %p\n",
-+ 					NET_CALLER(skb));
-+ 			}
-+ 			skb->destructor(skb);
-+ 		}
-+ #ifdef CONFIG_NETFILTER
-+ 		nf_conntrack_put(skb->nfct);
-+ #endif
-+ 		skb_headerinit(skb, NULL, 0);
-+ 
-+ 		if (!skb->cloned ||
-+ 		    atomic_dec_and_test(&(skb_shinfo(skb)->dataref))) {
-+ 			if (skb_shinfo(skb)->nr_frags) {
-+ 				int i;
-+ 				for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
-+ 					put_page(skb_shinfo(skb)->frags[i].page);
-+ 			}
-+ 
-+ 			if (skb_shinfo(skb)->frag_list)
-+ 				skb_drop_fraglist(skb);
-+ 
-+ 			/* Load the data pointers. */
-+ 			skb->data = skb->head;
-+ 			skb->tail = skb->data;
-+ 			/* end and truesize should have never changed */
-+ 			/* skb->end = skb->data + skb->truesize; */
-+ 
-+ 			/* set up other state */
-+ 			skb->len = 0;
-+ 			skb->cloned = 0;
-+ 
-+ 			atomic_set(&skb->users, 1);
-+ 			atomic_set(&(skb_shinfo(skb)->dataref), 1);
-+ 
-+ 			return skb;
-+ 		}
-+ 
-+ 		skb_head_to_pool(skb);
-+ 	}
-+ 
-+ 	return 0;
-+ }
-+ 
-+ 
-  /**
-   *	skb_copy	-	create private copy of an sk_buff
-   *	@skb: buffer to copy
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/net/ipv4/arp.c ./net/ipv4/arp.c
-*** ../linux-2.4.9-pure/net/ipv4/arp.c	Wed May 16 10:21:45 2001
---- ./net/ipv4/arp.c	Fri Aug 17 16:52:49 2001
-***************
-*** 318,323 ****
---- 318,324 ----
-  {
-  	u32 saddr;
-  	u8  *dst_ha = NULL;
-+ 	u8  dst_ha_buf[MAX_ADDR_LEN+sizeof(unsigned long)];
-  	struct net_device *dev = neigh->dev;
-  	u32 target = *(u32*)neigh->primary_key;
-  	int probes = atomic_read(&neigh->probes);
-***************
-*** 330,337 ****
-  	if ((probes -= neigh->parms->ucast_probes) < 0) {
-  		if (!(neigh->nud_state&NUD_VALID))
-  			printk(KERN_DEBUG "trying to ucast probe in NUD_INVALID\n");
-! 		dst_ha = neigh->ha;
-! 		read_lock_bh(&neigh->lock);
-  	} else if ((probes -= neigh->parms->app_probes) < 0) {
-  #ifdef CONFIG_ARPD
-  		neigh_app_ns(neigh);
---- 331,338 ----
-  	if ((probes -= neigh->parms->ucast_probes) < 0) {
-  		if (!(neigh->nud_state&NUD_VALID))
-  			printk(KERN_DEBUG "trying to ucast probe in NUD_INVALID\n");
-! 		memcpy(dst_ha_buf, neigh->ha, sizeof(neigh->ha));
-! 		dst_ha = dst_ha_buf;
-  	} else if ((probes -= neigh->parms->app_probes) < 0) {
-  #ifdef CONFIG_ARPD
-  		neigh_app_ns(neigh);
-***************
-*** 341,348 ****
-  
-  	arp_send(ARPOP_REQUEST, ETH_P_ARP, target, dev, saddr,
-  		 dst_ha, dev->dev_addr, NULL);
-- 	if (dst_ha)
-- 		read_unlock_bh(&neigh->lock);
-  }
-  
-  static int arp_filter(__u32 sip, __u32 tip, struct net_device *dev)
---- 342,347 ----
-diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.4.9-pure/net/netsyms.c ./net/netsyms.c
-*** ../linux-2.4.9-pure/net/netsyms.c	Tue Aug  7 08:30:50 2001
---- ./net/netsyms.c	Fri Aug 17 16:52:49 2001
-***************
-*** 269,274 ****
---- 269,279 ----
-  EXPORT_SYMBOL(register_inetaddr_notifier);
-  EXPORT_SYMBOL(unregister_inetaddr_notifier);
-  
-+ /* Click */
-+ EXPORT_SYMBOL(register_net_in);
-+ EXPORT_SYMBOL(unregister_net_in);
-+ EXPORT_SYMBOL(ptype_dispatch);
-+ 
-  /* needed for ip_gre -cw */
-  EXPORT_SYMBOL(ip_statistics);
-  
-***************
-*** 480,485 ****
---- 485,491 ----
-  EXPORT_SYMBOL(__kfree_skb);
-  EXPORT_SYMBOL(skb_clone);
-  EXPORT_SYMBOL(skb_copy);
-+ EXPORT_SYMBOL(skb_recycle);
-  EXPORT_SYMBOL(netif_rx);
-  EXPORT_SYMBOL(dev_add_pack);
-  EXPORT_SYMBOL(dev_remove_pack);
+
+Index: include/asm-i386/highmem.h
+--- include/asm-i386/highmem.h.orig	Wed Aug 15 21:21:21 2001
++++ include/asm-i386/highmem.h	Mon Aug 20 21:49:57 2001
+@@ -88,7 +88,7 @@
+ 	if (page < highmem_start_page)
+ 		return page_address(page);
+ 
+-	idx = type + KM_TYPE_NR*smp_processor_id();
++	idx = (enum fixed_addresses) (type + KM_TYPE_NR*smp_processor_id());
+ 	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
+ #if HIGHMEM_DEBUG
+ 	if (!pte_none(*(kmap_pte-idx)))
+@@ -104,7 +104,8 @@
+ {
+ #if HIGHMEM_DEBUG
+ 	unsigned long vaddr = (unsigned long) kvaddr;
+-	enum fixed_addresses idx = type + KM_TYPE_NR*smp_processor_id();
++	enum fixed_addresses idx =
++		(enum fixed_addresses) (type + KM_TYPE_NR*smp_processor_id());
+ 
+ 	if (vaddr < FIXADDR_START) // FIXME
+ 		return;
+
+Index: include/asm-i386/rwlock.h
+--- include/asm-i386/rwlock.h.orig	Fri Sep 22 21:07:43 2000
++++ include/asm-i386/rwlock.h	Mon Aug 20 21:47:41 2001
+@@ -28,7 +28,7 @@
+ 		     "2:\tcall " helper "\n\t" \
+ 		     "jmp 1b\n" \
+ 		     ".previous" \
+-		     ::"a" (rw) : "memory")
++		     : : "a" (rw) : "memory")
+ 
+ #define __build_read_lock_const(rw, helper)   \
+ 	asm volatile(LOCK "subl $1,%0\n\t" \
+@@ -58,7 +58,7 @@
+ 		     "2:\tcall " helper "\n\t" \
+ 		     "jmp 1b\n" \
+ 		     ".previous" \
+-		     ::"a" (rw) : "memory")
++		     : : "a" (rw) : "memory")
+ 
+ #define __build_write_lock_const(rw, helper) \
+ 	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",(%0)\n\t" \
+
+Index: include/asm-i386/string.h
+--- include/asm-i386/string.h.orig	Wed Aug 15 21:21:11 2001
++++ include/asm-i386/string.h	Mon Aug 20 21:49:50 2001
+@@ -29,6 +29,7 @@
+  *		consider these trivial functions to be PD.
+  */
+ 
++#if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
+ #define __HAVE_ARCH_STRCPY
+ static inline char * strcpy(char * dest,const char *src)
+ {
+@@ -42,6 +43,7 @@
+ 	:"0" (src),"1" (dest) : "memory");
+ return dest;
+ }
++#endif
+ 
+ #define __HAVE_ARCH_STRNCPY
+ static inline char * strncpy(char * dest,const char *src,size_t count)
+@@ -102,6 +104,7 @@
+ return dest;
+ }
+ 
++#if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
+ #define __HAVE_ARCH_STRCMP
+ static inline int strcmp(const char * cs,const char * ct)
+ {
+@@ -122,6 +125,7 @@
+ 		     :"1" (cs),"2" (ct));
+ return __res;
+ }
++#endif
+ 
+ #define __HAVE_ARCH_STRNCMP
+ static inline int strncmp(const char * cs,const char * ct,size_t count)
+@@ -182,6 +186,7 @@
+ return __res;
+ }
+ 
++#if __GNUC__ > 2 || __GNUC_MINOR__ != 96 || !defined(CLICK_LINUXMODULE)
+ #define __HAVE_ARCH_STRLEN
+ static inline size_t strlen(const char * s)
+ {
+@@ -195,6 +200,7 @@
+ 	:"=c" (__res), "=&D" (d0) :"1" (s),"a" (0), "0" (0xffffffff));
+ return __res;
+ }
++#endif
+ 
+ static inline void * __memcpy(void * to, const void * from, size_t n)
+ {
+
+Index: include/linux/highmem.h
+--- include/linux/highmem.h.orig	Wed Aug 15 21:21:21 2001
++++ include/linux/highmem.h	Mon Aug 20 21:49:57 2001
+@@ -18,7 +18,7 @@
+ 
+ static inline char *bh_kmap(struct buffer_head *bh)
+ {
+-	return kmap(bh->b_page) + bh_offset(bh);
++	return (char *)kmap(bh->b_page) + bh_offset(bh);
+ }
+ 
+ static inline void bh_kunmap(struct buffer_head *bh)
+@@ -61,7 +61,7 @@
+ 
+ 	if (offset + size > PAGE_SIZE)
+ 		BUG();
+-	kaddr = kmap(page);
++	kaddr = (char *) kmap(page);
+ 	memset(kaddr + offset, 0, size);
+ 	kunmap(page);
+ }
+@@ -75,7 +75,7 @@
+ 
+ 	if (offset + size > PAGE_SIZE)
+ 		BUG();
+-	kaddr = kmap(page);
++	kaddr = (char *) kmap(page);
+ 	memset(kaddr + offset, 0, size);
+ 	flush_page_to_ram(page);
+ 	kunmap(page);
+@@ -85,8 +85,8 @@
+ {
+ 	char *vfrom, *vto;
+ 
+-	vfrom = kmap(from);
+-	vto = kmap(to);
++	vfrom = (char *) kmap(from);
++	vto = (char *) kmap(to);
+ 	copy_user_page(vto, vfrom, vaddr);
+ 	kunmap(from);
+ 	kunmap(to);
+@@ -96,8 +96,8 @@
+ {
+ 	char *vfrom, *vto;
+ 
+-	vfrom = kmap(from);
+-	vto = kmap(to);
++	vfrom = (char *) kmap(from);
++	vto = (char *) kmap(to);
+ 	copy_page(vto, vfrom);
+ 	kunmap(from);
+ 	kunmap(to);
+
+Index: include/linux/inetdevice.h
+--- include/linux/inetdevice.h.orig	Thu Jul 26 20:52:39 2001
++++ include/linux/inetdevice.h	Mon Aug 20 21:47:41 2001
+@@ -122,7 +122,7 @@
+ 	struct in_device *in_dev;
+ 
+ 	read_lock(&inetdev_lock);
+-	in_dev = dev->ip_ptr;
++	in_dev = (struct in_device *) dev->ip_ptr;
+ 	if (in_dev)
+ 		atomic_inc(&in_dev->refcnt);
+ 	read_unlock(&inetdev_lock);
+
+Index: include/linux/mm.h
+--- include/linux/mm.h.orig	Wed Aug 15 21:21:11 2001
++++ include/linux/mm.h	Mon Aug 20 21:49:50 2001
+@@ -516,7 +516,6 @@
+ 
+ extern unsigned long do_brk(unsigned long, unsigned long);
+ 
+-struct zone_t;
+ /* filemap.c */
+ extern void remove_inode_page(struct page *);
+ extern unsigned long page_unuse(struct page *);
+
+Index: include/linux/netdevice.h
+--- include/linux/netdevice.h.orig	Wed Aug 15 21:21:32 2001
++++ include/linux/netdevice.h	Mon Aug 20 21:50:05 2001
+@@ -407,6 +407,46 @@
+ 	/* this will get initialized at each interface type init routine */
+ 	struct divert_blk	*divert;
+ #endif /* CONFIG_NET_DIVERT */
++
++	/* Click polling support */
++	/*
++	 * polling is < 0 if the device does not support polling, == 0 if the
++	 * device supports polling but interrupts are on, and > 0 if polling
++	 * is on.
++	 */
++	int			polling;
++	int			(*poll_on)(struct net_device *);
++	int			(*poll_off)(struct net_device *);
++	/*
++	 * rx_poll returns to caller a linked list of sk_buff objects received
++	 * by the device. on call, the want argument specifies the number of
++	 * packets wanted. on return, the want argument specifies the number
++	 * of packets actually returned.
++	 */
++	struct sk_buff *	(*rx_poll)(struct net_device*, int *want);
++	/* refill rx dma ring using the given sk_buff list. returns 0 if
++	 * successful, or if there are more entries need to be cleaned,
++	 * returns the number of dirty entries. the ptr to the sk_buff list is
++	 * updated by the driver to point to any unused skbs.
++	 */
++	int			(*rx_refill)(struct net_device*, struct sk_buff**);
++	/*
++	 * place sk_buff on the transmit ring. returns 0 if successful, 1
++	 * otherwise
++	 */
++	int			(*tx_queue)(struct net_device *, struct sk_buff *);
++	/*
++	 * clean tx dma ring. returns the list of skb objects cleaned
++	 */
++	struct sk_buff*		(*tx_clean)(struct net_device *);
++	/*
++	 * start transmission. returns 0 if successful, 1 otherwise
++	 */
++	int			(*tx_start)(struct net_device *);
++	/*
++	 * tell device the end of a batch of packets
++	 */
++	int			(*tx_eob)(struct net_device *);
+ };
+ 
+ 
+@@ -445,6 +485,9 @@
+ extern int		unregister_netdevice(struct net_device *dev);
+ extern int 		register_netdevice_notifier(struct notifier_block *nb);
+ extern int		unregister_netdevice_notifier(struct notifier_block *nb);
++extern int		register_net_in(struct notifier_block *nb); /* Click */
++extern int		unregister_net_in(struct notifier_block *nb); /* Click */
++extern int		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
+ extern int		dev_new_index(void);
+ extern struct net_device	*dev_get_by_index(int ifindex);
+ extern struct net_device	*__dev_get_by_index(int ifindex);
+
+Index: include/linux/skbuff.h
+--- include/linux/skbuff.h.orig	Wed Aug 15 21:21:30 2001
++++ include/linux/skbuff.h	Mon Aug 20 21:50:04 2001
+@@ -124,15 +124,31 @@
+ 	skb_frag_t	frags[MAX_SKB_FRAGS];
+ };
+ 
++/* Click: overload sk_buff.pkt_type to contain information about whether
++   a packet is clean. Clean packets have the following fields zero:
++   dst, destructor, pkt_bridged, prev, list, sk, security, priority. */
++#define PACKET_CLEAN		128		/* Is packet clean? */
++#define PACKET_TYPE_MASK	127		/* Actual packet type */
++
++/* Click: change sk_buff structure so all fields used for router are grouped
++ * together on one cache line, we hope */
+ struct sk_buff {
+ 	/* These two members must be first. */
+ 	struct sk_buff	* next;			/* Next buffer in list 				*/
+ 	struct sk_buff	* prev;			/* Previous buffer in list 			*/
+ 
+-	struct sk_buff_head * list;		/* List we are on				*/
+-	struct sock	*sk;			/* Socket we are owned by 			*/
+-	struct timeval	stamp;			/* Time we arrived				*/
++	unsigned int 	len;			/* Length of actual data			*/
++	unsigned char	*data;			/* Data head pointer				*/
++	unsigned char	*tail;			/* Tail pointer					*/
+ 	struct net_device	*dev;		/* Device we arrived on/are leaving by		*/
++	unsigned char 	__unused,		/* Dead field, may be reused			*/
++			cloned, 		/* head may be cloned (check refcnt to be sure). */
++  			pkt_type,		/* Packet class					*/
++  			ip_summed;		/* Driver fed us an IP checksum			*/
++	atomic_t	users;			/* User count - see datagram.c,tcp.c 		*/
++	unsigned int	truesize;		/* Buffer size 					*/
++	unsigned char	*head;			/* Head of buffer 				*/
++	unsigned char 	*end;			/* End pointer					*/
+ 
+ 	/* Transport layer header */
+ 	union
+@@ -163,8 +179,6 @@
+ 	  	unsigned char 	*raw;
+ 	} mac;
+ 
+-	struct  dst_entry *dst;
+-
+ 	/* 
+ 	 * This is the control buffer. It is free to use for every
+ 	 * layer. Please put your private variables there. If you
+@@ -173,23 +187,17 @@
+ 	 */ 
+ 	char		cb[48];	 
+ 
+-	unsigned int 	len;			/* Length of actual data			*/
++	struct  dst_entry *dst;
++
++	struct sk_buff_head * list;		/* List we are on				*/
++	struct sock	*sk;			/* Socket we are owned by 			*/
++	struct timeval	stamp;			/* Time we arrived				*/
++
+  	unsigned int 	data_len;
+ 	unsigned int	csum;			/* Checksum 					*/
+-	unsigned char 	__unused,		/* Dead field, may be reused			*/
+-			cloned, 		/* head may be cloned (check refcnt to be sure). */
+-  			pkt_type,		/* Packet class					*/
+-  			ip_summed;		/* Driver fed us an IP checksum			*/
+ 	__u32		priority;		/* Packet queueing priority			*/
+-	atomic_t	users;			/* User count - see datagram.c,tcp.c 		*/
+ 	unsigned short	protocol;		/* Packet protocol from driver. 		*/
+ 	unsigned short	security;		/* Security level of packet			*/
+-	unsigned int	truesize;		/* Buffer size 					*/
+-
+-	unsigned char	*head;			/* Head of buffer 				*/
+-	unsigned char	*data;			/* Data head pointer				*/
+-	unsigned char	*tail;			/* Tail pointer					*/
+-	unsigned char 	*end;			/* End pointer					*/
+ 
+ 	void 		(*destructor)(struct sk_buff *);	/* Destruct function		*/
+ #ifdef CONFIG_NETFILTER
+@@ -231,6 +239,8 @@
+ extern void			kfree_skbmem(struct sk_buff *skb);
+ extern struct sk_buff *		skb_clone(struct sk_buff *skb, int priority);
+ extern struct sk_buff *		skb_copy(const struct sk_buff *skb, int priority);
++extern void			skb_recycled_init(struct sk_buff *buf);
++extern struct sk_buff *		skb_recycle(struct sk_buff *buf);
+ extern struct sk_buff *		pskb_copy(struct sk_buff *skb, int gfp_mask);
+ extern int			pskb_expand_head(struct sk_buff *skb, int nhead, int ntail, int gfp_mask);
+ extern struct sk_buff *		skb_realloc_headroom(struct sk_buff *skb, unsigned int headroom);
+@@ -820,7 +830,7 @@
+ 	return skb->data;
+ }
+ 
+-static inline char *__skb_pull(struct sk_buff *skb, unsigned int len)
++static inline unsigned char *__skb_pull(struct sk_buff *skb, unsigned int len)
+ {
+ 	skb->len-=len;
+ 	if (skb->len < skb->data_len)
+@@ -848,7 +858,7 @@
+ 
+ extern unsigned char * __pskb_pull_tail(struct sk_buff *skb, int delta);
+ 
+-static inline char *__pskb_pull(struct sk_buff *skb, unsigned int len)
++static inline unsigned char *__pskb_pull(struct sk_buff *skb, unsigned int len)
+ {
+ 	if (len > skb_headlen(skb) &&
+ 	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
+
+Index: include/linux/swap.h
+--- include/linux/swap.h.orig	Wed Aug 15 21:21:11 2001
++++ include/linux/swap.h	Mon Aug 20 21:49:50 2001
+@@ -96,7 +96,7 @@
+ struct vm_area_struct;
+ struct sysinfo;
+ 
+-struct zone_t;
++struct zone_struct;
+ 
+ /* linux/mm/swap.c */
+ extern int memory_pressure;
+@@ -111,7 +111,7 @@
+ extern void swap_setup(void);
+ 
+ /* linux/mm/vmscan.c */
+-extern struct page * reclaim_page(zone_t *);
++extern struct page * reclaim_page(struct zone_struct *);
+ extern wait_queue_head_t kswapd_wait;
+ extern wait_queue_head_t kreclaimd_wait;
+ extern int page_launder(int, int);
+
+Index: include/net/route.h
+--- include/net/route.h.orig	Wed Aug 15 21:21:32 2001
++++ include/net/route.h	Mon Aug 20 21:50:05 2001
+@@ -131,7 +131,13 @@
+ static inline int ip_route_output(struct rtable **rp,
+ 				      u32 daddr, u32 saddr, u32 tos, int oif)
+ {
++#ifdef __cplusplus
++	struct rt_key key = { daddr, saddr };
++	key.oif = oif;
++	key.tos = tos;
++#else
+ 	struct rt_key key = { dst:daddr, src:saddr, oif:oif, tos:tos };
++#endif
+ 
+ 	return ip_route_output_key(rp, &key);
+ }
+
+Index: net/core/skbuff.c
+--- net/core/skbuff.c.orig	Tue Aug  7 15:30:50 2001
++++ net/core/skbuff.c	Mon Aug 20 21:47:41 2001
+@@ -444,6 +444,65 @@
+ #endif
+ }
+ 
++/* Click: attempts to recycle a sk_buff. if it can be recycled, return it
++ * without reinitializing any bits */
++struct sk_buff *skb_recycle(struct sk_buff *skb)
++{
++	if (atomic_dec_and_test(&skb->users)) { 
++
++		if (skb->list) {
++		 	printk(KERN_WARNING "Warning: kfree_skb passed an skb still "
++			       "on a list (from %p).\n", NET_CALLER(skb));
++			BUG();
++		}
++
++		dst_release(skb->dst); 
++		if(skb->destructor) {
++			if (in_irq()) {
++				printk(KERN_WARNING "Warning: kfree_skb on hard IRQ %p\n",
++					NET_CALLER(skb));
++			}
++			skb->destructor(skb);
++		}
++#ifdef CONFIG_NETFILTER
++		nf_conntrack_put(skb->nfct);
++#endif
++		skb_headerinit(skb, NULL, 0);
++
++		if (!skb->cloned ||
++		    atomic_dec_and_test(&(skb_shinfo(skb)->dataref))) {
++			if (skb_shinfo(skb)->nr_frags) {
++				int i;
++				for (i = 0; i < skb_shinfo(skb)->nr_frags; i++)
++					put_page(skb_shinfo(skb)->frags[i].page);
++			}
++
++			if (skb_shinfo(skb)->frag_list)
++				skb_drop_fraglist(skb);
++
++			/* Load the data pointers. */
++			skb->data = skb->head;
++			skb->tail = skb->data;
++			/* end and truesize should have never changed */
++			/* skb->end = skb->data + skb->truesize; */
++
++			/* set up other state */
++			skb->len = 0;
++			skb->cloned = 0;
++
++			atomic_set(&skb->users, 1);
++			atomic_set(&(skb_shinfo(skb)->dataref), 1);
++
++			return skb;
++		}
++
++		skb_head_to_pool(skb);
++	}
++
++	return 0;
++}
++
++
+ /**
+  *	skb_copy	-	create private copy of an sk_buff
+  *	@skb: buffer to copy
+
+Index: net/core/dev.c
+--- net/core/dev.c.orig	Tue Jul 31 17:34:02 2001
++++ net/core/dev.c	Mon Aug 20 21:47:41 2001
+@@ -172,6 +172,9 @@
+  
+ static struct notifier_block *netdev_chain=NULL;
+ 
++/* Click: input packet handlers, might steal packets from net_rx_action. */
++static struct notifier_block *net_in_chain = 0;
++
+ /*
+  *	Device drivers call our routines to queue packets here. We empty the
+  *	queue in the local softnet handler.
+@@ -1365,6 +1368,22 @@
+ 	br_write_unlock_bh(BR_NETPROTO_LOCK);
+ }
+ 
++/*
++ * Click: Allow Click to ask to intercept input packets.
++ */
++int
++register_net_in(struct notifier_block *nb)
++{
++  return notifier_chain_register(&net_in_chain, nb);
++}
++
++int
++unregister_net_in(struct notifier_block *nb)
++{
++  return notifier_chain_unregister(&net_in_chain, nb);
++}
++
++
+ #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
+ void (*br_handle_frame_hook)(struct sk_buff *skb) = NULL;
+ #endif
+@@ -1398,6 +1417,86 @@
+ #endif   /* CONFIG_NET_DIVERT */
+ 
+ 
++/*
++ * Click: Hand a packet to the ordinary Linux protocol stack.
++ * Broke this out from net_tx_action so that Click can call it.
++ * Always frees the skb one way or another.
++ *
++ * skb->pkt_type needs to be set to PACKET_{BROADCAST,MULTICAST,OTHERHOST}
++ * maybe skb->mac.raw must point to ether header.
++ * skb->protocol must be set to a htons(ETHERTYPE_?).
++ * skb->data must point to the ethernet payload (e.g. the IP header).
++ * skb->nh.raw must point to the ethernet payload also.
++ *
++ * Returns 1 if caller should skip bugdet, etc.
++ */
++int ptype_dispatch(struct sk_buff *skb, unsigned short type)
++{
++	struct packet_type *ptype, *pt_prev;
++
++	pt_prev = NULL;
++	for (ptype = ptype_all; ptype; ptype = ptype->next) {
++		if (!ptype->dev || ptype->dev == skb->dev) {
++			if (pt_prev) {
++				if (!pt_prev->data) {
++					deliver_to_old_ones(pt_prev, skb, 0);
++				} else {
++					atomic_inc(&skb->users);
++					pt_prev->func(skb,
++						      skb->dev,
++						      pt_prev);
++				}
++			}
++			pt_prev = ptype;
++		}
++	}
++
++	/* Click: exit if sniffers only */
++	if (type == 0xFFFF)
++		goto done;
++	
++#ifdef CONFIG_NET_DIVERT
++	if (skb->dev->divert && skb->dev->divert->divert)
++		handle_diverter(skb);
++#endif /* CONFIG_NET_DIVERT */
++
++			
++#if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
++	if (skb->dev->br_port != NULL &&
++	    br_handle_frame_hook != NULL) {
++		handle_bridge(skb, pt_prev);
++		return 1;
++	}
++#endif
++
++	for (ptype=ptype_base[ntohs(type)&15];ptype;ptype=ptype->next) {
++		if (ptype->type == type &&
++		    (!ptype->dev || ptype->dev == skb->dev)) {
++			if (pt_prev) {
++				if (!pt_prev->data)
++					deliver_to_old_ones(pt_prev, skb, 0);
++				else {
++					atomic_inc(&skb->users);
++					pt_prev->func(skb,
++						      skb->dev,
++						      pt_prev);
++				}
++			}
++			pt_prev = ptype;
++		}
++	}
++
++done:
++	if (pt_prev) {
++		if (!pt_prev->data)
++			deliver_to_old_ones(pt_prev, skb, 1);
++		else
++			pt_prev->func(skb, skb->dev, pt_prev);
++	} else
++		kfree_skb(skb);
++	return 0;
++}
++
+ static void net_rx_action(struct softirq_action *h)
+ {
+ 	int this_cpu = smp_processor_id();
+@@ -1410,6 +1509,7 @@
+ 	for (;;) {
+ 		struct sk_buff *skb;
+ 		struct net_device *rx_dev;
++		int backlog;
+ 
+ 		local_irq_disable();
+ 		skb = __skb_dequeue(&queue->input_pkt_queue);
+@@ -1431,66 +1531,19 @@
+ 		}
+ #endif
+ 		skb->h.raw = skb->nh.raw = skb->data;
+-		{
+-			struct packet_type *ptype, *pt_prev;
+-			unsigned short type = skb->protocol;
+-
+-			pt_prev = NULL;
+-			for (ptype = ptype_all; ptype; ptype = ptype->next) {
+-				if (!ptype->dev || ptype->dev == skb->dev) {
+-					if (pt_prev) {
+-						if (!pt_prev->data) {
+-							deliver_to_old_ones(pt_prev, skb, 0);
+-						} else {
+-							atomic_inc(&skb->users);
+-							pt_prev->func(skb,
+-								      skb->dev,
+-								      pt_prev);
+-						}
+-					}
+-					pt_prev = ptype;
+-				}
+-			}
+ 
+-#ifdef CONFIG_NET_DIVERT
+-			if (skb->dev->divert && skb->dev->divert->divert)
+-				handle_diverter(skb);
+-#endif /* CONFIG_NET_DIVERT */
+-
+-			
+-#if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
+-			if (skb->dev->br_port != NULL &&
+-			    br_handle_frame_hook != NULL) {
+-				handle_bridge(skb, pt_prev);
+-				dev_put(rx_dev);
+-				continue;
+-			}
+-#endif
+-
+-			for (ptype=ptype_base[ntohs(type)&15];ptype;ptype=ptype->next) {
+-				if (ptype->type == type &&
+-				    (!ptype->dev || ptype->dev == skb->dev)) {
+-					if (pt_prev) {
+-						if (!pt_prev->data)
+-							deliver_to_old_ones(pt_prev, skb, 0);
+-						else {
+-							atomic_inc(&skb->users);
+-							pt_prev->func(skb,
+-								      skb->dev,
+-								      pt_prev);
+-						}
+-					}
+-					pt_prev = ptype;
+-				}
+-			}
++		/* Click: may want to steal the packet */
++                if (notifier_call_chain(&net_in_chain,
++					skb_queue_len(&queue->input_pkt_queue),
++					skb) & NOTIFY_STOP_MASK) {
++                	dev_put(rx_dev);
++			continue;
++		}
+ 
+-			if (pt_prev) {
+-				if (!pt_prev->data)
+-					deliver_to_old_ones(pt_prev, skb, 1);
+-				else
+-					pt_prev->func(skb, skb->dev, pt_prev);
+-			} else
+-				kfree_skb(skb);
++		/* Click: dispatch based on protocol type */
++		if (ptype_dispatch(skb, skb->protocol)) {
++			dev_put(rx_dev);
++			continue;
+ 		}
+ 
+ 		dev_put(rx_dev);
+
+Index: net/ipv4/arp.c
+--- net/ipv4/arp.c.orig	Wed May 16 17:21:45 2001
++++ net/ipv4/arp.c	Mon Aug 20 21:47:41 2001
+@@ -318,6 +318,7 @@
+ {
+ 	u32 saddr;
+ 	u8  *dst_ha = NULL;
++	u8  dst_ha_buf[MAX_ADDR_LEN+sizeof(unsigned long)];
+ 	struct net_device *dev = neigh->dev;
+ 	u32 target = *(u32*)neigh->primary_key;
+ 	int probes = atomic_read(&neigh->probes);
+@@ -330,8 +331,8 @@
+ 	if ((probes -= neigh->parms->ucast_probes) < 0) {
+ 		if (!(neigh->nud_state&NUD_VALID))
+ 			printk(KERN_DEBUG "trying to ucast probe in NUD_INVALID\n");
+-		dst_ha = neigh->ha;
+-		read_lock_bh(&neigh->lock);
++		memcpy(dst_ha_buf, neigh->ha, sizeof(neigh->ha));
++		dst_ha = dst_ha_buf;
+ 	} else if ((probes -= neigh->parms->app_probes) < 0) {
+ #ifdef CONFIG_ARPD
+ 		neigh_app_ns(neigh);
+@@ -341,8 +342,6 @@
+ 
+ 	arp_send(ARPOP_REQUEST, ETH_P_ARP, target, dev, saddr,
+ 		 dst_ha, dev->dev_addr, NULL);
+-	if (dst_ha)
+-		read_unlock_bh(&neigh->lock);
+ }
+ 
+ static int arp_filter(__u32 sip, __u32 tip, struct net_device *dev)
+
+Index: net/netsyms.c
+--- net/netsyms.c.orig	Tue Aug  7 15:30:50 2001
++++ net/netsyms.c	Mon Aug 20 21:47:41 2001
+@@ -269,6 +269,11 @@
+ EXPORT_SYMBOL(register_inetaddr_notifier);
+ EXPORT_SYMBOL(unregister_inetaddr_notifier);
+ 
++/* Click */
++EXPORT_SYMBOL(register_net_in);
++EXPORT_SYMBOL(unregister_net_in);
++EXPORT_SYMBOL(ptype_dispatch);
++
+ /* needed for ip_gre -cw */
+ EXPORT_SYMBOL(ip_statistics);
+ 
+@@ -480,6 +485,7 @@
+ EXPORT_SYMBOL(__kfree_skb);
+ EXPORT_SYMBOL(skb_clone);
+ EXPORT_SYMBOL(skb_copy);
++EXPORT_SYMBOL(skb_recycle);
+ EXPORT_SYMBOL(netif_rx);
+ EXPORT_SYMBOL(dev_add_pack);
+ EXPORT_SYMBOL(dev_remove_pack);
+
+Index: fs/proc/inode.c
+--- fs/proc/inode.c.orig	Wed Apr 18 06:16:39 2001
++++ fs/proc/inode.c	Mon Aug 20 21:47:41 2001
+@@ -147,6 +147,11 @@
+ 	if (!inode)
+ 		goto out_fail;
+ 	
++	/* Click change: don't double-increment de's use count if the inode
++	 * existed already */
++	if (inode->u.generic_ip == (void *) de)
++		de_put(de);
++
+ 	inode->u.generic_ip = (void *) de;
+ 	if (de) {
+ 		if (de->mode) {
+
+Index: drivers/net/tulip/interrupt.c
+--- drivers/net/tulip/interrupt.c.orig	Wed Jun 20 18:15:44 2001
++++ drivers/net/tulip/interrupt.c	Mon Aug 20 21:58:12 2001
+@@ -292,6 +292,10 @@
+ }
+ 
+ 
++/* Polling extensions -- interrupt stats */
++void (*tulip_interrupt_hook)(struct net_device *, unsigned);
++
++
+ /* The interrupt handler does all of the Rx thread work and cleans up
+    after the Tx thread. */
+ void tulip_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
+@@ -301,7 +305,6 @@
+ 	long ioaddr = dev->base_addr;
+ 	int csr5;
+ 	int entry;
+-	int missed;
+ 	int rx = 0;
+ 	int tx = 0;
+ 	int oi = 0;
+@@ -309,6 +312,7 @@
+ 	int maxtx = TX_RING_SIZE;
+ 	int maxoi = TX_RING_SIZE;
+ 	unsigned int work_count = tulip_max_interrupt_work;
++	int first_time = 1;
+ 
+ 	/* Let's see whether the interrupt really is for us */
+ 	csr5 = inl(ioaddr + CSR5);
+@@ -319,14 +323,33 @@
+ 	tp->nir++;
+ 
+ 	do {
++		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0) {
++			if (dev->polling > 0)
++				goto out;
++			if (first_time)
++				goto out;
++			else
++				break;
++		}
++		first_time = 0;
++
+ 		/* Acknowledge all of the current interrupt sources ASAP. */
+ 		outl(csr5 & 0x0001ffff, ioaddr + CSR5);
+ 
++		/* Notify tulip_interrupt_hook */
++		if (tulip_interrupt_hook)
++			tulip_interrupt_hook(dev, CSR5);
++
++		if (dev->polling > 0) {
++			if ((csr5 & (TxDied|TimerInt|AbnormalIntr)) == 0)
++				goto out;
++		}
++
+ 		if (tulip_debug > 4)
+ 			printk(KERN_DEBUG "%s: interrupt  csr5=%#8.8x new csr5=%#8.8x.\n",
+ 				   dev->name, csr5, inl(dev->base_addr + CSR5));
+ 
+-		if (csr5 & (RxIntr | RxNoBuf)) {
++		if ((csr5 & (RxIntr | RxNoBuf)) && (dev->polling == 0)) {
+ #ifdef CONFIG_NET_HW_FLOWCONTROL
+                         if ((!tp->fc_bit) ||
+ 			    (!test_bit(tp->fc_bit, &netdev_fc_xoff)))
+@@ -335,7 +358,13 @@
+ 			tulip_refill_rx(dev);
+ 		}
+ 
+-		if (csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) {
++		if ((csr5 & (TxNoBuf | TxDied | TxIntr | TimerInt)) &&
++		    (dev->polling == 0)) {
++			/*
++			 * part of the following code is duplicated at the end
++			 * in tulip_tx_clean for the polling driver; changes
++			 * here should propagate to there as well.
++			 */
+ 			unsigned int dirty_tx;
+ 
+ 			spin_lock(&tp->lock);
+@@ -403,16 +432,17 @@
+ 				netif_wake_queue(dev);
+ 
+ 			tp->dirty_tx = dirty_tx;
+-			if (csr5 & TxDied) {
+-				if (tulip_debug > 2)
+-					printk(KERN_WARNING "%s: The transmitter stopped."
+-						   "  CSR5 is %x, CSR6 %x, new CSR6 %x.\n",
+-						   dev->name, csr5, inl(ioaddr + CSR6), tp->csr6);
+-				tulip_restart_rxtx(tp);
+-			}
+ 			spin_unlock(&tp->lock);
+ 		}
+ 
++		if (csr5 & TxDied) { /* XXX move after loop? */
++			if (tulip_debug > 2)
++				printk(KERN_WARNING "%s: The transmitter stopped."
++				       "  CSR5 is %x, CSR6 %x, new CSR6 %x.\n",
++				       dev->name, csr5, inl(ioaddr + CSR6), tp->csr6);
++			tulip_restart_rxtx(tp);
++		}
++
+ 		/* Log errors. */
+ 		if (csr5 & AbnormalIntr) {	/* Abnormal error summary bit. */
+ 			if (csr5 == 0xffffffff)
+@@ -434,7 +464,10 @@
+ 				}
+ 			}
+ 			if (csr5 & RxDied) {		/* Missed a Rx frame. */
+-                                tp->stats.rx_missed_errors += inl(ioaddr + CSR8) & 0xffff;
++				unsigned csr8status = inl(ioaddr + CSR8);
++				unsigned fifostatus = csr8status >> 17;
++                                tp->stats.rx_missed_errors += csr8status & 0xffff;
++				tp->stats.rx_fifo_errors += fifostatus & 0x7ff;
+ #ifdef CONFIG_NET_HW_FLOWCONTROL
+ 				if (tp->fc_bit && !test_bit(tp->fc_bit, &netdev_fc_xoff)) {
+ 					tp->stats.rx_errors++;
+@@ -525,7 +558,9 @@
+ 		csr5 = inl(ioaddr + CSR5);
+ 	} while ((csr5 & (NormalIntr|AbnormalIntr)) != 0);
+ 
+-	tulip_refill_rx(dev);
++	if (dev->polling == 0) {
++		tulip_refill_rx(dev);
++	}
+ 
+ 	/* check if the card is in suspend mode */
+ 	entry = tp->dirty_rx % RX_RING_SIZE;
+@@ -548,12 +583,230 @@
+ 		}
+ 	}
+ 
++#if 0
+ 	if ((missed = inl(ioaddr + CSR8) & 0x1ffff)) {
+ 		tp->stats.rx_dropped += missed & 0x10000 ? 0x10000 : missed;
+ 	}
++#endif
+ 
+ 	if (tulip_debug > 4)
+ 		printk(KERN_DEBUG "%s: exiting interrupt, csr5=%#4.4x.\n",
+ 			   dev->name, inl(ioaddr + CSR5));
+ 
++out:
++}
++
++/* Click: polling support routines */
++
++int tulip_rx_refill(struct net_device *dev, struct sk_buff **skbs) {
++	struct tulip_private *tp = (struct tulip_private *)dev->priv;
++	struct sk_buff *skb_list;
++
++	if (skbs == NULL)
++		return tp->cur_rx - tp->dirty_rx;
++
++	skb_list = *skbs;
++
++	/* Refill the Rx ring buffers. */
++	for (; tp->cur_rx - tp->dirty_rx > 0 && skb_list; tp->dirty_rx++) {
++		int entry = tp->dirty_rx % RX_RING_SIZE;
++		if (tp->rx_buffers[entry].skb == NULL) {
++			struct sk_buff *skb;
++			dma_addr_t mapping;
++
++			/* Grab an skb from the list we were given */
++			skb = skb_list;
++			skb_list = skb_list->next;
++			skb->prev = NULL;
++			skb->next = NULL;
++			skb->list = NULL;
++
++			tp->rx_buffers[entry].skb = skb;
++
++			mapping = pci_map_single(tp->pdev, skb->tail, PKT_BUF_SZ,
++						 PCI_DMA_FROMDEVICE);
++			tp->rx_buffers[entry].mapping = mapping;
++
++			skb->dev = dev;	/* Mark as being used by this device. */
++			tp->rx_ring[entry].buffer1 = cpu_to_le32(mapping);
++		}
++		tp->rx_ring[entry].status = cpu_to_le32(DescOwned);
++	}
++	if(tp->chip_id == LC82C168) {
++		if(((inl(dev->base_addr + CSR5)>>17)&0x07) == 4) {
++			/* Rx stopped due to out of buffers,
++			 * restart it
++			 */
++			outl(0x01, dev->base_addr + CSR2);
++		}
++	}
++
++	/* Return the unused skb's */
++	*skbs = skb_list;
++
++	return tp->cur_rx - tp->dirty_rx;
++}
++
++struct sk_buff *tulip_tx_clean(struct net_device *dev) {
++	struct tulip_private *tp = (struct tulip_private *)dev->priv;
++	struct sk_buff *skb_head, *skb_last;
++	unsigned int dirty_tx;
++
++	skb_head = skb_last = 0;
++
++	spin_lock(&tp->lock);
++
++	for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0; dirty_tx++) {
++		int entry = dirty_tx % TX_RING_SIZE;
++		int status = le32_to_cpu(tp->tx_ring[entry].status);
++		struct sk_buff *skb;
++
++		if (status < 0)
++			break;			/* It still has not been Txed */
++
++		/* Check for Rx filter setup frames. */
++		if (tp->tx_buffers[entry].skb == NULL) {
++			/* test because dummy frames not mapped */
++			if (tp->tx_buffers[entry].mapping)
++				pci_unmap_single(tp->pdev,
++					 tp->tx_buffers[entry].mapping,
++					 sizeof(tp->setup_frame),
++					 PCI_DMA_TODEVICE);
++			continue;
++		}
++
++		if (status & 0x8000) {
++			/* There was an major error, log it. */
++#ifndef final_version
++			if (tulip_debug > 1)
++				printk(KERN_DEBUG "%s: Transmit error, Tx status %8.8x.\n",
++					   dev->name, status);
++#endif
++			tp->stats.tx_errors++;
++			if (status & 0x4104) tp->stats.tx_aborted_errors++;
++			if (status & 0x0C00) tp->stats.tx_carrier_errors++;
++			if (status & 0x0200) tp->stats.tx_window_errors++;
++			if (status & 0x0002) tp->stats.tx_fifo_errors++;
++			if ((status & 0x0080) && tp->full_duplex == 0)
++				tp->stats.tx_heartbeat_errors++;
++		} else {
++			tp->stats.tx_bytes +=
++				tp->tx_buffers[entry].skb->len;
++			tp->stats.collisions += (status >> 3) & 15;
++			tp->stats.tx_packets++;
++		}
++
++		pci_unmap_single(tp->pdev, tp->tx_buffers[entry].mapping,
++				 tp->tx_buffers[entry].skb->len,
++				 PCI_DMA_TODEVICE);
++
++		/* Remove from buffer list */
++		skb = tp->tx_buffers[entry].skb;
++
++		tp->tx_buffers[entry].skb = NULL;
++		tp->tx_buffers[entry].mapping = 0;
++
++		/* Put the skb onto the return list */
++		if (skb_head == 0) {
++			skb_head = skb;
++			skb_last = skb;
++			skb_last->next = NULL;
++			skb_last->prev = NULL;
++		} else {
++			skb_last->next = skb;
++			skb->prev = skb_last;
++			skb->next = NULL;
++			skb_last = skb;
++		}
++	}
++
++#ifndef final_version
++	if (tp->cur_tx - dirty_tx > TX_RING_SIZE) {
++		printk(KERN_ERR "%s: Out-of-sync dirty pointer, %d vs. %d.\n",
++			   dev->name, dirty_tx, tp->cur_tx);
++		dirty_tx += TX_RING_SIZE;
++	}
++#endif
++
++#if 0
++	if (tp->cur_tx - dirty_tx < TX_RING_SIZE - 2)
++		netif_wake_queue(dev);
++#endif
++
++	tp->dirty_tx = dirty_tx;
++	spin_unlock(&tp->lock);
++
++	return skb_head;
++}
++
++struct sk_buff *tulip_rx_poll(struct net_device *dev, int *want) {
++	struct tulip_private *tp = (struct tulip_private *)dev->priv;
++	int entry = tp->cur_rx % RX_RING_SIZE;
++	int rx_work_limit = tp->dirty_rx + RX_RING_SIZE - tp->cur_rx;
++	struct sk_buff *skb_head, *skb_last;
++	int got = 0;
++
++	skb_head = skb_last = NULL;
++
++	while ( ! (tp->rx_ring[entry].status & cpu_to_le32(DescOwned))) {
++		s32 status = le32_to_cpu(tp->rx_ring[entry].status);
++
++		if (--rx_work_limit < 0 || got == *want) break;
++
++		if ((status & 0x38008300) != 0x0300) {
++			if ((status & 0x38000300) != 0x0300) {
++				/* Ignore earlier buffers. */
++				if ((status & 0xffff) != 0x7fff) {
++					if (tulip_debug > 1)
++						printk(KERN_WARNING "%s: Oversized Ethernet frame "
++							   "spanned multiple buffers, status %8.8x!\n",
++							   dev->name, status);
++					tp->stats.rx_length_errors++;
++				}
++			} else if (status & RxDescFatalErr) {
++				/* There was a fatal error. */
++				if (tulip_debug > 2)
++					printk(KERN_DEBUG "%s: Receive error, Rx status %8.8x.\n",
++						   dev->name, status);
++				tp->stats.rx_errors++; /* end of a packet.*/
++				if (status & 0x0890) tp->stats.rx_length_errors++;
++				if (status & 0x0004) tp->stats.rx_frame_errors++;
++				if (status & 0x0002) tp->stats.rx_crc_errors++;
++				if (status & 0x0001) tp->stats.rx_fifo_errors++;
++			}
++		} else {
++			/* Omit the four octet CRC from the length. */
++			short pkt_len = ((status >> 16) & 0x7ff) - 4;
++			struct sk_buff *skb = tp->rx_buffers[entry].skb;
++
++			pci_unmap_single(tp->pdev,
++					 tp->rx_buffers[entry].mapping,
++					 PKT_BUF_SZ, PCI_DMA_FROMDEVICE);
++
++			tp->rx_buffers[entry].skb = NULL;
++			tp->rx_buffers[entry].mapping = 0;
++
++			skb_put(skb, pkt_len);
++			skb->protocol = eth_type_trans(skb, dev);
++			tp->stats.rx_packets++;
++			tp->stats.rx_bytes += pkt_len;
++
++			if (got == 0) {
++				skb_head = skb;
++				skb_last = skb;
++				skb->next = skb->prev = NULL;
++			} else {
++				skb_last->next = skb;
++				skb->prev = skb_last;
++				skb->next = NULL;
++				skb_last = skb;
++			}
++			got++;
++		}
++		entry = (++tp->cur_rx) % RX_RING_SIZE;
++	}
++
++	dev->last_rx = jiffies;
++	*want = got;
++	return skb_head;
+ }
+
+Index: drivers/net/tulip/tulip_core.c
+--- drivers/net/tulip/tulip_core.c.orig	Tue Aug  7 15:30:50 2001
++++ drivers/net/tulip/tulip_core.c	Mon Aug 20 21:47:41 2001
+@@ -245,6 +245,16 @@
+ static void set_rx_mode(struct net_device *dev);
+ 
+ 
++/* Click: polling support */
++static int tulip_tx_queue(struct net_device *dev, struct sk_buff *skb);
++static int tulip_tx_eob(struct net_device *dev);
++static int tulip_tx_start(struct net_device *dev);
++int tulip_rx_refill(struct net_device *dev, struct sk_buff **);
++struct sk_buff *tulip_tx_clean(struct net_device *dev);
++struct sk_buff *tulip_rx_poll(struct net_device *dev, int *want);
++static int tulip_poll_on(struct net_device *dev);
++static int tulip_poll_off(struct net_device *dev);
++
+ 
+ static void tulip_set_power_state (struct tulip_private *tp,
+ 				   int sleep, int snooze)
+@@ -693,6 +703,17 @@
+ }
+ 
+ static int
++tulip_tx_start(struct net_device *dev) {
++	/* Trigger an immediate transmit demand unless polling */
++	if (dev->polling <= 0)
++		outl(0, dev->base_addr + CSR1);
++
++	dev->trans_start = jiffies;
++
++	return 0;
++}
++
++static int
+ tulip_start_xmit(struct sk_buff *skb, struct net_device *dev)
+ {
+ 	struct tulip_private *tp = (struct tulip_private *)dev->priv;
+@@ -727,13 +748,13 @@
+ 	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
+ 	/* if we were using Transmit Automatic Polling, we would need a
+ 	 * wmb() here. */
++	wmb();
+ 	tp->tx_ring[entry].status = cpu_to_le32(DescOwned);
+ 	wmb();
+ 
+ 	tp->cur_tx++;
+ 
+-	/* Trigger an immediate transmit demand. */
+-	outl(0, dev->base_addr + CSR1);
++	tulip_tx_start(dev);
+ 
+ 	spin_unlock_irq(&tp->lock);
+ 
+@@ -742,6 +763,19 @@
+ 	return 0;
+ }
+ 
++static __inline__ unsigned long long
++tulip_get_cycles(void)
++{
++	unsigned long low, high;
++	unsigned long long x;
++
++	__asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
++	x = high;
++	x <<= 32;
++	x |= low;
++	return(x);
++}
++
+ static void tulip_clean_tx_ring(struct tulip_private *tp)
+ {
+ 	unsigned int dirty_tx;
+@@ -804,8 +838,12 @@
+ 	if (tp->chip_id == DC21040)
+ 		outl (0x00000004, ioaddr + CSR13);
+ 
+-	if (inl (ioaddr + CSR6) != 0xffffffff)
+-		tp->stats.rx_missed_errors += inl (ioaddr + CSR8) & 0xffff;
++	if (inl (ioaddr + CSR6) != 0xffffffff) {
++		unsigned csr8status = inl(ioaddr + CSR8);
++		unsigned fifostatus = csr8status >> 17;
++		tp->stats.rx_missed_errors += csr8status & 0xffff;
++		tp->stats.rx_fifo_errors += fifostatus & 0x7ff;
++	}
+ 
+ 	spin_unlock_irqrestore (&tp->lock, flags);
+ 
+@@ -884,10 +922,14 @@
+ 
+ 	if (netif_running(dev)) {
+ 		unsigned long flags;
++		unsigned csr8status, fifostatus;
+ 
+ 		spin_lock_irqsave (&tp->lock, flags);
+ 
+-		tp->stats.rx_missed_errors += inl(ioaddr + CSR8) & 0xffff;
++		csr8status = inl(ioaddr + CSR8);
++		fifostatus = csr8status >> 17;
++		tp->stats.rx_missed_errors += csr8status & 0xffff;
++		tp->stats.rx_fifo_errors += fifostatus & 0x7ff;
+ 
+ 		spin_unlock_irqrestore(&tp->lock, flags);
+ 	}
+@@ -1668,6 +1710,17 @@
+ 	dev->do_ioctl = private_ioctl;
+ 	dev->set_multicast_list = set_rx_mode;
+ 
++	/* Click polling for this device */
++	dev->polling = 0;
++	dev->rx_poll = tulip_rx_poll;
++	dev->rx_refill = tulip_rx_refill;
++	dev->tx_clean = tulip_tx_clean;
++	dev->tx_queue = tulip_tx_queue;
++	dev->tx_start = tulip_tx_start;
++	dev->tx_eob = tulip_tx_eob;
++	dev->poll_on = tulip_poll_on;
++	dev->poll_off = tulip_poll_off;
++
+ 	if (register_netdev(dev))
+ 		goto err_out_free_ring;
+ 
+@@ -1872,3 +1925,109 @@
+ 
+ module_init(tulip_init);
+ module_exit(tulip_cleanup);
++
++/*
++ * Click polling extensions
++ */
++
++/* Demand polling */
++#define	DEMAND_POLLTX	1
++
++static int
++tulip_poll_on(struct net_device *dev)
++{
++	long ioaddr = dev->base_addr;
++	int csr7;
++#if DEMAND_POLLTX
++	int csr0;
++#endif
++
++	if (dev->polling == 0) {
++		csr7 = inl(ioaddr + CSR7) & ~(NormalIntr|RxNoBuf|\
++					      RxIntr|TxIntr|TxNoBuf);
++		outl(csr7, ioaddr + CSR7);
++
++#if DEMAND_POLLTX
++		csr0 = (inl(ioaddr + CSR0) & ~(7<<17)) | (4<<17);
++		outl(csr0, ioaddr + CSR0);
++#endif
++
++		dev->polling = 2;
++	}
++
++	return 0;
++}
++
++static int
++tulip_poll_off(struct net_device *dev)
++{
++	long ioaddr = dev->base_addr;
++	int csr7;
++#if DEMAND_POLLTX
++	int csr0;
++#endif
++
++	if (dev->polling > 0) {
++		csr7 = inl(ioaddr + CSR7) | (NormalIntr|RxNoBuf|\
++					     RxIntr|TxIntr|TxNoBuf);
++		outl(csr7, ioaddr + CSR7);
++
++#if DEMAND_POLLTX
++		csr0 = inl(ioaddr + CSR0) & ~(7<<17);
++		outl(csr0, ioaddr + CSR0);
++#endif
++
++		dev->polling = 0;
++	}
++
++	return 0;
++}
++
++static int tulip_tx_queue(struct net_device *dev, struct sk_buff *skb) {
++	struct tulip_private *tp = (struct tulip_private *)dev->priv;
++	int entry;
++	u32 flag;
++	dma_addr_t mapping;
++
++	spin_lock_irq(&tp->lock);
++
++	/* Calculate the next Tx descriptor entry. */
++	entry = tp->cur_tx % TX_RING_SIZE;
++
++	tp->tx_buffers[entry].skb = skb;
++	mapping = pci_map_single(tp->pdev, skb->data,
++				 skb->len, PCI_DMA_TODEVICE);
++	tp->tx_buffers[entry].mapping = mapping;
++	tp->tx_ring[entry].buffer1 = cpu_to_le32(mapping);
++
++	flag = 0x60000000; /* No interrupt */
++
++	if (entry == TX_RING_SIZE-1)
++		flag = 0xe0000000 | DESC_RING_WRAP;
++
++	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
++	/* if we were using Transmit Automatic Polling, we would need a
++	 * wmb() here. */
++	wmb();
++	tp->tx_ring[entry].status = cpu_to_le32(DescOwned);
++	wmb();
++
++	tp->cur_tx++;
++
++#if !(DEMAND_POLLTX)
++	outl(0, dev->base_addr + CSR1);
++	dev->trans_start = jiffies;
++#endif
++
++	/* If we've almost filled up the transmit ring, signal busy */
++	if (tp->cur_tx - tp->dirty_tx >= TX_RING_SIZE - 2)
++		netif_stop_queue(dev);
++
++	spin_unlock_irq(&tp->lock);
++
++	return 0;
++}
++
++static int tulip_tx_eob(struct net_device *dev) {
++	return 0;
++}
+
+Index: drivers/net/eepro100.c
+--- drivers/net/eepro100.c.orig	Mon Jul  2 21:03:04 2001
++++ drivers/net/eepro100.c	Mon Aug 20 21:47:41 2001
+@@ -545,6 +545,16 @@
+ static void set_rx_mode(struct net_device *dev);
+ static void speedo_show_state(struct net_device *dev);
+ 
++/* device polling stuff */
++static int speedo_tx_queue(struct net_device *dev, struct sk_buff *skb);
++static int speedo_tx_eob(struct net_device *dev);
++static int speedo_tx_start(struct net_device *dev);
++static int speedo_rx_refill(struct net_device *dev, struct sk_buff **);
++static struct sk_buff *speedo_tx_clean(struct net_device *dev);
++static struct sk_buff *speedo_rx_poll(struct net_device *dev, int *want);
++static int speedo_poll_on(struct net_device *dev);
++static int speedo_poll_off(struct net_device *dev);
++
+ 
+ 
+ #ifdef honor_default_port
+@@ -835,6 +845,17 @@
+ 	dev->set_multicast_list = &set_rx_mode;
+ 	dev->do_ioctl = &speedo_ioctl;
+ 
++	/* Click: polling support */
++	dev->polling = 0;
++	dev->poll_on = &speedo_poll_on;
++	dev->poll_off = &speedo_poll_off;
++	dev->rx_poll = &speedo_rx_poll;
++	dev->rx_refill = &speedo_rx_refill;
++	dev->tx_queue = &speedo_tx_queue;
++	dev->tx_clean = &speedo_tx_clean;
++	dev->tx_start = &speedo_tx_start;
++	dev->tx_eob = &speedo_tx_eob;
++
+ 	return 0;
+ }
+ 
+@@ -1058,7 +1079,8 @@
+ 		 ioaddr + SCBPointer);
+ 	/* We are not ACK-ing FCP and ER in the interrupt handler yet so they should
+ 	   remain masked --Dragan */
+-	outw(CUStart | SCBMaskEarlyRx | SCBMaskFlowCtl, ioaddr + SCBCmd);
++	outw(CUStart | SCBMaskEarlyRx | SCBMaskFlowCtl |
++	     (dev->polling ? SCBMaskAll : 0), ioaddr + SCBCmd);
+ }
+ 
+ /* Media monitoring and control. */
+@@ -1285,7 +1307,8 @@
+ 			   dev->name);
+ 		outl(TX_RING_ELEM_DMA(sp, dirty_tx % TX_RING_SIZE]),
+ 			 ioaddr + SCBPointer);
+-		outw(CUStart, ioaddr + SCBCmd);
++		outw(CUStart | (dev->polling ? SCBMaskAll : 0),
++		     ioaddr + SCBCmd);
+ 		reset_mii(dev);
+ 	} else {
+ #else
+@@ -1329,6 +1352,12 @@
+ 	long ioaddr = dev->base_addr;
+ 	int entry;
+ 
++	if (dev->polling) {
++		printk(KERN_ERR "%s: start_xmit while polling\n",
++		       dev->name);
++		return 1;
++	}
++
+ 	{	/* Prevent interrupts from changing the Tx ring from underneath us. */
+ 		unsigned long flags;
+ 
+@@ -1390,6 +1419,12 @@
+ 	unsigned int dirty_tx;
+ 	struct speedo_private *sp = (struct speedo_private *)dev->priv;
+ 
++	if (dev->polling) {
++		printk(KERN_ERR "%s: speedo_tx_buffer_gc while polling\n",
++		       dev->name);
++		return;
++	}
++
+ 	dirty_tx = sp->dirty_tx;
+ 	while ((int)(sp->cur_tx - dirty_tx) > 0) {
+ 		int entry = dirty_tx % TX_RING_SIZE;
+@@ -1460,6 +1495,9 @@
+ 	}
+ #endif
+ 
++	if (dev->polling)
++		printk(KERN_ERR "%s: interrupt while polling\n", dev->name);
++
+ 	ioaddr = dev->base_addr;
+ 	sp = (struct speedo_private *)dev->priv;
+ 
+@@ -1677,6 +1715,12 @@
+ {
+ 	struct speedo_private *sp = (struct speedo_private *)dev->priv;
+ 
++	if (dev->polling) {
++		printk(KERN_ERR "%s: speedo_refill_rx_buffers called "
++		       "while polling\n", dev->name);
++		return;
++	}
++
+ 	/* Refill the RX ring. */
+ 	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 &&
+ 			speedo_refill_rx_buf(dev, force) != -1);
+@@ -1690,6 +1734,12 @@
+ 	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
+ 	int alloc_ok = 1;
+ 
++	if (dev->polling) {
++		printk(KERN_ERR "%s: in speedo_rx() while polling\n",
++		       dev->name);
++		return 0;
++	}
++
+ 	if (speedo_debug > 4)
+ 		printk(KERN_DEBUG " In speedo_rx().\n");
+ 	/* If we own the next entry, it's a new packet. Send it up. */
+@@ -2273,3 +2323,368 @@
+  *  tab-width: 4
+  * End:
+  */
++
++/*
++ * Click: Polling extensions.  Most of this code has been copied
++ * from various routines above with slight modifications.
++ */
++
++static int speedo_rx_refill(struct net_device *dev, struct sk_buff **skbs) {
++	struct speedo_private *sp = (struct speedo_private *)dev->priv;
++	struct sk_buff *skb_list;
++	int dirty_rx = sp->dirty_rx;
++
++	/* If the list is empty, return the number of skb's we want */
++	if (skbs == 0)
++		return sp->cur_rx - sp->dirty_rx;
++
++	skb_list = *skbs;
++
++	/*
++	 * Refill the RX ring with supplied skb's.  Unlike
++	 * speedo_refill_rx_buf routine, we don't have to
++	 * worry about failed allocations.
++	 */
++	while ((int)(sp->cur_rx - sp->dirty_rx) > 0 && skb_list) {
++		int entry;
++		struct RxFD *rxf;
++		struct sk_buff *skb;
++
++		entry = sp->dirty_rx % RX_RING_SIZE;
++		if (sp->rx_skbuff[entry] == NULL) {
++			skb = skb_list;
++			skb_list = skb->next;
++			skb->prev = skb->next = NULL;
++			skb->list = NULL;
++
++			sp->rx_skbuff[entry] = skb;
++			rxf = sp->rx_ringp[entry] = (struct RxFD *)skb->tail;
++			sp->rx_ring_dma[entry] = pci_map_single(sp->pdev, rxf,
++				PKT_BUF_SZ + sizeof(struct RxFD),
++				PCI_DMA_FROMDEVICE);
++
++			skb->dev = dev;
++			skb_reserve(skb, sizeof(struct RxFD));
++			rxf->rx_buf_addr = 0xffffffff;
++			pci_dma_sync_single(sp->pdev, sp->rx_ring_dma[entry],
++					    sizeof(struct RxFD),
++					    PCI_DMA_TODEVICE);
++		} else {
++			rxf = sp->rx_ringp[entry];
++		}
++		speedo_rx_link(dev, entry, rxf, sp->rx_ring_dma[entry]);
++		sp->dirty_rx++;
++	}
++
++	/*
++	 * Check if the RU is stopped -- restart it, if so.
++	 */
++	if ((inw(dev->base_addr + SCBStatus) & 0x003c) == 0x0008) {
++		wait_for_cmd_done(dev->base_addr + SCBCmd);
++
++		/*
++		 * If the RU stopped, it's because there aren't
++		 * any DMA buffers left, so the first DMA buffer
++		 * we've just refilled is where we should start
++		 * receiving.
++		 */
++		outl(virt_to_bus(sp->rx_ringp[dirty_rx % RX_RING_SIZE]),
++		     dev->base_addr + SCBPointer);
++		outb(RxStart, dev->base_addr + SCBCmd);
++	}
++
++	/*
++	 * Clear error flags on the RX ring, write back the remaining
++	 * skb's that we haven't used, and return the number of dirty
++	 * buffers remaining.
++	 */
++	sp->rx_ring_state &= ~(RrNoMem|RrOOMReported);
++	*skbs = skb_list;
++	return sp->cur_rx - sp->dirty_rx;
++}
++
++static struct sk_buff *speedo_rx_poll(struct net_device *dev, int *want) {
++	struct speedo_private *sp = (struct speedo_private *)dev->priv;
++	int entry = sp->cur_rx % RX_RING_SIZE;
++	int rx_work_limit = sp->dirty_rx + RX_RING_SIZE - sp->cur_rx;
++	struct sk_buff *skb_head, *skb_last;
++	int got = 0;
++
++	skb_head = skb_last = NULL;
++
++	/* If we own the next entry, it's a new packet. Send it up. */
++	while (sp->rx_ringp[entry] != NULL) {
++		int status;
++		int pkt_len;
++
++		pci_dma_sync_single(sp->pdev, sp->rx_ring_dma[entry],
++			sizeof(struct RxFD), PCI_DMA_FROMDEVICE);
++		status = le32_to_cpu(sp->rx_ringp[entry]->status);
++		pkt_len = le32_to_cpu(sp->rx_ringp[entry]->count) & 0x3fff;
++
++		if (!(status & RxComplete))
++			break;
++
++		if (--rx_work_limit < 0 || got == *want)
++			break;
++
++		/* Check for a rare out-of-memory case: the current buffer is
++		   the last buffer allocated in the RX ring.  --SAW */
++		if (sp->last_rxf == sp->rx_ringp[entry]) {
++			/*
++			 * Postpone the packet.  It'll be reaped next time
++			 * when this packet is no longer the last packet
++			 * in the ring.
++			 */
++			if (speedo_debug > 2)
++				printk(KERN_DEBUG "%s: RX packet postponed!\n",
++					   dev->name);
++			sp->rx_ring_state |= RrPostponed;
++			break;
++		}
++
++		if ((status & (RxErrTooBig|RxOK|0x0f90)) != RxOK) {
++			if (status & RxErrTooBig) {
++				printk(KERN_ERR "%s: Ethernet frame overran "
++				       "the Rx buffer, status %8.8x!\n",
++				       dev->name, status);
++			} else if (! (status & RxOK)) {
++				/*
++				 * There was a fatal error.  This *should*
++				 * be impossible.
++				 */
++				sp->stats.rx_errors++;
++				printk(KERN_ERR "%s: Anomalous event in "
++				       "speedo_rx_poll(), status %8.8x.\n",
++				       dev->name, status);
++			}
++		} else {
++			struct sk_buff *skb = sp->rx_skbuff[entry];
++
++			if (skb == NULL) {
++				printk(KERN_ERR "%s: Inconsistent Rx "
++				       "descriptor chain.\n", dev->name);
++				break;
++			}
++
++			/* Remove skbuff from RX ring. */
++			sp->rx_skbuff[entry] = NULL;
++			sp->rx_ringp[entry] = NULL;
++			skb_put(skb, pkt_len);
++			pci_unmap_single(sp->pdev, sp->rx_ring_dma[entry],
++				PKT_BUF_SZ + sizeof(struct RxFD),
++				PCI_DMA_FROMDEVICE);
++
++			skb->protocol = eth_type_trans(skb, dev);
++			sp->stats.rx_packets++;
++			sp->stats.rx_bytes += pkt_len;
++
++			/* Append the skb to the received list */
++			if (got == 0) {
++				skb_head = skb_last = skb;
++				skb->next = skb->prev = NULL;
++			} else {
++				skb_last->next = skb;
++				skb->prev = skb_last;
++				skb->next = NULL;
++				skb_last = skb;
++			}
++
++			got++;
++		}
++
++		entry = (++sp->cur_rx) % RX_RING_SIZE;
++		sp->rx_ring_state &= ~RrPostponed;
++	}
++
++	if (got == 0 && (inw(dev->base_addr + SCBStatus) & 0x003c) == 0x0008) {
++		wait_for_cmd_done(dev->base_addr + SCBCmd);
++
++		outl(virt_to_bus(sp->rx_ringp[sp->cur_rx % RX_RING_SIZE]),
++		     dev->base_addr + SCBPointer);
++		outb(RxStart, dev->base_addr + SCBCmd);
++	}
++
++	sp->last_rx_time = jiffies;
++	*want = got;
++	return skb_head;
++}
++
++static int speedo_tx_queue(struct net_device *dev, struct sk_buff *skb) {
++	struct speedo_private *sp = (struct speedo_private *)dev->priv;
++	int entry;
++
++	spin_lock(&sp->lock);
++
++	/* Check if there are enough space. */
++	if ((int)(sp->cur_tx - sp->dirty_tx) >= TX_QUEUE_LIMIT) {
++		printk(KERN_ERR "%s: incorrect tbusy state, fixed.\n",
++		       dev->name);
++		netif_stop_queue(dev);
++		sp->tx_full = 1;
++		spin_unlock(&sp->lock);
++		return 1;
++	}
++
++	/* Calculate the Tx descriptor entry. */
++	entry = sp->cur_tx++ % TX_RING_SIZE;
++
++	sp->tx_skbuff[entry] = skb;
++	sp->tx_ring[entry].status =
++		cpu_to_le32(CmdSuspend | CmdTx | CmdTxFlex);
++	sp->tx_ring[entry].link =
++		cpu_to_le32(TX_RING_ELEM_DMA(sp, sp->cur_tx % TX_RING_SIZE));
++	sp->tx_ring[entry].tx_desc_addr =
++		cpu_to_le32(TX_RING_ELEM_DMA(sp, entry) + TX_DESCR_BUF_OFFSET);
++
++	/* The data region is always in one buffer descriptor. */
++	sp->tx_ring[entry].count = cpu_to_le32(sp->tx_threshold);
++	sp->tx_ring[entry].tx_buf_addr0 =
++		cpu_to_le32(pci_map_single(sp->pdev, skb->data,
++					   skb->len, PCI_DMA_TODEVICE));
++	sp->tx_ring[entry].tx_buf_size0 = cpu_to_le32(skb->len);
++
++	/* Clear the suspend bit on the last command */
++	clear_suspend(sp->last_cmd);
++
++	sp->last_cmd = (struct descriptor *)&sp->tx_ring[entry];
++
++	/* Leave room for set_rx_mode(). If there is no more space than
++	 * reserved for multicast filter mark the ring as full.
++	 */
++	if ((int)(sp->cur_tx - sp->dirty_tx) >= TX_QUEUE_LIMIT) {
++		netif_stop_queue(dev);
++		sp->tx_full = 1;
++	}
++
++	spin_unlock(&sp->lock);
++
++	return 0;
++}
++
++static int speedo_tx_eob(struct net_device *dev) {
++	/* Start the DMA going again */
++	wait_for_cmd_done(dev->base_addr + SCBCmd);
++	outb(CUResume, dev->base_addr + SCBCmd);
++
++	/* Bump the trans_start time to keep the net watchdog happy */
++	dev->trans_start = jiffies;
++	return 0;
++}
++
++static int speedo_tx_start(struct net_device *dev) {
++	/* Just bump the trans_start time.. */
++	dev->trans_start = jiffies;
++	return 0;
++}
++
++static struct sk_buff *speedo_tx_clean(struct net_device *dev) {
++	unsigned int dirty_tx;
++	struct speedo_private *sp = (struct speedo_private *)dev->priv;
++	struct sk_buff *skb_head, *skb_last;
++
++	spin_lock(&sp->lock);
++
++	skb_head = skb_last = NULL;
++
++	dirty_tx = sp->dirty_tx;
++	while ((int)(sp->cur_tx - dirty_tx) > 0) {
++		int entry = dirty_tx % TX_RING_SIZE;
++		int status = le32_to_cpu(sp->tx_ring[entry].status);
++
++		if ((status & StatusComplete) == 0)
++			break;		/* It still hasn't been processed. */
++
++		if (status & TxUnderrun)
++			if (sp->tx_threshold < 0x01e08000) {
++				if (speedo_debug > 2)
++					printk(KERN_DEBUG "%s: TX underrun, "
++					       "threshold adjusted.\n",
++					       dev->name);
++				sp->tx_threshold += 0x00040000;
++			}
++
++		/* Put the original skb on the return list. */
++		if (sp->tx_skbuff[entry]) {
++			struct sk_buff *skb = sp->tx_skbuff[entry];
++
++			sp->stats.tx_packets++;	/* Count only user packets. */
++			sp->stats.tx_bytes += sp->tx_skbuff[entry]->len;
++			pci_unmap_single(sp->pdev,
++				le32_to_cpu(sp->tx_ring[entry].tx_buf_addr0),
++				sp->tx_skbuff[entry]->len, PCI_DMA_TODEVICE);
++			sp->tx_skbuff[entry] = 0;
++
++			if (skb_head == NULL) {
++				skb_head = skb_last = skb;
++				skb->next = skb->prev = NULL;
++			} else {
++				skb_last->next = skb;
++				skb->prev = skb_last;
++				skb->next = NULL;
++				skb_last = skb;
++			}
++		}
++		dirty_tx++;
++	}
++
++	if (speedo_debug && (int)(sp->cur_tx - dirty_tx) > TX_RING_SIZE) {
++		printk(KERN_ERR "out-of-sync dirty pointer, %d vs. %d,"
++				" full=%d.\n",
++				dirty_tx, sp->cur_tx, sp->tx_full);
++		dirty_tx += TX_RING_SIZE;
++	}
++
++	while (sp->mc_setup_head != NULL
++		   && (int)(dirty_tx - sp->mc_setup_head->tx - 1) > 0) {
++		struct speedo_mc_block *t;
++		if (speedo_debug > 1)
++			printk(KERN_DEBUG "%s: freeing mc frame.\n", dev->name);
++		pci_unmap_single(sp->pdev, sp->mc_setup_head->frame_dma,
++				sp->mc_setup_head->len, PCI_DMA_TODEVICE);
++		t = sp->mc_setup_head->next;
++		kfree(sp->mc_setup_head);
++		sp->mc_setup_head = t;
++	}
++	if (sp->mc_setup_head == NULL)
++		sp->mc_setup_tail = NULL;
++
++	sp->dirty_tx = dirty_tx;
++
++	if (sp->tx_full && (int)(sp->cur_tx - sp->dirty_tx) < TX_QUEUE_UNFULL) {
++		/* The ring is no longer full. */
++		sp->tx_full = 0;
++		netif_wake_queue(dev); /* Attention: under a spinlock.  --SAW */
++	}
++
++	spin_unlock(&sp->lock);
++
++	return skb_head;
++}
++
++static int speedo_poll_on(struct net_device *dev) {
++	long ioaddr = dev->base_addr;
++
++	if (dev->polling == 0) {
++		/* Mask all interrupts */
++		outw(SCBMaskAll, ioaddr + SCBCmd);
++
++		dev->polling = 2;
++	}
++
++	return 0;
++}
++
++static int speedo_poll_off(struct net_device *dev) {
++	long ioaddr = dev->base_addr;
++
++	if (dev->polling > 0) {
++		/* Enable interrupts */
++		outw(0, ioaddr + SCBCmd);
++
++		dev->polling = 0;
++	}
++
++	return 0;
++}
++
+
+Index: Makefile
+--- Makefile.orig	Thu Aug 16 18:12:49 2001
++++ Makefile	Mon Aug 20 21:47:41 2001
+@@ -1,7 +1,7 @@
+ VERSION = 2
+ PATCHLEVEL = 4
+ SUBLEVEL = 9
+-EXTRAVERSION =
++EXTRAVERSION = -Click
+ 
+ KERNELRELEASE=$(VERSION).$(PATCHLEVEL).$(SUBLEVEL)$(EXTRAVERSION)
+ 

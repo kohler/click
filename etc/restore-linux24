@@ -6,6 +6,7 @@ mv include/linux/inetdevice.h.orig include/linux/inetdevice.h
 mv include/linux/mm.h.orig include/linux/mm.h
 mv include/linux/netdevice.h.orig include/linux/netdevice.h
 mv include/linux/skbuff.h.orig include/linux/skbuff.h
+mv include/linux/swap.h.orig include/linux/swap.h
 mv include/net/route.h.orig include/net/route.h
 mv net/core/skbuff.c.orig net/core/skbuff.c
 mv net/core/dev.c.orig net/core/dev.c
@@ -15,3 +16,4 @@ mv fs/proc/inode.c.orig fs/proc/inode.c
 mv drivers/net/tulip/interrupt.c.orig drivers/net/tulip/interrupt.c
 mv drivers/net/tulip/tulip_core.c.orig drivers/net/tulip/tulip_core.c
 mv drivers/net/eepro100.c.orig drivers/net/eepro100.c
+mv Makefile.orig Makefile

@@ -18,6 +18,7 @@ my @files = (
 	"include/linux/mm.h",
 	"include/linux/netdevice.h",
 	"include/linux/skbuff.h",
+	"include/linux/swap.h",
 	"include/net/route.h",
 	"net/core/skbuff.c",
 	"net/core/dev.c",
@@ -27,6 +28,7 @@ my @files = (
 	"drivers/net/tulip/interrupt.c",
 	"drivers/net/tulip/tulip_core.c",
 	"drivers/net/eepro100.c",
+	"Makefile",
 	);
 
 $| = 1;
