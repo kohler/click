@@ -1,5 +1,5 @@
 /*
- * linkstat.{cc,hh} -- extract per-packet link quality/strength stats
+ * linkstat.{cc,hh} -- track per-link delivery rates.
  * Douglas S. J. De Couto
  *
  * Copyright (c) 1999-2002 Massachusetts Institute of Technology
