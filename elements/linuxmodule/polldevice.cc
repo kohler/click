@@ -324,6 +324,15 @@ PollDevice_read_stats(Element *e, void *thunk)
     return String();
   }
 }
+
+static int
+PollDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
+{
+  PollDevice *pd = (PollDevice *)e;
+  pd->_npackets = 0;
+  pd->_push_cycles = 0;
+  return 0;
+}
 #endif
 
 void
@@ -333,6 +342,7 @@ PollDevice::add_handlers()
 #if POLLDEVICE_STATS
   add_read_handler("packets", PollDevice_read_stats, 0);
   add_read_handler("push_cycles", PollDevice_read_stats, (void *)1);
+  add_write_handler("reset_counts", PollDevice_write_stats, 0);
 #endif
 }
 
