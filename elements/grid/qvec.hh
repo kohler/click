@@ -9,6 +9,8 @@
 
 #include <click/vector.hh>
 
+CLICK_DECLS
+
 template <class T>
 class QVec : public Vector<T> {
   typedef Vector<T> Base;
@@ -46,4 +48,5 @@ QVec<T>::pop_front()
 }
 
 
+CLICK_ENDDECLS
 #endif
