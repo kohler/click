@@ -456,6 +456,7 @@ sub check_expects ($$) {
 	    next;
 	}
 	my($text) = <IN>;
+	$text = '' if !defined($text);
 	close IN;
 
 	# escape in common case
