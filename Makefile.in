@@ -165,5 +165,6 @@ distdir: $(srcdir)/configure
 
 
 .PHONY: all always elemlist elemlists \
-	linuxmodule userlevel exopc tools clean distclean dist distdir \
+	bsdmodule exopc linuxmodule tools userlevel \
+	clean distclean dist distdir \
 	install install-doc install-man install-local install-include

@@ -137,7 +137,7 @@ install: $(INSTALLOBJS)
 install-man:
 
 clean:
-	-rm -f *.d *.o elements.mk elements.cc elements.conf
+	-rm -f *.d *.o click.ko elements.mk elements.cc elements.conf
 distclean: clean
 	-rm -f Makefile
 
