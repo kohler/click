@@ -1,0 +1,176 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0.5
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-COMBINE 1 "27/Apr/2000" "Version \*V"
+.SH NAME
+click-combine \- combines two or more Click routers into one configuration
+'
+.SH SYNOPSIS
+.B click-combine
+.I \%[options]
+\%\fIname\fR:\fIfile\fR ... \\
+.br
+\%        \fIname1\fR.\fIelement1\fR=\fIname2\fR.\fIelement2\fR ...
+'
+.SH DESCRIPTION
+The
+.B click-combine
+tool combines two or more Click router configurations into a single
+configuration representing the network. For example, say there is a
+point-to-point link from router A's eth0 interface to router B's eth1
+interface. Then in the combined configuration, A's ToDevice(eth0) element
+and B's PollDevice(eth1) element will be replaced with a new RouterLink
+element; packets will flow from A to B via the RouterLink element. You can
+edit the combined configuration with tools, which are effectively able to
+consider the whole network. For example, they can check cross-router
+properties or perform cross-router optimizations. Use the
+.M click-uncombine 1
+tool to extract a component router configuration from the combination.
+.PP
+Component routers are identified by name. This name must be a legal Click
+identifier (see
+.M click 5 )
+that does not contain a slash. To add a router component named
+.I N
+whose configuration is in the file
+.IR f ,
+supply the option
+.RI ` N : f '.
+You will generally supply at least two such options.
+.PP
+A link says that packets leaving one router via one element will arrive at
+another router via another element. The routers are specified by component
+name, and the elements can be specified by element name or by device name.
+To connect the
+.I e1
+element from  router component
+.I A
+to the
+.I e2
+element from router component
+.IR B ,
+supply the option
+.RI ` A . e1 = B . e2 '.
+If
+.I e1
+is a
+.M ToDevice n
+element, then you can use its device name argument instead of its name.
+Similarly, if
+.I e2
+is a
+.M PollDevice n
+or
+.M FromDevice n
+element, you can use its device name argument instead of its name.
+.PP
+Link options are one-way, so if there is a duplex connection, you will need
+to give two arguments: `A.eth0=B.eth1 B.eth1=A.eth0', for example. You can
+also support more than two routers sharing a link; for example,
+`A.eth0=B.eth1 A.eth0=C.eth2'.
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-combine
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-o " file"
+.PD 0
+.TP
+.BI \-\-output " file"
+Write the output router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP
+.BI \-n " name"
+.TP
+.BI \-\-name " name"
+The next router component will be named
+.IR name .
+This option and the
+.BR \-\-file
+provide an alternative to the
+.IR name : file
+syntax.
+'
+.Sp
+.TP
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read a router configuration from
+.IR file .
+This option and
+.BR \-\-name
+provide an alternative to the
+.IR name : file
+syntax.
+'
+.Sp
+.TP
+.BI \-l " component1\fR.\fIelement1\fR=\fIcomponent2\fR.\fIelement2"
+.PD 0
+.TP
+.BI \-\-link " component1\fR.\fIelement1\fR=\fIcomponent2\fR.\fIelement2"
+Add a link specification as described above.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click-uncombine 1 ,
+.M click-xform 1 ,
+.M click 5 ,
+.M PollDevice n ,
+.M FromDevice n ,
+.M ToDevice n
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

@@ -1,0 +1,108 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0.5
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-UNCOMBINE 1 "27/Apr/2000" "Version \*V"
+.SH NAME
+click-uncombine \- separate a component Click router from a combined
+configuration
+'
+.SH SYNOPSIS
+.B click-uncombine
+.I \%[options]
+\%[\fIcomponent\fR | \fIfile component\fR]
+'
+.SH DESCRIPTION
+The
+.B click-uncombine
+tool outputs one Click router configuration component from a combined
+configuration created by
+.M click-combine 1 .
+The chosen component is specified by its name, as originally specified to
+.M click-combine 1 .
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-uncombine
+will use the standard input or output instead, as appropriate. You can give
+one or two non-option arguments. If you give one, it is used as the
+component name; if you give two, the first is the router file and the
+second is the component name.
+'
+.TP 5
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read the combined router configuration from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-n " name"
+.TP
+.BI \-\-name " name"
+Output the router component named
+.IR name .
+'
+.Sp
+.TP 5
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the output router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click-combine 1 ,
+.M click 5
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

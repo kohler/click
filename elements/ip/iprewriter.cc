@@ -359,9 +359,8 @@ IPMapper::get_map(bool, const IPFlowID &, IPRewriter *)
 //
 
 IPRewriter::IPRewriter()
-  : _patterns(0), _tcp_map(0), _udp_map(0), _timer(this)
+  : _tcp_map(0), _udp_map(0), _timer(this)
 {
-  set_ninputs(2);
 }
 
 IPRewriter::~IPRewriter()

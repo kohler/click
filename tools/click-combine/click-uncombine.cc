@@ -38,7 +38,6 @@
 #define NAME_OPT		304
 
 static Clp_Option options[] = {
-  { "component", 'c', NAME_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "name", 'n', NAME_OPT, Clp_ArgString, 0 },
@@ -63,15 +62,14 @@ usage()
 {
   printf("\
 `Click-uncombine' reads a combined Click configuration produced by\n\
-click-combine, separates one of its components, and writes that component to\n\
-the standard output.\n\
+click-combine and writes one of its components to the standard output.\n\
 \n\
 Usage: %s [OPTION]... [COMPONENTNAME | ROUTERFILE COMPONENTNAME]\n\
 \n\
 Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
+  -n, --name NAME             Output the router component named NAME.\n\
   -o, --output FILE           Write output to FILE.\n\
-  -c, --component NAME        Separate component named NAME.\n\
       --help                  Print this message and exit.\n\
   -v, --version               Print version number and exit.\n\
 \n\

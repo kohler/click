@@ -70,9 +70,9 @@ extract components from these combined configurations.\n\
 Usage: %s [OPTION]... [ROUTERFILE | ROUTERNAME:FILE | LINKSPEC]\n\
 \n\
 Options:\n\
-  -f, --file FILE       Read router configuration from FILE.\n\
   -o, --output FILE     Write combined configuration to FILE.\n\
-  -n, --name NAME       The next router component will be named NAME.\n\
+  -n, --name NAME       The next router component name is NAME.\n\
+  -f, --file FILE       Read router component configuration from FILE.\n\
   -l, --link LINKSPEC   Add a link between router components. LINKSPEC has the\n\
                         form `NAME1.COMP1=NAME2.COMP2'. Each NAME is a router\n\
                         component name. Each COMP is either an element name or\n\

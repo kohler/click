@@ -34,9 +34,11 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/click.5 $(mandir)/man5/click.5
 	$(INSTALL_DATA) $(srcdir)/click.o.8 $(mandir)/man8/click.o.8
 	$(INSTALL_DATA) $(srcdir)/click-align.1 $(mandir)/man1/click-align.1
+	$(INSTALL_DATA) $(srcdir)/click-combine.1 $(mandir)/man1/click-combine.1
 	$(INSTALL_DATA) $(srcdir)/click-devirtualize.1 $(mandir)/man1/click-devirtualize.1
 	$(INSTALL_DATA) $(srcdir)/click-fastclassifier.1 $(mandir)/man1/click-fastclassifier.1
 	$(INSTALL_DATA) $(srcdir)/click-install.1 $(mandir)/man1/click-install.1
+	$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(mandir)/man1/click-uncombine.1
 	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(mandir)/man1/click-uninstall.1
 	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
 	$(INSTALL_DATA) $(srcdir)/Element.3 $(mandir)/man3/Element.3
