@@ -1,3 +1,8 @@
+2003-06-06 Friday 16:56  Eddie Kohler <kohler@icir.org>
+
+	* doc/: Makefile.in (1.45), click.texi (1.56): doc updates for Task
+	and Timer and stuff
+
 2003-06-06 Friday 14:59  Eddie Kohler <kohler@icir.org>
 
 	* doc/click.texi (1.55), etc/libclick/DISTFILES (1.16): DISTFILES,
