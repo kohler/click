@@ -621,6 +621,17 @@ pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 fi
 
 
+dnl other user-level specifics
+
+AC_CACHE_CHECK([whether struct if_data has ifi_datalen], [ac_cv_if_data_ifi_datalen],
+    [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[#include <net/if.h>
+#include <net/if_var.h>
+]], [[struct if_msghdr ifm; ifm.ifm_data.ifi_datalen = 0;]])], ac_cv_if_data_ifi_datalen=yes, ac_cv_if_data_ifi_datalen=no)])
+if test "x$ac_cv_if_data_ifi_datalen" = xyes; then
+    AC_DEFINE([HAVE_IF_DATA_IFI_DATALEN], [1], [Define if 'struct if_data' has an 'ifi_datalen' member.])
+fi
+
+
 dnl expat library
 
 explicit_expat=yes

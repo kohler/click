@@ -35,6 +35,12 @@
 # include <net/if_arp.h>
 # include <click/userutils.hh>
 # include <time.h>
+#elif CLICK_USERLEVEL && (defined(__APPLE__) || defined(__FreeBSD__))
+# include <sys/sysctl.h>
+# include <net/if.h>
+# include <net/if_dl.h>
+# include <net/if_types.h>
+# include <net/route.h>
 #endif
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
@@ -287,6 +293,112 @@ query_netdevice(const String &s, unsigned char *store, int type, int len)
     return false;
 }
 
+#elif CLICK_USERLEVEL && (defined(__APPLE__) || defined(__FreeBSD__))
+
+static bool
+query_netdevice(const String &s, unsigned char *store, int type, int len)
+    // type: should be 'e' (Ethernet) or 'i' (ipv4)
+{
+    // 5 Mar 2004 - Don't call ioctl for every attempt to look up an Ethernet
+    // device name, because this causes the kernel to try to load weird kernel
+    // modules.
+    static time_t read_time = 0;
+    static Vector<String> device_names;
+    static Vector<String> device_addrs;
+
+    // XXX magic time constant
+    if (!read_time || read_time + 30 < time(0)) {
+	device_names.clear();
+	device_addrs.clear();
+
+	// get list of interfaces (this code borrowed, with changes, from
+	// FreeBSD ifconfig(8))
+	int mib[8];
+	mib[0] = CTL_NET;
+	mib[1] = PF_ROUTE;
+	mib[2] = 0;
+	mib[3] = 0;		// address family
+	mib[4] = NET_RT_IFLIST;
+	mib[5] = 0;		// ifindex
+
+	size_t if_needed;
+	char* buf = 0;
+	while (!buf) {
+	    if (sysctl(mib, 6, 0, &if_needed, 0, 0) < 0)
+		return false;
+	    if ((buf = new char[if_needed]) == 0)
+		return false;
+	    if (sysctl(mib, 6, buf, &if_needed, 0, 0) < 0) {
+		if (errno == ENOMEM) {
+		    delete[] buf;
+		    buf = 0;
+		} else
+		    return false;
+	    }
+	}
+	
+	for (char* pos = buf; pos < buf + if_needed; ) {
+	    // grab next if_msghdr
+	    struct if_msghdr* ifm = reinterpret_cast<struct if_msghdr*>(pos);
+	    if (ifm->ifm_type != RTM_IFINFO)
+		break;
+	    int datalen = sizeof(struct if_data);
+#if HAVE_IF_DATA_IFI_DATALEN
+	    if (ifm->ifm_data.ifi_datalen)
+		datalen = ifm->ifm_data.ifi_datalen;
+#endif
+	    
+	    // extract interface name from 'ifm'
+	    struct sockaddr_dl* sdl = reinterpret_cast<struct sockaddr_dl*>(pos + sizeof(struct if_msghdr) - sizeof(struct if_data) + datalen);
+	    String name(sdl->sdl_data, sdl->sdl_nlen);
+
+	    // Ethernet address is stored in 'sdl'
+	    if (sdl->sdl_type == IFT_ETHER && sdl->sdl_alen == 6) {
+		device_names.push_back(name);
+		device_addrs.push_back(String('e') + String((const char*)(LLADDR(sdl)), 6));
+	    }
+	    
+	    // parse all addresses, looking for IP
+	    pos += ifm->ifm_msglen;
+	    while (pos < buf + if_needed) {
+		struct if_msghdr* nextifm = reinterpret_cast<struct if_msghdr*>(pos);
+		if (nextifm->ifm_type != RTM_NEWADDR)
+		    break;
+		
+		struct ifa_msghdr* ifam = reinterpret_cast<struct ifa_msghdr*>(nextifm);
+		char* sa_buf = reinterpret_cast<char*>(ifam + 1);
+		pos += nextifm->ifm_msglen;
+		for (int i = 0; i < RTAX_MAX && sa_buf < pos; i++) {
+		    if (!(ifam->ifam_addrs & (1 << i)))
+			continue;
+		    struct sockaddr* sa = reinterpret_cast<struct sockaddr*>(sa_buf);
+		    if (sa->sa_len)
+			sa_buf += 1 + ((sa->sa_len - 1) | (sizeof(long) - 1));
+		    else
+			sa_buf += sizeof(long);
+		    if (i != RTAX_IFA)
+			continue;
+		    if (sa->sa_family == AF_INET) {
+			device_names.push_back(name);
+			device_addrs.push_back(String('i') + String((const char *)&((struct sockaddr_in*)sa)->sin_addr, 4));
+		    }
+		}
+	    }
+	}
+
+	delete[] buf;
+	read_time = time(0);
+    }
+
+    for (int i = 0; i < device_names.size(); i++)
+	if (device_names[i] == s && device_addrs[i][0] == type) {
+	    memcpy(store, device_addrs[i].data() + 1, len);
+	    return true;
+	}
+
+    return false;
+}
+
 #endif /* CLICK_USERLEVEL && defined(__linux__) */
 
 
@@ -327,7 +439,7 @@ AddressInfo::query_ip(String s, unsigned char *store, Element *e)
 	    return true;
     }
 # endif
-#elif CLICK_USERLEVEL && defined(__linux__)
+#elif CLICK_USERLEVEL && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
     if (query_netdevice(s, store, 'i', 4))
 	return true;
 #endif
@@ -427,7 +539,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
     return true;
   } else if (dev)
     dev_put(dev);
-#elif CLICK_USERLEVEL && defined(__linux__)
+#elif CLICK_USERLEVEL && (defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__))
   if (query_netdevice(s, store, 'e', 6))
       return true;
 #endif

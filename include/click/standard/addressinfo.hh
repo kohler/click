@@ -70,7 +70,7 @@ default, if any.  Defaults are as follows:
 =item *
 
 If DEVNAME is the name of an Ethernet device, then C<DEVNAME:eth> defaults to
-DEVNAME's Ethernet address.
+DEVNAME's Ethernet address.  (At userlevel, this works only on BSD and Linux.)
 
 =item *
 

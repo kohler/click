@@ -17,6 +17,9 @@
 /* Floating point arithmetic is allowed. */
 #define HAVE_FLOAT_TYPES 1
 
+/* Define if 'struct if_data' has an 'ifi_datalen' member. */
+#undef HAVE_IF_DATA_IFI_DATALEN
+
 /* Define if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
