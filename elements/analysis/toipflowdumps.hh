@@ -86,11 +86,16 @@ Boolean. If true, then run C<gzip> to compress completed trace files. (The
 resulting files have F<.gz> appended to their OUTPUT_PATTERN names.) Defaults
 to false.
 
-=item OPT
+=item TCP_OPT
 
 Boolean. If true, then output any interesting TCP options present on TCP
 packets. Interesting options are MSS, window scaling, and SACK options;
 timestamp options are not interesting. Defaults to false.
+
+=item TCP_WINDOW
+
+Boolean. If true, then output each TCP packet's window field. Defaults to
+false.
 
 =item IP_ID
 
@@ -178,7 +183,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     class Flow { public:
 
-	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq, bool binary, bool opt, bool ip_id);
+	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq, bool binary, bool ip_id, bool tcp_opt, bool tcp_window);
 	~Flow();
 
 	uint32_t aggregate() const	{ return _aggregate; }
@@ -206,7 +211,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	String _filename;
 	bool _outputted : 1;
 	bool _binary : 1;
-	bool _opt : 1;
+	bool _tcp_opt : 1;
 	int _npkt;
 	int _nnote;
 	struct timeval _first_timestamp;
@@ -217,6 +222,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	StringAccum _note_text;
 	StringAccum _opt_info;
 	uint16_t *_ip_ids;
+	uint16_t *_tcp_windows;
 
 	int create_directories(const String &, ErrorHandler *);
 	void output_binary(StringAccum &);
@@ -238,8 +244,9 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     bool _absolute_seq : 1;
     bool _binary : 1;
     bool _gzip : 1;
-    bool _opt : 1;
     bool _ip_id : 1;
+    bool _tcp_opt : 1;
+    bool _tcp_window : 1;
 
     uint32_t _output_larger;
     

@@ -39,13 +39,13 @@ CLICK_DECLS
 #define PUT1(p, d)	((p)[0] = (d))
 
 ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
-			  bool absolute_time, bool absolute_seq,
-			  bool binary, bool opt, bool ip_id)
+			  bool absolute_time, bool absolute_seq, bool binary,
+			  bool ip_id, bool tcp_opt, bool tcp_window)
     : _next(0),
       _flowid(p), _ip_p(p->ip_header()->ip_p),
       _aggregate(AGGREGATE_ANNO(p)), _packet_count(0), _note_count(0),
-      _filename(filename), _outputted(false), _binary(binary), _opt(opt),
-      _npkt(0), _nnote(0)
+      _filename(filename), _outputted(false), _binary(binary),
+      _tcp_opt(tcp_opt), _npkt(0), _nnote(0)
 {
     // use the encapsulated IP header for ICMP errors
     if (_ip_p == IP_PROTO_ICMP) {
@@ -71,6 +71,11 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
 	_ip_ids = new uint16_t[NPKT];
     else
 	_ip_ids = 0;
+
+    if (tcp_window && _ip_p == IP_PROTO_TCP)
+	_tcp_windows = new uint16_t[NPKT];
+    else
+	_tcp_windows = 0;
     
     // sanity checks
     assert(_aggregate && (_ip_p == IP_PROTO_TCP || _ip_p == IP_PROTO_UDP));
@@ -79,6 +84,7 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
 ToIPFlowDumps::Flow::~Flow()
 {
     delete[] _ip_ids;
+    delete[] _tcp_windows;
 }
 
 int
@@ -106,6 +112,7 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 {
     union {
 	uint32_t u[8];
+	uint16_t us[16];
 	char c[32];
     } buf;
     int pi = 0, ni = 0;
@@ -115,25 +122,27 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
     while (pi < _npkt || ni < _nnote)
 	if (ni >= _nnote || _note[ni].before_pkt > pi) {
 	    int pos;
+
 	    buf.u[1] = ntohl(_pkt[pi].timestamp.tv_sec);
 	    buf.u[2] = ntohl(_pkt[pi].timestamp.tv_usec);
 	    if (_ip_p == IP_PROTO_TCP) {
 		buf.u[3] = ntohl(_pkt[pi].th_seq);
 		buf.u[4] = ntohl(_pkt[pi].payload_len);
 		buf.u[5] = ntohl(_pkt[pi].th_ack);
-		buf.c[24] = _pkt[pi].th_flags;
-		pos = 25;
+		pos = 24;
 	    } else {
 		buf.u[3] = ntohl(_pkt[pi].payload_len);
 		pos = 16;
 	    }
 
-	    if (_ip_ids) {
-		buf.c[pos++] = _ip_ids[pi] >> 8;
-		buf.c[pos++] = _ip_ids[pi] & 255;
-	    }
-	    
+	    if (_ip_ids)
+		buf.us[pos>>1] = _ip_ids[pi], pos += 2;
+	    if (_tcp_windows)
+		buf.us[pos>>1] = _tcp_windows[pi], pos += 2;
+	    if (_ip_p == IP_PROTO_TCP)
+		buf.c[pos++] = _pkt[pi].th_flags;
 	    buf.c[pos++] = _pkt[pi].direction;
+	    
 	    buf.u[0] = ntohl(pos);
 	    sa.append(&buf.c[0], pos);
 
@@ -186,13 +195,17 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	sa << "!data timestamp";
 	if (_binary) {
 	    if (_ip_p == IP_PROTO_TCP)
-		sa << " tcp_seq payload_len tcp_ack tcp_flags";
+		sa << " tcp_seq payload_len tcp_ack";
 	    else
 		sa << " payload_len";
 	    if (_ip_ids)
 		sa << " ip_id";
+	    if (_tcp_windows)
+		sa << " tcp_window";
+	    if (_ip_p == IP_PROTO_TCP)
+		sa << " tcp_flags";
 	    sa << " direction";
-	    if (_ip_p == IP_PROTO_TCP && _opt)
+	    if (_ip_p == IP_PROTO_TCP && _tcp_opt)
 		sa << " tcp_opt";
 	} else {
 	    sa << " direction";
@@ -200,7 +213,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		sa << " ip_id";
 	    if (_ip_p == IP_PROTO_TCP) {
 		sa << " tcp_flags tcp_seq payload_len tcp_ack";
-		if (_opt)
+		if (_tcp_opt)
 		    sa << " tcp_opt";
 	    } else
 		sa << " payload_len";
@@ -249,6 +262,9 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		    sa << ' ' << _pkt[pi].th_seq
 		       << ' ' << _pkt[pi].payload_len
 		       << ' ' << _pkt[pi].th_ack;
+
+		    if (_tcp_windows)
+			sa << ' ' << ntohs(_tcp_windows[pi]);
 		    
 		    if (opt < end_opt && opt[0] == pi) {
 			sa << ' ';
@@ -447,10 +463,13 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 	_pkt[_npkt].th_flags = tcph->th_flags;
 	_pkt[_npkt].payload_len = ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2); // XXX check for correctness?
 
-	if (_opt
+	if (_tcp_opt
 	    && tcph->th_off > (sizeof(click_tcp) >> 2)
 	    && (tcph->th_off != 8 || *(reinterpret_cast<const uint32_t *>(tcph + 1)) != htonl(0x0101080A)))
 	    store_opt(tcph, direction);
+
+	if (_tcp_windows)
+	    _tcp_windows[_npkt] = tcph->th_win;
 	
     } else
 	_pkt[_npkt].payload_len = ntohs(iph->ip_len) - sizeof(click_udp);
@@ -509,7 +528,7 @@ int
 ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
-    bool absolute_time = false, absolute_seq = false, binary = false, opt = false, ip_id = false, gzip = false;
+    bool absolute_time = false, absolute_seq = false, binary = false, tcp_opt = false, tcp_window = false, ip_id = false, gzip = false;
     _output_larger = 0;
     
     if (cp_va_parse(conf, this, errh,
@@ -521,7 +540,8 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "ABSOLUTE_TIME", cpBool, "print absolute timestamps?", &absolute_time,
 		    "ABSOLUTE_SEQ", cpBool, "print absolute sequence numbers?", &absolute_seq,
 		    "BINARY", cpBool, "output binary records?", &binary,
-		    "OPT", cpBool, "output TCP options?", &opt,
+		    "TCP_OPT", cpBool, "output TCP options?", &tcp_opt,
+		    "TCP_WINDOW", cpBool, "output TCP windows?", &tcp_window,
 		    "GZIP", cpBool, "gzip output files?", &gzip,
 		    "IP_ID", cpBool, "output IP IDs?", &ip_id,
 		    "OUTPUT_LARGER", cpUnsigned, "output flows with more than this many packets", &_output_larger,
@@ -539,7 +559,8 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     _absolute_time = absolute_time;
     _absolute_seq = absolute_seq;
     _binary = binary;
-    _opt = opt;
+    _tcp_opt = tcp_opt;
+    _tcp_window = tcp_window;
     _ip_id = ip_id;
     _gzip = gzip;
 
@@ -666,7 +687,7 @@ ToIPFlowDumps::find_aggregate(uint32_t agg, const Packet *p)
 
     if (f)
 	/* nada */;
-    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq, _binary, _opt, _ip_id)))
+    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq, _binary, _ip_id, _tcp_opt, _tcp_window)))
 	prev = f;
     else
 	return 0;
