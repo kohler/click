@@ -24,9 +24,10 @@
 #include <fcntl.h>
 #include <errno.h>
 
+#include <sys/ioctl.h>
+
 #if FROMDEVICE_LINUX
 # include <sys/socket.h>
-# include <sys/ioctl.h>
 # include <net/if.h>
 # include <net/if_packet.h>
 # include <features.h>
@@ -174,6 +175,16 @@ FromDevice::initialize(ErrorHandler *errh)
   // nonblocking I/O on the packet socket so we can poll
   int fd = pcap_fileno(_pcap);
   fcntl(fd, F_SETFL, O_NONBLOCK);
+
+#if defined(BIOCSSEESENT) || defined(__FreeBSD__)
+  {
+    int no = 0;
+    if(ioctl(fd, BIOCSSEESENT, &no) != 0){
+      return errh->error("FromDevice: BIOCSEESENT failed");
+    }
+  }
+#endif
+
 
   bpf_u_int32 netmask;
   bpf_u_int32 localnet;

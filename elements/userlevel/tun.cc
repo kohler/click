@@ -24,6 +24,10 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
+#include <net/if.h>
+#include <net/if_tun.h>
+#endif
 
 Tun::Tun()
 {
@@ -177,35 +181,26 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far,
     sprintf(tmp, "/dev/%s%d", dev_prefix, i);
     fd = open(tmp, 2);
     if(fd >= 0){
-#ifdef TUNSIFINFO
-      struct tuninfo ti;
-      if(ioctl(fd, TUNGIFINFO, &ti) < 0){
-        close(fd);
-        return errh->error("TUNGIFINFO failed");
-      }
-      ti.mtu = 576;
-      if(ioctl(fd, TUNSIFINFO, &ti) < 0){
-        close(fd);
-        return errh->error("TUNSIFINFO failed");
-      }
-#endif
-#ifdef FIONBIO
       if(ioctl(fd, FIONBIO, &yes) < 0){
         close(fd);
         return errh->error("FIONBIO failed");
       }
-#else
-      return errh->error("not configured for non-blocking IO");
+
+#if defined(TUNSIFMODE) || defined(__FreeBSD__) || defined(__OpenBSD__)
+      {
+        int mode = IFF_BROADCAST;
+        if(ioctl(fd, TUNSIFMODE, &mode) != 0){
+          perror("Tun: TUNSIFMODE");
+          return errh->error("cannot set TUNSIFMODE");
+        }
+      }
 #endif
 
       strcpy(tmp0, inet_ntoa(near));
       strcpy(tmp1, inet_ntoa(far));
-#if defined(__linux__)
       // treat far address as netmask 
       sprintf(tmp, "ifconfig %s%d %s netmask %s up", dev_prefix, i, tmp0, tmp1);
-#else
-      sprintf(tmp, "ifconfig %s%d %s %s up", dev_prefix, i, tmp0, tmp1);
-#endif
+
       if(system(tmp) != 0){
         close(fd);
         return errh->error("failed: %s", tmp);

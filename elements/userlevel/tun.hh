@@ -3,7 +3,7 @@
 
 /*
  * =c
- * Tun(dev-prefix, near-address, far-address)
+ * Tun(dev-prefix, near-address, netmask)
  * =d
  * Reads and writes packets from/to a /dev/<dev-prefix>* device.
  * This allows a user-level Click to hand packets to the
@@ -16,8 +16,7 @@
  * 
  * Tun allocates a /dev/tun device (this might fail) and
  * runs ifconfig to set the interface's local (ie kernel)
- * address to near-address and the distant (ie Click)
- * address to far-address.
+ * address to near-address and the netmask to netmask.
  *
  * =a ToLinux
  */
