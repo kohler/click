@@ -5,12 +5,21 @@ extern "C" {
 #endif
 
 /* clp.h - Public interface to CLP.
- * Copyright (C) 1997-9 Eddie Kohler, eddietwo@lcs.mit.edu
  * This file is part of CLP, the command line parser package.
  *
- * CLP is free software. You can copy, distribute, or alter it at will, as
- * long as this notice and the copyright notice above are kept intact and this
- * source code is made available. There is no warranty, express or implied. */
+ * Copyright (c) 1997-2002 Eddie Kohler, kohler@icir.org
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file, which is available in full at
+ * http://www.pdos.lcs.mit.edu/click/license.html. The conditions include: you
+ * must preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding. */
+
 
 /* Argument types */
 #define Clp_NoArg		0
@@ -61,12 +70,12 @@ typedef struct Clp_Internal Clp_Internal;
 typedef struct Clp_ParserState Clp_ParserState;
 
 typedef int (*Clp_ArgParseFunc)(Clp_Parser *, const char *, int, void *);
-typedef void (*Clp_ErrorHandler)(char *);
+typedef void (*Clp_ErrorHandler)(const char *);
 
 
 struct Clp_Option {
   
-  char *long_name;
+  const char *long_name;
   int short_name;
   
   int option_id;
@@ -82,13 +91,13 @@ struct Clp_Parser {
   int negated;
   
   int have_arg;
-  char *arg;
+  const char *arg;
   
   union {
     int i;
     unsigned u;
     double d;
-    char *s;
+    const char *s;
     void *pv;
 #ifdef HAVE_INT64_TYPES
     int64_t i64;
@@ -121,10 +130,10 @@ int		Clp_AddStringListTypeVec
 			(Clp_Parser *, int type_id, int flags,
 			 int n, char **str, int *val);
 
-char *		Clp_ProgramName(Clp_Parser *);
+const char *	Clp_ProgramName(Clp_Parser *);
 
 int		Clp_Next(Clp_Parser *);
-char *		Clp_Shift(Clp_Parser *, int allow_dashes);
+const char *	Clp_Shift(Clp_Parser *, int allow_dashes);
 int		Clp_SetOptionProcessing(Clp_Parser *, int option_processing);
 
 Clp_ParserState *Clp_NewParserState(void);

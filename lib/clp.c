@@ -1,10 +1,19 @@
+/* -*- c-basic-offset: 4 -*- */
 /* clp.c - Complete source code for CLP.
- * Copyright (C) 1997-2001 Eddie Kohler, eddietwo@lcs.mit.edu
  * This file is part of CLP, the command line parser package.
  *
- * CLP is free software. You can copy, distribute, or alter it at will, as
- * long as this notice and the copyright notice above are kept intact and this
- * source code is made available. There is no warranty, express or implied. */
+ * Copyright (c) 1997-2002 Eddie Kohler, kohler@icir.org
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a
+ * copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, subject to the conditions
+ * listed in the Click LICENSE file, which is available in full at
+ * http://www.pdos.lcs.mit.edu/click/license.html. The conditions include: you
+ * must preserve this copyright notice, and you cannot mention the copyright
+ * holders in advertising related to the Software without their permission.
+ * The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
+ * notice is a summary of the Click LICENSE file; the license in that file is
+ * legally binding. */
 
 #include <click/config.h>
 
@@ -58,17 +67,17 @@ struct Clp_Internal {
   Clp_ArgType *argtype;
   int nargtype;
   
-  char * const *argv;
+  const char * const *argv;
   int argc;
   
   unsigned char option_class[256];
   int both_short_and_long;
   
   char option_chars[3];
-  char *text;
+  const char *text;
   
-  char *program_name;
-  void (*error_handler)(char *);
+  const char *program_name;
+  void (*error_handler)(const char *);
   
   int is_short;
   int whole_negated;		/* true if negated by an option character */
@@ -88,10 +97,10 @@ struct Clp_Internal {
 
 struct Clp_ParserState {
   
-  char * const *argv;
+  const char * const *argv;
   int argc;
   char option_chars[3];
-  char *text;
+  const char *text;
   int is_short;
   int whole_negated;
   
@@ -216,9 +225,9 @@ Clp_NewParser(int argc, char * const argv[], int nopt, Clp_Option *opt)
   cli->nargtype = 5;
   
   cli->argc = argc;
-  cli->argv = argv;
+  cli->argv = (const char * const *)argv;
   {
-    char *slash = strrchr(argv[0], '/');
+    const char *slash = strrchr(argv[0], '/');
     cli->program_name = slash ? slash + 1 : argv[0];
   }
   cli->error_handler = 0;
@@ -292,7 +301,7 @@ Clp_SetOptionProcessing(Clp_Parser *clp, int option_processing)
 
 
 Clp_ErrorHandler
-Clp_SetErrorHandler(Clp_Parser *clp, void (*error_handler)(char *))
+Clp_SetErrorHandler(Clp_Parser *clp, void (*error_handler)(const char *))
      /* Sets a hook function to be called before Clp_OptionError
 	prints anything. 0 means nothing will be called. */
 {
@@ -352,9 +361,12 @@ Clp_SetOptionChar(Clp_Parser *clp, int c, int option_type)
       for (i = 0; i < cli->nopt; i++)
 	have_short[cli->opt[i].short_name] = 1;
       for (i = 0; i < cli->nopt; i++)
-	if (cli->opt[i].long_name && cli->long_min_match[i].pos == 1
-	    && have_short[ (unsigned char)cli->opt[i].long_name[0] ])
-	  cli->long_min_match[i].pos++;
+	if (cli->opt[i].long_name && cli->long_min_match[i].pos == 1) {
+	  /* if `--Cxxxx's short name is `-C', keep long_min_match == 1 */
+	  unsigned char first = (unsigned char)cli->opt[i].long_name[0];
+	  if (have_short[first] && first != cli->opt[i].short_name)
+	    cli->long_min_match[i].pos++;
+	}
       cli->both_short_and_long = 1;
     }
   }
@@ -368,18 +380,18 @@ Clp_SetOptionChar(Clp_Parser *clp, int c, int option_type)
  **/
 
 static int
-min_different_chars(char *s, char *t)
+min_different_chars(const char *s, const char *t)
      /* Returns the minimum number of characters required to distinguish
 	s from t.
 	If s is shorter than t, returns strlen(s). */
 {
-  char *sfirst = s;
-  while (*s && *t && *s == *t)
-    s++, t++;
-  if (!*s)
-    return s - sfirst;
-  else
-    return s - sfirst + 1;
+    const char *sfirst = s;
+    while (*s && *t && *s == *t)
+	s++, t++;
+    if (!*s)
+	return s - sfirst;
+    else
+	return s - sfirst + 1;
 }
 
 static int
@@ -506,8 +518,9 @@ Clp_AddType(Clp_Parser *clp, int type_id, int flags,
 static int
 parse_string(Clp_Parser *clp, const char *arg, int complain, void *thunk)
 {
-  clp->val.s = (char *)arg;
-  return 1;
+    (void)complain, (void)thunk;
+    clp->val.s = arg;
+    return 1;
 }
 
 static int
@@ -547,44 +560,46 @@ parse_int(Clp_Parser *clp, const char *arg, int complain, void *thunk)
 static int
 parse_double(Clp_Parser *clp, const char *arg, int complain, void *thunk)
 {
-  char *val;
-  clp->val.d = strtod(arg, &val);
-  if (*arg != 0 && *val == 0)
-    return 1;
-  else if (complain)
-    return Clp_OptionError(clp, "`%O' expects a real number, not `%s'", arg);
-  else
-    return 0;
+    char *val;
+    (void)thunk;
+    clp->val.d = strtod(arg, &val);
+    if (*arg != 0 && *val == 0)
+	return 1;
+    else if (complain)
+	return Clp_OptionError(clp, "`%O' expects a real number, not `%s'", arg);
+    else
+	return 0;
 }
 
 static int
 parse_bool(Clp_Parser *clp, const char *arg, int complain, void *thunk)
 {
-  int i;
-  char lcarg[6];
-  if (strlen(arg) > 5 || strchr(arg, '=') != 0)
-    goto error;
+    int i;
+    char lcarg[6];
+    (void)thunk;
+    if (strlen(arg) > 5 || strchr(arg, '=') != 0)
+	goto error;
   
-  for (i = 0; arg[i] != 0; i++)
-    lcarg[i] = tolower(arg[i]);
-  lcarg[i] = 0;
+    for (i = 0; arg[i] != 0; i++)
+	lcarg[i] = tolower(arg[i]);
+    lcarg[i] = 0;
   
-  if (argcmp("yes", lcarg, 1) > 0
-      || argcmp("true", lcarg, 1) > 0
-      || argcmp("1", lcarg, 1) > 0) {
-    clp->val.i = 1;
-    return 1;
-  } else if (argcmp("no", lcarg, 1) > 0
-	     || argcmp("false", lcarg, 1) > 0
-	     || argcmp("1", lcarg, 1) > 0) {
-    clp->val.i = 0;
-    return 1;
-  }
+    if (argcmp("yes", lcarg, 1) > 0
+	|| argcmp("true", lcarg, 1) > 0
+	|| argcmp("1", lcarg, 1) > 0) {
+	clp->val.i = 1;
+	return 1;
+    } else if (argcmp("no", lcarg, 1) > 0
+	       || argcmp("false", lcarg, 1) > 0
+	       || argcmp("1", lcarg, 1) > 0) {
+	clp->val.i = 0;
+	return 1;
+    }
   
- error:
-  if (complain)
-    Clp_OptionError(clp, "`%O' expects a true-or-false value, not `%s'", arg);
-  return 0;
+  error:
+    if (complain)
+	Clp_OptionError(clp, "`%O' expects a true-or-false value, not `%s'", arg);
+    return 0;
 }
 
 
@@ -596,15 +611,15 @@ static int
 parse_string_list(Clp_Parser *clp, const char *arg, int complain, void *thunk)
 {
   Clp_StringList *sl = (Clp_StringList *)thunk;
-  int index, ambiguous = 0;
+  int idx, ambiguous = 0;
   int ambiguous_values[MAX_AMBIGUOUS_VALUES + 1];
   
   /* actually look for a string value */
-  index = find_prefix_opt
+  idx = find_prefix_opt
     (arg, sl->nitems, sl->items, sl->long_min_match,
      &ambiguous, ambiguous_values, 0);
-  if (index >= 0) {
-    clp->val.i = sl->items[index].option_id;
+  if (idx >= 0) {
+    clp->val.i = sl->items[idx].option_id;
     return 1;
   }
   
@@ -614,11 +629,11 @@ parse_string_list(Clp_Parser *clp, const char *arg, int complain, void *thunk)
   }
   
   if (complain) {
-    char *complaint = (ambiguous ? "an ambiguous" : "not a valid");
+    const char *complaint = (ambiguous ? "an ambiguous" : "not a valid");
     if (!ambiguous) {
       ambiguous = sl->nitems_invalid_report;
-      for (index = 0; index < ambiguous; index++)
-	ambiguous_values[index] = index;
+      for (idx = 0; idx < ambiguous; idx++)
+	ambiguous_values[idx] = idx;
     }
     return ambiguity_error
       (clp, ambiguous, ambiguous_values, sl->items, "",
@@ -752,7 +767,7 @@ Clp_AddStringListTypeVec(Clp_Parser *clp, int type_id, int flags,
  * Returning information
  **/
 
-char *
+const char *
 Clp_ProgramName(Clp_Parser *clp)
 {
   return clp->internal->program_name;
@@ -809,16 +824,16 @@ Clp_RestoreParser(Clp_Parser *clp, Clp_ParserState *save)
  **/
 
 static void
-set_option_text(Clp_Internal *cli, char *text, int n_option_chars)
+set_option_text(Clp_Internal *cli, const char *text, int n_option_chars)
 {
-  char *option_chars = cli->option_chars;
-  assert(n_option_chars < 3);
-  
-  while (n_option_chars-- > 0)
-    *option_chars++ = *text++;
-  *option_chars = 0;
-  
-  cli->text = text;
+    char *option_chars = cli->option_chars;
+    assert(n_option_chars < 3);
+
+    while (n_option_chars-- > 0)
+	*option_chars++ = *text++;
+    *option_chars = 0;
+
+    cli->text = text;
 }
 
 
@@ -843,7 +858,7 @@ next_argument(Clp_Parser *clp, int want_argument)
 	for long options, cli->text holds the rest of the option. */
 {
   Clp_Internal *cli = clp->internal;
-  char *text;
+  const char *text;
   int option_class;
 
   /* clear relevant flags */
@@ -967,7 +982,7 @@ switch_to_short_argument(Clp_Parser *clp)
 
 
 static Clp_Option *
-find_long(Clp_Parser *clp, char *arg)
+find_long(Clp_Parser *clp, const char *arg)
      /* If arg corresponds to one of clp's options, finds that option &
 	returns it. If any argument is given after an = sign in arg, sets
 	clp->have_arg = 1 and clp->arg to that argument. Sets cli->ambiguous
@@ -1175,7 +1190,7 @@ Clp_Next(Clp_Parser *clp)
 }
 
 
-char *
+const char *
 Clp_Shift(Clp_Parser *clp, int allow_dashes)
      /* Returns the next argument from the argument list without parsing it.
         If there are no more arguments, returns 0. */
@@ -1194,54 +1209,54 @@ Clp_Shift(Clp_Parser *clp, int allow_dashes)
  **/
 
 typedef struct Clp_BuildString {
-  char *text;
-  char *pos;
-  int capacity;
-  int bad;
+    char *text;
+    char *pos;
+    int capacity;
+    int bad;
 } Clp_BuildString;
 
 static Clp_BuildString *
 new_build_string(void)
 {
-  Clp_BuildString *bs = (Clp_BuildString *)malloc(sizeof(Clp_BuildString));
-  if (!bs) goto bad;
-  bs->text = (char *)malloc(256);
-  if (!bs->text) goto bad;
-  bs->pos = bs->text;
-  bs->capacity = 256;
-  bs->bad = 0;
-  return bs;
-  
- bad:
-  if (bs) free(bs);
-  return 0;
+    Clp_BuildString *bs = (Clp_BuildString *)malloc(sizeof(Clp_BuildString));
+    if (!bs) goto bad;
+    bs->text = (char *)malloc(256);
+    if (!bs->text) goto bad;
+    bs->pos = bs->text;
+    bs->capacity = 256;
+    bs->bad = 0;
+    return bs;
+
+  bad:
+    if (bs) free(bs);
+    return 0;
 }
 
 static void
 free_build_string(Clp_BuildString *bs)
 {
-  if (bs) free(bs->text);
-  free(bs);
+    if (bs) free(bs->text);
+    free(bs);
 }
 
 static int
 grow_build_string(Clp_BuildString *bs, int want)
 {
-  char *new_text;
-  int ipos = bs->pos - bs->text;
-  int new_capacity = bs->capacity;
-  while (want >= new_capacity)
-    new_capacity *= 2;
-  new_text = (char *)realloc(bs->text, new_capacity);
-  if (!new_text) {
-    bs->bad = 1;
-    return 0;
-  } else {
-    bs->text = new_text;
-    bs->pos = bs->text + ipos;
-    bs->capacity = new_capacity;
-    return 1;
-  }
+    char *new_text;
+    int ipos = bs->pos - bs->text;
+    int new_capacity = bs->capacity;
+    while (want >= new_capacity)
+	new_capacity *= 2;
+    new_text = (char *)realloc(bs->text, new_capacity);
+    if (!new_text) {
+	bs->bad = 1;
+	return 0;
+    } else {
+	bs->text = new_text;
+	bs->pos = bs->text + ipos;
+	bs->capacity = new_capacity;
+	return 1;
+    }
 }
 
 #define ENSURE_BUILD_STRING(bs, space) \
@@ -1251,11 +1266,12 @@ grow_build_string(Clp_BuildString *bs, int want)
 static void
 append_build_string(Clp_BuildString *bs, const char *s, int l)
 {
-  if (l < 0) l = strlen(s);
-  if (ENSURE_BUILD_STRING(bs, l)) {
-    memcpy(bs->pos, s, l);
-    bs->pos += l;
-  }
+    if (l < 0)
+	l = strlen(s);
+    if (ENSURE_BUILD_STRING(bs, l)) {
+	memcpy(bs->pos, s, l);
+	bs->pos += l;
+    }
 }
 
 
@@ -1360,30 +1376,30 @@ Clp_VaOptionError(Clp_Parser *clp, Clp_BuildString *bs,
 static void
 do_error(Clp_Parser *clp, Clp_BuildString *bs)
 {
-  char *text;
-  if (bs && !bs->bad) {
-    *bs->pos = 0;
-    text = bs->text;
-  } else
-    text = "out of memory\n";
-  
-  if (clp->internal->error_handler != 0)
-    (*clp->internal->error_handler)(text);
-  else
-    fputs(text, stderr);
+    const char *text;
+    if (bs && !bs->bad) {
+	*bs->pos = 0;
+	text = bs->text;
+    } else
+	text = "out of memory\n";
+
+    if (clp->internal->error_handler != 0)
+	(*clp->internal->error_handler)(text);
+    else
+	fputs(text, stderr);
 }
 
 int
 Clp_OptionError(Clp_Parser *clp, const char *fmt, ...)
 {
-  Clp_BuildString *bs;
-  va_list val;
-  va_start(val, fmt);
-  bs = Clp_VaOptionError(clp, 0, fmt, val);
-  va_end(val);
-  do_error(clp, bs);
-  free_build_string(bs);
-  return 0;
+    Clp_BuildString *bs;
+    va_list val;
+    va_start(val, fmt);
+    bs = Clp_VaOptionError(clp, 0, fmt, val);
+    va_end(val);
+    do_error(clp, bs);
+    free_build_string(bs);
+    return 0;
 }
 
 static int
@@ -1391,82 +1407,83 @@ ambiguity_error(Clp_Parser *clp, int ambiguous, int *ambiguous_values,
 		Clp_Option *opt, const char *prefix,
 		const char *fmt, ...)
 {
-  Clp_BuildString *bs;
-  int i;
-  va_list val;
-  va_start(val, fmt);
-  bs = Clp_VaOptionError(clp, 0, fmt, val);
-  if (!bs) goto done;
-  
-  append_build_string(bs, clp->internal->program_name, -1);
-  append_build_string(bs, ": (Possibilities are", -1);
-  
-  for (i = 0; i < ambiguous && i < MAX_AMBIGUOUS_VALUES; i++) {
-    int val = ambiguous_values[i];
-    const char *no_dash = "";
-    if (val < 0) val = -(val + 1), no_dash = "no-";
-    if (i == 0)
-      append_build_string(bs, " ", 1);
-    else if (i == ambiguous - 1)
-      append_build_string(bs, (i == 1 ? " and " : ", and "), -1);
-    else
-      append_build_string(bs, ", ", 2);
-    append_build_string(bs, prefix, -1);
-    append_build_string(bs, no_dash, -1);
-    append_build_string(bs, opt[val].long_name, -1);
-  }
-  
-  if (ambiguous > MAX_AMBIGUOUS_VALUES)
-    append_build_string(bs, ", and others", -1);
-  append_build_string(bs, ".)\n", -1);
-  va_end(val);
-  
- done:
-  do_error(clp, bs);
-  free_build_string(bs);
-  return 0;
+    Clp_BuildString *bs;
+    int i;
+    va_list val;
+    va_start(val, fmt);
+    bs = Clp_VaOptionError(clp, 0, fmt, val);
+    if (!bs) goto done;
+
+    append_build_string(bs, clp->internal->program_name, -1);
+    append_build_string(bs, ": (Possibilities are", -1);
+
+    for (i = 0; i < ambiguous && i < MAX_AMBIGUOUS_VALUES; i++) {
+	int value = ambiguous_values[i];
+	const char *no_dash = "";
+	if (value < 0)
+	    value = -(value + 1), no_dash = "no-";
+	if (i == 0)
+	    append_build_string(bs, " ", 1);
+	else if (i == ambiguous - 1)
+	    append_build_string(bs, (i == 1 ? " and " : ", and "), -1);
+	else
+	    append_build_string(bs, ", ", 2);
+	append_build_string(bs, prefix, -1);
+	append_build_string(bs, no_dash, -1);
+	append_build_string(bs, opt[value].long_name, -1);
+    }
+
+    if (ambiguous > MAX_AMBIGUOUS_VALUES)
+	append_build_string(bs, ", and others", -1);
+    append_build_string(bs, ".)\n", -1);
+    va_end(val);
+
+  done:
+    do_error(clp, bs);
+    free_build_string(bs);
+    return 0;
 }
 
 static int
 copy_string(char *buf, int buflen, int bufpos, const char *what)
 {
-  int l = strlen(what);
-  if (l > buflen - bufpos - 1)
-    l = buflen - bufpos - 1;
-  memcpy(buf + bufpos, what, l);
-  return l;
+    int l = strlen(what);
+    if (l > buflen - bufpos - 1)
+	l = buflen - bufpos - 1;
+    memcpy(buf + bufpos, what, l);
+    return l;
 }
 
 int
 Clp_CurOptionNameBuf(Clp_Parser *clp, char *buf, int buflen)
 {
-  Clp_Internal *cli = clp->internal;
-  Clp_Option *opt = cli->current_option;
-  int pos = 0;
-  if (!opt)
-    pos += copy_string(buf, buflen, pos, "(no current option!)");
-  else if (cli->current_short) {
-    pos += copy_string(buf, buflen, pos, cli->option_chars);
-    if (pos < buflen - 1)
-      buf[pos++] = opt->short_name;
-  } else if (cli->negated_by_no) {
-    pos += copy_string(buf, buflen, pos, cli->option_chars);
-    pos += copy_string(buf, buflen, pos, "no-");
-    pos += copy_string(buf, buflen, pos, opt->long_name);
-  } else {
-    pos += copy_string(buf, buflen, pos, cli->option_chars);
-    pos += copy_string(buf, buflen, pos, opt->long_name);
-  }
-  buf[pos] = 0;
-  return pos;
+    Clp_Internal *cli = clp->internal;
+    Clp_Option *opt = cli->current_option;
+    int pos = 0;
+    if (!opt)
+	pos += copy_string(buf, buflen, pos, "(no current option!)");
+    else if (cli->current_short) {
+	pos += copy_string(buf, buflen, pos, cli->option_chars);
+	if (pos < buflen - 1)
+	    buf[pos++] = opt->short_name;
+    } else if (cli->negated_by_no) {
+	pos += copy_string(buf, buflen, pos, cli->option_chars);
+	pos += copy_string(buf, buflen, pos, "no-");
+	pos += copy_string(buf, buflen, pos, opt->long_name);
+    } else {
+	pos += copy_string(buf, buflen, pos, cli->option_chars);
+	pos += copy_string(buf, buflen, pos, opt->long_name);
+    }
+    buf[pos] = 0;
+    return pos;
 }
 
 const char *
 Clp_CurOptionName(Clp_Parser *clp)
 {
-  static char buf[256];
-  Clp_CurOptionNameBuf(clp, buf, 256);
-  return buf;
+    static char buf[256];
+    Clp_CurOptionNameBuf(clp, buf, 256);
+    return buf;
 }
 
 #ifdef __cplusplus
