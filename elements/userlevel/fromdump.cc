@@ -45,7 +45,7 @@
 
 FromDump::FromDump()
     : Element(0, 1), _fd(-1), _buffer(0), _data_packet(0), _packet(0),
-      _task(this)
+      _task(this), _pipe(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -265,6 +265,7 @@ FromDump::initialize(ErrorHandler *errh)
     if (_fd < 0)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
+  retry_file:
     _pos = 0;
     int result = read_buffer(errh);
     if (result < 0) {
@@ -277,11 +278,27 @@ FromDump::initialize(ErrorHandler *errh)
 	uninitialize();
 	return errh->error("%s: not a tcpdump file (too short)", _filename.cc());
     }
+
+    // check for a gziped or bzip2d dump
+    if (_fd == STDIN_FILENO || _pipe)
+	/* cannot handle gzip or bzip2 */;
+    else if (_len >= 3
+	     && ((_buffer[0] == 037 && _buffer[1] == 0213)
+		 || (_buffer[0] == 'B' && _buffer[1] == 'Z' && _buffer[2] == 'h'))) {
+	close(_fd);
+	_fd = -1;
+	String command = (_buffer[0] == '\037' ? "zcat " : "bzcat ") + _filename;
+	_pipe = popen(command.cc(), "r");
+	if (!_pipe)
+	    return errh->error("%s while executing `%s'", strerror(errno), command.cc());
+	_fd = fileno(_pipe);
+	goto retry_file;
+    }
     
+    // check magic number
     fake_pcap_file_header swapped_fh;
     const fake_pcap_file_header *fh = (const fake_pcap_file_header *)_buffer;
 
-    // check magic number
     if (fh->magic == FAKE_PCAP_MAGIC || fh->magic == FAKE_MODIFIED_PCAP_MAGIC)
 	_swapped = false;
     else {
@@ -329,7 +346,9 @@ FromDump::initialize(ErrorHandler *errh)
 void
 FromDump::uninitialize()
 {
-    if (_fd >= 0 && _fd != STDIN_FILENO)
+    if (_pipe)
+	pclose(_pipe);
+    else if (_fd >= 0 && _fd != STDIN_FILENO)
 	close(_fd);
     if (_packet)
 	_packet->kill();
@@ -338,6 +357,7 @@ FromDump::uninitialize()
     _task.unschedule();
     _fd = -1;
     _packet = _data_packet = 0;
+    _pipe = 0;
 }
 
 bool

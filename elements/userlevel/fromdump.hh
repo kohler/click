@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef FROMDUMP_HH
 #define FROMDUMP_HH
 #include <click/element.hh>
@@ -18,6 +19,9 @@ Reads packets from a file produced by `tcpdump -w FILENAME' or ToDump. Pushes
 them out the output, and optionally stops the driver when there are no more
 packets. If TIMING is true, then FromDump tries to maintain the timing of the
 original packet stream. TIMING is false by default.
+
+FromDump also transparently reads gzip- and bzip2-compressed tcpdump files, if
+you have zcat(1) and bzcat(1) installed.
 
 Keyword arguments are:
 
@@ -137,6 +141,7 @@ class FromDump : public Element { public:
   
     struct timeval _time_offset;
     String _filename;
+    FILE *_pipe;
 
     int error_helper(ErrorHandler *, const char *);
 #ifdef ALLOW_MMAP
