@@ -1,3 +1,4 @@
+
 /*
  * ipreassembler.{cc,hh} -- defragments IP packets
  * Alexander Yip
@@ -80,7 +81,7 @@ Packet *
 IPReassembler::simple_action(Packet *p_in)
 {
   struct IPQueue *qp;
-  int flags, offset;
+  unsigned int flags, offset;
   int i, ihl, end;
   struct FragEntry *prev, *next, *tmp, *tfp;
   Packet *outPacket = NULL;
@@ -94,8 +95,7 @@ IPReassembler::simple_action(Packet *p_in)
   qp = queue_find(p_in->ip_header());
 
   // figure out offset & flags
-  offset = ntohs(p_in->ip_header()->ip_off);
-  //click_chatter(" offset: %x", offset);
+  offset = ntohs(p_in->ip_header()->ip_off );
   flags  = offset & ~IP_OFFMASK;
   offset &= IP_OFFMASK;
   offset <<= 3;
@@ -166,7 +166,8 @@ IPReassembler::simple_action(Packet *p_in)
     tfp = tmp->next;
     if (tmp->offset >= end)
       break;   // no overlaps
-    
+
+    // cut tmp (cut existing fragment)
     i = end - next->offset;  // overlap is 'i' bytes
     tmp->len -= i;    // 
     tmp->offset += i;
@@ -187,8 +188,8 @@ IPReassembler::simple_action(Packet *p_in)
       next = tfp;
 
       // kill that frag packet & it's FragEntry
-      tfp->p->kill();
-      delete(tfp);
+      tmp->p->kill();
+      delete(tmp);
     }
   }
 
@@ -267,8 +268,9 @@ IPReassembler::queue_free(struct IPQueue *qp, int free_first) {
     
     // dont free first packet unless specified (first packet 
     //  is usually pushed onto the next click element
-    if (free_first || fp != qp->frags)
+    if (free_first || fp != qp->frags){
       fp->p->kill();  
+    }
 
     // free FragEntry
     delete(fp);
