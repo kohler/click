@@ -1,3 +1,7 @@
+2001-05-03 Thursday 18:38  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: Click-1.2.0 released!
+
 2001-05-03 Thursday 18:14  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/: Makefile.in, mkwebdoc.pl: fix
@@ -2041,17 +2045,17 @@
 
 2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
 
+	* elements/local/staticthreadsched.cc: file staticthreadsched.cc
+	was initially added on branch smp_click.
+
+2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
+
 	* elements/local/threadmonitor.cc: file threadmonitor.cc was
 	initially added on branch smp_click.
 
 2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/staticthreadsched.hh: file staticthreadsched.hh
-	was initially added on branch smp_click.
-
-2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
-
-	* elements/local/staticthreadsched.cc: file staticthreadsched.cc
 	was initially added on branch smp_click.
 
 2001-02-24 Saturday 17:30  Benjie Chen <benjie@lcs.mit.edu>
@@ -2102,12 +2106,12 @@
 
 2001-02-23 Friday 11:29  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/fastudpflows.cc: file fastudpflows.cc was
+	* elements/linuxmodule/fastudpflows.hh: file fastudpflows.hh was
 	initially added on branch smp_click.
 
 2001-02-23 Friday 11:29  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/linuxmodule/fastudpflows.hh: file fastudpflows.hh was
+	* elements/linuxmodule/fastudpflows.cc: file fastudpflows.cc was
 	initially added on branch smp_click.
 
 2001-02-22 Thursday 18:50  Eddie Kohler <eddietwo@lcs.mit.edu>
@@ -2118,12 +2122,12 @@
 
 2001-02-22 Thursday 18:31  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/threadsched.hh: file threadsched.hh was
+	* elements/standard/threadsched.cc: file threadsched.cc was
 	initially added on branch smp_click.
 
 2001-02-22 Thursday 18:31  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/threadsched.cc: file threadsched.cc was
+	* elements/standard/threadsched.hh: file threadsched.hh was
 	initially added on branch smp_click.
 
 2001-02-22 Thursday 14:16  Eddie Kohler <eddietwo@lcs.mit.edu>
@@ -2754,12 +2758,12 @@
 
 2000-12-20 Wednesday 11:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/local/duppath.hh: file duppath.hh was initially added on
+	* elements/local/duppath.cc: file duppath.cc was initially added on
 	branch smp_click.
 
 2000-12-20 Wednesday 11:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/local/duppath.cc: file duppath.cc was initially added on
+	* elements/local/duppath.hh: file duppath.hh was initially added on
 	branch smp_click.
 
 2000-12-18 Monday 18:25  Benjie Chen <benjie@lcs.mit.edu>
@@ -4579,12 +4583,12 @@
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.cc: file msqueue.cc was initially added
+	* elements/standard/msqueue.hh: file msqueue.hh was initially added
 	on branch smp-benjie.
 
 2000-10-05 Thursday 15:40  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/msqueue.hh: file msqueue.hh was initially added
+	* elements/standard/msqueue.cc: file msqueue.cc was initially added
 	on branch smp-benjie.
 
 2000-10-05 Thursday 13:01  Eddie Kohler <eddietwo@lcs.mit.edu>
@@ -4952,12 +4956,12 @@
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.cc: file spinlockinfo.cc was
+	* elements/standard/spinlockinfo.hh: file spinlockinfo.hh was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
 
-	* elements/standard/spinlockinfo.hh: file spinlockinfo.hh was
+	* elements/standard/spinlockinfo.cc: file spinlockinfo.cc was
 	initially added on branch smp-benjie.
 
 2000-09-29 Friday 14:58  Benjie Chen <benjie@lcs.mit.edu>
