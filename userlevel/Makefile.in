@@ -110,16 +110,19 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: $(INSTALLPROGS) libclick.a
+install: $(INSTALLPROGS) install-lib
 	$(mkinstalldirs) $(bindir)
 	for i in $(INSTALLPROGS); do $(INSTALL) $$i $(bindir)/$$i; done
+install-lib: libclick.a
 	$(mkinstalldirs) $(libdir)
 	$(INSTALL) libclick.a $(libdir)/libclick.a
 install-man:
 
 clean:
 	rm -f *.d *.o $(INSTALLPROGS) elements.mk elements.cc elements.conf libclick.a
+clean-lib:
+	rm -f $(LIBOBJS) libclick.a
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install install-man
+.PHONY: all clean clean-lib distclean elemlist install install-lib install-man
