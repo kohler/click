@@ -1,3 +1,9 @@
+2003-10-06 Monday 22:50  John Bicket <jbicket@mit.edu>
+
+	* elements/standard/notifierqueue.hh (1.10): make config and
+	tokenqueue work with non-token packets so it can be the masquerade
+	as a normal queue.
+
 2003-10-06 Monday 12:00  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/ipfilter.cc (1.38): avoid potential crash on null
