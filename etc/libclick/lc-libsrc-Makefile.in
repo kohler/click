@@ -1,0 +1,103 @@
+## Click userlevel driver Makefile ##
+SHELL = @SHELL@
+
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
+top_builddir := ..
+subdir := libsrc
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libdir = @libdir@
+
+CC = @CC@
+CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+AR = @AR@
+RANLIB = @RANLIB@
+INSTALL = @INSTALL@
+mkinstalldirs = @top_srcdir@/mkinstalldirs
+
+.SUFFIXES:
+.SUFFIXES: .S .c .cc .o .s .ii
+
+.c.o:
+	$(COMPILE) -c $<
+.s.o:
+	$(COMPILE) -c $<
+.S.o:
+	$(COMPILE) -c $<
+.cc.o:
+	$(CXXCOMPILE) -c $<
+.cc.ii:
+	$(CXXCOMPILE) -E $< > $@
+
+
+ifndef INSTALLPROGS
+INSTALLPROGS = click
+endif
+
+GENERIC_OBJS = string.o straccum.o \
+	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
+	ipaddress.o ipaddressset.o ipflowid.o etheraddress.o \
+	packet.o \
+	error.o glue.o task.o timer.o atomic.o gaprate.o \
+	element.o \
+	confparse.o variableenv.o lexer.o elemfilter.o \
+	routerthread.o router.o \
+	crc32.o in_cksum.o iptable.o iptable2.o radix.o \
+	archive.o packageutils.o userutils.o \
+	$(EXTRA_DRIVER_OBJS)
+
+EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
+
+LIBOBJS = $(GENERIC_OBJS) \
+	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
+	drivermanager.o clp.o
+
+CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
+CFLAGS = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@
+
+DEFS = @DEFS@
+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	@PCAP_HEADER_PATH@
+LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
+LIBS = @LIBS@ @PCAP_LIBRARY@ @DL_LIBRARY@ @SOCKET_LIBS@
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+all: libclick.a
+
+libclick.a: Makefile $(LIBOBJS)
+	$(AR) cru libclick.a $(LIBOBJS)
+	$(RANLIB) libclick.a
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+install: libclick.a
+	$(mkinstalldirs) $(libdir)
+	$(INSTALL) libclick.a $(libdir)/libclick.a
+install-man:
+
+clean:
+	rm -f *.d *.o libclick.a
+distclean: clean
+	-rm -f Makefile
+
+.PHONY: all clean distclean elemlist install install-man

@@ -1,0 +1,81 @@
+# Warning: this file must be usable by regular make
+# (unlike the Makefiles in subdirectories).
+
+SHELL = @SHELL@
+@SUBMAKE@
+
+PACKAGE = libclick
+VERSION = @CLICK_VERSION@
+
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+top_builddir = .
+subdir = .
+AUTOCONF = @AUTOCONF@
+PERL = @PERL@
+INSTALL = @INSTALL@
+INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
+INSTALL_DATA = @INSTALL@ -m 644
+INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
+mkinstalldirs = @top_srcdir@/mkinstalldirs
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+includedir = @includedir@/click
+bindir = @bindir@
+datadir = @datadir@/click
+
+all: libsrc Makefile
+
+libsrc: Makefile stamp-h
+	@cd libsrc && $(MAKE) all
+
+install: stamp-h
+	@(cd libsrc && $(MAKE) install) || exit 1
+	@$(MAKE) install-local install-include
+install-lib: stamp-h
+	@(cd libsrc && $(MAKE) install) || exit 1
+install-local: $(srcdir)/click-buildtool click-compile
+	$(mkinstalldirs) $(bindir)
+	$(INSTALL_IF_CHANGED) $(srcdir)/click-buildtool $(bindir)/click-buildtool
+	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
+	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
+# note: install-include installs include/click/config.h, not config.h
+install-include: stamp-h
+	$(mkinstalldirs) $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/config.h $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/pathvars.h $(includedir)
+	$(mkinstalldirs) $(includedir)/standard
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(includedir)/standard
+
+click-compile: $(srcdir)/click-compile.in
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	@chmod +x click-compile; touch click-compile
+
+$(srcdir)/configure: $(srcdir)/configure.in
+	cd $(srcdir) && $(AUTOCONF)
+config.status: $(srcdir)/configure
+	$(SHELL) $(srcdir)/configure @ac_configure_args@
+Makefile: config.status $(srcdir)/Makefile.in
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
+config.h: stamp-h
+stamp-h: $(srcdir)/config.h.in config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES= CONFIG_HEADERS='include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in' $(SHELL) ./config.status
+	echo > stamp-h
+
+clean:
+	@cd libsrc && $(MAKE) clean
+	-rm -f elementmap
+distclean:
+	@cd libsrc && $(MAKE) distclean
+	-rm -f config.h Makefile config.status
+	-rm -f config.cache config.log click-compile stamp-h
+
+
+.PHONY: all libsrc clean distclean \
+	install install-lib install-local install-include
