@@ -12,6 +12,9 @@
 // A geographical position.
 // Suitable for including inside a packet.
 struct grid_location {
+
+// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+
   // Internally, we remember positions as lat/lon in milliseconds,
   // as 32-bit integers in network order.
   long _mslat;
@@ -57,6 +60,13 @@ struct grid_location {
 };
 
 struct grid_hdr {
+
+// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+#define GRID_VERSION 0xfecf
+
+  unsigned int version; // look, doug, a coherent variable name
+                        // (should maybe be called nbr_vrs or something)
+
   unsigned char hdr_len;    // sizeof(grid_hdr). Why do we need this? -- it was changing...
 
   unsigned char type;
@@ -86,6 +96,10 @@ struct grid_hdr {
    * field.  The other location info is typically handled by the
    * FixSrcLoc element.  
    */
+
+
+// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+
   unsigned int ip;          // Sender's IP address. 
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
   unsigned short loc_err;   // Error radius of position, in metres.  
@@ -117,6 +131,9 @@ struct grid_hdr {
 };
 
 struct grid_nbr_entry {
+
+// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+
   unsigned int ip; 
   unsigned int next_hop_ip;
   unsigned char num_hops; 
@@ -138,6 +155,9 @@ struct grid_nbr_entry {
 };
 
 struct grid_hello {
+
+// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+
   unsigned int seq_no;
   unsigned int age; // decreasing, approximately in milliseconds
 
@@ -159,6 +179,9 @@ struct grid_hello {
 };
 
 struct grid_nbr_encap {
+
+// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+
   grid_nbr_encap() { assert(sizeof(grid_nbr_encap) % 4 == 0); }
   unsigned int dst_ip;
   struct grid_location dst_loc;
@@ -168,6 +191,9 @@ struct grid_nbr_encap {
 };
 
 struct grid_loc_query {
+
+// REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
+
   grid_loc_query() { assert(sizeof(grid_loc_query) % 4 == 0); }
   unsigned int dst_ip;
   unsigned int seq_no;

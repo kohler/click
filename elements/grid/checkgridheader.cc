@@ -18,6 +18,7 @@
  */
 
 #include <click/config.h>
+#include <click/confparse.hh>
 #include "checkgridheader.hh"
 #include <click/glue.hh>
 #include "grid.hh"
@@ -48,7 +49,6 @@ CheckGridHeader::notify_noutputs(int n)
 {
   set_noutputs(n < 2 ? 1 : 2);
 }
-
 
 void
 CheckGridHeader::drop_it(Packet *p)
@@ -83,6 +83,12 @@ CheckGridHeader::simple_action(Packet *p)
   if(hlen < sizeof(grid_hdr))
     goto bad;
   */
+
+  if (gh->version != GRID_VERSION) {
+     click_chatter ("%s: unknown grid version %x", id().cc(), gh->version);
+     p->kill();
+     return 0;
+  }
   
   if (tlen + sizeof(click_ether) > p->length()) { 
     /* can only check inequality, as short packets are padded to a

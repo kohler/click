@@ -17,6 +17,7 @@
  */
 
 #include <click/config.h>
+#include <click/confparse.hh>
 #include "setgridchecksum.hh"
 #include <click/glue.hh>
 #include "grid.hh"
@@ -55,6 +56,8 @@ SetGridChecksum::simple_action(Packet *xp)
   if (/* hlen < sizeof(grid_hdr) || */ // grid_hdr size keeps changing...
       tlen > plen - sizeof(click_ether))
     goto bad;
+
+  gh->version = GRID_VERSION;
 
   gh->cksum = 0;
   gh->cksum = click_in_cksum((unsigned char *) gh, tlen);

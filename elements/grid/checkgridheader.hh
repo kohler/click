@@ -32,7 +32,7 @@ class CheckGridHeader : public Element {
   
   CheckGridHeader *clone() const;
   void notify_noutputs(int);
-  
+
   int drops() const				{ return _drops; }
   
   void add_handlers();

@@ -121,6 +121,12 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 	struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + gh->hdr_len);
 	IPAddress dest_ip(encap->dst_ip);
 
+// 	click_chatter ("lr: got packet for %s; I am %s; agi=%s, is_gw = %d\n",
+// 		       dest_ip.s().cc(), 
+// 		       _ipaddr.s().cc(),
+// 		       _any_gateway_ip.s().cc(),
+// 		       _gw_info->is_gateway () ? 1 : 0);
+
  	if ((dest_ip == _any_gateway_ip && _gw_info->is_gateway ())
 	    || (dest_ip == _ipaddr)) {
 	  // it's for us, send to higher level
@@ -153,7 +159,17 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     assert(port == 1);
     // check to see is the desired dest is our neighbor
     IPAddress dst = packet->dst_ip_anno();
-    if (dst == _ipaddr) {
+
+//     click_chatter ("lr: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
+// 		   dst.s().cc(), 
+// 		   _ipaddr.s().cc(),
+// 		   _any_gateway_ip.s().cc(),
+// 		   _gw_info->is_gateway () ? 1 : 0);
+    
+    if (dst == _any_gateway_ip && _gw_info->is_gateway ()) {
+      //     output ( );
+      packet->kill ();
+    } if (dst == _ipaddr) {
       click_chatter("%s: got IP packet from us for our address; looping it back.  Check the configuration.", id().cc());
       output(1).push(packet);
     } else {
@@ -206,18 +222,14 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) co
 
   if (dest_ip == _any_gateway_ip) {
     rte = _rtes->current_gateway();
-    if (rte) {
-      return true;
-    } else {
       
-      // if we're here, we are presumably being asked to forward a grid
-      // packet to an internet host, but we have no local routes to a
-      // gateway.  drop here?
-      
-      // i guess we could do a loc query for a gateway...
-      
-      return false;
-    }
+    // what if we are being asked to forward a grid packet to an
+    // internet host, but we have no local routes to a gateway?
+    // drop here?
+    
+    // i guess we could do a loc query for a gateway...  seems a little
+    // sketchy to me though.
+
   } else {
     rte = _rtes->_rtes.findp(dest_ip);
   }
