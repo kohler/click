@@ -70,10 +70,10 @@ ElementT::operator=(const ElementT &o)
     name = o.name;
     _configuration = o._configuration;
     _landmark = o._landmark;
-    _tunnel_input = -1;
-    _tunnel_output = -1;
-    _ninputs = 0;
-    _noutputs = 0;
+    _tunnel_input = o._tunnel_input;
+    _tunnel_output = o._tunnel_output;
+    _ninputs = o._ninputs;
+    _noutputs = o._noutputs;
     flags = o.flags;
     return *this;
 }
