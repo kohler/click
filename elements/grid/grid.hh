@@ -151,7 +151,9 @@ grid_hdr::type_string(unsigned char type)
   case GRID_HELLO: return String("GRID_HELLO"); break;
   case GRID_LR_HELLO: return String("GRID_LR_HELLO"); break;
   case GRID_NBR_ENCAP: return String("GRID_NBR_ENCAP"); break;
-  default: return String("Unknown");
+  case GRID_LOC_REPLY: return String("GRID_LOC_REPLY"); break;
+  case GRID_LOC_QUERY: return String("GRID_LOC_QUERY"); break;
+  default: return String("Unknown-type");
   }
 }
 

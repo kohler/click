@@ -20,8 +20,8 @@
  * location that we need, the mapping is recorded and the saved Grid
  * packet is sent through output 0.
  *
- * Input 1 expects flooding query packets, and response packets for
- * us.  Packets must include all headers (MAC, Grid, etc.)
+ * Input 1 expects flooding query packets, and query reply response
+ * packets for us.  Packets must include all headers (MAC, Grid, etc.)
  *
  *
  * =a
