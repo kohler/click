@@ -1,3 +1,12 @@
+2004-04-28 Wednesday 14:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test.click (1.10): add Align to prevent confusion
+
+2004-04-28 Wednesday 13:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* acclick.m4 (1.39), aclocal.m4 (1.39), configure (1.8): change
+	INSTALL_IF_CHANGED to refer to "$(INSTALL)"
+
 2004-04-28 Wednesday 13:25  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/kerneltun.cc (1.48): test for SIOCSIFMTU
