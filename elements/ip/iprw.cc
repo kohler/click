@@ -168,7 +168,7 @@ IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
 {
   // otherwise, pattern definition
   if (words.size() != 4)
-    return errh->error("bad pattern spec: should be `NAME' or `SADDR SPORT DADDR DPORT'");
+    return errh->error("bad pattern spec: should be 'NAME' or 'SADDR SPORT DADDR DPORT'");
   
   IPAddress saddr, daddr;
   int32_t sportl, sporth, dport;
@@ -176,17 +176,17 @@ IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
   if (words[0] == "-")
     saddr = 0;
   else if (!cp_ip_address(words[0], &saddr, e))
-    return errh->error("bad source address `%s' in pattern spec", words[0].cc());
+    return errh->error("bad source address '%s' in pattern spec", words[0].cc());
   
   if (words[1] == "-")
     sportl = sporth = 0;
   else {
     const char *dash = find(words[1], '-');
     if (!cp_integer(words[1].substring(words[1].begin(), dash), &sportl))
-      return errh->error("bad source port `%s' in pattern spec", words[1].cc());
+      return errh->error("bad source port '%s' in pattern spec", words[1].cc());
     if (dash < words[1].end()) {
       if (!cp_integer(words[1].substring(dash + 1, words[1].end()), &sporth))
-	return errh->error("bad source port `%s' in pattern spec", words[1].cc());
+	return errh->error("bad source port '%s' in pattern spec", words[1].cc());
     } else
       sporth = sportl;
   }
@@ -196,12 +196,12 @@ IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
   if (words[2] == "-")
     daddr = 0;
   else if (!cp_ip_address(words[2], &daddr, e))
-    return errh->error("bad destination address `%s' in pattern spec", words[2].cc());
+    return errh->error("bad destination address '%s' in pattern spec", words[2].cc());
   
   if (words[3] == "-")
     dport = 0;
   else if (!cp_integer(words[3], &dport))
-    return errh->error("bad destination port `%s' in pattern spec", words[3].cc());
+    return errh->error("bad destination port '%s' in pattern spec", words[3].cc());
   if (dport < 0 || dport > 0xFFFF)
     return errh->error("destination port %d out of range in pattern spec", dport);
 
@@ -215,7 +215,7 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
 {
   // otherwise, pattern definition
   if (words.size() != 2)
-    return errh->error("bad pattern spec: should be `NAME' or `SADDR/PREFIX DADDR'");
+    return errh->error("bad pattern spec: should be 'NAME' or 'SADDR/PREFIX DADDR'");
   
   IPAddress saddr1, saddr2;  
   if (words[0] == "-")
@@ -235,7 +235,7 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
 	&& cp_ip_address(words[0].substring(dash+1, words[0].end()), &saddr2, e))
       /* ok */;
     else
-      return errh->error("bad source address `%s' in pattern spec", words[0].cc());
+      return errh->error("bad source address '%s' in pattern spec", words[0].cc());
   }
 
   // check that top 16 bits agree
@@ -245,7 +245,7 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
       uint32_t xorval = ntohl(saddr1.addr()) ^ ntohl(saddr2.addr());
       int first_different = first_bit_set(xorval);
       if (first_different <= 16)
-	  return errh->error("source addresses `%s' and `%s' too far apart;\nmust agree in at least top 16 bits", saddr1.s().cc(), saddr2.s().cc());
+	  return errh->error("source addresses '%s' and '%s' too far apart;\nmust agree in at least top 16 bits", saddr1.s().cc(), saddr2.s().cc());
       IPAddress prefix = ~IPAddress::make_prefix(first_different - 1);
       sportl = ntohl((unsigned)(saddr1 & prefix));
       sporth = ntohl((unsigned)(saddr2 & prefix));
@@ -258,7 +258,7 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
   if (words[1] == "-")
     daddr = 0;
   else if (!cp_ip_address(words[1], &daddr, e))
-    return errh->error("bad destination address `%s' in pattern spec", words[2].cc());
+    return errh->error("bad destination address '%s' in pattern spec", words[2].cc());
   
   *pstore = new Pattern(saddr1, sportl, sporth, daddr, 0);
   (*pstore)->_is_napt = false;
@@ -329,7 +329,7 @@ IPRw::Pattern::find_sport()
   if (_sportl == _sporth || !_rover)
     return _sportl;
 
-  // search for empty port number starting at `_rover'
+  // search for empty port number starting at '_rover'
   Mapping *r = _rover;
   uint16_t this_sport = ntohs(r->sport());
   do {
@@ -509,7 +509,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
   if (word == "pass" || word == "passthrough" || word == "nochange") {
     int32_t outnum = 0;
     if (rest && !cp_integer(rest, &outnum))
-      return errh->error("%s: syntax error; expected `nochange [OUTPUT]'", name.cc());
+      return errh->error("%s: syntax error; expected 'nochange [OUTPUT]'", name.cc());
     else if (outnum < 0 || outnum >= noutputs())
       return errh->error("%s: output port out of range", name.cc());
     is.kind = INPUT_SPEC_NOCHANGE;
@@ -520,14 +520,14 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
 		    cpUnsigned, "forward output", &is.u.keep.fport,
 		    cpUnsigned, "reverse output", &is.u.keep.rport,
 		    cpEnd) < 0)
-      return errh->error("%s: syntax error; expected `keep FOUTPUT ROUTPUT'", name.cc());
+      return errh->error("%s: syntax error; expected 'keep FOUTPUT ROUTPUT'", name.cc());
     if (is.u.keep.fport >= noutputs() || is.u.keep.rport >= noutputs())
       return errh->error("%s: output port out of range", name.cc());
     is.kind = INPUT_SPEC_KEEP;
     
   } else if (word == "drop") {
     if (rest)
-      return errh->error("%s: syntax error; expected `drop'", name.cc());
+      return errh->error("%s: syntax error; expected 'drop'", name.cc());
     
   } else if (word == "pattern") {
     if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport, &is.u.pattern.rport, this, errh) < 0)
@@ -542,7 +542,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
   } else if (Element *e = cp_element(word, this, 0)) {
     IPMapper *mapper = (IPMapper *)e->cast("IPMapper");
     if (rest)
-      return errh->error("%s: syntax error: expected `ELEMENTNAME'", name.cc());
+      return errh->error("%s: syntax error: expected 'ELEMENTNAME'", name.cc());
     else if (!mapper)
       return errh->error("%s: element is not an IPMapper", name.cc());
     else {
@@ -552,7 +552,7 @@ IPRw::parse_input_spec(const String &line, InputSpec &is,
     }
     
   } else
-    return errh->error("%s: unknown specification `%s'", name.cc(), word.cc());
+    return errh->error("%s: unknown specification '%s'", name.cc(), word.cc());
   
   return 0;
 }
