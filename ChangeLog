@@ -1,3 +1,9 @@
+2004-08-04 Wednesday 13:39  Max Krohn <krohn@mit.edu>
+
+	* conf/click-mkclgw.pl (1.10): Don't allow labels with '-'
+	characters in them; the resulting click configuration will not
+	parse in click.
+
 2004-08-03 Tuesday 15:33  Max Krohn <krohn@mit.edu>
 
 	* conf/click-mkclgw.pl (1.9): added https.
