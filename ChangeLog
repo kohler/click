@@ -1,3 +1,10 @@
+2005-01-03 Monday 23:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: analysis/fromdagdump.cc (1.26), userlevel/fakepcap.cc
+	(1.17), userlevel/fakepcap.hh (1.21), userlevel/fromdump.cc (1.95),
+	userlevel/fromdump.hh (1.57), userlevel/todump.hh (1.37): add
+	FORCE_IP support for DLT NULL
+
 2005-01-03 Monday 23:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/routerthread.hh (1.30), lib/routerthread.cc (1.53):
