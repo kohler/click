@@ -3458,6 +3458,7 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 	struct e1000_tx_desc *tx_desc;
 	int i, len, offset, txd_needed;
 	uint32_t txd_upper, txd_lower;
+	static int test_limit = 0;
 
 	if(unlikely(!netif_carrier_ok(netdev))) {
 		netif_stop_queue(netdev);
@@ -3465,6 +3466,10 @@ e1000_tx_pqueue(struct net_device *netdev, struct sk_buff *skb)
 	}
 
 	txd_needed = TXD_USE_COUNT(skb->len, E1000_MAX_TXD_PWR);
+	if (test_limit < 10) {
+	    printk("<1> txd_needed: %d\n", txd_needed);
+	    test_limit++;
+	}
 
 	/* make sure there are enough Tx descriptors available in the ring */
 	if(E1000_DESC_UNUSED(&adapter->tx_ring) <= (txd_needed + 1)) {
