@@ -1,5 +1,5 @@
 %define name click
-%define version 1.4.1
+%define version 1.4.2
 %define release 1
 
 Summary: The Click modular router

@@ -1,5 +1,55 @@
 Click NEWS
 
+Version 1.4.2
+
+* BSD kernel module support!  Implemented by Marko Zec, University of
+  Zagreb.
+
+* KernelTap is undeprecated.  (jbicket)
+
+* User-level Click has FromHost and ToHost elements, at least on Linux!
+  (jbicket)
+
+* Add FullNoteQueue option.  FullNoteQueue informs upstream listeners when
+  it's full.  Queue now invokes FullNoteQueue by default.  (kohler)
+
+* New elements: Truncate, RandomSeed, IPAddrPairRewriter, SchedOrderTest.
+
+* IPFilter/IPClassifier: Support "ip[POS:LEN]" and "transp[POS:LEN]"
+  expressions.  (kohler)
+
+* Add support for new-format DAG dumps, and more encapsulation types for
+  FromDump, including 802.11 and PPP.  (kohler)
+
+* ToIPSummaryDump will emit a dash for a field only if that field wasn't
+  captured, rather than if the header wasn't captured.  For example, if the
+  first 8 bytes of the TCP header were captured, ToIPSummaryDump will
+  happily print the source and destination ports, but not anything further.
+  (kohler)
+
+* DriverManager: Add "loop" instruction, available at user level.  (kohler)
+
+* Bug fixes, particularly to IPReassembler, click-fastclassifier,
+  click-devirtualize (kohler), and fix the linuxmodule bug that led to
+  errors like "wmem_alloc != 0" (jbicket).
+
+* Internal changes (kohler)
+
+** Handler class rewritten. 
+
+** Timers are stored in a heap; thanks to Jonathan K. Lee for an initial
+   implementation.
+
+** If you supply the --enable-task-heap option to ./configure, tasks will
+   also be stored in a heap, rather than a linked list.
+
+* Thanks to Peter De Cleyn, Holger Dreger, Thomer Gil, Jeff Gold, Bob
+  Keyes, Peter Lippens, Nikitas Liogkas, Kevin Mitchell, Indian Mogul,
+  Michele Mordenti, Vern Paxson, Marcel Poisot, Pavlin Radoslavov, Rick
+  Stewart, Erik VandeKieft, Frederic Van Quickenborne, Erwin Van de Velde,
+  Marko Zec.
+
+
 Version 1.4.1   7.Jul.2004
 
 * Added Element::static_initialize() and static_cleanup() methods.
