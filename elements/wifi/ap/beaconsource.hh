@@ -1,5 +1,5 @@
-#ifndef CLICK_BEACONSCANNER_HH
-#define CLICK_BEACONSCANNER_HH
+#ifndef CLICK_BEACONSOURCE_HH
+#define CLICK_BEACONSOURCE_HH
 #include <click/element.hh>
 #include <clicknet/ether.h>
 CLICK_DECLS
@@ -7,7 +7,7 @@ CLICK_DECLS
 /*
 =c
 
-BeaconScanner(CHANNEL)
+BeaconSource(CHANNEL)
 
 =s decapsulation, Wifi -> Ethernet
 
@@ -28,53 +28,41 @@ if channel is > 0, it looks at only beacons with on channel.
 
   wifi_cl [0] -> Discard; //mgt 
   wifi_cl [1] -> Discard; //ctl
-  wifi_cl [2] -> wifi_decap :: BeaconScanner() -> ...
+  wifi_cl [2] -> wifi_decap :: BeaconSource() -> ...
 
 =a
 
 EtherEncap */
 
-class BeaconScanner : public Element { public:
+class BeaconSource : public Element { public:
   
-  BeaconScanner();
-  ~BeaconScanner();
+  BeaconSource();
+  ~BeaconSource();
 
-  const char *class_name() const	{ return "BeaconScanner"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *class_name() const	{ return "BeaconSource"; }
+  const char *processing() const	{ return PUSH; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
-
-  Packet *simple_action(Packet *);
-
-
   void add_handlers();
-  void reset();
+  void run_timer();
+  int initialize (ErrorHandler *);
 
+  void send_beacon();
+
+
+  Timer _timer;
   bool _debug;
   int _channel;
+  EtherAddress _bssid;
+  String _ssid;
+  Vector<int> _rates;
+  int _interval_ms;
+
 
   String scan_string();
  private:
 
-
-
-  class wap {
-  public:
-    EtherAddress _eth;
-    String _ssid;
-    int _channel;
-    uint16_t _capability;
-    Vector<int> _rates;
-    Vector<int> _basic_rates;
-    int _rssi;
-    struct timeval _last_rx;
-  };
-
-  typedef HashMap<EtherAddress, wap> APTable;
-  typedef APTable::const_iterator APIter;
-  
-  class APTable _waps;
 
 };
 

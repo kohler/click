@@ -8,13 +8,22 @@ CLICK_DECLS
 /*
 =c
 
-WifiEncap(BSSID)
+WifiEncap(mode, BSSID)
 
 =s encapsulation, Wifi -> Ethernet
 
 Turns 80211 packets into ethernet packets encapsulates packets in Ethernet header
 
 =d
+
+Mode is one of:
+0x00 STA->STA
+0x01 STA->AP
+0x02 AP->STA
+0x03 AP->AP
+
+ BSSID is an ethernet address
+
 
 =e
 
@@ -49,6 +58,8 @@ class WifiEncap : public Element { public:
 
 
   bool _debug;
+
+  unsigned _mode;
   EtherAddress _bssid;
  private:
 

@@ -16,14 +16,18 @@
  */
 
 #include <click/config.h>
-#include "beaconscanner.hh"
+#include <clicknet/wifi.h>
 #include <click/etheraddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <clicknet/wifi.h>
 #include <clicknet/llc.h>
 #include <click/straccum.hh>
+#include <click/vector.hh>
+#include <click/hashmap.hh>
+#include <click/packet_anno.hh>
+#include "beaconscanner.hh"
+
 CLICK_DECLS
 
 BeaconScanner::BeaconScanner()
@@ -41,11 +45,13 @@ int
 BeaconScanner::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
-  _debug = true;
+  _debug = false;
+  _channel = 0;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
+		  "CHANNEL", cpInteger, "channel", &_channel,
 		  0) < 0)
     return -1;
   return 0;
@@ -60,6 +66,10 @@ BeaconScanner::simple_action(Packet *p)
   uint8_t type;
   uint8_t subtype;
 
+
+  if (_channel < 0) {
+    return p;
+  }
 
   if (p->length() < sizeof(struct click_wifi)) {
     click_chatter("%{element}: packet too small: %d vs %d\n",
@@ -104,7 +114,9 @@ BeaconScanner::simple_action(Packet *p)
 
   uint8_t *cap_info = ptr;
   ptr += 2;
-  
+
+  uint16_t capability = cap_info[0] + (cap_info[1] << 8);
+
   uint8_t *end  = (uint8_t *) p->data() + p->length();
 
   uint8_t *ssid_l = NULL;
@@ -136,65 +148,119 @@ BeaconScanner::simple_action(Packet *p)
     case 150: /* ??? */
       break;
     default:
-      click_chatter("%{element}: ignored element id %u %u \n",
-		    this,
-		    *ptr,
-		    ptr[1]);
+      if (_debug) {
+	click_chatter("%{element}: ignored element id %u %u \n",
+		      this,
+		      *ptr,
+		      ptr[1]);
+      }
     }
     ptr += ptr[1] + 2;
 
   }
-  
+
+
+  if (_channel > 0 && ds_l && ds_l[2] != _channel) {
+    return p;
+  }
   String ssid;
-  if (ssid_l) {
+  if (ssid_l && ssid_l[1]) {
     ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
   } else {
+    /* there was no element or it has zero length */
     ssid = "(none)";
   }
 
-  String rates;
+  EtherAddress bssid = EtherAddress(w->i_addr3);
+
+  wap *ap = _waps.findp(bssid);
+  if (!ap) {
+    _waps.insert(bssid, wap());
+    ap = _waps.findp(bssid);
+  }
+
+  
+  ap->_eth = bssid;
+  ap->_ssid = ssid;
+  ap->_channel = (ds_l) ? ds_l[2] : -1;
+  ap->_rssi = WIFI_SIGNAL_ANNO(p);
+
+  ap->_capability = capability;
+  ap->_basic_rates.clear();
+  ap->_rates.clear();
+  click_gettimeofday(&ap->_last_rx);
   if (rates_l) {
-    StringAccum sa;
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
-
+      
       if (rate & WIFI_RATE_BASIC) {
-	sa << "basic ";
+	ap->_basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
+      } else {
+	ap->_rates.push_back((int)(rate & WIFI_RATE_VAL));
       }
-      sa << (int)(rate & WIFI_RATE_VAL) << " ";
     }
-    rates = sa.take_string();
-  } else {
-    rates = "(none)";
   }
 
-  String ds = "(none)";
-  if (ds_l) {
-    uint8_t dot11channel = ds_l[2];
-    StringAccum sa;
-    sa << (int) dot11channel;
-    ds = sa.take_string();
-  }
 
-  StringAccum sa;
-
-  sa << ": beacon ";
-  sa << EtherAddress(w->i_addr2) << " -> ";
-  sa << EtherAddress(w->i_addr1) << " ";
-  sa << "(" <<EtherAddress(w->i_addr3) << ")";
-  sa << " ssid " << ssid;
-  sa << " channel " << ds;
-  sa << " rates " << rates;
-  if (_debug) {
-    click_chatter("%s\n",
-		  sa.take_string().cc());
-  }
-
+  
   return p;
 }
 
 
-enum {H_DEBUG};
+String
+BeaconScanner::scan_string()
+{
+  StringAccum sa;
+  struct timeval now;
+  click_gettimeofday(&now);
+  for (APIter iter = _waps.begin(); iter; iter++) {
+    wap ap = iter.value();
+    sa << ap._eth << " ";
+    sa << "channel " << ap._channel << " ";
+    sa << "ssid " << ap._ssid << " ";
+    sa << "last_rx " << now - ap._last_rx << " ";
+    sa << "+" << ap._rssi << " ";
+
+    sa << "[ ";
+    if (ap._capability & WIFI_CAPINFO_ESS) {
+      sa << "ESS ";
+    }
+    if (ap._capability & WIFI_CAPINFO_IBSS) {
+      sa << "IBSS ";
+    }
+    if (ap._capability & WIFI_CAPINFO_CF_POLLABLE) {
+      sa << "CF_POLLABLE ";
+    }
+    if (ap._capability & WIFI_CAPINFO_CF_POLLREQ) {
+      sa << "CF_POLLREQ ";
+    }
+    if (ap._capability & WIFI_CAPINFO_PRIVACY) {
+      sa << "PRIVACY ";
+    }
+    sa << "] ";
+
+    sa << "( { ";
+    for (int x = 0; x < ap._basic_rates.size(); x++) {
+      sa << ap._basic_rates[x] << " ";
+    }
+    sa << "} ";
+    for (int x = 0; x < ap._rates.size(); x++) {
+      sa << ap._rates[x] << " ";
+    }
+
+    sa << ")\n";
+  }
+  return sa.take_string();
+}
+
+
+void 
+BeaconScanner::reset() 
+{
+  _waps.clear();
+}
+
+enum {H_DEBUG, H_SCAN, H_RESET, H_CHANNEL};
 
 static String 
 BeaconScanner_read_param(Element *e, void *thunk)
@@ -203,6 +269,10 @@ BeaconScanner_read_param(Element *e, void *thunk)
     switch ((uintptr_t) thunk) {
       case H_DEBUG:
 	return String(td->_debug) + "\n";
+      case H_SCAN:
+	return td->scan_string();
+      case H_CHANNEL:
+	return String(td->_channel) + "\n";
     default:
       return String();
     }
@@ -221,6 +291,17 @@ BeaconScanner_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
+  case H_RESET: {    //reset
+    f->reset();
+  }
+  case H_CHANNEL: {    //channel
+    int channel;
+    if (!cp_integer(s, &channel)) 
+      return errh->error("channel parameter must be integer");
+    f->_channel = channel;
+    break;
+  }
+
   }
   return 0;
 }
@@ -231,8 +312,19 @@ BeaconScanner::add_handlers()
   add_default_handlers(true);
 
   add_read_handler("debug", BeaconScanner_read_param, (void *) H_DEBUG);
+  add_read_handler("scan", BeaconScanner_read_param, (void *) H_SCAN);
+  add_read_handler("channel", BeaconScanner_read_param, (void *) H_CHANNEL);
 
   add_write_handler("debug", BeaconScanner_write_param, (void *) H_DEBUG);
+  add_write_handler("reset", BeaconScanner_write_param, (void *) H_RESET);
+  add_write_handler("channel", BeaconScanner_write_param, (void *) H_CHANNEL);
 }
+
+
+#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
+#include <click/vector.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
+#endif
 CLICK_ENDDECLS
 EXPORT_ELEMENT(BeaconScanner)
