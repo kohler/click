@@ -66,6 +66,7 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
+			cpOptional, 
                         cpElement, "GenericGridRouteTable element", &_rtes,
 			cpKeywords,
                         "GWI", cpElement, "GridGatewayInfo element", &_gw_info,
@@ -84,10 +85,13 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
     return errh->error("%s: GridRouteTable argument %s has the wrong type",
 		       id().cc(),
 		       _rtes->id().cc());
-  } else if (_rtes == 0) {
+  } 
+#if 0
+  else if (_rtes == 0) {
     return errh->error("%s: no GridRouteTable element given",
 		       id().cc());
   }
+#endif
 
   if (_gw_info && _gw_info->cast("GridGatewayInfo") == 0) {
     return errh->error("%s: GridGatewayInfo argument %s has the wrong type",
@@ -160,7 +164,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 	IPAddress dest_ip(encap->dst_ip);
 #if NOISY
  	click_chatter("lr %s: got %s packet for %s; I am %s; agi=%s, is_gw = %d\n",
-		      id.cc(),
+		      id().cc(),
 		      grid_hdr::type_string(gh->type).cc(),
 		      dest_ip.s().cc(), 
 		      _ipaddr.s().cc(),
@@ -209,7 +213,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     IPAddress dst = packet->dst_ip_anno();
 #if NOISY
     click_chatter("lr %s: got packet for %s; I am %s; agi=%s, is_gw=%d\n",
-		  id.cc(),
+		  id().cc(),
 		  dst.s().cc(), 
 		  _ipaddr.s().cc(),
 		  _any_gateway_ip.s().cc(),
@@ -222,6 +226,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
       output(1).push(packet);
     } else {
       // encapsulate packet with grid hdr and try to send it out
+
       WritablePacket *new_packet = packet->push(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
       memset(new_packet->data(), 0, sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
 
@@ -242,10 +247,10 @@ LookupLocalGridRoute::push(int port, Packet *packet)
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;
       encap->dst_ip = dst;
+
 #ifndef SMALL_GRID_HEADERS
       encap->dst_loc_good = false;
 #endif
-
       forward_grid_packet(new_packet, dst);
     }
   }
