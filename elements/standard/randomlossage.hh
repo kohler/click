@@ -28,7 +28,7 @@ class RandomLossage : public Element {
   RandomLossage(int p_drop = -1, bool = true);
   
   const char *class_name() const		{ return "RandomLossage"; }
-  void notify_outputs(int);
+  void notify_noutputs(int);
   void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   
   int p_drop() const				{ return _p_drop; }

@@ -27,15 +27,15 @@ UnlimitedElement::UnlimitedElement(int ninputs, int noutputs)
 }
 
 void
-UnlimitedElement::notify_inputs(int n)
+UnlimitedElement::notify_ninputs(int n)
 {
   if (unlimited_inputs())
-    add_inputs(n - ninputs());
+    set_ninputs(n);
 }
 
 void
-UnlimitedElement::notify_outputs(int n)
+UnlimitedElement::notify_noutputs(int n)
 {
   if (unlimited_outputs())
-    add_outputs(n - noutputs());
+    set_noutputs(n);
 }

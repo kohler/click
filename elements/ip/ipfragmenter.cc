@@ -33,12 +33,11 @@ IPFragmenter::~IPFragmenter()
 }
 
 void
-IPFragmenter::notify_outputs(int n)
+IPFragmenter::notify_noutputs(int n)
 {
   // allow 2 outputs -- then packet is pushed onto 2d output instead of
   // dropped
-  n = (n >= 2 ? 2 : 1);
-  add_outputs(n - noutputs());
+  set_noutputs(n < 2 ? 1 : 2);
 }
 
 IPFragmenter *

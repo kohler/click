@@ -222,8 +222,8 @@ Router::notify_hookup_range()
       nin[_hookup_to[c].idx] = _hookup_to[c].port;
   }
   for (int f = 0; f < nelements(); f++) {
-    _elements[f]->notify_inputs(nin[f] + 1);
-    _elements[f]->notify_outputs(nout[f] + 1);
+    _elements[f]->notify_ninputs(nin[f] + 1);
+    _elements[f]->notify_noutputs(nout[f] + 1);
   }
 }
 
@@ -500,8 +500,8 @@ Router::set_connections()
     Element *fromf = _elements[hfrom.idx];
     Hookup &hto = _hookup_to[c];
     Element *tof = _elements[hto.idx];
-    fromf->set_output(hfrom.port, tof, hto.port);
-    tof->set_input(hto.port, fromf, hfrom.port);
+    fromf->connect_output(hfrom.port, tof, hto.port);
+    tof->connect_input(hto.port, fromf, hfrom.port);
   }
 }
 

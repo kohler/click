@@ -16,8 +16,8 @@ public:
   Processing default_processing() const		{ return PUSH; }
   EtherSpanTree* clone() const;
   
-  void notify_inputs(int);
-  void notify_outputs(int);
+  void notify_ninputs(int);
+  void notify_noutputs(int);
   
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -46,22 +46,22 @@ class Element : public ElementLink { public:
   int ninputs() const				{ return _ninputs; }
   const Connection &input(int input_id) const;
   
-  void add_input()				{ add_inputs(1); }
-  void add_inputs(int);
+  void add_input()				{ set_ninputs(ninputs()+1); }
+  void set_ninputs(int);
+  virtual void notify_ninputs(int);
   
-  virtual void notify_inputs(int);
-  int set_input(int input_id, Element *, int);
+  int connect_input(int input_id, Element *, int);
   
   // OUTPUTS
   int noutputs() const				{ return _noutputs; }
   const Connection &output(int output_id) const;
   void checked_push_output(int output_id, Packet *) const;
   
-  void add_output()				{ add_outputs(1); }
-  void add_outputs(int);
+  void add_output()				{ set_noutputs(noutputs()+1); }
+  void set_noutputs(int);
+  virtual void notify_noutputs(int);
   
-  virtual void notify_outputs(int);
-  int set_output(int output_id, Element *, int);
+  int connect_output(int output_id, Element *, int);
   
   // FLOW
   virtual Bitvector forward_flow(int) const;
@@ -167,7 +167,7 @@ class Element : public ElementLink { public:
   Element(const Element &);
   Element &operator=(const Element &);
   
-  void change_ports(int &, Connection *&, Connection *, int count);
+  void set_nports(int &, Connection *&, Connection *, int count);
   
 };
 

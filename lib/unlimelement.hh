@@ -12,8 +12,8 @@ class UnlimitedElement : public Element {
   virtual bool unlimited_inputs() const		{ return false; }
   virtual bool unlimited_outputs() const	{ return false; }
   
-  void notify_inputs(int);
-  void notify_outputs(int);
+  void notify_ninputs(int);
+  void notify_noutputs(int);
 
 };
 

@@ -26,17 +26,15 @@ Idle::~Idle()
 }
 
 void
-Idle::notify_inputs(int n)
+Idle::notify_ninputs(int n)
 {
-  n = (n > 1 ? 1 : n);
-  add_inputs(n - ninputs());
+  set_ninputs(n);
 }
 
 void
-Idle::notify_outputs(int n)
+Idle::notify_noutputs(int n)
 {
-  n = (n > 1 ? 1 : n);
-  add_outputs(n - noutputs());
+  set_noutputs(n);
 }
 
 Bitvector
@@ -66,16 +64,24 @@ Idle::pull(int)
 bool
 Idle::wants_packet_upstream() const
 {
-  return input_is_pull(0);
+  for (int i = 0; i < ninputs(); i++)
+    if (input_is_pull(i))
+      return true;
+  return false;
 }
 
 void
 Idle::run_scheduled()
 {
-  if (Packet *p = input(0).pull()) {
-    p->kill();
+  bool got_any = false;
+  for (int i = 0; i < ninputs(); i++)
+    if (input_is_pull(i))
+      if (Packet *p = input(i).pull()) {
+	p->kill();
+	got_any = true;
+      }
+  if (got_any)
     schedule_tail();
-  }
 }
 
 EXPORT_ELEMENT(Idle)

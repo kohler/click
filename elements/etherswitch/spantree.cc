@@ -38,16 +38,16 @@ EtherSpanTree::clone() const
 }
 
 void
-EtherSpanTree::notify_inputs(int n) {
-  add_inputs(n - ninputs());
-  // the rest is redundant with notify_outputs below
+EtherSpanTree::notify_ninputs(int n) {
+  set_ninputs(n);
+  // the rest is redundant with notify_noutputs below
   _port.resize(n);
 }
 
 void
-EtherSpanTree::notify_outputs(int n) {
-  add_outputs(n - noutputs());
-  // the rest is redundant with notify_inputs above
+EtherSpanTree::notify_noutputs(int n) {
+  set_noutputs(n);
+  // the rest is redundant with notify_ninputs above
   _port.resize(n);
 }
 

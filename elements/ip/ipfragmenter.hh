@@ -43,7 +43,7 @@ class IPFragmenter : public Element {
   
   const char *class_name() const		{ return "IPFragmenter"; }
   int configure(const String &, ErrorHandler *);
-  void notify_outputs(int);
+  void notify_noutputs(int);
   Processing default_processing() const	{ return PUSH; }
   
   int drops()					{ return _drops; }

@@ -24,7 +24,6 @@ class Tee : public Element {
  public:
   
   Tee()						: Element(1, 2) { }
-  explicit Tee(int n)				: Element(1, n) { }
   
   const char *class_name() const		{ return "Tee"; }
   Processing default_processing() const	{ return PUSH; }

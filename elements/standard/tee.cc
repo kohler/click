@@ -20,7 +20,7 @@
 Tee *
 Tee::clone() const
 {
-  return new Tee(noutputs());
+  return new Tee;
 }
 
 int
@@ -32,7 +32,7 @@ Tee::configure(const String &conf, ErrorHandler *errh)
 		  cpUnsigned, "number of arms", &n,
 		  0) < 0)
     return -1;
-  add_outputs(n - noutputs());
+  set_noutputs(n);
   return 0;
 }
 
@@ -78,7 +78,7 @@ PullTee::configure(const String &conf, ErrorHandler *errh)
     return -1;
   if (n == 0)
     return errh->error("number of arms must be > 0");
-  add_outputs(n - noutputs());
+  set_noutputs(n - noutputs());
   return 0;
 }
 

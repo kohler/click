@@ -4,7 +4,7 @@
 #include "etheraddress.hh"
 #include "hashmap.hh"
 
-class EtherSwitch : public UnlimitedElement {
+class EtherSwitch : public Element {
   
  public:
   
@@ -14,8 +14,8 @@ class EtherSwitch : public UnlimitedElement {
   
   const char *class_name() const		{ return "EtherSwitch"; }
   Processing default_processing() const	{ return PUSH; }
-  bool unlimited_inputs() const			{ return true; }
-  bool unlimited_outputs() const		{ return true; }
+  void notify_ninputs(int);
+  void notify_noutputs(int);
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   void push(int port, Packet* p);

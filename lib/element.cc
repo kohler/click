@@ -41,18 +41,8 @@ Element::Element(int ninputs, int noutputs)
   : ELEMENT_CTOR_STATS _refcount(0), _ninputs(0), _inputs(&_input0[0]),
     _noutputs(0), _outputs(&_output0[0])
 {
-  add_inputs(ninputs);
-  add_outputs(noutputs);
-  nelements_allocated++;
-}
-
-Element::Element(const Element &o)
-  : ElementLink(),
-    ELEMENT_CTOR_STATS _refcount(0), _ninputs(0), _inputs(&_input0[0]),
-    _noutputs(0), _outputs(&_output0[0])
-{
-  add_inputs(o._ninputs);
-  add_outputs(o._noutputs);
+  set_ninputs(ninputs);
+  set_noutputs(noutputs);
   nelements_allocated++;
 }
 
@@ -109,16 +99,14 @@ Element::context_message(const String &message) const
 // INPUTS AND OUTPUTS
 
 void
-Element::change_ports(int &store_n, Connection *&store_vec,
-		      Connection *store_inline, int count)
+Element::set_nports(int &store_n, Connection *&store_vec,
+		    Connection *store_inline, int new_n)
 {
-  if (count == 0 || store_n + count < 0)
-    return;
-  
+  if (new_n < 0) return;
   int old_n = store_n;
-  store_n += count;
+  store_n = new_n;
   
-  if (count < 0) {
+  if (new_n < old_n) {
     if (old_n > InlinePorts && store_n <= InlinePorts) {
       memcpy(store_inline, store_vec, store_n * sizeof(Connection));
       delete[] store_vec;
@@ -149,18 +137,18 @@ Element::change_ports(int &store_n, Connection *&store_vec,
 }
 
 void
-Element::add_inputs(int count)
+Element::set_ninputs(int count)
 {
-  change_ports(_ninputs, _inputs, &_input0[0], count);
+  set_nports(_ninputs, _inputs, &_input0[0], count);
 }
 
 void
-Element::notify_inputs(int)
+Element::notify_ninputs(int)
 {
 }
 
 int
-Element::set_input(int i, Element *f, int port)
+Element::connect_input(int i, Element *f, int port)
 {
   if (i >= 0 && i < ninputs() && _inputs[i].allowed()) {
     _inputs[i] = Connection(this, f, port);
@@ -170,18 +158,18 @@ Element::set_input(int i, Element *f, int port)
 }
 
 void
-Element::add_outputs(int count)
+Element::set_noutputs(int count)
 {
-  change_ports(_noutputs, _outputs, &_output0[0], count);
+  set_nports(_noutputs, _outputs, &_output0[0], count);
 }
 
 void
-Element::notify_outputs(int)
+Element::notify_noutputs(int)
 {
 }
 
 int
-Element::set_output(int o, Element *f, int port)
+Element::connect_output(int o, Element *f, int port)
 {
   if (o >= 0 && o < noutputs() && _outputs[o].allowed()) {
     _outputs[o] = Connection(this, f, port);

@@ -1,0 +1,120 @@
+.\" -*- mode: nroff -*-
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.TH ELEMENT 3 "19/Oct/1999" "Version \*V"
+.SH NAME
+Element \- Click superclass for elements
+'
+.SH DESCRIPTION
+'
+The C++ class Element is the superclass for all Click elements. This manual
+page describes its operations\*Especifically, the operations that an author
+of an Element subclass might use.
+'
+.SH "INPUT AND OUTPUT PORTS"
+.TP 5
+.PD 0
+.BR "int ninputs() const"
+.TP
+.BR "int noutputs() const"
+Returns the number of input or output ports.
+'
+.Sp
+.TP
+.BR "const Connection &input(" "int \fIport_number" ") const"
+.TP
+.BR "const Connection &output(" "int \fIport_number" ") const"
+Returns a Connection object corresponding to the given input or output
+port. See below for more on Connection objects.
+'
+.Sp
+.TP
+.BR "void set_ninputs(" "int \fInumber_of_ports" ")"
+.TP
+.BR "void set_noutputs(" "int \fInumber_of_ports" ")"
+Sets the number of input or output ports. Any newly created ports are
+unconnected.
+'
+.Sp
+.TP
+.BR "void add_input()"
+.TP
+.BR "void add_output()"
+Adds a single input or output port.
+'
+.Sp
+.TP
+.BR "virtual void notify_ninputs(" "int \fInumber_of_ports_used" ")"
+.TP
+.BR "virtual void notify_noutputs(" "int \fInumber_of_ports_used" ")"
+Called on every element during Router initialization. The parameters are
+the number of that element's input and output ports that are used in the
+router configuration. This is one more than the maximum input or output
+port number that appears in a connection. Elements often react to these
+calls by creating or destroying ports, depending on whether they are needed
+in the router configuration.
+'
+.PD
+'
+.SH "CONNECTIONS"
+'
+.PD 0
+.TP
+.BR "operator bool() const"
+'
+.Sp
+.TP
+.BR "bool allowed() const"
+'
+.Sp
+.TP
+.BR "void push(" "Packet *\fIp" ") const"
+'
+.Sp
+.TP
+.BR "Packet *pull() const"
+'
+.Sp
+.TP
+.BR "Element *element() const"
+'
+.Sp
+.TP
+.BR "int port() const"
+.PD
+'
+.SH "SEE ALSO"
+click(5), elements(n)
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+John Jannotti, jj@lcs.mit.edu
+.br
+Robert Morris, rtm@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

@@ -42,10 +42,9 @@ CheckIPHeader::clone() const
 }
 
 void
-CheckIPHeader::notify_outputs(int n)
+CheckIPHeader::notify_noutputs(int n)
 {
-  n = (n >= 2 ? 2 : 1);
-  add_outputs(n - noutputs());
+  set_noutputs(n < 2 ? 1 : 2);
 }
 
 void

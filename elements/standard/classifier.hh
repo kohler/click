@@ -96,12 +96,11 @@ class Classifier : public Element {
   
  public:
   
-  Classifier(int slots = 0);
-  Classifier(const Classifier &);
+  Classifier();
   ~Classifier();
   
   const char *class_name() const		{ return "Classifier"; }
-  Processing default_processing() const	{ return PUSH; }
+  Processing default_processing() const		{ return PUSH; }
   
   Classifier *clone() const;
   int configure(const String &, ErrorHandler *);

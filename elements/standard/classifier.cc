@@ -226,14 +226,8 @@ print_spread(Classifier::Spread &s)
 // CLASSIFIER ITSELF
 //
 
-Classifier::Classifier(int slots = 0)
-  : Element(1, slots)
-{
-}
-
-Classifier::Classifier(const Classifier &f)
-  : Element(1, f.noutputs()), _exprs(f._exprs),
-    _output_everything(f._output_everything), _safe_length(f._safe_length)
+Classifier::Classifier()
+  : Element(1, 0)
 {
 }
 
@@ -244,7 +238,7 @@ Classifier::~Classifier()
 Classifier *
 Classifier::clone() const
 {
-  return new Classifier(*this);
+  return new Classifier;
 }
 
 //
@@ -541,7 +535,7 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
-  add_outputs(args.size());
+  set_noutputs(args.size());
   
   _output_everything = -1;
   int FAIL = -noutputs();

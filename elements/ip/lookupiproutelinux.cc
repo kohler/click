@@ -51,7 +51,7 @@ LookupIPRouteLinux::configure(const String &conf, ErrorHandler *)
 {
   cp_argvec(conf, _out2devname);
   _nout = _out2devname.size();
-  add_outputs(_nout + 1);
+  set_noutputs(_nout + 1);
   return 0;
 }
 

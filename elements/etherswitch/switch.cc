@@ -34,6 +34,18 @@ EtherSwitch::~EtherSwitch()
 {
 }
 
+void
+EtherSwitch::notify_ninputs(int n)
+{
+  set_ninputs(n);
+}
+
+void
+EtherSwitch::notify_noutputs(int n)
+{
+  set_noutputs(n);
+}
+
 Bitvector
 EtherSwitch::forward_flow(int i) const
 {

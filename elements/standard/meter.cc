@@ -74,7 +74,7 @@ Meter::configure(const String &conf, ErrorHandler *errh)
     _nmeters = vals.size();
   }
 
-  add_outputs(_nmeters + 1 - noutputs());
+  set_noutputs(_nmeters + 1);
   return 0;
 }
 
