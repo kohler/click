@@ -1,3 +1,66 @@
+2001-11-23 Friday 16:34  Eddie Kohler <kohler@aciri.org>
+
+	* mkinstalldirs (1.2), elements/analysis/fromipsumdump.cc (1.11),
+	elements/analysis/fromnetflowsumdump.cc (1.4),
+	elements/analysis/toipsumdump.cc (1.4),
+	elements/bsdmodule/fromdevice.cc (1.6),
+	elements/bsdmodule/polldevice.cc (1.4),
+	elements/bsdmodule/todevice.cc (1.3),
+	elements/ethernet/arpquerier.cc (1.39),
+	elements/ethernet/ip6ndsolicitor.cc (1.13),
+	elements/etherswitch/spantree.cc (1.28),
+	elements/etherswitch/spantree.hh (1.14),
+	elements/grid/floodinglocquerier.cc (1.26),
+	elements/grid/floodinglocquerier.hh (1.12),
+	elements/grid/radiosim.cc (1.14), elements/grid/radiosim.hh (1.8),
+	elements/icmp/icmppingrewriter.cc (1.9),
+	elements/icmp/icmpsendpings.cc (1.12),
+	elements/icmp/icmpsendpings.hh (1.3), elements/ip/ipaddrrewriter.cc
+	(1.9), elements/ip/ipreassembler.cc (1.5),
+	elements/linuxmodule/anydevice.cc (1.23),
+	elements/linuxmodule/anydevice.hh (1.35),
+	elements/linuxmodule/fromdevice.cc (1.67),
+	elements/linuxmodule/polldevice.cc (1.123),
+	elements/linuxmodule/schedulelinux.cc (1.18),
+	elements/linuxmodule/schedulelinux.hh (1.10),
+	elements/linuxmodule/todevice.cc (1.120),
+	elements/linuxmodule/tulipstats.cc (1.14),
+	elements/local/rrunqueue.cc (1.5), elements/local/rrunqueue.hh
+	(1.2), elements/radio/bim.cc (1.25), elements/standard/burster.cc
+	(1.21), elements/standard/burster.hh (1.12),
+	elements/standard/delayunqueue.cc (1.5),
+	elements/standard/discard.cc (1.21), elements/standard/discard.hh
+	(1.15), elements/standard/discardnofree.cc (1.18),
+	elements/standard/discardnofree.hh (1.12),
+	elements/standard/infinitesource.cc (1.31),
+	elements/standard/pokehandlers.cc (1.22),
+	elements/standard/pokehandlers.hh (1.14),
+	elements/standard/quitwatcher.cc (1.16),
+	elements/standard/quitwatcher.hh (1.12),
+	elements/standard/randomsource.cc (1.14),
+	elements/standard/randomsource.hh (1.8),
+	elements/standard/ratedsource.cc (1.41),
+	elements/standard/ratedunqueue.cc (1.15),
+	elements/standard/ratedunqueue.hh (1.8),
+	elements/standard/timedsink.cc (1.22),
+	elements/standard/timedsink.hh (1.13),
+	elements/standard/timedsource.cc (1.25),
+	elements/standard/unqueue.cc (1.15), elements/standard/unqueue.hh
+	(1.8), elements/standard/unqueue2.cc (1.6),
+	elements/standard/unqueue2.hh (1.2), elements/tcpudp/iprewriter.cc
+	(1.28), elements/tcpudp/tcprewriter.cc (1.16),
+	elements/userlevel/fromdump.cc (1.57),
+	elements/userlevel/kerneltap.cc (1.25),
+	elements/userlevel/progressbar.cc (1.13),
+	elements/userlevel/todevice.cc (1.15), elements/userlevel/todump.cc
+	(1.34), etc/samplepackage/mkinstalldirs (1.2),
+	include/click/routerthread.hh (1.7), include/click/task.hh (1.13),
+	include/click/timer.hh (1.12), lib/router.cc (1.112),
+	lib/routerthread.cc (1.19), lib/task.cc (1.16), lib/timer.cc
+	(1.25), linuxmodule/proc_element.cc (1.35): more changes from Mazu:
+	fixes for dynamic installation and removal of devices (which was
+	way lame before!)
+
 2001-11-21 Wednesday 19:33  Eddie Kohler <kohler@aciri.org>
 
 	* doc/click-flatten.1 (1.3), tools/click-flatten/click-flatten.cc

@@ -1,3 +1,13 @@
+2001-11-23 Friday 16:34  Eddie Kohler <kohler@aciri.org>
+
+	* mkinstalldirs, include/click/routerthread.hh,
+	include/click/task.hh, include/click/routerthread.hh,
+	include/click/task.hh, include/click/timer.hh,
+	include/click/timer.hh, libsrc/router.cc, libsrc/routerthread.cc,
+	libsrc/task.cc, libsrc/timer.cc: more changes from Mazu: fixes for
+	dynamic installation and removal of devices (which was way lame
+	before!)
+
 2001-11-05 Monday 12:15  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/packageutils.cc: fix typo in error message
