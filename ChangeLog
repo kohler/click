@@ -1,3 +1,15 @@
+2003-10-07 Tuesday 18:06  Eddie Kohler <kohler@icir.org>
+
+	* tools/: click2xml/xml2click.cc (1.6), lib/eclasst.cc (1.23),
+	lib/eclasst.hh (1.16): xml2click: add --flatten/-F option; prevent
+	crashes
+
+2003-10-07 Tuesday 18:06  Eddie Kohler <kohler@icir.org>
+
+	* include/click/error.hh (1.23), lib/error.cc (1.47):
+	ContextErrorHandler gains a fourth (optional) argument: the default
+	landmark
+
 2003-10-06 Monday 22:50  John Bicket <jbicket@mit.edu>
 
 	* elements/standard/notifierqueue.hh (1.10): make config and
