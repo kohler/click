@@ -528,18 +528,18 @@ LexerT::yelement(int &element, bool comma_ok)
   if (ftype >= 0)
     element = make_anon_element(name, ftype, configuration, lm);
   else {
-    element = _router->eindex(name);
-    
     const Lexeme &t2colon = lex();
     unlex(t2colon);
-
     if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok)) {
       ydeclaration(name);
       element = _router->eindex(name);
-    } else if (element < 0) {
-      // assume it's an element type
-      ftype = force_element_type(name);
-      element = make_anon_element(name, ftype, configuration, lm);
+    } else {
+      element = _router->eindex(name);
+      if (element < 0) {
+	// assume it's an element type
+	ftype = force_element_type(name);
+	element = make_anon_element(name, ftype, configuration, lm);
+      }
     }
   }
   
@@ -713,30 +713,22 @@ LexerT::yelementclass()
 void
 LexerT::ytunnel()
 {
-  while (true) {
-    Lexeme tname1 = lex();
-    if (!tname1.is(lexIdent)) {
-      unlex(tname1);
-      lerror("expected port name");
-    }
-    
-    expect(lexArrow);
-    
-    Lexeme tname2 = lex();
-    if (!tname2.is(lexIdent)) {
-      unlex(tname2);
-      lerror("expected port name");
-    }
-    
-    if (tname1.is(lexIdent) && tname2.is(lexIdent))
-      _router->add_tunnel(tname1.string(), tname2.string(), landmark(), _errh);
-    
-    const Lexeme &t = lex();
-    if (!t.is(',')) {
-      unlex(t);
-      return;
-    }
+  Lexeme tname1 = lex();
+  if (!tname1.is(lexIdent)) {
+    unlex(tname1);
+    lerror("expected tunnel input name");
   }
+  
+  expect(lexArrow);
+  
+  Lexeme tname2 = lex();
+  if (!tname2.is(lexIdent)) {
+    unlex(tname2);
+    lerror("expected tunnel output name");
+  }
+  
+  if (tname1.is(lexIdent) && tname2.is(lexIdent))
+    _router->add_tunnel(tname1.string(), tname2.string(), landmark(), _errh);
 }
 
 void
@@ -745,7 +737,8 @@ LexerT::ycompound_arguments(CompoundElementClassT *comptype)
   while (1) {
     const Lexeme &tvar = lex();
     if (!tvar.is(lexVariable)) {
-      unlex(tvar);
+      if (!tvar.is('|') || comptype->nformals() > 0)
+	unlex(tvar);
       return;
     }
     comptype->add_formal(tvar.string());
@@ -776,7 +769,7 @@ LexerT::ycompound(String name)
   const Lexeme &t = lex();
   if (t.is(lex3Dot)) {
     if (_router->type_index(name) < 0)
-      _router->add_type_index(name, new ElementClassT);
+      _router->add_type_index(name, new SynonymElementClassT(name, 0));
     created = _router->type_class(name);
     expect(lex2Bar);
   } else

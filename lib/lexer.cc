@@ -230,14 +230,25 @@ Lexer::Compound::check_duplicates_until(Element *last, ErrorHandler *errh)
 Element *
 Lexer::Compound::find_relevant_class(int ninputs, int noutputs, const Vector<String> &args)
 {
+  // Try to return an element class, even if it is wrong -- the error messages
+  // are friendlier
   Compound *ct = this;
+  Compound *closest = 0;
+  int nclosest = 0;
   
   while (1) {
     if (ct->_ninputs == ninputs && ct->_noutputs == noutputs && ct->_formals.size() == args.size())
       return ct;
+
+    // replace `closest'
+    if (ct->_formals.size() == args.size()) {
+      closest = ct;
+      nclosest++;
+    }
+
     Element *e = ct->_next;
     if (!e)
-      return 0;
+      return (nclosest == 1 ? closest : 0);
     else if (Compound *next = (Compound *)e->cast("Lexer::Compound"))
       ct = next;
     else
@@ -250,7 +261,7 @@ Lexer::Compound::signature(const String &name, int ninputs, int noutputs, int na
 {
   StringAccum sa;
   const char *pl_args = (nargs == 1 ? " argument, " : " arguments, ");
-  const char *pl_ins = (ninputs == 1 ? " input, " : " inputs,");
+  const char *pl_ins = (ninputs == 1 ? " input, " : " inputs, ");
   const char *pl_outs = (noutputs == 1 ? " output" : " outputs");
   sa << name << '[' << nargs << pl_args << ninputs << pl_ins << noutputs << pl_outs << ']';
   return sa.take_string();
@@ -1008,18 +1019,15 @@ Lexer::yelement(int &element, bool comma_ok)
   if (etype >= 0)
     element = get_element(anon_element_name(name), etype, configuration, lm);
   else {
-    element = _element_map[name];
-    if (element < 0) {
-      const Lexeme &t2colon = lex();
-      unlex(t2colon);
-      if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok))
-	ydeclaration(name);
-      else {
-	lerror("undeclared element `%s' (first use this block)", name.cc());
-	get_element(name, ERROR_TYPE);
-      }
-      element = _element_map[name];
+    const Lexeme &t2colon = lex();
+    unlex(t2colon);
+    if (t2colon.is(lex2Colon) || (t2colon.is(',') && comma_ok))
+      ydeclaration(name);
+    else if (_element_map[name] < 0) {
+      lerror("undeclared element `%s' (first use this block)", name.cc());
+      get_element(name, ERROR_TYPE);
     }
+    element = _element_map[name];
   }
   
   return true;
@@ -1192,30 +1200,22 @@ Lexer::yelementclass()
 void
 Lexer::ytunnel()
 {
-  while (true) {
-    Lexeme tname1 = lex();
-    if (!tname1.is(lexIdent)) {
-      unlex(tname1);
-      lerror("expected port name");
-    }
-    
-    expect(lexArrow);
-    
-    Lexeme tname2 = lex();
-    if (!tname2.is(lexIdent)) {
-      unlex(tname2);
-      lerror("expected port name");
-    }
-    
-    if (tname1.is(lexIdent) && tname2.is(lexIdent))
-      add_tunnel(tname1.string(), tname2.string());
-    
-    const Lexeme &t = lex();
-    if (!t.is(',')) {
-      unlex(t);
-      return;
-    }
+  Lexeme tname1 = lex();
+  if (!tname1.is(lexIdent)) {
+    unlex(tname1);
+    lerror("expected tunnel input name");
   }
+
+  expect(lexArrow);
+    
+  Lexeme tname2 = lex();
+  if (!tname2.is(lexIdent)) {
+    unlex(tname2);
+    lerror("expected tunnel output name");
+  }
+  
+  if (tname1.is(lexIdent) && tname2.is(lexIdent))
+    add_tunnel(tname1.string(), tname2.string());
 }
 
 void
@@ -1224,7 +1224,8 @@ Lexer::ycompound_arguments(Compound *comptype)
   while (1) {
     const Lexeme &tvar = lex();
     if (!tvar.is(lexVariable)) {
-      unlex(tvar);
+      if (!tvar.is('|') || comptype->nformals() > 0)
+	unlex(tvar);
       return;
     }
     comptype->add_formal(tvar.string());
@@ -1281,7 +1282,7 @@ Lexer::ycompound(String name)
 
     _compound_depth--;
     _anonymous_offset = old_offset;
-    old_type_map.swap(_element_type_map);
+    _element_type_map = old_type_map;
     ct->swap_router(this);
 
     ct->finish(_errh);
@@ -1291,6 +1292,9 @@ Lexer::ycompound(String name)
     const Lexeme &t = lex();
     if (!t.is(lex2Bar))
       break;
+
+    // add the intermediate type to ensure it is freed later
+    add_element_type(name, created);
   }
   
   // on the way out
@@ -1410,7 +1414,8 @@ Lexer::expand_compound_element(int which, Vector<int> &environment_map, Vector<V
     if (hf.idx == which && hf.port >= outputs_used)
       outputs_used = hf.port + 1;
   }
-  Compound *c = (Compound *)_element_types[etype];
+  // must use `cast()' in case we have a synonym!
+  Compound *c = (Compound *)_element_types[etype]->cast("Lexer::Compound");
   Element *found_c = c->find_relevant_class(inputs_used, outputs_used, args);
   if (!found_c) {
     _errh->lerror(c->landmark(), "no match for `%s'", Compound::signature(c->name(), inputs_used, outputs_used, args.size()).cc());

@@ -211,6 +211,15 @@ SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *ec
 {
 }
 
+ElementClassT *
+SynonymElementClassT::find_relevant_class(int ninputs, int noutputs, const Vector<String> &args)
+{
+  if (!_eclass)
+    return this;
+  else
+    return _eclass->find_relevant_class(ninputs, noutputs, args);
+}
+
 int
 SynonymElementClassT::complex_expand_element(
 	RouterT *fromr, int which, const String &new_config, Vector<String> &,
@@ -245,6 +254,17 @@ SynonymElementClassT::declaration_string(StringAccum &sa, const String &name, co
   sa << indent << "elementclass " << name << " " << _name << ";\n";
 }
 
+CompoundElementClassT *
+SynonymElementClassT::cast_compound()
+{
+  return (_eclass ? _eclass->cast_compound() : 0);
+}
+
+RouterT *
+SynonymElementClassT::cast_router()
+{
+  return (_eclass ? _eclass->cast_router() : 0);
+}
 
 CompoundElementClassT::CompoundElementClassT(RouterT *r)
   : _router(r), _depth(0), _ninputs(0), _noutputs(0), _next(0),
@@ -279,7 +299,6 @@ CompoundElementClassT::finish(ErrorHandler *errh)
   int einput = _router->eindex("input");
   if (einput >= 0) {
     _ninputs = _router->noutputs(einput);
-    
     if (_router->ninputs(einput))
       errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", _name.cc());
 
@@ -337,12 +356,30 @@ CompoundElementClassT::check_duplicates_until(ElementClassT *last, ErrorHandler 
 ElementClassT *
 CompoundElementClassT::find_relevant_class(int ninputs, int noutputs, const Vector<String> &args)
 {
-  if (ninputs == _ninputs && noutputs == _noutputs && args.size() == _formals.size())
-    return this;
-  else if (_next)
-    return _next->find_relevant_class(ninputs, noutputs, args);
-  else
-    return 0;
+  // Try to return an element class, even if it is wrong -- the error messages
+  // are friendlier
+  CompoundElementClassT *ct = this;
+  CompoundElementClassT *closest = 0;
+  int nclosest = 0;
+  
+  while (1) {
+    if (ct->_ninputs == ninputs && ct->_noutputs == noutputs && ct->_formals.size() == args.size())
+      return ct;
+
+    // replace `closest'
+    if (ct->_formals.size() == args.size()) {
+      closest = ct;
+      nclosest++;
+    }
+
+    ElementClassT *e = ct->_next;
+    if (!e)
+      return (nclosest == 1 ? closest : 0);
+    else if (CompoundElementClassT *next = e->cast_compound())
+      ct = next;
+    else
+      return e->find_relevant_class(ninputs, noutputs, args);
+  }
 }
 
 String

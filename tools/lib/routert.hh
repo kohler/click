@@ -45,8 +45,7 @@ class RouterT {
   void finish_remove_elements(Vector<int> &, ErrorHandler *);
   void finish_free_elements(Vector<int> &);
   void finish_remove_element_types(Vector<int> &);
-  void expand_tunnel(Vector<Hookup> *, bool is_input, int magice, int which,
-		     Vector<Hookup> &results) const;
+  void expand_tunnel(Vector<Hookup> *port_expansions, const Vector<Hookup> &ports, bool is_output, int which, ErrorHandler *) const;
   String interpolate_arguments(const String &, const Vector<String> &) const;
 
  public:
@@ -157,7 +156,7 @@ class RouterT {
   void remove_dead_elements(ErrorHandler * = 0);
   
   void remove_compound_elements(ErrorHandler *);
-  void remove_tunnels();
+  void remove_tunnels(ErrorHandler * = 0);
 
   void expand_into(RouterT *, const VariableEnvironment &, ErrorHandler *);
   void flatten(ErrorHandler *);

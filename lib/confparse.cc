@@ -1471,6 +1471,8 @@ default_parsefunc(cp_value *v, const String &arg,
 	errh->error("%s (%s) must be >= 0", argname, desc);
       else if (cp_errno == CPE_OVERFLOW)
 	errh->error("overflow on %s (%s)", argname, desc);
+      else if (cp_errno == CPE_INVALID)
+	errh->error("%s (%s) is an invalid real", argname, desc);
       else
 	errh->error("%s should be %s (real)", argname, desc);
     }

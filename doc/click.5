@@ -709,7 +709,9 @@ kernel module will not accept archives; use
 .br
 .IR compounds " ::= " compound " | " compounds " ""||"" " compound
 .br
-.IR compound " ::= " stmts " | " formals " ""|"" " stmts
+.IR compound " ::= " stmts " | " opt-formals " ""|"" " stmts
+.br
+.IR opt-formals " ::= " formals " | " empty
 .br
 .IR formals " ::= parameter | " formals " "","" parameter"
 .br
@@ -727,11 +729,7 @@ kernel module will not accept archives; use
 .br
 .IR opt-port " ::= ""["" portnumber ""]"" | " empty
 .br
-.IR tunnelstmt " ::= ""connectiontunnel"" " tunnels
-.br
-.IR tunnels " ::= identifier ""->"" identifier"
-.br
-.RI "    | " tunnels " "","" identifier ""->"" identifier"
+.IR tunnelstmt " ::= ""connectiontunnel"" identifier ""->"" identifier"
 .br
 .IR elementclassstmt " ::= ""elementclass"" identifier " class
 .br

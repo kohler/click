@@ -87,11 +87,14 @@ class SynonymElementClassT : public ElementClassT {
 
   SynonymElementClassT(const String &, ElementClassT *);
 
+  ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
   int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
   
   void declaration_string(StringAccum &, const String &, const String &);
 
   bool direct_expansion() const		{ return false; }
+  CompoundElementClassT *cast_compound();
+  RouterT *cast_router();
   
 };
 
@@ -117,6 +120,7 @@ class CompoundElementClassT : public ElementClassT {
   CompoundElementClassT(const String &name, const String &landmark, RouterT *, ElementClassT *, int depth);
   ~CompoundElementClassT();
 
+  int nformals() const			{ return _formals.size(); }
   void add_formal(const String &n)	{ _formals.push_back(n); }
   void finish(ErrorHandler *);
   void check_duplicates_until(ElementClassT *, ErrorHandler *);
