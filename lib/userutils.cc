@@ -132,6 +132,45 @@ glob_match(const String &str, const String &pattern)
 }
 
 String
+percent_substitute(const String &pattern, int format1, ...)
+{
+  const char *results[256];
+  memset(&results, 0, sizeof(results));
+
+  va_list val;
+  va_start(val, format1);
+  while (format1 > 0) {
+    assert(!results[format1]);
+    results[format1] = va_arg(val, const char *);
+    format1 = va_arg(val, int);
+  }
+  va_end(val);
+
+  results['%'] = "%";
+
+  int pos = 0;
+  StringAccum sa;
+  while (pos < pattern.length()) {
+    int pct = pattern.find_left('%', pos);
+    if (pct < 0 || pct == pattern.length() - 1)
+      break;
+    int format = (unsigned char)(pattern[pct + 1]);
+    if (const char *str = results[format])
+      sa << pattern.substring(pos, pct - pos) << str;
+    else
+      sa << pattern.substring(pos, pct - pos + 2);
+    pos = pct + 2;
+  }
+
+  if (pos == 0)
+    return pattern;
+  else {
+    sa << pattern.substring(pos);
+    return sa.take_string();
+  }
+}
+
+String
 file_string(FILE *f, ErrorHandler *errh)
 {
   StringAccum sa;

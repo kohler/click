@@ -7,6 +7,8 @@ class ErrorHandler;
 
 bool glob_match(const String &string, const String &pattern);
 
+String percent_substitute(const String &string, int format1, ...);
+
 String file_string(FILE *, ErrorHandler * = 0);
 String file_string(const char *, ErrorHandler * = 0);
 
