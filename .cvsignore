@@ -1,3 +1,3 @@
 configure config.log config.cache config.status
 config.h.in config.h
-Makefile stamp-h
+Makefile mkelemlist.sh

@@ -1,2 +1,2 @@
 Makefile *.d click click.aout
-faclist.conf faclist.cc faclist.mk
+elements.conf elements.cc elements.mk
