@@ -173,6 +173,7 @@ ElementMap::ElementMap()
   _e.push_back(Elt());
   _def_srcdir.push_back(String());
   _def_compile_flags.push_back(String());
+  _def_package.push_back(String());
 }
 
 ElementMap::ElementMap(const String &str)
@@ -181,6 +182,7 @@ ElementMap::ElementMap(const String &str)
   _e.push_back(Elt());
   _def_srcdir.push_back(String());
   _def_compile_flags.push_back(String());
+  _def_package.push_back(String());
   parse(str);
 }
 
@@ -195,10 +197,16 @@ ElementMap::driver_name(int d)
     return "??";
 }
 
-String
+const String &
 ElementMap::processing_code(const String &n) const
 {
   return _e[ _name_map[n] ].processing_code;
+}
+
+const String &
+ElementMap::flow_code(const String &n) const
+{
+  return _e[ _name_map[n] ].flow_code;
 }
 
 int
@@ -232,6 +240,12 @@ const String &
 ElementMap::source_directory(int i) const
 {
   return _def_srcdir[ _e[i].def_index ];
+}
+
+const String &
+ElementMap::package(int i) const
+{
+  return _def_package[ _e[i].def_index ];
 }
 
 int
@@ -321,12 +335,18 @@ ElementMap::remove(int i)
 }
 
 void
-ElementMap::parse(const String &str)
+ElementMap::parse(const String &str, const String &package_name)
 {
   int p, len = str.length();
   int endp = 0;
 
   int def_index = 0;
+  if (package_name != _def_package[0]) {
+    def_index = _def_srcdir.size();
+    _def_srcdir.push_back(String());
+    _def_compile_flags.push_back(String());
+    _def_package.push_back(package_name);
+  }
   
   for (p = 0; p < len; p = endp + 1) {
     // read a line
@@ -349,6 +369,7 @@ ElementMap::parse(const String &str)
 	def_index = _def_srcdir.size();
 	_def_srcdir.push_back(cp_unquote(words[1]));
 	_def_compile_flags.push_back(_def_compile_flags[def_index - 1]);
+	_def_package.push_back(package_name);
       }
 
     } else if (words[0][0] != '$' && words.size() >= 4) {
@@ -370,6 +391,12 @@ ElementMap::parse(const String &str)
       (void) add(elt);
     }
   }
+}
+
+void
+ElementMap::parse(const String &str)
+{
+  parse(str, String());
 }
 
 String

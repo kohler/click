@@ -2,6 +2,7 @@
 #define PROCESSINGT_HH
 #include "routert.hh"
 class ElementMap;
+class Bitvector;
 
 class ProcessingT { public:
 
@@ -34,6 +35,9 @@ class ProcessingT { public:
   int reset(const RouterT *, const ElementMap &, ErrorHandler *);
 
   bool same_processing(int, int) const;
+
+  static int forward_flow(const String &code, int input_port, int noutputs, Bitvector *);
+  static int backward_flow(const String &code, int output_port, int ninputs, Bitvector *);
   
  private:
 

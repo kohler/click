@@ -49,10 +49,12 @@ class ElementMap { public:
   const String &flags(int i) const		{ return _e[i].flags; }
   const String &requirements(int i) const	{ return _e[i].requirements; }
   const String &provisions(int i) const		{ return _e[i].provisions; }
+  const String &package(int i) const;
   int name_next(int i) const			{ return _e[i].name_next; }
   int cxx_next(int i) const			{ return _e[i].cxx_next; }
   int definition_index(int i) const		{ return _e[i].def_index; }
-  String processing_code(const String &) const;
+  const String &processing_code(const String &) const;
+  const String &flow_code(const String &) const;
   int flag_value(int i, int flag) const;
   int flag_value(const String &, int flag) const;
 
@@ -73,7 +75,8 @@ class ElementMap { public:
   const String &def_source_directory(int i) const { return _def_srcdir[i]; }
   const String &def_compile_flags(int i) const { return _def_compile_flags[i];}
   
-  void parse(const String &);
+  void parse(const String &data);
+  void parse(const String &data, const String &package_name);
   void parse_all_required(RouterT *, String, ErrorHandler *);
   String unparse() const;
   
@@ -91,6 +94,7 @@ class ElementMap { public:
 
   Vector<String> _def_srcdir;
   Vector<String> _def_compile_flags;
+  Vector<String> _def_package;
 
   int get_driver(const String &);
 

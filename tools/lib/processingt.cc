@@ -22,6 +22,7 @@
 #endif
 #include "processingt.hh"
 #include <click/error.hh>
+#include <click/bitvector.hh>
 #include "toolutils.hh"
 #include <ctype.h>
 #include <string.h>
@@ -206,14 +207,18 @@ ProcessingT::check_processing(const ElementMap &em, ErrorHandler *errh)
   // add fake connections for agnostics
   Vector<Hookup> hookup_from = _router->hookup_from();
   Vector<Hookup> hookup_to = _router->hookup_to();
+  Bitvector bv;
   for (int i = 0; i < ninput_pidx(); i++)
     if (_input_processing[i] == VAGNOSTIC) {
       int ei = _input_eidx[i];
       int port = i - _input_pidx[ei];
       int opidx = _output_pidx[ei];
-      for (int j = opidx; j < _output_pidx[ei+1]; j++)
-	if (_output_processing[j] == VAGNOSTIC) {
-	  hookup_from.push_back(Hookup(ei, j - opidx));
+      int noutputs = _output_pidx[ei+1] - opidx;
+      forward_flow(em.flow_code(_router->etype_name(ei)),
+		   port, noutputs, &bv);
+      for (int j = 0; j < noutputs; j++)
+	if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC) {
+	  hookup_from.push_back(Hookup(ei, j));
 	  hookup_to.push_back(Hookup(ei, port));
 	}
     }
@@ -378,4 +383,145 @@ bool
 ProcessingT::is_internal_flow(int, int, int) const
 {
   return true;
+}
+
+// FLOW CODES
+
+static void
+skip_flow_code(const char *&p, const char *last)
+{
+  if (p != last && *p != '/') {
+    if (*p == '[') {
+      for (p++; p != last && *p != ']'; p++)
+	/* nada */;
+      if (p != last)
+	p++;
+    } else
+      p++;
+  }
+}
+
+static int
+next_flow_code(const char *&p, const char *last,
+	       int port, Bitvector &code, ErrorHandler *errh)
+{
+  if (p == last || *p == '/') {
+    // back up to last code character
+    if (p[-1] == ']') {
+      for (p -= 2; *p != '['; p--)
+	/* nada */;
+    } else
+      p--;
+  }
+
+  code.assign(256, false);
+
+  if (*p == '[') {
+    bool negated = false;
+    if (p[1] == '^')
+      negated = true, p++;
+    for (p++; p != last && *p != ']'; p++) {
+      if (isalpha(*p))
+	code[*p] = true;
+      else if (*p == '#')
+	code[port + 128] = true;
+      else if (errh)
+	errh->error("flow code: invalid character `%c'", *p);
+    }
+    if (negated)
+      code.negate();
+    if (p == last) {
+      if (errh)
+	errh->error("flow code: missing `]'");
+      p--;			// don't skip over final '\0'
+    }
+  } else if (isalpha(*p))
+    code[*p] = true;
+  else if (*p == '#')
+    code[port + 128] = true;
+  else {
+    if (errh)
+      errh->error("flow code: invalid character `%c'", *p);
+    p++;
+    return -1;
+  }
+
+  p++;
+  return 0;
+}
+
+int
+ProcessingT::forward_flow(const String &flow_code, int input_port,
+			  int noutputs, Bitvector *bv)
+{
+  if (input_port < 0) {
+    bv->assign(noutputs, false);
+    return 0;
+  } else if (!flow_code || (flow_code.length() == 3 && flow_code == "x/x")) {
+    bv->assign(noutputs, true);
+    return 0;
+  }
+
+  bv->assign(noutputs, false);
+  ErrorHandler *errh = ErrorHandler::default_handler();
+
+  int slash_pos = flow_code.find_left('/');
+  if (slash_pos <= 0 || slash_pos == flow_code.length() - 1 || flow_code[slash_pos + 1] == '/')
+    return errh->error("flow code: missing or bad `/'");
+
+  const char *f_in = flow_code.data();
+  const char *f_out = f_in + slash_pos + 1;
+  const char *f_last = f_in + flow_code.length();
+  
+  Bitvector in_code;
+  for (int i = 0; i < input_port; i++)
+    skip_flow_code(f_in, f_last);
+  next_flow_code(f_in, f_last, input_port, in_code, errh);
+
+  Bitvector out_code;
+  for (int i = 0; i < noutputs; i++) {
+    next_flow_code(f_out, f_last, i, out_code, errh);
+    if (in_code.nonzero_intersection(out_code))
+      (*bv)[i] = true;
+  }
+
+  return 0;
+}
+
+int
+ProcessingT::backward_flow(const String &flow_code, int output_port,
+			   int ninputs, Bitvector *bv)
+{
+  if (output_port < 0) {
+    bv->assign(ninputs, false);
+    return 0;
+  } else if (!flow_code || (flow_code.length() == 3 && flow_code == "x/x")) {
+    bv->assign(ninputs, true);
+    return 0;
+  }
+
+  bv->assign(ninputs, false);
+  ErrorHandler *errh = ErrorHandler::default_handler();
+
+  int slash_pos = flow_code.find_left('/');
+  if (slash_pos <= 0 || slash_pos == flow_code.length() - 1 || flow_code[slash_pos + 1] == '/')
+    return errh->error("flow code: missing or bad `/'");
+
+  const char *f_in = flow_code.data();
+  const char *f_out = f_in + slash_pos + 1;
+  const char *f_last = f_in + flow_code.length();
+  
+  Bitvector out_code;
+  for (int i = 0; i < output_port; i++)
+    skip_flow_code(f_out, f_last);
+  next_flow_code(f_out, f_last, output_port, out_code, errh);
+
+  Bitvector in_code;
+  for (int i = 0; i < ninputs; i++) {
+    next_flow_code(f_in, f_last, i, in_code, errh);
+    if (in_code.nonzero_intersection(out_code))
+      (*bv)[i] = true;
+  }
+
+  return 0;
 }

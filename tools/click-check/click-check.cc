@@ -238,7 +238,7 @@ particular purpose.\n");
   if (indifferent) {
     if (check_kernel < 0 && check_userlevel < 0)
       // only bother to check one of them
-      check_kernel = 0;
+      check_kernel = 0, check_userlevel = 1;
   } else {
     if (check_kernel < 0 && check_userlevel < 0) {
       check_kernel = elementmap.driver_compatible(elementmap_indexes, ElementMap::DRIVER_LINUXMODULE);
