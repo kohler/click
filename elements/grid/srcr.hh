@@ -102,10 +102,47 @@ struct sr_pkt {
 };
 
 
+#if 0
+struct Path {
+  IPAddress src;
+  IPAddress dst;
+  typedef Vector<IPAddress> PathVec;
+  PathVec hops;
 
+  unsigned int hashcode() {
+    unsigned int h = 0;
+    for (int x = 0; x < p.size(); x++) {
+      h = (h ^ p[x].addr());
+    }
+    return h;
+  }
+}
+#endif
 
+typedef Vector<IPAddress> Path;
+inline unsigned
+hashcode(const Path &p)
+{
+  unsigned h = 0;
+  for (int x = 0; x < p.size(); x++) {
+    h = h ^ p[x].addr();
+  }
+  return h;
+}
 
-
+inline bool
+operator==(const Path &p1, const Path &p2)
+{
+  if (p1.size() != p2.size()) {
+    return false;
+  }
+  for (int x = 0; x < p1.size(); x++) {
+    if (p1[x] != p2[x]) {
+      return false;
+    }
+  }
+  return true;
+}
 
 
 
@@ -129,6 +166,8 @@ class SRCR : public Element {
 
   static String static_print_stats(Element *e, void *);
   String print_stats();
+  static String static_print_routes(Element *e, void *);
+  String print_routes();
   static String static_print_arp(Element *e, void *);
   String print_arp();
 
@@ -145,11 +184,24 @@ private:
   // Statistics for handlers.
   int _datas;
   int _databytes;
+  
+  class PathInfo {
+  public:
+    Path _p;
+    int _count;
+    PathInfo() {
+      memset(this, 0, sizeof(*this));
+    }
+  };
 
-
+  typedef BigHashMap<Path, PathInfo> PathTable;
+  typedef PathTable::const_iterator PIter;
+  
+  class PathTable _paths;
   EtherAddress _bcast;
   class LinkTable *_link_table;
   class LinkStat *_link_stat;
+  IPAddress _ls_net;
   class ARPTable *_arp_table;
   
   u_short get_metric(IPAddress other);

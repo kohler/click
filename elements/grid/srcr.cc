@@ -57,6 +57,7 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
 		    "LS", cpElement, "LinkStat element", &_link_stat,
+                    "LSNET", cpIPAddress, "LinkStat net", &_ls_net,
                     0);
 
   if (res < 0) {
@@ -79,8 +80,11 @@ SRCR::initialize (ErrorHandler *)
 
 // Ask LinkStat for the metric for the link from other to us.
 u_short
-SRCR::get_metric(IPAddress other)
+SRCR::get_metric(IPAddress next_hop)
 {
+  IPAddress other = IPAddress(_ls_net.addr() | 
+			      (next_hop.addr() & 0xffffff00));
+  
   u_short dft = 9999; // default metric
   if(_link_stat){
     unsigned int tau;

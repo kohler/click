@@ -85,6 +85,7 @@ private:
   EtherAddress _bcast;
   class LinkTable *_link_table;
   class LinkStat *_link_stat;
+  IPAddress _ls_net;
   class ARPTable *_arp_table;
   // State of a destination.
   // We might have a request outstanding for this destination.
