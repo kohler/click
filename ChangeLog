@@ -1,3 +1,11 @@
+2003-10-27 Monday 21:39  Eddie Kohler <kohler@icir.org>
+
+	* test/testie (1.21): stderr nits
+
+2003-10-27 Monday 21:37  Eddie Kohler <kohler@icir.org>
+
+	* test/testie (1.20): add %desc sections and --superverbose
+
 2003-10-27 Monday 18:47  Eddie Kohler <kohler@icir.org>
 
 	* test/testie (1.19): testie supports %eot
