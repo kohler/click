@@ -510,8 +510,10 @@
 
 2001-07-02 Monday 14:10  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: scheduleinfo.cc (1.32), scheduleinfo.hh
-	(1.14): ScheduleInfo: add initialize_task functions
+	* elements/standard/scheduleinfo.cc (1.32),
+	elements/standard/scheduleinfo.hh (1.14),
+	include/click/standard/scheduleinfo.hh (1.14): ScheduleInfo: add
+	initialize_task functions
 
 2001-07-02 Monday 14:09  Eddie Kohler <kohler@aciri.org>
 
@@ -580,14 +582,18 @@
 
 2001-07-01 Sunday 13:47  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: scheduleinfo.cc (1.31), scheduleinfo.hh
-	(1.13): ScheduleInfo: add optional "bool scheduled" argument
+	* elements/standard/scheduleinfo.cc (1.31),
+	elements/standard/scheduleinfo.hh (1.13),
+	include/click/standard/scheduleinfo.hh (1.13): ScheduleInfo: add
+	optional "bool scheduled" argument
 
 2001-07-01 Sunday 13:46  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: drivermanager.cc (1.8), drivermanager.hh
-	(1.5): DriverManager: "wait" by itself means "wait_stop"; change
-	name of "wait SEC" to "wait_for SEC" (but "wait SEC" still works)
+	* elements/standard/drivermanager.cc (1.8),
+	elements/standard/drivermanager.hh (1.5),
+	include/click/standard/drivermanager.hh (1.5): DriverManager:
+	"wait" by itself means "wait_stop"; change name of "wait SEC" to
+	"wait_for SEC" (but "wait SEC" still works)
 
 2001-07-01 Sunday 12:45  Eddie Kohler <kohler@aciri.org>
 
@@ -595,9 +601,11 @@
 
 2001-07-01 Sunday 12:44  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: drivermanager.cc (1.7), drivermanager.hh
-	(1.4): DriverManager: "call" and "print" instructions changed to
-	"write" and "read" (but old names still work)
+	* elements/standard/drivermanager.cc (1.7),
+	elements/standard/drivermanager.hh (1.4),
+	include/click/standard/drivermanager.hh (1.4): DriverManager:
+	"call" and "print" instructions changed to "write" and "read" (but
+	old names still work)
 
 2001-07-01 Sunday 12:41  Eddie Kohler <kohler@aciri.org>
 
@@ -1032,9 +1040,12 @@
 
 2001-05-31 Thursday 18:32  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: drivermanager.cc (1.4), drivermanager.hh
-	(1.3), drivermanager.cc (1.5), peekhandlers.cc (1.16):
-	DriverManager: Add "print" instruction
+	* elements/standard/drivermanager.cc (1.4),
+	elements/standard/drivermanager.hh (1.3),
+	include/click/standard/drivermanager.hh (1.3),
+	elements/standard/drivermanager.cc (1.5),
+	elements/standard/peekhandlers.cc (1.16): DriverManager: Add
+	"print" instruction
 
 2001-05-31 Thursday 18:31  Eddie Kohler <kohler@aciri.org>
 
@@ -1153,10 +1164,12 @@
 
 2001-05-25 Friday 21:00  Eddie Kohler <kohler@aciri.org>
 
-	* elements/: linuxmodule/anydevice.cc (1.17),
-	standard/addressinfo.cc (1.14), standard/addressinfo.hh (1.11):
-	AddressInfo: support "DEVNAME" as an Ethernet address even without
-	explicit AddressInfo about DEVNAME
+	* elements/linuxmodule/anydevice.cc (1.17),
+	elements/standard/addressinfo.cc (1.14),
+	elements/standard/addressinfo.hh (1.11),
+	include/click/standard/addressinfo.hh (1.11): AddressInfo: support
+	"DEVNAME" as an Ethernet address even without explicit AddressInfo
+	about DEVNAME
 
 2001-05-25 Friday 20:43  Eddie Kohler <kohler@aciri.org>
 
@@ -1641,8 +1654,9 @@
 	elements/linuxmodule/polldevice.cc (1.106),
 	elements/standard/addressinfo.cc (1.11),
 	elements/standard/addressinfo.hh (1.10), include/click/confparse.hh
-	(1.16), include/click/ipaddress.hh (1.15), lib/confparse.cc (1.69),
-	lib/string.cc (1.25), linuxmodule/Makefile.in (1.56),
+	(1.16), include/click/ipaddress.hh (1.15),
+	include/click/standard/addressinfo.hh (1.10), lib/confparse.cc
+	(1.69), lib/string.cc (1.25), linuxmodule/Makefile.in (1.56),
 	tools/lib/Makefile.in (1.13), userlevel/Makefile.in (1.54): fixlets
 	to config.h.in; also, only compile IP6-related objects --
 	ip6address, ip6flowid, ip6table -- when --enable-ip6 is supplied
@@ -1905,25 +1919,26 @@
 	elements/standard/priosched.hh (1.10), elements/standard/red.hh
 	(1.24), elements/standard/rrsched.hh (1.11),
 	elements/standard/stridesched.hh (1.13), include/click/clp.h (1.3),
-	include/click/ewma.cc (1.2), lib/archive.cc (1.10), lib/atomic.cc
-	(1.3), lib/bigewma.cc (1.3), lib/bighashmap_arena.cc (1.3),
-	lib/bitvector.cc (1.11), lib/clp.c (1.8), lib/confparse.cc (1.66),
-	lib/element.cc (1.57), lib/elemfilter.cc (1.9), lib/error.cc
-	(1.26), lib/etheraddress.cc (1.10), lib/gaprate.cc (1.4),
-	lib/glue.cc (1.19), lib/in_cksum.c (1.9), lib/integers.cc (1.6),
-	lib/ip6address.cc (1.20), lib/ip6flowid.cc (1.2), lib/ip6table.cc
-	(1.7), lib/ipaddress.cc (1.18), lib/ipaddressset.cc (1.5),
-	lib/ipflowid.cc (1.9), lib/iptable.cc (1.9), lib/iptable2.cc
-	(1.13), lib/lexer.cc (1.49), lib/lulea.cc (1.3), lib/packet.cc
-	(1.42), lib/radix.cc (1.9), lib/router.cc (1.91),
-	lib/routerthread.cc (1.11), lib/straccum.cc (1.15), lib/strerror.c
-	(1.2), lib/string.cc (1.21), lib/task.cc (1.13), lib/templatei.cc
-	(1.7), lib/timer.cc (1.20), lib/userutils.cc (1.12),
-	lib/variableenv.cc (1.3), lib/vectorv.cc (1.8),
-	linuxmodule/Makefile.in (1.53), linuxmodule/kernelerror.cc (1.17),
-	linuxmodule/module.cc (1.53), linuxmodule/proc_config.cc (1.22),
-	linuxmodule/proc_element.cc (1.29), linuxmodule/proc_mgr.cc (1.13),
-	linuxmodule/sched.cc (1.25), linuxmodule/skbmgr.cc (1.9),
+	include/click/ewma.cc (1.2),
+	include/click/standard/drivermanager.hh (1.2), lib/archive.cc
+	(1.10), lib/atomic.cc (1.3), lib/bigewma.cc (1.3),
+	lib/bighashmap_arena.cc (1.3), lib/bitvector.cc (1.11), lib/clp.c
+	(1.8), lib/confparse.cc (1.66), lib/element.cc (1.57),
+	lib/elemfilter.cc (1.9), lib/error.cc (1.26), lib/etheraddress.cc
+	(1.10), lib/gaprate.cc (1.4), lib/glue.cc (1.19), lib/in_cksum.c
+	(1.9), lib/integers.cc (1.6), lib/ip6address.cc (1.20),
+	lib/ip6flowid.cc (1.2), lib/ip6table.cc (1.7), lib/ipaddress.cc
+	(1.18), lib/ipaddressset.cc (1.5), lib/ipflowid.cc (1.9),
+	lib/iptable.cc (1.9), lib/iptable2.cc (1.13), lib/lexer.cc (1.49),
+	lib/lulea.cc (1.3), lib/packet.cc (1.42), lib/radix.cc (1.9),
+	lib/router.cc (1.91), lib/routerthread.cc (1.11), lib/straccum.cc
+	(1.15), lib/strerror.c (1.2), lib/string.cc (1.21), lib/task.cc
+	(1.13), lib/templatei.cc (1.7), lib/timer.cc (1.20),
+	lib/userutils.cc (1.12), lib/variableenv.cc (1.3), lib/vectorv.cc
+	(1.8), linuxmodule/Makefile.in (1.53), linuxmodule/kernelerror.cc
+	(1.17), linuxmodule/module.cc (1.53), linuxmodule/proc_config.cc
+	(1.22), linuxmodule/proc_element.cc (1.29), linuxmodule/proc_mgr.cc
+	(1.13), linuxmodule/sched.cc (1.25), linuxmodule/skbmgr.cc (1.9),
 	tools/click-align/Makefile.in (1.8),
 	tools/click-align/alignclass.cc (1.10),
 	tools/click-align/alignment.cc (1.7),
@@ -2233,8 +2248,10 @@
 2001-04-18 Wednesday 15:02  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/drivermanager.cc (1.1),
-	elements/standard/drivermanager.hh (1.1), userlevel/Makefile.in
-	(1.50), tools/click-mkmindriver/click-mkmindriver.cc (1.8): add
+	elements/standard/drivermanager.hh (1.1),
+	include/click/standard/drivermanager.hh (1.1),
+	userlevel/Makefile.in (1.50),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.8): add
 	DriverManager element, make it part of libclick.a
 
 2001-04-18 Wednesday 15:00  Eddie Kohler <kohler@aciri.org>
@@ -2357,8 +2374,11 @@
 
 2001-04-17 Tuesday 00:24  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: alignmentinfo.cc (1.13), scheduleinfo.cc
-	(1.25), scheduleinfo.hh (1.12): use the Router attachment feature
+	* elements/standard/alignmentinfo.cc (1.13),
+	elements/standard/scheduleinfo.cc (1.25),
+	elements/standard/scheduleinfo.hh (1.12),
+	include/click/standard/scheduleinfo.hh (1.12): use the Router
+	attachment feature
 
 2001-04-17 Tuesday 00:23  Eddie Kohler <kohler@aciri.org>
 
@@ -3440,17 +3460,23 @@
 
 2001-03-13 Tuesday 00:55  Eddie Kohler <kohler@aciri.org>
 
-	* elements/: ethernet/arpquerier.cc (1.32), ethernet/arpquerier.hh
-	(1.23), ethernet/ip6ndsolicitor.cc (1.10),
-	ethernet/ip6ndsolicitor.hh (1.6), etherswitch/etherswitch.cc
-	(1.10), etherswitch/etherswitch.hh (1.5), etherswitch/spantree.hh
-	(1.12), standard/errorelement.cc (1.4), standard/errorelement.hh
-	(1.4), standard/idle.cc (1.16), standard/idle.hh (1.14),
-	standard/suppressor.cc (1.15), standard/suppressor.hh (1.11),
-	tcpudp/snooptcp.cc (1.3), tcpudp/snooptcp.hh (1.2),
-	userlevel/kerneltap.cc (1.15), userlevel/kerneltap.hh (1.7): use
-	new flow_code() function instead of forward_flow() and
-	backward_flow()
+	* elements/ethernet/arpquerier.cc (1.32),
+	elements/ethernet/arpquerier.hh (1.23),
+	elements/ethernet/ip6ndsolicitor.cc (1.10),
+	elements/ethernet/ip6ndsolicitor.hh (1.6),
+	elements/etherswitch/etherswitch.cc (1.10),
+	elements/etherswitch/etherswitch.hh (1.5),
+	elements/etherswitch/spantree.hh (1.12),
+	elements/standard/errorelement.cc (1.4),
+	elements/standard/errorelement.hh (1.4), elements/standard/idle.cc
+	(1.16), elements/standard/idle.hh (1.14),
+	elements/standard/suppressor.cc (1.15),
+	elements/standard/suppressor.hh (1.11), elements/tcpudp/snooptcp.cc
+	(1.3), elements/tcpudp/snooptcp.hh (1.2),
+	elements/userlevel/kerneltap.cc (1.15),
+	elements/userlevel/kerneltap.hh (1.7),
+	include/click/standard/errorelement.hh (1.4): use new flow_code()
+	function instead of forward_flow() and backward_flow()
 
 2001-03-13 Tuesday 00:54  Eddie Kohler <kohler@aciri.org>
 
@@ -3508,7 +3534,8 @@
 2001-03-12 Monday 18:04  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/element.hh (1.8), elements/standard/addressinfo.hh
-	(1.9), elements/standard/spinlockinfo.hh (1.3): renamed
+	(1.9), elements/standard/spinlockinfo.hh (1.3),
+	include/click/standard/addressinfo.hh (1.9): renamed
 	CONFIGURE_PHASE_ZERO to CONFIGURE_PHASE_FIRST, and
 	CONFIGURE_PHASE_LATE to CONFIGURE_PHASE_LAST
 
@@ -3992,17 +4019,18 @@
 	elements/userlevel/todevice.cc (1.9),
 	elements/userlevel/todevice.hh (1.9), elements/userlevel/todump.cc
 	(1.22), elements/userlevel/todump.hh (1.16),
-	include/click/element.hh (1.6), include/click/elemlink.hh (1.4),
-	include/click/router.hh (1.4), include/click/task.hh (1.1),
-	include/click/timer.hh (1.4), lib/element.cc (1.46),
-	lib/elemlink.cc (1.11), lib/router.cc (1.75), lib/task.cc (1.1),
-	lib/timer.cc (1.16), linuxmodule/Makefile.in (1.44),
-	userlevel/Makefile.in (1.43): Great Scheduling Rewrite: removed
-	ElementLink. The task queues consist of Task objects. Schedulable
-	elements, therefore, must include Task data members, and schedule
-	themselves using those members. Changed all elements to conform to
-	the new interface. Some other changes folded in. ACIRI; previous
-	changes Mazu.
+	include/click/element.hh (1.6),
+	include/click/standard/scheduleinfo.hh (1.11),
+	include/click/elemlink.hh (1.4), include/click/router.hh (1.4),
+	include/click/task.hh (1.1), include/click/timer.hh (1.4),
+	lib/element.cc (1.46), lib/elemlink.cc (1.11), lib/router.cc
+	(1.75), lib/task.cc (1.1), lib/timer.cc (1.16),
+	linuxmodule/Makefile.in (1.44), userlevel/Makefile.in (1.43): Great
+	Scheduling Rewrite: removed ElementLink. The task queues consist of
+	Task objects. Schedulable elements, therefore, must include Task
+	data members, and schedule themselves using those members. Changed
+	all elements to conform to the new interface. Some other changes
+	folded in. ACIRI; previous changes Mazu.
 
 2001-02-26 Monday 10:26  Eddie Kohler <kohler@aciri.org>
 
@@ -5687,9 +5715,10 @@
 
 2000-11-09 Thursday 21:27  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: addressinfo.cc (1.9), addressinfo.hh (1.8):
-	now AddressInfo supports combined address-prefix arguments like
-	1.0.0.59/24
+	* elements/standard/addressinfo.cc (1.9),
+	elements/standard/addressinfo.hh (1.8),
+	include/click/standard/addressinfo.hh (1.8): now AddressInfo
+	supports combined address-prefix arguments like 1.0.0.59/24
 
 2000-11-09 Thursday 21:27  Eddie Kohler <kohler@aciri.org>
 
@@ -5853,6 +5882,7 @@
 	elements/standard/classifier.hh (1.20),
 	elements/standard/compblock.hh (1.12), elements/standard/counter.hh
 	(1.17), elements/standard/discard.hh (1.13),
+	include/click/standard/addressinfo.hh (1.7),
 	elements/standard/discardnofree.hh (1.10),
 	elements/standard/dropbroadcasts.hh (1.12),
 	elements/standard/errorelement.hh (1.3),
@@ -5872,6 +5902,7 @@
 	(1.22), elements/standard/quitwatcher.hh (1.10),
 	elements/standard/randomerror.hh (1.12),
 	elements/standard/randomlossage.hh (1.12),
+	include/click/standard/errorelement.hh (1.3),
 	elements/standard/randomsource.hh (1.5),
 	elements/standard/ratedsource.hh (1.20),
 	elements/standard/ratedsplitter.hh (1.12),
@@ -5895,14 +5926,15 @@
 	elements/userlevel/fromdump.hh (1.16),
 	elements/userlevel/kerneltap.hh (1.5), elements/userlevel/tobpf.hh
 	(1.20), elements/userlevel/todevice.hh (1.7),
-	elements/userlevel/todump.cc (1.20), elements/userlevel/todump.hh
-	(1.14), etc/samplepackage/Makefile.in (1.11),
-	etc/samplepackage/sampleelt.hh (1.4), include/click/llrpc.h (1.3):
-	documentation changes: changed the way summary sections are handled
-	(they now follow "-s", as in "-s IPv6"), changed all elements to
-	conform. Also changed click-elem2man so generating manual pages
-	from a package does not clobber the old list of manual pages (new
-	-L option). (Mazu)
+	elements/userlevel/todump.cc (1.20),
+	include/click/standard/scheduleinfo.hh (1.10),
+	elements/userlevel/todump.hh (1.14), etc/samplepackage/Makefile.in
+	(1.11), etc/samplepackage/sampleelt.hh (1.4), include/click/llrpc.h
+	(1.3): documentation changes: changed the way summary sections are
+	handled (they now follow "-s", as in "-s IPv6"), changed all
+	elements to conform. Also changed click-elem2man so generating
+	manual pages from a package does not clobber the old list of manual
+	pages (new -L option). (Mazu)
 
 2000-11-01 Wednesday 19:34  Eddie Kohler <kohler@aciri.org>
 
@@ -6425,6 +6457,7 @@
 	elements/standard/averagecounter.cc (1.5),
 	elements/standard/averagecounter.hh (1.4),
 	elements/standard/bandwidthmeter.cc (1.4),
+	include/click/standard/addressinfo.hh (1.6),
 	elements/standard/bandwidthshaper.cc (1.7),
 	elements/standard/bandwidthshaper.hh (1.5),
 	elements/standard/block.cc (1.12), elements/standard/block.hh
@@ -6451,6 +6484,7 @@
 	elements/standard/errorelement.cc (1.2),
 	elements/standard/errorelement.hh (1.2),
 	elements/standard/frontdropqueue.cc (1.6),
+	include/click/standard/errorelement.hh (1.2),
 	elements/standard/hashdemux.cc (1.12),
 	elements/standard/hashdemux.hh (1.13),
 	elements/standard/hashswitch.cc (1.4),
@@ -6504,6 +6538,7 @@
 	elements/standard/timedsink.hh (1.11),
 	elements/standard/timedsource.cc (1.16),
 	elements/standard/timedsource.hh (1.11),
+	include/click/standard/scheduleinfo.hh (1.9),
 	elements/standard/unqueue.cc (1.4), elements/standard/unqueue.hh
 	(1.3), elements/userlevel/controlsocket.cc (1.12),
 	elements/userlevel/controlsocket.hh (1.9),
@@ -6742,6 +6777,7 @@
 	elements/standard/addressinfo.hh (1.5), elements/standard/align.cc
 	(1.9), elements/standard/align.hh (1.9),
 	elements/standard/alignmentinfo.cc (1.10),
+	include/click/standard/addressinfo.hh (1.5),
 	elements/standard/alignmentinfo.hh (1.9),
 	elements/standard/averagecounter.cc (1.4),
 	elements/standard/averagecounter.hh (1.3),
@@ -6777,9 +6813,10 @@
 	elements/standard/infinitesource.cc (1.19),
 	elements/standard/infinitesource.hh (1.20),
 	elements/standard/nullelement.hh (1.4), elements/standard/nulls.hh
-	(1.6), elements/standard/paint.cc (1.9), elements/standard/paint.hh
-	(1.10), elements/standard/painttee.cc (1.3),
-	elements/standard/painttee.hh (1.2),
+	(1.6), elements/standard/paint.cc (1.9),
+	include/click/standard/errorelement.hh (1.1),
+	elements/standard/paint.hh (1.10), elements/standard/painttee.cc
+	(1.3), elements/standard/painttee.hh (1.2),
 	elements/standard/peekhandlers.cc (1.8),
 	elements/standard/peekhandlers.hh (1.9),
 	elements/standard/pokehandlers.cc (1.7),
@@ -6816,6 +6853,7 @@
 	elements/standard/shaper.hh (1.17),
 	elements/standard/staticpullswitch.cc (1.3),
 	elements/standard/staticpullswitch.hh (1.3),
+	include/click/standard/scheduleinfo.hh (1.8),
 	elements/standard/staticswitch.cc (1.3),
 	elements/standard/staticswitch.hh (1.2),
 	elements/standard/stridesched.cc (1.10),
@@ -8866,7 +8904,8 @@
 	(1.13), elements/ip/lookupiproute2.cc (1.12),
 	elements/ip/ripsend.cc (1.17), elements/linuxmodule/fromlinux.cc
 	(1.15), elements/standard/addressinfo.cc (1.4),
-	elements/standard/addressinfo.hh (1.4), lib/click_ip.h (1.12),
+	elements/standard/addressinfo.hh (1.4),
+	include/click/standard/addressinfo.hh (1.4), lib/click_ip.h (1.12),
 	lib/click_ip6.h (1.6), lib/confparse.cc (1.29), lib/confparse.hh
 	(1.21), lib/etheraddress.cc (1.4), lib/etheraddress.hh (1.3),
 	lib/ip6address.cc (1.6), lib/ip6address.hh (1.5), lib/ipaddress.cc
@@ -9005,14 +9044,16 @@
 
 2000-08-18 Friday 02:11  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/addressinfo.hh (1.3): nitletlet
+	* elements/standard/addressinfo.hh (1.3),
+	include/click/standard/addressinfo.hh (1.3): nitletlet
 
 2000-08-18 Friday 02:03  Eddie Kohler <kohler@aciri.org>
 
 	* doc/element2man.pl (1.27), doc/mkwebdoc.pl (1.6),
 	elements/standard/addressinfo.cc (1.2),
-	elements/standard/addressinfo.hh (1.2), lib/confparse.cc (1.28),
-	lib/confparse.hh (1.20): addressinfo nets
+	elements/standard/addressinfo.hh (1.2),
+	include/click/standard/addressinfo.hh (1.2), lib/confparse.cc
+	(1.28), lib/confparse.hh (1.20): addressinfo nets
 
 2000-08-18 Friday 01:20  Eddie Kohler <kohler@aciri.org>
 
@@ -9034,8 +9075,9 @@
 	elements/local/rrudpipencap.cc (1.7),
 	elements/local/rrudpipencap.hh (1.4),
 	elements/standard/addressinfo.cc (1.1),
-	elements/standard/addressinfo.hh (1.1), lib/confparse.cc (1.27),
-	lib/confparse.hh (1.19), lib/element.hh (1.39),
+	elements/standard/addressinfo.hh (1.1),
+	include/click/standard/addressinfo.hh (1.1), lib/confparse.cc
+	(1.27), lib/confparse.hh (1.19), lib/element.hh (1.39),
 	tools/click-devirtualize/click-devirtualize.cc (1.8): xxx
 
 2000-08-17 Thursday 23:49  Eddie Kohler <kohler@aciri.org>
@@ -9441,9 +9483,11 @@
 	(1.16), elements/standard/rrswitch.hh (1.4),
 	elements/standard/scheduleinfo.hh (1.7),
 	elements/standard/setcrc32.hh (1.4),
-	elements/standard/strideswitch.hh (1.6), elements/standard/strip.hh
-	(1.10), elements/standard/switch.hh (1.7), elements/standard/tee.hh
-	(1.8), elements/standard/timedsink.hh (1.9),
+	elements/standard/strideswitch.hh (1.6),
+	include/click/standard/scheduleinfo.hh (1.7),
+	elements/standard/strip.hh (1.10), elements/standard/switch.hh
+	(1.7), elements/standard/tee.hh (1.8),
+	elements/standard/timedsink.hh (1.9),
 	elements/standard/timedsource.hh (1.9),
 	elements/userlevel/controlsocket.hh (1.6),
 	elements/userlevel/frombpf.hh (1.17),
@@ -9576,9 +9620,9 @@
 	elements/userlevel/fromdump.hh (1.13), elements/userlevel/tobpf.hh
 	(1.16), elements/userlevel/todevice.hh (1.3),
 	elements/userlevel/todump.hh (1.10), elements/userlevel/tun.hh
-	(1.17), lib/errorelement.hh (1.9): more element documentation:
-	added =for, =begin, =end, and summaries, greatly improved "man n
-	elements"
+	(1.17), include/click/standard/scheduleinfo.hh (1.6),
+	lib/errorelement.hh (1.9): more element documentation: added =for,
+	=begin, =end, and summaries, greatly improved "man n elements"
 
 2000-08-05 Saturday 23:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
@@ -9766,6 +9810,7 @@
 	elements/standard/stridesched.hh (1.8),
 	elements/standard/strideswitch.hh (1.2), elements/standard/strip.hh
 	(1.8), elements/standard/switch.hh (1.5),
+	include/click/standard/scheduleinfo.hh (1.5),
 	elements/userlevel/controlsocket.hh (1.4),
 	elements/userlevel/fromdevice.hh (1.4),
 	elements/userlevel/fromdump.hh (1.12),
@@ -11252,14 +11297,15 @@
 	elements/userlevel/fromdump.hh (1.9),
 	elements/userlevel/readhandler.cc (1.7),
 	elements/userlevel/readhandler.hh (1.4),
-	elements/userlevel/tobpf.cc (1.16), elements/userlevel/tobpf.hh
-	(1.14), elements/userlevel/todump.cc (1.14),
-	elements/userlevel/todump.hh (1.7), elements/userlevel/tun.cc
-	(1.10), elements/userlevel/tun.hh (1.8), lib/confparse.cc (1.16),
-	lib/confparse.hh (1.10), lib/element.cc (1.27), lib/element.hh
-	(1.32), lib/errorelement.cc (1.8), lib/errorelement.hh (1.8),
-	lib/lexer.cc (1.25), lib/router.cc (1.42): the Great configure()
-	Method Shift
+	elements/userlevel/tobpf.cc (1.16),
+	include/click/standard/scheduleinfo.hh (1.4),
+	elements/userlevel/tobpf.hh (1.14), elements/userlevel/todump.cc
+	(1.14), elements/userlevel/todump.hh (1.7),
+	elements/userlevel/tun.cc (1.10), elements/userlevel/tun.hh (1.8),
+	lib/confparse.cc (1.16), lib/confparse.hh (1.10), lib/element.cc
+	(1.27), lib/element.hh (1.32), lib/errorelement.cc (1.8),
+	lib/errorelement.hh (1.8), lib/lexer.cc (1.25), lib/router.cc
+	(1.42): the Great configure() Method Shift
 
 2000-07-07 Friday 15:59  Eddie Kohler <kohler@aciri.org>
 
@@ -11278,8 +11324,10 @@
 	elements/standard/scheduleinfo.cc (1.8),
 	elements/standard/scheduleinfo.hh (1.3),
 	elements/userlevel/frombpf.hh (1.13), elements/userlevel/tobpf.cc
-	(1.14), elements/userlevel/tobpf.hh (1.12), lib/element.cc (1.26),
-	lib/element.hh (1.31), lib/router.cc (1.40): configure_phase
+	(1.14), elements/userlevel/tobpf.hh (1.12),
+	include/click/standard/scheduleinfo.hh (1.3), lib/element.cc
+	(1.26), lib/element.hh (1.31), lib/router.cc (1.40):
+	configure_phase
 
 2000-07-06 Thursday 20:16  Eddie Kohler <kohler@aciri.org>
 
@@ -13731,6 +13779,7 @@
 	(1.8), elements/standard/rrsched.cc (1.3),
 	elements/standard/scheduleinfo.cc (1.2),
 	elements/standard/scheduleinfo.hh (1.2),
+	include/click/standard/scheduleinfo.hh (1.2),
 	elements/standard/setcrc32.cc (1.3), elements/standard/shaper.cc
 	(1.7), elements/standard/spew.cc (1.9), elements/standard/strip.cc
 	(1.4), elements/standard/suppressor.cc (1.5),
@@ -13777,8 +13826,9 @@
 
 2000-01-22 Saturday 18:59  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: scheduleinfo.cc (1.1), scheduleinfo.hh (1.1):
-	scheduleinfo forgot
+	* elements/standard/scheduleinfo.cc (1.1),
+	elements/standard/scheduleinfo.hh (1.1),
+	include/click/standard/scheduleinfo.hh (1.1): scheduleinfo forgot
 
 2000-01-22 Saturday 18:48  Eddie Kohler <kohler@aciri.org>
 
