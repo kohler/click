@@ -22,6 +22,7 @@ class HandlerCall;
 bool cp_eat_space(String &);
 bool cp_is_space(const String &);
 bool cp_is_word(const String &);
+bool cp_is_click_id(const String &);
 
 String cp_unquote(const String &);
 String cp_quote(const String &, bool allow_newlines = false);
