@@ -1,3 +1,15 @@
+2004-03-03 Wednesday 17:05  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/: dequeue.cc (1.3), dequeue.hh (1.2): Hack: in
+	kernel, use vmalloc() for big queues instead of C++ new/delete. 
+	This lets us have queues that require more than 128k, the kmalloc
+	limit.
+
+2004-03-03 Wednesday 17:05  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: packetlogger2.cc (1.2), packetlogger2.hh (1.3):
+	Check for overflow in packet log queue
+
 2004-03-03 Wednesday 09:39  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* linuxmodule/proc_click.cc (1.52): Handle failure of
