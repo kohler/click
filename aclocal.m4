@@ -522,8 +522,7 @@ dnl autoconf 2.53 versus autoconf 2.13
 		    else
 			endian_hdr=$ac_hdr
 		    fi
-		    break
-		    , endian_hdr=no)
+		    break, endian_hdr=no)
     if test "x$endian_hdr" != xno; then
 	AC_CACHE_CHECK(endianness, ac_cv_endian,
 	    dnl can't use AC_TRY_CPP because it throws out the results

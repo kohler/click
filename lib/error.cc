@@ -336,7 +336,7 @@ ErrorHandler::make_text(Seriousness seriousness, const char *s, va_list val)
      }
 
 #ifndef CLICK_TOOL
-     case 'e': {
+     case 'E': {
        Element *e = va_arg(val, Element *);
        if (e)
 	 placeholder = e->declaration();

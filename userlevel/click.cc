@@ -434,7 +434,7 @@ main(int argc, char **argv)
       printf("click (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999-2001 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
-There is NO warranty, not even for merchantability or fitness for a\n\
+There is NO warranty, not even for merchantability or fitness for any\n\
 particular purpose.\n");
       exit(0);
       break;

@@ -118,10 +118,10 @@ ToDump::initialize(ErrorHandler *errh)
 	for (int i = 0; _use_encap_from[i]; i++) {
 	    int hi = router()->find_handler(_use_encap_from[i], "encap");
 	    if (hi < 0 || !router()->handler(hi).readable())
-		return errh->error("`%e' has no `encap' read handler", _use_encap_from[i]);
+		return errh->error("`%E' has no `encap' read handler", _use_encap_from[i]);
 	    int et = fake_pcap_parse_dlt(cp_uncomment(router()->handler(hi).call_read(_use_encap_from[i])));
 	    if (et < 0)
-		return errh->error("`%e.encap' did not return a valid encapsulation type", _use_encap_from[i]);
+		return errh->error("`%E.encap' did not return a valid encapsulation type", _use_encap_from[i]);
 	    else if (_encap_type >= 0 && et != _encap_type)
 		return errh->error("`USE_ENCAP_FROM' elements have different encapsulation types");
 	    else
