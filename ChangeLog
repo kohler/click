@@ -1,3 +1,7 @@
+2001-08-10 Friday 20:59  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.18-example-conf (1.1): sample linux 2.2.18 conf
+
 2001-08-10 Friday 19:13  Eddie Kohler <kohler@aciri.org>
 
 	* .cvsignore (1.7): remove config.h.in from .cvsignore
