@@ -104,6 +104,15 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 	    errh->error("unknown directive `%#s'", word.cc());
     }
 
+    if (_timer.initialized()) {
+	// we must be live reconfiguring
+	_pos = 0;
+	_paused = false;
+	_timer.unschedule();
+	if (_h_timeout.size() != 0)
+	    _timer.schedule_after_ms(_h_timeout[0] + 1);
+    }
+
     return 0;
 }
 
@@ -111,6 +120,7 @@ int
 PokeHandlers::initialize(ErrorHandler *)
 {
     _pos = 0;
+    _paused = false;
     _timer.initialize(this);
     if (_h_timeout.size() != 0)
 	_timer.schedule_after_ms(_h_timeout[0] + 1);

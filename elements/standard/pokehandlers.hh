@@ -82,6 +82,7 @@ class PokeHandlers : public Element { public:
     
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
+    bool can_live_reconfigure() const		{ return true; }
 
     void add_handlers();
 
