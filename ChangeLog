@@ -1,3 +1,32 @@
+2002-03-05 Tuesday 21:40  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/vnode_if.pl (1.2): remove hacked vnode_if.pl
+
+2002-03-05 Tuesday 21:19  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/: Makefile.in (1.28), configure.in (1.5):
+	etc/samplepackage works for BSD kernel module
+
+2002-03-05 Tuesday 21:12  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in (1.17), configure.in (1.176), pathvars.h.in
+	(1.3), bsdmodule/.cvsignore (1.3), bsdmodule/Makefile.in (1.18),
+	bsdmodule/clickfs.cc (1.7), bsdmodule/clickfs_vnops.cc (1.9),
+	bsdmodule/massage-vnode_if.pl (1.1), etc/samplepackage/Makefile.in
+	(1.27), etc/samplepackage/configure.in (1.4): FreeBSD kernel module
+	build updates
+
+2002-03-05 Tuesday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/.cvsignore (1.5), etc/samplepackage/README
+	(1.3), etc/samplepackage/aclocal.m4 (1.1), DISTFILES (1.49): add
+	etc/samplepackage/aclocal.m4 to repository, and to DISTFILES
+
+2002-03-05 Tuesday 21:01  Eddie Kohler <kohler@aciri.org>
+
+	* etc/samplepackage/Makefile.in (1.26): updating samplepackage
+	Makefile for bsdmodule
+
 2002-03-05 Tuesday 19:39  Eddie Kohler <kohler@aciri.org>
 
 	* bsdmodule/: Makefile.in (1.16), Makefile.in (1.17): bsdmodule

@@ -1,3 +1,8 @@
+2002-03-05 Tuesday 21:12  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in, pathvars.h.in: FreeBSD kernel module build
+	updates
+
 2002-03-05 Tuesday 19:30  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/bitvector.hh, include/click/hashmap.cc,
