@@ -188,16 +188,16 @@ if ($ELEMENTS) {
 sub element_li ($) {
     my($e) = @_;
     my($t) = "<li><a href='$e.n.html'>$e</a>";
-    my($x) = '';
-    $x .= "<a href='#D'>D</a>" if $edeprecated{$e};
+    my(@x);
+    push @x, "<a href='#D'>D</a>" if $edeprecated{$e};
     if ($ereq{$e}) {
 	my($r) = $ereq{$e};
-	$x .= "<a href='#U'>U</a>" if $r =~ /\buserlevel\b/;
-	$x .= "<a href='#L'>L</a>" if $r =~ /\blinuxmodule\b/;
-	$x .= "<a href='#B'>B</a>" if $r =~ /\bbsdmodule\b/;
-	$x .= "<a href='#Ns'>Ns</a>" if $r =~ /\bns\b/;
+	push @x, "<a href='#U'>U</a>" if $r =~ /\buserlevel\b/;
+	push @x, "<a href='#L'>L</a>" if $r =~ /\blinuxmodule\b/;
+	push @x, "<a href='#B'>B</a>" if $r =~ /\bbsdmodule\b/;
+	push @x, "<a href='#Ns'>Ns</a>" if $r =~ /\bns\b/;
     }
-    $t .= " <small>[$x]</small>" if $x ne '';
+    $t .= " <small>[", join('&nbsp;', @x), "</small>" if @x;
     "$t</li>\n";
 }
 
