@@ -77,6 +77,9 @@
 /* Define if you have the vsnprintf function. */
 #undef HAVE_VSNPRINTF
 
+/* The size of a `off_t', as computed by sizeof. */
+#undef SIZEOF_OFF_T
+
 
 /* Set feature test macros before anything is included. */
 #ifdef HAVE_LARGE_FILE_SUPPORT

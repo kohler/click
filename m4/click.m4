@@ -57,7 +57,7 @@ AC_DEFUN([CLICK_PROG_CXX], [
 
     dnl work around Autoconf 2.53, which #includes <stdlib.h> inappropriately
     if grep __cplusplus confdefs.h >/dev/null 2>&1; then
-	sed 's/#ifdef __cplusplus/#if defined(__cplusplus) \&\& !defined(__KERNEL__)/' < confdefs.h > confdefs.h~
+	sed 's/#ifdef __cplusplus/#if 0/' < confdefs.h > confdefs.h~
 	mv confdefs.h~ confdefs.h
     fi
 
@@ -667,4 +667,11 @@ void h(off_t a) {
     if test "x$ac_cv_large_file_support" = xyes; then
 	AC_DEFINE(HAVE_LARGE_FILE_SUPPORT)
     fi
+
+    AC_CHECK_SIZEOF(off_t, [], [#ifdef HAVE_LARGE_FILE_SUPPORT
+# define _LARGEFILE_SOURCE 1
+# define _FILE_OFFSET_BITS 64
+#endif
+#include <stdio.h>
+#include <sys/types.h>])
 ])
