@@ -56,14 +56,20 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .c.uo:
 	$(U_COMPILE) -c $< -o $@
+	@/bin/sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
 .cc.uo:
 	$(U_CXXCOMPILE) -c $< -o $@
+	@/bin/sed 's/\.o:/\.uo:/' < $*.d > $*.ud; /bin/rm -f $*.d
+.cc.uii:
+	$(U_CXXCOMPILE) -E $< > $@
 .c.ko:
 	$(K_COMPILE) -c $< -o $@
+	@/bin/sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
 .cc.ko:
 	$(K_CXXCOMPILE) -c $< -o $@
-.cc.ii:
-	$(U_CXXCOMPILE) -E $< > $@
+	@/bin/sed 's/\.o:/\.ko:/' < $*.d > $*.kd; /bin/rm -f $*.d
+.cc.kii:
+	$(K_CXXCOMPILE) -E $< > $@
 
 
 -include elements.mk
@@ -116,7 +122,7 @@ upackage.cc: uelements.conf $(clicksrcdir)/mkelemconf.sh
 	$(clicksrcdir)/mkelemconf.sh -k $(package) < uelements.conf > upackage.cc
 	@rm -f upackage.d
 
-DEPFILES := $(wildcard *.d)
+DEPFILES := $(wildcard *.{d,kd,ud})
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
@@ -127,7 +133,7 @@ install: $(TARGETS)
 install-man:
 
 clean:
-	-rm -f *.d *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf
+	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf
 distclean: clean
 	-rm -f Makefile
 
