@@ -396,6 +396,7 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_idle_pulls) + " idle pulls\n" +
     String(td->_busy_returns) + " device busy returns\n" +
     String(td->_pkts_sent) + " packets sent\n" +
+    String(td->_linux_pkts_sent) + " linux packets sent\n" +
     String(td->_time_pull) + " cycles pull\n" +
     String(td->_time_clean) + " cycles clean\n" +
     String(td->_time_queue) + " cycles queue\n" +
