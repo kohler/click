@@ -42,6 +42,8 @@
 /* remove possible definitions for symbols */
 #undef icmp6_identifier
 #undef icmp6_sequence
+#undef icmp6_pointer
+#undef icmp6_maxdelay
 
 
 /* most ICMP6 request types */
