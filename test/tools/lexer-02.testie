@@ -2,13 +2,13 @@
 Check lexical scoping of formals
 %script
 
-click-flatten A > AO_TOOL
-click -qo- A > AO_USERLEVEL
+click-flatten A.click > AO_TOOL
+click -qo- A.click > AO_USERLEVEL
 
-click-flatten B > BO_TOOL
-click -qo- B > BO_USERLEVEL
+click-flatten B.click > BO_TOOL
+click -qo- B.click > BO_USERLEVEL
 
-%file A
+%file A.click
 elementclass Foo {
 $a |
    DriverManager($a);
@@ -22,7 +22,7 @@ Far(wait_pause stop, stop);
 %expect AO_TOOL AO_USERLEVEL
 Far@1/Foo@1/DriverManager@1 :: DriverManager(stop);
 
-%file B
+%file B.click
 elementclass Foo {
 $a |
    elementclass Bar {

@@ -22,7 +22,7 @@ sub shquote ($) {
 
 package Testie;
 
-my %_special_filenames = ('stdin' => 1, 'stdout' => 2, 'stderr' => 2);
+my %_special_filerefs = ('stdin' => 1, 'stdout' => 2, 'stderr' => 2);
 %_variables = ();
 
 # return filename
@@ -171,7 +171,7 @@ sub _read_file_section ($$$$) {
     my($fh, $tt, $args, $secname) = @_;
     $args =~ s/\s+$//;
 
-    # split arguments to get filename
+    # split arguments to get fileref
     my(@args) = split(/\s+/, $args);
 
     # assert that we understand $secname
@@ -184,7 +184,7 @@ sub _read_file_section ($$$$) {
 	shift @args;
     }
 
-    # make sure there are filenames
+    # make sure there are filerefs
     if (!@args) {
 	push @args, "stdin" if $secname eq 'file';
 	push @args, "stdout" if $secname eq 'expect' || $secname eq 'expectv' || $secname eq 'expectx';
@@ -213,6 +213,8 @@ sub _read_file_section ($$$$) {
 	my($hashkey) = substr($secname, 0, 1) . ":" . $fn;
 	if (exists $tt->{$hashkey}) {
 	    $tt->file_err("file `$fn' already defined");
+	} elsif ($fn !~ m/^[A-Za-z_.0-9]+$/) {
+	    $tt->file_err("fileref error: `$fn' contains illegal characters");
 	} else {
 	    push @{$tt->{$secname}}, $fn;
 	}
@@ -289,14 +291,14 @@ sub read (*;$) {
 }
 
 sub have_file ($$) {
-    my($tt, $filename) = @_;
-    exists($tt->{"f:$filename"}) || exists($tt->{"e:$filename"});
+    my($tt, $fileref) = @_;
+    exists($tt->{"f:$fileref"}) || exists($tt->{"e:$fileref"});
 }
 
 sub save_files ($&) {
-    my($tt, $filename_subr) = @_;
+    my($tt, $fileref_subr) = @_;
     foreach my $fn (@{$tt->{'file'}}) {
-	my($actual) = $filename_subr->($fn);
+	my($actual) = $fileref_subr->($fn);
 	next if !defined($actual);
 	open OUT, ">$actual" || die "$actual: $!\n";
 	print OUT $tt->{"f:$fn"};
@@ -305,17 +307,8 @@ sub save_files ($&) {
 }
 
 sub script_text ($&) {
-    my($tt, $filename_subr) = @_;
-
-    # develop file-replacing subroutine
+    my($tt, $fileref_subr) = @_;
     my($subbody, $var, $val) = '';
-    foreach $var (@{$tt->{'file'}}, @{$tt->{'expect'}}, @{$tt->{'expectx'}}, @{$tt->{'expectv'}}, @{$tt->{'ignore'}}) {
-	next if $_special_filenames{$var};
-	$val = quotemeta($filename_subr->($var));
-	next if !defined($val);
-	$var = quotemeta($var);
-	$subbody .= "\$t =~ s/(^|[^\\\\\\w])$var\\b/\$1$val/g;\n";
-    }
 
     # add variables
     while (($var, $val) = each %_variables) {
@@ -353,10 +346,10 @@ EOD
 }
 
 sub output_error ($$) {
-    my($tt, $filename_subr) = @_;
+    my($tt, $fileref_subr) = @_;
     my($fn) = $tt->filename;
     
-    if (!open(ERR, $filename_subr->('stderr'))) {
+    if (!open(ERR, $fileref_subr->('stderr'))) {
 	print STDERR "$fn: $!\n";
 	return -1;
     }
@@ -437,7 +430,7 @@ sub _output_expectation_error ($$$$$) {
 }
 
 sub check_expects ($$) {
-    my($tt, $filename_subr) = @_;
+    my($tt, $fileref_subr) = @_;
     my($fn) = $tt->filename;
     local($/) = undef;
     my($retval) = 0;
@@ -450,7 +443,7 @@ sub check_expects ($$) {
 	    next;
 	}
 	
-	if (!open(IN, $filename_subr->($efn))) {
+	if (!open(IN, $fileref_subr->($efn))) {
 	    print STDERR "$fn: ---$!\n";
 	    $retval = 1;
 	    next;
@@ -527,7 +520,7 @@ sub check_expects ($$) {
 
     # check expectv files
     foreach my $efn (@{$tt->{'expectv'}}) {
-	if (!open(IN, $filename_subr->($efn))) {
+	if (!open(IN, $fileref_subr->($efn))) {
 	    print STDERR "$fn: $!\n";
 	    $retval = 1;
 	    next;
@@ -558,20 +551,12 @@ my($dir, @show, $show_stdout, $show_stderr);
 
 sub script_fn_to_fn ($) {
     my($fn) = @_;
-    if (exists $Testie::_special_filenames{$fn}) {
-	"$fn";
-    } else {
-	"f_$fn";
-    }
+    $fn;
 }
 
 sub out_script_fn_to_fn ($) {
     my($fn) = @_;
-    if (exists $Testie::_special_filenames{$fn}) {
-	"$dir/$fn";
-    } else {
-	"$dir/f_$fn";
-    }
+    "$dir/$fn";
 }
 
 sub run_test (;$$) {
@@ -597,7 +582,7 @@ sub run_test (;$$) {
     $tt->save_files(\&out_script_fn_to_fn);
 
     # save the script
-    open(SCR, ">$dir/script") || die "$dir/script: $!\n";
+    open(SCR, ">$dir/+script+") || die "$dir/+script+: $!\n";
     print SCR $tt->script_text(\&script_fn_to_fn);
     close SCR;
 
@@ -605,7 +590,7 @@ sub run_test (;$$) {
     my($actual_stdin) = ($tt->have_file('stdin') ? script_fn_to_fn('stdin') : "/dev/null");
     my($actual_stdout) = ($show_stdout || $tt->have_file('stdout') ? script_fn_to_fn('stdout') : "/dev/null");
     my($actual_stderr) = script_fn_to_fn('stderr');
-    my($exitval) = system("cd $dir; /bin/sh script <$actual_stdin >$actual_stdout 2>$actual_stderr");
+    my($exitval) = system("cd $dir; /bin/sh ./+script+ <$actual_stdin >$actual_stdout 2>$actual_stderr");
 
     # echo files
     foreach $f (@show) {
@@ -634,7 +619,7 @@ sub run_test (;$$) {
     if ($verbose) {
 	print "$fn: success\n";
     }
-    
+
     0;
 }
 
@@ -835,7 +820,7 @@ Preserve the temporary directory created for the test.
 =item -s, --show FILE
 
 Echo the contents of FILE on completion. FILE should be one of the
-filenames specified by %file or %expect, or 'stdout' or 'stderr'.
+filenames specified by %file or %expect*, or 'stdout' or 'stderr'.
 
 =back
 
@@ -844,15 +829,17 @@ filenames specified by %file or %expect, or 'stdout' or 'stderr'.
 Testie files consist of several sections, each introduced by a line
 starting with %. There must be, at least, a %script section.
 
+The %file and %expect* sections define input and/or output files by
+name. Testie runs its script in a private directory in F</tmp>; any files
+mentioned in %file or %expect* are placed in that directory.
+
 =over 8
 
 =item %script
 
 The shell script (in sh syntax) that controls the test. Testie will run
 each command in sequence. Every command must succeed, with exit status 0,
-or the test will fail. Any FILENAMEs from %file, %expect, %expectv, and
-%expectx sections will be replaced by the actual filenames, except within
-single quotes.
+or the test will fail.
 
 =item %info
 
@@ -860,17 +847,17 @@ This section is ignored. You can use it for comments.
 
 =item %file [+LENGTH] FILENAME...
 
-An input file for the script. FILENAME can be `stdin', for standard input,
-or a filename. If LENGTH is provided, the file data consists of the LENGTH
-bytes following this line; otherwise, it consists of the data up to the
-next section.
+Create an input file for the script. FILENAME can be `stdin', which sets
+the script's standard input. If LENGTH is provided, the file data consists
+of the LENGTH bytes following this line; otherwise, it consists of the data
+up to the next section. FILENAME cannot contain slashes.
 
 =item %expectv [+LENGTH] FILENAME...
 
 An expected output file for the script. FILENAME can be `stdout', for
-standard output, or a filename. If LENGTH is provided, the file data
-consists of the LENGTH bytes following this line; otherwise, it consists of
-the data up to the next section. 
+standard output. If LENGTH is provided, the file data consists of the
+LENGTH bytes following this line; otherwise, it consists of the data up to
+the next section.
 
 Testie will run the script, then compare the file generated by script
 with the provided data. They must match exactly or the test fails.
