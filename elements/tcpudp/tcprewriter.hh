@@ -55,7 +55,7 @@ seconds.
 
 =h mappings read-only
 
-Returns a human-readable description of the IPRewriter's current set of
+Returns a human-readable description of the TCPRewriter's current set of
 mappings.
 
 =a IPRewriter, IPRewriterPatterns, FTPPortMapper */

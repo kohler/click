@@ -110,7 +110,7 @@ class IPRw::Mapping { public:
 
     bool free_tracked() const		{ return _free_tracked; }
     void add_to_free_tracked_tail(Mapping *&head, Mapping *&tail);
-    void clear_free_tracked()		{ _free_tracked = 0; }
+    void clear_free_tracked();
 
     void apply(WritablePacket *);
 
@@ -259,6 +259,14 @@ IPRw::Mapping::add_to_free_tracked_tail(Mapping *&head, Mapping *&tail)
     assert(!_free_tracked && !_reverse->_free_tracked);
     _free_tracked = _reverse->_free_tracked = true;
     primary()->append_to_free(head, tail);
+}
+
+inline void
+IPRw::Mapping::clear_free_tracked()
+{
+    _free_tracked = _reverse->_free_tracked = false;
+    _free_next = 0;
+    assert(_reverse->_free_next == 0);
 }
 
 inline bool

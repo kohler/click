@@ -73,22 +73,23 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
   int ninputs = 0;
-  _tcp_timeout_jiffies = 86400000;	// 24 hours
-  _tcp_done_timeout_jiffies = 30000;	// 30 seconds
-  _udp_timeout_jiffies = 60000;		// 1 minute
-  _tcp_gc_interval = 3600000;		// 1 hour
-  _tcp_done_gc_interval = 10000;	// 10 seconds
-  _udp_gc_interval = 10000;		// 10 seconds
+  // numbers in seconds
+  _tcp_timeout_jiffies = 86400;		// 24 hours
+  _tcp_done_timeout_jiffies = 30;	// 30 seconds
+  _udp_timeout_jiffies = 60;		// 1 minute
+  _tcp_gc_interval = 3600;		// 1 hour
+  _tcp_done_gc_interval = 10;		// 10 seconds
+  _udp_gc_interval = 10;		// 10 seconds
   _tcp_done_gc_incr = false;
   
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
-			    "REAP_TCP", cpSecondsAsMilli, "TCP garbage collection interval", &_tcp_gc_interval,
-			    "REAP_TCP_DONE", cpSecondsAsMilli, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
-			    "REAP_UDP", cpSecondsAsMilli, "UDP garbage collection interval", &_udp_gc_interval,
-			    "TCP_TIMEOUT", cpSecondsAsMilli, "TCP timeout interval", &_tcp_timeout_jiffies,
-			    "TCP_DONE_TIMEOUT", cpSecondsAsMilli, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
-			    "UDP_TIMEOUT", cpSecondsAsMilli, "UDP timeout interval", &_udp_timeout_jiffies,
+			    "REAP_TCP", cpSeconds, "TCP garbage collection interval", &_tcp_gc_interval,
+			    "REAP_TCP_DONE", cpSeconds, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
+			    "REAP_UDP", cpSeconds, "UDP garbage collection interval", &_udp_gc_interval,
+			    "TCP_TIMEOUT", cpSeconds, "TCP timeout interval", &_tcp_timeout_jiffies,
+			    "TCP_DONE_TIMEOUT", cpSeconds, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
+			    "UDP_TIMEOUT", cpSeconds, "UDP timeout interval", &_udp_timeout_jiffies,
 			    "TCP_DONE_GC_INCR", cpBool, "clean tcp completed sessions incrementally", &_tcp_done_gc_incr,
 			    0) != 0)
       continue;
@@ -100,9 +101,9 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
 
   // change timeouts into jiffies
-  _tcp_timeout_jiffies = (_tcp_timeout_jiffies * CLICK_HZ) / 1000;
-  _tcp_done_timeout_jiffies = (_tcp_done_timeout_jiffies * CLICK_HZ) / 1000;
-  _udp_timeout_jiffies = (_udp_timeout_jiffies * CLICK_HZ) / 1000;
+  _tcp_timeout_jiffies *= CLICK_HZ;
+  _tcp_done_timeout_jiffies *= CLICK_HZ;
+  _udp_timeout_jiffies *= CLICK_HZ;
   
   if (ninputs == 0)
     return errh->error("too few arguments; expected `INPUTSPEC, ...'");
@@ -125,9 +126,9 @@ IPRewriter::initialize(ErrorHandler *)
   _tcp_done_gc_timer.initialize(this);
   _udp_gc_timer.initialize(this);
 
-  _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
-  _udp_gc_timer.schedule_after_ms(_udp_gc_interval);
-  _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
+  _tcp_gc_timer.schedule_after_s(_tcp_gc_interval);
+  _udp_gc_timer.schedule_after_s(_udp_gc_interval);
+  _tcp_done_gc_timer.schedule_after_s(_tcp_done_gc_interval);
 
   return 0;
 }
@@ -210,7 +211,7 @@ IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
   rw->_spinlock.release();
   } else wait = 20;
 #endif
-  timer->schedule_after_ms(wait);
+  timer->reschedule_after_s(wait);
 }
 
 void
@@ -233,7 +234,7 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
   rw->_spinlock.release();
   } else wait = 20;
 #endif
-  timer->schedule_after_ms(wait);
+  timer->reschedule_after_s(wait);
 }
 
 void
@@ -254,7 +255,7 @@ IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
   rw->_spinlock.release();
   } else wait = 20;
 #endif
-  timer->schedule_after_ms(wait);
+  timer->reschedule_after_s(wait);
 }
 
 IPRw::Mapping *

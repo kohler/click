@@ -165,17 +165,18 @@ TCPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
   int ninputs = 0;
-  _tcp_timeout_jiffies = 86400000;	// 24 hours
-  _tcp_done_timeout_jiffies = 240000;	// 4 minutes
-  _tcp_gc_interval = 3600000;		// 1 hour
-  _tcp_done_gc_interval = 10000;	// 10 seconds
+  // numbers in seconds
+  _tcp_timeout_jiffies = 86400;		// 24 hours
+  _tcp_done_timeout_jiffies = 240;	// 4 minutes
+  _tcp_gc_interval = 3600;		// 1 hour
+  _tcp_done_gc_interval = 10;		// 10 seconds
 
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
-			    "REAP_TCP", cpSecondsAsMilli, "reap interval for active TCP connections", &_tcp_gc_interval,
-			    "REAP_TCP_DONE", cpSecondsAsMilli, "reap interval for completed TCP connections", &_tcp_done_gc_interval,
-			    "TCP_TIMEOUT", cpSecondsAsMilli, "TCP timeout interval", &_tcp_timeout_jiffies,
-			    "TCP_DONE_TIMEOUT", cpSecondsAsMilli, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
+			    "REAP_TCP", cpSeconds, "reap interval for active TCP connections", &_tcp_gc_interval,
+			    "REAP_TCP_DONE", cpSeconds, "reap interval for completed TCP connections", &_tcp_done_gc_interval,
+			    "TCP_TIMEOUT", cpSeconds, "TCP timeout interval", &_tcp_timeout_jiffies,
+			    "TCP_DONE_TIMEOUT", cpSeconds, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
 			    0) != 0)
       continue;
     InputSpec is;
@@ -186,8 +187,8 @@ TCPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
 
   // change timeouts into jiffies
-  _tcp_timeout_jiffies = (_tcp_timeout_jiffies * CLICK_HZ) / 1000;
-  _tcp_done_timeout_jiffies = (_tcp_done_timeout_jiffies * CLICK_HZ) / 1000;
+  _tcp_timeout_jiffies *= CLICK_HZ;
+  _tcp_done_timeout_jiffies *= CLICK_HZ;
 
   if (ninputs == 0)
     return errh->error("too few arguments; expected `INPUTSPEC, ...'");
@@ -204,9 +205,9 @@ int
 TCPRewriter::initialize(ErrorHandler *)
 {
   _tcp_gc_timer.initialize(this);
-  _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
+  _tcp_gc_timer.schedule_after_s(_tcp_gc_interval);
   _tcp_done_gc_timer.initialize(this);
-  _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
+  _tcp_done_gc_timer.schedule_after_s(_tcp_done_gc_interval);
   _nmapping_failures = 0;
   return 0;
 }
@@ -263,7 +264,7 @@ TCPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 {
   TCPRewriter *rw = (TCPRewriter *)thunk;
   rw->clean_map(rw->_tcp_map, click_jiffies() - rw->_tcp_timeout_jiffies);
-  timer->schedule_after_ms(rw->_tcp_gc_interval);
+  timer->reschedule_after_s(rw->_tcp_gc_interval);
 }
 
 void
@@ -273,7 +274,7 @@ TCPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
   rw->clean_map_free_tracked
     (rw->_tcp_map, rw->_tcp_done, rw->_tcp_done_tail,
      click_jiffies() - rw->_tcp_done_timeout_jiffies);
-  timer->schedule_after_ms(rw->_tcp_done_gc_interval);
+  timer->reschedule_after_s(rw->_tcp_done_gc_interval);
 }
 
 TCPRewriter::TCPMapping *
