@@ -1,3 +1,20 @@
+2004-07-31 Saturday 01:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipaddrrewriter.cc (1.21),
+	elements/ip/ipaddrrewriter.hh (1.12), elements/ip/iprw.cc (1.54),
+	elements/ip/iprw.hh (1.28), elements/tcpudp/iprewriter.cc (1.43),
+	elements/tcpudp/iprewriter.hh (1.24),
+	elements/tcpudp/tcprewriter.cc (1.35),
+	elements/tcpudp/tcprewriter.hh (1.18),
+	test/IPRewriter/IPAddrRewriter-01.testie (1.1),
+	test/IPRewriter/IPRewriter-02.testie (1.1): change parsing and
+	unparsing functions somewhat, small reformatting, add tests (pretty
+	safe changes)
+
+2004-07-31 Saturday 01:10  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/ipaddress.hh (1.26): add operator^= and operator^
+
 2004-07-30 Friday 19:05  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: aggpktcounter.cc (1.5), aggpktcounter.hh
