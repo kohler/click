@@ -2,9 +2,9 @@
 #define PACKET_HH
 #include <click/ipaddress.hh>
 #include <click/glue.hh>
-extern "C" { 
-#include <click/skbmgr.hh> 
-}
+#ifdef __KERNEL__
+# include <click/skbmgr.hh>
+#endif
 
 class IP6Address;
 struct click_ip;
@@ -14,8 +14,8 @@ class WritablePacket;
 class Packet { public:
 
   // PACKET CREATION
-  static unsigned default_headroom()	{ return 28; }
-  static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
+  static const unsigned DEFAULT_HEADROOM = 28;
+  static const unsigned MIN_TOTAL_LENGTH = 64;
   
   static WritablePacket *make(unsigned);
   static WritablePacket *make(const char *, unsigned);
@@ -206,7 +206,7 @@ class Packet { public:
   bool alloc_data(unsigned, unsigned, unsigned);
 #endif
 
-  WritablePacket *uniqueify_copy();
+  WritablePacket *expensive_uniqueify();
   WritablePacket *expensive_push(unsigned int nbytes);
   WritablePacket *expensive_put(unsigned int nbytes);
   
@@ -245,22 +245,19 @@ class WritablePacket : public Packet { public:
 inline WritablePacket *
 Packet::make(unsigned len)
 {
-  return make(default_headroom(), (const unsigned char *)0, len,
-	      default_tailroom(len));
+  return make(DEFAULT_HEADROOM, (const unsigned char *)0, len, 0);
 }
 
 inline WritablePacket *
 Packet::make(const char *s, unsigned len)
 {
-  return make(default_headroom(), (const unsigned char *)s, len,
-	      default_tailroom(len));
+  return make(DEFAULT_HEADROOM, (const unsigned char *)s, len, 0);
 }
 
 inline WritablePacket *
 Packet::make(const unsigned char *s, unsigned len)
 {
-  return make(default_headroom(), (const unsigned char *)s, len,
-	      default_tailroom(len));
+  return make(DEFAULT_HEADROOM, (const unsigned char *)s, len, 0);
 }
 
 #ifdef __KERNEL__
@@ -299,22 +296,20 @@ Packet::uniqueify()
   if (!shared())
     return static_cast<WritablePacket *>(this);
   else
-    return uniqueify_copy();
+    return expensive_uniqueify();
 }
 
 inline WritablePacket *
 Packet::push(unsigned int nbytes)
 {
-  if (headroom() >= nbytes) {
-    if (WritablePacket *q = uniqueify()) {
+  if (headroom() >= nbytes && !shared()) {
+    WritablePacket *q = (WritablePacket *)this;
 #ifdef __KERNEL__
-      __skb_push(q->skb(), nbytes);
+    __skb_push(q->skb(), nbytes);
 #else
-      q->_data -= nbytes;
+    q->_data -= nbytes;
 #endif
-      return q;
-    } else
-      return 0;
+    return q;
   } else
     return expensive_push(nbytes);
 }
@@ -351,16 +346,14 @@ Packet::pull(unsigned int nbytes)
 inline WritablePacket *
 Packet::put(unsigned int nbytes)
 {
-  if (tailroom() >= nbytes) {
-    if (WritablePacket *q = uniqueify()) {
+  if (tailroom() >= nbytes && !shared()) {
+    WritablePacket *q = (WritablePacket *)this;
 #ifdef __KERNEL__
-      __skb_put(q->skb(), nbytes);
+    __skb_put(q->skb(), nbytes);
 #else
-      q->_tail += nbytes;
+    q->_tail += nbytes;
 #endif
-      return q;
-    } else
-      return 0;
+    return q;
   } else
     return expensive_put(nbytes);
 }

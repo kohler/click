@@ -44,11 +44,10 @@ WritablePacket *
 Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
 	     unsigned tailroom)
 {
-  unsigned size = len + headroom + tailroom;
   int want = 1;
-  if (struct sk_buff *skb = skbmgr_allocate_skbs(size, &want)) {
+  if (struct sk_buff *skb = skbmgr_allocate_skbs(headroom, len + tailroom, &want)) {
     assert(want == 1);
-    skb_reserve(skb, headroom);	// leave some headroom
+    // packet comes back from skbmgr with headroom reserved
     __skb_put(skb, len);	// leave space for data
     if (data) memcpy(skb->data, data, len);
     skb->pkt_type = HOST | PACKET_CLEAN;
@@ -104,6 +103,10 @@ bool
 Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
 {
   unsigned n = len + headroom + tailroom;
+  if (n < MIN_TOTAL_LENGTH) {
+    tailroom = MIN_TOTAL_LENGTH - len - headroom;
+    n = MIN_TOTAL_LENGTH;
+  }
   _destructor = 0;
   _head = new unsigned char[n];
   if (!_head)
@@ -146,7 +149,7 @@ Packet::clone()
 }
 
 WritablePacket *
-Packet::uniqueify_copy()
+Packet::expensive_uniqueify()
 {
   struct sk_buff *nskb = skb_copy(skb(), GFP_ATOMIC);
   if (nskb) {
@@ -182,7 +185,7 @@ Packet::clone()
 }
 
 WritablePacket *
-Packet::uniqueify_copy()
+Packet::expensive_uniqueify()
 {
   WritablePacket *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
   if (p) {
@@ -222,31 +225,32 @@ WritablePacket *
 Packet::expensive_push(unsigned int nbytes)
 {
   static int chatter = 0;
-  if (chatter < 5) {
+  if (headroom() < nbytes && chatter < 5) {
     click_chatter("expensive Packet::push; have %d wanted %d",
                   headroom(), nbytes);
     chatter++;
   }
+  WritablePacket *q = Packet::make((nbytes + 128) & ~3, total_data(), total_length(), 0);
+  if (q) {
+    // [N+128, H+L+T, 0 / H+L+T]
 #ifdef __KERNEL__
-  struct sk_buff *nskb = skb_realloc_headroom(skb(), nbytes);
-  // new packet guaranteed not to be shared
-  WritablePacket *q = reinterpret_cast<WritablePacket *>(nskb);
-  if (q) {
-    __skb_push(q->skb(), nbytes);
-    // skb_realloc_headroom doesn't deal well with null network header
-    if (!network_header())
-      q->set_network_header(0, 0);
-  }
+    sk_buff *skb = q->skb();
+    skb->data -= nbytes - headroom();
+    // [128+H, N+L+T, 0 / H+L+T]
+    skb->tail -= tailroom();
+    // [128+H, N+L, T / H+L+T]
+    skb->len += nbytes - tailroom() - headroom();
+    // [128+H, N+L, T / N+L]
 #else
-  WritablePacket *q = Packet::make(nbytes + 128, total_data(), total_length(), 0);
-  if (q) {
-    q->_data += headroom() - nbytes;
+    q->_data -= nbytes - headroom();
+    // [128+H, N+L+T, 0]
     q->_tail -= tailroom();
+    // [128+H, N+L, T]
+#endif
     q->copy_annotations(this);
     if (network_header())
-      q->set_network_header(q->data() + network_header_offset(), network_header_length());
+      q->set_network_header(q->data() + network_header_offset() + nbytes, network_header_length());
   }
-#endif
   kill();
   return q;
 }
@@ -255,7 +259,7 @@ WritablePacket *
 Packet::expensive_put(unsigned int nbytes)
 {
   static int chatter = 0;
-  if (chatter < 5) {
+  if (tailroom() < nbytes && chatter < 5) {
     click_chatter("expensive Packet::put; have %d wanted %d",
                   tailroom(), nbytes);
     chatter++;
