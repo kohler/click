@@ -63,7 +63,7 @@ WifiDecap::simple_action(Packet *p)
   EtherAddress src;
   EtherAddress dst;
 
-  if (p->length() < sizeof(struct click_wifi)) {
+  if (p->length() < sizeof(struct click_wifi) + sizeof(struct click_llc)) {
     p->kill();
     return 0;
   }
