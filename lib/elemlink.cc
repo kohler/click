@@ -22,12 +22,7 @@ ElementLink::set_max_tickets(int n)
 {
   if (n > MAX_TICKETS)
     n = MAX_TICKETS;
-  _tickets = _max_tickets = n;
-  if (n > 0) {
-    _stride = STRIDE1 / _tickets;
-    assert(_stride < MAX_STRIDE);
-  } else
-    _stride = 0;
+  _max_tickets = n;
 }
 
 #endif

@@ -28,6 +28,7 @@ class ErrorHandler {
   virtual int verror(Seriousness, const String &, const char *, va_list);
   virtual void vmessage(Seriousness, const String &) = 0;
 
+  int lmessage(const String &, const char *, ...);
   int lwarning(const String &, const char *, ...);
   int lerror(const String &, const char *, ...);
   int lfatal(const String &, const char *, ...);

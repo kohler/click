@@ -67,6 +67,16 @@ ErrorHandler::fatal(const char *format, ...)
 }
 
 int
+ErrorHandler::lmessage(const String &where, const char *format, ...)
+{
+  va_list val;
+  va_start(val, format);
+  verror(Message, where, format, val);
+  va_end(val);
+  return -1;
+}
+
+int
 ErrorHandler::lwarning(const String &where, const char *format, ...)
 {
   va_list val;

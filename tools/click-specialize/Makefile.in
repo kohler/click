@@ -1,0 +1,87 @@
+SHELL = @SHELL@
+@SUBMAKE@
+
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
+top_builddir := ../..
+subdir := tools/click-specialize
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libdir = @libdir@
+mandir = @mandir@
+
+VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/lib
+
+CC = @CC@
+CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+INSTALL = @INSTALL@
+mkinstalldirs = @top_srcdir@/mkinstalldirs
+
+.SUFFIXES:
+.SUFFIXES: .S .c .cc .o .s
+
+.c.o:
+	$(COMPILE) -c $<
+.s.o:
+	$(COMPILE) -c $<
+.S.o:
+	$(COMPILE) -c $<
+.cc.o:
+	$(CXXCOMPILE) -c $<
+
+
+OBJS = codeblock.o expr.o exprxform.o feature.o field.o handler.o \
+	landmark.o main.o mesg.o namespace.o operator.o output.o \
+	permstr.o token.o type.o writer.o xerror.o yuck.o yucktype.o
+
+CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL -DHAVE_PERMSTRING
+CFLAGS = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@
+
+DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) \
+	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/lib
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+all: libclicktool.a click-specialize
+
+libclicktool.a:
+	@cd ../lib; $(MAKE) libclicktool.a
+
+click-specialize: Makefile $(OBJS)
+	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+install: click-specialize
+	$(mkinstalldirs) $(bindir)
+	$(INSTALL) click-specialize $(bindir)/click-specialize
+install-man:
+
+clean:
+	rm -f *.d *.o click-specialize
+distclean: clean
+	-rm -f Makefile
+
+.PHONY: all clean distclean install install-bin install-man libclicktool.a
