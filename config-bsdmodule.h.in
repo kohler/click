@@ -23,8 +23,12 @@
 
 #ifdef __cplusplus
 
+/* Declare operator new. */
+void *operator new(size_t) throw ();
+void *operator new[](size_t) throw ();
+
 /* Provide placement new. */
-inline void *operator new(size_t, void *v) { return v; }
+inline void *operator new(size_t, void *v) throw () { return v; }
 #define HAVE_PLACEMENT_NEW 1
 
 #endif /* __cplusplus */

@@ -67,7 +67,7 @@ click_chatter(const char *fmt, ...)
 unsigned int click_new_count = 0;
 unsigned int click_outstanding_news = 0;
 
-#if defined(_KERNEL) || defined(__KERNEL__)
+#if defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)
 
 /*
  * Kernel module glue.
@@ -141,7 +141,7 @@ static Chunk *chunks = 0;
 int click_dmalloc_where = 0x3F3F3F3F;
 
 void *
-operator new(unsigned int sz)
+operator new(unsigned int sz) throw ()
 {
   click_new_count++;
   click_outstanding_news++;
@@ -162,7 +162,7 @@ operator new(unsigned int sz)
 }
 
 void *
-operator new [] (unsigned int sz)
+operator new [] (unsigned int sz) throw ()
 {
   click_new_count++;
   click_outstanding_news++;
