@@ -412,8 +412,8 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
 	if (i >= 0)
 	    config_str = archive[i].data;
 	else {
-	    errh->error("archive has no `config' section");
-	    config_str = String();
+	    errh->error("%s: archive has no 'config' section", filename.c_str());
+	    return 0;
 	}
     }
 
