@@ -1,3 +1,16 @@
+2001-07-19 Thursday 22:07  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in (1.10): nitlet
+
+2001-07-19 Thursday 21:49  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in (1.8), doc/click-fastclassifier.1 (1.5),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.40),
+	click-compile.in (1.9): add --quiet options to click-compile and
+	click-fastclassifier; also, click-compile not finding source code
+	is not a fatal error (although not finding the include directory is
+	fatal)
+
 2001-07-19 Thursday 19:38  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/: red.cc (1.32), red.hh (1.26): RED: add
