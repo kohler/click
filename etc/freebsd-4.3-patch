@@ -1,8 +1,8 @@
 
 Index: net/if_var.h
 --- net/if_var.h.orig	Thu Aug  2 19:47:22 2001
-+++ net/if_var.h	Mon Jul 23 15:32:49 2001
-@@ -137,6 +137,40 @@
++++ net/if_var.h	Mon Aug 20 11:08:49 2001
+@@ -137,6 +137,45 @@
  		__P((void *));
  	int	(*if_resolvemulti)	/* validate/resolve multicast */
  		__P((struct ifnet *, struct sockaddr **, struct sockaddr *));
@@ -10,8 +10,6 @@ Index: net/if_var.h
 +	/*
 +	 * Modifications for Click, mostly polling support.
 +	 */
-+	int	(*if_click_rcv)		/* pass packets to Click */
-+		__P((struct ifnet *, struct mbuf *));
 +	int	(*if_click_poll_on)	/* enable polling */
 +		__P((struct ifnet *));
 +	int	(*if_click_poll_off)	/* disable polling */
@@ -37,6 +35,13 @@ Index: net/if_var.h
 +	int	polling;
 +
 +	/*
++	 * Packet diversion flag: if nonzero, incoming packets should
++	 * be queued onto click_intrq on this interface.
++	 */
++	int	click_divert;
++	struct ifqueue click_intrq;
++
++	/*
 +	 * End of Click polling additions
 +	 */
 +
@@ -46,20 +51,30 @@ Index: net/if_var.h
 
 Index: net/if_ethersubr.c
 --- net/if_ethersubr.c.orig	Thu Aug  2 19:47:46 2001
-+++ net/if_ethersubr.c	Sat Jul 14 19:30:26 2001
-@@ -430,6 +430,12 @@
- 		bpf_mtap(ifp, (struct mbuf *)&mh);
- 	}
++++ net/if_ethersubr.c	Mon Aug 20 12:16:48 2001
+@@ -500,6 +500,22 @@
+ 	register struct llc *l;
+ #endif
  
-+	/* Pass the packet to Click */
-+	if (ifp->if_click_rcv != NULL) {
-+		if (0 == (*ifp->if_click_rcv)(ifp, m))
-+			return;
-+	}
++    if (ifp->click_divert) {
++	/*
++	 * Put the packet on Click's receive queue.  Click will
++	 * pick them up from the queue itself.
++	 */
++	inq = &ifp->click_intrq;
++	s = splimp();
++	if (IF_QFULL(inq)) {
++		IF_DROP(inq);
++		m_freem(m);
++	} else
++		IF_ENQUEUE(inq, m);
++	splx(s);
++	return;
++    }
 +
- 	/* Handle ng_ether(4) processing, if any */
- 	if (ng_ether_input_p != NULL) {
- 		(*ng_ether_input_p)(ifp, &m, eh);
+ #ifdef BRIDGE
+     if (! (do_bridge && BDG_USED(ifp) ) )
+ #endif
 
 Index: pci/if_fxpvar.h
 --- pci/if_fxpvar.h.orig	Thu Aug  2 19:45:57 2001
@@ -89,16 +104,8 @@ Index: pci/if_fxpreg.h
 
 Index: pci/if_fxp.c
 --- pci/if_fxp.c.orig	Thu Aug  2 19:46:53 2001
-+++ pci/if_fxp.c	Mon Jul 30 16:45:37 2001
-@@ -99,6 +99,7 @@
- 
- #endif /* __NetBSD__ */
- 
-+
- #ifdef __alpha__		/* XXX */
- /* XXX XXX NEED REAL DMA MAPPING SUPPORT XXX XXX */
- #undef vtophys
-@@ -237,6 +238,15 @@
++++ pci/if_fxp.c	Mon Aug 20 12:19:36 2001
+@@ -237,6 +237,15 @@
  static void fxp_stats_update	__P((void *));
  static void fxp_mc_setup	__P((struct fxp_softc *));
  
@@ -114,16 +121,7 @@ Index: pci/if_fxp.c
  /*
   * Set initial transmit threshold at 64 (512 bytes). This is
   * increased by 64 (512 bytes) at a time, to maximum of 192
-@@ -269,7 +279,7 @@
-  * Number of receive frame area buffers. These are large so chose
-  * wisely.
-  */
--#define FXP_NRFABUFS	64
-+#define FXP_NRFABUFS	16
- 
- /*
-  * Maximum number of seconds that the receiver can be idle before we
-@@ -616,6 +626,19 @@
+@@ -616,6 +625,19 @@
  	ifp->if_watchdog = fxp_watchdog;
  
  	/*
@@ -143,7 +141,7 @@ Index: pci/if_fxp.c
  	 * Attach the interface.
  	 */
  	ether_ifattach(ifp, ETHER_BPF_SUPPORTED);
-@@ -836,6 +859,7 @@
+@@ -836,6 +858,7 @@
  	/*
  	 * Pre-allocate our receive buffers.
  	 */
@@ -151,18 +149,23 @@ Index: pci/if_fxp.c
  	for (i = 0; i < FXP_NRFABUFS; i++) {
  		if (fxp_add_rfabuf(sc, NULL) != 0) {
  			goto fail;
-@@ -1206,6 +1230,10 @@
+@@ -1206,6 +1229,15 @@
  		return;
  	}
  
 +	if (ifp->polling > 0) {
-+		printf("Yo!  Interrupts while polling!\n");
++		/*
++		 * We shouldn't receive any interrupts while in
++		 * polling mode, so simply ignore the interrupt.
++		 * It could be due to PCI IRQ sharing..
++		 */
++		return;
 +	}
 +
  	while ((statack = CSR_READ_1(sc, FXP_CSR_SCB_STATACK)) != 0) {
  #if defined(__NetBSD__)
  		claimed = 1;
-@@ -1261,6 +1289,7 @@
+@@ -1261,6 +1293,7 @@
  				 */
  				sc->rfa_headm = m->m_next;
  				m->m_next = NULL;
@@ -170,7 +173,7 @@ Index: pci/if_fxp.c
  
  				/*
  				 * Add a new buffer to the receive chain.
-@@ -1463,6 +1492,7 @@
+@@ -1463,6 +1496,7 @@
  		m_freem(sc->rfa_headm);
  	sc->rfa_headm = NULL;
  	sc->rfa_tailm = NULL;
@@ -178,7 +181,7 @@ Index: pci/if_fxp.c
  	for (i = 0; i < FXP_NRFABUFS; i++) {
  		if (fxp_add_rfabuf(sc, NULL) != 0) {
  			/*
-@@ -1487,9 +1517,11 @@
+@@ -1487,6 +1521,9 @@
  {
  	struct fxp_softc *sc = ifp->if_softc;
  
@@ -187,11 +190,8 @@ Index: pci/if_fxp.c
 +
  	printf(FXP_FORMAT ": device timeout\n", FXP_ARGS(sc));
  	ifp->if_oerrors++;
--
- 	fxp_init(sc);
- }
  
-@@ -1886,6 +1918,7 @@
+@@ -1886,6 +1923,7 @@
  	} else {
  		sc->rfa_headm = m;
  	}
@@ -199,7 +199,7 @@ Index: pci/if_fxp.c
  	sc->rfa_tailm = m;
  
  	return (m == oldm);
-@@ -2150,4 +2183,280 @@
+@@ -2150,4 +2188,280 @@
  
  	ifp->if_timer = 2;
  	return;

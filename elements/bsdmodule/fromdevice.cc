@@ -33,33 +33,19 @@ static AnyDeviceMap from_device_map;
 static int registered_readers;
 static int from_device_count;
 
-extern "C" {
-static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
-}
-
-/*
- * Process an incoming packet from the kernel.
- */
-static int
-packet_notifier_hook(struct ifnet *ifp, struct mbuf *m)
-{
-    FromDevice *fd = (FromDevice *)from_device_map.lookup(ifp);
-
-    return fd->got_m(m);
-}
-
 #ifdef HAVE_CLICK_BSD_KERNEL
 /*
  * Attach ourselves to the current device's packet-receive hook.
  */
 static int
-register_rx(struct ifnet *d)
+register_rx(struct ifnet *d, int qSize)
 {
     int s;
 
     assert(d);
     s = splimp();
-    d->if_click_rcv = packet_notifier_hook;
+    d->click_intrq.ifq_maxlen = qSize;
+    d->click_divert = 1;
     splx(s);
 }
 
@@ -73,7 +59,18 @@ unregister_rx(struct ifnet *d)
 
     assert(d);
     s = splimp();
-    d->if_click_rcv = 0;
+    d->click_divert = 0;
+
+    /*
+     * Flush the receive queue..
+     */
+    for (int i = 0; i <= d->click_intrq.ifq_maxlen; i++) {
+	struct mbuf *m;
+	IF_DEQUEUE(&d->click_intrq, m);
+	if (NULL == m) break;
+	m_freem(m);
+    }
+
     splx(s);
 }
 #endif
@@ -171,7 +168,7 @@ FromDevice::initialize(ErrorHandler *errh)
     
     if (!registered_readers) {
 #ifdef HAVE_CLICK_BSD_KERNEL
-	register_rx(_dev);
+	register_rx(_dev, QSIZE);
 #else
 	errh->warning("can't get packets: not compiled for a Click kernel");
 #endif
@@ -185,7 +182,6 @@ FromDevice::initialize(ErrorHandler *errh)
     _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
 
-    _head = _tail = 0;
     _capacity = QSIZE;
     _drops = 0;
     return 0;
@@ -205,10 +201,6 @@ FromDevice::uninitialize()
     from_device_map.remove(this);
     if (_promisc && _dev)
 	ifpromisc(_dev, 0);
-    
-    for (unsigned i = _head; i != _tail; i = next_i(i))
-	_queue[i]->kill();
-    _head = _tail = 0;    
 }
 
 void
@@ -216,30 +208,23 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
 {
   FromDevice *fd = (FromDevice *)e->cast("FromDevice");
   if (!fd) return;
-  
-  if (_head != _tail) {
-    errh->error("already have packets enqueued, can't take state");
-    return;
-  }
-
-  memcpy(_queue, fd->_queue, sizeof(Packet *) * (QSIZE + 1));
-  _head = fd->_head;
-  _tail = fd->_tail;
-  
-  fd->_head = fd->_tail = 0;
 }
 
-/*
- * Per-FromDevice packet input routine.
- */
-int
-FromDevice::got_m(struct mbuf *m)
+void
+FromDevice::run_scheduled()
 {
-    unsigned next = next_i(_tail);
+    int npq = 0;
+    while (npq < _burst) {
+	/*
+	 * Try to dequeue a packet from the interrupt input queue.
+	 */
+	struct mbuf *m;
+	IF_DEQUEUE(&_dev->click_intrq, m);
+	if (NULL == m) break;
 
-    if (next != _head) { /* ours */
-
-	/* Retrieve the MAC header. */
+	/*
+	 * Got a packet -- retrieve the MAC header and make a real Packet.
+	 */
 	int push_len = 14;
 
 	m->m_data -= push_len;
@@ -247,30 +232,6 @@ FromDevice::got_m(struct mbuf *m)
 	m->m_pkthdr.len += push_len;
 
 	Packet *p = Packet::make(m);
-	_queue[_tail] = p; /* hand it to run_scheduled */
-	_tail = next;
-
-    } else {
-	/* queue full, drop */
-	struct mbuf *n;
-
-	while (m) {
-		MFREE(m, n);
-		m = n;
-	}
-	_drops++;
-    }
-
-    return 0;
-}
-
-void
-FromDevice::run_scheduled()
-{
-    int npq = 0;
-    while (npq < _burst && _head != _tail) {
-	Packet *p = _queue[_head];
-	_head = next_i(_head);
 	output(0).push(p);
 	npq++;
     }

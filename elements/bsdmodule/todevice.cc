@@ -293,13 +293,9 @@ ToDevice::queue_packet(Packet *p)
     _hard_start++;
   }
   if(ret != 0){
-    struct mbuf *n;
     if(_rejected == 0)
       printf("ToDevice %s rejected a packet!\n", _dev->if_name);
-    while (m) {
-      MFREE(m, n);
-      m = n;
-    }
+    m_freem(m);
     _rejected++;
   }
   return ret;
