@@ -1,3 +1,18 @@
+2004-06-29 Tuesday 11:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/: testie (1.35), tools/testie-01.testie (1.1): testie bug
+	fixes
+
+2004-06-29 Tuesday 11:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/analysis/: FromIPSummaryDump-ipopt-01.testie (1.11),
+	FromTcpdump-01.testie (1.4), FromTcpdump-02.testie (1.4): use
+	click-buildtool provides
+
+2004-06-29 Tuesday 11:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.52): add click-buildtool provides
+
 2004-06-29 Tuesday 02:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.82), test/analysis/FromIPSummaryDump-ipopt-01.testie
