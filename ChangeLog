@@ -1,3 +1,13 @@
+2005-03-02 Wednesday 16:27  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/variableenv.cc (1.12): fix variable interpolation bug that
+	would be triggered by non-comment /s in configuration arguments
+	(Anne)
+
+2005-03-02 Wednesday 16:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/confparse.cc (1.140): nit
+
 2005-03-02 Wednesday 02:43  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/iprw.cc (1.60), elements/ip/lookupiproutemp.cc
