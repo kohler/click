@@ -16,7 +16,7 @@ class SpinlockRelease : public Element {
   Spinlock *_lock;
  
 public:
-  SpinlockRelease()			{}
+  SpinlockRelease()			: _lock(0) {}
   ~SpinlockRelease()			{}
 
   const char *class_name() const	{ return "SpinlockRelease"; }
@@ -28,7 +28,7 @@ public:
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize()			{ _lock->unref(); }
+  void cleanup(CleanupStage)		{ if (_lock) _lock->unref(); }
   
   Packet *simple_action(Packet *p)  	{ _lock->release(); return p; }
 };

@@ -24,11 +24,10 @@ SpinlockInfo::SpinlockInfo()
 
 SpinlockInfo::~SpinlockInfo()
 {
-  uninitialize();
 }
 
 void
-SpinlockInfo::uninitialize()
+SpinlockInfo::cleanup(CleanupStage)
 {
   _map.clear();
   for (int i=0; i<_spinlocks.size(); i++)

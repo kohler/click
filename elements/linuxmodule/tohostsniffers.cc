@@ -43,7 +43,6 @@ ToHostSniffers::ToHostSniffers()
 
 ToHostSniffers::~ToHostSniffers()
 {
-    uninitialize();		// might need to dev_put
     MOD_DEC_USE_COUNT;
 }
 
@@ -74,7 +73,7 @@ ToHostSniffers::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-ToHostSniffers::uninitialize()
+ToHostSniffers::cleanup(CleanupStage)
 {
     if (_dev)
 	dev_put(_dev);

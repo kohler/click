@@ -51,7 +51,6 @@ FromIPSummaryDump::FromIPSummaryDump()
 FromIPSummaryDump::~FromIPSummaryDump()
 {
     MOD_DEC_USE_COUNT;
-    uninitialize();
 }
 
 int
@@ -191,13 +190,10 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 
     _pos = _len = _file_offset = _save_char = 0;
     int result = read_buffer(errh);
-    if (result < 0) {
-	uninitialize();
+    if (result < 0)
 	return -1;
-    } else if (result == 0) {
-	uninitialize();
+    else if (result == 0)
 	return errh->error("%s: empty file", _filename.cc());
-    }
 
     // check for a gziped or bzip2d dump
     if (_fd == STDIN_FILENO || _pipe)
@@ -212,11 +208,10 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     }
 
     String line;
-    if (read_line(line, errh) < 0) {
-	uninitialize();
+    if (read_line(line, errh) < 0)
 	return -1;
-    } else if (line.substring(0, 14) != "!IPSummaryDump"
-	       && line.substring(0, 8) != "!creator") {
+    else if (line.substring(0, 14) != "!IPSummaryDump"
+	     && line.substring(0, 8) != "!creator") {
 	if (!_contents.size() /* don't warn on DEFAULT_CONTENTS */)
 	    errh->warning("%s: missing banner line; is this an IP summary dump?", _filename.cc());
 	if (_save_char)
@@ -231,18 +226,17 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
 }
 
 void
-FromIPSummaryDump::uninitialize()
+FromIPSummaryDump::cleanup(CleanupStage)
 {
     if (_pipe)
 	pclose(_pipe);
     else if (_fd >= 0 && _fd != STDIN_FILENO)
 	close(_fd);
-    if (_work_packet) {
-	_work_packet->kill();
-	_work_packet = 0;
-    }
     _fd = -1;
     _pipe = 0;
+    if (_work_packet)
+	_work_packet->kill();
+    _work_packet = 0;
     free(_buffer);
     _buffer = 0;
 }

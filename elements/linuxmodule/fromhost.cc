@@ -74,7 +74,6 @@ FromHost::FromHost()
 
 FromHost::~FromHost()
 {
-    uninitialize();
     fromlinux_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
@@ -225,24 +224,18 @@ dev_updown(net_device *dev, int up, ErrorHandler *errh)
 int
 FromHost::initialize(ErrorHandler *errh)
 {
-    int res;
     if (_dev->flags & IFF_UP) {
 	_wakeup_timer.initialize(this);
 	_wakeup_timer.schedule_now();
-	res = 0;
-    } else {
-	res = set_device_addresses(errh);
-	if (res >= 0)
-	    res = dev_updown(_dev, 1, errh);
-    }
-
-    if (res < 0)
-	uninitialize();
-    return res;
+	return 0;
+    } else if (set_device_addresses(errh) < 0)
+	return -1;
+    else
+	return dev_updown(_dev, 1, errh);
 }
 
 void
-FromHost::uninitialize()
+FromHost::cleanup(CleanupStage)
 {
     fromlinux_map.remove(this);
     if (_dev) {

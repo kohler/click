@@ -106,11 +106,12 @@ IPRateMonitor::initialize(ErrorHandler *errh)
 }
 
 void
-IPRateMonitor::uninitialize()
+IPRateMonitor::cleanup(CleanupStage)
 { 
   delete _base;
   delete _lock;
   _base = 0;
+  _lock = 0;
 }
 
 void

@@ -145,7 +145,7 @@ class TulipStats : public AnyDevice {
   int configure_phase() const	{ return FromLinux::TODEVICE_CONFIGURE_PHASE; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   void add_handlers();
 
   void reset_counts();

@@ -77,11 +77,11 @@ FromDevice::FromDevice()
     MOD_INC_USE_COUNT;
     fromdev_static_initialize();
     add_output();
+    _head = _tail = 0;
 }
 
 FromDevice::~FromDevice()
 {
-    uninitialize_device();
     fromdev_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
@@ -131,10 +131,8 @@ FromDevice::initialize(ErrorHandler *errh)
     // check for duplicate readers
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_reader_" + String(ifindex()));
-	if (used) {
-	    uninitialize_device();
+	if (used)
 	    return errh->error("duplicate reader for device `%s'", _devname.cc());
-	}
 	used = this;
     }
 
@@ -156,28 +154,23 @@ FromDevice::initialize(ErrorHandler *errh)
 #endif
 
     from_device_map.move_to_front(this);
-    _head = _tail = 0;
     _capacity = QSIZE;
     _drops = 0;
     return 0;
 }
 
 void
-FromDevice::uninitialize_device()
+FromDevice::cleanup(CleanupStage stage)
 {
-    clear_device(&from_device_map);
-}
-
-void
-FromDevice::uninitialize()
-{
-    registered_readers--;
+    if (stage >= CLEANUP_INITIALIZED) {
+	registered_readers--;
 #ifdef HAVE_CLICK_KERNEL
-    if (registered_readers == 0)
-	unregister_net_in(&packet_notifier);
+	if (registered_readers == 0)
+	    unregister_net_in(&packet_notifier);
 #endif
+    }
     
-    uninitialize_device();
+    clear_device(&from_device_map);
     
     for (unsigned i = _head; i != _tail; i = next_i(i))
 	_queue[i]->kill();

@@ -58,7 +58,6 @@ ToDevice::ToDevice()
 ToDevice::~ToDevice()
 {
   MOD_DEC_USE_COUNT;
-  uninitialize();
 }
 
 ToDevice *
@@ -128,10 +127,8 @@ ToDevice::initialize(ErrorHandler *errh)
 
   // check for duplicate writers
   void *&used = router()->force_attachment("device_writer_" + _ifname);
-  if (used) {
-    uninitialize();
+  if (used)
     return errh->error("duplicate writer for device `%s'", _ifname.cc());
-  }
   used = this;
 
   if (input_is_pull(0)) {
@@ -142,14 +139,16 @@ ToDevice::initialize(ErrorHandler *errh)
 }
 
 void
-ToDevice::uninitialize()
+ToDevice::cleanup(CleanupStage)
 {
 #if TODEVICE_BSD_DEV_BPF
-  if (_pcap) pcap_close(_pcap);
+  if (_pcap)
+    pcap_close(_pcap);
   _pcap = 0;
 #endif
 #if TODEVICE_LINUX
-  if (_fd >= 0 && _my_fd) close(_fd);
+  if (_fd >= 0 && _my_fd)
+    close(_fd);
   _fd = -1;
 #endif
 }

@@ -77,7 +77,7 @@ class FromDevice : public AnyDevice, public Storage { public:
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
     void add_handlers();
     void take_state(Element *, ErrorHandler *);
 
@@ -96,8 +96,6 @@ class FromDevice : public AnyDevice, public Storage { public:
     static const int QSIZE = 511;
     Packet *_queue[QSIZE+1];
 
-    void uninitialize_device();
-    
 };
 
 #endif

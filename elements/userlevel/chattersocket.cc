@@ -85,23 +85,19 @@ static ChatterSocketErrorHandler *chatter_socket_errh;
 static ErrorHandler *base_default_errh;
 
 ChatterSocket::ChatterSocket()
-  : _channel("default"), _alive(false)
+  : _socket_fd(-1), _channel("default")
 {
   MOD_INC_USE_COUNT;
 }
 
 ChatterSocket::~ChatterSocket()
 {
-  if (_alive)
-    uninitialize();		// might happen if initialize() never called
   MOD_DEC_USE_COUNT;
 }
 
 int
 ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _socket_fd = -1;
-  _channel = "default";
   bool quiet_channel = true;
   bool greeting = true;
   
@@ -137,10 +133,8 @@ ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     sa.sin_family = AF_INET;
     sa.sin_port = htons(portno);
     sa.sin_addr = inet_makeaddr(0, 0);
-    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-      uninitialize();
+    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return errh->error("bind: %s", strerror(errno));
-    }
 
   } else if (socktype == "UNIX") {
     if (cp_va_parse(conf, this, errh,
@@ -166,10 +160,8 @@ ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("socket: %s", strerror(errno));
 
     // bind to port
-    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-      uninitialize();
+    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return errh->error("bind: %s", strerror(errno));
-    }
 
   } else
     return errh->error("unknown socket type `%s'", socktype.cc());
@@ -196,7 +188,6 @@ ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 
   // install ChatterSocketErrorHandler
   cserrh->add_chatter_socket(this);
-  _alive = true;
   
   return 0;
 }
@@ -205,10 +196,8 @@ int
 ChatterSocket::initialize(ErrorHandler *errh)
 {
   // start listening
-  if (listen(_socket_fd, 2) < 0) {
-    uninitialize();
+  if (listen(_socket_fd, 2) < 0)
     return errh->error("listen: %s", strerror(errno));
-  }
   
   // nonblocking I/O on the socket
   fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
@@ -236,7 +225,7 @@ remove_chatter_channel(ChatterSocketErrorHandler *&cserrh, ChatterSocket *cs)
 }
 
 void
-ChatterSocket::uninitialize()
+ChatterSocket::cleanup(CleanupStage)
 {
   if (_socket_fd >= 0) {
     close(_socket_fd);
@@ -258,8 +247,6 @@ ChatterSocket::uninitialize()
   else
     remove_chatter_channel
       ((ChatterSocketErrorHandler *&)(router()->force_attachment("ChatterChannel." + _channel)), this);
-
-  _alive = false;
 }
 
 int

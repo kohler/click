@@ -75,7 +75,7 @@ public:
   
   TCPBuffer *clone() const			{ return new TCPBuffer; }
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   int configure(Vector<String> &conf, ErrorHandler *errh);
   
   void push(int, Packet *);

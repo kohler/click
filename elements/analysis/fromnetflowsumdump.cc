@@ -44,7 +44,6 @@ FromNetFlowSummaryDump::FromNetFlowSummaryDump()
 FromNetFlowSummaryDump::~FromNetFlowSummaryDump()
 {
     MOD_DEC_USE_COUNT;
-    uninitialize();
 }
 
 int
@@ -160,13 +159,10 @@ FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
     _pos = _len = _file_offset = 0;
     _buffer = String();
     int result = read_buffer(errh);
-    if (result < 0) {
-	uninitialize();
+    if (result < 0)
 	return -1;
-    } else if (result == 0) {
-	uninitialize();
+    else if (result == 0)
 	return errh->error("%s: empty file", _filename.cc());
-    }
 
     // check for a gziped or bzip2d dump
     if (_fd == STDIN_FILENO || _pipe)
@@ -181,10 +177,9 @@ FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
     }
 
     String line;
-    if (read_line(line, errh) < 0) {
-	uninitialize();
+    if (read_line(line, errh) < 0)
 	return -1;
-    } else
+    else
 	_pos = 0;
     
     _format_complaint = false;
@@ -194,18 +189,17 @@ FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
 }
 
 void
-FromNetFlowSummaryDump::uninitialize()
+FromNetFlowSummaryDump::cleanup(CleanupStage)
 {
     if (_pipe)
 	pclose(_pipe);
     else if (_fd >= 0 && _fd != STDIN_FILENO)
 	close(_fd);
-    if (_work_packet) {
-	_work_packet->kill();
-	_work_packet = 0;
-    }
     _fd = -1;
     _pipe = 0;
+    if (_work_packet)
+	_work_packet->kill();
+    _work_packet = 0;
     _buffer = String();
 }
 

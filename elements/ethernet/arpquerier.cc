@@ -40,7 +40,6 @@ ARPQuerier::ARPQuerier()
 ARPQuerier::~ARPQuerier()
 {
   MOD_DEC_USE_COUNT;
-  uninitialize();
 }
 
 ARPQuerier *
@@ -95,7 +94,7 @@ ARPQuerier::initialize(ErrorHandler *)
 }
 
 void
-ARPQuerier::uninitialize()
+ARPQuerier::cleanup(CleanupStage)
 {
   clear_map();
 }

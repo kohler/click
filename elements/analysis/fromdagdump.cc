@@ -54,7 +54,6 @@ FromDAGDump::~FromDAGDump()
 {
     MOD_DEC_USE_COUNT;
     delete _last_time_h;
-    uninitialize();
 }
 
 void
@@ -299,13 +298,10 @@ FromDAGDump::initialize(ErrorHandler *errh)
 #endif
     _file_offset = 0;
     int result = read_buffer(errh);
-    if (result < 0) {
-	uninitialize();
+    if (result < 0)
 	return -1;
-    } else if (result == 0) {
-	uninitialize();
+    else if (result == 0)
 	return errh->error("%s: empty file", _filename.cc());
-    }
 
     // check for a gziped or bzip2d dump
     if (_fd == STDIN_FILENO || _pipe)
@@ -347,19 +343,19 @@ FromDAGDump::initialize(ErrorHandler *errh)
 }
 
 void
-FromDAGDump::uninitialize()
+FromDAGDump::cleanup(CleanupStage)
 {
     if (_pipe)
 	pclose(_pipe);
     else if (_fd >= 0 && _fd != STDIN_FILENO)
 	close(_fd);
+    _fd = -1;
+    _pipe = 0;
     if (_packet)
 	_packet->kill();
     if (_data_packet)
 	_data_packet->kill();
-    _fd = -1;
     _packet = _data_packet = 0;
-    _pipe = 0;
 }
 
 void

@@ -1,5 +1,5 @@
-#ifndef POLLDEVICE_HH
-#define POLLDEVICE_HH
+#ifndef CLICK_POLLDEVICE_HH
+#define CLICK_POLLDEVICE_HH
 
 /*
 =c
@@ -80,7 +80,7 @@ class PollDevice : public AnyDevice { public:
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   void add_handlers();
 
   void change_device(net_device *);
@@ -119,8 +119,6 @@ class PollDevice : public AnyDevice { public:
 
   unsigned _burst;
 
-  void uninitialize_device();
-  
 };
 
 #endif 

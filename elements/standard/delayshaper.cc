@@ -24,7 +24,7 @@
 #include <click/standard/scheduleinfo.hh>
 
 DelayShaper::DelayShaper()
-  : Element(1,1)
+  : Element(1, 1), _p(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -41,15 +41,8 @@ DelayShaper::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpSecondsAsMicro, "delay", &_delay, 0);
 }
 
-int
-DelayShaper::initialize(ErrorHandler *)
-{
-  _p = 0;
-  return 0;
-}
-
 void
-DelayShaper::uninitialize()
+DelayShaper::cleanup(CleanupStage)
 {
   if (_p) {
     _p->kill();

@@ -52,7 +52,6 @@ FromDump::~FromDump()
 {
     MOD_DEC_USE_COUNT;
     delete _last_time_h;
-    uninitialize();
 }
 
 void
@@ -301,18 +300,6 @@ FromDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
 }
 
 int
-FromDump::initialize_failed(ErrorHandler *errh, const char *format, ...)
-{
-    va_list val;
-    va_start(val, format);
-    if (format && errh)
-	errh->verror(ErrorHandler::ERR_ERROR, String(), format, val);
-    va_end(val);
-    uninitialize();
-    return -EINVAL;
-}
-
-int
 FromDump::initialize(ErrorHandler *errh)
 {
     if (_filename == "-") {
@@ -330,11 +317,11 @@ FromDump::initialize(ErrorHandler *errh)
     _file_offset = 0;
     int result = read_buffer(errh);
     if (result < 0)
-	return initialize_failed(errh, 0);
+	return -1;
     else if (result == 0)
-	return initialize_failed(errh, "%s: empty file", _filename.cc());
+	return errh->error("%s: empty file", _filename.cc());
     else if (_len < sizeof(fake_pcap_file_header))
-	return initialize_failed(errh, "%s: not a tcpdump file (too short)", _filename.cc());
+	return errh->error("%s: not a tcpdump file (too short)", _filename.cc());
 
     // check for a gziped or bzip2d dump
     if (_fd == STDIN_FILENO || _pipe)
@@ -343,7 +330,7 @@ FromDump::initialize(ErrorHandler *errh)
 	close(_fd);
 	_fd = -1;
 	if (!(_pipe = open_uncompress_pipe(_filename, _buffer, _len, errh)))
-	    return initialize_failed(errh, 0);
+	    return -1;
 	_fd = fileno(_pipe);
 	goto retry_file;
     }
@@ -360,28 +347,28 @@ FromDump::initialize(ErrorHandler *errh)
 	fh = &swapped_fh;
     }
     if (fh->magic != FAKE_PCAP_MAGIC && fh->magic != FAKE_MODIFIED_PCAP_MAGIC)
-	return initialize_failed(errh, "%s: not a tcpdump file (bad magic number)", _filename.cc());
+	return errh->error("%s: not a tcpdump file (bad magic number)", _filename.cc());
     // compensate for extra crap appended to packet headers
     _extra_pkthdr_crap = (fh->magic == FAKE_PCAP_MAGIC ? 0 : sizeof(fake_modified_pcap_pkthdr) - sizeof(fake_pcap_pkthdr));
 
     if (fh->version_major != FAKE_PCAP_VERSION_MAJOR)
-	return initialize_failed(errh, "%s: unknown major version %d", _filename.cc(), fh->version_major);
+	return errh->error("%s: unknown major version %d", _filename.cc(), fh->version_major);
     _minor_version = fh->version_minor;
     _linktype = fh->linktype;
 
     // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {
 	if (!fake_pcap_dlt_force_ipable(_linktype))
-	    return initialize_failed(errh, "%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
+	    return errh->error("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
 	if (_timing)
-	    return initialize_failed(errh, "FORCE_IP and TIMING options are incompatible");
+	    return errh->error("FORCE_IP and TIMING options are incompatible");
     } else if (_linktype == FAKE_DLT_RAW)
 	// force FORCE_IP.
 	_force_ip = true;	// XXX _timing?
 
     // check handler call
     if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
-	return initialize_failed(errh, 0);
+	return -1;
     
     // done
     _pos = sizeof(fake_pcap_file_header);
@@ -391,19 +378,19 @@ FromDump::initialize(ErrorHandler *errh)
 }
 
 void
-FromDump::uninitialize()
+FromDump::cleanup(CleanupStage)
 {
     if (_pipe)
 	pclose(_pipe);
     else if (_fd >= 0 && _fd != STDIN_FILENO)
 	close(_fd);
+    _pipe = 0;
+    _fd = -1;
     if (_packet)
 	_packet->kill();
     if (_data_packet)
 	_data_packet->kill();
-    _fd = -1;
     _packet = _data_packet = 0;
-    _pipe = 0;
 }
 
 void

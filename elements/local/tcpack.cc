@@ -74,11 +74,6 @@ TCPAck::initialize(ErrorHandler *errh)
 }
 
 void
-TCPAck::uninitialize()
-{
-}
-
-void
 TCPAck::push(int port, Packet *p)
 {
   bool forward;

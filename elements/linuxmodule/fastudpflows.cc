@@ -38,7 +38,6 @@ FastUDPFlows::FastUDPFlows()
 
 FastUDPFlows::~FastUDPFlows()
 {
-  uninitialize();
   MOD_DEC_USE_COUNT;
 }
 
@@ -166,7 +165,7 @@ FastUDPFlows::initialize(ErrorHandler *)
 }
 
 void
-FastUDPFlows::uninitialize()
+FastUDPFlows::cleanup(CleanupStage)
 {
   if (_flows) {
     for (int i=0; i<_nflows; i++) {

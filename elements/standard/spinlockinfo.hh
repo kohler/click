@@ -34,7 +34,7 @@ public:
   SpinlockInfo *clone() const		{ return new SpinlockInfo; }
   int configure_phase() const		{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &, ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   
   Spinlock *query(const String &, const String &) const;
 };

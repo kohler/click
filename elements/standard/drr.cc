@@ -20,13 +20,10 @@
 #include "drr.hh"
 
 DRRSched::DRRSched()
+  : _quantum(500), _head(0), _deficit(0), _next(0)
 {
   MOD_INC_USE_COUNT;
   add_output();
-  _next = 0;
-  _head = 0;
-  _deficit = 0;
-  _quantum = 500;
 }
 
 DRRSched::~DRRSched()
@@ -45,10 +42,8 @@ DRRSched::initialize(ErrorHandler *errh)
 {
   _head = new Packet *[ninputs()];
   _deficit = new unsigned[ninputs()];
-  if (!_head || !_deficit) {
-    uninitialize();
+  if (!_head || !_deficit)
     return errh->error("out of memory!");
-  }
 
   for (int i = 0; i < ninputs(); i++) {
     _head[i] = 0;
@@ -59,7 +54,7 @@ DRRSched::initialize(ErrorHandler *errh)
 }
 
 void
-DRRSched::uninitialize()
+DRRSched::cleanup(CleanupStage)
 {
   if (_head)
     for (int j = 0; j < ninputs(); j++)

@@ -1,5 +1,5 @@
-#ifndef ADDRESSTRANSLATOR_HH
-#define ADDRESSTRANSLATOR_HH
+#ifndef CLICK_ADDRESSTRANSLATOR_HH
+#define CLICK_ADDRESSTRANSLATOR_HH
 
 #include <click/ip6address.hh>
 #include <click/ipaddress.hh>
@@ -85,7 +85,7 @@ class AddressTranslator : public Element {
   void handle_inward(Packet *p);
   
   bool lookup(IP6Address &, unsigned short &, IP6Address &, unsigned short &, IP6Address &, unsigned short &, bool);
-  void uninitialize();
+  void cleanup(CleanupStage);
 
 protected:
 

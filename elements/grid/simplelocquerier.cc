@@ -34,7 +34,6 @@ SimpleLocQuerier::SimpleLocQuerier()
 SimpleLocQuerier::~SimpleLocQuerier()
 {
   MOD_DEC_USE_COUNT;
-  uninitialize();
 }
 
 SimpleLocQuerier *
@@ -66,11 +65,6 @@ int
 SimpleLocQuerier::initialize(ErrorHandler *)
 {
   return 0;
-}
-
-void
-SimpleLocQuerier::uninitialize()
-{
 }
 
 

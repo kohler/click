@@ -33,10 +33,9 @@
 #endif
 
 KernelTap::KernelTap()
-  : Element(1, 1), _task(this)
+  : Element(1, 1), _fd(-1), _task(this)
 {
   MOD_INC_USE_COUNT;
-  _fd = -1;
 }
 
 KernelTap::~KernelTap()
@@ -195,13 +194,13 @@ KernelTap::initialize(ErrorHandler *errh)
 }
 
 void
-KernelTap::uninitialize()
+KernelTap::cleanup(CleanupStage)
 {
   if (_fd >= 0) {
     close(_fd);
     remove_select(_fd, SELECT_READ);
+    dealloc_tun();
   }
-  dealloc_tun();
 }
 
 void

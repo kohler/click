@@ -74,6 +74,7 @@ ControlSocketErrorHandler::handle_text(Seriousness seriousness, const String &m)
 
 
 ControlSocket::ControlSocket()
+  : _socket_fd(-1), _proxy(0), _full_proxy(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -86,10 +87,7 @@ ControlSocket::~ControlSocket()
 int
 ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _socket_fd = -1;
   bool read_only = false, verbose = false;
-  _proxy = 0;
-  _full_proxy = 0;
   
   String socktype;
   if (cp_va_parse(conf, this, errh,
@@ -125,10 +123,8 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
     sa.sin_family = AF_INET;
     sa.sin_port = htons(portno);
     sa.sin_addr = inet_makeaddr(0, 0);
-    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-      uninitialize();
+    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return errh->error("bind: %s", strerror(errno));
-    }
 
   } else if (socktype == "UNIX") {
     if (cp_va_parse(conf, this, errh,
@@ -156,10 +152,8 @@ ControlSocket::configure(Vector<String> &conf, ErrorHandler *errh)
       return errh->error("socket: %s", strerror(errno));
 
     // bind to port
-    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0) {
-      uninitialize();
+    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
       return errh->error("bind: %s", strerror(errno));
-    }
 
   } else
     return errh->error("unknown socket type `%s'", socktype.cc());
@@ -173,10 +167,8 @@ int
 ControlSocket::initialize(ErrorHandler *errh)
 {
   // start listening
-  if (listen(_socket_fd, 2) < 0) {
-    uninitialize();
+  if (listen(_socket_fd, 2) < 0)
     return errh->error("listen: %s", strerror(errno));
-  }
   
   // nonblocking I/O on the socket
   fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
@@ -194,7 +186,7 @@ ControlSocket::initialize(ErrorHandler *errh)
 }
 
 void
-ControlSocket::uninitialize()
+ControlSocket::cleanup(CleanupStage)
 {
   if (_full_proxy)
     _full_proxy->remove_error_receiver(proxy_error_function, this);

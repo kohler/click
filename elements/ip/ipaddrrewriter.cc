@@ -125,7 +125,7 @@ IPAddrRewriter::initialize(ErrorHandler *)
 }
 
 void
-IPAddrRewriter::uninitialize()
+IPAddrRewriter::cleanup(CleanupStage)
 {
   clear_map(_map);
 

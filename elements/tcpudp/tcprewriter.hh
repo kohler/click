@@ -105,7 +105,7 @@ class TCPRewriter : public IPRw { public:
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   void take_state(Element *, ErrorHandler *);
   
   int notify_pattern(Pattern *, ErrorHandler *);

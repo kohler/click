@@ -35,7 +35,7 @@ class IPReassembler : public Element {
   IPReassembler *clone() const;
 
   int initialize(ErrorHandler *);
-  void uninitialize(void);
+  void cleanup(CleanupStage);
 
   Packet* simple_action(Packet *);
 

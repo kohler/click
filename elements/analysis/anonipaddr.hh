@@ -108,7 +108,7 @@ class AnonymizeIPAddr : public Element { public:
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
 
     Packet *simple_action(Packet *);
 

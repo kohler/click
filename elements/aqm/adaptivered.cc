@@ -96,9 +96,9 @@ AdaptiveRED::initialize(ErrorHandler *errh)
 }
 
 void
-AdaptiveRED::uninitialize()
+AdaptiveRED::cleanup(CleanupStage)
 {
-    _timer.uninitialize();
+    _timer.cleanup();
 }
 
 void

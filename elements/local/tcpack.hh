@@ -68,7 +68,6 @@ public:
   TCPAck *clone() const				{ return new TCPAck; }
 
   int initialize(ErrorHandler *);
-  void uninitialize();
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   void push(int, Packet *);

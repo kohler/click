@@ -29,7 +29,6 @@ Queue::Queue()
 Queue::~Queue()
 {
   MOD_DEC_USE_COUNT;
-  if (_q) uninitialize();
 }
 
 void *
@@ -135,7 +134,7 @@ Queue::take_state(Element *e, ErrorHandler *errh)
 }
 
 void
-Queue::uninitialize()
+Queue::cleanup(CleanupStage)
 {
   for (int i = _head; i != _tail; i = next_i(i))
     _q[i]->kill();

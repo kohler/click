@@ -8,6 +8,8 @@ DupPath::DupPath()
 {
   MOD_INC_USE_COUNT;
   set_ninputs(1);
+  _q._q = 0;
+  _q._head = _q._tail = 0;
 }
 
 DupPath::~DupPath()
@@ -22,16 +24,17 @@ DupPath::clone() const
 }
 
 int 
-DupPath::initialize(ErrorHandler *)
+DupPath::initialize(ErrorHandler *errh)
 {
-  _q._q = new Packet*[129];
+  if (!(_q._q = new Packet*[129]))
+    return errh->error("out of memory!");
   _q._head = 0;
   _q._tail = 0;
   return 0;
 }
 
 void
-DupPath::uninitialize()
+DupPath::cleanup(CleanupStage)
 {
   for (unsigned j = _q._head; j != _q._tail; j = next_i(j))
     _q._q[j]->kill();

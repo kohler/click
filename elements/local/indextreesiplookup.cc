@@ -28,31 +28,20 @@ IndexTreesIPLookup::IndexTreesIPLookup()
   MOD_INC_USE_COUNT;
   add_input();
   add_output();
+  for (int i=0; i<INDEX_SIZE; i++)
+    _trees[i] = 0;
 }
 
 IndexTreesIPLookup::~IndexTreesIPLookup()
 {
   MOD_DEC_USE_COUNT;
-  uninitialize();
-}
-
-int
-IndexTreesIPLookup::initialize(ErrorHandler *)
-{
-  for (int i=0; i<INDEX_SIZE; i++)
-    _trees[i] = 0;
-  return 0;
 }
 
 void
-IndexTreesIPLookup::uninitialize()
+IndexTreesIPLookup::cleanup(CleanupStage)
 {
-  for (int i=0; i<INDEX_SIZE; i++) {
-    if (_trees[i] != 0) {
-      delete _trees[i];
-      _trees[i] = 0;
-    }
-  }
+  for (int i=0; i<INDEX_SIZE; i++)
+    delete _trees[i];
 }
 
 String

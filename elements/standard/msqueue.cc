@@ -21,7 +21,6 @@ MSQueue::MSQueue()
 MSQueue::~MSQueue()
 {
   MOD_DEC_USE_COUNT;
-  if (_q) uninitialize();
 }
 
 void *
@@ -66,14 +65,12 @@ MSQueue::initialize(ErrorHandler *errh)
 }
 
 void
-MSQueue::uninitialize()
+MSQueue::cleanup(CleanupStage)
 {
-  for (int i = 0; i <= _capacity; i++) {
-    if (_q[i] != 0) {
-      _q[i]->kill();
-      _q[i] = 0;
-    }
-  }
+  if (_q)
+    for (int i = 0; i <= _capacity; i++)
+      if (_q[i])
+	_q[i]->kill();
   delete[] _q;
   _q = 0;
 }

@@ -22,7 +22,7 @@ class DupPath : public Element {
   const char *class_name() const		{ return "DupPath"; }
   const char *processing() const		{ return "h/hl"; }
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   DupPath *clone() const;
   
   void push(int port, Packet *);

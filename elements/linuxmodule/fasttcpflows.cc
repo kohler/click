@@ -38,7 +38,6 @@ FastTCPFlows::FastTCPFlows()
 
 FastTCPFlows::~FastTCPFlows()
 {
-  uninitialize();
   MOD_DEC_USE_COUNT;
 }
 
@@ -280,7 +279,7 @@ FastTCPFlows::initialize(ErrorHandler *)
 }
 
 void
-FastTCPFlows::uninitialize()
+FastTCPFlows::cleanup(CleanupStage)
 {
   if (_flows) {
     for (int i=0; i<_nflows; i++) {

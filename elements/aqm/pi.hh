@@ -23,7 +23,7 @@ class PI : public Element { public:
     int configure(Vector<String> &, ErrorHandler *);
     int check_params(double, double, double, unsigned, unsigned, ErrorHandler *) const ;
     int initialize(ErrorHandler *);
-	void uninitialize();
+    void cleanup(CleanupStage);
     void take_state(Element *, ErrorHandler *);
     void configuration(Vector<String> &) const;
     bool can_live_reconfigure() const		{ return true; }

@@ -94,7 +94,7 @@ ProgressBar::initialize(ErrorHandler *errh)
 }
 
 void
-ProgressBar::uninitialize()
+ProgressBar::cleanup(CleanupStage)
 {
     if (_status == ST_MIDDLE) {
 	_status = ST_DONE;

@@ -67,7 +67,7 @@ class StrideSched : public Element { protected:
   
   StrideSched *clone() const			{ return new StrideSched; }
   int configure(Vector<String> &conf, ErrorHandler *errh);
-  void uninitialize();
+  void cleanup(CleanupStage);
   void add_handlers();
 
   int tickets(int) const;

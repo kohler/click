@@ -39,7 +39,6 @@ IP6NDSolicitor::IP6NDSolicitor()
 IP6NDSolicitor::~IP6NDSolicitor()
 {
   MOD_DEC_USE_COUNT;
-  uninitialize();
 }
 
 IP6NDSolicitor *
@@ -74,7 +73,7 @@ IP6NDSolicitor::initialize(ErrorHandler *)
 }
 
 void
-IP6NDSolicitor::uninitialize()
+IP6NDSolicitor::cleanup(CleanupStage)
 {
   for (int i = 0; i < NMAP; i++) {
     for (NDEntry *t = _map[i]; t; ) {

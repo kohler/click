@@ -16,7 +16,7 @@ class SpinlockAcquire : public Element {
   Spinlock *_lock;
  
 public:
-  SpinlockAcquire()			{}
+  SpinlockAcquire()			: _lock(0) {}
   ~SpinlockAcquire()			{}
 
   const char *class_name() const	{ return "SpinlockAcquire"; }
@@ -28,7 +28,7 @@ public:
 
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize()			{ _lock->unref(); }
+  void cleanup(CleanupStage)		{ if (_lock) _lock->unref(); }
   
   Packet *simple_action(Packet *p)  	{ _lock->acquire(); return p; }
 };

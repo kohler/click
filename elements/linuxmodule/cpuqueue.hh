@@ -46,7 +46,7 @@ class CPUQueue : public Element {
   const char *processing() const		{ return PUSH_TO_PULL; }
   void notify_noutputs(int);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
 
   unsigned drops() const			{ return _drops; }
   unsigned capacity() const			{ return _capacity; }

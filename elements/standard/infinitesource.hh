@@ -91,7 +91,7 @@ class InfiniteSource : public Element { public:
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
-  void uninitialize();
+  void cleanup(CleanupStage);
 
   void run_scheduled();
   Packet *pull(int);

@@ -32,7 +32,6 @@ InfiniteSource::InfiniteSource()
 
 InfiniteSource::~InfiniteSource()
 {
-  uninitialize();
   MOD_DEC_USE_COUNT;
 }
 
@@ -86,7 +85,7 @@ InfiniteSource::initialize(ErrorHandler *errh)
 }
 
 void
-InfiniteSource::uninitialize()
+InfiniteSource::cleanup(CleanupStage)
 {
   if (_packet)
     _packet->kill();

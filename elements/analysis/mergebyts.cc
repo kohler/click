@@ -66,11 +66,12 @@ MergeByTimestamp::initialize(ErrorHandler *errh)
 }
 
 void
-MergeByTimestamp::uninitialize()
+MergeByTimestamp::cleanup(CleanupStage)
 {
-    for (int i = 0; i < ninputs(); i++)
-	if (_vec[i])
-	    _vec[i]->kill();
+    if (_vec)
+	for (int i = 0; i < ninputs(); i++)
+	    if (_vec[i])
+		_vec[i]->kill();
 }
 
 Packet *

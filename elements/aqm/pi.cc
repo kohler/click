@@ -200,9 +200,9 @@ PI::initialize(ErrorHandler *errh)
     return 0;
 }
 
-void PI::uninitialize()
+void PI::cleanup(CleanupStage)
 {
-    _timer.uninitialize();
+    _timer.cleanup();
 }
 
 void

@@ -78,7 +78,7 @@ ICMPPingRewriter::initialize(ErrorHandler *)
 }
 
 void
-ICMPPingRewriter::uninitialize()
+ICMPPingRewriter::cleanup(CleanupStage)
 {
   for (Map::Iterator iter = _request_map.first(); iter; iter++) {
     Mapping *m = iter.value();

@@ -78,7 +78,7 @@ class ToDump : public Element { public:
     int configure_phase() const		{ return CONFIGURE_PHASE_DEFAULT+100; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
     void add_handlers();
 
     void push(int, Packet *);

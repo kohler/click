@@ -22,7 +22,7 @@
 #include "tcpbuffer.hh"
 
 TCPBuffer::TCPBuffer()
-  : Element(1, 1)
+  : Element(1, 1), _chain(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -44,14 +44,13 @@ TCPBuffer::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 TCPBuffer::initialize(ErrorHandler *)
 {
-  _chain = 0;
   _start_push = false;
   _start_pull = false;
   return 0;
 }
 
 void
-TCPBuffer::uninitialize()
+TCPBuffer::cleanup(CleanupStage)
 {
   TCPBufferElt *elt = _chain;
   while (elt) {

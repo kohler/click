@@ -75,7 +75,6 @@ PollDevice::PollDevice()
 
 PollDevice::~PollDevice()
 {
-    uninitialize_device();	// might need to dev_put
     polldev_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
@@ -105,10 +104,8 @@ PollDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 #if HAVE_LINUX_POLLING
     if (find_device(allow_nonexistent, &poll_device_map, errh) < 0)
 	return -1;
-    if (_dev && (!_dev->poll_on || _dev->polling < 0)) {
-	uninitialize_device();
+    if (_dev && (!_dev->poll_on || _dev->polling < 0))
 	return errh->error("device `%s' not pollable, use FromDevice instead", _devname.cc());
-    }
 #endif
 
     return 0;
@@ -126,21 +123,16 @@ PollDevice::initialize(ErrorHandler *errh)
     // check for duplicate readers
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_reader_" + ifindex());
-	if (used) {
-	    uninitialize_device();
+	if (used)
 	    return errh->error("duplicate reader for device `%s'", _devname.cc());
-	}
 	used = this;
     }
 
     if (_dev && !_dev->polling) {
 	/* turn off interrupt if interrupts weren't already off */
 	_dev->poll_on(_dev);
-	if (_dev->polling != 2) {
-	    _dev->poll_off(_dev);
-	    uninitialize_device();
+	if (_dev->polling != 2)
 	    return errh->error("PollDevice detected wrong version of polling patch");
-	}
     }
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
@@ -186,22 +178,14 @@ PollDevice::reset_counts()
 }
 
 void
-PollDevice::uninitialize_device()
-{
-    // This portion of uninitialize might be called even if initialize did not
-    // succeed.
-    clear_device(&poll_device_map);
-}
-
-void
-PollDevice::uninitialize()
+PollDevice::cleanup(CleanupStage)
 {
 #if HAVE_LINUX_POLLING
     net_device *had_dev = _dev;
 
-    // call uninitialize_device first so we can check poll_device_map for
+    // call clear_device first so we can check poll_device_map for
     // other users
-    uninitialize_device();
+    clear_device(&poll_device_map);
 
     if (had_dev && had_dev->polling > 0 && !poll_device_map.lookup(had_dev, 0))
 	had_dev->poll_off(had_dev);

@@ -50,11 +50,6 @@ BufferConverter::initialize(ErrorHandler *)
 }
 
 void
-BufferConverter::uninitialize()
-{
-}
-
-void
 BufferConverter::push(int, Packet *p)
 {
   // XXX do path mtu discovery

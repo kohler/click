@@ -73,7 +73,7 @@ class ARPQuerier : public Element { public:
   bool can_live_reconfigure() const		{ return true; }
 
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   void clear_map();
   
   void take_state(Element *, ErrorHandler *);

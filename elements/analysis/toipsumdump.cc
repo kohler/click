@@ -134,7 +134,7 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
 }
 
 void
-ToIPSummaryDump::uninitialize()
+ToIPSummaryDump::cleanup(CleanupStage)
 {
     if (_f && _f != stdout)
 	fclose(_f);

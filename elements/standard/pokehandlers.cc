@@ -34,7 +34,6 @@ PokeHandlers::PokeHandlers()
 PokeHandlers::~PokeHandlers()
 {
     MOD_DEC_USE_COUNT;
-    uninitialize();
 }
 
 void

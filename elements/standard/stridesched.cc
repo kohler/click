@@ -65,7 +65,7 @@ StrideSched::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-StrideSched::uninitialize()
+StrideSched::cleanup(CleanupStage)
 {
   while (_list->_n != _list) {
     Client *c = _list->_n;

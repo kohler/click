@@ -31,7 +31,7 @@ class RadixIPLookup : public IPRouteTable { public:
     RadixIPLookup *clone() const		{ return new RadixIPLookup; }
 
     void notify_noutputs(int);
-    void uninitialize();
+    void cleanup(CleanupStage);
 
     int add_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);
     int remove_route(IPAddress, IPAddress, IPAddress, int, ErrorHandler *);

@@ -46,11 +46,6 @@ CopyTCPSeq::initialize(ErrorHandler *)
 }
 
 void
-CopyTCPSeq::uninitialize()
-{
-}
-
-void
 CopyTCPSeq::push(int port, Packet *p)
 {
   if (port == 0)

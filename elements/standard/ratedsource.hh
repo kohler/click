@@ -85,7 +85,7 @@ class RatedSource : public Element { public:
   RatedSource *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
 
   void run_scheduled();
   Packet *pull(int);

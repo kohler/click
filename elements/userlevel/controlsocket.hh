@@ -162,7 +162,7 @@ class ControlSocket : public Element { public:
   
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
 
   void selected(int);
 

@@ -43,17 +43,6 @@ TCPDemux::configure(Vector<String> &, ErrorHandler *)
 
 
 int
-TCPDemux::initialize(ErrorHandler *)
-{
-  return 0;
-}
-
-void
-TCPDemux::uninitialize()
-{
-}
-
-int
 TCPDemux::find_flow(Packet *p)
 {
   const click_ip *iph = p->ip_header();

@@ -140,7 +140,6 @@ ICMP6Error::simple_action(Packet *p)
   const click_ip6 *ipp = p->ip6_header();
   click_ip6 *nip;
   struct icmp6_generic *icp;
-  struct icmp6_redirect *icpr;
   unsigned xlen;
 
 
@@ -209,15 +208,12 @@ ICMP6Error::simple_action(Packet *p)
   }
 
   if (_type == ICMP6_REDIRECT_MESSAGE && _code == 0) {
-    icpr = (struct icmp6_redirect *) (nip + 1);
+    struct icmp6_redirect *icpr = (struct icmp6_redirect *) (nip + 1);
     icpr->target_address = p->dst_ip6_anno();
     icpr->destination_address = ipp->ip6_dst;
-  }
-
-  if (_type != ICMP6_REDIRECT_MESSAGE)
-    memcpy((void *)(icp + 1), p->data(), xlen);
-  else
     memcpy((void *)(icpr + 1), p->data(), xlen);
+  } else
+    memcpy((void *)(icp + 1), p->data(), xlen);
 
   icp->icmp6_cksum = htons(in6_fast_cksum(&nip->ip6_src, &nip->ip6_dst, nip->ip6_plen, nip->ip6_nxt, 0, (unsigned char *)icp, nip->ip6_plen));
   

@@ -89,7 +89,7 @@ class IPPrint : public Element { public:
   IPPrint *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   
   Packet *simple_action(Packet *);
 

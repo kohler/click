@@ -50,7 +50,7 @@ class KernelTap : public Element {
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   void add_handlers();
 
   void selected(int fd);

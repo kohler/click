@@ -59,7 +59,6 @@ FromDevice::FromDevice()
 FromDevice::~FromDevice()
 {
   MOD_DEC_USE_COUNT;
-  uninitialize();
 }
 
 FromDevice *
@@ -257,7 +256,7 @@ FromDevice::initialize(ErrorHandler *errh)
 }
 
 void
-FromDevice::uninitialize()
+FromDevice::cleanup(CleanupStage)
 {
 #if FROMDEVICE_PCAP
   if (_pcap)

@@ -94,7 +94,7 @@ class Queue : public Element, public Storage { public:
   Queue *clone() const				{ return new Queue; }
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   bool can_live_reconfigure() const		{ return true; }
   int live_reconfigure(Vector<String> &, ErrorHandler *);
   void take_state(Element *, ErrorHandler *);

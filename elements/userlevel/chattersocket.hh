@@ -83,7 +83,7 @@ class ChatterSocket : public Element { public:
   int configure_phase() const	 	{ return CONFIGURE_PHASE_INFO; }
   int configure(Vector<String> &conf, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
 
   void selected(int);
 
@@ -96,7 +96,6 @@ class ChatterSocket : public Element { public:
   int _socket_fd;
   String _channel;
   bool _greeting : 1;
-  bool _alive : 1;
 
   Vector<String> _messages;
   Vector<uint32_t> _message_pos;

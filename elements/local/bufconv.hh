@@ -40,7 +40,6 @@ public:
   BufferConverter *clone() const	{ return new BufferConverter; }
 
   int initialize(ErrorHandler *);
-  void uninitialize();
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   void push(int, Packet *p);

@@ -66,7 +66,7 @@ RoundRobinIPMapper::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-RoundRobinIPMapper::uninitialize()
+RoundRobinIPMapper::cleanup(CleanupStage)
 {
   for (int i = 0; i < _patterns.size(); i++)
     _patterns[i]->unuse();

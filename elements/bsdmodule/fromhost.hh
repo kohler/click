@@ -13,7 +13,7 @@ class FromHost : public AnyDevice {
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
     void run_scheduled();
     struct ifqueue *_inq;
 

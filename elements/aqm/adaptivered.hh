@@ -37,7 +37,7 @@ class AdaptiveRED : public RED { public:
     int configure(Vector<String> &, ErrorHandler *);
     int live_reconfigure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
 
     void run_scheduled();
 

@@ -76,7 +76,6 @@ ToDevice::ToDevice()
 
 ToDevice::~ToDevice()
 {
-    uninitialize_device();		// might need to dev_put
     todev_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
@@ -109,10 +108,8 @@ ToDevice::initialize(ErrorHandler *errh)
     // check for duplicate writers
     if (ifindex() >= 0) {
 	void *&used = router()->force_attachment("device_writer_" + String(ifindex()));
-	if (used) {
-	    uninitialize_device();
+	if (used)
 	    return errh->error("duplicate writer for device `%s'", _devname.cc());
-	}
 	used = this;
     }
 
@@ -153,15 +150,9 @@ ToDevice::reset_counts()
 }
 
 void
-ToDevice::uninitialize_device()
+ToDevice::cleanup(CleanupStage)
 {
     clear_device(&to_device_map);
-}
-
-void
-ToDevice::uninitialize()
-{
-    uninitialize_device();
 }
 
 /*

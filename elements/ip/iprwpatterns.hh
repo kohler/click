@@ -35,7 +35,7 @@ class IPRewriterPatterns : public Element {
 
   int configure_phase() const	{ return IPRw::CONFIGURE_PHASE_PATTERNS; }
   int configure(Vector<String> &, ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
 
   static IPRw::Pattern *find(Element *, const String &, ErrorHandler *);
   

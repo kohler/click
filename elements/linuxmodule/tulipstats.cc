@@ -170,15 +170,17 @@ TulipStats::initialize(ErrorHandler *errh)
 }
 
 void
-TulipStats::uninitialize()
+TulipStats::cleanup(CleanupStage stage)
 {
   tulip_stats_map.remove(this);
 
-  tulip_stats_active--;
+  if (stage >= CLEANUP_INITIALIZED) {
+    tulip_stats_active--;
 #if HAVE_LINUX_TULIP_INTERRUPT_HOOK
-  if (tulip_stats_active == 0)
-    tulip_interrupt_hook = 0;
+    if (tulip_stats_active == 0)
+      tulip_interrupt_hook = 0;
 #endif
+  }
 }
 
 void

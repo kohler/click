@@ -246,9 +246,11 @@ FromDevice::initialize(ErrorHandler *errh)
 }
 
 void
-FromDevice::uninitialize()
+FromDevice::cleanup(CleanupStage)
 {
-    assert(_dev);
+    if (!_dev)
+	return;
+
     struct ifqueue *q = NULL;
     int s = splimp();
     registered_readers--;

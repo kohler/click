@@ -56,7 +56,7 @@ DelayUnqueue::initialize(ErrorHandler *errh)
 }
 
 void
-DelayUnqueue::uninitialize()
+DelayUnqueue::cleanup(CleanupStage)
 {
   if (_p) {
     _p->kill();

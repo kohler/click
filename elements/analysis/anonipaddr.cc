@@ -112,10 +112,8 @@ AnonymizeIPAddr::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 AnonymizeIPAddr::initialize(ErrorHandler *errh)
 {
-    if (!(_root = new_node())) {
-	uninitialize();
+    if (!(_root = new_node()))
 	return errh->error("out of memory!");
-    }
     _root->input = 1;		// use 1 instead of 0 b/c 0.0.0.0 is special
     _root->output = rand32();
     _root->child[0] = _root->child[1] = 0;
@@ -139,10 +137,8 @@ AnonymizeIPAddr::initialize(ErrorHandler *errh)
 	    root_touched = true;
 	} else if (Node *n = find_node(addr))
 	    n->output = (n->output & 0x00FFFFFF) | addr;
-	else {
-	    uninitialize();
+	else
 	    return errh->error("out of memory!");
-	}
     }
 
     // prepare special nodes for 0.0.0.0 and 255.255.255.255
@@ -154,7 +150,7 @@ AnonymizeIPAddr::initialize(ErrorHandler *errh)
 }
 
 void
-AnonymizeIPAddr::uninitialize()
+AnonymizeIPAddr::cleanup(CleanupStage)
 {
     for (int i = 0; i < _blocks.size(); i++)
 	delete[] _blocks[i];

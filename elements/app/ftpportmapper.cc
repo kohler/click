@@ -90,7 +90,7 @@ FTPPortMapper::initialize(ErrorHandler *errh)
 }
 
 void
-FTPPortMapper::uninitialize()
+FTPPortMapper::cleanup(CleanupStage)
 {
   if (_pattern)
     _pattern->unuse();

@@ -45,7 +45,6 @@ IPReassembler::IPReassembler()
 IPReassembler::~IPReassembler()
 {
   MOD_DEC_USE_COUNT;
-  uninitialize();
 }
 
 IPReassembler *
@@ -63,7 +62,7 @@ IPReassembler::initialize(ErrorHandler *)
   return 0;
 }
 void
-IPReassembler::uninitialize()
+IPReassembler::cleanup(CleanupStage)
 {
   for (int i = 0; i < NMAP; i++) {
     for (IPQueue *t = _map[i]; t; ) {

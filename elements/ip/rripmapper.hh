@@ -1,5 +1,5 @@
-#ifndef RRIPMAPPER_HH
-#define RRIPMAPPER_HH
+#ifndef CLICK_RRIPMAPPER_HH
+#define CLICK_RRIPMAPPER_HH
 #include "elements/ip/iprw.hh"
 
 /*
@@ -38,7 +38,7 @@ class RoundRobinIPMapper : public Element, public IPMapper {
   RoundRobinIPMapper *clone() const	{ return new RoundRobinIPMapper; }
   int configure_phase() const		{ return IPRw::CONFIGURE_PHASE_MAPPER;}
   int configure(Vector<String> &, ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   
   void notify_rewriter(IPRw *, ErrorHandler *);
   IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);

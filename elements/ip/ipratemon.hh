@@ -1,5 +1,5 @@
-#ifndef IPRATEMON_HH
-#define IPRATEMON_HH
+#ifndef CLICK_IPRATEMON_HH
+#define CLICK_IPRATEMON_HH
 
 /*
  * =c
@@ -84,7 +84,7 @@ public:
   void notify_ninputs(int);  
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
 
   void set_resettime()                          { _resettime = MyEWMA::now(); }
   void set_anno_level(unsigned addr, unsigned level, unsigned when);

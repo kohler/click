@@ -126,7 +126,7 @@ ToDevice::reset_counts()
 }
 
 void
-ToDevice::uninitialize()
+ToDevice::cleanup(CleanupStage)
 {
     to_device_map.remove(this);
 }

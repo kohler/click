@@ -64,7 +64,7 @@ IPRewriterPatterns::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-IPRewriterPatterns::uninitialize()
+IPRewriterPatterns::cleanup(CleanupStage)
 {
   for (int i = 0; i < _patterns.size(); i++)
     _patterns[i]->unuse();

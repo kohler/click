@@ -124,13 +124,12 @@ IPPrint::initialize(ErrorHandler *errh)
 }
 
 void
-IPPrint::uninitialize()
+IPPrint::cleanup(CleanupStage)
 {
 #if CLICK_USERLEVEL
-  if (_outfile) {
+  if (_outfile)
     fclose(_outfile);
-    _outfile = 0;
-  }
+  _outfile = 0;
 #endif
 }
 

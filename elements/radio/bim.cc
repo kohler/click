@@ -128,12 +128,6 @@ BIM::initialize(ErrorHandler *errh)
 }
 
 void
-BIM::uninitialize()
-{
-  remove_select(_fd, SELECT_READ | SELECT_WRITE);
-}
-
-void
 BIM::selected(int fd)
 {
   int cc, i;

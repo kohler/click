@@ -104,7 +104,7 @@ class IPAddrRewriter : public IPRw { public:
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
     //void take_state(Element *, ErrorHandler *);
 
     void run_scheduled();

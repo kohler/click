@@ -38,7 +38,6 @@ ToDump::ToDump()
 ToDump::~ToDump()
 {
     MOD_DEC_USE_COUNT;
-    uninitialize();
 }
 
 ToDump*
@@ -141,7 +140,7 @@ ToDump::initialize(ErrorHandler *errh)
 }
 
 void
-ToDump::uninitialize()
+ToDump::cleanup(CleanupStage)
 {
   if (_fp && _fp != stdout)
     fclose(_fp);

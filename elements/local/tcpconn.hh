@@ -50,7 +50,7 @@ public:
   TCPConn *clone() const			{ return new TCPConn; }
 
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
   void push(int, Packet *);

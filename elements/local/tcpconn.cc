@@ -27,7 +27,7 @@
 #include "tcpconn.hh"
 
 TCPConn::TCPConn()
-  : Element(2, 3)
+  : Element(2, 3), _active(false)
 {
   MOD_INC_USE_COUNT;
 }
@@ -66,7 +66,7 @@ TCPConn::initialize(ErrorHandler *errh)
 }
 
 void
-TCPConn::uninitialize()
+TCPConn::cleanup(CleanupStage)
 {
   reset();
 }

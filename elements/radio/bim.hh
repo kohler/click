@@ -1,5 +1,5 @@
-#ifndef BIM_HH
-#define BIM_HH
+#ifndef CLICK_BIM_HH
+#define CLICK_BIM_HH
 
 /*
  * BIM(/dev/cuaa0, speed)
@@ -23,7 +23,6 @@ class BIM : public Element {
   BIM *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
 
   void selected(int fd);
 

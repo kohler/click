@@ -123,7 +123,7 @@ class FromIPSummaryDump : public Element { public:
 
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
     void add_handlers();
 
     void run_scheduled();

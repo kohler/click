@@ -37,7 +37,6 @@ FastUDPSource::FastUDPSource()
 
 FastUDPSource::~FastUDPSource()
 {
-  uninitialize();
   MOD_DEC_USE_COUNT;
 }
 
@@ -147,7 +146,7 @@ FastUDPSource::initialize(ErrorHandler *)
 }
 
 void
-FastUDPSource::uninitialize()
+FastUDPSource::cleanup(CleanupStage)
 {
   if (_packet) {
     _packet->kill();

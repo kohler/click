@@ -36,7 +36,6 @@ class SimpleLocQuerier : public Element {
   SimpleLocQuerier *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
   
   void push(int port, Packet *);
   

@@ -196,12 +196,7 @@ TCPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   _tcp_timeout_jiffies *= CLICK_HZ;
   _tcp_done_timeout_jiffies *= CLICK_HZ;
 
-  if (errh->nerrors() == before)
-    return 0;
-  else {
-    uninitialize();
-    return -1;
-  }
+  return (errh->nerrors() == before ? 0 : -1);
 }
 
 int
@@ -216,7 +211,7 @@ TCPRewriter::initialize(ErrorHandler *)
 }
 
 void
-TCPRewriter::uninitialize()
+TCPRewriter::cleanup(CleanupStage)
 {
   clear_map(_tcp_map);
   for (int i = 0; i < _input_specs.size(); i++)

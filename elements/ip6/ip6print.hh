@@ -1,5 +1,5 @@
-#ifndef IP6PRINT_HH
-#define IP6PRINT_HH
+#ifndef CLICK_IP6PRINT_HH
+#define CLICK_IP6PRINT_HH
 #include <click/element.hh>
 #include <click/string.hh>
 
@@ -34,8 +34,6 @@ class IP6Print : public Element { public:
   
   IP6Print *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void uninitialize();
   
   Packet *simple_action(Packet *);
 

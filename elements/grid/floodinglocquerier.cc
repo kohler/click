@@ -43,7 +43,6 @@ FloodingLocQuerier::FloodingLocQuerier()
 FloodingLocQuerier::~FloodingLocQuerier()
 {
   MOD_DEC_USE_COUNT;
-  uninitialize();
 }
 
 

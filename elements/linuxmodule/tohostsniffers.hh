@@ -33,7 +33,7 @@ class ToHostSniffers : public Element { public:
 
   int configure_phase() const	{ return FromHost::CONFIGURE_PHASE_TODEVICE; }
   int configure(Vector<String> &, ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   
   void push(int port, Packet *);
 

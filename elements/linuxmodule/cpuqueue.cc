@@ -3,10 +3,12 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 
-CPUQueue::CPUQueue() : _last(0), _drops(0)
+CPUQueue::CPUQueue()
+  : _last(0), _drops(0)
 {
   MOD_INC_USE_COUNT;
   set_ninputs(1);
+  memset(&_q, 0, sizeof(_q));
 }
 
 CPUQueue::~CPUQueue()
@@ -41,18 +43,16 @@ CPUQueue::configure(Vector<String> &conf, ErrorHandler *errh)
 int 
 CPUQueue::initialize(ErrorHandler *errh)
 {
-  for (int i=0; i<NUM_CLICK_CPUS; i++) {
-    _q[i]._q = new Packet*[_capacity+1];
-    _q[i]._head = 0;
-    _q[i]._tail = 0;
-  }
+  for (int i=0; i<NUM_CLICK_CPUS; i++)
+    if (!(_q[i]._q = new Packet*[_capacity+1]))
+      return errh->error("out of memory!");
   _drops = 0;
   _last = 0;
   return 0;
 }
 
 void
-CPUQueue::uninitialize()
+CPUQueue::cleanup(CleanupStage)
 {
   for (int i=0; i<NUM_CLICK_CPUS; i++) {
     for (int j = _q[i]._head; j != _q[i]._tail; j = next_i(j))

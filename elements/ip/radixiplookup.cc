@@ -36,7 +36,6 @@ RadixIPLookup::RadixIPLookup()
 RadixIPLookup::~RadixIPLookup()
 {
     MOD_DEC_USE_COUNT;
-    uninitialize();
 }
 
 
@@ -47,7 +46,7 @@ RadixIPLookup::notify_noutputs(int n)
 }
 
 void
-RadixIPLookup::uninitialize()
+RadixIPLookup::cleanup(CleanupStage)
 {
     for (int i = 0; i < _v.size(); i++)
 	if (_v[i])

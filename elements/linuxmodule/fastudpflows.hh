@@ -97,7 +97,7 @@ class FastUDPFlows : public Element {
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   Packet *pull(int);
 
   void add_handlers();

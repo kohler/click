@@ -35,7 +35,6 @@ FastUDPSource::FastUDPSource()
 
 FastUDPSource::~FastUDPSource()
 {
-    uninitialize();
 }
 
 int
@@ -139,7 +138,7 @@ FastUDPSource::initialize(ErrorHandler *)
 }
 
 void
-FastUDPSource::uninitialize()
+FastUDPSource::cleanup(CleanupStage)
 {
     if (_m) {
 	m_freem(_m);

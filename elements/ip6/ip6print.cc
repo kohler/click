@@ -52,23 +52,11 @@ IP6Print::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-int
-IP6Print::initialize(ErrorHandler *)
-{
-  return 0;
-}
-
-void
-IP6Print::uninitialize()
-{
-}
-
 Packet *
 IP6Print::simple_action(Packet *p)
 {
   String s = "";
   const click_ip6 *iph = (click_ip6*) p->ip_header();
-  bool zero = false;
   
   StringAccum sa;
   if (_label) 

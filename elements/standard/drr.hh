@@ -28,7 +28,7 @@ class DRRSched : public Element { public:
   
   void notify_ninputs(int);
   int initialize(ErrorHandler *);
-  void uninitialize();
+  void cleanup(CleanupStage);
   
   Packet *pull(int port);
 

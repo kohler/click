@@ -46,11 +46,6 @@ CopyFlowID::initialize(ErrorHandler *)
 }
 
 void
-CopyFlowID::uninitialize()
-{
-}
-
-void
 CopyFlowID::push(int port, Packet *p)
 {
   if (port == 0)

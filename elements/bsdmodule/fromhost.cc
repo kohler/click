@@ -77,8 +77,11 @@ FromHost::initialize(ErrorHandler *errh)
 }
 
 void
-FromHost::uninitialize()
+FromHost::cleanup(CleanupStage)
 {
+    if (!_inq)
+	return;
+    
     // Flush the receive queue.
     int s = splimp();
     struct ifqueue *q = _inq ;

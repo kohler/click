@@ -37,7 +37,6 @@ FastUDPSourceIP6::FastUDPSourceIP6()
 
 FastUDPSourceIP6::~FastUDPSourceIP6()
 {
-  uninitialize();
   MOD_DEC_USE_COUNT;
 }
 
@@ -147,7 +146,7 @@ FastUDPSourceIP6::initialize(ErrorHandler *)
 }
 
 void
-FastUDPSourceIP6::uninitialize()
+FastUDPSourceIP6::cleanup(CleanupStage)
 {
   if (_packet) {
     _packet->kill();

@@ -154,7 +154,7 @@ class FromDump : public Element { public:
     void notify_noutputs(int);
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void uninitialize();
+    void cleanup(CleanupStage);
     void add_handlers();
 
     void run_scheduled();
@@ -218,7 +218,6 @@ class FromDump : public Element { public:
     int read_buffer(ErrorHandler *);
     int read_into(void *, uint32_t, ErrorHandler *);
     bool read_packet(ErrorHandler *);
-    int initialize_failed(ErrorHandler *, const char *, ...);
 
     void prepare_times(const struct fake_bpf_timeval &);
 

@@ -53,8 +53,7 @@ public:
   const char *class_name() const	{ return "IndexTreesIPLookup"; }
   const char *processing() const	{ return AGNOSTIC; }
   IndexTreesIPLookup *clone() const	{ return new IndexTreesIPLookup; }
-  void uninitialize();
-  int initialize(ErrorHandler *);
+  void cleanup(CleanupStage);
 
   String dump_routes();
   void add_route(IPAddress, IPAddress, IPAddress, int);

@@ -108,12 +108,7 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   _tcp_done_timeout_jiffies *= CLICK_HZ;
   _udp_timeout_jiffies *= CLICK_HZ;
   
-  if (errh->nerrors() == before)
-    return 0;
-  else {
-    uninitialize();
-    return -1;
-  }
+  return (errh->nerrors() == before ? 0 : -1);
 }
 
 int
@@ -133,7 +128,7 @@ IPRewriter::initialize(ErrorHandler *)
 }
 
 void
-IPRewriter::uninitialize()
+IPRewriter::cleanup(CleanupStage)
 {
   clear_map(_tcp_map);
   clear_map(_udp_map);
