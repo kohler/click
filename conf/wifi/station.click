@@ -41,7 +41,7 @@
 control :: ControlSocket("TCP", 7777);
 chatter :: ChatterSocket("TCP", 7778);
 
-AddressInfo(station_address 192.168.1.1/24 00:05:4E:46:97:28);
+AddressInfo(station_address 192.168.1.1/24 ath0);
 winfo :: WirelessInfo(SSID "", BSSID 00:00:00:00:00:00, CHANNEL 1);
 
 rates :: AvailableRates(DEFAULT 2 4 11 22);
@@ -58,7 +58,7 @@ FromDevice(ath0)
 -> extra_decap :: ExtraDecap()
 -> FilterPhyErr()
 -> tx_filter :: FilterTX()
--> dupe :: WifiDupeFilter(WINDOW 20)
+-> dupe :: WifiDupeFilter()
 -> wifi_cl :: Classifier(0/00%0c, //mgt
 			 0/08%0c, //data
 			 );
@@ -96,12 +96,11 @@ management_cl [2] -> beacon_t :: Tee(2)
 -> bs :: BeaconScanner(RT rates, WIRELESS_INFO winfo) ->  Discard;
 beacon_t [1] -> tracker :: BeaconTracker(WIRELESS_INFO winfo, TRACK 10) -> Discard;
 
-management_cl [3] -> station_assoc;
+management_cl [3] -> Print ("dissoc") -> station_assoc;
 management_cl [4] -> PrintWifi(probe_resp) -> bs;
 management_cl [5] -> PrintWifi(auth) -> station_auth;
 
 wifi_cl [1] 
--> WifiDupeFilter(WINDOW 20)
 //-> PrintWifi(data)
 -> wifi_decap :: WifiDecap() 
 -> ToHost(station);

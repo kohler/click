@@ -15,9 +15,9 @@
 // Messages are printed to the system log (run 'dmesg' to see them, or look
 // in /var/log/messages), and to the file '/click/messages'.
 
-AddressInfo(ap_bssid 10.0.0.1/8 00:05:4E:46:97:28);
+AddressInfo(ap_bssid 10.0.0.1/8 ath0);
 
-winfo :: WirelessInfo(SSID "click-ssid", BSSID 00:05:4E:46:97:28, CHANNEL 1);
+winfo :: WirelessInfo(SSID "click-ssid", BSSID ap_bssid, CHANNEL 1);
 
 rates :: AvailableRates(DEFAULT 2 4 11 22);
 

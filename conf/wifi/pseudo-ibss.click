@@ -15,7 +15,7 @@
 // Messages are printed to the system log (run 'dmesg' to see them, or look
 // in /var/log/messages), and to the file '/click/messages'.
 
-AddressInfo(safe_addr 6.70.151.40/8 00:05:4E:46:97:28);
+AddressInfo(safe_addr 6.0.0.1/8 ath0);
 winfo :: WirelessInfo(BSSID 00:00:00:00:00:00);
 
 FromHost(safe, safe_addr, ETHER safe_addr)

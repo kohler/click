@@ -6,6 +6,7 @@
 #include <click/bighashmap.hh>
 #include <click/glue.hh>
 #include <click/timer.hh>
+#include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 
 /*

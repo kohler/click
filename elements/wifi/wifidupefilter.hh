@@ -7,19 +7,17 @@
 CLICK_DECLS
 
 /*
- * =c
- * WifiDupeFilter([TAG] [, KEYWORDS])
- * =s debugging
- * =d
- * Assumes input packets are SR packets (ie a sr_pkt struct from 
- * sr.hh). Prints out a description of those packets.
- *
- * Keyword arguments are:
- *
- * =over 8
- *
- * =a
- * Print, SR
+=c
+
+WifiDupeFilter([TAG] [, KEYWORDS])
+
+=s Wifi, Checking Validity
+
+Filters out duplicate 802.11 packets based on their sequence number.
+
+=d
+
+=a WifiEncap, WifiDecap
  */
 
 class WifiDupeFilter : public Element {
@@ -49,7 +47,10 @@ class WifiDupeFilter : public Element {
     struct timeval _last;
     int _dupes;
     int _packets;
-    DEQueue<int> _sequences; //most recently received seq nos
+
+    uint16_t seq;
+    uint16_t frag;
+
     DstInfo(EtherAddress eth) {
       _eth = eth;
     }
@@ -57,8 +58,11 @@ class WifiDupeFilter : public Element {
     void clear() {
       _dupes = 0;
       _packets = 0;
-      _sequences.clear();
       click_gettimeofday(&_last);
+
+      seq = 0;
+      frag = 0;
+
     }
   };
 
@@ -66,7 +70,6 @@ class WifiDupeFilter : public Element {
   typedef DstTable::const_iterator DstIter;
 
   DstTable _table;
-  int _window;
   bool _debug;
 
   int _dupes;

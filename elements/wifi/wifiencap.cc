@@ -113,9 +113,11 @@ WifiEncap::simple_action(Packet *p)
   struct click_wifi *w = (struct click_wifi *) p_out->data();
 
   memset(p_out->data(), 0, sizeof(click_wifi));
-  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_DATA;
+  w->i_fc[0] = (uint8_t) (WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_DATA);
   w->i_fc[1] = 0;
-  w->i_fc[1] |= (WIFI_FC1_DIR_MASK & _mode);
+  w->i_fc[1] |= (uint8_t) (WIFI_FC1_DIR_MASK & _mode);
+
+
 
   switch (_mode) {
   case WIFI_FC1_DIR_NODS:
@@ -134,6 +136,7 @@ WifiEncap::simple_action(Packet *p)
     memcpy(w->i_addr3, src.data(), 6);
     break;
   case WIFI_FC1_DIR_DSTODS:
+    /* XXX this is wrong */
     memcpy(w->i_addr1, dst.data(), 6);
     memcpy(w->i_addr2, src.data(), 6);
     memcpy(w->i_addr3, bssid.data(), 6);
@@ -145,17 +148,6 @@ WifiEncap::simple_action(Packet *p)
     p_out->kill();
     return 0;
   }
-
-  w->i_fc[0] = WIFI_FC0_VERSION_0 | WIFI_FC0_TYPE_DATA;
-  w->i_fc[1] = 0;
-  w->i_fc[1] |= (WIFI_FC1_DIR_MASK & _mode);
-
-  w->i_dur[0] = 0;
-  w->i_dur[1] = 0;
-
-  w->i_seq[0] = 0;
-  w->i_seq[1] = 0;
-  
   return p_out;
 }
 

@@ -31,7 +31,6 @@ CLICK_DECLS
 
 WifiDupeFilter::WifiDupeFilter()
   : Element(1, 1),
-    _window(10),
     _debug(false),
     _dupes(0),
     _packets(0)
@@ -50,7 +49,6 @@ WifiDupeFilter::configure(Vector<String> &conf, ErrorHandler* errh)
   int ret;
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
-		    "WINDOW", cpInteger, "window length", &_window,
 		    "DEBUG", cpBool, "debug level", &_debug,
 		    cpEnd);
   return ret;
@@ -63,8 +61,16 @@ WifiDupeFilter::simple_action(Packet *p_in)
   click_wifi *w = (click_wifi *) p_in->data();
   EtherAddress src = EtherAddress(w->i_addr2);
   uint16_t seq = le16_to_cpu(*(uint16_t *) w->i_seq) >> WIFI_SEQ_SEQ_SHIFT;
-  //uint8_t fragno = le16_to_cpu(*(u_int16_t *)w->i_seq) & WIFI_SEQ_FRAG_MASK;
+  uint8_t frag = le16_to_cpu(*(u_int16_t *)w->i_seq) & WIFI_SEQ_FRAG_MASK;
+  u_int8_t more_frag = w->i_fc[1] & WIFI_FC1_MORE_FRAG;
+
+  bool is_frag = frag || more_frag;
+
   DstInfo *nfo = _table.findp(src);
+
+  if (w->i_fc[0] & WIFI_FC0_TYPE_CTL) {
+    return p_in;
+  }
 
   click_gettimeofday(&now);
   _packets++;
@@ -84,32 +90,31 @@ WifiDupeFilter::simple_action(Packet *p_in)
     }
     nfo->clear();
   }
-  
-  for (int x = 0; x < nfo->_sequences.size(); x++) {
-    if(seq == nfo->_sequences[x]) {
-      /* duplicate dectected */
-      if (_debug) {
-	click_chatter("%{element}: dup seq %d src %s\n",
-		      this,
-		      seq,
-		      src.s().cc());
+
+  if (w->i_fc[1] & WIFI_FC1_RETRY) {
+    /* must be a retry to be a dupe */
+    if (seq == nfo->seq) {
+      if (!is_frag || frag <= nfo->frag) {
+	/* duplicate dectected */
+	if (_debug) {
+	  click_chatter("%{element}: dup seq %d frag %d src %s\n",
+			this,
+			seq,
+			frag,
+			src.s().cc());
+	}
+	nfo->_dupes++;
+	_dupes++;
+	p_in->kill();
+	return 0;
       }
-      nfo->_dupes++;
-      _dupes++;
-      p_in->kill();
-      return 0;
     }
   }
 
   nfo->_packets++;
   nfo->_last = now;
-  nfo->_sequences.push_back(seq);
-  /* clear space for new seq */
-  while( nfo->_sequences.size() > _window) {
-    nfo->_sequences.pop_front();
-  }
-
-
+  nfo->seq = seq;
+  nfo->frag = frag;
   return p_in;
 }
 
@@ -129,18 +134,15 @@ WifiDupeFilter::static_read_stats(Element *xf, void *)
     sa << " age " << now - nfo._last;
     sa << " packets " << nfo._packets;
     sa << " dupes " << nfo._dupes;
-    sa << " seq_size " << nfo._sequences.size();
-    sa << " [";
-    for (int x = 0; x < nfo._sequences.size(); x++) {
-      sa << " " << nfo._sequences[x];
-    }
-    sa << "]\n";
+    sa << " seq " << nfo.seq;
+    sa << " frag " << nfo.frag;
+    sa << "\n";
 
   }
   return sa.take_string();
 }
 
-enum {H_DEBUG, H_WINDOW, H_DUPES, H_PACKETS, H_RESET};
+enum {H_DEBUG, H_DUPES, H_PACKETS, H_RESET};
 
 static String 
 WifiDupeFilter_read_param(Element *e, void *thunk)
@@ -149,8 +151,6 @@ WifiDupeFilter_read_param(Element *e, void *thunk)
     switch ((uintptr_t) thunk) {
       case H_DEBUG:
 	return String(td->_debug) + "\n";
-      case H_WINDOW:
-	return String(td->_window) + "\n";
       case H_DUPES:
 	return String(td->_dupes) + "\n";
       case H_PACKETS:
@@ -173,13 +173,6 @@ WifiDupeFilter_write_param(const String &in_s, Element *e, void *vparam,
     f->_debug = debug;
     break;
   }
-  case H_WINDOW: {    
-    int window;
-    if (!cp_integer(s, &window)) 
-      return errh->error("window parameter must be integer");
-    f->_window = window;
-    break;
-  }
   case H_RESET: {
     f->_table.clear();
     f->_packets = 0;
@@ -194,12 +187,11 @@ WifiDupeFilter::add_handlers()
   add_default_handlers(true);
   
   add_read_handler("debug", WifiDupeFilter_read_param, (void *) H_DEBUG);
-  add_read_handler("window", WifiDupeFilter_read_param, (void *) H_WINDOW);
   add_read_handler("dupes", WifiDupeFilter_read_param, (void *) H_DUPES);
+  add_read_handler("drops", WifiDupeFilter_read_param, (void *) H_DUPES);
   add_read_handler("packets", WifiDupeFilter_read_param, (void *) H_PACKETS);
 
   add_write_handler("debug", WifiDupeFilter_write_param, (void *) H_DEBUG);
-  add_write_handler("window", WifiDupeFilter_write_param, (void *) H_WINDOW);
   add_write_handler("reset", WifiDupeFilter_write_param, (void *) H_RESET);
 
   add_read_handler("stats", static_read_stats, 0);

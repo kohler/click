@@ -57,6 +57,12 @@ Packet *
 PrintWifi::simple_action(Packet *p)
 {
   struct click_wifi *wh = (struct click_wifi *) p->data();
+  EtherAddress src;
+  EtherAddress dst;
+  EtherAddress bssid;
+
+
+
 
   StringAccum sa;
   if (_label[0] != 0) {
@@ -70,14 +76,26 @@ PrintWifi::simple_action(Packet *p)
   switch (wh->i_fc[1] & WIFI_FC1_DIR_MASK) {
   case WIFI_FC1_DIR_NODS:
     sa << "NODS ";
+    dst = EtherAddress(wh->i_addr1);
+    src = EtherAddress(wh->i_addr2);
+    bssid = EtherAddress(wh->i_addr3);
     break;
   case WIFI_FC1_DIR_TODS:
     sa << "TODS ";
+    bssid = EtherAddress(wh->i_addr1);
+    src = EtherAddress(wh->i_addr2);
+    dst = EtherAddress(wh->i_addr3);
     break;
   case WIFI_FC1_DIR_FROMDS:
+    dst = EtherAddress(wh->i_addr1);
+    bssid = EtherAddress(wh->i_addr2);
+    src = EtherAddress(wh->i_addr3);
     sa << "FROMDS ";
     break;
   case WIFI_FC1_DIR_DSTODS:
+    dst = EtherAddress(wh->i_addr1);
+    src = EtherAddress(wh->i_addr2);
+    bssid = EtherAddress(wh->i_addr3);
     sa << "DSTODS ";
     break;
   default:
@@ -163,13 +181,12 @@ PrintWifi::simple_action(Packet *p)
   }
 
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
-  sa << EtherAddress(wh->i_addr2);
-  sa << " -> ";
-  sa << " " << EtherAddress(wh->i_addr1);
-  sa << " (" <<EtherAddress(wh->i_addr3) << ") ";
-  
+  sa << EtherAddress(wh->i_addr1);
+  sa << " " << EtherAddress(wh->i_addr2);
+  sa << " " << EtherAddress(wh->i_addr3);
+  sa << " ";
 
-  sa << "[ ";
+  sa << "[";
   if (ceh->flags & WIFI_EXTRA_TX) {
     sa << " TX ";
   }
@@ -185,8 +202,13 @@ PrintWifi::simple_action(Packet *p)
   if (ceh->flags & WIFI_EXTRA_RX_MORE) {
     sa << " RX_MORE ";
   }
-  sa << " ] ";
-  sa << (int) ceh->rate << " Mbps ";
+  sa << "] ";
+
+  sa << (int) ceh->rate/2;
+  if (ceh->rate % 2) {
+    sa << ".5";
+  }  
+  sa << " Mbps ";
 
   sa << "+" << (int) ceh->rssi << "/" <<  (int) ceh->silence;
 

@@ -1,5 +1,3 @@
-
-
 FromDevice(ath0) 
 -> prism2_decap :: Prism2Decap()
 -> extra_decap :: ExtraDecap()

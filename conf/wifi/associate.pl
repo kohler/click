@@ -1,14 +1,18 @@
 #!/usr/bin/perl -w
 
 use strict;
-
-
-my @lines = split /\n/, `read_handler.pl bs.scan`;
-
+my $desired_ssid;
 my $best_ssid = "";
 my $best_rssi = 0;
 my $best_bssid = "";
 my $best_channel = 0;
+
+if (scalar(@ARGV)) {
+    $desired_ssid =  shift @ARGV;
+}
+
+my @lines = split /\n/, `read_handler.pl bs.scan`;
+
 foreach my $line (@lines) {
     my ($bssid, $rest) = split /\s+/, $line;
 
@@ -21,7 +25,9 @@ foreach my $line (@lines) {
     $line =~ / ssid (\S+) /;
     my $ssid = $1;
 
-    if ($best_rssi < $rssi) {
+    if ($best_rssi < $rssi &&
+	(! defined $desired_ssid ||
+	 $desired_ssid eq $ssid)) {
 	$best_rssi = $rssi;
 	$best_ssid = $ssid;
 	$best_channel = $channel;
