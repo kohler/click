@@ -1018,7 +1018,7 @@ IPFilter::push(int, Packet *p)
 {
   const unsigned char *neth_data = (const unsigned char *)p->ip_header();
   const unsigned char *transph_data = (const unsigned char *)p->transport_header();
-  Expr *ex = &_exprs[0];	// avoid bounds checking
+  Expr *ex;
   int pos = 0;
   
   if (_output_everything >= 0) {
@@ -1031,6 +1031,8 @@ IPFilter::push(int, Packet *p)
     length_checked_push(p);
     return;
   }
+  
+  ex = &_exprs[0];	// avoid bounds checking
   
   do {
     int off = ex[pos].offset;
