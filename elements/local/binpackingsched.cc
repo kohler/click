@@ -10,7 +10,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-#define DEBUG 2
+#define DEBUG 0
 
 BinPackingScheduler::BinPackingScheduler()
   : _timer(this)
