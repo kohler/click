@@ -97,7 +97,6 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     _force_ip = force_ip;
 #ifdef ALLOW_MMAP
     _mmap = mmap;
-    _mmap_unit = 0;
 #else
     if (mmap)
 	errh->warning("`MMAP' is not supported on this platform");
@@ -266,6 +265,7 @@ FromDump::initialize(ErrorHandler *errh)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
   retry_file:
+    _mmap_unit = 0;
     _pos = 0;
     int result = read_buffer(errh);
     if (result < 0) {
