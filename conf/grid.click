@@ -8,6 +8,7 @@ li :: LocationInfo(POS_LAT, POS_LON);
 // protocol els
 nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, MAC_ADDR, GRID_IP);
 lr :: LookupLocalGridRoute(MAC_ADDR, GRID_IP, nb);
+geo :: LookupGeographicGridRoute(MAC_ADDR, GRID_IP, nb);
 
 // device layer els
 from_wvlan :: FromDevice(NET_DEVICE, 0);
@@ -26,8 +27,12 @@ from_wvlan -> Classifier(12/GRID_ETH_PROTO)
   -> Classifier(15/GRID_NBR_ENCAP_PROTO)
   -> [0] lr [0] -> to_wvlan;
 
-lr [2] -> Discard; // packets for geo fwding
+lr [2] -> [0] geo; // packets for geo fwding
 lr [3] -> Discard; // bad packets
+
+geo [0] -> to_wvlan;
+geo [1] -> Discard; // geo route can't handle
+geo [2] -> Discard; // bad packet
 
 fr [1] -> Discard; // out of range
 
