@@ -11,12 +11,12 @@
 /*
  * =c
  * AddressTranslator(number_of_static_Mapping,
- *                   StaticMappingFields,
+ *                   StaticPortMapping,
  *                   StaticMapping1,...
  *                   StaticMappingm,
- *                   OutwardLookupFields,
- *                   InwardLookupFields,
- *                   Direction,
+ *                   DynamicMapping,
+ *                   DynamicPortMapping,
+ *                   AddressAllocationDirection,
  *                   Mapped_IP6Address1 Port_start1 Port_end1, ...
  *                   Mapped_IP6Addressn Port_startn Port_endn)   
  *
@@ -38,13 +38,17 @@
  * is initiated. For dynamic mapping, mappings are created on the fly as new flows 
  * arrives from the direction that can be allocate new mapped address/port.
  * 
- * When a packet arrives, it will first check every entry in the table, see if there 
- * exists an entry for the lookupfields, and do the translation to the address and port.  
+ * When a packet arrives, it will first check entries in the table, see if there 
+ * exists an entry for the flow that the packet belongs to.  If there's 
+ * such an entry,  then the packet's source address (and port) will be replaced with 
+ * the mapped address (and port) of the entry for the outward packet and the packet's 
+ * destination address (and port) will be replaced with the inner host's address (and 
+ * port) for the inward packet.
  * If there is no such an entry, then the translator will create a binding for the new 
- * mapping if the flow comes from the right direction (the direction that allocate a 
+ * mapping if the flow comes from the right direction (the direction that allocates a 
  * new mapping is allowed).
  *
- * =a ProtocolTranslator */
+ * =a ProtocolTranslator64, ProtocolTranslator46 */
 
 class AddressTranslator : public Element {
   
@@ -82,8 +86,11 @@ private:
   Vector<EntryMap> _v;
   
   int _number_of_smap; // number of static-mapping entry
-  bool _direction;
- 
+  bool _static_portmapping;
+  bool _dynamic_mapping; 
+  bool _dynamic_portmapping;
+  bool _dynamic_mapping_allocation_direction;
+
   //the index of the following bool array corresponds to the colums of 
   //_iai, _ipi, _mai, _mpi, _ea, _ep
   bool _outwardLookupFields[6];
