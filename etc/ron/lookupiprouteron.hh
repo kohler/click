@@ -36,15 +36,15 @@
 class LookupIPRouteRON : public Element {
 public:
 
-  const static int POLICY_LOCAL                 = 0;
-  const static int POLICY_RANDOM                = 1;
-  const static int POLICY_PROBE3                = 2;
+  static const int POLICY_LOCAL                 = 0;
+  static const int POLICY_RANDOM                = 1;
+  static const int POLICY_PROBE3                = 2;
+  
+  static const int POLICY_PROBE3_LOCAL          = 3;
+  static const int POLICY_PROBE3_UNPROBED       = 4;
+  static const int POLICY_PROBE3_UNPROBED_LOCAL = 5;
 
-  const static int POLICY_PROBE3_LOCAL          = 3;
-  const static int POLICY_PROBE3_UNPROBED       = 4;
-  const static int POLICY_PROBE3_UNPROBED_LOCAL = 5;
-
-  const static int NUM_POLICIES = 1;
+  static const int NUM_POLICIES = 2;
 
   LookupIPRouteRON();
   ~LookupIPRouteRON();
@@ -84,11 +84,8 @@ protected:
   void duplicate_pkt(Packet *p);
   void send_rst(Packet *p, FlowTableEntry *match, int outport);
 
-  unsigned int pick_random();
-  unsigned int pick_portno(int policy);
-
-  void policy_handle_syn(FlowTableEntry *flow, Packet *p);
-  void policy_handle_synack(FlowTableEntry *flow, Packet *p);
+  void policy_handle_syn(FlowTableEntry *flow, Packet *p, bool first_syn);
+  void policy_handle_synack(FlowTableEntry *flow, unsigned int port, Packet *p);
 
 private:
   FlowTable *_flow_table;
