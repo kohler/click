@@ -79,6 +79,5 @@ IPTable::del(IPAddress dst, IPAddress mask)
 
 // generate Vector template instance
 #include <click/vector.cc>
-#if EXPLICIT_TEMPLATE_INSTANCES
+// must always generate the whole instance! LookupIPRoute demands it
 template class Vector<IPTable::Entry>;
-#endif
