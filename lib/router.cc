@@ -805,8 +805,9 @@ Router::initialize(ErrorHandler *errh)
   // clear handler offsets
   _ehandler_first_by_element.assign(nelements(), -1);
   assert(_ehandler_to_handler.size() == 0 && _ehandler_next.size() == 0
-	 && _handler_names.size() == 0 && _handler_first_by_name.size() == 0
-	 && _handler_next_by_name.size() == 0 && _handler_use_count.size() == 0
+	 && _handler_first_by_name.size() == 0
+	 && _handler_next_by_name.size() == 0
+	 && _handler_use_count.size() == 0
 	 && _nhandlers == 0);
 
   // If there were errors, uninitialize any elements that we initialized
@@ -867,18 +868,19 @@ Router::put_handler(const Handler &to_add)
   // element has already installed a handler corresponding to `to_add'.
   
   assert(_handler_use_count.size() == _nhandlers
-	 && _handler_next_by_name.size() == _nhandlers
-	 && _handler_names.size() == _handler_first_by_name.size());
+	 && _handler_next_by_name.size() == _nhandlers);
   
   // find the offset in _name_handlers
   int name_offset;
-  for (name_offset = 0; name_offset < _handler_names.size(); name_offset++)
-    if (_handler_names[name_offset] == to_add.name)
+  for (name_offset = 0;
+       name_offset < _handler_first_by_name.size();
+       name_offset++) {
+    int hi = _handler_first_by_name[name_offset];
+    if (hi < 0 || _handlers[hi].name == to_add.name)
       break;
-  if (name_offset == _handler_names.size()) {
-    _handler_names.push_back(to_add.name);
-    _handler_first_by_name.push_back(-1);
   }
+  if (name_offset == _handler_first_by_name.size())
+    _handler_first_by_name.push_back(-1);
 
   // now find a similar handler, if any exists
   int hi = _handler_first_by_name[name_offset];

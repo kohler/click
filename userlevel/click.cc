@@ -576,7 +576,7 @@ particular purpose.\n");
   // run driver
   if (!quit_immediately)
     router->driver();
-  
+
   gettimeofday(&after_time, 0);
   getrusage(RUSAGE_SELF, &after);
   // report time

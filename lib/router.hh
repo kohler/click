@@ -41,7 +41,6 @@ class Router : public ElementLink {
   Vector<int> _ehandler_to_handler;
   Vector<int> _ehandler_next;
 
-  Vector<String> _handler_names;
   Vector<int> _handler_first_by_name;
   Vector<int> _handler_next_by_name;
   Vector<int> _handler_use_count;
