@@ -105,9 +105,11 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 	IPAddress dest_ip(encap->dst_ip);
 	if (dest_ip == _ipaddr) {
 	  // it's for us, send to higher level
-          click_chatter("%s: got an IP packet for us %s",
+#if 0
+	  click_chatter("%s: got an IP packet for us %s",
                         id().cc(),
                         dest_ip.s().cc());
+#endif
 	  packet->pull(sizeof(click_ether) + gh->hdr_len + sizeof(grid_nbr_encap)); 
 	  output(1).push(packet);
 	  break;
@@ -245,7 +247,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     output(0).push(packet);
   }
   else {
-    click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", id().cc(), dest_ip.s().cc());
+    // click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", id().cc(), dest_ip.s().cc());
     output(2).push(packet);
   }
 }

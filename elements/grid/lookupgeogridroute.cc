@@ -150,7 +150,18 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     output(0).push(xp);
   }
   else {
+#if 0
     click_chatter("LookupGeographicGridRoute %s: unable to forward packet for %s with geographic routing", id().cc(), dest_ip.s().cc());
+    int ip_off = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap);
+    xp->pull(ip_off);
+    IPAddress src_ip(xp->data() + 12);
+    IPAddress dst_ip(xp->data() + 16);
+    unsigned short *sp = (unsigned short *) (xp->data() + 20);
+    unsigned short *dp = (unsigned short *) (xp->data() + 22);
+    unsigned short src_port = ntohs(*sp);
+    unsigned short dst_port = ntohs(*dp);
+    click_chatter("packet info: %s:%hu -> %s:%hu", src_ip.s().cc(), src_port, dst_ip.s().cc(), dst_port);
+#endif
     output(1).push(xp);
   }
 }

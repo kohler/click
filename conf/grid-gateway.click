@@ -29,11 +29,17 @@ ip_cl :: Classifier(16/GW_HEX_IP, // ip for us as wired node
 
 nb :: UpdateGridRoutes(NBR_TIMEOUT, LR_PERIOD, LR_JITTER, GRID_MAC_ADDR, GRID_IP);
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
+geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb);
+
 lr [0] -> to_wvlan;
 lr [1] -> ip_cl;
 
-lr [2] -> Discard; // don't know where to route these
+lr [2] -> [0] geo; // for geographic forwarding
 lr [3] -> Discard; // too many hops, or bad protocol 
+
+geo [0] -> to_wvlan;
+geo [1] -> Discard; // can't handle
+geo [2] -> Discard; // bad packet
 
 eth -> eth_demux :: Classifier(12/0806 20/0001, // arp request, for proxy reply
 			       12/0806 20/0002, // arp replies 
@@ -48,26 +54,26 @@ eth_demux [0] -> ARPResponder(GW_IP GW_MAC_ADDR,
 eth_demux [1] -> [1] arpq :: ARPQuerier(GW_IP, GW_MAC_ADDR) -> to_eth;
 eth_demux [2] -> Strip(14) -> Discard; // linux picks up for us XXX but BSD?
 Idle -> to_tun1;
-eth_demux [3] -> Strip(14) -> Discard; // linux pivks up for us XXX but BSD?
+eth_demux [3] -> Strip(14) -> Discard; // linux picks up for us XXX but BSD?
 eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] lr;
 
 wvlan_demux [0] 
 -> check_grid :: CheckGridHeader [0]
--> fr :: FilterByRange(RANGE, li) [0] 
--> nb
+// -> fr :: FilterByRange(RANGE, li) [0]
+-> nb 
 -> Classifier(15/GRID_NBR_ENCAP_PROTO)
-  -> [0] lr;
+-> [0] lr;
 
 check_grid [1]-> Print(bad_grid_hdr) -> Discard;
-fr [1] -> Discard; // out of range
+// fr [1] -> Discard; // out of range
 wvlan_demux [1] -> Discard; // not a grid packet
 
 ip_cl [0] -> to_tun1;
 ip_cl [1] -> to_tun2;
 ip_cl [2] -> to_nb_ip; // send grid net packets to Grid processing
 ip_cl [3] -> gw_cl :: Classifier(16/GW_HEX_NET, -); // get local wired IP net traffic
-gw_cl [0] -> Print(for_this_net) -> GetIPAddress(16) -> [0] arpq; // ARP and send local net traffic
-gw_cl [1] -> Print(for_gw) -> SetIPAddress(GW_REAL_IP) -> [0] arpq; // ARP and send gateway traffic
+gw_cl [0] -> GetIPAddress(16) -> [0] arpq; // ARP and send local net traffic
+gw_cl [1] -> SetIPAddress(GW_REAL_IP) -> [0] arpq; // ARP and send gateway traffic
 
 from_tun1 -> ip_cl;
 from_tun2 -> ip_cl;
