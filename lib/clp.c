@@ -405,7 +405,7 @@ argcmp(const char *ref, const char *arg, int min_match)
      /* Returns 0 if ref and arg don't match.
 	Returns -1 if ref and arg match, but fewer than min_match characters.
 	Returns len if ref and arg match min_match or more characters;
-	len is the number of charcters that matched.
+	len is the number of characters that matched.
 	
 	Examples:
 	argcmp("x", "y", 1)	-->  0	/ just plain wrong
@@ -416,6 +416,7 @@ argcmp(const char *ref, const char *arg, int min_match)
 	*/
 {
   const char *refstart = ref;
+  assert(min_match > 0);
   while (*ref && *arg && *arg != '=' && *ref == *arg)
     ref++, arg++;
   if (*arg && *arg != '=')
@@ -973,7 +974,7 @@ find_long(Clp_Parser *clp, char *arg)
 	to 1 iff there was no match because the argument was ambiguous. */
 {
   Clp_Internal *cli = clp->internal;
-  int value, len;
+  int value, len, min_match;
   Clp_Option *opt = cli->opt;
   int first_negative_ambiguous;
   
@@ -1009,7 +1010,9 @@ find_long(Clp_Parser *clp, char *arg)
   }
   
  worked:
-  len = argcmp(opt[value].long_name, arg, cli->long_min_match[value].pos);
+  min_match = (clp->negated ? cli->long_min_match[value].neg : cli->long_min_match[value].pos);
+  len = argcmp(opt[value].long_name, arg, min_match);
+  assert(len > 0);
   if (arg[len] == '=') {
     clp->have_arg = 1;
     clp->arg = arg + len + 1;
