@@ -1,0 +1,110 @@
+SHELL = @SHELL@
+
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
+top_builddir := ..
+subdir := exopc
+
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/exopc@elements_vpath@
+
+CROSS = ./
+CC = $(CROSS)gcc
+CXX = $(CROSS)g++
+SETMAGIC=setmagic
+
+#CC = @CC@
+#CPP = @CPP@
+#CXX = @CXX@
+#CXXCPP = @CXXCPP@
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+
+.SUFFIXES:
+.SUFFIXES: .S .c .cc .o .s
+
+.c.o:
+	$(COMPILE) -c $<
+.s.o:
+	$(COMPILE) -c $<
+.S.o:
+	$(COMPILE) -c $<
+.cc.o:
+	$(CXXCOMPILE) -c $<
+
+GENERIC_OBJS = string.o straccum.o \
+	bitvector.o vectori.o vectorv.o hashmapi.o \
+	ipaddress.o etheraddress.o packet.o \
+	error.o glue.o timer.o \
+	element.o unlimelement.o timedelement.o errorelement.o \
+	confparse.o lexer.o elemfilter.o router.o \
+	crc32.o iptable.o ewma.o
+
+EXOPC_OBJS = click.o syscall.o
+
+-include elements.mk
+
+OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(EXOPC_OBJS) elements.o
+
+CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL
+CFLAGS = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@ -fno-exceptions -fno-rtti
+
+
+VOS=$(EXODEST)/vos
+CRT0=$(VOS)/crt0_cpp.o
+LIBOS=$(VOS)/libvos.a
+LIBC=$(VOS)/libc.a
+LIBGCC=$(VOS)/libgcc.a
+INSTALLDIR=$(EXODEST)/home/benjie/ipb
+
+
+DEFS = @DEFS@ -DEXOPC -DNOTEXOS
+INCLUDES = -nostdinc -I$(EXODEST)/usr/include -I$(srcdir) -I$(top_srcdir) \
+	-I$(top_srcdir)/lib
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+all: setup click
+
+setup:
+	ln -sf cross-compile.sh g++
+	ln -sf cross-compile.sh gcc
+
+click: Makefile $(OBJS)
+	$(CXX) -static -N -Ttext 800020 -nostdlib -o click $(CRT0) $(OBJS) $(LIBOS) $(LIBGCC) $(LIBC)
+	cp click click.aout
+	$(SETMAGIC) click 700
+	mkdir -p $(INSTALLDIR)
+	cp click $(INSTALLDIR)
+	cp samples/*.ipb $(INSTALLDIR)
+
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+
+elemlist elements.conf:
+	echo "exopc@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > elements.conf
+elements.mk: elements.conf $(top_srcdir)/mkelemlist.sh
+	(cd $(top_srcdir); /bin/sh ./mkelemlist.sh -m) < elements.conf > elements.mk
+elements.cc: elements.conf $(top_srcdir)/mkelemlist.sh
+	(cd $(top_srcdir); /bin/sh ./mkelemlist.sh -c) < elements.conf > elements.cc
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+clean:
+	rm -f *.d *.o click elements.mk elements.cc gcc g++ *.aout
+distclean: clean
+	-rm -f Makefile elements.conf
+
+.PHONY: all clean distclean elemlist

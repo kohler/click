@@ -1,0 +1,61 @@
+# punish.uun.org's end of the tunnel between net 18.26.4
+# and nephron.lcs.mit.edu (18.26.4.99).
+# proxy arp for everything on 18.26.4, encapsulate
+# resulting IP packets, send to tsb.
+#   LCS hosts -> tsb -> (encap tunnel) -> punish.uun.org -> nephron
+# Also un-encapsulate packets from tsb.
+
+# Classifier 5 kinds of input packets:
+# 0. IPIP packets to punish (from tsb).
+# 1. ARP queries.
+# 2. ARP responses.
+# 3. IP packets from nephron (to LCS hosts).
+# 4. Others.
+fi :: Classifier(12/0800 23/04 30/12170a53,
+             12/0806 20/0001,
+             12/0806 20/0002,
+             12/0800 26/121a0463,
+             -);
+
+FromBPF(fxp0) -> [0]fi;
+outq :: Queue(20) -> ToBPF(fxp0);
+
+# Common code to send IP packets, including ARP.
+# IP dst annotation must already be set.
+arpq :: ARPQuerier(18.23.10.83, 00:90:27:26:53:B6);
+fi[2] -> Print(gotresponse) -> [1]arpq;
+arpq[0] -> outq;
+
+# Proxy ARP for the LCS gateway, tsb, and zeus.
+# We ought to have whole-subnet proxy ARP.
+# The point here is to trick nephron into sending
+# LCS packets to punish's ethernet address.
+arpr :: ARPResponder(18.26.4.1 00:90:27:26:53:b6,
+                     18.26.4.200 00:90:27:26:53:b6,
+                     18.26.4.97 00:90:27:26:53:b6);
+fi[1] -> Print(gotquery) -> arpr;
+arpr -> outq;
+
+# Un-encapsulate IPIP packets and send them w/o routing.
+# We cannot use ARP because the ISDN router proxy-arps
+# for all LCS addresses.
+# The 8 is decimal of htons(0x0800)
+fi[0] -> Strip(14)
+      -> CheckIPHeader
+      -> DecIPTTL
+      -> Strip(20)
+      -> EtherEncap(8, 00:90:27:26:53:b6, 00:e0:98:01:f2:5c)
+      -> Print(toneph)
+      -> outq;
+
+# Encapsulate all IP packets from nephron.
+fi[3] -> Strip(14)
+      -> CheckIPHeader
+      -> DecIPTTL
+#     -> SetIPChecksum
+      -> IPEncap(4, 18.23.10.83, 18.26.4.200)
+      -> GetIPAddress(16)
+      -> LookupIPRoute(18.26.4.200 18.23.10.81)
+      -> [0]arpq;
+
+fi[4] -> Discard;

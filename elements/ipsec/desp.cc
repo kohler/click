@@ -1,0 +1,77 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#ifndef HAVE_IPSEC
+# error "Must #define HAVE_IPSEC in config.h"
+#endif
+#include "esp.hh"
+#include "desp.hh"
+#include "ipaddress.hh"
+#include "confparse.hh"
+#include "error.hh"
+#include "glue.hh"
+
+DeEsp::DeEsp()
+  : Element(1, 1)
+{
+}
+
+DeEsp::~DeEsp()
+{
+}
+
+DeEsp *
+DeEsp::clone() const
+{
+  return new DeEsp();
+}
+
+int
+DeEsp::configure(const String &conf, Router *router, ErrorHandler *errh)
+{
+  if (cp_va_parse(conf, this, router, errh,
+		  0) < 0)
+    return -1;
+  return 0;
+}
+
+int
+DeEsp::initialize(Router *, ErrorHandler *errh)
+{
+  return 0;
+}
+
+
+Packet *
+DeEsp::simple_action(Packet *p)
+{
+
+  int i, blks;
+  unsigned char * blk;
+
+  // Rip off ESP header
+  p->pull(sizeof(esp_new));
+
+  // Verify padding
+  blks = p->length();
+  click_chatter("got %d left", blks);
+  blk = p->data();
+  if((blk[blks - 2] != blk[blks - 3]) && (blk[blks -2] != 0)) {
+    click_chatter("Invalid padding length");
+    p->kill();
+    return(0);
+  }
+  blks = blk[blks - 2];
+  blk = p->data() + p->length() - (blks + 2);
+  for(i = 0; (i < blks) && (blk[i] == ++i););    
+  if(i<blks) {
+    click_chatter("Corrupt padding");
+    p->kill();
+    return(0);
+  }
+
+  // Chop off padding
+  return Packet::make(p->data(), p->length() - (blks + 2));
+}
+
+EXPORT_ELEMENT(DeEsp)

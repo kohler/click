@@ -1,0 +1,27 @@
+# Warning: this file must be usable by regular make
+# (unlike the Makefiles in subdirectories).
+
+SHELL = @SHELL@
+@SUBMAKE@
+
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+AUTOHEADER = autoheader
+AUTOCONF = autoconf
+
+all: click-xform
+
+click-xform: Makefile
+	@cd click-xform; $(MAKE) all
+
+Makefile: $(srcdir)/Makefile.in
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_FACLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+
+clean:
+	@-cd click-xform; $(MAKE) clean
+distclean:
+	@-cd click-xform; $(MAKE) distclean
+	-rm -f Makefile
+
+.PHONY: all click-xform clean distclean

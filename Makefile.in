@@ -1,0 +1,69 @@
+# Warning: this file must be usable by regular make
+# (unlike the Makefiles in subdirectories).
+
+SHELL = @SHELL@
+@SUBMAKE@
+
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+AUTOHEADER = autoheader
+AUTOCONF = autoconf
+
+all: @TARGETS@
+
+linuxmodule: stamp-h Makefile
+	@cd linuxmodule; $(MAKE) all
+userlevel: stamp-h Makefile
+	@cd userlevel; $(MAKE) all
+exopc: stamp-h Makefile
+	@cd exopc; $(MAKE) all
+tools: stamp-h Makefile
+	@cd tools; $(MAKE) all
+
+elemlist elemlists: stamp-h elemlist-simple
+elemlist-simple:
+	@f=linuxmodule/elements.conf; \
+	echo "linuxmodule@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > $$f~; \
+	if test -r $$f; then if diff -q $$f $$f~ > /dev/null; then \
+	  rm $$f~; echo "$$f is unchanged"; exit 0; \
+	fi; fi; mv $$f~ $$f; rm -f linuxmodule/elements.d
+	@f=userlevel/elements.conf; \
+	echo "userlevel@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > $$f~; \
+	if test -r $$f; then if diff -q $$f $$f~ > /dev/null; then \
+	  rm $$f~; echo "$$f is unchanged"; exit 0; \
+	fi; fi; mv $$f~ $$f; rm -f userlevel/elements.d
+	@f=exopc/elements.conf; \
+	echo "exopc@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > $$f~; \
+	if test -r $$f; then if diff -q $$f $$f~ > /dev/null; then \
+	  rm $$f~; echo "$$f is unchanged"; exit 0; \
+	fi; fi; mv $$f~ $$f; rm -f exopc/elements.d
+
+stamp-h: $(srcdir)/configure
+$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/config.h.in
+	cd $(srcdir); $(AUTOCONF)
+	$(srcdir)/configure @ac_configure_args@
+$(srcdir)/config.h.in: $(srcdir)/configure.in $(srcdir)/acconfig.h
+	cd $(srcdir); $(AUTOHEADER); touch config.h.in
+Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
+	@if echo "$?" | grep -q configure 2>/dev/null; then :; else \
+	  CONFIG_FILES=$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status; fi
+
+check-filenames:
+	@a=`find . \( -name \*.cc -or -name \*.c \) -print | sed 's/.*\/\(.*\)\.c*$$/\1.o/' | grep -v 'faclist\.o' | sort | uniq -d`; \
+	if test -z $$a; then echo OK; else echo "*** warning: duplicate object file names:"; echo "$$a"; fi
+
+clean:
+	@-cd linuxmodule; $(MAKE) clean
+	@-cd userlevel; $(MAKE) clean
+	@-cd exopc; $(MAKE) clean
+	@-cd tools; $(MAKE) clean
+distclean:
+	@-cd linuxmodule; $(MAKE) distclean
+	@-cd userlevel; $(MAKE) distclean
+	@-cd exopc; $(MAKE) distclean
+	@-cd tools; $(MAKE) distclean
+	-rm -f config.h Makefile config.status
+	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+
+.PHONY: all elemlist elemlists elemlist-simple \
+	linuxmodule userlevel exopc tools clean distclean

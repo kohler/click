@@ -1,0 +1,32 @@
+#ifndef TOLINUX_HH
+#define TOLINUX_HH
+#include "element.hh"
+
+/*
+ * =c
+ * ToLinux()
+ * =d
+ * Hands packets to the ordinary Linux protocol stack.
+ * Expects packets with Ethernet headers.
+ * 
+ * You should probably give Linux IP packets addressed to
+ * the local machine (including broadcasts), and a copy
+ * of each ARP reply.
+ */
+
+class ToLinux : public Element {
+ public:
+  
+  ToLinux();
+  ~ToLinux();
+  
+  const char *class_name() const		{ return "ToLinux"; }
+  Processing default_processing() const	{ return PUSH; }
+  
+  ToLinux *clone() const;
+  
+  void push(int port, Packet *);
+
+};
+
+#endif TOLINUX_HH

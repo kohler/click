@@ -1,0 +1,141 @@
+#!/usr/local/bin/perl -w
+
+# Create per-faction HTML documentation files.
+# Should be run in the documentation subdirectory.
+# Creates html subdirectory, after first deleting it.
+# Depends on ../mkfaclist
+
+my $z = `echo ../factions | ../mkfaclist.sh -x`;
+my @fl = split(/\n/, $z);
+if($#fl < 5){
+    print STDERR "make-faction-html: could not make faction list\n";
+    exit(1);
+}
+
+if(-d "html"){
+    if(-d "html.old"){
+        if(system("rm -rf html.old") != 0 || -d "html.old"){
+            print STDERR "make-faction-html: could not delete html.old\n";
+            exit(1);
+        }
+    }
+    if(system("mv html html.old") != 0){
+        print STDERR "make-faction-html: could not mv html html.old\n";
+        exit(1);
+    }
+}
+if(!mkdir("html", 0777)){
+    print STDERR "make-faction-html: mkdir html: $!\n";
+    exit(1);
+}
+
+my @cl;
+
+my $ff;
+foreach $ff (@fl){
+    my $hf = $ff;
+    $hf =~ s/\.cc/\.hh/;
+    if(!open(F, $hf)){
+        print STDERR "make-faction-html: $hf: $!\n";
+        next;
+    }
+    
+    my $personality;
+    my $class;
+    my $text = "";
+    my $firstcomment = 0;
+    while(<F>){
+        if($firstcomment == 0 && $text eq "" && (/^\/\*/ || /^\/\//)){
+            $firstcomment = 1;
+        }
+        if($firstcomment && (/^ *\*\// || /^ *$/)){
+            $firstcomment = 0;
+        }
+        if($firstcomment && $_ ne "/*\n"){
+            if($_ eq " *\n"){
+                s/.*//;
+            }
+            s/^ \* //;
+            s/^\/\/ //;
+            $text .= $_;
+        }
+        if(!$firstcomment && !defined($class) && /^class *([a-zA-Z0-9_]+).*:/){
+            $class = $1;
+        }
+        if(/Personality.*AGNOSTIC/){
+            $personality = "agnostic";
+        }
+        if(/Personality.*PUSH/){
+            $personality = "push";
+        }
+        if(/Personality.*PULL/){
+            $personality = "pull";
+        }
+        if(/Personality.*PUSH_TO_PULL/){
+            $personality = "push to pull";
+        }
+    }
+
+    close(F);
+
+    if(!defined($class)){
+        print STDERR "make-faction-html: no class in $hf\n";
+        next;
+    }
+    if(!defined($text)){
+        print STDERR "make-faction-html: no first comment in $hf\n";
+        next;
+    }
+
+    push(@cl, $class);
+    my $html = htmlize($text);
+
+    my $of = "html/${class}.html";
+    if(!open(OF, ">$of")){
+        print STDERR "make-faction-html: cannot write $of\n";
+        next;
+    }
+
+    print OF "<title>Faction $class</title>\n";
+    print OF "<h2>Faction $class\n";
+    if(defined($personality)){
+        print OF "($personality)";
+    }
+    print OF "</h2>\n";
+
+    print OF $html;
+
+    close(OF);
+}
+
+sub htmlize {
+    my($in) = @_;
+    if($in =~ /=c/ || $in =~ /=d/){
+        $in =~ s/=c/<h3>Configuration Arguments<\/h3>/g;
+        $in =~ s/=io/<h3>Inputs and Outputs<\/h3>/g;
+        $in =~ s/=d/<h3>Description<\/h3>/g;
+        $in =~ s/=n/<h3>Notes<\/h3>/g;
+        $in =~ s/=e/<h3>Examples<\/h3>/g;
+        $in =~ s/=a *(.*)\n/<p><b>See Also:<\/b> <a href="$1.html">$1<\/a>/g;
+
+        $in =~ s/\n\n/\n<p>\n/g;
+        return $in;
+    } else {
+        return "<pre>$in</pre>";
+    }
+}
+
+@cl = sort { $a cmp $b } @cl;
+
+die "oops" if !open(IF, ">html/index.html");
+print IF "<title>Faction Documentation</title>\n";
+print IF "<h2>Faction Documentation</h2>\n";
+print IF "<p>\n";
+
+my $c;
+foreach $c (@cl){
+    print IF "<a href=\"${c}.html\">${c}</a>\n";
+    print IF "<br>\n";
+}
+
+close(IF);

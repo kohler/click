@@ -1,0 +1,145 @@
+dnl Process this file with autoconf to produce a configure script.
+AC_INIT(acconfig.h)
+AC_SUBST(ac_configure_args)
+AC_DEFINE(PACKAGE, "click")
+AC_DEFINE(VERSION, "0.5")
+AC_SUBST(PACKAGE)
+AC_SUBST(VERSION)
+AC_CONFIG_HEADER(config.h)
+
+AC_PROG_CC
+AC_PROG_CPP
+AC_PROG_CXX
+AC_PROG_CXXCPP
+CPPFLAGS="$CPPFLAGS"
+if test -n "$GCC"; then
+  CC="$CC -Wall"; KERNEL_CXX="$CXX -w -Wall"; CXX="$CXX -Wp,-w -W -Wall"
+else
+  KERNEL_CXX="$CXX"
+fi
+AC_SUBST(KERNEL_CXX)
+
+AC_PROG_RANLIB
+
+dnl
+dnl element collections
+dnl
+
+dnl ELEMENTS_ARG_ENABLE(COLLECTION, HELP-STRING, DEFAULT-VALUE)
+element_groups=""
+AC_SUBST(element_groups)
+AC_DEFUN(ELEMENTS_ARG_ENABLE,
+[AC_ARG_ENABLE($1, builtin(format, [  --enable-%-14s %s], [$1], [[$2]]), ,
+[enable_]patsubst([$1], -, _)=$3)dnl
+if test ["x$enable_]patsubst([$1], -, _)["] = xyes; then
+  element_groups="$element_groups $1"
+fi])
+
+ELEMENTS_ARG_ENABLE(standard, [include standard elements (yes)], yes)
+ELEMENTS_ARG_ENABLE(ethernet, [include Ethernet elements (yes)], yes)
+ELEMENTS_ARG_ENABLE(ip, [include IP, UDP, and TCP elements (yes)], yes)
+ELEMENTS_ARG_ENABLE(etherswitch, [include Ethernet switch elements (yes)], yes)
+ELEMENTS_ARG_ENABLE(ipsec, [include IP security elements (no)], no)
+ELEMENTS_ARG_ENABLE(radio, [include radio elements (yes)], yes)
+
+elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
+AC_SUBST(elements_vpath)
+
+dnl
+dnl check C++ stuff
+dnl
+
+AC_LANG_CPLUSPLUS
+AC_CHECK_HEADERS(new.h)
+
+dnl
+dnl make FLAGS variables without `-g'
+dnl
+
+CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
+CXXFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
+AC_SUBST(CFLAGS_NDEBUG)
+AC_SUBST(CXXFLAGS_NDEBUG)
+
+dnl
+dnl check for stuff in the linux kernel
+dnl
+
+AC_CACHE_CHECK(for Click kernel extensions, ac_cv_click_kernel,
+[if grep -q register_net_out /proc/ksyms 2>/dev/null; then
+  ac_cv_click_kernel=yes
+else ac_cv_click_kernel=no; fi])
+if test $ac_cv_click_kernel = yes; then
+  AC_DEFINE_UNQUOTED(HAVE_CLICK_KERNEL, 1)
+fi
+
+AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_read_net_skbcount,
+[if grep -q read_net_skbcount /proc/ksyms 2>/dev/null; then
+  ac_cv_read_net_skbcount=yes
+else ac_cv_read_net_skbcount=no; fi])
+if test $ac_cv_read_net_skbcount = yes; then
+  AC_DEFINE_UNQUOTED(HAVE_READ_NET_SKBCOUNT, 1)
+fi
+
+dnl
+dnl check for GNU make
+dnl
+
+SUBMAKE=''
+AC_SUBST(SUBMAKE)
+AC_CACHE_CHECK(for GNU make, ac_cv_gnu_make,
+[if /bin/sh -c 'make --version | grep -q GNU' 2>/dev/null; then
+  ac_cv_gnu_make='make'
+elif /bin/sh -c 'gmake --version | grep -q GNU' 2>/dev/null; then
+  ac_cv_gnu_make='gmake'
+else
+  AC_MSG_RESULT(not found)
+  AC_MSG_ERROR(can't find GNU make!)
+fi])
+if test $ac_cv_gnu_make != make; then
+  echo "*** Warning: you must compile with GNU make ("'`'"$ac_cv_gnu_make')."
+  SUBMAKE="MAKE = $ac_cv_gnu_make"
+fi
+
+dnl
+dnl default targets
+dnl
+
+TARGETS=
+AC_SUBST(TARGETS)
+
+dnl check userlevel for pcap.h
+
+PCAP_HEADER_PATH="no"
+AC_SUBST(PCAP_HEADER_PATH)
+AC_CHECK_HEADER(pcap.h, PCAP_HEADER_PATH="")
+
+for i in /usr/include/pcap /usr/local/include/pcap; do
+ if test "$PCAP_HEADER_PATH" != no; then break; fi
+ save_cppflags=$CPPFLAGS
+ CPPFLAGS="$CPPFLAGS -I$i"
+ AC_CHECK_HEADER($i/pcap.h, [PCAP_HEADER_PATH="-I$i"])
+ CPPFLAGS=$save_cppflags
+done
+
+if test "$PCAP_HEADER_PATH" = no; then
+  PCAP_HEADER_PATH=""
+else
+  TARGETS="$TARGETS userlevel"
+fi
+
+dnl check linuxmodule for Linux
+
+if test `uname` = Linux; then
+  TARGETS="$TARGETS linuxmodule"
+fi
+
+dnl
+dnl Output
+dnl
+
+AC_OUTPUT_COMMANDS([if test ${CONFIG_ELEMLISTS-yes} = yes; then
+  echo creating element lists
+  make -s elemlist-simple
+fi])
+AC_OUTPUT(Makefile linuxmodule/Makefile userlevel/Makefile exopc/Makefile tools/Makefile tools/click-xform/Makefile stamp-h)

@@ -1,0 +1,15 @@
+FromBPF(eth0,1) -> f0 :: Classifier(14/4242, -);
+FromBPF(eth1,1) -> f1 :: Classifier(14/4242, -);
+
+w0 :: ToBPF(eth0);
+w1 :: ToBPF(eth1);
+
+s :: EtherSwitch;
+in :: Suppressor;
+out :: Suppressor;
+f0[1] -> [0]in[0] -> [0]s[0] -> [0]out[0] -> w0;
+f1[1] -> [1]in[1] -> [1]s[1] -> [1]out[1] -> w1;
+
+st :: EtherSpanTree(00:02:03:04:05:06, in, out, s);
+f0[0] -> [0]st[0] -> w0;
+f1[0] -> [1]st[1] -> w1;

@@ -1,0 +1,2 @@
+TimedSource(0.5) -> Queue(20) -> Shaper(1) -> Queue(20) -> Print(q1) -> TimedSink(0.5);
+

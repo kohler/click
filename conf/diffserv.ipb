@@ -1,0 +1,17 @@
+TimedSource(.05)
+-> d_cl::Classifier(2/0C%FC, 2/1C%FC, 2/2C%FC, -);
+
+d_cl[0] -> d_m0::Meter(2000) -> d_qa::Queue(200);
+	d_m0[1] -> Discard;
+d_cl[1] -> d_qb::Queue(200) -> d_m1::Shaper(1000);
+d_cl[2] -> d_m2::Meter(500) -> d_qc::Queue(200);
+d_cl[3] -> d_qd::Queue(500);
+	d_m2[1] -> SetIPDSCP(0, 14) -> d_qd;
+
+d_rr::RoundRobinSched;
+d_prio::PrioSched;
+
+d_qa -> [0]d_rr; d_m1 -> [1]d_rr; d_qc -> [2]d_rr;
+d_rr -> [0]d_prio; d_qd -> [1]d_prio;
+
+d_prio -> Discard;

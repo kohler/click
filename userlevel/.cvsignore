@@ -1,0 +1,2 @@
+Makefile *.d click
+faclist.conf faclist.cc faclist.mk

@@ -1,0 +1,22 @@
+FromDevice(eth0) -> f0 :: Classifier(14/4242, -);
+FromDevice(eth1) -> f1 :: Classifier(14/4242, -);
+FromDevice(eth2) -> f2 :: Classifier(14/4242, -);
+
+w0 :: Queue -> ToDevice(eth0);
+w1 :: Queue -> ToDevice(eth1);
+w2 :: Queue -> ToDevice(eth2);
+
+s :: EtherSwitch;
+in :: Suppressor;
+out :: Suppressor;
+f0[1] -> t0::Tee[0] -> [0]in[0] -> [0]s[0] -> [0]out[0] -> w0;
+              t0[1] -> ToLinux;
+f1[1] -> t1::Tee[0] -> [1]in[1] -> [1]s[1] -> [1]out[1] -> w1;
+              t1[1] -> ToLinux;
+f2[1] -> t2::Tee[0] -> [2]in[2] -> [2]s[2] -> [2]out[2] -> w2;
+              t2[1] -> ToLinux;
+
+st :: EtherSpanTree(00:02:03:04:05:06, in, out, s);
+f0[0] -> [0]st[0] -> w0;
+f1[0] -> [1]st[1] -> w1;
+f2[0] -> [2]st[2] -> w2;

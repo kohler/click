@@ -1,0 +1,88 @@
+SHELL = @SHELL@
+
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
+top_builddir := ..
+subdir := linuxmodule
+
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/linuxmodule@elements_vpath@
+
+CC = @CC@
+CPP = @CPP@
+CXX = @KERNEL_CXX@
+CXXCPP = @CXXCPP@
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+
+.SUFFIXES:
+.SUFFIXES: .S .c .cc .o .s
+
+.c.o:
+	$(COMPILE) -c $<
+.s.o:
+	$(COMPILE) -c $<
+.S.o:
+	$(COMPILE) -c $<
+.cc.o:
+	$(CXXCOMPILE) -c $<
+
+
+GENERIC_OBJS = string.o straccum.o \
+	bitvector.o vectori.o vectorv.o hashmapi.o \
+	ipaddress.o etheraddress.o packet.o \
+	error.o glue.o timer.o \
+	element.o unlimelement.o timedelement.o errorelement.o \
+	confparse.o lexer.o elemfilter.o router.o \
+	crc32.o iptable.o ewma.o
+
+LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o \
+	proc_config.o proc_element.o proc_mgr.o read-pmc.o
+
+-include elements.mk
+
+OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(LINUXMODULE_OBJS) elements.o
+
+CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
+CFLAGS = @CFLAGS_NDEBUG@
+CXXFLAGS = @CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti
+
+DEFS = @DEFS@ -I -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) -I$(top_srcdir)/lib -I/usr/src/linux/include
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+all: click.o
+
+click.o: Makefile $(OBJS)
+	ld -r -o click.o $(OBJS)
+	strip -g click.o
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+
+elemlist elements.conf:
+	echo "linuxmodule@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > elements.conf
+elements.mk: elements.conf $(top_srcdir)/mkelemlist.sh
+	(cd $(top_srcdir); /bin/sh ./mkelemlist.sh -m) < elements.conf > elements.mk
+elements.cc: elements.conf $(top_srcdir)/mkelemlist.sh
+	(cd $(top_srcdir); /bin/sh ./mkelemlist.sh -c) < elements.conf > elements.cc
+	@rm -f elements.d
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+clean:
+	-rm -f *.d *.o elements.mk elements.cc
+distclean: clean
+	-rm -f Makefile elements.conf
+
+.PHONY: all clean distclean elemlist

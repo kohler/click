@@ -1,0 +1,125 @@
+#ifndef SNOOPTCP_HH
+#define SNOOPTCP_HH
+#include "element.hh"
+#include "ipaddress.hh"
+#include "hashmap.hh"
+#include "click_ip.h"
+#include "click_tcp.h"
+
+/*
+ * SnoopTCP
+ * Input 0 should be data packets from a server to a mobile host.
+ *   Those packets are sent out output 0.
+ * Input 1 should ACK packets from the mobile host back to the server.
+ *   Those packets are sent out output 1.
+ * Output 2 sends retransmitted packets destined for the mobile host.
+ * Output 3 sends generated packets destined for the server.
+ *
+ * Expects IP packets (no ether header).
+ *
+ * XXX - Retransmit timers not implemented
+ */
+
+#define DEBUG
+
+class SnoopTCP : public Element { public:
+  
+  SnoopTCP();
+  ~SnoopTCP();
+  
+  const char *class_name() const		{ return "SnoopTCP"; }
+  void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
+  
+  Bitvector forward_flow(int) const;
+  Bitvector backward_flow(int) const;
+  
+  SnoopTCP *clone() const;
+  
+  void push(int port, Packet *);
+  Packet *pull(int port);
+  
+ private:
+
+  Packet *handle_packet(int, Packet *);
+  
+  struct Quad {
+    unsigned int src;
+    unsigned int dst;
+    unsigned short sport;
+    unsigned short dport;
+    Quad() { src = dst = 0; sport = dport = 0; }
+    operator bool() const { return(src != 0 || dst != 0); }
+    int hashcode();
+  };
+  
+  struct SCacheEntry {
+    Packet *packet;
+    unsigned seq;
+    unsigned size;
+    struct timeval snd_time;
+    int num_rxmit;
+    int sender_rxmit;
+    
+    void clear();
+  };
+  
+  struct PCB;
+  
+  HashMap<struct Quad, PCB *> _map;
+  
+  PCB *find(unsigned s_ip, unsigned short s_port,
+	    unsigned mh_ip, unsigned short mh_port, bool);
+  
+};
+
+
+struct SnoopTCP::PCB {
+
+  static const int S_CACHE_SIZE = 1024;
+  static const int S_CACHE_HIGHWATER = (9*S_CACHE_SIZE / 10);
+  
+  SCacheEntry _s_cache[S_CACHE_SIZE];
+  int _head;
+  int _tail;
+  
+  unsigned _s_una;		// first unacked SEQ # 
+  unsigned _s_max;		// first as-yet-unsent data SEQ #
+  unsigned _mh_last_ack;	// last ACK received from MH
+  unsigned short _mh_last_win;	// advertised window size
+  
+  int _mh_expected_dup_acks;
+  int _mh_dup_acks;
+  int _dup_acks;
+  
+  bool _s_exists : 1;
+  bool _s_alive : 1;
+  bool _mh_exists : 1;
+  bool _mh_alive : 1;
+  
+  int next_i(int i) const	{ return (i+1) % S_CACHE_SIZE; }
+  int prev_i(int i) const	{ return (i ? i-1 : S_CACHE_SIZE-1); }
+  
+  PCB();
+  ~PCB();
+  
+  void clear(bool is_s);
+  void initialize(bool is_s, tcp_header *, int datalen);
+  
+  int s_cache_size() const	{ return (_head >= _tail ? _head - _tail : S_CACHE_SIZE - (_tail - _head)); }
+  
+  void clean(unsigned, struct timeval *);
+  
+  Packet *s_data(Packet *, tcp_header *, int datalen);
+
+  void s_ack(Packet *, tcp_header *, int datalen);
+  
+  void mh_data(Packet *, tcp_header *, int datalen);
+  
+  void mh_new_ack(unsigned ack);
+  Packet *mh_dup_ack(Packet *, tcp_header *, unsigned ack);
+  Packet *mh_ack(Packet *, tcp_header *, int datalen);
+  
+};
+
+
+#endif

@@ -1,0 +1,33 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#include "rrsched.hh"
+
+RRSched::RRSched()
+{
+  add_output();
+  _next = 0;
+}
+
+RRSched::~RRSched()
+{
+}
+
+Packet *
+RRSched::pull(int)
+{
+  int n = ninputs();
+  int i = _next;
+  for (int j = 0; j < n; j++) {
+    Packet *p = input(i).pull();
+    i++;
+    if (i >= n) i = 0;
+    if (p) {
+      _next = i;
+      return p;
+    }
+  }
+  return 0;
+}
+
+EXPORT_ELEMENT(RRSched)

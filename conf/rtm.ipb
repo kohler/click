@@ -1,0 +1,22 @@
+arp :: ARPResponder(18.26.4.99 00:a0:c9:9c:fd:9c);
+out_printer :: Print(out)
+ipencap :: IPEncap(4, 18.26.4.200, 18.23.10.83)
+aq :: ARPQuerier(18.26.4.200, 00:a0:c9:9c:fd:9c);
+fi :: Classifier(12/0800 30/121a0463, 12/0806 20/0001, 12/0806 20/0002, -)
+
+FromBPF(fxp0) -> fi
+
+fi[0] -> Print(in)
+	-> Strip(14)
+	-> ipencap
+        -> GetIPAddress(16)
+        -> LookupIPRoute(18.23.10.83 18.26.4.1)
+	-> [0]aq
+	-> out_printer
+	-> ToBPF(fxp0)
+
+fi[1] -> arp -> out_printer
+
+fi[2] -> [1]aq;
+
+fi[3] -> Discard

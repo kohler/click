@@ -1,0 +1,87 @@
+SHELL = @SHELL@
+
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
+top_builddir := ..
+subdir := userlevel
+
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/userlevel@elements_vpath@
+
+CC = @CC@
+CPP = @CPP@
+CXX = @CXX@
+CXXCPP = @CXXCPP@
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+
+.SUFFIXES:
+.SUFFIXES: .S .c .cc .o .s
+
+.c.o:
+	$(COMPILE) -c $<
+.s.o:
+	$(COMPILE) -c $<
+.S.o:
+	$(COMPILE) -c $<
+.cc.o:
+	$(CXXCOMPILE) -c $<
+
+
+GENERIC_OBJS = string.o straccum.o \
+	bitvector.o vectori.o vectorv.o hashmapi.o \
+	ipaddress.o etheraddress.o packet.o \
+	error.o glue.o timer.o \
+	element.o unlimelement.o timedelement.o errorelement.o \
+	confparse.o lexer.o elemfilter.o router.o \
+	crc32.o in_cksum.o iptable.o ewma.o
+
+USERLEVEL_OBJS = click.o
+
+-include elements.mk
+
+OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(USERLEVEL_OBJS) elements.o
+
+CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_USERLEVEL
+CFLAGS = @CFLAGS@
+CXXFLAGS = @CXXFLAGS@ -fno-exceptions -fno-rtti
+
+DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
+	-I$(top_srcdir)/lib @PCAP_HEADER_PATH@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+all: click
+
+click: Makefile $(OBJS)
+	$(CXXLINK) $(OBJS) -lpcap
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+
+elemlist elements.conf:
+	echo "userlevel@element_groups@" | (cd $(top_srcdir); sh ./mkelemlist.sh -x) > elements.conf
+elements.mk: elements.conf $(top_srcdir)/mkelemlist.sh
+	(cd $(top_srcdir); /bin/sh ./mkelemlist.sh -m) < elements.conf > elements.mk
+elements.cc: elements.conf $(top_srcdir)/mkelemlist.sh
+	(cd $(top_srcdir); /bin/sh ./mkelemlist.sh -c) < elements.conf > elements.cc
+	@rm -f elements.d
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+clean:
+	rm -f *.d *.o click elements.mk elements.cc
+distclean: clean
+	-rm -f Makefile elements.conf
+
+.PHONY: all clean distclean elemlist

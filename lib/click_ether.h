@@ -1,0 +1,44 @@
+#ifndef CLICK_ETHER_H
+#define CLICK_ETHER_H
+
+/*
+ * Our own definitions of ethernet and ARP headers.
+ */
+
+struct ether_header {
+  unsigned char ether_dhost[6];
+  unsigned char ether_shost[6];
+  unsigned short ether_type;
+};
+#define ETHERTYPE_IP  0x0800
+#define ETHERTYPE_ARP 0x0806
+
+struct arp_header {
+  unsigned short int ar_hrd;  /* Format of hardware address.  */
+  unsigned short int ar_pro;  /* Format of protocol address.  */
+  unsigned char ar_hln;       /* Length of hardware address.  */
+  unsigned char ar_pln;       /* Length of protocol address.  */
+  unsigned short int ar_op;   /* ARP opcode (command).  */
+};
+
+/* ARP protocol HARDWARE identifiers. */
+#define ARPHRD_ETHER    1       /* Ethernet 10Mbps      */
+
+/* ARP protocol opcodes. */
+#define ARPOP_REQUEST   1       /* ARP request          */
+#define ARPOP_REPLY 2       /* ARP reply            */
+
+struct ether_arp {
+  struct arp_header ea_hdr;    /* fixed-size header */
+  unsigned char arp_sha[6]; /* sender hardware address */
+  unsigned char arp_spa[4]; /* sender protocol address */
+  unsigned char arp_tha[6]; /* target hardware address */
+  unsigned char arp_tpa[4]; /* target protocol address */
+};
+#define arp_hrd ea_hdr.ar_hrd
+#define arp_pro ea_hdr.ar_pro
+#define arp_hln ea_hdr.ar_hln
+#define arp_pln ea_hdr.ar_pln
+#define arp_op  ea_hdr.ar_op
+
+#endif

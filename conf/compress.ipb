@@ -1,0 +1,23 @@
+arp :: ARPResponder(18.26.4.99 00:a0:c9:9c:fd:9c);
+ipencap :: IPEncap(4, 18.26.4.200, 18.23.10.84)
+aq :: ARPQuerier(18.26.4.200, 00:a0:c9:9c:fd:9c);
+fi :: Classifier(12/0800 30/121a0463, 12/0806 20/0001, 12/0806 20/0002, -)
+
+out :: ToBPF(fxp0)
+
+FromBPF(fxp0) -> fi
+
+fi[0]   -> Strip(14)
+        -> RFC2507Comp
+        -> RFC2507Decomp
+        -> ipencap
+        -> GetIPAddress(16)
+        -> LookupIPRoute(18.23.10.84 18.26.4.1)
+        -> [0]aq
+        -> out
+
+fi[1] -> arp -> out
+
+fi[2] -> [1]aq;
+
+fi[3] -> Discard

@@ -1,0 +1,6 @@
+rr :: RoundRobinSched;
+
+TimedSource(0.2) -> Queue(20) -> Print(q1) -> [0]rr;
+TimedSource(0.5) -> Queue(20) -> Print(q2) -> [1]rr;
+
+rr -> TimedSink(0.1);

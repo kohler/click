@@ -1,0 +1,5 @@
+s :: EtherSwitch;
+
+FromBPF(eth0,1) -> [0]s[0] -> Queue -> ToBPF(eth0);
+FromBPF(eth1,1) -> [1]s[1] -> Queue -> ToBPF(eth1);
+FromBPF(eth2,2) -> [2]s[2] -> Queue -> ToBPF(eth2);

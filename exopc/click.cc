@@ -1,0 +1,83 @@
+#include <stdio.h>
+#include <string.h>
+#include <signal.h>
+
+#include "lexer.hh"
+#include "router.hh"
+#include "error.hh"
+#include "timer.hh"
+
+void
+catchint(int)
+{
+  /* call exit so -pg file is written */
+  exit(0);
+}
+
+void
+print_bitvector(const Bitvector &bv)
+{
+  fprintf(stderr, "%d : ", bv.size());
+  for (int i = 0; i < bv.size(); i++) {
+    fprintf(stderr, (i % 8 == 7 ? "%c " : "%c"), (bv[i] ? '1' : '0'));
+  }
+  fprintf(stderr, "\n");
+}
+
+extern void export_factions(Lexer *);
+
+int
+main(int argc, char **argv)
+{
+  String::static_initialize();
+  Timer::static_initialize();
+  ErrorHandler *errh = new FileErrorHandler(stderr, "ipb: ");
+  ErrorHandler::static_initialize(errh);
+  
+  FileLexerSource *fp;
+  if (argc < 2)
+    fp = new FileLexerSource("<stdin>", stdin);
+  else
+    fp = new FileLexerSource(argv[1], 0);
+  
+  Lexer *lex = new Lexer(errh);
+  export_factions(lex);
+  lex->faction_types_permanent();
+  
+  lex->reset(fp);
+  while (lex->ystatement())
+    /* do nothing */;
+  
+  Router *router = lex->create_router();
+  delete fp;
+  lex->clear();
+  
+  if (argc > 2) {
+    for (int i = 0; i < 4; i++) {
+      if (router->initialize(errh) >= 0)
+	router->print_structure(errh);
+      fp = new FileLexerSource(argv[1], 0);
+      lex->reset(fp);
+      delete router;
+      while (lex->ystatement())
+	/* do nothing */;
+      router = lex->create_router();
+      lex->clear();
+    }
+  }
+
+#if 0
+  signal(SIGINT, catchint);
+#endif
+  
+  if (router->initialize(errh) >= 0) {
+    router->print_structure(errh);
+    //errh->message(router->flat_configuration());
+    while (router->driver())
+      /* nada */;
+  } else
+  {
+    delete router;
+    exit(1);
+  }
+}

@@ -1,0 +1,13 @@
+#ifdef HAVE_CONFIG_H
+# include <config.h>
+#endif
+#include "nulls.hh"
+
+EXPORT_ELEMENT(Null1)
+EXPORT_ELEMENT(Null2)
+EXPORT_ELEMENT(Null3)
+EXPORT_ELEMENT(Null4)
+EXPORT_ELEMENT(Null5)
+EXPORT_ELEMENT(Null6)
+EXPORT_ELEMENT(Null7)
+EXPORT_ELEMENT(Null8)
