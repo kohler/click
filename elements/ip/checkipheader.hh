@@ -18,8 +18,9 @@
  * Usually consists of the subnet broadcast addresses on
  * each interface (RFC1812 5.3.7).
  *
+ * =a CheckIPHeader2
+ * =a MarkIPHeader
  * =a SetIPChecksum
- * =a DecIPTTL
  */
 
 #include "element.hh"
@@ -27,9 +28,9 @@
 
 class CheckIPHeader : public Element {
 
-  int _drops;
   int _n_bad_src;
   u_int *_bad_src; // array of illegal IP src addresses.
+  int _drops;
   
  public:
   

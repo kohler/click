@@ -25,12 +25,10 @@
 #endif
 
 CheckIPHeader::CheckIPHeader()
-  : _drops(0)
+  : _bad_src(0), _drops(0)
 {
   add_input();
   add_output();
-  _bad_src = 0;
-  _n_bad_src = 0;
 }
 
 CheckIPHeader::~CheckIPHeader()
@@ -85,10 +83,14 @@ CheckIPHeader::configure(const String &conf, ErrorHandler *errh)
      repeat: ;
     }
   }
-  
+
+  delete[] _bad_src;
   _n_bad_src = ips.size();
-  _bad_src = new u_int [_n_bad_src];
-  memcpy(_bad_src, &ips[0], sizeof(u_int) * ips.size());
+  if (_n_bad_src) {
+    _bad_src = new u_int [_n_bad_src];
+    memcpy(_bad_src, &ips[0], sizeof(u_int) * ips.size());
+  } else
+    _bad_src = 0;
 
   return 0;
 }

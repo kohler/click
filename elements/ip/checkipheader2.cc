@@ -93,10 +93,7 @@ CheckIPHeader2::configure(const String &conf, ErrorHandler *errh)
 inline Packet *
 CheckIPHeader2::smaction(Packet *p)
 {
-#define NOCHECK
   click_ip *ip = (click_ip *) p->data();
-
-#ifndef NOCHECK
   unsigned int src;
   unsigned hlen;
   
@@ -111,9 +108,6 @@ CheckIPHeader2::smaction(Packet *p)
     goto bad;
   
   if(hlen > p->length())
-    goto bad;
-  
-  if(in_cksum((unsigned char *)ip, hlen) != 0)
     goto bad;
   
   if(ntohs(ip->ip_len) < hlen)
@@ -133,12 +127,10 @@ CheckIPHeader2::smaction(Packet *p)
    * RFC1812 4.2.3.1: discard illegal destinations.
    * We now do this in the IP routing table.
    */
-#endif
 
   p->set_ip_header(ip);
   return(p);
-
-#ifndef NOCHECK 
+  
  bad:
   if (_drops == 0)
     click_chatter("IP checksum failed");
@@ -150,13 +142,12 @@ CheckIPHeader2::smaction(Packet *p)
     p->kill();
   
   return 0;
-#endif
 }
 
 void
 CheckIPHeader2::push(int, Packet *p)
 {
-  if((p = smaction(p)) != 0)
+  if ((p = smaction(p)))
     output(0).push(p);
 }
 
@@ -164,9 +155,9 @@ Packet *
 CheckIPHeader2::pull(int)
 {
   Packet *p = input(0).pull();
-  if(p)
+  if (p)
     p = smaction(p);
-  return(p);
+  return p;
 }
 
 static String

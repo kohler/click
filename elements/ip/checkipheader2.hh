@@ -7,8 +7,8 @@
  * =d
  * Expects IP packets as input.
  * Checks that the packet's length is reasonable,
- * and that the IP version, header length, length, and
- * checksum fields are valid.
+ * and that the IP version, header length, and length
+ * fields are valid.
  * Checks that the IP source address is a legal unicast address.
  * Pushes invalid packets out on output 1, unless output 1 was unused;
  * if so, drops invalid packets.
@@ -18,8 +18,10 @@
  * Usually consists of the subnet broadcast addresses on
  * each interface (RFC1812 5.3.7).
  *
- * =a SetIPChecksum
- * =a DecIPTTL
+ * This element does all the work of CheckIPHeader except for checking
+ * the checksum.
+ *
+ * =a CheckIPHeader
  */
 
 #include "element.hh"
