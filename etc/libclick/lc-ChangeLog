@@ -1,3 +1,10 @@
+2001-10-18 Thursday 21:07  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cp_pop_spacevec(): take the first argument
+	off a String, which is a spacevec, and return it, modifying the
+	argument String to point at what's left
+
 2001-10-18 Thursday 15:31  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: packet_anno.hh, packet_anno.hh: add aggregate
