@@ -331,6 +331,22 @@ IPRateMonitor::what_read_handler(Element *e, void *)
 }
 
 
+String
+IPRateMonitor::rates_read_handler(Element *e, void *)
+{
+  IPRateMonitor *me = (IPRateMonitor *) e;
+  String ret = "";
+
+  for(int i = 1; i < me->_no_of_rates; i++) {
+    if(i != 1)
+      ret += "\t";
+    ret += String(me->_rates[i]);
+  }
+
+  return ret + "\n";
+}
+
+
 int
 IPRateMonitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
@@ -370,6 +386,7 @@ IPRateMonitor::add_handlers()
   add_read_handler("srcdst", srcdst_read_handler, 0);
   add_read_handler("what", what_read_handler, 0);
   add_read_handler("look", look_read_handler, 0);
+  add_read_handler("rates", rates_read_handler, 0);
 
   add_write_handler("reset", reset_write_handler, 0);
 }

@@ -28,6 +28,9 @@
  * =h thresh (read-write)
  * When read, returns THRESH/PERIOD. When written, expects THRESH/PERIOD.
  *
+ * =h rates (read)
+ * Returns rates T1, T2, ...
+ *
  * =e
  *
  * =a FlexMonitor
@@ -114,6 +117,7 @@ private:
   static String look_read_handler(Element *e, void *);
   static String what_read_handler(Element *e, void *);
   static String srcdst_read_handler(Element *e, void *);
+  static String rates_read_handler(Element *e, void *);
 
   static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
   static int reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
