@@ -48,14 +48,14 @@
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
-#define UNINSTALL_OPT		304
-#define HOTSWAP_OPT		305
-#define MAP_OPT			306
-#define VERBOSE_OPT		307
-#define THREADS_OPT		308
-#define PRIVATE_OPT		309
-#define PRIORITY_OPT		310
-#define EXPRESSION_OPT		311
+#define EXPRESSION_OPT		304
+#define UNINSTALL_OPT		305
+#define HOTSWAP_OPT		306
+#define MAP_OPT			307
+#define VERBOSE_OPT		308
+#define THREADS_OPT		309
+#define PRIVATE_OPT		310
+#define PRIORITY_OPT		311
 
 static Clp_Option options[] = {
   { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
@@ -326,7 +326,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
-  const char *expression = 0;
+  bool file_is_expr = false;
   bool uninstall = false;
   bool hotswap = false;
   int priority = -100;
@@ -362,20 +362,14 @@ particular purpose.\n");
       break;
       
      case ROUTER_OPT:
+     case EXPRESSION_OPT:
      case Clp_NotOption:
-      if (router_file || expression) {
-	errh->error("router file or expression specified twice");
+      if (router_file) {
+	errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
-      break;
-
-     case EXPRESSION_OPT:
-      if (router_file || expression) {
-	errh->error("router file or expression specified twice");
-	goto bad_option;
-      }
-      expression = clp->arg;
+      file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
 #if FOR_LINUXMODULE
@@ -429,7 +423,7 @@ particular purpose.\n");
   if (hotswap && uninstall)
     errh->warning("`--hotswap' and `--uninstall' are mutually exclusive");
   
-  RouterT *r = read_router(expression ? expression : router_file, expression, nop_errh);
+  RouterT *r = read_router(router_file, file_is_expr, nop_errh);
   if (r)
     r->flatten(nop_errh);
   if (!r || errh->nerrors() > 0)

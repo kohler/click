@@ -41,9 +41,10 @@
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
-#define OUTPUT_OPT		304
-#define FILTER_OPT		305
-#define QUIET_OPT		306
+#define EXPRESSION_OPT		304
+#define OUTPUT_OPT		305
+#define FILTER_OPT		306
+#define QUIET_OPT		307
 
 #define FIRST_DRIVER_OPT	1000
 #define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
@@ -53,6 +54,7 @@
 static Clp_Option options[] = {
   { "bsdmodule", 'b', BSDMODULE_OPT, 0, Clp_Negate },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "filter", 'p', FILTER_OPT, 0, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
@@ -87,6 +89,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE           Read router configuration from FILE.\n\
+  -e, --expression EXPR     Use EXPR as router configuration.\n\
   -o, --output FILE         If valid, write configuration to FILE.\n\
   -p, --filter              If valid, write configuration to standard output.\n\
   -b, --bsdmodule           Check for bsdmodule driver.\n\
@@ -148,6 +151,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  bool file_is_expr = false;
   const char *output_file = 0;
   bool output = false;
   bool quiet = false;
@@ -178,12 +182,14 @@ particular purpose.\n");
       break;
       
      case ROUTER_OPT:
+     case EXPRESSION_OPT:
      case Clp_NotOption:
       if (router_file) {
-	p_errh->error("router file specified twice");
+	p_errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
+      file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
      case OUTPUT_OPT:
@@ -230,12 +236,14 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *r = read_router_file(router_file, errh);
+  RouterT *r = read_router(router_file, file_is_expr, errh);
   if (r)
     r->flatten(errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
-  if (!router_file || strcmp(router_file, "-") == 0)
+  if (file_is_expr)
+    router_file = "<expr>";
+  else if (!router_file || strcmp(router_file, "-") == 0)
     router_file = "<stdin>";
 
   // open output file

@@ -410,12 +410,14 @@ match_config(const String &pat, const String &conf,
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
-#define ROUTER_OPT		302
-#define PATTERNS_OPT		303
-#define OUTPUT_OPT		304
-#define REVERSE_OPT		305
+#define ROUTER_OPT		303
+#define EXPRESSION_OPT		304
+#define OUTPUT_OPT		305
+#define PATTERNS_OPT		306
+#define REVERSE_OPT		307
 
 static Clp_Option options[] = {
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
@@ -449,6 +451,7 @@ Options:\n\
   -p, --patterns PATTERNFILE    Read patterns from PATTERNFILE. Can be given\n\
                                 more than once.\n\
   -f, --file FILE               Read router configuration from FILE.\n\
+  -e, --expression EXPR         Use EXPR as router configuration.\n\
   -o, --output FILE             Write output to FILE.\n\
   -r, --reverse                 Apply patterns in reverse.\n\
       --help                    Print this message and exit.\n\
@@ -507,6 +510,7 @@ main(int argc, char **argv)
 
   int num_nondash_args = 0;
   const char *router_file = 0;
+  bool file_is_expr = false;
   const char *output_file = 0;
   bool reverse = 0;
   
@@ -533,13 +537,15 @@ particular purpose.\n");
       break;
 
      case ROUTER_OPT:
+     case EXPRESSION_OPT:
       if (router_file) {
-	errh->error("router file specified twice");
+	errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
+      file_is_expr = (opt == EXPRESSION_OPT);
       break;
-
+      
      case OUTPUT_OPT:
       if (output_file) {
 	errh->error("output file specified twice");
@@ -554,7 +560,7 @@ particular purpose.\n");
       
      case Clp_NotOption:
       if (num_nondash_args == 0 && router_file) {
-	errh->error("router file specified twice");
+	errh->error("router configuration specified twice");
 	goto bad_option;
       } else if (num_nondash_args == 0)
 	router_file = clp->arg;
@@ -576,7 +582,7 @@ particular purpose.\n");
   }
   
  done:
-  RouterT *r = read_router_file(router_file, errh);
+  RouterT *r = read_router(router_file, file_is_expr, errh);
   if (r)
     r->flatten(errh);
   if (!r || errh->nerrors() > 0)

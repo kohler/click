@@ -44,23 +44,23 @@
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
-#define OUTPUT_OPT		304
-#define KERNEL_OPT		305
-#define USERLEVEL_OPT		306
-#define SOURCE_OPT		307
-#define CONFIG_OPT		308
-#define REVERSE_OPT		309
-#define COMBINE_OPT		310
-#define COMPILE_OPT		311
-#define QUIET_OPT		312
-#define EXPR_OPT		313
+#define EXPRESSION_OPT		304
+#define OUTPUT_OPT		305
+#define KERNEL_OPT		306
+#define USERLEVEL_OPT		307
+#define SOURCE_OPT		308
+#define CONFIG_OPT		309
+#define REVERSE_OPT		310
+#define COMBINE_OPT		311
+#define COMPILE_OPT		312
+#define QUIET_OPT		313
 
 static Clp_Option options[] = {
   { "classes", 0, COMPILE_OPT, 0, Clp_Negate },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "combine", 0, COMBINE_OPT, 0, Clp_Negate },
   { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
-  { "expression", 'e', EXPR_OPT, Clp_ArgString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
@@ -856,21 +856,14 @@ particular purpose.\n");
       break;
       
      case ROUTER_OPT:
+     case EXPRESSION_OPT:
      case Clp_NotOption:
       if (router_file) {
 	errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
-      break;
-
-     case EXPR_OPT:
-      if (router_file) {
-	errh->error("router configuration specified twice");
-	goto bad_option;
-      }
-      router_file = clp->arg;
-      file_is_expr = true;
+      file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
      case OUTPUT_OPT:

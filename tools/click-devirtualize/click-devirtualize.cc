@@ -41,13 +41,14 @@
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
-#define OUTPUT_OPT		304
-#define KERNEL_OPT		305
-#define USERLEVEL_OPT		306
-#define SOURCE_OPT		307
-#define CONFIG_OPT		308
-#define NO_DEVIRTUALIZE_OPT	309
-#define DEVIRTUALIZE_OPT	310
+#define EXPRESSION_OPT		304
+#define OUTPUT_OPT		305
+#define KERNEL_OPT		306
+#define USERLEVEL_OPT		307
+#define SOURCE_OPT		308
+#define CONFIG_OPT		309
+#define NO_DEVIRTUALIZE_OPT	310
+#define DEVIRTUALIZE_OPT	311
 #define INSTRS_OPT		312
 #define REVERSE_OPT		313
 
@@ -55,6 +56,7 @@ static Clp_Option options[] = {
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "config", 'c', CONFIG_OPT, 0, Clp_Negate },
   { "devirtualize", 0, DEVIRTUALIZE_OPT, Clp_ArgString, Clp_Negate },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { 0, 'n', NO_DEVIRTUALIZE_OPT, Clp_ArgString, 0 },
@@ -197,6 +199,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE              Read router configuration from FILE.\n\
+  -e, --expression EXPR        Use EXPR as router configuration.\n\
   -o, --output FILE            Write output to FILE.\n\
   -k, --kernel                 Compile into Linux kernel binary package.\n\
   -u, --user                   Compile into user-level binary package.\n\
@@ -228,6 +231,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  bool file_is_expr = false;
   const char *output_file = 0;
   int source_only = 0;
   int config_only = 0;
@@ -260,13 +264,15 @@ particular purpose.\n");
       set_clickpath(clp->arg);
       break;
       
-     case Clp_NotOption:
      case ROUTER_OPT:
+     case EXPRESSION_OPT:
+     case Clp_NotOption:
       if (router_file) {
-	p_errh->error("router file specified twice");
+	p_errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
+      file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
      case OUTPUT_OPT:
@@ -326,7 +332,7 @@ particular purpose.\n");
     compile_kernel = compile_user = 0;
 
   // read router
-  RouterT *router = read_router_file(router_file, errh);
+  RouterT *router = read_router(router_file, file_is_expr, errh);
   if (router)
     router->flatten(errh);
   if (!router || errh->nerrors() > 0)

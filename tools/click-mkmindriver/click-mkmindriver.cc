@@ -18,20 +18,22 @@
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
-#define PACKAGE_OPT		304
-#define DIRECTORY_OPT		305
-#define KERNEL_OPT		306
-#define USERLEVEL_OPT		307
-#define ELEMENT_OPT		308
-#define ALIGN_OPT		309
-#define ALL_OPT			310
+#define EXPRESSION_OPT		304
+#define PACKAGE_OPT		306
+#define DIRECTORY_OPT		307
+#define KERNEL_OPT		308
+#define USERLEVEL_OPT		309
+#define ELEMENT_OPT		310
+#define ALIGN_OPT		311
+#define ALL_OPT			312
 
 static Clp_Option options[] = {
   { "align", 'A', ALIGN_OPT, 0, 0 },
   { "all", 'a', ALL_OPT, 0, Clp_Negate },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "directory", 'd', DIRECTORY_OPT, Clp_ArgString, 0 },
-  { "elements", 'e', ELEMENT_OPT, Clp_ArgString, 0 },
+  { "elements", 'E', ELEMENT_OPT, Clp_ArgString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, Clp_Negate },
   { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, 0 },
@@ -68,21 +70,21 @@ user-level driver or a `PKGclick.o' kernel module.\n\
 Usage: %s -p PKG [OPTION]... [ROUTERFILE]...\n\
 \n\
 Options:\n\
-  -p, --package PKG         Name of package is PKG.\n\
-  -f, --file FILE           Read router configuration from FILE. Can supply\n\
-                            multiple configurations.\n\
-  -a, --all                 Include all element classes from later FILEs, even\n\
-                            those in unused compound elements.\n\
-  -k, --linuxmodule         Build Makefile for Linux kernel module driver.\n\
-  -u, --userlevel           Build Makefile for user-level driver (default).\n\
-  -d, --directory DIR       Put files in DIR. DIR must contain a `Makefile'\n\
-                            for the relevant driver. Default is `.'.\n\
-  -e, --elements ELTS       Include element classes ELTS.\n\
-  -A, --align               Include element classes required by click-align.\n\
-      --no-file             Don't read a configuration from standard input.\n\
-  -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
-      --help                Print this message and exit.\n\
-  -v, --version             Print version number and exit.\n\
+  -p, --package PKG        Name of package is PKG.\n\
+  -f, --file FILE          Read a router configuration from FILE.\n\
+  -e, --expression EXPR    Use EXPR as a router configuration.\n\
+  -a, --all                Add all element classes from following configs,\n\
+                           even those in unused compound elements.\n\
+  -k, --linuxmodule        Build Makefile for Linux kernel module driver.\n\
+  -u, --userlevel          Build Makefile for user-level driver (default).\n\
+  -d, --directory DIR      Put files in DIR. DIR must contain a `Makefile'\n\
+                           for the relevant driver. Default is `.'.\n\
+  -E, --elements ELTS      Include element classes ELTS.\n\
+  -A, --align              Include element classes required by click-align.\n\
+      --no-file            Don't read a configuration from standard input.\n\
+  -C, --clickpath PATH     Use PATH for CLICKPATH.\n\
+      --help               Print this message and exit.\n\
+  -v, --version            Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -91,17 +93,20 @@ static void
 handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *errh)
 {
   // decide if `filename' should be flattened
-  bool flattenable = (filename_in[0] == 'f');
-  const char *filename = filename_in.cc() + 1;
+  bool flattenable = (filename_in[0] != 'a');
+  bool file_is_expr = (filename_in[1] == 'e');
+  const char *filename = filename_in.cc() + 2;
 
   // read file
   int before = errh->nerrors();
-  RouterT *router = read_router_file(filename, new RouterT, errh);
+  RouterT *router = read_router(filename, file_is_expr, errh);
   if (router && flattenable)
     router->flatten(errh);
   if (!router || errh->nerrors() != before)
     return;
-  if (!filename || strcmp(filename, "-") == 0)
+  if (file_is_expr)
+    filename = "<expr>";
+  else if (!filename || strcmp(filename, "-") == 0)
     filename = "<stdin>";
   
   // find and parse `elementmap'
@@ -310,8 +315,8 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   Vector<String> router_filenames;
+  String specifier = "x";
   Vector<String> elements;
-  String specifier = "f";
   const char *package_name = 0;
   String directory;
   bool need_file = true;
@@ -358,7 +363,7 @@ particular purpose.\n");
       break;
 
      case ALL_OPT:
-      specifier = (clp->negated ? "f" : "a");
+      specifier = (clp->negated ? "x" : "a");
       break;
 
      case ELEMENT_OPT:
@@ -369,12 +374,16 @@ particular purpose.\n");
       elements.push_back("Align");
       break;
       
-     case Clp_NotOption:
      case ROUTER_OPT:
+     case Clp_NotOption:
       if (clp->negated)
 	need_file = false;
       else
-	router_filenames.push_back(specifier + clp->arg);
+	router_filenames.push_back(specifier + String("f") + clp->arg);
+      break;
+
+     case EXPRESSION_OPT:
+      router_filenames.push_back(specifier + String("e") + clp->arg);
       break;
 
      case Clp_BadOption:
@@ -392,7 +401,7 @@ particular purpose.\n");
   if (driver < 0)
     driver = Driver::USERLEVEL;
   if (!router_filenames.size() && need_file)
-    router_filenames.push_back(specifier + "-");
+    router_filenames.push_back(specifier + "f-");
   if (!package_name)
     errh->fatal("fatal error: no package name specified\nPlease supply the `-p PKG' option.");
 

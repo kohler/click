@@ -36,12 +36,13 @@
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
-#define OUTPUT_OPT		304
-#define CLASS_URLS_OPT		305
-#define TEMPLATE_OPT		306
-#define WRITE_TEMPLATE_OPT	307
-#define DEFINE_OPT		308
-#define PACKAGE_URLS_OPT	309
+#define EXPRESSION_OPT		304
+#define OUTPUT_OPT		305
+#define CLASS_URLS_OPT		306
+#define TEMPLATE_OPT		307
+#define WRITE_TEMPLATE_OPT	308
+#define DEFINE_OPT		309
+#define PACKAGE_URLS_OPT	310
 
 #define FIRST_DRIVER_OPT	1000
 #define LINUXMODULE_OPT		(1000 + Driver::LINUXMODULE)
@@ -53,6 +54,7 @@ static Clp_Option options[] = {
     { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
     { "class-docs", 'u', CLASS_URLS_OPT, Clp_ArgString, 0 },
     { "define", 'd', DEFINE_OPT, Clp_ArgString, 0 },
+    { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
     { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
     { "help", 0, HELP_OPT, 0, 0 },
     { "kernel", 'k', LINUXMODULE_OPT, 0, 0 },
@@ -447,19 +449,25 @@ Try `%s --help' for more information.\n",
 }
 
 static RouterT *
-pretty_read_router(const char *filename, ErrorHandler *errh, String &config)
+pretty_read_router(const char *filename, bool file_is_expr,
+		   ErrorHandler *errh, String &config)
 {
     // This function is a paraphrase of read_router_file.
   
     // read file string
     int before_nerrors = errh->nerrors();
-  
-    config = file_string(filename, errh);
+
+    if (file_is_expr)
+	config = filename;
+    else
+	config = file_string(filename, errh);
     if (!config && errh->nerrors() != before_nerrors)
 	return 0;
 
     // set readable filename
-    if (!filename || strcmp(filename, "-") == 0)
+    if (file_is_expr)
+	filename = "<expr>";
+    else if (!filename || strcmp(filename, "-") == 0)
 	filename = "<stdin>";
 
     // check for archive
@@ -986,11 +994,11 @@ open_output_file(const char *outfile, ErrorHandler *errh)
 }
 
 static void
-pretty_process(const char *infile, const char *outfile,
+pretty_process(const char *infile, bool file_is_expr, const char *outfile,
 	       const char *templ, ErrorHandler *errh)
 {
     String r_config;
-    RouterT *r = pretty_read_router(infile, errh, r_config);
+    RouterT *r = pretty_read_router(infile, file_is_expr, errh, r_config);
     if (!r)
 	return;
 
@@ -1052,6 +1060,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
+  -e, --expression EXPR       Use EXPR as router configuration.\n\
   -o, --output FILE           Write HTML output to FILE.\n\
   -t, --template FILE         Use FILE as the template instead of default.\n\
   -d, --define NAME=TEXT      Define a new tag, NAME, that expands to TEXT.\n\
@@ -1081,6 +1090,7 @@ main(int argc, char **argv)
     program_name = Clp_ProgramName(clp);
 
     const char *router_file = 0;
+    bool file_is_expr = false;
     const char *output_file = 0;
     String html_template = default_template;
     bool write_template = false;
@@ -1141,12 +1151,14 @@ particular purpose.\n");
 	    break;
 
 	  case ROUTER_OPT:
+	  case EXPRESSION_OPT:
 	  case Clp_NotOption:
 	    if (router_file) {
-		p_errh->error("router file specified twice");
+		p_errh->error("router configuration specified twice");
 		goto bad_option;
 	    }
 	    router_file = clp->arg;
+	    file_is_expr = (opt == EXPRESSION_OPT);
 	    break;
 
 	  case OUTPUT_OPT:
@@ -1186,7 +1198,7 @@ particular purpose.\n");
 	    fclose(f);
 	}
     } else
-	pretty_process(router_file, output_file, html_template, errh);
+	pretty_process(router_file, file_is_expr, output_file, html_template, errh);
 	
     exit(errh->nerrors() > 0 ? 1 : 0);
 }

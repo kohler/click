@@ -285,9 +285,11 @@ prepare_classes()
 #define HELP_OPT		300
 #define VERSION_OPT		301
 #define ROUTER_OPT		303
-#define OUTPUT_OPT		304
+#define EXPRESSION_OPT		304
+#define OUTPUT_OPT		305
 
 static Clp_Option options[] = {
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
@@ -316,6 +318,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
+  -e, --expression EXPR         Use EXPR as router configuration.\n\
   -o, --output FILE             Write output to FILE.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
@@ -346,6 +349,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  bool file_is_expr = false;
   const char *output_file = 0;
   
   while (1) {
@@ -366,13 +370,15 @@ particular purpose.\n");
       exit(0);
       break;
       
-     case Clp_NotOption:
      case ROUTER_OPT:
+     case EXPRESSION_OPT:
+     case Clp_NotOption:
       if (router_file) {
-	errh->error("router file specified twice");
+	errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
+      file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
      case OUTPUT_OPT:
@@ -397,7 +403,7 @@ particular purpose.\n");
   
  done:
   prepare_classes();
-  RouterT *router = read_router_file(router_file, errh);
+  RouterT *router = read_router(router_file, file_is_expr, errh);
   if (router)
     router->flatten(errh);
   if (!router || errh->nerrors() > 0)

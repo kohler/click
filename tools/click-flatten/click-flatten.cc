@@ -17,12 +17,12 @@
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
+#define EXPRESSION_OPT		304
 #define OUTPUT_OPT		305
 #define FLATTEN_OPT		306
 #define CLASSES_OPT		307
 #define ELEMENTS_OPT		308
 #define DECLARATIONS_OPT	309
-#define EXPR_OPT		310
 
 static Clp_Option options[] = {
   { "classes", 'c', CLASSES_OPT, 0, 0 },
@@ -30,7 +30,7 @@ static Clp_Option options[] = {
   { "decls", 'd', DECLARATIONS_OPT, 0, 0 },
   { "declarations", 'd', DECLARATIONS_OPT, 0, 0 },
   { "elements", 'n', ELEMENTS_OPT, 0, 0 },
-  { "expression", 'e', EXPR_OPT, Clp_ArgString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "names", 'n', ELEMENTS_OPT, 0, 0 },
@@ -106,8 +106,8 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
-  const char *output_file = 0;
   bool file_is_expr = false;
+  const char *output_file = 0;
   int action = FLATTEN_OPT;
   
   while (1) {
@@ -147,22 +147,15 @@ particular purpose.\n");
       output_file = clp->arg;
       break;
 
-     case EXPR_OPT:
-      if (router_file) {
-	errh->error("router configuration specified twice");
-	goto bad_option;
-      }
-      router_file = clp->arg;
-      file_is_expr = true;
-      break;
-
-     case Clp_NotOption:
      case ROUTER_OPT:
+     case EXPRESSION_OPT:
+     case Clp_NotOption:
       if (router_file) {
 	errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
+      file_is_expr = (opt == EXPRESSION_OPT);
       break;
 
      case Clp_BadOption:
