@@ -1,3 +1,19 @@
+2002-10-30 Wednesday 23:23  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.35), toipsumdump.cc
+	(1.32), toipsumdump.hh (1.27): rename timestamp to ts in tcp_opt
+
+2002-10-30 Wednesday 23:14  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.34), ipsumdumpinfo.cc
+	(1.4), toipsumdump.cc (1.31), toipsumdump.hh (1.26): change the
+	BINARY method to compress more (lose the padding)
+
+2002-10-30 Wednesday 23:12  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/todevice.cc (1.30): fix leftover cc() bug on
+	BSD
+
 2002-10-29 Tuesday 09:46  Eddie Kohler <kohler@icir.org>
 
 	* elements/ns/fromsimdevice.cc (1.3), elements/ns/tosimdevice.cc
