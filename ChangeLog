@@ -1,3 +1,8 @@
+2002-08-19 Monday 13:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/: paintswitch.cc (1.1), paintswitch.hh (1.1):
+	Added PaintSwitch element: demux packets based on paint annotation
+
 2002-08-19 Monday 00:53  Eddie Kohler <kohler@icir.org>
 
 	* include/click/clp.h (1.9), lib/clp.c (1.11): CLP updates from the
