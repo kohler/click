@@ -27,7 +27,7 @@ Returns the number of packets that have passed.
 Returns the accumulated cycles for all passing packets.
 
 =h reset_counts write-only
-Resets C<packets> and C<accum> counters to zero when written.
+Resets C<count> and C<cycles> counters to zero when written.
 
 =a SetCycleCount, RoundTripCycleCount, SetPerfCount, PerfCountAccum */
 

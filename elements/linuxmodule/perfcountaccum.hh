@@ -27,7 +27,7 @@
  * Returns the accumulated changes in the metric TYPE for all passing packets.
  *
  * =h reset_counts write-only
- * Resets C<packets> and C<accum> counters to zero when written.
+ * Resets C<count> and C<accum> counters to zero when written.
  * 
  * =a SetPerfCount, SetCycleCount, CycleCountAccum */
 
