@@ -32,6 +32,7 @@
  * =a ToDevice.u */
 
 #include "anydevice.hh"
+#include "fromlinux.hh"
 
 class ToDevice : public AnyDevice {
   
@@ -44,6 +45,7 @@ class ToDevice : public AnyDevice {
   const char *processing() const	{ return PULL; }
   ToDevice *clone() const		{ return new ToDevice; }
   
+  int configure_phase() const	{ return FromLinux::TODEVICE_CONFIGURE_PHASE; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();

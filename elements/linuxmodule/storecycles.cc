@@ -98,4 +98,5 @@ StoreCycles::add_handlers()
   add_read_handler("cycles", StoreCycles_read_cycles, 0);
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(StoreCycles)

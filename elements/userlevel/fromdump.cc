@@ -161,4 +161,5 @@ FromDump::run_scheduled()
 #endif
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromDump)

@@ -302,4 +302,5 @@ FromDevice::selected(int)
 }
 #endif
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromDevice)

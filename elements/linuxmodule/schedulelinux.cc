@@ -53,5 +53,5 @@ ScheduleLinux::run_scheduled()
   reschedule();
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(ScheduleLinux)
-

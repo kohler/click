@@ -139,4 +139,5 @@ ToDump::run_scheduled()
   reschedule();
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(ToDump)

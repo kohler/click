@@ -40,5 +40,5 @@ ReadHandlerCaller::run_scheduled()
   reschedule();
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(ReadHandlerCaller)
-

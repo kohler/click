@@ -302,5 +302,5 @@ PollDevice::add_handlers()
   add_read_handler("calls", PollDevice_read_calls, 0);
 }
 
+ELEMENT_REQUIRES(AnyDevice linuxmodule)
 EXPORT_ELEMENT(PollDevice)
-ELEMENT_REQUIRES(AnyDevice)

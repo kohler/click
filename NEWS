@@ -47,11 +47,10 @@ Version 1.1
    (`mask' is either `SELECT_READ', `SELECT_WRITE', or
    `SELECT_READ|SELECT_WRITE'.)
 
-** Other small changes and method renamings should have very limited
-   impact. For instance, renamed `Element::number()' to
-   `Element::elementno()'; removed `Element::use()' and `Element::unuse()';
-   renamed `Element::change_configuration()' to
-   `Element::set_configuration()' and
+** Other small changes and method renamings should have limited impact. For
+   instance, renamed `Element::number()' to `Element::elementno()'; removed
+   `Element::use()' and `Element::unuse()'; renamed
+   `Element::change_configuration()' to `Element::set_configuration()' and
    `Element::set_configuration_argument()'.
 
 * General
@@ -86,13 +85,17 @@ Version 1.1
 
 ** Cleaned up polling interface in Linux.
 
+** Added ToLinuxSniffers element.
+
 * Elements
 
 ** Fixed kernel alignment bug in IP header checking elements: can't use
    Linux's `fast_ip_csum' on unaligned data.
 
 ** Added QuitWatcher, FrontDropQueue, StripIPHeader, IPClassifier, and
-   IPPrint.
+   IPPrint. Also mentioned above: user-level FromDevice, ToDevice, and
+   ControlSocket; kernel module ToLinuxSniffers; generic SetIPAddress,
+   StoreIPAddress.
 
 ** Fixed user-level FromDevice and ToDevice bugs. Now FromDevice will not
    starve other router processing, and ToDevice works on Linux.

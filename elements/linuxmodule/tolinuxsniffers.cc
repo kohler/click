@@ -1,6 +1,6 @@
 /*
- * tolinux.{cc,hh} -- element sends packets to Linux for default processing
- * Robert Morris
+ * tolinuxsniffers.{cc,hh} -- element sends packets to Linux sniffers
+ * Eddie Kohler; based on tolinux.cc
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -13,37 +13,29 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "tolinux.hh"
+#include "tolinuxsniffers.hh"
 extern "C" {
 #include <linux/if_ether.h>
 #include <linux/netdevice.h>
 }
 
-ToLinux::ToLinux()
+ToLinuxSniffers::ToLinuxSniffers()
 {
   add_input();
 }
 
-#if 0
-static unsigned long linux_cycles = 0;
-static unsigned long linux_pkts = 0;
-#endif
-
-ToLinux::~ToLinux()
+ToLinuxSniffers::~ToLinuxSniffers()
 {
-#if 0
-  click_chatter("%d pkts in %u cycles", linux_pkts, linux_cycles);
-#endif
 }
 
-ToLinux *
-ToLinux::clone() const
+ToLinuxSniffers *
+ToLinuxSniffers::clone() const
 {
-  return new ToLinux();
+  return new ToLinuxSniffers();
 }
 
 void
-ToLinux::push(int port, Packet *p)
+ToLinuxSniffers::push(int port, Packet *p)
 {
   struct sk_buff *skb1 = p->steal_skb();
   if (!skb1) return;
@@ -57,17 +49,10 @@ ToLinux::push(int port, Packet *p)
 #ifdef HAVE_CLICK_KERNEL
   skb1->nh.raw = skb1->data;
   start_bh_atomic();
-#if 0
-  unsigned long c0 = click_get_cycles();
-#endif
-  ptype_dispatch(skb1, skb1->protocol);
-#if 0
-  linux_cycles += click_get_cycles() - c0;
-  linux_pkts ++;
-#endif
+  ptype_dispatch(skb1, 0xFFFF);	// an unlikely protocol number
   end_bh_atomic();
 #endif
 }
 
 ELEMENT_REQUIRES(linuxmodule)
-EXPORT_ELEMENT(ToLinux)
+EXPORT_ELEMENT(ToLinuxSniffers)

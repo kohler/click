@@ -69,4 +69,5 @@ ToLinux::push(int port, Packet *p)
 #endif
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(ToLinux)

@@ -38,4 +38,5 @@ ToBPF::configure(const Vector<String> &conf, ErrorHandler *errh)
   return errh->error("ToBPF has been deprecated; use ToDevice instead");
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(ToBPF)

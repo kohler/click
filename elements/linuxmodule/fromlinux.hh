@@ -47,16 +47,20 @@ class FromLinux : public AnyDevice {
   int init_dev();
 
  public:
-  
+
+  enum { FROMLINUX_CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT,
+	 TODEVICE_CONFIGURE_PHASE };
+    
   FromLinux();
   ~FromLinux();
-  FromLinux *clone() const;
 
   const char *class_name() const	{ return "FromLinux"; }
+  FromLinux *clone() const;
   const char *processing() const	{ return PUSH; }
 
   struct enet_statistics *stats() const	{ return &_stats; }
-  
+
+  int configure_phase() const		{ return FROMLINUX_CONFIGURE_PHASE; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();

@@ -13,6 +13,7 @@
  * the local machine (including broadcasts), and a copy
  * of each ARP reply.
  *
+ * =a ToLinuxSniffers
  * =a FromLinux
  * =a FromDevice
  * =a PollDevice

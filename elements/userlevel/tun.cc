@@ -217,4 +217,5 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far,
   return errh->error("could not allocate a free /dev/%s* device", dev_prefix);
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(Tun)

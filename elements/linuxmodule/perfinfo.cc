@@ -87,5 +87,5 @@ PerfInfo::uninitialize()
   _init = 0;
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(PerfInfo)
-

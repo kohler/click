@@ -178,5 +178,5 @@ ToDevice::run_scheduled()
   reschedule();
 }
 
-ELEMENT_REQUIRES(FromDevice)
+ELEMENT_REQUIRES(FromDevice userlevel)
 EXPORT_ELEMENT(ToDevice)

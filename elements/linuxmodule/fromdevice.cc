@@ -154,7 +154,7 @@ FromDevice::take_state(Element *e, ErrorHandler *errh)
     return;
   }
 
-  memcpy(_queue, fd->_queue, sizeof(Packet *) * FROMDEV_QSIZE);
+  memcpy(_queue, fd->_queue, sizeof(Packet *) * QSIZE);
   _puller_ptr = fd->_puller_ptr;
   _pusher_ptr = fd->_pusher_ptr;
   
@@ -256,5 +256,5 @@ FromDevice::run_scheduled()
   reschedule();
 }
 
+ELEMENT_REQUIRES(AnyDevice linuxmodule)
 EXPORT_ELEMENT(FromDevice)
-ELEMENT_REQUIRES(AnyDevice)

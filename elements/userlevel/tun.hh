@@ -30,7 +30,7 @@ class Tun : public Element {
   Tun();
   ~Tun();
   
-  const char *class_name() const		{ return "Tun"; }
+  const char *class_name() const	{ return "Tun"; }
   const char *processing() const	{ return PULL_TO_PUSH; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

@@ -41,4 +41,5 @@ FromBPF::configure(const Vector<String> &conf, ErrorHandler *errh)
   return errh->error("FromBPF is deprecated; use FromDevice instead");
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromBPF)

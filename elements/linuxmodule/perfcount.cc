@@ -103,5 +103,5 @@ PerfCount::add_handlers()
   add_read_handler("stats", PerfCount_read_cycles, 0);
 }
 
+ELEMENT_REQUIRES(linuxmodule)
 EXPORT_ELEMENT(PerfCount)
-
