@@ -1,3 +1,9 @@
+2001-10-09 Tuesday 03:54  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: fromdevice.cc (1.34), fromdevice.hh (1.18):
+	user-level FromDevice on Linux generates EXTRA_LENGTH_ANNO
+	correctly
+
 2001-10-09 Tuesday 00:54  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/queue.cc (1.37), elements/standard/queue.hh
