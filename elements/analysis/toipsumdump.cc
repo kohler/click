@@ -233,11 +233,21 @@ ToIPSummaryDump::store_ip_opt_ascii(const uint8_t *opt, int opt_len, int content
 	    goto print_route;
 	  print_route: {
 		const uint8_t *o = opt + 3, *ol = opt + opt[1], *op = opt + opt[2] - 1;
+		const char *sep = "";
 		sa << '{';
-		for (; o + 4 <= ol && o != op; o += 4)
-		    sa << (int)o[0] << '.' << (int)o[1] << '.' << (int)o[2] << '.' << (int)o[3] << ':';
-		sa.back() = '}';
-		if (o + 4 <= ol && o == op)
+		for (; o + 4 <= ol; o += 4) {
+		    if (o == op) {
+			if (opt[0] == IPOPT_RR)
+			    break;
+			sep = "*";
+		    }
+		    sa << sep << (int)o[0] << '.' << (int)o[1] << '.' << (int)o[2] << '.' << (int)o[3];
+		    sep = ":";
+		}
+		if (o == ol && o == op && opt[0] != IPOPT_RR)
+		    sa << '*';
+		sa << '}';
+		if (o + 4 <= ol && o == op && opt[0] == IPOPT_RR)
 		    sa << '+' << (ol - o) / 4;
 		opt = ol;
 		sep = ",";

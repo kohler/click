@@ -448,8 +448,11 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 	    pos += 3;
 	  parse_route:
 	    int sa_pos = sa.length() - 1;
+	    int pointer = -1;
 	    sa << '\0' << '\0';
 	    next = const_cast<char *>(data + pos);
+	    if (*next == '*')
+		pointer = 4, next++;
 	    while (isdigit(*next)) {
 		for (int i = 0; i < 4 && isdigit(*next); i++) {
 		    if (!isdigit(*next)
@@ -459,12 +462,14 @@ FromIPSummaryDump::parse_ip_opt_ascii(const char *data, int pos, String *result,
 		    sa << (char)u1;
 		    next++;
 		}
-		if (next[-1] != '-' && next[-1] != ':')
+		if (next[-1] == '*' && pointer < 0)
+		    pointer = sa.length() - sa_pos + 1;
+		else if (next[-1] != '-' && next[-1] != ':')
 		    next--;
 	    }
 	    if (*next != '}')
 		goto bad_opt;
-	    sa[sa_pos + 2] = sa.length() - sa_pos + 1;
+	    sa[sa_pos + 2] = (pointer >= 0 ? pointer : sa.length() - sa_pos + 1);
 	    if (next[1] == '+' && isdigit(next[2])
 		&& (u1 = strtoul(next + 2, &next, 0)) < 64)
 		sa.append_fill('\0', u1 * 4);

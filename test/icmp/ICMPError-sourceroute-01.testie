@@ -1,0 +1,20 @@
+%script
+
+# read from a hand-written IPSummaryDump file; check headers, emit to a dump
+click -e "
+FromIPSummaryDump(IN1, STOP true, ZERO true)
+	-> ICMPError(19.19.19.19, timeexceeded)
+	-> CheckIPHeader
+	-> CheckICMPHeader
+	-> ToIPSummaryDump(OUT1, CONTENTS src dst proto payload_len ip_opt)
+"
+
+%file IN1
+!data src sport dst dport proto ip_opt ttl
+18.26.4.44 20 10.0.0.8 80 T ssrr{128.4.45.60:128.4.49.61*1.2.3.4:5.6.7.8} 0
+
+%expect OUT1
+19.19.19.19 18.26.4.44 I 68 ssrr{*128.4.49.61:128.4.45.60}
+
+%ignore
+!.*
