@@ -13,23 +13,19 @@
 #define FIX_IP_SRC_ANNO(p)		((p)->user_anno_c(3))
 #define SET_FIX_IP_SRC_ANNO(p, v)	((p)->set_user_anno_c(3, (v)))
 
-// bytes 0-3
-#define AGGREGATE_ANNO(p)		((p)->user_anno_u(0))
-#define SET_AGGREGATE_ANNO(p, v)	((p)->set_user_anno_u(0, (v)))
-
 // bytes 4-7
+#define AGGREGATE_ANNO(p)		((p)->user_anno_u(1))
+#define SET_AGGREGATE_ANNO(p, v)	((p)->set_user_anno_u(1, (v)))
+
 #define FWD_RATE_ANNO(p)		((p)->user_anno_i(1))
 #define SET_FWD_RATE_ANNO(p, v)		((p)->set_user_anno_i(1, (v)))
 
-#define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(1))
-#define SET_EXTRA_LENGTH_ANNO(p, v)	((p)->set_user_anno_u(1, (v)))
-
 // bytes 8-11
-#define REV_RATE_ANNO(p)		((p)->user_anno_i(2))
-#define SET_REV_RATE_ANNO(p, v)		((p)->set_user_anno_i(2, (v)))
-
 #define EXTRA_PACKETS_ANNO(p)		((p)->user_anno_u(2))
 #define SET_EXTRA_PACKETS_ANNO(p, v)	((p)->set_user_anno_u(2, (v)))
+
+#define REV_RATE_ANNO(p)		((p)->user_anno_i(2))
+#define SET_REV_RATE_ANNO(p, v)		((p)->set_user_anno_i(2, (v)))
 
 // byte 10
 #define SEND_ERR_ANNO(p)                ((p)->user_anno_c(10))
@@ -38,5 +34,9 @@
 // byte 11
 #define GRID_ROUTE_CB_ANNO(p)           ((p)->user_anno_c(11))
 #define SET_GRID_ROUTE_CB_ANNO(p, v)    ((p)->set_user_anno_c(11, (v)))
+
+// bytes 12-15
+#define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(3))
+#define SET_EXTRA_LENGTH_ANNO(p, v)	((p)->set_user_anno_u(3, (v)))
 
 #endif
