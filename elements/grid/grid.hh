@@ -281,7 +281,7 @@ struct grid_hello {
   { assert(sizeof(grid_hello) % 4 == 0); }
 
   static const unsigned int MIN_AGE_DECREMENT = 10;
-  static const unsigned int MAX_AGE_DEFAULT = 30000; // ~ 30 secs
+  static const unsigned int MAX_AGE_DEFAULT = 300000; // ~ 300 secs
   // age is really ttl...add these new names for clarity
   static const unsigned int MIN_TTL_DECREMENT = MIN_AGE_DECREMENT;
   static const unsigned int MAX_TTL_DEFAULT = MAX_AGE_DEFAULT;
