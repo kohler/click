@@ -50,16 +50,16 @@
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
-#define QUIT_OPT		304
-#define OUTPUT_OPT		305
-#define HANDLER_OPT		306
-#define TIME_OPT		307
-#define STOP_OPT		308
-#define PORT_OPT		309
-#define UNIX_SOCKET_OPT		310
-#define NO_WARNINGS_OPT		311
-#define WARNINGS_OPT		312
-#define EXPRESSION_OPT		313
+#define EXPRESSION_OPT		304
+#define QUIT_OPT		305
+#define OUTPUT_OPT		306
+#define HANDLER_OPT		307
+#define TIME_OPT		308
+#define STOP_OPT		309
+#define PORT_OPT		310
+#define UNIX_SOCKET_OPT		311
+#define NO_WARNINGS_OPT		312
+#define WARNINGS_OPT		313
 
 static Clp_Option options[] = {
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
@@ -345,8 +345,8 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  bool file_is_expr = false;
   const char *output_file = 0;
-  const char *expression = 0;
   bool quit_immediately = false;
   bool report_time = false;
   bool stop = false;
@@ -361,21 +361,15 @@ main(int argc, char **argv)
     int opt = Clp_Next(clp);
     switch (opt) {
       
-     case Clp_NotOption:
      case ROUTER_OPT:
-      if (router_file || expression) {
-	errh->error("router file or expression specified twice");
+     case EXPRESSION_OPT:
+     case Clp_NotOption:
+      if (router_file) {
+	errh->error("router configuration specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
-      break;
-
-     case EXPRESSION_OPT:
-      if (router_file || expression) {
-	errh->error("router file or expression specified twice");
-	goto bad_option;
-      }
-      expression = clp->arg;
+      file_is_expr = (opt == EXPRESSION_OPT);
       break;
       
      case OUTPUT_OPT:
@@ -458,13 +452,13 @@ particular purpose.\n");
   
  done:
   String config_str;
-  if (expression)
-    config_str = expression;
+  if (file_is_expr)
+    config_str = router_file;
   else
     config_str = file_string(router_file, errh);
   if (errh->nerrors() > 0)
     exit(1);
-  if (expression)
+  if (file_is_expr)
     router_file = "<expr>";
   else if (!router_file || strcmp(router_file, "-") == 0)
     router_file = "<stdin>";
