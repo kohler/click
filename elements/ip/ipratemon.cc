@@ -260,11 +260,9 @@ IPRateMonitor::print(_stats *s, String ip = "")
     if (s->counter[i].flags != CLEAN) {
       int j;
   
-      for(j = 1; j < _no_of_rates; j++) {
-        // s->counter[i].values[j].update(0);
+      for(j = 1; j < _no_of_rates; j++)
 	if (s->counter[i].values[j].average() > 0)
 	  nonzero = true;
-      }
 
       if (nonzero) {
 	for(j = 1; j < _no_of_rates; j++) { 
