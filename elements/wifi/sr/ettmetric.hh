@@ -11,10 +11,9 @@ CLICK_DECLS
 /*
  * =c
  * ETTMetric(LinkStat, LinkStat)
- * =s Grid
+ * =s Wifi
  * =io
  * None
- * =d
  *
  */
 

@@ -152,6 +152,9 @@ MadwifiRate::process_feedback(Packet *p_in)
     nfo->_failures = 0;
     nfo->_retries = 0;
   } else if (stepup) {
+    if (nfo->_current_index == nfo->_rates.size() - 1) {
+      return;
+    }
     if (nfo->_rates.size()) {
       click_chatter("%{element} steping up for %s from %d to %d\n",
 		    this,
@@ -159,9 +162,6 @@ MadwifiRate::process_feedback(Packet *p_in)
 		    nfo->_rates[nfo->_current_index],
 		    nfo->_rates[min(nfo->_rates.size() - 1, 
 				    nfo->_current_index + 1)]);
-    }
-    if (nfo->_current_index == nfo->_rates.size() - 1) {
-      return;
     }
     nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
     nfo->_successes = 0;

@@ -27,7 +27,6 @@
 #include "srforwarder.hh"
 #include "srpacket.hh"
 #include "linkmetric.hh"
-#include "srcr.hh"
 #include "elements/wifi/arptable.hh"
 CLICK_DECLS
 
@@ -41,7 +40,6 @@ SRForwarder::SRForwarder()
      _databytes(0),
      _link_table(0),
      _arp_table(0),
-     _srcr(0),
      _metric(0)
 
 {
@@ -69,7 +67,6 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    /* below not required */
 		    "LM", cpElement, "LinkMetric element", &_metric,
-		    "SRCR", cpElement, "SRCR element", &_srcr,
 		    "LT", cpElement, "LinkTable element", &_link_table,
                     cpEnd);
 
@@ -87,8 +84,6 @@ SRForwarder::configure (Vector<String> &conf, ErrorHandler *errh)
 
   if (_metric && _metric->cast("LinkMetric") == 0) 
     return errh->error("LinkMetric element is not a LinkMetric");
-  if (_srcr && _srcr->cast("SRCR") == 0) 
-    return errh->error("SRCR element is not a SRCR");
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
 
@@ -197,15 +192,6 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
   pk->_type = PT_DATA;
   pk->_dlen = htons(payload_len);
 
-  if (_srcr) {
-    IPAddress neighbor = _srcr->get_random_neighbor();
-    if (neighbor) {
-      pk->set_random_from(_ip);
-      pk->set_random_to(neighbor);
-      pk->set_random_fwd_metric(get_fwd_metric(neighbor));
-      pk->set_random_rev_metric(get_rev_metric(neighbor));
-    }
-  }
   pk->set_num_hops(r.size());
   pk->set_next(next);
   pk->set_flag(flags);
@@ -363,21 +349,6 @@ SRForwarder::push(int port, Packet *p_in)
   sr_assert(pk->next() < 8);
   IPAddress nxt = pk->get_hop(pk->next());
   
-  /*
-   * put new information in the random link field
-   * with probability = 1/num_hops in the packet
-   */
-  if (_srcr && random() % pk->num_hops() == 0) {
-    IPAddress r_neighbor = _srcr->get_random_neighbor();
-    if (r_neighbor) {
-      pk->set_random_from(_ip);
-      pk->set_random_to(r_neighbor);
-      pk->set_random_fwd_metric(get_fwd_metric(r_neighbor));
-      pk->set_random_rev_metric(get_rev_metric(r_neighbor));
-    }
-  }
-
-
   EtherAddress eth_dest = _arp_table->lookup(nxt);
   if (eth_dest == _arp_table->_bcast) {
     click_chatter("SRForwarder %s: arp lookup failed for %s",

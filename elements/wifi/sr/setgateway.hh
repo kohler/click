@@ -13,7 +13,7 @@
 #include <elements/wifi/sr/path.hh>
 #include <click/ipflowid.hh>
 #include <clicknet/tcp.h>
-#include "srcr.hh"
+#include "srpacket.hh"
 #include "gatewayselector.hh"
 #include <elements/wifi/rxstats.hh>
 CLICK_DECLS

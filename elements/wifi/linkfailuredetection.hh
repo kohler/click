@@ -25,13 +25,13 @@ CLICK_DECLS
  * Unsigned integer. Number of failures before HANLDER is called
  *
  *
- * =back
- * 
  * =item  HANDLER
  *
  * The write handler to call when a link failure is detected.
  * This handler will be called with a string that is the ethernet
  * mac address of the failed destination.
+ * =back
+ * 
  *
  * =s wifi
  *

@@ -292,20 +292,40 @@ srcr_forwarder :: SRForwarder(ETHTYPE 0x$srcr_forwarder_ethtype,
 			      IP $srcr_ip, 
 			      ETH $wireless_mac, 
 			      ARP srcr_arp, 
-			      SRCR srcr,
 			      LM srcr_ett,
 			      LT srcr_lt);
 
-srcr :: SRCR(ETHTYPE 0x$srcr_ethtype, 
-	   IP $srcr_ip, 
-	   ETH $wireless_mac, 
-	   SR srcr_forwarder,
-	   LT srcr_lt, 
-	   ARP srcr_arp, 
-           LM srcr_ett,
-	   ROUTE_DAMPENING true,
-	   TIME_BEFORE_SWITCH 5,
-	   DEBUG false);
+
+srcr_querier :: SRQuerier(ETHTYPE 0x$srcr_ethtype, 
+			  IP $srcr_ip, 
+			  ETH $wireless_mac, 
+			  SR srcr_forwarder,
+			  LT srcr_lt, 
+			  ROUTE_DAMPENING true,
+			  TIME_BEFORE_SWITCH 5,
+			  DEBUG true);
+
+srcr_query_forwarder :: SRQueryForwarder(ETHTYPE 0x$srcr_ethtype, 
+					 IP $srcr_ip, 
+					 ETH $wireless_mac, 
+					 SR srcr_forwarder,
+					 LT srcr_lt, 
+					 ARP srcr_arp,
+					 LM srcr_ett,
+					 DEBUG true);
+
+srcr_query_responder :: SRQueryResponder(ETHTYPE 0x$srcr_ethtype, 
+					 IP $srcr_ip, 
+					 ETH $wireless_mac, 
+					 SR srcr_forwarder,
+					 LT srcr_lt, 
+					 ARP srcr_arp,
+					 LM srcr_ett,
+					 DEBUG true);
+
+
+srcr_query_responder -> SetSRChecksum -> route_q;
+srcr_query_forwarder -> SetSRChecksum -> route_q;
 
 srcr_data_ck :: SetSRChecksum() 
 
@@ -313,22 +333,22 @@ srcr_host
 -> SetTimestamp()
 -> srcr_host_cl :: IPClassifier(dst net $srcr_ip mask $srcr_nm,
 				-)
--> [1] srcr [1]
+-> srcr_querier
 -> srcr_data_ck;
 
 
-srcr_host_cl [1] -> [0] srcr_set_gw [0] -> [1] srcr;
+srcr_host_cl [1] -> [0] srcr_set_gw [0] -> srcr_querier;
 
 srcr_forwarder[0] 
   -> srcr_dt ::DecIPTTL
   -> srcr_data_ck
   -> data_q;
-srcr_dt[1] -> ICMPError($srcr_ip, timeexceeded, 0) -> [2] srcr;
+srcr_dt[1] -> ICMPError($srcr_ip, timeexceeded, 0) -> srcr_querier;
 
-// SRCR handles data source-routing packets
-Idle -> [2] srcr;
 
-srcr[0] -> SetSRChecksum -> route_q;
+// queries
+srcr_querier [1] -> SetSRChecksum -> route_q;
+
 srcr_es 
 -> SetTimestamp()
 -> route_q;
@@ -372,7 +392,11 @@ print <<EOF;
 
 // ethernet packets
 ncl[0] -> CheckSRHeader() -> [0] srcr_forwarder;
-ncl[1] -> CheckSRHeader() -> [0] srcr;
+ncl[1] -> CheckSRHeader() -> srcr_query_t :: Tee(2);
+
+srcr_query_t [0] -> srcr_query_forwarder;
+srcr_query_t [1] -> srcr_query_responder;
+
 ncl[2] -> srcr_es;
 ncl[3] -> CheckSRHeader() -> srcr_gw;
 EOF
