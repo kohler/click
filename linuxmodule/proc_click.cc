@@ -160,15 +160,7 @@ prepare_handler_read(int eindex, int handlerno, int stringno)
   else if (!h->read_visible())
     return -EPERM;
   
-  // prevent interrupts
-  unsigned cli_flags;
-  save_flags(cli_flags);
-  cli();
-
   s = h->call_read(e);
-  
-  // restore interrupts
-  restore_flags(cli_flags);
   
   if (s.out_of_memory())
     return -ENOMEM;
@@ -212,19 +204,11 @@ finish_handler_write(int eindex, int handlerno, int stringno)
   if (e) context_string += String(" for `") + e->declaration() + "'";
   ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
   
-  // prevent interrupts
-  unsigned cli_flags;
-  save_flags(cli_flags);
-  cli();
-
   int result;
   if (handler_strings[stringno].out_of_memory())
     result = -ENOMEM;
   else
     result = h->call_write(handler_strings[stringno], e, &cerrh);
-
-  // restore interrupts
-  restore_flags(cli_flags);
 
   return result;
 }
@@ -271,8 +255,8 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
     filp->private_data = (void *)stringno;
     return 0;
   } else {
-    free_handler_string(stringno);
     filp->private_data = (void *)-1;
+    free_handler_string(stringno);
     return retval;
   }
 }
@@ -370,8 +354,10 @@ static int
 proc_element_handler_release(struct inode *, struct file *filp)
 {
   int stringno = reinterpret_cast<int>(filp->private_data);
-  if (stringno >= 0)
+  if (stringno >= 0) {
+    filp->private_data = (void *)-1;
     free_handler_string(stringno);
+  }
   return 0;
 }
 
