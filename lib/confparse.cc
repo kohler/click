@@ -2897,9 +2897,9 @@ cp_va_space_parse(const String &argument,
   Vector<String> args;
   cp_spacevec(argument, args);
 #ifndef CLICK_TOOL
-  int retval = cp_va_parsev(args, context, "word", " ", false, errh, val);
+  int retval = cp_va_parsev(args, context, "word", ", ", false, errh, val);
 #else
-  int retval = cp_va_parsev(args, "word", " ", false, errh, val);
+  int retval = cp_va_parsev(args, "word", ", ", false, errh, val);
 #endif
   va_end(val);
   return retval;

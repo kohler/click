@@ -11,6 +11,8 @@ class HandlerCall { public:
     bool ok() const		{ return _hi >= 0; }
     bool is_read() const;
 
+    static int initialize(HandlerCall *&, const String &, bool write, Element *, ErrorHandler *);
+    
     int initialize(bool write, Element *, ErrorHandler *);
     int initialize(String, bool write, Element *, ErrorHandler *);
     int initialize_read(Element *, ErrorHandler *);

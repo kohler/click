@@ -53,6 +53,19 @@ HandlerCall::initialize(String what, bool write, Element *context, ErrorHandler 
     return 0;
 }
 
+int
+HandlerCall::initialize(HandlerCall *&call, const String &text, bool write, Element *context, ErrorHandler *errh)
+{
+    if (!call && !(call = new HandlerCall))
+	return -ENOMEM;
+    int retval = call->initialize(text, write, context, errh);
+    if (retval < 0) {
+	delete call;
+	call = 0;
+    }
+    return retval;
+}
+
 String
 HandlerCall::call_read(Router *router) const
 {
