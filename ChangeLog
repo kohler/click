@@ -1,3 +1,14 @@
+2003-02-07 Friday 20:35  Eddie Kohler <kohler@icir.org>
+
+	* etc/: linux-2.4.18-patch (1.4), linux-2.4.20-patch (1.4): adapt
+	patches for gcc-2.95.3 suitability
+
+2003-02-07 Friday 18:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipgwoptions.cc (1.30): IPGWOptions handles erroneous
+	option lists correctly, more careful option-length checks, and copy
+	the packet lazily
+
 2003-02-07 Friday 13:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.34): Add some new lame
