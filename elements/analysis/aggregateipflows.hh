@@ -39,6 +39,13 @@ paints 2 and 3.)
 AggregateIPFlows can optionally apply aggregate annotations to ICMP errors. See
 the ICMP keyword argument below.
 
+When used as a push element, AggregateIPFlows may have a second input. Packets
+arriving on this input are assigned aggregate annotations just like usual.
+However, these packets never generate a new aggregate annotation; if a packet
+arriving on input 1 has a flow ID that has never been seen before, it will be
+treated like a short packet and emitted on output 1 or dropped. You might send
+ICMP errors to this input, for example.
+
 Keywords are:
 
 =over 8
@@ -76,6 +83,22 @@ Filename. If provided, output information about each flow to that filename.
 AggregateIPFlows is an AggregateNotifier, so AggregateListeners can request
 notifications when new aggregates are created and old ones are deleted.
 
+=e
+
+This configuration counts with AggregateCounter the number of packets in each
+flow in a trace (not counting fragments).
+
+   FromDump(tracefile.dump, STOP true, FORCE_IP true)
+       -> AggregateIPFlows
+       -> AggregateCounter
+       -> Discard;
+
+=h frozen read/write
+
+A Boolean value indicating whether the AggregateIPFlows is frozen. When it is
+frozen, no new aggregate annotations are generated -- all packets act like
+they arrived on input 1. Starts out false.
+
 =a
 
 AggregateIP, AggregateCounter */
@@ -93,9 +116,12 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     const char *processing() const	{ return "a/ah"; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
+    void add_handlers();
     void cleanup(CleanupStage);
 
-    Packet *simple_action(Packet *);
+    bool handle_packet(Packet *, bool);
+    void push(int, Packet *);
+    Packet *pull(int);
 
   private:
 
@@ -128,6 +154,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     unsigned _gc_interval;
 
     bool _handle_icmp_errors : 1;
+    bool _frozen : 1;
 
     FILE *_flowinfo_file;
     String _flowinfo_filename;
@@ -135,6 +162,10 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     void clean_map(Map &, uint32_t, uint32_t);
     void reap();
     const click_ip *icmp_encapsulated_header(const Packet *) const;
+
+    enum { H_FROZEN };
+    static String read_handler(Element *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler*);
     
 };
 

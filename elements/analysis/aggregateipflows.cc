@@ -50,6 +50,7 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
     _udp_timeout = 60;
     _gc_interval = 20 * 60;
     bool handle_icmp_errors = false;
+    
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "TCP_TIMEOUT", cpSeconds, "timeout for active TCP connections", &_tcp_timeout,
@@ -60,9 +61,11 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "FLOWINFO", cpFilename, "filename for flow info file", &_flowinfo_filename,
 		    0) < 0)
 	return -1;
+    
     _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);
     _smallest_timeout = (_smallest_timeout < _udp_timeout ? _smallest_timeout : _udp_timeout);
     _handle_icmp_errors = handle_icmp_errors;
+    _frozen = false;
     return 0;
 }
 
@@ -145,8 +148,8 @@ AggregateIPFlows::icmp_encapsulated_header(const Packet *p) const
 	return 0;
 }
 
-Packet *
-AggregateIPFlows::simple_action(Packet *p)
+bool
+AggregateIPFlows::handle_packet(Packet *p, bool frozen)
 {
     const click_ip *iph = p->ip_header();
     int paint = 0;
@@ -158,10 +161,8 @@ AggregateIPFlows::simple_action(Packet *p)
     }
     if (!iph || !IP_FIRSTFRAG(iph)
 	|| (iph->ip_p != IP_PROTO_TCP && iph->ip_p != IP_PROTO_UDP)
-	|| (reinterpret_cast<const unsigned char *>(iph) - p->data()) + (iph->ip_hl << 2) + sizeof(click_udp) > p->length()) {
-	checked_output_push(1, p);
-	return 0;
-    }
+	|| (reinterpret_cast<const unsigned char *>(iph) - p->data()) + (iph->ip_hl << 2) + sizeof(click_udp) > p->length())
+	return false;
 
     // find relevant FlowInfo
     IPFlowID flow(iph);
@@ -172,9 +173,10 @@ AggregateIPFlows::simple_action(Packet *p)
 
     if (!finfo) {
 	click_chatter("out of memory!");
-	checked_output_push(1, p);
-	return 0;
+	return false;
     } else if (finfo->fresh()) {
+	if (frozen)
+	    return false;
 	finfo->_aggregate = _next;
 	FlowInfo *rfinfo = m.findp_force(flow.rev());
 	rfinfo->uu.other = finfo;
@@ -198,6 +200,8 @@ AggregateIPFlows::simple_action(Packet *p)
 	if (p_sec > finfo->uu.active_sec + timeout) {
 	    // old flow; kill old aggregate and create new aggregate
 	    notify(finfo->_aggregate, AggregateListener::DELETE_AGG, 0);
+	    if (frozen)
+		return false;
 	    if (paint & 1) {	// switch sides
 		FlowInfo *rfinfo = m.findp(flow);
 		assert(rfinfo && rfinfo != finfo);
@@ -245,7 +249,64 @@ AggregateIPFlows::simple_action(Packet *p)
     if (_active_sec >= _gc_sec)
 	reap();
     
-    return p;
+    return true;
+}
+
+void
+AggregateIPFlows::push(int port, Packet *p)
+{
+    if (handle_packet(p, port == 1 || _frozen))
+	output(0).push(p);
+    else
+	checked_output_push(1, p);
+}
+
+Packet *
+AggregateIPFlows::pull(int)
+{
+    Packet *p = input(0).pull();
+    if (p && handle_packet(p, _frozen))
+	return p;
+    else {
+	if (p)
+	    checked_output_push(1, p);
+	return 0;
+    }
+}
+
+String
+AggregateIPFlows::read_handler(Element *e, void *thunk)
+{
+    AggregateIPFlows *af = static_cast<AggregateIPFlows *>(e);
+    switch ((intptr_t)thunk) {
+      case H_FROZEN:
+	return cp_unparse_bool(af->_frozen) + "\n";
+      default:
+	return "";
+    }
+}
+
+int
+AggregateIPFlows::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh)
+{
+    AggregateIPFlows *af = static_cast<AggregateIPFlows *>(e);
+    switch ((intptr_t)thunk) {
+      case H_FROZEN: {
+	  bool frozen;
+	  if (cp_bool(cp_uncomment(s_in), &frozen))
+	      af->_frozen = frozen;
+	  else
+	      return errh->error("`frozen' takes a Boolean value");
+      }
+    }
+    return 0;
+}
+
+void
+AggregateIPFlows::add_handlers()
+{
+    add_read_handler("frozen", read_handler, (void *)H_FROZEN);
+    add_write_handler("frozen", write_handler, (void *)H_FROZEN);
 }
 
 ELEMENT_REQUIRES(userlevel AggregateNotifier)
