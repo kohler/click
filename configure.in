@@ -1,4 +1,4 @@
-dnl -*- mode: shell-script; tab-width: 2 -*-
+dnl -*- mode: shell-script -*-
 dnl Process this file with autoconf to produce a configure script.
 AC_INIT(pathvars.h.in)
 AC_CONFIG_HEADER(include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in include/click/config-bsdmodule.h:config-bsdmodule.h.in include/click/config-linuxmodule.h:config-linuxmodule.h.in include/click/config-userlevel.h:config-userlevel.h.in)
@@ -155,7 +155,7 @@ else
   dnl This is wrong!! Should at least check that HOST_CC and HOST_CXX work.
   AC_CHECK_PROGS(BUILD_CC, gcc)
   AC_CHECK_PROGS(BUILD_CXX, g++)
-	CLICK_PROG_BUILD_CXX
+  CLICK_PROG_BUILD_CXX
   AC_CHECK_PROGS(BUILD_AR, ar)
   AC_CHECK_PROGS(BUILD_RANLIB, ranlib, :)
   HOST_TOOLS=$enable_tools
@@ -214,7 +214,7 @@ dnl
 AC_CHECK_HEADERS(unistd.h termio.h)
 CLICK_CHECK_DYNAMIC_LINKING
 if test "$HOST_TOOLS" != host; then
-		CLICK_CHECK_BUILD_DYNAMIC_LINKING
+    CLICK_CHECK_BUILD_DYNAMIC_LINKING
 fi
 
 
@@ -446,15 +446,15 @@ dnl
 TARGETS=
 AC_SUBST(TARGETS)
 for i in click-align click-check click-combine click-devirtualize click-fastclassifier click-flatten click-ipopt click-mkmindriver click-pretty click-undead click-xform; do
-	if test -d $srcdir/tools/$i; then
-		TOOLDIRS="$TOOLDIRS $i"
-		TOOL_TARGETS="$TOOL_TARGETS $i"
-	fi
+    if test -d $srcdir/tools/$i; then
+	TOOLDIRS="$TOOLDIRS $i"
+	TOOL_TARGETS="$TOOL_TARGETS $i"
+    fi
 done
 for i in click-install; do
-	if test -d $srcdir/tools/$i; then
-		TOOLDIRS="$TOOLDIRS $i"
-	fi
+    if test -d $srcdir/tools/$i; then
+	TOOLDIRS="$TOOLDIRS $i"
+    fi
 done
 AC_SUBST(TOOLDIRS)
 AC_SUBST(TOOL_TARGETS)
