@@ -197,8 +197,8 @@ WARNING: \`$1' is missing on your system; trying to use plain \`tex'
 
   install-info)
     echo 1>&2 "\
-WARNING: \`$1' is missing on your system.  I will not be able to install
-         the Click Info manual."
+WARNING: \`$1' is missing on your system.  I will not be able to
+         install the Click Info manual."
     ;;
 
   *)

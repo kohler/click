@@ -647,15 +647,19 @@ else
   AC_MSG_RESULT(missing)
 fi
 
-AC_MSG_CHECKING(for working install-info)
 dnl Assume any version of install-info is OK
-INSTALL_INFO=${INSTALL_INFO-install-info}
+if test ${INSTALL_INFO-xxx} = xxx; then
+  AC_PATH_PROG(INSTALL_INFO, install-info, "$missing_dir/missing install-info",
+	$PATH:/sbin:/usr/sbin:/usr/local/sbin)
+fi
+AC_MSG_CHECKING(for working install-info)
 if ($INSTALL_INFO --version) < /dev/null > conftest.out 2>&1; then
   AC_MSG_RESULT(found)
 else
   INSTALL_INFO="$missing_dir/missing install-info"
   AC_MSG_RESULT(missing)
 fi
+
 
 AC_SUBST(MAKEINFO)
 AC_SUBST(TEXI2DVI)
