@@ -56,7 +56,6 @@ CLICK_USING_DECLS
 #define OUTPUT_OPT		306
 #define HANDLER_OPT		307
 #define TIME_OPT		308
-#define STOP_OPT		309
 #define PORT_OPT		310
 #define UNIX_SOCKET_OPT		311
 #define NO_WARNINGS_OPT		312
@@ -71,7 +70,6 @@ static Clp_Option options[] = {
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "port", 'p', PORT_OPT, Clp_ArgInt, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
-  { "stop", 's', STOP_OPT, Clp_ArgString, Clp_Optional },
   { "time", 't', TIME_OPT, 0, 0 },
   { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ArgString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
@@ -108,9 +106,6 @@ Options:\n\
                                 driver and print result to standard output.\n\
   -o, --output FILE             Write flat configuration to FILE.\n\
   -q, --quit                    Do not run driver.\n\
-  -s, --stop[=ELEMENT]          Stop driver once ELEMENT is done. Can be given\n\
-                                multiple times. If not specified, ELEMENTS are\n\
-                                the configuration's packet sources.\n\
   -t, --time                    Print information on how long driver took.\n\
   -w, --no-warnings             Do not print warnings.\n\
   -C, --clickpath PATH          Use PATH for CLICKPATH.\n\
@@ -232,11 +227,8 @@ main(int argc, char **argv)
   const char *output_file = 0;
   bool quit_immediately = false;
   bool report_time = false;
-  bool stop = false;
-  bool stop_guess = false;
   bool warnings = true;
   Vector<String> handlers;
-  Vector<String> stops;
   Vector<String> unix_sockets;
   Vector<int> ports;
 
@@ -263,18 +255,6 @@ main(int argc, char **argv)
       output_file = clp->arg;
       break;
      
-     case STOP_OPT:
-      if (stop && ((stop_guess && clp->have_arg) || (!stop_guess && !clp->have_arg))) {
-	errh->error("conflicting `--stop' options: guess or not?");
-	goto bad_option;
-      }
-      stop = true;
-      if (!clp->have_arg)
-	stop_guess = true;
-      else
-	stops.push_back(clp->arg);
-      break;
-      
      case HANDLER_OPT:
       handlers.push_back(clp->arg);
       break;
@@ -341,21 +321,6 @@ particular purpose.\n");
 
   if (router->nelements() == 0 && warnings)
     errh->warning("%s: configuration has no elements", router_file);
-
-  // handle stop option by adding a QuitWatcher element
-  if (stop) {
-    if (stop_guess) {
-      for (int i = 0; i < router->nelements(); i++) {
-	Element *e = router->element(i);
-	if (e->cast("InfiniteSource") || e->cast("RatedSource")
-	    || e->cast("FromDump"))
-	  stops.push_back(e->id());
-      }
-    }
-    if (!stops.size())
-      errh->error("`--stop' option given, but configuration has no packet sources");
-    router->add_element(new QuitWatcher, "click_driver@@QuitWatcher", cp_unargvec(stops), "click");
-  }
 
   // add new ControlSockets
   for (int i = 0; i < ports.size(); i++)
