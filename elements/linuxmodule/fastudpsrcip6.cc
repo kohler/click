@@ -22,7 +22,7 @@
 #include <click/config.h>
 #include <click/package.hh>
 #include <click/click_ip6.h>
-#include "fastudpsrc.hh"
+#include "fastudpsrcip6.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
