@@ -1,6 +1,10 @@
 #ifndef FROMDEVICE_HH
 #define FROMDEVICE_HH
 
+extern "C" {
+#include <linux/netdevice.h>
+}
+
 /*
  * =c
  * FromDevice(devname)
@@ -36,7 +40,7 @@ class FromDevice : public Element {
   static void static_cleanup();
   
   const char *class_name() const		{ return "FromDevice"; }
-  const char *processing() const	{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   FromDevice *clone() const;
   int configure(const String &, ErrorHandler *);
@@ -47,18 +51,12 @@ class FromDevice : public Element {
   int got_skb(struct sk_buff *);
   
   void run_scheduled();
+  int ifnum() 				{return _dev!=0 ? _dev->ifindex : -1;}
   
  private:
   
   String _devname;
   struct device *_dev;
-  int _registered;
-  
-#ifdef CLICK_BENCHMARK
-  // benchmark
-  int _bm_done;
-  void bm();
-#endif
   
   Packet* _queue[FROMDEV_QSIZE];
   unsigned _puller_ptr;

@@ -1,6 +1,10 @@
 #ifndef TODEVICE_HH
 #define TODEVICE_HH
 
+extern "C" {
+#include <linux/netdevice.h>
+}
+
 /*
  * =c
  * ToDevice(devname)
@@ -38,7 +42,7 @@ class ToDevice : public Element {
   static void static_initialize();
   static void static_cleanup();
   
-  const char *class_name() const		{ return "ToDevice"; }
+  const char *class_name() const	{ return "ToDevice"; }
   const char *processing() const	{ return PULL; }
   
   ToDevice *clone() const;
@@ -51,7 +55,7 @@ class ToDevice : public Element {
   
   bool tx_intr();
 
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   // Statistics.
   unsigned long long _idle_calls;
   unsigned long long _idle_pulls;
@@ -70,14 +74,15 @@ class ToDevice : public Element {
   unsigned long _rejected;
   unsigned long _hard_start;
   unsigned long _activations; 
+
+  int ifnum() 				{return _dev!=0 ? _dev->ifindex : -1;}
   
  private:
 
   int queue_packet(Packet *p);
-
-  String _devname;
   struct device *_dev;
-  int _registered;
+  String _devname;
+  unsigned _polling;
   int _dev_idle;
   int _last_dma_length;
   int _last_tx;

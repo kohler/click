@@ -1,6 +1,10 @@
 #ifndef POLLDEVICE_HH
 #define POLLDEVICE_HH
 
+extern "C" {
+#include <linux/netdevice.h>
+}
+
 /*
  * =c
  * PollDevice(devname)
@@ -49,7 +53,7 @@ class PollDevice : public Element {
 
   void run_scheduled();
 
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   // statistics
   unsigned long long _pkts_received;
   unsigned long long _idle_calls;
@@ -63,12 +67,15 @@ class PollDevice : public Element {
   unsigned long long _perfcnt2_refill;
   unsigned long long _perfcnt2_pushing;
 #endif
-  struct device *_dev;
   unsigned long _activations;
+  int ifnum() 				{return _dev!=0 ? _dev->ifindex : -1;}
 
  private:
+  struct device *_dev;
   String _devname;
   unsigned int _last_rx;
+  unsigned _registered;
+  unsigned _manage_tx;
 };
 
 #endif 

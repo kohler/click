@@ -16,6 +16,7 @@
 #endif
 #include "glue.hh"
 #include "polldevice.hh"
+#include "todevice.hh"
 #include "error.hh"
 #include "packet.hh"
 #include "confparse.hh"
@@ -32,10 +33,10 @@ extern "C" {
 #include "asm/msr.h"
 
 PollDevice::PollDevice()
-  : _dev(0), _activations(0), _last_rx(0)
+  : _activations(0), _dev(0), _last_rx(0), _manage_tx(1)
 {
   add_output();
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   _idle_calls = 0;
   _pkts_received = 0;
   _time_poll = 0;
@@ -51,13 +52,13 @@ PollDevice::PollDevice()
 }
 
 PollDevice::PollDevice(const String &devname)
-  : _devname(devname), _dev(0), _activations(0), _last_rx(0)
+  : _devname(devname), _activations(0), _dev(0), _last_rx(0), _manage_tx(1)
 {
 #ifdef CLICK_BENCHMARK
   _bm_done = 0;
 #endif
   add_output();
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   _idle_calls = 0;
   _pkts_received = 0;
   _time_poll = 0;
@@ -116,6 +117,22 @@ PollDevice::initialize(ErrorHandler *errh)
   if (!_dev->pollable) 
     return errh->error("device `%s' not pollable", _devname.cc());
   
+  void *p = update_ifindex_map(_dev->ifindex, errh, POLLDEV_OBJ, this);
+  if (p == 0) return -1;
+  else if (p != this)
+    return errh->error("duplicate PollDevice for device `%s'", _devname.cc());
+
+  /* try to find a ToDevice with the same device: if none exists, then we need
+   * to manage tx queue as well as rx queue */
+  for(int fi = 0; fi < router()->nelements(); fi++) {
+    Element *f = router()->element(fi);
+    ToDevice *td = (ToDevice *)f->cast("ToDevice");
+    if (td && td->ifnum() == _dev->ifindex) {
+      _manage_tx = 0;
+      break;
+    }
+  }
+
   _dev->intr_off(_dev);
 
 #ifndef RR_SCHED
@@ -140,8 +157,9 @@ PollDevice::uninitialize()
 #if HAVE_POLLING
   if (_dev) {
     _dev->intr_on(_dev);
-    unschedule();
   }
+  remove_ifindex_map(_dev->ifindex, POLLDEV_OBJ);
+  unschedule();
 #endif
 }
 
@@ -151,26 +169,24 @@ PollDevice::run_scheduled()
 #if HAVE_POLLING
   struct sk_buff *skb_list, *skb;
   int got=0;
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   unsigned long time_now;
   unsigned low00, low10;
 #endif
-  
-  /* need to have this somewhere */
-  /* _dev->tx_clean(_dev); */
+ 
+  if (_manage_tx) 
+    _dev->tx_clean(_dev);
 
   SET_STATS(low00, low10, time_now);
 
-#ifdef BATCH_PKT_PROC
-  
-  got = POLLDEV_MAX_PKTS_PER_RUN;
+  got = INPUT_MAX_PKTS_PER_RUN;
   skb_list = _dev->rx_poll(_dev, &got);
 
   if (got > 0 || _activations > 0) {
     _activations++;
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_poll, _perfcnt2_poll, _time_poll);
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
     _pkts_received += got;
     if (got == 0) _idle_calls++;
 #endif
@@ -208,59 +224,6 @@ PollDevice::run_scheduled()
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_pushing, _perfcnt2_pushing, _time_pushing);
 
-#else  /* BATCH_PKT_PROC */
- 
-  int i=1;
-  got = 0;
-  while(i > 0 && got < POLLDEV_MAX_PKTS_PER_RUN) {
-    i = 1;
-
-    skb_list = _dev->rx_poll(_dev, &i);
-
-    if (i > 0) {
-      GET_STATS_RESET(low00, low10, time_now, 
-	              _perfcnt1_poll, _perfcnt2_poll, _time_poll);
-
-      got += i;
-      skb = skb_list;
-      assert(skb);
-      assert(skb->data - skb->head >= 14);
-      assert(skb->mac.raw == skb->data - 14);
-      assert(skb_shared(skb) == 0);
-
-      /* Retrieve the ether header. */
-      skb_push(skb, 14);
-
-      Packet *p = Packet::make(skb);
-      if(skb->pkt_type == PACKET_MULTICAST || skb->pkt_type == PACKET_BROADCAST)
-        p->set_mac_broadcast_anno(1);
-  
-      output(0).push(p);
-      
-      GET_STATS_RESET(low00, low10, time_now, 
-	              _perfcnt1_pushing, _perfcnt2_pushing, _time_pushing);
-    }
-  }
-
-  if (got > 0 || _activations > 0) _activations++;
-
-  if (_activations > 0)
-    GET_STATS_RESET(low00, low10, time_now, 
-	            _perfcnt1_poll, _perfcnt2_poll, _time_poll);
-
-  _dev->rx_refill(_dev);
-
-  if (_activations > 0) {
-    GET_STATS_RESET(low00, low10, time_now, 
-	            _perfcnt1_refill, _perfcnt2_refill, _time_refill);
-#if DEV_KEEP_STATS
-    if (got == 0) _idle_calls++;
-    else _pkts_received+=got;
-#endif
-  }
-
-#endif /* !BATCH_PKT_PROC */
-
 #ifndef RR_SCHED
 #ifdef ADJ_TICKETS
   /* adjusting tickets */
@@ -268,12 +231,12 @@ PollDevice::run_scheduled()
   if (adj<2) adj=2;
   
   /* handles burstiness: fast start */
-  if (got == POLLDEV_MAX_PKTS_PER_RUN && 
-      _last_rx <= POLLDEV_MAX_PKTS_PER_RUN/8) adj*=2;
+  if (got == INPUT_MAX_PKTS_PER_RUN && 
+      _last_rx <= INPUT_MAX_PKTS_PER_RUN/8) adj*=2;
   /* rx dma ring is fairly full, schedule ourselves more */
-  else if (got == POLLDEV_MAX_PKTS_PER_RUN);
+  else if (got == INPUT_MAX_PKTS_PER_RUN);
   /* rx dma ring was fairly empty, schedule ourselves less */
-  else if (got < POLLDEV_MAX_PKTS_PER_RUN/4) adj=0-adj;
+  else if (got < INPUT_MAX_PKTS_PER_RUN/4) adj=0-adj;
   else adj=0;
 
   adj_tickets(adj);
@@ -283,10 +246,6 @@ PollDevice::run_scheduled()
   reschedule();
 #endif /* !RR_SCHED */
 
-#ifdef DEV_RXFIFO_STATS
-  if ((_activations % 2048)==0) _dev->get_stats(_dev);
-#endif
-
 #endif /* HAVE_POLLING */
 }
  
@@ -295,7 +254,7 @@ PollDevice_read_calls(Element *f, void *)
 {
   PollDevice *kw = (PollDevice *)f;
   return
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
     String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_pkts_received) + " packets received\n" +
     String(kw->_time_poll) + " cycles poll\n" +

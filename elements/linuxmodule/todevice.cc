@@ -15,6 +15,7 @@
 # include <config.h>
 #endif
 #include "glue.hh"
+#include "polldevice.hh"
 #include "todevice.hh"
 #include "error.hh"
 #include "etheraddress.hh"
@@ -35,19 +36,17 @@ extern "C" {
 #include "perfcount.hh"
 #include "asm/msr.h"
 
-static int min_ifindex;
-static Vector<ToDevice *> *ifindex_map;
 static struct notifier_block notifier;
 static int registered_writers;
 
 extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v);
 
 ToDevice::ToDevice()
-  : Element(1, 0), _dev(0), _registered(0), 
+  : Element(1, 0), _dev(0), _polling(0),
     _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
     _rejected(0), _hard_start(0), _activations(0)
 {
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   _idle_pulls = 0; 
   _idle_calls = 0; 
   _busy_returns = 0; 
@@ -65,11 +64,11 @@ ToDevice::ToDevice()
 }
 
 ToDevice::ToDevice(const String &devname)
-  : Element(1, 0), _devname(devname), _dev(0), _registered(0),
+  : Element(1, 0), _devname(devname), _dev(0), _polling(0),
     _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
     _rejected(0), _hard_start(0), _activations(0)
 {
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   _idle_pulls = 0; 
   _idle_calls = 0; 
   _busy_returns = 0; 
@@ -88,15 +87,12 @@ ToDevice::ToDevice(const String &devname)
 
 ToDevice::~ToDevice()
 {
-  if (_registered) click_chatter("ToDevice still registered");
   uninitialize();
 }
 
 void
 ToDevice::static_initialize()
 {
-  if (!ifindex_map)
-    ifindex_map = new Vector<ToDevice *>;
   notifier.notifier_call = click_ToDevice_out;
   notifier.priority = 1;
 }
@@ -104,13 +100,6 @@ ToDevice::static_initialize()
 void
 ToDevice::static_cleanup()
 {
-  delete ifindex_map;
-#ifdef HAVE_CLICK_KERNEL
-#if 0
-  if (registered_writers)
-    unregister_net_out(&notifier);
-#endif
-#endif
 }
 
 
@@ -128,81 +117,42 @@ ToDevice::configure(const String &conf, ErrorHandler *errh)
 		     cpEnd);
 }
 
-static int
-update_ifindex_map(int ifindex, ErrorHandler *errh)
-{
-  if (ifindex_map->size() == 0) {
-    min_ifindex = ifindex;
-    ifindex_map->push_back(0);
-    return 0;
-  }
-  
-  int left = min_ifindex;
-  int right = min_ifindex + ifindex_map->size();
-  if (ifindex < left) left = ifindex;
-  if (ifindex >= right) right = ifindex + 1;
-  if (right - left >= 1000 || right - left < 0)
-    return errh->error("too many devices");
-
-  if (left < min_ifindex) {
-    int delta = min_ifindex - left;
-    for (int i = 0; i < delta; i++)
-      ifindex_map->push_back(0);
-    for (int i = ifindex_map->size() - delta - 1; i >= 0; i--)
-      (*ifindex_map)[i + delta] = (*ifindex_map)[i];
-    for (int i = 0; i < delta; i++)
-      (*ifindex_map)[i] = 0;
-    min_ifindex = left;
-  } else if (right > min_ifindex + ifindex_map->size()) {
-    int delta = right - min_ifindex - ifindex_map->size();
-    for (int i = 0; i < delta; i++)
-      ifindex_map->push_back(0);
-  }
-  return 0;
-}
-
 int
 ToDevice::initialize(ErrorHandler *errh)
 {
+#ifndef HAVE_CLICK_KERNEL
+  errh->warning("not compiled for a Click kernel");
+#endif
+
   _dev = dev_get(_devname.cc());
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
   
-  if (input_is_pull(0)) {
-    if (!_registered) {
-      // add to ifindex_map
-      if (update_ifindex_map(_dev->ifindex, errh) < 0)
-	return -1;
-      int ifindex_off = _dev->ifindex - min_ifindex;
-      if ((*ifindex_map)[ifindex_off])
-	return errh->error("duplicate ToDevice for device `%s'", _devname.cc());
-      (*ifindex_map)[ifindex_off] = this;
-      
-      if (!registered_writers) {
-#ifdef HAVE_CLICK_KERNEL
-#ifndef HAVE_POLLING
-#if 0
-	notifier.next = 0;
-	register_net_out(&notifier);
-#endif
-#endif
-#else
-	errh->warning("not compiled for a Click kernel");
-#endif
-      }
-      
-      _registered = 1;
-      registered_writers++;
+  void *p = update_ifindex_map(_dev->ifindex, errh, TODEV_OBJ, this);
+  if (p == 0) return -1;
+  else if (p != this)
+    return errh->error("duplicate ToDevice for device `%s'", _devname.cc());
+  
+  /* see if a PollDevice with the same device exists: if so, use polling
+   * extensions */
+  for(int fi = 0; fi < router()->nelements(); fi++) {
+    Element *f = router()->element(fi);
+    PollDevice *pd = (PollDevice *)f->cast("PollDevice");
+    if (pd && pd->ifnum() == _dev->ifindex) {
+      click_chatter("todevice: found polling partner");
+      _polling = 1;
+      break;
     }
+  }
+  registered_writers++;
     
 #ifndef RR_SCHED
-    // start out with default number of tickets, inflate up to max
-    int max_tickets = ScheduleInfo::query(this, errh);
-    set_max_tickets(max_tickets);
-    set_tickets(ScheduleInfo::DEFAULT);
+  /* start out with default number of tickets, inflate up to max */
+  int max_tickets = ScheduleInfo::query(this, errh);
+  set_max_tickets(max_tickets);
+  set_tickets(ScheduleInfo::DEFAULT);
 #endif
-    join_scheduler();
-  }
+  join_scheduler();
 
   return 0;
 }
@@ -210,23 +160,10 @@ ToDevice::initialize(ErrorHandler *errh)
 void
 ToDevice::uninitialize()
 {
-  if (_registered) {
-    registered_writers--;
-#ifdef HAVE_CLICK_KERNEL
-#if 0
-    if (registered_writers == 0)
-      unregister_net_out(&notifier);
-#endif
-#endif
+  registered_writers--;
 
-    // remove from ifindex_map
-    int ifindex_off = _dev->ifindex - min_ifindex;
-    (*ifindex_map)[ifindex_off] = 0;
-    while (ifindex_map->size() > 0 && ifindex_map->back() == 0)
-      ifindex_map->pop_back();
-    
-    _registered = 0;
-  }
+  /* remove from ifindex_map */
+  remove_ifindex_map(_dev->ifindex, TODEV_OBJ);
   unschedule();
 }
 
@@ -242,20 +179,12 @@ click_ToDevice_out(struct notifier_block *nb, unsigned long val, void *v)
 {
   struct device *dev = (struct device *) v;
   
-#if CLICK_STATS > 0 || XCYC > 0
-  entering_ipb();
-#endif
-
   int retval = 0;
-  int ifindex_off = dev->ifindex - min_ifindex;
-  if (ifindex_off >= 0 && ifindex_off < ifindex_map->size())
-    if (ToDevice *kw = (*ifindex_map)[ifindex_off])
+  int ifindex = dev->ifindex;
+  if (ifindex >= 0 && ifindex < MAX_DEVICES)
+    if (ToDevice *kw = (ToDevice*) lookup_ifindex_map(ifindex, TODEV_OBJ))
       retval = kw->tx_intr();
   
-#if CLICK_STATS > 0 || XCYC > 0
-  leaving_ipb();
-#endif
-
   return retval;
 }
 
@@ -274,13 +203,13 @@ ToDevice::tx_intr()
   int sent = 0;
   int queued_pkts;
   
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   unsigned low00, low10;
   unsigned long time_now;
 #endif
 
 #if HAVE_POLLING
-  if (_dev->pollable && !_dev->intr_is_on) {
+  if (_polling) {
     SET_STATS(low00, low10, time_now);
  
     queued_pkts = _dev->tx_clean(_dev);
@@ -291,7 +220,7 @@ ToDevice::tx_intr()
   }
 #endif
 
-  while (sent<TODEV_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
+  while (sent<OUTPUT_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
     int r;
     Packet *p;
     if (p = input(0).pull()) {
@@ -312,7 +241,7 @@ ToDevice::tx_intr()
 
   if (sent > 0 || _activations > 0) _activations++;
 
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
   if (_activations > 0) {
     if (sent == 0) _idle_calls++;
     if (sent == 0 && !busy) _idle_pulls++;
@@ -322,7 +251,7 @@ ToDevice::tx_intr()
 #endif
 
 #if HAVE_POLLING
-  if (_dev->pollable && !_dev->intr_is_on) {
+  if (_polling) {
     if (queued_pkts == _last_dma_length + _last_tx && queued_pkts != 0) {
       _dev_idle++;
       if (_dev_idle==1024) {
@@ -358,7 +287,7 @@ ToDevice::tx_intr()
 
   int dmal;
 #if HAVE_POLLING
-  if (_dev->pollable)
+  if (_polling)
     dmal = _dev->tx_dma_length;
   else
 #endif
@@ -367,7 +296,7 @@ ToDevice::tx_intr()
   int dma_thresh_high = dmal-dmal/8;
   int dma_thresh_low  = dmal/4;
   int adj = tickets()/4;
-  if (adj<2) adj=2;
+  if (adj<4) adj=4;
 
   /* tx dma ring was fairly full, slow down */
   if (busy && queued_pkts > dma_thresh_high 
@@ -377,11 +306,6 @@ ToDevice::tx_intr()
   /* handle burstiness: start a bit faster */
   else if (sent > dma_thresh_high && !busy && 
            _last_tx < dma_thresh_low && !_last_busy) adj*=2;
-  /* prevent backlog and keep device running */
-  else if (sent > dmal/2) {
-    /* semi-bursty: start a bit faster if we sent a lot */
-    if (sent > dma_thresh_high) if (adj<8) adj=8;
-  }
   else adj = 0;
 
   adj_tickets(adj);
@@ -418,7 +342,7 @@ ToDevice::queue_packet(Packet *p)
 
   int ret;
 #if HAVE_POLLING
-  if (_dev->pollable && !_dev->intr_is_on)
+  if (_polling)
     ret = _dev->tx_queue(skb1, _dev); 
   else 
 #endif
@@ -446,7 +370,7 @@ ToDevice_read_calls(Element *f, void *)
   return
     String(td->_rejected) + " packets rejected\n" +
     String(td->_hard_start) + " hard start xmit\n" +
-#if DEV_KEEP_STATS
+#if _CLICK_STATS_
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_idle_pulls) + " idle pulls\n" +
     String(td->_busy_returns) + " device busy returns\n" +
