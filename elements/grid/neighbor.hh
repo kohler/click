@@ -90,6 +90,8 @@ public:
   bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
   void get_nbrs(Vector<grid_nbr_entry> *retval) const;
 
+  IPAddress _ipaddr;
+  EtherAddress _ethaddr;
 
 private:
   int _timeout; // -1 if we are not timing out entries
@@ -97,8 +99,6 @@ private:
 
   String get_nbrs();
 
-  IPAddress _ipaddr;
-  EtherAddress _ethaddr;
   int _max_hops;
 
   int _period;

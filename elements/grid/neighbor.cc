@@ -128,6 +128,12 @@ Neighbor::simple_action(Packet *packet)
   grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
   IPAddress ipaddr((unsigned char *) &gh->ip);
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
+
+  if (ethaddr == _ethaddr) {
+    click_chatter("%s: received own Grid packet; ignoring it", id().cc());
+    return packet;
+  }
+
   NbrEntry *nbr = _addresses.findp(ipaddr);
   if (nbr == 0) {
     // this src addr not already in map, so add it
@@ -210,7 +216,9 @@ Neighbor::simple_action(Packet *packet)
 	      // who told us about the broken route, so the
 	      // pseudo-split-horizon will ignore this entry
 	      new_entry.next_hop_ip = curr->ip; 
-	      assert(new_entry.seq_no & 1); // broken route info should be odd seq_no's
+	      // broken route info should be odd seq_no's
+	      new_entry.seq_no = ntohl(curr->seq_no);
+	      assert((new_entry.seq_no & 1) == 1); // XXX convert this to more robust check
 	      new_entry.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
 	      if (new_entry.age > 0) // don't propagate expired info
 		triggered_rtes.push_back(new_entry);
@@ -220,7 +228,7 @@ Neighbor::simple_action(Packet *packet)
 	      // we know more recent info about a route that this
 	      // entry is trying to invalidate
 	      grid_nbr_entry new_entry = fe->nbr;
-	      assert(new_entry.seq_no & 1 == 0);
+	      assert((new_entry.seq_no & 1) == 0);
 	      if (new_entry.age > 0)
 		triggered_rtes.push_back(new_entry);
 	    }
@@ -258,7 +266,7 @@ Neighbor::simple_action(Packet *packet)
 	}
       }
     
-      if(triggered_rtes.size() > 0){
+      if (triggered_rtes.size() > 0) {
         // send the triggered update
         send_routing_update(triggered_rtes, false);
       }
@@ -315,6 +323,20 @@ print_nbrs(Element *e, void *)
   return s;
 }
 
+static String
+print_ip(Element *e, void *)
+{
+  Neighbor *n = (Neighbor *) e;
+  return n->_ipaddr.s();
+}
+
+
+static String
+print_eth(Element *e, void *)
+{
+  Neighbor *n = (Neighbor *) e;
+  return n->_ethaddr.s();
+}
 
 
 void
@@ -322,6 +344,8 @@ Neighbor::add_handlers()
 {
   add_default_handlers(false);
   add_read_handler("nbrs", print_nbrs, 0);
+  add_read_handler("ip", print_ip, 0);
+  add_read_handler("eth", print_eth, 0);
 }
 
 

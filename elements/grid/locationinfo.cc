@@ -37,14 +37,14 @@ LocationInfo::~LocationInfo()
 int
 LocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
-  bool do_move = false;
+  int do_move = 0;
   int lat_int, lon_int;
   int res = cp_va_parse(conf, this, errh,
 			// 5 fractional digits ~= 1 metre precision
 			cpReal, "latitude (decimal degrees)", 5, &lat_int,
 			cpReal, "longitude (decimal degrees)", 5, &lon_int,
                         cpOptional,
-                        cpBool, "move?", &do_move,
+                        cpInteger, "move?", &do_move,
 			0);
   float lat = ((float) lat_int) / 100000.0f;
   float lon = ((float) lon_int) / 100000.0f; 
@@ -183,6 +183,11 @@ LocationInfo::add_handlers()
 void
 LocationInfo::set_new_dest(double v_lat, double v_lon)
 { /* velocities v_lat and v_lon in degrees per sec */
+
+  if (_move != 2) {
+    click_chatter("%s: not configured to accept set_new_dest directives!", id().cc());
+    return;
+  }
 
   double t = now();
   

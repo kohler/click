@@ -78,7 +78,7 @@ struct grid_nbr_entry {
   unsigned int next_hop_ip;
   unsigned char num_hops; 
   /* 0 for num_hops indicate that this dest. is unreachable.  if so,
-     num_hops, and loc fields are meaningless */
+     loc fields are meaningless */
   grid_location loc;
   unsigned int seq_no;
   unsigned int age; 
