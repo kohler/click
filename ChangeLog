@@ -1,3 +1,8 @@
+2002-10-31 Thursday 02:04  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: toipsumdump.cc (1.33), toipsumdump.hh (1.28):
+	remove padding of "!binary" line
+
 2002-10-30 Wednesday 23:23  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.35), toipsumdump.cc
