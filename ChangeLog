@@ -1,3 +1,7 @@
+2005-01-25 Tuesday 14:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.30): fix blank lines in verbatim sections
+
 2005-01-25 Tuesday 11:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-mkelemmap (1.31): fix generated XML: "<" not allowed in
