@@ -2180,6 +2180,14 @@ Equivalent to @code{set_network_header(@var{header}, @var{len})}.
 Equivalent to @code{set_ip6_header(@var{header}, 40)}.
 @end deftypemethod
 
+@deftypemethod Packet {const click_tcp *} tcp_header () const
+@deftypemethodx WritablePacket {click_tcp *} tcp_header () const
+@deftypemethodx Packet {const click_udp *} udp_header () const
+@deftypemethodx WritablePacket {click_udp *} udp_header () const
+Returns @code{transport_header()} as a pointer to a TCP or UDP header
+structure.
+@end deftypemethod
+
 
 @node User Annotations, Specific User Annotations, Header Annotations, Annotations
 @subsection User Annotations
