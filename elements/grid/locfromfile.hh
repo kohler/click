@@ -29,6 +29,7 @@ public:
   LocFromFile *clone() const { return new LocFromFile; }
   int configure(const Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const { return true; }
+  virtual void *cast(const char *);
 
 protected:
   virtual void choose_new_leg(double *, double *, double *);

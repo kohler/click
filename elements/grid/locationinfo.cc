@@ -128,8 +128,8 @@ LocationInfo::get_current_location()
     double nlat = 0, nlon = 0, nt = 0;
     choose_new_leg(&nlat, &nlon, &nt);
     assert(nt > 0);
-    _vlat = (nlat - _lat0) / nt;
-    _vlon = (nlon - _lon0) / nt;
+    _vlat = (nlat - _lat0) / (nt - _t0);
+    _vlon = (nlon - _lon0) / (nt - _t0);
     _t1 = nt;
   }
 

@@ -22,21 +22,32 @@
 LocFromFile::LocFromFile()
 {
   _next = 0;
+  _move = 1;
 }
 
 LocFromFile::~LocFromFile()
 {
 }
 
+void *
+LocFromFile::cast(const char *name)
+{
+  if(strcmp(name, "LocationInfo") == 0)
+    return(this);
+  return(Element::cast(name));
+}
+
 int
 LocFromFile::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String filename;
-  int res = cp_va_parse(conf, this, errh, &filename);
+  int res = cp_va_parse(conf, this, errh,
+                        cpString, "filename",  &filename,
+                        cpEnd);
   if(res == 0){
     FILE *fp = fopen(filename.cc(), "r");
     if(fp == 0)
-      return(errh->error("cannot open %s", filename.cc()));
+      return(errh->error("cannot open file %s", filename.cc()));
     char buf[512];
     while(fgets(buf, sizeof(buf), fp)){
       struct delta d;
@@ -44,7 +55,7 @@ LocFromFile::configure(const Vector<String> &conf, ErrorHandler *errh)
         _deltas.push_back(d);
       } else {
         fclose(fp);
-        return(errh->error("cannot parse a line in %s", filename.cc()));
+        return(errh->error("cannot parse a line in file %s", filename.cc()));
       }
     }
     fclose(fp);
