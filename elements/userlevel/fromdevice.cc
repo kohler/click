@@ -189,21 +189,19 @@ FromDevice::initialize(ErrorHandler *errh)
   int fd = pcap_fileno(_pcap);
   fcntl(fd, F_SETFL, O_NONBLOCK);
 
-#if defined(BIOCSSEESENT) || defined(__FreeBSD__)
+#ifdef BIOCSSEESENT
   {
     int no = 0;
-    if(ioctl(fd, BIOCSSEESENT, &no) != 0){
+    if (ioctl(fd, BIOCSSEESENT, &no) != 0)
       return errh->error("FromDevice: BIOCSEESENT failed");
-    }
   }
 #endif
 
-#if defined(BIOCIMMEDIATE) || defined(__FreeBSD__)
+#ifdef BIOCIMMEDIATE
   {
     int yes = 1;
-    if(ioctl(fd, BIOCIMMEDIATE, &yes) != 0){
+    if (ioctl(fd, BIOCIMMEDIATE, &yes) != 0)
       return errh->error("FromDevice: BIOCIMMEDIATE failed");
-    }
   }
 #endif
 
