@@ -140,7 +140,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
       private:
 
-	enum { NPKT = 1024, NNOTE = 256 };
+	enum { NPKT = 512, NNOTE = 128 };
 	
 	Flow *_next;
 	IPFlowID _flowid;
