@@ -21,14 +21,14 @@ annotation to the corresponding GW (if specified), and emits the packet on the
 indicated OUTput port.
 
 Each argument is a route, specifying a destination and mask, an optional
-gateway IP address, and an output port.
+gateway IP address, and an output port.  No destination-mask pair should occur
+more than once.
 
-DirectIPLookup element is optimized for lookup speed at the expense of
-extensive RAM usage. Each longest-prefix lookup is accomplished in one to
-maximum two DRAM accesses, regardless on the number of routing table
-entries. Individual entries can be dynamically added or removed to / from
-the routing table with relatively low CPU overhead, allowing for high
-update rates to be sustained.
+DirectIPLookup is optimized for lookup speed at the expense of extensive RAM
+usage. Each longest-prefix lookup is accomplished in one to maximum two DRAM
+accesses, regardless on the number of routing table entries. Individual
+entries can be dynamically added to or removed from the routing table with
+relatively low CPU overhead, allowing for high update rates.
 
 DirectIPLookup implements the I<DIR-24-8-BASIC> lookup scheme described by
 Gupta, Lin, and McKeown in the paper cited below.
@@ -37,9 +37,18 @@ Gupta, Lin, and McKeown in the paper cited below.
 
 Outputs a human-readable version of the current routing table.
 
+=h lookup read-only
+
+Reports the OUTput port and GW corresponding to an address.
+
 =h add write-only
 
-Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'.
+Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'. Should
+fail if a route for C<ADDR/MASK> already exists, but currently does not.
+
+=h set write-only
+
+Sets a route, whether or not a route for the same prefix already exists.
 
 =h remove write-only
 
@@ -47,9 +56,10 @@ Removes a route from the table. Format should be `C<ADDR/MASK>'.
 
 =h ctrl write-only
 
-Adds or removes a group of routes. Write `C<add ADDR/MASK [GW] OUT>' to add a
-route, and `C<remove ADDR/MASK>' to remove a route. You can supply multiple
-commands, one per line; all commands are executed as one atomic operation.
+Adds or removes a group of routes. Write `C<add>/C<set ADDR/MASK [GW] OUT>' to
+add a route, and `C<remove ADDR/MASK>' to remove a route. You can supply
+multiple commands, one per line; all commands are executed as one atomic
+operation.
 
 =h flush write-only
 

@@ -22,6 +22,10 @@ deleting of routes.
 
 Outputs a human-readable version of the current routing table.
 
+=h lookup read-only
+
+Reports the OUTput port and GW corresponding to an address.
+
 =a LinearIPLookup, SortedIPLookup, LinuxIPLookup, TrieIPLookup,
 DirectIPLookup */
 

@@ -27,22 +27,28 @@ particular routing table elements.
 
 =over 4
 
-=item C<int B<add_route>(const IPRoute& r, ErrorHandler *errh)>
+=item C<int B<add_route>(const IPRoute& r, bool set, IPRoute* old_route, ErrorHandler *errh)>
 
-Adds a route sending packets with destination addresses matching
-C<r.addr/r.mask> to gateway C<r.gw>, via the element's output port
-C<r.port>. Any existing route for C<dst/mask> is silently overwritten. Any
-errors are reported to C<errh>. Should return 0 on success and negative on
-failure. The default implementation reports an error "cannot add routes to
-this routing table".
+Add a route sending packets with destination addresses matching
+C<r.addr/r.mask> to gateway C<r.gw>, via output port C<r.port>.  If a route
+for this exact prefix already exists, then the behavior depends on C<set>.  If
+C<set> is true, then any existing route is silently overwritten (after
+possibly being stored in C<*old_route>); if C<set> is false, the function
+should return C<-EEXIST>.  Report errors to C<errh>.  Should return 0 on
+success and negative on failure.  The default implementation reports an error
+"cannot add routes to this routing table".
 
-=item C<int B<remove_route>(const IPRoute& r, ErrorHandler *errh)>
+=item C<int B<remove_route>(const IPRoute& r, IPRoute* old_route, ErrorHandler *errh)>
 
 Removes the route sending packets with destination addresses matching
-C<r.addr/r.mask> to gateway C<r.gw>, via the element's output port
-C<r.port>. Any errors are reported to C<errh>. Should return 0 on success and
-negative on failure.  The default implementation reports an error "cannot
-delete routes from this routing table".
+C<r.addr/r.mask> to gateway C<r.gw>, via the element's output port C<r.port>.
+All four fields must match, unless C<r.port> is less than 0, in which case
+only C<r.addr/r.mask> must match.  If no route for that prefix exists, the
+function should return C<-ENOENT>; otherwise, the old route should be stored
+in C<*old_route> (assuming it's not null).  Any errors are reported to
+C<errh>.  Should return 0 on success and negative on failure.  The default
+implementation reports an error "cannot delete routes from this routing
+table".
 
 =item C<int B<lookup_route>(IPAddress dst, IPAddress &gw_return) const>
 
@@ -99,7 +105,8 @@ the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
 
 =back
 
-=a StaticIPLookup, LinearIPLookup, DirectIPLookup */
+=a StaticIPLookup, LinearIPLookup, DirectIPLookup, RadixIPLookup,
+TrieIPLookup */
 
 struct IPRoute {
     IPAddress addr;

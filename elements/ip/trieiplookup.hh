@@ -35,9 +35,18 @@ Warning: This element is experimental.
 
 Outputs a human-readable version of the current routing table.
 
+=h lookup read-only
+
+Reports the OUTput port and GW corresponding to an address.
+
 =h add write-only
 
-Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'.
+Adds a route to the table. Format should be `C<ADDR/MASK [GW] OUT>'. Should
+fail if a route for C<ADDR/MASK> already exists, but currently does not.
+
+=h set write-only
+
+Sets a route, whether or not a route for the same prefix already exists.
 
 =h remove write-only
 
@@ -45,9 +54,10 @@ Removes a route from the table. Format should be `C<ADDR/MASK>'.
 
 =h ctrl write-only
 
-Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
-`C<remove ADDR/MASK>' to remove a route. You can supply multiple commands, one
-per line; all commands are executed as one atomic operation.
+Adds or removes a group of routes. Write `C<add>/C<set ADDR/MASK [GW] OUT>' to
+add a route, and `C<remove ADDR/MASK>' to remove a route. You can supply
+multiple commands, one per line; all commands are executed as one atomic
+operation.
 
 =a IPRouteTable, StaticIPLookup, LinearIPLookup, SortedIPLookup,
 DirectIPLookup, TrieIPLookup
