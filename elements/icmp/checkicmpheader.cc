@@ -40,9 +40,10 @@ const char *CheckICMPHeader::reason_texts[NREASONS] = {
 };
 
 CheckICMPHeader::CheckICMPHeader()
-  : Element(1, 1), _drops(0), _reason_drops(0)
+  : Element(1, 1), _reason_drops(0)
 {
   MOD_INC_USE_COUNT;
+  _drops = 0;
 }
 
 CheckICMPHeader::~CheckICMPHeader()
@@ -72,10 +73,11 @@ CheckICMPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   _verbose = verbose;
   if (details)
-    _reason_drops = new int[NREASONS];
+    _reason_drops = new u_atomic32_t[NREASONS];
   
   return 0;
 }
+
 
 Packet *
 CheckICMPHeader::drop(Reason reason, Packet *p)

@@ -50,7 +50,9 @@ FastUDPSource::~FastUDPSource()
 int
 FastUDPSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  bool _cksum = true;
+  _cksum = true;
+  _active = true;
+  _interval = 0;
   unsigned sp, dp;
   unsigned rate;
   int limit;
@@ -66,6 +68,8 @@ FastUDPSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "dst port", &dp,
 		  cpOptional,
 		  cpBool, "do UDP checksum?", &_cksum,
+		  cpUnsigned, "interval", &_interval,
+		  cpBool, "active?", &_active,
 		  0) < 0)
     return -1;
   if (sp >= 0x10000 || dp >= 0x10000)
@@ -87,15 +91,34 @@ FastUDPSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+void
+FastUDPSource::incr_ports()
+{
+  click_ip *ip = reinterpret_cast<click_ip *>(_packet->data()+14);
+  click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
+  _incr++;
+  udp->uh_sport = htons(_sport+_incr);
+  udp->uh_dport = htons(_dport+_incr);
+  udp->uh_sum = 0;
+  unsigned short len = _len-14-sizeof(click_ip);
+  if (_cksum) {
+    unsigned csum = ~in_cksum((unsigned char *)udp, len) & 0xFFFF;
+    udp->uh_sum = csum_tcpudp_magic(_sipaddr.s_addr, _dipaddr.s_addr,
+				    len, IP_PROTO_UDP, csum);
+  } else
+    udp->uh_sum = 0;
+}
+
 int 
 FastUDPSource::initialize(ErrorHandler *)
 {
   _count = 0;
+  _incr = 0;
   _packet = Packet::make(_len);
   memcpy(_packet->data(), &_ethh, 14);
   click_ip *ip = reinterpret_cast<click_ip *>(_packet->data()+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
-  
+ 
   // set up IP header
   ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
@@ -107,6 +130,7 @@ FastUDPSource::initialize(ErrorHandler *)
   ip->ip_tos = 0;
   ip->ip_off = 0;
   ip->ip_ttl = 250;
+  ip->ip_sum = 0;
   ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
   _packet->set_dst_ip_anno(IPAddress(_dipaddr));
   _packet->set_ip_header(ip, sizeof(click_ip));
@@ -114,6 +138,7 @@ FastUDPSource::initialize(ErrorHandler *)
   // set up UDP header
   udp->uh_sport = htons(_sport);
   udp->uh_dport = htons(_dport);
+  udp->uh_sum = 0;
   unsigned short len = _len-14-sizeof(click_ip);
   udp->uh_ulen = htons(len);
   if (_cksum) {
@@ -141,7 +166,7 @@ FastUDPSource::pull(int)
 {
   Packet *p = 0;
 
-  if (_limit != NO_LIMIT && _count >= _limit) return 0;
+  if (!_active || (_limit != NO_LIMIT && _count >= _limit)) return 0;
 
   if(_rate_limited){
     struct timeval now;
@@ -156,13 +181,15 @@ FastUDPSource::pull(int)
     p = reinterpret_cast<Packet *>(_skb);
   }
 
-  if(p){
-assert(_skb->users > 1);
+  if(p) {
+    assert(_skb->users > 1);
     _count++;
     if(_count == 1)
       _first = click_jiffies();
     if(_limit != NO_LIMIT && _count >= _limit)
       _last = click_jiffies();
+    if(_interval>0 && !(_count%_interval))
+      incr_ports();
   }
 
   return(p);
@@ -174,6 +201,7 @@ FastUDPSource::reset()
   _count = 0;
   _first = 0;
   _last = 0;
+  _incr = 0;
 }
 
 static String
@@ -197,7 +225,7 @@ FastUDPSource_read_rate_handler(Element *e, void *)
   }
 }
 
-static int
+int
 FastUDPSource_reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
 {
@@ -206,12 +234,58 @@ FastUDPSource_reset_write_handler
   return 0;
 }
 
+int
+FastUDPSource_limit_write_handler
+(const String &in_s, Element *e, void *, ErrorHandler *errh)
+{
+  FastUDPSource *c = (FastUDPSource *)e;
+  String s = cp_uncomment(in_s);
+  unsigned limit;
+  if (!cp_unsigned(s, &limit))
+    return errh->error("limit parameter must be integer >= 0");
+  c->_limit = (limit >= 0 ? limit : c->NO_LIMIT);
+  return 0;
+}
+
+int
+FastUDPSource_rate_write_handler
+(const String &in_s, Element *e, void *, ErrorHandler *errh)
+{
+  FastUDPSource *c = (FastUDPSource *)e;
+  String s = cp_uncomment(in_s);
+  unsigned rate;
+  if (!cp_unsigned(s, &rate))
+    return errh->error("rate parameter must be integer >= 0");
+  if (rate > GapRate::MAX_RATE)
+    // report error rather than pin to max
+    return errh->error("rate too large; max is %u", GapRate::MAX_RATE);
+  c->_rate.set_rate(rate);
+  return 0;
+}
+
+int
+FastUDPSource_active_write_handler
+(const String &in_s, Element *e, void *, ErrorHandler *errh)
+{
+  FastUDPSource *c = (FastUDPSource *)e;
+  String s = cp_uncomment(in_s);
+  bool active;
+  if (!cp_bool(s, &active)) 
+    return errh->error("active parameter must be boolean");
+  c->_active = active;
+  if (active) c->reset();
+  return 0;
+}
+
 void
 FastUDPSource::add_handlers()
 {
   add_read_handler("count", FastUDPSource_read_count_handler, 0);
   add_read_handler("rate", FastUDPSource_read_rate_handler, 0);
+  add_write_handler("rate", FastUDPSource_rate_write_handler, 0);
   add_write_handler("reset", FastUDPSource_reset_write_handler, 0);
+  add_write_handler("active", FastUDPSource_active_write_handler, 0);
+  add_write_handler("limit", FastUDPSource_limit_write_handler, 0);
 }
 
 ELEMENT_REQUIRES(linuxmodule)

@@ -27,13 +27,10 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
+#include <click/atomic.hh>
 
-class DecIPTTL : public Element {
+class DecIPTTL : public Element { public:
 
-  int _drops;
-  
- public:
-  
   DecIPTTL();
   ~DecIPTTL();
   
@@ -41,13 +38,17 @@ class DecIPTTL : public Element {
   const char *processing() const		{ return "a/ah"; }
   void notify_noutputs(int);
   
-  int drops()					{ return _drops; }
+  u_int32_t drops()				{ return _drops; }
   
   DecIPTTL *clone() const;
   void add_handlers();
 
   Packet *simple_action(Packet *);
   void drop_it(Packet *);
+  
+ private:
+
+  u_atomic32_t _drops;
   
 };
 

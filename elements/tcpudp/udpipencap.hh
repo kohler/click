@@ -23,6 +23,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
+#include <click/atomic.hh>
 #include <click/click_udp.h>
 
 class UDPIPEncap : public Element {
@@ -33,7 +34,7 @@ class UDPIPEncap : public Element {
   unsigned short _dport;
   bool _cksum : 1;
   bool _aligned : 1;
-  unsigned short _id;
+  u_atomic32_t _id;
 
  public:
   

@@ -76,7 +76,7 @@ CheckIPHeader2::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   _verbose = verbose;
   if (details)
-    _reason_drops = new int[NREASONS];
+    _reason_drops = new u_atomic32_t[NREASONS];
 
   return 0;
 }

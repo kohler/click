@@ -59,3 +59,5 @@ StoreIPAddress::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(StoreIPAddress)
+ELEMENT_MT_SAFE(StoreIPAddress)
+

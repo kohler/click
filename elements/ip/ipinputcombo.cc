@@ -32,9 +32,10 @@
 #include "elements/standard/alignmentinfo.hh"
 
 IPInputCombo::IPInputCombo()
-  : _drops(0), _bad_src(0)
+  : _bad_src(0)
 {
   MOD_INC_USE_COUNT;
+  _drops = 0;
   add_input();
   add_output();
 }
@@ -189,3 +190,5 @@ IPInputCombo::add_handlers()
 }
 
 EXPORT_ELEMENT(IPInputCombo)
+ELEMENT_MT_SAFE(IPInputCombo)
+

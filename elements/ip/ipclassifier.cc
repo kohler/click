@@ -57,3 +57,5 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
 
 ELEMENT_REQUIRES(Classifier)
 EXPORT_ELEMENT(IPClassifier)
+ELEMENT_MT_SAFE(IPClassifier)
+

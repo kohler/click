@@ -28,6 +28,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
+#include <click/atomic.hh>
 #include <click/click_ip.h>
 
 class IPEncap : public Element {
@@ -39,7 +40,7 @@ class IPEncap : public Element {
   bool _aligned;
 #endif
 
-  short _id;
+  u_atomic32_t _id;
 
  public:
   

@@ -46,3 +46,4 @@ UnstripIPHeader::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(UnstripIPHeader)
+ELEMENT_MT_SAFE(UnstripIPHeader)

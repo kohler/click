@@ -146,6 +146,24 @@ if test $linuxdir != NONE -a $linuxdir != no -a $enable_linuxmodule = yes; then
 fi
 AC_SUBST(linuxdir)
 
+dnl 
+dnl build with multithread support?
+dnl
+
+AC_ARG_WITH(mt, 
+            [  --with-mt[=MAX_THREADS]      compile with multithread support (max number threads = MAX_THREADS [4])],
+            [mtnt=$withval; if test -z "$withval" -o "$withval" = yes; then mtnt=4; fi; mtsupport=YES],
+            mtsupport=NO)
+
+if test $mtsupport = YES; then
+  AC_DEFINE_UNQUOTED(__CLICK_NCPUS__, $mtnt)
+  AC_DEFINE_UNQUOTED(__MTCLICK__, 1)
+  saveflags="$CPPFLAGS"
+  CPPFLAGS="$saveflags -D__MTCLICK__"
+else
+  AC_DEFINE_UNQUOTED(__CLICK_NCPUS__, 1)
+fi
+
 AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
   AC_TRY_RUN([int main(int c, char **v) {
 #ifdef __linux__

@@ -90,7 +90,7 @@ IPEncap::simple_action(Packet *p_in)
   ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
   ip->ip_len = htons(p->length());
-  ip->ip_id = htons(_id++);
+  ip->ip_id = htons(_id.read_and_add(1));
   ip->ip_p = _ip_p;
   ip->ip_src = _ip_src;
   ip->ip_dst = _ip_dst;
@@ -116,3 +116,5 @@ IPEncap::simple_action(Packet *p_in)
 }
 
 EXPORT_ELEMENT(IPEncap)
+ELEMENT_MT_SAFE(IPEncap)
+

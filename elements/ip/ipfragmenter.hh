@@ -29,12 +29,13 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
+#include <click/atomic.hh>
 
 class IPFragmenter : public Element {
 
   unsigned _mtu;
-  int _drops;
-  int _fragments;
+  u_atomic32_t _drops;
+  u_atomic32_t _fragments;
 
   void fragment(Packet *);
   int optcopy(const click_ip *ip1, click_ip *ip2);
@@ -49,8 +50,8 @@ class IPFragmenter : public Element {
   void notify_noutputs(int);
   int configure(const Vector<String> &, ErrorHandler *);
   
-  int drops() const				{ return _drops; }
-  int fragments() const				{ return _fragments; }
+  u_int32_t drops() const			{ return _drops; }
+  u_int32_t fragments() const			{ return _fragments; }
   
   IPFragmenter *clone() const;
   void add_handlers();

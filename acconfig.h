@@ -8,9 +8,11 @@
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
 
-/* EXPORT_ELEMENT, ELEMENT_REQUIRES and ELEMENT_PROVIDES are noops. */
+/* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_MT_SAFE,
+ * and ELEMENT_PROVIDES are noops. */
 #define ELEMENT_REQUIRES(x)
 #define ELEMENT_PROVIDES(x)
+#define ELEMENT_MT_SAFE(x)
 #define EXPORT_ELEMENT(x)
 
 /* Define if <new.h> exists and works. */
@@ -72,6 +74,10 @@
 
 /* Define if you have -ldl. */
 #undef HAVE_LIBDL
+
+/* Define if click multithread support should be off */
+#undef __MTCLICK__
+#undef __CLICK_NCPUS__
 
 /* Define if you want to use the stride scheduler. */
 #undef HAVE_STRIDE_SCHED

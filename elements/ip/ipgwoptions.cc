@@ -227,3 +227,5 @@ IPGWOptions::add_handlers()
 }
 
 EXPORT_ELEMENT(IPGWOptions)
+ELEMENT_MT_SAFE(IPGWOptions)
+

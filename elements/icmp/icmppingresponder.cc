@@ -82,3 +82,4 @@ ICMPPingResponder::simple_action(Packet *p_in)
 }
 
 EXPORT_ELEMENT(ICMPPingResponder)
+ELEMENT_MT_SAFE(ICMPPingResponder)

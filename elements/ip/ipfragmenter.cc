@@ -29,11 +29,11 @@
 #include <click/glue.hh>
 
 IPFragmenter::IPFragmenter()
-  : _drops(0)
 {
   MOD_INC_USE_COUNT;
   _fragments = 0;
   _mtu = 0;
+  _drops = 0;
   add_input();
   add_output();
 }
@@ -206,3 +206,5 @@ IPFragmenter::add_handlers()
 
 
 EXPORT_ELEMENT(IPFragmenter)
+ELEMENT_MT_SAFE(IPFragmenter)
+

@@ -23,10 +23,11 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
+#include <click/atomic.hh>
 
 class IPInputCombo : public Element {
   
-  int _drops;
+  u_atomic32_t _drops;
   int _color;
 
   int _n_bad_src;
@@ -43,7 +44,7 @@ class IPInputCombo : public Element {
   const char *class_name() const		{ return "IPInputCombo"; }
   const char *processing() const		{ return AGNOSTIC; }
   
-  int drops() const				{ return _drops; }
+  u_int32_t drops() const			{ return _drops; }
   IPInputCombo *clone() const;
   void add_handlers();
   int configure(const Vector<String> &, ErrorHandler *);

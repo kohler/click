@@ -209,3 +209,5 @@ IPOutputCombo::push(int, Packet *p_in)
 }
 
 EXPORT_ELEMENT(IPOutputCombo)
+ELEMENT_MT_SAFE(IPOutputCombo)
+

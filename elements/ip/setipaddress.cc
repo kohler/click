@@ -53,3 +53,5 @@ SetIPAddress::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(SetIPAddress)
+ELEMENT_MT_SAFE(SetIPAddress)
+

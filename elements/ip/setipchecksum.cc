@@ -70,3 +70,5 @@ SetIPChecksum::simple_action(Packet *p_in)
 }
 
 EXPORT_ELEMENT(SetIPChecksum)
+ELEMENT_MT_SAFE(SetIPChecksum)
+

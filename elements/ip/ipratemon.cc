@@ -29,7 +29,7 @@
 #include <click/straccum.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <click/mplock.hh>
+#include <click/sync.hh>
 #include <click/llrpc.h>
 
 IPRateMonitor::IPRateMonitor()

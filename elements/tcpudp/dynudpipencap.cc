@@ -1,5 +1,5 @@
 /*
- * udpipencap.{cc,hh} -- element encapsulates packet in UDP/IP header
+ * dynudpipencap.{cc,hh} -- element encapsulates packet in UDP/IP header
  * Benjie Chen, Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -23,7 +23,7 @@
 #include <click/config.h>
 #include <click/package.hh>
 #include <click/click_ip.h>
-#include "udpipencap.hh"
+#include "dynudpipencap.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
@@ -32,28 +32,29 @@
 # include <net/checksum.h>
 #endif
 
-UDPIPEncap::UDPIPEncap()
+DynamicUDPIPEncap::DynamicUDPIPEncap()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
 }
 
-UDPIPEncap::~UDPIPEncap()
+DynamicUDPIPEncap::~DynamicUDPIPEncap()
 {
   MOD_DEC_USE_COUNT;
 }
 
-UDPIPEncap *
-UDPIPEncap::clone() const
+DynamicUDPIPEncap *
+DynamicUDPIPEncap::clone() const
 {
-  return new UDPIPEncap;
+  return new DynamicUDPIPEncap;
 }
 
 int
-UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
+DynamicUDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   bool do_cksum = true;
   unsigned sp, dp;
+  _interval = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpIPAddress, "source address", &_saddr,
 		  cpUnsigned, "source port", &sp,
@@ -61,6 +62,7 @@ UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpUnsigned, "destination port", &dp,
 		  cpOptional,
 		  cpBool, "do UDP checksum?", &do_cksum,
+		  cpUnsigned, "change interval", &_interval,
 		  0) < 0)
     return -1;
   if (sp >= 0x10000 || dp >= 0x10000)
@@ -70,6 +72,7 @@ UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
   _dport = dp;
   _id = 0;
   _cksum = do_cksum;
+  _count = 0;
 
 #ifdef __KERNEL__
   // check alignment
@@ -88,7 +91,7 @@ UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-UDPIPEncap::simple_action(Packet *p_in)
+DynamicUDPIPEncap::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->push(sizeof(click_udp) + sizeof(click_ip));
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
@@ -145,9 +148,15 @@ UDPIPEncap::simple_action(Packet *p_in)
   } else
     udp->uh_sum = 0;
  
+  unsigned old_count = _count.read_and_add(1);
+  if (old_count == _interval-1 && _interval > 0) {
+    _sport ++;
+    _dport ++;
+    _count = 0;
+  }
   return p;
 }
 
-EXPORT_ELEMENT(UDPIPEncap)
+EXPORT_ELEMENT(DynamicUDPIPEncap)
 ELEMENT_MT_SAFE(UDPIPEncap)
 

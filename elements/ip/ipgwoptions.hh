@@ -31,10 +31,11 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
+#include <click/atomic.hh>
 
 class IPGWOptions : public Element {
   
-  int _drops;
+  u_atomic32_t _drops;
   struct in_addr _my_ip;
   unsigned *_other_ips;
   int _n_other_ips;
@@ -51,7 +52,7 @@ class IPGWOptions : public Element {
   IPGWOptions *clone() const;
   void add_handlers();
 
-  int drops() { return(_drops); }
+  u_int32_t drops() const			{ return _drops; }
   
   Packet *handle_options(Packet *);
   Packet *simple_action(Packet *);

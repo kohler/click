@@ -46,7 +46,7 @@ subdivided by error. Only available if the DETAILS keyword argument was true.
 =a CheckIPHeader, CheckUDPHeader, MarkIPHeader */
 
 #include <click/element.hh>
-#include <click/glue.hh>
+#include <click/atomic.hh>
 
 class CheckICMPHeader : public Element { public:
   
@@ -66,8 +66,8 @@ class CheckICMPHeader : public Element { public:
  private:
   
   bool _verbose : 1;
-  int _drops;
-  int *_reason_drops;
+  u_atomic32_t _drops;
+  u_atomic32_t *_reason_drops;
 
   enum Reason {
     NOT_ICMP,

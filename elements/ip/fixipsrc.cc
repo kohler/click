@@ -66,9 +66,11 @@ FixIPSrc::fix_it(Packet *p_in)
   WritablePacket *p = p_in->uniqueify();
   click_ip *ip = p->ip_header();
   SET_FIX_IP_SRC_ANNO(p, 0);
+#if 0
   click_chatter("FixIPSrc changed %x to %x",
                 ip->ip_src.s_addr,
                 _my_ip.s_addr);
+#endif
   ip->ip_src = _my_ip;
   int hlen = ip->ip_hl << 2;
   ip->ip_sum = 0;
@@ -86,3 +88,5 @@ FixIPSrc::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(FixIPSrc)
+ELEMENT_MT_SAFE(FixIPSrc)
+

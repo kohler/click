@@ -1,8 +1,4 @@
 /*
- * saveipfields.{cc,hh} -- set IP TOS, TTL, and OFF annotations based on values
- * in packet data
- * Alex Snoeren, Eddie Kohler
- *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
@@ -23,40 +19,47 @@
 #endif
 #include <click/config.h>
 #include <click/package.hh>
-#include "saveipfields.hh"
-#include <click/click_ip.h>
-#include <click/confparse.hh>
+#include "cpuswitch.hh"
 #include <click/error.hh>
+#include <click/confparse.hh>
 
-SaveIPFields::SaveIPFields()
-  : Element(1, 1)
+CPUSwitch::CPUSwitch()
 {
   MOD_INC_USE_COUNT;
+  set_ninputs(1);
 }
 
-SaveIPFields::~SaveIPFields()
+CPUSwitch::~CPUSwitch()
 {
   MOD_DEC_USE_COUNT;
 }
 
-SaveIPFields *
-SaveIPFields::clone() const
+CPUSwitch *
+CPUSwitch::clone() const
 {
-  return new SaveIPFields;
+  return new CPUSwitch;
 }
 
-Packet *
-SaveIPFields::simple_action(Packet *p)
+void
+CPUSwitch::notify_noutputs(int i)
 {
-  const click_ip *ip = p->ip_header();
-  assert(ip);
-  p->set_ip_tos_anno(ip->ip_tos);
-  p->set_ip_ttl_anno(ip->ip_ttl);
-  p->set_ip_off_anno(ip->ip_off);
-  return p;
+  set_noutputs(i < 1 ? 1 : i);
 }
 
-ELEMENT_REQUIRES(false)
-EXPORT_ELEMENT(SaveIPFields)
-ELEMENT_MT_SAFE(SaveIPFields)
+int
+CPUSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+  if (cp_va_parse(conf, this, errh, 0) < 0) return -1;
+  return 0;
+}
+
+void
+CPUSwitch::push(int, Packet *p)
+{
+  int n = current->processor % noutputs();
+  output(n).push(p);
+}
+
+EXPORT_ELEMENT(CPUSwitch)
+ELEMENT_MT_SAFE(CPUSwitch)
 

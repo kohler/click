@@ -62,3 +62,5 @@ MarkIPHeader::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(MarkIPHeader)
+ELEMENT_MT_SAFE(MarkIPHeader)
+

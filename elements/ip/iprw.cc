@@ -366,11 +366,17 @@ IPRw::Pattern::create_mapping(int ip_p, const IPFlowID &in,
 			      int fport, int rport,
 			      Mapping *fmap, Mapping *rmap)
 {
+  static unsigned _printed = 0;
   unsigned short new_sport = 0;
   if (_sportl) {
     new_sport = find_sport();
-    if (!new_sport)
+    if (!new_sport) {
+      if (!_printed) { 
+	click_chatter("IPRw ran out of ports");
+	_printed = 1;
+      }
       return false;
+    }
   }
   
   IPFlowID out(in);

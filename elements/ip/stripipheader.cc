@@ -44,3 +44,5 @@ StripIPHeader::simple_action(Packet *p)
 }
 
 EXPORT_ELEMENT(StripIPHeader)
+ELEMENT_MT_SAFE(StripIPHeader)
+

@@ -27,11 +27,10 @@
 #include <click/glue.hh>
 
 DecIPTTL::DecIPTTL()
-  : _drops(0)
+  : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
-  add_input();
-  add_output();
+  _drops = 0;
 }
 
 DecIPTTL::~DecIPTTL()
@@ -105,3 +104,5 @@ DecIPTTL::add_handlers()
 }
 
 EXPORT_ELEMENT(DecIPTTL)
+ELEMENT_MT_SAFE(DecIPTTL)
+

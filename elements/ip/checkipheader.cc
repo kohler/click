@@ -41,11 +41,12 @@ const char *CheckIPHeader::reason_texts[NREASONS] = {
 };
 
 CheckIPHeader::CheckIPHeader()
-  : _bad_src(0), _drops(0), _reason_drops(0)
+  : _bad_src(0), _reason_drops(0)
 {
   MOD_INC_USE_COUNT;
   add_input();
   add_output();
+  _drops = 0;
 }
 
 CheckIPHeader::~CheckIPHeader()
@@ -93,7 +94,7 @@ CheckIPHeader::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   _verbose = verbose;
   if (details)
-    _reason_drops = new int[NREASONS];
+    _reason_drops = new u_atomic32_t[NREASONS];
 
 #ifdef __KERNEL__
   // check alignment
