@@ -48,23 +48,18 @@ int
 DynamicUDPIPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   bool do_cksum = true;
-  unsigned sp, dp;
   _interval = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpIPAddress, "source address", &_saddr,
-		  cpUnsigned, "source port", &sp,
+		  cpUDPPort, "source port", &_sport,
 		  cpIPAddress, "destination address", &_daddr,
-		  cpUnsigned, "destination port", &dp,
+		  cpUDPPort, "destination port", &_dport,
 		  cpOptional,
 		  cpBool, "do UDP checksum?", &do_cksum,
 		  cpUnsigned, "change interval", &_interval,
 		  0) < 0)
     return -1;
-  if (sp >= 0x10000 || dp >= 0x10000)
-    return errh->error("source or destination port too large");
   
-  _sport = sp;
-  _dport = dp;
   _id = 0;
   _cksum = do_cksum;
   _count = 0;

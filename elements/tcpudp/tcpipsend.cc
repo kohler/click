@@ -56,9 +56,9 @@ TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandl
   unsigned seqn, ackn;
   if(cp_va_space_parse(conf, me, errh,
        cpIPAddress, "source address", &saddr,
-       cpInteger, "source port", &sport,
+       cpTCPPort, "source port", &sport,
        cpIPAddress, "destination address", &daddr,
-       cpInteger, "destinatin port", &dport,
+       cpTCPPort, "destinatin port", &dport,
        cpUnsigned, "seq number", &seqn,
        cpUnsigned, "ack number", &ackn,
        cpByte, "bits", &bits,

@@ -36,8 +36,8 @@ class DynamicUDPIPEncap : public Element {
 
   struct in_addr _saddr;
   struct in_addr _daddr;
-  unsigned short _sport;
-  unsigned short _dport;
+  uint16_t _sport;
+  uint16_t _dport;
   bool _cksum : 1;
   bool _aligned : 1;
   uatomic32_t _id;
