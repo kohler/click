@@ -466,7 +466,7 @@ RouterThread::unschedule_all_tasks()
     unlock_tasks();
 }
 
-#if CLICK_DEBUG_SCHEDULE
+#if CLICK_DEBUG_SCHEDULING
 String
 RouterThread::thread_state_name(int ts)
 {
