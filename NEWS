@@ -57,6 +57,10 @@ Version 1.2.2
 
 ** Add SetPacketType, IPLookupRadix, ....
 
+** Renamed LookupIPRoute to StaticIPLookup, LookupIPRoute2 to
+   RadixIPLookup, and LookupIPRouteLinux to LinuxIPLookup. The old names
+   are still available.
+
 * Internal
 
 ** The format of `elements.conf' files has changed.

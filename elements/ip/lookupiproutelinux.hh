@@ -3,6 +3,7 @@
 
 /*
  * =c
+ * LinuxIPLookup(if0, if1, ..., ifN)
  * LookupIPRouteLinux(if0, if1, ..., ifN)
  * =s IP, classification
  * interface to Linux's routing table
@@ -29,6 +30,9 @@
  *   r[0] -> ... -> ToDevice(eth0)
  *   r[1] -> ... -> ToDevice(eth1)
  *   r[2] -> ICMPError(18.26.4.24, 3, 0) -> ...
+ *
+ * =a
+ * StaticIPLookup
  */
 
 #include <click/element.hh>
