@@ -236,10 +236,12 @@ ICMPPingRewriter::apply_pattern(const IPFlowID &flow)
   Mapping *reverse = new Mapping;
 
   if (forward && reverse) {
-    IPAddress nsrc = (_new_src ? _new_src : flow.saddr());
-    IPAddress ndst = (_new_dst ? _new_dst : flow.daddr());
-    IPFlowID new_flow(nsrc, _identifier, ndst, _identifier);
+    IPFlowID new_flow(_new_src, _identifier, _new_dst, _identifier);
     _identifier++;
+    if (!_new_src)
+      new_flow.set_saddr(flow.saddr());
+    if (!_new_dst)
+      new_flow.set_daddr(flow.daddr());
     Mapping::make_pair(flow, new_flow, forward, reverse);
 
     _request_map.insert(flow, forward);
