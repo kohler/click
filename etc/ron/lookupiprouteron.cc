@@ -103,7 +103,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
   const click_tcp *tcph= p->tcp_header();
   unsigned tcp_seq = ntohl(tcph->th_seq) + 
     ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2)+1;
-  click_chatter("syn seq: %u\n", tcp_seq);
+  //click_chatter("syn seq: %u\n", tcp_seq);
 
 
   tcph = p->tcp_header();
@@ -122,6 +122,8 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
       match->outstanding_syns++;
       duplicate_pkt(p);
     } else {
+      // this can happen if an identical flow is started before the last one
+      // was removed from the flow table.
       printf("FLOW match, port (%d) {%s}->{%s}\n", 
 	     match->outgoing_port,
 	     IPAddress(p->ip_header()->ip_src).s().cc(), 
