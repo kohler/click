@@ -25,10 +25,11 @@ struct click_ip {
 #if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
     uint8_t	ip_hl : 4;		/* 0     header length */
     uint8_t	ip_v : 4;		/*       version == 4 */
-#endif
-#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+#elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     uint8_t	ip_v : 4;		/* 0     version == 4 */
     uint8_t	ip_hl : 4;		/*       header length */
+#else
+#   error "unknown byte order"
 #endif
     uint8_t	ip_tos;			/* 1     type of service */
 #define IP_DSCPMASK 0xFC		/*         diffserv code point */
