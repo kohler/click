@@ -1,3 +1,8 @@
+2003-09-10 Wednesday 15:06  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/linktable.cc (1.18): top5 fixes first cut of
+	srscheduler
+
 2003-09-07 Sunday 23:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.hh (1.48): Added <clicknet/ether.h>
