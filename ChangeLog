@@ -1,3 +1,13 @@
+2001-08-19 Sunday 03:53  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS (1.20): nitlet
+
+2001-08-19 Sunday 03:53  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/: arpquerier.cc (1.37), arpquerier.hh (1.26):
+	add warning on missing dest IP addr anno; doc updates (inspired by
+	Tim Wilson <timwilson@mediaone.net>
+
 2001-08-18 Saturday 04:17  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/router.hh (1.23), lib/router.cc (1.107): bug fix
