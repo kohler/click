@@ -1,3 +1,35 @@
+2001-02-02 Friday 00:00  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/linuxmodule/: fastudpsrcip6.cc, fastudpsrcip6.hh,
+	fastudpsrcip6.cc, fastudpsrcip6.cc: [no log message]
+
+2001-02-01 Thursday 23:33  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/: protocoltranslator.cc, protocoltranslator.hh: The
+	elements is replaced by ProtocolTranslator64 and
+	ProtocolTranslator46.
+
+2001-02-01 Thursday 13:46  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/: ip6mirror.cc, ip6mirror.hh, markip6header.cc: [no
+	log message]
+
+2001-02-01 Thursday 11:34  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/linuxmodule/: fastudpsrcip6.cc, fastudpsrcip6.hh: for
+	ip6 udp packets.
+
+2001-02-01 Thursday 11:33  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ip6/: addresstranslator.cc, addresstranslator.hh,
+	protocoltranslator46.cc, protocoltranslator46.hh,
+	protocoltranslator64.cc, protocoltranslator64.hh: change arguments
+	of AddressTranslator, spilt ProtocolTranslator into two modules.
+
+2001-02-01 Thursday 11:31  Peilei Fan <peilei@lcs.mit.edu>
+
+	* conf/: ip64-nat.click, ip64-nat2.click: [no log message]
+
 2001-01-14 Sunday 18:13  Peilei Fan <peilei@lcs.mit.edu>
 
 	* elements/ip6/addresstranslator.cc: [no log message]
