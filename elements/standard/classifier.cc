@@ -154,6 +154,251 @@ Classifier::clone() const
 
 // OPTIMIZATION
 
+#define CLASSIFIER_ITERATIVE 1
+
+#if CLASSIFIER_ITERATIVE
+
+#define BEFORE_YES		0x00000000
+#define BEFORE_NO		0x00000001
+#define BEFORE_COMBINE		0x00000002
+#define STATE_FLAG		0x00000003
+#define SET_STATE(x, s)		((x) = ((x) & ~STATE_FLAG) | (s))
+#define YET_FLAG		0x00000004
+#define YES_OK_FLAG		0x00000008
+#define YES_OUTPUT(s)		((s >> 8)  & 0x00000FFF)
+#define NO_OUTPUT(s)		((s >> 20) & 0x00000FFF)
+#define MK_YES_OUTPUT(i)	((i << 8)  & 0x000FFF00)
+#define MK_NO_OUTPUT(i)		((i << 20) & 0xFFF00000)
+
+static void
+common_paths(Vector<int> &output, int yes_pos, int no_pos)
+{
+  assert(yes_pos <= no_pos && no_pos <= output.size());
+  Vector<int> result;
+  
+  int yi = yes_pos, ni = no_pos;
+  while (yi < no_pos && ni < output.size()) {
+    if (output[yi] == output[ni]) {
+      result.push_back(output[ni]);
+      yi++;
+      ni++;
+    }
+    // cast to unsigned so that outputs and FAILURE are bigger than
+    // internal nodes
+    while (yi < no_pos && ni < output.size() && (unsigned)output[yi] < (unsigned)output[ni])
+      yi++;
+    while (yi < no_pos && ni < output.size() && (unsigned)output[yi] > (unsigned)output[ni])
+      ni++;
+  }
+
+  if (result.size())
+    memcpy(&output[yes_pos], &result[0], sizeof(int) * result.size());
+  output.resize(yes_pos + result.size());
+}
+
+static void
+move_path(Vector<int> &output, int to_pos, int start_pos, int end_pos)
+{
+  assert(to_pos <= start_pos && start_pos <= end_pos && end_pos <= output.size());
+  if (to_pos == start_pos)
+    output.resize(end_pos);
+  else {
+    int len = end_pos - start_pos;
+    if (len)
+      memmove(&output[to_pos], &output[start_pos], sizeof(int) * len);
+    output.resize(to_pos + len);
+  }
+}
+
+/* The recursive check_path function below is easier to understand than this,
+ * but unfortunately, it seems to cause kernel crashes b/c of stack overflows.
+ * (Deep recursion.) This iterative version, based on the recursive version,
+ * should avoid such problems.
+ *
+ * The iterative transformation is pretty conventional. To transofrm a
+ * recursive function to iterative version, you explicitly store the required
+ * persistent state from each activation record.
+ *
+ * The check_path function walks over a path through the _exprs array. Since
+ * _exprs is noncircular -- every branch points forward (or to an output) --
+ * each path has a maximum length: _exprs.size() + 1. Since only one path is
+ * active at a time, the recursion has a maximum depth of _exprs.size(), and
+ * we can reserve _exprs.size() state words.
+ *
+ * What state do we need to keep? The list of current activations, obviously.
+ * And for each activation, the state it is in; whether 'yet' is true; whether
+ * the recursive call for the 'yes' branch succeeded; and the 'yes_output' and
+ * 'no_output' arrays. We store them as follows:
+ *
+ * - List of prior activations: Each activation corresponds to a single
+ *   expression number. Expression numbers are stored in 'path'. When 'path'
+ *   is empty the recursion is done. Making a recursive call == adding an
+ *   expr# to the end of 'path'. Returning from an activation == removing the
+ *   back end of 'path'. Current activation == back end of path.
+ *
+ * - State the activation is in: Three valid states, "BEFORE_YES" (have not
+ *   yet made recursive call along yes branch, the initial state), "BEFORE_NO"
+ *   (have not yet made recursive call along no branch), "BEFORE_COMBINE"
+ *   (after both recursive calls but before return). Stored in 'flags[expr#] &
+ *   STATE_FLAG'.
+ *
+ * - Whether 'yet' is true: Stored in 'flags[expr#] & YET_FLAG'.
+ *
+ * - Whether the recursive call for the 'yes' branch succeeded: Stored in
+ *   'flags[expr#] & YES_OK_FLAG'.
+ *
+ * - The 'yes_output' and 'no_output' arrays: Stored in 'output'. Say that an
+ *   activation starts with 'output.size() == X'. Then the iterative
+ *   activation, like the recursive activation, will return having appended
+ *   some vector (possibly empty) to 'output'. However, there is a difference.
+ *   The recursive version passes new vectors to recursive calls. Here, we
+ *   simply tack more data on to the single 'output' vector, and use indexes
+ *   to tell how long the recursive vectors would have been. Specifically, in
+ *   the "BEFORE_COMBINE" state, the vector 'yes_answer' is stored in 'output'
+ *   indices 'YES_OUTPUT(flags[expr#]) <= i < NO_OUTPUT(flags[expr#])', and
+ *   the vector 'no_answer' is stored in 'output' indices
+ *   'NO_OUTPUT(flags[expr#]) <= i < output.size()'. Before "BEFORE_COMBINE"
+ *   returns, it moves data around, and probably shrinks the 'output' vector,
+ *   so that its return value is as required.
+ *
+ * The return value for the most recently completed activation record is
+ * stored in 'bool result'.
+ * */
+
+bool
+Classifier::check_path_iterative(Vector<int> &output,
+				 int interested, int eventual) const
+{
+  Vector<int> flags(_exprs.size(), 0);
+  Vector<int> path;
+  path.reserve(_exprs.size() + 1);
+  path.push_back(0);
+
+  bool result = false;		// result of last check_path execution
+
+  // loop until path is empty
+  while (path.size()) {
+
+    int ei = path.back();
+    int flag = flags[ei];
+    bool yet = (flag & YET_FLAG) != 0;
+    int state = (flag & STATE_FLAG);
+
+    switch (state) {
+
+     case BEFORE_YES: {
+       // check for early breakout
+       result = false;
+       if (ei > interested && ei != eventual && !yet)
+	 goto back_up;
+       if (yet)
+	 output.push_back(ei);
+       assert(ei >= 0);
+       assert(!(flag & YES_OK_FLAG) && YES_OUTPUT(flag) == 0);
+
+       // store 'YES_OUTPUT'
+       flags[ei] = flag = flag | MK_YES_OUTPUT(output.size());
+
+       const Expr &e = _exprs[ei];
+       for (int i = 0; i < path.size() - 1; i++) {
+	 const Expr &old = _exprs[path[i]];
+	 bool yes = (old.yes == path[i+1]);
+	 if ((yes && old.implies_not(e)) || (!yes && old.not_implies_not(e)))
+	   goto yes_dead;
+       }
+
+       // if we get here, must check `yes' branch
+       flags[ei] = (flag & ~STATE_FLAG) | BEFORE_NO;       
+       if (ei == interested && e.yes == eventual)
+	 yet = true;
+       ei = e.yes;
+       goto step_forward;
+     }
+
+     yes_dead:
+     case BEFORE_NO: {
+       // store 'NO_OUTPUT'
+       flags[ei] = flag = flag | MK_NO_OUTPUT(output.size()) | (result ? YES_OK_FLAG : 0);
+       result = false;
+
+       const Expr &e = _exprs[ei];
+       for (int i = 0; i < path.size() - 1; i++) {
+	 const Expr &old = _exprs[path[i]];
+	 bool yes = (old.yes == path[i+1]);
+	 if ((yes && old.implies(e)) || (!yes && old.not_implies(e)))
+	   goto no_dead;
+       }
+
+       // if we get here, must check no branch
+       flags[ei] = (flag & ~STATE_FLAG) | BEFORE_COMBINE;
+       if (ei == interested && e.no == eventual)
+	 yet = true;
+       ei = e.no;
+       goto step_forward;
+     }
+
+     step_forward: {
+       // move to 'ei'; check for output port rather than internal node
+       if (ei <= 0) {
+	 if (yet)
+	   output.push_back(ei);
+	 result = yet;
+	 /* do not move forward */
+       } else {
+	 flags[ei] = BEFORE_YES | (yet ? YET_FLAG : 0);
+	 path.push_back(ei);
+       }
+       break;
+     }
+     
+     no_dead:
+     case BEFORE_COMBINE: {
+       const Expr &e = _exprs[ei];
+       bool yes_ok = ((flag & YES_OK_FLAG) != 0);
+       bool no_ok = result;
+       
+       if (ei == interested) {
+	 if (e.yes == eventual)
+	   move_path(output, YES_OUTPUT(flag), YES_OUTPUT(flag), NO_OUTPUT(flag));
+	 else
+	   move_path(output, YES_OUTPUT(flag), NO_OUTPUT(flag), output.size());
+	 result = (e.yes == eventual ? yes_ok : no_ok);
+	 
+       } else if (yes_ok && no_ok) {
+	 common_paths(output, YES_OUTPUT(flag), NO_OUTPUT(flag));
+	 result = true;
+	 
+       } else if (!yes_ok && !no_ok)
+	 result = false;
+       
+       else if (yes_ok) {
+	 move_path(output, YES_OUTPUT(flag), YES_OUTPUT(flag), NO_OUTPUT(flag));
+	 result = true;
+
+       } else {			// no_ok
+	 move_path(output, YES_OUTPUT(flag), NO_OUTPUT(flag), output.size());
+	 result = true;
+       }
+
+       goto back_up;
+     }
+
+     back_up: {
+       path.pop_back();
+       break;
+     }
+
+     default:
+      assert(0);
+      
+    }
+  }
+
+  return result;
+}
+
+#else /* !CLASSIFIER_ITERATIVE */
+
 static void
 common_paths(const Vector<int> &a, const Vector<int> &b, Vector<int> &out)
 {
@@ -238,6 +483,8 @@ Classifier::check_path(const Vector<int> &path, Vector<int> &output,
   }
 }
 
+#endif /* CLASSIFIER_ITERATIVE */
+
 int
 Classifier::check_path(int ei, bool yes) const
 {
@@ -245,7 +492,11 @@ Classifier::check_path(int ei, bool yes) const
   //fprintf(stderr, "%d.%s -> %d\n", ei, yes?"y":"n", next_ei);
   if (next_ei > 0) {
     Vector<int> x;
+#if CLASSIFIER_ITERATIVE
+    check_path_iterative(x, ei, next_ei);
+#else
     check_path(Vector<int>(), x, 0, ei, next_ei, true, false);
+#endif
     next_ei = (x.size() ? x.back() : FAILURE);
   }
   // next_ei = check_path(Vector<int>(), 0, ei, next_ei, true, false);
@@ -348,7 +599,7 @@ Classifier::optimize_exprs(ErrorHandler *errh)
   do {
     for (int i = 0; i < _exprs.size(); i++)
       drift_expr(i);
-    combine_compatible_states();
+    //combine_compatible_states();
   } while (remove_unused_states()); // || remove_duplicate_states());
   
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }

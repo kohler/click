@@ -124,9 +124,6 @@ class Classifier : public Element { public:
 
   void sort_and_expr_subtree(int, int, int);
   
-  bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
-  int check_path(int, bool) const;
-  void drift_expr(int);
   void combine_compatible_states();
   bool remove_unused_states();
   //int count_occurrences(const Expr &, int state, bool first) const;
@@ -137,6 +134,13 @@ class Classifier : public Element { public:
   static String program_string(Element *, void *);
   
   void length_checked_push(Packet *);
+
+ private:
+  
+  bool check_path_iterative(Vector<int> &, int interested, int eventual) const;
+  bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
+  int check_path(int, bool) const;
+  void drift_expr(int);
   
 };
 
