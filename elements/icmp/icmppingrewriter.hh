@@ -114,7 +114,7 @@ class ICMPPingRewriter : public Element { public:
 
   IPAddress _new_src;
   IPAddress _new_dst;
-  unsigned short _identifier;
+  uint16_t _identifier;
 
   enum { GC_INTERVAL_SEC = 300 };
 
