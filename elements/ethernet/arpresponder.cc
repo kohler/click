@@ -154,7 +154,6 @@ ARPResponder::simple_action(Packet *p)
     if(lookup(ipa, ena)){
       q = make_response(ea->arp_sha, ea->arp_spa,
 			ena.data(), ea->arp_tpa);
-      click_chatter("in arp responder: after make_response -1");
     }
   } else {
     struct in_addr ina;

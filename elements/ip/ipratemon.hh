@@ -65,7 +65,7 @@
 #include "ewma.hh"
 #include "vector.hh"
 
-struct HalfSecondsTimer {
+struct IPRateMonitor_HalfSecondsTimer {
   static unsigned now()			{ return click_jiffies() >> 3; }
   static unsigned freq()                { return CLICK_HZ >> 3; }
 };
@@ -96,7 +96,7 @@ public:
 
 private:
 
-  typedef RateEWMAX<5, 10, 2, HalfSecondsTimer> MyEWMA;
+  typedef RateEWMAX<5, 10, 2, IPRateMonitor_HalfSecondsTimer> MyEWMA;
   
   struct Stats;
   struct Counter {
@@ -249,13 +249,15 @@ IPRateMonitor::update(unsigned addr, int val, Packet *p,
     
   int fwd_rate = c->fwd_and_rev_rate.average(0); 
   int rev_rate = c->fwd_and_rev_rate.average(1); 
+  int scale = c->fwd_and_rev_rate.scale;
+  int freq = c->fwd_and_rev_rate.freq();
+  fwd_rate = (fwd_rate * freq) >> scale;
+  rev_rate = (rev_rate * freq) >> scale;
 
   if (_anno_packets) {
     // annotate packet with fwd and rev rates for inspection by CompareBlock
-    int scale = c->fwd_and_rev_rate.scale;
-    int freq = c->fwd_and_rev_rate.freq();
-    p->set_fwd_rate_anno((fwd_rate * freq) >> scale);
-    p->set_rev_rate_anno((rev_rate * freq) >> scale);
+    p->set_fwd_rate_anno(fwd_rate);
+    p->set_rev_rate_anno(rev_rate);
   }
 
   //

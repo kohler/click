@@ -123,8 +123,12 @@ Packet *
 IPRateMonitor::pull(int port)
 {
   Packet *p = input(port).pull();
-  if (p)
-    update_rates(p, port == 0, true);
+  if (p) {
+    bool ewma = ((unsigned) ((random() >> 5) & 0xffff) <= _ratio);
+    _lock->acquire();
+    update_rates(p, port == 0, ewma);
+    _lock->release();
+  }
   return p;
 }
 
@@ -197,9 +201,8 @@ start:
 
     // Shitty code, but avoids an update() and average() call if one of both
     // rates is not below thresh.
-    s->_parent->fwd_and_rev_rate.update(0, 0);
+    s->_parent->fwd_and_rev_rate.update_time();
     if (s->_parent->fwd_and_rev_rate.average(0) < thresh) {
-      s->_parent->fwd_and_rev_rate.update(0, 1);
       if (s->_parent->fwd_and_rev_rate.average(1) < thresh) {
         delete s;
         if ((_alloced_mem < memmax) ||
@@ -310,8 +313,7 @@ IPRateMonitor::print(Stats *s, String ip = "")
         this_ip = String(i);
       ret += this_ip;
 
-      c->fwd_and_rev_rate.update(0, 0);
-      c->fwd_and_rev_rate.update(0, 1);
+      c->fwd_and_rev_rate.update_time();
       ret += "\t"; 
       ret += cp_unparse_real(c->fwd_and_rev_rate.average(0) *
 	                     c->fwd_and_rev_rate.freq(),
@@ -537,11 +539,12 @@ IPRateMonitor::llrpc(unsigned command, void *data)
       s = s->counter[b]->next_level;
     }
 
+    unsigned freq = MyEWMA::freq();
+    unsigned scale = MyEWMA::scale;
+
     for (int i = 0; i < 256; i++) {
-      unsigned freq = s->counter[0]->fwd_and_rev_rate.freq();
-      unsigned scale = s->counter[0]->fwd_and_rev_rate.scale;
       if (s->counter[i]) {
-        s->counter[i]->fwd_and_rev_rate.update(0, which);
+        s->counter[i]->fwd_and_rev_rate.update_time();
 	averages[i] = 
 	  (s->counter[i]->fwd_and_rev_rate.average(which) * freq) >> scale;
       }
@@ -585,8 +588,7 @@ IPRateMonitor::llrpc(unsigned command, void *data)
       
       unsigned freq = s->counter[b]->fwd_and_rev_rate.freq();
       unsigned scale = s->counter[b]->fwd_and_rev_rate.scale;
-      s->counter[b]->fwd_and_rev_rate.update(0, 0);
-      s->counter[b]->fwd_and_rev_rate.update(0, 1);
+      s->counter[b]->fwd_and_rev_rate.update_time();
       averages[n*2+1] = 
 	(s->counter[b]->fwd_and_rev_rate.average(0) * freq) >> scale;
       averages[n*2+2] = 

@@ -15,6 +15,7 @@
 #endif
 #include "string.hh"
 #include "router.hh"
+#include "ipflowid.hh"
 #include "ipaddress.hh"
 #include "etheraddress.hh"
 
@@ -30,6 +31,9 @@ template class HashMapIterator<String, int>;
 
 #include "bighashmap.cc"
 template class BigHashMap<IPAddress, unsigned>;
+template class BigHashMap<IPFlowID, bool>;
+template class BigHashMapIterator<IPAddress, unsigned>;
+template class BigHashMapIterator<IPFlowID, bool>;
 
 #include "ewma.cc"
 template class DirectEWMAX<4, 10>;
