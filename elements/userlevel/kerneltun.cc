@@ -224,13 +224,12 @@ KernelTap::selected(int fd)
       return;
     }
     memcpy(p->data() + sizeof(*e), b + 4, cc - 4);
+    output(0).push(p);
 #elif defined (__linux__)
     // Linux prefixes packet 2 bytes of 0, then ether_header.
     Packet *p = Packet::make(b+2, cc-2);
-#else
-    Only know how to deal with Linux and BSDs.
-#endif
     output(0).push(p);
+#endif
   } else {
     perror("KernelTap read");
   }
