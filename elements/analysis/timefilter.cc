@@ -74,8 +74,12 @@ TimeFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	_last = last, _last_relative = false, _last_interval = false;
     else if (timerisset(&last_delta))
 	_last = last_delta, _last_relative = true, _last_interval = false;
-    else
+    else if (timerisset(&interval))
 	_last = interval, _last_relative = false, _last_interval = true;
+    else {
+	_last.tv_sec = 0x7FFFFFFF;
+	_last_relative = false, _last_interval = false;
+    }
 
     _ready = false;
     _stop = stop;
