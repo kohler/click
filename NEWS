@@ -72,7 +72,7 @@ Version 1.2.2   1.Sep.2001
 ** The format of `elements.conf' files has changed.
 
 ** The header files for ScheduleInfo, AddressInfo, AlignmentInfo, Error,
-   and DriverManager are stored in `C<include/click/standard>'. This makes
+   and DriverManager are stored in `<include/click/standard>'. This makes
    it simpler to distribute a self-contained Click library.
 
 ** Bug fix: Elements are uninitialized and destroyed in the reverse order
