@@ -19,72 +19,16 @@
 #include "modulepriv.hh"
 #include "clickfs_tree.hh"
 
-#include "kernelerror.hh"
 #include <click/lexer.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
 
-ErrorHandler *kernel_errh = 0;
-static Lexer *lexer = 0;
-Router *current_router = 0;
+ErrorHandler *click_logged_errh = 0;
+Router *click_router = 0;
 
 
-class BsdModuleLexerExtra : public LexerExtra { public:
-  BsdModuleLexerExtra() { }
-  void require(String, ErrorHandler *);
-};
-
-void
-BsdModuleLexerExtra::require(String r, ErrorHandler *errh)
-{
-  if (!click_has_provision(r))
-    errh->error("unsatisfied requirement `%s'", r.cc());
-}
-
-Router *
-parse_router(String s)
-{
-  BsdModuleLexerExtra lextra;
-
-  int cookie = lexer->begin_parse(s, "line ", &lextra);
-  while (lexer->ystatement())
-    /* do nothing */;
-  
-  Router *r = lexer->create_router();
-  
-  lexer->end_parse(cookie);
-  return r;
-}
-
-void
-kill_current_router()
-{
-  if (current_router) {
-    current_router->please_stop_driver();
-    // printf("  killed\n");
-    cleanup_router_element_procs();
-    // printf("  cleaned\n");
-    current_router->unuse();
-    // printf("  deleted\n");
-    current_router = 0;
-  }
-}
-
-void
-install_current_router(Router *r)
-{
-  current_router = r;
-  r->use();
-  init_router_element_procs();
-#if __MTCLICK__
-  if (r->initialized())
-    start_click_sched(r, click_threads(), kernel_errh);
-#else
-  if (r->initialized())
-    start_click_sched(r, 1, kernel_errh);
-#endif
-}
+/***************************** Global handlers *******************************/
 
 extern "C" void
 click_cycle_counter(int which, unsigned int *fnp, unsigned long long *valp);
@@ -103,7 +47,6 @@ read_version(Element *, void *)
   return String(CLICK_VERSION) + "\n";
 }
 
-#if 0		/* XXX   the BSD clickfs isn't this flexible yet.. */
 static String
 read_meminfo(Element *, void *)
 {
@@ -112,53 +55,19 @@ read_meminfo(Element *, void *)
   StringAccum sa;
   sa << "outstanding news " << click_outstanding_news << "\n";
   sa << "news " << click_new_count << "\n";
-#ifdef HAVE_READ_NET_SKBCOUNT
-  sa << "net_skbcount " << read_net_skbcount() << "\n";
-#endif
   return sa.take_string();
 }
 
-static String
-read_threads(Element *, void *)
+static int
+write_stop(const String &s, Element *, void *, ErrorHandler *errh)
 {
-  StringAccum sa;
-  spin_lock(&click_thread_spinlock);
-  if (click_thread_pids)
-    for (int i = 0; i < click_thread_pids->size(); i++)
-      sa << (*click_thread_pids)[i] << '\n';
-  spin_unlock(&click_thread_spinlock);
-  return sa.take_string();
-  //int x = atomic_read(&num_click_threads);
-  //return String(x) + "\n";
-}
-
-static String
-read_flatconfig(Element *, void *)
-{
-  if (current_router)
-    return current_router->flat_configuration_string();
-  else
-    return "";
-}
-
-static String
-read_list(Element *, void *)
-{
-  if (!current_router)
-    return "0\n";
-  else
-    return current_router->element_list_string();
-}
-
-static String
-read_classes(Element *, void *)
-{
-  Vector<String> v;
-  lexer->element_type_names(v);
-  StringAccum sa;
-  for (int i = 0; i < v.size(); i++)
-    sa << v[i] << "\n";
-  return sa.take_string();
+  if (click_router) {
+    int n = 1;
+    (void) cp_integer(cp_uncomment(s), &n);
+    click_router->adjust_driver_reservations(-n);
+  } else
+    errh->message("no router installed");
+  return 0;
 }
 
 static String
@@ -175,8 +84,8 @@ read_packages(Element *, void *)
 static String
 read_requirements(Element *, void *)
 {
-  if (current_router) {
-    const Vector<String> &v = current_router->requirements();
+  if (click_router) {
+    const Vector<String> &v = click_router->requirements();
     StringAccum sa;
     for (int i = 0; i < v.size(); i++)
       sa << v[i] << "\n";
@@ -185,64 +94,81 @@ read_requirements(Element *, void *)
     return "";
 }
 
-static String
-read_priority(Element *, void *)
-{
-  return String(PRIO2NICE(click_thread_priority)) + "\n";
-}
 
-static int
-write_priority(const String &conf, Element *, void *, ErrorHandler *errh)
-{
-  int priority;
-  if (!cp_integer(cp_uncomment(conf), &priority))
-    return errh->error("priority must be integer");
+/****************************** Error handlers *******************************/
 
-  priority = NICE2PRIO(priority);
-  if (priority < MIN_PRIO) {
-    priority = MIN_PRIO;
-    errh->warning("priority pinned at %d", PRIO2NICE(priority));
-  } else if (priority > MAX_PRIO) {
-    priority = MAX_PRIO;
-    errh->warning("priority pinned at %d", PRIO2NICE(priority));
-  }
+class KernelErrorHandler : public ErrorHandler { public:
 
-  spin_lock(&click_thread_spinlock);
-  click_thread_priority = priority;
-  for (int i = 0; i < click_thread_pids->size(); i++) {
-    struct proc *p = find_task_by_pid((*click_thread_pids)[i]);
-    if (p)
-      TASK_PRIO(task) = priority;
-  }
-  spin_unlock(&click_thread_spinlock);
+  KernelErrorHandler(bool log)		: _log(log) { reset_counts(); }
   
-  return 0;
-}
+  int nwarnings() const			{ return _nwarnings; }
+  int nerrors() const			{ return _nerrors; }
+  void reset_counts()			{ _nwarnings = _nerrors = 0; }
+  
+  void handle_text(Seriousness, const String &);
 
+ private:
 
-static void
-next_root_handler(const char *name, ReadHandler read, void *read_thunk,
-		  WriteHandler write, void *write_thunk)
+  bool _log;
+  int _nwarnings;
+  int _nerrors;
+  
+};
+
+static StringAccum *error_log;
+
+void
+KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  if (read)
-    Router::add_global_read_handler(name, read, read_thunk);
-  if (write)
-    Router::add_global_write_handler(name, write, write_thunk);
-  register_handler(proc_click_entry, Router::find_global_handler(name));
-}
-#endif
+  if (seriousness <= ERR_MESSAGE)
+    /* do nothing */;
+  else if (seriousness == ERR_WARNING)
+    _nwarnings++;
+  else
+    _nerrors++;
 
-extern "C" int
-click_add_element_type(const char *name, Element *e)
-{
-  return lexer->add_element_type(name, e);
+  // print message to syslog
+  int pos = 0, nl;
+  while ((nl = message.find_left('\n', pos)) >= 0) {
+    String x = message.substring(pos, nl - pos);
+    printf("%s\n", x.cc());
+    pos = nl + 1;
+  }
+  if (pos < message.length()) {
+    String x = message.substring(pos);
+    printf("%s\n", x.cc());
+  }
+
+  // log message if required
+  if (_log && error_log)
+    *error_log << message << "\n";
+  
+  if (seriousness == ERR_FATAL)
+    panic("click");
 }
 
-extern "C" void
-click_remove_element_type(int i)
+static String
+read_errors(Element *, void *)
 {
-  lexer->remove_element_type(i);
+  if (error_log)
+    // OK to return a stable_string, even though the data is not really
+    // stable, because we use it for a very short time (HANDLER_REREAD).
+    // Problems are possible, of course.
+    return String::stable_string(error_log->data(), error_log->length());
+  else
+    return String::out_of_memory_string();
 }
+
+void
+click_clear_error_log()
+{
+  if (error_log)
+    error_log->clear();
+}
+
+
+
+/******************** Module initialization and cleanup **********************/
 
 extern void export_elements(Lexer *);
 
@@ -257,23 +183,48 @@ extern "C" void (*ng_ether_output_p)(struct ifnet *, struct mbuf **);
 extern "C" int
 init_module()
 {
-  // first call C++ static initializers
+  // C++ static initializers
   String::static_initialize();
   cp_va_static_initialize();
 
-  syslog_errh = new SyslogErrorHandler;
-  kernel_errh = new KernelErrorHandler;
-  ErrorHandler *default_errh = new LandmarkErrorHandler(syslog_errh, "chatter");
-  ErrorHandler::static_initialize(default_errh);
+  // error initialization
+  syslog_errh = new KernelErrorHandler(false);
+  click_logged_errh = new KernelErrorHandler(true);
+  ErrorHandler::static_initialize(new LandmarkErrorHandler(syslog_errh, "chatter"));
+  error_log = new StringAccum;
 
-  init_click_sched();
-  clickfs_tree_init();
-  
+  // default provisions
   CLICK_DEFAULT_PROVIDES;
-  lexer = new Lexer(kernel_errh);
-  export_elements(lexer);
-  
-  current_router = 0;
+
+  // thread manager, sk_buff manager, config manager
+  click_init_sched();
+  click_init_config();
+
+  // global handlers
+  Router::add_global_read_handler("version", read_version, 0);
+  Router::add_global_read_handler("packages", read_packages, 0);
+  Router::add_global_read_handler("requirements", read_requirements, 0);
+  Router::add_global_read_handler("meminfo", read_meminfo, 0);
+  Router::add_global_read_handler("cycles", read_cycles, 0);
+  Router::add_global_write_handler("stop", write_stop, 0);
+  Router::add_global_read_handler("errors", read_errors, 0);
+  Router::change_handler_flags(0, -1, "errors", 0, HANDLER_REREAD);
+
+  // filesystem interface
+  // set modes based on 'accessible'
+  if (click_accessible()) {
+    click_mode_r = S_IRUSR | S_IRGRP | S_IROTH;
+    click_mode_x = S_IXUSR | S_IXGRP | S_IXOTH;
+  } else {
+    click_mode_r = S_IRUSR | S_IRGRP;
+    click_mode_x = S_IXUSR | S_IXGRP;
+  }
+  click_mode_w = S_IWUSR | S_IWGRP;
+  click_mode_dir = S_IFDIR | click_mode_r | click_mode_x;
+
+  init_clickfs();
+
+  // netgraph hooks
   ng_ether_input_p = click_ether_input;
   ng_ether_output_p = click_ether_output;
 
@@ -285,40 +236,41 @@ void print_and_free_chunks();
 extern "C" int
 cleanup_module()
 {
-  int ret;
   extern int click_new_count; /* glue.cc */
   extern int click_outstanding_news; /* glue.cc */
 
+  // netgraph hooks
   ng_ether_input_p = 0;
   ng_ether_output_p = 0;
-  
-  kill_current_router();
 
-  cleanup_click_sched();
-  delete lexer;
-  
-  Router::cleanup_global_handlers();
-  cp_va_static_cleanup();
-
-  /* Clean up the click filesystem tree */
+  // filesystem interface
   clickfs_tree_cleanup();
 
-#if 0 /* XXX ?? */ 
+  // extra packages, global handlers
   click_cleanup_packages();
-#endif
+  Router::cleanup_global_handlers();
+
+  // config manager, thread manager, sk_buff manager
+  click_cleanup_config();
+  click_cleanup_sched();
   
-  delete kernel_errh;
-  delete syslog_errh;
+  cp_va_static_cleanup();
+
+  // clean up error handlers
   ErrorHandler::static_cleanup();
-  kernel_errh = syslog_errh = 0;
- 
+  delete click_logged_errh;
+  delete syslog_errh;
+  delete error_log;
+  click_logged_errh = syslog_errh = 0;
+  
   printf("click module exiting\n");
-    
-  // must call after all operations that might create strings are done
+  
+  // String (after any operations that might create Strings)
   String::static_cleanup();
+
+  // report memory leaks
   if (Element::nelements_allocated)
-    printf("click error: %d elements still allocated\n",
-	   Element::nelements_allocated);
+    printf("click error: %d elements still allocated\n", Element::nelements_allocated);
   if (click_outstanding_news) {
     printf("click error: %d outstanding news\n", click_outstanding_news);
     print_and_free_chunks();

@@ -60,7 +60,7 @@ GENERIC_OBJS = string.o straccum.o \
 	packageutils.o \
 	$(EXTRA_DRIVER_OBJS)
 
-BSDMODULE_OBJS = module.o kernelerror.o sched.o \
+BSDMODULE_OBJS = config.o sched.o module.o \
 	clickfs.o clickfs_vnops.o clickfs_tree.o clickfs_element.o
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
@@ -86,7 +86,7 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: $(INSTALLOBJS) click-mount
+all: $(INSTALLOBJS)
 
 click.ko: Makefile vnode_if.h $(OBJS)
 	$(LD) -Bshareable -o click.ko $(OBJS)
@@ -111,13 +111,6 @@ setdef0.c setdef1.c: module.o
 vnode_if.h: $(freebsd_srcdir)/kern/vnode_if.pl $(freebsd_srcdir)/kern/vnode_if.src $(srcdir)/massage-vnode_if.pl
 	$(PERL) $(freebsd_srcdir)/kern/vnode_if.pl -h $(freebsd_srcdir)/kern/vnode_if.src
 	$(PERL) $(srcdir)/massage-vnode_if.pl vnode_if.h
-
-# Special compile rule for click-mount because we don't want
-# to built it with -D_KERNEL, it's in user-space..
-click-mount: click-mount.o
-	$(CC) click-mount.o -o click-mount $(LDFLAGS)
-click-mount.o: click-mount.c
-	$(CC) -c $< -o click-mount.o
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)

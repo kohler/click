@@ -21,19 +21,24 @@ CLICK_CXX_UNPROTECT
 #include <click/package.hh>
 #include <click/driver.hh>
 
-extern ErrorHandler *kernel_errh;
-extern ErrorHandler *kernel_syslog_errh;
-extern Router *current_router;
-Router *parse_router(String);
-void kill_current_router();
-void install_current_router(Router *);
+#define HANDLER_REREAD			(Router::Handler::FIRST_USER_FLAG)
+#define HANDLER_NEED_READ		(Router::Handler::FIRST_USER_FLAG << 1)
+#define HANDLER_SPECIAL_INODE		(Router::Handler::FIRST_USER_FLAG << 2)
+#define HANDLER_WRITE_UNLIMITED		(Router::Handler::FIRST_USER_FLAG << 3)
 
-extern struct simplelock click_thread_spinlock;
-extern Vector<int> *click_thread_pids;
+extern ErrorHandler *click_logged_errh;
+void click_clear_error_log();
+
+void click_init_config();
+void click_cleanup_config();
+
+extern Router *click_router;
+int click_kill_router_threads();
+
 extern int click_thread_priority;
-void init_click_sched();
-int start_click_sched(Router *, int, ErrorHandler *);
-int cleanup_click_sched();
+void click_init_sched();
+int click_cleanup_sched();
+int click_start_sched(Router *, int, ErrorHandler *);
 
 void init_router_element_procs();
 void cleanup_router_element_procs();

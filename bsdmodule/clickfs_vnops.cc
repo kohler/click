@@ -1,8 +1,10 @@
+/* -*- c-basic-offset: 4 -*- */
 /*
  * clickfs_vnops.cc -- Click configuration filesystem for BSD
- * Nickolai Zeldovich, Luigi Rizzo
+ * Nickolai Zeldovich, Luigi Rizzo, Eddie Kohler
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
+ * Copyright (c) 2001-2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -55,8 +57,6 @@ struct clickfs_node {
 };
 
 #define	VTON(vn)	((struct clickfs_node *)(vn)->v_data)
-
-String *current_config = 0;
 
 static struct clickfs_node *
 new_clickfs_node()
@@ -402,9 +402,10 @@ clickfs_read(struct vop_read_args *ap)
 	cp->r_offset = uio->uio_offset;
     }
     if (!cp->rbuf) {   /* try to read */
-	if (cp->dirent->type == CLICKFS_DIRENT_CONFIG)
-	    cp->rbuf = new String(*current_config);
-	else if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
+	if (cp->dirent->type == CLICKFS_DIRENT_CONFIG) {
+	    int h = Router::find_global_handler("config");
+	    cp->rbuf = new String(Router::global_handler(h).call_read(0));
+	} else if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
 	    Element *e = clickfs_int_get_element(cp);
 	    const Router::Handler *h = clickfs_int_get_handler(cp);
 	    if (!h)
@@ -414,8 +415,11 @@ clickfs_read(struct vop_read_args *ap)
 	    cp->rbuf = new String(h->call_read(e));
 	}
     }
-    if (!cp->rbuf)
+    if (!cp->rbuf || cp->rbuf->out_of_memory()) {
+	delete cp->rbuf;
+	cp->rbuf = 0;
 	return ENOMEM;
+    }
 
     len = cp->rbuf->length();
     if (off >= len) {
@@ -484,18 +488,10 @@ clickfs_fsync_body(struct clickfs_node *cp)
 	if (cp->wbuf == NULL)
 	    cp->wbuf = new String("");
 
-	*current_config = *cp->wbuf;
-	kill_current_router();
+	int h = Router::find_global_handler("config");
+	retval = Router::global_handler(h).call_write(*cp->wbuf, 0, click_logged_errh);
+	retval = (retval >= 0 ? 0 : -retval);
 
-	Router *r = parse_router(*current_config);
-	if (!r)
-	    retval = EINVAL;
-	else {
-	    r->preinitialize();
-	    r->initialize(kernel_errh);
-	    install_current_router(r);
-	    retval =  r->initialized() ? 0 : EINVAL;
-	}
 	printf("clickfs_fsync_body: 2\n");
     } else if (cp->dirent->type == CLICKFS_DIRENT_EHANDLE) {
 	const Router::Handler *h = clickfs_int_get_handler(cp);
@@ -511,11 +507,10 @@ clickfs_fsync_body(struct clickfs_node *cp)
 	    String context_string = "In write handler `" + h->name() + "'";
 	    if (e)
 		context_string += String(" for `") + e->declaration() + "'";
-	    ContextErrorHandler cerrh(kernel_errh, context_string + ":");
+	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
 
-	    int result = h->call_write(*cp->wbuf, e, &cerrh);
-	    if (result < 0)
-		retval = EINVAL;
+	    retval = h->call_write(*cp->wbuf, e, &cerrh);
+	    retval = (retval >= 0 ? 0 : -retval);
 	}
 	/*
 	 * now dispose read buffer if any
