@@ -136,7 +136,10 @@ if ($ELEMENTS) {
 	}
 
 	$v = $x{'requires'};
-	$ereq{ $x{'name'} } = $v if $x{'name'} && $v;
+	next if !$v;
+
+	$ereq{ $x{'docname'} } = $v if $x{'docname'};
+	$ereq{ $x{'name'} } = $v if $x{'name'} && !$x{'docname'};
 	map { $ereq{$_} = $v } split(/\s+/, $x{'provides'}) if $x{'provides'};
     }
 }
@@ -220,6 +223,8 @@ if ($ELEMENTS) {
 	    my($num, $total) = ($1, $2);
 	    my($amt) = int((@esubj + 2*@esections - 1) / $2) + 1;
 	    my($index) = ($num - 1) * $amt;
+	    my($ul) = "<ul>";
+	    $ul = "<ul class='$1'>" if m/ulclass='(\w+)'/;
 
 	    # find first section number
 	    my($secno, $secno2);
@@ -240,9 +245,11 @@ if ($ELEMENTS) {
 	    # iterate over sections
 	    for ($i = $secno; $i < $secno2; $i++) {
 		print OUT "<p class='esubject'>", $esections[$i]->[0], "</p>\n";
+		print OUT "$ul\n";
 		for ($j = $esections[$i]->[1]; $j < $esections[$i]->[2]; $j++) {
 		    print OUT element_li($esubj[$j]);
 		}
+		print OUT "</ul>\n";
 	    }
 	
 	    1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
