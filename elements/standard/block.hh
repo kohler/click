@@ -41,7 +41,6 @@ class Block : public Element {
   void add_handlers();
   
   int configure(const String &, ErrorHandler *);
-  int initialize(ErrorHandler *);
   // bool can_live_reconfigure() const		{ return true; }
   
   void push(int port, Packet *);

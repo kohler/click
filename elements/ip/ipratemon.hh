@@ -3,7 +3,7 @@
 
 /*
  * =c
- * IPRateMonitor(N, PB, OFF, THRESH, ANNOBY [,ANNO_PORT0, ANNO_PORT1, ... ])
+ * IPRateMonitor(PB, OFF, THRESH)
  * =d
  *
  * Monitors network traffic rates. Can monitor either packet or byte rate (per
@@ -13,19 +13,12 @@
  * src_rate_anno with the rates for dst or src IP address (specified by the
  * ANNOBY argument).
  *
- * N (default to 1): number of input/output port pairs.
- *
  * PB (default to PACKETS): PACKETS or BYTES. Count number of packets or bytes.
  *
  * OFF (default to 0): offset in packet where IP header starts
  *
  * THRESH (default to 10): IPRateMonitor further splits a subnet if rate is
  * over THRESH number packets or bytes per second.
- *
- * ANNOBY (default to DST): DST or SRC. Annotate by DST or SRC IP address.
- *
- * ANNO_PORTX (default to false): true or false. if true, annotate packet
- * going through port X.
  * 
  * =h look (read)
  * Returns the rate of counted to and from a cluster of IP addresses. The
@@ -41,7 +34,7 @@
  * =e
  * Example: 
  *
- * IPRateMonitor(1, PACKETS, 0, 256, DST, true);
+ * IPRateMonitor(PACKETS, 0, 256);
  *
  * Monitors packet rates for packets coming in on one port. When rate for a
  * network address (e.g. 18.26.*.*) exceeds 1000 packets per second, start
@@ -66,7 +59,7 @@
 #define MAX_PORT_PAIRS 16
 
 struct HalfSecondsTimer {
-  static unsigned now()			{ return click_jiffies() >> 4; }
+  static unsigned now()			{ return click_jiffies() >> 3; }
 };
 
 class IPRateMonitor : public Element { public:
@@ -75,44 +68,38 @@ class IPRateMonitor : public Element { public:
   ~IPRateMonitor();
 
   const char *class_name() const		{ return "IPRateMonitor"; }
-  const char * default_processing() const	{ return AGNOSTIC; }
-  
-  void uninitialize() 				{ _base->clear(); }
-  int configure(const String &conf, ErrorHandler *errh);
+  const char *default_processing() const	{ return AGNOSTIC; }
 
   IPRateMonitor *clone() const;
+  void notify_ninputs(int);  
+  int configure(const String &, ErrorHandler *);
+  void uninitialize() 				{ _base->clear(); }
+
   void push(int port, Packet *p);
   Packet *pull(int port);
 
-private:
+ private:
 
-  typedef RateEWMAX<4, 10, HalfSecondsTimer> MyEWMA;
+  typedef RateEWMAX<3, 10, HalfSecondsTimer> MyEWMA;
   
   unsigned char _pb;
 #define COUNT_PACKETS 0
 #define COUNT_BYTES 1
 
   int _offset;
-  bool _annobydst;
-  bool _anno[MAX_PORT_PAIRS];
-
-  // one for each input
-  struct _inp {
-    int change;
-    unsigned char srcdst;
-  };
 
   // one for each address
   struct Stats;
   struct Counter {
-    MyEWMA dst_rate;
-    MyEWMA src_rate;
-    struct Stats *next_level;
+    MyEWMA rev_rate;
+    MyEWMA fwd_rate;
+    Stats *next_level;
   };
 
   struct Stats {
-    struct Counter counter[MAX_COUNTERS];
+    Counter counter[MAX_COUNTERS];
     Stats();
+    Stats(const MyEWMA &, const MyEWMA &);
     ~Stats();
     void clear();
   };
@@ -122,9 +109,9 @@ private:
   long unsigned int _resettime;       // time of last reset
 
   void set_resettime();
-  Packet *update_rates(Packet *, int port);
+  void update_rates(Packet *, bool forward);
   void update(IPAddress dstaddr, IPAddress srcaddr, 
-              int val, Packet *p, int port);
+              int val, Packet *p, bool forward);
 
   String print(Stats *s, String ip = "");
 
@@ -141,75 +128,49 @@ private:
 // Dives in tables based on a and raises all rates by val.
 //
 inline void
-IPRateMonitor::update(IPAddress dstaddr, IPAddress srcaddr, 
-                      int val, Packet *p, int port)
+IPRateMonitor::update(IPAddress from_addr, IPAddress, int val,
+		      Packet *p, bool forward)
 {
-  unsigned int saddr = dstaddr.saddr();
-  unsigned int dst = true;
+  unsigned int addr = from_addr.addr();
   int now = MyEWMA::now();
 
- restart:
   struct Stats *s = _base;
   Counter *c = 0;
   int bitshift;
 
   // find entry on correct level
   for (bitshift = 0; bitshift <= MAX_SHIFT && s; bitshift += 8) {
-    unsigned char byte = (saddr >> bitshift) & 0x000000ff;
+    unsigned char byte = (addr >> bitshift) & 0x000000ff;
     c = &(s->counter[byte]);
-    if (dst) 
-      c->dst_rate.update(now, val);
+    if (forward) 
+      c->fwd_rate.update(now, val);
     else 
-      c->src_rate.update(now, val);
+      c->rev_rate.update(now, val);
     s = c->next_level;
   }
 
   // annotate src and dst rate for dst address
-  int cr;
-  if (dst) {
-    cr = (c->dst_rate.average()*CLICK_HZ) >> c->dst_rate.scale;
-    if (_anno[port] && _annobydst) {
-      p->set_dst_rate_anno(cr);
-      p->set_src_rate_anno
-	((c->src_rate.average()*CLICK_HZ)>>c->src_rate.scale);
-    }
-  }
-  else {
-    cr = (c->src_rate.average()*CLICK_HZ) >> c->src_rate.scale;
-    if (_anno[port] && !_annobydst) {
-      p->set_dst_rate_anno
-	((c->dst_rate.average()*CLICK_HZ)>>c->dst_rate.scale);
-      p->set_src_rate_anno(cr);
-    }
-  }
+  int fwd_rate = c->fwd_rate.average(); 
+  p->set_fwd_rate_anno(fwd_rate);
+  int rev_rate = c->rev_rate.average(); 
+  p->set_rev_rate_anno(rev_rate);
 
   // did value get larger than THRESH in the specified period?
-  if (cr >= _thresh) {
+  if (fwd_rate >= _thresh || rev_rate >= _thresh) {
     if (bitshift < MAX_SHIFT)
-      c->next_level = new Stats;
-  }
-
-  if (dst) {
-    dst = false;
-    saddr = srcaddr.saddr();
-    goto restart;
+      c->next_level = new Stats(c->fwd_rate, c->rev_rate);
   }
 }
 
-inline Packet *
-IPRateMonitor::update_rates(Packet *p, int port)
+inline void
+IPRateMonitor::update_rates(Packet *p, bool forward)
 {
-  IPAddress dstaddr, srcaddr;
   click_ip *ip = (click_ip *) (p->data() + _offset);
   int val = (_pb == COUNT_PACKETS) ? 1 : ip->ip_len;
-  
-  dstaddr = IPAddress(ip->ip_dst);
-  srcaddr = IPAddress(ip->ip_src);
-  update(dstaddr, srcaddr, val, p, port);
-
-  return p;
+  if (forward)
+    update(IPAddress(ip->ip_src), IPAddress(ip->ip_dst), val, p, true);
+  else
+    update(IPAddress(ip->ip_dst), IPAddress(ip->ip_src), val, p, false);
 }
 
-
 #endif /* IPRATEMON_HH */
-

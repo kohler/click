@@ -1,6 +1,7 @@
 /*
  * ipratemon.{cc,hh} -- counts packets clustered by src/dst addr.
  * Thomer M. Gil
+ * Eddie Kohler
  * Benjie Chen (minor changes)
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -22,15 +23,25 @@
 #include "glue.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : Element(1,1), _pb(COUNT_PACKETS), _offset(0), _annobydst(true), 
-    _thresh(1), _base(NULL)
+  : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _base(NULL)
 {
-  for (int i=0; i<MAX_PORT_PAIRS; i++)
-    _anno[i] = false;
 }
 
 IPRateMonitor::~IPRateMonitor()
 {
+}
+
+IPRateMonitor *
+IPRateMonitor::clone() const
+{
+  return new IPRateMonitor;
+}
+
+void
+IPRateMonitor::notify_ninputs(int n)
+{
+  set_ninputs(n == 1 ? 1 : 2);
+  set_noutputs(n == 1 ? 1 : 2);
 }
 
 int
@@ -41,48 +52,27 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 5)
+  if(args.size() != 3)
     return errh->error("too few arguments.");
 
-  // N of PORT PAIRS
-  int n;
-  if(!cp_integer(args[0], n) || n < 1 || n > MAX_PORT_PAIRS)
-    return errh->error
-      ("number of port pairs should be between 1 and %d", MAX_PORT_PAIRS);
-  set_ninputs(n);
-  set_noutputs(n);
-
   // PACKETS/BYTES
-  if(args[1] == "PACKETS")
+  if(args[0] == "PACKETS")
     _pb = COUNT_PACKETS;
-  else if(args[1] == "BYTES")
+  else if(args[0] == "BYTES")
     _pb = COUNT_BYTES;
   else
     return errh->error("second argument should be \"PACKETS\" or \"BYTES\".");
 
   // OFFSET
-  if(!cp_integer(args[2], _offset) || _offset < 0)
+  if(!cp_integer(args[1], _offset) || _offset < 0)
     return errh->error
       ("offset should be a non-negative integer.");
 
   // THRESH
-  if(!cp_integer(args[3], _thresh) || _thresh < 0)
+  if(!cp_integer(args[2], _thresh) || _thresh < 0)
     return errh->error
       ("thresh should be non-negative integer.");
  
-  // ANNOBY
-  if(args[4] == "DST")
-    _annobydst = true;
-  else if(args[4] == "SRC")
-    _annobydst = false;
-  else
-    return errh->error("ANNOBY should be \"DST\" or \"SRC\".");
-
-  for(int i=5; i < args.size() && i < n+5; i++) {
-    if (!cp_bool(args[i], _anno[i-5]))
-      return errh->error("ANNO_PORT arguments must be bool.");
-  }
-
   set_resettime();
 
   // Make _base
@@ -97,24 +87,19 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 #endif
 }
 
-IPRateMonitor *
-IPRateMonitor::clone() const
-{
-  return new IPRateMonitor;
-}
-
 void
 IPRateMonitor::push(int port, Packet *p)
 {
-  p = update_rates(p, port);
-  if (p) output(port).push(p);
+  update_rates(p, port == 0);
+  output(port).push(p);
 }
 
 Packet *
 IPRateMonitor::pull(int port)
 {
   Packet *p = input(port).pull();
-  if (p) p = update_rates(p, port);
+  if (p)
+    update_rates(p, port == 0);
   return p;
 }
 
@@ -126,8 +111,18 @@ IPRateMonitor::pull(int port)
 IPRateMonitor::Stats::Stats()
 {
   for (int i = 0; i < MAX_COUNTERS; i++) {
-    counter[i].dst_rate.initialize();
-    counter[i].src_rate.initialize();
+    counter[i].fwd_rate.initialize();
+    counter[i].rev_rate.initialize();
+    counter[i].next_level = 0;
+  }
+}
+
+IPRateMonitor::Stats::Stats(const MyEWMA &fwd, const MyEWMA &rev)
+{
+  for (int i = 0; i < MAX_COUNTERS; i++) {
+    counter[i].fwd_rate = fwd;
+    counter[i].rev_rate = rev;
+    counter[i].next_level = 0;
   }
 }
 
@@ -143,8 +138,8 @@ IPRateMonitor::Stats::clear()
   for (int i = 0; i < MAX_COUNTERS; i++) {
     delete counter[i].next_level;
     counter[i].next_level = 0;
-    counter[i].dst_rate.initialize();
-    counter[i].src_rate.initialize();
+    counter[i].rev_rate.initialize();
+    counter[i].fwd_rate.initialize();
   }
 }
 
@@ -158,7 +153,7 @@ IPRateMonitor::print(Stats *s, String ip = "")
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
     Counter &c = s->counter[i];
-    if (c.dst_rate.average() > 0 || c.src_rate.average() > 0) {
+    if (c.rev_rate.average() > 0 || c.fwd_rate.average() > 0) {
       String this_ip;
       if (ip)
         this_ip = ip + "." + String(i);
@@ -166,14 +161,12 @@ IPRateMonitor::print(Stats *s, String ip = "")
         this_ip = String(i);
       ret += this_ip;
 
-      c.src_rate.update(jiffs, 0);
-      c.dst_rate.update(jiffs, 0);
+      c.fwd_rate.update(jiffs, 0);
+      c.rev_rate.update(jiffs, 0);
       ret += "\t"; 
-      ret += cp_unparse_real(c.src_rate.average()*CLICK_HZ,
-			     c.src_rate.scale);
+      ret += cp_unparse_real(c.fwd_rate.average()*CLICK_HZ, c.fwd_rate.scale);
       ret += "\t"; 
-      ret += cp_unparse_real(c.dst_rate.average()*CLICK_HZ, 
-			     c.dst_rate.scale);
+      ret += cp_unparse_real(c.rev_rate.average()*CLICK_HZ, c.rev_rate.scale);
       
       ret += "\n";
       if (c.next_level) 
@@ -226,3 +219,6 @@ IPRateMonitor::add_handlers()
 }
 
 EXPORT_ELEMENT(IPRateMonitor)
+
+// template instances
+#include "ewma.cc"

@@ -9,16 +9,16 @@ class Packet {
 public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
+    bool mac_broadcast : 1; // flag: MAC address was a broadcast or multicast
+    bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
     IPAddress dst_ip;
     unsigned char ip_tos;
     unsigned char ip_ttl;
     unsigned short ip_off;
-    char mac_broadcast; // flag: MAC address was a broadcast or multicast.
-    char fix_ip_src;    // flag: asks FixIPSrc to set ip_src.
-    char param_off;     // for ICMP Parameter Problem, byte offset of error.
-    char color;         // one of 255 colors set by Paint element.
-    unsigned long src_rate;  // written by IPRateMonitor, read by Block
-    unsigned long dst_rate;  // written by IPRateMonitor, read by Block
+    char param_off;     // for ICMP Parameter Problem, byte offset of error
+    char color;         // one of 255 colors set by Paint element
+    int fwd_rate;
+    int rev_rate;
 #ifdef __KERNEL__
     union {
       cycles_t cycles[4];
@@ -132,27 +132,26 @@ private:
 
   void copy_annotations(Packet *);
   
-  void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
   IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
-  
-  void set_ip_tos_anno(unsigned char t)	{ anno()->ip_tos = t; }
+  void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
   unsigned char ip_tos_anno() const	{ return anno()->ip_tos; }
-  void set_ip_ttl_anno(unsigned char t)	{ anno()->ip_ttl = t; }
+  void set_ip_tos_anno(unsigned char t)	{ anno()->ip_tos = t; }
   unsigned char ip_ttl_anno() const	{ return anno()->ip_ttl; }
-  void set_ip_off_anno(unsigned short o){ anno()->ip_off = o; }
+  void set_ip_ttl_anno(unsigned char t)	{ anno()->ip_ttl = t; }
   unsigned short ip_off_anno() const    { return anno()->ip_off; }
-  void set_mac_broadcast_anno(char b)	{ anno()->mac_broadcast = b; }
-  char mac_broadcast_anno() const	{ return anno()->mac_broadcast; }
-  void set_fix_ip_src_anno(char f)	{ anno()->fix_ip_src = f; }
-  char fix_ip_src_anno() const		{ return anno()->fix_ip_src; }
-  void set_param_off_anno(char p)	{ anno()->param_off = p; }
+  void set_ip_off_anno(unsigned short o){ anno()->ip_off = o; }
+  bool mac_broadcast_anno() const	{ return anno()->mac_broadcast; }
+  void set_mac_broadcast_anno(bool b)	{ anno()->mac_broadcast = b; }
+  bool fix_ip_src_anno() const		{ return anno()->fix_ip_src; }
+  void set_fix_ip_src_anno(bool f)	{ anno()->fix_ip_src = f; }
   char param_off_anno() const		{ return anno()->param_off; }
-  void set_color_anno(char c)		{ anno()->color = c; }
+  void set_param_off_anno(char p)	{ anno()->param_off = p; }
   char color_anno() const		{ return anno()->color; }
-  void set_src_rate_anno(int r)	        { anno()->src_rate = r; }
-  void set_dst_rate_anno(int r)	        { anno()->dst_rate = r; }
-  int src_rate_anno() const		{ return anno()->src_rate; }
-  int dst_rate_anno() const		{ return anno()->dst_rate; }
+  void set_color_anno(char c)		{ anno()->color = c; }
+  int fwd_rate_anno() const		{ return anno()->fwd_rate; }
+  void set_fwd_rate_anno(int r)		{ anno()->fwd_rate = r; }
+  int rev_rate_anno() const		{ return anno()->rev_rate; }
+  void set_rev_rate_anno(int r)		{ anno()->rev_rate = r; }
 #ifdef __KERNEL__
   void set_cycle_anno(int i, cycles_t v) { anno()->p.cycles[i] = v; }
   void set_metric0_anno(int i, unsigned v) { anno()->p.perf.m0[i] = v; }

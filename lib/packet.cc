@@ -24,6 +24,7 @@
 
 Packet::Packet()
 {
+  StaticAssert(sizeof(Anno) <= 48);
   panic("Packet constructor");
 }
 
@@ -47,19 +48,11 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
     return 0;
   }
   Packet *p = (Packet *) skb;
-  p->set_mac_broadcast_anno(0);
-  p->set_fix_ip_src_anno(0);
-  p->set_color_anno(0);
-  p->set_src_rate_anno(0);
-  p->set_dst_rate_anno(0);
-  p->set_cycle_anno(0,0);
-  p->set_cycle_anno(1,0);
-  p->set_cycle_anno(2,0);
-  p->set_cycle_anno(3,0);
-  return(p);
+  memset(p->anno(), 0, sizeof(Anno));  
+  return p;
 }
 
-#else /* __KERNEL__ */
+#else /* !__KERNEL__ */
 
 inline
 Packet::Packet()
@@ -191,7 +184,6 @@ Packet::uniqueify_copy()
 Packet *
 Packet::expensive_push(unsigned int nbytes)
 {
-  StaticAssert(sizeof(Anno) <= 48);
   click_chatter("expensive Packet::push");
 #ifdef __KERNEL__
   Packet *q = Packet::make(skb_realloc_headroom(skb(), nbytes));

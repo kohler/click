@@ -31,34 +31,15 @@ Block::clone() const
 int
 Block::configure(const String &conf, ErrorHandler *errh)
 {
-  Vector<String> args;
-  cp_argvec(conf, args);
-
-  // Enough args?
-  if(args.size() != 1) {
-    errh->error("One argument expexted");
-    return -1;
-  }
-
-  // THRESH
-  if(!cp_integer(args[0], _thresh)) {
-    errh->error("Not an integer");
-    return -1;
-  }
-
-  return 0;
-}
-
-int
-Block::initialize(ErrorHandler *)
-{
-  return 0;
+  return cp_va_parse(conf, this, errh,
+		     cpInteger, "threshold", &_thresh,
+		     0);
 }
 
 void
 Block::push(int, Packet *packet)
 {
-  if(_thresh == 0 || packet->dst_rate_anno() <= _thresh)
+  if(_thresh == 0 || packet->fwd_rate_anno() <= _thresh)
     output(0).push(packet);
   else
     output(1).push(packet);
