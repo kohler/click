@@ -36,6 +36,10 @@ fake_pcap_parse_dlt(const String &str)
 	return FAKE_DLT_FDDI;
     else if (str == "ATM" || str == "RFC1483" || str == "ATM-RFC1483")
 	return FAKE_DLT_ATM_RFC1483;
+    else if (str == "802.11")
+	return FAKE_DLT_IEEE802_11;
+    else if (str == "AIRONET")
+	return FAKE_DLT_AIRONET_HEADER;
     else
 	return -1;
 }
@@ -52,6 +56,10 @@ fake_pcap_unparse_dlt(int dlt)
 	return "FDDI";
       case FAKE_DLT_ATM_RFC1483:
 	return "ATM";
+      case FAKE_DLT_IEEE802_11:
+	return "802.11";
+      case FAKE_DLT_AIRONET_HEADER:
+	return "AIRONET";
       default:
 	return "??";
     }

@@ -13,6 +13,8 @@ CLICK_DECLS
 #define FAKE_DLT_FDDI			10	/* FDDI */
 #define FAKE_DLT_ATM_RFC1483		11	/* RFC 1483-encapsulated ATM */
 #define FAKE_DLT_RAW			12	/* raw IP */
+#define FAKE_DLT_IEEE802_11             105     /* IEEE 802.11 wireless */
+#define FAKE_DLT_AIRONET_HEADER	        120     /* Aironet wireless header */
 
 /*
  * The first record in the file contains saved values for some
