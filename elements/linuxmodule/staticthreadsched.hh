@@ -13,6 +13,8 @@
  * Statically binds elements to threads. If more than one StaticThreadSched
  * is specified, they will all run. The one that runs later may override an
  * earlier run.
+ * =a
+ * ThreadMonitor, BalanceThreadSched
  */
 
 #include <click/element.hh>

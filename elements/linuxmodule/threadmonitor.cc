@@ -65,12 +65,12 @@ ThreadMonitor::run_timer()
     unsigned now_jiffies = click_jiffies();
 
     // report currently scheduled tasks (ignore pending list)
-    for (int threadid = 0; threadid < m->nthreads(); threadid++) {
-	RouterThread *thread = m->thread(threadid);
+    for (int tid = 0; tid < m->nthreads(); tid++) {
+	RouterThread *thread = m->thread(tid);
 	thread->lock_tasks();
 	for (Task *t = thread->scheduled_next(); t != thread; t = t->scheduled_next())
 	    if (t->cycles() >= _thresh) {
-		sa << now_jiffies << ": on " << threadid << ": " << (void *)t << " (";
+		sa << now_jiffies << ": on " << tid << ": " << (void *)t << " (";
 		if (Element *e = t->element())
 		    sa << e->id();
 		else

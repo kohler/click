@@ -4,7 +4,7 @@
 
 /*
  * =c
- * SortedTaskSched([INTERVAL, INCREASING])
+ * BalanceThreadSched([INTERVAL, INCREASING])
  * =s IP
  * bin packing scheduler
  * =d
@@ -15,18 +15,18 @@
  * order based on cost, then binpack. Otherwise, tasks are decreasingly
  * sorted. By default, INCREASING is true.
  *
- * =a ThreadMonitor
+ * =a ThreadMonitor, StaticThreadSched
  */
 
 #include <click/element.hh>
 #include <click/timer.hh>
 
-class SortedTaskSched : public Element { public:
+class BalanceThreadSched : public Element { public:
 
-    SortedTaskSched();
-    ~SortedTaskSched();
+    BalanceThreadSched();
+    ~BalanceThreadSched();
   
-    const char *class_name() const	{ return "SortedTaskSched"; }
+    const char *class_name() const	{ return "BalanceThreadSched"; }
     int configure(Vector<String> &, ErrorHandler *);
 
     int initialize(ErrorHandler *);

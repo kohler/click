@@ -22,29 +22,30 @@
 #include "sortedsched.hh"
 #include <click/task.hh>
 #include <click/routerthread.hh>
+#include <click/router.hh>
+#include <click/master.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/task.hh>
-#include <click/router.hh>
 #include <click/error.hh>
 
 #define DEBUG 0
 #define KEEP_GOOD_ASSIGNMENT 1
 
 
-SortedTaskSched::SortedTaskSched()
+BalanceThreadSched::BalanceThreadSched()
     : _timer(this)
 {
     MOD_INC_USE_COUNT;
 }
 
-SortedTaskSched::~SortedTaskSched()
+BalanceThreadSched::~BalanceThreadSched()
 {
     MOD_DEC_USE_COUNT;
 }
   
 int 
-SortedTaskSched::configure(Vector<String> &conf, ErrorHandler *errh)
+BalanceThreadSched::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _interval = 1000;
     _increasing = true;
@@ -57,15 +58,99 @@ SortedTaskSched::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-SortedTaskSched::initialize(ErrorHandler *)
+BalanceThreadSched::initialize(ErrorHandler *)
 {
     _timer.initialize(this);
     _timer.schedule_after_ms(2000);
     return 0;
 }
 
+extern "C" {
+static int task_sorter(void *va, void *vb) {
+    Task **a = (Task **)va, **b = (Task **)vb;
+    return (*a)->cycles() - (*b)->cycles();
+}
+
+static int task_rev_sorter(void *va, void *vb) {
+    Task **a = (Task **)va, **b = (Task **)vb;
+    return (*b)->cycles() - (*a)->cycles();
+}
+}
+
 void
-SortedTaskSched::run_timer()
+BalanceThreadSched::run_timer()
+{
+    Master *m = router()->master();
+
+    // develop load list
+    Vector<int> load;
+    int total_load = 0;
+    for (int tid = 0; tid < m->nthreads(); tid++) {
+	RouterThread *thread = m->thread(tid);
+	thread->lock_tasks();
+	int thread_load = 0;
+	for (Task *t = thread->scheduled_next(); t != thread; t = t->scheduled_next())
+	    thread_load += t->cycles();
+	thread->unlock_tasks();
+	total_load += thread_load;
+	load.push_back(thread_load);
+    }
+    int avg_load = total_load / m->nthreads();
+
+    for (int rounds = 0; rounds < m->nthreads(); rounds++) {
+	// find min and max loaded threads
+	int min_tid = 0, max_tid = 0;
+	for (int tid = 1; tid < m->nthreads(); tid++)
+	    if (load[tid] < load[min_tid])
+		min_tid = tid;
+	    else if (load[tid] > load[max_tid])
+		max_tid = tid;
+
+#if KEEP_GOOD_ASSIGNMENT
+	// do nothing if load difference is minor
+	if ((avg_load - load[min_tid] < (avg_load >> 3))
+	    && (load[max_tid] - avg_load > (avg_load >> 3)))
+	    break;
+#endif
+
+	// lock max_thread
+	RouterThread *thread = m->thread(max_tid);
+	thread->lock_tasks();
+	
+	// collect tasks from max-loaded thread
+	total_load -= load[max_tid];
+	load[max_tid] = 0;
+	Vector<Task *> tasks;
+	for (Task *t = thread->scheduled_next(); t != thread; t = t->scheduled_next()) {
+	    load[max_tid] += t->cycles();
+	    tasks.push_back(t);
+	}
+	total_load += load[max_tid];
+	avg_load = total_load / m->nthreads();
+	
+	// sort tasks by cycle count
+	click_qsort(tasks.begin(), tasks.size(), sizeof(Task *), (_increasing ? task_rev_sorter : task_sorter));
+
+	// move tasks
+	int highwater = avg_load + (avg_load >> 2);
+	for (Task **tt = tasks.begin(); tt < tasks.end(); tt++)
+	    if (load[min_tid] + (*tt)->cycles() < highwater
+		&& load[min_tid] + 2*(*tt)->cycles() <= load[max_tid]) {
+		load[min_tid] += (*tt)->cycles();
+		load[max_tid] -= (*tt)->cycles();
+		(*tt)->change_thread(min_tid);
+	    }
+
+	// done with this round!
+	thread->unlock_tasks();
+    }
+  
+    _timer.schedule_after_ms(_interval);
+}
+
+#if 0
+void
+BalanceThreadSched::run_timer()
 {
     Vector<Task*> tasks;
     unsigned total_load = 0;
@@ -187,6 +272,7 @@ SortedTaskSched::run_timer()
 
     _timer.schedule_after_ms(_interval);
 }
+#endif
 
-ELEMENT_REQUIRES(false linuxmodule smpclick)
-EXPORT_ELEMENT(SortedTaskSched)
+ELEMENT_REQUIRES(linuxmodule smpclick)
+EXPORT_ELEMENT(BalanceThreadSched BalanceThreadSched-SortedTaskSched)
