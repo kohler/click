@@ -1,3 +1,9 @@
+2002-05-02 Thursday 16:17  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/: Makefile.in (1.66), module.cc (1.63),
+	proc_config.cc (1.30): revert premature changes for clickfs;
+	reported by Eric Freudenthal at NYU
+
 2002-04-30 Tuesday 18:31  Eddie Kohler <kohler@aciri.org>
 
 	* elements/linuxmodule/anydevice.hh (1.37),
