@@ -1,3 +1,14 @@
+2005-03-08 Tuesday 14:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/directiplookup.hh (1.13), elements/ip/iproutetable.hh
+	(1.20), elements/ip/lineariplookup.hh (1.16),
+	elements/ip/lookupiproute.hh (1.29),
+	elements/ip/lookupiproutelinux.hh (1.20),
+	elements/ip/radixiplookup.hh (1.19), elements/ip/rangeiplookup.cc
+	(1.1), elements/ip/rangeiplookup.hh (1.1),
+	test/ip/iplookups-01.testie (1.4): add Marko's RangeIPLookup
+	element
+
 2005-03-08 Tuesday 12:08  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/ipfilter.cc (1.53): fix IPFilter bug, introduced by
