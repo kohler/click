@@ -69,7 +69,9 @@ ARPResponder::configure(const String &conf, ErrorHandler *errh)
 	if (have_ena)
 	  errh->error("argument %d has more than one Ethernet address", i);
 	have_ena = true;
-      } else {
+      } else if (cp_ip_address(arg, ipa, &arg))
+	add_map(ipa, IPAddress(0xFFFFFFFFU), EtherAddress());
+      else {
 	errh->error("argument %d should be `IPADDR MASK ETHADDR'", i);
 	arg = "";
       }

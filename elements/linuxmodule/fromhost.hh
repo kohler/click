@@ -4,7 +4,7 @@
 
 /*
  * =c
- * FromLinux(DEVNAME, ADDR, MASK)
+ * FromLinux(DEVNAME, ADDR/MASK)
  * =d
  * Captures packets orginating from the Linux kernel and pushes
  * them on output 0.
@@ -18,6 +18,9 @@
  *
  * = % /sbin/ifconfig DEVNAME up
  * = % /sbin/route add -net ADDR netmask MASK DEVNAME
+ *
+ * =e
+ * = FromLinux(fake0, 192.0.0.0/8) -> ...;
  *
  * =a ToLinux
  * =a FromDevice

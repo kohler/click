@@ -64,8 +64,7 @@ FromLinux::configure(const String &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpString, "interface name", &_devname,
-			cpIPAddress, "destination IP address", &_destaddr,
-			cpIPAddress, "destination netmask", &_destmask,
+			cpIPAddressMask, "destination IP address and netmask", &_destaddr, &_destmask,
 			cpEnd);
   if (res < 0)
     return res;

@@ -16,25 +16,26 @@
 
 struct click_ip {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-    unsigned char ip_hl:4;			/* header length */
-    unsigned char ip_v:4;			/* version */
+  unsigned char ip_hl:4;		/* 0     header length */
+  unsigned char ip_v:4;			/*       & version */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-    unsigned char ip_v:4;			/* version */
-    unsigned char ip_hl:4;			/* header length */
+  unsigned char ip_v:4;			/* 0     version */
+  unsigned char ip_hl:4;		/*       & header length */
 #endif
-    unsigned char ip_tos;			/* type of service */
-    unsigned short ip_len;			/* total length */
-    unsigned short ip_id;			/* identification */
-    unsigned short ip_off;			/* fragment offset field */
-#define	IP_RF 0x8000				/* reserved fragment flag */
-#define	IP_DF 0x4000				/* dont fragment flag */
-#define	IP_MF 0x2000				/* more fragments flag */
-#define	IP_OFFMASK 0x1fff			/* mask for fragmenting bits */
-    unsigned char ip_ttl;			/* time to live */
-    unsigned char ip_p;				/* protocol */
-    unsigned short ip_sum;			/* checksum */
-    struct in_addr ip_src, ip_dst;		/* source and dest address */
+  unsigned char ip_tos;			/* 1     type of service */
+  unsigned short ip_len;		/* 2-3   total length */
+  unsigned short ip_id;			/* 4-5   identification */
+  unsigned short ip_off;		/* 6-7   fragment offset field */
+#define	IP_RF 0x8000			/* reserved fragment flag */
+#define	IP_DF 0x4000			/* dont fragment flag */
+#define	IP_MF 0x2000			/* more fragments flag */
+#define	IP_OFFMASK 0x1fff		/* mask for fragmenting bits */
+  unsigned char ip_ttl;			/* 8     time to live */
+  unsigned char ip_p;			/* 9     protocol */
+  unsigned short ip_sum;		/* 10-11 checksum */
+  struct in_addr ip_src;		/* 12-15 source address */
+  struct in_addr ip_dst;		/* 16-19 destination address */
 };
 
 /* ip_protocol */
