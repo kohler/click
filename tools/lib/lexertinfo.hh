@@ -2,6 +2,7 @@
 #ifndef CLICK_LEXERTINFO_HH
 #define CLICK_LEXERTINFO_HH
 #include "lexert.hh"
+class ElementT;
 class ElementClassT;
 
 class LexerTInfo { public:
@@ -18,10 +19,10 @@ class LexerTInfo { public:
     virtual void notify_class_extension(ElementClassT *, int pos1, int pos2);
     virtual void notify_class_reference(ElementClassT *, int pos1, int pos2);
     virtual void notify_element_declaration(
-		const String &name, ElementClassT *type,
+		ElementT *e,
 		ElementClassT *owner, int pos1, int name_pos2, int decl_pos2);
     virtual void notify_element_reference(
-		const String &name, ElementClassT *type,
+		ElementT *e,
 		ElementClassT *owner, int pos1, int pos2);
   
 };

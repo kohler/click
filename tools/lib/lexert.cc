@@ -558,8 +558,9 @@ LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
 	    break;
 	}
     }
-    _lexinfo->notify_element_declaration(name, type, _compound_class, location.pos1(), location.pos2(), (decl_pos2 < 0 ? location.pos2() : decl_pos2));
-    return _router->get_element(name, type, conf, lm ? lm : landmark())->idx();
+    ElementT *e = _router->get_element(name, type, conf, lm ? lm : landmark());
+    _lexinfo->notify_element_declaration(e, _compound_class, location.pos1(), location.pos2(), (decl_pos2 < 0 ? location.pos2() : decl_pos2));
+    return e->idx();
 }
 
 int
@@ -669,7 +670,7 @@ LexerT::yelement(int &element, bool comma_ok)
 		etype = force_element_type(tname);
 		element = make_anon_element(tname, tname.pos2(), etype, configuration.string(), lm);
 	    } else
-		_lexinfo->notify_element_reference(name, _router->etype(element), _compound_class, tname.pos1(), tname.pos2());
+		_lexinfo->notify_element_reference(_router->element(element), _compound_class, tname.pos1(), tname.pos2());
 	}
     }
 

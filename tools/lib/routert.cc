@@ -514,6 +514,7 @@ RouterT::find_connections_from(const PortT &h, Vector<PortT> &v) const
     assert(h.router() == this);
     int c = _first_conn[h.idx()].from;
     int p = h.port;
+    v.clear();
     while (c >= 0) {
 	if (_conn[c].from().port == p)
 	    v.push_back(_conn[c].to());
@@ -527,6 +528,7 @@ RouterT::find_connections_from(const PortT &h, Vector<int> &v) const
     assert(h.router() == this);
     int c = _first_conn[h.idx()].from;
     int p = h.port;
+    v.clear();
     while (c >= 0) {
 	if (_conn[c].from().port == p)
 	    v.push_back(c);
@@ -540,6 +542,7 @@ RouterT::find_connections_to(const PortT &h, Vector<PortT> &v) const
     assert(h.router() == this);
     int c = _first_conn[h.idx()].to;
     int p = h.port;
+    v.clear();
     while (c >= 0) {
 	if (_conn[c].to().port == p)
 	    v.push_back(_conn[c].from());
@@ -553,6 +556,7 @@ RouterT::find_connections_to(const PortT &h, Vector<int> &v) const
     assert(h.router() == this);
     int c = _first_conn[h.idx()].to;
     int p = h.port;
+    v.clear();
     while (c >= 0) {
 	if (_conn[c].to().port == p)
 	    v.push_back(c);
@@ -1206,6 +1210,43 @@ RouterT::configuration_string() const
     StringAccum sa;
     unparse(sa);
     return sa.take_string();
+}
+
+
+void
+RouterT::iterator::step(RouterT *r, int idx)
+{
+    int n = (r ? r->nelements() : -1);
+    while (idx < n && (_e = r->element(idx), _e->dead()))
+	idx++;
+    if (idx >= n)
+	_e = 0;
+}
+
+void
+RouterT::const_iterator::step(const RouterT *r, int idx)
+{
+    int n = (r ? r->nelements() : -1);
+    while (idx < n && (_e = r->element(idx), _e->dead()))
+	idx++;
+    if (idx >= n)
+	_e = 0;
+}
+
+RouterT::type_iterator::type_iterator(RouterT *r, ElementClassT *type)
+    : _type(type ? type : ElementClassT::unused_type())
+{
+    step(r, 0);
+}
+
+void
+RouterT::type_iterator::step(RouterT *r, int idx)
+{
+    int n = (r ? r->nelements() : -1);
+    while (idx < n && (_e = r->element(idx), _e->type() != _type))
+	idx++;
+    if (idx >= n)
+	_e = 0;
 }
 
 #include <click/vector.cc>

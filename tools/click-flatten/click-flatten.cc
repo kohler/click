@@ -210,18 +210,16 @@ particular purpose.\n");
 
    case DECLARATIONS_OPT: {
      Vector<String> decls;
-     for (int i = 0; i < router->nelements(); i++) {
-       String e = router->ename(i), et = router->etype_name(i);
-       decls.push_back(e + " :: " + et);
-     }
+     for (RouterT::iterator x = router->first_element(); x; x++)
+       decls.push_back(x->name() + " :: " + x->type_name());
      output_sorted_one_per_line(decls, out);
      break;
    }
 
    case ELEMENTS_OPT: {
      Vector<String> elts;
-     for (int i = 0; i < router->nelements(); i++)
-       elts.push_back(router->ename(i));
+     for (RouterT::iterator x = router->first_element(); x; x++)
+       elts.push_back(x->name());
      output_sorted_one_per_line(elts, out);
      break;
    }

@@ -396,7 +396,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
   Bitvector dead(r->nelements(), false);
 
   // find initial sources and sinks
-  for (RouterT::live_iterator x = r->first_live_element(); x; x++) {
+  for (RouterT::iterator x = r->first_element(); x; x++) {
     int nin = x->ninputs();
     int nout = x->noutputs();
     int source_flag = x->type()->traits().flag_value('S');
@@ -473,7 +473,7 @@ find_live_elements(/*const*/ RouterT *r, const char *filename,
   live_elements = sources & sinks;
 
   // find independently live elements
-  for (RouterT::live_iterator x = r->first_live_element(); x; x++)
+  for (RouterT::iterator x = r->first_element(); x; x++)
     if (!live_elements[x->idx()]) {
       int ei = x->idx();
       int live_flag = x->type()->traits().flag_value('L');
@@ -499,7 +499,7 @@ replace_blank_ports(RouterT *r)
 {
   ElementT *idle = 0;
   int idle_next_in = 0, idle_next_out = 0;
-  for (RouterT::live_iterator x = r->first_live_element(); x; x++) {
+  for (RouterT::iterator x = r->first_element(); x; x++) {
     Vector<int> connv;
 
     r->find_connection_vector_to(x, connv);

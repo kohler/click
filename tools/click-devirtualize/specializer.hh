@@ -1,13 +1,14 @@
-#ifndef SPECIALIZER_HH
-#define SPECIALIZER_HH
+#ifndef CLICK_SPECIALIZER_HH
+#define CLICK_SPECIALIZER_HH
 #include "cxxclass.hh"
 class RouterT;
+class ElementT;
 class ErrorHandler;
 class ElementMap;
 class Signatures;
 
 String click_to_cxx_name(const String &);
-String specialized_click_name(RouterT *, int);
+String specialized_click_name(ElementT *);
 
 struct ElementTypeInfo {
   String click_name;

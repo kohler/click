@@ -89,9 +89,9 @@ click_to_cxx_name(const String &click)
 }
 
 String
-specialized_click_name(RouterT *router, int i)
+specialized_click_name(ElementT *e)
 {
-  return router->etype_name(i) + "@@" + router->ename(i);
+  return e->type_name() + "@@" + e->name();
 }
 
 static void

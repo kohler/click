@@ -180,7 +180,7 @@ Specializer::check_specialize(int eindex, ErrorHandler *errh)
     spc.click_name = spc.old_click_name;
     spc.cxx_name = old_eti.cxx_name;
   } else {
-    spc.click_name = specialized_click_name(_router, eindex);
+    spc.click_name = specialized_click_name(_router->element(eindex));
     spc.cxx_name = click_to_cxx_name(spc.click_name);
     add_type_info(spc.click_name, spc.cxx_name, String(), String());
   }

@@ -31,7 +31,8 @@
 static String::Initializer string_initializer;
 static HashMap<String, int> default_class_map(-1);
 static Vector<ElementClassT *> default_classes;
-static int unique_id_storage = 0;
+static int unique_id_storage = ElementClassT::UNUSED_UID;
+ElementClassT *ElementClassT::the_unused_type = new ElementClassT("<unused>", UNUSED_UID);
 ElementClassT *ElementClassT::the_tunnel_type = new ElementClassT("<tunnel>", TUNNEL_UID);
 
 static int fake_emap_version;

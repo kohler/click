@@ -21,7 +21,8 @@ class ElementClassT { public:
 
     static void set_default_class(ElementClassT *);
     static ElementClassT *default_class(const String &);
-    static ElementClassT *tunnel_type() { assert(the_tunnel_type); return the_tunnel_type; }
+    static ElementClassT *unused_type();
+    static ElementClassT *tunnel_type();
 
     void use()				{ _use_count++; }
     void unuse()			{ if (--_use_count <= 0) delete this; }
@@ -30,6 +31,7 @@ class ElementClassT { public:
     const char *name_cc()		{ return _name.cc(); }
     int unique_id() const		{ return _unique_id; }
     int uid() const			{ return _unique_id; }
+    static const int UNUSED_UID = -1;
     static const int TUNNEL_UID = 0;
 
     const ElementTraits &traits() const;
@@ -64,6 +66,7 @@ class ElementClassT { public:
     mutable int _traits_version;
     mutable const ElementTraits *_traits;
     
+    static ElementClassT *the_unused_type;
     static ElementClassT *the_tunnel_type;
     static ElementMap *the_emap;
     static const int *the_emap_version_ptr;
@@ -140,6 +143,20 @@ class CompoundElementClassT : public ElementClassT { public:
 
 
 extern int32_t default_element_map_version;
+
+inline ElementClassT *
+ElementClassT::tunnel_type()
+{
+    assert(the_tunnel_type);
+    return the_tunnel_type;
+}
+
+inline ElementClassT *
+ElementClassT::unused_type()
+{
+    assert(the_unused_type);
+    return the_unused_type;
+}
 
 inline const ElementTraits &
 ElementClassT::traits() const

@@ -260,8 +260,8 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
     
     // look for things starting with that name
     int plen = prefix.length();
-    for (int i = 0; i < r->nelements(); i++) {
-      const String &n = r->ename(i);
+    for (RouterT::iterator x = r->first_element(); x; x++) {
+      const String &n = x->name();
       if (n.length() > plen + 1 && n.substring(0, plen) == prefix
 	  && n[plen] == '/')
 	goto failed;

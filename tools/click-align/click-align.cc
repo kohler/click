@@ -80,14 +80,11 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
   _ialign.assign(id, Alignment());
   _oalign.assign(od, Alignment());
   // find aligners
-  for (int i = 0; i < ne; i++) {
-    AlignClass *eclass = (AlignClass *)_router->etype(i)->cast("AlignClass");
-    Aligner *aligner = 0;
+  _aligners.assign(_router->nelements(), default_aligner());
+  for (RouterT::iterator x = _router->first_element(); x; x++) {
+    AlignClass *eclass = (AlignClass *)x->type()->cast("AlignClass");
     if (eclass)
-      aligner = eclass->create_aligner(_router->element(i), _router, errh);
-    if (!aligner)
-      aligner = default_aligner();
-    _aligners.push_back(aligner);
+      _aligners[x->idx()] = eclass->create_aligner(x, _router, errh);
   }
 }
 
@@ -214,9 +211,9 @@ RouterAlign::adjust()
 void
 RouterAlign::print(FILE *f)
 {
-  int ne = _router->nelements();
-  for (int i = 0; i < ne; i++) {
-    fprintf(f, "%s :", _router->ename(i).cc());
+  for (RouterT::iterator x = _router->first_element(); x; x++) {
+    int i = x->idx();
+    fprintf(f, "%s :", x->name_cc());
     for (int j = 0; j < _icount[i]; j++) {
       const Alignment &a = _ialign[ _ioffset[i] + j ];
       fprintf(f, " %d/%d", a.chunk(), a.offset());
@@ -454,9 +451,8 @@ particular purpose.\n");
     const Vector<ConnectionT> &conn = router->connections();
     int nhook = conn.size();
     for (int i = 0; i < nhook; i++)
-      if (conn[i].live()
-	  && router->etype(conn[i].to_idx()) == align_class
-	  && router->etype(conn[i].from_idx()) == align_class) {
+      if (conn[i].live() && conn[i].to_elt()->type() == align_class
+	  && conn[i].from_elt()->type() == align_class) {
 	// skip over hf[i]
 	Vector<PortT> above, below;
 	router->find_connections_to(conn[i].from(), above);
@@ -519,7 +515,7 @@ particular purpose.\n");
     const Vector<ConnectionT> &conn = router->connections();
     int nhook = conn.size();
     for (int i = 0; i < nhook; i++)
-      if (conn[i].live() && router->etype(conn[i].to_idx()) == align_class) {
+      if (conn[i].live() && conn[i].to_elt()->type() == align_class) {
 	Alignment have = ral._oalign[ ral._ooffset[conn[i].from_idx()] + conn[i].from_port() ];
 	Alignment want = ral._oalign[ ral._ooffset[conn[i].to_idx()] ];
 	if (have <= want) {
@@ -558,17 +554,19 @@ particular purpose.\n");
 
     // collect alignment information, delete old AlignmentInfos
     StringAccum sa;
-    int nelem = router->nelements();
-    for (int i = 0; i < nelem; i++) {
-      if (sa.length()) sa << ",\n  ";
-      sa << router->ename(i);
+    for (RouterT::iterator x = router->first_element(); x; x++) {
+      if (sa.length())
+	sa << ",\n  ";
+      sa << x->name();
+      int i = x->idx();
       for (int j = 0; j < ral._icount[i]; j++) {
 	const Alignment &a = ral._ialign[ ral._ioffset[i] + j ];
 	sa << "  " << a.chunk() << " " << a.offset();
       }
     }
     
-    router->get_element(String("AlignmentInfo@click_align@") + String(nelem+1),
+    router->get_element(String("AlignmentInfo@click_align@")
+			+ String(router->nelements() + 1),
 			aligninfo_class, sa.take_string(),
 			"<click-align>");
   }

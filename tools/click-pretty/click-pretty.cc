@@ -87,6 +87,19 @@ SPAN.click-err:hover {\n\
   font-weight: bold;\n\
   background-color: #000;\n\
 }\n\
+SPAN.click-et-decl {\n\
+  font-weight: bold;\n\
+  font-family: monospace;\n\
+}\n\
+SPAN.click-et-port {\n\
+  font-family: monospace;\n\
+  font-style: italic;\n\
+  font-size: small;\n\
+}\n\
+SPAN.click-et-conn {\n\
+  font-family: monospace;\n\
+  font-size: small;\n\
+}\n\
 --></style>\n\
 <body>\n";
 
@@ -260,7 +273,7 @@ url_attr_quote(const String &what)
 	sa << what.substring(pos, npos - pos);
 	if (what[npos] == '&')
 	    sa << "&#38;";
-	else
+	else /* what[npos] == '\'' */
 	    sa << "&#39;";
 	pos = npos + 1;
     }
@@ -270,6 +283,30 @@ url_attr_quote(const String &what)
 	sa << what.substring(pos);
 	return sa.take_string();
     }
+}
+
+static String
+link_class_decl(ElementClassT *ec)
+{
+    return "decl" + String(ec->unique_id());
+}
+
+static String
+link_element_decl(ElementT *e, ElementClassT *enclose)
+{
+    if (enclose)
+	return "e" + String(enclose->unique_id()) + "-" + e->name();
+    else
+	return "e-" + e->name();
+}
+
+static String
+link_element_table(ElementT *e, ElementClassT *enclose)
+{
+    if (enclose)
+	return "et" + String(enclose->unique_id()) + "-" + e->name();
+    else
+	return "et-" + e->name();
 }
 
 class PrettyLexerTInfo : public LexerTInfo { public:
@@ -289,12 +326,11 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	add_item(pos1, "<span class='click-cstr'>", pos2, "</span>");
     }
     void notify_class_declaration(ElementClassT *ec, bool anonymous, int decl_pos1, int name_pos1, int) {
-	int uid = ec->unique_id();
 	if (!anonymous)
-	    add_item(name_pos1, "<a name='decl" + String(uid) + "'><span class='click-cdecl'>", name_pos1 + ec->name().length(), "</span></a>");
+	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='click-cdecl'>", name_pos1 + ec->name().length(), "</span></a>");
 	else
-	    add_item(decl_pos1, "<a name='decl" + String(uid) + "'>", decl_pos1 + 1, "</a>");
-	add_class_href(uid, "#decl" + String(uid));
+	    add_item(decl_pos1, "<a name='" + link_class_decl(ec) + "'>", decl_pos1 + 1, "</a>");
+	add_class_href(ec->unique_id(), "#" + link_class_decl(ec));
     }
     void notify_class_extension(ElementClassT *ec, int pos1, int pos2) {
 	String href = class_href(ec);
@@ -306,15 +342,12 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	if (href)
 	    add_item(pos1, "<a href='" + href + "'>", pos2, "</a>");
     }
-    void notify_element_declaration(const String &name, ElementClassT *type, ElementClassT *enclose, int pos1, int pos2, int decl_pos2) {
-	if (!enclose)
-	    add_item(pos1, "<a name='e-" + name + "'>", pos2, "</a>");
-	else
-	    add_item(pos1, "<a name='e" + String(enclose->unique_id()) + "-" + name + "'>", pos2, "</a>");
-	notify_element_reference(name, type, enclose, pos1, decl_pos2);
+    void notify_element_declaration(ElementT *e, ElementClassT *enclose, int pos1, int pos2, int decl_pos2) {
+	add_item(pos1, "<a name='" + link_element_decl(e, enclose) + "'>", pos2, "</a>");
+	notify_element_reference(e, enclose, pos1, decl_pos2);
     }
-    void notify_element_reference(const String &name, ElementClassT *type, ElementClassT *, int pos1, int pos2) {
-	add_item(pos1, "<span title='" + name + " :: " + type->name() + "'>", pos2, "</span>");
+    void notify_element_reference(ElementT *e, ElementClassT *, int pos1, int pos2) {
+	add_item(pos1, "<span title='" + e->name() + " :: " + e->type_name() + "'>", pos2, "</span>");
     }
 
 };
@@ -496,10 +529,122 @@ output_config(String r_config, FILE *outf)
     fputs("</pre>\n", outf);
 }
 
+
+extern "C" {
+static const Vector<ConnectionT> *conn_compar_connvec;
+static bool conn_compar_from;
+static int
+conn_compar(const void *v1, const void *v2)
+{
+    const int *i1 = (const int *)v1, *i2 = (const int *)v2;
+    const ConnectionT &c1 = (*conn_compar_connvec)[*i1];
+    const ConnectionT &c2 = (*conn_compar_connvec)[*i2];
+    const PortT &p1 = (conn_compar_from ? c1.from() : c1.to());
+    const PortT &p2 = (conn_compar_from ? c2.from() : c2.to());
+    if (p1.elt == p2.elt)
+	return p1.port - p2.port;
+    else
+	return click_strcmp(p1.elt->name(), p2.elt->name());
+}
+}
+
 static void
 output_element_connections(ElementT *e, RouterT *r, FILE *outf)
 {
+    StringAccum sa;
+
+    // +---+-------------------+
+    // | name :: declaration   |
+    // +---+-------------------+
+    // |   |+----+-+--+-------+|
+    // |sp.||port|#|->| stuff ||
+    // |   |+....+.+..+.......+|
+    // +---+-------------------+
     
+    // table boilerplate
+    sa << "<table cellspacing='0' cellpadding='1' border='0'>\n";
+    
+    // output declaration and link
+    sa << "<tr valign='top'><td colspan='2' align='left'><span class='click-et-decl'>"
+       << "<a name='" + link_element_table(e, 0 /* XXX */) + "'>"
+       << e->name() << "</a> :: ";
+    String h = class_href(e->type());
+    if (h)
+	sa << "<a href='" << h << "'>" << e->type_name() << "</a>";
+    else
+	sa << e->type_name();
+    sa << "</span> <a href='#" << link_element_decl(e, 0 /* XXX */)
+       << "'>*</a><br></td></tr>\n"
+       << "<tr valign='top'><td width='15'>&nbsp;</td>\n"
+       << "<td>";
+
+    // output inputs
+    Vector<int> conn;
+    conn_compar_connvec = &r->connections();
+    conn_compar_from = true;
+    sa << "<table cellspacing='0' cellpadding='0' border='0'>\n";
+    for (int i = 0; i < e->ninputs(); i++) {
+	r->find_connections_to(PortT(e, i), conn);
+	sa << "<tr valign='top'>"
+	   << "<td align='left'><span class='click-et-port'>input&nbsp;&nbsp;</span></td>\n"
+	   << "<td align='right'><span class='click-et-port'>" << i << "</span></td>\n";
+	if (conn.size()) {
+	    sa << "<td align='center'><span class='click-et-conn'>&nbsp;&lt;-&nbsp;</span></td>\n<td align='left'><span class='click-et-conn'>";
+	    qsort(&conn[0], conn.size(), sizeof(int), conn_compar);
+	} else
+	    sa << "<td align='left' colspan='2'><span class='click-et-conn'>&nbsp;not connected";
+	for (int j = 0; j < conn.size(); j++) {
+	    const ConnectionT &c = r->connection(conn[j]);
+	    if (j)
+		sa << ", ";
+	    sa << "<a href='#" << link_element_table(c.from_elt(), 0)
+	       << "'>" << c.from_elt()->name() << "</a>["
+	       << c.from_port() << "]";
+	}
+	sa << "<br></span></td></tr>\n";
+    }
+    if (e->ninputs() == 0)
+	sa << "<tr valign='top'>"
+	   << "<td colspan='4'><span class='click-et-port'>no inputs<br></span></td></tr>\n";
+
+    // outputs
+    conn_compar_from = false;
+    for (int i = 0; i < e->noutputs(); i++) {
+	r->find_connections_from(PortT(e, i), conn);
+	sa << "<tr valign='top'>"
+	   << "<td align='left'><span class='click-et-port'>output&nbsp;</span></td>\n"
+	   << "<td align='right'><span class='click-et-port'>" << i << "</span></td>\n";
+	if (conn.size()) {
+	    sa << "<td align='center'><span class='click-et-conn'>&nbsp;-&gt;&nbsp;</span></td>\n<td align='left'><span class='click-et-conn'>";
+	    qsort(&conn[0], conn.size(), sizeof(int), conn_compar);
+	} else
+	    sa << "<td align='left' colspan='2'><span class='click-et-conn'>&nbsp;not connected";
+	for (int j = 0; j < conn.size(); j++) {
+	    const ConnectionT &c = r->connection(conn[j]);
+	    if (j)
+		sa << ", ";
+	    sa << "[" << c.to_port() << "]<a href='#"
+	       << link_element_table(c.to_elt(), 0) << "'>"
+	       << c.to_elt()->name() << "</a>";
+	}
+	sa << "<br></span></td></tr>\n";
+    }
+    if (e->noutputs() == 0)
+	sa << "<tr valign='top'>"
+	   << "<td colspan='3'><span class='click-et-port'>no outputs<br></span></td></tr>\n";
+
+    sa << "</table></td></tr></table>\n";
+    fputs(sa.cc(), outf);
+}
+
+
+extern "C" {
+static int
+element_name_compar(const void *v1, const void *v2)
+{
+    const ElementT **e1 = (const ElementT **)v1, **e2 = (const ElementT **)v2;
+    return click_strcmp((*e1)->name(), (*e2)->name());
+}
 }
 
 static void
@@ -526,6 +671,17 @@ pretty_process(const char *infile, const char *outfile, ErrorHandler *errh)
 
     // output configuration
     output_config(r_config, outf);
+
+    // get list of elements
+    Vector<ElementT *> elements;
+    for (RouterT::iterator x = r->first_element(); x; x++)
+	elements.push_back(x);
+    if (elements.size())
+	qsort(&elements[0], elements.size(), sizeof(ElementT *), element_name_compar);
+    
+    // output connections
+    for (int i = 0; i < elements.size(); i++)
+	output_element_connections(elements[i], r, outf);
     
     if (html_boilerplate)
 	fputs(html_footer, outf);
