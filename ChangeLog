@@ -1,3 +1,7 @@
+2004-02-03 Tuesday 22:31  Eddie Kohler <kohler@icir.org>
+
+	* click-compile.in (1.28): include $cflags when linking
+
 2004-02-03 Tuesday 14:33  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromnlanrdump.cc (1.1), fromnlanrdump.hh
