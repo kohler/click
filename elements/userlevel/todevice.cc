@@ -48,7 +48,7 @@
 #endif
 
 ToDevice::ToDevice()
-  : Element(1, 0), _task(this), _fd(-1), _my_fd(false)
+  : Element(1, 0), _task(this), _fd(-1), _my_fd(false), _set_error_anno(false)
 {
   MOD_INC_USE_COUNT;
 #if TODEVICE_BSD_DEV_BPF
@@ -78,6 +78,8 @@ ToDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_ifname,
+		  cpKeywords,
+		  "SET_ERROR_ANNO", cpBool, "set annotation on error packets?", &_set_error_anno,
 		  0) < 0)
     return -1;
   if (!_ifname)
@@ -178,10 +180,12 @@ ToDevice::send_packet(Packet *p)
 
   if (retval < 0) {
     click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
-    unsigned char c = errno & 0xFF;
-    if (c != errno)
-      click_chatter("ToDevice(%s) truncating errno to %d", _ifname.cc(), (int) c);
-    SET_SEND_ERR_ANNO(p, c);
+    if (_set_error_anno) {
+      unsigned char c = errno & 0xFF;
+      if (c != errno)
+	click_chatter("ToDevice(%s) truncating errno to %d", _ifname.cc(), (int) c);
+      SET_SEND_ERR_ANNO(p, c);
+    }
     checked_output_push(0, p);
   }
   else

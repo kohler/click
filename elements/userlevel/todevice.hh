@@ -9,7 +9,7 @@
 /*
  * =title ToDevice.u
  * =c
- * ToDevice(DEVNAME)
+ * ToDevice(DEVNAME [, I<KEYWORDS>])
  * =s devices
  * sends packets to network device (user-level)
  * =d
@@ -20,6 +20,17 @@
  * Pulls packets and sends them out the named device using
  * Berkeley Packet Filters (or Linux equivalent).
  *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item SET_ERROR_ANNO
+ * 
+ * Boolean.  If true, then set the SEND_ERR annotation on error output
+ * packets.  Default is false.
+ *
+ * =back
+ *
  * Packets sent via ToDevice should already have a link-level
  * header prepended. This means that ARP processing,
  * for example, must already have been done.
@@ -29,8 +40,9 @@
  * mileage may vary.
  *
  * If there is an error write()ing or send()ing a packet to the
- * device, the packet will be pushed out the (optional) output, with
- * the SEND_ERR annotation set to the system error code.
+ * device, the packet will be pushed out the (optional) output.  If
+ * the SET_ERROR_ANNO keyword is true, the SEND_ERR annotation of the
+ * pushed packet is set to the system error code.
  *
  * This element is only available at user level.
  * 
@@ -91,6 +103,8 @@ private:
   bool _my_fd;
   NotifierSignal _signal;
   
+  bool _set_error_anno;
+
 #if TODEVICE_BSD_DEV_BPF
   pcap_t *_pcap;
 #endif
