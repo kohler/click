@@ -193,17 +193,11 @@ cp_unspacevec(const Vector<String> &args)
 }
 
 String
-cp_subst(const String &str)
+cp_uncomment(const String &str)
 {
   Vector<String> v;
   cp_argvec(str, v);
-  if (v.size() > 1) {
-    cp_errno = CPE_FORMAT;
-    return String();
-  } else {
-    cp_errno = CPE_OK;
-    return (v.size() ? v[0] : String());
-  }
+  return cp_unargvec(v);
 }
 
 void

@@ -30,17 +30,20 @@ ProcessingT::ProcessingT(const RouterT *r, const ElementMap &em, ErrorHandler *e
 }
 
 void
-ProcessingT::create_pidx()
+ProcessingT::create_pidx(ErrorHandler *errh)
 {
   int ne = _router->nelements();
   _input_pidx.assign(ne, 0);
   _output_pidx.assign(ne, 0);
 
+  // count used input and output ports for each element
   int nh = _router->nhookup();
   const Vector<Hookup> &hf = _router->hookup_from();
   const Vector<Hookup> &ht = _router->hookup_to();
   for (int i = 0; i < nh; i++) {
     const Hookup &ho = hf[i];
+    if (ho.idx < 0)
+      continue;
     if (ho.port >= _output_pidx[ho.idx])
       _output_pidx[ho.idx] = ho.port + 1;
     const Hookup &hi = ht[i];
@@ -67,6 +70,13 @@ ProcessingT::create_pidx()
       _input_eidx.push_back(i - 1);
     for (; co < _output_pidx[i]; co++)
       _output_eidx.push_back(i - 1);
+  }
+
+  // complain about dead elements with live connections
+  if (errh) {
+    for (int i = 0; i < ne; i++)
+      if (_router->edead(i) && (ninputs(i) > 0 || noutputs(i) > 0))
+	errh->lwarning(_router->elandmark(i), "dead element %s has live connections", _router->ename(i).cc());
   }
 }
 
@@ -112,7 +122,7 @@ ProcessingT::initial_processing_for(int ei, const ElementMap &em, ErrorHandler *
 {
   // don't handle uprefs or tunnels
   int etype = _router->etype(ei);
-  if (etype == RouterT::TUNNEL_TYPE || etype == RouterT::UPREF_TYPE)
+  if (etype < 0 || etype == RouterT::TUNNEL_TYPE || etype == RouterT::UPREF_TYPE)
     return;
   
   String etype_name = _router->type_name(etype);
@@ -265,6 +275,9 @@ ProcessingT::check_connections(ErrorHandler *errh)
   const Vector<Hookup> &hf = _router->hookup_from();
   const Vector<Hookup> &ht = _router->hookup_to();
   for (int c = 0; c < hf.size(); c++) {
+    if (hf[c].idx < 0)
+      continue;
+    
     int fp = output_pidx(hf[c]), tp = input_pidx(ht[c]);
 
     if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
@@ -292,6 +305,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
   for (int i = 0; i < ninput_pidx(); i++)
     if (input_used[i] < 0) {
       int ei = _input_eidx[i];
+      if (_router->edead(ei)) continue;
       int port = i - _input_pidx[ei];
       errh->lerror(_router->elandmark(ei),
 		   "`%s' %s input %d not connected",
@@ -301,6 +315,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
   for (int i = 0; i < noutput_pidx(); i++)
     if (output_used[i] < 0) {
       int ei = _output_eidx[i];
+      if (_router->edead(ei)) continue;
       int port = i - _output_pidx[ei];
       errh->lerror(_router->elandmark(ei),
 		   "`%s' %s output %d not connected",
@@ -325,7 +340,10 @@ ProcessingT::reset(const RouterT *r, const ElementMap &em, ErrorHandler *errh)
   _router = r;
   if (!errh) errh = ErrorHandler::silent_handler();
   int before = errh->nerrors();
-  create_pidx();
+
+  // create pidx and eidx arrays, warn about dead elements
+  create_pidx(errh);
+  
   initial_processing(em, errh);
   check_processing(em, errh);
   check_connections(errh);
@@ -347,5 +365,11 @@ ProcessingT::same_processing(int a, int b) const
     return false;
   if (ano && memcmp(&_output_processing[ao], &_output_processing[bo], sizeof(int) * ano) != 0)
     return false;
+  return true;
+}
+
+bool
+ProcessingT::is_internal_flow(int, int, int) const
+{
   return true;
 }

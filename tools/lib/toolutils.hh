@@ -18,6 +18,7 @@ class ElementMap {
   Vector<String> _cxx;
   Vector<String> _header_file;
   Vector<String> _processing_code;
+  Vector<String> _flags;
   Vector<String> _requirements;
   Vector<String> _provisions;
   Vector<int> _driver;
@@ -34,7 +35,8 @@ class ElementMap {
   static const int DRIVER_LINUXMODULE = 0;
   static const int DRIVER_USERLEVEL = 1;
   static const int NDRIVERS = 2;
-
+  static const char *driver_name(int);
+  
   ElementMap();
   ElementMap(const String &);
 
@@ -43,17 +45,20 @@ class ElementMap {
   const String &cxx(int i) const		{ return _cxx[i]; }
   const String &header_file(int i) const	{ return _header_file[i]; }
   const String &processing_code(int i) const	{ return _processing_code[i]; }
+  const String &flags(int i) const		{ return _flags[i]; }
   const String &requirements(int i) const	{ return _requirements[i]; }
   const String &provisions(int i) const		{ return _provisions[i]; }
   int name_next(int i) const			{ return _name_next[i]; }
   int cxx_next(int i) const			{ return _cxx_next[i]; }
   String processing_code(const String &) const;
+  int flag_value(int i, int flag) const;
+  int flag_value(const String &, int flag) const;
 
   int find(const String &n) const		{ return _name_map[n]; }
   int find_cxx(const String &n) const		{ return _cxx_map[n]; }
 
   int add(const String &name, const String &cxx, const String &header_file,
-	  const String &processing_code,
+	  const String &processing_code, const String &flags,
 	  const String &requirements, const String &provisions);
   int add(const String &name, const String &cxx, const String &header_file,
 	  const String &processing_code);

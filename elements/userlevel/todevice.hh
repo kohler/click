@@ -76,6 +76,7 @@ class ToDevice : public Element {
   
   const char *class_name() const		{ return "ToDevice"; }
   const char *processing() const		{ return AGNOSTIC; }
+  const char *flags() const			{ return "S2"; }
   
   ToDevice *clone() const;
   int configure_phase() const { return FromDevice::CONFIGURE_PHASE_TODEVICE; }

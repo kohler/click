@@ -120,7 +120,8 @@ Bitvector::operator&=(const Bitvector &o)
 Bitvector &
 Bitvector::operator|=(const Bitvector &o)
 {
-  assert(o._max == _max);
+  if (o._max > _max)
+    resize(o._max + 1);
   int nn = u_max();
   unsigned *data = _data, *o_data = o._data;
   for (int i = 0; i <= nn; i++)

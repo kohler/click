@@ -87,6 +87,7 @@ class RouterT : public ElementClassT {
   String ename_upref(int) const;
   int etype(int) const;
   String etype_name(int) const;
+  String edeclaration(int) const;
   ElementClassT *etype_class(int) const;
   const String &econfiguration(int) const;
   String &econfiguration(int i)		{ return _elements[i].configuration; }
@@ -105,7 +106,9 @@ class RouterT : public ElementClassT {
   
   int nhookup() const				{ return _hookup_from.size(); }
   const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
+  const Hookup &hookup_from(int i) const	{ return _hookup_from[i]; }
   const Vector<Hookup> &hookup_to() const	{ return _hookup_to; }
+  const Hookup &hookup_to(int i) const		{ return _hookup_to[i]; }
   const String &hookup_landmark(int i) const	{ return _hookup_landmark[i]; }
   bool hookup_live(int i) const		{ return _hookup_from[i].live(); }
  
@@ -114,9 +117,8 @@ class RouterT : public ElementClassT {
   bool add_connection(Hookup, Hookup, const String &landmark = String());
   bool add_connection(int fidx, int fport, int tport, int tidx);
   void kill_connection(int);
+  void kill_bad_connections();
   void compact_connections();
-  void change_connection_to(int, Hookup);
-  void change_connection_from(int, Hookup);
 
   void add_requirement(const String &);
   void remove_requirement(const String &);
@@ -130,9 +132,14 @@ class RouterT : public ElementClassT {
   ArchiveElement &archive(const String &s);
   
   bool has_connection(const Hookup &, const Hookup &) const;
+  int find_connection(const Hookup &, const Hookup &) const;
+  void change_connection_to(int, Hookup);
+  void change_connection_from(int, Hookup);
   bool find_connection_from(const Hookup &, Hookup &) const;
   void find_connections_from(const Hookup &, Vector<Hookup> &) const;
+  void find_connections_from(const Hookup &, Vector<int> &) const;
   void find_connections_to(const Hookup &, Vector<Hookup> &) const;
+  void find_connections_to(const Hookup &, Vector<int> &) const;
   void find_connection_vector_from(int, Vector<int> &) const;
   void find_connection_vector_to(int, Vector<int> &) const;
   void count_ports(Vector<int> &, Vector<int> &) const;
@@ -206,6 +213,12 @@ RouterT::etype_name(int idx) const
   return type_name(_elements[idx].type);
 }
 
+inline String
+RouterT::edeclaration(int idx) const
+{
+  return ename(idx) + " :: " + etype_name(idx);
+}
+
 inline ElementClassT *
 RouterT::etype_class(int idx) const
 {
@@ -223,6 +236,12 @@ inline bool
 RouterT::add_connection(int fidx, int fport, int tport, int tidx)
 {
   return add_connection(Hookup(fidx, fport), Hookup(tidx, tport));
+}
+
+inline bool
+RouterT::has_connection(const Hookup &hfrom, const Hookup &hto) const
+{
+  return find_connection(hfrom, hto) >= 0;
 }
 
 inline ArchiveElement &

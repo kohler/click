@@ -39,6 +39,7 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/click-fastclassifier.1 $(mandir)/man1/click-fastclassifier.1
 	$(INSTALL_DATA) $(srcdir)/click-install.1 $(mandir)/man1/click-install.1
 	$(INSTALL_DATA) $(srcdir)/click-uncombine.1 $(mandir)/man1/click-uncombine.1
+	$(INSTALL_DATA) $(srcdir)/click-undead.1 $(mandir)/man1/click-undead.1
 	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(mandir)/man1/click-uninstall.1
 	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
 	$(INSTALL_DATA) $(srcdir)/Element.3 $(mandir)/man3/Element.3

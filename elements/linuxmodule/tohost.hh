@@ -29,6 +29,7 @@ class ToLinux : public Element {
   
   const char *class_name() const		{ return "ToLinux"; }
   const char *processing() const		{ return PUSH; }
+  const char *flags() const			{ return "S2"; }
   
   ToLinux *clone() const;
   

@@ -81,10 +81,6 @@ Options:\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
-static const char *driver_name[] = {
-  "kernel", "user-level"
-};
-
 static void
 check_once(const RouterT *r, const char *filename,
 	   const Vector<int> &elementmap_indexes,
@@ -93,19 +89,19 @@ check_once(const RouterT *r, const char *filename,
 	   ErrorHandler *full_errh)
 {
   if (!indifferent && !full_elementmap.driver_compatible(elementmap_indexes, driver)) {
-    full_errh->error("%s: configuration incompatible with %s driver", filename, driver_name[driver]);
+    full_errh->error("%s: configuration incompatible with %s driver", filename, ElementMap::driver_name(driver));
     return;
   }
   
   const ElementMap *em = &full_elementmap;
   if (!indifferent) {
     ElementMap *new_em = new ElementMap(full_elementmap);
-    new_em->limit_driver(ElementMap::DRIVER_LINUXMODULE);
+    new_em->limit_driver(driver);
     em = new_em;
   }
   ErrorHandler *errh = full_errh;
   if (print_context)
-    errh = new ContextErrorHandler(errh, "While checking configuration for " + String(driver_name[driver]) + " driver:");
+    errh = new ContextErrorHandler(errh, "While checking configuration for " + String(ElementMap::driver_name(driver)) + " driver:");
   int before = errh->nerrors();
   int before_warnings = errh->nwarnings();
 
@@ -114,7 +110,7 @@ check_once(const RouterT *r, const char *filename,
   // ... it will report errors as required
 
   if (print_ok_message && errh->nerrors() == before && errh->nwarnings() == before_warnings)
-    full_errh->message("%s: configuration OK in %s driver", filename, driver_name[driver]);
+    full_errh->message("%s: configuration OK in %s driver", filename, ElementMap::driver_name(driver));
   if (!indifferent)
     delete em;
   if (print_context)
@@ -128,7 +124,6 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
   ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-check: ");
-  assert(sizeof(driver_name) / sizeof(driver_name[0]) == ElementMap::NDRIVERS);
 
   // read command line arguments
   Clp_Parser *clp =

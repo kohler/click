@@ -155,7 +155,7 @@ write_tickets_handler(const String &in_s, Element *e, void *thunk, ErrorHandler 
 {
   StrideSched *ss = (StrideSched *)e;
   int port = (int)thunk;
-  String s = cp_subst(in_s);
+  String s = cp_uncomment(in_s);
   int tickets;
   if (!cp_integer(s, &tickets))
     return errh->error("tickets value must be integer");

@@ -17,7 +17,7 @@ bool cp_is_space(const String &);
 bool cp_is_word(const String &);
 
 // argument lists <-> lists of arguments
-String cp_subst(const String &);
+String cp_uncomment(const String &);
 void cp_argvec(const String &, Vector<String> &);
 void cp_spacevec(const String &, Vector<String> &);
 String cp_unargvec(const Vector<String> &);

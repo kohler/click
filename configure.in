@@ -322,8 +322,8 @@ dnl
 
 TARGETS=
 AC_SUBST(TARGETS)
-TOOLDIRS="click-align click-check click-combine click-devirtualize click-fastclassifier click-install click-xform udpgen"
-TOOL_TARGETS="click-align click-check click-combine click-compile click-devirtualize click-fastclassifier click-xform"
+TOOLDIRS="click-align click-check click-combine click-devirtualize click-fastclassifier click-install click-undead click-xform udpgen"
+TOOL_TARGETS="click-align click-check click-combine click-compile click-devirtualize click-fastclassifier click-undead click-xform"
 if test -d $srcdir/tools/click-ipopt; then
   TOOLDIRS="$TOOLDIRS click-ipopt"
   TOOL_TARGETS="$TOOLDIRS click-ipopt"

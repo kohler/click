@@ -33,6 +33,8 @@ class ToDump : public Element {
   ~ToDump();
   
   const char *class_name() const		{ return "ToDump"; }
+  const char *processing() const		{ return AGNOSTIC; }
+  const char *flags() const			{ return "S2"; }
   ToDump *clone() const;
   
   int configure(const Vector<String> &, ErrorHandler *);

@@ -46,6 +46,10 @@ read_router_file(const char *filename, bool empty_ok, RouterT *router,
   if (!s && errh->nerrors() != old_nerrors)
     return 0;
 
+  // set readable filename
+  if (!filename || strcmp(filename, "-") == 0)
+    filename = "<stdin>";
+
   // check for archive
   Vector<ArchiveElement> archive;
   if (s.length() && s[0] == '!') {
@@ -57,14 +61,12 @@ read_router_file(const char *filename, bool empty_ok, RouterT *router,
     if (found >= 0)
       s = archive[found].data;
     else {
-      errh->error("archive has no `config' section");
+      errh->error("%s: archive has no `config' section", filename);
       s = String();
     }
   }
 
   // read router
-  if (!filename || strcmp(filename, "-") == 0)
-    filename = "<stdin>";
   if (!s.length() && !empty_ok)
     errh->warning("%s: empty configuration", filename);
   LexerT lexer(errh, ignore_line_directives);
@@ -160,20 +162,58 @@ write_router_file(RouterT *r, const char *name, ErrorHandler *errh)
 ElementMap::ElementMap()
   : _name_map(0), _cxx_map(0)
 {
-  add(String(), String(), String(), String(), String(), String());
+  add(String(), String(), String(), String());
 }
 
 ElementMap::ElementMap(const String &str)
   : _name_map(0), _cxx_map(0)
 {
-  add(String(), String(), String(), String(), String(), String());
+  add(String(), String(), String(), String());
   parse(str);
+}
+
+const char *
+ElementMap::driver_name(int d)
+{
+  if (d == DRIVER_LINUXMODULE)
+    return "kernel";
+  else if (d == DRIVER_USERLEVEL)
+    return "user-level";
+  else
+    return "??";
 }
 
 String
 ElementMap::processing_code(const String &n) const
 {
   return _processing_code[ _name_map[n] ];
+}
+
+int
+ElementMap::flag_value(int ei, int flag) const
+{
+  const unsigned char *data = reinterpret_cast<const unsigned char *>(_flags[ei].data());
+  int len = _flags[ei].length();
+  for (int i = 0; i < len; i++) {
+    if (data[i] == flag) {
+      if (i < len - 1 && isdigit(data[i+1])) {
+	int value = 0;
+	for (i++; i < len && isdigit(data[i]); i++)
+	  value = 10*value + data[i] - '0';
+	return value;
+      } else
+	return 1;
+    } else
+      while (i < len && data[i] != ',')
+	i++;
+  }
+  return -1;
+}
+
+int
+ElementMap::flag_value(const String &n, int flag) const
+{
+  return flag_value(_name_map[n], flag);
 }
 
 void
@@ -190,6 +230,7 @@ ElementMap::set_driver(int i, const String &requirements)
 int
 ElementMap::add(const String &click_name, const String &cxx_name,
 		const String &header_file, const String &processing_code,
+		const String &flags,
 		const String &requirements, const String &provisions)
 {
   if (!click_name && !cxx_name)
@@ -203,6 +244,7 @@ ElementMap::add(const String &click_name, const String &cxx_name,
   _cxx.push_back(cxx_name);
   _header_file.push_back(header_file);
   _processing_code.push_back(processing_code);
+  _flags.push_back(flags);
   _requirements.push_back(requirements);
   _provisions.push_back(provisions);
   _driver.push_back(-1);
@@ -222,7 +264,7 @@ ElementMap::add(const String &click_name, const String &cxx_name,
 		const String &header_file, const String &processing_code)
 {
   return add(click_name, cxx_name, header_file, processing_code,
-	     String(), String());
+	     String(), String(), String());
 }
 
 void
@@ -254,12 +296,13 @@ ElementMap::remove(int i)
 void
 ElementMap::parse(const String &str)
 {
-  Vector<String> name, cxx_name, header, processing, requirements, provisions;
+  Vector<String> name, cxx_name, header, processing, flags,
+    requirements, provisions;
   parse_tabbed_lines(str, &name, &cxx_name, &header, &processing,
-		     &requirements, &provisions, (void *)0);
+		     &flags, &requirements, &provisions, (void *)0);
   for (int i = 0; i < name.size(); i++)
     (void) add(name[i], cxx_name[i], header[i], processing[i],
-	       requirements[i], provisions[i]);
+	       flags[i], requirements[i], provisions[i]);
 }
 
 String
@@ -273,6 +316,7 @@ ElementMap::unparse() const
        << cp_quote(_cxx[i]) << '\t'
        << cp_quote(_header_file[i]) << '\t'
        << cp_quote(_processing_code[i]) << '\t'
+       << cp_quote(_flags[i]) << '\t'
        << cp_quote(_requirements[i]) << '\t'
        << cp_quote(_provisions[i]) << '\n';
   }
@@ -291,7 +335,7 @@ ElementMap::map_indexes(const RouterT *r, Vector<int> &map_indexes,
       int idx = _name_map[r->type_name(t)];
       if (idx <= 0) {
 	if (errh)
-	  errh->error("nothing known about element class `%s'", String(r->type_name(t)).cc());
+	  errh->lerror(r->elandmark(i), "nothing known about element class `%s'", String(r->type_name(t)).cc());
 	map_indexes[t] = -2;
       } else
 	map_indexes[t] = idx;

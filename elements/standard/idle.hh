@@ -27,6 +27,7 @@ class Idle : public Element {
   void notify_ninputs(int);
   void notify_noutputs(int);
   const char *processing() const		{ return "a/a#"; }
+  const char *flags() const			{ return "S0"; }
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   

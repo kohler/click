@@ -13,9 +13,8 @@
 my(%processing_constants) =
     ('AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h');
-%processing = ('Element' => 'a/a');
 my(@class_file, @click_name, @cxx_name,
-   @parents, @processing, @requirements, @provisions,
+   @parents, @processing, @flags, @requirements, @provisions,
    %click_name_to_id, %cxx_name_to_id);
 
 sub process_file ($) {
@@ -57,6 +56,11 @@ sub process_file ($) {
       push @processing, $p;
     } else {
       push @processing, "";
+    }
+    if (/\bflags\(\).*return\s*"(.*?)";/) {
+      push @flags, $1;
+    } else {
+      push @flags, undef;
     }
   }
 
@@ -113,6 +117,22 @@ sub parents_processing ($) {
   return $processing[$classid];
 }
 
+sub parents_flags ($) {
+  my($classid) = @_;
+  if (!defined $flags[$classid]) {
+    my($parent);
+    foreach $parent (@{$parents[$classid]}) {
+      if ($parent eq 'Element') {
+	last;
+      } elsif ($parent ne '') {
+	$flags[$classid] = parents_flags($cxx_name_to_id{$parent});
+	last if defined $flags[$classid];
+      }
+    }
+  }
+  return $flags[$classid];
+}
+
 # main program: parse options
 sub read_files_from ($) {
   my($fn) = @_;
@@ -166,7 +186,7 @@ foreach $fn (@files) {
 
 umask(022);
 open(OUT, ">&STDOUT");
-print OUT "# Click class name\tC++ class name\theader file\tprocessing code\trequirements\tprovisions\n";
+print OUT "# Click class name\tC++ class name\theader file\tprocessing code\tflag word\trequirements\tprovisions\n";
 foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($n) = $click_name[$id];
   $n = '""' if !$n;
@@ -177,10 +197,14 @@ foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($p) = $processing[$id];
   $p = parents_processing($class) if !$p;
 
+  my($flags) = $flags[$id];
+  $flags = parents_flags($class) if !defined($flags);
+  $flags = "" if !defined($flags);
+  
   my($req) = $requirements[$id];
   my($prov) = $provisions[$id];
   
-  print OUT $n, "\t", $cxx_name[$id], "\t", $f, "\t", $p,
+  print OUT $n, "\t", $cxx_name[$id], "\t", $f, "\t", $p, "\t\"", $flags, "\"",
   "\t\"", $req, "\"\t\"", $prov, "\"\n";
 }
 close OUT;

@@ -20,7 +20,7 @@ class ProcessingT { public:
   Vector<Hookup> _connected_input;
   Vector<Hookup> _connected_output;
 
-  void create_pidx();
+  void create_pidx(ErrorHandler *);
   
   void initial_processing_for(int, const ElementMap &, ErrorHandler *);
   void initial_processing(const ElementMap &, ErrorHandler *);
@@ -53,6 +53,8 @@ class ProcessingT { public:
   const Hookup &input_connection(int i, int p) const;
   const Hookup &output_connection(int i, int p) const;
 
+  bool is_internal_flow(int i, int ip, int op) const;
+  
   int reset(const RouterT *, const ElementMap &, ErrorHandler *);
 
   bool same_processing(int, int) const;

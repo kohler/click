@@ -46,7 +46,7 @@ class xokReader : public Element {
   ~xokReader();
   
   const char *class_name() const		{ return "xokReader"; }
-  const char *processing() const	{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
   xokReader *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);

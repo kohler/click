@@ -36,6 +36,8 @@ click-install: lib Makefile
 	@cd click-install; $(MAKE) all-local
 click-ipopt: lib Makefile
 	@cd click-ipopt; $(MAKE) all-local
+click-undead: lib Makefile
+	@cd click-undead; $(MAKE) all-local
 click-xform: lib Makefile
 	@cd click-xform; $(MAKE) all-local
 udpgen: Makefile
@@ -93,6 +95,8 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	click-install/Makefile.in \
 	click-install/click-install.cc \
 	click-install/click-uninstall.cc \
+	click-undead/Makefile.in \
+	click-undead/click-undead.cc \
 	click-xform/Makefile.in \
 	click-xform/adjacency.cc click-xform/adjacency.hh \
 	click-xform/click-xform.cc \

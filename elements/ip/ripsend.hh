@@ -40,7 +40,7 @@ class RIPSend : public Element {
   RIPSend();
   
   const char *class_name() const		{ return "RIPSend"; }
-  const char *processing() const	{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
 
   RIPSend *clone() const { return new RIPSend(); }
   int configure(const Vector<String> &, ErrorHandler *);

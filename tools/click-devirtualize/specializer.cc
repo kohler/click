@@ -525,7 +525,7 @@ Specializer::output_new_elementmap(const ElementMap &full_em, ElementMap &em,
     if (_specials[i].special()) {
       int j = full_em.find(_specials[i].old_click_name);
       em.add(_specials[i].click_name, _specials[i].cxx_name,
-	     filename, full_em.processing_code(j),
+	     filename, full_em.processing_code(j), full_em.flags(j),
 	     requirements + _specials[i].old_click_name, String());
     }
 }

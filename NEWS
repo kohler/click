@@ -181,6 +181,8 @@ Version 1.1
 
 * Tools
 
+** Added new click-undead(1) tool.
+
 ** Fixed click-uncombine(1) bugs and changed its order of arguments.
 
 ** Added PollDevice and EtherEncap specifications to click-align(1).

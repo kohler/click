@@ -16,7 +16,6 @@
 #include "pullswitch.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "router.hh"
 
 PullSwitch *
 PullSwitch::clone() const
@@ -64,7 +63,7 @@ int
 PullSwitch::write_param(const String &in_s, Element *e, void *, ErrorHandler *errh)
 {
   PullSwitch *sw = (PullSwitch *)e;
-  String s = cp_subst(in_s);
+  String s = cp_uncomment(in_s);
   if (!cp_integer(s, &sw->_input))
     return errh->error("PullSwitch input must be integer");
   if (sw->_input >= sw->ninputs())

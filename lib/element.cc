@@ -297,6 +297,12 @@ Element::processing() const
   return AGNOSTIC;
 }
 
+const char *
+Element::flags() const
+{
+  return "";
+}
+
 void
 Element::set_processing_vector(const Subvector<int> &in_v,
 			       const Subvector<int> &out_v)

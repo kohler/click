@@ -16,7 +16,6 @@
 #include "switch.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "router.hh"
 
 Switch *
 Switch::clone() const
@@ -64,7 +63,7 @@ int
 Switch::write_param(const String &in_s, Element *e, void *, ErrorHandler *errh)
 {
   Switch *sw = (Switch *)e;
-  String s = cp_subst(in_s);
+  String s = cp_uncomment(in_s);
   if (!cp_integer(s, &sw->_output))
     return errh->error("Switch output must be integer");
   if (sw->_output >= sw->noutputs())

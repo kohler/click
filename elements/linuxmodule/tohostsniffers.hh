@@ -34,6 +34,7 @@ class ToLinuxSniffers : public Element {
   
   const char *class_name() const		{ return "ToLinuxSniffers"; }
   const char *processing() const		{ return PUSH; }
+  const char *flags() const			{ return "S2"; }
 
   int configure_phase() const	{ return FromLinux::TODEVICE_CONFIGURE_PHASE; }
   int configure(const Vector<String> &, ErrorHandler *);

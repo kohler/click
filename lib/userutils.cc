@@ -134,7 +134,7 @@ file_string(FILE *f, ErrorHandler *errh)
       return String();
     }
   return sa.take_string();
-} 
+}
 
 String
 file_string(const char *filename, ErrorHandler *errh)

@@ -117,7 +117,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
 			     ErrorHandler *errh)
 {
   InfiniteSource *is = (InfiniteSource *)e;
-  String s = cp_subst(in_s);
+  String s = cp_uncomment(in_s);
   switch ((int)vparam) {
 
    case 1: {			// limit

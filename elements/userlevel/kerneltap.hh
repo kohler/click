@@ -40,6 +40,7 @@ class KernelTap : public Element {
   
   const char *class_name() const	{ return "KernelTap"; }
   const char *processing() const	{ return "a/h"; }
+  const char *flags() const		{ return "S3"; }
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   
