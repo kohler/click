@@ -303,6 +303,7 @@ PollDevice::run_scheduled()
 void
 PollDevice::change_device(net_device *dev)
 {
+#if HAVE_POLLING
     _task.unschedule();
     
     if (dev && (dev->polling < 0 || !dev->poll_on)) {
@@ -330,6 +331,9 @@ PollDevice::change_device(net_device *dev)
 
     if (_dev)
 	_task.reschedule();
+#else
+    (void) dev;
+#endif /* HAVE_POLLING */
 }
 
 extern "C" {
