@@ -49,11 +49,11 @@ sub main {
 	#   tar czvf - -C /home/am2/yipal/ron/ click-export | ssh ron@mit.ron.lcs.mit.edu tar xzvf - -C yipal/
 	#   tar czvf - -C /home/am2/yipal/ron/ datacollection | ssh ron@mit.ron.lcs.mit.edu tar xzvf - -C yipal/
 
-	$command = "tar czvf - -C /home/am2/yipal/ron/ click-export | ssh ron@$name[$i].ron.lcs.mit.edu tar xzvf - -C yipal/";
+	$command = "tar czvf - -C /home/am2/yipal/ron/ click-export | ssh ron@$name[$i] tar xzvf - -C yipal/";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 
-	$command = "tar czvf - -C /home/am2/yipal/ron/ datacollection | ssh ron@$name[$i].ron.lcs.mit.edu tar xzvf - -C yipal/";
+	$command = "tar czvf - -C /home/am2/yipal/ron/ datacollection | ssh ron@$name[$i] tar xzvf - -C yipal/";
 	@args = ("tcsh", "-c", $command);
 	system(@args);
 	

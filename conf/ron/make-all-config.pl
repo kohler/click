@@ -25,7 +25,6 @@ sub main {
 		push @ip, $2;
 		push @hw, $3;
 		push @gw, $4;
-		push @name, $5;
 		if ($6 eq "I") {push @I2, 0;}
 		elsif ($6 eq "I2") {push @I2, 1;}
 		else { 
@@ -36,6 +35,8 @@ sub main {
 		    pop @gw;
 		    pop @name;
 		}
+		$5 =~ /(\S+).ron.lcs.mit.edu/;
+		push @name, $1;
 	    } 
 	}
 
