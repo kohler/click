@@ -54,6 +54,7 @@ extern unsigned SHA1_IV[5];
 #define SHA1_INPUT_WORDS ( SHA1_INPUT_BYTES >> 2 )
 #define SHA1_DIGEST_WORDS 5	/* 160 bits */
 #define SHA1_DIGEST_BYTES ( SHA1_DIGEST_WORDS * 4 )
+#define SHA1_PAD_BYTES 32
 
 /* result is in reused memory, copy it if you want to keep it */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -279,7 +280,7 @@ inline void SHA1_final( SHA1_ctx* ctx )
 
 inline const unsigned char* SHA1_get_digest( const SHA1_ctx* ctx )
 {
-  static unsigned char digest [NR_CPUS] [SHA1_DIGEST_BYTES];
+  static unsigned char digest [NR_CPUS] [SHA1_DIGEST_BYTES + SHA1_PAD_BYTES];
     
 #if __BYTE_ORDER == __LITTLE_ENDIAN
   memmove( digest[current->processor], ctx->H, SHA1_DIGEST_BYTES );
