@@ -141,7 +141,8 @@ distdir:
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
-	mkdir $(distdir)/conf $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
+	@echo Copying library, documentation, configuration, and driver files...
+	@mkdir $(distdir)/conf $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
 	@-chmod 777 $(distdir)/conf $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
@@ -153,7 +154,8 @@ distdir:
 	    || cp -p $$d/$$file $(distdir)/$$file || :; \
 	  fi; \
 	done
-	mkdir $(distdir)/elements
+	@echo Copying element files...
+	@mkdir $(distdir)/elements
 	@-chmod 777 $(distdir)/elements
 	@d=$(srcdir); \
 	for dir in `cd $$d && find elements -type d | grep -v 'exopc\|CVS'`; do \
@@ -164,15 +166,18 @@ distdir:
 	  done; \
 	done; \
 	rm -rf $(distdir)/elements/local/*
+	@echo Copying tool files...
 	@for subdir in tools; do \
-	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
-	      || exit 1; \
+	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) || exit 1; \
 	done
+	@echo Removing files not meant for distribution...
 	@if test -r $(srcdir)/NODIST; then \
 	for i in `cat $(srcdir)/NODIST`; do \
-	  rm -r $(distdir)/$$i; \
+	  rm -rf $(distdir)/$$i; \
 	done; fi
-	@grep -q benjie `find $(srcdir)/etc -maxdepth 1 -type f` && (echo 'ERROR: Benjie must be punished!'; exit 1)
+	@if grep -q benjie `find $(srcdir)/etc -maxdepth 1 -type f`; then \
+	  echo 'ERROR: Benjie must be punished!'; exit 1; \
+	fi
 
 
 .PHONY: all elemlist elemlists elemlist-simple \

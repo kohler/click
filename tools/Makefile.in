@@ -99,6 +99,7 @@ DISTFILES = Makefile.in lib/Makefile.in \
 	udpgen/Makefile.in udpgen/udpgen.c udpgen/udpcount.c
 
 distdir:
+	rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
 	@-for d in lib $(TOOLDIRS); do mkdir $(distdir)/$$d; chmod 777 $(distdir)/$$d; done
