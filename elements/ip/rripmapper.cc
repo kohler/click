@@ -62,7 +62,8 @@ RoundRobinIPMapper::configure(Vector<String> &conf, ErrorHandler *errh)
       _reverse_outputs.push_back(r);
     }
   }
-  
+
+  _last_pattern = 0;
   return (errh->nerrors() == before ? 0 : -1);
 }
 
@@ -93,6 +94,8 @@ RoundRobinIPMapper::get_map(IPRw *rw, int ip_p, const IPFlowID &flow, Packet *)
     int fport = _forward_outputs[_last_pattern];
     int rport = _reverse_outputs[_last_pattern];
     _last_pattern++;
+    if (_last_pattern == _patterns.size())
+      _last_pattern = 0;
     if (IPRw::Mapping *m = rw->apply_pattern(pat, ip_p, flow, fport, rport))
       return m;
   } while (_last_pattern != first_pattern);

@@ -21,14 +21,7 @@ CLICK_DECLS
  *
  * =a IPRewriter, TCPRewriter, IPRewriterPatterns */
 
-class RoundRobinIPMapper : public Element, public IPMapper {
-
-  Vector<IPRw::Pattern *> _patterns;
-  Vector<int> _forward_outputs;
-  Vector<int> _reverse_outputs;
-  int _last_pattern;
-  
- public:
+class RoundRobinIPMapper : public Element, public IPMapper { public:
 
   RoundRobinIPMapper();
   ~RoundRobinIPMapper();
@@ -43,6 +36,13 @@ class RoundRobinIPMapper : public Element, public IPMapper {
   
   void notify_rewriter(IPRw *, ErrorHandler *);
   IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);
+
+ private:
+
+  Vector<IPRw::Pattern *> _patterns;
+  Vector<int> _forward_outputs;
+  Vector<int> _reverse_outputs;
+  int _last_pattern;
   
 };
 
