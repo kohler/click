@@ -14,13 +14,11 @@ CLICK_DECLS
 // 		V::V(const V &)
 // V &		V::operator=(const V &)
 
-
-template <class K, class V> class BigHashMapIterator;
+template <class K, class V> class _BigHashMap_const_iterator;
+template <class K, class V> class _BigHashMap_iterator;
 
 template <class K, class V>
 class BigHashMap { public:
-
-  typedef BigHashMapIterator<K, V> Iterator;
   
   BigHashMap();
   explicit BigHashMap(const V &);
@@ -41,8 +39,14 @@ class BigHashMap { public:
   void clear();
 
   void swap(BigHashMap<K, V> &);
+
+  // iteration
+  typedef _BigHashMap_const_iterator<K, V> const_iterator;
+  typedef _BigHashMap_iterator<K, V> iterator;
+  const_iterator first() const;
+  iterator first();
   
-  Iterator first() const		{ return Iterator(this); }
+  typedef iterator Iterator;
 
   // dynamic resizing
   void resize(int);
@@ -84,14 +88,15 @@ class BigHashMap { public:
 
   enum { MAX_NBUCKETS = 32767 };
   
-  friend class BigHashMapIterator<K, V>;
+  friend class _BigHashMap_iterator<K, V>;
+  friend class _BigHashMap_const_iterator<K, V>;
   
 };
 
 template <class K, class V>
-class BigHashMapIterator { public:
+class _BigHashMap_const_iterator { public:
 
-  BigHashMapIterator(const BigHashMap<K, V> *);
+  _BigHashMap_const_iterator(const BigHashMap<K, V> *m);
 
   operator bool() const			{ return _elt; }
   void operator++(int);
@@ -99,7 +104,7 @@ class BigHashMapIterator { public:
   
   const K &key() const			{ return _elt->key; }
   const V &value() const		{ return _elt->v; }
-  
+
  private:
 
   const BigHashMap<K, V> *_hm;
@@ -107,6 +112,31 @@ class BigHashMapIterator { public:
   int _bucket;
 
 };
+
+template <class K, class V>
+class _BigHashMap_iterator : public _BigHashMap_const_iterator<K, V> { public:
+
+  typedef _BigHashMap_const_iterator<K, V> inherited;
+  
+  _BigHashMap_iterator(BigHashMap<K, V> *m) : inherited(m) { }
+
+  V &value() const		{ return const_cast<V &>(inherited::value()); }
+  
+};
+
+template <class K, class V>
+inline typename BigHashMap<K, V>::const_iterator
+BigHashMap<K, V>::first() const
+{
+  return const_iterator(this);
+}
+
+template <class K, class V>
+inline typename BigHashMap<K, V>::iterator
+BigHashMap<K, V>::first()
+{
+  return iterator(this);
+}
 
 template <class K, class V>
 inline const V &
@@ -143,8 +173,6 @@ BigHashMap<K, V>::find_force(const K &key)
 template <class K>
 class BigHashMap<K, void *> { public:
 
-  typedef BigHashMapIterator<K, void *> Iterator;
-  
   BigHashMap();
   explicit BigHashMap(void *);
   ~BigHashMap();
@@ -164,9 +192,16 @@ class BigHashMap<K, void *> { public:
   void clear();
 
   void swap(BigHashMap<K, void *> &);
-  
-  Iterator first() const;
 
+  // iterators
+  typedef _BigHashMap_const_iterator<K, void *> const_iterator;
+  typedef _BigHashMap_iterator<K, void *> iterator;
+
+  const_iterator first() const;
+  iterator first();
+
+  typedef iterator Iterator;
+  
   // dynamic resizing
   void resize(int);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
@@ -207,14 +242,15 @@ class BigHashMap<K, void *> { public:
 
   enum { MAX_NBUCKETS = 32767 };
   
-  friend class BigHashMapIterator<K, void *>;
+  friend class iterator;
+  friend class const_iterator;
   
 };
 
 template <class K>
-class BigHashMapIterator<K, void *> { public:
+class _BigHashMap_const_iterator<K, void *> { public:
 
-  BigHashMapIterator(const BigHashMap<K, void *> *);
+  _BigHashMap_const_iterator(const BigHashMap<K, void *> *);
 
   operator bool() const			{ return _elt; }
   void operator++(int);
@@ -229,7 +265,34 @@ class BigHashMapIterator<K, void *> { public:
   typename BigHashMap<K, void *>::Elt *_elt;
   int _bucket;
 
+  template <class, class> friend class _BigHashMap_iterator;
+
 };
+
+template <class K>
+class _BigHashMap_iterator<K, void *> : public _BigHashMap_const_iterator<K, void *> { public:
+
+  typedef _BigHashMap_const_iterator<K, void *> inherited;
+
+  _BigHashMap_iterator(BigHashMap<K, void *> *m) : inherited(m) { }
+  
+  void *&value() const			{ return _elt->v; }
+
+};
+
+template <class K>
+inline typename BigHashMap<K, void *>::const_iterator
+BigHashMap<K, void *>::first() const
+{
+  return const_iterator(this);
+}
+
+template <class K>
+inline typename BigHashMap<K, void *>::iterator
+BigHashMap<K, void *>::first()
+{
+  return iterator(this);
+}
 
 template <class K>
 inline void *
@@ -261,63 +324,89 @@ BigHashMap<K, void *>::find_force(const K &key)
   return *findp_force(key);
 }
 
-template <class K>
-inline BigHashMapIterator<K, void *>
-BigHashMap<K, void *>::first() const
-{
-  return Iterator(this);
-}
-
 
 template <class K, class T>
 class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
 
-  typedef BigHashMapIterator<K, T *> Iterator;
-  typedef BigHashMap<K, void *> Base;
+  typedef BigHashMap<K, void *> inherited;
   
-  BigHashMap()				: Base() { }
-  explicit BigHashMap(T *def)		: Base(def) { }
+  BigHashMap()				: inherited() { }
+  explicit BigHashMap(T *def)		: inherited(def) { }
   ~BigHashMap()				{ }
   
-  int nbuckets() const			{ return Base::nbuckets(); }
-  int size() const			{ return Base::size(); }
-  bool empty() const			{ return Base::empty(); }
+  int nbuckets() const			{ return inherited::nbuckets(); }
+  int size() const			{ return inherited::size(); }
+  bool empty() const			{ return inherited::empty(); }
   
-  T *find(const K &k) const { return reinterpret_cast<T *>(Base::find(k)); }
-  T **findp(const K &k) const { return reinterpret_cast<T **>(Base::findp(k)); }
-  T *operator[](const K &k) const { return reinterpret_cast<T *>(Base::operator[](k)); }
-  T *&find_force(const K &k) { return reinterpret_cast<T *>(Base::find_force(k)); }
+  T *find(const K &k) const { return reinterpret_cast<T *>(inherited::find(k)); }
+  T **findp(const K &k) const { return reinterpret_cast<T **>(inherited::findp(k)); }
+  T *operator[](const K &k) const { return reinterpret_cast<T *>(inherited::operator[](k)); }
+  T *&find_force(const K &k) { return reinterpret_cast<T *>(inherited::find_force(k)); }
   
-  bool insert(const K &k, T *v)		{ return Base::insert(k, v); }
-  bool remove(const K &k)		{ return Base::remove(k); }
-  void clear()				{ Base::clear(); }
+  bool insert(const K &k, T *v)		{ return inherited::insert(k, v); }
+  bool remove(const K &k)		{ return inherited::remove(k); }
+  void clear()				{ inherited::clear(); }
 
-  void swap(BigHashMap<K, T *> &o)	{ Base::swap(o); }
+  void swap(BigHashMap<K, T *> &o)	{ inherited::swap(o); }
+
+  // iteration
+  typedef _BigHashMap_const_iterator<K, T *> const_iterator;
+  typedef _BigHashMap_iterator<K, T *> iterator;
   
-  Iterator first() const		{ return Iterator(this); }
+  const_iterator first() const;
+  iterator first();
+
+  typedef iterator Iterator;
 
   // dynamic resizing
-  void resize(int s)			{ Base::resize(s); }
-  bool dynamic_resizing() const		{ return Base::dynamic_resizing(); }
-  void set_dynamic_resizing(bool dr)	{ Base::set_dynamic_resizing(dr); }
+  void resize(int s)			{ inherited::resize(s); }
+  bool dynamic_resizing() const		{ return inherited::dynamic_resizing(); }
+  void set_dynamic_resizing(bool dr)	{ inherited::set_dynamic_resizing(dr); }
 
 };
 
 template <class K, class T>
-class BigHashMapIterator<K, T *> : public BigHashMapIterator<K, void *> { public:
+class _BigHashMap_const_iterator<K, T *> : private _BigHashMap_const_iterator<K, void *> { public:
 
-  typedef BigHashMapIterator<K, void *> Base;
+  typedef _BigHashMap_const_iterator<K, void *> inherited;
 
-  BigHashMapIterator(const BigHashMap<K, T *> *t) : Base(t) { }
+  _BigHashMap_const_iterator(const BigHashMap<K, T *> *t) : inherited(t) { }
 
-  operator bool() const			{ return Base::operator bool(); }
-  void operator++(int)			{ Base::operator++(0); }
-  void operator++()			{ Base::operator++(); }
+  operator bool() const	{ return inherited::operator bool(); }
+  void operator++(int)	{ return inherited::operator++(0); }
+  void operator++()	{ return inherited::operator++(); }
   
-  const K &key() const	{ return Base::key(); }
-  T *value() const	{ return reinterpret_cast<T *>(Base::value()); }
+  const K &key() const	{ return inherited::key(); }
+  T *value() const	{ return reinterpret_cast<T *>(inherited::value()); }
+
+  friend class _BigHashMap_iterator<K, T *>;
   
 };
+
+template <class K, class T>
+class _BigHashMap_iterator<K, T *> : public _BigHashMap_const_iterator<K, T *> { public:
+
+  typedef _BigHashMap_const_iterator<K, T *> inherited;
+
+  _BigHashMap_iterator(BigHashMap<K, T *> *t) : inherited(t) { }
+
+  T *&value() const	{ return reinterpret_cast<T *&>(_elt->v); }
+  
+};
+
+template <class K, class T>
+inline typename BigHashMap<K, T *>::const_iterator
+BigHashMap<K, T *>::first() const
+{
+  return const_iterator(this);
+}
+
+template <class K, class T>
+inline typename BigHashMap<K, T *>::iterator
+BigHashMap<K, T *>::first()
+{
+  return iterator(this);
+}
 
 CLICK_ENDDECLS
 #endif

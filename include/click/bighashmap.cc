@@ -15,6 +15,9 @@
  * legally binding.
  */
 
+#ifndef CLICK_BIGHASHMAP_CC
+#define CLICK_BIGHASHMAP_CC
+
 CLICK_ENDDECLS
 #include <click/bighashmap.hh>
 CLICK_DECLS
@@ -309,7 +312,7 @@ BigHashMap<K, V>::swap(BigHashMap<K, V> &o)
 }
 
 template <class K, class V>
-BigHashMapIterator<K, V>::BigHashMapIterator(const BigHashMap<K, V> *hm)
+_BigHashMap_const_iterator<K, V>::_BigHashMap_const_iterator(const BigHashMap<K, V> *hm)
   : _hm(hm)
 {
   int nb = _hm->_nbuckets;
@@ -324,7 +327,7 @@ BigHashMapIterator<K, V>::BigHashMapIterator(const BigHashMap<K, V> *hm)
 
 template <class K, class V>
 void
-BigHashMapIterator<K, V>::operator++(int)
+_BigHashMap_const_iterator<K, V>::operator++(int)
 {
   if (_elt->next)
     _elt = _elt->next;
@@ -662,7 +665,7 @@ BigHashMap<K, void *>::swap(BigHashMap<K, void *> &o)
 
 
 template <class K>
-BigHashMapIterator<K, void *>::BigHashMapIterator(const BigHashMap<K, void *> *hm)
+_BigHashMap_const_iterator<K, void *>::_BigHashMap_const_iterator(const BigHashMap<K, void *> *hm)
   : _hm(hm)
 {
   int nb = _hm->_nbuckets;
@@ -677,7 +680,7 @@ BigHashMapIterator<K, void *>::BigHashMapIterator(const BigHashMap<K, void *> *h
 
 template <class K>
 void
-BigHashMapIterator<K, void *>::operator++(int)
+_BigHashMap_const_iterator<K, void *>::operator++(int)
 {
   if (_elt->next)
     _elt = _elt->next;
@@ -692,3 +695,5 @@ BigHashMapIterator<K, void *>::operator++(int)
     _elt = 0;
   }
 }
+
+#endif
