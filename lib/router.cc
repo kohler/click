@@ -950,31 +950,52 @@ Router::put_handler(const Handler &to_add)
 }
 
 int
-Router::find_ehandler(int eindex, const String &name, bool force)
+Router::find_ehandler(int eindex, const String &name, bool force, bool star_ok)
 {
   int eh = _ehandler_first_by_element[eindex];
+  int star_h = -1;
+  String star_string = "*";
+  
   while (eh >= 0) {
     int h = _ehandler_to_handler[eh];
-    if (h >= 0 && _handlers[h].name == name)
-      return eh;
+    if (h >= 0) {
+      if (_handlers[h].name == name)
+	return eh;
+      else if (_handlers[h].name == star_string)
+	star_h = h;
+    }
     eh = _ehandler_next[eh];
   }
 
+  int handler_to_add = -1;
+  bool add_handler = false;
+  
   if (force) {
-    eh = _ehandler_to_handler.size();
-    _ehandler_to_handler.push_back(-1);
-    _ehandler_next.push_back(_ehandler_first_by_element[eindex]);
-    _ehandler_first_by_element[eindex] = eh;
+    add_handler = true;
+  } else if (star_ok && star_h >= 0) {
+    const Handler &h = _handlers[star_h];
+    if (h.write) {
+      handler_to_add = h.write(name, _elements[eindex], 0, ErrorHandler::default_handler());
+      if (handler_to_add >= 0)
+	add_handler = true;
+    }
   }
 
-  return eh;
+  if (add_handler) {
+    eh = _ehandler_to_handler.size();
+    _ehandler_to_handler.push_back(handler_to_add);
+    _ehandler_next.push_back(_ehandler_first_by_element[eindex]);
+    _ehandler_first_by_element[eindex] = eh;
+    return eh;
+  } else
+    return -1;
 }
 
 void
 Router::add_read_handler(int eindex, const String &name,
 			 ReadHandler read, void *thunk)
 {
-  int eh = find_ehandler(eindex, name, true);
+  int eh = find_ehandler(eindex, name, true, false);
   Handler to_add;
   int h = _ehandler_to_handler[eh];
   if (h >= 0) {
@@ -994,7 +1015,7 @@ void
 Router::add_write_handler(int eindex, const String &name,
 			  WriteHandler write, void *thunk)
 {
-  int eh = find_ehandler(eindex, name, true);
+  int eh = find_ehandler(eindex, name, true, false);
   Handler to_add;
   int h = _ehandler_to_handler[eh];
   if (h >= 0) {
@@ -1013,7 +1034,7 @@ Router::add_write_handler(int eindex, const String &name,
 int
 Router::find_handler(Element *element, const String &name)
 {
-  int eh = find_ehandler(element->eindex(), name, false);
+  int eh = find_ehandler(element->eindex(), name, false, true);
   return (eh >= 0 ? _ehandler_to_handler[eh] : -1);
 }
 

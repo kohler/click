@@ -161,7 +161,7 @@ class Router : public ElementLink { public:
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
   Element *find(String, const String &, ErrorHandler * = 0) const;
-  int find_ehandler(int, const String &, bool);
+  int find_ehandler(int, const String &, bool, bool);
   int put_handler(const Handler &);
   
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
