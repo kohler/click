@@ -1,3 +1,12 @@
+2001-07-05 Thursday 13:28  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/: make-adapt-ron2.pl (1.5), make-adapt-ron2.pl (1.6):
+	added ICMP errors for fragmenters
+
+2001-07-05 Thursday 13:16  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-adapt-ron2.pl (1.4): added delay
+
 2001-07-05 Thursday 11:33  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/configure (1.1): Initial checkin
