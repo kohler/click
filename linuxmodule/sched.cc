@@ -66,7 +66,7 @@ click_sched(void *thunk)
   daemonize();
   
   TASK_PRIO(current) = click_thread_priority;
-  strcpy(current->comm, "click");
+  strcpy(current->comm, "kclick");
 
   RouterThread *rt = (RouterThread *)thunk;
   printk("<1>click: starting router thread pid %d (%p)\n", current->pid, rt);
