@@ -393,6 +393,8 @@ AggregateCounter::write_file(String where, bool binary,
 	return errh->error("%s: %s", where.cc(), strerror(errno));
 
     fwrite(_output_banner.data(), 1, _output_banner.length(), f);
+    if (_output_banner.length() && _output_banner.back() != '\n')
+	fputc('\n', f);
     fprintf(f, "$num_nonzero %u\n", _num_nonzero);
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     if (binary)
