@@ -20,7 +20,7 @@ CLICK_DECLS
  * =a 
  * ACKRetrySender */
 
-#define ETHERTYPE_GRID_ACK 0x7ffe
+#define ETHERTYPE_GRID_ACK 0x7ffa
 
 class ACKResponder : public Element {
 public:
