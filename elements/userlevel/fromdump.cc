@@ -108,6 +108,7 @@ FromDump::pcap_packet_hook(u_char* clientdata,
   // Fill pkthdr and bump the timestamp by offset
   memcpy(&e->_pending_pkthdr, pkthdr, sizeof(pcap_pkthdr));
 
+#if 0
   if (once && (e->_pending_pkthdr.ts.tv_sec-e->_init.tv_sec >= 30)) {
     timeval now;
     click_gettimeofday(&now);
@@ -124,6 +125,7 @@ FromDump::pcap_packet_hook(u_char* clientdata,
     click_chatter("reset");
     once = true;
   }
+#endif
 
   timeradd(&e->_pending_pkthdr.ts, &e->_offset, &e->_pending_pkthdr.ts);
 }
