@@ -68,6 +68,7 @@ TCPAck::initialize(ErrorHandler *errh)
 
   _synack = false;
   _needack = false;
+  _copyhdr = true;
   _timer.initialize(this);
   _timer.schedule_after_ms(_ackdelay_ms);
   return 0;
@@ -110,6 +111,7 @@ TCPAck::pull(int port)
 bool
 TCPAck::iput(Packet *p)
 {
+  const click_ip *iph = p->ip_header();
   const click_tcp *tcph =
     reinterpret_cast<const click_tcp *>(p->transport_header());
   if (!_synack && (tcph->th_flags&(TH_SYN|TH_ACK))==(TH_SYN|TH_ACK)) {
@@ -122,6 +124,12 @@ TCPAck::iput(Packet *p)
   }
   if (!_synack)
     return false;
+  else if (_copyhdr) {
+    memmove(&_iph_in, iph, sizeof(click_ip));
+    memmove(&_tcph_in, tcph, sizeof(click_tcp));
+    _copyhdr = false;
+  }
+
   if ((tcph->th_flags&(TH_SYN|TH_FIN|TH_RST)) != 0)
     return true;
 
@@ -169,10 +177,50 @@ void
 TCPAck::run_scheduled()
 {
   if (_needack) {
-    // TODO send a plain ACK packet
+    send_ack();
     _needack = false;
   }
 }
+
+void
+TCPAck::send_ack()
+{
+  struct click_ip *ip;
+  struct click_tcp *tcp;
+  WritablePacket *q = Packet::make(sizeof(*ip) + sizeof(*tcp));
+  if (q == 0) {
+    click_chatter("TCPAck: cannot make packet");
+    return;
+  } 
+  memset(q->data(), '\0', q->length());
+  ip = (struct click_ip *) q->data();
+  tcp = (struct click_tcp *) (ip + 1);
+  
+  ip->ip_v = 4;
+  ip->ip_hl = 5;
+  ip->ip_tos = 0;
+  ip->ip_len = htons(q->length());
+  ip->ip_id = htons(0); // what is this used for exactly?
+  ip->ip_off = htons(IP_DF);
+  ip->ip_ttl = 255;
+  ip->ip_p = IP_PROTO_TCP;
+  ip->ip_sum = 0;
+  memmove((void *) &(ip->ip_src), (void *) &(_iph_in.ip_dst), 4);
+  memmove((void *) &(ip->ip_dst), (void *) &(_iph_in.ip_src), 4);
+
+  tcp->th_sport = _tcph_in.th_dport;
+  tcp->th_dport = _tcph_in.th_sport;
+  tcp->th_seq = htonl(_seq_nxt);
+  tcp->th_ack = htonl(_ack_nxt);
+  tcp->th_off = 5;
+  tcp->th_flags = TH_ACK;
+  tcp->th_win = htons(32120);
+  tcp->th_sum = htons(0);
+  tcp->th_urp = htons(0);
+
+  output(2).push(q);
+}
+
 
 EXPORT_ELEMENT(TCPAck)
 

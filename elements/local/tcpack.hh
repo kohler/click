@@ -10,6 +10,7 @@
  * =s TCP
  * acknowledge TCP packets
  * =d
+ *
  * performs TCP style acknowledgement. marked TCP/IP packets are expected on
  * both input and output ports. use MarkIPHeader to mark packets.
  *
@@ -32,8 +33,12 @@
  * ACK_DELAY is set to 20.
  *
  * TCPAck only deals with DATA packets. it doesn't try to acknowledge SYN and
- * FIN packets. TCPAck starts using ack no from the first SYN ACK packet it
- * seems on in/output port 0 or 1. packets before that are rejected.
+ * FIN packets. TCPAck starts using ack number from the first SYN ACK packet
+ * it sees on in/output port 0 or 1. packets before that are rejected. the tcp
+ * and ip header from this packet are used to send explicit ACK packets. 
+ *
+ * TCPAck does not compute checksum on any packets. use SetIPChecksum and
+ * SetTCPChecksum instead.
  */
 
 class TCPBuffer;
@@ -44,14 +49,20 @@ private:
 
   bool _synack;
   bool _needack;
+  bool _copyhdr;
   unsigned _seq_nxt;
   unsigned _ack_nxt;
+  
+  click_tcp _tcph_in;
+  click_ip  _iph_in;
+
   TCPBuffer *_tcpbuffer;
 
   unsigned _ackdelay_ms;
   
   bool iput(Packet *);
   bool oput(Packet *);
+  void send_ack();
 
 public:
   TCPAck();
