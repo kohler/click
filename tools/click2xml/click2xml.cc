@@ -127,9 +127,9 @@ print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
 static void
 print_landmark_attributes(FILE *f, const String &landmark)
 {
-    int colon = landmark.find_left(':');
-    if (colon >= 0 && landmark.substring(colon + 1) != "0")
-	fprintf(f, " file=\"%s\" line=\"%s\"", landmark.substring(0, colon).cc(), landmark.substring(colon + 1).cc());
+    const char *colon = find(landmark, ':');
+    if (colon < landmark.end() && (colon < landmark.end() - 1 || colon[1] != '0'))
+	fprintf(f, " file=\"%s\" line=\"%s\"", landmark.substring(landmark.begin(), colon).cc(), landmark.substring(colon + 1, landmark.end()).cc());
 }
 
 static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);

@@ -378,10 +378,8 @@ particular purpose.\n");
   // walk down one slash at a time
   String prefix;
   while (component) {
-    int p = component.find_left('/');
-    if (p < 0) p = component.length();
-    String toplevel = component.substring(0, p);
-    String suffix = component.substring(p + 1);
+    String toplevel = component.substring(component.begin(), find(component, '/'));
+    String suffix = component.substring(toplevel.end() + 1, component.end());
     remove_toplevel_component(toplevel, r, router_file, errh, prefix);
     component = suffix;
     prefix += component + "/";

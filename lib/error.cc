@@ -536,13 +536,15 @@ ErrorHandler::prepend_lines(const String &prepend, const String &text)
     return text;
   
   StringAccum sa;
-  int pos = 0, nl;
-  while ((nl = text.find_left('\n', pos)) >= 0) {
-    sa << prepend << text.substring(pos, nl - pos + 1);
-    pos = nl + 1;
+  const char *begin = text.begin();
+  const char *end = text.end();
+  const char *nl;
+  while ((nl = find(begin, end, '\n')) < end) {
+    sa << prepend << text.substring(begin, nl + 1);
+    begin = nl + 1;
   }
-  if (pos < text.length())
-    sa << prepend << text.substring(pos);
+  if (begin < end)
+    sa << prepend << text.substring(begin, end);
   
   return sa.take_string();
 }
@@ -578,16 +580,10 @@ FileErrorHandler::FileErrorHandler(FILE *f, const String &context)
 void
 FileErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
-  int pos = 0, nl;
-  while ((nl = message.find_left('\n', pos)) >= 0) {
-    String s = _context + message.substring(pos, nl - pos) + "\n";
-    fwrite(s.data(), 1, s.length(), _f);
-    pos = nl + 1;
-  }
-  if (pos < message.length()) {
-    String s = _context + message.substring(pos) + "\n";
-    fwrite(s.data(), 1, s.length(), _f);
-  }
+  String text = prepend_lines(_context, message);
+  if (text && text.back() != '\n')
+    text += '\n';
+  fwrite(text.data(), 1, text.length(), _f);
   
   if (seriousness >= ERR_MIN_FATAL)
     exit(1);

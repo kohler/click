@@ -181,12 +181,11 @@ IPRw::Pattern::parse_napt(Vector<String> &words, Pattern **pstore,
   if (words[1] == "-")
     sportl = sporth = 0;
   else {
-    int dash = words[1].find_left('-');
-    if (dash < 0) dash = words[1].length();
-    if (!cp_integer(words[1].substring(0, dash), &sportl))
+    const char *dash = find(words[1], '-');
+    if (!cp_integer(words[1].substring(words[1].begin(), dash), &sportl))
       return errh->error("bad source port `%s' in pattern spec", words[1].cc());
-    if (dash < words[1].length()) {
-      if (!cp_integer(words[1].substring(dash + 1), &sporth))
+    if (dash < words[1].end()) {
+      if (!cp_integer(words[1].substring(dash + 1, words[1].end()), &sporth))
 	return errh->error("bad source port `%s' in pattern spec", words[1].cc());
     } else
       sporth = sportl;
@@ -230,10 +229,10 @@ IPRw::Pattern::parse_nat(Vector<String> &words, Pattern **pstore,
     saddr1 = htonl(ntohl(s1) + 1);
     saddr2 = htonl(ntohl(s2) - 1);
   } else {
-    int dash = words[0].find_left('-');
-    if (dash >= 0
-	&& cp_ip_address(words[0].substring(0, dash), &saddr1, e)
-	&& cp_ip_address(words[0].substring(dash+1), &saddr2, e))
+    const char *dash = find(words[0], '-');
+    if (dash != words[0].end()
+	&& cp_ip_address(words[0].substring(words[0].begin(), dash), &saddr1, e)
+	&& cp_ip_address(words[0].substring(dash+1, words[0].end()), &saddr2, e))
       /* ok */;
     else
       return errh->error("bad source address `%s' in pattern spec", words[0].cc());

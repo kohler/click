@@ -88,7 +88,7 @@ interpolate_string(StringAccum &output, const String &config, int pos1,
 String
 VariableEnvironment::interpolate(const String &config) const
 {
-  if (!config || (_formals.size() == 0 && config.find_left('$') < 0))
+  if (!config || (_formals.size() == 0 && find(config, '$') == config.end()))
     return config;
   
   const char *data = config.data();

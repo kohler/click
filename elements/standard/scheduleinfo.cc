@@ -117,7 +117,7 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
   String id = e->id();
   String text = id;
   int tickets = Task::DEFAULT_TICKETS;
-  int slash;
+  const char *slash;
   while (text) {
 
     // find current prefix, which includes slash
@@ -130,12 +130,12 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
       warning = true;
     }
 
-    slash = text.find_left('/');
-    if (slash >= 0) {
+    slash = find(text, '/');
+    if (slash < text.end()) {
       if (warning)
 	errh->warning("no ScheduleInfo for compound element `%s'",
-		      text.substring(0, slash).cc());
-      text = text.substring(slash + 1);
+		      text.substring(text.begin(), slash).cc());
+      text = text.substring(slash + 1, text.end());
     } else {
       if (warning)
 	errh->warning("no ScheduleInfo for element `%s'", text.cc());

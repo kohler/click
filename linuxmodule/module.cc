@@ -133,15 +133,12 @@ void
 KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
 {
   // print message to syslog
-  int pos = 0, nl;
-  while ((nl = message.find_left('\n', pos)) >= 0) {
-    String x = message.substring(pos, nl - pos);
-    printk("<1>%s\n", x.cc());
-    pos = nl + 1;
-  }
-  if (pos < message.length()) {
-    String x = message.substring(pos);
-    printk("<1>%s\n", x.cc());
+  const char *begin = message.begin();
+  const char *end = message.end();
+  while (begin < end) {
+    String x = message.substring(begin, find(begin, end, '\n'));
+    printk("<1>%s\n", x.c_str());
+    begin = x.end() + 1;
   }
 
   // log message if required

@@ -98,9 +98,9 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_IP_TOS;
     else if (word == "ip_ttl")
 	return W_IP_TTL;
-    else if (word.find_left(' ') >= 0) {
-	int space = word.find_left(' ');
-	return parse_content(word.substring(0, space) + "_" + word.substring(space + 1));
+    else if (find(word, ' ') != word.end()) {
+	const char *space = find(word, ' ');
+	return parse_content(word.substring(word.begin(), space) + "_" + word.substring(space + 1, word.end()));
     } else
 	return W_NONE;
 }

@@ -1757,22 +1757,22 @@ cp_handler(const String &str, Element *context, Element **result_element,
     return false;
   }
 
-  int leftmost_dot = text.find_left('.');
-  if (leftmost_dot < 0) {
+  const char *leftmost_dot = find(text, '.');
+  if (leftmost_dot == text.end()) {
     *result_element = context->router()->root_element();
     *result_hname = text;
     return true;
-  } else if (leftmost_dot == text.length() - 1) {
+  } else if (leftmost_dot == text.end() - 1) {
     errh->error("empty handler name");
     return false;
   }
 
-  Element *e = context->router()->find(text.substring(0, leftmost_dot), context, errh);
+  Element *e = context->router()->find(text.substring(text.begin(), leftmost_dot), context, errh);
   if (!e)
     return false;
 
   *result_element = e;
-  *result_hname = text.substring(leftmost_dot + 1);
+  *result_hname = text.substring(leftmost_dot + 1, text.end());
   return true;
 }
 

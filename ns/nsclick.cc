@@ -248,14 +248,14 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 
   // expand handler names
   for (int i = 0; i < handlers.size(); i++) {
-    int dot = handlers[i].find_left('.');
-    if (dot < 0) {
+    const char *dot = find(handlers[i], '.');
+    if (dot == handlers[i].end()) {
       call_read_handler(0, handlers[i], router, print_names, errh);
       continue;
     }
     
-    String element_name = handlers[i].substring(0, dot);
-    String handler_name = handlers[i].substring(dot + 1);
+    String element_name = handlers[i].substring(handlers[i].begin(), dot);
+    String handler_name = handlers[i].substring(dot + 1, handlers[i].end());
 
     Vector<Element *> elements;
     if (Element *e = router->find(element_name))

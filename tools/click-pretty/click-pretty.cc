@@ -604,12 +604,9 @@ output_config(String r_config, FILE *outf)
 static bool
 parse_columns(const String &s, int &which, int &count)
 {
-    which = count = 1; 
-    int slash = s.find_left('/');
-    if (slash < 0)
-	return false;
-    if (!cp_integer(s.substring(0, slash), &which)
-	|| !cp_integer(s.substring(slash + 1), &count)
+    const char *slash = find(s, '/');
+    if (!cp_integer(s.substring(s.begin(), slash), &which)
+	|| !cp_integer(s.substring(slash + 1, s.end()), &count)
 	|| which <= 0 || which > count) {
 	which = count = 1;
 	return false;
@@ -1117,12 +1114,12 @@ particular purpose.\n");
 
 	  case PACKAGE_URLS_OPT: {
 	      String s = clp->arg;
-	      int equals = s.find_left('=');
-	      if (!equals) {
+	      const char *equals = find(s, '=');
+	      if (equals == s.end()) {
 		  p_errh->error("`--package-urls' option must contain an equals sign");
 		  goto bad_option;
 	      }
-	      package_hrefs.insert("x" + s.substring(0, equals), s.substring(equals + 1));
+	      package_hrefs.insert("x" + s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
 	      break;
 	  }
 
@@ -1132,9 +1129,9 @@ particular purpose.\n");
 
 	  case DEFINE_OPT: {
 	      String s = clp->arg;
-	      int equals = s.find_left('=');
-	      if (equals >= 0)
-		  definitions.insert(s.substring(0, equals), s.substring(equals + 1));
+	      const char *equals = find(s, '=');
+	      if (equals < s.end())
+		  definitions.insert(s.substring(s.begin(), equals), s.substring(equals + 1, s.end()));
 	      else
 		  definitions.insert(s, "");
 	      break;

@@ -486,9 +486,8 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
     prog.noutputs = c->noutputs();
     while (program) {
       // find step
-      int newline = program.find_left('\n');
-      String step = program.substring(0, newline);
-      program = program.substring(newline + 1);
+      String step = program.substring(program.begin(), find(program, '\n'));
+      program = program.substring(step.end() + 1, program.end());
       // check for many things
       if (isdigit(step[0]) || isspace(step[0])) {
 	// real step

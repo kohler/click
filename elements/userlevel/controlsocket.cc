@@ -54,13 +54,13 @@ struct ControlSocketErrorHandler : public BaseErrorHandler { public:
 void
 ControlSocketErrorHandler::handle_text(Seriousness, const String &m)
 {
-  int pos = 0, nl;
-  while ((nl = m.find_left('\n', pos)) >= 0) {
-    _messages.push_back(m.substring(pos, nl - pos));
-    pos = nl + 1;
+  const char *begin = m.begin();
+  const char *end = m.end();
+  while (begin < end) {
+    const char *nl = find(begin, end, '\n');
+    _messages.push_back(m.substring(begin, nl));
+    begin = nl + 1;
   }
-  if (pos < m.length())
-    _messages.push_back(m.substring(pos));
 }
 
 
@@ -318,9 +318,9 @@ ControlSocket::transfer_messages(int fd, int default_code, const String &msg,
 static String
 canonical_handler_name(const String &n)
 {
-  int dot = n.find_left('.');
-  if (dot == 0 || (dot == 1 && n[0] == '0'))
-    return n.substring(dot + 1);
+  const char *dot = find(n, '.');
+  if (dot == n.begin() || (dot == n.begin() + 1 && n.front() == '0'))
+    return n.substring(dot + 1, n.end());
   else
     return n;
 }
@@ -328,7 +328,7 @@ canonical_handler_name(const String &n)
 String
 ControlSocket::proxied_handler_name(const String &n) const
 {
-  if (_full_proxy && n.find_left('.') < 0)
+  if (_full_proxy && find(n, '.') == n.end())
     return "0." + n;
   else
     return n;
@@ -360,11 +360,11 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
 
   // Otherwise, find element.
   Element *e;
-  int dot = canonical_name.find_left('.');
+  const char *dot = find(canonical_name, '.');
   String hname;
   
-  if (dot >= 0) {
-    String ename = canonical_name.substring(0, dot);
+  if (dot != canonical_name.end()) {
+    String ename = canonical_name.substring(canonical_name.begin(), dot);
     e = router()->find(ename);
     if (!e) {
       int num;
@@ -373,7 +373,7 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     }
     if (!e)
       return message(fd, CSERR_NO_SUCH_ELEMENT, "No element named `" + ename + "'");
-    hname = canonical_name.substring(dot + 1);
+    hname = canonical_name.substring(dot + 1, canonical_name.end());
   } else {
     e = router()->root_element();
     hname = canonical_name;
@@ -470,7 +470,7 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
 
   if (_full_proxy) {
     String phname = canonical_handler_name(hname);
-    if (phname.find_left('.') < 0)
+    if (find(phname, '.') == phname.end())
       phname = "0." + phname;
     ok = _full_proxy->check_handler(phname, write, &errh);
   } else {
@@ -500,15 +500,15 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
 int
 ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
 {
-  int octothorp = llrpcname.find_left('#');
+  const char *octothorp = find(llrpcname, '#');
   uint32_t command;
-  if (octothorp < 0 || !cp_unsigned(llrpcname.substring(octothorp + 1), 16, &command))
+  if (!cp_unsigned(llrpcname.substring(octothorp + 1, llrpcname.end()), 16, &command))
     return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name `" + llrpcname + "'");
   // transform net LLRPC id into host LLRPC id
   command = CLICK_LLRPC_NTOH(command);
   
   Element *e;
-  int hid = parse_handler(fd, llrpcname.substring(0, octothorp) + ".name", &e);
+  int hid = parse_handler(fd, llrpcname.substring(llrpcname.begin(), octothorp) + ".name", &e);
   if (hid < 0)
     return hid;
 

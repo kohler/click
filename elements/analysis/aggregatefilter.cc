@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * aggregatefilter.{cc,hh} -- count packets/bytes with given aggregate
  * Eddie Kohler
@@ -98,16 +99,16 @@ AggregateFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	else
 	    for (int i = 1; i < words.size(); i++) {
 		uint32_t agg1, agg2;
-		int dash;
+		const char *dash;
 		if (cp_unsigned(words[i], &agg1))
 		    agg2 = agg1;
-		else if ((dash = words[i].find_left('-')) >= 0
-			 && cp_unsigned(words[i].substring(0, dash), &agg1)
-			 && cp_unsigned(words[i].substring(dash + 1), &agg2))
-		    /* nada */;
 		else {
-		    errh->error("pattern %d: bad aggregate number `%#s'", words[i].cc());
-		    continue;
+		    dash = find(words[i], '-');
+		    if (!cp_unsigned(words[i].substring(words[i].begin(), dash), &agg1)
+			|| !cp_unsigned(words[i].substring(dash + 1, words[i].end()), &agg2)) {
+			errh->error("pattern %d: bad aggregate number `%#s'", words[i].cc());
+			continue;
+		    }
 		}
 
 		while (agg1 <= agg2) {

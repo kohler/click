@@ -380,10 +380,7 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 void
 ElementMap::parse(const String &str, const String &package_name, ErrorHandler *errh)
 {
-    int p, len = str.length();
-    int endp = 0;
-
-    if (len > 0 && str[0] == '<') {
+    if (str.length() && str[0] == '<') {
 	parse_xml(str, package_name, errh);
 	return;
     }
@@ -401,12 +398,12 @@ ElementMap::parse(const String &str, const String &package_name, ErrorHandler *e
 	data.push_back(i);
 
     // loop over the lines
-    for (p = 0; p < len; p = endp + 1) {
+    const char *begin = str.begin();
+    const char *end = str.end();
+    while (begin < end) {
 	// read a line
-	endp = str.find_left('\n', p);
-	if (endp < 0)
-	    endp = str.length();
-	String line = str.substring(p, endp - p);
+	String line = str.substring(begin, find(begin, end, '\n'));
+	begin = line.end() + 1;
 
 	// break into words
 	Vector<String> words;

@@ -555,7 +555,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 
     if (!_filename_pattern)
 	_filename_pattern = "-";
-    if (_filename_pattern.find_left('%') < 0)
+    if (find(_filename_pattern, '%') == _filename_pattern.end())
 	errh->warning("OUTPUT_PATTERN has no %% escapes, so output files will get overwritten");
     
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))

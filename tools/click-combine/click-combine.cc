@@ -244,7 +244,7 @@ parse_link(String text, ErrorHandler *errh)
 static void
 frob_nested_routerlink(ElementT *e)
 {
-  String prefix = e->name().substring(0, e->name().find_left('/') + 1);
+  String prefix = e->name().substring(e->name().begin(), find(e->name(), '/') + 1);
   assert(prefix.length() > 1 && prefix.back() == '/');
   Vector<String> words;
   cp_argvec(e->configuration(), words);

@@ -46,15 +46,14 @@ bool verbose = false;
 static void
 read_package_string(const String &text, StringMap &packages)
 {
-  const char *s = text.data();
-  int pos = 0;
-  int len = text.length();
-  while (pos < len) {
-    int start = pos;
-    while (pos < len && !isspace(s[pos]))
-      pos++;
-    packages.insert(text.substring(start, pos - start), 0);
-    pos = text.find_left('\n', pos) + 1;
+  const char *begin = text.begin();
+  const char *end = text.end();
+  while (begin < end) {
+    const char *start = begin;
+    while (begin < end && !isspace(*begin))
+      begin++;
+    packages.insert(text.substring(start, begin), 0);
+    begin = find(begin, end, '\n') + 1;
   }
 }
 

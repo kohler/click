@@ -496,13 +496,13 @@ ProcessingT::forward_flow(const String &flow_code, int input_port,
 
     bv->assign(noutputs, false);
 
-    int slash_pos = flow_code.find_left('/');
-    if (slash_pos <= 0 || slash_pos == flow_code.length() - 1 || flow_code[slash_pos + 1] == '/')
+    const char *slash = find(flow_code, '/');
+    if (slash == flow_code.begin() || slash >= flow_code.end() - 1 || slash[1] == '/')
 	return (errh ? errh->error("flow code: missing or bad `/'") : -1);
 
-    const char *f_in = flow_code.data();
-    const char *f_out = f_in + slash_pos + 1;
-    const char *f_last = f_in + flow_code.length();
+    const char *f_in = flow_code.begin();
+    const char *f_out = slash + 1;
+    const char *f_last = flow_code.end();
 
     Bitvector in_code;
     for (int i = 0; i < input_port; i++)
@@ -533,13 +533,13 @@ ProcessingT::backward_flow(const String &flow_code, int output_port,
 
     bv->assign(ninputs, false);
 
-    int slash_pos = flow_code.find_left('/');
-    if (slash_pos <= 0 || slash_pos == flow_code.length() - 1 || flow_code[slash_pos + 1] == '/')
+    const char *slash = find(flow_code, '/');
+    if (slash == flow_code.begin() || slash >= flow_code.end() - 1 || slash[1] == '/')
 	return (errh ? errh->error("flow code: missing or bad `/'") : -1);
 
-    const char *f_in = flow_code.data();
-    const char *f_out = f_in + slash_pos + 1;
-    const char *f_last = f_in + flow_code.length();
+    const char *f_in = flow_code.begin();
+    const char *f_out = slash + 1;
+    const char *f_last = flow_code.end();
 
     Bitvector out_code;
     for (int i = 0; i < output_port; i++)

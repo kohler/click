@@ -93,8 +93,8 @@ int
 KernelHandlerProxy::complain_about_open(ErrorHandler *errh,
 					const String &hname, int errno_val)
 {
-  int dot = hname.find_left('.');
-  String k_elt = hname.substring(0, dot);
+  const char *dot = find(hname, '.');
+  String k_elt = hname.substring(hname.begin(), dot);
   
   if (errno_val == ENOENT) {
     String try_fn = "/click/" + k_elt;
@@ -115,17 +115,16 @@ KernelHandlerProxy::complain_about_open(ErrorHandler *errh,
 int
 KernelHandlerProxy::check_handler_name(const String &hname, ErrorHandler *errh)
 {
-  int dot = hname.find_left('.');
-  if (dot <= 0 || dot == hname.length() - 1)
+  const char *dot = find(hname, '.');
+  if (dot == hname.begin() || dot >= hname.end() - 1)
     return complain(errh, hname, CSERR_SYNTAX, "Bad handler name `" + hname.printable() + "'");
 
   // check characters for validity -- don't want to screw stuff up
-  const char *s = hname.data();
-  for (int i = 0; i < dot; i++)
-    if (!isalnum(s[i]) && s[i] != '_' && s[i] != '/' && s[i] != '@')
-      return complain(errh, hname, CSERR_SYNTAX, "Bad character in element name `" + hname.substring(0, dot).printable() + "'");
-  for (int i = dot + 1; i < hname.length(); i++)
-    if (s[i] < 32 || s[i] >= 127 || s[i] == '/')
+  for (const char *s = hname.begin(); s < dot; s++)
+    if (!isalnum(*s) && *s != '_' && *s != '/' && *s != '@')
+      return complain(errh, hname, CSERR_SYNTAX, "Bad character in element name `" + hname.substring(hname.begin(), dot).printable() + "'");
+  for (const char *s = dot + 1; s < hname.end(); s++)
+    if (*s < 32 || *s >= 127 || *s == '/')
       return complain(errh, hname, CSERR_SYNTAX, "Bad character in handler name `" + hname.printable() + "'");
 
   return 0;
@@ -137,8 +136,8 @@ handler_name_to_file_name(const String &str)
   if (str[0] == '0' && str[1] == '.')
     return "/click/" + str.substring(2);
   else {
-    int dot = str.find_left('.');
-    return "/click/" + str.substring(0, dot) + "/" + str.substring(dot + 1);
+    const char *dot = find(str, '.');
+    return "/click/" + str.substring(str.begin(), dot) + "/" + str.substring(dot + 1, str.end());
   }
 }
 

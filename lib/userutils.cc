@@ -153,24 +153,25 @@ percent_substitute(const String &pattern, int format1, ...)
 
   results['%'] = "%";
 
-  int pos = 0;
+  const char *s = pattern.begin();
+  const char *end = pattern.end();
   StringAccum sa;
-  while (pos < pattern.length()) {
-    int pct = pattern.find_left('%', pos);
-    if (pct < 0 || pct == pattern.length() - 1)
+  while (s < end) {
+    const char *pct = find(s, end, '%');
+    if (pct >= end - 1)
       break;
-    int format = (unsigned char)(pattern[pct + 1]);
+    int format = (unsigned char)(pct[1]);
     if (const char *str = results[format])
-      sa << pattern.substring(pos, pct - pos) << str;
+      sa << pattern.substring(s, pct) << str;
     else
-      sa << pattern.substring(pos, pct - pos + 2);
-    pos = pct + 2;
+      sa << pattern.substring(s, pct + 2);
+    s = pct + 2;
   }
 
-  if (pos == 0)
+  if (s == pattern.begin())
     return pattern;
   else {
-    sa << pattern.substring(pos);
+    sa << pattern.substring(s, pattern.end());
     return sa.take_string();
   }
 }
@@ -298,11 +299,11 @@ unique_tmpnam(const String &pattern, ErrorHandler *errh)
   else
     tmpdir = "/tmp";
 
-  int star_pos = pattern.find_left('*');
+  const char *star = find(pattern, '*');
   String left, right;
-  if (star_pos >= 0) {
-    left = "/" + pattern.substring(0, star_pos);
-    right = pattern.substring(star_pos + 1);
+  if (star < pattern.end()) {
+    left = "/" + pattern.substring(pattern.begin(), star);
+    right = pattern.substring(star + 1, pattern.end());
   } else
     left = "/" + pattern;
   
@@ -390,41 +391,45 @@ remove_file_on_exit(const String &file)
 }
 
 static String
-path_find_file_2(const String &filename, String path, String default_path,
-		 String subdir)
+path_find_file_2(const String &filename, const String &path,
+		 String default_path, String subdir)
 {
-  if (subdir && subdir.back() != '/')
-    subdir += "/";
-  
-  while (1) {
-    int colon = path.find_left(':');
-    String dir = (colon < 0 ? path : path.substring(0, colon));
+    if (subdir && subdir.back() != '/')
+	subdir += "/";
+
+    const char *begin = path.begin();
+    const char *end = path.end();
     
-    if (!dir && default_path) {
-      // look in default path
-      String fn = path_find_file_2(filename, default_path, "", 0);
-      if (fn) return fn;
+    do {
+	String dir = path.substring(begin, find(begin, end, ':'));
+	begin = dir.end() + 1;
+    
+	if (!dir && default_path) {
+	    // look in default path
+	    String fn = path_find_file_2(filename, default_path, "", 0);
+	    if (fn)
+		return fn;
       
-    } else if (dir) {
-      if (dir.back() != '/') dir += "/"; 
-      // look for `dir/filename'
-      String fn = dir + filename;
-      if (access(fn.cc(), F_OK) >= 0)
-	return fn;
-      // look for `dir/subdir/filename' and `dir/subdir/click/filename'
-      if (subdir) {
-	fn = dir + subdir + filename;
-	if (access(fn.cc(), F_OK) >= 0)
-	  return fn;
-	fn = dir + subdir + "click/" + filename;
-	if (access(fn.cc(), F_OK) >= 0)
-	  return fn;
-      }
-    }
-    
-    if (colon < 0) return String();
-    path = path.substring(colon + 1);
-  }
+	} else if (dir) {
+	    if (dir.back() != '/')
+		dir += "/"; 
+	    // look for `dir/filename'
+	    String fn = dir + filename;
+	    if (access(fn.cc(), F_OK) >= 0)
+		return fn;
+	    // look for `dir/subdir/filename' and `dir/subdir/click/filename'
+	    if (subdir) {
+		fn = dir + subdir + filename;
+		if (access(fn.cc(), F_OK) >= 0)
+		    return fn;
+		fn = dir + subdir + "click/" + filename;
+		if (access(fn.cc(), F_OK) >= 0)
+		    return fn;
+	    }
+	}
+    } while (begin < end);
+
+    return String();
 }
 
 
@@ -486,15 +491,17 @@ clickpath_find_file(const String &filename, const char *subdir,
 bool
 path_allows_default_path(String path)
 {
-  while (1) {
-    int colon = path.find_left(':');
-    if (colon == 0 || (!path && colon < 0))
-      return true;
-    else if (colon < 0)
-      return false;
-    else
-      path = path.substring(colon + 1);
-  }
+    const char *begin = path.begin();
+    const char *end = path.end();
+    while (1) {
+	const char *colon = find(begin, end, ':');
+	if (colon == begin)
+	    return true;
+	else if (colon == end)
+	    return false;
+	else
+	    begin = colon + 1;
+    }
 }
 
 String
@@ -530,42 +537,37 @@ click_mktmpdir(ErrorHandler *errh)
 void
 parse_tabbed_lines(const String &str, Vector<String> *fields1, ...)
 {
-  va_list val;
-  Vector<void *> tabs;
-  va_start(val, fields1);
-  while (fields1) {
-    tabs.push_back((void *)fields1);
-    fields1 = va_arg(val, Vector<String> *);
-  }
-  va_end(val);
+    va_list val;
+    Vector<void *> tabs;
+    va_start(val, fields1);
+    while (fields1) {
+	tabs.push_back((void *)fields1);
+	fields1 = va_arg(val, Vector<String> *);
+    }
+    va_end(val);
+
+    const char *begin = str.begin();
+    const char *end = str.end();
   
-  int p = 0;
-  int len = str.length();
-  
-  while (p < len) {
-    // read a line
-    int endp = str.find_left('\n', p);
-    if (endp < 0)
-      endp = str.length();
-    String line = str.substring(p, endp - p);
+    while (begin < end) {
+	// read a line
+	String line = str.substring(begin, find(begin, end, '\n'));
+	begin = line.end() + 1;
 
-    // break into words
-    Vector<String> words;
-    cp_spacevec(line, words);
+	// break into words
+	Vector<String> words;
+	cp_spacevec(line, words);
 
-    // skip blank lines & comments
-    if (words.size() > 0 && words[0][0] != '#')
-      for (int i = 0; i < tabs.size(); i++) {
-	Vector<String> *vec = (Vector<String> *)tabs[i];
-	if (i < words.size())
-	  vec->push_back(cp_unquote(words[i]));
-	else
-	  vec->push_back(String());
-      }
-
-    // skip past end of line
-    p = endp + 1;
-  }
+	// skip blank lines & comments
+	if (words.size() > 0 && words[0][0] != '#')
+	    for (int i = 0; i < tabs.size(); i++) {
+		Vector<String> *vec = (Vector<String> *)tabs[i];
+		if (i < words.size())
+		    vec->push_back(cp_unquote(words[i]));
+		else
+		    vec->push_back(String());
+	    }
+    }
 }
 
 ArchiveElement
