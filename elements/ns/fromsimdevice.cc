@@ -82,7 +82,7 @@ FromSimDevice::initialize(ErrorHandler *errh)
   // Get the simulator ifid
   Router* myrouter = router();
   _fd = myrouter->sim_get_ifid(_ifname.cc());
-  if (_fd < 0) return -1;
+  if (_fd < 0) return errh->error("unable to open netowrk interface");
   // create packet buffer
   _packetbuf = new unsigned char[_packetbuf_size];
   if (!_packetbuf) {
@@ -111,20 +111,22 @@ FromSimDevice::uninitialize()
 }
 
 void
-FromSimDevice::set_annotations(Packet *p)
+FromSimDevice::set_annotations(Packet *p,int ptype)
 {
   static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
-  // check if multicast
-  // ! mcast => ! bcast
-  if (!(p->data()[0] & 1))
-    return; 
+  if (SIMCLICK_PTYPE_ETHER == ptype) {
+    // check if multicast
+    // ! mcast => ! bcast
+    if (!(p->data()[0] & 1))
+      return; 
   
-  // check for bcast
-  if (memcmp(bcast_addr, p->data(), 6) == 0)
-    p->set_packet_type_anno(Packet::BROADCAST);
-  else
-    p->set_packet_type_anno(Packet::MULTICAST);
+    // check for bcast
+    if (memcmp(bcast_addr, p->data(), 6) == 0)
+      p->set_packet_type_anno(Packet::BROADCAST);
+    else
+      p->set_packet_type_anno(Packet::MULTICAST);
+  }
 
   return;
 }
@@ -135,7 +137,7 @@ FromSimDevice::incoming_packet(int ifid,int ptype,const unsigned char* data,
   int result = 0;
 
   Packet *p = Packet::make(data, len);
-  set_annotations(p);
+  set_annotations(p,ptype);
   p->set_sim_packetinfo(pinfo);
   output(0).push(p);
 
