@@ -1,3 +1,19 @@
+2004-08-12 Thursday 13:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.120), bsdmodule/Makefile.in (1.31),
+	doc/Makefile.in (1.51), etc/libclick/lc-Makefile.in (1.12),
+	etc/libclick/lc-libsrc-Makefile.in (1.15),
+	etc/samplepackage/Makefile.in (1.44), linuxmodule/Makefile.in
+	(1.92), ns/Makefile.in (1.15), tools/click-align/Makefile.in
+	(1.19), tools/click-check/Makefile.in (1.15),
+	tools/click-combine/Makefile.in (1.15),
+	tools/click-devirtualize/Makefile.in (1.15),
+	tools/click-fastclassifier/Makefile.in (1.20),
+	tools/click-flatten/Makefile.in (1.11),
+	tools/click-install/Makefile.in (1.23),
+	tools/click-mkmindriver/Makefile.in (1.14): $(DESTDIR) update
+	suggested by Rick Stewart and Jeff Gold
+
 2004-08-12 Thursday 00:37  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: counterrors.cc (1.1), counterrors.hh (1.1),
