@@ -65,12 +65,28 @@ IPAddress::mask_to_prefix_bits() const
 }
 
 String
-IPAddress::s() const
+IPAddress::unparse() const
 {
   const unsigned char *p = data();
   char buf[20];
   sprintf(buf, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
   return String(buf);
+}
+
+String
+IPAddress::unparse_mask() const
+{
+  int prefix_bits = mask_to_prefix_bits();
+  if (prefix_bits >= 0)
+    return String(prefix_bits);
+  else
+    return unparse();
+}
+
+String
+IPAddress::unparse_with_mask(IPAddress mask) const
+{
+  return unparse() + "/" + mask.unparse_mask();
 }
 
 StringAccum &
@@ -83,4 +99,3 @@ operator<<(StringAccum &sa, IPAddress ipa)
   sa.push(buf, amt);
   return sa;
 }
-

@@ -31,9 +31,13 @@ class IPAddress {
 
   IPAddress &operator&=(IPAddress);
   IPAddress &operator|=(IPAddress);
+
+  String unparse() const;
+  String unparse_mask() const;
+  String unparse_with_mask(IPAddress) const;
   
-  operator String() const	{ return s(); }
-  String s() const;
+  operator String() const	{ return unparse(); }
+  String s() const		{ return unparse(); }
   
 };
 
