@@ -72,7 +72,7 @@ ARPQuerier::live_reconfigure(Vector<String> &conf, ErrorHandler *errh)
   clear_map();
   _arp_queries = 0;
   _pkts_killed = 0;
-
+  _arp_responses = 0;
   return 0;
 }
 
@@ -83,6 +83,7 @@ ARPQuerier::initialize(ErrorHandler *)
   _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
   _arp_queries = 0;
   _pkts_killed = 0;
+  _arp_responses = 0;
   return 0;
 }
 
@@ -140,7 +141,7 @@ ARPQuerier::expire_hook(Timer *, void *thunk)
       if (e->ok) {
 	int gap = jiff - e->last_response_jiffies;
 	if (gap > 300*CLICK_HZ) {
-	  // click_chatter("ARPQuerier timing out %x", e->ip.addr());
+	    //click_chatter("DARPQuerier timing out %x", e->ip.addr());
 	  // delete entry from map
 	  if (prev) prev->next = e->next;
 	  else arpq->_map[i] = e->next;
@@ -236,13 +237,14 @@ ARPQuerier::handle_ip(Packet *p)
       if (ae->polling) {
 	ae->polling = 0;
 	send_query_for(addr);
-      }
+     }
     } 
     
     else {
       _lock.release_read();
       _lock.acquire_write();
       if (ae->p) {
+	  //click_chatter("ARPQuerier killing packet...\n");
         ae->p->kill();
 	_pkts_killed++;
       }
@@ -276,6 +278,8 @@ ARPQuerier::handle_response(Packet *p)
 {
   if (p->length() < sizeof(click_ether) + sizeof(click_ether_arp))
     return;
+
+  _arp_responses++;
   
   click_ether *ethh = (click_ether *) p->data();
   click_ether_arp *arph = (click_ether_arp *) (ethh + 1);
@@ -335,12 +339,21 @@ ARPQuerier::read_table(Element *e, void *)
 }
 
 static String
-ARPQuerier_read_stats(Element *e, void *)
+ARPQuerier_read_stats(Element *e, void *thunk)
 {
   ARPQuerier *q = (ARPQuerier *)e;
-  return
-    String(q->_pkts_killed.value()) + " packets killed\n" +
-    String(q->_arp_queries.value()) + " ARP queries sent\n";
+
+  switch ((uintptr_t) thunk) {
+  case 0:
+      return
+        String(q->_pkts_killed.value()) + " packets killed\n" +
+        String(q->_arp_queries.value()) + " ARP queries sent\n";
+  case 1:
+      return String(q->_arp_responses.value()) + "\n";
+      
+  default:
+      return String() + "\n";
+  }
 }
 
 void
@@ -348,6 +361,7 @@ ARPQuerier::add_handlers()
 {
   add_read_handler("table", read_table, (void *)0);
   add_read_handler("stats", ARPQuerier_read_stats, (void *)0);
+  add_read_handler("responses", ARPQuerier_read_stats, (void *)1);
 }
 
 CLICK_ENDDECLS
