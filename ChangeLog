@@ -1,3 +1,20 @@
+2001-12-31 Monday 02:40  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: processingt.cc (1.17), processingt.hh (1.8):
+	progressive ElementT * rewrite: ProcessingT uses Hookups instead of
+	HookupIs; induces simplifications
+
+2001-12-31 Monday 02:36  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: elementt.cc (1.24), elementt.hh (1.19): add
+	Hookup::unparse_input and unparse_output; construct Hookups from
+	HookupIs
+
+2001-12-31 Monday 02:35  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/eclasst.cc (1.6): progressive pointer rewrite: use
+	RouterT::element(String)
+
 2001-12-30 Sunday 13:25  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-undead/click-undead.cc (1.24),
