@@ -66,6 +66,12 @@ loc_err=0
 loc_tag=no_tag
 
 # process command line
+if test $# -gt 0; then
+    if [ x"$1" = "x--help" ]; then
+	usage
+    fi
+fi
+
 if test $# -lt 3; then  
     short_usage
 fi

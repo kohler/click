@@ -46,8 +46,15 @@ ghi :: GridHeaderInfo
 
 ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 ControlSocket(tcp, CONTROL2_PORT, CONTROL2_RO);
+
+// general router chatter output
 ChatterSocket(tcp, CHATTER_PORT);
+
+// routelog output
 ChatterSocket(tcp, ROUTELOG_PORT, CHANNEL ROUTELOG_CHANNEL);
+
+// route probe reply messages
+ChatterSocket(tcp, PROBE_PORT, CHANNEL PROBE_CHANNEL);
 
 li :: GridLocationInfo(POS_LAT, POS_LON, LOC_GOOD ARG_LOC_GOOD, ERR_RADIUS ARG_LOC_ERR, TAG ARG_LOC_TAG);
 

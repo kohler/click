@@ -13,8 +13,8 @@ dnl
 
 dnl 
 dnl Control and debugging facility parameters.  Two ControlSockets, one
-dnl read-only, one read-write.  The read-write is blocked from most of
-dnl the world by firewall code on the relay nodes.
+dnl read-only, one read-write.  The read-write socket should be blocked 
+dnl from most of the world by firewall code on the relay nodes.
 dnl 
 define(CONTROL_PORT,         7777)
 define(CONTROL_RO,           false)
@@ -26,6 +26,7 @@ define(CHATTER_PORT,         7776)
 define(ROUTELOG_PORT,        7778)
 define(ROUTELOG_CHANNEL,     routelog)
 
+define(PROBE_PORT,	     7774)
 define(PROBE_CHANNEL,        probechannel)
 
 
