@@ -833,8 +833,7 @@ Element::local_llrpc(unsigned command, void *data)
   set_fs(old_fs);
   return result;
 #else
-  (void) command, (void) data;
-  return -EINVAL;
+  return llrpc(command, data);
 #endif
 }
 

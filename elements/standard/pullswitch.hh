@@ -51,7 +51,6 @@ class PullSwitch : public Element { public:
   Packet *pull(int);
 
   int llrpc(unsigned, void *);
-  int local_llrpc(unsigned, void *);
   
  private:
 

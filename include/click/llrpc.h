@@ -4,26 +4,30 @@
 # include <linux/errno.h>
 #else
 # include <errno.h>
+# include <sys/ioctl.h>
 #endif
 
-// Click low-level RPC interface
+/* Click low-level RPC interface */
 
-#define CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG		0xC400C701
-#define CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG		0xC400C702
-#define CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG		0xC400C703
-#define CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL		0xC400C704
-#define CLICK_LLRPC_TCPCOUNTER_GET_RATES		0xC400C705
-#define CLICK_LLRPC_KUTUNNEL_GET_PACKET			0xC400C706
-#define CLICK_LLRPC_IPREWRITER_MAP_TCP			0xC400C707
-#define CLICK_LLRPC_IPREWRITER_MAP_UDP			0xC400C708
-#define CLICK_LLRPC_MARK_TIMESTAMP			0xC400C709
-#define CLICK_LLRPC_GET_RATE				0xC400C70A
-#define CLICK_LLRPC_GET_RATES				0xC400C70B
-#define CLICK_LLRPC_GET_COUNT				0xC400C70C
-#define CLICK_LLRPC_GET_COUNTS				0xC400C70D
-#define CLICK_LLRPC_GET_SWITCH				0xC400C70E
-#define CLICK_LLRPC_SET_SWITCH				0xC400C70F
-#define CLICK_LLRPC_MAP_IPADDRESS			0xC400C710
+#define _CLICK_IO(n)				_IO(0xC7, n)
+#define _CLICK_IOR(n, t)			_IOR(0xC7, n, t)
+#define _CLICK_IOW(n, t)			_IOW(0xC7, n, t)
+#define _CLICK_IOWR(n, t)			_IOWR(0xC7, n, t)
+#define _CLICK_IOWRSZ(n, sz)			_IOC(IOC_INOUT, 0xC7, n, sz)
+
+#define CLICK_LLRPC_GET_RATE			_CLICK_IOWR(0, int32_t)
+#define CLICK_LLRPC_GET_RATES			_CLICK_IO(1)
+#define CLICK_LLRPC_GET_COUNT			_CLICK_IOWR(2, int32_t)
+#define CLICK_LLRPC_GET_COUNTS			_CLICK_IO(3)
+#define CLICK_LLRPC_GET_SWITCH			_CLICK_IOR(4, int32_t)
+#define CLICK_LLRPC_SET_SWITCH			_CLICK_IOW(5, int32_t)
+#define CLICK_LLRPC_MAP_IPADDRESS		_CLICK_IOWR(6, int32_t)
+#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWRSZ(7, 12)
+#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWRSZ(8, 12)
+#define CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG	_CLICK_IO(9)
+#define CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG	_CLICK_IO(10)
+#define CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG	_CLICK_IO(11)
+#define CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL	_CLICK_IO(12)
 
 #define CLICK_LLRPC_COUNTS_SIZE 8
 struct click_llrpc_counts_st {
@@ -33,14 +37,14 @@ struct click_llrpc_counts_st {
 };
 
 
-// data manipulation
+/* data manipulation */
 
 #if CLICK_USERLEVEL
 
-# define CLICK_LLRPC_GET_DATA(local, remote, size) ((void)(local), (void)(remote), (void)(size), -EFAULT)
-# define CLICK_LLRPC_PUT_DATA(remote, local, size) ((void)(local), (void)(remote), (void)(size), -EFAULT)
-# define CLICK_LLRPC_GET(local_obj, remote_addr) ((void)(local_obj), (void)(remote_addr), -EFAULT)
-# define CLICK_LLRPC_PUT(remote_addr, local_obj) ((void)(local_obj), (void)(remote_addr), -EFAULT)
+# define CLICK_LLRPC_GET_DATA(local, remote, size) (memcpy(local, remote, size), 0)
+# define CLICK_LLRPC_PUT_DATA(remote, local, size) (memcpy(remote, local, size), 0)
+# define CLICK_LLRPC_GET(local_obj, remote_addr) (memcpy(&(local_obj), remote_addr, sizeof(local_obj)), 0)
+# define CLICK_LLRPC_PUT(remote_addr, local_obj) (memcpy(remote_addr, &(local_obj), sizeof(local_obj)), 0)
 
 #elif CLICK_LINUXMODULE
 

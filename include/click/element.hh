@@ -109,7 +109,7 @@ class Element { public:
   static int reconfigure_keyword_handler(const String &, Element *, void *, ErrorHandler *);
   
   virtual int llrpc(unsigned command, void *arg);
-  virtual int local_llrpc(unsigned command, void *arg);
+  int local_llrpc(unsigned command, void *arg);
   
   // RUNTIME
   virtual void push(int port, Packet *);

@@ -495,25 +495,21 @@ IPRewriter::llrpc(unsigned command, void *data)
     //		  mapping into 'data' and returns zero. Otherwise, returns
     //		  -EAGAIN.
 
-    IPFlowID flowid;
-    if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
-      return -EFAULT;
+    IPFlowID *val = reinterpret_cast<IPFlowID *>(data);
 #if IPRW_SPINLOCKS
     _spinlock.acquire();
 #endif
-    Mapping *m = get_mapping(IP_PROTO_TCP, flowid);
+    Mapping *m = get_mapping(IP_PROTO_TCP, *val);
     if (!m) {
 #if IPRW_SPINLOCKS
       _spinlock.release();
 #endif
       return -EAGAIN;
     }
-    flowid = m->flow_id();
+    *val = m->flow_id();
 #if IPRW_SPINLOCKS
     _spinlock.release();
 #endif
-    if (CLICK_LLRPC_PUT_DATA(data, &flowid, sizeof(IPFlowID)) < 0)
-      return -EFAULT;
     return 0;
     
   } else if (command == CLICK_LLRPC_IPREWRITER_MAP_UDP) {
@@ -524,25 +520,21 @@ IPRewriter::llrpc(unsigned command, void *data)
     //		  mapping into 'data' and returns zero. Otherwise, returns
     //		  -EAGAIN.
 
-    IPFlowID flowid;
-    if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
-      return -EFAULT;
+    IPFlowID *val = reinterpret_cast<IPFlowID *>(data);
 #if IPRW_SPINLOCKS
     _spinlock.acquire();
 #endif
-    Mapping *m = get_mapping(IP_PROTO_UDP, flowid);
+    Mapping *m = get_mapping(IP_PROTO_UDP, *val);
     if (!m) {
 #if IPRW_SPINLOCKS
       _spinlock.release();
 #endif
       return -EAGAIN;
     }
-    flowid = m->flow_id();
+    *val = m->flow_id();
 #if IPRW_SPINLOCKS
     _spinlock.release();
 #endif
-    if (CLICK_LLRPC_PUT_DATA(data, &flowid, sizeof(IPFlowID)) < 0)
-      return -EFAULT;
     return 0;
     
   } else

@@ -22,6 +22,7 @@
 
 #include <click/router.hh>
 #include <click/error.hh>
+#include <click/llrpc.h>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -1036,11 +1037,43 @@ handler_ioctl(struct inode *inode, struct file *filp,
 	retval = -EINVAL;
     else if (!(e = click_router->element(INO_ELEMENTNO(inode->i_ino))))
 	retval = -EIO;
-    else if (click_router->initialized())
-	retval = e->llrpc(command, reinterpret_cast<void *>(address));
-    else
-	retval = e->Element::llrpc(command, reinterpret_cast<void *>(address));
+    else {
+	union {
+	    char buf[128];
+	    long align;
+	} ubuf;
+	char *data;
 
+	// allocate ioctl buffer
+	if (_IOC_SIZE(command) <= 128)
+	    data = &ubuf.buf;
+	else if (_IOC_SIZE(command) > 16384 || !(data = new char[_IOC_SIZE(command)])) {
+	    retval = -ENOMEM;
+	    goto exit;
+	}
+
+	// fetch incoming data if necessary
+	void *address_ptr = reinterpret_cast<void *>(address);
+	if (_IOC_SIZE(command) && (command & IOC_IN)
+	    && (retval = CLICK_LLRPC_GET_DATA(data, address_ptr, _IOC_SIZE(command))) < 0)
+	    goto exit;
+
+	// call llrpc
+	void *arg_ptr = (_IOC_SIZE(command) && (command & (IOC_INOUT)) ? data : address_ptr);
+	if (click_router->initialized())
+	    retval = e->llrpc(command, arg_ptr);
+	else
+	    retval = e->Element::llrpc(command, arg_ptr);
+
+	// store outgoing data if necessary
+	if (retval >= 0 && _IOC_SIZE(command) && (command & IOC_OUT))
+	    retval = CLICK_LLRPC_PUT_DATA(address_ptr, data, _IOC_SIZE(command));
+
+	if (data != &ubuf.buf)
+	    delete[] data;
+    }
+
+  exit:
     spin_unlock(&click_config_lock);
     return retval;
 }

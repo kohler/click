@@ -176,18 +176,18 @@ int
 Counter::llrpc(unsigned command, void *data)
 {
   if (command == CLICK_LLRPC_GET_RATE) {
-    unsigned d;
-    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || d != 0)
+    uint32_t *val = reinterpret_cast<uint32_t *>(data);
+    if (*val != 0)
       return -EINVAL;
-    unsigned r = _rate.rate();
-    return CLICK_LLRPC_PUT_DATA(data, &r, sizeof(r));
+    *val = _rate.rate();
+    return 0;
 
   } else if (command == CLICK_LLRPC_GET_COUNT) {
-    unsigned d;
-    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || (d != 0 && d != 1))
+    uint32_t *val = reinterpret_cast<uint32_t *>(data);
+    if (*val != 0 && *val != 1)
       return -EINVAL;
-    unsigned what = (d == 0 ? (unsigned)_count : (unsigned)_byte_count);
-    return CLICK_LLRPC_PUT_DATA(data, &what, sizeof(what));
+    *val = (*val == 0 ? _count : _byte_count);
+    return 0;
     
   } else if (command == CLICK_LLRPC_GET_COUNTS) {
     click_llrpc_counts_st *user_cs = (click_llrpc_counts_st *)data;

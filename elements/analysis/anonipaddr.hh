@@ -113,7 +113,6 @@ class AnonymizeIPAddr : public Element { public:
     Packet *simple_action(Packet *);
 
     int llrpc(unsigned, void *);
-    int local_llrpc(unsigned, void *);
     
   private:
 

@@ -417,15 +417,11 @@ TCPRewriter::llrpc(unsigned command, void *data)
     //		  mapping into 'data' and returns zero. Otherwise, returns
     //		  -EAGAIN.
 
-    IPFlowID flowid;
-    if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
-      return -EFAULT;
-    TCPMapping *m = get_mapping(IP_PROTO_TCP, flowid);
+    IPFlowID *val = reinterpret_cast<IPFlowID *>(data);
+    TCPMapping *m = get_mapping(IP_PROTO_TCP, *val);
     if (!m)
       return -EAGAIN;
-    flowid = m->flow_id();
-    if (CLICK_LLRPC_PUT_DATA(data, &flowid, sizeof(IPFlowID)) < 0)
-      return -EFAULT;
+    *val = m->flow_id();
     return 0;
     
   } else

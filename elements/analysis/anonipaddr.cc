@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * anonipaddr.{cc,hh} -- anonymize packet IP addresses
  * Eddie Kohler after Greg Minshall
@@ -279,26 +280,12 @@ int
 AnonymizeIPAddr::llrpc(unsigned command, void *data)
 {
     if (command == CLICK_LLRPC_MAP_IPADDRESS) {
-	uint32_t d;
-	if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0)
-	    return -EINVAL;
-	d = anonymize_addr(d);
-	return CLICK_LLRPC_PUT_DATA(data, &d, sizeof(d));
-
-    } else
-	return Element::llrpc(command, data);
-}
-
-int
-AnonymizeIPAddr::local_llrpc(unsigned command, void *data)
-{
-    if (command == CLICK_LLRPC_MAP_IPADDRESS) {
-	uint32_t *dp = (uint32_t *)data;
-	*dp = anonymize_addr(*dp);
+	uint32_t *val = reinterpret_cast<uint32_t *>(data);
+	*val = anonymize_addr(*val);
 	return 0;
 
     } else
-	return Element::local_llrpc(command, data);
+	return Element::llrpc(command, data);
 }
 
 EXPORT_ELEMENT(AnonymizeIPAddr)

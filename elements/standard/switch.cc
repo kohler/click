@@ -103,34 +103,17 @@ int
 Switch::llrpc(unsigned command, void *data)
 {
   if (command == CLICK_LLRPC_SET_SWITCH) {
-    int d;
-    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0)
-      return -EINVAL;
-    _output = (d >= noutputs() ? -1 : d);
+    int32_t *val = reinterpret_cast<int32_t *>(data);
+    _output = (*val >= noutputs() ? -1 : *val);
     return 0;
 
   } else if (command == CLICK_LLRPC_GET_SWITCH) {
-    return CLICK_LLRPC_PUT_DATA(data, &_output, sizeof(_output));
+    int32_t *val = reinterpret_cast<int32_t *>(data);
+    *val = _output;
+    return 0;
 
   } else
     return Element::llrpc(command, data);
-}
-
-int
-Switch::local_llrpc(unsigned command, void *data)
-{
-  if (command == CLICK_LLRPC_SET_SWITCH) {
-    int *i = (int *)data;
-    _output = (*i >= noutputs() ? -1 : *i);
-    return 0;
-
-  } else if (command == CLICK_LLRPC_GET_SWITCH) {
-    int *i = (int *)data;
-    *i = _output;
-    return 0;
-
-  } else
-    return Element::local_llrpc(command, data);
 }
 
 EXPORT_ELEMENT(Switch)

@@ -52,7 +52,6 @@ class Switch : public Element { public:
   void push(int, Packet *);
 
   int llrpc(unsigned, void *);
-  int local_llrpc(unsigned, void *);
   
  private:
 
