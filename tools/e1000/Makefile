@@ -12,7 +12,7 @@ CFLAGS = -DLINUX -D__KERNEL__ -DHAVE_INTEL_CPU -DMODULE -DEXPORT_SYMTAB -O2 -pip
 -I$(LINUX)/include
 
 # Check for SMP
-CFLAGS += $(subst SMP, -D__SMP__, $(findstring SMP, $(shell uname -v)))
+# CFLAGS += $(subst SMP, -D__SMP__, $(findstring SMP, $(shell uname -v)))
 
 # Check for Module Versioning
 CFLAGS += $(shell [ -f /usr/include/linux/modversions.h ] && echo -DMODVERSIONS)

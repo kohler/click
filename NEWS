@@ -43,7 +43,7 @@ Version 1.2.0
    this distribution and recompile.
 
 ** Added a polling Intel EEPro 1000 gigabit driver, which can receive or
-   send up to 1 million 64 byte packets.
+   send up to 1.3 million 64 byte packets per second.
 
 ** Added `accessible' and `priority' module parameters (see
    click-install(1)'s `--private' and `--priority' options).
