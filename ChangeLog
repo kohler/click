@@ -1,3 +1,24 @@
+2005-02-11 Friday 13:20  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/todevice.cc (1.140): bug fix (Ross Mcilroy):
+	don't try to poll if theres no polling
+
+2005-02-11 Friday 13:19  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.hh (1.4), iproutetable.hh (1.11),
+	lineariplookup.hh (1.6), lookupiproute.hh (1.22), lookupiproute2.cc
+	(1.24), trieiplookup.hh (1.7): adjust crossreferences
+
+2005-02-11 Friday 13:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/test-tap.click (1.7): add ARP to test-tap.click, and
+	undeprecate it
+
+2005-02-11 Friday 13:17  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: ip/radixiplookup.cc (1.12), ip/radixiplookup.hh
+	(1.12), ip6/ip6print.cc (1.12): nits
+
 2005-02-11 Friday 12:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: ipprint.cc (1.43), ipprint.hh (1.24): print ICMP
