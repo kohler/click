@@ -859,7 +859,6 @@ Router::wait()
 
       /* add current thread to this element's wait queue */
       add_wait_queue(wq, &ewq->thread_wq);
-
       /* now that we registered ourselves, we can let the element setup the
        * event... doing an add_wait_queue prevents race between check and
        * waiting. */
@@ -867,9 +866,13 @@ Router::wait()
     }
   }
 
-  /* go wait if haven't been woken up already */
-  if (!go_waiting) current->state = TASK_RUNNING;
-  else if (current->state != TASK_RUNNING) schedule();
+  if (!go_waiting) 
+    current->state = TASK_RUNNING;
+ 
+  /* right now, we always go to kernel scheduler just in case there are
+   * nothing on the run queue so we don't hog CPU... eventually, each element
+   * on run queue should specify when to run, etc. */
+  schedule();
 
   /* remove current thread from wait queues */
   for (int i = 0; i < wqs.size(); i++) 
@@ -922,10 +925,16 @@ Router::driver()
   Timer::run_timers();
 #endif
 
+#ifdef CLICK_POLLDEV
+  {
+    extern pid_t click_sched_pid;
+    assert(current->pid == click_sched_pid);
+  }
+#endif
+
   // Alert outputs that they should pull because some upstream
   // Queue became non-empty.
   run_scheduled();
-
   wait();
 
   return !_please_stop_driver;
