@@ -3,16 +3,22 @@
 # Douglas S. J. De Couto
 # stolen from run-grid-node
 
-# assume we run in <clickdir>/conf XXX
+# assume $CLICKDIR is set, or that we run in the directory above this
+# script.
 
 # other problems: assumes 24 bit netmasks; confusing parameter naming
 
 $| = 1;
 $debug = 0;
 
-$click = "../userlevel/click";
+$clickdir = $ENV{CLICKDIR};
+if ($clickdir eq "") {
+    $clickdir = ".";
+}
+
+$click = "$clickdir/userlevel/click";
 $click_debug = "cat";
-$click_config_name = "../conf/grid-gateway.click";
+$click_config_name = "$clickdir/conf/grid-gateway.click";
 
 
 $grid_channel = "5";
