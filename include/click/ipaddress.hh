@@ -158,7 +158,7 @@ IPAddress::mask_as_specific(IPAddress mask) const
 inline bool
 IPAddress::mask_more_specific(IPAddress mask) const
 {
-    return (addr() & mask.addr()) == mask.addr() && addr() != mask.addr();
+    return ((addr() << 1) & mask.addr()) == mask.addr();
 }
 
 inline IPAddress
