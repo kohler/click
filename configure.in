@@ -536,6 +536,10 @@ if test $ac_have_linux_kernel = y; then
 #define class xxx_class
 #define virtual xxx_virtual
 #define typename xxx_typename
+#define private xxx_private
+#define protected xxx_protected
+#define public xxx_public
+#define namespace xxx_namespace
 #include <linux/skbuff.h>], [], 
 	ac_cv_f_permissive=no, ac_cv_f_permissive=yes))
 
@@ -552,6 +556,10 @@ if test $ac_have_linux_kernel = y; then
 #define class xxx_class
 #define virtual xxx_virtual
 #define typename xxx_typename
+#define private xxx_private
+#define protected xxx_protected
+#define public xxx_public
+#define namespace xxx_namespace
 #include <linux/skbuff.h>], [], 
 	ac_cv_f_permissive_ok=yes, ac_cv_f_permissive_ok=no))
 
