@@ -1,3 +1,8 @@
+2001-09-02 Sunday 11:24  Eddie Kohler <kohler@aciri.org>
+
+	* etc/libclick/Makefile.in (1.6): libclick configure.in does not
+	enable_linuxmodule by default
+
 2001-09-02 Sunday 00:45  Eddie Kohler <kohler@aciri.org>
 
 	* doc/click.texi (1.30): doc updates
