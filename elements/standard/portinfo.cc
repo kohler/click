@@ -145,7 +145,7 @@ PortInfo::query(const String &s, int ip_p, uint16_t &store, Element *e)
 	}
 
 #if HAVE_NETDB_H
-    if (struct servent *srv = getservbyname(s.c_str(), (ip_p == IP_PROTO_TCP ? "tcp" : "udp"))) {
+    if (const struct servent *srv = getservbyname(s.c_str(), (ip_p == IP_PROTO_TCP ? "tcp" : "udp"))) {
 	store = ntohs(srv->s_port);
 	return true;
     }
