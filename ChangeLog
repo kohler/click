@@ -1,3 +1,9 @@
+2005-03-15 Tuesday 20:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure.in (1.257), etc/libclick/lc-configure.in (1.41): add
+	-nsl and -lsocket in the other order; and dont check
+	$enable_userlevel in lc-configure.in, no need for it
+
 2005-03-15 Tuesday 18:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/clicknet/wifi.h (1.22): nitlet
