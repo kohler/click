@@ -1,3 +1,22 @@
+2002-03-28 Thursday 20:22  Eddie Kohler <kohler@aciri.org>
+
+	* elements/test/packettest.cc (1.2): PacketTest: add tests for
+	shift_data()
+
+2002-03-28 Thursday 20:22  Eddie Kohler <kohler@aciri.org>
+
+	* lib/packet.cc (1.55): preserve tailroom on Packet::shift_data()
+	with negative offset
+
+2002-03-28 Thursday 20:16  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-install/common.cc (1.5): include glue.hh (reported by
+	Brecht)
+
+2002-03-28 Thursday 20:09  Eddie Kohler <kohler@aciri.org>
+
+	* lib/packet.cc (1.54): bsdmodule nitlet
+
 2002-03-28 Thursday 12:45  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/align.cc (1.16): Align uses
