@@ -485,6 +485,125 @@ Index: pci/if_fxp.c
 +	return 0;
  }
 
+Index: pci/if_wxvar.h
+--- pci/if_wxvar.h.orig	Wed Aug 22 12:59:33 2001
++++ pci/if_wxvar.h	Wed Aug 22 12:59:41 2001
+@@ -176,8 +176,8 @@
+ #endif
+ 
+ struct wxmdvar {
+-	struct device *		dev;	/* backpointer to device */
+ 	struct arpcom 		arpcom;	/* per-interface network data */
++	struct device *		dev;	/* backpointer to device */
+ 	struct resource *	mem;	/* resource descriptor for registers */
+ 	struct resource *	irq;	/* resource descriptor for interrupt */
+ 	void *			ih;	/* interrupt handler cookie */
+
+Index: pci/if_wxreg.h
+--- pci/if_wxreg.h.orig	Thu Aug 23 15:16:01 2001
++++ pci/if_wxreg.h	Thu Aug 23 15:53:28 2001
+@@ -115,6 +115,23 @@
+  * Register access via offsets.
+  */
+ 
++#define	WXREG_LVG_SELECT(rn)	(IS_LIVENGOOD(sc) ? WXREG_LVG_##rn : \
++						    WXREG_WSM_##rn)
++#define	WXREG_RDTR0		WXREG_LVG_SELECT(RDTR0)
++#define	WXREG_RDBA0_LO		WXREG_LVG_SELECT(RDBA0_LO)
++#define	WXREG_RDBA0_HI		WXREG_LVG_SELECT(RDBA0_HI)
++#define	WXREG_RDLEN0		WXREG_LVG_SELECT(RDLEN0)
++#define	WXREG_RDH0		WXREG_LVG_SELECT(RDH0)
++#define	WXREG_RDT0		WXREG_LVG_SELECT(RDT0)
++#define	WXREG_FLOW_RCV_HI	WXREG_LVG_SELECT(FLOW_RCV_HI)
++#define	WXREG_FLOW_RCV_LO	WXREG_LVG_SELECT(FLOW_RCV_LO)
++#define	WXREG_TDLEN		WXREG_LVG_SELECT(TDLEN)
++#define	WXREG_TDBA_LO		WXREG_LVG_SELECT(TDBA_LO)
++#define	WXREG_TDBA_HI		WXREG_LVG_SELECT(TDBA_HI)
++#define	WXREG_TDH		WXREG_LVG_SELECT(TDH)
++#define	WXREG_TDT		WXREG_LVG_SELECT(TDT)
++#define	WXREG_TIDV		WXREG_LVG_SELECT(TIDV)
++
+ #define	WXREG_DCR		0x00000000
+ #define	WXREG_DSR		0x00000008
+ #define	WXREG_EECDR		0x00000010
+@@ -132,20 +149,20 @@
+ #define	WXREG_IMASK		0x000000d0
+ #define	WXREG_IMCLR		0x000000d8
+ #define	WXREG_RCTL		0x00000100
+-#define	WXREG_RDTR0		0x00000108
+-#define	WXREG_RDBA0_LO		0x00000110
+-#define	WXREG_RDBA0_HI		0x00000114
+-#define	WXREG_RDLEN0		0x00000118
+-#define	WXREG_RDH0		0x00000120
+-#define	WXREG_RDT0		0x00000128
++#define	WXREG_WSM_RDTR0		0x00000108
++#define	WXREG_WSM_RDBA0_LO	0x00000110
++#define	WXREG_WSM_RDBA0_HI	0x00000114
++#define	WXREG_WSM_RDLEN0	0x00000118
++#define	WXREG_WSM_RDH0		0x00000120
++#define	WXREG_WSM_RDT0		0x00000128
+ #define	WXREG_RDTR1		0x00000130
+ #define	WXREG_RDBA1_LO		0x00000138
+ #define	WXREG_RDBA1_HI		0x0000013C
+ #define	WXREG_RDLEN1		0x00000140
+ #define	WXREG_RDH1		0x00000148
+ #define	WXREG_RDT1		0x00000150
+-#define	WXREG_FLOW_RCV_HI	0x00000160
+-#define	WXREG_FLOW_RCV_LO	0x00000168
++#define	WXREG_WSM_FLOW_RCV_HI	0x00000160
++#define	WXREG_WSM_FLOW_RCV_LO	0x00000168
+ #define	WXREG_FLOW_XTIMER	0x00000170
+ #define	WXREG_XMIT_CFGW		0x00000178
+ #define	WXREG_RECV_CFGW		0x00000180
+@@ -155,13 +172,28 @@
+ #define	WXREG_TQSA_HI		0x0000040C
+ #define	WXREG_TIPG		0x00000410
+ #define	WXREG_TQC		0x00000418
+-#define	WXREG_TDBA_LO		0x00000420
+-#define	WXREG_TDBA_HI		0x00000424
+-#define	WXREG_TDLEN		0x00000428
+-#define	WXREG_TDH		0x00000430
+-#define	WXREG_TDT		0x00000438
+-#define	WXREG_TIDV		0x00000440
++#define	WXREG_WSM_TDBA_LO	0x00000420
++#define	WXREG_WSM_TDBA_HI	0x00000424
++#define	WXREG_WSM_TDLEN		0x00000428
++#define	WXREG_WSM_TDH		0x00000430
++#define	WXREG_WSM_TDT		0x00000438
++#define	WXREG_WSM_TIDV		0x00000440
+ #define	WXREG_VFTA		0x00000600
++
++#define	WXREG_LVG_FLOW_RCV_LO	0x00002160
++#define	WXREG_LVG_FLOW_RCV_HI	0x00002168
++#define	WXREG_LVG_RDBA0_LO	0x00002800
++#define	WXREG_LVG_RDBA0_HI	0x00002804
++#define	WXREG_LVG_RDLEN0	0x00002808
++#define	WXREG_LVG_RDH0		0x00002810
++#define	WXREG_LVG_RDT0		0x00002818
++#define	WXREG_LVG_RDTR0		0x00002820
++#define	WXREG_LVG_TDBA_LO	0x00003800
++#define	WXREG_LVG_TDBA_HI	0x00003804
++#define	WXREG_LVG_TDLEN		0x00003808
++#define	WXREG_LVG_TDH		0x00003810
++#define	WXREG_LVG_TDT		0x00003818
++#define	WXREG_LVG_TIDV		0x00003820
+ 
+ #define	WX_RAL_TAB_SIZE		16
+ #define	WX_RAL_AV		0x80000000
+
+Index: pci/if_wx.c
+--- pci/if_wx.c.orig	Wed Aug 22 13:17:28 2001
++++ pci/if_wx.c	Thu Aug 23 15:40:56 2001
+@@ -1087,7 +1087,7 @@
+ 
+ 			/*
+ 			 * If this packet is too small for the chip's minimum,
+-			 * break out to to cluster it.
++			 * break out to cluster it.
+ 			 */
+ 			if (m->m_len < WX_MIN_RPKT_SIZE) {
+ 				sc->wx_xmitrunt++;
+
 Index: sys/namei.h
 --- sys/namei.h.orig	Fri Nov  3 10:55:40 2000
 +++ sys/namei.h	Tue Aug 21 18:47:08 2001
