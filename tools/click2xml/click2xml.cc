@@ -118,8 +118,6 @@ print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
 {
     if (c->simple())
 	fprintf(f, "%sclassname=\"%s\"", prefix, String(c->name()).cc());
-    else if (c->name())
-	fprintf(f, "%sclassname=\"%s\" %sclassid=\"c%d\"", prefix, String(c->name()).cc(), prefix, c->uid());
     else
 	fprintf(f, "%sclassid=\"c%d\"", prefix, c->uid());
 }
@@ -147,6 +145,8 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 	generate_type(prerequisites[i], f, indent, errh);
 
     fprintf(f, "%s<elementclass ", indent.cc());
+    if (c->name())
+	fprintf(f, "classname=\"%s\" ", String(c->name()).cc());
     print_class_reference(f, c, "");
     
     if (SynonymElementClassT *synonym = c->cast_synonym()) {
@@ -194,6 +194,8 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
 		    e->ninputs(), e->noutputs());
 	    if (e->ninputs() || e->noutputs())
 		fprintf(f, " processing=\"%s\"", processing.processing_code(e).cc());
+	    if (e->config())
+		fprintf(f, " config=\"%s\"", xml_quote(e->config()));
 	    fprintf(f, " />\n");
 	}
 

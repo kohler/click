@@ -169,6 +169,71 @@ ElementMap::remove_at(int i)
 }
 
 static const char *
+parse_attribute_value(String *result,
+		      const char *s, const char *ends,
+		      const HashMap<String, String> &entities,
+		      ErrorHandler *errh)
+{
+    while (s < ends && isspace(*s))
+	s++;
+    if (s >= ends || (*s != '\'' && *s != '\"')) {
+	errh->error("XML parse error: missing attribute value");
+	return s;
+    }
+    
+    char quote = *s;
+    const char *first = s + 1;
+    StringAccum sa;
+    for (s++; s < ends && *s != quote; s++)
+	if (*s == '&') {
+	    // dump on normal text
+	    sa.append(first, s - first);
+	    
+	    if (s + 3 < ends && s[1] == '#' && s[2] == 'x') {
+		// hex character reference
+		int c = 0;
+		for (s += 3; isxdigit(*s); s++)
+		    if (isdigit(*s))
+			c = (c * 16) + *s - '0';
+		    else
+			c = (c * 16) + tolower(*s) - 'a' + 10;
+		sa << (char)c;
+	    } else if (s + 2 < ends && s[1] == '#') {
+		// decimal character reference
+		int c = 0;
+		for (s += 2; isdigit(*s); s++)
+		    c = (c * 10) + *s - '0';
+		sa << (char)c;
+	    } else {
+		// named entity
+		const char *t;
+		for (t = s + 1; t < ends && *t != quote && *t != ';'; t++)
+		    /* nada */;
+		if (t < ends && *t == ';') {
+		    String entity_name(s + 1, t - s - 1);
+		    sa << entities[entity_name];
+		    s = t;
+		}
+	    }
+
+	    // check entity ended correctly
+	    if (s >= ends || *s != ';') {
+		errh->error("XML parse error: bad entity name");
+		return s;
+	    }
+
+	    first = s + 1;
+	}
+    sa.append(first, s - first);
+    if (s >= ends)
+	errh->error("XML parse error: unterminated attribute value");
+    else
+	s++;
+    *result = sa.take_string();
+    return s;
+}
+
+static const char *
 parse_xml_attrs(HashMap<String, String> &attrs,
 		const char *s, const char *ends, bool *closed,
 		const HashMap<String, String> &entities,
@@ -204,62 +269,11 @@ parse_xml_attrs(HashMap<String, String> &attrs,
 	    return s;
 	}
 	s++;
-	while (s < ends && isspace(*s))
-	    s++;
 
-	// parse attribute value
-	if (s >= ends || (*s != '\'' && *s != '\"')) {
-	    errh->error("XML parse error: missing attribute value");
-	    return s;
-	}
-	char quote = *s;
-	const char *first = s + 1;
-	StringAccum attrvalue;
-	for (s++; s < ends && *s != quote; s++)
-	    if (*s == '&') {
-		// dump on normal text
-		attrvalue.append(first, s - first);
-		
-		if (s + 3 < ends && s[1] == '#' && s[2] == 'x') {
-		    // hex character reference
-		    int c = 0;
-		    for (s += 3; isxdigit(*s); s++)
-			if (isdigit(*s))
-			    c = (c * 16) + *s - '0';
-			else
-			    c = (c * 16) + tolower(*s) - 'a' + 10;
-		} else if (s + 2 < ends && s[1] == '#') {
-		    // decimal character reference
-		    int c = 0;
-		    for (s += 2; isdigit(*s); s++)
-			c = (c * 10) + *s - '0';
-		} else {
-		    // named entity
-		    const char *t;
-		    for (t = s + 1; t < ends && *t != quote && *t != ';'; t++)
-			/* nada */;
-		    if (t < ends && *t == ';') {
-			String entity_name(s + 1, t - s - 1);
-			attrvalue << entities[entity_name];
-			s = t;
-		    }
-		}
-
-		// check entity ended correctly
-		if (s >= ends || *s != ';') {
-		    errh->error("XML parse error: bad entity name");
-		    return s;
-		}
-
-		first = s + 1;
-	    }
-	attrvalue.append(first, s - first);
-	if (s >= ends)
-	    errh->error("XML parse error: unterminated attribute value");
-	else
-	    s++;
-
-	attrs.insert(attrname, attrvalue.take_string());
+	// get attribute value
+	String attrvalue;
+	s = parse_attribute_value(&attrvalue, s, ends, entities, errh);
+	attrs.insert(attrname, attrvalue);
     }
     return s;
 }
@@ -334,8 +348,17 @@ ElementMap::parse_xml(const String &str, const String &package_name, ErrorHandle
 	} else if (s + 7 < ends && memcmp(s, "!ENTITY", 7) == 0
 		 && (isspace(s[7]) || s[7] == '>' || s[7] == '/')) {
 	    // parse entity declaration
-	    for (s += 7; isspace(*s); s++)
+	    for (s += 7; s < ends && isspace(*s); s++)
 		/* nada */;
+	    if (s >= ends || *s == '%') // skip DTD entities
+		break;
+	    const char *name_start = s;
+	    while (s < ends && !isspace(*s))
+		s++;
+	    String name(name_start, s - name_start), value;
+	    s = parse_attribute_value(&value, s, ends, entities, errh);
+	    entities.insert(name, value);
+	    
 	} else if (s + 8 < ends && memcmp(s, "![CDATA[", 8) == 0) {
 	    // skip CDATA section
 	    for (s += 8; s < ends; s++)
@@ -437,26 +460,6 @@ void
 ElementMap::parse(const String &str, ErrorHandler *errh)
 {
     parse(str, String(), errh);
-}
-
-static String
-xml_quote(const String &str)
-{
-    const char *s = str.data();
-    const char *ends = s + str.length();
-    const char *first = s;
-    StringAccum sa;
-    for (; s < ends; s++)
-	if (*s == '&' || *s == '<' || *s == '\"') {
-	    sa.append(first, s - first);
-	    sa << '&' << (*s == '&' ? "amp" : (*s == '<' ? "lt" : "quot")) << ';';
-	    first = s + 1;
-	}
-    if (sa) {
-	sa.append(first, s - first);
-	return sa.take_string();
-    } else
-	return str;
 }
 
 String

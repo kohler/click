@@ -30,7 +30,8 @@ file CDATA #IMPLIED
 line NMTOKEN #IMPLIED
 ninputs NMTOKEN #IMPLIED
 noutputs NMTOKEN #IMPLIED
-processing CDATA #IMPLIED>
+processing CDATA #IMPLIED
+config CDATA #IMPLIED>
 
 <!ATTLIST connection from CDATA #REQUIRED
 fromport NMTOKEN #REQUIRED
@@ -39,3 +40,22 @@ toport NMTOKEN #REQUIRED
 processing NMTOKEN #IMPLIED
 file CDATA #IMPLIED
 line NMTOKEN #IMPLIED>
+
+
+<!ELEMENT elementmap (entry*)>
+<!ELEMENT entry EMPTY>
+
+<!ATTLIST elementmap sourcedir CDATA #IMPLIED
+provides CDATA #IMPLIED
+webdoc CDATA #IMPLIED>
+
+<!ATTLIST entry name CDATA #IMPLIED
+cxxclass NMTOKEN #IMPLIED
+docname CDATA #IMPLIED
+headerfile CDATA #IMPLIED
+sourcefile CDATA #IMPLIED
+processing CDATA #IMPLIED
+flowcode CDATA #IMPLIED
+flags CDATA #IMPLIED
+requires CDATA #IMPLIED
+provides CDATA #IMPLIED>

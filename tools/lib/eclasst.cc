@@ -247,7 +247,7 @@ ElementClassT::collect_prerequisites(Vector<ElementClassT *> &)
 }
 
 void
-ElementClassT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind uk, ElementClassT *)
+ElementClassT::unparse_declaration(StringAccum &sa, const String &, UnparseKind uk, ElementClassT *)
 {
     if (uk == UNPARSE_OVERLOAD)
 	sa << " ...\n";

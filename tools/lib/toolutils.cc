@@ -127,11 +127,7 @@ read_router_file(const char *filename, bool empty_ok, ErrorHandler *errh)
   if (!s && errh->nerrors() != old_nerrors)
     return 0;
 
-  // set readable filename
-  if (!filename || !*filename || strcmp(filename, "-") == 0)
-    filename = "<stdin>";
-
-  return read_router_string(s, filename, empty_ok, errh);
+  return read_router_string(s, filename_landmark(filename), empty_ok, errh);
 }
 
 RouterT *
@@ -199,4 +195,25 @@ write_router_file(RouterT *r, const char *name, ErrorHandler *errh)
   } else
     write_router_file(r, stdout, errh);
   return 0;
+}
+
+
+String
+xml_quote(const String &str)
+{
+    const char *s = str.data();
+    const char *ends = s + str.length();
+    const char *first = s;
+    StringAccum sa;
+    for (; s < ends; s++)
+	if (*s == '&' || *s == '<' || *s == '\"') {
+	    sa.append(first, s - first);
+	    sa << '&' << (*s == '&' ? "amp" : (*s == '<' ? "lt" : "quot")) << ';';
+	    first = s + 1;
+	}
+    if (sa) {
+	sa.append(first, s - first);
+	return sa.take_string();
+    } else
+	return str;
 }

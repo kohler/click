@@ -14,4 +14,6 @@ RouterT *read_router(const String &, bool is_expr, ErrorHandler *);
 void write_router_file(RouterT *, FILE *, ErrorHandler * = 0);
 int write_router_file(RouterT *, const char *, ErrorHandler * = 0);
 
+String xml_quote(const String &);
+
 #endif
