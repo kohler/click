@@ -1,10 +1,10 @@
 // grid-node-info.h
 
 // Grid physical device
-#define NET_DEVICE eth0
+#define NET_DEVICE wvlan0
 
 // MAC address of NET_DEVICE
-#define MAC_ADDR  00:E0:98:09:27:C5
+#define MAC_ADDR 00:60:1D:23:A7:A6
 
 // tunnel device for user-level grid configuration
 #define TUN_DEVICE tap
@@ -28,5 +28,5 @@
 #define HELLO_JITTER 100 // msecs
 
 // Grid ethernet protocol number in Click hex notation with ethernet
-// protocol offset (typically 12) e.g. 12/BABE
-#define GRID_ETH_PROTO 12/BABE
+// protocol offset (typically 12) e.g. 12/7FFF
+#define GRID_ETH_PROTO 12/7FFF
