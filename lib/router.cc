@@ -761,6 +761,8 @@ Router::wait()
 
   if (scheduled_next() != this)
     return;
+  tv.tv_sec = 1;
+  tv.tv_usec = 0;
   if (!any && !Timer::get_next_delay(&tv))
     return;
   
