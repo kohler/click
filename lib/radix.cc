@@ -1,5 +1,5 @@
 /*
- * radix.{cc,hh} -- a radix tree.
+ * radix.{cc,hh} -- a radix tree. Implementation taken from Sedgewick.
  * Thomer M. Gil
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -20,7 +20,7 @@
 Radix::Radix()
 {
   root = new struct node;
-  root->rt_idx = root->key = 0;
+  root->info = root->key = 0;
   root->bit_idx = KEYSIZE-1;
   root->left = root->right = root;
 }
@@ -30,27 +30,22 @@ Radix::~Radix()
 }
 
 void
-Radix::insert(KEYTYPE v, int rt_idx)
+Radix::insert(KEYTYPE v, int info)
 {
   struct node *t, *p;
   int i;
 
   t = node_lookup(v);
 
-  // In there already?
   if(v == t->key)
     return;
-
-  // t is now the node whose key must be distinguished from v
 
   // Find bit for which v and t-> key differ
   i = KEYSIZE-1;
   while(bits(v, i, 1) == bits(t->key, i, 1))
     i--;
 
-  // i now equals the index of the bit where v and t->key differ.
-
-  // Travel down the tree to the point where bit_idx <= i
+  // Descend to that level
   struct node *x = root;
   do {
     p = x;
@@ -63,11 +58,11 @@ Radix::insert(KEYTYPE v, int rt_idx)
       break;
   } while(1);
 
-  // Create new node
+  // ... and instert node
   t = new struct node;
   t->key = v;
   t->bit_idx = i;
-  t->rt_idx = rt_idx;
+  t->info = info;
 
   if(bits(v, t->bit_idx, 1) == 0) {
     t->left = t;
@@ -84,6 +79,16 @@ Radix::insert(KEYTYPE v, int rt_idx)
 }
 
 
+// Returns info based on key
+int
+Radix::lookup(KEYTYPE v)
+{
+  return(node_lookup(v)->info);
+}
+
+
+
+// Returns node based on key
 struct Radix::node *
 Radix::node_lookup(KEYTYPE v)
 {
@@ -100,31 +105,10 @@ Radix::node_lookup(KEYTYPE v)
   return x;
 }
 
-int
-Radix::lookup(KEYTYPE v)
-{
-  return(node_lookup(v)->rt_idx);
-}
+
 
 inline KEYTYPE
-Radix::bits(KEYTYPE x, KEYTYPE k, unsigned char j)
+bits(KEYTYPE x, KEYTYPE k, unsigned char j)
 {
   return (x >> k) & (0xffffffff >> (KEYSIZE-j));
 }
-
-/*
-
-int main(int argc, char *argv[])
-{
-    Radix a;
-
-    a.insert(0x04020101, 0xffffff00, 28);
-    a.insert(0x01010101, 0xffff0000, 23);
-    a.insert(0x02010101, 0xffff0000, 24);
-    a.insert(0x03010101, 0xffff0000, 25);
-    a.insert(0x04010101, 0xffff0000, 26);
-    a.insert(0x04020101, 0xffff0000, 27);
-    printf("%d\n", a.lookup(0x04020101 & 0xffffff00));
-}
-
-*/
