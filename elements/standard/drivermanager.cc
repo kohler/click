@@ -58,7 +58,10 @@ DriverManager::configure(const Vector<String> &conf, ErrorHandler *errh)
 	cp_spacevec(conf[i], words);
 
 	String insn_name;
-	if (words.size() == 0 || !cp_keyword(words[0], &insn_name))
+	if (words.size() == 0)	// ignore as benign
+	    /* nada */;
+
+	else if (!cp_keyword(words[0], &insn_name))
 	    errh->error("missing or bad instruction name; should be `INSNNAME [ARG]'");
     
 	else if (insn_name == "wait_stop" || insn_name == "wait_pause"
@@ -124,7 +127,7 @@ DriverManager::initialize(ErrorHandler *errh)
 				  cpString, "data", &text,
 				  0) < 0)
 		return -1;
-	    _args[i] = e->eindex();
+	    _args[i] = (e ? e->eindex() : -1);
 	    _args2[i] = hi;
 	    _args3[i] = text;
 	} else if (_insns[i] == INSN_READ) {
@@ -132,7 +135,7 @@ DriverManager::initialize(ErrorHandler *errh)
 				  cpReadHandler, "read handler", &e, &hi,
 				  0) < 0)
 		return -1;
-	    _args[i] = e->eindex();
+	    _args[i] = (e ? e->eindex() : -1);
 	    _args2[i] = hi;
 	}
 
