@@ -160,6 +160,21 @@ and whose element's name matches the pattern.
 '
 .Sp
 .TP
+.BI \-x " \fR[\fPelement\fR.]\fPhandler"
+.TP
+.BI \-\-exit-handler " \fR[\fPelement\fR.]\fPhandler"
+After running the driver, call
+.IR element 's
+read handler named
+.IR handler ,
+or the global read handler named
+.IR handler ,
+and use the result as the
+.B click
+process exit value.  The handler should return an integer, which is used directly, or a boolean (true means 0, false means 1).
+'
+.Sp
+.TP
 .BI \-o " file"
 .TP
 .BI \-\-output " file"

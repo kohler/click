@@ -5,6 +5,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -44,6 +45,7 @@
 #include <click/driver.hh>
 #include <click/userutils.hh>
 #include <click/confparse.hh>
+#include <click/handlercall.hh>
 #include "elements/standard/quitwatcher.hh"
 #include "elements/userlevel/controlsocket.hh"
 CLICK_USING_DECLS
@@ -62,6 +64,7 @@ CLICK_USING_DECLS
 #define NO_WARNINGS_OPT		312
 #define WARNINGS_OPT		313
 #define ALLOW_RECONFIG_OPT	314
+#define EXIT_HANDLER_OPT	315
 
 static Clp_Option options[] = {
   { "allow-reconfigure", 'R', ALLOW_RECONFIG_OPT, 0, Clp_Negate },
@@ -77,6 +80,7 @@ static Clp_Option options[] = {
   { "unix-socket", 'u', UNIX_SOCKET_OPT, Clp_ArgString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
   { "warnings", 0, WARNINGS_OPT, 0, Clp_Negate },
+  { "exit-handler", 'x', EXIT_HANDLER_OPT, Clp_ArgString, 0 },
   { 0, 'w', NO_WARNINGS_OPT, 0, Clp_Negate },
 };
 
@@ -86,7 +90,7 @@ void
 short_usage()
 {
   fprintf(stderr, "Usage: %s [OPTION]... [ROUTERFILE]\n\
-Try `%s --help' for more information.\n",
+Try '%s --help' for more information.\n",
 	  program_name, program_name);
 }
 
@@ -94,7 +98,7 @@ void
 usage()
 {
   printf("\
-`Click' runs a Click router configuration at user level. It installs the\n\
+'Click' runs a Click router configuration at user level. It installs the\n\
 configuration, reporting any errors to standard error, and then generally runs\n\
 until interrupted.\n\
 \n\
@@ -108,6 +112,7 @@ Options:\n\
   -R, --allow-reconfigure       Provide a writable 'hotconfig' handler.\n\
   -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
                                 driver and print result to standard output.\n\
+  -x, --exit-handler ELEMENT.H  Use handler ELEMENT.H value for exit status.\n\
   -o, --output FILE             Write flat configuration to FILE.\n\
   -q, --quit                    Do not run driver.\n\
   -t, --time                    Print information on how long driver took.\n\
@@ -145,9 +150,9 @@ call_read_handler(Element *e, String handler_name,
   const Router::Handler *rh = Router::handler(e, handler_name);
   String full_name = Router::Handler::unparse_name(e, handler_name);
   if (!rh || !rh->visible())
-    return errh->error("no `%s' handler", full_name.cc());
+    return errh->error("no '%s' handler", full_name.cc());
   else if (!rh->read_visible())
-    return errh->error("`%s' is a write handler", full_name.cc());
+    return errh->error("'%s' is a write handler", full_name.cc());
 
   if (print_name)
     fprintf(stdout, "%s:\n", full_name.cc());
@@ -202,7 +207,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
     else if (expand_handler_elements(element_name, handler_name, elements, router))
       print_names = true;
     else
-      errh->error("no element matching `%s'", element_name.cc());
+      errh->error("no element matching '%s'", element_name.cc());
 
     for (int j = 0; j < elements.size(); j++)
       call_read_handler(elements[j], handler_name, print_names, errh);
@@ -311,6 +316,7 @@ main(int argc, char **argv)
   bool report_time = false;
   bool allow_reconfigure = false;
   Vector<String> handlers;
+  String exit_handler;
 
   while (1) {
     int opt = Clp_Next(clp);
@@ -339,6 +345,14 @@ main(int argc, char **argv)
       handlers.push_back(clp->arg);
       break;
 
+     case EXIT_HANDLER_OPT:
+      if (exit_handler) {
+	errh->error("--exit-handler specified twice");
+	goto bad_option;
+      }
+      exit_handler = clp->arg;
+      break;
+      
      case PORT_OPT:
       cs_ports.push_back(clp->val.i);
       break;
@@ -380,6 +394,7 @@ main(int argc, char **argv)
       printf("click (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999-2001 Massachusetts Institute of Technology\n\
 Copyright (C) 2001-2003 International Computer Science Institute\n\
+Copyright (C) 2004 Regents of the University of California\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -457,19 +472,35 @@ particular purpose.\n");
   if (report_time) {
     struct timeval diff;
     timersub(&after.ru_utime, &before.ru_utime, &diff);
-    printf("%ld.%03ldu", (long) diff.tv_sec, (long) (diff.tv_usec+500)/1000);
+    printf("%ld.%03ldu", (long)diff.tv_sec, (long)((diff.tv_usec+500)/1000));
     timersub(&after.ru_stime, &before.ru_stime, &diff);
-    printf(" %ld.%03lds", (long) diff.tv_sec, (long) (diff.tv_usec+500)/1000);
+    printf(" %ld.%03lds", (long)diff.tv_sec, (long)((diff.tv_usec+500)/1000));
     timersub(&after_time, &before_time, &diff);
-    printf(" %ld:%02ld.%02ld", (long) diff.tv_sec/60, (long) diff.tv_sec%60,
-	   (long) (diff.tv_usec+5000)/10000);
+    printf(" %ld:%02ld.%02ld", (long)(diff.tv_sec/60), (long)(diff.tv_sec%60), (long)((diff.tv_usec+5000)/10000));
     printf("\n");
   }
-  
+
   // call handlers
   if (handlers.size())
     if (call_read_handlers(handlers, errh) < 0)
       exit_value = 1;
+
+  // call exit handler
+  if (exit_handler) {
+    int before = errh->nerrors();
+    String exit_string = HandlerCall::call_read(exit_handler, router, errh);
+    bool b;
+    if (errh->nerrors() != before)
+      exit_value = -1;
+    else if (cp_integer(cp_uncomment(exit_string), &exit_value))
+      /* nada */;
+    else if (cp_bool(cp_uncomment(exit_string), &b))
+      exit_value = (b ? 0 : 1);
+    else {
+      errh->error("exit handler value should be integer");
+      exit_value = -1;
+    }
+  }
 
   router->unuse();
   click_static_cleanup();
