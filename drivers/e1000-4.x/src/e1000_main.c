@@ -1927,9 +1927,14 @@ e1000_intr(int irq, void *data, struct pt_regs *regs)
 			mod_timer(&adapter->watchdog_timer, jiffies);
 		}
 
-                if(netdev->polling){
-                  printk("%s: polling! icr=0x%x\n", netdev->name, icr);
-                } else {
+		/* 26.Jun.2004 - Do not print a message if we get an interrupt
+                   in polling mode.  Andy Van Maele reports that e1000
+                   adapters can share interrupts with other devices, such as
+                   other network cards.  Thus, it is not necessarily a problem
+                   if we get an interrupt; and printing a message is very
+                   expensive. So scrap it.  It might be better to keep a
+                   counter. */
+                if(!netdev->polling){
                   e1000_clean_rx_irq(adapter);
                   e1000_clean_tx_irq(adapter);
                 }
