@@ -27,6 +27,8 @@
 #include <click/router.hh>
 #include <click/glue.hh>
 
+int GridRouteActor::_next_free_cb = 0;
+
 #define NOISY 0
 
 LookupLocalGridRoute::LookupLocalGridRoute()
@@ -98,6 +100,8 @@ LookupLocalGridRoute::run_scheduled()
   _task.fast_reschedule();
 }
 
+typedef GridRouteActionCallback GRCB;
+
 void
 LookupLocalGridRoute::push(int port, Packet *packet)
 {
@@ -144,7 +148,8 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 			  id().cc(),
 			  dest_ip.s().cc());
 #endif
-	    packet->pull(sizeof(click_ether) + gh->hdr_len + sizeof(grid_nbr_encap)); 
+	    packet->pull(sizeof(click_ether) + gh->hdr_len + sizeof(grid_nbr_encap));
+	    notify_route_cbs(packet, dest_ip, GRCB::SendToIP, 0, 0);
 	    output(1).push(packet);
 	  }
 	  else
@@ -161,6 +166,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     default:
       click_chatter("%s: received unexpected Grid packet type: %s", 
 		    id().cc(), grid_hdr::type_string(gh->type).cc());
+      notify_route_cbs(packet, 0, GRCB::Drop, GRCB::UnknownType, 0);
       output(3).push(packet);
     }
   }
@@ -229,7 +235,7 @@ LookupLocalGridRoute::add_handlers()
 }
 
 bool
-LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
+LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IPAddress *next_hop_ip) const
 {
   assert(dest_eth != 0);
 
@@ -254,6 +260,7 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) co
     return false;
 
   *dest_eth = rte->next_hop_eth;
+  *next_hop_ip = rte->next_hop_ip;
 
   /* sanity check routing table entries -- does entry's next_hop_eth
      actually match the next hop's eth? */
@@ -288,6 +295,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   if (_rtes == 0) {
     // no GridRouteTable next-hop table in configuration
     click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", id().cc(), dest_ip.s().cc());
+    notify_route_cbs(packet, dest_ip, GRCB::FallbackToGF, 0, 0);
     output(2).push(packet);
     return;
   }
@@ -295,7 +303,8 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
 
   EtherAddress next_hop_eth;
-  bool found_next_hop = get_next_hop(dest_ip, &next_hop_eth);
+  IPAddress next_hop_ip;
+  bool found_next_hop = get_next_hop(dest_ip, &next_hop_eth, &next_hop_ip);
 
   if (found_next_hop) {
     struct click_ether *eh = (click_ether *) packet->data();
@@ -305,12 +314,14 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     gh->tx_ip = _ipaddr;
     encap->hops_travelled++;
     // leave src location update to FixSrcLoc element
+    notify_route_cbs(packet, dest_ip, GRCB::ForwardDSDV, next_hop_ip, 0);
     output(0).push(packet);
   }
   else {
 #if NOISY
     click_chatter("%s: unable to forward packet for %s with local routing, trying geographic routing", id().cc(), dest_ip.s().cc());
 #endif
+    notify_route_cbs(packet, dest_ip, GRCB::FallbackToGF, 0, 0);
     output(2).push(packet);
   }
 }

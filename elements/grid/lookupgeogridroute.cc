@@ -86,6 +86,8 @@ LookupGeographicGridRoute::run_scheduled()
   _task.fast_reschedule();
 }
 
+typedef GridRouteActionCallback GRCB;
+
 void
 LookupGeographicGridRoute::push(int port, Packet *packet)
 {
@@ -104,6 +106,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
       gh->type != grid_hdr::GRID_LOC_REPLY) {
     click_chatter("LookupGeographicGridRoute %s: received unexpected Grid packet type: %s", 
 		  id().cc(), grid_hdr::type_string(gh->type).cc());
+    notify_route_cbs(packet, 0, GRCB::Drop, GRCB::UnknownType, 0);
     output(2).push(packet);
     return;
   }
@@ -117,6 +120,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     click_chatter("LookupGeographicGridroute %s: got an IP packet for us %s, dropping it",
 		  id().cc(),
 		  dest_ip.s().cc());
+    notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::ConfigError, 0);
     packet->kill();
     return;
   }
@@ -125,6 +129,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
   if (_rt == 0) {
     // no UpdateGridRoutes next-hop table in configuration
     click_chatter("LookupGeographicGridRoute %s: can't forward packet for %s; there is no routing table", id().cc(), dest_ip.s().cc());
+    notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::ConfigError, 0);
     output(1).push(packet);
     return;
   }
@@ -133,6 +138,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     click_chatter("LookupGeographicGridroute %s: bad destination location in packet for %s",
                   id().cc(),
                   dest_ip.s().cc());
+    notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoDestLoc, 0);
     output(2).push(packet);
     return;
   }
@@ -143,7 +149,9 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
    * addresses.  
    */
   EtherAddress next_hop_eth;
-  bool found_next_hop = get_next_geographic_hop(dest_ip, encap->dst_loc, &next_hop_eth);
+  IPAddress next_hop_ip;
+  IPAddress best_nbr_ip;
+  bool found_next_hop = get_next_geographic_hop(dest_ip, encap->dst_loc, &next_hop_eth, &next_hop_ip, &best_nbr_ip);
 
   if (found_next_hop) {
     struct click_ether *eh = (click_ether *) xp->data();
@@ -152,6 +160,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     struct grid_hdr *gh = (grid_hdr *) (xp->data() + sizeof(click_ether));
     gh->tx_ip = _ipaddr;
     encap->hops_travelled++;
+    notify_route_cbs(packet, dest_ip, GRCB::ForwardGF, next_hop_ip, best_nbr_ip);
     // leave src location update to FixSrcLoc element
     output(0).push(xp);
   }
@@ -168,6 +177,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     unsigned short dst_port = ntohs(*dp);
     click_chatter("packet info: %s:%hu -> %s:%hu", src_ip.s().cc(), src_port, dst_ip.s().cc(), dst_port);
 #endif
+    notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoCloserNode, 0);
     output(1).push(xp);
   }
 }
@@ -175,7 +185,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
 bool 
 LookupGeographicGridRoute::get_next_geographic_hop(IPAddress, grid_location dest_loc, 
-						   EtherAddress *dest_eth) const
+						   EtherAddress *dest_eth, IPAddress *dest_ip, IPAddress *best_nbr) const
 {
   /*
    * search through table for all nodes we have routes to and for whom
@@ -225,6 +235,9 @@ LookupGeographicGridRoute::get_next_geographic_hop(IPAddress, grid_location dest
     return false;
   }
   *dest_eth = nent->next_hop_eth;
+  *dest_ip = nent->next_hop_ip;
+  *best_nbr = next_hop;
+  
   return true;
 } 
 

@@ -32,11 +32,12 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include "gridroutetable.hh"
+#include "gridroutecb.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
 
-class LookupLocalGridRoute : public Element {
+class LookupLocalGridRoute : public Element, public GridRouteActor  {
   public:
 
   LookupLocalGridRoute();
@@ -58,7 +59,7 @@ class LookupLocalGridRoute : public Element {
 
 private:
 
-  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
+  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth, IPAddress *next_hop_ip) const;
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 
   GridGatewayInfo *_gw_info;

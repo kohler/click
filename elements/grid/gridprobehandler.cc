@@ -27,7 +27,8 @@
 #include "grid.hh"
 
 
-GridProbeHandler::GridProbeHandler() 
+GridProbeHandler::GridProbeHandler() : 
+  _gf_cb_id(-1), _lr_cb_id(-1), _lr_el(0), _gf_el(0), _cached_reply_pkt(0)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -36,8 +37,29 @@ GridProbeHandler::GridProbeHandler()
 }
 
 int
-GridProbeHandler::initialize(ErrorHandler *)
+GridProbeHandler::initialize(ErrorHandler *errh)
 {
+  if (!_lr_el || !_lr_el->cast("LookupLocalGridRoute")) {
+    errh->warning("%s: LookupLocalGridRoute argument is missing or has the wrong type, probe replies will not contain all info",
+		  id().cc());
+    _lr_el = 0;
+  }
+  if (!_gf_el || !_gf_el->cast("LookupGeographicGridRoute")) {
+    errh->warning("%s: LookupGeographicGridRoute argument is missing or has the wrong type, probe replies will not contain all info",
+		  id().cc());
+    _gf_el = 0;
+  }
+
+  _lr_cb_id = _lr_el->add_callback(this);
+  _gf_cb_id = _gf_el->add_callback(this);
+
+  if (_lr_cb_id < 0) 
+    errh->warning("%s: unable to install local routing action callback, probe replies will not contain all info",
+		  id().cc());
+  if (_gf_cb_id < 0) 
+    errh->warning("%s: unable to install geographic forwarding action callback, probe replies will not contain all info",
+		  id().cc());
+  
   return 0;
 }
 
@@ -59,6 +81,8 @@ GridProbeHandler::configure(const Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpEthernetAddress, "Ethernet address", &_eth,
 		     cpIPAddress, "IP address", &_ip,
+		     cpElement, "LookupLocalGridRoute element", _lr_el,
+		     cpElement, "LookupGeographicsGRidRoute element", _gf_el,
 		     0);
 }
 
@@ -117,7 +141,23 @@ GridProbeHandler::push(int port, Packet *p)
   rr->probe_dest = nb->dst_ip;
   rr->reply_hop = nb->hops_travelled;
 
-  output(1).push(q);
+
+  if (_cached_reply_pkt != 0) {
+    click_chatter("GridProbeHandler: error!!! cached reply packet was deleted before being sent; the appropriate route action callback was not received\n");
+    _cached_reply_pkt->kill();
+    _cached_reply_pkt = 0;
+  }
+  
+  if (_lr_el && _gf_el && _lr_cb_id > -1 && _gf_cb_id > -1) {
+    /* cache reply to wait for route action callback */
+    _cached_reply_pkt = q;
+  }
+  else {
+    /* the route action callbacks are f-ed up, so just send the packet anyway */
+    _cached_reply_pkt = 0;
+    output(1).push(q);
+  }
+  
 
   /* pass through probe if we aren't the destination */
   if (_ip != nb->dst_ip)
@@ -125,6 +165,59 @@ GridProbeHandler::push(int port, Packet *p)
   else
     p->kill();
 }
+
+void
+GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int data, unsigned int data2)
+{
+  if (id != _lr_cb_id && id != _gf_cb_id) {
+    click_chatter("GridProbeHandler: error!!! route action callback invoked with the wrong callback id\n");
+    if (_cached_reply_pkt) {
+      _cached_reply_pkt->kill();
+      _cached_reply_pkt = 0;
+      return;
+    }
+  }
+
+  if (!_cached_reply_pkt) {
+    click_chatter("GridProbeHandler: error!!! route action callback invoked, but there is no probe reply cached\n");
+    return;
+  }  
+
+  
+
+  grid_route_reply *rr = (grid_route_reply *) (_cached_reply_pkt->data() + sizeof(click_ether) 
+					      + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
+  if (rr->probe_dest != dest_ip) {
+    click_chatter("GridProbeHandler: error!!! route action callback probe dest arg does not match cached reply\n");
+    _cached_reply_pkt->kill();
+    _cached_reply_pkt = 0;
+    return;
+  }
+
+  rr->route_action = htonl(a);
+  rr->data1 = htonl(data);
+  rr->data2 = htonl(data2);
+
+  switch (a) {
+  case SendToIP:
+  case ForwardDSDV:
+  case ForwardGF:
+  case Drop:
+    output(0).push(_cached_reply_pkt);
+    _cached_reply_pkt = 0;
+    break;
+  case FallbackToGF:
+    /* XXX could perhaps do some moe sanity checking here */
+    break;
+  case UnknownAction:
+  default:
+    click_chatter("GridProbeHandler: error!!! route action callback invoked with an unknown action (%d), sending reply now\n", a);
+    output(0).push(_cached_reply_pkt);
+    _cached_reply_pkt = 0;
+    break;
+  }
+}
+
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridProbeHandler)

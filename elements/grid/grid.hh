@@ -217,6 +217,9 @@ struct grid_route_reply {
   unsigned int probe_dest;
   unsigned char reply_hop;
   struct timeval probe_send_time;
+  unsigned int route_action;
+  unsigned int data1;
+  unsigned int data2;
 };
 
 

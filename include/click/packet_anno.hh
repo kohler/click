@@ -31,4 +31,8 @@
 #define EXTRA_PACKETS_ANNO(p)		((p)->user_anno_u(2))
 #define SET_EXTRA_PACKETS_ANNO(p, v)	((p)->set_user_anno_u(2, (v)))
 
+// byte 12
+#define GRID_ROUTE_CB_ANNO(p)           ((p)->user_anno_c(12))
+#define SET_GRID_ROUTE_CB_ANNO(p, v)    ((p)->set_user_anno_c(12, (v)))
+
 #endif

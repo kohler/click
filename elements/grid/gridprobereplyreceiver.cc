@@ -105,12 +105,17 @@ GridProbeReplyReceiver::simple_action(Packet *p)
 
   char buf[100];
   snprintf(buf, sizeof(buf),
-	   "dest=%s nonce=%u hop=%s hopcount=%u rtt=%lu.%06lu",
+	   "dest=%s nonce=%u hop=%s hopcount=%u rtt=%lu.%06lu tx_time=%lu.%06lu act=%u d1=%u d2=%u",
 	   IPAddress(rr->probe_dest).s().cc(),
 	   (unsigned int) ntohl(rr->nonce),
 	   IPAddress(gh->ip).s().cc(),
 	   (unsigned int) rr->reply_hop,
-	   rtt.tv_sec, rtt.tv_usec);
+	   rtt.tv_sec, rtt.tv_usec,
+	   tx_time.tv_sec,
+	   tx_time.tv_usec,
+	   (unsigned int) ntohl(rr->route_action),
+	   (unsigned int) ntohl(rr->data1),
+	   (unsigned int) ntohl(rr->data2));
   
   _repl_errh->message(buf);
   p->kill();

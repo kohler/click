@@ -33,11 +33,12 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include "gridroutetable.hh"
+#include "gridroutecb.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
 
-class LookupGeographicGridRoute : public Element {
+class LookupGeographicGridRoute : public Element, public GridRouteActor {
   public:
 
   LookupGeographicGridRoute();
@@ -59,7 +60,8 @@ class LookupGeographicGridRoute : public Element {
 
 private:
 
-  bool get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth) const;
+  bool get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth,
+			       IPAddress *dest_ip, IPAddress *best_hop_ip) const;
 
   GridRouteTable *_rt;
   EtherAddress _ethaddr;
