@@ -158,6 +158,13 @@ case $1 in
 	shift 1;;
     --disable-gf)
         disable_gf=1; shift 1;;
+    --m4)
+	if test $# -lt 2; then
+	    echo "Missing m4 program argument."
+	    usage
+	fi
+        shift 1; m4=$1;
+	shift 1;;
     *)
 	usage;;
     esac
