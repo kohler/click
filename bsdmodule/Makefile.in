@@ -110,8 +110,8 @@ setdef0.c: module.o
 setdef1.c: module.o
 	gensetdefs module.o
 
-vnode_if.h: vnode_if.pl /sys/kern/vnode_if.src
-	perl ./vnode_if.pl -h /sys/kern/vnode_if.src
+vnode_if.h: $(srcdir)/vnode_if.pl /sys/kern/vnode_if.src
+	perl $(srcdir)/vnode_if.pl -h /sys/kern/vnode_if.src
 clickfs.cc: modulepriv.hh
 clickfs_vnops.cc: modulepriv.hh
 clickfs_tree.cc: modulepriv.hh
