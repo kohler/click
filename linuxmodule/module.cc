@@ -39,9 +39,6 @@ ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
 Router *current_router = 0;
 
-Router::Handler *root_handlers;
-int nroot_handlers = 0;
-
 
 class LinuxModuleLexerExtra : public LexerExtra { public:
   LinuxModuleLexerExtra() { }
@@ -269,16 +266,11 @@ static void
 next_root_handler(const char *name, ReadHandler read, void *read_thunk,
 		  WriteHandler write, void *write_thunk)
 {
-  if (nroot_handlers >= ROOT_HANDLERS_CAP)
-    return;
-  int i = nroot_handlers;
-  nroot_handlers++;
-  root_handlers[i].name = name;
-  root_handlers[i].read = read;
-  root_handlers[i].read_thunk = read_thunk;
-  root_handlers[i].write = write;
-  root_handlers[i].write_thunk = write_thunk;
-  register_handler(proc_click_entry, -1, i);
+  if (read)
+    Router::add_global_read_handler(name, read, read_thunk);
+  if (write)
+    Router::add_global_write_handler(name, write, write_thunk);
+  register_handler(proc_click_entry, Router::find_global_handler(name));
 }
 
 static ErrorHandler *syslog_errh;
@@ -328,13 +320,12 @@ init_module()
 
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
-  root_handlers = new Router::Handler[ROOT_HANDLERS_CAP];
   next_root_handler("version", read_version, 0, 0, 0);
   next_root_handler("list", read_list, 0, 0, 0);
   next_root_handler("classes", read_classes, 0, 0, 0);
+  next_root_handler("flatconfig", read_flatconfig, 0, 0, 0);
   next_root_handler("packages", read_packages, 0, 0, 0);
   next_root_handler("requirements", read_requirements, 0, 0, 0);
-  next_root_handler("flatconfig", read_flatconfig, 0, 0, 0);
   next_root_handler("meminfo", read_meminfo, 0, 0, 0);
   next_root_handler("cycles", read_cycles, 0, 0, 0);
   next_root_handler("threads", read_threads, 0, 0, 0);
@@ -358,8 +349,10 @@ cleanup_module()
   cleanup_proc_click_config();
   
   // remove root handlers
-  for (int i = 0; i < nroot_handlers; i++)
-    remove_proc_entry(root_handlers[i].name, proc_click_entry);
+  for (int i = 0; i < Router::nglobal_handlers(); i++) {
+    const Router::Handler &h = Router::global_handler(Router::FIRST_GLOBAL_HANDLER + i);
+    remove_proc_entry(String(h.name).cc(), proc_click_entry);
+  }
 
   // remove the `/proc/click' directory first
   remove_proc_entry("click", 0);
@@ -379,7 +372,7 @@ cleanup_module()
   cleanup_click_sched();
   delete lexer;
   
-  delete[] root_handlers;
+  Router::cleanup_global_handlers();
   cp_va_static_cleanup();
 
   delete kernel_errh;

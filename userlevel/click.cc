@@ -152,47 +152,57 @@ click_remove_element_type(int which)
 
 // global handlers for ControlSocket
 
-bool
-click_userlevel_global_handler_string(Router *router, const String &name, String *data)
+enum {
+  GH_VERSION, GH_LIST, GH_CLASSES, GH_CONFIG,
+  GH_FLATCONFIG, GH_PACKAGES, GH_REQUIREMENTS
+};
+
+String
+read_global_handler(Element *, void *thunk)
 {
   StringAccum sa;
+
+  switch (reinterpret_cast<int>(thunk)) {
+
+   case GH_VERSION:
+    return String(CLICK_VERSION "\n");
+
+   case GH_LIST:
+    return router->element_list_string();
   
-  if (name == "version")
-    *data = String(CLICK_VERSION "\n");
-  
-  else if (name == "list")
-    *data = router->element_list_string();
-  
-  else if (name == "classes") {
-    Vector<String> v;
-    lexer->element_type_names(v);
-    for (int i = 0; i < v.size(); i++)
-      sa << v[i] << "\n";
-    *data = sa.take_string();
-    
-  } else if (name == "config")
-    *data = configuration_string;
-  
-  else if (name == "flatconfig")
-    *data = router->flat_configuration_string();
-  
-  else if (name == "packages") {
-    Vector<String> p;
-    click_public_packages(p);
-    for (int i = 0; i < p.size(); i++)
-      sa << p[i] << "\n";
-    *data = sa.take_string();
-    
-  } else if (name == "requirements") {
-    const Vector<String> &v = router->requirements();
-    for (int i = 0; i < v.size(); i++)
-      sa << v[i] << "\n";
-    *data = sa.take_string();
-    
-  } else
-    return false;
-  
-  return true;
+   case GH_CLASSES: {
+     Vector<String> v;
+     lexer->element_type_names(v);
+     for (int i = 0; i < v.size(); i++)
+       sa << v[i] << "\n";
+     return sa.take_string();
+   }
+
+   case GH_CONFIG:
+    return configuration_string;
+
+   case GH_FLATCONFIG:
+    return router->flat_configuration_string();
+
+   case GH_PACKAGES: {
+     Vector<String> p;
+     click_public_packages(p);
+     for (int i = 0; i < p.size(); i++)
+       sa << p[i] << "\n";
+     return sa.take_string();
+   }
+
+   case GH_REQUIREMENTS: {
+     const Vector<String> &v = router->requirements();
+     for (int i = 0; i < v.size(); i++)
+       sa << v[i] << "\n";
+     return sa.take_string();
+   }
+
+   default:
+    return "<error>\n";
+
+  }
 }
 
 
@@ -203,32 +213,20 @@ call_read_handler(Element *e, String handler_name, Router *r,
 		  bool print_name, ErrorHandler *errh)
 {
   int hi = r->find_handler(e, handler_name);
-  if (hi < 0)
+  if (hi < 0 && e)
     return errh->error("no `%s' handler for element `%s'", handler_name.cc(), e->id().cc());
+  else if (hi < 0)
+    return errh->error("no `%s' handler", handler_name.cc());
+
+  String full_name = (e ? e->id() + "." + handler_name : handler_name);
   
   const Router::Handler &rh = r->handler(hi);
   if (!rh.read)
-    return errh->error("`%s.%s' is a write handler", e->id().cc(), handler_name.cc());
+    return errh->error("`%s' is a write handler", full_name.cc());
   String result = rh.read(e, rh.read_thunk);
 
   if (print_name)
-    fprintf(stdout, "%s.%s:\n", e->id().cc(), handler_name.cc());
-  fputs(result.cc(), stdout);
-  if (print_name)
-    fputs("\n", stdout);
-
-  return 0;
-}
-
-static int
-call_global_read_handler(String handler_name, Router *r, bool print_name, ErrorHandler *errh)
-{
-  String result;
-  if (!click_userlevel_global_handler_string(r, handler_name, &result))
-    return errh->error("no `%s' handler", handler_name.cc());
-  
-  if (print_name)
-    fprintf(stdout, "%s:\n", handler_name.cc());
+    fprintf(stdout, "%s:\n", full_name.cc());
   fputs(result.cc(), stdout);
   if (print_name)
     fputs("\n", stdout);
@@ -264,7 +262,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
   for (int i = 0; i < handlers.size(); i++) {
     int dot = handlers[i].find_left('.');
     if (dot < 0) {
-      call_global_read_handler(handlers[i], router, print_names, errh);
+      call_read_handler(0, handlers[i], router, print_names, errh);
       continue;
     }
     
@@ -290,7 +288,7 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
   return (errh->nerrors() == before ? 0 : -1);
 }
 
-    
+
 // include requirements
 
 class RequireLexerExtra : public LexerExtra { public:
@@ -496,6 +494,15 @@ particular purpose.\n");
     router->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i), "tcp, " + String(ports[i]), "click");
   for (int i = 0; i < unix_sockets.size(); i++)
     router->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i + ports.size()), "unix, " + cp_quote(unix_sockets[i]), "click");
+
+  // add global handlers
+  Router::add_global_read_handler("version", read_global_handler, (void *)GH_VERSION);
+  Router::add_global_read_handler("list", read_global_handler, (void *)GH_LIST);
+  Router::add_global_read_handler("classes", read_global_handler, (void *)GH_CLASSES);
+  Router::add_global_read_handler("config", read_global_handler, (void *)GH_CONFIG);
+  Router::add_global_read_handler("flatconfig", read_global_handler, (void *)GH_FLATCONFIG);
+  Router::add_global_read_handler("packages", read_global_handler, (void *)GH_PACKAGES);
+  Router::add_global_read_handler("requirements", read_global_handler, (void *)GH_REQUIREMENTS);
 
   // catch control-C
   signal(SIGINT, catch_sigint);

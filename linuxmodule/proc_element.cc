@@ -119,19 +119,12 @@ next_handler_string()
 static const Router::Handler *
 find_handler(int eindex, int handlerno)
 {
-  if (handlerno < 0)
+  if (current_router && current_router->handler_ok(handlerno))
+    return &current_router->handler(handlerno);
+  else if (Router::global_handler_ok(handlerno))
+    return &Router::global_handler(handlerno);
+  else
     return 0;
-  if (eindex < 0) {
-    if (handlerno >= nroot_handlers)
-      return 0;
-    else
-      return &root_handlers[handlerno];
-  } else {
-    if (handlerno >= current_router->nhandlers())
-      return 0;
-    else
-      return &current_router->handler(handlerno);
-  }
 }
 
 static int
@@ -367,10 +360,10 @@ proc_element_handler_ioctl(struct inode *ino, struct file *filp,
 //
 
 void
-register_handler(proc_dir_entry *directory, int eindex, int handlerno)
+register_handler(proc_dir_entry *directory, int handlerno)
 {
   const proc_dir_entry *pattern = 0;
-  const Router::Handler *h = (eindex >= 0 ? &current_router->handler(handlerno) : &root_handlers[handlerno]);
+  const Router::Handler *h = &current_router->handler(handlerno);
   
   mode_t mode = S_IFREG;
   if (h->read)
@@ -522,7 +515,7 @@ init_router_element_procs()
       handlers.clear();
       current_router->element_handlers(i, handlers);
       for (int j = 0; j < handlers.size(); j++)
-	register_handler(fpde, i, handlers[j]);
+	register_handler(fpde, handlers[j]);
     }
 }
 

@@ -58,12 +58,24 @@ class Router { public:
   int initialize(ErrorHandler *);
   void take_state(Router *, ErrorHandler *);
 
+  // handlers
+  int nhandlers() const				{ return _nhandlers; }
+  bool handler_ok(int) const;
+  const Handler &handler(int) const;
+  void element_handlers(int, Vector<int> &) const;
   void add_read_handler(int, const String &, ReadHandler, void *);
   void add_write_handler(int, const String &, WriteHandler, void *);
+  
+  static const int FIRST_GLOBAL_HANDLER = 0x40000000;
+  static int nglobal_handlers();
+  static bool global_handler_ok(int);
+  static const Handler &global_handler(int);
+  static void add_global_read_handler(const String &, ReadHandler, void *);
+  static void add_global_write_handler(const String &, WriteHandler, void *);
+  static void cleanup_global_handlers();
+
   int find_handler(Element *, const String &);
-  void element_handlers(int, Vector<int> &) const;
-  int nhandlers() const				{ return _nhandlers; }
-  const Handler &handler(int i) const;
+  static int find_global_handler(const String &);
 
   // thread(-1) is the quiescent thread
   int nthreads() const				{ return _threads.size() - 1; }
@@ -195,6 +207,7 @@ class Router { public:
   void initialize_handlers(bool, bool);
   int find_ehandler(int, const String &, bool, bool);
   int put_handler(const Handler &);
+  static int find_global_handler_index(const String &, bool);
   
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
@@ -242,8 +255,11 @@ Router::find(const String &name, ErrorHandler *errh) const
 inline const Router::Handler &
 Router::handler(int i) const
 {
-  assert(i>=0 && i<_nhandlers);
-  return _handlers[i];
+  if (i < FIRST_GLOBAL_HANDLER) {
+    assert(i >= 0 && i < _nhandlers);
+    return _handlers[i];
+  } else
+    return global_handler(i);
 }
 
 #endif

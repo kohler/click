@@ -33,6 +33,10 @@
 # include <unistd.h>
 #endif
 
+static Router::Handler *globalh;
+static int nglobalh;
+static int globalh_cap;
+
 Router::Router()
   : _preinitialized(0), _initialized(0), 
     _have_connections(0), _have_hookpidx(0),
@@ -1133,8 +1137,9 @@ Router::add_write_handler(int eindex, const String &name,
 int
 Router::find_handler(Element *element, const String &name)
 {
-  if (_ehandler_first_by_element.size() == 0) // handlers not configured
-    return -1;
+  if (_ehandler_first_by_element.size() == 0 // handlers not configured
+      || !element)
+    return find_global_handler(name);
   int eh = find_ehandler(element->eindex(), name, false, true);
   return (eh >= 0 ? _ehandler_to_handler[eh] : -1);
 }
@@ -1152,6 +1157,98 @@ Router::element_handlers(int eindex, Vector<int> &handlers) const
   }
 }
 
+
+// global handlers
+
+int
+Router::find_global_handler_index(const String &name, bool add)
+{
+  for (int i = 0; i < nglobalh; i++)
+    if (globalh[i].name == name)
+      return i;
+  
+  if (!add)
+    return -1;
+  
+  if (nglobalh >= globalh_cap) {
+    int n = (globalh_cap ? 2 * globalh_cap : 4);
+    Router::Handler *hs = new Router::Handler[n];
+    if (!hs)
+      return -1;
+    for (int i = 0; i < nglobalh; i++)
+      hs[i] = globalh[i];
+    delete[] globalh;
+    globalh = hs;
+    globalh_cap = n;
+  }
+
+  int i = nglobalh++;
+  globalh[i].name = name;
+  globalh[i].read = 0;
+  globalh[i].write = 0;
+  return i;
+}
+
+int
+Router::find_global_handler(const String &name)
+{
+  int hi = find_global_handler_index(name, false);
+  return (hi < 0 ? hi : hi + FIRST_GLOBAL_HANDLER);
+}
+
+int
+Router::nglobal_handlers()
+{
+  return ::nglobalh;
+}
+
+const Router::Handler &
+Router::global_handler(int hi)
+{
+  assert(hi >= FIRST_GLOBAL_HANDLER && hi < FIRST_GLOBAL_HANDLER + nglobalh);
+  return globalh[hi - FIRST_GLOBAL_HANDLER];
+}
+
+void
+Router::add_global_read_handler(const String &name, ReadHandler rh, void *thunk)
+{
+  int hi = find_global_handler_index(name, true);
+  if (hi >= 0) {
+    globalh[hi].read = rh;
+    globalh[hi].read_thunk = thunk;
+  }
+}
+
+void
+Router::add_global_write_handler(const String &name, WriteHandler wh, void *thunk)
+{
+  int hi = find_global_handler_index(name, true);
+  if (hi >= 0) {
+    globalh[hi].write = wh;
+    globalh[hi].write_thunk = thunk;
+  }
+}
+
+void
+Router::cleanup_global_handlers()
+{
+  delete[] globalh;
+  globalh = 0;
+  nglobalh = globalh_cap = 0;
+}
+
+bool
+Router::handler_ok(int i) const
+{
+  return ((i >= 0 && i < _nhandlers) ||
+	  (i >= FIRST_GLOBAL_HANDLER && i < FIRST_GLOBAL_HANDLER + nglobalh));
+}
+
+bool
+Router::global_handler_ok(int i)
+{
+  return (i >= FIRST_GLOBAL_HANDLER && i < FIRST_GLOBAL_HANDLER + nglobalh);
+}
 
 // ATTACHMENTS
 
