@@ -1,3 +1,17 @@
+2002-10-14 Monday 16:17  Eddie Kohler <kohler@icir.org>
+
+	* click-mkelemmap, Makefile.in: unparse configurations with
+	compound elements more carefully; generate XML elementmap files
+	(elementmap.xml and elementmap-PACKAGE.xml, instead of elementmap
+	and elementmap.PACKAGE)
+
+2002-10-14 Monday 15:46  Eddie Kohler <kohler@icir.org>
+
+	* include/click/error.hh, include/click/error.hh,
+	libsrc/element.cc, libsrc/error.cc, libsrc/router.cc: ErrorHandler
+	supports %[efgEFG] conversions for doubles, and roll-your-own
+	conversions, such as %{element}
+
 2002-10-10 Thursday 20:06  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4, libsrc/element.cc, libsrc/error.cc, libsrc/router.cc:

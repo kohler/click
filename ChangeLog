@@ -1,3 +1,32 @@
+2002-10-14 Monday 16:17  Eddie Kohler <kohler@icir.org>
+
+	* .cvsignore (1.8), Makefile.in (1.110), click-mkelemmap (1.21),
+	etc/libclick/lc-Makefile.in (1.9), etc/ron/Makefile.in (1.4),
+	tools/click-combine/click-combine.cc (1.30),
+	tools/click-devirtualize/click-devirtualize.cc (1.36),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.53),
+	tools/click-flatten/click-flatten.cc (1.13),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.24),
+	tools/click2xml/click2xml.cc (1.7), tools/lib/eclasst.cc (1.17),
+	tools/lib/eclasst.hh (1.13), tools/lib/elementmap.cc (1.9),
+	tools/lib/elementmap.hh (1.6), tools/lib/etraits.cc (1.8),
+	tools/lib/etraits.hh (1.5), tools/lib/routert.cc (1.66),
+	tools/lib/routert.hh (1.54): unparse configurations with compound
+	elements more carefully; generate XML elementmap files
+	(elementmap.xml and elementmap-PACKAGE.xml, instead of elementmap
+	and elementmap.PACKAGE)
+
+2002-10-14 Monday 15:58  Eddie Kohler <kohler@icir.org>
+
+	* userlevel/click.cc (1.72): nit
+
+2002-10-14 Monday 15:46  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/todump.cc (1.45), include/click/error.hh
+	(1.18), lib/element.cc (1.76), lib/error.cc (1.41), lib/router.cc
+	(1.136): ErrorHandler supports %[efgEFG] conversions for doubles,
+	and roll-your-own conversions, such as %{element}
+
 2002-10-10 Thursday 20:06  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.22), aclocal.m4 (1.22),
