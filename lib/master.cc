@@ -146,37 +146,49 @@ Master::remove_router(Router *router)
 	Task *prev = *tp;
 	Task *t;
 	for (t = prev->_next; t != *tp; t = t->_next)
-	    if (t->_router == router) {
-		t->_router = 0;
+	    if (t->_router == router)
 		t->_prev = 0;
-	    } else {
+	    else {
 		prev->_next = t;
 		t->_prev = prev;
 		prev = t;
 	    }
 	prev->_next = t;
 	t->_prev = prev;
-	t->_next = *tp;
 	(*tp)->unlock_tasks();
     }
     
-    // Remove pending tasks
     {
 	_task_lock.acquire();
+
+	// Remove pending tasks
 	Task *prev = &_task_list;
 	for (Task *t = _task_list._pending_next; t != &_task_list; ) {
 	    Task *next = t->_pending_next;
-	    // May have set _router to 0 if a pending task was also scheduled
-	    if (t->_router == router || t->_router == 0) {
-		t->_router = 0;
+	    if (t->_router == router)
 		t->_pending_next = 0;
-	    } else {
+	    else {
 		prev->_pending_next = t;
 		prev = t;
 	    }
 	    t = next;
 	}
 	prev->_pending_next = &_task_list;
+
+	// Remove "all" tasks
+	prev = &_task_list;
+	Task *t;
+	for (t = prev->_all_next; t != &_task_list; t = t->_all_next)
+	    if (t->_router == router)
+		t->_router = 0;
+	    else {
+		prev->_all_next = t;
+		t->_all_prev = prev;
+		prev = t;
+	    }
+	prev->_all_next = t;
+	t->_all_prev = prev;
+	
 	_task_lock.release();
     }
     
@@ -246,22 +258,17 @@ Master::check_driver()
     _runcount_lock.acquire();
 
     if (_runcount <= 0) {
-      restart:
 	_runcount = 0;
 	for (Router *r = _routers; r; r = r->_next_router) {
 	    if (r->_runcount <= 0) {
 		DriverManager *dm = (DriverManager *)(r->attachment("DriverManager"));
-		if (dm && r->initialized())
+		if (dm && r->running())
 		    while (1) {
 			int was_runcount = _runcount;
 			dm->handle_stopped_driver();
 			if (r->_runcount <= was_runcount || r->_runcount > 0)
 			    break;
 		    }
-	    }
-	    if (r->_runcount <= 0) {
-		remove_router(r);
-		goto restart;
 	    }
 	    if (r->_runcount > _runcount)
 		_runcount = r->_runcount;
