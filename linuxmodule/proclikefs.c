@@ -4,7 +4,7 @@
  * to be unmounted even while active
  * Eddie Kohler
  *
- * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2002-2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -79,7 +79,7 @@ proclikefs_null_root_lookup(struct inode *dir, struct dentry *dentry)
 }
 
 struct proclikefs_file_system *
-proclikefs_register_filesystem(const char *name,
+proclikefs_register_filesystem(const char *name, int fs_flags,
 	struct super_block *(*read_super) (struct super_block *, void *, int),
 	void (*reread_super) (struct super_block *))
 {
@@ -125,7 +125,7 @@ proclikefs_register_filesystem(const char *name,
 	newfs_is_new = 1;
     }
 
-    newfs->fs.fs_flags = 0;
+    newfs->fs.fs_flags = fs_flags;
     newfs->fs.read_super = read_super;
     newfs->live = 1;
     DEBUG("pfs[%p]: created filesystem %s", newfs, name);
@@ -370,7 +370,7 @@ cleanup_module(void)
 	struct proclikefs_file_system *pfs = list_entry(next, struct proclikefs_file_system, fs_list);
 	next = next->next;
 	if (pfs->live || atomic_read(&pfs->nsuper) != 0)
-	    printk("<1>proclikefs: unregistering active FS %s, prepare to die\n", pfs->name);
+	    printk("<1>proclikefs: unregistering active FS %s, prepare to die\n", pfs->name);	    
 	unregister_filesystem(&pfs->fs);
 	kfree(pfs);
     }

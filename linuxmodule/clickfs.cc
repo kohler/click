@@ -3,7 +3,7 @@
  * clickfs.cc -- the Click filesystem
  * Eddie Kohler
  *
- * Copyright (c) 2002 International Computer Science Institute
+ * Copyright (c) 2002-2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -789,7 +789,9 @@ init_clickfs()
     atomic_set(&config_read_count, 0);
     click_ino.initialize();
 
-    clickfs = proclikefs_register_filesystem("click", click_read_super, click_reread_super);
+    // NB: remove FS_SINGLE if it will ever make sense to have different
+    // Click superblocks -- if we introduce mount options, for example
+    clickfs = proclikefs_register_filesystem("click", FS_SINGLE, click_read_super, click_reread_super);
     if (!clickfs) {
 	printk("<1>click: could not initialize clickfs!\n");
 	return -EINVAL;

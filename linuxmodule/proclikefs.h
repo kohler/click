@@ -14,7 +14,7 @@ struct proclikefs_inode_info {
 };
 
 struct proclikefs_file_system *proclikefs_register_filesystem
-		(const char *name,
+		(const char *name, int fs_flags,
 		 struct super_block *(*read_super) (struct super_block *, void *, int),
 		 void (*reread_super) (struct super_block *));
 void proclikefs_unregister_filesystem(struct proclikefs_file_system *);
