@@ -18,12 +18,12 @@ CLICK_CXX_PROTECT
  */
 
 struct click_ip {
-#if CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-    unsigned	ip_hl : 4;		/* 0     header length */
-    unsigned	ip_v : 4;		/*       version == 4 */
-#elif CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
     unsigned	ip_v : 4;		/* 0     version == 4 */
     unsigned	ip_hl : 4;		/*       header length */
+#elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
+    unsigned	ip_hl : 4;		/* 0     header length */
+    unsigned	ip_v : 4;		/*       version == 4 */
 #else
 #   error "unknown byte order"
 #endif
