@@ -153,7 +153,7 @@ ToIPFlowDumps::Flow::output(bool done, ErrorHandler *errh)
 int
 ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
 {
-    // ICMP errors are not handled as packets
+    // ICMP errors are handled as notes, not packets
     if (PAINT_ANNO(p) >= 2) {
 	assert(p->ip_header()->ip_p == IP_PROTO_ICMP);
 	StringAccum sa;
