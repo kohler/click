@@ -56,7 +56,7 @@ void
 CheckSRCRHeader::drop_it(Packet *p)
 {
   if (_drops == 0)
-    click_chatter("CheckSRCRHeader %s: SRCR checksum failed", id().cc());
+    click_chatter("CheckSRCRHeader %s: first drop", id().cc());
   _drops++;
   
   if (noutputs() == 2)
@@ -87,7 +87,10 @@ CheckSRCRHeader::simple_action(Packet *p)
   }
 
   if (pk->_version != _srcr_version) {
-     click_chatter ("%s: unknown srcr version %x", id().cc(), pk->_version);
+     click_chatter ("%s: unknown srcr version %x from %s", 
+		    id().cc(), 
+		    pk->_version,
+		    EtherAddress(eh->ether_shost).s().cc());
      goto bad;
   }
   
