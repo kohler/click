@@ -185,9 +185,9 @@ ToIPSummaryDump::cleanup(CleanupStage)
 }
 
 bool
-ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa) const
+ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool force_extra_length) const
 {
-    IPSummaryDump::PacketDesc d(p, &sa, bad_sa, _careful_trunc);
+    IPSummaryDump::PacketDesc d(p, &sa, bad_sa, _careful_trunc, force_extra_length);
 
     for (int i = 0; i < _prepare_fields.size(); i++)
 	_prepare_fields[i]->prepare(d);
@@ -216,9 +216,9 @@ ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa) const
 }
 
 void
-ToIPSummaryDump::write_packet(Packet* p, bool multipacket)
+ToIPSummaryDump::write_packet(Packet* p, int multipacket)
 {
-    if (multipacket && EXTRA_PACKETS_ANNO(p) > 0) {
+    if (multipacket > 0 && EXTRA_PACKETS_ANNO(p) > 0) {
 	uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
 	uint32_t total_len = p->length() + EXTRA_LENGTH_ANNO(p);
 	uint32_t len = p->length();
@@ -239,7 +239,7 @@ ToIPSummaryDump::write_packet(Packet* p, bool multipacket)
 	    uint32_t l = total_len / i;
 	    SET_EXTRA_LENGTH_ANNO(p, l - len);
 	    total_len -= l;
-	    write_packet(p, false);
+	    write_packet(p, -1);
 	    if (i == 1)
 		p->timestamp_anno() = end_timestamp;
 	    else
@@ -250,7 +250,7 @@ ToIPSummaryDump::write_packet(Packet* p, bool multipacket)
 	_sa.clear();
 	_bad_sa.clear();
 
-	summary(p, _sa, (_bad_packets ? &_bad_sa : 0));
+	summary(p, _sa, (_bad_packets ? &_bad_sa : 0), (multipacket < 0 || EXTRA_PACKETS_ANNO(p) > 0));
 
 	if (_bad_packets && _bad_sa)
 	    write_line(_bad_sa.take_string());

@@ -58,13 +58,13 @@ void ip_prepare(PacketDesc& d)
 	// truncate packet length to IP length if necessary
 	int ip_len = ntohs(d.iph->ip_len);
 	if (p->network_length() > ip_len) {
-	    // XXX should we adjust EXTRA_LENGTH here?  SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + p->network_length() - ip_len);
+	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + p->network_length() - ip_len);
 	    p->take(p->network_length() - ip_len);
-	}
-	int scratch;
-	if (d.careful_trunc && p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t)(ntohs(d.iph->ip_len)))
+	} else if (d.careful_trunc && p->network_length() + EXTRA_LENGTH_ANNO(p) < (uint32_t) ip_len) {
 	    /* This doesn't actually kill the IP header. */ 
+	    int scratch;
 	    BAD2("truncated IP missing ", (ntohs(d.iph->ip_len) - p->network_length() - EXTRA_LENGTH_ANNO(p)), scratch);
+	}
     }
 
     // check TCP header
@@ -143,8 +143,10 @@ static bool ip_extract(PacketDesc& d, int thunk)
 	else
 	    return field_missing(d, MISSING_IP, "IP", d.iph->ip_hl << 2);
       case T_IP_LEN:
-	d.v = (d.iph ? ntohs(d.iph->ip_len) : d.p->length())
-	    + EXTRA_LENGTH_ANNO(d.p);
+	if (d.iph)
+	    d.v = ntohs(d.iph->ip_len) + (d.force_extra_length ? EXTRA_LENGTH_ANNO(d.p) : 0);
+	else
+	    d.v = d.p->length() + EXTRA_LENGTH_ANNO(d.p);
 	return true;
       case T_IP_CAPTURE_LEN: {
 	  uint32_t allow_len = (d.iph ? network_length : d.p->length());
@@ -221,17 +223,16 @@ static bool transport_extract(PacketDesc& d, int thunk)
 
       case T_PAYLOAD_LEN:
 	if (d.iph) {
-	    int32_t off = p->transport_header_offset();
+	    int32_t off = p->network_header_length();
 	    if (d.tcph && p->transport_length() >= 13)
 		off += (d.tcph->th_off << 2);
 	    else if (d.udph)
 		off += sizeof(click_udp);
 	    else if (IP_FIRSTFRAG(d.iph) && (d.iph->ip_p == IP_PROTO_TCP || d.iph->ip_p == IP_PROTO_UDP))
-		off = ntohs(d.iph->ip_len) + p->network_header_offset();
-	    d.v = ntohs(d.iph->ip_len) + p->network_header_offset() - off;
+		off = ntohs(d.iph->ip_len);
+	    d.v = ntohs(d.iph->ip_len) - off + (d.force_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
 	} else
-	    d.v = p->length();
-	d.v += EXTRA_LENGTH_ANNO(p);
+	    d.v = p->length() + EXTRA_LENGTH_ANNO(p);
 	return true;
       case T_PAYLOAD:
 	return true;

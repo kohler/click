@@ -107,8 +107,8 @@ below). Defaults to false.
 Boolean. If true, and the CONTENTS option doesn't contain 'C<count>', then
 generate multiple summary entries for packets with nonzero extra-packets
 annotations. For example, if MULTIPACKET is true, and a packet has
-extra-packets annotation 1, then ToIPSummaryDump will generate 2 identical
-lines for that packet in the dump. False by default.
+extra-packets annotation 1, then ToIPSummaryDump will generate 2 lines for
+that packet in the dump. False by default.
 
 =item BAD_PACKETS
 
@@ -342,8 +342,8 @@ class ToIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     
     String _banner;
 
-    bool summary(Packet* p, StringAccum& sa, StringAccum* bad_sa) const;
-    void write_packet(Packet *, bool multipacket = false);
+    bool summary(Packet* p, StringAccum& sa, StringAccum* bad_sa, bool force_extra_length) const;
+    void write_packet(Packet* p, int multipacket);
     
 };
 

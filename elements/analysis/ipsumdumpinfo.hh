@@ -29,8 +29,9 @@ struct PacketDesc {
     StringAccum* sa;
     StringAccum* bad_sa;
     bool careful_trunc;
+    bool force_extra_length;
     
-    inline PacketDesc(Packet*, StringAccum* sa, StringAccum* bad_sa, bool careful_trunc);
+    inline PacketDesc(Packet*, StringAccum* sa, StringAccum* bad_sa, bool careful_trunc, bool force_extra_length);
     void clear_values()			{ v = v2 = 0; }
 };
 
@@ -104,9 +105,9 @@ void unparse_tcp_opt(StringAccum&, const click_tcp*, int mask);
 void unparse_tcp_opt_binary(StringAccum&, const uint8_t*, int olen, int mask);
 void unparse_tcp_opt_binary(StringAccum&, const click_tcp*, int mask);
 
-inline PacketDesc::PacketDesc(Packet* p_, StringAccum* sa_, StringAccum* bad_sa_, bool careful_trunc_)
+inline PacketDesc::PacketDesc(Packet* p_, StringAccum* sa_, StringAccum* bad_sa_, bool careful_trunc_, bool force_extra_length_)
     : p(p_), iph(0), udph(0), tcph(0), sa(sa_), bad_sa(bad_sa_),
-      careful_trunc(careful_trunc_)
+      careful_trunc(careful_trunc_), force_extra_length(force_extra_length_)
 {
 }
 
