@@ -130,6 +130,10 @@ class Packet { public:
     LOOPBACK = 5, FASTROUTE = 6
   };
 
+  static const int ADDR_ANNO_SIZE = 16;
+
+  uint8_t *addr_anno()			{ return anno()->addr.c; }
+  const uint8_t *addr_anno() const	{ return anno()->addr.c; }
   IPAddress dst_ip_anno() const;
   void set_dst_ip_anno(IPAddress);
   const IP6Address &dst_ip6_anno() const;
@@ -171,13 +175,13 @@ class Packet { public:
   static const int USER_ANNO_U_SIZE = 3;
   static const int USER_ANNO_I_SIZE = 3;
   
-  uint8_t user_anno_c(int i) const	{ return anno()->user_flags.c[i]; }
-  void set_user_anno_c(int i, uint8_t v) { anno()->user_flags.c[i] = v; }
-  uint32_t user_anno_u(int i) const	{ return anno()->user_flags.u[i]; }
-  void set_user_anno_u(int i, uint32_t v) { anno()->user_flags.u[i] = v; }
-  uint32_t *all_user_anno_u()		{ return &anno()->user_flags.u[0]; }
-  int32_t user_anno_i(int i) const	{ return anno()->user_flags.i[i]; }
-  void set_user_anno_i(int i, int32_t v) { anno()->user_flags.i[i] = v; }
+  uint8_t user_anno_c(int i) const	{ return anno()->user.c[i]; }
+  void set_user_anno_c(int i, uint8_t v) { anno()->user.c[i] = v; }
+  uint32_t user_anno_u(int i) const	{ return anno()->user.u[i]; }
+  void set_user_anno_u(int i, uint32_t v) { anno()->user.u[i] = v; }
+  uint32_t *all_user_anno_u()		{ return &anno()->user.u[0]; }
+  int32_t user_anno_i(int i) const	{ return anno()->user.i[i]; }
+  void set_user_anno_i(int i, int32_t v) { anno()->user.i[i] = v; }
 
   void clear_annotations();
   void copy_annotations(const Packet *);
@@ -187,15 +191,15 @@ class Packet { public:
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
     union {
-      uint32_t dst_ip4;
-      unsigned char dst_ip6[16];
-    } dst_ip;
+      uint8_t c[ADDR_ANNO_SIZE];
+      uint32_t ip4;
+    } addr;
     
     union {
       uint8_t c[USER_ANNO_SIZE];
       uint32_t u[USER_ANNO_U_SIZE];
       int32_t i[USER_ANNO_I_SIZE];
-    } user_flags;
+    } user;
     // flag allocations: see packet_anno.hh
     
 #if (defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)) && defined(HAVE_INT64_TYPES)
@@ -528,25 +532,25 @@ Packet::change_headroom_and_length(uint32_t headroom, uint32_t length)
 inline const IP6Address &
 Packet::dst_ip6_anno() const
 {
-  return reinterpret_cast<const IP6Address &>(anno()->dst_ip.dst_ip6);
+  return reinterpret_cast<const IP6Address &>(anno()->addr.c);
 }
 
 inline void
 Packet::set_dst_ip6_anno(const IP6Address &a)
 {
-  memcpy(anno()->dst_ip.dst_ip6, &a, 16);
+  memcpy(anno()->addr.c, &a, 16);
 }
 
 inline IPAddress 
 Packet::dst_ip_anno() const
 {
-  return IPAddress(anno()->dst_ip.dst_ip4);
+  return IPAddress(anno()->addr.ip4);
 }
 
 inline void 
 Packet::set_dst_ip_anno(IPAddress a)
 { 
-  anno()->dst_ip.dst_ip4 = a.addr(); 
+  anno()->addr.ip4 = a.addr(); 
 }
 
 inline void
