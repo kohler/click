@@ -2,7 +2,7 @@
 
 #
 #
-# $Id: click-mkclgw.pl,v 1.2 2004/02/26 03:42:32 max Exp $
+# $Id: click-mkclgw.pl,v 1.3 2004/02/26 03:45:20 max Exp $
 #
 # click-mkclgw
 #
@@ -1146,7 +1146,7 @@ sub lb_mapper {
     for (my $i = 0; $i < $self->{_label}->clust_full_size (); $i++) {
 	my @elems = ();
 	my $id = $self->{_label}->{_inc_arr}->[$i];
-	push @elems, "//" if $self->{_label}->{_excl_map}->{$id};
+	next if $self->{_label}->{_excl_map}->{$id};
 	push @elems, qw [ - - ];
 	push @elems, $self->{_label}->ith ($i)-> str();
 	push @elems, qw [ - 1 0 ];
