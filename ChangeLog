@@ -1,3 +1,23 @@
+2001-08-21 Tuesday 20:25  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/toolutils.cc (1.39): nitlet to improve compilability on
+	egcs-2.91
+
+2001-08-21 Tuesday 20:24  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/: freebsd-4.3-patch (1.5), make-bsd-patch (1.2), restore-bsd
+	(1.2): Add a couple of C++-unfriendly header files to the patch
+	that were missed earlier.
+
+2001-08-21 Tuesday 20:24  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/Makefile.in (1.4): Add proper dependencies for the
+	generated vnode_if.h
+
+2001-08-21 Tuesday 19:25  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/arpresponder.cc (1.35): stupid idiot
+
 2001-08-20 Monday 22:12  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ip/iprw.cc (1.37): nitlet
