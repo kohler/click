@@ -49,7 +49,7 @@ RatedSplitter::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 RatedSplitter::configuration(Vector<String> &conf) const
 {
-    conf.push_back(String(_rate.rate()));
+    conf.push_back(is_bandwidth() ? cp_unparse_bandwidth(_rate.rate()) : String(_rate.rate()));
 }
 
 void

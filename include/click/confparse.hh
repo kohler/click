@@ -124,6 +124,7 @@ String cp_unparse_real10(uint32_t, int frac_digits);
 String cp_unparse_milliseconds(uint32_t);
 String cp_unparse_microseconds(uint32_t);
 String cp_unparse_interval(const struct timeval &);
+String cp_unparse_bandwidth(uint32_t);
 
 // network addresses
 class IPAddress;

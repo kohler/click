@@ -52,7 +52,7 @@ Shaper::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 Shaper::configuration(Vector<String> &conf) const
 {
-    conf.push_back(String(_rate.rate()));
+    conf.push_back(is_bandwidth() ? cp_unparse_bandwidth(_rate.rate()) : String(_rate.rate()));
 }
 
 Packet *
