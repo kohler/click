@@ -22,6 +22,10 @@ set to the current time. Other annotations are copied from the input packet.
 IP packets other than ICMP echo requests are emitted on the second output, if
 there are two outputs; otherwise, they are dropped.
 
+=head1 BUGS
+
+ICMPPingResponder does not pay attention to source route options; it should.
+
 =a
 
 ICMPSendPings, ICMPError */
