@@ -26,7 +26,6 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
-#include <click/subvector.hh>
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -195,8 +194,7 @@ Element::notify_noutputs(int)
 }
 
 void
-Element::initialize_ports(const Subvector<int> &in_v,
-			  const Subvector<int> &out_v)
+Element::initialize_ports(const int *in_v, const int *out_v)
 {
   // always initialize _ports0[0] so set_nports will know whether to quit
   if (_inputs != _ports0 && _outputs != _ports0)
@@ -415,8 +413,7 @@ next_processing_code(const char *&p, ErrorHandler *errh)
 }
 
 void
-Element::processing_vector(Subvector<int> &in_v, Subvector<int> &out_v,
-			   ErrorHandler *errh) const
+Element::processing_vector(int *in_v, int *out_v, ErrorHandler *errh) const
 {
   const char *p_in = processing();
   int val = 0;
@@ -424,8 +421,10 @@ Element::processing_vector(Subvector<int> &in_v, Subvector<int> &out_v,
   const char *p = p_in;
   int last_val = 0;
   for (int i = 0; i < ninputs(); i++) {
-    if (last_val >= 0) last_val = next_processing_code(p, errh);
-    if (last_val >= 0) val = last_val;
+    if (last_val >= 0)
+      last_val = next_processing_code(p, errh);
+    if (last_val >= 0)
+      val = last_val;
     in_v[i] = val;
   }
 
@@ -438,8 +437,10 @@ Element::processing_vector(Subvector<int> &in_v, Subvector<int> &out_v,
 
   last_val = 0;
   for (int i = 0; i < noutputs(); i++) {
-    if (last_val >= 0) last_val = next_processing_code(p, errh);
-    if (last_val >= 0) val = last_val;
+    if (last_val >= 0)
+      last_val = next_processing_code(p, errh);
+    if (last_val >= 0)
+      val = last_val;
     out_v[i] = val;
   }
 }

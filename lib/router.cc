@@ -25,7 +25,6 @@
 #include <click/straccum.hh>
 #include <click/elemfilter.hh>
 #include <click/confparse.hh>
-#include <click/subvector.hh>
 #include <click/timer.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/standard/errorelement.hh>
@@ -487,11 +486,8 @@ Router::check_push_and_pull(ErrorHandler *errh)
   // set up processing vectors
   Vector<int> input_pers(ninput_pidx(), 0);
   Vector<int> output_pers(noutput_pidx(), 0);
-  for (int f = 0; f < nelements(); f++) {
-    Subvector<int> i(input_pers, _input_pidx[f], _elements[f]->ninputs());
-    Subvector<int> o(output_pers, _output_pidx[f], _elements[f]->noutputs());
-    _elements[f]->processing_vector(i, o, errh);
-  }
+  for (int e = 0; e < nelements(); e++)
+    _elements[e]->processing_vector(input_pers.begin() + _input_pidx[e], output_pers.begin() + _output_pidx[e], errh);
   
   // add fake connections for agnostics
   Vector<Hookup> hookup_from = _hookup_from;
@@ -556,11 +552,8 @@ Router::check_push_and_pull(ErrorHandler *errh)
   if (errh->nerrors() != before)
     return -1;
 
-  for (int e = 0; e < nelements(); e++) {
-    Subvector<int> i(input_pers, _input_pidx[e], _elements[e]->ninputs());
-    Subvector<int> o(output_pers, _output_pidx[e], _elements[e]->noutputs());
-    _elements[e]->initialize_ports(i, o);
-  }
+  for (int e = 0; e < nelements(); e++)
+    _elements[e]->initialize_ports(input_pers.begin() + _input_pidx[e], output_pers.begin() + _output_pidx[e]);
   return 0;
 }
 
@@ -1678,8 +1671,8 @@ Router::element_ports_string(int ei) const
   StringAccum sa;
   Element *e = _elements[ei];
   Vector<int> pers(e->ninputs() + e->noutputs(), 0);
-  Subvector<int> in_pers(pers, 0, e->ninputs());
-  Subvector<int> out_pers(pers, e->ninputs(), e->noutputs());
+  int *in_pers = pers.begin();
+  int *out_pers = pers.begin() + e->ninputs();
   e->processing_vector(in_pers, out_pers, 0);
 
   sa << e->ninputs() << (e->ninputs() == 1 ? " input\n" : " inputs\n");

@@ -870,8 +870,7 @@ ToIPFlowDumps::gc_hook(Timer *t, void *thunk)
 	    td->end_flow(f, ErrorHandler::default_handler());
 	}
     if (i < td->_gc_aggs.size()) {
-	memmove(&td->_gc_aggs[0], &td->_gc_aggs[i], (td->_gc_aggs.size() - i) * sizeof(int));
-	td->_gc_aggs.resize(td->_gc_aggs.size() - i);
+	td->_gc_aggs.erase(td->_gc_aggs.begin(), td->_gc_aggs.begin() + i);
 	t->schedule_after_ms(250);
     }
 }

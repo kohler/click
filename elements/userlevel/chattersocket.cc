@@ -423,12 +423,8 @@ ChatterSocket::flush()
 
   // cull old messages
   if (min_useful_message >= 10) {
-    for (int i = min_useful_message; i < _messages.size(); i++) {
-      _messages[i - min_useful_message] = _messages[i];
-      _message_pos[i - min_useful_message] = _message_pos[i];
-    }
-    _messages.resize(_messages.size() - min_useful_message);
-    _message_pos.resize(_message_pos.size() - min_useful_message);
+    _messages.erase(_messages.begin(), _messages.begin() + min_useful_message);
+    _message_pos.erase(_message_pos.begin(), _message_pos.begin() + min_useful_message);
   }
 }
 

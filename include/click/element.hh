@@ -136,8 +136,8 @@ class Element { public:
   // METHODS USED BY `ROUTER'
   void attach_router(Router *r, int n)		{ _router = r; _eindex = n; }
   
-  void processing_vector(Subvector<int> &, Subvector<int> &, ErrorHandler *) const;
-  void initialize_ports(const Subvector<int> &, const Subvector<int> &);
+  void processing_vector(int *input_codes, int *output_codes, ErrorHandler *) const;
+  void initialize_ports(const int *input_codes, const int *output_codes);
   
   void forward_flow(int, Bitvector *) const;
   void backward_flow(int, Bitvector *) const;

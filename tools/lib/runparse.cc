@@ -166,8 +166,8 @@ RouterUnparseT::relate_types()
 {
     // collect type relations
     for (Vector<ElementClassT *>::iterator i = _types.begin(); i != _types.end(); i++)
-	if (CompoundElementClassT *c = i->cast_compound())
-	    if (c->previous() && apply_relation(c, c->previous(), X_GEQ))
+	if (RouterT *r = i->cast_router())
+	    if (r->previous() && apply_relation(c, c->previous(), X_GEQ))
 		_errh->lerror(c->landmark(), "circular type relationship involving '%s'", c->printable_name_c_str());
 }
 
