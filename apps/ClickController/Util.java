@@ -20,15 +20,15 @@ import java.util.*;
 public class Util {
 
     static public void fail(String msg) {
-	System.err.println("FAILURE");
-	System.err.println(msg);
+	System.err.println("FAILURE: " + msg);
 	try { throw new Exception("FAILURE"); }
 	catch (Exception ex) { ex.printStackTrace(); }
 	System.exit(-1);
     }
 
     static public void assert(boolean b, String msg) {
-	System.err.println("ASSERTION FAILED: " + msg);
+        if (b) return;
+        System.err.println("ASSERTION FAILED: " + msg);
 	try { throw new Exception("ASSERTION FAILED"); }
 	catch (Exception ex) { ex.printStackTrace(); }
 	System.exit(-1);
