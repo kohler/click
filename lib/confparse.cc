@@ -1265,8 +1265,7 @@ static const char seconds_units[] = "\
 \0\1\0s\0\1\0sec\1\6\0m\1\6\0min\2\044\0h\2\044\0hr";
 static const char seconds_prefixes[] = "m\075u\072n\067";
 
-bool
-cp_seconds_as(int want_power, const String &str, uint32_t *return_value)
+bool cp_seconds_as(int want_power, const String &str, uint32_t *return_value)
 {
   int power = 0, factor = 1;
   const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
@@ -1280,20 +1279,17 @@ cp_seconds_as(int want_power, const String &str, uint32_t *return_value)
   return true;
 }
 
-bool
-cp_seconds_as_milli(const String &str_in, uint32_t *return_value)
+bool cp_seconds_as_milli(const String &str_in, uint32_t *return_value)
 {
   return cp_seconds_as(3, str_in, return_value);
 }
 
-bool
-cp_seconds_as_micro(const String &str_in, uint32_t *return_value)
+bool cp_seconds_as_micro(const String &str_in, uint32_t *return_value)
 {
   return cp_seconds_as(6, str_in, return_value);
 }
 
-bool
-cp_timeval(const String &str, struct timeval *return_value)
+bool cp_timeval(const String &str, struct timeval *return_value)
 {
   int power = 0, factor = 1;
   const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
