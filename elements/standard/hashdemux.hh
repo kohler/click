@@ -6,19 +6,12 @@
  * =c
  * HashDemux(OFFSET, LENGTH)
  * =s
- * classifies packets by hash of contents
+ * old name for HashSwitch
  * V<classification>
  * =d
- * Can have any number of outputs.
- * Chooses the output on which to emit each packet based on
- * a hash of the LENGTH bytes starting at OFFSET.
- * Could be used for stochastic fair queuing.
- * =e
- * This element expects IP packets and chooses the output
- * based on a hash of the IP destination address:
- * 
- *   HashDemux(16, 4)
- */
+ * This is the old name for the HashSwitch element. You should use HashSwitch
+ * instead.
+ * =a HashSwitch */
 
 class HashDemux : public Element {
 

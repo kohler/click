@@ -1,5 +1,5 @@
 /*
- * hashdemux.{cc,hh} -- element demultiplexes packets based on hash of
+ * hashswitch.{cc,hh} -- element demultiplexes packets based on hash of
  * specified packet fields
  * Eddie Kohler
  *
@@ -14,32 +14,31 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "hashdemux.hh"
+#include "hashswitch.hh"
 #include "error.hh"
 #include "confparse.hh"
 
-HashDemux::HashDemux()
+HashSwitch::HashSwitch()
   : _offset(-1)
 {
   set_ninputs(1);
 }
 
-HashDemux *
-HashDemux::clone() const
+HashSwitch *
+HashSwitch::clone() const
 {
-  return new HashDemux;
+  return new HashSwitch;
 }
 
 void
-HashDemux::notify_noutputs(int i)
+HashSwitch::notify_noutputs(int i)
 {
   set_noutputs(i < 1 ? 1 : i);
 }
 
 int
-HashDemux::configure(const Vector<String> &conf, ErrorHandler *errh)
+HashSwitch::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  errh->error("HashDemux has been deprecated; use HashSwitch instead");
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "byte offset", &_offset,
 		  cpUnsigned, "number of bytes", &_length,
@@ -51,7 +50,7 @@ HashDemux::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-HashDemux::push(int, Packet *p)
+HashSwitch::push(int, Packet *p)
 {
   const unsigned char *data = p->data();
   int o = _offset, l = _length;
@@ -69,4 +68,4 @@ HashDemux::push(int, Packet *p)
   }
 }
 
-EXPORT_ELEMENT(HashDemux)
+EXPORT_ELEMENT(HashSwitch)

@@ -18,7 +18,7 @@
  * =h switch read/write
  * Return or set the K parameter.
  *
- * =a StaticSwitch, StrideSwitch, PullSwitch */
+ * =a StaticSwitch, PullSwitch, RoundRobinSwitch, StrideSwitch, HashSwitch */
 
 class Switch : public Element {
 
