@@ -146,7 +146,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 	_end_h = new HandlerCall(id() + ".stop");
     else if (_have_last_time && !_end_h)
 	_end_h = new HandlerCall(id() + ".active false");
-    
+
     // set other variables
     _have_any_times = false;
     _timing = timing;
@@ -244,7 +244,7 @@ FromDump::initialize(ErrorHandler *errh)
     // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {
 	if (!fake_pcap_dlt_force_ipable(_linktype))
-	    return _ff.error(errh, "unknown linktype %s; can't force IP packets", _linktype);
+	    return _ff.error(errh, "unknown linktype %d; can't force IP packets", _linktype);
 	if (_timing)
 	    return errh->error("FORCE_IP and TIMING options are incompatible");
     } else if (_linktype == FAKE_DLT_RAW)

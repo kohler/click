@@ -11,7 +11,7 @@ class HandlerCall;
 /*
 =c
 
-FromDump(FILENAME [, TIMING, I<KEYWORDS>])
+FromDump(FILENAME [, I<keywords> TIMING, STOP, SAMPLE, FORCE_IP, START, START_AFTER, END, END_AFTER, INTERVAL, END_CALL, FILEPOS])
 
 =s analysis
 
@@ -225,7 +225,7 @@ class FromDump : public Element { public:
 
     Timestamp _time_offset;
     off_t _packet_filepos;
-
+    
     bool read_packet(ErrorHandler *);
 
     void prepare_times(const Timestamp &);

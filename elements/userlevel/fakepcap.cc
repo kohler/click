@@ -33,6 +33,7 @@ static const struct dlt_name {
     const char* name;
     int dlt;
 } dlt_names[] = {
+    { "NULL", FAKE_DLT_NULL },
     { "IP", FAKE_DLT_RAW },
     { "ETHER", FAKE_DLT_EN10MB },
     { "FDDI", FAKE_DLT_FDDI },
@@ -69,6 +70,8 @@ fake_pcap_unparse_dlt(int dlt)
     for (const dlt_name* d = dlt_names; d < dlt_names + (sizeof(dlt_names) / sizeof(dlt_names[0])); d++)
 	if (dlt == d->dlt)
 	    return String::stable_string(d->name);
+    if (dlt < 0)
+	return String::stable_string("<none>");
     return "#" + String(dlt);
 }
 
@@ -82,7 +85,8 @@ fake_pcap_dlt_force_ipable(int dlt)
 	    || dlt == FAKE_DLT_FDDI || dlt == FAKE_DLT_ATM_RFC1483
 	    || dlt == FAKE_DLT_LINUX_SLL || dlt == FAKE_DLT_C_HDLC
 	    || dlt == FAKE_DLT_IEEE802_11 || dlt == FAKE_DLT_PRISM_HEADER
-	    || dlt == FAKE_DLT_PPP_HDLC || dlt == FAKE_DLT_PPP);
+	    || dlt == FAKE_DLT_PPP_HDLC || dlt == FAKE_DLT_PPP
+	    || dlt == FAKE_DLT_NULL);
 }
 
 int
@@ -259,7 +263,21 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	    goto rfc1483;
 	}
 	break;
-	
+
+      case FAKE_DLT_NULL: {
+	  if (data + 4 > end_data)
+	      break;
+	  int family = data[0] | (data[1] << 8);
+	  if (family == 0)
+	      family = (data[2] << 8) | data[3];
+	  if (family == 2 /* BSD_AF_INET */
+	      || family == 24 /* BSD_AF_INET6_BSD */
+	      || family == 28 /* BSD_AF_INET6_FREEBSD */
+	      || family == 30 /* BSD_AF_INET6_DARWIN */)
+	      iph = reinterpret_cast<const click_ip*>(data + 4);
+	  break;
+      }
+
       default:
 	break;
 

@@ -129,7 +129,7 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 
     // default linktype
     if (!encap)
-	_base_linktype = 0;
+	_base_linktype = FAKE_DLT_NONE;
     else if ((_base_linktype = fake_pcap_parse_dlt(encap)) < 0
 	     || (_base_linktype != FAKE_DLT_SUNATM
 		 && _base_linktype != FAKE_DLT_C_HDLC
@@ -302,7 +302,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	    wire_length = htons(*(reinterpret_cast<const uint16_t*>(cell) + 5));
 	    goto cell;
 
-	  case 0:
+	  case FAKE_DLT_NONE:
 	    _linktype = FAKE_DLT_ATM_RFC1483;
 	    goto cell;
 

@@ -28,8 +28,8 @@ is 2000. If SNAPLEN is 0, the whole packet will be written to the file.  ENCAP
 specifies the first header each packet is expected to have.  This information
 is stored in the file header, and must be correct or tcpdump won't be able to
 read the file correctly. It can be C<ETHER> (Ethernet encapsulation),
-C<IP> (raw IP packets), C<FDDI>, C<ATM>, C<802_11>, C<SLL>, C<AIRONET>,
-C<HDLC>, C<PPP_HDLC>, C<PPP>, C<SUNATM>, or C<PRISM>; the default is C<ETHER>.
+C<IP> (raw IP packets), C<FDDI>, C<ATM>, C<802_11>, C<SLL>, C<AIRONET>, C<HDLC>,
+C<PPP_HDLC>, C<PPP>, C<SUNATM>, C<PRISM>, or C<NULL>; the default is C<ETHER>.
 
 ToDump may have zero or one output. If it has an output, then it emits all
 received packets on that output. ToDump will schedule itself on the task list
