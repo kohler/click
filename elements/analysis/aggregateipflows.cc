@@ -10,6 +10,7 @@
 #include <clicknet/udp.h>
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
+#include <click/handlercall.hh>
 CLICK_DECLS
 
 #define SEC_OLDER(s1, s2)	((int)(s1 - s2) < 0)
@@ -49,7 +50,7 @@ flip_ports(uint32_t ports)
 // actual AggregateIPFlows operations
 
 AggregateIPFlows::AggregateIPFlows()
-    : Element(1, 1), _conninfo_file(0)
+    : Element(1, 1), _traceinfo_file(0), _packet_source(0), _filepos_h(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -96,7 +97,8 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "FRAGMENT_TIMEOUT", cpSeconds, "timeout for fragment collection", &_fragment_timeout,
 		    "REAP", cpSeconds, "garbage collection interval", &_gc_interval,
 		    "ICMP", cpBool, "handle ICMP errors?", &handle_icmp_errors,
-		    "CONNINFO", cpFilename, "filename for connection info file", &_conninfo_filename,
+		    "TRACEINFO", cpFilename, "filename for connection info file", &_traceinfo_filename,
+		    "SOURCE", cpElement, "packet source element", &_packet_source,
 		    cpConfirmKeywords,
 		    "FRAGMENTS", cpBool, "handle fragmented packets?", &gave_fragments, &fragments,
 		    0) < 0)
@@ -117,13 +119,20 @@ AggregateIPFlows::initialize(ErrorHandler *errh)
     _active_sec = _gc_sec = 0;
     _timestamp_warning = false;
     
-    if (_conninfo_filename == "-")
-	_conninfo_file = stdout;
-    else if (_conninfo_filename && !(_conninfo_file = fopen(_conninfo_filename.cc(), "w")))
-	return errh->error("%s: %s", _conninfo_filename.cc(), strerror(errno));
-    if (_conninfo_file)
-	fprintf(_conninfo_file, "<?xml version='1.0' standalone='yes'?>\n\
-<connections>\n");
+    if (_traceinfo_filename == "-")
+	_traceinfo_file = stdout;
+    else if (_traceinfo_filename && !(_traceinfo_file = fopen(_traceinfo_filename.cc(), "w")))
+	return errh->error("%s: %s", _traceinfo_filename.cc(), strerror(errno));
+    if (_traceinfo_file) {
+	fprintf(_traceinfo_file, "<?xml version='1.0' standalone='yes'?>\n\
+<trace");
+	if (_packet_source) {
+	    if (String s = HandlerCall::call_read(_packet_source, "filename").trim_space())
+		fprintf(_traceinfo_file, " file='%s'", s.cc());
+	    (void) HandlerCall::reset_read(_filepos_h, _packet_source, "packet_filepos");
+	}
+	fprintf(_traceinfo_file, ">\n");
+    }
 
     if (_fragments == 2)
 	_fragments = !input_is_pull(0);
@@ -138,27 +147,35 @@ AggregateIPFlows::cleanup(CleanupStage)
 {
     clean_map(_tcp_map);
     clean_map(_udp_map);
-    if (_conninfo_file && _conninfo_file != stdout) {
-	fprintf(_conninfo_file, "</connections>\n");
-	fclose(_conninfo_file);
+    if (_traceinfo_file && _traceinfo_file != stdout) {
+	fprintf(_traceinfo_file, "</trace>\n");
+	fclose(_traceinfo_file);
     }
+    delete _filepos_h;
 }
 
 inline void
 AggregateIPFlows::delete_flowinfo(const HostPair &hp, FlowInfo *finfo, bool really_delete)
 {
-    if (_conninfo_file) {
+    if (_traceinfo_file) {
 	StatFlowInfo *sinfo = static_cast<StatFlowInfo *>(finfo);
 	IPAddress src(sinfo->reverse() ? hp.b : hp.a);
 	int sport = (ntohl(sinfo->_ports) >> (sinfo->reverse() ? 0 : 16)) & 0xFFFF;
 	IPAddress dst(sinfo->reverse() ? hp.a : hp.b);
 	int dport = (ntohl(sinfo->_ports) >> (sinfo->reverse() ? 16 : 0)) & 0xFFFF;
 	struct timeval duration = sinfo->_last_timestamp - sinfo->_first_timestamp;
-	fprintf(_conninfo_file, "<connection aggregate='%u' src='%s' sport='%d' dst='%s' dport='%d' begin='%ld.%06ld' duration='%ld.%06ld' />\n",
+	fprintf(_traceinfo_file, "<flow aggregate='%u' src='%s' sport='%d' dst='%s' dport='%d' begin='%ld.%06ld' duration='%ld.%06ld'",
+
 		sinfo->_aggregate,
 		src.s().cc(), sport, dst.s().cc(), dport,
 		sinfo->_first_timestamp.tv_sec, sinfo->_first_timestamp.tv_usec,
 		duration.tv_sec, duration.tv_usec);
+	if (sinfo->_filepos)
+	    fprintf(_traceinfo_file, " filepos='%u'", sinfo->_filepos);
+	fprintf(_traceinfo_file, ">\n\
+  <stream dir='0' packets='%d' /><stream dir='1' packets='%d' />\n\
+</flow>\n",
+		sinfo->_packets[0], sinfo->_packets[1]);
 	if (really_delete)
 	    delete sinfo;
     } else
@@ -183,6 +200,16 @@ AggregateIPFlows::clean_map(Map &table)
     }
 }
 
+void
+AggregateIPFlows::stat_new_flow_hook(const Packet *p, FlowInfo *finfo)
+{
+    StatFlowInfo *sinfo = static_cast<StatFlowInfo *>(finfo);
+    sinfo->_first_timestamp = p->timestamp_anno();
+    sinfo->_filepos = 0;
+    if (_filepos_h)
+	(void) cp_unsigned(_filepos_h->call_read().trim_space(), &sinfo->_filepos);
+}
+
 inline void
 AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInfo *finfo)
 {
@@ -196,6 +223,12 @@ AggregateIPFlows::packet_emit_hook(const Packet *p, const click_ip *iph, FlowInf
 	    finfo->_flow_over |= (1 << PAINT_ANNO(p));
 	else if (p->tcp_header()->th_flags & TH_SYN)
 	    finfo->_flow_over = 0;
+    }
+
+    // count packets
+    if (stats() && PAINT_ANNO(p) < 2) {
+	StatFlowInfo *sinfo = static_cast<StatFlowInfo *>(finfo);
+	sinfo->_packets[PAINT_ANNO(p)]++;
     }
 }
 
@@ -363,7 +396,7 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
 		finfo->_reverse = flipped;
 		finfo->_flow_over = 0;
 		if (stats())
-		    ((StatFlowInfo *)finfo)->_first_timestamp = p->timestamp_anno();
+		    stat_new_flow_hook(p, finfo);
 		notify(finfo->aggregate(), AggregateListener::NEW_AGG, p);
 	    }
 
@@ -378,7 +411,7 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
     FlowInfo *finfo;
     if (stats()) {
 	finfo = new StatFlowInfo(ports, hpinfo->_flows, _next);
-	((StatFlowInfo *)finfo)->_first_timestamp = p->timestamp_anno();
+	stat_new_flow_hook(p, finfo);
     } else
 	finfo = new FlowInfo(ports, hpinfo->_flows, _next);
     

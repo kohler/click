@@ -253,7 +253,7 @@ AggregateCounter::update(Packet *p, bool frozen)
     if (amount && !n->count) {
 	if (_num_nonzero >= _call_nnz) {
 	    _call_nnz = (uint32_t)(-1);
-	    _call_nnz_h->call_write(this);
+	    _call_nnz_h->call_write();
 	    // handler may have changed our state; reupdate
 	    return update(p, frozen || _frozen);
 	}
@@ -264,7 +264,7 @@ AggregateCounter::update(Packet *p, bool frozen)
     _count += amount;
     if (_count >= _call_count) {
 	_call_count = (uint64_t)(-1);
-	_call_count_h->call_write(this);
+	_call_count_h->call_write();
     }
     return true;
 }
@@ -457,12 +457,12 @@ AggregateCounter::read_handler(Element *e, void *thunk)
 	if (ac->_call_nnz == (uint32_t)(-1))
 	    return "";
 	else
-	    return String(ac->_call_nnz) + " " + ac->_call_nnz_h->unparse(ac);
+	    return String(ac->_call_nnz) + " " + ac->_call_nnz_h->unparse();
       case AC_COUNT_CALL:
 	if (ac->_call_count == (uint64_t)(-1))
 	    return "";
 	else
-	    return String(ac->_call_count) + " " + ac->_call_count_h->unparse(ac);
+	    return String(ac->_call_count) + " " + ac->_call_count_h->unparse();
       case AC_NAGG:
 	return String(ac->_num_nonzero) + "\n";
       default:
@@ -506,34 +506,28 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	return 0;
       case AC_CLEAR:
 	return ac->clear(errh);
-      case AC_AGGREGATE_CALL:
-	if (!s) {
-	    ac->_call_nnz = (uint32_t)(-1);
-	    return 0;
-	}
-	if (!ac->_call_nnz_h)
-	    ac->_call_nnz_h = new HandlerCall;
-	if (!cp_unsigned(cp_pop_spacevec(s), &ac->_call_nnz))
-	    return errh->error("argument to `aggregate_call' should be `N HANDLER [VALUE]'");
-	else if (ac->_call_nnz_h->initialize_write(s, ac, errh) < 0) {
-	    ac->_call_nnz = (uint32_t)(-1);
-	    return -1;
-	} else
-	    return 0;
-      case AC_COUNT_CALL:
-	if (!s) {
-	    ac->_call_count = (uint64_t)(-1);
-	    return 0;
-	}
-	if (!ac->_call_count_h)
-	    ac->_call_count_h = new HandlerCall;
-	if (!cp_unsigned64(cp_pop_spacevec(s), &ac->_call_count))
-	    return errh->error("argument to `count_call' should be `N HANDLER [VALUE]'");
-	else if (ac->_call_count_h->initialize_write(s, ac, errh) < 0) {
-	    ac->_call_count = (uint64_t)(-1);
-	    return -1;
-	} else
-	    return 0;
+      case AC_AGGREGATE_CALL: {
+	  uint32_t new_nnz = (uint32_t)(-1);
+	  if (s) {
+	      if (!cp_unsigned(cp_pop_spacevec(s), &new_nnz))
+		  return errh->error("argument to `aggregate_call' should be `N HANDLER [VALUE]'");
+	      else if (HandlerCall::reset_write(ac->_call_nnz_h, s, ac, errh) < 0)
+		  return -1;
+	  }
+	  ac->_call_nnz = new_nnz;
+	  return 0;
+      }
+      case AC_COUNT_CALL: {
+	  uint64_t new_count = (uint64_t)(-1);
+	  if (s) {
+	      if (!cp_unsigned64(cp_pop_spacevec(s), &new_count))
+		  return errh->error("argument to `count_call' should be `N HANDLER [VALUE]'");
+	      else if (HandlerCall::reset_write(ac->_call_count_h, s, ac, errh) < 0)
+		  return -1;
+	  }
+	  ac->_call_count = new_count;
+	  return 0;
+      }
       default:
 	return errh->error("internal error");
     }

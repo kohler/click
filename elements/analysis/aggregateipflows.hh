@@ -6,6 +6,7 @@
 #include <click/bighashmap.hh>
 #include "aggregatenotifier.hh"
 CLICK_DECLS
+class HandlerCall;
 
 /*
 =c
@@ -62,6 +63,19 @@ Keywords are:
 
 =over 8
 
+=item TRACEINFO
+
+Filename. If provided, output information about each flow to that filename in
+an XML format.
+
+=item SOURCE
+
+Element. If provided, the results of that element's 'C<filename>' and
+'C<packet_filepos>' read handlers will be recorded in the TRACEINFO dump. (It
+is not an error if the element doesn't have those handlers.) The
+'C<packet_filepos>' results may be particularly useful, since a reader can use
+those results to skip ahead through a trace file.
+
 =item TCP_TIMEOUT
 
 The timeout for active TCP flows, in seconds. Default is 24 hours.
@@ -95,10 +109,6 @@ Default is false.
 Boolean. If true, then try to assign aggregate annotations to all fragments.
 May only be set to true if AggregateIPFlows is running in a push context.
 Default is true in a push context and false in a pull context.
-
-=item FLOWINFO
-
-Filename. If provided, output information about each flow to that filename.
 
 =back
 
@@ -149,7 +159,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     void add_handlers();
     void cleanup(CleanupStage);
 
-    bool stats() const			{ return _conninfo_file; }
+    bool stats() const			{ return _traceinfo_file; }
     
     void push(int, Packet *);
     Packet *pull(int);
@@ -180,7 +190,8 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     struct StatFlowInfo : public FlowInfo {
 	struct timeval _first_timestamp;
 	uint32_t _filepos;
-	StatFlowInfo(uint32_t ports, FlowInfo *next, uint32_t agg) : FlowInfo(ports, next, agg) { }
+	uint32_t _packets[2];
+	StatFlowInfo(uint32_t ports, FlowInfo *next, uint32_t agg) : FlowInfo(ports, next, agg) { _packets[0] = _packets[1] = 0; }
     };
 
     struct HostPairInfo {
@@ -211,8 +222,11 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     unsigned _fragments : 2;
     bool _timestamp_warning : 1;
 
-    FILE *_conninfo_file;
-    String _conninfo_filename;
+    FILE *_traceinfo_file;
+    String _traceinfo_filename;
+
+    Element *_packet_source;
+    HandlerCall *_filepos_h;
 
     static const click_ip *icmp_encapsulated_header(const Packet *);
     
@@ -221,6 +235,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     void reap();
 
     inline int relevant_timeout(const FlowInfo *, const Map &) const;
+    void stat_new_flow_hook(const Packet *, FlowInfo *);
     inline void packet_emit_hook(const Packet *, const click_ip *, FlowInfo *);
     inline void delete_flowinfo(const HostPair &, FlowInfo *, bool really_delete = true);
     void assign_aggregate(Map &, HostPairInfo *, int emit_before_sec);
