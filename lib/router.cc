@@ -1194,26 +1194,28 @@ Router::add_write_handler(int eindex, const String &name,
 }
 
 int
-Router::find_handler(Element *element, const String &name)
+Router::find_handler(Router *router, int eindex, const String &name)
 {
-  if (_ehandler_first_by_element.size() == 0 // handlers not configured
-      || !element)
+  if (eindex < 0)
     return find_global_handler(name);
-  int eh = find_ehandler(element->eindex(), name, true);
-  return (eh >= 0 ? _ehandler_to_handler[eh] : -1);
+  else if (router && eindex < router->_ehandler_first_by_element.size()) {
+    int eh = router->find_ehandler(eindex, name, true);
+    return (eh >= 0 ? router->_ehandler_to_handler[eh] : -1);
+  } else
+    return -1;
 }
 
 void
-Router::element_handlers(int eindex, Vector<int> &handlers) const
+Router::element_handlers(const Router *r, int eindex, Vector<int> &handlers)
 {
   if (eindex < 0) {		// global handlers
     for (int i = 0; i < nglobal_handlers(); i++)
       handlers.push_back(FIRST_GLOBAL_HANDLER + i);
-  } else if (eindex < _elements.size()) { // element handlers
-    for (int eh = _ehandler_first_by_element[eindex];
+  } else if (r && eindex < r->_elements.size()) { // element handlers
+    for (int eh = r->_ehandler_first_by_element[eindex];
 	 eh >= 0;
-	 eh = _ehandler_next[eh]) {
-      int h = _ehandler_to_handler[eh];
+	 eh = r->_ehandler_next[eh]) {
+      int h = r->_ehandler_to_handler[eh];
       if (h >= 0)
 	handlers.push_back(h);
     }
@@ -1310,9 +1312,9 @@ Router::cleanup_global_handlers()
 }
 
 bool
-Router::handler_ok(int i) const
+Router::handler_ok(const Router *r, int i)
 {
-  return ((i >= 0 && i < _nhandlers) ||
+  return ((r && i >= 0 && i < r->_nhandlers) ||
 	  (i >= FIRST_GLOBAL_HANDLER && i < FIRST_GLOBAL_HANDLER + nglobalh));
 }
 

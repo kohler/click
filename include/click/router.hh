@@ -63,9 +63,11 @@ class Router { public:
 
   // handlers
   int nhandlers() const				{ return _nhandlers; }
-  bool handler_ok(int) const;
+  static bool handler_ok(const Router *, int);
+  bool handler_ok(int hi) const			{ return handler_ok(this, hi);}
   static const Handler &handler(const Router *, int);
   const Handler &handler(int hi) const		{ return handler(this, hi); }
+  static void element_handlers(const Router *, int, Vector<int> &);
   void element_handlers(int, Vector<int> &) const;
   void add_read_handler(int, const String &, ReadHandler, void *);
   void add_write_handler(int, const String &, WriteHandler, void *);
@@ -78,6 +80,7 @@ class Router { public:
   static void add_global_write_handler(const String &, WriteHandler, void *);
   static void cleanup_global_handlers();
 
+  static int find_handler(Router *, int eindex, const String &);
   int find_handler(Element *, const String &);
   static int find_global_handler(const String &);
 
@@ -302,6 +305,18 @@ Router::handler(const Router *r, int i)
     return r->_handlers[i];
   } else
     return global_handler(i);
+}
+
+inline int
+Router::find_handler(Element *e, const String &n)
+{
+  return find_handler(this, (e ? e->eindex() : -1), n);
+}
+
+inline void
+Router::element_handlers(int ei, Vector<int> &hv) const
+{
+  return element_handlers(this, ei, hv);
 }
 
 inline
