@@ -1,3 +1,8 @@
+2003-01-23 Thursday 16:56  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/ethernet/arpquerier.hh (1.32): doc nitlet: ARP responses
+	match the pattern 20/0002
+
 2003-01-23 Thursday 16:19  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* conf/grid.click (1.62): Handle new DSDVRouteTable arg syntax
