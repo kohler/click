@@ -5,12 +5,18 @@
 class ErrorHandler;
 
 struct ArchiveElement {
+  
   String name;
   int date;
   int uid;
   int gid;
   int mode;
   String data;
+
+  bool live() const			{ return name; }
+  bool dead() const			{ return !name; }
+  void kill()				{ name = String(); }
+  
 };
 
 int separate_ar_string(const String &, Vector<ArchiveElement> &,

@@ -165,6 +165,8 @@ create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh = 0)
   sa << "!<arch>\n";
   for (int i = 0; i < v.size(); i++) {
     const ArchiveElement &ae = v[i];
+    if (ae.dead())
+      continue;
 
     // check name
     const char *ndata = ae.name.data();
