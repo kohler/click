@@ -46,20 +46,23 @@ void
 usage()
 {
   printf("\
-`Click-mkmindriver' produces a build environment for a specific router\n\
-configuration. The resulting Makefile will build a `PKGclick' executable, or\n\
-`PKGclick.o' kernel module, containing only the elements required by the\n\
-router configuration or configurations.\n\
+`Click-mkmindriver' produces a Makefile that builds a minimum Click driver\n\
+for a set of router configurations. This driver contains just the elements\n\
+those configurations require. Run `click-mkmindriver' in the relevant driver's\n\
+build directory and supply a package name with the `-p PKG' option. The\n\
+resulting Makefile is called `Makefile.PKG'; it will build either a `PKGclick'\n\
+user-level driver or a `PKGclick.o' kernel module.\n\
 \n\
-Usage: %s -p PKGNAME [OPTION]... [ROUTERFILE]...\n\
+Usage: %s -p PKG [OPTION]... [ROUTERFILE]...\n\
 \n\
 Options:\n\
-  -f, --file FILE           Read router configuration from FILE.\n\
-  -p, --package PKG         Name of package is PKGN. User-level driver will be\n\
-                            called `PKGclick'; kernel module `PKGclick.o'.\n\
-  -k, --kernel              Check kernel driver version of configuration.\n\
-  -u, --user                Check user-level driver version of configuration.\n\
-  -d, --directory DIR       Change build environment located in DIR.\n\
+  -p, --package PKG         Name of package is PKG.\n\
+  -f, --file FILE           Read router configuration from FILE. Can supply\n\
+                            multiple configurations.\n\
+  -k, --kernel              Build Makefile for kernel driver.\n\
+  -u, --user                Build Makefile for user-level driver (default).\n\
+  -d, --directory DIR       Put files in DIR. DIR must contain a `Makefile'\n\
+                            for the relevant driver. Default is `.'.\n\
       --help                Print this message and exit.\n\
   -v, --version             Print version number and exit.\n\
 \n\
