@@ -1,3 +1,13 @@
+2001-04-11 Wednesday 11:03  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/: run-grid-gateway.openbsd, run-grid-node.openbsd: [no log
+	message]
+
+2001-04-11 Wednesday 10:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/: kerneltap.cc, kerneltap.hh: added read
+	handler to find out what device file was actually used
+
 2001-04-11 Wednesday 10:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-node.openbsd: [no log message]
