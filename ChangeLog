@@ -1,3 +1,7 @@
+2004-11-06 Saturday 18:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/Makefile.in (1.56): h4
+
 2004-11-06 Saturday 01:07  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/Makefile.in (1.55): mkwebdoc make error
