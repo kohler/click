@@ -383,9 +383,6 @@ IPRateMonitor::reset_write_handler
 {
   IPRateMonitor* me = (IPRateMonitor *) e;
 
-#ifdef __KERNEL__
-  start_bh_atomic();
-#endif
   me->_lock->acquire();
   for (int i = 0; i < MAX_COUNTERS; i++) {
     if (me->_base->counter[i]) {
@@ -397,9 +394,6 @@ IPRateMonitor::reset_write_handler
   }
   me->set_resettime();
   me->_lock->release();
-#ifdef __KERNEL__
-  end_bh_atomic();
-#endif
 
   return 0;
 }
@@ -426,9 +420,6 @@ IPRateMonitor::memmax_write_handler
   if (memmax && memmax < (int)MEMMAX_MIN)
     memmax = MEMMAX_MIN;
   
-#ifdef __KERNEL__
-  start_bh_atomic();
-#endif
   me->_lock->acquire();
   me->_memmax = memmax * 1024; // count bytes, not kbytes
 
@@ -436,9 +427,6 @@ IPRateMonitor::memmax_write_handler
   if (me->_memmax && me->_alloced_mem > me->_memmax)
     me->forced_fold();
   me->_lock->release();
-#ifdef __KERNEL__
-  end_bh_atomic();
-#endif
 
   return 0;
 }
@@ -475,17 +463,11 @@ IPRateMonitor::anno_level_write_handler
   when *= MyEWMA::freq();
   when += MyEWMA::now();
 
-#ifdef __KERNEL__
-  start_bh_atomic();
-#endif
   me->_lock->acquire();
   unsigned addr = a.addr();
   me->set_anno_level(addr, static_cast<unsigned>(level), 
                      static_cast<unsigned>(when));
   me->_lock->release();
-#ifdef __KERNEL__
-  end_bh_atomic();
-#endif
   return 0;
 }
 
