@@ -3,7 +3,7 @@
 
 /*
  * =c
- * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GridGatewayInfo, LinkTracker, LinkStat [, I<KEYWORDS>])
+ * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP [, GridGatewayInfo, LinkTracker, LinkStat] [, I<KEYWORDS>])
  *
  * =s Grid
  * Run DSDV local routing protocol
@@ -45,6 +45,11 @@
  *
  * =back
  *
+ * Optional arguments are GridGatewayInfo, LinkTracker, and LinkStat
+ * elements.  If the GridGatewayInfo element is missing, this node
+ * won't advertise itself as a gateway.  If LinkStat or LinkTracker
+ * elements are missing, link metrics may not work correctly.
+ *
  * Keywords arguments are:
  *
  * =over 8
@@ -58,7 +63,7 @@
  *
  * String.  The type of metric that should be used to compare two
  * routes.  Allowable values are: ``hopcount'' or ``est_tx_count''
- * (estimate transmission count).  The default is to use estimated
+ * (estimated transmission count).  The default is to use estimated
  * transmission count.
  *
  * =item LOGFILE
@@ -137,7 +142,7 @@ private:
     bool                is_gateway;
 
     unsigned int        ttl;                   // msecs
-    int                 last_updated_jiffies;  // last time this entry was updated
+    unsigned int        last_updated_jiffies;  // last time this entry was updated
 
     // metrics are invalid until updated to incorporate the last hop's
     // link, i.e. by calling initialize_metric or update_metric.
@@ -148,16 +153,16 @@ private:
     double              wst;                   // weighted settling time (msecs)
     metric_t            last_adv_metric;       // last metric we advertised
     int                 last_seq_jiffies;      // last time the seq_no changed
-    int                 advertise_ok_jiffies;  // when it is ok to advertise route
+    unsigned int        advertise_ok_jiffies;  // when it is ok to advertise route
     bool                need_seq_ad;
     bool                need_metric_ad;
-    int                 last_expired_jiffies;  // when the route was expired (if broken)
+    unsigned int        last_expired_jiffies;  // when the route was expired (if broken)
 
     bool broken() { return num_hops == 0; }
     bool good()   { return num_hops != 0; }
 
     RTEntry() : 
-      is_gateway(false), ttl(0), last_updated_jiffies(-1), wst(0), 
+      is_gateway(false), ttl(0), last_updated_jiffies(0), wst(0), 
       last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false), 
       need_metric_ad(false), last_expired_jiffies(0)
     { }
@@ -217,7 +222,7 @@ private:
 
   void handle_update(RTEntry &, const bool was_sender);  
   void insert_route(const RTEntry &, const bool was_Sender);
-  void schedule_triggered_update(const IPAddress &ip, int when); // when is in jiffies
+  void schedule_triggered_update(const IPAddress &ip, unsigned int when); // when is in jiffies
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
   typedef TMap::Iterator TMIter;
@@ -316,10 +321,10 @@ public:
   static unsigned int decr_ttl(unsigned int ttl, unsigned int decr)
   { return (ttl > decr ? ttl - decr : 0); }
 
-  static int jiff_to_msec(int j)
+  static unsigned int jiff_to_msec(unsigned int j)
   { return (j * 1000) / CLICK_HZ; }
 
-  static int msec_to_jiff(int m)
+  static unsigned int msec_to_jiff(unsigned int m)
   { return (CLICK_HZ * m) / 1000; }
 
 private:

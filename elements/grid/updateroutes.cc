@@ -120,7 +120,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
    * expects grid packets, with MAC hdrs
    */
   assert(packet);
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
   
   /*
    * Update immediate neighbor table with this packet's transmitter's
@@ -443,7 +443,7 @@ UpdateGridRoutes::expire_routes()
      inclusion in a broken route advertisement. */
 
   assert(_timeout > 0);
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   // XXX not sure if we are allowed to iterate while modifying map
   // (i.e. erasing entries), so figure out what to expire first.

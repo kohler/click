@@ -53,7 +53,8 @@ DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
 }
 
 DSDVRouteTable::DSDVRouteTable() : 
-  GridGenericRouteTable(1, 1), _log(0), 
+  GridGenericRouteTable(1, 1), _gw_info(0),
+  _link_tracker(0), _link_stat(0), _log(0), 
   _seq_no(0), _bcast_count(0),
   _max_hops(3), _alpha(0.875), _wst0(6000),
   _last_periodic_update(0),
@@ -114,6 +115,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpUnsigned, "route broadcast jitter (msec)", &_jitter,
 			cpEthernetAddress, "source Ethernet address", &_eth,
 			cpIPAddress, "source IP address", &_ip,
+			cpOptional,
 			cpElement, "GridGatewayInfo element", &_gw_info,
 			cpElement, "LinkTracker element", &_link_tracker,
 			cpElement, "LinkStat element", &_link_stat,
@@ -143,6 +145,11 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   _metric_type = check_metric_type(metric);
   if (_metric_type < 0)
     return errh->error("Unknown metric type ``%s''", metric.cc());
+
+  if (_gw_info == 0)
+    errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
+  if (_link_tracker == 0 || _link_stat == 0)
+    errh->warning("One or both of LinkTracker and LinkStat not specified, some metrics may not work");
 
   _log = GridLogger::get_log();
   if (logfile.length() > 0) 
@@ -179,7 +186,7 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, double &rate)
   switch (_est_type) {
   case EstByMeas: {
     struct timeval last;
-    bool res = _link_tracker->get_bcast_stat(ip, rate, last);
+    bool res = _link_tracker ? _link_tracker->get_bcast_stat(ip, rate, last) : false;
     return res;
     break;
   }
@@ -200,7 +207,7 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, double &rate)
     unsigned int window = 0;
     unsigned int num_rx = 0;
     unsigned int num_expected = 0;
-    bool res = _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
+    bool res = _link_stat ? _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected) : false;
     if (!res || num_expected <= 1)
       return false;
     double num_rx_ = num_rx;
@@ -311,7 +318,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
     }
   }
 
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   for (int i = 0; i < expired_dests.size(); i++) {
     RTEntry *r = _rtes.findp(expired_dests[i]);
@@ -356,7 +363,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 }
 
 void
-DSDVRouteTable::schedule_triggered_update(const IPAddress &ip, int when)
+DSDVRouteTable::schedule_triggered_update(const IPAddress &ip, unsigned int when)
 {
   // get rid of outstanding triggered request (if any)
   Timer **old = _trigger_timers.findp(ip);
@@ -372,7 +379,7 @@ DSDVRouteTable::schedule_triggered_update(const IPAddress &ip, int when)
   HookPair *hp = new HookPair(this, ip);
   Timer *t = new Timer(static_trigger_hook, (void *) hp);
   t->initialize(this);
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
   t->schedule_after_ms(jiff_to_msec(jiff > when ? 0 : when - jiff));
   _trigger_timers.insert(ip, t);
   _trigger_hooks.insert(ip, hp);
@@ -387,8 +394,8 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   HookPair **oldhp = _trigger_hooks.findp(ip);
   assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
 
-  int jiff = click_jiffies();
-  int next_trigger_time = _last_triggered_update + _min_triggered_update_period;
+  unsigned int jiff = click_jiffies();
+  unsigned int next_trigger_time = _last_triggered_update + _min_triggered_update_period;
 
   if (jiff >= next_trigger_time) {
     // It's ok to send a triggered update now.  Cleanup expired timer.
@@ -598,7 +605,7 @@ DSDVRouteTable::metrics_differ(const metric_t &m1, const metric_t &m2)
 void
 DSDVRouteTable::send_full_update() {
 
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
   Vector<RTEntry> routes;
   
   for (RTIter i = _rtes.first(); i; i++) {
@@ -640,7 +647,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   RTEntry *r = _rtes.findp(ip);
   assert(r);
 
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   Vector<RTEntry> triggered_routes;
   for (RTIter i = _rtes.first(); i; i++) {
@@ -689,7 +696,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender)
   RTEntry *old_r = _rtes.findp(new_r.dest_ip);
   update_wst(old_r, new_r);
 
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   // If the new route is good, and the old route (if any) was good,
   // wait for the settling time to expire before advertising.
@@ -742,7 +749,7 @@ Packet *
 DSDVRouteTable::simple_action(Packet *packet)
 {
   assert(packet);
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   /* 
    * sanity check the packet, get pointers to headers 
@@ -814,7 +821,7 @@ DSDVRouteTable::simple_action(Packet *packet)
     // Check for ping-pong link stats about us. We still do the
     // ping-ponging in route ads as well as pigybacking on unicast
     // data, in case we aren't sending data to that destination.
-    if (curr->ip == (unsigned int) _ip && curr->num_hops == 1) {
+    if (curr->ip == (unsigned int) _ip && curr->num_hops == 1 && _link_tracker) {
       _link_tracker->add_stat(ipaddr, ntohl(curr->link_sig), ntohl(curr->link_qual), 
 			      ntoh(curr->measurement_time));
       _link_tracker->add_bcast_stat(ipaddr, curr->num_rx, curr->num_expected, ntoh(curr->last_bcast));
@@ -897,8 +904,8 @@ DSDVRouteTable::print_nbrs_v(Element *e, void *)
   
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
-    // /* only print immediate neighbors 
-    if (i.value().dest_eth) 
+    // only print immediate neighbors 
+    if (!i.value().dest_eth) 
       continue;
     s += i.key().s();
     s += " eth=" + i.value().dest_eth.s();
@@ -920,7 +927,7 @@ DSDVRouteTable::print_nbrs(Element *e, void *)
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
     // only print immediate neighbors 
-    if (i.value().dest_eth)
+    if (!i.value().dest_eth)
       continue;
     s += i.key().s();
     s += " eth=" + i.value().dest_eth.s();
@@ -1084,19 +1091,20 @@ DSDVRouteTable::print_links(Element *e, void *)
       continue;
 
     /* get our measurements of the link *from* this neighbor */
-    LinkStat::stat_t *s1 = rt->_link_stat->_stats.findp(r.next_hop_eth);
+    LinkStat::stat_t *s1 = rt->_link_stat ? rt->_link_stat->_stats.findp(r.next_hop_eth) : 0;
     struct timeval last;
     unsigned int window = 0;
     unsigned int num_rx = 0;
     unsigned int num_expected = 0;
-    bool res1 = rt->_link_stat->get_bcast_stats(r.next_hop_eth, last, window, num_rx, num_expected);
+    bool res1 = rt->_link_stat ? 
+      rt->_link_stat->get_bcast_stats(r.next_hop_eth, last, window, num_rx, num_expected) : 0;
 
     /* get estimates of our link *to* this neighbor */
     int tx_sig = 0;
     int tx_qual = 0;
-    bool res2 = rt->_link_tracker->get_stat(r.dest_ip, tx_sig, tx_qual, last);
+    bool res2 = rt->_link_tracker ? rt->_link_tracker->get_stat(r.dest_ip, tx_sig, tx_qual, last) : false;
     double bcast_rate = 0;
-    bool res3 = rt->_link_tracker->get_bcast_stat(r.dest_ip, bcast_rate, last);
+    bool res3 = rt->_link_tracker? rt->_link_tracker->get_bcast_stat(r.dest_ip, bcast_rate, last) : false;
 
     char buf[255];
     double tx_rate = num_rx;
@@ -1137,14 +1145,14 @@ DSDVRouteTable::hello_hook()
 {
   int msecs_to_next_ad = _period;
 
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
   unsigned int msec_since_last = jiff_to_msec(jiff - _last_periodic_update);
   if (msec_since_last < 2 * _period / 3) {
     // a full periodic update was sent ahead of schedule (because
     // there were so many triggered updates to send).  reschedule this
     // period update to one period after the last periodic update
     
-    int jiff_period = msec_to_jiff(_period);
+    unsigned int jiff_period = msec_to_jiff(_period);
     msecs_to_next_ad = jiff_to_msec(_last_periodic_update + jiff_period - jiff);
   }
   else {
@@ -1219,7 +1227,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
   hlo->seq_no = htonl(_seq_no);
 
-  hlo->is_gateway = _gw_info->is_gateway ();
+  hlo->is_gateway = _gw_info ? _gw_info->is_gateway() : false;
 
   if (_log)
     _log->log_sent_advertisement(_seq_no, tv);
@@ -1262,14 +1270,14 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
   nb->link_sig = 0;
   nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
   if (ls && num_hops == 1) {
-    LinkStat::stat_t *s = ls->_stats.findp(next_hop_eth);
+    LinkStat::stat_t *s = ls ? ls->_stats.findp(next_hop_eth) : 0;
     if (s) {
       nb->link_qual = htonl(s->qual);
       nb->link_sig = htonl(s->sig);
       nb->measurement_time.tv_sec = htonl(s->when.tv_sec);
       nb->measurement_time.tv_usec = htonl(s->when.tv_usec);
     }
-    else
+    else if (ls)
       click_chatter("DSDVRouteTable: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",
 		    IPAddress(dest_ip).s().cc());
 
@@ -1279,7 +1287,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
     unsigned int window = 0;
     unsigned int num_rx = 0;
     unsigned int num_expected = 0;
-    bool res = ls->get_bcast_stats(next_hop_eth, nb->last_bcast, window, num_rx, num_expected);
+    bool res = ls ? ls->get_bcast_stats(next_hop_eth, nb->last_bcast, window, num_rx, num_expected) : 0;
     if (res) {
       if (num_rx > 255 || num_expected > 255) {
 	click_chatter("DSDVRouteTable: error! overflow on broadcast loss stats for one-hop neighbor %s",

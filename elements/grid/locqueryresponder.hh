@@ -48,12 +48,12 @@ private:
   Timer _expire_timer;
 
   static const int EXPIRE_TIMEOUT_MS = 2 * 1000;
-  int _timeout_jiffies;
+  unsigned int _timeout_jiffies;
   static void expire_hook(Timer *, void *);
 
   struct seq_t {
     unsigned int seq_no;
-    int last_jiffies;
+    unsigned int last_jiffies;
     seq_t(unsigned int s, int j) : seq_no(s), last_jiffies(j) { }
     seq_t() : seq_no(0), last_jiffies(0) { }
   };

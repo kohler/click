@@ -59,7 +59,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
     unsigned short loc_err;
     bool loc_good;
     unsigned int loc_seq_no;;
-    int last_response_jiffies;
+    unsigned int last_response_jiffies;
     Packet *p; 
     // if p == 0, we have sent the last p, and are now caching the
     // data; p == 0 ==> this data is valid at some time.  p != 0 ==>
@@ -78,7 +78,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
   
   struct seq_t {
     unsigned int seq_no;
-    int last_response_jiffies;
+    unsigned int last_response_jiffies;
     seq_t(unsigned int s, int j) : seq_no(s), last_response_jiffies(j) { }
     seq_t() : seq_no(0), last_response_jiffies(0) { }
   };
@@ -96,7 +96,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
   void handle_query(Packet *);
 
   enum { EXPIRE_TIMEOUT_MS = 15 * 1000 };
-  int _timeout_jiffies;
+  unsigned int _timeout_jiffies;
   static void expire_hook(Timer *, void *);
   static String read_table(Element *, void *);
   static String read_seqs(Element *, void *);

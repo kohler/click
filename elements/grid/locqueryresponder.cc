@@ -68,7 +68,7 @@ void
 LocQueryResponder::expire_hook(Timer *, void *thunk)
 { 
   LocQueryResponder *resp = (LocQueryResponder *)thunk;
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   // flush old ``last query heard''
   typedef seq_map::Iterator smi_t;

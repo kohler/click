@@ -157,7 +157,7 @@ private:
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
 	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 
 	    bool _loc_good, bool _is_gateway, unsigned int _seq_no, unsigned int _ttl, 
-	    int _last_updated_jiffies) :
+	    unsigned int _last_updated_jiffies) :
       _init(true), dest_ip(_dest_ip), next_hop_ip(_next_hop_ip), 
       next_hop_eth(_next_hop_eth), num_hops(_num_hops), loc(_loc), 
       loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway), 
@@ -207,7 +207,7 @@ private:
 private:
   /* max time to keep an entry in RT */
   int _timeout; // msecs, -1 if we are not timing out entries
-  int _timeout_jiffies;
+  unsigned int _timeout_jiffies;
 
   /* route broadcast timing parameters */
   int _period;

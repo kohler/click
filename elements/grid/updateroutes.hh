@@ -89,9 +89,9 @@ public:
   public:
     EtherAddress eth;
     IPAddress ip;
-    int last_updated_jiffies;
-    NbrEntry() : _init(false), last_updated_jiffies(-1) { }
-    NbrEntry(EtherAddress eth_in, IPAddress ip_in, int jiff) 
+    unsigned int last_updated_jiffies;
+    NbrEntry() : _init(false), last_updated_jiffies(0) { }
+    NbrEntry(EtherAddress eth_in, IPAddress ip_in, unsigned int jiff) 
       : _init(true), eth(eth_in), ip(ip_in), last_updated_jiffies(jiff) { }
     operator bool() const { return _init; }
     unsigned int hashcode() const { return *(unsigned int *)ip.data(); }
@@ -110,7 +110,7 @@ public:
   struct far_entry {
     far_entry() : last_updated_jiffies(0) { }
     far_entry(int j, grid_nbr_entry n) : last_updated_jiffies(j), sent_new(false), nbr(n)  { }
-    int last_updated_jiffies;
+    unsigned int last_updated_jiffies;
     bool sent_new;
     grid_nbr_entry nbr;
   };
@@ -159,7 +159,7 @@ public:
 
 private:
   int _timeout; // -1 if we are not timing out entries
-  int _timeout_jiffies;
+  unsigned int _timeout_jiffies;
 
   int _max_hops;
 

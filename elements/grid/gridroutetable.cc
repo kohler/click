@@ -659,7 +659,7 @@ Packet *
 GridRouteTable::simple_action(Packet *packet)
 {
   assert(packet);
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   /* 
    * sanity check the packet, get pointers to headers 
@@ -1333,7 +1333,7 @@ GridRouteTable::expire_routes()
   }
       
   assert(_timeout > 0);
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   Vector<RTEntry> retval;
 
@@ -1468,7 +1468,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   if (_frozen)
     return;
 
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   Vector<RTEntry> rte_info = Vector<RTEntry>();
 

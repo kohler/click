@@ -80,7 +80,7 @@ FloodingLocQuerier::expire_hook(Timer *, void *thunk)
 { 
   /* yes, this function won't expire entries exactly on the dot */
   FloodingLocQuerier *locq = (FloodingLocQuerier *)thunk;
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   // flush old ``last sequence numbers''
   typedef seq_map::Iterator smi_t;
@@ -371,12 +371,12 @@ FloodingLocQuerier::read_seqs(Element *e, void *)
   FloodingLocQuerier *q = (FloodingLocQuerier *)e;
   String s;
   
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   typedef seq_map::Iterator si_t;
   for (si_t i = q->_query_seqs.first(); i; i++) {
     const seq_t &e = i.value();
-    int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
+    unsigned int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
     s += i.key().s() + " seq=" + String(e.seq_no) + " age=" + String(age) + "\n";
   }
   
@@ -389,12 +389,12 @@ FloodingLocQuerier::read_table(Element *e, void *)
   FloodingLocQuerier *q = (FloodingLocQuerier *)e;
   String s;
 
-  int jiff = click_jiffies();
+  unsigned int jiff = click_jiffies();
 
   typedef qmap::Iterator smi_t;
   for (smi_t i = q->_queries.first(); i; i++) {
     const LocEntry &e = i.value();
-    int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
+    unsigned int age = (1000 * (jiff - e.last_response_jiffies)) / CLICK_HZ;
     if (e.p == 0) {
       char locbuf[255];
       snprintf(locbuf, sizeof(locbuf), " lat=%f lon=%f", e.loc.lat(), e.loc.lon());
