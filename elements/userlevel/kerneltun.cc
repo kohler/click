@@ -30,14 +30,21 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
-#include <net/if.h>
-#include <net/if_tun.h>
-#endif
+
 #if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
+# define KERNELTUN_LINUX 1
+#elif defined(HAVE_NET_IF_TUN_H)
+# define KERNELTUN_NET 1
+#endif
+
+#if HAVE_NET_IF_TUN_H
+# include <net/if.h>
+# include <net/if_tun.h>
+#elif HAVE_LINUX_IF_TUN_H
 # include <linux/if.h>
 # include <linux/if_tun.h>
 #endif
+
 CLICK_DECLS
 
 KernelTun::KernelTun()
@@ -104,7 +111,7 @@ KernelTun::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-#if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
+#if KERNELTUN_LINUX
 int
 KernelTun::try_linux_universal(ErrorHandler *errh)
 {
@@ -149,7 +156,7 @@ KernelTun::try_tun(const String &dev_name, ErrorHandler *)
 int
 KernelTun::alloc_tun(ErrorHandler *errh)
 {
-#if !(defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__))
+#if !KERNELTUN_LINUX && !KERNELTUN_NET
     return errh->error("KernelTun is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
 #endif
 
@@ -157,7 +164,7 @@ KernelTun::alloc_tun(ErrorHandler *errh)
     String saved_device, saved_message;
     StringAccum tried;
     
-#if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
+#if KERNELTUN_LINUX
     _type = LINUX_UNIVERSAL;
     if ((error = try_linux_universal(errh)) >= 0)
 	return error;

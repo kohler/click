@@ -29,14 +29,21 @@
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
-#if defined(__FreeBSD__) || defined(__OpenBSD__) || defined(__APPLE__)
-#include <net/if.h>
-#include <net/if_tun.h>
-#endif
+
 #if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
+# define KERNELTAP_LINUX 1
+#elif defined(HAVE_NET_IF_TUN_H)
+# define KERNELTAP_NET 1
+#endif
+
+#if HAVE_NET_IF_TUN_H
+# include <net/if.h>
+# include <net/if_tun.h>
+#elif HAVE_LINUX_IF_TUN_H
 # include <linux/if.h>
 # include <linux/if_tun.h>
 #endif
+
 CLICK_DECLS
 
 KernelTap::KernelTap()
@@ -85,7 +92,7 @@ KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-#if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
+#if KERNELTAP_LINUX
 int
 KernelTap::try_linux_universal(ErrorHandler *errh)
 {
@@ -132,7 +139,7 @@ KernelTap::try_tun(const String &dev_name, ErrorHandler *)
 int
 KernelTap::alloc_tun(ErrorHandler *errh)
 {
-#if !(defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__))
+#if !KERNELTAP_LINUX && !KERNELTAP_NET
     return errh->error("KernelTap is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
 #endif
 
@@ -140,7 +147,7 @@ KernelTap::alloc_tun(ErrorHandler *errh)
     String saved_device, saved_message;
     StringAccum tried;
     
-#if defined(__linux__) && defined(HAVE_LINUX_IF_TUN_H)
+#if KERNELTAP_LINUX
     if ((error = try_linux_universal(errh)) >= 0)
 	return error;
     else if (!saved_error || error != -ENOENT) {
@@ -270,7 +277,7 @@ KernelTap::cleanup(CleanupStage)
 void
 KernelTap::selected(int fd)
 {
-#if defined(__OpenBSD__) || defined(__FreeBSD__) || defined(__linux__) || defined(__APPLE__)
+#if KERNELTAP_LINUX || KERNELTAP_NET
     int cc;
     unsigned char b[2048];
 
@@ -279,7 +286,7 @@ KernelTap::selected(int fd)
   
     cc = read(_fd, b, sizeof(b));
     if (cc > 0) {
-# if defined (__OpenBSD__) || defined(__FreeBSD__) || defined(__APPLE__)
+# if KERNELTAP_NET
 	// BSDs prefix packet with 32-bit address family.
 	int af = ntohl(*(unsigned *)b);
 	struct click_ether *e;
@@ -297,7 +304,7 @@ KernelTap::selected(int fd)
 	    return;
 	}
 	memcpy(p->data() + sizeof(click_ether), b + 4, cc - 4);
-# elif defined (__linux__)
+# elif KERNELTAP_LINUX
 	Packet *p = Packet::make(_headroom, b, cc, 0);
 	if (_type == LINUX_UNIVERSAL)
 	    /* Two zero bytes of padding, then the Ethernet type, then the
@@ -351,7 +358,7 @@ KernelTap::push(int, Packet *p)
 
     int num_written;
     int num_expected_written;
-#if defined (__OpenBSD__) || defined(__FreeBSD__) || defined(__APPLE__)
+#if KERNELTAP_NET
     char big[2048];
     int af;
 
@@ -376,7 +383,7 @@ KernelTap::push(int, Packet *p)
   
     num_written = write(_fd, big, length + 4);
     num_expected_written = (int) length + 4;
-#elif defined(__linux__)
+#elif KERNELTAP_LINUX
     /*
      * Ethertap is linux equivalent of/dev/tun; wants ethernet header plus 2
      * alignment bytes */

@@ -67,6 +67,9 @@
 /* Define if you have the <linux/if_tun.h> header file. */
 #undef HAVE_LINUX_IF_TUN_H
 
+/* Define if you have the <net/if_tun.h> header file. */
+#undef HAVE_NET_IF_TUN_H
+
 /* Include integer type definitions. */
 #ifdef HAVE_INTTYPES_H
 # include <inttypes.h>

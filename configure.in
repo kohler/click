@@ -482,7 +482,7 @@ dnl
 dnl kernel interfaces
 dnl
 
-AC_CHECK_HEADERS(linux/if_tun.h)
+AC_CHECK_HEADERS(linux/if_tun.h net/if_tun.h)
 
 
 dnl
