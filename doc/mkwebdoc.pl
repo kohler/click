@@ -296,4 +296,25 @@ close OUT;
 close TMP;
 
 # 8. create doc.tar.gz
-mysystem("cd $WEBDIR && gtar czf doc.tar.gz doc");
+mysystem("cp -r $WEBDIR/doc /tmp/%click-webdoc/click-doc-$VERSION");
+mysystem("cp $WEBDIR/_.gif /tmp/%click-webdoc/click-doc-$VERSION");
+mysystem("cp $WEBDIR/el_*.gif /tmp/%click-webdoc/click-doc-$VERSION");
+
+opendir(DIR, "/tmp/%click-webdoc/click-doc-$VERSION") || die;
+my(@htmlfiles) = grep { /\.html$/ } readdir(DIR);
+closedir(DIR);
+
+undef $/;
+foreach $f (@htmlfiles) {
+    open(IN, "+</tmp/%click-webdoc/click-doc-$VERSION/$f");
+    $_ = <IN>;
+    seek(IN, 0, 0);
+    truncate(IN, 0) || die;
+    s{src='\.\./}{src='}g;
+    s{href='\.\./?'}{href='http://www.pdos.lcs.mit.edu/click/'}g;
+    print IN;
+    close IN;
+}
+
+mysystem("cd /tmp/%click-webdoc && gtar czf click-doc-$VERSION.tar.gz click-doc-$VERSION");
+mysystem("mv /tmp/%click-webdoc/click-doc-$VERSION.tar.gz $WEBDIR");
