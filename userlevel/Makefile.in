@@ -70,8 +70,8 @@ CXXFLAGS = @CXXFLAGS@
 DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(srcdir) -I$(top_srcdir) @PCAP_HEADER_PATH@
-LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
-LIBS = @LIBS@ @PCAP_LIBRARY@ @DL_LIBRARY@ @SOCKET_LIBS@
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@ `$(top_builddir)/click-compile --libs`
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -83,7 +83,7 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 all: $(INSTALLPROGS)
 
 click: Makefile libclick.a $(OBJS)
-	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) libclick.a
+	$(CXXLINK) -rdynamic $(OBJS) libclick.a $(LIBS)
 
 libclick.a: Makefile $(LIBOBJS)
 	$(AR) cru libclick.a $(LIBOBJS)
@@ -99,9 +99,9 @@ elemlist:
 elements.conf: $(top_builddir)/config.status $(top_srcdir)/click-buildtool
 	echo "userlevel @element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@") > elements.conf
 elements.mk: elements.conf $(top_srcdir)/click-buildtool
-	(cd $(top_srcdir); ./click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o) < elements.conf > elements.mk
+	$(top_srcdir)/click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o < elements.conf > elements.mk
 elements.cc: elements.conf $(top_srcdir)/click-buildtool
-	(cd $(top_srcdir); ./click-buildtool elem2export) < elements.conf > elements.cc
+	$(top_srcdir)/click-buildtool elem2export < elements.conf > elements.cc
 	@rm -f elements.d
 
 DEPFILES := $(wildcard *.d)

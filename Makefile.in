@@ -30,14 +30,14 @@ all: @TARGETS@ tools Makefile
 
 linuxmodule: Makefile stamp-h
 	@cd linuxmodule && $(MAKE) all
-userlevel: Makefile stamp-h
+userlevel: Makefile click-compile stamp-h
 	@cd userlevel && $(MAKE) all
 exopc: Makefile stamp-h
 	@cd exopc && $(MAKE) all
 tools: Makefile
 	@cd tools && $(MAKE) all
 
-install: stamp-h
+install: click-compile stamp-h
 	@for d in @TARGETS@ tools; do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-include
 install-local: elementmap $(srcdir)/click-buildtool click-compile
@@ -79,8 +79,7 @@ always:
 	@:
 
 click-compile: $(srcdir)/click-compile.in
-	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
 
 $(srcdir)/configure: $(srcdir)/configure.in
