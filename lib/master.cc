@@ -35,6 +35,11 @@ Master::Master()
     _max_select_fd = -1;
 # endif
     assert(!_pollfds.size() && !_read_poll_elements.size() && !_write_poll_elements.size());
+    // Add a null 'struct pollfd', then take it off. This ensures that
+    // _pollfds.begin() is nonnull, preventing crashes on Mac OS X
+    struct pollfd dummy;
+    _pollfds.push_back(dummy);
+    _pollfds.clear();
 #endif
 }
 
