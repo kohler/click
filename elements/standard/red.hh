@@ -32,8 +32,30 @@ elements.
 Marked packets are dropped, or emitted on output 1 if RED has two output
 ports.
 
+Keyword arguments are:
+
+=over 8
+
+=item MIN_THRESH, MAX_THRESH, MAX_P, QUEUES
+
+These keyword arguments will set the corresponding parameters.
+
+=item STABILITY
+
+Unsigned. This number determines how stable the average queue size is -- that
+is, how quickly it changes due to fluctuations in the instantaneous queue
+size. Higher numbers mean more stability.
+
+STABILITY should equal
+
+   -log_2 (1 - e^(-1/K)),
+
+where K is the link bandwidth in packets per second.
+
+=back
+
 Keyword arguments MIN_THRESH, MAX_THRESH, MAX_P, and QUEUES can be used to set
-the corresponding parameters.
+the corresponding parameters. The additional STABILITY
 
 =e
 

@@ -1,15 +1,16 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
-#ifndef CLICK_RED_HH
-#define CLICK_RED_HH
+#ifndef CLICK_ADAPTIVERED_HH
+#define CLICK_ADAPTIVERED_HH
 #include <click/element.hh>
+#include <click/timer.hh>
 #include <click/ewma64.hh>
 class Storage;
 
 /*
 =c
 
-RED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES])
-RED(I<KEYWORDS>)
+AdaptiveRED(MIN_THRESH, MAX_THRESH, MAX_P [, QUEUES])
+AdaptiveRED(I<KEYWORDS>)
 
 =s dropping
 
@@ -32,30 +33,8 @@ elements.
 Marked packets are dropped, or emitted on output 1 if RED has two output
 ports.
 
-Keyword arguments are:
-
-=over 8
-
-=item MIN_THRESH, MAX_THRESH, MAX_P, QUEUES
-
-These keyword arguments will set the corresponding parameters.
-
-=item STABILITY
-
-Unsigned. This number determines how stable the average queue size is -- that
-is, how quickly it changes due to fluctuations in the instantaneous queue
-size. Higher numbers mean more stability.
-
-STABILITY should equal
-
-   -log_2 (1 - e^(-1/K)),
-
-where K is the link bandwidth in packets per second.
-
-=back
-
 Keyword arguments MIN_THRESH, MAX_THRESH, MAX_P, and QUEUES can be used to set
-the corresponding parameters. The additional STABILITY
+the corresponding parameters.
 
 =e
 
@@ -95,14 +74,14 @@ Sally Floyd and Van Jacobson. I<Random Early Detection Gateways for
 Congestion Avoidance>. ACM Transactions on Networking, B<1>(4), August
 1993, pp 397-413. */
 
-class RED : public Element { public:
+class AdaptiveRED : public Element { public:
 
-    RED();
-    ~RED();
+    AdaptiveRED();
+    ~AdaptiveRED();
 
-    const char *class_name() const		{ return "RED"; }
+    const char *class_name() const		{ return "AdaptiveRED"; }
     const char *processing() const		{ return "a/ah"; }
-    RED *clone() const;
+    AdaptiveRED *clone() const			{ return new AdaptiveRED; }
 
     int queue_size() const;
     const DirectEWMA64 &average_queue_size() const { return _size; }
@@ -122,6 +101,8 @@ class RED : public Element { public:
     void handle_drop(Packet *);
     void push(int port, Packet *);
     Packet *pull(int port);
+
+    void run_scheduled();
 
   protected:
 
@@ -147,6 +128,11 @@ class RED : public Element { public:
 
     int _drops;
     Vector<Element *> _queue_elements;
+    
+    static const int ADAPTIVE_INTERVAL = 500;
+    static const uint32_t ONE_HUNDREDTH = 655;
+    static const uint32_t NINE_TENTHS = 58982;
+    Timer _timer;
 
     void set_C1_and_C2();
 
