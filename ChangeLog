@@ -1,3 +1,11 @@
+2002-05-03 Friday 18:01  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/Makefile.in (1.68): oopslet
+
+2002-05-03 Friday 17:19  Eddie Kohler <kohler@aciri.org>
+
+	* elements/grid/gridtxerror.cc (1.3): GridTxError only at userlevel
+
 2002-05-03 Friday 13:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridlogger.hh (1.6): bugfix: mark fd as closed
