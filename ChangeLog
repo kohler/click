@@ -1,3 +1,15 @@
+2001-07-03 Tuesday 17:38  Eddie Kohler <kohler@aciri.org>
+
+	* elements/local/: tcpbuffer.cc (1.3), tcpbuffer.hh (1.2),
+	tcpbuffer.cc (1.4): correct reinterpret_cast<>s: reinterpret_cast
+	cannot, and should not, cast away const
+
+2001-07-03 Tuesday 17:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: bighashmap.cc (1.8), hashmap.cc (1.5), hashmap.hh
+	(1.5): add explicit default initializers for objects, so that
+	built-in types will be initialized to 0
+
 2001-07-03 Tuesday 14:08  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* etc/linux-2.4.4-patch (1.4): Pull up fixes and improvements for
