@@ -8,6 +8,8 @@
 #define CLICK_DEQUEUE_HH
 CLICK_DECLS
 
+#define USE_VMALLOC 1
+
 template <class T>
 class DEQueue {
 
@@ -97,6 +99,10 @@ private:
   
   friend class iterator;
   friend class const_iterator;
+
+#if defined(USE_VMALLOC) && defined(CLICK_LINUXMODULE)
+  bool _vmalloc;
+#endif
 };
 
 

@@ -23,9 +23,18 @@ CLICK_ENDDECLS
 #include <click/dequeue.hh>
 CLICK_DECLS
 
+#if defined(USE_VMALLOC) && defined(CLICK_LINUXMODULE)
+extern "C" {
+# include <linux/vmalloc.h>
+}
+#endif
+
 template <class T>
 DEQueue<T>::DEQueue(const DEQueue<T> &o)
   : _l(0), _n(0), _cap(0), _head(0), _tail(0)
+#if defined(USE_VMALLOC) && defined(CLICK_LINUXMODULE)
+    , _vmalloc(false)
+#endif
 {
   *this = o;
 }
@@ -35,7 +44,14 @@ DEQueue<T>::~DEQueue()
 {
   for (int i = _head, j = 0; j < _n; i = next_i(i), j++)
     _l[i].~T();
+#if defined(USE_VMALLOC) && defined(CLICK_LINUXMODULE)
+  if (_vmalloc)
+    vfree(_l);
+  else
+    delete[] (unsigned char *)_l;
+#else
   delete[] (unsigned char *)_l;
+#endif
 }
 
 template <class T> DEQueue<T> &
@@ -72,16 +88,49 @@ DEQueue<T>::reserve(int want)
     want = _cap > 0 ? _cap * 2 : 4;
   if (want <= _cap)
     return true;
-  
+
+#if defined(USE_VMALLOC) && defined(CLICK_LINUXMODULE)
+  // skank hack to allocate more than 128k
+  // may not work at interrupt time, since vmalloc uses GFP_KERNEL
+# define MAX_KMALLOC 131072
+  bool old_vmalloc = _vmalloc;
+  T *new_l = 0;
+  int need = want * sizeof(T);
+  if (need <= MAX_KMALLOC) {
+    new_l = (T *)new unsigned char[sizeof(T) * want];
+    _vmalloc = false;
+  }
+  else {
+    static bool did_warn = false;
+    if (!did_warn) {
+      click_chatter("DEQueue: WARNING using vmalloc(), be careful of re-entry");      
+      did_warn = true;
+    }
+    void *v = vmalloc(need);
+    if (!v)
+      return false;
+    new_l = (T *) v;
+    _vmalloc = true;
+  }
+#else
   T *new_l = (T *)new unsigned char[sizeof(T) * want];
+#endif
   if (!new_l) return false;
   
   for (int i = _head, j = 0; j < _n; j++, i = next_i(i)) {
     new(velt(new_l, j)) T(_l[i]);
     _l[i].~T();
   }
+
+#if defined(USE_VMALLOC) && defined(CLICK_LINUXMODULE)
+  if (old_vmalloc)
+    vfree(_l);
+  else
+    delete[] (unsigned char *)_l;
+#else
   delete[] (unsigned char *)_l;
-  
+#endif
+
   _l = new_l;
   _cap = want;
   _head = 0;
