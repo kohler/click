@@ -206,10 +206,10 @@ IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
   rw->clean_map(rw->_tcp_map, click_jiffies() - rw->_tcp_timeout_jiffies);
 #if IPRW_RWLOCKS
   rw->_rwlock.release_write();
-  } else wait = 20;
+  } else wait = 1;		// XXX too long a wait?
 #elif IPRW_SPINLOCKS
   rw->_spinlock.release();
-  } else wait = 20;
+  } else wait = 1;
 #endif
   timer->reschedule_after_s(wait);
 }
@@ -229,10 +229,10 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
      click_jiffies() - rw->_tcp_done_timeout_jiffies);
 #if IPRW_RWLOCKS
   rw->_rwlock.release_write();
-  } else wait = 20;
+  } else wait = 1;		// XXX too long a wait?
 #elif IPRW_SPINLOCKS
   rw->_spinlock.release();
-  } else wait = 20;
+  } else wait = 1;
 #endif
   timer->reschedule_after_s(wait);
 }
@@ -250,10 +250,10 @@ IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
   rw->clean_map(rw->_udp_map, click_jiffies() - rw->_udp_timeout_jiffies);
 #if IPRW_RWLOCKS
   rw->_rwlock.release_write();
-  } else wait = 20;
+  } else wait = 1;		// XXX too long a wait?
 #elif IPRW_SPINLOCKS
   rw->_spinlock.release();
-  } else wait = 20;
+  } else wait = 1;
 #endif
   timer->reschedule_after_s(wait);
 }
