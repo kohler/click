@@ -21,7 +21,7 @@
  * Usually consists of the subnet broadcast addresses on
  * each interface 
  *
- * =a CheckIP6Header2, MarkIP6Header, StripIP6Header */
+ * =a MarkIP6Header */
 
 
 #include "element.hh"
@@ -56,9 +56,6 @@ class CheckIP6Header : public Element {
   Packet *simple_action(Packet *);
   void drop_it(Packet *);
 
-  //inline Packet *smaction(Packet *);
-  //void push(int, Packet *p);
-  //Packet *pull(int);
 
 };
 

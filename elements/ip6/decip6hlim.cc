@@ -55,40 +55,20 @@ DecIP6HLIM::drop_it(Packet *p)
 inline Packet *
 DecIP6HLIM::simple_action(Packet *p_in)
 {
-  //click_chatter("start DecIP6HLIM \n");
+  
   const click_ip6 *ip_in = p_in->ip6_header();
   assert(ip_in);
   
-  //click_chatter("Hop limit: %x \n", ip_in->ip6_hlim);
-  //click_chatter("\n ############ DecIP6HLIM smaction start ! \n");
   if (ip_in->ip6_hlim <= 1) {
     drop_it(p_in);
-    click_chatter("\n ############ DecIP6HLIM smaction successful ! \n");
     return 0;
   } else {
      WritablePacket *p = p_in->uniqueify();
      click_ip6 *ip = p->ip6_header();
      ip->ip6_hlim--;
-     click_chatter("decreased Hop limit: %x \n", ip->ip6_hlim);
     return p;
   }
 }
-
-//  void
-//  DecIP6HLIM::push(int, Packet *p)
-//  {
-//    if ((p = smaction(p)) != 0)
-//      output(0).push(p);
-//  }
-
-//  Packet *
-//  DecIP6HLIM::pull(int)
-//  {
-//    Packet *p = input(0).pull();
-//    if (p)
-//      p = smaction(p);
-//    return p;
-//  } 
 
 static String
 DecIP6HLIM_read_drops(Element *xf, void *)

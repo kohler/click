@@ -69,7 +69,6 @@ CheckIP6Header::configure(const Vector<String> &conf, ErrorHandler *errh)
       if (!cp_ip6_address(words[j], (unsigned char *)&a)) { 
 	return errh->error("expects IP6ADDRESS -a ");
       }
-      click_chatter(a.s());
       for (int j = 0; j < ips.size(); j++) {
 	IP6Address b = IP6Address(ips[j]);
 	if (b == a)
@@ -127,8 +126,6 @@ length %d", p->length(), sizeof(click_ip6));
   }
 
   //check if the PayloadLength field is valid
-  // Hey, isn't it also an error for the plen to
-  // be too long?
    if(ntohs(ip->ip6_plen) > (p->length()-40)){
      click_chatter("CheckIP6Header: payload length field in ip6 header  %d, 
                    is greater than the payload length %d",

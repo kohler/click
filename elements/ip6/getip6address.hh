@@ -15,9 +15,9 @@
  *
  * The destination address annotation is used by elements
  * that need to know where the packet is going.
- * Such elements include ArpQuerier6 and LookupIP6Route.
+ * Such elements include NDSol and LookupIP6Route.
  *
- * =a ARPQuerier, LookupIP6Route, SetIP6Address, StoreIP6Address
+ * =a NDSol, LookupIP6Route, SetIP6Address, StoreIP6Address
  */
 
 
@@ -36,9 +36,6 @@ class GetIP6Address : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
-  //inline void smaction(Packet *);
-  //void push(int, Packet *p);
-  //Packet *pull(int);
   
 };
 

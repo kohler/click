@@ -20,7 +20,7 @@
  * This is a typical IP6 input processing sequence:
  *
  *   ... -> CheckIP6Header -> dt::DecIP6HLIM -> ...
- *   dt[1] -> ICMP6Error(18.26.4.24, 11, 0) -> ...
+ *   dt[1] -> ICMP6Error(...) -> ...
  *
  * =a ICMP6Error, CheckIP6Header
  */
@@ -48,10 +48,6 @@ class DecIP6HLIM : public Element {
 
   Packet *simple_action(Packet *);
   void drop_it(Packet *);
-
-  //  inline Packet *smaction(Packet *);
-//    void push(int, Packet *p);
-//    Packet *pull(int); 
   
 };
 

@@ -18,17 +18,15 @@
  * and an output index.
  *
  * =e
- * This example delivers broadcasts and packets addressed to the local
- * host (::1261:027d) to itself, all others via gateway ::ffff:c0a8:1:
  *
  *   ... -> GetIP6Address(24) -> rt;
  *   rt :: LookupIP6Route(
- *          3ffe:1ce1:2::1 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
- *          3ffe:1ce1:2:0:200::1 ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
- *          3ffe:1ce1:2:: ffff:ffff:ffff:ffff:ffff:: ::0 1,
- *          3ffe:1ce1:2:0:200:: ffff:ffff:ffff:ffff:ffff:: ::0 2,
- *          0::ffff:0:0 ffff:ffff:ffff:ffff:ffff:ffff:: ::0 3,
- *          ::0 ::0 3ffe:1ce1:2::2 1);
+ *          3ffe:1ce1:2::/128 ::0 0,
+ *          3ffe:1ce1:2:0:200::/128  ::0 0,
+ *          3ffe:1ce1:2:/80 ::0 1,
+ *          3ffe:1ce1:2:0:200::/80: ::0 2,
+ *          0::ffff:0:0/96 ::0 3,
+ *          ::0/0 3ffe:1ce1:2::2 1);
 	
  *   rt[0] -> ToLinux;
  *   rt[1] -> ... -> ToDevice(eth0);

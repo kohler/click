@@ -1,7 +1,7 @@
 /*
  * lookupip6route.{cc,hh} -- element looks up next-hop ip6 address in static
  * routing table
- * Robert Morris, Peilei Fan
+ * Peilei Fan, Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
