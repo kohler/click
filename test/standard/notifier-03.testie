@@ -1,0 +1,24 @@
+%info
+Tests Notifier functionality in the kernel.
+
+%require
+[ `whoami` = root ]
+
+%script
+click-install CONFIG
+usleep 200000
+cat /click/c/count > OUT
+
+%file CONFIG
+i :: InfiniteSource(ACTIVE false, LIMIT 5)
+  -> q :: Queue
+  -> p :: PrioSched
+  -> u :: Unqueue
+  -> c :: Counter
+  -> d :: Discard
+Idle -> [1]p
+
+DriverManager(wait 0.1s, write i.active true, wait 0.1s)
+
+%expect OUT
+5
