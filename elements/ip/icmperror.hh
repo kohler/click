@@ -76,7 +76,7 @@ private:
   bool is_error_type(int);
   bool unicast(struct in_addr);
   bool valid_source(struct in_addr);
-  bool has_route_opt(click_ip *ip);
+  bool has_route_opt(const click_ip *ip);
   
 };
 

@@ -32,7 +32,7 @@ public:
   FixIPSrc *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
 
-  void fix_it(Packet *);
+  WritablePacket *fix_it(Packet *);
   Packet *simple_action(Packet *);
   
 };

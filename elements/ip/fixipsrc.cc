@@ -48,9 +48,10 @@ FixIPSrc::configure(const Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
-void
-FixIPSrc::fix_it(Packet *p)
+WritablePacket *
+FixIPSrc::fix_it(Packet *p_in)
 {
+  WritablePacket *p = p_in->uniqueify();
   click_ip *ip = p->ip_header();
   p->set_fix_ip_src_anno(0);
   click_chatter("FixIPSrc changed %x to %x",
@@ -60,16 +61,16 @@ FixIPSrc::fix_it(Packet *p)
   int hlen = ip->ip_hl << 2;
   ip->ip_sum = 0;
   ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
+  return p;
 }
 
 Packet *
 FixIPSrc::simple_action(Packet *p)
 {
-  click_ip *ip = p->ip_header();
-  if(p->fix_ip_src_anno() && ip){
-    fix_it(p);
-  }
-  return(p);
+  const click_ip *ip = p->ip_header();
+  if (p->fix_ip_src_anno() && ip)
+    p = fix_it(p);
+  return p;
 }
 
 EXPORT_ELEMENT(FixIPSrc)

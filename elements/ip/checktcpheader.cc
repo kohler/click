@@ -47,9 +47,9 @@ CheckTCPHeader::notify_noutputs(int n)
 Packet *
 CheckTCPHeader::simple_action(Packet *p)
 {
-  click_ip *iph = p->ip_header();
+  const click_ip *iph = p->ip_header();
   unsigned len, iph_len, tcph_len, csum;
-  click_tcp *tcph = (click_tcp *)p->transport_header();
+  const click_tcp *tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
   
   if (!iph || iph->ip_p != IP_PROTO_TCP)
     goto bad;

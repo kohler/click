@@ -34,13 +34,14 @@ StoreIPAddress::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 StoreIPAddress::simple_action(Packet *p)
 {
+  // XXX error reporting?
   IPAddress ipa = p->dst_ip_anno();
   if (ipa && _offset + 4 <= p->length()) {
-    p = p->uniqueify();
-    memcpy(p->data() + _offset, &ipa, 4);
-  }
-  // XXX error reporting?
-  return p;
+    WritablePacket *q = p->uniqueify();
+    memcpy(q->data() + _offset, &ipa, 4);
+    return q;
+  } else
+    return p;
 }
 
 EXPORT_ELEMENT(StoreIPAddress)

@@ -91,7 +91,7 @@ ARPResponder::make_response(u_char tha[6], /* him */
 {
   click_ether *e;
   click_ether_arp *ea;
-  Packet *q = Packet::make(sizeof(*e) + sizeof(*ea));
+  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
   if (q == 0) {
     click_chatter("in arp responder: cannot make packet!");
     assert(0);

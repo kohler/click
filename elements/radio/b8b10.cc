@@ -110,11 +110,11 @@ B8B10::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 B8B10::simple_action(Packet *p)
 {
-  if(_flag){
+  if (_flag) {
     /* encode */
     int qbits = p->length() * 10;
     int qbytes = (qbits + 7) / 8;
-    Packet *q = Packet::make(qbytes);
+    WritablePacket *q = Packet::make(qbytes);
     memset(q->data(), '\0', q->length());
     int qbit = 0;
     int pi;
@@ -134,7 +134,7 @@ B8B10::simple_action(Packet *p)
     /* decode */
     int babbling = 0;
     int pbits = p->length() * 8;
-    Packet *q = Packet::make(pbits / 10);
+    WritablePacket *q = Packet::make(pbits / 10);
     int qi = 0;
     int pbit;
     for(pbit = 0; pbit < pbits; pbit += 10){

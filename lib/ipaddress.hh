@@ -10,7 +10,7 @@ class IPAddress {
  public:
   
   IPAddress()			: _addr(0) { }
-  explicit IPAddress(unsigned char *);
+  explicit IPAddress(const unsigned char *);
   IPAddress(unsigned);	// network byte order IP address
   explicit IPAddress(const String &);	// "18.26.4.99"
   explicit IPAddress(struct in_addr);

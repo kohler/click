@@ -15,6 +15,12 @@ DropBroadcasts::~DropBroadcasts()
 {
 }
 
+void
+DropBroadcasts::notify_noutputs(int n)
+{
+  set_noutputs(n < 2 ? 1 : 2);
+}
+
 DropBroadcasts *
 DropBroadcasts::clone() const
 {
@@ -24,29 +30,23 @@ DropBroadcasts::clone() const
 void
 DropBroadcasts::drop_it(Packet *p)
 {
-  if(_drops == 0){
-    unsigned char *q = p->data();
-    static char buf[512];
-    int i, j=0;
-    for(i = 0; i < 20; i++){
-      sprintf(buf+j, "%02x ", q[i]);
-      j += 3;
-    }
-    click_chatter("DropBroadcasts: dropped a packet: %s", buf);
-  }                    
+  if (_drops == 0)
+    click_chatter("DropBroadcasts: dropped a packet");
   _drops++;
-  p->kill();
+  if (noutputs() == 2)
+    output(1).push(p);
+  else
+    p->kill();
 }
 
 Packet *
 DropBroadcasts::simple_action(Packet *p)
 {
-  if(p->mac_broadcast_anno()){
+  if (p->mac_broadcast_anno()) {
     drop_it(p);
-    return(0);
-  } else {
-    return(p);
-  }
+    return 0;
+  } else
+    return p;
 }
 
 static String

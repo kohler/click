@@ -19,12 +19,13 @@ class DropBroadcasts : public Element {
   DropBroadcasts();
   ~DropBroadcasts();
   
-  const char *class_name() const		{ return "DropBroadcasts"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *class_name() const	{ return "DropBroadcasts"; }
+  const char *processing() const	{ return "a/ah"; }
+  void notify_noutputs(int);
   DropBroadcasts *clone() const;
   void add_handlers();
 
-  int drops() const { return(_drops); }
+  int drops() const			{ return _drops; }
 
   void drop_it(Packet *);
   Packet *simple_action(Packet *);

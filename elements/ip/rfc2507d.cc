@@ -33,7 +33,7 @@ RFC2507d::clone() const
 }
 
 void
-RFC2507d::decode(u_char * &in, unsigned short &x)
+RFC2507d::decode(const u_char * &in, unsigned short &x)
 {
   x = ntohs(x);
   if(in[0] != 0){
@@ -50,7 +50,7 @@ RFC2507d::decode(u_char * &in, unsigned short &x)
 }
 
 void
-RFC2507d::decode(u_char * &in, unsigned int &x)
+RFC2507d::decode(const u_char * &in, unsigned int &x)
 {
   x = ntohl(x);
   if(in[0] != 0){
@@ -70,15 +70,15 @@ RFC2507d::decode(u_char * &in, unsigned int &x)
 Packet *
 RFC2507d::simple_action(Packet *p)
 {
-  Packet *q = 0;
+  WritablePacket *q = 0;
 
   if(p->length() < 2)
     goto out;
 
-  if(p->data()[0] == PT_OTHER){
+  if (p->data()[0] == PT_OTHER) {
     q = Packet::make(p->length() - 1);
     memcpy(q->data(), p->data() + 1, p->length() - 1);
-  } else if(p->data()[0] == PT_FULL_HEADER){
+  } else if (p->data()[0] == PT_FULL_HEADER) {
     click_chatter("2507d: got full header\n");
     int cid = p->data()[1] & 0xff;
     if(cid <= 0 || cid >= TCP_SPACE)
@@ -89,7 +89,7 @@ RFC2507d::simple_action(Packet *p)
            sizeof(struct click_tcp));
     q = Packet::make(p->length() - 2);
     memcpy(q->data(), p->data() + 2, p->length() - 2);
-  } else if(p->data()[0] == PT_COMPRESSED_TCP){
+  } else if (p->data()[0] == PT_COMPRESSED_TCP) {
     int cid = p->data()[1] & 0xff;
     if(cid <= 0 || cid >= TCP_SPACE)
       goto out;
@@ -97,7 +97,7 @@ RFC2507d::simple_action(Packet *p)
     struct tcpip *ctx = &_ccbs[cid]._context;
     int flags = p->data()[2];
     memcpy(&(ctx->_tcp.th_sum), p->data() + 3, 2);
-    u_char *in = p->data() + 5;
+    const u_char *in = p->data() + 5;
 
     if(flags & (1 << 4)) /* P */
       ctx->_tcp.th_flags |= TH_PUSH;

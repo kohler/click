@@ -46,9 +46,10 @@ CheckUDPHeader::notify_noutputs(int n)
 Packet *
 CheckUDPHeader::simple_action(Packet *p)
 {
-  click_ip *iph = p->ip_header();
+  const click_ip *iph = p->ip_header();
   unsigned len, iph_len;
-  click_udp *udph = (click_udp *)p->transport_header();
+  const click_udp *udph =
+    reinterpret_cast<const click_udp *>(p->transport_header());
   
   if (!iph || iph->ip_p != IP_PROTO_UDP)
     goto bad;

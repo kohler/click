@@ -137,13 +137,13 @@ RandomBitErrors::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-RandomBitErrors::simple_action(Packet *p)
+RandomBitErrors::simple_action(Packet *p_in)
 {
   // if no chance we'll flip a bit, return now
   if (!_on || _p_error[0] >= 0x10000)
-    return p;
+    return p_in;
   
-  p = p->uniqueify();
+  WritablePacket *p = p_in->uniqueify();
   unsigned char *data = p->data();
   unsigned len = p->length();
   int *p_error = _p_error;

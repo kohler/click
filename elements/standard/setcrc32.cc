@@ -36,7 +36,7 @@ SetCRC32::simple_action(Packet *p)
   unsigned int crc = 0xffffffff;
   crc = update_crc(crc, (char *) p->data(), len);
 
-  Packet *q = p->put(4);
+  WritablePacket *q = p->put(4);
   memcpy(q->data() + len, &crc, 4);
   
   return(q);

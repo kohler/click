@@ -242,8 +242,8 @@ EtherSpanTree::set_state(int i, PortState state) {
 
 void
 EtherSpanTree::push(int source, Packet* p) {
-  BridgeMessage::wire* msg =
-    reinterpret_cast<BridgeMessage::wire*>(p->data());
+  const BridgeMessage::wire* msg =
+    reinterpret_cast<const BridgeMessage::wire*>(p->data());
 
   // Accept a message if it is better *or equal* to current message.
   // (if it is equal, we need it so that its timestamp is updated)
@@ -293,7 +293,7 @@ EtherSpanTree::generate_packet(int output)
   }
   
   // _best is better (or we need send topology change)
-  Packet* p = Packet::make(sizeof(BridgeMessage::wire));
+  WritablePacket* p = Packet::make(sizeof(BridgeMessage::wire));
   BridgeMessage::wire* msg = reinterpret_cast<BridgeMessage::wire*>(p->data());
   
   if (cmp == 0) {

@@ -47,8 +47,9 @@ SetIPDSCP::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 inline Packet *
-SetIPDSCP::smaction(Packet *p)
+SetIPDSCP::smaction(Packet *p_in)
 {
+  WritablePacket *p = p_in->uniqueify();
   click_ip *ip = p->ip_header();
   assert(ip);
   

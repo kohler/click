@@ -59,10 +59,10 @@ IPGWOptions::clone() const
 }
 
 Packet *
-IPGWOptions::handle_options(Packet *p)
+IPGWOptions::handle_options(Packet *p_in)
 {
   /* This is lame: should be lazier. */
-  p = p->uniqueify();
+  WritablePacket *p = p_in->uniqueify();
   click_ip *ip = p->ip_header();
   unsigned hlen = ip->ip_hl << 2;
 
@@ -177,7 +177,7 @@ IPGWOptions::handle_options(Packet *p)
 Packet *
 IPGWOptions::simple_action(Packet *p)
 {
-  click_ip *ip = p->ip_header();
+  const click_ip *ip = p->ip_header();
   assert(ip);
   unsigned hlen = ip->ip_hl << 2;
   if (hlen <= sizeof(click_ip) || (p = handle_options(p)))

@@ -33,7 +33,7 @@ SaveIPFields::clone() const
 Packet *
 SaveIPFields::simple_action(Packet *p)
 {
-  click_ip *ip = p->ip_header();
+  const click_ip *ip = p->ip_header();
   assert(ip);
   p->set_ip_tos_anno(ip->ip_tos);
   p->set_ip_ttl_anno(ip->ip_ttl);

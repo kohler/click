@@ -50,8 +50,8 @@ DebugBridge::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 DebugBridge::simple_action(Packet *p)
 {
-  BridgeMessage::wire* msg =
-    reinterpret_cast<BridgeMessage::wire*>(p->data());
+  const BridgeMessage::wire *msg =
+    reinterpret_cast<const BridgeMessage::wire *>(p->data());
   click_chatter("%s",msg->s(_label).cc());
   return p;
 }

@@ -154,7 +154,7 @@ class IPRewriter : public Element {
     Mapping *pat_prev() const		{ return _pat_prev; }
     Mapping *pat_next() const		{ return _pat_next; }
     
-    void apply(Packet *p);
+    void apply(WritablePacket *p);
     
   };
 

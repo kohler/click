@@ -33,7 +33,7 @@ Packet::~Packet()
   panic("Packet destructor");
 }
 
-Packet *
+WritablePacket *
 Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
 	     unsigned tailroom)
 {
@@ -49,7 +49,7 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
   }
   Packet *p = (Packet *) skb;
   memset(p->anno(), 0, sizeof(Anno));  
-  return p;
+  return (WritablePacket *)p;
 }
 
 #else /* !__KERNEL__ */
@@ -73,10 +73,10 @@ Packet::~Packet()
   }
 }
 
-inline Packet *
+inline WritablePacket *
 Packet::make(int, int, int)
 {
-  return new Packet(6, 6, 6);
+  return (WritablePacket *)(new Packet(6, 6, 6));
 }
 
 void
@@ -89,11 +89,11 @@ Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
   _end = _head + n;
 }
 
-Packet *
+WritablePacket *
 Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
 	     unsigned tailroom)
 {
-  Packet *p = new Packet;
+  WritablePacket *p = new WritablePacket;
   if (p) {
     p->alloc_data(headroom, len, tailroom);
     if (data && p->data()) memcpy(p->data(), data, len);
@@ -116,15 +116,16 @@ Packet::clone()
   return (Packet *)n;
 }
 
-Packet *
+WritablePacket *
 Packet::uniqueify_copy()
 {
   struct sk_buff *n = skb_copy(skb(), GFP_ATOMIC);
   // all annotations, including IP header annotation, are copied,
   // but IP header will point to garbage if old header was 0
   if (!ip_header()) n->nh.iph = 0;
+  if (!transport_header()) n->h.raw = 0;
   kill();
-  return (Packet *)n;
+  return (WritablePacket *)n;
 }
 
 #else /* user level */
@@ -148,10 +149,10 @@ Packet::clone()
   return p;
 }
 
-Packet *
+WritablePacket *
 Packet::uniqueify_copy()
 {
-  Packet *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
+  WritablePacket *p = Packet::make(6, 6, 6); // dummy arguments: no initialization
   if (!p) return 0;
   p->_use_count = 1;
   p->_data_packet = 0;
@@ -181,16 +182,18 @@ Packet::uniqueify_copy()
  * Prepend some empty space before a packet.
  * May kill this packet and return a new one.
  */
-Packet *
+WritablePacket *
 Packet::expensive_push(unsigned int nbytes)
 {
   click_chatter("expensive Packet::push");
 #ifdef __KERNEL__
-  Packet *q = Packet::make(skb_realloc_headroom(skb(), nbytes));
+  struct sk_buff *new_skb = skb_realloc_headroom(skb(), nbytes);
+  WritablePacket *q =
+    reinterpret_cast<WritablePacket *>(Packet::make(new_skb));
   // oops! -- patch from Richard Mortier
   (void)skb_push(q->skb(), nbytes);
 #else
-  Packet *q = Packet::make(length() + nbytes);
+  WritablePacket *q = Packet::make(length() + nbytes);
   memcpy(q->data() + nbytes, data(), length());
   memcpy(q->anno(), anno(), sizeof(Anno));
 #endif
@@ -198,11 +201,11 @@ Packet::expensive_push(unsigned int nbytes)
   return q;
 }
 
-Packet *
+WritablePacket *
 Packet::put(unsigned int nbytes)
 {
   if (tailroom() >= nbytes) {
-    Packet *p = uniqueify();
+    WritablePacket *p = uniqueify();
 #ifdef __KERNEL__
     skb_put(p->skb(), nbytes);
 #else
@@ -212,10 +215,10 @@ Packet::put(unsigned int nbytes)
   } else {
     click_chatter("expensive Packet::put");
 #ifdef __KERNEL__
-    Packet *q = 0;
+    WritablePacket *q = 0;
     panic("Packet::put");
 #else
-    Packet *q = Packet::make(length() + nbytes);
+    WritablePacket *q = Packet::make(length() + nbytes);
     memcpy(q->data(), data(), length());
     memcpy(q->anno(), anno(), sizeof(Anno));
 #endif
@@ -224,20 +227,20 @@ Packet::put(unsigned int nbytes)
   }
 }
 
-Packet *
+WritablePacket *
 Packet::take(unsigned int nbytes)
 {
-  if(nbytes <= length()){
-    Packet *p = uniqueify();
+  if (nbytes <= length()) {
+    WritablePacket *p = uniqueify();
 #ifdef __KERNEL__
     skb()->tail -= nbytes;
     skb()->len -= nbytes;
 #else
     p->_tail -= nbytes;
 #endif    
-    return(p);
+    return p;
   } else {
     click_chatter("Packet::take oops");
-    return(this);
+    return 0;
   }
 }

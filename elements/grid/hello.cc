@@ -111,7 +111,7 @@ Hello::make_hello()
     psz += sizeof(grid_nbr_entry) * num_nbrs;
   }
 
-  Packet *p = Packet::make(psz);
+  WritablePacket *p = Packet::make(psz);
   memset(p->data(), 0, p->length());
 
   click_ether *eh = (click_ether *) p->data();

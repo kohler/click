@@ -51,21 +51,18 @@ RIPSend::initialize(ErrorHandler *)
 void
 RIPSend::run_scheduled()
 {
-  click_ip *ipp;
-  click_udp *udpp;
-  Packet *p = Packet::make(sizeof(*ipp) + sizeof(*udpp) + 24);
-
+  WritablePacket *p = Packet::make(sizeof(click_ip) + sizeof(click_udp) + 24);
   memset(p->data(), '\0', p->length());
   
   /* for now just pseudo-header fields for UDP checksum */
-  ipp = (click_ip *) p->data();
+  click_ip *ipp = reinterpret_cast<click_ip *>(p->data());
   ipp->ip_len = htons(p->length() - sizeof(*ipp));
   ipp->ip_p = IPPROTO_UDP;
   ipp->ip_src = _src.in_addr();
   ipp->ip_dst = _dst.in_addr();
 
   /* RIP payload */
-  udpp = (click_udp *) (ipp + 1);
+  click_udp *udpp = reinterpret_cast<click_udp *>(ipp + 1);
   unsigned int *r = (unsigned int *) (udpp + 1);
   r[0] = htonl((2 << 24) | (2 << 16) | 0);
   r[1] = htonl((2 << 16) | 0);

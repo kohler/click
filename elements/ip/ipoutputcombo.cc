@@ -46,23 +46,23 @@ IPOutputCombo::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 void
-IPOutputCombo::push(int, Packet *p)
+IPOutputCombo::push(int, Packet *p_in)
 {
   int do_cksum = 0;
   int problem_offset = -1;
 
   // DropBroadcasts
-  if (p->mac_broadcast_anno()) {
-    p->kill();
+  if (p_in->mac_broadcast_anno()) {
+    p_in->kill();
     return;
   }
   
   // CheckPaint
-  if (p->color_anno() == _color)
-    output(1).push(p->clone());
+  if (p_in->color_anno() == _color)
+    output(1).push(p_in->clone());
   
   // IPGWOptions
-  p = p->uniqueify();
+  WritablePacket *p = p_in->uniqueify();
   click_ip *ip = p->ip_header();
   assert(ip);
   unsigned hlen = (ip->ip_hl << 2);

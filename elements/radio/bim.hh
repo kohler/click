@@ -41,7 +41,7 @@ class BIM : public Element {
   int _started;
   int _escaped;
 
-  void send_packet(unsigned char buf[], unsigned int len);
+  void send_packet(const unsigned char buf[], unsigned int len);
 };
 
 #endif

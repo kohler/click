@@ -74,7 +74,7 @@ ARPFaker::make_response(u_char tha[6], /* him */
 {
   click_ether *e;
   click_ether_arp *ea;
-  Packet *q = Packet::make(sizeof(*e) + sizeof(*ea));
+  WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
   ea = (click_ether_arp *) (e + 1);

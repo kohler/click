@@ -53,17 +53,17 @@ DecIPTTL::drop_it(Packet *p)
 }
 
 Packet *
-DecIPTTL::simple_action(Packet *p)
+DecIPTTL::simple_action(Packet *p_in)
 {
-  click_ip *ip = p->ip_header();
-  assert(ip);
+  const click_ip *ip_in = p_in->ip_header();
+  assert(ip_in);
   
-  if (ip->ip_ttl <= 1) {
-    drop_it(p);
+  if (ip_in->ip_ttl <= 1) {
+    drop_it(p_in);
     return 0;
   } else {
-    p = p->uniqueify();
-    ip = p->ip_header();
+    WritablePacket *p = p_in->uniqueify();
+    click_ip *ip = p->ip_header();
     ip->ip_ttl--;
     
     // 19.Aug.1999 - incrementally update IP checksum as suggested by SOSP

@@ -82,7 +82,7 @@ IPRewriter::Mapping::make_pair(const IPFlowID &inf, const IPFlowID &outf,
 }
 
 void
-IPRewriter::Mapping::apply(Packet *p)
+IPRewriter::Mapping::apply(WritablePacket *p)
 {
   click_ip *iph = p->ip_header();
   assert(iph);
@@ -686,9 +686,9 @@ IPRewriter::install(bool is_tcp, Mapping *forward, Mapping *reverse)
 }
 
 void
-IPRewriter::push(int port, Packet *p)
+IPRewriter::push(int port, Packet *p_in)
 {
-  p = p->uniqueify();
+  WritablePacket *p = p_in->uniqueify();
   IPFlowID flow(p);
   click_ip *iph = p->ip_header();
   assert(iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP);

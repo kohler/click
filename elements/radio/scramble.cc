@@ -44,11 +44,11 @@ static unsigned char pattern[] = {
 };
 
 Packet *
-Scramble::simple_action(Packet *p)
+Scramble::simple_action(Packet *p_in)
 {
   int i, len, j;
 
-  p = p->uniqueify();
+  WritablePacket *p = p_in->uniqueify();
   len = p->length();
   j = 0;
   for(i = 0; i < len; i++){

@@ -121,7 +121,7 @@ ICMPError::valid_source(struct in_addr aa)
  * Does a packet contain a source route option?
  */
 bool
-ICMPError::has_route_opt(click_ip *ip)
+ICMPError::has_route_opt(const click_ip *ip)
 {
   int opts = (ip->ip_hl << 2) - sizeof(click_ip);
   u_char *base = (u_char *) (ip + 1);
@@ -146,8 +146,8 @@ ICMPError::has_route_opt(click_ip *ip)
 Packet *
 ICMPError::simple_action(Packet *p)
 {
-  Packet *q = 0;
-  click_ip *ipp = p->ip_header();
+  WritablePacket *q = 0;
+  const click_ip *ipp = p->ip_header();
   click_ip *nip;
   struct icmp_generic *icp;
   unsigned hlen, xlen;

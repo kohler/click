@@ -41,11 +41,11 @@ SendPattern::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SendPattern::pull(int)
 {
-  Packet *p = Packet::make(_len);
+  WritablePacket *p = Packet::make(_len);
   int i;
   for(i = 0; i < _len; i++)
     p->data()[i] = i & 0xff;
-  return(p);
+  return p;
 }
 
 EXPORT_ELEMENT(SendPattern)

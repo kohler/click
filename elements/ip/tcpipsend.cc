@@ -74,7 +74,7 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
 {
   struct click_ip *ip;
   struct click_tcp *tcp;
-  Packet *q = Packet::make(sizeof(*ip) + sizeof(*tcp));
+  WritablePacket *q = Packet::make(sizeof(*ip) + sizeof(*tcp));
   if (q == 0) {
     click_chatter("in TCPIPSend: cannot make packet!");
     assert(0);

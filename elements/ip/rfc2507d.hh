@@ -48,8 +48,8 @@ private:
   };
   struct ccb _ccbs[TCP_SPACE];
 
-  void decode(u_char * &in, unsigned short &);
-  void decode(u_char * &in, unsigned int &);
+  void decode(const u_char * &in, unsigned short &);
+  void decode(const u_char * &in, unsigned int &);
 };
 
 inline bool

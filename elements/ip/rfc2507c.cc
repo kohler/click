@@ -42,13 +42,13 @@ RFC2507c::clone() const
  * Make a packet containing an uncompressed and uncompressible
  * packet, not to be associated with a CID.
  */
-Packet *
+WritablePacket *
 RFC2507c::make_other(Packet *p)
 {
-  Packet *q = Packet::make(p->length() + 1);
+  WritablePacket *q = Packet::make(p->length() + 1);
   q->data()[0] = PT_OTHER;
   memcpy(q->data() + 1, p->data(), p->length());
-  return(q);
+  return q;
 }
 
 /*
@@ -56,10 +56,10 @@ RFC2507c::make_other(Packet *p)
  * and also indicating a CID. The point is to cause the
  * decompressor to sync context with us.
  */
-Packet *
+WritablePacket *
 RFC2507c::make_full(int cid, Packet *p)
 {
-  Packet *q = Packet::make(p->length() + 2);
+  WritablePacket *q = Packet::make(p->length() + 2);
   q->data()[0] = PT_FULL_HEADER;
   q->data()[1] = cid;
   memcpy(q->data() + 2, p->data(), p->length());
@@ -115,7 +115,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
   struct click_tcp *tcpp = (struct click_tcp *) (ipp + 1);
   int x;
   struct tcpip *ctx = &_ccbs[cid]._context;
-  Packet *q = 0;
+  WritablePacket *q = 0;
 
   if(ipp->ip_v != ctx->_ip.ip_v ||
      ipp->ip_hl != ctx->_ip.ip_hl ||
@@ -218,7 +218,7 @@ RFC2507c::make_key(const struct tcpip &from, struct tcpip &to)
 Packet *
 RFC2507c::simple_action(Packet *p)
 {
-  click_ip *ipp = p->ip_header();
+  const click_ip *ipp = p->ip_header();
   assert(ipp && p->ip_header_offset() == 0);
   struct click_tcp *tcpp = (struct click_tcp *) (ipp + 1);
   int cid;

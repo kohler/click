@@ -143,22 +143,22 @@ LocalRoute::push(int port, Packet *packet)
     }
     else {
       // encapsulate packet with grid hdr and try to send it out
-      packet = packet->push(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
-      memset(packet->data(), 0, sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
+      WritablePacket *new_packet = packet->push(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
+      memset(new_packet->data(), 0, sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
 
-      struct click_ether *eh = (click_ether *) packet->data();
+      struct click_ether *eh = (click_ether *) new_packet->data();
       eh->ether_type = htons(ETHERTYPE_GRID);
 
-      struct grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
+      struct grid_hdr *gh = (grid_hdr *) (new_packet->data() + sizeof(click_ether));
       gh->hdr_len = sizeof(grid_hdr);
-      gh->total_len = packet->length() - sizeof(click_ether); // encapsulate everything we get, don't look inside it for length info
+      gh->total_len = new_packet->length() - sizeof(click_ether); // encapsulate everything we get, don't look inside it for length info
       gh->type = GRID_NBR_ENCAP;
 
-      struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
+      struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;
       encap->dst_ip = dst.addr();
 
-      forward_grid_packet(packet, dst);
+      forward_grid_packet(new_packet, dst);
     }
   }
 }

@@ -710,7 +710,6 @@ Classifier::push(int, Packet *p)
   checked_push_output(-pos, p);
 }
 
-
 ELEMENT_REQUIRES(AlignmentInfo)
 EXPORT_ELEMENT(Classifier)
 

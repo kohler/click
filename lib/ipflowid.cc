@@ -21,11 +21,11 @@
 
 IPFlowID::IPFlowID(Packet *p)
 {
-  click_ip *iph = p->ip_header();
+  const click_ip *iph = p->ip_header();
   _saddr = IPAddress(iph->ip_src.s_addr);
   _daddr = IPAddress(iph->ip_dst.s_addr);
 
-  click_udp *udph = (click_udp *)p->transport_header();
+  const click_udp *udph = (const click_udp *)p->transport_header();
   _sport = udph->uh_sport;	// network byte order
   _dport = udph->uh_dport;	// network byte order
 }
@@ -33,7 +33,7 @@ IPFlowID::IPFlowID(Packet *p)
 IPFlowID2::IPFlowID2(Packet *p)
   : IPFlowID(p)
 {
-  click_ip *iph = p->ip_header();
+  const click_ip *iph = p->ip_header();
   _protocol = iph->ip_p;
 }
 

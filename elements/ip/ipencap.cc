@@ -71,11 +71,10 @@ IPEncap::initialize(ErrorHandler *)
 }
 
 Packet *
-IPEncap::simple_action(Packet *p)
+IPEncap::simple_action(Packet *p_in)
 {
-  p = p->uniqueify();
-  p = p->push(sizeof(click_ip));
-  click_ip *ip = (click_ip *) p->data();
+  WritablePacket *p = p_in->push(sizeof(click_ip));
+  click_ip *ip = reinterpret_cast<click_ip *>(p->data());
   
   ip->ip_v = IPVERSION;
   ip->ip_hl = sizeof(click_ip) >> 2;

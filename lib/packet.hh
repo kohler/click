@@ -3,6 +3,7 @@
 #include "ipaddress.hh"
 #include "glue.hh"
 struct click_ip;
+class WritablePacket;
 
 class Packet {
 
@@ -31,6 +32,7 @@ public:
   };
 
 private:
+  
 #ifndef __KERNEL__
   int _use_count;
   Packet *_data_packet;
@@ -51,29 +53,29 @@ private:
 
 #ifndef __KERNEL__
   Packet(int, int, int)			{ }
-  static Packet *make(int, int, int);
+  static WritablePacket *make(int, int, int);
   void alloc_data(unsigned, unsigned, unsigned);
 #endif
 
-  Packet *uniqueify_copy();
+  WritablePacket *uniqueify_copy();
 
-  Packet *expensive_push(unsigned int nbytes);
+  WritablePacket *expensive_push(unsigned int nbytes);
   
 #ifndef __KERNEL__
   const Anno *anno() const		{ return (const Anno *)_cb; }
   Anno *anno()				{ return (Anno *)_cb; }
 #endif
   
-  friend class ShutUpCompiler;
+  friend class WritablePacket;
   
  public:
   static unsigned default_headroom()	{ return 28; }
   static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
   
-  static Packet *make(unsigned);
-  static Packet *make(const char *, unsigned);
-  static Packet *make(const unsigned char *, unsigned);
-  static Packet *make(unsigned, const unsigned char *, unsigned, unsigned);
+  static WritablePacket *make(unsigned);
+  static WritablePacket *make(const char *, unsigned);
+  static WritablePacket *make(const unsigned char *, unsigned);
+  static WritablePacket *make(unsigned, const unsigned char *, unsigned, unsigned);
   
 #ifdef __KERNEL__
   /*
@@ -98,32 +100,32 @@ private:
 
   bool shared() const;
   Packet *clone();
-  Packet *uniqueify();
+  WritablePacket *uniqueify();
   
 #ifdef __KERNEL__
-  unsigned char *data() const	{ return skb()->data; }
-  unsigned length() const	{ return skb()->len; }
-  unsigned headroom() const	{ return skb()->data - skb()->head; }
-  unsigned tailroom() const	{ return skb()->end - skb()->tail; }
+  const unsigned char *data() const	{ return skb()->data; }
+  unsigned length() const		{ return skb()->len; }
+  unsigned headroom() const		{ return skb()->data - skb()->head; }
+  unsigned tailroom() const		{ return skb()->end - skb()->tail; }
 #else
-  unsigned char *data() const	{ return _data; }
-  unsigned length() const	{ return _tail - _data; }
-  unsigned headroom() const	{ return _data - _head; }
-  unsigned tailroom() const	{ return _end - _tail; }
+  const unsigned char *data() const	{ return _data; }
+  unsigned length() const		{ return _tail - _data; }
+  unsigned headroom() const		{ return _data - _head; }
+  unsigned tailroom() const		{ return _end - _tail; }
 #endif
   
-  Packet *push(unsigned nbytes);	// Add more space before packet.
-  Packet *nonunique_push(unsigned);
-  void pull(unsigned nbytes);		// Get rid of initial bytes.
-  Packet *put(unsigned nbytes);		// Add bytes to end of pkt.
-  Packet *take(unsigned nbytes);	// Delete bytes from end of pkt.
+  WritablePacket *push(unsigned nb);	// Add more space before packet.
+  Packet *nonunique_push(unsigned nb);
+  void pull(unsigned nb);		// Get rid of initial bytes.
+  WritablePacket *put(unsigned nb);	// Add bytes to end of pkt.
+  WritablePacket *take(unsigned nb);	// Delete bytes from end of pkt.
 
 #ifdef __KERNEL__
-  click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
-  unsigned char *transport_header() const	{ return skb()->h.raw; }
+  const click_ip *ip_header() const	{ return (click_ip *)skb()->nh.iph; }
+  const unsigned char *transport_header() const	{ return skb()->h.raw; }
 #else
-  click_ip *ip_header() const		{ return _nh_iph; }
-  unsigned char *transport_header() const	{ return _h_raw; }
+  const click_ip *ip_header() const		{ return _nh_iph; }
+  const unsigned char *transport_header() const	{ return _h_raw; }
 #endif
   void set_ip_header(click_ip *, unsigned);
   unsigned ip_header_offset() const;
@@ -164,21 +166,36 @@ private:
 };
 
 
-inline Packet *
+class WritablePacket : public Packet { public:
+  
+#ifdef __KERNEL__
+  unsigned char *data() const			{ return skb()->data; }
+  click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
+  unsigned char *transport_header() const	{ return skb()->h.raw; }
+#else
+  unsigned char *data() const			{ return _data; }
+  click_ip *ip_header() const			{ return _nh_iph; }
+  unsigned char *transport_header() const	{ return _h_raw; }
+#endif
+
+};
+
+
+inline WritablePacket *
 Packet::make(unsigned len)
 {
   return make(default_headroom(), (const unsigned char *)0, len,
 	      default_tailroom(len));
 }
 
-inline Packet *
+inline WritablePacket *
 Packet::make(const char *s, unsigned len)
 {
   return make(default_headroom(), (const unsigned char *)s, len,
 	      default_tailroom(len));
 }
 
-inline Packet *
+inline WritablePacket *
 Packet::make(const unsigned char *s, unsigned len)
 {
   return make(default_headroom(), (const unsigned char *)s, len,
@@ -206,20 +223,20 @@ Packet::shared() const
 #endif
 }
 
-inline Packet *
+inline WritablePacket *
 Packet::uniqueify()
 {
   if (shared())
     return uniqueify_copy();
   else
-    return this;
+    return static_cast<WritablePacket *>(this);
 }
 
-inline Packet *
+inline WritablePacket *
 Packet::push(unsigned int nbytes)
 {
   if (headroom() >= nbytes) {
-    Packet *p = uniqueify();
+    WritablePacket *p = uniqueify();
 #ifdef __KERNEL__
     skb_push(p->skb(), nbytes);
 #else
@@ -276,19 +293,19 @@ Packet::set_ip_header(click_ip *iph, unsigned len)
 inline unsigned
 Packet::ip_header_offset() const
 {
-  return (unsigned char *)ip_header() - data();
+  return (const unsigned char *)ip_header() - data();
 }
 
 inline unsigned
 Packet::ip_header_length() const
 {
-  return (unsigned char *)transport_header() - (unsigned char *)ip_header();
+  return (const unsigned char *)transport_header() - (const unsigned char *)ip_header();
 }
 
 inline unsigned
 Packet::transport_header_offset() const
 {
-  return (unsigned char *)transport_header() - data();
+  return (const unsigned char *)transport_header() - data();
 }
 
 inline void
@@ -304,4 +321,3 @@ Packet::zero_annotations()
 }
 
 #endif
-

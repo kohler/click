@@ -68,7 +68,7 @@ Packet *
 IPPrint::simple_action(Packet *p)
 {
   String s = "";
-  click_ip *iph = p->ip_header();
+  const click_ip *iph = p->ip_header();
 
   if (!iph) {
     s = "(Not an IP packet)";
@@ -81,7 +81,8 @@ IPPrint::simple_action(Packet *p)
   
   switch (iph->ip_p) {
   case IP_PROTO_TCP: {
-    click_tcp *tcph = (click_tcp *)p->transport_header();
+    const click_tcp *tcph =
+      reinterpret_cast<const click_tcp *>(p->transport_header());
     unsigned short srcp = ntohs(tcph->th_sport);
     unsigned short dstp = ntohs(tcph->th_dport);
     unsigned seq = ntohl(tcph->th_seq);

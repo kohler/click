@@ -17,10 +17,10 @@
 #include "click_ip.h"
 #include "click_udp.h"
 
-void
-IPMirror::push(int, Packet *p)
+Packet *
+IPMirror::simple_action(Packet *p_in)
 {
-  p = p->uniqueify();
+  WritablePacket *p = p_in->uniqueify();
   // new checksum is same as old checksum
   
   click_ip *iph = p->ip_header();
@@ -33,7 +33,7 @@ IPMirror::push(int, Packet *p)
   udph->uh_sport = udph->uh_dport;
   udph->uh_dport = tmpp;
   
-  output(0).push(p);
+  return p;
 }
 
 EXPORT_ELEMENT(IPMirror)

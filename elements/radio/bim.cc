@@ -195,7 +195,7 @@ BIM::push(int, Packet *p)
 }
 
 void
-BIM::send_packet(unsigned char buf[], unsigned int len)
+BIM::send_packet(const unsigned char buf[], unsigned int len)
 {
   unsigned int i, j;
   char big[2048];

@@ -20,9 +20,9 @@ class IPMirror : public Element {
   IPMirror *clone() const			{ return new IPMirror(); }
   
   const char *class_name() const		{ return "IPMirror"; }
-  const char *processing() const		{ return PUSH; }
+  const char *processing() const		{ return AGNOSTIC; }
   
-  void push(int, Packet *);
+  Packet *simple_action(Packet *);
   
 };
 

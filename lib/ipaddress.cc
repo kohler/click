@@ -17,9 +17,9 @@
 #include "ipaddress.hh"
 #include "confparse.hh"
 
-IPAddress::IPAddress(unsigned char *data)
+IPAddress::IPAddress(const unsigned char *data)
 {
-  _addr = *((unsigned *)data);
+  _addr = *(reinterpret_cast<const unsigned *>(data));
 }
 
 IPAddress::IPAddress(const String &str)

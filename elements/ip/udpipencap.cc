@@ -78,12 +78,11 @@ UDPIPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-UDPIPEncap::simple_action(Packet *p)
+UDPIPEncap::simple_action(Packet *p_in)
 {
-  p = p->uniqueify();
-  p = p->push(sizeof(click_udp) + sizeof(click_ip));
-  click_ip *ip = (click_ip *)p->data();
-  click_udp *udp = (click_udp *)(ip + 1);
+  WritablePacket *p = p_in->push(sizeof(click_udp) + sizeof(click_ip));
+  click_ip *ip = reinterpret_cast<click_ip *>(p->data());
+  click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
 
   // set up IP header
   ip->ip_v = IPVERSION;

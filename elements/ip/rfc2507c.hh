@@ -57,8 +57,8 @@ private:
   HashMap<struct tcpip, int> _map;
 
   void make_key(const struct tcpip &from, struct tcpip &to);
-  Packet *make_other(Packet *p);
-  Packet *make_full(int cid, Packet *p);
+  WritablePacket *make_other(Packet *p);
+  WritablePacket *make_full(int cid, Packet *p);
   int encode16(int o, int n, char *p, int &i);
   int encode32(int o, int n, char *p, int &i);
   int encodeX(int o, int n, char *p, int &i);

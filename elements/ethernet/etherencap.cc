@@ -48,13 +48,10 @@ EtherEncap::initialize(ErrorHandler *errh)
 Packet *
 EtherEncap::smaction(Packet *p)
 {
-  p = p->uniqueify();
-  Packet *q = p->push(14);
-
+  WritablePacket *q = p->push(14);
   memcpy(q->data(), _dst, 6);
   memcpy(q->data() + 6, _src, 6);
   memcpy(q->data() + 12, &_netorder_type, 2);
-  
   return q;
 }
 

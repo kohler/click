@@ -38,7 +38,7 @@ class IPFragmenter : public Element {
   int _fragments;
 
   void fragment(Packet *);
-  int optcopy(click_ip *ip1, click_ip *ip2);
+  int optcopy(const click_ip *ip1, click_ip *ip2);
   
  public:
   
