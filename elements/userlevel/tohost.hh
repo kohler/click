@@ -1,0 +1,71 @@
+// -*- c-basic-offset: 4 -*-
+#ifndef CLICK_TOHOST_HH
+#define CLICK_TOHOST_HH
+#include <click/element.hh>
+#include <click/ipaddress.hh>
+#include <click/etheraddress.hh>
+#include "fromhost.hh"
+CLICK_DECLS
+
+/*
+ * =title ToHost.u
+ *
+ * =c
+ *
+ * ToHost([DEVNAME])
+ *
+ * =s sinks
+ *
+ * sends packets to Linux via Universal TUN/TAP device.
+ *
+ * =d
+ *
+ * Hands packets to the ordinary Linux protocol stack.
+ * Expects packets with Ethernet headers.
+ * 
+ * You should probably give Linux IP packets addressed to
+ * the local machine (including broadcasts), and a copy
+ * of each ARP reply.
+ *
+ * ToHost requires an initialized FromHost with the same DEVNAME.
+ *
+ * IPv4 packets should have a destination IP address corresponding
+ * to DEVNAME, and a routable source address. Otherwise Linux will silently
+ * drop the packets.
+ *
+ * =h drops read-only
+ *
+ * Reports the number of packets ToHost has dropped because they had a null
+ * device annotation.
+ *
+ * =a
+ *
+ * Fromhost.u, FromHost
+ * 
+ */
+
+class ToHost : public Element { public:
+  
+    ToHost();
+    ~ToHost();
+  
+    const char *class_name() const	{ return "ToHost"; }
+    const char *processing() const	{ return PUSH; }
+
+    int configure_phase() const		{ return FromHost::CONFIGURE_PHASE_TOHOST; }
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void add_handlers();
+
+    void push(int port, Packet *);
+    String dev_name() { return _dev_name; }
+
+  private:
+
+    int _fd;
+    String _dev_name;
+    
+};
+
+CLICK_ENDDECLS
+#endif
