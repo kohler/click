@@ -347,10 +347,10 @@ FromDevice::selected(int)
     int len = recvfrom(_fd, p->data(), p->length(), MSG_TRUNC, (sockaddr *)&sa, &fromlen);
     if (len > 0 && sa.sll_pkttype != PACKET_OUTGOING) {
 	if (len > _snaplen) {
-	    p->change_headroom_and_length(2, _snaplen);
+	    assert(p->length() == _snaplen);
 	    SET_EXTRA_LENGTH_ANNO(p, len - _snaplen);
 	} else
-	    p->change_headroom_and_length(2, len);
+	    p->take(_snaplen - len);
 	p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
 	(void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
 	if (!_force_ip || fake_pcap_force_ip(p, _datalink))
