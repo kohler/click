@@ -24,6 +24,8 @@ lib: always Makefile
 	@cd lib && $(MAKE) all
 click-align: lib Makefile
 	@cd click-align && $(MAKE) all-local
+click-shrink: lib Makefile
+	@cd click-shrink && $(MAKE) all-local
 click-check: lib Makefile
 	@cd click-check && $(MAKE) all-local
 click-combine: lib Makefile
