@@ -1,6 +1,7 @@
+/* -*- mode: c; c-basic-offset: 4 -*- */
 #ifndef CLICK_IP_H
 #define CLICK_IP_H
-// get struct in_addr
+/* get struct in_addr */
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #if CLICK_LINUXMODULE
@@ -10,7 +11,7 @@ CLICK_CXX_PROTECT
 #else
 # include <sys/types.h>
 # include <netinet/in.h>
-unsigned short click_in_cksum(const unsigned char *addr, int len);
+uint16_t click_in_cksum(const unsigned char *addr, int len);
 #endif
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
@@ -23,36 +24,36 @@ CLICK_CXX_UNPROTECT
 #ifndef __BYTE_ORDER
 #define __LITTLE_ENDIAN 1234
 #define __BYTE_ORDER __LITTLE_ENDIAN
-#endif
+#endif 
 
 struct click_ip {
 #if __BYTE_ORDER == __LITTLE_ENDIAN
-  unsigned char ip_hl : 4;		/* 0     header length */
-  unsigned char ip_v : 4;		/*       version == 4 */
+    uint8_t	ip_hl : 4;		/* 0     header length */
+    uint8_t	ip_v : 4;		/*       version == 4 */
 #endif
 #if __BYTE_ORDER == __BIG_ENDIAN
-  unsigned char ip_v : 4;		/* 0     version == 4 */
-  unsigned char ip_hl : 4;		/*       header length */
+    uint8_t	ip_v : 4;		/* 0     version == 4 */
+    uint8_t	ip_hl : 4;		/*       header length */
 #endif
-  unsigned char ip_tos;			/* 1     type of service */
+    uint8_t	ip_tos;			/* 1     type of service */
 #define IP_DSCPMASK 0xFC		/*         diffserv code point */
 #define IP_ECNMASK 0x03			/*	   ECN code point */
 #define IP_ECN_NOT_ECT 0x00		/*         not ECN capable transport */
 #define IP_ECN_ECT1 0x01		/*         ECN capable transport */
 #define IP_ECN_ECT2 0x02		/*         ECN capable transport */
 #define IP_ECN_CE 0x03			/*         ECN congestion exp'd */
-  unsigned short ip_len;		/* 2-3   total length */
-  unsigned short ip_id;			/* 4-5   identification */
-  unsigned short ip_off;		/* 6-7   fragment offset field */
+    uint16_t	ip_len;			/* 2-3   total length */
+    uint16_t	ip_id;			/* 4-5   identification */
+    uint16_t	ip_off;			/* 6-7   fragment offset field */
 #define	IP_RF 0x8000			/*         reserved fragment flag */
 #define	IP_DF 0x4000			/*         don't fragment flag */
 #define	IP_MF 0x2000			/*         more fragments flag */
 #define	IP_OFFMASK 0x1fff		/*         mask for fragmenting bits */
-  unsigned char ip_ttl;			/* 8     time to live */
-  unsigned char ip_p;			/* 9     protocol */
-  unsigned short ip_sum;		/* 10-11 checksum */
-  struct in_addr ip_src;		/* 12-15 source address */
-  struct in_addr ip_dst;		/* 16-19 destination address */
+    uint8_t	ip_ttl;			/* 8     time to live */
+    uint8_t	ip_p;			/* 9     protocol */
+    uint16_t	ip_sum;			/* 10-11 checksum */
+    struct in_addr ip_src;		/* 12-15 source address */
+    struct in_addr ip_dst;		/* 16-19 destination address */
 };
 
 /* ip_protocol */
