@@ -102,7 +102,6 @@
 #include <click/timer.hh>
 #include "gridlogger.hh"
 
-
 class DSDVRouteTable : public GridGenericRouteTable {
 
 public:
@@ -425,6 +424,8 @@ private:
   static const metric_t _bad_metric; // default value is ``bad''
 
   bool _frozen;
+
+  void dsdv_assert_(const char *, int, const char *) const;
 };
 
 #endif

@@ -31,6 +31,8 @@
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
+#define dsdv_assert(e) ((e) ? (void) 0 : dsdv_assert_(__FILE__, __LINE__, #e))
+
 const DSDVRouteTable::metric_t DSDVRouteTable::_bad_metric; // default metric state is ``bad''
 
 bool
@@ -237,10 +239,10 @@ DSDVRouteTable::insert_route(const RTEntry &r, const GridLogger::reason_t why)
   Timer **old = _expire_timers.findp(r.dest_ip);
   HookPair **oldhp = _expire_hooks.findp(r.dest_ip);
   if (old_r && old_r->good())
-    assert(old && *old && (*old)->scheduled() && oldhp && *oldhp);
+    dsdv_assert(old && *old && (*old)->scheduled() && oldhp && *oldhp);
   else { 
-    assert(old == 0);
-    assert(oldhp == 0);
+    dsdv_assert(old == 0);
+    dsdv_assert(oldhp == 0);
   }
 
   // get rid of old expire timer
@@ -286,16 +288,16 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   // invariant check:
   // 1. route to expire should exist
   RTEntry *r = _rtes.findp(ip);
-  assert(r != 0);
+  dsdv_assert(r != 0);
   
   // 2. route to expire should be good
-  assert(r->good() && (r->seq_no() & 1) == 0);
+  dsdv_assert(r->good() && (r->seq_no() & 1) == 0);
   
   // 3. the expire timer for this dest should exist, but should not be
   // running.
   Timer **old = _expire_timers.findp(ip);
   HookPair **oldhp = _expire_hooks.findp(ip);
-  assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
+  dsdv_assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
 
   if (_log) {
     timeval tv;
@@ -320,7 +322,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   // cases where we should not expire n2 just because n1 expires, if
   // n1 is not its own next hop.
   if (r->num_hops() == 1) {
-    assert(r->next_hop_ip == r->dest_ip);
+    dsdv_assert(r->next_hop_ip == r->dest_ip);
     for (RTIter i = _rtes.first(); i; i++) {
       RTEntry r = i.value();
       if (r.dest_ip == ip)
@@ -339,19 +341,19 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 
   for (int i = 0; i < expired_dests.size(); i++) {
     RTEntry *r = _rtes.findp(expired_dests[i]);
-    assert(r);
+    dsdv_assert(r);
 
     // invariant check: 
     // 1. route to expire must be good, and thus should have existing
     // expire timer and hook object.
     Timer **exp_timer = _expire_timers.findp(r->dest_ip);
-    assert(exp_timer && *exp_timer);
+    dsdv_assert(exp_timer && *exp_timer);
     HookPair **hp = _expire_hooks.findp(r->dest_ip);
-    assert(hp && *hp);
+    dsdv_assert(hp && *hp);
 
     // 2. that existing timer should still be scheduled, except for
     // the timer whose expiry called this hook
-    assert(r->dest_ip != ip ? (*exp_timer)->scheduled() : true);
+    dsdv_assert(r->dest_ip != ip ? (*exp_timer)->scheduled() : true);
     
     // cleanup pending timers
     if ((*exp_timer)->scheduled())
@@ -387,7 +389,7 @@ DSDVRouteTable::schedule_triggered_update(const IPAddress &ip, unsigned int when
   Timer **old = _trigger_timers.findp(ip);
   HookPair **oldhp = _trigger_hooks.findp(ip);
   if (old) {
-    assert(*old && (*old)->scheduled() && oldhp && *oldhp);
+    dsdv_assert(*old && (*old)->scheduled() && oldhp && *oldhp);
     (*old)->unschedule();
     delete *old;
     delete *oldhp;
@@ -414,7 +416,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   // not be running
   Timer **old = _trigger_timers.findp(ip);
   HookPair **oldhp = _trigger_hooks.findp(ip);
-  assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
+  dsdv_assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
 
   unsigned int jiff = click_jiffies();
   unsigned int next_trigger_time = _last_triggered_update + _min_triggered_update_period;
@@ -438,10 +440,10 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
 
 
       Timer *old2 = i.value();
-      assert(old2 && old2->scheduled());
+      dsdv_assert(old2 && old2->scheduled());
 
       HookPair **oldhp = _trigger_hooks.findp(i.key());
-      assert(oldhp && *oldhp);
+      dsdv_assert(oldhp && *oldhp);
 
       RTEntry *r = _rtes.findp(i.key());
       if (r->advertise_ok_jiffies < next_trigger_time) {
@@ -468,7 +470,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
 void
 DSDVRouteTable::init_metric(RTEntry &r)
 {
-  assert(r.num_hops() == 1);
+  dsdv_assert(r.num_hops() == 1);
 
   switch (_metric_type) {
   case MetricHopCount:
@@ -501,7 +503,7 @@ DSDVRouteTable::init_metric(RTEntry &r)
     break;
   }
   default:
-    assert(0);
+    dsdv_assert(0);
   }
 } 
 
@@ -517,13 +519,13 @@ DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r, unsigned int jiff)
     new_r.last_seq_jiffies = old_r->last_seq_jiffies;
   }
   else if (old_r->seq_no() < new_r.seq_no()) {
-    assert(old_r->last_updated_jiffies >= old_r->last_seq_jiffies);
+    dsdv_assert(old_r->last_updated_jiffies >= old_r->last_seq_jiffies);
     new_r.wst = _alpha * old_r->wst + 
       (1 - _alpha) * jiff_to_msec(old_r->last_updated_jiffies - old_r->last_seq_jiffies);
     new_r.last_seq_jiffies = jiff;
   }
   else {
-    assert(old_r->seq_no() > new_r.seq_no());
+    dsdv_assert(old_r->seq_no() > new_r.seq_no());
     // Do nothing.  We will never accept this route anyway.
   }
   
@@ -539,7 +541,7 @@ DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r, unsigned int jiff)
 void 
 DSDVRouteTable::update_metric(RTEntry &r)
 {
-  assert(r.num_hops() > 1);
+  dsdv_assert(r.num_hops() > 1);
 
   RTEntry *next_hop = _rtes.findp(r.next_hop_ip);
   if (!next_hop) {
@@ -574,7 +576,7 @@ DSDVRouteTable::update_metric(RTEntry &r)
     r.metric.val += next_hop->metric.val;
     break;
   default:
-    assert(0);
+    dsdv_assert(0);
   }
   r.metric.valid = true;
 }
@@ -595,7 +597,7 @@ DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
     return r1.num_hops() < r2.num_hops();
   }
   
-  assert(r1.metric.valid && r2.metric.valid);
+  dsdv_assert(r1.metric.valid && r2.metric.valid);
   return metric_val_lt(r1.metric.val, r2.metric.val);
 }
 
@@ -608,7 +610,7 @@ DSDVRouteTable::metric_val_lt(unsigned int v1, unsigned int v2)
     // add 0.25 tx count fudge factor
     return v2 > v1 + 25; break;
   default:
-    assert(0);
+    dsdv_assert(0);
   }
   return false;
 }
@@ -620,7 +622,7 @@ DSDVRouteTable::metrics_differ(const metric_t &m1, const metric_t &m2)
   if (m1.valid && !m2.valid)  return true;
   if (!m1.valid && m2.valid)  return true;
   
-  assert(m1.valid && m2.valid);
+  dsdv_assert(m1.valid && m2.valid);
   return metric_val_lt(m1.val, m2.val) || metric_val_lt(m2.val, m1.val);
 }
 
@@ -641,7 +643,7 @@ DSDVRouteTable::send_full_update()
   // reset ``need advertisement'' flag
   for (int i = 0; i < routes.size(); i++) {
     RTEntry *r = _rtes.findp(routes[i].dest_ip);
-    assert(r);
+    dsdv_assert(r);
     r->need_seq_ad = false;
     r->need_metric_ad = false;
     r->last_adv_metric = r->metric;
@@ -672,7 +674,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   // take entries out of the route table; we only mark them as
   // expired.
   RTEntry *r = _rtes.findp(ip);
-  assert(r);
+  dsdv_assert(r);
 
   unsigned int jiff = click_jiffies();
 
@@ -698,7 +700,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   // reset ``need advertisement'' flag
   for (int i = 0; i < triggered_routes.size(); i++) {
     RTEntry *r = _rtes.findp(triggered_routes[i].dest_ip);
-    assert(r);
+    dsdv_assert(r);
     r->need_seq_ad = false;
     r->last_adv_metric = r->metric;
   }
@@ -715,7 +717,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
   check_invariants();
   new_r.check();
 
-  assert(was_sender ? new_r.num_hops() == 1 : new_r.num_hops() != 1);
+  dsdv_assert(was_sender ? new_r.num_hops() == 1 : new_r.num_hops() != 1);
 
   if (new_r.good() && new_r.num_hops() >_max_hops)
     return; // ignore ``non-local'' routes
@@ -747,7 +749,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
   }
   else if (old_r->seq_no() == new_r.seq_no()) {
     // Accept if better route
-    assert(new_r.good() ? old_r->good() : old_r->broken()); // same seq ==> same broken state
+    dsdv_assert(new_r.good() ? old_r->good() : old_r->broken()); // same seq ==> same broken state
     if (new_r.good() && metric_preferable(new_r, *old_r)) {
       if (metrics_differ(new_r.metric, new_r.last_adv_metric)) {
 	new_r.need_metric_ad = true;
@@ -765,7 +767,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     insert_route(new_r, was_sender ? GridLogger::NEWER_SEQ_SENDER : GridLogger::NEWER_SEQ);
   }
   else {
-    assert(old_r->seq_no() > new_r.seq_no());
+    dsdv_assert(old_r->seq_no() > new_r.seq_no());
     if (new_r.broken() && old_r->good()) {
       // Someone has stale info, give them good info
       old_r->advertise_ok_jiffies = jiff;
@@ -775,7 +777,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
     else if (new_r.good() && old_r->broken()) {
       // Perhaps a node rebooted?  This case is not handled by ns
       // simulator DSDV code.
-      assert(jiff >= old_r->last_expired_jiffies);
+      dsdv_assert(jiff >= old_r->last_expired_jiffies);
       unsigned age = jiff_to_msec(jiff - old_r->last_expired_jiffies);
       if (age > 2 * grid_hello::MAX_TTL_DEFAULT || was_sender) {
 	// Assume we got a new entry, not a stale entry that has been
@@ -785,7 +787,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
 	new_r.need_seq_ad = true;
 	new_r.need_metric_ad = true;
 	new_r.last_seq_jiffies = jiff; // not done by update_wst() becaue seq is less, so do it here
-	assert(new_r.last_updated_jiffies = new_r.last_seq_jiffies);
+	dsdv_assert(new_r.last_updated_jiffies = new_r.last_seq_jiffies);
 	schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
 	insert_route(new_r, was_sender ? GridLogger::REBOOT_SEQ_SENDER : GridLogger::REBOOT_SEQ);
       }
@@ -799,7 +801,7 @@ DSDVRouteTable::simple_action(Packet *packet)
 {
   check_invariants();
 
-  assert(packet);
+  dsdv_assert(packet);
   unsigned int jiff = click_jiffies();
 
   /* 
@@ -860,7 +862,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   
   // update this dest's eth
   r = _rtes.findp(ipaddr);
-  assert(r);
+  dsdv_assert(r);
   r->dest_eth = ethaddr;
 
   // handle each entry in message
@@ -1185,7 +1187,7 @@ DSDVRouteTable::hello_hook()
   unsigned int msecs_to_next_ad = _period;
 
   unsigned int jiff = click_jiffies();
-  assert(jiff >= _last_periodic_update);
+  dsdv_assert(jiff >= _last_periodic_update);
   unsigned int msec_since_last = jiff_to_msec(jiff - _last_periodic_update);
   if (msec_since_last < 2 * _period / 3) {
     // a full periodic update was sent ahead of schedule (because
@@ -1229,7 +1231,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   int num_rtes = min(max_rtes, rtes_to_send.size()); 
   int psz = hdr_sz + sizeof(grid_nbr_entry) * num_rtes;
 
-  assert(psz <= 1500);
+  dsdv_assert(psz <= 1500);
   if (num_rtes < rtes_to_send.size())
     click_chatter("DSDVRouteTable %s: too many routes, truncating route advertisement",
 		  id().cc());
@@ -1238,7 +1240,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   WritablePacket *p = Packet::make(psz + 2); // for alignment
   if (p == 0) {
     click_chatter("in %s: cannot make packet!", id().cc());
-    assert(0);
+    dsdv_assert(0);
   } 
   ASSERT_ALIGNED(p->data());
   p->pull(2);
@@ -1264,7 +1266,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   gh->type = grid_hdr::GRID_LR_HELLO;
   gh->ip = gh->tx_ip = _ip;
   grid_hello *hlo = (grid_hello *) (gh + 1);
-  assert(num_rtes <= 255);
+  dsdv_assert(num_rtes <= 255);
   hlo->num_nbrs = (unsigned char) num_rtes;
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
   hlo->seq_no = htonl(_seq_no);
@@ -1395,35 +1397,49 @@ DSDVRouteTable::check_invariants(const IPAddress *ignore) const
     HookPair **hp = _expire_hooks.findp(r.dest_ip);
 
     if (r.good()) {
-      assert(t);
-      assert(*t);
-      assert((*t)->scheduled());
-      assert(hp);
-      assert(*hp);
-      assert((*hp)->obj == this);
-      assert((*hp)->ip == (unsigned int) r.dest_ip);
+      dsdv_assert(t);
+      dsdv_assert(*t);
+      dsdv_assert((*t)->scheduled());
+      dsdv_assert(hp);
+      dsdv_assert(*hp);
+      dsdv_assert((*hp)->obj == this);
+      dsdv_assert((*hp)->ip == (unsigned int) r.dest_ip);
     }
     else {
-      assert(!t);
-      assert(!hp);
+      dsdv_assert(!t);
+      dsdv_assert(!hp);
     }      
 
     // check trigger timer invariants
     t = _trigger_timers.findp(r.dest_ip);
     hp = _trigger_hooks.findp(r.dest_ip);
     if (t) {
-      assert(*t);
-      assert((*t)->scheduled());
-      assert(hp);
-      assert(*hp);
-      assert((*hp)->obj == this);
-      assert((*hp)->ip == (unsigned int) r.dest_ip);
-      // assert(r.need_seq_ad || r.need_metric_ad); // see note for trigger invariants
+      dsdv_assert(*t);
+      dsdv_assert((*t)->scheduled());
+      dsdv_assert(hp);
+      dsdv_assert(*hp);
+      dsdv_assert((*hp)->obj == this);
+      dsdv_assert((*hp)->ip == (unsigned int) r.dest_ip);
+      // dsdv_assert(r.need_seq_ad || r.need_metric_ad); // see note for trigger invariants
     }
     else {
-      assert(!hp);
+      dsdv_assert(!hp);
     }
   }
+}
+
+void
+DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
+{
+  click_chatter("DSDVRouteTable assertion \"%s\" failed: file %s, line %d",
+		expr, file, line);
+  click_chatter("Routing table state:");
+  for (RTIter i = _rtes.first(); i; i++) {
+    i.value().dump();
+    click_chatter("");
+  }
+  
+  abort();
 }
 
 ELEMENT_REQUIRES(userlevel)
