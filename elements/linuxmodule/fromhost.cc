@@ -143,15 +143,6 @@ FromLinux::initialize_device(ErrorHandler *errh)
 {
   int res;
   
-  for (int fi = 0; fi < router()->nelements(); fi++) {
-    Element *e = router()->element(fi);
-    if (e == this) continue;
-    if (FromLinux *fl=(FromLinux *)(e->cast("FromLinux"))) {
-      if (fl->ifindex() == ifindex())
-	return errh->error("duplicate FromLinux for `%s'", _devname.cc());
-    }
-  }
- 
   _dev = dev_get(_devname.cc());
   if (_dev) {
     _rt = (struct rtentry *) _dev->priv;
@@ -224,6 +215,7 @@ FromLinux::initialize_device(ErrorHandler *errh)
 
   set_fs(oldfs);
 
+  memset(&_stats, 0, sizeof(_stats));
   return res;
 }
 
@@ -256,6 +248,21 @@ FromLinux::uninitialize()
   UNREG_DEV;
   CLEAN_DEV;
 }
+
+int
+FromLinux::initialize(ErrorHandler *errh)
+{
+  for (int fi = 0; fi < router()->nelements(); fi++) {
+    Element *e = router()->element(fi);
+    if (e == this) continue;
+    if (FromLinux *fl=(FromLinux *)(e->cast("FromLinux"))) {
+      if (fl->ifindex() == ifindex())
+	return errh->error("duplicate FromLinux for `%s'", _devname.cc());
+    }
+  }
+  return 0;
+}
+ 
 
 /*
  * Device callbacks
