@@ -58,10 +58,9 @@ ARPQuerier::notify_noutputs(int n)
 int
 ARPQuerier::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  Vector<String> conf2(conf);
   if (conf.size() == 1)
-    conf2.push_back(conf[0]);
-  return cp_va_parse(conf2, this, errh,
+    conf.push_back(conf[0]);
+  return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "IP address", &_my_ip,
 		     cpEthernetAddress, "Ethernet address", &_my_en,
 		     0);
