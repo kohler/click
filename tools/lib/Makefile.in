@@ -20,32 +20,36 @@ CC = @CC@
 CXX = @CXX@
 AR = @AR@
 RANLIB = @RANLIB@
-HOST_CC = @HOST_CC@
-HOST_CXX = @HOST_CXX@
-HOST_AR = @HOST_AR@
-HOST_RANLIB = @HOST_RANLIB@
+BUILD_CC = @BUILD_CC@
+BUILD_CXX = @BUILD_CXX@
+BUILD_AR = @BUILD_AR@
+BUILD_RANLIB = @BUILD_RANLIB@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
 INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 .SUFFIXES:
-.SUFFIXES: .S .c .cc .o .ho .s
+.SUFFIXES: .S .c .cc .o .bo .s
 
 .c.o:
 	$(COMPILE) -c $<
+	@/bin/mv $*.d $*.hd
 .s.o:
 	$(COMPILE) -c $<
+	@/bin/mv $*.d $*.hd
 .S.o:
 	$(COMPILE) -c $<
+	@/bin/mv $*.d $*.hd
 .cc.o:
 	$(CXXCOMPILE) -c $<
-.c.ho:
+	@/bin/mv $*.d $*.hd
+.c.bo:
 	$(COMPILE) -c $< -o $@
-	@sed 's/\.o:/\.ho:/' < $*.d > $*.hd; /bin/rm -f $*.d
-.cc.ho:
+	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
+.cc.bo:
 	$(CXXCOMPILE) -c $< -o $@
-	@sed 's/\.o:/\.ho:/' < $*.d > $*.hd; /bin/rm -f $*.d
+	@sed 's/\.o:/\.bo:/' < $*.d > $*.bd; /bin/rm -f $*.d
 
 
 OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
@@ -53,7 +57,7 @@ OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
 	confparse.o archive.o processingt.o \
 	ipaddress.o ipaddressset.o etheraddress.o \
 	userutils.o toolutils.o clp.o @LIBOBJS@ @EXTRA_TOOL_OBJS@
-HOSTOBJS = $(patsubst %.o,%.ho,$(OBJS))
+BUILDOBJS = $(patsubst %.o,%.bo,$(OBJS))
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
@@ -69,10 +73,10 @@ CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
 
 ifeq ($(HOST_TOOLS),mixed)
-all: libclicktool.a libclicktool_host.a
+all: libclicktool.a libclicktool_build.a
 endif
-ifeq ($(HOST_TOOLS),host)
-all: libclicktool_host.a
+ifeq ($(HOST_TOOLS),build)
+all: libclicktool_build.a
 endif
 ifeq ($(HOST_TOOLS),target)
 all: libclicktool.a
@@ -81,15 +85,15 @@ endif
 libclicktool.a: Makefile $(OBJS)
 	$(AR) cru libclicktool.a $(OBJS)
 	$(RANLIB) libclicktool.a
-libclicktool_host.a: Makefile $(HOSTOBJS)
-	$(HOST_AR) cru libclicktool_host.a $(HOSTOBJS)
-	$(HOST_RANLIB) libclicktool_host.a
+libclicktool_host.a: Makefile $(BUILDOBJS)
+	$(BUILD_AR) cru libclicktool_host.a $(BUILDOBJS)
+	$(BUILD_RANLIB) libclicktool_host.a
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
-DEPFILES := $(wildcard *.d *.hd)
+DEPFILES := $(wildcard *.hd *.bd)
 ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
@@ -102,7 +106,7 @@ install: libclicktool.a
 install-man:
 
 clean:
-	rm -f *.d *.hd *.o *.ho libclicktool.a libclicktool_host.a
+	rm -f *.d *.hd *.bd *.o *.bo libclicktool.a libclicktool_build.a
 distclean: clean
 	-rm -f Makefile
 
