@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/package.hh>
 #include "lexert.hh"
 #include "routert.hh"
 #include "alignment.hh"
@@ -346,6 +347,7 @@ main(int argc, char **argv)
   cp_va_static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

@@ -24,6 +24,7 @@
 #include "lexert.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
+#include <click/package.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include <stdio.h>
@@ -148,6 +149,7 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = new PrefixErrorHandler
     (ErrorHandler::default_handler(), "click-uninstall: ");
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

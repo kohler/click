@@ -24,6 +24,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/variableenv.hh>
+#include <click/package.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include "adjacency.hh"
@@ -498,6 +499,7 @@ main(int argc, char **argv)
   String::static_initialize();
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

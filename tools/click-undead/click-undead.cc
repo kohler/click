@@ -27,6 +27,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/package.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include <click/bitvector.hh>
@@ -571,6 +572,7 @@ main(int argc, char **argv)
   ErrorHandler *default_errh = new FileErrorHandler(stderr);
   ErrorHandler::static_initialize(default_errh);
   ErrorHandler *p_errh = new PrefixErrorHandler(default_errh, "click-undead: ");
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

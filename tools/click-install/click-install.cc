@@ -26,6 +26,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/clp.h>
+#include <click/package.hh>
 #include "toolutils.hh"
 #include <stdio.h>
 #include <stdlib.h>
@@ -139,7 +140,7 @@ prepare_compile_tmpdir(RouterT *r, String &tmpdir, String &compile_prog,
 static void
 compile_archive_packages(RouterT *r, ErrorHandler *errh)
 {
-  const Vector<String> &requirements = r->requirements();
+  Vector<String> requirements = r->requirements();
 
   String tmpdir;
   String click_compile_prog;
@@ -178,20 +179,8 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     fwrite(source_text.data(), 1, source_text.length(), f);
     fclose(f);
     
-    // grab compiler options
-    String compiler_options;
-    if (source_text.substring(0, 17) == "// click-compile:") {
-      const char *s = source_text.data();
-      int pos = 17;
-      int len = source_text.length();
-      while (pos < len && s[pos] != '\n' && s[pos] != '\r')
-	pos++;
-      // XXX check user input for shell metas?
-      compiler_options = source_text.substring(17, pos - 17) + " ";
-    }
-    
     // run click-compile
-    String compile_command = click_compile_prog + " --target=kernel --package=" + req + ".ko " + compiler_options + filename;
+    String compile_command = click_compile_prog + " --target=kernel --package=" + req + ".ko " + filename;
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
       cerrh.fatal("could not run `%s'", compile_command.cc());
@@ -215,7 +204,7 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
   // check for uncompiled archive packages and try to compile them
   compile_archive_packages(r, errh);
   
-  const Vector<String> &requirements = r->requirements();
+  Vector<String> requirements = r->requirements();
 
   // go over requirements
   for (int i = 0; i < requirements.size(); i++) {
@@ -363,6 +352,7 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *nop_errh = ErrorHandler::default_handler();
   ErrorHandler *errh = new PrefixErrorHandler(nop_errh, "click-install: ");
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

@@ -32,6 +32,7 @@
 #include "specializer.hh"
 #include "signature.hh"
 #include <click/clp.h>
+#include <click/package.hh>
 #include <stdio.h>
 #include <ctype.h>
 #include <errno.h>
@@ -222,6 +223,7 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
   ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-devirtualize: ");
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =
@@ -422,7 +424,7 @@ particular purpose.\n");
   
   // output
   StringAccum out;
-  out << "// click-compile: -w -fno-access-control\n\
+  out << "/** click-compile: -w -fno-access-control */\n\
 #include <click/config.h>\n\
 #include <click/package.hh>\n";
   specializer.output(out);
@@ -448,20 +450,20 @@ particular purpose.\n");
   }
   
   // create temporary directory
+  String tmpdir;
+  
   if (compile_user > 0 || compile_kernel > 0) {
-    String tmpdir = click_mktmpdir(errh);
-    if (!tmpdir) exit(1);
-    if (chdir(tmpdir.cc()) < 0)
-      errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+    if (!(tmpdir = click_mktmpdir(errh)))
+      exit(1);
     
     // find Click binaries
     String click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, errh);
 
     // write C++ file
     String cxx_filename = package_name + cc_suffix;
-    FILE *f = fopen(cxx_filename, "w");
+    FILE *f = fopen(tmpdir + cxx_filename, "w");
     if (!f)
-      errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
+      errh->fatal("%s: %s", (tmpdir + cxx_filename).cc(), strerror(errno));
     fwrite(out.data(), 1, out.length(), f);
     fclose(f);
 
@@ -469,7 +471,7 @@ particular purpose.\n");
     const Vector<ArchiveElement> &aelist = router->archive();
     for (int i = 0; i < aelist.size(); i++)
       if (aelist[i].name.substring(-3) == ".hh") {
-	String filename = aelist[i].name;
+	String filename = tmpdir + aelist[i].name;
 	f = fopen(filename, "w");
 	if (!f)
 	  errh->warning("%s: %s", filename.cc(), strerror(errno));
@@ -481,7 +483,7 @@ particular purpose.\n");
     
     // compile kernel module
     if (compile_kernel > 0) {
-      String compile_command = click_compile_prog + " --target=kernel --package=" + package_name + ".ko -fno-access-control " + cxx_filename;
+      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
 	errh->fatal("could not run `%s'", compile_command.cc());
@@ -493,7 +495,7 @@ particular purpose.\n");
     
     // compile userlevel
     if (compile_user > 0) {
-      String compile_command = click_compile_prog + " --target=user --package=" + package_name + ".uo -w -fno-access-control " + cxx_filename;
+      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=user --package=" + package_name + ".uo " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
 	errh->fatal("could not run `%s'", compile_command.cc());
@@ -515,13 +517,13 @@ particular purpose.\n");
 
     if (compile_kernel > 0) {
       ae.name = package_name + ".ko";
-      ae.data = file_string(ae.name, errh);
+      ae.data = file_string(tmpdir + ae.name, errh);
       router->add_archive(ae);
     }
     
     if (compile_user > 0) {
       ae.name = package_name + ".uo";
-      ae.data = file_string(ae.name, errh);
+      ae.data = file_string(tmpdir + ae.name, errh);
       router->add_archive(ae);
     }
   }

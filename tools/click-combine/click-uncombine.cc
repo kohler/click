@@ -27,6 +27,7 @@
 #include "toolutils.hh"
 #include <click/confparse.hh>
 #include <click/straccum.hh>
+#include <click/package.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -287,6 +288,7 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
   ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-uncombine: ");
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

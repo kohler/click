@@ -27,6 +27,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
+#include <click/package.hh>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -331,6 +332,7 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
   ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-combine: ");
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =
@@ -448,6 +450,10 @@ particular purpose.\n");
   RouterT *combined = new RouterT;
   for (int i = 0; i < routers.size(); i++)
     routers[i]->expand_into(combined, VariableEnvironment(router_names[i]), errh);
+
+  // exit if there have been errors (again)
+  if (errh->nerrors() != 0)
+    exit(1);
 
   // nested combinations: change config strings of included RouterLinks
   int link_type = combined->type_index("RouterLink");

@@ -24,6 +24,7 @@
 #include "routert.hh"
 #include "lexert.hh"
 #include <click/error.hh>
+#include <click/package.hh>
 #include <click/clp.h>
 #include "toolutils.hh"
 #include "processingt.hh"
@@ -134,6 +135,7 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = ErrorHandler::default_handler();
   ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-check: ");
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

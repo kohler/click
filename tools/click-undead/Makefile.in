@@ -45,7 +45,7 @@ DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(top_srcdir)/tools/lib -I$(srcdir)
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
+LIBS = @LIBS@ @DL_LIBRARY@
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -61,7 +61,7 @@ libclicktool.a:
 	@cd ../lib; $(MAKE) libclicktool.a
 
 click-undead: Makefile $(OBJS) ../lib/libclicktool.a
-	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
+	$(CXXLINK) -rdynamic $(OBJS) $(LIBS) ../lib/libclicktool.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

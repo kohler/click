@@ -27,6 +27,7 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/clp.h>
+#include <click/package.hh>
 #include "toolutils.hh"
 #include "click-fastclassifier.hh"
 #include <stdio.h>
@@ -561,9 +562,10 @@ compile_classifiers(RouterT *r, const String &package_name,
   header << "#ifndef CLICK_" << package_name << "_HH\n"
 	 << "#define CLICK_" << package_name << "_HH\n"
 	 << "#include <click/package.hh>\n#include <click/element.hh>\n";
-  source << "#include <click/config.h>\n";
-  source << "#include \"" << package_name << ".hh\"\n\
-#include <click/glue.hh>\n";
+  source << "#include <click/config.h>\n\
+#include \"" << package_name << ".hh\"\n\
+#include <click/glue.hh>\n\
+/** click-compile: -w */\n";
 
   // analyze Classifiers into programs
   analyze_classifiers(r, classifiers, errh);
@@ -604,14 +606,14 @@ compile_classifiers(RouterT *r, const String &package_name,
   }
 
   // compile files if required
+  String tmpdir;
+  
   if (compile_kernel || compile_user) {
     // create temporary directory
-    String tmpdir = click_mktmpdir(errh);
-    if (!tmpdir) exit(1);
-    if (chdir(tmpdir.cc()) < 0)
-      errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+    if (!(tmpdir = click_mktmpdir(errh)))
+      exit(1);
     
-    String filename = package_name + ".hh";
+    String filename = tmpdir + package_name + ".hh";
     FILE *f = fopen(filename, "w");
     if (!f)
       errh->fatal("%s: %s", filename.cc(), strerror(errno));
@@ -619,15 +621,15 @@ compile_classifiers(RouterT *r, const String &package_name,
     fclose(f);
 
     String cxx_filename = package_name + ".cc";
-    f = fopen(cxx_filename, "w");
+    f = fopen(tmpdir + cxx_filename, "w");
     if (!f)
-      errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
+      errh->fatal("%s%s: %s", tmpdir.cc(), cxx_filename.cc(), strerror(errno));
     fwrite(source.data(), 1, source.length(), f);
     fclose(f);
     
     // compile kernel module
     if (compile_kernel) {
-      String compile_command = click_compile_prog + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
+      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
 	errh->fatal("could not run `%s'", compile_command.cc());
@@ -639,7 +641,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 
     // compile userlevel
     if (compile_user) {
-      String compile_command = click_compile_prog + " --target=user --package=" + package_name + ".uo -w " + cxx_filename;
+      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=user --package=" + package_name + ".uo " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
 	errh->fatal("could not run `%s'", compile_command.cc());
@@ -662,13 +664,13 @@ compile_classifiers(RouterT *r, const String &package_name,
 
     if (compile_kernel) {
       ae.name = package_name + ".ko";
-      ae.data = file_string(ae.name, errh);
+      ae.data = file_string(tmpdir + ae.name, errh);
       r->add_archive(ae);
     }
     
     if (compile_user) {
       ae.name = package_name + ".uo";
-      ae.data = file_string(ae.name, errh);
+      ae.data = file_string(tmpdir + ae.name, errh);
       r->add_archive(ae);
     }
   }
@@ -760,6 +762,7 @@ main(int argc, char **argv)
   ErrorHandler::static_initialize(new FileErrorHandler(stderr));
   ErrorHandler *errh = new PrefixErrorHandler
     (ErrorHandler::default_handler(), "click-fastclassifier: ");
+  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =
