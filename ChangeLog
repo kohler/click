@@ -1,3 +1,11 @@
+2002-10-03 Thursday 01:16  Eddie Kohler <kohler@icir.org>
+
+	* tools/: click-combine/click-uncombine.cc (1.25),
+	click2xml/click2xml.cc (1.4), lib/eclasst.cc (1.15), lib/eclasst.hh
+	(1.11), lib/routert.cc (1.64), lib/routert.hh (1.53),
+	click2xml/click2xml.cc (1.5): click2xml works with compound
+	elements
+
 2002-10-02 Wednesday 18:48  Eddie Kohler <kohler@icir.org>
 
 	* tools/lib/: routert.cc (1.63), routert.hh (1.52): iterator stuff
