@@ -13,7 +13,10 @@
  * PullSwitch has an unlimited number of inputs.
  *
  * =h switch read/write
- * Set or change the K parameter. */
+ * Return or set the K parameter.
+ *
+ * =a PrioSched RoundRobinSched StrideSched Switch
+ */
 
 class PullSwitch : public Element {
 

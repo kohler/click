@@ -13,7 +13,10 @@
  * write handler. Switch has an unlimited number of outputs.
  *
  * =h switch read/write
- * Set or change the K parameter. */
+ * Set or change the K parameter.
+ *
+ * =a StrideSwitch
+ * =a PullSwitch */
 
 class Switch : public Element {
 

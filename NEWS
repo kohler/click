@@ -98,13 +98,14 @@ Version 1.1
 
 * Elements
 
+** Added QuitWatcher, FrontDropQueue, StripIPHeader, IPClassifier, IPPrint,
+   FTPPortMapper, IPRewriterPatterns, Switch, PullSwitch, RoundRobinSwitch,
+   and StrideSwitch, among others. Also mentioned above: user-level
+   FromDevice, ToDevice, and ControlSocket; kernel module ToLinuxSniffers;
+   generic SetIPAddress, StoreIPAddress.
+
 ** Fixed kernel alignment bug in IP header checking elements: can't use
    Linux's `fast_ip_csum' on unaligned data.
-
-** Added QuitWatcher, FrontDropQueue, StripIPHeader, IPClassifier, IPPrint,
-   FTPPortMapper, and IPRewriterPatterns, among others. Also mentioned
-   above: user-level FromDevice, ToDevice, and ControlSocket; kernel module
-   ToLinuxSniffers; generic SetIPAddress, StoreIPAddress.
 
 ** Fixed user-level FromDevice and ToDevice bugs. Now FromDevice will not
    starve other router processing, and ToDevice works on Linux.

@@ -5,10 +5,10 @@
 
 /*
  * =c
- * StrideSched(TICKET1, ..., TICKET<i>n</i>)
+ * StrideSched(TICKETS0, ..., TICKETS<i>N-1</i>)
  * =d
- * Has one output and n inputs.  Performs simple packet-based stride
- * scheduling, assigning TICKET<i>i</i> to input <i>i</i> for each input.
+ * Has one output and N inputs.  Performs simple packet-based stride
+ * scheduling, assigning TICKETS<i>i</i> to input <i>i</i> for each input.
  * 
  * Each time a pull comes in on the output, it pulls on its inputs in the order
  * specified by the stride scheduling queue, until all inputs have been tried
@@ -17,12 +17,15 @@
  * if it has a very short stride.  This minimizes overhead and ensures that
  * an input that produces a packet, if any, is found as soon as possible,
  * consistently with the stride scheduler ordering.
- * 
- * =a PrioSched
- * =a RoundRobinSched
+ *
+ * =h tickets0...tickets<i>N-1</i> read/write
+ * Returns or sets the number of tickets for each input port.
+ *
+ * =a PrioSched RoundRobinSched
+ * =a StrideSwitch
  */
 
-class StrideSched : public Element {
+class StrideSched : public Element { protected:
   
   static const unsigned STRIDE1 = 1U<<16;
   static const int MAX_TICKETS = 1U<<15;
@@ -40,31 +43,36 @@ class StrideSched : public Element {
     Client() : _p(0), _n(0), _pass(0), _stride(0), _tickets(-1), _id(-1) {}
     Client(int id, int tickets);
     
-    void make_head();
-    Client *remove_min();
-    void insert(Client *c);
-    void stride();
     int id() const 				{ return _id; }
+    void set_tickets(int);
+    
+    void make_head();
+    
+    void insert(Client *c);
+    void remove();
+    void stride();
 
   };
   
-public:
+  Client *_list;
+
+ public:
   
   StrideSched();
   ~StrideSched();
 
-  int configure(const Vector<String> &conf, ErrorHandler *errh);
-  void uninitialize();
-  
   const char *class_name() const		{ return "StrideSched"; }
   const char *processing() const		{ return PULL; }
   
   StrideSched *clone() const			{ return new StrideSched; }
+  int configure(const Vector<String> &conf, ErrorHandler *errh);
+  void uninitialize();
+  void add_handlers();
+
+  int tickets(int) const;
+  int set_tickets(int, int, ErrorHandler *);
+  
   Packet *pull(int port);
-
-private:
-
-  Client *_list;
 
 };
 
@@ -97,18 +105,19 @@ StrideSched::Client::insert(Client *c)
   x->_p = c;
 }
 
-inline StrideSched::Client *
-StrideSched::Client::remove_min()
+inline void
+StrideSched::Client::remove()
 {
-  assert(this == _list);
-  if (_n != this) {
-    Client *r = _n;
-    _n = r->_n;
-    _n->_p = this;
-    r->_n = r->_p = r->_list = 0;
-    return r;
-  }
-  return 0;
+  _n->_p = _p;
+  _p->_n = _n;
+  _n = _p = 0;
+}
+
+inline void
+StrideSched::Client::set_tickets(int tickets)
+{
+  _tickets = tickets;
+  _stride = STRIDE1 / tickets;
 }
 
 inline void

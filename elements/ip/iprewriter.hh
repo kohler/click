@@ -79,6 +79,10 @@ class IPMapper;
  * <i>mapping request</i>. This element must implement the IPMapper interface.
  * One example mapper is IPRoundRobinMapper.
  *
+ * =h mappings read-only
+ * Returns a human-readable description of the IPRewriter's current set of
+ * mappings.
+ *
  * =a IPRewriterPatterns
  * =a IPRoundRobinMapper
  * =a FTPPortMapper */

@@ -219,7 +219,7 @@ EOD;
     print OUT "The ", $classes[0], " element installs the following additional handlers.\n";
     foreach $i (@{$x{'h'}}) {
       if ($i =~ /^(\S+)\s*(\S*)\n(.*)$/s) {
-	print OUT ".TP 5\n.BR ", $1;
+	print OUT ".TP 5\n.BR ", nroffize($1);
 	print OUT " \" (", $2, ")\"" if $2;
 	print OUT "\n.RS\n", nroffize($3), ".RE\n.Sp\n";
       }
