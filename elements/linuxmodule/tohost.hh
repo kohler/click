@@ -60,6 +60,11 @@
  * some device, that packet may have some other type. Use SetPacketType to
  * reset the type appropriately.
  *
+ * =h drops read-only
+ *
+ * Reports the number of packets ToHost has dropped because they had a null
+ * device annotation.
+ *
  * =a
  *
  * ToHostSniffers, FromHost, FromDevice, PollDevice, ToDevice,
