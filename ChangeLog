@@ -1,3 +1,9 @@
+2003-08-20 Wednesday 16:48  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/: dsr.hh (1.1), dsrarptable.cc (1.1),
+	dsrarptable.hh (1.1), dsrroutetable.cc (1.1), dsrroutetable.hh
+	(1.1), linktable.hh (1.13): a DSR implementation
+
 2003-08-18 Monday 14:07  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: toipflowdumps.cc (1.28), toipflowdumps.hh
