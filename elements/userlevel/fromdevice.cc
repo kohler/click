@@ -151,7 +151,7 @@ FromDevice::initialize(ErrorHandler *errh)
 {
   if (!_ifname)
     return errh->error("interface not set");
-  
+
   /* 
    * Later versions of pcap distributed with linux (e.g. the redhat
    * linux pcap-0.4-16) want to have a filter installed before they

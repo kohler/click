@@ -79,7 +79,7 @@ int
 ToDevice::initialize(ErrorHandler *errh)
 {
   _fd = -1;
-  
+
 #if TODEVICE_BSD_DEV_BPF
   
   /* pcap_open_live() doesn't open for writing. */
@@ -102,9 +102,9 @@ ToDevice::initialize(ErrorHandler *errh)
   // find a FromDevice and reuse its socket if possible
   for (int ei = 0; ei < router()->nelements() && _fd < 0; ei++) {
     Element *e = router()->element(ei);
-    ToDevice *td = (ToDevice *)e->cast("FromDevice");
-    if (td && td->ifname() == _ifname && td->fd() >= 0) {
-      _fd = td->fd();
+    FromDevice *fdev = (FromDevice *)e->cast("FromDevice");
+    if (fdev && fdev->ifname() == _ifname && fdev->fd() >= 0) {
+      _fd = fdev->fd();
       _my_fd = false;
     }
   }
@@ -158,7 +158,7 @@ ToDevice::send_packet(Packet *p)
 #endif
 
   if (retval < 0)
-    click_chatter("ToDevice(%d) %s: %s", _ifname.cc(), syscall, strerror(errno));
+    click_chatter("ToDevice(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
   p->kill();
 }
 

@@ -226,7 +226,7 @@ ToBPF::push(int, Packet *p)
 #endif
 
   if (retval < 0)
-    click_chatter("ToBPF(%d) %s: %s", _ifname.cc(), syscall, strerror(errno));
+    click_chatter("ToBPF(%s) %s: %s", _ifname.cc(), syscall, strerror(errno));
   p->kill();
 }
 
