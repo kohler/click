@@ -231,7 +231,7 @@ AC_DEFUN([CLICK_CHECK_LIBPCAP], [
     dnl libraries
 
     if test "$HAVE_PCAP" = yes; then
-	if test ${PCAP_LIBS-NO} = NO; then
+	if test "${PCAP_LIBS-NO}" = NO; then
 	    AC_CACHE_CHECK(for -lpcap, 
                 ac_cv_pcap_library_path,
 		saveflags="$LDFLAGS"
@@ -306,7 +306,7 @@ dnl
 
 AC_DEFUN([CLICK_PROG_AUTOCONF], [
     AC_MSG_CHECKING(for working autoconf)
-    AUTOCONF=${AUTOCONF-autoconf}
+    AUTOCONF="${AUTOCONF-autoconf}"
     if ($AUTOCONF --version) < /dev/null > conftest.out 2>&1; then
 	if test `head -1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
 	    AC_MSG_RESULT(found)
@@ -331,7 +331,7 @@ AC_DEFUN(CLICK_PROG_PERL5, [
     dnl A IS-NOT A
     ac_foo=`echo 'exit($A<5);' | tr A \135`
 
-    if test ${PERL-NO} = NO; then
+    if test "${PERL-NO}" = NO; then
 	AC_CHECK_PROGS(perl5, perl5 perl, missing)
 	test "$perl5" != missing && $perl5 -e "$ac_foo" && perl5=missing
 	if test "$perl5" = missing; then
