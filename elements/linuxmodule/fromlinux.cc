@@ -32,6 +32,11 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+#define netif_start_queue(dev)	do { dev->start=1; dev->tbusy=0; } while(0)
+#define netif_stop_queue(dev)	do { dev->start=0; dev->tbusy=1; } while(0)
+#endif
+
 static int iff_set(struct ifreq *ifr, short flag);
 static int iff_clear(struct ifreq *ifr, short flag);
 static int fl_init(net_device *dev);
@@ -165,6 +170,7 @@ FromLinux::uninitialize()
 {
   fromlinux_map.remove(this);
   if (fromlinux_map.lookup(_dev) != 0) {
+    dev_put(_dev);
     _dev = 0; 
     return;
   }
@@ -186,8 +192,10 @@ FromLinux::uninitialize()
   // Uninstall fake interface
   if (_dev) {
     unregister_netdev(_dev);
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
     if (_dev->name)
       delete[] _dev->name;
+#endif
     delete _dev;
     _dev = 0;
   }
@@ -218,16 +226,14 @@ fl_open(net_device *dev)
   // set to an arbitrary Ethernet address
   for (int i = 0; i < ETH_ALEN; i++)
     dev->dev_addr[i] = i;
-  dev->start = 1;
-  dev->tbusy = 0;
+  netif_start_queue(dev);
   return 0;
 }
 
 static int
 fl_close(net_device *dev)
 {
-  dev->start = 0;
-  dev->tbusy = 1;
+  netif_stop_queue(dev);
   return 0;
 }
 
@@ -242,7 +248,7 @@ fl_tx(struct sk_buff *skb, net_device *dev)
     return -1;
 }
 
-static enet_statistics *
+static net_device_stats *
 fl_stats(net_device *dev)
 {
     if (FromLinux *fl = (FromLinux *)fromlinux_map.lookup(dev))
@@ -293,5 +299,5 @@ iff_clear(struct ifreq *ifr, short flag)
  * Routing table management
  */
 
-ELEMENT_REQUIRES(AnyDevice linuxmodule linux_2_2)
+ELEMENT_REQUIRES(AnyDevice linuxmodule)
 EXPORT_ELEMENT(FromLinux)
