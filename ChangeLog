@@ -1,3 +1,20 @@
+2001-06-01 Friday 04:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/iptable.cc (1.11): protect with EXPLICIT_TEMPLATE_INSTANCES
+
+2001-06-01 Friday 04:08  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi (1.26): doc updates
+
+2001-06-01 Friday 04:05  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/drivermanager.cc (1.6),
+	elements/standard/peekhandlers.cc (1.17),
+	elements/standard/pokehandlers.cc (1.17), include/click/router.hh
+	(1.15), lib/confparse.cc (1.73), lib/router.cc (1.95): cp_handler
+	and friends (cpHandler, cpReadHandler, ...) may now return global
+	handlers (Element * is null). adjust for this possibility elsewhere
+
 2001-06-01 Friday 03:34  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* lib/confparse.cc (1.72): fix bug with cpArguments only visible in
