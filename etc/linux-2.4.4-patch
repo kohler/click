@@ -441,16 +441,7 @@ Index: net/core/dev.c
  /*
   *	Device drivers call our routines to queue packets here. We empty the
   *	queue in the local softnet handler.
-@@ -591,6 +594,8 @@
- 		kfree(dev);
- 		return NULL;
- 	}
-+	/* by default, no polling support */
-+	dev->polling = -1;
- 	return dev;
- }
- 
-@@ -1359,6 +1364,22 @@
+@@ -1359,6 +1362,22 @@
  	br_write_unlock_bh(BR_NETPROTO_LOCK);
  }
  
@@ -473,7 +464,7 @@ Index: net/core/dev.c
  #if defined(CONFIG_BRIDGE) || defined(CONFIG_BRIDGE_MODULE)
  void (*br_handle_frame_hook)(struct sk_buff *skb) = NULL;
  #endif
-@@ -1392,6 +1413,86 @@
+@@ -1392,6 +1411,86 @@
  #endif   /* CONFIG_NET_DIVERT */
  
  
@@ -560,7 +551,7 @@ Index: net/core/dev.c
  static void net_rx_action(struct softirq_action *h)
  {
  	int this_cpu = smp_processor_id();
-@@ -1404,6 +1505,7 @@
+@@ -1404,6 +1503,7 @@
  	for (;;) {
  		struct sk_buff *skb;
  		struct net_device *rx_dev;
@@ -568,7 +559,7 @@ Index: net/core/dev.c
  
  		local_irq_disable();
  		skb = __skb_dequeue(&queue->input_pkt_queue);
-@@ -1425,66 +1527,19 @@
+@@ -1425,66 +1525,19 @@
  		}
  #endif
  		skb->h.raw = skb->nh.raw = skb->data;

@@ -1882,7 +1882,7 @@ diff -r -c --exclude=*.o --exclude=*.flags ../linux-2.2.17-pure/net/core/dev.c .
   		return NULL;
   	}
 + 	/* by default, no polling support */
-+ 	dev->polling = -1; 
++ 	dev->poll_on = dev->poll_off = 0; 
   	return dev;
   }
   
