@@ -106,6 +106,18 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
 
     enum { QSIZE = 511 };
     Packet *_queue[QSIZE+1];
+#if CLICK_DEBUG_SCHEDULING
+    struct Schinfo {
+	struct timeval enq_time;
+	char enq_state;
+	char enq_woke_process;
+	char enq_task_scheduled;
+	uint32_t enq_epoch;
+	uint32_t enq_task_epoch;
+    };
+    Schinfo _schinfo[QSIZE+1];
+    void emission_report(int);
+#endif
 
 };
 

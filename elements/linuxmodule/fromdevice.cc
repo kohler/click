@@ -257,9 +257,22 @@ FromDevice::got_skb(struct sk_buff *skb)
 
 	Packet *p = Packet::make(skb);
 	_queue[_tail] = p; /* hand it to run_task */
+
+#if CLICK_DEBUG_SCHEDULING
+	click_gettimeofday(&_schinfo[_tail].enq_time);
+	RouterThread *rt = _task.scheduled_list();
+	_schinfo[_tail].enq_state = rt->thread_state();
+	int enq_process_asleep = rt->sleeper() && rt->sleeper()->state != TASK_RUNNING;
+	_schinfo[_tail].enq_task_scheduled = _task.scheduled();
+	_schinfo[_tail].enq_epoch = rt->driver_epoch();
+	_schinfo[_tail].enq_task_epoch = rt->driver_task_epoch();
+#endif
+	
 	_tail = next;
-#if 1 /* Doug */
 	_task.reschedule();
+
+#if CLICK_DEBUG_SCHEDULING
+	_schinfo[_tail].enq_woke_process = enq_process_asleep && rt->sleeper()->state == TASK_RUNNING;
 #endif
 
     } else {
@@ -271,6 +284,32 @@ FromDevice::got_skb(struct sk_buff *skb)
     return 1;
 }
 
+#if CLICK_DEBUG_SCHEDULING
+void
+FromDevice::emission_report(int idx)
+{
+    struct timeval now;
+    click_gettimeofday(&now);
+    RouterThread *rt = _task.scheduled_list();
+    StringAccum sa;
+    sa << "dt " << (now - _schinfo[idx].enq_time);
+    if (_schinfo[idx].enq_state != RouterThread::S_RUNNING) {
+	struct timeval etime = rt->task_epoch_time(_schinfo[idx].enq_task_epoch + 1);
+	if (timerisset(&etime))
+	    sa << " dt_thread " << (etime - _schinfo[idx].enq_time);
+    }
+    sa << " arrst " << RouterThread::thread_state_name(_schinfo[idx].enq_state)
+       << " depoch " << (rt->driver_epoch() - _schinfo[idx].enq_epoch)
+       << " dtepoch " << (rt->driver_task_epoch() - _schinfo[idx].enq_task_epoch);
+    if (_schinfo[idx].enq_woke_process)
+	sa << " woke";
+    if (_schinfo[idx].enq_task_scheduled)
+	sa << " tasksched";
+    
+    click_chatter("%s packet: %s", id().c_str(), sa.c_str()); 
+}
+#endif
+
 bool
 FromDevice::run_task()
 {
@@ -278,6 +317,9 @@ FromDevice::run_task()
     int npq = 0;
     while (npq < _burst && _head != _tail) {
 	Packet *p = _queue[_head];
+#if CLICK_DEBUG_SCHEDULING
+	emission_report(_head);
+#endif
 	_head = next_i(_head);
 	output(0).push(p);
 	npq++;
@@ -288,9 +330,7 @@ FromDevice::run_task()
 #if CLICK_DEVICE_ADJUST_TICKETS
     adjust_tickets(npq);
 #endif
-#if 1 /* Doug */
     if (npq > 0)
-#endif
 	_task.fast_reschedule();
     return npq > 0;
 }

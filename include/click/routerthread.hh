@@ -12,6 +12,8 @@ CLICK_CXX_UNPROTECT
 # include <click/cxxunprotect.h>
 #endif
 
+#define CLICK_DEBUG_SCHEDULING 0
+
 // NB: user must #include <click/task.hh> before <click/routerthread.hh>.
 // We cannot #include <click/task.hh> ourselves because of circular #include
 // dependency.
@@ -45,12 +47,21 @@ class RouterThread : public Task { public:
 
     inline void unsleep();
 
-
+#if CLICK_DEBUG_SCHEDULING
+    enum { S_RUNNING, S_PAUSED, S_TIMER, S_BLOCKED };
+    int thread_state() const		{ return _thread_state; }
+    static String thread_state_name(int);
+    uint32_t driver_epoch() const	{ return _driver_epoch; }
+    uint32_t driver_task_epoch() const	{ return _driver_task_epoch; }
+    timeval task_epoch_time(uint32_t epoch) const;
+# ifdef CLICK_LINUXMODULE
+    struct task_struct *sleeper() const	{ return _sleeper; }
+# endif
+#endif
 
     unsigned _tasks_per_iter;
     unsigned _iters_per_timers;
     unsigned _iters_per_os;
-
 
   private:
     
@@ -85,6 +96,15 @@ class RouterThread : public Task { public:
     unsigned _cur_click_share;		// current Click share
 #endif
 
+#if CLICK_DEBUG_SCHEDULING
+    int _thread_state;
+    uint32_t _driver_epoch;
+    uint32_t _driver_task_epoch;
+    enum { TASK_EPOCH_BUFSIZ = 32 };
+    uint32_t _task_epoch_first;
+    timeval _task_epoch_time[TASK_EPOCH_BUFSIZ];
+#endif
+    
     // called by Master
     RouterThread(Master *, int);
     ~RouterThread();

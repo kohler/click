@@ -61,8 +61,6 @@ RouterThread::RouterThread(Master *m, int id)
     _cur_click_share = 0;	// because we aren't yet running
 #endif
 
-
-
 #if defined(CLICK_NS)
     _tasks_per_iter = 256;
     _iters_per_timers = 1;
@@ -77,7 +75,12 @@ RouterThread::RouterThread(Master *m, int id)
     _iters_per_os = 2;          /* iterations per OS schedule() */
 #endif
 
-
+#if CLICK_DEBUG_SCHEDULING
+    _thread_state = S_BLOCKED;
+    _driver_epoch = 0;
+    _driver_task_epoch = 0;
+    _task_epoch_first = 0;
+#endif
 }
 
 RouterThread::~RouterThread()
@@ -201,6 +204,24 @@ RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_n
 
 #endif
 
+/******************************/
+/* Debugging                  */
+/******************************/
+
+#if CLICK_DEBUG_SCHEDULING
+timeval
+RouterThread::task_epoch_time(uint32_t epoch) const
+{
+    if (epoch >= _task_epoch_first && epoch <= _driver_task_epoch)
+	return _task_epoch_time[epoch - _task_epoch_first];
+    else if (epoch > _driver_task_epoch - TASK_EPOCH_BUFSIZ && epoch <= _task_epoch_first - 1)
+	// "-1" makes this code work even if _task_epoch overflows
+	return _task_epoch_time[epoch - (_task_epoch_first - TASK_EPOCH_BUFSIZ)];
+    else
+	return make_timeval(0, 0);
+}
+#endif
+
 
 /******************************/
 /* The driver loop            */
@@ -210,6 +231,13 @@ RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_n
 inline void
 RouterThread::run_tasks(int ntasks)
 {
+#if CLICK_DEBUG_SCHEDULING
+    _driver_task_epoch++;
+    click_gettimeofday(&_task_epoch_time[_driver_task_epoch % TASK_EPOCH_BUFSIZ]);
+    if ((_driver_task_epoch % TASK_EPOCH_BUFSIZ) == 0)
+	_task_epoch_first = _driver_task_epoch;
+#endif
+    
     // never run more than 32768 tasks
     if (ntasks > 32768)
 	ntasks = 32768;
@@ -243,6 +271,12 @@ RouterThread::run_tasks(int ntasks)
     }
 }
 
+#if CLICK_DEBUG_SCHEDULING
+# define SET_STATE(s)		_thread_state = (s)
+#else
+# define SET_STATE(s)		/* nada */
+#endif
+
 inline void
 RouterThread::run_os()
 {
@@ -259,18 +293,23 @@ RouterThread::run_os()
 # if CLICK_LINUXMODULE		/* Linux kernel module */
     if (!empty()) {		// just schedule others for a second
 	current->state = TASK_RUNNING;
+	SET_STATE(S_PAUSED);
 	schedule();
     } else {
 	struct timeval wait;
-	if (_id != 0 || !_master->timer_delay(&wait))
+	if (_id != 0 || !_master->timer_delay(&wait)) {
+	    SET_STATE(S_BLOCKED);
 	    schedule();
-	else if (wait.tv_sec > 0 || wait.tv_usec > (1000000 / CLICK_HZ))
+	} else if (wait.tv_sec > 0 || wait.tv_usec > (1000000 / CLICK_HZ)) {
+	    SET_STATE(S_TIMER);
 	    (void) schedule_timeout((wait.tv_sec * CLICK_HZ) + (wait.tv_usec * CLICK_HZ / 1000000) - 1);
-	else {
+	} else {
 	    current->state = TASK_RUNNING;
+	    SET_STATE(S_PAUSED);
 	    schedule();
 	}
     }
+    SET_STATE(S_RUNNING);
 # else				/* BSD kernel module */
     extern int click_thread_priority;
     int s = splhigh();
@@ -306,8 +345,14 @@ RouterThread::driver()
     click_gettimeofday(&restride_t_before);
 #endif
 
+    SET_STATE(S_RUNNING);
+
 #ifndef CLICK_NS
   driver_loop:
+#endif
+
+#if CLICK_DEBUG_SCHEDULING
+    _driver_epoch++;
 #endif
 
     if (*runcount > 0) {
@@ -315,8 +360,7 @@ RouterThread::driver()
 	iter++;
 	
 #ifndef HAVE_ADAPTIVE_SCHEDULER	/* Adaptive scheduler runs OS itself. */
-	// WHat the fuck?!?
-	if (/* thread_id() == 0 && */ (iter % _iters_per_os) == 0)
+	if ((iter % _iters_per_os) == 0)
 	    run_os();
 #endif
 
@@ -338,7 +382,6 @@ RouterThread::driver()
     // run task requests (1)
     if (_pending)
 	_master->process_pending(this);
-    
 
 #ifndef HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
@@ -422,5 +465,19 @@ RouterThread::unschedule_all_tasks()
 	t->fast_unschedule();
     unlock_tasks();
 }
+
+#if CLICK_DEBUG_SCHEDULE
+String
+RouterThread::thread_state_name(int ts)
+{
+    switch (ts) {
+      case S_RUNNING:		return "running";
+      case S_PAUSED:		return "paused";
+      case S_TIMER:		return "timer";
+      case S_BLOCKED:		return "blocked";
+      default:			return String(ts);
+    }
+}
+#endif
 
 CLICK_ENDDECLS
