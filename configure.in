@@ -503,6 +503,7 @@ if test $ac_have_linux_kernel = y; then
 #define delete xxx_delete
 #define class xxx_class
 #define virtual xxx_virtual
+#define typename xxx_typename
 #include <linux/skbuff.h>], [], 
 	ac_cv_f_permissive=no, ac_cv_f_permissive=yes))
 
@@ -518,6 +519,7 @@ if test $ac_have_linux_kernel = y; then
 #define delete xxx_delete
 #define class xxx_class
 #define virtual xxx_virtual
+#define typename xxx_typename
 #include <linux/skbuff.h>], [], 
 	ac_cv_f_permissive_ok=yes, ac_cv_f_permissive_ok=no))
 
