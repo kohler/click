@@ -37,7 +37,7 @@ click-combine \- combines two or more Click routers into one configuration
 .SH SYNOPSIS
 .B click-combine
 .RI \%[ options ]
-\%\fIname\fR:\fIfile\fR ... \e
+\%\fIname\fR=\fIfile\fR ... \e
 .br
 \%        \fIname1\fR.\fIelement1\fR=\fIname2\fR.\fIelement2\fR ...
 '
@@ -64,7 +64,7 @@ that does not contain a slash. To add a router component named
 whose configuration is in the file
 .IR f ,
 supply the option
-.RI ` N : f '.
+.RI ` N = f '.
 You will generally supply at least two such options.
 .PP
 A link says that packets leaving one router via one element will arrive at
@@ -123,7 +123,7 @@ The next router component will be named
 This option and the
 .BR \-\-file
 provide an alternative to the
-.IR name : file
+.IR name = file
 syntax.
 '
 .Sp
@@ -137,7 +137,7 @@ Read a router configuration from
 This option and
 .BR \-\-name
 provide an alternative to the
-.IR name : file
+.IR name = file
 syntax.
 '
 .Sp

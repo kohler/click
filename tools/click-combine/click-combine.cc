@@ -73,7 +73,7 @@ devices and writes the combined configuration to the standard output. The\n\
 combination is controlled by link specifications. The click-uncombine tool can\n\
 extract components from these combined configurations.\n\
 \n\
-Usage: %s [OPTION]... [ROUTERFILE | ROUTERNAME:FILE | LINKSPEC]\n\
+Usage: %s [OPTION]... [ROUTERFILE | ROUTERNAME=FILE | LINKSPEC]\n\
 \n\
 Options:\n\
   -o, --output FILE     Write combined configuration to FILE.\n\
@@ -98,10 +98,17 @@ static Vector<Hookup> link_port_from;
 static Vector<Hookup> link_port_to;
 
 static void
-read_router(String next_name, int next_number, const char *filename,
-	    ErrorHandler *errh)
+read_router(String name, String &next_name, int &next_number,
+	    const char *filename, ErrorHandler *errh)
 {
+  if (name && next_name)
+    errh->warning("router name specified twice (`%s' and `%s')",
+		  next_name.cc(), name.cc());
+  else if (name)
+    next_name = name;
+  
   RouterT *r = read_router_file(filename, errh);
+  
   if (r) {
     r->flatten(errh);
     if (next_name) {
@@ -114,6 +121,9 @@ read_router(String next_name, int next_number, const char *filename,
       router_names.push_back(String(next_number));
     routers.push_back(r);
   }
+
+  next_name = String();
+  next_number++;
 }
 
 static int
@@ -362,9 +372,7 @@ particular purpose.\n");
       break;
       
      case ROUTER_OPT:
-      read_router(next_name, next_number, clp->arg, errh);
-      next_name = String();
-      next_number++;
+      read_router(String(), next_name, next_number, clp->arg, errh);
       break;
 
      case OUTPUT_OPT:
@@ -386,21 +394,16 @@ particular purpose.\n");
       break;
       
      case Clp_NotOption:
-      if (const char *s = strchr(clp->arg, ':')) {
-	String name(clp->arg, s - clp->arg);
-	if (next_name)
-	  p_errh->warning("router name specified twice (`%s' and `%s')",
-			  next_name.cc(), name.cc());
-	read_router(name, next_number, s + 1, errh);
-	next_name = String();
-	next_number++;
-      } else if (strchr(clp->arg, '=') != 0) {
-	link_texts.push_back(clp->arg);
-      } else {
-	read_router(next_name, next_number, clp->arg, errh);
-	next_name = String();
-	next_number++;
-      }
+      if (const char *s = strchr(clp->arg, ':'))
+	read_router(String(clp->arg, s - clp->arg), next_name, next_number, s + 1, errh);
+      else if (const char *eq = strchr(clp->arg, '=')) {
+	const char *dot = strchr(clp->arg, '.');
+	if (!dot || dot > eq)
+	  read_router(String(clp->arg, eq - clp->arg), next_name, next_number, eq + 1, errh);
+	else
+	  link_texts.push_back(clp->arg);
+      } else
+	read_router(String(), next_name, next_number, clp->arg, errh);
       break;
       
      bad_option:
