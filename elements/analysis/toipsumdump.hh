@@ -9,7 +9,7 @@
 
 ToIPSummaryDump(FILENAME [, I<KEYWORDS>])
 
-=s sinks
+=s analysis
 
 writes packet summary information
 

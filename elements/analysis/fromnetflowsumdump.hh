@@ -8,7 +8,7 @@
 
 FromNetFlowSummaryDump(FILE [, I<KEYWORDS>])
 
-=s sources
+=s analysis
 
 reads packets from a NetFlow summary file
 

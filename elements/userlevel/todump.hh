@@ -11,7 +11,7 @@
 
 ToDump(FILENAME [, SNAPLEN, ENCAP, I<KEYWORDS>])
 
-=s sinks
+=s analysis
 
 writes packets to a tcpdump(1) file
 

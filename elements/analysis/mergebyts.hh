@@ -8,7 +8,7 @@
 
 MergeByTimestamp(I<KEYWORDS>)
 
-=s
+=s analysis
 
 merge sorted packet streams by timestamp
 

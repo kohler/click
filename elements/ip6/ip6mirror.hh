@@ -7,7 +7,7 @@
 
 IP6Mirror
 
-=s IP6, modification
+=s IPv6
 
 swaps IP6 source and destination
 

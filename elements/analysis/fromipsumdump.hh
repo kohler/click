@@ -9,7 +9,7 @@
 
 FromIPSummaryDump(FILENAME [, I<KEYWORDS>])
 
-=s sources
+=s analysis
 
 reads packets from an IP summary dump file
 

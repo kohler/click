@@ -7,7 +7,7 @@
 
 AnonymizeIPAddr
 
-=s IP, modification
+=s IP, analysis
 
 anonymizes top-level IP addresses in passing packets
 

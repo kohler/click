@@ -10,7 +10,7 @@ class HandlerCall;
 
 FromDump(FILENAME [, TIMING, I<KEYWORDS>])
 
-=s sources
+=s analysis
 
 reads packets from a tcpdump(1) file
 

@@ -9,7 +9,7 @@ class HandlerCall;
 
 TimeFilter(I<KEYWORDS>)
 
-=s
+=s analysis
 
 filter packets by timestamp
 

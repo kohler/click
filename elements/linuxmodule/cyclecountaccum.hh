@@ -1,11 +1,12 @@
-#ifndef CYCLECOUNTACCUM_HH
-#define CYCLECOUNTACCUM_HH
+#ifndef CLICK_CYCLECOUNTACCUM_HH
+#define CLICK_CYCLECOUNTACCUM_HH
 
 /*
 =c
 CycleCountAccum()
 
-=s profiling
+=s measurement
+
 collects differences in cycle counters
 
 =d

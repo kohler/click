@@ -8,7 +8,7 @@
 
 TimeRange(I<KEYWORDS>)
 
-=s
+=s measurement, analysis
 
 monitor range of packet timestamps
 
