@@ -1,3 +1,9 @@
+2002-02-28 Thursday 12:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: fix problem reported by Anne Dudfield
+	<anne@mazunetworks.com>: before router was initialized,
+	Router::unparse() could return garbage configuration strings
+
 2002-02-22 Friday 15:21  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc-Makefile.in, include/click/integers.hh,

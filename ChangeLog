@@ -1,3 +1,13 @@
+2002-02-28 Thursday 12:18  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.116): fix problem reported by Anne Dudfield
+	<anne@mazunetworks.com>: before router was initialized,
+	Router::unparse() could return garbage configuration strings
+
+2002-02-28 Thursday 12:17  Eddie Kohler <kohler@aciri.org>
+
+	* etc/diagrams/elements.mp (1.4): add drawconnectj
+
 2002-02-27 Wednesday 18:59  Eddie Kohler <kohler@aciri.org>
 
 	* tools/click-viz (1.1): add click-viz to repository (the Python
