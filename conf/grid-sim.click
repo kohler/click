@@ -8,17 +8,19 @@ elementclass GridNode {
     -> CheckGridHeader
     -> fr :: FilterByRange(250, li)
     -> nn :: Neighbor(2000, $ena, $ipa)
-    -> Classifier(15/02)
+    -> Classifier(15/03)
     -> lr :: LocalRoute($ena, $ipa, nn)
     -> fl :: FixSrcLoc(li)
     -> SetGridChecksum
     -> oq :: Queue
     -> output;
 
-  Hello(500, 100, $ena, $ipa, nn) -> fl;
+  LocalRouteHello(10000, 2000, $ena, $ipa, nn) -> fl;
+  Hello(500, 100, $ena, $ipa) -> fl;
 
   TimedSource(1000000) -> [1]lr;
   lr[1] -> Print(fromLR) -> Discard;
+  lr[2] -> Print(BadLR) -> Discard;
   fr[1] -> Discard;
 
   ICMPSendPings($ipa, 1.0.0.3) -> [1]lr;
