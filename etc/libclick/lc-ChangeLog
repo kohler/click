@@ -1,0 +1,4019 @@
+2001-09-21 Friday 20:29  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in: libclick: don't enable Linux module
+	by default
+
+2001-09-21 Friday 20:12  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in: add --with-freebsd configuration
+	argument, by analogy with --with-linux
+
+2001-09-11 Tuesday 08:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: cxxprotect.h, cxxunprotect.h, cxxprotect.h,
+	cxxunprotect.h: protect access keywords; reported by Powell Molleti
+
+2001-09-10 Monday 17:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: llrpc.h, llrpc.h: s/unsigned/uint32_t/
+
+2001-09-10 Monday 15:06  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in: update lc-configure.in
+	CLICK_VERSION, and check for that error in "make dist"
+
+2001-09-02 Sunday 00:15  Eddie Kohler <kohler@aciri.org>
+
+	* README: update version number
+
+2001-08-30 Thursday 18:20  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: oops, bug
+
+2001-08-30 Thursday 18:12  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: support element synonyms; you can say
+	EXPORT_ELEMENT(A=B), and that will export element class B under
+	name A
+
+2001-08-30 Thursday 15:16  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: doc updates, mostly
+
+2001-08-30 Thursday 14:19  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: glue.hh, glue.hh: Fix some memory leaks and fix
+	the debugging allocator macros on BSD.
+
+2001-08-28 Tuesday 11:13  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: delete elements in reverse of _configure_order
+
+2001-08-28 Tuesday 11:13  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: click-mkelemmap and click-elem2man can put up
+	with the normal "click-buildtool findelem" output format; no need
+	for -F
+
+2001-08-27 Monday 18:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ip.h, click_ip.h, click_ip6.h, click_tcp.h,
+	packet.hh, click_ip6.h, click_tcp.h, packet.hh: nitlets, and use
+	CLICK_BYTE_ORDER, not __BYTE_ORDER
+
+2001-08-25 Saturday 14:27  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ether.h, click_ip.h, click_ether.h,
+	click_ip.h: nitlets
+
+2001-08-25 Saturday 14:27  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_fddi.h, click_fddi.h: add click_fddi.h
+	header for FDDI; use that header in FromDevice and FromDump
+
+2001-08-24 Friday 22:06  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/glue.hh, include/click/glue.hh, libsrc/glue.cc: BSD
+	performance fixes
+
+2001-08-24 Friday 13:40  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4, config.h.in, configure.in,
+	libsrc-Makefile.in, include/click/ipaddress.hh,
+	include/click/ipaddress.hh: update DISTFILES based on Benjie
+	changes; check for endianness in configure.in; nitlets
+
+2001-08-20 Monday 22:04  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipflowid.hh, include/click/ipflowid.hh,
+	libsrc/ipflowid.cc: add IPFlowID::unparse() method for name
+	consistency
+
+2001-08-20 Monday 14:45  Benjie Chen <benjie@lcs.mit.edu>
+
+	* config.h.in, libsrc/routerthread.cc: add configuration option
+	CLICK_GREEDY; when specified, click will not give up processor to
+	OS (linux or bsd). instead it will occupy one cpu exclusively,
+	preventing other processes to run on that cpu. should only be used
+	if you have more than one CPU to begin with...
+
+2001-08-19 Sunday 03:53  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS: nitlet
+
+2001-08-18 Saturday 04:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	bug fix for Kyle #2: uninitialize in reverse order from
+	initialize(), rather than arbitrary order
+
+2001-08-17 Friday 23:46  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/iptable2.hh, include/click/radix.hh,
+	include/click/iptable2.hh, include/click/radix.hh, libsrc/radix.cc:
+	created IPRouteTable element that defines generic routing table
+	interfaces, in preparation of more IP routing table lookup
+	algorithms to be implemented in the next few weeks; changed
+	LookupIPRoute2 to IPLookupRadix; fixed bug in IPLookupRadix that
+	pushing stack allocated memory on to persistent vectors; merged
+	radix and iptable2 classes into IPLookupRadix
+
+2001-08-17 Friday 21:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: glue.hh, perfctr.hh, glue.hh, perfctr.hh:
+	glue.hh, perfctr.hh: make safe for non-i386 machines
+
+2001-08-17 Friday 16:07  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* config.h.in: Check for polling on BSD and use HAVE_BSD_POLLING
+	instead.
+
+2001-08-16 Thursday 19:10  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS: updates
+
+2001-08-16 Thursday 03:58  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/etheraddress.hh, include/click/etheraddress.hh,
+	libsrc/etheraddress.cc: EtherAddress nitlets: missing const, unparse()
+
+2001-08-10 Friday 17:00  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: fix IP prefix parsing nitlet
+
+2001-08-08 Wednesday 20:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet_anno.hh, packet_anno.hh: add EXTRA_LENGTH
+	and PACKET_COUNT annotations
+
+2001-08-08 Wednesday 20:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh, libsrc/packet.cc:
+	change "unsigned" to "uint32_t" for explicitness
+
+2001-08-08 Wednesday 20:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: atomic.hh, clp.h, integers.hh, atomic.hh, clp.h,
+	integers.hh: remove leftover occurrences of u_int32_t and friends
+	(reported by Lee Breslau)
+
+2001-08-06 Monday 13:04  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/ipaddress.cc: use new HAVE_INDIFFERENT_ALIGNMENT symbol
+	(problem reported by Kyle Jamieson <jamieson@mit.edu>)
+
+2001-08-06 Monday 13:04  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4, configure.in, config.h.in: configure
+	noodling: add CLICK_CHECK_INTEGER_TYPES, CLICK_CHECK_INT64_TYPES,
+	CLICK_CHECK_ALIGNMENT; fix CLICK_CHECK_PCAP bug
+
+2001-08-04 Saturday 13:30  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: mkelemmap nitlet
+
+2001-08-04 Saturday 13:03  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in, click-mkelemmap: add initial support for
+	"bsdmodule" driver to click-compile, click-mkelemmap, and the tools
+
+2001-08-04 Saturday 03:38  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: support abbreviated IP prefix strings like
+	"18.26/16" (requested by Vern Paxson)
+
+2001-08-03 Friday 18:21  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: ip6flowid.cc, ipflowid.cc: use Packet::tcp_header() and
+	Packet::udp_header() convenience functions; also, some uniqueify()
+	bug fixes
+
+2001-08-03 Friday 18:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh, libsrc/packet.cc:
+	add Packet::tcp_header() and Packet::udp_header() convenience
+	functions
+
+2001-08-03 Friday 18:16  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in: do not define HAVE_LINUXMODULE_TARGET or
+	HAVE_BSDMODULE_TARGET symbols -- no one used those symbols,
+	anywhere
+
+2001-08-03 Friday 14:40  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: click-buildtool: support
+	"requirement1|requirement2|...", requested by Kolya
+
+2001-08-03 Friday 14:12  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: llrpc.h, llrpc.h: We don't have LLRPC for FreeBSD
+	yet...
+
+2001-08-03 Friday 11:52  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* libsrc/: packet.cc, routerthread.cc: Add FreeBSD support.
+
+2001-08-03 Friday 11:51  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: glue.hh, packet.hh, glue.hh, packet.hh: Changes
+	to support FreeBSD: various kernel glue and the BSD packet
+	implementation.
+
+2001-08-03 Friday 11:47  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* config.h.in: Add a bsd kernel module build target.
+
+2001-08-02 Thursday 20:43  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, click-mkelemmap: support sourcefiles in
+	elementmaps; update click-mkmindriver to new elements.conf format
+	(it works again)
+
+2001-08-02 Thursday 19:41  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: elementmap format is self-describing
+
+2001-08-02 Thursday 18:58  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/in_cksum.c: fix UDP checksum bug reported by Julio Garcia
+	<julio_garcia@agilent.com>
+
+2001-07-31 Tuesday 20:05  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	String::append_garbage is a better name than append_space
+
+2001-07-31 Tuesday 04:05  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4: CLICK_CHECK_LIBPCAP nitlet
+
+2001-07-31 Tuesday 03:56  Eddie Kohler <kohler@aciri.org>
+
+	* acclick.m4, click-compile.in, Makefile.in,
+	configure.in, libsrc-Makefile.in:
+	configuration refactoring: place common configure.in tests in
+	acclick.m4, include that elsewhere.
+
+2001-07-30 Monday 21:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/glue.hh, include/click/glue.hh, libsrc/glue.cc: add
+	srandom() to glue.hh
+
+2001-07-30 Monday 21:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: ipaddress.hh, ipaddress.hh: add
+	operator==(IPAddress, uint32_t) and operator!=(IPAddress,
+	uuint32_t)
+
+2001-07-30 Monday 21:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: llrpc.h, llrpc.h: add LLRPC
+
+2001-07-26 Thursday 11:55  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc,
+	libsrc/glue.cc: Add an ErrorHandler::has_default_handler() method to
+	avoid failing assertions in ErrorHandler::default_handler().
+
+2001-07-26 Thursday 11:33  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* libsrc/packageutils.cc: Don't include userutils.hh if we're building
+	for a kernel module.
+
+2001-07-26 Thursday 01:03  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: protect against crap before or after
+	EXPORT_ELEMENT and friends
+
+2001-07-26 Thursday 01:03  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/error.cc: revert change
+
+2001-07-26 Thursday 00:56  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/userutils.hh, include/click/userutils.hh,
+	libsrc/userutils.cc: revert incorrect change
+
+2001-07-25 Wednesday 15:45  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/error.hh, include/click/error.hh,
+	include/click/straccum.hh, include/click/userutils.hh,
+	include/click/straccum.hh, include/click/userutils.hh,
+	libsrc/error.cc, libsrc/userutils.cc: Don't try to use stdio in the
+	kernel, and don't assert in ErrorHandler::default_handler().
+
+2001-07-25 Wednesday 04:20  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in: GNU makelessness changes
+
+2001-07-25 Wednesday 04:01  Eddie Kohler <kohler@aciri.org>
+
+	* missing, configure.in: updates to make Click
+	compilable without GNU make
+
+2001-07-25 Wednesday 03:46  Eddie Kohler <kohler@aciri.org>
+
+	* missing, Makefile.in,
+	configure.in, libsrc-Makefile.in:
+	add support for gmake-less systems
+
+2001-07-24 Tuesday 18:31  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in: libclick crap
+
+2001-07-24 Tuesday 17:58  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: revert change, found a better way
+
+2001-07-24 Tuesday 15:54  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: Router: cut out on first error unless
+	verbose_errors. (Too much work? Are we losing clean efficiency to
+	features?)
+
+2001-07-24 Tuesday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: Makefile nitlets
+
+2001-07-24 Tuesday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc, include/click/router.hh, include/click/router.hh:
+	add verbose_errors argument to Router::initialize() to quiet
+	context messages
+
+2001-07-24 Tuesday 15:29  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: sort elements.conf on output to match older
+	behavior
+
+2001-07-24 Tuesday 04:04  Eddie Kohler <kohler@aciri.org>
+
+	* etc/libclick/: lc-configure.in, lc-libsrc-Makefile.in: nitlets
+
+2001-07-24 Tuesday 03:46  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in: distclean removes config.h and
+	pathvars.h
+
+2001-07-24 Tuesday 03:29  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in: libclick updates: getting there
+
+2001-07-24 Tuesday 03:23  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: add --defs and --libs options
+
+2001-07-24 Tuesday 03:23  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: add -S/--standards option to click-buildtool
+	elem2{export,package}
+
+2001-07-23 Monday 21:16  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc: AlignmentInfo include file
+	moved to include/click/standard
+
+2001-07-23 Monday 21:16  Eddie Kohler <kohler@aciri.org>
+
+	* etc/libclick/: lc-Makefile.in, lc-configure.in,
+	lc-libsrc-Makefile.in: add first cut at libclick directory
+
+2001-07-23 Monday 18:31  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, click-mkelemmap: click-mkelemmap and
+	click-elem2man read new "click-buildtool -F" output format
+
+2001-07-23 Monday 15:12  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in, libsrc/addressinfo.cc,
+	libsrc/drivermanager.cc,
+	libsrc/errorelement.cc,
+	libsrc/scheduleinfo.cc, libsrc/confparse.cc, libsrc/lexer.cc,
+	libsrc/router.cc: put standard element #includes in <click/standardd>
+
+2001-07-23 Monday 15:10  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: augment elements.conf format with header files
+	and exported elements; makes "elem2export" and "elem2make" simpler
+
+2001-07-21 Saturday 05:20  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	be more careful about memory leaks
+
+2001-07-21 Saturday 04:54  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc,
+	libsrc/router.cc: more nitlets (avoid memory leaks of channel
+	ErrorHandlers)
+
+2001-07-21 Saturday 04:43  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	Router: add force_attachment() function, which returns a reference
+	to the attachment data
+
+2001-07-20 Friday 22:47  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc, libsrc/confparse.cc,
+	libsrc/element.cc: adapt to Router::Handler changes (Mz)
+
+2001-07-20 Friday 22:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: element.hh, element.hh: Add
+	Element::configuration(Vector<String> &) convenience method
+
+2001-07-20 Friday 22:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	Router: improve Handler objects. Simpler adding/changing;
+	Router::Handler is a true object with private data (requires
+	changes elsewhere). (Mz)
+
+2001-07-20 Friday 22:43  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	String: add compare(const String &), and operators < <= >= > (Mz)
+
+2001-07-19 Thursday 23:45  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: driver.hh, driver.hh, package.hh, package.hh:
+	split package.hh into two header files, package.hh (included by
+	drivers and packages) and driver.hh (included only by drivers)
+
+2001-07-19 Thursday 22:07  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: nitlet
+
+2001-07-19 Thursday 21:49  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in, click-compile.in: add --quiet options to
+	click-compile and click-fastclassifier; also, click-compile not
+	finding source code is not a fatal error (although not finding the
+	include directory is fatal)
+
+2001-07-19 Thursday 17:50  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* libsrc/: confparse.cc, ip6address.cc, ipaddress.cc, straccum.cc,
+	string.cc: Use the return value of sprintf rather than %n because
+	it's more portable.  Also make better use of CLICK_USERLEVEL (as
+	opposed to !CLICK_LINUXMODULE) where we really just want something
+	in user-space only.
+
+2001-07-19 Thursday 17:48  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* libsrc/radix.cc: Don't include stdio.h since it's harmful in a BSD
+	kernel.
+
+2001-07-18 Wednesday 11:49  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/click_ip.h, include/click/click_ip.h,
+	libsrc/in_cksum.c: Rename in_cksum to click_in_cksum to avoid
+	namespace collision in FreeBSD kernel.
+
+2001-07-17 Tuesday 14:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: llrpc.h, llrpc.h: ControlSocket/HandlerProxy:
+	Refactoring for increased niceness. Added CHECKREAD and CHECKWRITE
+	commands to ControlSocket.
+
+2001-07-17 Tuesday 14:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc:
+	ErrorHandler: add set_error_code() virtual function, and
+	verror_text() method (verror_text = decorate_text + handle_text =
+	verror - make_text).
+
+2001-07-16 Monday 02:06  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: nitlet with ports strings
+
+2001-07-14 Saturday 13:35  Eddie Kohler <kohler@aciri.org>
+
+	* README: add etc/samplellrpc directory, demonstrating how LLRPCs
+	work at user level
+
+2001-07-14 Saturday 03:50  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: buildtool nitlet: allow semicolons and/or
+	comments after EXPORT_ELEMENT
+
+2001-07-06 Friday 03:41  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: alignmentinfo.cc, drivermanager.cc: use new
+	cpSecondsAsMilli and cpSecondsAsMicro
+
+2001-07-06 Friday 03:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc:
+	number of milliseconds is a uint32_t, not an int
+
+2001-07-06 Friday 03:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: added cpSecondsAsMilli and cpSecondsAsMicro, and
+	cp_seconds_as_milli() and cp_seconds_as_micro(). All can understand
+	units suffixes, like "1ms" or "0.5 usec". Required rearrangement.
+	cp_integer() types take int32_t's, now; this is more correct, but
+	may cause type conflicts on machines that define int32_t to "long".
+	We might revert later.
+
+2001-07-03 Tuesday 17:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: bighashmap.cc, hashmap.cc, hashmap.hh,
+	bighashmap.cc, hashmap.cc, hashmap.hh: add explicit default
+	initializers for objects, so that built-in types will be
+	initialized to 0
+
+2001-07-03 Tuesday 12:05  Benjie Chen <benjie@lcs.mit.edu>
+
+	* config.h.in: --enable-warp9 feature: make polldevice run fast by
+	bypassing timestamping packet, for benchmark purposes
+
+2001-07-02 Monday 14:10  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh: ScheduleInfo: add
+	initialize_task functions
+
+2001-07-02 Monday 14:09  Eddie Kohler <kohler@aciri.org>
+
+	* pathvars.h.in: updated logic for finding Linux, and add the Linux
+	source directory to pathvars.h. Also, fix infodir bug, and don't
+	generate etc/samplepackage/Makefile, since samplepackage has its
+	own configure now
+
+2001-07-02 Monday 14:05  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: updated license
+
+2001-07-02 Monday 14:04  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: "findelem"s output only contains elements (that
+	is, .cc or .c files containg EXPORT_ELEMENT or ELEMENT_REQUIRES).
+	Therefore, elem2xxx doesn't need to filter.
+
+2001-07-02 Monday 00:43  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS: email update
+
+2001-07-01 Sunday 13:48  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/packet.cc: (very) slightly faster clone()
+
+2001-07-01 Sunday 13:47  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh: ScheduleInfo: add optional
+	"bool scheduled" argument
+
+2001-07-01 Sunday 13:46  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh: DriverManager: "wait" by
+	itself means "wait_stop"; change name of "wait SEC" to "wait_for
+	SEC" (but "wait SEC" still works)
+
+2001-07-01 Sunday 12:44  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh: DriverManager: "call" and
+	"print" instructions changed to "write" and "read" (but old names
+	still work)
+
+2001-07-01 Sunday 12:38  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: router.hh, router.hh: move LARGEST_HANDLER_WRITE
+	to router.hh
+
+2001-07-01 Sunday 12:34  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in: add checks for mmap() functions
+
+2001-06-28 Thursday 19:57  Eddie Kohler <kohler@aciri.org>
+
+	* README: added sample diagrams and diagram-making macros to
+	repository
+
+2001-06-26 Tuesday 20:34  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, INSTALL, README: updated info for click-1.2.1; added
+	documentation to FAQ about creating your own elements
+
+2001-06-26 Tuesday 13:35  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: sync.hh, sync.hh: Port to 2.4 kernels.
+
+2001-06-26 Tuesday 13:34  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* libsrc/glue.cc: Some additional checking to report doubly-freed
+	chunks in debug mode.
+
+2001-06-26 Tuesday 11:20  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/: .cvsignore, .cvsignore: pathvars.h is also
+	automatically generated
+
+2001-06-20 Wednesday 11:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/router.hh,
+	include/click/element.hh, include/click/router.hh, libsrc/element.cc,
+	libsrc/router.cc: added extra "bool *" argument to
+	Element::configuration() method, to support Brecht's request that
+	element configuration strings not lose whitespace unless necessary
+
+2001-06-05 Tuesday 13:44  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: bighashmap.hh, hashmap.cc, hashmap.hh,
+	bighashmap.hh, hashmap.cc, hashmap.hh: updated HashMap to follow
+	BigHashMap's interface
+
+2001-06-04 Monday 17:19  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bighashmap.cc, include/click/bighashmap.cc,
+	include/click/bighashmap.hh, include/click/etheraddress.hh,
+	include/click/hashmap.cc, include/click/hashmap.hh,
+	include/click/bighashmap.hh, include/click/etheraddress.hh,
+	include/click/hashmap.cc, include/click/hashmap.hh,
+	include/click/ip6address.hh, include/click/ip6flowid.hh,
+	include/click/ipaddress.hh, include/click/ipflowid.hh,
+	include/click/string.hh, include/click/ip6address.hh,
+	include/click/ip6flowid.hh, include/click/ipaddress.hh,
+	include/click/ipflowid.hh, include/click/string.hh, libsrc/string.cc:
+	hashcode() is now an overloaded function, not a member function, so
+	Jinyang wants to hash with key = int
+
+2001-06-04 Monday 14:52  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cpFilename type, which includes tilde
+	expansion and "//" removal
+
+2001-06-03 Sunday 02:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc:
+	update from ACIRI timer thoughts
+
+2001-06-03 Sunday 02:32  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: elem2package always generates #ifdef
+	HAVE_CONFIG_H / #include <config.h> / #endif; required for packages
+
+2001-06-03 Sunday 02:17  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: add "quietlink" subtool: filter out undefined
+	symbol errors, useful for linking packages with -Bsymbolic
+
+2001-06-01 Friday 13:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ip6address.hh, include/click/ipaddress.hh,
+	include/click/ip6address.hh, include/click/ipaddress.hh,
+	libsrc/confparse.cc, libsrc/ip6address.cc, libsrc/ipaddress.cc: rename
+	mask_to_prefix_bits to mask_to_prefix_len
+
+2001-06-01 Friday 13:33  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/iptable.cc: must always instantiate Vector<IPTable::Entry>
+
+2001-06-01 Friday 04:14  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/iptable.cc: protect with EXPLICIT_TEMPLATE_INSTANCES
+
+2001-06-01 Friday 04:05  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc, include/click/router.hh,
+	include/click/router.hh, libsrc/confparse.cc, libsrc/router.cc:
+	cp_handler and friends (cpHandler, cpReadHandler, ...) may now
+	return global handlers (Element * is null). adjust for this
+	possibility elsewhere
+
+2001-06-01 Friday 03:34  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: fix bug with cpArguments only visible in
+	kernel: clear out v2_string on first use
+
+2001-05-31 Thursday 18:32  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh,
+	libsrc/drivermanager.cc: DriverManager: Add "print"
+	instruction
+
+2001-05-31 Thursday 02:23  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: straccum.hh, straccum.hh: add
+	operator<<(StringAccum &, bool)
+
+2001-05-30 Wednesday 20:22  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: archive.cc, confparse.cc, error.cc: use new extend() and
+	printable() methods where appropriate
+
+2001-05-30 Wednesday 20:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	String: add new printable() method, to create a printable version
+	of an arbitrary string
+
+2001-05-30 Wednesday 20:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: straccum.hh, straccum.hh: StringAccum: add
+	extend(int len, int extend) method
+
+2001-05-30 Wednesday 18:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: llrpc.h, llrpc.h: ControlSocket: adds PROXY,
+	VERBOSE, and READONLY keyword arguments; support reading error
+	messages from proxies
+
+2001-05-30 Wednesday 17:56  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	add global handlers to Router; in both linuxmodule and userlevel
+	drivers, use Router's global handlers rather than per-driver global
+	handlers.
+
+2001-05-30 Wednesday 01:29  Eddie Kohler <kohler@aciri.org>
+
+	* missing: search for install-info, as it isn't always in a
+	predictable place
+
+2001-05-29 Tuesday 21:55  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/lexer.cc: lexer: Disallow identifiers containing all-digit
+	components. So "1/x" is illegal now. "1@x" is still legal ("/"
+	separates components).
+
+2001-05-29 Tuesday 15:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ether.h, click_ether.h, click_ether.h,
+	click_ether.h: rearrange header
+
+2001-05-25 Friday 21:00  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh: AddressInfo: support
+	"DEVNAME" as an Ethernet address even without explicit AddressInfo
+	about DEVNAME
+
+2001-05-24 Thursday 20:03  Eddie Kohler <kohler@aciri.org>
+
+	* LICENSE, libsrc/addressinfo.cc,
+	libsrc/alignmentinfo.cc,
+	libsrc/drivermanager.cc,
+	libsrc/errorelement.cc,
+	libsrc/scheduleinfo.cc, include/click/bighashmap.cc,
+	include/click/bighashmap.cc, include/click/ewma.cc,
+	include/click/hashmap.cc, include/click/vector.cc,
+	include/click/ewma.cc, include/click/hashmap.cc,
+	include/click/vector.cc, libsrc/archive.cc, libsrc/atomic.cc,
+	libsrc/bigewma.cc, libsrc/bighashmap_arena.cc, libsrc/bitvector.cc,
+	libsrc/confparse.cc, libsrc/element.cc, libsrc/elemfilter.cc, libsrc/error.cc,
+	libsrc/etheraddress.cc, libsrc/gaprate.cc, libsrc/glue.cc, libsrc/integers.cc,
+	libsrc/ip6address.cc, libsrc/ip6flowid.cc, libsrc/ip6table.cc,
+	libsrc/ipaddress.cc, libsrc/ipaddressset.cc, libsrc/ipflowid.cc,
+	libsrc/iptable.cc, libsrc/iptable2.cc, libsrc/lexer.cc, libsrc/lulea.cc,
+	libsrc/packageutils.cc, libsrc/packet.cc, libsrc/radix.cc, libsrc/router.cc,
+	libsrc/straccum.cc, libsrc/string.cc, libsrc/task.cc, libsrc/templatei.cc,
+	libsrc/timer.cc, libsrc/userutils.cc, libsrc/variableenv.cc, libsrc/vectorv.cc,
+	click-buildtool, click-mkelemmap: everywhere: updated license
+	summary (license remains the same)
+
+2001-05-24 Thursday 19:57  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/glue.hh, include/click/glue.hh, libsrc/glue.cc:
+	include a definition of strcmp on Linux 2.4 with newer gccs,
+	because otherwise gcc crashes horribly
+
+2001-05-24 Thursday 14:49  Eddie Kohler <kohler@aciri.org>
+
+	* LICENSE: updated license dates
+
+2001-05-22 Tuesday 17:43  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: addressinfo.cc, alignmentinfo.cc,
+	drivermanager.cc, errorelement.cc, scheduleinfo.cc: elements no
+	longer need to #include <click/package.hh>, so remove this
+	dependency
+
+2001-05-22 Tuesday 15:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	Router: rename router unparsing functions, and divide them up so
+	others can partially unparse a router. (Mz)
+
+2001-05-22 Tuesday 15:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/error.cc: ErrorHandler: add "%#s" format escape, to quote
+	non-ASCII string characters.
+
+2001-05-22 Tuesday 15:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/userutils.hh, include/click/userutils.hh,
+	libsrc/userutils.cc: userutils: Add dynamic-linking-related functions.
+	(Mz)
+
+2001-05-22 Tuesday 15:35  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/lexer.hh, include/click/lexer.hh, libsrc/lexer.cc:
+	Lexer: Add remaining_text() and set_remaining_text() methods.
+	Implement expect() more carefully, so it does not add anything to
+	_tcircle. (Mz)
+
+2001-05-22 Tuesday 15:32  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in: Don't define HAVE_LIBDL symbol; instead define
+	HAVE_DYNAMIC_LINKING directly. Also, add click-flatten tool.
+
+2001-05-22 Tuesday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: Add --directory option to click-compile. Also
+	take compilation options out of /** click-compile: */ comments in
+	the first couple lines. (Mz; so was previous change)
+
+2001-05-22 Tuesday 15:25  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/glue.hh, include/click/package.hh,
+	include/click/glue.hh, include/click/package.hh,
+	libsrc/packageutils.cc: #define MOD_INC_USE_COUNT and related symbols
+	in <click/glue.hh>, not <click/package.hh>. Save <click/package.hh>
+	for symbols and functions related to package manipulation. Add a
+	universal implementation of package functions in
+	libsrc/packageutils.cc.
+
+2001-05-17 Thursday 18:57  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in, libsrc/addressinfo.cc,
+	include/click/confparse.hh, include/click/ipaddress.hh,
+	include/click/standard/addressinfo.hh, include/click/confparse.hh,
+	include/click/ipaddress.hh, include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh, libsrc/confparse.cc,
+	libsrc/string.cc: fixlets to config.h.in; also, only compile
+	IP6-related objects -- ip6address, ip6flowid, ip6table -- when
+	--enable-ip6 is supplied
+
+2001-05-16 Wednesday 13:30  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: add "$provides" line to elementmap: says which
+	provisions are always available; use that line in click-mkmindriver
+
+2001-05-16 Wednesday 12:51  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: one "-r" option can list multiple provisions,
+	space-separated
+
+2001-05-15 Tuesday 20:21  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/click_ip.h, include/click/glue.hh,
+	include/click/click_ip.h, include/click/glue.hh,
+	include/click/ipaddress.hh, include/click/packet.hh,
+	include/click/ipaddress.hh, include/click/packet.hh,
+	libsrc/element.cc, libsrc/etheraddress.cc, libsrc/ip6address.cc,
+	libsrc/ip6flowid.cc, libsrc/ipaddress.cc, libsrc/routerthread.cc: use new
+	cxxprotect.h header files; changes to support Linux 2.4
+
+2001-05-15 Tuesday 20:19  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: cxxprotect.h, cxxprotect.h, cxxunprotect.h,
+	cxxunprotect.h: add header files to abstract all the #defines that
+	you need to protect C++ from Linux header brain damage
+
+2001-05-14 Monday 19:47  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL, README: fix INSTALL and README directions (thanks
+	Brecht, Atanu)
+
+2001-05-09 Wednesday 18:46  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: nitlet
+
+2001-05-09 Wednesday 18:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: fix cp_unparse_real2() bug found by Andrew
+	Gorelik, Mazu Networks
+
+2001-05-09 Wednesday 17:02  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in, include/click/clp.h, include/click/clp.h,
+	include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	more changes to get int64 types working on OpenBSD
+
+2001-05-09 Wednesday 14:59  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/clp.h, include/click/string.hh,
+	include/click/clp.h, include/click/string.hh, libsrc/string.cc,
+	libsrc/task.cc: changes to get int64 types working on OpenBSD
+
+2001-05-08 Tuesday 20:08  Eddie Kohler <kohler@aciri.org>
+
+	* config.h.in, include/click/atomic.hh, include/click/atomic.hh,
+	include/click/confparse.hh, include/click/glue.hh,
+	include/click/integers.hh, include/click/ipaddress.hh,
+	include/click/confparse.hh, include/click/glue.hh,
+	include/click/integers.hh, include/click/ipaddress.hh,
+	include/click/packet.hh, include/click/straccum.hh,
+	include/click/string.hh, include/click/packet.hh,
+	include/click/straccum.hh, include/click/string.hh,
+	libsrc/confparse.cc, libsrc/ipaddress.cc, libsrc/lulea.cc, libsrc/lulea.hh,
+	libsrc/routerthread.cc, libsrc/straccum.cc, libsrc/string.cc:
+	s/u_int(\d\d)_t/uint\1_t/g (because the uint32_t names are
+	"standard"ized by Posix)
+
+2001-04-30 Monday 18:46  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: add cvs note to INSTALL
+
+2001-04-30 Monday 17:05  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, config.h.in, missing, pathvars.h.in,
+	include/click/clp.h, include/click/ewma.cc,
+	include/click/standard/drivermanager.hh, include/click/clp.h,
+	include/click/ewma.cc, include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh, libsrc/archive.cc,
+	libsrc/atomic.cc, libsrc/bigewma.cc, libsrc/bighashmap_arena.cc,
+	libsrc/bitvector.cc, libsrc/clp.c, libsrc/confparse.cc, libsrc/element.cc,
+	libsrc/elemfilter.cc, libsrc/error.cc, libsrc/etheraddress.cc,
+	libsrc/gaprate.cc, libsrc/glue.cc, libsrc/in_cksum.c, libsrc/integers.cc,
+	libsrc/ip6address.cc, libsrc/ip6flowid.cc, libsrc/ip6table.cc,
+	libsrc/ipaddress.cc, libsrc/ipaddressset.cc, libsrc/ipflowid.cc,
+	libsrc/iptable.cc, libsrc/iptable2.cc, libsrc/lexer.cc, libsrc/lulea.cc,
+	libsrc/packet.cc, libsrc/radix.cc, libsrc/router.cc, libsrc/routerthread.cc,
+	libsrc/straccum.cc, libsrc/strerror.c, libsrc/string.cc, libsrc/task.cc,
+	libsrc/templatei.cc, libsrc/timer.cc, libsrc/userutils.cc,
+	libsrc/variableenv.cc, libsrc/vectorv.cc: updates taking us to 1.2.0,
+	mostly rearranging #include files: always put config.h in
+	include/click (don't put it in the build directory); do't depend on
+	HAVE_CONFIG_H: just always #include <click/config.h>; add
+	pathvars.h
+
+2001-04-30 Monday 16:57  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, README: updated for release of 1.2.0
+
+2001-04-27 Friday 19:21  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/error.cc: buglet
+
+2001-04-27 Friday 17:38  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: error.cc, userutils.cc: PrefixErrorHandler: improve
+	behavior of nested Prefix and Context error handlers
+
+2001-04-27 Friday 17:37  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: error message fixes
+
+2001-04-27 Friday 17:35  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ip.h, click_ip.h: change ECN definitions to
+	follow nonce draft
+
+2001-04-25 Wednesday 16:44  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/packet.hh,
+	include/click/error.hh, include/click/packet.hh,
+	include/click/router.hh, include/click/straccum.hh,
+	include/click/string.hh, include/click/router.hh,
+	include/click/straccum.hh, include/click/string.hh, libsrc/error.cc,
+	libsrc/router.cc, libsrc/routerthread.cc, libsrc/straccum.cc, libsrc/string.cc:
+	more updates, including fixing unsigned64, and fixing problems with
+	Router initialization relative to erroneous configurations
+
+2001-04-25 Wednesday 16:42  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: use HAVE_INT64_TYPES symbol to conditionalize
+	"long long" type functions; change names to integer64 and
+	unsigned64 (rather than ulonglong); add cp_integer64() functions
+	(for unparsing, rather than parsing)
+
+2001-04-25 Wednesday 16:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: hashmap.hh, vector.hh, hashmap.hh, vector.hh:
+	nitlets
+
+2001-04-25 Wednesday 16:40  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: glue.hh, glue.hh: remove redundant u_int32_t
+	definitions, and other cleanups
+
+2001-04-25 Wednesday 16:39  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc: add
+	Timer::reschedule_after_ms() function, which reschedules the Timer
+	relative to the last time it was scheduled, not relative to now
+
+2001-04-25 Wednesday 16:37  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/task.cc: use the HAVE_STRIDE_SCHED symbol, not RR_SCHED;
+	also, fix Task::uninitialize() so that it does Task::unschedule()
+	when required
+
+2001-04-25 Wednesday 16:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, include/click/task.hh,
+	include/click/task.hh, libsrc/element.cc: use the HAVE_STRIDE_SCHED
+	symbol, not RR_SCHED
+
+2001-04-24 Tuesday 13:08  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/routerthread.cc: only call schedule() on one cpu
+
+2001-04-18 Wednesday 15:55  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: another DriverManager fixlet
+
+2001-04-18 Wednesday 15:17  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: Router::check_driver fixes: check whether router
+	is initialized before calling DriverManager, and call DriverManager
+	multiple times if please_stop_driver was called multiple times
+
+2001-04-18 Wednesday 15:04  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc: fix
+	ScheduleInfo::join_scheduler bug: was never setting tickets, since
+	Task::initialize now sets tickets
+
+2001-04-18 Wednesday 15:03  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc: adjust to Router::find
+	interface change
+
+2001-04-18 Wednesday 15:02  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh,
+	include/click/standard/drivermanager.hh: add DriverManager element,
+	make it part of libclick.a
+
+2001-04-18 Wednesday 15:00  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/string.cc: static_cleanup nitlet: cope with multiple calls
+
+2001-04-18 Wednesday 15:00  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/routerthread.hh, include/click/routerthread.hh,
+	libsrc/routerthread.cc: update RouterThread::driver logic; use
+	Router's please_stop_driver mechanism, rather than a per-thread
+	variable
+
+2001-04-18 Wednesday 14:58  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	add reserve_driver, adjust_driver_reservations, and check_driver
+	functions, for new driver-stopping story; call DriverManager before
+	stopping driver; changed order of arguments to Router::find
+
+2001-04-18 Wednesday 14:57  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cp_element that takes a Router *context
+	argument (no compound element context); change cpNonnegReal*
+	constants to cpUnsignedReal* (but keep cpNonnegReal* for
+	compatibility); add cpHandlerName, which works at configure time;
+	fix cpArguments bug, which led to infinite loops
+
+2001-04-17 Tuesday 17:58  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/scheduleinfo.cc: fix for compile with RR_SCHED
+
+2001-04-17 Tuesday 00:30  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/string.cc: faster implementations of String::lower and
+	String::upper dont create a new string if the existing string is
+	all the correct case
+
+2001-04-17 Tuesday 00:30  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/task.hh, include/click/task.hh, libsrc/task.cc: Task:
+	add DEFAULT_TICKETS constant, and initialize tickets to that
+	constant as part of initialize()
+
+2001-04-17 Tuesday 00:29  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	add Router attachment mechanism; also, initialize handlers as part
+	of Router::initialize, between configure() and initialize() phases
+
+2001-04-17 Tuesday 00:27  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: llrpc.h, llrpc.h: Switch, PullSwitch: add LLRPCs
+	for getting and setting the switch value
+
+2001-04-17 Tuesday 00:26  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add cpMandatoryKeywords, cpArguments,
+	cpReadHandler, cpWriteHandler, and cpHandler; also add cp_handler
+	functions to parse a handler name
+
+2001-04-17 Tuesday 00:24  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc,
+	libsrc/scheduleinfo.cc,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh: use the Router attachment
+	feature
+
+2001-04-13 Friday 11:20  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/routerthread.cc: don't lock and swap if nothing is on the
+	list
+
+2001-04-12 Thursday 11:07  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: perfctr-i586.hh, perfctr.hh, perfctr-i586.hh,
+	perfctr.hh: more cycle counters
+
+2001-04-09 Monday 22:05  Peilei Fan <peilei@lcs.mit.edu>
+
+	* include/click/ip6flowid.hh, include/click/ip6flowid.hh,
+	libsrc/ip6flowid.cc: [no log message]
+
+2001-04-09 Monday 22:04  Peilei Fan <peilei@lcs.mit.edu>
+
+	* include/click/: ip6address.hh, ip6address.hh: add hashcode()
+	function
+
+2001-04-02 Monday 16:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: major update to real number parsing functions:
+	fix bugs, and in particular, handle overflow and rounding better;
+	also minor updates elsewhere
+
+2001-04-02 Monday 15:52  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ip6table.hh, include/click/ip6table.hh,
+	libsrc/ip6table.cc: methods take const IP6Address &; use new
+	IP6Address matches_prefix and mask_more_specific methods for
+	correctness
+
+2001-04-02 Monday 15:51  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/iptable.hh, include/click/iptable.hh,
+	libsrc/iptable.cc: methods take IPAddresses, not unsigneds; use new
+	IPAddress matches_prefix and mask_more_specific methods for
+	correctness
+
+2001-04-02 Monday 15:50  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: ipaddress.hh, ipaddress.hh: added matches_prefix
+	and mask_more_specific methods
+
+2001-04-02 Monday 15:49  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ip6address.hh, include/click/ip6address.hh,
+	libsrc/ip6address.cc: update IP6Address method names to follow
+	IPAddress; add matches_prefix and mask_more_specific methods;
+	removed addr() method in favor of in6_addr(); added
+	mask_to_prefix_bits(); fixed bugs
+
+2001-03-30 Friday 19:27  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: some more unquoting fixes; cp_keyword is now
+	exported
+
+2001-03-29 Thursday 20:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/lexer.hh, include/click/lexer.hh, libsrc/confparse.cc,
+	libsrc/lexer.cc: support comments within \<...> hex strings, and
+	restructure confparse functions to reduce the number of String
+	operations
+
+2001-03-28 Wednesday 19:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: don't report errors on duplicate keywords.
+	Ignore comments inside "\< ... >". Be more careful about comment
+	parsing.
+
+2001-03-28 Wednesday 19:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: straccum.hh, straccum.hh: added operator bool()
+
+2001-03-28 Wednesday 19:16  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/userutils.hh, include/click/userutils.hh,
+	libsrc/userutils.cc: add clickpath() and set_clickpath() functions;
+	also, use them.
+
+2001-03-28 Wednesday 19:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	removed econfiguration() in favor of
+	default_configuration_string(), and calling
+	Element::configuration() directly. Removed live_reconfigure()
+	methods; this is handled by Element now.
+
+2001-03-28 Wednesday 19:14  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh, libsrc/packet.cc:
+	renamed MIN_TOTAL_LENGTH to MIN_BUFFER_LENGTH, total_data to
+	buffer_data, and total_length to buffer_length. Fix
+	Packet::make(sk_buff *) in case of users > 1 (users was not
+	decremented -- memory leaks). The header_offset() functions return
+	int, not unsigned. Header file rearrangement.
+
+2001-03-28 Wednesday 19:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: ipaddress.hh, ipaddress.hh: nitlets
+
+2001-03-28 Wednesday 19:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: removed set_configuration() methods in favor of
+	"virtual void configuration(Vector<String> &)": better to pay when
+	the configuration string is needed. Added read_keyword_handler and
+	reconfigure_keyword_handler handler functions; renamed old
+	configuration_read_handler and reconfigure_write_handler to
+	read_positional_handler and reconfigure_positional_handler.
+
+2001-03-23 Friday 13:41  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, include/click/ewma.hh,
+	include/click/ewma.hh: adapt to confparse interface changes
+
+2001-03-23 Friday 13:38  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: timer.hh, timer.hh: add schedule_now() function
+
+2001-03-23 Friday 13:38  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: sync.hh, sync.hh: use #error, not StaticAssert
+
+2001-03-23 Friday 13:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: straccum.hh, straccum.hh: added back() methods;
+	header file rearrangement
+
+2001-03-23 Friday 13:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc:
+	added set_default_handler static method
+
+2001-03-23 Friday 13:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: starting to document confparse: changed cp_real
+	functions to cp_real10, and constants to cpReal10; changed
+	cpNonnegFixed to cpNonnegReal2 for consistency; added
+	cp_unsigned_real2 and cpReal2; added cp_unparse_real10() functions
+	and cp_unparse_milliseconds(); rearrangements for readability
+
+2001-03-22 Thursday 15:27  Eddie Kohler <kohler@aciri.org>
+
+	* missing: nitlet: always put "." first on TEXINPUTS
+
+2001-03-22 Thursday 15:08  Eddie Kohler <kohler@aciri.org>
+
+	* missing: add texinfo.tex to doc/ subdirectory, so any texi2dvi
+	should do (stop checking its version number in configure.in). Also
+	added "make clean" target, and add a "missing texi2dvi".
+
+2001-03-21 Wednesday 19:16  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: changed the "ports" handler: agnostic ports are
+	reported as "push-" or "pull-", not "(push)" or "(pull)"; and
+	connected ports are comma-separated. Also adapt to Element
+	interface changes
+
+2001-03-21 Wednesday 19:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh, libsrc/packet.cc:
+	use "net_device", not "struct device", for Linux 2.4 compatibility
+
+2001-03-21 Wednesday 19:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: glue.hh, glue.hh: provide a definition for
+	"net_device", for better Linux 2.4 compatibility; fix
+	CLICK_DMALLOC_REG definition; rename StaticAssert to static_assert
+
+2001-03-21 Wednesday 19:11  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: rename Connection to Port; prevent
+	set_ninputs()/set_noutputs()/etc. from working once an element has
+	been initialized; header file rearrangement for readability
+
+2001-03-20 Tuesday 20:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: element.hh, element.hh: rearranged method
+	declarations for greater clarity
+
+2001-03-20 Tuesday 16:32  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: add const String &prefix argument to
+	add_task_handlers(), so people can add task handlers for multiple
+	tasks
+
+2001-03-20 Tuesday 16:31  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh, include/click/straccum.hh,
+	libsrc/straccum.cc: rename pop() method to pop_back(); add
+	operator<<(long long)
+
+2001-03-20 Tuesday 16:31  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	add long long constructor
+
+2001-03-18 Sunday 17:40  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh,
+	include/click/routerthread.hh, include/click/task.hh,
+	include/click/routerthread.hh, include/click/task.hh,
+	libsrc/router.cc, libsrc/routerthread.cc, libsrc/task.cc: changed
+	thread_preference stuff a lot; now there is one function people
+	should call to change threads, change_thread(). This function does
+	not change a Task's scheduled state. If it was scheduled, it
+	remains scheduled ; if it was not scheduled, it remains
+	unscheduled.
+
+2001-03-18 Sunday 17:36  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: added --version option and, in elem2make,
+	--make-variable option
+
+2001-03-16 Friday 21:35  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: bug fix: files that only define provisions, not
+	elements, won't have flow codes or processing codes; write an
+	explicit null string "" in those cases so the tab order doesn't get
+	screwed up
+
+2001-03-16 Friday 20:04  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/element.cc,
+	libsrc/router.cc: nitlets; and treat flow_code() strings carefully:
+	don't crash on erroneous strings
+
+2001-03-16 Friday 16:57  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/glue.cc: make glue.cc smp safe
+
+2001-03-16 Friday 15:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/: click_ether.h, click_ether.h: added packed
+	attribute to click_ether.  on arm-linux, e.g. iPaq,
+	sizeof(click_ether) is 16 unless the packed attribute is used. 
+	there should probably be a better way of dealing with this.
+
+2001-03-16 Friday 14:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* config.sub, config.guess: Changes to configure system to support
+	cross compiling, e.g. on iPaq with arm-linux.  configure.in:
+	explicitly check host and build types.	figure out the correct
+	compiler names.  config.sub, config.guess: required for macros
+	added to configure.in
+
+2001-03-16 Friday 09:02  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/sha1.hh, include/click/sha1.hh, libsrc/sha1.cc: move
+	sha1 implementation out of library and have it as a .hh file only
+	in ipsec
+
+2001-03-15 Thursday 23:54  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/sha1.h, include/click/sha1.h,
+	include/click/sha1.hh, include/click/sha1.hh, libsrc/sha1.c,
+	libsrc/sha1.cc: compile bug fix
+
+2001-03-15 Thursday 23:27  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/sha1.h, include/click/sha1.h, libsrc/sha1.c: ESP
+	header in IPsec now can optionally set SHA1 digest
+
+2001-03-14 Wednesday 18:09  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/routerthread.hh, include/click/routerthread.hh,
+	libsrc/routerthread.cc: crancked up the profile frequency
+
+2001-03-14 Wednesday 16:02  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap, libsrc/element.cc: "elementmap" now contains flow
+	codes; tools adapted to parse and generate flow codes correctly
+
+2001-03-14 Wednesday 15:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc,
+	libsrc/glue.cc, libsrc/lexer.cc, libsrc/router.cc: ErrorHandler fixes:
+	Renamed Seriousness constants to follow naming guidelines: Debug =>
+	ERR_DEBUG, and so forth; added extra "const String &prefix"
+	argument to decorate_text methods, for better behavior when mixing
+	PrefixErrorHandlers with other ErrorHandlers; cleaned up format
+	string handling a bit to make it follow C more closely; bug fixlets
+	and cleanups
+
+2001-03-14 Wednesday 15:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh, include/click/straccum.hh,
+	libsrc/archive.cc, libsrc/etheraddress.cc, libsrc/ipaddress.cc,
+	libsrc/straccum.cc: renamed StringAccum::push method to
+	StringAccum::append
+
+2001-03-13 Tuesday 21:08  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/task.hh, include/click/task.hh, libsrc/task.cc:
+	TaskHook takes a Task * in addition to the void * thunk. Also
+	removed have_scheduler() function (it was equivalent to
+	initialized()) and the _max_tickets member and related functions
+	(rely on callers to implement their own _max_tickets when
+	appropriate).
+
+2001-03-13 Tuesday 21:07  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	stable_string() takes an extra "int len" argument for parity with
+	other functions. Also updated some comments
+
+2001-03-13 Tuesday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: adapt to Element::forward_flow and backward_flow
+	interface changes
+
+2001-03-13 Tuesday 21:05  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: change signatures of forward_flow and
+	backward_flow: they take a Bitvector *, rather than returning a
+	Bitvector. This may lead to fewer memory allocations. Also
+	flow_code() cannot contain digits: only letters, [], and #. Also
+	the tickets handler cannot access max_tickets(), sicne
+	max_tickets() has been removed.
+
+2001-03-13 Tuesday 21:04  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc: replace Task::_max_tickets
+	with AnyDevice::_max_tickets
+
+2001-03-13 Tuesday 00:55  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/errorelement.cc,
+	include/click/standard/errorelement.hh,
+	include/click/standard/errorelement.hh,
+	include/click/standard/errorelement.hh: use new flow_code()
+	function instead of forward_flow() and backward_flow()
+
+2001-03-13 Tuesday 00:53  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: use new forward_flow() and backward_flow()
+	interfaces (with ErrorHandler *)
+
+2001-03-13 Tuesday 00:50  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/task.cc: Don't complain if a task list is scheduled at
+	destruction -- task lists are always "scheduled".
+
+2001-03-13 Tuesday 00:50  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: added flow_code() method, which packages forward
+	and backward flow information into a convenient string
+	representation. Now Element::forward_flow() and backward_flow() are
+	use flow_code() to do their work. Added COMPLETE_FLOW constant to
+	express the normal case.
+
+2001-03-13 Tuesday 00:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bitvector.hh, include/click/bitvector.hh,
+	libsrc/bitvector.cc: added nonzero_intersection() method
+
+2001-03-12 Monday 20:22  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: element.hh, element.hh: processing_vector is no
+	longer virtual: processing() is the only possible way to specify an
+	element's port processing values
+
+2001-03-12 Monday 18:04  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: element.hh, element.hh, standard/addressinfo.hh,
+	standard/addressinfo.hh, standard/addressinfo.hh: renamed
+	CONFIGURE_PHASE_ZERO to CONFIGURE_PHASE_FIRST, and
+	CONFIGURE_PHASE_LATE to CONFIGURE_PHASE_LAST
+
+2001-03-11 Sunday 20:53  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: added first cut at Texinfo documentation
+
+2001-03-11 Sunday 20:52  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/task.hh, include/click/task.hh,
+	libsrc/routerthread.cc, libsrc/task.cc: remove Task::Task() constructor;
+	add private Task(const Task &) and operator= functions to prevent
+	misuse
+
+2001-03-11 Sunday 20:51  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: glue.hh, glue.hh: get rid of
+	entering_ipb()/leaving_ipb() crap, which was unused
+
+2001-03-11 Sunday 20:50  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: nitlets: declaration types
+
+2001-03-10 Saturday 15:41  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/glue.hh, include/click/glue.hh, libsrc/task.cc:
+	removed click_getusecofday(); changed all instances of #ifdef
+	__MTCLICK__ to #if __MTCLICK__; fixed compile error in
+	elements/local when --enable-local is on but __MTCLICK__ is not
+	defined
+
+2001-03-10 Saturday 14:09  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: bighashmap.cc, bighashmap.hh, bighashmap.cc,
+	bighashmap.hh: updates; the new rearrange-hashmap-on-access
+	heuristic is optional, based on a #define
+
+2001-03-09 Friday 23:00  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: bighashmap.cc, bighashmap.hh, bighashmap.cc,
+	bighashmap.hh, glue.hh, skbmgr.h.old, glue.hh, skbmgr.h.old: merge
+	in changes from smp branch. bighashmap now has a max number of
+	buckets, otherwise linux will blow up if we try to allocate the
+	array of buckets; iprewriter and arpquerier now have locks, which
+	are compiled away in smp_click; added load balancing elements to
+	elements/local; other minor stuff
+
+2001-03-09 Friday 22:20  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/element.cc: add thread_preference handler for tasks
+
+2001-03-09 Friday 22:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc: adapt to new Task structure
+
+2001-03-09 Friday 22:18  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	split Router::wait() into Router::run_selects(); removed other
+	driver code, because its in RouterThread now; code for adding and
+	removing RouterThreads
+
+2001-03-09 Friday 22:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/task.hh, include/click/task.hh, libsrc/task.cc: Great
+	Task Rewrite: every Task::_scheduled_list is a RouterThread; every
+	global tsak list corresponds to a Router. The global task list lock
+	protects Task::_scheduled_list changes. join_scheduler() is
+	private, and less overloaded; now it is only called to switch a
+	task to a new scheduler. The initialize() function takes an extra
+	boolean argument, true to schedule the task. Removed
+	schedule_immediately() and _urgent; they were unused.
+
+2001-03-09 Friday 22:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: sync.hh, sync.hh: provide nonempty sync types
+	whenever on SMP (not just __MTCLICK__); ReadWriteLock has a
+	selectable number of lock_ts
+
+2001-03-09 Friday 22:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: ewma.hh, ewma.hh: added FastDirectEWMA
+
+2001-03-09 Friday 22:09  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc:
+	Timer heads are their own type -- TimerList -- so only the list
+	head needs a lock
+
+2001-03-09 Friday 22:09  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/iptable.hh, include/click/iptable.hh,
+	libsrc/iptable.cc: nitlets, whitespace
+
+2001-03-09 Friday 22:07  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: atomic.hh, atomic.hh: add
+	inc_and_test_greater_zero() (available on Linux); compile even if
+	!__MTCLICK__
+
+2001-03-09 Friday 22:07  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/routerthread.hh, include/click/routerthread.hh,
+	libsrc/routerthread.cc: added RouterThread: a thread of control --
+	basically something that runs a task list.
+
+2001-03-07 Wednesday 15:26  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet.hh, packet.hh: copy all relevant
+	annotations, including packet_type and device, in
+	copy_annotations() (Mazu bug fix)
+
+2001-03-06 Tuesday 19:11  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/confparse.cc: fix confparser to parse des cblock
+
+2001-03-06 Tuesday 17:13  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/task.cc: bug fix in uninitialize(); have join_scheduler
+	initialize the master task list if it wasn't initialized
+
+2001-03-06 Tuesday 17:12  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: task.hh, task.hh: minor change to remove compile
+	warning
+
+2001-03-04 Sunday 21:28  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: addressinfo.cc, alignmentinfo.cc,
+	errorelement.cc, scheduleinfo.cc: removed #if
+	HAVE_CONFIG_H/#include <config.h>/#endif from all elements.
+	Instead, the first #include of each element MUST be #include
+	<click/config.h>.
+
+2001-03-04 Sunday 16:15  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc: renamed Timer::attach() to
+	Timer::initialize(); also, use Task::fast_reschedule() when
+	possible
+
+2001-03-04 Sunday 16:14  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	TaskList is now a separate type
+
+2001-03-04 Sunday 16:14  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/task.hh, include/click/task.hh, libsrc/task.cc: added
+	timer list locking; renamed some methods; added fast_unschedule()
+	and fast_reschedule() (no locking)
+
+2001-03-04 Sunday 16:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc:
+	renamed Timer::attach() methods to Timer::initialize(); it's just a
+	better name
+
+2001-03-02 Friday 13:16  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: sync.hh, sync.hh: rearranged code for readability
+
+2001-02-28 Wednesday 20:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, include/click/task.hh,
+	include/click/task.hh, libsrc/task.cc: remove attach() method in favor
+	of  join_scheduler(Task *)
+
+2001-02-26 Monday 10:29  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, include/click/element.hh,
+	include/click/standard/scheduleinfo.hh, include/click/element.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh, include/click/elemlink.hh,
+	include/click/router.hh, include/click/task.hh,
+	include/click/timer.hh, include/click/elemlink.hh,
+	include/click/router.hh, include/click/task.hh,
+	include/click/timer.hh, libsrc/element.cc, libsrc/elemlink.cc,
+	libsrc/router.cc, libsrc/task.cc, libsrc/timer.cc: Great Scheduling Rewrite:
+	removed ElementLink. The task queues consist of Task objects.
+	Schedulable elements, therefore, must include Task data members,
+	and schedule themselves using those members. Changed all elements
+	to conform to the new interface. Some other changes folded in.
+	ACIRI; previous changes Mazu.
+
+2001-02-26 Monday 10:25  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: fix cp_va_parse_keyword(), which previously
+	didnt work. A keyword which is not followed by any data is not
+	recognized as a keyword at all. Different keyword parsing: keywords
+	are not prevented from having [0-9.] as their first character by
+	cp_keyword(), although users are discouraged from recognizing such
+	keywords. Add cpTimeval for real.
+
+2001-02-26 Monday 10:23  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh, libsrc/packet.cc:
+	use new skbmgr allocate() function, which takes a headroom
+	argument. (Previously, both the skbmgr and class Packet allocated
+	headroom on packets. Furthermore, the skbmgr could allocate
+	headroom twice per packet!!) Also, fix expensive_push() to use only
+	Click functions -- never skb_realloc_headroom(). Remove
+	default_{head,tail}room() functions in favor of DEFAULT_HEADROOM
+	and MIN_TOTAL_LENGTH constants. (Mazu)
+
+2001-02-26 Monday 10:20  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/glue.hh,
+	include/click/error.hh, include/click/glue.hh, libsrc/error.cc:
+	ErrorHandler functions return -EINVAL instead of -1.
+	<click/glue.hh> includes the right version of <errno.h> (either
+	<errno.h> or <linux/errno.h>, depending on whether we are in the
+	kernel). In other checkins, elements no longer include <errno.h>
+	directly, but rely on <click/glue.hh>.
+
+2001-02-26 Monday 10:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: skbmgr.hh, skbmgr.hh: skbmgr functions include
+	headroom arguments. also, removed extern "C"
+
+2001-02-24 Saturday 13:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: added cp_timeval() function and cpTimeval
+	constant
+
+2001-02-22 Thursday 18:50  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: ipaddress.hh, ipaddress.hh: make IPAddress
+	constructors for int, unsigned int, long, and unsigned long (rather
+	than a dangerous mix of u_int32_t and unsigned long)
+
+2001-02-22 Thursday 14:16  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc:
+	changed TimerHook to take (Timer *, void *) arguments instead of
+	(unsigned long)
+
+2001-02-18 Sunday 16:50  Robert Morris <rtm@lcs.mit.edu>
+
+	* include/click/: ipaddress.hh, ipaddress.hh: fix for freebsd
+
+2001-02-16 Friday 19:38  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ip.h, click_ip.h: add constants for IP ECN
+	stuff
+
+2001-02-15 Thursday 22:45  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: add mixed keywords: keyword arguments can be
+	mixed in with regular, positional arguments. cpKeywords gives mixed
+	keywords by default. (cpUnmixedKeywords gives unmixed keywords.)
+	Also, "-" is no longer a valid character in keywords; and keywords
+	must start with a letter or "_".
+
+2001-02-14 Wednesday 23:46  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: packet.hh, skbmgr.h, packet.hh, skbmgr.h,
+	skbmgr.h.old, skbmgr.hh, skbmgr.h.old, skbmgr.hh: merge in skbmgr
+	changes from mazu: use only 2 buckets, 1800 and 500 bytes, also use
+	c++ interface instead of c interface
+
+2001-02-14 Wednesday 19:14  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh, libsrc/packet.cc:
+	PACKET_TYPE_MASK changes to support PACKET_CLEAN; also nitlets
+	(Mazu)
+
+2001-02-14 Wednesday 19:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipaddress.hh, include/click/ipflowid.hh,
+	include/click/ipaddress.hh, include/click/ipflowid.hh,
+	libsrc/confparse.cc: improve IPAddress constructors; for instance, add
+	IPAddress(int32_t) so that IPAddress(0) is nonambiguous
+
+2001-02-14 Wednesday 19:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc:
+	added ErrorHandler::{debug,ldebug} methods (Anne Dudfield, Mazu)
+
+2001-02-14 Wednesday 17:11  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	added append_fill(int char_value, int length) [like memset] and
+	append_space(int length) [like realloc: added space contains
+	undetermined data] methods
+
+2001-02-13 Tuesday 23:38  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: packet.hh, skbmgr.h, packet.hh, skbmgr.h: click
+	skb manager interface
+
+2001-02-13 Tuesday 23:38  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/packet.cc: packet create and kill now uses click skb manager
+
+2001-02-12 Monday 14:42  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/clp.c: nitlets, and click-align fixes (?) reported by Benjie,
+	Dan Aguayo, et al
+
+2001-02-10 Saturday 21:11  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, router.cc: nitlets: missing dependency, generate
+	error messages differently, whitespace (Mazu)
+
+2001-02-10 Saturday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: elemlink.hh, elemlink.hh: initialize the _list
+	member to a null pointer (Mazu)
+
+2001-02-10 Saturday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: element.hh, element.hh: the parts of an
+	Element::Connection should not be public
+
+2001-02-10 Saturday 21:02  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: avoid error messages on nonexistent files
+
+2001-02-10 Saturday 21:01  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipaddress.hh, include/click/ipaddress.hh,
+	libsrc/ipaddress.cc: added unparse(), unparse_mask(), and
+	unparse_with_mask() functions (Mazu)
+
+2001-02-10 Saturday 21:00  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/glue.hh, include/click/glue.hh, libsrc/glue.cc:
+	click_chatter() now always uses an ErrorHandler, the
+	default_handler(). Also, be more careful about placement new.
+	(Mazu)
+
+2001-02-10 Saturday 21:00  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc: add
+	LandmarkErrorHandler: apply landmark if no other landmark is
+	supplied
+
+2001-02-10 Saturday 20:59  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/element.cc: nitlet
+
+2001-02-10 Saturday 20:59  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bighashmap.cc, include/click/bighashmap.cc,
+	libsrc/bighashmap_arena.cc: be more careful about placement new (Mazu)
+
+2001-02-10 Saturday 20:57  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	add String::stable_string(const char *) creator function; bug fixes
+	and changes to make substring, mutable_data, and c_str functions
+	work on stable strings; changed claim_string() to take a non-const
+	char *; added c_str method (Mazu)
+
+2001-02-10 Saturday 20:52  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh, libsrc/packet.cc:
+	Be more careful with respect to out-of-memory conditions: for
+	example, if Packet::push() fails and returns null, then it will
+	delete the old packet too. Also, added USER_ANNO{_U,_I,}_SIZE to
+	Packet; suggested by Dimitri Stratton Vlachos <d@mazunetworks.com>.
+	Also, WritablePacket {con,de}structors private. Added
+	change_headroom_and_length() and nonunique_put(). Moved put() to
+	header file. User-level packet memory destructors take poitner and
+	length, not just pointer. All (Mazu)
+
+2001-02-10 Saturday 20:48  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: subvector.hh, subvector.hh: changed Subvector<T
+	*> inheritance to "public"; avoids instantiation errors found by
+	Anne <anne@dumbfuck.dudfield.mazunetworks.com> (Mazu)
+
+2001-02-10 Saturday 20:48  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc, include/click/confparse.hh,
+	include/click/confparse.hh: CpVaParseCmd is now a C string type:
+	const char *. Constants such as cpInteger are now "const char *"
+	constants. The "cp_argtype" structure is exported. Changed the
+	definition of cp_add_argtype; new function is cp_register_argtype.
+	All should make it much easier to add and remove argtypes
+	dynamically.
+
+2001-01-14 Sunday 15:37  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/ip6address.cc: changed get_ip4address so it can get ip4
+	address from both IPv4-mapped IPv6 address (::ffff:18.26.4.116) and
+	IPv4-compatible IPv6 addresses (::18.26.4.125).
+
+2001-01-07 Sunday 23:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: sync.hh, sync.hh: mostly declaring elements
+	MT_SAFE
+
+2001-01-07 Sunday 13:40  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/timer.hh, include/click/timer.hh, libsrc/timer.cc:
+	added schedule_at() function (Mz)
+
+2001-01-07 Sunday 13:40  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: llrpc.h, llrpc.h: remove GET_COUNTS_RESET llrpc;
+	change click_llrpc_counts_st to support transferring less data
+	across KU boundary (Mz)
+
+2001-01-07 Sunday 13:39  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh, include/click/straccum.hh,
+	libsrc/straccum.cc: changed operator<< from member functions to global
+	functions; added function for struct timeval (Mz)
+
+2001-01-07 Sunday 13:37  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: don't bother to call select() if there are no
+	selects; also run work list fewer times before calling wait() at
+	user level (Mz)
+
+2001-01-07 Sunday 13:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc: added CONFIGURE_PHASE_LATE constant and local_llrpc
+	virtual function (Mz)
+
+2000-12-28 Thursday 11:14  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/atomic.cc: added
+
+2000-12-28 Thursday 11:11  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/integers.cc: #include buglet
+
+2000-12-28 Thursday 11:10  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipaddress.hh, include/click/ipaddress.hh,
+	libsrc/ipaddress.cc: added mask_to_prefix_bits()
+
+2000-12-21 Thursday 00:00  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/string.cc: String::find_left(String, int) fix (Mz)
+
+2000-12-18 Monday 18:25  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: packet.hh, packet.hh: better arrangement of
+	annotation area
+
+2000-12-18 Monday 18:13  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: atomic.hh, atomic.hh, mplock.hh, mplock.hh,
+	sync.hh, sync.hh: smp merge first step: changed elements that keep
+	counters to use u_atomic32_t instead
+
+2000-12-16 Saturday 21:55  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/atomic.cc: file atomic.cc was initially added on branch
+	smp_click.
+
+2000-12-16 Saturday 21:55  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: atomic.hh, atomic.hh: file atomic.hh was
+	initially added on branch smp_click.
+
+2000-12-15 Friday 04:13  Eddie Kohler <kohler@aciri.org>
+
+	* README, click-buildtool: configuration updates for building on
+	System V and other platforms; documentation changes
+
+2000-12-15 Friday 02:44  Eddie Kohler <kohler@aciri.org>
+
+	* README: mentioned anonymous CVS repository
+
+2000-12-15 Friday 02:07  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL, README, include/click/glue.hh, include/click/glue.hh: IP
+	rewriter: added faster garbage collection for completed TCP
+	sessions, other fixes. Also nitlets; RatedSource sets timestamp
+	annotation on its generated packets; documentation; and a new Linux
+	patch.
+
+2000-12-11 Monday 16:50  Eddie Kohler <kohler@aciri.org>
+
+	* README: added tcpudp directory for TCP or UDP elements; updated
+	IPRewriter and TCPRewriter to support dropping on receipt of FIN or
+	RST; other changes to support that; doc nitlets elsewhere
+
+2000-12-11 Monday 16:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: added cp_keyword_argument(): parse a single
+	keyword argument, or ignore it
+
+2000-12-07 Thursday 19:02  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/ipaddress.hh, include/click/ipflowid.hh,
+	include/click/ipaddress.hh, include/click/ipflowid.hh,
+	libsrc/ipaddress.cc: IPRewriter updates to support IPAddrRewriter, and
+	also to support multiple protocols
+
+2000-12-07 Thursday 18:59  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ip.h, click_ip.h: added IP_PROTO_TCP_OR_UDP
+
+2000-12-06 Wednesday 10:39  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: ewma.hh, ewma.hh: added rate() and unparse()
+	methods
+
+2000-12-06 Wednesday 10:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_icmp.h, click_icmp6.h, click_ip.h,
+	click_ip6.h, ipaddress.hh, click_icmp.h, click_icmp6.h, click_ip.h,
+	click_ip6.h, ipaddress.hh: click_ip makeover. Now IPAddress does
+	not depend on click_ip. Also added some fragmentation-related
+	macros and fixed bad #include statements.
+
+2000-12-06 Wednesday 10:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: llrpc.h, llrpc.h: added GET_COUNTS llrpcs
+
+2000-12-06 Wednesday 10:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: bug fixes: crash when printing signature, and
+	bad message
+
+2000-12-06 Wednesday 10:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet.hh, packet_anno.hh, packet.hh,
+	packet_anno.hh: changed annotations again: now forward and reverse
+	rate annotations are stored by macros into an arbitrary annotation
+	section (Mz)
+
+2000-12-06 Wednesday 09:47  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/clp.c: added check for strtoul(), and handle negative numbers
+	better in CLP when it doesn't exist
+
+2000-11-29 Wednesday 11:57  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: fixed "ports" handler problem reported by Brecht
+	Vermeulen
+
+2000-11-27 Monday 21:19  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/skbmgr.c: file skbmgr.c was initially added on branch
+	smp_click.
+
+2000-11-27 Monday 21:19  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: skbmgr.h, skbmgr.h: file skbmgr.h was initially
+	added on branch smp_click.
+
+2000-11-27 Monday 00:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/llrpc.h, include/click/packet.hh,
+	include/click/packet_anno.hh, include/click/llrpc.h,
+	include/click/packet.hh, include/click/packet_anno.hh,
+	libsrc/confparse.cc, libsrc/packet.cc: bug fixes; added userlevel
+	destructor included in Packet data (so Packet might not own its
+	memory -- more flexible); removed specialized annotations from
+	packet.hh in favor of general annotations like user_anno_c(3) --
+	mnemonic names for these annotations are defined in
+	<click/packet_anno.hh>; updated NEWS
+
+2000-11-27 Monday 00:09  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	added support for "*" write handler, which gives an element to
+	create handlers as they are requested (Mazu)
+
+2000-11-21 Tuesday 23:59  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, lexer.cc: more parsing updates:
+	"connectiontunnel" statement only takes one tunnel; overloading
+	mechanism returns the closest class if there is no exact match, but
+	one class is closer than others, because the error messages are
+	more reasonable; better error messages in drivers on redeclarations
+	of elements; eradicated a crash caused by elementclass synonyms,
+	plus other synonym bugfixes; in tools, report errors for unused
+	tunnels, like drivers already dead (Mazu)
+
+2000-11-21 Tuesday 23:57  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/router.hh, include/click/router.hh, libsrc/router.cc:
+	add Router::preinitialize() to put the Router in a reasonable state
+	before or in lieu of fully initializing it (Mazu)
+
+2000-11-21 Tuesday 23:55  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/variableenv.cc: support ${variable} syntax (Mazu)
+
+2000-11-20 Monday 21:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/lexer.hh, include/click/lexer.hh, libsrc/lexer.cc:
+	make anonymous element class names truly unique
+
+2000-11-19 Sunday 17:53  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/variableenv.hh, include/click/variableenv.hh,
+	libsrc/variableenv.cc: forgot to add VariableEnvironment, whoops (Mz)
+
+2000-11-19 Sunday 17:50  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, include/click/lexer.hh, include/click/lexer.hh,
+	libsrc/confparse.cc, libsrc/lexer.cc: Lots of parsing-related changes.
+	Many error message improvements and more careful coding in the
+	tools. Biggest user-visible change: added overloading to compound
+	elements. (Mazu)
+
+2000-11-19 Sunday 17:48  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: iptable.cc, iptable2.cc: fixed bugs caused by bad
+	assumption. Code assumed that after cp_ip_prefix(str, &ip, &mask),
+	you must have (ip & ~mask) == 0. This was NOT in fact true. So
+	added some explicit maskings (basically, ip &= mask).
+
+2000-11-19 Sunday 17:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/etheraddress.hh, include/click/ipaddress.hh,
+	include/click/etheraddress.hh, include/click/ipaddress.hh,
+	libsrc/etheraddress.cc: added operator<<(StringAccum &, const
+	EtherAddress &) and operator&(IPAddress, IPAddress)
+
+2000-11-19 Sunday 17:44  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: gaprate.hh, gaprate.hh: small change so that
+	rates of 1pps work correctly (Mazu; reported by Jessie)
+
+2000-11-19 Sunday 17:44  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc:
+	more ErrorHandler changes for better consistency of result messages
+
+2000-11-15 Wednesday 23:24  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/ip6address.cc, include/click/click_ip6.h,
+	include/click/click_ip6.h: in6_fast_cksum arguments changed.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* AUTHORS: test click smp branch checkin and merge
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/skbmgr.cc: file skbmgr.cc was initially added on branch
+	smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: skbmgr.hh, skbmgr.hh: file skbmgr.hh was
+	initially added on branch smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: sync.hh, sync.hh: file sync.hh was initially
+	added on branch smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: routerthread.hh, routerthread.hh: file
+	routerthread.hh was initially added on branch smp_click.
+
+2000-11-13 Monday 13:29  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh, include/click/packet.hh,
+	libsrc/confparse.cc: other bug fixes: fixed crash in IPFilter parsing,
+	preserve case in IPFilter expressions, added version of
+	Packet::timestamp_anno() that returns a non-const struct timeval,
+	ICMPPingRewriter buglet, etc.
+
+2000-11-13 Monday 13:28  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	libsrc/element.cc, libsrc/router.cc: after running the processing
+	determination algorithm, assign any remaining agnostics to push
+
+2000-11-11 Saturday 12:14  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/click_icmp.h, include/click/ipaddress.hh,
+	include/click/click_icmp.h, include/click/ipaddress.hh,
+	libsrc/ipaddress.cc: improved IPPrint messages for ICMP, and added
+	operator<<(StringAccum &, IPAddress)
+
+2000-11-10 Friday 12:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/ipflowid.hh,
+	include/click/confparse.hh, include/click/ipflowid.hh,
+	libsrc/confparse.cc, libsrc/ipflowid.cc: nitlets (confparse header order,
+	cp_uncomment: don't remove internal spaces around comments, remove
+	IPFlowID2)
+
+2000-11-09 Thursday 21:28  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/bighashmap_arena.hh, include/click/bighashmap.cc,
+	include/click/bighashmap.hh, include/click/bighashmap_arena.hh,
+	libsrc/bighashmap_arena.cc: added BigHashMap_Arena and template
+	specializations for BigHashMap to reduce code bloat (Mazu)
+
+2000-11-09 Thursday 21:27  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh: now AddressInfo supports
+	combined address-prefix arguments like 1.0.0.59/24
+
+2000-11-09 Thursday 21:27  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: added keyword support to cp_va_parse() and
+	friends (Mazu)
+
+2000-11-06 Monday 02:37  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	include/click/element.hh, include/click/element.hh,
+	libsrc/confparse.cc, libsrc/element.cc: confparse: support dynamically
+	added/removed argtypes to cp_va_parse() and friends. Also removed
+	Element::static_initialize(), added cp_va_static_initialize().
+	(Mazu)
+
+2000-11-06 Monday 02:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/clp.h, include/click/clp.h, libsrc/clp.c: added
+	Clp_CurOptionName() (Mazu)
+
+2000-11-06 Monday 02:35  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/error.hh, include/click/error.hh, libsrc/error.cc:
+	ErrorHandler changes for better flexibility: added ErrorVeneer
+	class, updated other ErrorHandlers accordingly. Now creating a
+	message is broken into three stages: creating the text, applying
+	the landmark, printing the text. (Mazu)
+
+2000-11-03 Friday 10:57  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/: glue.hh, glue.hh: new get usec helper
+
+2000-11-02 Thursday 14:39  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/scheduleinfo.cc, include/click/elemlink.hh,
+	include/click/elemlink.hh, libsrc/element.cc: getting it to compile
+	with RR_SCHED again
+
+2000-11-02 Thursday 13:46  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/: alignmentinfo.hh, alignmentinfo.hh,
+	alignmentinfo.hh: added PerfCountInfo element for Benjie,
+	documentation generation fixes (Mazu)
+
+2000-11-01 Wednesday 19:35  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: standard/addressinfo.hh,
+	standard/alignmentinfo.hh, standard/addressinfo.hh,
+	standard/alignmentinfo.hh, standard/addressinfo.hh,
+	standard/alignmentinfo.hh, standard/errorelement.hh,
+	standard/errorelement.hh, standard/errorelement.hh,
+	standard/scheduleinfo.hh, standard/scheduleinfo.hh,
+	standard/scheduleinfo.hh, llrpc.h, llrpc.h: documentation changes:
+	changed the way summary sections are handled (they now follow "-s",
+	as in "-s IPv6"), changed all elements to conform. Also changed
+	click-elem2man so generating manual pages from a package does not
+	clobber the old list of manual pages (new -L option). (Mazu)
+
+2000-11-01 Wednesday 19:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh, include/click/straccum.hh,
+	libsrc/straccum.cc: add StringAccum::operator<<(const StringAccum &)
+
+2000-10-31 Tuesday 17:35  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/straccum.hh, include/click/string.hh,
+	include/click/straccum.hh, include/click/string.hh, libsrc/error.cc,
+	libsrc/string.cc: other changes from Mazu (note: previous group of
+	changes is all from Mazu)
+
+2000-10-31 Tuesday 17:33  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: change /proc handling to use newer, undeprecated
+	create_proc_entry() API. Also support removing a kernel module even
+	while someone has a handler file open underneath. Added new kernel
+	patch
+
+2000-10-31 Tuesday 17:13  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: perfctr-i586.hh, perfctr.hh, perfctr-i586.hh,
+	perfctr.hh: performance counter cleanups: do not include PerfInfo,
+	remove old PerfCtr class from perfctr.hh
+
+2000-10-26 Thursday 12:06  Peilei Fan <peilei@lcs.mit.edu>
+
+	* include/click/: click_ip6.h, click_ip6.h: add in_ip4_cksum(..)
+	metahod.
+
+2000-10-26 Thursday 12:04  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/click_ip6.h: should not be there
+
+2000-10-25 Wednesday 19:04  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/: click_ip6.h, ip6address.cc: add a method in_ip4_cksum(...).
+
+2000-10-23 Monday 15:34  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap, include/click/click_tcp.h,
+	include/click/packet.hh, include/click/click_tcp.h,
+	include/click/packet.hh, libsrc/router.cc: other changes from Mazu
+
+2000-10-23 Monday 15:33  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh, include/click/string.hh, libsrc/string.cc:
+	from Mazu: add String(long) constructor
+
+2000-10-23 Monday 15:32  Eddie Kohler <kohler@aciri.org>
+
+	* README: from Mazu: dont compile udpgen and udpcount by default;
+	add HAVE_TULIP_INTERRUPT_HOOK
+
+2000-10-23 Monday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: from Mazu: create libclick.a containing
+	supporting code for Click userlevel program
+
+2000-10-23 Monday 15:29  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: from Mazu: bug fix: cp_ip_address could look at
+	a character that didnt exist
+
+2000-10-23 Monday 15:27  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/error.cc: from Mazu: support "%#c" flag in ErrorHandler for
+	printing characters in a human-readable way
+
+2000-10-16 Monday 11:38  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: Use MOD_IN_USE to make the use count for
+	packages more reliable. Also fixed click-fastclassifier #include
+	related bug.
+
+2000-10-16 Monday 11:27  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: define CLICK_PACKAGE when compiling a package
+
+2000-10-16 Monday 11:26  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: package.hh, package.hh: provide definition for
+	MOD_IN_USE
+
+2000-10-16 Monday 11:26  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: fix Perl warnings
+
+2000-10-13 Friday 13:25  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/router.cc: [no log message]
+
+2000-10-13 Friday 11:50  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/router.cc: [no log message]
+
+2000-10-12 Thursday 01:23  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, libsrc/addressinfo.cc,
+	libsrc/alignmentinfo.cc,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	libsrc/errorelement.cc,
+	include/click/standard/errorelement.hh,
+	include/click/standard/errorelement.hh,
+	include/click/standard/errorelement.hh,
+	libsrc/scheduleinfo.cc,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh, include/click/.cvsignore,
+	include/click/package.hh, include/click/.cvsignore,
+	include/click/package.hh: make even standard element source files
+	package-ready
+
+2000-10-11 Wednesday 20:41  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, include/click/lexer.hh, include/click/llrpc.h,
+	include/click/package.hh, include/click/packet.hh,
+	include/click/lexer.hh, include/click/llrpc.h,
+	include/click/package.hh, include/click/packet.hh, libsrc/lexer.cc,
+	libsrc/packet.cc, libsrc/router.cc: changes from mazu, mostly to support
+	packages, plus some fixes to element2man. also changes from barbara
+	-- report errors better on compound element port mistakes.
+
+2000-10-09 Monday 17:39  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, click-compile.in, click-mkelemmap,
+	include/click/archive.hh, include/click/archive.hh,
+	libsrc/userutils.cc: removed function from compile and buildtool,
+	suport devirtualize on packages
+
+2000-10-09 Monday 13:26  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/clickpackage.hh: removing dead files
+
+2000-10-09 Monday 13:20  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, click-mkelemmap,
+	libsrc/addressinfo.cc,
+	libsrc/alignmentinfo.cc,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	libsrc/errorelement.cc,
+	include/click/standard/errorelement.hh,
+	include/click/standard/errorelement.hh,
+	include/click/standard/errorelement.hh,
+	libsrc/scheduleinfo.cc,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh, include/click/archive.hh,
+	include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/bitvector.hh, include/click/click_ether.h,
+	include/click/click_icmp.h, include/click/click_icmp6.h,
+	include/click/click_ip.h, include/click/archive.hh,
+	include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/bitvector.hh, include/click/click_ether.h,
+	include/click/click_icmp.h, include/click/click_icmp6.h,
+	include/click/click_ip.h, include/click/click_ip6.h,
+	include/click/click_tcp.h, include/click/click_udp.h,
+	include/click/clp.h, include/click/confparse.hh,
+	include/click/crc32.h, include/click/element.hh,
+	include/click/elemfilter.hh, include/click/elemlink.hh,
+	include/click/error.hh, include/click/etheraddress.hh,
+	include/click/ewma.cc, include/click/click_ip6.h,
+	include/click/click_tcp.h, include/click/click_udp.h,
+	include/click/clp.h, include/click/confparse.hh,
+	include/click/crc32.h, include/click/element.hh,
+	include/click/elemfilter.hh, include/click/elemlink.hh,
+	include/click/error.hh, include/click/etheraddress.hh,
+	include/click/ewma.cc, include/click/ewma.hh,
+	include/click/gaprate.hh, include/click/glue.hh,
+	include/click/hashmap.cc, include/click/hashmap.hh,
+	include/click/integers.hh, include/click/ip6address.hh,
+	include/click/ip6table.hh, include/click/ipaddress.hh,
+	include/click/ipaddressset.hh, include/click/ipflowid.hh,
+	include/click/iptable.hh, include/click/ewma.hh,
+	include/click/gaprate.hh, include/click/glue.hh,
+	include/click/hashmap.cc, include/click/hashmap.hh,
+	include/click/integers.hh, include/click/ip6address.hh,
+	include/click/ip6table.hh, include/click/ipaddress.hh,
+	include/click/ipaddressset.hh, include/click/ipflowid.hh,
+	include/click/iptable.hh, include/click/iptable2.hh,
+	include/click/lexer.hh, include/click/llrpc.h,
+	include/click/mplock.hh, include/click/package.hh,
+	include/click/packet.hh, include/click/perfctr-i586.hh,
+	include/click/perfctr.hh, include/click/radix.hh,
+	include/click/router.hh, include/click/straccum.hh,
+	include/click/string.hh, include/click/iptable2.hh,
+	include/click/lexer.hh, include/click/llrpc.h,
+	include/click/mplock.hh, include/click/package.hh,
+	include/click/packet.hh, include/click/perfctr-i586.hh,
+	include/click/perfctr.hh, include/click/radix.hh,
+	include/click/router.hh, include/click/straccum.hh,
+	include/click/string.hh, include/click/subvector.hh,
+	include/click/timer.hh, include/click/userutils.hh,
+	include/click/vector.cc, include/click/vector.hh,
+	include/click/subvector.hh, include/click/timer.hh,
+	include/click/userutils.hh, include/click/vector.cc,
+	include/click/vector.hh, libsrc/archive.cc, libsrc/archive.hh,
+	libsrc/bighashmap.cc, libsrc/bighashmap.hh, libsrc/bitvector.cc,
+	libsrc/bitvector.hh, libsrc/click_ether.h, libsrc/click_icmp.h,
+	libsrc/click_icmp6.h, libsrc/click_ip.h, libsrc/click_ip6.h,
+	libsrc/click_tcp.h, libsrc/click_udp.h, libsrc/clp.c, libsrc/clp.h,
+	libsrc/confparse.cc, libsrc/confparse.hh, libsrc/crc32.c, libsrc/crc32.h,
+	libsrc/element.cc, libsrc/element.hh, libsrc/elemfilter.cc,
+	libsrc/elemfilter.hh, libsrc/elemlink.cc, libsrc/elemlink.hh, libsrc/error.cc,
+	libsrc/error.hh, libsrc/errorelement.cc, libsrc/errorelement.hh,
+	libsrc/etheraddress.cc, libsrc/etheraddress.hh, libsrc/ewma.cc, libsrc/ewma.hh,
+	libsrc/gaprate.cc, libsrc/gaprate.hh, libsrc/glue.cc, libsrc/glue.hh,
+	libsrc/hashmap.cc, libsrc/hashmap.hh, libsrc/in_cksum.c, libsrc/integers.hh,
+	libsrc/ip6address.cc, libsrc/ip6address.hh, libsrc/ip6table.cc,
+	libsrc/ip6table.hh, libsrc/ipaddress.cc, libsrc/ipaddress.hh,
+	libsrc/ipaddressset.cc, libsrc/ipaddressset.hh, libsrc/ipflowid.cc,
+	libsrc/ipflowid.hh, libsrc/iptable.cc, libsrc/iptable.hh, libsrc/iptable2.cc,
+	libsrc/iptable2.hh, libsrc/lexer.cc, libsrc/lexer.hh, libsrc/llrpc.h,
+	libsrc/mplock.hh, libsrc/packet.cc, libsrc/packet.hh, libsrc/perfctr.hh,
+	libsrc/radix.cc, libsrc/radix.hh, libsrc/router.cc, libsrc/router.hh,
+	libsrc/straccum.cc, libsrc/straccum.hh, libsrc/string.cc, libsrc/string.hh,
+	libsrc/subvector.hh, libsrc/templatei.cc, libsrc/timer.cc, libsrc/timer.hh,
+	libsrc/userutils.cc, libsrc/userutils.hh, libsrc/vector.cc, libsrc/vector.hh,
+	libsrc/vectorv.cc: Great Include Makeover Mark One
+
+2000-10-06 Friday 18:00  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: buildtool update
+
+2000-10-06 Friday 17:56  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool, libsrc/userutils.cc: move to click-buildtool
+
+2000-10-05 Thursday 15:47  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: updates to NEWS and samplepackage
+
+2000-10-05 Thursday 12:52  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, lexer.hh: loogah, etc/samplepackage, package
+	system improvements
+
+2000-10-04 Wednesday 20:14  Eddie Kohler <kohler@aciri.org>
+
+	* README: linuxmodule 1.1
+
+2000-10-04 Wednesday 19:03  Eddie Kohler <kohler@aciri.org>
+
+	* LICENSE, README, click-compile.in,
+	libsrc/addressinfo.cc,
+	libsrc/alignmentinfo.cc,
+	libsrc/scheduleinfo.cc, libsrc/archive.cc, libsrc/bigewma.cc,
+	libsrc/bighashmap.cc, libsrc/bitvector.cc, libsrc/clp.c, libsrc/clp.h,
+	libsrc/confparse.cc, libsrc/element.cc, libsrc/elemfilter.cc,
+	libsrc/elemlink.cc, libsrc/error.cc, libsrc/errorelement.cc,
+	libsrc/etheraddress.cc, libsrc/ewma.cc, libsrc/gaprate.cc, libsrc/glue.cc,
+	libsrc/hashmap.cc, libsrc/integers.cc, libsrc/ip6address.cc,
+	libsrc/ip6table.cc, libsrc/ipaddress.cc, libsrc/ipaddressset.cc,
+	libsrc/ipflowid.cc, libsrc/iptable.cc, libsrc/iptable2.cc, libsrc/lexer.cc,
+	libsrc/lulea.cc, libsrc/packet.cc, libsrc/radix.cc, libsrc/router.cc,
+	libsrc/straccum.cc, libsrc/string.cc, libsrc/templatei.cc, libsrc/timer.cc,
+	libsrc/userutils.cc, libsrc/vector.cc, libsrc/vectorv.cc: lick incense
+
+2000-10-03 Tuesday 20:32  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/llrpc.h: up with mazuchanges
+
+2000-10-03 Tuesday 01:30  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, libsrc/lexer.cc: lexer for
+	correct compounds, scheduleinfo nitlet
+
+2000-10-01 Sunday 23:55  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/packet.hh: faster etherencap; redid perfcount and cyclecount
+	stuff to make them make sense
+
+2000-09-27 Wednesday 19:03  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: straccum.cc, straccum.hh: tulipstats
+
+2000-09-26 Tuesday 11:50  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: bighashmap.hh, etheraddress.cc, hashmap.hh,
+	ipaddressset.cc, packet.hh, router.hh, straccum.hh, string.hh: fix
+	fastclass, fix for gcc-2.96
+
+2000-09-23 Saturday 12:12  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, ip6address.cc, ipaddress.cc,
+	ipaddressset.cc, ipaddressset.hh: IPAddressSet
+
+2000-09-21 Thursday 14:06  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: x
+
+2000-09-21 Thursday 11:10  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/sync.hh: file sync.hh was initially added on branch
+	smp-benjie.
+
+2000-09-21 Thursday 10:31  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: router.hh, routerthread.cc, routerthread.hh: debenjify
+
+2000-09-21 Thursday 10:24  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: debenj
+
+2000-09-21 Thursday 10:21  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/elemlink.hh: worklist destroyed (debenj)
+
+2000-09-20 Wednesday 16:18  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: elemlink.hh, mplock.hh, router.cc, router.hh,
+	routerthread.cc, routerthread.hh: smp groundwork
+
+2000-09-20 Wednesday 11:21  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: more packet bullshit
+
+2000-09-19 Tuesday 10:39  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: fixed packet::put
+
+2000-09-17 Sunday 16:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/archive.cc: fixes to many things, especially: archive can
+	support zero-length members, click-align warns on added aligns,
+	better landmarks from -combine and -uncombine, fixed longstanding
+	xform etc. bug
+
+2000-09-15 Friday 16:40  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, ipaddress.hh, packet.hh: modifications to
+	click-align (second arg to the checkipheaders); packet_type to
+	packet; device annotation; and fixed from/tolinux to work correctly
+
+2000-09-14 Thursday 14:30  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/llrpc.h: iprewriter llrpc
+
+2000-09-10 Sunday 15:57  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc: nitlets
+
+2000-09-07 Thursday 21:02  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/gaprate.hh: gaprate fuckup
+
+2000-09-07 Thursday 12:11  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in, libsrc/gaprate.cc, libsrc/gaprate.hh,
+	libsrc/userutils.cc: unqueues added ; gaprate.?? ; rearranged stuff
+	for robert CLICKPATH
+
+2000-09-06 Wednesday 10:24  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/packet.hh: [no log message]
+
+2000-09-05 Tuesday 13:18  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: fucking douglas!
+
+2000-09-04 Monday 18:57  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/lexer.cc: painttee, various nitlet fixes such as error
+	messages and documentation
+
+2000-09-03 Sunday 13:00  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/packet.hh: [no log message]
+
+2000-08-31 Thursday 00:11  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, libsrc/ip6address.cc, libsrc/ip6address.hh, libsrc/lexer.cc:
+	deadcode, other updates
+
+2000-08-30 Wednesday 16:09  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, element.cc: java controller bullshit, magic
+	real unparsing correctness
+
+2000-08-30 Wednesday 10:35  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/: click_ip6.h, ip6address.cc: nits
+
+2000-08-30 Wednesday 10:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* libsrc/ip6address.cc: const bug
+
+2000-08-29 Tuesday 17:08  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/ip6address.cc: [no log message]
+
+2000-08-29 Tuesday 17:04  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/click_icmp6.h: bugs.
+
+2000-08-29 Tuesday 16:11  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/: ip6address.cc, ip6address.hh: add a constructor
+	IP6Address(const IPAddress ip)
+
+2000-08-28 Monday 22:40  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: bitvector.cc, confparse.cc, confparse.hh, element.cc,
+	element.hh, userutils.cc: click-undead, from mazu
+
+2000-08-27 Sunday 20:14  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, lexer.cc, router.cc: added (c) mazu networks
+	to files which contain patches/additions/major changes from mazu
+
+2000-08-27 Sunday 19:17  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, lexer.cc: quotes and dollar signs
+
+2000-08-27 Sunday 15:31  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS: author
+
+2000-08-27 Sunday 15:31  Eddie Kohler <kohler@aciri.org>
+
+	* README, libsrc/router.cc: apps
+
+2000-08-27 Sunday 00:53  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: furg
+
+2000-08-26 Saturday 17:20  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/packet.cc: Avoid expensive Push in ToyTCP.
+
+2000-08-26 Saturday 15:29  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/packet.cc: Toy TCP
+
+2000-08-26 Saturday 09:57  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/click_ip6.h: Partial fixes for DEC OSF 1 4.0, g++ 2.8.1
+	
+	socklen_t -> int uin8_t &c -> unsigned whatever
+
+2000-08-25 Friday 11:23  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh: add defaults for the *prefix
+	methods
+
+2000-08-25 Friday 11:22  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc: nitlet
+
+2000-08-25 Friday 10:14  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/click_icmp6.h: [no log message]
+
+2000-08-24 Thursday 22:28  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS: authors
+
+2000-08-24 Thursday 22:23  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, README: blech
+
+2000-08-24 Thursday 22:13  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, README: AUTH
+
+2000-08-24 Thursday 21:56  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: bitvector.cc, bitvector.hh, router.cc, router.hh,
+	string.cc, string.hh: kdsaojfsafs
+
+2000-08-24 Thursday 16:58  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: bitvector.cc, bitvector.hh: [no log message]
+
+2000-08-23 Wednesday 18:51  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: bitvector.cc, bitvector.hh: patches from mazu
+
+2000-08-23 Wednesday 16:30  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: bigewma.cc, bigewma.hh: [no log message]
+
+2000-08-23 Wednesday 13:50  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/click_icmp6.h: [no log message]
+
+2000-08-22 Tuesday 23:19  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma.hh: [no log message]
+
+2000-08-22 Tuesday 17:28  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/ewma.cc: xskxmak
+
+2000-08-22 Tuesday 15:32  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/: ip6address.cc, ip6table.cc: [no log message]
+
+2000-08-22 Tuesday 15:32  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/click_ether.h: change arp6 stuff to nd_sol/nd_adv
+
+2000-08-22 Tuesday 13:11  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, ewma.cc, ewma.hh:
+	xsacdnkjanfdkjnakjnfjdsa: mostly unsigned and udpgen fix
+
+2000-08-22 Tuesday 11:15  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/bighashmap.cc: fix memory leak in bighashmap; move
+	packetshaper2 into slowpacketshaper
+
+2000-08-22 Tuesday 10:37  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: bighashmap.cc, bighashmap.cc: [no log message]
+
+2000-08-21 Monday 23:26  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: mazu changes: /proc/click/threads, click-install
+
+2000-08-21 Monday 21:11  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/element.cc: added global read handlers to controlsocket;
+	classifier fixlet
+
+2000-08-21 Monday 16:48  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/confparse.cc: change cp_ip6_prefix relevant_bits <=128 rather
+	than 64 (line 1081)
+
+2000-08-21 Monday 12:45  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, router.cc, router.hh: handlers handler
+
+2000-08-20 Sunday 20:39  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: straccum.cc, straccum.hh, userutils.cc, userutils.hh: added
+	globbing to click -h; removed click --dir; more classifier
+	rigamarole
+
+2000-08-19 Saturday 22:47  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/click_ip.h: foo
+
+2000-08-19 Saturday 21:29  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/lexer.cc: tools updated to handle elementclass X Y
+
+2000-08-19 Saturday 20:09  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: hashmap.hh, lexer.cc: removed ^ from syntax in doc/click.5;
+	dont include SnoopTCP; HashMapIterator lets you change the value;
+	Lexer: added "elementclass NAME1 NAME2"; Tun -> KernelTap
+
+2000-08-18 Friday 23:08  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/click_ip6.h: nitlet
+
+2000-08-18 Friday 23:05  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh, libsrc/click_ip.h,
+	libsrc/click_ip6.h, libsrc/confparse.cc, libsrc/confparse.hh,
+	libsrc/etheraddress.cc, libsrc/etheraddress.hh, libsrc/ip6address.cc,
+	libsrc/ip6address.hh, libsrc/ipaddress.cc, libsrc/ipaddress.hh:
+	cp_ip_address_mask becomes cp_ip_prefix; added cp_ip6_prefix;
+	{IP,IP6,Ether}Address available in tools
+
+2000-08-18 Friday 20:13  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: glue.cc, glue.hh, router.cc: updates to grid elements (no
+	linuxmodule), and fixed memory leak
+
+2000-08-18 Friday 17:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, lexer.hh, packet.hh, router.cc: xxx
+
+2000-08-18 Friday 15:07  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: ip6address.cc, ip6address.hh, packet.hh: packet.hh
+
+2000-08-18 Friday 09:53  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/packet.hh: change the method dst_ip6_anno return type,
+	set_dst_ip6_anno's argument type
+
+2000-08-18 Friday 09:48  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/router.cc: Fix bug in which timeval passed to select was not
+	initialized if there were selectable file descriptors.
+
+2000-08-18 Friday 09:18  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/llrpc.h: [no log message]
+
+2000-08-18 Friday 02:17  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc: oops
+
+2000-08-18 Friday 02:11  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/: addressinfo.hh, addressinfo.hh,
+	addressinfo.hh: nitletlet
+
+2000-08-18 Friday 02:03  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh, libsrc/confparse.cc,
+	libsrc/confparse.hh: addressinfo nets
+
+2000-08-18 Friday 01:20  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/addressinfo.cc,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh,
+	include/click/standard/addressinfo.hh, libsrc/confparse.cc,
+	libsrc/confparse.hh, libsrc/element.hh: xxx
+
+2000-08-17 Thursday 23:49  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: peilei
+
+2000-08-17 Thursday 21:49  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/llrpc.h: get rid of unused variable errors
+
+2000-08-17 Thursday 21:06  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: router.cc, timer.cc: nitlet
+
+2000-08-17 Thursday 00:55  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/llrpc.h: llrpc.h
+
+2000-08-17 Thursday 00:55  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: click_ip6.h, in_cksum.c, ip6address.cc, llrpc.hh,
+	packet.hh: support /proc/click/config and errors tail -f for
+	example
+
+2000-08-16 Wednesday 14:21  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/: ip6address.cc, ip6address.hh, ip6table.cc: add
+	get_IP4Address(unsigned char ip4[4]) method, fix bug in ip6table's
+	lookup(...)
+
+2000-08-15 Tuesday 11:21  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/click_ether.h: differentiate neighborhood adv msg which
+	replies to multicast neigh. solitation message and unicast neigh.
+	solitation msag.
+
+2000-08-14 Monday 14:11  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: packet.hh, templatei.cc: mazu merge
+
+2000-08-10 Thursday 12:36  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/: click_ether.h, click_ip6.h: add methods: in6_cksum(.......)
+	and in6_fast_cksum(.......) for checksum calculating of
+	neighborhood solitation/advertise msg.	changed click_arp6req's
+	3bits to flags field.
+
+2000-08-09 Wednesday 16:16  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/: click_ether.h, click_ip6.h, in_cksum.c: Modification to fit
+	for IPv6 Neighborhood Discovery RFC 2461. IGnore arpfaker6 and
+	arpquerier6 for now.  The checksum part still need  more work.	Now
+	the arpresponder packet just set to 0.
+
+2000-08-08 Tuesday 17:00  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/llrpc.hh: [no log message]
+
+2000-08-08 Tuesday 09:30  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: llrpc.hh, templatei.cc: [no log message]
+
+2000-08-07 Monday 18:28  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: fixed confparse bug
+
+2000-08-07 Monday 12:42  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/llrpc.hh: [no log message]
+
+2000-08-07 Monday 01:21  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, element.hh, llrpc.hh, router.cc, router.hh:
+	llrpc
+
+2000-08-06 Sunday 22:20  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/confparse.cc: [no log message]
+
+2000-08-06 Sunday 12:16  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh, libsrc/hashmap2.cc,
+	libsrc/hashmap2.hh: mopre dcuemtnation
+
+2000-08-06 Sunday 00:22  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh, libsrc/errorelement.hh: more
+	element documentation: added =for, =begin, =end, and summaries,
+	greatly improved "man n elements"
+
+2000-08-05 Saturday 22:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* libsrc/bighashmap.cc: [no log message]
+
+2000-08-05 Saturday 15:49  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh, libsrc/confparse.hh,
+	libsrc/lexer.cc, libsrc/lexer.hh: elementdoc, lexer #line
+
+2000-08-04 Friday 12:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma.hh: [no log message]
+
+2000-08-04 Friday 02:31  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: click_ether.h, click_ip6.h, confparse.cc, confparse.hh,
+	ip6address.cc, ip6address.hh, ipaddress.cc, ipaddress.hh,
+	packet.hh: ipv6 fixes
+
+2000-08-04 Friday 00:34  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/click_ip.h: IPVERSION bye
+
+2000-08-03 Thursday 19:28  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/click_ether.h: ethertype
+
+2000-08-03 Thursday 16:38  Peilei Fan <peilei@lcs.mit.edu>
+
+	* libsrc/: click_ether.h, click_icmp6.h, click_ip.h, click_ip6.h,
+	confparse.cc, confparse.hh, ip6address.cc, ip6address.hh,
+	ip6table.cc, ip6table.hh, packet.cc, packet.hh, router.cc: add
+	support for IPv6
+
+2000-08-03 Thursday 15:03  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/mplock.hh: [no log message]
+
+2000-08-03 Thursday 13:03  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/click_ip.h: [no log message]
+
+2000-08-03 Thursday 01:03  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: in_cksum.c, packet.cc, packet.hh: in_cksum updates in many
+	places, fixed Rewriters and FTPPortMapper works!
+
+2000-08-02 Wednesday 16:43  Eddie Kohler <kohler@aciri.org>
+
+	* README, libsrc/packet.hh: updates for Peilei: rearrange annotations,
+	remove useless fucking annotations
+
+2000-08-01 Tuesday 14:12  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/bighashmap.cc: x
+
+2000-08-01 Tuesday 13:38  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: bighashmap.cc, bighashmap.hh, vector.hh: ddd
+
+2000-08-01 Tuesday 11:27  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/hashmap2.hh: [no log message]
+
+2000-08-01 Tuesday 09:20  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: bighashmap.cc, bighashmap.hh: bighashmap fixes and swap
+	method; linuxmodule element doc fixes; iprewriter takestate and
+	check port numbers
+
+2000-08-01 Tuesday 00:01  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: bighashmap.cc, bighashmap.hh, hashmap.cc, hashmap.hh,
+	string.hh, templatei.cc: HashMap skulduggery
+
+2000-07-31 Monday 18:04  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: glue.cc, glue.hh: glue updated again
+
+2000-07-31 Monday 17:39  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: glue.cc, glue.hh: DUMB! strtol bug
+
+2000-07-31 Monday 15:25  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/hashmap2.cc: use rate.freq() instead of CLICK_HZ
+	packetshaper2 is better than packetshaper (more accurate)
+
+2000-07-31 Monday 01:04  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/ipflowid.cc: x
+
+2000-07-31 Monday 00:28  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc,
+	libsrc/scheduleinfo.cc, libsrc/confparse.cc,
+	libsrc/confparse.hh, libsrc/element.cc, libsrc/element.hh, libsrc/ipflowid.cc,
+	libsrc/router.cc, libsrc/router.hh: IP rewriter documentation fix; added
+	FTPPortMapper; added IPRewriterPatterns; changed IPRewriter
+	internals; changed elementno() to eindex(); updated IPPrint to have
+	ASCII and HEX instea dof true/false data printing;confparse fixes
+
+2000-07-29 Saturday 16:15  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: hashmap2.cc, hashmap2.hh: [no log message]
+
+2000-07-28 Friday 11:02  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: click_ip.h, error.cc, in_cksum.c, straccum.hh: fix WRitable
+	issues and warnings on old GCCs
+
+2000-07-28 Friday 10:00  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, lexer.hh: xsa
+
+2000-07-27 Thursday 22:46  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: error.cc, error.hh: error changes ( better stuff )
+
+2000-07-27 Thursday 14:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: take errors
+
+2000-07-27 Thursday 14:17  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: ipaddress.cc, ipaddress.hh, ipflowid.cc, packet.cc,
+	packet.hh: WritablePacket
+
+2000-07-26 Wednesday 20:23  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, lexer.hh: oops -- naming bug
+
+2000-07-26 Wednesday 19:58  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, element.hh, lexer.cc, router.cc, router.hh:
+	select interface, removed old userlevel elements, Element updates
+
+2000-07-25 Tuesday 13:05  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: string.cc, string.hh: controlsocket update
+
+2000-07-25 Tuesday 10:34  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, element.cc, element.hh,
+	glue.cc, router.cc, router.hh, userutils.cc, userutils.hh: changed
+	ARP mechanisms; added ControlSocket
+
+2000-07-19 Wednesday 14:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* libsrc/click_ether.h: changed grid protocol number: wvlan_cs driver
+	won't transmit frames with high bit of protocol number set
+
+2000-07-17 Monday 20:48  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, libsrc/router.cc: fromdevice todevice userlevel
+
+2000-07-17 Monday 16:52  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/confparse.hh: mazu merge
+
+2000-07-17 Monday 16:44  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* libsrc/confparse.cc: fixed types for cp_ulong
+
+2000-07-14 Friday 18:32  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: confparse.cc, confparse.hh, glue.cc: [no log message]
+
+2000-07-14 Friday 18:02  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: click_tcp.h, hashmap.hh, ipflowid.hh, packet.cc, packet.hh:
+	ipclassifier!
+
+2000-07-14 Friday 12:13  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/etheraddress.hh: [no log message]
+
+2000-07-13 Thursday 16:42  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ipflowid.cc: [no log message]
+
+2000-07-12 Wednesday 17:52  Max Poletto <maxp@lcs.mit.edu>
+
+	* libsrc/: hashmap.cc, hashmap.hh, ipflowid.hh, packet.cc, packet.hh:
+	mazu merge
+
+2000-07-12 Wednesday 14:02  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/packet.hh: [no log message]
+
+2000-07-11 Tuesday 17:10  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: router.cc, router.hh: another blip to element handlers
+
+2000-07-11 Tuesday 13:41  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, element.hh, router.cc, router.hh: handler fixes
+
+2000-07-11 Tuesday 12:51  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: element.cc, element.hh: [no log message]
+
+2000-07-10 Monday 18:54  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, libsrc/confparse.cc: oops
+
+2000-07-10 Monday 16:12  Max Poletto <maxp@lcs.mit.edu>
+
+	* libsrc/perfctr.hh: [no log message]
+
+2000-07-09 Sunday 01:39  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, element.cc, lexer.cc, lexer.hh,
+	router.cc, router.hh: more configuration changes : better lexing,
+	unsubst
+
+2000-07-08 Saturday 23:14  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	libsrc/scheduleinfo.cc,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh, libsrc/confparse.cc,
+	libsrc/confparse.hh, libsrc/element.cc, libsrc/element.hh,
+	libsrc/errorelement.cc, libsrc/errorelement.hh, libsrc/lexer.cc,
+	libsrc/router.cc: the Great configure() Method Shift
+
+2000-07-06 Thursday 21:46  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/router.cc: sort fixes
+
+2000-07-06 Thursday 20:56  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc,
+	libsrc/scheduleinfo.cc,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/scheduleinfo.hh, libsrc/element.cc,
+	libsrc/element.hh, libsrc/router.cc: configure_phase
+
+2000-07-06 Thursday 18:22  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/click_ether.h: ethernet changes, fixed from bpf
+
+2000-07-06 Thursday 16:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* libsrc/click_ether.h: add grid subdir and config stuff
+
+2000-07-06 Thursday 12:02  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/ewma.hh: [no log message]
+
+2000-07-05 Wednesday 10:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: click_ip.h, confparse.cc: updates mostly to comments
+
+2000-06-30 Friday 13:07  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/confparse.cc: x
+
+2000-06-30 Friday 00:43  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/click_ip.h: added elements, etc
+
+2000-06-12 Monday 21:35  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, libsrc/element.cc: schdeuleinfo
+	warnings
+
+2000-06-12 Monday 19:42  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/element.cc: sajdh
+
+2000-06-10 Saturday 08:15  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/error.cc: no more verbose; added -m to click-install; fixed
+	chuck-check
+
+2000-06-09 Friday 16:39  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/ewma.hh: ewma XXX; ratemon update
+
+2000-06-08 Thursday 23:42  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: rate annotation changes
+
+2000-06-08 Thursday 23:39  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: ipaddress.cc, ipaddress.hh: saddr -> addr
+
+2000-06-08 Thursday 23:38  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/ewma.cc: ewma fix
+
+2000-06-08 Thursday 23:37  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: hashmapi.cc, templatei.cc, vectori.cc: tmemplatei.cc
+
+2000-06-07 Wednesday 20:35  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: ewma.cc, ewma.hh, ewma2.hh, glue.cc, glue.hh: EWMA changes
+
+2000-06-07 Wednesday 15:37  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, router.cc, router.hh: rename things
+
+2000-06-01 Thursday 10:19  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: ewma.hh, ewma2.hh: fixed ipratedsource config bug: used to
+	core dump fixed scheduling problem with ipratedsource: used to
+	schedule 1 instead of default number of tickets.  make ipratemon
+	take in two streams and make it go faster.
+
+2000-05-31 Wednesday 18:55  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/packet.hh: [no log message]
+
+2000-05-31 Wednesday 18:21  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: glue.hh, packet.cc, packet.hh: add compblock - compare
+	rates changed ipratemon to keep two rates
+
+2000-05-28 Sunday 22:22  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, element.cc, element.hh,
+	lexer.cc, router.cc, router.hh: added -s option; fixed bad
+	fast_csum usage; moved id() et al into Router
+
+2000-05-24 Wednesday 11:28  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: packet.cc, packet.hh: [no log message]
+
+2000-05-22 Monday 17:48  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, element.cc, element.hh,
+	lexer.cc, lexer.hh, router.cc, router.hh: RED state transfer;
+	element takes out _id and _landmark, back in Router; IP+netmask
+	confparsetype
+
+2000-05-15 Monday 11:52  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/elemlink.hh: [no log message]
+
+2000-05-09 Tuesday 16:53  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-06 Saturday 12:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: udpipencap
+
+2000-05-04 Thursday 11:21  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/packet.cc: richard-mortier
+
+2000-05-03 Wednesday 14:22  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: ewma2.hh, packet.hh: [no log message]
+
+2000-05-03 Wednesday 12:52  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-03 Wednesday 12:36  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-03 Wednesday 12:26  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-03 Wednesday 12:12  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-03 Wednesday 11:32  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-03 Wednesday 11:04  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-03 Wednesday 00:20  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-03 Wednesday 00:00  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/ewma2.hh: [no log message]
+
+2000-05-01 Monday 20:29  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: glue.cc, router.cc, router.hh, string.cc, timedelement.cc,
+	timedelement.hh, timer.cc, timer.hh: updates
+
+2000-04-30 Sunday 15:31  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/elemlink.hh: schedule_immediately for timer
+
+2000-04-30 Sunday 15:30  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/glue.cc: support for debugging memory allocator
+
+2000-04-30 Sunday 15:29  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/packet.cc: poacket is not interested in router
+
+2000-04-30 Sunday 15:28  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: radix.cc, radix.hh, iptable2.cc: no more memory leaks
+
+2000-04-30 Sunday 15:28  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: router.cc, router.hh, element.cc, element.hh: take_state
+
+2000-04-30 Sunday 15:28  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: timer.cc, timer.hh: fix so default timer succeeds in
+	putting on work list
+
+2000-04-28 Friday 18:15  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh, libsrc/errorelement.hh:
+	mostly documentation updates
+
+2000-04-28 Friday 14:11  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: added transport_header(); changed
+	set_ip_header() to reflect
+
+2000-04-27 Thursday 14:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: archive.cc, archive.hh: archives can be dead
+
+2000-04-25 Tuesday 14:32  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: packet.cc, packet.hh: [no log message]
+
+2000-04-25 Tuesday 10:30  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: userutils.cc, userutils.hh: added userutils
+
+2000-04-23 Sunday 11:51  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: errorelement.cc, errorelement.hh, unlimelement.cc,
+	unlimelement.hh: got rid of UnlimitedElement
+
+2000-04-20 Thursday 14:10  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh: more updates!
+
+2000-04-14 Friday 12:54  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/archive.cc: foo
+
+2000-04-13 Thursday 21:16  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/ipflowid.hh: sakdnsadnsak
+
+2000-04-13 Thursday 12:05  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/packet.hh: [no log message]
+
+2000-04-09 Sunday 11:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: archive.cc, glue.hh, lexer.cc, router.cc, router.hh,
+	timer.hh: to 1.0.3
+
+2000-04-07 Friday 18:35  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/glue.cc: changes, including some patches
+
+2000-04-06 Thursday 17:06  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/subvector.hh: forgot to add subvect
+
+2000-04-06 Thursday 16:07  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, element.hh, router.cc, vector.cc, vector.hh,
+	vectorv.cc: added Subvector<T>; autodetect -fpermissive; beginning
+	of click-check
+
+2000-04-03 Monday 10:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/error.cc: va_arg fix
+
+2000-04-02 Sunday 20:18  Eddie Kohler <kohler@aciri.org>
+
+	* README, libsrc/element.cc, libsrc/element.hh, libsrc/errorelement.hh,
+	libsrc/router.cc, libsrc/string.hh: oogah!
+
+2000-03-17 Friday 12:27  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: router.cc, timer.cc, timer.hh: changes to get rid of
+	reentrancy bugs
+
+2000-03-16 Thursday 15:52  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/in_cksum.c: changed implementation
+
+2000-03-16 Thursday 12:03  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: click_ip.h, click_tcp.h, click_udp.h, hashmap.cc,
+	hashmap.hh, ipaddress.cc, ipaddress.hh, ipflowid.cc, ipflowid.hh:
+	alignment, added ipflowid
+
+2000-03-15 Wednesday 13:14  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc,
+	libsrc/scheduleinfo.cc, libsrc/element.cc, libsrc/element.hh,
+	libsrc/elemfilter.cc, libsrc/elemfilter.hh, libsrc/lexer.cc, libsrc/router.cc:
+	red fix
+
+2000-03-09 Thursday 11:37  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/router.cc: [no log message]
+
+2000-03-02 Thursday 11:31  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: errorelement.cc, errorelement.hh: no more rewriter; other
+	fixlets
+
+2000-03-01 Wednesday 20:26  Eddie Kohler <kohler@aciri.org>
+
+	* README: various changes to linuxmodule; also updated
+	CheckjIPHeader
+
+2000-02-26 Saturday 12:53  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: instructions
+
+2000-02-26 Saturday 11:39  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS: other things benjie did
+
+2000-02-25 Friday 19:31  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: a
+
+2000-02-25 Friday 19:29  Eddie Kohler <kohler@aciri.org>
+
+	* README: jasdf
+
+2000-02-25 Friday 18:24  Eddie Kohler <kohler@aciri.org>
+
+	* README: afdsnanfkjdsnakjfndsakj
+
+2000-02-25 Friday 18:04  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, README: jdsfaijifsafhiudsaiufhdsahfdsa
+
+2000-02-25 Friday 13:53  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: iptable2.cc, iptable2.hh, radix.cc, radix.hh: 0
+
+2000-02-24 Thursday 18:25  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: iptable2.cc, iptable2.hh, radix.cc, radix.hh: 0
+
+2000-02-24 Thursday 17:27  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/radix.cc: 0
+
+2000-02-24 Thursday 17:14  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: iptable2.cc, iptable2.hh, lulea.cc, lulea.hh, radix.cc,
+	radix.hh, radix.cc, radix.hh: 0
+
+2000-02-22 Tuesday 16:26  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/iptable2.cc: [no log message]
+
+2000-02-22 Tuesday 15:23  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/iptable2.cc: 0
+
+2000-02-22 Tuesday 15:11  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: iptable2.cc, iptable2.hh: [no log message]
+
+2000-02-18 Friday 17:24  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: iptable2.cc, iptable2.hh: [no log message]
+
+2000-02-16 Wednesday 13:52  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, element.cc, element.hh,
+	elemlink.hh, errorelement.cc, errorelement.hh, lexer.cc, router.cc,
+	router.hh: thomer handler fix; added pokehandlers
+
+2000-02-15 Tuesday 14:44  Thomer Gil <thomer@lcs.mit.edu>
+
+	* libsrc/: iptable2.cc, iptable2.hh: [no log message]
+
+2000-02-13 Sunday 15:06  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, lexer.hh: fixed lexical scoping problems,
+	hopefully fixed benjies click-install hang
+
+2000-02-04 Friday 13:59  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/packet.hh: added -S to click-compile; fixed anno(), which
+	formerly did not inline skb()
+
+2000-02-03 Thursday 22:35  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc: fastclassifier updates:
+	first, it works at all (this is new); second, it only generates
+	code for 1 of a series of identical classifiers
+
+2000-01-31 Monday 19:26  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, lexer.cc, lexer.hh: specializer
+	updates; compounds take formal parameters!
+
+2000-01-26 Wednesday 18:59  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, element.hh: element rearrangement
+
+2000-01-26 Wednesday 13:37  Max Poletto <maxp@lcs.mit.edu>
+
+	* libsrc/packet.hh: [no log message]
+
+2000-01-25 Tuesday 17:50  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/elemlink.hh: [no log message]
+
+2000-01-25 Tuesday 16:55  Max Poletto <maxp@lcs.mit.edu>
+
+	* libsrc/packet.hh: [no log message]
+
+2000-01-25 Tuesday 15:32  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, libsrc/elemlink.cc,
+	libsrc/elemlink.hh, libsrc/error.cc, libsrc/error.hh: error gets lmessage();
+	added set_tickets function; removed set_tickets functionality from
+	set-max_tickets
+
+2000-01-25 Tuesday 13:16  Max Poletto <maxp@lcs.mit.edu>
+
+	* libsrc/scheduleinfo.cc, libsrc/element.hh,
+	libsrc/elemlink.cc, libsrc/elemlink.hh, libsrc/router.cc, libsrc/router.hh: [no
+	log message]
+
+2000-01-24 Monday 12:32  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc, libsrc/elemlink.cc,
+	libsrc/elemlink.hh: fixing scheduler
+
+2000-01-23 Sunday 15:59  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: router.cc, timer.cc: remove CLICK_POLLDEV, replace with
+	HAVE_POLLING
+
+2000-01-23 Sunday 15:24  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	libsrc/scheduleinfo.cc,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh, libsrc/archive.cc,
+	libsrc/bitvector.cc, libsrc/confparse.cc, libsrc/element.cc,
+	libsrc/elemfilter.cc, libsrc/elemlink.cc, libsrc/error.cc,
+	libsrc/errorelement.cc, libsrc/etheraddress.cc, libsrc/ewma.cc, libsrc/glue.cc,
+	libsrc/hashmap.cc, libsrc/hashmapi.cc, libsrc/integers.cc, libsrc/ipaddress.cc,
+	libsrc/iptable.cc, libsrc/lexer.cc, libsrc/packet.cc, libsrc/packet.hh,
+	libsrc/router.cc, libsrc/straccum.cc, libsrc/string.cc, libsrc/string.hh,
+	libsrc/timedelement.cc, libsrc/timer.cc, libsrc/unlimelement.cc,
+	libsrc/vector.cc, libsrc/vectori.cc, libsrc/vectorv.cc: updated copyright
+	date, documentation, added HAVE_POLLING config option
+
+2000-01-22 Saturday 20:36  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/router.cc: [no log message]
+
+2000-01-22 Saturday 18:59  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/scheduleinfo.cc,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh,
+	include/click/standard/scheduleinfo.hh: scheduleinfo forgot
+
+2000-01-22 Saturday 18:48  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc, libsrc/element.hh,
+	libsrc/elemlink.hh, libsrc/lexer.cc, libsrc/router.cc: ElementSched ->
+	ScheduleInfo, plus reduced idle counts from 32/8 -> 1
+
+2000-01-22 Saturday 17:21  Max Poletto <maxp@lcs.mit.edu>
+
+	* libsrc/: packet.cc, packet.hh: arpquerier/packet::push inlined
+
+2000-01-21 Friday 19:06  Max Poletto <maxp@lcs.mit.edu>
+
+	* libsrc/: element.cc, element.hh, elemfilter.cc, elemfilter.hh,
+	router.cc, router.hh, timer.cc: removed wants packet upstream;
+	unified router::driver/run_scheduled
+
+2000-01-21 Friday 12:51  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/ipaddress.hh: arpquerier update
+
+2000-01-21 Friday 10:23  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: element.hh, router.cc, router.hh: [no log message]
+
+2000-01-20 Thursday 21:01  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/router.cc: [no log message]
+
+2000-01-20 Thursday 16:30  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: packet.cc, packet.hh: [no log message]
+
+2000-01-20 Thursday 09:47  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: elemlink.hh, packet.cc, packet.hh, router.cc: [no log
+	message]
+
+2000-01-19 Wednesday 12:28  Max Poletto <maxp@lcs.mit.edu>
+
+	* libsrc/: click_udp.h, vector.hh: [no log message]
+
+2000-01-19 Wednesday 10:52  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/router.cc: [no log message]
+
+2000-01-18 Tuesday 17:52  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: elemlink.hh, router.cc: [no log message]
+
+2000-01-18 Tuesday 14:49  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: element.cc, element.hh, elemlink.cc, elemlink.hh,
+	packet.cc, packet.hh, router.cc: [no log message]
+
+2000-01-18 Tuesday 11:31  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/straccum.hh: straccum robustness
+
+2000-01-13 Thursday 17:33  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: element.cc, element.hh, elemlink.cc, elemlink.hh, lexer.cc,
+	packet.cc, router.cc, router.hh, timer.cc: added stride scheduling
+	to click
+
+1999-12-11 Saturday 02:00  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL, README: nits; stuff
+
+1999-12-10 Friday 12:09  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/standard/: alignmentinfo.hh, alignmentinfo.hh,
+	alignmentinfo.hh: tools remove their temporary files; renamed combo
+	elements; fixed documentation
+
+1999-12-09 Thursday 17:11  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: element.hh, router.cc, wq.hh: cleanup waiting interface
+
+1999-12-09 Thursday 16:02  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/element.hh: const, _s, crap
+
+1999-12-09 Thursday 15:42  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/element.hh: not 0L
+
+1999-12-09 Thursday 15:08  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: element.hh, router.cc: bunch of changes to router and
+	polldevice to make it actually route...  130,000 pkts per secs...
+	not too shabby...
+
+1999-12-08 Wednesday 18:32  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL, README, libsrc/router.cc, libsrc/wq.hh: added udpgen into
+	distribution; updated README; tested distribution
+
+1999-12-08 Wednesday 18:22  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/router.cc: in run_scheduled(), always do a schedule() to
+	allow other things to run on CPU
+
+1999-12-08 Wednesday 18:21  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/timer.cc: don't manually call run_scheduled() anymore
+
+1999-12-06 Monday 17:17  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/: element.hh, router.cc, wq.hh: added support for waiting in
+	kernel for events that drive polling
+
+1999-11-28 Sunday 16:01  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: clp.c, clp.h: check for dynamic linking library in other
+	places too; get rid of clp-related warnings
+
+1999-11-27 Saturday 17:32  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/clickpackage.hh: beginning click-specialize; added handlers
+	section to element man pages; dynamic linking in user-level click;
+	documentation updates
+
+1999-11-23 Tuesday 12:41  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: archive.cc, archive.hh, confparse.cc, confparse.hh,
+	lexer.cc, straccum.cc, straccum.hh: archive stuff done
+
+1999-11-22 Monday 18:52  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, lexer.hh, straccum.cc, straccum.hh: changed Lexer
+	(but not yet LexerT) to take a String rather than a LexerSource --
+	preparation for ar
+
+1999-11-22 Monday 17:07  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/lexer.cc: boneheaded connectiontunnel lexer bug
+
+1999-11-21 Sunday 19:42  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: lexer.cc, lexer.hh: more fastclassifier and related stuff
+
+1999-11-18 Thursday 22:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: elemfilter.cc, elemfilter.hh, string.hh: fastclassifier
+	added
+
+1999-11-18 Thursday 14:51  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, libsrc/error.cc, libsrc/error.hh, libsrc/lexer.cc, libsrc/lexer.hh:
+	click=install
+
+1999-11-17 Wednesday 12:13  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: clp.c, clp.h, confparse.cc, element.cc, element.hh,
+	lexer.cc, lexer.hh, router.cc, router.hh, strerror.c: handler
+	stuff, CLP
+
+1999-11-05 Friday 11:50  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/alignmentinfo.cc,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh,
+	include/click/standard/alignmentinfo.hh, libsrc/element.cc,
+	libsrc/element.hh, libsrc/packet.cc, libsrc/packet.hh, libsrc/router.cc,
+	libsrc/router.hh: further alignment stuff: propagate want information
+	backwards, added AlignmentInfo
+
+1999-11-04 Thursday 11:55  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: click_icmp.h, click_ip.h, packet.cc, packet.hh: added IP
+	header annotation
+
+1999-11-03 Wednesday 20:27  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, element.cc: changes to support
+	click-align
+
+1999-10-27 Wednesday 11:01  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: packet.cc, packet.hh: added align element, packet changes
+
+1999-10-23 Saturday 14:03  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/element.hh: checklength
+
+1999-10-21 Thursday 18:01  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, element.hh: naming whoops
+
+1999-10-21 Thursday 18:00  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, element.hh, router.cc: more programmers' manual
+	stuff ; fixed some things
+
+1999-10-21 Thursday 12:36  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: element.cc, element.hh, router.cc: element/connection man
+	pages
+
+1999-10-20 Wednesday 17:48  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, libsrc/element.cc, libsrc/element.hh, libsrc/router.cc,
+	libsrc/unlimelement.cc, libsrc/unlimelement.hh: changed add_inputs to
+	set_ninputs
+
+1999-10-20 Wednesday 00:38  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS, AUTHORS: au
+
+1999-10-20 Wednesday 00:26  Eddie Kohler <kohler@aciri.org>
+
+	* AUTHORS: forgotten files
+
+1999-10-20 Wednesday 00:22  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL, README, libsrc/glue.cc, libsrc/lexer.cc, libsrc/string.cc:
+	DISTRIBUTION. added comments, changed names, added files, fixed
+	bugs, fucked men, lived high, smoked dope, killed babies.
+
+1999-10-19 Tuesday 23:14  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL, LICENSE, README, libsrc/bitvector.cc, libsrc/click_ether.h,
+	libsrc/click_icmp.h, libsrc/click_ip.h, libsrc/click_tcp.h, libsrc/click_udp.h,
+	libsrc/confparse.cc, libsrc/crc32.c, libsrc/element.cc, libsrc/element.hh,
+	libsrc/elemfilter.cc, libsrc/elemlink.cc, libsrc/error.cc,
+	libsrc/errorelement.cc, libsrc/etheraddress.cc, libsrc/ewma.cc, libsrc/glue.cc,
+	libsrc/hashmap.cc, libsrc/hashmapi.cc, libsrc/in_cksum.c, libsrc/integers.cc,
+	libsrc/ipaddress.cc, libsrc/iptable.cc, libsrc/lexer.cc, libsrc/lexer.hh,
+	libsrc/packet.cc, libsrc/router.cc, libsrc/straccum.cc, libsrc/string.cc,
+	libsrc/timedelement.cc, libsrc/timer.cc, libsrc/unlimelement.cc,
+	libsrc/vector.cc, libsrc/vectori.cc, libsrc/vectorv.cc: updated
+	configurations, added copyrights everywhere, updated lots of
+	documentation
+
+1999-10-19 Tuesday 16:45  Robert Morris <rtm@lcs.mit.edu>
+
+	* README: lame first attempt
+
+1999-10-19 Tuesday 14:45  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: glue.hh, ipaddress.cc, ipaddress.hh, timer.hh: fixes to
+	compile cleanly on Solaris
+
+1999-10-19 Tuesday 11:09  Robert Morris <rtm@lcs.mit.edu>
+
+	* INSTALL: foo
+
+1999-10-19 Tuesday 01:22  Benjie Chen <benjie@lcs.mit.edu>
+
+	* libsrc/lexer.cc: 1. temp get around to a weird lexing bug on
+	exokernel 2. get click back up running on exokernel
+
+1999-10-18 Monday 20:23  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/router.cc: Improve FromBPF.
+
+1999-10-18 Monday 19:35  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/glue.hh: alpha timeradd re-fix.
+
+1999-10-18 Monday 19:30  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/glue.hh: Alpha fix (timersub/add).
+
+1999-10-18 Monday 17:19  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: integers.cc, integers.hh: integers, not packed
+
+1999-10-18 Monday 13:50  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL, install-sh, mkinstalldirs, libsrc/click_ip.h, libsrc/glue.hh,
+	libsrc/lexer.cc, libsrc/lexer.hh: many changes
+
+1999-10-17 Sunday 19:29  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: installation fix
+
+1999-10-17 Sunday 19:08  Eddie Kohler <kohler@aciri.org>
+
+	* INSTALL: added INSTALL, fixed configure again
+
+1999-10-17 Sunday 16:39  Eddie Kohler <kohler@aciri.org>
+
+	* missing: things
+
+1999-10-17 Sunday 15:19  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, error.cc, lexer.cc, lexer.hh, string.cc,
+	string.hh, vector.hh: lexical changes galore, plus first of many
+	kernel fixes
+
+1999-10-17 Sunday 13:31  Robert Morris <rtm@lcs.mit.edu>
+
+	* libsrc/: element.cc, element.hh, iptable.hh, vector.cc, vector.hh,
+	vectorv.cc: Get rid of #include <new.h>
+
+1999-10-15 Friday 17:56  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: confparse.cc, confparse.hh, element.cc, element.hh,
+	error.cc, errorelement.cc, errorelement.hh, ipaddress.hh, lexer.cc,
+	lexer.hh, router.cc, timedelement.cc, timedelement.hh: changed #
+	comments to // and /* */ ; use normal confparse in tools; remove
+	Router * arguments in many places (configure, reconfigure,
+	initialize, uninitialize, write handlers, cp_va_parse)
+
+1999-10-14 Thursday 18:18  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/: bitvector.cc, bitvector.hh, click_ether.h, click_icmp.h,
+	click_ip.h, click_tcp.h, click_udp.h, confparse.cc, confparse.hh,
+	crc32.c, crc32.h, element.cc, element.hh, elemfilter.cc,
+	elemfilter.hh, elemlink.cc, elemlink.hh, error.cc, error.hh,
+	errorelement.cc, errorelement.hh, etheraddress.cc, etheraddress.hh,
+	ewma.cc, ewma.hh, glue.cc, glue.hh, hashmap.cc, hashmap.hh,
+	hashmapi.cc, in_cksum.c, ipaddress.cc, ipaddress.hh, iptable.cc,
+	iptable.hh, lexer.cc, lexer.hh, packet.cc, packet.hh, router.cc,
+	router.hh, straccum.cc, straccum.hh, string.cc, string.hh,
+	timedelement.cc, timedelement.hh, timer.cc, timer.hh,
+	unlimelement.cc, unlimelement.hh, vector.cc, vector.hh, vectori.cc,
+	vectorv.cc: Initial revision
+
