@@ -58,10 +58,11 @@ CheckIP6Header2::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (conf.size() > 1)
     return errh->error("too many arguments to `CheckIP6Header([ADDRS])'");
   click_chatter("***************configure 2*************");
-  Vector<u_int> ips;
-  ips.push_back(0);
-  ips.push_back(0xffffffff);
- 
+  
+ Vector<String> ips; 
+ ips.push_back("0::0"); //bad IP6 address "0::0"
+ ips.push_back("ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff"); //another bad IP6 address
+
   if (conf.size()) {
     String s = conf[0];
     IP6Address a;
@@ -72,10 +73,12 @@ CheckIP6Header2::configure(const Vector<String> &conf, ErrorHandler *errh)
 	  return errh->error("expects IP6ADDRESS -a ");}
       click_chatter(a.s());
       cp_eat_space(s);
-      for (int j = 0; j < ips.size(); j++)
-	if (ips[j] == a)
+      for (int j = 0; j < ips.size(); j++){
+	IP6Address b= IP6Address(ips[j]);
+	if (b == a)
 	  goto repeat;
-      ips.push_back(a);
+      }
+      ips.push_back(a.s());
     repeat: ;
     }
   }
@@ -84,23 +87,27 @@ CheckIP6Header2::configure(const Vector<String> &conf, ErrorHandler *errh)
   //_bad_src = new u_int [_n_bad_src];
   _bad_src = new IP6Address [_n_bad_src];
   
-
-if (conf.size()) {
-    String s = conf[0];
-    IP6Address a;    
-    int i=0;
-    while (s) {
-       if (!cp_ip6_address(s, (unsigned char *)&a, &s))
-	return errh->error("expects IP6ADDRESS -b");
-      cp_eat_space(s);
-      for (int j = 0; j < i; j++)
-	if (_bad_src[j] == a)
-	  goto repeat2;
-      _bad_src[i]=a;
-      i++;
-    repeat2: ;
-    }
+ for (int i = 0; i<_n_bad_src; i++) {
+    _bad_src[i]= IP6Address(ips[i]);
   }
+
+//  if (conf.size()) {
+//      String s = conf[0];
+//      IP6Address a;    
+//      int i=0;
+//      while (s) {
+//         if (!cp_ip6_address(s, (unsigned char *)&a, &s))
+//  	return errh->error("expects IP6ADDRESS -b");
+//        cp_eat_space(s);
+//        for (int j = 0; j < i; j++)
+//  	if (_bad_src[j] == a)
+//  	  goto repeat2;
+//        _bad_src[i]=a;
+//        i++;
+//      repeat2: ;
+//      }
+//    }
+
  click_chatter("\n ########## CheckIP6Header conf successful ! \n"); 
  return 0;
 }
@@ -109,7 +116,7 @@ inline Packet *
 CheckIP6Header2::smaction(Packet *p)
 {
   //click_chatter("CheckIP6Header::smaction ");
-  click_ip6 *ip = (click_ip6 *) p->data();
+  const click_ip6 *ip = reinterpret_cast<const click_ip6 *>(p->data());
  //   (ip->ip6_src).swap();  
 //    (ip->ip6_dst).swap();
   //    unsigned char p1, p2;
@@ -117,7 +124,7 @@ CheckIP6Header2::smaction(Packet *p)
 //      p2=(ip->ip6_plen >>8 ) & 0xff;
 //      ip->ip6_plen =(p1 << 8) + p2;
   
-  click_ip6 *ip66;
+  const click_ip6 *ip66;
 //unsigned int src;
   struct IP6Address src;
   //unsigned hlen;
