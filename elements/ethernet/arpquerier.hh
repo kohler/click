@@ -36,7 +36,7 @@
 #include "element.hh"
 #include "etheraddress.hh"
 #include "ipaddress.hh"
-#include "hashmap.hh"
+#include "timer.hh"
 
 class ARPQuerier : public Element {
  public:
@@ -45,44 +45,52 @@ class ARPQuerier : public Element {
   ~ARPQuerier();
   
   const char *class_name() const		{ return "ARPQuerier"; }
-  Processing default_processing() const	{ return PUSH; }
+  Processing default_processing() const		{ return PUSH; }
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
+  void notify_noutputs(int);
   void add_handlers(HandlerRegistry *fcr);
   
   ARPQuerier *clone() const;
   int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
   
   void push(int port, Packet *);
   
   Packet *make_query(unsigned char tpa[4],
                      unsigned char sha[6], unsigned char spa[4]);
 
-  void insert(IPAddress, EtherAddress);
-
   struct ARPEntry {
-    EtherAddress a;
-    int ok;              // Is the EtherAddress valid?
-    struct timeval when; // Time of last response heard.
-    int polling;         // Refreshing the ARP entry.
+    IPAddress ip;
+    EtherAddress en;
+    int last_response_jiffies;
+    unsigned ok: 1;
+    unsigned polling: 1;
     Packet *p;
+    struct ARPEntry *next;
   };
 
-  bool each(int &i, IPAddress &k, ARPEntry &v) const;
- 
   // statistics
   int _arp_queries;
   int _pkts_killed;
   
  private:
- 
-  HashMap<IPAddress, ARPEntry *> _map;
+
+  static const int NMAP = 256;
+  ARPEntry *_map[NMAP];
   EtherAddress _my_en;
   IPAddress _my_ip;
+  Timer _expire_timer;
   
-  Packet *lookup(Packet *p);
-  Packet *query_for(Packet *p);
-  Packet *response(Packet *p);
+  void send_query_for(const IPAddress &);
+  
+  void handle_ip(Packet *);
+  void handle_response(Packet *);
+
+  static const int EXPIRE_TIMEOUT_MS = 15 * 1000;
+  static void expire_hook(unsigned long);
+  static String read_table(Element *, void *);
   
 };
 

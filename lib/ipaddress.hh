@@ -49,6 +49,12 @@ operator==(IPAddress a, IPAddress b)
   return a.saddr() == b.saddr();
 }
 
+inline bool
+operator!=(IPAddress a, IPAddress b)
+{
+  return a.saddr() != b.saddr();
+}
+
 inline struct in_addr
 IPAddress::in_addr() const
 {

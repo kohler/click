@@ -1,6 +1,6 @@
 /*
  * arpquerier.{cc,hh} -- ARP resolver element
- * Robert Morris
+ * Robert Morris, Eddie Kohler
  *
  * Copyright (c) 1999 Massachusetts Institute of Technology.
  *
@@ -23,23 +23,27 @@
 #include "glue.hh"
 
 ARPQuerier::ARPQuerier()
+  : _expire_timer(expire_hook, (unsigned long)this)
 {
   add_input(); /* IP packets */
   add_input(); /* ether/ARP responses */
   add_output();/* ether/IP and ether/ARP queries */
-  _arp_queries = 0;
-  _pkts_killed = 0;
+  for (int i = 0; i < NMAP; i++)
+    _map[i] = 0;
 }
 
 ARPQuerier::~ARPQuerier()
 {
+  uninitialize();
 }
 
 Bitvector
 ARPQuerier::forward_flow(int i) const
 {
+  Bitvector bv(noutputs(), false);
   // Packets can flow from input 0 to output 0
-  return Bitvector(1, i == 0);
+  if (i == 0) bv[0] = true;
+  return bv;
 }
 
 Bitvector
@@ -50,36 +54,85 @@ ARPQuerier::backward_flow(int o) const
   return bv;
 }
 
-int
-ARPQuerier::configure(const String &conf, ErrorHandler *errh)
-{
-  Vector<String> args;
-  cp_argvec(conf, args);
-  
-  if (args.size() != 2) {
-    errh->error("ARPQuerier conf needs IP addr and ethernet addr");
-    return(-1);
-  }
-  
-  if (cp_ip_address(args[0], _my_ip)
-      && cp_ethernet_address(args[1], _my_en)) {
-    return(0);
-  } else {
-    errh->error("ARPQuerier conf needs IP addr and ethernet addr");
-    return(-1);
-  }
-}
-
 ARPQuerier *
 ARPQuerier::clone() const
 {
   return new ARPQuerier;
 }
 
-Packet *
-ARPQuerier::make_query(u_char tpa[4], /* him */
-                       u_char sha[6], /* me */
-                       u_char spa[4])
+void
+ARPQuerier::notify_noutputs(int n)
+{
+  set_noutputs(n < 2 ? 1 : 2);
+}
+
+int
+ARPQuerier::configure(const String &conf, ErrorHandler *errh)
+{
+  return cp_va_parse(conf, this, errh,
+		     cpIPAddress, "IP address", &_my_ip,
+		     cpEthernetAddress, "Ethernet address", &_my_en,
+		     0);
+}
+
+int
+ARPQuerier::initialize(ErrorHandler *)
+{
+  _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  _arp_queries = 0;
+  _pkts_killed = 0;
+  return 0;
+}
+
+void
+ARPQuerier::uninitialize()
+{
+  _expire_timer.unschedule();
+  for (int i = 0; i < NMAP; i++) {
+    for (ARPEntry *t = _map[i]; t; ) {
+      ARPEntry *n = t->next;
+      if (t->p)
+	t->p->kill();
+      delete t;
+      t = n;
+    }
+    _map[i] = 0;
+  }
+}
+
+void
+ARPQuerier::expire_hook(unsigned long thunk)
+{
+  ARPQuerier *arpq = (ARPQuerier *)thunk;
+  int jiff = click_jiffies();
+  for (int i = 0; i < NMAP; i++) {
+    ARPEntry *prev = 0;
+    while (1) {
+      ARPEntry *e = (prev ? prev->next : arpq->_map[i]);
+      if (!e)
+	break;
+      if (e->ok) {
+	int gap = jiff - e->last_response_jiffies;
+	if (gap > 120*CLICK_HZ) {
+	  click_chatter("ARPQuerier timing out %x", e->ip.saddr());
+	  // delete entry from map
+	  if (prev) prev->next = e->next;
+	  else arpq->_map[i] = e->next;
+	  if (e->p)
+	    e->p->kill();
+	  delete e;
+	  continue;		// don't change prev
+	} else if (gap > 60*CLICK_HZ)
+	  e->polling = 1;
+      }
+      prev = e;
+    }
+  }
+  arpq->_expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+}
+
+void
+ARPQuerier::send_query_for(const IPAddress &want_ip)
 {
   struct ether_header *e;
   struct ether_arp *ea;
@@ -92,95 +145,68 @@ ARPQuerier::make_query(u_char tpa[4], /* him */
   e = (struct ether_header *) q->data();
   ea = (struct ether_arp *) (e + 1);
   memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
-  memcpy(e->ether_shost, sha, 6);
+  memcpy(e->ether_shost, _my_en.data(), 6);
   e->ether_type = htons(ETHERTYPE_ARP);
   ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
   ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
   ea->ea_hdr.ar_hln = 6;
   ea->ea_hdr.ar_pln = 4;
   ea->ea_hdr.ar_op = htons(ARPOP_REQUEST);
-  memcpy(ea->arp_tpa, tpa, 4);
-  memcpy(ea->arp_sha, sha, 6);
-  memcpy(ea->arp_spa, spa, 4);
-  return(q);
+  memcpy(ea->arp_tpa, want_ip.data(), 4);
+  memcpy(ea->arp_sha, _my_en.data(), 6);
+  memcpy(ea->arp_spa, _my_ip.data(), 4);
+  _arp_queries++;
+  output(noutputs()-1).push(q);
 }
 
 /*
- * If the packet's IP address is in the table, return a new
- * packet with an ethernet header.
- * Otherwise returns a query packet.
+ * If the packet's IP address is in the table, add an ethernet header
+ * and push it out.
+ * Otherwise push out a query packet.
  * May save the packet in the ARP table for later sending.
  * May call p->kill().
  */
-Packet *
-ARPQuerier::lookup(Packet *p)
+void
+ARPQuerier::handle_ip(Packet *p)
 {
   IPAddress ipa = p->dst_ip_anno();
-  ARPEntry **aep = _map.findp(ipa);
-  if (aep) {
-    ARPEntry *ae = *aep;
+  int bucket = (ipa.data()[0] + ipa.data()[3]) % NMAP;
+  ARPEntry *ae = _map[bucket];
+  while (ae && ae->ip != ipa)
+    ae = ae->next;
 
-    // Time out old ARP entries.
-    struct timeval now;
-#ifdef __KERNEL__
-    get_fast_time(&now);
-#else
-    click_gettimeofday(&now);
-#endif
-    if(ae->ok && now.tv_sec - ae->when.tv_sec > 120){
-      click_chatter("ARPQuerier timing out %x", ipa.saddr());
-      ae->ok = 0;
+  if (ae) {
+    if (ae->polling) {
+      send_query_for(ae->ip);
+      ae->polling = 0;
     }
-    if(ae->ok && ae->polling == 0 && now.tv_sec - ae->when.tv_sec > 60){
-      ae->polling = 1;
-      _arp_queries++;
-      output(0).push(query_for(p));
-    }      
-
-    if(ae->ok) {
+    
+    if (ae->ok) {
       Packet *q = p->push(sizeof(struct ether_header));
       struct ether_header *e = (struct ether_header *)q->data();
       memcpy(e->ether_shost, _my_en.data(), 6);
-      memcpy(e->ether_dhost, ae->a.data(), 6);
+      memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP);
-      return(q);
+      output(0).push(q);
+      
     } else {
-      if(ae->p) {
+      if (ae->p) {
         ae->p->kill();
 	_pkts_killed++;
       }
       ae->p = p;
-      _arp_queries++;
-      return(query_for(p));
+      send_query_for(p->dst_ip_anno());
     }
+    
   } else {
-    ARPEntry *ae = new ARPEntry();
-    ae->ok = 0;
+    ARPEntry *ae = new ARPEntry;
+    ae->ip = ipa;
+    ae->ok = ae->polling = 0;
     ae->p = p;
-    _map.insert(ipa, ae);
-    // click_chatter("%s sending arp query",declaration().cc());
-    _arp_queries++;
-    return(query_for(p));
+    ae->next = _map[bucket];
+    _map[bucket] = ae;
+    send_query_for(p->dst_ip_anno());
   }
-}
-
-void
-ARPQuerier::insert(IPAddress ipa, EtherAddress ena)
-{
-  ARPEntry *ae = new ARPEntry();
-  ae->a = ena;
-  ae->ok = 1;
-  ae->p = 0;
-  ae->polling = 0;
-  _map.insert(ipa, ae);
-}
-
-Packet *
-ARPQuerier::query_for(Packet *p)
-{
-  IPAddress ipa = p->dst_ip_anno();
-  Packet *q = make_query(ipa.data(), _my_en.data(), _my_ip.data());
-  return(q);
 }
 
 /*
@@ -188,101 +214,79 @@ ARPQuerier::query_for(Packet *p)
  * Update our ARP table.
  * If there was a packet waiting to be sent, return it.
  */
-Packet *
-ARPQuerier::response(Packet *p)
+void
+ARPQuerier::handle_response(Packet *p)
 {
-  if(p->length() < sizeof(struct ether_header) + sizeof(struct ether_arp))
-    return(0);
+  if (p->length() < sizeof(struct ether_header) + sizeof(struct ether_arp))
+    return;
   
-  struct ether_header *e = (struct ether_header *) p->data();
-  struct ether_arp *ea = (struct ether_arp *) (e + 1);
-  IPAddress ipa = IPAddress(ea->arp_spa);
-  EtherAddress ena = EtherAddress(ea->arp_sha);
-  if (p->length() >= sizeof(*e) + sizeof(struct ether_arp) &&
-      ntohs(e->ether_type) == ETHERTYPE_ARP &&
-      ntohs(ea->ea_hdr.ar_hrd) == ARPHRD_ETHER &&
-      ntohs(ea->ea_hdr.ar_pro) == ETHERTYPE_IP &&
-      ntohs(ea->ea_hdr.ar_op) == ARPOP_REPLY &&
-      ena.is_group() == 0 &&
-      _map.findp(ipa)){
-    // click_chatter("got an arp response for %s",ipa.s().cc());
-    ARPEntry *ae = _map[ipa];
-    if(ae->ok && ae->a != ena){
+  struct ether_header *ethh = (struct ether_header *) p->data();
+  struct ether_arp *arph = (struct ether_arp *) (ethh + 1);
+  IPAddress ipa = IPAddress(arph->arp_spa);
+  EtherAddress ena = EtherAddress(arph->arp_sha);
+  if (ntohs(ethh->ether_type) == ETHERTYPE_ARP
+      && ntohs(arph->ea_hdr.ar_hrd) == ARPHRD_ETHER
+      && ntohs(arph->ea_hdr.ar_pro) == ETHERTYPE_IP
+      && ntohs(arph->ea_hdr.ar_op) == ARPOP_REPLY
+      && !ena.is_group()) {
+    
+    int bucket = (ipa.data()[0] + ipa.data()[3]) % NMAP;
+    ARPEntry *ae = _map[bucket];
+    while (ae && ae->ip != ipa)
+      ae = ae->next;
+    if (!ae)
+      return;
+    
+    if (ae->ok && ae->en != ena)
       click_chatter("ARPQuerier overwriting an entry");
-    }
-    ae->a = ena;
+    ae->en = ena;
     ae->ok = 1;
-    click_gettimeofday(&(ae->when));
     ae->polling = 0;
-    Packet *q = ae->p;
+    ae->last_response_jiffies = click_jiffies();
+    Packet *cached_packet = ae->p;
     ae->p = 0;
-    if(q){
-      return(lookup(q));
-    } else {
-      return(0);
-    }
+    if (cached_packet)
+      handle_ip(cached_packet);
   }
-  
-  return(0);
 }
 
 void
 ARPQuerier::push(int port, Packet *p)
 {
-  if (port == 0){
-    output(0).push(lookup(p));
-  } else {
-    Packet *q = response(p);
+  if (port == 0)
+    handle_ip(p);
+  else {
+    handle_response(p);
     p->kill();
-    if (q) output(0).push(q);
   }
 }
 
-bool
-ARPQuerier::each(int &i, IPAddress &k, ARPEntry &v) const
+String
+ARPQuerier::read_table(Element *e, void *)
 {
-  ARPEntry *ae = 0;
-  if(_map.each(i, k, ae)){
-    v = *ae;
-    return(true);
-  }
-  return(false);
-}
-
-static String
-ARPQuerier_read_table(Element *f, void *)
-{
-  ARPQuerier *q = (ARPQuerier *)f;
+  ARPQuerier *q = (ARPQuerier *)e;
   String s;
-  
-  int i = 0;
-  IPAddress k;
-  ARPQuerier::ARPEntry v;
-  while(q->each(i, k, v)){
-    s += k.s() + " " + (v.ok?"1":"0") + " " + v.a.s() + "\n";
-  }
-
-  return(s);
+  for (int i = 0; i < NMAP; i++)
+    for (ARPEntry *e = q->_map[i]; e; e = e->next) {
+      s += e->ip.s() + " " + (e->ok ? "1" : "0") + " " + e->en.s() + "\n";
+    }
+  return s;
 }
 
 static String
-ARPQuerier_read_pkts(Element *f, void *)
+ARPQuerier_read_stats(Element *e, void *)
 {
-  ARPQuerier *q = (ARPQuerier *)f;
+  ARPQuerier *q = (ARPQuerier *)e;
   return
     String(q->_pkts_killed) + " packets killed\n" +
-    String(q->_arp_queries) + " arp queries sent\n";
+    String(q->_arp_queries) + " ARP queries sent\n";
 }
 
 void
-ARPQuerier::add_handlers(HandlerRegistry *fcr)
+ARPQuerier::add_handlers(HandlerRegistry *hr)
 {
-  fcr->add_read("table", ARPQuerier_read_table, (void *)0);
-  fcr->add_read("pkts", ARPQuerier_read_pkts, (void *)0);
+  hr->add_read("table", read_table, (void *)0);
+  hr->add_read("stats", ARPQuerier_read_stats, (void *)0);
 }
 
-
 EXPORT_ELEMENT(ARPQuerier)
-
-#include "hashmap.cc"
-template class HashMap<IPAddress, ARPQuerier::ARPEntry *>;

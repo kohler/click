@@ -80,8 +80,9 @@ Spew::spew_some()
   ARPQuerier *aq = (ARPQuerier *)o->is_a_cast("ARPQuerier");
   if(aq){
     click_chatter("Spew is hacking ARPQuerier");
-    aq->insert(IPAddress("2.0.0.2"), EtherAddress((u_char*)"\x00\xa0\xc9\x9c\xfd\x9c"));
-    aq->insert(IPAddress("18.26.4.97"), EtherAddress((u_char*)"\x00\x00\xc0\xca\x68\xef"));
+    assert(0);
+    //aq->insert(IPAddress("2.0.0.2"), EtherAddress((u_char*)"\x00\xa0\xc9\x9c\xfd\x9c"));
+    //aq->insert(IPAddress("18.26.4.97"), EtherAddress((u_char*)"\x00\x00\xc0\xca\x68\xef"));
   }
 #endif
   
