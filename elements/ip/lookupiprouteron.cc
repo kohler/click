@@ -88,12 +88,12 @@ void LookupIPRouteRON::duplicate_pkt(Packet *p) {
 void LookupIPRouteRON::push_forward_syn(Packet *p) 
 {
   // what to do in the case of a forward direction syn.
-  click_tcp *tcph;
+  const click_tcp *tcph;
   int match_type; 
   TableEntry *match = NULL;
   TableEntry *new_entry = NULL;
 
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
 
   match_type = _t->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 			  ntohs(tcph->th_sport), ntohs(tcph->th_dport),
@@ -161,12 +161,12 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 }
 void LookupIPRouteRON::push_forward_fin(Packet *p) 
 {
-  click_tcp *tcph;
+  const click_tcp *tcph;
   int match_type; 
   TableEntry *match = NULL;
   TableEntry *new_entry = NULL;
 
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
 
   match_type = _t->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 			  ntohs(tcph->th_sport), ntohs(tcph->th_dport),
@@ -217,12 +217,12 @@ void LookupIPRouteRON::push_forward_fin(Packet *p)
 }
 void LookupIPRouteRON::push_forward_rst(Packet *p) 
 {
-  click_tcp *tcph;
+  const click_tcp *tcph;
   int match_type; 
   TableEntry *match = NULL;
   TableEntry *new_entry = NULL;
 
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
 
   match_type = _t->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 			  ntohs(tcph->th_sport), ntohs(tcph->th_dport),
@@ -275,12 +275,12 @@ void LookupIPRouteRON::push_forward_rst(Packet *p)
 void LookupIPRouteRON::push_forward_normal(Packet *p) 
 {
   // what to do in the case of a forward direction syn.
-  click_tcp *tcph;
+  const click_tcp *tcph;
   int match_type; 
   TableEntry *match = NULL;
   TableEntry *new_entry = NULL;
 
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
 
   match_type = _t->lookup(IPAddress(p->ip_header()->ip_src), p->dst_ip_anno(),
 			  ntohs(tcph->th_sport), ntohs(tcph->th_dport),
@@ -318,7 +318,7 @@ void LookupIPRouteRON::push_forward_normal(Packet *p)
 
 void LookupIPRouteRON::push_forward_packet(Packet *p) 
 {
-  click_tcp *tcph;
+  const click_tcp *tcph;
 
   // if non-TCP just forward direct 
   // (YIPAL: perhaps this could be more intelligent)
@@ -329,7 +329,7 @@ void LookupIPRouteRON::push_forward_packet(Packet *p)
   }
 
   // Switch on TCP packet type
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
   if (tcph->th_flags & TH_SYN) {
     push_forward_syn(p);
   } else if (tcph->th_flags & TH_FIN) {
@@ -343,10 +343,10 @@ void LookupIPRouteRON::push_forward_packet(Packet *p)
 
 void LookupIPRouteRON::push_reverse_synack(int inport, Packet *p) 
 {
-  click_tcp *tcph;
+  const click_tcp *tcph;
   int match_type; 
   TableEntry *match = NULL;
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
 
   match_type = _t->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			  ntohs(tcph->th_dport), ntohs(tcph->th_sport),
@@ -401,10 +401,10 @@ void LookupIPRouteRON::push_reverse_synack(int inport, Packet *p)
 }
 void LookupIPRouteRON::push_reverse_fin(int inport, Packet *p) 
 {
-  click_tcp *tcph;
+  const click_tcp *tcph;
   int match_type; 
   TableEntry *match = NULL;
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
 
   match_type = _t->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			  ntohs(tcph->th_dport), ntohs(tcph->th_sport),
@@ -439,10 +439,10 @@ void LookupIPRouteRON::push_reverse_fin(int inport, Packet *p)
 }
 void LookupIPRouteRON::push_reverse_rst(int inport, Packet *p) 
 {
-  click_tcp *tcph;
+  const click_tcp *tcph;
   int match_type; 
   TableEntry *match = NULL;
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
 
   match_type = _t->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			  ntohs(tcph->th_dport), ntohs(tcph->th_sport),
@@ -473,10 +473,10 @@ void LookupIPRouteRON::push_reverse_rst(int inport, Packet *p)
 }
 void LookupIPRouteRON::push_reverse_normal(int inport, Packet *p) 
 {
-  click_tcp *tcph;
+  const click_tcp *tcph;
   int match_type; 
   TableEntry *match = NULL;
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
 
   match_type = _t->lookup(p->dst_ip_anno(),IPAddress(p->ip_header()->ip_src),
 			  ntohs(tcph->th_dport), ntohs(tcph->th_sport),
@@ -510,7 +510,7 @@ void LookupIPRouteRON::push_reverse_normal(int inport, Packet *p)
 
 void LookupIPRouteRON::push_reverse_packet(int inport, Packet *p) 
 {
-  click_tcp *tcph;
+  const click_tcp *tcph;
 
   // if non-TCP just forward direct 
   // (YIPAL: perhaps this could be more intelligent)
@@ -521,7 +521,7 @@ void LookupIPRouteRON::push_reverse_packet(int inport, Packet *p)
   }
 
   // Switch on TCP packet type
-  tcph = reinterpret_cast<click_tcp *>(p->transport_header());
+  tcph = reinterpret_cast<const click_tcp *>(p->transport_header());
   if ((tcph->th_flags & TH_SYN) && (tcph->th_flags & TH_ACK)) {
     push_reverse_synack(inport, p);
   } else if (tcph->th_flags & TH_FIN) {
