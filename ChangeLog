@@ -1,3 +1,8 @@
+2003-02-17 Monday 02:06  Eddie Kohler <kohler@icir.org>
+
+	* lib/task.cc (1.23): Task::reschedule: don't lock tasks if we're
+	already scheduled; should make inline?
+
 2003-02-16 Sunday 12:13  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/timesortedsched.hh (1.4): doc nits
@@ -1435,13 +1440,13 @@
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/packet.hh (1.42): add end_data() function (= data()
-	+ length())
+	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
+	typename where required by later GCCs
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
-	typename where required by later GCCs
+	* include/click/packet.hh (1.42): add end_data() function (= data()
+	+ length())
 
 2002-10-14 Monday 20:26  Eddie Kohler <kohler@icir.org>
 
@@ -1520,13 +1525,13 @@
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
-	* include/click/routerthread.hh (1.12), lib/routerthread.cc (1.26):
-	RouterThread::driver() gives waiting threads a chance before
-	restarting (Mz)
+	* include/click/task.hh (1.19): remove unused method
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
-	* include/click/task.hh (1.19): remove unused method
+	* include/click/routerthread.hh (1.12), lib/routerthread.cc (1.26):
+	RouterThread::driver() gives waiting threads a chance before
+	restarting (Mz)
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
