@@ -97,7 +97,7 @@ private:
   typedef BigHashMap<IPAddress, probe_list_t> ProbeMap;
   ProbeMap _bcast_stats;
 
-  // record delivery date data about our outgoing links
+  // record delivery rate data about our outgoing links
   struct outgoing_link_entry_t : public grid_link_entry {
     struct timeval received_at;
     unsigned int   tau;
