@@ -61,17 +61,17 @@ int
 BalancedThreadSched::initialize(ErrorHandler *)
 {
     _timer.initialize(this);
-    _timer.schedule_after_ms(2000);
+    _timer.schedule_after_ms(10);
     return 0;
 }
 
 extern "C" {
-static int task_sorter(void *va, void *vb) {
+static int task_increasing_sorter(const void *va, const void *vb) {
     Task **a = (Task **)va, **b = (Task **)vb;
     return (*a)->cycles() - (*b)->cycles();
 }
 
-static int task_rev_sorter(void *va, void *vb) {
+static int task_decreasing_sorter(const void *va, const void *vb) {
     Task **a = (Task **)va, **b = (Task **)vb;
     return (*b)->cycles() - (*a)->cycles();
 }
@@ -109,7 +109,7 @@ BalancedThreadSched::run_timer()
 #if KEEP_GOOD_ASSIGNMENT
 	// do nothing if load difference is minor
 	if ((avg_load - load[min_tid] < (avg_load >> 3))
-	    && (load[max_tid] - avg_load > (avg_load >> 3)))
+	    && (load[max_tid] - avg_load < (avg_load >> 3)))
 	    break;
 #endif
 
@@ -129,7 +129,7 @@ BalancedThreadSched::run_timer()
 	avg_load = total_load / m->nthreads();
 	
 	// sort tasks by cycle count
-	click_qsort(tasks.begin(), tasks.size(), sizeof(Task *), (_increasing ? task_rev_sorter : task_sorter));
+	click_qsort(tasks.begin(), tasks.size(), sizeof(Task *), (_increasing ? task_increasing_sorter : task_decreasing_sorter));
 
 	// move tasks
 	int highwater = avg_load + (avg_load >> 2);

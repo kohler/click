@@ -70,12 +70,12 @@ ThreadMonitor::run_timer()
 	thread->lock_tasks();
 	for (Task *t = thread->scheduled_next(); t != thread; t = t->scheduled_next())
 	    if (t->cycles() >= _thresh) {
-		sa << now_jiffies << ": on " << tid << ": " << (void *)t << " (";
+		sa << now_jiffies << ": on thread " << tid << ": " << (void *)t << " (";
 		if (Element *e = t->element())
 		    sa << e->id();
 		else
 		    sa << "hook";
-		sa << "), cycles " << t->cycles();
+		sa << "), cycles " << t->cycles() << '\n';
 	    }
 	thread->unlock_tasks();
     }
