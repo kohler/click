@@ -25,7 +25,7 @@ creates separate trace files for each flow
 Writes summary information, in the style of ToIPSummaryDump, about incoming
 packets to several files. ToIPFlowDumps writes one file per flow. It
 distinguishes flows by their aggregate annotations. You usually will run
-ToIPFlowDumps downstream of an AggregateFlows element.
+ToIPFlowDumps downstream of an AggregateIPFlows element.
 
 The OUTPUT_PATTERN argument gives the pattern used by ToIPSummaryDump to
 generate filenames. Printf-like `C<%>' escapes in the pattern are expanded
