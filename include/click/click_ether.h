@@ -29,6 +29,25 @@ struct click_arp {
   unsigned short int ar_op;   /* ARP opcode (command).  */
 };
 
+/* ARP protocol HARDWARE identifiers. */
+#define ARPHRD_ETHER    1       /* Ethernet 10Mbps      */
+
+/* ARP protocol opcodes. */
+#define ARPOP_REQUEST   1       /* ARP request          */
+#define ARPOP_REPLY 2           /* ARP reply            */
+#define ND_SOL 0x0087       /* Neighborhood Solicitation Message Type */
+#define ND_ADV 0x0088       /* Neighborhood Advertisement Message Type */
+
+struct click_ether_arp {
+  struct click_arp ea_hdr;    /* fixed-size header */
+  unsigned char arp_sha[6]; /* sender hardware address */
+  unsigned char arp_spa[4]; /* sender protocol address */
+  unsigned char arp_tha[6]; /* target hardware address */
+  unsigned char arp_tpa[4]; /* target protocol address */
+};
+
+
+
 //define structure of Neighborhood Solicitation Message
 struct click_nd_sol {
   unsigned char type;
@@ -69,25 +88,6 @@ struct click_nd_adv2 {
                        // all other bits should be zero
   unsigned char reserved[3];
   unsigned char nd_tpa[16];
-};
-
-
-
-/* ARP protocol HARDWARE identifiers. */
-#define ARPHRD_ETHER    1       /* Ethernet 10Mbps      */
-
-/* ARP protocol opcodes. */
-#define ARPOP_REQUEST   1       /* ARP request          */
-#define ARPOP_REPLY 2           /* ARP reply            */
-#define ND_SOL 0x0087       /* Neighborhood Solicitation Message Type */
-#define ND_ADV 0x0088       /* Neighborhood Advertisement Message Type */
-
-struct click_ether_arp {
-  struct click_arp ea_hdr;    /* fixed-size header */
-  unsigned char arp_sha[6]; /* sender hardware address */
-  unsigned char arp_spa[4]; /* sender protocol address */
-  unsigned char arp_tha[6]; /* target hardware address */
-  unsigned char arp_tpa[4]; /* target protocol address */
 };
 
 #endif
