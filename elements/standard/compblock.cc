@@ -44,19 +44,15 @@ CompareBlock::configure(const String &conf, ErrorHandler *errh)
 void
 CompareBlock::push(int, Packet *p)
 {
-  int network = *((unsigned char *)&p->ip_header()->ip_src);
+  // int network = *((unsigned char *)&p->ip_header()->ip_src);
   int fwd = p->fwd_rate_anno();
   if (fwd < 1) fwd = 1;
   int rev = p->rev_rate_anno();
   if (rev < 1) rev = 1;
-  if ((fwd > _thresh || rev > _thresh) && 
+  if ((fwd > _thresh || rev > _thresh) &&
       _fwd_weight * fwd > _rev_weight * rev) {
-       if (network == 8) { _bad++;
-       click_chatter("%05d dropping (%s) %d >> %d", _bad,
-		     IPAddress(p->ip_header()->ip_src.s_addr).s().cc(),
-		     fwd, rev);}
-      output(1).push(p);}
-  else
+    output(1).push(p);
+  } else
     output(0).push(p);
 }
 

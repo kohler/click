@@ -135,8 +135,6 @@ inline void
 IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
 		      Packet *p, bool forward)
 {
-  static int bad = 0;
-
   unsigned int addr = paddr.addr();
   int now = MyEWMA::now();
 
@@ -148,10 +146,11 @@ IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
   for (bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
     unsigned char byte = (addr >> bitshift) & 0x000000ff;
     c = &(s->counter[byte]);
-    if (forward) 
+    if (forward) {
       c->fwd_rate.update(now, val);
-    else 
+    } else {
       c->rev_rate.update(now, val);
+    }
 
     if(!(s = c->next_level))
       break;
@@ -162,20 +161,14 @@ IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
   p->set_fwd_rate_anno(fwd_rate);
   int rev_rate = c->rev_rate.average(); 
   p->set_rev_rate_anno(rev_rate);
-  int ns = *((unsigned char *)&p->ip_header()->ip_src);
-  int nd = *((unsigned char *)&p->ip_header()->ip_dst);
-  if (ns == 8 || nd == 8) { 
-    click_chatter("ipratemon: (%d) [%s] f=%d, r=%d", bad++, 		    
-		  IPAddress(p->ip_header()->ip_src.s_addr).s().cc(),
-		  fwd_rate, rev_rate);
-  }
 
   // did value get larger than THRESH in the specified period?
   if (fwd_rate >= _thresh || rev_rate >= _thresh) {
     if (bitshift < MAX_SHIFT) {
       c->next_level = new Stats(this, c->fwd_rate, c->rev_rate);
-      if(!c->next_level)
-        click_chatter("FUCK!!!!!!!!!!!!!!!!!!!!!");
+      if(!c->next_level) {
+        // XXX: Clean up and try again
+      }
     }
   }
 }
