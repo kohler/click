@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/param.h>
 #include <sys/stat.h>
 #include <sys/resource.h>
 #include <fcntl.h>
@@ -175,7 +176,8 @@ click_remove_element_type(int which)
 }
 
 
-// register handlers
+// register handlers: this gets called in signal handler, so don't use
+// new/malloc
 
 static int
 call_read_handler(String s, Router *r, bool print_name, const char *handler_dir, ErrorHandler *errh)
@@ -199,35 +201,30 @@ call_read_handler(String s, Router *r, bool print_name, const char *handler_dir,
     return errh->error("`%s' is a write handler", s.cc());
   String result = rh.read(e, rh.read_thunk);
 
-  char *fpath=0;
-  char *fdir=0;
+  bool tofile = true;
+  char fpath[MAXPATHLEN];
+  char fdir[MAXPATHLEN];
   FILE *fout = 0;
-  if (handler_dir) {
-    fpath = new char[strlen(handler_dir)+s.length()+1];
-    fdir = new char[strlen(handler_dir)+s.length()+1];
+  if (handler_dir && (strlen(handler_dir)+strlen(element_name.cc())+
+                      strlen(handler_name.cc())+2) < MAXPATHLEN) {
     sprintf(fdir,"%s/%s", handler_dir,element_name.cc());
     sprintf(fpath,"%s/%s/%s", handler_dir,element_name.cc(),handler_name.cc());
     if ((mkdir(fdir, S_IRWXU) < 0 && errno != EEXIST)
-	|| (fout = fopen(fpath,"w")) == 0L) {
-      delete fpath;
-      delete fdir;
-      fpath = fdir = 0;
-      fout = 0;
-    } 
+	|| (fout = fopen(fpath,"w")) == 0L) fout = 0;
   }
-  if (!fout) fout = stdout;
+  if (!fout) {
+    fout = stdout;
+    tofile = false;
+  }
 
-  if (print_name && !fpath)
+  if (print_name && !tofile)
     fprintf(fout, "%s:\n", s.cc());
   fputs(result.cc(), fout);
-  if (print_name && !fpath)
+  if (print_name && !tofile)
     fputs("\n", fout);
 
-  if (fpath) {
-    delete fpath;
-    delete fdir;
+  if (tofile)
     fclose(fout);
-  }
   return 0;
 }
 
@@ -349,17 +346,15 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
   
 int call_read_handlers()
 {
-  ErrorHandler *errh = new FileErrorHandler(stderr, "");
-  ErrorHandler::static_initialize(errh);
+  FileErrorHandler errh(stderr, "");
+  ErrorHandler::static_initialize(&errh);
 
   // call handlers
   if (call_handlers.size()) {
-    int nerrors = errh->nerrors();
     for (int i = 0; i < call_handlers.size(); i++)
       call_read_handler(call_handlers[i], router,
-	                call_handlers.size() > 1, handler_dir, errh);
-    if (nerrors != errh->nerrors())
-      return 1;
+	                call_handlers.size() > 1, handler_dir, &errh);
+    if (errh.nerrors()) return 1;
   }
   return 0;
 }
