@@ -1114,6 +1114,7 @@ RouterT::remove_compound_elements(ErrorHandler *errh)
 void
 RouterT::flatten(ErrorHandler *errh)
 {
+    check();
     //String s = configuration_string(); fprintf(stderr, "1.\n%s\n\n", s.cc());
     remove_compound_elements(errh);
     //s = configuration_string(); fprintf(stderr, "2.\n%s\n\n", s.cc());

@@ -28,6 +28,7 @@
 #include "toolutils.hh"
 #include <click/confparse.hh>
 
+static String::Initializer string_initializer;
 int32_t default_element_map_version = 0;
 static ElementMap main_element_map;
 ElementMap *ElementMap::the_element_map = &main_element_map;

@@ -43,10 +43,11 @@ ElementT::ElementT(const String &n, ElementClassT *eclass,
     _type->use();
 }
 
-ElementT::ElementT(const ElementT &e)
-    : name(e.name), flags(e.flags),
-      _type(e._type), _configuration(e._configuration), _landmark(e._landmark),
-      _ninputs(0), _noutputs(0), _tunnel_input(-1), _tunnel_output(-1)
+ElementT::ElementT(const ElementT &o)
+    : name(o.name), flags(o.flags),
+      _type(o._type), _configuration(o._configuration), _landmark(o._landmark),
+      _ninputs(o._ninputs), _noutputs(o._noutputs),
+      _tunnel_input(o._tunnel_input), _tunnel_output(o._tunnel_output)
 {
     if (_type)
 	_type->use();
