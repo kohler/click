@@ -30,7 +30,7 @@
 #include <fcntl.h>
 CLICK_DECLS
 
-const char *ChatterSocket::protocol_version = "1.0";
+const char * const ChatterSocket::protocol_version = "1.0";
 
 struct ChatterSocketErrorHandler : public ErrorVeneer {
 
@@ -86,7 +86,7 @@ static ChatterSocketErrorHandler *chatter_socket_errh;
 static ErrorHandler *base_default_errh;
 
 ChatterSocket::ChatterSocket()
-  : _socket_fd(-1), _channel("default")
+  : _socket_fd(-1), _channel("default"), _retry_timer(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -99,75 +99,45 @@ ChatterSocket::~ChatterSocket()
 int
 ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  bool quiet_channel = true;
-  bool greeting = true;
-  
   String socktype;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "type of socket (`TCP' or `UNIX')", &socktype,
 		  cpIgnoreRest, cpEnd) < 0)
     return -1;
 
+  // remove keyword arguments
+  bool quiet_channel = true, greeting = true, retry_warnings = true;
+  _retries = 0;
+  if (cp_va_parse_remove_keywords(conf, 2, this, errh,
+		"CHANNEL", cpWord, "chatter channel", &_channel,
+		"QUIET_CHANNEL", cpElement, "channel is quiet?", &quiet_channel,
+		"GREETING", cpBool, "greet connectors?", &greeting,
+		"RETRIES", cpInteger, "number of retries", &_retries,
+		"RETRY_WARNINGS", cpBool, "warn on unsuccessful socket attempt?", &retry_warnings,
+		0) < 0)
+    return -1;
+  _greeting = greeting;
+  _retry_warnings = retry_warnings;
+  
   socktype = socktype.upper();
   if (socktype == "TCP") {
+    _tcp_socket = true;
     unsigned short portno;
     if (cp_va_parse(conf, this, errh,
-		    cpIgnore,
-		    cpUnsignedShort, "port number", &portno,
-		    cpKeywords,
-		    "CHANNEL", cpWord, "chatter channel", &_channel,
-		    "QUIET_CHANNEL", cpBool, "channel is quiet?", &quiet_channel,
-		    "GREETING", cpBool, "greet connectors?", &greeting,
-		    cpEnd) < 0)
+		    cpIgnore, cpUnsignedShort, "port number", &portno, 0) < 0)
       return -1;
-
-    // open socket, set options
-    _socket_fd = socket(PF_INET, SOCK_STREAM, 0);
-    if (_socket_fd < 0)
-      return errh->error("socket: %s", strerror(errno));
-    int sockopt = 1;
-    if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&sockopt, sizeof(sockopt)) < 0)
-      errh->warning("setsockopt: %s", strerror(errno));
-
-    // bind to port
-    struct sockaddr_in sa;
-    sa.sin_family = AF_INET;
-    sa.sin_port = htons(portno);
-    sa.sin_addr = inet_makeaddr(0, 0);
-    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-      return errh->error("bind: %s", strerror(errno));
+    _unix_pathname = String(portno);
 
   } else if (socktype == "UNIX") {
+    _tcp_socket = false;
     if (cp_va_parse(conf, this, errh,
-		    cpIgnore,
-		    cpString, "filename", &_unix_pathname,
-		    cpKeywords,
-		    "CHANNEL", cpWord, "chatter channel", &_channel,
-		    "QUIET_CHANNEL", cpBool, "channel is quiet?", &quiet_channel,
-		    "GREETING", cpBool, "greet connectors?", &greeting,
-		    cpEnd) < 0)
+		    cpIgnore, cpString, "filename", &_unix_pathname, 0) < 0)
       return -1;
-
-    // create socket address
-    struct sockaddr_un sa;
-    sa.sun_family = AF_UNIX;
-    if (_unix_pathname.length() >= (int)sizeof(sa.sun_path))
+    if (_unix_pathname.length() >= (int)sizeof(((struct sockaddr_un *)0)->sun_path))
       return errh->error("filename too long");
-    memcpy(sa.sun_path, _unix_pathname.c_str(), _unix_pathname.length() + 1);
-    
-    // open socket, set options
-    _socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
-    if (_socket_fd < 0)
-      return errh->error("socket: %s", strerror(errno));
-
-    // bind to port
-    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
-      return errh->error("bind: %s", strerror(errno));
 
   } else
     return errh->error("unknown socket type `%s'", socktype.cc());
-
-  _greeting = greeting;
 
   // Create channel now, so that other configure() methods will get it.
   ChatterSocketErrorHandler *cserrh;
@@ -193,22 +163,137 @@ ChatterSocket::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+
+int
+ChatterSocket::initialize_socket_error(ErrorHandler *errh, const char *syscall)
+{
+  int e = errno;		// preserve errno
+
+  if (_socket_fd >= 0) {
+    close(_socket_fd);
+    _socket_fd = -1;
+  }
+
+  if (_retries >= 0) {
+    if (_retry_warnings)
+      errh->warning("%s: %s (%d %s left)", syscall, strerror(e), _retries + 1, (_retries == 0 ? "try" : "tries"));
+    return -EINVAL;
+  } else
+    return errh->error("%s: %s", syscall, strerror(e));
+}
+
+int
+ChatterSocket::initialize_socket(ErrorHandler *errh)
+{
+  _retries--;
+
+  // open socket, set options, bind to address
+  if (_tcp_socket) {
+    _socket_fd = socket(PF_INET, SOCK_STREAM, 0);
+    if (_socket_fd < 0)
+      return initialize_socket_error(errh, "socket");
+    int sockopt = 1;
+    if (setsockopt(_socket_fd, SOL_SOCKET, SO_REUSEADDR, (void *)&sockopt, sizeof(sockopt)) < 0)
+      errh->warning("setsockopt: %s", strerror(errno));
+
+    // bind to port
+    int portno;
+    (void) cp_integer(_unix_pathname, &portno);
+    struct sockaddr_in sa;
+    sa.sin_family = AF_INET;
+    sa.sin_port = htons(portno);
+    sa.sin_addr = inet_makeaddr(0, 0);
+    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
+      return initialize_socket_error(errh, "bind");
+
+  } else {
+    _socket_fd = socket(PF_UNIX, SOCK_STREAM, 0);
+    if (_socket_fd < 0)
+      return initialize_socket_error(errh, "socket");
+
+    // bind to port
+    struct sockaddr_un sa;
+    sa.sun_family = AF_UNIX;
+    memcpy(sa.sun_path, _unix_pathname.cc(), _unix_pathname.length() + 1);
+    if (bind(_socket_fd, (struct sockaddr *)&sa, sizeof(sa)) < 0)
+      return initialize_socket_error(errh, "bind");
+  }
+
+  // start listening
+  if (listen(_socket_fd, 2) < 0)
+    return initialize_socket_error(errh, "listen");
+  
+  // nonblocking I/O and close-on-exec for the socket
+  fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
+  fcntl(_socket_fd, F_SETFD, FD_CLOEXEC);
+
+  add_select(_socket_fd, SELECT_READ);
+  return 0;
+}
+
+void
+ChatterSocket::retry_hook(Timer *t, void *thunk)
+{
+  ChatterSocket *cs = (ChatterSocket *)thunk;
+  if (cs->_socket_fd >= 0)
+    /* nada */;
+  else if (cs->initialize_socket(ErrorHandler::default_handler()) >= 0)
+    /* nada */;
+  else if (cs->_retries >= 0)
+    t->reschedule_after_s(1);
+  else
+    cs->router()->please_stop_driver();
+}
+
 int
 ChatterSocket::initialize(ErrorHandler *errh)
 {
-  // start listening
-  if (listen(_socket_fd, 2) < 0)
-    return errh->error("listen: %s", strerror(errno));
-  
-  // nonblocking I/O on the socket
-  fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
-
-  // select
-  add_select(_socket_fd, SELECT_READ | SELECT_WRITE);
   _max_pos = 0;
   _live_fds = 0;
 
-  return 0;
+  if (initialize_socket(errh) >= 0)
+    return 0;
+  else if (_retries >= 0) {
+    _retry_timer = new Timer(retry_hook, this);
+    _retry_timer->initialize(this);
+    _retry_timer->schedule_after_s(1);
+    return 0;
+  } else
+    return -1;
+}
+
+void
+ChatterSocket::take_state(Element *e, ErrorHandler *errh)
+{
+  ChatterSocket *cs = (ChatterSocket *)e->cast("ChatterSocket");
+  if (!cs)
+    return;
+
+  if (_socket_fd >= 0) {
+    errh->error("already initialized, can't take state");
+    return;
+  } else if (_tcp_socket != cs->_tcp_socket
+	     || _unix_pathname != cs->_unix_pathname
+	     || _channel != cs->_channel) {
+    errh->error("incompatible ChatterSockets");
+    return;
+  }
+
+  _socket_fd = cs->_socket_fd;
+  cs->_socket_fd = -1;
+  _messages.swap(cs->_messages);
+  _message_pos.swap(cs->_message_pos);
+  _max_pos = cs->_max_pos;
+  _fd_alive.swap(cs->_fd_alive);
+  _fd_pos.swap(cs->_fd_pos);
+  _live_fds = cs->_live_fds;
+  cs->_live_fds = 0;
+
+  if (_socket_fd >= 0)
+    add_select(_socket_fd, SELECT_READ);
+  for (int i = 0; i < _fd_alive.size(); i++)
+    if (_fd_alive[i])
+      add_select(i, SELECT_WRITE);
 }
 
 static void
@@ -229,11 +314,17 @@ void
 ChatterSocket::cleanup(CleanupStage)
 {
   if (_socket_fd >= 0) {
+    // shut down the listening socket in case we forked
+#ifdef SHUT_RDWR
+    shutdown(_socket_fd, SHUT_RDWR);
+#else
+    shutdown(_socket_fd, 2);
+#endif
     close(_socket_fd);
-    if (_unix_pathname)
+    if (!_tcp_socket)
       unlink(_unix_pathname.c_str());
+    _socket_fd = -1;
   }
-  _socket_fd = -1;
   
   for (int i = 0; i < _fd_alive.size(); i++)
     if (_fd_alive[i]) {
@@ -241,6 +332,12 @@ ChatterSocket::cleanup(CleanupStage)
       _fd_alive[i] = 0;
     }
   _live_fds = 0;
+
+  if (_retry_timer) {
+    _retry_timer->cleanup();
+    delete _retry_timer;
+    _retry_timer = 0;
+  }
 
   // unhook from chatter socket error handler
   if (_channel == "default")
@@ -251,50 +348,65 @@ ChatterSocket::cleanup(CleanupStage)
 }
 
 int
-ChatterSocket::flush(int fd, int min_useful_message)
+ChatterSocket::flush(int fd)
 {
   // check file descriptor
   if (fd >= _fd_alive.size() || !_fd_alive[fd])
-    return min_useful_message;
+    return _messages.size();
 
   // check if all data written
   if (_fd_pos[fd] == _max_pos)
-    return min_useful_message;
+    return _messages.size();
 
-  // find first useful message
-  int fd_pos = _fd_pos[fd];
-  int mid = _message_pos.size() - 1;
-  while (SEQ_LT(fd_pos, _message_pos[mid]))
-    mid--;
-  
-  // write data until blocked or closed
-  int w = 0;
-  while (mid < _message_pos.size()) {
-    const String &m = _messages[mid];
-    int mpos = _message_pos[mid];
-    const char *data = m.data() + (fd_pos - mpos);
-    int len = m.length() - (fd_pos - mpos);
-    w = write(fd, data, len);
-    if (w < 0 && errno != EINTR)
+  // find first useful message (binary search)
+  uint32_t fd_pos = _fd_pos[fd];
+  int l = 0, r = _messages.size() - 1, useful_message = -1;
+  while (l <= r) {
+    int m = (l + r) >> 1;
+    if (SEQ_LT(fd_pos, _message_pos[m]))
+      r = m - 1;
+    else if (SEQ_GEQ(fd_pos, _message_pos[m] + _messages[m].length()))
+      l = m + 1;
+    else {
+      useful_message = m;
       break;
-    if (w > 0)
-      fd_pos += len;
-    if (SEQ_GEQ(fd_pos, mpos + m.length()))
-      mid++;
+    }
+  }
+
+  // if messages found, write data until blocked or closed
+  if (useful_message >= 0) {
+    while (useful_message < _message_pos.size()) {
+      const String &m = _messages[useful_message];
+      int mpos = _message_pos[useful_message];
+      const char *data = m.data() + (fd_pos - mpos);
+      int len = m.length() - (fd_pos - mpos);
+      int w = write(fd, data, len);
+      if (w < 0 && errno != EINTR) {
+	if (errno != EAGAIN)	// drop connection on error, except WOULDBLOCK
+	  useful_message = -1;
+	break;
+      } else if (w > 0)
+	fd_pos += w;
+      if (SEQ_GEQ(fd_pos, mpos + m.length()))
+	useful_message++;
+    }
   }
 
   // store changed fd_pos
   _fd_pos[fd] = fd_pos;
   
-  // maybe close out
-  if (w < 0 && errno == EPIPE) {
+  // close out on error, or if socket falls too far behind
+  if (useful_message < 0 || SEQ_LT(fd_pos, _max_pos - MAX_BACKLOG)) {
     close(fd);
     remove_select(fd, SELECT_WRITE);
     _fd_alive[fd] = 0;
     _live_fds--;
-    return min_useful_message;
-  } else
-    return (mid < min_useful_message ? mid : min_useful_message);
+  } else if (fd_pos == _max_pos)
+    remove_select(fd, SELECT_WRITE);
+  else
+    add_select(fd, SELECT_WRITE);
+  
+  return useful_message;
 }
 
 void
@@ -303,8 +415,11 @@ ChatterSocket::flush()
   int min_useful_message = _messages.size();
   if (min_useful_message)
     for (int i = 0; i < _fd_alive.size(); i++)
-      if (_fd_alive[i] >= 0)
-	min_useful_message = flush(i, min_useful_message);
+      if (_fd_alive[i] >= 0) {
+	int m = flush(i);
+	if (m < min_useful_message)
+	  min_useful_message = m;
+      }
 
   // cull old messages
   if (min_useful_message >= 10) {
@@ -337,7 +452,7 @@ ChatterSocket::selected(int fd)
     }
     
     fcntl(new_fd, F_SETFL, O_NONBLOCK);
-    add_select(new_fd, SELECT_WRITE);
+    fcntl(new_fd, F_SETFD, FD_CLOEXEC);
 
     while (new_fd >= _fd_alive.size()) {
       _fd_alive.push_back(0);
@@ -348,6 +463,7 @@ ChatterSocket::selected(int fd)
     _live_fds++;
 
     fd = new_fd;
+    // no need to SELECT_WRITE; flush(fd) will do it if required
 
     if (_greeting) {
       // XXX - assume that this write will succeed
@@ -358,7 +474,7 @@ ChatterSocket::selected(int fd)
     }
   }
 
-  flush(fd, 0);
+  flush(fd);
 }
 
 CLICK_ENDDECLS

@@ -45,6 +45,13 @@ version number with a line like "Click::ControlSocket/1.1". The current
 version number is 1.1. Changes in minor version number will only add commands
 and functionality to this specification, not change existing functionality.
 
+ControlSocket supports hot-swapping, meaning you can change configurations
+without interrupting existing clients. The hot-swap will succeed only if the
+old ControlSocket and the new ControlSocket have the same element name, and
+the same socket type and port/filename parameters. Additionally, the new
+ControlSocket must have RETRIES set to 1 or more, since the old ControlSocket
+has already bound the relevant socket.
+
 Keyword arguments are:
 
 =over 8

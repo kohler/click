@@ -201,6 +201,20 @@ ControlSocket::initialize_socket(ErrorHandler *errh)
   return 0;
 }
 
+void
+ControlSocket::retry_hook(Timer *t, void *thunk)
+{
+  ControlSocket *cs = (ControlSocket *)thunk;
+  if (cs->_socket_fd >= 0)
+    /* nada */;
+  else if (cs->initialize_socket(ErrorHandler::default_handler()) >= 0)
+    /* nada */;
+  else if (cs->_retries >= 0)
+    t->reschedule_after_s(1);
+  else
+    cs->router()->please_stop_driver();
+}
+
 int
 ControlSocket::initialize(ErrorHandler *errh)
 {
@@ -280,20 +294,6 @@ ControlSocket::cleanup(CleanupStage)
     delete _retry_timer;
     _retry_timer = 0;
   }
-}
-
-void
-ControlSocket::retry_hook(Timer *t, void *thunk)
-{
-  ControlSocket *cs = (ControlSocket *)thunk;
-  if (cs->_socket_fd >= 0)
-    /* nada */;
-  else if (cs->initialize_socket(ErrorHandler::default_handler()) >= 0)
-    /* nada */;
-  else if (cs->_retries >= 0)
-    t->reschedule_after_s(1);
-  else
-    cs->router()->please_stop_driver();
 }
 
 int
