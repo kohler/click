@@ -67,7 +67,7 @@ install-local: elementmap.xml click-buildtool click-compile
 	$(INSTALL_DATA) elementmap.xml $(DESTDIR)$(clickdatadir)/elementmap.xml
 	(cd $(top_srcdir); pwd) > $(DESTDIR)$(clickdatadir)/srcdir
 	/bin/rm -rf $(DESTDIR)$(clickdatadir)/src
-	/bin/ln -s `cd $(top_srcdir); pwd` $(DESTDIR)$(clickdatadir)/src
+	/bin/ln -s "`cd $(top_srcdir); pwd`" $(DESTDIR)$(clickdatadir)/src
 install-doc:
 	@cd doc && $(MAKE) install
 install-info:
@@ -106,7 +106,7 @@ elemlist elemlists:
 
 MKELEMMAPFLAGS =
 elementmap.xml: click-buildtool $(srcdir)/click-mkelemmap always
-	echo $(TARGETS) @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(TARGETS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -p $(top_srcdir) -Iinclude -s `cd $(top_srcdir) && pwd` $(MKELEMMAPFLAGS) > elementmap.xml
+	echo $(TARGETS) @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(TARGETS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -p $(top_srcdir) -Iinclude -s "`cd $(top_srcdir) && pwd`" $(MKELEMMAPFLAGS) > elementmap.xml
 always:
 	@:
 
