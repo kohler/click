@@ -32,7 +32,7 @@ dnl
 AC_DEFUN([CLICK_PROG_CC], [
     AC_REQUIRE([AC_PROG_CC])
     test -z "$ac_user_cc" -a -n "$GCC" -a -n "$ac_compile_with_warnings" && \
-	echo foo 1>&2 && CC="$CC -Wall -MD"
+	CC="$CC -Wall -MD"
 
     CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
     AC_SUBST(CFLAGS_NDEBUG)
