@@ -453,7 +453,7 @@ cleanup_module()
 
 #ifdef HAVE_POLLING
   kill_click_sched(kernel_errh);
-  tulip_print_stats();
+  /* tulip_print_stats(); */
 #endif
   
   cleanup_proc_click_errors();
