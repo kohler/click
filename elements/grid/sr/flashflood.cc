@@ -57,6 +57,7 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   _lossy = true;
   _threshold = 100;
   _neighbor_threshold = 66;
+  _pick_slots = false;
 
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
@@ -72,6 +73,7 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "LOSSY", cpBool, "mist", &_lossy,
 		    "THRESHOLD", cpInteger, "Threshold", &_threshold,
 		    "NEIGHBOR_THRESHOLD", cpInteger, "Neighbor Threshold", &_neighbor_threshold,
+		    "PICK_SLOTS", cpBool, "Wait time selection", &_pick_slots,
                     0);
 
   if (!_et) 
@@ -102,8 +104,70 @@ FlashFlood::initialize (ErrorHandler *)
   return 0;
 }
 
+int 
+FlashFlood::expected_rx(Broadcast *bcast, IPAddress src) {
+  Vector<IPAddress> neighbors = _link_table->get_neighbors(src);
+  int my_expected_rx = 0;
+  
+  for (int x = 0; x < neighbors.size(); x++) {
+    if (neighbors[x] == src || neighbors[x] == _ip) {
+      continue;
+    }
+    int *p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
+    if (!p_ever_ptr) {
+      bcast->_node_to_prob.insert(neighbors[x], 0);
+      p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
+    }
+    int p_ever = *p_ever_ptr;
+    if (p_ever > 100) {
+      click_chatter("%{element} p_ever is %d\n",
+		    this,
+		    p_ever);
+      sr_assert(false);
+    }
+    int metric = get_link_prob(src, neighbors[x]);
+    int neighbor_expected_rx = ((100 - p_ever) * metric)/100;
+    my_expected_rx += neighbor_expected_rx;
+  }
+
+  return my_expected_rx;
+}
+
+
+int 
+FlashFlood::neighbor_weight(IPAddress src) {
+  Vector<IPAddress> neighbors = _link_table->get_neighbors(src);
+  int src_neighbor_weight = 0;
+  
+  for (int x = 0; x < neighbors.size(); x++) {
+    int metric = get_link_prob(src, neighbors[x]);
+    src_neighbor_weight += metric;
+  }
+
+  return src_neighbor_weight;
+}
+
 void
 FlashFlood::forward(Broadcast *bcast) {
+  
+  int my_expected_rx = expected_rx(bcast, _ip);
+
+  if (my_expected_rx < _threshold) {
+    if (_debug) {
+      click_chatter("%{element} seq %d sender %s my_expected_rx %d not sending\n",
+		    this,
+		    bcast->_seq,
+		    bcast->_last_heard_sender.s().cc(),
+		    my_expected_rx);
+    }
+
+    bcast->_sent = true;
+    bcast->_scheduled = false;
+    bcast->del_timer();
+    return;
+  }
+
+
   Packet *p_in = bcast->_p;
   click_ether *eh_in = (click_ether *) p_in->data();
   struct srpacket *pk_in = (struct srpacket *) (eh_in+1);
@@ -271,6 +335,9 @@ FlashFlood::get_link_prob(IPAddress from, IPAddress to)
 {
 
   int metric = _link_table->get_hop_metric(from, to);
+  if (!metric) {
+    return 0;
+  }
   int prob = 100 * 100 / metric;
 
   prob = min(prob, 100);
@@ -316,119 +383,142 @@ FlashFlood::update_probs(IPAddress src, Broadcast *bcast) {
     }
     bcast->_node_to_prob.insert(neighbors[x], p_ever);
   }
+  bcast->_last_heard_sender = src;
 }
 
 void
 FlashFlood::reschedule_bcast(Broadcast *bcast) {    
-    Vector<IPAddress> neighbors = _link_table->get_neighbors(_ip);
-    int expected_rx = 0;
-    int my_neighbor_weight = 0;
-    int max_neighbor_weight = 0;
+
+  if (bcast->_scheduled) {
+    return;
+  }
+  Vector<IPAddress> neighbors = _link_table->get_neighbors(_ip);
+  int my_expected_rx = expected_rx(bcast, _ip);
+  int my_neighbor_weight = neighbor_weight(_ip);
+  
+  int delay_ms = 0;
+
+
+  int max_neighbor_weight = 0;
+  for (int x = 0; x< neighbors.size(); x++) {
+    int nw = neighbor_weight(neighbors[x]);
+    max_neighbor_weight = max(nw, max_neighbor_weight);
+  }
+
+
+  if (_pick_slots) {
+  int slot = 0;
+
+    /* 
+     * now see what slot I should fit in
+     */
+    
     for (int x = 0; x < neighbors.size(); x++) {
       if (neighbors[x] == _ip) {
 	/* don't update my prob, it's one */
 	continue;
       }
-      int neighbor_neighbor_weight = 0;
+      int neighbor_expected_rx = expected_rx(bcast, neighbors[x]);
       
-      /* first, find the neighbor's neighbor weight */
-      Vector<IPAddress> neighbor_neighbors = _link_table->get_neighbors(neighbors[x]);
-      for (int y = 0; y < neighbor_neighbors.size(); y++) {
-	int m = get_link_prob(neighbors[x], neighbor_neighbors[y]);
-	if (_debug && 0) {
-	  click_chatter("%{element} neighbor %s neighbor %s metric %d\n",
-			this,
-			neighbors[x].s().cc(),
-			neighbor_neighbors[y].s().cc(),
-			m);
-	}
-	neighbor_neighbor_weight += m;
-      }
-
-      max_neighbor_weight = max(neighbor_neighbor_weight, max_neighbor_weight);
-
       int *p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
       if (!p_ever_ptr) {
 	bcast->_node_to_prob.insert(neighbors[x], 0);
 	p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
       }
       int p_ever = *p_ever_ptr;
-      if (p_ever > 100) {
-	click_chatter("%{element} p_ever is %d\n",
-		      this,
-		      p_ever);
-	sr_assert(false);
-      }
+      
       int metric = get_link_prob(_ip, neighbors[x]);
-      my_neighbor_weight += metric;
-      int neighbor_expected_rx = ((100 - p_ever) * 
-				  get_link_prob(_ip, neighbors[x]))/100;
-      expected_rx += neighbor_expected_rx;
-
-
+      
+      
+      int metric_from_sender = get_link_prob(bcast->_last_heard_sender, neighbors[x]);
       if (_debug) {
-	click_chatter("%{element} rbcast neighbor %s neighbor_weight %d prob %d metric %d good %d\n",
-		      this,
-		      neighbors[x].s().cc(),
-		      neighbor_neighbor_weight,
-		      p_ever,
-		      metric,
-		      neighbor_expected_rx);
-      }
-    }
-    
-
-    /*
-     * now, using 
-     * max_neighbor_weight
-     * expected_rx 
-     * schedule a broadcast 
-     *
-     */
-    if (_debug) {
-      click_chatter("%{element} reschedule seq %d: max_neighbor_w %d my_neighbor_w %d expected_rx %d thresh %d\n",
-		    this,
-		    bcast->_seq,
-		    max_neighbor_weight,
-		    my_neighbor_weight,
-		    expected_rx,
-		    _threshold);
-    }
-    if (expected_rx < _threshold || !my_neighbor_weight) {
-      if (_debug) {
-	click_chatter("%{element} not rescheduling seq %d\n",
-		      this,
-		      bcast->_seq);
-      }
-
-    } else {
-      int max_delay_ms = min(1000, 100 * max_neighbor_weight / my_neighbor_weight);
-      int delay_time = (random() % max_delay_ms) + 1;
-
-      if (_debug) {
-	click_chatter("%{element} seq %d delay time is %d / max %d ms\n",
+	click_chatter("%{element} seq %d sender %s neighbor %s prob %d expected_rx %d metric %d\n",
 		      this,
 		      bcast->_seq,
-		      delay_time,
-		      max_delay_ms);
+		      bcast->_last_heard_sender.s().cc(),
+		      neighbors[x].s().cc(),
+		      p_ever,
+		      neighbor_expected_rx,
+		      metric);
       }
-      sr_assert(delay_time > 0);
-      struct timeval now;
-      click_gettimeofday(&now);
-      struct timeval delay;
-      delay.tv_sec = 0;
-      delay.tv_usec = delay_time*1000;
-      timeradd(&now, &delay, &bcast->_to_send);
-      bcast->del_timer();
-      /* schedule timer */
-      bcast->_scheduled = true;
-      bcast->_sent = false;
-      bcast->t = new Timer(static_forward_hook, (void *) this);
-      bcast->t->initialize(this);
-      bcast->t->schedule_at(bcast->_to_send);
+      if (neighbor_expected_rx > my_expected_rx && 
+	  metric_from_sender > 1) {
+	
+	slot++;
+      }
     }
 
+
+    delay_ms = 10 * slot;
+
+    if (my_expected_rx > 0 && _debug) {
+      click_chatter("%{element} seq %d sender %s slot %d expected_rx %d\n",
+		    this,
+		    bcast->_seq,
+		    bcast->_last_heard_sender.s().cc(),
+		    slot,
+		    my_expected_rx
+		    );
+    }
+
+
+
+  } else {
+    /* don't pick slots */
+    /* pick based on relative neighbor weight */
+    if (my_neighbor_weight) {
+      int max_delay_ms = 10 * max_neighbor_weight / my_neighbor_weight;
+      delay_ms = random() % max_delay_ms;
+
+      if (_debug) {
+	click_chatter("%{element} seq %d sender %s max_delay_ms %d delay_ms %d expected_rx %d\n",
+		      this,
+		      bcast->_seq,
+		      bcast->_last_heard_sender.s().cc(),
+		      max_delay_ms,
+		      delay_ms,
+		      my_expected_rx
+		      );
+      }
+      
+    }
+  }
+
+  if (my_expected_rx < 1 || !my_neighbor_weight) {
+    return;
+  }
+
+  /*
+   * now, schedule a broadcast 
+   *
+   */
+  if (_debug) {
+    click_chatter("%{element} reschedule seq %d delay_ms %d\n",
+		  this,
+		  bcast->_seq,
+		  delay_ms
+		  );
+  }
+  
+  delay_ms = max(delay_ms, 1);
+  
+  sr_assert(delay_ms > 0);
+  struct timeval now;
+  click_gettimeofday(&now);
+  struct timeval delay;
+  delay.tv_sec = 0;
+  delay.tv_usec = delay_ms*1000;
+  timeradd(&now, &delay, &bcast->_to_send);
+  bcast->del_timer();
+  /* schedule timer */
+  bcast->_scheduled = true;
+  bcast->_sent = false;
+  bcast->t = new Timer(static_forward_hook, (void *) this);
+  bcast->t->initialize(this);
+  bcast->t->schedule_at(bcast->_to_send);
+
 }
+  
 
 
 String
