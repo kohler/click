@@ -1,3 +1,8 @@
+2001-08-17 Friday 20:28  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/clickfs_vnops.cc (1.3): Fix writes into element
+	handlers through clickfs
+
 2001-08-17 Friday 16:16  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* bsdmodule/: Makefile.in (1.2), clickfs.cc (1.2),
@@ -3102,8 +3107,9 @@
 
 2001-04-12 Thursday 11:07  Benjie Chen <benjie@lcs.mit.edu>
 
-	* include/click/perfctr.hh (1.3),
-	elements/linuxmodule/perfcountuser.cc (1.9): more cycle counters
+	* include/click/perfctr-i586.hh (1.3), include/click/perfctr.hh
+	(1.3), elements/linuxmodule/perfcountuser.cc (1.9): more cycle
+	counters
 
 2001-04-11 Wednesday 16:35  Benjie Chen <benjie@lcs.mit.edu>
 
@@ -6680,7 +6686,8 @@
 
 2000-10-31 Tuesday 17:13  Eddie Kohler <kohler@aciri.org>
 
-	* elements/linuxmodule/perfinfo.cc (1.18), include/click/perfctr.hh
+	* elements/linuxmodule/perfinfo.cc (1.18),
+	include/click/perfctr-i586.hh (1.2), include/click/perfctr.hh
 	(1.2): performance counter cleanups: do not include PerfInfo,
 	remove old PerfCtr class from perfctr.hh
 
@@ -7557,46 +7564,47 @@
 	(1.1), include/click/iptable2.hh (1.1), include/click/lexer.hh
 	(1.1), include/click/llrpc.h (1.1), include/click/mplock.hh (1.1),
 	include/click/package.hh (1.1), include/click/packet.hh (1.1),
-	include/click/perfctr.hh (1.1), include/click/radix.hh (1.1),
-	include/click/router.hh (1.1), include/click/straccum.hh (1.1),
-	include/click/string.hh (1.1), include/click/subvector.hh (1.1),
-	include/click/timer.hh (1.1), include/click/userutils.hh (1.1),
-	include/click/vector.cc (1.1), include/click/vector.hh (1.1),
-	lib/archive.cc (1.8), lib/archive.hh (1.3), lib/bighashmap.cc
-	(1.10), lib/bighashmap.hh (1.5), lib/bitvector.cc (1.9),
-	lib/bitvector.hh (1.5), lib/click_ether.h (1.13), lib/click_icmp.h
-	(1.4), lib/click_icmp6.h (1.5), lib/click_ip.h (1.14),
-	lib/click_ip6.h (1.10), lib/click_tcp.h (1.5), lib/click_udp.h
-	(1.5), lib/clp.c (1.4), lib/clp.h (1.4), lib/confparse.cc (1.40),
-	lib/confparse.hh (1.26), lib/crc32.c (1.3), lib/crc32.h (1.2),
-	lib/element.cc (1.40), lib/element.hh (1.41), lib/elemfilter.cc
-	(1.8), lib/elemfilter.hh (1.5), lib/elemlink.cc (1.10),
-	lib/elemlink.hh (1.16), lib/error.cc (1.13), lib/error.hh (1.5),
-	lib/errorelement.cc (1.10), lib/errorelement.hh (1.10),
-	lib/etheraddress.cc (1.7), lib/etheraddress.hh (1.4), lib/ewma.cc
-	(1.9), lib/ewma.hh (1.9), lib/gaprate.cc (1.3), lib/gaprate.hh
-	(1.3), lib/glue.cc (1.15), lib/glue.hh (1.12), lib/hashmap.cc
-	(1.8), lib/hashmap.hh (1.8), lib/in_cksum.c (1.8), lib/integers.hh
-	(1.2), lib/ip6address.cc (1.15), lib/ip6address.hh (1.8),
-	lib/ip6table.cc (1.5), lib/ip6table.hh (1.2), lib/ipaddress.cc
-	(1.12), lib/ipaddress.hh (1.11), lib/ipaddressset.cc (1.4),
-	lib/ipaddressset.hh (1.2), lib/ipflowid.cc (1.7), lib/ipflowid.hh
-	(1.5), lib/iptable.cc (1.5), lib/iptable.hh (1.3), lib/iptable2.cc
-	(1.11), lib/iptable2.hh (1.7), lib/lexer.cc (1.41), lib/lexer.hh
-	(1.19), lib/llrpc.h (1.6), lib/mplock.hh (1.3), lib/packet.cc
-	(1.33), lib/packet.hh (1.45), lib/perfctr.hh (1.2), lib/radix.cc
-	(1.8), lib/radix.hh (1.6), lib/router.cc (1.64), lib/router.hh
-	(1.27), lib/straccum.cc (1.9), lib/straccum.hh (1.9), lib/string.cc
-	(1.10), lib/string.hh (1.10), lib/subvector.hh (1.2),
-	lib/templatei.cc (1.6), lib/timer.cc (1.13), lib/timer.hh (1.7),
-	lib/userutils.cc (1.8), lib/userutils.hh (1.4), lib/vector.cc
-	(1.7), lib/vector.hh (1.7), lib/vectorv.cc (1.7),
-	linuxmodule/Makefile.in (1.36), linuxmodule/kernelerror.cc (1.12),
-	linuxmodule/kernelerror.hh (1.3), linuxmodule/module.cc (1.42),
-	linuxmodule/modulepriv.hh (1.15), linuxmodule/proc_config.cc
-	(1.15), linuxmodule/proc_element.cc (1.21), linuxmodule/proc_mgr.cc
-	(1.11), linuxmodule/sched.cc (1.21), tools/click-align/Makefile.in
-	(1.7), tools/click-align/alignclass.cc (1.8),
+	include/click/perfctr-i586.hh (1.1), include/click/perfctr.hh
+	(1.1), include/click/radix.hh (1.1), include/click/router.hh (1.1),
+	include/click/straccum.hh (1.1), include/click/string.hh (1.1),
+	include/click/subvector.hh (1.1), include/click/timer.hh (1.1),
+	include/click/userutils.hh (1.1), include/click/vector.cc (1.1),
+	include/click/vector.hh (1.1), lib/archive.cc (1.8), lib/archive.hh
+	(1.3), lib/bighashmap.cc (1.10), lib/bighashmap.hh (1.5),
+	lib/bitvector.cc (1.9), lib/bitvector.hh (1.5), lib/click_ether.h
+	(1.13), lib/click_icmp.h (1.4), lib/click_icmp6.h (1.5),
+	lib/click_ip.h (1.14), lib/click_ip6.h (1.10), lib/click_tcp.h
+	(1.5), lib/click_udp.h (1.5), lib/clp.c (1.4), lib/clp.h (1.4),
+	lib/confparse.cc (1.40), lib/confparse.hh (1.26), lib/crc32.c
+	(1.3), lib/crc32.h (1.2), lib/element.cc (1.40), lib/element.hh
+	(1.41), lib/elemfilter.cc (1.8), lib/elemfilter.hh (1.5),
+	lib/elemlink.cc (1.10), lib/elemlink.hh (1.16), lib/error.cc
+	(1.13), lib/error.hh (1.5), lib/errorelement.cc (1.10),
+	lib/errorelement.hh (1.10), lib/etheraddress.cc (1.7),
+	lib/etheraddress.hh (1.4), lib/ewma.cc (1.9), lib/ewma.hh (1.9),
+	lib/gaprate.cc (1.3), lib/gaprate.hh (1.3), lib/glue.cc (1.15),
+	lib/glue.hh (1.12), lib/hashmap.cc (1.8), lib/hashmap.hh (1.8),
+	lib/in_cksum.c (1.8), lib/integers.hh (1.2), lib/ip6address.cc
+	(1.15), lib/ip6address.hh (1.8), lib/ip6table.cc (1.5),
+	lib/ip6table.hh (1.2), lib/ipaddress.cc (1.12), lib/ipaddress.hh
+	(1.11), lib/ipaddressset.cc (1.4), lib/ipaddressset.hh (1.2),
+	lib/ipflowid.cc (1.7), lib/ipflowid.hh (1.5), lib/iptable.cc (1.5),
+	lib/iptable.hh (1.3), lib/iptable2.cc (1.11), lib/iptable2.hh
+	(1.7), lib/lexer.cc (1.41), lib/lexer.hh (1.19), lib/llrpc.h (1.6),
+	lib/mplock.hh (1.3), lib/packet.cc (1.33), lib/packet.hh (1.45),
+	lib/perfctr.hh (1.2), lib/radix.cc (1.8), lib/radix.hh (1.6),
+	lib/router.cc (1.64), lib/router.hh (1.27), lib/straccum.cc (1.9),
+	lib/straccum.hh (1.9), lib/string.cc (1.10), lib/string.hh (1.10),
+	lib/subvector.hh (1.2), lib/templatei.cc (1.6), lib/timer.cc
+	(1.13), lib/timer.hh (1.7), lib/userutils.cc (1.8),
+	lib/userutils.hh (1.4), lib/vector.cc (1.7), lib/vector.hh (1.7),
+	lib/vectorv.cc (1.7), linuxmodule/Makefile.in (1.36),
+	linuxmodule/kernelerror.cc (1.12), linuxmodule/kernelerror.hh
+	(1.3), linuxmodule/module.cc (1.42), linuxmodule/modulepriv.hh
+	(1.15), linuxmodule/proc_config.cc (1.15),
+	linuxmodule/proc_element.cc (1.21), linuxmodule/proc_mgr.cc (1.11),
+	linuxmodule/sched.cc (1.21), tools/click-align/Makefile.in (1.7),
+	tools/click-align/alignclass.cc (1.8),
 	tools/click-align/click-align.cc (1.26),
 	tools/click-check/Makefile.in (1.3),
 	tools/click-check/click-check.cc (1.11),
