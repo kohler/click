@@ -191,8 +191,9 @@ Packet::clone()
   memcpy(p, this, sizeof(Packet));
   p->_use_count = 1;
   p->_data_packet = this;
+# if CLICK_USERLEVEL
   p->_destructor = 0;
-# if CLICK_BSDMODULE
+# else
   p->_m = 0;
 # endif
   // increment our reference count because of _data_packet reference
