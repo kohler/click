@@ -92,9 +92,8 @@ ToDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  "ALLOW_NONEXISTENT", cpBool, "allow nonexistent interface?", &allow_nonexistent,
 		  cpEnd) < 0)
     return -1;
-
   if (find_device(allow_nonexistent, errh) < 0)
-      return -1;
+    return -1;
   return 0;
 }
 

@@ -53,6 +53,9 @@ AnyDevice::find_device(bool allow_nonexistent, ErrorHandler *errh)
     }
     if (_dev && !(_dev->flags & IFF_UP)) {
 	errh->warning("device `%s' is down", _devname.cc());
+#if LINUX_VERSION_CODE >= 0x020400
+	dev_put(_dev);
+#endif
 	_dev = 0;
     }
     return 0;
