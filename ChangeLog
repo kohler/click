@@ -1,3 +1,14 @@
+2002-01-08 Tuesday 21:34  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.13), fromipsumdump.hh
+	(1.11), toipsumdump.cc (1.10), toipsumdump.hh (1.7): to
+	ipsumdump-1.20: add "direction" type
+
+2002-01-08 Tuesday 21:34  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: timefilter.cc (1.5), timefilter.hh (1.6):
+	TimeFilter: add START_DELAY and END_DELAY options
+
 2002-01-08 Tuesday 15:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridroutecb.hh (1.6): nitlet
