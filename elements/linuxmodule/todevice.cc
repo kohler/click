@@ -247,8 +247,7 @@ ToDevice::tx_intr()
   }
 #endif
 
-  if (sent > 0 || !busy) 
-    adjust_tickets(sent);
+  adjust_tickets(sent);
   reschedule();
 }
 
