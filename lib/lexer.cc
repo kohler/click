@@ -1623,12 +1623,14 @@ Lexer::create_router(Master *master)
     int etype = _elements[i];
     if (etype == TUNNEL_TYPE)
       router_id.push_back(-1);
-    else if (Element *e = (*_element_types[etype].factory)(_element_types[etype].thunk)) {
-      int ei = router->add_element(e, _element_names[i], _element_configurations[i], _element_landmarks[i]
 #if CLICK_LINUXMODULE
-				   , _element_types[etype].module
+    else if (_element_types[etype].module && router->add_module_ref(_element_types[etype].module) < 0) {
+      _errh->lerror(_element_landmarks[i], "module for element type '%s' unloaded", _element_types[etype].name.c_str());
+      router_id.push_back(-1);
+    }
 #endif
-				   );
+    else if (Element *e = (*_element_types[etype].factory)(_element_types[etype].thunk)) {
+      int ei = router->add_element(e, _element_names[i], _element_configurations[i], _element_landmarks[i]);
       router_id.push_back(ei);
     } else {
       _errh->lerror(_element_landmarks[i], "failed to create element '%s'", _element_names[i].c_str());

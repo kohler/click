@@ -123,12 +123,11 @@ class Router { public:
   
     // INITIALIZATION
     void add_requirement(const String&);
-#if CLICK_LINUXMODULE
-    int add_element(Element*, const String& name, const String& conf, const String& landmark, struct module *);
-#else
     int add_element(Element*, const String& name, const String& conf, const String& landmark);
-#endif
     int add_connection(int from_idx, int from_port, int to_idx, int to_port);
+#if CLICK_LINUXMODULE
+    int add_module_ref(struct module *);
+#endif
   
     int initialize(ErrorHandler*);
     void activate(bool foreground, ErrorHandler*);

@@ -213,35 +213,31 @@ Router::elandmark(int ei) const
 
 // CREATION 
 
+#if CLICK_LINUXMODULE
 int
-Router::add_element(Element *e, const String &ename, const String &conf, const String &landmark
-#if CLICK_LINUXMODULE
-		    , struct module *module
-#endif
-		    )
+Router::add_module_ref(struct module *module)
 {
-    if (_state != ROUTER_NEW || !e || e->router())
-	return -1;
-
-#if CLICK_LINUXMODULE
-    // increment module use count
     if (!module)
-	goto found_module;
+	return 0;
     for (struct module **m = _modules.begin(); m < _modules.end(); m++)
 	if (*m == module)
-	    goto found_module;
+	    return 0;
 # if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 9)
-    if (try_module_get(module) == 0) {
-	delete e;
-	e = new ErrorElement;
-	goto found_module;
-    }
+    if (try_module_get(module) == 0)
+	return -1;
 # else
     __MOD_INC_USE_COUNT(module);
 # endif
     _modules.push_back(module);
-  found_module:
+    return 0;
+}
 #endif
+    
+int
+Router::add_element(Element *e, const String &ename, const String &conf, const String &landmark)
+{
+    if (_state != ROUTER_NEW || !e || e->router())
+	return -1;
 
     _elements.push_back(e);
     _element_names.push_back(ename);
