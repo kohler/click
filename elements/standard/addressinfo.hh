@@ -12,18 +12,18 @@
  * None
  * =d
  *
- * Lets you use shorthand names for IPv4 or IPv6 addresses and network
- * addresses, and for Ethernet addresses. Each argument has the form `NAME
+ * Lets you use mnemonic names for IPv4 and IPv6 addresses, IPv4 network
+ * addresses, and Ethernet addresses. Each argument has the form `NAME
  * ADDRESS [ADDRESS...]', which associates the given ADDRESSes with NAME. For
  * example, if a configuration contains this AddressInfo element,
  *
  *    AddressInfo(mauer 10.0.0.1, mazu 10.0.0.10);
  *
- * then other configuration strings can use C<mauer> and C<mazu> as shorthand
+ * then other configuration strings can use C<mauer> and C<mazu> as mnemonics
  * for the IP addresses 10.0.0.1 and 10.0.0.10, respectively.
  *
- * The shorthand names introduced by AddressInfo elements are local with
- * respect to compound elements. That is, shorthands created inside a compound
+ * The mnemonic names introduced by AddressInfo elements are local with
+ * respect to compound elements. That is, names created inside a compound
  * element apply only within that compound element and its subelements. For
  * example:
  *
