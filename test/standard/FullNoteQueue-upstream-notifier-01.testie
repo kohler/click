@@ -1,0 +1,25 @@
+%info
+Tests upstream Notifier functionality -- Ensure that InfiniteSource
+doesn't overflow the queu in front of it, even when that 
+queue is drained slower than it can produce packets.
+
+%script
+click -e "
+src :: InfiniteSource(<0800>, 2, 1, true, STOP true) 
+-> q :: FullNoteQueue(1)
+-> count :: Counter() 
+-> unq :: Unqueue
+-> Discard;
+ScheduleInfo(unq 1,
+	     src 2);
+DriverManager(wait,
+	      read q.drops,
+	      read count.count);
+"
+
+%expect stderr
+q.drops:
+0
+
+count.count:
+2
