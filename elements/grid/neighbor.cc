@@ -110,7 +110,8 @@ Neighbor::simple_action(Packet *packet)
   }
   
   /*
-   * update far nbr info with this hello sender info.
+   * update far nbr info with this hello sender info -- list sender as
+   * its own next hop.
    */
   int i;
   for (i = 0; i < _nbrs.size() && gh->ip != _nbrs[i].nbr.ip; i++) 
@@ -123,14 +124,10 @@ Neighbor::simple_action(Packet *packet)
   }
   else { 
     // update pre-existing information
-    // XXX simply replace information, or only replace expired info?
-    // for now we will replace info if expired, or if nbr is now closer.
-    if ((jiff - _nbrs[i].last_updated_jiffies > _timeout_jiffies) ||
-	(_nbrs[i].nbr.num_hops > 1)) {
-      _nbrs[i].last_updated_jiffies = jiff;
-      _nbrs[i].nbr.num_hops = 1;
-      _nbrs[i].nbr.next_hop_ip = gh->ip;
-      _nbrs[i].nbr.loc = gh->loc;
+    _nbrs[i].last_updated_jiffies = jiff;
+    _nbrs[i].nbr.num_hops = 1;
+    _nbrs[i].nbr.next_hop_ip = gh->ip;
+    _nbrs[i].nbr.loc = gh->loc;
     }
   }
   
@@ -157,6 +154,9 @@ Neighbor::simple_action(Packet *packet)
 						   i * entry_sz);
 	if (curr->num_hops + 1 > _max_hops)
 	  continue; // skip this one, we don't care about nbrs too many hops away
+
+	if (IPAddress(curr->next_hop_ip) == _ipaddr)
+	  continue; // pseduo-split-horizon: ignore routes from nbrs that go back through us
 	
 	int j;
 	for (j = 0; j < _nbrs.size() && curr->ip != _nbrs[j].nbr.ip; j++) 
@@ -168,10 +168,13 @@ Neighbor::simple_action(Packet *packet)
 	  _nbrs[j].last_updated_jiffies = jiff;
 	}
 	else { 
-	  // update pre-existing information.  use same criteria as when
-	  // updating pre-existing information of 1-hop nbr.
-	  if ((jiff - _nbrs[j].last_updated_jiffies > _timeout_jiffies) ||
-	      (_nbrs[j].nbr.num_hops > curr->num_hops)) {
+	  // update pre-existing information.  replace all information
+	  // if next hop is the same as in the old entry; if the next
+	  // hop is different, only update if old info is timed out or
+	  // more hops away.
+	  if (_nbrs[j].nbr.next_hop_ip == gh->ip ||
+	      jiff - _nbrs[j].last_updated_jiffies > _timeout_jiffies ||
+	      _nbrs[j].nbr.num_hops > curr->num_hops) {
 	    _nbrs[j].nbr.num_hops = curr->num_hops + 1;
 	    _nbrs[j].nbr.next_hop_ip = gh->ip;
 	    _nbrs[j].nbr.loc = curr->loc;
