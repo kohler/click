@@ -222,7 +222,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
 			"ALPHA", cpUnsigned, "alpha parameter for settling time computation, in percent (0 <= ALPHA <= 100)", &_alpha,
 			"SEQ0", cpUnsigned, "initial sequence number (must be even)", &_seq_no,
-			"MTU", cpUnsigned, "interface's MTU", &_mtu,
+			"MTU", cpUnsigned, "interface MTU", &_mtu,
 			0);
 
   if (res < 0)
@@ -242,6 +242,9 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("max hops must be greater than 0");
   if (_alpha > 100) 
     return errh->error("alpha must be between 0 and 100 inclusive");
+
+  if (_mtu < sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello)) 
+    return errh->error("mtu is too small to send a route ads");
 
   _metric_type = check_metric_type(metric);
   if (_metric_type < 0)
@@ -1054,7 +1057,7 @@ DSDVRouteTable::send_full_update()
   for (int i = 0; i < routes.size() && i < max_rtes_per_ad(); i++) {
     if (ad_routes.size() == max_rtes_per_ad()) {
       build_and_tx_ad(ad_routes);
-      ad_routes = Vector<RTEntry>();
+      ad_routes.clear();
 #if DBG
       click_chatter("%s: too many routes; sending out partial full dump (%d)\n", 
 		    id().cc(), i);
@@ -1069,7 +1072,6 @@ DSDVRouteTable::send_full_update()
     r->need_metric_ad = false;
     r->last_adv_metric = r->metric;
   }
-  
   build_and_tx_ad(ad_routes);
 
   /* 
@@ -1123,7 +1125,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   for (int i = 0; i < triggered_routes.size(); i++) {
     if (ad_routes.size() == max_rtes_per_ad()) {
       build_and_tx_ad(ad_routes);
-      ad_routes = Vector<RTEntry>();
+      ad_routes.clear();
 #if DBG
       click_chatter("%s: too many routes; sending out partial triggered update (%d)\n", 
 		    id().cc(), i);
@@ -1137,8 +1139,8 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
     r->need_seq_ad = false; // XXX why not reset need_metric_ad flag as well?
     r->last_adv_metric = r->metric;
   }
-
   build_and_tx_ad(ad_routes); 
+
   _last_triggered_update = jiff;
 
   check_invariants();
@@ -1878,21 +1880,18 @@ void
 DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
 {
   /*
-   * build and send routing update packet advertising the contents of
-   * the rtes_to_send vector.  
+   * Build and send routing update packet advertising the contents of
+   * the rtes_to_send vector.  Requires that the nuber of entries in
+   * rtes_to_send is <= the maximum number of routes that fit into a
+   * single route advertisement.
    */
 
-  unsigned int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
-  int max_rtes = max_rtes_per_ad();
   int num_rtes = rtes_to_send.size();
+  dsdv_assert(num_rtes <= max_rtes_per_ad());
+
+  unsigned int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
   unsigned int psz = hdr_sz + sizeof(grid_nbr_entry) * num_rtes;
-  
-  dsdv_assert(psz <= _mtu);
-  dsdv_assert(num_rtes <= max_rtes);
-  
-  //   if (num_rtes < rtes_to_send.size())
-  //     click_chatter("DSDVRouteTable %s: too many routes, truncating route advertisement",
-  // 		  id().cc());
+  dsdv_assert(psz <= _mtu);  
 
   /* allocate and align the packet */
   WritablePacket *p = Packet::make(psz + 2); // for alignment
@@ -1932,7 +1931,6 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
 
   if (_log)
     _log->log_sent_advertisement(_seq_no, tv);
-
   
   _bcast_count++;
   grid_hdr::set_pad_bytes(*gh, htonl(_bcast_count));

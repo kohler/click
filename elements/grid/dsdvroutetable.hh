@@ -132,6 +132,12 @@ CLICK_DECLS
  * Unsigned integer.  Initial sequence number used in advertisements.
  * Defaults to 0.  Must be even.
  *
+ * =item MTU
+ *
+ * Unsigned integer.  Maximum packet size (`mtu') allowed by
+ * interface; route broadcasts will not exceed this size.  Defaults to
+ * 2000.
+ *
  * =item VERBOSE
  *
  * Boolean.  Be verbose about warning and status messages?  Defaults
@@ -443,9 +449,8 @@ private:
   IPAddress _ip;
   EtherAddress _eth;
 
-  /* latest sequence number for this node's route entry */
-  unsigned int _seq_no;
-  unsigned int _mtu;
+  unsigned int _seq_no;       // latest sequence number for this node's route entry 
+  unsigned int _mtu;          // maximum total bytes per packet, including ethernet headers
   unsigned int _bcast_count;  // incremented on every broadcast
 
   /* local DSDV radius */
