@@ -293,6 +293,13 @@ SRCR::srcr_assert_(const char *file, int line, const char *expr) const
 #endif
 
 }
+// generate Vector template instance
+#include <click/vector.cc>
+#include <click/bighashmap.cc>
+#include <click/hashmap.cc>
+#if EXPLICIT_TEMPLATE_INSTANCES
+template class HashMap<Path, SRCR::PathInfo>;
+#endif
 
 CLICK_ENDDECLS
 EXPORT_ELEMENT(SRCR)
