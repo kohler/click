@@ -50,6 +50,7 @@ class CompareBlock : public Element {
   int _fwd_weight;
   int _rev_weight;
   int _thresh;
+  int _bad;
 
   static int rev_weight_write_handler
     (const String &conf, Element *e, void *, ErrorHandler *errh);

@@ -17,6 +17,7 @@
 #include "compblock.hh"
 #include "error.hh"
 #include "confparse.hh"
+#include "click_ip.h"
 
 CompareBlock::CompareBlock()
   : Element(1, 2), _fwd_weight(0), _rev_weight(1)
@@ -32,6 +33,7 @@ CompareBlock::clone() const
 int
 CompareBlock::configure(const String &conf, ErrorHandler *errh)
 {
+  _bad = 0;
   return cp_va_parse(conf, this, errh,
 		     cpInteger, "forward weight", &_fwd_weight,
 		     cpInteger, "reverse weight", &_rev_weight,
@@ -42,9 +44,18 @@ CompareBlock::configure(const String &conf, ErrorHandler *errh)
 void
 CompareBlock::push(int, Packet *p)
 {
-  if ((p->fwd_rate_anno() > _thresh || p->rev_rate_anno() > _thresh) && 
-      _fwd_weight * p->fwd_rate_anno() > _rev_weight * p->rev_rate_anno())
-    output(1).push(p);
+  int network = *((unsigned char *)&p->ip_header()->ip_src);
+  int fwd = p->fwd_rate_anno();
+  if (fwd < 1) fwd = 1;
+  int rev = p->rev_rate_anno();
+  if (rev < 1) rev = 1;
+  if ((fwd > _thresh || rev > _thresh) && 
+      _fwd_weight * fwd > _rev_weight * rev) {
+       if (network == 8) { _bad++;
+       click_chatter("%05d dropping (%s) %d >> %d", _bad,
+		     IPAddress(p->ip_header()->ip_src.s_addr).s().cc(),
+		     fwd, rev);}
+      output(1).push(p);}
   else
     output(0).push(p);
 }

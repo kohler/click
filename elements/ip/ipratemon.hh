@@ -71,14 +71,16 @@ class IPRateMonitor : public Element { public:
   void notify_ninputs(int);  
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void uninitialize() 				{ _base->clear(_alloced_mem); }
+  void uninitialize();
+
+  void update_alloced_mem(int m)		{ _alloced_mem += m; }
 
   void push(int port, Packet *p);
   Packet *pull(int port);
 
  private:
 
-  typedef RateEWMAX<3, 10, HalfSecondsTimer> MyEWMA;
+  typedef RateEWMAX<5, 10, HalfSecondsTimer> MyEWMA;
   
   unsigned char _pb;
 #define COUNT_PACKETS 0
@@ -96,20 +98,18 @@ class IPRateMonitor : public Element { public:
 
   struct Stats {
     Counter counter[MAX_COUNTERS];
-    Stats();
-    Stats(const MyEWMA &, const MyEWMA &);
+    Stats(const IPRateMonitor *m);
+    Stats(const IPRateMonitor *m, const MyEWMA &, const MyEWMA &);
     ~Stats();
-    void clear(int &);
-    void destroy(int &);
-
-    private:
-    static int _my_size;
+    void clear();
+  private:
+    IPRateMonitor *_rm;
   };
-  int _stats_struct_size;
 
   int _thresh;
   struct Stats *_base;
   long unsigned int _resettime;       // time of last reset
+
   int _alloced_mem;
 
   void set_resettime();
@@ -135,6 +135,8 @@ inline void
 IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
 		      Packet *p, bool forward)
 {
+  static int bad = 0;
+
   unsigned int addr = paddr.addr();
   int now = MyEWMA::now();
 
@@ -151,7 +153,6 @@ IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
     else 
       c->rev_rate.update(now, val);
 
-    // XXX: update not called on break.
     if(!(s = c->next_level))
       break;
   }
@@ -161,12 +162,20 @@ IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
   p->set_fwd_rate_anno(fwd_rate);
   int rev_rate = c->rev_rate.average(); 
   p->set_rev_rate_anno(rev_rate);
+  int ns = *((unsigned char *)&p->ip_header()->ip_src);
+  int nd = *((unsigned char *)&p->ip_header()->ip_dst);
+  if (ns == 8 || nd == 8) { 
+    click_chatter("ipratemon: (%d) [%s] f=%d, r=%d", bad++, 		    
+		  IPAddress(p->ip_header()->ip_src.s_addr).s().cc(),
+		  fwd_rate, rev_rate);
+  }
 
   // did value get larger than THRESH in the specified period?
   if (fwd_rate >= _thresh || rev_rate >= _thresh) {
     if (bitshift < MAX_SHIFT) {
-      c->next_level = new Stats(c->fwd_rate, c->rev_rate);
-      _alloced_mem += _stats_struct_size;
+      c->next_level = new Stats(this, c->fwd_rate, c->rev_rate);
+      if (!c->next_level)
+	click_chatter("fuck !!!!!!!!!!!!!!!!!!!!!!!");
     }
   }
 }

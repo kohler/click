@@ -27,7 +27,6 @@ IPRateMonitor::IPRateMonitor()
   click_chatter("EWMA %d", sizeof(MyEWMA));
   click_chatter("Counter %d", sizeof(Counter));
   click_chatter("Stats %d", sizeof(Stats));
-  _stats_struct_size = sizeof(Stats);
 }
 
 IPRateMonitor::~IPRateMonitor()
@@ -72,10 +71,17 @@ IPRateMonitor::initialize(ErrorHandler *errh)
   set_resettime();
 
   // Make _base
-  _base = new Stats();
+  _base = new Stats(this);
   if(!_base)
     return errh->error("cannot allocate data structure.");
   return 0;
+}
+
+void
+IPRateMonitor::uninitialize()
+{ 
+  delete _base;
+  _base = 0;
 }
 
 void
@@ -98,59 +104,52 @@ IPRateMonitor::pull(int port)
 //
 // Recursively destroys tables.
 //
-int IPRateMonitor::Stats::_my_size = 0;
-
-IPRateMonitor::Stats::Stats()
+IPRateMonitor::Stats::Stats(const IPRateMonitor *m)
 {
+  _rm = m;
+  _rm->update_alloced_mem(sizeof(*this));
+
   for (int i = 0; i < MAX_COUNTERS; i++) {
     counter[i].fwd_rate.initialize();
     counter[i].rev_rate.initialize();
     counter[i].next_level = 0;
   }
-
-  if(!_my_size)
-    _my_size = sizeof(Stats);
 }
 
-IPRateMonitor::Stats::Stats(const MyEWMA &fwd, const MyEWMA &rev)
+IPRateMonitor::Stats::Stats(const IPRateMonitor *m, 
+			    const MyEWMA &fwd, const MyEWMA &rev)
 {
+  _rm = m;
+  _rm->update_alloced_mem(sizeof(*this));
+
   for (int i = 0; i < MAX_COUNTERS; i++) {
     counter[i].fwd_rate = fwd;
     counter[i].rev_rate = rev;
     counter[i].next_level = 0;
   }
-
-  if(!_my_size)
-    _my_size = sizeof(Stats);
 }
 
 IPRateMonitor::Stats::~Stats()
 {
+  for (int i = 0; i < MAX_COUNTERS; i++)
+    if (counter[i].next_level) 
+      delete counter[i].next_level;
+
+  _rm->update_alloced_mem(-sizeof(*this));
 }
 
 void
-IPRateMonitor::Stats::clear(int &alloced_mem)
+IPRateMonitor::Stats::clear()
 {
   for (int i = 0; i < MAX_COUNTERS; i++) {
     if(counter[i].next_level) {
-      counter[i].next_level->destroy(alloced_mem);
+      delete counter[i].next_level;
       counter[i].next_level = 0;
     }
+
     counter[i].rev_rate.initialize();
     counter[i].fwd_rate.initialize();
   }
-}
-
-
-void
-IPRateMonitor::Stats::destroy(int &alloced_mem)
-{
-  for (int i = 0; i < MAX_COUNTERS; i++) {
-    if(counter[i].next_level)
-      counter[i].next_level->destroy(alloced_mem);
-  }
-  delete this;
-  alloced_mem -= _my_size;
 }
 
 //
@@ -174,9 +173,11 @@ IPRateMonitor::print(Stats *s, String ip = "")
       c.fwd_rate.update(jiffs, 0);
       c.rev_rate.update(jiffs, 0);
       ret += "\t"; 
-      ret += cp_unparse_real(c.fwd_rate.average()*CLICK_HZ, c.fwd_rate.scale);
+      ret += String(c.fwd_rate.average());
+      //      ret += cp_unparse_real(c.fwd_rate.average()*CLICK_HZ, c.fwd_rate.scale);
       ret += "\t"; 
-      ret += cp_unparse_real(c.rev_rate.average()*CLICK_HZ, c.rev_rate.scale);
+      ret += String(c.rev_rate.average());
+      //      ret += cp_unparse_real(c.rev_rate.average()*CLICK_HZ, c.rev_rate.scale);
       
       ret += "\n";
       if (c.next_level) 
@@ -214,7 +215,7 @@ IPRateMonitor::reset_write_handler
 (const String &, Element *e, void *, ErrorHandler *)
 {
   IPRateMonitor* me = (IPRateMonitor *) e;
-  me->_base->clear(me->_alloced_mem);
+  me->_base->clear();
   me->set_resettime();
   return 0;
 }
