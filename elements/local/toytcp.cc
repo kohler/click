@@ -39,6 +39,11 @@ ToyTCP::ToyTCP()
   _snd_nxt = _iss;
   _grow = 0;
   _wc = 0;
+  _reset = 0;
+
+  _ingood = 0;
+  _inbad = 0;
+  _out = 0;
 }
 
 ToyTCP::~ToyTCP()
@@ -79,8 +84,12 @@ ToyTCP::initialize(ErrorHandler *)
 void
 ToyTCP::run_scheduled()
 {
-  tcp_output(0);
-  _timer.schedule_after_ms(1000);
+  if(_reset == false){
+    tcp_output(0);
+    _timer.schedule_after_ms(1000);
+    click_chatter("ToyTCP: %d good in, %d bad in, %d out",
+                  _ingood, _inbad, _out);
+  }
 }
 
 void
@@ -105,16 +114,30 @@ ToyTCP::tcp_input(Packet *p)
     _state = 1;
     click_chatter("ToyTCP connected");
   }
+
+  if(th->th_flags & TH_RST){
+    if(_reset == false)
+      click_chatter("ToyTCP: RST, in %d, out %d",
+                    _ingood, _out);
+    _reset = true;
+    _inbad++;
+  } else {
+    _ingood++;
+  }
 }
 
 Packet *
 ToyTCP::simple_action(Packet *p)
 {
-  tcp_input(p);
-  tcp_output(p);
-  if(_grow++ > 4){
-    tcp_output(0);
-    _grow = 0;
+  if(_reset){
+    p->kill();
+  } else {
+    tcp_input(p);
+    tcp_output(p);
+    if(_grow++ > 4){
+      tcp_output(0);
+      _grow = 0;
+    }
   }
   return(0);
 }
@@ -155,7 +178,11 @@ ToyTCP::tcp_output(Packet *xp)
 
   th->th_sport = _sport;
   th->th_dport = _dport;
-  th->th_seq = htonl(_snd_nxt);
+  if(_state){
+    th->th_seq = htonl(_snd_nxt + (_out & 0xfff));
+  } else {
+    th->th_seq = htonl(_snd_nxt);
+  }
   th->th_off = sizeof(click_tcp) >> 2;
   if(_state == 0){
     th->th_flags = TH_SYN;
@@ -172,6 +199,8 @@ ToyTCP::tcp_output(Packet *xp)
   }
 
   output(0).push(p);
+
+  _out++;
 }
 
 EXPORT_ELEMENT(ToyTCP)

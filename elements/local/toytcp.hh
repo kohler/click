@@ -50,6 +50,11 @@ private:
   int _grow;
   int _wc;
 
+  bool _reset;
+  int _ingood;
+  int _inbad;
+  int _out;
+
   void tcp_output(Packet *);
   void tcp_input(Packet *);
 };
