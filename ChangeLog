@@ -1,3 +1,9 @@
+2004-12-02 Thursday 15:03  John Bicket <jbicket@mit.edu>
+
+	* include/click/packet.hh (1.49): orphan packets when we get them
+	from linux; this ensures that sockets can do their bookkeeping
+	correctly.
+
 2004-12-01 Wednesday 15:46  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/todevice.cc (1.42): fix _q bug.
