@@ -1,3 +1,7 @@
+2005-01-26 Wednesday 14:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* conf/sampler.click (1.3): nit
+
 2005-01-26 Wednesday 11:47  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/directiplookup.cc (1.2): a little Marko patch
