@@ -32,7 +32,6 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <linux/netdevice.h>
-#include <linux/sched.h>
 #if __i386__
 #include <asm/msr.h>
 #endif

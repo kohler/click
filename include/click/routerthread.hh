@@ -4,6 +4,14 @@
 #include <click/sync.hh>
 #include <click/vector.hh>
 #include <click/ewma.hh>
+#if CLICK_LINUXMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <linux/sched.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
+#endif
+
 // NB: user must #include <click/task.hh> before <click/routerthread.hh>.
 // We cannot #include <click/task.hh> ourselves because of circular #include
 // dependency.
