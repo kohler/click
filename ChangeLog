@@ -1,3 +1,28 @@
+2004-06-29 Tuesday 02:31  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.82), test/analysis/FromIPSummaryDump-ipopt-01.testie
+	(1.10), test/analysis/FromTcpdump-01.testie (1.3),
+	test/analysis/FromTcpdump-02.testie (1.3),
+	test/icmp/ICMPPingEncap-01.testie (1.3),
+	test/linuxmodule/ToHost-01.testie (1.5): update tests for moronic,
+	horrendous tcpdump arbitrariness
+
+2004-06-29 Tuesday 02:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/testie (1.34): add -q, -i, and %cut
+
+2004-06-29 Tuesday 02:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/testie.1 (1.1): testie man page
+
+2004-06-29 Tuesday 02:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/Makefile.in (1.48): make and install testie man page
+
+2004-06-29 Tuesday 02:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.118): install testie
+
 2004-06-28 Monday 16:25  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.17), configure.in (1.235): add
