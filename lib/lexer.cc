@@ -806,7 +806,7 @@ Lexer::add_element_type(Element *e)
 int
 Lexer::add_element_type(const String &name, Element *e, bool scoped)
 {
-  assert(e && name);
+  assert(e);		// 3.Sep.2003: anonymous compounds have name ""
   // Lexer now owns 'e'
   int tid;
   if (_free_element_type < 0) {
@@ -821,7 +821,8 @@ Lexer::add_element_type(const String &name, Element *e, bool scoped)
     _element_type_names[tid] = name;
     _element_type_next[tid] = _last_element_type | (scoped ? (int)ET_SCOPED : 0);
   }
-  _element_type_map.insert(name, tid);
+  if (name)
+    _element_type_map.insert(name, tid);
   _last_element_type = tid;
   return tid;
 }
@@ -881,7 +882,7 @@ Lexer::remove_element_type(int removed, int *prev_hint)
   
   // fix up element type name map
   const String &name = _element_type_names[removed];
-  if (_element_type_map[name] == removed) {
+  if (name && _element_type_map[name] == removed) {
     int trav;
     for (trav = _element_type_next[removed] & ET_TMASK;
 	 trav != ET_NULL && _element_type_names[trav] != name;
