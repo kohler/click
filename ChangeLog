@@ -1,3 +1,9 @@
+2001-08-30 Thursday 14:19  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* bsdmodule/clickfs.cc (1.4), bsdmodule/clickfs_vnops.cc (1.7),
+	include/click/glue.hh (1.19): Fix some memory leaks and fix the
+	debugging allocator macros on BSD.
+
 2001-08-29 Wednesday 13:12  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fromdump.cc (1.43): fix FDDI encapsulation
