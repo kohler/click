@@ -37,8 +37,6 @@ extern "C" {
 #include "perfcount.hh"
 #include "asm/msr.h"
 
-static int registered_writers;
-
 ToDevice::ToDevice()
   : _polling(0), _registered(0),
     _dev_idle(0), _last_tx(0), _last_busy(0), 

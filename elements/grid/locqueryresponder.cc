@@ -100,5 +100,6 @@ LocQueryResponder::simple_action(Packet *p)
   return(q);
 }
 
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocQueryResponder)
 

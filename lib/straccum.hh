@@ -57,6 +57,8 @@ class StringAccum {
   StringAccum &operator<<(const String &);
   StringAccum &operator<<(int);
   StringAccum &operator<<(unsigned);
+  StringAccum &operator<<(long);
+  StringAccum &operator<<(unsigned long);
 #ifndef __KERNEL__
   StringAccum &operator<<(double);
 #endif
@@ -125,6 +127,18 @@ inline char *
 StringAccum::take()
 {
   return (char *)take_bytes();
+}
+
+inline StringAccum &
+StringAccum::operator<<(int i)
+{
+  return *this << static_cast<long>(i);
+}
+
+inline StringAccum &
+StringAccum::operator<<(unsigned u)
+{
+  return *this << static_cast<unsigned long>(u);
 }
 
 #endif

@@ -76,22 +76,22 @@ StringAccum::operator<<(const String &s)
 }
 
 StringAccum &
-StringAccum::operator<<(int i)
+StringAccum::operator<<(long i)
 {
   if (char *x = reserve(256)) {
     int len;
-    sprintf(x, "%d%n", i, &len);
+    sprintf(x, "%ld%n", i, &len);
     forward(len);
   }
   return *this;
 }
 
 StringAccum &
-StringAccum::operator<<(unsigned u)
+StringAccum::operator<<(unsigned long u)
 {
   if (char *x = reserve(256)) {
     int len;
-    sprintf(x, "%u%n", u, &len);
+    sprintf(x, "%lu%n", u, &len);
     forward(len);
   }
   return *this;
