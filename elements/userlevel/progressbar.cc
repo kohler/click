@@ -55,8 +55,9 @@ ProgressBar::initialize(ErrorHandler *errh)
     _interval = 250;
     _delay_ms = 0;
     _active = true;
+    _size = -1;
     String position_str, size_str;
-    bool check_stdout = false;
+    bool check_stdout = false, have_size = false;
 
     if (cp_va_parse(conf, this, errh,
 		    cpArgument, "position handler", &position_str,
@@ -68,6 +69,8 @@ ProgressBar::initialize(ErrorHandler *errh)
 		    "ACTIVE", cpBool, "start active?", &_active,
 		    "DELAY", cpSecondsAsMilli, "display delay (s)", &_delay_ms,
 		    "CHECK_STDOUT", cpBool, "check if stdout is terminal?", &check_stdout,
+		    cpConfirmKeywords,
+		    "FIXED_SIZE", cpDouble, "fixed size", &have_size, &_size,
 		    0) < 0)
 	return -1;
 
@@ -87,7 +90,7 @@ ProgressBar::initialize(ErrorHandler *errh)
     else
 	_status = ST_FIRST;
     
-    _have_size = false;
+    _have_size = have_size;
     _timer.initialize(this);
     if (_active && _status != ST_DEAD)
 	_timer.schedule_now();
@@ -150,52 +153,17 @@ static const char * const bad_bar =
 static const int max_bar_length = 240;
 static const char prefixes[] = " KMGTP";
 
-#if 0
-ssize_t
-atomicio(f, fd, _s, n)
-	ssize_t (*f) ();
-	int fd;
-	void *_s;
-	size_t n;
-{
-	char *s = _s;
-	ssize_t res, pos = 0;
-
-	while (n > pos) {
-		res = (f) (fd, s + pos, n - pos);
-		switch (res) {
-		case -1:
-#ifdef EWOULDBLOCK
-			if (errno == EINTR || errno == EAGAIN || errno == EWOULDBLOCK)
-#else
-			if (errno == EINTR || errno == EAGAIN)
-#endif
-				continue;
-		case 0:
-			return (res);
-		default:
-			pos += res;
-		}
-	}
-	return (pos);
-}
-#endif
-
 #define STALLTIME	5
 
 bool
-ProgressBar::get_value(int first, int last, thermometer_t *value)
+ProgressBar::get_value(int first, int last, double *value)
 {
     *value = 0;
     bool all_known = true;
     for (int i = first; i < last; i++) {
 	String s = cp_uncomment(router()->handler(_his[i])->call_read(_es[i]));
-	thermometer_t this_value;
-#ifdef HAVE_INT64_TYPES
-	bool ok = cp_unsigned64(s, &this_value);
-#else
-	bool ok = cp_unsigned(s, &this_value);
-#endif
+	double this_value;
+	bool ok = cp_double(s, &this_value);
 	if (ok)
 	    *value += this_value;
 	else
@@ -244,18 +212,18 @@ ProgressBar::run_timer()
     }
     
     // get position
-    thermometer_t pos;
+    double pos;
     bool have_pos = get_value(_first_pos_h, _es.size(), &pos);
 
     // measure how far along we are
-    int thermpos;
+    double thermpos;
     if (!have_pos)
 	thermpos = -1;
     else if (!_have_size) {
-	thermpos = (pos / 100000) % 200;
+	thermpos = ((int)(pos / 100000)) % 200;
 	if (thermpos > 100) thermpos = 200 - thermpos;
     } else if (_size > 0) {
-	thermpos = (int)(100.0 * pos / _size);
+	thermpos = (int)(100 * pos / _size);
 	if (thermpos < 0) thermpos = 0;
 	else if (thermpos > 100) thermpos = 100;
     } else
@@ -267,35 +235,40 @@ ProgressBar::run_timer()
     if (_banner)
 	sa << _banner << ' ';
     if (have_pos && _have_size)
-	sa.snprintf(6, "%3d%% ", thermpos);
+	sa.snprintf(6, "%3d%% ", (int)thermpos);
     else if (_have_size)
 	sa << "  -% ";
 
     // print the bar
     int barlength = getttywidth() - (sa.length() + 25);
+    if (_have_size && _first_pos_h == 0)
+	barlength += 8;
     barlength = (barlength <= max_bar_length ? barlength : max_bar_length);
     if (barlength > 0) {
 	if (thermpos < 0 || (!_have_size && _status >= ST_DONE))
 	    sa.snprintf(barlength + 10, "|%.*s|", barlength, bad_bar);
 	else if (!_have_size && barlength > 3) {
-	    int barchar = ((barlength - 3) * thermpos / 100);
+	    int barchar = (int)((barlength - 3) * thermpos / 100);
 	    sa.snprintf(barlength + 10, "|%*s***%*s|", barchar, "", barlength - barchar - 3, "");
 	} else if (!_have_size) {
-	    int barchar = ((barlength - 1) * thermpos / 100);
+	    int barchar = (int)((barlength - 1) * thermpos / 100);
 	    sa.snprintf(barlength + 10, "|%*s*%*s|", barchar, "", barlength - barchar - 1, "");
 	} else {
-	    int barchar = (barlength * thermpos / 100);
+	    int barchar = (int)(barlength * thermpos / 100);
 	    sa.snprintf(barlength + 10, "|%.*s%*s|", barchar, bar, barlength - barchar, "");
 	}
     }
 
-    // print the size
-    if (have_pos) {
+    // print position
+    if (_have_size && _first_pos_h == 0)
+	// don't print position, it's relevant only as a fraction of _size
+	sa << " ";
+    else if (have_pos) {
 	int which_pfx = 0;
-	thermometer_t abbrevpos = pos;
+	double abbrevpos = pos;
 	while (abbrevpos >= 100000 && which_pfx < (int)(sizeof(prefixes))) {
 	    which_pfx++;
-	    abbrevpos >>= 10;
+	    abbrevpos /= 1024;
 	}
 	sa.snprintf(30, " %5lu%c%c ", (unsigned long)abbrevpos, prefixes[which_pfx], (prefixes[which_pfx] == ' ' ? ' ' : 'B'));
     } else
@@ -384,7 +357,7 @@ ProgressBar::complete(bool is_full)
 
 
 enum { H_MARK_STOPPED, H_MARK_DONE, H_BANNER, H_ACTIVE,
-       H_POSHANDLER, H_SIZEHANDLER, H_RESET };
+       H_POSHANDLER, H_SIZEHANDLER, H_RESET, H_POS, H_SIZE };
 
 String
 ProgressBar::read_handler(Element *e, void *thunk)
@@ -395,6 +368,10 @@ ProgressBar::read_handler(Element *e, void *thunk)
 	return pb->_banner + "\n";
       case H_ACTIVE:
 	return cp_unparse_bool(pb->_active) + "\n";
+      case H_POS:
+	return String(pb->_last_pos) + "\n";
+      case H_SIZE:
+	return String(pb->_size) + "\n";
       case H_POSHANDLER:
       case H_SIZEHANDLER: {
 	  bool is_pos = ((intptr_t)thunk == H_POSHANDLER);
@@ -426,6 +403,11 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
       case H_BANNER:
 	pb->_banner = str;
 	return 0;
+      case H_SIZE:
+	if (cp_double(str, &pb->_size))
+	    return 0;
+	else
+	    return errh->error("`size' should be double (size value)");
       case H_POSHANDLER:
       case H_SIZEHANDLER: {
 	  Vector<String> words;
@@ -486,6 +468,9 @@ ProgressBar::add_handlers()
     add_write_handler("poshandler", write_handler, (void *)H_POSHANDLER);
     add_read_handler("sizehandler", read_handler, (void *)H_SIZEHANDLER);
     add_write_handler("sizehandler", write_handler, (void *)H_SIZEHANDLER);
+    add_read_handler("pos", read_handler, (void *)H_POS);
+    add_read_handler("size", read_handler, (void *)H_SIZE);
+    add_write_handler("size", write_handler, (void *)H_SIZE);
     add_write_handler("reset", write_handler, (void *)H_RESET);
 }
 

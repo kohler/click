@@ -24,17 +24,22 @@ Reads progress information from handlers, and displays an ASCII-art progress
 bar on standard error, indicating how much progress has been made and how much
 remains to go.
 
-POSHANDLER and SIZEHANDLER are read handlers. Each of them should return an
-unsigned number. POSHANDLER is checked each time the progress bar displays;
-SIZEHANDLER is checked just once, the first time the progress bar comes up.
-Intuitively, POSHANDLER represents the "position"; the process is complete
-when its value equals the "size" returned by SIZEHANDLER. You may give
-multiple position and/or size handlers, as a space-separated list; their
+POSHANDLER and SIZEHANDLER are read handlers. Each of them should return a
+nonnegative real number. POSHANDLER is checked each time the progress bar
+displays; SIZEHANDLER is checked just once, the first time the progress bar
+comes up. Intuitively, POSHANDLER represents the "position"; the process is
+complete when its value equals the "size" returned by SIZEHANDLER. You may
+give multiple position and/or size handlers, as a space-separated list; their
 values are added together.
 
 Keyword arguments are:
 
 =over 8
+
+=item FIXED_SIZE
+
+Nonnegative real number. Used as the size when SIZEHANDLER is not supplied.
+Default is no fixed size.
 
 =item BANNER
 
@@ -96,6 +101,15 @@ stopped, possibly prematurely.
 When written, the progress bar changes to indicate that the transfer has
 successfully completed.
 
+=h pos read-only
+
+Returns the progress bar's current position.
+
+=h size read/write
+
+Returns or sets the progress bar's size value, which is used to compute how
+close the process is to completion.
+
 =h active read/write
 
 Returns or sets the ACTIVE setting, a Boolean value. An inactive progress bar
@@ -143,18 +157,12 @@ class ProgressBar : public Element { public:
 
   private:
 
-#if HAVE_INT64_TYPES
-    typedef uint64_t thermometer_t;
-#else
-    typedef uint32_t thermometer_t;
-#endif
-
     enum { ST_FIRST, ST_MIDDLE, ST_DONE, ST_FIRSTDONE, ST_DEAD };
     
     bool _have_size;
     int _status;
-    thermometer_t _size;
-    thermometer_t _last_pos;
+    double _size;
+    double _last_pos;
     struct timeval _start_time;
     struct timeval _stall_time;
     struct timeval _last_time;
@@ -170,7 +178,7 @@ class ProgressBar : public Element { public:
     Vector<int> _his;
     int _first_pos_h;
 
-    bool get_value(int first, int last, thermometer_t *);
+    bool get_value(int first, int last, double *);
     
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);
