@@ -1,3 +1,10 @@
+2003-08-08 Friday 10:34  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.68), dsdvroutetable.hh
+	(1.47), gridgenericmetric.hh (1.2): Modified DSDVRouteTable to work
+	with generic metric elements; mostly entailed removing all metric
+	details from element, for a savings of 545 lines removed.
+
 2003-08-08 Friday 02:49  Eddie Kohler <kohler@icir.org>
 
 	* config-userlevel.h.in (1.15), configure.in (1.212),
