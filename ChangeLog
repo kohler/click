@@ -1,3 +1,14 @@
+2003-04-24 Thursday 20:26  Eddie Kohler <kohler@icir.org>
+
+	* elements/ethernet/ip6ndsolicitor.hh (1.12): 54/, not 53/; thanks
+	Brecht!
+
+2003-04-24 Thursday 19:48  jbicket
+
+	* elements/grid/dsdvroutetable.cc (1.48): grid: make the default
+	etx instead of hopcount       also change the print_rtes slightly
+	to print metric also.
+
 2003-04-24 Thursday 12:21  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/: fromdump.cc (1.78), fromdump.hh (1.45),
