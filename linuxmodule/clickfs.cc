@@ -46,16 +46,27 @@ static spinlock_t config_write_lock;
 static atomic_t config_read_count;
 extern uint32_t click_config_generation;
 
+//#define SPIN_LOCK_MSG(l, file, line, what)	printk("<1>%s:%d: pid %d: %sing %p in clickfs\n", (file), (line), current->pid, (what), (l))
+#define SPIN_LOCK_MSG(l, file, line, what)	(void)(file), (void)(line)
+#define SPIN_LOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "lock"); spin_lock((l)); } while (0)
+#define SPIN_UNLOCK(l, file, line)	do { SPIN_LOCK_MSG((l), (file), (line), "unlock"); spin_unlock((l)); } while (0)
+
+#define LOCK_CONFIG_READ()	lock_config_read(__FILE__, __LINE__)
+#define UNLOCK_CONFIG_READ()	unlock_config_read()
+#define LOCK_CONFIG_WRITE()	lock_config_write(__FILE__, __LINE__)
+#define UNLOCK_CONFIG_WRITE()	unlock_config_write(__FILE__, __LINE__)
+
 
 /*************************** Config locking *********************************/
 
 static inline void
-lock_config_read()
+lock_config_read(const char *file, int line)
 {
+    SPIN_LOCK_MSG(&config_write_lock, file, line, "soft lock");
     while (!spin_trylock(&config_write_lock))
 	schedule();
     atomic_inc(&config_read_count);
-    spin_unlock(&config_write_lock);
+    SPIN_UNLOCK(&config_write_lock, file, line);
 }
 
 static inline void
@@ -65,22 +76,23 @@ unlock_config_read()
 }
 
 static inline void
-lock_config_write()
+lock_config_write(const char *file, int line)
 {
     while (1) {
+	SPIN_LOCK_MSG(&config_write_lock, file, line, "soft lock");
 	while (!spin_trylock(&config_write_lock))
 	    schedule();
 	if (atomic_read(&config_read_count) == 0)
 	    return;
-	spin_unlock(&config_write_lock);
+	SPIN_UNLOCK(&config_write_lock, file, line);
 	schedule();
     }
 }
 
 static inline void
-unlock_config_write()
+unlock_config_write(const char *file, int line)
 {
-    spin_unlock(&config_write_lock);
+    SPIN_UNLOCK(&config_write_lock, file, line);
 }
 
 
@@ -177,7 +189,7 @@ extern "C" {
 static struct dentry *
 click_dir_lookup(struct inode *dir, struct dentry *dentry)
 {
-    lock_config_read();
+    LOCK_CONFIG_READ();
     MDEBUG("click_dir_lookup %lx", dir->i_ino);
 
     struct inode *inode = 0;
@@ -194,7 +206,7 @@ click_dir_lookup(struct inode *dir, struct dentry *dentry)
 	    error = -ENOENT;
     }
 
-    unlock_config_read();
+    UNLOCK_CONFIG_READ();
     if (error < 0)
 	return reinterpret_cast<struct dentry *>(ERR_PTR(error));
     else if (!inode)
@@ -216,7 +228,7 @@ click_dir_revalidate(struct dentry *dentry)
 	return -EINVAL;
     
     int error = 0;
-    lock_config_read();
+    LOCK_CONFIG_READ();
     if (INODE_INFO(inode).config_generation != click_config_generation) {
 	if (INO_ELEMENTNO(inode->i_ino) >= 0) // not a global directory
 	    error = -EIO;
@@ -227,7 +239,7 @@ click_dir_revalidate(struct dentry *dentry)
 	    inode->i_nlink = click_ino.nlink(inode->i_ino);
 	}
     }
-    unlock_config_read();
+    UNLOCK_CONFIG_READ();
     return error;
 }
 
@@ -262,7 +274,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     uint32_t f_pos = filp->f_pos;
     MDEBUG("click_dir_readdir %lx", ino);
 
-    lock_config_read();
+    LOCK_CONFIG_READ();
 
     int error;
     if (inode_out_of_date(inode))
@@ -288,7 +300,7 @@ click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
     if (error >= 0)
 	error = click_ino.readdir(ino, f_pos, my_filldir, &mfd);
 
-    unlock_config_read();
+    UNLOCK_CONFIG_READ();
     filp->f_pos = f_pos;
     return (error == -1 ? 0 : error);
 }
@@ -326,9 +338,9 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     sb->s_magic = CLICKFS_SUPER_MAGIC;
     sb->s_op = &click_superblock_ops;
     MDEBUG("click_config_lock");
-    lock_config_read();
+    LOCK_CONFIG_READ();
     struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
-    unlock_config_read();
+    UNLOCK_CONFIG_READ();
     if (!root_inode)
 	goto out_no_root;
 #ifdef LINUX_2_4
@@ -359,9 +371,9 @@ click_reread_super(struct super_block *sb)
     lock_super(sb);
     if (sb->s_root) {
 	struct inode *old_inode = sb->s_root->d_inode;
-	lock_config_read();
+	LOCK_CONFIG_READ();
 	sb->s_root->d_inode = click_inode(sb, INO_GLOBALDIR);
-	unlock_config_read();
+	UNLOCK_CONFIG_READ();
 	iput(old_inode);
 	sb->s_blocksize = 1024;
 	sb->s_blocksize_bits = 10;
@@ -472,7 +484,7 @@ extern "C" {
 static int
 handler_open(struct inode *inode, struct file *filp)
 {
-    lock_config_read();
+    LOCK_CONFIG_READ();
 
     bool reading = (filp->f_flags & O_ACCMODE) != O_WRONLY;
     bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
@@ -499,7 +511,7 @@ handler_open(struct inode *inode, struct file *filp)
 	retval = 0;
     }
 
-    unlock_config_read();
+    UNLOCK_CONFIG_READ();
     
     if (retval < 0 && stringno >= 0) {
 	free_handler_string(stringno);
@@ -519,7 +531,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 
     // (re)read handler if necessary
     if (handler_strings_info[stringno].flags & (HANDLER_REREAD | HANDLER_NEED_READ)) {
-	lock_config_read();
+	LOCK_CONFIG_READ();
 	int retval;
 	const Router::Handler *h;
 	struct inode *inode = filp->f_dentry->d_inode;
@@ -534,7 +546,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	    handler_strings[stringno] = h->call_read(e);
 	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
 	}
-	unlock_config_read();
+	UNLOCK_CONFIG_READ();
 	if (retval < 0)
 	    return retval;
 	handler_strings_info[stringno].flags &= ~HANDLER_NEED_READ;
@@ -603,7 +615,7 @@ handler_flush(struct file *filp)
     
     if (writing && f_count == 1
 	&& stringno >= 0 && stringno < handler_strings_cap) {
-	lock_config_write();
+	LOCK_CONFIG_WRITE();
 	
 	struct inode *inode = filp->f_dentry->d_inode;
 	const Router::Handler *h;
@@ -624,7 +636,7 @@ handler_flush(struct file *filp)
 	    retval = h->call_write(handler_strings[stringno], e, &cerrh);
 	}
 	
-	unlock_config_write();
+	UNLOCK_CONFIG_WRITE();
     }
 
     return retval;
@@ -645,9 +657,9 @@ handler_ioctl(struct inode *inode, struct file *filp,
 	      unsigned command, unsigned long address)
 {
     if (command & _CLICK_IOC_SAFE)
-	lock_config_read();
+	LOCK_CONFIG_READ();
     else
-	lock_config_write();
+	LOCK_CONFIG_WRITE();
 
     int retval;
     Element *e;
@@ -698,9 +710,9 @@ handler_ioctl(struct inode *inode, struct file *filp,
 
   exit:
     if (command & _CLICK_IOC_SAFE)
-	unlock_config_read();
+	UNLOCK_CONFIG_READ();
     else
-	unlock_config_write();
+	UNLOCK_CONFIG_WRITE();
     return retval;
 }
 
