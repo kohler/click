@@ -26,7 +26,7 @@
 #include <click/glue.hh>
 #include <click/click_ip.h>
 #include <click/click_ether.h>
-#include "elements/userlevel/fakepcap.h"
+#include "fakepcap.h"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>

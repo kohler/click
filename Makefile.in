@@ -89,7 +89,6 @@ config.status: $(srcdir)/configure
 Makefile: config.status $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$@ CONFIG_HEADERS= $(SHELL) ./config.status
-config.h: stamp-h
 stamp-h: $(srcdir)/config.h.in config.status
 	cd $(top_builddir) \
 	  && CONFIG_FILES= CONFIG_HEADERS='include/click/config.h:config.h.in include/click/pathvars.h:pathvars.h.in' $(SHELL) ./config.status
@@ -104,7 +103,7 @@ clean:
 	-rm -f elementmap
 distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
-	-rm -f config.h Makefile config.status
+	-rm -f Makefile config.status
 	-rm -f include/click/config.h include/click/pathvars.h
 	-rm -f config.cache config.log click-compile stamp-h
 

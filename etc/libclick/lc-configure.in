@@ -483,6 +483,7 @@ dnl
 dnl Output
 dnl
 
+test ! -d include && mkdir include
 config_files="Makefile click-compile libsrc/Makefile"
 rm -rf conftest*
 

@@ -17,7 +17,6 @@
 
 #include <click/config.h>
 #include "fromdevice.hh"
-#include "todevice.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>

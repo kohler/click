@@ -12,6 +12,8 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 
+VPATH = .:$(srcdir)
+
 CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
