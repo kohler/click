@@ -20,9 +20,9 @@ class Packet {
     union {
       cycles_t cycles[4];
       struct {
-	unsigned d[2];
-	unsigned i[2];
-      } cache;
+	unsigned m0[2];
+	unsigned m1[2];
+      } perf;
     } p;
 #endif
   };
@@ -140,11 +140,11 @@ class Packet {
   char color_anno() const		{ return anno()->color; }
 #ifdef __KERNEL__
   void set_cycle_anno(int i, cycles_t v) { anno()->p.cycles[i] = v; }
-  void set_dcache_anno(int i, unsigned v) { anno()->p.cache.d[i] = v; }
-  void set_icache_anno(int i, unsigned v) { anno()->p.cache.i[i] = v; }
+  void set_metric0_anno(int i, unsigned v) { anno()->p.perf.m0[i] = v; }
+  void set_metric1_anno(int i, unsigned v) { anno()->p.perf.m1[i] = v; }
   cycles_t cycle_anno(int i) const	{ return anno()->p.cycles[i]; }
-  unsigned dcache_anno(int i) const     { return anno()->p.cache.d[i]; }
-  unsigned icache_anno(int i) const     { return anno()->p.cache.i[i]; }
+  unsigned metric0_anno(int i) const     { return anno()->p.perf.m0[i]; }
+  unsigned metric1_anno(int i) const     { return anno()->p.perf.m1[i]; }
 #endif
 };
 

@@ -30,8 +30,8 @@ class StorePerf : public Element {
   
   // statistics 
   unsigned _packets;
-  unsigned _icache;
-  unsigned _dcache;
+  unsigned _m0;
+  unsigned _m1;
   
 };
 

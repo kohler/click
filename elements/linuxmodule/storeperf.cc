@@ -21,7 +21,7 @@ StorePerf::StorePerf()
 {
   add_input();
   add_output();
-  _icache = _dcache = _packets = 0;
+  _m0 = _m1 = _packets = 0;
 }
 
 StorePerf::~StorePerf()
@@ -37,11 +37,11 @@ StorePerf::clone() const
 inline void
 StorePerf::smaction(Packet *p)
 {
-  unsigned i0 = p->icache_anno(0), i1 = p->icache_anno(1);
-  unsigned d0 = p->dcache_anno(0), d1 = p->dcache_anno(1);
+  unsigned m00 = p->metric0_anno(0), m01 = p->metric0_anno(1);
+  unsigned m10 = p->metric1_anno(0), m11 = p->metric1_anno(1);
 
-  _icache += (i1 >= i0) ? i1 - i0 : (UINT_MAX - i0 + i1);
-  _dcache += (d1 >= d0) ? d1 - d0 : (UINT_MAX - d0 + d1);
+  _m0 += (m01 >= m00) ? m01 - m00 : (UINT_MAX - m00 + m01);
+  _m1 += (m11 >= m10) ? m11 - m10 : (UINT_MAX - m10 + m11);
   _packets++;
 }
 
@@ -66,8 +66,8 @@ StorePerf_read_cycles(Element *f, void *)
 {
   StorePerf *s = (StorePerf *)f;
   return
-    String(s->_dcache) + " dcache misses\n" +
-    String(s->_icache) + " icache misses\n" +
+    String(s->_m0) + " (metric1)\n" +
+    String(s->_m1) + " (metric2)\n" +
     String(s->_packets) + " packets\n";
 }
 
