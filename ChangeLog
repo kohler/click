@@ -1,3 +1,7 @@
+2004-09-03 Friday 14:39  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/clicknet/ppp.h (1.1): add PPP header
+
 2004-09-02 Thursday 00:03  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: analysis/countfragbytes.cc (1.2),
