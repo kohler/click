@@ -29,6 +29,7 @@
 CLICK_CXX_PROTECT
 #include <linux/spinlock.h>
 #include <linux/locks.h>
+#include <linux/proc_fs.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
@@ -699,6 +700,15 @@ handler_ioctl(struct inode *inode, struct file *filp,
     return retval;
 }
 
+#ifdef LINUX_2_2
+static int
+proc_click_readlink_proc(proc_dir_entry *, char *page)
+{
+    strcpy(page, "/click");
+    return 6;
+}
+#endif
+
 } // extern "C"
 
 
@@ -756,13 +766,28 @@ init_clickfs()
     if (!clickfs) {
 	printk("<1>click: could not initialize clickfs!\n");
 	return -EINVAL;
-    } else
-	return 0;
+    }
+
+    // initialize a symlink from /proc/click -> /click, to ease transition
+#ifdef LINUX_2_4
+    (void) proc_symlink("click", 0, "/click");
+#elif defined(LINUX_2_2)
+    if (proc_dir_entry *link = create_proc_entry("click", S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO, 0))
+	link->readlink_proc = proc_click_readlink_proc;
+#endif
+    
+    return 0;
 }
 
 void
 cleanup_clickfs()
 {
+#if defined(LINUX_2_4) || defined(LINUX_2_2)
+    // remove the `/proc/click' directory
+    remove_proc_entry("click", 0);
+#endif
+
+    // kill filesystem
     proclikefs_unregister_filesystem(clickfs);
 
     // clean up handler_strings
