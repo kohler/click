@@ -61,14 +61,6 @@ PrintSRCR::simple_action(Packet *p)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
 
-  if(ntohs(pk->ether_type) != ETHERTYPE_SRCR){
-    click_chatter("PrintSRCR %s%s%s: not a srcr packet",
-		  id().cc(),
-		  _label.cc()[0] ? " " : "",
-                  _label.cc());
-    return (0);
-  }
-
   StringAccum sa;
   sa << "PrintSRCR ";
   if (_label[0] != 0) {
@@ -90,9 +82,6 @@ PrintSRCR::simple_action(Packet *p)
     type = "UNKNOWN";
   }
   String flags = "";
-  if (pk->_flags & PF_BETTER) {
-    flags = "FBETTER";
-  }
   sa << ": " << type << " (" << flags << ") ";
 
   if (pk->_type == PT_DATA) {

@@ -78,9 +78,14 @@ public:
   /* other public functions */
   void update_link(IPPair p, u_short metric, unsigned int now);
   u_short get_hop_metric(IPPair p);
-  u_short get_route_metric(Vector<IPAddress> route, int size);
+  Vector< Vector<IPAddress> >  update_routes(Vector<Vector<IPAddress> > routes, 
+					     int n, Vector<IPAddress> route);
+  bool valid_route(Vector<IPAddress> route);
+  u_short get_route_metric(Vector<IPAddress> route);
   void dijkstra();
   Vector<IPAddress> best_route(IPAddress dst);
+
+  Vector< Vector<IPAddress> > top_n_routes(IPAddress dst, int n);
   u_short get_host_metric(IPAddress s);
   Vector<IPAddress> get_hosts();
 private: 

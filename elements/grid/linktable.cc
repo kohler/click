@@ -150,10 +150,10 @@ LinkTable::get_hop_metric(IPPair p)
   
   
 u_short 
-LinkTable::get_route_metric(Vector<IPAddress> route, int size) 
+LinkTable::get_route_metric(Vector<IPAddress> route) 
 {
   u_short metric = 0;
-  for (int i = 0; i < size - 1; i++) {
+  for (int i = 0; i < route.size() - 1; i++) {
     metric += get_hop_metric(IPPair(route[i], route[i+1]));
   }
   return metric;
@@ -161,6 +161,24 @@ LinkTable::get_route_metric(Vector<IPAddress> route, int size)
 }
 
 
+bool
+LinkTable::valid_route(Vector<IPAddress> route) 
+{
+  if (get_route_metric(route) >= 9999){
+    return false;
+  }
+
+  for (int x = 0; x < route.size(); x++) {
+    
+    for (int y = x + 1; y < route.size(); y++) {
+      if (route[x] == route[y]) {
+	return false;
+      }
+    }
+  }
+
+  return true;
+}
 Vector<IPAddress> 
 LinkTable::best_route(IPAddress dst)
 {
@@ -182,6 +200,95 @@ LinkTable::best_route(IPAddress dst)
   }
 
   return route;
+}
+Vector<Vector<IPAddress> > 
+LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPAddress> route)
+{
+  int x = 0;
+  int y = 0;
+  if (!valid_route(route)) {
+    return routes;
+  }
+
+  u_short route_m = get_route_metric(route);
+  
+  for (x = 0; x < size; x++) {
+    if (!valid_route(routes[x])) {
+      routes[x] = route;
+      return routes;
+    }
+    u_short m = get_route_metric(routes[x]);
+    if (route_m < m) {
+      break;
+    }
+  }
+  if (x == size) {
+    /* we're not good enough */
+    return routes;
+  }
+  for(y = size - 1; y > x; y--) {
+    routes[y] = routes[y-1];
+  }
+  routes[x] = route;
+  return routes;
+}
+Vector <Vector <IPAddress> >
+LinkTable::top_n_routes(IPAddress dst, int n)
+{
+  Vector<Vector<IPAddress> > routes;
+  {
+    Vector<IPAddress> route;
+    route.push_back(_ip);
+    route.push_back(dst);
+    update_routes(routes, n, route);
+  }
+
+  /* two hop */
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    Vector<IPAddress> route;
+
+    HostInfo h = iter.value();
+    route.push_back(_ip);
+    route.push_back(h._ip);
+    route.push_back(dst);
+    update_routes(routes, n, route);
+  }
+  
+  /* three hop */
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    for (HTIter iter2 = _hosts.begin(); iter; iter++) {
+      Vector<IPAddress> route;
+      
+      HostInfo h = iter.value();
+      HostInfo h2 = iter2.value();
+      route.push_back(_ip);
+      route.push_back(h._ip);
+      route.push_back(h2._ip);
+      route.push_back(dst);
+      update_routes(routes, n, route);
+    }
+  }
+
+  /* four hop */
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    for (HTIter iter2 = _hosts.begin(); iter; iter++) {
+      for (HTIter iter3 = _hosts.begin(); iter; iter++) {
+      Vector<IPAddress> route;
+      
+      HostInfo h = iter.value();
+      HostInfo h2 = iter2.value();
+      HostInfo h3 = iter3.value();
+      route.push_back(_ip);
+      route.push_back(h._ip);
+      route.push_back(h2._ip);
+      route.push_back(h3._ip);
+      route.push_back(dst);
+      update_routes(routes, n, route);
+      }
+    }
+  }
+
+  return routes;
 }
 
 String
@@ -359,6 +466,7 @@ LinkTable::lt_assert_(const char *file, int line, const char *expr) const
 
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class BigHashMap<IPAddress, IPAddress>;
 template class BigHashMap<IPPair, LinkTable::LinkInfo>;
