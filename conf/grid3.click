@@ -17,7 +17,6 @@ to_wvlan :: FixSrcLoc(li) -> SetGridChecksum -> ToDevice(NET_DEVICE)
 
 // linux ip layer els
 linux :: Tun(TUN_DEVICE_PREFIX, GRID_IP, GRID_NETMASK, GRID_GW)
-to_linux :: Queue -> linux
 
 // hook it all up
 from_wvlan -> Classifier(12/GRID_ETH_PROTO) 
@@ -37,8 +36,8 @@ check_grid [1] -> Print(bad_grid_hdr) -> Discard
 linux -> cl :: Classifier(16/GRID_HEX_IP, // ip for us
 			  16/GRID_NET_HEX, // ip for Grid network
 			  -) // the rest of the world
-cl [0] -> to_linux
-cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> to_linux
+cl [0] -> linux
+cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> linux
 check [1] -> Discard
 cl [2] -> SetIPAddress(GRID_GW) -> [1] lr // for grid gateway
 nb [1] -> to_wvlan // Routing hello packets

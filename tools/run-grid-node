@@ -4,6 +4,7 @@
 
 # assume we run in <clickdir>/conf XXX
 
+$| = 1;
 $debug = 0;
 
 $click = "../userlevel/click";

@@ -39,7 +39,7 @@ class Tun : public Element {
   ~Tun();
   
   const char *class_name() const	{ return "Tun"; }
-  const char *processing() const	{ return PULL_TO_PUSH; }
+  const char *processing() const	{ return PUSH; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();

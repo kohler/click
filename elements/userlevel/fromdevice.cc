@@ -213,6 +213,8 @@ FromDevice::initialize(ErrorHandler *errh)
     return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
   }
 
+  add_select(fd, SELECT_READ);
+
 #elif FROMDEVICE_LINUX
 
   _fd = open_packet_socket(_ifname, errh);
@@ -232,6 +234,8 @@ FromDevice::initialize(ErrorHandler *errh)
     close(_fd);
     return errh->error("out of memory");
   }
+
+  add_select(_fd, SELECT_READ);
   
 #else
 
@@ -239,12 +243,6 @@ FromDevice::initialize(ErrorHandler *errh)
   
 #endif
 
-#if !FROMDEVICE_LINUX
-  ScheduleInfo::join_scheduler(this, errh);
-#endif
-#if FROMDEVICE_LINUX
-  add_select(_fd, SELECT_READ);
-#endif
   return 0;
 }
 
@@ -304,10 +302,13 @@ FromDevice::run_scheduled()
   reschedule();
 }
 
-#if FROMDEVICE_LINUX
 void
 FromDevice::selected(int)
 {
+#ifdef FROMDEVICE_PCAP
+  run_scheduled();
+#endif
+#ifdef FROMDEVICE_LINUX
   struct sockaddr_ll sa;
   //memset(&sa, 0, sizeof(sa));
   socklen_t fromlen = sizeof(sa);
@@ -318,8 +319,8 @@ FromDevice::selected(int)
       output(0).push(Packet::make(_packetbuf, len));
   } else if (errno != EAGAIN)
     click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
-}
 #endif
+}
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromDevice)
