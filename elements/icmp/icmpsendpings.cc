@@ -205,19 +205,20 @@ ICMPPingSource::push(int, Packet *p)
     p->kill();
 }
 
-enum { H_ACTIVE, H_LIMIT, H_INTERVAL, H_RESET_COUNTS, H_COUNT, H_SUMMARY };
+enum { H_ACTIVE, H_LIMIT, H_INTERVAL, H_RESET_COUNTS, H_COUNT, H_SUMMARY,
+       H_RTT_MIN, H_RTT_AVG, H_RTT_MAX };
 
 String
 ICMPPingSource::read_handler(Element *e, void *thunk)
 {
     ICMPPingSource *ps = static_cast<ICMPPingSource *>(e);
+    ReceiverInfo *ri = ps->_receiver;
     switch ((uintptr_t)thunk) {
       case H_ACTIVE:
 	return String(ps->_active) + "\n";
       case H_COUNT:
 	return String(ps->_count) + "\n";
       case H_SUMMARY: {
-	  ReceiverInfo *ri = ps->_receiver;
 	  StringAccum sa;
 	  sa << ps->_count << " packets transmitted"
 	     << ", " << (ri->nreceived - ri->nduplicate) << " received";
@@ -233,6 +234,12 @@ ICMPPingSource::read_handler(Element *e, void *thunk)
 	  }
 	  return sa.take_string();
 	}
+      case H_RTT_MIN:
+	return cp_unparse_microseconds(ri->time_min) + "\n";
+      case H_RTT_AVG:
+	return cp_unparse_microseconds(ri->time_sum / (ri->nreceived ? ri->nreceived : 1)) + "\n";
+      case H_RTT_MAX:
+	return cp_unparse_microseconds(ri->time_max) + "\n";
       default:
 	return "";
     }
@@ -283,8 +290,12 @@ ICMPPingSource::add_handlers()
     add_write_handler("limit", write_handler, (void *)H_LIMIT);
     add_write_handler("interval", write_handler, (void *)H_INTERVAL);
     add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS);
-    if (ninputs() > 0)
+    if (ninputs() > 0) {
 	add_read_handler("summary", read_handler, (void *)H_SUMMARY);
+	add_read_handler("rtt_min", read_handler, (void *)H_RTT_MIN);
+	add_read_handler("rtt_avg", read_handler, (void *)H_RTT_AVG);
+	add_read_handler("rtt_max", read_handler, (void *)H_RTT_MAX);
+    }
 }
 
 CLICK_ENDDECLS

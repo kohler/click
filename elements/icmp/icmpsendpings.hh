@@ -22,8 +22,10 @@ Periodically emits ping packets with source IP address SRC and destination
 address DST. Advances the "sequence" field by one each time. (The sequence
 field is stored in network byte order in the packet.)
 
-ICMPPingSource's optional input accepts ping replies, printing ping(1)-style
-reports as they arrive.
+ICMPPingSource's optional input accepts replies to the pings it sends.  If you
+send replies to this input, ICMPPingSource will print reply reports and keep
+loss and RTT statistics like the ping(1) program.  You can access those
+stistics with the "C<summary>" handler.
 
 Keyword arguments are:
 
@@ -83,6 +85,21 @@ Resets all counters to zero.
 Returns ping(1)-style summary information: number of packets sent and
 received, loss rate, and RTT statistics.  Only available if ICMPPingSource had
 an input.
+
+=h rtt_min read-only
+
+Returns the minimum RTT observed, or 0 if no RTTs have been observed.  Only
+available if ICMPPingSource had an input.
+
+=h rtt_max read-only
+
+Returns the maximum RTT observed, or 0 if no RTTs have been observed.  Only
+available if ICMPPingSource had an input.
+
+=h rtt_avg read-only
+
+Returns the average RTT observed, or 0 if no RTTs have been observed.  Only
+available if ICMPPingSource had an input.
 
 =a
 
