@@ -22,4 +22,4 @@ elements/ip6/markip6header.hh
 elements/ip6/markip6header.cc
 elements/ip6/setip6address.hh
 elements/ip6/setip6address.cc
-conf/nat1.click
+
