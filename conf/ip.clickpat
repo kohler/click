@@ -44,7 +44,7 @@ elementclass IPInput {
 }
 
 elementclass IPInput_Replacement {
-  input -> BigIn($paint) -> output;
+  input -> BigIn($paint, $bad_addrs) -> output;
 }
 
 
@@ -59,7 +59,7 @@ elementclass IPInput2 {
 }
 
 elementclass IPInput2_Replacement {
-  input -> BigIn($paint) -> output;
+  input -> BigIn($paint, $bad_addrs) -> output;
   input[1] -> Strip(14)
 	-> CheckIPHeader($bad_addrs)
 	-> GetIPAddress(16)

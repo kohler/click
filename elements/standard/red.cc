@@ -87,7 +87,7 @@ RED::initialize(ErrorHandler *errh)
   _queues.clear();
   _queue1 = 0;
   
-  IsaElementFilter filter("Queue");
+  IsaElementFilter filter("Storage");
   int ok;
   if (output_is_push(0))
     ok = router()->downstream_elements(this, 0, &filter, _queues);
@@ -100,7 +100,7 @@ RED::initialize(ErrorHandler *errh)
   if (_queues.size() == 0)
     return errh->error("no Queues downstream");
   else if (_queues.size() == 1)
-    _queue1 = (Queue *)_queues[0];
+    _queue1 = (Storage *)_queues[0];
 
   // Prepare EWMA stuff
   _size.initialize();
@@ -120,7 +120,7 @@ RED::queue_size() const
   else {
     int s = 0;
     for (int i = 0; i < _queues.size(); i++)
-      s += ((Queue *)_queues[i])->size();
+      s += ((Storage *)_queues[i])->size();
     return s;
   }
 }
@@ -137,7 +137,7 @@ RED::drop()
     int now_j = click_jiffies();
     int j = now_j;
     for (int i = 0; i < _queues.size(); i++) {
-      int ej = ((Queue *)_queues[i])->empty_jiffies();
+      int ej = ((Storage *)_queues[i])->empty_jiffies();
       if (ej - now_j > j - now_j)
 	j = ej;
     }
@@ -260,5 +260,5 @@ RED::add_handlers(HandlerRegistry *fcr)
 		      reconfigure_write_handler, (void *)2);
 }
 
-ELEMENT_REQUIRES(Queue)
+ELEMENT_REQUIRES(Storage)
 EXPORT_ELEMENT(RED)

@@ -20,13 +20,25 @@
 #include "elemfilter.hh"
 
 Queue::Queue()
-  : Element(1, 1), _q(0)
+  : Storage(1, 1), _q(0)
 {
 }
 
 Queue::~Queue()
 {
   if (_q) uninitialize();
+}
+
+bool
+Storage::is_a(const char *n) const
+{
+  return strcmp(n, "Storage") == 0;
+}
+
+bool
+Queue::is_a(const char *n) const
+{
+  return strcmp(n, "Queue") == 0 || Storage::is_a(n);
 }
 
 int
@@ -188,4 +200,5 @@ Queue::add_handlers(HandlerRegistry *fcr)
   fcr->add_read("drops", queue_read_drops, 0);
 }
 
+ELEMENT_PROVIDES(Storage)
 EXPORT_ELEMENT(Queue)

@@ -231,10 +231,17 @@ Matcher::next_match()
   return false;
 }
 
+
+
 static String
 uniqueify_prefix(const String &base_prefix, RouterT *r)
 {
-  int count = 1;
+  // speed up uniqueification on the same prefix
+  static HashMap<String, int> *last_uniqueifier;
+  if (!last_uniqueifier)
+    last_uniqueifier = new HashMap<String, int>(1);
+  int count = (*last_uniqueifier)[base_prefix];
+  
   while (1) {
     String prefix = base_prefix;
     prefix += "@" + String(count);
@@ -249,6 +256,7 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
 	goto failed;
     }
 
+    last_uniqueifier->insert(base_prefix, count);
     return prefix;
 
    failed: ;
@@ -306,10 +314,9 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   for (int i = 0; i < old_nelements; i++)
     if (_back_match[i] >= 0)
       _body->element(i).type = -1;
-  _body->remove_blank_elements();
 
   // cleanup
-  _body->flatten(errh);
+  _body->flatten(0);
   _match.clear();
 }
 
@@ -545,5 +552,9 @@ particular purpose.\n");
   // write result
   if (write_router_file(r, output_file, errh) < 0)
     exit(1);
+  {
+    extern int nelement_match, nconnection_match, nexcl_connection_match;
+    printf("// %d %d %d\n", nelement_match, nconnection_match, nexcl_connection_match);
+  }
   return 0;
 }

@@ -29,7 +29,7 @@ class RouterT : public ElementClassT {
   void finish_remove_element_types(Vector<int> &);
   void expand_tunnel(Vector<Hookup> *, bool is_input, int which,
 		     Vector<Hookup> &results) const;
-  
+
  public:
 
   static const int TUNNEL_TYPE = 0;
@@ -125,19 +125,13 @@ class RouterT : public ElementClassT {
 inline String
 RouterT::ename(int idx) const
 {
-  if (idx >= 0 && idx < _elements.size())
-    return _elements[idx].name;
-  else
-    return String("/*BAD_") + String(idx) + String("*/");
+  return _elements[idx].name;
 }
 
 inline int
 RouterT::etype(int idx) const
 {
-  if (idx >= 0 && idx < _elements.size())
-    return _elements[idx].type;
-  else
-    return -1;
+  return _elements[idx].type;
 }
 
 inline String

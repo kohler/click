@@ -4,10 +4,10 @@
 
 sub class_to_xx ($) {
   my($x) = $_[0];
-  $x =~ s/@/:a/g;
-  $x =~ s/\//:s/g;
-  $x =~ s/_/:u/g;
-  $x =~ tr/:/_/;
+  $x =~ s/@/-a/g;
+  $x =~ s/\//-s/g;
+  $x =~ s/_/-u/g;
+  $x =~ tr/-/_/;
   $x;
 }
 
@@ -29,20 +29,20 @@ sub mangle ($$@) {
   $t = $func;
   foreach $i (@args) {
     next if $i eq 'void';
+    $i =~ s/\s+/ /g;
+    $i =~ s/^\s+//;
+    $i =~ s/\s+$//;
 
     $any = 1;
     while ($any) {
       $any = 0;
-      $t .= 'P', $any = 1 if ($i =~ s/\s*\*\s*$//);
-      $t .= 'C', $any = 1 if ($i =~ s/\s+const\s*$//);
+      $t .= 'P', $any = 1 if ($i =~ s/ ?\*$//);
+      $t .= 'C', $any = 1 if ($i =~ s/ const$//);
     }
-    if ($i =~ s/^\s*const\s+//) {
+    if ($i =~ s/^const //) {
       $t .= 'C';
     }
 
-    $i =~ s/\s+/ /g;
-    $i =~ s/^\s+//;
-    $i =~ s/\s+$//;
     if ($mangle_map{$i}) {
       $t .= $mangle_map{$i};
     } else {

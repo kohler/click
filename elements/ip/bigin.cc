@@ -20,7 +20,7 @@
 #include "error.hh"
 
 BigIn::BigIn()
-  : _drops(0)
+  : _drops(0), _bad_src(0)
 {
   add_input();
   add_output();
@@ -28,6 +28,7 @@ BigIn::BigIn()
 
 BigIn::~BigIn()
 {
+  delete[] _bad_src;
 }
 
 BigIn *
@@ -51,22 +52,26 @@ BigIn::configure(const String &conf, ErrorHandler *errh)
   ips.push_back(0);
   ips.push_back(0xffffffff);
 
-  for (int i = 1; i < args.size(); i++) {
-    u_int a;
-    if (!cp_ip_address(args[i], (unsigned char *)&a))
-      return errh->error("expects IPADDRESS");
-    for (int j = 0; j < ips.size(); j++)
-      if (ips[j] == a)
-	goto repeat;
-    ips.push_back(a);
-   repeat: ;
+  if (args.size() > 1) {
+    String s = args[1];
+    while (s) {
+      u_int a;
+      if (!cp_ip_address(s, (unsigned char *)&a, &s))
+	return errh->error("expects IPADDRESS");
+      cp_eat_space(s);
+      for (int j = 0; j < ips.size(); j++)
+	if (ips[j] == a)
+	  goto repeat;
+      ips.push_back(a);
+     repeat: ;
+    }
   }
 
   _n_bad_src = ips.size();
   _bad_src = new u_int [_n_bad_src];
   memcpy(_bad_src, &ips[0], sizeof(u_int) * ips.size());
 
-  return(0);
+  return 0;
 }
 
 inline Packet *
@@ -122,19 +127,6 @@ BigIn::smaction(Packet *p)
   return(0);
 }
 
-static String
-BigIn_read_drops(Element *xf, void *)
-{
-  BigIn *f = (BigIn *)xf;
-  return String(f->drops()) + "\n";
-}
-
-void
-BigIn::add_handlers(HandlerRegistry *fcr)
-{
-  fcr->add_read("drops", BigIn_read_drops, 0);
-}
-
 void
 BigIn::push(int, Packet *p)
 {
@@ -151,5 +143,17 @@ BigIn::pull(int)
   return(p);
 }
 
+static String
+BigIn_read_drops(Element *xf, void *)
+{
+  BigIn *f = (BigIn *)xf;
+  return String(f->drops()) + "\n";
+}
+
+void
+BigIn::add_handlers(HandlerRegistry *fcr)
+{
+  fcr->add_read("drops", BigIn_read_drops, 0);
+}
 
 EXPORT_ELEMENT(BigIn)

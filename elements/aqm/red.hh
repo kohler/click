@@ -2,7 +2,7 @@
 #define RED_HH
 #include "element.hh"
 #include "ewma.hh"
-class Queue;
+class Storage;
 
 /*
  * =c
@@ -40,7 +40,7 @@ class Queue;
 
 class RED : public Element {
   
-  Queue *_queue1;
+  Storage *_queue1;
   Vector<Element *> _queues;
   
   // Queue sizes are shifted by this much.

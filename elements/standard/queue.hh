@@ -15,15 +15,35 @@
  * =a RED
  */
 
-class Queue : public Element {
-  
-  Packet **_q;
+class Storage : public Element { protected:
+
   int _max;
   int _head;
   int _tail;
+
+  int _empty_jiffies;
+  
+ public:
+
+  Storage()					{ }
+  Storage(int i, int o)				: Element(i, o) { }
+
+  bool is_a(const char *) const;
+  
+  operator bool() const				{ return _head != _tail; }
+  bool empty() const				{ return _head == _tail; }
+  int size() const;
+  int capacity() const				{ return _max; }
+
+  int empty_jiffies() const			{ return _empty_jiffies; }
+  
+};
+
+class Queue : public Storage {
+  
+  Packet **_q;
   int _drops;
   int _max_length;
-  int _empty_jiffies;
 
   Element *_puller1;
   Vector<Element *> _pullers;
@@ -36,15 +56,11 @@ class Queue : public Element {
   ~Queue();
   
   const char *class_name() const		{ return "Queue"; }
-  Processing default_processing() const	{ return PUSH_TO_PULL; }
+  bool is_a(const char *) const;
+  Processing default_processing() const		{ return PUSH_TO_PULL; }
   
-  operator bool() const				{ return _head != _tail; }
-  bool empty() const				{ return _head == _tail; }
-  int size() const;
   int drops() const				{ return _drops; }
   int max_length() const			{ return _max_length; }
-  int capacity() const				{ return _max; }
-  int empty_jiffies() const			{ return _empty_jiffies; }
   
   void enq(Packet *);
   Packet *deq();
@@ -65,7 +81,7 @@ class Queue : public Element {
 
 
 inline int
-Queue::size() const
+Storage::size() const
 {
   return (_tail >= _head ? _tail - _head : _max - (_head - _tail) + 1);
 }

@@ -47,20 +47,20 @@ out1 :: Queue(200) -> Discard;
 tol :: Discard;
 
 // An "ARP querier" for each interface.
-arpq0 :: EtherEncap(0x0800, 00:00:c0:ae:67:ef, 00:00:c0:4f:71:ef); //ARPQuerier(18.26.4.24, 00:00:C0:AE:67:EF);
-arpq1 :: EtherEncap(0x0800, 00:00:c0:4f:71:ef, 00:00:c0:4f:71:ef); //ARPQuerier(18.26.7.1, 00:00:C0:4F:71:EF);
+fake_arpq0 :: EtherEncap(0x0800, 00:00:c0:ae:67:ef, 00:00:c0:4f:71:ef); //ARPQuerier(18.26.4.24, 00:00:C0:AE:67:EF);
+fake_arpq1 :: EtherEncap(0x0800, 00:00:c0:4f:71:ef, 00:00:c0:4f:71:ef); //ARPQuerier(18.26.7.1, 00:00:C0:4F:71:EF);
 
 // Deliver ARP responses to ARP queriers as well as Linux.
 t :: Tee(3);
 c0[1] -> t;
 c1[1] -> t;
 t[0] -> tol;
-t[1] -> [0]arpq0; //[1]
-t[2] -> [0]arpq1; //[1]
+t[1] -> fake_arpq0; // was -> [1]arpq0
+t[2] -> fake_arpq1; // was -> [1]arpq1
 
 // Connect ARP outputs to the interface queues.
-arpq0 -> out0;
-arpq1 -> out1;
+fake_arpq0 -> out0;
+fake_arpq1 -> out1;
 
 // Proxy ARP on eth0 for 18.26.7, as well as cone's IP address.
 ar0 :: ARPResponder(18.26.4.24 255.255.255.255 00:00:C0:AE:67:EF,
@@ -115,18 +115,16 @@ rt[1] -> DropBroadcasts
       -> FixIPSrc(18.26.4.24)
       -> dt1 :: DecIPTTL
       -> SetIPDSCP(9)
-      -> cccc :: CheckIPHeader
+      -> CheckIPHeader
       -> fr1 :: IPFragmenter(300)
-      -> [0]arpq0;
+      -> [0]fake_arpq0;
 rt[2] -> DropBroadcasts
       -> cp2 :: CheckPaint(2)
       -> gio2 :: IPGWOptions(18.26.7.1)
       -> FixIPSrc(18.26.7.1)
       -> dt2 :: DecIPTTL
       -> fr2 :: IPFragmenter(300)
-      -> [0]arpq1;
-
-// cccc[1] -> Print(fucker!) -> Discard;
+      -> [0]fake_arpq1;
 
 // DecIPTTL[1] emits packets with expired TTLs.
 // Reply with ICMPs. Rate-limit them?

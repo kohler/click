@@ -318,15 +318,36 @@ RouterT::remove_bad_connections()
 void
 RouterT::remove_duplicate_connections()
 {
+  // 5.Dec.1999 - This function dominated the running time of click-xform. Use
+  // an algorithm faster on the common case (few connections per element).
+
+  int nh = _hookup_from.size();
+  int nelem = _elements.size();
+  Vector<int> index(nelem, -1);
+  Vector<int> next(nh, -1);
+  Vector<int> removers;
+  
   for (int i = 0; i < _hookup_from.size(); i++) {
     Hookup &hfrom = _hookup_from[i], &hto = _hookup_to[i];
-    for (int j = 0; j < i; j++)
-      if (_hookup_from[j] == hfrom && _hookup_to[j] == hto) {
-	remove_connection(i);
-	i--;
-	break;
+    int prev = -1;
+    int trav = index[hfrom.idx];
+    while (trav >= 0) {
+      if (_hookup_from[trav].port == hfrom.port && _hookup_to[trav] == hto) {
+	removers.push_back(i);
+	goto removed;
       }
+      prev = trav;
+      trav = next[trav];
+    }
+    if (prev == -1)
+      index[hfrom.idx] = i;
+    else
+      next[prev] = i;
+   removed: ;
   }
+
+  for (int i = removers.size() - 1; i >= 0; i--)
+    remove_connection(removers[i]);
 }
 
 
@@ -347,14 +368,12 @@ RouterT::finish_remove_elements(Vector<int> &new_findex, ErrorHandler *errh)
   for (int i = 0; i < _hookup_from.size(); i++) {
     Hookup &hf = _hookup_from[i], &ht = _hookup_to[i];
     bool bad = false;
-    if (hf.idx < 0 || hf.idx >= nelements)
+    if (hf.idx < 0 || hf.idx >= nelements || ht.idx < 0 || ht.idx >= nelements)
       bad = true;
     else if (new_findex[hf.idx] < 0) {
       errh->lerror(_hookup_landmark[i], "connection from removed element `%s'", ename(hf.idx).cc());
       bad = true;
-    } else if (ht.idx < 0 || ht.idx >= nelements)
-      bad = true;
-    else if (new_findex[ht.idx] < 0) {
+    } else if (new_findex[ht.idx] < 0) {
       errh->lerror(_hookup_landmark[i], "connection to removed element `%s'", ename(ht.idx).cc());
       bad = true;
     }
@@ -450,16 +469,15 @@ RouterT::finish_remove_element_types(Vector<int> &new_tindex)
     _elements[i].type = new_tindex[ _elements[i].type ];
   
   // compress element type arrays
+  _element_type_map.clear();
   for (int i = 0; i < ntype; i++) {
     j = new_tindex[i];
-    if (j != i) {
+    if (j >= 0) {
       _element_type_map.insert(_element_type_names[i], j);
-      if (j >= 0) {
-	_element_type_names[j] = _element_type_names[i];
-	_element_classes[j] = _element_classes[i];
-      } else if (_element_classes[i])
-	_element_classes[i]->unuse();
-    }
+      _element_type_names[j] = _element_type_names[i];
+      _element_classes[j] = _element_classes[i];
+    } else if (_element_classes[i])
+      _element_classes[i]->unuse();
   }
 
   // resize element type arrays
@@ -695,19 +713,25 @@ RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
 void
 RouterT::remove_compound_elements(ErrorHandler *errh)
 {
-  Vector<int> removed_eclass(_element_classes.size(), 0);
-  
+  int neclass = _element_classes.size();
+  Vector<int> removed_eclass(neclass, 0);
+  bool any_removed = false;
+
   for (int i = 0; i < _elements.size(); i++) {
-    int typ = _elements[i].type;
-    if (typ < 0 || typ >= _element_classes.size() || !_element_classes[typ])
-      continue;
-    if (_element_classes[typ]->expand_compound(_elements[i], this, errh))
-      removed_eclass[typ] = -1;
+    int t = _elements[i].type;
+    if (t >= 0 && t < neclass && _element_classes[t]
+	&& _element_classes[t]->expand_compound(_elements[i], this, errh)) {
+      removed_eclass[t] = -1;
+      any_removed = true;
+    }
   }
 
+  // quit early if you can
+  if (!any_removed) return;
+  
+  // remove bad elements and unused element classes (if you can)
   remove_blank_elements(errh);
 
-  // check to see if we can remove element classes
   removed_eclass.resize(_element_classes.size(), 0);
   for (int i = 0; i < _elements.size(); i++) {
     int typ = _elements[i].type;
@@ -749,21 +773,23 @@ RouterT::flatten(ErrorHandler *errh)
 
 
 // MATCHES
+int nelement_match;
+int nconnection_match;
+int nexcl_connection_match;
 
 bool
 RouterT::next_element_match(RouterT *pat, Vector<int> &match) const
 {
-  int pnf = pat->_elements.size();
-  int nf = _elements.size();
-  int nft = _element_classes.size();
+  int pnf = pat->nelements();
+  int nf = nelements();
   
   int match_idx;
   int direction;
   if (match.size() == 0) {
     match.assign(pnf, -1);
-    int pnft = pat->_element_classes.size();
+    int pnft = pat->ntypes();
     for (int i = 0; i < pnf; i++) {
-      int t = pat->_elements[i].type;
+      int t = pat->etype(i);
       if (t == TUNNEL_TYPE)
 	match[i] = -2;		// don't match tunnels
       else if (t < 0 || t >= pnft)
@@ -781,11 +807,11 @@ RouterT::next_element_match(RouterT *pat, Vector<int> &match) const
       match_idx += direction;
       continue;
     }
+    int want_t = type_index( pat->etype_name(match_idx) );
     int rover = match[match_idx] + 1;
-    const String &want_type = pat->_element_type_names[ pat->_elements[match_idx].type ];
     while (rover < nf) {
-      int t = _elements[rover].type;
-      if (t >= 0 && t < nft && _element_type_names[t] == want_type) {
+      nelement_match++;
+      if (etype(rover) == want_t) {
 	for (int j = 0; j < match_idx; j++)
 	  if (match[j] == rover)
 	    goto not_match;
@@ -823,6 +849,7 @@ RouterT::next_connection_match(RouterT *pat, Vector<int> &match) const
 			    Hookup(match[pht.idx], pht.port)))
 	  goto not_match;
     }
+    nconnection_match++;
     return true;
     
    not_match: /* try again */;
@@ -882,6 +909,7 @@ RouterT::next_exclusive_connection_match(RouterT *pat, Vector<int> &match) const
 	  goto not_match;
       } /* otherwise, connection between two non-match elements; don't care */
     }
+    nexcl_connection_match++;
     return true;
     
    not_match: /* try again */;
