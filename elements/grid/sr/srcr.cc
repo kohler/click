@@ -36,7 +36,6 @@ SRCR::SRCR()
   :  Element(2,2), 
      _datas(0), 
      _databytes(0),
-     _link_table(0),
      _arp_table(0),
      _ett(0)
 
@@ -63,8 +62,6 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "ETT", cpElement, "ETT element", &_ett,
                     0);
 
-  if (_link_table && _link_table->cast("LinkTable") == 0) 
-    return errh->error("LT LinkTable element is not a LinkTable");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not a Arptable");
   if (_ett && _ett->cast("ETT") == 0) 
@@ -91,8 +88,11 @@ SRCR::initialize (ErrorHandler *)
 
 // Ask LinkStat for the metric for the link from other to us.
 int
-SRCR::get_metric(IPAddress)
+SRCR::get_metric(IPAddress other)
 {
+  if (_ett) {
+    return _ett->get_metric(other);
+  }
   return 0;
 }
 
@@ -200,7 +200,7 @@ SRCR::push(int port, Packet *p_in)
     IPAddress a = pk->get_hop(i);
     IPAddress b = pk->get_hop(i+1);
     int m = pk->get_metric(i);
-    if (m != 0 && _link_table) {
+    if (m != 0) {
       click_chatter("updating %s -> %d -> %s", a.s().cc(), m, b.s().cc());
       update_link(a,b,m);
     }
@@ -208,6 +208,7 @@ SRCR::push(int port, Packet *p_in)
   
   if (port == 1) {
     /* we're just sniffing this packet */
+    click_chatter("SRCR %s: killing sniffed packet\n", id().cc());
     p_in->kill();
     return;
   }
@@ -219,15 +220,13 @@ SRCR::push(int port, Packet *p_in)
     /* need to decap */
     WritablePacket *p_out = Packet::make(pk->data_len());
     if (p_out == 0){
+      click_chatter("SRCR %s: couldn't make packet\n", id().cc());
       return;
     }
     memcpy(p_out->data(), pk->data(), pk->data_len());
     output(1).push(p_out);
     return;
   } 
-
-  click_chatter("forwarding packet from %d to %d\n", 
-		pk->get_hop(0).s().cc(), pk->get_hop(pk->num_hops() - 1).s().cc());
 
   int len = pk->hlen_with_data();
   WritablePacket *p = Packet::make(len);
@@ -241,30 +240,23 @@ SRCR::push(int port, Packet *p_in)
   
   pk_out->set_next(pk->next() + 1);
   pk_out->ether_type = htons(_et);
-  memcpy(pk_out->ether_shost, _eth.data(), 6);
 
   srcr_assert(pk->next() < 8);
-  IPAddress nxt = pk->get_hop(pk->next());
+  IPAddress nxt = pk_out->get_hop(pk_out->next());
   int prev_metric = get_metric(prev);
-    
   pk_out->set_metric(pk_out->next() - 2, prev_metric);
+  update_link(_ip, prev, prev_metric);
 
-  if (_link_table) {
-    click_chatter("updating %s -> %d -> %s", 
-		  prev.s().cc(), 
-		  prev_metric,  
-		  _ip.s().cc());
-    update_link(_ip, prev, prev_metric);
-  }
 
 
   EtherAddress eth_dest = _arp_table->lookup(nxt);
   memcpy(pk_out->ether_dhost, eth_dest.data(), 6);
+  memcpy(pk_out->ether_shost, _eth.data(), 6);
 
   /* set the ip header anno */
   const click_ip *ip = reinterpret_cast<const click_ip *>
-    (p->data() + sr_pkt::len_wo_data(pk->num_hops()));
-  p->set_ip_header(ip, ip->ip_hl << 2);
+    (pk_out->data());
+  p->set_ip_header(ip, pk_out->data_len());
 
 
   p_in->kill();

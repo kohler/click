@@ -199,13 +199,16 @@ ETT::get_metric(IPAddress other)
     struct timeval tv;
     unsigned int frate, rrate;
     bool res = _link_stat->get_forward_rate(other, &frate, &tau, &tv);
-    if(res == false)
+    if(res == false) {
       return dft;
+    }
     res = _link_stat->get_reverse_rate(other, &rrate, &tau);
-    if(res == false)
+    if(res == false) {
       return dft;
-    if(frate == 0 || rrate == 0)
+    }
+    if(frate == 0 || rrate == 0) {
       return dft;
+    }
     u_short m = 100 * 100 * 100 / (frate * (int) rrate);
     return m;
   } else {
@@ -215,11 +218,6 @@ ETT::get_metric(IPAddress other)
 
 void
 ETT::update_link(IPAddress from, IPAddress to, int metric) {
-  click_chatter("ETT %s: updating link %s %d %s\n",
-		id().cc(),
-		from.s().cc(),
-		metric,
-		to.s().cc());
   _link_table->update_link(from, to, metric);
   _link_table->update_link(to, from, metric);
 }
@@ -254,8 +252,15 @@ ETT::process_query(struct sr_pkt *pk1)
     }
   }
   /* also get the metric from the neighbor */
-  metric += get_metric(pk1->get_hop(pk1->num_hops()-1));
-
+  int m = get_metric(pk1->get_hop(pk1->num_hops()-1));
+  update_link(_ip, pk1->get_hop(pk1->num_hops()-1), m);
+  metric += m;
+  metrics.push_back(m);
+  hops.push_back(_ip);
+  click_chatter("ETT %s: got metric for neighbor %s of %d\n",
+		id().cc(),
+		pk1->get_hop(pk1->num_hops()-1).s().cc(),
+		m);
   for(si = 0; si < _seen.size(); si++){
     if(src == _seen[si]._src && seq == _seen[si]._seq){
       break;
@@ -272,13 +277,6 @@ ETT::process_query(struct sr_pkt *pk1)
   }
 
   _seen[si]._metric = metric;
-
-  hops.push_back(_ip);
-  int m = get_metric(pk1->get_hop(pk1->num_hops()-1));
-  update_link(_ip, pk1->get_hop(pk1->num_hops()-1), m);
-  update_link(pk1->get_hop(pk1->num_hops()-1), _ip, m);
-  
-  metrics.push_back(m);
 
   click_gettimeofday(&_seen[si]._when);
   
@@ -547,7 +545,6 @@ ETT::push(int port, Packet *p_in)
       int m = pk->get_metric(i);
       if (m != 0) {
 	update_link(a,b,m);
-	update_link(b,a,m);
       }
     }
     
