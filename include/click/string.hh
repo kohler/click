@@ -95,7 +95,7 @@ class String { public:
 
   void append(const char *, int len);
   void append_fill(int c, int len);
-  void append_space(int len);
+  void append_garbage(int len);
   String &operator+=(const String &);
   String &operator+=(const char *);
   String &operator+=(char);

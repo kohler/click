@@ -158,9 +158,10 @@ String::out_of_memory_count()
 void
 String::assign(const char *str, int len)
 {
-  if (!str)
+  if (!str) {
+    assert(len <= 0);
     len = 0;
-  else if (len < 0)
+  } else if (len < 0)
     len = strlen(str);
   
   if (len == 0) {
@@ -274,7 +275,7 @@ String::append_fill(int c, int suffix_len)
 }
 
 void
-String::append_space(int suffix_len)
+String::append_garbage(int suffix_len)
 {
   assert(suffix_len >= 0);
   if (suffix_len == 0)

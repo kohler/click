@@ -549,7 +549,7 @@ Adds @var{len} copies of the character @var{c} to the end of this
 string.
 @end deftypemethod
 
-@deftypemethod String void append_space (int @var{len})
+@deftypemethod String void append_garbage (int @var{len})
 Adds @var{len} arbitrary characters to the end of this string.
 @end deftypemethod
 
