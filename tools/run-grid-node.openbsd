@@ -207,7 +207,9 @@ my_system "ancontrol  $grid_if -o 0";
 my_system "ancontrol  $grid_if -c $grid_channel";
 my_system "ancontrol  $grid_if -n $grid_ssid";
     
-print("warning: not decreasing mtu on tun\n");
+# set mtu to account for grid encapsulation
+# prob, how do we know we get tun0?  perhaps KernelTap should do it...
+my_system "ifconfig tun0 mtu 1350"
 
 # fire up click, substituting appropriate values into the config file,
 # and piping it into click stdin.
