@@ -1,3 +1,26 @@
+2000-11-06 Monday 02:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipfilter.cc, elements/ip/ipfilter.hh,
+	include/click/confparse.hh, include/click/element.hh,
+	lib/confparse.cc, lib/element.cc, linuxmodule/module.cc,
+	tools/click-align/click-align.cc, userlevel/click.cc: confparse:
+	support dynamically added/removed argtypes to cp_va_parse() and
+	friends. Also removed Element::static_initialize(), added
+	cp_va_static_initialize(). (Mazu)
+
+2000-11-06 Monday 02:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/clp.h, lib/clp.c: added Clp_CurOptionName() (Mazu)
+
+2000-11-06 Monday 02:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/controlsocket.cc, include/click/error.hh,
+	lib/error.cc, linuxmodule/kernelerror.cc,
+	linuxmodule/kernelerror.hh: ErrorHandler changes for better
+	flexibility: added ErrorVeneer class, updated other ErrorHandlers
+	accordingly. Now creating a message is broken into three stages:
+	creating the text, applying the landmark, printing the text. (Mazu)
+
 2000-11-03 Friday 10:57  Benjie Chen <benjie@lcs.mit.edu>
 
 	* include/click/glue.hh: new get usec helper
