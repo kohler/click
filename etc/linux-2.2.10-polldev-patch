@@ -1,0 +1,835 @@
+
+Index: include/linux/netdevice.h
+--- include/linux/netdevice.h.orig	Mon Dec  6 13:35:27 1999
++++ include/linux/netdevice.h	Mon Dec  6 14:52:49 1999
+@@ -312,6 +312,28 @@
+ 	/* Semi-private data. Keep it at the end of device struct. */
+ 	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
+ #endif
++
++	/* Click: give kernel module controls of device operations */
++
++	/* is this card pollable? */
++	int			pollable;
++	/* tell linux that interrupt handling should be defered elsewhere */
++	int    			intr_defer;
++	/* wait queue for intrs - wake_up(&intr_wq) is called when interrupts
++	 * occur and intr_defer is set */
++	struct wait_queue 	*intr_wq;   
++	/* turn interrupts off */
++	void			(*intr_off)(struct device *);
++	/* turn interrupts on */
++	void			(*intr_on)(struct device *);
++	/* poll the device for packets: return one packet at a time. Returns
++	 * 0L if there are no packets */
++	struct sk_buff *	(*rx_poll)(struct device *);
++	/* fill rx dma ring. returns the number of rings filled */
++	int			(*fill_rx)(struct device *); 
++	/* clean tx dma ring. returns 0 if there are empty spaces, 1 if the
++	 * device is still busy */
++	int			(*clean_tx)(struct device *);
+ };
+ 
+ 
+@@ -349,6 +371,11 @@
+ extern int		unregister_netdevice(struct device *dev);
+ extern int 		register_netdevice_notifier(struct notifier_block *nb);
+ extern int		unregister_netdevice_notifier(struct notifier_block *nb);
++extern int 		register_net_in(struct notifier_block *nb); /* Click */
++extern int		unregister_net_in(struct notifier_block *nb); /* Click */
++extern int 		register_net_out(struct notifier_block *nb); /* Click */
++extern int		unregister_net_out(struct notifier_block *nb); /* Click */
++extern void		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
+ extern int		dev_new_index(void);
+ extern struct device	*dev_get_by_index(int ifindex);
+ extern int		dev_restart(struct device *dev);
+
+Index: net/core/dev.c
+--- net/core/dev.c.orig	Thu Mar 25 12:23:34 1999
++++ net/core/dev.c	Mon Dec  6 14:47:13 1999
+@@ -145,6 +145,9 @@
+  
+ static struct notifier_block *netdev_chain=NULL;
+ 
++/* input packet handlers -- might steal packets from net_bh(). for Click. */
++static struct notifier_block *net_in_chain = 0;
++
+ /*
+  *	Device drivers call our routines to queue packets here. We empty the
+  *	queue in the bottom half handler.
+@@ -326,6 +329,7 @@
+ 		kfree(dev);
+ 		return NULL;
+ 	}
++	dev->pollable = 0;		/* by default, not pollable */
+ 	return dev;
+ }
+ 
+@@ -503,6 +507,22 @@
+ }
+ 
+ /*
++ * Allow Click modules to ask to intercept input packets.
++ * Must add these to ../netsyms.c
++ */
++int
++register_net_in(struct notifier_block *nb)
++{
++  return(notifier_chain_register(&net_in_chain, nb));
++}
++
++int
++unregister_net_in(struct notifier_block *nb)
++{
++  return(notifier_chain_unregister(&net_in_chain, nb));
++}
++
++/*
+  *	Support routine. Sends outgoing frames to any network
+  *	taps currently in use.
+  */
+@@ -748,6 +768,8 @@
+ 	}
+ }
+ 
++int (*udpcount_hook)(struct sk_buff *skb);
++
+ /*
+  *	Receive a packet from a device driver and queue it for the upper
+  *	(protocol) levels.  It always succeeds. 
+@@ -755,6 +777,9 @@
+ 
+ void netif_rx(struct sk_buff *skb)
+ {
++  if(udpcount_hook && udpcount_hook(skb))
++    return;
++
+ #ifndef CONFIG_CPU_IS_SLOW
+ 	if(skb->stamp.tv_sec==0)
+ 		get_fast_time(&skb->stamp);
+@@ -819,6 +844,84 @@
+ }
+ #endif
+ 
++/*
++ * Hand a packet to the ordinary Linux protocol stack.
++ * Broke this out from net_bh() so that Click can call it.
++ * Always frees the skb one way or another.
++ *
++ * skb->pkt_type needs to be set to PACKET_{BROADCAST,MULTICAST,OTHERHOST}
++ * maybe skb->mac.raw must point to ether header.
++ * skb->protocol must be set to a htons(ETHERTYPE_?).
++ * skb->data must point to the ethernet payload (e.g. the IP header).
++ * skb->nh.raw must point to the ethernet payload also.
++ */
++void
++ptype_dispatch(struct sk_buff *skb, unsigned short type)
++{
++	struct packet_type *ptype;
++	struct packet_type *pt_prev;
++
++		/*
++		 *	We got a packet ID.  Now loop over the "known protocols"
++		 * 	list. There are two lists. The ptype_all list of taps (normally empty)
++		 *	and the main protocol list which is hashed perfectly for normal protocols.
++		 */
++
++		pt_prev = NULL;
++		for (ptype = ptype_all; ptype!=NULL; ptype=ptype->next)
++		{
++			if (!ptype->dev || ptype->dev == skb->dev) {
++				if(pt_prev)
++				{
++					struct sk_buff *skb2=skb_clone(skb, GFP_ATOMIC);
++					if(skb2)
++						pt_prev->func(skb2,skb->dev, pt_prev);
++				}
++				pt_prev=ptype;
++			}
++		}
++
++		for (ptype = ptype_base[ntohs(type)&15]; ptype != NULL; ptype = ptype->next) 
++		{
++			if (ptype->type == type && (!ptype->dev || ptype->dev==skb->dev))
++			{
++				/*
++				 *	We already have a match queued. Deliver
++				 *	to it and then remember the new match
++				 */
++				if(pt_prev)
++				{
++					struct sk_buff *skb2;
++
++					skb2=skb_clone(skb, GFP_ATOMIC);
++
++					/*
++					 *	Kick the protocol handler. This should be fast
++					 *	and efficient code.
++					 */
++
++					if(skb2)
++						pt_prev->func(skb2, skb->dev, pt_prev);
++				}
++				/* Remember the current last to do */
++				pt_prev=ptype;
++			}
++		} /* End of protocol list loop */
++
++		/*
++		 *	Is there a last item to send to ?
++		 */
++
++		if(pt_prev)
++			pt_prev->func(skb, skb->dev, pt_prev);
++		/*
++		 * 	Has an unknown packet has been received ?
++		 */
++	 
++		else {
++			kfree_skb(skb);
++		}
++}
+ 
+ /*
+  *	When we are called the queue is ready to grab, the interrupts are
+@@ -830,10 +933,8 @@
+  
+ void net_bh(void)
+ {
+-	struct packet_type *ptype;
+-	struct packet_type *pt_prev;
+-	unsigned short type;
+ 	unsigned long start_time = jiffies;
++	unsigned short type;
+ #ifdef CONFIG_CPU_IS_SLOW
+ 	static unsigned long start_busy = 0;
+ 	static unsigned long ave_busy = 0;
+@@ -932,66 +1033,19 @@
+ 		handle_bridge(skb, type); 
+ #endif
+ 
+-		/*
+-		 *	We got a packet ID.  Now loop over the "known protocols"
+-		 * 	list. There are two lists. The ptype_all list of taps (normally empty)
+-		 *	and the main protocol list which is hashed perfectly for normal protocols.
+-		 */
++                /* does Click want to steal this packet? */
++                if(notifier_call_chain(&net_in_chain, skb_queue_len(&backlog), skb) & NOTIFY_STOP_MASK)
++                  continue;
+ 
+-		pt_prev = NULL;
+-		for (ptype = ptype_all; ptype!=NULL; ptype=ptype->next)
+-		{
+-			if (!ptype->dev || ptype->dev == skb->dev) {
+-				if(pt_prev)
+-				{
+-					struct sk_buff *skb2=skb_clone(skb, GFP_ATOMIC);
+-					if(skb2)
+-						pt_prev->func(skb2,skb->dev, pt_prev);
+-				}
+-				pt_prev=ptype;
+-			}
+-		}
+ 
+-		for (ptype = ptype_base[ntohs(type)&15]; ptype != NULL; ptype = ptype->next) 
+-		{
+-			if (ptype->type == type && (!ptype->dev || ptype->dev==skb->dev))
+-			{
+-				/*
+-				 *	We already have a match queued. Deliver
+-				 *	to it and then remember the new match
+-				 */
+-				if(pt_prev)
+-				{
+-					struct sk_buff *skb2;
++                /*
++                 * Ordinary Linux dispatch based on packet type.
++                 * Moved into a function so Click can call it.
++                 */
++                ptype_dispatch(skb, type);
+ 
+-					skb2=skb_clone(skb, GFP_ATOMIC);
+-
+-					/*
+-					 *	Kick the protocol handler. This should be fast
+-					 *	and efficient code.
+-					 */
+-
+-					if(skb2)
+-						pt_prev->func(skb2, skb->dev, pt_prev);
+-				}
+-				/* Remember the current last to do */
+-				pt_prev=ptype;
+-			}
+-		} /* End of protocol list loop */
+ 
+-		/*
+-		 *	Is there a last item to send to ?
+-		 */
+ 
+-		if(pt_prev)
+-			pt_prev->func(skb, skb->dev, pt_prev);
+-		/*
+-		 * 	Has an unknown packet has been received ?
+-		 */
+-	 
+-		else {
+-			kfree_skb(skb);
+-		}
+   	}	/* End of queue loop */
+   	
+   	/*
+
+Index: net/sched/sch_generic.c
+--- net/sched/sch_generic.c.orig	Mon Dec  6 13:35:27 1999
++++ net/sched/sch_generic.c	Mon Dec  6 14:21:13 1999
+@@ -76,6 +76,24 @@
+ 	return q->q.qlen;
+ }
+ 
++/*
++ * Click hooks to be notified when a network device
++ * is idle and could send a packet.
++ */
++static struct notifier_block *net_out_chain = 0;
++
++int
++register_net_out(struct notifier_block *nb)
++{
++  return(notifier_chain_register(&net_out_chain, nb));
++}
++
++int
++unregister_net_out(struct notifier_block *nb)
++{
++  return(notifier_chain_unregister(&net_out_chain, nb));
++}
++
+ /* Scan transmission queue and kick devices.
+ 
+    Deficiency: slow devices (ppp) and fast ones (100Mb ethernet)
+@@ -93,9 +111,14 @@
+ 	hp = &qdisc_head.forw;
+ 	while ((h = *hp) != &qdisc_head) {
+ 		int res = -1;
++                int res1 = -1;
+ 		struct Qdisc *q = (struct Qdisc*)h;
+ 		struct device *dev = q->dev;
+ 
++                /* Click */
++                if(dev->tbusy == 0)
++                  res1 = notifier_call_chain(&net_out_chain, 0, dev);
++
+ 		while (!dev->tbusy && (res = qdisc_restart(dev)) < 0)
+ 			/* NOTHING */;
+ 
+@@ -108,7 +131,7 @@
+ 		   No problem, we will unlink it during the next round.
+ 		 */
+ 
+-		if (res == 0 && *hp == h) {
++		if (res1 == 0 && res == 0 && *hp == h) {
+ 			*hp = h->forw;
+ 			h->forw = NULL;
+ 			continue;
+
+Index: net/netsyms.c
+--- net/netsyms.c.orig	Mon Dec  6 13:35:27 1999
++++ net/netsyms.c	Mon Dec  6 14:21:13 1999
+@@ -431,6 +431,17 @@
+ EXPORT_SYMBOL(register_netdevice_notifier);
+ EXPORT_SYMBOL(unregister_netdevice_notifier);
+ 
++/* Click */
++EXPORT_SYMBOL(register_net_in);
++EXPORT_SYMBOL(unregister_net_in);
++EXPORT_SYMBOL(register_net_out);
++EXPORT_SYMBOL(unregister_net_out);
++EXPORT_SYMBOL(ptype_dispatch);
++struct inet_protocol *inet_get_protocol(unsigned char prot);
++EXPORT_SYMBOL(inet_get_protocol);
++extern int (*udpcount_hook)(struct sk_buff *skb);
++EXPORT_SYMBOL(udpcount_hook);
++
+ /* support for loadable net drivers */
+ #ifdef CONFIG_NET
+ EXPORT_SYMBOL(loopback_dev);
+
+Index: drivers/net/tulip.c
+--- drivers/net/tulip.c.orig	Mon Dec  6 17:21:15 1999
++++ drivers/net/tulip.c	Mon Dec  6 17:20:59 1999
+@@ -327,6 +327,11 @@
+ 	TxFIFOUnderflow=0x20, TxJabber=0x08, TxNoBuf=0x04, TxDied=0x02, TxIntr=0x01,
+ };
+ 
++/* 2.2.12 patch for hanging. rtm sep 8. */
++enum desc_status_bits {
++      DescOwned=0x80000000, RxDescFatalErr=0x8000, RxWholePkt=0x0300,
++};
++
+ /* The Tulip Rx and Tx buffer descriptors. */
+ struct tulip_rx_desc {
+ 	s32 status;
+@@ -418,7 +423,13 @@
+ static void tulip_tx_timeout(struct device *dev);
+ static void tulip_init_ring(struct device *dev);
+ static int tulip_start_xmit(struct sk_buff *skb, struct device *dev);
+-static int tulip_rx(struct device *dev);
++static int tulip_clean_tx(struct device *dev);
++static int tulip_tx(struct device *dev, int poll);
++static int tulip_rx(struct device *dev, struct sk_buff **retskb, int poll);
++static struct sk_buff *tulip_rx_poll(struct device *dev);
++static void tulip_intr_on(struct device *dev);
++static void tulip_intr_off(struct device *dev);
++static int tulip_fill_rxring(struct device *dev);
+ static void tulip_interrupt IRQ(int irq, void *dev_instance, struct pt_regs *regs);
+ static int tulip_close(struct device *dev);
+ static struct enet_statistics *tulip_get_stats(struct device *dev);
+@@ -469,10 +480,12 @@
+ 			(PCI_CLASS_NETWORK_ETHERNET << 8,
+ 			 reverse_probe ? 0xfe - pci_index : pci_index,
+ 			 &pci_bus, &pci_device_fn) != PCIBIOS_SUCCESSFUL)
++		{
+ 			if (reverse_probe)
+ 				continue;
+ 			else
+ 				break;
++		}
+ 		pcibios_read_config_word(pci_bus, pci_device_fn,
+ 								 PCI_VENDOR_ID, &vendor);
+ 		pcibios_read_config_word(pci_bus, pci_device_fn,
+@@ -683,6 +696,16 @@
+ 
+ 	dev->base_addr = ioaddr;
+ 	dev->irq = irq;
++	
++	/* Click - export routines that control device operations */
++	dev->pollable = 1;
++	dev->intr_defer = 0;
++	dev->intr_wq = NULL;
++	dev->rx_poll = tulip_rx_poll;
++	dev->clean_tx = tulip_clean_tx;
++	dev->fill_rx = tulip_fill_rxring;
++	dev->intr_off = tulip_intr_off;
++	dev->intr_on = tulip_intr_on;
+ 
+ 	/* Make certain the data structures are quadword aligned. */
+ 	tp = (void *)(((long)kmalloc(sizeof(*tp), GFP_KERNEL | GFP_DMA) + 7) & ~7);
+@@ -1536,10 +1559,12 @@
+ 		outl(dev->if_port ? 0x0000000C : 0x00000004, ioaddr + CSR13);
+ 	} else {					/* Unknown chip type with no media table. */
+ 		if (tp->default_port == 0)
++		{
+ 			if (tp->mii_cnt) {
+ 				dev->if_port = 11;
+ 			} else
+ 				dev->if_port = 3;
++		}
+ 		if (media_cap[dev->if_port] & MediaIsMII) {
+ 			new_csr6 = 0x020E0000;
+ 		} else if (media_cap[dev->if_port] & MediaIsFx) {
+@@ -1973,7 +1998,7 @@
+ 	add_timer(&tp->timer);
+ }
+ 
+-static void tulip_tx_timeout(struct device *dev)
++void tulip_tx_timeout(struct device *dev)
+ {
+   struct tulip_private *tp = (struct tulip_private *)dev->priv;
+   long ioaddr = dev->base_addr;
+@@ -2161,6 +2186,23 @@
+ 	return 0;
+ }
+ 
++/* rtm IPB */
++static __inline__ unsigned long long
++rtm_get_cycles(void)
++{
++    unsigned long low, high;
++    unsigned long long x;
++   
++    __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
++    x = high;
++    x <<= 32;
++    x |= low;
++    return(x);
++}
++unsigned int rtm_tulip_calls;
++unsigned long long rtm_tulip_cycles;
++
++
+ /* The interrupt handler does all of the Rx thread work and cleans up
+    after the Tx thread. */
+ static void tulip_interrupt IRQ(int irq, void *dev_instance, struct pt_regs *regs)
+@@ -2170,6 +2212,9 @@
+ #else
+ 	struct device *dev = (struct device *)(irq2dev_map[irq]);
+ #endif
++#if 1
++    	unsigned long long c0;
++#endif
+ 
+ 	struct tulip_private *tp;
+ 	long ioaddr;
+@@ -2193,6 +2238,12 @@
+ #endif
+ 		return;
+ 	}
++
++#if 1
++    	rtm_tulip_calls++;
++    	c0 = rtm_get_cycles();
++#endif
++    
+ 	dev->interrupt = 1;
+ #ifdef SMP_CHECK
+ 	tp->smp_proc_id = hard_smp_processor_id();
+@@ -2201,86 +2252,34 @@
+ 	do {
+ 		csr5 = inl(ioaddr + CSR5);
+ 		/* Acknowledge all of the current interrupt sources ASAP. */
++#if 1
++		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0)
++			break;
++#endif
++
+ 		outl(csr5 & 0x0001ffff, ioaddr + CSR5);
+ 
+ 		if (tulip_debug > 4)
+ 			printk(KERN_DEBUG "%s: interrupt  csr5=%#8.8x new csr5=%#8.8x.\n",
+ 				   dev->name, csr5, inl(dev->base_addr + CSR5));
+ 
+-		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0)
+-			break;
++		/* Click: allow click to handle interrupts */
++		if (dev->intr_defer && 
++			(csr5 & (NormalIntr|RxIntr|RxNoBuf|TxNoBuf|TxIntr))) 
++		{
++	    	wake_up(&dev->intr_wq);
++	    	goto exit_intr;
++		}
+ 
+ 		if (csr5 & (RxIntr | RxNoBuf))
+-			work_budget -= tulip_rx(dev);
+-
+-		if (csr5 & (TxNoBuf | TxDied | TxIntr)) {
+-			unsigned int dirty_tx;
+-
+-			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
+-				 dirty_tx++) {
+-				int entry = dirty_tx % TX_RING_SIZE;
+-				int status = tp->tx_ring[entry].status;
+-
+-				if (status < 0)
+-					break;			/* It still hasn't been Txed */
+-				/* Check for Rx filter setup frames. */
+-				if (tp->tx_skbuff[entry] == NULL)
+-				  continue;
+-
+-				if (status & 0x8000) {
+-					/* There was an major error, log it. */
+-#ifndef final_version
+-					if (tulip_debug > 1)
+-						printk(KERN_DEBUG "%s: Transmit error, Tx status %8.8x.\n",
+-							   dev->name, status);
+-#endif
+-					tp->stats.tx_errors++;
+-					if (status & 0x4104) tp->stats.tx_aborted_errors++;
+-					if (status & 0x0C00) tp->stats.tx_carrier_errors++;
+-					if (status & 0x0200) tp->stats.tx_window_errors++;
+-					if (status & 0x0002) tp->stats.tx_fifo_errors++;
+-					if ((status & 0x0080) && tp->full_duplex == 0)
+-						tp->stats.tx_heartbeat_errors++;
+-#ifdef ETHER_STATS
+-					if (status & 0x0100) tp->stats.collisions16++;
+-#endif
+-				} else {
+-#ifdef ETHER_STATS
+-					if (status & 0x0001) tp->stats.tx_deferred++;
+-#endif
+-#if LINUX_VERSION_CODE > 0x20127
+-					tp->stats.tx_bytes += tp->tx_ring[entry].length & 0x7ff;
+-#endif
+-					tp->stats.collisions += (status >> 3) & 15;
+-					tp->stats.tx_packets++;
+-				}
+-
+-				/* Free the original skb. */
+-#if (LINUX_VERSION_CODE > 0x20155)
+-				dev_kfree_skb(tp->tx_skbuff[entry]);
+-#else
+-				dev_kfree_skb(tp->tx_skbuff[entry], FREE_WRITE);
+-#endif
+-				tp->tx_skbuff[entry] = 0;
+-			}
+-
+-#ifndef final_version
+-			if (tp->cur_tx - dirty_tx > TX_RING_SIZE) {
+-				printk(KERN_ERR "%s: Out-of-sync dirty pointer, %d vs. %d, full=%d.\n",
+-					   dev->name, dirty_tx, tp->cur_tx, tp->tx_full);
+-				dirty_tx += TX_RING_SIZE;
+-			}
+-#endif
++		{
++			work_budget -= tulip_rx(dev, 0L, 0);
++			work_budget -= tulip_fill_rxring(dev);
++		}
+ 
+-			if (tp->tx_full && dev->tbusy
+-				&& tp->cur_tx - dirty_tx  < TX_RING_SIZE - 2) {
+-				/* The ring is no longer full, clear tbusy. */
+-				tp->tx_full = 0;
+-				dev->tbusy = 0;
+-				mark_bh(NET_BH);
+-			}
++		if (csr5 & (TxNoBuf | TxDied | TxIntr)) { 
++			tulip_tx(dev, 0);
+ 
+-			tp->dirty_tx = dirty_tx;
+ 			if (csr5 & TxDied) {
+ 				if (tulip_debug > 1)
+ 					printk(KERN_WARNING "%s: The transmitter stopped!"
+@@ -2340,13 +2339,103 @@
+ 		printk(KERN_DEBUG "%s: exiting interrupt, csr5=%#4.4x.\n",
+ 			   dev->name, inl(ioaddr + CSR5));
+ 
++exit_intr:
++
++#if 1
++    rtm_tulip_cycles += rtm_get_cycles() - c0;
++#endif
++
+ 	dev->interrupt = 0;
+ 	clear_bit(0, (void*)&tp->interrupt);
+ 	return;
+ }
+ 
++
++static int
++tulip_tx(struct device *dev, int poll)
++{
++	struct tulip_private *tp;
++	unsigned int dirty_tx;
++	
++	tp = (struct tulip_private *)dev->priv;
++
++	for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
++		 dirty_tx++) {
++		int entry = dirty_tx % TX_RING_SIZE;
++		int status = tp->tx_ring[entry].status;
++
++		if (status < 0)
++			break;			/* It still hasn't been Txed */
++		/* Check for Rx filter setup frames. */
++		if (tp->tx_skbuff[entry] == NULL)
++		  continue;
++
++		if (status & 0x8000) {
++			/* There was an major error, log it. */
++#ifndef final_version
++			if (tulip_debug > 1)
++				printk(KERN_DEBUG "%s: Transmit error, Tx status %8.8x.\n",
++					   dev->name, status);
++#endif
++			tp->stats.tx_errors++;
++			if (status & 0x4104) tp->stats.tx_aborted_errors++;
++			if (status & 0x0C00) tp->stats.tx_carrier_errors++;
++			if (status & 0x0200) tp->stats.tx_window_errors++;
++			if (status & 0x0002) tp->stats.tx_fifo_errors++;
++			if ((status & 0x0080) && tp->full_duplex == 0)
++				tp->stats.tx_heartbeat_errors++;
++#ifdef ETHER_STATS
++			if (status & 0x0100) tp->stats.collisions16++;
++#endif
++		} else {
++#ifdef ETHER_STATS
++			if (status & 0x0001) tp->stats.tx_deferred++;
++#endif
++#if LINUX_VERSION_CODE > 0x20127
++			tp->stats.tx_bytes += tp->tx_ring[entry].length & 0x7ff;
++#endif
++			tp->stats.collisions += (status >> 3) & 15;
++			tp->stats.tx_packets++;
++		}
++
++		/* Free the original skb. */
++#if (LINUX_VERSION_CODE > 0x20155)
++		dev_kfree_skb(tp->tx_skbuff[entry]);
++#else
++		dev_kfree_skb(tp->tx_skbuff[entry], FREE_WRITE);
++#endif
++		tp->tx_skbuff[entry] = 0;
++	}
++
++#ifndef final_version
++	if (tp->cur_tx - dirty_tx > TX_RING_SIZE) {
++		printk(KERN_ERR "%s: Out-of-sync dirty pointer, %d vs. %d, full=%d.\n",
++			   dev->name, dirty_tx, tp->cur_tx, tp->tx_full);
++		dirty_tx += TX_RING_SIZE;
++	}
++#endif
++
++	if (tp->tx_full && dev->tbusy
++		&& tp->cur_tx - dirty_tx  < TX_RING_SIZE - 2) {
++		/* The ring is no longer full, clear tbusy. */
++		tp->tx_full = 0;
++		dev->tbusy = 0;
++		if (!poll) mark_bh(NET_BH);
++	}
++
++	tp->dirty_tx = dirty_tx;
++	return dev->tbusy;
++}
++
+ static int
+-tulip_rx(struct device *dev)
++tulip_clean_tx(struct device *dev)
++{
++  return tulip_tx(dev, 1);
++}
++
++
++static int
++tulip_rx(struct device *dev, struct sk_buff **retskb, int poll)
+ {
+ 	struct tulip_private *tp = (struct tulip_private *)dev->priv;
+ 	int entry = tp->cur_rx % RX_RING_SIZE;
+@@ -2417,6 +2506,7 @@
+ 				}
+ #else
+ 				skb_put(skb, pkt_len);
++			    work_done++;
+ #endif
+ 			}
+ #if LINUX_VERSION_CODE > 0x10300
+@@ -2424,16 +2514,34 @@
+ #else
+ 			skb->len = pkt_len;
+ #endif
+-			netif_rx(skb);
++			if (!poll)
++			  netif_rx(skb);
+ 			dev->last_rx = jiffies;
+ 			tp->stats.rx_packets++;
+ #if LINUX_VERSION_CODE > 0x20127
+ 			tp->stats.rx_bytes += pkt_len;
+ #endif
++			if (poll)
++			{ 
++			  *retskb = skb; 
++			  tp->cur_rx++;
++			  return work_done;
++			}
+ 		}
+ 		entry = (++tp->cur_rx) % RX_RING_SIZE;
+ 	}
+ 
++	if (poll) *retskb = 0L;
++	return work_done; 
++}
++
++int 
++tulip_fill_rxring(struct device *dev)
++{
++	struct tulip_private *tp = (struct tulip_private *)dev->priv;
++	int entry;
++	int work_done = 0;
++
+ 	/* Refill the Rx ring buffers. */
+ 	for (; tp->cur_rx - tp->dirty_rx > 0; tp->dirty_rx++) {
+ 		entry = tp->dirty_rx % RX_RING_SIZE;
+@@ -2456,6 +2564,39 @@
+ 	return work_done;
+ }
+ 
++
++/* Click: following are routines that allow click to 
++ * control device operations */
++static struct sk_buff *
++tulip_rx_poll(struct device *dev)
++{
++  struct sk_buff *skb;
++  tulip_rx(dev, &skb, 1);
++  return skb;
++}
++
++static void
++tulip_intr_off(struct device *dev)
++{
++    long ioaddr = dev->base_addr;
++    int csr7;
++
++    csr7 = inl(ioaddr + CSR7) & ~(NormalIntr|RxNoBuf|RxIntr|TxIntr|TxNoBuf);
++    outl(csr7, ioaddr+CSR7);
++}
++
++static void
++tulip_intr_on(struct device *dev)
++{
++    long ioaddr = dev->base_addr;
++    int csr7;
++
++    csr7 = inl(ioaddr + CSR7) | (NormalIntr|RxNoBuf|RxIntr|TxIntr|TxNoBuf);
++    outl(csr7, ioaddr+CSR7);
++}
++
++
++
+ static int
+ tulip_close(struct device *dev)
+ {
+@@ -2698,7 +2839,7 @@
+ 			/* Same setup recently queued, we need not add it. */
+ 		} else {
+ 			unsigned long flags;
+-			unsigned int entry;
++			unsigned int entry, dummy = 0;
+ 			
+ 			save_flags(flags); cli();
+ 			entry = tp->cur_tx++ % TX_RING_SIZE;
+@@ -2709,7 +2850,12 @@
+ 				tp->tx_ring[entry].length =
+ 					(entry == TX_RING_SIZE-1) ? 0x02000000 : 0;
+ 				tp->tx_ring[entry].buffer1 = 0;
++#if 1
++                /* race with chip, set DescOwned later */
++                dummy = entry;
++#else
+ 				tp->tx_ring[entry].status = 0x80000000;
++#endif
+ 				entry = tp->cur_tx++ % TX_RING_SIZE;
+ 			}
+ 
+@@ -2724,6 +2870,10 @@
+ 				dev->tbusy = 1;
+ 				tp->tx_full = 1;
+ 			}
++#if 1
++            if (dummy >= 0)
++                tp->tx_ring[dummy].status = DescOwned;
++#endif
+ 			restore_flags(flags);
+ 			/* Trigger an immediate transmit demand. */
+ 			outl(0, ioaddr + CSR1);
+
+Index: include/linux/signal.h
+--- include/linux/signal.h.orig	Mon Dec  6 14:07:57 1999
++++ include/linux/signal.h	Mon Dec  6 14:49:54 1999
+@@ -189,7 +189,7 @@
+ 		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
+ 		break;
+ 	case 2: set->sig[1] = 0;
+-	case 1:
++	case 1: ;
+ 	}
+ }
+ 
+@@ -201,7 +201,7 @@
+ 		memset(&set->sig[1], -1, sizeof(long)*(_NSIG_WORDS-1));
+ 		break;
+ 	case 2: set->sig[1] = -1;
+-	case 1:
++	case 1: ;
+ 	}
+ }
+ 
