@@ -13,7 +13,8 @@ acclick.m4
 aclocal.m4
 apps
 bsdmodule
-click-buildtool
+click.spec
+click-buildtool.in
 click-compile.in
 click-mkelemmap
 conf
@@ -92,6 +93,7 @@ make-udpcount.pl
 make-udpgen.pl
 mazu-nat.click
 print-pings.click
+sampler.click
 simple-dsdv-userlevel.click
 simple-dsdv.click
 test-device.click
@@ -209,6 +211,7 @@ linux-2.4.18-patch
 linux-2.4.20-patch
 linux-2.4.20-wifi-patch
 linux-2.4.21-patch
+linux-2.4.26-patch
 samplellrpc
 samplepackage
 
@@ -332,9 +335,11 @@ icmp.h
 icmp6.h
 ip.h
 ip6.h
+llc.h
 rfc1483.h
 tcp.h
 udp.h
+wifi.h
 
 ./lib:
 archive.cc
@@ -424,6 +429,7 @@ FromTcpdump-01.testie
 FromTcpdump-02.testie
 
 ./test/compound:
+input-01.testie
 overload-01.testie
 
 ./test/handlers:
@@ -435,6 +441,7 @@ ICMPPingEncap-01.testie
 
 ./test/linuxmodule:
 ToHost-01.testie
+ToHost-udpsocket-01.testie
 
 ./test/standard:
 DelayShaper-notifier-01.testie
@@ -442,7 +449,10 @@ LinkUnqueue-01.testie
 MixedQueue-01.testie
 MixedQueue-02.testie
 Queue-yank-01.testie
+StrideSched-01.testie
 notifier-01.testie
+notifier-02.testie
+notifier-03.testie
 
 ./test/tcpudp:
 UDPIPEncap-01.testie
@@ -452,11 +462,13 @@ align-01.testie
 combine-01.testie
 lexer-01.testie
 lexer-02.testie
+testie-01.testie
 xform-ip-01.testie
 
 ./test/userlevel:
 ControlSocket-llrpc-01.testie
 ControlSocket-llrpc-02.testie
+uhotswap-01.testie
 
 ./tools:
 Makefile.in

@@ -2,8 +2,7 @@ THE CLICK MODULAR ROUTER RELEASE 1.4
 ====================================
 
     This is the README file for the source release for the Click modular
-software router. The first thing you should do is look for more recent
-information on the Web at
+software router. More recent information may be available on the Web at
 
 	http://www.pdos.lcs.mit.edu/click/
 
@@ -11,8 +10,8 @@ information on the Web at
 compile and install the software, how to write router configurations, and
 how to write new elements. Our ACM Transactions on Computer Systems paper,
 available from the Web site, will give you a feeling for what Click can
-do. (Note: Using the optimization tools under CLICKDIR/tools, you can get
-even better performance than that paper describes.)
+do. Using the optimization tools under CLICKDIR/tools, you can get even
+better performance than that paper describes.
 
 CONTENTS
 --------

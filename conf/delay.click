@@ -8,12 +8,12 @@ PollDevice(eth1, true)
   -> SetTimestamp
   -> Queue(8)
   -> DelayShaper(10)
-  -> BandwidthShaper(131072) // 1Mb
+  -> BandwidthShaper(131072B/s) // 1Mb
   -> ToDevice(eth2);
 
 PollDevice(eth2, true)
   -> SetTimestamp
   -> Queue(8)
   -> DelayShaper(10)
-  -> BandwidthShaper(131072) // 1Mb
+  -> BandwidthShaper(131072B/s) // 1Mb
   -> ToDevice(eth1);
