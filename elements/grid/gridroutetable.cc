@@ -189,6 +189,9 @@ GridRouteTable::sig_to_pct(int s)
   return (100 * (s - _min_metric)) / delta;
 }
 
+// #define h(x) click_chatter("XXXX %d", x);
+#define h(x)
+
 bool
 GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
 {
@@ -200,8 +203,10 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
     int qual = 0;
     struct timeval last;
     bool res = _link_tracker->get_stat(ip, sig, qual, last);
-    if (!res)
+    if (!res) {
+      h(1);
       return false;
+    }
     if (_est_type == EstByQual) {
       return false;
     }
@@ -209,6 +214,10 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
       return false;
     }
     else if (_est_type == EstBySigQual) {
+      h(2);
+#if 0
+      click_chatter("XXX %s", ip.s().cc());
+#endif
       /* 
        * use jinyang's parameters, based on 1sec broadcast loss rates
        * with 50-byte UDP packets.  
@@ -219,37 +228,49 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
        * links as good, while only classifying 2% of bad links as
        * good.  
        */
-      double rate = 0;
       res = _link_tracker->get_bcast_stat(ip, rate, last);
       double z = 9.4519 + 0.0391 * sig + 0.5518 * qual;
       double z2 = 1 / (1 + exp(z));
       double thresh = 0.8;
       bool link_good = z2 > thresh;
-
-      if (!link_good && !res)
+      h(3);
+      if (!link_good && !res) {
+	h(4);
 	return false;
+      }
       else if (link_good && !res) {
+	h(5);
 	rate = 0.8;
 	return true;
       }
-      else if (!link_good && res)
-	return true; /* rate was set in call toget_bcast_stat */
+      else if (!link_good && res) {
+	h(6);
+	return true; /* rate was set in call to get_bcast_stat */
+      }
       else /* link_good && res */ {
-	if (rate < 0.8)
+	h(7);
+	if (rate < 0.8) {
+	  h(8);
 	  rate = 0.8;
+	}
 	return true;
       }
+      h(9);
     }
-    else 
+    else {
+      h(10);
       return false;
+    }
   }
   case EstByMeas: {
+    h(11);
     struct timeval last;
     bool res = _link_tracker->get_bcast_stat(ip, rate, last);
     return res;
     break;
   }
   default:
+    h(12);
     return false;
   }
 }
@@ -260,16 +281,25 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
   switch (_est_type) {
   case EstBySig:
   case EstByQual: 
+    h(101);
     return false;
     break;
   case EstBySigQual: {
+#if 0
+    click_chatter("XXX %s", ip.s().cc());
+#endif
+    h(102);
     struct timeval last;
     RTEntry *r = _rtes.findp(ip);
-    if (r == 0 || r->num_hops > 1)
+    if (r == 0 || r->num_hops > 1) {
+      h(103);
       return false;
+    }
     LinkStat::stat_t *s = _link_stat->_stats.findp(r->next_hop_eth);
-    if (s == 0)
+    if (s == 0) {
       return false;
+      h(104);
+    }
     double z = 9.4519 + 0.0391 * s->sig + 0.5518 * s->qual;
     double z2 = 1 / (1 + exp(z));
     double thresh = 0.8;
@@ -280,26 +310,38 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     unsigned int num_expected = 0;
     bool res = _link_stat->get_bcast_stats(r->next_hop_eth, last, window, num_rx, num_expected);
     if (res && num_expected > 0) {
+      h(105);
       double num_rx_ = num_rx;
       double num_expected_ = num_expected;
       rate = (num_rx_ - 0.5) / num_expected_;
     }
-    else 
+    else {
+      h(107);
       rate = 0;
-    if (!link_good && !res)
+    }
+    if (!link_good && !res) {
+      h(108);
       return false;
+    }
     else if (link_good && !res) {
+      h(109);
       rate = 0.8;
       return true;
     }
-    else if (!link_good && res)
+    else if (!link_good && res) {
+      h(110);
       return true; /* rate was set in call to get_bcast_stats */
+    }
     else /* link_good && res */ {
-      if (rate < 0.8)
+      h(111);
+      if (rate < 0.8) {
+	h(112);
 	rate = 0.8;
+      }
       return true;
     }
   }
+  h(113);
   case EstByMeas: {
     struct timeval last;
     RTEntry *r = _rtes.findp(ip);
@@ -381,13 +423,23 @@ GridRouteTable::init_metric(RTEntry &r)
     double rev_rate = 0;
     bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
     bool res2 = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
+#if 0
+    char buf[255];
+    snprintf(buf, 255, "YYY %s %s -- res: %s, res2: %s, fwd: %f, rev: %f",
+	     r.dest_ip.s().cc(), r.next_hop_ip.s().cc(),
+	     res ? "true" : "false", res2 ? "true" : "false",
+	     fwd_rate, rev_rate);
+    click_chatter(buf);
+#endif
     if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
       r.metric = (int) (100 / (fwd_rate * rev_rate));
       r.metric_valid = true;
+      h(201);
     } 
     else {
       r.metric = _bad_metric;
       r.metric_valid = false;
+      h(202);
     }
     break;
   }
