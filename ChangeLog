@@ -1,3 +1,192 @@
+2004-06-23 Wednesday 20:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/aggcounter.cc (1.29),
+	elements/analysis/aggpktcounter.cc (1.4),
+	elements/analysis/aggregatefirst.cc (1.4),
+	elements/analysis/aggregateip.cc (1.16),
+	elements/analysis/aggregateipflows.cc (1.27),
+	elements/analysis/aggregatelast.cc (1.5),
+	elements/analysis/aggregatelen.cc (1.6),
+	elements/analysis/anonipaddr.cc (1.12),
+	elements/analysis/fromcapdump.cc (1.8),
+	elements/analysis/fromdagdump.cc (1.18),
+	elements/analysis/fromflandump.cc (1.6),
+	elements/analysis/fromipsumdump.cc (1.66),
+	elements/analysis/fromnetflowsumdump.cc (1.19),
+	elements/analysis/fromnlanrdump.cc (1.4),
+	elements/analysis/fromtcpdump.cc (1.7),
+	elements/analysis/timefilter.cc (1.10),
+	elements/analysis/timerange.cc (1.5),
+	elements/analysis/timesortedsched.cc (1.4),
+	elements/analysis/toipflowdumps.cc (1.34),
+	elements/analysis/toipsumdump.cc (1.52),
+	elements/aqm/adaptivered.cc (1.10), elements/aqm/pi.cc (1.10),
+	elements/aqm/red.cc (1.44), elements/ethernet/arpfaker.cc (1.24),
+	elements/ethernet/arpquerier.cc (1.47),
+	elements/ethernet/ensureether.cc (1.4),
+	elements/ethernet/etherencap.cc (1.21),
+	elements/ethernet/hostetherfilter.cc (1.15),
+	elements/ethernet/ip6ndsolicitor.cc (1.20),
+	elements/etherswitch/debugbridge.cc (1.17),
+	elements/exopc/xokwriter.cc (1.13), elements/grid/airoinfo.cc
+	(1.13), elements/grid/bottleneckmetric.cc (1.2),
+	elements/grid/dsdvroutetable.cc (1.76),
+	elements/grid/dsrarptable.cc (1.9), elements/grid/dsrroutetable.cc
+	(1.9), elements/grid/e2elossmetric.cc (1.4),
+	elements/grid/etx2metric.cc (1.2), elements/grid/etxmetric.cc
+	(1.5), elements/grid/filterbyhops.cc (1.17),
+	elements/grid/filterbyrange.cc (1.29), elements/grid/fixdstloc.cc
+	(1.14), elements/grid/fixsrcloc.cc (1.31),
+	elements/grid/floodinglocquerier.cc (1.41),
+	elements/grid/gridencap.cc (1.3), elements/grid/gridgatewayinfo.cc
+	(1.10), elements/grid/gridlocationinfo.cc (1.22),
+	elements/grid/gridlocationinfo2.cc (1.3),
+	elements/grid/gridlogger.cc (1.8),
+	elements/grid/gridprobehandler.cc (1.16),
+	elements/grid/gridprobereplyreceiver.cc (1.14),
+	elements/grid/gridprobesender.cc (1.11), elements/grid/gridproxy.cc
+	(1.4), elements/grid/gridroutetable.cc (1.71),
+	elements/grid/gridsrforwarder.cc (1.7),
+	elements/grid/gridtxerror.cc (1.7), elements/grid/hello.cc (1.44),
+	elements/grid/hopcountmetric.cc (1.4), elements/grid/linkstat.cc
+	(1.31), elements/grid/linktracker.cc (1.19),
+	elements/grid/lirmetric.cc (1.4),
+	elements/grid/locqueryresponder.cc (1.29),
+	elements/grid/loctable.cc (1.15),
+	elements/grid/lookupgeogridroute.cc (1.34),
+	elements/grid/lookuplocalgridroute.cc (1.52),
+	elements/grid/lookuplocalgridroute2.cc (1.3),
+	elements/grid/lrhello.cc (1.29), elements/grid/movesim.cc (1.18),
+	elements/grid/packetlogger.cc (1.3), elements/grid/packetlogger2.cc
+	(1.4), elements/grid/pep.cc (1.27), elements/grid/pingpong.cc
+	(1.9), elements/grid/regionpep.cc (1.18),
+	elements/grid/simplelocquerier.cc (1.19),
+	elements/grid/threshmetric.cc (1.4), elements/grid/updateroutes.cc
+	(1.34), elements/grid/yarvismetric.cc (1.2),
+	elements/icmp/checkicmpheader.cc (1.17), elements/icmp/icmperror.cc
+	(1.18), elements/icmp/icmprewriter.cc (1.15),
+	elements/ip/checkipheader.cc (1.51), elements/ip/fixipsrc.cc
+	(1.24), elements/ip/getipaddress.cc (1.20), elements/ip/ipencap.cc
+	(1.36), elements/ip/ipfragmenter.cc (1.32),
+	elements/ip/ipgwoptions.cc (1.36), elements/ip/ipinputcombo.cc
+	(1.31), elements/ip/ipoutputcombo.cc (1.23),
+	elements/ip/ipratemon.cc (1.101), elements/ip/ipreassembler.cc
+	(1.19), elements/ip/iproutetable.cc (1.8), elements/ip/iprw.cc
+	(1.52), elements/ip/markipheader.cc (1.18), elements/ip/ripsend.cc
+	(1.31), elements/ip/setipaddress.cc (1.19),
+	elements/ip/setipdscp.cc (1.28), elements/ip/setrandipaddress.cc
+	(1.8), elements/ip/storeipaddress.cc (1.18),
+	elements/ip6/getip6address.cc (1.13), elements/ip6/icmp6error.cc
+	(1.25), elements/ip6/ip6fragmenter.cc (1.13),
+	elements/ip6/markip6header.cc (1.13), elements/ip6/setip6address.cc
+	(1.11), elements/ip6/setip6dscp.cc (1.5), elements/ipsec/des.cc
+	(1.20), elements/ipsec/desp.cc (1.24), elements/ipsec/esp.cc
+	(1.29), elements/ipsec/sha1.cc (1.9),
+	elements/linuxmodule/cpuqueue.cc (1.12),
+	elements/linuxmodule/cpuswitch.cc (1.8),
+	elements/linuxmodule/fasttcpflows.cc (1.12),
+	elements/linuxmodule/fastudpflows.cc (1.13),
+	elements/linuxmodule/fastudpsrc.cc (1.18),
+	elements/linuxmodule/fastudpsrcip6.cc (1.18),
+	elements/linuxmodule/sortedsched.cc (1.11),
+	elements/linuxmodule/staticthreadsched.cc (1.8),
+	elements/linuxmodule/threadmonitor.cc (1.9),
+	elements/local/bufconv.cc (1.10), elements/local/forceicmp.cc
+	(1.11), elements/local/forcetcp.cc (1.19),
+	elements/local/forceudp.cc (1.11), elements/local/rrunqueue.cc
+	(1.11), elements/local/tcpack.cc (1.15),
+	elements/local/tcpbuffer.cc (1.10), elements/local/tcpconn.cc
+	(1.10), elements/local/toytcp.cc (1.23), elements/local/webgen.cc
+	(1.16), elements/ns/tosimdevice.cc (1.10),
+	elements/radio/checkpattern.cc (1.14),
+	elements/radio/sendpattern.cc (1.16), elements/standard/align.cc
+	(1.18), elements/standard/averagecounter.cc (1.13),
+	elements/standard/block.cc (1.21), elements/standard/burster.cc
+	(1.26), elements/standard/checklength.cc (1.15),
+	elements/standard/checkpaint.cc (1.20),
+	elements/standard/compblock.cc (1.22), elements/standard/counter.cc
+	(1.32), elements/standard/delayshaper.cc (1.13),
+	elements/standard/delayunqueue.cc (1.20),
+	elements/standard/drivermanager.cc (1.34),
+	elements/standard/hashswitch.cc (1.12),
+	elements/standard/infinitesource.cc (1.45),
+	elements/standard/linkunqueue.cc (1.5),
+	elements/standard/messageelement.cc (1.3),
+	elements/standard/msqueue.cc (1.13), elements/standard/paint.cc
+	(1.21), elements/standard/painttee.cc (1.13),
+	elements/standard/pullswitch.cc (1.22),
+	elements/standard/randomerror.cc (1.24),
+	elements/standard/randomsample.cc (1.6),
+	elements/standard/randomsource.cc (1.20),
+	elements/standard/ratedsource.cc (1.50),
+	elements/standard/ratedsplitter.cc (1.20),
+	elements/standard/ratedunqueue.cc (1.25),
+	elements/standard/setannobyte.cc (1.4),
+	elements/standard/setpackettype.cc (1.4),
+	elements/standard/shaper.cc (1.33),
+	elements/standard/simplequeue.cc (1.9),
+	elements/standard/spinlockacquire.cc (1.7),
+	elements/standard/spinlockrelease.cc (1.7),
+	elements/standard/staticpullswitch.cc (1.12),
+	elements/standard/staticswitch.cc (1.12),
+	elements/standard/storedata.cc (1.2), elements/standard/strip.cc
+	(1.18), elements/standard/switch.cc (1.23),
+	elements/standard/tee.cc (1.22), elements/standard/timedsink.cc
+	(1.27), elements/standard/timedsource.cc (1.31),
+	elements/standard/unqueue.cc (1.27), elements/standard/unqueue2.cc
+	(1.13), elements/standard/unstrip.cc (1.7),
+	elements/tcpudp/checktcpheader.cc (1.18),
+	elements/tcpudp/checkudpheader.cc (1.18),
+	elements/tcpudp/dynudpipencap.cc (1.17),
+	elements/tcpudp/iprewriter.cc (1.40),
+	elements/tcpudp/settcpchecksum.cc (1.14),
+	elements/tcpudp/tcpipsend.cc (1.15), elements/tcpudp/tcprewriter.cc
+	(1.32), elements/tcpudp/udpipencap.cc (1.19),
+	elements/test/checkpacket.cc (1.3), elements/test/comparepackets.cc
+	(1.3), elements/test/queueyanktest.cc (1.2),
+	elements/userlevel/chattersocket.cc (1.17),
+	elements/userlevel/controlsocket.cc (1.53),
+	elements/userlevel/fromdump.cc (1.90),
+	elements/userlevel/fromfile.cc (1.6),
+	elements/userlevel/khandlerproxy.cc (1.15),
+	elements/userlevel/progressbar.cc (1.25),
+	elements/userlevel/todevice.cc (1.37), elements/userlevel/todump.cc
+	(1.55), elements/wifi/arptable.cc (1.2),
+	elements/wifi/autoratefallback.cc (1.3),
+	elements/wifi/collisiondetection.cc (1.3),
+	elements/wifi/copyrxstats.cc (1.4), elements/wifi/linktable.cc
+	(1.3), elements/wifi/probetxrate.cc (1.5), elements/wifi/rxstats.cc
+	(1.9), elements/wifi/settxrate.cc (1.15),
+	elements/wifi/txfeedbackstats.cc (1.4), elements/wifi/txstat.cc
+	(1.5), elements/wifi/wifidecap.cc (1.3), elements/wifi/wifiencap.cc
+	(1.5), elements/wifi/ap/associationresponder.cc (1.4),
+	elements/wifi/ap/beaconsource.cc (1.5),
+	elements/wifi/ap/openauthresponder.cc (1.3),
+	elements/wifi/ap/proberesponder.cc (1.5),
+	elements/wifi/ap/stationtable.cc (1.2),
+	elements/wifi/sr/counterflood.cc (1.2),
+	elements/wifi/sr/ecnqueue.cc (1.2), elements/wifi/sr/ettmetric.cc
+	(1.3), elements/wifi/sr/ettstat.cc (1.4),
+	elements/wifi/sr/flashflood.cc (1.2),
+	elements/wifi/sr/gatewayselector.cc (1.2),
+	elements/wifi/sr/inorderqueue.cc (1.2),
+	elements/wifi/sr/ipaddresscounter.cc (1.2),
+	elements/wifi/sr/localbroadcast.cc (1.2),
+	elements/wifi/sr/pflood.cc (1.2), elements/wifi/sr/setgateway.cc
+	(1.2), elements/wifi/sr/setsourceroute.cc (1.2),
+	elements/wifi/sr/srcr.cc (1.2), elements/wifi/sr/srforwarder.cc
+	(1.2), elements/wifi/sr/tokenqueue.cc (1.2),
+	elements/wifi/station/associationrequester.cc (1.4),
+	elements/wifi/station/beaconscanner.cc (1.4),
+	elements/wifi/station/openauthrequester.cc (1.3),
+	elements/wifi/station/proberequester.cc (1.4), etc/ron/changeuid.cc
+	(1.6), etc/ron/ipencap2.cc (1.7), etc/ron/ipencappaint.cc (1.6),
+	etc/ron/lookupiprouteron.cc (1.30), etc/ron/portclassifier.cc
+	(1.7), include/click/confparse.hh (1.51), lib/confparse.cc (1.130),
+	lib/element.cc (1.86), tools/click-align/alignclass.cc (1.17):
+	change cp_va_parse(..., 0) => cp_va_parse(..., cpEnd); cpEnd is
+	required on 64-bit machines (Qinghua Ye)
+
 2004-06-23 Wednesday 19:05  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/confparse.hh (1.50): remove !HAVE_64_BIT_LONG,
