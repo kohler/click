@@ -218,6 +218,7 @@ class FromDump : public Element { public:
     int read_buffer(ErrorHandler *);
     int read_into(void *, uint32_t, ErrorHandler *);
     bool read_packet(ErrorHandler *);
+    int initialize_failed(ErrorHandler *, const char *, ...);
 
     void prepare_times(const struct fake_bpf_timeval &);
 
