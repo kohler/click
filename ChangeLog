@@ -1,3 +1,15 @@
+2003-01-22 Wednesday 10:32  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: linktester.cc (1.1), linktester.hh (1.1),
+	linktestreceiver.cc (1.1), linktestreceiver.hh (1.1): wireless link
+	measurement els, a work in progress
+
+2003-01-22 Wednesday 10:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.26), dsdvroutetable.hh
+	(1.20): made optional GridGatewayInof and LinkTracker/LinkStat
+	element arguments into keyword args
+
 2003-01-21 Tuesday 02:07  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.40), ipsumdumpinfo.cc
