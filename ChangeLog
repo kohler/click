@@ -1,3 +1,8 @@
+2003-07-10 Thursday 23:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.59): use correct packets zie
+	for prediction
+
 2003-07-09 Wednesday 21:09  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/delivery_rate_table.hh (1.2): put right packet
