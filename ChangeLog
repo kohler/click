@@ -1,3 +1,18 @@
+2004-07-17 Saturday 14:08  John Bicket <jbicket@mit.edu>
+
+	* conf/gen_config_roofnet.pl (1.4), elements/wifi/arptable.cc
+	(1.3), elements/wifi/autoratefallback.cc (1.6),
+	elements/wifi/linktable.cc (1.5), elements/wifi/linktable.hh (1.4),
+	elements/wifi/madwifirate.cc (1.2), elements/wifi/probetxrate.cc
+	(1.9), elements/wifi/sr/ettmetric.cc (1.5),
+	elements/wifi/sr/ettmetric.hh (1.5), elements/wifi/sr/ettstat.cc
+	(1.6), elements/wifi/sr/flashflood.cc (1.3),
+	elements/wifi/sr/gatewayselector.cc (1.3),
+	elements/wifi/sr/linkmetric.hh (1.2), elements/wifi/sr/srcr.hh
+	(1.3), elements/wifi/sr/srforwarder.cc (1.3),
+	elements/wifi/sr/srforwarder.hh (1.2), elements/wifi/sr/srpacket.hh
+	(1.3): fix gen_config_roofnet.pl and make metrics 32 bits, not 16.
+
 2004-07-16 Friday 21:54  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/click/router.hh (1.62), lib/confparse.cc (1.132),
