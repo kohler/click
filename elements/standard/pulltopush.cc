@@ -18,6 +18,16 @@
 #include "elements/standard/scheduleinfo.hh"
 
 int
+PullToPush::configure(const String &conf, ErrorHandler *errh)
+{
+  _burst = 1;
+  return cp_va_parse(conf, this, errh,
+		     cpOptional,
+		     cpUnsigned, "burst size", &_burst,
+		     0);
+}
+
+int
 PullToPush::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, errh);
@@ -34,8 +44,9 @@ void
 PullToPush::run_scheduled()
 {
   // XXX reduce # of tickets if idle
-  if (Packet *p = input(0).pull())
-    output(0).push(p);
+  for (int i = 0; i < _burst; i++)
+    if (Packet *p = input(0).pull())
+      output(0).push(p);
   reschedule();
 }
 
