@@ -129,7 +129,8 @@ catch_signal(int sig)
   signal(sig, SIG_DFL);
   if (!started)
     kill(getpid(), sig);
-  router->please_stop_driver();
+  else
+    router->please_stop_driver();
 }
 }
 
