@@ -45,6 +45,7 @@ class FromDump : public Element { public:
   FILE *_fp;
   bool _timing;
   bool _swapped;
+    bool _stop;
   int _minor_version;
   int _linktype;
   

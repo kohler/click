@@ -50,7 +50,7 @@ ToDump::configure(const Vector<String> &conf, ErrorHandler *errh)
   String encap_type;
   _snaplen = 2000;
   if (cp_va_parse(conf, this, errh,
-		  cpString, "dump filename", &_filename,
+		  cpFilename, "dump filename", &_filename,
 		  cpOptional,
 		  cpUnsigned, "max packet length", &_snaplen,
 		  cpWord, "encapsulation type", &encap_type,

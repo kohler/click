@@ -78,7 +78,7 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  "TTL", cpBool, "print IP TTL?", &print_ttl,
 		  "SWAP", cpBool, "swap ICMP values when printing?", &_swap,
 #if CLICK_USERLEVEL
-		  "OUTFILE", cpString, "output filename", &_outfilename,
+		  "OUTFILE", cpFilename, "output filename", &_outfilename,
 #endif
 		  cpEnd) < 0)
     return -1;

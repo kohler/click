@@ -47,7 +47,7 @@ LocFromFile::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   String filename;
   int res = cp_va_parse(conf, this, errh,
-                        cpString, "filename",  &filename,
+                        cpFilename, "filename",  &filename,
                         cpEnd);
   if(res == 0){
     FILE *fp = fopen(filename.cc(), "r");

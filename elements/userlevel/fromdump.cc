@@ -46,10 +46,14 @@ int
 FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _timing = true;
+  _stop = false;
   return cp_va_parse(conf, this, errh,
-		     cpString, "dump file name", &_filename,
+		     cpFilename, "dump file name", &_filename,
 		     cpOptional,
 		     cpBool, "use original packet timing", &_timing,
+		     cpKeywords,
+		     "TIMING", cpBool, "use original packet timing", &_timing,
+		     "STOP", cpBool, "stop driver when done?", &_stop,
 		     0);
 }
 
@@ -193,6 +197,8 @@ FromDump::run_scheduled()
   _packet = read_packet(0);
   if (_packet)
     _task.fast_reschedule();
+  else if (_stop)
+      router()->please_stop_driver();
 }
 
 void
