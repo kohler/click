@@ -103,7 +103,7 @@ Hello::make_hello()
   int num_nbrs = 0;
   Vector<grid_nbr_entry> nbrs;
   if (_nbr) {
-    _nbr->get_nbrs(nbrs);
+    _nbr->get_nbrs(&nbrs);
     // don't count nbrs that are too many hops away
     for (int i = 0; i < nbrs.size(); i++) 
       if (nbrs[i].num_hops <= _hops)

@@ -6,40 +6,10 @@
  * Neighbor(TIMEOUT, ETH, IP [, MAX-HOPS])
  * =d
  *
- * Neighbor is an immediate neighbor routing protocol for Grid.  It
- * encapsulates and sends packets to immediate neighbors that it knows
- * about.  When Neighbor receives a Grid packet, it remembers the
- * sender's Grid address and MAC address in its neighbor table.
- *
- * TIMEOUT is the timeout in milliseconds for entries in the neighbor
- * table.  If a negative value is specified, neighbor entries are
- * never discard.  ETH and IP are this node's MAC (Ethernet) and Grid
- * (IP) addresses, respectively.
- *
- * A multi-hop neighbor table is maintained from Hello packet info,
- * with neighbors up to MAX-HOPS away.  MAX_HOPS defaults to 1.
- *
- * Neighbor expects and produces Grid packets with MAC headers on
- * input and output 0, expects IP packets annotated with a destination
- * address on input 1, and produces IP packets on output 1.
- *
- * Grid packets originate by this element need to have their location
- * and checksum information updated by some other element
- * (e.g. FixSrcLoc, SetGridChecksum).
- *
- * =e This example runs the neighbor protocol for a host with Grid
- * address 13.0.0.2 listening on eth0.  Note that you need a Hello
- * element so that Grid nodes can find out about each other initially.
- *
- * = nb :: Neighbor(0, 00:E0:98:09:27:C5, 13.0.0.2)
- * = q :: Queue -> ToDevice(eth0)
- * = FromDevice(eth0) -> Classifier(12/BABE) -> [0] nb [0] -> q
- * = FromLinux(...) -> [1] nb [1] -> Queue -> ToLinux
- * = Hello(...) -> q
- *
  * =a Hello 
  * =a FixSrcLoc 
  * =a SetGridChecksum
+ * =a LocalRoute
  */
 
 
@@ -91,23 +61,20 @@ public:
 
   void add_handlers();
   
-  void run_scheduled();
+  Packet *simple_action(Packet *);
 
-  void push(int port, Packet *);
-
-  // true iff nbr is an immediate neighbor we have heard from
-  bool knows_about(IPAddress nbr); 
-
-  void get_nbrs(Vector<grid_nbr_entry> &v) const;
+  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
+  void get_nbrs(Vector<grid_nbr_entry> *retval) const;
 
   int _timeout_jiffies; // -1 if we are not timing out entries
-
 private:
+  String get_nbrs();
+
   IPAddress _ipaddr;
   EtherAddress _ethaddr;
   int _max_hops;
 
-  void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 };
 
 #endif
+
