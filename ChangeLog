@@ -1,3 +1,11 @@
+2001-09-10 Monday 18:03  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/counter.hh (1.21): doc update
+
+2001-09-10 Monday 17:41  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/llrpc.h (1.12): s/unsigned/uint32_t/
+
 2001-09-10 Monday 15:06  Eddie Kohler <kohler@aciri.org>
 
 	* Makefile.in (1.100), etc/libclick/Makefile.in (1.7),
