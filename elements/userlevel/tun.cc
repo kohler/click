@@ -46,6 +46,7 @@ int
 Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
+		  cpString, "device name prefix", &_dev_prefix,
 		  cpIPAddress, "near address", &_near,
 		  cpIPAddress, "far address", &_far,
 		  cpEnd) < 0)
@@ -57,7 +58,7 @@ Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Tun::initialize(ErrorHandler *errh)
 {
-  _fd = alloc_tun(_near, _far, errh);
+  _fd = alloc_tun(_dev_prefix.cc(), _near, _far, errh);
   if (_fd < 0)
     return -1;
   if (input_is_pull(0))
@@ -84,8 +85,10 @@ Tun::selected(int fd)
   
   cc = read(_fd, b, sizeof(b));
   if(cc > 0){
-#ifdef __OpenBSD__
+#if defined (__OpenBSD__)
     Packet *p = Packet::make(b+4, cc-4);
+#elif defined (__linux__)
+    Packet *p = Packet::make(b+16, cc-16);
 #else
     Packet *p = Packet::make(b, cc);
 #endif
@@ -100,14 +103,14 @@ Tun::run_scheduled()
 {
   if (Packet *p = input(0).pull()) {
     push(0, p); 
-    reschedule();
   }
+  reschedule();
 }
 
 void
 Tun::push(int, Packet *p)
 {
-#ifdef __OpenBSD__
+#if defined (__OpenBSD__)
   char big[2048];
   int af;
 
@@ -119,6 +122,22 @@ Tun::push(int, Packet *p)
   memcpy(big, &af, 4);
   memcpy(big+4, p->data(), p->length());
   if(write(_fd, big, p->length()+4) != (int)p->length()+4){
+    perror("write tun");
+  }
+#elif defined(__linux__)
+  /*
+   * Ethertap is linux equivalent of Tun; wants ethernet header plus 2
+   * alignment bytes 
+   */
+  char big[2048];
+
+  if(p->length()+16 >= sizeof(big)){
+    fprintf(stderr, "bimtun writetun pkt too big\n");
+    return;
+  }
+  bzero(big, 16);
+  memcpy(big+16, p->data(), p->length());
+  if(write(_fd, big, p->length()+16) != (int)p->length()+16){
     perror("write tun");
   }
 #else
@@ -135,14 +154,14 @@ Tun::push(int, Packet *p)
  * Exits on failure.
  */
 int
-Tun::alloc_tun(struct in_addr near, struct in_addr far,
+Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far,
                ErrorHandler *errh)
 {
   int i, fd, yes = 1;
   char tmp[512], tmp0[64], tmp1[64];;
 
   for(i = 0; i < 32; i++){
-    sprintf(tmp, "/dev/tun%d", i);
+    sprintf(tmp, "/dev/%s%d", dev_prefix, i);
     fd = open(tmp, 2);
     if(fd >= 0){
 #ifdef TUNSIFINFO
@@ -165,9 +184,15 @@ Tun::alloc_tun(struct in_addr near, struct in_addr far,
 #else
       return errh->error("not configured for non-blocking IO");
 #endif
+
       strcpy(tmp0, inet_ntoa(near));
       strcpy(tmp1, inet_ntoa(far));
-      sprintf(tmp, "ifconfig tun%d %s %s up", i, tmp0, tmp1);
+#if defined(__linux__)
+      // XXX don't know what to do with far address 
+      sprintf(tmp, "ifconfig %s%d %s up", dev_prefix, i, tmp0);
+#else
+      sprintf(tmp, "ifconfig %s%d %s %s up", dev_prefix, i, tmp0, tmp1);
+#endif
       if(system(tmp) != 0){
         close(fd);
         return errh->error("failed: %s", tmp);
@@ -176,7 +201,7 @@ Tun::alloc_tun(struct in_addr near, struct in_addr far,
     }
   }
 
-  return errh->error("could not allocate a free /dev/tun* device");
+  return errh->error("could not allocate a free /dev/%s* device", dev_prefix);
 }
 
 EXPORT_ELEMENT(Tun)

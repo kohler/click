@@ -3,9 +3,9 @@
 
 /*
  * =c
- * Tun(near-address, far-address)
+ * Tun(dev-prefix, near-address, far-address)
  * =d
- * Reads and writes packets from/to a /dev/tun* device.
+ * Reads and writes packets from/to a /dev/<dev-prefix>* device.
  * This allows a user-level Click to hand packets to the
  * ordinary kernel IP packet processing code.
  * A Tun will also transfer packets from the kernel IP
@@ -44,12 +44,12 @@ class Tun : public Element {
   void run_scheduled();
 
  private:
-  String _dev;
+  String _dev_prefix;
   IPAddress _near;
   IPAddress _far;
   int _fd;
 
-  int alloc_tun(struct in_addr near, struct in_addr far, ErrorHandler *errh);
+  int alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far, ErrorHandler *errh);
 };
 
 #endif
