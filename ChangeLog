@@ -1,3 +1,18 @@
+2004-06-19 Saturday 14:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: sortedsched.cc (1.8), sortedsched.hh
+	(1.6), staticthreadsched.hh (1.6), threadmonitor.cc (1.7): rename
+	SortedTaskSched->BalanceThreadSched (old name still works);
+	reenable BalanceThreadSched, because it might actually work now
+	(but still remains untested).  Note that the new BalanceThreadSched
+	algorithm is quite different from the old SortedTaskSched
+	algorithm, partially because there's no list of "all tasks in the
+	system" any more.  (Note that SortedTaskSched didnt even work
+	before, really: if tasks were dynamically created and deleted it
+	could crash, since it released a lock too early.)  Now, rather than
+	sort *all* tasks, we repeatedly load balance tasks from the
+	"worst-off" thread onto the "best-off" thread.
+
 2004-06-18 Friday 16:30  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/linuxmodule/: sortedsched.cc (1.7), sortedsched.hh
