@@ -1,3 +1,9 @@
+2003-02-01 Saturday 18:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.30), dsdvroutetable.hh
+	(1.24), linkstat.cc (1.15): Adapt DSDVRouteTable to kernel-click;
+	remove all use of floating point
+
 2003-02-01 Saturday 01:51  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.29), fixdstloc.cc (1.12),
