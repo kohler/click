@@ -1,3 +1,8 @@
+2002-10-26 Saturday 12:47  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/clickfs.cc (1.21): fix linuxmodule locking error:
+	soft lock on the configuration lock
+
 2002-10-24 Thursday 17:32  Eddie Kohler <kohler@icir.org>
 
 	* tools/lib/eclasst.cc (1.21): correct referencecounting so
