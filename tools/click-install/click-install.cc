@@ -428,7 +428,10 @@ particular purpose.\n");
 	FILE *f = fopen(tmpnam.cc(), "w");
 	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
 	fclose(f);
-	String cmdline = "/sbin/insmod -o " + insmod_name + " " + tmpnam;
+	String cmdline = "/sbin/insmod ";
+	if (output_map)
+	  cmdline += "-m ";
+	cmdline += "-o " + insmod_name + " " + tmpnam;
 	int retval = system(cmdline);
 	if (retval != 0)
 	  errh->fatal("`insmod %s' failed", module_name.cc());
@@ -457,7 +460,10 @@ particular purpose.\n");
 	}
 	if (verbose)
 	  errh->message("Installing package %s (%s)", key.cc(), package.cc());
-	String cmdline = "/sbin/insmod " + package;
+	String cmdline = "/sbin/insmod ";
+	if (output_map)
+	  cmdline += "-m ";
+	cmdline += package;
 	int retval = system(cmdline);
 	if (retval != 0)
 	  errh->fatal("`insmod %s' failed: %s", package.cc(), strerror(errno));
