@@ -412,9 +412,11 @@ FromDump::uninitialize()
 void
 FromDump::set_active(bool active)
 {
-    _active = active;
-    if (active && output_is_push(0) && !_task.scheduled())
-	_task.reschedule();
+    if (_active != active) {
+	_active = active;
+	if (active && output_is_push(0) && !_task.scheduled())
+	    _task.reschedule();
+    }
 }
 
 void
@@ -650,7 +652,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	      return errh->error("`active' should be Boolean");
       }
       case STOP_THUNK:
-	fd->_active = false;
+	fd->set_active(false);
 	fd->router()->please_stop_driver();
 	return 0;
       case EXTEND_INTERVAL_THUNK: {
