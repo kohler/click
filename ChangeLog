@@ -1,3 +1,7 @@
+2001-11-02 Friday 15:45  Eddie Kohler <kohler@aciri.org>
+
+	* doc/: mkwebdoc.pl (1.20), mkwebdoc.pl (1.21): webdoc update
+
 2001-11-01 Thursday 19:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridheaderinfo.cc (1.2), gridheaderinfo.hh (1.2):
