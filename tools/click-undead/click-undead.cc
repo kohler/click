@@ -354,9 +354,8 @@ remove_redundant_tee_ports(RouterT *r, int tindex, bool is_pull_tee,
     Vector<int> hnext;
     Vector<String> args;
     r->find_connection_vector_from(ei, hnext);
-    r->econfiguration(ei) = "";
     
-    for (int p = (is_pull_tee ? 1 : 0); p < hnext.size(); p++)
+    for (int p = hnext.size() - 1; p >= (is_pull_tee ? 1 : 0); p--)
       if (hnext[p] == -1 || (hnext[p] >= 0 && r->etype(r->hookup_from(hnext[p]).idx) == idle_tindex)) {
 	// remove that tee port
 	int bad_connection = hnext[p];
@@ -367,7 +366,6 @@ remove_redundant_tee_ports(RouterT *r, int tindex, bool is_pull_tee,
 	if (bad_connection >= 0)
 	  r->kill_connection(bad_connection);
 	hnext.pop_back();
-	p--;
       }
     
     if (hnext.size() == 1) {
@@ -383,8 +381,9 @@ remove_redundant_tee_ports(RouterT *r, int tindex, bool is_pull_tee,
       changed = true;
     }
 
-    // save number of inputs so we don't attach new Idles
+    // save number of outputs so we don't attach new Idles
     element_noutputs.insert(r->ename(ei), hnext.size());
+    r->econfiguration(ei) = String(hnext.size());
   }
 
   return changed;
