@@ -57,7 +57,7 @@ class LookupGeographicGridRoute : public Element {
 
 private:
 
-  void forward_grid_packet(Packet *packet, IPAddress dest_ip);
+  bool get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth) const;
 
   UpdateGridRoutes *_rt;
   EtherAddress _ethaddr;

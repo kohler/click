@@ -77,6 +77,7 @@ public:
     String s() const 
     { return eth.s() + " -- " + ip.s() + " -- " + String(last_updated_jiffies); }
   };
+
   typedef BigHashMap<IPAddress, NbrEntry> Table;
   Table _addresses; // immediate nbrs
   /* 
@@ -92,14 +93,28 @@ public:
     bool sent_new;
     grid_nbr_entry nbr;
   };
+
   typedef BigHashMap<IPAddress, far_entry> FarTable;
-  FarTable _nbrs; // immediate and multihop nbrs
+  FarTable _rtes; // immediate and multihop nbrs
   /* 
-   * _nbrs is our routing table; its information is maintained by
+   * _rtes is our routing table; its information is maintained by
    * processing Grid Hello (GRID_LR_HELLO) packets only.  some
-   * invariants: any entry listed as one hop in _nbrs has an entry in
+   * invariants: any entry listed as one hop in _rtes has an entry in
    * _addresses.  this table should never include a broken route
-   * (indicated by num_hops == 0).  There may be entries with age 0 */
+   * (indicated by num_hops == 0).  There may be entries with age 0 
+   */
+
+  /*
+   * will leave _addresses and _rtes exposed to other code so we can
+   * eliminate implementing all the routing lookup logic in this
+   * class.  This class will only worry about keeping the tables
+   * updated.  This assumes single thread -- e.g. when we are looking
+   * up in the tables from other code, we will neve be in the middle
+   * of updating the table.  Also, the tables are public so the static
+   * read handlers can access them! -- perhaps eventually need a
+   * better design for accessing the table contents... 
+   */
+
 
   UpdateGridRoutes();
   ~UpdateGridRoutes();
@@ -116,9 +131,7 @@ public:
   
   Packet *simple_action(Packet *);
 
-  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
-  bool get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth) const;
-  void get_nbrs(Vector<grid_nbr_entry> *retval) const;
+  void get_rtes(Vector<grid_nbr_entry> *retval) const;
 
   IPAddress _ipaddr;
   EtherAddress _ethaddr;
@@ -126,8 +139,6 @@ public:
 private:
   int _timeout; // -1 if we are not timing out entries
   int _timeout_jiffies;
-
-  String get_nbrs();
 
   int _max_hops;
 

@@ -173,6 +173,43 @@ LookupLocalGridRoute::add_handlers()
   add_default_handlers(true);
 }
 
+bool
+LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
+{
+  assert(dest_eth != 0);
+
+  // is the destination an immediate nbr?
+  UpdateGridRoutes::NbrEntry *ne = _nbr->_addresses.findp(dest_ip);
+  if (ne != 0) {
+    click_chatter("%s: found immediate nbr %s for next hop for %s",
+                  id().cc(),
+                  ne->ip.s().cc(),
+                  dest_ip.s().cc());
+    *dest_eth = ne->eth;
+    return true;
+  }
+  if (ne == 0) {
+    // not an immediate nbr, search multihop nbrs
+    UpdateGridRoutes::far_entry *fe = _nbr->_rtes.findp(dest_ip);
+    if (fe != 0) {
+      // we know how to get to this dest, look up MAC addr for next hop
+      ne = _nbr->_addresses.findp(IPAddress(fe->nbr.next_hop_ip));
+      if (ne != 0) {
+	*dest_eth = ne->eth;
+	click_chatter("%s: trying to use next hop %s for %s",
+		      id().cc(),
+		      ne->ip.s().cc(),
+		      dest_ip.s().cc());
+	return true;
+      }
+      else {
+	click_chatter("%s: dude, MAC nbr table and routing table are not consistent!", id().cc());
+      }
+    }
+  }
+  return false;
+}
+
 
 void
 LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
@@ -195,7 +232,7 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
 
   EtherAddress next_hop_eth;
-  bool found_next_hop = _nbr->get_next_hop(dest_ip, &next_hop_eth);
+  bool found_next_hop = get_next_hop(dest_ip, &next_hop_eth);
 
   if (found_next_hop) {
     struct click_ether *eh = (click_ether *) packet->data();

@@ -56,6 +56,7 @@ class LookupLocalGridRoute : public Element {
 
 private:
 
+  bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 
   UpdateGridRoutes *_nbr;

@@ -22,7 +22,6 @@
 #include "elements/standard/scheduleinfo.hh"
 #include "router.hh"
 #include "grid.hh"
-#include "filterbyrange.hh"
 
 
 UpdateGridRoutes::UpdateGridRoutes() : Element(1, 2), _max_hops(3), 
@@ -162,12 +161,12 @@ UpdateGridRoutes::simple_action(Packet *packet)
        * update far nbr info with this hello sender info -- list sender as
        * its own next hop.
        */
-      far_entry *fe = _nbrs.findp(ipaddr);
+      far_entry *fe = _rtes.findp(ipaddr);
       if (fe == 0) {
 	// we don't already know about it, so add it
 	/* XXX not using HashMap2 very efficiently --- fix later */
-	_nbrs.insert(ipaddr, far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1, ntohl(hlo->seq_no))));
-	fe = _nbrs.findp(ipaddr);
+	_rtes.insert(ipaddr, far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1, ntohl(hlo->seq_no))));
+	fe = _rtes.findp(ipaddr);
 	fe->nbr.loc = gh->loc;
 	fe->nbr.age = decr_age(ntohl(hlo->age), grid_hello::MIN_AGE_DECREMENT);
       } else { 
@@ -207,7 +206,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
              old broken route info we received */
 
 	  IPAddress broken_ip(curr->ip);
-	  fe = _nbrs.findp(broken_ip);
+	  fe = _rtes.findp(broken_ip);
 	  if (fe != 0) {
 	    if (ntohl(curr->seq_no) > fe->nbr.seq_no && fe->nbr.next_hop_ip == gh->ip) {
 	      // invalidate a route we have through this next hop
@@ -243,11 +242,11 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	  continue; // skip this one, we don't care about nbrs too many hops away
 
 	IPAddress curr_ip(curr->ip);
-	fe = _nbrs.findp(curr_ip);
+	fe = _rtes.findp(curr_ip);
 	if (fe == 0) {
 	  // we don't already know about this nbr
-	  _nbrs.insert(curr_ip, far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, curr->num_hops + 1, ntohl(curr->seq_no))));
-	  fe =_nbrs.findp(curr_ip);
+	  _rtes.insert(curr_ip, far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, curr->num_hops + 1, ntohl(curr->seq_no))));
+	  fe =_rtes.findp(curr_ip);
 	  fe->nbr.loc = curr->loc;
 	  fe->nbr.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
 	}
@@ -273,7 +272,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
 
       // remove the broken routes
       for (int i = 0; i < broken_rtes.size(); i++)
-	assert(_nbrs.remove(broken_rtes[i]));
+	assert(_rtes.remove(broken_rtes[i]));
     }
     break;
     
@@ -298,7 +297,7 @@ print_rtes(Element *e, void *)
   UpdateGridRoutes *n = (UpdateGridRoutes *) e;
   
   String s;
-  for (UpdateGridRoutes::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = n->_rtes.first(); iter; iter++) {
     UpdateGridRoutes::far_entry f = iter.value();
     s += IPAddress(f.nbr.ip).s() 
       + " next_hop=" + IPAddress(f.nbr.next_hop_ip).s() 
@@ -353,96 +352,12 @@ UpdateGridRoutes::add_handlers()
 
 
 
-bool
-UpdateGridRoutes::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
-{
-  assert(dest_eth != 0);
-
-  // is the destination an immediate nbr?
-  NbrEntry *ne = _addresses.findp(dest_ip);
-  if (ne != 0) {
-    click_chatter("%s: found immediate nbr %s for next hop for %s",
-                  id().cc(),
-                  ne->ip.s().cc(),
-                  dest_ip.s().cc());
-    *dest_eth = ne->eth;
-    return true;
-  }
-  if (ne == 0) {
-    // not an immediate nbr, search multihop nbrs
-    far_entry *fe = _nbrs.findp(dest_ip);
-    if (fe != 0) {
-      // we know how to get to this dest, look up MAC addr for next hop
-      ne = _addresses.findp(IPAddress(fe->nbr.next_hop_ip));
-      if (ne != 0) {
-	*dest_eth = ne->eth;
-	click_chatter("%s: trying to use next hop %s for %s",
-		      id().cc(),
-		      ne->ip.s().cc(),
-		      dest_ip.s().cc());
-	return true;
-      }
-      else {
-	click_chatter("%s: dude, MAC nbr table and routing table are not consistent!", id().cc());
-      }
-    }
-  }
-  return false;
-}
-
-
-bool 
-UpdateGridRoutes::get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth) const
-{
-  /*
-   * search through table for all nodes we have routes to and for whom
-   * we know the position.  of these, choose the node closest to the
-   * destination location to send the packet to.  
-   */
-  IPAddress next_hop;
-  double d = 0;
-  bool found_one = false;
-  for (FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
-    const far_entry &fe = iter.value();
-    if (fe.nbr.loc_err < 0)
-      continue; // negative err means don't believe info at all
-    double new_d = FilterByRange::calc_range(dest_loc, fe.nbr.loc);
-    if (!found_one) {
-      found_one = true;
-      d = new_d;
-      next_hop = fe.nbr.next_hop_ip;
-    }
-    else if (new_d < d) {
-      d = new_d;
-      next_hop = fe.nbr.next_hop_ip;
-    }
-  }
-  if (!found_one)
-    return false;
-
-  /* XXX fooey, we may actually send the packet backwards here even
-     though we choose a next hop to some node which is closest to
-     ultimate dest.  the issues is: we can't mark the packet with some
-     intermediate destination address, only the next hop and ultimate
-     destination... how to `fix' the phase of the packet so we can
-     make progree guarantees? */
-
-  // find the MAC address
-  NbrEntry *nent = _addresses.findp(next_hop);
-  if (nent == 0) {
-    click_chatter("%s: dude, MAC nbr table and routing table are not consistent (get_next_geographic_hop)", id().cc());
-    return false;
-  }
-  *dest_eth = nent->eth;
-  return true;
-} 
-
 
 void
-UpdateGridRoutes::get_nbrs(Vector<grid_nbr_entry> *retval) const
+UpdateGridRoutes::get_rtes(Vector<grid_nbr_entry> *retval) const
 {
   assert(retval != 0);
-  for (UpdateGridRoutes::FarTable::Iterator iter = _nbrs.first(); iter; iter++)
+  for (UpdateGridRoutes::FarTable::Iterator iter = _rtes.first(); iter; iter++)
     retval->push_back(iter.value().nbr);
 }
 
@@ -466,7 +381,7 @@ UpdateGridRoutes::expire_hook(unsigned long thunk)
   UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
 
   // decrement the ages of the route entries
-  for (UpdateGridRoutes::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = n->_rtes.first(); iter; iter++) {
     // XXX yucky
     *((unsigned int *) &(iter.value().nbr.age)) = decr_age(iter.value().nbr.age, EXPIRE_TIMER_PERIOD);
   }
@@ -506,7 +421,7 @@ UpdateGridRoutes::expire_routes()
   // find expired routing entries -- either we have had the entry for
   // too long, or it has been flying around the whole network for too
   // long, or we have expired the next hop from our immediate neighbor
-  for (UpdateGridRoutes::FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = _rtes.first(); iter; iter++) {
     assert(iter.value().nbr.num_hops > 0);
     if (jiff - iter.value().last_updated_jiffies > _timeout_jiffies ||
 	iter.value().nbr.age == 0 ||
@@ -529,7 +444,7 @@ UpdateGridRoutes::expire_routes()
   // remove expired route table entry
   for (int i = 0; i < expired_nbrs.size(); i++) {
     click_chatter("%s: expiring route entry for %s", id().cc(), IPAddress(expired_nbrs[i].ip).s().cc());
-    assert(_nbrs.remove(expired_nbrs[i].ip));
+    assert(_rtes.remove(expired_nbrs[i].ip));
   }
 
   return expired_nbrs;
@@ -544,7 +459,7 @@ UpdateGridRoutes::hello_hook(unsigned long thunk)
   n->expire_routes();
 
   Vector<grid_nbr_entry> rte_entries;
-  for (UpdateGridRoutes::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = n->_rtes.first(); iter; iter++) {
     /* XXX if everyone is using the same max-hops parameter, we could
        leave out all of our entries that are exactly max-hops hops
        away, because we know those entries will be greater than
@@ -580,9 +495,9 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
 
   _num_updates_sent++;
 
-  int num_nbrs = rte_info.size();
+  int num_rtes = rte_info.size();
   int psz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
-  psz += sizeof(grid_nbr_entry) * num_nbrs;
+  psz += sizeof(grid_nbr_entry) * num_rtes;
 
   WritablePacket *p = Packet::make(psz);
   memset(p->data(), 0, p->length());
@@ -600,8 +515,8 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   memcpy(&gh->ip, _ipaddr.data(), 4);
 
   grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
-  assert(num_nbrs <= 255);
-  hlo->num_nbrs = (unsigned char) num_nbrs;
+  assert(num_rtes <= 255);
+  hlo->num_nbrs = (unsigned char) num_rtes;
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
   hlo->seq_no = htonl(_seq_no);
 
@@ -618,7 +533,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (p->data() + sizeof(click_ether) +
 					     sizeof(grid_hdr) + sizeof(grid_hello));
-  for (int i = 0; i < num_nbrs; i++) {
+  for (int i = 0; i < num_rtes; i++) {
     *curr = rte_info[i];
     curr->seq_no = htonl(curr->seq_no);
     curr->age = htonl(curr->age);
@@ -636,9 +551,9 @@ UpdateGridRoutes::make_hello()
   
   expire_routes();
 
-  int num_nbrs =_nbrs.count();
+  int num_rtes =_rtes.count();
 
-  psz += sizeof(grid_nbr_entry) * num_nbrs;
+  psz += sizeof(grid_nbr_entry) * num_rtes;
 
   WritablePacket *p = Packet::make(psz);
   memset(p->data(), 0, p->length());
@@ -656,11 +571,11 @@ UpdateGridRoutes::make_hello()
   memcpy(&gh->ip, _ipaddr.data(), 4);
 
   grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
-  assert(num_nbrs <= 255);
-  hlo->num_nbrs = (unsigned char) num_nbrs;
+  assert(num_rtes <= 255);
+  hlo->num_rtes = (unsigned char) num_rtes;
 #if 1
-  click_chatter("num_nbrs = %d , _hops = %d, nbrs.count() = %d",
-		num_nbrs, _max_hops, _nbrs.count());
+  click_chatter("num_rtes = %d , _hops = %d, rtes.count() = %d",
+		num_rtes, _max_hops, _nbrs.count());
 #endif
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
   hlo->seq_no = htonl(_seq_no);
@@ -673,7 +588,7 @@ UpdateGridRoutes::make_hello()
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (p->data() + sizeof(click_ether) +
 					     sizeof(grid_hdr) + sizeof(grid_hello));
-  for (UpdateGridRoutes::FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = _rtes.first(); iter; iter++) {
     /* XXX if everyone is using the same max-hops parameter, we could
        leave out all of our entries that are exactly max-hops hops
        away, because we know those entries will be greater than

@@ -63,7 +63,7 @@ struct grid_hdr {
 
   unsigned int ip;          // Sender's IP address.
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
-  int loc_err;              // Error ra dius of position, in metres.  if negative, don't believe loc
+  int loc_err;              // Error radius of position, in metres.  if negative, don't believe loc
   unsigned short total_len; // Of the whole packet, starting at grid_hdr.
                             // Why do we need total_len? What about byte order? -- for cksum.  network order.
   unsigned short cksum;     // Over the whole packet, starting at grid_hdr.

@@ -23,6 +23,7 @@
 #include "grid.hh"
 #include "router.hh"
 #include "glue.hh"
+#include "filterbyrange.hh"
 
 LookupGeographicGridRoute::LookupGeographicGridRoute() : Element(1, 3), _rt(0)
 {
@@ -136,7 +137,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
    * addresses.  
    */
   EtherAddress next_hop_eth;
-  bool found_next_hop = _rt->get_next_geographic_hop(dest_ip, encap->dst_loc, &next_hop_eth);
+  bool found_next_hop = get_next_geographic_hop(dest_ip, encap->dst_loc, &next_hop_eth);
 
   if (found_next_hop) {
     struct click_ether *eh = (click_ether *) xp->data();
@@ -153,6 +154,56 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     output(1).push(xp);
   }
 }
+
+
+bool 
+LookupGeographicGridRoute::get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, 
+						   EtherAddress *dest_eth) const
+{
+  /*
+   * search through table for all nodes we have routes to and for whom
+   * we know the position.  of these, choose the node closest to the
+   * destination location to send the packet to.  
+   */
+  IPAddress next_hop;
+  double d = 0;
+  bool found_one = false;
+  for (UpdateGridRoutes::FarTable::Iterator iter = _rt->_rtes.first(); iter; iter++) {
+    const UpdateGridRoutes::far_entry &fe = iter.value();
+    if (fe.nbr.loc_err < 0)
+      continue; // negative err means don't believe info at all
+    double new_d = FilterByRange::calc_range(dest_loc, fe.nbr.loc);
+    if (!found_one) {
+      found_one = true;
+      d = new_d;
+      next_hop = fe.nbr.next_hop_ip;
+    }
+    else if (new_d < d) {
+      d = new_d;
+      next_hop = fe.nbr.next_hop_ip;
+    }
+  }
+  if (!found_one)
+    return false;
+
+  /* XXX fooey, we may actually send the packet backwards here even
+     though we choose a next hop to some node which is closest to
+     ultimate dest.  the issues is: we can't mark the packet with some
+     intermediate destination address, only the next hop and ultimate
+     destination... how to `fix' the phase of the packet so we can
+     make progree guarantees? */
+
+  // find the MAC address
+  UpdateGridRoutes::NbrEntry *nent = _rt->_addresses.findp(next_hop);
+  if (nent == 0) {
+    click_chatter("%s: dude, MAC nbr table and routing table are not consistent (get_next_geographic_hop)", id().cc());
+    return false;
+  }
+  *dest_eth = nent->eth;
+  return true;
+} 
+
+
 
 LookupGeographicGridRoute *
 LookupGeographicGridRoute::clone() const
@@ -174,10 +225,6 @@ LookupGeographicGridRoute::add_handlers()
  * ``lookup-and-modify-packet'' element that lets me plug in the
  * appropriate visitors... i guess i could use the iterators... */
 
-void
-LookupGeographicGridRoute::forward_grid_packet(Packet *, IPAddress)
-{
-}
 
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LookupGeographicGridRoute)
