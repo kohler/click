@@ -211,7 +211,7 @@ init_module()
   Router::add_global_read_handler("cycles", read_cycles, 0);
   Router::add_global_write_handler("stop", write_stop, 0);
   Router::add_global_read_handler("errors", read_errors, 0);
-  Router::change_handler_flags(0, -1, "errors", 0, HANDLER_REREAD);
+  Router::change_handler_flags(0, "errors", 0, HANDLER_REREAD);
 
   // filesystem interface
 #if 0

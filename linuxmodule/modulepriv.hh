@@ -30,10 +30,10 @@ CLICK_CXX_UNPROTECT
 # define MDEBUG(args...) /* nada */
 #endif
 
-#define HANDLER_REREAD			(Router::Handler::FIRST_USER_FLAG)
-#define HANDLER_NEED_READ		(Router::Handler::FIRST_USER_FLAG << 1)
-#define HANDLER_SPECIAL_INODE		(Router::Handler::FIRST_USER_FLAG << 2)
-#define HANDLER_WRITE_UNLIMITED		(Router::Handler::FIRST_USER_FLAG << 3)
+#define HANDLER_REREAD			(Router::Handler::DRIVER_FLAG_0)
+#define HANDLER_NEED_READ		(Router::Handler::DRIVER_FLAG_1)
+#define HANDLER_SPECIAL_INODE		(Router::Handler::DRIVER_FLAG_2)
+#define HANDLER_WRITE_UNLIMITED		(Router::Handler::DRIVER_FLAG_3)
 
 extern ErrorHandler *click_logged_errh;
 void click_clear_error_log();

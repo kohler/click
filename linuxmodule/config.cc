@@ -221,8 +221,8 @@ click_init_config()
   Router::add_global_read_handler("config", read_config, 0);
   Router::add_global_write_handler("config", write_config, 0);
   Router::add_global_write_handler("hotconfig", write_config, (void *)1);
-  Router::change_handler_flags(0, -1, "config", 0, HANDLER_REREAD | HANDLER_WRITE_UNLIMITED);
-  Router::change_handler_flags(0, -1, "hotconfig", 0, HANDLER_WRITE_UNLIMITED);
+  Router::change_handler_flags(0, "config", 0, HANDLER_REREAD | HANDLER_WRITE_UNLIMITED);
+  Router::change_handler_flags(0, "hotconfig", 0, HANDLER_WRITE_UNLIMITED);
   Router::add_global_read_handler("list", read_list, 0);
   Router::add_global_read_handler("flatconfig", read_flatconfig, 0);
   
