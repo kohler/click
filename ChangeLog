@@ -1,3 +1,10 @@
+2002-09-05 Thursday 14:06  Eddie Kohler <kohler@icir.org>
+
+	* include/click/bighashmap.cc (1.16),
+	include/click/bighashmap_arena.hh (1.8), lib/bighashmap_arena.cc
+	(1.10), lib/router.cc (1.132): add reference counting to
+	BHM_Arenas, to support the swap operation
+
 2002-09-03 Tuesday 07:26  Eddie Kohler <kohler@icir.org>
 
 	* lib/bitvector.cc (1.17): nitlet
