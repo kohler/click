@@ -24,6 +24,13 @@ Suppressor::~Suppressor()
 {
 }
 
+void
+Suppressor::notify_ninputs(int i)
+{
+  set_ninputs(i);
+  set_noutputs(i);
+}
+
 Bitvector
 Suppressor::forward_flow(int i) const
 {

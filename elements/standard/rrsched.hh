@@ -1,6 +1,6 @@
 #ifndef RRSCHED_HH
 #define RRSCHED_HH
-#include "unlimelement.hh"
+#include "element.hh"
 
 /*
  * =c
@@ -16,7 +16,7 @@
  * =a StrideSched
  */
 
-class RRSched : public UnlimitedElement {
+class RRSched : public Element {
   
  public:
   
@@ -25,14 +25,13 @@ class RRSched : public UnlimitedElement {
   
   const char *class_name() const		{ return "RoundRobinSched"; }
   const char *processing() const		{ return PULL; }
-  
-  bool unlimited_inputs() const			{ return true; }
+  void notify_ninputs(int);
   
   RRSched *clone() const			{ return new RRSched; }
   
   Packet *pull(int port);
 
-private:
+ private:
 
   int _next;
   

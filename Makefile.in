@@ -115,7 +115,6 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	lib/subvector.hh \
 	lib/timedelement.cc lib/timedelement.hh \
 	lib/timer.cc lib/timer.hh \
-	lib/unlimelement.cc lib/unlimelement.hh \
 	lib/vector.cc lib/vector.hh lib/vectori.cc lib/vectorv.cc \
 	userlevel/Makefile.in \
 	userlevel/click.cc \

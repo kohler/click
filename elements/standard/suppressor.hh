@@ -1,8 +1,8 @@
 #ifndef SUPPRESSER_HH
 #define SUPPRESSER_HH
-#include "unlimelement.hh"
+#include "element.hh"
 
-class Suppressor : public UnlimitedElement {
+class Suppressor : public Element {
   
   fd_set _suppressed;
   
@@ -13,8 +13,7 @@ class Suppressor : public UnlimitedElement {
   
   const char *class_name() const		{ return "Suppressor"; }
   const char *processing() const		{ return "a/a#"; }
-  bool unlimited_inputs() const			{ return true; }
-  bool unlimited_outputs() const		{ return true; }
+  void notify_ninputs(int);
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
   

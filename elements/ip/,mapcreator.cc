@@ -28,12 +28,16 @@ MappingCreator::RWInfo::~RWInfo()
 {
 }
 
+void
+MappingCreator::notify_ninputs(int i)
+{
+  set_ninputs(i);
+  set_noutputs(i);
+}
+
 int
 MappingCreator::initialize(ErrorHandler *errh)
 {
-  if (ninputs() != noutputs())
-    return errh->error("MappingCreator must have as many inputs as outputs");
-
   for (int i = 0; i < ninputs(); i++) {
     Vector<Element *> rewriters;
     CastElementFilter filter("Rewriter");

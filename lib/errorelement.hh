@@ -1,6 +1,6 @@
 #ifndef ERRORELEMENT_HH
 #define ERRORELEMENT_HH
-#include "unlimelement.hh"
+#include "element.hh"
 
 /*
  * =c
@@ -12,7 +12,7 @@
  * spurious error messages.
  */
 
-class ErrorElement : public UnlimitedElement {
+class ErrorElement : public Element {
   
  public:
   
@@ -20,9 +20,8 @@ class ErrorElement : public UnlimitedElement {
   
   const char *class_name() const		{ return "Error"; }
   const char *processing() const		{ return AGNOSTIC; }
-
-  bool unlimited_inputs() const			{ return true; }
-  bool unlimited_outputs() const		{ return true; }
+  void notify_ninputs(int);
+  void notify_noutputs(int);
   
   ErrorElement *clone() const;
   int configure(const String &, ErrorHandler *);

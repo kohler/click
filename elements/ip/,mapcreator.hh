@@ -1,7 +1,6 @@
 #ifndef MAPPINGCREATOR_HH
 #define MAPPINGCREATOR_HH
-
-#include "unlimelement.hh"
+#include "element.hh"
 #include "rewriter.hh"
 
 /*
@@ -25,7 +24,7 @@
  * =a Rewriter 
  */
 
-class MappingCreator : public UnlimitedElement {
+class MappingCreator : public Element {
   
   class RWInfo {
   public:
@@ -49,11 +48,9 @@ class MappingCreator : public UnlimitedElement {
   
   const char *class_name() const		{ return "MappingCreator"; }
   const char *processing() const		{ return PUSH; }
+  void notify_ninputs(int);
   
   MappingCreator *clone() const			{ return new MappingCreator; }
-
-  bool unlimited_inputs() const			{ return true; }
-  bool unlimited_outputs() const		{ return true; }
 
   virtual int initialize(ErrorHandler *);
   void add_handlers();

@@ -1,18 +1,18 @@
 #ifndef BROADCAST_HH
 #define BROADCAST_HH
-#include "unlimelement.hh"
+#include "element.hh"
 
 /*
  * =c
  * Broadcast()
  * =io
- * Has unlimited inputs and outputs. All of them are push.
+ * Has one input and an unlimited number of outputs.
  * =d
  * Sends a copy of each input packet to every output.
  * =a Tee
  */
 
-class Broadcast : public UnlimitedElement {
+class Broadcast : public Element {
   
  public:
   
@@ -20,10 +20,8 @@ class Broadcast : public UnlimitedElement {
   ~Broadcast()					{ }
   
   const char *class_name() const		{ return "Broadcast"; }
-  const char *processing() const	{ return PUSH; }
-  
-  bool unlimited_inputs() const			{ return true; }
-  bool unlimited_outputs() const		{ return true; }
+  const char *processing() const		{ return PUSH; }
+  void notify_noutputs(int);
   
   Broadcast *clone() const;
   

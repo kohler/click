@@ -3,10 +3,6 @@
 // Patterns for the Click pattern optimizer (click-xform) that change
 // common sequences of IP-related elements into single combination elements.
 
-// These patterns do not quite work: our CheckIPHeader elements now take
-// configuration arguments to specify invalid source addresses, but we
-// haven't updated BigIn to support this.
-
 // To transform a router configuration according to these patterns, run
 //     % click-xform -p ip.clickpat ROUTER > TRANSFORMED-ROUTER
 

@@ -1,14 +1,14 @@
 #ifndef HASHDEMUX_HH
 #define HASHDEMUX_HH
-#include "unlimelement.hh"
+#include "element.hh"
 
 /*
  * =c
- * HashDemux(offset, length)
+ * HashDemux(OFFSET, LENGTH)
  * =d
  * Can have any number of outputs.
  * Chooses the output on which to emit each packet based on
- * a hash of the bytes at the indicated offset.
+ * a hash of the LENGTH bytes starting at OFFSET.
  * Could be used for stochastic fair queuing.
  * =e
  * This element expects IP packets and chooses the output
@@ -17,7 +17,7 @@
  * = HashDemux(16, 4)
  */
 
-class HashDemux : public UnlimitedElement {
+class HashDemux : public Element {
 
   int _offset;
   int _length;
@@ -27,12 +27,11 @@ class HashDemux : public UnlimitedElement {
   HashDemux();
   
   const char *class_name() const		{ return "HashDemux"; }
-  const char *processing() const	{ return PUSH; }
-  bool unlimited_outputs() const		{ return true; }
+  const char *processing() const		{ return PUSH; }
+  void notify_noutputs(int);
   
   HashDemux *clone() const;
   int configure(const String &, ErrorHandler *);
-  int initialize(ErrorHandler *);
   
   void push(int port, Packet *);
   

@@ -1,6 +1,6 @@
 #ifndef PRIOSCHED_HH
 #define PRIOSCHED_HH
-#include "unlimelement.hh"
+#include "element.hh"
 
 /*
  * =c
@@ -18,7 +18,7 @@
  * =a StrideSched
  */
 
-class PrioSched : public UnlimitedElement {
+class PrioSched : public Element {
   
  public:
   
@@ -26,9 +26,8 @@ class PrioSched : public UnlimitedElement {
   ~PrioSched();
   
   const char *class_name() const		{ return "PrioSched"; }
-  const char *processing() const	{ return PULL; }
-  
-  bool unlimited_inputs() const			{ return true; }
+  const char *processing() const		{ return PULL; }
+  void notify_ninputs(int);
   
   PrioSched *clone() const			{ return new PrioSched; }
   

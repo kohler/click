@@ -24,6 +24,12 @@ PrioSched::~PrioSched()
 {
 }
 
+void
+PrioSched::notify_ninputs(int i)
+{
+  set_ninputs(i);
+}
+
 Packet *
 PrioSched::pull(int)
 {

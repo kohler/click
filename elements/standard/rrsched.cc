@@ -25,6 +25,12 @@ RRSched::~RRSched()
 {
 }
 
+void
+RRSched::notify_ninputs(int i)
+{
+  set_ninputs(i);
+}
+
 Packet *
 RRSched::pull(int)
 {

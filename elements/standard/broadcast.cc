@@ -23,6 +23,12 @@ Broadcast::clone() const
 }
 
 void
+Broadcast::notify_noutputs(int i)
+{
+  set_noutputs(i);
+}
+
+void
 Broadcast::push(int, Packet *p)
 {
   int n = noutputs();

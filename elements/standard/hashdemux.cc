@@ -19,14 +19,21 @@
 #include "confparse.hh"
 
 HashDemux::HashDemux()
-  : UnlimitedElement(1, 0), _offset(-1)
+  : _offset(-1)
 {
+  set_ninputs(1);
 }
 
 HashDemux *
 HashDemux::clone() const
 {
   return new HashDemux;
+}
+
+void
+HashDemux::notify_noutputs(int i)
+{
+  set_noutputs(i < 1 ? 1 : i);
 }
 
 int
@@ -39,16 +46,6 @@ HashDemux::configure(const String &conf, ErrorHandler *errh)
     return -1;
   if (_length == 0)
     return errh->error("length must be > 0");
-  return 0;
-}
-
-int
-HashDemux::initialize(ErrorHandler *errh)
-{
-  if (_offset < 0)
-    return errh->error("not configured");
-  if (noutputs() == 0)
-    return errh->error("at least one output required");
   return 0;
 }
 
