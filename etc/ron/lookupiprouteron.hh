@@ -126,7 +126,7 @@ public:
 
   TableEntry() {valid = 1; all_answered = 1;}
 
-  bool is_old() const        { return (probe_time + ROUTE_TIMEOUT*1000
+  bool is_old() const        { return (probe_time + ROUTE_TIMEOUT
 				       < click_jiffies());}
   bool is_waiting() const    { return (waiting.size() > 0); } // waiting for a different probe
   bool is_pending() const    { return (outstanding_syns > 0);}
