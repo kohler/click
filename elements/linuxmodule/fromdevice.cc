@@ -212,6 +212,7 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
       kr->_self_cycles += c1 - c0;
 #endif
 
+#ifndef CLICK_POLLDEV
       // Call scheduled things.
       // This causes a bit of batching, so that not every packet causes
       // Queue to put ToDevice on the work list.
@@ -224,6 +225,7 @@ click_FromDevice_in(struct notifier_block *nb, unsigned long backlog_len,
 	  current_router->run_scheduled();
 	called_times = 0;
       }
+#endif
     }
   
 #if CLICK_STATS > 0 || XCYC > 0
