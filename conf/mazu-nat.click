@@ -78,7 +78,7 @@ elementclass SniffGatewayDevice {
 extern_dev :: SniffGatewayDevice(extern:eth);
 intern_dev :: SniffGatewayDevice(intern:eth);
 
-ip_to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
+to_linux :: EtherEncap(0x0800, 1:1:1:1:1:1, intern)
 	-> ToLinux;
 
 
@@ -139,13 +139,13 @@ ip_to_intern :: GetIPAddress(16)
 
 // to outside world or gateway from inside network
 rw[0] -> ip_to_extern_class :: IPClassifier(dst host intern, -);
-  ip_to_extern_class[0] -> ip_to_linux;
+  ip_to_extern_class[0] -> to_linux;
   ip_to_extern_class[1] -> ip_to_extern;
 // to server
 rw[1] -> ip_to_intern;
 // only accept packets from outside world to gateway
 rw[2] -> IPClassifier(dst host extern)
-	-> ip_to_linux;
+	-> to_linux;
 
 // tcp_rw is used only for FTP control traffic
 tcp_rw[0] -> ip_to_extern;
@@ -191,15 +191,15 @@ intern_arp_class[2] -> Strip(14)
   	-> CheckIPHeader
 	-> ip_from_intern;
 ip_from_intern[0] -> my_ip_from_intern; // stuff for 10.0.0.1 from inside
-  my_ip_from_intern[0] -> ip_to_linux; // SSH traffic to gw
+  my_ip_from_intern[0] -> to_linux; // SSH traffic to gw
   my_ip_from_intern[1] -> [2]rw; // HTTP(S) traffic, redirect to server instead
   my_ip_from_intern[2] -> Discard;  // DNS (no DNS allowed yet)
-  my_ip_from_intern[3] -> ip_to_linux; // auth traffic, gw will reject it
+  my_ip_from_intern[3] -> to_linux; // auth traffic, gw will reject it
   my_ip_from_intern[4] -> [3]rw; // other TCP or UDP traffic, send to linux
                              	// but pass it thru rw in case it is the
 				// returning redirect HTTP traffic from server
-  my_ip_from_intern[5] -> ip_to_linux; // non TCP or UDP traffic, to linux
-ip_from_intern[1] -> ip_to_linux; // other net 10 stuff, like broadcasts
+  my_ip_from_intern[5] -> to_linux; // non TCP or UDP traffic, to linux
+ip_from_intern[1] -> to_linux;	// other net 10 stuff, like broadcasts
 ip_from_intern[2] -> FTPPortMapper(tcp_rw, rw, to_world_pat 0 1)
 		-> [0]tcp_rw;	// FTP traffic for outside needs special
 				// treatment
