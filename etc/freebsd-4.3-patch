@@ -1,0 +1,553 @@
+
+Index: net/if_var.h
+--- net/if_var.h.orig	Thu Aug  2 19:47:22 2001
++++ net/if_var.h	Mon Jul 23 15:32:49 2001
+@@ -137,6 +137,40 @@
+ 		__P((void *));
+ 	int	(*if_resolvemulti)	/* validate/resolve multicast */
+ 		__P((struct ifnet *, struct sockaddr **, struct sockaddr *));
++
++	/*
++	 * Modifications for Click, mostly polling support.
++	 */
++	int	(*if_click_rcv)		/* pass packets to Click */
++		__P((struct ifnet *, struct mbuf *));
++	int	(*if_click_poll_on)	/* enable polling */
++		__P((struct ifnet *));
++	int	(*if_click_poll_off)	/* disable polling */
++		__P((struct ifnet *));
++	struct mbuf *(*if_click_rx_poll)/* poll for received packets */
++		__P((struct ifnet *, int *want));
++	int	(*if_click_rx_refill)	/* refill the rx ring */
++		__P((struct ifnet *));
++	int	(*if_click_tx_queue)	/* queue a packet on the dma ring */
++		__P((struct ifnet *, struct mbuf *));
++	int	(*if_click_tx_clean)	/* clean the tx dma ring */
++		__P((struct ifnet *));
++	int	(*if_click_tx_start)	/* start transmitting */
++		__P((struct ifnet *));
++	int	(*if_click_tx_eob)	/* signal the end of a batch */
++		__P((struct ifnet *));
++	/*
++	 * Polling flag: negative if polling is not supported, zero
++	 * if polling supported but not enabled, and positive if
++	 * polling enabled (actual value reflects polling protocol
++	 * version.)
++	 */
++	int	polling;
++
++	/*
++	 * End of Click polling additions
++	 */
++
+ 	struct	ifqueue if_snd;		/* output queue */
+ 	struct	ifqueue *if_poll_slowq;	/* input queue for slow devices */
+ 	struct	ifprefixhead if_prefixhead; /* list of prefixes per if */
+
+Index: net/if_ethersubr.c
+--- net/if_ethersubr.c.orig	Thu Aug  2 19:47:46 2001
++++ net/if_ethersubr.c	Sat Jul 14 19:30:26 2001
+@@ -430,6 +430,12 @@
+ 		bpf_mtap(ifp, (struct mbuf *)&mh);
+ 	}
+ 
++	/* Pass the packet to Click */
++	if (ifp->if_click_rcv != NULL) {
++		if (0 == (*ifp->if_click_rcv)(ifp, m))
++			return;
++	}
++
+ 	/* Handle ng_ether(4) processing, if any */
+ 	if (ng_ether_input_p != NULL) {
+ 		(*ng_ether_input_p)(ifp, &m, eh);
+
+Index: pci/if_fxpvar.h
+--- pci/if_fxpvar.h.orig	Thu Aug  2 19:45:57 2001
++++ pci/if_fxpvar.h	Wed Jul 25 14:48:58 2001
+@@ -53,6 +53,7 @@
+ 	bus_space_handle_t sc_sh;	/* bus space handle */
+ 	struct mbuf *rfa_headm;		/* first mbuf in receive frame area */
+ 	struct mbuf *rfa_tailm;		/* last mbuf in receive frame area */
++	int rfa_bufs;			/* number of rfa's allocated */
+ 	struct fxp_cb_tx *cbl_first;	/* first active TxCB in list */
+ 	int tx_queued;			/* # of active TxCB's */
+ 	int need_mcsetup;		/* multicast filter needs programming */
+
+Index: pci/if_fxpreg.h
+--- pci/if_fxpreg.h.orig	Thu Aug  2 19:46:24 2001
++++ pci/if_fxpreg.h	Tue Jul 24 20:19:47 2001
+@@ -97,6 +97,9 @@
+ #define FXP_SCB_COMMAND_RU_BASE		6
+ #define FXP_SCB_COMMAND_RU_RBDRESUME	7
+ 
++#define FXP_SCB_INTRCNTL_ENABLE		0
++#define FXP_SCB_INTRCNTL_DISABLE	1
++
+ /*
+  * Command block definitions
+  */
+
+Index: pci/if_fxp.c
+--- pci/if_fxp.c.orig	Thu Aug  2 19:46:53 2001
++++ pci/if_fxp.c	Mon Jul 30 16:45:37 2001
+@@ -99,6 +99,7 @@
+ 
+ #endif /* __NetBSD__ */
+ 
++
+ #ifdef __alpha__		/* XXX */
+ /* XXX XXX NEED REAL DMA MAPPING SUPPORT XXX XXX */
+ #undef vtophys
+@@ -237,6 +238,15 @@
+ static void fxp_stats_update	__P((void *));
+ static void fxp_mc_setup	__P((struct fxp_softc *));
+ 
++static int fxp_poll_on		__P((struct ifnet *));
++static int fxp_poll_off		__P((struct ifnet *));
++static struct mbuf *fxp_rx_poll	__P((struct ifnet *, int *want));
++static int fxp_rx_refill	__P((struct ifnet *));
++static int fxp_tx_queue		__P((struct ifnet *, struct mbuf *));
++static int fxp_tx_clean		__P((struct ifnet *));
++static int fxp_tx_start		__P((struct ifnet *));
++static int fxp_tx_eob		__P((struct ifnet *));
++
+ /*
+  * Set initial transmit threshold at 64 (512 bytes). This is
+  * increased by 64 (512 bytes) at a time, to maximum of 192
+@@ -269,7 +279,7 @@
+  * Number of receive frame area buffers. These are large so chose
+  * wisely.
+  */
+-#define FXP_NRFABUFS	64
++#define FXP_NRFABUFS	16
+ 
+ /*
+  * Maximum number of seconds that the receiver can be idle before we
+@@ -616,6 +626,19 @@
+ 	ifp->if_watchdog = fxp_watchdog;
+ 
+ 	/*
++	 * Set up for Click polling support
++	 */
++	ifp->if_click_poll_on = fxp_poll_on;
++	ifp->if_click_poll_off = fxp_poll_off;
++	ifp->if_click_rx_poll = fxp_rx_poll;
++	ifp->if_click_rx_refill = fxp_rx_refill;
++	ifp->if_click_tx_queue = fxp_tx_queue;
++	ifp->if_click_tx_clean = fxp_tx_clean;
++	ifp->if_click_tx_start = fxp_tx_start;
++	ifp->if_click_tx_eob = fxp_tx_eob;
++	ifp->polling = 0;
++
++	/*
+ 	 * Attach the interface.
+ 	 */
+ 	ether_ifattach(ifp, ETHER_BPF_SUPPORTED);
+@@ -836,6 +859,7 @@
+ 	/*
+ 	 * Pre-allocate our receive buffers.
+ 	 */
++	sc->rfa_bufs = 0;
+ 	for (i = 0; i < FXP_NRFABUFS; i++) {
+ 		if (fxp_add_rfabuf(sc, NULL) != 0) {
+ 			goto fail;
+@@ -1206,6 +1230,10 @@
+ 		return;
+ 	}
+ 
++	if (ifp->polling > 0) {
++		printf("Yo!  Interrupts while polling!\n");
++	}
++
+ 	while ((statack = CSR_READ_1(sc, FXP_CSR_SCB_STATACK)) != 0) {
+ #if defined(__NetBSD__)
+ 		claimed = 1;
+@@ -1261,6 +1289,7 @@
+ 				 */
+ 				sc->rfa_headm = m->m_next;
+ 				m->m_next = NULL;
++				sc->rfa_bufs--;
+ 
+ 				/*
+ 				 * Add a new buffer to the receive chain.
+@@ -1463,6 +1492,7 @@
+ 		m_freem(sc->rfa_headm);
+ 	sc->rfa_headm = NULL;
+ 	sc->rfa_tailm = NULL;
++	sc->rfa_bufs = 0;
+ 	for (i = 0; i < FXP_NRFABUFS; i++) {
+ 		if (fxp_add_rfabuf(sc, NULL) != 0) {
+ 			/*
+@@ -1487,9 +1517,11 @@
+ {
+ 	struct fxp_softc *sc = ifp->if_softc;
+ 
++	if (ifp->polling > 0)
++		return;
++
+ 	printf(FXP_FORMAT ": device timeout\n", FXP_ARGS(sc));
+ 	ifp->if_oerrors++;
+-
+ 	fxp_init(sc);
+ }
+ 
+@@ -1886,6 +1918,7 @@
+ 	} else {
+ 		sc->rfa_headm = m;
+ 	}
++	sc->rfa_bufs++;
+ 	sc->rfa_tailm = m;
+ 
+ 	return (m == oldm);
+@@ -2150,4 +2183,280 @@
+ 
+ 	ifp->if_timer = 2;
+ 	return;
++}
++
++/*
++ * Click polling code, mostly borrowed from the interrupt handling
++ * routines above, with some performance modifications.
++ *
++ * Currently, no buffer reuse is done: buffers are allocated in
++ * the driver in rx_refill and freed in tx_clean.  Probably some
++ * performance measurement is necessary to see whether it makes
++ * sense to save buffers manually.
++ */
++
++static struct mbuf *fxp_first_free_m(struct mbuf *m) {
++	while (m) {
++		struct fxp_rfa *rfa = (struct fxp_rfa *)
++						(m->m_ext.ext_buf +
++						 RFA_ALIGNMENT_FUDGE);
++
++		if (!(rfa->rfa_status & FXP_RFA_STATUS_C))
++			break;
++		m = m->m_next;
++	}
++
++	return m;
++}
++
++static int fxp_poll_on(struct ifnet *ifp) {
++	struct fxp_softc *sc = ifp->if_softc;
++
++	if (ifp->polling == 0) {
++		CSR_WRITE_1(sc, FXP_CSR_SCB_INTRCNTL, FXP_SCB_INTRCNTL_DISABLE);
++		ifp->polling = 2;
++	}
++
++	return 0;
++}
++
++static int fxp_poll_off(struct ifnet *ifp) {
++	struct fxp_softc *sc = ifp->if_softc;
++
++	if (ifp->polling > 0) {
++		CSR_WRITE_1(sc, FXP_CSR_SCB_INTRCNTL, FXP_SCB_INTRCNTL_ENABLE);
++		ifp->polling = 0;
++	}
++
++	return 0;
++}
++
++static struct mbuf *fxp_rx_poll(struct ifnet *ifp, int *want) {
++	struct fxp_softc *sc = ifp->if_softc;
++	int need = *want, got = 0;
++	struct mbuf *m, *m_list = NULL;
++	struct fxp_rfa *rfa;
++
++	/*
++	 * -- Check that there's a receive buffer to be collected.
++	 * -- Check that it's not the last buffer (in which case we
++	 *    can't use it: the card needs to DMA the next pointer
++	 *    out of this RFA!
++	 * -- Check if we've already collected enough packets.
++	 * -- Check that this RFA has been completed (ie the card
++	 *    has DMA'd something into this buffer.)
++	 */
++	while ((m = sc->rfa_headm) &&
++	       (m->m_next) &&
++	       (rfa = (struct fxp_rfa *)(m->m_ext.ext_buf +
++					 RFA_ALIGNMENT_FUDGE)) &&
++	       (got < need) &&
++	       (rfa->rfa_status & FXP_RFA_STATUS_C))
++	{
++		struct ether_header *eh;
++		int total_len;
++
++		/*
++		 * Remove first packet from the chain.
++		 */
++		sc->rfa_headm = m->m_next;
++		sc->rfa_bufs--;
++		m->m_next = NULL;
++
++/*printf("%p (%p) << from DMA ring\n", m->m_ext.ext_buf,
++sc->rfa_headm->m_ext.ext_buf);
++*/
++		/*
++		 * Compute the actual size of the packet,
++		 * verify that it's sane.
++		 */
++		total_len = rfa->actual_size & (MCLBYTES - 1);
++		if (total_len <
++		    sizeof(struct ether_header)) {
++printf("%p << packet too small\n", m->m_ext.ext_buf);
++			m_freem(m);
++			continue;
++		}
++
++		/*
++		 * Write out the mbuf packet header
++		 */
++		m->m_pkthdr.rcvif = ifp;
++		m->m_pkthdr.len = m->m_len = total_len;
++		eh = mtod(m, struct ether_header *);
++		m->m_data += sizeof(struct ether_header);
++		m->m_len -= sizeof(struct ether_header);
++		m->m_pkthdr.len = m->m_len;
++
++		/*
++		 * Tack this mbuf onto our return list.
++		 */
++		m->m_nextpkt = m_list;
++		m_list = m;
++		got++;
++	}
++
++	/*
++	 * Don't bother checking for RU stalls here: the only
++	 * failure mode should be "all the completed RFA's are
++	 * taken except the last one, and there are no more".
++	 * The refill will do an RU restart in that case.
++	 *
++	 * XXX why does it stall anyway?
++	 */
++
++	/*
++	 * Check if we're out of mbufs on the receive list..
++	 * Don't bother restarting RU if we don't actually
++	 * have any free buffers though.
++	 */
++	if (got == 0 && sc->rfa_headm) {
++		int rustat = (CSR_READ_1(sc, FXP_CSR_SCB_RUSCUS) & 0x3c) >> 2;
++		struct mbuf *m = fxp_first_free_m(sc->rfa_headm);
++
++		if (m && (rustat == FXP_SCB_RUS_NORESOURCES)) {
++			struct fxp_rfa *rfa2;
++
++			printf(FXP_FORMAT ": Rx stall in poll, restarting\n",
++			       FXP_ARGS(sc));
++
++			rfa2 = (struct fxp_rfa *) (m->m_ext.ext_buf +
++						   RFA_ALIGNMENT_FUDGE);
++			fxp_scb_wait(sc);
++if (rfa2->rfa_status & FXP_RFA_STATUS_C)
++printf("*** newly restarted rfa is already completed (pre)\n");
++			CSR_WRITE_4(sc, FXP_CSR_SCB_GENERAL,
++				    vtophys(rfa2));
++			CSR_WRITE_1(sc, FXP_CSR_SCB_COMMAND,
++				    FXP_SCB_COMMAND_RU_START);
++if (rfa2->rfa_status & FXP_RFA_STATUS_C)
++printf("*** newly restarted rfa is already completed (post)\n");
++		}
++else { if(rustat!=4)printf("RU status: %d\n", rustat); }
++	}
++
++	*want = got;
++	return m_list;
++}
++
++static int fxp_rx_refill(struct ifnet *ifp) {
++	struct fxp_softc *sc = ifp->if_softc;
++	struct mbuf *last_m;
++	int check_ru_stall = 0;
++
++	/*
++	 * Because rfa_tailm isn't always kept up-to-date, we only
++	 * use it if rfa_headm is valid (otherwise there aren't any
++	 * buffers in the RX DMA ring and the tail is null too.)
++	 */
++	last_m = sc->rfa_headm ? sc->rfa_tailm : NULL;
++
++	while (sc->rfa_bufs < FXP_NRFABUFS) {
++		int ret;
++
++		ret = fxp_add_rfabuf(sc, NULL);
++		/*
++		 * If we couldn't allocate more buffers,
++		 * exit, and print a warning.
++		 */
++		if (ret) {
++			printf(FXP_FORMAT ": Unable to get buffers in refill\n",
++			       FXP_ARGS(sc));
++			break;
++		}
++	}
++
++	/*
++	 * If there's no buffers on the RX ring, or if the last
++	 * buffer is already completed, we must check for an RU
++	 * stall.
++	 */
++	if (!last_m) {
++		check_ru_stall = 1;
++	} else {
++		struct fxp_rfa *rfa;
++
++		rfa = (struct fxp_rfa *)(last_m->m_ext.ext_buf +
++					 RFA_ALIGNMENT_FUDGE);
++		if (rfa->rfa_status & FXP_RFA_STATUS_C)
++			check_ru_stall = 1;
++	}
++
++	/*
++	 * If we didn't have any buffers at all to begin with,
++	 * the first newly-allocated buffer is now in rfa_headm,
++	 * otherwise it's in last_m->m_next.
++	 *
++	 * From this point, last_m points at the first buffer
++	 * we've just allocated (if any).
++	 */
++	if (last_m)
++		last_m = last_m->m_next;
++	else
++		last_m = sc->rfa_headm;
++
++	/*
++	 * If we have succeeded in allocating some receive buffers,
++	 * and we need to check the RU, do so now.
++	 */
++	if (check_ru_stall && last_m) {
++		int statack = CSR_READ_1(sc, FXP_CSR_SCB_STATACK);
++		struct mbuf *m = fxp_first_free_m(last_m);
++
++		if (m && (statack & FXP_SCB_STATACK_RNR)) {
++			struct fxp_rfa *rfa;
++
++			rfa = (struct fxp_rfa *) (m->m_ext.ext_buf +
++						  RFA_ALIGNMENT_FUDGE);
++			printf(FXP_FORMAT ": Rx stall in refill, restarting\n",
++			       FXP_ARGS(sc));
++
++if (rfa->rfa_status & FXP_RFA_STATUS_C)
++printf("*** newly restarted rfa(refill) is already completed (pre)\n");
++			fxp_scb_wait(sc);
++			CSR_WRITE_4(sc, FXP_CSR_SCB_GENERAL,
++				    vtophys(rfa));
++			CSR_WRITE_1(sc, FXP_CSR_SCB_COMMAND,
++				    FXP_SCB_COMMAND_RU_START);
++if (rfa->rfa_status & FXP_RFA_STATUS_C)
++printf("*** newly restarted rfa(refill) is already completed (post)\n");
++		}
++	}
++
++	return 0;
++}
++
++static int fxp_tx_queue(struct ifnet *ifp, struct mbuf *m) {
++	return 0;
++}
++
++static int fxp_tx_clean(struct ifnet *ifp) {
++	return 0;
++}
++
++static int fxp_tx_start(struct ifnet *ifp) {
++	struct fxp_softc *sc = ifp->if_softc;
++
++	/*
++	 * This should only be called if the Tx appears to be
++	 * stalling.  So, just wake up the command unit for
++	 * now.
++	 */
++	fxp_scb_wait(sc);
++	CSR_WRITE_1(sc, FXP_CSR_SCB_COMMAND, FXP_SCB_COMMAND_CU_RESUME);
++
++	return 0;
++}
++
++static int fxp_tx_eob(struct ifnet *ifp) {
++	struct fxp_softc *sc = ifp->if_softc;
++
++	/*
++	 * Wake up the command unit to transmit the newly chained
++	 * entries on the Tx list.
++	 */
++	fxp_scb_wait(sc);
++	CSR_WRITE_1(sc, FXP_CSR_SCB_COMMAND, FXP_SCB_COMMAND_CU_RESUME);
++
++	return 0;
+ }
+
+Index: sys/namei.h
+--- sys/namei.h.orig	Thu Aug  2 19:45:12 2001
++++ sys/namei.h	Tue Jul 31 14:51:31 2001
+@@ -40,6 +40,23 @@
+ #include <sys/queue.h>
+ #include <sys/uio.h>
+ 
++struct componentname {
++	/*
++	 * Arguments to lookup.
++	 */
++	u_long	cn_nameiop;	/* namei operation */
++	u_long	cn_flags;	/* flags to namei */
++	struct	proc *cn_proc;	/* process requesting lookup */
++	struct	ucred *cn_cred;	/* credentials */
++	/*
++	 * Shared between lookup and commit routines.
++	 */
++	char	*cn_pnbuf;	/* pathname buffer */
++	char	*cn_nameptr;	/* pointer to looked up name */
++	long	cn_namelen;	/* length of looked up component */
++	long	cn_consume;	/* chars to consume in lookup() */
++};
++
+ /*
+  * Encapsulation of namei parameters.
+  */
+@@ -75,22 +92,7 @@
+ 	 * information from the nameidata structure that is passed
+ 	 * through the VOP interface.
+ 	 */
+-	struct componentname {
+-		/*
+-		 * Arguments to lookup.
+-		 */
+-		u_long	cn_nameiop;	/* namei operation */
+-		u_long	cn_flags;	/* flags to namei */
+-		struct	proc *cn_proc;	/* process requesting lookup */
+-		struct	ucred *cn_cred;	/* credentials */
+-		/*
+-		 * Shared between lookup and commit routines.
+-		 */
+-		char	*cn_pnbuf;	/* pathname buffer */
+-		char	*cn_nameptr;	/* pointer to looked up name */
+-		long	cn_namelen;	/* length of looked up component */
+-		long	cn_consume;	/* chars to consume in lookup() */
+-	} ni_cnd;
++	struct componentname ni_cnd;
+ };
+ 
+ #ifdef _KERNEL
+@@ -148,12 +150,12 @@
+ static void NDINIT __P((struct nameidata *, u_long, u_long, enum uio_seg,
+ 	    const char *, struct proc *));
+ static __inline void
+-NDINIT(ndp, op, flags, segflg, namep, p)
+-	struct nameidata *ndp;
+-	u_long op, flags;
+-	enum uio_seg segflg;
+-	const char *namep;
+-	struct proc *p;
++NDINIT(struct nameidata *ndp,
++       u_long op,
++       u_long flags,
++       enum uio_seg segflg,
++       const char *namep,
++       struct proc *p)
+ {
+ 	ndp->ni_cnd.cn_nameiop = op;
+ 	ndp->ni_cnd.cn_flags = flags;

@@ -1,0 +1,27 @@
+#!/usr/bin/perl -w
+
+# make-bsd-patch
+
+# Make a patch file for a BSD kernel that adds our hooks.
+# The resulting output can be used thus:
+#  cd /sys
+#  patch -p0 -b < patch-file
+
+# List of files that we modified and that should be patched.
+# Each must be accompanied by a file.orig.
+my @files = (
+	"net/if_var.h",
+	"net/if_ethersubr.c",
+	"pci/if_fxpvar.h",
+	"pci/if_fxpreg.h",
+	"pci/if_fxp.c",
+	"sys/namei.h",
+	);
+
+$| = 1;
+my $f;
+chdir "/sys";
+foreach $f (@files) {
+    print "\nIndex: $f\n";
+    system("diff -u ${f}.orig $f");
+}

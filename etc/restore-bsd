@@ -1,0 +1,6 @@
+mv net/if_var.h{.orig,}
+mv net/if_ethersubr.c{.orig,}
+mv pci/if_fxpvar.h{.orig,}
+mv pci/if_fxpreg.h{.orig,}
+mv pci/if_fxp.c{.orig,}
+mv sys/namei.h{.orig,}
