@@ -1,3 +1,9 @@
+2003-04-23 Wednesday 10:55  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
+
+	* elements/standard/addressinfo.cc (1.25): Don't choke if user only
+	supplies just an ethernet or just an IP address.  Thanks to Kendy
+	Kutzner for the patch.
+
 2003-04-22 Tuesday 11:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridprobereplyreceiver.cc (1.12), linktracker.cc
