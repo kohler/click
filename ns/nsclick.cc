@@ -355,72 +355,33 @@ char* simclick_click_read_handler(simclick_click clickinst,
 				  const char* handlername,
 				  SIMCLICK_MEM_ALLOC memalloc,
 				  void* memparam) {
-  Router *r = ((SimState*)clickinst)->router;
-  Element *ep = 0;
-  String s,readresult;
-  // first search for the element name
-  for (int ei=0; ei < r->nelements(); ei++){
-    s = r->ename(ei);
-    if (s.equals(elementname, -1)){
-      ep = r->element(ei);
-      break;
-    }
-  }
-  if (!ep){
-    click_chatter("readhandler: Element %s not found", elementname);
+    Router *r = ((SimState*)clickinst)->router;
+    if (Element *e = r->find(elementname))
+	if (const Handler* h = r->handler(e, handlername))
+	    if (h->read_visible()) {
+		String readresult = h->call_read(e);
+		char* result = 0;
+		if (memalloc)
+		    result = (char*) memalloc(readresult.length() + 1, memparam);
+		else
+		    result = (char*) malloc(readresult.length() + 1);
+		strcpy(result, readresult.c_str());
+		return result;
+	    }
+    click_chatter("readhandler: Handler %s.%s not found", elementname, handlername);
     return 0;
-  }
-  // then search for handler name
-  String handler = String(elementname) + '.' + String(handlername);
-  for (int hi=0; hi < r->nhandlers(); hi++) {
-    if (r->handler(hi)->read_visible()){
-      if(r->handler(hi)->unparse_name(ep) == handler){
-	char* result = 0;
-	readresult = r->handler(hi)->call_read(ep);
-	if (memalloc) {
-	  result = (char*)memalloc(readresult.length() + 1,memparam);
-	}
-	else {
-	  result = (char*)malloc(readresult.length() + 1);
-	}
-	strcpy(result,readresult.cc());
-	return result;
-      }
-    }
-  }
-  click_chatter("readhandler: Handler %s not found", handler.cc());
-  return 0;
 }
 
 int simclick_click_write_handler(simclick_click clickinst,
 				 const char* elementname,
 				 const char* handlername,
 				 const char* writestring) {
-  Router *r = ((SimState*)clickinst)->router;
-  Element *ep = 0;
-  String s;
-  // XXX add checks for global handlers where elementname == NULL
-  //click_chatter("looking for element called '%s'", elementname);
-  for (int ei=0; ei < r->nelements(); ei++){
-    s = r->ename(ei);
-    //	click_chatter("considering %s", s.cc());
-    if (s.equals(elementname, -1)){
-      ep = r->element(ei);
-      break;
-    }
-  }
-  if (!ep){
-    //click_chatter("not found");
-    return(-1);
-  }
-  
-  String handler = String(elementname) + '.' + String(handlername);
-  //click_chatter("looking for handler called '%s'", handler.cc());
-  for (int hi=0; hi < r->nhandlers(); hi++)
-    if (r->handler(hi)->write_visible()){
-      //click_chatter("considering %s", r->handler(hi)->unparse_name(ep).cc());
-      if(r->handler(hi)->unparse_name(ep) == handler)
-	return r->handler(hi)->call_write(String(writestring), ep, ErrorHandler::default_handler());
-    }
-  return (-2);
+    Router *r = ((SimState*)clickinst)->router;
+    if (Element* e = r->find(elementname)) {
+	if (const Handler* h = r->handler(e, handlername))
+	    if (h->write_visible())
+		return h->call_write(writestring, e, ErrorHandler::default_handler());
+	return -2;		// no such handler
+    } else
+	return -1;		// no such element
 }
