@@ -31,14 +31,69 @@
 #include <click/click_tcp.h>
 #include <click/hashmap.hh>
 
+static HashMap<String, int> *wordmap;
+static int ip_filter_count;
+
+void
+IPFilter::initialize_wordmap()
+{
+  wordmap = new HashMap<String, int>(0);
+
+  wordmap->insert("host",	WT_TYPE | TYPE_HOST);
+  wordmap->insert("net",	WT_TYPE | TYPE_NET);
+  wordmap->insert("port",	WT_TYPE | TYPE_PORT);
+  wordmap->insert("proto",	WT_TYPE | TYPE_PROTO);
+  wordmap->insert("opt",	WT_TYPE | TYPE_TCPOPT);
+  wordmap->insert("tos",	WT_TYPE | TYPE_TOS);
+  wordmap->insert("dscp",	WT_TYPE | TYPE_DSCP);
+  wordmap->insert("type",	WT_TYPE | TYPE_ICMP_TYPE);
+  wordmap->insert("frag",	WT_TYPE | TYPE_IPFRAG);
+  wordmap->insert("unfrag",	WT_TYPE | TYPE_IPUNFRAG);
+  
+  wordmap->insert("icmp",	WT_PROTO | IP_PROTO_ICMP);
+  wordmap->insert("igmp",	WT_PROTO | IP_PROTO_IGMP);
+  wordmap->insert("ipip",	WT_PROTO | IP_PROTO_IPIP);
+  wordmap->insert("tcp",	WT_PROTO | IP_PROTO_TCP);
+  wordmap->insert("udp",	WT_PROTO | IP_PROTO_UDP);
+  
+  wordmap->insert("echo",	WT_PORT | 7);
+  wordmap->insert("discard",	WT_PORT | 9);
+  wordmap->insert("daytime",	WT_PORT | 13);
+  wordmap->insert("chargen",	WT_PORT | 19);
+  wordmap->insert("ftp-data",	WT_PORT | 20);
+  wordmap->insert("ftp",	WT_PORT | 21);
+  wordmap->insert("ssh",	WT_PORT | 22);
+  wordmap->insert("telnet",	WT_PORT | 23);
+  wordmap->insert("smtp",	WT_PORT | 25);
+  wordmap->insert("domain",	WT_PORT | 53);
+  wordmap->insert("dns",	WT_PORT | 53);
+  wordmap->insert("finger",	WT_PORT | 79);
+  wordmap->insert("www",	WT_PORT | 80);
+  wordmap->insert("auth",	WT_PORT | 113);
+  wordmap->insert("https",	WT_PORT | 443);
+
+  wordmap->insert("syn",	WT_TCPOPT | TH_SYN);
+  wordmap->insert("fin",	WT_TCPOPT | TH_FIN);
+  wordmap->insert("ack",	WT_TCPOPT | TH_ACK);
+  wordmap->insert("rst",	WT_TCPOPT | TH_RST);
+  wordmap->insert("psh",	WT_TCPOPT | TH_PUSH);
+  wordmap->insert("urg",	WT_TCPOPT | TH_URG);
+}
+
 IPFilter::IPFilter()
 {
   // no MOD_INC_USE_COUNT; rely on Classifier
+  if (ip_filter_count == 0)
+    initialize_wordmap();
+  ip_filter_count++;
 }
 
 IPFilter::~IPFilter()
 {
   // no MOD_DEC_USE_COUNT; rely on Classifier
+  ip_filter_count--;
+  if (ip_filter_count == 0)
+    delete wordmap;
 }
 
 IPFilter *
@@ -379,6 +434,241 @@ IPFilter::notify_noutputs(int n)
   set_noutputs(n);
 }
 
+/*
+ * expr ::= expr || expr
+ *	|   expr or expr
+ *	|   term
+ *	;
+ * term ::= term && term
+ *	|   term and term
+ *	|   term factor			// juxtaposition = and
+ *	|   term
+ * factor ::= ! factor
+ *	|   true
+ *	|   false
+ *	|   quals data
+ *	|   quals relop data
+ *	|   ( expr )
+ *	;
+ */
+
+int
+IPFilter::parse_expr(const Vector<String> &words, int pos,
+		     Vector<int> &tree, Primitive &prev_prim,
+		     ErrorHandler *errh, int argno)
+{
+  start_expr_subtree(tree);
+
+  while (1) {
+    pos = parse_term(words, pos, tree, prev_prim, errh, argno);
+    if (pos >= words.size())
+      break;
+    if (words[pos] == "or" || words[pos] == "||")
+      pos++;
+    else
+      break;
+  }
+
+  finish_expr_subtree(tree, false);
+  return pos;
+}
+
+int
+IPFilter::parse_term(const Vector<String> &words, int pos,
+		     Vector<int> &tree, Primitive &prev_prim,
+		     ErrorHandler *errh, int argno)
+{
+  start_expr_subtree(tree);
+
+  bool blank_ok = false;
+  while (1) {
+    int next = parse_factor(words, pos, tree, prev_prim, false, errh, argno);
+    if (next == pos)
+      break;
+    blank_ok = true;
+    if (next < words.size() && (words[next] == "and" || words[next] == "&&")) {
+      blank_ok = false;
+      next++;
+    }
+    pos = next;
+  }
+
+  if (!blank_ok)
+    errh->error("pattern %d: missing term", argno);
+  finish_expr_subtree(tree, true);
+  return pos;
+}
+
+int
+IPFilter::parse_factor(const Vector<String> &words, int pos,
+		       Vector<int> &tree, Primitive &prev_prim,
+		       bool negated, ErrorHandler *errh, int argno)
+{
+  // return immediately on last word, ")", "||", "or"
+  if (pos >= words.size() || words[pos] == ")" || words[pos] == "||" || words[pos] == "or")
+    return pos;
+
+  // easy cases
+  
+  // `true' and `false'
+  if (words[pos] == "true") {
+    add_expr(tree, 0, 0, 0);
+    if (negated)
+      negate_expr_subtree(tree);
+    return pos + 1;
+  }
+  if (words[pos] == "false") {
+    add_expr(tree, 0, 0, 0);
+    if (!negated)
+      negate_expr_subtree(tree);
+    return pos + 1;
+  }
+  // ! factor
+  if (words[pos] == "not" || words[pos] == "!") {
+    int next = parse_factor(words, pos + 1, tree, prev_prim, !negated, errh, argno);
+    if (next == pos + 1)
+      errh->error("pattern %d: missing factor after `%s'", argno, String(words[pos]).cc());
+    return next;
+  }
+  // ( expr )
+  if (words[pos] == "(") {
+    int next = parse_expr(words, pos + 1, tree, prev_prim, errh, argno);
+    if (next == pos + 1)
+      errh->error("pattern %d: missing expression after `('", argno);
+    if (next >= 0) {
+      if (next >= words.size() || words[next] != ")")
+	errh->error("pattern %d: missing `)'", argno);
+      else
+	next++;
+      if (negated)
+	negate_expr_subtree(tree);
+    }
+    return next;
+  }
+
+  // hard case
+  
+  // expect quals [relop] data
+  int first_pos = pos;
+  Primitive prim;
+
+  // collect qualifiers
+  for (; pos < words.size(); pos++) {
+    String wd = words[pos];
+    int wt = (*wordmap)[wd];
+
+    if ((wt & WT_TYPE_MASK) == WT_TYPE)
+      prim.set_type(wt & WT_DATA, argno, errh);
+
+    else if ((wt & WT_TYPE_MASK) == WT_PROTO) {
+      prim.set_net_proto(PROTO_IP, argno, errh);
+      prim.set_transp_proto(wt & WT_DATA, argno, errh);
+
+    } else if (wt & WT_TYPE_MASK)
+      break;
+
+    else if (wd == "src") {
+      if (pos < words.size() - 2 && (words[pos+2] == "dst" || words[pos+2] == "dest")) {
+	if (words[pos+1] == "and" || words[pos+1] == "&&") {
+	  prim.set_srcdst(SD_AND, argno, errh);
+	  pos += 2;
+	} else if (words[pos+1] == "or" || words[pos+1] == "||") {
+	  prim.set_srcdst(SD_OR, argno, errh);
+	  pos += 2;
+	} else
+	  prim.set_srcdst(SD_SRC, argno, errh);
+      } else
+	prim.set_srcdst(SD_SRC, argno, errh);
+    } else if (wd == "dst" || wd == "dest")
+      prim.set_srcdst(SD_DST, argno, errh);
+    
+    else if (wd == "ip")
+      prim.set_net_proto(PROTO_IP, argno, errh);
+    
+    else if (wd == "not" || wd == "!")
+      negated = !negated;
+      
+    else
+      break;
+  }
+
+  // prev_prim is not relevant if there were any qualifiers
+  if (pos != first_pos)
+    prev_prim.clear();
+  
+  // optional relational operation
+  String wd = (pos >= words.size() ? String() : words[pos]);
+  pos++;
+  prim._op = OP_EQ;
+  prim._op_negated = false;
+  if (wd == "=" || wd == "==")
+    /* nada */;
+  else if (wd == "!=")
+    prim._op_negated = true;
+  else if (wd == ">")
+    prim._op = OP_GT;
+  else if (wd == "<")
+    prim._op = OP_LT;
+  else if (wd == ">=") {
+    prim._op = OP_LT;
+    prim._op_negated = true;
+  } else if (wd == "<=") {
+    prim._op = OP_GT;
+    prim._op_negated = true;
+  } else
+    pos--;
+  
+  // now collect the actual data
+  if (pos < words.size()) {
+    wd = words[pos];
+    int wt = (*wordmap)[wd];
+    pos++;
+
+    if ((wt & WT_TYPE_MASK) == WT_PROTO) {
+      prim._data = DATA_PROTO;
+      prim._u.i = (wt & WT_DATA);
+
+    } else if ((wt & WT_TYPE_MASK) == WT_PORT) {
+      prim._data = DATA_PORT;
+      prim._u.i = (wt & WT_DATA);
+
+    } else if ((wt & WT_TYPE_MASK) == WT_TCPOPT) {
+      prim._data = DATA_TCPOPT;
+      prim._u.i = (wt & WT_DATA);
+
+    } else if (cp_integer(wd, &prim._u.i))
+      prim._data = DATA_INT;
+  
+    else if (cp_ip_address(wd, (unsigned char *)&prim._u.ip, this)) {
+      if (pos < words.size() - 1 && words[pos] == "mask"
+	  && cp_ip_address(words[pos+1], (unsigned char *)&prim._u.ipnet.mask, this)) {
+	pos += 2;
+	prim._data = DATA_IPNET;
+      } else if (prim._type == TYPE_NET && cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
+	prim._data = DATA_IPNET;
+      else
+	prim._data = DATA_IP;
+    
+    } else if (cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
+      prim._data = DATA_IPNET;
+
+    else
+      pos--;
+  }
+
+  if (pos == first_pos)
+    return errh->error("pattern %d: empty term near `%s'", argno, wd.cc());
+  
+  // add if it is valid
+  prim._negated = negated;
+  if (prim.check(argno, prev_prim, errh) >= 0) {
+    prim.add_exprs(this, tree);
+    prev_prim = prim;
+  }
+
+  return pos;
+}
+
 int
 IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -386,51 +676,6 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   // requires packet headers be aligned
   _align_offset = 0;
-
-  // create IP protocol hashmap
-  HashMap<String, int> type_map(-1);
-  type_map.insert("host", TYPE_HOST);
-  type_map.insert("net", TYPE_NET);
-  type_map.insert("port", TYPE_PORT);
-  type_map.insert("proto", TYPE_PROTO);
-  type_map.insert("opt", TYPE_TCPOPT);
-  type_map.insert("tos", TYPE_TOS);
-  type_map.insert("dscp", TYPE_DSCP);
-  type_map.insert("type", TYPE_ICMP_TYPE);
-  type_map.insert("frag", TYPE_IPFRAG);
-  type_map.insert("unfrag", TYPE_IPUNFRAG);
-  
-  HashMap<String, int> ip_proto_map(-1);
-  ip_proto_map.insert("icmp", IP_PROTO_ICMP);
-  ip_proto_map.insert("igmp", IP_PROTO_IGMP);
-  ip_proto_map.insert("ipip", IP_PROTO_IPIP);
-  ip_proto_map.insert("tcp", IP_PROTO_TCP);
-  ip_proto_map.insert("udp", IP_PROTO_UDP);
-  
-  HashMap<String, int> ip_port_map(-1);
-  ip_port_map.insert("echo", 7);
-  ip_port_map.insert("discard", 9);
-  ip_port_map.insert("daytime", 13);
-  ip_port_map.insert("chargen", 19);
-  ip_port_map.insert("ftp-data", 20);
-  ip_port_map.insert("ftp", 21);
-  ip_port_map.insert("ssh", 22);
-  ip_port_map.insert("telnet", 23);
-  ip_port_map.insert("smtp", 25);
-  ip_port_map.insert("domain", 53);
-  ip_port_map.insert("dns", 53);
-  ip_port_map.insert("finger", 79);
-  ip_port_map.insert("www", 80);
-  ip_port_map.insert("auth", 113);
-  ip_port_map.insert("https", 443);
-
-  HashMap<String, int> tcp_opt_map(-1);
-  tcp_opt_map.insert("syn", TH_SYN);
-  tcp_opt_map.insert("fin", TH_FIN);
-  tcp_opt_map.insert("ack", TH_ACK);
-  tcp_opt_map.insert("rst", TH_RST);
-  tcp_opt_map.insert("psh", TH_PUSH);
-  tcp_opt_map.insert("urg", TH_URG);
 
   Vector<int> tree;
   init_expr_subtree(tree);
@@ -440,7 +685,7 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
   //        |  ip | icmp | tcp | udp
   for (int argno = 0; argno < conf.size(); argno++) {
     Vector<String> words;
-    cp_spacevec(conf[argno], words);
+    cp_spacevec(conf[argno].lower(), words);
     separate_words(words);
 
     if (words.size() == 0) {
@@ -451,7 +696,7 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
     // get slot
     int slot = noutputs();
     {
-      String slotwd = cp_unquote(words[0]).lower();
+      String slotwd = cp_unquote(words[0]);
       if (slotwd == "allow") {
 	slot = 0;
 	if (noutputs() == 0)
@@ -469,183 +714,24 @@ IPFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	errh->error("unknown slot ID `%s' in pattern %d", slotwd.cc(), argno);
     }
 
-    // parse parens
-    Vector<int> parens;
-    parens.push_back(0);
-    Vector<int> negated;
-    negated.push_back(0);
     start_expr_subtree(tree);
 
     // check for "-"
     if (words.size() == 1 || (words.size() == 2 && words[1] == "-")
-	|| (words.size() == 2 && words[1].lower() == "any")
-	|| (words.size() == 2 && words[1].lower() == "all")) {
+	|| (words.size() == 2 && words[1] == "any")
+	|| (words.size() == 2 && words[1] == "all"))
       add_expr(tree, 0, 0, 0);
-      finish_expr_subtree(tree, parens.back() != '|', -slot);
-      continue;
+
+    else {
+      // start with a blank primitive
+      Primitive prev_prim;
+      
+      int pos = parse_expr(words, 1, tree, prev_prim, errh, argno);
+      if (pos < words.size())
+	errh->error("pattern %d: garbage after expression near `%s'", argno, String(words[pos]).cc());
     }
     
-    // start with a blank primitive
-    Primitive prev_prim;
-
-    // loop over primitives
-    for (int w = 1; w < words.size(); w++) {
-      Primitive prim;
-
-      // check for `not' and parentheses
-      bool negate = false, just_negated = false;
-      while (w < words.size() && (words[w] == "not" || words[w] == "!")) {
-	negate = !negate;
-	just_negated = true;
-	w++;
-      }
-      if (w < words.size() && words[w] == "(") {
-	start_expr_subtree(tree);
-	parens.push_back(0);
-	negated.push_back(negate);
-	continue;
-      } else if (w < words.size() && words[w] == ")") {
-	if (just_negated)
-	  errh->error("pattern %d: dangling `not'", argno);
-	if (parens.size() == 1)
-	  errh->error("pattern %d: too many `)'s", argno);
-	else {
-	  finish_expr_subtree(tree, parens.back() != '|');
-	  if (negated.back()) negate_expr_subtree(tree);
-	  parens.pop_back();
-	  negated.pop_back();
-	}
-	continue;
-      }
-
-      // collect qualifiers
-      for (; w < words.size(); w++) {
-	String wd = words[w];
-	if (type_map[wd] >= 0)
-	  prim.set_type(type_map[wd], argno, errh);
-
-	else if (wd == "src") {
-	  if (w < words.size() - 2 && (words[w+2] == "dst" || words[w+2] == "dest")) {
-	    if (words[w+1] == "and" || words[w+1] == "&&")
-	      prim.set_srcdst(SD_AND, argno, errh);
-	    else if (words[w+1] == "or" || words[w+1] == "||")
-	      prim.set_srcdst(SD_OR, argno, errh);
-	    else
-	      prim.set_srcdst(SD_SRC, argno, errh);
-	    w += 2;
-	  } else
-	    prim.set_srcdst(SD_SRC, argno, errh);
-	} else if (wd == "dst" || wd == "dest")
-	  prim.set_srcdst(SD_DST, argno, errh);
-
-	else if (wd == "ip")
-	  prim.set_net_proto(PROTO_IP, argno, errh);
-
-	else if (ip_proto_map[wd] >= 0) {
-	  prim.set_net_proto(PROTO_IP, argno, errh);
-	  prim.set_transp_proto(ip_proto_map[wd], argno, errh);
-
-	} else if (wd == "not" || wd == "!") {
-	  negate = !negate;
-	
-	} else
-	  break;
-      }
-      // end collect qualifiers
-
-      // optional relational operation
-      String wd = (w >= words.size() ? String() : words[w]);
-      w++;
-      prim._op = OP_EQ;
-      prim._op_negated = false;
-      if (wd == "=" || wd == "==")
-	/* nada */;
-      else if (wd == "!=")
-	prim._op_negated = true;
-      else if (wd == ">")
-	prim._op = OP_GT;
-      else if (wd == "<")
-	prim._op = OP_LT;
-      else if (wd == ">=") {
-	prim._op = OP_LT;
-	prim._op_negated = true;
-      } else if (wd == "<=") {
-	prim._op = OP_GT;
-	prim._op_negated = true;
-      } else
-	w--;
-      
-      // now collect the actual data
-      wd = (w >= words.size() ? String() : words[w]);
-      if (w >= words.size())
-	/* no extra data */;
-      
-      else if (wd == "and" || wd == "or" || wd == "&&" || wd == "||"
-	       || wd == "(" || wd == ")") {
-	/* no extra data */
-	w--;
-	
-      } else if (cp_integer(wd, &prim._u.i))
-	prim._data = DATA_INT;
-      
-      else if ((prim._u.i = ip_proto_map[wd]) >= 0)
-	prim._data = DATA_PROTO;
-      
-      else if ((prim._u.i = ip_port_map[wd]) >= 0)
-	prim._data = DATA_PORT;
-      
-      else if ((prim._u.i = tcp_opt_map[wd]) >= 0)
-	prim._data = DATA_TCPOPT;
-      
-      else if (cp_ip_address(wd, (unsigned char *)&prim._u.ip, this)) {
-	if (w < words.size() - 2 && words[w+1] == "mask"
-	    && cp_ip_address(words[w+2], (unsigned char *)&prim._u.ipnet.mask, this)) {
-	  w += 2;
-	  prim._data = DATA_IPNET;
-	} else if (prim._type == TYPE_NET && cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
-	  prim._data = DATA_IPNET;
-	else
-	  prim._data = DATA_IP;
-	
-      } else if (cp_ip_prefix(wd, (unsigned char *)&prim._u.ipnet.ip, (unsigned char *)&prim._u.ipnet.mask, this))
-	prim._data = DATA_IPNET;
-      
-      else
-	errh->error("pattern %d: syntax error near `%s'", argno, wd.cc());
-
-      // add if it is valid
-      prim._negated = negate;
-      if (prim.check(argno, prev_prim, errh) >= 0) {
-	prim.add_exprs(this, tree);
-	prev_prim = prim;
-      }
-      
-      // check for combining expression
-      while (w < words.size() - 1) {
-	String wd = words[w+1];
-	int next_combiner = 0;
-	if (words[w+1] == "and" || words[w+1] == "&&")
-	  next_combiner = '&';
-	else if (words[w+1] == "or" || words[w+1] == "||")
-	  next_combiner = '|';
-	else
-	  break;
-	if (parens.back() && next_combiner != parens.back())
-	  errh->error("pattern %d: must use parens to combine `and' and `or'", argno);
-	parens.back() = next_combiner;
-	w++;
-      }
-    }
-
-    if (parens.size() > 1)
-      errh->error("pattern %d: too many `('s", argno);
-    while (parens.size() > 1) {
-      finish_expr_subtree(tree, parens.back() != '|');
-      if (negated.back()) negate_expr_subtree(tree);
-      parens.pop_back();
-      negated.pop_back();
-    }
-    finish_expr_subtree(tree, parens.back() != '|', -slot);
+    finish_expr_subtree(tree, true, -slot);
   }
 
   finish_expr_subtree(tree, false, -noutputs(), -noutputs());

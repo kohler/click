@@ -104,6 +104,10 @@
 class IPFilter : public Classifier {
 
   enum {
+    WT_TYPE_MASK = 0xFFFF0000, WT_DATA = 0x0000FFFF,
+    WT_TYPE = 0x00010000, WT_PORT = 0x00020000,
+    WT_PROTO = 0x00030000, WT_TCPOPT = 0x00040000,
+    
     UNKNOWN = -1000,
     NONE = 0,
     
@@ -161,6 +165,15 @@ class IPFilter : public Classifier {
     
   };
 
+  static void initialize_wordmap();
+  
+  int parse_expr(const Vector<String> &, int, Vector<int> &, Primitive &,
+		 ErrorHandler *, int argno);
+  int parse_term(const Vector<String> &, int, Vector<int> &, Primitive &,
+		 ErrorHandler *, int argno);  
+  int parse_factor(const Vector<String> &, int, Vector<int> &, Primitive &,
+		 bool negated, ErrorHandler *, int argno);
+  
   void length_checked_push(Packet *);
   
  public:

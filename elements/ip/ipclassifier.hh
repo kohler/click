@@ -71,6 +71,14 @@
  * TYPE is a value between 0 and 255. Matches ICMP packets with the given ICMP
  * type.
  *
+ * =item B<true>
+ *
+ * Matches every packet.
+ *
+ * =item B<false>
+ *
+ * Matches no packets.
+ *
  * =back
  *
  * These primitives can be combined with the connectives `and', `or', and
