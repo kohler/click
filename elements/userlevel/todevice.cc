@@ -47,7 +47,7 @@
 #endif
 
 ToDevice::ToDevice()
-  : Element(1, 0), _fd(-1), _my_fd(false), _task(this)
+  : Element(1, 0), _task(this), _fd(-1), _my_fd(false)
 {
   MOD_INC_USE_COUNT;
 #if TODEVICE_BSD_DEV_BPF
