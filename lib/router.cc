@@ -22,6 +22,7 @@
 # include <config.h>
 #endif
 #include <click/router.hh>
+#include <click/routerthread.hh>
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
@@ -35,32 +36,42 @@
 #endif
 
 Router::Router()
-  : _please_stop_driver(0), _refcount(0),
-    _preinitialized(0), _initialized(0),
+  : _preinitialized(0), _initialized(0), 
     _have_connections(0), _have_hookpidx(0),
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
-  //printf("sizeof(Anno) %d\n", sizeof(Packet::Anno));
+  _refcount = 0;
+  new RouterThread(this);	// RouterThread will add itself to _threads
 }
 
 Router::~Router()
 {
-  if (_initialized)
+  if (_refcount > 0)
+    click_chatter("deleting router while ref count > 0");
+  if (_initialized) {
     for (int i = 0; i < _elements.size(); i++)
       _elements[i]->uninitialize();
+  }
+  for (int i = 0; i < _threads.size(); i++)
+    delete _threads[i];
   for (int i = 0; i < _elements.size(); i++)
     delete _elements[i];
   delete[] _handlers;
-#ifdef __KERNEL__
-  //initialize_head();		// get rid of scheduled wait queue
-  _please_stop_driver = true;	// XXX races?
-#endif
+}
+
+void
+Router::please_stop_driver()
+{
+  for (int i = 0; i < _threads.size(); i++) {
+    if (_threads[i])
+      _threads[i]->please_stop_driver();
+  }
 }
 
 void
 Router::unuse()
 {
-  if (--_refcount <= 0)
+  if (_refcount.dec_and_test())
     delete this;
 }
 
@@ -178,6 +189,23 @@ Router::add_requirement(const String &r)
 {
   assert(cp_is_word(r));
   _requirements.push_back(r);
+}
+
+void
+Router::add_thread(RouterThread *rt)
+{
+  rt->set_thread_id(_threads.size());
+  _threads.push_back(rt);
+}
+
+void
+Router::remove_thread(RouterThread *rt)
+{
+  for (int i = 0; i < _threads.size(); i++)
+    if (_threads[i] == rt) {
+      _threads[i] = 0;
+      return;
+    }
 }
 
 
@@ -515,6 +543,15 @@ Router::set_connections()
     fromf->connect_output(hfrom.port, tof, hto.port);
     tof->connect_input(hto.port, fromf, hfrom.port);
   }
+}
+
+
+// TIMERS
+
+void
+Router::run_timers()
+{
+  _timer_list.run();
 }
 
 
@@ -1146,13 +1183,11 @@ Router::remove_select(int fd, int element, int mask)
 #endif
 
 
-// DRIVER 
+#if CLICK_USERLEVEL
 
 void
-Router::wait()
+Router::run_selects(bool more_tasks)
 {
-#ifndef __KERNEL__
-  
   // Wait in select() for input or timer.
   // And call relevant elements' selected() methods.
   fd_set read_mask = _read_select_fd_set;
@@ -1160,16 +1195,15 @@ Router::wait()
   bool selects = (_selectors.size() > 0);
 
   struct timeval wait;
-  bool timers = _timer_head.get_next_delay(&wait);
+  bool timers = _timer_list.get_next_delay(&wait);
   if (!selects && !timers)
     return;
   
-  // don't bother to call select() if no selects.
-  if (selects || _task_list.empty()) {
+  if (selects || !more_tasks) {
     // never wait if anything is scheduled;
     // otherwise, if no timers, block indefinitely.
     struct timeval *wait_ptr = &wait;
-    if (!_task_list.empty())
+    if (more_tasks)
       wait.tv_sec = wait.tv_usec = 0;
     else if (!timers)
       wait_ptr = 0;
@@ -1187,61 +1221,9 @@ Router::wait()
       }
     }
   }
-  
-#else /* __KERNEL__ */
-
-  schedule();
+}
 
 #endif
-  
-  // always run timers
-  _timer_head.run();
-}
-
-
-// WORK LIST
-
-void
-Router::driver()
-{
-  Task *t;
-  while (1) {
-#if CLICK_USERLEVEL
-    int c = 5000;
-#else
-    int c = 10000;
-#endif
-    
-    _task_list.lock();
-    while ((t = _task_list.scheduled_next()),
-	   t != &_task_list && !_please_stop_driver && c >= 0) {
-      t->fast_unschedule();
-      t->call_hook();
-      c--;
-    }
-    _task_list.unlock();
-    
-    if (_please_stop_driver)
-      break;
-    else
-      wait();
-  }
-}
-
-void
-Router::driver_once()
-{
-  if (_please_stop_driver)
-    return;
-
-  _task_list.lock();
-  Task *t = _task_list.scheduled_next();
-  if (t != &_task_list) {
-    t->fast_unschedule();
-    t->call_hook();
-  }
-  _task_list.unlock();
-}
 
 
 // PRINTING

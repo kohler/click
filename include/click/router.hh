@@ -2,12 +2,14 @@
 #define ROUTER_HH
 #include <click/element.hh>
 #include <click/timer.hh>
+#include <click/sync.hh>
 #include <click/bitvector.hh>
 #include <click/task.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
 class ElementFilter;
+class RouterThread;
 
 class Router { public:
 
@@ -66,8 +68,13 @@ class Router { public:
   int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
   void set_configuration(int, const String &);
 
+  int nthreads() const				{ return _threads.size(); }
+  RouterThread *thread(int id) const		{ return _threads[id]; }
+  void add_thread(RouterThread *);
+  void remove_thread(RouterThread *);
+  
+  TimerList *timer_list()			{ return &_timer_list; }
   TaskList *task_list()				{ return &_task_list; }
-  Timer *timer_head()				{ return &_timer_head; }
 
 #if CLICK_USERLEVEL
   enum { SELECT_READ = Element::SELECT_READ, SELECT_WRITE = Element::SELECT_WRITE };
@@ -75,36 +82,38 @@ class Router { public:
   int remove_select(int fd, int element, int mask);
 #endif
   
-  void driver();
-  void driver_once();
-  void wait();
-  
   String flat_configuration_string() const;
   String element_list_string() const;
   String element_ports_string(int) const;
-  
-  void please_stop_driver()			{ _please_stop_driver = 1; }
+
+#if CLICK_USERLEVEL
+  void run_selects(bool more_tasks);
+#endif
+  void run_timers();
+  void please_stop_driver();
   
  private:
   
-  Timer _timer_head;
+  TimerList _timer_list;
   TaskList _task_list;
-  bool _please_stop_driver;
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL
   struct Selector;
   fd_set _read_select_fd_set;
   fd_set _write_select_fd_set;
   int _max_select_fd;
   Vector<Selector> _selectors;
+  Spinlock _wait_lock;
 #endif
-  
-  int _refcount;
+
+  u_atomic32_t _refcount;
   
   Vector<Element *> _elements;
   Vector<String> _element_names;
   Vector<String> _configurations;
   Vector<String> _element_landmarks;
+
+  Vector<RouterThread *> _threads;
   
   Vector<Hookup> _hookup_from;
   Vector<Hookup> _hookup_to;
@@ -169,8 +178,6 @@ class Router { public:
   
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
-
-  static const unsigned int MAX_DRIVER_COUNT = 10000;
 
 };
 
