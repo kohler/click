@@ -12,6 +12,8 @@ extern "C" {
 }
 
 extern proc_dir_entry *proc_click_entry;
+extern int proc_click_mode_r, proc_click_mode_w, proc_click_mode_x;
+extern int proc_click_mode_dir;
 
 proc_dir_entry *click_find_pde(proc_dir_entry *, const String &);
 void remove_proc_entry_recursive(proc_dir_entry *, proc_dir_entry *parent);

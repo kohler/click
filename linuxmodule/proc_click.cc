@@ -381,15 +381,11 @@ register_handler(proc_dir_entry *directory, int eindex, int handlerno)
   const proc_dir_entry *pattern = 0;
   const Router::Handler *h = (eindex >= 0 ? &current_router->handler(handlerno) : &root_handlers[handlerno]);
   
-  mode_t mode;
-  if (h->read && h->write)
-    mode = S_IFREG | S_IRUGO | S_IWUSR | S_IWGRP;
-  else if (h->write)
-    mode = S_IFREG | S_IWUSR | S_IWGRP;
-  else if (h->read)
-    mode = S_IFREG | S_IRUGO;
-  else
-    return;
+  mode_t mode = S_IFREG;
+  if (h->read)
+    mode |= proc_click_mode_r;
+  if (h->write)
+    mode |= proc_click_mode_w;
 
   String name = h->name;
   proc_dir_entry *pde = create_proc_entry(name.cc(), mode, directory);
@@ -460,7 +456,7 @@ make_compound_element_symlink(int ei)
     proc_dir_entry *subdir = click_find_pde(parent_dir, component);
     if (!subdir) {
       // make the directory
-      subdir = create_proc_entry(component.cc(), S_IFDIR, parent_dir);
+      subdir = create_proc_entry(component.cc(), proc_click_mode_dir, parent_dir);
       if (parent_dir == proc_click_entry)
 	element_pdes[ei + nelements] = subdir;
     } else if (!S_ISDIR(subdir->mode))
@@ -504,7 +500,7 @@ init_router_element_procs()
   char namebuf[200];
   for (int i = 0; i < nelements; i++) {
     sprintf(namebuf, "%d", i + 1);
-    element_pdes[i] = create_proc_entry(namebuf, S_IFDIR, proc_click_entry);
+    element_pdes[i] = create_proc_entry(namebuf, proc_click_mode_dir, proc_click_entry);
     element_pdes[i]->data = (void *)i;
   }
   

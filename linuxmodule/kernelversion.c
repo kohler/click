@@ -27,3 +27,13 @@
 #define __KERNEL__
 #define MODULE
 #include <linux/module.h>
+
+static int accessible = 1;
+MODULE_PARM(accessible, "i");
+MODULE_PARM_DESC(accessible, "make /proc/click world-readable [1]");
+
+int
+click_accessible(void)
+{
+  return accessible;
+}

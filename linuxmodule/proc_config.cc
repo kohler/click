@@ -246,8 +246,8 @@ init_proc_click_config()
   proc_click_config_inode_operations = proc_dir_inode_operations;
   proc_click_config_inode_operations.default_file_ops = &proc_click_config_operations;
   
-  proc_click_config_entry = create_proc_entry("config", S_IFREG | S_IRUGO | S_IWUSR | S_IWGRP, proc_click_entry);
-  proc_click_hotconfig_entry = create_proc_entry("hotconfig", S_IFREG | S_IWUSR | S_IWGRP, proc_click_entry);
+  proc_click_config_entry = create_proc_entry("config", S_IFREG | proc_click_mode_r | proc_click_mode_w, proc_click_entry);
+  proc_click_hotconfig_entry = create_proc_entry("hotconfig", S_IFREG | proc_click_mode_w, proc_click_entry);
   // XXX memory exhaustion?
   proc_click_config_entry->ops = &proc_click_config_inode_operations;
   proc_click_hotconfig_entry->ops = &proc_click_config_inode_operations;

@@ -140,7 +140,7 @@ init_proc_click_errors()
   proc_click_errors_inode_operations = proc_dir_inode_operations;
   proc_click_errors_inode_operations.default_file_ops = &proc_click_errors_operations;
 
-  proc_click_errors_entry = create_proc_entry("errors", S_IFREG | S_IRUGO, proc_click_entry);
+  proc_click_errors_entry = create_proc_entry("errors", S_IFREG | proc_click_mode_r, proc_click_entry);
   // XXX error checking
   proc_click_errors_entry->ops = &proc_click_errors_inode_operations;
   

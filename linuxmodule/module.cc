@@ -29,6 +29,9 @@
 #include <click/confparse.hh>
 
 proc_dir_entry *proc_click_entry = 0;
+int proc_click_mode_r, proc_click_mode_w, proc_click_mode_x;
+int proc_click_mode_dir;
+extern "C" int click_accessible();
 
 ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
@@ -76,9 +79,9 @@ kill_current_router()
     kill_click_sched(current_router);
     //printk("<1>  killed\n");
     cleanup_router_element_procs();
-    //printk("<1>  cleaned\n");
+    // printk("<1>  cleaned\n");
     current_router->unuse();
-    //printk("<1>  deleted\n");
+    // printk("<1>  deleted\n");
     current_router = 0;
   }
 }
@@ -284,29 +287,43 @@ next_root_handler(const char *name, ReadHandler read, void *read_thunk,
   register_handler(proc_click_entry, -1, i);
 }
 
+
+static ErrorHandler *syslog_errh;
+
 extern "C" int
 init_module()
 {
   // first call C++ static initializers
   String::static_initialize();
   cp_va_static_initialize();
+
+  syslog_errh = new SyslogErrorHandler;
+  kernel_errh = new KernelErrorHandler;
+  ErrorHandler::static_initialize(new LandmarkErrorHandler(syslog_errh, "chatter"));
   
-  ErrorHandler::static_initialize(new KernelErrorHandler);
-  kernel_errh = ErrorHandler::default_handler();
-  extern ErrorHandler *click_chatter_errh;
-  click_chatter_errh = new SyslogErrorHandler;
-  
+  init_click_sched();
+
   packages = new Vector<String>;
   lexer = new Lexer(kernel_errh);
   export_elements(lexer);
   
   current_router = 0;
 
-  proc_click_entry = create_proc_entry("click", S_IFDIR, 0);
+  // set modes based on 'accessible'
+  if (click_accessible()) {
+    proc_click_mode_r = S_IRUSR | S_IRGRP | S_IROTH;
+    proc_click_mode_x = S_IXUSR | S_IXGRP | S_IXOTH;
+  } else {
+    proc_click_mode_r = S_IRUSR | S_IRGRP;
+    proc_click_mode_x = S_IXUSR | S_IXGRP;
+  }
+  proc_click_mode_w = S_IWUSR | S_IWGRP;
+  proc_click_mode_dir = S_IFDIR | proc_click_mode_r | proc_click_mode_x;
+
+  proc_click_entry = create_proc_entry("click", proc_click_mode_dir, 0);
   init_proc_click_config();
   init_proc_click_elements();
   init_proc_click_errors();
-  init_click_sched();
 
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
@@ -320,7 +337,7 @@ init_module()
   next_root_handler("meminfo", read_meminfo, 0, 0, 0);
   next_root_handler("cycles", read_cycles, 0, 0, 0);
   next_root_handler("threads", read_threads, 0, 0, 0);
-
+  
   return 0;
 }
 
@@ -333,6 +350,7 @@ cleanup_module()
   extern int click_outstanding_news; /* glue.cc */
   
   kill_current_router();
+
   cleanup_proc_click_errors();
   cleanup_proc_click_elements();
   cleanup_proc_click_config();
@@ -354,15 +372,15 @@ cleanup_module()
   
   cleanup_click_sched();
   delete lexer;
-  
-  extern ErrorHandler *click_chatter_errh;
-  delete click_chatter_errh;
   delete packages;
-  click_chatter_errh = 0;
   
   delete[] root_handlers;
   cp_va_static_cleanup();
+  
   ErrorHandler::static_cleanup();
+  delete kernel_errh;
+  delete syslog_errh;
+  kernel_errh = syslog_errh = 0;
   
   printk("<1>click module exiting\n");
     

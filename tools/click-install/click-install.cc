@@ -46,12 +46,15 @@
 #define MAP_OPT			305
 #define VERBOSE_OPT		306
 #define THREADS_OPT		307
+#define PRIVATE_OPT		308
 
 static Clp_Option options[] = {
+  { "cabalistic", 0, PRIVATE_OPT, 0, Clp_Negate },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "map", 'm', MAP_OPT, 0, 0 },
+  { "private", 'p', PRIVATE_OPT, 0, Clp_Negate },
   { "threads", 't', THREADS_OPT, Clp_ArgUnsigned, 0 },
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "verbose", 'V', VERBOSE_OPT, 0, Clp_Negate },
@@ -79,14 +82,15 @@ usage()
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
-  -f, --file FILE               Read router configuration from FILE.\n\
-  -h, --hot-swap                Hot-swap install new configuration.\n\
-  -u, --uninstall               Uninstall Click from kernel, then reinstall.\n\
-  -m, --map                     Print load map to the standard output.\n\
-  -t, --threads N               use N threads (multithreaded Click only).\n\
-  -V, --verbose                 Print information about files installed.\n\
-      --help                    Print this message and exit.\n\
-  -v, --version                 Print version number and exit.\n\
+  -f, --file FILE             Read router configuration from FILE.\n\
+  -h, --hot-swap              Hot-swap install new configuration.\n\
+  -u, --uninstall             Uninstall Click from kernel, then reinstall.\n\
+  -m, --map                   Print load map to the standard output.\n\
+  -p, --private               Make /proc/click readable only by root.\n\
+  -t, --threads N             Use N threads (multithreaded Click only).\n\
+  -V, --verbose               Print information about files installed.\n\
+      --help                  Print this message and exit.\n\
+  -v, --version               Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -364,6 +368,7 @@ main(int argc, char **argv)
   int threads = 1;
   bool uninstall = false;
   bool hotswap = false;
+  bool accessible = true;
   output_map = false;
   
   while (1) {
@@ -401,6 +406,10 @@ particular purpose.\n");
         errh->error("must have at least one thread");
 	goto bad_option;
       }
+      break;
+
+     case PRIVATE_OPT:
+      accessible = clp->negated;
       break;
 
      case UNINSTALL_OPT:
@@ -482,6 +491,8 @@ particular purpose.\n");
       cmdline += " threads=";
       cmdline += String(threads);
     }
+    if (!accessible)
+      cmdline += " accessible=0";
     (void) system(cmdline);
     if (access("/proc/click/version", F_OK) < 0)
       errh->fatal("cannot install Click module");
