@@ -1,0 +1,135 @@
+## Click bsdmodule driver Makefile ##
+SHELL = @SHELL@
+
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
+top_builddir := ..
+subdir := bsdmodule
+
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libdir = @libdir@
+linuxdir = @linuxdir@
+
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/bsdmodule@elements_vpath@
+
+CC = @CC@
+CPP = @CPP@
+CXX = @KERNEL_CXX@
+CXXCPP = @CXXCPP@
+LD = @LD@
+STRIP = @STRIP@
+INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL@ -m 644
+mkinstalldirs = @top_srcdir@/mkinstalldirs
+
+.SUFFIXES:
+.SUFFIXES: .S .c .cc .o .s .ii
+
+.c.o:
+	$(COMPILE) -c $<
+.s.o:
+	$(COMPILE) -c $<
+.S.o:
+	$(COMPILE) -c $<
+.cc.o:
+	$(CXXCOMPILE) -c $<
+.cc.s:
+	$(CXXCOMPILE) -S $<
+.cc.ii:
+	$(CXXCOMPILE) -E $< > $@
+
+
+ifndef INSTALLOBJS
+INSTALLOBJS = click.ko
+endif
+
+GENERIC_OBJS = string.o straccum.o \
+	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
+	ipaddress.o ipaddressset.o ipflowid.o etheraddress.o \
+	packet.o in_cksum.o \
+	error.o glue.o task.o timer.o atomic.o gaprate.o \
+	element.o \
+	confparse.o variableenv.o lexer.o elemfilter.o \
+	routerthread.o router.o \
+	crc32.o iptable.o iptable2.o radix.o \
+	packageutils.o \
+	$(EXTRA_DRIVER_OBJS)
+
+BSDMODULE_OBJS = module.o kernelerror.o sched.o \
+	clickfs.o clickfs_vnops.o
+
+EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
+
+-include elements.mk
+
+OBJS = setdef0.o $(BSDMODULE_OBJS) $(GENERIC_OBJS) $(ELEMENT_OBJS) elements.o setdef1.o
+
+CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_BSDMODULE -DKERNEL -D_KERNEL -DKLD_MODULE
+CFLAGS = @CFLAGS_NDEBUG@ -g
+CXXFLAGS = @CXXFLAGS_NDEBUG@ -g
+
+DEFS = @DEFS@ 
+INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(srcdir) -I$(top_srcdir) -I$(linuxdir)/include
+LDFLAGS = @LDFLAGS@
+LIBS = @LIBS@
+
+CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
+CXXLD = $(CXX)
+CXXLINK = $(CXXLD) $(CXXFLAGS) $(LDFLAGS) -o $@
+COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS)
+CCLD = $(CC)
+LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
+
+all: $(INSTALLOBJS) click-mount
+
+click.ko: Makefile $(OBJS)
+	$(LD) -Bshareable -o click.ko $(OBJS)
+
+Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+
+elemlist:
+	@/bin/rm -f elements.conf
+	@$(MAKE) elements.conf
+elements.conf: $(top_builddir)/config.status $(top_srcdir)/click-buildtool
+	echo "bsdmodule @element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@") > elements.conf
+elements.mk: elements.conf $(top_srcdir)/click-buildtool
+	(cd $(top_srcdir); ./click-buildtool elem2make) < elements.conf > elements.mk
+elements.cc: elements.conf $(top_srcdir)/click-buildtool
+	(cd $(top_srcdir); ./click-buildtool elem2export) < elements.conf > elements.cc
+	@rm -f elements.d
+
+setdef0.c: module.o
+	gensetdefs module.o
+setdef1.c: module.o
+	gensetdefs module.o
+
+vnode_if.h: vnode_if.pl /sys/kern/vnode_if.src
+	perl ./vnode_if.pl -h /sys/kern/vnode_if.src
+clickfs.o: clickfs.cc vnode_if.h
+clickfs_vnops.o: clickfs_vnops.cc vnode_if.h
+
+click-mount: click-mount.o
+	$(CC) click-mount.o -o click-mount $(LDFLAGS)
+
+DEPFILES := $(wildcard *.d)
+ifneq ($(DEPFILES),)
+include $(DEPFILES)
+endif
+
+install: $(INSTALLOBJS)
+	$(mkinstalldirs) $(libdir)
+	for i in $(INSTALLOBJS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
+install-man:
+
+clean:
+	-rm -f *.d *.o elements.mk elements.cc elements.conf
+distclean: clean
+	-rm -f Makefile
+
+.PHONY: all clean distclean elemlist install install-man
