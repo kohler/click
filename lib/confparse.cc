@@ -720,6 +720,7 @@ cp_unsigned(const String &str, unsigned *return_value)
   return cp_unsigned(str, 0, return_value);
 }
 
+
 bool
 cp_integer(const String &in_str, int base, int *return_value)
 {
@@ -749,6 +750,106 @@ cp_integer(const String &str, int *return_value)
 {
   return cp_integer(str, 0, return_value);
 }
+
+
+#ifdef HAVE_INT64_TYPES
+
+static u_int64_t unsigned64_overflow_vals[] = { 0, 0, 9223372036854775807ULL, 6148914691236517205ULL, 4611686018427387903ULL, 3689348814741910323ULL, 3074457345618258602ULL, 2635249153387078802ULL, 2305843009213693951ULL, 2049638230412172401ULL, 1844674407370955161ULL, 1676976733973595601ULL, 1537228672809129301ULL, 1418980313362273201ULL, 1317624576693539401ULL, 1229782938247303441ULL, 1152921504606846975ULL, 1085102592571150095ULL, 1024819115206086200ULL, 970881267037344821ULL, 922337203685477580ULL, 878416384462359600ULL, 838488366986797800ULL, 802032351030850070ULL, 768614336404564650ULL, 737869762948382064ULL, 709490156681136600ULL, 683212743470724133ULL, 658812288346769700ULL, 636094623231363848ULL, 614891469123651720ULL, 595056260442243600ULL, 576460752303423487ULL, 558992244657865200ULL, 542551296285575047ULL, 527049830677415760ULL };
+
+bool
+cp_unsigned64(const String &str, int base, u_int64_t *return_value)
+{
+  const char *s = str.data();
+  int len = str.length();
+  int i = 0;
+
+  if (i < len && s[i] == '+')
+    i++;
+
+  if ((base == 0 || base == 16) && i < len - 1
+      && s[i] == '0' && (s[i+1] == 'x' || s[i+1] == 'X')) {
+    i += 2;
+    base = 16;
+  } else if (base == 0 && s[i] == '0')
+    base = 8;
+  else if (base == 0)
+    base = 10;
+  else if (base < 2 || base > 36) {
+    cp_errno = CPE_INVALID;
+    return false;
+  }
+
+  if (i == len)			// no digits
+    return false;
+
+  u_int64_t overflow_val = unsigned64_overflow_vals[base];
+  int64_t overflow_digit = 0xFFFFFFFFFFFFFFFFULL - (overflow_val * base);
+
+  u_int64_t val = 0;
+  cp_errno = CPE_OK;
+  while (i < len) {
+    // find digit
+    int digit;
+    if (s[i] >= '0' && s[i] <= '9')
+      digit = s[i] - '0';
+    else if (s[i] >= 'A' && s[i] <= 'Z')
+      digit = s[i] - 'A' + 10;
+    else if (s[i] >= 'a' && s[i] <= 'z')
+      digit = s[i] - 'a' + 10;
+    else
+      digit = 36;
+    if (digit >= base)
+      return false;
+    // check for overflow
+    if (val > overflow_val || (val == overflow_val && digit > overflow_digit))
+      cp_errno = CPE_OVERFLOW;
+    // assign new value
+    val = val * base + digit;
+    i++;
+  }
+
+  *return_value = (cp_errno ? 0xFFFFFFFFFFFFFFFFULL : val);
+  return true;
+}
+
+bool
+cp_unsigned64(const String &str, u_int64_t *return_value)
+{
+  return cp_unsigned64(str, 0, return_value);
+}
+
+bool
+cp_integer64(const String &in_str, int base, int64_t *return_value)
+{
+  String str = in_str;
+  bool negative = false;
+  if (str.length() > 1 && str[0] == '-' && str[1] != '+') {
+    negative = true;
+    str = in_str.substring(1);
+  }
+
+  u_int64_t value;
+  if (!cp_unsigned64(str, base, &value))
+    return false;
+
+  u_int64_t max = (negative ? 0x8000000000000000ULL : 0x7FFFFFFFFFFFFFFFULL);
+  if (value > max) {
+    cp_errno = CPE_OVERFLOW;
+    value = max;
+  }
+
+  *return_value = (negative ? -value : value);
+  return true;
+}
+
+bool
+cp_integer64(const String &str, int64_t *return_value)
+{
+  return cp_integer64(str, 0, return_value);
+}
+
+#endif
+
 
 static unsigned
 exp10(int exponent)
@@ -1549,6 +1650,9 @@ CpVaParseCmd
   cpUnsignedShort	= "u_short",
   cpInteger		= "int",
   cpUnsigned		= "u_int",
+  cpInteger64		= "long_long",
+  cpUnsigned64		= "u_long_long",
+  cpUnsignedLongLong	= "u_long_long", // synonym
   cpReal2		= "real2",
   cpUnsignedReal2	= "u_real2",
   cpNonnegReal2		= "u_real2", // synonym
@@ -1591,6 +1695,8 @@ enum {
   cpiUnsignedShort,
   cpiInteger,
   cpiUnsigned,
+  cpiInteger64,
+  cpiUnsigned64,
   cpiReal2,
   cpiUnsignedReal2,
   cpiReal10,
@@ -1766,6 +1872,22 @@ default_parsefunc(cp_value *v, const String &arg,
     else if (v->v.u > overflower)
       errh->error("%s (%s) must be <= %u", argname, desc, overflower);
     break;
+
+#ifdef HAVE_INT64_TYPES
+   case cpiInteger64:
+    if (!cp_integer64(arg, &v->v.i64))
+      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+    else if (cp_errno == CPE_OVERFLOW)
+      errh->error("overflow on %s (%s); max %lld", argname, desc, v->v.i64);
+    break;
+
+   case cpiUnsigned64:
+    if (!cp_unsigned64(arg, &v->v.u64))
+      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+    else if (cp_errno == CPE_OVERFLOW)
+      errh->error("overflow on %s (%s); max %llu", argname, desc, v->v.u64);
+    break;
+#endif
 
    case cpiReal10:
     if (!cp_real10(arg, v->extra, &v->v.i))
@@ -1953,6 +2075,20 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      *ustore = v->v.u; 
      break; 
    }
+
+#ifdef HAVE_INT64_TYPES
+   case cpiInteger64: {
+     int64_t *llstore = (int64_t *)v->store;
+     *llstore = v->v.i64;
+     break;
+   }
+
+   case cpiUnsigned64: {
+     u_int64_t *ullstore = (u_int64_t *)v->store;
+     *ullstore = v->v.u64;
+     break;
+   }
+#endif
 
    case cpiTimeval: {
      struct timeval *tvstore = (struct timeval *)v->store;
@@ -2469,10 +2605,12 @@ cp_unparse_bool(bool b)
   return String(b ? "true" : "false");
 }
 
+#ifdef HAVE_INT64_TYPES
+
 String
-cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
+cp_unparse_unsigned64(u_int64_t q, int base, bool uppercase)
 {
-  // Unparse an unsigned long long. Linux kernel sprintf can't handle %L,
+  // Unparse an unsigned long long. Linux kernel sprintf can't handle %lld,
   // so we provide our own function.
   
   char buf[256];
@@ -2493,20 +2631,20 @@ cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
     for (trav = lastbuf; q > 0; trav--) {
       
       // k = Approx[q/10] -- know that k <= q/10
-      unsigned long long k = (q >> 4) + (q >> 5) + (q >> 8) + (q >> 9)
+      u_int64_t k = (q >> 4) + (q >> 5) + (q >> 8) + (q >> 9)
 	+ (q >> 12) + (q >> 13) + (q >> 16) + (q >> 17);
-      unsigned long long m;
+      u_int64_t m;
       
       // increase k until it exactly equals floor(q/10). on exit, m is the
       // remainder: m < 10 and q == 10*k + m.
       while (1) {
 	// d = 10*k
-	unsigned long long d = (k << 3) + (k << 1);
+	u_int64_t d = (k << 3) + (k << 1);
 	m = q - d;
 	if (m < 10) break;
 	
 	// delta = Approx[m/10] -- know that delta <= m/10
-	unsigned long long delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
+	u_int64_t delta = (m >> 4) + (m >> 5) + (m >> 8) + (m >> 9);
 	if (m >= 0x1000)
 	  delta += (m >> 12) + (m >> 13) + (m >> 16) + (m >> 17);
 	
@@ -2525,6 +2663,17 @@ cp_unparse_ulonglong(unsigned long long q, int base, bool uppercase)
   
   return String(trav + 1, lastbuf - trav);
 }
+
+String
+cp_unparse_integer64(int64_t q, int base, bool uppercase)
+{
+  if (q < 0)
+    return "-" + cp_unparse_unsigned64(-q, base, uppercase);
+  else
+    return cp_unparse_unsigned64(q, base, uppercase);
+}
+
+#endif
 
 String
 cp_unparse_real2(unsigned real, int frac_bits)
@@ -2637,6 +2786,10 @@ cp_va_static_initialize()
   cp_register_argtype(cpUnsignedShort, "unsigned short", 0, default_parsefunc, default_storefunc, cpiUnsignedShort);
   cp_register_argtype(cpInteger, "int", 0, default_parsefunc, default_storefunc, cpiInteger);
   cp_register_argtype(cpUnsigned, "unsigned", 0, default_parsefunc, default_storefunc, cpiUnsigned);
+#ifdef HAVE_INT64_TYPES
+  cp_register_argtype(cpInteger64, "long long", 0, default_parsefunc, default_storefunc, cpiInteger64);
+  cp_register_argtype(cpUnsigned64, "unsigned long long", 0, default_parsefunc, default_storefunc, cpiUnsigned64);
+#endif
   cp_register_argtype(cpReal2, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal2);
   cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);
   cp_register_argtype(cpReal10, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal10);
