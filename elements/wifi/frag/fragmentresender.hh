@@ -66,7 +66,7 @@ class FragmentResender : public Element { public:
   typedef PacketInfoTable::const_iterator PIIter;
 
   
-  class PacketInfoTable _packets;
+  PacketInfoTable _packets;
   bool _debug;
   unsigned _et;
 

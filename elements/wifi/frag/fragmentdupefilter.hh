@@ -40,7 +40,7 @@ class FragmentDupeFilter : public Element { public:
   typedef HashMap<EtherAddress, DstInfo> FragTable;
   typedef FragTable::const_iterator FIter;
 
-  class FragTable _frags;
+  FragTable _frags;
 
   EtherAddress _en;
   unsigned _et;

@@ -119,9 +119,9 @@ class AutoRateFallback : public Element { public:
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;
 
-  class NeighborTable _neighbors;
+  NeighborTable _neighbors;
 
-  class AvailableRates *_rtable;
+  AvailableRates *_rtable;
   bool _alt_rate;
   bool _active;
 };

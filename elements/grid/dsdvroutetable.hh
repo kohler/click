@@ -340,10 +340,10 @@ private:
   // 3. expired routes *are* allowed in the table, since that's what
   // the DSDV description does.
 
-  class RTable _rtes;
+  RTable _rtes;
 
 #if USE_OLD_SEQ
-  class RTable _old_rtes;
+  RTable _old_rtes;
   bool use_old_route(const IPAddress &dst, unsigned jiff);
 #endif
 
@@ -373,8 +373,8 @@ private:
   // has a running timer in _expire_timers.  No broken routes have a
   // timer.  Every entry in _expire_timers has a corresponding
   // TimerHook pointer stored in _expire_hooks.
-  class TMap _expire_timers;
-  class HMap _expire_hooks;
+  TMap _expire_timers;
+  HMap _expire_hooks;
 
   // Trigger timer invariants: any route may have a timer in this
   // table.  All timers in the table must be running.  Every entry in
@@ -388,8 +388,8 @@ private:
   // destinations whose triggered updates were cancelled when r's
   // trigger was delayed, and which should be advertised when r's
   // triggered update timer finally fires, even if r needn't be.
-  class TMap _trigger_timers;
-  class HMap _trigger_hooks;
+  TMap _trigger_timers;
+  HMap _trigger_hooks;
 
   // check table, timer, and trigger hook invariants
   void check_invariants(const IPAddress *ignore = 0) const; 
@@ -402,11 +402,11 @@ private:
   unsigned int _jitter; // msecs
   unsigned int _min_triggered_update_period; // msecs
 
-  class GridGatewayInfo *_gw_info;
-  class GridGenericMetric *_metric;
+  GridGatewayInfo *_gw_info;
+  GridGenericMetric *_metric;
 
   /* binary logging */
-  class GridGenericLogger  *_log;
+  GridGenericLogger  *_log;
   static const unsigned int _log_dump_period = 5 * 1000; // msecs
 
   /* this node's addresses */
@@ -431,11 +431,11 @@ private:
   /* Keep and propagate route with invalid metrics? */
   bool _ignore_invalid_routes; 
 
-  class Timer _hello_timer;
+  Timer _hello_timer;
   static void static_hello_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->hello_hook(); }
   void hello_hook();
 
-  class Timer _log_dump_timer;
+  Timer _log_dump_timer;
   static void static_log_dump_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->log_dump_hook(true); }
   void log_dump_hook(bool reschedule);
 
@@ -518,9 +518,9 @@ private:
 #if ENABLE_PAUSE
   bool _paused;
   unsigned _snapshot_jiffies;
-  class RTable _snapshot_rtes;
+  RTable _snapshot_rtes;
 #if USE_OLD_SEQ
-  class RTable _snapshot_old_rtes;
+  RTable _snapshot_old_rtes;
 #endif
 #endif
 

@@ -89,9 +89,9 @@ class BeaconScanner : public Element { public:
   typedef HashMap<EtherAddress, wap> APTable;
   typedef APTable::const_iterator APIter;
   
-  class APTable _waps;
-  class AvailableRates *_rtable;
-  class WirelessInfo *_winfo;
+  APTable _waps;
+  AvailableRates *_rtable;
+  WirelessInfo *_winfo;
 };
 
 CLICK_ENDDECLS

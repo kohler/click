@@ -63,7 +63,7 @@ public:
   typedef IPInfoTable::const_iterator IPIter;
 
 
-  class IPInfoTable _table;
+  IPInfoTable _table;
 
   bool _track_src;
   bool _track_dst;

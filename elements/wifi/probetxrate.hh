@@ -7,6 +7,7 @@
 #include <click/glue.hh>
 #include <clicknet/wifi.h>
 CLICK_DECLS
+class AvailableRates;
 
 /*
 =c
@@ -276,12 +277,12 @@ class ProbeTXRate : public Element { public:
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;
 
-  class NeighborTable _neighbors;
+  NeighborTable _neighbors;
   EtherAddress _bcast;
   int _rate_window_ms;
   struct timeval _rate_window;
 
-  class AvailableRates *_rtable;
+  AvailableRates *_rtable;
   bool _filter_low_rates;
   bool _filter_never_success;
   bool _aggressive_alt_rate;

@@ -68,7 +68,7 @@ private:
   typedef TXNeighborTable::const_iterator TXNIter;
 
 
-  class  TXNeighborTable _neighbors;
+  TXNeighborTable _neighbors;
 
   EtherAddress _eth;
   EtherAddress _bcast;

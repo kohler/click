@@ -50,7 +50,7 @@ class FragmentAck : public Element { public:
   typedef HashMap<EtherAddress, WindowInfo> FragTable;
   typedef FragTable::const_iterator FIter;
 
-  class FragTable _frags;
+  FragTable _frags;
 
   EtherAddress _en;
   unsigned _et;

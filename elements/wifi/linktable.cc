@@ -465,7 +465,7 @@ LinkTable::print_hosts()
 void 
 LinkTable::clear_stale() {
 
-  class LTable links;
+  LTable links;
   for (LTIter iter = _links.begin(); iter; iter++) {
     LinkInfo nfo = iter.value();
     if ((unsigned) _stale_timeout.tv_sec >= nfo.age()) {

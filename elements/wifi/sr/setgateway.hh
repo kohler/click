@@ -107,7 +107,7 @@ private:
 
   typedef HashMap<IPFlowID, FlowTableEntry> FlowTable;
   typedef FlowTable::const_iterator FTIter;
-  class FlowTable _flow_table;
+  FlowTable _flow_table;
 
   IPAddress _gw;
   void push_fwd(Packet *, IPAddress);

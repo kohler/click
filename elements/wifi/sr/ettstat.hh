@@ -256,7 +256,7 @@ public:
     typedef HashMap<EtherAddress, uint8_t> BadTable;
   typedef BadTable::const_iterator BTIter;
   
-  class BadTable _bad_table;
+  BadTable _bad_table;
 
  public:
   String bad_nodes();

@@ -126,7 +126,7 @@ public:
   typedef HashMap<IPAddress, IPAddress> IPTable;
   typedef IPTable::const_iterator IPIter;
   
-  class IPTable _blacklist;
+  IPTable _blacklist;
   
   struct timeval dijkstra_time;
 private: 
@@ -237,8 +237,8 @@ private:
   typedef HashMap<IPPair, LinkInfo> LTable;
   typedef LTable::const_iterator LTIter;
 
-  class HTable _hosts;
-  class LTable _links;
+  HTable _hosts;
+  LTable _links;
 
 
   IPAddress _ip;

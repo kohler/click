@@ -39,7 +39,7 @@ class GridProxy : public Element {
 
   };
   typedef HashMap<IPAddress, DstInfo> ProxyMap;
-  class ProxyMap _map;
+  ProxyMap _map;
   
   click_ip _iph;
   uatomic32_t _id;

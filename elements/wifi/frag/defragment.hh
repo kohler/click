@@ -54,7 +54,7 @@ class Defragment : public Element { public:
   typedef HashMap<int, PacketInfo> PacketInfoTable;
   typedef PacketInfoTable::const_iterator PIIter;
 
-  class PacketInfoTable _packets;
+  PacketInfoTable _packets;
   bool _debug;
  private:
 
