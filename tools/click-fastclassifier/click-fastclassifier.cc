@@ -75,8 +75,8 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
   -o, --output FILE           Write output to FILE.\n\
-  -k, --kernel                Create Linux kernel module code (on by default).\n\
-  -u, --user                  Create user-level code (on by default).\n\
+  -k, --kernel                Compile into Linux kernel binary package.\n\
+  -u, --user                  Compile into user-level binary package.\n\
   -s, --source                Write source code only.\n\
   -c, --config                Write new configuration only.\n\
       --help                  Print this message and exit.\n\
@@ -371,9 +371,11 @@ analyze_classifier(RouterT *r, int classifier_ei,
   gen_eclass_names.push_back(class_name);
   gen_cxxclass_names.push_back(cxx_name);
 
-  header << "class " << cxx_name << " : public Element { public:\n  "
-	 << cxx_name << "() : Element(1, " << noutputs
-	 << ") { MOD_INC_USE_COUNT; }\n  ~"
+  header << "class " << cxx_name << " : public Element {\n\
+  void specialize_away() { }\n\
+ public:\n  "
+	 << cxx_name << "() { set_ninputs(1); set_noutputs(" << noutputs
+	 << "); MOD_INC_USE_COUNT; }\n  ~"
 	 << cxx_name << "() { MOD_DEC_USE_COUNT; }\n\
   const char *class_name() const { return \"" << class_name << "\"; }\n\
   Processing default_processing() const { return PUSH; }\n  "
@@ -426,8 +428,8 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
-  int compile_kernel = -1;
-  int compile_user = -1;
+  int compile_kernel = 0;
+  int compile_user = 0;
   bool source_only = false;
   bool config_only = false;
   
@@ -495,14 +497,6 @@ particular purpose.\n");
   }
   
  done:
-  if (compile_kernel < 0 && compile_user < 0) {
-#ifdef HAVE_LINUXMODULE_TARGET
-    compile_kernel = compile_user = 1;
-#else
-    compile_user = 1;
-#endif
-  }
-  
   RouterT *r = read_router_file(router_file, errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
@@ -556,8 +550,11 @@ particular purpose.\n");
   header << "#ifndef CLICKSOURCE_" << package_name << "_HH\n"
 	 << "#define CLICKSOURCE_" << package_name << "_HH\n"
 	 << "#include \"clickpackage.hh\"\n#include \"element.hh\"\n";
-  source << "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n"
-	 << "#include \"" << package_name << ".hh\"\n";
+  source << "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n";
+  if (!source_only)
+    source << "#include \"" << package_name << ".hh\"\n";
+  else
+    source << "/* #include \"" << package_name << ".hh\" */\n";
   
   // write Classifier programs
   for (int i = 0; i < nclassifiers; i++)

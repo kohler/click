@@ -1,2 +1,2 @@
 Makefile *.d
-click-install
+click-install click-uninstall

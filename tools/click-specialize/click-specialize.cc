@@ -150,8 +150,8 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE             Read router configuration from FILE.\n\
   -o, --output FILE           Write output to FILE.\n\
-  -k, --kernel                Create Linux kernel module code (on by default).\n\
-  -u, --user                  Create user-level code (on by default).\n\
+  -k, --kernel                Compile into Linux kernel binary package.\n\
+  -u, --user                  Compile into user-level binary package.\n\
   -s, --source                Write source code only.\n\
   -c, --config                Write new configuration only.\n\
   -n, --no-specialize CLASS   Don't specialize element class CLASS.\n\
@@ -181,8 +181,8 @@ main(int argc, char **argv)
   const char *output_file = 0;
   int source_only = 0;
   int config_only = 0;
-  int compile_kernel = -1;
-  int compile_user = -1;
+  int compile_kernel = 0;
+  int compile_user = 0;
   Vector<String> like1, like2;
   HashMap<String, int> specializing(1);
   
@@ -274,13 +274,6 @@ particular purpose.\n");
   }
   
  done:
-  if (compile_kernel < 0 && compile_user < 0) {
-#ifdef HAVE_LINUXMODULE_TARGET
-    compile_kernel = compile_user = 1;
-#else
-    compile_user = 1;
-#endif
-  }
   if (config_only)
     compile_kernel = compile_user = 0;
 
@@ -341,7 +334,8 @@ particular purpose.\n");
 
   // output
   StringAccum out;
-  out << "#ifdef HAVE_CONFIG_H\n\
+  out << "// click-compile: -w -fno-access-control\n\
+#ifdef HAVE_CONFIG_H\n\
 # include <config.h>\n\
 #endif\n\
 #include \"clickpackage.hh\"\n";

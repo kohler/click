@@ -44,7 +44,7 @@ CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@
 
-DEFS = @DEFS@ -DCLICK_LIBDIR='"$(libdir)"' \
+DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"'  -DCLICK_LIBDIR='"$(libdir)"' \
 	-I. -I$(top_builddir) -I$(srcdir) \
 	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/lib
 LDFLAGS = @LDFLAGS@

@@ -40,17 +40,17 @@ click-install \- installs a router configuration into the Click kernel module
 .I \%[router\-file]
 '
 .SH DESCRIPTION
-The
-.B click-install
-tool is a convenience program that installs a Click router configuration
+.B Click-install
+is a convenience program that installs a Click router configuration
 into the current Linux kernel. It reads a router configuration file in the
 .M click 5
-language; installs the
+language, installs the
 .M click.o 8
-kernel module if necessary; installs any dynamically loadable packages
-required by the router configuration; installs the router configuration
-itself by writing it to /proc/click/config; reports any errors to standard
-error; and uninstalls any unused packages.
+kernel module if necessary, compiles and/or installs any dynamically
+loadable packages required by the router configuration, installs the router
+configuration itself by writing it to /proc/click/config, and uninstalls
+any unused packages. It reports any errors to standard error, including
+errors reported by the Click module.
 '
 .SH "OPTIONS"
 '
@@ -69,6 +69,11 @@ The default is the standard input.
 '
 .Sp
 .TP 5
+.BR \-u ", " \-\-uninstall
+Uninstall and reinstall the Click kernel module.
+'
+.Sp
+.TP 5
 .BI \-\-help
 Print usage information and exit.
 '
@@ -80,6 +85,7 @@ Print the version number and some quickie warranty information and exit.
 .PD
 '
 .SH "SEE ALSO"
+.M click-uninstall 1 ,
 .M click 5 ,
 .M click.o 8
 '

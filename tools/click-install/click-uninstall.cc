@@ -171,17 +171,14 @@ particular purpose.\n");
   read_package_file("/proc/click/packages", packages, errh);
 
   // remove unused packages
-  {
-    String to_remove = packages_to_remove(active_modules, packages);
-    if (to_remove) {
-      String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
-      (void) system(cmdline);
-    }
-    String cmdline = "/sbin/rmmod click";
-    int retval = system(cmdline);
-    if (retval != 0)
-      errh->fatal("`rmmod click' failed");
+  String to_remove = packages_to_remove(active_modules, packages);
+  if (to_remove) {
+    String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
+    (void) system(cmdline);
   }
+  (void) system("/sbin/rmmod click");
+  if (access("/proc/click", F_OK) >= 0)
+    errh->fatal("could not uninstall Click module");
   
   return 0;
 }

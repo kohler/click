@@ -66,7 +66,8 @@ distclean:
 
 DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
 	doc/Makefile.in doc/click.1 doc/click.5 doc/click.o.8 \
-	doc/click-align.1 doc/click-install.1 doc/click-xform.1 \
+	doc/click-align.1 doc/click-fastclassifier.1 doc/click-install.1 \
+	doc/click-uninstall.1 doc/click-xform.1 \
 	doc/element2man.pl doc/mkelementmap.pl \
 	doc/Element.3 doc/Connection.3 doc/HandlerRegistry.3 \
 	conf/make-ip-conf.pl conf/ip.clickpat \

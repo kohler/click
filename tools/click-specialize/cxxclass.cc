@@ -107,6 +107,9 @@ CxxFunction::find_expr(const String &pattern, int *pos1, int *pos2,
     while (tpos < tlen && ppos < plen) {
 
       if (isspace(ps[ppos])) {
+	if (ppos > 0 && (isalnum(ps[ppos-1]) || ps[ppos-1] == '_')
+	    && (isalnum(ts[tpos]) || ts[tpos] == '_'))
+	  break;
 	while (tpos < tlen && isspace(ts[tpos]))
 	  tpos++;
 	ppos++;
@@ -337,6 +340,14 @@ CxxClass::find_should_rewrite()
   if (simple_action >= 0) {
     reach(simple_action, reached);
     _should_rewrite[simple_action] = any = true;
+  }
+  int specialize_away = _fn_map["specialize_away"];
+  if (specialize_away >= 0) {
+    for (int i = 0; i < nfunctions(); i++) {
+      const String &n = _functions[i].name();
+      if (n != _name && n[0] != '~')
+	_should_rewrite[i] = any = true;
+    }
   }
   return any;
 }
@@ -585,13 +596,13 @@ CxxInfo::parse_function_definition(const String &text, int fn_start_p,
   for (p = paren_p - 1; p > fn_start_p && isspace(s[p]); p--)
     /* nada */;
   int end_fn_name_p = p + 1;
-  while (p > fn_start_p && (isalnum(s[p]) || s[p] == '_'))
+  while (p >= fn_start_p && (isalnum(s[p]) || s[p] == '_' || s[p] == '~'))
     p--;
   String fn_name = original.substring(p + 1, end_fn_name_p - (p + 1));
   String class_name;
   if (p >= fn_start_p + 2 && s[p] == ':' && s[p-1] == ':') {
     int end_class_name_p = p - 1;
-    for (p -= 2; p >= fn_start_p && (isalnum(s[p]) || s[p] == '_'); p--)
+    for (p -= 2; p >= fn_start_p && (isalnum(s[p]) || s[p] == '_' || s[p] == '~'); p--)
       /* nada */;
     if (p > fn_start_p && s[p] == ':') // nested class fns uninteresting
       return close_brace_p;

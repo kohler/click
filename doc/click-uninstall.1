@@ -1,0 +1,73 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-UNINSTALL 1 "9/Feb/2000" "Version \*V"
+.SH NAME
+click-uninstall \- uninstalls the Click kernel module
+'
+.SH SYNOPSIS
+.B click-uninstall
+.I \%[options]
+'
+.SH DESCRIPTION
+.B Click-uninstall
+is a convenience program that uninstalls Click from the current Linux
+kernel. It uninstalls the currently running configuration, any dynamically
+loadable Click packages, and the
+.M click.o 8
+kernel module itself.
+'
+.SH "OPTIONS"
+'
+.TP 5
+.PD 0
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click-install 1 ,
+.M click 5 ,
+.M click.o 8
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

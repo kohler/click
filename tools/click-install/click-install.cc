@@ -29,10 +29,12 @@
 #define HELP_OPT		300
 #define VERSION_OPT		301
 #define ROUTER_OPT		302
+#define UNINSTALL_OPT		303
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
+  { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -56,10 +58,105 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
+  -u, --uninstall               Uninstall Click from kernel, then reinstall.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+}
+
+static void
+compile_archive_packages(RouterT *r, ErrorHandler *errh)
+{
+  const HashMap<String, int> &requirements = r->requirement_map();
+  const Vector<ArchiveElement> &archive = r->archive();
+  HashMap<String, int> have_requirements(0);
+
+  // analyze archive
+  for (int i = 0; i < archive.size(); i++) {
+    const ArchiveElement &ae = archive[i];
+    if (ae.name.substring(-3) == ".cc") {
+      int &have = have_requirements.find_force(ae.name.substring(0, -3));
+      have |= 1;
+    } else if (ae.name.substring(-3) == ".ko") {
+      int &have = have_requirements.find_force(ae.name.substring(0, -3));
+      have |= 2;
+    }
+  }
+  
+  String tmpdir;
+  String click_compile_prog;
+  ErrorHandler *cerrh = 0;
+    
+  // check requirements
+  int thunk = 0, value; String package;
+  while (requirements.each(thunk, package, value))
+    if (value >= 0 && have_requirements[package] == 1) {
+      // have source, but not package; compile it
+      
+      if (!cerrh) {
+	// initialize
+	cerrh = new ContextErrorHandler
+	  (errh, "While compiling package `" + package + ".ko':");
+      
+	tmpdir = click_mktmpdir(cerrh);
+	if (!tmpdir) exit(1);
+	if (chdir(tmpdir.cc()) < 0)
+	  cerrh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
+
+	click_compile_prog = clickpath_find_file("click-compile", "bin", CLICK_BINDIR, cerrh);
+      }
+
+      // look for .hh and .cc files
+      String compiler_options;
+      String filename = package + ".hh";
+      int aidx = r->archive_index(filename);
+      if (aidx >= 0) {
+	FILE *f = fopen(filename, "w");
+	if (!f)
+	  cerrh->fatal("%s: %s", filename.cc(), strerror(errno));
+	fwrite(archive[aidx].data.data(), 1, archive[aidx].data.length(), f);
+	fclose(f);
+      }
+
+      filename = package + ".cc";
+      assert(r->archive_index(filename) >= 0);
+      String source_text = r->archive(filename).data;
+      FILE *f = fopen(filename, "w");
+      if (!f)
+	cerrh->fatal("%s: %s", filename.cc(), strerror(errno));
+      fwrite(source_text.data(), 1, source_text.length(), f);
+      fclose(f);
+      // grab compiler options
+      if (source_text.substring(0, 17) == "// click-compile:") {
+	const char *s = source_text.data();
+	int pos = 17;
+	int len = source_text.length();
+	while (pos < len && s[pos] != '\n' && s[pos] != '\r')
+	  pos++;
+	// XXX check user input for shell metas?
+	compiler_options = source_text.substring(17, pos - 17) + " ";
+      }
+      
+      // run click-compile
+      errh->message("Compiling `%s.ko'...", package.cc());
+      String compile_command = click_compile_prog + " --target=kernel --package=" + package + ".ko " + compiler_options + filename;
+      int compile_retval = system(compile_command.cc());
+      if (compile_retval == 127)
+	cerrh->fatal("could not run `%s'", compile_command.cc());
+      else if (compile_retval < 0)
+	cerrh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+      else if (compile_retval != 0)
+	cerrh->fatal("`%s' failed", compile_command.cc());
+
+      // grab object file and add to archive
+      ArchiveElement ae = init_archive_element(package + ".ko", 0600);
+      ae.data = file_string(package + ".ko", cerrh);
+      r->add_archive(ae);
+    }
+
+  if (cerrh)
+    delete cerrh;
 }
 
 static bool
@@ -126,6 +223,7 @@ main(int argc, char **argv)
   program_name = Clp_ProgramName(clp);
 
   const char *router_file = 0;
+  bool uninstall = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -154,6 +252,10 @@ particular purpose.\n");
       router_file = clp->arg;
       break;
 
+     case UNINSTALL_OPT:
+      uninstall = !clp->negated;
+      break;
+
      bad_option:
      case Clp_BadOption:
       short_usage();
@@ -172,6 +274,30 @@ particular purpose.\n");
     exit(1);
   r->flatten(errh);
 
+  // uninstall Click if requested
+  if (uninstall && access("/proc/click", F_OK) >= 0) {
+    // install blank configuration
+    FILE *f = fopen("/proc/click/config", "w");
+    if (!f)
+      errh->fatal("cannot install configuration: %s", strerror(errno));
+    fputs("// nothing\n", f);
+    fclose(f);
+    // find current packages
+    HashMap<String, int> active_modules(-1);
+    HashMap<String, int> packages(-1);
+    read_package_file("/proc/modules", active_modules, errh);
+    read_package_file("/proc/click/packages", packages, errh);
+    // remove packages
+    String to_remove = packages_to_remove(active_modules, packages);
+    if (to_remove) {
+      String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
+      (void) system(cmdline);
+    }
+    (void) system("/sbin/rmmod click");
+    if (access("/proc/click", F_OK) >= 0)
+      errh->warning("could not uninstall Click module");
+  }
+  
   // check for Click module; install it if not available
   if (access("/proc/click", F_OK) < 0) {
     String click_o =
@@ -188,6 +314,9 @@ particular purpose.\n");
   read_package_file("/proc/modules", active_modules, errh);
   read_package_file("/proc/click/packages", packages, errh);
 
+  // check for uncompiled archive packages and try to compile them
+  compile_archive_packages(r, errh);
+  
   // install archived objects. mark them with leading underscores.
   // may require renaming to avoid clashes in `insmod'
   {

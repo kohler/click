@@ -1,0 +1,159 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-FASTCLASSIFIER 1 "9/Feb/2000" "Version \*V"
+.SH NAME
+click-fastclassifier \- specializes Classifier code in a Click router configuration
+'
+.SH SYNOPSIS
+.B click-fastclassifier
+.I \%[options]
+.I \%[router\-file]
+'
+.SH DESCRIPTION
+The
+.B click-fastclassifier
+tool speeds up a Click configuration by creating fast versions of all its
+.M Classifier n
+elements. It reads a router configuration file in the
+.M click 5
+language and creates specialized C++ source code for each Classifier
+element. A Classifier is expanded into a series of if statements; for
+example, the expansion of `Classifier(0/80, -)' contains this function:
+.PP
+.nf
+inline void
+FastClassifier_a_ac::length_unchecked_push(Packet *p)
+{
+  const unsigned *data = (const unsigned *)(p->data() - 0);
+ step_0:
+  if ((data[0] & 255U) == 128U) {
+    output(0).push(p);
+    return;
+  }
+  output(1).push(p);
+  return;
+}
+.fi
+.PP
+After creating the source code,
+.B click-fastclassifier
+will optionally compile it into dynamically loadable packages. The
+Classifier elements in the input configuration are changed to use new
+FastClassifier elements, and the resulting configuration, plus source code
+and any compiled packages, are combined into an archive and written to the
+standard output. You can install such an archive into the
+.M click.o 8
+Linux kernel module with
+.M click-install 1 :
+.Sp
+.nf
+  % click-fastclassifier -k CONFIGURATION | click-install
+.fi
+.Sp
+The
+.M click 1
+user level driver can read the archives directly.
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-align
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read the router configuration to transform from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the output router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP
+.BR \-k ", " \-\-kernel
+Generate a dynamically loadable package for the
+.M click.o 8
+Linux kernel module.
+'
+.Sp
+.TP
+.BR \-u ", " \-\-user
+Generate a dynamically loadable package for the
+.M click 1
+user-level driver.
+'
+.Sp
+.TP 5
+.BR \-s ", " \-\-source
+Output only the source code for the FastClassifier elements.
+'
+.Sp
+.TP 5
+.BR \-c ", " \-\-config
+Output only the new configuration (the one that includes FastClassifiers).
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click 1 ,
+.M click-install 1 ,
+.M click 5 ,
+.M click.o 8 ,
+.M Classifier n
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

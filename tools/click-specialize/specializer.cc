@@ -241,16 +241,38 @@ Specializer::create_class(SpecializedClass &spc)
   CxxClass *old_cxxc = _cxxinfo.find_class(old_eti.cxx_name);
   CxxClass *new_cxxc = _cxxinfo.make_class(spc.cxx_name);
   assert(old_cxxc && new_cxxc);
-  new_cxxc->add_parent(old_cxxc);
+  bool specialize_away = (old_cxxc->find("specialize_away") != 0);
+  String parent_cxx_name = old_eti.cxx_name;
+  if (specialize_away) {
+    CxxClass *parent = old_cxxc->parent(0);
+    new_cxxc->add_parent(parent);
+    parent_cxx_name = parent->name();
+  } else
+    new_cxxc->add_parent(old_cxxc);
   spc.cxxc = new_cxxc;
 
   // add helper functions: constructor, destructor, class_name, is_a
-  new_cxxc->defun
-    (CxxFunction(spc.cxx_name, true, "", "()",
-		 " MOD_INC_USE_COUNT; ", ""));
-  new_cxxc->defun
-    (CxxFunction("~" + spc.cxx_name, true, "", "()",
-		 " MOD_DEC_USE_COUNT; ", ""));
+  if (specialize_away) {
+    CxxFunction *f = old_cxxc->find(old_eti.cxx_name);
+    CxxFunction &constructor = new_cxxc->defun
+      (CxxFunction(spc.cxx_name, true, "", "()", f->body(), f->clean_body()));
+    if (!constructor.find_expr(compile_pattern("MOD_INC_USE_COUNT")))
+      constructor.set_body(constructor.body() + "\nMOD_INC_USE_COUNT; ");
+
+    f = old_cxxc->find("~" + old_eti.cxx_name);
+    CxxFunction &destructor = new_cxxc->defun
+      (CxxFunction("~" + spc.cxx_name, true, "", "()", f->body(), f->clean_body()));
+    if (!destructor.find_expr(compile_pattern("MOD_DEC_USE_COUNT")))
+      destructor.set_body(destructor.body() + "\nMOD_DEC_USE_COUNT; ");
+    
+  } else {
+    new_cxxc->defun
+      (CxxFunction(spc.cxx_name, true, "", "()",
+		   " MOD_INC_USE_COUNT; ", ""));
+    new_cxxc->defun
+      (CxxFunction("~" + spc.cxx_name, true, "", "()",
+		   " MOD_DEC_USE_COUNT; ", ""));
+  }
   new_cxxc->defun
     (CxxFunction("class_name", true, "const char *", "() const",
 		 String(" return \"") + spc.click_name + "\"; ", ""));
@@ -261,7 +283,7 @@ Specializer::create_class(SpecializedClass &spc)
     (CxxFunction("is_a", false, "bool", "(const char *n) const",
 		 "\n  return (strcmp(n, \"" + spc.click_name + "\") == 0\n\
 	  || strcmp(n, \"" + old_eti.click_name + "\") == 0\n\
-	  || " + old_eti.cxx_name + "::is_a(n));\n", ""));
+	  || " + parent_cxx_name + "::is_a(n));\n", ""));
   // placeholders for pull_input and push_output
   new_cxxc->defun
     (CxxFunction("pull_input", false, "inline Packet *",
@@ -292,7 +314,10 @@ Specializer::create_class(SpecializedClass &spc)
     bool any_checked_push = false, any_push = false, any_pull = false;
     for (int i = 0; i < old_cxxc->nfunctions(); i++)
       if (old_cxxc->should_rewrite(i)) {
-	CxxFunction &new_fn = new_cxxc->defun(old_cxxc->function(i));
+	const CxxFunction &old_fn = old_cxxc->function(i);
+	if (new_cxxc->find(old_fn.name())) // don't add again
+	  continue;
+	CxxFunction &new_fn = new_cxxc->defun(old_fn);
 	while (new_fn.replace_expr(ninputs_pat, ninputs_repl)) ;
 	while (new_fn.replace_expr(noutputs_pat, noutputs_repl)) ;
 	while (new_fn.replace_expr(push_pat, push_repl))
