@@ -121,7 +121,7 @@ private:
   static void sanity_hook(unsigned long);
 
   Vector<grid_nbr_entry> expire_routes();
-  void send_routing_update(Vector<grid_nbr_entry> &rte_info);
+  void send_routing_update(Vector<grid_nbr_entry> &rte_info, bool);
 #if 0
   Packet *make_hello();
 #endif  

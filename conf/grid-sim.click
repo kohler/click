@@ -1,13 +1,13 @@
 elementclass GridNode {
   $ena, $ipa, $lat, $lon | 
 
-  li :: LocationInfo($lat, $lon, 1);
+  li :: LocationInfo($lat, $lon, 0);
 
   input
     -> HostEtherFilter($ena)
     -> CheckGridHeader
     -> fr :: FilterByRange(250, li)
-    -> nn :: Neighbor(2000, $ena, $ipa)
+    -> nn :: Neighbor(10000, 3000, 300, $ena, $ipa)
     -> Classifier(15/03)
     -> lr :: LocalRoute($ena, $ipa, nn)
     -> fl :: FixSrcLoc(li)
@@ -15,15 +15,16 @@ elementclass GridNode {
     -> oq :: Queue
     -> output;
 
-  LocalRouteHello(1000, 200, $ena, $ipa, nn, 10) -> fl;
-  Hello(500, 100, $ena, $ipa) -> fl;
+#  Hello(2000, 100, $ena, $ipa) -> fl;
 
   TimedSource(1000000) -> [1]lr;
   lr[1] -> Print(fromLR) -> Discard;
-  lr[2] -> Print(BadLR) -> Discard;
+  lr[2] -> Print(Geo) -> Discard;
+  lr[3] -> Print(BadLR) -> Discard;
   fr[1] -> Discard;
+  nn[1] -> fl;
 
-  ICMPSendPings($ipa, 1.0.0.3) -> [1]lr;
+#  ICMPSendPings($ipa, 1.0.0.3) -> [1]lr;
 };
 
 elementclass LAN3 {

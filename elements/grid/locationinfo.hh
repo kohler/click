@@ -55,6 +55,7 @@ protected:
   double xlat();
   double xlon();
   double uniform();
+  void choose_new_leg(double *, double *, double *);
 };
 
 #endif

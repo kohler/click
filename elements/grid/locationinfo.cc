@@ -105,6 +105,17 @@ LocationInfo::uniform()
   return(x);
 }
 
+// Pick a new place to move to, and a time by which we want
+// to arrive there.
+// Intended to be overridden.
+void
+LocationInfo::choose_new_leg(double *nlat, double *nlon, double *nt)
+{
+  *nlat = _lat0 + 0.0001 - (uniform() * 0.0002);
+  *nlon = _lon0 + 0.0001 - (uniform() * 0.0002);
+  *nt = _t0 + 20 * uniform();
+}
+
 grid_location
 LocationInfo::get_current_location()
 {
@@ -114,9 +125,12 @@ LocationInfo::get_current_location()
     _lat0 = xlat();
     _lon0 = xlon();
     _t0 = t;
-    _t1 = _t0 + 20 * uniform();
-    _vlat = 0.0001 - (uniform() * 0.0002);
-    _vlon = 0.0001 - (uniform() * 0.0002);
+    double nlat = 0, nlon = 0, nt = 0;
+    choose_new_leg(&nlat, &nlon, &nt);
+    assert(nt > 0);
+    _vlat = (nlat - _lat0) / nt;
+    _vlon = (nlon - _lon0) / nt;
+    _t1 = nt;
   }
 
   grid_location gl(xlat(), xlon());

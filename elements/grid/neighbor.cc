@@ -258,8 +258,11 @@ Neighbor::simple_action(Packet *packet)
 	}
       }
     
-      // send the triggered update
-      send_routing_update(triggered_rtes);
+      if(triggered_rtes.size() > 0){
+        // send the triggered update
+        send_routing_update(triggered_rtes, false);
+      }
+
       // remove the broken routes
       for (int i = 0; i < broken_rtes.size(); i++)
 	assert(_nbrs.remove(broken_rtes[i]));
@@ -396,8 +399,11 @@ Neighbor::expire_hook(unsigned long thunk)
   }
   
   Vector<grid_nbr_entry> expired_info = n->expire_routes();
-  // make and send the packet advertising any broken routes
-  n->send_routing_update(expired_info);
+  
+  if(expired_info.size() > 0){
+    // make and send the packet advertising any broken routes
+    n->send_routing_update(expired_info, false);
+  }
 
   n->_expire_timer.schedule_after_ms(EXPIRE_TIMER_PERIOD);
 }
@@ -477,7 +483,7 @@ Neighbor::hello_hook(unsigned long thunk)
   }
 
   // make and send the packet
-  n->send_routing_update(rte_entries);
+  n->send_routing_update(rte_entries, true);
 
   // XXX this random stuff is not right i think... wouldn't it be nice
   // if click had a phat RNG like ns?
@@ -491,7 +497,8 @@ Neighbor::hello_hook(unsigned long thunk)
 
 
 void
-Neighbor::send_routing_update(Vector<grid_nbr_entry> &rte_info)
+Neighbor::send_routing_update(Vector<grid_nbr_entry> &rte_info,
+                              bool update_seq)
 {
   /* build and send routing update packet advertising the contents of
      the rte_info vector.  calling function must fill in each nbr
@@ -523,10 +530,15 @@ Neighbor::send_routing_update(Vector<grid_nbr_entry> &rte_info)
   hlo->num_nbrs = (unsigned char) num_nbrs;
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
   hlo->seq_no = htonl(_seq_no);
-  /* originating sequence numbers are even, starting at 0.  odd
-     numbers are reserved for other nodes to advertise a broken route
-     to us.  from DSDV paper. */
-  _seq_no += 2;
+
+  // Update the sequence number for periodic updates, but not
+  // for triggered updates.
+  if(update_seq){
+    /* originating sequence numbers are even, starting at 0.  odd
+       numbers are reserved for other nodes to advertise a broken route
+       to us.  from DSDV paper. */
+    _seq_no += 2;
+  }
   
   hlo->age = htonl(grid_hello::MAX_AGE_DEFAULT);
 
