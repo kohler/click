@@ -403,22 +403,21 @@ Master::add_select(int fd, Element *element, int mask)
     assert(element && (mask & ~(SELECT_READ | SELECT_WRITE)) == 0);
     _select_lock.acquire();
 
-    int pi, free_pi = _pollfds.size();
-    for (pi = 0; pi < _pollfds.size(); pi++)
-	if (_pollfds[pi].fd == fd) {
+    int pi = _pollfds.size();
+    for (int pix = 0; pix < _pollfds.size(); pix++)
+	if (_pollfds[pix].fd == fd) {
 	    // There is exactly one match per fd.
-	    if (((mask & SELECT_READ) && (_pollfds[pi].events & POLLIN) && _read_poll_elements[pi] != element)
-		|| ((mask & SELECT_WRITE) && (_pollfds[pi].events & POLLOUT) && _write_poll_elements[pi] != element)) {
+	    if (((mask & SELECT_READ) && (_pollfds[pix].events & POLLIN) && _read_poll_elements[pix] != element)
+		|| ((mask & SELECT_WRITE) && (_pollfds[pix].events & POLLOUT) && _write_poll_elements[pix] != element)) {
 		_select_lock.release();
 		return -1;
 	    }
+	    pi = pix;
 	    break;
-	} else if (_pollfds[pi].fd < 0)
-	    free_pi = pi;
+	} else if (_pollfds[pix].fd < 0)
+	    pi = pix;
 
     // Add a new selector
-    if (pi == _pollfds.size())
-	pi = free_pi;
     if (pi == _pollfds.size()) {
 	_pollfds.push_back(pollfd());
 	_pollfds[pi].events = 0;
