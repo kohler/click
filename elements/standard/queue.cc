@@ -136,10 +136,12 @@ Queue::take_state(Element *e, ErrorHandler *errh)
 void
 Queue::cleanup(CleanupStage)
 {
-  for (int i = _head; i != _tail; i = next_i(i))
-    _q[i]->kill();
-  delete[] _q;
-  _q = 0;
+  if (_q) {
+    for (int i = _head; i != _tail; i = next_i(i))
+      _q[i]->kill();
+    delete[] _q;
+    _q = 0;
+  }
 }
 
 void
