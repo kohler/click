@@ -234,7 +234,9 @@ public:
     BETTER_RTE        = 0xe2,
     BETTER_RTE_SENDER = 0xe3,
     NEWER_SEQ         = 0xe4,
-    NEWER_SEQ_SENDER  = 0xe5
+    NEWER_SEQ_SENDER  = 0xe5,
+    REBOOT_SEQ        = 0xe6,
+    REBOOT_SEQ_SENDER = 0xe7
   };
 
   void log_sent_advertisement(unsigned seq_no, struct timeval when) { 
