@@ -3,40 +3,40 @@
 
 /*
  * =c
- * LocalRouteHello(PERIOD, JITTER, ETH, IP, NeighborName [, MAX-HOPS])
+ * SendGridLRHello(PERIOD, JITTER, ETH, IP, UpdateGridRoutes [, MAX-HOPS])
  * =d
  *
  * Every PERIOD millseconds (+/- a jitter bounded by JITTER
  * milliseconds), emit a Grid protocol ``LR_HELLO'' packet for the
  * Grid node at address IP with MAC address ETH, advertising any
- * neighbors within MAX-HOPS of the node, as reported by the Neighbor
- * element named by the 5th argument.  MAX-HOPS defaults to 1.  PERIOD
- * must be greater than 0, JITTER must be positive and less than
- * JITTER.  Produces Ethernet packets.
+ * neighbors within MAX-HOPS of the node, as reported by the
+ * UpdateGridRoutes element named by the 5th argument.  MAX-HOPS
+ * defaults to 1.  PERIOD must be greater than 0, JITTER must be
+ * positive and less than PERIOD.  Produces Grid packets with MAC
+ * headers.
  *
  * =e
- * LocalRouteHello(500, 100, 00:E0:98:09:27:C5, 18.26.4.115, nel) -> ? -> ToDevice(eth0)
+ * SendGridLRHello(500, 100, 00:E0:98:09:27:C5, 18.26.4.115, nel) -> ? -> ToDevice(eth0)
  *
  * =a
- * Neighbor, LocalRoute
- */
+ * UpdateGridRoutes, LookupLocalGridRoute */
 
 #include "element.hh"
 #include "timer.hh"
 #include "etheraddress.hh"
 #include "ipaddress.hh"
-#include "neighbor.hh"
+#include "updateroutes.hh"
 
-class LocalRouteHello : public Element {
+class SendGridLRHello : public Element {
   
 public:
   
-  LocalRouteHello();
-  ~LocalRouteHello();
+  SendGridLRHello();
+  ~SendGridLRHello();
   
-  const char *class_name() const		{ return "LocalRouteHello"; }
+  const char *class_name() const		{ return "SendGridLRHello"; }
   const char *processing() const		{ return PUSH; }
-  LocalRouteHello *clone() const;
+  SendGridLRHello *clone() const;
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -52,7 +52,7 @@ private:
   int _period;
   int _jitter;
   Timer _timer;
-  Neighbor *_nbr;
+  UpdateGridRoutes *_nbr;
   int _hops;
 };
 

@@ -22,30 +22,30 @@
 #include "router.hh"
 #include "grid.hh"
 
-LocalRouteHello::LocalRouteHello()
+SendGridLRHello::SendGridLRHello()
   : Element(0, 1), _timer(this), _nbr(0), _hops(1)
 {
 }
 
-LocalRouteHello::~LocalRouteHello()
+SendGridLRHello::~SendGridLRHello()
 {
 }
 
-LocalRouteHello *
-LocalRouteHello::clone() const
+SendGridLRHello *
+SendGridLRHello::clone() const
 {
-  return new LocalRouteHello;
+  return new SendGridLRHello;
 }
 
 int
-LocalRouteHello::configure(const Vector<String> &conf, ErrorHandler *errh)
+SendGridLRHello::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "period (msec)", &_period,
 			cpInteger, "jitter (msec)", &_jitter,
 			cpEthernetAddress, "source Ethernet address", &_from_eth,
 			cpIPAddress, "source IP address", &_from_ip,
-                        cpElement, "Neighbor element", &_nbr,
+                        cpElement, "UpdateGridRoutes element", &_nbr,
 			cpOptional,
 			cpInteger, "max nbr hops", &_hops,
 			0);
@@ -61,19 +61,19 @@ LocalRouteHello::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-LocalRouteHello::initialize(ErrorHandler *errh)
+SendGridLRHello::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, errh);
   _timer.attach(this);
   _timer.schedule_after_ms(_period); // Send periodically
 
-  if(_nbr && _nbr->cast("Neighbor") == 0){
-    errh->warning("%s: Neighbor argument %s has the wrong type",
+  if(_nbr && _nbr->cast("UpdateLocalGridRoutes") == 0){
+    errh->warning("%s: UpdateLocalGridRoutes argument %s has the wrong type",
                   id().cc(),
                   _nbr->id().cc());
     _nbr = 0;
   } else if (_nbr == 0) {
-    errh->warning("%s: no Neighbor element given",
+    errh->warning("%s: no UpdateLocalGridRoutes element given",
                   id().cc());
   }
 
@@ -81,7 +81,7 @@ LocalRouteHello::initialize(ErrorHandler *errh)
 }
 
 void
-LocalRouteHello::run_scheduled()
+SendGridLRHello::run_scheduled()
 {
   output(0).push(make_hello());
 
@@ -96,7 +96,7 @@ LocalRouteHello::run_scheduled()
 }
 
 Packet *
-LocalRouteHello::make_hello()
+SendGridLRHello::make_hello()
 {
   int psz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
   int num_nbrs = 0;
@@ -145,5 +145,5 @@ click_chatter("num_nbrs = %d , _hops = %d, nbrs.size() = %d",
 }
 
 ELEMENT_REQUIRES(userlevel)
-EXPORT_ELEMENT(LocalRouteHello)
+EXPORT_ELEMENT(SendGridLRHello)
 

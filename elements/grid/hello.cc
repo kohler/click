@@ -22,23 +22,23 @@
 #include "router.hh"
 #include "grid.hh"
 
-Hello::Hello()
+SendGridHello::SendGridHello()
   : Element(0, 1), _timer(this)
 {
 }
 
-Hello::~Hello()
+SendGridHello::~SendGridHello()
 {
 }
 
-Hello *
-Hello::clone() const
+SendGridHello *
+SendGridHello::clone() const
 {
-  return new Hello;
+  return new SendGridHello;
 }
 
 int
-Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
+SendGridHello::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "period (msec)", &_period,
@@ -56,7 +56,7 @@ Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-Hello::initialize(ErrorHandler *errh)
+SendGridHello::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, errh);
   _timer.attach(this);
@@ -66,7 +66,7 @@ Hello::initialize(ErrorHandler *errh)
 }
 
 void
-Hello::run_scheduled()
+SendGridHello::run_scheduled()
 {
   output(0).push(make_hello());
 
@@ -81,7 +81,7 @@ Hello::run_scheduled()
 }
 
 Packet *
-Hello::make_hello()
+SendGridHello::make_hello()
 {
   int psz = sizeof(click_ether) + sizeof(grid_hdr);
 
@@ -103,4 +103,4 @@ Hello::make_hello()
 }
 
 ELEMENT_REQUIRES(userlevel)
-EXPORT_ELEMENT(Hello)
+EXPORT_ELEMENT(SendGridHello)

@@ -1,5 +1,5 @@
 /*
- * neighbor.{cc,hh} -- Grid local neighbor table element
+ * updateroutes.{cc,hh} -- Grid local neighbor and route tables element
  * Douglas S. J. De Couto
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
@@ -14,7 +14,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "neighbor.hh"
+#include "updateroutes.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "click_ether.h"
@@ -25,7 +25,7 @@
 
 
 
-Neighbor::Neighbor() : Element(1, 2), _max_hops(3), 
+UpdateGridRoutes::UpdateGridRoutes() : Element(1, 2), _max_hops(3), 
   _hello_timer(hello_hook, (unsigned long) this), 
   _expire_timer(expire_hook, (unsigned long) this),
   _sanity_timer(sanity_hook, (unsigned long) this),
@@ -33,17 +33,17 @@ Neighbor::Neighbor() : Element(1, 2), _max_hops(3),
 {
 }
 
-Neighbor::~Neighbor()
+UpdateGridRoutes::~UpdateGridRoutes()
 {
 }
 
 
 
 void *
-Neighbor::cast(const char *n)
+UpdateGridRoutes::cast(const char *n)
 {
-  if (strcmp(n, "Neighbor") == 0)
-    return (Neighbor *)this;
+  if (strcmp(n, "UpdateGridRoutes") == 0)
+    return (UpdateGridRoutes *)this;
   else
     return 0;
 }
@@ -51,7 +51,7 @@ Neighbor::cast(const char *n)
 
 
 int
-Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
+UpdateGridRoutes::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpInteger, "entry timeout (msec)", &_timeout,
@@ -89,7 +89,7 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
 
 
 int
-Neighbor::initialize(ErrorHandler *)
+UpdateGridRoutes::initialize(ErrorHandler *)
 {
   //  ScheduleInfo::join_scheduler(this, errh);
   _hello_timer.attach(this);
@@ -108,7 +108,7 @@ Neighbor::initialize(ErrorHandler *)
 
 
 Packet *
-Neighbor::simple_action(Packet *packet)
+UpdateGridRoutes::simple_action(Packet *packet)
 {
   /*
    * expects grid packets, with MAC hdrs
@@ -122,7 +122,7 @@ Neighbor::simple_action(Packet *packet)
    */
   click_ether *eh = (click_ether *) packet->data();
   if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
-    click_chatter("%s: Neighbor: got non-Grid packet type", id().cc());
+    click_chatter("%s: got non-Grid packet type", id().cc());
     return packet;
   }
   grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
@@ -285,23 +285,23 @@ Neighbor::simple_action(Packet *packet)
 
 
 
-Neighbor *
-Neighbor::clone() const
+UpdateGridRoutes *
+UpdateGridRoutes::clone() const
 {
-  return new Neighbor;
+  return new UpdateGridRoutes;
 }
 
 
 static String
 print_nbrs(Element *e, void *)
 {
-  Neighbor *n = (Neighbor *) e;
+  UpdateGridRoutes *n = (UpdateGridRoutes *) e;
 
   String s = "\nimmediate neighbor addrs (";
   s += String(n->_addresses.count());
   s += "):\n";
 
-  for (Neighbor::Table::Iterator iter = n->_addresses.first(); iter; iter++) {
+  for (UpdateGridRoutes::Table::Iterator iter = n->_addresses.first(); iter; iter++) {
     s += iter.key().s();
     s += " -- ";
     s += iter.value().eth.s();
@@ -313,8 +313,8 @@ print_nbrs(Element *e, void *)
   s += "):\n";
   s += "ip next-hop num-hops loc seq-no\n";
 
-  for (Neighbor::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
-    Neighbor::far_entry f = iter.value();
+  for (UpdateGridRoutes::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
+    UpdateGridRoutes::far_entry f = iter.value();
     s += IPAddress(f.nbr.ip).s() + " " + IPAddress(f.nbr.next_hop_ip).s() 
       + " " + String((int) f.nbr.num_hops) + " " + f.nbr.loc.s() 
       + " " + String(f.nbr.seq_no) + "\n";
@@ -326,7 +326,7 @@ print_nbrs(Element *e, void *)
 static String
 print_ip(Element *e, void *)
 {
-  Neighbor *n = (Neighbor *) e;
+  UpdateGridRoutes *n = (UpdateGridRoutes *) e;
   return n->_ipaddr.s();
 }
 
@@ -334,13 +334,13 @@ print_ip(Element *e, void *)
 static String
 print_eth(Element *e, void *)
 {
-  Neighbor *n = (Neighbor *) e;
+  UpdateGridRoutes *n = (UpdateGridRoutes *) e;
   return n->_ethaddr.s();
 }
 
 
 void
-Neighbor::add_handlers()
+UpdateGridRoutes::add_handlers()
 {
   add_default_handlers(false);
   add_read_handler("nbrs", print_nbrs, 0);
@@ -351,7 +351,7 @@ Neighbor::add_handlers()
 
 
 bool
-Neighbor::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
+UpdateGridRoutes::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
 {
   assert(dest_eth != 0);
 
@@ -390,18 +390,18 @@ Neighbor::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
 
 
 void
-Neighbor::get_nbrs(Vector<grid_nbr_entry> *retval) const
+UpdateGridRoutes::get_nbrs(Vector<grid_nbr_entry> *retval) const
 {
   assert(retval != 0);
-  for (Neighbor::FarTable::Iterator iter = _nbrs.first(); iter; iter++)
+  for (UpdateGridRoutes::FarTable::Iterator iter = _nbrs.first(); iter; iter++)
     retval->push_back(iter.value().nbr);
 }
 
 
 void
-Neighbor::sanity_hook(unsigned long thunk) 
+UpdateGridRoutes::sanity_hook(unsigned long thunk) 
 {
-  Neighbor *n = (Neighbor *) thunk;
+  UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
   
   if (n->_num_updates_sent > SANITY_CHECK_MAX_PACKETS)
     click_chatter("%s: sent more than %d routing updates in %d milliseconds!",
@@ -412,12 +412,12 @@ Neighbor::sanity_hook(unsigned long thunk)
 }
 
 void
-Neighbor::expire_hook(unsigned long thunk) 
+UpdateGridRoutes::expire_hook(unsigned long thunk) 
 {
-  Neighbor *n = (Neighbor *) thunk;
+  UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
 
   // decrement the ages of the route entries
-  for (Neighbor::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
     // XXX yucky
     *((unsigned int *) &(iter.value().nbr.age)) = decr_age(iter.value().nbr.age, EXPIRE_TIMER_PERIOD);
   }
@@ -434,7 +434,7 @@ Neighbor::expire_hook(unsigned long thunk)
 
 
 Vector<grid_nbr_entry>
-Neighbor::expire_routes()
+UpdateGridRoutes::expire_routes()
 {
   /* removes expired routes and immediate neighbor entries from the
      tables.  returns a vector of expired routes which is suitable for
@@ -450,14 +450,14 @@ Neighbor::expire_routes()
   Vector<grid_nbr_entry> expired_nbrs;
 
   // find the expired immediate entries
-  for (Neighbor::Table::Iterator iter = _addresses.first(); iter; iter++) 
+  for (UpdateGridRoutes::Table::Iterator iter = _addresses.first(); iter; iter++) 
     if (jiff - iter.value().last_updated_jiffies > _timeout_jiffies)
       expired_addresses.insert(iter.key(), true);
 
   // find expired routing entries -- either we have had the entry for
   // too long, or it has been flying around the whole network for too
   // long, or we have expired the next hop from our immediate neighbor
-  for (Neighbor::FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
     assert(iter.value().nbr.num_hops > 0);
     if (jiff - iter.value().last_updated_jiffies > _timeout_jiffies ||
 	iter.value().nbr.age == 0 ||
@@ -488,14 +488,14 @@ Neighbor::expire_routes()
 
 
 void
-Neighbor::hello_hook(unsigned long thunk)
+UpdateGridRoutes::hello_hook(unsigned long thunk)
 {
-  Neighbor *n = (Neighbor *) thunk;
+  UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
 
   n->expire_routes();
 
   Vector<grid_nbr_entry> rte_entries;
-  for (Neighbor::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
     /* XXX if everyone is using the same max-hops parameter, we could
        leave out all of our entries that are exactly max-hops hops
        away, because we know those entries will be greater than
@@ -522,7 +522,7 @@ Neighbor::hello_hook(unsigned long thunk)
 
 
 void
-Neighbor::send_routing_update(Vector<grid_nbr_entry> &rte_info,
+UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
                               bool update_seq)
 {
   /* build and send routing update packet advertising the contents of
@@ -581,7 +581,7 @@ Neighbor::send_routing_update(Vector<grid_nbr_entry> &rte_info,
 
 #if 0
 Packet *
-Neighbor::make_hello()
+UpdateGridRoutes::make_hello()
 {
   int psz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
   
@@ -624,7 +624,7 @@ Neighbor::make_hello()
 
   grid_nbr_entry *curr = (grid_nbr_entry *) (p->data() + sizeof(click_ether) +
 					     sizeof(grid_hdr) + sizeof(grid_hello));
-  for (Neighbor::FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
+  for (UpdateGridRoutes::FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
     /* XXX if everyone is using the same max-hops parameter, we could
        leave out all of our entries that are exactly max-hops hops
        away, because we know those entries will be greater than
@@ -644,11 +644,11 @@ Neighbor::make_hello()
 
 
 ELEMENT_REQUIRES(userlevel)
-EXPORT_ELEMENT(Neighbor)
+EXPORT_ELEMENT(UpdateGridRoutes)
 
 #include "bighashmap.cc"
-template class BigHashMap<IPAddress, Neighbor::NbrEntry>;
-template class BigHashMap<IPAddress, Neighbor::far_entry>;
+template class BigHashMap<IPAddress, UpdateGridRoutes::NbrEntry>;
+template class BigHashMap<IPAddress, UpdateGridRoutes::far_entry>;
 #include "vector.cc"
 template class Vector<IPAddress>;
 template class Vector<grid_nbr_entry>;

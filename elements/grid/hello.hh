@@ -3,7 +3,7 @@
 
 /*
  * =c
- * Hello(PERIOD, JITTER, ETH, IP);
+ * SendGridHello(PERIOD, JITTER, ETH, IP);
  * =d
  *
  * Every PERIOD millseconds (+/- a jitter bounded by JITTER
@@ -15,10 +15,10 @@
  * FixSrcLoc puts the node's position into the packet.
  *
  * =e
- * Hello(500, 100, 00:E0:98:09:27:C5, 18.26.4.115) -> ? -> ToDevice(eth0)
+ * SendGridHello(500, 100, 00:E0:98:09:27:C5, 18.26.4.115) -> ? -> ToDevice(eth0)
  *
  * =a
- * Neighbor, LocalRouteHello
+ * UpdateGridRoutes, SendGridLRHello
  */
 
 #include "element.hh"
@@ -26,16 +26,16 @@
 #include "etheraddress.hh"
 #include "ipaddress.hh"
 
-class Hello : public Element {
+class SendGridHello : public Element {
   
 public:
   
-  Hello();
-  ~Hello();
+  SendGridHello();
+  ~SendGridHello();
   
-  const char *class_name() const		{ return "Hello"; }
+  const char *class_name() const		{ return "SendGridHello"; }
   const char *processing() const		{ return PUSH; }
-  Hello *clone() const;
+  SendGridHello *clone() const;
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);

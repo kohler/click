@@ -1,5 +1,5 @@
 /*
- * localroute.{cc,hh} -- Grid multihop local routing element
+ * lookupgridroute.{cc,hh} -- Grid multihop local routing element
  * Douglas S. J. De Couto
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
@@ -14,7 +14,7 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "localroute.hh"
+#include "lookupgridroute.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "click_ether.h"
@@ -24,30 +24,30 @@
 #include "router.hh"
 #include "glue.hh"
 
-LocalRoute::LocalRoute() : Element(2, 4), _nbr(0), _max_forwarding_hops(5)
+LookupLocalGridRoute::LookupLocalGridRoute() : Element(2, 4), _nbr(0), _max_forwarding_hops(5)
 {
 }
 
-LocalRoute::~LocalRoute()
+LookupLocalGridRoute::~LookupLocalGridRoute()
 {
 }
 
 void *
-LocalRoute::cast(const char *n)
+LookupLocalGridRoute::cast(const char *n)
 {
-  if (strcmp(n, "LocalRoute") == 0)
-    return (LocalRoute *)this;
+  if (strcmp(n, "LookupLocalGridRoute") == 0)
+    return (LookupLocalGridRoute *)this;
   else
     return 0;
 }
 
 int
-LocalRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
+LookupLocalGridRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
-                        cpElement, "Neighbor element", &_nbr,
+                        cpElement, "UpdadateGridRoutes element", &_nbr,
 			cpOptional,
 			cpInteger, "max hops to forward packets for", &_max_forwarding_hops,
 			0);
@@ -55,16 +55,16 @@ LocalRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-LocalRoute::initialize(ErrorHandler *errh)
+LookupLocalGridRoute::initialize(ErrorHandler *errh)
 {
 
-  if(_nbr && _nbr->cast("Neighbor") == 0){
-    errh->warning("%s: Neighbor argument %s has the wrong type",
+  if(_nbr && _nbr->cast("UpdateGridRoutes") == 0){
+    errh->warning("%s: UpdateGridRoutes argument %s has the wrong type",
                   id().cc(),
                   _nbr->id().cc());
     _nbr = 0;
   } else if (_nbr == 0) {
-    errh->warning("%s: no Neighbor element given",
+    errh->warning("%s: no UpdateGridRoutes element given",
                   id().cc());
   }
 
@@ -74,7 +74,7 @@ LocalRoute::initialize(ErrorHandler *errh)
 }
 
 void
-LocalRoute::run_scheduled()
+LookupLocalGridRoute::run_scheduled()
 {
   if (Packet *p = input(0).pull())
     push(0, p); 
@@ -83,7 +83,7 @@ LocalRoute::run_scheduled()
 }
 
 void
-LocalRoute::push(int port, Packet *packet)
+LookupLocalGridRoute::push(int port, Packet *packet)
 {
   /* 
    * input 1 and output 1 hook up to higher level (e.g. ip), input 0
@@ -162,22 +162,22 @@ LocalRoute::push(int port, Packet *packet)
   }
 }
 
-LocalRoute *
-LocalRoute::clone() const
+LookupLocalGridRoute *
+LookupLocalGridRoute::clone() const
 {
-  return new LocalRoute;
+  return new LookupLocalGridRoute;
 }
 
 
 void
-LocalRoute::add_handlers()
+LookupLocalGridRoute::add_handlers()
 {
   add_default_handlers(true);
 }
 
 
 void
-LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
+LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 {
   WritablePacket *packet = xp->uniqueify();
 
@@ -188,8 +188,8 @@ LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
    */
 
   if (_nbr == 0) {
-    // no Neighbor next-hop table in configuration
-    click_chatter("%s: can't forward packet for %s; there is no neighbor table, trying geographic forwarding", id().cc(), dest_ip.s().cc());
+    // no UpdateGridRoutes next-hop table in configuration
+    click_chatter("%s: can't forward packet for %s; there is no routing table, trying geographic forwarding", id().cc(), dest_ip.s().cc());
     output(2).push(packet);
     return;
   }
@@ -224,4 +224,4 @@ LocalRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 }
 
 ELEMENT_REQUIRES(userlevel)
-EXPORT_ELEMENT(LocalRoute)
+EXPORT_ELEMENT(LookupLocalGridRoute)
