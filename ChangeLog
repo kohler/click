@@ -1,3 +1,8 @@
+2004-03-05 Friday 19:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/: ratedsource.cc (1.48), ratedsource.hh (1.29):
+	add DATASIZE keyword to RatedSource
+
 2004-03-05 Friday 18:21  Eddie Kohler <kohler@icir.org>
 
 	* lib/router.cc (1.156): nit
