@@ -1,3 +1,27 @@
+2002-05-22 Wednesday 18:19  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.106), click-buildtool (1.36), configure.in
+	(1.186), bsdmodule/Makefile.in (1.20), doc/Makefile.in (1.44),
+	exopc/Makefile.in (1.13), linuxmodule/Makefile.in (1.72),
+	userlevel/Makefile.in (1.65): click-buildtool update: Take
+	requirements only from the command line (no special directory
+	magic). Required updates in various Makefiles. Reported as a bug by
+	Max Poletto
+
+2002-05-22 Wednesday 17:34  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: analysis/toipsumdump.cc (1.15),
+	analysis/toipsumdump.hh (1.11), linuxmodule/todevice.cc (1.125),
+	linuxmodule/todevice.hh (1.60), standard/delayunqueue.hh (1.9),
+	standard/discard.hh (1.19), standard/notifierqueue.cc (1.4),
+	standard/notifierqueue.hh (1.5), standard/queue.cc (1.42),
+	standard/simplequeue.cc (1.1), standard/simplequeue.hh (1.1),
+	standard/unqueue.cc (1.18), standard/unqueue.hh (1.11),
+	userlevel/todump.cc (1.37), userlevel/todump.hh (1.25): Queues are
+	now NotifierQueues. The old, non-Notifier Queue is available under
+	the name "SimpleQueue". Added notification support to ToDump,
+	Unqueue, and several other elements.
+
 2002-05-22 Wednesday 14:59  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.59), elements/aqm/pi.cc (1.6), elements/aqm/red.cc

@@ -1,3 +1,9 @@
+2002-05-22 Wednesday 18:19  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: click-buildtool update: Take requirements only
+	from the command line (no special directory magic). Required
+	updates in various Makefiles. Reported as a bug by Max Poletto
+
 2002-05-22 Wednesday 14:59  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/standard/: storage.hh, storage.hh, storage.hh: add
