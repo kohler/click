@@ -1,4 +1,4 @@
-2001-07-26 Thursday 19:04  aguayo
+2001-07-26 Thursday 19:04  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* conf/grid.click (1.31): fixed names of some perl preprocess
 	constants
@@ -163,7 +163,7 @@
 	click-mkelemmap and click-elem2man read new "click-buildtool -F"
 	output format
 
-2001-07-23 Monday 15:16  aguayo
+2001-07-23 Monday 15:16  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* conf/grid.click (1.30): [no log message]
 
@@ -561,7 +561,7 @@
 	* conf/ron/: make-adapt-ron.pl (1.1), make-adapt-ron2.pl (1.8):
 	enlarged max pkt size
 
-2001-07-05 Thursday 15:48  aguayo
+2001-07-05 Thursday 15:48  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* tools/run-grid (1.1): first attempt at unifying run-grid-node,
 	run-grid-gateway, run-grid-gateway.openbsd, etc.
