@@ -14,9 +14,9 @@ click-install KERNELCONFIG
 tcpdump -n -i fake0 >FAKE0 2>&1 &
 usleep 500000
 dump1=$!
-ping -n -w 1 -c 1 1.0.0.2 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >PING1
+ping -n -i 1 -c 1 1.0.0.2 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >PING1
 echo 1 > /click/sw/switch
-ping -n -w 1 -c 1 1.0.0.3 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >>PING1
+ping -n -i 1 -c 1 1.0.0.3 | grep transmitted | sed 's/^\([0-9]*\).*/\1/' >>PING1
 kill $dump1
 cat /click/th0/drops /click/th1/drops >DROPS
 cat /click/c/count >COUNT
