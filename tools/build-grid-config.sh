@@ -29,6 +29,8 @@ Options:
   --location-error ERR    Location error radius, in metres.  Defaults to 0.
   --loc-tag TAG           Location tag string.  
 
+  --disable-gf            Disable geographic forwarding
+
   --click CLICK           Where to find the Click executable.
                           Default: $click
   --m4 M4                 Where to find the m4 executable.
@@ -64,6 +66,8 @@ lon=
 no_loc=
 loc_err=0
 loc_tag=no_tag
+
+disable_gf=0
 
 # process command line
 if test $# -gt 0; then
@@ -152,6 +156,8 @@ case $1 in
 	fi
 	shift 1; gw_ip=$1;
 	shift 1;;
+    --disable-gf)
+        disable_gf=1;;
     *)
 	usage;;
     esac
@@ -244,6 +250,10 @@ if [ -n "$gw_dev" ]; then
     defines="$defines -DIS_GATEWAY -DGW_IP=$gw_ip -DGW_MAC_ADDR=$gw_mac -DGW_NET_DEVICE=$gw_dev"
 fi
 
+# turn off geographic forwarding?
+if [ $disable_gf -eq 1 ]; then
+    defines="$define -DDISABLE_GF"
+fi
 
 # get protocol numbers from Click binary 
 defines="$defines -DGRID_ETH_PROTO=`$click -q -e 'g::GridHeaderInfo' -h g.grid_ether_proto`"

@@ -146,6 +146,8 @@ dnl define(GRID_MAC_ADDR, ?)
 dnl This node's wireless device, e.g. eth0 
 dnl define(GRID_NET_DEVICE, ?) 
 
+dnl If defined, geographic forwarding (including location queries/replies) is disabled.
+dnl define(DISABLE_GF, 1)
 
 dnl
 dnl Gateway configuration.

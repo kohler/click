@@ -138,12 +138,12 @@ grid_demux [1]
 //	       -> Print("gd1 ")
                -> query_demux :: Classifier(OFFSET_LOC_QUERY_DST/GRID_HEX_IP, 
 					    OFFSET_LOC_QUERY_DST/GRID_ANY_GATEWAY_HEX_IP,
-					    -); // loc query for us
+					    -);
 grid_demux [2]
 //	       -> Print("gd2 ")
                -> repl_demux :: Classifier(OFFSET_LOC_REPLY_DST/GRID_HEX_IP, 
 					   OFFSET_LOC_REPLY_DST/GRID_ANY_GATEWAY_HEX_IP,
-					   -); // loc reply for us
+					   -); 
 grid_demux [3]
 //	       -> Print("gd3 ")
                -> nb;
@@ -156,7 +156,7 @@ grid_demux [5]
 //             -> Print("gd5 ") 
                -> probe_repl_demux :: Classifier(OFFSET_ROUTE_PROBE_DST/GRID_HEX_IP, 
                                                  OFFSET_ROUTE_PROBE_DST/GRID_ANY_GATEWAY_HEX_IP,
-                                                 -); // probe reply for us
+                                                 -); 
 
 query_demux [0] 
 //	       -> Print("qd0 ")
@@ -228,7 +228,13 @@ lr [1]
        -> check :: CheckIPHeader; // IP packets getting passed up to kernel
 lr [2]
 //       -> Print ("lr2 ") // packets for GF
+ifdef(`DISABLE_GF',
+       -> Discard;
+       Idle
+, dnl else
        -> [0] fq;
+)
+
 lr [3]
 //       -> Print ("lr3 ")
        -> Discard; // bad packets
