@@ -11,15 +11,24 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
 #define CLICKPATH_OPT		302
 #define ROUTER_OPT		303
 #define OUTPUT_OPT		305
+#define FLATTEN_OPT		306
+#define CLASSES_OPT		307
+#define ELEMENTS_OPT		308
+#define DECLARATIONS_OPT	309
 
 static Clp_Option options[] = {
+  { "classes", 'c', CLASSES_OPT, 0, 0 },
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
+  { "decls", 'd', DECLARATIONS_OPT, 0, 0 },
+  { "declarations", 'd', DECLARATIONS_OPT, 0, 0 },
+  { "elements", 'e', ELEMENTS_OPT, 0, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
@@ -49,11 +58,30 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 Options:\n\
   -f, --file FILE           Read router configuration from FILE.\n\
   -o, --output FILE         Write output configuration to FILE.\n\
+  -c, --classes             Output list of classes used by configuration.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
   -v, --version             Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
+}
+
+extern "C" {
+  static int
+  string_sorter(const void *va, const void *vb)
+  {
+    const String *a = (const String *)va, *b = (const String *)vb;
+    return a->compare(*b);
+  }
+}
+
+static void
+output_sorted_one_per_line(Vector<String> &v, FILE *out)
+{
+  if (v.size())
+    qsort((void *)&v[0], v.size(), sizeof(String), string_sorter);
+  for (int i = 0; i < v.size(); i++)
+    fprintf(out, "%s\n", v[i].cc());
 }
 
 int
@@ -73,6 +101,7 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
+  int action = FLATTEN_OPT;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -97,6 +126,12 @@ particular purpose.\n");
       set_clickpath(clp->arg);
       break;
 
+     case CLASSES_OPT:
+     case DECLARATIONS_OPT:
+     case ELEMENTS_OPT:
+      action = opt;
+      break;
+      
      case OUTPUT_OPT:
       if (output_file) {
 	errh->error("--output file specified twice");
@@ -133,7 +168,47 @@ particular purpose.\n");
   if (!router || errh->nerrors() > 0)
     exit(1);
 
-  if (write_router_file(router, output_file, errh) < 0)
+  FILE *out;
+  if (!output_file || strcmp(output_file, "-") == 0)
+    out = stdout;
+  else if (!(out = fopen(output_file, "wb"))) {
+    errh->error("%s: %s", output_file, strerror(errno));
     exit(1);
+  }
+
+  switch (action) {
+
+   case FLATTEN_OPT:
+    write_router_file(router, out, errh);
+    break;
+
+   case CLASSES_OPT: {
+     Vector<String> classes;
+     for (int i = RouterT::FIRST_REAL_TYPE; i < router->ntypes(); i++)
+       classes.push_back(router->type_name(i));
+     output_sorted_one_per_line(classes, out);
+     break;
+   }
+
+   case DECLARATIONS_OPT: {
+     Vector<String> decls;
+     for (int i = 0; i < router->nelements(); i++) {
+       String e = router->ename(i), et = router->etype_name(i);
+       decls.push_back(e + " :: " + et);
+     }
+     output_sorted_one_per_line(decls, out);
+     break;
+   }
+
+   case ELEMENTS_OPT: {
+     Vector<String> elts;
+     for (int i = 0; i < router->nelements(); i++)
+       elts.push_back(router->ename(i));
+     output_sorted_one_per_line(elts, out);
+     break;
+   }
+   
+  }
+  
   return 0;
 }

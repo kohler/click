@@ -44,7 +44,7 @@ The
 .B click-flatten
 tool flattens a Click router configuration, compiling all its compound
 elements away, and writes the resulting configuration to the standard
-output.
+output. It can also output information about the file.
 '
 .SH "OPTIONS"
 '
@@ -52,6 +52,33 @@ If any filename argument is a single dash "-",
 .B click-flatten
 will use the standard input or output instead, as appropriate.
 '
+.TP 5
+.BI \-c
+.PD 0
+.TP
+.BI \-\-classes
+Output an alphabetical list of the element classes used by the flattened
+router file, one per line, instead of the usual configuration.
+'
+.Sp
+.TP 5
+.BI \-e
+.PD 0
+.TP
+.BI \-\-elements
+Output an alphabetical list of the element names in the flattened router
+file, one per line, instead of the usual configuration.
+'
+.Sp
+.TP 5
+.BI \-d
+.PD 0
+.TP
+.BI \-\-declarations
+Output the element declarations in the flattened router file, one per line,
+instead of the usual configuration.
+'
+.Sp
 .TP 5
 .BI \-f " file"
 .PD 0
