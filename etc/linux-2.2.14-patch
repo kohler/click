@@ -51,15 +51,6 @@ Index: include/linux/netdevice.h
 Index: net/core/skbuff.c
 --- net/core/skbuff.c.orig	Thu Mar  2 18:27:45 2000
 +++ net/core/skbuff.c	Tue Feb 29 20:40:49 2000
-@@ -4,7 +4,7 @@
-  *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
-  *			Florian La Roche <rzsfl@rz.uni-sb.de>
-  *
-- *	Version:	$Id: click-patch-1.0.7,v 1.1 2000/05/30 15:04:53 benjie Exp $
-+ *	Version:	$Id: click-patch-1.0.7,v 1.1 2000/05/30 15:04:53 benjie Exp $
-  *
-  *	Fixes:	
-  *		Alan Cox	:	Fixed the worst of the load balancer bugs.
 @@ -256,6 +256,47 @@
  	n->destructor = NULL;
  	return n;
