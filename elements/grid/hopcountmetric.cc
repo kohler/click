@@ -18,6 +18,8 @@
 #include "elements/grid/hopcountmetric.hh"
 CLICK_DECLS 
 
+const GridGenericMetric::metric_t GridGenericMetric::_bad_metric(777777, false);
+
 HopcountMetric::HopcountMetric()
   : GridGenericMetric(0, 0)
 {
@@ -66,7 +68,7 @@ GridGenericMetric::metric_t
 HopcountMetric::append_metric(const metric_t &r, const metric_t &l) const
 {
   if (!r.good() || !l.good())
-    return metric_t(777777, false); // `bad' metric
+    return _bad_metric;
   else
     return metric_t(r.val() + l.val());
 }

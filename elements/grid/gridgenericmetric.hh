@@ -42,6 +42,9 @@ public:
   // metric L to the end of route with metric R.  Either L or R may be
   // invalid, which will result in an invalid combined metric.
   virtual metric_t append_metric(const metric_t &r, const metric_t &l) const = 0;
+
+protected:
+  static const metric_t _bad_metric; // defined in hopcountmetric.cc
 };
 
 CLICK_ENDDECLS
