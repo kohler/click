@@ -34,8 +34,9 @@
  *
  * TCPAck only deals with DATA packets. it doesn't try to acknowledge SYN and
  * FIN packets. TCPAck starts using ack number from the first SYN ACK packet
- * it sees on in/output port 0 or 1. packets before that are rejected. the tcp
- * and ip header from this packet are used to send explicit ACK packets. 
+ * it sees on in/output port 0 or 1. packets before that are rejected. TCPAck
+ * also copies the ip and tcp headers of the first accepted incoming packet
+ * for use in sending ACK packets.
  *
  * TCPAck does not compute checksum on any packets. use SetIPChecksum and
  * SetTCPChecksum instead.

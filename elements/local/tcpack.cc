@@ -198,7 +198,7 @@ TCPAck::send_ack()
   
   ip->ip_v = 4;
   ip->ip_hl = 5;
-  ip->ip_tos = 0;
+  ip->ip_tos = _iph_in.ip_tos;
   ip->ip_len = htons(q->length());
   ip->ip_id = htons(0); // what is this used for exactly?
   ip->ip_off = htons(IP_DF);
@@ -214,7 +214,7 @@ TCPAck::send_ack()
   tcp->th_ack = htonl(_ack_nxt);
   tcp->th_off = 5;
   tcp->th_flags = TH_ACK;
-  tcp->th_win = htons(32120);
+  tcp->th_win = htons(32120); // when and where should this be set?
   tcp->th_sum = htons(0);
   tcp->th_urp = htons(0);
 
