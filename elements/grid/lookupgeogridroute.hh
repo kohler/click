@@ -3,7 +3,7 @@
 
 /*
  * =c
- * LookupGeographicGridRoute(MAC-ADDRESS, IP-ADDRESS, UpdateGridRoutes, GridLocationInfo)
+ * LookupGeographicGridRoute(MAC-ADDRESS, IP-ADDRESS, GridGenericRouteTable, GridLocationInfo)
  *
  * =s Grid
  * =d 
@@ -28,7 +28,7 @@
  *
  * =a
  * LookupLocalGridRoute
- * UpdateGridRoutes 
+ * GridGenericRouteTable
  * GridLocationInfo */
 
 #include <click/element.hh>
@@ -70,7 +70,7 @@ private:
   bool dest_loc_good(const Packet *p) const;
   grid_location get_dest_loc(const Packet *p) const;
 
-  GridRouteTable *_rt;
+  GridGenericRouteTable *_rt;
   GridLocationInfo *_li;
   EtherAddress _ethaddr;
   IPAddress _ipaddr;

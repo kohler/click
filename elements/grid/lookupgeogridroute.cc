@@ -54,15 +54,15 @@ LookupGeographicGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
   int res = cp_va_parse(conf, this, errh,
 			cpEthernetAddress, "source Ethernet address", &_ethaddr,
 			cpIPAddress, "source IP address", &_ipaddr,
-                        cpElement, "GridRouteTable element", &_rt,
+                        cpElement, "GridGenericRouteTable element", &_rt,
 			cpElement, "GridLocationInfo element", &_li,
 			0);
 
   if (res < 0)
     return res;
 
-  if (_rt->cast("GridRouteTable") == 0) {
-    errh->warning("%s: GridRouteTable argument %s has the wrong type",
+  if (_rt->cast("GridGenericRouteTable") == 0) {
+    errh->warning("%s: GridGenericRouteTable argument %s has the wrong type",
                   id().cc(),
                   _rt->id().cc());
     return -1;
