@@ -179,7 +179,7 @@ ToyTCP::tcp_output(Packet *xp)
   th->th_sport = _sport;
   th->th_dport = _dport;
   if(_state){
-    th->th_seq = htonl(_snd_nxt + (_out & 0xfff));
+    th->th_seq = htonl(_snd_nxt + 1 + (_out & 0xfff));
   } else {
     th->th_seq = htonl(_snd_nxt);
   }
