@@ -1,3 +1,16 @@
+2001-04-06 Friday 16:42  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: fasttcpflows.cc, fasttcpflows.hh,
+	fastudpflows.hh: add a tcp flow generator: it is similar to
+	fastudpflows element, but generate tcp packets. first and last tcp
+	packet in the flow are SYN and FIN packets; other packets are DATA
+	packets. use bogus sequence and ack numbers.
+
+2001-04-06 Friday 16:41  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/tcpudp/: iprewriter.cc, iprewriter.hh: add tcp done
+	timeout argument
+
 2001-04-06 Friday 12:46  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/tcpudp/: iprewriter.cc, iprewriter.hh: added keyword
