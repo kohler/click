@@ -651,10 +651,11 @@ Router::downstream_inputs(Element *first_element, int first_output,
     outputs.assign(nopidx, false);
     for (int i = 0; i < nipidx; i++)
       if (diff[i]) {
-	int facno = _input_eidx[i];
-	if (!stop_filter || !stop_filter->match(_elements[facno])) {
-	  _elements[facno]->forward_flow(input_pidx_port(i), &scratch);
-	  outputs.or_at(scratch, _output_pidx[facno]);
+	int ei = _input_eidx[i];
+	int port = input_pidx_port(i);
+	if (!stop_filter || !stop_filter->match(_elements[ei], port)) {
+	  _elements[ei]->forward_flow(port, &scratch);
+	  outputs.or_at(scratch, _output_pidx[ei]);
 	}
       }
   }
@@ -725,10 +726,11 @@ Router::upstream_outputs(Element *first_element, int first_input,
     inputs.assign(nipidx, false);
     for (int i = 0; i < nopidx; i++)
       if (diff[i]) {
-	int facno = _output_eidx[i];
-	if (!stop_filter || !stop_filter->match(_elements[facno])) {
-	  _elements[facno]->backward_flow(output_pidx_port(i), &scratch);
-	  inputs.or_at(scratch, _input_pidx[facno]);
+	int ei = _output_eidx[i];
+	int port = output_pidx_port(i);
+	if (!stop_filter || !stop_filter->match(_elements[ei], port)) {
+	  _elements[ei]->backward_flow(port, &scratch);
+	  inputs.or_at(scratch, _input_pidx[ei]);
 	}
       }
   }

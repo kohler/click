@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/elemfilter.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/elemfilter.hh" -*-
 /*
  * elemfilter.{cc,hh} -- element filters
  * Eddie Kohler
@@ -17,27 +17,60 @@
  */
 
 #include <click/config.h>
-
 #include <click/elemfilter.hh>
 
 void
 ElementFilter::filter(Vector<Element *> &v)
 {
-  Vector<Element *> nv;
-  for (int i = 0; i < v.size(); i++)
-    if (match(v[i]))
-      nv.push_back(v[i]);
-  v = nv;
+    Vector<Element *> nv;
+    for (int i = 0; i < v.size(); i++)
+	if (match(v[i], -1))
+	    nv.push_back(v[i]);
+    v = nv;
 }
 
 
 CastElementFilter::CastElementFilter(const String &what)
-  : _what(what)
+    : _what(what)
 {
 }
 
 bool
-CastElementFilter::match(Element *f)
+CastElementFilter::match(Element *e, int)
 {
-  return f->cast(_what) != 0;
+    return e->cast(_what) != 0;
+}
+
+
+InputProcessingElementFilter::InputProcessingElementFilter(bool p)
+    : _push(p)
+{
+}
+
+bool
+InputProcessingElementFilter::match(Element *e, int port)
+{
+    return (port >= 0 && e->input_is_pull(port) != _push);
+}
+
+
+OutputProcessingElementFilter::OutputProcessingElementFilter(bool p)
+    : _push(p)
+{
+}
+
+bool
+OutputProcessingElementFilter::match(Element *e, int port)
+{
+    return (port >= 0 && e->output_is_push(port) == _push);
+}
+
+
+bool
+DisjunctionElementFilter::match(Element *e, int port)
+{
+    for (int i = 0; i < _filters.size(); i++)
+	if (_filters[i]->match(e, port))
+	    return true;
+    return false;
 }
