@@ -1,3 +1,137 @@
+2001-05-22 Tuesday 17:42  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: app/ftpportmapper.cc (1.13), ethernet/arpfaker.cc
+	(1.16), ethernet/arpquerier.cc (1.35), ethernet/arpresponder.cc
+	(1.32), ethernet/etherencap.cc (1.14), ethernet/ethermirror.cc
+	(1.7), ethernet/hostetherfilter.cc (1.9),
+	ethernet/ip6ndadvertiser.cc (1.11), ethernet/ip6ndsolicitor.cc
+	(1.11), etherswitch/bridgemessage.cc (1.15),
+	etherswitch/debugbridge.cc (1.12), etherswitch/etherswitch.cc
+	(1.12), etherswitch/spantree.cc (1.26), grid/checkgridheader.cc
+	(1.16), grid/filterbyhops.cc (1.7), grid/filterbyrange.cc (1.21),
+	grid/fixdstloc.cc (1.7), grid/fixsrcloc.cc (1.22),
+	grid/floodinglocquerier.cc (1.22), grid/gridlocationinfo.cc (1.6),
+	grid/gridroutetable.cc (1.4), grid/hello.cc (1.32),
+	grid/locationinfo.cc (1.21), grid/locfromfile.cc (1.10),
+	grid/locqueryresponder.cc (1.17), grid/loctable.cc (1.8),
+	grid/lookupgeogridroute.cc (1.15), grid/lookuplocalgridroute.cc
+	(1.20), grid/lrhello.cc (1.17), grid/movesim.cc (1.14), grid/pep.cc
+	(1.19), grid/printgrid.cc (1.14), grid/radiosim.cc (1.11),
+	grid/regionpep.cc (1.11), grid/setgridchecksum.cc (1.13),
+	grid/simplelocquerier.cc (1.8), grid/updateroutes.cc (1.19),
+	icmp/checkicmpheader.cc (1.6), icmp/icmperror.cc (1.6),
+	icmp/icmppingresponder.cc (1.4), icmp/icmppingrewriter.cc (1.5),
+	icmp/icmprewriter.cc (1.6), icmp/icmpsendpings.cc (1.7),
+	ip/checkipheader.cc (1.35), ip/checkipheader2.cc (1.22),
+	ip/decipttl.cc (1.20), ip/fixipsrc.cc (1.17), ip/getipaddress.cc
+	(1.15), ip/ipaddrrewriter.cc (1.6), ip/ipclassifier.cc (1.21),
+	ip/ipencap.cc (1.27), ip/ipfilter.cc (1.25), ip/ipfragmenter.cc
+	(1.21), ip/ipgwoptions.cc (1.24), ip/ipinputcombo.cc (1.21),
+	ip/ipmirror.cc (1.14), ip/ipoutputcombo.cc (1.15), ip/ipprint.cc
+	(1.24), ip/ipratemon.cc (1.90), ip/iprw.cc (1.32),
+	ip/iprwpatterns.cc (1.10), ip/lookupiproute.cc (1.20),
+	ip/lookupiproute2.cc (1.17), ip/lookupiproutelinux.cc (1.19),
+	ip/lookupiproutemp.cc (1.7), ip/markipce.cc (1.4),
+	ip/markipheader.cc (1.12), ip/rfc2507c.cc (1.18), ip/rfc2507d.cc
+	(1.16), ip/ripsend.cc (1.24), ip/rripmapper.cc (1.8),
+	ip/saveipfields.cc (1.11), ip/setipaddress.cc (1.15),
+	ip/setipchecksum.cc (1.13), ip/setipdscp.cc (1.21),
+	ip/setrandipaddress.cc (1.4), ip/storeipaddress.cc (1.13),
+	ip/stripipheader.cc (1.8), ip/unstripipheader.cc (1.7),
+	ip6/checkip6header.cc (1.14), ip6/decip6hlim.cc (1.9),
+	ip6/getip6address.cc (1.8), ip6/icmp6error.cc (1.17),
+	ip6/ip6fragmenter.cc (1.7), ip6/ip6mirror.cc (1.4),
+	ip6/lookupip6route.cc (1.15), ip6/markip6header.cc (1.7),
+	ip6/setip6address.cc (1.7), ipsec/des.cc (1.15), ipsec/desp.cc
+	(1.19), ipsec/esp.cc (1.22), linuxmodule/anydevice.cc (1.15),
+	linuxmodule/cpuqueue.cc (1.8), linuxmodule/cpuswitch.cc (1.4),
+	linuxmodule/cyclecount.cc (1.10), linuxmodule/cyclecountaccum.cc
+	(1.6), linuxmodule/fasttcpflows.cc (1.2),
+	linuxmodule/fastudpflows.cc (1.3), linuxmodule/fastudpsrc.cc (1.8),
+	linuxmodule/fastudpsrcip6.cc (1.7), linuxmodule/fromdevice.cc
+	(1.56), linuxmodule/fromlinux.cc (1.28), linuxmodule/perfcount.cc
+	(1.14), linuxmodule/perfcountaccum.cc (1.6),
+	linuxmodule/perfcountinfo.cc (1.4), linuxmodule/perfcountuser.cc
+	(1.10), linuxmodule/perfinfo.cc (1.20), linuxmodule/polldevice.cc
+	(1.107), linuxmodule/rtcycles.cc (1.7),
+	linuxmodule/schedulelinux.cc (1.15), linuxmodule/setcyclecount.cc
+	(1.6), linuxmodule/setperfcount.cc (1.6),
+	linuxmodule/sortedsched.cc (1.2), linuxmodule/staticthreadsched.cc
+	(1.2), linuxmodule/storecycles.cc (1.13),
+	linuxmodule/threadmonitor.cc (1.2), linuxmodule/todevice.cc
+	(1.105), linuxmodule/tolinux.cc (1.22),
+	linuxmodule/tolinuxsniffers.cc (1.19), linuxmodule/tulipstats.cc
+	(1.8), local/chuckcheck.cc (1.9), local/duppath.cc (1.3),
+	local/forceicmp.cc (1.3), local/forceip.cc (1.8), local/forcetcp.cc
+	(1.10), local/forceudp.cc (1.3), local/rrunqueue.cc (1.2),
+	local/toytcp.cc (1.16), local/webgen.cc (1.5), radio/b8b10.cc
+	(1.11), radio/bim.cc (1.22), radio/checkpattern.cc (1.10),
+	radio/scramble.cc (1.8), radio/sendpattern.cc (1.11),
+	standard/addressinfo.cc (1.12), standard/align.cc (1.13),
+	standard/alignmentinfo.cc (1.15), standard/averagecounter.cc (1.8),
+	standard/bandwidthmeter.cc (1.8), standard/bandwidthshaper.cc
+	(1.9), standard/block.cc (1.16), standard/burster.cc (1.18),
+	standard/bwratedsplitter.cc (1.5), standard/bwratedunqueue.cc
+	(1.9), standard/checkcrc32.cc (1.10), standard/checklength.cc
+	(1.11), standard/checkpaint.cc (1.16), standard/classifier.cc
+	(1.32), standard/compblock.cc (1.15), standard/counter.cc (1.19),
+	standard/devirtualizeinfo.cc (1.7), standard/discard.cc (1.18),
+	standard/discardnofree.cc (1.15), standard/drivermanager.cc (1.2),
+	standard/dropbroadcasts.cc (1.12), standard/drr.cc (1.3),
+	standard/errorelement.cc (1.5), standard/frontdropqueue.cc (1.8),
+	standard/hashdemux.cc (1.15), standard/hashswitch.cc (1.7),
+	standard/idle.cc (1.17), standard/infinitesource.cc (1.27),
+	standard/meter.cc (1.18), standard/msqueue.cc (1.7),
+	standard/nullelement.cc (1.9), standard/nulls.cc (1.7),
+	standard/paint.cc (1.16), standard/painttee.cc (1.8),
+	standard/peekhandlers.cc (1.14), standard/pokehandlers.cc (1.15),
+	standard/print.cc (1.17), standard/priosched.cc (1.9),
+	standard/probsplitter.cc (1.9), standard/pullswitch.cc (1.13),
+	standard/pulltopush.cc (1.23), standard/queue.cc (1.35),
+	standard/quitwatcher.cc (1.11), standard/randomerror.cc (1.19),
+	standard/randomlossage.cc (1.21), standard/randomsource.cc (1.11),
+	standard/ratedsource.cc (1.38), standard/ratedsplitter.cc (1.12),
+	standard/ratedunqueue.cc (1.11), standard/red.cc (1.29),
+	standard/rrsched.cc (1.8), standard/rrswitch.cc (1.10),
+	standard/scheduleinfo.cc (1.29), standard/setcrc32.cc (1.10),
+	standard/settimestamp.cc (1.2), standard/shaper.cc (1.25),
+	standard/staticpullswitch.cc (1.7), standard/staticswitch.cc (1.7),
+	standard/stridesched.cc (1.13), standard/strideswitch.cc (1.8),
+	standard/strip.cc (1.13), standard/suppressor.cc (1.16),
+	standard/switch.cc (1.13), standard/tee.cc (1.16),
+	standard/timedsink.cc (1.19), standard/timedsource.cc (1.22),
+	standard/unqueue.cc (1.11), standard/unqueue2.cc (1.3),
+	standard/unstrip.cc (1.2), tcpudp/checktcpheader.cc (1.4),
+	tcpudp/checkudpheader.cc (1.4), tcpudp/dynudpipencap.cc (1.4),
+	tcpudp/iprewriter.cc (1.20), tcpudp/settcpchecksum.cc (1.4),
+	tcpudp/snooptcp.cc (1.4), tcpudp/tcpipsend.cc (1.3),
+	tcpudp/tcprewriter.cc (1.9), tcpudp/udpipencap.cc (1.6),
+	userlevel/chattersocket.cc (1.2), userlevel/controlsocket.cc
+	(1.22), userlevel/frombpf.cc (1.22), userlevel/fromdevice.cc
+	(1.23), userlevel/fromdump.cc (1.28), userlevel/kerneltap.cc
+	(1.22), userlevel/printold.cc (1.5), userlevel/tobpf.cc (1.25),
+	userlevel/todevice.cc (1.12), userlevel/todump.cc (1.25): elements
+	no longer need to #include <click/package.hh>, so remove this
+	dependency
+
+2001-05-22 Tuesday 17:41  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/: Makefile.in (1.43), click-align/Makefile.in (1.9),
+	click-align/click-align.cc (1.32), click-check/Makefile.in (1.5),
+	click-check/click-check.cc (1.17), click-combine/Makefile.in (1.5),
+	click-combine/click-combine.cc (1.17),
+	click-combine/click-uncombine.cc (1.15),
+	click-devirtualize/Makefile.in (1.5),
+	click-devirtualize/click-devirtualize.cc (1.23),
+	click-fastclassifier/Makefile.in (1.10),
+	click-fastclassifier/click-fastclassifier.cc (1.38),
+	click-install/Makefile.in (1.12), click-install/click-install.cc
+	(1.38), click-install/click-uninstall.cc (1.16),
+	click-undead/Makefile.in (1.4), click-undead/click-undead.cc
+	(1.16), click-xform/Makefile.in (1.13), click-xform/click-xform.cc
+	(1.33): bring tools up to date with recent changes; mostly, just
+	link with @DL_LIBRARY@ (usually -ldl)
+
 2001-05-22 Tuesday 15:43  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* linuxmodule/: kernelerror.cc (1.18), module.cc (1.54),
