@@ -1,3 +1,12 @@
+2004-04-27 Tuesday 21:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.29): Nikitas reported text bugs in INSTALL
+
+2004-04-27 Tuesday 21:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/ipflowrawsockets.cc (1.3): fix compile errors
+	on Mac OS
+
 2004-04-27 Tuesday 20:35  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/fromfile.cc (1.4): correct
