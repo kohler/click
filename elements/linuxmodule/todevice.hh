@@ -62,6 +62,8 @@ class ToDevice : public AnyDevice {
 
 #if CLICK_DEVICE_STATS
   // Statistics.
+  unsigned long long _idle_calls;
+  unsigned long long _idle_pulls;
   unsigned long long _linux_pkts_sent;
   unsigned long long _time_clean;
   unsigned long long _time_queue;
@@ -88,6 +90,8 @@ class ToDevice : public AnyDevice {
   bool _registered;
   bool _polling;
   int _dev_idle;
+  int _last_tx;
+  int _last_busy;
   
   int queue_packet(Packet *p);
   

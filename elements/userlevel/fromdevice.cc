@@ -316,7 +316,7 @@ FromDevice::selected(int)
 void
 FromDevice::set_annotations(Packet *p)
 {
-  char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  static char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
 
   // check if multicast
   // ! mcast => ! bcast
