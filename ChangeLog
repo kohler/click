@@ -1,3 +1,9 @@
+2003-07-13 Sunday 22:13  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.61): add 'seen' option, which
+	marks received routes as invalid unless the node advertising the
+	route also advertises a route to us
+
 2003-07-13 Sunday 20:19  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.60), dsdvroutetable.hh
