@@ -91,7 +91,7 @@ Subvector<void *>::Subvector(const Vector<void *> &o, int i, int j)
 
 
 template <class T>
-class Subvector<T *>: private Subvector<void *> {
+class Subvector<T *>: public Subvector<void *> {
   
   typedef Vector<void *> Base;
 
