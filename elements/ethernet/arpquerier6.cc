@@ -1,5 +1,5 @@
 /*
- * arpquerier6.{cc,hh} -- Neighborhood Solitation
+ * arpquerier6.{cc,hh} -- Neighborhood Solicitation element
  * Robert Morris, Peilei Fan
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -26,8 +26,8 @@ ARPQuerier6::ARPQuerier6()
 : _expire_timer(expire_hook, (unsigned long)this)
 {
   add_input(); /* IP6 packets */
-  add_input(); /* ether/ARP responses */
-  add_output();/* ether/IP6 and ether/NBSoli queries */
+  add_input(); /* ether/N.Advertisement responses */
+  add_output();/* ether/IP6 and ether/N.Solicitation queries */
   for (int i = 0; i < NMAP; i++)
     _map[i] = 0;
 }
@@ -129,7 +129,7 @@ ARPQuerier6::expire_hook(unsigned long thunk)
       if (e->ok) {
 	int gap = jiff - e->last_response_jiffies;
 	if (gap > 120*CLICK_HZ) {
-	  // click_chatter("ARPQuerier timing out %x", e->ip.addr());
+	  // click_chatter("ARPQuerier6 timing out %x", e->ip.addr());
 	  // delete entry from map
 	  if (prev) prev->next = e->next;
 	  else arpq->_map[i] = e->next;
@@ -165,7 +165,7 @@ ARPQuerier6::send_query_for(const u_char want_ip6[16])
 
   // set ethernet header
   // dst add is a multicast add: first two octets : 0x3333, 
-  // last four octets is the lst four octets of DST IP6
+  // last four octets is the lst four octets of DST IP6Address
   e->ether_dhost[0] = 0x33;
   e->ether_dhost[1] = 0x33;
   e->ether_dhost[2] = want_ip6[12];
@@ -185,9 +185,9 @@ ARPQuerier6::send_query_for(const u_char want_ip6[16])
   ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
   ip6->ip6_hlim=0xff; //indicate no router has processed it
   ip6->ip6_src = _my_ip6; 
-  ip6->ip6_dst = IP6Address(want_ip6);
+  ip6->ip6_dst = IP6Address("ff02::1"); //set dst as multicast IP6 Address
 
-//set ICMP6 - Neighborhood Solicitation Message
+  //set ICMP6 - Neighborhood Solicitation Message
   ea->type = 0x87; 
   ea->code =0;
   ea->reserved = htonl(0);
@@ -200,7 +200,6 @@ ARPQuerier6::send_query_for(const u_char want_ip6[16])
   
   _arp_queries++;
   output(noutputs()-1).push(q);
-
 }
 
 /*
@@ -212,8 +211,7 @@ ARPQuerier6::send_query_for(const u_char want_ip6[16])
  */
 void
 ARPQuerier6::handle_ip6(Packet *p)
-{
-  click_chatter("ARPQuerier6::handle_ip6 ! -1");
+{  
   IP6Address ipa = p->dst_ip6_anno();
   int bucket = (ipa.data()[0] + ipa.data()[15]) % NMAP;
   ARPEntry6 *ae = _map[bucket];
@@ -221,13 +219,11 @@ ARPQuerier6::handle_ip6(Packet *p)
     ae = ae->next;
 
   if (ae) {
-    click_chatter("ARPQuerier6::push ! -2");
     if (ae->polling) {
       send_query_for(ae->ip6.data());
       ae->polling = 0;
-      click_chatter("ARPQuerier6::push ! -3");
     }
-    //find the match IP address, send to output0
+    //find the match IP address, send to output 0
     if (ae->ok) {
       Packet *q = p->push(sizeof(click_ether));
       click_ether *e = (click_ether *)q->data();
@@ -235,16 +231,13 @@ ARPQuerier6::handle_ip6(Packet *p)
       memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP6);
       output(0).push(q);
-      click_chatter("ARPQuerier6::push ! -4");
     } else {
       if (ae->p) {
         ae->p->kill();
 	_pkts_killed++;
-	click_chatter("ARPQuerier6::push ! -5");
       }
       ae->p = p;
       send_query_for(p->dst_ip6_anno().data());
-      click_chatter("ARPQuerier6::push ! -6");
     }
     
   } else {
@@ -255,15 +248,13 @@ ARPQuerier6::handle_ip6(Packet *p)
     ae->next = _map[bucket];
     _map[bucket] = ae;
     send_query_for(p->dst_ip6_anno().data());
-    const unsigned char *d = p->dst_ip6_anno().data();
-    click_chatter("ARPQuerier6:: %x", (p->dst_ip6_anno().data())[15]);
-    click_chatter("ARPQuerier6:: %x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", d[0], d[1], d[2], d[3],d[4], d[5],d[6], d[7],d[8], d[9],d[10], d[11],d[12], d[13],d[14], d[15]);
-    click_chatter("ARPQuerier6::push ! -7");
+    unsigned  char *d = p->dst_ip6_anno().data();
+    //click_chatter("ARPQuerier6:: %x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", d[0], d[1], d[2], d[3],d[4], d[5],d[6], d[7],d[8], d[9],d[10], d[11],d[12], d[13],d[14], d[15]);
   }
 }
 
 /*
- * Got an Neighborhood Solitation Validation response.
+ * Got an Neighborhood Advertisement (response to N. Solicitation Message) 
  * Update our ARP table.
  * If there was a packet waiting to be sent, return it.
  */
@@ -306,9 +297,7 @@ ARPQuerier6::handle_response(Packet *p)
 void
 ARPQuerier6::push(int port, Packet *p)
 {
-   click_chatter("ARPQuerier6::push ! -1");
    if (port == 0){
-     click_chatter("ARPQuerier6::push ! -1");
      handle_ip6(p); }
   else {
     handle_response(p);
