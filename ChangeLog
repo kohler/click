@@ -1,3 +1,8 @@
+2001-08-03 Friday 14:12  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* include/click/llrpc.h (1.11): We don't have LLRPC for FreeBSD
+	yet...
+
 2001-08-03 Friday 11:52  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* lib/: packet.cc (1.45), routerthread.cc (1.14): Add FreeBSD
