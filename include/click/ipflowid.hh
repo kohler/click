@@ -19,8 +19,8 @@ class IPFlowID { public:
 
   void set_saddr(IPAddress a)		{ _saddr = a; }
   void set_daddr(IPAddress a)		{ _daddr = a; }
-  void set_sport(unsigned short p)	{ _sport = p; }
-  void set_dport(unsigned short p)	{ _dport = p; }
+  void set_sport(uint16_t p)		{ _sport = p; }	// network order
+  void set_dport(uint16_t p)		{ _dport = p; }	// network order
   
   IPFlowID rev() const;
 
