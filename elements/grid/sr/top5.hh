@@ -154,7 +154,7 @@ private:
 
   class SRCR *_srcr;
   class LinkTable *_link_table;
-  class GridGenericMetric *_metric;
+  class SrcrStat *_srcr_stat;
   class ARPTable *_arp_table;
 
   // Statistics for handlers.

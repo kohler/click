@@ -11,6 +11,7 @@
 #include "ett.hh"
 #include <elements/grid/sr/path.hh>
 #include <elements/wifi/rxstats.hh>
+#include <elements/grid/sr/srcrstat.hh>
 CLICK_DECLS
 
 /*
@@ -185,7 +186,7 @@ private:
   class LinkTable *_link_table;
   class ARPTable *_arp_table;
   class ETT *_ett;
-  class GridGenericMetric *_metric;
+  class SrcrStat *_srcr_stat;
   
   int get_metric(IPAddress other);
 

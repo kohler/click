@@ -21,7 +21,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <elements/grid/linkstat.hh>
+#include <elements/grid/sr/srcrstat.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
 CLICK_DECLS
@@ -34,7 +34,7 @@ CLICK_DECLS
 GatewaySelector::GatewaySelector()
   :  Element(1,1),
      _warmup(0),
-     _metric(0),
+     _srcr_stat(0),
      _arp_table(0),
      _timer(this)
 {
@@ -72,13 +72,13 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
                     cpKeywords,
 		    "PERIOD", cpUnsigned, "Ad broadcast period (secs)", &_period,
 		    "GW", cpBool, "Gateway", &_is_gw,
-		    "METRIC", cpElement, "Metric element", &_metric,
+		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
                     0);
 
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
-  if (_metric && _metric->cast("GridGenericMetric") == 0) 
-    return errh->error("METRIC element is not a GridGenericMetric");
+  if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
+    return errh->error("SS element is not a SrcrStat");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
@@ -177,15 +177,8 @@ GatewaySelector::get_metric(IPAddress other)
 {
   int metric = 9999;
   gatewayselector_assert(other);
-  if (_metric && _arp_table) {
-    EtherAddress neighbor = _arp_table->lookup(other);
-    gatewayselector_assert(neighbor);
-    GridGenericMetric::metric_t t = _metric->get_link_metric(neighbor);
-    if (t.good()) {
-      metric = t.val();
-    } else {
-      metric = 9999;
-    }
+  if (_srcr_stat) {
+    metric = _srcr_stat->get_etx(other);
   }
   update_link(_ip, other, metric);
   return metric;

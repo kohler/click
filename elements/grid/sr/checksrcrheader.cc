@@ -110,8 +110,9 @@ CheckSRCRHeader::simple_action(Packet *p)
 
 
   if (pk->next() >= pk->num_hops()){
-    click_chatter("%s: data with bad next hop\n", 
-		  id().cc());
+    click_chatter("%s: data with bad next hop from %s\n", 
+		  id().cc(),
+		  pk->get_hop(0).s().cc());
     goto bad;
   }
 

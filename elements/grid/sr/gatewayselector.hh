@@ -119,7 +119,7 @@ private:
   bool _is_gw;
 
   class LinkTable *_link_table;
-  class GridGenericMetric *_metric;
+  class SrcrStat *_srcr_stat;
   class ARPTable *_arp_table;
   Timer _timer;
 

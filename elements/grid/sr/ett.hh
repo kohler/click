@@ -165,11 +165,9 @@ private:
   struct timeval _rev_path_update;
   u_long _seq;      // Next query sequence number to use.
   Timer _timer;
-  int _warmup;
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   uint32_t _et;     // This protocol's ethertype
-  int _warmup_period;
 
   IPAddress _bcast_ip;
 
@@ -177,7 +175,7 @@ private:
 
   class SRCR *_srcr;
   class LinkTable *_link_table;
-  class GridGenericMetric *_metric;
+  class SrcrStat *_srcr_stat;
   class ARPTable *_arp_table;
 
   // Statistics for handlers.

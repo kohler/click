@@ -35,7 +35,7 @@ Top5::Top5()
   :  Element(3,2),
      _timer(this), 
      _warmup(0),
-     _metric(0),
+     _srcr_stat(0),
      _arp_table(0),
      _num_queries(0),
      _bytes_queries(0),
@@ -78,7 +78,7 @@ Top5::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
-		    "METRIC", cpElement, "GridGenericMetric element", &_metric,
+		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
 		    "WARMUP", cpUnsigned, "Warmup period", &_warmup_period,
                     0);
 
@@ -86,8 +86,8 @@ Top5::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("SRCR element is not a SRCR");
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
-  if (_metric && _metric->cast("GridGenericMetric") == 0) 
-    return errh->error("METRIC element is not a GridGenericMetric");
+  if (_srcr_stat && _srcr_stat->cast("SrcrStat") == 0) 
+    return errh->error("SS element is not a SrcrStat");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
@@ -193,17 +193,10 @@ Top5::send(WritablePacket *p)
 int
 Top5::get_metric(IPAddress other)
 {
-  int metric = 0;
-
-  if (_metric && _arp_table) {
-    EtherAddress neighbor = _arp_table->lookup(other);
-
-    GridGenericMetric::metric_t t = _metric->get_link_metric(neighbor);
-    if (t.good()) {
-      metric = t.val();
-    } else {
-      metric = 9999;
-    }
+  int metric = 9999;
+  
+  if (_srcr_stat) {
+    metric = _srcr_stat->get_etx(other);
   }
   update_link(_ip, other, metric);
   return metric;
@@ -267,6 +260,9 @@ Top5::process_query(struct sr_pkt *pk1)
       struct timeval now;
       delay.tv_sec = 10;
       delay.tv_usec = 0;
+      _replies[x]._src = src;
+      _replies[x]._dst = dst;
+      _replies[x]._seq = seq;
       click_gettimeofday(&now);
       timeradd(&now, &delay, &_replies[x]._to_send);
       _replies[x]._sent = false;
@@ -482,7 +478,7 @@ void Top5::start_reply(class Reply *r)
     }
   }
 
-  for (int x = 0; x < hop; x++) {
+  for (int x = 0; x < paths.size()-1; x++) {
     int metric = _link_table->get_hop_metric(pk_out->get_hop(x), 
 					    pk_out->get_hop(x+1));
     pk_out->set_metric(x, metric);
