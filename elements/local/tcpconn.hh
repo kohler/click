@@ -15,7 +15,9 @@
  * can either start a tcp connection or listen for connections.
  *
  * input and output 0 carry incoming packets; input and output 1 carry
- * outgoing packets; output 2 send out SYNs and SYN ACKs.
+ * outgoing packets; output 2 send out SYNs and SYN ACKs. incoming packets are
+ * pushed onto input 0, but outgoing packets are pulled thru input/output 1.
+ * does not allow output pull to succeed unless connection is established.
  */
 
 class TCPDemux;
@@ -26,6 +28,7 @@ private:
 
   bool _active;
   bool _listen;
+  bool _established;
  
   unsigned _seq_nxt;
   IPFlowID _flow;
@@ -35,15 +38,15 @@ private:
   void send_syn();
 
   void reset();
-  void iput(Packet *p);
-  void oput(Packet *p);
+  bool iput(Packet *p);
+  bool oput(Packet *p);
 
 public:
   TCPConn();
   ~TCPConn();
   
   const char *class_name() const		{ return "TCPConn"; }
-  const char *processing() const		{ return PUSH; }
+  const char *processing() const		{ return "hl/hlh"; }
   TCPConn *clone() const			{ return new TCPConn; }
 
   int initialize(ErrorHandler *);
@@ -51,6 +54,7 @@ public:
   int configure(const Vector<String> &conf, ErrorHandler *errh);
 
   void push(int, Packet *);
+  Packet *pull(int);
   void add_handlers();
 
   static int ctrl_write_handler

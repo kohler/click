@@ -26,17 +26,16 @@
  * as described above. this packet also causes TCPAck to cancel scheduled ACK.
  * the packet is then sent out on output port 1.
  *
- * finally, output port 2 is used to send scheduled ACKs. TCPAck uses the
- * latest seq number it sees across input/output port 1 as the sequence number
- * for the acknowledgement. an ACK is generated on this output only if after
- * ACK_DELAY number of ms a triggered acknowledge was not sent. by default,
- * ACK_DELAY is set to 20.
+ * finally, output port 2 is used to send scheduled ACKs. packets generated on
+ * this port does not have any of the flow ID nor sequence number. another
+ * element, such as TCPConn, should be used downstream from this port to set
+ * those fields. an ACK is generated on this output only if after ACK_DELAY
+ * number of ms a triggered acknowledge was not sent. by default, ACK_DELAY is
+ * set to 20.
  *
  * TCPAck only deals with DATA packets. it doesn't try to acknowledge SYN and
  * FIN packets. TCPAck starts using ack number from the first SYN ACK packet
- * it sees on in/output port 0 or 1. packets before that are rejected. TCPAck
- * also copies the ip and tcp headers of the first accepted incoming packet
- * for use in sending ACK packets.
+ * it sees on in/output port 0 or 1. packets before that are rejected.
  *
  * TCPAck does not compute checksum on any packets. use SetIPChecksum and
  * SetTCPChecksum instead.
@@ -50,13 +49,8 @@ private:
 
   bool _synack;
   bool _needack;
-  bool _copyhdr;
-  unsigned _seq_nxt;
   unsigned _ack_nxt;
   
-  click_tcp _tcph_in;
-  click_ip  _iph_in;
-
   TCPBuffer *_tcpbuffer;
 
   unsigned _ackdelay_ms;

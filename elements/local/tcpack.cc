@@ -68,7 +68,6 @@ TCPAck::initialize(ErrorHandler *errh)
 
   _synack = false;
   _needack = false;
-  _copyhdr = true;
   _timer.initialize(this);
   _timer.schedule_after_ms(_ackdelay_ms);
   return 0;
@@ -89,6 +88,8 @@ TCPAck::push(int port, Packet *p)
     forward = oput(p);
   if (forward)
     output(port).push(p);
+  else
+    p->kill();
 }
 
 Packet *
@@ -96,38 +97,33 @@ TCPAck::pull(int port)
 {
   bool forward;
   Packet *p = input(port).pull();
-  if (port == 0)
-    forward = iput(p);
-  else
-    forward = oput(p);
-  if (forward) 
-    return p;
-  else {
-    p->kill();
-    return 0;
+  if (p) {
+    if (port == 0)
+      forward = iput(p);
+    else
+      forward = oput(p);
+    if (forward) 
+      return p;
+    else {
+      p->kill();
+      return 0;
+    }
   }
+  return 0;
 }
 
 bool
 TCPAck::iput(Packet *p)
 {
-  const click_ip *iph = p->ip_header();
   const click_tcp *tcph =
     reinterpret_cast<const click_tcp *>(p->transport_header());
   if (!_synack && (tcph->th_flags&(TH_SYN|TH_ACK))==(TH_SYN|TH_ACK)) {
-    // synack on input, meaning next seqn to use is the ackn
-    // in packet and next ackn is the seqn in packet
-    _seq_nxt = ntohl(tcph->th_ack);
+    // synack on input, meaning next ackn is the seqn in packet
     _ack_nxt = ntohl(tcph->th_seq)+1;
     _synack = true;
   }
   if (!_synack)
     return false;
-  else if (_copyhdr) {
-    memmove(&_iph_in, iph, sizeof(click_ip));
-    memmove(&_tcph_in, tcph, sizeof(click_tcp));
-    _copyhdr = false;
-  }
 
   if (tcph->th_flags & (TH_SYN|TH_FIN|TH_RST))
     return true;
@@ -148,9 +144,6 @@ TCPAck::iput(Packet *p)
   _needack = true;
   if (!_timer.scheduled()) 
     _timer.schedule_after_ms(_ackdelay_ms);
- 
-  click_chatter("next ack: got %u, ack_nxt %u, seq_nxt %u", 
-                TCPBuffer::seqno(p), _ack_nxt, _seq_nxt);
   return true;
 }
 
@@ -160,15 +153,12 @@ TCPAck::oput(Packet *p)
   const click_tcp *tcph =
     reinterpret_cast<const click_tcp *>(p->transport_header());
   if (tcph->th_flags&(TH_SYN|TH_ACK) == (TH_SYN|TH_ACK)) {
-    // synack on output, meaning next seqn to use is the seqn 
-    // in packet and next ackn is the ackn in packet
-    _seq_nxt = ntohl(tcph->th_seq)+1;
+    // synack on output, meaning next ackn is the ackn in packet
     _ack_nxt = ntohl(tcph->th_ack);
     _synack = true;
   }
   if (!_synack)
     return false;
-  _seq_nxt = TCPBuffer::seqno(p)+TCPBuffer::seqlen(p);
   _needack = false;
   click_tcp *tcph_new =
     reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
@@ -201,19 +191,14 @@ TCPAck::send_ack()
   
   ip->ip_v = 4;
   ip->ip_hl = 5;
-  ip->ip_tos = _iph_in.ip_tos;
+  ip->ip_tos = 0x10;
   ip->ip_len = htons(q->length());
   ip->ip_id = htons(0); // what is this used for exactly?
   ip->ip_off = htons(IP_DF);
   ip->ip_ttl = 255;
   ip->ip_p = IP_PROTO_TCP;
   ip->ip_sum = 0;
-  memmove((void *) &(ip->ip_src), (void *) &(_iph_in.ip_dst), 4);
-  memmove((void *) &(ip->ip_dst), (void *) &(_iph_in.ip_src), 4);
 
-  tcp->th_sport = _tcph_in.th_dport;
-  tcp->th_dport = _tcph_in.th_sport;
-  tcp->th_seq = htonl(_seq_nxt);
   tcp->th_ack = htonl(_ack_nxt);
   tcp->th_off = 5;
   tcp->th_flags = TH_ACK;
@@ -221,6 +206,7 @@ TCPAck::send_ack()
   tcp->th_sum = htons(0);
   tcp->th_urp = htons(0);
 
+  q->set_ip_header(ip, ip->ip_hl << 2);
   output(2).push(q);
 }
 

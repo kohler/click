@@ -70,17 +70,13 @@ BufferConverter::run_scheduled()
 void
 BufferConverter::oput(const String &s)
 {
-  String buf = _obuf + s;
-  if (buf.length() > _mtu) {
-    _obuf = String(buf.substring(_mtu, buf.length()).cc(), buf.length()-_mtu);
-    buf = buf.substring(0, _mtu);
-  }
-  else
-    _obuf = "";
+  int dlen = _obuf.length() + s.length();
+  if (dlen > _mtu)
+    dlen = _mtu;
 
   struct click_ip *ip;
   struct click_tcp *tcp;
-  WritablePacket *q = Packet::make(sizeof(*ip) + sizeof(*tcp) + buf.length());
+  WritablePacket *q = Packet::make(sizeof(*ip) + sizeof(*tcp) + dlen);
   if (q == 0) {
     click_chatter("BufferConverter: cannot make packet");
     return;
@@ -97,31 +93,55 @@ BufferConverter::oput(const String &s)
   ip->ip_ttl = 255;
   ip->ip_p = IP_PROTO_TCP;
   ip->ip_sum = 0;
+
   tcp->th_off = 5;
   tcp->th_flags = TH_PUSH; // how should we set the PUSH bit?
   tcp->th_win = htons(32120); // when and where should this be set?
   tcp->th_sum = htons(0);
   tcp->th_urp = htons(0);
+
+  unsigned char *data = q->data() + sizeof(*ip) + sizeof(*tcp);
+  if (_obuf.length() > _mtu) {
+    memmove(data, _obuf.cc(), _mtu);
+    _obuf = _obuf.substring(_mtu, _obuf.length()-_mtu);
+    dlen -= _mtu;
+    data += _mtu;
+  } 
+  else if (_obuf.length() > 0) {
+    memmove(data, _obuf.cc(), _obuf.length());
+    dlen -= _obuf.length();
+    data += _obuf.length();
+    _obuf = "";
+  }
+  String ss = s;
+  memmove(data, (const char *)ss, dlen);
+  if (ss.length() > dlen)
+    _obuf += ss.substring(dlen, ss.length()-dlen);
+
+  q->set_ip_header(ip, ip->ip_hl << 2);
   output(0).push(q);
 }
 
 String
 BufferConverter::iput()
 {
-  Packet *p = input(0).pull();
-  if (p) {
+  Packet *p;
+  while((p = input(0).pull())) {
     const click_ip *iph = p->ip_header();
     const click_tcp *tcph =
       reinterpret_cast<const click_tcp *>(p->transport_header());
     unsigned dlen = ntohs(iph->ip_len)-(iph->ip_hl<<2)-(tcph->th_off<<2);
+    if (dlen == 0) {
+      p->kill();
+      continue;
+    }
     unsigned off = tcph->th_off << 2;
     const char *data = ((const char*)tcph) + off;
     String s(data, dlen);
     p->kill();
     return s;
   }
-  else
-    return "";
+  return "";
 }
 
 void

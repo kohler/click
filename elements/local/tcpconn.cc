@@ -23,6 +23,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include "tcpdemux.hh"
+#include "tcpbuffer.hh"
 #include "tcpconn.hh"
 
 TCPConn::TCPConn()
@@ -83,13 +84,33 @@ TCPConn::reset()
 void
 TCPConn::push(int port, Packet *p)
 {
-  if (port == 0)
-    iput(p);
+  assert(port == 0);
+  if (iput(p))
+    output(0).push(p);
   else
-    oput(p);
+    p->kill();
 }
 
-void
+Packet*
+TCPConn::pull(int port)
+{
+  if (!_active || _listen || !_established)
+    return 0;
+
+  assert(port == 1);
+  Packet *p = input(1).pull();
+  if (p) {
+    if (oput(p))
+      return p;
+    else {
+      p->kill();
+      return 0;
+    }
+  }
+  return 0;
+}
+
+bool
 TCPConn::iput(Packet *p)
 {
   const click_tcp *tcph = 
@@ -99,35 +120,37 @@ TCPConn::iput(Packet *p)
     if (tcph->th_flags & TH_SYN) {
       // XXX create new connection, etc... need to use as little
       // state as possible to prevent SYN attack; use RR list
-      p->kill();
+      return false;
     }
     else
-      p->kill();
+      return false;
   }
   else {
-    // XXX implement TCB stuff for handling SYN ACK, RST and FIN packets
     // XXX verify sequence range
-    output(0).push(p);
+    if ((tcph->th_flags&(TH_SYN|TH_ACK)) == (TH_SYN|TH_ACK)) {
+      _established = true;
+      _seq_nxt++;
+    }
+    // XXX implement TCB stuff for handling SYN ACK, RST and FIN packets
+    return true;
   }
 }
 
-void
+bool
 TCPConn::oput(Packet *p)
 {
-  if (!_active || _listen)
-    p->kill();
-  else {
-    click_ip *iph = p->uniqueify()->ip_header();
-    click_tcp *tcph = 
-      reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
-    unsigned int sa = _flow.saddr();
-    unsigned int da = _flow.daddr();
-    memmove((void *) &(iph->ip_src), (void *) &sa, 4);
-    memmove((void *) &(iph->ip_dst), (void *) &da, 4);
-    tcph->th_sport = _flow.sport();
-    tcph->th_dport = _flow.dport();
-    output(1).push(p);
-  }
+  click_ip *iph = p->uniqueify()->ip_header();
+  click_tcp *tcph = 
+    reinterpret_cast<click_tcp *>(p->uniqueify()->transport_header());
+  unsigned int sa = _flow.saddr();
+  unsigned int da = _flow.daddr();
+  memmove((void *) &(iph->ip_src), (void *) &sa, 4);
+  memmove((void *) &(iph->ip_dst), (void *) &da, 4);
+  tcph->th_sport = _flow.sport();
+  tcph->th_dport = _flow.dport();
+  tcph->th_seq = ntohl(_seq_nxt);
+  _seq_nxt += TCPBuffer::seqlen(p);
+  return true;
 }
   
 bool
@@ -137,6 +160,7 @@ TCPConn::connect_handler(IPFlowID f)
   if (_tcpdemux->add_flow(f.saddr(), f.sport(), f.daddr(), f.dport(), 0)) {
     _active = true;
     _listen = false;
+    _established = false;
     _flow = f;
     _seq_nxt = random();
     send_syn();
@@ -153,6 +177,7 @@ TCPConn::listen_handler(IPFlowID f)
   if (_tcpdemux->add_flow(f.saddr(), f.sport(), f.daddr(), f.dport(), 0)) {
     _active = true;
     _listen = true;
+    _established = false;
     _flow = f;
     return true;
   }
@@ -198,6 +223,7 @@ TCPConn::send_syn()
   tcp->th_sum = htons(0);
   tcp->th_urp = htons(0);
 
+  q->set_ip_header(ip, ip->ip_hl << 2);
   output(2).push(q);
 }
 
