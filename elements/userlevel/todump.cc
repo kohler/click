@@ -154,7 +154,7 @@ ToDump::run_scheduled()
     write_packet(p);
     p->kill();
   }
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void

@@ -68,7 +68,7 @@ void
 ScheduleLinux::run_scheduled()
 {
   schedule();
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void

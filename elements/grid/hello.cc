@@ -68,7 +68,7 @@ SendGridHello::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 SendGridHello::initialize(ErrorHandler *)
 {
-  _timer.attach(this);
+  _timer.initialize(this);
   _timer.schedule_after_ms(_period); // Send Grid HELLO periodically
 
   return 0;

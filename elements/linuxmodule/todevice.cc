@@ -258,7 +258,7 @@ ToDevice::run_scheduled()
 #endif
 
   adjust_tickets(sent);
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 int

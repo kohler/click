@@ -110,7 +110,7 @@ InfiniteSource::run_scheduled()
     for (int i = 0; i < n; i++)
       output(0).push(_packet->clone());
     _count += n;
-    _task.reschedule();
+    _task.fast_reschedule();
   } else if (_stop)
     router()->please_stop_driver();
 }

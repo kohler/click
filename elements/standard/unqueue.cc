@@ -89,7 +89,7 @@ Unqueue::run_scheduled()
     _packets++;
   }
   
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 String

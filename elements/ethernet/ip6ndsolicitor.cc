@@ -89,7 +89,7 @@ IP6NDSolicitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 IP6NDSolicitor::initialize(ErrorHandler *)
 {
-  _expire_timer.attach(this);
+  _expire_timer.initialize(this);
   _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
   _arp_queries = 0;
   _pkts_killed = 0;

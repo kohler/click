@@ -46,7 +46,7 @@ BandwidthRatedUnqueue::run_scheduled()
       output(0).push(p);
     }
   }
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 EXPORT_ELEMENT(BandwidthRatedUnqueue)

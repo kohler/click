@@ -95,7 +95,7 @@ RandomSource::run_scheduled()
 {
   Packet *p = make_packet();
   output(0).push(p);
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 Packet *

@@ -60,7 +60,7 @@ void
 DiscardNoFree::run_scheduled()
 {
   (void) input(0).pull();
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void

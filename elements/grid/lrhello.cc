@@ -73,7 +73,7 @@ SendGridLRHello::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 SendGridLRHello::initialize(ErrorHandler *errh)
 {
-  _timer.attach(this);
+  _timer.initialize(this);
   _timer.schedule_after_ms(_period); // Send periodically
 
   if(_nbr && _nbr->cast("UpdateLocalGridRoutes") == 0){

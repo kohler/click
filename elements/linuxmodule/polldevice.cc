@@ -293,7 +293,7 @@ PollDevice::run_scheduled()
 #endif
 
   adjust_tickets(got);
-  _task.reschedule();
+  _task.fast_reschedule();
 
 #endif /* HAVE_POLLING */
 }

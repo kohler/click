@@ -107,11 +107,11 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 IPRewriter::initialize(ErrorHandler *)
 {
-  _tcp_gc_timer.attach(this);
+  _tcp_gc_timer.initialize(this);
   _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
-  _tcp_done_gc_timer.attach(this);
+  _tcp_done_gc_timer.initialize(this);
   _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
-  _udp_gc_timer.attach(this);
+  _udp_gc_timer.initialize(this);
   _udp_gc_timer.schedule_after_ms(_udp_gc_interval);
   return 0;
 }

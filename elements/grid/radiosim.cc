@@ -125,7 +125,7 @@ RadioSim::run_scheduled()
     }
   }
 
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 grid_location

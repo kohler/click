@@ -185,7 +185,7 @@ ToDevice::run_scheduled()
   // XXX reduce tickets when idle
   if (Packet *p = input(0).pull())
     send_packet(p); 
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void

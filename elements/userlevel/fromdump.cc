@@ -190,7 +190,7 @@ FromDump::run_scheduled()
     click_gettimeofday(&now);
     timersub(&now, &_time_offset, &now);
     if (timercmp(&_packet->timestamp_anno(), &now, >)) {
-      _task.reschedule();
+      _task.fast_reschedule();
       return;
     }
   }
@@ -198,7 +198,7 @@ FromDump::run_scheduled()
   output(0).push(_packet);
   _packet = read_packet(0);
   if (_packet)
-    _task.reschedule();
+    _task.fast_reschedule();
 }
 
 void

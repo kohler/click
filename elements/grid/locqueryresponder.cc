@@ -45,7 +45,7 @@ LocQueryResponder::LocQueryResponder()
 int
 LocQueryResponder::initialize(ErrorHandler *) 
 {
-  _expire_timer.attach(this);
+  _expire_timer.initialize(this);
   _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
   _timeout_jiffies = (CLICK_HZ * EXPIRE_TIMEOUT_MS) / 1000;
   return 0;

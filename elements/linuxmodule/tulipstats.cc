@@ -223,7 +223,7 @@ void
 TulipStats::run_scheduled()
 {
   stats_poll();
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void

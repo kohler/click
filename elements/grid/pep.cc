@@ -94,7 +94,7 @@ PEP::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 PEP::initialize(ErrorHandler *)
 {
-  _timer.attach(this);
+  _timer.initialize(this);
   _timer.schedule_after_ms(pep_update * 1000);
   return 0;
 }

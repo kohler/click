@@ -59,7 +59,7 @@ TimedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 TimedSource::initialize(ErrorHandler *)
 {
-  _timer.attach(this);
+  _timer.initialize(this);
   _timer.schedule_after_ms(_interval);
   return 0;
 }

@@ -124,7 +124,7 @@ RatedSource::run_scheduled()
     _count++;
   }
 
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 Packet *

@@ -123,7 +123,7 @@ IPAddrRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 IPAddrRewriter::initialize(ErrorHandler *)
 {
-  _timer.attach(this);
+  _timer.initialize(this);
   _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
   return 0;
 }

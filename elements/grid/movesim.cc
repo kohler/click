@@ -100,7 +100,7 @@ MovementSimulator::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 MovementSimulator::initialize(ErrorHandler *)
 {
-  _event_timer.attach(this);
+  _event_timer.initialize(this);
   // just wait a little while before we kick things off simulated
   // motions
   _event_timer.schedule_after_ms(300); 

@@ -201,9 +201,9 @@ TCPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 TCPRewriter::initialize(ErrorHandler *)
 {
-  _tcp_gc_timer.attach(this);
+  _tcp_gc_timer.initialize(this);
   _tcp_gc_timer.schedule_after_ms(_tcp_gc_interval);
-  _tcp_done_gc_timer.attach(this);
+  _tcp_done_gc_timer.initialize(this);
   _tcp_done_gc_timer.schedule_after_ms(_tcp_done_gc_interval);
   return 0;
 }

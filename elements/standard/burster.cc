@@ -61,7 +61,7 @@ Burster::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Burster::initialize(ErrorHandler *)
 {
-  _timer.attach(this);
+  _timer.initialize(this);
   _timer.schedule_after_ms(_interval);
   return 0;
 }

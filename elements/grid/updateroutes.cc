@@ -102,14 +102,14 @@ int
 UpdateGridRoutes::initialize(ErrorHandler *)
 {
   //  ScheduleInfo::join_scheduler(this, errh);
-  _hello_timer.attach(this);
+  _hello_timer.initialize(this);
   _hello_timer.schedule_after_ms(_period); // Send periodically
 
-  _expire_timer.attach(this);
+  _expire_timer.initialize(this);
   if (_timeout > 0)
     _expire_timer.schedule_after_ms(EXPIRE_TIMER_PERIOD);
 
-  _sanity_timer.attach(this);
+  _sanity_timer.initialize(this);
   _sanity_timer.schedule_after_ms(SANITY_CHECK_PERIOD); // Send periodically
 
   return 0;

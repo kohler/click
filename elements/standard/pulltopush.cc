@@ -70,7 +70,7 @@ PullToPush::run_scheduled()
   for (int i = 0; i < _burst; i++)
     if (Packet *p = input(0).pull())
       output(0).push(p);
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void

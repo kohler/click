@@ -191,7 +191,7 @@ BIM::run_scheduled()
 {
   if (Packet *p = input(0).pull())
     push(0, p); 
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void

@@ -243,7 +243,7 @@ FromDevice::run_scheduled()
 #if CLICK_DEVICE_ADJUST_TICKETS
   adjust_tickets(sent);
 #endif
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void

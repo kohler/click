@@ -62,7 +62,7 @@ ARPFaker::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 ARPFaker::initialize(ErrorHandler *)
 {
-  _timer.attach(this);
+  _timer.initialize(this);
   _timer.schedule_after_ms(1 * 1000); // Send an ARP reply periodically.
   return 0;
 }

@@ -63,7 +63,7 @@ Discard::run_scheduled()
 {
   if (Packet *p = input(0).pull())
     p->kill();
-  _task.reschedule();
+  _task.fast_reschedule();
 }
 
 void
