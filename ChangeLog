@@ -1,3 +1,8 @@
+2002-12-09 Monday 15:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: airoinfo.cc (1.8), airoinfo.hh (1.5): expanded
+	airoinfo API for link testing elements
+
 2002-11-22 Friday 19:26  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/skbmgr.cc (1.14): the correct size of the packet's
