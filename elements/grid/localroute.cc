@@ -151,7 +151,7 @@ LocalRoute::push(int port, Packet *packet)
 
       struct grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
       gh->hdr_len = sizeof(grid_hdr);
-      gh->total_len = packet->length(); // encapsulate everything we get, don't look inside it for length info
+      gh->total_len = packet->length() - sizeof(click_ether); // encapsulate everything we get, don't look inside it for length info
       gh->type = GRID_NBR_ENCAP;
 
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
@@ -180,8 +180,6 @@ LocalRoute::add_handlers()
 void
 LocalRoute::forward_grid_packet(Packet *packet, IPAddress dest_ip)
 {
-
-  click_chatter("fwding for dst %s", dest_ip.s().cc());
 
   /*
    * packet must have a MAC hdr, grid_hdr, and a grid_nbr_encap hdr on

@@ -73,9 +73,6 @@ Neighbor::simple_action(Packet *packet)
   /*
    * expects grid packets, with MAC hdrs
    */
-
-  click_chatter("nbr::simple_action");
-
   assert(packet);
   int jiff = click_jiffies();
   
@@ -112,8 +109,6 @@ Neighbor::simple_action(Packet *packet)
     }
   }
   
-  click_chatter("about to update far nbr info for this sender");
-
   /*
    * update far nbr info with this hello sender info.
    */
@@ -154,8 +149,6 @@ Neighbor::simple_action(Packet *packet)
     {    /* 
 	  * add this sender's nbrs to our far neighbor list.  
 	  */
-
-      click_chatter("about to update far nbr info for hello nbrs");
 
       grid_hello *hlo = (grid_hello *) (packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       int entry_sz = hlo->nbr_entry_sz;
