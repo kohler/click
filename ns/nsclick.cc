@@ -273,68 +273,32 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 }
 #endif
 
-// include requirements
-
-class RequireLexerExtra : public LexerExtra { public:
-
-  RequireLexerExtra()			{ }
-
-  void require(String, ErrorHandler *);
-  
-};
-
-void
-RequireLexerExtra::require(String name, ErrorHandler *errh)
-{
-  if (!click_has_provision(name.cc()))
-    errh->error("requirement `%s' not available", name.cc());
-}
-
 
 // main
 
-extern void click_export_elements(Lexer *);
+extern void click_export_elements();
 
 SimState*
-SimState::simmain(simclick_sim siminst,const char *router_file)
+SimState::simmain(simclick_sim siminst, const char *router_file)
 {
   if (!didinit_) {
-    String::static_initialize();
-    cp_va_static_initialize();
-    errh = new FileErrorHandler(stderr, "");
-    ErrorHandler::static_initialize(errh);
-    Router::static_initialize();
-    
-    CLICK_DEFAULT_PROVIDES;
-
+    click_static_initialize();
+    click_export_elements();
+    errh = ErrorHandler::default_handler();
     didinit_ = true;
   }
 
-
-  bool quit_immediately = false;
-  bool report_time = false;
-  bool stop = false;
-  bool stop_guess = false;
   bool warnings = true;
-  Vector<String> handlers;
-  Vector<String> stops;
 
-  String config_str = file_string(router_file, errh);
   SimState* newstate = new SimState();
 
-  // prepare lexer (for packages)
-  Lexer* lexer = new Lexer();
-  click_export_elements(lexer);
-  
   // lex
-  RequireLexerExtra lextra;
-  int cookie = lexer->begin_parse(config_str, router_file, &lextra,errh);
-  while (lexer->ystatement())
-    /* do nothing */;
-  newstate->router = lexer->create_router();
+  newstate->router = click_read_router(router_file, false, errh, false);
+  if (!newstate->router)
+    exit(1);
+  
   newstate->router->set_clickinst((simclick_click)newstate);
   newstate->router->set_siminst(siminst);
-  lexer->end_parse(cookie);
 
   if (newstate->router->nelements() == 0 && warnings)
     errh->warning("%s: configuration has no elements", router_file);
@@ -342,10 +306,6 @@ SimState::simmain(simclick_sim siminst,const char *router_file)
   if (errh->nerrors() > 0 || newstate->router->initialize(errh) < 0)
     exit(1);
 
-  //
-  // XXX memory leak - see if the lexers can be deleted
-  //delete lexer;
-  
   return newstate;
 }
 
