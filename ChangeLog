@@ -1,3 +1,10 @@
+2002-06-12 Wednesday 18:57  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: ackresponder.cc (1.1), ackresponder.hh (1.1),
+	ackretrysender.cc (1.1), ackretrysender.hh (1.1):
+	ACKRetrySender/ACKResponder implement a pseudo-link-layer positive
+	acknowledgment protocol
+
 2002-06-12 Wednesday 16:37  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/: getipaddress.hh (1.16), lookupiproute.hh (1.19):
