@@ -87,7 +87,7 @@ CheckTCPHeader::simple_action(Packet *p)
   
  bad:
   if (_drops == 0)
-    click_chatter("TCP checksum failed %d", csum);
+    click_chatter("TCP checksum failed %x", csum);
   _drops++;
   
   if (noutputs() == 2)

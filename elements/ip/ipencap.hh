@@ -21,7 +21,8 @@
  *
  * = IPEncap(4, 18.26.4.24, 140.247.60.147)
  *
- * =a Strip */
+ * =a UDPIPEncap Strip
+ */
 
 #include "element.hh"
 #include "glue.hh"

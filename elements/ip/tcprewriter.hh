@@ -35,6 +35,7 @@ class TCPRewriter : public IPRw {
 
     unsigned _seqno_delta;
     unsigned _ackno_delta;
+    unsigned _interesting_seqno;
 
     void change_udp_csum_delta(unsigned old_word, unsigned new_word);
     
@@ -43,6 +44,9 @@ class TCPRewriter : public IPRw {
     TCPMapping();
 
     TCPMapping *reverse() const		{ return static_cast<TCPMapping *>(_reverse); }
+
+    unsigned interesting_seqno() const	{ return _interesting_seqno; }
+    void set_interesting_seqno(unsigned s) { _interesting_seqno = s; }
     
     void update_seqno_delta(int);
     void update_ackno_delta(int);

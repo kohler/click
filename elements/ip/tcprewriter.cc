@@ -25,7 +25,7 @@
 // TCPMapping
 
 TCPRewriter::TCPMapping::TCPMapping()
-  : _seqno_delta(0), _ackno_delta(0)
+  : _seqno_delta(0), _ackno_delta(0), _interesting_seqno(0)
 {
 }
 
@@ -36,16 +36,17 @@ TCPRewriter::TCPMapping::change_udp_csum_delta(unsigned old_word, unsigned new_w
   const unsigned short *dest_words = (const unsigned short *)&new_word;
   unsigned delta = _udp_csum_delta;
   for (int i = 0; i < 2; i++) {
-    delta += (~ntohs(source_words[i]) & 0xFFFF);
-    delta += ntohs(dest_words[i]);
+    delta += ~source_words[i] & 0xFFFF;
+    delta += dest_words[i];
   }
-  if ((new_word & 0x80000000) && !(old_word & 0x80000000))
-    delta--;
-  else if (!(new_word & 0x80000000) && (old_word & 0x80000000))
-    delta++;
-  while (delta >> 16)
-    delta = (delta & 0xFFFF) + (delta >> 16);
-  _udp_csum_delta = delta;
+  // why is this required here, but not elsewhere when we do
+  // incremental updates?
+  if ((int)ntohl(old_word) >= 0 && (int)ntohl(new_word) < 0)
+    delta -= htons(1);
+  else if ((int)ntohl(old_word) < 0 && (int)ntohl(new_word) >= 0)
+    delta += htons(1);
+  delta = (delta & 0xFFFF) + (delta >> 16);
+  _udp_csum_delta = delta + (delta >> 16);
 }
 
 void
@@ -58,10 +59,9 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   iph->ip_src = _mapto.saddr();
   iph->ip_dst = _mapto.daddr();
 
-  unsigned sum = (~ntohs(iph->ip_sum) & 0xFFFF) + _ip_csum_delta;
-  if (sum >> 16)
-    sum = (sum & 0xFFFF) + (sum >> 16);
-  iph->ip_sum = ~htons(sum);
+  unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
+  sum = (sum & 0xFFFF) + (sum >> 16);
+  iph->ip_sum = ~(sum + (sum >> 16));
 
   // TCP header
   click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
@@ -70,16 +70,25 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
 
   // update sequence numbers
   unsigned short csum_delta = _udp_csum_delta;
-  if (_seqno_delta)
-    tcph->th_seq = htonl(ntohl(tcph->th_seq) + _seqno_delta);
-  if (_ackno_delta)
-    tcph->th_ack = htonl(ntohl(tcph->th_ack) + _ackno_delta);
+  if (_seqno_delta) {
+    unsigned oldval = ntohl(tcph->th_seq);
+    unsigned newval = oldval + _seqno_delta;
+    if ((int)oldval < 0 && (int)newval >= 0)
+      csum_delta -= htons(1);
+    tcph->th_seq = htonl(newval);
+  }
+  if (_ackno_delta) {
+    unsigned oldval = ntohl(tcph->th_ack);
+    unsigned newval = oldval + _ackno_delta;
+    if ((int)oldval < 0 && (int)newval >= 0)
+      csum_delta -= htons(1);
+    tcph->th_ack = htonl(newval);
+  }
 
   // update checksum
-  unsigned sum2 = (~ntohs(tcph->th_sum) & 0xFFFF) + csum_delta;
-  if (sum2 >> 16)
-    sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-  tcph->th_sum = ~htons(sum2);
+  unsigned sum2 = (~tcph->th_sum & 0xFFFF) + csum_delta;
+  sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
+  tcph->th_sum = ~(sum2 + (sum2 >> 16));
   
   mark_used();
 }

@@ -59,20 +59,18 @@ IPRw::Mapping::initialize(const IPFlowID &in, const IPFlowID &out,
   const unsigned short *dest_words = (const unsigned short *)&_mapto;
   unsigned delta = 0;
   for (int i = 0; i < 4; i++) {
-    delta += (~ntohs(source_words[i]) & 0xFFFF);
-    delta += ntohs(dest_words[i]);
+    delta += ~source_words[i] & 0xFFFF;
+    delta += dest_words[i];
   }
-  while (delta >> 16)
-    delta = (delta & 0xFFFF) + (delta >> 16);
-  _ip_csum_delta = delta;
+  delta = (delta & 0xFFFF) + (delta >> 16);
+  _ip_csum_delta = delta + (delta >> 16);
   
   for (int i = 4; i < 6; i++) {
-    delta += (~ntohs(source_words[i]) & 0xFFFF);
-    delta += ntohs(dest_words[i]);
+    delta += ~source_words[i] & 0xFFFF;
+    delta += dest_words[i];
   }
-  while (delta >> 16)
-    delta = (delta & 0xFFFF) + (delta >> 16);
-  _udp_csum_delta = delta;
+  delta = (delta & 0xFFFF) + (delta >> 16);
+  _udp_csum_delta = delta + (delta >> 16);
 }
 
 void
@@ -94,29 +92,26 @@ IPRw::Mapping::apply(WritablePacket *p)
   iph->ip_src = _mapto.saddr();
   iph->ip_dst = _mapto.daddr();
 
-  unsigned sum = (~ntohs(iph->ip_sum) & 0xFFFF) + _ip_csum_delta;
-  if (sum >> 16)
-    sum = (sum & 0xFFFF) + (sum >> 16);
-  iph->ip_sum = ~htons(sum);
+  unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
+  sum = (sum & 0xFFFF) + (sum >> 16);
+  iph->ip_sum = ~(sum + (sum >> 16));
 
   // UDP/TCP header
   if (iph->ip_p == IP_PROTO_TCP) {
     click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
     tcph->th_sport = _mapto.sport();
     tcph->th_dport = _mapto.dport();
-    unsigned sum2 = (~ntohs(tcph->th_sum) & 0xFFFF) + _udp_csum_delta;
-    while (sum2 >> 16)
-      sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-    tcph->th_sum = ~htons(sum2);
+    unsigned sum2 = (~tcph->th_sum & 0xFFFF) + _udp_csum_delta;
+    sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
+    tcph->th_sum = ~(sum2 + (sum2 >> 16));
   } else {
     click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
     udph->uh_sport = _mapto.sport();
     udph->uh_dport = _mapto.dport();
     if (udph->uh_sum) {		// 0 checksum is no checksum
-      unsigned sum2 = (~ntohs(udph->uh_sum) & 0xFFFF) + _udp_csum_delta;
-      if (sum2 >> 16)
-	sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
-      udph->uh_sum = ~htons(sum2);
+      unsigned sum2 = (~udph->uh_sum & 0xFFFF) + _udp_csum_delta;
+      sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
+      udph->uh_sum = ~(sum2 + (sum2 >> 16));
     }
   }
   

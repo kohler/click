@@ -163,7 +163,7 @@ FTPPortMapper::simple_action(Packet *p)
 	  (new_saddr>>8)&255, new_saddr&255, (new_sport>>8)&255, new_sport&255,
 	  &buflen);
   click_chatter("%s", forward->s().cc());
-  click_chatter("%s", buf);
+  //click_chatter("%s", buf);
 
   WritablePacket *wp;
   unsigned port_arg_len = pos - port_arg_offset;
@@ -171,7 +171,7 @@ FTPPortMapper::simple_action(Packet *p)
     wp = p->put(buflen - port_arg_len);
   } else {
     wp = p->uniqueify();
-    p->take(port_arg_len - buflen);
+    wp->take(port_arg_len - buflen);
   }
   memmove(wp->data() + data_offset + port_arg_offset + buflen,
 	  wp->data() + data_offset + port_arg_offset + port_arg_len,
@@ -199,10 +199,17 @@ FTPPortMapper::simple_action(Packet *p)
   // update sequence numbers in old mapping
   IPFlowID p_flow(p);
   if (TCPRewriter::TCPMapping *p_mapping = _control_rewriter->get_mapping(true, p_flow)) {
-    p_mapping->update_seqno_delta(buflen - port_arg_len);
-    p_mapping->reverse()->update_ackno_delta(port_arg_len - buflen);
-    // update sequence number in this packet so TCPRewriter will fix it
-    wp_tcph->th_seq = htonl(ntohl(wp_tcph->th_seq) - buflen + port_arg_len);
+    // don't re-change sequence numbers on a retransmit
+    unsigned last_seq = p_mapping->interesting_seqno();
+    unsigned cur_seq = ntohl(wp_tcph->th_seq);
+    if (!last_seq || SEQ_GT(cur_seq, last_seq)) {
+      p_mapping->update_seqno_delta(buflen - port_arg_len);
+      p_mapping->reverse()->update_ackno_delta(port_arg_len - buflen);
+      p_mapping->set_interesting_seqno(cur_seq | 1); // make sure it's not zero
+    }
+    // always update sequence number in this packet so TCPRewriter will fix it
+    // (works even with retransmits)
+    wp_tcph->th_seq = htonl(cur_seq - buflen + port_arg_len);
   }
 
   wp_tcph->th_sum = 0;

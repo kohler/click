@@ -1,6 +1,6 @@
 /*
  * in_cksum.c -- Internet checksum
- * borrowed from one of the BSDs
+ * borrowed, with bug fixes, from one of the BSDs
  */
 
 #ifdef HAVE_CONFIG_H
@@ -33,8 +33,9 @@ in_cksum(const unsigned char *addr, int len)
   }
   
   /* add back carry outs from top 16 bits to low 16 bits */
-  while (sum >> 16)		/* XXX necessary? */
-    sum = (sum >> 16) + (sum & 0xffff); /* add hi 16 to low 16 */
+  sum = (sum & 0xffff) + (sum >> 16);
+  sum += (sum >> 16);
+  /* guaranteed now that the lower 16 bits of sum are correct */
   
   answer = ~sum;              /* truncate to 16 bits */
   return answer;

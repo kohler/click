@@ -60,6 +60,8 @@ Packet::Packet()
   _use_count = 1;
   _data_packet = 0;
   _head = _data = _tail = _end = 0;
+  _nh_iph = 0;
+  _h_raw = 0;
   memset(_cb, 0, sizeof(_cb));
 }
 
@@ -218,9 +220,13 @@ Packet::put(unsigned int nbytes)
     WritablePacket *q = 0;
     panic("Packet::put");
 #else
-    WritablePacket *q = Packet::make(length() + nbytes);
-    memcpy(q->data(), data(), length());
-    memcpy(q->anno(), anno(), sizeof(Anno));
+    WritablePacket *q = Packet::make(headroom(), data(), length(), tailroom() + nbytes);
+    if (_nh_iph) {
+      q->_nh_iph = (click_ip *)(q->_data + ip_header_offset());
+      q->_h_raw = (unsigned char *)(q->_data + transport_header_offset());
+    }
+    q->copy_annotations(this);
+    q->_tail += nbytes;
 #endif
     kill();
     return q;

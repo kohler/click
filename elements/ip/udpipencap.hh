@@ -17,6 +17,7 @@
  * =e
  * = UDPIPEncap(1.0.0.1, 1234, 2.0.0.2, 1234)
  * =a Strip
+ * =a IPEncap
  */
 
 #include "element.hh"

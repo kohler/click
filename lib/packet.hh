@@ -104,11 +104,13 @@ private:
   unsigned length() const		{ return skb()->len; }
   unsigned headroom() const		{ return skb()->data - skb()->head; }
   unsigned tailroom() const		{ return skb()->end - skb()->tail; }
+  unsigned total_length() const		{ return skb()->end - skb()->head; }
 #else
   const unsigned char *data() const	{ return _data; }
   unsigned length() const		{ return _tail - _data; }
   unsigned headroom() const		{ return _data - _head; }
   unsigned tailroom() const		{ return _end - _tail; }
+  unsigned total_length() const		{ return _end - _head; }
 #endif
   
   WritablePacket *push(unsigned nb);	// Add more space before packet.
