@@ -158,7 +158,7 @@ SnoopTCP::PCB::clean(unsigned ack, struct timeval *last_cleaned_time)
 
 
 void
-SnoopTCP::PCB::s_ack(Packet *p, const click_tcp *tcph, int datalen)
+SnoopTCP::PCB::s_ack(Packet *, const click_tcp *, int)
 {
   // XXX rest
 }
@@ -347,7 +347,7 @@ SnoopTCP::PCB::mh_ack(Packet *p, const click_tcp *tcph, int datalen)
 
 
 void
-SnoopTCP::PCB::mh_data(Packet *p, const click_tcp *tcph, int datalen)
+SnoopTCP::PCB::mh_data(Packet *, const click_tcp *tcph, int datalen)
 {
   // initialize connection (starting up snoop in the middle of a connection)
   // or mark it alive
