@@ -94,7 +94,7 @@ BinPackingScheduler::run_scheduled()
     unsigned now = click_jiffies();
     for(int i=0; i<sorted.size(); i++) {
 	Element *e = sorted[i]->element();
-	if (e && 0)
+	if (e)
 	  click_chatter("%u: %s %d, was on %d", 
 	                now, e->id().cc(), 
 			sorted[i]->cycles(), 
