@@ -32,7 +32,7 @@ class StringAccum { public:
 
   void clear()				{ _len = 0; }
   
-  char *extend(int);
+  char *extend(int, int = 0);
   
   void append(char);
   void append(unsigned char);
@@ -123,9 +123,10 @@ StringAccum::reserve(int hm)
 }
 
 inline char *
-StringAccum::extend(int amt)
+StringAccum::extend(int amt, int extra)
 {
-  char *c = reserve(amt);
+  assert(extra >= 0);
+  char *c = reserve(amt + extra);
   if (c) _len += amt;
   return c;
 }
