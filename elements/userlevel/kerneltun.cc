@@ -84,6 +84,101 @@ KernelTap::configure(const Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+/*
+ * Find an kill()d /dev/tun* device, return a fd to it.
+ * Exits on failure.
+ */
+int
+KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
+		     ErrorHandler *errh)
+{
+  int fd;
+  char tmp[512], tmp0[64], tmp1[64], dev_prefix[64];
+  int saved_errno = 0;
+
+#if !(defined(__linux__) || defined(__FreeBSD__) || defined(__OpenBSD__))
+  return errh->error("KernelTap is not yet supported on this system\n(Please report this message to click@pdos.lcs.mit.edu.)");
+#endif
+  
+#ifdef __linux__
+  strcpy(dev_prefix, "tap");
+#else
+  strcpy(dev_prefix, "tun");
+#endif
+
+  for (int i = 0; i < 32; i++) {
+    sprintf(tmp, "/dev/%s%d", dev_prefix, i);
+    fd = open(tmp, O_RDWR);
+    if (fd < 0) {
+      if (saved_errno == 0 || errno != ENOENT)
+        saved_errno = errno;
+      continue;
+    }
+
+    int yes = 1;
+    if (ioctl(fd, FIONBIO, &yes) < 0) {
+      close(fd);
+      return errh->error("FIONBIO failed: %s", strerror(errno));
+    }
+
+    _dev_name = String(dev_prefix) + String(i);
+
+#if defined(TUNSIFMODE) || defined(__FreeBSD__)
+    {
+      int mode = IFF_BROADCAST;
+      if (ioctl(fd, TUNSIFMODE, &mode) != 0)
+	return errh->error("TUNSIFMODE failed: %s", strerror(errno));
+    }
+#endif
+    
+#if defined(TUNSIFHEAD) || defined(__FreeBSD__)
+    // Each read/write prefixed with a 32-bit address family,
+    // just as in OpenBSD.
+    yes = 1;
+    if (ioctl(fd, TUNSIFHEAD, &yes) != 0)
+      return errh->error("TUNSIFHEAD failed: %s", strerror(errno));
+#endif        
+
+    strcpy(tmp0, inet_ntoa(near));
+    strcpy(tmp1, inet_ntoa(mask));
+    sprintf(tmp, "ifconfig %s %s netmask %s up 2>/dev/null", _dev_name.cc(), tmp0, tmp1);
+    if (system(tmp) != 0) {
+      close(fd);
+# if defined(__linux__)
+    // Is Ethertap available? If it is moduleified, then it might not be.
+      return errh->error("%s: `%s' failed\n(Perhaps Ethertap is in a kernel module that you haven't loaded yet?)", _dev_name.cc(), tmp);
+# else
+      return errh->error("%s: `%s' failed", _dev_name.cc(), tmp);
+# endif
+    }
+    
+    if (_gw) {
+#if defined(__linux__)
+      sprintf(tmp, "route -n add default gw %s", _gw.s().cc());
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
+      sprintf(tmp, "route -n add default %s", _gw.s().cc());
+#endif
+      if (system(tmp) != 0) {
+	close(fd);
+	return errh->error("%s: %s", tmp, strerror(errno));
+      }
+    }
+    
+    return fd;
+  }
+
+  return errh->error("could not allocate a /dev/%s* device: %s",
+                     dev_prefix, strerror(saved_errno));
+}
+
+void
+KernelTap::dealloc_tun()
+{
+  String cmd = "ifconfig " + _dev_name + " down";
+  if (system(cmd.cc()) != 0) 
+    click_chatter("%s: failed: %s", id().cc(), cmd.cc());
+}
+
 int
 KernelTap::initialize(ErrorHandler *errh)
 {
@@ -229,93 +324,6 @@ KernelTap::push(int, Packet *p)
 #endif
 
   p->kill();
-}
-
-/*
- * Find an kill()d /dev/tun* device, return a fd to it.
- * Exits on failure.
- */
-int
-KernelTap::alloc_tun(struct in_addr near, struct in_addr mask,
-		     ErrorHandler *errh)
-{
-  int fd, yes = 1;
-  char tmp[512], tmp0[64], tmp1[64], dev_prefix[64];
-  int saved_errno = 0;
-
-#ifdef __linux__
-  strcpy(dev_prefix, "tap");
-#else
-  strcpy(dev_prefix, "tun");
-#endif
-
-  for (int i = 0; i < 32; i++) {
-    sprintf(tmp, "/dev/%s%d", dev_prefix, i);
-    fd = open(tmp, 2);
-    if (fd < 0) {
-      if(saved_errno == 0 || errno != ENOENT)
-        saved_errno = errno;
-    } else {
-      if(ioctl(fd, FIONBIO, &yes) < 0){
-	close(fd);
-	return errh->error("FIONBIO failed: %s", strerror(errno));
-      }
-
-      _dev_name = String(dev_prefix) + String(i);
-      
-#if defined(TUNSIFMODE) || defined(__FreeBSD__)
-      {
-	int mode = IFF_BROADCAST;
-	if(ioctl(fd, TUNSIFMODE, &mode) != 0)
-	  return errh->error("TUNSIFMODE failed: %s", strerror(errno));
-      }
-#endif
-
-#if defined(TUNSIFHEAD) || defined(__FreeBSD__)
-      // Each read/write prefixed with a 32-bit address family,
-      // just as in OpenBSD.
-      if (ioctl(fd, TUNSIFHEAD, &yes) != 0)
-	return errh->error("TUNSIFHEAD failed: %s", strerror(errno));
-#endif        
-      
-      strcpy(tmp0, inet_ntoa(near));
-      strcpy(tmp1, inet_ntoa(mask));
-      
-      sprintf(tmp, "ifconfig %s %s netmask %s up", _dev_name.cc(), tmp0, tmp1);
-      
-      if (system(tmp) != 0) {
-	close(fd);
-	return errh->error("%s: %s", tmp, strerror(errno));
-      }
-
-      if (_gw) {
-#if defined(__linux__)
-	sprintf(tmp, "route -n add default gw %s", _gw.s().cc());
-#elif defined(__FreeBSD__) || defined(__OpenBSD__)
-	sprintf(tmp, "route -n add default %s", _gw.s().cc());
-#else
-#error "Not supported on this system"
-#endif
-	if (system(tmp) != 0) {
-	  close(fd);
-	  return errh->error("%s: %s", tmp, strerror(errno));
-	}
-      }
-
-      return fd;
-    }
-  }
-
-  return errh->error("could not allocate a /dev/%s* device: %s",
-                     dev_prefix, strerror(saved_errno));
-}
-
-void
-KernelTap::dealloc_tun()
-{
-  String cmd = "ifconfig " + _dev_name + " down";
-  if (system(cmd.cc()) != 0) 
-    click_chatter("%s: failed: %s", id().cc(), cmd.cc());
 }
 
 ELEMENT_REQUIRES(userlevel)

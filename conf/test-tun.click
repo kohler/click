@@ -6,11 +6,12 @@
 
 tun :: KernelTap(1.0.0.1/8);
 
-ICMPSendPings(1.0.0.2, 1.0.0.1) ->
-  EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) ->
-  tun;
+ICMPSendPings(1.0.0.2, 1.0.0.1)
+	-> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
+	-> tun;
 
-tun -> Strip(14) -> ch :: CheckIPHeader;
+tun -> Strip(14)
+	-> ch :: CheckIPHeader;
 
 ch[0] -> Print(tun-ok) -> Discard;
 ch[1] -> Print(tun-bad) -> Discard;

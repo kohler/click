@@ -14,4 +14,4 @@
 // If you run this inside the kernel, your kernel's ordinary IP stack
 // will stop getting packets from eth0. This might not be convenient.
 
-FromDevice(eth0) -> Print(ok) -> Discard;
+FromDevice(wvlan0) -> Print(ok) -> Discard;

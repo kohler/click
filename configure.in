@@ -277,9 +277,9 @@ dnl
 
 if test ${GMAKE-NO} = NO; then
   AC_CACHE_CHECK(for GNU make, ac_cv_gnu_make,
-[if /bin/sh -c 'make --version | grep GNU' >/dev/null 2>&1; then
+[if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
   ac_cv_gnu_make='make'
-elif /bin/sh -c 'gmake --version | grep GNU' >/dev/null 2>&1; then
+elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
   ac_cv_gnu_make='gmake'
 else
   AC_MSG_RESULT(not found)
