@@ -1,3 +1,33 @@
+2001-06-27 Wednesday 02:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/lib/toolutils.hh (1.24): add ElementMap::empty() function
+
+2001-06-27 Wednesday 02:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/markipce.hh (1.2): MarkIPCE: doc updates
+
+2001-06-27 Wednesday 02:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-install/click-install.cc (1.40): warn if you supply
+	--threads option and a Click module is already installed
+
+2001-06-27 Wednesday 02:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-install.1 (1.9): document --threads option
+
+2001-06-27 Wednesday 02:26  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: grid/hello.cc (1.34), grid/lrhello.cc (1.19),
+	standard/hashdemux.cc (1.17), standard/hashdemux.hh (1.15),
+	standard/pulltopush.cc (1.25), standard/pulltopush.hh (1.18),
+	userlevel/frombpf.cc (1.24), userlevel/frombpf.hh (1.21),
+	userlevel/tobpf.cc (1.27), userlevel/tobpf.hh (1.21): remove
+	deprecated elements
+
+2001-06-27 Wednesday 01:28  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in (1.125): change version number
+
 2001-06-26 Tuesday 23:31  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/ip6/ip6print.cc (1.2): more compact print msg
