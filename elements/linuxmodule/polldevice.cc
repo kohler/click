@@ -165,7 +165,6 @@ PollDevice::reset_counts()
 #if CLICK_DEVICE_STATS
   _activations = 0;
   _idle_calls = 0;
-  _pkts_received = 0;
   _time_poll = 0;
   _time_refill = 0;
   _perfcnt1_poll = 0;
