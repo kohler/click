@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 #ifndef CLICK_TOIPSUMDUMP_HH
 #define CLICK_TOIPSUMDUMP_HH
 #include <click/element.hh>
@@ -75,6 +76,13 @@ annotations. For example, if MULTIPACKET is true, and a packet has packet
 count annotation 2, then ToIPSummaryDump will generate 2 identical lines for
 that packet in the dump. False by default.
 
+=item BAD_PACKETS
+
+Boolean. If true, then print `C<!bad MESSAGE>' lines for packets with bad IP,
+TCP, or UDP headers, instead of normal output. (Even if BAD_PACKETS is false,
+output will contain dashes `C<->' in place of data from bad headers.) Default
+is false.
+
 =back
 
 =e
@@ -143,6 +151,7 @@ class ToIPSummaryDump : public Element { public:
 	W_SRC, W_DST, W_LENGTH, W_PROTO, W_IPID,
 	W_SPORT, W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS,
 	W_PAYLOAD_LENGTH, W_COUNT, W_FRAG, W_FRAGOFF,
+	W_PAYLOAD,
 	W_LAST
     };
 
@@ -157,6 +166,8 @@ class ToIPSummaryDump : public Element { public:
     uint32_t _output_count;
     Task _task;
     bool _verbose : 1;
+    bool _bad_packets : 1;
+    
     String _banner;
 
     bool ascii_summary(Packet *, StringAccum &) const;

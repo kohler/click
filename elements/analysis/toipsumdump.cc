@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * toipsummarydump.{cc,hh} -- element writes packet summary in ASCII
  * Eddie Kohler
@@ -46,6 +47,7 @@ ToIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     int before = errh->nerrors();
     String save = "timestamp 'ip src'";
     bool verbose = false;
+    bool bad_packets = false;
     _multipacket = false;
 
     if (cp_va_parse(conf, this, errh,
@@ -55,6 +57,7 @@ ToIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "VERBOSE", cpBool, "be verbose?", &verbose,
 		    "BANNER", cpString, "banner", &_banner,
 		    "MULTIPACKET", cpBool, "output multiple packets based on packet count anno?", &_multipacket,
+		    "BAD_PACKETS", cpBool, "output `!bad' messages for non-IP or bad IP packets?", &bad_packets,
 		    0) < 0)
 	return -1;
 
@@ -77,6 +80,7 @@ ToIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 	    _multipacket = false;
     
     _verbose = verbose;
+    _bad_packets = bad_packets;
 
     return (before == errh->nerrors() ? 0 : -1);
 }
@@ -144,7 +148,53 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
     const click_ip *iph = p->ip_header();
     const click_tcp *tcph = p->tcp_header();
     const click_udp *udph = p->udp_header();
-    
+
+    // Check that the IP header fields are valid.
+    if (!iph || iph->ip_v != 4 || iph->ip_hl < (sizeof(click_ip) >> 2)
+	|| p->length() < (uint32_t)(p->network_header_offset() + (iph->ip_hl << 2))) {
+	if (_bad_packets) {
+	    if (!iph)
+		sa << "!bad no IP header\n";
+	    else if (iph->ip_v != 4)
+		sa << "!bad IP version " << iph->ip_v << '\n';
+	    else
+		sa << "!bad IP header length " << iph->ip_hl << '\n';
+	    return true;
+	}
+	iph = 0;
+    }
+    if (!iph || !tcph || iph->ip_p != IP_PROTO_TCP || !IP_FIRSTFRAG(iph)
+	|| tcph->th_off < (sizeof(click_tcp) >> 2)
+	|| p->length() < (uint32_t)(p->transport_header_offset() + (tcph->th_off << 2))) {
+	if (_bad_packets && iph->ip_p == IP_PROTO_TCP && IP_FIRSTFRAG(iph)) {
+	    assert(tcph);
+	    if (p->length() < (uint32_t)(p->transport_header_offset() + sizeof(click_tcp))) {
+		if (IP_ISFRAG(iph))
+		    sa << "!bad fragmented TCP header\n";
+		else
+		    sa << "!bad truncated TCP header\n";
+	    } else if (tcph->th_off < (sizeof(click_tcp) >> 2) || !IP_ISFRAG(iph))
+		sa << "!bad TCP header length " << (int)tcph->th_off << '\n';
+	    else
+		sa << "!bad fragmented TCP header\n";
+	    return true;
+	}
+	tcph = 0;
+    }
+    if (!iph || !udph || iph->ip_p != IP_PROTO_UDP || !IP_FIRSTFRAG(iph)
+	|| p->length() < p->transport_header_offset() + sizeof(click_udp)) {
+	if (_bad_packets && iph->ip_p == IP_PROTO_UDP && IP_FIRSTFRAG(iph)) {
+	    assert(udph);
+	    if (IP_ISFRAG(iph))
+		sa << "!bad fragmented UDP header\n";
+	    else
+		sa << "!bad truncated UDP header\n";
+	    return true;
+	}
+	udph = 0;
+    }
+
+    // Print actual contents.
     for (int i = 0; i < _contents.size(); i++) {
 	if (i)
 	    sa << ' ';
@@ -179,16 +229,20 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 		sa << '+';
 	    break;
 	  case W_SPORT:
-	    if (!iph || !IP_FIRSTFRAG(iph)
-		|| (iph->ip_p != IP_PROTO_TCP && iph->ip_p != IP_PROTO_UDP))
+	    if (tcph)
+		sa << ntohs(tcph->th_sport);
+	    else if (udph)
+		sa << ntohs(udph->uh_sport);
+	    else
 		goto no_data;
-	    sa << ntohs(udph->uh_sport);
 	    break;
 	  case W_DPORT:
-	    if (!iph || !IP_FIRSTFRAG(iph)
-		|| (iph->ip_p != IP_PROTO_TCP && iph->ip_p != IP_PROTO_UDP))
+	    if (tcph)
+		sa << ntohs(tcph->th_dport);
+	    else if (udph)
+		sa << ntohs(udph->uh_dport);
+	    else
 		goto no_data;
-	    sa << ntohs(udph->uh_dport);
 	    break;
 	  case W_IPID:
 	    if (!iph) goto no_data;
@@ -204,17 +258,17 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	    }
 	    break;
 	  case W_TCP_SEQ:
-	    if (!iph || !IP_FIRSTFRAG(iph) || iph->ip_p != IP_PROTO_TCP)
+	    if (!tcph)
 		goto no_data;
 	    sa << ntohl(tcph->th_seq);
 	    break;
 	  case W_TCP_ACK:
-	    if (!iph || !IP_FIRSTFRAG(iph) || iph->ip_p != IP_PROTO_TCP)
+	    if (!tcph)
 		goto no_data;
 	    sa << ntohl(tcph->th_ack);
 	    break;
 	  case W_TCP_FLAGS: {
-	      if (!iph || !IP_FIRSTFRAG(iph) || iph->ip_p != IP_PROTO_TCP)
+	      if (!tcph)
 		  goto no_data;
 	      int flags = tcph->th_flags;
 	      for (int i = 0; i < 7; i++)
@@ -235,14 +289,28 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	      uint32_t len = p->length() + EXTRA_LENGTH_ANNO(p);
 	      if (iph) {
 		  len -= p->transport_header_offset();
-		  if (!IP_FIRSTFRAG(iph))
-		      /* nada */;
-		  else if (iph->ip_p == IP_PROTO_TCP)
+		  if (tcph)
 		      len -= (tcph->th_off << 2);
-		  else if (iph->ip_p == IP_PROTO_UDP)
+		  else if (udph)
 		      len -= sizeof(click_udp);
+		  else if (IP_FIRSTFRAG(iph) && (iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP))
+		      goto no_data;
 	      }
 	      sa << len;
+	      break;
+	  }
+	  case W_PAYLOAD: {
+	      int32_t off;
+	      if (iph) {
+		  off = p->transport_header_offset();
+		  if (tcph)
+		      off += (tcph->th_off << 2);
+		  else if (udph)
+		      off += sizeof(click_udp);
+	      } else
+		  off = 0;
+	      String s = String::stable_string((const char *)(p->data() + off), p->length() - off);
+	      sa << cp_quote(s);
 	      break;
 	  }
 	  case W_COUNT: {

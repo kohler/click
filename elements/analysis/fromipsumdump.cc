@@ -704,7 +704,7 @@ static const char *content_names[] = {
     "??", "timestamp", "ts sec", "ts usec",
     "ip src", "ip dst", "ip len", "ip proto", "ip id",
     "sport", "dport", "tcp seq", "tcp ack", "tcp flags",
-    "payload len", "count", "ip frag", "ip fragoff"
+    "payload len", "count", "ip frag", "ip fragoff", "payload"
 };
 
 const char *
@@ -753,6 +753,8 @@ FromIPSummaryDump::parse_content(const String &word)
 	return W_PAYLOAD_LENGTH;
     else if (word == "count" || word == "pkt count" || word == "packet count")
 	return W_COUNT;
+    else if (word == "payload")
+	return W_PAYLOAD;
     else
 	return W_NONE;
 }
