@@ -230,7 +230,7 @@ IPPrint::simple_action(Packet *p)
   }
 
   const unsigned char *data = p->data();
-  if (_contents == 1) {
+  if (_contents > 0) {
     int amt = 3*_bytes + (_bytes/4+1) + 3*(_bytes/24+1) + 1;
 
     sa << "\n  ";
