@@ -18,12 +18,13 @@ extern "C" {
 // #define CLICK_DEVICE_STATS 1
 // #define CLICK_DEVICE_THESIS_STATS 1
 // #define _DEV_OVRN_STATS_ 1
+#define CLICK_CYCLE_COMPENSATION 54
 
 #ifndef RR_SCHED
 # define CLICK_DEVICE_ADJUST_TICKETS 1
 #endif
 
-#if CLICK_DEVICE_STATS
+#if CLICK_DEVICE_STATS > 1
 
 #define SET_STATS(p0mark, p1mark, time_mark) \
   { \
@@ -37,7 +38,7 @@ extern "C" {
   { \
     unsigned high; \
     unsigned low01, low11; \
-    tctr += get_cycles() - time_mark; \
+    tctr += get_cycles() - time_mark - CLICK_CYCLE_COMPENSATION; \
     rdpmc(0, low01, high); \
     rdpmc(1, low11, high); \
     pctr0 += (low01 >= p0mark) ? low01-p0mark : (UINT_MAX-p0mark+low01); \
@@ -45,6 +46,20 @@ extern "C" {
     rdpmc(0, p0mark, high); \
     rdpmc(1, p1mark, high); \
     time_mark = get_cycles(); \
+  }
+
+#elif CLICK_DEVICE_STATS
+
+#define SET_STATS(p0mark, p1mark, time_mark) \
+  { \
+    time_mark = click_get_cycles(); \
+  }
+
+#define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
+  { \
+    unsigned long long __now = click_get_cycles(); \
+    tctr += __now - time_mark - CLICK_CYCLE_COMPENSATION; \
+    time_mark = __now; \
   }
 
 #else

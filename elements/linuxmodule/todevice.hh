@@ -57,7 +57,8 @@ class ToDevice : public AnyDevice {
   void add_handlers();
   
   void run_scheduled();
-  
+
+  void reset_counts();
   bool tx_intr();
 
 #if CLICK_DEVICE_STATS
@@ -65,7 +66,6 @@ class ToDevice : public AnyDevice {
   unsigned long long _idle_calls;
   unsigned long long _idle_pulls;
   unsigned long long _linux_pkts_sent;
-  unsigned long long _time_pull;
   unsigned long long _time_clean;
   unsigned long long _time_queue;
   unsigned long long _perfcnt1_pull;
@@ -77,7 +77,7 @@ class ToDevice : public AnyDevice {
   unsigned long _activations; 
 #endif
   unsigned _npackets;
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   unsigned long long _pull_cycles;
 #endif
   unsigned long _rejected;

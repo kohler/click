@@ -98,14 +98,21 @@ ToDevice::initialize(ErrorHandler *errh)
 #endif
   join_scheduler();
 
-  // reset stats
+  reset_counts();
+  return 0;
+}
+
+void
+ToDevice::reset_counts()
+{
+  _npackets = 0;
+  
   _busy_returns = 0; 
 #if CLICK_DEVICE_STATS
   _activations = 0;
   _idle_pulls = 0; 
   _idle_calls = 0; 
   _linux_pkts_sent = 0; 
-  _time_pull = 0;
   _time_clean = 0;
   _time_queue = 0;
   _perfcnt1_pull = 0;
@@ -115,14 +122,11 @@ ToDevice::initialize(ErrorHandler *errh)
   _perfcnt2_clean = 0;
   _perfcnt2_queue = 0;
 #endif
-
-  _npackets = 0;
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   _pull_cycles = 0;
 #endif
-  
-  return 0;
 }
+
 
 void
 ToDevice::uninitialize()
@@ -148,38 +152,37 @@ ToDevice::tx_intr()
   
 #if CLICK_DEVICE_STATS
   unsigned low00, low10;
-  unsigned long time_now;
+  unsigned long long time_now;
 #endif
 
+  SET_STATS(low00, low10, time_now);
+ 
 #if HAVE_POLLING
   if (_polling) {
-    SET_STATS(low00, low10, time_now);
- 
     queued_pkts = _dev->tx_clean(_dev);
 
 #if CLICK_DEVICE_STATS
-    if (_activations > 0)
-      GET_STATS_RESET(low00, low10, time_now, 
-	              _perfcnt1_clean, _perfcnt2_clean, _time_clean);
+    GET_STATS_RESET(low00, low10, time_now, 
+		    _perfcnt1_clean, _perfcnt2_clean, _time_clean);
 #endif
   }
 #endif
 
   /* try to send from click */
   while (sent < OUTPUT_BATCH && (busy=_dev->tbusy) == 0) {
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
     unsigned long long before_pull_cycles = click_get_cycles();
 #endif
     
     if (Packet *p = input(0).pull()) {
       
       _npackets++;
-#if CLICK_DEVICE_THESIS_STATS
-      _pull_cycles += click_get_cycles() - before_pull_cycles;
+#if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
+      _pull_cycles += click_get_cycles() - before_pull_cycles - CLICK_CYCLE_COMPENSATION;
 #endif
     
       GET_STATS_RESET(low00, low10, time_now, 
-	              _perfcnt1_pull, _perfcnt2_pull, _time_pull);
+	              _perfcnt1_pull, _perfcnt2_pull, _pull_cycles);
       
       int r = queue_packet(p);
       
@@ -329,7 +332,7 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_idle_pulls) + " idle pulls\n" +
     String(td->_linux_pkts_sent) + " linux packets sent\n" +
-    String(td->_time_pull) + " cycles pull\n" +
+    String(td->_pull_cycles) + " cycles pull\n" +
     String(td->_time_clean) + " cycles clean\n" +
     String(td->_time_queue) + " cycles queue\n" +
     String(td->_perfcnt1_pull) + " perfctr1 pull\n" +
@@ -352,9 +355,15 @@ ToDevice_read_stats(Element *e, void *thunk)
   switch (which) {
    case 0:
     return String(td->_npackets) + "\n";
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
    case 1:
     return String(td->_pull_cycles) + "\n";
+#endif
+#if CLICK_DEVICE_STATS
+   case 2:
+    return String(td->_time_queue) + "\n";
+   case 3:
+    return String(td->_time_clean) + "\n";
 #endif
    default:
     return String();
@@ -365,13 +374,7 @@ static int
 ToDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
 {
   ToDevice *td = (ToDevice *)e;
-  td->_npackets = 0;
-  td->_rejected = 0;
-  td->_hard_start = 0;
-  td->_busy_returns = 0;
-#if CLICK_DEVICE_THESIS_STATS
-  td->_pull_cycles = 0;
-#endif
+  td->reset_counts();
   return 0;
 }
 
@@ -380,8 +383,12 @@ ToDevice::add_handlers()
 {
   add_read_handler("calls", ToDevice_read_calls, 0);
   add_read_handler("packets", ToDevice_read_stats, 0);
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   add_read_handler("pull_cycles", ToDevice_read_stats, (void *)1);
+#endif
+#if CLICK_DEVICE_STATS
+  add_read_handler("enqueue_cycles", ToDevice_read_stats, (void *)2);
+  add_read_handler("clean_dma_cycles", ToDevice_read_stats, (void *)3);
 #endif
   add_write_handler("reset_counts", ToDevice_write_stats, 0);
 }

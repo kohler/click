@@ -55,12 +55,14 @@ class PollDevice : public AnyDevice {
 
   void run_scheduled();
 
+  void reset_counts();
+  
+  unsigned long _npackets;
 #if CLICK_DEVICE_STATS
   unsigned long long _pkts_received;
   unsigned long long _idle_calls;
   unsigned long long _time_poll;
   unsigned long long _time_refill;
-  unsigned long long _time_pushing;
   unsigned long long _perfcnt1_poll;
   unsigned long long _perfcnt1_refill;
   unsigned long long _perfcnt1_pushing;
@@ -69,8 +71,7 @@ class PollDevice : public AnyDevice {
   unsigned long long _perfcnt2_pushing;
   unsigned long _activations;
 #endif
-  unsigned long _npackets;
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   unsigned long long _push_cycles;
 #endif
     

@@ -137,29 +137,10 @@ PollDevice::initialize(ErrorHandler *errh)
 #if CLICK_DEVICE_ADJUST_TICKETS
   _last_rx = 0;
 #endif
-
-#if CLICK_DEVICE_STATS
-  _activations = 0;
-  _idle_calls = 0;
-  _pkts_received = 0;
-  _time_poll = 0;
-  _time_refill = 0;
-  _time_pushing = 0;
-  _perfcnt1_poll = 0;
-  _perfcnt1_refill = 0;
-  _perfcnt1_pushing = 0;
-  _perfcnt2_poll = 0;
-  _perfcnt2_refill = 0;
-  _perfcnt2_pushing = 0;
-#endif
-
-  _npackets = 0;
-#if CLICK_DEVICE_THESIS_STATS
-  _push_cycles = 0;
-#endif
   
   join_scheduler();
 
+  reset_counts();
   return 0;
 #else
   errh->warning("can't get packets: not compiled with polling extensions");
@@ -167,6 +148,28 @@ PollDevice::initialize(ErrorHandler *errh)
 #endif
 }
 
+void
+PollDevice::reset_counts()
+{
+  _npackets = 0;
+
+#if CLICK_DEVICE_STATS
+  _activations = 0;
+  _idle_calls = 0;
+  _pkts_received = 0;
+  _time_poll = 0;
+  _time_refill = 0;
+  _perfcnt1_poll = 0;
+  _perfcnt1_refill = 0;
+  _perfcnt1_pushing = 0;
+  _perfcnt2_poll = 0;
+  _perfcnt2_refill = 0;
+  _perfcnt2_pushing = 0;
+#endif
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
+  _push_cycles = 0;
+#endif
+}
 
 void
 PollDevice::uninitialize()
@@ -191,7 +194,7 @@ PollDevice::run_scheduled()
   struct sk_buff *skb_list, *skb;
   int got=0;
 #if CLICK_DEVICE_STATS
-  unsigned long time_now;
+  unsigned long long time_now;
   unsigned low00, low10;
 #endif
 
@@ -236,19 +239,19 @@ PollDevice::run_scheduled()
     Packet *p = Packet::make(skb);
 
     _npackets++;
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
     unsigned long long before_push_cycles = click_get_cycles();
 #endif
     output(0).push(p);
-#if CLICK_DEVICE_THESIS_STATS
-    _push_cycles += click_get_cycles() - before_push_cycles;
+#if CLICK_DEVICE_THESIS_STATS && !CLICK_DEVICE_STATS
+    _push_cycles += click_get_cycles() - before_push_cycles - CLICK_CYCLE_COMPENSATION;
 #endif
   }
 
 #if CLICK_DEVICE_STATS
-  if (_activations > 0 && got > 0) {
+  if (_activations > 0) {
     GET_STATS_RESET(low00, low10, time_now, 
-	            _perfcnt1_pushing, _perfcnt2_pushing, _time_pushing);
+	            _perfcnt1_pushing, _perfcnt2_pushing, _push_cycles);
 #if _DEV_OVRN_STATS_
     if ((_activations % 1024) == 0) _dev->get_stats(_dev);
 #endif
@@ -296,7 +299,7 @@ PollDevice_read_calls(Element *f, void *)
     String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_time_poll) + " cycles poll\n" +
     String(kw->_time_refill) + " cycles refill\n" +
-    String(kw->_time_pushing) + " cycles pushing\n" +
+    String(kw->_push_cycles) + " cycles pushing\n" +
     String(kw->_perfcnt1_poll) + " perfctr1 poll\n" +
     String(kw->_perfcnt1_refill) + " perfctr1 refill\n" +
     String(kw->_perfcnt1_pushing) + " perfctr1 pushing\n" +
@@ -317,9 +320,15 @@ PollDevice_read_stats(Element *e, void *thunk)
   switch (which) {
    case 0:
     return String(pd->_npackets) + "\n";
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
    case 1:
     return String(pd->_push_cycles) + "\n";
+#endif
+#if CLICK_DEVICE_STATS
+   case 2:
+    return String(pd->_time_poll) + "\n";
+   case 3:
+    return String(pd->_time_refill) + "\n";
 #endif
    default:
     return String();
@@ -330,10 +339,7 @@ static int
 PollDevice_write_stats(const String &, Element *e, void *, ErrorHandler *)
 {
   PollDevice *pd = (PollDevice *)e;
-  pd->_npackets = 0;
-#if CLICK_DEVICE_THESIS_STATS
-  pd->_push_cycles = 0;
-#endif
+  pd->reset_counts();
   return 0;
 }
 
@@ -342,8 +348,12 @@ PollDevice::add_handlers()
 {
   add_read_handler("calls", PollDevice_read_calls, 0);
   add_read_handler("packets", PollDevice_read_stats, 0);
-#if CLICK_DEVICE_THESIS_STATS
+#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
   add_read_handler("push_cycles", PollDevice_read_stats, (void *)1);
+#endif
+#if CLICK_DEVICE_STATS
+  add_read_handler("poll_cycles", PollDevice_read_stats, (void *)2);
+  add_read_handler("refill_dma_cycles", PollDevice_read_stats, (void *)3);
 #endif
   add_write_handler("reset_counts", PollDevice_write_stats, 0);
 }
