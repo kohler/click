@@ -470,7 +470,7 @@ particular purpose.\n");
     combined->add_archive(init_archive_element("elementmap", 0600));
     ArchiveElement &ae = combined->archive("elementmap");
     ElementMap em(ae.data);
-    em.add("RouterLink", "", "", "l/h", "S3", "", "");
+    em.add("RouterLink", "", "", "l/h", "x/x", "S3", "", "");
     // add data from included elementmaps
     for (int i = 0; i < routers.size(); i++)
       if (routers[i]->archive_index("elementmap") >= 0) {

@@ -30,7 +30,7 @@ class SnoopTCP : public Element { public:
   
   const char *class_name() const		{ return "SnoopTCP"; }
   const char *processing() const		{ return "aa/aahh"; }
-  const char *flow_code() const			{ return "abx/ab"; }
+  const char *flow_code() const			{ return "xyz/xy"; }
   
   SnoopTCP *clone() const;
 

@@ -269,7 +269,7 @@ ElementMap::add(const Elt &e)
 int
 ElementMap::add(const String &click_name, const String &cxx_name,
 		const String &header_file, const String &processing_code,
-		const String &flags,
+		const String &flow_code, const String &flags,
 		const String &requirements, const String &provisions)
 {
   Elt e;
@@ -277,6 +277,7 @@ ElementMap::add(const String &click_name, const String &cxx_name,
   e.cxx = cxx_name;
   e.header_file = header_file;
   e.processing_code = processing_code;
+  e.flow_code = flow_code;
   e.flags = flags;
   e.requirements = requirements;
   e.provisions = provisions;
@@ -285,9 +286,10 @@ ElementMap::add(const String &click_name, const String &cxx_name,
 
 int
 ElementMap::add(const String &click_name, const String &cxx_name,
-		const String &header_file, const String &processing_code)
+		const String &header_file, const String &processing_code,
+		const String &flow_code)
 {
-  return add(click_name, cxx_name, header_file, processing_code,
+  return add(click_name, cxx_name, header_file, processing_code, flow_code,
 	     String(), String(), String());
 }
 
@@ -357,11 +359,13 @@ ElementMap::parse(const String &str)
       elt.header_file = cp_unquote(words[2]);
       elt.processing_code = cp_unquote(words[3]);
       if (words.size() >= 5)
-	elt.flags = cp_unquote(words[4]);
+	elt.flow_code = cp_unquote(words[4]);
       if (words.size() >= 6)
-	elt.requirements = cp_unquote(words[5]);
+	elt.flags = cp_unquote(words[5]);
       if (words.size() >= 7)
-	elt.provisions = cp_unquote(words[6]);
+	elt.requirements = cp_unquote(words[6]);
+      if (words.size() >= 8)
+	elt.provisions = cp_unquote(words[7]);
       elt.def_index = def_index;
       (void) add(elt);
     }

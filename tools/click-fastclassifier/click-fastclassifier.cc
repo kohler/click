@@ -678,7 +678,7 @@ compile_classifiers(RouterT *r, const String &package_name,
     ElementMap em(ae.data);
     String header_file = package_name + ".hh";
     for (int i = 0; i < gen_eclass_names.size(); i++)
-      em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h");
+      em.add(gen_eclass_names[i], gen_cxxclass_names[i], header_file, "h/h", "x/x");
     ae.data = em.unparse();
   }
 

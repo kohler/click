@@ -1209,7 +1209,7 @@ Flow codes look like @samp{@var{inputspec}/@var{outputspec}}, where each
 of @var{inputspec} and @var{outputspec} is a sequence of @dfn{port
 codes}. The simplest port code is a single letter. Packets can travel
 from an input port to an output port if and only if the port codes
-match. (Case is significant.) For example, the flow code @strcode{"a/a"}
+match. (Case is significant.) For example, the flow code @strcode{"x/x"}
 says that packets can travel from the element's input port to its output
 port, while @strcode{"x/y"} says that packets never travel between ports.
 
@@ -1226,21 +1226,21 @@ used within brackets. One @samp{#} matches another @samp{#} only when
 they represent the same port number---for example, when one @samp{#}
 corresponds to input port 2 and the other to output port 2. @samp{#}
 never matches any letter. Thus, the flow code @strcode{"##/##"} behaves
-like @strcode{"ab/ab"}.
+like @strcode{"xy/xy"}.
 
 @var{Inputspec} and @var{outputspec} need not have the correct numbers
 of port codes. The last code in each specification is duplicated as many
 times as necessary, and any extra codes are ignored. Thus, the flow
-codes @strcode{"[a#][a#][a#][a#]/a######"} and @strcode{"[a#]/a#"} behave
+codes @strcode{"[x#][x#][x#][x#]/x######"} and @strcode{"[x#]/x#"} behave
 identically.
 
 This table describes some simple flow codes.
 
 @table @code
-@item "a/a"
+@item "x/x"
 Packets may travel from any input port to any output port.
 
-@item "ax/a"
+@item "xy/x"
 Packets arriving on input port 0 may travel to output port 0, but those
 arriving on input port 1 will not be emitted on any output.
 
@@ -1261,7 +1261,7 @@ code:
 
 @table @code
 @item COMPLETE_FLOW
-@strcode{"a/a"} (packets travel from any input to all outputs).
+@strcode{"x/x"} (packets travel from any input to all outputs).
 @end table
 
 The default implementation for @code{Element::processing} returns

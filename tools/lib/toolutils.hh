@@ -19,6 +19,7 @@ class ElementMap { public:
     String cxx;
     String header_file;
     String processing_code;
+    String flow_code;
     String flags;
     String requirements;
     String provisions;
@@ -44,6 +45,7 @@ class ElementMap { public:
   const String &header_file(int i) const	{ return _e[i].header_file; }
   const String &source_directory(int i) const;
   const String &processing_code(int i) const	{return _e[i].processing_code;}
+  const String &flow_code(int i) const		{ return _e[i].flow_code; }
   const String &flags(int i) const		{ return _e[i].flags; }
   const String &requirements(int i) const	{ return _e[i].requirements; }
   const String &provisions(int i) const		{ return _e[i].provisions; }
@@ -60,10 +62,11 @@ class ElementMap { public:
 
   int add(const Elt &);
   int add(const String &name, const String &cxx, const String &header_file,
-	  const String &processing_code, const String &flags,
+	  const String &processing_code, const String &flow_code,
+	  const String &flags,
 	  const String &requirements, const String &provisions);
   int add(const String &name, const String &cxx, const String &header_file,
-	  const String &processing_code);
+	  const String &processing_code, const String &flow_code);
   void remove(int);
   void remove(const String &n)			{ remove(find(n)); }
 

@@ -7,30 +7,6 @@ class ProcessingT { public:
 
   enum ProcessingCode { VAGNOSTIC = 0, VPUSH = 1, VPULL = 2 };
 
- private:
-
-  const RouterT *_router;
-  
-  Vector<int> _input_pidx;
-  Vector<int> _output_pidx;
-  Vector<int> _input_eidx;
-  Vector<int> _output_eidx;
-  Vector<int> _input_processing;
-  Vector<int> _output_processing;
-  Vector<Hookup> _connected_input;
-  Vector<Hookup> _connected_output;
-
-  void create_pidx(ErrorHandler *);
-  
-  void initial_processing_for(int, const ElementMap &, ErrorHandler *);
-  void initial_processing(const ElementMap &, ErrorHandler *);
-  void processing_error(const Hookup &, const Hookup &, int, int,
-			const ElementMap &, ErrorHandler *);
-  void check_processing(const ElementMap &, ErrorHandler *);
-  void check_connections(ErrorHandler *);
-  
- public:
-
   ProcessingT();
   ProcessingT(const RouterT *, const ElementMap &, ErrorHandler *);
 
@@ -58,6 +34,28 @@ class ProcessingT { public:
   int reset(const RouterT *, const ElementMap &, ErrorHandler *);
 
   bool same_processing(int, int) const;
+  
+ private:
+
+  const RouterT *_router;
+  
+  Vector<int> _input_pidx;
+  Vector<int> _output_pidx;
+  Vector<int> _input_eidx;
+  Vector<int> _output_eidx;
+  Vector<int> _input_processing;
+  Vector<int> _output_processing;
+  Vector<Hookup> _connected_input;
+  Vector<Hookup> _connected_output;
+
+  void create_pidx(ErrorHandler *);
+  
+  void initial_processing_for(int, const ElementMap &, ErrorHandler *);
+  void initial_processing(const ElementMap &, ErrorHandler *);
+  void processing_error(const Hookup &, const Hookup &, int, int,
+			const ElementMap &, ErrorHandler *);
+  void check_processing(const ElementMap &, ErrorHandler *);
+  void check_connections(ErrorHandler *);
   
 };
 

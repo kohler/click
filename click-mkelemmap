@@ -20,8 +20,10 @@
 my(%processing_constants) =
     ('AGNOSTIC' => 'a/a', 'PUSH' => 'h/h', 'PULL' => 'l/l',
      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h');
+my(%flow_code_constants) =
+    ('COMPLETE_FLOW' => 'x/x');
 my(@class_file, @click_name, @cxx_name,
-   @parents, @processing, @flags, @requirements, @provisions,
+   @parents, @processing, @flow_code, @flags, @requirements, @provisions,
    %click_name_to_id, %cxx_name_to_id);
 
 sub process_file ($) {
@@ -59,10 +61,17 @@ sub process_file ($) {
       my $p = $1;
       $p = $processing_constants{$p} if exists($processing_constants{$p});
       $p =~ tr/\" \t\r\n//d;
-      $p =~ s{\A([^/]+)\Z}{$1/$1};
       push @processing, $p;
     } else {
       push @processing, "";
+    }
+    if (/flow_code.*return\s*(.*?);/) {
+      my $p = $1;
+      $p = $flow_code_constants{$p} if exists($flow_code_constants{$p});
+      $p =~ tr/\" \t\r\n//d;
+      push @flow_code, $p;
+    } else {
+      push @flow_code, "";
     }
     if (/\bflags\(\).*return\s*"(.*?)";/) {
       push @flags, $1;
@@ -122,6 +131,23 @@ sub parents_processing ($) {
     }
   }
   return $processing[$classid];
+}
+
+sub parents_flow_code ($) {
+  my($classid) = @_;
+  if (!$flow_code[$classid]) {
+    my($parent);
+    foreach $parent (@{$parents[$classid]}) {
+      if ($parent eq 'Element') {
+	$flow_code[$classid] = 'x/x';
+	last;
+      } elsif ($parent ne '') {
+	$flow_code[$classid] = &parents_flow_code($cxx_name_to_id{$parent});
+	last if $flow_code[$classid];
+      }
+    }
+  }
+  return $flow_code[$classid];
 }
 
 sub parents_flags ($) {
@@ -200,7 +226,7 @@ my($sourcedir) = `/bin/pwd`;
 $sourcedir =~ s{\s+$}{}s;
 print OUT "\$sourcedir\t\"$sourcedir\"\n";
 
-print OUT "# Click class name\tC++ class name\theader file\tprocessing code\tflag word\trequirements\tprovisions\n";
+print OUT "# Click class name\tC++ class name\theader file\tprocessing code\tflow code\tflag word\trequirements\tprovisions\n";
 
 foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($n) = $click_name[$id];
@@ -212,6 +238,9 @@ foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($p) = $processing[$id];
   $p = parents_processing($id) if !$p;
 
+  my($flow) = $flow_code[$id];
+  $flow = parents_flow_code($id) if !$flow;
+
   my($flags) = $flags[$id];
   $flags = parents_flags($id) if !defined($flags);
   $flags = "" if !defined($flags);
@@ -219,7 +248,7 @@ foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($req) = $requirements[$id];
   my($prov) = $provisions[$id];
   
-  print OUT $n, "\t", $cxx_name[$id], "\t", $f, "\t", $p, "\t\"", $flags, "\"",
-  "\t\"", $req, "\"\t\"", $prov, "\"\n";
+  print OUT $n, "\t", $cxx_name[$id], "\t", $f, "\t", $p, "\t", $flow,
+  "\t\"", $flags, "\"\t\"", $req, "\"\t\"", $prov, "\"\n";
 }
 close OUT;

@@ -55,7 +55,7 @@ class IP6NDSolicitor : public Element {
   
   const char *class_name() const		{ return "IP6NDSolicitor"; }
   const char *processing() const		{ return PUSH; }
-  const char *flow_code() const			{ return "ax/a"; }
+  const char *flow_code() const			{ return "xy/x"; }
 
   void notify_noutputs(int);
   void add_handlers();

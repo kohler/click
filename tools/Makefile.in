@@ -59,7 +59,7 @@ distclean:
 
 install: install-subdirs
 install-subdirs: lib
-	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) install); done
+	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
 
 DISTFILES = Makefile.in lib/Makefile.in \
 	lib/elementt.cc lib/elementt.hh \
