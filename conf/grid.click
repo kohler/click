@@ -92,7 +92,7 @@ from_linux -> cl :: Classifier(16/GRID_HEX_IP, // ip for us
 			       16/GRID_NET_HEX, // ip for Grid network
 			       -); // the rest of the world
 to_ip_cl/out -> cl;
-cl [0] -> linux;
+cl [0] -> to_linux;
 cl [1] -> GetIPAddress(16) -> [1] lr [1] -> check :: CheckIPHeader [0] -> to_linux;
 check [1] -> Discard;
 cl [2] -> SetIPAddress(GRID_GW) -> [1] lr; // for grid gateway
