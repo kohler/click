@@ -10,7 +10,7 @@ The user-level version of Click should compile and run on any Intel x86
 Unix system that has the pcap library. (The pcap library is necessary to
 communicate with the network. See the end of this document for portability
 notes for other architectures.) The Linux kernel module requires a patched
-Linux 2.2 system; we've tested on the recent 2.2.14 Linux kernel.
+Linux 2.2 system; we've tested on the recent 2.2.16 Linux kernel.
 
 First, run
 
@@ -68,7 +68,7 @@ and running Linux kernels.
     This is in case something goes wrong and you need to revert to an old
     kernel.
 
- 2. Get a copy of the Linux 2.2.14 kernel source distribution, for example
+ 2. Get a copy of the Linux 2.2.16 kernel source distribution, for example
     from www.kernel.org. A later 2.2 kernel may also work. Unpack this
     distribution into /usr/src/linux. (Save the old kernel source tree, if
     you had one.)
@@ -76,7 +76,7 @@ and running Linux kernels.
  3. Install the Click Linux kernel patch:
 
 	cd /usr/src/linux
-	patch -p0 -b < CLICKDIR/etc/linux-2.2.14-patch
+	patch -p0 -b < CLICKDIR/etc/linux-2.2.16-patch
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
@@ -89,11 +89,11 @@ and running Linux kernels.
     configuration, or you can do the usual `make menuconfig'.
 
  5. If your archived, working kernel has the same version number as the
-    patched kernel (they're both 2.2.14, for example), then it is a good
+    patched kernel (they're both 2.2.16, for example), then it is a good
     idea to change the patched kernel's `EXTRAVERSION'. This way, the
     modules for the new kernel won't overwrite the old, working modules.
     Edit /usr/src/linux/Makefile and change the line `EXTRAVERSION =' to
-    `EXTRAVERSION = click', or whatever you would like.
+    `EXTRAVERSION = -click', or whatever you would like.
 
  6. Compile and install the kernel:
 
@@ -123,7 +123,8 @@ module with
 
 	/sbin/insmod click.o
 
-At this point you can load a configuration file (see doc/click.5) with
+(or use the click-install(1) program). At this point you can load a
+configuration file (see doc/click.5) with
 
         cat xxx.click > /proc/click/config
 
@@ -140,7 +141,3 @@ such an architecture, you'll need to run your configurations through the
 doc/click-align.1) figures out what alignment is required and adds elements
 as necessary to make that alignment happen. It also adds an `AlignmentInfo'
 element to tell every element what kind of alignment it can expect.
-
-    Note that some parts of the system have not yet been updated for
-non-x86 portability. In particular, IP checksums appear to be computed
-incorrectly on SPARCs, probably due to endian issues.
