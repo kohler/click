@@ -8,6 +8,7 @@ NEWS
 README
 
 Makefile.in
+acclick.m4
 click-buildtool
 click-compile.in
 click-mkelemmap
@@ -67,6 +68,7 @@ etc/linux-2.4.4-patch
 etc/samplepackage
 etc/samplepackage/Makefile.in
 etc/samplepackage/README
+etc/samplepackage/acclick.m4
 etc/samplepackage/config.h.in
 etc/samplepackage/configure
 etc/samplepackage/configure.in

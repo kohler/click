@@ -45,8 +45,9 @@ U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrc
 
 # Everything below here will probably stay unchanged
 
-srcdir := @srcdir@
-top_srcdir := @top_srcdir@
+srcdir = @srcdir@
+top_srcdir = @top_srcdir@
+conf_auxdir = @conf_auxdir@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -69,7 +70,7 @@ LD = @LD@
 STRIP = @STRIP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
-mkinstalldirs = @top_srcdir@/mkinstalldirs
+mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 .SUFFIXES:
 .SUFFIXES: .c .cc .o .ko .uo .kii .uii

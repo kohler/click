@@ -1,9 +1,10 @@
 SHELL = @SHELL@
 
-srcdir := @srcdir@
-top_srcdir := @top_srcdir@
-top_builddir := ../..
-subdir := tools/udpgen
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+top_builddir = ../..
+subdir = tools/udpgen
+conf_auxdir = @conf_auxdir@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -20,7 +21,7 @@ CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
-mkinstalldirs = @top_srcdir@/mkinstalldirs
+mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .s

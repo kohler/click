@@ -11,13 +11,16 @@ top_srcdir = @top_srcdir@
 srcdir = @srcdir@
 top_builddir = ../..
 subdir = etc/libclick
+conf_auxdir = @conf_auxdir@
+
 AUTOCONF = @AUTOCONF@
+ACLOCAL = cp acclick.m4 aclocal.m4
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
 INSTALL_DATA = @INSTALL@ -m 644
 INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
-mkinstalldirs = @top_srcdir@/mkinstalldirs
+mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -66,7 +69,7 @@ distdir:
 	  fi; \
 	  echo $$df >>$(distdir)/DISTFILES; \
 	done
-	cd $(distdir) && $(AUTOCONF)
+	cd $(distdir) && $(ACLOCAL) && $(AUTOCONF)
 	echo configure >>$(distdir)/DISTFILES
 
 

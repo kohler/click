@@ -8,6 +8,8 @@ AC_SUBST(ac_configure_args)
 AC_DEFINE_UNQUOTED(CLICK_VERSION, "$CLICK_VERSION")
 AC_SUBST(CLICK_VERSION)
 
+CLICK_INIT('$(top_srcdir)')
+
 dnl support for cross compiling
 AC_CANONICAL_SYSTEM
 
@@ -15,10 +17,10 @@ dnl This is wrong!!
 AC_CHECK_TOOL(CC, gcc)
 AC_CHECK_TOOL(CXX, g++)
 
-AC_PROG_CC
+CLICK_PROG_CC
 AC_PROG_CPP
 
-AC_PROG_CXX
+CLICK_PROG_CXX
 AC_PROG_CXXCPP
 
 AC_CHECK_TOOL(AR, ar)
@@ -26,92 +28,9 @@ AC_CHECK_TOOL(LD, ld)
 AC_CHECK_TOOL(RANLIB, ranlib, :)
 AC_CHECK_TOOL(STRIP, strip, :)
 
-AC_PROG_INSTALL
+conf_auxdir='$(top_srcdir)'
+AC_SUBST(conf_auxdir)
 
-dnl check for install -C
-
-AC_MSG_CHECKING(whether install accepts -C)
-echo X > conftest.1
-if $INSTALL -C conftest.1 conftest.2 >/dev/null 2>&1; then
-  INSTALL_IF_CHANGED="$INSTALL -C"
-  AC_MSG_RESULT(yes)
-else
-  INSTALL_IF_CHANGED="$INSTALL"
-  AC_MSG_RESULT(no)
-fi
-AC_SUBST(INSTALL_IF_CHANGED)
-
-dnl
-dnl check C++ suitability
-dnl
-
-if test -z "$GXX"; then
-  AC_MSG_WARN(Your C++ compiler ($CXX) is not a GNU C++ compiler!
-Either set the "'`'"CXX' environment variable to tell me where
-[a GNU C++ compiler is, or compile at your own risk.
-(This code uses a few GCC extensions and GCC-specific compiler options,
-and Linux header files are GCC-specific.)])
-fi
-
-AC_LANG_CPLUSPLUS
-AC_CACHE_CHECK(for recent version of C++, ac_cv_good_cxx,
-  AC_TRY_COMPILE([], [#ifdef __GNUG__
-#if (__GNUC__ == 2) && (__GNUC_MINOR__ <= 7)
-#error "fuckers! fuckers!"
-#endif
-#endif
-return 0;], ac_cv_good_cxx=yes, ac_cv_good_cxx=no))
-if test "$ac_cv_good_cxx" != yes; then
-  AC_MSG_ERROR(Your GNU C++ compiler ($CXX) is too old!
-[Either download a newer compiler, or tell me to use a different compiler
-by setting the "'`'"CXX' environment variable and rerunning me.])
-fi
-
-dnl look for particular things in G++
-
-AC_CACHE_CHECK(for working new.h, ac_cv_good_new_h,
-  AC_TRY_LINK([#include <new.h>], [
-  int a;
-  int *b = new(&a) int;
-  return 0;
-], ac_cv_good_new_h=yes, ac_cv_good_new_h=no))
-if test "$ac_cv_good_new_h" = yes; then
-  AC_DEFINE(HAVE_NEW_H)
-fi
-
-dnl set C++ compiler options
-
-CPPFLAGS="$CPPFLAGS"
-if test -n "$GCC"; then
-  CC="$CC -Wall"
-fi
-if test -n "$GXX"; then
-  CXX="$CXX -Wp,-w -W -Wall"
-fi
-if test -n "$GXX"; then
-  CXXFLAGS="-fno-exceptions -fno-rtti -fvtable-thunks $CXXFLAGS"
-fi
-
-dnl
-dnl autoconf
-dnl
-
-missing_dir=`cd $srcdir && pwd`
-
-AC_MSG_CHECKING(for working autoconf)
-AUTOCONF=${AUTOCONF-autoconf}
-if ($AUTOCONF --version) < /dev/null > conftest.out 2>&1; then
-  if test `head -1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
-    AC_MSG_RESULT(found)
-  else
-    AUTOCONF="$missing_dir/missing autoconf"
-    AC_MSG_RESULT(old)
-  fi
-else
-  AUTOCONF="$missing_dir/missing autoconf"
-  AC_MSG_RESULT(missing)
-fi
-AC_SUBST(AUTOCONF)
 
 dnl
 dnl build userlevel? Linux module? are we compiling on Linux?
@@ -151,6 +70,7 @@ AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
 #endif
 return 0;], ac_cv_under_linux=yes, ac_cv_under_linux=no))
 
+
 dnl
 dnl multithread support?
 dnl
@@ -172,14 +92,6 @@ else
   AC_DEFINE_UNQUOTED(NUM_CLICK_CPUS, 1)
 fi
 
-dnl
-dnl make FLAGS variables without `-g'
-dnl
-
-CFLAGS_NDEBUG=`echo "$CFLAGS" | sed 's/-g//'`
-CXXFLAGS_NDEBUG=`echo "$CXXFLAGS" | sed 's/-g//'`
-AC_SUBST(CFLAGS_NDEBUG)
-AC_SUBST(CXXFLAGS_NDEBUG)
 
 dnl
 dnl functions
@@ -187,6 +99,7 @@ dnl
 
 AC_REPLACE_FUNCS(strerror)
 AC_CHECK_FUNCS(strtoul)
+
 
 dnl
 dnl integer types
@@ -225,21 +138,15 @@ Compile with "'`'"--disable-int64'.)
   fi
 fi
 
+
 dnl
-dnl dynamic linking
+dnl headers, dynamic linking, pcap
 dnl
 
 AC_CHECK_HEADERS(unistd.h)
+CLICK_CHECK_DYNAMIC_LINKING
+CLICK_CHECK_LIBPCAP
 
-DL_LIBRARY=
-AC_CHECK_HEADERS(dlfcn.h, ac_have_dlfcn_h=yes, ac_have_dlfcn_h=no)
-AC_CHECK_FUNC(dlopen, ac_have_dlopen=yes,
-[AC_CHECK_LIB(dl, dlopen, [ac_have_dlopen=yes
-DL_LIBRARY="-ldl"], ac_have_dlopen=no)])
-if test "x$ac_have_dlopen" = xyes -a "x$ac_have_dlfcn_h" = xyes; then
-  AC_DEFINE(HAVE_DYNAMIC_LINKING)
-fi
-AC_SUBST(DL_LIBRARY)
 
 dnl
 dnl sockets
@@ -250,15 +157,17 @@ dnl AC_CHECK_LIB(nsl, gethostbyname, SOCKET_LIBS="-lnsl $SOCKET_LIBS")
 AC_CHECK_LIB(socket, connect, SOCKET_LIBS="-lsocket $SOCKET_LIBS")
 AC_SUBST(SOCKET_LIBS)
 
+
 dnl
 dnl mmap
 dnl
 
 AC_LANG_C
-AC_CHECK_HEADERS(sys/mman.h, have_mman_h=yes, have_mman_h=no)
+AC_CHECK_HEADERS(sys/mman.h)
 AC_FUNC_MMAP
 AC_CHECK_FUNCS(madvise)
 AC_LANG_CPLUSPLUS
+
 
 dnl
 dnl element collections
@@ -281,6 +190,7 @@ ELEMENTS_ARG_ENABLE(warp9, [reduce PollDevice functionality for speed], no, AC_D
 
 elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
 AC_SUBST(elements_vpath)
+
 
 dnl
 dnl objects required by element collections
@@ -327,129 +237,17 @@ fi
 
 
 dnl
-dnl check for GNU make
+dnl programs needed for build process
 dnl
 
-if test "x${GMAKE-NO}" = xNO; then
-  AC_CACHE_CHECK(for GNU make, ac_cv_gnu_make,
-[if /bin/sh -c 'make -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
-  ac_cv_gnu_make='make'
-elif /bin/sh -c 'gmake -f /dev/null -n --version | grep GNU' >/dev/null 2>&1; then
-  ac_cv_gnu_make='gmake'
-else
-  AC_MSG_RESULT(not found)
-  AC_MSG_WARN([can't find GNU make, not tracking dependencies])
-  ac_cv_gnu_make=''
-fi])
-  GMAKE="$ac_cv_gnu_make"
-fi
+CLICK_PROG_INSTALL
+CLICK_PROG_GMAKE
+CLICK_PROG_AUTOCONF
+CLICK_PROG_PERL5
 
-SUBMAKE=''
-AC_SUBST(SUBMAKE)
-if test "x$GMAKE" != xmake -a "x$GMAKE" != x; then
-  SUBMAKE="MAKE = $ac_cv_gnu_make"
-fi
 
 dnl
-dnl check userlevel for pcap library
-dnl note: no longer need pcap under Linux
-dnl
-
-if test "$enable_userlevel" = yes; then
-
-  if test "${PCAP_HEADER_PATH-NO}" != NO; then
-    ac_cv_pcap_header_path="$PCAP_HEADER_PATH"
-  elif test "$ac_cv_under_linux" != yes; then
-    saveflags="$CPPFLAGS"
-    AC_CACHE_CHECK(for pcap.h, ac_cv_pcap_header_path,
-      AC_TRY_CPP([#include <pcap.h>], ac_cv_pcap_header_path="found",
-       CPPFLAGS="$saveflags -I/usr/include/pcap"
-       AC_TRY_CPP([#include <pcap.h>], ac_cv_pcap_header_path="-I/usr/include/pcap",
-        CPPFLAGS="$saveflags -I/usr/local/include/pcap"
-        AC_TRY_CPP([#include <pcap.h>], ac_cv_pcap_header_path="-I/usr/local/include/pcap",
-         ac_cv_pcap_header_path="not found"))))
-    if test "$ac_cv_pcap_header_path" = "found"; then
-      PCAP_HEADER_PATH=""
-    elif test "$ac_cv_pcap_header_path" != "not found"; then
-      PCAP_HEADER_PATH="$ac_cv_pcap_header_path"
-    fi
-    if test "$ac_cv_pcap_header_path" != "not found"; then
-      CPPFLAGS="$saveflags $PCAP_HEADER_PATH"
-      AC_CACHE_CHECK(for bpf_timeval in pcap.h, ac_cv_bpf_timeval,
-        AC_EGREP_HEADER(bpf_timeval, pcap.h, ac_cv_bpf_timeval=yes, ac_cv_bpf_timeval=no))
-      if test "$ac_cv_bpf_timeval" = yes; then
-        AC_DEFINE(HAVE_BPF_TIMEVAL)
-      fi
-    fi
-    CPPFLAGS="$saveflags"
-  else
-    ac_cv_pcap_header_path="not found"
-  fi
-
-  if test ${PCAP_LIBRARY_PATH-NO} != NO; then
-    ac_cv_pcap_header_path="$PCAP_LIBRARY_PATH"
-    PCAP_LIBRARY="-lpcap"
-  elif test "$ac_cv_under_linux" != yes; then
-    saveflags="$LDFLAGS"
-    savelibs="$LIBS"
-    LIBS="$savelibs -lpcap"
-    AC_CACHE_CHECK(for -lpcap, ac_cv_pcap_library_path,
-      AC_LANG_C
-      AC_TRY_LINK_FUNC(pcap_open_live, ac_cv_pcap_library_path="found",
-       LDFLAGS="$saveflags -L/usr/local/lib"
-       AC_TRY_LINK_FUNC(pcap_open_live, ac_cv_pcap_library_path="-L/usr/local/lib",
-        ac_cv_pcap_library_path="not found")))
-    LDFLAGS="$saveflags"
-    LIBS="$savelibs"
-    if test "$ac_cv_pcap_library_path" = "found"; then
-      PCAP_LIBRARY_PATH=""
-      PCAP_LIBRARY="-lpcap"
-    elif test "$ac_cv_pcap_library_path" != "not found"; then
-      PCAP_LIBRARY_PATH="$ac_cv_pcap_library_path"
-      PCAP_LIBRARY="-lpcap"
-    fi
-  else
-    ac_cv_pcap_library_path="not found"
-  fi
-
-  if test "$ac_cv_pcap_library_path" = "not found" -o "$ac_cv_pcap_library_path" = "not found"; then
-    if test "$ac_cv_under_linux" != yes; then
-      AC_MSG_WARN(pcap.h or -lpcap not found; user-level driver can't steal packets)
-    fi
-  else
-    AC_DEFINE_UNQUOTED(HAVE_PCAP, 1)
-  fi
-
-  TARGETS="$TARGETS userlevel"
-fi
-AC_SUBST(PCAP_HEADER_PATH)
-AC_SUBST(PCAP_LIBRARY_PATH)
-AC_SUBST(PCAP_LIBRARY)
-
-dnl
-dnl Perl5
-dnl
-
-if test ${PERL-NO} = NO; then
-  AC_CHECK_PROGS(perl5, perl5 perl, missing)
-  if test $perl5 = missing && $perl5 -e 'exit($] < 5);'; then
-    AC_CHECK_PROGS(perl5_local, perl5 perl, missing, /usr/local/bin)
-    if test "$perl5_local" != "missing"; then
-      perl5="/usr/local/bin/$perl5_local"
-    fi
-  fi
-  if test "$perl5" = "missing"; then
-    AC_MSG_WARN(I can't find Perl 5, so I won't be able to make 
-manual pages for you.)
-    PERL="$missing_dir/missing perl"
-  else
-    PERL="$perl5"
-  fi
-fi
-AC_SUBST(PERL)
-
-dnl
-dnl Set path variables
+dnl set path variables
 dnl
 
 shell_expand () {
@@ -477,13 +275,13 @@ AC_DEFINE_UNQUOTED(CLICK_LIBDIR, "$libdir")
 AC_DEFINE_UNQUOTED(CLICK_SHAREDIR, "$datadir/click")
 AC_DEFINE_UNQUOTED(CLICK_INFODIR, "$infodir")
 
+
 dnl
 dnl Output
 dnl
 
 test ! -d include && mkdir include
 config_files="Makefile click-compile libsrc/Makefile"
-rm -rf conftest*
 
 AC_OUTPUT_COMMANDS(for ac_file in $CONFIG_HEADERS; do
   test $ac_file = include/click/config.h:config.h.in && echo > stamp-h

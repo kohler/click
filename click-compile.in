@@ -33,10 +33,10 @@ while true; do
   bad=x
   case $1 in
     --de|--def|--defs)
-      echo @PCAP_HEADER_PATH@ -I$includedir
+      echo @PCAP_INCLUDES@ -I$includedir
       exit 0;;
     --l|--li|--lib|--libs)
-      echo @PCAP_LIBRARY_PATH@ @PCAP_LIBRARY@ @DL_LIBRARY@ @SOCKET_LIBS@
+      echo @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
       exit 0;;
     -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
       directory=$2; shift 2;;

@@ -11,13 +11,16 @@ top_srcdir = @top_srcdir@
 srcdir = @srcdir@
 top_builddir = .
 subdir = .
+conf_auxdir = @conf_auxdir@
+
 AUTOCONF = @AUTOCONF@
+ACLOCAL = cp acclick.m4 aclocal.m4
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_IF_CHANGED = @INSTALL_IF_CHANGED@
 INSTALL_DATA = @INSTALL@ -m 644
 INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
-mkinstalldirs = @top_srcdir@/mkinstalldirs
+mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -83,8 +86,8 @@ click-compile: $(srcdir)/click-compile.in
 	CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
 
-$(srcdir)/configure: $(srcdir)/configure.in
-	cd $(srcdir) && $(AUTOCONF)
+$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acclick.m4
+	cd $(srcdir) && $(ACLOCAL) && $(AUTOCONF)
 config.status: $(srcdir)/configure
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
 Makefile: config.status $(srcdir)/Makefile.in
@@ -113,9 +116,9 @@ distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
 
 dist: distdir
-distdir:
+distdir: $(srcdir)/configure
 	@cd doc && $(MAKE) info
-	@cd $(srcdir)/etc/samplepackage && $(AUTOCONF)
+	@cp $(srcdir)/acclick.m4 $(srcdir)/aclocal.m4 $(srcdir)/etc/samplepackage; cd $(srcdir)/etc/samplepackage; $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)

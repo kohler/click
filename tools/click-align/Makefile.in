@@ -1,10 +1,11 @@
 SHELL = @SHELL@
 @SUBMAKE@
 
-srcdir := @srcdir@
-top_srcdir := @top_srcdir@
-top_builddir := ../..
-subdir := tools/click-align
+top_srcdir = @top_srcdir@
+srcdir = @srcdir@
+top_builddir = ../..
+subdir = tools/click-align
+conf_auxdir = @conf_auxdir@
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -20,7 +21,7 @@ CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
 INSTALL = @INSTALL@
-mkinstalldirs = @top_srcdir@/mkinstalldirs
+mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .s
@@ -45,7 +46,7 @@ DEFS = @DEFS@
 INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
 	-I$(top_srcdir)/tools/lib -I$(srcdir)
 LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@ @DL_LIBRARY@
+LIBS = @LIBS@ @DL_LIBS@
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
