@@ -16,6 +16,7 @@ AUTOCONF = @AUTOCONF@
 PERL = @PERL@
 INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
+INSTALL_DATA_IF_CHANGED = @INSTALL_IF_CHANGED@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 prefix = @prefix@
@@ -54,8 +55,8 @@ install-man:
 	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
 install-include:
 	$(mkinstalldirs) $(includedir)
-	$(INSTALL_DATA) $(srcdir)/include/click/*.* $(includedir)
-	$(INSTALL_DATA) $(top_builddir)/config.h $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.* $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/config.h $(includedir)
 
 elemlist elemlists:
 	for dir in @TARGETS@; do \

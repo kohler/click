@@ -12,6 +12,19 @@ AC_PROG_CPP
 AC_PROG_RANLIB
 AC_PROG_INSTALL
 
+dnl check for install -C
+
+AC_MSG_CHECKING(whether install accepts -C)
+echo X > conftest.1
+if $INSTALL -C conftest.1 conftest.2; then
+  INSTALL_IF_CHANGED="$INSTALL -C"
+  AC_MSG_RESULT(yes)
+else
+  INSTALL_IF_CHANGED="$INSTALL"
+  AC_MSG_RESULT(no)
+fi
+AC_SUBST(INSTALL_IF_CHANGED)
+
 dnl
 dnl check for C++
 dnl
@@ -151,6 +164,7 @@ fi])
 ELEMENTS_ARG_ENABLE(standard, [include standard elements [yes]], yes)
 ELEMENTS_ARG_ENABLE(ethernet, [include Ethernet elements [yes]], yes)
 ELEMENTS_ARG_ENABLE(ip, [include IP, UDP, and TCP elements [yes]], yes)
+ELEMENTS_ARG_ENABLE(icmp, [include ICMP elements [yes]], yes)
 ELEMENTS_ARG_ENABLE(ip6, [include IPv6 elements (EXPERIMENTAL)], no, AC_DEFINE(HAVE_IP6))
 ELEMENTS_ARG_ENABLE(app, [include application-level elements [yes]], yes)
 ELEMENTS_ARG_ENABLE(etherswitch, [include Ethernet switch elements (EXPERIMENTAL)], no)
@@ -457,7 +471,7 @@ dnl
 
 if test ${PERL-NO} = NO; then
   AC_CHECK_PROGS(perl5, perl5 perl, missing)
-  if test $perl5 = missing || $perl5 -e 'exit($^V < 5);'; then
+  if test $perl5 = missing && $perl5 -e 'exit($] < 5);'; then
     AC_CHECK_PROGS(perl5_local, perl5 perl, missing, /usr/local/bin)
     if test "$perl5_local" != "missing"; then
       perl5="/usr/local/bin/$perl5_local"
