@@ -96,12 +96,11 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 {
 
   // what to do in the case of a forward direction syn.
-  const click_tcp *tcph;
   FlowTableEntry *match = NULL;
   FlowTableEntry *new_entry = NULL;
   DstTableEntry  *dst_match = NULL;
   const click_ip  *iph = p->ip_header();
-  const click_tcp *tchp= p->tcp_header();
+  const click_tcp *tcph= p->tcp_header();
   unsigned tcp_seq = ntohl(tcph->th_seq) + 
     ntohs(iph->ip_len) - (iph->ip_hl << 2) - (tcph->th_off << 2);
 
@@ -299,7 +298,6 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	return;
       } else {
 	rtprintf("Incorrect return port, replying with RST\n");
-
 	WritablePacket *rst_pkt = Packet::make(40);
 	click_ip *iphdr   = reinterpret_cast<click_ip *>(rst_pkt->ip_header());
 	click_tcp *tcphdr = reinterpret_cast<click_tcp*>(rst_pkt->tcp_header());
@@ -308,15 +306,24 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	tcphdr->th_dport = p->tcp_header()->th_sport;
 	tcphdr->th_seq   = 0;
 	tcphdr->th_ack   = p->tcp_header()->th_seq + 1;
+	tcphdr->th_win   = 16384;
+	tcphdr->th_urp   = 0;
+	tcphdr->th_sum   = 0;
 	
-	
+	memset(iphdr, '\0', 9);
+
+	iphdr->ip_src = p->ip_header()->ip_dst;
+ 	iphdr->ip_dst = p->ip_header()->ip_src;
 	iphdr->ip_len = htons(40);
+
+	tcphdr->th_sum = click_in_cksum((unsigned char *)iphdr, 40);
+
 	iphdr->ip_id  = htons(0x1234);
 	iphdr->ip_off = htons(0);
 	iphdr->ip_ttl = htons(32);
 	iphdr->ip_p   = htons(IP_PROTO_TCP);
 	iphdr->ip_sum = 0;
-	iphdr->ip_sum = click_in_cksum(p1->data(), h1len);
+	iphdr->ip_sum = click_in_cksum(rst_pkt->data(), 40);
 
 	p->kill();
 	duplicate_pkt(rst_pkt);
