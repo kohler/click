@@ -1,3 +1,27 @@
+2003-11-16 Sunday 22:16  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.75), elements/analysis/toipflowdumps.cc (1.29),
+	elements/userlevel/chattersocket.cc (1.16),
+	include/click/element.hh (1.29), include/click/subvector.hh (1.5),
+	include/click/vector.cc (1.7), include/click/vector.hh (1.10),
+	lib/element.cc (1.82), lib/router.cc (1.151), lib/vectorv.cc
+	(1.11), tools/lib/runparse.cc (1.7): Vector<> changes for
+	marginally better STL compatibility: remove Vector<T>::Vector(int)
+	constructor (its meaning differed radically from the STL); add
+	erase() members; remove Subvector (iterators are easier)
+
+2003-11-16 Sunday 22:11  Eddie Kohler <kohler@icir.org>
+
+	* test/testie (1.24): oops
+
+2003-11-16 Sunday 22:09  Eddie Kohler <kohler@icir.org>
+
+	* test/: testie (1.23), IPRewriter/FTPPortMapper-01.testie (1.4),
+	handlers/kernel-01.testie (1.4), linuxmodule/ToHost-01.testie
+	(1.4), userlevel/ControlSocket-llrpc-01.testie (1.4),
+	userlevel/ControlSocket-llrpc-02.testie (1.4): testie supports
+	%require; add requirements to root-only tests
+
 2003-11-14 Friday 11:20  Eddie Kohler <kohler@icir.org>
 
 	* elements/: analysis/timefilter.hh (1.9), analysis/timerange.hh
