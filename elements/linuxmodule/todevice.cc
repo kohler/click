@@ -8,6 +8,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
  * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2005 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -286,7 +287,11 @@ ToDevice::run_task()
     // the transmit ring.
     // Also don't go to sleep if the transmitting device was busy (as opposed
     // to the queue being empty).
+#if HAVE_LINUX_POLLING
     if (is_polling || sent > 0 || busy || _signal)
+#else
+    if (sent > 0 || busy || _signal)
+#endif
 	_task.fast_reschedule();
     return sent > 0;
 }
