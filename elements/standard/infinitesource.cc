@@ -215,7 +215,7 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_bool(s, &active))
        return errh->error("active parameter must be boolean");
      is->_active = active;
-     if (!is->_task.scheduled() && active)
+     if (is->output_is_push(0) && !is->_task.scheduled() && active)
        is->_task.reschedule();
      break;
    }
