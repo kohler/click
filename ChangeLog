@@ -1,8 +1,14 @@
+2002-07-06 Saturday 04:44  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: llrpc.h (1.17), llrpc.h (1.18): add explanatory
+	comment
+
 2002-07-06 Saturday 04:41  Eddie Kohler <kohler@icir.org>
 
-	* include/click/confparse.hh (1.32), include/click/llrpc.h (1.15),
-	linuxmodule/clickfs.cc (1.12), linuxmodule/proc_click.cc (1.47):
-	fix ioctl bugs
+	* configure.in (1.187), elements/ip/ipprint.hh (1.18),
+	include/click/confparse.hh (1.32), include/click/llrpc.h (1.15),
+	linuxmodule/clickfs.cc (1.12), linuxmodule/proc_click.cc (1.47),
+	include/click/llrpc.h (1.16): fix ioctl bugs
 
 2002-07-06 Saturday 04:41  Eddie Kohler <kohler@icir.org>
 
