@@ -25,7 +25,7 @@ String cp_quote_string(const String &);
 bool cp_bool(String, bool *, String *rest = 0);
 bool cp_integer(String, int *, String *rest = 0);
 bool cp_integer(String, int base, int *, String *rest = 0);
-bool cp_ulong(String, unsigned long &, String *rest = 0);
+bool cp_ulong(String, unsigned long *, String *rest = 0);
 bool cp_real(const String &, int frac_digits, int *, int *, String *rest = 0);
 bool cp_real(const String &, int frac_digits, int *, String *rest = 0);
 bool cp_real2(const String &, int frac_bits, int *, String *rest = 0);
