@@ -1,3 +1,15 @@
+2004-09-16 Thursday 18:08  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/analysis/: countfecbytes.cc (1.1), countfecbytes.hh
+	(1.1): analyze fec throughput
+
+2004-09-16 Thursday 18:08  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: analysis/counterrors.cc (1.4),
+	analysis/countfragbytes.cc (1.4), analysis/locationhistogram.cc
+	(1.2), sr/ettstat.cc (1.7), sr/ettstat.hh (1.4),
+	station/beaconscanner.cc (1.7): more analysis elements
+
 2004-09-16 Thursday 03:10  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.29), configure.in (1.245), include/click/error.hh
