@@ -126,6 +126,11 @@ Reap UDP connections every I<time> seconds. Default is 10 seconds.
 
 Timeout a TCP connections every I<time> seconds. Default is 24 hours.
 
+=item TCP_DONE_TIMEOUT I<time>
+
+Timeout a completed TCP connections every I<time> seconds. 
+Default is 30 seconds.
+
 =item UDP_TIMEOUT I<time>
 
 Timeout a UDP connections every I<time> seconds. Default is 1 minute.
@@ -196,6 +201,7 @@ class IPRewriter : public IPRw { public:
   Timer _udp_gc_timer;
   int _udp_timeout_interval;
   int _tcp_timeout_interval;
+  int _tcp_done_timeout_interval;
 
 #if IPRW_SPINLOCKS
   Spinlock _spinlock;

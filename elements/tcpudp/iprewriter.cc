@@ -73,6 +73,7 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
   int before = errh->nerrors();
   int ninputs = 0;
   _tcp_timeout_interval = 86400000;	// 24 hours
+  _tcp_done_timeout_interval = 30000;	// 30 seconds
   _udp_timeout_interval = 60000;	// 1 minute
   _tcp_gc_interval = 3600000;		// 1 hour
   _udp_gc_interval = 10000;		// 10 seconds
@@ -84,6 +85,7 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 			    "REAP_TCP_DONE", cpMilliseconds, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
 			    "REAP_UDP", cpMilliseconds, "UDP garbage collection interval", &_udp_gc_interval,
 			    "TCP_TIMEOUT", cpMilliseconds, "TCP timeout interval", &_tcp_timeout_interval,
+			    "TCP_DONE_TIMEOUT", cpMilliseconds, "Completed TCP timeout interval", &_tcp_done_timeout_interval,
 			    "UDP_TIMEOUT", cpMilliseconds, "UDP timeout interval", &_udp_timeout_interval,
 			    0) != 0)
       continue;
@@ -193,7 +195,7 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
   rw->_spinlock.acquire();
 #endif
   rw->clean_map_free_tracked
-    (rw->_tcp_map, rw->_tcp_timeout_interval, &rw->_tcp_done);
+    (rw->_tcp_map, rw->_tcp_done_timeout_interval, &rw->_tcp_done);
 #if IPRW_SPINLOCKS
   rw->_spinlock.release();
 #endif
