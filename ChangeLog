@@ -1,3 +1,15 @@
+2001-10-18 Thursday 14:04  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.30): nitlet: fix --prefix option to findelem
+
+2001-10-18 Thursday 12:55  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: analysis/timefilter.hh (1.2), userlevel/fakepcap.hh
+	(1.10), userlevel/fromdump.cc (1.48), userlevel/fromdump.hh (1.27):
+	add START, START_AFTER, END, END_AFTER, and INTERVAL keywords to
+	FromDump. Using these is much faster than using TimeFilter, b/c
+	FromDump won't generate packets only to have them thrown away.
+
 2001-10-18 Thursday 12:05  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/: timerange.cc (1.1), timerange.hh (1.1): add
