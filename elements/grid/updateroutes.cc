@@ -22,7 +22,7 @@
 #include "elements/standard/scheduleinfo.hh"
 #include "router.hh"
 #include "grid.hh"
-
+#include "filterbyrange.hh"
 
 
 UpdateGridRoutes::UpdateGridRoutes() : Element(1, 2), _max_hops(3), 
@@ -292,34 +292,36 @@ UpdateGridRoutes::clone() const
 }
 
 
+static String 
+print_rtes(Element *e, void *)
+{
+  UpdateGridRoutes *n = (UpdateGridRoutes *) e;
+  
+  String s;
+  for (UpdateGridRoutes::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
+    UpdateGridRoutes::far_entry f = iter.value();
+    s += IPAddress(f.nbr.ip).s() 
+      + " next_hop=" + IPAddress(f.nbr.next_hop_ip).s() 
+      + " num_hops=" + String((int) f.nbr.num_hops) 
+      + " loc=" + f.nbr.loc.s()
+      + " err=" + String(f.nbr.loc_err)
+      + " seq_no=" + String(f.nbr.seq_no)
+      + "\n";
+  }
+  return s;
+}
+
 static String
 print_nbrs(Element *e, void *)
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) e;
 
-  String s = "\nimmediate neighbor addrs (";
-  s += String(n->_addresses.count());
-  s += "):\n";
-
+  String s;
   for (UpdateGridRoutes::Table::Iterator iter = n->_addresses.first(); iter; iter++) {
     s += iter.key().s();
-    s += " -- ";
-    s += iter.value().eth.s();
-    s += '\n';
+    s += " eth=" + iter.value().eth.s();
+    s += "\n";
   }
-
-  s += "\nmulti-hop neighbors (";
-  s += String(n->_nbrs.count());
-  s += "):\n";
-  s += "ip next-hop num-hops loc seq-no\n";
-
-  for (UpdateGridRoutes::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
-    UpdateGridRoutes::far_entry f = iter.value();
-    s += IPAddress(f.nbr.ip).s() + " " + IPAddress(f.nbr.next_hop_ip).s() 
-      + " " + String((int) f.nbr.num_hops) + " " + f.nbr.loc.s() 
-      + " " + String(f.nbr.seq_no) + "\n";
-  }
-
   return s;
 }
 
@@ -344,6 +346,7 @@ UpdateGridRoutes::add_handlers()
 {
   add_default_handlers(false);
   add_read_handler("nbrs", print_nbrs, 0);
+  add_read_handler("rtes", print_rtes, 0);
   add_read_handler("ip", print_ip, 0);
   add_read_handler("eth", print_eth, 0);
 }
@@ -391,8 +394,48 @@ UpdateGridRoutes::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const
 bool 
 UpdateGridRoutes::get_next_geographic_hop(IPAddress dest_ip, grid_location dest_loc, EtherAddress *dest_eth) const
 {
-  return false;
-}
+  /*
+   * search through table for all nodes we have routes to and for whom
+   * we know the position.  of these, choose the node closest to the
+   * destination location to send the packet to.  
+   */
+  IPAddress next_hop;
+  double d = 0;
+  bool found_one = false;
+  for (FarTable::Iterator iter = _nbrs.first(); iter; iter++) {
+    const far_entry &fe = iter.value();
+    if (fe.nbr.loc_err < 0)
+      continue; // negative err means don't believe info at all
+    double new_d = FilterByRange::calc_range(dest_loc, fe.nbr.loc);
+    if (!found_one) {
+      found_one = true;
+      d = new_d;
+      next_hop = fe.nbr.next_hop_ip;
+    }
+    else if (new_d < d) {
+      d = new_d;
+      next_hop = fe.nbr.next_hop_ip;
+    }
+  }
+  if (!found_one)
+    return false;
+
+  /* XXX fooey, we may actually send the packet backwards here even
+     though we choose a next hop to some node which is closest to
+     ultimate dest.  the issues is: we can't mark the packet with some
+     intermediate destination address, only the next hop and ultimate
+     destination... how to `fix' the phase of the packet so we can
+     make progree guarantees? */
+
+  // find the MAC address
+  NbrEntry *nent = _addresses.findp(next_hop);
+  if (nent == 0) {
+    click_chatter("%s: dude, MAC nbr table and routing table are not consistent (get_next_geographic_hop)", id().cc());
+    return false;
+  }
+  *dest_eth = nent->eth;
+  return true;
+} 
 
 
 void

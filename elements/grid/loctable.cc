@@ -63,14 +63,12 @@ table_read_handler(Element *f, void *)
 {
   LocationTable *l = (LocationTable *) f;
   
-  BigHashMapIterator<IPAddress, LocationTable::entry> iter(&(l->_locs));
-
   String res("");
   const int BUFSZ = 255;
   char buf[BUFSZ];
-  for ( ; iter; iter++) {
+  for (LocationTable::Table::Iterator iter = l->_locs.first(); iter; iter++) {
     const LocationTable::entry &ent = iter.value();
-    int r = snprintf(buf, BUFSZ, "%s %f %f %d\n", iter.key().s().cc(), ent.loc.lat(), ent.loc.lon(), ent.err);
+    int r = snprintf(buf, BUFSZ, "%s lat=%f lon=%f err=%d\n", iter.key().s().cc(), ent.loc.lat(), ent.loc.lon(), ent.err);
     if (r < 0) {
       click_chatter("LocationTable %s read handler buffer too small", l->id().cc());
       return String("");

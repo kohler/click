@@ -149,8 +149,8 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     output(0).push(xp);
   }
   else {
-    click_chatter("LookupGeographicGridRoute %s: unable to forward packet for %s with geographics routing", id().cc(), dest_ip.s().cc());
-    output(2).push(xp);
+    click_chatter("LookupGeographicGridRoute %s: unable to forward packet for %s with geographic routing", id().cc(), dest_ip.s().cc());
+    output(1).push(xp);
   }
 }
 
