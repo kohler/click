@@ -25,7 +25,7 @@
 #include <click/straccum.hh>
 CLICK_DECLS
 
-IPFlowID::IPFlowID(Packet *p)
+IPFlowID::IPFlowID(const Packet *p)
 {
   const click_ip *iph = p->ip_header();
   const click_udp *udph = p->udp_header();
