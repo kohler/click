@@ -30,7 +30,7 @@
 #endif
 CLICK_DECLS
 
-const char *CheckIPHeader::reason_texts[NREASONS] = {
+const char * const CheckIPHeader::reason_texts[NREASONS] = {
   "tiny packet", "bad IP version", "bad IP header length",
   "bad IP length", "bad IP checksum", "bad source address"
 };

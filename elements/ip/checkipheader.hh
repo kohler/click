@@ -98,7 +98,7 @@ class CheckIPHeader : public Element { public:
     BAD_SADDR,
     NREASONS
   };
-  static const char *reason_texts[NREASONS];
+  static const char * const reason_texts[NREASONS];
   
   Packet *drop(Reason, Packet *);
   static String read_handler(Element *, void *);
