@@ -55,6 +55,7 @@ contain those fields. Valid field names, with examples, are:
    tcp_flags    TCP flags: 'SA', '.'
    tcp_opt      TCP options (see below)
    tcp_sack     TCP SACK options (see below)
+   tcp_window   TCP receive window: '480'
    payload_len  Payload length (not including IP/TCP/UDP
                 headers): '34'
    count        Number of packets: '1'

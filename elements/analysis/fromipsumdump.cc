@@ -630,6 +630,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		  case W_SPORT:
 		  case W_DPORT:
 		  case W_FRAGOFF:
+		  case W_TCP_WINDOW:
 		    u1 = GET2(data + pos);
 		    pos += 2;
 		    break;
@@ -691,6 +692,7 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_TCP_ACK:
 	      case W_COUNT:
 	      case W_AGGREGATE:
+	      case W_TCP_WINDOW:
 		u1 = strtoul(data + pos, &next, 0);
 		pos = next - data;
 		break;
@@ -908,6 +910,11 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		    q->tcp_header()->th_flags = u1, ip_ok++;
 		break;
 
+	      case W_TCP_WINDOW:
+		if (u1 <= 0xFFFF)
+		    q->tcp_header()->th_win = htons(u1), ip_ok++;
+		break;
+		
 	      case W_COUNT:
 		if (u1)
 		    SET_EXTRA_PACKETS_ANNO(q, u1 - 1), ok++;

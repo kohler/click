@@ -443,6 +443,11 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 		  sa << '.';
 	      break;
 	  }
+	  case W_TCP_WINDOW:
+	    if (!tcph)
+		goto no_data;
+	    sa << ntohs(tcph->th_win);
+	    break;
 	  case W_TCP_OPT:
 	    if (!tcph)
 		goto no_data;
@@ -667,6 +672,10 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	    if (tcph)
 		v = tcph->th_flags;
 	    goto output_1;
+	  case W_TCP_WINDOW:
+	    if (tcph)
+		v = tcph->th_win;
+	    goto output_2_net;
 	  case W_TCP_OPT: {
 	      if (!tcph || tcph->th_off <= (sizeof(click_tcp) >> 2))
 		  goto output_1;

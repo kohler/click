@@ -26,7 +26,7 @@ static const char *content_names[] = {
     "ip_dst", "ip_len", "ip_proto", "ip_id", "sport",
     "dport", "tcp_seq", "tcp_ack", "tcp_flags", "payload_len",
     "count", "ip_frag", "ip_fragoff", "payload", "direction",
-    "aggregate", "tcp_sack", "tcp_opt", "first_timestamp",
+    "aggregate", "tcp_sack", "tcp_opt", "first_timestamp", "tcp_window"
 };
 
 const char *
@@ -87,6 +87,8 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_AGGREGATE;
     else if (word == "first_timestamp" || word == "first_ts")
 	return W_FIRST_TIMESTAMP;
+    else if (word == "tcp_window" || word == "tcp_win")
+	return W_TCP_WINDOW;
     else if (word.find_left(' ') >= 0) {
 	int space = word.find_left(' ');
 	return parse_content(word.substring(0, space) + "_" + word.substring(space + 1));
@@ -99,7 +101,7 @@ static int content_binary_sizes[] = {
     4, 4, 1, 2, 2,	// W_DST, W_LENGTH, W_PROTO, W_IPID, W_SPORT
     2, 4, 4, 1, 4,	// W_DPORT, W_TCP_SEQ, W_TCP_ACK, W_TCP_FLAGS, W_PL_LEN
     4, 1, 2, -10000, 1,	// W_COUNT, W_FRAG, W_FRAGOFF, W_PAYLOAD, W_LINK
-    4, 4, 4, 8		// W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_FIRST_TIMESTAMP
+    4, 4, 4, 8, 2     // W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_FIRST_TIMESTAMP, W_TCP_WINDOW
 };
 
 int
