@@ -42,14 +42,14 @@ BigHashMap<K, V>::initialize(BigHashMap_ArenaFactory *factory)
 
 template <class K, class V>
 BigHashMap<K, V>::BigHashMap()
-  : _default_v(), _arena(0)
+  : _default_value(), _arena(0)
 {
   initialize(0);
 }
 
 template <class K, class V>
 BigHashMap<K, V>::BigHashMap(const V &def, BigHashMap_ArenaFactory *factory)
-  : _default_v(def), _arena(0)
+  : _default_value(def), _arena(0)
 {
   initialize(factory);
 }
@@ -61,7 +61,7 @@ BigHashMap<K, V>::~BigHashMap()
     for (Elt *e = _buckets[i]; e; ) {
       Elt *next = e->next;
       e->key.~K();
-      e->v.~V();
+      e->value.~V();
       _arena->free(e);
       e = next;
     }
@@ -166,7 +166,7 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key) {
-      e->v = value;
+      e->value = value;
       return false;
     }
 
@@ -176,7 +176,7 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
   }
   Elt *e = reinterpret_cast<Elt *>(_arena->alloc());
   new(reinterpret_cast<void *>(&e->key)) K(key);
-  new(reinterpret_cast<void *>(&e->v)) V(value);
+  new(reinterpret_cast<void *>(&e->value)) V(value);
   e->next = _buckets[b];
   _buckets[b] = e;
   _n++;
@@ -200,7 +200,7 @@ BigHashMap<K, V>::remove(const K &key)
     else
       _buckets[b] = e->next;
     e->key.~K();
-    e->v.~V();
+    e->value.~V();
     _arena->free(e);
     _n--;
     return true;
@@ -215,14 +215,14 @@ BigHashMap<K, V>::findp_force(const K &key)
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
-      return &e->v;
+      return &e->value;
   if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
-    new(reinterpret_cast<void *>(&e->v)) V(_default_v);
+    new(reinterpret_cast<void *>(&e->value)) V(_default_value);
     e->next = _buckets[b];
     _buckets[b] = e;
     _n++;
-    return &e->v;
+    return &e->value;
   } else
     return 0;
 }
@@ -235,7 +235,7 @@ BigHashMap<K, V>::clear()
     for (Elt *e = _buckets[i]; e; ) {
       Elt *next = e->next;
       e->key.~K();
-      e->v.~V();
+      e->value.~V();
       _arena->free(e);
       e = next;
     }
@@ -255,7 +255,7 @@ BigHashMap<K, V>::swap(BigHashMap<K, V> &o)
 
   t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
   t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
-  t_v = _default_v; _default_v = o._default_v; o._default_v = t_v;
+  t_v = _default_value; _default_value = o._default_value; o._default_value = t_v;
 
   t_int = _n; _n = o._n; o._n = t_int;
   t_int = _capacity; _n = o._capacity; o._capacity = t_int;
@@ -350,14 +350,14 @@ BigHashMap<K, void *>::initialize(BigHashMap_ArenaFactory *factory)
 
 template <class K>
 BigHashMap<K, void *>::BigHashMap()
-  : _default_v(0), _arena(0)
+  : _default_value(0), _arena(0)
 {
   initialize(0);
 }
 
 template <class K>
 BigHashMap<K, void *>::BigHashMap(void *def, BigHashMap_ArenaFactory *factory)
-  : _default_v(def), _arena(0)
+  : _default_value(def), _arena(0)
 {
   initialize(factory);
 }
@@ -473,7 +473,7 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key) {
-      e->v = value;
+      e->value = value;
       return false;
     }
 
@@ -483,7 +483,7 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
   }
   Elt *e = reinterpret_cast<Elt *>(_arena->alloc());
   new(reinterpret_cast<void *>(&e->key)) K(key);
-  e->v = value;
+  e->value = value;
   e->next = _buckets[b];
   _buckets[b] = e;
   _n++;
@@ -521,14 +521,14 @@ BigHashMap<K, void *>::findp_force(const K &key)
   int b = bucket(key);
   for (Elt *e = _buckets[b]; e; e = e->next)
     if (e->key == key)
-      return &e->v;
+      return &e->value;
   if (Elt *e = reinterpret_cast<Elt *>(_arena->alloc())) {
     new(reinterpret_cast<void *>(&e->key)) K(key);
-    e->v = _default_v;
+    e->value = _default_value;
     e->next = _buckets[b];
     _buckets[b] = e;
     _n++;
-    return &e->v;
+    return &e->value;
   } else
     return 0;
 }
@@ -560,7 +560,7 @@ BigHashMap<K, void *>::swap(BigHashMap<K, void *> &o)
 
   t_elts = _buckets; _buckets = o._buckets; o._buckets = t_elts;
   t_int = _nbuckets; _nbuckets = o._nbuckets; o._nbuckets = t_int;
-  t_v = _default_v; _default_v = o._default_v; o._default_v = t_v;
+  t_v = _default_value; _default_value = o._default_value; o._default_value = t_v;
 
   t_int = _n; _n = o._n; o._n = t_int;
   t_int = _capacity; _n = o._capacity; o._capacity = t_int;
