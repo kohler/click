@@ -1038,8 +1038,20 @@ DSDVRouteTable::send_full_update()
 #endif
   }
 
-  // reset ``need advertisement'' flag
-  for (int i = 0; i < routes.size(); i++) {
+  // send out ads and reset ``need advertisement'' flag
+  Vector<RTEntry> ad_routes;
+  for (int i = 0; i < routes.size() && i < max_rtes_per_ad(); i++) {
+    if (ad_routes.size() == max_rtes_per_ad()) {
+      build_and_tx_ad(ad_routes);
+      ad_routes = Vector<RTEntry>();
+#if DBG
+      click_chatter("%s: too many routes; sending out partial full dump (%d)\n", 
+		    id().cc(), i);
+#endif
+    }
+
+    ad_routes.push_back(routes[i]);
+
     RTEntry *r = _rtes.findp(routes[i].dest_ip);
     dsdv_assert(r);
     r->need_seq_ad = false;
@@ -1047,7 +1059,7 @@ DSDVRouteTable::send_full_update()
     r->last_adv_metric = r->metric;
   }
   
-  build_and_tx_ad(routes);
+  build_and_tx_ad(ad_routes);
 
   /* 
    * Update the sequence number for periodic updates, but not for
@@ -1058,7 +1070,7 @@ DSDVRouteTable::send_full_update()
   _seq_no += 2;
   _last_periodic_update = jiff;
   _last_triggered_update = jiff;
-
+  
   check_invariants();
 }
 
@@ -1095,15 +1107,27 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   if (triggered_routes.size() == 0)
     return;
 
-  // reset ``need advertisement'' flag
+  // send out ads and reset ``need advertisement'' flag
+  Vector<RTEntry> ad_routes;
   for (int i = 0; i < triggered_routes.size(); i++) {
+    if (ad_routes.size() == max_rtes_per_ad()) {
+      build_and_tx_ad(ad_routes);
+      ad_routes = Vector<RTEntry>();
+#if DBG
+      click_chatter("%s: too many routes; sending out partial triggered update (%d)\n", 
+		    id().cc(), i);
+#endif
+    }
+
+    ad_routes.push_back(triggered_routes[i]);
+
     RTEntry *r = _rtes.findp(triggered_routes[i].dest_ip);
     dsdv_assert(r);
     r->need_seq_ad = false; // XXX why not reset need_metric_ad flag as well?
     r->last_adv_metric = r->metric;
   }
 
-  build_and_tx_ad(triggered_routes); 
+  build_and_tx_ad(ad_routes); 
   _last_triggered_update = jiff;
 
   check_invariants();
@@ -1847,15 +1871,17 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
    * the rtes_to_send vector.  
    */
 
-  int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
-  int max_rtes = (_mtu - hdr_sz) / sizeof(grid_nbr_entry);
-  int num_rtes = min(max_rtes, rtes_to_send.size()); 
-  int psz = hdr_sz + sizeof(grid_nbr_entry) * num_rtes;
-
+  unsigned int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
+  int max_rtes = max_rtes_per_ad();
+  int num_rtes = rtes_to_send.size();
+  unsigned int psz = hdr_sz + sizeof(grid_nbr_entry) * num_rtes;
+  
   dsdv_assert(psz <= _mtu);
-  if (num_rtes < rtes_to_send.size())
-    click_chatter("DSDVRouteTable %s: too many routes, truncating route advertisement",
-		  id().cc());
+  dsdv_assert(num_rtes <= max_rtes);
+  
+  //   if (num_rtes < rtes_to_send.size())
+  //     click_chatter("DSDVRouteTable %s: too many routes, truncating route advertisement",
+  // 		  id().cc());
 
   /* allocate and align the packet */
   WritablePacket *p = Packet::make(psz + 2); // for alignment

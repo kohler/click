@@ -483,6 +483,10 @@ private:
 
   /* send a route advertisement containing the specified entries */
   void build_and_tx_ad(Vector<RTEntry> &);
+  int max_rtes_per_ad() const { 
+    int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
+    return ((_mtu - hdr_sz) / sizeof(grid_nbr_entry));
+  }
 
 public:
   static unsigned int decr_ttl(unsigned int ttl, unsigned int decr)
