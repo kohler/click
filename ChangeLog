@@ -1,3 +1,12 @@
+2004-10-27 Wednesday 11:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: todump.cc (1.59), todump.hh (1.36): fix
+	SNAPLEN 0: reported by Marcel Poisot
+
+2004-10-27 Wednesday 11:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/Makefile.in (1.54): nit
+
 2004-10-26 Tuesday 12:39  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/: kerneltap.cc (1.42), kerneltap.hh (1.19):
