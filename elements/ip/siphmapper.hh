@@ -6,7 +6,6 @@
 #include <clicknet/ip.h>
 #include "elements/ip/iprw.hh"
 #include <click/glue.hh>
-#include <limits.h>
 CLICK_DECLS
 
 /*
@@ -31,7 +30,7 @@ CLICK_DECLS
  */
 
 //
-// $Id: siphmapper.hh,v 1.2 2004/02/24 12:51:56 max Exp $
+// $Id: siphmapper.hh,v 1.3 2004/03/03 07:54:51 eddietwo Exp $
 //
 
 //
