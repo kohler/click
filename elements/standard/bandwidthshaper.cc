@@ -29,28 +29,22 @@ BandwidthShaper::clone() const
 Packet *
 BandwidthShaper::pull(int)
 {
-  struct timeval now, diff;
+  struct timeval now;
   Packet *p = 0;
+  
   click_gettimeofday(&now);
-
-  if (_start.tv_sec == 0)
-    _start = now;
-  
-  timersub(&now, &_start, &diff);
-  
-  unsigned need = diff.tv_sec * _meter;
-  need += diff.tv_usec / _ugap;
-  
-  if (need >= _total) {
-    if ((p = input(0).pull())) {
-      _total += p->length();
-      if (_total > (_meter << 5)) {
-	_total = 0;
-	_start = now;
-      }
-    }
+  if (now.tv_sec > _tv_sec) {
+    _tv_sec = now.tv_sec;
+    if (_count > 0)
+      _count -= _meter;
   }
 
+  unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;
+  if ((int)need >= _count) {
+    if ((p = input(0).pull()))
+      _count += p->length();
+  }
+  
   return p;
 }
 

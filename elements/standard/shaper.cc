@@ -39,45 +39,54 @@ Shaper::clone() const
 int
 Shaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int rate;
+  unsigned rate;
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "max allowable rate", &rate,
 		  0) < 0)
     return -1;
 
+  unsigned one_sec = (1000000U << UGAP_SHIFT);
+  if (rate > one_sec) {
+    // must have _ugap > 0, so limit rate to 1e6<<UGAP_SHIFT
+    errh->error("rate too large; lowered to %u", one_sec);
+    rate = one_sec;
+  }
+
+  _ugap = one_sec / rate;
+  _count = 0;
   _meter = rate;
-  _ugap = 1000000/rate;
-  _total = 0;
-  _start.tv_sec = 0;
-  _start.tv_usec = 0;
+  return 0;
+}
+
+int
+Shaper::initialize(ErrorHandler *)
+{
+  struct timeval now;
+  click_gettimeofday(&now);
+  _tv_sec = now.tv_sec;
+  _count = (now.tv_usec << UGAP_SHIFT) / _ugap;
   return 0;
 }
 
 Packet *
 Shaper::pull(int)
 {
-  struct timeval now, diff;
+  struct timeval now;
   Packet *p = 0;
+  
   click_gettimeofday(&now);
-
-  if (_start.tv_sec == 0)
-    _start = now;
-  
-  timersub(&now, &_start, &diff);
-  
-  unsigned need = diff.tv_sec * _meter;
-  need += diff.tv_usec / _ugap;
-  
-  if (need >= _total) {
-    if ((p = input(0).pull())) {
-      _total++;
-      if (_total > (_meter << 5)) {
-	_total = 0;
-	_start = now;
-      }
-    }
+  if (now.tv_sec > _tv_sec) {
+    _tv_sec = now.tv_sec;
+    if (_count > 0)
+      _count -= _meter;
   }
 
+  unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;
+  if ((int)need >= _count) {
+    if ((p = input(0).pull()))
+      _count++;
+  }
+  
   return p;
 }
 

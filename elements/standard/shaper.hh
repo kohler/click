@@ -21,13 +21,15 @@
 
 class Shaper : public Element { protected:
 
-  unsigned _meter;
+  static const unsigned UGAP_SHIFT = 12;
+  
   unsigned _ugap;
-  unsigned _total;
-  struct timeval _start;
+  int _count;
+  unsigned _meter;
+  int _tv_sec;
 
  public:
-  
+
   Shaper();
   ~Shaper();
   
@@ -36,6 +38,7 @@ class Shaper : public Element { protected:
 
   Shaper *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
+  int initialize(ErrorHandler *);
 
   Packet *pull(int);
   
