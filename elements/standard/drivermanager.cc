@@ -60,7 +60,8 @@ DriverManager::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (words.size() == 0 || !cp_keyword(words[0], &insn_name))
       errh->error("missing or bad instruction name; should be `INSNNAME [ARG]'");
     
-    else if (insn_name == "wait_stop" || insn_name == "wait_pause") {
+    else if (insn_name == "wait_stop" || insn_name == "wait_pause"
+	     || (insn_name == "wait" && words.size() == 1)) {
       unsigned n = 1;
       if (words.size() > 2 || (words.size() == 2 && !cp_unsigned(words[1], &n)))
 	errh->error("expected `%s [COUNT]'", insn_name.cc());
@@ -81,10 +82,10 @@ DriverManager::configure(const Vector<String> &conf, ErrorHandler *errh)
       else
 	errh->error("expected `%s ELEMENT.HANDLER'", insn_name.cc());
       
-    } else if (insn_name == "wait") {
+    } else if (insn_name == "wait_for" || insn_name == "wait") {
       int ms;
       if (words.size() != 2 || !cp_milliseconds(words[1], &ms))
-	errh->error("expected `wait TIME'");
+	errh->error("expected `%s TIME'", insn_name.cc());
       else
 	add_insn(INSN_WAIT, ms);
       

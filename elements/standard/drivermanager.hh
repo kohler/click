@@ -43,7 +43,11 @@ these instructions sequentially. Instructions include:
 
 Stop the driver.
 
-=item `C<wait> TIME'
+=item `C<wait>'
+
+Wait for a driver pause, then go to the next instruction.
+
+=item `C<wait_for> TIME'
 
 Wait for TIME seconds, or until a driver pause, whichever comes first; then go
 to the next instruction.
