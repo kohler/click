@@ -69,13 +69,13 @@ ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel
 
 
 ElementClassT::ElementClassT(const String &name)
-    : _name(name), _use_count(1), _unique_id(unique_id_storage++),
+    : _name(name), _use_count(0), _unique_id(unique_id_storage++),
       _traits_version(-1)
 {
 }
 
 ElementClassT::ElementClassT(const String &name, int uid)
-    : _name(name), _use_count(1), _unique_id(uid), _traits_version(-1)
+    : _name(name), _use_count(0), _unique_id(uid), _traits_version(-1)
 {
     assert(uid >= unique_id_storage);
     unique_id_storage = uid + 1;
@@ -344,6 +344,7 @@ CompoundElementClassT::CompoundElementClassT
     _router->use();
     if (_prev)
 	_prev->use();
+    *(_traits.component(Traits::D_CLASS)) = name;
 }
 
 CompoundElementClassT::CompoundElementClassT(const String &name, RouterT *r)

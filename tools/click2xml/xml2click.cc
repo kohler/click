@@ -59,148 +59,9 @@ static Clp_Option options[] = {
 
 static String::Initializer string_initializer;
 static const char *program_name;
-static int specified_driver = -1;
-
-
-//
-// main loop
-//
-
-static HashMap<int, int> generated_types(0);
-
-static void
-space_until(String &s, int last_col, int want_col)
-{
-    while (last_col < want_col)
-	if (((last_col + 8) & ~7) <= want_col) {
-	    s += '\t';
-	    last_col = (last_col + 8) & ~7;
-	} else {
-	    s += ' ';
-	    last_col++;
-	}
-}
-
-static String
-add_indent(const String &indent, int spaces)
-{
-    String new_indent;
-    const char *s = indent.data();
-    int last_col = 0, col = 0, len = indent.length();
-    for (int pos = 0; pos < len; pos++)
-	if (s[pos] == '\t')
-	    col = (col + 8) & ~7;
-	else if (s[pos] == ' ')
-	    col++;
-	else {
-	    space_until(new_indent, last_col, col);
-	    new_indent += s[pos];
-	    col++;
-	    last_col = col;
-	}
-    space_until(new_indent, last_col, col + spaces);
-    return new_indent;
-}
-
-static void
-print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
-{
-    if (c->simple())
-	fprintf(f, "%sclassname=\"%s\"", prefix, String(c->name()).cc());
-    else if (c->name())
-	fprintf(f, "%sclassname=\"%s\" %sclassid=\"c%d\"", prefix, String(c->name()).cc(), prefix, c->uid());
-    else
-	fprintf(f, "%sclassid=\"c%d\"", prefix, c->uid());
-}
-
-static void
-print_landmark_attributes(FILE *f, const String &landmark)
-{
-    int colon = landmark.find_left(':');
-    if (colon >= 0 && landmark.substring(colon + 1) != "0")
-	fprintf(f, " file=\"%s\" line=\"%s\"", landmark.substring(0, colon).cc(), landmark.substring(colon + 1).cc());
-}
-
-static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);
-
-static void
-generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
-{
-    if (!c || c->simple() || generated_types[c->uid()])
-	return;
-    generated_types.insert(c->uid(), 1);
-
-    Vector<ElementClassT *> prerequisites;
-    c->collect_prerequisites(prerequisites);
-    for (int i = 0; i < prerequisites.size(); i++)
-	generate_type(prerequisites[i], f, indent, errh);
-
-    fprintf(f, "%s<elementclass ", indent.cc());
-    print_class_reference(f, c, "");
-    
-    if (SynonymElementClassT *synonym = c->cast_synonym()) {
-	fprintf(f, ">\n%s  <synonym ", indent.cc());
-	print_class_reference(f, synonym->synonym_of(), "");
-	fprintf(f, " />\n");
-    } else if (CompoundElementClassT *compound = c->cast_compound()) {
-	print_landmark_attributes(f, compound->landmark());
-	fprintf(f, ">\n%s  <compound", indent.cc());
-	if (ElementClassT *prev = compound->previous()) {
-	    fprintf(f, " ");
-	    print_class_reference(f, prev, "prev");
-	}
-	fprintf(f, " ninputs=\"%d\" noutputs=\"%d\" nformals=\"%d\">\n",
-		compound->ninputs(), compound->noutputs(), compound->nformals());
-
-	String new_indent = add_indent(indent, 4);
-	for (int i = 0; i < compound->nformals(); i++)
-	    fprintf(f, "%s<formal number=\"%d\" name=\"%s\" />\n",
-		    new_indent.cc(), i, compound->formals()[i].substring(1).cc());
-	generate_router(compound->cast_router(), f, new_indent, false, errh);
-	
-	fprintf(f, "%s  </compound>\n", indent.cc());
-    }
-    
-    fprintf(f, "%s</elementclass>\n", indent.cc());
-}
-
-static void
-generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh)
-{
-    ProcessingT processing(r, ElementMap::default_map(), errh);
-    if (top)
-	processing.resolve_agnostics();
-    
-    for (int i = 0; i < r->ntypes(); i++)
-	generate_type(r->eclass(i), f, indent, errh);
-    
-    for (RouterT::iterator e = r->begin_elements(); e; e++)
-	if (!e->tunnel()) {
-	    fprintf(f, "%s<element name=\"%s\" ", indent.cc(), e->name_cc());
-	    print_class_reference(f, e->type(), "");
-	    print_landmark_attributes(f, e->landmark());
-	    fprintf(f, " ninputs=\"%d\" noutputs=\"%d\"",
-		    e->ninputs(), e->noutputs());
-	    if (e->ninputs() || e->noutputs())
-		fprintf(f, " processing=\"%s\"", processing.processing_code(e).cc());
-	    fprintf(f, " />\n");
-	}
-
-    // print connections
-    const Vector<ConnectionT> &conn = r->connections();
-    for (int i = 0; i < conn.size(); i++) {
-	int p = processing.output_processing(conn[i].from());
-	fprintf(f, "%s<connection from=\"%s\" fromport=\"%d\" to=\"%s\" toport=\"%d\" processing=\"%c\" />\n",
-		indent.cc(),
-		conn[i].from_elt()->name_cc(), conn[i].from_port(),
-		conn[i].to_elt()->name_cc(), conn[i].to_port(),
-		ProcessingT::processing_letters[p]);
-    }
-}
 
 static ErrorHandler *xml_errh;
 static String xml_file;
-static RouterT *router;
 
 static inline String
 xml_landmark(XML_Parser parser)
@@ -240,25 +101,444 @@ struct CxConnection {
     CxConnection()		: fromport(0), toport(0) { }
 };
 
-struct CxState {
-    Vector<CxElement> elements;
-    Vector<CxConnection> connections;
-    CxState *prev;
+struct CxConfig {
+    Vector<CxElement> _elements;
+    Vector<CxConnection> _connections;
+    
+    Vector<String> _formals;
+    CxConfig *_enclosing;
+    int _depth;
+    String _name;
+    String _id;
+    String _prev_class_name;
+    String _prev_class_id;
+    bool _is_synonym;
+    bool _filled;
+    String _landmark;
+    String _xml_landmark;
+
+    ElementClassT *_type;
+    bool _completing;
+    RouterT *_router;
+    
+    CxConfig(CxConfig *enclosing, int depth, const String &xml_landmark)
+	: _enclosing(enclosing), _depth(depth), _filled(false),
+	  _xml_landmark(xml_landmark), _type(0), _completing(false),
+	  _router(0) { }
+    ~CxConfig();
+
+    String readable_name() const;
+    RouterT *router(ErrorHandler *);
+    int complete_elementclass(ErrorHandler *);
+    int complete(ErrorHandler *);
 };
 
-static CxState *xstate;
-
-
-static RouterT *
-complete(CxState *cx, ErrorHandler *errh)
+CxConfig::~CxConfig()
 {
-    RouterT *r = new RouterT;
+    if (_type)
+	_type->unuse();
+    if (_router)
+	_router->unuse();
+}
 
-    for (int i = 0; i < cx->elements.size(); i++) {
-	CxElement &e = cx->elements[i];
+String
+CxConfig::readable_name() const
+{
+    return (_name ? _name : String("<anonymous>"));
+}
+
+
+enum CxState { CX_NONE, CX_CONFIGURATION, CX_ELEMENTCLASS, CX_COMPOUND,
+	       CX_IN_EMPTY, CX_ERROR };
+static Vector<CxState> xstates;
+static Vector<CxConfig *> xstack;
+static HashMap<String, int> class_id_map(-1);
+static Vector<CxConfig *> classes;
+
+
+static CxState
+do_element(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
+{
+    String landmark = xml_landmark(parser);
+    
+    if (xstates.back() != CX_CONFIGURATION && xstates.back() != CX_COMPOUND) {
+	if (xstates.back() != CX_ERROR)
+	    errh->lerror(landmark, "<element> tag outside of <configuration>");
+	return CX_ERROR;
+    }
+    
+    CxElement e;
+    e.xml_landmark = landmark;
+    bool ok = true;
+    
+    String file, line;
+    for (const XML_Char **a = attrs; *a; a += 2)
+	if (strcmp(a[0], "name") == 0) {
+	    if (!cp_is_click_id(a[1]))
+		errh->lerror(landmark, "'name' attribute not a Click identifier");
+	    e.name = a[1];
+	} else if (strcmp(a[0], "classname") == 0) {
+	    if (!cp_is_click_id(a[1]))
+		errh->lerror(landmark, "'classname' attribute not a Click identifier");
+	    e.class_name = a[1];
+	} else if (strcmp(a[0], "classid") == 0)
+	    e.class_id = a[1];
+	else if (strcmp(a[0], "config") == 0)
+	    e.config = a[1];
+	else if (strcmp(a[0], "file") == 0)
+	    file = a[1];
+	else if (strcmp(a[0], "line") == 0)
+	    line = a[1];
+	else if (strcmp(a[0], "ninputs") == 0) {
+	    if (!cp_integer(a[1], &e.ninputs))
+		errh->lerror(landmark, "'ninputs' attribute not an integer");
+	} else if (strcmp(a[0], "noutputs") == 0) {
+	    if (!cp_integer(a[1], &e.ninputs))
+		errh->lerror(landmark, "'noutputs' attribute not an integer");
+	}
+    
+    if (file && line)
+	e.landmark = file + ":" + line;
+    else if (file)
+	e.landmark = file;
+    else if (line)
+	e.landmark = "line " + line;
+
+    if (e.class_name && e.class_id) {
+	errh->lerror(landmark, "conflicting attributes 'classname' and 'classid'");
+	e.class_name = String();
+    } else if (!e.class_name && !e.class_id) {
+	errh->lerror(landmark, "element declared without a class");
+	ok = false;
+    }
+    if (!e.name) {
+	errh->lerror(landmark, "element declared without a name");
+	ok = false;
+    }
+
+    if (ok)
+	xstack.back()->_elements.push_back(e);
+    return CX_IN_EMPTY;
+}
+
+static CxState
+do_connection(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
+{
+    String landmark = xml_landmark(parser);
+    
+    if (xstates.back() != CX_CONFIGURATION && xstates.back() != CX_COMPOUND) {
+	if (xstates.back() != CX_ERROR)
+	    errh->lerror(landmark, "<connection> tag meaningless outside of <configuration>");
+	return CX_ERROR;
+    }
+    
+    CxConnection e;
+    e.xml_landmark = landmark;
+    bool ok = true;
+    
+    for (const XML_Char **a = attrs; *a; a += 2)
+	if (strcmp(a[0], "from") == 0)
+	    e.from = a[1];
+	else if (strcmp(a[0], "to") == 0)
+	    e.to = a[1];
+	else if (strcmp(a[0], "fromport") == 0) {
+	    if (!cp_integer(a[1], &e.fromport) && e.fromport >= 0)
+		errh->lerror(landmark, "'fromport' should be port number");
+	} else if (strcmp(a[0], "toport") == 0) {
+	    if (!cp_integer(a[1], &e.toport) && e.toport >= 0)
+		errh->lerror(landmark, "'toport' should be port number");
+	}
+
+    if (!e.from || !e.to) {
+	errh->lerror(landmark, "connection lacks 'from' or 'to' attribute");
+	ok = false;
+    }
+    
+    if (ok)
+	xstack.back()->_connections.push_back(e);
+    return CX_IN_EMPTY;
+}
+
+static CxState
+do_start_elementclass(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
+{
+    String landmark = xml_landmark(parser);
+
+    if (xstates.back() != CX_CONFIGURATION && xstates.back() != CX_COMPOUND) {
+	if (xstates.back() != CX_ERROR)
+	    errh->lerror(landmark, "<elementclass> tag outside of <configuration>");
+	return CX_ERROR;
+    }
+
+    CxConfig *nc = new CxConfig(xstack.back(), xstack.size(), landmark);
+    
+    String file, line;
+    for (const XML_Char **a = attrs; *a; a += 2)
+	if (strcmp(a[0], "classname") == 0) {
+	    if (!cp_is_click_id(a[1]))
+		errh->lerror(landmark, "'classname' attribute not a valid Click identifier");
+	    nc->_name = a[1];
+	} else if (strcmp(a[0], "classid") == 0)
+	    nc->_id = a[1];
+	else if (strcmp(a[0], "file") == 0)
+	    file = a[1];
+	else if (strcmp(a[0], "line") == 0)
+	    line = a[1];
+
+    if (file && line)
+	nc->_landmark = file + ":" + line;
+    else if (file)
+	nc->_landmark = file;
+    else if (line)
+	nc->_landmark = "line " + line;
+
+    if (!nc->_id)
+	errh->lerror(landmark, "element class declared without an ID");
+    else
+	class_id_map.insert(nc->_id, classes.size());
+    classes.push_back(nc);
+    
+    xstack.push_back(nc);
+    return CX_ELEMENTCLASS;
+}
+
+static CxState
+do_synonym(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
+{
+    String landmark = xml_landmark(parser);
+    
+    if (xstates.back() != CX_ELEMENTCLASS) {
+	if (xstates.back() != CX_ERROR)
+	    errh->lerror(landmark, "<synonym> tag meaningless outside of <elementclass>");
+	return CX_ERROR;
+    } else if (xstack.back()->_filled) {
+	errh->lerror(landmark, "element class already defined");
+	return CX_ERROR;
+    }
+
+    CxConfig *cx = xstack.back();
+    for (const XML_Char **a = attrs; *a; a += 2)
+	if (strcmp(a[0], "classname") == 0) {
+	    if (!cp_is_click_id(a[1]))
+		errh->lerror(landmark, "'classname' attribute not a Click identifier");
+	    cx->_prev_class_name = a[1];
+	} else if (strcmp(a[0], "classid") == 0)
+	    cx->_prev_class_id = a[1];
+
+    if (cx->_prev_class_name && cx->_prev_class_id) {
+	errh->lerror(landmark, "conflicting attributes 'classname' and 'classid'");
+	cx->_prev_class_name = String();
+    } else if (!cx->_prev_class_name && !cx->_prev_class_id)
+	errh->lerror(landmark, "synonym refers to no other class");
+    
+    cx->_filled = true;
+    return CX_IN_EMPTY;
+}
+
+static CxState
+do_start_compound(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
+{
+    String landmark = xml_landmark(parser);
+    
+    if (xstates.back() != CX_ELEMENTCLASS) {
+	if (xstates.back() != CX_ERROR)
+	    errh->lerror(landmark, "<compound> tag outside of <elementclass>");
+	return CX_ERROR;
+    } else if (xstack.back()->_filled) {
+	errh->lerror(landmark, "element class already defined");
+	return CX_ERROR;
+    }
+
+    CxConfig *cx = xstack.back();
+    for (const XML_Char **a = attrs; *a; a += 2)
+	if (strcmp(a[0], "prevclassname") == 0) {
+	    if (!cp_is_click_id(a[1]))
+		errh->lerror(landmark, "'prevclassname' attribute not a valid Click identifier");
+	    cx->_prev_class_name = a[1];
+	} else if (strcmp(a[0], "prevclassid") == 0)
+	    cx->_prev_class_id = a[1];
+    // XXX nformals etc.
+
+    if (cx->_prev_class_name && cx->_prev_class_id) {
+	errh->lerror(landmark, "conflicting attributes 'classname' and 'classid'");
+	cx->_prev_class_name = String();
+    }
+
+    cx->_filled = true;
+    return CX_ELEMENTCLASS;
+}
+
+static CxState
+do_formal(XML_Parser parser, const XML_Char **attrs, ErrorHandler *errh)
+{
+    String landmark = xml_landmark(parser);
+    
+    if (xstates.back() != CX_COMPOUND) {
+	if (xstates.back() != CX_ERROR)
+	    errh->lerror(landmark, "<formal> tag meaningless outside of <compound>");
+	return CX_ERROR;
+    }
+
+    int number = -1;
+    String name;
+    for (const XML_Char **a = attrs; *a; a += 2)
+	if (strcmp(a[0], "name") == 0) {
+	    if (!cp_is_word(name))
+		errh->lerror(landmark, "'name' should be formal name");
+	    name = a[1];
+	} else if (strcmp(a[0], "number") == 0) {
+	    if (!cp_integer(a[1], &number) || number < 0)
+		errh->lerror(landmark, "'number' should be formal argument position");
+	}
+
+    while (xstack.back()->_formals.size() < number)
+	xstack.back()->_formals.push_back(String());
+    if (xstack.back()->_formals[number])
+	errh->lerror(landmark, "formal parameter %d already defined as '$%s'", number, xstack.back()->_formals[number].cc());
+    else
+	xstack.back()->_formals[number] = name;
+    return CX_IN_EMPTY;
+}
+
+
+extern "C" {
+
+static void
+start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
+{
+    XML_Parser parser = (XML_Parser)v;
+    CxState next_state = CX_ERROR;
+    
+    if (strcmp(name, "configuration") == 0) {
+	String landmark = xml_landmark(parser);
+	if (xstack.size())
+	    xml_errh->lerror(landmark, "additional configuration section ignored");
+	else {
+	    xstack.push_back(new CxConfig(0, 0, landmark));
+	    next_state = CX_CONFIGURATION;
+	}
+	
+    } else if (strcmp(name, "element") == 0)
+	next_state = do_element(parser, attrs, xml_errh);
+	
+    else if (strcmp(name, "connection") == 0)
+	next_state = do_connection(parser, attrs, xml_errh);
+	
+    else if (strcmp(name, "elementclass") == 0)
+	next_state = do_start_elementclass(parser, attrs, xml_errh);
+	
+    else if (strcmp(name, "synonym") == 0)
+	next_state = do_synonym(parser, attrs, xml_errh);
+	
+    else if (strcmp(name, "compound") == 0)
+	next_state = do_start_compound(parser, attrs, xml_errh);
+
+    else if (strcmp(name, "formal") == 0)
+	next_state = do_formal(parser, attrs, xml_errh);
+	
+    else
+	next_state = xstates.back();
+
+    xstates.push_back(next_state);
+}
+
+static void
+end_element_handler(void *v, const XML_Char *name)
+{
+    XML_Parser parser = (XML_Parser)v;
+    
+    if (strcmp(name, "elementclass") == 0) {
+	if (xstates.back() == CX_ELEMENTCLASS) {
+	    if (!xstack.back()->_filled)
+		xml_errh->lerror(xml_landmark(parser), "elementclass tag not filled");
+	    xstack.pop_back();
+	}
+    }
+
+    xstates.pop_back();
+}
+
+}
+
+
+int
+CxConfig::complete_elementclass(ErrorHandler *errh)
+{
+    if (_type)			// already complete
+	return 0;
+    if (_completing)
+	return errh->lerror(_xml_landmark, "circular definition of elementclass `%s'", readable_name().cc());
+
+    _completing = true;
+
+    // get referred-to class
+    ElementClassT *prev_class = 0;
+    if (_prev_class_id) {
+	int which = class_id_map[_prev_class_id];
+	if (which < 0)
+	    errh->lerror(_xml_landmark, "no such elementclass `%s'", _prev_class_id.cc());
+	else {
+	    classes[which]->complete_elementclass(errh);
+	    prev_class = classes[which]->_type;
+	}
+    } else if (_prev_class_name)
+	prev_class = ElementClassT::default_class(_prev_class_name);
+
+    // check for synonym or empty
+    if (!_filled)		// error already reported
+	return 0;
+    if (_is_synonym && prev_class) {
+	_type = new SynonymElementClassT(_name, prev_class);
+	return 0;
+    }
+
+    // otherwise, compound
+    assert(_enclosing);
+    RouterT *enclosing_scope = _enclosing->router(errh);
+    CompoundElementClassT *c = new CompoundElementClassT(_name, prev_class, _depth, enclosing_scope, (_landmark ? _landmark : _xml_landmark));
+    _type = c;
+    _router = c->cast_router();
+
+    // handle formals
+    HashMap<String, int> formal_map(-1);
+    for (int i = 0; i < _formals.size(); i++)
+	if (!_formals.size())
+	    errh->lerror(_xml_landmark, "definition missing for formal %d", i);
+	else if (formal_map[_formals[i]] >= 0)
+	    errh->lerror(_xml_landmark, "redeclaration of formal `$%s'", _formals[i].cc());
+	else
+	    c->add_formal(_formals[i]);
+
+    return 0;
+}
+
+RouterT *
+CxConfig::router(ErrorHandler *errh)
+{
+    if (!_router) {
+	if (_enclosing) {
+	    assert(_filled && !_is_synonym);
+	    complete_elementclass(errh);
+	    if (!_router)
+		return _enclosing->router(errh);
+	} else
+	    _router = new RouterT;
+    }
+    return _router;
+}
+
+int
+CxConfig::complete(ErrorHandler *errh)
+{
+    RouterT *r = router(errh);
+    if (!r)
+	return -1;
+
+    for (int i = 0; i < _elements.size(); i++) {
+	CxElement &e = _elements[i];
 	if (ElementT *old_e = r->elt(e.name)) {
 	    int which = (int)(old_e->user_data());
-	    ElementT::redeclaration_error(errh, "element", e.name, e.xml_landmark, cx->elements[which].xml_landmark);
+	    ElementT::redeclaration_error(errh, "element", e.name, e.xml_landmark, _elements[which].xml_landmark);
 	} else {
 	    ElementClassT *eclass = r->get_type(e.class_name);
 	    ElementT *ne = r->get_element(e.name, eclass, e.config, (e.landmark ? e.landmark : e.xml_landmark));
@@ -266,8 +546,8 @@ complete(CxState *cx, ErrorHandler *errh)
 	}
     }
 
-    for (int i = 0; i < cx->connections.size(); i++) {
-	CxConnection &c = cx->connections[i];
+    for (int i = 0; i < _connections.size(); i++) {
+	CxConnection &c = _connections[i];
 	ElementT *frome = r->elt(c.from);
 	if (!frome) {
 	    errh->lerror(c.xml_landmark, "undeclared element '%s' (first use this block)", c.from.cc());
@@ -281,127 +561,9 @@ complete(CxState *cx, ErrorHandler *errh)
 	r->add_connection(frome, c.fromport, toe, c.toport, c.xml_landmark);
     }
 
-    return r;
+    return 0;
 }
 
-
-extern "C" {
-    
-static void
-start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
-{
-    XML_Parser parser = (XML_Parser)v;
-    String landmark = xml_landmark(parser);
-    
-    if (strcmp(name, "configuration") == 0) {
-	CxState *xs = new CxState;
-	xs->prev = xstate;
-	xstate = xs;
-	
-    } else if (strcmp(name, "element") == 0) {
-	if (!xstate) {
-	    xml_errh->lerror(landmark, "<element> tag meaningless outside of <configuration>");
-	    return;
-	}
-	
-	CxElement e;
-	e.xml_landmark = landmark;
-	bool ok = true;
-	
-	String file, line;
-	for (const XML_Char **a = attrs; *a; a += 2)
-	    if (strcmp(a[0], "name") == 0) {
-		if (!cp_is_click_id(a[1]))
-		    xml_errh->lerror(landmark, "'name' attribute is not a valid Click identifier");
-		e.name = a[1];
-	    } else if (strcmp(a[0], "classname") == 0) {
-		if (!cp_is_click_id(a[1]))
-		    xml_errh->lerror(landmark, "'classname' attribute is not a valid Click identifier");
-		e.class_name = a[1];
-	    } else if (strcmp(a[0], "classid") == 0)
-		e.class_id = a[1];
-	    else if (strcmp(a[0], "config") == 0)
-		e.config = a[1];
-	    else if (strcmp(a[0], "file") == 0)
-		file = a[1];
-	    else if (strcmp(a[0], "line") == 0)
-		line = a[1];
-	    else if (strcmp(a[0], "ninputs") == 0) {
-		if (!cp_integer(a[1], &e.ninputs))
-		    xml_errh->lerror(landmark, "'ninputs' should be an integer number of ports");
-	    } else if (strcmp(a[0], "noutputs") == 0) {
-		if (!cp_integer(a[1], &e.ninputs))
-		    xml_errh->lerror(landmark, "'noutputs' should be an integer number of ports");
-	    }
-	
-	if (file && line)
-	    e.landmark = file + ":" + line;
-	else if (file)
-	    e.landmark = file;
-	else if (line)
-	    e.landmark = "line " + line;
-
-	if (e.class_name && e.class_id) {
-	    xml_errh->lerror(landmark, "cannot specify both 'classname' and 'classid'");
-	    e.class_name = String();
-	} else if (!e.class_name && !e.class_id) {
-	    xml_errh->lerror(landmark, "element declared without a class");
-	    ok = false;
-	}
-	if (!e.name) {
-	    xml_errh->lerror(landmark, "element declared without a name");
-	    ok = false;
-	}
-
-	if (ok)
-	    xstate->elements.push_back(e);
-	
-    } else if (strcmp(name, "connection") == 0) {
-	if (!xstate) {
-	    xml_errh->lerror(landmark, "<connection> tag meaningless outside of <configuration>");
-	    return;
-	}
-	
-	CxConnection e;
-	e.xml_landmark = landmark;
-	bool ok = true;
-	
-	for (const XML_Char **a = attrs; *a; a += 2)
-	    if (strcmp(a[0], "from") == 0)
-		e.from = a[1];
-	    else if (strcmp(a[0], "to") == 0)
-		e.to = a[1];
-	    else if (strcmp(a[0], "fromport") == 0) {
-		if (!cp_integer(a[1], &e.fromport) && e.fromport >= 0)
-		    xml_errh->lerror(landmark, "bad 'fromport' attribute; expected port number");
-	    } else if (strcmp(a[0], "toport") == 0) {
-		if (!cp_integer(a[1], &e.toport) && e.toport >= 0)
-		    xml_errh->lerror(landmark, "bad 'fromport' attribute; expected port number");
-	    }
-
-	if (!e.from || !e.to) {
-	    xml_errh->lerror(landmark, "connection lacks 'from' or 'to' attribute");
-	    ok = false;
-	}
-	
-	if (ok)
-	    xstate->connections.push_back(e);
-    }
-}
-
-static void
-end_element_handler(void *, const XML_Char *name)
-{
-    if (strcmp(name, "configuration") == 0) {
-	// XXX
-	CxState *xs = xstate;
-	xstate = xs->prev;
-	router = complete(xs, xml_errh);
-	delete xs;
-    }
-}
-
-}
 
 static void
 process(const char *infile, bool file_is_expr, const char *outfile,
@@ -424,19 +586,37 @@ process(const char *infile, bool file_is_expr, const char *outfile,
     xml_errh = errh;
     xml_file = filename_landmark(infile, file_is_expr);
 
+    xstates.clear();
+    xstates.push_back(CX_NONE);
+    
     if (XML_Parse(parser, contents.data(), contents.length(), 1) == 0) {
 	xml_error(parser, "XML parse error: %s", XML_ErrorString(XML_GetErrorCode(parser)));
 	return;
     }
 
-    if (!router && errh->nerrors() == before)
+    if (xstack.size() == 0 && errh->nerrors() == before)
 	errh->lerror(xml_file, "no configuration section");
+
+    // if no errors, resolve router
+    if (errh->nerrors() == before) {
+	for (int i = 0; i < classes.size(); i++)
+	    classes[i]->complete_elementclass(errh);
+	xstack.back()->complete(errh);
+    }
     
-    // open output file
-    if (errh->nerrors() == before && router)
-	write_router_file(router, outfile, errh);
-    
-    delete router;
+    // if no errors, write output
+    if (errh->nerrors() == before)
+	write_router_file(xstack.back()->router(errh), outfile, errh);
+
+    // delete state
+    for (int i = 0; i < classes.size(); i++)
+	delete classes[i];
+    classes.clear();
+    if (xstack.size())
+	delete xstack[0];
+    xstack.clear();
+    xstates.clear();
+    class_id_map.clear();
 }
 
 void
@@ -527,6 +707,7 @@ particular purpose.\n");
 	    output_file = clp->arg;
 	    break;
 
+#if 0
 	  case USERLEVEL_OPT:
 	  case LINUXMODULE_OPT:
 	  case BSDMODULE_OPT:
@@ -536,6 +717,7 @@ particular purpose.\n");
 	    }
 	    specified_driver = opt - FIRST_DRIVER_OPT;
 	    break;
+#endif
 
 	  bad_option:
 	  case Clp_BadOption:
