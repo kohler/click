@@ -20,11 +20,6 @@ class ProcessingT { public:
   Vector<Hookup> _connected_input;
   Vector<Hookup> _connected_output;
 
-  int input_pidx(int ei, int p = 0) const	{ return _input_pidx[ei]+p; }
-  int output_pidx(int ei, int p = 0) const	{ return _output_pidx[ei]+p; }
-  int input_pidx(const Hookup &h) const;
-  int output_pidx(const Hookup &h) const;
-  
   void create_pidx();
   
   void initial_processing_for(int, const ElementMap &, ErrorHandler *);
@@ -43,6 +38,11 @@ class ProcessingT { public:
   int ninput_pidx() const	{ return _input_pidx.back(); }
   int noutput_pidx() const	{ return _output_pidx.back(); }
   
+  int input_pidx(int ei, int p = 0) const	{ return _input_pidx[ei]+p; }
+  int output_pidx(int ei, int p = 0) const	{ return _output_pidx[ei]+p; }
+  int input_pidx(const Hookup &h) const;
+  int output_pidx(const Hookup &h) const;
+    
   int ninputs(int i) const	{ return _input_pidx[i+1] - _input_pidx[i]; }
   int noutputs(int i) const	{ return _output_pidx[i+1] - _output_pidx[i]; }
 

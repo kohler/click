@@ -15,7 +15,7 @@ bindir = @bindir@
 INSTALL = @INSTALL@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
-TOOLDIRS = click-align click-check click-combine click-devirtualize click-fastclassifier click-install click-xform udpgen
+TOOLDIRS = @TOOLDIRS@
 TARGETS = @TOOL_TARGETS@
 
 all: $(TARGETS)
@@ -34,6 +34,8 @@ click-fastclassifier: lib Makefile
 	@cd click-fastclassifier; $(MAKE) all-local
 click-install: lib Makefile
 	@cd click-install; $(MAKE) all-local
+click-ipopt: lib Makefile
+	@cd click-ipopt; $(MAKE) all-local
 click-xform: lib Makefile
 	@cd click-xform; $(MAKE) all-local
 udpgen: Makefile

@@ -252,6 +252,9 @@ RouterT::get_types_from(const RouterT *r)
 int
 RouterT::unify_type_indexes(const RouterT *r)
 {
+  if (r == this)
+    return 0;
+  
   Vector<int> new_tidx;
   for (int i = 0; i < ntypes(); i++) {
     int t = r->type_index( type_name(i) );
@@ -274,7 +277,8 @@ RouterT::unify_type_indexes(const RouterT *r)
 
   // fix tindexes
   for (int i = 0; i < nelements(); i++)
-    element(i).type = new_tidx[ element(i).type ];
+    if (element(i).type >= 0)
+      element(i).type = new_tidx[ element(i).type ];
   
   return 0;
 }
@@ -1303,22 +1307,6 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
       if (!used[c])
 	startchain[c] = true, done = false;
   }
-  
-//    // print hookup 2
-//    for (int c = 0; c < nhookup; c++) {
-//      const Hookup &hf = _hookup_from[c];
-//      if (hf.idx >= 0) {
-//        sa << indent << ename_upref(hf.idx);
-//        if (hf.port)
-//  	sa << " [" << hf.port << "]";
-//        sa << " -> ";
-//        const Hookup &ht = _hookup_to[c];
-//        if (ht.port)
-//  	sa << "[" << ht.port << "] ";
-//        sa << ename_upref(ht.idx);
-//        sa << ";\n";
-//      }
-//    }
 }
 
 String

@@ -271,19 +271,19 @@ ProcessingT::check_connections(ErrorHandler *errh)
       errh->lerror(_router->hookup_landmark(c),
 		   "reuse of `%s' push output %d",
 		   _router->ename(hf[c].idx).cc(), hf[c].port);
-      errh->lerror(_router->hookup_landmark(output_used[fp]),
-		   "`%s' output %d previously used here",
-		   _router->ename(hf[c].idx).cc(), hf[c].port);
+      errh->lmessage(_router->hookup_landmark(output_used[fp]),
+		     "  `%s' output %d previously used here",
+		     _router->ename(hf[c].idx).cc(), hf[c].port);
     } else
       output_used[fp] = c;
     
-    if (_input_processing[tp] == VPUSH && input_used[tp] >= 0) {
+    if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
       errh->lerror(_router->hookup_landmark(c),
 		   "reuse of `%s' pull input %d",
 		   _router->ename(ht[c].idx).cc(), ht[c].port);
-      errh->lerror(_router->hookup_landmark(input_used[tp]),
-		   "`%s' input %d previously used here",
-		   _router->ename(ht[c].idx).cc(), ht[c].port);
+      errh->lmessage(_router->hookup_landmark(input_used[tp]),
+		     "  `%s' input %d previously used here",
+		     _router->ename(ht[c].idx).cc(), ht[c].port);
     } else
       input_used[tp] = c;
   }

@@ -583,12 +583,14 @@ particular purpose.\n");
       patterns[i]->flatten(errh);
 
     // unify pattern types
-    for (int i = 1; i < patterns.size(); i++)
-      patterns[0]->get_types_from(patterns[i]);
-    patterns[0]->get_types_from(r);
-    for (int i = 1; i < patterns.size(); i++)
-      patterns[i]->unify_type_indexes(patterns[0]);
-    r->unify_type_indexes(patterns[0]);
+    for (int i = 0; i < patterns.size(); i++) {
+      r->get_types_from(patterns[i]);
+      r->get_types_from(replacements[i]);
+    }
+    for (int i = 0; i < patterns.size(); i++) {
+      patterns[i]->unify_type_indexes(r);
+      replacements[i]->unify_type_indexes(r);
+    }
   }
   
   // clear r's flags, so we know the current element complement
@@ -596,24 +598,18 @@ particular purpose.\n");
   for (int i = 0; i < r->nelements(); i++)
     r->element(i).flags = 0;
 
-  // get stats
-  int input_size, patterns_size = 0, nreplace = 0;
-  input_size = r->nelements() - 2;
-  for (int i = 0; i < patterns.size(); i++)
-    patterns_size += patterns[i]->nelements() - 1;
-
   // get adjacency matrices
   Vector<AdjacencyMatrix *> patterns_adj;
   for (int i = 0; i < patterns.size(); i++)
     patterns_adj.push_back(new AdjacencyMatrix(patterns[i]));
   
   bool any = true;
+  int nreplace = 0;
   AdjacencyMatrix matrix(r);
   while (any) {
     any = false;
     for (int i = 0; i < patterns.size(); i++) {
       Matcher m(patterns[i], patterns_adj[i], r, &matrix, i + 1, errh);
-      //fprintf(stderr, ">>> %d\n", i);
       if (m.next_match()) {
 	m.replace(replacements[i], pat_names[i], String(), errh);
 	nreplace++;

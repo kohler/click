@@ -15,10 +15,10 @@ class AdjacencyMatrix {
   
  public:
 
-  AdjacencyMatrix(RouterT *, RouterT * = 0);
+  AdjacencyMatrix(RouterT *);
   ~AdjacencyMatrix();
 
-  void init(RouterT *, RouterT * = 0);
+  void init(RouterT *);
   void update(RouterT *, const Vector<int> &changed_eindices);
   void print() const;
 
