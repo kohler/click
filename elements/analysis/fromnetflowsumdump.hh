@@ -142,7 +142,7 @@ class FromNetFlowSummaryDump : public Element { public:
     bool _active;
     bool _multipacket;
     Packet *_work_packet;
-    uint32_t _multipacket_extra_length;
+    uint32_t _multipacket_length;
     struct timeval _multipacket_timestamp_delta;
     struct timeval _multipacket_end_timestamp;
 
