@@ -2253,6 +2253,10 @@ These constants define the size of the annotation area.
 @table @code
 @item Packet::USER_ANNO_SIZE
 The size of the annotation area in bytes.
+@item Packet::USER_ANNO_US_SIZE
+The size of the annotation area in @code{unsigned short}s.
+@item Packet::USER_ANNO_S_SIZE
+The size of the annotation area in @code{short}s.
 @item Packet::USER_ANNO_U_SIZE
 The size of the annotation area in @code{unsigned int}s.
 @item Packet::USER_ANNO_I_SIZE
@@ -2260,8 +2264,9 @@ The size of the annotation area in @code{int}s.
 @end table
 
 @noindent
-Currently, @code{USER_ANNO_SIZE} is 12 and @code{USER_ANNO_U_SIZE} and
-@code{USER_ANNO_I_SIZE} are both 3.
+Currently, @code{USER_ANNO_SIZE} is 24, @code{USER_ANNO_U_SIZE} and
+@code{USER_ANNO_I_SIZE} are both 6, and @code{USER_ANNO_US_SIZE} and
+@code{USER_ANNO_S_SIZE} are both 12.
 
 The user annotation area may be accessed as an array of bytes, an array
 of @code{unsigned int}s, or an array of @code{int}s. The elements of
