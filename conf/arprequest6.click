@@ -26,10 +26,10 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 	-> CheckIP6Header(::c0a8:ffff ::1261:ffff)
 	-> GetIP6Address(24)
 	-> rt :: LookupIP6Route(
-	3ffe::1261:027d ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::2222 0,
-	::c0a8:0001 ffff:ffff:ffff:ffff:ffff:ffff:ffff:0000 ::0 1,
-	0::ffff:0:0 ffff:ffff:ffff:ffff:ffff:ffff:0:0 ::0 2,
-  	::0 ::0 ::c0a8:1 3);
+	3ffe::1261:027d/128 ::0 0,
+	::c0a8:0001/112 ::0 1,
+	0::ffff:0:0/96 ::0 2,
+  	::0/0 ::c0a8:1 3);
 	arpq :: ARPQuerier6(3ffe:1ce1:0:b5::1, 00:e0:29:05:e5:6f);
 	
 	rt[0] 	-> Print(route0-ok, 200) 

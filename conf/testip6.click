@@ -22,7 +22,7 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 	t::Tee(3);
 	c[1] -> [0]t;
 	arpq1 :: ARPQuerier6(::1261:027d, 00:A0:CC:52:14:33);
-	ar1 :: ARPResponder6(::1261:027d ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 00:A0:CC:52:14:33);
+	ar1 :: ARPResponder6(::1261:027d/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff 00:A0:CC:52:14:33);
 	t[0] -> [1]arpq1;
 	t[1] -> Discard;
 	t[2] -> Discard;
@@ -33,9 +33,9 @@ d8 01 00 00  13 69 13 69>, 1, 5)
 	-> CheckIP6Header(::c0a8:ffff ::1261:ffff)
 	-> GetIP6Address(24)
 	-> rt :: LookupIP6Route(
-	::1261:027d ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
-	::c0a8:0001 ffff:ffff:ffff:ffff:ffff:ffff:ffff:0000 ::0 1,
-  	::0 ::0 ::c0a8:1 1);
+	::1261:027d/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff ::0 0,
+	::c0a8:0001/ffff:ffff:ffff:ffff:ffff:ffff:ffff:0000 ::0 1,
+  	::0/::0 ::c0a8:1 1);
 	icmpjunk :: Classifier(44/1261FFFF,44/C0A8FFFF,-);
 	icmpdisc :: Discard;
 	icmpjunk[0] -> icmpdisc;
