@@ -160,7 +160,8 @@ distdir:
 	  for cfile in `cd $$d && find $$dir -maxdepth 1 \( -name \[^,.]\*.cc -or -name \[^,.]\*.c -or -name \[^,.]\*.hh -or -name \[^,.]\*.h \) -print`; do \
 	    ln $$d/$$cfile $(distdir)/$$cfile; \
 	  done; \
-	done
+	done; \
+	rm -rf $(distdir)/elements/local/*
 	@for subdir in tools; do \
 	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
 	      || exit 1; \
