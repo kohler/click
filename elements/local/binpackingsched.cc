@@ -10,7 +10,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-#define DEBUG 0
+#define DEBUG 2
 
 BinPackingScheduler::BinPackingScheduler()
   : _timer(this)
@@ -75,8 +75,8 @@ BinPackingScheduler::run_scheduled()
   int i;
   for(i=0; i<n; i++) {
     unsigned diff = avg_load>load[i] ? avg_load-load[i] : load[i]-avg_load;
-    if (diff > (avg_load>>3)) {
-#if DEBUG > 0
+      if (diff > (avg_load>>3)) {
+#if DEBUG > 2
       click_chatter("load balance, avg %u, diff %u", avg_load, diff);
 #endif
       break;
@@ -128,18 +128,30 @@ BinPackingScheduler::run_scheduled()
 
   Vector<Task*> schedule[n];
   for(int i=0; i<n; i++) load[i] = 0;
-  for(int i=sorted.size()-1; i>=0; i--) {
-    int min = load[0];
-    int which = 0;
-    for (int j = 1; j < n; j++) {
-      if (load[j] < min) {
+  unsigned next = 0;
+  int max, which;
+  for(int i=0; i<sorted.size(); i++) {
+redo:
+    max = load[next];
+    which = next;
+    for (int j = 0; j < n; j++) {
+      if (load[j] >= max && j != next) {
 	which = j;
-	min = load[j];
+	max = load[j];
+	break;
       }
     }
-    load[which] += sorted[i]->cycles();
-    schedule[which].push_back(sorted[i]);
-    sorted[i]->change_thread(which);
+    if (which != next) {
+      load[next] += sorted[i]->cycles();
+      schedule[next].push_back(sorted[i]);
+      sorted[i]->change_thread(next);
+      next++; 
+      if (next == n) next = 0;
+    } else {
+      next++; 
+      if (next == n) next = 0;
+      goto redo;
+    }
   }
   
 #if DEBUG > 1
