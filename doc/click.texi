@@ -191,12 +191,12 @@ Handlers
 * Read and Write Handler Overview::  
 * Adding Handlers::             
 * Default Handlers::            
-* Accessing Handlers::          
+* Accessing Handlers Internally::  
 * LLRPC Overview::              
 
-Accessing Handlers
+Accessing Handlers Internally
 
-* The Router::Handler Type::    
+* Handler Objects::             
 * Handler Indexes::             
 * Locating Handlers::           
 
@@ -3635,7 +3635,7 @@ while @dfn{LLRPCs} provide a remote procedure call interface.
 * Read and Write Handler Overview::  
 * Adding Handlers::             
 * Default Handlers::            
-* Accessing Handlers::          
+* Accessing Handlers Internally::  
 * LLRPC Overview::              
 @end menu
 
@@ -3737,7 +3737,7 @@ element handler case.
 @end deftypeop
 
 The @code{change_handler_flags} method lets you change a handler's flags
-word (@pxref{The Router::Handler Type}).
+word (@pxref{Handler Objects}).
 
 @anchor{Changing Handler Flags}
 @deftypeop {Static Method} Router void change_handler_flags (@w{Element *@var{element}}, @w{const String &@var{name}}, @w{uint32_t @var{clear_flags}}, @w{uint32_t @var{set_flags}})
@@ -3749,7 +3749,7 @@ specified handler does not exist; otherwise, it returns 0.
 @end deftypeop
 
 
-@node Default Handlers, Accessing Handlers, Adding Handlers, Handlers
+@node Default Handlers, Accessing Handlers Internally, Adding Handlers, Handlers
 @subsection Default Read and Write Handlers
 
 Every element automatically provides five handlers, @handler{class},
@@ -3830,8 +3830,8 @@ class   r
 @end table
 
 
-@node Accessing Handlers, LLRPC Overview, Default Handlers, Handlers
-@subsection Accessing Handlers
+@node Accessing Handlers Internally, LLRPC Overview, Default Handlers, Handlers
+@subsection Accessing Handlers Internally
 
 Element handlers are stored in the relevant @code{Router} as objects
 with type @code{Router::Handler}. (This design allows handler objects to
@@ -3845,12 +3845,12 @@ less than 0 are used for error returns, such as nonexistent handlers.
 names.
 
 @menu
-* The Router::Handler Type::    
+* Handler Objects::             
 * Handler Indexes::             
 * Locating Handlers::           
 @end menu
 
-@node The Router::Handler Type, Handler Indexes, Accessing Handlers, Accessing Handlers
+@node Handler Objects, Handler Indexes, Accessing Handlers Internally, Accessing Handlers Internally
 @subsubsection The Router::Handler Type
 
 The @code{Router::Handler} type allows you to check a handler's
@@ -3917,13 +3917,19 @@ know the handler is @code{writable()}.
 @end deftypemethod
 
 
-@node Handler Indexes, Locating Handlers, The Router::Handler Type, Accessing Handlers
+@node Handler Indexes, Locating Handlers, Handler Objects, Accessing Handlers Internally
 @subsubsection Handler Indexes
 
+These @code{Router} methods check handler indexes for validity, and
+translate handler indexes into @code{Router::Handler} objects. Each
+method comes in a pair: one static method that takes a possibly-null
+@w{@code{Router *}} argument, and one non-static method that does the
+same thing.
+
 @deftypeop {Static Method} Router bool handler_ok (@w{const Router *@var{router}}, @w{int @var{handler_index}})
-Returns true if @var{handler_index} is a valid element handler index for
-@var{router} (and @var{router} is non-null), or if @var{handler_index}
-is a valid global handler index.
+Returns true if @var{handler_index} is a valid global handler index, or
+if @var{router} is non-null and @var{handler_index} is a valid element
+handler index for @var{router}.
 @end deftypeop
 
 @deftypemethod Router bool handler_ok (@w{int @var{handler_index}}) const
@@ -3940,9 +3946,27 @@ return true.
 Same as @code{handler(this, @var{handler_index})}.
 @end deftypemethod
 
+@deftypeop {Static Method} Router {const Router::Handler *} handlerp (@w{const Router *@var{router}}, @w{int @var{handler_index}})
+Returns a pointer to the handler with index @var{handler_index}, using
+@var{router} if @var{handler_index} refers to an element handler.
+Returns a null pointer if @var{handler_index} is not a valid handler
+index (for instance, if it is an element handler index and @var{router}
+is null). The pointer returned by @code{handlerp} should be treated as
+transient, since it may become invalid as new handlers are added.
+@end deftypeop
 
-@node Locating Handlers,  , Handler Indexes, Accessing Handlers
+@deftypemethod Router {const Router::Handler *} handler (@w{int @var{handler_index}}) const
+Same as @code{handlerp(this, @var{handler_index})}.
+@end deftypemethod
+
+
+@node Locating Handlers,  , Handler Indexes, Accessing Handlers Internally
 @subsubsection Locating Handlers
+
+These methods find the handler index corresponding to a given handler
+name, or list all handlers for a given element. They are static methods
+so that you don't need a @code{Router} object to investigate global
+handlers.
 
 @deftypeop {Static Method} Router int find_handler (@w{Element *@var{element}}, @w{const String &@var{name}})
 Returns the handler index for @var{element}'s @var{name} handler, or the
@@ -3956,7 +3980,8 @@ supported by @var{router}'s element number @var{eindex}, or all global
 handlers if @math{@var{eindex} < 0}.
 @end deftypeop
 
-@node LLRPC Overview,  , Accessing Handlers, Handlers
+
+@node LLRPC Overview,  , Accessing Handlers Internally, Handlers
 @subsection LLRPC Overview
 
 @node Live Reconfiguration,  , Handlers, Element Runtime
