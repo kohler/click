@@ -1,3 +1,8 @@
+2001-02-24 Saturday 13:17  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: added cp_timeval()
+	function and cpTimeval constant
+
 2001-02-24 Saturday 10:12  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: forceudp.cc, forceudp.hh: ForceUDP corrects the
