@@ -192,6 +192,12 @@ ControlSocket::cleanup(CleanupStage)
   if (_full_proxy)
     _full_proxy->remove_error_receiver(proxy_error_function, this);
   if (_socket_fd >= 0) {
+    // shut down the listening socket in case we forked
+#ifdef SHUT_RDWR
+    shutdown(_socket_fd, SHUT_RDWR);
+#else
+    shutdown(_socket_fd, 2);
+#endif
     close(_socket_fd);
     if (_unix_pathname)
       unlink(_unix_pathname);
