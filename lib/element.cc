@@ -339,7 +339,7 @@ Element::configure_phase() const
 int
 Element::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh, 0);
+  return cp_va_parse(conf, this, errh, cpEnd);
 }
 
 int
