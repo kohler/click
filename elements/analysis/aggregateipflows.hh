@@ -1,6 +1,6 @@
 // -*- c-basic-offset: 4 -*-
-#ifndef CLICK_AGGREGATEFLOWS_HH
-#define CLICK_AGGREGATEFLOWS_HH
+#ifndef CLICK_AGGREGATEIPFLOWS_HH
+#define CLICK_AGGREGATEIPFLOWS_HH
 #include <click/element.hh>
 #include <click/ipflowid.hh>
 #include <click/bighashmap.hh>
@@ -9,7 +9,7 @@
 /*
 =c
 
-AggregateFlows([I<KEYWORDS>])
+AggregateIPFlows([I<KEYWORDS>])
 
 =s
 
@@ -17,12 +17,13 @@ sets aggregate annotation based on flow
 
 =d
 
-AggregateFlows monitors TCP and UDP flows, setting the aggregate annotation on
-every passing packet to a flow number, and the paint annotation to a direction
-indication. Non-TCP and UDP packets, second and subsequent fragments, and
-short packets are emitted on output 1, or dropped if there is no output 1.
+AggregateIPFlows monitors TCP and UDP flows, setting the aggregate annotation
+on every passing packet to a flow number, and the paint annotation to a
+direction indication. Non-TCP and UDP packets, second and subsequent
+fragments, and short packets are emitted on output 1, or dropped if there is
+no output 1.
 
-AggregateFlows uses source and destination addresses and source and
+AggregateIPFlows uses source and destination addresses and source and
 destination ports to distinguish flows. Reply packets get the same flow
 number, but a different paint annotation. Old flows die after a configurable
 timeout, after which new packets with the same addresses and ports get a new
@@ -34,7 +35,7 @@ packets are on the forward or reverse subflow. (The first packet seen on each
 flow gets paint color 0; reply packets get paint color 1. ICMP errors get
 paints 2 and 3.)
 
-AggregateFlows can optionally apply aggregate annotations to ICMP errors. See
+AggregateIPFlows can optionally apply aggregate annotations to ICMP errors. See
 the ICMP keyword argument below.
 
 Keywords are:
@@ -67,21 +68,21 @@ Default is false.
 
 =back
 
-AggregateFlows is an AggregateNotifier, so AggregateListeners can request
+AggregateIPFlows is an AggregateNotifier, so AggregateListeners can request
 notifications when new aggregates are created and old ones are deleted.
 
 =a
 
 AggregateIP, AggregateCounter */
 
-class AggregateFlows : public Element, public AggregateNotifier { public:
+class AggregateIPFlows : public Element, public AggregateNotifier { public:
 
-    AggregateFlows();
-    ~AggregateFlows();
+    AggregateIPFlows();
+    ~AggregateIPFlows();
 
-    const char *class_name() const	{ return "AggregateFlows"; }
+    const char *class_name() const	{ return "AggregateIPFlows"; }
     void *cast(const char *);
-    AggregateFlows *clone() const	{ return new AggregateFlows; }
+    AggregateIPFlows *clone() const	{ return new AggregateIPFlows; }
 
     void notify_noutputs(int);
     const char *processing() const	{ return "a/ah"; }

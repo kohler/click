@@ -60,10 +60,10 @@ Keyword arguments are:
 
 =item NOTIFIER
 
-The name of an AggregateNotifier element, like AggregateFlows. If given, then
-ToIPFlowDumps will ask the element for notification when flows are deleted. It
-uses that notification to free its state early. It's a very good idea to
-supply a NOTIFIER.
+The name of an AggregateNotifier element, like AggregateIPFlows. If given,
+then ToIPFlowDumps will ask the element for notification when flows are
+deleted. It uses that notification to free its state early. It's a very good
+idea to supply a NOTIFIER.
 
 =item ABSOLUTE_TIME
 
@@ -103,7 +103,7 @@ let you reconstruct actual sequence numbers if necessary.
 
 =a
 
-FromIPSummaryDump, ToIPSummaryDump, AggregateFlows */
+FromIPSummaryDump, ToIPSummaryDump, AggregateIPFlows */
 
 class ToIPFlowDumps : public Element, public AggregateListener { public:
   

@@ -2,7 +2,7 @@
 #include <config.h>
 #include <click/config.h>
 
-#include "aggregateflows.hh"
+#include "aggregateipflows.hh"
 #include <click/error.hh>
 #include <click/hashmap.hh>
 #include <click/straccum.hh>
@@ -13,36 +13,36 @@
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
 
-AggregateFlows::AggregateFlows()
+AggregateIPFlows::AggregateIPFlows()
     : Element(1, 1)
 {
     MOD_INC_USE_COUNT;
 }
 
-AggregateFlows::~AggregateFlows()
+AggregateIPFlows::~AggregateIPFlows()
 {
     MOD_DEC_USE_COUNT;
 }
 
 void *
-AggregateFlows::cast(const char *n)
+AggregateIPFlows::cast(const char *n)
 {
     if (strcmp(n, "AggregateNotifier") == 0)
 	return (AggregateNotifier *)this;
-    else if (strcmp(n, "AggregateFlows") == 0)
+    else if (strcmp(n, "AggregateIPFlows") == 0)
 	return (Element *)this;
     else
 	return Element::cast(n);
 }
 
 void
-AggregateFlows::notify_noutputs(int n)
+AggregateIPFlows::notify_noutputs(int n)
 {
     set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
-AggregateFlows::configure(Vector<String> &conf, ErrorHandler *errh)
+AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _tcp_timeout = 24 * 60 * 60;
     _tcp_done_timeout = 30;
@@ -65,7 +65,7 @@ AggregateFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-AggregateFlows::initialize(ErrorHandler *)
+AggregateIPFlows::initialize(ErrorHandler *)
 {
     _next = 1;
     _active_sec = _gc_sec = 0;
@@ -73,7 +73,7 @@ AggregateFlows::initialize(ErrorHandler *)
 }
 
 void
-AggregateFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
+AggregateIPFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
 {
     FlowInfo *to_free = 0;
     timeout = _active_sec - timeout;
@@ -100,7 +100,7 @@ AggregateFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
 }
 
 void
-AggregateFlows::reap()
+AggregateIPFlows::reap()
 {
     if (_gc_sec) {
 	clean_map(_tcp_map, _tcp_timeout, _tcp_done_timeout);
@@ -110,7 +110,7 @@ AggregateFlows::reap()
 }
 
 const click_ip *
-AggregateFlows::icmp_encapsulated_header(const Packet *p) const
+AggregateIPFlows::icmp_encapsulated_header(const Packet *p) const
 {
     const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
     if (icmph
@@ -131,7 +131,7 @@ AggregateFlows::icmp_encapsulated_header(const Packet *p) const
 }
 
 Packet *
-AggregateFlows::simple_action(Packet *p)
+AggregateIPFlows::simple_action(Packet *p)
 {
     const click_ip *iph = p->ip_header();
     int paint = 0;
@@ -230,6 +230,6 @@ AggregateFlows::simple_action(Packet *p)
 }
 
 ELEMENT_REQUIRES(userlevel AggregateNotifier)
-EXPORT_ELEMENT(AggregateFlows)
+EXPORT_ELEMENT(AggregateIPFlows)
 
 #include <click/bighashmap.cc>
