@@ -28,6 +28,8 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 
+#define RED_DEBUG 0
+
 RED::RED()
   : Element(1, 1)
 {
@@ -112,7 +114,7 @@ RED::configure(const Vector<String> &conf, ErrorHandler *errh)
     cp_spacevec(queues_string, eids);
     _queue_elements.clear();
     for (int i = 0; i < eids.size(); i++)
-      if (Element *e = router()->find(this, eids[i], errh))
+      if (Element *e = router()->find(eids[i], this, errh))
 	_queue_elements.push_back(e);
     if (eids.size() != _queue_elements.size())
       return -1;
@@ -227,6 +229,9 @@ RED::should_drop()
   if (avg <= _min_thresh)
     _count = -1;
   else if (avg > _max_thresh) {
+#if RED_DEBUG
+    click_chatter("%s: drop, over max_thresh", declaration().cc());
+#endif
     _count = -1;
     return true;
   } else {
@@ -236,6 +241,9 @@ RED::should_drop()
     
     // note: division had Approx[]
     if (_count > 0 && p_b > 0 && _count >= _random_value / p_b) {
+#if RED_DEBUG
+      click_chatter("%s: drop, random drop (%d, %d, %d, %d)", declaration().cc(), _count, p_b, _random_value, _random_value/p_b);
+#endif
       _count = 0;
       _random_value = (random()>>5) & 0xFFFF;
       return true;
@@ -243,6 +251,9 @@ RED::should_drop()
       _random_value = (random()>>5) & 0xFFFF;
   }
   
+#if RED_DEBUG
+  click_chatter("%s: no drop", declaration().cc());
+#endif
   return false;
 }
 
