@@ -150,7 +150,7 @@ IPReassembler::simple_action(Packet *p_in)
   }
 
   // point into the IP datagram 'data' part
-  ptr = p_in->data();
+  ptr = p_in->data() + ((int)p_in->ip_header()->ip_hl << 2);
 
   // We found where to put this one. Check for overlap with
   // preceding fragment, and, if needed, align things so that
@@ -293,7 +293,7 @@ IPReassembler::frag_create(int offset, int end, Packet *p)
   fp->end = end;
   fp->len = end-offset;
   fp->p = p;
-  fp->ptr = p->data();
+  fp->ptr = p->data() + ((int)p->ip_header()->ip_hl << 2) ;
   fp->next = fp->prev = NULL;
 
   // remember how much memory this frag takes up
@@ -307,6 +307,7 @@ IPReassembler::queue_create(const click_ip *ipheader){
   int hashvalue;
 
   IPQueue *qp = new IPQueue;
+
   qp->iph = ipheader;
   qp->frags = NULL;
   qp->len = 0;
@@ -316,7 +317,7 @@ IPReassembler::queue_create(const click_ip *ipheader){
   
   // add this entr to the queue
   hashvalue = hashfn(ipheader->ip_id, ipheader->ip_src.s_addr, 
-		     ipheader->ip_src.s_addr, ipheader->ip_p);
+		     ipheader->ip_dst.s_addr, ipheader->ip_p);
   
   if ((qp->next = _map[hashvalue]) != NULL)
     qp->next->pprev = &qp->next;
@@ -341,13 +342,14 @@ IPReassembler::queue_find(const struct click_ip *iph)
   unsigned int hashvalue;
 
   hashvalue = hashfn(id, saddr, daddr, protocol);
-  
+
   for (qp = _map[hashvalue]; qp; qp = qp->next) {
+  
     if ((qp->iph->ip_id == id) &&
 	(qp->iph->ip_src.s_addr == saddr) &&
  	(qp->iph->ip_dst.s_addr == daddr) &&
 	(qp->iph->ip_p == protocol)) {
-    
+      
       break;
     }
   }
@@ -375,15 +377,16 @@ IPReassembler::queue_done(IPQueue *qp)
   fp = qp->frags;
   offset = 0;
 
-  if (!fp)
-    //no frags in queue
+  //  if (!fp)
+
+  //no frags in queue
   while (fp) {
     if (fp->offset > offset)
       return(0);  // fragment missing
     offset = fp->end;
     fp = fp->next;
   }
-
+  
   return 1; // all fragments are present
 }
 
@@ -394,13 +397,14 @@ IPReassembler::queue_done(IPQueue *qp)
 Packet *
 IPReassembler::queue_glue(IPQueue *qp)
 {
-  char _buf[128];
-  int pos = 0;
   int len, count;
   FragEntry *first, *next;
   WritablePacket *wp;
 
   next = qp->frags;
+
+  
+#ifdef 0
   while(next){
     
     pos = 0;
@@ -410,11 +414,12 @@ IPReassembler::queue_glue(IPQueue *qp)
       if ((i % 4) == 3) _buf[pos++] = ' ';
     }
     _buf[pos++] = '\0';
-    click_chatter(" %s", _buf);
+    click_chatter(" glue: (%d) %s", next->p->length(),  _buf);
     
 
     next = next->next;
   }
+#endif
 
   // reject if oversized
   len = qp->len + qp->ihlen;
@@ -426,6 +431,7 @@ IPReassembler::queue_glue(IPQueue *qp)
 
   // resize first packet, and copy info from other fragments
   first->p = first->p->put(qp->len - first->len);
+  wp = (WritablePacket *)first->p;
 
   count = qp->ihlen + first->len;
   next = first->next;
@@ -438,13 +444,13 @@ IPReassembler::queue_glue(IPQueue *qp)
     }
     
     // copy from frag into final packet.
-    memcpy(first + next->offset, next->ptr, next->len);
+    memcpy(wp->data() + next->offset + qp->ihlen, 
+	   next->ptr, next->len);
     count += next->len;
     next = next->next;
   }
 
   // fix up header
-  wp = (WritablePacket *)first->p;
   wp->ip_header()->ip_hl = qp->ihlen >> 2;
   wp->ip_header()->ip_len = htons(count);
   wp->ip_header()->ip_off = 0;
