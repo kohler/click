@@ -45,6 +45,8 @@
 // Note that the configuration will only forward TCP and UDP through the 
 // firewall. ICMP is not passed. A nice exercise: Add ICMP support to the
 // configuration using the ICMPRewriter and ICMPPingRewriter elements.
+//
+// See also thomer-nat.click
 
 
 // ADDRESS INFORMATION

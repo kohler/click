@@ -102,6 +102,7 @@ test-tun.click
 test.click
 test2.click
 test3.click
+thomer-nat.click
 udpcount.click
 udpgen.click
 unarp.clickpat
