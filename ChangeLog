@@ -1,3 +1,10 @@
+2003-06-30 Monday 17:25  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.54), dsdvroutetable.hh
+	(1.39): added ability to take a snapshot of the route table, and
+	use that to route packets, while routing protocol continues to
+	operate on real table.	see paused handler
+
 2003-06-30 Monday 15:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridgenericrt.hh (1.8), gridroutetable.cc (1.67),
