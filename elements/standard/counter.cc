@@ -22,9 +22,11 @@
 #include <click/handlercall.hh>
 
 #ifdef HAVE_INT64_TYPES
-static CpVaParseCmd parse_cmd = cpUnsigned64;
+# define PARSEVAL cpUnsigned64
+# define PARSECMD cp_unsigned64
 #else
-static CpVaParseCmd parse_cmd = cpUnsigned;
+# define PARSEVAL cpUnsigned
+# define PARSECMD cp_unsigned
 #endif
 
 Counter::Counter()
@@ -60,20 +62,16 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
 
   if (count_call) {
-    if (cp_va_space_parse(count_call, this, errh,
-			  parse_cmd, "count trigger", &_count_trigger,
-			  cpWriteHandlerCall, "handler to call", &_count_trigger_h,
-			  0) < 0)
-      return -1;
+    if (!PARSECMD(cp_pop_spacevec(count_call), &_count_trigger))
+      return errh->error("`COUNT_CALL' first word should be unsigned (count)");
+    _count_trigger_h = new HandlerCall(count_call);
   } else
     _count_trigger = (counter_t)(-1);
 
   if (byte_count_call) {
-    if (cp_va_space_parse(byte_count_call, this, errh,
-			  parse_cmd, "bytecount trigger", &_byte_trigger,
-			  cpWriteHandlerCall, "handler to call", &_byte_trigger_h,
-			  0) < 0)
-      return -1;
+    if (!PARSECMD(cp_pop_spacevec(byte_count_call), &_byte_trigger))
+      return errh->error("`BYTE_COUNT_CALL' first word should be unsigned (count)");
+    _byte_trigger_h = new HandlerCall(byte_count_call);
   } else
     _byte_trigger = (counter_t)(-1);
 
@@ -137,20 +135,19 @@ int
 Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandler *errh)
 {
   Counter *c = (Counter *)e;
+  String str = cp_uncomment(in_str);
   switch ((intptr_t)thunk) {
    case H_COUNT_CALL:
-    if (cp_va_space_parse(in_str, c, errh,
-			  parse_cmd, "count trigger", &c->_count_trigger,
-			  cpOptional,
-			  cpWriteHandlerCall, "handler to call", &c->_count_trigger_h, 0) < 0)
+    if (!PARSECMD(cp_pop_spacevec(str), &c->_count_trigger))
+      return errh->error("`count_call' first word should be unsigned (count)");
+    if (HandlerCall::initialize(c->_count_trigger_h, str, true, c, errh) < 0)
       return -1;
     c->_count_triggered = false;
     return 0;
    case H_BYTE_COUNT_CALL:
-    if (cp_va_space_parse(in_str, c, errh,
-			  parse_cmd, "bytecount trigger", &c->_byte_trigger,
-			  cpOptional,
-			  cpWriteHandlerCall, "handler to call", &c->_byte_trigger_h, 0) < 0)
+    if (!PARSECMD(cp_pop_spacevec(str), &c->_byte_trigger))
+      return errh->error("`byte_count_call' first word should be unsigned (count)");
+    if (HandlerCall::initialize(c->_byte_trigger_h, str, true, c, errh) < 0)
       return -1;
     c->_byte_triggered = false;
     return 0;
