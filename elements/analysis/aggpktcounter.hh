@@ -21,9 +21,8 @@ counts packets per packet number and aggregate annotation
 Maintains counts of how many packets seen for each aggregate value and packet
 number.  Elements such as FromCapDump, AggregateIP and AggregateIPFlows set
 the aggregate annotation; FromCapDump sets the packet number annotation too.
-Call one of its handlers to get this information.
 
-AggregatePacketCounter may have any number of inputs, but always have the same
+AggregatePacketCounter may have any number of inputs, but always has the same
 number of outputs as inputs.  Packets arriving on input port I<N> are emitted
 on output port I<N>.  The element maintains separate counts for each input.
 See the example for how this can be used.

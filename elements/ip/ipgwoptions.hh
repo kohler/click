@@ -32,7 +32,7 @@ CLICK_DECLS
  * the param_off packet annotation so that ICMPError can set
  * the Parameter Problem pointer to point to the erroneous byte.
  *
- * =a IPDstOptions, ICMPError */
+ * =a ICMPError */
 
 class IPGWOptions : public Element { public:
   
