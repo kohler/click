@@ -102,6 +102,16 @@ struct click_icmp_tstamp {
     uint32_t icmp_transmit;	/* transmit timestamp */
 };
 
+/* Path MTU Discovery header: ICMP_UNREACH_NEEDFRAG */
+struct click_icmp_needfrag { 
+    uint8_t icmp_type;		/* ICMP_UNREACH */
+    uint8_t icmp_code;		/* ICMP_UNREACH_NEEDFRAG */
+    uint16_t icmp_cksum;	/* 16 1's comp csum */
+    uint16_t padding;		/* should be zero */
+    uint16_t icmp_nextmtu;      /* Next-Hop MTU */
+    /* followed by original IP header and first 8 octets of data */
+};
+
 #define click_icmp_unreach	click_icmp
 #define click_icmp_sourcequench	click_icmp
 #define click_icmp_timxceed	click_icmp

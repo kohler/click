@@ -82,6 +82,7 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
   String bad_addr_str;
   _code = 0;
   _mtu = 576;
+  _pmtu = 0;
   if (cp_va_parse(conf, this, errh,
                   cpIPAddress, "source IP address", &_src_ip,
                   "ICMP.type", "ICMP error type", &_type,
@@ -91,6 +92,7 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "BADADDRS", cpIPAddressList, "bad IP addresses", &_bad_addrs,
 		  "MTU", cpUnsigned, "MTU", &_mtu,
+                  "PMTU", cpUnsigned, "Next-Hop MTU", &_pmtu,
 		  0) < 0)
     return -1;
   if (_type < 0 || _type > 255 || _code < 0 || _code > 255)
@@ -304,6 +306,8 @@ ICMPError::simple_action(Packet *p)
     ((click_icmp_paramprob *) icp)->icmp_pointer = ICMP_PARAMPROB_ANNO(p);
   if (_type == ICMP_REDIRECT)
     ((click_icmp_redirect *) icp)->icmp_gateway = p->dst_ip_anno();
+  if (_type == ICMP_UNREACH && _code == ICMP_UNREACH_NEEDFRAG)
+    ((click_icmp_needfrag *) icp)->icmp_nextmtu = htons(_pmtu);
 
   // copy packet contents
   xlen = q->end_data() - (uint8_t *)(icp + 1);

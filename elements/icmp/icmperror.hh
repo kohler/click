@@ -49,6 +49,12 @@ CLICK_DECLS
  * element pair hands the packet to a redirect ICMPError. RFC1812 says only
  * code 1 (`host') should be used.
  *
+ * If TYPE is 3 ('unreachable') and CODE is 4 ('needfrag'), produces
+ * an ICMP unreachable message containing the MTU of the next-hop
+ * interface, specified by the PMTU keyword. This error should be
+ * returned to the sender of an IP packet with the DF bit set, that is
+ * longer than the next-hop MTU, to support Path MTU Discovery.
+ *
  * If the input packet has a source route option, the output packet will also
  * have a source route option, containing the routers from the input source
  * route, reversed.
@@ -92,6 +98,7 @@ private:
   int _code;
   IPAddressList _bad_addrs;
   unsigned _mtu;
+  unsigned _pmtu;
 
   static bool is_error_type(int);
   bool unicast(struct in_addr) const;
