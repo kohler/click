@@ -146,7 +146,7 @@ TXFeedbackStats::cleanup_map(const EtherAddress &dest)
 }
 
 bool
-TXFeedbackStats::est_tx_count(const EtherAddress &dest, int &etx)
+TXFeedbackStats::est_tx_count(const EtherAddress &dest, unsigned &etx)
 {
   unsigned n_data, n_rts, n_pkts;
   if (!get_counts(dest, n_data, n_rts, n_pkts))

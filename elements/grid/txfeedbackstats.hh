@@ -79,7 +79,7 @@ class TXFeedbackStats : public Element {
   // data (more than MIN_PKTS packet to DEST in the last TAU
   // milliseconds), calculate ETX as a percentage (1 tx = 100), and
   // return true.  Else return false.
-  bool est_tx_count(const EtherAddress &dest, int &etx);
+  bool est_tx_count(const EtherAddress &dest, unsigned &etx);
 
 private:
   

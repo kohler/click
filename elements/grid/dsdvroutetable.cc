@@ -30,6 +30,7 @@
 #include <elements/grid/dsdvroutetable.hh>
 #include <elements/grid/linkstat.hh>
 #include <elements/grid/gridgatewayinfo.hh>
+#include <elements/grid/txfeedbackstats.hh>
 #include <elements/grid/timeutils.hh>
 CLICK_DECLS
 
@@ -148,7 +149,7 @@ DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
 
 DSDVRouteTable::DSDVRouteTable() : 
   GridGenericRouteTable(1, 1), _gw_info(0),
-  _link_stat(0), _log(0), 
+  _link_stat(0), _txfb(0), _log(0), 
   _seq_no(0), _bcast_count(0),
   _max_hops(3), _alpha(88), _wst0(6000),
   _last_periodic_update(0),
@@ -156,7 +157,7 @@ DSDVRouteTable::DSDVRouteTable() :
   _hello_timer(static_hello_hook, this),
   _log_dump_timer(static_log_dump_hook, this),
   _metric_type(MetricEstTxCount),
-  _est_type(EstByMeas)
+  _est_type(EstByMeas), _verbose(true)
 {
   MOD_INC_USE_COUNT;
 }
@@ -205,10 +206,13 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpEthernetAddress, "source Ethernet address", &_eth,
 			cpIPAddress, "source IP address", &_ip,
 			cpKeywords,
+			"VERBOSE", cpBool, "verbose warnings and messages?", &_verbose,
 			"GW", cpElement, "GridGatewayInfo element", &_gw_info,
 			"LS", cpElement, "LinkStat element", &_link_stat,
+			"TXFB", cpElement, "TXFeedbackStats element", &_txfb,
 			"MAX_HOPS", cpUnsigned, "max hops", &_max_hops,
 			"METRIC", cpString, "route metric", &metric,
+			"EST_TYPE", cpUnsigned, "link estimation type (1 or 3)", &_est_type,
 			"LOG", cpElement, "GridGenericLogger element", &_log,
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
 			"ALPHA", cpUnsigned, "alpha parameter for settling time computation, in percent (0 <= ALPHA <= 100)", &_alpha,
@@ -236,14 +240,25 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
   _metric_type = check_metric_type(metric);
   if (_metric_type < 0)
     return errh->error("Unknown metric type ``%s''", metric.cc());
+  if (_est_type != 1 && _est_type != 3)
+    return errh->error("link estimation type must be 1 or 3");
+    
 
   if (_log && _log->cast("GridGenericLogger") == 0) 
     return errh->error("LOG element is not a GridGenericLogger");
+  if (_gw_info && _gw_info->cast("GridGatewayInfo") == 0)
+    return errh->error("GW element is not a GridGatewayInfo");
+  if (_link_stat && _link_stat->cast("LinkStat") == 0)
+    return errh->error("LS element is not a LinkStat");
+  if (_txfb && _txfb->cast("TXFeedbackStats") == 0)
+    return errh->error("TXFB element is not a TXFeedbackStats");
 
-  if (_gw_info == 0)
+  if (_gw_info == 0 && _verbose)
     errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
-  if (_link_stat == 0)
+  if (_link_stat == 0 && _verbose)
     errh->warning("LinkStat elements not specified, some metrics may not work");
+  if (_txfb == 0 && _verbose)
+    errh->warning("TXFeedbackStats elements not specified, some metrics may not work");
 
   return res;
 }
@@ -304,6 +319,7 @@ bool
 DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rate)
 {
   switch (_est_type) {
+  case EstByTXFB:
   case EstByMeas: {
     if (!_link_stat) 
       return false;
@@ -343,6 +359,7 @@ bool
 DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rate)
 {
   switch (_est_type) {
+  case EstByTXFB:
   case EstByMeas: {
     if (!_link_stat)
       return false;
@@ -654,6 +671,17 @@ DSDVRouteTable::init_metric(RTEntry &r)
       if (r.metric.val < 100) 
 	click_chatter("DSDVRouteTable %s: init_metric WARNING: metric %d%% transmissions to %s is too low for one hop",
 		      id().cc(), r.metric.val, r.next_hop_ip.s().cc());
+      if (_est_type == EstByTXFB && _txfb) {
+	// possibly over-ride calculated etx with actual etx to this dest
+	unsigned etx;
+	bool res = _txfb->est_tx_count(r.dest_eth, etx);
+	if (res) {
+	  
+	}
+	else
+	  click_chatter("DSDVRouteTable %s: init_metric WARNING: TXFeedbackStats has no ETX for 1-hop neighbor %s",
+			id().cc(), r.dest_ip.s().cc());
+      }
     } 
     else 
       r.metric = _bad_metric;
@@ -1433,6 +1461,7 @@ DSDVRouteTable::write_est_type(const String &arg, Element *el,
     return errh->error("est_type must be unsigned");
   switch (est_type) {
   case EstByMeas:
+  case EstByTXFB:
     rt->_est_type = est_type; break;
   default:
     return errh->error("est_type %u is not valid", est_type);

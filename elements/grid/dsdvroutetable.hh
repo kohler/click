@@ -76,6 +76,10 @@ CLICK_DECLS
  * LinkStat element.  Required to use link metrics other than
  * hopcount.
  *
+ * =item TXFB
+ *
+ * TXFeedbackStats element.  Required to use 
+ *
  * =item MAX_HOPS
  * 
  * Unsigned integer.  The maximum number of hops for which a route
@@ -90,6 +94,13 @@ CLICK_DECLS
  * hop count is like hopcount, but is only valid if all links in the
  * route are good in both directions.  The default is to use
  * est_tx_count.
+ *
+ * =item EST_TYPE
+ *
+ * Unsigned int.  Link estimation type.  Allowable values are 1
+ * (estimate using broadcast probes combined with actual transmission
+ * count feedbach, requires TXFB and LS arguments), or 3 (estimate
+ * using broadcast probes only, require LS argument).  Defaults to 3.
  *
  * =item LOG
  *
@@ -110,6 +121,11 @@ CLICK_DECLS
  *
  * Unsigned integer.  Initial sequence number used in advertisements.
  * Defaults to 0.  Must be even.
+ *
+ * =item VERBOSE
+ *
+ * Boolean.  Be verbose about warning and status messages?  Defaults
+ * to true.
  *
  * =back
  *
@@ -180,6 +196,7 @@ CLICK_DECLS
 
 class GridGatewayInfo;
 class LinkStat;
+class TXFeedbackStats;
 
 class DSDVRouteTable : public GridGenericRouteTable {
 
@@ -258,6 +275,7 @@ private:
     void   check() const { 
       assert(_init); 
       assert((num_hops() > 0) != (seq_no() & 1)); 
+      assert((num_hops() != 1) || (dest_ip == next_hop_ip && dest_eth == next_hop_eth));
       // only check if last_seq_jiff has been set
       assert(last_seq_jiffies ? last_updated_jiffies >= last_seq_jiffies : true); 
     } 
@@ -397,6 +415,7 @@ private:
 
   class GridGatewayInfo *_gw_info;
   class LinkStat        *_link_stat;
+  class TXFeedbackStats *_txfb;
 
   /* binary logging */
   class GridGenericLogger  *_log;
@@ -531,6 +550,7 @@ private:
 
   // type of delivery rate estimator to use
   enum {  
+    EstByTXFB = 1,
     EstByMeas = 3
   };
 
@@ -553,6 +573,9 @@ private:
   bool _use_good_new_route;
 #endif
 #endif
+  
+  // be verbose about warnings and status messages?
+  bool _verbose;
 
   void dsdv_assert_(const char *, int, const char *) const;
 
