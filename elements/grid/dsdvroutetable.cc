@@ -121,6 +121,23 @@ DSDVRouteTable::get_all_entries(Vector<RouteEntry> &vec)
   }
 }
 
+unsigned
+DSDVRouteTable::get_number_direct_neigbors()
+{
+  Vector<RouteEntry> v;
+  
+  // delegate to avoid repeating all the pause/old seq logic
+  get_all_entries(v);
+
+  // assume all direct neighbors are one-hop neighbors, and count
+  // those instead
+  int num_nbrs = 0;
+  for (int i = 0; i < v.size(); i++)
+    if (v[i].num_hops() == 1 && v[i].good())
+      num_nbrs++;
+  return num_nbrs;
+}
+
 
 #if USE_OLD_SEQ
 bool

@@ -192,6 +192,7 @@ public:
   bool current_gateway(RouteEntry &entry);  
   bool get_one_entry(const IPAddress &dest_ip, RouteEntry &entry);
   void get_all_entries(Vector<RouteEntry> &vec);
+  unsigned get_number_direct_neigbors();
 
   DSDVRouteTable();
   ~DSDVRouteTable();

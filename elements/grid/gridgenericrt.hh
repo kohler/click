@@ -60,6 +60,22 @@ public:
   // append all the current route entries to vec.  You should clear
   // vec before calling this method, if desired.
   virtual void get_all_entries(Vector<RouteEntry> &vec) = 0;
+
+  // return the number of neighbors we can hear from directly.  This
+  // may be larger than (but never less than) the number of nodes with
+  // 1-hop route, because some neighbors aren't their own best next
+  // hop.
+  virtual unsigned get_number_direct_neigbors() {
+    Vector<RouteEntry> v;
+    get_all_entries(v);
+    
+    // assume all direct neighbors are one-hop neighbors
+    int num_nbrs = 0;
+    for (int i = 0; i < v.size(); i++)
+      if (v[i].num_hops() == 1 && v[i].good())
+	num_nbrs++;
+    return num_nbrs;
+  }
   
   virtual ~GridGenericRouteTable() { }
 };
