@@ -854,9 +854,8 @@ calls to the base handler.
 
 Click comes with three error veneers: one for adding context, one for
 prepending text to every line, and one for supplying missing landmarks.
-It is easy to write others; see @ref{How Error Messages Are
-Constructed}, for details. The end of this section demonstrates how
-error veneers are used in practice.
+It is easy to write others; see @ref{Writing Error Handlers}, for
+details.
 
 @deftypeop Constructor ContextErrorHandler {} ContextErrorHandler (ErrorHandler *@var{base_errh}, const String &@var{context}, const String &@var{indent} = "@w{@ @ }")
 Constructs a @code{ContextErrorHandler} with @var{base_errh} as base.
@@ -926,6 +925,10 @@ f(&errh3);
     @print{} here: ** warning: Third line
 @end example
 
+@noindent
+Note that the indentation @samp{**@ } is printed after the landmark.
+This often looks better than the alternative.
+
 Of course, an error veneer can take another error veneer as its ``base
 handler'', leading to cumulative effects.
 
@@ -947,7 +950,12 @@ functions. The first, @code{make_text}, parses a format string and
 argument list into a single @code{String}. This is passed to the second
 function, @code{decorate_text}, which may transform the string. The
 final function, @code{handle_text}, prints the resulting error message.
-This three-part structure makes @code{ErrorHandler} easy to extend.
+This structure makes @code{ErrorHandler} easy to extend. To write a new
+basic @code{ErrorHandler}, you will need to override just
+@code{handle_text} and the counting functions (@code{nwarnings},
+@code{nerrors}, and @code{reset_counts}). The @code{ErrorVeneer} helper
+class, described below, lets you override just @code{decorate_text} when
+writing an error veneer.
 
 @deftypemethod ErrorHandler {virtual String} make_text (Seriousness @var{s}, const char *@var{format}, va_list @var{val})
 Parses the format string @var{format} with arguments from @var{val},
@@ -990,11 +998,17 @@ variable, @code{ErrorHandler *_errh}, is the base handler.
 @code{ErrorVeneer} overrides all the relevant virtual
 functions---@code{nwarnings}, @code{nerrors}, @code{reset_counts},
 @code{make_text}, @code{decorate_text}, and @code{handle_text}. Its
-versions simply delegate to the corresponding functions on @code{_errh}.
+versions simply delegate to the corresponding methods on @code{_errh}.
 An error veneer designer will generally subclass @code{ErrorVeneer}
 rather than @code{ErrorHandler}; then she will override only the methods
 she cares about (usually @code{decorate_text}), relying on
 @code{ErrorVeneer}'s default implementations for the rest.
+
+@deftypeop Constructor ErrorVeneer {} ErrorVeneer (ErrorHandler *@var{base_errh})
+Constructs an @code{ErrorVeneer} helper class with @var{base_errh} as
+its base error handler. This constructor simply sets @code{_errh =
+base_errh}.
+@end deftypeop
 
 
 @node Element Initialization, Tasks, Basics, Top
