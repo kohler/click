@@ -22,7 +22,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
-GridLocationInfo::GridLocationInfo() : _seq_no(0)
+GridLocationInfo::GridLocationInfo() : _seq_no(0), _logging_timer(logging_hook, this)
 {
   MOD_INC_USE_COUNT;
   _move = 0;
@@ -42,11 +42,30 @@ GridLocationInfo::~GridLocationInfo()
   MOD_DEC_USE_COUNT;
 }
 
+void
+GridLocationInfo::logging_hook (Timer *, void *thunk) {
+  // extended logging
+  GridLocationInfo *l = (GridLocationInfo *) thunk;
+  grid_location loc = l->get_current_location();
+  
+  const int BUFSZ = 255;
+  char buf[BUFSZ];
+  int res = snprintf(buf, BUFSZ, "loc %f %f\n\n", loc.lat(), loc.lon());
+  if (res < 0) {
+    click_chatter("LocationInfo read handler buffer too small");
+    return;
+  }
+
+  l->_extended_logging_errh->message(buf);
+  l->_logging_timer.schedule_after_ms (1000);
+}
+
 int
 GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 {
   int do_move = 0;
   int lat_int, lon_int;
+  String chan("routelog");
   int res = cp_va_parse(conf, this, errh,
 			// 5 fractional digits ~= 1 metre precision at the equator
 			cpReal10, "latitude (decimal degrees)", 5, &lat_int,
@@ -56,6 +75,7 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"LOC_GOOD", cpBool, "Is our location information valid?", &_loc_good,
 			"ERR_RADIUS", cpUnsignedShort, "Location error radius, in metres", &_loc_err,
+			"LOGCHANNEL", cpString, "log channel name", &chan,
 			0);
   float lat = ((float) lat_int) / 100000.0f;
   float lon = ((float) lon_int) / 100000.0f; 
@@ -67,6 +87,10 @@ GridLocationInfo::read_args(const Vector<String> &conf, ErrorHandler *errh)
   _lat0 = lat;
   _lon0 = lon;
   _move = do_move;
+
+  _extended_logging_errh = router()->chatter_channel(chan);
+  _logging_timer.initialize(this);
+  _logging_timer.schedule_after_ms(100);
 
   return res;
 }

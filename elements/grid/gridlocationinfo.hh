@@ -56,6 +56,7 @@
 
 #include <click/element.hh>
 #include "grid.hh"
+#include <click/timer.hh>
 
 class GridLocationInfo : public Element {
   
@@ -101,6 +102,10 @@ protected:
   double xlon();
   double uniform();
   virtual void choose_new_leg(double *, double *, double *);
+
+  ErrorHandler *_extended_logging_errh;
+  Timer _logging_timer;
+  static void logging_hook(Timer *, void *);
 
 };
 
