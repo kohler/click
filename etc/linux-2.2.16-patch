@@ -501,7 +501,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Tue Jul 18 14:53:15 2000
-+++ drivers/net/tulip.c	Fri Jul 21 14:14:52 2000
++++ drivers/net/tulip.c	Fri Jul 21 23:52:06 2000
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
@@ -571,7 +571,7 @@ Index: drivers/net/tulip.c
  		tp->rx_skbuff[i] = skb;
  		if (skb == NULL)
  			break;
-@@ -2537,21 +2553,43 @@
+@@ -2537,22 +2553,35 @@
  	tp->tx_ring[i-1].buffer2 = virt_to_le32desc(&tp->tx_ring[0]);
  }
  
@@ -608,19 +608,12 @@ Index: drivers/net/tulip.c
 +		    tulip_tx_timeout(dev);
  		return 1;
  	}
+-
 +	
-+	/* work around potential collision between tulip_interrupt cleaning the tx
-+	 * ring on one CPU and hard_start_xmit running on another: tbusy bit may
-+	 * be cleared after hard_start_xmit even though the tx ring is full. 
-+	 */
-+	if (tp->cur_tx - tp->dirty_tx >= TX_RING_SIZE - 2) {
-+	    tp->tx_full = 1;
-+	    return 1;
-+	}
- 
  	/* Caution: the write order is important here, set the field
  	   with the ownership bits last. */
-@@ -2576,18 +2614,43 @@
+ 
+@@ -2576,18 +2605,43 @@
  		flag = 0xe0000000 | DESC_RING_WRAP;
  
  	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
@@ -671,7 +664,7 @@ Index: drivers/net/tulip.c
  /* The interrupt handler does all of the Rx thread work and cleans up
     after the Tx thread. */
  static void tulip_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
-@@ -2597,13 +2660,17 @@
+@@ -2597,13 +2651,17 @@
  	long ioaddr = dev->base_addr;
  	int csr5;
  	int entry;
@@ -690,7 +683,7 @@ Index: drivers/net/tulip.c
  
  #if defined(__i386__) && defined(SMP_CHECK)
  	if (test_and_set_bit(0, (void*)&dev->interrupt)) {
-@@ -2622,25 +2689,51 @@
+@@ -2622,25 +2680,51 @@
  #endif
  
  	tp->nir++;
@@ -749,7 +742,7 @@ Index: drivers/net/tulip.c
  			unsigned int dirty_tx;
  
  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-@@ -2705,14 +2798,15 @@
+@@ -2705,14 +2789,15 @@
  			}
  
  			tp->dirty_tx = dirty_tx;
@@ -773,7 +766,7 @@ Index: drivers/net/tulip.c
  		}
  
  		/* Log errors. */
-@@ -2731,8 +2825,11 @@
+@@ -2731,8 +2816,11 @@
  				outl(0, ioaddr + CSR1);
  			}
  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
@@ -786,7 +779,7 @@ Index: drivers/net/tulip.c
  				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
  			}
  			if (csr5 & (TPLnkPass | TPLnkFail | 0x08000000)) {
-@@ -2772,7 +2869,9 @@
+@@ -2772,7 +2860,9 @@
  		}
  	} while (1);
  
@@ -797,7 +790,7 @@ Index: drivers/net/tulip.c
  
  	/* check if we card is in suspend mode */
  	entry = tp->dirty_rx % RX_RING_SIZE;
-@@ -2790,14 +2889,23 @@
+@@ -2790,14 +2880,23 @@
  		}
  	}
  
@@ -821,7 +814,7 @@ Index: drivers/net/tulip.c
  #if defined(__i386__)
  	clear_bit(0, (void*)&dev->interrupt);
  #else
-@@ -2916,6 +3024,9 @@
+@@ -2916,6 +3015,9 @@
  #endif
  		}
  		received++;
@@ -831,7 +824,7 @@ Index: drivers/net/tulip.c
  		entry = (++tp->cur_rx) % RX_RING_SIZE;
  	}
  
-@@ -2943,8 +3054,12 @@
+@@ -2943,8 +3045,12 @@
  	if (tp->chip_id == DC21040)
  		outl(0x00000004, ioaddr + CSR13);
  
@@ -846,7 +839,7 @@ Index: drivers/net/tulip.c
  
  	del_timer(&tp->timer);
  
-@@ -2987,9 +3102,14 @@
+@@ -2987,9 +3093,14 @@
  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
  	long ioaddr = dev->base_addr;
  
@@ -864,7 +857,7 @@ Index: drivers/net/tulip.c
  	return &tp->stats;
  }
  
-@@ -3186,7 +3306,7 @@
+@@ -3186,7 +3297,7 @@
  			/* Same setup recently queued, we need not add it. */
  		} else {
  			unsigned long flags;
@@ -873,7 +866,7 @@ Index: drivers/net/tulip.c
  
  			save_flags(flags); cli();
  			entry = tp->cur_tx++ % TX_RING_SIZE;
-@@ -3197,7 +3317,12 @@
+@@ -3197,7 +3308,12 @@
  				tp->tx_ring[entry].length =
  					(entry == TX_RING_SIZE-1) ? cpu_to_le32(DESC_RING_WRAP) : 0;
  				tp->tx_ring[entry].buffer1 = 0;
@@ -886,7 +879,7 @@ Index: drivers/net/tulip.c
  				entry = tp->cur_tx++ % TX_RING_SIZE;
  			}
  
-@@ -3212,6 +3337,10 @@
+@@ -3212,6 +3328,10 @@
  				set_bit(0, (void*)&dev->tbusy);
  				tp->tx_full = 1;
  			}
@@ -897,7 +890,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3356,3 +3485,355 @@
+@@ -3356,3 +3476,335 @@
   *  tab-width: 4
   * End:
   */
@@ -917,16 +910,6 @@ Index: drivers/net/tulip.c
 + * dev->tbusy was used by Linux's original tulip driver to synchronize the
 + * send pkt routine (tulip_start_xmit) and timer based send. I am using it
 + * also to synchronize tx queueing.
-+ *
-+ * Possible race condition on SMP: if tx_clean is called when hard_start_xmit
-+ * is called by linux, we may get into a situation where tx_clean executes,
-+ * cleans the ring, but before it has a chance to set tbusy and tx_full to 0,
-+ * hard_start_xmit starts on another processor and fills up the tx ring. it
-+ * leaves tbusy at 1. now tx_clean finishes execution and clears tbusy, even
-+ * though it should be left at 1. 
-+ *
-+ * The current solution is to double verify, in tulip_start_xmit and tx_queue,
-+ * that tx_full should be 0 before we queue a packet.
 + */
 +
 +/* set to 0 if don't want to do recycle, otherwise, 128 is a good number */
@@ -1152,16 +1135,6 @@ Index: drivers/net/tulip.c
 +		return 1;
 +	}
 +
-+	/* work around potential collision between tulip_interrupt cleaning the tx
-+	 * ring on one CPU and hard_start_xmit running on another: tbusy bit may
-+	 * be cleared after hard_start_xmit even though the tx ring is full. 
-+	 */
-+	if (tp->cur_tx - tp->dirty_tx >= TX_RING_SIZE - 2) {
-+	    /* printk("tulip_tx_queue: reject because tbusy\n"); */
-+	    tp->tx_full = 1;
-+	    return 1;
-+	}
-+
 +	/* Caution: the write order is important here, set the base address
 +	 * with the "ownership" bits last. */
 +
@@ -1256,7 +1229,7 @@ Index: drivers/net/tulip.c
 
 Index: drivers/net/acenic.c
 --- drivers/net/acenic.c.orig	Fri Jul 21 10:59:34 2000
-+++ drivers/net/acenic.c	Fri Jul 21 14:59:05 2000
++++ drivers/net/acenic.c	Sat Jul 22 00:00:45 2000
 @@ -396,6 +396,14 @@
  
  static int probed __initdata = 0;
@@ -1489,7 +1462,7 @@ Index: drivers/net/acenic.c
  	unsigned long addr;
 -	u32 idx, flagsize;
 +	u32 flagsize;
- 
++
 +	ap->skb->tx_skbuff[idx].skb = skb;
 +	ap->skb->tx_skbuff[idx].mapping =
 +		pci_map_single(ap->pdev, skb->data, skb->len,
@@ -1503,7 +1476,7 @@ Index: drivers/net/acenic.c
 +	writel(flagsize, &ap->tx_ring[idx].flagsize);
 +	wmb();
 +	idx = (idx + 1) % TX_RING_ENTRIES;
-+
+ 
 +	ap->tx_prd = idx;
 +	ace_set_txprd(regs, ap, idx);
 +	return idx;
@@ -1555,7 +1528,7 @@ Index: drivers/net/acenic.c
  
  	/*
  	 * tx_csm is set by the NIC whereas we set tx_ret_csm which
-@@ -2966,9 +3025,182 @@
+@@ -2966,9 +3025,190 @@
  	goto out;
  }
  
@@ -1617,9 +1590,17 @@ Index: drivers/net/acenic.c
 +	u32 txcsm = *ap->tx_csm; 
 +
 +	ace_service_tx(dev);
-+	
-+	clear_bit(0, (void*)&ap->tx_full);
-+	clear_bit(0, (void*)&dev->tbusy);
++
++	/* only clear the tbusy bit if tx_full is set, so we don't
++	 * accidentally allow two start_xmit or tx_queue to go on w/o
++	 * synchronization. if tx_full is set, then neither start_xmit nor
++	 * tx_queue is executing, or one is executing but the producer pointer
++	 * has already been updated.
++	 */
++	if (ap->tx_full) {
++		clear_bit(0, (void*)&ap->tx_full);
++		clear_bit(0, (void*)&dev->tbusy);
++	}
 +	ap->tx_ret_csm = txcsm;
 +	wmb();
 +	if (ap->tx_prd < ap->tx_ret_csm) 

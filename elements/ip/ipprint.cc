@@ -104,6 +104,7 @@ IPPrint::simple_action(Packet *p)
     if (ackp)
       s += " ack " + String(ack);
     s += " win " + String(win);
+    s += " len " + String(ntohs(iph->ip_len)-iph->ip_hl*4-tcph->th_off*4);
     break;
   }
   case IP_PROTO_UDP: {
