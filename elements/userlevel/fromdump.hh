@@ -68,6 +68,9 @@ By default, `tcpdump -w FILENAME' dumps only the first 68 bytes of
 each packet. You probably want to run `tcpdump -w FILENAME -s 2000' or some
 such.
 
+FromDump sets packets' extra length annotations to any additional length
+recorded in the dump.
+
 =h sampling_prob read-only
 
 Returns the sampling probability (see the SAMPLE keyword argument).
@@ -75,11 +78,6 @@ Returns the sampling probability (see the SAMPLE keyword argument).
 =h active read/write
 
 Value is a Boolean.
-
-=n
-
-FromDump sets packets' extra length annotations to any additional length
-recorded in the dump.
 
 =a
 
