@@ -6,12 +6,31 @@
 
 /*
  * =c
- * PrintGrid([TAG])
+ * PrintGrid([TAG] [, KEYWORDS])
  * =s Grid
  * =d
  * Assumes input packets have Ethernet headers enclosing Grid
  * packets, as described by grid_hdr in grid.hh. Prints out
  * a description of the Grid payload.
+ *
+ * Keyword arguments are:
+ *
+ * =over 8
+ *
+ * =item SHOW_ROUTES
+ *
+ * Boolean.  Default false.  If true, print all the entries in each route advertisement.
+ *
+ * =item VERBOSE
+ *
+ * Boolean.  Default true.  If false, leave out some details such as location info, etc.
+ *
+ * =item TIMESTAMP
+ *
+ * Boolean.  Default false.  If true, print the packet timestamp.
+ * 
+ * =a
+ * Print
  */
 
 class PrintGrid : public Element {
@@ -34,6 +53,11 @@ class PrintGrid : public Element {
 private:
   String encap_to_string(grid_nbr_encap *);
   
+  bool _print_routes;
+  String get_entries(grid_hello *);
+
+  bool _verbose;  
+  bool _timestamp;
 };
 
 #endif

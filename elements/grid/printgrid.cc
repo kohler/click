@@ -27,7 +27,7 @@
 #include "grid.hh"
 
 PrintGrid::PrintGrid()
-  : Element(1, 1)
+  : Element(1, 1), _print_routes(false), _verbose(true)
 {
   MOD_INC_USE_COUNT;
   _label = "";
@@ -50,6 +50,10 @@ PrintGrid::configure(Vector<String> &conf, ErrorHandler* errh)
   if (cp_va_parse(conf, this, errh,
                   cpOptional,
 		  cpString, "label", &_label,
+		  cpKeywords,
+		  "SHOW_ROUTES", cpBool, "print route entries in advertisments?", &_print_routes,
+		  "VERBOSE", cpBool, "show more detail?", &_verbose,
+		  "TIMESTAMP", cpBool, "print packet timestamps?", &_timestamp,
 		  cpEnd) < 0)
     return -1;
   return(0);
@@ -61,14 +65,16 @@ PrintGrid::encap_to_string(grid_nbr_encap *nb)
   String line;
   line += "hops_travelled=" + String((unsigned int) nb->hops_travelled) + " ";
   line += "dst=" + IPAddress(nb->dst_ip).s() + " ";
-  if (nb->dst_loc_good) {
-    char buf[50];
-    snprintf(buf, 50, "dst_loc=%s ", nb->dst_loc.s().cc());
-    line += buf;
-    line += "dst_loc_err=" + String(ntohs(nb->dst_loc_err)) + " ";
+  if (_verbose) {
+    if (nb->dst_loc_good) {
+      char buf[50];
+      snprintf(buf, 50, "dst_loc=%s ", nb->dst_loc.s().cc());
+      line += buf;
+      line += "dst_loc_err=" + String(ntohs(nb->dst_loc_err)) + " ";
+    }
+    else 
+      line += "bad-dst-loc";
   }
-  else 
-    line += "bad-dst-loc";
   return line;
 }
 
@@ -83,51 +89,58 @@ PrintGrid::simple_action(Packet *p)
 		  _label.cc());
     return p;
   }
-  /*  EtherAddress deth = EtherAddress(eh->ether_dhost); */
-#if 0
-  EtherAddress seth = EtherAddress(eh->ether_shost);
-#endif
 
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-
-#if 0
-  IPAddress xip = IPAddress((unsigned) gh->ip);
-#endif
 
   String type = grid_hdr::type_string(gh->type);
 
   String line("PrintGrid ");
-  line += id() + " ";
+  if (_verbose)
+    line += id() + " ";
   if (_label[0] != 0)
     line += _label + " ";
+  if (_timestamp) {
+    char buf[30];
+    snprintf(buf, sizeof(buf), "%ld.%06ld ",
+	     p->timestamp_anno().tv_sec,
+	     p->timestamp_anno().tv_usec);
+    line += buf;
+  }
+
   line += ": " + type + " ";
-  line += "hdr_len=" + String((unsigned int) gh->hdr_len) + " ";
+  if (_verbose)
+    line += "hdr_len=" + String((unsigned int) gh->hdr_len) + " ";
 
   // packet originator info
   line += "ip=" + IPAddress(gh->ip).s() + " ";
-  if (gh->loc_good) {
-    char buf[50];
-    snprintf(buf, 50, "loc=%s ", gh->loc.s().cc());
-    line += buf;
-    line += "loc_err=" + String(ntohs(gh->loc_err)) + " ";
+  if (_verbose) {
+    if (gh->loc_good) {
+      char buf[50];
+      snprintf(buf, 50, "loc=%s ", gh->loc.s().cc());
+      line += buf;
+      line += "loc_err=" + String(ntohs(gh->loc_err)) + " ";
+    }
+    else
+      line += "bad-loc ";
+    line += "loc_seq_no=" + String(ntohl(gh->loc_seq_no)) + " ";
   }
-  else
-    line += "bad-loc ";
-  line += "loc_seq_no=" + String(ntohl(gh->loc_seq_no)) + " ";
   
   // packet transmitter info
   line += "tx_ip=" + IPAddress(gh->tx_ip).s() + " ";
-  if (gh->tx_loc_good) {
-    char buf[50];
-    snprintf(buf, 50, "tx_loc=%s ", gh->tx_loc.s().cc());
-    line += buf;
-    line += "tx_loc_err=" + String(ntohs(gh->tx_loc_err)) + " ";
+  if (_verbose) {
+    if (gh->tx_loc_good) {
+      char buf[50];
+      snprintf(buf, 50, "tx_loc=%s ", gh->tx_loc.s().cc());
+      line += buf;
+      line += "tx_loc_err=" + String(ntohs(gh->tx_loc_err)) + " ";
+    }
+    else
+      line += "bad-tx-loc ";
+    line += "tx_loc_seq_no=" + String(ntohl(gh->tx_loc_seq_no)) + " ";
   }
-  else
-    line += "bad-tx-loc ";
-  line += "tx_loc_seq_no=" + String(ntohl(gh->tx_loc_seq_no)) + " ";
 
-  line += "pkt_len=" + String(ntohs(gh->total_len)) + " ";
+  if (_verbose)
+    line += "pkt_len=" + String(ntohs(gh->total_len)) + " ";
 
   line += "** ";
 
@@ -142,8 +155,11 @@ PrintGrid::simple_action(Packet *p)
   case grid_hdr::GRID_LR_HELLO:
     gh2 = (grid_hello *) (gh + 1);
     line += "seq_no=" + String(ntohl(gh2->seq_no)) + " ";
-    line += "age=" + String(ntohl(gh2->age)) + " ";
+    if (_verbose)
+      line += "age=" + String(ntohl(gh2->age)) + " ";
     line += "num_nbrs=" + String((unsigned int) gh2->num_nbrs);
+    if (_print_routes)
+      line += get_entries(gh2);
     break;
 
   case grid_hdr::GRID_NBR_ENCAP:
@@ -178,43 +194,46 @@ PrintGrid::simple_action(Packet *p)
     line += "Don't know how to print this header";
   }
   
-#if 0
-  if(gh->type == grid_hdr) {
-    grid_hello *h = (grid_hello *) (gh + 1);
-    grid_nbr_entry *na = (grid_nbr_entry *) (h + 1);
-    buf = new char [h->num_nbrs * 100 + 1];
-    assert(buf);
-    snprintf(buf, h->num_nbrs*100 + 1, "%d ", h->num_nbrs);
-    int i;
-    for(i = 0; i < h->num_nbrs; i++){
-      char tmp[100];
-      snprintf(tmp, sizeof(buf), "%s %s %d %f %f ",
-	       IPAddress(na[i].ip).s().cc(),
-	       IPAddress(na[i].next_hop_ip).s().cc(),
-	       na[i].num_hops,
-	       na[i].loc.lat(),
-	       na[i].loc.lon());
-      strcat(buf, tmp);
-    }
-  }
-
-  click_chatter("PrintGrid%s%s : %s %s %s %.4f %.4f %s",
-                _label.cc()[0] ? " " : "",
-                _label.cc(),
-                seth.s().cc(),
-                type.cc(),
-                xip.s().cc(),
-                gh->loc.lat(),
-                gh->loc.lon(),
-                buf ? buf : "");
-  
-  if(buf)
-    delete buf;
-#endif;
-
   click_chatter("%s", line.cc());
 
   return p;
+}
+
+
+String
+PrintGrid::get_entries(grid_hello *gh)
+{
+  String ret;
+  char *cp = (char *) (gh + 1);
+  for (int i = 0; i < gh->num_nbrs; i++) {
+    grid_nbr_entry *na = (grid_nbr_entry *) (cp + gh->nbr_entry_sz * i);
+    char buf[1024];
+    snprintf(buf, sizeof(buf), "\n\tip=%s next=%s hops=%d seq=%lu ",
+	     IPAddress(na->ip).s().cc(),
+	     IPAddress(na->next_hop_ip).s().cc(),
+	     (int) na->num_hops,
+	     ntohl(na->seq_no));
+    ret += buf;
+
+    if (na->metric_valid) {
+      snprintf(buf, sizeof(buf), "metric=%lu", ntohl(na->metric));
+      ret += buf;
+    }
+    else
+      ret += "bad-metric";
+
+    if (_verbose) {
+      ret += String(" gw=") + (na->is_gateway ? "yes" : "no");
+      if (na->loc_good) {
+	snprintf(buf, sizeof(buf), " loc=%s loc_err=%us",
+		 na->loc.s().cc(), ntohs(na->loc_err));
+	ret += buf;
+      }
+      else
+	ret += " bad-loc";
+    }
+  }
+  return ret;
 }
 
 ELEMENT_REQUIRES(userlevel)
