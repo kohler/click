@@ -132,7 +132,7 @@ Checks whether a I<handler> exists and is writable.
 
 Call an LLRPC I<llrpc> and return the results. I<Llrpc> should have the form
 C<I<element>#I<hexnumber>>. The C<I<hexnumber>> is the LLRPC number, from
-C<E<lt>click/llrpc.hE<gt>>, in network format. Translate C<CLICK_LLRPC>
+C<E<lt>click/llrpc.hE<gt>>, in hexadecimal network format. Translate C<CLICK_LLRPC>
 constants to network format by calling
 C<CLICK_LLRPC_HTON(CLICK_LLRPC_...)>. If I<n> is given, then the I<n> bytes
 immediately following (the CRLF that terminates) the LLRPC line are passed in
