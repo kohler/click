@@ -106,7 +106,7 @@ int
 IPAddrRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   if (conf.size() == 0)
-    return errh->error("too few arguments; expected `INPUTSPEC, ...'");
+    return errh->error("too few arguments; expected 'INPUTSPEC, ...'");
   set_ninputs(conf.size());
 
   int before = errh->nerrors();

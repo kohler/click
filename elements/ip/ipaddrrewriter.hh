@@ -47,14 +47,17 @@ These INPUTSPECs behave like those in IPRewriter.
 
 Packets with no existing mapping are rewritten according to the given pattern.
 IPAddrRewriter patterns are like IPRewriter patterns minus the source and
-destination ports. Additionally, the source address can be a range of IP
-addresses, SADDR-SADDR2, in which case a new IP address is chosen for each
-unique source address. The two addresses SADDR and SADDR2 must lie within a
-single /16 network.
+destination ports. The source address can also be a range of IP addresses,
+SADDR-SADDR2, in which case a new IP address is chosen for each unique source
+address. The two addresses SADDR and SADDR2 must lie within a single /16
+network.
 
-A new mapping is installed. Packets with source address like the input
-packet's are rewritten and sent to FOUTPUT; packets sent to the input packet's
-source address are rewritten and sent to ROUTPUT.
+Packets with source address like the input packet's are rewritten and sent to
+FOUTPUT; packets sent to the resulting source address are rewritten and sent
+to ROUTPUT.  For example, consider the INPUTSPEC 'pattern 3.0.0.1-3.0.255.254
+- 0 1'.  Then a packet from 1.0.0.1 might get rewritten to have source address
+3.0.0.3; after which packets sent to 3.0.0.3 would get rewritten to have
+destination address 1.0.0.1.
 
 =item `pattern PATNAME FOUTPUT ROUTPUT'
 
@@ -77,8 +80,8 @@ Returns the number of currently installed mappings.
 Returns a human-readable description of the patterns associated with this
 IPAddrRewriter.
 
-=a TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper, FTPPortMapper,
-ICMPRewriter, ICMPPingRewriter */
+=a IPRewriter, TCPRewriter, IPRewriterPatterns, RoundRobinIPMapper,
+FTPPortMapper, ICMPRewriter, ICMPPingRewriter */
 
 class IPAddrRewriter : public IPRw { public:
 
