@@ -164,6 +164,7 @@ TrieIPLookup::build_exists_middle(const TrieNode& parent, const TrieNode& child)
         }
     }
     assert(false);
+    return 0;
 }
 
 // returns whether there exists a middle
