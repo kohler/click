@@ -368,7 +368,7 @@ match_config(const String &pat, const String &conf,
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
-  { "help", 'h', HELP_OPT, 0, 0 },
+  { "help", 0, HELP_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "patterns", 'p', PATTERNS_OPT, Clp_ArgString, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
@@ -400,7 +400,7 @@ Options:\n\
                                 more than once.\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -o, --output FILE             Write output to FILE.\n\
-  -h, --help                    Print this message and exit.\n\
+      --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);

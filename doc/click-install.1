@@ -1,0 +1,91 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-INSTALL 1 "27/Nov/1999" "Version \*V"
+.SH NAME
+click-install \- installs a router configuration into the Click kernel module
+'
+.SH SYNOPSIS
+.B click-install
+.I \%[options]
+.I \%[router\-file]
+'
+.SH DESCRIPTION
+The
+.B click-install
+tool is a convenience program that installs a Click router configuration
+into the current Linux kernel. It reads a router configuration file in the
+.M click 5
+language; installs the
+.M click.o 8
+kernel module if necessary; installs any dynamically loadable packages
+required by the router configuration; installs the router configuration
+itself by writing it to /proc/click/config; reports any errors to standard
+error; and uninstalls any unused packages.
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-install
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read the router configuration to transform from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click 5 ,
+.M click.o 8
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

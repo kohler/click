@@ -7,6 +7,7 @@ includedir=@includedir@
 # determine mode
 target=
 package=NONE
+cflags=
 while true; do
   bad=x
   case $1 in
@@ -16,6 +17,8 @@ while true; do
       target=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
     --p=*|--pa=*|--pac=*|--pack=*|--packa=*|--packag=*|--package=*)
       package=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
+    -*)
+      cflags="$cflags '$1'"; shift 1;;
     *)
       bad=;;
   esac
@@ -23,22 +26,22 @@ while true; do
 done
 
 case $target in
-  m|mo|mod|modu|modul|module)
+  k|ke|ker|kern|kerne|kernel|m|mo|mod|modu|modul|module)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
     iincludes="-I${includedir} -I/usr/src/linux/include"
     icxxflags="@CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti"
-    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} -c"
+    command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} -c $cflags"
     target=module;;
   u|us|use|user)
     idefs="@DEFS@ -DCLICK_USERLEVEL"
     iincludes="-I${includedir}"
     icxxflags="@CXXFLAGS@ -fno-exceptions -fno-rtti"
-    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} -c"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} -c $cflags"
     target=user;;
   t|to|too|tool)
     target=tool;;
   *)
-    echo "click-compile: acceptable targets are \`module', \`user', and \`tool'" 1>&2; exit 1;;
+    echo "click-compile: acceptable targets are \`kernel', \`user', and \`tool'" 1>&2; exit 1;;
 esac
 
 # do stuff
@@ -66,6 +69,11 @@ EOF
     eval $command || (rm -f $vfile.*; exit 1)
     rm -f $vfile.*
     exit 0 
+  elif test $target = user; then
+    command="ld -shared -o $package $files"
+    echo $command 1>&2
+    eval $command
+    exit 0
   fi
 else
   echo $command "$@" 1>&2

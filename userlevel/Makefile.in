@@ -57,7 +57,7 @@ DEFS = @DEFS@
 INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
 	-I$(top_srcdir)/lib @PCAP_HEADER_PATH@
 LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
-LIBS = @LIBS@ @PCAP_LIBRARY@
+LIBS = @LIBS@ @PCAP_LIBRARY@ @DL_LIBRARY@
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -69,7 +69,7 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 all: click
 
 click: Makefile $(OBJS)
-	$(CXXLINK) $(OBJS) $(LIBS)
+	$(CXXLINK) -rdynamic $(OBJS) $(LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \

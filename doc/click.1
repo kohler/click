@@ -1,0 +1,165 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK 1 "27/Nov/1999" "Version \*V"
+.SH NAME
+click \- runs router configurations at user level
+'
+.SH SYNOPSIS
+.B click
+.I \%[options]
+.I \%[router\-file]
+'
+.SH DESCRIPTION
+The Click modular router can be compiled as a user-level program. It reads
+a router configuration file, sets up the router according to that file, and
+generally runs until interrupted. The router configuration is written in
+the Click language (see 
+.M click 5 ),
+and can contain dynamically loadable code, which
+.B click
+will link against before installing the configuration.
+.PP
+The
+.B click
+program can read and write packets from the network using Berkeley Packet
+Filters\*Esee
+.M FromBPF n
+and
+.M ToBPF n .
+It can also read and write BPF dump files, such as those created by
+.M tcpdump 1 "\*Esee"
+.M FromDump n
+and
+.M ToDump n .
+The
+.M InfiniteSource n
+element, and others like it, may be useful for testing configurations
+without affecting the network.
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.PD 0
+.BI \-f " file"
+.TP
+.BI \-\-file " file"
+Read the router configuration from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the router configuration to
+.IR file
+with all compound elements removed, and without any additional archive
+members.
+'
+.Sp
+.TP
+.BI \-h " element\fR.\fPhandler"
+.TP
+.BI \-\-handler " element\fR.\fPhandler"
+After running the driver, call
+.IR element 's
+read handler named
+.IR handler
+and print the result to standard output. Each element has several generic
+handlers\*Efor example,
+.BR config
+returns the element's configuration string and
+.BR class
+returns the element's class name. Some elements have additional handlers;
+.M Counter n ,
+for example, has
+.BR count " and " rate
+handlers that return the number of packets arrived and the recent arrival
+rate in packets per second. See
+.M click.o 8
+for more information on generic handlers, and the element documentation for
+more information on element-specific handlers.
+'
+.Sp
+.TP 5
+.BR \-q ", " \-\-quit
+Do not run the driver. This option can be used to check a configuration for
+errors, or to check handler results (with the
+.B \-\-handler
+option) without running the configuration.
+'
+.Sp
+.TP 5
+.BR \-t ", " \-\-time
+Print the time it took to run the driver.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "BUGS"
+If you get an unaligned access error, try running your configuration
+through
+.M click-align 1
+before installing it.
+'
+.SH "SEE ALSO"
+.M click-align 1 ,
+.M click 5 ,
+.M click.o 8 ,
+.M FromBPF n ,
+.M ToBPF n ,
+.M FromDump n ,
+.M ToDump n ,
+.M tcpdump 1 ,
+.M InfiniteSource n
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

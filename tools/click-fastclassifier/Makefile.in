@@ -12,7 +12,6 @@ sbindir = @sbindir@
 libdir = @libdir@
 mandir = @mandir@
 localstatedir = @localstatedir@
-packagesdir = @packagesdir@
 
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)/tools/lib:$(top_srcdir)/lib
 
@@ -46,7 +45,7 @@ CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
 CXXFLAGS = @CXXFLAGS@ -fno-exceptions -fno-rtti
 
-DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"' -DCLICK_PACKAGESDIR='"$(packagesdir)"' \
+DEFS = @DEFS@ -DCLICK_BINDIR='"$(bindir)"' \
 	-I. -I$(top_builddir) -I$(srcdir) \
 	-I$(top_srcdir)/tools/lib -I$(top_srcdir)/lib
 LDFLAGS = @LDFLAGS@

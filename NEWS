@@ -1,15 +1,26 @@
 Click NEWS
 
-Version 0.52
+Version 0.6
 
-* Added `--help', `--version', etc. options to tools
+* Added dynamic linking support. Click configuration files can now be ar(1)
+  archives, possibly containing "packages"---dynamically linked object
+  files that are loaded into the kernel module or the user-level program.
+  This means you can make your own element classes and link them
+  dynamically.
 
-* Added "dynamic linking" support to kernel module
+* Added `click-fastclassifier' and `click-install' tools.
 
-* More options for user-level Click, and support for hander invocations on the
-  command line
+* Added `--help', `--version', etc. options to tools.
 
-* Fixed dynamic reconfiguration bug: no more doubled characters
+* Added man pages for `click', `click-align', and `click-install'.
+
+* More options for user-level Click, including support for hander
+  invocations on the command line.
+
+* Fixed dynamic reconfiguration bug: no more doubled characters.
+
+* Fixed compound element bug: input and output ports bigger than 0 were
+  ignored.
 
 
 Version 0.51   12.Nov.1999

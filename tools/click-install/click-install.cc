@@ -32,7 +32,7 @@
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
-  { "help", 'h', HELP_OPT, 0, 0 },
+  { "help", 0, HELP_OPT, 0, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -56,7 +56,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
-  -h, --help                    Print this message and exit.\n\
+      --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
@@ -179,10 +179,10 @@ particular purpose.\n");
     const Vector<ArchiveElement> &archive = r->archive();
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].name.length() > 2
-	  && archive[i].name.substring(-2) == ".o") {
+	  && archive[i].name.substring(-2) == ".ko") {
 	
 	// choose module name
-	String module_name = archive[i].name.substring(0, -2);
+	String module_name = archive[i].name.substring(0, -3);
 	String insmod_name = "_" + module_name;
 	while (active_modules[insmod_name] >= 0)
 	  insmod_name = "_" + insmod_name;
@@ -211,10 +211,13 @@ particular purpose.\n");
     while (requirements.each(thunk, key, value))
       if (value >= 0 && packages[key] < 0) {
 	String package = clickpath_find_file
-	  (key + ".o", "packages", CLICK_PACKAGESDIR);
+	  (key + ".ko", "lib", CLICK_LIBDIR);
+	if (!package)
+	  package = clickpath_find_file
+	    (key + ".o", "lib", CLICK_LIBDIR);
 	if (!package) {
 	  errh->message("cannot find required package `%s.o'", key.cc());
-	  errh->fatal("in CLICKPATH or `%s'", CLICK_PACKAGESDIR);
+	  errh->fatal("in CLICKPATH or `%s'", CLICK_LIBDIR);
 	}
 	String cmdline = "/sbin/insmod " + package;
 	int retval = system(cmdline);

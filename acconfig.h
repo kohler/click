@@ -44,6 +44,9 @@
 /* Define if you have -lpcap and pcap.h. */
 #undef HAVE_PCAP
 
+/* Define if you have -ldl. */
+#undef HAVE_LIBDL
+
 /* Prototype strerror if we don't have it. */
 #ifndef CLICK_LINUXMODULE
 # ifndef HAVE_STRERROR

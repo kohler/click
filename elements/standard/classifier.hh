@@ -4,14 +4,15 @@
 
 /*
  * =c
- * Classifier(off0a/val0a[%mask0a] off0b/val0b[%mask0b] ..., ..., offNa/valNa[%maskNa])
+ * Classifier(pattern1, ..., patternN)
  * =d
- * Classifies packets. Each output has a pattern associated with it.
- * A pattern is a set of offset/value[%mask] clauses; a pattern matches
- * if the packet has the indicated value at each offset.
+ * Classifies packets. The Classifier has N outputs, each associated with the
+ * corresponding pattern from the configuration string.
+ * A pattern is a set of clauses, where each clause is either "offset/value"
+ * or "offset/value%mask". A pattern matches if the packet has the indicated
+ * value at each offset.
  *
- * The patterns are supplied in the configuration string. The patterns are
- * separated by commas. The clauses in each pattern are separated
+ * The clauses in each pattern are separated
  * by spaces. A clause consists of the offset, "/", the value, and (optionally)
  * "%" and a mask. The offset is in decimal. The value and mask are in hex.
  * The length of the value is implied by the number of hex digits, which must
@@ -42,7 +43,23 @@
  * creates an element with four outputs intended to process
  * Ethernet packets.
  * ARP requests are sent to output 0, ARP replies are sent to
- * output 1, IP packets to output 2, and all others to output 3. */
+ * output 1, IP packets to output 2, and all others to output 3.
+ *
+ * =h program read-only
+ * Returns a human-readable definition of the program the Classifier element
+ * is using to classify packets. At each step in the program, four bytes
+ * of packet data are ANDed with a mask and compared against four bytes of
+ * classifier pattern.
+ *
+ * The Classifier patterns above compile into the following program:
+ *
+ * = 0  12/08060000%ffff0000  yes->step 1  no->step 3
+ * = 1  20/00010000%ffff0000  yes->[0]  no->step 2
+ * = 2  20/00020000%ffff0000  yes->[1]  no->[3]
+ * = 3  12/08000000%ffff0000  yes->[2]  no->[3]
+ * = safe length 22
+ * = alignment offset 0
+ */
 
 class Classifier : public Element {
   

@@ -16,6 +16,7 @@ my(%text_processing) = ( 'AGNOSTIC' => 'agnostic', 'PUSH' => 'push',
 			 'PULL' => 'pull',
 			 'PUSH_TO_PULL' => 'push inputs, pull outputs',
 			 'PULL_TO_PUSH' => 'pull inputs, push outputs' );
+my(%section_is_array) = ( 'h' => 1, 'a' => 1 );
 my $directory;
 my $section = 'n';
 my @all_created;
@@ -61,7 +62,11 @@ sub process_comment ($$) {
   my(%x, $i);
 
   while ($t =~ m{^=(\w+)\s*([\0-\377]*?)(?=\n=\w|\Z)}mg) {
-    $x{$1} .= "$2\n";
+    if ($section_is_array{$1}) {
+      push @{$x{$1}}, "$2\n";
+    } else {
+      $x{$1} .= "$2\n";
+    }
   }
   
   my(@classes, %classes);
@@ -122,12 +127,22 @@ EOD;
     print OUT nroffize($x{'e'});
   }
 
-  my(@related);
-  while ($x{'a'} =~ /(\w+)/g) {
-    push @related, $1;
+  if (@{$x{'h'}}) {
+    print OUT ".SH \"HANDLERS\"\n";
+    print OUT "The ", $classes[0], " element installs the following additional handlers.\n";
+    foreach $i (@{$x{'h'}}) {
+      if ($i =~ /^(\S+)\s*(\S*)\n(.*)$/s) {
+	print OUT ".TP 5\n.BR ", $1;
+	print OUT " \" (", $2, ")\"" if $2;
+	print OUT "\n.RS\n", nroffize($3), ".RE\n";
+      }
+    }
   }
-  if (@related) {
+
+  if (@{$x{'a'}}) {
     print OUT ".SH \"SEE ALSO\"\n";
+    my(@related) = @{$x{'a'}};
+    map(s/\s//sg, @related);
     @related = sort @related;
     my($last) = pop @related;
     print OUT map(".M $_ n ,\n", @related);

@@ -14,6 +14,7 @@ subdir = .
 AUTOHEADER = @AUTOHEADER@
 AUTOCONF = @AUTOCONF@
 INSTALL = @INSTALL@
+INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 prefix = @prefix@
@@ -23,29 +24,29 @@ includedir = @includedir@
 all: @TARGETS@ tools Makefile
 
 linuxmodule: Makefile
-	@cd linuxmodule; $(MAKE) all
+	@cd linuxmodule && $(MAKE) all
 userlevel: Makefile
-	@cd userlevel; $(MAKE) all
+	@cd userlevel && $(MAKE) all
 exopc: Makefile
-	@cd exopc; $(MAKE) all
+	@cd exopc && $(MAKE) all
 tools: Makefile
-	@cd tools; $(MAKE) all
+	@cd tools && $(MAKE) all
 
 install:
-	@-for d in @TARGETS@ tools doc; do (cd $$d; $(MAKE) install); done
+	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install); done
 	@$(MAKE) install-include
 install-man:
-	@-for d in @TARGETS@ tools doc; do (cd $$d; $(MAKE) install-man); done
+	@-for d in @TARGETS@ tools doc; do (cd $$d && $(MAKE) install-man); done
 install-include:
 	$(mkinstalldirs) $(includedir)
-	$(INSTALL) $(top_builddir)/config.h $(srcdir)/lib/*.hh $(srcdir)/linuxmodule/clickmodule.hh $(includedir)
+	$(INSTALL_DATA) $(top_builddir)/config.h $(srcdir)/lib/*.hh $(includedir)
 
 elemlist elemlists:
 	$(SHELL) mkelemlist.sh
 
 $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
-	cd $(srcdir); $(AUTOHEADER)
-	cd $(srcdir); $(AUTOCONF)
+	cd $(srcdir) && $(AUTOHEADER)
+	cd $(srcdir) && $(AUTOCONF)
 	$(SHELL) $(srcdir)/configure @ac_configure_args@
 Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
@@ -56,15 +57,16 @@ check-filenames:
 	if test -z $$a; then echo OK; else echo "*** warning: duplicate object file names:"; echo "$$a"; fi
 
 clean:
-	@-for d in @POSSIBLE_TARGETS@ tools; do (cd $$d; $(MAKE) clean); done
+	@-for d in @POSSIBLE_TARGETS@ tools; do (cd $$d && $(MAKE) clean); done
 distclean:
-	@-for d in @POSSIBLE_TARGETS@ tools; do (cd $$d; $(MAKE) distclean); done
+	@-for d in @POSSIBLE_TARGETS@ tools; do (cd $$d && $(MAKE) distclean); done
 	-rm -f config.h Makefile config.status
 	-rm -f config.cache config.log mkelemlist.sh
 
 
 DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
-	doc/Makefile.in doc/click.5 doc/click.o.8 doc/click-xform.1 \
+	doc/Makefile.in doc/click.1 doc/click.5 doc/click.o.8 \
+	doc/click-align.1 doc/click-install.1 doc/click-xform.1 \
 	doc/element2man.pl \
 	doc/Element.3 doc/Connection.3 doc/HandlerRegistry.3 \
 	conf/make-ip-conf.pl conf/ip.clickpat \
@@ -80,6 +82,7 @@ DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
 	lib/click_ip.h \
 	lib/click_tcp.h \
 	lib/click_udp.h \
+	lib/clickpackage.hh \
 	lib/clp.c lib/clp.h \
 	lib/confparse.cc lib/confparse.hh \
 	lib/crc32.c lib/crc32.h \
@@ -111,8 +114,8 @@ DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
 	linuxmodule/Makefile.in \
 	linuxmodule/kernelerror.cc linuxmodule/kernelerror.hh \
 	linuxmodule/kernelversion.c \
-	linuxmodule/linuxmodule.hh \
 	linuxmodule/module.cc \
+	linuxmodule/modulepriv.hh \
 	linuxmodule/proc_config.cc \
 	linuxmodule/proc_element.cc \
 	linuxmodule/proc_mgr.cc \
@@ -141,10 +144,10 @@ distdir:
 	mkdir $(distdir)/elements
 	@-chmod 777 $(distdir)/elements
 	@d=$(srcdir); \
-	for dir in `cd $$d; find elements -type d | grep -v 'exopc\|CVS'`; do \
+	for dir in `cd $$d && find elements -type d | grep -v 'exopc\|CVS'`; do \
 	  mkdir $(distdir)/$$dir 2>/dev/null; \
 	  chmod 777 $(distdir)/$$dir; \
-	  for cfile in `cd $$d; find $$dir -maxdepth 1 \( -name \*.cc -or -name \*.c -or -name \*.hh -or -name \*.h \) -print`; do \
+	  for cfile in `cd $$d && find $$dir -maxdepth 1 \( -name \*.cc -or -name \*.c -or -name \*.hh -or -name \*.h \) -print`; do \
 	    ln $$d/$$cfile $(distdir)/$$cfile; \
 	  done; \
 	done

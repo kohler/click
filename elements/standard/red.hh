@@ -11,14 +11,30 @@ class Queue;
  * Implements the Random Early Detection packet dropping
  * algorithm.
  *
- * A RED element expects to be followed by one or more
+ * A RED element is associated with one or more
  * Queues. It maintains an average of the sum of the
  * queue lengths, and drops packets with a probability
- * proportional to that sum.
+ * proportional to that sum. The Queues are found with
+ * flow-based router context: if the RED is a push element, the nearest
+ * downstream Queues are used; if it is a pull element, the nearest
+ * upstream Queues are used.
  *
  * =e
  * = ... -> RED(5, 50, 0.02) -> Queue(200) -> ...
- * 
+ *
+ * =h min_thresh read/write
+ * Returns or sets the min_thresh configuration parameter.
+ * =h max_thresh read/write
+ * Returns or sets the max_thresh configuration parameter.
+ * =h max_p read/write
+ * Returns or sets the max_p configuration parameter.
+ * =h drops read-only
+ * Returns the number of packets dropped so far.
+ * =h queues read-only
+ * Returns the Queues associated with this RED element, listed one per line.
+ * =h stats read-only
+ * Returns some human-readable statistics.
+ *
  * =a Queue
  */
 

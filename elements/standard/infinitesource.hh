@@ -4,17 +4,16 @@
 
 /*
  * =c
- * InfiniteSource(BURSTSIZE)
- * InfiniteSource(BURSTSIZE, DATA)
- * InfiniteSource(BURSTSIZE, DATA, TOTALCOUNT)
+ * InfiniteSource([DATA, COUNT, BURSTSIZE])
  * =d
  * Creates packets consisting of DATA. Pushes BURSTSIZE such packets
  * out its single output every time it is scheduled (which will be often).
- * Default DATA is at least 64 bytes long. If TOTALCOUNT is given,
- * sends that many packets, then stops the driver. Otherwise, sends packets
- * forever.
+ * After COUNT packets are sent, stops the driver; but if COUNT is negative,
+ * sends packets forever.
+ * Default DATA is at least 64 bytes long. Default COUNT is -1 (send packets
+ * forever). Default BURSTSIZE is 1.
  * =e
- * = InfiniteSource(5) -> Queue -> ...
+ * = InfiniteSource(\<0800>, -1, 5) -> Queue -> ...
  * =n
  * Useful for profiling and experiments.
  */
@@ -25,6 +24,7 @@ class InfiniteSource : public Element { protected:
   int _count;
   int _limit;
   int _total;
+  Packet *_packet;
   
  public:
   

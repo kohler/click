@@ -15,7 +15,7 @@ bindir = @bindir@
 INSTALL = @INSTALL@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
-TOOLDIRS = click-align click-fastclassifier click-install click-xform
+TOOLDIRS = click-align click-fastclassifier click-install click-specialize click-xform
 TARGETS = @TOOL_TARGETS@
 
 all: $(TARGETS)

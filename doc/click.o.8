@@ -45,21 +45,21 @@ Install the kernel module with
 .M insmod 1 :
 `/sbin/insmod click.o'. Remove it with
 .M rmmod 1 :
-`/sbin/rmmod click'.
+`/sbin/rmmod click'. The
+.M click-install 1
+program will also install the kernel module if necessary.
 .PP
 The module uses the /proc filesystem
 .RM ( proc 5 )
 for its API. It creates a number of files under /proc/click, some read-only
 and some read/write (writable by the superuser). You control the module by
-writing to files. For example, you install a router configuration by
-writing it to /proc/click/config.
+writing to these files.
 .PP
-The module does not change your machine's default networking setup until
-you write a configuration to /proc/click/config. This configuration can use
-most of Click's element classes (see
+A router configuration is installed by writing it to the /proc/click/config
+file. The configuration can use most of Click's element classes (see
 .M elements n ).
-Three kernel-only element classes control how packets are read from, and
-written to, devices:
+Three element classes control how the module receives and transmits
+packets:
 .M FromDevice n
 steals packets from devices before Linux process them,
 .M ToDevice n
@@ -67,9 +67,8 @@ sends packets directly to devices, and
 .M ToLinux n
 sends packets to Linux for normal processing. Removing the module or
 installing a null configuration will restore your machine's default
-networking setup.
+networking behavior.
 .PP
-.SS "/proc/click"
 The files under /proc/click include:
 .TP 5
 .B /proc/click/config
@@ -87,8 +86,8 @@ messages are also printed to the system log.
 '
 .TP
 .B /proc/click/classes
-Read-only. A newline-separated list of primitive element classes supported
-by the router.
+Read-only. The primitive element classes supported by the router, listed
+one per line.
 '
 .TP
 .B /proc/click/list
@@ -99,8 +98,18 @@ line by name. The first line is an integer: the number of elements.
 .B /proc/click/flatconfig
 Read-only. A Click-language description of the current router
 configuration, including the effects of any run-time reconfiguration. All
-the element declarations come first, then all connections, and any compound
-elements have been compiled away.
+element declarations come first, then all connections. Compound elements
+are expanded into their primitive components.
+'
+.TP
+.B /proc/click/packages
+Read-only. The packages that are currently linked to the Click module,
+listed one per line.
+'
+.TP
+.B /proc/click/requirements
+Read-only. The packages required by the current configuration, listed one
+per line.
 '
 .TP
 .B /proc/click/cycles, /proc/click/meminfo
@@ -121,7 +130,9 @@ This works even if the name contains slashes
 .RB ( click.o
 creates directories for each name component).
 .PP
-The files in these directories include:
+The files in these directories are called
+.IR handlers .
+They include:
 '
 .TP 5
 .BI /proc/click/xxx/class
@@ -145,8 +156,8 @@ Read-only. Describes the element's outputs: how many there are, and (for
 push outputs) what they are connected to.
 '
 .PP
-Particular elements may add read-only, write-only, or read/write files to
-their directories. RED elements (see
+Particular elements may add additional handlers to their directories. For
+example, RED elements (see
 .M RED n )
 add read/write
 .BR min_thresh ", " max_thresh ", and " max_p
@@ -154,16 +165,22 @@ files representing RED parameters, and Counter elements (see
 .M Counter n )
 provide read-only
 .BR count " and " rate
-files to report packet counts and the recent rate. See the element
-documentation
-.RM ( elements n )
-for other examples.
+files to report packet counts and the recent rate.
 .PP
-The subdirectories are created even for erroneous configurations, but
-element-specific files are created only if the router configuration is
-correct.
+The subdirectories and generic files are always created, but
+element-specific files are created only if the router configuration was
+initialized successfully.
+'
+.SH "BUGS"
+If you get an unaligned access error, try running your configuration
+through
+.M click-align 1
+before installing it.
 '
 .SH "SEE ALSO"
+.M click 1 ,
+.M click-align 1 ,
+.M click-install 1 ,
 .M insmod 1 ,
 .M rmmod 1 ,
 .M click 5 ,

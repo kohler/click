@@ -33,12 +33,16 @@
 #define HELP_OPT		300
 #define VERSION_OPT		301
 #define ROUTER_OPT		302
-#define OUTPUT_OPT		304
+#define OUTPUT_OPT		303
+#define KERNEL_OPT		304
+#define USERLEVEL_OPT		305
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
-  { "help", 'h', HELP_OPT, 0, 0 },
+  { "help", 0, HELP_OPT, 0, 0 },
+  { "kernel", 'k', KERNEL_OPT, 0, Clp_Negate },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
+  { "user", 'u', USERLEVEL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -58,14 +62,19 @@ void
 usage()
 {
   printf("\
-`Click-fastclassifier' sucks ass.\n\
+`Click-fastclassifier' transforms a router configuration by replacing generic\n\
+Classifier elements with specific generated code. The resulting configuration\n\
+has both Click-language files and object files.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
-  -f, --file FILE               Read router configuration from FILE.\n\
-  -h, --help                    Print this message and exit.\n\
-  -v, --version                 Print version number and exit.\n\
+  -f, --file FILE             Read router configuration from FILE.\n\
+  -o, --output FILE           Write output to FILE.\n\
+  -k, --kernel                Create Linux kernel module code (on by default).\n\
+  -u, --user                  Create user-level code (on by default).\n\
+      --help                  Print this message and exit.\n\
+  -v, --version               Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
@@ -167,9 +176,9 @@ write_checked_program(FILE *f, const Vector<Classifion> &cls,
   fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", align_offset);
   fprintf(f, "  int l = p->length();\n");
   fprintf(f, "  assert(l < %d);\n", safe_length);
+
   for (int i = 0; i < cls.size(); i++) {
     const Classifion &e = cls[i];
-    fprintf(f, " lstep_%d:\n", i);
     
     int want_l = e.offset + 4;
     if (!e.mask.c[3]) {
@@ -180,11 +189,12 @@ write_checked_program(FILE *f, const Vector<Classifion> &cls,
 	  want_l--;
       }
     }
-
+    
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
-
+    fprintf(f, " lstep_%d:\n", i);
+    
     if (want_l >= safe_length) {
       branch2 = e.no;
       goto output_branch2;
@@ -202,7 +212,7 @@ write_checked_program(FILE *f, const Vector<Classifion> &cls,
       fprintf(f, " {\n    output(%d).push(p);\n    return;\n  }\n", -branch1);
     else
       fprintf(f, "\n    goto lstep_%d;\n", branch1);
-
+    
    output_branch2:
     if (branch2 <= -noutputs)
       fprintf(f, "  p->kill();\n  return;\n");
@@ -218,14 +228,15 @@ write_unchecked_program(FILE *f, const Vector<Classifion> &cls,
 			int noutputs, int align_offset)
 {
   fprintf(f, "  const unsigned *data = (const unsigned *)(p->data() - %d);\n", align_offset);
+
   for (int i = 0; i < cls.size(); i++) {
     const Classifion &e = cls[i];
-    fprintf(f, " step_%d:\n", i);
     
     bool switched = (e.yes == i + 1);
     int branch1 = (switched ? e.no : e.yes);
     int branch2 = (switched ? e.yes : e.no);
-
+    fprintf(f, " step_%d:\n", i);
+      
     if (switched)
       fprintf(f, "  if ((data[%d] & 0x%xU) != 0x%xU)",
 	      e.offset/4, e.mask.u, e.value.u);
@@ -395,6 +406,8 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
+  int compile_kernel = -1;
+  int compile_user = -1;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -430,6 +443,14 @@ particular purpose.\n");
       }
       output_file = clp->arg;
       break;
+
+     case KERNEL_OPT:
+      compile_kernel = !clp->negated;
+      break;
+      
+     case USERLEVEL_OPT:
+      compile_user = !clp->negated;
+      break;
       
      bad_option:
      case Clp_BadOption:
@@ -444,6 +465,9 @@ particular purpose.\n");
   }
   
  done:
+  if (compile_kernel < 0 && compile_user < 0)
+    compile_kernel = compile_user = 1;
+  
   RouterT *r = read_router_file(router_file, errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
@@ -500,7 +524,7 @@ particular purpose.\n");
   if (!f)
     errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
   fprintf(f, "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n\
-#include \"clickmodule.hh\"\n#include \"element.hh\"\n");
+#include \"clickpackage.hh\"\n#include \"element.hh\"\n");
   
   // write Classifier programs
   for (int i = 0; i < classifiers.size(); i++)
@@ -526,9 +550,9 @@ extern \"C\" int\ninit_module()\n{\n\
     fclose(f);
   }
 
-  // compile file
-  {
-    String compile_command = click_compile_prog + " --target=module --package=" + module_name + ".o " + cxx_filename;
+  // compile kernel module
+  if (compile_kernel > 0) {
+    String compile_command = click_compile_prog + " --target=kernel --package=" + module_name + ".ko " + cxx_filename;
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
       errh->fatal("could not run `%s'", compile_command.cc());
@@ -538,7 +562,19 @@ extern \"C\" int\ninit_module()\n{\n\
       errh->fatal("`%s' failed", compile_command.cc());
   }
 
-  // read .cc and .o files, add them to archive
+  // compile userlevel
+  if (compile_user > 0) {
+    String compile_command = click_compile_prog + " --target=user --package=" + module_name + ".uo -w " + cxx_filename;
+    int compile_retval = system(compile_command.cc());
+    if (compile_retval == 127)
+      errh->fatal("could not run `%s'", compile_command.cc());
+    else if (compile_retval < 0)
+      errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+    else if (compile_retval != 0)
+      errh->fatal("`%s' failed", compile_command.cc());
+  }
+
+  // read .cc and .?o files, add them to archive
   {
     ArchiveElement ae;
     ae.name = module_name + ".cc";
@@ -549,9 +585,17 @@ extern \"C\" int\ninit_module()\n{\n\
     ae.data = file_string(cxx_filename, errh);
     r->add_archive(ae);
 
-    ae.name = module_name + ".o";
-    ae.data = file_string(module_name + ".o", errh);
-    r->add_archive(ae);
+    if (compile_kernel > 0) {
+      ae.name = module_name + ".ko";
+      ae.data = file_string(module_name + ".ko", errh);
+      r->add_archive(ae);
+    }
+    
+    if (compile_user > 0) {
+      ae.name = module_name + ".uo";
+      ae.data = file_string(module_name + ".uo", errh);
+      r->add_archive(ae);
+    }
   }
   
   // write configuration

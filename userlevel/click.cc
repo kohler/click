@@ -17,6 +17,11 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <sys/resource.h>
+#include <fcntl.h>
 
 #include "lexer.hh"
 #include "router.hh"
@@ -25,6 +30,13 @@
 #include "straccum.hh"
 #include "clp.h"
 #include "archive.hh"
+#include "glue.hh"
+#include "clickpackage.hh"
+
+#if defined(HAVE_DLFCN_H) && defined(HAVE_LIBDL)
+# define HAVE_DYNAMIC_LINKING 1
+# include <dlfcn.h>
+#endif
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
@@ -32,6 +44,7 @@
 #define QUIT_OPT		303
 #define OUTPUT_OPT		304
 #define HANDLER_OPT		305
+#define TIME_OPT		306
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
@@ -39,6 +52,7 @@ static Clp_Option options[] = {
   { "help", 0, HELP_OPT, 0, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
+  { "time", 't', TIME_OPT, 0, 0 },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
 
@@ -56,18 +70,19 @@ void
 usage()
 {
   printf("\
-`Click' adds any required `Align' elements to a Click router\n\
-configuration. The resulting router will work on machines that don't allow\n\
-unaligned accesses. Its configuration is written to the standard output.\n\
+`Click' runs a Click router configuration at user level. It installs the\n\
+configuration, reporting any errors to standard error, and then generally runs\n\
+until interrupted.\n\
 \n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
-  -h, --handler ELEMENT.HANDLER Print result of an element handler to the\n\
-                                standard output.\n\
+  -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
+                                driver and print result to standard output.\n\
   -o, --output FILE             Write flat configuration to FILE.\n\
-  -q, --quit                    Quit immediately after initializing router.\n\
+  -q, --quit                    Do not run driver.\n\
+  -t, --time                    Print information on how long driver took.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
 \n\
@@ -79,6 +94,104 @@ catch_sigint(int)
 {
   /* call exit so -pg file is written */
   exit(0);
+}
+
+
+// stuff for dynamic linking
+
+String
+unique_tmpnam(const String &pattern, ErrorHandler *errh)
+{
+  String tmpdir;
+  if (const char *path = getenv("TMPDIR"))
+    tmpdir = path;
+#ifdef P_tmpdir
+  else if (P_tmpdir)
+    tmpdir = P_tmpdir;
+#endif
+  else
+    tmpdir = "/tmp";
+
+  int star_pos = pattern.find_left('*');
+  String left, right;
+  if (star_pos >= 0) {
+    left = "/" + pattern.substring(0, star_pos);
+    right = pattern.substring(star_pos + 1);
+  } else
+    left = "/" + pattern;
+  
+  int uniqueifier = getpid();
+  while (1) {
+    String name = tmpdir + left + String(uniqueifier) + right;
+    int result = open(name.cc(), O_WRONLY | O_CREAT | O_EXCL, S_IRWXU);
+    if (result >= 0) {
+      close(result);
+      return name;
+    } else if (errno != EEXIST) {
+      errh->error("cannot create temporary file: %s", strerror(errno));
+      return String();
+    }
+    uniqueifier++;
+  }
+}
+
+#if HAVE_DYNAMIC_LINKING
+extern "C" {
+typedef int (*init_module_func)(void);
+}
+
+static int
+load_package(String package, ErrorHandler *errh)
+{
+  void *handle = dlopen(package.cc(), RTLD_NOW);
+  if (!handle)
+    return errh->error("cannot load package: %s", dlerror());
+  void *init_sym = dlsym(handle, "init_module");
+  if (!init_sym)
+    return errh->error("package `%s' has no `init_module'", package.cc());
+  init_module_func init_func = (init_module_func)init_sym;
+  if (init_func() != 0)
+    return errh->error("error initializing package `%s'", package.cc());
+  return 0;
+}
+#endif
+
+
+// functions for packages
+
+static Lexer *lexer;
+static Vector<String> packages;
+
+extern "C" void
+click_provide(const char *package)
+{
+  packages.push_back(package);
+}
+
+extern "C" void
+click_unprovide(const char *package)
+{
+  String s = package;
+  for (int i = 0; i < packages.size(); i++)
+    if (packages[i] == s) {
+      packages[i] = packages.back();
+      packages.pop_back();
+      return;
+    }
+}
+
+extern "C" int
+click_add_element_type(const char *ename, Element *e)
+{
+  int c = lexer->add_element_type(ename, e);
+  lexer->save_element_types();
+  return c;
+}
+
+extern "C" void
+click_remove_element_type(int which)
+{
+  lexer->remove_element_type(which);
 }
 
 
@@ -167,6 +280,7 @@ main(int argc, char **argv)
   const char *router_file = 0;
   const char *output_file = 0;
   bool quit_immediately = false;
+  bool report_time = false;
   Vector<String> call_handlers;
   
   while (1) {
@@ -196,6 +310,10 @@ main(int argc, char **argv)
       
      case QUIT_OPT:
       quit_immediately = true;
+      break;
+
+     case TIME_OPT:
+      report_time = true;
       break;
       
      case HELP_OPT:
@@ -249,34 +367,55 @@ particular purpose.\n");
   if (f != stdin)
     fclose(f);
 
+  // prepare lexer (for packages)
+  lexer = new Lexer(errh);
+  export_elements(lexer);
+  lexer->save_element_types();
+  
+  // XXX locals should override
+#if HAVE_DYNAMIC_LINKING
+  int num_packages = 0;
+#endif
+  
   // find config string in archive
   String config_str = config_sa.take_string();
   if (config_str.length() != 0 && config_str[0] == '!') {
     Vector<ArchiveElement> archive;
     separate_ar_string(config_str, archive, errh);
-    bool found = false;
+    bool found_config = false;
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].name == "config") {
 	config_str = archive[i].data;
-	found = true;
+	found_config = true;
       }
-    if (!found) {
+#if HAVE_DYNAMIC_LINKING
+      else if (HAVE_DYNAMIC_LINKING
+	       && archive[i].name.length() > 3
+	       && archive[i].name.substring(-3) == ".uo") {
+	num_packages++;
+	String tmpnam = unique_tmpnam("package" + String(num_packages) + "-*.uo", errh);
+	if (!tmpnam) exit(1);
+	FILE *f = fopen(tmpnam.cc(), "wb");
+	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
+	fclose(f);
+	int ok = load_package(tmpnam, errh);
+	unlink(tmpnam.cc());
+	if (ok < 0) exit(1);
+      }
+#endif
+    if (!found_config) {
       errh->error("archive has no `config' section");
       config_str = String();
     }
   }
 
   // lex
-  Lexer *lex = new Lexer(errh);
-  export_elements(lex);
-  lex->save_element_types();
-  
-  lex->reset(config_str, filename);
-  while (lex->ystatement())
+  lexer->reset(config_str, filename);
+  while (lexer->ystatement())
     /* do nothing */;
   
-  Router *router = lex->create_router();
-  lex->clear();
+  Router *router = lexer->create_router();
+  lexer->clear();
   
   signal(SIGINT, catch_sigint);
 
@@ -284,7 +423,8 @@ particular purpose.\n");
     exit(1);
 
   int exit_value = 0;
-  
+
+  // output flat configuration
   if (output_file) {
     FILE *f = 0;
     if (strcmp(output_file, "-") != 0) {
@@ -302,6 +442,33 @@ particular purpose.\n");
     }
   }
 
+  struct rusage before, after;
+  struct timeval before_time, after_time;
+  getrusage(RUSAGE_SELF, &before);
+  gettimeofday(&before_time, 0);
+
+  // run driver
+  if (!quit_immediately) {
+    while (router->driver())
+      /* nada */;
+  }
+  
+  gettimeofday(&after_time, 0);
+  getrusage(RUSAGE_SELF, &after);
+  // report time
+  if (report_time) {
+    struct timeval diff;
+    timersub(&after.ru_utime, &before.ru_utime, &diff);
+    printf("%ld.%03ldu", diff.tv_sec, (diff.tv_usec+500)/1000);
+    timersub(&after.ru_stime, &before.ru_stime, &diff);
+    printf(" %ld.%03lds", diff.tv_sec, (diff.tv_usec+500)/1000);
+    timersub(&after_time, &before_time, &diff);
+    printf(" %ld:%02ld.%02ld", diff.tv_sec/60, diff.tv_sec%60,
+	   (diff.tv_usec+5000)/10000);
+    printf("\n");
+  }
+  
+  // call handlers
   if (call_handlers.size()) {
     int nelements = router->nelements();
     UserHandlerRegistry uhr;
@@ -319,13 +486,8 @@ particular purpose.\n");
       exit_value = 1;
   }
 
-  if (!quit_immediately) {
-    while (router->driver())
-      /* nada */;
-  }
-  
   delete router;
-  delete lex;
+  delete lexer;
   exit(exit_value);
 }
 

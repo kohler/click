@@ -37,10 +37,10 @@ int
 InfiniteSource::configure(const String &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpUnsigned, "packets per scheduling", &_count,
 		     cpOptional,
 		     cpString, "packet data", &_data,
 		     cpInteger, "total packet count", &_limit,
+		     cpUnsigned, "packets per scheduling", &_count,
 		     0);
 }
 
@@ -48,6 +48,7 @@ int
 InfiniteSource::initialize(ErrorHandler *)
 {
   schedule_tail();
+  _packet = Packet::make(_data.data(), _data.length());
   return 0;
 }
 
@@ -55,6 +56,8 @@ void
 InfiniteSource::uninitialize()
 {
   unschedule();
+  _packet->kill();
+  _packet = 0;
 }
 
 void
@@ -67,7 +70,7 @@ InfiniteSource::run_scheduled()
     router()->please_stop_driver();
   else {
     for (int i = 0; i < count; i++)
-      output(0).push(Packet::make(_data.data(), _data.length()));
+      output(0).push(_packet->clone());
     _total += count;
     schedule_tail();
   }

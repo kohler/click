@@ -1,0 +1,119 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0
+.ds E " \-\- 
+.if t .ds E \(em
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
+.de RM
+.RB "\\$1" "\\$2" "(\\$3)\\$4"
+..
+.TH CLICK-ALIGN 1 "27/Nov/1999" "Version \*V"
+.SH NAME
+click-align \- adds required Align elements to a Click router configuration
+'
+.SH SYNOPSIS
+.B click-align
+.I \%[options]
+.I \%[router\-file]
+'
+.SH DESCRIPTION
+The
+.B click-align
+tool makes Click router configurations usable on machines that disallow
+unaligned accesses. It reads a router configuration file in the
+.M click 5
+language, adds any required
+.M Align n
+elements, and writes the new configuration to the standard output.
+.PP
+Several Click elements, such as
+.M CheckIPHeader n
+and
+.M ToLinux n ,
+have alignment requirements. The CheckIPHeader element, for example,
+expects that the packet begins with an IP header, and that this IP header
+is four-byte-aligned. Normally, Click does not guarantee this: elements
+cannot guarantee how input packets will be aligned. The
+.B click-align
+tool first analyzes the router configuration, then inserts
+.M Align n
+elements as required to guarantee that packets will be properly aligned. It
+also adds an
+.M AlignmentInfo n
+element so that elements can figure out what packet alignment they can
+expect.
+.PP
+The list of alignment requirements is currently built in to the
+.B click-align
+tool and cannot be changed except by recompilation.
+'
+.SH "OPTIONS"
+'
+If any filename argument is a single dash "-",
+.B click-align
+will use the standard input or output instead, as appropriate.
+'
+.TP 5
+.BI \-f " file"
+.PD 0
+.TP
+.BI \-\-file " file"
+Read the router configuration to transform from
+.IR file .
+The default is the standard input.
+'
+.Sp
+.TP
+.BI \-o " file"
+.TP
+.BI \-\-output " file"
+Write the output router configuration to
+.IR file .
+The default is the standard output.
+'
+.Sp
+.TP 5
+.BI \-\-help
+Print usage information and exit.
+'
+.Sp
+.TP
+.BI \-\-version
+Print the version number and some quickie warranty information and exit.
+'
+.PD
+'
+.SH "SEE ALSO"
+.M click 5 ,
+.M Align n ,
+.M AlignmentInfo n
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

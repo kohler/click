@@ -7,9 +7,15 @@
  * =c
  * Counter()
  * =d
- * Counts arriving packets. Makes the count available in
- * /proc/click/xxx/count, and the current rate (measured by
- * exponential weight moving average) in /proc/click/xxx/rate.
+ * Passes packets unchanged from its input to its output,  maintaining
+ * statistics information about packet count and rate.
+ * =h count read-only
+ * Returns the number of packets that have passed through.
+ * =h rate read-only
+ * Returns the recent packet arrival rate (measured by exponential
+ * weighted moving average) in packets per second.
+ * =h reset write-only
+ * Resets the count and rate to zero.
  */
 
 class Counter : public Element { protected:

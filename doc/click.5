@@ -25,6 +25,9 @@
 .RE
 .PP
 ..
+.de M
+.BR "\\$1" "(\\$2)\\$3"
+..
 .de Rs
 .RS
 .Sp
@@ -508,6 +511,19 @@ a -> Counter -> b;
 .Re
 Compound elements use this mechanism.
 '
+.SH "REQUIREMENTS"
+'
+A configuration can say that it depends on optional packages by using the
+`require' statement. Its argument is a comma-separated list of package
+names:
+.Rs
+require(fastclassifier, specialcode);
+.Re
+Installation programs can use the package names to find and upload any
+necessary package code. Furthermore, the required package names are checked
+against a list of currently active packages when a configuration is
+installed. If any required packages are unavailable, an error is reported.
+'
 .SH "LEXICAL ISSUES"
 '
 Click identifiers are nonempty sequences of letters, numbers, underscores
@@ -561,6 +577,18 @@ C4(#// end-of-line comment)
 C5(#/* slash-star comment) */ and backslash \\\\#)
 .Re
 '
+.SH "ARCHIVES"
+The Click programs also accept
+.M ar 1
+archives as configurations. The archive must contain a member called
+`config', which is treated as a Click-language configuration. The archive
+may also contain package code required by the configuration. The
+.M click-install 1
+and
+.M click 1
+programs will decompose the archive and install any package code before
+installing the configuration itself.
+'
 .SH "BNF GRAMMAR"
 '
 .IR stmts " ::= " stmts " " stmt " | " empty
@@ -572,6 +600,8 @@ C5(#/* slash-star comment) */ and backslash \\\\#)
 .RI "    | " tunnelstmt
 .br
 .RI "    | " elementclassstmt
+.br
+.RI "    | " requirestmt
 .br
 .RI "    | "";"""
 .br
@@ -615,6 +645,8 @@ C5(#/* slash-star comment) */ and backslash \\\\#)
 .IR elementclassstmt " ::= ""elementclass"" identifier "
 .br
 .RI "        ""{"" " stmts " ""}"""
+.br
+.IR requirestmt " ::= ""require"" ""("" configstring "")"""
 .br
 .IR empty " ::= "
 '

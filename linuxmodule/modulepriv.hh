@@ -1,7 +1,7 @@
 #ifndef MODULEPRIV_HH
 #define MODULEPRIV_HH
 #include "element.hh"
-#include "clickmodule.hh"
+#include "clickpackage.hh"
 
 extern "C" {
 #define new linux_new
