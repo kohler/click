@@ -47,8 +47,8 @@ CXXFLAGS = @CXXFLAGS@ -fno-exceptions -fno-rtti
 
 DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
 	-I$(top_srcdir)/lib @PCAP_HEADER_PATH@
-LDFLAGS = @LDFLAGS@
-LIBS = @LIBS@
+LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
+LIBS = @LIBS@ -lpcap
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)
@@ -60,7 +60,7 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 all: click
 
 click: Makefile $(OBJS)
-	$(CXXLINK) $(OBJS) -lpcap
+	$(CXXLINK) $(OBJS) $(LIBS)
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	cd $(top_builddir) \
