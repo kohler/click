@@ -172,7 +172,5 @@ operator<=(const uatomic32_t &a, const uatomic32_t &b)
   return a.value() <= b.value();
 }
 
-typedef uatomic32_t u_atomic32_t;
-
 CLICK_ENDDECLS
 #endif
