@@ -4,7 +4,7 @@ SHELL = @SHELL@
 srcdir := @srcdir@
 top_srcdir := @top_srcdir@
 top_builddir := ../..
-subdir := tools/click-shrink
+subdir := tools/click-mkmindriver
 
 prefix = @prefix@
 exec_prefix = @exec_prefix@
@@ -36,7 +36,7 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 	$(CXXCOMPILE) -c $<
 
 
-OBJS = click-shrink.o
+OBJS = click-mkmindriver.o
 
 CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_TOOL
 CFLAGS = @CFLAGS@
@@ -56,12 +56,12 @@ CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: libclicktool.a all-local
-all-local: click-shrink
+all-local: click-mkmindriver
 
 libclicktool.a:
 	@cd ../lib; $(MAKE) libclicktool.a
 
-click-shrink: Makefile $(OBJS) ../lib/libclicktool.a
+click-mkmindriver: Makefile $(OBJS) ../lib/libclicktool.a
 	$(CXXLINK) $(OBJS) ../lib/libclicktool.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
@@ -73,13 +73,13 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: click-shrink
+install: click-mkmindriver
 	$(mkinstalldirs) $(bindir)
-	$(INSTALL) click-shrink $(bindir)/click-shrink
+	$(INSTALL) click-mkmindriver $(bindir)/click-mkmindriver
 install-man:
 
 clean:
-	rm -f *.d *.o click-shrink
+	rm -f *.d *.o click-mkmindriver
 distclean: clean
 	-rm -f Makefile
 
