@@ -1250,13 +1250,13 @@ cp_ip_prefix(const String &str,
 
     int slash = str.find_right('/');
     String ip_part, mask_part;
-    if (slash >= 0) {
+    if (slash < 0 && allow_bare_address)
+      ip_part = str;
+    else if (slash >= 0 && slash < str.length() - 1) {
       ip_part = str.substring(0, slash);
       mask_part = str.substring(slash + 1);
-    } else if (!allow_bare_address)
+    } else
       goto failure;
-    else
-      ip_part = str;
 
     // read IP address part
     int good_ip_bytes = ip_address_portion(ip_part, value);
@@ -1266,7 +1266,7 @@ cp_ip_prefix(const String &str,
       good_ip_bytes = 4;
     }
 
-    // move past /
+    // check mask
     if (allow_bare_address && !mask_part.length() && good_ip_bytes == 4) {
       memcpy(return_value, value, 4);
       return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
@@ -1286,7 +1286,7 @@ cp_ip_prefix(const String &str,
 	umask = 0xFFFFFFFFU << (32 - relevant_bits);
       for (int i = 0; i < 4; i++, umask <<= 8)
 	mask[i] = (umask >> 24) & 255;
-      if (good_ip_bytes < relevant_bits/8)
+      if (good_ip_bytes < (relevant_bits + 7)/8)
 	goto failure;
     
     } else
