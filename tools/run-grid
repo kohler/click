@@ -1,6 +1,7 @@
 #!/usr/bin/perl 
-# run-grid-node.openbsd
+# run-grid
 # Douglas S. J. De Couto
+# Daniel Aguayo
 
 $| = 1;
 
@@ -37,37 +38,6 @@ $CLICK_DEBUG = "cat";
 $GRID_CHANNEL = "2";
 $GRID_SSID = "pij6";
 
-$BOGUS_IP = "10.3.4.5";
-
-$CONTROL_PORT = "7777";
-$CONTROL_RO = "false";
-
-$CHATTER_PORT = "7776";
-$ROUTELOG_PORT = "7766";
-$ROUTELOG_CHANNEL = "routelog";
-
-$HEADROOM = "68"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
-$NUM_HOPS = "100"; # always run DSDV -- assumer less than 100 hops in net ;>
-
-$RANGE = "-1"; # don't filter
-
-$NBR_TIMEOUT = "3200"; # msecs
-$HELLO_PERIOD = "500"; # msecs
-$HELLO_JITTER = "100"; # msecs
-$LR_PERIOD = "1300"; # msecs
-$LR_JITTER = "300"; # msecs
-
-$GRID_ETH_PROTO = "7FFF";
-$GRID_NBR_ENCAP_PROTO = "03";
-$GRID_LOC_QUERY_PROTO = "04";
-$GRID_LOC_REPLY_PROTO = "05";
-$GRID_LR_HELLO_PROTO = "02";
-
-sub ip_to_hex {
-    ($a, $b, $c, $d) = @_[0] =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
-    return sprintf("%02x%02x%02x%02x", $a, $b, $c, $d);
-}
-	
 sub my_system {
     if ($DEBUG) {
 	print stderr "+rg:  ", @_, "\n";
@@ -239,82 +209,28 @@ print "run_grid:     ad-hoc channel/SSID $GRID_CHANNEL/$GRID_SSID.\n";
 # system specific stuff here
 setup_net_info();
 
-$GRID_IP_HEX = ip_to_hex($GRID_IP);
-if ($IS_GATEWAY) {
-    $GW_NET_HEX = ip_to_hex($GW_NET);
-    $GW_IP_HEX = ip_to_hex($GW_IP);
-}
 
+$REAL_CLICK = $CLICK;
 if ($DEBUG) {
     $CLICK = $CLICK_DEBUG;
 }
 
-# open click config, run click.
+# build click config
+$BUILDSCRIPT = "$GRID_DIR/build-grid-config.sh";
+$GRID_PARAMS = "$GRID_DIR/grid-params.m4";
 
-$CLICK_CONFIG = "grid.click";
-$CLICK_CONFIG_OUT = "runtime_grid.click";
+$CLICK_CONFIG = "$GRID_DIR/grid2.click";
+$CLICK_CONFIG_OUT = "$GRID_DIR/runtime_grid.click";
 
-$CLICK_CONFIG_CMD = "cpp -DCPP_IS_GATEWAY=$IS_GATEWAY $CLICK_CONFIG";
-
-open (click_config, "$CLICK_CONFIG_CMD |") || 
-    die "can't preprocess click configuration ($CLICK_CONFIG_CMD)\n";
-
-open (click_config_out, "> $CLICK_CONFIG_OUT") ||
-    die "can't open click configuration output file ($CLICK_CONFIG_OUT)\n";
-
-while(<click_config>) {
-
-    s/LOC_DB/$LOC_DB/;
-    s/HEADROOM/$HEADROOM/;
-    s/NUM_HOPS/$NUM_HOPS/;
-    s/CONTROL_PORT/$CONTROL_PORT/;
-    s/CONTROL_RO/$CONTROL_RO/;
-    s/CHATTER_PORT/$CHATTER_PORT/;
-    s/ROUTELOG_PORT/$ROUTELOG_PORT/;
-    s/ROUTELOG_CHANNEL/$ROUTELOG_CHANNEL/;
-
-
-    s/RANGE/$RANGE/;
-    s/POS_LAT/$POS_LAT/;
-    s/POS_LON/$POS_LON/;
-    s/GRID_NETMASK/$GRID_NETMASK/;
-    s/NBR_TIMEOUT/$NBR_TIMEOUT/;
-    s/HELLO_PERIOD/$HELLO_PERIOD/;
-    s/HELLO_JITTER/$HELLO_JITTER/;
-    s/LR_PERIOD/$LR_PERIOD/;
-    s/LR_JITTER/$LR_JITTER/;
-    s/GRID_ETH_PROTO/$GRID_ETH_PROTO/;
-    s/GRID_NBR_ENCAP_PROTO/$GRID_NBR_ENCAP_PROTO/;
-    s/GRID_LOC_QUERY_PROTO/$GRID_LOC_QUERY_PROTO/;
-    s/GRID_LOC_REPLY_PROTO/$GRID_LOC_REPLY_PROTO/;
-    s/GRID_LR_HELLO_PROTO/$GRID_LR_HELLO_PROTO/;
-    s/GRID_IP/$GRID_IP/;
-    s/GRID_HEX_IP/$GRID_IP_HEX/;
-    s/WI_NET_DEVICE/$GRID_IF/;
-
-    s/GRID_NET1_HEX/121A07/;
-    s/GRID_NET2_HEX/0A02/;
-
-    s/GRID_MAC_ADDR/$GRID_HW_ADDR/;
-
-    s/GRID_ANY_GATEWAY_IP/18.26.7.254/;
-    s/GRID_HEX_ANY_GATEWAY_IP/121a07fe/;
-
-    s/BOGUS_IP/$BOGUS_IP/;
-    s/BOGUS_NETMASK/255.255.255.255/;
-
-    s/GW_IP/$GW_IP/;
-    s/GW_NETMASK/$GW_NETMASK/;
-    s/GW_HEX_IP/$GW_IP_HEX/;
-    s/GW_HEX_NET/$GW_NET_HEX/;
-    s/GW_NET_DEVICE/$GW_IF/;
-    s/GW_MAC_ADDR/$GW_HW_ADDR/;
-
-    print click_config_out $_;
+$GW_OPTIONS = "";
+if ($IS_GATEWAY) {
+    $GW_OPTIONS = "--gateway-device $GW_IF --gateway-ip $GW_IP"
 }
 
-close click_config;
-close click_config_out;
+
+my_system("$BUILDSCRIPT $GRID_IP $GRID_NETMASK $GRID_IF $GW_OPTIONS --config $CLICK_CONFIG --params $GRID_PARAMS --click $REAL_CLICK > $CLICK_CONFIG_OUT");
+$CLICK_CONFIG_CMD = "cpp -DCPP_IS_GATEWAY=$IS_GATEWAY $CLICK_CONFIG";
+
 
 # $OLDFH = select(P); $| = 1; select($OLDFH);
 
@@ -594,123 +510,6 @@ sub setup_net_info {
 	# but i forget why those are in there at all...
 	my_system "/sbin/ifconfig tap1 mtu 1400";
 
-#    } elsif ($SYSTEM_TYPE == 'FreeBSD') {
-#	
-#	$ifconfig_out = `/sbin/ifconfig $GRID_IF`;
-#	$grid_hw_addr = "";
-#	$old_ip = "";
-#	$old_netmask = "";
-#	$old_bcast = "";
-#	$old_grid_dev_gw = "";
-#	$old_grid_dev_net = "";
-#	$tun_dev_type = "";
-#
-#	$lan_addr = "";
-#	$lan_hw_addr = "";
-#	$old_lan_netmask = "";
-#	$old_lan_bcast = "";
-#	$lan_gw = "";
-#	$lan_net = "";
-#
-#	
-#	if (!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
-#	    print "Unable to get Grid device MAC address\n";
-#	    exit 1;
-#	}
-#	else {
-#	    $grid_hw_addr = $1;
-#	}
-#	if (!($ifconfig_out =~ /\n\s+inet (\d+.\d+.\d+.\d+)/)) {
-#	    print "Unable to get old Grid device IP address\n";
-#	}
-#	else {
-#	    $old_ip_addr = $1;
-#	    if (!($old_ip_addr =~ /(\d+.\d+.\d+).\d+/)) {
-#		print "Unable to get Grid device net address\n";
-#		exit 1;
-#	    }
-#	    $old_grid_dev_net = "$1"; # keep as only the first 3 digits
-#	}
-#	if (!($ifconfig_out =~ /netmask (0x[0-9a-fA-F]{8})/)) {
-#	    print "Unable to get old Grid device netmask\n";
-#	}
-#	else {
-#	    $old_netmask = $1;
-#	}
-#	if (!($ifconfig_out =~ /broadcast (\d+.\d+.\d+.\d+)/)) {
-#	    print "Unable to get old Grid device broadcast address\n";
-#	}
-#	else {
-#	    $old_bcast = $1;
-#	}
-#
-#	# get LAN device params for routing
-#	$ifconfig_lan_out = `ifconfig $lan_if`;
-#	if (!($ifconfig_lan_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
-#	    print "Unable to get LAN device MAC address\n";
-#	    exit 1; # we really need to know that...
-#	}
-#	else {
-#	    $lan_hw_addr = $1;
-#	}
-#	if (!($ifconfig_lan_out =~ /\n\s+inet (\d+.\d+.\d+.\d+)/)) {
-#	    print "Unable to get LAN device IP address\n";
-#	    exit 1;
-#	}
-#	else {
-#	    $lan_addr = $1;
-#	    if (!($lan_addr =~ /(\d+.\d+.\d+).\d+/)) {
-#		print "Unable to get LAN device net address\n";
-#		exit 1;
-#	    }
-#	    $lan_net = "$1"; # keep as only the first 3 digits
-#	}
-#	if (!($ifconfig_lan_out =~ /netmask (0x[0-9a-fA-f]{8})/)) {
-#	    print "Unable to get LAN device netmask\n";
-#	}
-#	else {
-#	    $old_lan_netmask = $1;
-#	}
-#	if (!($ifconfig_lan_out =~ /broadcast (\d+.\d+.\d+.\d+)/)) {
-#	    print "Unable to get LAN device broadcast address\n";
-#	}
-#	else {
-#	    $old_lan_bcast = $1;
-#	}
-#
-#	# only know how to extract one default route -- whereas linux
-#	# seems to be able to support multiple ``default'' routes!.
-#	$route_info = `route -n get default`;
-#	if (!($route_info =~ /\n\s+gateway: ($lan_net.\d+)/)) {
-#	    print "Unable to get gateway\n";
-#	    exit 1;
-#	}
-#	else {
-#	    $lan_gw = $1;
-#	}
-#
-#	$tun_dev = "tun";
-#
-#	# make sure grid interface is up
-#	my_system "route -n delete default";
-#	my_system "ifconfig $grid_if 0";
-#
-#	# set the adapter to ad-hoc mode
-#	if ($RADIO_TYPE eq "wavelan") {
-#	    my_system "wicontrol -i $grid_if -p 3";
-#	    my_system "wicontrol -i $grid_if -f $grid_channel";
-#	}
-#	elsif ($RADIO_TYPE eq "aironet") {
-#	    die "radio type $RADIO_TYPE is not supported yet on freebsd\n";
-#	}
-#
-#	print "WARNING: not decreasing grid tun MTU.  Transfers with big packets will fail.  Fix this script!\n";
-#
-#	# remove default route
-#	my_system, "route -n delete default";
-#	# make sure LAN interface is up
-#	my_system "ifconfig $lan_if 0";
-	
     } else {
 	
 	die "this system type ($SYSTEM_TYPE) is not supported\n";
@@ -761,3 +560,11 @@ sub do_cleanup {
 #
 #    }    
 }
+
+
+
+# sub ip_to_hex {
+#     ($a, $b, $c, $d) = @_[0] =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
+#     return sprintf("%02x%02x%02x%02x", $a, $b, $c, $d);
+# }
+	
