@@ -291,7 +291,7 @@ CompoundElementClassT::finish(ErrorHandler *errh)
     int einput = _router->eindex("input");
     if (einput >= 0) {
 	_ninputs = _router->element(einput).noutputs();
-	if (_router->element(einput).noutputs())
+	if (_router->element(einput).ninputs())
 	    errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", name_cc());
 
 	if (_ninputs) {
