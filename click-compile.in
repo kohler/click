@@ -19,6 +19,7 @@
 prefix=@prefix@
 exec_prefix=@exec_prefix@
 includedir=@includedir@
+libdir=@libdir@
 srcdir=@datadir@/click/src
 linuxdir=@linuxdir@
 freebsd_includedir=@freebsd_includedir@
@@ -39,6 +40,9 @@ while true; do
       echo @PCAP_INCLUDES@ -I$includedir
       exit 0;;
     --l|--li|--lib|--libs)
+      echo -L$libdir -lclick @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
+      exit 0;;
+    --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
       echo @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
       exit 0;;
     -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
@@ -67,8 +71,9 @@ Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
 Options:
       --defs              Outputs preprocessor options for userlevel drivers.
       --libs              Outputs link options for userlevel drivers.
-  -t, --target TARGET     Sets target to `bsdmodule', `linuxmodule',
-                          `userlevel', `ns', or `tool'.
+      --otherlibs         Like '--libs' minus the Click library.
+  -t, --target TARGET     Sets target to 'bsdmodule', 'linuxmodule',
+                          'userlevel', 'ns', or 'tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
   -d, --directory DIR     Change to directory DIR.
   -q, --quiet             Be quiet (don't echo commands or print warnings).
