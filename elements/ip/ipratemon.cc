@@ -217,12 +217,17 @@ IPRateMonitor::print(_stats *s, String ip = "")
       for(j = 1; j < _no_of_rates; j++) {
 	// Update the rate first, so we have correct info
         s->counter[i].values[j].update(0);
-        rates += "\t";
-	rates += cp_unparse_real
-	  (s->counter[i].values[j].average() * CLICK_HZ,
-	   s->counter[i].values[j].scale());
 	if (s->counter[i].values[j].average() > 0)
 	  nonzero = true;
+      }
+
+      if (nonzero) {
+        for(j = 1; j < _no_of_rates; j++) {
+          rates += "\t";
+	  rates += cp_unparse_real
+	    (s->counter[i].values[j].average() * CLICK_HZ,
+	     s->counter[i].values[j].scale());
+        }
       }
     }
     
