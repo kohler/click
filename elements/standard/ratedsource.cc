@@ -21,18 +21,6 @@
 #include "scheduleinfo.hh"
 #include "glue.hh"
 
-
-static inline void
-sub_timer(struct timeval *diff, struct timeval *tv2, struct timeval *tv1)
-{
-  diff->tv_sec = tv2->tv_sec - tv1->tv_sec;
-  diff->tv_usec = tv2->tv_usec - tv1->tv_usec;
-  if (diff->tv_usec < 0) {
-    diff->tv_sec--;
-    diff->tv_usec += 1000000;
-  }
-}
-
 RatedSource::RatedSource()
 {
   _packet = 0;
@@ -63,7 +51,7 @@ RatedSource::configure(const String &conf, ErrorHandler *errh)
 
   _data = data;
   _rate = rate;
-  _ngap = 1000000000 / _rate;
+  _ugap = (rate ? 1000000 / rate : 1000000);
   _limit = (time >= 0 ? time * rate : -1);
   _active = active;
   
@@ -81,6 +69,7 @@ int
 RatedSource::initialize(ErrorHandler *errh)
 {
   _count = 0;
+  _schedcount = 0;
   
 #ifndef RR_SCHED
   /* start out with default number of tickets, inflate up to max */
@@ -91,7 +80,8 @@ RatedSource::initialize(ErrorHandler *errh)
   join_scheduler();
   // ScheduleInfo::join_scheduler(this, errh);
 
-  click_gettimeofday(&_start_time); 
+  click_gettimeofday(&_start_time);
+  _inactive_time = _start_time;
   
   return 0;
 }
@@ -107,20 +97,27 @@ RatedSource::uninitialize()
 void
 RatedSource::run_scheduled()
 {
-  if (_active && _count < _limit) {
+  if (!_active) {
+    click_gettimeofday(&_inactive_time);
+    return;
+  }
+  
+  if (_limit < 0 || _count < _limit) {
     struct timeval now, diff;
     click_gettimeofday(&now);
-    sub_timer(&diff, &now, &_start_time);
+    timersub(&now, &_start_time, &diff);
   
-    /* how many packets should we have sent by now? */
+    // how many packets should we have sent by now?
     int need = diff.tv_sec * _rate;
-    need += (diff.tv_usec * 1000) / _ngap;
+    need += diff.tv_usec / _ugap;
+    _need = need;
 
-    /* send one if we've fallen behind. */
+    // send one if we've fallen behind.
     if (need > _count) {
       output(0).push(_packet->clone());
       _count++;
     }
+    _schedcount++;
 
     reschedule();
   }
@@ -135,16 +132,12 @@ RatedSource::read_param(Element *e, void *vparam)
     return rs->_data;
    case 1:			// rate
     return String(rs->_rate) + "\n";
-   case 2: {			// time
-     if (rs->_limit < 0)
-       return "forever\n";
-     int ms = rs->_limit * 1000 / rs->_rate;
-     return String(ms / 1000) + "." + String(ms % 1000) + "\n";
-   }
+   case 2:			// limit
+    return String(rs->_limit) + "\n";
    case 3:			// active
     return cp_unparse_bool(rs->_active) + "\n";
    case 4:			// count
-    return String(rs->_count) + "\n";
+    return String(rs->_count) + "\n" + String(rs->_schedcount) + "\n" + String(rs->_need) + "\n";
    default:
     return "";
   }
@@ -160,10 +153,29 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
    case 1: {			// rate
      int rate;
      if (!cp_integer(s, rate) || rate < 0)
-       return errh->error("limit parameter must be integer >= 0");
-     rs->_rate = rate;
-     rs->_ngap = 1000000000 / rate;
+       return errh->error("rate parameter must be integer >= 0");
      rs->change_configuration(1, s);
+     rs->_rate = rate;
+     rs->_ugap = (rate ? 1000000 / rate : 1000000);
+     if (!rate) break;
+     // change _start_time to get a smooth transition
+     struct timeval now;
+     click_gettimeofday(&now);
+     int sec = rate / rs->_count;
+     int usec = (rate % rs->_count) * 1000000 / rate;
+     struct timeval diff;
+     diff.tv_sec = sec + (usec / 1000000);
+     diff.tv_usec = usec % 1000000;
+     timersub(&now, &diff, &rs->_start_time);
+     rs->_inactive_time = rs->_start_time;
+     break;
+   }
+
+   case 2: {			// limit
+     int limit;
+     if (!cp_integer(s, limit))
+       return errh->error("limit parameter must be integer");
+     rs->_limit = limit;
      break;
    }
    
@@ -172,13 +184,20 @@ RatedSource::change_param(const String &s, Element *e, void *vparam,
      if (!cp_bool(s, active))
        return errh->error("active parameter must be boolean");
      rs->_active = active;
-     if (!rs->scheduled() && active)
+     if (!rs->scheduled() && active) {
+       // change _start_time to avoid flood of packets when turned on
+       struct timeval now, diff;
+       click_gettimeofday(&now);
+       timersub(&now, &rs->_inactive_time, &diff);
+       timeradd(&rs->_start_time, &diff, &rs->_start_time);
        rs->reschedule();
+     }
      break;
    }
 
    case 5: {			// reset
      rs->_count = 0;
+     click_gettimeofday(&rs->_start_time);
      if (!rs->scheduled() && rs->_active)
        rs->reschedule();
      break;
@@ -195,7 +214,8 @@ RatedSource::add_handlers()
   add_write_handler("data", reconfigure_write_handler, (void *)0);
   add_read_handler("rate", read_param, (void *)1);
   add_write_handler("rate", change_param, (void *)1);
-  add_read_handler("time", read_param, (void *)2);
+  add_read_handler("limit", read_param, (void *)2);
+  add_write_handler("limit", change_param, (void *)2);
   add_read_handler("active", read_param, (void *)3);
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
