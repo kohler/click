@@ -33,6 +33,8 @@ all: @TARGETS@ tools Makefile
 
 linuxmodule: Makefile stamp-h
 	@cd linuxmodule && $(MAKE) all
+bsdmodule: Makefile stamp-h
+	@cd bsdmodule && $(MAKE) all
 userlevel: Makefile click-compile stamp-h
 	@cd userlevel && $(MAKE) all
 exopc: Makefile stamp-h

@@ -38,6 +38,7 @@ dnl
 
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
 AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, enable_linuxmodule=yes)
+AC_ARG_ENABLE(bsdmodule, [  --disable-bsdmodule   disable BSD kernel driver], :, enable_bsdmodule=yes)
 
 AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
   [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
@@ -63,6 +64,12 @@ else
 fi
 AC_SUBST(linuxdir)
 AC_DEFINE_UNQUOTED(LINUX_SRCDIR, "${linuxdir}")
+
+if test "x$enable_bsdmodule" = xyes -a -d /usr/src/sys; then
+  ac_have_bsd_kernel=y
+else
+  ac_have_bsd_kernel=n
+fi
 
 AC_CACHE_CHECK(whether we are compiling for Linux, ac_cv_under_linux,
   AC_TRY_COMPILE([], [#ifndef __linux__
@@ -278,6 +285,23 @@ fi
 
 
 dnl
+dnl stuff in the bsd kernel
+dnl
+
+if test $ac_have_bsd_kernel = y; then
+
+AC_CACHE_CHECK(for Click BSD kernel extensions, ac_cv_click_bsd_kernel,
+[if grep if_click_rcv /usr/include/net/if_var.h >/dev/null 2>&1; then
+  ac_cv_click_bsd_kernel=yes
+else ac_cv_click_bsd_kernel=no; fi])
+if test $ac_cv_click_bsd_kernel = yes; then
+    AC_DEFINE_UNQUOTED(HAVE_CLICK_BSD_KERNEL, 1)
+fi
+
+fi
+
+
+dnl
 dnl use Intel-specific machine instructions
 dnl
 
@@ -311,7 +335,7 @@ dnl
 dnl possible targets
 dnl
 
-POSSIBLE_TARGETS="linuxmodule userlevel"
+POSSIBLE_TARGETS="linuxmodule userlevel bsdmodule"
 AC_SUBST(POSSIBLE_TARGETS)
 if test -f $srcdir/exopc/Makefile.in; then
   POSSIBLE_TARGETS="$POSSIBLE_TARGETS exopc"
@@ -420,6 +444,17 @@ if you want to compile Click as a Linux module.)
   fi
 fi
 AC_SUBST(HAVE_LINUXMODULE_TARGET)
+
+
+dnl check bsdmodule for BSD
+
+HAVE_BSDMODULE_TARGET=
+if test $ac_have_bsd_kernel = y; then
+  TARGETS="$TARGETS bsdmodule"
+  AC_DEFINE_UNQUOTED(HAVE_BSDMODULE_TARGET, 1)
+  HAVE_BSDMODULE_TARGET=1
+fi
+AC_SUBST(HAVE_BSDMODULE_TARGET)
 
 
 dnl
