@@ -64,13 +64,6 @@ class ETT : public Element {
   static String static_print_stats(Element *e, void *);
   String print_stats();
 
-  static String static_print_current_gateway(Element *e, void *);
-  String print_current_gateway();
-
-  static String static_print_is_gateway(Element *e, void *);
-  String print_is_gateway();
-
-
   void push(int, Packet *);
   void run_timer();
 
@@ -177,11 +170,9 @@ private:
   uint32_t _et;     // This protocol's ethertype
   int _warmup_period;
 
-  IPAddress _gw;
   IPAddress _bcast_ip;
 
   EtherAddress _bcast;
-  bool _is_gw;
 
   class SRCR *_srcr;
   class LinkTable *_link_table;

@@ -27,7 +27,8 @@ CLICK_DECLS
 
 enum SRCRPacketType { PT_QUERY = (1<<0),
 		      PT_REPLY = (1<<1),
-		      PT_DATA  = (1<<2) };
+		      PT_DATA  = (1<<2),
+                      PT_GATEWAY = (1<<3)};
 
 
 

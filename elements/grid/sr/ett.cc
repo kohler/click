@@ -32,10 +32,9 @@ CLICK_DECLS
 
 
 ETT::ETT()
-  :  Element(4,2),
+  :  Element(3,2),
      _timer(this), 
      _warmup(0),
-     _gw("255.255.255.255"),
      _link_stat(0),
      _arp_table(0),
      _num_queries(0),
@@ -77,7 +76,6 @@ int
 ETT::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
-  _is_gw = false;
   _warmup_period = 25;
   ret = cp_va_parse(conf, this, errh,
 		    cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -87,7 +85,6 @@ ETT::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
-		    "GW", cpBool, "Gateway", &_is_gw,
 		    "LS", cpElement, "LinkStat element", &_link_stat,
 		    "WARMUP", cpUnsigned, "Warmup period", &_warmup_period,
                     0);
@@ -156,9 +153,6 @@ ETT::start_query(IPAddress dstip)
   click_gettimeofday(&q->_last_query);
   q->_count++;
   q->_metric = 0;
-  if (q->_count > 3 && dstip == _gw) {
-    _gw = IPAddress("255.255.255.255");
-  }
   click_chatter("ETT %s: start_query %s ->  %s", 
 		id().cc(),
 		_ip.s().cc(),
@@ -307,7 +301,7 @@ ETT::process_query(struct sr_pkt *pk1)
 
   click_gettimeofday(&_seen[si]._when);
   
-  if (dst == _ip || (dst == IPAddress("255.255.255.255") && _is_gw)) {
+  if (dst == _ip) {
     /* query for me */
     start_reply(pk1);
   } else {
@@ -443,7 +437,7 @@ void ETT::start_reply(struct sr_pkt *pk_in)
 
   int len = sr_pkt::len_wo_data(pk_in->num_hops()+1);
   _link_table->dijkstra();
-  click_chatter("ETT %s: star_reply %s <- %s\n",
+  click_chatter("ETT %s: start_reply %s <- %s\n",
 		id().cc(),
 		pk_in->get_hop(0).s().cc(),
 		IPAddress(pk_in->_qdst).s().cc());
@@ -508,12 +502,6 @@ ETT::got_reply(struct sr_pkt *pk)
   q->_count = 0;
   if ((!q->_metric || q->_metric > metric) && metric < 9999) {
     q->_metric = metric;
-    if (dst == IPAddress("255.255.255.255")) {
-      _gw = pk->get_hop(pk->num_hops() - 1);
-      click_chatter("ETT %s: set gw to %s",
-		    id().cc(),
-		    _gw.s().cc());
-    }
   }
 }
 
@@ -621,25 +609,19 @@ ETT::push(int port, Packet *p_in)
     p_in->kill();
     return;
   }
-  if (port == 2 || port == 3) {
+  if (port == 2) {
     bool sent_packet = false;
     IPAddress dst = p_in->dst_ip_anno();
-    if (port == 3) {
-      dst = _gw;
-    }
     
     ett_assert(dst);
     Path p = _link_table->best_route(dst);
     int metric = _link_table->get_route_metric(p);
 
-    if (dst != IPAddress("255.255.255.255")) {
-
-      if (_link_table->valid_route(p)) {
-	Packet *p_out = _srcr->encap(p_in->data(), p_in->length(), p);
-	if (p_out) {
-	  sent_packet = true;
-	  output(1).push(p_out);
-	}
+    if (_link_table->valid_route(p)) {
+      Packet *p_out = _srcr->encap(p_in->data(), p_in->length(), p);
+      if (p_out) {
+	sent_packet = true;
+	output(1).push(p_out);
       }
     }
 
@@ -776,37 +758,6 @@ ETT::print_stats()
     String(_bytes_replies) + " bytes of reply sent\n";
 }
 
-String
-ETT::static_print_is_gateway(Element *f, void *)
-{
-  ETT *d = (ETT *) f;
-  return d->print_is_gateway();
-}
-
-String
-ETT::print_is_gateway()
-{
-  
-  if (_is_gw) {
-    return "true\n";
-  }
-  return "false\n";
-}
-
-String
-ETT::static_print_current_gateway(Element *f, void *)
-{
-  ETT *d = (ETT *) f;
-  return d->print_current_gateway();
-}
-
-String
-ETT::print_current_gateway()
-{
-  
-  return _gw.s() + "\n";
-}
-
 int
 ETT::static_clear(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
@@ -902,8 +853,6 @@ void
 ETT::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
-  add_read_handler("current_gateway", static_print_current_gateway, 0);
-  add_read_handler("is_gateway", static_print_is_gateway, 0);
   add_write_handler("clear", static_clear, 0);
   add_write_handler("start", static_start, 0);
   add_write_handler("link_failure", static_link_failure, 0);
