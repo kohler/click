@@ -55,8 +55,8 @@ class Notifier { public:
     virtual int add_listener(Task*);
     virtual void remove_listener(Task*);
 
-    static const char* const EMPTY_NOTIFIER;
-    static const char* const NONFULL_NOTIFIER;
+    static const char EMPTY_NOTIFIER[];
+    static const char NONFULL_NOTIFIER[];
     
     static NotifierSignal upstream_empty_signal(Element*, int port, Task*);
     static NotifierSignal downstream_nonfull_signal(Element*, int port, Task*);

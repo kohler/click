@@ -27,8 +27,8 @@ CLICK_DECLS
 
 // should be const, but we need to explicitly initialize it
 atomic_uint32_t NotifierSignal::static_value;
-const char* const Notifier::EMPTY_NOTIFIER = "Notifier.EMPTY";
-const char* const Notifier::NONFULL_NOTIFIER = "Notifier.NONFULL";
+const char Notifier::EMPTY_NOTIFIER[] = "Notifier.EMPTY";
+const char Notifier::NONFULL_NOTIFIER[] = "Notifier.NONFULL";
 
 void
 NotifierSignal::static_initialize()
@@ -206,7 +206,7 @@ NotifierElementFilter::check_match(Element* e, int port, PortType pt)
 	
     } else if (pt != NONE) {
 	Bitvector flow;
-	if (e->port_is_push(pt, port)
+	if (e->port_allowed(pt, port) // went from pull <-> push
 	    || (e->port_flow(pt, port, &flow), flow.zero())) {
 	    _signal = NotifierSignal::always_active_signal();
 	    return true;
