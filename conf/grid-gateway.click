@@ -5,8 +5,6 @@ ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
 
 li :: LocationInfo(POS_LAT, POS_LON);
 
-rh :: ReadHandlerCaller(1);
-
 // device interface
 eth :: FromDevice(GW_NET_DEVICE, 0);
 to_eth :: ToDevice(GW_NET_DEVICE);
