@@ -1,3 +1,19 @@
+2004-05-15 Saturday 16:29  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/routerthread.cc (1.38): fix the place where pending tasks get
+	changed into scheduled tasks (John Bicket); and fix a race
+	condition in run_os()
+
+2004-05-15 Saturday 16:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/task.hh (1.31): you can fast_reschedule() twice
+	without crashing
+
+2004-05-15 Saturday 15:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/task.hh (1.30): back out of Task change from
+	jbicket (what is pending_reschedule()?)
+
 2004-05-15 Saturday 15:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/: icmppingencap.hh (1.3), icmpsendpings.hh (1.11):
