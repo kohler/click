@@ -27,6 +27,9 @@ class RouterT { public:
     void collect_primitive_classes(HashMap<String, int> &) const;
     void collect_active_types(Vector<ElementClassT *> &) const;
 
+    int ntypes() const			{ return _etypes.size(); }
+    ElementClassT *eclass(int i)	{ return _etypes[i].eclass; }
+    
     class iterator;
     class const_iterator;
     class type_iterator;
@@ -50,8 +53,8 @@ class RouterT { public:
     ElementT *element(int i)		{ return _elements[i]; }
     ElementT *elt(int i)		{ return _elements[i]; }
     
-    bool elive(int ei) const		{ return _elements[ei]->live(); }
-    bool edead(int ei) const		{ return _elements[ei]->dead(); }
+    bool elive(int i) const		{ return _elements[i]->live(); }
+    bool edead(int i) const		{ return _elements[i]->dead(); }
     String ename(int) const;
     ElementClassT *etype(int) const;
     String etype_name(int) const;

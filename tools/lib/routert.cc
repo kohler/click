@@ -81,7 +81,7 @@ RouterT::check() const
 	String key = iter.key();
 	int value = iter.value();
 	if (value >= 0)
-	    assert(value < ne && ename(value) == key); // && _elements[value].live());
+	    assert(value < ne && _elements[value]->name() == key); // && _elements[value].live());
     }
 
     // check free elements
@@ -107,7 +107,7 @@ RouterT::check() const
 
     // check hookup next pointers, port counts
     for (int i = 0; i < ne; i++)
-	if (elive(i)) {
+	if (_elements[i]->live()) {
 	    int ninputs = 0, noutputs = 0;
 	    const ElementT *e = elt(i);
 	    

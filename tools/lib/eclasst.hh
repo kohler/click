@@ -6,13 +6,14 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include "etraits.hh"
+class ErrorHandler;
+class StringAccum;
 class RouterT;
 class ElementT;
 class VariableEnvironment;
-class ErrorHandler;
-class StringAccum;
-class CompoundElementClassT;
 class ElementMap;
+class CompoundElementClassT;
+class SynonymElementClassT;
 
 class ElementClassT { public:
 
@@ -50,12 +51,15 @@ class ElementClassT { public:
     virtual void report_signatures(const String &, String, ErrorHandler *);
     virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     virtual void collect_primitive_classes(HashMap<String, int> &);
+    virtual void collect_prerequisites(Vector<ElementClassT *> &);
 
     virtual void unparse_declaration(StringAccum &, const String &);
 
     virtual bool simple() const			{ return true; }
+    virtual String landmark() const		{ return String(); }
 
     virtual void *cast(const char *)		{ return 0; }
+    virtual SynonymElementClassT *cast_synonym() { return 0; }
     virtual CompoundElementClassT *cast_compound() { return 0; }
     virtual RouterT *cast_router()		{ return 0; }
 
@@ -88,15 +92,19 @@ class SynonymElementClassT : public ElementClassT { public:
 
     SynonymElementClassT(const String &, ElementClassT *);
 
+    ElementClassT *synonym_of() const	{ return _eclass; }
+
     ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     void collect_primitive_classes(HashMap<String, int> &);
+    void collect_prerequisites(Vector<ElementClassT *> &);
 
     void unparse_declaration(StringAccum &, const String &);
 
     bool simple() const			{ return false; }
     const ElementTraits *find_traits() const;
     
+    SynonymElementClassT *cast_synonym() { return this; }
     CompoundElementClassT *cast_compound();
     RouterT *cast_router();
   
@@ -113,7 +121,12 @@ class CompoundElementClassT : public ElementClassT { public:
     ~CompoundElementClassT();
 
     int nformals() const		{ return _formals.size(); }
+    const Vector<String> &formals() const { return _formals; }
     void add_formal(const String &n)	{ _formals.push_back(n); }
+    int ninputs() const			{ return _ninputs; }
+    int noutputs() const		{ return _noutputs; }
+    ElementClassT *previous() const	{ return _prev; }
+    
     void finish(ErrorHandler *);
     void check_duplicates_until(ElementClassT *, ErrorHandler *);
 
@@ -121,10 +134,12 @@ class CompoundElementClassT : public ElementClassT { public:
     void report_signatures(const String &, String, ErrorHandler *);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     void collect_primitive_classes(HashMap<String, int> &);
+    void collect_prerequisites(Vector<ElementClassT *> &);
 
     void unparse_declaration(StringAccum &, const String &);
     
     bool simple() const			{ return false; }
+    String landmark() const		{ return _landmark; }
     const ElementTraits *find_traits() const;
     
     CompoundElementClassT *cast_compound() { return this; }
@@ -141,7 +156,7 @@ class CompoundElementClassT : public ElementClassT { public:
     int _ninputs;
     int _noutputs;
 
-    ElementClassT *_next;
+    ElementClassT *_prev;
 
     bool _circularity_flag;
 

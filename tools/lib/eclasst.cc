@@ -242,6 +242,11 @@ ElementClassT::collect_primitive_classes(HashMap<String, int> &m)
 }
 
 void
+ElementClassT::collect_prerequisites(Vector<ElementClassT *> &)
+{
+}
+
+void
 ElementClassT::unparse_declaration(StringAccum &, const String &)
 {
 }
@@ -286,6 +291,13 @@ SynonymElementClassT::collect_primitive_classes(HashMap<String, int> &m)
 }
 
 void
+SynonymElementClassT::collect_prerequisites(Vector<ElementClassT *> &v)
+{
+    _eclass->collect_prerequisites(v);
+    v.push_back(_eclass);
+}
+
+void
 SynonymElementClassT::unparse_declaration(StringAccum &sa, const String &indent)
 {
     sa << indent << "elementclass " << name() << " " << _eclass->name() << ";\n";
@@ -315,23 +327,23 @@ SynonymElementClassT::cast_router()
 //
 
 CompoundElementClassT::CompoundElementClassT
-	(const String &name, ElementClassT *next, int depth,
+	(const String &name, ElementClassT *prev, int depth,
 	 RouterT *enclosing_router, const String &landmark)
     : ElementClassT(name), _landmark(landmark), _depth(depth),
-      _ninputs(0), _noutputs(0), _next(next),
+      _ninputs(0), _noutputs(0), _prev(prev),
       _circularity_flag(false)
 {
     _router = new RouterT(this, enclosing_router);
     _router->get_element("input", ElementClassT::tunnel_type(), String(), landmark);
     _router->get_element("output", ElementClassT::tunnel_type(), String(), landmark);
     _router->use();
-    if (_next)
-	_next->use();
+    if (_prev)
+	_prev->use();
 }
 
 CompoundElementClassT::CompoundElementClassT(const String &name, RouterT *r)
     : ElementClassT(name), _router(r), _depth(0), _ninputs(0), _noutputs(0),
-      _next(0), _circularity_flag(false)
+      _prev(0), _circularity_flag(false)
 {
     _router->use();
     *(_traits.component(Traits::D_CLASS)) = name;
@@ -340,8 +352,8 @@ CompoundElementClassT::CompoundElementClassT(const String &name, RouterT *r)
 CompoundElementClassT::~CompoundElementClassT()
 {
     _router->unuse();
-    if (_next)
-	_next->unuse();
+    if (_prev)
+	_prev->unuse();
 }
 
 void
@@ -389,10 +401,10 @@ CompoundElementClassT::finish(ErrorHandler *errh)
 void
 CompoundElementClassT::check_duplicates_until(ElementClassT *last, ErrorHandler *errh)
 {
-  if (this == last || !_next)
+  if (this == last || !_prev)
     return;
   
-  ElementClassT *n = _next;
+  ElementClassT *n = _prev;
   while (n && n != last) {
     CompoundElementClassT *nc = n->cast_compound();
     if (!nc) break;
@@ -400,10 +412,10 @@ CompoundElementClassT::check_duplicates_until(ElementClassT *last, ErrorHandler 
       ElementT::redeclaration_error(errh, "", signature(), _landmark, nc->_landmark);
       break;
     }
-    n = nc->_next;
+    n = nc->_prev;
   }
 
-  if (CompoundElementClassT *nc = _next->cast_compound())
+  if (CompoundElementClassT *nc = _prev->cast_compound())
     nc->check_duplicates_until(last, errh);
 }
 
@@ -426,7 +438,7 @@ CompoundElementClassT::find_relevant_class(int ninputs, int noutputs, const Vect
 	    nclosest++;
 	}
 
-	ElementClassT *e = ct->_next;
+	ElementClassT *e = ct->_prev;
 	if (!e)
 	    return (nclosest == 1 ? closest : 0);
 	else if (CompoundElementClassT *next = e->cast_compound())
@@ -445,8 +457,8 @@ CompoundElementClassT::signature() const
 void
 CompoundElementClassT::report_signatures(const String &lm, String name, ErrorHandler *errh)
 {
-    if (_next)
-	_next->report_signatures(lm, name, errh);
+    if (_prev)
+	_prev->report_signatures(lm, name, errh);
     errh->lmessage(lm, "`%s'", signature().cc());
 }
 
@@ -504,8 +516,17 @@ void
 CompoundElementClassT::collect_primitive_classes(HashMap<String, int> &m)
 {
     _router->collect_primitive_classes(m);
-    if (_next)
-	_next->collect_primitive_classes(m);
+    if (_prev)
+	_prev->collect_primitive_classes(m);
+}
+
+void
+CompoundElementClassT::collect_prerequisites(Vector<ElementClassT *> &v)
+{
+    if (_prev) {
+	_prev->collect_prerequisites(v);
+	v.push_back(_prev);
+    }
 }
 
 const ElementTraits *

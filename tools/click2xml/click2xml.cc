@@ -257,9 +257,9 @@ process(const char *infile, bool file_is_expr, const char *outfile,
     emap.set_driver(driver);
     ElementMap::push_default(&emap);
 
-    fprintf(outf, "<configuration>\n");
+    fprintf(outf, "<clickrouter>\n");
     generate_router(r, outf, "", true, errh);
-    fprintf(outf, "</configuration>\n");
+    fprintf(outf, "</clickrouter>\n");
     
     ElementMap::pop_default();
     
