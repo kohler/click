@@ -1,3 +1,8 @@
+2003-03-27 Thursday 14:09  Eddie Kohler <kohler@icir.org>
+
+	* etc/libclick/: DISTFILES (1.15), lc-libsrc-Makefile.in (1.10):
+	fix libclick generation
+
 2003-03-27 Thursday 13:29  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/: progressbar.cc (1.24), progressbar.hh
