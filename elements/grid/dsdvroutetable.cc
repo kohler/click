@@ -747,7 +747,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
   // Otherwise, propagate the route immediately (e.g. a newly
   // appearing node, or broken route)
   if (new_r.good() && (!old_r || old_r->good())) // XXX comment implies: new_r.good() && old_r && old_r->good()
-    new_r.advertise_ok_jiffies = jiff + msec_to_jiff(2 * new_r.wst);
+    new_r.advertise_ok_jiffies = jiff + msec_to_jiff((unsigned int) (2 * new_r.wst));
   else
     new_r.advertise_ok_jiffies = jiff;
 
