@@ -75,6 +75,9 @@ ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpEnd) < 0)
 	return -1;
 
+    if (_snaplen == 0)
+	_snaplen = 0xFFFFFFFFU;
+
     if (use_encap_from && encap_type)
 	return errh->error("specify at most one of 'ENCAP' and 'USE_ENCAP_FROM'");
     else if (use_encap_from) {

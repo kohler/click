@@ -11,7 +11,7 @@ CLICK_DECLS
 /*
 =c
 
-ToDump(FILENAME [, SNAPLEN, ENCAP, I<KEYWORDS>])
+ToDump(FILENAME [, I<keywords> SNAPLEN, ENCAP, USE_ENCAP_FROM, EXTRA_LENGTH])
 
 =s analysis
 
@@ -23,12 +23,13 @@ Writes incoming packets to FILENAME in `tcpdump -w' format. This file can be
 read by `tcpdump -r', or by FromDump on a later run. FILENAME can be `-', in
 which case ToDump writes to the standard output.
 
-Writes at most SNAPLEN bytes of each packet to the file. The default
-SNAPLEN is 2000. If SNAPLEN is 0, the whole packet will be written to
-the file.  ENCAP specifies the first header each packet is expected to
-have.  This information is stored in the file header, and must be
-correct or tcpdump won't be able to read the file correctly. It can be
-`C<IP>', `C<ETHER>', or `C<FDDI>'; default is `C<ETHER>'.
+Writes at most SNAPLEN bytes of each packet to the file. The default SNAPLEN
+is 2000. If SNAPLEN is 0, the whole packet will be written to the file.  ENCAP
+specifies the first header each packet is expected to have.  This information
+is stored in the file header, and must be correct or tcpdump won't be able to
+read the file correctly. It can be C<ETHER> (Ethernet encapsulation),
+C<IP> (raw IP packets), C<FDDI>, C<ATM>, C<802_11>, C<SLL>, C<AIRONET>,
+C<HDLC>, C<PPP_HDLC>, C<PPP>, C<SUNATM>, or C<PRISM>; the default is C<ETHER>.
 
 ToDump may have zero or one output. If it has an output, then it emits all
 received packets on that output. ToDump will schedule itself on the task list
@@ -40,11 +41,11 @@ Keyword arguments are:
 
 =item SNAPLEN
 
-Integer. Same as the SNAPLEN argument.
+Integer.  See above.
 
 =item ENCAP
 
-Either `C<IP>', `C<ETHER>', or `C<FDDI>'. Same as the ENCAP argument.
+The encapsulation type to store in the dump.  See above.
 
 =item USE_ENCAP_FROM
 
