@@ -1,3 +1,8 @@
+2002-10-16 Wednesday 00:42  Eddie Kohler <kohler@icir.org>
+
+	* pathvars.h.in: first nonridiculous xml2click; includes configure
+	test for expat
+
 2002-10-15 Tuesday 21:18  Eddie Kohler <kohler@icir.org>
 
 	* include/click/userutils.hh, include/click/userutils.hh,
