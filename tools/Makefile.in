@@ -71,8 +71,10 @@ install-subdirs: lib
 	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) install-local) || exit 1; done
 install-include:
 	@cd lib && $(MAKE) install-include
+install-lib:
+	@cd lib && $(MAKE) install-lib
 uninstall:
 	@for d in lib $(TARGETS); do (cd $$d && $(MAKE) uninstall) || exit 1; done
 
 
-.PHONY: all always lib $(TOOLDIRS) clean distclean distdir install install-subdirs install-include uninstall
+.PHONY: all always lib $(TOOLDIRS) clean distclean distdir install install-subdirs install-include install-lib uninstall

@@ -86,6 +86,9 @@ install-local-include: stamp-h
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(DESTDIR)$(netincludedir)
 install-include: install-local-include
 	@cd tools && $(MAKE) install-include
+install-lib:
+	@echo $(ALL_TARGETS) | grep userlevel >/dev/null 2>&1 && cd userlevel && $(MAKE) install-lib
+	@echo $(ALL_TARGETS) | grep tools >/dev/null 2>&1 && cd tools && $(MAKE) install-lib
 
 uninstall:
 	@for d in $(ALL_TARGETS) doc; do (cd $$d && $(MAKE) uninstall) || exit 1; done
@@ -198,5 +201,5 @@ distdir: $(srcdir)/configure
 .PHONY: all always elemlist elemlists \
 	bsdmodule exopc linuxmodule ns tools userlevel \
 	clean distclean dist distdir \
-	install install-doc install-man install-local install-include install-local-include \
+	install install-doc install-lib install-man install-local install-include install-local-include \
 	uninstall uninstall-local uninstall-local-include

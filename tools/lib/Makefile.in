@@ -106,7 +106,7 @@ include $(DEPFILES)
 endif
 
 install: install-local
-install-local: libclicktool.a install-include
+install-lib install-local: libclicktool.a install-include
 	$(mkinstalldirs) $(DESTDIR)$(libdir)
 	$(INSTALL) libclicktool.a $(DESTDIR)$(libdir)/libclicktool.a
 install-include:
@@ -122,4 +122,4 @@ distclean: clean
 	-rm -f Makefile
 
 .PHONY: all clean distclean \
-	install install-local install-include uninstall
+	install install-lib install-local install-include uninstall
