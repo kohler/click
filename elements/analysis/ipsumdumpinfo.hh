@@ -6,7 +6,10 @@ CLICK_DECLS
 
 class IPSummaryDumpInfo { public:
 
-    enum { MAJOR_VERSION = 1, MINOR_VERSION = 1 };
+    enum { MAJOR_VERSION = 1, MINOR_VERSION = 2 };
+    // MINOR_VERSION 0 has W_IP_FRAGOFF fields in multiples of 8 bytes.
+    // MINOR_VERSION 1 uses 'W' for TCP flag CWR (now we use 'C'), and often
+    // uses ':' in sack blocks.
     
     enum Content {
 	W_NONE, W_TIMESTAMP, W_TIMESTAMP_SEC, W_TIMESTAMP_USEC,	W_IP_SRC,
