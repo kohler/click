@@ -1,3 +1,8 @@
+2003-08-06 Wednesday 21:12  jastr
+
+	* elements/analysis/aggregateipflows.cc (1.22): check whole
+	timestamp against zero
+
 2003-08-06 Wednesday 19:36  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/toipflowdumps.cc (1.27): take environment into
