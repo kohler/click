@@ -50,6 +50,10 @@ extern "C" {
 #define Clp_BadOption		-2
 #define Clp_Error		-3
 
+/* Sizes of clp->val */
+#define Clp_ValSize		40
+#define Clp_ValIntSize		10
+
 
 typedef struct Clp_Option Clp_Option;
 typedef struct Clp_Parser Clp_Parser;
@@ -90,6 +94,10 @@ struct Clp_Parser {
     int64_t i64;
     uint64_t u64;
 #endif
+    char cs[Clp_ValSize];
+    unsigned char ucs[Clp_ValSize];
+    int is[Clp_ValIntSize];
+    unsigned us[Clp_ValIntSize];
   } val;
   
   Clp_Internal *internal;
