@@ -71,9 +71,13 @@ CheckGridHeader::simple_action(Packet *p)
 {
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
 
-  if(p->length() < sizeof(click_ether) + sizeof(grid_hdr))
+  if(p->length() < sizeof(click_ether) + sizeof(grid_hdr)) { 
+#if 1
+    click_chatter("%s: packet truncated", id().cc());
+#endif
     goto bad;
-  
+  }
+
   unsigned int hlen, tlen;
   hlen = gh->hdr_len;
   tlen = ntohs(gh->total_len);
@@ -86,15 +90,17 @@ CheckGridHeader::simple_action(Packet *p)
   if (tlen + sizeof(click_ether) > p->length()) { 
     /* can only check inequality, as short packets are padded to a
        minimum frame size for wavelan and ethernet */
-#if 0
-    click_chatter("%s: bad packet size", id().cc());
+#if 1
+    click_chatter("%s: bad packet size, wanted %d, only got %d", id().cc(),
+		  tlen + sizeof(click_ether), p->length());
 #endif
     goto bad;
   }
 
   if (in_cksum((unsigned char *) gh, tlen) != 0) {
-#if 0
+#if 1
     click_chatter("%s: bad Grid checksum", id().cc());
+    click_chatter("%s: length: %d, cksum: 0x%.4x", id().cc(), (unsigned long) ntohs(gh->cksum));
 #endif
     goto bad;
   }
