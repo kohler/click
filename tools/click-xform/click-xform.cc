@@ -222,10 +222,10 @@ Matcher::check_match()
   const Vector<ConnectionT> &pconn = _pat->connections();
   for (int i = 0; i < pconn.size(); i++) {
     if (pconn[i].from_idx() == _pat_input_idx
-	&& pconn[i].from().index_in(_to_pp_to) < 0)
+	&& HookupI(pconn[i].from()).index_in(_to_pp_to) < 0)
       return false;
     if (pconn[i].to_idx() == _pat_output_idx
-	&& pconn[i].to().index_in(_from_pp_from) < 0)
+	&& HookupI(pconn[i].to()).index_in(_from_pp_from) < 0)
       return false;
   }
 

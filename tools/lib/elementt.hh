@@ -113,19 +113,20 @@ struct Hookup {
 class ConnectionT { public:
 
     ConnectionT();
-    ConnectionT(const HookupI &, const HookupI &, const String & = String());
+    ConnectionT(const Hookup &, const Hookup &, const String & = String());
     ConnectionT(const Hookup &, const Hookup &, const String &, int, int);
-    ConnectionT(const HookupI &, const HookupI &, const String &, int, int);
 
     bool live() const			{ return _from.live(); }
     bool dead() const			{ return _from.dead(); }
-    void kill()				{ _from.idx = -1; }
+    void kill()				{ _from.elt = 0; }
     
-    const HookupI &from() const		{ return _from; }
-    const HookupI &to() const		{ return _to; }
-    int from_idx() const		{ return _from.idx; }
+    const Hookup &from() const		{ return _from; }
+    const Hookup &to() const		{ return _to; }
+    ElementT *from_elt() const		{ return _from.elt; }
+    int from_idx() const		{ return _from.idx(); }
     int from_port() const		{ return _from.port; }
-    int to_idx() const			{ return _to.idx; }
+    ElementT *to_elt() const		{ return _to.elt; }
+    int to_idx() const			{ return _to.idx(); }
     int to_port() const			{ return _to.port; }
     const String &landmark() const	{ return _landmark; }
 
@@ -134,8 +135,8 @@ class ConnectionT { public:
     
   private:
 
-    HookupI _from;
-    HookupI _to;
+    Hookup _from;
+    Hookup _to;
     String _landmark;
     int _next_from;
     int _next_to;

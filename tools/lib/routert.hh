@@ -66,8 +66,8 @@ class RouterT { public:
     int nconnections() const			{ return _conn.size(); }
     const Vector<ConnectionT> &connections() const { return _conn; }
     bool connection_live(int c) const		{ return _conn[c].live(); }
-    const HookupI &hookup_from(int c) const	{ return _conn[c].from(); }
-    const HookupI &hookup_to(int c) const	{ return _conn[c].to(); }
+    const Hookup &hookup_from(int c) const	{ return _conn[c].from(); }
+    const Hookup &hookup_to(int c) const	{ return _conn[c].to(); }
     const String &hookup_landmark(int c) const	{ return _conn[c].landmark(); }
 
     void add_tunnel(String, String, const String &, ErrorHandler *);
@@ -181,7 +181,6 @@ class RouterT { public:
     void free_connection(int ci);
     void unlink_connection_from(int ci);
     void unlink_connection_to(int ci);
-    void finish_remove_elements(Vector<int> &, ErrorHandler *);
     void finish_free_elements(Vector<int> &);
     void expand_tunnel(Vector<HookupI> *port_expansions, const Vector<HookupI> &ports, bool is_output, int which, ErrorHandler *) const;
     String interpolate_arguments(const String &, const Vector<String> &) const;

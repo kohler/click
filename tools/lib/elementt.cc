@@ -143,22 +143,13 @@ ConnectionT::ConnectionT()
 {
 }
 
-ConnectionT::ConnectionT(const HookupI &from, const HookupI &to, const String &lm)
+ConnectionT::ConnectionT(const Hookup &from, const Hookup &to, const String &lm)
     : _from(from), _to(to), _landmark(lm), _next_from(-1), _next_to(-1)
 {
 }
 
-ConnectionT::ConnectionT(const HookupI &from, const HookupI &to, const String &lm, int next_from, int next_to)
+ConnectionT::ConnectionT(const Hookup &from, const Hookup &to, const String &lm, int next_from, int next_to)
     : _from(from), _to(to), _landmark(lm),
       _next_from(next_from), _next_to(next_to)
 {
-}
-
-ConnectionT::ConnectionT(const Hookup &from, const Hookup &to, const String &lm, int next_from, int next_to)
-    : _landmark(lm), _next_from(next_from), _next_to(next_to)
-{
-    _from.idx = from.idx();
-    _from.port = from.port;
-    _to.idx = to.idx();
-    _to.port = to.port;
 }

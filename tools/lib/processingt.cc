@@ -201,6 +201,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
     for (int i = 0; i < ninput_pidx(); i++)
 	if (_input_processing[i] == VAGNOSTIC) {
 	    int ei = _input_eidx[i];
+	    ElementT *e = const_cast<ElementT *>(_router->elt(ei));
 	    int port = i - _input_pidx[ei];
 	    int opidx = _output_pidx[ei];
 	    int noutputs = _output_pidx[ei+1] - opidx;
@@ -208,7 +209,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 			 port, noutputs, &bv);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
-		    conn.push_back(ConnectionT(HookupI(ei, j), HookupI(ei, port)));
+		    conn.push_back(ConnectionT(Hookup(e, j), Hookup(e, port)));
 	}
 
     // spread personalities

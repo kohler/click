@@ -283,7 +283,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
     }
     
     for (int p = 0; p < hprev.size(); p++)
-      if (hprev[p] == -1 || (hprev[p] >= 0 && r->etype(r->hookup_from(hprev[p]).idx) == idlet)) {
+      if (hprev[p] == -1 || (hprev[p] >= 0 && r->hookup_from(hprev[p]).elt->type() == idlet)) {
 	// remove that scheduler port
 	// check configuration first
 	if (config_eq_ninputs) {
@@ -341,7 +341,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
     r->find_connection_vector_from(x->idx(), hnext);
     
     for (int p = hnext.size() - 1; p >= (is_pull_tee ? 1 : 0); p--)
-      if (hnext[p] == -1 || (hnext[p] >= 0 && r->etype(r->hookup_from(hnext[p]).idx) == idlet)) {
+      if (hnext[p] == -1 || (hnext[p] >= 0 && r->hookup_from(hnext[p]).elt->type() == idlet)) {
 	// remove that tee port
 	int bad_connection = hnext[p];
 	for (int pp = p + 1; pp < hnext.size(); pp++) {
