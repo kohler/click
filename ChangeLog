@@ -1,6 +1,7 @@
 2001-05-09 Wednesday 18:39  Eddie Kohler <eddietwo@lcs.mit.edu>
 
-	* elements/ip/checkipheader.hh (1.28): nitlet
+	* elements/ip/checkipheader.hh (1.28), click-buildtool (1.13):
+	nitlet
 
 2001-05-09 Wednesday 18:36  Eddie Kohler <eddietwo@lcs.mit.edu>
 
