@@ -20,21 +20,21 @@ None
 
 =d
 
-A router configuration may use a DriverManager element to gain control over
-when the Click driver should stop.
+The DriverManager element gives you control over when the Click driver should
+stop.
 
-Any Click element may request a I<driver pause>. Normally, the first pause
-encountered stops the Click driver---that is, the user-level driver calls
-C<exit(0)>, or the kernel driver kills the relevant kernel threads. In element
-documentation, therefore, a driver pause is usually called "stopping the
-driver", and the user asks an element to request a driver pause by supplying a
-'STOP true' keyword argument.
+Click I<driver stop events> suggest that the driver should stop processing.
+Any element can register a driver stop event; for instance, trace processing
+elements can stop the driver when they finish a trace file.  You generally
+request this functionality by supplying a 'STOP true' keyword argument.
 
-The DriverManager element changes this behavior. When the driver detects a
-pause, it asks DriverManager what to do. Depending on its arguments,
+Driver stop events normally stop the driver: the user-level driver calls
+C<exit(0)>, or the kernel driver kills the relevant kernel threads.  The
+DriverManager element changes this behavior.  When a driver stop event occurs,
+the router asks DriverManager what to do next.  Depending on its arguments,
 DriverManager will tell the driver to stop immediately, to wait a while, or to
-continue until the next pause, possibly after calling write handlers on other
-elements.
+continue until the next driver stop event, possibly after calling handlers on
+other elements.
 
 Each configuration argument is an I<instruction>; DriverManager processes
 these instructions sequentially. Instructions include:
@@ -47,31 +47,31 @@ Stop the driver.
 
 =item 'C<wait>'
 
-Wait for a driver pause, then go to the next instruction.
+Consume a driver stop event, then go to the next instruction.
 
 =item 'C<wait_for> TIME'
 
-Wait for TIME seconds, or until a driver pause, whichever comes first; then go
-to the next instruction.
+Wait for TIME seconds, or until a driver stop event occurs, whichever comes
+first; then go to the next instruction.  Any driver stop is not consumed.
 
-=item 'C<wait_pause> [COUNT]'
+=item 'C<wait_stop> [COUNT]'
 
-Wait for COUNT driver pauses, then go to the next instruction. COUNT defaults
-to one. You may say 'C<wait_stop>' instead of 'C<wait_pause>'.
+Consume COUNT driver stop events, then go to the next instruction.  COUNT
+defaults to one.
+
+=item 'C<read> ELEMENT.HANDLER'
+
+Call ELEMENT's read handler named HANDLER and print the result.
 
 =item 'C<write> ELEMENT.HANDLER [DATA]'
 
 Call ELEMENT's write handler named HANDLER, passing it the string DATA; then
 go to the next instruction. DATA defaults to the empty string.
 
-=item 'C<read> ELEMENT.HANDLER'
-
-Call ELEMENT's read handler named HANDLER and print the result.
-
-=item 'C<write_skip>' ELEMENT.HANDLER [DATA]'
+=item 'C<write_skip> ELEMENT.HANDLER [DATA]'
 
 Same as 'C<write>', except that this directive is skipped when there is
-another driver pause pending.
+another driver stop event pending.
 
 =back
 
@@ -93,7 +93,7 @@ FILE is 'C<->', writes the handler value to the standard output.
 
 DriverManager adds an implicit 'C<stop>' instruction to the end of its
 instruction list. As a special case, 'C<DriverManager()>', with no arguments,
-is equivalent to 'C<DriverManager(wait_pause, stop)>'.
+is equivalent to 'C<DriverManager(wait_stop, stop)>'.
 
 DriverManager accepts the following keyword argument:
 
@@ -112,10 +112,10 @@ A router configuration can contain at most one DriverManager element.
 
 The following DriverManager element ensures that an element, C<k>, has time to
 clean itself up before the driver is stopped. It waits for the first driver
-pause, then calls C<k>'s C<cleanup> handler, waits for a tenth of a second,
-and stops the driver.
+stop event, then calls C<k>'s C<cleanup> handler, waits for a tenth of a
+second, and stops the driver.
 
-  DriverManager(wait_pause, write k.cleanup, wait_for 0.1, stop);
+  DriverManager(wait_stop, write k.cleanup, wait_for 0.1, stop);
 
 Use this idiom when one of your elements must emit a last packet or two before
 the router configuration is destroyed.
@@ -134,14 +134,15 @@ class DriverManager : public Element { public:
     int initialize(ErrorHandler *);
 
     void run_timer();
-    void handle_stopped_driver();
+    bool handle_stopped_driver();
 
     int stopped_count() const		{ return _stopped_count; }
 
   private:
 
-    enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_WRITE, INSN_READ,
-		INSN_WRITE_SKIP, INSN_SAVE, INSN_APPEND, INSN_IGNORE };
+    enum Insn { INSN_INITIAL, INSN_WAIT_STOP, INSN_WAIT_FOR, // order required
+		INSN_READ, INSN_WRITE, INSN_WRITE_SKIP, INSN_SAVE, INSN_APPEND,
+		INSN_IGNORE, INSN_STOP };
 
     Vector<int> _insns;
     Vector<int> _args;
@@ -149,7 +150,6 @@ class DriverManager : public Element { public:
     Vector<String> _args3;
 
     int _insn_pos;
-    int _insn_arg;
     int _stopped_count;
     bool _check_handlers;
 

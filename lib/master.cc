@@ -285,12 +285,8 @@ Master::check_driver()
 	    if (r->_runcount <= 0 && r->_running == Router::RUNNING_ACTIVE) {
 		DriverManager *dm = (DriverManager *)(r->attachment("DriverManager"));
 		if (dm)
-		    while (1) {
-			int was_runcount = _runcount;
-			dm->handle_stopped_driver();
-			if (r->_runcount <= was_runcount || r->_runcount > 0)
-			    break;
-		    }
+		    while (dm->handle_stopped_driver() && r->_runcount <= 0)
+			/* nada */;
 	    }
 	    if (r->_runcount > _runcount)
 		_runcount = r->_runcount;

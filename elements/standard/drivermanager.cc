@@ -39,10 +39,10 @@ DriverManager::~DriverManager()
 void
 DriverManager::add_insn(int insn, int arg, const String &arg3)
 {
-    // first instruction must be WAIT or WAIT_STOP, so add a fake WAIT if
+    // first instruction must be WAIT or WAIT_STOP, so add INITIAL if
     // necessary
-    if (_insns.size() == 0 && insn != INSN_WAIT && insn != INSN_WAIT_STOP)
-	add_insn(INSN_WAIT, 0);
+    if (_insns.size() == 0 && insn > INSN_WAIT_FOR)
+	add_insn(INSN_INITIAL, 0);
     _insns.push_back(insn);
     _args.push_back(arg);
     _args2.push_back(0);
@@ -109,7 +109,7 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if (words.size() != 2 || !cp_seconds_as_milli(words[1], &ms))
 		errh->error("expected '%s TIME'", insn_name.cc());
 	    else
-		add_insn(INSN_WAIT, ms);
+		add_insn(INSN_WAIT_FOR, ms);
 
 	} else if (insn_name == "stop" || insn_name == "quit") {
 	    if (words.size() != 1)
@@ -173,14 +173,16 @@ DriverManager::initialize(ErrorHandler *errh)
     }
 
     _insn_pos = 0;
-    _insn_arg = 0;
     _stopped_count = 0;
     _timer.initialize(this);
 
     int insn = _insns[_insn_pos];
-    assert(insn == INSN_WAIT || insn == INSN_WAIT_STOP);
-    if (insn == INSN_WAIT)
+    assert(insn <= INSN_WAIT_FOR);
+    if (insn == INSN_WAIT_FOR)
 	_timer.schedule_after_ms(_args[_insn_pos]);
+    else if (insn == INSN_INITIAL)
+	// get rid of the initial runcount so we get called right away
+	router()->adjust_runcount(-1);
     
     return (errh->nerrors() == before || !_check_handlers ? 0 : -1);
 }
@@ -191,14 +193,17 @@ DriverManager::step_insn()
     _insn_pos++;
 
     int insn = _insns[_insn_pos];
+
+    // change insn if appropriate
     if (insn == INSN_WRITE_SKIP && router()->runcount() >= 0)
 	insn = INSN_WRITE;
+    
     if (insn == INSN_STOP)
-	router()->please_stop_driver();
-    else if (insn == INSN_WAIT)
+	router()->adjust_runcount(-1);
+    else if (insn == INSN_WAIT_FOR)
 	_timer.schedule_after_ms(_args[_insn_pos]);
     else if (insn == INSN_WAIT_STOP)
-	_insn_arg = 0;
+	/* nada */;
     else if (insn == INSN_WRITE) {
 	StringAccum sa;
 	Element *e = router()->element(_args[_insn_pos]);
@@ -241,41 +246,38 @@ DriverManager::step_insn()
     return false;
 }
 
-void
+bool
 DriverManager::handle_stopped_driver()
 {
     _stopped_count++;
 
     // process current instruction
     int insn = _insns[_insn_pos];
-    assert(insn == INSN_STOP || insn == INSN_WAIT_STOP || insn == INSN_WAIT);
+    assert(insn == INSN_STOP || insn == INSN_WAIT_STOP || insn == INSN_WAIT_FOR || insn == INSN_INITIAL);
     if (insn == INSN_STOP)
-	return;
-    else if (insn == INSN_WAIT_STOP) {
-	_insn_arg++;
-	if (_insn_arg < _args[_insn_pos]) {
-	    router()->reserve_driver();
-	    return;
-	}
-    } else if (insn == INSN_WAIT)
+	return false;
+    else if (insn == INSN_WAIT_STOP && _args[_insn_pos] > 0) {
+	router()->adjust_runcount(1);
+	_args[_insn_pos]--;
+	if (_args[_insn_pos] > 0)
+	    return true;
+    } else if (insn == INSN_WAIT_FOR)
 	_timer.unschedule();
+    else if (insn == INSN_INITIAL)
+	router()->adjust_runcount(1);
 
     // process following instructions
     while (step_insn())
 	/* nada */;
 
-    // reserve driver if current instruction says so
-    insn = _insns[_insn_pos];
-    assert(insn == INSN_STOP || insn == INSN_WAIT_STOP || insn == INSN_WAIT);
-    if (insn != INSN_STOP)
-	router()->reserve_driver();
+    return true;
 }
 
 void
 DriverManager::run_timer()
 {
     // called when a timer expires
-    assert(_insns[_insn_pos] == INSN_WAIT);
+    assert(_insns[_insn_pos] == INSN_WAIT_FOR);
     while (step_insn())
 	/* nada */;
 }

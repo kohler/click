@@ -31,7 +31,6 @@
 #include <click/notifier.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/standard/errorelement.hh>
-#include <click/standard/drivermanager.hh>
 #include <stdarg.h>
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
@@ -574,7 +573,7 @@ Router::set_connections()
 // DRIVER STOPPAGE
 
 void
-Router::set_driver_reservations(int x)
+Router::set_runcount(int x)
 {
     _master->_runcount_lock.acquire();
     _runcount = x;
@@ -588,10 +587,10 @@ Router::set_driver_reservations(int x)
 }
 
 void
-Router::adjust_driver_reservations(int x)
+Router::adjust_runcount(int delta)
 {
     _master->_runcount_lock.acquire();
-    _runcount += x;
+    _runcount += delta;
     if (_runcount < _master->_runcount)
 	_master->_runcount = _runcount;
     _master->_runcount_lock.release();
@@ -1565,7 +1564,7 @@ stop_global_handler(const String &s, Element *e, void *, ErrorHandler *errh)
     if (e) {
 	int n = 1;
 	(void) cp_integer(cp_uncomment(s), &n);
-	e->router()->adjust_driver_reservations(-n);
+	e->router()->adjust_runcount(-n);
     } else
 	errh->message("no router to stop");
     return 0;

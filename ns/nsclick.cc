@@ -191,7 +191,7 @@ stop_global_handler(const String &s, Element *, void *, ErrorHandler *)
 {
   int n = 1;
   (void) cp_integer(cp_uncomment(s), &n);
-  router->adjust_driver_reservations(-n);
+  router->adjust_runcount(-n);
   return 0;
 }
 

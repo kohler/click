@@ -136,7 +136,7 @@ catch_signal(int sig)
   if (!started)
     kill(getpid(), sig);
   else
-    router->adjust_driver_reservations(-10000);
+    router->adjust_runcount(-10000);
 }
 }
 
@@ -461,7 +461,7 @@ particular purpose.\n");
       hotswap_thunk_router->initialize(errh);
       hotswap_task.initialize(hotswap_thunk_router, false);
       hotswap_thunk_router->activate(errh);
-      hotswap_thunk_router->set_driver_reservations(0);
+      hotswap_thunk_router->set_runcount(0);
     }
     router->master()->thread(0)->driver();
   }

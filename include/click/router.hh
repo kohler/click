@@ -99,10 +99,10 @@ class Router { public:
     enum { RUNNING_DEAD = -2, RUNNING_INACTIVE = -1, RUNNING_ACTIVE = 0, RUNNING_PAUSED = 1 };
   
     // DRIVER RESERVATIONS
-    void please_stop_driver()		{ adjust_driver_reservations(-1); }
-    void reserve_driver()		{ adjust_driver_reservations(1); }
-    void set_driver_reservations(int);
-    void adjust_driver_reservations(int);
+    void please_stop_driver()		{ adjust_runcount(-1); }
+    void reserve_driver()		{ adjust_runcount(1); }
+    void set_runcount(int);
+    void adjust_runcount(int);
     int runcount() const		{ return _runcount; }
 
     // UNPARSING
