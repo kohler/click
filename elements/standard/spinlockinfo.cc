@@ -10,9 +10,7 @@
  * distribution.
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <click/config.h>
 #include "spinlockinfo.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>

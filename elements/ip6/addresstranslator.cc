@@ -13,9 +13,7 @@
  * distribution.
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <click/config.h>
 #include "addresstranslator.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>

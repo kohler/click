@@ -17,10 +17,6 @@
  * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
  */
 
-#include <stddef.h>
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
 #include <click/config.h>
 #include <click/package.hh>
 #include "updateroutes.hh"
@@ -28,6 +24,7 @@
 #include <click/error.hh>
 #include <click/click_ether.h>
 #include <click/click_ip.h>
+#include <stddef.h>
 #include "elements/standard/scheduleinfo.hh"
 #include <click/router.hh>
 #include "grid.hh"

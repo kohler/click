@@ -7,9 +7,7 @@
  * being distributed.
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
+#include <click/config.h>
 #include "amoeba.hh"
 
 #include <math.h>
