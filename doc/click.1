@@ -145,6 +145,14 @@ rate in packets per second. See
 .M click.o 8
 for more information on generic handlers, and the element documentation for
 more information on element-specific handlers.
+.Sp
+.I element
+may also be a pattern that uses the shell's globbing syntax (*, ?, and
+[...]). In this case,
+.B click
+will run every handler whose name is
+.I handler
+and whose element's name matches the pattern.
 '
 .Sp
 .TP 5

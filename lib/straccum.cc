@@ -37,6 +37,14 @@ StringAccum::grow(int want)
   return true;
 }
 
+const char *
+StringAccum::cc()
+{
+  push('\0');
+  pop();
+  return reinterpret_cast<char *>(_s);
+}
+
 String
 StringAccum::take_string()
 {

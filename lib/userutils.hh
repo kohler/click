@@ -4,6 +4,8 @@
 #include <stdio.h>
 class ErrorHandler;
 
+bool glob_match(const String &string, const String &pattern);
+
 String file_string(FILE *, ErrorHandler * = 0);
 String file_string(const char *, ErrorHandler * = 0);
 

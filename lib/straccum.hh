@@ -22,7 +22,8 @@ class StringAccum {
   StringAccum()				: _s(0), _len(0), _cap(0) { }
   explicit StringAccum(int);
   ~StringAccum()			{ delete[] _s; }
-  
+
+  const char *cc();
   char *data() const			{ return (char *)_s; }
   int length() const			{ return _len; }
   

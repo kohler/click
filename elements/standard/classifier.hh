@@ -90,6 +90,8 @@ class Classifier : public Element { protected:
     bool not_implies(const Expr &) const;
     bool not_implies_not(const Expr &) const;
     bool compatible(const Expr &) const;
+    Expr &operator&=(const Expr &);
+    String s() const;
   };
   
   Vector<Expr> _exprs;
@@ -97,16 +99,16 @@ class Classifier : public Element { protected:
   unsigned _safe_length;
   unsigned _align_offset;
 
-#if 0
-  int check_path(int ei, int interested, int eventual, bool first, bool yet) const;
-#else
-  int check_path(const Vector<int> &path, int ei, int interested, int eventual, bool first, bool yet) const;
-#endif
+  void sort_and_expr_subtree(int, int, int);
+  
+  bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
   int check_path(int, bool) const;
   void drift_expr(int);
-  void unaligned_optimize();
-  void remove_unused_states();
   void combine_compatible_states();
+  bool remove_unused_states();
+  //int count_occurrences(const Expr &, int state, bool first) const;
+  //bool remove_duplicate_states();
+  void unaligned_optimize();
   void optimize_exprs(ErrorHandler *);
   
   static String program_string(Element *, void *);

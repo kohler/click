@@ -84,6 +84,58 @@ Classifier::Expr::compatible(const Expr &e) const
   return (value.u & both_mask) == (e.value.u & both_mask);
 }
 
+Classifier::Expr &
+Classifier::Expr::operator&=(const Expr &e)
+{
+  if ((e.offset >= 0 && !e.mask.u) || offset < 0)
+    /* nada */;
+  else if ((offset >= 0 && !mask.u) || e.offset < 0)
+    *this = e;
+  else {
+    unsigned both_mask = mask.u & e.mask.u;
+    if (offset != e.offset || (value.u & both_mask) != (e.value.u & both_mask))
+      offset = -1;
+    else {
+      mask.u = both_mask;
+      value.u &= both_mask;
+    }
+  }
+  return *this;
+}
+
+StringAccum &
+operator<<(StringAccum &sa, const Classifier::Expr &e)
+{
+  char buf[20];
+  int offset = e.offset;
+  sprintf(buf, "%3d/", offset);
+  sa << buf;
+  for (int j = 0; j < 4; j++)
+    sprintf(buf + 2*j, "%02x", e.value.c[j]);
+  sprintf(buf + 8, "%%");
+  for (int j = 0; j < 4; j++)
+    sprintf(buf + 9 + 2*j, "%02x", e.mask.c[j]);
+  sa << buf << "  yes->";
+  if (e.yes <= 0)
+    sa << "[" << -e.yes << "]";
+  else
+    sa << "step " << e.yes;
+  sa << "  no->";
+  if (e.no <= 0)
+    sa << "[" << -e.no << "]";
+  else
+    sa << "step " << e.no;
+  return sa;
+}
+
+String
+Classifier::Expr::s() const
+{
+  StringAccum sa;
+  sa << *this;
+  return sa.take_string();
+}
+
 //
 // CLASSIFIER ITSELF
 //
@@ -109,52 +161,88 @@ Classifier::clone() const
 
 // OPTIMIZATION
 
-int
-Classifier::check_path(const Vector<int> &path,
+static void
+common_paths(const Vector<int> &a, const Vector<int> &b, Vector<int> &out)
+{
+  int ai = 0, bi = 0;
+  while (ai < a.size() && bi < b.size()) {
+    if (a[ai] == b[bi]) {
+      out.push_back(a[ai]);
+      ai++;
+      bi++;
+    }
+    // cast to unsigned so that outputs and FAILURE are bigger than
+    // internal nodes
+    while (ai < a.size() && bi < b.size() && (unsigned)a[ai] < (unsigned)b[bi])
+      ai++;
+    while (ai < a.size() && bi < b.size() && (unsigned)a[ai] > (unsigned)b[bi])
+      bi++;
+  }
+}
+
+bool
+Classifier::check_path(const Vector<int> &path, Vector<int> &output,
 		       int ei, int interested, int eventual,
 		       bool first, bool yet) const
 {
   if (ei > interested && ei != eventual && !yet)
-    return FAILURE;
+    return false;
+  if (yet)
+    output.push_back(ei);
   if (ei < 0 || (ei == 0 && !first))
-    return (!yet ? FAILURE : ei);
+    return yet;
 
   const Expr &e = _exprs[ei];
   Vector<int> new_path(path);
   new_path.push_back(ei);
-  
-  int yes_answer = 0;
-  for (int i = 0; i < new_path.size() - 1 && !yes_answer; i++) {
+
+  Vector<int> yes_answer;
+  bool yes_ok = false;
+  for (int i = 0; i < new_path.size() - 1; i++) {
     const Expr &old = _exprs[new_path[i]];
     bool yes = (old.yes == new_path[i+1]);
     if ((yes && old.implies_not(e)) || (!yes && old.not_implies_not(e)))
-      yes_answer = FAILURE;
+      goto yes_dead;
   }
-  if (!yes_answer)
-    yes_answer = check_path(new_path, e.yes, interested, eventual, false,
-			    yet || (ei == interested && e.yes == eventual));
-  
-  int no_answer = 0;
-  for (int i = 0; i < new_path.size() - 1 && !no_answer; i++) {
+  yes_ok = check_path(new_path, yes_answer, e.yes, interested, eventual, false,
+		      yet || (ei == interested && e.yes == eventual));
+
+ yes_dead:
+  Vector<int> no_answer;
+  bool no_ok = false;
+  for (int i = 0; i < new_path.size() - 1; i++) {
     const Expr &old = _exprs[new_path[i]];
     bool yes = (old.yes == new_path[i+1]);
     if ((yes && old.implies(e)) || (!yes && old.not_implies(e)))
-      no_answer = FAILURE;
+      goto no_dead;
   }
-  if (!no_answer)
-    no_answer = check_path(new_path, e.no, interested, eventual, false,
-			   yet || (ei == interested && e.no == eventual));
+  no_ok = check_path(new_path, no_answer, e.no, interested, eventual, false,
+		     yet || (ei == interested && e.no == eventual));
 
+ no_dead:
   //fprintf(stderr, "      ");
   //for (int i=0; i<new_path.size(); i++) fprintf(stderr, " %d", new_path[i]);
-  //fprintf(stderr, "%s -> [%d, %d]\n", (yet?"*":""), yes_answer, no_answer);
+  //fprintf(stderr, "%s -> \n", (yet?"*":""));
   
-  if (ei == interested)
-    return (e.yes == eventual ? yes_answer : no_answer);
-  else if (yes_answer != FAILURE && no_answer != FAILURE && yes_answer != no_answer)
-    return (ei >= eventual ? ei : eventual);
-  else
-    return (yes_answer != FAILURE ? yes_answer : no_answer);
+  if (ei == interested) {
+    const Vector<int> &v = (e.yes == eventual ? yes_answer : no_answer);
+    for (int i = 0; i < v.size(); i++)
+      output.push_back(v[i]);
+    return (e.yes == eventual ? yes_ok : no_ok);
+    
+  } else if (yes_ok && no_ok) {
+    common_paths(yes_answer, no_answer, output);
+    return true;
+    
+  } else if (!yes_ok && !no_ok)
+    return false;
+  
+  else {
+    const Vector<int> &v = (yes_ok ? yes_answer : no_answer);
+    for (int i = 0; i < v.size(); i++)
+      output.push_back(v[i]);
+    return true;
+  }
 }
 
 int
@@ -162,9 +250,13 @@ Classifier::check_path(int ei, bool yes) const
 {
   int next_ei = (yes ? _exprs[ei].yes : _exprs[ei].no);
   //fprintf(stderr, "%d.%s -> %d\n", ei, yes?"y":"n", next_ei);
-  if (next_ei > 0)
-    next_ei = check_path(Vector<int>(), 0, ei, next_ei, true, false);
-  //fprintf(stderr, "      %d.%s -> %d\n", ei, yes?"y":"n", next_ei);
+  if (next_ei > 0) {
+    Vector<int> x;
+    check_path(Vector<int>(), x, 0, ei, next_ei, true, false);
+    next_ei = (x.size() ? x.back() : FAILURE);
+  }
+  // next_ei = check_path(Vector<int>(), 0, ei, next_ei, true, false);
+  //fprintf(stderr, "   -> %d\n", next_ei);
   return next_ei;
 }
 
@@ -172,58 +264,14 @@ void
 Classifier::drift_expr(int ei)
 {
   Expr &e = _exprs[ei];
-  while (1) {
-    Expr save(e);
-    e.yes = check_path(ei, true);
-    e.no = check_path(ei, false);
-    if (save.yes == e.yes && save.no == e.no)
-      break;
-  }
+  // only do it once; repetitions without other changes to the dag would be
+  // redundant
+  e.yes = check_path(ei, true);
+  e.no = check_path(ei, false);
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
 }
 
-void
-Classifier::unaligned_optimize()
-{
-  // A simple optimization to catch the common case that two adjacent
-  // expressions have one of the forms:
-  //   OFF/??XXXXXX    OFF/????XXXX    OFF/??????XX
-  // OFF+4/XX??????  OFF+4/XXXX????  OFF+4/XXXXXX??
-  // Change this into a single expression like:
-  // OFF+1/XXXXXXXX  OFF+2/XXXXXXXX  OFF+3/XXXXXXXX
-  // It's a pretty weak optimization, but often effective.
-  for (int i = 0; i < _exprs.size() - 1; i++) {
-    if (_exprs[i].yes != i+1 || _exprs[i].no != _exprs[i+1].no
-	|| _exprs[i].offset + UBYTES != _exprs[i+1].offset)
-      continue;
-    
-    // check to see that masks don't conflict
-    int shift = 0;
-    while (!_exprs[i].mask.c[shift])
-      shift++;
-    if (shift == 0)
-      continue;
-    for (int j = shift; j < 4; j++)
-      if (_exprs[i+1].mask.c[j])
-	goto done;
-    
-    // combine expressions
-    _exprs[i].offset += shift;
-    for (int j = 0; j < 4-shift; j++) {
-      _exprs[i].mask.c[j] = _exprs[i].mask.c[j+shift];
-      _exprs[i].value.c[j] = _exprs[i].value.c[j+shift];
-    }
-    for (int j = 4-shift; j < 4; j++) {
-      _exprs[i].mask.c[j] = _exprs[i+1].mask.c[j-4+shift];
-      _exprs[i].value.c[j] = _exprs[i+1].value.c[j-4+shift];
-    }
-    _exprs[i].yes = _exprs[i+1].yes;
-    
-   done: ;
-  }
-}
-
-void
+bool
 Classifier::remove_unused_states()
 {
   // Remove uninteresting exprs
@@ -244,11 +292,10 @@ Classifier::remove_unused_states()
       }
     }
   }
-
   if (_output_everything < 0 && first > 0)
     _exprs[0] = _exprs[first];
-  
-  // Now remove unreachable states.
+
+  // Remove unreachable states
   for (int i = 1; i < _exprs.size(); i++) {
     for (int j = 0; j < i; j++)	// all branches are forward
       if (_exprs[j].yes == i || _exprs[j].no == i)
@@ -264,6 +311,26 @@ Classifier::remove_unused_states()
     i--;			// shifted downward, so must reconsider `i'
    done: ;
   }
+
+  // Get rid of bad branches
+  Vector<int> failure_states(_exprs.size(), FAILURE);
+  bool changed = false;
+  for (int i = _exprs.size() - 1; i >= 0; i--) {
+    Expr &e = _exprs[i];
+    if (e.yes > 0 && failure_states[e.yes] != FAILURE) {
+      e.yes = failure_states[e.yes];
+      changed = true;
+    }
+    if (e.no > 0 && failure_states[e.no] != FAILURE) {
+      e.no = failure_states[e.no];
+      changed = true;
+    }
+    if (e.yes == FAILURE)
+      failure_states[i] = e.no;
+    else if (e.no == FAILURE)
+      failure_states[i] = e.yes;
+  }
+  return changed;
 }
 
 void
@@ -285,13 +352,12 @@ void
 Classifier::optimize_exprs(ErrorHandler *errh)
 {
   // optimize edges by drifting
-  for (int i = 0; i < _exprs.size(); i++)
-    drift_expr(i);
+  do {
+    for (int i = 0; i < _exprs.size(); i++)
+      drift_expr(i);
+    combine_compatible_states();
+  } while (remove_unused_states()); // || remove_duplicate_states());
   
-  // get rid of unused states
-  combine_compatible_states();
-  remove_unused_states();
-
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   
   // Check for case where all patterns have conflicts: _exprs will be empty
@@ -327,7 +393,7 @@ Classifier::optimize_exprs(ErrorHandler *errh)
     if (!used_patterns[i])
       errh->warning("pattern %d matches no packets", i);
 
-  //fputs(program_string(this, 0).cc(), stderr);
+  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
 }
 
 //
@@ -369,6 +435,131 @@ Classifier::start_expr_subtree(Vector<int> &tree)
 }
 
 void
+Classifier::sort_and_expr_subtree(int from, int success, int failure)
+{
+  // This function checks the last subtree in _exprs, from `from' to the end
+  // of _exprs, to see if it is an AND subtree. Such a subtree can be divided
+  // into N sections, where all links inside each section K satisfy the
+  // following properties:
+  //
+  // -- Each "yes" link either remains within section K, or jumps to the
+  //    beginning of section K + 1, or (if there is no section K + 1) jumps
+  //    to `success'.
+  // -- Each "no" link either remains within section K or jumps to `failure'.
+  //
+  // The sections within such a subtree can be arbitrarily reordered without
+  // affecting the subtree's semantics. This function finds such subtrees and
+  // sorts them by offset of the first expr in each section. (Thus, the offset
+  // of the first expr in section 0 <= the offset of the first expr in section
+  // 1, and so forth.) This improves the action of later optimizations.
+  
+  int nexprs = _exprs.size();
+  Vector<int> id(nexprs, 0);
+  for (int i = from; i < nexprs; i++)
+    id[i] = i;
+
+  // determine equivalence classes (that is, the sections)
+  while (1) {
+    bool changed = false;
+    for (int i = from; i < nexprs; i++) {
+      const Expr &e = _exprs[i];
+      if (e.no != failure && e.no > 0 && id[i] != id[e.no]) {
+	for (int j = i + 1; j <= e.no; j++)
+	  id[j] = id[i];
+	changed = true;
+      } else if (e.yes > 0 && id[i] != id[e.yes - 1]) {
+	for (int j = i + 1; j < e.yes; j++)
+	  id[j] = id[i];
+	changed = true;
+      } else if ((e.no <= 0 && e.no != failure) || (e.yes <= 0 && e.yes != success))
+	return;
+    }
+    if (!changed) break;
+  }
+
+  // check for bad branches that would invalidate the transformation
+  for (int i = from; id[i] < id.back(); i++) {
+    const Expr &e = _exprs[i];
+    if (e.yes == success)
+      return;
+  }
+  
+  //{ StringAccum sa;
+  //sa << success << " -- " << failure << "\n";
+  //for (int i = from; i < nexprs; i++) {
+  //  sa << (i < 10 ? ">> " : ">>") << i << " [" << (id[i] < 10 ? " " : "") << id[i] << "] " << _exprs[i] << "\n";
+  //}
+  //click_chatter("%s", sa.cc()); }
+
+  // extract equivalence classes from 'id' array
+  Vector<int> equiv_classes;
+  for (int i = from, c = -1; i < nexprs; i++)
+    if (id[i] != c) {
+      equiv_classes.push_back(i);
+      c = id[i];
+    }
+  if (equiv_classes.size() <= 1)
+    return;
+
+  // sort equivalence classes
+  bool sorted = true;
+  Vector<int> sort_equiv_class(equiv_classes.size(), 0);
+  for (int i = 0; i < equiv_classes.size(); i++) {
+    int c = equiv_classes[i];
+    int j = 0;
+    for (; j < i
+	   && _exprs[sort_equiv_class[j]].offset <= _exprs[c].offset; j++)
+      /* nada */;
+    if (j == i)
+      sort_equiv_class[i] = c;
+    else {
+      memmove(&sort_equiv_class[j+1], &sort_equiv_class[j], (i - j) * sizeof(int));
+      sort_equiv_class[j] = c;
+      sorted = false;
+    }
+  }
+
+  // return early if already sorted
+  if (sorted)
+    return;
+
+  // sort the actual exprs
+  equiv_classes.push_back(nexprs);
+  Vector<Expr> newe;
+  for (int i = 0; i < sort_equiv_class.size(); i++) {
+    int c = sort_equiv_class[i];
+    int new_c = from + newe.size();
+    int classno;
+    for (classno = 0; equiv_classes[classno] != c; classno++) ;
+    int next = (classno == equiv_classes.size() - 2 ? success : equiv_classes[classno+1]);
+    int new_next = (i == sort_equiv_class.size() - 1 ? success : new_c + equiv_classes[classno+1] - c);
+    for (int j = c; j < nexprs && id[j] == c; j++) {
+      Expr e = _exprs[j];
+      if (e.yes == next)
+	e.yes = new_next;
+      else if (e.yes > 0) {
+	assert(e.yes >= c && (next <= 0 || e.yes < next));
+	e.yes += new_c - c;
+      }
+      if (e.no > 0) {
+	assert(e.no >= c && (next <= 0 || e.no < next));
+	e.no += new_c - c;
+      } else
+	assert(e.no == failure);
+      newe.push_back(e);
+    }
+  }
+
+  memcpy(&_exprs[from], &newe[0], newe.size() * sizeof(Expr));
+  
+  //{ StringAccum sa;
+  //for (int i = from; i < nexprs; i++) {
+  //  sa << (i < 10 ? " " : "") << i << " " << _exprs[i] << "\n";
+  //}
+  //click_chatter("%s", sa.cc()); }
+}
+
+void
 Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
 				int success = SUCCESS, int failure = FAILURE)
 {
@@ -381,8 +572,9 @@ Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
     else if (tree[i+1] >= 0 && tree[i+1] < level)
       break;
 
-  if (subtrees.size()) {
+  if (int nsubtrees = subtrees.size()) {
     int first = subtrees.back();
+    int real_first = first;
     
     tree[first+1] = level - 1;
     for (int i = first + 1; i < _exprs.size(); i++)
@@ -405,6 +597,9 @@ Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
       }
       first = next;
     }
+
+    if (is_and && nsubtrees > 1)
+      sort_and_expr_subtree(real_first, success, failure);
   }
 
   tree[0]--;
@@ -604,27 +799,9 @@ Classifier::program_string(Element *element, void *)
   Classifier *c = (Classifier *)element;
   StringAccum sa;
   for (int i = 0; i < c->_exprs.size(); i++) {
-    Expr &e = c->_exprs[i];
-    char buf[20];
-    int offset = e.offset - c->_align_offset;
-    sprintf(buf, "%2d %3d/", i, offset);
-    sa << buf;
-    for (int j = 0; j < 4; j++)
-      sprintf(buf + 2*j, "%02x", e.value.c[j]);
-    sprintf(buf + 8, "%%");
-    for (int j = 0; j < 4; j++)
-      sprintf(buf + 9 + 2*j, "%02x", e.mask.c[j]);
-    sa << buf << "  yes->";
-    if (e.yes <= 0)
-      sa << "[" << -e.yes << "]";
-    else
-      sa << "step " << e.yes;
-    sa << "  no->";
-    if (e.no <= 0)
-      sa << "[" << -e.no << "]";
-    else
-      sa << "step " << e.no;
-    sa << "\n";
+    Expr e = c->_exprs[i];
+    e.offset -= c->_align_offset;
+    sa << (i < 10 ? " " : "") << i << ' ' << e << '\n';
   }
   if (c->_exprs.size() == 0)
     sa << "all->[" << c->_output_everything << "]\n";
@@ -710,6 +887,157 @@ Classifier::push(int, Packet *p)
   checked_push_output(-pos, p);
 }
 
+
+
+#if 0
+// optimization detritus
+
+int
+Classifier::check_path(const Vector<int> &path,
+		       int ei, int interested, int eventual,
+		       bool first, bool yet) const
+{
+  if (ei > interested && ei != eventual && !yet)
+    return FAILURE;
+  if (ei < 0 || (ei == 0 && !first))
+    return (!yet ? FAILURE : ei);
+
+  const Expr &e = _exprs[ei];
+  Vector<int> new_path(path);
+  new_path.push_back(ei);
+  
+  int yes_answer = 0;
+  for (int i = 0; i < new_path.size() - 1 && !yes_answer; i++) {
+    const Expr &old = _exprs[new_path[i]];
+    bool yes = (old.yes == new_path[i+1]);
+    if ((yes && old.implies_not(e)) || (!yes && old.not_implies_not(e)))
+      yes_answer = FAILURE;
+  }
+  if (!yes_answer)
+    yes_answer = check_path(new_path, e.yes, interested, eventual, false,
+			    yet || (ei == interested && e.yes == eventual));
+  
+  int no_answer = 0;
+  for (int i = 0; i < new_path.size() - 1 && !no_answer; i++) {
+    const Expr &old = _exprs[new_path[i]];
+    bool yes = (old.yes == new_path[i+1]);
+    if ((yes && old.implies(e)) || (!yes && old.not_implies(e)))
+      no_answer = FAILURE;
+  }
+  if (!no_answer)
+    no_answer = check_path(new_path, e.no, interested, eventual, false,
+			   yet || (ei == interested && e.no == eventual));
+
+  //fprintf(stderr, "      ");
+  //for (int i=0; i<new_path.size(); i++) fprintf(stderr, " %d", new_path[i]);
+  //fprintf(stderr, "%s -> [%d, %d]\n", (yet?"*":""), yes_answer, no_answer);
+  
+  if (ei == interested)
+    return (e.yes == eventual ? yes_answer : no_answer);
+  else if (yes_answer != FAILURE && no_answer != FAILURE && yes_answer != no_answer)
+    return (ei > eventual ? ei : eventual);
+  else
+    return (yes_answer != FAILURE ? yes_answer : no_answer);
+}
+
+int
+Classifier::count_occurrences(const Expr &what, int state, bool first) const
+{
+  if (state < 0 || (state == 0 && !first))
+    return 0;
+  const Expr &e = _exprs[state];
+  int nyes = count_occurrences(what, e.yes, false);
+  int nno = count_occurrences(what, e.no, false);
+  return (nyes > nno ? nyes : nno) + (what.implies(e) ? 1 : 0);
+}
+
+bool
+Classifier::remove_duplicate_states()
+{
+  // look for duplicate states
+  Vector<int> init_duplicates;
+  for (int i = 0; i < _exprs.size(); i++) {
+    const Expr &e = _exprs[i];
+    int dupcount = 0;
+    for (int j = i + 1; j < _exprs.size(); j++)
+      if (e.implies(_exprs[j]))
+	dupcount++;
+    if (dupcount)
+      init_duplicates.push_back(i);
+  }
+
+  // check for real duplicates
+  Vector<int> duplicates;
+  for (int i = 0; i < init_duplicates.size(); i++)
+    if (count_occurrences(_exprs[init_duplicates[i]], 0, true) > 1)
+      duplicates.push_back(init_duplicates[i]);
+  
+  if (!duplicates.size())
+    return false;
+  
+  // expand first duplicate
+  int splitter = duplicates[0];
+  Expr &splite = _exprs[splitter];
+  assert(splite.no > 0 && splite.yes > 0);
+  //click_chatter("%s", program_string(this, 0).cc());
+  //click_chatter("******** %s", splite.s().cc());
+  int orig_nexprs = _exprs.size();
+  int orig_no_branch = splite.no;
+  splite.no = orig_nexprs;
+  for (int i = orig_no_branch; i < orig_nexprs; i++) {
+    Expr e = _exprs[i];
+    if (e.yes > 0) e.yes += orig_nexprs - orig_no_branch;
+    if (e.no > 0) e.no += orig_nexprs - orig_no_branch;
+    _exprs.push_back(e);
+  }
+  click_chatter("%s", program_string(this, 0).cc());
+  return true;
+}
+
+void
+Classifier::unaligned_optimize()
+{
+  // A simple optimization to catch the common case that two adjacent
+  // expressions have one of the forms:
+  //   OFF/??XXXXXX    OFF/????XXXX    OFF/??????XX
+  // OFF+4/XX??????  OFF+4/XXXX????  OFF+4/XXXXXX??
+  // Change this into a single expression like:
+  // OFF+1/XXXXXXXX  OFF+2/XXXXXXXX  OFF+3/XXXXXXXX
+  // It's a pretty weak optimization, but often effective.
+  for (int i = 0; i < _exprs.size() - 1; i++) {
+    if (_exprs[i].yes != i+1 || _exprs[i].no != _exprs[i+1].no
+	|| _exprs[i].offset + UBYTES != _exprs[i+1].offset)
+      continue;
+    
+    // check to see that masks don't conflict
+    int shift = 0;
+    while (!_exprs[i].mask.c[shift])
+      shift++;
+    if (shift == 0)
+      continue;
+    for (int j = shift; j < 4; j++)
+      if (_exprs[i+1].mask.c[j])
+	goto done;
+    
+    // combine expressions
+    _exprs[i].offset += shift;
+    for (int j = 0; j < 4-shift; j++) {
+      _exprs[i].mask.c[j] = _exprs[i].mask.c[j+shift];
+      _exprs[i].value.c[j] = _exprs[i].value.c[j+shift];
+    }
+    for (int j = 4-shift; j < 4; j++) {
+      _exprs[i].mask.c[j] = _exprs[i+1].mask.c[j-4+shift];
+      _exprs[i].value.c[j] = _exprs[i+1].value.c[j-4+shift];
+    }
+    _exprs[i].yes = _exprs[i+1].yes;
+    
+   done: ;
+  }
+}
+
+#endif
+
+#undef UBYTES
 ELEMENT_REQUIRES(AlignmentInfo)
 EXPORT_ELEMENT(Classifier)
 

@@ -106,10 +106,9 @@ Version 1.1
    (or RatedSource or FromDump) runs out of packets to send. Supply the
    `-s' option to get the old behavior.
 
-** User-level Click can optionally dump the output of element read handlers
-   into a directory (directory path specified using -d option) or stdout on a
-   regular basis (duration specified by argument to ReadHandlerCaller element).
-
+** You can give shell globbing syntax to the user-level driver's `-h
+   HANDLER' option; for example, `-h "*.config"'.
+ 
 ** Fixed FromBPF and ToBPF, finally. The fixed versions are called
    FromDevice and ToDevice.
 

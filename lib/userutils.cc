@@ -28,6 +28,98 @@
 #include <dirent.h>
 #include <stdarg.h>
 
+bool
+glob_match(const String &str, const String &pattern)
+{
+  const char *sdata = str.data();
+  const char *pdata = pattern.data();
+  int slen = str.length();
+  int plen = pattern.length();
+  int spos = 0, ppos = 0;
+  Vector<int> glob_spos, glob_ppos1, glob_ppos2;
+
+  while (1) {
+    while (ppos < plen)
+      switch (pdata[ppos]) {
+
+       case '?':
+	if (spos >= slen) goto done;
+	spos++;
+	ppos++;
+	break;
+
+       case '*':
+	glob_spos.push_back(spos + 1);
+	glob_ppos1.push_back(ppos);
+	glob_ppos2.push_back(plen);
+	ppos = plen;
+	break;
+
+       case '[': {
+	 if (spos >= slen) goto done;
+
+	 // find end of character class
+	 int p = ppos + 1;
+	 bool negated = false;
+	 if (p < plen && pdata[p] == '^') {
+	   negated = true;
+	   p++;
+	 }
+	 int first = p;
+	 if (p < plen && pdata[p] == ']')
+	   p++;
+	 while (p < plen && pdata[p] != ']')
+	   p++;
+	 if (p >= plen)		// not a character class at all
+	   goto ordinary;
+	 
+	 // parse character class
+	 bool in = false;
+	 for (int i = first; i < p && !in; i++) {
+	   int c1 = pdata[i];
+	   int c2 = c1;
+	   if (i < p - 2 && pdata[i+1] == '-') {
+	     c2 = pdata[i+2];
+	     i += 2;
+	   }
+	   if (sdata[spos] >= c1 && sdata[spos] <= c2)
+	     in = true;
+	 }
+
+	 if ((negated && in) || (!negated && !in)) goto done;
+	 ppos = p + 1;
+	 spos++;
+	 break;
+       }
+
+       default:
+       ordinary:
+	if (spos >= slen || sdata[spos] != pdata[ppos]) goto done;
+	spos++;
+	ppos++;
+	break;
+	
+      }
+
+   done:
+    if (spos == slen && ppos == plen)
+      return true;
+    while (glob_spos.size() && glob_ppos1.back() == glob_ppos2.back()) {
+      glob_spos.pop_back();
+      glob_ppos1.pop_back();
+      glob_ppos2.pop_back();
+    }
+    if (glob_spos.size()) {
+      glob_ppos2.back()--;
+      spos = glob_spos.back();
+      ppos = glob_ppos2.back();
+    } else
+      return false;
+  }
+
+  return (spos == slen && ppos == plen);
+}
+
 String
 file_string(FILE *f, ErrorHandler *errh)
 {

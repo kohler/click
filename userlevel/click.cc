@@ -35,7 +35,6 @@
 #include "clickpackage.hh"
 #include "userutils.hh"
 #include "confparse.hh"
-#include "elements/userlevel/readhandler.hh"
 #include "elements/standard/quitwatcher.hh"
 
 #if defined(HAVE_DLFCN_H) && defined(HAVE_LIBDL)
@@ -50,14 +49,12 @@
 #define OUTPUT_OPT		304
 #define HANDLER_OPT		305
 #define TIME_OPT		306
-#define DIR_OPT			307
-#define STOP_OPT		308
+#define STOP_OPT		307
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "handler", 'h', HANDLER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
-  { "directory", 'd', DIR_OPT, Clp_ArgString, 0 },
   { "output", 'o', OUTPUT_OPT, Clp_ArgString, 0 },
   { "quit", 'q', QUIT_OPT, 0, 0 },
   { "stop", 's', STOP_OPT, Clp_ArgString, Clp_Optional },
@@ -89,7 +86,6 @@ Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
   -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
                                 driver and print result to standard output.\n\
-  -d, --directory DIR		Write output of read handlers into DIR. \n\
   -o, --output FILE             Write flat configuration to FILE.\n\
   -q, --quit                    Do not run driver.\n\
   -s, --stop[=ELEMENT]          Stop driver once ELEMENT is done. Can be given\n\
@@ -103,9 +99,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
 static Router *router;
-static Vector<String> call_handlers;
 static ErrorHandler *errh;
-static const char *handler_dir = 0;
 static bool started = 0;
 
 static void
@@ -184,59 +178,85 @@ click_remove_element_type(int which)
 }
 
 
-// register handlers: this gets called in signal handler, so don't use
-// new/malloc
+// report handler results
 
 static int
-call_read_handler(String s, Router *r, bool print_name, const char *handler_dir, ErrorHandler *errh)
+call_read_handler(Element *e, String handler_name, Router *r,
+		  bool print_name, ErrorHandler *errh)
 {
-  int dot = s.find_left('.');
-  if (dot < 0)
-    return errh->error("bad read handler syntax: expected ELEMENTNAME.HANDLERNAME");
-  String element_name = s.substring(0, dot);
-  String handler_name = s.substring(dot + 1);
-  
-  Element *e = r->find(element_name, errh);
-  if (!e)
-    return -1;
-  
   int hi = r->find_handler(e, handler_name);
   if (hi < 0)
-    return errh->error("no `%s' handler for element `%s'", handler_name.cc(), element_name.cc());
+    return errh->error("no `%s' handler for element `%s'", handler_name.cc(), e->id().cc());
   
   const Router::Handler &rh = r->handler(hi);
   if (!rh.read)
-    return errh->error("`%s' is a write handler", s.cc());
+    return errh->error("`%s.%s' is a write handler", e->id().cc(), handler_name.cc());
   String result = rh.read(e, rh.read_thunk);
 
-  bool tofile = true;
-  char fpath[MAXPATHLEN];
-  char fdir[MAXPATHLEN];
-  FILE *fout = 0;
-  if (handler_dir && (strlen(handler_dir)+strlen(element_name.cc())+
-                      strlen(handler_name.cc())+2) < MAXPATHLEN) {
-    sprintf(fdir,"%s/%s", handler_dir,element_name.cc());
-    sprintf(fpath,"%s/%s/%s", handler_dir,element_name.cc(),handler_name.cc());
-    if ((mkdir(fdir, S_IRWXU) < 0 && errno != EEXIST)
-	|| (fout = fopen(fpath,"w")) == 0L) fout = 0;
-  }
-  if (!fout) {
-    fout = stdout;
-    tofile = false;
-  }
+  if (print_name)
+    fprintf(stdout, "%s.%s:\n", e->id().cc(), handler_name.cc());
+  fputs(result.cc(), stdout);
+  if (print_name)
+    fputs("\n", stdout);
 
-  if (print_name && !tofile)
-    fprintf(fout, "%s:\n", s.cc());
-  fputs(result.cc(), fout);
-  if (print_name && !tofile)
-    fputs("\n", fout);
-
-  if (tofile)
-    fclose(fout);
   return 0;
 }
 
+static void
+expand_handler_elements(const String &pattern, const String &handler_name,
+			Vector<Element *> &elements, Router *router)
+{
+  int nelem = router->nelements();
+  for (int i = 0; i < nelem; i++) {
+    const String &id = router->ename(i);
+    if (glob_match(id, pattern)) {
+      Element *e = router->element(i);
+      int hi = router->find_handler(e, handler_name);
+      if (hi >= 0 && router->handler(hi).read)
+	elements.push_back(e);
+    }
+  }
+}
 
+static int
+call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
+{
+  Vector<Element *> handler_elements;
+  Vector<String> handler_names;
+  bool print_names = (handlers.size() > 1);
+  int before = errh->nerrors();
+
+  // expand handler names
+  for (int i = 0; i < handlers.size(); i++) {
+    int dot = handlers[i].find_left('.');
+    if (dot < 0) {
+      errh->error("syntax error in handler `%s': expected ELEMENTNAME.HANDLERNAME", handlers[i].cc());
+      continue;
+    }
+    
+    String element_name = handlers[i].substring(0, dot);
+    String handler_name = handlers[i].substring(dot + 1);
+
+    Vector<Element *> elements;
+    if (Element *e = router->find(element_name))
+      elements.push_back(e);
+    else {
+      expand_handler_elements(element_name, handler_name, elements, router);
+      print_names = true;
+    }
+    if (!elements.size()) {
+      errh->error("no element named `%s'", element_name.cc());
+      continue;
+    }
+
+    for (int j = 0; j < elements.size(); j++)
+      call_read_handler(elements[j], handler_name, router, print_names, errh);
+  }
+
+  return (errh->nerrors() == before ? 0 : -1);
+}
+
+    
 // compile packages
 
 #if HAVE_DYNAMIC_LINKING
@@ -353,19 +373,7 @@ compile_archive_packages(Vector<ArchiveElement> &archive,
 }
 
 #endif
-  
-int call_read_handlers()
-{
-  // call handlers
-  if (call_handlers.size()) {
-    int nerrs = errh->nerrors();
-    for (int i = 0; i < call_handlers.size(); i++)
-      call_read_handler(call_handlers[i], router,
-	                call_handlers.size() > 1, handler_dir, errh);
-    if (errh->nerrors() > nerrs) return 1;
-  }
-  return 0;
-}
+
 
 // main
 
@@ -391,6 +399,7 @@ main(int argc, char **argv)
   bool report_time = false;
   bool stop = false;
   bool stop_guess = false;
+  Vector<String> handlers;
   Vector<String> stops;
   
   while (1) {
@@ -414,14 +423,6 @@ main(int argc, char **argv)
       output_file = clp->arg;
       break;
      
-     case DIR_OPT:
-      if (handler_dir) {
-	errh->error("hander output directory specified twice");
-	goto bad_option;
-      }
-      handler_dir = clp->arg;
-      break;
-
      case STOP_OPT:
       if (stop && ((stop_guess && clp->have_arg) || (!stop_guess && !clp->have_arg))) {
 	errh->error("conflicting `--stop' options: guess or not?");
@@ -435,7 +436,7 @@ main(int argc, char **argv)
       break;
       
      case HANDLER_OPT:
-      call_handlers.push_back(clp->arg);
+      handlers.push_back(clp->arg);
       break;
       
      case QUIT_OPT:
@@ -601,9 +602,9 @@ particular purpose.\n");
   }
 
   // call handlers
-  int ev = 0;
-  if ((ev = call_read_handlers()))
-    exit_value = ev;
+  if (handlers.size())
+    if (call_read_handlers(handlers, errh) < 0)
+      exit_value = 1;
 
   delete router;
   delete lexer;
