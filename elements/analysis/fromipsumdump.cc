@@ -60,7 +60,6 @@ FromIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     uint8_t default_proto = IP_PROTO_TCP;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     String default_contents;
-    _hash_chunk = 0;
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -72,7 +71,6 @@ FromIPSummaryDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "PROTO", cpByte, "default IP protocol", &default_proto,
 		    "MULTIPACKET", cpBool, "generate multiple packets per record?", &multipacket,
 		    "DEFAULT_CONTENTS", cpArgument, "default contents of log", &default_contents,
-		    "HASH", cpUnsigned, "hash printing interval", &_hash_chunk,
 		    0) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
@@ -113,6 +111,7 @@ FromIPSummaryDump::read_buffer(ErrorHandler *errh)
     if (_len == buffer_len) {
 	memmove(data, data + _pos, _len - _pos);
 	_len -= _pos;
+	_file_offset += _pos;
 	_pos = 0;
     }
     int initial_len = _len;
@@ -178,7 +177,7 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     if (_fd < 0)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
-    _pos = _len = 0;
+    _pos = _len = _file_offset = 0;
     _buffer = String();
     int result = read_buffer(errh);
     if (result < 0) {
@@ -216,7 +215,6 @@ FromIPSummaryDump::initialize(ErrorHandler *errh)
     }
     
     _format_complaint = false;
-    _count = 0;
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
     return 0;
@@ -232,10 +230,6 @@ FromIPSummaryDump::uninitialize()
     if (_work_packet) {
 	_work_packet->kill();
 	_work_packet = 0;
-    }
-    if (_count && _hash_chunk) {
-	fputc('\n', stderr);
-	_count = 0;
     }
     _fd = -1;
     _pipe = 0;
@@ -464,11 +458,6 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	else if (payload_len)
 	    SET_EXTRA_LENGTH_ANNO(q, payload_len);
 
-	// maybe print a hash
-	_count++;
-	if (_hash_chunk && _count % _hash_chunk == _hash_chunk - 1)
-	    fputc('#', stderr);
-	
 	return q;
     }
 
@@ -569,6 +558,15 @@ FromIPSummaryDump::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(fd->_active) + "\n";
       case 2:
 	return "IP\n";
+      case 3: {
+	  struct stat s;
+	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0)
+	      return String(s.st_size) + "\n";
+	  else
+	      return "-\n";
+      }
+      case 4:
+	return String(fd->_file_offset + fd->_pos) + "\n";
       default:
 	return "<error>\n";
     }
@@ -602,6 +600,8 @@ FromIPSummaryDump::add_handlers()
     add_read_handler("active", read_handler, (void *)1);
     add_write_handler("active", write_handler, (void *)1);
     add_read_handler("encap", read_handler, (void *)2);
+    add_read_handler("filesize", read_handler, (void *)3);
+    add_read_handler("filepos", read_handler, (void *)4);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

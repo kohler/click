@@ -80,11 +80,6 @@ String, containing a space-separated list of content names (see
 ToIPSummaryDump for the possibilities). Defines the default contents of the
 dump.
 
-=item HASH
-
-Unsigned. If supplied, FromIPSummaryDump will print a hash character to
-standard error every HASH packets it reads.
-
 =back
 
 Only available in user-level processes.
@@ -107,6 +102,15 @@ Value is a Boolean.
 =h encap read-only
 
 Returns `IP'. Useful for ToDump's USE_ENCAP_FROM option.
+
+=h filesize read-only
+
+Returns the length of the FromIPSummaryDump file, in bytes, or "-" if that
+length cannot be determined.
+
+=h filepos read-only
+
+Returns FromIPSummaryDump's position in the file, in bytes.
 
 =a
 
@@ -155,9 +159,6 @@ class FromIPSummaryDump : public Element { public:
     uint16_t _default_proto;
     uint32_t _sampling_prob;
 
-    uint32_t _count;
-    uint32_t _hash_chunk;
-    
     bool _stop : 1;
     bool _format_complaint : 1;
     bool _zero;
@@ -171,6 +172,7 @@ class FromIPSummaryDump : public Element { public:
     struct timeval _time_offset;
     String _filename;
     FILE *_pipe;
+    off_t _file_offset;
 
     int error_helper(ErrorHandler *, const char *);
     int read_buffer(ErrorHandler *);

@@ -75,7 +75,6 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     timerclear(&last_time_off);
     timerclear(&interval);
     _sampling_prob = (1 << SAMPLING_SHIFT);
-    _hash_chunk = 0;
     
     if (cp_va_parse(conf, this, errh,
 		    cpFilename, "dump file name", &_filename,
@@ -93,7 +92,6 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		    "END", cpTimeval, "ending time", &last_time,
 		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimeval, "time interval", &interval,
-		    "HASH", cpUnsigned, "hash printing interval", &_hash_chunk,
 		    0) < 0)
 	return -1;
 
@@ -215,6 +213,7 @@ FromDump::read_buffer_mmap(ErrorHandler *errh)
 
     _data_packet = Packet::make((unsigned char *)mmap_data, _len, munmap_destructor);
     _buffer = _data_packet->data();
+    _file_offset = _mmap_off;
     _mmap_off += _len;
 
 #ifdef HAVE_MADVISE
@@ -232,6 +231,8 @@ FromDump::read_buffer(ErrorHandler *errh)
     if (_data_packet)
 	_data_packet->kill();
     _data_packet = 0;
+
+    _file_offset += _len;
     _pos -= _len;		// adjust _pos by _len: it might validly point
 				// beyond _len
     _len = 0;
@@ -304,6 +305,7 @@ FromDump::initialize(ErrorHandler *errh)
   retry_file:
     _mmap_unit = 0;
     _pos = 0;
+    _file_offset = 0;
     int result = read_buffer(errh);
     if (result < 0) {
 	uninitialize();
@@ -369,9 +371,6 @@ FromDump::initialize(ErrorHandler *errh)
 	// force FORCE_IP.
 	_force_ip = true;	// XXX _timing?
 
-    // clear _count
-    _count = 0;
-    
     // try reading a packet
     if ((_packet = read_packet(errh))) {
 	struct timeval now;
@@ -395,10 +394,6 @@ FromDump::uninitialize()
 	_packet->kill();
     if (_data_packet)
 	_data_packet->kill();
-    if (_count && _hash_chunk) {
-	fputc('\n', stderr);
-	_count = 0;
-    }
     _task.unschedule();
     _fd = -1;
     _packet = _data_packet = 0;
@@ -515,11 +510,6 @@ FromDump::read_packet(ErrorHandler *errh)
 	goto retry;
     }
 
-    // up count, print hash if necessary
-    _count++;
-    if (_hash_chunk && _count % _hash_chunk == _hash_chunk - 1)
-	fputc('#', stderr);
-    
     return p;
 }
 
@@ -573,17 +563,31 @@ FromDump::pull(int)
     return old_packet;
 }
 
+enum {
+    SAMPLING_PROB_THUNK, ACTIVE_THUNK, ENCAP_THUNK, STOP_THUNK,
+    FILESIZE_THUNK, FILEPOS_THUNK
+};
+
 String
 FromDump::read_handler(Element *e, void *thunk)
 {
     FromDump *fd = static_cast<FromDump *>(e);
     switch ((int)thunk) {
-      case 0:
+      case SAMPLING_PROB_THUNK:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
-      case 1:
+      case ACTIVE_THUNK:
 	return cp_unparse_bool(fd->_active) + "\n";
-      case 2:
+      case ENCAP_THUNK:
 	return String(fake_pcap_unparse_dlt(fd->_linktype)) + "\n";
+      case FILESIZE_THUNK: {
+	  struct stat s;
+	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0)
+	      return String(s.st_size) + "\n";
+	  else
+	      return "-\n";
+      }
+      case FILEPOS_THUNK:
+	return String(fd->_file_offset + fd->_pos) + "\n";
       default:
 	return "<error>\n";
     }
@@ -595,7 +599,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
     FromDump *fd = static_cast<FromDump *>(e);
     String s = cp_uncomment(s_in);
     switch ((int)thunk) {
-      case 1: {
+      case ACTIVE_THUNK: {
 	  bool active;
 	  if (cp_bool(s, &active)) {
 	      fd->_active = active;
@@ -605,7 +609,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	  } else
 	      return errh->error("`active' should be Boolean");
       }
-      case 3:
+      case STOP_THUNK:
 	fd->_active = false;
 	fd->router()->please_stop_driver();
 	return 0;
@@ -617,11 +621,13 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 void
 FromDump::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, (void *)0);
-    add_read_handler("active", read_handler, (void *)1);
-    add_write_handler("active", write_handler, (void *)1);
-    add_read_handler("encap", read_handler, (void *)2);
-    add_write_handler("stop", write_handler, (void *)3);
+    add_read_handler("sampling_prob", read_handler, (void *)SAMPLING_PROB_THUNK);
+    add_read_handler("active", read_handler, (void *)ACTIVE_THUNK);
+    add_write_handler("active", write_handler, (void *)ACTIVE_THUNK);
+    add_read_handler("encap", read_handler, (void *)ENCAP_THUNK);
+    add_write_handler("stop", write_handler, (void *)STOP_THUNK);
+    add_read_handler("filesize", read_handler, (void *)FILESIZE_THUNK);
+    add_read_handler("filepos", read_handler, (void *)FILEPOS_THUNK);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

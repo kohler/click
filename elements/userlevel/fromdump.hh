@@ -1,6 +1,6 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
-#ifndef FROMDUMP_HH
-#define FROMDUMP_HH
+#ifndef CLICK_FROMDUMP_HH
+#define CLICK_FROMDUMP_HH
 #include <click/element.hh>
 #include <click/task.hh>
 
@@ -89,11 +89,6 @@ This can result in slightly better performance on some machines. FromDump's
 regular file discipline is pretty optimized, so the difference is often small
 in practice. Default is true on most operating systems, but false on Linux.
 
-=item HASH
-
-Unsigned. If supplied, FromIPSummaryDump will print a hash character to
-standard error every HASH packets it reads.
-
 =back
 
 You can supply at most one of START and START_AFTER, and at most one of END,
@@ -121,6 +116,15 @@ Value is a Boolean.
 =h encap read-only
 
 Returns the file's encapsulation type.
+
+=h filesize read-only
+
+Returns the length of the FromIPSummaryDump file, in bytes, or "-" if that
+length cannot be determined.
+
+=h filepos read-only
+
+Returns FromIPSummaryDump's position in the file, in bytes.
 
 =a
 
@@ -157,9 +161,6 @@ class FromDump : public Element { public:
     WritablePacket *_data_packet;
     Packet *_packet;
 
-    uint32_t _count;
-    uint32_t _hash_chunk;
-    
     bool _swapped : 1;
     bool _timing : 1;
     bool _stop : 1;
@@ -193,6 +194,7 @@ class FromDump : public Element { public:
     struct timeval _time_offset;
     String _filename;
     FILE *_pipe;
+    off_t _file_offset;
 
     int error_helper(ErrorHandler *, const char *);
 #ifdef ALLOW_MMAP
