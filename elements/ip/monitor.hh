@@ -24,18 +24,17 @@
  * cluster to be changed with the value of VARx. If no VAR is supplied, then
  * Monitor has one input with a weight of 1.
  *
- * Monitor has as many outputs as inputs. A packet coming in on packet n will
- * leave this element using output n. Connect all outputs to a Funnel element if
- * there is no need to keep the streams splitted.
- *
  * Monitor should be used together with Classifier to count packets with
  * specific features.
  *
  * =h look (read)
- * Returns ...
+ * Returns the number of packets counted to/from a cluster of IP addresses.
  * 
  * =h max (read-write)
- * Used to change MAX value.
+ * Used to read/write MAX value.
+ *
+ * =h srcdst (read-write)
+ * Used to read/write SRC/DST value.
  *
  * = reset (write)
  * Resets all entries to zero.
@@ -56,6 +55,8 @@
  * makes m count packets based on the destination IP address. For every
  * SYN-packet, the value is raised by 1, for every SYN-ACK packet the value is
  * lowered by 2.
+ *
+ * (Classifier has been simplified in this example)
  *
  * =a Classifier
  * =a Funnel

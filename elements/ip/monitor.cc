@@ -45,16 +45,17 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   }
 
   // SRC|DST
-  String src_dst;
-  String arg = args[0];
-  if(!cp_word(arg, src_dst)) {
+  if(args[0] == "SRC")
+    _src_dst = SRC;
+  else if(args[0] == "DST")
+    _src_dst = DST;
+  else {
     errh->error("first argument expected \"SRC\" or \"DST\". Found neither.");
     return -1;
   }
 
   // MAX
-  arg = args[1];
-  if(!cp_integer(arg, _max)) {
+  if(!cp_integer(args[1], _max)) {
     errh->error("second argument expected MAX. Not found.");
     return -1;
   }
@@ -64,6 +65,15 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
     errh->error("oops");
     return -1;
   }
+  clean(_base);
+
+  _base->counter[2].flags = SPLIT;
+  _base->counter[2].next_level = new struct _stats;
+  clean(_base->counter[2].next_level);
+
+  _base->counter[2].next_level->counter[0].flags = SPLIT;
+  _base->counter[2].next_level->counter[0].next_level = new struct _stats;
+  clean(_base->counter[2].next_level->counter[0].next_level);
 
   // VAL1, ..., VALn
   int change;
@@ -142,12 +152,38 @@ void
 Monitor::clean(_stats *s, int value = 0, bool recurse = false)
 {
   for(int i = 0; i < 256; i++) {
-    if(recurse && (s->counter[i].flags & SPLIT == SPLIT))
+    if(recurse && (s->counter[i].flags & SPLIT == SPLIT)) {
       clean(s->counter[i].next_level, value, true);
+      delete s->counter[i].next_level;
+    }
     s->counter[i].flags = 0;
     s->counter[i].value = value;
   }
 }
+
+
+String
+Monitor::print(_stats *s, String ip = "")
+{
+  String ret = "";
+
+  for(int i = 0; i < 256; i++) {
+    String this_ip = String(i);
+    if(ip)
+      this_ip = ip + "." + this_ip;
+
+
+    if(s->counter[i].flags & SPLIT == SPLIT) {
+      ret += this_ip + "\t*\n";
+      ret += print(s->counter[i].next_level, "\t" + this_ip);
+    }
+    else
+      ret += this_ip + "\t" + String(s->counter[i].value) + "\n";
+  }
+
+  return ret;
+}
+
 
 
 String
@@ -156,10 +192,38 @@ Monitor::look_handler(Element *e, void *)
   Monitor *me;
   me = (Monitor*) e;
 
-  String ret = "*** not fully implemented yet ***\n";
-  for(int i = 0; i < 256; i++)
-    ret += String(i) + "\t" + String(me->_base->counter[i].value) + "\n";
-  return ret;
+  return me->print(me->_base);
+}
+
+String
+Monitor::srcdst_rhandler(Element *e, void *)
+{
+  Monitor *me = (Monitor *) e;
+  return (me->_src_dst == SRC ? String("SRC\n") : String("DST\n"));
+}
+
+
+int
+Monitor::srcdst_whandler(const String &conf, Element *e, void *, ErrorHandler *errh)
+{
+  Vector<String> args;
+  cp_argvec(conf, args);
+
+  Monitor* me = (Monitor *) e;
+
+  if(args.size() != 1) {
+    errh->error("expecting \"SRC\" or \"DST\" and nothing more or less");
+    return -1;
+  } else if(args[0] == "SRC")
+    me->_src_dst = SRC;
+  else if(args[0] == "DST")
+    me->_src_dst = DST;
+  else {
+    errh->error("expected \"SRC\" or \"DST\". Found neither.");
+    return -1;
+  }
+
+  return 0;
 }
 
 
@@ -167,9 +231,9 @@ String
 Monitor::max_rhandler(Element *e, void *)
 {
   Monitor *me = (Monitor *) e;
-  String ret = String(me->_max);
-  return ret;
+  return String(me->_max) + "\n";
 }
+
 
 int
 Monitor::max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh)
@@ -222,6 +286,9 @@ Monitor::add_handlers()
 {
   add_read_handler("max", max_rhandler, 0);
   add_write_handler("max", max_whandler, 0);
+
+  add_read_handler("srcdst", srcdst_rhandler, 0);
+  add_write_handler("srcdst", srcdst_whandler, 0);
 
   add_write_handler("reset", reset_handler, 0);
   add_read_handler("look", look_handler, 0);
