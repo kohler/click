@@ -3,15 +3,15 @@
 rh :: ReadHandlerCaller(1) 
 
 // protocol els
-nb :: Neighbor(00:90:27:E0:23:03, 10.0.0.1)
-h :: Hello(1, 00:90:27:E0:23:03, 10.0.0.1)
+nb :: Neighbor(2000, 00:90:27:E0:23:03, 18.26.7.1)
+h :: Hello(500, 100, 00:90:27:E0:23:03, 18.26.7.1)
 
 // device layer els
 ps :: PacketSocket(eth0)
-q :: Queue -> Print(qps) -> ps
+q :: Queue -> ps
 
 // linux ip layer els
-linux :: Tun(tap, 10.0.0.1, 0.0.0.0)
+linux :: Tun(tap, 18.26.7.1, 255.255.255.0)
 
 // hook it all up
 ps -> Classifier(12/Babe) -> [0] nb [0] -> q 
