@@ -1,3 +1,8 @@
+2005-03-30 Wednesday 18:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.95), INSTALL (1.37), configure (1.51), configure.in
+	(1.261), etc/README (1.10): improve warnings, list 2.6 patch;
+
 2005-03-30 Wednesday 12:11  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* linuxmodule/proclikefs.c (1.15): getxattr, etc. arent in 2.4.18
