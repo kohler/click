@@ -3226,8 +3226,19 @@ cp_va_parse_remove_keywords(Vector<String> &argv, int first,
 }
 
 int
-cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vector<String> &values)
+cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vector<String> *values)
 {
+  // check common case
+  if (keys.size() == 0 || !keys.back()) {
+    if (argv.size() != keys.size())
+      return -1;
+    else {
+      if (values)
+	*values = argv;
+      return 0;
+    }
+  }
+
   if (!cp_values || !cp_parameter_used || keys.size() > CP_VALUES_SIZE)
     return -1; /*errh->error("out of memory in cp_va_parse");*/
 
@@ -3253,7 +3264,7 @@ cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vect
   }
 
   int retval = cpva.assign_arguments(argv, "argument", ErrorHandler::silent_handler());
-  if (retval >= 0) {
+  if (retval >= 0 && values) {
     if (cpva.ignore_rest) {
       // collect '__REST__' argument
       StringAccum sa;
@@ -3265,9 +3276,9 @@ cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vect
 	}
       cp_values[cpva.nvalues].v_string = sa.take_string();
     }
-    values.resize(keys.size());
+    values->resize(keys.size());
     for (arg = 0; arg < keys.size(); arg++)
-      values[arg] = cp_values[arg].v_string;
+      (*values)[arg] = cp_values[arg].v_string;
   }
   return retval;
 }

@@ -225,7 +225,7 @@ int cp_va_parse_remove_keywords(Vector<String> &argv, int, CP_VA_PARSE_ARGS_REST
 // Returns the number of result arguments set, or negative on error.
 // Stores no values in the result arguments on error.
 
-int cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vector<String> &values);
+int cp_assign_arguments(const Vector<String> &argv, const Vector<String> &keys, Vector<String> *values = 0);
 
 void cp_va_static_initialize();
 void cp_va_static_cleanup();
