@@ -1,3 +1,8 @@
+2004-02-26 Thursday 12:00  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/ettstat.cc (1.6): bugfix: forgot to initialize a
+	variable
+
 2004-02-25 Wednesday 23:20  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: packetlogger2.cc (1.1), packetlogger2.hh (1.1):
