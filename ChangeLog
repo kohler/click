@@ -1,3 +1,10 @@
+2002-05-30 Thursday 21:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.4), dsdvroutetable.hh (1.4):
+	whew.  finished converting to 'official' DSDV, as described by ns
+	implementation.  this implementation is incomplete, nd completely
+	untested.
+
 2002-05-30 Thursday 19:21  Eddie Kohler <kohler@aciri.org>
 
 	* linuxmodule/clickfs.cc (1.8): linuxmodule oops
