@@ -37,6 +37,7 @@ class LocQueryResponder : public Element {
   const char *processing() const		{ return AGNOSTIC; }
   LocQueryResponder *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
+  int initialize(ErrorHandler *);
 
   Packet *simple_action(Packet *);
   
@@ -46,7 +47,7 @@ private:
   EtherAddress _eth;
   Timer _expire_timer;
 
-  static const int EXPIRE_TIMEOUT_MS = 15 * 1000;
+  static const int EXPIRE_TIMEOUT_MS = 2 * 1000;
   int _timeout_jiffies;
   static void expire_hook(unsigned long);
 
