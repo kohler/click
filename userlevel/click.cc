@@ -559,15 +559,9 @@ particular purpose.\n");
     e->add_handlers();
   }
   
-  // find read handler element
-  for (int i = 0; i < nelements; i++) {
-    Element *e = router->element(i);
-    readhandler_element = (ReadHandlerCaller*)e->cast("ReadHandlerCaller");
-    if (readhandler_element) break;
-  }
-  if (!readhandler_element)
-    errh->warning("No ReadHandler element: read handlers may not be called");
-
+  // create a ReadHandlerCaller element: is this kosher? we don't use
+  // ReadHandlerCaller anywhere else...
+  readhandler_element = new ReadHandlerCaller();
   alarm(handler_duration);
 
   // run driver
@@ -594,6 +588,7 @@ particular purpose.\n");
   if ((ev = call_read_handlers()))
     exit_value = ev;
 
+  delete readhandler_element;
   delete router;
   delete lexer;
   exit(exit_value);
