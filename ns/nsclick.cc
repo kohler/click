@@ -323,12 +323,12 @@ SimState::simmain(simclick_sim siminst,const char *router_file)
   SimState* newstate = new SimState();
 
   // prepare lexer (for packages)
-  Lexer* lexer = new Lexer(errh);
+  Lexer* lexer = new Lexer();
   export_elements(lexer);
   
   // lex
   RequireLexerExtra lextra;
-  int cookie = lexer->begin_parse(config_str, router_file, &lextra);
+  int cookie = lexer->begin_parse(config_str, router_file, &lextra,errh);
   while (lexer->ystatement())
     /* do nothing */;
   newstate->router = lexer->create_router();
