@@ -41,11 +41,10 @@
 // this driver doesn't produce or expect packets with an address family prepended
 #endif
 
+#include <net/if.h>
 #if HAVE_NET_IF_TUN_H
-# include <net/if.h>
 # include <net/if_tun.h>
 #elif HAVE_LINUX_IF_TUN_H
-# include <linux/if.h>
 # include <linux/if_tun.h>
 #endif
 
