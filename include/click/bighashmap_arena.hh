@@ -5,15 +5,13 @@
 struct BigHashMap_Arena {
   
   enum { SIZE = 128 };
-  union {
-    int first;
-    double padding;		// pad to 8-byte boundary
-  } _u;
+  int32_t _first;
+  int32_t _padding;			// pad to 8-byte boundary
   unsigned char _x[1];
 
   static BigHashMap_Arena *new_arena(unsigned esize);
   static void delete_arena(BigHashMap_Arena *);
-  void clear()				{ _u.first = 0; }
+  void clear()				{ _first = 0; }
   void *alloc(unsigned esize);
   void *elt(unsigned esize, int i)	{ return (_x + esize*i); }
   
@@ -22,8 +20,8 @@ struct BigHashMap_Arena {
 inline void *
 BigHashMap_Arena::alloc(unsigned esize)
 {
-  if (_u.first < SIZE)
-    return elt(esize, _u.first++);
+  if (_first < SIZE)
+    return elt(esize, _first++);
   else
     return 0;
 }
