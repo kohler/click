@@ -40,6 +40,7 @@ class Element { public:
   // CHARACTERISTICS
   virtual const char *class_name() const = 0;
   virtual void *cast(const char *);
+  virtual Element *clone() const = 0;
   
   String id() const;
   String declaration() const;
@@ -49,8 +50,6 @@ class Element { public:
   int eindex() const			{ return _eindex; }
   int eindex(Router *) const;
 
-  void attach_router(Router *r, int n)	{ _router = r; _eindex = n; }
-
   // INPUTS
   int ninputs() const				{ return _ninputs; }
   const Connection &input(int input_id) const;
@@ -58,8 +57,6 @@ class Element { public:
   void add_input()				{ set_ninputs(ninputs()+1); }
   void set_ninputs(int);
   virtual void notify_ninputs(int);
-  
-  int connect_input(int input_id, Element *, int);
   
   // OUTPUTS
   int noutputs() const				{ return _noutputs; }
@@ -69,8 +66,6 @@ class Element { public:
   void add_output()				{ set_noutputs(noutputs()+1); }
   void set_noutputs(int);
   virtual void notify_noutputs(int);
-  
-  int connect_output(int output_id, Element *, int);
   
   // FLOW
   virtual const char *flow_code() const;
@@ -82,14 +77,10 @@ class Element { public:
   virtual const char *processing() const;
   virtual const char *flags() const;
   
-  void processing_vector(Subvector<int> &, Subvector<int> &, ErrorHandler *) const;
-  void set_processing_vector(const Subvector<int> &, const Subvector<int> &);
-  
   bool output_is_push(int) const;
   bool input_is_pull(int) const;
   
-  // CLONING AND CONFIGURATION
-  virtual Element *clone() const = 0;
+  // CONFIGURATION
   virtual int configure_phase() const;
   virtual int configure(const Vector<String> &, ErrorHandler *);
   virtual int initialize(ErrorHandler *);
@@ -117,7 +108,12 @@ class Element { public:
   virtual int local_llrpc(unsigned command, void *arg);
   
   // RUNTIME
+  virtual void push(int port, Packet *);
+  virtual Packet *pull(int port);
+  virtual Packet *simple_action(Packet *);
+  
   virtual void run_scheduled();
+  
 #if CLICK_USERLEVEL
   enum { SELECT_READ = 1, SELECT_WRITE = 2 };
   int add_select(int fd, int mask) const;
@@ -125,10 +121,15 @@ class Element { public:
   virtual void selected(int fd);
 #endif
 
-  virtual void push(int port, Packet *);
-  virtual Packet *pull(int port);
-  virtual Packet *simple_action(Packet *);
+  // METHODS USED BY `ROUTER'
+  void attach_router(Router *r, int n)	{ _router = r; _eindex = n; }
   
+  int connect_input(int input_id, Element *, int);
+  int connect_output(int output_id, Element *, int);
+  
+  void processing_vector(Subvector<int> &, Subvector<int> &, ErrorHandler *) const;
+  void set_processing_vector(const Subvector<int> &, const Subvector<int> &);
+
 #if CLICK_STATS >= 2
   // Statistics
   int _calls; // Push and pull calls into this element.
