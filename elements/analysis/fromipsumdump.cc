@@ -599,12 +599,11 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	uint32_t payload_len = 0;
 	bool have_payload_len = false;
 	bool have_payload = false;
-	
-	uint32_t u1 = 0, u2 = 0;
-	
+		
 	for (int i = 0; pos < len && i < _contents.size(); i++) {
 	    int original_pos = pos;
 	    char *next;
+	    uint32_t u1 = 0, u2 = 0;
 
 	    // check binary case
 	    if (_binary) {

@@ -545,15 +545,14 @@ static int tcp_opt_contents_mapping[] = {
 int
 ToIPSummaryDump::store_tcp_opt_binary(const uint8_t *opt, int opt_len, int contents, StringAccum &sa)
 {
-    const uint8_t *end_opt = opt + opt_len;
-
     if (contents == (int)DO_TCPOPT_ALL) {
 	// store all options
-	sa.append((char)(end_opt - opt));
-	sa.append(opt, end_opt - opt);
-	return end_opt - opt;
+	sa.append((char)opt_len);
+	sa.append(opt, opt_len);
+	return opt_len;
     }
 
+    const uint8_t *end_opt = opt + opt_len;
     int initial_sa_len = sa.length();
     sa.append('\0');
     
