@@ -35,9 +35,16 @@ String::Memo *String::permanent_memo = 0;
 String *String::null_string_p = 0;
 static int out_of_memory_flag = 0;
 
-
+inline
 String::Memo::Memo()
-  : _refcount(1), _capacity(0), _dirty(0), _real_data("")
+  : _refcount(0), _capacity(0), _dirty(0), _real_data("")
+{
+}
+
+inline
+String::Memo::Memo(char *data, int dirty_capacity)
+  : _refcount(0), _capacity(dirty_capacity), _dirty(dirty_capacity),
+    _real_data(data)
 {
 }
 
@@ -106,23 +113,27 @@ String::String(double d)
 #endif
 
 String
-String::claim_string(const char *cc, int cclen)
+String::claim_string(char *str, int len)
 {
-  if (!cc)
-    cclen = 0;
-  else if (cclen < 0)
-    cclen = strlen(cc);
-  if (cclen == 0) {
-    delete[] cc;
+  if (!str)
+    len = 0;
+  else if (len < 0)
+    len = strlen(str);
+  if (len == 0) {
+    delete[] str;
     return String();
-  } else {
-    Memo *memo = new Memo;
-    memo->_refcount = 0;
-    memo->_capacity = cclen;
-    memo->_dirty = cclen;
-    memo->_real_data = const_cast<char *>(cc);
-    return String(cc, cclen, memo);
-  }
+  } else
+    return String(str, len, new Memo(str, len));
+}
+
+String
+String::stable_string(const char *str)
+{
+  int len = (str ? strlen(str) : 0);
+  if (len == 0)
+    return String();
+  else
+    return String(str, len, permanent_memo);
 }
 
 void
@@ -141,50 +152,52 @@ String::out_of_memory_count()
 }
 
 void
-String::assign(const char *cc, int cclen)
+String::assign(const char *str, int len)
 {
-  if (!cc)
-    cclen = 0;
-  else if (cclen < 0)
-    cclen = strlen(cc);
+  if (!str)
+    len = 0;
+  else if (len < 0)
+    len = strlen(str);
   
-  if (cclen == 0) {
+  if (len == 0) {
     _memo = null_memo;
     _memo->_refcount++;
     
   } else {
-    // Make `capacity' a multiple of 16 characters at least as big as `cclen'.
-    int capacity = (cclen + 16) & ~15;
-    _memo = new Memo(cclen, capacity);
+    // Make `capacity' a multiple of 16 characters at least as big as `len'.
+    int capacity = (len + 16) & ~15;
+    _memo = new Memo(len, capacity);
     if (!_memo || !_memo->_real_data) {
       out_of_memory();
       return;
     }
-    memcpy(_memo->_real_data, cc, cclen);
+    memcpy(_memo->_real_data, str, len);
   }
   
   _data = _memo->_real_data;
-  _length = cclen;
+  _length = len;
 }
 
 void
-String::append(const char *cc, int cclen)
+String::append(const char *suffix, int suffix_len)
 {
-  if (cclen < 0)
-    cclen = strlen(cc);
-  
-  if (cclen == 0)
+  if (!suffix)
+    suffix_len = 0;
+  else if (suffix_len < 0)
+    suffix_len = strlen(suffix);
+
+  if (suffix_len == 0)
     return;
   
   // If we can, append into unused space. First, we check that there's enough
-  // unused space for `cclen' characters to fit; then, we check that the
+  // unused space for `suffix_len' characters to fit; then, we check that the
   // unused space immediately follows the data in `*this'.
-  if (_memo->_capacity > _memo->_dirty + cclen) {
+  if (_memo->_capacity > _memo->_dirty + suffix_len) {
     char *real_dirty = _memo->_real_data + _memo->_dirty;
     if (real_dirty == _data + _length) {
-      if (cc) memcpy(real_dirty, cc, cclen);
-      _length += cclen;
-      _memo->_dirty += cclen;
+      memcpy(real_dirty, suffix, suffix_len);
+      _length += suffix_len;
+      _memo->_dirty += suffix_len;
       assert(_memo->_dirty < _memo->_capacity);
       return;
     }
@@ -193,21 +206,22 @@ String::append(const char *cc, int cclen)
   // Now we have to make new space. Make sure the new capacity is a
   // multiple of 16 characters and that it is at least 16.
   int new_capacity = (_length + 16) & ~15;
-  while (new_capacity < _length + cclen)
+  while (new_capacity < _length + suffix_len)
     new_capacity *= 2;
-  Memo *new_memo = new Memo(_length + cclen, new_capacity);
+  Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
   if (!new_memo || !new_memo->_real_data) {
+    delete new_memo;
     out_of_memory();
     return;
   }
-  
+
   char *new_data = new_memo->_real_data;
   memcpy(new_data, _data, _length);
-  if (cc) memcpy(new_data + _length, cc, cclen);
+  memcpy(new_data + _length, suffix, suffix_len);
   
   deref();
   _data = new_data;
-  _length += cclen;
+  _length += suffix_len;
   _memo = new_memo;
 }
 
@@ -219,9 +233,9 @@ String::mutable_data()
   if (_memo->_capacity && _memo->_refcount == 1)
     return const_cast<char *>(_data);
   
-  // Otherwise, make a copy of it. Rely on fact that deref() doesn't change
-  // _data or _length.
-  assert(_memo->_refcount > 1);
+  // Otherwise, make a copy of it. Rely on: deref() doesn't change _data or
+  // _length; and if _capacity == 0, then deref() doesn't free _real_data.
+  assert(!_memo->_capacity || _memo->_refcount > 1);
   deref();
   assign(_data, _length);
   return const_cast<char *>(_data);
@@ -238,30 +252,33 @@ String::mutable_c_str()
 const char *
 String::cc()
 {
-  // If _memo has no capacity, then this is one of the special strings
-  // (null or PermString), and we can return _data immediately.
-  if (!_memo->_capacity)
+  // If _memo has no capacity, then this is one of the special strings (null
+  // or PermString). We are guaranteed, in these strings, that _data[_length]
+  // exists. We can return _data immediately if we have a '\0' in the right
+  // place.
+  if (!_memo->_capacity && _data[_length] == '\0')
     return _data;
   
-  // If _memo->_capacity > 0, this invariant must hold (there's more real data
-  // in _memo than in our substring).
-  assert(_memo->_real_data + _memo->_dirty >= _data + _length);
+  // Otherwise, this invariant must hold (there's more real data in _memo than
+  // in our substring).
+  assert(!_memo->_capacity
+	 || _memo->_real_data + _memo->_dirty >= _data + _length);
   
-  // Once we return a cc() from a given String, we don't want to append to
-  // it, since the terminating \0 would get overwritten.
+  // Has the character after our substring been set?
   if (_memo->_real_data + _memo->_dirty == _data + _length) {
+    // Character after our substring has not been set. May be able to change
+    // it to '\0'. This case will never occur on special strings.
     if (_memo->_dirty < _memo->_capacity)
       goto add_final_nul;
     
   } else {
-    // OK -- someone has added characters past the end of our substring of
-    // _memo. Still OK to return _data immediately if _data[_length] == '\0'.
+    // Character after our substring has been set. OK to return _data if it is
+    // already '\0'.
     if (_data[_length] == '\0')
       return _data;
   }
   
-  // Unfortunately, we've got a non-null-terminated substring, so we need to
-  // make a copy of our portion.
+  // If we get here, we must make a copy of our portion of the string.
   {
     String s(_data, _length);
     deref();
@@ -284,6 +301,7 @@ String::substring(int left, int len) const
     len = _length - left + len;
   if (left + len > _length)
     len = _length - left;
+  
   if (left < 0 || len <= 0)
     return String();
   else
@@ -381,7 +399,9 @@ String::static_initialize()
   // do-nothing function called simply to initialize static globals
   if (!null_memo) {
     null_memo = new Memo;
+    null_memo->_refcount++;
     permanent_memo = new Memo;
+    permanent_memo->_refcount++;
     null_string_p = new String;
   }
 }

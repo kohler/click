@@ -34,7 +34,8 @@ class String { public:
   ~String();
   
   static const String &null_string()	{ return *null_string_p; }
-  static String claim_string(const char *, int = -1); // claim memory
+  static String claim_string(char *, int = -1); // claim memory
+  static String stable_string(const char *); // stable read-only memory
   
   static int out_of_memory_count();
   
@@ -52,6 +53,7 @@ class String { public:
 #endif
   
   const char *cc();			// pointer returned is semi-transient
+  const char *c_str()			{ return cc(); }
   operator const char *()		{ return cc(); }
   
   char operator[](int e) const		{ return _data[e]; }
@@ -107,6 +109,7 @@ class String { public:
     char *_real_data;
     
     Memo();
+    Memo(char *, int);
     Memo(int, int);
     ~Memo();
   };
