@@ -1,4 +1,4 @@
-#! /bin/sh
+#!/bin/sh
 # Common stub for a few missing GNU programs while installing.
 # Copyright (C) 1996, 1997 Free Software Foundation, Inc.
 # Franc,ois Pinard <pinard@iro.umontreal.ca>, 1996.
@@ -178,7 +178,7 @@ WARNING: \`$1' is missing on your system.  You should only need it if
 
   texi2dvi)
     echo 1>&2 "\
-WARNING: \`$1' is missing on your system; trying to use plain \`tex'
+WARNING: \`$1' is missing or old on your system; trying to use \`tex'
          instead.  You might want to install the latest \`Texinfo' package;
          grab it from any GNU archive site."
     file=`echo "$*" | sed -n 's/.*-o \([^ ]*\).*/\1/p'`
@@ -193,7 +193,7 @@ WARNING: \`$1' is missing on your system; trying to use plain \`tex'
     tex $file
     base=`echo "$file" | sed 's/.*\/\([^/]*\)$/\1/' | sed 's/\.texi*//'`
     indexfiles=
-    for i in cp vr fn tp pg ky; [ -f $base.$i ] && indexfiles="$base.$i $indexfiles"; done
+    for i in cp vr fn tp pg ky; do [ -f $base.$i ] && indexfiles="$base.$i $indexfiles"; done
     [ "x$indexfiles" != x ] && texindex $indexfiles
     tex $file
     tex $file
