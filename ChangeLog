@@ -1,3 +1,18 @@
+2003-02-05 Wednesday 01:53  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: ipfragmenter.cc (1.30), ipfragmenter.hh (1.23):
+	HONOR_DF is a keyword argument
+
+2003-02-05 Wednesday 01:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: ipreassembler.cc (1.16), ipreassembler.hh (1.12):
+	IPReassembler uses packet time rather than real time
+
+2003-02-05 Wednesday 01:46  Eddie Kohler <kohler@icir.org>
+
+	* elements/: userlevel/fromdump.hh (1.43), standard/ratedsource.hh
+	(1.28): doc updates
+
 2003-02-04 Tuesday 18:40  Eddie Kohler <kohler@icir.org>
 
 	* elements/standard/infinitesource.hh (1.32): InfiniteSource is
