@@ -11,6 +11,13 @@
  *   interval lat lon
  *
  * This means "spend interval seconds moving to lat/lon."
+ * Here's a reasonable test file that keeps the node more or
+ * less within radio range of 0,0:
+ *
+ * 1 0 0
+ * 10 .002 .002
+ * 20 0 .003
+ * 30 0 0
  *
  * =a
  * LocationInfo
