@@ -1,3 +1,21 @@
+2001-06-20 Wednesday 11:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/peekhandlers.cc (1.18),
+	elements/standard/pullswitch.cc (1.15),
+	elements/standard/pullswitch.hh (1.12),
+	elements/standard/quitwatcher.cc (1.13),
+	elements/standard/ratedsplitter.cc (1.14),
+	elements/standard/ratedsplitter.hh (1.14),
+	elements/standard/ratedunqueue.cc (1.13),
+	elements/standard/ratedunqueue.hh (1.7), elements/standard/red.cc
+	(1.31), elements/standard/red.hh (1.25),
+	elements/standard/switch.cc (1.15), elements/standard/switch.hh
+	(1.15), include/click/element.hh (1.16), include/click/router.hh
+	(1.16), lib/element.cc (1.60), lib/router.cc (1.96): added extra
+	"bool *" argument to Element::configuration() method, to support
+	Brecht's request that element configuration strings not lose
+	whitespace unless necessary
+
 2001-06-20 Wednesday 02:41  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* DISTFILES (1.28), etc/linux-2.2.17-patch (1.2): backported
