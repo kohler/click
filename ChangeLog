@@ -1,3 +1,8 @@
+2003-02-04 Tuesday 18:40  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/infinitesource.hh (1.32): InfiniteSource is
+	actually agnostic
+
 2003-02-04 Tuesday 15:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridheaderinfo.cc (1.8), gridheaderinfo.hh (1.7),
