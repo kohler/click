@@ -2,7 +2,8 @@
 
 // This file is a simple, fast UDP/IP load generator, meant to be used in the
 // Linux kernel module. It sends UDP/IP packets from this machine to another
-// machine at a given rate.
+// machine at a given rate. See 'udpcount.click' for a packet counter
+// compatible with udpgen.click.
 
 // The relevant address and rate arguments are specified as parameters to a
 // compound element UDPGen.
