@@ -1,3 +1,85 @@
+2001-06-03 Sunday 02:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/timer.hh (1.9), lib/timer.cc (1.22): update from
+	ACIRI timer thoughts
+
+2001-06-03 Sunday 02:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/samplepackage/Makefile.in (1.15): clean up and improve
+	samplepackage Makefile.in
+
+2001-06-03 Sunday 02:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* etc/samplepackage/config.h (1.1): previous change means
+	samplepackage must now have a config.h
+
+2001-06-03 Sunday 02:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-buildtool (1.17): elem2package always generates #ifdef
+	HAVE_CONFIG_H / #include <config.h> / #endif; required for packages
+
+2001-06-03 Sunday 02:17  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-buildtool (1.16): add "quietlink" subtool: filter out
+	undefined symbol errors, useful for linking packages with
+	-Bsymbolic
+
+2001-06-01 Friday 13:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi (1.27), include/click/ip6address.hh (1.4),
+	include/click/ipaddress.hh (1.16), lib/confparse.cc (1.74),
+	lib/ip6address.cc (1.23), lib/ipaddress.cc (1.22): rename
+	mask_to_prefix_bits to mask_to_prefix_len
+
+2001-06-01 Friday 13:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/iptable.cc (1.12): must always instantiate
+	Vector<IPTable::Entry>
+
+2001-06-01 Friday 04:14  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/iptable.cc (1.11): protect with EXPLICIT_TEMPLATE_INSTANCES
+
+2001-06-01 Friday 04:08  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi (1.26): doc updates
+
+2001-06-01 Friday 04:05  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/drivermanager.cc (1.6),
+	elements/standard/peekhandlers.cc (1.17),
+	elements/standard/pokehandlers.cc (1.17), include/click/router.hh
+	(1.15), lib/confparse.cc (1.73), lib/router.cc (1.95): cp_handler
+	and friends (cpHandler, cpReadHandler, ...) may now return global
+	handlers (Element * is null). adjust for this possibility elsewhere
+
+2001-06-01 Friday 03:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/confparse.cc (1.72): fix bug with cpArguments only visible in
+	kernel: clear out v2_string on first use
+
+2001-05-31 Thursday 18:32  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: drivermanager.cc (1.4), drivermanager.hh
+	(1.3), drivermanager.cc (1.5), peekhandlers.cc (1.16):
+	DriverManager: Add "print" instruction
+
+2001-05-31 Thursday 18:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/local/: fromtusummarylog.cc (1.3), fromtusummarylog.hh
+	(1.2): move FromTUSummaryLog to ACIRI repository
+
+2001-05-31 Thursday 18:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in (1.123): remove redundancy
+
+2001-05-31 Thursday 13:48  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/local/: fromtusummarylog.cc (1.1), fromtusummarylog.hh
+	(1.1), fromtusummarylog.cc (1.2): add FromTUSummaryLog, to process
+	"logs" of lines like "961456915.315105 213.216.200.137 80
+	134.11.130.136 3380 T 1460" into packets. For ACIRI/Jinyang
+
 2001-05-31 Thursday 02:23  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click.texi (1.25), include/click/straccum.hh (1.12): add
