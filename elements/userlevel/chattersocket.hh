@@ -42,8 +42,9 @@ Keyword arguments are:
 
 =item CHANNEL
 
-Word. The chatter channel: the socket generates messages sent to this channel.
-Default is the default channel, which corresponds to C<click_chatter>.
+Text word. The chatter channel: the socket generates messages sent to this
+channel. Default is the default channel, which corresponds to
+C<click_chatter>.
 
 Channels help you organize extensive debugging output. For example, you could
 send extremely verbose messages to a `C<verbose>' channel, then only connect
@@ -56,8 +57,8 @@ C<Router::chatter_channel(const String &channel_name)>.
 =item QUIET_CHANNEL
 
 Boolean. Messages sent to a non-default channel are not normally printed on
-standard error. If QUIET_CHANNEL is false, however, its messages do go to
-standard error, along with chatter messages. Default is true.
+standard error. If QUIET_CHANNEL is false, however, the channel's messages do
+go to standard error, along with chatter messages. Default is true.
 
 =item GREETING
 
