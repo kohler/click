@@ -1,3 +1,9 @@
+2001-04-18 Wednesday 11:26  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/: binpackingsched.cc, binpackingsched.hh,
+	revsortedsched.cc, revsortedsched.hh: new name for binpacking
+	scheduler
+
 2001-04-17 Tuesday 17:58  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/standard/scheduleinfo.cc: fix for compile with RR_SCHED
