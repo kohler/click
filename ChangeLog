@@ -1,3 +1,7 @@
+2004-05-02 Sunday 11:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool (1.49): remove /tmp/x reference
+
 2004-05-02 Sunday 02:57  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-buildtool (1.48), elements/local/forceudp.cc (1.9),
