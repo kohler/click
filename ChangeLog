@@ -1,3 +1,10 @@
+2001-05-29 Tuesday 21:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/lexer.cc (1.52), doc/click.5 (1.24), tools/lib/lexert.cc
+	(1.35): lexer: Disallow identifiers containing all-digit
+	components. So "1/x" is illegal now. "1@x" is still legal ("/"
+	separates components).
+
 2001-05-29 Tuesday 18:01  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ethernet/: ensureether.cc (1.1), ensureether.hh (1.1),
