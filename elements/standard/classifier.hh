@@ -1,5 +1,5 @@
-#ifndef CLASSIFIER_HH
-#define CLASSIFIER_HH
+#ifndef CLICK_CLASSIFIER_HH
+#define CLICK_CLASSIFIER_HH
 #include <click/element.hh>
 
 /*
@@ -124,8 +124,6 @@ class Classifier : public Element { public:
   unsigned _safe_length;
   unsigned _align_offset;
 
-  void sort_and_expr_subtree(int, int, int);
-  
   void combine_compatible_states();
   bool remove_unused_states();
   //int count_occurrences(const Expr &, int state, bool first) const;
@@ -138,11 +136,49 @@ class Classifier : public Element { public:
   void length_checked_push(Packet *);
 
  private:
+
+  class DominatorOptimizer { public:
+
+    DominatorOptimizer(Classifier *c);
+
+    static int brno(int state, bool br)		{ return (state << 1) + br; }
+    static int stateno(int brno)		{ return brno >> 1; }
+    static bool br(int brno)			{ return brno & 1; }
+
+    bool br_implies(int brno, int state) const;
+    bool br_implies_not(int brno, int state) const;
+
+    void run(int);
+    void print();
+
+   private:
+
+    Classifier *_c;
+    Vector<int> _dom;
+    Vector<int> _dom_start;
+    Vector<int> _domlist_start;
+
+    static const int MAX_DOMLIST = 4;
+    
+    Classifier::Expr &expr(int state) const;
+    int nexprs() const;
+
+    static void intersect_lists(const Vector<int> &, const Vector<int> &, const Vector<int> &, int pos1, int pos2, Vector<int> &);
+    static int last_common_state_in_lists(const Vector<int> &, const Vector<int> &, const Vector<int> &);
+    void find_predecessors(int state, Vector<int> &) const;
+    int dom_shift_branch(int brno, int to_state, int dom, int dom_end, Vector<int> *collector);
+    void shift_branch(int brno);
+    void calculate_dom(int state);
+    
+  };
   
-  bool check_path_iterative(Vector<int> &, int interested, int eventual) const;
-  bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
-  int check_path(int, bool) const;
-  void drift_expr(int);
+  void bubble_sort_and_exprs();
+  //bool check_path_iterative(Vector<int> &, int interested, int eventual) const;
+  //bool check_path(const Vector<int> &path, Vector<int> &, int ei, int interested, int eventual, bool first, bool yet) const;
+  //int check_path(int, bool) const;
+  //void drift_expr(int);
+
+  friend class DominatorOptimizer;
   
 };
 

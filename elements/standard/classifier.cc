@@ -165,368 +165,273 @@ Classifier::clone() const
 // COMPILATION
 //
 
-// OPTIMIZATION
+// DOMINATOR OPTIMIZER
 
-#define CLASSIFIER_ITERATIVE 1
-
-#if CLASSIFIER_ITERATIVE
-
-#define BEFORE_YES		0x00000000
-#define BEFORE_NO		0x00000001
-#define BEFORE_COMBINE		0x00000002
-#define STATE_FLAG		0x00000003
-#define SET_STATE(x, s)		((x) = ((x) & ~STATE_FLAG) | (s))
-#define YET_FLAG		0x00000004
-#define YES_OK_FLAG		0x00000008
-#define YES_OUTPUT(s)		((s >> 8)  & 0x00000FFF)
-#define NO_OUTPUT(s)		((s >> 20) & 0x00000FFF)
-#define MK_YES_OUTPUT(i)	((i << 8)  & 0x000FFF00)
-#define MK_NO_OUTPUT(i)		((i << 20) & 0xFFF00000)
-
-static void
-common_paths(Vector<int> &output, int yes_pos, int no_pos)
+Classifier::DominatorOptimizer::DominatorOptimizer(Classifier *c)
+  : _c(c)
 {
-  assert(yes_pos <= no_pos && no_pos <= output.size());
-  Vector<int> result;
-  
-  int yi = yes_pos, ni = no_pos;
-  while (yi < no_pos && ni < output.size()) {
-    if (output[yi] == output[ni]) {
-      result.push_back(output[ni]);
-      yi++;
-      ni++;
-    }
-    // cast to unsigned so that outputs and FAILURE are bigger than
-    // internal nodes
-    while (yi < no_pos && ni < output.size() && (unsigned)output[yi] < (unsigned)output[ni])
-      yi++;
-    while (yi < no_pos && ni < output.size() && (unsigned)output[yi] > (unsigned)output[ni])
-      ni++;
-  }
-
-  if (result.size())
-    memcpy(&output[yes_pos], &result[0], sizeof(int) * result.size());
-  output.resize(yes_pos + result.size());
+  _dom_start.push_back(0);
+  _domlist_start.push_back(0);
 }
 
-static void
-move_path(Vector<int> &output, int to_pos, int start_pos, int end_pos)
+inline Classifier::Expr &
+Classifier::DominatorOptimizer::expr(int state) const
 {
-  assert(to_pos <= start_pos && start_pos <= end_pos && end_pos <= output.size());
-  if (to_pos == start_pos)
-    output.resize(end_pos);
-  else {
-    int len = end_pos - start_pos;
-    if (len)
-      memmove(&output[to_pos], &output[start_pos], sizeof(int) * len);
-    output.resize(to_pos + len);
-  }
+  return _c->_exprs[state];
 }
 
-/* The recursive check_path function below is easier to understand than this,
- * but unfortunately, it seems to cause kernel crashes b/c of stack overflows.
- * (Deep recursion.) This iterative version, based on the recursive version,
- * should avoid such problems.
- *
- * The iterative transformation is pretty conventional. To transofrm a
- * recursive function to iterative version, you explicitly store the required
- * persistent state from each activation record.
- *
- * The check_path function walks over a path through the _exprs array. Since
- * _exprs is noncircular -- every branch points forward (or to an output) --
- * each path has a maximum length: _exprs.size() + 1. Since only one path is
- * active at a time, the recursion has a maximum depth of _exprs.size(), and
- * we can reserve _exprs.size() state words.
- *
- * What state do we need to keep? The list of current activations, obviously.
- * And for each activation, the state it is in; whether 'yet' is true; whether
- * the recursive call for the 'yes' branch succeeded; and the 'yes_output' and
- * 'no_output' arrays. We store them as follows:
- *
- * - List of prior activations: Each activation corresponds to a single
- *   expression number. Expression numbers are stored in 'path'. When 'path'
- *   is empty the recursion is done. Making a recursive call == adding an
- *   expr# to the end of 'path'. Returning from an activation == removing the
- *   back end of 'path'. Current activation == back end of path.
- *
- * - State the activation is in: Three valid states, "BEFORE_YES" (have not
- *   yet made recursive call along yes branch, the initial state), "BEFORE_NO"
- *   (have not yet made recursive call along no branch), "BEFORE_COMBINE"
- *   (after both recursive calls but before return). Stored in 'flags[expr#] &
- *   STATE_FLAG'.
- *
- * - Whether 'yet' is true: Stored in 'flags[expr#] & YET_FLAG'.
- *
- * - Whether the recursive call for the 'yes' branch succeeded: Stored in
- *   'flags[expr#] & YES_OK_FLAG'.
- *
- * - The 'yes_output' and 'no_output' arrays: Stored in 'output'. Say that an
- *   activation starts with 'output.size() == X'. Then the iterative
- *   activation, like the recursive activation, will return having appended
- *   some vector (possibly empty) to 'output'. However, there is a difference.
- *   The recursive version passes new vectors to recursive calls. Here, we
- *   simply tack more data on to the single 'output' vector, and use indexes
- *   to tell how long the recursive vectors would have been. Specifically, in
- *   the "BEFORE_COMBINE" state, the vector 'yes_answer' is stored in 'output'
- *   indices 'YES_OUTPUT(flags[expr#]) <= i < NO_OUTPUT(flags[expr#])', and
- *   the vector 'no_answer' is stored in 'output' indices
- *   'NO_OUTPUT(flags[expr#]) <= i < output.size()'. Before "BEFORE_COMBINE"
- *   returns, it moves data around, and probably shrinks the 'output' vector,
- *   so that its return value is as required.
- *
- * The return value for the most recently completed activation record is
- * stored in 'bool result'.
- * */
-
-bool
-Classifier::check_path_iterative(Vector<int> &output,
-				 int interested, int eventual) const
+inline int
+Classifier::DominatorOptimizer::nexprs() const
 {
-  Vector<int> flags(_exprs.size(), 0);
-  Vector<int> path;
-  path.reserve(_exprs.size() + 1);
-  path.push_back(0);
-
-  bool result = false;		// result of last check_path execution
-
-  // loop until path is empty
-  while (path.size()) {
-
-    int ei = path.back();
-    int flag = flags[ei];
-    bool yet = (flag & YET_FLAG) != 0;
-    int state = (flag & STATE_FLAG);
-
-    switch (state) {
-
-     case BEFORE_YES: {
-       // check for early breakout
-       result = false;
-       if (ei > interested && ei != eventual && !yet)
-	 goto back_up;
-       if (yet)
-	 output.push_back(ei);
-       assert(ei >= 0);
-       assert(!(flag & YES_OK_FLAG) && YES_OUTPUT(flag) == 0);
-
-       // store 'YES_OUTPUT'
-       flags[ei] = flag = flag | MK_YES_OUTPUT(output.size());
-
-       const Expr &e = _exprs[ei];
-       for (int i = 0; i < path.size() - 1; i++) {
-	 const Expr &old = _exprs[path[i]];
-	 bool yes = (old.yes == path[i+1]);
-	 if ((yes && old.implies_not(e)) || (!yes && old.not_implies_not(e)))
-	   goto yes_dead;
-       }
-
-       // if we get here, must check `yes' branch
-       flags[ei] = (flag & ~STATE_FLAG) | BEFORE_NO;       
-       if (ei == interested && e.yes == eventual)
-	 yet = true;
-       ei = e.yes;
-       goto step_forward;
-     }
-
-     yes_dead:
-     case BEFORE_NO: {
-       // store 'NO_OUTPUT'
-       flags[ei] = flag = flag | MK_NO_OUTPUT(output.size()) | (result ? YES_OK_FLAG : 0);
-       result = false;
-
-       const Expr &e = _exprs[ei];
-       for (int i = 0; i < path.size() - 1; i++) {
-	 const Expr &old = _exprs[path[i]];
-	 bool yes = (old.yes == path[i+1]);
-	 if ((yes && old.implies(e)) || (!yes && old.not_implies(e)))
-	   goto no_dead;
-       }
-
-       // if we get here, must check no branch
-       flags[ei] = (flag & ~STATE_FLAG) | BEFORE_COMBINE;
-       if (ei == interested && e.no == eventual)
-	 yet = true;
-       ei = e.no;
-       goto step_forward;
-     }
-
-     step_forward: {
-       // move to 'ei'; check for output port rather than internal node
-       if (ei <= 0) {
-	 if (yet)
-	   output.push_back(ei);
-	 result = yet;
-	 /* do not move forward */
-       } else {
-	 flags[ei] = BEFORE_YES | (yet ? YET_FLAG : 0);
-	 path.push_back(ei);
-       }
-       break;
-     }
-     
-     no_dead:
-     case BEFORE_COMBINE: {
-       const Expr &e = _exprs[ei];
-       bool yes_ok = ((flag & YES_OK_FLAG) != 0);
-       bool no_ok = result;
-       
-       if (ei == interested) {
-	 if (e.yes == eventual)
-	   move_path(output, YES_OUTPUT(flag), YES_OUTPUT(flag), NO_OUTPUT(flag));
-	 else
-	   move_path(output, YES_OUTPUT(flag), NO_OUTPUT(flag), output.size());
-	 result = (e.yes == eventual ? yes_ok : no_ok);
-	 
-       } else if (yes_ok && no_ok) {
-	 common_paths(output, YES_OUTPUT(flag), NO_OUTPUT(flag));
-	 result = true;
-	 
-       } else if (!yes_ok && !no_ok)
-	 result = false;
-       
-       else if (yes_ok) {
-	 move_path(output, YES_OUTPUT(flag), YES_OUTPUT(flag), NO_OUTPUT(flag));
-	 result = true;
-
-       } else {			// no_ok
-	 move_path(output, YES_OUTPUT(flag), NO_OUTPUT(flag), output.size());
-	 result = true;
-       }
-
-       goto back_up;
-     }
-
-     back_up: {
-       path.pop_back();
-       break;
-     }
-
-     default:
-      assert(0);
-      
-    }
-  }
-
-  return result;
+  return _c->_exprs.size();
 }
 
-#else /* !CLASSIFIER_ITERATIVE */
-
-static void
-common_paths(const Vector<int> &a, const Vector<int> &b, Vector<int> &out)
+inline bool
+Classifier::DominatorOptimizer::br_implies(int brno, int state) const
 {
-  int ai = 0, bi = 0;
-  while (ai < a.size() && bi < b.size()) {
-    if (a[ai] == b[bi]) {
-      out.push_back(a[ai]);
-      ai++;
-      bi++;
-    }
-    // cast to unsigned so that outputs and FAILURE are bigger than
-    // internal nodes
-    while (ai < a.size() && bi < b.size() && (unsigned)a[ai] < (unsigned)b[bi])
-      ai++;
-    while (ai < a.size() && bi < b.size() && (unsigned)a[ai] > (unsigned)b[bi])
-      bi++;
-  }
+  assert(state > 0);
+  if (br(brno))
+    return expr(stateno(brno)).implies(expr(state));
+  else
+    return expr(stateno(brno)).not_implies(expr(state));
 }
 
-bool
-Classifier::check_path(const Vector<int> &path, Vector<int> &output,
-		       int ei, int interested, int eventual,
-		       bool first, bool yet) const
+inline bool
+Classifier::DominatorOptimizer::br_implies_not(int brno, int state) const
 {
-  if (ei > interested && ei != eventual && !yet)
-    return false;
-  if (yet)
-    output.push_back(ei);
-  if (ei < 0 || (ei == 0 && !first))
-    return yet;
-
-  const Expr &e = _exprs[ei];
-  Vector<int> new_path(path);
-  new_path.push_back(ei);
-
-  Vector<int> yes_answer;
-  bool yes_ok = false;
-  for (int i = 0; i < new_path.size() - 1; i++) {
-    const Expr &old = _exprs[new_path[i]];
-    bool yes = (old.yes == new_path[i+1]);
-    if ((yes && old.implies_not(e)) || (!yes && old.not_implies_not(e)))
-      goto yes_dead;
-  }
-  yes_ok = check_path(new_path, yes_answer, e.yes, interested, eventual, false,
-		      yet || (ei == interested && e.yes == eventual));
-
- yes_dead:
-  Vector<int> no_answer;
-  bool no_ok = false;
-  for (int i = 0; i < new_path.size() - 1; i++) {
-    const Expr &old = _exprs[new_path[i]];
-    bool yes = (old.yes == new_path[i+1]);
-    if ((yes && old.implies(e)) || (!yes && old.not_implies(e)))
-      goto no_dead;
-  }
-  no_ok = check_path(new_path, no_answer, e.no, interested, eventual, false,
-		     yet || (ei == interested && e.no == eventual));
-
- no_dead:
-  //fprintf(stderr, "      ");
-  //for (int i=0; i<new_path.size(); i++) fprintf(stderr, " %d", new_path[i]);
-  //fprintf(stderr, "%s -> \n", (yet?"*":""));
-  
-  if (ei == interested) {
-    const Vector<int> &v = (e.yes == eventual ? yes_answer : no_answer);
-    for (int i = 0; i < v.size(); i++)
-      output.push_back(v[i]);
-    return (e.yes == eventual ? yes_ok : no_ok);
-    
-  } else if (yes_ok && no_ok) {
-    common_paths(yes_answer, no_answer, output);
-    return true;
-    
-  } else if (!yes_ok && !no_ok)
-    return false;
-  
-  else {
-    const Vector<int> &v = (yes_ok ? yes_answer : no_answer);
-    for (int i = 0; i < v.size(); i++)
-      output.push_back(v[i]);
-    return true;
-  }
-}
-
-#endif /* CLASSIFIER_ITERATIVE */
-
-int
-Classifier::check_path(int ei, bool yes) const
-{
-  int next_ei = (yes ? _exprs[ei].yes : _exprs[ei].no);
-  //fprintf(stderr, "%d.%s -> %d\n", ei, yes?"y":"n", next_ei);
-  if (next_ei > 0) {
-    Vector<int> x;
-#if CLASSIFIER_ITERATIVE
-    check_path_iterative(x, ei, next_ei);
-#else
-    check_path(Vector<int>(), x, 0, ei, next_ei, true, false);
-#endif
-    next_ei = (x.size() ? x.back() : FAILURE);
-  }
-  // next_ei = check_path(Vector<int>(), 0, ei, next_ei, true, false);
-  //fprintf(stderr, "   -> %d\n", next_ei);
-  return next_ei;
+  assert(state > 0);
+  if (br(brno))
+    return expr(stateno(brno)).implies_not(expr(state));
+  else
+    return expr(stateno(brno)).not_implies_not(expr(state));
 }
 
 void
-Classifier::drift_expr(int ei)
+Classifier::DominatorOptimizer::find_predecessors(int state, Vector<int> &v) const
 {
-  Expr &e = _exprs[ei];
-  // only do it once; repetitions without other changes to the dag would be
-  // redundant
-  e.yes = check_path(ei, true);
-  e.no = check_path(ei, false);
-  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+  for (int i = 0; i < state; i++) {
+    Expr &e = expr(i);
+    if (e.yes == state)
+      v.push_back(brno(i, true));
+    if (e.no == state)
+      v.push_back(brno(i, false));
+  }
 }
+
+#if CLICK_USERLEVEL
+void
+Classifier::DominatorOptimizer::print()
+{
+  String s = Classifier::program_string(_c, 0);
+  fprintf(stderr, "%s\n", s.cc());
+  for (int i = 0; i < _domlist_start.size() - 1; i++) {
+    if (_domlist_start[i] == _domlist_start[i+1])
+      fprintf(stderr, "S-%d   NO DOMINATORS\n", i);
+    else {
+      int done = 0;
+      for (int j = _domlist_start[i]; j < _domlist_start[i+1]; j++) {
+	fprintf(stderr, (done ? "    ": "S-%d "), i);
+	fprintf(stderr, ": ");
+	for (int k = _dom_start[j]; k < _dom_start[j+1]; k++)
+	  fprintf(stderr, " %d.%c", stateno(_dom[k]), br(_dom[k]) ? 'Y' : 'N');
+	fprintf(stderr, "\n");
+	done = 1;
+      }
+    }
+  }
+}
+#endif
+
+void
+Classifier::DominatorOptimizer::calculate_dom(int state)
+{
+  assert(_domlist_start.size() == state + 1);
+  assert(_dom_start.size() - 1 == _domlist_start.back());
+  assert(_dom.size() == _dom_start.back());
+  
+  // find predecessors
+  Vector<int> predecessors;
+  find_predecessors(state, predecessors);
+  
+  // if no predecessors, kill this expr
+  if (predecessors.size() == 0) {
+    if (state > 0)
+      expr(state).yes = expr(state).no = -_c->noutputs();
+    else {
+      assert(state == 0);
+      _dom.push_back(brno(state, false));
+      _dom_start.push_back(_dom.size());
+    }
+    _domlist_start.push_back(_dom_start.size() - 1);
+    return;
+  }
+
+  // collect dominator lists from predecessors
+  Vector<int> pdom, pdom_end;
+  for (int i = 0; i < predecessors.size(); i++) {
+    int p = predecessors[i], s = stateno(p);
+    
+    // if both branches point at same place, remove predecessor state from
+    // tree
+    if (i > 0 && stateno(predecessors[i-1]) == s) {
+      assert(i == predecessors.size() - 1 || stateno(predecessors[i+1]) != s);
+      assert(pdom_end.back() > pdom.back());
+      assert(stateno(_dom[pdom_end.back() - 1]) == s);
+      pdom_end.back()--;
+      continue;
+    }
+
+    // append all dom lists to pdom and pdom_end; modify dom array to end with
+    // branch 'p'
+    for (int j = _domlist_start[s]; j < _domlist_start[s+1]; j++) {
+      pdom.push_back(_dom_start[j]);
+      pdom_end.push_back(_dom_start[j+1]);
+      assert(stateno(_dom[pdom_end.back() - 1]) == s);
+      _dom[pdom_end.back() - 1] = p;
+    }
+  }
+
+  // We now have pdom and pdom_end arrays pointing at predecessors'
+  // dominators.
+
+  // If we have too many arrays, combine some of them.
+  int pdom_pos = 0;
+  if (pdom.size() > MAX_DOMLIST) {
+    intersect_lists(_dom, pdom, pdom_end, 0, pdom.size(), _dom);
+    _dom.push_back(brno(state, false));
+    _dom_start.push_back(_dom.size());
+    pdom_pos = pdom.size();
+  }
+
+  for (int p = pdom_pos; p < pdom.size(); p++) {
+    for (int i = pdom[p]; i < pdom_end[p]; i++) {
+      int x = _dom[i];
+      _dom.push_back(x);
+    }
+    _dom.push_back(brno(state, false));
+    _dom_start.push_back(_dom.size());
+  }
+
+  _domlist_start.push_back(_dom_start.size() - 1);
+}
+
+
+void
+Classifier::DominatorOptimizer::intersect_lists(const Vector<int> &in, const Vector<int> &start, const Vector<int> &end, int pos1, int pos2, Vector<int> &out)
+{
+  assert(pos1 <= pos2 && pos2 <= start.size() && pos2 <= end.size());
+  if (pos1 == pos2)
+    return;
+  else if (pos2 - pos1 == 1) {
+    for (int i = start[pos1]; i < end[pos1]; i++)
+      out.push_back(in[i]);
+  } else {
+    Vector<int> pos(start);
+    // Be careful about lists that end with something <= 0.
+    int x = -1;
+    while (1) {
+      int p = pos1, k = 0;
+      while (k < pos2 - pos1) {
+	while (pos[p] < end[p] && in[pos[p]] < x)
+	  pos[p]++;
+	if (pos[p] >= end[p])
+	  goto done;
+	if (in[pos[p]] > x)
+	  x = in[pos[p]], k = 0;
+	p++;
+	if (p == pos2)
+	  p = pos1;
+	k++;
+      }
+      out.push_back(x);
+      x++;
+    }
+   done: ;
+  }
+}
+
+int
+Classifier::DominatorOptimizer::dom_shift_branch(int brno, int to_state, int dom, int dom_end, Vector<int> *collector)
+{
+  // shift the branch from `brno' to `to_state' as far down as you can, using
+  // information from `brno's dominators
+  assert(dom_end > dom && stateno(_dom[dom_end - 1]) == stateno(brno));
+  _dom[dom_end - 1] = brno;
+  if (collector)
+    collector->push_back(to_state);
+
+  while (to_state > 0) {
+    for (int j = dom_end - 1; j >= dom; j--)
+      if (br_implies(_dom[j], to_state)) {
+	to_state = expr(to_state).yes;
+	goto found;
+      } else if (br_implies_not(_dom[j], to_state)) {
+	to_state = expr(to_state).no;
+	goto found;
+      }
+    // not found
+    break;
+   found:
+    if (collector)
+      collector->push_back(to_state);
+  }
+
+  return to_state;
+}
+
+int
+Classifier::DominatorOptimizer::last_common_state_in_lists(const Vector<int> &in, const Vector<int> &start, const Vector<int> &end)
+{
+  assert(start.size() == end.size() && start.size() > 1);
+  if (in[end[0] - 1] <= 0) {
+    int s = in[end[0] - 1];
+    for (int j = 1; j < start.size(); j++)
+      if (in[end[j] - 1] != s)
+	goto not_end;
+    return s;
+  }
+ not_end:
+  Vector<int> intersection;
+  intersect_lists(in, start, end, 0, start.size(), intersection);
+  return intersection.back();
+}
+
+void
+Classifier::DominatorOptimizer::shift_branch(int brno)
+{
+  // shift a branch by examining its dominators
+  
+  int s = stateno(brno);
+  int &to_state = (br(brno) ? expr(s).yes : expr(s).no);
+  if (to_state <= 0)
+    return;
+
+  if (_domlist_start[s] + 1 == _domlist_start[s+1]) {
+    // single domlist; faster algorithm
+    int d = _domlist_start[s];
+    to_state = dom_shift_branch(brno, to_state, _dom_start[d], _dom_start[d+1], 0);
+  } else {
+    Vector<int> vals, start, end;
+    for (int d = _domlist_start[s]; d < _domlist_start[s+1]; d++) {
+      start.push_back(vals.size());
+      (void) dom_shift_branch(brno, to_state, _dom_start[d], _dom_start[d+1], &vals);
+      end.push_back(vals.size());
+    }
+    to_state = last_common_state_in_lists(vals, start, end);
+  }
+}
+
+void
+Classifier::DominatorOptimizer::run(int state)
+{
+  assert(_domlist_start.size() == state + 1);
+  calculate_dom(state);
+  shift_branch(brno(state, true));
+  shift_branch(brno(state, false));
+}
+
+
+// OPTIMIZATION
 
 bool
 Classifier::remove_unused_states()
@@ -612,14 +517,60 @@ Classifier::combine_compatible_states()
 }
 
 void
+Classifier::bubble_sort_and_exprs()
+{
+  // count inbranches
+  Vector<int> inbranch(_exprs.size(), -1);
+  for (int i = 0; i < _exprs.size(); i++) {
+    Expr &e = _exprs[i];
+    if (e.yes > 0)
+      inbranch[e.yes] = (inbranch[e.yes] >= 0 ? 0 : i);
+    if (e.no > 0)
+      inbranch[e.no] = (inbranch[e.no] >= 0 ? 0 : i);
+  }
+
+  // do bubblesort
+  for (int i = 0; i < _exprs.size(); i++)
+    if (_exprs[i].yes > 0) {
+      int j = _exprs[i].yes;
+      Expr &e1 = _exprs[i], &e2 = _exprs[j];
+      if (e1.no == e2.no && e1.offset > e2.offset && inbranch[j] > 0) {
+	Expr temp(e2);
+	e2 = e1;
+	e2.yes = temp.yes;
+	e1 = temp;
+	e1.yes = j;
+	// step backwards to continue the sort
+	i = (inbranch[i] > 0 ? inbranch[i] - 1 : i - 1);
+      }
+    }
+}
+
+void
 Classifier::optimize_exprs(ErrorHandler *errh)
 {
-  // optimize edges by drifting
-  do {
+  // sort 'and' expressions
+  bubble_sort_and_exprs();
+  
+  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+
+  // optimize using dominators
+  {
+    DominatorOptimizer dom(this);
     for (int i = 0; i < _exprs.size(); i++)
-      drift_expr(i);
+      dom.run(i);
+    //dom.print();
     combine_compatible_states();
-  } while (remove_unused_states()); // || remove_duplicate_states());
+    (void) remove_unused_states();
+  }
+  
+  // optimize edges by drifting
+  /*if (_exprs.size() < 100)
+    do {
+      for (int i = 0; i < _exprs.size(); i++)
+	drift_expr(i);
+      combine_compatible_states();
+      } while (remove_unused_states());*/
   
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
   
@@ -698,131 +649,6 @@ Classifier::start_expr_subtree(Vector<int> &tree)
 }
 
 void
-Classifier::sort_and_expr_subtree(int from, int success, int failure)
-{
-  // This function checks the last subtree in _exprs, from `from' to the end
-  // of _exprs, to see if it is an AND subtree. Such a subtree can be divided
-  // into N sections, where all links inside each section K satisfy the
-  // following properties:
-  //
-  // -- Each "yes" link either remains within section K, or jumps to the
-  //    beginning of section K + 1, or (if there is no section K + 1) jumps
-  //    to `success'.
-  // -- Each "no" link either remains within section K or jumps to `failure'.
-  //
-  // The sections within such a subtree can be arbitrarily reordered without
-  // affecting the subtree's semantics. This function finds such subtrees and
-  // sorts them by offset of the first expr in each section. (Thus, the offset
-  // of the first expr in section 0 <= the offset of the first expr in section
-  // 1, and so forth.) This improves the action of later optimizations.
-  
-  int nexprs = _exprs.size();
-  Vector<int> id(nexprs, 0);
-  for (int i = from; i < nexprs; i++)
-    id[i] = i;
-
-  // determine equivalence classes (that is, the sections)
-  while (1) {
-    bool changed = false;
-    for (int i = from; i < nexprs; i++) {
-      const Expr &e = _exprs[i];
-      if (e.no != failure && e.no > 0 && id[i] != id[e.no]) {
-	for (int j = i + 1; j <= e.no; j++)
-	  id[j] = id[i];
-	changed = true;
-      } else if (e.yes > 0 && id[i] != id[e.yes - 1]) {
-	for (int j = i + 1; j < e.yes; j++)
-	  id[j] = id[i];
-	changed = true;
-      } else if ((e.no <= 0 && e.no != failure) || (e.yes <= 0 && e.yes != success))
-	return;
-    }
-    if (!changed) break;
-  }
-
-  // check for bad branches that would invalidate the transformation
-  for (int i = from; id[i] < id.back(); i++) {
-    const Expr &e = _exprs[i];
-    if (e.yes == success)
-      return;
-  }
-  
-  //{ StringAccum sa;
-  //sa << success << " -- " << failure << "\n";
-  //for (int i = from; i < nexprs; i++) {
-  //  sa << (i < 10 ? ">> " : ">>") << i << " [" << (id[i] < 10 ? " " : "") << id[i] << "] " << _exprs[i] << "\n";
-  //}
-  //click_chatter("%s", sa.cc()); }
-
-  // extract equivalence classes from 'id' array
-  Vector<int> equiv_classes;
-  for (int i = from, c = -1; i < nexprs; i++)
-    if (id[i] != c) {
-      equiv_classes.push_back(i);
-      c = id[i];
-    }
-  if (equiv_classes.size() <= 1)
-    return;
-
-  // sort equivalence classes
-  bool sorted = true;
-  Vector<int> sort_equiv_class(equiv_classes.size(), 0);
-  for (int i = 0; i < equiv_classes.size(); i++) {
-    int c = equiv_classes[i];
-    int j = 0;
-    for (; j < i
-	   && _exprs[sort_equiv_class[j]].offset <= _exprs[c].offset; j++)
-      /* nada */;
-    if (j == i)
-      sort_equiv_class[i] = c;
-    else {
-      memmove(&sort_equiv_class[j+1], &sort_equiv_class[j], (i - j) * sizeof(int));
-      sort_equiv_class[j] = c;
-      sorted = false;
-    }
-  }
-
-  // return early if already sorted
-  if (sorted)
-    return;
-
-  // sort the actual exprs
-  equiv_classes.push_back(nexprs);
-  Vector<Expr> newe;
-  for (int i = 0; i < sort_equiv_class.size(); i++) {
-    int c = sort_equiv_class[i];
-    int new_c = from + newe.size();
-    int classno;
-    for (classno = 0; equiv_classes[classno] != c; classno++) ;
-    int next = (classno == equiv_classes.size() - 2 ? success : equiv_classes[classno+1]);
-    int new_next = (i == sort_equiv_class.size() - 1 ? success : new_c + equiv_classes[classno+1] - c);
-    for (int j = c; j < nexprs && id[j] == c; j++) {
-      Expr e = _exprs[j];
-      if (e.yes == next)
-	e.yes = new_next;
-      else if (e.yes > 0) {
-	assert(e.yes >= c && (next <= 0 || e.yes < next));
-	e.yes += new_c - c;
-      }
-      if (e.no > 0) {
-	assert(e.no >= c && (next <= 0 || e.no < next));
-	e.no += new_c - c;
-      } else
-	assert(e.no == failure);
-      newe.push_back(e);
-    }
-  }
-
-  memcpy(&_exprs[from], &newe[0], newe.size() * sizeof(Expr));
-  
-  //{ StringAccum sa;
-  //for (int i = from; i < nexprs; i++) {
-  //  sa << (i < 10 ? " " : "") << i << " " << _exprs[i] << "\n";
-  //}
-  //click_chatter("%s", sa.cc()); }
-}
-
-void
 Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
 				int success = SUCCESS, int failure = FAILURE)
 {
@@ -835,34 +661,37 @@ Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
     else if (tree[i+1] >= 0 && tree[i+1] < level)
       break;
 
-  if (int nsubtrees = subtrees.size()) {
+  if (subtrees.size()) {
     int first = subtrees.back();
-    int real_first = first;
     
     tree[first+1] = level - 1;
     for (int i = first + 1; i < _exprs.size(); i++)
       tree[i+1] = -1;
-    
+
     int change_from = (is_and ? SUCCESS : FAILURE);
     while (subtrees.size()) {
       subtrees.pop_back();
       int next = (subtrees.size() ? subtrees.back() : _exprs.size());
-      if (!subtrees.size()) change_from = NEVER;
+      if (!subtrees.size())
+	change_from = NEVER;
       /* click_chatter("%d %d   %d %d", first, next, change_from, next); */
       for (int i = first; i < next; i++) {
 	Expr &e = _exprs[i];
-	if (e.yes == change_from) e.yes = next;
-	else if (e.yes == SUCCESS) e.yes = success;
-	else if (e.yes == FAILURE) e.yes = failure;
-	if (e.no == change_from) e.no = next;
-	else if (e.no == SUCCESS) e.no = success;
-	else if (e.no == FAILURE) e.no = failure;
+	if (e.yes == change_from)
+	  e.yes = next;
+	else if (e.yes == SUCCESS)
+	  e.yes = success;
+	else if (e.yes == FAILURE)
+	  e.yes = failure;
+	if (e.no == change_from)
+	  e.no = next;
+	else if (e.no == SUCCESS)
+	  e.no = success;
+	else if (e.no == FAILURE)
+	  e.no = failure;
       }
       first = next;
     }
-
-    if (is_and && nsubtrees > 1)
-      sort_and_expr_subtree(real_first, success, failure);
   }
 
   tree[0]--;
@@ -871,6 +700,7 @@ Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
 void
 Classifier::negate_expr_subtree(Vector<int> &tree)
 {
+  // swap 'SUCCESS' and 'FAILURE' within the last subtree
   int level = tree[0];
   int first = _exprs.size() - 1;
   while (first >= 0 && tree[first+1] != level)
@@ -878,10 +708,14 @@ Classifier::negate_expr_subtree(Vector<int> &tree)
 
   for (int i = first; i < _exprs.size(); i++) {
     Expr &e = _exprs[i];
-    if (e.yes == FAILURE) e.yes = SUCCESS;
-    else if (e.yes == SUCCESS) e.yes = FAILURE;
-    if (e.no == FAILURE) e.no = SUCCESS;
-    else if (e.no == SUCCESS) e.no = FAILURE;
+    if (e.yes == FAILURE)
+      e.yes = SUCCESS;
+    else if (e.yes == SUCCESS)
+      e.yes = FAILURE;
+    if (e.no == FAILURE)
+      e.no = SUCCESS;
+    else if (e.no == SUCCESS)
+      e.no = FAILURE;
   }
 }
 
@@ -1300,6 +1134,498 @@ Classifier::unaligned_optimize()
 }
 
 #endif
+#if 0
+#define CLASSIFIER_ITERATIVE 1
+
+#if CLASSIFIER_ITERATIVE
+
+#define BEFORE_YES		0x00000000
+#define BEFORE_NO		0x00000001
+#define BEFORE_COMBINE		0x00000002
+#define STATE_FLAG		0x00000003
+#define SET_STATE(x, s)		((x) = ((x) & ~STATE_FLAG) | (s))
+#define YET_FLAG		0x00000004
+#define YES_OK_FLAG		0x00000008
+#define YES_OUTPUT(s)		((s >> 8)  & 0x00000FFF)
+#define NO_OUTPUT(s)		((s >> 20) & 0x00000FFF)
+#define MK_YES_OUTPUT(i)	((i << 8)  & 0x000FFF00)
+#define MK_NO_OUTPUT(i)		((i << 20) & 0xFFF00000)
+
+static void
+common_paths(Vector<int> &output, int yes_pos, int no_pos)
+{
+  assert(yes_pos <= no_pos && no_pos <= output.size());
+  Vector<int> result;
+  
+  int yi = yes_pos, ni = no_pos;
+  while (yi < no_pos && ni < output.size()) {
+    if (output[yi] == output[ni]) {
+      result.push_back(output[ni]);
+      yi++;
+      ni++;
+    }
+    // cast to unsigned so that outputs and FAILURE are bigger than
+    // internal nodes
+    while (yi < no_pos && ni < output.size() && (unsigned)output[yi] < (unsigned)output[ni])
+      yi++;
+    while (yi < no_pos && ni < output.size() && (unsigned)output[yi] > (unsigned)output[ni])
+      ni++;
+  }
+
+  if (result.size())
+    memcpy(&output[yes_pos], &result[0], sizeof(int) * result.size());
+  output.resize(yes_pos + result.size());
+}
+
+static void
+move_path(Vector<int> &output, int to_pos, int start_pos, int end_pos)
+{
+  assert(to_pos <= start_pos && start_pos <= end_pos && end_pos <= output.size());
+  if (to_pos == start_pos)
+    output.resize(end_pos);
+  else {
+    int len = end_pos - start_pos;
+    if (len)
+      memmove(&output[to_pos], &output[start_pos], sizeof(int) * len);
+    output.resize(to_pos + len);
+  }
+}
+
+/* The recursive check_path function below is easier to understand than this,
+ * but unfortunately, it seems to cause kernel crashes b/c of stack overflows.
+ * (Deep recursion.) This iterative version, based on the recursive version,
+ * should avoid such problems.
+ *
+ * The iterative transformation is pretty conventional. To transofrm a
+ * recursive function to iterative version, you explicitly store the required
+ * persistent state from each activation record.
+ *
+ * The check_path function walks over a path through the _exprs array. Since
+ * _exprs is noncircular -- every branch points forward (or to an output) --
+ * each path has a maximum length: _exprs.size() + 1. Since only one path is
+ * active at a time, the recursion has a maximum depth of _exprs.size(), and
+ * we can reserve _exprs.size() state words.
+ *
+ * What state do we need to keep? The list of current activations, obviously.
+ * And for each activation, the state it is in; whether 'yet' is true; whether
+ * the recursive call for the 'yes' branch succeeded; and the 'yes_output' and
+ * 'no_output' arrays. We store them as follows:
+ *
+ * - List of prior activations: Each activation corresponds to a single
+ *   expression number. Expression numbers are stored in 'path'. When 'path'
+ *   is empty the recursion is done. Making a recursive call == adding an
+ *   expr# to the end of 'path'. Returning from an activation == removing the
+ *   back end of 'path'. Current activation == back end of path.
+ *
+ * - State the activation is in: Three valid states, "BEFORE_YES" (have not
+ *   yet made recursive call along yes branch, the initial state), "BEFORE_NO"
+ *   (have not yet made recursive call along no branch), "BEFORE_COMBINE"
+ *   (after both recursive calls but before return). Stored in 'flags[expr#] &
+ *   STATE_FLAG'.
+ *
+ * - Whether 'yet' is true: Stored in 'flags[expr#] & YET_FLAG'.
+ *
+ * - Whether the recursive call for the 'yes' branch succeeded: Stored in
+ *   'flags[expr#] & YES_OK_FLAG'.
+ *
+ * - The 'yes_output' and 'no_output' arrays: Stored in 'output'. Say that an
+ *   activation starts with 'output.size() == X'. Then the iterative
+ *   activation, like the recursive activation, will return having appended
+ *   some vector (possibly empty) to 'output'. However, there is a difference.
+ *   The recursive version passes new vectors to recursive calls. Here, we
+ *   simply tack more data on to the single 'output' vector, and use indexes
+ *   to tell how long the recursive vectors would have been. Specifically, in
+ *   the "BEFORE_COMBINE" state, the vector 'yes_answer' is stored in 'output'
+ *   indices 'YES_OUTPUT(flags[expr#]) <= i < NO_OUTPUT(flags[expr#])', and
+ *   the vector 'no_answer' is stored in 'output' indices
+ *   'NO_OUTPUT(flags[expr#]) <= i < output.size()'. Before "BEFORE_COMBINE"
+ *   returns, it moves data around, and probably shrinks the 'output' vector,
+ *   so that its return value is as required.
+ *
+ * The return value for the most recently completed activation record is
+ * stored in 'bool result'.
+ * */
+
+bool
+Classifier::check_path_iterative(Vector<int> &output,
+				 int interested, int eventual) const
+{
+  Vector<int> flags(_exprs.size(), 0);
+  Vector<int> path;
+  path.reserve(_exprs.size() + 1);
+  path.push_back(0);
+
+  bool result = false;		// result of last check_path execution
+
+  // loop until path is empty
+  while (path.size()) {
+
+    int ei = path.back();
+    int flag = flags[ei];
+    bool yet = (flag & YET_FLAG) != 0;
+    int state = (flag & STATE_FLAG);
+
+    switch (state) {
+
+     case BEFORE_YES: {
+       // check for early breakout
+       result = false;
+       if (ei > interested && ei != eventual && !yet)
+	 goto back_up;
+       if (yet)
+	 output.push_back(ei);
+       assert(ei >= 0);
+       assert(!(flag & YES_OK_FLAG) && YES_OUTPUT(flag) == 0);
+
+       // store 'YES_OUTPUT'
+       flags[ei] = flag = flag | MK_YES_OUTPUT(output.size());
+
+       const Expr &e = _exprs[ei];
+       for (int i = 0; i < path.size() - 1; i++) {
+	 const Expr &old = _exprs[path[i]];
+	 bool yes = (old.yes == path[i+1]);
+	 if ((yes && old.implies_not(e)) || (!yes && old.not_implies_not(e)))
+	   goto yes_dead;
+       }
+
+       // if we get here, must check `yes' branch
+       flags[ei] = (flag & ~STATE_FLAG) | BEFORE_NO;       
+       if (ei == interested && e.yes == eventual)
+	 yet = true;
+       ei = e.yes;
+       goto step_forward;
+     }
+
+     yes_dead:
+     case BEFORE_NO: {
+       // store 'NO_OUTPUT'
+       flags[ei] = flag = flag | MK_NO_OUTPUT(output.size()) | (result ? YES_OK_FLAG : 0);
+       result = false;
+
+       const Expr &e = _exprs[ei];
+       for (int i = 0; i < path.size() - 1; i++) {
+	 const Expr &old = _exprs[path[i]];
+	 bool yes = (old.yes == path[i+1]);
+	 if ((yes && old.implies(e)) || (!yes && old.not_implies(e)))
+	   goto no_dead;
+       }
+
+       // if we get here, must check no branch
+       flags[ei] = (flag & ~STATE_FLAG) | BEFORE_COMBINE;
+       if (ei == interested && e.no == eventual)
+	 yet = true;
+       ei = e.no;
+       goto step_forward;
+     }
+
+     step_forward: {
+       // move to 'ei'; check for output port rather than internal node
+       if (ei <= 0) {
+	 if (yet)
+	   output.push_back(ei);
+	 result = yet;
+	 /* do not move forward */
+       } else {
+	 flags[ei] = BEFORE_YES | (yet ? YET_FLAG : 0);
+	 path.push_back(ei);
+       }
+       break;
+     }
+     
+     no_dead:
+     case BEFORE_COMBINE: {
+       const Expr &e = _exprs[ei];
+       bool yes_ok = ((flag & YES_OK_FLAG) != 0);
+       bool no_ok = result;
+       
+       if (ei == interested) {
+	 if (e.yes == eventual)
+	   move_path(output, YES_OUTPUT(flag), YES_OUTPUT(flag), NO_OUTPUT(flag));
+	 else
+	   move_path(output, YES_OUTPUT(flag), NO_OUTPUT(flag), output.size());
+	 result = (e.yes == eventual ? yes_ok : no_ok);
+	 
+       } else if (yes_ok && no_ok) {
+	 common_paths(output, YES_OUTPUT(flag), NO_OUTPUT(flag));
+	 result = true;
+	 
+       } else if (!yes_ok && !no_ok)
+	 result = false;
+       
+       else if (yes_ok) {
+	 move_path(output, YES_OUTPUT(flag), YES_OUTPUT(flag), NO_OUTPUT(flag));
+	 result = true;
+
+       } else {			// no_ok
+	 move_path(output, YES_OUTPUT(flag), NO_OUTPUT(flag), output.size());
+	 result = true;
+       }
+
+       goto back_up;
+     }
+
+     back_up: {
+       path.pop_back();
+       break;
+     }
+
+     default:
+      assert(0);
+      
+    }
+  }
+
+  return result;
+}
+
+#else /* !CLASSIFIER_ITERATIVE */
+
+static void
+common_paths(const Vector<int> &a, const Vector<int> &b, Vector<int> &out)
+{
+  int ai = 0, bi = 0;
+  while (ai < a.size() && bi < b.size()) {
+    if (a[ai] == b[bi]) {
+      out.push_back(a[ai]);
+      ai++;
+      bi++;
+    }
+    // cast to unsigned so that outputs and FAILURE are bigger than
+    // internal nodes
+    while (ai < a.size() && bi < b.size() && (unsigned)a[ai] < (unsigned)b[bi])
+      ai++;
+    while (ai < a.size() && bi < b.size() && (unsigned)a[ai] > (unsigned)b[bi])
+      bi++;
+  }
+}
+
+bool
+Classifier::check_path(const Vector<int> &path, Vector<int> &output,
+		       int ei, int interested, int eventual,
+		       bool first, bool yet) const
+{
+  if (ei > interested && ei != eventual && !yet)
+    return false;
+  if (yet)
+    output.push_back(ei);
+  if (ei < 0 || (ei == 0 && !first))
+    return yet;
+
+  const Expr &e = _exprs[ei];
+  Vector<int> new_path(path);
+  new_path.push_back(ei);
+
+  Vector<int> yes_answer;
+  bool yes_ok = false;
+  for (int i = 0; i < new_path.size() - 1; i++) {
+    const Expr &old = _exprs[new_path[i]];
+    bool yes = (old.yes == new_path[i+1]);
+    if ((yes && old.implies_not(e)) || (!yes && old.not_implies_not(e)))
+      goto yes_dead;
+  }
+  yes_ok = check_path(new_path, yes_answer, e.yes, interested, eventual, false,
+		      yet || (ei == interested && e.yes == eventual));
+
+ yes_dead:
+  Vector<int> no_answer;
+  bool no_ok = false;
+  for (int i = 0; i < new_path.size() - 1; i++) {
+    const Expr &old = _exprs[new_path[i]];
+    bool yes = (old.yes == new_path[i+1]);
+    if ((yes && old.implies(e)) || (!yes && old.not_implies(e)))
+      goto no_dead;
+  }
+  no_ok = check_path(new_path, no_answer, e.no, interested, eventual, false,
+		     yet || (ei == interested && e.no == eventual));
+
+ no_dead:
+  //fprintf(stderr, "      ");
+  //for (int i=0; i<new_path.size(); i++) fprintf(stderr, " %d", new_path[i]);
+  //fprintf(stderr, "%s -> \n", (yet?"*":""));
+  
+  if (ei == interested) {
+    const Vector<int> &v = (e.yes == eventual ? yes_answer : no_answer);
+    for (int i = 0; i < v.size(); i++)
+      output.push_back(v[i]);
+    return (e.yes == eventual ? yes_ok : no_ok);
+    
+  } else if (yes_ok && no_ok) {
+    common_paths(yes_answer, no_answer, output);
+    return true;
+    
+  } else if (!yes_ok && !no_ok)
+    return false;
+  
+  else {
+    const Vector<int> &v = (yes_ok ? yes_answer : no_answer);
+    for (int i = 0; i < v.size(); i++)
+      output.push_back(v[i]);
+    return true;
+  }
+}
+
+#endif /* CLASSIFIER_ITERATIVE */
+
+int
+Classifier::check_path(int ei, bool yes) const
+{
+  int next_ei = (yes ? _exprs[ei].yes : _exprs[ei].no);
+  //fprintf(stderr, "%d.%s -> %d\n", ei, yes?"y":"n", next_ei);
+  if (next_ei > 0) {
+    Vector<int> x;
+#if CLASSIFIER_ITERATIVE
+    check_path_iterative(x, ei, next_ei);
+#else
+    check_path(Vector<int>(), x, 0, ei, next_ei, true, false);
+#endif
+    next_ei = (x.size() ? x.back() : FAILURE);
+  }
+  // next_ei = check_path(Vector<int>(), 0, ei, next_ei, true, false);
+  //fprintf(stderr, "   -> %d\n", next_ei);
+  return next_ei;
+}
+
+void
+Classifier::drift_expr(int ei)
+{
+  Expr &e = _exprs[ei];
+  // only do it once; repetitions without other changes to the dag would be
+  // redundant
+  e.yes = check_path(ei, true);
+  e.no = check_path(ei, false);
+  //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
+}
+#endif
+
+#if 0
+void
+Classifier::sort_and_expr_subtree(int from, int success, int failure)
+{
+  // This function checks the last subtree in _exprs, from `from' to the end
+  // of _exprs, to see if it is an AND subtree. Such a subtree can be divided
+  // into N sections, where all links inside each section K satisfy the
+  // following properties:
+  //
+  // -- Each "yes" link either remains within section K, or jumps to the
+  //    beginning of section K + 1, or (if there is no section K + 1) jumps
+  //    to `success'.
+  // -- Each "no" link either remains within section K or jumps to `failure'.
+  //
+  // The sections within such a subtree can be arbitrarily reordered without
+  // affecting the subtree's semantics. This function finds such subtrees and
+  // sorts them by offset of the first expr in each section. (Thus, the offset
+  // of the first expr in section 0 <= the offset of the first expr in section
+  // 1, and so forth.) This improves the action of later optimizations.
+  
+  int nexprs = _exprs.size();
+  // 'id' identifies section equivalence classes: if id[i] == id[j], then i
+  // and j are in the same section
+  Vector<int> id(nexprs, 0);
+  for (int i = from; i < nexprs; i++)
+    id[i] = i;
+
+  // determine equivalence classes (the sections)
+  bool changed;
+  do {
+    changed = false;
+    for (int i = from; i < nexprs; i++) {
+      const Expr &e = _exprs[i];
+      if (e.no != failure && e.no > 0 && id[i] != id[e.no]) {
+	for (int j = i + 1; j <= e.no; j++)
+	  id[j] = id[i];
+	changed = true;
+      } else if (e.yes > 0 && id[i] != id[e.yes - 1]) {
+	for (int j = i + 1; j < e.yes; j++)
+	  id[j] = id[i];
+	changed = true;
+      } else if ((e.no <= 0 && e.no != failure) || (e.yes <= 0 && e.yes != success))
+	return;
+    }
+  } while (changed);
+
+  // check for bad branches that would invalidate the transformation
+  for (int i = from; id[i] < id.back(); i++) {
+    const Expr &e = _exprs[i];
+    if (e.yes == success)
+      return;
+  }
+  
+  //{ StringAccum sa;
+  //sa << success << " -- " << failure << "\n";
+  //for (int i = from; i < nexprs; i++) {
+  //  sa << (i < 10 ? ">> " : ">>") << i << " [" << (id[i] < 10 ? " " : "") << id[i] << "] " << _exprs[i] << "\n";
+  //}
+  //click_chatter("%s", sa.cc()); }
+
+  // extract equivalence classes from 'id' array
+  Vector<int> equiv_classes;
+  for (int i = from, c = -1; i < nexprs; i++)
+    if (id[i] != c) {
+      equiv_classes.push_back(i);
+      c = id[i];
+    }
+  if (equiv_classes.size() <= 1)
+    return;
+
+  // sort equivalence classes
+  bool sorted = true;
+  Vector<int> sort_equiv_class(equiv_classes.size(), 0);
+  for (int i = 0; i < equiv_classes.size(); i++) {
+    int c = equiv_classes[i];
+    int j = 0;
+    for (; j < i
+	   && _exprs[sort_equiv_class[j]].offset <= _exprs[c].offset; j++)
+      /* nada */;
+    if (j == i)
+      sort_equiv_class[i] = c;
+    else {
+      memmove(&sort_equiv_class[j+1], &sort_equiv_class[j], (i - j) * sizeof(int));
+      sort_equiv_class[j] = c;
+      sorted = false;
+    }
+  }
+
+  // return early if already sorted
+  if (sorted)
+    return;
+
+  // sort the actual exprs
+  equiv_classes.push_back(nexprs);
+  Vector<Expr> newe;
+  for (int i = 0; i < sort_equiv_class.size(); i++) {
+    int c = sort_equiv_class[i];
+    int new_c = from + newe.size();
+    int classno;
+    for (classno = 0; equiv_classes[classno] != c; classno++) ;
+    int next = (classno == equiv_classes.size() - 2 ? success : equiv_classes[classno+1]);
+    int new_next = (i == sort_equiv_class.size() - 1 ? success : new_c + equiv_classes[classno+1] - c);
+    for (int j = c; j < nexprs && id[j] == c; j++) {
+      Expr e = _exprs[j];
+      if (e.yes == next)
+	e.yes = new_next;
+      else if (e.yes > 0) {
+	assert(e.yes >= c && (next <= 0 || e.yes < next));
+	e.yes += new_c - c;
+      }
+      if (e.no > 0) {
+	assert(e.no >= c && (next <= 0 || e.no < next));
+	e.no += new_c - c;
+      } else
+	assert(e.no == failure);
+      newe.push_back(e);
+    }
+  }
+
+  memcpy(&_exprs[from], &newe[0], newe.size() * sizeof(Expr));
+  
+  //{ StringAccum sa;
+  //for (int i = from; i < nexprs; i++) {
+  //  sa << (i < 10 ? " " : "") << i << " " << _exprs[i] << "\n";
+  //}
+  //click_chatter("%s", sa.cc()); }
+}
+#endif
+
 
 #undef UBYTES
 ELEMENT_REQUIRES(AlignmentInfo)

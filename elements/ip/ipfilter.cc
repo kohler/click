@@ -636,8 +636,14 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 {
   Expr e;
 
-  // handle transport protocol uniformly
   c->start_expr_subtree(tree);
+
+  // enforce first fragment: fragmentation offset == 0
+  // (before transport protocol to enhance later optimizations)
+  if (_type == TYPE_PORT || _type == TYPE_TCPOPT || _type == TYPE_ICMP_TYPE)
+    c->add_expr(tree, 4, 0, htonl(0x00001FFF));
+  
+  // handle transport protocol uniformly
   if (_type == TYPE_PROTO)
     add_exprs_for_proto(_u.i, _mask.i, c, tree);
   else if (_transp_proto != UNKNOWN)
@@ -702,9 +708,6 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
      uint32_t mask = (htons(_mask.u) << 16) | htons(_mask.u);
      uint32_t ports = (htons(_u.u) << 16) | htons(_u.u);
     
-     // enforce first fragment: fragmentation offset == 0
-     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
-
      c->start_expr_subtree(tree);
      if (_srcdst == SD_SRC || _srcdst == SD_AND || _srcdst == SD_OR) {
        c->add_expr(tree, TRANSP_FAKE_OFFSET, ports, mask & htonl(0xFFFF0000));
@@ -719,15 +722,11 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    }
 
    case TYPE_TCPOPT: {
-     // enforce first fragment: fragmentation offset == 0
-     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
      c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, htonl(_u.u << 16), htonl(_mask.u << 16));
      break;
    }
 
    case TYPE_ICMP_TYPE: {
-     // enforce first fragment: fragmentation offset == 0
-     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
      c->start_expr_subtree(tree);
      c->add_expr(tree, TRANSP_FAKE_OFFSET, htonl(_u.u << 24), htonl(_mask.u << 24));
      c->finish_expr_subtree(tree, true);
