@@ -28,8 +28,9 @@ ip_cl :: Classifier(GW_IP_HEX, // ip for us as wired node
 		    -) // ip for the wired net or outside world
 
 nb :: Neighbor(NBR_TIMEOUT, MAC_ADDR, GRID_IP)
-nb [0] -> to_wvlan
-nb [1] -> ip_cl
+lr :: LocalRoute(MAC_ADDR, GRID_IP)
+lr [0] -> to_wvlan
+lr [1] -> ip_cl
 
 eth -> eth_demux :: Classifier(12/0806 20/0001, // arp request, for proxy reply
 			       12/0806 20/0002, // arp replies 
@@ -46,11 +47,13 @@ eth_demux [1] -> [1] arpq :: ARPQuerier(GW_IP, GW_MAC_ADDR) -> to_eth
 eth_demux [2] -> Strip(14) -> Discard // linux handles 
 Idle -> to_tun1
 eth_demux [3] -> Strip(14) -> Discard // linux handles -> to_tun2
-eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] nb
+eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] lr
 
 wvlan_demux [0] -> check_grid :: CheckGridHeader [0]
                 -> fr :: FilterByRange(1000) [0] 
-                -> [0] nb
+                -> nb
+                -> Classifier(GRID_NBR_ENCAP_PROTO)
+                -> [0] lr
 check_grid [1]-> Print(bad_grid_hdr) -> Discard
 fr [1] -> Print(out_of_range) -> Discard
 wvlan_demux [1] -> Discard
