@@ -55,16 +55,16 @@ ICMP6Error::configure(Vector<String> &conf, ErrorHandler *errh)
 bool
 ICMP6Error::is_error_type(int type)
 {
-  return (type == ICMP6_DST_UNREACHABLE
-	  || type == ICMP6_PKT_TOOBIG
-	  || type == ICMP6_TYPE_TIME_EXCEEDED
-	  || type == ICMP6_PARAMETER_PROBLEM);
+  return (type == ICMP6_UNREACH
+	  || type == ICMP6_PKTTOOBIG
+	  || type == ICMP6_TIMXCEED
+	  || type == ICMP6_PARAMPROB);
 }
 
 bool
 ICMP6Error::is_redirect_type(int type)
 {
-  return (type == ICMP6_REDIRECT_MESSAGE);
+  return (type == ICMP6_REDIRECT);
 }
 
 int
@@ -140,7 +140,7 @@ ICMP6Error::simple_action(Packet *p)
   WritablePacket *q = 0;
   const click_ip6 *ipp = p->ip6_header();
   click_ip6 *nip;
-  struct icmp6_generic *icp;
+  click_icmp6 *icp;
   unsigned xlen;
 
 
@@ -152,7 +152,7 @@ ICMP6Error::simple_action(Packet *p)
 
   /* Don't reply to ICMP6 error messages. */
   if(ipp->ip6_nxt == IP_PROTO_ICMP6) {
-    icp = (struct icmp6_generic *) ((char *)ipp);
+    icp = (click_icmp6 *) ((char *)ipp);
     if( is_error_type(icp->icmp6_type))
       goto out;
   }
@@ -172,10 +172,10 @@ ICMP6Error::simple_action(Packet *p)
   if (xlen > 568)
     xlen = 568;           
 
-  if (_type != ICMP6_REDIRECT_MESSAGE)
-    q = Packet::make(sizeof(struct click_ip6) + sizeof(struct icmp6_generic) + xlen);
+  if (_type != ICMP6_REDIRECT)
+    q = Packet::make(sizeof(struct click_ip6) + sizeof(struct click_icmp6) + xlen);
   else
-    q = Packet::make(sizeof(struct click_ip6) + sizeof(struct icmp6_redirect) + xlen);
+    q = Packet::make(sizeof(struct click_ip6) + sizeof(struct click_icmp6_redirect) + xlen);
   
   // guaranteed that packet data is aligned
   memset(q->data(), '\0', q->length());
@@ -191,27 +191,27 @@ ICMP6Error::simple_action(Packet *p)
   nip->ip6_dst = ipp->ip6_src;
   
   //set icmp6 Message
-  icp = (struct icmp6_generic *) (nip + 1);
+  icp = (click_icmp6 *) (nip + 1);
   icp->icmp6_type = _type;
   icp->icmp6_code = _code;
 
     
-  if(_type == ICMP6_PKT_TOOBIG && _code == 0){
+  if(_type == ICMP6_PKTTOOBIG && _code == 0){
     /* Set the mtu value. */
-  ((struct icmp6_pkt_toobig *)icp)->icmp6_mtusize = 1500;
+    ((click_icmp6_pkttoobig *)icp)->icmp6_mtusize = 1500;
   }
   
   if(_type == 4 && _code == 0){
     /* Set the Parameter Problem pointer. */
-    ((struct icmp6_param *) icp)->pointer = ICMP_PARAM_PROB_ANNO(p);
+    ((click_icmp6_paramprob *) icp)->icmp6_pointer = ICMP_PARAMPROB_ANNO(p);
     //the pointer should be 4 bytes, however, there's no space in Anno structure
     //temporarily use the same as the ICMP parameter pointer, will be dealt later
   }
 
-  if (_type == ICMP6_REDIRECT_MESSAGE && _code == 0) {
-    struct icmp6_redirect *icpr = (struct icmp6_redirect *) (nip + 1);
-    icpr->target_address = p->dst_ip6_anno();
-    icpr->destination_address = ipp->ip6_dst;
+  if (_type == ICMP6_REDIRECT && _code == 0) {
+    click_icmp6_redirect *icpr = (click_icmp6_redirect *) (nip + 1);
+    icpr->icmp6_target = p->dst_ip6_anno();
+    icpr->icmp6_dst = ipp->ip6_dst;
     memcpy((void *)(icpr + 1), p->data(), xlen);
   } else
     memcpy((void *)(icp + 1), p->data(), xlen);

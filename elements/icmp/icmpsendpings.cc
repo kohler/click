@@ -72,9 +72,9 @@ ICMPSendPings::initialize(ErrorHandler *)
 void
 ICMPSendPings::run_timer()
 {
-  WritablePacket *q = Packet::make(sizeof(click_ip) + sizeof(struct icmp_sequenced) + _data.length());
-  memset(q->data(), '\0', sizeof(click_ip) + sizeof(struct icmp_sequenced));
-  memcpy(q->data() + sizeof(click_ip) + sizeof(struct icmp_sequenced), _data.data(), _data.length());
+  WritablePacket *q = Packet::make(sizeof(click_ip) + sizeof(struct click_icmp_echo) + _data.length());
+  memset(q->data(), '\0', sizeof(click_ip) + sizeof(struct click_icmp_echo));
+  memcpy(q->data() + sizeof(click_ip) + sizeof(struct click_icmp_echo), _data.data(), _data.length());
 
   click_ip *nip = reinterpret_cast<click_ip *>(q->data());
   nip->ip_v = 4;
@@ -87,18 +87,18 @@ ICMPSendPings::run_timer()
   nip->ip_dst = _dst;
   nip->ip_sum = click_in_cksum((unsigned char *)nip, sizeof(click_ip));
 
-  icmp_sequenced *icp = (struct icmp_sequenced *) (nip + 1);
+  click_icmp_echo *icp = (struct click_icmp_echo *) (nip + 1);
   icp->icmp_type = ICMP_ECHO;
   icp->icmp_code = 0;
 #ifdef __linux__
-  icp->identifier = _icmp_id;
-  icp->sequence = _ip_id;
+  icp->icmp_identifier = _icmp_id;
+  icp->icmp_sequence = _ip_id;
 #else
-  icp->identifier = htons(_icmp_id);
-  icp->sequence = htons(_ip_id);
+  icp->icmp_identifier = htons(_icmp_id);
+  icp->icmp_sequence = htons(_ip_id);
 #endif
 
-  icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(struct icmp_sequenced) + _data.length());
+  icp->icmp_cksum = click_in_cksum((const unsigned char *)icp, sizeof(click_icmp_sequenced) + _data.length());
 
   q->set_dst_ip_anno(IPAddress(_dst));
   q->set_ip_header(nip, sizeof(click_ip));

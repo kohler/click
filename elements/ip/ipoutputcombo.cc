@@ -199,7 +199,7 @@ IPOutputCombo::push(int, Packet *p_in)
   return;
 
  ipgw_send_error:
-  SET_ICMP_PARAM_PROB_ANNO(p, problem_offset);
+  SET_ICMP_PARAMPROB_ANNO(p, problem_offset);
   output(2).push(p);
 }
 

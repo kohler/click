@@ -5,7 +5,7 @@ CLICK_DECLS
 
 /*
  * =c
- * ICMPError(IPADDR, TYPE, CODE [, BADADDRS])
+ * ICMPError(IPADDR, TYPE [, CODE, BADADDRS])
  * =s ICMP, encapsulation
  * generates ICMP error packets
  * =d
@@ -16,6 +16,14 @@ CLICK_DECLS
  * the original packet's IP header and the first 8 byte of the packet's
  * IP payload. ICMPError sets the packet destination IP and
  * fix_ip_src annotations.
+ *
+ * TYPE and CODE may be integers between 0 and 255 or mnemonic names; CODE
+ * defaults to 0. Valid named TYPEs are `unreachable' [3], `sourcequench' [4],
+ * `redirect' [5], `timeexceeded' [11], and `parameterproblem' [12]. Valid
+ * named CODEs are `net' [0], `host' [1], `proto' [2], `port' [3], and
+ * `needfrag' [4] for `unreachable'; `net' [0] and `host' [1] for `redirect';
+ * `transit' [0] and `reassembly' [1] for `timeexceeded'; and `erroratptr'
+ * [0], `missingopt' [1], and `length' [2] for `parameterproblem'.
  *
  * The intent is that elements that give rise to errors, like DecIPTTL,
  * should have two outputs, one of which is connected to an ICMPError.
@@ -31,14 +39,14 @@ CLICK_DECLS
  * The output of ICMPError should be connected to the routing lookup
  * machinery, much as if the ICMP errors came from a hardware interface.
  *
- * If TYPE is 12 and CODE is 0 (Parameter Problem), ICMPError
- * takes the error pointer from the packet's param_off annotation.
- * The IPGWOptions element sets the annotation.
+ * If TYPE is 12 (`parameterproblem') and CODE is 0 (`erroratptr'), ICMPError
+ * takes the error pointer from the packet's ICMP parameter problem
+ * annotation. The IPGWOptions element sets the annotation.
  *
- * If TYPE is 5, produces an ICMP redirect message. The gateway address is
- * taken from the destination annotation. Usually a Paint-PaintTee element
- * pair hands the packet to a redirect ICMPError. RFC1812 says only code 1
- * (host redirect) should be used.
+ * If TYPE is 5 (`redirect'), produces an ICMP redirect message. The gateway
+ * address is taken from the destination annotation. Usually a Paint-PaintTee
+ * element pair hands the packet to a redirect ICMPError. RFC1812 says only
+ * code 1 (`host') should be used.
  *
  * =e
  * This configuration fragment produces ICMP Time Exceeded error
@@ -46,7 +54,7 @@ CLICK_DECLS
  * rate at which such messages can be sent to 10 per second:
  *
  *   dt : DecIPTTL;
- *   dt[1] -> ICMPError(18.26.4.24, 11, 0) -> m :: RatedSplitter(10) -> ...
+ *   dt[1] -> ICMPError(18.26.4.24, timeexceeded) -> m :: RatedSplitter(10) -> ...
  *   m[1] -> Discard;
  *
  * =n

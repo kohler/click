@@ -181,8 +181,8 @@ ICMPPingRewriter::Mapping::apply(WritablePacket *p)
   iph->ip_sum = ~(sum + (sum >> 16));
 
   // ICMP header
-  icmp_sequenced *icmph = reinterpret_cast<icmp_sequenced *>(p->transport_header());
-  icmph->identifier = _mapto.sport();
+  click_icmp_echo *icmph = reinterpret_cast<click_icmp_echo *>(p->icmp_header());
+  icmph->icmp_identifier = _mapto.sport();
 
   unsigned sum2 = (~icmph->icmp_cksum & 0xFFFF) + _icmp_csum_delta;
   sum2 = (sum2 & 0xFFFF) + (sum2 >> 16);
@@ -192,12 +192,12 @@ ICMPPingRewriter::Mapping::apply(WritablePacket *p)
   // is always the case that IP headers have at least one nonzero byte (and
   // thus the one's-complement sum of their 16-bit words cannot be +0, so the
   // checksum field cannot be -0). However, it is not enough for ICMP, because
-  // an ICMP header MAY have all nonzero bytes (and thus the one's-complement
-  // sum of its 16-bit words MIGHT be +0, and the checksum field MIGHT be -0).
+  // an ICMP header MAY have all zero bytes (and thus the one's-complement sum
+  // of its 16-bit words MIGHT be +0, and the checksum field MIGHT be -0).
   // Therefore, if the resulting icmp_cksum is +0, we do a full checksum to
   // verify.
   if (!icmph->icmp_cksum)
-    icmph->icmp_cksum = click_in_cksum((unsigned char *)icmph, p->length() - p->transport_header_offset());
+    icmph->icmp_cksum = click_in_cksum((const unsigned char *)icmph, p->length() - p->transport_header_offset());
   
   mark_used();
 }
@@ -275,12 +275,12 @@ ICMPPingRewriter::push(int port, Packet *p_in)
   click_ip *iph = p->ip_header();
   assert(iph->ip_p == IP_PROTO_ICMP);
 
-  icmp_sequenced *icmph = reinterpret_cast<icmp_sequenced *>(p->transport_header());
+  click_icmp_echo *icmph = reinterpret_cast<click_icmp_echo *>(p->icmp_header());
 
   Map *map;
   if (icmph->icmp_type == ICMP_ECHO)
     map = &_request_map;
-  else if (icmph->icmp_type == ICMP_ECHO_REPLY)
+  else if (icmph->icmp_type == ICMP_ECHOREPLY)
     map = &_reply_map;
   else {
     click_chatter("ICMPPingRewriter got non-request, non-reply");
@@ -288,7 +288,7 @@ ICMPPingRewriter::push(int port, Packet *p_in)
     return;
   }
   
-  IPFlowID flow(iph->ip_src, icmph->identifier, iph->ip_dst, icmph->identifier);
+  IPFlowID flow(iph->ip_src, icmph->icmp_identifier, iph->ip_dst, icmph->icmp_identifier);
   Mapping *m = map->find(flow);
   if (!m) {
     if (port == 0 && icmph->icmp_type == ICMP_ECHO) {
@@ -306,7 +306,7 @@ ICMPPingRewriter::push(int port, Packet *p_in)
   }
   
   m->apply(p);
-  if (icmph->icmp_type == ICMP_ECHO_REPLY && noutputs() == 2)
+  if (icmph->icmp_type == ICMP_ECHOREPLY && noutputs() == 2)
     output(1).push(p);
   else
     output(0).push(p);

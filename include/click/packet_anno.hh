@@ -8,8 +8,8 @@
 #define PAINT_ANNO_LENGTH		1
 
 // byte 1
-#define ICMP_PARAM_PROB_ANNO(p)		((p)->user_anno_c(1))
-#define SET_ICMP_PARAM_PROB_ANNO(p, v)	((p)->set_user_anno_c(1, (v)))
+#define ICMP_PARAMPROB_ANNO(p)		((p)->user_anno_c(1))
+#define SET_ICMP_PARAMPROB_ANNO(p, v)	((p)->set_user_anno_c(1, (v)))
 
 // byte 3
 #define FIX_IP_SRC_ANNO(p)		((p)->user_anno_c(3))

@@ -97,43 +97,49 @@ CheckICMPHeader::simple_action(Packet *p)
 {
   const click_ip *iph = p->ip_header();
   unsigned csum, icmp_len;
-  const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
+  const click_icmp *icmph = p->icmp_header();
   
   if (!iph || iph->ip_p != IP_PROTO_ICMP)
     return drop(NOT_ICMP, p);
   
   icmp_len = p->length() - p->transport_header_offset();
-  if ((int)icmp_len < (int)sizeof(icmp_generic))
+  if (icmp_len < sizeof(click_icmp))
     return drop(BAD_LENGTH, p);
 
   switch (icmph->icmp_type) {
 
-   case ICMP_DST_UNREACHABLE:
-   case ICMP_TYPE_TIME_EXCEEDED:
-   case ICMP_PARAMETER_PROBLEM:
-   case ICMP_SOURCE_QUENCH:
+   case ICMP_UNREACH:
+   case ICMP_TIMXCEED:
+   case ICMP_PARAMPROB:
+   case ICMP_SOURCEQUENCH:
    case ICMP_REDIRECT:
     // check for IP header + first 64 bits of datagram = at least 28 bytes
-    if (icmp_len < sizeof(icmp_generic) + 28)
+    if (icmp_len < sizeof(click_icmp) + 28)
       return drop(BAD_LENGTH, p);
     break;
 
-   case ICMP_TIME_STAMP:
-   case ICMP_TIME_STAMP_REPLY:
+   case ICMP_TSTAMP:
+   case ICMP_TSTAMPREPLY:
     // exactly 12 more bytes
-    if (icmp_len != sizeof(icmp_generic) + 12)
+    if (icmp_len != sizeof(click_icmp_tstamp))
       return drop(BAD_LENGTH, p);
     break;
 
-   case ICMP_INFO_REQUEST:
-   case ICMP_INFO_REQUEST_REPLY:
+   case ICMP_IREQ:
+   case ICMP_IREQREPLY:
     // exactly 0 more bytes
-    if (icmp_len != sizeof(icmp_generic))
+    if (icmp_len != sizeof(click_icmp))
       return drop(BAD_LENGTH, p);
     break;
+
+   case ICMP_ROUTERADVERT:
+    /* nada */
+   case ICMP_MASKREQ:
+   case ICMP_MASKREQREPLY:
+    /* nada */
 
    case ICMP_ECHO:
-   case ICMP_ECHO_REPLY:
+   case ICMP_ECHOREPLY:
    default:
     // no additional length checks
     break;

@@ -34,12 +34,48 @@ ICMPError::ICMPError()
   add_output();
   _code = _type = -1;
   _bad_addrs = 0;
+  if (cp_register_stringlist_argtype("ICMP.type", "ICMP message type", cpArgAllowNumbers) == 0)
+    cp_extend_stringlist_argtype("ICMP.type",
+				 "echo-reply", ICMP_ECHOREPLY,
+				 "unreachable", ICMP_UNREACH,
+				 "sourcequench", ICMP_SOURCEQUENCH,
+				 "redirect", ICMP_REDIRECT,
+				 "echo", ICMP_ECHO,
+				 "routeradvert", ICMP_ROUTERADVERT,
+				 "routersolicit", ICMP_ROUTERSOLICIT,
+				 "timeexceeded", ICMP_TIMXCEED,
+				 "parameterproblem", ICMP_PARAMPROB,
+				 "timestamp", ICMP_TSTAMP,
+				 "timestamp-reply", ICMP_TSTAMPREPLY,
+				 "inforeq", ICMP_IREQ,
+				 "inforeq-reply", ICMP_IREQREPLY,
+				 "maskreq", ICMP_MASKREQ,
+				 "maskreq-reply", ICMP_MASKREQREPLY,
+				 (const char *)0);
+  if (cp_register_stringlist_argtype("ICMP.code", "ICMP message code", cpArgAllowNumbers) == 0) {
+    cp_extend_stringlist_argtype("ICMP.code",
+				 "net", ICMP_UNREACH_NET,
+				 "host", ICMP_UNREACH_HOST,
+				 "protocol", ICMP_UNREACH_PROTOCOL,
+				 "port", ICMP_UNREACH_PORT,
+				 "needfrag", ICMP_UNREACH_NEEDFRAG,
+				 /* other UNREACH constants missing */
+				 "transit", ICMP_TIMXCEED_TRANSIT,
+				 "reassembly", ICMP_TIMXCEED_REASSEMBLY,
+				 "erroratptr", ICMP_PARAMPROB_ERRATPTR,
+				 "missingopt", ICMP_PARAMPROB_OPTABSENT,
+				 "length", ICMP_PARAMPROB_LENGTH,
+				 (const char *)0);
+    static_assert(ICMP_UNREACH_NET == ICMP_REDIRECT_NET && ICMP_UNREACH_HOST == ICMP_REDIRECT_HOST);
+  }
 }
 
 ICMPError::~ICMPError()
 {
   MOD_DEC_USE_COUNT;
   delete[] _bad_addrs;
+  cp_unregister_argtype("ICMP.type");
+  cp_unregister_argtype("ICMP.code");
 }
 
 int
@@ -47,14 +83,17 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String bad_addr_str;
   IPAddressSet bad_addrs;
+  _code = 0;
   if (cp_va_parse(conf, this, errh,
-                  cpIPAddress, "Source IP address", &_src_ip,
-                  cpInteger, "ICMP Type", &_type,
-                  cpInteger, "ICMP Code", &_code,
+                  cpIPAddress, "source IP address", &_src_ip,
+                  "ICMP.type", "ICMP error type", &_type,
 		  cpOptional,
+                  "ICMP.code", "ICMP error code", &_code,
 		  cpIPAddressSet, "bad IP addresses", &bad_addrs,
 		  0) < 0)
     return -1;
+  if (_type < 0 || _type > 255 || _code < 0 || _code > 255)
+    return errh->error("ICMP type and code must be between 0 and 255");
 
   delete[] _bad_addrs;
   _n_bad_addrs = bad_addrs.size();
@@ -66,11 +105,9 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 bool
 ICMPError::is_error_type(int type)
 {
-  return(type == ICMP_DST_UNREACHABLE ||  	// 3
-         type == ICMP_SOURCE_QUENCH ||		// 4
-         type == ICMP_REDIRECT ||		// 5
-         type == ICMP_TYPE_TIME_EXCEEDED ||	// 11
-         type == ICMP_PARAMETER_PROBLEM);	// 12
+  return type == ICMP_UNREACH || type == ICMP_SOURCEQUENCH
+    || type == ICMP_REDIRECT ||	type == ICMP_TIMXCEED
+    || type == ICMP_PARAMPROB;
 }
 
 int
@@ -78,7 +115,7 @@ ICMPError::initialize(ErrorHandler *errh)
 {
   if (_type < 0 || _code < 0 || _src_ip.addr() == 0)
     return errh->error("not configured");
-  if(is_error_type(_type) == false)
+  if (is_error_type(_type) == false)
     return errh->error("ICMP type %d is not an error type", _type);
   return 0;
 }
@@ -170,7 +207,7 @@ ICMPError::simple_action(Packet *p)
   WritablePacket *q = 0;
   const click_ip *ipp = p->ip_header();
   click_ip *nip;
-  struct icmp_generic *icp;
+  click_icmp *icp;
   unsigned hlen, xlen;
   static int id = 1;
 
@@ -183,7 +220,7 @@ ICMPError::simple_action(Packet *p)
 
   /* Don't reply to ICMP error messages. */
   if(ipp->ip_p == IP_PROTO_ICMP) {
-    icp = (struct icmp_generic *) (((char *)ipp) + hlen);
+    icp = (click_icmp *) (((char *)ipp) + hlen);
     if(hlen + 4 > p->length() || is_error_type(icp->icmp_type))
       goto out;
   }
@@ -214,7 +251,7 @@ ICMPError::simple_action(Packet *p)
   if (xlen > hlen + 8)
     xlen = hlen + 8;
 
-  q = Packet::make(sizeof(click_ip) + sizeof(struct icmp_generic) + xlen);
+  q = Packet::make(sizeof(click_ip) + sizeof(click_icmp) + xlen);
   // guaranteed that packet data is aligned
   memset(q->data(), '\0', q->length());
   nip = reinterpret_cast<click_ip *>(q->data());
@@ -228,21 +265,21 @@ ICMPError::simple_action(Packet *p)
   nip->ip_dst = ipp->ip_src;
   nip->ip_sum = click_in_cksum((unsigned char *)nip, sizeof(click_ip));
 
-  icp = (struct icmp_generic *) (nip + 1);
+  icp = (click_icmp *) (nip + 1);
   icp->icmp_type = _type;
   icp->icmp_code = _code;
 
-  if(_type == 12 && _code == 0){
+  if (_type == ICMP_PARAMPROB && _code == ICMP_PARAMPROB_ERRATPTR) {
     /* Set the Parameter Problem pointer. */
-    ((struct icmp_param *) icp)->pointer = ICMP_PARAM_PROB_ANNO(p);
+    ((click_icmp_paramprob *) icp)->icmp_pointer = ICMP_PARAMPROB_ANNO(p);
   }
-  if(_type == 5){
+  if (_type == ICMP_REDIRECT) {
     /* Redirect */
-    ((struct icmp_redirect *) icp)->gateway = p->dst_ip_anno().addr();
+    ((click_icmp_redirect *) icp)->icmp_gateway = p->dst_ip_anno();
   }
 
   memcpy((void *)(icp + 1), p->network_header(), xlen);
-  icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(icmp_generic) + xlen);
+  icp->icmp_cksum = click_in_cksum((unsigned char *)icp, sizeof(click_icmp) + xlen);
 
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
   SET_FIX_IP_SRC_ANNO(q, 1);

@@ -185,10 +185,10 @@ rt[$i1] -> DropBroadcasts
     -> dt$i :: DecIPTTL
     -> fr$i :: IPFragmenter(1500)
     -> [0]arpq$i;
-dt$i\[1] -> ICMPError($ipa, 11, 0) -> rt;
-fr$i\[1] -> ICMPError($ipa, 3, 4) -> rt;
-gio$i\[1] -> ICMPError($ipa, 12, 1) -> rt;
-cp$i\[1] -> ICMPError($ipa, 5, 1) -> rt;
+dt$i\[1] -> ICMPError($ipa, timeexceeded) -> rt;
+fr$i\[1] -> ICMPError($ipa, unreachable, needfrag) -> rt;
+gio$i\[1] -> ICMPError($ipa, parameterproblem) -> rt;
+cp$i\[1] -> ICMPError($ipa, redirect, host) -> rt;
 EOD;
 }
 

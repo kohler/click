@@ -131,23 +131,23 @@ rt[2] -> DropBroadcasts
 
 // DecIPTTL[1] emits packets with expired TTLs.
 // Reply with ICMPs. Rate-limit them?
-dt1[1] -> ICMPError(18.26.4.24, 11, 0) -> [0]rt;
-dt2[1] -> ICMPError(18.26.4.24, 11, 0) -> [0]rt;
+dt1[1] -> ICMPError(18.26.4.24, timeexceeded) -> [0]rt;
+dt2[1] -> ICMPError(18.26.4.24, timeexceeded) -> [0]rt;
 
 // Send back ICMP UNREACH/NEEDFRAG messages on big packets with DF set.
 // This makes path mtu discovery work.
-fr1[1] -> ICMPError(18.26.7.1, 3, 4) -> [0]rt;
-fr2[1] -> ICMPError(18.26.7.1, 3, 4) -> [0]rt;
+fr1[1] -> ICMPError(18.26.7.1, unreachable, needfrag) -> [0]rt;
+fr2[1] -> ICMPError(18.26.7.1, unreachable, needfrag) -> [0]rt;
 
 // Send back ICMP Parameter Problem messages for badly formed
 // IP options. Should set the code to point to the
 // bad byte, but that's too hard.
-gio1[1] -> ICMPError(18.26.4.24, 12, 1) -> [0]rt;
-gio2[1] -> ICMPError(18.26.4.24, 12, 1) -> [0]rt;
+gio1[1] -> ICMPError(18.26.4.24, parameterproblem) -> [0]rt;
+gio2[1] -> ICMPError(18.26.4.24, parameterproblem) -> [0]rt;
 
 // Send back an ICMP redirect if required.
-cp1[1] -> ICMPError(18.26.4.24, 5, 1) -> [0]rt;
-cp2[1] -> ICMPError(18.26.7.1, 5, 1) -> [0]rt;
+cp1[1] -> ICMPError(18.26.4.24, redirect, host) -> [0]rt;
+cp2[1] -> ICMPError(18.26.7.1, redirect, host) -> [0]rt;
 
 // Unknown ethernet type numbers.
 c0[3] -> Print(c3) -> Discard;

@@ -128,23 +128,23 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
 
   switch (icmp_type)  {
   case (ICMP_ECHO): ; // icmp_type ==8
-  case (ICMP_ECHO_REPLY):  {//icmp_type ==0 
-    icmp_echo *icmp = (icmp_echo *)a;
+  case (ICMP_ECHOREPLY):  {//icmp_type ==0 
+    click_icmp_echo *icmp = (click_icmp_echo *)a;
     ip = (click_ip *)(icmp+1); 
-    icmp6_length = payload_length-sizeof(icmp_echo)+sizeof(icmp6_echo);
+    icmp6_length = payload_length-sizeof(click_icmp_echo)+sizeof(click_icmp6_echo);
     q2=Packet::make(icmp6_length);
     memset(q2->data(), '\0', q2->length());
-    icmp6_echo *icmp6 = (icmp6_echo *)q2->data();
+    click_icmp6_echo *icmp6 = (click_icmp6_echo *)q2->data();
     ip6=(unsigned char *)(icmp6+1);
       
     if (icmp_type == ICMP_ECHO ) { // icmp_type ==8
-      icmp6->icmp6_type = ICMP6_ECHO_REQUEST;  // icmp6_type =128  
+      icmp6->icmp6_type = ICMP6_ECHO;  // icmp6_type =128  
     }
-    else if (icmp_type == ICMP_ECHO_REPLY ) { // icmp_type ==0
-      icmp6->icmp6_type = ICMP6_ECHO_REPLY;              // icmp6_type = 129   
+    else if (icmp_type == ICMP_ECHOREPLY ) { // icmp_type ==0
+      icmp6->icmp6_type = ICMP6_ECHOREPLY;              // icmp6_type = 129   
     }
-    icmp6->identifier = icmp->identifier;
-    icmp6->sequence = icmp->sequence;
+    icmp6->icmp6_identifier = icmp->icmp_identifier;
+    icmp6->icmp6_sequence = icmp->icmp_sequence;
     memcpy(ip6, (unsigned char *)ip, icmp6_length);
     icmp->icmp_cksum  = 0;
   icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
@@ -152,21 +152,21 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
   }
   break; 
 
-  case (ICMP_DST_UNREACHABLE):  { //icmp_type ==3
-    icmp_unreach *icmp = (icmp_unreach *)a;
+  case (ICMP_UNREACH):  { //icmp_type ==3
+    click_icmp_unreach *icmp = (click_icmp_unreach *)a;
     ip = (click_ip *)(icmp+1);
     
     if (icmp_code == 2 || icmp_code ==4) {
       switch (icmp_code) {
       case 2: {
-	icmp6_length = payload_length-sizeof(icmp_unreach)+sizeof(icmp6_param);
+	icmp6_length = payload_length-sizeof(click_icmp_unreach)+sizeof(click_icmp6_paramprob);
 	q2=Packet::make(icmp6_length);
 	memset(q2->data(), '\0', q2->length());
-	icmp6_param *icmp6 = (icmp6_param *)q2->data();
+	click_icmp6_paramprob *icmp6 = (click_icmp6_paramprob *)q2->data();
 	ip6=(unsigned char *)(icmp6+1);
-	icmp6->icmp6_type = ICMP6_PARAMETER_PROBLEM; //icmp6_type = 4
+	icmp6->icmp6_type = ICMP6_PARAMPROB; //icmp6_type = 4
 	icmp6->icmp6_code = 1;
-	icmp6->pointer = 6;
+	icmp6->icmp6_pointer = 6;
 	memcpy(ip6, (unsigned char *)ip, icmp6_length);
 	icmp->icmp_cksum  = 0;
 	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
@@ -174,12 +174,12 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
       break;
 	    
       case 4: {
-	icmp6_length = payload_length-sizeof(icmp_unreach)+sizeof(icmp6_pkt_toobig);
+	icmp6_length = payload_length-sizeof(click_icmp_unreach)+sizeof(click_icmp6_pkttoobig);
 	q2=Packet::make(icmp6_length);
 	memset(q2->data(), '\0', q2->length());
-	icmp6_pkt_toobig *icmp6 = (icmp6_pkt_toobig *)q2->data();
+	click_icmp6_pkttoobig *icmp6 = (click_icmp6_pkttoobig *)q2->data();
 	ip6=(unsigned char *)(icmp6+1);
-	icmp6->icmp6_type = ICMP6_PKT_TOOBIG; //icmp6_type = 2
+	icmp6->icmp6_type = ICMP6_PKTTOOBIG; //icmp6_type = 2
 	icmp6->icmp6_code = 0;
 
 	//adjust the mtu field for the difference between the ipv4 and ipv6 header size
@@ -219,12 +219,12 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
       }
       break;
       default:  {
-	icmp6_length = payload_length-sizeof(icmp_unreach)+sizeof(icmp6_dst_unreach);
+	icmp6_length = payload_length-sizeof(click_icmp_unreach)+sizeof(click_icmp6_unreach);
 	q2=Packet::make(icmp6_length);
 	memset(q2->data(), '\0', q2->length());
-	icmp6_dst_unreach *icmp6 = (icmp6_dst_unreach *)q2->data();
+	click_icmp6_unreach *icmp6 = (click_icmp6_unreach *)q2->data();
 	ip6=(unsigned char *)(icmp6+1);
-	icmp6->icmp6_type = ICMP6_DST_UNREACHABLE;
+	icmp6->icmp6_type = ICMP6_UNREACH;
 	icmp6->icmp6_code = icmp6_code;
 	memcpy(ip6, (unsigned char *)ip, icmp6_length);
 	icmp->icmp_cksum  = 0;
@@ -236,15 +236,15 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
   }
   break; 
      
-  case (ICMP_TYPE_TIME_EXCEEDED) : { //icmp ==11
-    icmp_exceeded *icmp = (icmp_exceeded *)a;
+  case (ICMP_TIMXCEED) : { //icmp ==11
+    click_icmp_timxceed *icmp = (click_icmp_timxceed *)a;
     ip = (click_ip *)(icmp+1);
-    icmp6_length = payload_length-sizeof(icmp_exceeded)+sizeof(icmp6_time_exceeded);
+    icmp6_length = payload_length-sizeof(click_icmp_timxceed)+sizeof(click_icmp6_timxceed);
     q2=Packet::make(icmp6_length);
     memset(q2->data(), '\0', q2->length());
-    icmp6_echo *icmp6 = (icmp6_echo *)q2->data();
+    click_icmp6_timxceed *icmp6 = (click_icmp6_timxceed *)q2->data();
     ip6=(unsigned char *)(icmp6+1);
-    icmp6->icmp6_type=ICMP6_TYPE_TIME_EXCEEDED;
+    icmp6->icmp6_type=ICMP6_TIMXCEED;
     icmp6->icmp6_code = icmp_code;
     memcpy(ip6, (unsigned char *)ip, icmp6_length);
     icmp->icmp_cksum  = 0;
@@ -252,24 +252,24 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
   }
   break;
 
-  case (ICMP_PARAMETER_PROBLEM): { //icmp==12
-    icmp_param *icmp = (icmp_param *)a;
+  case (ICMP_PARAMPROB): { //icmp==12
+    click_icmp_paramprob *icmp = (click_icmp_paramprob *)a;
     ip = (click_ip *)(icmp+1);
-    icmp6_length = payload_length-sizeof(icmp_param)+sizeof(icmp6_param);
+    icmp6_length = payload_length-sizeof(click_icmp_paramprob)+sizeof(click_icmp6_paramprob);
     q2=Packet::make(icmp6_length);
     memset(q2->data(), '\0', q2->length());
-    icmp6_param *icmp6 = (icmp6_param *)q2->data();
+    click_icmp6_paramprob *icmp6 = (click_icmp6_paramprob *)q2->data();
     ip6=(unsigned char *)(icmp6+1);
-    icmp6->icmp6_type=ICMP6_PARAMETER_PROBLEM;
+    icmp6->icmp6_type=ICMP6_PARAMPROB;
 	  
     switch (icmp_pointer) {
-    case 0  : icmp6->pointer = 0;  break;
-    case 2  : icmp6->pointer = 4;  break;
-    case 8  : icmp6->pointer = 7;  break;
-    case 9  : icmp6->pointer = 6;  break;
-    case 12 : icmp6->pointer = 8;  break;
-    case 16 : icmp6->pointer = 24; break;
-    default : icmp6->pointer = -1; break;
+    case 0  : icmp6->icmp6_pointer = 0;  break;
+    case 2  : icmp6->icmp6_pointer = 4;  break;
+    case 8  : icmp6->icmp6_pointer = 7;  break;
+    case 9  : icmp6->icmp6_pointer = 6;  break;
+    case 12 : icmp6->icmp6_pointer = 8;  break;
+    case 16 : icmp6->icmp6_pointer = 24; break;
+    default : icmp6->icmp6_pointer = -1; break;
     }
      memcpy(ip6, (unsigned char *)ip, icmp6_length);
     icmp->icmp_cksum  = 0;

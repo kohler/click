@@ -70,7 +70,7 @@ class ICMPRewriter : public Element { public:
 
   void rewrite_packet(WritablePacket *, click_ip *, click_udp *,
 		      const IPFlowID &, IPRw::Mapping *);
-  void rewrite_ping_packet(WritablePacket *, click_ip *, icmp_sequenced *,
+  void rewrite_ping_packet(WritablePacket *, click_ip *, click_icmp_echo *,
 			   const IPFlowID &, ICMPPingRewriter::Mapping *);
   
 };

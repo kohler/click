@@ -220,13 +220,13 @@ IPPrint::simple_action(Packet *p)
   
      case IP_PROTO_ICMP: {
        sa << src << " > " << dst << ": icmp";
-       const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
-       if (icmph->icmp_type == ICMP_ECHO_REPLY) {
-	 const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
-	 sa << ": echo reply (" << swapit(seqh->identifier) << ", " << swapit(seqh->sequence) << ")";
+       const click_icmp *icmph = p->icmp_header();
+       if (icmph->icmp_type == ICMP_ECHOREPLY) {
+	 const click_icmp_sequenced *seqh = reinterpret_cast<const click_icmp_sequenced *>(icmph);
+	 sa << ": echo reply (" << swapit(seqh->icmp_identifier) << ", " << swapit(seqh->icmp_sequence) << ")";
        } else if (icmph->icmp_type == ICMP_ECHO) {
-	 const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
-	 sa << ": echo request (" << swapit(seqh->identifier) << ", " << swapit(seqh->sequence) << ")";
+	 const click_icmp_sequenced *seqh = reinterpret_cast<const click_icmp_sequenced *>(icmph);
+	 sa << ": echo request (" << swapit(seqh->icmp_identifier) << ", " << swapit(seqh->icmp_sequence) << ")";
        } else
 	 sa << ": type " << (int)icmph->icmp_type;
        break;

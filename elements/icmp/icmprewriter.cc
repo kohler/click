@@ -75,7 +75,7 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
 			     IPRw::Mapping *mapping)
 {
   click_ip *iph = p->ip_header();
-  icmp_generic *icmph = reinterpret_cast<icmp_generic *>(p->transport_header());
+  click_icmp *icmph = p->icmp_header();
 
   // XXX incremental checksums?
   
@@ -102,11 +102,11 @@ ICMPRewriter::rewrite_packet(WritablePacket *p, click_ip *embedded_iph,
 
 void
 ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
-				  icmp_sequenced *embedded_icmph, const IPFlowID &flow,
+				  click_icmp_echo *embedded_icmph, const IPFlowID &flow,
 				  ICMPPingRewriter::Mapping *mapping)
 {
   click_ip *iph = p->ip_header();
-  icmp_generic *icmph = reinterpret_cast<icmp_generic *>(p->transport_header());
+  click_icmp *icmph = p->icmp_header();
 
   // XXX incremental checksums?
   
@@ -123,7 +123,7 @@ ICMPRewriter::rewrite_ping_packet(WritablePacket *p, click_ip *embedded_iph,
   // don't bother patching embedded ICMP checksum
   embedded_iph->ip_src = new_flow.saddr();
   embedded_iph->ip_dst = new_flow.daddr();
-  embedded_icmph->identifier = new_flow.sport();
+  embedded_icmph->icmp_identifier = new_flow.sport();
 
   // but must patch ICMP checksum
   icmph->icmp_cksum = 0;
@@ -141,18 +141,18 @@ ICMPRewriter::simple_action(Packet *p_in)
     return 0;
   }
   
-  icmp_generic *icmph = reinterpret_cast<icmp_generic *>(p->transport_header());
+  click_icmp *icmph = p->icmp_header();
   switch (icmph->icmp_type) {
 
-   case ICMP_DST_UNREACHABLE:
-   case ICMP_TYPE_TIME_EXCEEDED:
-   case ICMP_PARAMETER_PROBLEM:
-   case ICMP_SOURCE_QUENCH:
+   case ICMP_UNREACH:
+   case ICMP_TIMXCEED:
+   case ICMP_PARAMPROB:
+   case ICMP_SOURCEQUENCH:
    case ICMP_REDIRECT: {
      // check length of embedded IP header
      click_ip *embedded_iph = reinterpret_cast<click_ip *>(icmph + 1);
      unsigned hlen = embedded_iph->ip_hl << 2;
-     if (p->transport_length() < (int)(sizeof(icmp_generic) + hlen + 8)
+     if (p->transport_length() < (int)(sizeof(click_icmp) + hlen + 8)
 	 || hlen < sizeof(click_ip))
        goto bad;
 
@@ -175,14 +175,14 @@ ICMPRewriter::simple_action(Packet *p_in)
        
      } else if (embedded_p == IP_PROTO_ICMP) {
        // ICMP
-       icmp_sequenced *embedded_icmph = reinterpret_cast<icmp_sequenced *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
+       click_icmp_sequenced *embedded_icmph = reinterpret_cast<click_icmp_sequenced *>(reinterpret_cast<unsigned char *>(embedded_iph) + hlen);
        
        int embedded_type = embedded_icmph->icmp_type;
-       if (embedded_type != ICMP_ECHO && embedded_type != ICMP_ECHO_REPLY)
+       if (embedded_type != ICMP_ECHO && embedded_type != ICMP_ECHOREPLY)
 	 goto unmapped;
        bool ask_for_request = (embedded_type != ICMP_ECHO);
        
-       IPFlowID flow(embedded_iph->ip_src, embedded_icmph->identifier, embedded_iph->ip_dst, embedded_icmph->identifier);
+       IPFlowID flow(embedded_iph->ip_src, embedded_icmph->icmp_identifier, embedded_iph->ip_dst, embedded_icmph->icmp_identifier);
 
        ICMPPingRewriter::Mapping *mapping = 0;
        for (int i = 0; i < _ping_maps.size() && !mapping; i++)

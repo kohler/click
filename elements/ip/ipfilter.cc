@@ -100,17 +100,32 @@ IPFilter::create_wordmap()
   wordmap->insert("psh",	WT(TYPE_TCPOPT, TH_PUSH));
   wordmap->insert("urg",	WT(TYPE_TCPOPT, TH_URG));
 
-  wordmap->insert("echo_reply",	WT(TYPE_ICMP_TYPE, ICMP_ECHO_REPLY));
-  wordmap->insert("dst_unreachable", WT(TYPE_ICMP_TYPE, ICMP_DST_UNREACHABLE));
-  wordmap->insert("source_quench", WT(TYPE_ICMP_TYPE, ICMP_SOURCE_QUENCH));
+  wordmap->insert("echo-reply",	WT(TYPE_ICMP_TYPE, ICMP_ECHOREPLY));
+  wordmap->insert("unreachable", WT(TYPE_ICMP_TYPE, ICMP_UNREACH));
+  wordmap->insert("sourcequench", WT(TYPE_ICMP_TYPE, ICMP_SOURCEQUENCH));
   wordmap->insert("redirect",	WT(TYPE_ICMP_TYPE, ICMP_REDIRECT));
   wordmap->insert("echo+",	WT(TYPE_ICMP_TYPE, ICMP_ECHO));
-  wordmap->insert("time_exceeded", WT(TYPE_ICMP_TYPE, ICMP_TYPE_TIME_EXCEEDED));
-  wordmap->insert("parameter_problem", WT(TYPE_ICMP_TYPE, ICMP_PARAMETER_PROBLEM));
-  wordmap->insert("time_stamp", WT(TYPE_ICMP_TYPE, ICMP_TIME_STAMP));
-  wordmap->insert("time_stamp_reply", WT(TYPE_ICMP_TYPE, ICMP_TIME_STAMP_REPLY));
-  wordmap->insert("info_request", WT(TYPE_ICMP_TYPE, ICMP_INFO_REQUEST));
-  wordmap->insert("info_request_reply", WT(TYPE_ICMP_TYPE, ICMP_INFO_REQUEST_REPLY));
+  wordmap->insert("routeradvert", WT(TYPE_ICMP_TYPE, ICMP_ROUTERADVERT));
+  wordmap->insert("routersolicit", WT(TYPE_ICMP_TYPE, ICMP_ROUTERSOLICIT));
+  wordmap->insert("timeexceeded", WT(TYPE_ICMP_TYPE, ICMP_TIMXCEED));
+  wordmap->insert("parameterproblem", WT(TYPE_ICMP_TYPE, ICMP_PARAMPROB));
+  wordmap->insert("timestamp",	WT(TYPE_ICMP_TYPE, ICMP_TSTAMP));
+  wordmap->insert("timestamp-reply", WT(TYPE_ICMP_TYPE, ICMP_TSTAMPREPLY));
+  wordmap->insert("inforeq",	WT(TYPE_ICMP_TYPE, ICMP_IREQ));
+  wordmap->insert("inforeq-reply", WT(TYPE_ICMP_TYPE, ICMP_IREQREPLY));
+  wordmap->insert("maskreq",	WT(TYPE_ICMP_TYPE, ICMP_MASKREQ));
+  wordmap->insert("maskreq-reply", WT(TYPE_ICMP_TYPE, ICMP_MASKREQREPLY));
+
+  // deprecated variants
+  wordmap->insert("echo_reply",	WT(TYPE_ICMP_TYPE, ICMP_ECHOREPLY));
+  wordmap->insert("dst_unreachable", WT(TYPE_ICMP_TYPE, ICMP_UNREACH));
+  wordmap->insert("source_quench", WT(TYPE_ICMP_TYPE, ICMP_SOURCEQUENCH));
+  wordmap->insert("time_exceeded", WT(TYPE_ICMP_TYPE, ICMP_TIMXCEED));
+  wordmap->insert("parameter_problem", WT(TYPE_ICMP_TYPE, ICMP_PARAMPROB));
+  wordmap->insert("time_stamp", WT(TYPE_ICMP_TYPE, ICMP_TSTAMP));
+  wordmap->insert("time_stamp_reply", WT(TYPE_ICMP_TYPE, ICMP_TSTAMPREPLY));
+  wordmap->insert("info_request", WT(TYPE_ICMP_TYPE, ICMP_IREQ));
+  wordmap->insert("info_request_reply", WT(TYPE_ICMP_TYPE, ICMP_IREQREPLY));
 
   return wordmap;
 }

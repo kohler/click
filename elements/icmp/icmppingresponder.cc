@@ -55,7 +55,7 @@ Packet *
 ICMPPingResponder::simple_action(Packet *p_in)
 {
     const click_ip *iph_in = p_in->ip_header();
-    const icmp_generic *icmph_in = reinterpret_cast<const icmp_generic *>(p_in->transport_header());
+    const click_icmp *icmph_in = p_in->icmp_header();
 
     if (iph_in->ip_p != IP_PROTO_ICMP || icmph_in->icmp_type != ICMP_ECHO) {
 	if (noutputs() == 2)
@@ -93,10 +93,10 @@ ICMPPingResponder::simple_action(Packet *p_in)
     click_gettimeofday(&q->timestamp_anno());
     SET_PAINT_ANNO(q, 0);
 
-    // set ICMP packet type to ICMP_ECHO_REPLY and recalculate checksum
-    icmp_sequenced *icmph = reinterpret_cast<icmp_sequenced *>(q->transport_header());
+    // set ICMP packet type to ICMP_ECHOREPLY and recalculate checksum
+    click_icmp_echo *icmph = reinterpret_cast<click_icmp_echo *>(q->icmp_header());
     old_hw = ((uint16_t *)icmph)[0];
-    icmph->icmp_type = ICMP_ECHO_REPLY;
+    icmph->icmp_type = ICMP_ECHOREPLY;
     icmph->icmp_code = 0;
     new_hw = ((uint16_t *)icmph)[0];
     click_update_in_cksum(&icmph->icmp_cksum, old_hw, new_hw);

@@ -199,7 +199,7 @@ IPGWOptions::handle_options(Packet *p)
 
  send_error:
   _drops++;
-  SET_ICMP_PARAM_PROB_ANNO(p, oi);
+  SET_ICMP_PARAMPROB_ANNO(p, oi);
   checked_output_push(1, p);
   return 0;
 }

@@ -159,42 +159,42 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
 
   // set type, code, length , and checksum of ICMP header
   switch (icmp6_type) {
-  case ICMP6_ECHO_REQUEST: ;
-  case ICMP6_ECHO_REPLY : {
-      icmp_length = payload_length -sizeof(icmp6_echo) + sizeof(icmp_echo);
-      icmp6_echo *icmp6 = (icmp6_echo *)a;
+   case ICMP6_ECHO: ;
+   case ICMP6_ECHOREPLY : {
+      icmp_length = payload_length -sizeof(click_icmp6_echo) + sizeof(click_icmp_echo);
+      click_icmp6_echo *icmp6 = (click_icmp6_echo *)a;
       ip6 = (click_ip6 *)(icmp6+1);
       
       q2 = Packet::make(icmp_length);
       memset(q2->data(), '\0', q2->length());
-      icmp_echo *icmp = (icmp_echo *)q2->data();
+      click_icmp_echo *icmp = (click_icmp_echo *)q2->data();
       ip = (unsigned char *)(icmp+1);
 
-      if (icmp6_type == ICMP6_ECHO_REQUEST ) { // icmp6_type ==128 
+      if (icmp6_type == ICMP6_ECHO ) { // icmp6_type ==128 
 	icmp->icmp_type = ICMP_ECHO;                 // icmp_type =8  
       }
-      else if (icmp6_type == ICMP6_ECHO_REPLY ) { // icmp6_type ==129 
-	icmp->icmp_type = ICMP_ECHO_REPLY;              // icmp_type = 0   
+      else if (icmp6_type == ICMP6_ECHOREPLY ) { // icmp6_type ==129 
+	icmp->icmp_type = ICMP_ECHOREPLY;              // icmp_type = 0   
       }
 
-      icmp->identifier = (icmp6->identifier);
-      icmp->sequence = (icmp6->sequence);
-      memcpy(ip, ip6, (payload_length - sizeof(icmp6_echo)));
+      icmp->icmp_identifier = (icmp6->icmp6_identifier);
+      icmp->icmp_sequence = (icmp6->icmp6_sequence);
+      memcpy(ip, ip6, (payload_length - sizeof(click_icmp6_echo)));
       icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
 
     }
   break;
  
-  case  ICMP6_DST_UNREACHABLE : {
+  case  ICMP6_UNREACH : {
       // icmp6_type ==11 
-      icmp_length = payload_length-sizeof(icmp6_dst_unreach)+sizeof(icmp_unreach);
-      icmp6_dst_unreach *icmp6 = (icmp6_dst_unreach *)a;
+      icmp_length = payload_length-sizeof(click_icmp6_unreach)+sizeof(click_icmp_unreach);
+      click_icmp6_unreach *icmp6 = (click_icmp6_unreach *)a;
       ip6 = (click_ip6 *)(icmp6+1);
       q2 = Packet::make(icmp_length);
       memset(q2->data(), '\0', q2->length());
-      icmp_unreach *icmp = (icmp_unreach *)q2->data();
+      click_icmp_unreach *icmp = (click_icmp_unreach *)q2->data();
       ip = (unsigned char *)(icmp+1);
-      icmp->icmp_type = ICMP_DST_UNREACHABLE;             // icmp_type =3    
+      icmp->icmp_type = ICMP_UNREACH;             // icmp_type =3    
    
       switch (icmp6_code) {
       case 0: icmp->icmp_code =0;  break;
@@ -204,86 +204,86 @@ ProtocolTranslator64::make_icmp_translate64(unsigned char *a,
       case 4: icmp->icmp_code =3;  break;
       default: ; break;
       }
-      memcpy(ip, ip6, (payload_length - sizeof(icmp6_dst_unreach)));
+      memcpy(ip, ip6, (payload_length - sizeof(click_icmp6_unreach)));
       icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
     
     }
   break;
   
-  case ICMP6_PKT_TOOBIG : {
-      icmp_length = payload_length-sizeof(icmp6_pkt_toobig)+sizeof(icmp_unreach);
-      icmp6_pkt_toobig *icmp6 = (icmp6_pkt_toobig*)a;
+  case ICMP6_PKTTOOBIG : {
+      icmp_length = payload_length-sizeof(click_icmp6_pkttoobig)+sizeof(click_icmp_unreach);
+      click_icmp6_pkttoobig *icmp6 = (click_icmp6_pkttoobig*)a;
       ip6 = (click_ip6 *)(icmp6+1);
       q2 = Packet::make(icmp_length);
       memset(q2->data(), '\0', q2->length());
-      icmp_unreach *icmp = (icmp_unreach *)q2->data();
+      click_icmp_unreach *icmp = (click_icmp_unreach *)q2->data();
       ip = (unsigned char *)(icmp+1);
-      icmp->icmp_type = ICMP_DST_UNREACHABLE; //icmp_type = 3
+      icmp->icmp_type = ICMP_UNREACH; //icmp_type = 3
       icmp->icmp_code = 4;
-      memcpy(ip, ip6, (payload_length - sizeof(icmp6_pkt_toobig)));
+      memcpy(ip, ip6, (payload_length - sizeof(click_icmp6_pkttoobig)));
       icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
     }
   break;
   
-  case ICMP6_TYPE_TIME_EXCEEDED : { 
-      icmp_length = payload_length-sizeof(icmp6_time_exceeded)+sizeof(icmp_exceeded);
-      icmp6_time_exceeded *icmp6 = (icmp6_time_exceeded *)a;
+  case ICMP6_TIMXCEED : { 
+      icmp_length = payload_length-sizeof(click_icmp6_timxceed)+sizeof(click_icmp_timxceed);
+      click_icmp6_timxceed *icmp6 = (click_icmp6_timxceed *)a;
       ip6 = (click_ip6 *)(icmp6+1);
       q2 = Packet::make(icmp_length);
       memset(q2->data(), '\0', q2->length());
-      icmp_exceeded *icmp = (icmp_exceeded *)q2->data();
+      click_icmp_timxceed *icmp = (click_icmp_timxceed *)q2->data();
       ip = (unsigned char *)(icmp+1);
-      icmp->icmp_type =ICMP_TYPE_TIME_EXCEEDED;            //icmp_type = 11 
+      icmp->icmp_type =ICMP_TIMXCEED;            //icmp_type = 11 
       icmp->icmp_code = icmp6_code;
-      memcpy(ip, ip6, (payload_length - sizeof(icmp6_time_exceeded)));
+      memcpy(ip, ip6, (payload_length - sizeof(click_icmp6_timxceed)));
       icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
     }
   break;
   
-  case ICMP6_PARAMETER_PROBLEM : { // icmp6_type == 4
+  case ICMP6_PARAMPROB : { // icmp6_type == 4
       
-      icmp6_param *icmp6 = (icmp6_param *)a;
+      click_icmp6_paramprob *icmp6 = (click_icmp6_paramprob *)a;
       ip6=(click_ip6 *)(icmp6+1);
       if (icmp6_code ==2 || icmp6_code ==0) 
 	{
-	  icmp_length = payload_length-sizeof(icmp6_param)+sizeof(icmp_param);
+	  icmp_length = payload_length-sizeof(click_icmp6_paramprob)+sizeof(click_icmp_paramprob);
 	  q2 = Packet::make(icmp_length);
 	  memset(q2->data(), '\0', q2->length());
-	  icmp_param *icmp = (icmp_param *)q2->data();
+	  click_icmp_paramprob *icmp = (click_icmp_paramprob *)q2->data();
 	  ip = (unsigned char *)(icmp +1);
-	  icmp->icmp_type = ICMP_PARAMETER_PROBLEM;         // icmp_type = 12 
+	  icmp->icmp_type = ICMP_PARAMPROB;         // icmp_type = 12 
 	  icmp->icmp_code = 0;
 	  if (icmp6_code ==2) {
-	    icmp->pointer = -1;
+	    icmp->icmp_pointer = -1;
 	  }
 	  else if(icmp6_code ==0)
 	    {
-	      switch (ntohl(icmp6->pointer)) {
-	      case 0 : icmp->pointer = 0;  break;
-	      case 4 : icmp->pointer = 2;  break;
-	      case 7 : icmp->pointer = 8;  break;
-	      case 6 : icmp->pointer = 9;  break;
-	      case 8 : icmp->pointer = 12; break;
-	      case 24: icmp->pointer = -1; break;
+	      switch (ntohl(icmp6->icmp6_pointer)) {
+	      case 0 : icmp->icmp_pointer = 0;  break;
+	      case 4 : icmp->icmp_pointer = 2;  break;
+	      case 7 : icmp->icmp_pointer = 8;  break;
+	      case 6 : icmp->icmp_pointer = 9;  break;
+	      case 8 : icmp->icmp_pointer = 12; break;
+	      case 24: icmp->icmp_pointer = -1; break;
 	      default: ; break; 
 	      }
 	      
 	    }
-	  memcpy(ip, ip6, (payload_length - sizeof(icmp6_param)));
+	  memcpy(ip, ip6, (payload_length - sizeof(click_icmp6_paramprob)));
 	  icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
 	}
 
       else if (icmp6_code ==1) 
 	{
-	  icmp_length = payload_length-sizeof(icmp6_param)+sizeof(icmp_unreach);
+	  icmp_length = payload_length-sizeof(click_icmp6_paramprob)+sizeof(click_icmp_unreach);
 	  q2 = Packet::make(icmp_length);
 	  memset(q2->data(), '\0', q2->length());
-	  icmp_unreach *icmp = (icmp_unreach *)q2->data();
+	  click_icmp_unreach *icmp = (click_icmp_unreach *)q2->data();
       
 	  ip = (unsigned char *)(icmp +1);
-	  icmp->icmp_type = ICMP_DST_UNREACHABLE;           // icmp_type = 3 
+	  icmp->icmp_type = ICMP_UNREACH; // icmp_type = 3 
 	  icmp->icmp_code = 2;
-	  memcpy(ip, ip6, (payload_length - sizeof(icmp6_param)));
+	  memcpy(ip, ip6, (payload_length - sizeof(click_icmp6_paramprob)));
 	  icmp->icmp_cksum = click_in_cksum((unsigned char *)icmp, icmp_length);
 	}
   }

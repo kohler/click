@@ -149,9 +149,10 @@ Valid IP protocol names: `icmp', `igmp', `ipip', `tcp', `udp'
 
 Valid TCP options: `syn', `fin', `ack', `rst', `psh', `urg'
 
-Valid ICMP type names: `echo_reply', `dst_unreachable', `source_quench',
-`redirect', `echo', `time_exceeded', `parameter_problem', `time_stamp',
-`time_stamp_reply', `info_request', `info_request_reply'
+Valid ICMP type names: `echo-reply', `unreachable', `sourcequench',
+`redirect', `echo', `routeradvert', `routersolicit', `timeexceeded',
+`parameterproblem', `timestamp', `timestamp-reply', `inforeq',
+`inforeq-reply', `maskreq', `maskreq-reply'
 
 This element correctly handles IP packets with options.
 

@@ -65,7 +65,7 @@ ForceICMP::simple_action(Packet *p_in)
   click_ip *ip = p->ip_header();
   unsigned plen = p->length() - p->ip_header_offset();
   unsigned hlen, ilen;
-  icmp_generic *ih;
+  click_icmp *ih;
 
   if (!ip || plen < sizeof(click_ip))
     goto bad;
@@ -75,10 +75,10 @@ ForceICMP::simple_action(Packet *p_in)
     goto bad;
 
   ilen = ntohs(ip->ip_len);
-  if(ilen > plen || ilen < hlen + sizeof(icmp_generic))
+  if(ilen > plen || ilen < hlen + sizeof(click_icmp))
     goto bad;
 
-  ih = (icmp_generic *) (((char *)ip) + hlen);
+  ih = (click_icmp *) (((char *)ip) + hlen);
 
   if(random() & 1){
     ih->icmp_type = random() % 20;
