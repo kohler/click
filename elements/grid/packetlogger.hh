@@ -43,13 +43,14 @@ class PacketLogger : public Element { public:
   void add_handlers();
   static String print_log(Element *, void *);
 
-#define NBYTES 8
+  enum { NBYTES = 8 };
+
   struct log_entry {
     struct timeval timestamp;
     uint8_t src_mac[6];
     uint8_t bytes[NBYTES];
   };
-
+  
  private:
   
   unsigned int _et;
