@@ -369,7 +369,7 @@ Classifier::handle_vertex(int ei, Vector<Spread *> &alw_edges,
 void
 Classifier::drift_edges()
 {
-  //fputs(decompile_string(this, 0).cc(), stderr);
+  //fputs(program_string(this, 0).cc(), stderr);
   
   // count uncalculated inputs to each expr
   int nexprs = _exprs.size();
@@ -496,6 +496,7 @@ Classifier::optimize_exprs(ErrorHandler *errh)
     if (off > _safe_length)
       _safe_length = off;
   }
+  _safe_length -= _align_offset;
 
   // Warn on patterns that can't match anything
   Vector<int> used_patterns(noutputs() + 1, 0);
@@ -510,7 +511,7 @@ Classifier::optimize_exprs(ErrorHandler *errh)
     if (!used_patterns[i])
       errh->warning("pattern %d matches no packets", i);
 
-  //fputs(decompile_string(this, 0).cc(), stderr);
+  //fputs(program_string(this, 0).cc(), stderr);
 }
 
 //
@@ -547,7 +548,8 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
   {
     int c, o;
     if (AlignmentInfo::query(this, 0, c, o) && c >= 4)
-      _align_offset = o % 4;
+      // want `data - _align_offset' aligned at 4/(o%4)
+      _align_offset = (4 - (o % 4)) % 4;
     else {
 #ifndef __i386__
       errh->error("no AlignmentInfo available: you may experience unaligned accesses");
@@ -701,7 +703,7 @@ Classifier::configure(const String &conf, ErrorHandler *errh)
 }
 
 String
-Classifier::decompile_string(Element *element, void *)
+Classifier::program_string(Element *element, void *)
 {
   Classifier *f = (Classifier *)element;
   StringAccum sa;
@@ -737,7 +739,7 @@ Classifier::decompile_string(Element *element, void *)
 void
 Classifier::add_handlers(HandlerRegistry *fcr)
 {
-  fcr->add_read("program", Classifier::decompile_string, 0);
+  fcr->add_read("program", Classifier::program_string, 0);
 }
 
 //
@@ -793,7 +795,7 @@ Classifier::push(int, Packet *p)
     // out of range
     pos = -_output_everything;
     goto found;
-  } else if (p->length() + _align_offset < _safe_length) {
+  } else if (p->length() < _safe_length) {
     // common case never checks packet length
     length_checked_push(p);
     return;

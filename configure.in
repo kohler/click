@@ -143,7 +143,7 @@ AC_SUBST(CFLAGS_NDEBUG)
 AC_SUBST(CXXFLAGS_NDEBUG)
 
 dnl
-dnl strerror()
+dnl strerror
 dnl
 
 AC_REPLACE_FUNCS(strerror)
@@ -210,7 +210,7 @@ dnl
 
 TARGETS=
 AC_SUBST(TARGETS)
-TOOL_TARGETS="click-align click-xform"
+TOOL_TARGETS="click-align click-fastclassifier click-xform"
 AC_SUBST(TOOL_TARGETS)
 
 dnl check userlevel for pcap library
@@ -315,7 +315,7 @@ dnl
 dnl Output
 dnl
 
-config_files="Makefile mkelemlist.sh tools/Makefile tools/click-align/Makefile tools/click-install/Makefile tools/click-xform/Makefile doc/Makefile"
+config_files="Makefile mkelemlist.sh tools/Makefile tools/click-align/Makefile tools/click-fastclassifier/Makefile tools/click-install/Makefile tools/click-xform/Makefile doc/Makefile"
 for dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $dir/Makefile"
 done

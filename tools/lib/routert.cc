@@ -57,7 +57,8 @@ RouterT::RouterT(const RouterT &o)
 
 RouterT::~RouterT()
 {
-  _enclosing_scope->unuse();
+  if (_enclosing_scope)
+    _enclosing_scope->unuse();
   for (int i = 0; i < _element_classes.size(); i++)
     if (_element_classes[i])
       _element_classes[i]->unuse();
@@ -146,6 +147,14 @@ RouterT::get_anon_eindex(const String &s, int type_index, const String &config,
   int i = _elements.size();
   _elements.push_back(ElementT(s, type_index, config, landmark));
   return i;
+}
+
+int
+RouterT::get_anon_eindex(int type_index, const String &config,
+			 const String &landmark)
+{
+  String name = _element_type_names[type_index] + "@" + String(_elements.size() + 1);
+  return get_anon_eindex(name, type_index, config, landmark);
 }
 
 

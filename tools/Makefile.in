@@ -9,13 +9,15 @@ srcdir = @srcdir@
 top_builddir = ..
 subdir = tools
 
-TOOLS = click-align click-install click-xform
+TOOLS = click-align click-fastclassifier click-install click-xform
 TARGETS = @TOOL_TARGETS@
 
 all: $(TARGETS)
 
 click-align: Makefile
 	@cd click-align; $(MAKE) all
+click-fastclassifier: Makefile
+	@cd click-fastclassifier; $(MAKE) all
 click-install: Makefile
 	@cd click-install; $(MAKE) all
 click-xform: Makefile
@@ -42,20 +44,21 @@ DISTFILES = Makefile.in \
 	lib/routert.cc lib/routert.hh \
 	lib/hashmapi.cc \
 	lib/vectori.cc \
-	click-xform/Makefile.in \
-	click-xform/click-xform.cc \
-	click-install/Makefile.in \
-	click-install/click-install.cc \
 	click-align/Makefile.in \
 	click-align/click-align.cc \
 	click-align/alignment.cc click-align/alignment.hh \
-	click-align/alignclass.cc click-align/alignclass.hh
+	click-align/alignclass.cc click-align/alignclass.hh \
+	click-fastclassifier/Makefile.in \
+	click-fastclassifier/click-fastclassifier.cc \
+	click-install/Makefile.in \
+	click-install/click-install.cc \
+	click-xform/Makefile.in \
+	click-xform/click-xform.cc
 
 distdir:
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
-	mkdir $(distdir)/lib $(distdir)/click-xform $(distdir)/click-align
-	@-chmod 777 $(distdir)/lib $(distdir)/click-xform $(distdir)/click-align
+	@-for d in lib $(TOOLS); do mkdir $(distdir)/$$d; chmod 777 $(distdir)/$$d; done
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \

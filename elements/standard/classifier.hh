@@ -91,7 +91,7 @@ class Classifier : public Element {
   void remove_unused_states();
   void optimize_exprs(ErrorHandler *);
   
-  static String decompile_string(Element *, void *);
+  static String program_string(Element *, void *);
   
   void length_checked_push(Packet *);
   

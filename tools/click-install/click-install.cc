@@ -63,22 +63,36 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
 static String
-path_find_file_2(const String &filename, String path,
-		 String default_path)
+path_find_file_2(const String &filename, String path, String default_path,
+		 String subdir)
 {
+  if (subdir.back() != '/') subdir += "/";
+  
   while (1) {
     int colon = path.find_left(':');
     String dir = (colon < 0 ? path : path.substring(0, colon));
+    
     if (!dir && default_path) {
-      String s = path_find_file_2(filename, default_path, String());
+      // look in default path
+      String s = path_find_file_2(filename, default_path, String(), 0);
       if (s) return s;
       default_path = String();	// don't search default path twice
+      
     } else if (dir) {
-      String name = (dir[dir.length()-1] == '/' ? dir + filename : dir + "/" + filename);
+      if (dir.back() != '/') dir += "/";
+      // look for `dir/filename'
+      String name = dir + filename;
       struct stat s;
       if (stat(name.cc(), &s) >= 0)
 	return name;
+      // look for `dir/subdir/filename'
+      if (subdir) {
+	name = dir + subdir + filename;
+	if (stat(name.cc(), &s) >= 0)
+	  return name;
+      }
     }
+    
     if (colon < 0) return String();
     path = path.substring(colon + 1);
   }
@@ -89,10 +103,27 @@ path_find_file(const String &filename, const char *path_variable,
 	       const String &default_path)
 {
   const char *path = getenv(path_variable);
-  if (!path)
-    return path_find_file_2(filename, default_path, "");
+  if (path)
+    return path_find_file_2(filename, path, default_path, 0);
   else
-    return path_find_file_2(filename, path, default_path);
+    return path_find_file_2(filename, default_path, "", 0);
+}
+
+static String
+clickpath_find_file(const String &filename, const char *subdir,
+		    const String &default_path, ErrorHandler *errh = 0)
+{
+  const char *path = getenv("CLICKPATH");
+  String s;
+  if (path)
+    s = path_find_file_2(filename, path, default_path, subdir);
+  else
+    s = path_find_file_2(filename, default_path, "", 0);
+  if (!s && errh) {
+    errh->message("cannot find file `click.o'");
+    errh->fatal("in CLICKPATH or `%s'", default_path.cc());
+  }
+  return s;
 }
 
 
@@ -207,11 +238,8 @@ particular purpose.\n");
     struct stat s;
     if (stat("/proc/click", &s) < 0) {
       // try to install module
-      String click_o = path_find_file("click.o", "CLICK_LIB", CLICK_LIBDIR);
-      if (!click_o) {
-	errh->message("cannot find Click module `click.o'");
-	errh->fatal("in CLICK_LIB or `%s'", CLICK_LIBDIR);
-      }
+      String click_o =
+	clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
       String cmdline = "/sbin/insmod " + click_o;
       (void) system(cmdline);
       if (stat("/proc/click", &s) < 0)
@@ -229,11 +257,11 @@ particular purpose.\n");
     int thunk = 0, value; String key;
     while (requirements.each(thunk, key, value))
       if (value >= 0 && packages[key] < 0) {
-	String package = path_find_file
-	  (key + ".o", "CLICK_PACKAGES", CLICK_PACKAGESDIR);
+	String package = clickpath_find_file
+	  (key + ".o", "packages", CLICK_PACKAGESDIR, errh);
 	if (!package) {
 	  errh->message("cannot find required package `%s.o'", key.cc());
-	  errh->fatal("in CLICK_PACKAGES or `%s'", CLICK_PACKAGESDIR);
+	  errh->fatal("in CLICKPATH or `%s'", CLICK_PACKAGESDIR);
 	}
 	String cmdline = "/sbin/insmod " + package;
 	int retval = system(cmdline);

@@ -75,6 +75,7 @@ class String {
   operator const char *()		{ return cc(); }
   
   char operator[](int e) const		{ return _data[e]; }
+  char back() const			{ return _data[_length-1]; }
   int find_left(int c, int start = 0) const;
   int find_right(int c, int start = 0x7FFFFFFF) const;
   

@@ -15,7 +15,7 @@ class ElementFilter { public:
 
 class IsaElementFilter : public ElementFilter {
   
-  String _isa_what;
+  String _what;
   
  public:
   

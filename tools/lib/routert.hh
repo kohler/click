@@ -49,8 +49,8 @@ class RouterT : public ElementClassT {
   int eindex(const String &s) const	{ return _element_name_map[s]; }
   const ElementT &element(int i) const	{ return _elements[i]; }
   ElementT &element(int i)		{ return _elements[i]; }
-  String ename(int findex) const;
-  String ename_upref(int findex) const;
+  String ename(int) const;
+  String ename_upref(int) const;
   int etype(int) const;
   String etype_name(int) const;
   ElementClassT *etype_class(int) const;
@@ -59,7 +59,8 @@ class RouterT : public ElementClassT {
   int eflags(int i) const		{ return _elements[i].flags; }
   
   int get_eindex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
-  int get_anon_eindex(const String &name, int ftype_index = -1, const String &configuration = String(), const String &landmark = String());
+  int get_anon_eindex(const String &name, int ftype_index, const String &configuration = String(), const String &landmark = String());
+  int get_anon_eindex(int ftype_index, const String &configuration = String(), const String &landmark = String());
   
   int nhookup() const				{ return _hookup_from.size(); }
   const Vector<Hookup> &hookup_from() const	{ return _hookup_from; }
