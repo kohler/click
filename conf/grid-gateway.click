@@ -91,7 +91,7 @@ reply_demux [1] -> [0] lr; // forward query reply packets like encap packets
 loc_repl -> [0] lr; // forward loc reply packets initiated by us
 
 query_demux [0] -> PrintGrid(qd0) -> loc_repl; // reply to this query
-query_demux [1] -> PrintGrid(qd1) -> Print(hex, 70) -> [1] fq [1] -> to_wvlan; // propagate this loc query, or initiate a new loc query
+query_demux [1] -> PrintGrid(qd1) -> [1] fq [1] -> to_wvlan; // propagate this loc query, or initiate a new loc query
 
 
 ip_cl [0] -> to_tun1;
