@@ -1,3 +1,11 @@
+2003-02-01 Saturday 00:16  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.hh (1.23), grid.hh (1.43),
+	gridgenericlogger.hh (1.2), gridlocationinfo.hh (1.12),
+	gridlogger.cc (1.6), gridlogger.hh (1.21), lookupgeogridroute.cc
+	(1.30), regionpep.cc (1.16): fix bugs in previous checkin to build
+	as userlevel as well
+
 2003-01-31 Friday 17:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: checkgridheader.cc (1.24), dsdvroutetable.hh
