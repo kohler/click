@@ -1,3 +1,8 @@
+2002-04-20 Saturday 11:31  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.45): Properly cleanup and
+	delete logging object in destructor.
+
 2002-04-20 Saturday 10:41  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: policyprobe.cc (1.10), policyprobe.hh (1.9),
