@@ -103,7 +103,6 @@ include/click/iptable2.hh
 include/click/ip6table.hh
 include/click/lexer.hh
 include/click/llrpc.h
-include/click/mplock.hh
 include/click/package.hh
 include/click/packet.hh
 include/click/packet_anno.hh
