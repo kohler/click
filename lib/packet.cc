@@ -31,15 +31,10 @@ Packet::~Packet()
 }
 
 Packet *
-Packet::make(const unsigned char *data, unsigned len)
+Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
+	     unsigned tailroom)
 {
-  unsigned headroom = 24;
-  unsigned tailroom = 0;
-  if (len < 64)
-    tailroom = 64 - len;
-  if(tailroom < 8)
-    tailroom = 8;
-  int size = len + headroom + tailroom;
+  unsigned size = len + headroom + tailroom;
   struct sk_buff *skb = alloc_skb(size, GFP_ATOMIC);
   if (skb) {
     skb_reserve(skb, headroom);	// leave some headroom
@@ -81,29 +76,22 @@ Packet::make(int, int, int)
 }
 
 void
-Packet::alloc_data(int len)
+Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
 {
-  int head_slop = 64;
-  int tail_slop = 0;
-  
-  if (len < 64)
-    tail_slop = 64 - len;
-  if(tail_slop < 8)
-    tail_slop = 8;
-  int n = len + head_slop + tail_slop;
-  
+  unsigned n = len + headroom + tailroom;
   _head = new unsigned char[n];
-  _data = _head + head_slop;
+  _data = _head + headroom;
   _tail = _data + len;
   _end = _head + n;
 }
 
 Packet *
-Packet::make(const unsigned char *data, unsigned len)
+Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
+	     unsigned tailroom)
 {
   Packet *p = new Packet;
   if (p) {
-    p->alloc_data(len);
+    p->alloc_data(headroom, len, tailroom);
     if (data && p->data()) memcpy(p->data(), data, len);
   }
   return p;
@@ -158,10 +146,8 @@ Packet::uniqueify_copy()
   if (!p) return 0;
   p->_use_count = 1;
   p->_data_packet = 0;
-  p->alloc_data(_end - _head);
-  memcpy(p->_head, _head, _end - _head);
-  p->_data = p->_head + (_data - _head);
-  p->_tail = p->_head + (_tail - _head);
+  p->alloc_data(headroom(), length(), tailroom());
+  memcpy(p->_data, _data, _tail - _data);
   memcpy(p->_cb, _cb, sizeof(_cb));
   kill();
   return p;

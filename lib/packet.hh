@@ -36,8 +36,10 @@ class Packet {
 #ifndef __KERNEL__
   Packet(int, int, int)			{ }
   static Packet *make(int, int, int);
-  void alloc_data(int len);
+  void alloc_data(unsigned, unsigned, unsigned);
 #endif
+  static unsigned default_headroom()	{ return 24; }
+  static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
 
   Packet *uniqueify_copy();
   
@@ -56,6 +58,7 @@ class Packet {
   static Packet *make(unsigned);
   static Packet *make(const char *, unsigned);
   static Packet *make(const unsigned char *, unsigned);
+  static Packet *make(unsigned, const unsigned char *, unsigned, unsigned);
   
 #ifdef __KERNEL__
   /*
@@ -73,7 +76,8 @@ class Packet {
 #else
   void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
-  
+
+  bool shared() const;
   Packet *clone();
   Packet *uniqueify();
   
@@ -99,6 +103,8 @@ class Packet {
   void spew_push(int zz) { _data -= zz; }
 #endif
 
+  void copy_annotations(Packet *);
+  
   void set_dst_ip_anno(IPAddress a)	{ anno()->dst_ip = a; }
   IPAddress dst_ip_anno() const		{ return anno()->dst_ip; }
   
@@ -123,13 +129,22 @@ class Packet {
 inline Packet *
 Packet::make(unsigned len)
 {
-  return make((const unsigned char *)0, len);
+  return make(default_headroom(), (const unsigned char *)0, len,
+	      default_tailroom(len));
 }
 
 inline Packet *
 Packet::make(const char *s, unsigned len)
 {
-  return make((const unsigned char *)s, len);
+  return make(default_headroom(), (const unsigned char *)s, len,
+	      default_tailroom(len));
+}
+
+inline Packet *
+Packet::make(const unsigned char *s, unsigned len)
+{
+  return make(default_headroom(), (const unsigned char *)s, len,
+	      default_tailroom(len));
 }
 
 #ifdef __KERNEL__
@@ -143,14 +158,20 @@ Packet::make(struct sk_buff *skb)
 }
 #endif
 
+inline bool
+Packet::shared() const
+{
+#ifdef __KERNEL__
+  return skb_cloned(skb());
+#else
+  return (_data_packet || _use_count > 1);
+#endif
+}
+
 inline Packet *
 Packet::uniqueify()
 {
-#ifdef __KERNEL__
-  if (skb_cloned(skb()))
-#else
-  if (_data_packet || _use_count > 1)
-#endif
+  if (shared())
     return uniqueify_copy();
   else
     return this;
@@ -171,6 +192,12 @@ Packet::pull(unsigned int nbytes)
 #else
   _data += nbytes;
 #endif
+}
+
+inline void
+Packet::copy_annotations(Packet *p)
+{
+  *anno() = *p->anno();
 }
 
 #endif
