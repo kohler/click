@@ -432,19 +432,19 @@ dnl Perl5
 dnl
 
 if test ${PERL-NO} = NO; then
-  AC_CHECK_PROGS(ac_cv_perl5, perl5 perl, missing)
-  if test $ac_cv_perl5 = missing -o `$ac_cv_perl5 -v | head -2 | sed 's/.*version \(.\).*/\1/'` -lt 5; then
-    AC_CHECK_PROGS(ac_cv_perl5_local, perl5 perl, missing, /usr/local/bin)
-    if test "$ac_cv_perl5_local" != "missing"; then
-      ac_cv_perl5="/usr/local/bin/$ac_cv_perl5_local"
+  AC_CHECK_PROGS(perl5, perl5 perl, missing)
+  if test $perl5 = missing || $perl5 -e 'exit $^V < 5;'; then
+    AC_CHECK_PROGS(perl5_local, perl5 perl, missing, /usr/local/bin)
+    if test "$perl5_local" != "missing"; then
+      perl5="/usr/local/bin/$perl5_local"
     fi
   fi
-  if test "$ac_cv_perl5" = "missing"; then
+  if test "$perl5" = "missing"; then
     AC_MSG_WARN(I can't find Perl 5, so I won't be able to make 
 manual pages for you.)
     PERL="$missing_dir/missing perl"
   else
-    PERL="$ac_cv_perl5"
+    PERL="$perl5"
   fi
 fi
 AC_SUBST(PERL)
