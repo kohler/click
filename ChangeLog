@@ -1,3 +1,23 @@
+2004-12-04 Saturday 21:28  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/iprw.cc (1.57): nit
+
+2004-12-04 Saturday 21:23  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/todevice.cc (1.43): signed/unsigned nit
+
+2004-12-04 Saturday 20:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* bsdmodule/Makefile.in (1.33), bsdmodule/config.cc (1.10),
+	bsdmodule/sched.cc (1.7), elements/bsdmodule/anydevice.cc (1.5),
+	elements/bsdmodule/anydevice.hh (1.8),
+	elements/bsdmodule/fromdevice.cc (1.17),
+	elements/bsdmodule/fromdevice.hh (1.15),
+	elements/bsdmodule/fromhost.cc (1.8), include/click/routerthread.hh
+	(1.29), include/click/task.hh (1.35), lib/routerthread.cc (1.49):
+	bsdmodule fixes from Marko Zec: Click hooks up with the BSD polling
+	loop
+
 2004-12-03 Friday 16:43  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: extradecap.hh (1.4), extraencap.hh (1.4): more
