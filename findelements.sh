@@ -19,9 +19,9 @@ case $1 in
   -p|--p|--pr|--pre|--pref|--prefi|--prefix)
      shift 1; prefix="$1/"; shift 1;;
   -p*)
-     prefix=`echo "$1" | sed 's/^-p//'`; shift 1;;
+     prefix=`echo "$1" | sed 's/^-p//'`/; shift 1;;
   --p=*|--pr=*|--pre=*|--pref=*|--prefi=*|--prefix=*)
-     prefix=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
+     prefix=`echo "$1" | sed 's/^[^=]*=//'`/; shift 1;;
   -v|--v|--ve|--ver|--verb|--verbo|--verbos|--verbose)
      verbose=1; shift 1;;
   -a|--a|--al|--all)
@@ -57,13 +57,19 @@ $directory_exports"
   fi
   if test -d $i; then
     files="$files
-"`find $i \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,]'`
+"`find $i \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
   else
     files="$files
 $i"
   fi
 done
 files=`echo "$files" | sort | uniq | grep .`
+
+# die if no files
+if test -z "$files"; then
+  echo "no files found" 1>&2
+  exit 1
+fi
 
 # find a good version of awk
 if test -x /usr/bin/gawk; then
