@@ -297,6 +297,7 @@ close TMP;
 
 # 8. create doc.tar.gz
 mysystem("cp -r $WEBDIR/doc /tmp/%click-webdoc/click-doc-$VERSION");
+mysystem("rm -rf /tmp/%click-webdoc/click-doc-$VERSION/CVS");
 mysystem("cp $WEBDIR/_.gif /tmp/%click-webdoc/click-doc-$VERSION");
 mysystem("cp $WEBDIR/el_*.gif /tmp/%click-webdoc/click-doc-$VERSION");
 
