@@ -383,6 +383,7 @@ click_qsort_partition(void *base_v, size_t size, int left, int right,
     // so base[i] == pivot for all left <= i <= right
     split_left = left - 1;
     split_right = right + 1;
+    return 0;
 }
 
 static void
