@@ -108,7 +108,7 @@ DSDVRouteTable::DSDVRouteTable() :
   _last_triggered_update(0), 
   _hello_timer(static_hello_hook, this),
   _log_dump_timer(static_log_dump_hook, this),
-  _metric_type(MetricHopCount),
+  _metric_type(MetricEstTxCount),
   _est_type(EstByMeas),
   _frozen(false)
 {
@@ -195,7 +195,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("LOG element is not a GridGenericLogger");
 
   if (_gw_info == 0)
-    errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
+    //errh->warning("No GridGatewayInfo element specified, will not advertise as gateway");
   if (_link_stat == 0)
     errh->warning("LinkStat elements not specified, some metrics may not work");
 
@@ -1207,8 +1207,8 @@ DSDVRouteTable::print_rtes(Element *e, void *)
       + " next=" + f.next_hop_ip.s() 
       + " hops=" + String((int) f.num_hops()) 
       + " gw=" + (f.is_gateway ? "y" : "n")
+      + " metric=" + String(f.metric.val)
       + " seq=" + String(f.seq_no())
-      + " if=" + String((int) f.next_hop_interface)
       + "\n";
   }
   
