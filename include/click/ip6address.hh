@@ -89,10 +89,10 @@ inline bool
 IP6Address::matches_prefix(const IP6Address &addr, const IP6Address &mask) const
 {
   const unsigned *xi = data32(), *ai = addr.data32(), *mi = mask.data32();
-  return ((xi[0] & mi[0]) == (ai[0] & mi[0]) && 
-	  (xi[1] & mi[1]) == (ai[1] & mi[1]) &&
-	  (xi[2] & mi[2]) == (ai[2] & mi[2]) && 
-	  (xi[3] & mi[3]) == (ai[3] & mi[3]));
+  return ((xi[0] ^ ai[0]) & mi[0]) == 0
+    && ((xi[1] ^ ai[1]) & mi[1]) == 0
+    && ((xi[2] ^ ai[2]) & mi[2]) == 0
+    && ((xi[3] ^ ai[3]) & mi[3]) == 0;
 }
 
 inline bool
