@@ -106,9 +106,11 @@ IPFragmenter::fragment(Packet *p)
   const click_ip *ip = p->ip_header();
   assert(ip);
   
+  uint16_t replacement_id = random() & 0xffff;
   int hlen = ip->ip_hl << 2;
   int len = (_mtu - hlen) & ~7;
   int ipoff = ntohs(ip->ip_off);
+
   if ( ((ipoff & IP_DF) && _honor_df) || len < 8) {
     click_chatter("IPFragmenter(%d) DF %s %s len=%d",
                   _mtu,
@@ -142,6 +144,10 @@ IPFragmenter::fragment(Packet *p)
     assert(off + p1datalen <= (int)p->length());
     memcpy(p1->data() + h1len, p->data() + off, p1datalen);
     
+    // if we're cheating the DF bit, we can't trust the ip_id. Set to a random.
+    if ((ipoff & IP_DF) && (!_honor_df))
+      ip1->ip_id = replacement_id;
+
     ip1->ip_hl = h1len >> 2;
     ip1->ip_off = ((off - hlen) >> 3) + (ipoff & IP_OFFMASK);
     if(ipoff & IP_MF)
@@ -167,6 +173,11 @@ IPFragmenter::fragment(Packet *p)
   click_ip *qip = reinterpret_cast<click_ip *>(q->data());
   qip->ip_len = htons(hlen + len);
   qip->ip_off = htons(ipoff | IP_MF);
+
+  // if we're cheating the DF bit, we can't trust the ip_id. Set to a random.
+  if ((ipoff & IP_DF) && (!_honor_df))
+    qip->ip_id = replacement_id;
+  
   qip->ip_sum = 0;
   qip->ip_sum = click_in_cksum(reinterpret_cast<unsigned char *>(qip), hlen);
   q->set_ip_header(qip, sizeof(click_ip)); // XXX correct headerlength?
