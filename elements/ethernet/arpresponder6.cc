@@ -1,5 +1,5 @@
 /*
- * arpresponder6.{cc,hh} -- element that responds to ARP queries
+ * arpresponder6.{cc,hh} -- element that responds to Neighborhood Solitation Msg
  * Peilei Fan
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -119,29 +119,36 @@ ARPResponder6::make_response(u_char dha[6],   /*  des eth address */
   memcpy(e->ether_shost, sha, 6);
   e->ether_type = htons(ETHERTYPE_IP6);
 
- 
   //set ip6 header
   ip6->ip6_v=6;
   ip6->ip6_pri=0;
   ip6->ip6_flow[0]=0;
   ip6->ip6_flow[1]=0;
   ip6->ip6_flow[2]=0;
-  ip6->ip6_plen=0x18;
-  ip6->ip6_nxt=0x3a;
-  ip6->ip6_hlim=0xff;
+  ip6->ip6_plen=htons(sizeof(click_arp6resp));
+  ip6->ip6_nxt=0x3a; //i.e. protocal: icmp6 message
+  ip6->ip6_hlim=0xff; //indicate no router has processed it
   ip6->ip6_src = IP6Address(spa);
   ip6->ip6_dst = IP6Address(dpa);
 
  
   //set Neighborhood Solicitation Validation Message
-  ea->type = 0x88;
+  ea->type = 0x88; 
   ea->code =0;
-  ea->checksum = 0; //temporarily set to "0", will come back later.
-  ea->sender_is_router = 1;
-  ea->solicited =1;
-  ea->override = 0;
-  ea->reserved =0;
+ 
+  ea->flags = 0x40; //  this is the same as setting the following
+                    //  ea->sender_is_router = 0;
+                    //  ea->solicited =1;
+                    //  ea->override = 0;
+  
+  for (int i=0; i<3; i++) {
+    ea->reserved[i] = 0;
+  }
+  
   memcpy(ea->arp_tpa, tpa, 16);
+  ea->checksum = htons(in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, 0, (unsigned char *)(ip6+1), sizeof(click_arp6resp)));
+  
+  //click_chatter("set checksum of neigh adv messag as : %x", ntohs(ea->checksum));
   return q;
 }
 
@@ -180,9 +187,9 @@ ARPResponder6::simple_action(Packet *p)
    memcpy(&dpa, IP6Address(ip6->ip6_src).data(), 16);
    IP6Address ipa = IP6Address(tpa);
 
-   click_chatter("delivered checksum here is %x", ea->checksum);
-   unsigned short int csum2 = in6_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, 0x3a, 0, (unsigned char *)(ip6+1), sizeof(click_arp6req));
-   click_chatter("calculated checksum here is %x", csum2);
+   //check see if the packet is corrupted by recalculate its checksum
+   unsigned short int csum2 = in6_fast_cksum(&ip6->ip6_src, &ip6->ip6_dst, ip6->ip6_plen, ip6->ip6_nxt, ea->checksum, (unsigned char *)(ip6+1), sizeof(click_arp6req));
+   //click_chatter(" recalculated its checksum is %x", csum2);
 
    Packet *q = 0;
 
@@ -190,15 +197,20 @@ ARPResponder6::simple_action(Packet *p)
       ntohs(e->ether_type) == ETHERTYPE_IP6 &&
       ip6->ip6_hlim ==0xff &&
       ea->type == NEIGH_SOLI &&
-      ea->code == 0)  
+      ea->code == 0 &&
+      csum2 == ntohs(ea->checksum))    
     {
       EtherAddress ena;
-      if(lookup(ipa, ena)){
-	memcpy(&spa, ipa.data(), 16); 
-	//use the finded ip6address as its source ip6 address in the header in neighborhood advertisement message packet
-	q = make_response( e->ether_shost,  e->ether_dhost, dpa, spa, tpa);
-       }
-    } else {
+      if(lookup(ipa, ena)) 
+	{
+	  memcpy(&spa, ipa.data(), 16); 
+	  //use the finded ip6address as its source ip6 address in the header in neighborhood advertisement message packet
+	  q = make_response( e->ether_shost,  e->ether_dhost, dpa, spa, tpa);
+	}
+    } 
+  
+  else 
+    {
       click_in6_addr ina;
       memcpy(&ina, &ea->arp_tpa, 16);
     }
