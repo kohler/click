@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#! /usr/bin/perl -w
 use Symbol 'qualify_to_ref';
 no locale;
 use bytes;

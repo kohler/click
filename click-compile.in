@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 
 # click-compile.in -- script compiles Click elements
 # Eddie Kohler

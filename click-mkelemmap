@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#! /usr/bin/perl -w
 
 # click-mkelemmap -- make map of element name to C++ class and file
 # Eddie Kohler

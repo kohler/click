@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#! /usr/bin/perl -w
 
 sub mysystem ($) {
   my($sys) = @_;

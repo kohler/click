@@ -1,4 +1,4 @@
-#!/usr/bin/perl -w
+#! /usr/bin/perl -w
 
 # massage-vnode_if.pl -- massages vnode_if.pl to make it C++ friendly
 # Eddie Kohler

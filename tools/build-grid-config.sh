@@ -1,4 +1,4 @@
-#!/bin/sh
+#! /bin/sh
 
 # Build a Grid Click configuration file with appropriate parameters
 # for each network device.
