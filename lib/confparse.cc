@@ -917,6 +917,22 @@ cp_ip_prefix(const String &str, IPAddress &address, IPAddress &mask,
 		      allow_bare_address  CP_PASS_CONTEXT);
 }
 
+bool
+cp_ip_prefix(const String &str, unsigned char *address, unsigned char *mask
+	     CP_CONTEXT_ARG)
+{
+  return cp_ip_prefix(str, address, mask,
+		      false  CP_PASS_CONTEXT);
+}
+
+bool
+cp_ip_prefix(const String &str, IPAddress &address, IPAddress &mask
+	     CP_CONTEXT_ARG)
+{
+  return cp_ip_prefix(str, address.data(), mask.data(),
+		      false  CP_PASS_CONTEXT);
+}
+
 
 static bool
 bad_ip6_address(const String &str, unsigned char *return_value
@@ -1084,6 +1100,31 @@ cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask,
   if (cp_ip6_prefix(str, address, &bits, allow_bare_address  CP_PASS_CONTEXT)) {
     IP6Address m = IP6Address::make_prefix(bits);
     memcpy(mask, m.data(), 16);
+    return true;
+  } else
+    return false;
+}
+
+bool
+cp_ip6_prefix(const String &str, unsigned char *address, unsigned char *mask
+	      CP_CONTEXT_ARG)
+{
+  int bits;
+  if (cp_ip6_prefix(str, address, &bits, false  CP_PASS_CONTEXT)) {
+    IP6Address m = IP6Address::make_prefix(bits);
+    memcpy(mask, m.data(), 16);
+    return true;
+  } else
+    return false;
+}
+
+bool
+cp_ip6_prefix(const String &str, IP6Address &address, IP6Address &mask
+	      CP_CONTEXT_ARG)
+{
+  int bits;
+  if (cp_ip6_prefix(str, address.data(), &bits, false  CP_PASS_CONTEXT)) {
+    mask = IP6Address::make_prefix(bits);
     return true;
   } else
     return false;

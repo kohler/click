@@ -51,15 +51,19 @@ bool cp_string(const String &, String *, String *rest = 0);
 class IPAddress;
 bool cp_ip_address(const String &, unsigned char *  CP_CONTEXT);
 bool cp_ip_address(const String &, IPAddress &  CP_CONTEXT);
-bool cp_ip_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address = false  CP_CONTEXT);
-bool cp_ip_prefix(const String &, IPAddress &, IPAddress &, bool allow_bare_address = false  CP_CONTEXT);
+bool cp_ip_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address  CP_CONTEXT);
+bool cp_ip_prefix(const String &, IPAddress &, IPAddress &, bool allow_bare_address  CP_CONTEXT);
+bool cp_ip_prefix(const String &, unsigned char *, unsigned char *  CP_CONTEXT);
+bool cp_ip_prefix(const String &, IPAddress &, IPAddress &  CP_CONTEXT);
 
 class IP6Address;
 bool cp_ip6_address(const String &, unsigned char *  CP_CONTEXT);
 bool cp_ip6_address(const String &, IP6Address &  CP_CONTEXT);
-bool cp_ip6_prefix(const String &, unsigned char *, int *, bool allow_bare_address = false  CP_CONTEXT);
-bool cp_ip6_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address = false  CP_CONTEXT);
-bool cp_ip6_prefix(const String &, IPAddress &, IP6Address &, bool allow_bare_address = false  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, unsigned char *, int *, bool allow_bare_address  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, unsigned char *, unsigned char *, bool allow_bare_address  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, IPAddress &, IP6Address &, bool allow_bare_address  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, unsigned char *, unsigned char *  CP_CONTEXT);
+bool cp_ip6_prefix(const String &, IPAddress &, IP6Address &  CP_CONTEXT);
 
 class EtherAddress;
 bool cp_ethernet_address(const String &, unsigned char *  CP_CONTEXT);
