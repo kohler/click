@@ -1,5 +1,5 @@
 .\" -*- mode: nroff -*-
-.ds V 1.0.5
+.ds V 1.3
 .ds D 27/Apr/2000
 .ds E " \-\- 
 .if t .ds E \(em
@@ -43,23 +43,58 @@ It can steal packets from network devices before Linux gets a chance to
 handle them, send packets directly to devices, and send packets to Linux
 for normal processing.
 .PP
-Install the kernel module with
-.M insmod 1 :
-`/sbin/insmod click.o'. Remove it with
-.M rmmod 1 :
-`/sbin/rmmod click'. The
+You should generally use
 .M click-install 1
-program will also install the kernel module if necessary.
+to load the Click kernel module, rather than doing it manually.
+Nevertheless, the manual loading steps are as follows. (These steps apply
+to a Click compiled with --enable-clickfs, which is the default as of
+version 1.3.)
+.TP 3
+1.
+Load the
+.B proclikefs
+module with
+.M insmod 8 :
+"/sbin/insmod proclikefs.o". This module takes charge of the Click
+filesystem, allowing you to safely unload the Click module even if
+user-level programs have Click control files open. 
+.TP
+2.
+Load the
+.B click
+module with
+.BR insmod :
+"/sbin/insmod click.o".
+.TP
+3.
+Mount the Click filesystem on a directory, DIR, using
+.M mount 8 :
+"mount -t click none DIR".
+.B Click-install
+will mount the filesystem on /click. For compatibility, the Click kernel
+module adds a symbolic link from /proc/click to /click.
+.TP
+4.
+Install a configuration by writing it to /click/config:
+"cat CONFIGFILE /click/config", for example.
 .PP
-The module uses the /proc filesystem
-.RM ( proc 5 )
-for its API. It creates a number of files under /proc/click, some read-only
-and some read/write (writable by the superuser). You control the module by
-writing to these files.
+Use
+.M click-uninstall 1
+to remove the Click module, or try
+.M rmmod 8 :
+"/sbin/rmmod click".
 .PP
-Install a router configuration by writing it to /proc/click/config or
-/proc/click/hotconfig. The configuration can use most of Click's element
-classes (see
+The module creates a filesystem similar to the /proc filesystem
+.RM "(see " proc 5 )
+for its API. It creates a number of files under /click (or wherever you
+have mounted the filesystem), some read-only and some read/write (writable
+by the superuser). You control the module by writing to these files, which
+are called
+.IR handlers .
+.PP
+Install a router configuration by writing it to /click/config or
+/click/hotconfig. The configuration can use most of Click's element classes
+(see
 .M elements n ).
 Several element classes control how the module receives and transmits
 packets:
@@ -69,14 +104,14 @@ and
 steal packets from devices before Linux processes them,
 .M ToDevice n
 sends packets directly to devices, and
-.M ToLinux n
+.M ToHost n
 sends packets to Linux for normal processing. Removing the module or
 installing a null configuration will restore your machine's default
 networking behavior.
 .PP
-The files under /proc/click include:
+The handlers under /click include:
 .TP 5
-.B /proc/click/config
+.B /click/config
 Read/write. Contains a Click-language description (see
 .M click 5 )
 of the most recent router configuration, not including any run-time
@@ -84,121 +119,146 @@ reconfiguration. Write a Click-language router description to this file to
 install a new router configuration.
 '
 .TP
-.B /proc/click/hotconfig
+.B /click/hotconfig
 Write-only. Write a Click-language router description to this file to
 hot-swap install a new router configuration. The new router is installed
 only if it initializes correctly; otherwise, error messages will be
-reported to /proc/click/errors, but the old router will keep working
+reported to /click/errors, but the old router will keep working
 without interruption. If the new router initializes successfully, state
 from the old router, such as any packets stored in
 .M Queue n
 elements, will be moved into the new router before it is installed. This
 happens on a per-element basis, and it only works if the new element and
 the old element have the same name. This behavior differs from
-/proc/click/config, which always throws away the old router.
+/click/config, which always throws away the old router.
 '
 .TP
-.B /proc/click/errors
+.B /click/errors
 Read-only. All errors and messages reported by the Click router since the
-last reconfiguration (that is, the last write to /proc/click/config). These
-messages are also printed to the system log.
+last reconfiguration (that is, the last write to /click/config or
+/click/hotconfig). Such messages are also printed to the system log.
 '
 .TP
-.B /proc/click/classes
+.B /click/classes
 Read-only. The primitive element classes supported by the router, listed
 one per line.
 '
 .TP
-.B /proc/click/list
-Read-only. The elements in the current router configuration, listed one per
-line by name. The first line is an integer: the number of elements.
+.B /click/list
+Read-only. The names of the elements in the current router configuration,
+listed one per line. The first line is an integer: the number of elements.
 '
 .TP
-.B /proc/click/flatconfig
+.B /click/flatconfig
 Read-only. A Click-language description of the current router
 configuration, including the effects of any run-time reconfiguration. All
 element declarations come first, then all connections. Compound elements
 are expanded into their primitive components.
 '
 .TP
-.B /proc/click/packages
+.B /click/packages
 Read-only. The packages that are currently linked to the Click module,
 listed one per line.
 '
 .TP
-.B /proc/click/requirements
+.B /click/requirements
 Read-only. The packages required by the current configuration, listed one
 per line.
 '
 .TP
-.B /proc/click/cycles, /proc/click/meminfo
+.B /click/cycles, /click/meminfo
 Read-only. Cycle count and memory usage statistics.
 '
 .TP
-.B /proc/click/threads
+.B /click/threads
 Read-only. The PIDs of any currently running Click kernel threads, listed
 one per line.
 '
 .TP
-.B /proc/click/priority
+.B /click/priority
 Read/write. The CPU priority for Click kernel threads. Lower values have
 higher priority.
 '
 .TP
-.B /proc/click/version
+.B /click/version
 Read-only. The kernel module's version number.
+'
+.PP
+When compiled with --enable-adaptive, Click provides three additional
+handlers:
+'
+.TP
+.B /click/min_cpu_share
+Read/write. The minimum fraction of CPU time Click will use, even if it has
+no work to do. Expressed as a real number between 0.001 and 0.999. Default
+is 0.005. Raising this number will help Click in polling mode respond more
+quickly to network events.
+'
+.TP
+.B /click/max_cpu_share
+Read/write. The maximum fraction of CPU time Click will use, no matter how
+much work it has to do. Expressed as a real number between 0.001 and 0.999.
+Default is 0.8. Lowering this number will help user-level programs make
+progress, even under high network load.
+'
+.TP
+.B /click/cpu_share
+Read-only. The fraction of CPU time Click is currently using, expressed as
+a real number between 0 and 1.
 '
 .SS "Element directories"
 '
 Every element in the current router configuration has a directory under
-/proc/click. You can access the directory by number or element name. The
+/click. You can access the directory by number or element name. The
 .IR i th
-element in /proc/click/list has directory
-.RI `/proc/click/ i ',
+element in /click/list has directory
+.RI `/click/ i ',
 and if the element is named
 .IR n ,
 that directory can be accessed as
-.RI `/proc/click/ n '.
+.RI `/click/ n '.
 This works even if the name contains slashes 
 .RB ( click.o
-creates directories for each name component).
+creates directories for each name component). However, if an element name
+conflicts with a handler name, the handler is preferred. Thus, if you call
+an element "config", you will be able to access that element's handlers
+only via its number directory.
 .PP
-The files in these directories are called
-.IR handlers .
-They include:
+Handlers in these element directories include:
 '
 .TP 5
-.BI /proc/click/xxx/class
-Read-only. The element class.
+.BI /click/xxx/class
+Read-only. The element's class.
 .TP
-.BI /proc/click/xxx/name
+.BI /click/xxx/name
 Read-only. The element's name.
 .TP
-.BI /proc/click/xxx/config
+.BI /click/xxx/config
 Read/write if the element supports run-time reconfiguration; otherwise
 read-only. The element's current configuration. Writing to this file (if it
 is writable) causes the element to reconfigure itself on the fly. If the
 reconfiguration fails, the element's old configuration is used instead.
 .TP
-.BI /proc/click/xxx/ports
+.BI /click/xxx/ports
 Read-only. Describes the element's input and output ports: how many there
 are, their processing type, and (for pull inputs and push outputs) what
 they are connected to.
 .TP
-.BI /proc/click/xxx/handlers
+.BI /click/xxx/handlers
 Read-only. Lists the element's handlers, one per line. Each line has the
 handler name and, after a tab, a permissions word. The permissions word is
 currently "r" (read-only), "w" (write-only), or "rw" (read/write).
 '
 .PP
-Elements which are also tasks have at least two additional handlers:
+Elements that have associated tasks often provide these two additional
+handlers:
 '
 .TP 5
-.BI /proc/click/xxx/scheduled
+.BI /click/xxx/scheduled
 Read-only. A Boolean value: "true" if the element is currently on the task
 list, "false" if it is not.
 .TP
-.BI /proc/click/xxx/tickets
+.BI /click/xxx/tickets
 Read-only. Returns the element's tickets, an integer that influences task
 scheduling priority. The more tickets a task has, the more often it will be
 scheduled relative to other tasks.
@@ -229,6 +289,7 @@ before installing it.
 .M click 1 ,
 .M click-align 1 ,
 .M click-install 1 ,
+.M click-uninstall 1 ,
 .M insmod 1 ,
 .M rmmod 1 ,
 .M click 5 ,
@@ -236,13 +297,13 @@ before installing it.
 .M FromDevice n ,
 .M PollDevice n ,
 .M ToDevice n ,
-.M FromLinux n ,
-.M ToLinux n ,
+.M FromHost n ,
+.M ToHost n ,
 .M Queue n
 '
 .SH AUTHOR
 .na
-Eddie Kohler, eddietwo@lcs.mit.edu
+Eddie Kohler, kohler@icir.org
 .br
 Robert Morris, rtm@lcs.mit.edu
 .br
