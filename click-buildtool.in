@@ -190,8 +190,8 @@ $bad_files"
   '"$comment"'
 }
 /EXPORT/ {
-  sub(/EXPORT_ELEMENT\(/, "", $2);
-  sub(/\)/, "", $2);
+  sub(/.*EXPORT_ELEMENT\(/, "", $2);
+  sub(/\).*/, "", $2);
   if (exports[$1] != "") {
     exports[$1] = exports[$1] " " $2
   } else {
@@ -206,8 +206,8 @@ $bad_files"
   next;
 }
 /HEADER/ {
-  sub(/ELEMENT_HEADER\(/, "", $2)
-  sub(/\)/, "", $2)
+  sub(/.*ELEMENT_HEADER\(/, "", $2)
+  sub(/\).*/, "", $2)
   header[$1] = $2
   next;
 }
