@@ -1,3 +1,15 @@
+2004-12-07 Tuesday 03:33  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/autoratefallback.cc (1.14),
+	elements/wifi/autoratefallback.hh (1.10), elements/wifi/filtertx.cc
+	(1.3), elements/wifi/madwifirate.cc (1.14),
+	elements/wifi/madwifirate.hh (1.6), elements/wifi/phyerrfilter.cc
+	(1.6), elements/wifi/printtxfeedback.cc (1.2),
+	elements/wifi/probetxrate.cc (1.16), elements/wifi/probetxrate.hh
+	(1.14), elements/wifi/txflog.cc (1.1), elements/wifi/txflog.hh
+	(1.1), include/clicknet/wifi.h (1.17), elements/wifi/sr/ettstat.cc
+	(1.16): more fixes for rate control so I can write my thesis.
+
 2004-12-07 Tuesday 01:13  John Bicket <jbicket@mit.edu>
 
 	* elements/userlevel/todevice.cc (1.44): backoff for usecs, not
