@@ -19,6 +19,7 @@
 #include "confparse.hh"
 #include "clp.h"
 #include "toolutils.hh"
+#include "adjacency.hh"
 #include <stdio.h>
 #include <ctype.h>
 
@@ -28,7 +29,9 @@ bool match_config(const String &, const String &, HashMap<String, String> &);
 class Matcher {
 
   RouterT *_pat;
+  AdjacencyMatrix *_pat_m;
   RouterT *_body;
+  AdjacencyMatrix *_body_m;
   int _patid;
 
   int _pat_input_idx;
@@ -45,7 +48,7 @@ class Matcher {
 
  public:
 
-  Matcher(RouterT *, RouterT *, int, ErrorHandler *);
+  Matcher(RouterT *, AdjacencyMatrix *, RouterT *, AdjacencyMatrix *, int, ErrorHandler *);
   ~Matcher();
 
   bool check_into(const Hookup &, const Hookup &);
@@ -60,8 +63,10 @@ class Matcher {
 };
 
 
-Matcher::Matcher(RouterT *pat, RouterT *body, int patid, ErrorHandler *errh)
-  : _pat(pat), _body(body), _patid(patid),
+Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
+		 RouterT *body, AdjacencyMatrix *body_m,
+		 int patid, ErrorHandler *errh)
+  : _pat(pat), _pat_m(pat_m), _body(body), _body_m(body_m), _patid(patid),
     _pat_input_idx(-1), _pat_output_idx(-1)
 {
   _pat->use();
@@ -224,7 +229,12 @@ Matcher::check_match()
 bool
 Matcher::next_match()
 {
-  while (_body->next_connection_match(_pat, _match)) {
+  //  while (_body->next_connection_match(_pat, _match)) {
+  //    if (check_match())
+  //      return true;
+  //  }
+  while (_pat_m->next_subgraph_isomorphism(_body_m, _match)
+	 && check_subgraph_isomorphism(_pat, _body, _match)) {
     if (check_match())
       return true;
   }
@@ -530,19 +540,40 @@ particular purpose.\n");
 
   if (!patterns_attempted)
     errh->warning("no patterns read");
+
+  // unify pattern types
+  for (int i = 1; i < patterns.size(); i++)
+    patterns[0]->get_types_from(patterns[i]);
+  patterns[0]->get_types_from(r);
+  for (int i = 1; i < patterns.size(); i++)
+    patterns[i]->unify_type_indexes(patterns[0]);
+  r->unify_type_indexes(patterns[0]);
   
   // clear r's flags, so we know the current element complement
   // didn't come from replacements (paranoia)
   for (int i = 0; i < r->nelements(); i++)
     r->element(i).flags = 0;
+
+  // get stats
+  int input_size, patterns_size = 0, nreplace = 0;
+  input_size = r->nelements() - 2;
+  for (int i = 0; i < patterns.size(); i++)
+    patterns_size += patterns[i]->nelements() - 1;
+
+  // get adjacency matrices
+  Vector<AdjacencyMatrix *> patterns_adj;
+  for (int i = 0; i < patterns.size(); i++)
+    patterns_adj.push_back(new AdjacencyMatrix(patterns[i]));
   
   bool any = true;
   while (any) {
     any = false;
+    AdjacencyMatrix matrix(r);
     for (int i = 0; i < patterns.size(); i++) {
-      Matcher m(patterns[i], r, i + 1, errh);
+      Matcher m(patterns[i], patterns_adj[i], r, &matrix, i + 1, errh);
       if (m.next_match()) {
 	m.replace(replacements[i], pat_names[i], String(), errh);
+	nreplace++;
 	any = true;
 	break;
       }
@@ -553,8 +584,8 @@ particular purpose.\n");
   if (write_router_file(r, output_file, errh) < 0)
     exit(1);
   {
-    extern int nelement_match, nconnection_match, nexcl_connection_match;
-    printf("// %d %d %d\n", nelement_match, nconnection_match, nexcl_connection_match);
+    extern int ntry_match, nelement_match, nconnection_match;
+    printf("// %d %d %d %d %d %d\n", input_size, patterns_size, ntry_match, nelement_match, nconnection_match, nreplace);
   }
   return 0;
 }
