@@ -124,6 +124,10 @@ class FromIPSummaryDump : public Element { public:
 	W_PAYLOAD_LENGTH, W_COUNT, W_FRAG, W_FRAGOFF,
 	W_LAST
     };
+    static int parse_content(const String &);
+    static const char *unparse_content(int);
+
+    static const char * const tcp_flags_word = "FSRPAUXY";
 
   private:
 

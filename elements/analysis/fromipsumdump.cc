@@ -18,7 +18,6 @@
 #include <click/config.h>
 
 #include "fromipsumdump.hh"
-#include "toipsumdump.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -41,7 +40,7 @@ FromIPSummaryDump::FromIPSummaryDump()
 {
     MOD_INC_USE_COUNT;
     if (!flag_mapping[(uint8_t)'A']) {
-	const char *x = ToIPSummaryDump::tcp_flags_word;
+	const char *x = tcp_flags_word;
 	for (int i = 0; *x; x++, i++)
 	    flag_mapping[(uint8_t)(*x)] = i + 1;
     }
@@ -242,7 +241,7 @@ FromIPSummaryDump::bang_data(const String &line, ErrorHandler *errh)
     uint32_t all_contents = 0;
     for (int i = 1; i < words.size(); i++) {
 	String word = cp_unquote(words[i]);
-	int what = ToIPSummaryDump::parse_content(word);
+	int what = parse_content(word);
 	if (what > W_NONE && what < W_LAST) {
 	    _contents.push_back(what);
 	    all_contents |= (1 << (what - W_NONE - 1));
@@ -589,5 +588,63 @@ FromIPSummaryDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel ToIPSummaryDump)
+
+static const char *content_names[] = {
+    "??", "timestamp", "ts sec", "ts usec",
+    "ip src", "ip dst", "ip len", "ip proto", "ip id",
+    "sport", "dport", "tcp seq", "tcp ack", "tcp flags",
+    "payload len", "count", "ip frag", "ip fragoff"
+};
+
+const char *
+FromIPSummaryDump::unparse_content(int what)
+{
+    if (what < 0 || what >= (int)(sizeof(content_names) / sizeof(content_names[0])))
+	return "??";
+    else
+	return content_names[what];
+}
+
+int
+FromIPSummaryDump::parse_content(const String &word)
+{
+    if (word == "timestamp" || word == "ts")
+	return W_TIMESTAMP;
+    else if (word == "sec" || word == "ts sec")
+	return W_TIMESTAMP_SEC;
+    else if (word == "usec" || word == "ts usec")
+	return W_TIMESTAMP_USEC;
+    else if (word == "src" || word == "ip src")
+	return W_SRC;
+    else if (word == "dst" || word == "ip dst")
+	return W_DST;
+    else if (word == "sport")
+	return W_SPORT;
+    else if (word == "dport")
+	return W_DPORT;
+    else if (word == "frag" || word == "ip frag")
+	return W_FRAG;
+    else if (word == "fragoff" || word == "ip fragoff")
+	return W_FRAGOFF;
+    else if (word == "len" || word == "length" || word == "ip len")
+	return W_LENGTH;
+    else if (word == "id" || word == "ip id")
+	return W_IPID;
+    else if (word == "proto" || word == "ip proto")
+	return W_PROTO;
+    else if (word == "tcp seq" || word == "tcp seqno")
+	return W_TCP_SEQ;
+    else if (word == "tcp ack" || word == "tcp ackno")
+	return W_TCP_ACK;
+    else if (word == "tcp flags")
+	return W_TCP_FLAGS;
+    else if (word == "payload len" || word == "payload length")
+	return W_PAYLOAD_LENGTH;
+    else if (word == "count" || word == "pkt count" || word == "packet count")
+	return W_COUNT;
+    else
+	return W_NONE;
+}
+
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(FromIPSummaryDump)
