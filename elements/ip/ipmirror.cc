@@ -44,7 +44,7 @@ IPMirror::simple_action(Packet *p_in)
   iph->ip_dst = tmpa;
   
   // may mirror ports as well
-  if ((iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP) && IP_FIRSTFRAG(iph) && p->length() >= p->transport_header_offset() + 8) {
+  if ((iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP) && IP_FIRSTFRAG(iph) && (int)p->length() >= p->transport_header_offset() + 8) {
     click_udp *udph = p->udp_header();
     unsigned short tmpp = udph->uh_sport;
     udph->uh_sport = udph->uh_dport;
