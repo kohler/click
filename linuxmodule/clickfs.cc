@@ -16,9 +16,13 @@
  * legally binding.
  */
 
+#define USE_PROCLIKEFS 1
+
 #include <click/config.h>
 #include "modulepriv.hh"
-#include "proclikefs.h"
+#if USE_PROCLIKEFS
+# include "proclikefs.h"
+#endif
 
 #include <click/router.hh>
 #include <click/error.hh>
@@ -38,7 +42,11 @@ static struct inode_operations click_dir_inode_ops;
 static struct file_operations click_handler_file_ops;
 static struct inode_operations click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
+#if USE_PROCLIKEFS
 static struct proclikefs_file_system *clickfs;
+#else
+static struct file_system_type *clickfs;
+#endif
 
 static spinlock_t config_write_lock;
 static atomic_t config_read_count;
@@ -87,7 +95,9 @@ unlock_config_write()
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
 
 struct ClickInodeInfo {
+#if USE_PROCLIKEFS
     struct proclikefs_inode_info padding;
+#endif
     uint32_t config_generation;
 };
 
@@ -111,7 +121,7 @@ click_inode(struct super_block *sb, ino_t ino)
     if (click_ino.prepare(click_router, click_config_generation) < 0)
 	return 0;
     
-    //MDEBUG("i_get");
+    MDEBUG("i_get");
     struct inode *inode = iget(sb, ino);
     if (!inode)
 	return 0;
@@ -145,7 +155,7 @@ click_inode(struct super_block *sb, ino_t ino)
 	inode->i_nlink = click_ino.nlink(ino);
     }
 
-    //MDEBUG("leaving click_inode");
+    MDEBUG("leaving click_inode");
     return inode;
 }
 
@@ -299,7 +309,9 @@ click_read_inode(struct inode *inode)
 #endif
 
     // Why don't we fill out the inode more completely? This is weird.
+#if USE_PROCLIKEFS
     proclikefs_read_inode(inode);
+#endif
 }
 
 #ifdef LINUX_2_2
@@ -320,16 +332,16 @@ click_put_inode(struct inode *inode)
 static struct super_block *
 click_read_super(struct super_block *sb, void * /* data */, int)
 {
-    //MDEBUG("click_read_super");
+    MDEBUG("click_read_super");
     sb->s_blocksize = 1024;
     sb->s_blocksize_bits = 10;
     //sb->s_magic = PROC_SUPER_MAGIC;
     sb->s_op = &click_superblock_ops;
-    //MDEBUG("click_config_lock");
+    MDEBUG("click_config_lock");
     lock_config_read();
     struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
     unlock_config_read();
-    //MDEBUG("got root inode %p", root_inode);
+    MDEBUG("got root inode %p", root_inode);
     if (!root_inode)
 	goto out_no_root;
 #ifdef LINUX_2_4
@@ -341,9 +353,11 @@ click_read_super(struct super_block *sb, void * /* data */, int)
 	goto out_no_root;
     // XXX options
 
-    //MDEBUG("got root directory");
+    MDEBUG("got root directory");
+#if USE_PROCLIKEFS
     proclikefs_read_super(sb);
-    //MDEBUG("done click_read_super");
+#endif
+    MDEBUG("done click_read_super");
     return sb;
 
   out_no_root:
@@ -730,8 +744,10 @@ init_clickfs()
     click_superblock_ops.write_inode = click_write_inode;
     click_superblock_ops.put_inode = click_put_inode;
 #endif
+#if USE_PROCLIKEFS
     click_superblock_ops.delete_inode = proclikefs_delete_inode;
     click_superblock_ops.put_super = proclikefs_put_super;
+#endif
     // XXX statfs
 
     click_dentry_ops.d_delete = click_delete_dentry;
@@ -766,7 +782,22 @@ init_clickfs()
     atomic_set(&config_read_count, 0);
     click_ino.initialize();
 
+#if USE_PROCLIKEFS
     clickfs = proclikefs_register_filesystem("click", click_read_super, click_reread_super);
+#else
+    clickfs = new file_system_type;
+    clickfs->name = "click";
+    clickfs->next = 0;
+    clickfs->read_super = click_read_super;
+    clickfs->fs_flags = 0;
+    clickfs->owner = THIS_MODULE;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
+    INIT_LIST_HEAD(&clickfs->fs_supers);
+# endif
+    int err = register_filesystem(clickfs);
+    if (err < 0)
+	printk("<1>click: registering fs[%p]: error %d\n", clickfs, -err);
+#endif
     if (!clickfs) {
 	printk("<1>click: could not initialize clickfs!\n");
 	return -EINVAL;
@@ -792,7 +823,12 @@ cleanup_clickfs()
 #endif
 
     // kill filesystem
+#if USE_PROCLIKEFS
     proclikefs_unregister_filesystem(clickfs);
+#else
+    unregister_filesystem(clickfs);
+    delete clickfs;
+#endif
 
     // clean up handler_strings
     spin_lock(&handler_strings_lock);

@@ -24,7 +24,7 @@ CLICK_CXX_UNPROTECT
 # define LINUX_2_4 1
 #endif
 
-#if 0
+#if 1
 # define MDEBUG(args...) do { printk("<1>kclick: " args); printk("\n"); } while (0)
 #else
 # define MDEBUG(args...) /* nada */

@@ -29,7 +29,7 @@
 #include <linux/locks.h>
 #include <linux/file.h>
 
-#if 0
+#if 1
 # define DEBUG(args...) do { printk("<1>proclikefs: " args); printk("\n"); } while (0)
 #else
 # define DEBUG(args...) /* nada */
@@ -117,10 +117,13 @@ proclikefs_register_filesystem(const char *name,
     newfs->fs.fs_flags = 0;
     newfs->fs.read_super = read_super;
     newfs->live = 1;
+    DEBUG("pfs[%p]: created filesystem %s", newfs, name);
 
-    if (newfs_is_new)
-	register_filesystem(&newfs->fs); /* XXX check return value */
-    else if (reread_super) {
+    if (newfs_is_new) {
+	int err = register_filesystem(&newfs->fs);
+	if (err != 0)
+	    printk("<1>proclikefs error %d while initializing pfs[%p] (%s)\n", -err, newfs, name);
+    } else if (reread_super) {
 	/* transfer superblocks */
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 10)
 	struct list_head *p;
@@ -279,7 +282,7 @@ proclikefs_read_super(struct super_block *sb)
 {
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (sb->s_type);
     atomic_inc(&pfs->nsuper);
-    DEBUG("read_super for %s", pfs->fs.name);
+    DEBUG("pfs[%p]: read_super for %s", pfs, pfs->fs.name);
     MOD_INC_USE_COUNT;
 }
 
@@ -288,7 +291,7 @@ proclikefs_put_super(struct super_block *sb)
 {
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (sb->s_type);
     atomic_dec(&pfs->nsuper);
-    DEBUG("put_super for %s", pfs->fs.name);
+    DEBUG("pfs[%p]: put_super for %s", pfs, pfs->fs.name);
     MOD_DEC_USE_COUNT;
     spin_lock(&fslist_lock);
     if (!pfs->live && atomic_read(&pfs->nsuper) == 0) {
@@ -305,6 +308,7 @@ proclikefs_read_inode(struct inode *inode)
     struct proclikefs_file_system *pfs = (struct proclikefs_file_system *) (inode->i_sb->s_type);
     struct proclikefs_inode_info *inode_info = (struct proclikefs_inode_info *) (&inode->u);
 
+    DEBUG("pfs[%p]: add inode %p", pfs, inode);
     spin_lock(&pfs->lock);
     list_add(&inode_info->fsi_list, &pfs->i_list);
     spin_unlock(&pfs->lock);
