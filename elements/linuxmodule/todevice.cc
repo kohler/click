@@ -204,7 +204,19 @@ ToDevice::tx_intr()
     else break;
   }
 
-#if HAVE_POLLING
+#if 1 && HAVE_POLLING
+  // If Linux tried to send a packet, but saw tbusy, it will
+  // have left it on the queue. It'll just sit there forever
+  // (or until Linux sends another packet) unless we poke
+  // net_bh(), which calls qdisc_restart(). We are not allowed
+  // to call qdisc_restart() ourselves, outside of net_bh().
+  if(_polling && !busy && _dev->qdisc->q.qlen)
+    mark_bh(NET_BH);
+#endif
+
+#if 0 && HAVE_POLLING
+This code causes crashes in pfifo_fast_dequeue, because qdisc_restart()
+should only be called from net_bh().
   // only try to send from Linux if the device's queue is nonempty. This is
   // an optimistic check that we use to avoid the expensive spin_lock_irqsave
   // below.
