@@ -1,3 +1,7 @@
+2001-07-30 Monday 15:06  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* conf/ron/make-adapt-ron.pl (1.5): fixes to end loops
+
 2001-07-30 Monday 14:11  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/make-adapt-ron.pl (1.4): added checkipheader to update
