@@ -68,7 +68,7 @@ rpr :: GridProbeReplyReceiver(PROBE_CHANNEL);
 ai :: AiroInfo(GRID_NET_DEVICE);
 lt :: LinkTracker(2000);
 
-nb :: GridRouteTable(ROUTE_TIMEOUT,
+nb :: DSDVRouteTable(ROUTE_TIMEOUT,
 		     BROADCAST_PERIOD, BROADCAST_JITTER,
 		     GRID_MAC_ADDR, GRID_IP, 
 		     ggi, 
