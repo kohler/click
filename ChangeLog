@@ -1,3 +1,7 @@
+2005-04-05 Tuesday 21:37  John Bicket <jbicket@mit.edu>
+
+	* elements/userlevel/todevice.cc (1.50): bug caught by Chema.
+
 2005-04-01 Friday 11:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* aclocal.m4 (1.46), config-userlevel.h.in (1.26), configure
