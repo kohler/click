@@ -91,6 +91,7 @@ public:
     uint16_t rev;
     uint32_t ip;
     link_entry() : fwd(0), rev(0), ip(0) { }
+    link_entry(uint16_t __fwd, uint16_t __rev, IPAddress __ip) : fwd(__fwd), rev(__rev), ip(__ip.addr()) { }
   };
 
 private:

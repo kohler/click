@@ -115,9 +115,9 @@ SrcrStat::send_hook()
   p->pull(2);
   memset(p->data(), 0, p->length());
 
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  p->set_timestamp_anno(tv);
+  struct timeval now;
+  click_gettimeofday(&now);
+  p->set_timestamp_anno(now);
   
   // fill in ethernet header 
   click_ether *eh = (click_ether *) p->data();
@@ -128,19 +128,37 @@ SrcrStat::send_hook()
   // calculate number of entries
   unsigned min_packet_sz = sizeof(click_ether) + sizeof(struct link_probe);
   unsigned max_entries = (_probe_size - min_packet_sz) / sizeof(struct link_entry);
-  static bool size_warning = false;
-  if (!size_warning && max_entries < (unsigned) _bcast_stats.size()) {
-    size_warning = true;
-    click_chatter("SrcrStat %s: WARNING, probe packet is too small to contain all link stats", id().cc());
-  }
-  unsigned num_entries = max_entries < (unsigned) _bcast_stats.size() ? max_entries : _bcast_stats.size();
-
-
 
   if (_sent <= (_tau / _period)+1) {
     _sent++;
   }
 
+  Vector<link_entry> to_send;
+  for (ProbeMap::const_iterator i = _bcast_stats.begin(); i > 0; i++) {
+    probe_list_t val = i.value();
+    struct timeval old_entry_timeout;
+    struct timeval old_entry_expire;
+    old_entry_timeout.tv_sec = 30;
+    old_entry_timeout.tv_usec = 30;
+    timeradd(&val.last_rx, &old_entry_timeout, &old_entry_expire);
+    
+    if (timercmp(&now, &old_entry_expire, <)) {
+      to_send.push_back(link_entry(val.fwd, val.rev_rate(_start), val.ip));
+      
+    }
+  }
+
+
+  static bool size_warning = false;
+  if (!size_warning && max_entries < (unsigned) to_send.size()) {
+    size_warning = true;
+    click_chatter("SrcrStat %s: WARNING, probe packet is too small to contain all link stats", id().cc());
+  }
+
+
+
+
+  unsigned num_entries = max_entries < (unsigned) to_send.size() ? max_entries : to_send.size();
   link_probe *lp = (struct link_probe *) (p->data() + sizeof(click_ether));
   lp->ip = _ip.addr();
   lp->seq_no = _seq;
@@ -150,16 +168,14 @@ SrcrStat::send_hook()
   lp->num_links = num_entries;
 
   _seq++;
-   
-  link_entry *entry = (struct link_entry *)(lp+1); 
-  for (ProbeMap::const_iterator i = _bcast_stats.begin(); 
-       i && num_entries > 0; 
-       num_entries--, i++) {
-    probe_list_t val = i.value();
+  
 
-    entry->ip = val.ip.addr();
-    entry->fwd = val.fwd;
-    entry->rev = val.rev_rate(_start);
+
+  link_entry *entry = (struct link_entry *)(lp+1); 
+  for (unsigned x = 0; x < num_entries; x++) {
+    entry->ip = to_send[x].ip;
+    entry->fwd = to_send[x].fwd;
+    entry->rev = to_send[x].rev;
     entry = (entry+1);
   }
 
@@ -441,6 +457,7 @@ EXPORT_ELEMENT(SrcrStat)
 
 #include <click/bighashmap.cc>
 #include <click/dequeue.cc>
+#include <click/vector.cc>
 template class DEQueue<SrcrStat::probe_t>;
 template class BigHashMap<IPAddress, SrcrStat::probe_list_t>;
 CLICK_ENDDECLS
