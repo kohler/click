@@ -72,7 +72,7 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     else if (ect_str == "2")
       ect = 2;
     else
-      return errh->error("bad ECT value `%s'", ect_str.cc());
+      return errh->error("bad ECT value '%s'", ect_str.cc());
   }
   
   if (tos >= 0 && dscp >= 0)
@@ -107,7 +107,7 @@ IPEncap::configure(Vector<String> &conf, ErrorHandler *errh)
     if (!_aligned)
       errh->warning("IP header unaligned, cannot use fast IP checksum");
     if (!ans)
-      errh->message("(Try passing the configuration through `click-align'.)");
+      errh->message("(Try passing the configuration through 'click-align'.)");
   }
 #endif
   
