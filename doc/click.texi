@@ -4882,6 +4882,14 @@ like @code{reschedule} without the locking overhead.
 @deftypemethod Task void unschedule ()
 Unschedules the task by removing it from its task queue. Does nothing if
 if the task is currently unscheduled, or if it was never initialized.
+When this function returns, the task will not be scheduled.
+@end deftypemethod
+
+@deftypemethod Task void unschedule_soon ()
+Unschedules the task by removing it from its task queue. Does nothing if
+if the task is currently unscheduled, or if it was never initialized.
+This function may schedule a task request if it cannot immediately
+unschedule the task.
 @end deftypemethod
 
 @deftypemethod Task void reschedule ()
@@ -4889,13 +4897,13 @@ Reschedules the task by placing it on its task queue. If the task is
 already scheduled, then this method does nothing.
 @end deftypemethod
 
-Both @code{unschedule} and @code{reschedule} lock the task queue before
-manipulating it. This avoids corruption when there are multiple
-processors executing simultaneously. If these functions cannot lock a
-task queue---perhaps because it is being used on another
-processor---then they register a task request, which will be executed in
-the near future. This implies that a task may remain scheduled for some
-time after @code{unschedule} has been called, for example.
+All three functions lock the task queue before manipulating it. This
+avoids corruption when there are multiple processors executing
+simultaneously. If @code{unschedule_soon} or @code{reschedule} cannot
+immediately lock a task queue---perhaps because it is being used on
+another processor---then they register a task request, which will be
+executed in the near future. In contrast, the @code{unschedule} function
+will wait until it can lock the task queue.
 
 The @code{fast_reschedule} method avoids locking overhead in the common
 case that a task must be rescheduled from within its callback.
@@ -4912,6 +4920,22 @@ element has a task, @w{@code{_task}}, that calls the element's
 is called only by that task's callback, then that element's
 @code{run_scheduled} method should call @code{_task.fast_reschedule()}
 instead of @code{_task.reschedule()}.
+@end quotation
+@end deftypemethod
+
+The @code{fast_unschedule} method is to @code{unschedule} as
+@code{fast_reschedule} is to @code{reschedule}. It is rarely used,
+however, since tasks are automatically unscheduled before they are run.
+
+@deftypemethod Task void fast_unschedule ()
+Unschedules the task by removing it from its task queue. Does nothing if
+if the task is currently unscheduled, or if it was never initialized.
+This method avoids locking overhead, so it is faster than
+@code{unschedule}.
+
+@quotation
+@strong{Caution}: You may call a @code{Task}'s @code{fast_unschedule}
+method only from within its callback function.k
 @end quotation
 @end deftypemethod
 
@@ -4964,8 +4988,8 @@ The task is scheduled on the new task queue if and only if it was
 scheduled on the old task queue.
 @end deftypemethod
 
-Like @code{unschedule} and @code{reschedule}, @code{change_thread} must
-lock the task queue before manipulating it. (Unlike those methods,
+Like @code{unschedule_soon} and @code{reschedule}, @code{change_thread}
+must lock the task queue before manipulating it. (Unlike those methods,
 @code{change_thread} must lock two task queues, the old and the new.) If
 @code{change_thread} cannot lock a task queue, then it registers a task
 request that will be executed in the near future. This implies that a
