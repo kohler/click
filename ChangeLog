@@ -1,3 +1,9 @@
+2001-02-02 Friday 10:56  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/: ip6/ip6mirror.cc, ip6/ip6mirror.hh,
+	ip6/protocoltranslator64.cc, linuxmodule/fastudpsrcip6.cc: [no log
+	message]
+
 2001-02-02 Friday 00:00  Peilei Fan <peilei@lcs.mit.edu>
 
 	* elements/linuxmodule/: fastudpsrcip6.cc, fastudpsrcip6.hh,
