@@ -181,6 +181,10 @@ Preserve the temporary directory created for the test.
 .IX Item "-s, --show FILE"
 Echo the contents of \s-1FILE\s0 on completion. \s-1FILE\s0 should be one of the
 filenames specified by \f(CW%file\fR or \f(CW%expect\fR*, or 'stdout' or 'stderr'.
+.IP "\-e, \-\-expand" 8
+.IX Item "-e, --expand"
+Don't run the given test; instead, expand its files into the current
+directory.  The script is stored in a file called '+script+'.
 .SH "FILE FORMAT"
 .IX Header "FILE FORMAT"
 Testie test files consist of several sections, each introduced by a line
@@ -269,14 +273,14 @@ Same as '%expect stdout'.
 Same as '%expect stderr'.
 .IP "%ignore [\-d] [\-i] [+LENGTH] [\s-1FILENAME\s0]" 8
 .IX Item "%ignore [-d] [-i] [+LENGTH] [FILENAME]"
-Each line in the \f(CW%ignore\fR section is a Perl regular expression. Lines in the
-supplied \s-1FILENAME\s0 that match any of those regular expressions will not be
-considered when comparing files with \f(CW%expect\fR[x] data. \s-1FILENAME\s0 may be
-\&'all', in which case the regular expressions will apply to all \f(CW%expect\fR[x]
-files.
+Each line in the \f(CW%ignore\fR section is a Perl regular expression.  Lines in
+the supplied \s-1FILENAME\s0 that match any of those regular expressions will not
+be considered when comparing files with \f(CW%expect\fR[x] data.  The regular
+expression must match the whole line.  \s-1FILENAME\s0 may be 'all', in which case
+the regular expressions will apply to all \f(CW%expect\fR[x] files.
 .IP "%eot" 8
 .IX Item "%eot"
-Marks the end of the current test. The rest of the file will be parsed for
+Marks the end of the current test.  The rest of the file will be parsed for
 additional tests.
 .IP "%eof" 8
 .IX Item "%eof"

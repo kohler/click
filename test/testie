@@ -5,6 +5,7 @@ use bytes;
 require 5.006;
 
 ($attempts, $internal_errors, $errors, $require_errors) = (0, 0, 0, 0);
+($preserve_temporaries, $expand_mode) = (0, 0);
 
 ## utilities
 
@@ -399,19 +400,22 @@ sub script_text ($&$) {
     
     my($code) = eval("sub { my(\$t) = \@_; $subbody\$t; }");
 
-    my($t) = <<'EOD';
+    my($t) = '';
+    if (!$::expand_mode) {
+	$t .= <<'EOD;';
 testie_failed () {
     exitval=$?
     test $exitval = 0 || (echo; echo testie_failure:$exitval) >&2
     exit $exitval
 }
 trap testie_failed EXIT
-EOD
+EOD;
+    }
 
     my($scriptarr, $linenoarr) = ($tt->{$script_type}, $tt->{$script_type . "_lineno"});
     foreach my $i (0..$#{$tt->{$script_type}}) {
 	my($ln, $text) = ($linenoarr->[$i], $scriptarr->[$i]);
-	$t .= "echo >&2; echo testie_lineno:$ln >&2\n";
+	$t .= "echo >&2; echo testie_lineno:$ln >&2\n" if !$::expand_mode;
 	my(@c, @d);
 	_shell_split(@c, @d, $text, 0, $code);
 	die if @c != 1;
@@ -703,19 +707,26 @@ sub execute_test ($$$) {
 	$tt->{'errprefix'} = "  ";
     }
 
+    # note that we're running the test in verbose mode
+    if ($verbose == 1) {
+	print STDERR $tt->{'errprefix'}, "Running...\n";
+    }
+
     # check requirements
     if (exists $tt->{'require'}) {
 	open(SCR, ">$dir/+require+") || die "$dir/+require+: $!\n";
 	print SCR $tt->script_text(\&script_fn_to_fn, 'require');
 	close SCR;
-	
-	my($exitval) = _shell($dir, '+require+', '/dev/null', '/dev/null', script_fn_to_fn('stderr'));
 
-	# if it exited with a bad value, quit
-	if ($exitval) {
-	    return $tt->output_error(\&out_script_fn_to_fn, 'require', $verbose);
-	} elsif ($verbose) {
-	    print STDERR $tt->{'errprefix'}, "Requirements OK\n";
+	if (!$expand_mode) {
+	    my($exitval) = _shell($dir, '+require+', '/dev/null', '/dev/null', script_fn_to_fn('stderr'));
+
+	    # if it exited with a bad value, quit
+	    if ($exitval) {
+		return $tt->output_error(\&out_script_fn_to_fn, 'require', $verbose);
+	    } elsif ($verbose) {
+		print STDERR $tt->{'errprefix'}, "Requirements OK\n";
+	    }
 	}
     }
 
@@ -727,6 +738,9 @@ sub execute_test ($$$) {
     print SCR $tt->script_text(\&script_fn_to_fn, 'script');
     close SCR;
 
+    # exit if expand mode
+    return 0 if ($expand_mode);
+    
     # run the script
     my($actual_stdin) = ($tt->have_file('stdin') ? script_fn_to_fn('stdin') : "/dev/null");
     my($actual_stdout) = ($show_stdout || $tt->have_file('stdout') ? script_fn_to_fn('stdout') : "/dev/null");
@@ -806,7 +820,7 @@ sub run_test (;$$) {
 }
 
 $SIG{'INT'} = $SIG{'QUIT'} = $SIG{'TERM'} = $SIG{'__DIE__'} = sub {
-    system("/bin/rm -rf $dir 2>/dev/null");
+    system("/bin/rm -rf $dir 2>/dev/null") if !$preserve_temporaries;
     exit(1);
 };
 
@@ -889,7 +903,7 @@ sub search_dir ($$) {
 
 $dir = "/tmp/testie$$";
 
-my(@tests, $verbose, $preserve_temporaries, $arg);
+my(@tests, $verbose, $arg);
 $verbose = 0;
 
 while (@ARGV) {
@@ -910,6 +924,10 @@ while (@ARGV) {
 	$verbose = 1;
     } elsif (/^-VV$/ || argcmp($_, '--superverbose', 2)) {
 	$verbose = 2;
+    } elsif (/^-e$/ || argcmp($_, '--expand', 1)) {
+	$expand_mode = 1;
+	$preserve_temporaries = 1;
+	$dir = ".";
     } elsif (argcmp($_, '--help', 1)) {
 	help;
     } elsif (argcmp($_, '--preserve-temporaries', 1)) {
@@ -926,7 +944,7 @@ while (@ARGV) {
     }
 }
 
-if (-d $dir) {
+if (-d $dir && !$expand_mode) {
     print STDERR "warning: $dir directory exists; removing it\n";
     system("/bin/rm -rf $dir");
     -d $dir && die "cannot remove $dir directory: $!\n";
@@ -1018,6 +1036,11 @@ Preserve the temporary directory created for the test.
 
 Echo the contents of FILE on completion. FILE should be one of the
 filenames specified by %file or %expect*, or 'stdout' or 'stderr'.
+
+=item -e, --expand
+
+Don't run the given test; instead, expand its files into the current
+directory.  The script is stored in a file called '+script+'.
 
 =back
 
@@ -1122,15 +1145,15 @@ Same as '%expect stderr'.
 
 =item %ignore [-d] [-i] [+LENGTH] [FILENAME]
 
-Each line in the %ignore section is a Perl regular expression. Lines in the
-supplied FILENAME that match any of those regular expressions will not be
-considered when comparing files with %expect[x] data. FILENAME may be
-'all', in which case the regular expressions will apply to all %expect[x]
-files.
+Each line in the %ignore section is a Perl regular expression.  Lines in
+the supplied FILENAME that match any of those regular expressions will not
+be considered when comparing files with %expect[x] data.  The regular
+expression must match the whole line.  FILENAME may be 'all', in which case
+the regular expressions will apply to all %expect[x] files.
 
 =item %eot
 
-Marks the end of the current test. The rest of the file will be parsed for
+Marks the end of the current test.  The rest of the file will be parsed for
 additional tests.
 
 =item %eof
