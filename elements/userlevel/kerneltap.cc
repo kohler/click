@@ -63,32 +63,32 @@ KernelTap::~KernelTap()
 int
 KernelTap::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _gw = IPAddress();
-  _headroom = Packet::DEFAULT_HEADROOM;
-  _mtu_out = DEFAULT_MTU;
+    _gw = IPAddress();
+    _headroom = Packet::DEFAULT_HEADROOM;
+    _mtu_out = DEFAULT_MTU;
 
-  if (cp_va_parse(conf, this, errh,
-		  cpIPPrefix, "network address", &_near, &_mask,
-		  cpOptional,
-		  cpKeywords,
-		  "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
-		  "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,
-		  "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
-		  "MTU", cpInteger, "MTU", &_mtu_out,
-		  cpEnd) < 0)
-    return -1;
+    if (cp_va_parse(conf, this, errh,
+		    cpIPPrefix, "network address", &_near, &_mask,
+		    cpOptional,
+		    cpKeywords,
+		    "HEADROOM", cpUnsigned, "default headroom for generated packets", &_headroom,
+		    "ETHER", cpEthernetAddress, "fake device Ethernet address", &_macaddr,
+		    "IGNORE_QUEUE_OVERFLOWS", cpBool, "ignore queue overflow errors?", &_ignore_q_errs,
+		    "MTU", cpInteger, "MTU", &_mtu_out,
+		    cpEnd) < 0)
+	return -1;
 
-  if (_gw) { // then it was set to non-zero by arg
-    // check net part matches 
-    unsigned int g = _gw.in_addr().s_addr;
-    unsigned int m = _mask.in_addr().s_addr;
-    unsigned int n = _near.in_addr().s_addr;
-    if ((g & m) != (n & m)) {
-      _gw = 0;
-      errh->warning("not setting up default route\n(network address and gateway are on different networks)");
+    if (_gw) { // then it was set to non-zero by arg
+	// check net part matches 
+	unsigned int g = _gw.in_addr().s_addr;
+	unsigned int m = _mask.in_addr().s_addr;
+	unsigned int n = _near.in_addr().s_addr;
+	if ((g & m) != (n & m)) {
+	    _gw = 0;
+	    errh->warning("not setting up default route\n(network address and gateway are on different networks)");
+	}
     }
-  }
-  return 0;
+    return 0;
 }
 
 #if KERNELTUN_LINUX
@@ -137,8 +137,8 @@ KernelTap::try_tun(const String &dev_name, ErrorHandler *)
 int
 KernelTap::alloc_tun(ErrorHandler *errh)
 {
-    #if !KERNELTUN_LINUX && !KERNELTUN_NET && !KERNELTUN_OSX
-    return errh->error("KernelTun is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
+#if !KERNELTUN_LINUX && !KERNELTUN_NET && !KERNELTUN_OSX
+    return errh->error("KernelTap is not yet supported on this system.\n(Please report this message to click@pdos.lcs.mit.edu.)");
 #endif
 
     int error, saved_error = 0;
@@ -334,7 +334,7 @@ KernelTap::selected(int fd)
     } else {
 	if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {
 	    _printed_read_err = true;
-	    perror("KernelTun read");
+	    perror("KernelTap read");
 	}
     }
 }
@@ -359,11 +359,11 @@ KernelTap::push(int, Packet *p)
     click_ether *e = (click_ether *) p->data();
     
     if (!iph) {
-	click_chatter("KernelTun(%s): no network header", _dev_name.cc());
+	click_chatter("KernelTap(%s): no network header", _dev_name.cc());
 	p->kill();
     }
-    if(p->length() < sizeof(*e)){
-	click_chatter("KernelTap: packet to small");
+    if (p->length() < sizeof(*e)){
+	click_chatter("KernelTap(%s): packet too small", _dev_name.c_str());
 	p->kill();
 	return;
     }
@@ -388,7 +388,7 @@ KernelTap::push(int, Packet *p)
 	int w = write(_fd, q->data(), q->length());
 	if (w != (int) q->length() && (errno != ENOBUFS || !_ignore_q_errs || !_printed_write_err)) {
 	    _printed_write_err = true;
-	    click_chatter("KernelTun(%s): write failed: %s", _dev_name.cc(), strerror(errno));
+	    click_chatter("KernelTap(%s): write failed: %s", _dev_name.cc(), strerror(errno));
 	}
 	q->kill();
     } else

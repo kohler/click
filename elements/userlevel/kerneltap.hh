@@ -10,7 +10,7 @@ CLICK_DECLS
 /*
 =c
 
-KernelTap(ADDR/MASK [, GATEWAY, HEADROOM] [, I<KEYWORDS>])
+KernelTap(ADDR/MASK [, GATEWAY, I<keywords> ETHER, MTU, HEADROOM, IGNORE_QUEUE_OVERFLOWS])
 
 =s devices
 
@@ -18,33 +18,39 @@ user-level interface to /dev/tap or ethertap
 
 =d
 
-Reads packets from and writes packets to a /dev/tun* or /dev/tap*
-device.  This allows a user-level Click to hand packets to the virtual
-ethernet device. KernelTap will also transfer packets from the virtual
-ethernet device.
+Reads packets from and writes packets to a /dev/tun* or /dev/tap* device.
+This allows a user-level Click to hand packets to the virtual Ethernet device.
+KernelTap will also transfer packets from the virtual Ethernet device.
 
-KernelTap allocates a /dev/tun* or tap* device (this might fail) and
-runs ifconfig(8) to set the interface's local (i.e., kernel) address
-to ADDR and the netmask to MASK. If a nonzero GATEWAY IP address
-(which must be on the same network as the tun) is specified, then
-KernelTap tries to set up a default route through that host.
-HEADROOM is the number of bytes left empty before the packet data 
-(to leave room for additional encapsulation headers). Default HEADROOM is 0.
+KernelTap allocates a /dev/tun* or tap* device (this might fail) and runs
+ifconfig(8) to set the interface's local (i.e., kernel) address to ADDR and
+the netmask to MASK.  If a nonzero GATEWAY IP address (which must be on the
+same network as the tun) is specified, then KernelTap tries to set up a
+default route through that host.
 
 Keyword arguments are:
 
 =over 8
 
-=item IGNORE_QUEUE_OVERFLOWS
-
-Boolean.  If true, don't print more than one error message when
-there are queue overflows error when sending/receiving packets
-to/from the tun device (e.g. there was an ENOBUFS error).  Default is false.
-
 =item ETHER
 
-Ethernet address. Specifies the fake device's Ethernet address. Default is
+Ethernet address.  Specifies the fake device's Ethernet address. Default is
 00:01:02:03:04:05.
+
+=item MTU
+
+Integer.  The interface's maximum transmission unit.  Default is 2048.
+
+=item HEADROOM
+
+Integer.  The number of bytes left empty before the packet data (to leave room
+for additional encapsulation headers).  Default is 0.
+
+=item IGNORE_QUEUE_OVERFLOWS
+
+Boolean.  If true, don't print more than one error message when there are
+queue overflow errors (ENOBUFS) when sending or receiving packets via the tun
+device.  Default is false.
 
 =back
 
@@ -54,16 +60,11 @@ Linux will send ARP queries to the fake device. You must respond to these
 queries in order to receive any IP packets, but you can obviously respond
 with any Ethernet address you'd like. Here is one common idiom:
  
-tap0 :: KernelTap(192.0.0.1/8)
--> fromhost_cl :: Classifier(12/0806, 12/0800);
-fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> tap0;
-fromhost_cl[1] -> ... // IP packets
+  tap0 :: KernelTap(192.0.0.1/8)
+       -> fromhost_cl :: Classifier(12/0806, 12/0800);
+  fromhost_cl[0] -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> tap0;
+  fromhost_cl[1] -> ... // IP packets
  
-=e
- 
- KernelTap(192.0.0.1/8) -> ...;
-
-
 An error like "could not allocate a /dev/tap* device : No such file or
 directory" usually means that you have not enabled /dev/tap* in your
 kernel. 
@@ -105,7 +106,6 @@ class KernelTap : public Element { public:
     IPAddress _gw;
     int _headroom;
     Task _task;
-
 
     EtherAddress _macaddr;
 
