@@ -11,27 +11,28 @@ class IPAddress { public:
   
     IPAddress()			: _addr(0) { }
     explicit IPAddress(const unsigned char*);
-    IPAddress(unsigned int);		// network byte order IP address
-    explicit IPAddress(int);		// network byte order IP address
-    explicit IPAddress(unsigned long);	// network byte order IP address
-    explicit IPAddress(long);		// network byte order IP address
+    inline IPAddress(unsigned int);	// network byte order IP address
+    inline explicit IPAddress(int);	// network byte order IP address
+    inline explicit IPAddress(unsigned long); // network byte order IP address
+    inline explicit IPAddress(long);	// network byte order IP address
     explicit IPAddress(const String&);	// "18.26.4.99"
-    IPAddress(struct in_addr);
+    inline IPAddress(struct in_addr);
     static IPAddress make_prefix(int);
   
     operator bool() const	{ return _addr != 0; }
     operator uint32_t() const	{ return _addr; }
     uint32_t addr() const	{ return _addr; }
   
-    operator struct in_addr() const;
-    struct in_addr in_addr() const;
+    inline operator struct in_addr() const;
+    inline struct in_addr in_addr() const;
 
-    unsigned char* data();
-    const unsigned char* data() const;
+    inline unsigned char* data();
+    inline const unsigned char* data() const;
   
     int mask_to_prefix_len() const;
-    bool matches_prefix(IPAddress addr, IPAddress mask) const;
-    bool mask_as_specific(IPAddress) const;
+    inline bool matches_prefix(IPAddress addr, IPAddress mask) const;
+    inline bool mask_as_specific(IPAddress) const;
+    inline bool mask_more_specific(IPAddress) const;
 
     // bool operator==(IPAddress, IPAddress);
     // bool operator==(IPAddress, uint32_t);
@@ -43,9 +44,9 @@ class IPAddress { public:
     // IPAddress operator^(IPAddress, IPAddress);
     // IPAddress operator~(IPAddress);
   
-    IPAddress& operator&=(IPAddress);
-    IPAddress& operator|=(IPAddress);
-    IPAddress& operator^=(IPAddress);
+    inline IPAddress& operator&=(IPAddress);
+    inline IPAddress& operator|=(IPAddress);
+    inline IPAddress& operator^=(IPAddress);
 
     String unparse() const;
     String unparse_mask() const;
@@ -152,6 +153,12 @@ inline bool
 IPAddress::mask_as_specific(IPAddress mask) const
 {
     return (addr() & mask.addr()) == mask.addr();
+}
+
+inline bool
+IPAddress::mask_more_specific(IPAddress mask) const
+{
+    return (addr() & mask.addr()) == mask.addr() && addr() != mask.addr();
 }
 
 inline IPAddress
