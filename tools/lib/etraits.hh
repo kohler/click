@@ -1,6 +1,7 @@
 // -*- c-basic-offset: 4 -*-
 #ifndef CLICK_ETRAITS_HH
 #define CLICK_ETRAITS_HH
+#include <click/string.hh>
 
 struct Driver {
     enum {
@@ -9,8 +10,8 @@ struct Driver {
     };
     static const char *name(int);
     static const char *requirement(int);
-    static int driver(const char *);
-    static int driver_mask(const char *);
+    static int driver(const String&);
+    static int driver_mask(const String&);
 };
     
 

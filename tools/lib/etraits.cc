@@ -55,27 +55,27 @@ Driver::requirement(int d)
 }
 
 int
-Driver::driver(const char *name)
+Driver::driver(const String& name)
 {
     for (int d = 0; d < COUNT; d++)
-	if (strcmp(driver_names[d], name) == 0)
+	if (name == driver_names[d])
 	    return d;
     return -1;
 }
 
 int
-Driver::driver_mask(const char *name)
+Driver::driver_mask(const String& name)
 {
     int d = driver(name);
     if (d >= 0)
 	return 1 << d;
     
     int m = 0;
-    const char *end_name = name + strlen(name), *bar;
-    while ((bar = find(name, end_name, '|')) < end_name) {
-	if ((d = driver(String(name, bar).c_str())) >= 0)
+    const char* begin = name.begin(), *end_name = name.end(), *bar;
+    while ((bar = find(begin, end_name, '|')) < end_name) {
+	if ((d = driver(String(begin, bar).c_str())) >= 0)
 	    m |= 1 << d;
-	name = bar + 1;
+	begin = bar + 1;
     }
     return m;
 }
