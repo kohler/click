@@ -1,0 +1,250 @@
+
+Intel(R) PRO/1000 Gigabit Server Adapter Linux Driver
+=====================================================
+
+This file describes the PRO/1000 driver for the Linux operating system.
+
+This package includes the source code for a Linux driver for the Intel 
+PRO/1000 Gigabit Server Adapter. This driver is known to build properly
+on 2.2.0 and newer Linux kernels. Most testing by Intel has been
+performed on the Linux 2.2.14 kernel on PCs with Intel processors.
+Kernels prior to 2.2.0 and beyond 2.2.16 are not officially supported.
+
+The PRO/1000 driver is only supported as a loadable module at this time.
+Intel is not supplying patches against the kernel source to allow for
+static linking of the driver.
+
+Please refer to the documentation supplied with your PRO/1000 adapter to
+answer any questions related to hardware requirements.  All hardware
+requirements listed apply to use with Linux.
+
+
+Building and Installation
+=========================
+
+Note: For the build to work properly it is important that the currently
+running kernel match the version and configuration of the installed
+kernel sources (and the header files in /usr/include/linux)
+
+1) Enter the src directory ('cd src').
+   The rest of the build process should be run from here.
+
+2) Run 'make' to build the driver as a loadable module.
+
+3) Test the loading of the driver by running 'insmod e1000.o'.
+
+4) Run 'make install' to install the e1000.o binary.
+   The binary will be installed as:
+    
+   /lib/modules/[KERNEL_VERSION]/net/e1000.o
+
+   
+Basic Configuration
+===================
+
+Once the driver has been installed it can be loaded by running
+'modprobe e1000'. This will create a new Ethernet interface. For example,
+if no other Ethernet drivers are loaded the PRO/1000 will be called eth0.
+
+The interface can be activated and assigned an IP address by running:
+ 
+     `ifconfig ethX yyy.yyy.yyy.yyy'
+
+where ethX is the Ethernet device and yyy.yyy.yyy.yyy is the IP address.
+
+
+Command Line Configuration
+==========================
+
+The following parameters are used by entering them on the command line
+with the modprobe (or insmod) command. For example, with two PRO/1000
+PCI cards, entering:
+
+    modprobe e1000 TxDescriptors=80,128
+
+will load the e1000 driver with 80 TX resources for the first card and
+128 TX resources for the second card. 
+
+Speed
+Valid Range: 0, 10, 100, 1000        Default Value: 0
+    Forces the line speed to the specified value in mega-bits per second.
+    If this parameter is not specified, or is set to 0, the board will 
+    auto-detect the correct speed.
+	
+    See the section "Speed and Duplex Configuration" in this document.
+    
+ForceDuplex
+Valid Range: 0-2                     Default Value: 0
+    Forces the duplex mode. 
+    A setting of 1 indicates half duplex.
+    A setting of 2 indicates full duplex.
+    If this parameter is not specified, or is set to 0, the board will
+    auto-detect the correct duplex. If it cannot detect the mode,
+    it will default to half-duplex.
+    
+	See the section "Speed and Duplex Configuration" in this document.
+    
+AutoNeg
+Valid Range: 0-255                   Default Value: 0x2F 
+    When this parameter is used, the Speed and ForceDuplex parameters
+    must not be specified.  This parameter is a bitmap that specifies
+    which speed and duplex settings the board will advertise.
+    
+	See the section "Speed and Duplex Configuration" in this document.
+
+TxDescriptors
+Valid Range: 80-256                  Default Value: 80
+    This value is the number of transmit descriptors allocated by the
+    driver. Increasing this value will allow the driver to queue more 
+    transmits. Each descriptor is 16 bytes.
+
+RxDescriptors
+Valid Range: 80-256                  Default Value: 80
+    This value is the number of receive descriptors allocated by the
+    driver. Increasing this value will allow the driver to buffer more
+    incoming packets.  Each descriptor is 16 bytes.  A receive buffer is
+    also allocated for each descriptor, and is either 2048, 4096, 8192,
+    or 16384 bytes depending on the MTU setting. 
+
+Jumbo
+Valid Range: 0-1                     Default Value: 1
+    A value of '1' indicates that the driver should allow the use of
+    Jumbo frames.  The actual frame size is controlled by the device MTU
+    setting, set from ifconfig.
+
+WaitForLink
+Valid Range: 0-1                     Default Value: 1
+    Controls whether or not the driver will wait for link before 
+    finishing initialization. The default value causes the driver to wait
+    until auto-negotiation is complete (or failed) before finishing 
+    initialization and returning to the command prompt. Setting this 
+    value to '0' may cause the driver to initialize faster, but may also 
+    cause it to display incorrect link information when it loads.
+
+
+Speed and Duplex Configuration
+==============================
+Three keywords are used to control the speed and duplex configuration of
+the PRO/1000.  These keywords are Speed, ForceDuplex, and AutoNeg.
+
+If the board uses a fiber interface, these keywords are ignored.
+The board will only link at 1000Mbs full-duplex.
+
+For copper-based boards, the keywords interact as follows:
+
+Default operation is to auto-negotiate. The board advertises all supported
+speed and duplex combinations, and links at the highest common speed and
+duplex mode.
+
+If Speed = 1000, auto-negotiation is enabled and only 1000Mbs is
+advertised. (The 1000BaseT spec requires auto-negotiation.)  If Duplex is
+not set or set to 0, then both full and half duplex mode are advertised.
+If ForceDuplex is set to 1 or 2, then only the specified duplex mode is
+advertised.  The AutoNeg parameter is ignored.
+
+If Speed = 10 or 100, then both Speed and ForceDuplex must be
+set, and auto-negotiation is disabled.  The AutoNeg parameter is ignored.
+
+The AutoNeg parameter is used when more control is required over the 
+auto-negotiation process.  When this parameter is used the Speed and 
+ForceDuplex parameters must not be specified.  This parameter is a bitmap
+that specifies which speed and duplex settings are advertised to the link 
+partner.
+
+Bit            7      6      5       4       3      2      1       0
+Speed (Mbps)   N/A    N/A    1000    N/A     100    100    10      10
+Duplex                       Full            Full   Half   Full    Half
+
+Note that setting AutoNeg does not guarantee that the board will link at
+the highest specified speed or duplex mode, as the actual link speed
+depends on what is common to both the board and the link partner.
+
+
+Additional Configuration
+========================
+
+Configuring a network driver to load properly when the system is started 
+is distribution dependent.  Typically it involves adding an alias line to 
+/etc/conf.modules as well as editing other system startup scripts and/or
+configuration files.  Many popular Linux distributions ship with tools to
+make these changes for you.  Refer to your distribution documentation
+to learn the proper way to configure a network device for your system.
+If during this process you are asked for the driver or module name, 
+the driver name for the PRO/1000 is 'e1000'.
+
+
+Supported Adapters
+==================
+
+This driver supports the following Intel adapters:
+
+    Intel(R) PRO/1000 Gigabit Server Adapter    (700262-xxx, 717037-xxx)
+    Intel(R) PRO/1000 F Server Adapter          (738640-xxx)
+    Intel(R) PRO/1000 T Server Adapter          (A19845-xxx)
+
+To verify your Intel adapter is supported, find the board ID number on the
+adapter. Look for a label that has a barcode and a number in the format
+of 123456-001 (six digits hyphen 3 digits). Match this to the list of
+numbers above.
+
+For more information on how to identify your adapter go to the 
+Adapter & Driver ID Guide at:
+
+    http://support.intel.com/support/network/adapter/pro100/21397.htm
+
+This driver should also work on the following adapters:
+
+    IBM Netfinity Gigabit Ethernet SX Adapter
+    IBM Gigabit Ethernet SX Server Adapter
+    IBM Gigabit Ethernet Server Adapter
+
+Please contact the appropriate vendor for support.
+
+
+Support
+=======
+
+For general information and peer to peer support go to the forum at:
+
+    http://support.intel.com/newsgroups/netwadap.htm
+
+Read the forum charter, legal information, and posting guidelines before
+entering the forum. This forum will post new information regarding the
+driver as it becomes available.
+
+If an issue is identified with the released source code on the supported
+kernel with a supported adapter, email the specific information related
+to the issue to linux.nics@intel.com. 
+
+
+License
+=======
+Copyright (c) 1999 - 2000, Intel Corporation 
+
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without 
+modification, are permitted provided that the following conditions are met:
+
+ 1. Redistributions of source code must retain the above copyright notice, 
+    this list of conditions and the following disclaimer.
+
+ 2. Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation 
+    and/or other materials provided with the distribution.
+
+ 3. Neither the name of Intel Corporation nor the names of its contributors 
+    may be used to endorse or promote products derived from this software 
+    without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS ``AS IS''
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING 
+NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
+

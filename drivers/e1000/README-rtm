@@ -1,0 +1,5 @@
+This is a copy of the Intel Linux driver for the Pro/1000
+gigabit ethernet adapter, tuned for small packet performance
+and with Click polling extensions.
+
+See http://www.pdos.lcs.mit.edu/~rtm/e1000/
