@@ -791,11 +791,5 @@ LookupIPRouteRON::IPTableRON::print() {
 template class Vector<LookupIPRouteRON::TableEntry>;
 
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(LookupIPRouteRON)
-
-
-
-
-
-
-

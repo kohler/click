@@ -59,5 +59,6 @@ IPDecapPaint::simple_action(Packet *p)
   return p;
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(IPDecapPaint)
 ELEMENT_MT_SAFE(IPDecapPaint)

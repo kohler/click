@@ -123,4 +123,5 @@ IPEncapPaint::simple_action(Packet *p_in)
   return p;
 }
 
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(IPEncapPaint)
