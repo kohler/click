@@ -138,7 +138,6 @@ private:
   void process_data(Packet *p_in);
   bool pick_new_gateway();
   bool valid_gateway(IPAddress);
-  void gatewayselector_assert_(const char *, int, const char *) const;
   static void static_forward_ad_hook(Timer *, void *e) { 
     ((GatewaySelector *) e)->forward_ad_hook(); 
   }

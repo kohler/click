@@ -25,15 +25,10 @@
 #include <elements/grid/linktable.hh>
 #include <elements/grid/arptable.hh>
 #include <elements/grid/sr/path.hh>
-#include <elements/grid/sr/srcrstat.hh>
 #include "setsourceroute.hh"
 #include "srforwarder.hh"
 
 CLICK_DECLS
-
-#ifndef setsourceroute_assert
-#define setsourceroute_assert(e) ((e) ? (void) 0 : setsourceroute_assert_(__FILE__, __LINE__, #e))
-#endif /* srcr_assert */
 
 
 SetSourceRoute::SetSourceRoute()
@@ -197,19 +192,6 @@ SetSourceRoute::add_handlers()
   add_read_handler("routes", static_print_routes, 0);
   add_write_handler("clear", static_clear, 0);
   add_write_handler("set_route", static_set_route, 0);
-}
-
-void
-SetSourceRoute::setsourceroute_assert_(const char *file, int line, const char *expr) const
-{
-  click_chatter("SetSourceRoute %s assertion \"%s\" failed: file %s, line %d",
-		id().cc(), expr, file, line);
-#ifdef CLICK_USERLEVEL  
-  abort();
-#else
-  click_chatter("Continuing execution anyway, hold on to your hats!\n");
-#endif
-
 }
 
 // generate Vector template instance

@@ -28,9 +28,6 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
-#ifndef setgateway_assert
-#define setgateway_assert(e) ((e) ? (void) 0 : setgateway_assert_(__FILE__, __LINE__, #e))
-#endif /* srcr_assert */
 
 
 SetGateway::SetGateway()
@@ -333,19 +330,6 @@ SetGateway::add_handlers()
 
   add_read_handler("gateway", read_param, (void *) 0);
   add_write_handler("gateway", change_param, (void *) 0);
-}
-
-void
-SetGateway::setgateway_assert_(const char *file, int line, const char *expr) const
-{
-  click_chatter("SetGateway %s assertion \"%s\" failed: file %s, line %d",
-		id().cc(), expr, file, line);
-#ifdef CLICK_USERLEVEL  
-  abort();
-#else
-  click_chatter("Continuing execution anyway, hold on to your hats!\n");
-#endif
-
 }
 
 // generate Vector template instance

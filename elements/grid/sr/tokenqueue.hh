@@ -4,6 +4,7 @@
 #include <elements/standard/notifierqueue.hh>
 #include <click/bighashmap.hh>
 #include <elements/grid/sr/path.hh>
+#include <elements/grid/sr/srpacket.hh>
 CLICK_DECLS
 
 /*
@@ -196,7 +197,7 @@ private:
 inline bool
 TokenQueue::enq(Packet *p)
 {
-    assert(p);
+    sr_assert(p);
     int next = next_i(_tail);
     if (next != _head) {
 	_q[_tail] = p;

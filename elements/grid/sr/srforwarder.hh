@@ -83,7 +83,6 @@ private:
   int get_rev_metric(IPAddress other);
 
   bool update_link(IPAddress from, IPAddress to, int metric);
-  void srforwarder_assert_(const char *, int, const char *) const;
 };
 
 

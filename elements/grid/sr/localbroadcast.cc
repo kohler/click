@@ -1,8 +1,8 @@
 /*
- * Flood.{cc,hh} -- DSR implementation
+ * LocalBroadcast.{cc,hh} -- DSR implementation
  * John Bicket
  *
- * Copyright (c) 1999-2001 Massachusfloods Institute of Technology
+ * Copyright (c) 1999-2001 Massachuslocalbroadcasts Institute of Technology
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -16,7 +16,7 @@
  */
 
 #include <click/config.h>
-#include "flood.hh"
+#include "localbroadcast.hh"
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
@@ -26,12 +26,7 @@
 #include "srpacket.hh"
 CLICK_DECLS
 
-#ifndef flood_assert
-#define flood_assert(e) ((e) ? (void) 0 : flood_assert_(__FILE__, __LINE__, #e))
-#endif /* flood_assert */
-
-
-Flood::Flood()
+LocalBroadcast::LocalBroadcast()
   :  Element(2,2),
      _timer(this), 
      _en(),
@@ -51,13 +46,13 @@ Flood::Flood()
   _bcast = EtherAddress(bcast_addr);
 }
 
-Flood::~Flood()
+LocalBroadcast::~LocalBroadcast()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-Flood::configure (Vector<String> &conf, ErrorHandler *errh)
+LocalBroadcast::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   _debug = false;
@@ -83,14 +78,14 @@ Flood::configure (Vector<String> &conf, ErrorHandler *errh)
   return ret;
 }
 
-Flood *
-Flood::clone () const
+LocalBroadcast *
+LocalBroadcast::clone () const
 {
-  return new Flood;
+  return new LocalBroadcast;
 }
 
 int
-Flood::initialize (ErrorHandler *)
+LocalBroadcast::initialize (ErrorHandler *)
 {
   _timer.initialize (this);
   _timer.schedule_now ();
@@ -99,7 +94,7 @@ Flood::initialize (ErrorHandler *)
 }
 
 void
-Flood::run_timer ()
+LocalBroadcast::run_timer ()
 {
   _timer.schedule_after_ms(1000);
 }
@@ -107,7 +102,7 @@ Flood::run_timer ()
 // Send a packet.
 // fills in ethernet header
 void
-Flood::send(WritablePacket *p)
+LocalBroadcast::send(WritablePacket *p)
 {
   click_ether *eh = (click_ether *) p->data();
 
@@ -119,7 +114,7 @@ Flood::send(WritablePacket *p)
 }
 
 void
-Flood::push(int port, Packet *p_in)
+LocalBroadcast::push(int port, Packet *p_in)
 {
   
   if (port == 1) {
@@ -159,14 +154,14 @@ Flood::push(int port, Packet *p_in)
 
 
 String
-Flood::static_print_stats(Element *f, void *)
+LocalBroadcast::static_print_stats(Element *f, void *)
 {
-  Flood *d = (Flood *) f;
+  LocalBroadcast *d = (LocalBroadcast *) f;
   return d->print_stats();
 }
 
 String
-Flood::print_stats()
+LocalBroadcast::print_stats()
 {
   StringAccum sa;
 
@@ -177,10 +172,10 @@ Flood::print_stats()
 }
 
 int
-Flood::static_write_debug(const String &arg, Element *e,
+LocalBroadcast::static_write_debug(const String &arg, Element *e,
 			void *, ErrorHandler *errh) 
 {
-  Flood *n = (Flood *) e;
+  LocalBroadcast *n = (LocalBroadcast *) e;
   bool b;
 
   if (!cp_bool(arg, &b))
@@ -190,15 +185,15 @@ Flood::static_write_debug(const String &arg, Element *e,
   return 0;
 }
 String
-Flood::static_print_debug(Element *f, void *)
+LocalBroadcast::static_print_debug(Element *f, void *)
 {
   StringAccum sa;
-  Flood *d = (Flood *) f;
+  LocalBroadcast *d = (LocalBroadcast *) f;
   sa << d->_debug << "\n";
   return sa.take_string();
 }
 void
-Flood::add_handlers()
+LocalBroadcast::add_handlers()
 {
   add_read_handler("stats", static_print_stats, 0);
   add_read_handler("debug", static_print_debug, 0);
@@ -206,27 +201,14 @@ Flood::add_handlers()
   add_write_handler("debug", static_write_debug, 0);
 }
 
-void
-Flood::flood_assert_(const char *file, int line, const char *expr) const
-{
-  click_chatter("Flood %s assertion \"%s\" failed: file %s, line %d",
-		id().cc(), expr, file, line);
-#ifdef CLICK_USERLEVEL  
-  abort();
-#else
-  click_chatter("Continuing execution anyway, hold on to your hats!\n");
-#endif
-
-}
-
 // generate Vector template instance
 #include <click/vector.cc>
 #include <click/hashmap.cc>
 #include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<Flood::IPAddress>;
-template class DEQueue<Flood::Seen>;
+template class Vector<LocalBroadcast::IPAddress>;
+template class DEQueue<LocalBroadcast::Seen>;
 #endif
 
 CLICK_ENDDECLS
-EXPORT_ELEMENT(Flood)
+EXPORT_ELEMENT(LocalBroadcast)

@@ -31,10 +31,6 @@
 #include "elements/grid/arptable.hh"
 CLICK_DECLS
 
-#ifndef srforwarder_assert
-#define srforwarder_assert(e) ((e) ? (void) 0 : srforwarder_assert_(__FILE__, __LINE__, #e))
-#endif /* srforwarder_assert */
-
 
 SRForwarder::SRForwarder()
   :  Element(1,3), 
@@ -118,7 +114,7 @@ int
 SRForwarder::get_fwd_metric(IPAddress other)
 {
   int metric = 0;
-  srforwarder_assert(other);
+  sr_assert(other);
   if (_metric) {
     metric = _metric->get_fwd_metric(other);
     if (metric && !update_link(_ip, other, metric)) {
@@ -139,7 +135,7 @@ int
 SRForwarder::get_rev_metric(IPAddress other)
 {
   int metric = 0;
-  srforwarder_assert(other);
+  sr_assert(other);
   if (_metric) {
     metric = _metric->get_rev_metric(other);
     if (metric && !update_link(other, _ip, metric)) {
@@ -181,7 +177,7 @@ SRForwarder::send(Packet *p_in, Vector<IPAddress> r, int flags)
 Packet *
 SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 {
-  srforwarder_assert(r.size() > 1);
+  sr_assert(r.size() > 1);
   int hops = r.size();
   int extra = srpacket::len_wo_data(hops) + sizeof(click_ether);
   int payload_len = p_in->length();
@@ -376,7 +372,7 @@ SRForwarder::push(int port, Packet *p_in)
   pk->set_rev_metric(pk->next() - 1, prev_rev_metric);
   pk->set_next(pk->next() + 1);
 
-  srforwarder_assert(pk->next() < 8);
+  sr_assert(pk->next() < 8);
   IPAddress nxt = pk->get_hop(pk->next());
   
   /*
@@ -438,18 +434,7 @@ SRForwarder::add_handlers()
 }
 
 
-void
-SRForwarder::srforwarder_assert_(const char *file, int line, const char *expr) const
-{
-  click_chatter("SRForwarder %s assertion \"%s\" failed: file %s, line %d",
-		id().cc(), expr, file, line);
-#ifdef CLICK_USERLEVEL  
-  abort();
-#else
-  click_chatter("Continuing execution anyway, hold on to your hats!\n");
-#endif
 
-}
 // generate Vector template instance
 #include <click/vector.cc>
 #include <click/bighashmap.cc>

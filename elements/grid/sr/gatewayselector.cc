@@ -28,11 +28,6 @@
 
 CLICK_DECLS
 
-#ifndef gatewayselector_assert
-#define gatewayselector_assert(e) ((e) ? (void) 0 : gatewayselector_assert_(__FILE__, __LINE__, #e))
-#endif /* srcr_assert */
-
-
 GatewaySelector::GatewaySelector()
   :  Element(1,1),
      _ip(),
@@ -183,7 +178,7 @@ int
 GatewaySelector::get_fwd_metric(IPAddress other)
 {
   int metric = 0;
-  gatewayselector_assert(other);
+  sr_assert(other);
   if (_metric) {
     metric = _metric->get_fwd_metric(other);
     if (metric && !update_link(_ip, other, metric)) {
@@ -204,7 +199,7 @@ int
 GatewaySelector::get_rev_metric(IPAddress other)
 {
   int metric = 0;
-  gatewayselector_assert(other);
+  sr_assert(other);
   if (_metric) {
     metric = _metric->get_rev_metric(other);
     if (metric && !update_link(other, _ip, metric)) {
@@ -249,8 +244,8 @@ GatewaySelector::forward_ad(Seen *s)
 {
   int nhops = s->_hops.size();
 
-  gatewayselector_assert(s->_hops.size() == s->_fwd_metrics.size()+1);
-  gatewayselector_assert(s->_hops.size() == s->_rev_metrics.size()+1);
+  sr_assert(s->_hops.size() == s->_fwd_metrics.size()+1);
+  sr_assert(s->_hops.size() == s->_rev_metrics.size()+1);
 
   int len = srpacket::len_wo_data(nhops);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
@@ -427,7 +422,7 @@ GatewaySelector::push(int port, Packet *p_in)
   hops.push_back(_ip);
 
   IPAddress gw = pk->_qdst;
-  gatewayselector_assert(gw);
+  sr_assert(gw);
   GWInfo *nfo = _gateways.findp(gw);
   if (!nfo) {
     _gateways.insert(gw, GWInfo());
@@ -481,7 +476,7 @@ GatewaySelector::push(int port, Packet *p_in)
   } else {
     /* schedule timer */
     int delay_time = (random() % 750) + 1;
-    gatewayselector_assert(delay_time > 0);
+    sr_assert(delay_time > 0);
     
     struct timeval delay;
     delay.tv_sec = 0;
@@ -571,19 +566,6 @@ GatewaySelector::add_handlers()
   add_read_handler("gateway_stats", static_print_gateway_stats, 0);
   add_read_handler("is_gateway", static_print_is_gateway, 0);
   add_write_handler("is_gateway", static_write_is_gateway, 0);
-}
-
-void
-GatewaySelector::gatewayselector_assert_(const char *file, int line, const char *expr) const
-{
-  click_chatter("GatewaySelector %s assertion \"%s\" failed: file %s, line %d",
-		id().cc(), expr, file, line);
-#ifdef CLICK_USERLEVEL  
-  abort();
-#else
-  click_chatter("Continuing execution anyway, hold on to your hats!\n");
-#endif
-
 }
 
 // generate Vector template instance

@@ -7,7 +7,7 @@ enum SRCRPacketType { PT_QUERY = 0x01,
 		      PT_REPLY = 0x02,
                       PT_TOP5_RESULT = 0x03,
 		      PT_DATA  = 0x04,
-                      PT_GATEWAY = 0x08,
+                      PT_GATEWAY = 0x08
 };
 
 
@@ -249,5 +249,24 @@ struct extra_link_info {
   }
 
 };
+
+#ifndef sr_assert
+#define sr_assert(e) ((e) ? (void) 0 : sr_assert_(__FILE__, __LINE__, #e))
+#endif /* sr_assert */
+
+
+inline void 
+sr_assert_(const char *file, int line, const char *expr)
+{
+  click_chatter("assertion \"%s\" FAILED: file %s, line %d",
+		expr, file, line);
+
+#ifdef CLICK_USERLEVEL  
+  abort();
+#endif
+
+}
+
+
 
 #endif /* CLICK_SRPACKET_HH */

@@ -222,8 +222,6 @@ private:
   }
 #endif
 
-  void srscheduler_assert_(const char *, int, const char *) const;
-
   Timer _timer;
 };
 

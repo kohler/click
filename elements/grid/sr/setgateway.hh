@@ -114,7 +114,6 @@ private:
   void push_fwd(Packet *, IPAddress);
   void push_rev(Packet *);
   void cleanup();
-  void setgateway_assert_(const char *, int, const char *) const;
   String print_flows();
 };
 

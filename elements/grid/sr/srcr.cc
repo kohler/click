@@ -28,9 +28,6 @@
 #include "srforwarder.hh"
 CLICK_DECLS
 
-#ifndef srcr_assert
-#define srcr_assert(e) ((e) ? (void) 0 : srcr_assert_(__FILE__, __LINE__, #e))
-#endif /* srcr_assert */
 
 
 SRCR::SRCR()
@@ -165,7 +162,7 @@ SRCR::get_random_neighbor()
 void
 SRCR::start_query(IPAddress dstip)
 {
-  srcr_assert(dstip);
+  sr_assert(dstip);
   Query *q = _queries.findp(dstip);
   if (!q) {
     Query foo = Query(dstip);
@@ -222,15 +219,15 @@ SRCR::send(WritablePacket *p)
     _bytes_queries_tx += p->length();
   } else if(type == PT_REPLY){
     int next = pk->next();
-    srcr_assert(next < MaxHops);
+    sr_assert(next < MaxHops);
     IPAddress next_ip = pk->get_hop(next);
-    srcr_assert(next_ip != _ip);
+    sr_assert(next_ip != _ip);
     EtherAddress eth_dest = _arp_table->lookup(next_ip);
     memcpy(eh->ether_dhost, eth_dest.data(), 6);
     _num_replies_tx++;
     _bytes_replies_tx += p->length();
   } else {
-    srcr_assert(0);
+    sr_assert(0);
     return;
   }
 
@@ -241,7 +238,7 @@ SRCR::send(WritablePacket *p)
 int
 SRCR::get_fwd_metric(IPAddress other)
 {
-  srcr_assert(other);
+  sr_assert(other);
   BadNeighbor *n = _black_list.findp(other);
   int metric = 9999;
   if (n && n->still_bad() ) {
@@ -262,7 +259,7 @@ SRCR::get_fwd_metric(IPAddress other)
 int
 SRCR::get_rev_metric(IPAddress other)
 {
-  srcr_assert(other);
+  sr_assert(other);
   BadNeighbor *n = _black_list.findp(other);
   int metric = 9999;
   if (n && n->still_bad() ) {
@@ -373,7 +370,7 @@ SRCR::process_query(struct srpacket *pk1)
     } else {
       /* schedule timer */
       int delay_time = random() % 750 + 1;
-      srcr_assert(delay_time > 0);
+      sr_assert(delay_time > 0);
 
       struct timeval delay;
       delay.tv_sec = 0;
@@ -410,8 +407,8 @@ SRCR::forward_query(Seen *s)
   }
   int nhops = s->_hops.size();
 
-  srcr_assert(s->_hops.size() == s->_fwd_metrics.size()+1);
-  srcr_assert(s->_hops.size() == s->_rev_metrics.size()+1);
+  sr_assert(s->_hops.size() == s->_fwd_metrics.size()+1);
+  sr_assert(s->_hops.size() == s->_rev_metrics.size()+1);
 
   //click_chatter("forward query called");
   int len = srpacket::len_wo_data(nhops);
@@ -446,7 +443,7 @@ void
 SRCR::forward_reply(struct srpacket *pk1)
 {
   u_char type = pk1->_type;
-  srcr_assert(type == PT_REPLY);
+  sr_assert(type == PT_REPLY);
 
   _link_table->dijkstra();
   if (_debug) {
@@ -555,7 +552,7 @@ SRCR::got_reply(struct srpacket *pk)
 {
 
   IPAddress dst = IPAddress(pk->_qdst);
-  srcr_assert(dst);
+  sr_assert(dst);
   if (_debug) {
     click_chatter("SRCR %s: got_reply %s <- %s\n", 
 		  id().cc(),
@@ -575,7 +572,7 @@ SRCR::got_reply(struct srpacket *pk)
     _queries.insert(dst, foo);
     q = _queries.findp(dst);
   }
-  srcr_assert(q);
+  sr_assert(q);
   q->_count = 0;
   if ((!q->_metric || q->_metric > metric) && metric < 9999) {
     q->_metric = metric;
@@ -604,7 +601,7 @@ SRCR::process_data(Packet *p_in)
     }
   }
   int ndx_me = i;
-  srcr_assert(ndx_me != fwd.size());
+  sr_assert(ndx_me != fwd.size());
   if (ndx_me == 0) {
     /* came from me */
     return;
@@ -700,7 +697,7 @@ SRCR::push(int port, Packet *p_in)
       p_in->kill();
       return;
     }
-    srcr_assert(dst);
+    sr_assert(dst);
     Path best = _link_table->best_route(dst);
     bool best_valid = _link_table->valid_route(best);
     int best_metric = _link_table->get_route_metric(best);
@@ -747,7 +744,7 @@ SRCR::push(int port, Packet *p_in)
       _queries.insert(dst, foo);
       q = _queries.findp(dst);
     }
-    srcr_assert(q);
+    sr_assert(q);
 
     if (q->_metric > best_metric) {
       q->_metric = best_metric;
@@ -825,10 +822,10 @@ SRCR::push(int port, Packet *p_in)
       neighbor = pk->get_hop(pk->next()+1);
       break;
     default:
-      srcr_assert(0);
+      sr_assert(0);
     }
 
-    srcr_assert(neighbor);
+    sr_assert(neighbor);
     if (!_neighbors.findp(neighbor)) {
       _neighbors.insert(neighbor, true);
       _neighbors_v.push_back(neighbor);
@@ -1070,19 +1067,6 @@ SRCR::add_handlers()
   add_write_handler("clear", static_clear, 0);
   add_write_handler("start", static_start, 0);
   add_write_handler("link_failure", static_link_failure, 0);
-}
-
-void
-SRCR::srcr_assert_(const char *file, int line, const char *expr) const
-{
-  click_chatter("SRCR %s assertion \"%s\" failed: file %s, line %d",
-		id().cc(), expr, file, line);
-#ifdef CLICK_USERLEVEL  
-  abort();
-#else
-  click_chatter("Continuing execution anyway, hold on to your hats!\n");
-#endif
-
 }
 
 // generate Vector template instance

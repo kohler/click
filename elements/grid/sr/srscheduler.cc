@@ -26,7 +26,6 @@
 #include <elements/grid/linktable.hh>
 #include <elements/grid/arptable.hh>
 #include <elements/grid/sr/path.hh>
-#include <elements/grid/sr/srcrstat.hh>
 #include <elements/standard/notifierqueue.hh>
 #include "srscheduler.hh"
 #include "srforwarder.hh"
@@ -36,11 +35,6 @@
 #include <click/llrpc.h>
 
 CLICK_DECLS
-
-#ifndef srscheduler_assert
-#define srscheduler_assert(e) ((e) ? (void) 0 : srscheduler_assert_(__FILE__, __LINE__, #e))
-#endif /* srcr_assert */
-
 
 
 SRScheduler::SRScheduler()
@@ -677,19 +671,6 @@ SRScheduler::add_handlers()
 
   add_write_handler("packet_timeout", static_write_packet_timeout, 0);
   add_read_handler("packet_timeout", static_print_packet_timeout, 0);
-
-}
-
-void
-SRScheduler::srscheduler_assert_(const char *file, int line, const char *expr) const
-{
-  click_chatter("SRScheduler %s assertion \"%s\" failed: file %s, line %d",
-		id().cc(), expr, file, line);
-#ifdef CLICK_USERLEVEL  
-  abort();
-#else
-  click_chatter("Continuing execution anyway, hold on to your hats!\n");
-#endif
 
 }
 

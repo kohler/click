@@ -231,7 +231,6 @@ private:
   void start_data(const u_char *data, u_long len, Vector<IPAddress> r);
   void send(WritablePacket *);
   void process_data(Packet *p_in);
-  void srcr_assert_(const char *, int, const char *) const;
   static void static_forward_query_hook(Timer *, void *e) { 
     ((SRCR *) e)->forward_query_hook(); 
   }

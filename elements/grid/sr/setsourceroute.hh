@@ -65,8 +65,6 @@ private:
 
   class SRForwarder *_sr_forwarder;
 
-  void setsourceroute_assert_(const char *, int, const char *) const;
-
 };
 
 

@@ -97,7 +97,7 @@ private:
 inline bool
 InOrderQueue::enq(Packet *p)
 {
-    assert(p);
+    sr_assert(p);
     int next = next_i(_tail);
     if (next != _head) {
 	_q[_tail] = p;

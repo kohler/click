@@ -1,5 +1,5 @@
-#ifndef CLICK_FLOOD_HH
-#define CLICK_FLOOD_HH
+#ifndef CLICK_COUNTERFLOOD_HH
+#define CLICK_COUNTERFLOOD_HH
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/timer.hh>
@@ -11,13 +11,13 @@
 #include <elements/grid/linktable.hh>
 #include <elements/grid/arptable.hh>
 #include <elements/grid/sr/path.hh>
-#include "flood.hh"
+#include "counterflood.hh"
 #include <elements/wifi/rxstats.hh>
 CLICK_DECLS
 
 /*
  * =c
- * Flood(IP, ETH, ETHERTYPE, Flood element, LinkTable element, ARPtable element, 
+ * CounterFlood(IP, ETH, ETHERTYPE, CounterFlood element, LinkTable element, ARPtable element, 
  *    [METRIC GridGenericMetric], [WARMUP period in seconds])
  * =d
  * DSR-inspired end-to-end ad-hoc routing protocol.
@@ -31,16 +31,16 @@ CLICK_DECLS
  */
 
 
-class Flood : public Element {
+class CounterFlood : public Element {
  public:
   
-  Flood();
-  ~Flood();
+  CounterFlood();
+  ~CounterFlood();
   
-  const char *class_name() const		{ return "Flood"; }
+  const char *class_name() const		{ return "CounterFlood"; }
   const char *processing() const		{ return PUSH; }
   int initialize(ErrorHandler *);
-  Flood *clone() const;
+  CounterFlood *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
 
 
@@ -58,7 +58,6 @@ class Flood : public Element {
 private:
 
   void send(WritablePacket *p);
-  void flood_assert_(const char *file, int line, const char *expr) const;
   u_long _seq;      // Next query sequence number to use.
   Timer _timer;
   IPAddress _ip;    // My IP address.
