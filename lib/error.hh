@@ -25,8 +25,10 @@ class ErrorHandler {
   virtual void reset_counts() = 0;
   
   // all error functions always return -1
-  virtual int verror(Seriousness, const String &, const char *, va_list);
   virtual void vmessage(Seriousness, const String &) = 0;
+  int verror(Seriousness, const String &, const char *, va_list);
+  virtual String verror_text(Seriousness, const String &, const char *,
+			     va_list);
 
   int lmessage(const String &, const char *, ...);
   int lwarning(const String &, const char *, ...);
@@ -78,7 +80,6 @@ class ContextErrorHandler : public ErrorHandler {
   int nerrors() const			{ return _errh->nerrors(); }
   void reset_counts();
   
-  int verror(Seriousness, const String &, const char *, va_list);
   void vmessage(Seriousness, const String &);
   
 };
@@ -96,7 +97,6 @@ class PrefixErrorHandler : public ErrorHandler {
   int nerrors() const			{ return _errh->nerrors(); }
   void reset_counts();
   
-  int verror(Seriousness, const String &, const char *, va_list);
   void vmessage(Seriousness, const String &);
   
 };

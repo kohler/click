@@ -80,7 +80,7 @@ PullTee::configure(const Vector<String> &conf, ErrorHandler *errh)
     return -1;
   if (n < 1)
     return errh->error("number of arms must be at least 1");
-  set_noutputs(n - noutputs());
+  set_noutputs(n);
   return 0;
 }
 

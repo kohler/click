@@ -25,6 +25,15 @@ Version 1.1
    of Click, you must unapply the old kernel patch and apply the new kernel
    patch before compiling.
 
+** Improved Packet copy-on-write behavior by reflecting it in the C++ class
+   structure. Now there is a class for possibly-shared packets (named
+   Packet), and a class for definitely-not-shared packets (named
+   WritablePacket). WritablePacket is a subclass of Packet. Packet's data
+   is always read-only (that is, the `data()' method returns a `const
+   unsigned char *', and so forth). WritablePacket's data is read/write
+   (the `data()' method returns an `unsigned char *').
+   `Packet::uniqueify()' and similar methods return a WritablePacket.
+
 ** Made configuration argument parsing more uniform among elements. For
    example, every configuration argument is always a comma-separated
    string. This is enforced by passing a vector of strings to the

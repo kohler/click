@@ -1,5 +1,5 @@
 /*
- * ipclassifier.{cc,hh} -- element is a generic classifier
+ * ipclassifier.{cc,hh} -- IP-packet classifier with tcpdumplike syntax
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -355,8 +355,12 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
   ip_port_map.insert("ssh", 22);
   ip_port_map.insert("telnet", 23);
   ip_port_map.insert("smtp", 25);
+  ip_port_map.insert("domain", 53);
+  ip_port_map.insert("dns", 53);
   ip_port_map.insert("finger", 79);
   ip_port_map.insert("www", 80);
+  ip_port_map.insert("auth", 113);
+  ip_port_map.insert("https", 443);
 
   HashMap<String, int> tcp_opt_map(-1);
   tcp_opt_map.insert("syn", TH_SYN);

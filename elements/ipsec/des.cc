@@ -77,9 +77,9 @@ Des::initialize(ErrorHandler *errh)
 
 
 Packet *
-Des::simple_action(Packet *p)
+Des::simple_action(Packet *p_in)
 {
-
+  WritablePacket *p = p_in->uniqueify();
   unsigned char hold[8];
   unsigned char *idat = p->data();
   struct esp_new *esp = (struct esp_new *)p->data();

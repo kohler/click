@@ -86,7 +86,7 @@ Esp::simple_action(Packet *p)
   // Make room for ESP header and padding
   int plen = p->length();
   int padding = ((_blks - ((plen + 2) % _blks)) % _blks) + 2;
-  Packet *q = Packet::make(sizeof(esp_new) + plen + padding);
+  WritablePacket *q = Packet::make(sizeof(esp_new) + plen + padding);
   
   // Copy data and packet annotations
   memcpy((q->data() + sizeof(esp_new)), p->data(), plen);

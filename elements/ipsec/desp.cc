@@ -53,7 +53,7 @@ DeEsp::simple_action(Packet *p)
 {
 
   int i, blks;
-  unsigned char * blk;
+  const unsigned char * blk;
 
   // Rip off ESP header
   p->pull(sizeof(esp_new));

@@ -64,12 +64,10 @@ ControlSocketErrorHandler::vmessage(Seriousness seriousness, const String &m)
    case Error: case Fatal: _nerrors++; break;
    default: break;
   }
-  int pos = 0;
-  while (pos < m.length()) {
-    int next = m.find_left('\n', pos);
-    if (next < 0) break;
-    _messages.push_back(m.substring(pos, next - pos));
-    pos = next + 1;
+  int pos = 0, nl;
+  while ((nl = m.find_left('\n', pos)) >= 0) {
+    _messages.push_back(m.substring(pos, nl - pos));
+    pos = nl + 1;
   }
   if (pos < m.length())
     _messages.push_back(m.substring(pos));

@@ -191,9 +191,9 @@ ErrorHandler::fix_landmark(const String &landmark)
   return lm;
 }
 
-int
-ErrorHandler::verror(Seriousness seriousness, const String &where,
-		     const char *s, va_list val)
+String
+ErrorHandler::verror_text(Seriousness seriousness, const String &where,
+			  const char *s, va_list val)
 {
   StringAccum msg;
   char numbuf[NUMBUF_SIZE];	// for numerics
@@ -385,12 +385,16 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
   }
   
   int len = msg.length();
-  String msg_str = String::claim_string(msg.take(), len);
-  vmessage(seriousness, msg_str);
-  
-  return -1;
+  return String::claim_string(msg.take(), len);
 }
 
+int
+ErrorHandler::verror(Seriousness seriousness, const String &where,
+		     const char *s, va_list val)
+{
+  vmessage(seriousness, verror_text(seriousness, where, s, val));
+  return -1;
+}
 
 #ifndef __KERNEL__
 //
@@ -427,8 +431,16 @@ FileErrorHandler::vmessage(Seriousness seriousness, const String &message)
   else if (seriousness == Warning) _nwarnings++;
   else _nerrors++;
 
-  String s = _context + message + "\n";
-  fwrite(s.data(), 1, s.length(), _f);
+  int pos = 0, nl;
+  while ((nl = message.find_left('\n', pos)) >= 0) {
+    String s = _context + message.substring(pos, nl - pos) + "\n";
+    fwrite(s.data(), 1, s.length(), _f);
+    pos = nl + 1;
+  }
+  if (pos < message.length()) {
+    String s = _context + message.substring(pos) + "\n";
+    fwrite(s.data(), 1, s.length(), _f);
+  }
   
   if (seriousness == Fatal)
     exit(1);
@@ -453,18 +465,9 @@ class SilentErrorHandler : public ErrorHandler {
   int nerrors() const			{ return _nerrors; }
   void reset_counts()			{ _nwarnings = _nerrors = 0; }
 
-  int verror(Seriousness, const String &, const char *, va_list);
   void vmessage(Seriousness, const String &);
   
 };
-
-int
-SilentErrorHandler::verror(Seriousness seriousness, const String &,
-			   const char *, va_list)
-{
-  vmessage(seriousness, String());
-  return -1;
-}
 
 void
 SilentErrorHandler::vmessage(Seriousness seriousness, const String &)
@@ -530,17 +533,6 @@ ContextErrorHandler::reset_counts()
   _errh->reset_counts();
 }
 
-int
-ContextErrorHandler::verror(Seriousness seriousness, const String &where,
-			    const char *format, va_list val)
-{
-  if (_context) {
-    _errh->vmessage(Message, _context);
-    _context = String();
-  }
-  return _errh->verror(seriousness, _indent + where, format, val);
-}
-
 void
 ContextErrorHandler::vmessage(Seriousness seriousness, const String &message)
 {
@@ -548,7 +540,13 @@ ContextErrorHandler::vmessage(Seriousness seriousness, const String &message)
     _errh->vmessage(Message, _context);
     _context = String();
   }
-  _errh->vmessage(seriousness, _indent + message);
+  int pos = 0, nl;
+  while ((nl = message.find_left('\n', pos)) >= 0) {
+    _errh->vmessage(seriousness, _indent + message.substring(pos, nl - pos));
+    pos = nl + 1;
+  }
+  if (pos < message.length())
+    _errh->vmessage(seriousness, _indent + message.substring(pos));
 }
 
 
@@ -568,15 +566,14 @@ PrefixErrorHandler::reset_counts()
   _errh->reset_counts();
 }
 
-int
-PrefixErrorHandler::verror(Seriousness seriousness, const String &where,
-			   const char *format, va_list val)
-{
-  return _errh->verror(seriousness, _prefix + where, format, val);
-}
-
 void
 PrefixErrorHandler::vmessage(Seriousness seriousness, const String &message)
 {
-  _errh->vmessage(seriousness, _prefix + message);
+  int pos = 0, nl;
+  while ((nl = message.find_left('\n', pos)) >= 0) {
+    _errh->vmessage(seriousness, _prefix + message.substring(pos, nl - pos));
+    pos = nl + 1;
+  }
+  if (pos < message.length())
+    _errh->vmessage(seriousness, _prefix + message.substring(pos));
 }

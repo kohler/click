@@ -47,16 +47,29 @@ static struct proc_dir_entry proc_click_errors_entry = {
 };
 
 
+static void
+syslog_message(const String &message)
+{
+  int pos = 0, nl;
+  while ((nl = message.find_left('\n', pos)) >= 0) {
+    String x = message.substring(pos, nl - pos);
+    printk("<1>%s\n", x.cc());
+    pos = nl + 1;
+  }
+  if (pos < message.length()) {
+    String x = message.substring(pos);
+    printk("<1>%s\n", x.cc());
+  }
+}
+
 void
 KernelErrorHandler::vmessage(Seriousness seriousness, const String &message)
 {
   if (seriousness == Message) /* do nothing */;
   else if (seriousness == Warning) _nwarnings++;
   else _nerrors++;
-  
-  String str_message = message;
-  printk("<1>%s\n", str_message.cc());
-  
+
+  syslog_message(message);
   *all_errors << message << "\n";
   proc_click_errors_entry.size = all_errors->length();
   
@@ -67,8 +80,7 @@ KernelErrorHandler::vmessage(Seriousness seriousness, const String &message)
 void
 SyslogErrorHandler::vmessage(Seriousness seriousness, const String &message)
 {
-  String str_message = message;
-  printk("<1>%s\n", str_message.cc());
+  syslog_message(message);
 }
 
 
