@@ -592,7 +592,14 @@ ETT::push(int port, Packet *p_in)
   if (port == 2) {
     bool sent_packet = false;
     IPAddress dst = p_in->dst_ip_anno();
-    
+
+    if (!dst) {
+      click_chatter("ETT %s: got invalid dst %s\n",
+		    id().cc(),
+		    dst.s().cc());
+      p_in->kill();
+      return;
+    }
     ett_assert(dst);
     Path p = _link_table->best_route(dst);
     int metric = _link_table->get_route_metric(p);
