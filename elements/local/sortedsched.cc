@@ -1,7 +1,7 @@
 #include <click/config.h>
 #include <click/package.hh>
 #include "../standard/scheduleinfo.hh"
-#include "revsortedsched.hh"
+#include "sortedsched.hh"
 #include <click/task.hh>
 #include <click/routerthread.hh>
 #include <click/glue.hh>
@@ -14,19 +14,19 @@
 #define KEEP_GOOD_ASSIGNMENT 1
 
 
-ReverseSortedTaskSched::ReverseSortedTaskSched()
+SortedTaskSched::SortedTaskSched()
   : _timer(this)
 {
   MOD_INC_USE_COUNT;
 }
 
-ReverseSortedTaskSched::~ReverseSortedTaskSched()
+SortedTaskSched::~SortedTaskSched()
 {
   MOD_DEC_USE_COUNT;
 }
 
 int
-ReverseSortedTaskSched::initialize(ErrorHandler *)
+SortedTaskSched::initialize(ErrorHandler *)
 {
   _timer.initialize(this);
   _timer.schedule_after_ms(2000);
@@ -34,24 +34,26 @@ ReverseSortedTaskSched::initialize(ErrorHandler *)
 }
   
 int 
-ReverseSortedTaskSched::configure
+SortedTaskSched::configure
   (const Vector<String> &conf, ErrorHandler *errh)
 {
 #if __MTCLICK__
   _interval = 1000;
+  _increasing = true;
   if (cp_va_parse(conf, this, errh, 
 	          cpOptional,
-	          cpUnsigned, "interval", &_interval, 0) < 0)
+	          cpUnsigned, "interval", &_interval, 
+		  cpBool, "increasing?", &_increasing, 0) < 0)
     return -1;
   return 0;
 #else
   (void) conf;
-  return errh->error("ReverseSortedTaskSched requires multithreading\n");
+  return errh->error("SortedTaskSched requires multithreading\n");
 #endif
 }
 
 void
-ReverseSortedTaskSched::run_scheduled()
+SortedTaskSched::run_scheduled()
 {
 #if __MTCLICK__
   Vector<Task*> tasks;
@@ -76,9 +78,9 @@ ReverseSortedTaskSched::run_scheduled()
   avg_load = total_load / n;
 
 #if KEEP_GOOD_ASSIGNMENT
-  int i;
-  for(i=0; i<n; i++) {
-    unsigned diff = avg_load>load[i] ? avg_load-load[i] : load[i]-avg_load;
+  int ii;
+  for(ii=0; ii<n; ii++) {
+    unsigned diff = avg_load>load[ii] ? avg_load-load[ii] : load[ii]-avg_load;
     if (diff > (avg_load>>3)) {
 #if DEBUG > 1
       click_chatter("load balance, avg %u, diff %u", avg_load, diff);
@@ -86,7 +88,7 @@ ReverseSortedTaskSched::run_scheduled()
       break;
     }
   }
-  if (i == n) {
+  if (ii == n) {
     _timer.schedule_after_ms(_interval);
     return;
   }
@@ -134,9 +136,8 @@ ReverseSortedTaskSched::run_scheduled()
   Vector<Task*> schedule[n];
   for(int i=0; i<n; i++) load[i] = 0;
   int min, which;
-  // bin packs in reversely sorted order, so tasks with small costs will get
-  // evenly distributed as well as tasks with large costs.
-  for(int i=sorted.size()-1; i>=0; i--) {
+  int i = _increasing ? sorted.size()-1 : 0;
+  while (1) {
     min = load[0];
     which = 0;
     for (int j = 1; j < n; j++) {
@@ -148,6 +149,13 @@ ReverseSortedTaskSched::run_scheduled()
     load[which] += sorted[i]->cycles();
     schedule[which].push_back(sorted[i]);
     sorted[i]->change_thread(which);
+    if (_increasing) {
+      if (i == 0) break;
+      else i--;
+    } else {
+      if (i == sorted.size()-1) break;
+      else i++;
+    }
   }
   
 #if DEBUG > 1
@@ -170,5 +178,5 @@ ReverseSortedTaskSched::run_scheduled()
 #endif
 }
 
-EXPORT_ELEMENT(ReverseSortedTaskSched)
+EXPORT_ELEMENT(SortedTaskSched)
 
