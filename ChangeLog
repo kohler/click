@@ -1,3 +1,11 @@
+2001-07-23 Monday 18:31  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.86), click-buildtool (1.21), click-mkelemmap
+	(1.9), doc/Makefile.in (1.34), doc/click-elem2man (1.11),
+	etc/ron/Makefile.in (1.3), etc/samplepackage/Makefile.in (1.21):
+	click-mkelemmap and click-elem2man read new "click-buildtool -F"
+	output format
+
 2001-07-23 Monday 15:16  aguayo
 
 	* conf/grid.click (1.30): [no log message]
