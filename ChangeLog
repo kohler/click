@@ -1,3 +1,7 @@
+2001-04-04 Wednesday 19:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid-node.openbsd: broken initial version
+
 2001-04-03 Tuesday 14:45  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid-gateway.openbsd: 
