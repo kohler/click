@@ -1,3 +1,15 @@
+2002-01-05 Saturday 04:58  Eddie Kohler <kohler@aciri.org>
+
+	* doc/: click-pretty.1 (1.5), click-pretty.1 (1.6): doc nitlet
+
+2002-01-05 Saturday 04:57  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/eclasst.cc (1.13): correct tunnel flow code
+
+2002-01-05 Saturday 04:50  Eddie Kohler <kohler@aciri.org>
+
+	* doc/mkwebdoc.pl (1.27), tools/lib/eclasst.cc (1.12): nitlets
+
 2002-01-05 Saturday 04:33  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-pretty/click-pretty.cc (1.14), lib/eclasst.cc
