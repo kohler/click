@@ -161,9 +161,9 @@ LinkTable::update_link(IPAddress from, IPAddress to, uint32_t seq, uint32_t metr
   IPPair p = IPPair(from, to);
   LinkInfo *lnfo = _links.findp(p);
   if (!lnfo) {
-    _links.insert(p, LinkInfo(from, to, seq, metric));
+    _links.insert(p, LinkInfo(from, to, seq, 0, metric));
   } else {
-    lnfo->update(seq, metric);
+    lnfo->update(seq, 0, metric);
   }
   return true;
 }

@@ -360,7 +360,7 @@ SRForwarder::push(int port, Packet *p_in)
   pk->set_link(pk->next()-1,
 	       pk->get_link_node(pk->next()-1), _ip,
 	       prev_fwd_metric, prev_rev_metric,
-	       0);
+	       0,0);
 
   pk->set_next(pk->next() + 1);
   IPAddress nxt = pk->get_link_node(pk->next());

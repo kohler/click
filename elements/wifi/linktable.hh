@@ -131,21 +131,24 @@ private:
     IPAddress _to;
     unsigned _metric;
     uint32_t _seq;
+    uint32_t _age;
     struct timeval _last_updated;
     LinkInfo() { 
       _from = IPAddress(); 
       _to = IPAddress(); 
       _metric = 0; 
       _seq = 0;
+      _age = 0;
       _last_updated.tv_sec = 0; 
     }
     
     LinkInfo(IPAddress from, IPAddress to, 
-	     uint32_t seq, unsigned metric) { 
+	     uint32_t seq, uint32_t age, unsigned metric) { 
       _from = from;
       _to = to;
       _metric = metric;
       _seq = seq;
+      _age = age;
       click_gettimeofday(&_last_updated);
     }
 
@@ -155,12 +158,13 @@ private:
       _last_updated(p._last_updated) 
     { }
 
-    void update(unsigned seq, unsigned metric) {
+    void update(uint32_t seq, uint32_t age, unsigned metric) {
       if (seq < _seq) {
 	return;
       }
       _metric = metric; 
       _seq = seq;
+      _age = age;
       click_gettimeofday(&_last_updated); 
     }
     

@@ -28,7 +28,7 @@ enum SRCRPacketFlags {
   FLAG_ECN = (1<<7)
 };
 
-static const uint8_t _sr_version = 0x0a;
+static const uint8_t _sr_version = 0x0b;
 
 
 // Packet format.
@@ -70,6 +70,7 @@ struct srpacket {,
   uint32_t _random_fwd_metric;
   uint32_t _random_rev_metric;
   uint32_t _random_seq;
+  uint16_t _random_age;
   uint32_t _random_to;
 
 
@@ -111,44 +112,46 @@ struct srpacket {,
   void set_link(int link,
 		IPAddress a, IPAddress b, 
 		uint32_t fwd, uint32_t rev,
-		uint32_t seq) {
+		uint32_t seq,
+		uint32_t age) {
     
     uint32_t *ndx = (uint32_t *) (this+1);
-    ndx += link * 4;
+    ndx += link * 5;
 
     ndx[0] = a;
     ndx[1] = fwd;
     ndx[2] = rev;
     ndx[3] = seq;
-    ndx[4] = b;
+    ndx[4] = age;
+    ndx[5] = b;
   }
 
   uint32_t get_link_fwd(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
-    ndx += link * 4;
+    ndx += link * 5;
     return ndx[1];
   }
   uint32_t get_link_rev(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
-    ndx += link * 4;
+    ndx += link * 5;
     return ndx[2];
   }
 
   uint32_t get_link_seq(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
-    ndx += link * 4;
+    ndx += link * 5;
     return ndx[3];
   }
   IPAddress get_link_node(int link) {
     uint32_t *ndx = (uint32_t *) (this+1);
-    ndx += link * 4;
+    ndx += link * 5;
     return ndx[0];
   }
 
 
   void set_link_node(int link, IPAddress ip) {
     uint32_t *ndx = (uint32_t *) (this+1);
-    ndx += link * 4;
+    ndx += link * 5;
     ndx[0] = ip;
   }
 
@@ -162,7 +165,7 @@ struct srpacket {,
   static size_t len_wo_data(int nlinks) {
     return sizeof(struct srpacket) +
       sizeof(uint32_t) + 
-      (nlinks) * sizeof(uint32_t) * 4;
+      (nlinks) * sizeof(uint32_t) * 5;
 
   }
   static size_t len_with_data(int nlinks, int dlen) {

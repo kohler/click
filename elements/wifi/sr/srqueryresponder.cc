@@ -252,14 +252,16 @@ void SRQueryResponder::start_reply(struct srpacket *pk_in)
 		     pk_in->get_link_node(x+1),
 		     pk_in->get_link_fwd(x),
 		     pk_in->get_link_rev(x),
-		     pk_in->get_link_seq(x));
+		     pk_in->get_link_seq(x),
+		     0);
   }
   IPAddress neighbor = pk_in->get_link_node(pk_in->num_links());
   pk_out->set_link(pk_in->num_links(),
 		   neighbor, _ip, 
 		   (_metric) ? _metric->get_fwd_metric(neighbor) : 0,
 		   (_metric) ? _metric->get_rev_metric(neighbor) : 0,
-		   (_metric) ? _metric->get_seq(neighbor) : 0);
+		   (_metric) ? _metric->get_seq(neighbor) : 0,
+		   0);
 
   send(p);
 }

@@ -58,8 +58,6 @@ WifiDecap::simple_action(Packet *p)
 
 
   uint8_t dir;
-  uint8_t type;
-  uint8_t subtype;
   struct click_wifi *w = (struct click_wifi *) p->data();
   EtherAddress bssid;
   EtherAddress src;

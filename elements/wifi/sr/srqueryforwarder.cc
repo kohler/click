@@ -311,7 +311,7 @@ SRQueryForwarder::forward_query(Seen *s)
     pk->set_link(i,
 		 s->_hops[i], s->_hops[i+1],
 		 s->_fwd_metrics[i], s->_rev_metrics[i],
-		 0);
+		 0,0);
   }
   IPAddress neighbor = s->_hops[links-1];
   click_chatter("neighbor is %s links %d hops %d\n", 
@@ -323,7 +323,8 @@ SRQueryForwarder::forward_query(Seen *s)
 	       neighbor, _ip,
 	       (_metric) ? _metric->get_fwd_metric(neighbor) : 0,
 	       (_metric) ? _metric->get_rev_metric(neighbor) : 0,
-	       (_metric) ? _metric->get_seq(neighbor) : 0);
+	       (_metric) ? _metric->get_seq(neighbor) : 0,
+	       0);
 
 	       
 	       

@@ -74,7 +74,7 @@ public:
   }
 };
 
-static const uint8_t _ett_version = 0x01;
+static const uint8_t _ett_version = 0x02;
 
 class ETTStat : public Element {
 
@@ -121,6 +121,7 @@ public:
     uint32_t ip;
     uint8_t num_rates;
     uint32_t seq;
+    uint32_t age;
     link_entry() { }
     link_entry(IPAddress __ip) : ip(__ip.addr()) { }
   };

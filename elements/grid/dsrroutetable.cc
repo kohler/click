@@ -752,7 +752,7 @@ DSRRouteTable::push(int port, Packet *p_in)
 		    err_src.s().cc(), unreachable.s().cc(), err_dst.s().cc());
       
       // XXX DSR_INVALID_HOP_METRIC isn't really an appropriate name here
-      _link_table->update_both_links(err_src, unreachable, DSR_INVALID_ROUTE_METRIC);
+      _link_table->update_both_links(err_src, unreachable, 0, DSR_INVALID_ROUTE_METRIC);
 
       if (err_dst == *me) {
 	DEBUG_CHATTER(" * killed (reached final destination)\n");
@@ -855,7 +855,7 @@ DSRRouteTable::push(int port, Packet *p_in)
       set_blacklist(bad_dst, DSR_BLACKLIST_UNI_PROBABLE);
     }
 
-    _link_table->update_both_links(bad_src, bad_dst, DSR_INVALID_ROUTE_METRIC);
+    _link_table->update_both_links(bad_src, bad_dst, 0, DSR_INVALID_ROUTE_METRIC);
 
     const click_ip *ip = p_in->ip_header();
     unsigned src = ip->ip_src.s_addr;
@@ -1796,9 +1796,9 @@ DSRRouteTable::add_route_to_link_table(DSRRoute route)
     // ETX:
     unsigned char metric = route[i+1]._metric;
     if (metric == DSR_INVALID_HOP_METRIC) 
-      _link_table->update_both_links(ip1, ip2, 9999);			      
+      _link_table->update_both_links(ip1, ip2, 0, 9999);			      
     else
-      _link_table->update_both_links(ip1, ip2, metric);
+      _link_table->update_both_links(ip1, ip2, 0, metric);
     
     // DEBUG_CHATTER("_link_table->update_link %s %s %d\n",
     //               route[i].s().cc(), route[i+1].s().cc(), metric);

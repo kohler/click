@@ -221,7 +221,8 @@ GatewaySelector::forward_ad(Seen *s)
     pk->set_link(i,
 		 s->_hops[i], s->_hops[i+1],
 		 s->_fwd_metrics[i], s->_rev_metrics[i],
-		 s->_seqs[i]);
+		 s->_seqs[i],
+		 0);
   }
 
   assert(links-1 < s->_hops.size());
@@ -230,7 +231,8 @@ GatewaySelector::forward_ad(Seen *s)
 	       neighbor, _ip,
 	       (_metric) ? _metric->get_fwd_metric(neighbor) : 0,
 	       (_metric) ? _metric->get_rev_metric(neighbor) : 0,
-	       (_metric) ? _metric->get_seq(neighbor) : 0);
+	       (_metric) ? _metric->get_seq(neighbor) : 0,
+	       0);
   s->_forwarded = true;
   send(p);
 }
