@@ -159,13 +159,13 @@ accum_wt_names(HashMap<String, int> *wordmap, String word, StringAccum &sa)
   if (types.size() == 0)
     /* nada */;
   else if (types.size() == 1)
-    sa << '`' << IPFilter::Primitive::unparse_type(0, types[0]) << '\'';
+    sa << '\'' << IPFilter::Primitive::unparse_type(0, types[0]) << '\'';
   else if (types.size() == 2)
-    sa << '`' << IPFilter::Primitive::unparse_type(0, types[0]) << "\' or `" << IPFilter::Primitive::unparse_type(0, types[1]) << '\'';
+    sa << '\'' << IPFilter::Primitive::unparse_type(0, types[0]) << "' or '" << IPFilter::Primitive::unparse_type(0, types[1]) << '\'';
   else {
     for (int i = 0; i < types.size() - 1; i++)
-      sa << '`' << IPFilter::Primitive::unparse_type(0, types[i]) << "\', ";
-    sa << "or `" << IPFilter::Primitive::unparse_type(0, types.back()) << '\'';
+      sa << '\'' << IPFilter::Primitive::unparse_type(0, types[i]) << "', ";
+    sa << "or '" << IPFilter::Primitive::unparse_type(0, types.back()) << '\'';
   }
 }
 
@@ -208,7 +208,7 @@ IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto,
     if (errh) {
       StringAccum sa;
       accum_wt_names(wordmap, orig_word, sa);
-      errh->error("`%s' is ambiguous; specify %s", orig_word.cc(), sa.cc());
+      errh->error("'%s' is ambiguous; specify %s", orig_word.cc(), sa.cc());
     }
     return -2;
   } else {
@@ -218,7 +218,7 @@ IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto,
       if (tr) tr += " ";
       StringAccum sa;
       accum_wt_names(wordmap, orig_word, sa);
-      errh->error("`%s%s %s' is meaningless; specify %s with %s", tr.cc(), tn.cc(), orig_word.cc(), sa.cc(), orig_word.cc());
+      errh->error("'%s%s %s' is meaningless; specify %s with %s", tr.cc(), tn.cc(), orig_word.cc(), sa.cc(), orig_word.cc());
     }
     return -2;
   }
@@ -270,7 +270,7 @@ void
 IPFilter::Primitive::set_srcdst(int x, ErrorHandler *errh)
 {
   if (_srcdst)
-    errh->error("`src' or `dst' specified twice");
+    errh->error("'src' or 'dst' specified twice");
   _srcdst = x;
 }
 
@@ -295,7 +295,7 @@ IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
     if ((_op == OP_LT && (data == 0 || data > full_mask))
 	|| (_op == OP_GT && data >= full_mask)) {
       bool will_be = (_op == OP_LT && data > full_mask ? !_op_negated : _op_negated);
-      errh->warning("relation `%s %u' is always %s (range 0-%u)", unparse_op().cc(), data, (will_be ? "true" : "false"), full_mask);
+      errh->warning("relation '%s %u' is always %s (range 0-%u)", unparse_op().cc(), data, (will_be ? "true" : "false"), full_mask);
       _u.u = _mask.u = 0;
       _op_negated = !will_be;
       _op = OP_EQ;
@@ -457,7 +457,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       break;
       
      default:
-      return errh->error("unknown type `%s'", unparse_type(0, _data).cc());
+      return errh->error("unknown type '%s'", unparse_type(0, _data).cc());
 
     }
   }
@@ -467,17 +467,17 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 
    case TYPE_HOST:
     if (_data != TYPE_HOST)
-      return errh->error("IP address missing in `host' directive");
+      return errh->error("IP address missing in 'host' directive");
     if (_op != OP_EQ)
-      return errh->error("can't use relational operators with `host'");
+      return errh->error("can't use relational operators with 'host'");
     _mask.u = 0xFFFFFFFFU;
     break;
 
    case TYPE_NET:
     if (_data != TYPE_NET)
-      return errh->error("IP prefix missing in `net' directive");
+      return errh->error("IP prefix missing in 'net' directive");
     if (_op != OP_EQ)
-      return errh->error("can't use relational operators with `net'");
+      return errh->error("can't use relational operators with 'net'");
     _type = TYPE_HOST;
     // _mask already set
     break;
@@ -491,10 +491,10 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       _u.i = _transp_proto;
     _transp_proto = UNKNOWN;
     if (_data != TYPE_NONE || _u.i == UNKNOWN)
-      return errh->error("IP protocol missing in `proto' directive");
+      return errh->error("IP protocol missing in 'proto' directive");
     if (_u.i == IP_PROTO_TCP_OR_UDP) {
       if (_op != OP_EQ)
-	return errh->error("can't use relational operators with `tcpudp'");
+	return errh->error("can't use relational operators with 'tcpudp'");
       _mask.u = 0xFF;
     } else if (set_mask(0xFF, 0, errh) < 0)
       return -1;
@@ -506,11 +506,11 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (_data == TYPE_INT)
       _data = TYPE_PORT;
     if (_data != TYPE_PORT)
-      return errh->error("port number missing in `port' directive");
+      return errh->error("port number missing in 'port' directive");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP_OR_UDP;
     else if (_transp_proto != IP_PROTO_TCP && _transp_proto != IP_PROTO_UDP && _transp_proto != IP_PROTO_TCP_OR_UDP)
-      return errh->error("bad protocol %d for `port' directive", _transp_proto);
+      return errh->error("bad protocol %d for 'port' directive", _transp_proto);
     if (set_mask(0xFFFF, 0, errh) < 0)
       return -1;
     break;
@@ -519,13 +519,13 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (_data == TYPE_INT)
       _data = TYPE_TCPOPT;
     if (_data != TYPE_TCPOPT)
-      return errh->error("TCP options missing in `tcp opt' directive");
+      return errh->error("TCP options missing in 'tcp opt' directive");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_TCP;
     else if (_transp_proto != IP_PROTO_TCP)
-      return errh->error("bad protocol %d for `tcp opt' directive", _transp_proto);
+      return errh->error("bad protocol %d for 'tcp opt' directive", _transp_proto);
     if (_op != OP_EQ || _op_negated)
-      return errh->error("can't use relational operators with `tcp opt'");
+      return errh->error("can't use relational operators with 'tcp opt'");
     if (_u.i < 0 || _u.i > 255)
       return errh->error("value %d out of range", _u.i);
     _mask.i = _u.i;
@@ -540,13 +540,13 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       if (set_mask(0x3, 0, errh) < 0)
 	return -1;
     } else
-      return errh->error("weird data given to `ip ect' directive");
+      return errh->error("weird data given to 'ip ect' directive");
     _type = TYPE_FIELD | FIELD_TOS;
     break;
 
    case TYPE_IPCE:
     if (_data != TYPE_NONE)
-      return errh->error("`ip ce' directive takes no data");
+      return errh->error("'ip ce' directive takes no data");
     _mask.u = IP_ECNMASK;
     _u.u = IP_ECN_CE;
     _type = TYPE_FIELD | FIELD_TOS;
@@ -556,24 +556,24 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (_data == TYPE_INT)
       _data = TYPE_ICMP_TYPE;
     if (_data != TYPE_ICMP_TYPE)
-      return errh->error("ICMP type missing in `icmp type' directive");
+      return errh->error("ICMP type missing in 'icmp type' directive");
     if (_transp_proto == UNKNOWN)
       _transp_proto = IP_PROTO_ICMP;
     else if (_transp_proto != IP_PROTO_ICMP)
-      return errh->error("bad protocol %d for `icmp type' directive", _transp_proto);
+      return errh->error("bad protocol %d for 'icmp type' directive", _transp_proto);
     if (set_mask(0xFF, 0, errh) < 0)
       return -1;
     break;
 
    case TYPE_IPFRAG:
     if (_data != TYPE_NONE)
-      return errh->error("`ip frag' directive takes no data");
+      return errh->error("'ip frag' directive takes no data");
     _mask.u = 1; // don't want mask to be 0
     break;
 
    case TYPE_IPUNFRAG:
     if (_data != TYPE_NONE)
-      return errh->error("`ip unfrag' directive takes no data");
+      return errh->error("'ip unfrag' directive takes no data");
     _op_negated = true;
     _mask.u = 1; // don't want mask to be 0
     _type = TYPE_IPFRAG;
@@ -597,7 +597,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (_srcdst == 0)
       _srcdst = SD_OR;
   } else if (old_srcdst)
-    errh->warning("`src' or `dst' is meaningless here");
+    errh->warning("'src' or 'dst' is meaningless here");
   
   return 0;
 }
@@ -894,7 +894,7 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 
   // easy cases
   
-  // `true' and `false'
+  // 'true' and 'false'
   if (words[pos] == "true") {
     add_expr(tree, 0, 0, 0);
     if (negated)
@@ -911,17 +911,17 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   if (words[pos] == "not" || words[pos] == "!") {
     int next = parse_factor(words, pos + 1, tree, prev_prim, !negated, errh);
     if (next == pos + 1)
-      errh->error("missing factor after `%s'", words[pos].c_str());
+      errh->error("missing factor after '%s'", words[pos].c_str());
     return next;
   }
   // ( expr )
   if (words[pos] == "(") {
     int next = parse_expr(words, pos + 1, tree, prev_prim, errh);
     if (next == pos + 1)
-      errh->error("missing expression after `('");
+      errh->error("missing expression after '('");
     if (next >= 0) {
       if (next >= words.size() || words[next] != ")")
-	errh->error("missing `)'");
+	errh->error("missing ')'");
       else
 	next++;
       if (negated)
@@ -1043,13 +1043,13 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
 
     else {
       if (prim._op != OP_EQ || prim._op_negated)
-	errh->error("dangling operator near `%s'", wd.cc());
+	errh->error("dangling operator near '%s'", wd.cc());
       pos--;
     }
   }
 
   if (pos == first_pos) {
-    errh->error("empty term near `%s'", wd.cc());
+    errh->error("empty term near '%s'", wd.cc());
     return pos;
   }
   
@@ -1098,20 +1098,20 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
       if (slotwd == "allow") {
 	slot = 0;
 	if (noutputs() == 0)
-	  cerrh.error("`allow' is meaningless, element has zero outputs");
+	  cerrh.error("'allow' is meaningless, element has zero outputs");
       } else if (slotwd == "deny") {
 	slot = noutputs();
 	if (noutputs() > 1)
-	  cerrh.warning("meaning of `deny' has changed (now it means `drop')");
+	  cerrh.warning("meaning of 'deny' has changed (now it means 'drop')");
       } else if (slotwd == "drop")
 	slot = noutputs();
       else if (cp_integer(slotwd, &slot)) {
 	if (slot < 0 || slot >= noutputs()) {
-	  cerrh.error("slot `%d' out of range", slot);
+	  cerrh.error("slot '%d' out of range", slot);
 	  slot = noutputs();
 	}
       } else
-	cerrh.error("unknown slot ID `%s'", slotwd.cc());
+	cerrh.error("unknown slot ID '%s'", slotwd.cc());
     }
 
     start_expr_subtree(tree);
@@ -1128,7 +1128,7 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
       
       int pos = parse_expr(words, 1, tree, prev_prim, &cerrh);
       if (pos < words.size())
-	cerrh.error("garbage after expression at `%s'", words[pos].c_str());
+	cerrh.error("garbage after expression at '%s'", words[pos].c_str());
     }
     
     finish_expr_subtree(tree, C_AND, -slot);
