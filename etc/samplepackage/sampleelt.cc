@@ -18,15 +18,12 @@
  * also accessible at http://www.pdos.lcs.mit.edu/click/license.html
  */
 
-#ifdef HAVE_CONFIG_H
-# include <config.h>
-#endif
-// ALWAYS INCLUDE click/config.h
+// ALWAYS INCLUDE <click/config.h> FIRST
 #include <click/config.h>
-// ALWAYS INCLUDE click/package.hh
-#include <click/package.hh>
+// include your own config.h if appropriate
 #include "sampleelt.hh"
 #include <click/error.hh>
+// note: <click/package.hh> no longer necessary
 
 SamplePackageElement::SamplePackageElement()
 {
@@ -45,6 +42,19 @@ SamplePackageElement::initialize(ErrorHandler *errh)
 {
   errh->message("Successfully linked with package!");
   return 0;
+}
+
+static String
+read_handler(Element *, void *)
+{
+  return "false\n";
+}
+
+void
+SamplePackageElement::add_handlers()
+{
+  // needed for QuitWatcher
+  add_read_handler("scheduled", read_handler, 0);
 }
 
 EXPORT_ELEMENT(SamplePackageElement)

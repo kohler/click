@@ -24,6 +24,7 @@ class SamplePackageElement : public Element { public:
   SamplePackageElement *clone() const	{ return new SamplePackageElement; }
 
   int initialize(ErrorHandler *);
+  void add_handlers();
   
 };
 
