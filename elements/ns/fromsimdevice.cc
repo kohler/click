@@ -69,7 +69,7 @@ FromSimDevice::clone() const
 }
 
 int
-FromSimDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   _packetbuf_size = 2048;
   if (cp_va_parse(conf, this, errh,

@@ -66,7 +66,7 @@ ToSimDevice::clone() const
 }
 
 int
-ToSimDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
+ToSimDevice::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   String encap_type;
   if (cp_va_parse(conf, this, errh,
