@@ -26,14 +26,11 @@
 CLICK_DECLS
 
 IPFragmenter::IPFragmenter()
+    : Element(1, 1), _honor_df(true), _verbose(false), _mtu(0)
 {
-  MOD_INC_USE_COUNT;
-  _fragments = 0;
-  _mtu = 0;
-  _honor_df = true;
-  _drops = 0;
-  add_input();
-  add_output();
+    MOD_INC_USE_COUNT;
+    _fragments = 0;
+    _drops = 0;
 }
 
 IPFragmenter::~IPFragmenter()
@@ -59,6 +56,7 @@ IPFragmenter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpBool, "HONOR_DF", &_honor_df,
 		    cpKeywords,
 		    "HONOR_DF", cpBool, "honor DF bit?", &_honor_df,
+		    "VERBOSE", cpBool, "be verbose?", &_verbose,
 		    cpEnd) < 0)
 	return -1;
     if (_mtu < 8)
@@ -104,9 +102,8 @@ IPFragmenter::fragment(Packet *p_in)
     int in_dlen = ntohs(ip_in->ip_len) - hlen;
 
     if (((ip_in->ip_off & htons(IP_DF)) && _honor_df) || first_dlen < 8) {
-	click_chatter("IPFragmenter(%d) DF %s %s len=%d",
-		      _mtu, IPAddress(ip_in->ip_src).s().cc(),
-		      IPAddress(ip_in->ip_dst).s().cc(), p_in->length());
+	if (_verbose || _drops < 5)
+	    click_chatter("IPFragmenter(%d) DF %s %s len=%d", _mtu, IPAddress(ip_in->ip_src).s().cc(), IPAddress(ip_in->ip_dst).s().cc(), p_in->length());
 	_drops++;
 	checked_output_push(1, p_in);
 	return;

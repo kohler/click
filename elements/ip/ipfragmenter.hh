@@ -7,7 +7,7 @@ CLICK_DECLS
 
 /*
  * =c
- * IPFragmenter(MTU, [I<keywords> HONOR_DF])
+ * IPFragmenter(MTU, [I<keywords> HONOR_DF, VERBOSE])
  * =s IP
  * fragments large IP packets
  * =d
@@ -33,6 +33,12 @@ CLICK_DECLS
  * Boolean. If HONOR_DF is false, IPFragmenter will ignore the don't-fragment
  * (DF) bit and fragment every packet larger than MTU. Default is true.
  *
+ * =item VERBOSE
+ *
+ * Boolean.  If true, IPFragmenter will print a message every time it sees a
+ * packet with DF; otherwise, it will print a message only the first 5 times.
+ * Default is false.
+ *
  * =e
  *   ... -> fr::IPFragmenter(1024) -> Queue(20) -> ...
  *   fr[1] -> ICMPError(18.26.4.24, 3, 4) -> ...
@@ -40,18 +46,7 @@ CLICK_DECLS
  * =a ICMPError, CheckLength
  */
 
-class IPFragmenter : public Element {
-
-  bool _honor_df;
-  unsigned _mtu;
-  atomic_uint32_t _drops;
-  atomic_uint32_t _fragments;
-
-  void fragment(Packet *);
-  int optcopy(const click_ip *ip1, click_ip *ip2);
-  
- public:
-
+class IPFragmenter : public Element { public:
 
   IPFragmenter();
   ~IPFragmenter();
@@ -67,6 +62,17 @@ class IPFragmenter : public Element {
   void add_handlers();
 
   void push(int, Packet *);
+
+ private:
+
+  bool _honor_df;
+  bool _verbose;
+  unsigned _mtu;
+  atomic_uint32_t _drops;
+  atomic_uint32_t _fragments;
+
+  void fragment(Packet *);
+  int optcopy(const click_ip *ip1, click_ip *ip2);
   
 };
 
