@@ -505,16 +505,30 @@ particular purpose.\n");
   }
 
   // write flattened configuration to /proc/click/config
-  String config_place = (hotswap ? clickfs_hotconfig : clickfs_config);
-  if (verbose)
-    errh->message("Writing configuration to %s", config_place.cc());
-  FILE *f = fopen(config_place.cc(), "w");
-  if (!f)
-    errh->fatal("cannot install configuration: %s", strerror(errno));
-  // XXX include packages?
-  String config = r->configuration_string();
-  fwrite(config.data(), 1, config.length(), f);
-  fclose(f);
+  int exit_status = 0;
+  {
+    String config_place = (hotswap ? clickfs_hotconfig : clickfs_config);
+    if (verbose)
+      errh->message("Writing configuration to %s", config_place.cc());
+    int fd = open(config_place.cc(), O_WRONLY | O_TRUNC);
+    if (fd < 0)
+      errh->fatal("cannot install configuration: %s", strerror(errno));
+    // XXX include packages?
+    String config = r->configuration_string();
+    int pos = 0;
+    while (pos < config.length()) {
+      ssize_t written = write(fd, config.data() + pos, config.length() - pos);
+      if (written >= 0)
+	pos += written;
+      else if (errno != EAGAIN && errno != EINTR)
+	errh->fatal("%s: %s", config_place.cc(), strerror(errno));
+    }
+    int retval = close(fd);
+    if (retval < 0 && errno == EINVAL)
+      exit_status = 2;
+    else if (retval < 0)
+      errh->error("%s: %s", config_place.cc(), strerror(errno));
+  }
 
   // report errors
   {
@@ -555,5 +569,5 @@ particular purpose.\n");
   
   if (verbose)
     errh->message("Done");
-  exit(0);
+  exit(exit_status);
 }

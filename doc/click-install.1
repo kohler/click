@@ -51,7 +51,8 @@ kernel module if necessary, compiles and/or installs any dynamically
 loadable packages required by the router configuration, installs the router
 configuration itself by writing it to /proc/click/config, and uninstalls
 any unused packages. It reports any errors to standard error, including
-errors reported by the Click module.
+errors reported by the Click module, and returns a zero (true) exit status
+if and only if the configuration was successfully installed.
 '
 .SH "OPTIONS"
 '
@@ -155,6 +156,25 @@ Print usage information and exit.
 .BI \-\-version
 Print the version number and some quickie warranty information and exit.
 '
+.PD
+'
+.SH "EXIT STATUS"
+.B Click-install
+exits with one of the following return values:
+.TP 5
+.B 0
+The configuration was successfully installed.
+.TP
+.B 1
+Some error prevented
+.B click-install
+from attempting to install the configuration. For example, perhaps the
+configuration could not be parsed, or the kernel module could not be
+loaded.
+.TP
+.B 2
+The configuration was installed, but the kernel module reports that it
+could not be initialized.
 .PD
 '
 .SH "SEE ALSO"
