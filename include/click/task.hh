@@ -21,6 +21,9 @@ class Task { public:
   enum { STRIDE1 = 1U<<16, MAX_STRIDE = 1U<<31 };
   enum { MAX_TICKETS = 1<<15, DEFAULT_TICKETS = 1<<10 };
 #endif
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+  enum { MAX_UTILIZATION = 1000 };
+#endif
 
   Task(TaskHook, void *);
   Task(Element *);			// call element->run_task()
@@ -64,8 +67,12 @@ class Task { public:
   void wakeup();
 #endif
   
-  bool call_hook();
+  void call_hook();
 
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+  unsigned utilization() const;
+  void clear_runs()			{ _runs = _work_done = 0; }
+#endif
 #if __MTCLICK__
   int cycles() const;
   void update_cycles(unsigned c);
@@ -90,9 +97,13 @@ class Task { public:
   TaskHook _hook;
   void *_thunk;
   
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+  unsigned _runs;
+  unsigned _work_done;
+#endif
 #if __MTCLICK__
   DirectEWMA _cycles;
-  int _update_cycle_runs;
+  unsigned _cycle_runs;
 #endif
 
   RouterThread *_thread;
@@ -151,8 +162,11 @@ Task::Task(TaskHook hook, void *thunk)
     _pass(0), _stride(0), _tickets(-1),
 #endif
     _hook(hook), _thunk(thunk),
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+    _runs(0), _work_done(0),
+#endif
 #if __MTCLICK__
-    _update_cycle_runs(0),
+    _cycle_runs(0),
 #endif
     _thread(0), _thread_preference(-1),
     _all_prev(0), _all_next(0), _all_list(0),
@@ -167,8 +181,11 @@ Task::Task(Element *e)
     _pass(0), _stride(0), _tickets(-1),
 #endif
     _hook(0), _thunk(e),
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+    _runs(0), _work_done(0),
+#endif
 #if __MTCLICK__
-    _update_cycle_runs(0),
+    _cycle_runs(0),
 #endif
     _thread(0), _thread_preference(-1),
     _all_prev(0), _all_next(0), _all_list(0),
@@ -197,7 +214,7 @@ Task::fast_unschedule()
     _next = _prev = 0;
   }
 #if __MTCLICK__
-  return _update_cycle_runs;
+  return _cycle_runs;
 #else
   return 0;
 #endif
@@ -299,17 +316,33 @@ Task::wakeup()
 }
 #endif
 
-inline bool
+inline void
 Task::call_hook()
 {
 #if __MTCLICK__
-  _update_cycle_runs++;
+  _cycle_runs++;
 #endif
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+  _runs++;
   if (!_hook)
-    return ((Element *)_thunk)->run_task();
+    _work_done += ((Element *)_thunk)->run_task();
   else
-    return _hook(this, _thunk);
+    _work_done += _hook(this, _thunk);
+#else
+  if (!_hook)
+    (void) ((Element *)_thunk)->run_task();
+  else
+    (void) _hook(this, _thunk);
+#endif
 }
+
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+inline unsigned
+Task::utilization() const
+{
+  return (_runs ? (MAX_UTILIZATION * _work_done) / _runs : 0);
+}
+#endif
 
 #if __MTCLICK__
 inline int
@@ -322,7 +355,7 @@ inline void
 Task::update_cycles(unsigned c) 
 {
   _cycles.update_with(c);
-  _update_cycle_runs = 0;
+  _cycle_runs = 0;
 }
 #endif
 
