@@ -867,6 +867,11 @@ if test "x$have_int64_types" = xyes; then
     provisions="int64 $provisions"
 fi
 
+dnl add `analysis' if analysis elements are available
+if test "x$enable_analysis" = xyes; then
+    provisions="analysis $provisions"
+fi
+
 dnl add `ip6' if ip6 elements are available
 if test "x$enable_ip6" = xyes; then
     provisions="ip6 $provisions"

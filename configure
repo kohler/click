@@ -9821,6 +9821,10 @@ if test "x$have_int64_types" = xyes; then
     provisions="int64 $provisions"
 fi
 
+if test "x$enable_analysis" = xyes; then
+    provisions="analysis $provisions"
+fi
+
 if test "x$enable_ip6" = xyes; then
     provisions="ip6 $provisions"
 fi
