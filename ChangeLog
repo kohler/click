@@ -1,3 +1,36 @@
+2005-03-01 Tuesday 23:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.63): call each static_initialize function
+	exactly once
+
+2005-03-01 Tuesday 23:11  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.126): make buildtool on install
+
+2005-03-01 Tuesday 23:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/: click-combine/click-combine.cc (1.39),
+	click-devirtualize/click-devirtualize.cc (1.46),
+	click-devirtualize/specializer.cc (1.40),
+	click-fastclassifier/click-fastclassifier.cc (1.68), lib/eclasst.hh
+	(1.23), lib/elementmap.cc (1.17), lib/elementmap.hh (1.9),
+	lib/etraits.cc (1.11), lib/etraits.hh (1.8), lib/processingt.cc
+	(1.34): generate correct elementmap files from tools
+
+2005-03-01 Tuesday 22:45  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.62), etc/samplepackage/Makefile.in (1.46),
+	etc/samplepackage/configure.in (1.10), lib/driver.cc (1.26),
+	tools/click-devirtualize/click-devirtualize.cc (1.45),
+	tools/click-devirtualize/specializer.cc (1.39),
+	tools/click-devirtualize/specializer.hh (1.12),
+	tools/click-fastclassifier/click-fastclassifier.cc (1.67): make
+	click-devirtualize and click-fastclassifier work again (Anne
+	Dudfield, Mazu).  click-buildtool elem2package loses its -I
+	argument, and gains -i"<config.h>".  devirt and fastclass don't
+	supply elem2package with -I; instead, they put the output of
+	elem2package at the TOP of the source file. also spacing nits.
+
 2005-03-01 Tuesday 15:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* drivers/e1000-5.x/src/: Makefile (1.2), e1000_main.c (1.4):
