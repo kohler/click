@@ -1,3 +1,8 @@
+2001-08-23 Thursday 11:19  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.4.9-patch (1.3): bring up tulip improvements from
+	2.2.18 to 2.4.9
+
 2001-08-22 Wednesday 12:29  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/: click-client-2part.conf (1.2),
