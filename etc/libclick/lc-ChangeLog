@@ -1,3 +1,14 @@
+2002-05-16 Thursday 13:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet.hh, packet.hh: header file rearrangement,
+	and add mac_length(), network_length(), transport_length()
+	functions
+
+2002-05-16 Thursday 13:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: click_ip.h, click_ip.h: add cast to
+	click_in_cksum in Linux: it takes non-const
+
 2002-05-15 Wednesday 18:21  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: packet.hh, packet.hh: add another word of user

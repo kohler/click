@@ -1,3 +1,34 @@
+2002-05-16 Thursday 14:12  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/: oldipreassembler.cc (1.1), oldipreassembler.hh
+	(1.1): save old IPReassembler code
+
+2002-05-16 Thursday 13:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/packet.hh (1.34): header file rearrangement, and
+	add mac_length(), network_length(), transport_length() functions
+
+2002-05-16 Thursday 13:17  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/click_ip.h (1.13): add cast to click_in_cksum in
+	Linux: it takes non-const
+
+2002-05-16 Thursday 13:16  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/rfc2507c.cc (1.22): be careful about ntohs() with
+	ip_off
+
+2002-05-16 Thursday 13:16  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ip/ipprint.cc (1.32): print fragment information a la
+	tcpdump
+
+2002-05-16 Thursday 13:15  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.17), toipsumdump.cc
+	(1.13), toipsumdump.hh (1.10): "ip fragoff" is in bytes (translate
+	to and from ip_off, which is in 8-byte units)
+
 2002-05-15 Wednesday 18:21  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/packet.hh (1.33): add another word of user
