@@ -298,7 +298,7 @@ $bad_files"
 
     # generate output
     if test "$filenames" = f; then
-	postprocess='$awk "{ print $1 }"'
+	postprocess="$awk '{ print \$1 }'"
     elif test "$filenames" = F; then
 	postprocess="$awk '{ if (NF > 2) printf "'"%s:%s\n", $1, $2; else print $1; }'"'"
     else
