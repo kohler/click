@@ -1,3 +1,8 @@
+2003-08-06 Wednesday 19:36  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/toipflowdumps.cc (1.27): take environment into
+	account when deciding how much space there is for compressables
+
 2003-08-06 Wednesday 15:28  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridgenericmetric.hh (1.1), hopcountmetric.cc
