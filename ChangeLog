@@ -1,3 +1,42 @@
+2003-12-02 Tuesday 14:22  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/linkunqueue.cc (1.1),
+	elements/standard/linkunqueue.hh (1.1),
+	test/standard/LinkUnqueue-01.testie (1.1),
+	elements/standard/linkunqueue.cc (1.2): add LinkUnqueue element,
+	which emulates the delay caused by a serial link
+
+2003-12-02 Tuesday 14:22  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: settimestampdelta.cc (1.1),
+	settimestampdelta.hh (1.1): add SetTimestampDelta element: set
+	timestamp based on delta from first timestamp seen (useful for
+	testing)
+
+2003-12-02 Tuesday 14:21  Eddie Kohler <kohler@icir.org>
+
+	* lib/straccum.cc (1.34): print negative timevals correctly
+
+2003-12-02 Tuesday 14:21  Eddie Kohler <kohler@icir.org>
+
+	* include/click/standard/storage.hh (1.3): nit
+
+2003-12-02 Tuesday 14:21  Eddie Kohler <kohler@icir.org>
+
+	* include/click/element.hh (1.30): add CLEANUP_MANUAL stage, to
+	signal a manual call to cleanup() outside the usual cleanup
+	procedure
+
+2003-12-02 Tuesday 14:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/: delayunqueue.cc (1.18), delayunqueue.hh
+	(1.13): documentation updates
+
+2003-12-02 Tuesday 14:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipreassembler.hh (1.14): mention "next packet"
+	annotation
+
 2003-11-30 Sunday 22:19  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: linktable.cc (1.21), sr/dupefilter.cc (1.2),
