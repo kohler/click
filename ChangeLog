@@ -1,3 +1,37 @@
+2000-11-21 Tuesday 23:59  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.5, lib/confparse.cc, lib/lexer.cc,
+	tools/lib/elementt.cc, tools/lib/elementt.hh, tools/lib/lexert.cc,
+	tools/lib/routert.cc, tools/lib/routert.hh: more parsing updates:
+	"connectiontunnel" statement only takes one tunnel; overloading
+	mechanism returns the closest class if there is no exact match, but
+	one class is closer than others, because the error messages are
+	more reasonable; better error messages in drivers on redeclarations
+	of elements; eradicated a crash caused by elementclass synonyms,
+	plus other synonym bugfixes; in tools, report errors for unused
+	tunnels, like drivers already dead (Mazu)
+
+2000-11-21 Tuesday 23:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/proc_config.cc, userlevel/click.cc: don't initialize
+	a Router if there were any errors during parsing; instead, just
+	preinitialize
+
+2000-11-21 Tuesday 23:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/router.hh, lib/router.cc: add
+	Router::preinitialize() to put the Router in a reasonable state
+	before or in lieu of fully initializing it (Mazu)
+
+2000-11-21 Tuesday 23:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/variableenv.cc: support ${variable} syntax (Mazu)
+
+2000-11-21 Tuesday 23:55  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: check whether -fpermissive actually works before
+	using it
+
 2000-11-20 Monday 21:33  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/lexer.hh, lib/lexer.cc, tools/lib/lexert.cc,
