@@ -14,7 +14,7 @@ CLICK_DECLS
 
 /*
  * =c
- * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, MIN_TRIGGER_PERIOD, ETH, IP [, GridGatewayInfo, LinkTracker, LinkStat] [, I<KEYWORDS>])
+ * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, MIN_TRIGGER_PERIOD, ETH, IP [, I<KEYWORDS>])
  *
  * =s Grid
  * Run DSDV local routing protocol
@@ -63,14 +63,20 @@ CLICK_DECLS
  *
  * =back
  *
- * Optional arguments are GridGatewayInfo, LinkTracker, and LinkStat
- * elements.  If the GridGatewayInfo element is missing, this node
- * won't advertise itself as a gateway.  If LinkStat or LinkTracker
- * elements are missing, link metrics may not work correctly.
- *
  * Keywords arguments are:
  *
  * =over 8
+ *
+ * =item GW
+ *
+ * GridGatewayInfo element.  Determines whether or not this node is a
+ * gateway.  If this argument is not provided, the node is not a
+ * gateway.
+ *
+ * =item LS, LT
+ *
+ * LinkStat and LinkTracker elements, respectively.  Both elements are
+ * required to use link metrics other than hopcount.
  *
  * =item MAX_HOPS
  * 
