@@ -169,7 +169,7 @@ read_cycles(Element *, void *)
   click_calls = 0;
   click_cycles = 0;
 
-#ifdef HAVE_CLICK_KERNEL
+#if 0 && defined(HAVE_CLICK_KERNEL)
   extern unsigned int rtm_irq_calls;
   extern unsigned long long rtm_irq_cycles;
   sa << rtm_irq_calls << " irq calls\n";
