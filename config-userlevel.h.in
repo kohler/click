@@ -5,7 +5,7 @@
 /* Define if <new.h> exists and works. */
 #undef HAVE_NEW_H
 
-/* Define if inttypes.h exists. */
+/* Define if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
 /* Define if you have the <byteswap.h> header file. */
