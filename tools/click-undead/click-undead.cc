@@ -688,6 +688,7 @@ particular purpose.\n");
   // remove elements who make static routing decisions
   remove_static_switches(r, default_errh);
   remove_static_pull_switches(r, default_errh);
+  remove_nulls(r, r->type_index("Null"), default_errh);
 
   // remove dead elements to improve processing checking
   r->remove_dead_elements();
@@ -730,7 +731,6 @@ particular purpose.\n");
     nchanges += remove_redundant_schedulers(r, r->type_index("StrideSched"), true, default_errh);
     nchanges += remove_redundant_tee_ports(r, r->type_index("Tee"), false, default_errh);
     nchanges += remove_redundant_tee_ports(r, r->type_index("PullTee"), true, default_errh);
-    remove_nulls(r, r->type_index("Null"), default_errh);
     if (!nchanges) break;
   }
 

@@ -11,20 +11,20 @@
  *
  *   elementclass IPOutputCombo { $COLOR, $IPADDR, $MTU |
  *     input[0] -> DropBroadcasts
- *           -> c::CheckPaint($COLOR)
+ *           -> p::PaintTee($COLOR)
  *           -> g::IPGWOptions($IPADDR)
  *           -> FixIPSrc($IPADDR)
  *           -> d::DecIPTTL
  *           -> l::CheckLength($MTU)
  *           -> [0]output;
- *     c[1] -> [1]output;
+ *     p[1] -> [1]output;
  *     g[1] -> [2]output;
  *     d[1] -> [3]output;
  *     l[1] -> [4]output;
  *   }
  *
  * Output 0 is the path for normal packets; outputs 1 through 3 are error
- * outputs for CheckPaint, IPGWOptions, and DecIPTTL, respectively; and
+ * outputs for PaintTee, IPGWOptions, and DecIPTTL, respectively; and
  * output 4 is for packets longer than MTU.
  *
  * =n
@@ -32,7 +32,7 @@
  * IPOutputCombo does no fragmentation. You'll still need an IPFragmenter for
  * that.
  *
- * =a DropBroadcasts, CheckPaint, CheckLength, IPGWOptions, FixIPSrc, DecIPTTL,
+ * =a DropBroadcasts, PaintTee, CheckLength, IPGWOptions, FixIPSrc, DecIPTTL,
  * IPFragmenter, IPInputCombo */
 
 #include "element.hh"

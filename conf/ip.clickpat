@@ -8,7 +8,7 @@
 
 elementclass IPOutput {
   input -> DropBroadcasts
-	-> cp :: CheckPaint($paint)
+	-> cp :: PaintTee($paint)
 	-> gw :: IPGWOptions($my_ip)
 	-> FixIPSrc($my_ip)
 	-> dt :: DecIPTTL

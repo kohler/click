@@ -25,6 +25,9 @@ Version 1.1
 ** Renamed the SetIPAddress element to StoreIPAddress. Added a different
    SetIPAddress element.
 
+** Renamed the HashDemux element to HashSwitch, and the CheckPaint element
+   to PaintTee.
+
 ** Removed the SaveIPFields and IPsec elements (they were rotting).
 
 * Incompatible C++ API changes

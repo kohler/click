@@ -1,5 +1,5 @@
 .\" -*- mode: nroff -*-
-.ds V 1.0
+.ds V 1.1
 .ds E " \-\- 
 .if t .ds E \(em
 .de OP
@@ -357,7 +357,7 @@ a -> compound/x :: X -> b;
 .Re
 For this purpose, anonymous compound elements are given constructed names
 like
-.RI `@X number '.
+.RI `@Class number '.
 Nothing prevents a user from declaring an element named like a compound
 element component. We suggest that users generally avoid using the `/'
 character in their element names.
@@ -565,7 +565,8 @@ The following characters and two-character sequences are single Click
 tokens:
 .TS
 l l l l l l l l l l l l l.
-	->	::	;	(	)	[	]	{	}	|	^
+	->	::	;	,	(	)	[	]	{	}	|
+.\" ^
 .TE
 .PP
 Whitespace (using the C definition) and comments separate Click tokens.
@@ -637,22 +638,6 @@ kernel module will not accept archives; use
 .IR declaration " ::= " element-names " ""::"" "
 .IR class " " opt-config
 .br
-.IR connection " ::= " element " " conntail
-.br
-.IR conntail " ::= " opt-port " ""->"" " opt-port " " element " " opt-conntail
-.br
-.IR opt-conntail " ::= " conntail " | " empty
-.br
-.IR element " ::= " element-name
-.br
-.RI "    | " element-name " ""::"" " class " " opt-config
-.br
-.RI "    | " class " " opt-config
-.br
-.IR opt-config " ::= " config " | " empty
-.br
-.IR config " ::= ""("" configstring "")"""
-.br
 .IR element-names " ::= " element-name
 .br
 .RI "    | " element-names " "","" " element-name
@@ -660,25 +645,33 @@ kernel module will not accept archives; use
 .IR element-name " ::= identifier
 .\" | ""^"" identifier
 .br
-.IR class " ::= identifier"
+.IR class " ::= identifier | ""{"" " stmts " ""}"""
 .br
-.RI "    | ""{"" " opt-formals " " stmts " ""}"""
-.br
-.IR opt-port " ::= " port " | " empty
-.br
-.IR port " ::= ""["" portnumber ""]"""
-.br
-.IR tunnelstmt " ::= ""connectiontunnel"" " tunneltail
-.br
-.IR tunneltail " ::= identifier ""->"" identifier"
-.br
-.RI "    | " tunneltail " "","" identifier ""->"" identifier"
-.br
-.IR elementclassstmt " ::= ""elementclass"" identifier " class
-.br
-.IR opt-formals " ::= " formals " ""|"" | " empty
+.RI "    | ""{"" " formals " ""|"" " stmts " ""}"""
 .br
 .IR formals " ::= parameter | " formals " "","" parameter"
+.br
+.IR connection " ::= " element " " opt-port " ""->"" " opt-port " " conntail
+.br
+.IR conntail " ::= " element " | " connection
+.br
+.IR element " ::= " element-name
+.br
+.RI "    | " element-name " ""::"" " class " " opt-config
+.br
+.RI "    | " class " " opt-config
+.br
+.IR opt-config " ::= ""("" configstring "")"" | " empty
+.br
+.IR opt-port " ::= ""["" portnumber ""]"" | " empty
+.br
+.IR tunnelstmt " ::= ""connectiontunnel"" " tunnels
+.br
+.IR tunnels " ::= identifier ""->"" identifier"
+.br
+.RI "    | " tunnels " "","" identifier ""->"" identifier"
+.br
+.IR elementclassstmt " ::= ""elementclass"" identifier " class
 .br
 .IR requirestmt " ::= ""require"" ""("" configstring "")"""
 .br

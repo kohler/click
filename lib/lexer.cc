@@ -1218,7 +1218,7 @@ Lexer::ylocal(String name)
 {
   // OK because every used ylocal() corresponds to at least one element
   if (!name)
-    name = "@X" + String(_elements.size() - _anonymous_offset + 1);
+    name = "@Class" + String(_elements.size() - _anonymous_offset + 1);
 
   // check for arguments
   Vector<String> arguments;

@@ -1,5 +1,5 @@
 /*
- * checkpaint.{cc,hh} -- element checks paint annotation
+ * painttee.{cc,hh} -- element checks paint annotation
  * Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -13,20 +13,19 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "checkpaint.hh"
+#include "painttee.hh"
 #include "confparse.hh"
 #include "error.hh"
 
-CheckPaint *
-CheckPaint::clone() const
+PaintTee *
+PaintTee::clone() const
 {
-  return new CheckPaint();
+  return new PaintTee();
 }
 
 int
-CheckPaint::configure(const Vector<String> &conf, ErrorHandler *errh)
+PaintTee::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  errh->error("CheckPaint has been renamed; use PaintTee instead");
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color", &_color,
 		  0) < 0)
@@ -35,11 +34,11 @@ CheckPaint::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-CheckPaint::simple_action(Packet *p)
+PaintTee::simple_action(Packet *p)
 {
   if (p->color_anno() == _color)
     output(1).push(p->clone());
   return(p);
 }
 
-EXPORT_ELEMENT(CheckPaint)
+EXPORT_ELEMENT(PaintTee)

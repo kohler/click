@@ -128,7 +128,7 @@ for($i = 0; $i < $nifs; $i++){
     my $ipa = $ifs->[$i]->[2];
     print <<EOF;
 rt[$i1] -> DropBroadcasts
-        -> cp$i :: CheckPaint($i1)
+        -> cp$i :: PaintTee($i1)
         -> gio$i :: IPGWOptions($ipa)
         -> FixIPSrc($ipa)
         -> dt$i :: DecIPTTL

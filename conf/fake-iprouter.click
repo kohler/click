@@ -111,14 +111,14 @@ rt[0] -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tol;
 // Fragment.
 // Send outgoing packets through ARP to the interfaces.
 rt[1] -> DropBroadcasts
-      -> cp1 :: CheckPaint(1)
+      -> cp1 :: PaintTee(1)
       -> gio1 :: IPGWOptions(18.26.4.24)
       -> FixIPSrc(18.26.4.24)
       -> dt1 :: DecIPTTL
       -> fr1 :: IPFragmenter(300)
       -> [0]fake_arpq0;
 rt[2] -> DropBroadcasts
-      -> cp2 :: CheckPaint(2)
+      -> cp2 :: PaintTee(2)
       -> gio2 :: IPGWOptions(18.26.7.1)
       -> FixIPSrc(18.26.7.1)
       -> dt2 :: DecIPTTL

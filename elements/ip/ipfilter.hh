@@ -63,6 +63,7 @@
  *            // FTP-6:
  *            allow src BASTION && dst INTERNALNET
  *               && tcp && src port 21 && dst port > 1023 && ack,
+ *            // FTP-7 omitted
  *            // FTP-8:
  *            allow src BASTION && dst INTERNALNET
  *               && tcp && src port > 1023 && dst port > 1023,
