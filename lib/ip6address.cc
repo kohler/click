@@ -77,18 +77,38 @@ IP6Address::make_prefix(int prefix)
   return a;
 }
 
+int
+IP6Address::mask_to_prefix_bits() const
+{
+  int bits = 0;
+  
+  for (; bits < 24; bits += 8)
+    if (_addr.s6_addr32[bits >> 3] != 0xFFFFFFFFU)
+      break;
+
+  // check 'swing' word
+  int swing_bits = IPAddress(_addr.s6_addr32[bits >> 3]).mask_to_prefix_bits();
+
+  for (int i = (bits >> 3) + 1; i < 4; i++)
+    if (_addr.s6_addr32[i] != 0)
+      return -1;
+
+  return (swing_bits >= 0 ? bits + swing_bits : -1);
+}
+
 bool
-IP6Address::get_ip4address(unsigned char ip4[4]) const
+IP6Address::ip4_address(IPAddress &ip4) const
 {
   if ((_addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0xFFFF ) 
       || ( _addr.s6_addr16[0] == 0 && _addr.s6_addr16[1] == 0 
 	   && _addr.s6_addr16[2] == 0 && _addr.s6_addr16[3] == 0 
 	   && _addr.s6_addr16[4] == 0 && _addr.s6_addr16[5] == 0)) 
     {
-      ip4[0] = _addr.s6_addr[12];
-      ip4[1] = _addr.s6_addr[13];
-      ip4[2] = _addr.s6_addr[14];
-      ip4[3] = _addr.s6_addr[15];
+      unsigned char *d = ip4.data();
+      d[0] = _addr.s6_addr[12];
+      d[1] = _addr.s6_addr[13];
+      d[2] = _addr.s6_addr[14];
+      d[3] = _addr.s6_addr[15];
       return true;
     }
   else 
@@ -96,7 +116,7 @@ IP6Address::get_ip4address(unsigned char ip4[4]) const
 }
 
 String
-IP6Address::s() const
+IP6Address::unparse() const
 {
   char buf[48];
   
@@ -144,7 +164,7 @@ IP6Address::s() const
 }
 
 String
-IP6Address::full_s() const
+IP6Address::unparse_expanded() const
 {
   char buf[48];
   sprintf(buf, "%X:%X:%X:%X:%X:%X:%X:%X",
