@@ -20,9 +20,9 @@ Thomer Gil
 thomer@lcs.mit.edu
 dynamic IP routing table, IP rate monitoring elements
 
-Max Krohn
-krohn@mit.edu
-click-mkclgw.pl
+John Jannotti
+jj@lcs.mit.edu
+initial design, Ethernet switch elements, user-level pcap/BPF elements
 
 Eddie Kohler
 kohler@cs.ucla.edu
@@ -67,13 +67,21 @@ Peilei Fan
 peilei@mit.edu
 IPv6 elements
 
+Mark Huang
+mlhuang@cs.princeton.edu
+FromSocket, ToSocket, FromRawSocket, ToRawSocket, IPFlowRawSockets
+
 Kyle Jamieson
 jamieson@mit.edu
 ARM fixes, 802.11 elements
 
-John Jannotti
-jj@lcs.mit.edu
-initial design, Ethernet switch elements, user-level pcap/BPF elements
+Max Krohn
+krohn@mit.edu
+click-mkclgw.pl
+
+Nikitas Liogkas
+nikitas@cs.ucla.edu
+SMP and other patches
 
 M. Frans Kaashoek
 kaashoek@lcs.mit.edu
