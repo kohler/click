@@ -473,11 +473,12 @@ if test "$enable_userlevel" = yes; then
 	AC_MSG_WARN([
 =========================================
 
-pcap.h or -lpcap not found; user-level driver can't steal packets
+pcap.h and/or -lpcap not found; user-level driver can't steal packets
 
 =========================================])
     fi
     TARGETS="$TARGETS userlevel"
+    AC_DEFINE(HAVE_USERLEVEL_DRIVER)
 fi
 
 
@@ -545,7 +546,7 @@ if test $ac_have_linux_kernel = y; then
   if test $ac_cv_cxx_aware_system = yes; then
     TARGETS="$TARGETS linuxmodule"
     TOOL_TARGETS="$TOOL_TARGETS click-install"
-    AC_DEFINE(HAVE_LINUXMODULE_TARGET)
+    AC_DEFINE(HAVE_LINUXMODULE_DRIVER)
   else
     AC_MSG_WARN([
 =========================================
@@ -563,7 +564,7 @@ dnl check bsdmodule for BSD
 
 if test $ac_have_bsd_kernel = y; then
   TARGETS="$TARGETS bsdmodule"
-  AC_DEFINE(HAVE_BSDMODULE_TARGET)
+  AC_DEFINE(HAVE_BSDMODULE_DRIVER)
 fi
 
 
