@@ -235,11 +235,11 @@ class Packet { public:
   void set_packet_type_anno(PacketType p) { _pkt_type = p; }
 #endif
 
-  enum { USER_ANNO_SIZE = 16,
-	 USER_ANNO_US_SIZE = 8,
-	 USER_ANNO_S_SIZE = 8,
-	 USER_ANNO_U_SIZE = 4,
-	 USER_ANNO_I_SIZE = 4 };
+  enum { USER_ANNO_SIZE = 24,
+	 USER_ANNO_US_SIZE = 12,
+	 USER_ANNO_S_SIZE = 12,
+	 USER_ANNO_U_SIZE = 6,
+	 USER_ANNO_I_SIZE = 6 };
   
   uint8_t user_anno_c(int i) const	{ return anno()->user.c[i]; }
   void set_user_anno_c(int i, uint8_t v) { anno()->user.c[i] = v; }
