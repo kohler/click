@@ -118,9 +118,9 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpKeywords,
 			"MAX_HOPS", cpUnsigned, "max hops", &_max_hops,
 			"METRIC", cpString, "route metric", &metric,
-			"LOG", cpElement, "GridLoggerElement", &_log,
+			"LOG", cpElement, "GridLogger element", &_log,
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
-			"ALPHA", cpDouble, "alpha parameter for settling time computation", &_alpha,
+			"ALPHA", cpDouble, "alpha parameter for settling time computation (0 <= ALPHA <= 1)", &_alpha,
 			0);
 
   if (res < 0)
@@ -243,25 +243,33 @@ DSDVRouteTable::insert_route(const RTEntry &r, const GridLogger::reason_t why)
     (*old)->unschedule();
     delete *old;
     delete *oldhp;
+    _expire_timers.remove(r.dest_ip);
+    _expire_hooks.remove(r.dest_ip);
   }
   
   // Note: ns dsdv only schedules a timeout for the sender of each
   // route ad, relying on the next-hop expiry logic to get all routes
   // via that next hop.  However, that won't work for general metrics,
-  // so we install a timeout for *every* newly installed 
-  HookPair *hp = new HookPair(this, r.dest_ip);
-  Timer *t = new Timer(static_expire_hook, (void *) hp);
-  t->initialize(this);
-  t->schedule_after_ms(min(r.ttl, _timeout));
-  
-  _expire_timers.insert(r.dest_ip, t);
-  _expire_hooks.insert(r.dest_ip, hp);
+  // so we install a timeout for *every* newly installed good route.
+  if (r.good()) {
+    HookPair *hp = new HookPair(this, r.dest_ip);
+    Timer *t = new Timer(static_expire_hook, (void *) hp);
+    t->initialize(this);
+    t->schedule_after_ms(min(r.ttl, _timeout));
+    
+    _expire_timers.insert(r.dest_ip, t);
+    _expire_hooks.insert(r.dest_ip, hp);
+  }
+
   _rtes.insert(r.dest_ip, r);
 
-  // note, we don't change any pending triggered update for this updated dest.
+  // note, we don't change any pending triggered update for this
+  // updated dest.  ... but shouldn't we postpone it?  -- shouldn't
+  // matter if timer fires too early, since the advertise_ok_jiffies
+  // should tell us it's too early.
 
   if (_log)
-    _log->log_added_route(why, make_generic_rte(r));
+    _log->log_added_route(why, make_generic_rte(r), (unsigned int) r.wst);
   check_invariants();
 }
 
@@ -623,9 +631,8 @@ DSDVRouteTable::send_full_update()
   
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &r = i.value();
-    if (r.advertise_ok_jiffies > jiff)
-      continue;
-    routes.push_back(r);
+    if (r.advertise_ok_jiffies <= jiff)
+      routes.push_back(r);
   }
 
   // reset ``need advertisement'' flag
@@ -1167,9 +1174,10 @@ DSDVRouteTable::add_handlers()
 void
 DSDVRouteTable::hello_hook()
 {
-  int msecs_to_next_ad = _period;
+  unsigned int msecs_to_next_ad = _period;
 
   unsigned int jiff = click_jiffies();
+  assert(jiff >= _last_periodic_update);
   unsigned int msec_since_last = jiff_to_msec(jiff - _last_periodic_update);
   if (msec_since_last < 2 * _period / 3) {
     // a full periodic update was sent ahead of schedule (because
@@ -1188,10 +1196,15 @@ DSDVRouteTable::hello_hook()
   // reschedule periodic update
   int r2 = random();
   double r = (double) (r2 >> 1);
-  int jitter = (int) (((double) _jitter) * r / ((double) 0x7FffFFff));
-  if (r2 & 1)
-    jitter *= -1;
-  _hello_timer.schedule_after_ms(msecs_to_next_ad + (int) jitter);
+  unsigned int jitter = (unsigned int) (((double) _jitter) * r / ((double) 0x7FffFFff));
+  if (r2 & 1) {
+    if (jitter <= msecs_to_next_ad)
+      msecs_to_next_ad -= jitter;
+  }
+  else 
+    msecs_to_next_ad += jitter;
+
+  _hello_timer.schedule_after_ms(msecs_to_next_ad);
 }
 
 
