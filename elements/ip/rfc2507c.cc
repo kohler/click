@@ -16,6 +16,9 @@
 #ifdef __linux__
 # define _BSD_SOURCE
 #endif
+#if defined(__linux__) && !defined(__KERNEL__)
+long int random(void);
+#endif
 #include "rfc2507c.hh"
 #include <stdlib.h>
 
