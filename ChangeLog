@@ -1,3 +1,8 @@
+2004-07-22 Thursday 11:02  Max Krohn <krohn@mit.edu>
+
+	* conf/click-mkclgw.pl (1.7): Comments output generator script
+	name, and not generator process ID.
+
 2004-07-17 Saturday 18:53  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/sr/: srquerier.cc (1.2), srquerier.hh (1.2): merge
