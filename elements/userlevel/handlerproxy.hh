@@ -18,10 +18,10 @@ class HandlerProxy : public Element { public:
     CSERR_SYNTAX		= 500,
     CSERR_NO_SUCH_ELEMENT	= 510,
     CSERR_NO_SUCH_HANDLER	= 511,
-    CSERR_UNSPECIFIED		= 512,
-    CSERR_NO_ROUTER		= 513,
     CSERR_HANDLER_ERROR		= 520,
     CSERR_PERMISSION		= 530,
+    CSERR_NO_ROUTER		= 540,
+    CSERR_UNSPECIFIED		= 590,
   };
   
  protected:

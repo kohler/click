@@ -140,9 +140,9 @@ Here are some of the particular error messages:
   501 Unimplemented command.
   510 No such element.
   511 No such handler.
-  513 No router installed.
   520 Handler error.
   530 Permission denied.
+  540 No router installed.
 
 ControlSocket is only available in user-level processes.
 
@@ -177,10 +177,10 @@ class ControlSocket : public Element { public:
     CSERR_UNIMPLEMENTED		= 501,
     CSERR_NO_SUCH_ELEMENT	= HandlerProxy::CSERR_NO_SUCH_ELEMENT, // 510
     CSERR_NO_SUCH_HANDLER	= HandlerProxy::CSERR_NO_SUCH_HANDLER, // 511
-    CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED,     // 512
-    CSERR_NO_ROUTER		= HandlerProxy::CSERR_NO_ROUTER,       // 513
     CSERR_HANDLER_ERROR		= HandlerProxy::CSERR_HANDLER_ERROR,   // 520
     CSERR_PERMISSION		= HandlerProxy::CSERR_PERMISSION,      // 530
+    CSERR_NO_ROUTER		= HandlerProxy::CSERR_NO_ROUTER,       // 540
+    CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED,     // 590
   };
   
  private:
