@@ -44,3 +44,25 @@ initial design work, Ethernet switch elements, user-level pcap/BPF elements
 M. Frans Kaashoek
 kaashoek@lcs.mit.edu
 initial design work
+
+Alex Snoeren
+snoeren@lcs.mit.edu
+IP security elements
+
+
+Thanks for patches and comments:
+
+Joe Elliott
+joe@inetd.com
+
+Prem Gopalan
+gopalan@purdue.edu
+
+Richard Mortier
+Richard.Mortier@cl.cam.ac.uk
+
+Saurabh Sandhir
+sandhir@purdue.edu
+
+Leigh Stoller
+stoller@cs.utah.edu
