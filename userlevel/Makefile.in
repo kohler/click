@@ -96,8 +96,8 @@ install: click
 install-man:
 
 clean:
-	rm -f *.d *.o click elements.mk elements.cc
+	rm -f *.d *.o click elements.mk elements.cc elements.conf
 distclean: clean
-	-rm -f Makefile elements.conf
+	-rm -f Makefile
 
 .PHONY: all clean distclean elemlist install install-man
