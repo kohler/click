@@ -86,11 +86,15 @@ Boolean. If true, then run C<gzip> to compress completed trace files. (The
 resulting files have F<.gz> appended to their OUTPUT_PATTERN names.) Defaults
 to false.
 
+=item ALL_TCP_OPT
+
+Boolean. If true, then output any non-padding TCP options present on TCP
+packets. Defaults to false.
+
 =item TCP_OPT
 
-Boolean. If true, then output any interesting TCP options present on TCP
-packets. Interesting options are MSS, window scaling, and SACK options;
-timestamp options are not interesting. Defaults to false.
+Boolean. If true, then output any MSS, window scaling, and SACK options
+present on TCP packets. Defaults to false.
 
 =item TCP_WINDOW
 
@@ -183,7 +187,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     class Flow { public:
 
-	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq, bool binary, bool ip_id, bool tcp_opt, bool tcp_window);
+	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq, bool binary, bool ip_id, int tcp_opt, bool tcp_window);
 	~Flow();
 
 	uint32_t aggregate() const	{ return _aggregate; }
@@ -212,7 +216,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	String _filename;
 	bool _outputted : 1;
 	bool _binary : 1;
-	bool _tcp_opt : 1;
+	int _tcp_opt;
 	int _npkt;
 	int _nnote;
 	struct timeval _first_timestamp;
@@ -246,8 +250,8 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     bool _binary : 1;
     bool _gzip : 1;
     bool _ip_id : 1;
-    bool _tcp_opt : 1;
     bool _tcp_window : 1;
+    int _tcp_opt;
 
     uint32_t _output_larger;
     
