@@ -1,3 +1,58 @@
+2004-03-27 Saturday 16:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/fromipsumdump.cc (1.59),
+	elements/analysis/fromnetflowsumdump.cc (1.18),
+	elements/analysis/fromtcpdump.cc (1.5),
+	elements/analysis/timesortedsched.cc (1.3),
+	elements/analysis/toipflowdumps.cc (1.33),
+	elements/analysis/toipsumdump.cc (1.48),
+	elements/linuxmodule/todevice.cc (1.135),
+	elements/standard/delayshaper.cc (1.11),
+	elements/standard/delayunqueue.cc (1.19),
+	elements/standard/discard.cc (1.26), elements/standard/drr.cc
+	(1.8), elements/standard/idle.cc (1.23),
+	elements/standard/linkunqueue.cc (1.3),
+	elements/standard/notifierqueue.cc (1.9),
+	elements/standard/priosched.cc (1.13), elements/standard/rrsched.cc
+	(1.12), elements/standard/stridesched.cc (1.20),
+	elements/standard/unqueue.cc (1.24), elements/userlevel/fromdump.cc
+	(1.88), elements/userlevel/kerneltun.cc (1.47),
+	elements/userlevel/todevice.cc (1.35), elements/userlevel/todump.cc
+	(1.52), include/click/notifier.hh (1.9), lib/notifier.cc (1.10):
+	Notifier naming generalization, so we can support more kinds of
+	notifier than just empty signals; add Notifier::EMPTY_SIGNAL,
+	rename upstream_pull_signal -> upstream_empty_signal
+
+2004-03-27 Saturday 16:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* userlevel/Makefile.in (1.78): nit
+
+2004-03-27 Saturday 16:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/bighashmap.cc (1.25): HashMap::copy_from()
+	correctness: set _n and _capacity appropriately, duh
+
+2004-03-27 Saturday 16:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/vector.hh (1.11): Vector<T*>::erase(iterator)
+	correctness (duh)
+
+2004-03-27 Saturday 16:34  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/ipfilter.cc (1.43): combine warning messages on >= 0
+	with those for < 0 (and similar); warn even when data == 0
+
+2004-03-27 Saturday 16:19  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ettstat.cc (1.8), flashflood.cc (1.6),
+	flashflood.hh (1.5): minor bugfixes in ettstat, flooding
+	improvements
+
+2004-03-27 Saturday 16:18  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: collisiondetection.cc (1.1),
+	collisiondetection.hh (1.1): for wireless simulations
+
 2004-03-24 Wednesday 18:27  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click.5 (1.33): wording
