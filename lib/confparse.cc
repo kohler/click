@@ -1177,33 +1177,40 @@ cp_timeval(const String &str, struct timeval *return_value)
 
 // PARSING IPv4 ADDRESSES
 
+static int
+ip_address_portion(const String &str, unsigned char *value)
+{
+  const char *s = str.data();
+  int len = str.length();
+  int pos = 0, part;
+
+  for (int d = 0; d < 4; d++) {
+    if (d && pos < len && s[pos] == '.')
+      pos++;
+    if (pos >= len) {
+      memset(value + d, 0, 4 - d);
+      return d;
+    } else if (!isdigit(s[pos]))
+      return 0;
+    for (part = 0; pos < len && isdigit(s[pos]) && part <= 255; pos++)
+      part = part*10 + s[pos] - '0';
+    if (part > 255)
+      return 0;
+    value[d] = part;
+  }
+
+  return (pos == len ? 4 : 0);
+}
+
 bool
 cp_ip_address(const String &str, unsigned char *return_value
 	      CP_CONTEXT_ARG)
 {
-  int pos = 0, part;
-  const char *s = str.data();
-  int len = str.length();
-
   unsigned char value[4];
-  for (int d = 0; d < 4; d++) {
-    if (d && pos < len && s[pos] == '.')
-      pos++;
-    if (pos >= len || !isdigit(s[pos]))
-      goto bad;
-    for (part = 0; pos < len && isdigit(s[pos]) && part <= 255; pos++)
-      part = part*10 + s[pos] - '0';
-    if (part > 255)
-      goto bad;
-    value[d] = part;
-  }
-
-  if (pos == len) {
+  if (ip_address_portion(str, value) == 4) {
     memcpy(return_value, value, 4);
     return true;
   }
-
- bad:
 #ifndef CLICK_TOOL
   return AddressInfo::query_ip(str, return_value, context);
 #else
@@ -1238,48 +1245,61 @@ cp_ip_prefix(const String &str,
 	     unsigned char *return_value, unsigned char *return_mask,
 	     bool allow_bare_address  CP_CONTEXT_ARG)
 {
-  unsigned char value[4], mask[4];
+  do {
+    unsigned char value[4], mask[4];
 
-  int slash = str.find_right('/');
-  String ip_part, mask_part;
-  if (slash >= 0) {
-    ip_part = str.substring(0, slash);
-    mask_part = str.substring(slash + 1);
-  } else if (!allow_bare_address)
-    return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
-  else
-    ip_part = str;
+    int slash = str.find_right('/');
+    String ip_part, mask_part;
+    if (slash >= 0) {
+      ip_part = str.substring(0, slash);
+      mask_part = str.substring(slash + 1);
+    } else if (!allow_bare_address)
+      goto failure;
+    else
+      ip_part = str;
+
+    // read IP address part
+    int good_ip_bytes = ip_address_portion(ip_part, value);
+    if (good_ip_bytes == 0) {
+      if (!cp_ip_address(ip_part, value  CP_PASS_CONTEXT))
+	goto failure;
+      good_ip_bytes = 4;
+    }
+
+    // move past /
+    if (allow_bare_address && !mask_part.length() && good_ip_bytes == 4) {
+      memcpy(return_value, value, 4);
+      return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
+      return true;
+    }
+
+    // check for complete IP address
+    int relevant_bits;
+    if (good_ip_bytes == 4 && cp_ip_address(mask_part, mask  CP_PASS_CONTEXT))
+      /* OK */;
   
-  if (!cp_ip_address(ip_part, value  CP_PASS_CONTEXT))
-    return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
-
-  // move past /
-  if (allow_bare_address && !mask_part.length()) {
-    memcpy(return_value, value, 4);
-    return_mask[0] = return_mask[1] = return_mask[2] = return_mask[3] = 255;
-    return true;
-  }
-
-  // check for complete IP address
-  int relevant_bits;
-  if (cp_ip_address(mask_part, mask  CP_PASS_CONTEXT))
-    /* OK */;
-  
-  else if (cp_integer(mask_part, &relevant_bits)
-	   && relevant_bits >= 0 && relevant_bits <= 32) {
-    // set bits
-    unsigned umask = 0;
-    if (relevant_bits > 0)
-      umask = 0xFFFFFFFFU << (32 - relevant_bits);
-    for (int i = 0; i < 4; i++, umask <<= 8)
-      mask[i] = (umask >> 24) & 255;
+    else if (cp_integer(mask_part, &relevant_bits)
+	     && relevant_bits >= 0 && relevant_bits <= 32) {
+      // set bits
+      unsigned umask = 0;
+      if (relevant_bits > 0)
+	umask = 0xFFFFFFFFU << (32 - relevant_bits);
+      for (int i = 0; i < 4; i++, umask <<= 8)
+	mask[i] = (umask >> 24) & 255;
+      if (good_ip_bytes < relevant_bits/8)
+	goto failure;
     
-  } else
-    return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
+    } else
+      goto failure;
 
-  memcpy(return_value, value, 4);
-  memcpy(return_mask, mask, 4);
-  return true;
+    memcpy(return_value, value, 4);
+    memcpy(return_mask, mask, 4);
+    return true;
+    
+  } while (0);
+
+ failure:
+  return bad_ip_prefix(str, return_value, return_mask, allow_bare_address CP_PASS_CONTEXT);
 }
 
 bool
