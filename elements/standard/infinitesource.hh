@@ -1,6 +1,7 @@
 #ifndef INFINITESOURCE_HH
 #define INFINITESOURCE_HH
 #include <click/element.hh>
+#include <click/task.hh>
 
 /*
 =c
@@ -100,6 +101,7 @@ class InfiniteSource : public Element { public:
   bool _active : 1;
   bool _stop : 1;
   Packet *_packet;
+  Task _task;
   
   static String read_param(Element *, void *);
   static int change_param(const String &, Element *, void *, ErrorHandler *);

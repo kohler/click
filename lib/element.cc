@@ -29,7 +29,6 @@
 #include <click/router.hh>
 #include <click/straccum.hh>
 #include <click/subvector.hh>
-#include <errno.h>
 #if CLICK_LINUXMODULE
 extern "C" {
 # define new xxx_new
@@ -403,6 +402,18 @@ Element::selected(int)
 
 // HANDLERS
 
+void
+Element::add_read_handler(const String &name, ReadHandler h, void *thunk)
+{
+  router()->add_read_handler(eindex(), name, h, thunk);
+}
+
+void
+Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
+{
+  router()->add_write_handler(eindex(), name, h, thunk);
+}
+
 static String
 read_element_class(Element *e, void *)
 {
@@ -458,18 +469,6 @@ read_element_handlers(Element *e, void *)
   return sa.take_string();
 }
 
-static String
-read_element_tickets(Element *e, void *)
-{
-#ifdef RR_SCHED
-  return String(e->scheduled() ? "scheduled\n" : "unscheduled\n");
-#else
-  String s = String(e->tickets()) + " " + String(e->max_tickets());
-  s += (e->scheduled() ? " scheduled\n" : " unscheduled\n");
-  return s;
-#endif
-}
-
 #if CLICK_STATS >= 1
 
 static String
@@ -515,18 +514,6 @@ read_element_cycles(Element *f, void *)
 #endif
 
 void
-Element::add_read_handler(const String &name, ReadHandler h, void *thunk)
-{
-  router()->add_read_handler(eindex(), name, h, thunk);
-}
-
-void
-Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
-{
-  router()->add_write_handler(eindex(), name, h, thunk);
-}
-
-void
 Element::add_default_handlers(bool allow_write_config)
 {
   add_read_handler("class", read_element_class, 0);
@@ -536,7 +523,6 @@ Element::add_default_handlers(bool allow_write_config)
     add_write_handler("config", write_element_config, 0);
   add_read_handler("ports", read_element_ports, 0);
   add_read_handler("handlers", read_element_handlers, 0);
-  add_read_handler("tickets", read_element_tickets, 0);
 #if CLICK_STATS >= 1
   add_read_handler("icounts", read_element_icounts, 0);
   add_read_handler("ocounts", read_element_ocounts, 0);
@@ -544,6 +530,31 @@ Element::add_default_handlers(bool allow_write_config)
   add_read_handler("cycles", read_element_cycles, 0);
 # endif
 #endif
+}
+
+#ifndef RR_SCHED
+static String
+read_task_tickets(Element *, void *thunk)
+{
+  Task *task = (Task *)thunk;
+  return String(task->tickets()) + " " + String(task->max_tickets()) + "\n";
+}
+#endif
+
+static String
+read_task_scheduled(Element *, void *thunk)
+{
+  Task *task = (Task *)thunk;
+  return String(task->scheduled() ? "true\n" : "false\n");
+}
+
+void
+Element::add_task_handlers(Task *task, bool = false)
+{
+#ifndef RR_SCHED
+  add_read_handler("tickets", read_task_tickets, task);
+#endif
+  add_read_handler("scheduled", read_task_scheduled, task);
 }
 
 void

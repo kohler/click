@@ -1,6 +1,7 @@
 #ifndef DISCARD_HH
 #define DISCARD_HH
 #include <click/element.hh>
+#include <click/task.hh>
 
 /*
  * =c
@@ -13,9 +14,7 @@
  * packets are available.
  */
 
-class Discard : public Element {
-  
- public:
+class Discard : public Element { public:
   
   Discard();
   ~Discard();
@@ -26,10 +25,14 @@ class Discard : public Element {
   Discard *clone() const			{ return new Discard; }
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
   
-  void push(int, Packet *p) { p->kill(); }
-  
+  void push(int, Packet *);
   void run_scheduled();
+
+ private:
+
+  Task _task;
   
 };
 

@@ -83,7 +83,7 @@ class ScheduleInfo : public Element {
   bool query(const String &, int &) const;
   bool query_prefixes(const String &, int &, String &) const;
   static int query(Element *, ErrorHandler *);
-  static void join_scheduler(Element *, ErrorHandler *);
+  static void join_scheduler(Element *, Task *, ErrorHandler *);
   
 };
 

@@ -177,6 +177,8 @@ class TulipStats : public AnyDevice {
   
   unsigned long _tbusy;
 
+  Task _task;
+  
   void stats_poll();
   static void interrupt_notifier(struct device *, unsigned);
   static String read_counts(Element *, void *);

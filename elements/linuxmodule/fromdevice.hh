@@ -32,20 +32,7 @@
 
 #include "elements/linuxmodule/anydevice.hh"
 
-class FromDevice : public AnyDevice {
-  
-  bool _registered;
-  bool _promisc;
-  unsigned _burst;
-  unsigned _drops;
-  unsigned _puller_ptr;
-  unsigned _pusher_ptr;
-
-  static const int QSIZE = 512;
-  Packet *_queue[QSIZE];
-  unsigned next_i(unsigned i) const	{ return (i!=(QSIZE-1) ? i+1 : 0); }
-  
- public:
+class FromDevice : public AnyDevice { public:
   
   FromDevice();
   ~FromDevice();
@@ -57,13 +44,27 @@ class FromDevice : public AnyDevice {
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
   void take_state(Element *, ErrorHandler *);
   
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
   
   void run_scheduled();
-  
+
+ private:
+
+  bool _registered;
+  bool _promisc;
+  unsigned _burst;
+  unsigned _drops;
+  unsigned _puller_ptr;
+  unsigned _pusher_ptr;
+
+  static const int QSIZE = 512;
+  Packet *_queue[QSIZE];
+  unsigned next_i(unsigned i) const	{ return (i!=(QSIZE-1) ? i+1 : 0); }
+ 
 };
 
 #endif

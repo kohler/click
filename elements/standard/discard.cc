@@ -28,7 +28,7 @@
 #include "scheduleinfo.hh"
 
 Discard::Discard()
-  : Element(1, 0)
+  : Element(1, 0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -42,23 +42,35 @@ int
 Discard::initialize(ErrorHandler *errh)
 {
   if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 Discard::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
+}
+
+void
+Discard::push(int, Packet *p)
+{
+  p->kill();
 }
 
 void
 Discard::run_scheduled()
 {
-  Packet *p = input(0).pull();
-  if (p)
+  if (Packet *p = input(0).pull())
     p->kill();
-  reschedule();
+  _task.reschedule();
+}
+
+void
+Discard::add_handlers()
+{
+  if (input_is_pull(0))
+    add_task_handlers(&_task);
 }
 
 EXPORT_ELEMENT(Discard)

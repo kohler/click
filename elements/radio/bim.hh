@@ -10,6 +10,7 @@
  */
 
 #include <click/element.hh>
+#include <click/task.hh>
 
 class BIM : public Element {
  public:
@@ -33,6 +34,7 @@ class BIM : public Element {
   String _dev;
   int _speed;
   int _fd;
+  Task _task;
 
   /* turn bytes from the radio into frames */
   void got_char(int c);

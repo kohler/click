@@ -1,6 +1,7 @@
 #ifndef ANYDEVICE_HH
 #define ANYDEVICE_HH
 #include <click/element.hh>
+#include <click/task.hh>
 extern "C" {
 #include <linux/netdevice.h>
 }
@@ -62,16 +63,7 @@ extern "C" {
 
 #endif
 
-class AnyDevice : public Element { protected:
-  
-  String _devname;
-  struct device *_dev;
-  AnyDevice *_next;
-
-  int _idles;
-  void adjust_tickets(int work);
-
- public:
+class AnyDevice : public Element { public:
 
   AnyDevice();
   ~AnyDevice();
@@ -80,6 +72,18 @@ class AnyDevice : public Element { protected:
   int ifindex() const			{ return _dev ? _dev->ifindex : -1; }
   AnyDevice *next() const		{ return _next; }
   void set_next(AnyDevice *d)		{ _next = d; }
+
+  void adjust_tickets(int work);
+
+ protected:
+
+  String _devname;
+  struct device *_dev;
+
+  Task _task;
+  int _idles;
+  
+  AnyDevice *_next;
   
 };
 
@@ -97,13 +101,13 @@ AnyDevice::adjust_tickets(int work)
   else if (work == 0) {
     _idles ++;
     if (_idles >= 64) {
-      adj = 0-(tickets()>>5);
+      adj = 0-(_task.tickets()>>5);
       if (adj == 0) 
 	adj = -2;
       _idles = 0;
     }
   }
-  adj_tickets(adj);
+  _task.adj_tickets(adj);
 #endif
 }
 

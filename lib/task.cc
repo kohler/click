@@ -1,5 +1,5 @@
 /*
- * elemlist.{cc,hh} -- a linked list of Elements
+ * task.{cc,hh} -- a linked list of schedulable entities
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
@@ -20,12 +20,25 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include <click/elemlink.hh>
+#include <click/task.hh>
+#include <click/router.hh>
+
+void
+Task::attach(Router *r)
+{
+  attach(r->task_list());
+}
+
+void
+Task::attach(Element *e)
+{
+  attach(e->router()->task_list());
+}
 
 #ifndef RR_SCHED
 
 void
-ElementLink::set_max_tickets(int n)
+Task::set_max_tickets(int n)
 {
   if (n > MAX_TICKETS)
     n = MAX_TICKETS;

@@ -27,7 +27,6 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
-#include <errno.h>
 #include <unistd.h>
 #include <sys/socket.h>
 #include <sys/un.h>

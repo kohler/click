@@ -179,9 +179,7 @@ ToyTCP::tcp_output(Packet *xp)
                     xp->headroom(), xp->length(), xp->tailroom());
       xp->kill();
     }
-    p = Packet::make(headroom, (const unsigned char *)0,
-                     plen,
-                     Packet::default_tailroom(plen));
+    p = Packet::make(headroom, (const unsigned char *)0, plen, 0);
   } else {
     p = xp->uniqueify();
     if(p->length() < plen)

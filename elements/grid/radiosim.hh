@@ -28,6 +28,7 @@
 #include <click/element.hh>
 #include <click/vector.hh>
 #include "grid.hh"
+#include <click/task.hh>
 
 class RadioSim : public Element {
   
@@ -59,6 +60,8 @@ private:
     double _lon;
   };
   Vector<Node> _nodes;
+  Task _task;
+  
 };
 
 #endif

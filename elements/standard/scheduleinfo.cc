@@ -160,8 +160,8 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
   }
 
   // check for too many tickets
-  if (max_tickets > ElementLink::MAX_TICKETS) {
-    max_tickets = ElementLink::MAX_TICKETS;
+  if (max_tickets > Task::MAX_TICKETS) {
+    max_tickets = Task::MAX_TICKETS;
     String m = cp_unparse_real(max_tickets, FRAC_BITS);
     errh->warning("ScheduleInfo too high; reduced to %s", m.cc());
   }
@@ -171,17 +171,19 @@ ScheduleInfo::query(Element *e, ErrorHandler *errh)
 }
 
 void
-ScheduleInfo::join_scheduler(Element *e, ErrorHandler *errh)
+ScheduleInfo::join_scheduler(Element *e, Task *task, ErrorHandler *errh)
 {
+  if (!task->attached())
+    task->attach(e);
 #ifndef RR_SCHED
   int max_tickets = query(e, errh);
   if (max_tickets > 0) {
-    e->set_max_tickets(max_tickets);
-    e->set_tickets(max_tickets);
-    e->join_scheduler();
+    task->set_max_tickets(max_tickets);
+    task->set_tickets(max_tickets);
+    task->join_scheduler();
   }
 #else
-  e->join_scheduler();
+  task->join_scheduler();
 #endif
 }
 

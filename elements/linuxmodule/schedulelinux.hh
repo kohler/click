@@ -1,6 +1,7 @@
 #ifndef SCHEDULELINUX_HH
 #define SCHEDULELINUX_HH
 #include <click/element.hh>
+#include <click/task.hh>
 
 /*
  * =c
@@ -27,8 +28,13 @@ class ScheduleLinux : public Element { public:
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
 
   void run_scheduled();
+
+ private:
+
+  Task _task;
   
 };
 

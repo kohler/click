@@ -29,6 +29,7 @@
 #include "elements/grid/filterbyrange.hh"
 
 RadioSim::RadioSim()
+  : _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -93,7 +94,7 @@ RadioSim::initialize(ErrorHandler *errh)
     _nodes.push_back(no);
   }
 
-  ScheduleInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, &_task, errh);
 
   return 0;
 }
@@ -101,7 +102,7 @@ RadioSim::initialize(ErrorHandler *errh)
 void
 RadioSim::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
 }
 
 void
@@ -124,7 +125,7 @@ RadioSim::run_scheduled()
     }
   }
 
-  reschedule();
+  _task.reschedule();
 }
 
 grid_location

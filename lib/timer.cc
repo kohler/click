@@ -23,6 +23,7 @@
 #include <click/timer.hh>
 #include <click/element.hh>
 #include <click/router.hh>
+#include <click/task.hh>
 
 Timer::Timer()
   : _prev(this), _next(this), _hook(head_hook), _thunk(0), _head(this)
@@ -45,6 +46,11 @@ Timer::Timer(Element *e)
 {
 }
 
+Timer::Timer(Task *t)
+  : _prev(0), _next(0), _hook(task_hook), _thunk(t), _head(0)
+{
+}
+
 void
 Timer::head_hook(Timer *, void *)
 {
@@ -64,6 +70,13 @@ Timer::element_hook(Timer *, void *thunk)
 {
   Element *e = (Element *)thunk;
   e->run_scheduled();
+}
+
+void
+Timer::task_hook(Timer *, void *thunk)
+{
+  Task *task = (Task *)thunk;
+  task->schedule_immediately();
 }
 
 void

@@ -146,11 +146,10 @@ PollDevice::initialize(ErrorHandler *errh)
   /* start out with default number of tickets, inflate up to max */
   int max_tickets;
   max_tickets = ScheduleInfo::query(this, errh);
-  set_max_tickets(max_tickets);
-  set_tickets(ScheduleInfo::DEFAULT);
+  _task.set_max_tickets(max_tickets);
+  _task.set_tickets(ScheduleInfo::DEFAULT);
 #endif
-
-  join_scheduler();
+  _task.join_scheduler(this);
 
   reset_counts();
   return 0;
@@ -196,7 +195,7 @@ PollDevice::uninitialize()
       _dev->poll_off(_dev);
   }
   if (_promisc) dev_set_promiscuity(_dev, -1);
-  unschedule();
+  _task.unschedule();
 #endif
 }
 
@@ -229,10 +228,10 @@ PollDevice::run_scheduled()
     nskbs = _dev->rx_refill(_dev, 0);
 
   if (nskbs > 0) {
-    struct sk_buff *new_skbs = skbmgr_allocate_skbs(1536, &nskbs);
+    struct sk_buff *new_skbs = skbmgr_allocate_skbs(0, 1536, &nskbs);
 
 #if CLICK_DEVICE_STATS
-    if (_activations > 0) 
+    if (_activations > 0)
       GET_STATS_RESET(low00, low10, time_now, 
 	              _perfcnt1_allocskb, _perfcnt2_allocskb, _time_allocskb);
 #endif
@@ -292,7 +291,7 @@ PollDevice::run_scheduled()
 #endif
 
   adjust_tickets(got);
-  reschedule();
+  _task.reschedule();
 
 #endif /* HAVE_POLLING */
 }
@@ -366,6 +365,7 @@ PollDevice::add_handlers()
   add_read_handler("refill_dma_cycles", PollDevice_read_stats, (void *)3);
 #endif
   add_write_handler("reset_counts", PollDevice_write_stats, 0);
+  add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

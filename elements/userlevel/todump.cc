@@ -30,11 +30,10 @@
 #include "elements/standard/scheduleinfo.hh"
 #include <string.h>
 #include <assert.h>
-#include <errno.h>
 #include "fakepcap.h"
 
 ToDump::ToDump()
-  : Element(1, 0), _fp(0)
+  : Element(1, 0), _fp(0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -98,7 +97,7 @@ ToDump::initialize(ErrorHandler *errh)
     return errh->error("unable to write to dump file");
 
   if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
@@ -108,6 +107,7 @@ ToDump::uninitialize()
   if (_fp)
     fclose(_fp);
   _fp = 0;
+  _task.unschedule();
 }
 
 void
@@ -154,7 +154,14 @@ ToDump::run_scheduled()
     write_packet(p);
     p->kill();
   }
-  reschedule();
+  _task.reschedule();
+}
+
+void
+ToDump::add_handlers()
+{
+  if (input_is_pull(0))
+    add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(userlevel)

@@ -5,6 +5,7 @@
 class Element;
 class Router;
 class Timer;
+class Task;
 
 typedef void (*TimerHook)(Timer *, void *);
 
@@ -14,6 +15,7 @@ class Timer { public:
   Timer(Timer *, TimerHook, void *);
   Timer(TimerHook, void *);
   Timer(Element *);
+  Timer(Task *); 
   ~Timer()				{ if (scheduled()) unschedule(); }
 
   // functions on Timers
@@ -46,6 +48,7 @@ class Timer { public:
   void finish_schedule();
   
   static void element_hook(Timer *, void *);
+  static void task_hook(Timer *, void *);
   static void head_hook(Timer *, void *);
   
 };

@@ -31,7 +31,7 @@
 #include <click/glue.hh>
 
 InfiniteSource::InfiniteSource()
-  : Element(0, 1)
+  : Element(0, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
   _packet = 0;
@@ -86,14 +86,14 @@ InfiniteSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 InfiniteSource::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 InfiniteSource::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
   _packet->kill();
   _packet = 0;
 }
@@ -110,7 +110,7 @@ InfiniteSource::run_scheduled()
     for (int i = 0; i < n; i++)
       output(0).push(_packet->clone());
     _count += n;
-    reschedule();
+    _task.reschedule();
   } else if (_stop)
     router()->please_stop_driver();
 }
@@ -180,15 +180,15 @@ InfiniteSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_bool(s, &active))
        return errh->error("active parameter must be boolean");
      is->_active = active;
-     if (!is->scheduled() && active)
-       is->reschedule();
+     if (!is->_task.scheduled() && active)
+       is->_task.reschedule();
      break;
    }
 
    case 5: {			// reset
      is->_count = 0;
-     if (!is->scheduled() && is->_active)
-       is->reschedule();
+     if (!is->_task.scheduled() && is->_active)
+       is->_task.reschedule();
      break;
    }
 
@@ -209,6 +209,7 @@ InfiniteSource::add_handlers()
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
   add_write_handler("reset", change_param, (void *)5);
+  add_task_handlers(&_task);
 }
 
 EXPORT_ELEMENT(InfiniteSource)

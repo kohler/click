@@ -4,8 +4,8 @@
 #include <click/vector.hh>
 #include <click/string.hh>
 #include <click/packet.hh>
-#include <click/elemlink.hh>
 class Router;
+class Task;
 class Element;
 class ErrorHandler;
 class Bitvector;
@@ -15,7 +15,7 @@ class Bitvector;
 typedef String (*ReadHandler)(Element *, void *);
 typedef int (*WriteHandler)(const String &, Element *, void *, ErrorHandler *);
 
-class Element : public ElementLink { public:
+class Element { public:
   
   enum Processing { VAGNOSTIC, VPUSH, VPULL };
   static const char *AGNOSTIC, *PUSH, *PULL, *PUSH_TO_PULL, *PULL_TO_PUSH;
@@ -42,10 +42,11 @@ class Element : public ElementLink { public:
   String declaration() const;
   String landmark() const;
   
-  Router *router() const		{ return (Router *)scheduled_list(); }
+  Router *router() const		{ return _router; }
   int eindex() const			{ return _eindex; }
   int eindex(Router *) const;
-  void set_eindex(int n)		{ _eindex = n; }
+
+  void attach_router(Router *r, int n)	{ _router = r; _eindex = n; }
 
   // INPUTS
   int ninputs() const				{ return _ninputs; }
@@ -102,6 +103,7 @@ class Element : public ElementLink { public:
   void add_read_handler(const String &, ReadHandler, void *);
   void add_write_handler(const String &, WriteHandler, void *);
   void add_default_handlers(bool allow_write_config);
+  void add_task_handlers(Task *, bool allow_write = false);
   virtual void add_handlers();
   static String configuration_read_handler(Element *, void *);
   static int reconfigure_write_handler(const String &, Element *, void *,
@@ -176,7 +178,8 @@ class Element : public ElementLink { public:
 
   int _ninputs;
   int _noutputs;
-  
+
+  Router *_router;
   int _eindex;
 
   Element(const Element &);

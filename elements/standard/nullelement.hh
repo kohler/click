@@ -18,7 +18,6 @@ class NullElement : public Element { public:
   
   const char *class_name() const	{ return "Null"; }
   const char *processing() const	{ return AGNOSTIC; }
-  
   NullElement *clone() const;
   
   Packet *simple_action(Packet *);

@@ -1,6 +1,7 @@
 #ifndef BURSTER_HH
 #define BURSTER_HH
 #include <click/element.hh>
+#include <click/task.hh>
 #include <click/timer.hh>
 
 /*
@@ -22,13 +23,7 @@
  * rates by being bursty.
  */
 
-class Burster : public Element {
-  
-  int _npackets;
-  Timer _timer;
-  int _interval;
-  
- public:
+class Burster : public Element { public:
   
   Burster();
   ~Burster();
@@ -42,6 +37,12 @@ class Burster : public Element {
   void uninitialize();
 
   void run_scheduled();
+  
+ private:
+  
+  int _npackets;
+  Timer _timer;
+  int _interval;
   
 };
 

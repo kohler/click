@@ -35,7 +35,6 @@
 #include <click/click_udp.h>
 
 #if CLICK_USERLEVEL
-# include <errno.h>
 # include <stdio.h>
 #endif
 
@@ -62,7 +61,7 @@ IPPrint::clone() const
 }
 
 int
-IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
+IPPrint::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _bytes = 1500;
   String contents = "no";
@@ -74,9 +73,9 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpString, "label", &_label,
-		  cpUnmixedKeywords,
+		  cpKeywords,
 		  "CONTENTS", cpWord, "print packet contents (no/hex/ascii)", &contents,
-		  "NBYTES", cpInteger, "number of bytes to dump", &_bytes,
+		  "NBYTES", cpInteger, "max data bytes to print", &_bytes,
 		  "ID", cpBool, "print IP ID?", &print_id,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &print_time,
 		  "PAINT", cpBool, "print paint?", &print_paint,

@@ -30,7 +30,7 @@
 #include <click/glue.hh>
 
 RandomSource::RandomSource()
-  : Element(0, 1)
+  : Element(0, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -65,23 +65,21 @@ int
 RandomSource::initialize(ErrorHandler *errh)
 {
   if (output_is_push(0)) 
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 RandomSource::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
 }
 
 Packet *
 RandomSource::make_packet()
 {
   int i;
-  WritablePacket *p = Packet::make(34, (const unsigned char *) 0,
-                                   _length,
-                                   Packet::default_tailroom(_length));
+  WritablePacket *p = Packet::make(34, (const unsigned char *)0, _length, 0);
   char *d = (char *) p->data();
   
   for(i = 0; i < _length; i += sizeof(int))
@@ -96,16 +94,21 @@ void
 RandomSource::run_scheduled()
 {
   Packet *p = make_packet();
-
   output(0).push(p);
-
-  reschedule();
+  _task.reschedule();
 }
 
 Packet *
 RandomSource::pull(int)
 {
-  return(make_packet());
+  return make_packet();
+}
+
+void
+RandomSource::add_handlers()
+{
+  if (output_is_push(0)) 
+    add_task_handlers(&_task);
 }
 
 EXPORT_ELEMENT(RandomSource)

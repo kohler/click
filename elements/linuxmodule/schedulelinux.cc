@@ -27,7 +27,6 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
 
 ScheduleLinux::ScheduleLinux()
@@ -55,21 +54,27 @@ ScheduleLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 ScheduleLinux::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 ScheduleLinux::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
 }
 
 void
 ScheduleLinux::run_scheduled()
 {
   schedule();
-  reschedule();
+  _task.reschedule();
+}
+
+void
+ScheduleLinux::add_handlers()
+{
+  add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(linuxmodule)

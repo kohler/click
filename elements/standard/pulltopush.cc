@@ -29,7 +29,7 @@
 #include "elements/standard/scheduleinfo.hh"
 
 PullToPush::PullToPush()
-  : Element(1, 1)
+  : Element(1, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -53,14 +53,14 @@ PullToPush::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 PullToPush::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 PullToPush::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
 }
 
 void
@@ -70,7 +70,13 @@ PullToPush::run_scheduled()
   for (int i = 0; i < _burst; i++)
     if (Packet *p = input(0).pull())
       output(0).push(p);
-  reschedule();
+  _task.reschedule();
+}
+
+void
+PullToPush::add_handlers()
+{
+  add_task_handlers(&_task);
 }
 
 EXPORT_ELEMENT(PullToPush)

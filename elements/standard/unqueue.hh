@@ -1,6 +1,7 @@
 #ifndef UNQUEUE_HH
 #define UNQUEUE_HH
 #include <click/element.hh>
+#include <click/task.hh>
 
 /*
  * =c
@@ -16,12 +17,7 @@
  * =a RatedUnqueue, BandwidthRatedUnqueue
  */
 
-class Unqueue : public Element {
-
-  int _burst;
-  unsigned _packets;
-
- public:
+class Unqueue : public Element { public:
   
   Unqueue();
   ~Unqueue();
@@ -38,6 +34,13 @@ class Unqueue : public Element {
   void run_scheduled();
 
   static String read_param(Element *e, void *);
+
+ private:
+
+  int _burst;
+  unsigned _packets;
+  Task _task;
+
 };
 
 #endif

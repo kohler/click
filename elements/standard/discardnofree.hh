@@ -1,6 +1,7 @@
 #ifndef DISCARDNOFREE_HH
 #define DISCARDNOFREE_HH
 #include <click/element.hh>
+#include <click/task.hh>
 
 /*
  * =c
@@ -12,9 +13,7 @@
  * them. Only useful for benchmarking.
  */
 
-class DiscardNoFree : public Element {
-  
- public:
+class DiscardNoFree : public Element { public:
   
   DiscardNoFree();
   ~DiscardNoFree();
@@ -25,10 +24,14 @@ class DiscardNoFree : public Element {
   
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
   
   void push(int, Packet *);
-  
   void run_scheduled();
+
+ private:
+
+  Task _task;
   
 };
 

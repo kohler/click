@@ -2,6 +2,7 @@
 #define TODUMP_HH
 #include <click/timer.hh>
 #include <click/element.hh>
+#include <click/task.hh>
 #include <stdio.h>
 
 /*
@@ -30,16 +31,7 @@
  *
  * FromDump, FromDevice.u, ToDevice.u, tcpdump(1) */
 
-class ToDump : public Element {
-  
-  String _filename;
-  FILE *_fp;
-  unsigned _snaplen;
-  unsigned _encap_type;
-  
-  void write_packet(Packet *);
-  
- public:
+class ToDump : public Element { public:
   
   ToDump();
   ~ToDump();
@@ -52,9 +44,20 @@ class ToDump : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
 
   void push(int, Packet *);
   void run_scheduled();
+
+ private:
+  
+  String _filename;
+  FILE *_fp;
+  unsigned _snaplen;
+  unsigned _encap_type;
+  Task _task;
+  
+  void write_packet(Packet *);
   
 };
 

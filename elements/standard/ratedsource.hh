@@ -2,6 +2,7 @@
 #define RATEDSOURCE_HH
 #include <click/element.hh>
 #include <click/gaprate.hh>
+#include <click/task.hh>
 
 /*
 =c
@@ -99,6 +100,7 @@ class RatedSource : public Element { public:
   bool _active : 1;
   bool _stop : 1;
   Packet *_packet;
+  Task _task;
   String _data;
 
   static String read_param(Element *, void *);

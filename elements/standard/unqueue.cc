@@ -28,7 +28,7 @@
 #include "elements/standard/scheduleinfo.hh"
 
 Unqueue::Unqueue()
-  : Element(1, 1)
+  : Element(1, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -52,14 +52,14 @@ int
 Unqueue::initialize(ErrorHandler *errh)
 {
   _packets = 0;
-  ScheduleInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 Unqueue::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
 }
 
 void
@@ -86,7 +86,8 @@ Unqueue::run_scheduled()
     output(0).push(p);
     _packets++;
   }
-  reschedule();
+  
+  _task.reschedule();
 }
 
 String
@@ -100,8 +101,8 @@ void
 Unqueue::add_handlers()
 {
   add_read_handler("packets", read_param, (void *)0);
+  add_task_handlers(&_task);
 }
 
 EXPORT_ELEMENT(Unqueue)
 ELEMENT_MT_SAFE(Unqueue)
-

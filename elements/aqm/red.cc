@@ -29,7 +29,6 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/confparse.hh>
-#include <errno.h>
 
 RED::RED()
   : Element(1, 1)

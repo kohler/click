@@ -3,12 +3,13 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 #include <click/bitvector.hh>
+#include <click/task.hh>
 #if CLICK_USERLEVEL
 # include <unistd.h>
 #endif
 class ElementFilter;
 
-class Router : public ElementLink { public:
+class Router { public:
 
   struct Handler;
   struct Hookup {
@@ -65,6 +66,7 @@ class Router : public ElementLink { public:
   int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
   void set_configuration(int, const String &);
 
+  Task *task_list()				{ return &_task_list; }
   Timer *timer_head()				{ return &_timer_head; }
 
 #if CLICK_USERLEVEL
@@ -86,6 +88,7 @@ class Router : public ElementLink { public:
  private:
   
   Timer _timer_head;
+  Task _task_list;
   bool _please_stop_driver;
 
 #ifdef CLICK_USERLEVEL

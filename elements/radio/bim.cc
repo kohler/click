@@ -32,12 +32,11 @@
 #include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
 #include <termios.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 
 BIM::BIM()
-  : Element(1, 1)
+  : Element(1, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
   _speed = 9600;
@@ -128,7 +127,7 @@ BIM::initialize(ErrorHandler *errh)
   return errh->error("this architecture has no TIOCFLUSH");
 #endif
 
-  ScheduleInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, &_task, errh);
   add_select(_fd, SELECT_READ | SELECT_WRITE);
   
   return 0;
@@ -137,7 +136,7 @@ BIM::initialize(ErrorHandler *errh)
 void
 BIM::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
   remove_select(_fd, SELECT_READ | SELECT_WRITE);
 }
 
@@ -190,10 +189,9 @@ BIM::got_char(int c)
 void
 BIM::run_scheduled()
 {
-  if (Packet *p = input(0).pull()) {
+  if (Packet *p = input(0).pull())
     push(0, p); 
-    reschedule();
-  } 
+  _task.reschedule();
 }
 
 void

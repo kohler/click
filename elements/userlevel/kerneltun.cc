@@ -30,7 +30,6 @@
 #include <click/click_ether.h>
 #include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <arpa/inet.h>
@@ -40,7 +39,7 @@
 #endif
 
 KernelTap::KernelTap()
-  : Element(1, 1)
+  : Element(1, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
   _fd = -1;
@@ -192,7 +191,7 @@ KernelTap::initialize(ErrorHandler *errh)
   if (_fd < 0)
     return -1;
   if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   add_select(_fd, SELECT_READ);
   return 0;
 }
@@ -200,7 +199,7 @@ KernelTap::initialize(ErrorHandler *errh)
 void
 KernelTap::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
   if (_fd >= 0) {
     close(_fd);
     remove_select(_fd, SELECT_READ);
@@ -240,7 +239,7 @@ KernelTap::selected(int fd)
     output(0).push(p);
 #elif defined (__linux__)
     // Linux prefixes packet 2 bytes of 0, then ether_header.
-    Packet *p = Packet::make(_headroom, b + 2, cc - 2, Packet::default_tailroom(cc - 2));
+    Packet *p = Packet::make(_headroom, b + 2, cc - 2, 0);
     output(0).push(p);
 #endif
   } else {
@@ -254,7 +253,7 @@ KernelTap::run_scheduled()
   if (Packet *p = input(0).pull()) {
     push(0, p); 
   }
-  reschedule();
+  _task.reschedule();
 }
 
 void
@@ -330,6 +329,13 @@ KernelTap::push(int, Packet *p)
 #endif
 
   p->kill();
+}
+
+void
+KernelTap::add_handlers()
+{
+  if (input_is_pull(0))
+    add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(userlevel)

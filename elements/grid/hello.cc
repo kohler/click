@@ -26,7 +26,6 @@
 #include <click/click_ether.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include "elements/standard/scheduleinfo.hh"
 #include "elements/userlevel/tobpf.hh"
 #include <click/router.hh>
 #include "grid.hh"
@@ -67,9 +66,8 @@ SendGridHello::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-SendGridHello::initialize(ErrorHandler *errh)
+SendGridHello::initialize(ErrorHandler *)
 {
-  ScheduleInfo::join_scheduler(this, errh);
   _timer.attach(this);
   _timer.schedule_after_ms(_period); // Send Grid HELLO periodically
 

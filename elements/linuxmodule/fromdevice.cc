@@ -136,12 +136,11 @@ FromDevice::initialize(ErrorHandler *errh)
   
 #ifndef RR_SCHED
   // start out with default number of tickets, inflate up to max
-  int max_tickets;
-  max_tickets = ScheduleInfo::query(this, errh);
-  set_max_tickets(max_tickets);
-  set_tickets(ScheduleInfo::DEFAULT);
+  int max_tickets = ScheduleInfo::query(this, errh);
+  _task.set_max_tickets(max_tickets);
+  _task.set_tickets(ScheduleInfo::DEFAULT);
 #endif
-  join_scheduler();
+  _task.join_scheduler(this);
   return 0;
 }
 
@@ -156,7 +155,7 @@ FromDevice::uninitialize()
   if (_registered)
     from_device_map.remove(this);
   _registered = false;
-  unschedule();
+  _task.unschedule();
   for (unsigned i = _puller_ptr; i != _pusher_ptr; i = next_i(i))
     _queue[i]->kill();
   _puller_ptr = _pusher_ptr = 0;
@@ -244,7 +243,13 @@ FromDevice::run_scheduled()
 #if CLICK_DEVICE_ADJUST_TICKETS
   adjust_tickets(sent);
 #endif
-  reschedule();
+  _task.reschedule();
+}
+
+void
+FromDevice::add_handlers()
+{
+  add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

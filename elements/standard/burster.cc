@@ -82,12 +82,8 @@ Burster::run_scheduled()
   
   for (int i = 0; i < _npackets; i++) {
     Packet *p = input(0).pull();
-    if (!p) {
-      reschedule();
-      click_chatter("burster: warning: rescheduling because no packets left.\n"
-		    "                  Used to rely on packet_upstream.\n");
-      return;
-    }
+    if (!p)
+      break;
     output(0).push(p);
   }
 

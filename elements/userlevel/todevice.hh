@@ -2,6 +2,7 @@
 #define TODEVICE_HH
 #include <click/element.hh>
 #include <click/string.hh>
+#include <click/task.hh>
 #include "elements/userlevel/fromdevice.hh"
 
 /*
@@ -50,19 +51,7 @@ extern "C" {
  * Can push or pull.
  */
 
-class ToDevice : public Element {
-
-  String _ifname;
-  int _fd;
-  bool _my_fd;
-  
-#if TODEVICE_BSD_DEV_BPF
-  pcap_t *_pcap;
-#endif
-
-  void send_packet(Packet *);
-  
- public:
+class ToDevice : public Element { public:
   
   ToDevice();
   ~ToDevice();
@@ -76,12 +65,26 @@ class ToDevice : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
 
   String ifname() const				{ return _ifname; }
   int fd() const				{ return _fd; }
 
   void push(int port, Packet *);
   void run_scheduled();
+
+ private:
+
+  String _ifname;
+  int _fd;
+  bool _my_fd;
+  Task _task;
+  
+#if TODEVICE_BSD_DEV_BPF
+  pcap_t *_pcap;
+#endif
+
+  void send_packet(Packet *);
   
 };
 

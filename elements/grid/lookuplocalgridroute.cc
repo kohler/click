@@ -33,7 +33,8 @@
 #include <click/router.hh>
 #include <click/glue.hh>
 
-LookupLocalGridRoute::LookupLocalGridRoute() : Element(2, 4), _nbr(0)
+LookupLocalGridRoute::LookupLocalGridRoute()
+  : Element(2, 4), _nbr(0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -78,7 +79,7 @@ LookupLocalGridRoute::initialize(ErrorHandler *errh)
   }
 
   if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
@@ -87,8 +88,7 @@ LookupLocalGridRoute::run_scheduled()
 {
   if (Packet *p = input(0).pull())
     push(0, p); 
-  reschedule();
-
+  _task.reschedule();
 }
 
 void

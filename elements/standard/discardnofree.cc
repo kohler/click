@@ -26,7 +26,7 @@
 #include "scheduleinfo.hh"
 
 DiscardNoFree::DiscardNoFree()
-  : Element(1, 0)
+  : Element(1, 0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -40,14 +40,14 @@ int
 DiscardNoFree::initialize(ErrorHandler *errh)
 {
   if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 DiscardNoFree::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
 }
 
 void
@@ -59,8 +59,15 @@ DiscardNoFree::push(int, Packet *)
 void
 DiscardNoFree::run_scheduled()
 {
-  if (input(0).pull())
-    reschedule();
+  (void) input(0).pull();
+  _task.reschedule();
+}
+
+void
+DiscardNoFree::add_handlers()
+{
+  if (input_is_pull(0))
+    add_task_handlers(&_task);
 }
 
 EXPORT_ELEMENT(DiscardNoFree)

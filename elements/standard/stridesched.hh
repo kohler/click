@@ -1,7 +1,7 @@
 #ifndef STRIDESCHED_HH
 #define STRIDESCHED_HH
-
 #include <click/element.hh>
+#include <click/task.hh>
 
 /*
  * =c

@@ -1,6 +1,7 @@
 #ifndef RANDOMSOURCE_HH
 #define RANDOMSOURCE_HH
 #include <click/element.hh>
+#include <click/task.hh>
 
 /*
  * =c
@@ -12,11 +13,7 @@
  * =a InfiniteSource
  */
 
-class RandomSource : public Element { protected:
-  
-  int _length;
-  
- public:
+class RandomSource : public Element { public:
   
   RandomSource();
   ~RandomSource(); 
@@ -27,10 +24,18 @@ class RandomSource : public Element { protected:
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
 
-  void run_scheduled();
   Packet *pull(int);
+  void run_scheduled();
+
+ protected:
+  
+  int _length;
+  Task _task;
+  
   Packet *make_packet();
+
 };
 
 #endif

@@ -107,10 +107,10 @@ ToDevice::initialize(ErrorHandler *errh)
   /* start out with max number of tickets */
   int max_tickets;
   max_tickets = ScheduleInfo::query(this, errh);
-  set_max_tickets(max_tickets);
-  set_tickets(ScheduleInfo::DEFAULT);
+  _task.set_max_tickets(max_tickets);
+  _task.set_tickets(ScheduleInfo::DEFAULT);
 #endif
-  join_scheduler();
+  _task.join_scheduler(this);
 
   reset_counts();
 
@@ -147,7 +147,7 @@ void
 ToDevice::uninitialize()
 {
   _registered = 0;
-  unschedule();
+  _task.unschedule();
 }
 
 /*
@@ -258,7 +258,7 @@ ToDevice::run_scheduled()
 #endif
 
   adjust_tickets(sent);
-  reschedule();
+  _task.reschedule();
 }
 
 int
@@ -374,6 +374,7 @@ ToDevice::add_handlers()
   add_read_handler("clean_dma_cycles", ToDevice_read_stats, (void *)3);
 #endif
   add_write_handler("reset_counts", ToDevice_write_stats, 0);
+  add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(AnyDevice linuxmodule)

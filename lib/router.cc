@@ -32,7 +32,6 @@
 #include <stdarg.h>
 #ifdef CLICK_USERLEVEL
 # include <unistd.h>
-# include <errno.h>
 #endif
 
 Router::Router()
@@ -41,7 +40,7 @@ Router::Router()
     _have_connections(0), _have_hookpidx(0),
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
-  initialize_head();
+  _task_list.initialize_list();
   //printf("sizeof(Anno) %d\n", sizeof(Packet::Anno));
 }
 
@@ -54,7 +53,7 @@ Router::~Router()
     delete _elements[i];
   delete[] _handlers;
 #ifdef __KERNEL__
-  initialize_head();		// get rid of scheduled wait queue
+  //initialize_head();		// get rid of scheduled wait queue
   _please_stop_driver = true;	// XXX races?
 #endif
 }
@@ -155,11 +154,7 @@ Router::add_element(Element *e, const String &ename, const String &conf,
   _element_landmarks.push_back(landmark);
   _configurations.push_back(conf);
   int i = _elements.size() - 1;
-  e->set_eindex(i);
-  /* make all elements use Router as its link: subsequent calls to
-   * schedule_xxxx places elements on this link, therefore allow
-   * driver to see them */
-  e->initialize_link(this);
+  e->attach_router(this, i);
   return i;
 }
 
@@ -1171,11 +1166,11 @@ Router::wait()
     return;
   
   // don't bother to call select() if no selects.
-  if (selects || scheduled_next() == this) {
+  if (selects || _task_list.empty()) {
     // never wait if anything is scheduled;
     // otherwise, if no timers, block indefinitely.
     struct timeval *wait_ptr = &wait;
-    if (scheduled_next() != this)
+    if (!_task_list.empty())
       wait.tv_sec = wait.tv_usec = 0;
     else if (!timers)
       wait_ptr = 0;
@@ -1210,16 +1205,17 @@ Router::wait()
 void
 Router::driver()
 {
-  ElementLink *l;
+  Task *t;
   while (1) {
 #if CLICK_USERLEVEL
     int c = 5000;
 #else
     int c = 10000;
 #endif
-    while (l = scheduled_next(), l != this && !_please_stop_driver && c >= 0) {
-      l->unschedule();
-      ((Element *)l)->run_scheduled();
+    while ((t = _task_list.next_task()),
+	   t != &_task_list && !_please_stop_driver && c >= 0) {
+      t->unschedule();
+      t->call_hook();
       c--;
     }
     if (_please_stop_driver)
@@ -1234,10 +1230,10 @@ Router::driver_once()
 {
   if (_please_stop_driver)
     return;
-  ElementLink *l = scheduled_next();
-  if (l != this) {
-    l->unschedule();
-    ((Element *)l)->run_scheduled();
+  Task *t = _task_list.next_task();
+  if (t != &_task_list) {
+    t->unschedule();
+    t->call_hook();
   }
 }
 

@@ -32,7 +32,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <unistd.h>
-#include <errno.h>
 
 #if TODEVICE_BSD_DEV_BPF
 # include <fcntl.h>
@@ -54,7 +53,7 @@
 #endif
 
 ToDevice::ToDevice()
-  : Element(1, 0), _fd(-1), _my_fd(false)
+  : Element(1, 0), _fd(-1), _my_fd(false), _task(this)
 {
   MOD_INC_USE_COUNT;
 #if TODEVICE_BSD_DEV_BPF
@@ -134,7 +133,7 @@ ToDevice::initialize(ErrorHandler *errh)
 #endif
 
   if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
@@ -149,7 +148,7 @@ ToDevice::uninitialize()
   if (_fd >= 0 && _my_fd) close(_fd);
   _fd = -1;
 #endif
-  unschedule();
+  _task.unschedule();
 }
 
 void
@@ -186,7 +185,14 @@ ToDevice::run_scheduled()
   // XXX reduce tickets when idle
   if (Packet *p = input(0).pull())
     send_packet(p); 
-  reschedule();
+  _task.reschedule();
+}
+
+void
+ToDevice::add_handlers()
+{
+  if (input_is_pull(0))
+    add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(FromDevice userlevel)

@@ -29,7 +29,7 @@
 #include "elements/standard/scheduleinfo.hh"
 
 RatedUnqueue::RatedUnqueue()
-  : Element(1, 1)
+  : Element(1, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -53,14 +53,14 @@ RatedUnqueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 RatedUnqueue::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 RatedUnqueue::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
 }
 
 void
@@ -80,7 +80,7 @@ RatedUnqueue::run_scheduled()
       output(0).push(p);
     }
   }
-  reschedule();
+  _task.reschedule();
 }
 
 
@@ -110,6 +110,7 @@ RatedUnqueue::add_handlers()
 {
   add_read_handler("rate", rate_read_handler, 0);
   add_write_handler("rate", rate_write_handler, 0);
+  add_task_handlers(&_task);
 }
 
 EXPORT_ELEMENT(RatedUnqueue)

@@ -125,6 +125,7 @@ tulipstats_static_cleanup()
 }
 
 TulipStats::TulipStats()
+  : _task(this)
 {
   // no MOD_INC_USE_COUNT; rely on AnyDevice
   tulipstats_static_initialize();
@@ -162,7 +163,7 @@ TulipStats::initialize(ErrorHandler *errh)
   if (tulip_stats_map.insert(this) < 0)
     return errh->error("cannot use TulipStats for device `%s'", _devname.cc());
   
-  ScheduleInfo::join_scheduler(this, errh);
+  ScheduleInfo::join_scheduler(this, &_task, errh);
 
   tulip_stats_active++;
 #if HAVE_TULIP_INTERRUPT_HOOK
@@ -180,7 +181,7 @@ TulipStats::initialize(ErrorHandler *errh)
 void
 TulipStats::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
   tulip_stats_map.remove(this);
 
   tulip_stats_active--;
@@ -222,7 +223,7 @@ void
 TulipStats::run_scheduled()
 {
   stats_poll();
-  reschedule();
+  _task.reschedule();
 }
 
 void
@@ -326,6 +327,7 @@ TulipStats::add_handlers()
 {
   add_read_handler("counts", read_counts, 0);
   add_write_handler("reset_counts", TulipStats_reset, 0);
+  add_task_handlers(&_task);
 }
 
 /* If you want to include TulipStats in your Click kernel driver, remove

@@ -1,6 +1,7 @@
 #ifndef FROMDUMP_HH
 #define FROMDUMP_HH
 #include <click/element.hh>
+#include <click/task.hh>
 
 /*
  * =c
@@ -34,6 +35,7 @@ class FromDump : public Element { public:
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers();
 
   void run_scheduled();
   
@@ -47,6 +49,7 @@ class FromDump : public Element { public:
   int _linktype;
   
   Packet *_packet;
+  Task _task;
   
   struct timeval _time_offset;
 

@@ -29,7 +29,6 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <click/click_ip.h>
-#include <errno.h>
 #include "fakepcap.h"
 
 #define	SWAPLONG(y) \
@@ -38,7 +37,7 @@
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromDump::FromDump()
-  : Element(0, 1), _fp(0), _packet(0)
+  : Element(0, 1), _fp(0), _packet(0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -112,7 +111,7 @@ FromDump::initialize(ErrorHandler *errh)
     click_gettimeofday(&now);
     timersub(&now, &_packet->timestamp_anno(), &_time_offset);
 
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   } else
     errh->warning("%s: no packets", _filename.cc());
   
@@ -130,6 +129,7 @@ FromDump::uninitialize()
     _packet->kill();
     _packet = 0;
   }
+  _task.unschedule();
 }
 
 WritablePacket *
@@ -190,7 +190,7 @@ FromDump::run_scheduled()
     click_gettimeofday(&now);
     timersub(&now, &_time_offset, &now);
     if (timercmp(&_packet->timestamp_anno(), &now, >)) {
-      reschedule();
+      _task.reschedule();
       return;
     }
   }
@@ -198,7 +198,13 @@ FromDump::run_scheduled()
   output(0).push(_packet);
   _packet = read_packet(0);
   if (_packet)
-    reschedule();
+    _task.reschedule();
+}
+
+void
+FromDump::add_handlers()
+{
+  add_task_handlers(&_task);
 }
 
 ELEMENT_REQUIRES(userlevel)

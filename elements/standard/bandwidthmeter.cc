@@ -26,7 +26,6 @@
 #include "bandwidthmeter.hh"
 #include <click/error.hh>
 #include <click/confparse.hh>
-#include <errno.h>
 
 BandwidthMeter::BandwidthMeter()
   : Element(1, 1), _meters(0), _nmeters(0)

@@ -2,6 +2,7 @@
 #define RATEDUNQUEUE_HH
 #include <click/element.hh>
 #include <click/gaprate.hh>
+#include <click/task.hh>
 
 /*
  * =c
@@ -15,11 +16,7 @@
  *
  * =a BandwidthRatedUnqueue, Unqueue, Shaper, RatedSplitter */
 
-class RatedUnqueue : public Element { protected:
-
-  GapRate _rate;
-
- public:
+class RatedUnqueue : public Element { public:
   
   RatedUnqueue();
   ~RatedUnqueue();
@@ -37,6 +34,11 @@ class RatedUnqueue : public Element { protected:
 
   unsigned rate() const				{ return _rate.rate(); }
   void set_rate(unsigned, ErrorHandler * = 0);
+  
+ protected:
+
+  GapRate _rate;
+  Task _task;
   
 };
 

@@ -34,7 +34,8 @@
 #include <click/glue.hh>
 #include "filterbyrange.hh"
 
-LookupGeographicGridRoute::LookupGeographicGridRoute() : Element(1, 3), _rt(0)
+LookupGeographicGridRoute::LookupGeographicGridRoute()
+  : Element(1, 3), _rt(0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -79,7 +80,7 @@ LookupGeographicGridRoute::initialize(ErrorHandler *errh)
   }
 
   if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
@@ -88,8 +89,7 @@ LookupGeographicGridRoute::run_scheduled()
 {
   if (Packet *p = input(0).pull())
     push(0, p); 
-  reschedule();
-
+  _task.reschedule();
 }
 
 void

@@ -35,6 +35,7 @@
 #include "updateroutes.hh"
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
+#include <click/task.hh>
 
 class LookupGeographicGridRoute : public Element {
   public:
@@ -63,6 +64,7 @@ private:
   UpdateGridRoutes *_rt;
   EtherAddress _ethaddr;
   IPAddress _ipaddr;
+  Task _task;
 };
 
 

@@ -31,7 +31,7 @@
 #include <click/glue.hh>
 
 RatedSource::RatedSource()
-  : Element(0, 1)
+  : Element(0, 1), _task(this)
 {
   MOD_INC_USE_COUNT;
   _packet = 0;
@@ -82,8 +82,7 @@ RatedSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   // note: if you change `headroom', change `click-align'
   unsigned int headroom = 16+20+24;
   _packet = Packet::make(headroom, (const unsigned char *)_data.data(), 
-      			 _data.length(), 
-			 Packet::default_tailroom(_data.length()));
+      			 _data.length(), 0);
   return 0;
 }
 
@@ -92,14 +91,14 @@ RatedSource::initialize(ErrorHandler *errh)
 {
   _count = 0;
   if (output_is_push(0)) 
-    ScheduleInfo::join_scheduler(this, errh);
+    ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
 }
 
 void
 RatedSource::uninitialize()
 {
-  unschedule();
+  _task.unschedule();
   _packet->kill();
   _packet = 0;
 }
@@ -125,7 +124,7 @@ RatedSource::run_scheduled()
     _count++;
   }
 
-  reschedule();
+  _task.reschedule();
 }
 
 Packet *
@@ -203,9 +202,9 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_bool(s, &active))
        return errh->error("active parameter must be boolean");
      rs->_active = active;
-     if (!rs->scheduled() && active) {
+     if (!rs->_task.scheduled() && active) {
        rs->_rate.reset();
-       rs->reschedule();
+       rs->_task.reschedule();
      }
      break;
    }
@@ -213,8 +212,8 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
    case 5: {			// reset
      rs->_count = 0;
      rs->_rate.reset();
-     if (!rs->scheduled() && rs->_active)
-       rs->reschedule();
+     if (!rs->_task.scheduled() && rs->_active)
+       rs->_task.reschedule();
      break;
    }
 
@@ -235,6 +234,8 @@ RatedSource::add_handlers()
   add_write_handler("active", change_param, (void *)3);
   add_read_handler("count", read_param, (void *)4);
   add_write_handler("reset", change_param, (void *)5);
+  if (output_is_push(0)) 
+    add_task_handlers(&_task);
 }
 
 EXPORT_ELEMENT(RatedSource)

@@ -34,6 +34,7 @@
 
 #include <click/element.hh>
 #include <click/ipaddress.hh>
+#include <click/task.hh>
 
 class KernelTap : public Element {
  public:
@@ -43,6 +44,7 @@ class KernelTap : public Element {
   
   const char *class_name() const	{ return "KernelTap"; }
   const char *processing() const	{ return "a/h"; }
+  KernelTap *clone() const;
   const char *flags() const		{ return "S3"; }
   Bitvector forward_flow(int) const;
   Bitvector backward_flow(int) const;
@@ -50,7 +52,7 @@ class KernelTap : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
-  KernelTap *clone() const;
+  void add_handlers();
 
   void selected(int fd);
 
@@ -64,6 +66,7 @@ class KernelTap : public Element {
   IPAddress _gw;
   int _fd;
   int _headroom;
+  Task _task;
 
   int alloc_tun(struct in_addr near, struct in_addr far, ErrorHandler *errh);
   void dealloc_tun();
