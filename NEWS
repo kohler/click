@@ -46,7 +46,8 @@ Version 1.2.0
 ** Added keyword arguments to Print, IPPrint, InfiniteSource, RatedSource,
    RED, TimedSource, ....
 
-** Added DRRSched, PrintOld, PushNull, PullNull, and SetTimestamp elements.
+** Added ChatterSocket, DRRSched, PrintOld, PushNull, PullNull, and
+   SetTimestamp elements.
 
 ** Real number parsing functions handle overflow and rounding better.
 
