@@ -1,3 +1,10 @@
+2003-02-22 Saturday 11:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.37), dsdvroutetable.hh
+	(1.28): Tweak DSDV: don't use route with new seqno until it's okay
+	to advertise it as well; in the meantime, use the route from the
+	last seqno
+
 2003-02-21 Friday 02:31  Eddie Kohler <kohler@icir.org>
 
 	* etc/libclick/: Makefile.in (1.8), lc-configure.in (1.22): update
