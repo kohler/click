@@ -339,3 +339,7 @@ apps/ClickController/RouterTreeModel.java
 apps/ClickController/StringUtils.java
 apps/ClickController/Util.java
 apps/ClickController/README
+
+apps/csclient
+apps/csclient/csclient.cc
+apps/csclient/csclient.hh
