@@ -102,7 +102,7 @@ public:
 protected:
 
   bool _loc_good; // if false, don't believe loc
-  unsigned short _loc_err; // error radius in meteres
+  unsigned short _loc_err; // error radius in metres
 
   int _move;    // Should we move?
   double _lat0; // Where we started.

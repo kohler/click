@@ -229,7 +229,7 @@ if [ $no_loc -eq 1 ]; then
     # XXX needs to be handled correctly
     defines="$defines -DPOS_LAT=0 -DPOS_LON=0 -DARG_LOC_GOOD=false -DARG_LOC_ERR=0 -DARG_LOC_TAG=$loc_tag"
 else
-    defines="$defines -DPOS_LAT=$lat -DPOS_LON=$lon -DARG_LOC_GOOD=false -DARG_LOC_ERR=$loc_err -DARG_LOC_TAG=$loc_tag"
+    defines="$defines -DPOS_LAT=$lat -DPOS_LON=$lon -DARG_LOC_GOOD=true -DARG_LOC_ERR=$loc_err -DARG_LOC_TAG=$loc_tag"
 fi
 
 # add Grid device arguments
