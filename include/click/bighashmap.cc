@@ -27,13 +27,13 @@ CLICK_DECLS
 
 template <class K, class V>
 void
-BigHashMap<K, V>::initialize(BigHashMap_ArenaFactory *factory)
+BigHashMap<K, V>::initialize(BigHashMap_ArenaFactory *factory, int initial_nbuckets)
 {
-  _buckets = new Elt *[127];
-  _nbuckets = 127;
+  _nbuckets = initial_nbuckets;
+  _buckets = new Elt *[_nbuckets];
   for (int i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
-  _capacity = _nbuckets * 3;
+  _capacity = _nbuckets * DEFAULT_RESIZE_THRESHOLD;
 
   _n = 0;
 
@@ -44,14 +44,35 @@ template <class K, class V>
 BigHashMap<K, V>::BigHashMap()
   : _default_value(), _arena(0)
 {
-  initialize(0);
+  initialize(0, DEFAULT_INITIAL_NBUCKETS);
 }
 
 template <class K, class V>
 BigHashMap<K, V>::BigHashMap(const V &def, BigHashMap_ArenaFactory *factory)
   : _default_value(def), _arena(0)
 {
-  initialize(factory);
+  initialize(factory, DEFAULT_INITIAL_NBUCKETS);
+}
+
+template <class K, class V>
+BigHashMap<K, V>::BigHashMap(const BigHashMap<K, V> &o)
+  : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
+    _default_value(o._default_value), _n(o._n), _capacity(o._capacity),
+    _arena(o._arena)
+{
+  _arena->use();
+  for (int i = 0; i < _nbuckets; i++) {
+    Elt **pprev = &_buckets[i];
+    *pprev = 0;
+    for (const Elt *e = o._buckets[i]; e; e = e->next) {
+      Elt *ee = reinterpret_cast<Elt *>(_arena->alloc());
+      new(reinterpret_cast<void *>(&ee->key)) K(e->key);
+      new(reinterpret_cast<void *>(&ee->value)) V(e->value);
+      ee->next = 0;
+      *pprev = ee;
+      pprev = &ee->next;
+    }
+  }
 }
 
 template <class K, class V>
@@ -73,7 +94,7 @@ template <class K, class V>
 void
 BigHashMap<K, V>::set_dynamic_resizing(bool on)
 {
-  _capacity = (on ? 3 * _nbuckets : 0x7FFFFFFF);
+  _capacity = (on ? DEFAULT_RESIZE_THRESHOLD * _nbuckets : 0x7FFFFFFF);
 }
 
 template <class K, class V>
@@ -134,7 +155,7 @@ BigHashMap<K, V>::resize0(int new_nbuckets)
   _nbuckets = new_nbuckets;
   _buckets = new_buckets;
   if (dynamic_resizing())
-    _capacity = new_nbuckets * 3;
+    _capacity = new_nbuckets * DEFAULT_RESIZE_THRESHOLD;
   
   for (int i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {
@@ -335,13 +356,13 @@ BigHashMap_qsort_elts(void **elts, int left, int right)
 
 template <class K>
 void
-BigHashMap<K, void *>::initialize(BigHashMap_ArenaFactory *factory)
+BigHashMap<K, void *>::initialize(BigHashMap_ArenaFactory *factory, int initial_nbuckets)
 {
-  _buckets = new Elt *[127];
-  _nbuckets = 127;
+  _nbuckets = initial_nbuckets;
+  _buckets = new Elt *[_nbuckets];
   for (int i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
-  _capacity = _nbuckets * 3;
+  _capacity = _nbuckets * DEFAULT_RESIZE_THRESHOLD;
 
   _n = 0;
 
@@ -352,14 +373,35 @@ template <class K>
 BigHashMap<K, void *>::BigHashMap()
   : _default_value(0), _arena(0)
 {
-  initialize(0);
+  initialize(0, DEFAULT_INITIAL_NBUCKETS);
 }
 
 template <class K>
 BigHashMap<K, void *>::BigHashMap(void *def, BigHashMap_ArenaFactory *factory)
   : _default_value(def), _arena(0)
 {
-  initialize(factory);
+  initialize(factory, DEFAULT_INITIAL_NBUCKETS);
+}
+
+template <class K>
+BigHashMap<K, void *>::BigHashMap(const BigHashMap<K, void *> &o)
+  : _buckets(new Elt *[o._nbuckets]), _nbuckets(o._nbuckets),
+    _default_value(o._default_value), _n(o._n), _capacity(o._capacity),
+    _arena(o._arena)
+{
+  _arena->use();
+  for (int i = 0; i < _nbuckets; i++) {
+    Elt **pprev = &_buckets[i];
+    *pprev = 0;
+    for (const Elt *e = o._buckets[i]; e; e = e->next) {
+      Elt *ee = reinterpret_cast<Elt *>(_arena->alloc());
+      new(reinterpret_cast<void *>(&ee->key)) K(e->key);
+      ee->value = e->value;
+      ee->next = 0;
+      *pprev = ee;
+      pprev = &ee->next;
+    }
+  }
 }
 
 template <class K>
@@ -380,7 +422,7 @@ template <class K>
 void
 BigHashMap<K, void *>::set_dynamic_resizing(bool on)
 {
-  _capacity = (on ? 3 * _nbuckets : 0x7FFFFFFF);
+  _capacity = (on ? DEFAULT_RESIZE_THRESHOLD * _nbuckets : 0x7FFFFFFF);
 }
 
 template <class K>
@@ -441,7 +483,7 @@ BigHashMap<K, void *>::resize0(int new_nbuckets)
   _nbuckets = new_nbuckets;
   _buckets = new_buckets;
   if (dynamic_resizing())
-    _capacity = new_nbuckets * 3;
+    _capacity = new_nbuckets * DEFAULT_RESIZE_THRESHOLD;
   
   for (int i = 0; i < old_nbuckets; i++)
     for (Elt *e = old_buckets[i]; e; ) {

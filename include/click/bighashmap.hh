@@ -23,6 +23,7 @@ class BigHashMap { public:
   
   BigHashMap();
   explicit BigHashMap(const V &, BigHashMap_ArenaFactory * = 0);
+  BigHashMap(const BigHashMap<K, V> &);
   ~BigHashMap();
 
   void set_arena(BigHashMap_ArenaFactory *);
@@ -60,6 +61,10 @@ class BigHashMap { public:
     K key;
     V value;
   };
+
+  enum { MAX_NBUCKETS = 32767,
+	 DEFAULT_INITIAL_NBUCKETS = 127,
+	 DEFAULT_RESIZE_THRESHOLD = 2 };
   
  private:
   
@@ -76,13 +81,13 @@ class BigHashMap { public:
 
   BigHashMap_Arena *_arena;
 
-  void initialize(BigHashMap_ArenaFactory *);
+  void initialize(BigHashMap_ArenaFactory *, int);
   void resize0(int = -1);
   int bucket(const K &) const;
   Elt *find_elt(const K &) const;
 
-  enum { MAX_NBUCKETS = 32767 };
-  
+  BigHashMap<K, V> &operator=(const BigHashMap<K, V> &); // does not exist
+
   friend class _BigHashMap_iterator<K, V>;
   friend class _BigHashMap_const_iterator<K, V>;
   
@@ -174,6 +179,7 @@ class BigHashMap<K, void *> { public:
 
   BigHashMap();
   explicit BigHashMap(void *, BigHashMap_ArenaFactory * = 0);
+  BigHashMap(const BigHashMap<K, void *> &);
   ~BigHashMap();
   
   void set_arena(BigHashMap_ArenaFactory *);
@@ -212,6 +218,10 @@ class BigHashMap<K, void *> { public:
     void *value;
   };
   
+  enum { MAX_NBUCKETS = 32767,
+	 DEFAULT_INITIAL_NBUCKETS = 127,
+	 DEFAULT_RESIZE_THRESHOLD = 2 };
+  
  private:
   
   struct Elt : public Pair {
@@ -227,15 +237,15 @@ class BigHashMap<K, void *> { public:
 
   BigHashMap_Arena *_arena;
 
-  void initialize(BigHashMap_ArenaFactory *);
+  void initialize(BigHashMap_ArenaFactory *, int);
   void resize0(int = -1);
   int bucket(const K &) const;
   Elt *find_elt(const K &) const;
 
-  enum { MAX_NBUCKETS = 32767 };
-  
-  friend class iterator;
-  friend class const_iterator;
+  BigHashMap<K, void *> &operator=(const BigHashMap<K, void *> &); // does not exist
+
+  friend class _BigHashMap_iterator<K, void *>;
+  friend class _BigHashMap_const_iterator<K, void *>;
   
 };
 
@@ -329,6 +339,7 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
   BigHashMap()				: inherited() { }
   explicit BigHashMap(T *def, BigHashMap_ArenaFactory *factory = 0)
 					: inherited(def, factory) { }
+  BigHashMap(const BigHashMap<K, T *> &o) : inherited(o) { }
   ~BigHashMap()				{ }
   
   void set_arena(BigHashMap_ArenaFactory *af) { inherited::set_arena(af); }
