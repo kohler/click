@@ -54,6 +54,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 #ifdef CLICK_LINUXMODULE
   bool print_cpu = false;
 #endif
+  bool print_anno = false;
   String label;
   unsigned bytes = 24;
   
@@ -64,6 +65,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
 		  cpKeywords,
 		  "NBYTES", cpInteger, "max bytes to print", &bytes,
 		  "TIMESTAMP", cpBool, "print packet timestamps?", &timestamp,
+		  "PRINTANNO", cpBool, "print packet annotation bytes?", &print_anno,
 #ifdef CLICK_LINUXMODULE
 		  "CPU", cpBool, "print CPU IDs?", &print_cpu,
 #endif
@@ -73,6 +75,7 @@ Print::configure(Vector<String> &conf, ErrorHandler* errh)
   _label = label;
   _bytes = bytes;
   _timestamp = timestamp;
+  _print_anno = print_anno;
 #ifdef CLICK_LINUXMODULE
   _cpu = print_cpu;
 #endif
@@ -103,8 +106,20 @@ Print::simple_action(Packet *p)
   len = sprintf(sa.reserve(9), "%4d | ", p->length());
   sa.forward(len);
 
+  if (_print_anno) {
+    char *buf = sa.reserve(Packet::USER_ANNO_SIZE*2);
+    int pos = 0;
+    for (unsigned j = 0; j < Packet::USER_ANNO_SIZE; j++, pos += 2) 
+      sprintf(buf + pos, "%02x", p->user_anno_c(j));
+    sa.forward(pos);
+    
+    len = sprintf(sa.reserve(3), " | ");
+    sa.forward(len);
+  }
+
   char *buf = sa.data() + sa.length();
   int pos = 0;
+
   for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
     sprintf(buf + pos, "%02x", p->data()[i] & 0xff);
     pos += 2;

@@ -31,6 +31,10 @@ Number of bytes to print. Default is 24.
 Boolean. Determines whether to print each packet's timestamp in seconds since
 1970. Default is false.
 
+=item PRINTANNO
+
+Boolean. Determines whether to print each packet's user annotation bytes.  Default is false.
+
 =item CPU
 
 Boolean; available only in the Linux kernel module. Determines whether to
@@ -64,7 +68,7 @@ class Print : public Element { public:
 #ifdef CLICK_LINUXMODULE
   bool _cpu : 1;
 #endif
-  
+  bool _print_anno;
 };
 
 CLICK_ENDDECLS
