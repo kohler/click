@@ -80,6 +80,9 @@ IPFilter::create_wordmap()
   wordmap->insert("auth",	WT(TYPE_PORT, 113));
   wordmap->insert("nntp",	WT(TYPE_PORT, 119));
   wordmap->insert("ntp",	WT(TYPE_PORT, 123));
+  wordmap->insert("netbios-ns",	WT(TYPE_PORT, 137));
+  wordmap->insert("netbios-dgm",WT(TYPE_PORT, 138));
+  wordmap->insert("netbios-ssn",WT(TYPE_PORT, 139));
   wordmap->insert("irc",	WT(TYPE_PORT, 194));
   wordmap->insert("imap3",	WT(TYPE_PORT, 220));
   wordmap->insert("https",	WT(TYPE_PORT, 443));
