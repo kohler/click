@@ -41,7 +41,7 @@ STRIP_UPACKAGE = true
 DEFS = @DEFS@ 
 U_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir)
 K_INCLUDES = -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(linuxdir)/include
-B_INCLUDES = -nostdinc -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(freebsddir)
+B_INCLUDES = -nostdinc -I. -I$(top_builddir) -I$(srcdir) -I$(clickincludedir) -I$(clicksrcdir) -I$(freebsd_includedir)
 
 # END OF VARIABLES THAT MAY CHANGE BETWEEN PACKAGES
 
@@ -60,7 +60,7 @@ libdir = @libdir@
 mandir = @mandir@
 datadir = @datadir@/click
 linuxdir = @linuxdir@
-freebsddir = @freebsddir@
+freebsd_includedir = @freebsd_includedir@
 
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)
 
@@ -123,8 +123,8 @@ U_CXXCOMPILE = $(U_CXX) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CXXFLAGS)
 K_CXXCOMPILE = $(K_CXX) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CXXFLAGS)
 B_CXXCOMPILE = $(B_CXX) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CXXFLAGS)
 U_COMPILE = $(U_CC) $(DEFS) $(U_INCLUDES) $(U_CPPFLAGS) $(CFLAGS)
-K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS) -D__KERNEL__
-B_COMPILE = $(B_CC) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CFLAGS) -DKERNEL -D_KERNEL -DKLD_MODULE
+K_COMPILE = $(K_CC) $(DEFS) $(K_INCLUDES) $(K_CPPFLAGS) $(CFLAGS)
+B_COMPILE = $(B_CC) $(DEFS) $(B_INCLUDES) $(B_CPPFLAGS) $(CFLAGS)
 
 # set TARGETS, etc. based on MAKE_UPACKAGE, MAKE_KPACKAGE, and MAKE_BPACKAGE
 ifeq ($(MAKE_UPACKAGE),1)

@@ -98,11 +98,17 @@ fi
 
 
 dnl
-dnl build userlevel? Linux module? are we compiling on Linux?
+dnl build userlevel? Linux module? FreeBSD module?
 dnl
 
 AC_ARG_ENABLE(userlevel, [  --disable-userlevel     disable user-level driver], :, enable_userlevel=yes)
 AC_ARG_ENABLE(linuxmodule, [  --disable-linuxmodule   disable Linux kernel driver], :, enable_linuxmodule=yes)
+AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver], :, enable_bsdmodule=no)
+
+
+dnl
+dnl Are we compiling on Linux?
+dnl
 
 AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
     [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
@@ -147,10 +153,17 @@ Are you sure $linuxdir contains Linux kernel source?
 fi
 AC_SUBST(linuxdir)
 
+
+dnl
+dnl Set HAVE_TARGET symbols
+dnl
+
 HAVE_USERLEVEL_TARGET=`if test "x$enable_userlevel" = xyes; then echo 1; else echo 0; fi`
 HAVE_LINUXMODULE_TARGET=`if test "x$linuxdir" = xNONE; then echo 0; else echo 1; fi`
+HAVE_BSDMODULE_TARGET=`if test "x$linuxdir" = xNONE; then echo 0; else echo 1; fi`
 AC_SUBST(HAVE_USERLEVEL_TARGET)
 AC_SUBST(HAVE_LINUXMODULE_TARGET)
+AC_SUBST(HAVE_BSDMODULE_TARGET)
 
 
 dnl

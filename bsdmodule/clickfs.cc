@@ -24,7 +24,6 @@ CLICK_CXX_PROTECT
 #include <sys/mount.h>
 #include <sys/types.h>
 #include <sys/time.h>
-#include <sys/vnode.h>
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 

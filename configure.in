@@ -88,39 +88,47 @@ dnl
 dnl How to build bsdmodule driver?
 dnl
 
-AC_ARG_WITH(freebsd, [  --with-freebsd[=DIR]    FreeBSD source code is in DIR [/usr/include]],
-  [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/inclde; fi],
+AC_ARG_WITH(freebsd, [  --with-freebsd[=SRC,INC] FreeBSD source code is in SRC [/usr/src/sys],
+                          include directory is INC [/usr/include]],
+  [freebsddir=$withval; if test -z "$withval" -o "$withval" = yes; then freebsddir=/usr/src/sys,/usr/include; fi],
   freebsddir=NONE)
 
 if test "x$freebsddir" = xNONE; then
-  if test -d /usr/include; then
-    freebsddir=/usr/include
+  if test -d /usr/src/sys -a -d /usr/include; then
+    freebsddir=/usr/src/sys,/usr/include
   elif test "x$enable_bsdmodule" = xyes; then
     AC_MSG_WARN([
 =========================================
 
-I can't find /usr/include, so I'm not compiling the bsdmodule driver.
-(You may need the --with-freebsd=DIR option.)
+I can't find /usr/src/sys and/or /usr/include, so I'm not compiling
+the bsdmodule driver. (You may need the --with-freebsd=DIR option.)
 
 =========================================])
   fi
 fi
 
+freebsd_srcdir=`echo "$freebsddir," | sed -e 's/,.*//'`
+freebsd_includedir=`echo "$freebsddir,/usr/include," | sed -e 's/^[[^,]]*,\([[^,]]*\),.*$/\1/'`
+
 if test "x$freebsddir" = xNONE -o "x$freebsddir" = xno -o "x$enable_bsdmodule" != xyes; then
   ac_have_bsd_kernel=n
   freebsddir=NONE
-elif test -r $freebsddir/net/if_var.h; then
+elif test -r $freebsd_includedir/net/if_var.h -a -r $freebsd_srcdir/kern/vnode_if.pl; then
   ac_have_bsd_kernel=y
 else
   AC_MSG_ERROR([
 =========================================
 
-I can't find $freebsddir/net/if_var.h!
-Are you sure $freebsddir contains FreeBSD kernel source?
+I can't find $freebsd_includedir/net/if_var.h and/or
+$freebsd_srcdir/kern/vnode_if.pl! Are you sure $freebsd_srcdir
+and $freebsd_includedir contain FreeBSD kernel source?
 
 =========================================])
 fi
-AC_SUBST(freebsddir)
+
+AC_SUBST(freebsd_srcdir)
+AC_SUBST(freebsd_includedir)
+AC_DEFINE_UNQUOTED(FREEBSD_INCLUDEDIR, "${freebsd_includedir}")
 
 
 dnl

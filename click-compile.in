@@ -21,7 +21,7 @@ exec_prefix=@exec_prefix@
 includedir=@includedir@
 srcdir=@datadir@/click/src
 linuxdir=@linuxdir@
-freebsddir=@freebsddir@
+freebsd_includedir=@freebsd_includedir@
 
 # determine mode
 directory=.

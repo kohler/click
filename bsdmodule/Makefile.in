@@ -11,7 +11,8 @@ exec_prefix = @exec_prefix@
 bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
-freebsddir = @freebsddir@
+freebsd_includedir = @freebsd_includedir@
+freebsd_srcdir = @freebsd_srcdir@
 
 VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/bsdmodule@elements_vpath@
 
@@ -73,8 +74,8 @@ CFLAGS = @CFLAGS_NDEBUG@ -g
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -g
 
 DEFS = @DEFS@ 
-INCLUDES = -I$(top_builddir)/include -I$(top_srcdir)/include \
-	-I$(srcdir) -I$(top_srcdir) -I. -I$(freebsddir)
+INCLUDES = -nostdinc -I$(top_builddir)/include -I$(top_srcdir)/include \
+	-I$(srcdir) -I$(top_srcdir) -I. -I$(freebsd_includedir)
 LDFLAGS = @LDFLAGS@
 LIBS = @LIBS@
 
@@ -107,15 +108,16 @@ elements.cc: elements.conf $(top_srcdir)/click-buildtool
 
 setdef0.c setdef1.c: module.o
 	gensetdefs module.o
-vnode_if.h: $(freebsddir)/kern/vnode_if.pl $(freebsddir)/kern/vnode_if.src
-	$(PERL) $(freebsddir)/kern/vnode_if.pl -h $(freebsddir)/kern/vnode_if.src
+vnode_if.h: $(freebsd_srcdir)/kern/vnode_if.pl $(freebsd_srcdir)/kern/vnode_if.src $(srcdir)/massage-vnode_if.pl
+	$(PERL) $(freebsd_srcdir)/kern/vnode_if.pl -h $(freebsd_srcdir)/kern/vnode_if.src
+	$(PERL) $(srcdir)/massage-vnode_if.pl vnode_if.h
 
 # Special compile rule for click-mount because we don't want
 # to built it with -D_KERNEL, it's in user-space..
 click-mount: click-mount.o
 	$(CC) click-mount.o -o click-mount $(LDFLAGS)
 click-mount.o: click-mount.c
-	$(CC) -c click-mount.c -o click-mount.o
+	$(CC) -c $< -o click-mount.o
 
 DEPFILES := $(wildcard *.d)
 ifneq ($(DEPFILES),)
@@ -128,7 +130,8 @@ install: $(INSTALLOBJS)
 install-man:
 
 clean:
-	-rm -f *.d *.o click.ko elements.mk elements.cc elements.conf
+	-rm -f *.d *.o click.ko elements.mk elements.cc elements.conf \
+	vnode_if.h vnode_if.h~ setdef0.c setdef1.c setdefs.h
 distclean: clean
 	-rm -f Makefile
 

@@ -22,7 +22,6 @@
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
 #include <sys/namei.h>
-#include <sys/vnode.h>
 #include <sys/dir.h>
 #include <sys/dirent.h>
 #include <sys/stat.h>

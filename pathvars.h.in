@@ -14,4 +14,7 @@
 /* Directory containing Linux sources. */
 #undef LINUX_SRCDIR
 
+/* FreeBSD kernel include directory. */
+#undef FREEBSD_INCLUDEDIR
+
 #endif
