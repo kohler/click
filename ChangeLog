@@ -1,3 +1,7 @@
+2003-01-03 Friday 11:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/airoinfo.cc (1.9): nits
+
 2003-01-02 Thursday 17:10  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/: build-grid-config.sh (1.10), run-grid (1.17): updated for
