@@ -59,8 +59,6 @@ class ToDevice : public AnyDevice {
   // Statistics.
   unsigned long long _idle_calls;
   unsigned long long _idle_pulls;
-  unsigned long long _busy_returns;
-  unsigned long long _pkts_sent;
   unsigned long long _linux_pkts_sent;
   unsigned long long _time_pull;
   unsigned long long _time_clean;
@@ -75,6 +73,8 @@ class ToDevice : public AnyDevice {
 #endif
   unsigned long _rejected;
   unsigned long _hard_start;
+  unsigned long long _busy_returns;
+  unsigned long long _pkts_sent;
 
   bool polling() const			{ return _polling; }
   

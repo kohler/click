@@ -8,13 +8,17 @@
  * =c
  * Counter2()
  * =d
+ *
  * Passes packets unchanged from its input to its output, maintaining
- * statistics information about packet count and total duration of packet
- * reception.
+ * statistics information about packet count and packet rate using historical
+ * average.
+ *
  * =h count read-only
  * Returns the number of packets that have passed through.
+ *
  * =h rate read-only
- * Returns packet arrival duration.
+ * Returns packet arrival rate.
+ *
  * =h reset write-only
  * Resets the count and rate to zero.
  */
@@ -31,7 +35,7 @@ class Counter2 : public Element { protected:
   
   const char *class_name() const		{ return "Counter2"; }
   const char *processing() const		{ return AGNOSTIC; }
-  
+
   int count() const				{ return _count; }
   unsigned long first() const			{ return _first; }
   unsigned long last() const			{ return _last; }

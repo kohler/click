@@ -60,7 +60,7 @@ HashMap2<K, V>::set_hashsize(unsigned i)
   }
 
   _k = new (HashMap2Elt *)[_hashsize];
-  for (int j = 0; j < _hashsize; j++) 
+  for (unsigned j = 0; j < _hashsize; j++) 
     _k[j] = 0L;
 
   struct HashMap2Elt *iter = _l;

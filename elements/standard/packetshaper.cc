@@ -45,7 +45,9 @@ PacketShaper::pull(int)
     return 0;
   } else {
     Packet *p = input(0).pull();
-    if (p) _rate.update_now(1);	// packets, not bytes
+    if (p) {
+      _rate.update_now(1);	// packets, not bytes
+    }
     return p;
   }
 }

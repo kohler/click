@@ -15,10 +15,9 @@
 #endif
 #include "counter2.hh"
 #include "confparse.hh"
+#include "straccum.hh"
 #include "glue.hh"
 #include "error.hh"
-
-static String counter2_read_rate_handler(Element *, void *);
 
 Counter2::Counter2()
   : Element(1, 1)

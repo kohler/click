@@ -6,9 +6,9 @@
  * =c
  * PacketShaper(RATE)
  * =d
- * PacketShaper is a pull element that allows a maximum of RATE
- * packets per second to pass through. It measures RATE using
- * an exponential weighted moving average.
+ * PacketShaper is a pull element that allows a maximum of RATE packets per
+ * second to pass through. It measures RATE using an exponential weighted
+ * moving average.
  *
  * There are usually Queues both upstream and downstream
  * of Shaper elements.

@@ -52,6 +52,7 @@ class Meter : public Element { protected:
   
   int rate() const				{ return _rate.average(); }
   int rate_scale() const			{ return _rate.scale; }
+  int rate_freq() const				{ return _rate.freq(); }
   
   Meter *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);

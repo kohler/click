@@ -32,6 +32,24 @@ Counter::reset()
 }
 
 int
+Counter::configure(const Vector<String> &conf, ErrorHandler *errh) 
+{ 
+  _bytes = false;
+  String b = "PACKETS";
+  if (cp_va_parse(conf, this, errh, 
+		  cpOptional,
+	          cpString, "count bytes?", &b,
+		  0) < 0)
+    return -1;
+  if (b == "BYTES") _bytes = true;
+  else if (b == "PACKETS") _bytes = false;
+  else 
+    return errh->error("argument should be BYTES or PACKETS");
+  return 0;
+}
+
+
+int
 Counter::initialize(ErrorHandler *)
 {
   reset();
@@ -41,8 +59,13 @@ Counter::initialize(ErrorHandler *)
 Packet *
 Counter::simple_action(Packet *p)
 {
-  _count++;
-  _rate.update(1);
+  if (!_bytes) {
+    _count++;
+    _rate.update(1);
+  } else {
+    _count += p->length();
+    _rate.update(p->length());
+  }
   return p;
 }
 
@@ -78,7 +101,7 @@ static String
 counter_read_rate_handler(Element *e, void *)
 {
   Counter *c = (Counter *)e;
-  return cp_unparse_real(c->rate()*CLICK_HZ, c->rate_scale()) + "\n";
+  return cp_unparse_real(c->rate()*c->rate_freq(), c->rate_scale()) + "\n";
 }
 
 static int

@@ -44,12 +44,12 @@ ToDevice::ToDevice()
     _rejected(0), _hard_start(0)
 {
   add_input();
+  _busy_returns = 0; 
+  _pkts_sent = 0; 
 #if CLICK_DEVICE_STATS
   _activations = 0;
   _idle_pulls = 0; 
   _idle_calls = 0; 
-  _busy_returns = 0; 
-  _pkts_sent = 0; 
   _linux_pkts_sent = 0; 
   _time_pull = 0;
   _time_clean = 0;
@@ -109,7 +109,7 @@ ToDevice::initialize(ErrorHandler *errh)
   _registered = 1;
 
 #ifndef RR_SCHED
-  /* start out with default number of tickets, inflate up to max */
+  /* start out with max number of tickets */
   int max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
   set_tickets(max_tickets);
@@ -210,10 +210,10 @@ ToDevice::tx_intr()
   if (_activations > 0) {
     if (sent == 0) _idle_calls++;
     if (sent == 0 && !busy) _idle_pulls++;
-    if (sent > 0) _pkts_sent+=sent;
-    if (busy) _busy_returns++;
   }
 #endif
+  if (busy) _busy_returns++;
+  if (sent > 0) _pkts_sent+=sent;
 
 #if HAVE_POLLING
   if (_polling) {
@@ -312,11 +312,11 @@ ToDevice_read_calls(Element *f, void *)
   return
     String(td->_rejected) + " packets rejected\n" +
     String(td->_hard_start) + " hard start xmit\n" +
+    String(td->_busy_returns) + " device busy returns\n" +
+    String(td->_pkts_sent) + " packets sent\n" +
 #if CLICK_DEVICE_STATS
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_idle_pulls) + " idle pulls\n" +
-    String(td->_busy_returns) + " device busy returns\n" +
-    String(td->_pkts_sent) + " packets sent\n" +
     String(td->_linux_pkts_sent) + " linux packets sent\n" +
     String(td->_time_pull) + " cycles pull\n" +
     String(td->_time_clean) + " cycles clean\n" +

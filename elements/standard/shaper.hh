@@ -32,6 +32,7 @@ class Shaper : public Element { protected:
   const char *processing() const		{ return PULL; }
 
   int rate() const				{ return _rate.average(); }
+  int rate_freq() const				{ return _rate.freq(); }
   int rate_scale() const			{ return _rate.scale; }
   
   Shaper *clone() const;

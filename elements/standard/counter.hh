@@ -5,21 +5,28 @@
 
 /*
  * =c
- * Counter()
+ * Counter(PACKETS/BYTES)
  * =d
+ *
  * Passes packets unchanged from its input to its output,  maintaining
- * statistics information about packet count and rate.
+ * statistics information about packet count and rate if configuration string
+ * is PACKETS (this is the default), byte count and byte rate if configuration
+ * string is BYTES.
+ *
  * =h count read-only
- * Returns the number of packets that have passed through.
+ * Returns the number of packets/bytes that have passed through.
+ *
  * =h rate read-only
- * Returns the recent packet arrival rate (measured by exponential
+ * Returns the recent packet/byte arrival rate (measured by exponential
  * weighted moving average) in packets per second.
+ *
  * =h reset write-only
  * Resets the count and rate to zero.
  */
 
 class Counter : public Element { protected:
-  
+ 
+  bool _bytes;
   int _count;
   RateEWMA _rate;
   
@@ -33,10 +40,12 @@ class Counter : public Element { protected:
   int count() const				{ return _count; }
   int rate() const				{ return _rate.average(); }
   int rate_scale() const			{ return _rate.scale; }
+  int rate_freq() const				{ return _rate.freq(); }
   void reset();
   
   Counter *clone() const			{ return new Counter; }
   int initialize(ErrorHandler *);
+  int configure(const Vector<String> &, ErrorHandler *);
   void add_handlers();
   
   /*void push(int port, Packet *);
