@@ -1,3 +1,21 @@
+2004-09-03 Friday 14:52  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.86), etc/libclick/DISTFILES (1.24): DISTFILES
+
+2004-09-03 Friday 14:46  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/fromdagdump.hh (1.15): nit
+
+2004-09-03 Friday 14:44  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromdagdump.cc (1.24), fromdagdump.hh (1.14):
+	FromDAGDump supports PPP and PPP_HDLC encapsulation
+
+2004-09-03 Friday 14:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fakepcap.cc (1.16), fakepcap.hh (1.19): add
+	support for PPP, PPP_HDLC, and parsing/unparsing unknown DLT types
+
 2004-09-03 Friday 14:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* include/clicknet/ppp.h (1.1): add PPP header
