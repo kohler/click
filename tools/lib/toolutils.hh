@@ -35,6 +35,7 @@ class ElementMap { public:
   static const int DRIVER_USERLEVEL = 1;
   static const int NDRIVERS = 2;
   static const char *driver_name(int);
+  static const char *driver_requirement(int);
   
   ElementMap();
   ElementMap(const String &);
@@ -50,7 +51,9 @@ class ElementMap { public:
   const String &flow_code(int i) const		{ return _e[i].flow_code; }
   const String &flags(int i) const		{ return _e[i].flags; }
   const String &requirements(int i) const	{ return _e[i].requirements; }
+  bool requires(int i, const String &) const;
   const String &provisions(int i) const		{ return _e[i].provisions; }
+  bool provides(int i, const String &) const;
   const String &package(int i) const;
   int name_next(int i) const			{ return _e[i].name_next; }
   int cxx_next(int i) const			{ return _e[i].cxx_next; }
@@ -88,6 +91,7 @@ class ElementMap { public:
   
   bool driver_indifferent(const Vector<int> &map_indexes) const;
   bool driver_compatible(const Vector<int> &map_indexes, int driver) const;
+  bool driver_compatible(const RouterT *, int driver, ErrorHandler *) const;
   void limit_driver(int driver);
   
  private:

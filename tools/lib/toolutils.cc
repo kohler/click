@@ -197,6 +197,54 @@ ElementMap::driver_name(int d)
     return "??";
 }
 
+const char *
+ElementMap::driver_requirement(int d)
+{
+  if (d == DRIVER_LINUXMODULE)
+    return "linuxmodule";
+  else if (d == DRIVER_USERLEVEL)
+    return "userlevel";
+  else
+    return "";
+}
+
+static bool
+requirement_contains(const String &req, const String &n)
+{
+  int pos = 0;
+  while ((pos = req.find_left(n)) >= 0) {
+    int rpos = pos + n.length();
+    if ((pos == 0 || isspace(req[pos - 1]))
+	&& (rpos == req.length() || isspace(req[rpos])))
+      return true;
+    pos = rpos;
+  }
+  return false;  
+}
+
+bool
+ElementMap::requires(int i, const String &n) const
+{
+  const String &req = _e[i].requirements;
+  if (!req)
+    return false;
+  else
+    return requirement_contains(req, n);
+}
+
+bool
+ElementMap::provides(int i, const String &n) const
+{
+  if (n == _e[i].name)
+    return true;
+  
+  const String &pro = _e[i].provisions;
+  if (!pro)
+    return false;
+  else
+    return requirement_contains(pro, n);
+}
+
 const String &
 ElementMap::processing_code(const String &n) const
 {
@@ -251,13 +299,12 @@ ElementMap::package(int i) const
 int
 ElementMap::get_driver(const String &requirements)
 {
-  int inreq = requirements.find_left("linuxmodule");
-  if (inreq >= 0)		// XXX linuxmodule as substring?
+  if (requirement_contains(requirements, "linuxmodule"))
     return DRIVER_LINUXMODULE;
-  inreq = requirements.find_left("userlevel");
-  if (inreq >= 0)
+  else if (requirement_contains(requirements, "userlevel"))
     return DRIVER_USERLEVEL;
-  return -1;
+  else
+    return -1;
 }
 
 int
@@ -468,6 +515,14 @@ ElementMap::driver_compatible(const Vector<int> &map_indexes, int driver) const
       return false;
   }
   return true;
+}
+
+bool
+ElementMap::driver_compatible(const RouterT *router, int driver, ErrorHandler *errh) const
+{
+  Vector<int> map;
+  map_indexes(router, map, errh);
+  return driver_compatible(map, driver);
 }
 
 void

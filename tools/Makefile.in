@@ -24,8 +24,6 @@ lib: always Makefile
 	@cd lib && $(MAKE) all
 click-align: lib Makefile
 	@cd click-align && $(MAKE) all-local
-click-shrink: lib Makefile
-	@cd click-shrink && $(MAKE) all-local
 click-check: lib Makefile
 	@cd click-check && $(MAKE) all-local
 click-combine: lib Makefile
@@ -38,6 +36,8 @@ click-install: lib Makefile
 	@cd click-install && $(MAKE) all-local
 click-ipopt: lib Makefile
 	@cd click-ipopt && $(MAKE) all-local
+click-mkmindriver: lib Makefile
+	@cd click-mkmindriver && $(MAKE) all-local
 click-undead: lib Makefile
 	@cd click-undead && $(MAKE) all-local
 click-xform: lib Makefile
