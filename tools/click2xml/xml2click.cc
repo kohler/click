@@ -283,11 +283,11 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 	for (const XML_Char **a = attrs; *a; a += 2)
 	    if (strcmp(a[0], "name") == 0) {
 		if (!cp_is_click_id(a[1]))
-		    errh->lerror(landmark, "'name' attribute is not a valid Click identifier");
+		    errh->lerror(landmark, "'name' attribute should be a Click identifier");
 		e.name = a[1];
 	    } else if (strcmp(a[0], "classname") == 0) {
 		if (!cp_is_click_id(a[1]))
-		    errh->lerror(landmark, "'classname' attribute is not a valid Click identifier");
+		    errh->lerror(landmark, "'classname' attribute should be a Click identifier");
 		e.class_name = a[1];
 	    } else if (strcmp(a[0], "classid") == 0)
 		e.class_id = a[1];
@@ -299,10 +299,10 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 		line = a[1];
 	    else if (strcmp(a[0], "ninputs") == 0) {
 		if (!cp_integer(a[1], &e.ninputs))
-		    errh->lerror(landmark, "bad 'ninputs' attribute; expected integer");
+		    errh->lerror(landmark, "'ninputs' should be an integer number of ports");
 	    } else if (strcmp(a[0], "noutputs") == 0) {
 		if (!cp_integer(a[1], &e.ninputs))
-		    errh->lerror(landmark, "bad 'noutputs' attribute; expected integer");
+		    errh->lerror(landmark, "'noutputs' should be an integer number of ports");
 	    }
 	
 	if (file && line)
