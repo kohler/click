@@ -62,21 +62,22 @@ PokeHandlers::configure(const Vector<String> &conf, ErrorHandler *errh)
 	if (i < conf.size() - 1)
 	  errh->warning("arguments after `quit' directive ignored");
 	break;
-      } else if (cp_milliseconds(first, &gap))
+      } else if (cp_milliseconds(first, &gap)) {
 	next_timeout += gap;
-      continue;
-    } else {
-      int dot = first.find_left('.');
-      if (dot >= 0) {
-	if (Element *e = router()->find(this, first.substring(0, dot), errh)) {
-	  _h_element.push_back(e);
-	  _h_handler.push_back(first.substring(dot + 1));
-	  _h_value.push_back(rest);
-	  _h_timeout.push_back(next_timeout);
-	  next_timeout = 0;
-	}
 	continue;
       }
+    }
+
+    int dot = first.find_left('.');
+    if (dot >= 0) {
+      if (Element *e = router()->find(this, first.substring(0, dot), errh)) {
+	_h_element.push_back(e);
+	_h_handler.push_back(first.substring(dot + 1));
+	_h_value.push_back(rest);
+	_h_timeout.push_back(next_timeout);
+	next_timeout = 0;
+      }
+      continue;
     }
     
     errh->error("argument %d: expected `TIMEOUT' or `ELEMENT.HANDLER VALUE'",
