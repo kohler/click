@@ -31,7 +31,7 @@ FlashFlood::FlashFlood()
   :  Element(2,2),
      _en(),
      _et(0),
-     _ett_metric(0),
+     _link_table(0),
      _packets_originated(0),
      _packets_tx(0),
      _packets_rx(0)
@@ -54,17 +54,24 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   _debug = false;
   _history = 100;
   _min_p = 50;
+  _lossy = true;
+  _threshold = 100;
+  _neighbor_threshold = 66;
+
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
                     "BCAST_IP", cpIPAddress, "IP address", &_bcast_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
-		    "ETT", cpElement, "ETTMetric", &_ett_metric,
+		    "LT", cpElement, "Linktable", &_link_table,
 		    "MIN_P", cpInteger, "Min P", &_min_p,
 		    /* below not required */
 		    "DEBUG", cpBool, "Debug", &_debug,
 		    "HISTORY", cpUnsigned, "history", &_history,
+		    "LOSSY", cpBool, "mist", &_lossy,
+		    "THRESHOLD", cpInteger, "Threshold", &_threshold,
+		    "NEIGHBOR_THRESHOLD", cpInteger, "Neighbor Threshold", &_neighbor_threshold,
                     0);
 
   if (!_et) 
@@ -75,10 +82,10 @@ FlashFlood::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("BCAST_IP not specified");
   if (!_en) 
     return errh->error("ETH not specified");
-  if (_ett_metric == 0) 
-    return errh->error("no ETTMetric element specified");
-  if (_ett_metric->cast("ETTMetric") == 0)
-    return errh->error("ETTMetric element is not a ETTMetric");
+  if (_link_table == 0) 
+    return errh->error("no LinkTable element specified");
+  if (_link_table->cast("LinkTable") == 0)
+    return errh->error("LinkTable element is not a LinkTable");
 
   return ret;
 }
@@ -255,69 +262,121 @@ FlashFlood::push(int port, Packet *p_in)
   trim_packets();
 }
 
+
+int
+FlashFlood::get_link_prob(IPAddress from, IPAddress to) 
+{
+  return 100 * 100 / _link_table->get_hop_metric(from, to);
+}
+
+
 void 
 FlashFlood::update_probs(IPAddress src, Broadcast *bcast) {
 
-    Vector<IPAddress> neighbors = _ett_metric->get_neighbors();
-    for (int x = 0; x < neighbors.size(); x++) {
-      /*
-       * p(got packet ever) = (1 - p(never))
-       *                    = (1 - (p(not before))*(p(not now)))
-       *                    = (1 - (1 - p(before))*(1 - p(now)))
-       *
-       */
-      if (src == neighbors[x]) {
-	/* they sent it */
-	bcast->_node_to_prob.insert(neighbors[x], 100);
-      } else {
-	int p_now = _ett_metric->get_delivery_rate(1, src, neighbors[x]);
-	int *p_before_ptr = bcast->_node_to_prob.findp(neighbors[x]);
-	int p_before = (p_before_ptr) ? *p_before_ptr : 0;
-	int p_ever = (100 - (((100 - p_before) * (100 - p_now))/100));
-	bcast->_node_to_prob.insert(neighbors[x], p_ever);
-      }
+  Vector<IPAddress> neighbors = _link_table->get_neighbors(src);
+  bcast->_node_to_prob.insert(src, 100);
+  for (int x = 0; x < neighbors.size(); x++) {
+    /*
+     * p(got packet ever) = (1 - p(never))
+     *                    = (1 - (p(not before))*(p(not now)))
+     *                    = (1 - (1 - p(before))*(1 - p(now)))
+     *
+     */
+    int p_now = get_link_prob(src, neighbors[x]);
+    if (!_lossy) {
+      /* if sba, just bimodal links! */
+      p_now = (p_now > _neighbor_threshold) ? 100 : 0;
     }
+    int *p_before_ptr = bcast->_node_to_prob.findp(neighbors[x]);
+    int p_before = (p_before_ptr) ? *p_before_ptr : 0;
+    int p_ever = (100 - (((100 - p_before) * (100 - p_now))/100));
+    bcast->_node_to_prob.insert(neighbors[x], p_ever);
+  }
 }
 
 void
 FlashFlood::reschedule_bcast(Broadcast *bcast) {    
-    Vector<IPAddress> neighbors = _ett_metric->get_neighbors();
-    int min_p_ever = 100;
+    Vector<IPAddress> neighbors = _link_table->get_neighbors(_ip);
     int expected_rx = 0;
+    int my_neighbor_weight = 0;
+    int max_neighbor_weight = 0;
     for (int x = 0; x < neighbors.size(); x++) {
+      
+      int neighbor_neighbor_weight = 0;
+      
+      /* first, find the neighbor's neighbor weight */
+      Vector<IPAddress> neighbor_neighbors = _link_table->get_neighbors(neighbors[x]);
+      for (int y = 0; y < neighbor_neighbors.size(); y++) {
+	int m;
+	if (_lossy) {
+	  m = get_link_prob(neighbors[x], neighbor_neighbors[y]);
+	} else {
+	  m = (get_link_prob(neighbors[x], neighbor_neighbors[y]) > _neighbor_threshold) ? 100 : 0;
+	}
+	if (_debug) {
+	  click_chatter("%{element} neighbor %s neighbor %s metric %d\n",
+			this,
+			neighbors[x].s().cc(),
+			neighbor_neighbors[y].s().cc(),
+			m);
+	}
+	neighbor_neighbor_weight += m;
+      }
+
+      max_neighbor_weight = max(neighbor_neighbor_weight, max_neighbor_weight);
+
       int *p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
-      sr_assert(p_ever_ptr);
       if (!p_ever_ptr) {
-	continue;
+	bcast->_node_to_prob.insert(neighbors[x], 0);
+	p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
       }
       int p_ever = *p_ever_ptr;
-      min_p_ever = min(min_p_ever, p_ever);
+
+      int metric;
+      if (_lossy) {
+	metric = get_link_prob(_ip, neighbors[x]);
+      } else {
+	metric = (get_link_prob(_ip, neighbors[x]) > _neighbor_threshold) ? 100 : 0;
+      }
+      my_neighbor_weight += metric;
       expected_rx += ((100 - p_ever) * 
-		      _ett_metric->get_delivery_rate(1, _ip, neighbors[x]))/100;
+		      get_link_prob(_ip, neighbors[x]))/100;
+
 
       if (_debug) {
-	click_chatter("%{element} reschedule_bcast neighbor %s, p_ever %d min %d\n",
+	click_chatter("%{element} reschedule_bcast neighbor %s neighbor_weight %d prob %d metric %d\n",
 		      this,
 		      neighbors[x].s().cc(),
+		      neighbor_neighbor_weight,
 		      p_ever,
-		      min_p_ever);
+		      metric);
       }
     }
     
+
+    /*
+     * now, using 
+     * max_neighbor_weight
+     * expected_rx 
+     * schedule a broadcast 
+     *
+     */
     if (_debug) {
-      click_chatter("%{element} reschedule for seq %d: min_p_ever %d expected_rx %d\n",
+      click_chatter("%{element} reschedule seq %d: max_neighbor_w %d my_neighbor_w %d expected_rx %d thresh %d\n",
 		    this,
 		    bcast->_seq,
-		    min_p_ever,
-		    expected_rx);
+		    max_neighbor_weight,
+		    my_neighbor_weight,
+		    expected_rx,
+		    _threshold);
     }
-    if (min_p_ever < _min_p) {
-      int max_delay_ms = 1000;
-      sr_assert(expected_rx);
-      if (expected_rx) {
-	max_delay_ms = 100 * 1000 / expected_rx;
-      }
-      
+    if (expected_rx < _threshold || !my_neighbor_weight) {
+      click_chatter("%{element} not rescheduling seq %d\n",
+		    this,
+		    bcast->_seq);
+
+    } else {
+      int max_delay_ms = min(1000, 100 * max_neighbor_weight / my_neighbor_weight);
       int delay_time = (random() % max_delay_ms) + 1;
 
       if (_debug) {

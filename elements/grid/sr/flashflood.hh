@@ -121,10 +121,10 @@ private:
   EtherAddress _bcast;
 
 
-  ETTMetric *_ett_metric;
+  LinkTable *_link_table;
 
   bool _debug;
-
+  bool _lossy;
 
   int _packets_originated;
   int _packets_tx;
@@ -132,9 +132,13 @@ private:
 
   int _history;
   int _min_p;
+
+  int _threshold;
+  int _neighbor_threshold;
   void forward(Broadcast *bcast);
   void forward_hook();
   void trim_packets();
+  int get_link_prob(IPAddress from, IPAddress to);
   void update_probs(IPAddress ip, Broadcast *bcast);
   void reschedule_bcast(Broadcast *bcast);
   static void static_forward_hook(Timer *, void *e) { 

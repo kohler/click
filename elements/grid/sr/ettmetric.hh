@@ -137,6 +137,7 @@ private:
   int _weight_5;
   int _weight_11;
   bool _enable_twoway;
+  bool _estimate_ack;
 };
 
 CLICK_ENDDECLS

@@ -99,6 +99,7 @@ public:
 					     int n, Vector<IPAddress> route);
   bool valid_route(Vector<IPAddress> route);
   int get_route_metric(Vector<IPAddress> route);
+  Vector<IPAddress> get_neighbors(IPAddress ip);
   void dijkstra();
   void clear_stale();
   Vector<IPAddress> best_route(IPAddress dst);

@@ -59,6 +59,7 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
   _weight_11 = 600;
 
   _enable_twoway = true;
+  _estimate_ack = true;
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
 			"ETT",cpElement, "ETTStat element", &_ett_stat,
@@ -69,6 +70,7 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 			"5_WEIGHT", cpUnsigned, "LinkTable element", &_weight_5, 
 			"11_WEIGHT", cpUnsigned, "LinkTable element", &_weight_11, 
 			"2WAY_METRICS", cpBool, "enable 2-way metrics", &_enable_twoway,
+			"ESTIMATE_ACKS", cpBool, "estimate ack", &_estimate_ack, 
 			0);
   if (res < 0)
     return res;
@@ -142,8 +144,15 @@ ETTMetric::get_rate_and_tput(int *tput, int *rate,
   int tput_5 = rev_small * fwd_5 * _weight_5 / 100;
   int tput_11 = rev_small * fwd_11 * _weight_11 / 100;
 
-  *rate = 1;
+  if (!_estimate_ack) {
+    tput_1 = fwd_1 * _weight_1;
+    tput_2 = fwd_2 * _weight_2;
+    tput_5 = fwd_5 * _weight_5;
+    tput_11 = fwd_11 * _weight_11;
+  }
+
   *tput = tput_1;
+  *rate = 1;
 
   if (*tput < tput_2) {
     *tput = tput_2;

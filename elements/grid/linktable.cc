@@ -589,7 +589,32 @@ LinkTable::clear_stale() {
 
 }
 
+Vector<IPAddress> 
+LinkTable::get_neighbors(IPAddress ip) 
+{
+  Vector<IPAddress> neighbors;
 
+  typedef HashMap<IPAddress, bool> IPMap;
+  IPMap ip_addrs;
+
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    ip_addrs.insert(iter.value()._ip, true);
+  }
+
+  for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
+    HostInfo *neighbor = _hosts.findp(i.key());
+    lt_assert(neighbor);
+    if (ip != neighbor->_ip) {
+      LinkInfo *lnfo = _links.findp(IPPair(ip, neighbor->_ip));
+      if (lnfo) {
+	neighbors.push_back(neighbor->_ip);
+      }
+    }
+    
+  }
+
+  return neighbors;
+}
 void
 LinkTable::dijkstra() 
 {
