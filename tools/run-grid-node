@@ -10,8 +10,9 @@ $config_file = "";
 
 $click = "/userlevel/click";
 $click_debug = "cat";
-$click_config_name = "/conf/grid.click";
+$click_config_name = "/grid.click";
 $clickdir = "..";
+$clickconfdir = "../conf";
 
 $grid_channel = "5";
 $grid_ssid = "grid";
@@ -37,6 +38,9 @@ $LR_PERIOD = "1300"; # msecs
 $LR_JITTER = "300"; # msecs
 $GRID_ETH_PROTO = "7FFF";
 $GRID_NBR_ENCAP_PROTO = "03";
+$GRID_LOC_QUERY_PROTO = "04";
+$GRID_LOC_REPLY_PROTO = "05";
+
 
 sub ip_to_hex {
     ($a, $b, $c, $d) = @_[0] =~ /(\d+)\.(\d+)\.(\d+)\.(\d+)/;
@@ -108,6 +112,7 @@ else {
 	if ($ARGV[$i] eq "-debug") {
 	    $debug = 1;
 	    $click = $click_debug;
+	    $clickdir = "";
 	    $CONTROL_RO = "false";
 	    print "Using DEBUG command\n";
 	    print "ControlSocket is write-enabled\n";
@@ -299,7 +304,7 @@ else {
 # fire up click, substituting appropriate values into the config file,
 # and piping it into click stdin.
 
-open(click_config_file, "$clickdir$click_config_name") || die "can't open click configuration ", "$clickdir$click_config_name", "\n";
+open(click_config_file, "$clickconfdir$click_config_name") || die "can't open click configuration ", "$clickdir$click_config_name", "\n";
 
 $grid_addr_hex = ip_to_hex($grid_addr);
 
@@ -323,6 +328,8 @@ while(<click_config_file>) {
     s/LR_JITTER/$LR_JITTER/;
     s/GRID_ETH_PROTO/$GRID_ETH_PROTO/;
     s/GRID_NBR_ENCAP_PROTO/$GRID_NBR_ENCAP_PROTO/;
+    s/GRID_LOC_QUERY_PROTO/$GRID_LOC_QUERY_PROTO/;
+    s/GRID_LOC_REPLY_PROTO/$GRID_LOC_REPLY_PROTO/;
     s/GRID_GW/$GRID_GW/;
     s/GRID_IP/$grid_addr/;
     s/GRID_HEX_IP/$grid_addr_hex/;
