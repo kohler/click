@@ -269,7 +269,7 @@ skb_recycle_fast(struct sk_buff *skb)
 
 #ifdef __MTCLICK__
 
-static inline int
+inline int
 RecycledSkbPool::find_producer(int cpu, int bucket)
 {
   int max_skbs = 0;
