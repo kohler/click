@@ -3,25 +3,23 @@
 
 /*
  * =c
- * Tun(dev-prefix, address, netmask [, default-gw])
+ * Tun(address, netmask [, default-gw])
  * =s
  * user-level interface to /dev/tun or ethertap
  * V<devices>
  * =d
- * Reads and writes packets from/to a /dev/<dev-prefix>* device.
+ * Reads and writes packets from/to a /dev/tun* or /dev/tap* device.
  * This allows a user-level Click to hand packets to the
  * ordinary kernel IP packet processing code.
  * A Tun will also transfer packets from the kernel IP
  * code if the kernel routing table has entries pointing
  * at the tun device.
  *
- * On a BSD machine, dev-prefix should be tun. On Linux, tap.
- *
  * Tun produces and expects Ethernet packets, much like ToLinux.
  * The only point is to look at the type field, so that e.g.
  * IPv6 packets can be sent into a Tun.
  * 
- * Tun allocates a /dev/<dev-prefix>* device (this might fail) and
+ * Tun allocates a /dev/tun* or tap* device (this might fail) and
  * runs ifconfig to set the interface's local (i.e. kernel) address to
  * address and the netmask to netmask.  If a default-gw IP address
  * (which must be on the same network as the tun) is specified (that
@@ -61,7 +59,7 @@ class Tun : public Element {
   IPAddress _gw;
   int _fd;
 
-  int alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr far, ErrorHandler *errh);
+  int alloc_tun(struct in_addr near, struct in_addr far, ErrorHandler *errh);
   void dealloc_tun();
 };
 

@@ -51,7 +51,6 @@ int
 Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
-		  cpString, "device name prefix", &_dev_name,
 		  cpIPAddress, "address", &_near,
 		  cpIPAddress, "netmask", &_mask,
 		  cpOptional,
@@ -75,7 +74,7 @@ Tun::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Tun::initialize(ErrorHandler *errh)
 {
-  _fd = alloc_tun(_dev_name.cc(), _near, _mask, errh);
+  _fd = alloc_tun(_near, _mask, errh);
   if (_fd < 0)
     return -1;
   if (input_is_pull(0))
@@ -226,12 +225,18 @@ Tun::push(int, Packet *p)
  * Exits on failure.
  */
 int
-Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
+Tun::alloc_tun(struct in_addr near, struct in_addr mask,
                ErrorHandler *errh)
 {
   int fd, yes = 1;
-  char tmp[512], tmp0[64], tmp1[64];;
+  char tmp[512], tmp0[64], tmp1[64], dev_prefix[64];
   int saved_errno = 0;
+
+#ifdef __linux__
+  strcpy(dev_prefix, "tap");
+#else
+  strcpy(dev_prefix, "tun");
+#endif
 
   for (int i = 0; i < 32; i++) {
     sprintf(tmp, "/dev/%s%d", dev_prefix, i);
@@ -246,7 +251,7 @@ Tun::alloc_tun(const char *dev_prefix, struct in_addr near, struct in_addr mask,
 	return errh->error("FIONBIO failed");
       }
 
-      _dev_name += String(i);
+      _dev_name = String(dev_prefix) + String(i);
       
 #if defined(TUNSIFMODE) || defined(__FreeBSD__)
       {

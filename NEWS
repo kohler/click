@@ -16,6 +16,12 @@ Version 1.1
    the arguments to FromDevice and ToDevice are the same as FromBPF and
    ToBPF.)
 
+** The Tun device no longer takes a device name as the first argument;
+   it chooses between /dev/tun and /dev/tap automatically. Tun also
+   expects and produces ethernet-encapsulated packets (rather than
+   IP); the point is that ether type field lets Tun handle IPv6
+   packets as well as IPv4.
+
 ** Renamed the SetIPAddress element to StoreIPAddress. Added a different
    SetIPAddress element.
 
