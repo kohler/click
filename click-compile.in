@@ -24,6 +24,7 @@ srcdir=@datadir@/click/src
 linuxdir=@linuxdir@
 
 # determine mode
+directory=.
 target=
 package=NONE
 cflags=
@@ -31,6 +32,10 @@ compileflag=-c
 while true; do
   bad=x
   case $1 in
+    -d|--d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
+      directory=$2; shift 2;;
+    --d=*|--di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
+      directory=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
     -t|--t|--ta|--tar|--targ|--targe|--target)
       target=$2; shift 2;;
     --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
@@ -48,6 +53,7 @@ Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
 Options:
   -t, --target TARGET     Sets target to `kernel', `user', or `tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
+  -d, --directory DIR     Change to directory DIR.
   -h, --help              Print this message and exit.
   Other options are passed to the compiler unchanged.
 
@@ -64,6 +70,8 @@ EOF
   esac
   if test -z "$bad"; then break; fi
 done
+
+cd $directory
 
 # test directory function
 test_dir () {
@@ -136,12 +144,20 @@ case $target in
     echo "click-compile: acceptable targets are \`kernel', \`user', and \`tool'" 1>&2; exit 1;;
 esac
 
+compile_file () {
+  option=
+  if test -r "$1"; then
+    option=`head -5 $1 | grep '^/\*\* click-compile:' | sed -e 's/\/\*\* click-compile://g' -e 's/\*\///g'`
+  fi
+  echo $command $option $1 1>&2
+  eval $command $option $1 || exit 1
+}
+
 # do stuff
 if test "x$package" != "xNONE"; then
   command="$command -DCLICK_PACKAGE"
   for file; do
-    echo $command $file 1>&2
-    eval $command $file || exit 1
+    compile_file $file
     files="$files "`echo $file | sed 's/\.c*$/\.o/;s/^.*\///'`
   done
   if test $target = module; then
@@ -162,7 +178,7 @@ EOF
     eval $command || (rm -f $vfile.*; exit 1)
     rm -f $vfile.*
     exit 0 
-  elif test $target = user; then
+  elif test $target = user -o $target = tool; then
     command="ld -shared -o $package $files"
     echo $command 1>&2
     eval $command
