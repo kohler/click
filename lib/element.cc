@@ -477,6 +477,13 @@ Element::initialize(ErrorHandler *)
 }
 
 void
+Element::cleanup(CleanupStage stage)
+{
+  if (stage >= CLEANUP_INITIALIZED)
+    uninitialize();
+}
+
+void
 Element::uninitialize()
 {
 }

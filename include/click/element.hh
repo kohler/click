@@ -81,7 +81,13 @@ class Element { public:
   virtual int configure_phase() const;
   virtual int configure(Vector<String> &, ErrorHandler *);
   virtual int initialize(ErrorHandler *);
-  virtual void uninitialize();
+
+  // CLEANUP
+  enum CleanupStage { CLEANUP_NO_ROUTER, CLEANUP_CONFIGURE_FAILED,
+		      CLEANUP_CONFIGURED, CLEANUP_INITIALIZE_FAILED,
+		      CLEANUP_INITIALIZED, CLEANUP_ROUTER_INITIALIZED };
+  virtual void cleanup(CleanupStage);
+  virtual void uninitialize();	// deprecated
 
   // LIVE RECONFIGURATION
   virtual void configuration(Vector<String> &) const;

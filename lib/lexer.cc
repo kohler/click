@@ -862,6 +862,8 @@ Lexer::remove_element_type(int removed)
   }
 
   // remove stuff
+  if (_element_types[removed])
+    _element_types[removed]->cleanup(Element::CLEANUP_NO_ROUTER);
   delete _element_types[removed];
   _element_types[removed] = 0;
   _element_type_names[removed] = String();

@@ -40,8 +40,8 @@ static int nglobalh;
 static int globalh_cap;
 
 Router::Router()
-  : _preinitialized(false), _initialized(false),
-    _have_connections(false), _have_hookpidx(false),
+  : _preinitialized(false), _initialized(false), _initialize_attempted(false),
+    _cleaned(false), _have_connections(false), _have_hookpidx(false),
     _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0)
 {
   _refcount = 0;
@@ -56,10 +56,14 @@ Router::~Router()
   if (_refcount > 0)
     click_chatter("deleting router while ref count > 0");
   
-  // Uninitialize elements in reverse configuration order
+  // Clean up elements in reverse configuration order
   if (_initialized) {
     for (int ord = _elements.size() - 1; ord >= 0; ord--)
-      _elements[ _configure_order[ord] ]->uninitialize();
+      _elements[ _configure_order[ord] ]->cleanup(Element::CLEANUP_ROUTER_INITIALIZED);
+  } else if (!_cleaned) {
+    assert(_configure_order.size() == 0);
+    for (int i = _elements.size() - 1; i >= 0; i--)
+      _elements[i]->cleanup(Element::CLEANUP_NO_ROUTER);
   }
   
   // Unschedule tasks and timers, delete threads
@@ -876,7 +880,10 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
   assert(!_initialized);
   if (!_preinitialized)
     preinitialize();
+  if (_initialize_attempted)
+    return errh->error("second attempt to initialize router");
   _driver_runcount = 1;
+  _initialize_attempted = true;
 
 #if CLICK_DMALLOC
   char dmalloc_buf[12];
@@ -900,6 +907,8 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
   qsort_configure_order(_configure_order, configure_phase, 0, _elements.size() - 1);
 
   // Configure all elements in configure order. Remember the ones that failed
+  Element::CleanupStage failure_stage = Element::CLEANUP_CONFIGURE_FAILED;
+  Element::CleanupStage success_stage = Element::CLEANUP_CONFIGURED;
   Vector<String> conf;
   for (int ord = 0; ord < _elements.size(); ord++) {
     int i = _configure_order[ord];
@@ -936,6 +945,8 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
 
   // Initialize elements if OK so far.
   if (all_ok) {
+    failure_stage = Element::CLEANUP_INITIALIZE_FAILED;
+    success_stage = Element::CLEANUP_INITIALIZED;
     initialize_handlers(true, true);
     for (int ord = 0; ord < _elements.size(); ord++) {
       int i = _configure_order[ord];
@@ -957,8 +968,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
 	}
       }
     }
-  } else
-    element_ok.assign(nelements(), false);
+  }
 
 #if CLICK_DMALLOC
   CLICK_DMALLOC_REG("iXXX");
@@ -973,12 +983,12 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
     if (verbose_errors)
       errh->error("Router could not be initialized!");
     
-    // Uninitialize elements
+    // Clean up elements
     for (int ord = _elements.size() - 1; ord >= 0; ord--) {
       int i = _configure_order[ord];
-      if (element_ok[i])
-	_elements[i]->uninitialize();
+      _elements[i]->cleanup(element_ok[i] ? success_stage : failure_stage);
     }
+    _cleaned = true;
     
     // Unschedule tasks and timers
     for (int i = 0; i < _threads.size(); i++)

@@ -166,6 +166,8 @@ class Router { public:
 
   bool _preinitialized : 1;
   bool _initialized : 1;
+  bool _initialize_attempted : 1;
+  bool _cleaned : 1;
   bool _have_connections : 1;
   bool _have_hookpidx : 1;
 
