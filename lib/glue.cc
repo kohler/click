@@ -31,10 +31,10 @@ click_chatter(const char *fmt, ...)
   va_list val;
   va_start(val, fmt);
 
-  ErrorHandler *errh = ErrorHandler::default_handler();
-  if (errh)
+  if (ErrorHandler::has_default_handler()) {
+    ErrorHandler *errh = ErrorHandler::default_handler();
     errh->verror(ErrorHandler::ERR_MESSAGE, "", fmt, val);
-  else {
+  } else {
 #ifdef CLICK_LINUXMODULE
 #if __MTCLICK__
     static char buf[NR_CPUS][512];	// XXX
@@ -45,7 +45,9 @@ click_chatter(const char *fmt, ...)
     int i = vsprintf(buf, fmt, val);
     printk("<1>%s\n", buf);
 #endif
-#else
+#elif defined(CLICK_BSDMODULE)
+    vprintf(fmt, val);
+#else /* User-space */
     vfprintf(stderr, fmt, val);
     fprintf(stderr, "\n");
 #endif
@@ -54,12 +56,69 @@ click_chatter(const char *fmt, ...)
   va_end(val);
 }
 
-
-#ifdef __KERNEL__
-
 // Just for statistics.
-unsigned click_new_count = 0;
-unsigned click_outstanding_news = 0;
+unsigned int click_new_count = 0;
+unsigned int click_outstanding_news = 0;
+
+#if defined(_KERNEL) || defined(__KERNEL__)
+
+/*
+ * Kernel module glue.
+ */
+
+#ifdef CLICK_BSDMODULE
+
+/*
+ * Character types glue for isalnum() et al, from Linux.
+ */
+
+/*
+ *  From linux/lib/ctype.c
+ *
+ *  Copyright (C) 1991, 1992  Linus Torvalds
+ */
+
+unsigned char _ctype[] = {
+_C,_C,_C,_C,_C,_C,_C,_C,			/* 0-7 */
+_C,_C|_S,_C|_S,_C|_S,_C|_S,_C|_S,_C,_C,		/* 8-15 */
+_C,_C,_C,_C,_C,_C,_C,_C,			/* 16-23 */
+_C,_C,_C,_C,_C,_C,_C,_C,			/* 24-31 */
+_S|_SP,_P,_P,_P,_P,_P,_P,_P,			/* 32-39 */
+_P,_P,_P,_P,_P,_P,_P,_P,			/* 40-47 */
+_D,_D,_D,_D,_D,_D,_D,_D,			/* 48-55 */
+_D,_D,_P,_P,_P,_P,_P,_P,			/* 56-63 */
+_P,_U|_X,_U|_X,_U|_X,_U|_X,_U|_X,_U|_X,_U,	/* 64-71 */
+_U,_U,_U,_U,_U,_U,_U,_U,			/* 72-79 */
+_U,_U,_U,_U,_U,_U,_U,_U,			/* 80-87 */
+_U,_U,_U,_P,_P,_P,_P,_P,			/* 88-95 */
+_P,_L|_X,_L|_X,_L|_X,_L|_X,_L|_X,_L|_X,_L,	/* 96-103 */
+_L,_L,_L,_L,_L,_L,_L,_L,			/* 104-111 */
+_L,_L,_L,_L,_L,_L,_L,_L,			/* 112-119 */
+_L,_L,_L,_P,_P,_P,_P,_C,			/* 120-127 */
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,		/* 128-143 */
+0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,		/* 144-159 */
+_S|_SP,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,   /* 160-175 */
+_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,_P,       /* 176-191 */
+_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,_U,       /* 192-207 */
+_U,_U,_U,_U,_U,_U,_U,_P,_U,_U,_U,_U,_U,_U,_U,_L,       /* 208-223 */
+_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,_L,       /* 224-239 */
+_L,_L,_L,_L,_L,_L,_L,_P,_L,_L,_L,_L,_L,_L,_L,_L};      /* 240-255 */
+
+extern "C" void __assert(const char *file, int line, const char *cond) {
+    printf("Failed assertion at %s:%d: %s\n", file, line, cond);
+}
+
+#endif
+
+#ifdef CLICK_LINUXMODULE
+#define	CLICK_ALLOC(size)	kmalloc((size), GFP_ATOMIC)
+#define	CLICK_FREE(ptr)		kfree((ptr))
+#endif
+
+#ifdef CLICK_BSDMODULE
+#define CLICK_ALLOC(size)	malloc((size), M_TEMP, M_WAITOK)
+#define	CLICK_FREE(ptr)		free(ptr, M_TEMP)
+#endif
 
 #define CHUNK_MAGIC		0xffff3f7f	/* -49281 */
 #define CHUNK_MAGIC_FREED	0xc66b04f5
@@ -80,7 +139,7 @@ operator new(unsigned int sz)
   click_new_count++;
   click_outstanding_news++;
 #if CLICK_DMALLOC
-  void *v = kmalloc(sz + sizeof(Chunk), GFP_ATOMIC);
+  void *v = CLICK_ALLOC(sz + sizeof(Chunk));
   Chunk *c = (Chunk *)v;
   c->magic = CHUNK_MAGIC;
   c->size = sz;
@@ -91,7 +150,7 @@ operator new(unsigned int sz)
   chunks = c;
   return (void *)((unsigned char *)v + sizeof(Chunk));
 #else
-  return kmalloc(sz, GFP_ATOMIC);
+  return CLICK_ALLOC(sz);
 #endif
 }
 
@@ -101,7 +160,7 @@ operator new [] (unsigned int sz)
   click_new_count++;
   click_outstanding_news++;
 #if CLICK_DMALLOC
-  void *v = kmalloc(sz + sizeof(Chunk), GFP_ATOMIC);
+  void *v = CLICK_ALLOC(sz + sizeof(Chunk));
   Chunk *c = (Chunk *)v;
   c->magic = CHUNK_MAGIC;
   c->size = sz;
@@ -112,7 +171,7 @@ operator new [] (unsigned int sz)
   chunks = c;
   return (void *)((unsigned char *)v + sizeof(Chunk));
 #else
-  return kmalloc(sz, GFP_ATOMIC);
+  return CLICK_ALLOC(sz);
 #endif
 }
 
@@ -124,21 +183,21 @@ operator delete(void *addr)
 #if CLICK_DMALLOC
     Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
     if (c->magic == CHUNK_MAGIC_FREED) {
-      printk("<1>click error: double-free of memory at %p (%d @ %p)\n",
-	     addr, c->size, c->where);
+      click_chatter("click error: double-free of memory at %p (%d @ %p)\n",
+		    addr, c->size, c->where);
       return;
     }
     if (c->magic != CHUNK_MAGIC) {
-      printk("<1>click error: memory corruption on delete %p\n", addr);
+      click_chatter("click error: memory corruption on delete %p\n", addr);
       return;
     }
     c->magic = CHUNK_MAGIC_FREED;
     if (c->prev) c->prev->next = c->next;
     else chunks = c->next;
     if (c->next) c->next->prev = c->prev;
-    kfree((void *)c);
+    CLICK_FREE((void *)c);
 #else
-    kfree(addr);
+    CLICK_FREE(addr);
 #endif
   }
 }
@@ -151,21 +210,21 @@ operator delete [] (void *addr)
 #if CLICK_DMALLOC
     Chunk *c = (Chunk *)((unsigned char *)addr - sizeof(Chunk));
     if (c->magic == CHUNK_MAGIC_FREED) {
-      printk("<1>click error: double-free of memory at %p (%d @ %p)\n",
-	     addr, c->size, c->where);
+      click_chatter("click error: double-free of memory at %p (%d @ %p)\n",
+		    addr, c->size, c->where);
       return;
     }
     if (c->magic != CHUNK_MAGIC) {
-      printk("<1>click error: memory corruption on delete[] %p\n", addr);
+      click_chatter("click error: memory corruption on delete[] %p\n", addr);
       return;
     }
     c->magic = CHUNK_MAGIC_FREED;
     if (c->prev) c->prev->next = c->next;
     else chunks = c->next;
     if (c->next) c->next->prev = c->prev;
-    kfree((void *)c);
+    CLICK_FREE((void *)c);
 #else
-    kfree(addr);
+    CLICK_FREE(addr);
 #endif
   }
 }
@@ -192,13 +251,13 @@ print_and_free_chunks()
     }
     *s++ = 0;
     
-    printk("<1>  chunk at %p size %d alloc[%s] data ",
-	   (void *)(c + 1), c->size, buf);
+    click_chatter("  chunk at %p size %d alloc[%s] data ",
+		  (void *)(c + 1), c->size, buf);
     unsigned char *d = (unsigned char *)(c + 1);
     for (int i = 0; i < 20 && i < c->size; i++)
-      printk("%02x", d[i]);
-    printk("\n");
-    kfree((void *)c);
+      click_chatter("%02x", d[i]);
+    click_chatter("\n");
+    CLICK_FREE((void *)c);
     
     c = n;
   }
@@ -213,7 +272,7 @@ __assert_fail(const char *__assertion,
 	      unsigned int __line,
 	      const char *__function)
 {
-  printk("<1>assertion failed %s %s %d %s\n",
+  click_chatter("assertion failed %s %s %d %s\n",
 	 __assertion,
 	 __file,
 	 __line,
@@ -228,23 +287,24 @@ __assert_fail(const char *__assertion,
 void
 __pure_virtual()
 {
-  printk("<1>pure virtual method called\n");
+  click_chatter("pure virtual method called\n");
 }
 
 void *
 __rtti_si()
 {
-  printk("<1>rtti_si\n");
+  click_chatter("rtti_si\n");
   return(0);
 }
 
 void *
 __rtti_user()
 {
-  printk("<1>rtti_user\n");
+  click_chatter("rtti_user\n");
   return(0);
 }
 
+#ifdef CLICK_LINUXMODULE
 
 /*
  * Convert a string to a long integer. use simple_strtoul, which is in the
@@ -286,12 +346,13 @@ __asm__ __volatile__(
 return __res;
 }
 #endif
+#endif
 
 };
 
-#else /* !__KERNEL__ */
+#endif /* !__KERNEL__ */
 
-int click_new_count; /* dummy */
+#if defined(CLICK_USERLEVEL) || defined(CLICK_BSDMODULE)
 
 unsigned
 click_jiffies()
@@ -301,4 +362,4 @@ click_jiffies()
   return (tv.tv_sec * 100) + (tv.tv_usec / 10000);
 }
 
-#endif /* __KERNEL__ */
+#endif /* CLICK_USERLEVEL || CLICK_BSDMODULE */

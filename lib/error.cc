@@ -613,6 +613,12 @@ ErrorHandler::static_cleanup()
   the_default_handler = the_silent_handler = 0;
 }
 
+bool
+ErrorHandler::has_default_handler()
+{
+  return the_default_handler ? true : false;
+}
+
 ErrorHandler *
 ErrorHandler::default_handler()
 {
