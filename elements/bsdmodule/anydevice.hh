@@ -12,58 +12,14 @@ CLICK_CXX_PROTECT
 CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
-// #define CLICK_DEVICE_CYCLES 1
-// #define CLICK_DEVICE_PRFCTR 1
-// #define CLICK_DEVICE_THESIS_STATS 1
-// #define _DEV_OVRN_STATS_ 1
 #define CLICK_CYCLE_COMPENSATION 0
 
 #ifndef RR_SCHED
 # define CLICK_DEVICE_ADJUST_TICKETS 1
 #endif
 
-#if CLICK_DEVICE_PRFCTR
-
-#define CLICK_DEVICE_STATS 1
-#define SET_STATS(p0mark, p1mark, time_mark) \
-  { \
-    p0mark = rdpmc(0); \
-    p1mark = rdpmc(1); \
-    time_mark = click_get_cycles(); \
-  }
-#define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
-  { \
-    unsigned low01, low11; \
-    tctr += click_get_cycles() - time_mark - CLICK_CYCLE_COMPENSATION; \
-    low01 = rdpmc(0); \
-    low11 = rdpmc(1); \
-    pctr0 += (low01 >= p0mark) ? low01-p0mark : (UINT_MAX-p0mark+low01); \
-    pctr1 += (low11 >= p1mark) ? low11-p1mark : (UINT_MAX-p1mark+low11); \
-    p0mark = rdpmc(0); \
-    p1mark = rdpmc(1); \
-    time_mark = click_get_cycles(); \
-  }
-
-#elif CLICK_DEVICE_CYCLES
-
-#define CLICK_DEVICE_STATS 1
-#define SET_STATS(p0mark, p1mark, time_mark) \
-  { \
-    time_mark = click_get_cycles(); \
-  }
-#define GET_STATS_RESET(p0mark, p1mark, time_mark, pctr0, pctr1, tctr) \
-  { \
-    unsigned long long __now = click_get_cycles(); \
-    tctr += __now - time_mark - CLICK_CYCLE_COMPENSATION; \
-    time_mark = __now; \
-  }
-
-#else
-
 #define GET_STATS_RESET(a,b,c,d,e,f)	/* nothing */
 #define SET_STATS(a,b,c)		/* nothing */
-
-#endif
 
 class AnyDevice : public Element { public:
 
@@ -78,55 +34,65 @@ class AnyDevice : public Element { public:
     int ifindex() const			{ return _dev ? _dev->if_index : -1; }
     AnyDevice *next() const		{ return _next; }
     void set_next(AnyDevice *d)		{ _next = d; }
+    void set_max_tickets(int t)		{ _max_tickets = t; }
+    int wakeup();
+    void set_need_wakeup()		{ _need_wakeup = true; }
+    void clear_need_wakeup()		{ _need_wakeup = false; }
 
     int find_device(bool, ErrorHandler *);
     void adjust_tickets(int work);
 
-#if HAVE_BSD_POLLING
-    // Does this device support polling?
-    bool polling() const	{ return _dev && _dev->if_poll_intren != 0; }
-#else
-    boll polling() const		{ return false; }
-#endif
-
   protected:
 
     String _devname;
-    struct ifnet *_dev;
-
     Task _task;
+
+  private:
+
+    bool _need_wakeup;
     int _max_tickets;
     int _idles;
-
     AnyDevice *_next;
-
+    struct ifnet *_dev;
 };
 
+inline int
+AnyDevice::wakeup()
+{
+    if (_need_wakeup) {
+	_need_wakeup = false;
+	_task.wakeup();
+	return 1;
+    } else
+	return 0;
+}
 
 inline void
 AnyDevice::adjust_tickets(int work)
 {
 #if CLICK_DEVICE_ADJUST_TICKETS
-  int tix = _task.tickets();
-  
-  // simple additive increase damped multiplicative decrease scheme
-  if (work > 2) {
-    tix += work;
-    if (tix > _max_tickets)
-      tix = _max_tickets;
-    _idles = 0;
-  } else if (work == 0) {
-    _idles++;
-    if (_idles >= 64) {
-      if (tix > 64)
-	tix -= (tix >> 5);
-      else
-	tix -= 2;
-      if (tix < 1)
-	tix = 1;
-      _idles = 0;
+    int tix = _task.tickets();
+    int old_tix = tix;
+
+    // simple additive increase damped multiplicative decrease scheme
+    if (work > 2) {
+	tix += work;
+	if (tix > _max_tickets)
+	    tix = _max_tickets;
+	_idles = 0;
+    } else if (work == 0) {
+	_idles++;
+	if (_idles >= 64) {
+	    if (tix > 64)
+		tix -= (tix >> 5);
+	    else
+		tix -= 2;
+	    if (tix < 1)
+		tix = 1;
+	    _idles = 0;
+	}
     }
-  }
+    // click_chatter(" tickets from %d to %d", old_tix, tix);
 
   _task.set_tickets(tix);
 #endif

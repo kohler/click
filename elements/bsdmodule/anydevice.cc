@@ -29,37 +29,33 @@ CLICK_CXX_UNPROTECT
 #include <click/cxxunprotect.h>
 
 AnyDevice::AnyDevice()
-  : _dev(0), _task(this), _idles(0), _next(0)
+  : _dev(0), _task(this), _idles(0), _next(0), _need_wakeup(false)
 {
-/* Not in BSD
   MOD_INC_USE_COUNT;
-*/
 }
 
 AnyDevice::~AnyDevice()
 {
-/* Not in BSD
   MOD_DEC_USE_COUNT;
-*/
 }
 
 static void
 lock_kernel()
 {
-  /* XXX not yet in BSD */
+    // XXX not yet in BSD
 }
 
 static void
 unlock_kernel()
 {
-  /* XXX not yet in BSD */
+    // XXX not yet in BSD
 }
 
 int
 AnyDevice::find_device(bool allow_nonexistent, ErrorHandler *errh)
 {
     _dev = ifunit((char *) _devname.cc());
-    if (!_dev) {
+    if (!_dev) {	// XXX move this test later.
 	errh->warning("Unable to load device\n");
 	return 0;
     }

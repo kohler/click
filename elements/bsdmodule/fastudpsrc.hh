@@ -98,6 +98,7 @@ class FastUDPSource : public Element {
   void uninitialize();
   Packet *pull(int);
 
+  void make_checksum(click_udp *udp);
   void add_handlers();
   void reset();
   unsigned count() { return _count; }
@@ -114,4 +115,21 @@ class FastUDPSource : public Element {
 #endif
 };
 
+inline
+void
+FastUDPSource::make_checksum(click_udp *udp)
+{
+    udp->uh_sum = 0;
+    unsigned short len = _len-14-sizeof(click_ip);
+    if (_cksum) {
+        unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
+        const uint16_t *words = (unsigned short *) &_sipaddr;
+        csum += words[0] + words[1] + words[2] + words[3] + words[4] +
+                htons(IP_PROTO_UDP) + htons(len);
+        while (csum >> 16)
+            csum = (csum & 0xFFFF) + (csum >> 16);
+        udp->uh_sum = ~csum & 0xFFFF;
+    } else
+        udp->uh_sum = 0;
+}
 #endif

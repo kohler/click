@@ -60,6 +60,10 @@ class Task { public:
   void fast_reschedule();
   int fast_unschedule();
 
+#ifdef CLICK_BSDMODULE
+  void wakeup();
+#endif
+  
   void call_hook();
 
 #if __MTCLICK__
@@ -255,6 +259,20 @@ Task::fast_reschedule()
 }
 
 #endif /* HAVE_STRIDE_SCHED */
+
+#ifdef CLICK_BSDMODULE
+// XXX FreeBSD specific
+// put tasks on the list of tasks to wakeup.
+inline void
+Task::wakeup()
+{
+    assert(_list && !_prev);
+    int s = splimp();
+    _next = _list->_wakeup_list;
+    _list->_wakeup_list = this;
+    splx(s);
+}
+#endif
 
 inline void
 Task::call_hook()

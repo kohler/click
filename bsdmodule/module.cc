@@ -252,6 +252,9 @@ static ErrorHandler *syslog_errh;
 extern "C" void click_ether_input(struct ifnet *, struct mbuf **, struct ether_header *);
 extern "C" void (*ng_ether_input_p)(struct ifnet *, struct mbuf **, struct ether_header *);
 
+extern "C" void click_ether_output(struct ifnet *, struct mbuf **);
+extern "C" void (*ng_ether_output_p)(struct ifnet *, struct mbuf **);
+
 extern "C" int
 init_module()
 {
@@ -273,6 +276,7 @@ init_module()
   
   current_router = 0;
   ng_ether_input_p = click_ether_input;
+  ng_ether_output_p = click_ether_output;
 
   return 0;
 }
@@ -287,6 +291,7 @@ cleanup_module()
   extern int click_outstanding_news; /* glue.cc */
 
   ng_ether_input_p = 0;
+  ng_ether_output_p = 0;
   
   kill_current_router();
 

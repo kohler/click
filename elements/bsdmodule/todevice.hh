@@ -14,10 +14,10 @@ sends packets to network device (kernel)
 
 =d
 
-This manual page describes the Linux kernel module version of the ToDevice
+This manual page describes the FreeBSD kernel module version of the ToDevice
 element. For the user-level element, read the ToDevice.u manual page.
 
-Pulls packets from its single input and sends them out the Linux network
+Pulls packets from its single input and sends them out the FreeBSD network
 interface named DEVNAME. DEVNAME may also be an Ethernet address, in which
 case ToDevice searches for a device with that address.
 
@@ -47,15 +47,12 @@ ToDevice will seamlessly begin sending packets to it. Default is false.
 
 =n
 
-The Linux networking code may also send packets out the device. Click won't
-see those packets. Worse, Linux may cause the device to be busy when a
+The FreeBSD networking code may also send packets out the device. Click won't
+see those packets. Worse, FreeBSD may cause the device to be busy when a
 ToDevice wants to send a packet. Click is not clever enough to re-queue
 such packets, and discards them. 
 
-ToDevice interacts with Linux in two ways: when Click is running in polling
-mode, or when Click is running in interrupt mode. In both of these cases,
-we depend on the net driver's send operation for synchronization (e.g.
-tulip send operation uses a bit lock).
+ToDevice's depend on the net driver's send operation for synchronization
 
 =h packets read-only
 
@@ -65,12 +62,9 @@ Returns the number of packets ToDevice has pulled.
 
 Resets C<packets> counter to zero when written.
 
-=a FromDevice, PollDevice, FromLinux, ToLinux, ToDevice.u */
+=a FromDevice, FromHost, ToHost, ToDevice.u */
 
 #include "elements/bsdmodule/anydevice.hh"
-#if 0
-#include "elements/linuxmodule/fromlinux.hh"
-#endif
 
 class ToDevice : public AnyDevice {
   
@@ -92,38 +86,13 @@ class ToDevice : public AnyDevice {
   void run_scheduled();
 
   void reset_counts();
-  void change_device(struct ifnet *);
-  bool tx_intr();
 
-#if CLICK_DEVICE_STATS
-  // Statistics.
-  unsigned long long _time_clean;
-  unsigned long long _time_freeskb;
-  unsigned long long _time_queue;
-  unsigned long long _perfcnt1_pull;
-  unsigned long long _perfcnt1_clean;
-  unsigned long long _perfcnt1_freeskb;
-  unsigned long long _perfcnt1_queue;
-  unsigned long long _perfcnt2_pull;
-  unsigned long long _perfcnt2_clean;
-  unsigned long long _perfcnt2_freeskb;
-  unsigned long long _perfcnt2_queue;
-  unsigned long _activations; 
-#endif
   unsigned _npackets;
-#if CLICK_DEVICE_THESIS_STATS || CLICK_DEVICE_STATS
-  unsigned long long _pull_cycles;
-#endif
-  unsigned long _rejected;
-  unsigned long _hard_start;
   unsigned long _busy_returns;
 
  private:
 
   unsigned _burst;
-  int _dev_idle;
-  
-  int queue_packet(Packet *p);
   
 };
 

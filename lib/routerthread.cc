@@ -46,6 +46,9 @@ RouterThread::RouterThread(Router *r)
   : Task(Task::error_hook, 0), _router(r)
 {
   _prev = _next = _list = this;
+#ifdef CLICK_BSDMODULE
+  _wakeup_list = 0;
+#endif
   router()->add_thread(this);
   // add_thread() will call this->set_thread_id()
 }
@@ -178,6 +181,17 @@ RouterThread::driver()
 	c--;
       }
 
+#ifdef CLICK_BSDMODULE
+      if (_wakeup_list) {
+	int s = splimp();
+	Task *t;
+	while ( (t = _wakeup_list) != 0) {
+	    _wakeup_list = t->_next;
+	    t->reschedule();
+	}
+	splx(s);
+      }
+#endif
       // check _driver_runcount
       if (*runcount <= 0)
 	break;

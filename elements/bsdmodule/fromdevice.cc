@@ -5,7 +5,7 @@
  * Robert Morris
  * Eddie Kohler: AnyDevice, other changes
  * Benjie Chen: scheduling, internal queue
- * Nickolai Zeldovich: BSD
+ * Nickolai Zeldovich, Luigi Rizzo: BSD
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
@@ -34,109 +34,95 @@ static AnyDeviceMap from_device_map;
 static int registered_readers;
 static int from_device_count;
 
-#ifdef HAVE_CLICK_BSD_KERNEL
 #include <net/if_var.h>
 #include <net/ethernet.h>
 
 /*
- * process incoming packets using the ng_ether_input_p hook
+ * Process incoming packets using the ng_ether_input_p hook.
+ * If if_poll_recv == NULL, no FromDevice element is registered on this
+ * interface, so return to pass the packet back to FreeBSD.
+ * Otherwise, if_poll_recv points to the element, which in turn contains
+ * a queue. Append the packet there, clear *mp to grab the pkt from FreeBSD.
+ * call wakeup() to poentially wake up the element.
+ *
+ * Special case: m->m_pkthdr.rcvif == NULL means the packet is coming
+ * from click and directed to this interface on the host.
+ * We are already running at splimp() so we need no further protection.
  */
 extern "C"
 void
-click_ether_input(struct ifnet *ifp,
-                struct mbuf **mp, struct ether_header *eh)
+click_ether_input(struct ifnet *ifp, struct mbuf **mp, struct ether_header *eh)
 {
-    struct ifqueue *inq;
-    struct mbuf *m = *mp;
-
-    inq = ifp->if_poll_slowq;
-    if (inq == NULL)	/* not for click... */
+    if (ifp->if_poll_recv == NULL)	// not for click.
 	return ;
-    /* we want to make a full packet in the mbuf */
+    struct mbuf *m = *mp;
+    if (m->m_pkthdr.rcvif == NULL) {	// Special case: from click to FreeBSD
+	m->m_pkthdr.rcvif = ifp;	// Reset rcvif to correct value, and
+	return;				// let FreeBSD continue processing.
+    }
+
+    *mp = NULL;		// tell ether_input no further processing needed.
+
+    FromDevice *me = (FromDevice *)(ifp->if_poll_recv);
+
+    // put the ethernet header back into the mbuf.
     M_PREPEND(m, sizeof(*eh), M_WAIT);
     bcopy(eh, mtod(m, struct ether_header *), sizeof(*eh));
-    if (IF_QFULL(inq)) {
-	IF_DROP(inq);
+
+    if (IF_QFULL(me->_inq)) {
+	IF_DROP(me->_inq);
 	m_freem(m);
     } else
-	IF_ENQUEUE(inq, m);
-    *mp = NULL;	// tell ether_input no further processing needed
+	IF_ENQUEUE(me->_inq, m);
+    me->wakeup();
 }
 
 /*
- * Attach ourselves to the current device's packet-receive hook.
+ * Process outgoing packets using the ng_ether_output_p hook.
+ * If if_poll_xmit == NULL, no FromHost element is registered on this
+ * interface, so return 0 to pass the packet back to FreeBSD.
+ * Otherwise, if_poll_xmit points to the element, which in turn contains
+ * a queue. Append the packet there, clear *mp to grab the pkt from FreeBSD,
+ * and possibly wakeup the element.
+ *
+ * We _need_ splimp()/splx() to avoid races.
  */
-static int
-register_rx(FromDevice *me, struct ifnet *d, int qSize)
+extern "C"
+int
+click_ether_output(struct ifnet *ifp, struct mbuf **mp)
 {
-    assert(d);
     int s = splimp();
-    if (d->if_poll_slowq == NULL) {
-	struct ifqueue *inq;
-
-	if (me->_readers != 0)
-	    printf("Warning, _readers mismatch (%d should be 0)\n",
-		   me->_readers);
-	inq = (struct ifqueue *)
-	    malloc(sizeof (struct ifqueue), M_DEVBUF, M_NOWAIT);
-	assert(inq);
-	memset(inq, 0, sizeof (struct ifqueue));
-	inq->ifq_maxlen = qSize;
-	d->if_poll_slowq = inq;
-    } else {
-	if (me->_readers == 0)
-	    printf("Warning, _readers mismatch (should not be 0)\n");
+    if (ifp->if_poll_xmit == NULL) { // not for click...
+	splx(s);
+	return 0;
     }
-    me->_readers++;
-    registered_readers++;
-    splx(s);
-}
+    struct mbuf *m = *mp;
+    *mp = NULL; // tell ether_output no further processing needed
 
-/*
- * Detach from device's packet-receive hook.
- */
-static int
-unregister_rx(FromDevice *me, struct ifnet *d)
-{
-    assert(d);
-    int s = splimp();
-    registered_readers--;
-    me->_readers--;
-    if (me->_readers == 0) {
-	/*
-	 * Flush the receive queue.
-	 */
-	int i, max = d->if_poll_slowq->ifq_maxlen ;
-	for (i = 0; i < max; i++) {
-	    struct mbuf *m;
-	    IF_DEQUEUE(d->if_poll_slowq, m);
-	    if (!m)
-		break;
-	    m_freem(m);
-	}
-	free(d->if_poll_slowq, M_DEVBUF);
-	d->if_poll_slowq = NULL ;
-    }
+    FromHost *me = (FromHost *)(ifp->if_poll_xmit);
+    if (IF_QFULL(me->_inq)) {
+        IF_DROP(me->_inq);
+        m_freem(m);
+    } else
+        IF_ENQUEUE(me->_inq, m);
+    me->wakeup();
     splx(s);
+    return 0;
 }
-#endif
 
 static void
 fromdev_static_initialize()
 {
-    if (++from_device_count == 1) {
+    if (++from_device_count == 1)
 	from_device_map.initialize();
-    }
 }
 
 static void
 fromdev_static_cleanup()
 {
     if (--from_device_count <= 0) {
-#ifdef HAVE_CLICK_BSD_KERNEL
 	if (registered_readers)
 	    printf("Warning: registered reader count mismatch!\n");
-#endif
     }
 }
 
@@ -169,6 +155,7 @@ int
 FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
     _promisc = false;
+    _inq = NULL;
     bool allow_nonexistent = false;
     _burst = 8;
     if (cp_va_parse(conf, this, errh, 
@@ -196,12 +183,12 @@ FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 FromDevice::initialize(ErrorHandler *errh)
 {
-    // check for duplicates; FromDevice <-> PollDevice conflicts checked by
-    // PollDevice
+    // check for duplicates
     if (ifindex() >= 0)
 	for (int fi = 0; fi < router()->nelements(); fi++) {
 	    Element *e = router()->element(fi);
-	    if (e == this) continue;
+	    if (e == this)
+		continue;
 	    if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
 		if (fd->ifindex() == ifindex())
 		    return errh->error("duplicate FromDevice for `%s'",
@@ -210,19 +197,32 @@ FromDevice::initialize(ErrorHandler *errh)
 	}
 
     from_device_map.insert(this);
-    if (_promisc && _dev)
-	ifpromisc(_dev, 1);
+    if (_promisc && device())
+	ifpromisc(device(), 1);
     
-#ifdef HAVE_CLICK_BSD_KERNEL
-    register_rx(this, _dev, QSIZE);
-#else
-    errh->warning("can't get packets: not compiled for a Click kernel");
-#endif
+    assert(_dev);
+    int s = splimp();
+    if (_inq == NULL) {
+	if (_readers != 0)
+	    printf("Warning, _readers mismatch (%d should be 0)\n",
+		   _readers);
+	_inq = (struct ifqueue *)
+	    malloc(sizeof (struct ifqueue), M_DEVBUF, M_NOWAIT|M_ZERO);
+	assert(inq);
+	_inq->ifq_maxlen = QSIZE;
+	(FromDevice *)(device()->if_poll_recv) = this;
+    } else {
+	if (_readers == 0)
+	    printf("Warning, _readers mismatch (should not be 0)\n");
+    }
+    _readers++;
+    registered_readers++;
+    splx(s);
 
-    ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
+    ScheduleInfo::initialize_task(this, &_task, device() != 0, errh);
 #ifdef HAVE_STRIDE_SCHED
     // start out with default number of tickets, inflate up to max
-    _max_tickets = _task.tickets();
+    set_max_tickets( _task.tickets() );
     _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
 
@@ -244,13 +244,32 @@ FromDevice::initialize(ErrorHandler *errh)
 void
 FromDevice::uninitialize()
 {
-#ifdef HAVE_CLICK_BSD_KERNEL
-    unregister_rx(this, _dev);
-#endif
+    assert(_dev);
+    struct ifqueue *q = NULL;
+    int s = splimp();
+    registered_readers--;
+    _readers--;
+    if (_readers == 0) {	// flush queue
+	q = _inq ;
+	_inq = NULL ;
+	device()->if_poll_recv = NULL ;
+    }
+    splx(s);
+    if (q) {		// we do not mutex for this.
+	int i, max = q->ifq_maxlen ;
+	for (i = 0; i < max; i++) {
+	    struct mbuf *m;
+	    IF_DEQUEUE(q, m);
+	    if (!m)
+		break;
+	    m_freem(m);
+	}
+	free(q, M_DEVBUF);
+    }
     
     from_device_map.remove(this);
-    if (_promisc && _dev)
-	ifpromisc(_dev, 0);
+    if (_promisc && device())
+	ifpromisc(device(), 0);
 }
 
 void
@@ -264,33 +283,25 @@ void
 FromDevice::run_scheduled()
 {
     int npq = 0;
+    // click_chatter("FromDevice::run_scheduled().");
     while (npq < _burst) {
-#if CLICK_DEVICE_STATS
-	unsigned low0, low1;
-	unsigned long long time_now;
-#endif
+	struct mbuf *m = 0;
 
-	/*
-	 * Try to dequeue a packet from the interrupt input queue.
-	 */
-	SET_STATS(low0, low1, time_now);
-
-	struct mbuf *m;
+	// Try to dequeue a packet from the interrupt input queue.
 	int s = splimp();
-	IF_DEQUEUE(_dev->if_poll_slowq, m);
+	IF_DEQUEUE(_inq, m);
+	if (m == NULL) {
+	    set_need_wakeup();
+	    splx(s);
+	    adjust_tickets(npq);
+	    return;
+	}
 	splx(s);
-	if (NULL == m) break;
 
-	/*
-	 * Got a packet, which includes the MAC header. Make it a real Packet.
-	 */
+	// Got a packet, which includes the MAC header. Make it a real Packet.
 
 	Packet *p = Packet::make(m);
-	GET_STATS_RESET(low0, low1, time_now,
-			_perfcnt1_read, _perfcnt2_read, _time_read);
 	output(0).push(p);
-	GET_STATS_RESET(low0, low1, time_now,
-			_perfcnt1_push, _perfcnt2_push, _time_push);
 	npq++;
 	_npackets++;
     }
@@ -303,7 +314,7 @@ FromDevice::run_scheduled()
 int
 FromDevice::get_inq_drops()
 {
-    return _dev->if_poll_slowq->ifq_drops;
+    return device()->if_poll_slowq->ifq_drops;
 }
 
 static String
@@ -329,6 +340,61 @@ FromDevice::add_handlers()
 {
     add_read_handler("stats", FromDevice_read_stats, 0);
     add_task_handlers(&_task);
+}
+
+//----------- implementation of ToHost(DEVNAME) ------------------------
+
+/*
+ToHost(DEVNAME)
+
+
+    ToHost();
+    ~ToHost();
+    const char *class_name() const      { return "ToHost"; }
+    const char *processing() const      { return PUSH; }
+    ToHost *clone() const               { return new ToHost; }
+
+    int configure(const Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void uninitialize();
+
+*/
+
+ToHost::ToHost()
+{
+    MOD_INC_USE_COUNT;
+    add_input();
+}
+
+ToHost::~ToHost()
+{
+    MOD_DEC_USE_COUNT;
+}
+
+int
+ToHost::configure(const Vector<String> &conf, ErrorHandler *errh)
+{
+    if (cp_va_parse(conf, this, errh,
+		    cpString, "interface name", &_devname,
+		    cpEnd) < 0 )
+	return -1;
+    if (find_device(false, errh) < 0)
+        return -1;
+    return 0;
+}
+
+void
+ToHost::push(int, Packet *p)
+{
+    struct mbuf *m = p->steal_m();
+    struct ether_header *eh = mtod(m, struct ether_header *);
+    if (m == NULL) {
+	click_chatter("ToHost: steal_m failed");
+	return ;
+    }
+    m->m_pkthdr.rcvif = NULL; // tell click-ether-input to ignore this
+    m_adj(m, ETHER_HDR_LEN);
+    ether_input(device(), eh, m) ;
 }
 
 ELEMENT_REQUIRES(AnyDevice Storage bsdmodule)

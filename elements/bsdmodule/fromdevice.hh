@@ -1,5 +1,5 @@
-#ifndef FROMDEVICE_HH
-#define FROMDEVICE_HH
+#ifndef CLICK_FROMDEVICE_HH
+#define CLICK_FROMDEVICE_HH
 
 /*
 =title FromDevice.b
@@ -60,11 +60,12 @@ the device. If you want BSD to process packets, you should hand them to
 ToBSD.
 
 FromDevice accesses packets the same way BSD does: through interrupts.
-This is bad for performance. If you care about performance and have a
-polling-capable device, use PollDevice instead.
+Performance is system-dependent (FreeBSD has a native polling mode
+which can be used for better performance and stability).
 
-=a PollDevice, ToDevice, FromBSD, ToBSD, FromDevice.u */
+=a ToDevice, FromHost, ToHost, FromDevice.u */
 
+#include <click/element.hh>
 #include "elements/bsdmodule/anydevice.hh"
 #include "elements/standard/queue.hh"
 
@@ -86,11 +87,7 @@ class FromDevice : public AnyDevice, public Storage { public:
 
     void change_device(struct if_net *);
     
-    /* process a packet. return 0 if not wanted after all. */
-    int got_m(struct mbuf *);
-
-    /* get some performance stats */
-    int get_inq_drops();
+    int get_inq_drops();	// get some performance stats
 
     void run_scheduled();
 
@@ -103,6 +100,7 @@ class FromDevice : public AnyDevice, public Storage { public:
 
     unsigned _readers;		// how many readers registered for this?
 
+    struct ifqueue *_inq;
   private:
 
     bool _promisc;
@@ -110,6 +108,19 @@ class FromDevice : public AnyDevice, public Storage { public:
 
     static const int QSIZE = 511;
 
+};
+
+class ToHost : public AnyDevice {
+
+  public:
+    ToHost();
+    ~ToHost();
+    const char *class_name() const      { return "ToHost"; }
+    const char *processing() const      { return PUSH; }
+    ToHost *clone() const		{ return new ToHost; }
+
+    int configure(const Vector<String> &, ErrorHandler *);
+    void push(int, Packet *);
 };
 
 #endif

@@ -41,6 +41,11 @@ class RouterThread : public Task { public:
 
   void set_thread_id(int i)		{ _id = i; }
 
+#ifdef CLICK_BSDMODULE
+  // XXX FreeBSD
+  Task *_wakeup_list;
+#endif
+
   // task request IDs
   static const unsigned SCHEDULE_TASK = 1;
   static const unsigned UNSCHEDULE_TASK = 2;
