@@ -26,11 +26,11 @@ datadir = @datadir@/click
 
 all: @TARGETS@ tools Makefile
 
-linuxmodule: Makefile
+linuxmodule: stamp-h stamp-egroup
 	@cd linuxmodule && $(MAKE) all
-userlevel: Makefile
+userlevel: stamp-h stamp-egroup
 	@cd userlevel && $(MAKE) all
-exopc: Makefile
+exopc: stamp-h stamp-egroup
 	@cd exopc && $(MAKE) all
 tools: Makefile elementmap
 	@cd tools && $(MAKE) all
@@ -55,11 +55,11 @@ install-include:
 	$(mkinstalldirs) $(includedir)
 	$(INSTALL_DATA) $(top_builddir)/clickconfig.h $(srcdir)/lib/*.hh $(srcdir)/lib/*.h $(includedir)
 
-elemlist elemlists:
+elemlist elemlists: stamp-egroup
 	for dir in @TARGETS@; do \
 	  f=$$dir/elements.conf; \
-	  echo $$dir @element_groups@ | (cd $(top_srcdir); ./click-buildtool findelem) > $$f~; \
-	  if test -r $$f && diff $$f $$f~ >/dev/null 2>&1; then; else \
+	  echo $$dir `cat stamp-egroup` | (cd $(top_srcdir); ./click-buildtool findelem) > $$f~; \
+	  if test -r $$f && diff $$f $$f~ >/dev/null 2>&1; then :; else \
 	    mv $$f~ $$f; rm -f $$dir/elements.d; fi; \
 	done
 
@@ -78,6 +78,13 @@ $(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
 Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+stamp-h: Makefile
+	@echo 'creating stamp-h' 1>&2
+	@echo "/* Created on" `date` "*/" > stamp-h
+	@if test "@element_groups@" != "`cat stamp-egroup`"; then echo "@element_groups@" > stamp-egroup; fi
+stamp-egroup:
+	@/bin/rm -f stamp-h
+	@$(MAKE) stamp-h
 
 check-filenames:
 	@a=`find . \( -name \*.cc -or -name \*.c \) -print | sed 's/.*\/\(.*\)\.c*$$/\1.o/' | grep -v 'elements\.o' | sort | uniq -d`; \
