@@ -72,16 +72,20 @@ GapRate::GapRate(unsigned rate)
 inline bool
 GapRate::need_update(const Timestamp &now)
 {
+    unsigned need = (now.usec() << UGAP_SHIFT) / _ugap;
+
     if (_tv_sec < 0) {
+	// 27.Feb.2005: often OK to send a packet after reset unless rate is
+	// 0 -- requested by Bart Braem
+	// check include/click/gaprate.hh (1.2)
 	_tv_sec = now.sec();
-	_sec_count = ((now.usec() << UGAP_SHIFT) / _ugap) + 1;
+	_sec_count = need + ((now.usec() << UGAP_SHIFT) - (need * _ugap) > _ugap / 2);
     } else if (now.sec() > _tv_sec) {
 	_tv_sec = now.sec();
 	if (_sec_count > 0)
 	    _sec_count -= _rate;
     }
 
-    unsigned need = (now.usec() << UGAP_SHIFT) / _ugap;
 #if DEBUG_GAPRATE
     click_chatter("%{timestamp} -> %u @ %u [%d]", &now, need, _sec_count, (int)need >= _sec_count);
 #endif
