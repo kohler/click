@@ -1,3 +1,15 @@
+2001-03-10 Saturday 15:41  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/binpackingsched.cc,
+	elements/local/binpackingsched.hh,
+	elements/local/staticthreadsched.cc,
+	elements/local/staticthreadsched.hh,
+	elements/local/threadmonitor.cc, elements/local/threadmonitor.hh,
+	include/click/glue.hh, lib/task.cc, linuxmodule/skbmgr.cc: removed
+	click_getusecofday(); changed all instances of #ifdef __MTCLICK__
+	to #if __MTCLICK__; fixed compile error in elements/local when
+	--enable-local is on but __MTCLICK__ is not defined
+
 2001-03-10 Saturday 14:09  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* include/click/: bighashmap.cc, bighashmap.hh: updates; the new
