@@ -28,9 +28,16 @@
 #include "elements/standard/scheduleinfo.hh"
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <errno.h>
+#include "fakepcap.h"
+
+#define	SWAPLONG(y) \
+	((((y)&0xff)<<24) | (((y)&0xff00)<<8) | (((y)&0xff0000)>>8) | (((y)>>24)&0xff))
+#define	SWAPSHORT(y) \
+	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
 FromDump::FromDump()
-  : Element(0, 1), _pcap(0), _pending_packet(0)
+  : Element(0, 1), _fp(0), _packet(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -38,13 +45,7 @@ FromDump::FromDump()
 FromDump::~FromDump()
 {
   MOD_DEC_USE_COUNT;
-  assert(!_pcap && !_pending_packet);
-}
-
-FromDump*
-FromDump::clone() const
-{
-  return new FromDump;
+  assert(!_fp && !_packet);
 }
 
 int
@@ -58,28 +59,61 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 		     0);
 }
 
+static void
+swap_file_header(fake_pcap_file_header *hp)
+{
+  hp->magic = SWAPLONG(hp->magic);
+  hp->version_major = SWAPSHORT(hp->version_major);
+  hp->version_minor = SWAPSHORT(hp->version_minor);
+  hp->thiszone = SWAPLONG(hp->thiszone);
+  hp->sigfigs = SWAPLONG(hp->sigfigs);
+  hp->snaplen = SWAPLONG(hp->snaplen);
+  hp->linktype = SWAPLONG(hp->linktype);
+}
+
+static void
+swap_packet_header(fake_pcap_pkthdr *hp)
+{
+  hp->ts.tv_sec = SWAPLONG(hp->ts.tv_sec);
+  hp->ts.tv_usec = SWAPLONG(hp->ts.tv_usec);
+  hp->caplen = SWAPLONG(hp->caplen);
+  hp->len = SWAPLONG(hp->len);
+}
+
 int
 FromDump::initialize(ErrorHandler *errh)
 {
-  if (!_filename)
-    return errh->error("filename not set");
+  _fp = fopen(_filename, "rb");
+  if (!_fp)
+    return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
-  timerclear(&_bpf_offset);
-  
-#ifdef HAVE_PCAP
-  char ebuf[PCAP_ERRBUF_SIZE];
-  _pcap = pcap_open_offline((char*)(const char*)_filename, ebuf);
-  if (!_pcap)
-    return errh->error("pcap error: %s\n", ebuf);
-  pcap_dispatch(_pcap, 1, &pcap_packet_hook, (u_char*)this);
-  if (!_pending_packet)
-    errh->warning("dump contains no packets");
-#else
-  errh->warning("can't read packets: not compiled with pcap support");
-#endif
+  fake_pcap_file_header fh;
+  if (fread(&fh, sizeof(fh), 1, _fp) < 1)
+    return errh->error("%s: not a tcpdump file (too short)", _filename.cc());
 
-  if (_pending_packet) 
+  if (fh.magic == FAKE_TCPDUMP_MAGIC)
+    _swapped = false;
+  else {
+    swap_file_header(&fh);
+    _swapped = true;
+  }
+  if (fh.magic != FAKE_TCPDUMP_MAGIC)
+    return errh->error("%s: not a tcpdump file (bad magic number)", _filename.cc());
+
+  if (fh.version_major != FAKE_PCAP_VERSION_MAJOR)
+    return errh->error("%s: unknown major version %d", _filename.cc(), fh.version_major);
+  _minor_version = fh.version_minor;
+  _linktype = fh.linktype;
+
+  _packet = read_packet(errh);
+  if (_packet) {
+    struct timeval now;
+    click_gettimeofday(&now);
+    timersub(&now, &_packet->timestamp_anno(), &_time_offset);
+
     ScheduleInfo::join_scheduler(this, errh);
+  } else
+    errh->warning("%s: no packets", _filename.cc());
   
   return 0;
 }
@@ -87,89 +121,83 @@ FromDump::initialize(ErrorHandler *errh)
 void
 FromDump::uninitialize()
 {
-  if (_pcap) {
-    pcap_close(_pcap);
-    _pcap = 0;
+  if (_fp) {
+    fclose(_fp);
+    _fp = 0;
   }
-  if (_pending_packet) {
-    _pending_packet->kill();
-    _pending_packet = 0;
+  if (_packet) {
+    _packet->kill();
+    _packet = 0;
   }
 }
 
-#ifdef HAVE_PCAP
-void
-FromDump::pcap_packet_hook(u_char* clientdata,
-			   const struct pcap_pkthdr* pkthdr,
-			   const u_char* data)
+WritablePacket *
+FromDump::read_packet(ErrorHandler *errh)
 {
-  FromDump *e = (FromDump *)clientdata;
+  fake_pcap_pkthdr ph;
+  if (fread(&ph, sizeof(fake_pcap_pkthdr), 1, _fp) < 1)
+    return 0;
 
-  // If first time called, set up offset for syncing up real time with
-  // the time of the dump.
-  if (!timerisset(&e->_bpf_offset)) {
-    struct timeval now;
-    click_gettimeofday(&now);
+  if (_swapped)
+    swap_packet_header(&ph);
 
-    e->_bpf_init = pkthdr->ts;
-    e->_bpf_offset.tv_sec = pkthdr->ts.tv_sec - (bpf_u_int32)now.tv_sec;
-    int32_t tv_usec = (int32_t)(pkthdr->ts.tv_usec - (bpf_u_int32)now.tv_usec);
-    if (tv_usec < 0) {
-      --e->_bpf_init.tv_sec;
-      e->_bpf_init.tv_usec = (bpf_u_int32)(tv_usec + 1000000);
-    } else
-      e->_bpf_init.tv_usec = (bpf_u_int32)tv_usec;
+  // may need to swap 'caplen' and 'len' fields at or before version 2.3
+  if (_minor_version < 3 || (_minor_version == 3 && ph.caplen > ph.len)) {
+    int t = ph.caplen;
+    ph.caplen = ph.len;
+    ph.len = t;
   }
 
-  e->_pending_packet = Packet::make(data, pkthdr->caplen);
-  e->_pending_packet->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+  // check for errors
+  if (ph.caplen > ph.len || ph.caplen > 65535) {
+    if (errh)
+      errh->error("%s: bad packet header; giving up", _filename.cc());
+    else
+      click_chatter("FromDump(%s): bad packet header; giving up", _filename.cc());
+    return 0;
+  }
+
+  // make packet
+  WritablePacket *wp = Packet::make(0, 0, ph.caplen, 0);
+  if (!wp) {
+    click_chatter("FromDump(%s): out of memory", _filename.cc());
+    return 0;
+  }
+
+  size_t r = fread(wp->data(), 1, ph.caplen, _fp);
+  if (r < ph.caplen) {
+    click_chatter("FromDump(%s): short packet", _filename.cc());
+    wp->kill();
+    return 0;
+  }
+
+  wp->set_timestamp_anno(ph.ts.tv_sec, ph.ts.tv_usec);
+
+  if (_linktype == FAKE_DLT_RAW && ph.caplen > 20) {
+    click_ip *iph = reinterpret_cast<click_ip *>(wp->data());
+    wp->set_ip_header(iph, iph->ip_hl << 2);
+  }
   
-  // Fill pkthdr and bump the timestamp by offset
-  memcpy(&e->_pending_pkthdr, pkthdr, sizeof(pcap_pkthdr));
-
-#if 0
-  static bool once = true;
-  if (once && (e->_pending_pkthdr.ts.tv_sec-e->_init.tv_sec >= 30)) {
-    timeval now;
-    click_gettimeofday(&now);
-    char *s1 = ctime((time_t*)&now);
-    *(s1+strlen(s1)-1) = '\0';
-    click_chatter("now: %s",s1);
-    s1 = ctime((time_t*)&e->_pending_pkthdr.ts.tv_sec);
-    *(s1+strlen(s1)-1) = '\0';
-    click_chatter("has: %s",s1);
-    once = false;
-    e->_init = e->_pending_pkthdr.ts;
-  }
-  if (!once && e->_pending_pkthdr.ts.tv_sec > e->_init.tv_sec) {
-    click_chatter("reset");
-    once = true;
-  }
-#endif
-
-  timeradd(&e->_pending_pkthdr.ts, &e->_bpf_offset, &e->_pending_pkthdr.ts);
+  return wp;
 }
-#endif
 
 void
 FromDump::run_scheduled()
 {
-#ifdef HAVE_PCAP
-  timeval now;
-  click_gettimeofday(&now);
-
-  bpf_timeval bpf_now;
-  bpf_now.tv_sec = now.tv_sec;
-  bpf_now.tv_usec = now.tv_usec;
-  
-  if (!_timing || timercmp(&bpf_now, &_pending_pkthdr.ts, >)) {
-    output(0).push(_pending_packet);
-    _pending_packet = 0;
-    pcap_dispatch(_pcap, 1, &pcap_packet_hook, (u_char *)this);
+  if (_timing) {
+    struct timeval now;
+    click_gettimeofday(&now);
+    timersub(&now, &_time_offset, &now);
+    if (timercmp(&_packet->timestamp_anno(), &now, >)) {
+      reschedule();
+      return;
+    }
   }
-  if (_pending_packet)
+
+  output(0).push(_packet);
+  _packet = read_packet(0);
+  if (_packet)
     reschedule();
-#endif
 }
 
 ELEMENT_REQUIRES(userlevel)

@@ -1,5 +1,6 @@
 #ifndef FROMDUMP_HH
 #define FROMDUMP_HH
+#include <click/element.hh>
 
 /*
  * =c
@@ -21,51 +22,35 @@
  *
  * =a ToDump, FromDevice.u, ToDevice.u, tcpdump(1) */
 
-#ifdef HAVE_PCAP
-extern "C" {
-# include <pcap.h>
-}
-#else
-# include "fakepcap.h"
-#endif
-#include <sys/types.h>
-#include <click/element.hh>
-#ifndef HAVE_BPF_TIMEVAL
-typedef struct timeval bpf_timeval;
-#endif
+class FromDump : public Element { public:
 
-class FromDump : public Element {
-  
-  pcap_t* _pcap;
-#ifdef HAVE_PCAP
-  pcap_pkthdr _pending_pkthdr;
-#endif
-  Packet* _pending_packet;
-  bpf_timeval _bpf_offset;
-  bpf_timeval _bpf_init;
-  String _filename;
-  bool _timing;
-
-#ifdef HAVE_PCAP
-  static void pcap_packet_hook(u_char* clientdata,
-			       const struct pcap_pkthdr* pkthdr,
-			       const u_char* data);
-#endif
-  
- public:
-  
   FromDump();
   ~FromDump();
 
   const char *class_name() const		{ return "FromDump"; }
   const char *processing() const		{ return PUSH; }
-  FromDump *clone() const;
+  FromDump *clone() const			{ return new FromDump; }
   
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
 
   void run_scheduled();
+  
+ private:
+  
+  String _filename;
+  FILE *_fp;
+  bool _timing;
+  bool _swapped;
+  int _minor_version;
+  int _linktype;
+  
+  Packet *_packet;
+  
+  struct timeval _time_offset;
+
+  WritablePacket *read_packet(ErrorHandler *);
   
 };
 
