@@ -513,7 +513,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
     return hid;
 
   int size = _CLICK_IOC_SIZE(command);
-  if (!size || !(command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)))
+  if (!size || !(command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)) || !(command & _CLICK_IOC_FLAT))
     return message(fd, CSERR_UNIMPLEMENTED, "Cannot call LLRPC `" + llrpcname + "' remotely");
 
   if (_read_only)		// can't tell whether an LLRPC is read-only;

@@ -140,7 +140,8 @@ as an argument. The results are returned after a "DATA I<nn>" line, as in
 READ.
 
 ControlSocket will not call an LLRPC unless it can determine (from the command
-number) how much data the LLRPC expects and returns.
+number) how much data the LLRPC expects and returns. (Only "flat" LLRPCs may
+be called; they are declared using the _CLICK_IOC_[RWS]F macros.)
 
 =item QUIT
 
