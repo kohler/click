@@ -1,3 +1,13 @@
+2004-03-17 Wednesday 02:25  Eddie Kohler <kohler@icir.org>
+
+	* doc/click.5 (1.30), include/click/confparse.hh (1.40),
+	include/click/variableenv.hh (1.4), lib/confparse.cc (1.118),
+	lib/lexer.cc (1.72), lib/variableenv.cc (1.10),
+	tools/lib/eclasst.cc (1.30), tools/lib/eclasst.hh (1.21),
+	tools/lib/lexert.cc (1.55), tools/lib/routert.cc (1.76),
+	tools/lib/routert.hh (1.64): add support for keyword arguments and
+	__REST__ in compound elements
+
 2004-03-16 Tuesday 03:08  Eddie Kohler <kohler@icir.org>
 
 	* etc/samplepackage/Makefile.in (1.40): Makefile nitlet
