@@ -1,3 +1,59 @@
+2002-04-24 Wednesday 12:39  Eddie Kohler <kohler@aciri.org>
+
+	* apps/csclient/csclient.hh (1.4), elements/analysis/fromdagdump.hh
+	(1.4), elements/ethernet/arpquerier.hh (1.30),
+	elements/ethernet/ethermirror.hh (1.6),
+	elements/ethernet/ip6ndsolicitor.hh (1.10),
+	elements/grid/floodinglocquerier.hh (1.15),
+	elements/icmp/icmppingrewriter.hh (1.6),
+	elements/ip/ipaddrrewriter.hh (1.7), elements/ip/ipfilter.hh
+	(1.19), elements/ip/ipmirror.hh (1.10), elements/ip/ipratemon.cc
+	(1.95), elements/ip/ipratemon.hh (1.59),
+	elements/ip/ipreassembler.cc (1.8), elements/ip/ipreassembler.hh
+	(1.4), elements/ip/iprw.hh (1.22), elements/ip/radixiplookup.hh
+	(1.7), elements/ip/rfc2507c.hh (1.10), elements/ip/rfc2507d.hh
+	(1.10), elements/ipsec/des.hh (1.11), elements/ipsec/esp.cc (1.25),
+	elements/ipsec/esp.hh (1.13), elements/ipsec/sha1.hh (1.7),
+	elements/linuxmodule/anydevice.hh (1.36),
+	elements/linuxmodule/fasttcpflows.cc (1.9),
+	elements/linuxmodule/fastudpflows.cc (1.10),
+	elements/linuxmodule/fastudpsrc.cc (1.15),
+	elements/linuxmodule/fastudpsrcip6.cc (1.15),
+	elements/linuxmodule/fromdevice.hh (1.31),
+	elements/local/chuckcheck.hh (1.7), elements/standard/classifier.cc
+	(1.41), elements/standard/classifier.hh (1.26),
+	elements/standard/notifierqueue.hh (1.4),
+	elements/standard/pokehandlers.cc (1.25),
+	elements/standard/pokehandlers.hh (1.16),
+	elements/standard/randomsample.hh (1.4),
+	elements/standard/ratedsource.cc (1.44),
+	elements/standard/stridesched.hh (1.17),
+	elements/tcpudp/snooptcp.hh (1.5),
+	elements/userlevel/controlsocket.hh (1.23),
+	elements/userlevel/fromdump.hh (1.37),
+	elements/userlevel/handlerproxy.hh (1.5),
+	include/click/bighashmap.cc (1.9), include/click/bighashmap.hh
+	(1.8), include/click/bighashmap_arena.hh (1.3),
+	include/click/bitvector.hh (1.7), include/click/confparse.hh
+	(1.29), include/click/element.hh (1.22), include/click/gaprate.hh
+	(1.4), include/click/handlercall.hh (1.5), include/click/hashmap.cc
+	(1.8), include/click/hashmap.hh (1.7), include/click/lexer.hh
+	(1.9), include/click/packet.hh (1.32), include/click/router.hh
+	(1.30), include/click/routerthread.hh (1.10), include/click/task.hh
+	(1.17), lib/archive.cc (1.14), lib/confparse.cc (1.97),
+	lib/handlercall.cc (1.4), lib/lexer.cc (1.58), lib/router.cc
+	(1.122), lib/routerthread.cc (1.23), lib/userutils.cc (1.24),
+	linuxmodule/Makefile.in (1.65), linuxmodule/module.cc (1.62),
+	linuxmodule/modulepriv.hh (1.25), linuxmodule/proc_config.cc
+	(1.29), tools/click-devirtualize/cxxclass.cc (1.8),
+	tools/click-devirtualize/signature.hh (1.6),
+	tools/click-devirtualize/specializer.hh (1.9),
+	tools/click-pretty/html.cc (1.4), tools/click-pretty/html.hh (1.4),
+	tools/lib/eclasst.hh (1.9), tools/lib/elementmap.cc (1.6),
+	tools/lib/lexert.hh (1.24), tools/lib/routert.cc (1.58),
+	tools/lib/routert.hh (1.49): closer standard compliance, much from
+	Scott Page@utexas
+
 2002-04-23 Tuesday 18:46  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.53), etc/libclick/DISTFILES (1.11),

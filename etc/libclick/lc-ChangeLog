@@ -1,3 +1,25 @@
+2002-04-24 Wednesday 12:39  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/bighashmap_arena.hh, include/click/bitvector.hh,
+	include/click/confparse.hh, include/click/element.hh,
+	include/click/gaprate.hh, include/click/handlercall.hh,
+	include/click/hashmap.cc, include/click/hashmap.hh,
+	include/click/lexer.hh, include/click/packet.hh,
+	include/click/bighashmap_arena.hh, include/click/bitvector.hh,
+	include/click/confparse.hh, include/click/element.hh,
+	include/click/gaprate.hh, include/click/handlercall.hh,
+	include/click/hashmap.cc, include/click/hashmap.hh,
+	include/click/lexer.hh, include/click/packet.hh,
+	include/click/router.hh, include/click/routerthread.hh,
+	include/click/task.hh, include/click/router.hh,
+	include/click/routerthread.hh, include/click/task.hh,
+	libsrc/archive.cc, libsrc/confparse.cc, libsrc/handlercall.cc,
+	libsrc/lexer.cc, libsrc/router.cc, libsrc/routerthread.cc,
+	libsrc/userutils.cc: closer standard compliance, much from Scott
+	Page@utexas
+
 2002-04-23 Tuesday 18:46  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc-Makefile.in: include notifier.{hh,cc} in DISTFILES and
