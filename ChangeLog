@@ -1,3 +1,9 @@
+2004-02-18 Wednesday 11:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/infinitesource.cc (1.43): dont try to schedule
+	task if output is pull (because the task is unneeded and never
+	initialized)
+
 2004-02-17 Tuesday 22:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: ackresponder2.cc (1.1), ackresponder2.hh (1.1),
