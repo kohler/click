@@ -1,3 +1,12 @@
+2002-07-23 Tuesday 00:38  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.17), config-userlevel.h.in (1.8), config.h.in
+	(1.19), include/click/straccum.hh (1.19), include/click/string.hh
+	(1.22), lib/straccum.cc (1.26), lib/string.cc (1.39): add configure
+	check for whether long is 64 bits, and use that check in String and
+	StringAccum, to avoid problematic overloading. Bug reported by
+	YongKang Zhu <yozhu@ece.rochester.edu>.
+
 2002-07-22 Monday 20:55  Eddie Kohler <kohler@icir.org>
 
 	* doc/click.texi (1.48): doc updates
