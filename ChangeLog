@@ -1,3 +1,29 @@
+2005-01-03 Monday 22:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/lc-configure.in (1.37): update version
+
+2005-01-03 Monday 22:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.41): autoconf-2.59
+
+2005-01-03 Monday 22:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/siphmapper.cc (1.5), lib/glue.cc (1.44): limits.h
+	cleanup
+
+2005-01-03 Monday 22:19  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/glue.hh (1.44): #include <limits.h> at user level
+
+2005-01-03 Monday 22:15  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-userlevel.h.in (1.23), config.h.in (1.30), configure
+	(1.40), configure.in (1.252), elements/userlevel/fromdevice.cc
+	(1.51), etc/libclick/lc-configure.in (1.36),
+	include/click/master.hh (1.11), include/click/timestamp.hh (1.6),
+	lib/master.cc (1.22): add support for kqueue() in addition to
+	select() and poll() [Should FromDump and friends use selected()?]
+
 2005-01-03 Monday 15:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/master.cc (1.21): fix the timeout fix
