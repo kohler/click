@@ -1,3 +1,7 @@
+2001-10-31 Wednesday 12:27  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* tools/run-grid (1.6): changes to support freebsd (once again)
+
 2001-10-31 Wednesday 01:34  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/: fromnetflowsumdump.cc (1.2),
