@@ -26,7 +26,7 @@ ARPResponder::clone() const
 }
 
 int
-ARPResponder::configure(const String &conf, Router *, ErrorHandler *errh)
+ARPResponder::configure(const String &conf, ErrorHandler *errh)
 {
   IPAddress ipa, mask;
   EtherAddress ena;
@@ -38,11 +38,11 @@ ARPResponder::configure(const String &conf, Router *, ErrorHandler *errh)
   
   for (int i = 0; i < args.size(); i++) {
     String arg = args[i];
-    if (cp_ip_address(arg, &ipa, &arg)
+    if (cp_ip_address(arg, ipa, &arg)
 	&& cp_eat_space(arg)
-        && cp_ip_address(arg, &mask, &arg)
+        && cp_ip_address(arg, mask, &arg)
         && cp_eat_space(arg)
-	&& cp_ethernet_address(arg, &ena))
+	&& cp_ethernet_address(arg, ena))
       set_map(ipa, mask, ena);
     else {
       errh->error("ARPResponder configuration expected ip, mask, and ether addr");

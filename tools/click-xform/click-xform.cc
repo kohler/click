@@ -4,7 +4,7 @@
 #include "routert.hh"
 #include "lexert.hh"
 #include "error.hh"
-#include "confparset.hh"
+#include "confparse.hh"
 #include <stdio.h>
 #include <ctype.h>
 

@@ -180,7 +180,7 @@ finish_handler_write(int elementno, int handler, String *s)
       + String(fc->name, fc->namelen) + "'";
     if (f) context_string += String(" for `") + f->declaration() + "'";
     ContextErrorHandler cerrh(kernel_errh, context_string + ":");
-    return fc->write(f, *s, fc->wthunk, current_router, &cerrh);
+    return fc->write(f, *s, fc->wthunk, &cerrh);
   } else
     return -EPERM;
 }
@@ -394,10 +394,10 @@ read_element_config(Element *f, void *)
 
 static int
 write_element_config(Element *f, const String &conf, void *,
-		     Router *router, ErrorHandler *errh)
+		     ErrorHandler *errh)
 {
   if (f->can_live_reconfigure())
-    return router->live_reconfigure(f->number(), conf, errh);
+    return f->router()->live_reconfigure(f->number(), conf, errh);
   else
     return -EPERM;
 }

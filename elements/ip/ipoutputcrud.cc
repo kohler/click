@@ -22,9 +22,9 @@ IPOutputCrud::clone() const
 }
 
 int
-IPOutputCrud::configure(const String &conf, Router *router, ErrorHandler *errh)
+IPOutputCrud::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color (CheckPaint)", &_color,
 		  cpIPAddress, "dest IP address", &_my_ip,
 		  cpUnsigned, "MTU (Fragmenter)", &_mtu,

@@ -43,17 +43,17 @@ ToBPF::clone() const
 }
 
 int
-ToBPF::configure(const String &conf, Router *router, ErrorHandler *errh)
+ToBPF::configure(const String &conf, ErrorHandler *errh)
 {
   if (_pcap) pcap_close(_pcap);
   _pcap = 0;
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpString, "interface name", &_ifname,
 		     0);
 }
 
 int
-ToBPF::initialize(Router *router, ErrorHandler *errh)
+ToBPF::initialize(ErrorHandler *errh)
 {
 #ifdef __FreeBSD__
   /* FreeBSD pcap_open_live() doesn't open for writing. */
@@ -90,8 +90,8 @@ ToBPF::initialize(Router *router, ErrorHandler *errh)
    * Try to find a FromBPF with the same device and re-use its _pcap.
    * If we don't, Linux will give ToBPF's packets to FromBPF.
    */
-  for(int fi = 0; fi < router->nelements(); fi++){
-    Element *f = router->element(fi);
+  for(int fi = 0; fi < router()->nelements(); fi++){
+    Element *f = router()->element(fi);
     FromBPF *lr = (FromBPF *)f->is_a_cast("FromBPF");
     if(lr && lr->get_ifname() == _ifname && lr->get_pcap()){
       _fd = pcap_fileno(lr->get_pcap());

@@ -254,20 +254,19 @@ Element::processing_name(int p)
 // CLONING AND CONFIGURING
 
 int
-Element::configure(const String &conf, Router *router, ErrorHandler *errh)
+Element::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
-		     0);
+  return cp_va_parse(conf, this, errh, 0);
 }
 
 int
-Element::initialize(Router *, ErrorHandler *)
+Element::initialize(ErrorHandler *)
 {
   return 0;
 }
 
 void
-Element::uninitialize(Router *)
+Element::uninitialize()
 {
 }
 
@@ -280,10 +279,10 @@ Element::can_live_reconfigure() const
 }
 
 int
-Element::live_reconfigure(const String &conf, Router *r, ErrorHandler *errh)
+Element::live_reconfigure(const String &conf, ErrorHandler *errh)
 {
   if (can_live_reconfigure())
-    return configure(conf, r, errh);
+    return configure(conf, errh);
   else
     return -1;
 }
@@ -336,9 +335,9 @@ element_read_cycles(Element *f, void *)
 
 int
 Element::reconfigure_write_handler(Element *element, const String &arg,
-				   void *vno, Router *router,
-				   ErrorHandler *errh)
+				   void *vno, ErrorHandler *errh)
 {
+  Router *router = element->router();
   Vector<String> args;
   cp_argvec(router->configuration(element->number()), args);
   int no = (int)vno;

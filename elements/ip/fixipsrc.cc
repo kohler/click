@@ -24,11 +24,11 @@ FixIPSrc::clone() const
 }
 
 int
-FixIPSrc::configure(const String &conf, Router *router, ErrorHandler *errh)
+FixIPSrc::configure(const String &conf, ErrorHandler *errh)
 {
   IPAddress a;
 
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
                   cpIPAddress, "local addr", &a,
 		  0) < 0)
     return -1;

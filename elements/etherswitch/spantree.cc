@@ -39,13 +39,13 @@ EtherSpanTree::notify_outputs(int n) {
 }
 
 int
-EtherSpanTree::configure(const String &conf, Router *router, ErrorHandler *errh)
+EtherSpanTree::configure(const String &conf, ErrorHandler *errh)
 {
   Element* in;
   Element* out;
   Element* sw;
 
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpEthernetAddress, "bridge address", _addr,
 		  cpElement, "Suppressor to control input", &in,
 		  cpElement, "Suppressor to control output", &out,
@@ -68,7 +68,7 @@ EtherSpanTree::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-EtherSpanTree::initialize(Router *, ErrorHandler *)
+EtherSpanTree::initialize(ErrorHandler *)
 {
   for (int i = 0; i < _port.size(); i++) {
     set_state(i, FORWARD);
@@ -79,7 +79,7 @@ EtherSpanTree::initialize(Router *, ErrorHandler *)
 }
 
 void
-EtherSpanTree::uninitialize(Router *)
+EtherSpanTree::uninitialize()
 {
   _hello_timer.unschedule();
 }

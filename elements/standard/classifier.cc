@@ -525,7 +525,7 @@ update_value_mask(int c, int shift, int &value, int &mask)
 }
 
 int
-Classifier::configure(const String &conf, Router *, ErrorHandler *errh)
+Classifier::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -563,7 +563,7 @@ Classifier::configure(const String &conf, Router *, ErrorHandler *errh)
       }
       
       if (!isdigit(s[i])) {
-	errh->error("expected a digit, got %d", s[i]);
+	errh->error("expected a digit, got `%c'", s[i]);
 	return -1;
       }
 

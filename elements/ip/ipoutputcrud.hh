@@ -46,7 +46,7 @@ class IPOutputCrud : public Element {
   Processing default_processing() const	{ return PUSH; }
   
   IPOutputCrud *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
 
   void push(int, Packet *);
   

@@ -32,10 +32,10 @@ IPEncap::clone() const
 }
 
 int
-IPEncap::configure(const String &conf, Router *router, ErrorHandler *errh)
+IPEncap::configure(const String &conf, ErrorHandler *errh)
 {
   unsigned char ip_p_uc;
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpByte, "IP encapsulation protocol", &ip_p_uc,
 		  cpIPAddress, "source IP address", &_ip_src,
 		  cpIPAddress, "destination IP address", &_ip_dst,
@@ -46,7 +46,7 @@ IPEncap::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-IPEncap::initialize(Router *, ErrorHandler *errh)
+IPEncap::initialize(ErrorHandler *errh)
 {
   if (_ip_p < 0)
     return errh->error("not configured");

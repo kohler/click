@@ -21,9 +21,9 @@ InfiniteSource::clone() const
 }
 
 int
-InfiniteSource::configure(const String &conf, Router *r, ErrorHandler *errh)
+InfiniteSource::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, r, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "packets per scheduling", &_count,
 		     cpOptional,
 		     cpString, "packet data", &_data,
@@ -32,14 +32,14 @@ InfiniteSource::configure(const String &conf, Router *r, ErrorHandler *errh)
 }
 
 int
-InfiniteSource::initialize(Router *, ErrorHandler *)
+InfiniteSource::initialize(ErrorHandler *)
 {
   schedule_tail();
   return 0;
 }
 
 void
-InfiniteSource::uninitialize(Router *)
+InfiniteSource::uninitialize()
 {
   unschedule();
 }

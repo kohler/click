@@ -47,8 +47,6 @@ class RED : public Element {
 
   static String read_stats(Element *, void *);
   static String read_parameter(Element *, void *);
-  static int write_parameter(Element *, const String &, void *,
-			     Router *, ErrorHandler *);
   
  public:
   
@@ -59,12 +57,12 @@ class RED : public Element {
   void add_handlers(HandlerRegistry *fcr);
   
   int queue_size() const;
-  int average_queue_size() const		{ return _size.average(); }
+  const EWMA &average_queue_size() const	{ return _size; }
   int drops() const				{ return _drops; }
     
   RED *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   
   bool drop();

@@ -1,18 +1,18 @@
-# Kernel configuration for cone as a router between
-# 18.26.4 (eth0) and 18.26.7 (eth1).
-# Proxy ARPs for 18.26.7 on eth0.
+// Kernel configuration for cone as a router between
+// 18.26.4 (eth0) and 18.26.7 (eth1).
+// Proxy ARPs for 18.26.7 on eth0.
 
-# Don't forget ifconfig eth1 up.
+// Don't forget ifconfig eth1 up.
 
-# eth0, 00:00:C0:AE:67:EF, 18.26.4.24
-# eth1, 00:00:C0:4F:71:EF, 18.26.7.1
+// eth0, 00:00:C0:AE:67:EF, 18.26.4.24
+// eth1, 00:00:C0:4F:71:EF, 18.26.7.1
 
-# 0. ARP queries
-# 1. ARP replies
-# 2. IP
-# 3. Other
-# We need separate classifiers for each interface because
-# we only want proxy ARP on eth0.
+// 0. ARP queries
+// 1. ARP replies
+// 2. IP
+// 3. Other
+// We need separate classifiers for each interface because
+// we only want proxy ARP on eth0.
 c0 :: Classifier(12/0806 20/0001,
                 12/0806 20/0002,
                 12/0800,
@@ -36,36 +36,36 @@ out0 :: Queue(200) -> Discard;
 out1 :: Queue(200) -> Discard;
 tol :: Discard;
 
-# An ARP querier for each interface.
-arpq0 :: EtherEncap(0x0800, 00:00:c0:ae:67:ef, 00:00:c0:4f:71:ef); #ARPQuerier(18.26.4.24, 00:00:C0:AE:67:EF);
-arpq1 :: EtherEncap(0x0800, 00:00:c0:4f:71:ef, 00:00:c0:4f:71:ef); #ARPQuerier(18.26.7.1, 00:00:C0:4F:71:EF);
+// An ARP querier for each interface.
+arpq0 :: EtherEncap(0x0800, 00:00:c0:ae:67:ef, 00:00:c0:4f:71:ef); //ARPQuerier(18.26.4.24, 00:00:C0:AE:67:EF);
+arpq1 :: EtherEncap(0x0800, 00:00:c0:4f:71:ef, 00:00:c0:4f:71:ef); //ARPQuerier(18.26.7.1, 00:00:C0:4F:71:EF);
 
-# Deliver ARP responses to ARP queriers as well as Linux.
+// Deliver ARP responses to ARP queriers as well as Linux.
 t :: Tee(3);
 c0[1] -> t;
 c1[1] -> t;
 t[0] -> tol;
-t[1] -> [0]arpq0; #[1]
-t[2] -> [0]arpq1; #[1]
+t[1] -> [0]arpq0; //[1]
+t[2] -> [0]arpq1; //[1]
 
-# Connect ARP outputs to the interface queues.
+// Connect ARP outputs to the interface queues.
 arpq0 -> out0;
 arpq1 -> out1;
 
-# Proxy ARP on eth0 for 18.26.7, as well as cone's IP address.
+// Proxy ARP on eth0 for 18.26.7, as well as cone's IP address.
 ar0 :: ARPResponder(18.26.4.24 255.255.255.255 00:00:C0:AE:67:EF,
                     18.26.7.0  255.255.255.0 00:00:C0:AE:67:EF);
 c0[0] -> ar0 -> out0;
 
-# Ordinary ARP on eth1.
+// Ordinary ARP on eth1.
 ar1 :: ARPResponder(18.26.7.1 255.255.255.255 00:00:C0:4F:71:EF);
 c1[0] -> ar1 -> out1;
 
-# IP routing table. Outputs:
-# 0: packets for this machine.
-# 1: packets for 18.26.4.
-# 2: packets for 18.26.7.
-# 3: default route to LCS router.
+// IP routing table. Outputs:
+// 0: packets for this machine.
+// 1: packets for 18.26.4.
+// 2: packets for 18.26.7.
+// 3: default route to LCS router.
 rt :: LookupIPRoute(18.26.4.24  255.255.255.255 0.0.0.0 0,
                  18.26.4.255 255.255.255.255 0.0.0.0 0,
                  18.26.4.0   255.255.255.255 0.0.0.0 0,
@@ -76,9 +76,9 @@ rt :: LookupIPRoute(18.26.4.24  255.255.255.255 0.0.0.0 0,
                  18.26.7.0 255.255.255.0 0.0.0.0 2,
                  0.0.0.0 0.0.0.0 18.26.4.1 1);
 
-# Hand incoming IP packets to the routing table.
-# CheckIPHeader checks all the lengths and length fields
-# for sanity.
+// Hand incoming IP packets to the routing table.
+// CheckIPHeader checks all the lengths and length fields
+// for sanity.
 ip ::   Strip(14)
      -> CheckIPHeader
      -> GetIPAddress(16)
@@ -86,19 +86,19 @@ ip ::   Strip(14)
 c0[2] -> ip;
 c1[2] -> ip;
 
-# IP packets for this machine.
-# ToLinux expects ethernet packets, so cook up a fake header.
+// IP packets for this machine.
+// ToLinux expects ethernet packets, so cook up a fake header.
 rt[0] -> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> tol;
 
-# These are the main output paths; we've committed to a
-# particular output device.
-# Check paint to see if a redirect is required.
-# Process record route and timestamp IP options.
-# Fill in missing ip_src fields.
-# Discard packets that arrived over link-level broadcast or multicast.
-# Decrement and check the TTL after deciding to forward.
-# Fragment.
-# Send outgoing packets through ARP to the interfaces.
+// These are the main output paths; we've committed to a
+// particular output device.
+// Check paint to see if a redirect is required.
+// Process record route and timestamp IP options.
+// Fill in missing ip_src fields.
+// Discard packets that arrived over link-level broadcast or multicast.
+// Decrement and check the TTL after deciding to forward.
+// Fragment.
+// Send outgoing packets through ARP to the interfaces.
 rt[1] -> DropBroadcasts
       -> cp1 :: CheckPaint(1)
       -> gio1 :: IPGWOptions(18.26.4.24)
@@ -116,28 +116,28 @@ rt[2] -> DropBroadcasts
       -> fr2 :: IPFragmenter(300)
       -> [0]arpq1;
 
-# cccc[1] -> Print(fucker!) -> Discard;
+// cccc[1] -> Print(fucker!) -> Discard;
 
-# DecIPTTL[1] emits packets with expired TTLs.
-# Reply with ICMPs. Rate-limit them?
+// DecIPTTL[1] emits packets with expired TTLs.
+// Reply with ICMPs. Rate-limit them?
 dt1[1] -> ICMPError(18.26.4.24, 11, 0) -> [0]rt;
 dt2[1] -> ICMPError(18.26.4.24, 11, 0) -> [0]rt;
 
-# Send back ICMP UNREACH/NEEDFRAG messages on big packets with DF set.
-# This makes path mtu discovery work.
+// Send back ICMP UNREACH/NEEDFRAG messages on big packets with DF set.
+// This makes path mtu discovery work.
 fr1[1] -> ICMPError(18.26.7.1, 3, 4) -> [0]rt;
 fr2[1] -> ICMPError(18.26.7.1, 3, 4) -> [0]rt;
 
-# Send back ICMP Parameter Problem messages for badly formed
-# IP options. Should set the code to point to the
-# bad byte, but that's too hard.
+// Send back ICMP Parameter Problem messages for badly formed
+// IP options. Should set the code to point to the
+// bad byte, but that's too hard.
 gio1[1] -> ICMPError(18.26.4.24, 12, 1) -> [0]rt;
 gio2[1] -> ICMPError(18.26.4.24, 12, 1) -> [0]rt;
 
-# Send back an ICMP redirect if required.
+// Send back an ICMP redirect if required.
 cp1[1] -> ICMPError(18.26.4.24, 5, 1) -> [0]rt;
 cp2[1] -> ICMPError(18.26.7.1, 5, 1) -> [0]rt;
 
-# Unknown ethernet type numbers.
+// Unknown ethernet type numbers.
 c0[3] -> Print(c3) -> Discard;
 c1[3] -> Print(c3) -> Discard;

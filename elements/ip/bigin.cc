@@ -25,12 +25,12 @@ BigIn::clone() const
 }
 
 int
-BigIn::configure(const String &conf, Router *router, ErrorHandler *errh)
+BigIn::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
 
-  if(cp_va_parse(args[0], this, router, errh,
+  if(cp_va_parse(args[0], this, errh,
                  cpUnsigned, "color", &_color,
                  0) < 0)
     return(-1);

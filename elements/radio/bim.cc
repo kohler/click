@@ -35,9 +35,9 @@ BIM::clone() const
 }
 
 int
-BIM::configure(const String &conf, Router *router, ErrorHandler *errh)
+BIM::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpString, "device name", &_dev,
 		  cpOptional,
 		  cpInteger, "baud rate", &_speed,
@@ -60,7 +60,7 @@ BIM::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-BIM::initialize(Router *, ErrorHandler *errh)
+BIM::initialize(ErrorHandler *errh)
 {
   if (_fd >= 0)
     return 0;

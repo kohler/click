@@ -25,7 +25,7 @@ public:
   int drops() { return(_drops); }
   BigIn *clone() const;
   void add_handlers(HandlerRegistry *fcr);
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
 
   inline Packet *smaction(Packet *);
   void push(int, Packet *p);

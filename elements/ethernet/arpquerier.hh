@@ -53,7 +53,7 @@ class ARPQuerier : public Element {
   void add_handlers(HandlerRegistry *fcr);
   
   ARPQuerier *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   void push(int port, Packet *);
   

@@ -32,9 +32,9 @@ Tun::clone() const
 }
 
 int
-Tun::configure(const String &conf, Router *router, ErrorHandler *errh)
+Tun::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpIPAddress, "near address", &_near,
 		  cpIPAddress, "far address", &_far,
 		  cpEnd) < 0)
@@ -44,7 +44,7 @@ Tun::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-Tun::initialize(Router *, ErrorHandler *errh)
+Tun::initialize(ErrorHandler *errh)
 {
   _fd = alloc_tun(_near, _far, errh);
   if(_fd < 0)

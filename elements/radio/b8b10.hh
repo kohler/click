@@ -21,8 +21,8 @@ public:
 
   const char *class_name() const		{ return "B8B10"; }
   Processing default_processing() const	{ return AGNOSTIC; }
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   
   B8B10 *clone() const { return(new B8B10()); }
   

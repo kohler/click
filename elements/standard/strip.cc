@@ -22,9 +22,9 @@ Strip::clone() const
 }
 
 int
-Strip::configure(const String &conf, Router *router, ErrorHandler *errh)
+Strip::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "number of bytes to strip", &_nbytes,
 		     0);
 }

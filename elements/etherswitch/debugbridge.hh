@@ -17,7 +17,7 @@ class DebugBridge : public Element {
   Processing default_processing() const	{ return AGNOSTIC; }
   
   DebugBridge *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
 };

@@ -30,7 +30,7 @@ class Tee : public Element {
   Processing default_processing() const	{ return PUSH; }
   
   Tee *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   void push(int, Packet *);
   
@@ -47,7 +47,7 @@ class PullTee : public Element {
   void processing_vector(Vector<int>&, int, Vector<int>&, int) const;
   
   PullTee *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   Packet *pull(int);
   

@@ -33,10 +33,9 @@ RandomLossage::processing_vector(Vector<int> &in_v, int in_offset,
 }
 
 int
-RandomLossage::configure(const String &conf, Router *router,
-			 ErrorHandler *errh)
+RandomLossage::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpNonnegReal2, "max_p drop probability", 16, &_p_drop,
 		  cpOptional,
 		  cpBool, "active?", &_on,
@@ -48,7 +47,7 @@ RandomLossage::configure(const String &conf, Router *router,
 }
 
 int
-RandomLossage::initialize(Router *, ErrorHandler *errh)
+RandomLossage::initialize(ErrorHandler *errh)
 {
   if (_p_drop < 0)
     return errh->error("not configured");

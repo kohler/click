@@ -27,7 +27,7 @@ class xokWriter : public Element {
   Processing default_processing() const	{ return AGNOSTIC; }
   
   xokWriter *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   void push(int port, Packet *);
 

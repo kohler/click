@@ -12,10 +12,10 @@ Tee::clone() const
 }
 
 int
-Tee::configure(const String &conf, Router *router, ErrorHandler *errh)
+Tee::configure(const String &conf, ErrorHandler *errh)
 {
   int n = noutputs();
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpUnsigned, "number of arms", &n,
 		  0) < 0)
@@ -56,10 +56,10 @@ PullTee::clone() const
 }
 
 int
-PullTee::configure(const String &conf, Router *router, ErrorHandler *errh)
+PullTee::configure(const String &conf, ErrorHandler *errh)
 {
   int n = noutputs();
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpUnsigned, "number of arms", &n,
 		  0) < 0)

@@ -20,7 +20,7 @@ class IPAddress {
   
   operator struct in_addr() const;
   struct in_addr in_addr() const;
-  
+
   unsigned char *data() const	{ return (unsigned char *)&_s_addr; }
   
   unsigned hashcode() const	{ return _s_addr; }

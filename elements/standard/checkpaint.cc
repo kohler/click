@@ -12,9 +12,9 @@ CheckPaint::clone() const
 }
 
 int
-CheckPaint::configure(const String &conf, Router *router, ErrorHandler *errh)
+CheckPaint::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "color", &_color,
 		  0) < 0)
     return -1;

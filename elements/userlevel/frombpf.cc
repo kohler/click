@@ -32,12 +32,12 @@ FromBPF::clone() const
 }
 
 int
-FromBPF::configure(const String &conf, Router *router, ErrorHandler *errh)
+FromBPF::configure(const String &conf, ErrorHandler *errh)
 {
   if (_pcap) pcap_close(_pcap);
   _pcap = 0;
 
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_ifname,
 		  cpOptional,
 		  cpInteger, "be promiscuous", &_promisc,
@@ -48,7 +48,7 @@ FromBPF::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-FromBPF::initialize(Router *, ErrorHandler *errh)
+FromBPF::initialize(ErrorHandler *errh)
 {
   if (_pcap)
     return 0;

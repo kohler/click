@@ -35,12 +35,12 @@ Esp::clone() const
 }
 
 int
-Esp::configure(const String &conf, Router *router, ErrorHandler *errh)
+Esp::configure(const String &conf, ErrorHandler *errh)
 {
   unsigned int spi_uc;
   int blk_int;
 
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "Security Parameter Index", &spi_uc,
 		  cpInteger, "Block size", &blk_int,
 		  0) < 0)
@@ -51,7 +51,7 @@ Esp::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-Esp::initialize(Router *, ErrorHandler *errh)
+Esp::initialize(ErrorHandler *errh)
 {
   if (_spi < 0)
     return errh->error("not configured");

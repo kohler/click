@@ -19,9 +19,9 @@ public:
   void notify_inputs(int);
   void notify_outputs(int);
   
-  int configure(const String &conf, Router *router, ErrorHandler *errh);
-  int initialize(Router *, ErrorHandler *);
-  void uninitialize(Router *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
 
   static String read_msgs(Element* f, void *);
   void add_handlers(HandlerRegistry *);

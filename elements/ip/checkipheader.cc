@@ -45,7 +45,7 @@ CheckIPHeader::processing_vector(Vector<int> &in_v, int in_offset,
 }
 
 int
-CheckIPHeader::configure(const String &conf, Router *, ErrorHandler *errh)
+CheckIPHeader::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);

@@ -22,9 +22,9 @@ HashDemux::clone() const
 }
 
 int
-HashDemux::configure(const String &conf, Router *router, ErrorHandler *errh)
+HashDemux::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "byte offset", &_offset,
 		  cpUnsigned, "number of bytes", &_length,
 		  0) < 0)
@@ -35,7 +35,7 @@ HashDemux::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-HashDemux::initialize(Router *, ErrorHandler *errh)
+HashDemux::initialize(ErrorHandler *errh)
 {
   if (_offset < 0)
     return errh->error("not configured");

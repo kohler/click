@@ -24,10 +24,10 @@ Shaper::clone() const
 }
 
 int
-Shaper::configure(const String &conf, Router *r, ErrorHandler *errh)
+Shaper::configure(const String &conf, ErrorHandler *errh)
 {
   int rate;
-  if (cp_va_parse(conf, this, r, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "max allowable rate", &rate,
 		  0) < 0)
     return -1;
@@ -41,7 +41,7 @@ Shaper::configure(const String &conf, Router *r, ErrorHandler *errh)
 }
 
 int
-Shaper::initialize(Router *router, ErrorHandler *)
+Shaper::initialize(ErrorHandler *)
 {
   _rate.initialize();
   
@@ -49,7 +49,7 @@ Shaper::initialize(Router *router, ErrorHandler *)
   _puller1 = 0;
   
   WantsPacketUpstreamElementFilter ppff;
-  if (router->downstream_elements(this, 0, &ppff, _pullers) < 0)
+  if (router()->downstream_elements(this, 0, &ppff, _pullers) < 0)
     return -1;
   ppff.filter(_pullers);
 

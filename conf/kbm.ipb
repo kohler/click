@@ -1,18 +1,18 @@
-# Run this on darkstar.
-# Just knows how to forward between tsb and zeus.
-# I use it for a benchmark.
+// Run this on darkstar.
+// Just knows how to forward between tsb and zeus.
+// I use it for a benchmark.
 
-# darkstar 18.26.4.60  00:80:C8:4B:25:00
-# tsb      18.26.4.200 00:a0:c9:9c:fd:9c
-# zeus     18.26.4.97  00:00:c0:ca:68:ef
-# cone     18.26.4.24  121a0418
-# panam    18.26.4.38  121a0426
+// darkstar 18.26.4.60  00:80:C8:4B:25:00
+// tsb      18.26.4.200 00:a0:c9:9c:fd:9c
+// zeus     18.26.4.97  00:00:c0:ca:68:ef
+// cone     18.26.4.24  121a0418
+// panam    18.26.4.38  121a0426
 
-# 0. IP packets to darkstar.
-# 1. IP packets to net 18.26.4.
-# 2. ARP queries.
-# 3. ARP responses.
-# 4. Others.
+// 0. IP packets to darkstar.
+// 1. IP packets to net 18.26.4.
+// 2. ARP queries.
+// 3. ARP responses.
+// 4. Others.
 fi :: Classifier(12/0800 30/121a043c,
              12/0800 30/121a04,
              12/0806 20/0001,
@@ -21,30 +21,30 @@ fi :: Classifier(12/0800 30/121a043c,
 
 FromDevice(eth0) -> [0]fi;
 outq :: Queue(20) -> ToDevice(eth0);
-# outq :: ToDevice(eth0);
+// outq :: ToDevice(eth0);
 tol :: ToLinux;
 
-# Common code to send IP packets, including ARP.
-# IP dst annotation must already be set.
+// Common code to send IP packets, including ARP.
+// IP dst annotation must already be set.
 arpq :: ARPQuerier(18.26.4.60, 00:80:C8:4B:25:00);
 fi[3] -> t1::Tee -> [1]arpq;
 arpq[0] -> outq;
 t1[1] -> tol;
 
-# No ARP responder... Not proxying.
+// No ARP responder... Not proxying.
 fi[2] -> tol;
 
-# Route packets between tsb and zeus.
-# They attach darkstar's ethernet address to packets,
-# so the real work is in ARP, not IP routing.
+// Route packets between tsb and zeus.
+// They attach darkstar's ethernet address to packets,
+// so the real work is in ARP, not IP routing.
 fi[1] -> Strip(14)
       -> CheckIPHeader
       -> DecIPTTL
-#     -> SetIPChecksum
+//     -> SetIPChecksum
       -> GetIPAddress(16)
       -> [0]arpq;
 
-# Give everything else to Linux.
+// Give everything else to Linux.
 fi[0] -> tol;
 fi[4] -> tol;
 

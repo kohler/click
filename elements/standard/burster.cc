@@ -23,9 +23,9 @@ Burster::clone() const
 }
 
 int
-Burster::configure(const String &conf, Router *r, ErrorHandler *errh)
+Burster::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, r, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpInterval, "packet pulling interval", &_interval,
 		  cpOptional,
 		  cpUnsigned, "max packets per interval", &_npackets,
@@ -37,14 +37,14 @@ Burster::configure(const String &conf, Router *r, ErrorHandler *errh)
 }
 
 int
-Burster::initialize(Router *, ErrorHandler *)
+Burster::initialize(ErrorHandler *)
 {
   _timer.schedule_after_ms(_interval);
   return 0;
 }
 
 void
-Burster::uninitialize(Router *)
+Burster::uninitialize()
 {
   _timer.unschedule();
 }

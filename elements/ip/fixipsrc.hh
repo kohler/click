@@ -30,7 +30,7 @@ public:
   const char *class_name() const		{ return "FixIPSrc"; }
   Processing default_processing() const	{ return AGNOSTIC; }
   FixIPSrc *clone() const;
-  int configure(const String &conf, Router *router, ErrorHandler *errh);
+  int configure(const String &, ErrorHandler *);
 
   inline Packet *smaction(Packet *);
   void push(int, Packet *p);

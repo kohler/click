@@ -19,7 +19,7 @@ Counter::reset()
 }
 
 int
-Counter::initialize(Router *, ErrorHandler *)
+Counter::initialize(ErrorHandler *)
 {
   reset();
   return 0;
@@ -60,8 +60,7 @@ counter_read_rate_handler(Element *f, void *)
 }
 
 static int
-counter_reset_write_handler(Element *f, const String &, void *,
-                            Router *, ErrorHandler *)
+counter_reset_write_handler(Element *f, const String &, void *, ErrorHandler *)
 {
   Counter *c = (Counter *)f;
   c->reset();

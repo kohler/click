@@ -40,8 +40,8 @@ public:
   Processing default_processing() const	{ return PUSH; }
   ARPFaker *clone() const;
   
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   
   Packet *make_response(unsigned char tha[6], unsigned char tpa[4],
                         unsigned char sha[6], unsigned char spa[4]);

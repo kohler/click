@@ -49,7 +49,7 @@ class xokReader : public Element {
   Processing default_processing() const	{ return PUSH; }
   
   xokReader *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   int select_fd() { return fd; }
   void selected(int fd);

@@ -40,9 +40,9 @@ class ToDevice : public Element {
   Processing default_processing() const	{ return AGNOSTIC; }
   
   ToDevice *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
-  void uninitialize(Router *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
   void add_handlers(HandlerRegistry *);
   
   bool wants_packet_upstream() const;

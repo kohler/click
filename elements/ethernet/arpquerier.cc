@@ -37,7 +37,7 @@ ARPQuerier::backward_flow(int o) const
 }
 
 int
-ARPQuerier::configure(const String &conf, Router *, ErrorHandler *errh)
+ARPQuerier::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -47,8 +47,8 @@ ARPQuerier::configure(const String &conf, Router *, ErrorHandler *errh)
     return(-1);
   }
   
-  if (cp_ip_address(args[0], &_my_ip)
-      && cp_ethernet_address(args[1], &_my_en)) {
+  if (cp_ip_address(args[0], _my_ip)
+      && cp_ethernet_address(args[1], _my_en)) {
     return(0);
   } else {
     errh->error("ARPQuerier conf needs IP addr and ethernet addr");

@@ -16,14 +16,14 @@ Queue::Queue(int max)
 
 Queue::~Queue()
 {
-  if (_q) uninitialize(0);
+  if (_q) uninitialize();
 }
 
 int
-Queue::configure(const String &conf, Router *router, ErrorHandler *errh)
+Queue::configure(const String &conf, ErrorHandler *errh)
 {
   int new_max = _max;
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpInteger, "maximum queue length", &new_max,
 		  0) < 0)
@@ -35,13 +35,13 @@ Queue::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-Queue::initialize(Router *router, ErrorHandler *errh)
+Queue::initialize(ErrorHandler *errh)
 {
   _pullers.clear();
   _puller1 = 0;
   
   WantsPacketUpstreamElementFilter ppff;
-  if (router->downstream_elements(this, 0, &ppff, _pullers) < 0)
+  if (router()->downstream_elements(this, 0, &ppff, _pullers) < 0)
     return -1;
   ppff.filter(_pullers);
 
@@ -58,11 +58,11 @@ Queue::initialize(Router *router, ErrorHandler *errh)
 }
 
 int
-Queue::live_reconfigure(const String &conf, Router *router, ErrorHandler *errh)
+Queue::live_reconfigure(const String &conf, ErrorHandler *errh)
 {
   // change the maximum queue length at runtime
   int old_max = _max;
-  if (configure(conf, router, errh) < 0)
+  if (configure(conf, errh) < 0)
     return -1;
   if (_max == old_max)
     return 0;
@@ -91,7 +91,7 @@ Queue::live_reconfigure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 void
-Queue::uninitialize(Router *)
+Queue::uninitialize()
 {
   for (int i = _head; i != _tail; i = next_i(i))
     _q[i]->kill();

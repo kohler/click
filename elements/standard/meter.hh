@@ -44,8 +44,8 @@ class Meter : public Element { protected:
   int rate_scale() const			{ return _rate.scale(); }
   
   Meter *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   void add_handlers(HandlerRegistry *);
   
   void push(int port, Packet *);

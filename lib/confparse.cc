@@ -2,12 +2,14 @@
 # include <config.h>
 #endif
 #include "glue.hh"
-#include "router.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "ipaddress.hh"
-#include "etheraddress.hh"
 #include "straccum.hh"
+#ifndef CLICK_TOOL
+# include "router.hh"
+# include "ipaddress.hh"
+# include "etheraddress.hh"
+#endif
 #include <stdarg.h>
 
 bool
@@ -84,13 +86,24 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
 	if (commas) goto done;
 	break;
 	
-       case '#':
-	sa << conf.substring(start, i - start);
-	while (i < len && s[i] != '\n' && s[i] != '\r')
-	  i++;
-	if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
-	  i++;
-	start = i + 1;
+       case '/':
+	// skip comments
+	if (i < len - 1) {
+	  if (s[i+1] == '/') {
+	    sa << conf.substring(start, i - start);
+	    while (i < len && s[i] != '\n' && s[i] != '\r')
+	      i++;
+	    if (i < len - 1 && s[i] == '\r' && s[i+1] == '\n')
+	      i++;
+	    start = i + 1;
+	  } else if (s[i+1] == '*') {
+	    sa << conf.substring(start, i - start);
+	    i += 2;
+	    while (i < len && (s[i] != '*' || i == len - 1 || s[i+1] != '/'))
+	      i++;
+	    start = i + 2;
+	  }
+	}
 	break;
 	
        case '\\':
@@ -98,29 +111,10 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
 	  sa << conf.substring(start, i - start);
 	  switch (s[i+1]) {
 	    
-	   case ',':
-	   case '#':
-	   case '\\':
-	    sa << s[i+1];
-	    goto skip_2;
-	    
-	   case ' ':
-	   case '\t':
-	   case '\f':
-	   case '\v':
-	    // spaces we're not allowed to remove
-	    sa << s[i+1];
-	   keep_space_skip_2:
-	    keep_spaces = sa.length();
-	    if (first_keep_spaces < 0) first_keep_spaces = keep_spaces - 1;
-	    goto skip_2;
-	    
 	   case '\r':
 	    if (i < len - 2 && s[i+2] == '\n') i++;
-	    goto skip_2;
-	    
+	    /* FALLTHRU */
 	   case '\n':
-	   skip_2:
 	    i++;
 	    start = i + 1;
 	    break;
@@ -190,7 +184,13 @@ cp_argvec_2(const String &conf, Vector<String> &args, bool commas)
 	    break;
 	    
 	   default:
-	    start = i;
+	    // keep the next character; if it's a space, don't let it be eaten
+	    sa << s[i+1];
+	   keep_space_skip_2:
+	    keep_spaces = sa.length();
+	    if (first_keep_spaces < 0) first_keep_spaces = keep_spaces - 1;
+	    i++;
+	    start = i + 1;
 	    break;
 	    
 	  }
@@ -239,7 +239,9 @@ cp_unargvec(const Vector<String> &args)
     if (len && isspace(s[0])) sa << "\\\n";
     int start = 0, i;
     for (i = 0; i < len; i++)
-      if (s[i] == ',' || s[i] == '#' || s[i] == '\\') {
+      if (s[i] == ',' || s[i] == '\\' ||
+	  (s[i] == '/' && i < len - 1
+	   && (s[i+1] == '/' || s[i+1] == '*'))) {
 	sa << args[an].substring(start, i - start) << '\\';
 	start = i;
       } else if (s[i] < ' ' || s[i] > '\126') {
@@ -281,9 +283,17 @@ cp_argprefix(const String &conf, int count)
       if (count == 0) goto done; // break early so we don't include the `,'
       break;
       
-     case '#':
-      while (pos < len && s[pos] != '\n' && s[pos] != '\r')
-	pos++;
+     case '/':
+      if (pos < len - 1) {
+	if (s[pos+1] == '/')
+	  while (pos < len && s[pos] != '\n' && s[pos] != '\r')
+	    pos++;
+	else if (s[pos+1] == '*') {
+	  pos += 2;
+	  while (pos < len && (s[pos] != '*' || pos == len - 1 || s[pos+1] != '/'))
+	    pos++;
+	}
+      }
       break;
       
      case '\\':
@@ -507,11 +517,13 @@ cp_ip_address(String str, unsigned char *return_value, String *rest = 0)
     return i >= len;
 }
 
+#ifndef CLICK_TOOL
 bool
-cp_ip_address(const String &str, IPAddress *return_value, String *rest = 0)
+cp_ip_address(String str, IPAddress &address, String *rest = 0)
 {
-  return cp_ip_address(str, return_value->data(), rest);
+  return cp_ip_address(str, address.data(), rest);
 }
+#endif
 
 bool
 cp_ethernet_address(const String &str, unsigned char *return_value,
@@ -543,13 +555,15 @@ cp_ethernet_address(const String &str, unsigned char *return_value,
     return i >= len;
 }
 
+#ifndef CLICK_TOOL
 bool
-cp_ethernet_address(const String &str, EtherAddress *return_value,
-		    String *rest = 0)
+cp_ethernet_address(String str, EtherAddress &address, String *rest = 0)
 {
-  return cp_ethernet_address(str, return_value->data(), rest);
+  return cp_ip_address(str, address.data(), rest);
 }
+#endif
 
+#ifndef CLICK_TOOL
 Element *
 cp_element(const String &name, const String &id, Router *router,
 	   ErrorHandler *errh)
@@ -567,6 +581,7 @@ cp_element(const String &name, const String &id, Router *router,
   }
   return router->find(name, errh);
 }
+#endif
 
 #ifdef HAVE_IPSEC
 bool
@@ -612,7 +627,9 @@ struct Values {
     } real10;
     int real2;
     unsigned char address[8];
+#ifndef CLICK_TOOL
     Element *element;
+#endif
   } v;
   String v_string;
 };
@@ -694,11 +711,13 @@ store_value(int cp_command, Values &v)
     address_bytes = 8;
     goto address;
 
+#ifndef CLICK_TOOL
    case cpElement: {
      Element **elementstore = (Element **)v.store;
      *elementstore = v.v.element;
      break;
    }
+#endif
    
    address: {
      unsigned char *addrstore = (unsigned char *)v.store;
@@ -714,8 +733,11 @@ store_value(int cp_command, Values &v)
 }
 
 static int
-cp_va_parsev(Vector<String> &args, Element *element,
-	     Router *router, ErrorHandler *errh, va_list val)
+cp_va_parsev(Vector<String> &args,
+#ifndef CLICK_TOOL
+	     Element *element,
+#endif
+	     ErrorHandler *errh, va_list val)
 {
   int argno = 0;
   
@@ -869,7 +891,8 @@ cp_va_parsev(Vector<String> &args, Element *element,
        break;
      }
 #endif
-     
+
+#ifndef CLICK_TOOL
      case cpElement: {
        (void) va_arg(val, const char *);
        v.store = va_arg(val, Element **);
@@ -878,9 +901,10 @@ cp_va_parsev(Vector<String> &args, Element *element,
        if (!lookup_name)
 	 v.v.element = 0;
        else
-	 v.v.element = cp_element(lookup_name, element->id(), router, errh);
+	 v.v.element = cp_element(lookup_name, element->id(), element->router(), errh);
        break;
      }
+#endif
      
      default:
       assert(0 && "bad cp type");
@@ -913,7 +937,12 @@ cp_va_parsev(Vector<String> &args, Element *element,
     
     const char *whoops = (too_few_args ? "few" : "many");
     errh->error("too %s arguments to configuration `%s(%s)'", whoops,
-		String(element->class_name()).cc(), signature.cc());
+#ifndef CLICK_TOOL
+		String(element->class_name()).cc(),
+#else
+		"??",
+#endif
+		signature.cc());
   }
   
  done:
@@ -931,25 +960,39 @@ cp_va_parsev(Vector<String> &args, Element *element,
 }
 
 int
-cp_va_parse(const String &argument, Element *element,
-	    Router *router, ErrorHandler *errh, ...)
+cp_va_parse(const String &argument,
+#ifndef CLICK_TOOL
+	    Element *element,
+#endif
+	    ErrorHandler *errh, ...)
 {
   va_list val;
   va_start(val, errh);
   Vector<String> args;
   cp_argvec(argument, args);
-  int retval = cp_va_parsev(args, element, router, errh, val);
+#ifndef CLICK_TOOL
+  int retval = cp_va_parsev(args, element, errh, val);
+#else
+  int retval = cp_va_parsev(args, errh, val);
+#endif
   va_end(val);
   return retval;
 }
 
 int
-cp_va_parse(Vector<String> &args, Element *element,
-	    Router *router, ErrorHandler *errh, ...)
+cp_va_parse(Vector<String> &args,
+#ifndef CLICK_TOOL
+	    Element *element,
+#endif
+	    ErrorHandler *errh, ...)
 {
   va_list val;
   va_start(val, errh);
-  int retval = cp_va_parsev(args, element, router, errh, val);
+#ifndef CLICK_TOOL
+  int retval = cp_va_parsev(args, element, errh, val);
+#else
+  int retval = cp_va_parsev(args, errh, val);
+#endif
   va_end(val);
   return retval;
 }

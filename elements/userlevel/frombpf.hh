@@ -47,8 +47,8 @@ class FromBPF : public Element {
   Processing default_processing() const	{ return PUSH; }
   
   FromBPF *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   
   int select_fd() { return(_pcap?pcap_fileno(_pcap):-1); }
   void selected(int);

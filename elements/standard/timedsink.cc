@@ -19,22 +19,22 @@ TimedSink::clone() const
 }
 
 int
-TimedSink::configure(const String &conf, Router *router, ErrorHandler *errh)
+TimedSink::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpInterval, "packet pull interval", &_interval,
 		     0);
 }
 
 int
-TimedSink::initialize(Router *, ErrorHandler *)
+TimedSink::initialize(ErrorHandler *)
 {
   _timer.schedule_after_ms(_interval);
   return 0;
 }
 
 void
-TimedSink::uninitialize(Router *)
+TimedSink::uninitialize()
 {
   _timer.unschedule();
 }

@@ -1,0 +1,479 @@
+.\" -*- mode: nroff -*-
+.ds V 3.0b10
+.ds E " \-\- 
+.if t .ds E \(em
+.de OP
+.BR "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de OA
+.IR "\fB\\$1\& \|\fI\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de QO
+.RB ` "\\$1" "'\\$2"
+..
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+'.html <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+'.html <html><head><title>Xmahjongg Man Page</title></head>
+'.html <body bgcolor="#FFFFFF" text="#000000" link="#FF0000" vlink="#000080">
+'.html <h1>Xmahjongg Man Page</h1>
+.TH CLICK 5 "25 May 1998" "Version \*V"
+.SH NAME
+click \- Click router configuration language
+'
+.SH DESCRIPTION
+The Click language describes the configuration of a Click router. It has
+two main directives:
+.IR declarations
+declare new elements, and
+.IR connections
+connect those elements together.
+Click router configurations are like directed graphs of elements; in this
+interpretation, declarations specify the vertices of the graph and
+connections specify the edges.
+.PP
+A declaration looks like this:
+.RS
+.Sp
+.IR "name" " :: " "class" ( "config" )
+.Sp
+.RE
+This declares an element called
+.IR name
+that has element class
+.IR class
+and configuration arguments
+.IR config .
+If the configuration string is empty, the parentheses can be left off.
+Also, there can be two or more names in a comma-separated list, which has
+the same effect as multiple individual declarations.
+.RS
+.Sp
+.IR "name" " :: " "class"
+.br
+.IR "name1" ", " "name2" ", ..., " "nameN" " ::"
+.IR "class" ( "config" )
+.Sp
+.RE
+.PP
+A connection looks like this:
+.RS
+.Sp
+.IR "name1" " [" "port1" "] -> [" "port2" "] " "name2"
+.Sp
+.RE
+where the two
+.IR name s
+are the names of previously declared elements, and the two
+.IR port s
+are nonnegative integers. This says that
+.IR name1 "'s output port " port1
+should be connected to
+.IR name2 "'s input port " port2 .
+If the output element of one connection is the same as the input
+element of another connection, then the two connections can be strung
+together into a single statement:
+.RS
+.Sp
+.IR "n1" " [" "p1" "] -> [" "p2" "] " "n2"
+.br
+.IR "n2" " [" "p3" "] -> [" "p4" "] " "n3"
+.Sp
+.RE
+is the same as
+.RS
+.Sp
+.IR "n1" " [" "p1" "] -> [" "p2" "] " "n2"
+.RI "[" "p3" "] -> [" "p4" "] " "n3"
+.Sp
+.RE
+This can be extended to three or more connections. Furthermore, if an input
+or output port is 0, it can be omitted along with the brackets. These two
+lines are equivalent:
+.RS
+.Sp
+.IR "n1" " [0] -> [0] " "n2"
+.br
+.IR "n1" " -> " "n2"
+.Sp
+.RE
+.PP
+Single elements can be declared inside connections:
+.RS
+.Sp
+.RI "... -> [" "p1" "] " "name" " ::"
+.IR "class" ( "config" ") [" "p2" "] -> ..."
+.Sp
+.RE
+is equivalent to
+.RS
+.Sp
+.IR "name" " :: " "class" ( "config" )
+.br
+.RI "... -> [" "p1" "] " "name" " [" "p2" "] -> ..."
+.Sp
+.RE
+Comma-separated lists of element names are not valid inside connections.
+.PP
+
+'
+.SS Identifiers
+
+Real Mah Jongg is a social game that originated in China thousands of years
+ago. Four players, named after the four winds, take tiles from a wall in
+turn. The best tiles are made of ivory and wood; they click pleasantly when
+you knock them together. Computer Solitaire Mah Jongg 
+.RB ( xmahjongg
+being one of the sillier examples) is nothing like that but it's fun, or it
+must be, since there are like 300 shareware versions available for Windows.
+This is for X11 and it's free.
+'
+.SH "LEXICAL ISSUES"
+'
+.SH "BNF GRAMMAR"
+'
+.IR stmts " ::= " stmts " " stmt " | " empty
+.br
+.IR stmt " ::= " declaration
+.br
+.RI "    | " connection
+.br
+.RI "    | " pseudoportstmt
+.br
+.RI "    | " prefixstmt
+.br
+.RI "    | " compoundstmt
+.br
+.RI "    | "";"""
+.br
+.IR declaration " ::= " elements " ""::"" "
+.IR elementclass " " opt-config
+.br
+.IR connection " ::= " celement " " conntail
+.br
+.IR conntail " ::= " opt-port " ""->"" " opt-port " " celement " " opt-conntail
+.br
+.IR opt-conntail " ::= " conntail " | " empty
+.br
+.IR celement " ::= " element
+.br
+.RI "    | " element " ""::"" " elementclass " " opt-config
+.br
+.RI "    | " elementclass " " opt-config
+.br
+.IR opt-config " ::= " config " | " empty
+.br
+.IR config " ::= ""("" configstring "")"""
+.br
+.IR elements " ::= " element " | " elements " "","" " element
+.br
+.IR element " ::= identifier"
+.br
+.IR elementclass " ::= identifier"
+.br
+.IR opt-port " ::= " port " | " empty
+.br
+.IR port " ::= ""["" portnumber ""]"""
+.br
+.IR pseudoportstmt " ::= ""pseudoports"" " pptail
+.br
+.IR pptail " ::= identifier ""->"" identifier"
+.br
+.RI "    | " pptail " "","" identifier ""->"" identifier"
+.br
+.IR prefixstmt " ::= ""withprefix"" identifier ""{"" " stmts " ""}"""
+.br
+.IR compoundstmt " ::= ""elementclass"" identifier "
+.br
+.RI "        ""{"" " innerstmts " ""}"""
+.br
+.IR innerstmts " ::= " innerstmts " " innerstmt " | " empty
+.br
+.IR innerstmt " ::= " declaration
+.br
+.RI "    | " connection
+.br
+.RI "    | " pseudoportstmt
+.br
+.RI "    | " innerprefixstmt
+.br
+.RI "    | "";"""
+.br
+.IR innerprefixstmt " ::= ""withprefix"" identifier "
+.br
+.RI "        ""{"" " innerstmts " ""}"""
+.br
+.IR empty " ::= "
+'
+.SH HOW TO PLAY
+The object is to remove all Mah Jongg tiles from the playing field by
+taking one matching pair at a time. Tiles generally match if they have
+identical faces. There are some exceptions: a season tile (spring, summer,
+autumn, or winter) matches any other season, and a flower tile (bamboo,
+orchid, plum, and chrysathemum) matches any other flower. There are 144
+tiles in all\*Eone of each season and flower, and four copies of each of
+the following: 1 to 9 dots; 1 to 9 bamboo sticks; characters for 1 to 9;
+the four winds; and three dragons.
+.PP
+Unfortunately, only free
+tiles can be removed. A tile is
+.I free
+if its entire top face is unobstructed and either its left or its right
+edge is open. (When looking at the left and right edges, only tiles on the
+same level count.)
+.PP
+The rules are simple, but winning, it turns out, can be pretty hard. It's
+easy to make a move that causes a stalemate thirty or more moves later.
+What's worse, the
+.B \-\-any\-boards
+option lets
+.B xmahjongg
+create boards that cannot be solved at all!
+'
+.SH CONTROLS AND APPEARANCE
+To select a free tile, simply click it with the left mouse button and it
+will light up. Click it again to deselect it. If you try to select a
+non-free tile,
+.B xmahjongg
+will beep at you. To remove a matched pair, just select one of the pair and
+click on the other one. This is all you really need to know to play the
+game.
+.PP
+.B xmahjongg
+comes with several features that may dismay purists, but make the game much
+more pleasant to play. First is the 
+.IR "match count" , 
+an array of small gold coins in the upper left corner. Each coin represents
+one potential match on the board. (Note that if three mutually matching
+tiles are free, this counts as three matches, and if four are free, that's
+six matches.) This will let you know when the game is over and when it's
+getting close.
+.PP
+The five buttons along the top right have the following functions:
+.TP 5
+.BR New " (keystroke: " n ")"
+Start a new game.
+'
+.TP
+.BR Quit " (keystroke: " q ")"
+Quit
+.BR xmahjongg .
+'
+.TP
+.BR Undo " (keystroke: " u ")"
+Undoes your last move. You can undo multiple moves by clicking multiple
+times. If you change your mind about undoing a move, hold down Shift while
+you click the Undo button (or press
+.BR r )
+to redo it.
+'
+.TP
+.BR Hint " (keystroke: " h ")"
+Gives you a hint by flashing a set of free matching tiles. You can cycle
+through all existing matches by clicking multiple times. If you select a
+free tile and then click Hint,
+.B xmahjongg
+will flash any matching free tiles, or beep if there are none.
+'
+.TP
+.BR Clean " (keystroke: " c ")"
+Automatically cleans the board of any trivial matches. A match is
+.I trivial
+if it involves all the remaining tiles of a given type. (For example, if
+there are 2 green dragons left and they are both free, they form a trivial
+match; but if there are 4 left and only 3 are free, they don't.) Removing a
+trivial match is guaranteed not to cause a stalemate later.
+'
+.TP
+.BR Solve " (no button; keystroke: " s ")"
+This command is only available if you ran
+.B xmahjongg
+with the \-\-solvable\-boards option (see below). If you get stuck, press
+the
+.B s
+key. After the board is restored to its original state,
+.B xmahjongg
+will show you one way to solve it by removing tiles two at a time. Press
+.B s
+again to stop.
+'
+.PP
+Additionally, the
+.B Escape
+key deselects any selected tile.
+'
+.SH KEYBOARD TRAVERSAL
+XXX FIXME: haven't written this section yet. Try the arrow keys, the
+spacebar, and Return to get a feel for keyboard traversal. Also try
+combining hints (the h key) and the Return key: this gives the fastest
+playing speed.
+'
+.SH OPTIONS
+Long option names can be abbreviated. Many options have one-letter short
+forms as well; run `xmahjongg --help' to see them.
+
+.PD 0
+.TP 5
+.OA \-\-solvable\-boards
+'
+Only create solvable boards. This is the default.
+'
+.Sp
+.TP 5
+.OA \-\-any\-boards
+'
+Allow any legal board, some of which will be solvable and some of which
+won't.
+'
+.Sp
+.TP 5
+.OA \-l layout
+.TP 5
+.OA \-\-layout layout
+'
+Use the specified game layout.
+.B xmahjongg
+comes with many layouts. The normal layout is called
+.BR default ;
+to see the other ones' names, run
+.RB ` "xmahjongg \-\-list" '.
+You can use an arbitrary layout by giving its filename.
+'
+.Sp
+.TP 5
+.OA \-\-tileset tileset
+'
+Use the specified tileset to draw the Mah Jongg tiles.
+.B xmahjongg
+comes with several extra tilesets, particularly
+.B thick
+(with thick tiles to help you distinguish between levels) and
+.B small
+(perfect for smaller screens). There are others too; run
+.RB ` "xmahjongg \-\-list" '
+for a complete listing.
+'
+.Sp
+.TP 5
+.OA \-\-background image
+.TP 5
+.OA \-\-bg image
+'
+The background image is set to
+.IR image .
+Run
+.RB ` "xmahjongg \-\-list" '
+to see the backgrounds that come with
+.BR xmahjongg ,
+or use an arbitrary GIF as a background image by giving its filename.
+'
+.Sp
+.TP 5
+.OP \-\-list
+'
+Lists all the layouts, tilesets, and backgrounds that came with
+.BR xmahjongg ,
+then exits.
+'
+.Sp
+.TP 5
+.OA \-\-display display
+'
+Sets the X display to
+.IR display .
+'
+.Sp
+.TP 5
+.OA \-\-name name
+'
+Specifies the application name under which resources are found, rather than
+the default ``xmahjongg''. Since
+.B xmahjongg
+itself does not use the resource database, this is mostly useful for
+communication with your window manager.
+'
+.Sp
+.TP 5
+.OA \-\-geometry geometry
+'
+This standard X option specifies the preferred size and position for the
+.B xmahjongg
+window.
+'
+.Sp
+.TP 5
+.OP \-\-help
+'
+Prints usage information and exits.
+'
+.Sp
+.TP
+.OP \-\-version
+'
+Prints the version number and some quickie warranty information and exits.
+'
+.PD
+'
+.SH BUGS
+
+Please email suggestions, additions, patches and bugs to
+eddietwo@lcs.mit.edu. The following features have not made it into 3.0 as
+of yet:
+.IP * 2
+Score.
+.IP * 2
+Tournament mode.
+.IP * 2
+Board setup mode.
+.IP * 2
+Specific game numbers.
+'
+.SH HISTORY
+.B xmahjongg
+version 3 is a complete rewrite by Eddie Kohler <eddietwo@lcs.mit.edu> of
+.B xmahjongg
+versions 1 and 2 by Jeff S. Young <jsy@cray.com>.
+.PP
+The 
+.B default
+tileset was originally created in black and white by Mark A. Holm
+<tektronix!tessi!exc!markh>, who copyrighted them in 1988, giving
+permission to copy and distribute for non-profit purposes. The
+significantly altered color version that comes with
+.B xmahjongg
+was created by Eddie Kohler in 1993. The
+.B small
+tileset was found at http://www.mahjongg.com/, and is presumably by Berrie
+Bloem. The
+.B gnome
+and
+.B gnome2
+tilesets were created by Jonathan Buzzard and Max Watson.
+.PP
+Many of the layouts were reverse-engineered from ones that come with
+Kyodai Mahjongg, a fun Windows Mah Jongg game.
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/~eddietwo/
+.PP
+http://www.lcdf.org/~eddietwo/xmahjongg/
+.br
+The 
+.B xmahjongg
+home page.
+'

@@ -22,7 +22,7 @@ class Paint : public Element {
   const char *class_name() const		{ return "Paint"; }
   Processing default_processing() const	{ return AGNOSTIC; }
   Paint *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   inline void smaction(Packet *);
   void push(int, Packet *p);

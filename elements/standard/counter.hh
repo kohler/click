@@ -30,7 +30,7 @@ class Counter : public Element {
   void reset();
   
   Counter *clone() const			{ return new Counter; }
-  int initialize(Router *, ErrorHandler *);
+  int initialize(ErrorHandler *);
   void add_handlers(HandlerRegistry *);
   
   void push(int port, Packet *);

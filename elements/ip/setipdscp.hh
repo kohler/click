@@ -31,7 +31,7 @@ class SetIPDSCP : public Element {
   unsigned char dscp() const			{ return _dscp; }
   
   SetIPDSCP *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
   void add_handlers(HandlerRegistry *fcr);
 

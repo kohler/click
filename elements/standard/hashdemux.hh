@@ -32,8 +32,8 @@ class HashDemux : public UnlimitedElement {
   bool unlimited_outputs() const		{ return true; }
   
   HashDemux *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   
   void push(int port, Packet *);
   

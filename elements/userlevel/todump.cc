@@ -29,7 +29,7 @@ ToDump::ToDump(String filename)
 
 ToDump::~ToDump()
 {
-  uninitialize(0);
+  uninitialize();
 }
 
 ToDump*
@@ -39,15 +39,15 @@ ToDump::clone() const
 }
 
 int
-ToDump::configure(const String &conf, Router *router, ErrorHandler *errh)
+ToDump::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpString, "dump filename", &_filename,
 		     0);
 }
 
 int
-ToDump::initialize(Router *, ErrorHandler *errh)
+ToDump::initialize(ErrorHandler *errh)
 {
   assert(!_fp);  
   _fp = fopen(_filename, "wb");
@@ -70,7 +70,7 @@ ToDump::initialize(Router *, ErrorHandler *errh)
 }
 
 void
-ToDump::uninitialize(Router *)
+ToDump::uninitialize()
 {
   if (_fp)
     fclose(_fp);

@@ -15,14 +15,14 @@ ErrorElement::clone() const
 }
 
 int
-ErrorElement::configure(const String &, Router *, ErrorHandler *)
+ErrorElement::configure(const String &, ErrorHandler *)
 {
   /* ignore any configuration arguments */
   return 0;
 }
 
 int
-ErrorElement::initialize(Router *, ErrorHandler *)
+ErrorElement::initialize(ErrorHandler *)
 {
   /* always fail */
   return -1;

@@ -37,7 +37,7 @@ FromDevice::FromDevice(const String &devname)
 FromDevice::~FromDevice()
 {
   if (_registered) click_chatter("FromDevice still registered");
-  uninitialize(0);
+  uninitialize();
 }
 
 void
@@ -67,9 +67,9 @@ FromDevice::clone() const
 }
 
 int
-FromDevice::configure(const String &conf, Router *router, ErrorHandler *errh)
+FromDevice::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpString, "interface name", &_devname,
 		     cpEnd);
 }
@@ -112,7 +112,7 @@ update_ifindex_map(int ifindex, ErrorHandler *errh)
  * to register to grab incoming packets.
  */
 int
-FromDevice::initialize(Router *, ErrorHandler *errh)
+FromDevice::initialize(ErrorHandler *errh)
 {
   _dev = dev_get(_devname.cc());
   if (!_dev)
@@ -144,7 +144,7 @@ FromDevice::initialize(Router *, ErrorHandler *errh)
 }
 
 void
-FromDevice::uninitialize(Router *)
+FromDevice::uninitialize()
 {
   if (_registered) {
     registered_readers--;

@@ -17,15 +17,15 @@ TimedElement::~TimedElement()
 }
 
 int
-TimedElement::configure(const String &conf, Router *router, ErrorHandler *errh)
+TimedElement::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpInterval, "time interval in seconds", &_interval_ms,
 		     0);
 }
 
 void
-TimedElement::uninitialize(Router *)
+TimedElement::uninitialize()
 {
   timer_unschedule();
 }

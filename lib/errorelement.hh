@@ -15,8 +15,8 @@ class ErrorElement : public UnlimitedElement {
   bool unlimited_outputs() const		{ return true; }
   
   ErrorElement *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   void add_handlers(HandlerRegistry *);
   
   Bitvector forward_flow(int) const;

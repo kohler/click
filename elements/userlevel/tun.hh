@@ -32,8 +32,8 @@ class Tun : public Element {
   
   const char *class_name() const		{ return "Tun"; }
   Processing default_processing() const	{ return PULL_TO_PUSH; }
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   Tun *clone() const;
 
   int select_fd() { return(_fd); }

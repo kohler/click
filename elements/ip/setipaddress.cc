@@ -27,9 +27,9 @@ SetIPAddress::clone() const
 }
 
 int
-SetIPAddress::configure(const String &conf, Router *router, ErrorHandler *errh)
+SetIPAddress::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "byte offset of IP address", &_offset,
 		     0);
 }

@@ -36,8 +36,8 @@ class FromDump : public Element {
   Processing default_processing() const	{ return PUSH; }
   FromDump *clone() const;
   
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
 
  private:
   pcap_t* _pcap;

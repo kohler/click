@@ -99,12 +99,11 @@ RandomBitErrors::set_bit_error(unsigned bit_error)
 }
 
 int
-RandomBitErrors::configure(const String &conf, Router *router,
-			   ErrorHandler *errh)
+RandomBitErrors::configure(const String &conf, ErrorHandler *errh)
 {
   unsigned bit_error;
   String kind = (_kind < 0 ? "flip" : "");
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpNonnegReal2, "bit error probability", 16, &bit_error,
 		  cpOptional,
 		  cpString, "action (set/clear/flip)", &kind,
@@ -132,7 +131,7 @@ RandomBitErrors::configure(const String &conf, Router *router,
 }
 
 int
-RandomBitErrors::initialize(Router *, ErrorHandler *errh)
+RandomBitErrors::initialize(ErrorHandler *errh)
 {
   if (_kind < 0)
     return errh->error("not configured");

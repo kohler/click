@@ -6,8 +6,8 @@
 #include "string.hh"
 #ifndef CLICK_TOOL
 # include "element.hh"
-# include "confparse.hh"
 #endif
+#include "confparse.hh"
 
 void
 ErrorHandler::message(const String &message)
@@ -294,7 +294,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
        
        unsigned long num;
        if (width_flag == 'q') {
-#ifndef CLICK_TOOL
+#if 1
 	 unsigned long long qnum = va_arg(val, unsigned long long);
 	 if ((flags & SIGNED) && (long long)qnum < 0)
 	   qnum = -(long long)qnum, flags |= NEGATIVE;

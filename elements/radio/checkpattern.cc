@@ -17,9 +17,9 @@ CheckPattern::~CheckPattern()
 }
 
 int
-CheckPattern::configure(const String &conf, Router *router, ErrorHandler *errh)
+CheckPattern::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "packet length", &_len,
 		     0);
 }

@@ -24,9 +24,9 @@ class Spew : public Element {
   Processing default_processing() const	{ return PUSH; }
   
   Spew *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
-  void uninitialize(Router *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
   
   void run_scheduled();
   void spew_some();

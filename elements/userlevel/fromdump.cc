@@ -31,17 +31,17 @@ FromDump::clone() const
 }
 
 int
-FromDump::configure(const String &conf, Router *router, ErrorHandler *errh)
+FromDump::configure(const String &conf, ErrorHandler *errh)
 {
   if (_pcap) pcap_close(_pcap);
   _pcap = 0;
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpString, "dump file name", &_filename,
 		     0);
 }
 
 int
-FromDump::initialize(Router *, ErrorHandler *errh)
+FromDump::initialize(ErrorHandler *errh)
 {
   if (_pcap)
     return 0;

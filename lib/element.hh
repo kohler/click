@@ -80,18 +80,18 @@ class Element : public ElementLink { public:
   
   // CLONING AND CONFIGURATION
   virtual Element *clone() const = 0;
-  virtual int configure(const String &, Router *, ErrorHandler *);
-  virtual int initialize(Router *, ErrorHandler *);
-  virtual void uninitialize(Router *);
+  virtual int configure(const String &, ErrorHandler *);
+  virtual int initialize(ErrorHandler *);
+  virtual void uninitialize();
   
   // LIVE CONFIGURATION
   virtual bool can_live_reconfigure() const;
-  virtual int live_reconfigure(const String &, Router *, ErrorHandler *);
+  virtual int live_reconfigure(const String &, ErrorHandler *);
   
   // HANDLERS
   virtual void add_handlers(HandlerRegistry *);
   static int reconfigure_write_handler(Element *, const String &, void *,
-				       Router *, ErrorHandler *);
+				       ErrorHandler *);
   
   // RUNNING user level input elements.
   virtual int select_fd()		{ return(-1); }
@@ -173,8 +173,7 @@ class Element : public ElementLink { public:
 
 //typedef Element Element;
 typedef String (*ReadHandler)(Element *, void *);
-typedef int (*WriteHandler)(Element *, const String &, void *,
-			    Router *, ErrorHandler *);
+typedef int (*WriteHandler)(Element *, const String &, void *, ErrorHandler *);
 
 class Element::HandlerRegistry { public:
   

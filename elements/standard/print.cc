@@ -30,10 +30,10 @@ Print::clone() const
 }
 
 int
-Print::configure(const String &conf, Router* router, ErrorHandler* errh)
+Print::configure(const String &conf, ErrorHandler* errh)
 {
   _bytes = 24;
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpString, "Print Label", &_label,
 		  cpOptional,
 		  cpInteger, "Bytes to print", &_bytes,

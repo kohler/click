@@ -37,8 +37,8 @@ class RIPSend : public TimedElement {
   Processing default_processing() const	{ return PUSH; }
 
   RIPSend *clone() const { return new RIPSend(); }
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   
   void run_scheduled();
 };

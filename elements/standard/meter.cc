@@ -24,7 +24,7 @@ Meter::clone() const
 }
 
 int
-Meter::configure(const String &conf, Router *, ErrorHandler *errh)
+Meter::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -66,7 +66,7 @@ Meter::configure(const String &conf, Router *, ErrorHandler *errh)
 }
 
 int
-Meter::initialize(Router *, ErrorHandler *)
+Meter::initialize(ErrorHandler *)
 {
   _rate.initialize();
   return 0;

@@ -19,8 +19,8 @@ class TimedElement : public Element {
   void timer_unschedule()	{ _timer.unschedule(); }
   void set_interval_ms(int ms)  { _interval_ms = ms; }
   
-  int configure(const String &, Router *, ErrorHandler *);
-  void uninitialize(Router *);
+  int configure(const String &, ErrorHandler *);
+  void uninitialize();
   
 };
 

@@ -35,7 +35,7 @@ Suppressor::clone() const
 }
 
 int
-Suppressor::initialize(Router *, ErrorHandler *)
+Suppressor::initialize(ErrorHandler *)
 {
   allow_all();
   return 0;

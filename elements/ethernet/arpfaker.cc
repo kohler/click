@@ -25,7 +25,7 @@ ARPFaker::clone() const
 }
 
 int
-ARPFaker::configure(const String &conf, Router *, ErrorHandler *errh)
+ARPFaker::configure(const String &conf, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -34,10 +34,10 @@ ARPFaker::configure(const String &conf, Router *, ErrorHandler *errh)
     return(-1);
   }
   
-  if (cp_ip_address(args[0], &_ip1) &&
-      cp_ethernet_address(args[1], &_eth1) &&
-      cp_ip_address(args[2], &_ip2) &&
-      cp_ethernet_address(args[3], &_eth2)){
+  if (cp_ip_address(args[0], _ip1) &&
+      cp_ethernet_address(args[1], _eth1) &&
+      cp_ip_address(args[2], _ip2) &&
+      cp_ethernet_address(args[3], _eth2)){
     /* yow */
   } else {
     errh->error("ARPFaker configuration expected ip and ether addr");
@@ -48,7 +48,7 @@ ARPFaker::configure(const String &conf, Router *, ErrorHandler *errh)
 }
 
 int
-ARPFaker::initialize(Router *, ErrorHandler *)
+ARPFaker::initialize(ErrorHandler *)
 {
   timer_schedule_after_ms(1 * 1000); // Send an ARP reply periodically.
   return 0;

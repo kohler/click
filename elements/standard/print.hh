@@ -28,7 +28,7 @@ class Print : public Element {
   Processing default_processing() const	{ return AGNOSTIC; }
   
   Print *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

@@ -47,7 +47,7 @@ Router::~Router()
 {
   if (_initialized)
     for (int i = 0; i < _elements.size(); i++)
-      _elements[i]->uninitialize(this);
+      _elements[i]->uninitialize();
   for (int i = 0; i < _elements.size(); i++)
     _elements[i]->unuse();
 #ifdef __KERNEL__
@@ -678,7 +678,7 @@ Router::initialize(ErrorHandler *errh)
     ContextErrorHandler cerrh
       (errh, context_message(i, "While configuring"));
     int before = cerrh.nerrors();
-    if (_elements[i]->configure(_configurations[i], this, &cerrh) < 0) {
+    if (_elements[i]->configure(_configurations[i], &cerrh) < 0) {
       element_ok[i] = all_ok = false;
       if (cerrh.nerrors() == before)
 	cerrh.error("unspecified error");
@@ -698,7 +698,7 @@ Router::initialize(ErrorHandler *errh)
       ContextErrorHandler cerrh
 	(errh, context_message(i, "While initializing"));
       int before = cerrh.nerrors();
-      if (_elements[i]->initialize(this, &cerrh) < 0) {
+      if (_elements[i]->initialize(&cerrh) < 0) {
 	element_ok[i] = all_ok = false;
 	// don't report `unspecified error' for ErrorElements: keep error
 	// messages clean
@@ -713,7 +713,7 @@ Router::initialize(ErrorHandler *errh)
     errh->error("router could not be initialized");
     for (int i = 0; i < _elements.size(); i++)
       if (element_ok[i])
-	_elements[i]->uninitialize(this);
+	_elements[i]->uninitialize();
     return -1;
   } else {
     _initialized = true;
@@ -734,7 +734,7 @@ Router::live_reconfigure(int elementno, const String &conf, ErrorHandler *errh)
   if (!f->can_live_reconfigure())
     return errh->error("cannot reconfigure `%s' live", f->declaration().cc());
   _configurations[elementno] = conf;
-  return f->live_reconfigure(conf, this, errh);
+  return f->live_reconfigure(conf, errh);
 }
 
 

@@ -36,10 +36,10 @@ RED::set_C1_and_C2()
 }
 
 int
-RED::configure(const String &conf, Router *router, ErrorHandler *errh)
+RED::configure(const String &conf, ErrorHandler *errh)
 {
   int min_thresh, max_thresh;
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "min_thresh queue length", &min_thresh,
 		  cpUnsigned, "max_thresh queue length", &max_thresh,
 		  cpNonnegReal2, "max_p drop probability", 16, &_max_p,
@@ -65,7 +65,7 @@ RED::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-RED::initialize(Router *r, ErrorHandler *errh)
+RED::initialize(ErrorHandler *errh)
 {
   if (_max_p < 0)
     return errh->error("not configured");
@@ -77,9 +77,9 @@ RED::initialize(Router *r, ErrorHandler *errh)
   IsaElementFilter filter("Queue");
   int ok;
   if (output_is_push(0))
-    ok = r->downstream_elements(this, 0, &filter, _queues);
+    ok = router()->downstream_elements(this, 0, &filter, _queues);
   else
-    ok = r->upstream_elements(this, 0, &filter, _queues);
+    ok = router()->upstream_elements(this, 0, &filter, _queues);
   if (ok < 0)
     return errh->error("downstream_elements failure");
   filter.filter(_queues);
@@ -208,12 +208,13 @@ String
 RED::read_stats(Element *f, void *)
 {
   RED *r = (RED *)f;
+  const EWMA &ewma = r->average_queue_size();
   return
     String(r->_min_thresh>>QUEUE_SCALE) + " min_thresh\n" +
     String(r->_max_thresh>>QUEUE_SCALE) + " max_thresh\n" +
     String(r->_max_p) + " max_p\n" +
     String(r->queue_size()) + " current queue\n" +
-    String(r->average_queue_size()) + " avg queue\n" +
+    cp_unparse_real(ewma.average(), ewma.scale()) + " avg queue\n" +
     String(r->drops()) + " drops\n"
 #if CLICK_STATS >= 1
     + String(r->output(0).packet_count()) + " packets\n"

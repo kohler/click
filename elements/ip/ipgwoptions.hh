@@ -41,7 +41,7 @@ class IPGWOptions : public Element {
   ~IPGWOptions();
   
   const char *class_name() const		{ return "IPGWOptions"; }
-  int configure(const String &conf, Router *router, ErrorHandler *errh);
+  int configure(const String &, ErrorHandler *);
   void notify_outputs(int);
   void processing_vector(Vector<int> &, int, Vector<int> &, int) const;
   IPGWOptions *clone() const;

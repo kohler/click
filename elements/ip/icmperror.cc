@@ -21,9 +21,9 @@ ICMPError::~ICMPError()
 }
 
 int
-ICMPError::configure(const String &conf, Router *router, ErrorHandler *errh)
+ICMPError::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
                   cpIPAddress, "Source IP address", &_src_ip,
                   cpInteger, "ICMP Type", &_type,
                   cpInteger, "ICMP Code", &_code,
@@ -43,7 +43,7 @@ ICMPError::is_error_type(int type)
 }
 
 int
-ICMPError::initialize(Router *, ErrorHandler *errh)
+ICMPError::initialize(ErrorHandler *errh)
 {
   if (_type < 0 || _code < 0 || _src_ip.s_addr() == 0)
     return errh->error("not configured");

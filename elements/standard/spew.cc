@@ -24,10 +24,10 @@ Spew::clone() const
 }
 
 int
-Spew::configure(const String &conf, Router *router, ErrorHandler *errh)
+Spew::configure(const String &conf, ErrorHandler *errh)
 {
   _quit = true;
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "number of packets to spew", &_n,
 		     cpOptional,
 		     cpBool, "quit after spewing", &_quit,
@@ -35,7 +35,7 @@ Spew::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-Spew::initialize(Router *, ErrorHandler *errh)
+Spew::initialize(ErrorHandler *errh)
 {
   _done = 0;
   if (_n <= 0)
@@ -45,7 +45,7 @@ Spew::initialize(Router *, ErrorHandler *errh)
 }
 
 void
-Spew::uninitialize(Router *)
+Spew::uninitialize()
 {
   _timer.unschedule();
 }

@@ -66,7 +66,7 @@ static int x8to10[] = {
 static int x10to8[1024];
 
 int
-B8B10::initialize(Router *, ErrorHandler *errh)
+B8B10::initialize(ErrorHandler *errh)
 {
   int i;
 
@@ -85,9 +85,9 @@ B8B10::initialize(Router *, ErrorHandler *errh)
 }
 
 int
-B8B10::configure(const String &conf, Router *router, ErrorHandler *errh)
+B8B10::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpInteger, "encode flag", &_flag,
 		  cpEnd) < 0)
     return -1;

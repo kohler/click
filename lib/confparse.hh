@@ -2,28 +2,38 @@
 #define CONFPARSE_HH
 #include "string.hh"
 #include "vector.hh"
-class IPAddress;
-class EtherAddress;
 class ErrorHandler;
+#ifndef CLICK_TOOL
 class Element;
-class Router;
+# define CP_VA_PARSE_ARGS_REST Element *, ErrorHandler *, ...
+#else
+# define CP_VA_PARSE_ARGS_REST ErrorHandler *, ...
+#endif
 
 bool cp_eat_space(String &);
 bool cp_is_space(const String &);
 
+// argument lists <-> lists of arguments
 String cp_arg(const String &);
 void cp_argvec(const String &, Vector<String> &);
 String cp_unargvec(const Vector<String> &);
 String cp_argprefix(const String &, int);
 
+// numbers
 bool cp_bool(String, bool &, String *rest = 0);
 bool cp_integer(String, int &, String *rest = 0);
 bool cp_real(const String &, int frac_digits, int &, int &, String *rest = 0);
 int cp_real2(const String &, int frac_bits, int &, String *rest = 0);
+
+// network addresses
 bool cp_ip_address(String, unsigned char *, String *rest = 0);
-bool cp_ip_address(const String &, IPAddress *, String *rest = 0);
 bool cp_ethernet_address(const String &, unsigned char *, String *rest = 0);
-bool cp_ethernet_address(const String &, EtherAddress *, String *rest = 0);
+#ifndef CLICK_TOOL
+class IPAddress; class EtherAddress;
+bool cp_ip_address(String, IPAddress &, String *rest = 0);
+bool cp_ethernet_address(String, EtherAddress &, String *rest = 0);
+#endif
+
 #ifdef HAVE_IPSEC
 bool cp_des_cblock(const String &, unsigned char *, String *rest = 0);
 #endif
@@ -49,8 +59,8 @@ enum CpVaParseCmd {
   cpDesCblock,  // unsigned char value[8]
 };
 
-int cp_va_parse(const String &arg, Element *, Router*, ErrorHandler*, ...);
-int cp_va_parse(Vector<String> &args, Element *, Router*, ErrorHandler*, ...);
+int cp_va_parse(const String &arg, CP_VA_PARSE_ARGS_REST);
+int cp_va_parse(Vector<String> &args, CP_VA_PARSE_ARGS_REST);
 // ... is: cpEnd				stop
 //     or: cpOptional				remaining args are optional
 //     or: CpVaParseCmd type_id,		actual argument
@@ -70,4 +80,5 @@ cp_argvec(const String &s, Vector<String> &vec)
   cp_argvec_2(s, vec, true);
 }
 
+#undef CP_VA_ARGS_REST
 #endif

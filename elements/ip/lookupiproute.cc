@@ -23,7 +23,7 @@ LookupIPRoute::clone() const
 }
 
 int
-LookupIPRoute::configure(const String &conf, Router *, ErrorHandler *errh)
+LookupIPRoute::configure(const String &conf, ErrorHandler *errh)
 {
   int maxout = 0, i;
   Vector<String> args;
@@ -57,7 +57,7 @@ LookupIPRoute::configure(const String &conf, Router *, ErrorHandler *errh)
 }
 
 int
-LookupIPRoute::initialize(Router *, ErrorHandler *)
+LookupIPRoute::initialize(ErrorHandler *)
 {
   _last_addr = IPAddress();
   return 0;

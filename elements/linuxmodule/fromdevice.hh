@@ -38,9 +38,9 @@ class FromDevice : public Element {
   Processing default_processing() const	{ return PUSH; }
   
   FromDevice *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
-  void uninitialize(Router *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
   
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);

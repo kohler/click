@@ -1,16 +1,16 @@
-#
-# Virtual Private Networking using IPSec
-#
+//
+// Virtual Private Networking using IPSec
+//
 
-# zwolle's side
+// zwolle's side
 
-# 18.26.4.0 -> zeus -> IPSec Tunnel -> redlab -> 18.26.4.200
-#
-# IPSec Security Policy Database
-#
-# 0. Packets destined for tsb
-# 1. Tunnel packets from redlab to us
-# 2. ARP packets
+// 18.26.4.0 -> zeus -> IPSec Tunnel -> redlab -> 18.26.4.200
+//
+// IPSec Security Policy Database
+//
+// 0. Packets destined for tsb
+// 1. Tunnel packets from redlab to us
+// 2. ARP packets
 
 spd :: Classifier(12/0800 30/121a04c8,
               12/0800 30/121a0461 26/121a040a,
@@ -20,28 +20,28 @@ spd :: Classifier(12/0800 30/121a04c8,
 FromBPF(de0) -> [0]spd;
 outq :: Queue(20) -> ToBPF(de0);
 
-#
-# IPSec Incoming SAD (Security Association Database)
-# 
-#
-# 0. ESP Packets to zeus with SPI 0x00000001
-#
+//
+// IPSec Incoming SAD (Security Association Database)
+// 
+//
+// 0. ESP Packets to zeus with SPI 0x00000001
+//
 
 isad :: Classifier(9/32 16/121a0461 20/00000001,
                9/32,
 	       -);
-#
-# IPSec Outgoing SAD (Security Association Database)
-# 
-#
-# 0. Any packets to 18.26.4.200
-#
+//
+// IPSec Outgoing SAD (Security Association Database)
+// 
+//
+// 0. Any packets to 18.26.4.200
+//
 
 osad :: Classifier(16/121a04c8,
 	      -);
 
-# Common code to send IP packets, including ARP.
-# IP dst annotation must already be set.
+// Common code to send IP packets, including ARP.
+// IP dst annotation must already be set.
 arpq :: ARPQuerier(18.26.4.97, 00:00:c0:ca:68:ef);
 spd[2] -> [1]arpq;
 arpq[0] -> outq;

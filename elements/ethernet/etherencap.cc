@@ -23,9 +23,9 @@ EtherEncap::clone() const
 }
 
 int
-EtherEncap::configure(const String &conf, Router *router, ErrorHandler *errh)
+EtherEncap::configure(const String &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "Ethernet encapsulation type", &_type,
 		  cpEthernetAddress, "source Ethernet address", &_src,
 		  cpEthernetAddress, "destination Ethernet address", &_dst,
@@ -37,7 +37,7 @@ EtherEncap::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-EtherEncap::initialize(Router *, ErrorHandler *errh)
+EtherEncap::initialize(ErrorHandler *errh)
 {
   if (_type < 0)
     return errh->error("not configured");

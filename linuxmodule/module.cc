@@ -246,8 +246,7 @@ read_classes(Element *, void *)
 }
 
 static int
-write_driver(Element *, const String &conf_in, void *,
-	     Router *router, ErrorHandler *errh)
+write_driver(Element *, const String &conf_in, void *, ErrorHandler *errh)
 {
   int num;
   String conf = cp_arg(conf_in);
@@ -257,12 +256,12 @@ write_driver(Element *, const String &conf_in, void *,
     errh->error("write an integer to /proc/click/driver");
     return -EINVAL;
   }
-  if (!router) {
+  if (!current_router) {
     errh->error("no router to drive");
     return -EINVAL;
   }
   for (int i = 0; i < num; i++)
-    if (!router->driver())
+    if (!current_router->driver())
       break;
   return 0;
 }

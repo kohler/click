@@ -47,6 +47,7 @@ class LexerT { protected:
   
   bool get_data();
   unsigned skip_line(unsigned);
+  unsigned skip_slash_star(unsigned);
   Lexeme next_lexeme();
   static String lexeme_string(int);
   

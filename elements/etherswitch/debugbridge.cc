@@ -28,7 +28,7 @@ DebugBridge::clone() const
 }
 
 int
-DebugBridge::configure(const String &conf, Router *, ErrorHandler *)
+DebugBridge::configure(const String &conf, ErrorHandler *)
 {
   _label = conf;
   return 0;

@@ -25,7 +25,7 @@ class SendPattern : public Element {
   Processing default_processing() const	{ return PULL; }
   
   SendPattern *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
 
   Packet *pull(int);
   

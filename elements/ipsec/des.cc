@@ -35,11 +35,11 @@ Des::clone() const
 }
 
 int
-Des::configure(const String &conf, Router *router, ErrorHandler *errh)
+Des::configure(const String &conf, ErrorHandler *errh)
 {
   int dec_int;
 
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpInteger, "Encrypt/Decrypt (0/1)", &dec_int,
 		  cpDesCblock, "8 byte IV", _iv,
 		  cpDesCblock, "64-bit DES key", _key,
@@ -54,7 +54,7 @@ Des::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-Des::initialize(Router *, ErrorHandler *errh)
+Des::initialize(ErrorHandler *errh)
 {
   if (_decrypt < 0)
     return errh->error("not configured");

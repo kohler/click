@@ -16,7 +16,7 @@ public:
   Bitvector backward_flow(int) const;
   
   Suppressor* clone() const;
-  int initialize(Router *, ErrorHandler *);
+  int initialize(ErrorHandler *);
   
   void push(int port, Packet *p);
   Packet *pull(int port);

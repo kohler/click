@@ -44,6 +44,7 @@ class RouterT : public ElementClassT {
   ElementT &element(int i)		{ return _elements[i]; }
   String fname(int findex) const;
   int ftype(int findex) const;
+  String ftype_name(int fi) const;
   const String &fconfiguration(int i) const;
   String &fconfiguration(int i)		{ return _elements[i].configuration; }
   int fflags(int i) const		{ return _elements[i].flags; }
@@ -106,6 +107,15 @@ RouterT::ftype(int fidx) const
     return _elements[fidx].type;
   else
     return -1;
+}
+
+inline String
+RouterT::ftype_name(int fidx) const
+{
+  if (fidx >= 0 && fidx < _elements.size())
+    return type_name(_elements[fidx].type);
+  else
+    return String();
 }
 
 inline const String &

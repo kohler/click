@@ -22,8 +22,8 @@ public:
   Processing default_processing() const	{ return AGNOSTIC; }
   
   DeEsp *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

@@ -20,9 +20,9 @@ TimedSource::clone() const
 }
 
 int
-TimedSource::configure(const String &conf, Router *router, ErrorHandler *errh)
+TimedSource::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpInterval, "packet generation interval", &_interval,
 		     cpOptional,
 		     cpString, "packet data", &_data,
@@ -30,14 +30,14 @@ TimedSource::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-TimedSource::initialize(Router *, ErrorHandler *)
+TimedSource::initialize(ErrorHandler *)
 {
   _timer.schedule_after_ms(_interval);
   return 0;
 }
 
 void
-TimedSource::uninitialize(Router *)
+TimedSource::uninitialize()
 {
   _timer.unschedule();
 }

@@ -35,9 +35,9 @@ class Burster : public Element {
   Processing default_processing() const       { return PULL_TO_PUSH; }
   
   Burster *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
-  void uninitialize(Router *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
 
   bool wants_packet_upstream() const;
   void run_scheduled();

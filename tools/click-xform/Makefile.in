@@ -28,7 +28,7 @@ VERSION = @VERSION@
 
 
 OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
-	elementt.o routert.o lexert.o confparset.o click-xform.o
+	elementt.o routert.o lexert.o confparse.o click-xform.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL
 CFLAGS = @CFLAGS@

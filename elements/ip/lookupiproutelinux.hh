@@ -40,8 +40,8 @@ public:
   const char *class_name() const	{ return "LookupIPRouteLinux"; }
   Processing default_processing() const	{ return AGNOSTIC; }
   LookupIPRouteLinux *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
-  int initialize(Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
 
   void push(int, Packet *);
 

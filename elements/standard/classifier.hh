@@ -104,7 +104,7 @@ class Classifier : public Element {
   Processing default_processing() const	{ return PUSH; }
   
   Classifier *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   void add_handlers(HandlerRegistry *);
   
   void push(int port, Packet *);

@@ -24,10 +24,10 @@ SetIPDSCP::clone() const
 }
 
 int
-SetIPDSCP::configure(const String &conf, Router *router, ErrorHandler *errh)
+SetIPDSCP::configure(const String &conf, ErrorHandler *errh)
 {
   unsigned dscp_val;
-  if (cp_va_parse(conf, this, router, errh,
+  if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "diffserv code point", &dscp_val,
 		  cpOptional,
 		  cpUnsigned, "IP header offset", &_ip_offset,

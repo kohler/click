@@ -24,9 +24,9 @@ Paint::clone() const
 }
 
 int
-Paint::configure(const String &conf, Router *router, ErrorHandler *errh)
+Paint::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpUnsigned, "color", &_color,
 		     0);
 }

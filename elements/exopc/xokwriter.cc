@@ -45,10 +45,10 @@ xokWriter::clone() const
 
 
 int
-xokWriter::configure(const String &conf, Router *router, ErrorHandler *errh)
+xokWriter::configure(const String &conf, ErrorHandler *errh)
 {
   String _ifname;
-  int r = cp_va_parse(conf, this, router, errh, cpString, 
+  int r = cp_va_parse(conf, this, errh, cpString, 
 	              "interface name", &_ifname, 0);
   if (r < 0) return r;
 

@@ -41,7 +41,7 @@ public:
   const char *class_name() const		{ return "ARPResponder"; }
   Processing default_processing() const	{ return AGNOSTIC; }
   ARPResponder *clone() const;
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
 
   Packet *simple_action(Packet *);
   

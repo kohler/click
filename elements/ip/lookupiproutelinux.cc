@@ -26,7 +26,7 @@ LookupIPRouteLinux::~LookupIPRouteLinux()
 }
 
 int
-LookupIPRouteLinux::configure(const String &conf, Router *, ErrorHandler *)
+LookupIPRouteLinux::configure(const String &conf, ErrorHandler *)
 {
   cp_argvec(conf, _out2devname);
   _nout = _out2devname.size();
@@ -35,7 +35,7 @@ LookupIPRouteLinux::configure(const String &conf, Router *, ErrorHandler *)
 }
 
 int
-LookupIPRouteLinux::initialize(Router *, ErrorHandler *errh)
+LookupIPRouteLinux::initialize(ErrorHandler *errh)
 {
   if(init_routes(errh) < 0)
     return(-1);

@@ -21,7 +21,7 @@ class CheckPattern : public Element {
   Processing default_processing() const	{ return AGNOSTIC; }
   
   CheckPattern *clone() const { return new CheckPattern; }
-  int configure(const String &, Router *, ErrorHandler *);
+  int configure(const String &, ErrorHandler *);
   
   Packet *simple_action(Packet *);
   

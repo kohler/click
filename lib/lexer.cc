@@ -199,6 +199,20 @@ Lexer::skip_line(unsigned pos)
   return _len;
 }
 
+unsigned
+Lexer::skip_slash_star(unsigned pos)
+{
+  for (; pos < _len; pos++)
+    if (_data[pos] == '\n')
+      _lineno++;
+    else if (_data[pos] == '\r') {
+      if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
+      _lineno++;
+    } else if (_data[pos] == '*' && pos < _len - 1 && _data[pos+1] == '/')
+      return pos + 2;
+  return _len;
+}
+
 Lexeme
 Lexer::next_lexeme()
 {
@@ -218,9 +232,14 @@ Lexer::next_lexeme()
     if (pos >= _len) {
       _pos = _len;
       return Lexeme();
-    } else if (_data[pos] == '#')
-      pos = skip_line(pos);
-    else
+    } else if (_data[pos] == '/' && pos < _len - 1) {
+      if (_data[pos+1] == '/')
+	pos = skip_line(pos + 2);
+      else if (_data[pos+1] == '*')
+	pos = skip_slash_star(pos + 2);
+      else
+	break;
+    } else
       break;
   }
   
@@ -230,8 +249,12 @@ Lexer::next_lexeme()
   if (isalnum(_data[pos]) || _data[pos] == '_' || _data[pos] == '/'
       || _data[pos] == '@') {
     while (pos < _len && (isalnum(_data[pos]) || _data[pos] == '_'
-			  || _data[pos] == '/' || _data[pos] == '@'))
+			  || _data[pos] == '/' || _data[pos] == '@')) {
+      if (_data[pos] == '/' && pos < _len - 1
+	  && (_data[pos+1] == '/' || _data[pos+1] == '*'))
+	break;
       pos++;
+    }
     _pos = pos;
     String word = _big_string.substring(word_pos, pos - word_pos);
     if (word.length() == 12 && word == "elementclass")
@@ -278,8 +301,14 @@ Lexer::lex_config()
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
     } else if (_data[pos] == '\\' && pos < _len - 1 &&
-	       (_data[pos+1] == '(' || _data[pos+1] == ')' || _data[pos+1] == '\\'))
+	       _data[pos+1] != '\n' && _data[pos+1] != '\r')
       pos++;
+    else if (_data[pos] == '/' && pos < _len - 1) {
+      if (_data[pos+1] == '/')
+	pos = skip_line(pos + 2);
+      else if (_data[pos+1] == '*')
+	pos = skip_slash_star(pos + 2);
+    }
   
   _pos = pos;
   return _big_string.substring(config_pos, pos - config_pos);
@@ -304,16 +333,18 @@ Lexer::lex_compound_body()
     else if (_data[pos] == '}' && !paren_depth) {
       brace_depth--;
       if (!brace_depth) break;
-    } else if (_data[pos] == '#' && !paren_depth) {
-      while (pos < _len - 1 && _data[pos+1] != '\n' && _data[pos+1] != '\r')
-	pos++;
+    } else if (_data[pos] == '/' && pos < _len - 1) {
+      if (_data[pos+1] == '/')
+	pos = skip_line(pos + 2);
+      else if (_data[pos+1] == '*')
+	pos = skip_line(pos + 2);
     } else if (_data[pos] == '\n')
       _lineno++;
     else if (_data[pos] == '\r') {
       if (pos < _len - 1 && _data[pos+1] == '\n') pos++;
       _lineno++;
     } else if (_data[pos] == '\\' && pos < _len - 1 &&
-	       (_data[pos+1] == '(' || _data[pos+1] == ')' || _data[pos+1] == '\\'))
+	       _data[pos+1] != '\n' && _data[pos+1] != '\r')
       pos++;
   
   _pos = pos;

@@ -30,7 +30,7 @@ ToDevice::ToDevice(const String &devname)
 ToDevice::~ToDevice()
 {
   if (_registered) click_chatter("ToDevice still registered");
-  uninitialize(0);
+  uninitialize();
 }
 
 void
@@ -60,9 +60,9 @@ ToDevice::clone() const
 }
 
 int
-ToDevice::configure(const String &conf, Router *router, ErrorHandler *errh)
+ToDevice::configure(const String &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, router, errh,
+  return cp_va_parse(conf, this, errh,
 		     cpString, "interface name", &_devname,
 		     cpEnd);
 }
@@ -101,7 +101,7 @@ update_ifindex_map(int ifindex, ErrorHandler *errh)
 }
 
 int
-ToDevice::initialize(Router *router, ErrorHandler *errh)
+ToDevice::initialize(ErrorHandler *errh)
 {
   _dev = dev_get(_devname.cc());
   if (!_dev)
@@ -135,7 +135,7 @@ ToDevice::initialize(Router *router, ErrorHandler *errh)
 }
 
 void
-ToDevice::uninitialize(Router *)
+ToDevice::uninitialize()
 {
   if (_registered) {
     registered_writers--;

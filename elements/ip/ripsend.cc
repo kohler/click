@@ -13,9 +13,9 @@ RIPSend::RIPSend()
 }
 
 int
-RIPSend::configure(const String &conf, Router *router, ErrorHandler *errh)
+RIPSend::configure(const String &conf, ErrorHandler *errh)
 {
-  int ret = cp_va_parse(conf, this, router, errh,
+  int ret = cp_va_parse(conf, this, errh,
                         cpIPAddress, "source addr", &_src,
                         cpIPAddress, "dst addr", &_dst,
                         cpIPAddress, "advertised address", &_what,
@@ -29,7 +29,7 @@ RIPSend::configure(const String &conf, Router *router, ErrorHandler *errh)
 }
 
 int
-RIPSend::initialize(Router *, ErrorHandler *)
+RIPSend::initialize(ErrorHandler *)
 {
   timer_schedule_after_ms(3 * 1000);
   return 0;
