@@ -12,9 +12,9 @@ A. Yes.
 Q. The Click Linux patch does not apply cleanly.
 
 A. You need a specific version of Linux. We currently distribute pactches
-   for Linux 2.2.18. Most of the patch will apply no matter what version of
-   Linux 2.2 you use. The problems are with device drivers, which seem to
-   change a lot between versions.
+   for Linux 2.2.17, 2.2.18, 2.2.19, and 2.4.4. Most of the patch will
+   apply no matter what version of Linux 2.2 you use. The problems are with
+   device drivers, which seem to change a lot between versions.
 
 
 Q. How fast can Click route packets?
@@ -43,6 +43,13 @@ A. As a kernel thread. It continually loops over a list of things to do,
    will get run, but not as often as on a machine without Click.
 
 
+Q. Is there a version of Click for Linux 2.4?
+
+A. Click now compiles under a patched version of Linux 2.4! (We supply the
+   patch.) Your mileage may vary; we still use Linux 2.2 for most of our
+   work.
+
+
 SECTION 2: QUESTIONS ABOUT POLLING
 ----------------------------------
 
@@ -60,3 +67,97 @@ Q. Can I use Click without updating device drivers (that is, without
 
 A. Sure you can. Just use FromDevice elements instead of PollDevice
    elements. Your performance will suck though.
+
+
+SECTION 3: CREATING YOUR OWN ELEMENTS
+-------------------------------------
+
+Q. How can I add my own element class to Click?
+
+A. There are two ways to add an element class to Click: in the main Click
+   collection, or in a package. We recommend that you use packages for
+   nontrivial collections of elements. It has several advantages -- for
+   example, it will keep your code separate from the main Click code. Check
+   out the sample package in `etc/samplepackage'. However, if you just want
+   to compile a single new element, it will be easier to add it to the main
+   Click collection. This answer shows how.
+
+   First, write your element class.
+
+     Each element class should be written as two C++ source files, FILE.cc
+     and FILE.hh. The easiest way to create an element this is to copy an
+     existing element and change the C++ class's name. You must change at
+     least the following functions:
+
+	const char *class_name() const;	// return your element's name
+	Element *clone() const;		// return a newly allocated element
+
+     Other common functions to override include:
+
+	const char *processing() const; // return processing code
+	int configure(const Vector<String> &, ErrorHandler *);
+					// process configuration string
+	int initialize(ErrorHandler *);	// initialize element
+	void uninitialize();		// uninitialize element
+
+	void push(int i, Packet *);	// process push request on input i
+	Packet *pull(int i);		// process pull request on output i
+	Packet *simple_action(Packet *); // for agnostic elements
+
+     All these functions are described in the Click programming manual,
+     doc/click.texi.
+
+     Make sure that your .cc file exports the element class with
+     EXPORT_ELEMENT. For example, the nullelement.cc file ends with:
+
+	EXPORT_ELEMENT(NullElement)
+
+     EXPORT_ELEMENT takes a single argument, the name of the C++ class
+     corresponding to your element. You can have multiple EXPORT_ELEMENT
+     lines if your source file declares multiple element classes. If your
+     element is meant only for the user-level driver, add this line near
+     EXPORT_ELEMENT:
+
+	ELEMENT_REQUIRES(userlevel)
+
+     Or, if it is meant for the Linux kernel module:
+
+	ELEMENT_REQUIRES(linuxmodule)
+
+     ELEMENT_REQUIRES can also take element names and package names like
+     `ip6':
+
+	ELEMENT_REQUIRES(linuxmodule Storage ip6)
+
+   Second, put your element in an `elements/' directory.
+
+     Choose the directory that seems most appropriate for your element.
+     Often, this is `elements/local', which is designed for locally-created
+     elements. If you place your element in `local', make sure you provide
+     the `--enable-local' argument to `configure'.
+
+   Third, run `make elemlist'.
+
+     `make elemlist' checks the source files in the `elements/'
+     subdirectories for EXPORT_ELEMENT directives, and compiles a list of
+     elements that Click should compile. After running `make elemlist',
+     check the `userlevel/elements.conf' and `linuxmodule/elements.conf'
+     files to see if your .cc file made it into this list.
+
+   Finally, run `make install'!
+
+     You are done.
+
+
+Q. My element wasn't compiled! Click reports `unknown element class'.
+
+A. Check these things:
+
+	Do you have an EXPORT_ELEMENT statement?
+	Does your element require something with ELEMENT_REQUIRES that is
+     not available?
+	Did you run `make elemlist'?
+	Is the relevant elements/ directory enabled? (For instance, for
+     elements/local, did you run `./configure --enable-local'?)
+	Is your element's .cc file present in `userlevel/elements.conf' or
+     `linuxmodule/elements.conf'?

@@ -1,4 +1,4 @@
-THE CLICK MODULAR ROUTER RELEASE 1.2.0
+THE CLICK MODULAR ROUTER RELEASE 1.2.1
 ======================================
 
     This is the README file for the source release for the Click modular
@@ -79,13 +79,16 @@ directly interacts with device drivers, while the user-level driver uses
 packet sockets (on Linux) or the pcap library (everywhere else).
 
 User-Level Program
-------------------
+..................
 
     Run the user-level program by giving it the name of a configuration
 file: `click CONFIGFILE'.
 
 Linux Kernel Module
--------------------
+...................
+
+    You must patch your Linux kernel first. See `INSTALL' for more
+information.
 
     See the `doc/click.o.8' manual page for a detailed description. To
 summarize, install a configuration by running `click-install CONFIGFILE'.
@@ -99,13 +102,19 @@ then install a configuration by hand with `cat CONFIGFILE >
 `/proc/click/errors'. But `click-install' is easier.
 
 Configurations
---------------
+..............
 
     A few configurations are included in the `conf' directory, including a
 Perl script that generated the IP router configurations used in our TOCS
 paper (`conf/make-ip-conf.pl') and a set of patterns for the Click pattern
 optimizer, click-xform (`conf/ip.clickpat'). Please check back to our Web
 site for more up-to-date configurations.
+
+ADDING YOUR OWN ELEMENTS
+------------------------
+
+    Please see the FAQ in this directory if you want to know how to add
+elements to Click.
 
 COPYRIGHT AND LICENSE
 =====================
@@ -131,4 +140,6 @@ source code. Write us at
 	  Thomer M. Gil
 	  Robert Morris
 	  Max Poletto
+	  Nickolai B. Zeldovich
 	  M. Frans Kaashoek
+	  John Jannotti

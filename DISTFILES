@@ -61,6 +61,7 @@ conf/udpgen.click
 etc
 etc/linux-2.2.17-patch
 etc/linux-2.2.18-patch
+etc/linux-2.2.19-patch
 etc/linux-2.4.4-patch
 
 etc/samplepackage
@@ -88,6 +89,8 @@ include/click/click_udp.h
 include/click/clp.h
 include/click/confparse.hh
 include/click/crc32.h
+include/click/cxxprotect.h
+include/click/cxxunprotect.h
 include/click/element.hh
 include/click/elemfilter.hh
 include/click/error.hh
@@ -185,15 +188,6 @@ linuxmodule/proc_mgr.cc
 linuxmodule/read-pmc.c
 linuxmodule/sched.cc
 linuxmodule/skbmgr.cc
-
-apps
-apps/ClickController
-apps/ClickController/README
-apps/ClickController/ClickController.java
-apps/ClickController/ControlSocket.java
-apps/ClickController/NewConnectionDialog.java
-apps/ClickController/RouterTreeModel.java
-apps/ClickController/Util.java
 
 tools
 tools/Makefile.in

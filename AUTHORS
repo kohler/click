@@ -19,7 +19,7 @@ Eddie Kohler
 kohler@aciri.org
 design, core, language, Linux /proc interface, Linux kernel module,
 standard elements, tools, documentation, distribution, IP rewriting
-elements, ClickController, other elements, Tasks
+elements, ClickController, other elements, Tasks, Linux 2.4
 
 Mazu Networks, Inc.
 http://www.mazunetworks.com/
@@ -34,16 +34,20 @@ Massimiliano Poletto
 maxp@lcs.mit.edu
 IP rewriting elements, stride scheduling element, round robin scheduler
 
+Nickolai B. Zeldovich
+kolya@lcs.mit.edu
+Linux 2.4
+
 
 Thanks to:
 
 John Jannotti
 jj@lcs.mit.edu
-initial design work, Ethernet switch elements, user-level pcap/BPF elements
+initial design, Ethernet switch elements, user-level pcap/BPF elements
 
 M. Frans Kaashoek
 kaashoek@lcs.mit.edu
-initial design work
+initial design
 
 Alex Snoeren
 snoeren@lcs.mit.edu

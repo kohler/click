@@ -24,9 +24,13 @@ cannot compile a version. Run
 
 to see more options for `./configure'.
 
-(If the distribution does not contain a `configure' script, you probably
-checked out the distribution from CVS. Change into the source directory and
-run `autoconf', then continue as above.)
+   Notes: You can also build Click in a different directory than the source
+          directory. Just change into the build directory and run
+          `PATH_TO_SRCDIR/configure'.)
+
+          If the distribution does not contain a `configure' script, you
+          probably checked out the distribution from CVS. Change into the
+          source directory and run `autoconf', then continue as above.)
 
 After running `./configure', the `make install' command will install the
 user-level executable `click', the kernel module `click.o', the
@@ -76,6 +80,9 @@ and running Linux kernels.
  2. Get a copy of the Linux 2.2.18 kernel source distribution, for example
     from www.kernel.org. Unpack this distribution into /usr/src/linux.
     (Save the old kernel source tree, if you had one.)
+
+    We also supply patches for Linux 2.2.17, 2.2.19, and a preliminary
+    patch for Linux 2.4.4/2.4.5.
 
  3. Install the Click Linux kernel patch:
 
