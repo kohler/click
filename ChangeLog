@@ -1,3 +1,93 @@
+2002-08-06 Tuesday 00:18  Eddie Kohler <kohler@icir.org>
+
+	* elements/ethernet/arpresponder.cc (1.42),
+	elements/ethernet/ip6ndadvertiser.cc (1.17),
+	elements/etherswitch/etherswitch.cc (1.16),
+	elements/etherswitch/spantree.cc (1.31),
+	elements/grid/ackresponder.cc (1.2), elements/grid/ackresponder.hh
+	(1.3), elements/grid/ackretrysender.cc (1.2),
+	elements/grid/ackretrysender.hh (1.2), elements/grid/airoinfo.cc
+	(1.6), elements/grid/airoinfo.hh (1.4), elements/grid/amoeba.cc
+	(1.7), elements/grid/amoeba.hh (1.2),
+	elements/grid/checkgridheader.cc (1.23),
+	elements/grid/checkgridheader.hh (1.6),
+	elements/grid/dsdvroutetable.cc (1.20),
+	elements/grid/dsdvroutetable.hh (1.16),
+	elements/grid/filterbyhops.cc (1.13), elements/grid/filterbyhops.hh
+	(1.5), elements/grid/filterbyrange.cc (1.26),
+	elements/grid/filterbyrange.hh (1.13), elements/grid/fixdstloc.cc
+	(1.11), elements/grid/fixdstloc.hh (1.5),
+	elements/grid/fixsrcloc.cc (1.27), elements/grid/fixsrcloc.hh
+	(1.8), elements/grid/floodinglocquerier.cc (1.33),
+	elements/grid/floodinglocquerier.hh (1.17), elements/grid/grid.hh
+	(1.39), elements/grid/gridgatewayinfo.cc (1.3),
+	elements/grid/gridgatewayinfo.hh (1.4),
+	elements/grid/gridgenericrt.hh (1.5),
+	elements/grid/gridheaderinfo.cc (1.6),
+	elements/grid/gridheaderinfo.hh (1.6),
+	elements/grid/gridlocationinfo.cc (1.17),
+	elements/grid/gridlocationinfo.hh (1.10),
+	elements/grid/gridlogger.cc (1.4), elements/grid/gridlogger.hh
+	(1.19), elements/grid/gridprobehandler.cc (1.13),
+	elements/grid/gridprobehandler.hh (1.6),
+	elements/grid/gridprobereplyreceiver.cc (1.11),
+	elements/grid/gridprobereplyreceiver.hh (1.5),
+	elements/grid/gridprobesender.cc (1.8),
+	elements/grid/gridprobesender.hh (1.4),
+	elements/grid/gridroutecb.hh (1.9), elements/grid/gridroutetable.cc
+	(1.57), elements/grid/gridroutetable.hh (1.35),
+	elements/grid/gridsrforwarder.cc (1.4),
+	elements/grid/gridsrforwarder.hh (1.2),
+	elements/grid/gridtxerror.cc (1.5), elements/grid/gridtxerror.hh
+	(1.4), elements/grid/hello.cc (1.40), elements/grid/hello.hh
+	(1.16), elements/grid/linkstat.cc (1.10), elements/grid/linkstat.hh
+	(1.5), elements/grid/linktracker.cc (1.9),
+	elements/grid/linktracker.hh (1.4), elements/grid/locfromfile.cc
+	(1.15), elements/grid/locfromfile.hh (1.9),
+	elements/grid/locqueryresponder.cc (1.23),
+	elements/grid/locqueryresponder.hh (1.9), elements/grid/loctable.cc
+	(1.12), elements/grid/loctable.hh (1.5),
+	elements/grid/lookupgeogridroute.cc (1.25),
+	elements/grid/lookupgeogridroute.hh (1.11),
+	elements/grid/lookuplocalgridroute.cc (1.42),
+	elements/grid/lookuplocalgridroute.hh (1.15),
+	elements/grid/lrhello.cc (1.25), elements/grid/lrhello.hh (1.7),
+	elements/grid/movesim.cc (1.17), elements/grid/movesim.hh (1.7),
+	elements/grid/pep.cc (1.22), elements/grid/pep.hh (1.11),
+	elements/grid/pep_proto.hh (1.6), elements/grid/pingpong.cc (1.4),
+	elements/grid/pingpong.hh (1.3), elements/grid/printgrid.cc (1.25),
+	elements/grid/printgrid.hh (1.7), elements/grid/radiosim.cc (1.19),
+	elements/grid/radiosim.hh (1.11), elements/grid/region.cc (1.9),
+	elements/grid/region.hh (1.4), elements/grid/regionpep.cc (1.14),
+	elements/grid/regionpep.hh (1.8), elements/grid/setgridchecksum.cc
+	(1.20), elements/grid/setgridchecksum.hh (1.5),
+	elements/grid/simplelocquerier.cc (1.14),
+	elements/grid/simplelocquerier.hh (1.7), elements/grid/timeutils.hh
+	(1.3), elements/grid/updateroutes.cc (1.28),
+	elements/grid/updateroutes.hh (1.13), elements/ip/ipratemon.cc
+	(1.99), elements/ip/iprw.cc (1.46), elements/ip/lineariplookup.cc
+	(1.5), elements/ip/radixiplookup.cc (1.8), elements/ip/rfc2507c.cc
+	(1.24), elements/ip/sortediplookup.cc (1.5),
+	elements/ip6/addresstranslator.cc (1.15),
+	elements/ip6/protocoltranslator64.cc (1.10),
+	elements/ip6/setip6address.cc (1.10), elements/ip6/setip6address.hh
+	(1.8), elements/ip6/setip6dscp.cc (1.3), elements/ip6/setip6dscp.hh
+	(1.3), elements/local/tcpdemux.cc (1.10), elements/radio/b8b10.cc
+	(1.14), elements/radio/b8b10.hh (1.7), elements/radio/bim.cc
+	(1.28), elements/radio/bim.hh (1.15),
+	elements/radio/checkpattern.cc (1.13),
+	elements/radio/checkpattern.hh (1.7), elements/radio/scramble.cc
+	(1.10), elements/radio/scramble.hh (1.4),
+	elements/radio/sendpattern.cc (1.14), elements/radio/sendpattern.hh
+	(1.8), elements/standard/addressinfo.cc (1.20),
+	elements/standard/classifier.cc (1.43),
+	elements/standard/spinlockinfo.cc (1.8),
+	elements/tcpudp/iprewriter.cc (1.37), include/click/bighashmap.cc
+	(1.13), include/click/ewma.cc (1.7), include/click/hashmap.cc
+	(1.12), include/click/vector.cc (1.4), include/clicknet/ip6.h
+	(1.2), lib/archive.cc (1.16), lib/ip6table.cc (1.12),
+	lib/iptable.cc (1.17), lib/templatei.cc (1.10): CLICK_DECLS fixes
+
 2002-08-05 Monday 20:51  Eddie Kohler <kohler@icir.org>
 
 	* click-buildtool (1.37), config-bsdmodule.h.in (1.7),

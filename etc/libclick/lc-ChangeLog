@@ -1,3 +1,13 @@
+2002-08-06 Tuesday 00:18  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/addressinfo.cc, include/click/bighashmap.cc,
+	include/click/ewma.cc, include/click/hashmap.cc,
+	include/click/vector.cc, include/clicknet/ip6.h,
+	include/click/bighashmap.cc, include/click/ewma.cc,
+	include/click/hashmap.cc, include/click/vector.cc,
+	include/clicknet/ip6.h, libsrc/archive.cc, libsrc/ip6table.cc,
+	libsrc/iptable.cc, libsrc/templatei.cc: CLICK_DECLS fixes
+
 2002-08-05 Monday 20:51  Eddie Kohler <kohler@icir.org>
 
 	* click-buildtool, config-userlevel.h.in, libsrc/addressinfo.cc,
