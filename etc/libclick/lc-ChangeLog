@@ -1,3 +1,8 @@
+2003-02-13 Thursday 03:49  Eddie Kohler <kohler@icir.org>
+
+	* include/click/routerthread.hh, include/click/routerthread.hh,
+	libsrc/routerthread.cc: the adaptive scheduler compiles!
+
 2003-02-13 Thursday 02:28  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: task.hh, task.hh: add variables to track usage

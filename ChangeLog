@@ -1,3 +1,13 @@
+2003-02-13 Thursday 03:50  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/: sched.cc (1.37), sched.cc (1.38): clickfs access to
+	adaptive scheduler parameters
+
+2003-02-13 Thursday 03:49  Eddie Kohler <kohler@icir.org>
+
+	* include/click/routerthread.hh (1.16), lib/routerthread.cc (1.29):
+	the adaptive scheduler compiles!
+
 2003-02-13 Thursday 02:28  Eddie Kohler <kohler@icir.org>
 
 	* include/click/task.hh (1.23): add variables to track usage and
