@@ -28,7 +28,7 @@ enum SRCRPacketFlags {
   FLAG_ECN = (1<<7)
 };
 
-static const uint8_t _sr_version = 0x08;
+static const uint8_t _sr_version = 0x09;
 
 // Packet format.
 struct srpacket {
@@ -43,8 +43,8 @@ struct srpacket {
   uint16_t _flags; 
   uint16_t _dlen;
 
-  uint16_t _random_fwd_metric;
-  uint16_t _random_rev_metric;
+  uint32_t _random_fwd_metric;
+  uint32_t _random_rev_metric;
 
   /* PT_QUERY
    * _qdst is used for the query destination in control packets
@@ -70,11 +70,11 @@ struct srpacket {
   void set_random_to(IPAddress ip) {
     _random_to = ip;
   }
-  void set_random_fwd_metric(uint16_t m) {
+  void set_random_fwd_metric(uint32_t m) {
     _random_fwd_metric = m;
   }
 
-  void set_random_rev_metric(uint16_t m) {
+  void set_random_rev_metric(uint32_t m) {
     _random_rev_metric = m;
   }
   IPAddress get_random_from() {
@@ -98,7 +98,7 @@ struct srpacket {
   static size_t len_wo_data(int nhops) {
     return sizeof(struct srpacket) 
       + nhops * sizeof(uint32_t)        // each ip address
-      + 2 * (nhops) * sizeof(uint16_t); //metrics in both directions
+      + 2 * (nhops) * sizeof(uint32_t); //metrics in both directions
   }
   static size_t len_with_data(int nhops, int dlen) {
     return len_wo_data(nhops) + dlen;
@@ -171,13 +171,13 @@ struct srpacket {
     return ndx[h + num_hops()];
   }
 
-  uint16_t get_fwd_metric(int h) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
+  uint32_t get_fwd_metric(int h) { 
+    uint32_t *ndx = (uint32_t *) (this+1);
     return ndx[2*h + num_hops()*2];
   }
 
-  uint16_t get_rev_metric(int h) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
+  uint32_t get_rev_metric(int h) { 
+    uint32_t *ndx = (uint32_t *) (this+1);
     return ndx[1 + 2*h  + num_hops()*2];
   }
 
@@ -186,14 +186,14 @@ struct srpacket {
     uint32_t *ndx = (uint32_t  *) (this+1);
     ndx[hop + num_hops()] = seq;
   }
-  void set_fwd_metric(int hop, uint16_t s) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
+  void set_fwd_metric(int hop, uint32_t s) { 
+    uint32_t *ndx = (uint32_t *) (this+1);
     ndx[2*hop + num_hops()*2] = s;
   }
 
 
-  void set_rev_metric(int hop, uint16_t s) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
+  void set_rev_metric(int hop, uint32_t s) { 
+    uint32_t *ndx = (uint32_t *) (this+1);
     ndx[1 + 2*hop + num_hops()*2] = s;
   }
 
@@ -227,43 +227,6 @@ struct srpacket {
 
 
 
-
-struct extra_link_info {
-  uint8_t _nhops;
-  uint8_t _foo1;
-  uint16_t _foo2;
-  static int len(int num_hosts) {
-    return sizeof(struct extra_link_info) + num_hosts * sizeof(uint32_t) 
-      + (num_hosts) * sizeof(uint16_t);
-  }
-  int num_hops() {
-    return _nhops;
-  }
-  void set_num_hops(uint8_t n) {
-    _nhops = n;
-  }
-  
-  uint16_t get_metric(int h) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
-    return ndx[h + num_hops()*2];
-  }
-  
-  void set_metric(int hop, uint16_t s) { 
-    uint16_t *ndx = (uint16_t *) (this+1);
-    ndx[hop + num_hops()*2] = s;
-  }
-  
-  IPAddress get_hop(int h) { 
-    in_addr *ndx = (in_addr *) (this + 1);
-    return IPAddress(ndx[h]);
-  }
-  
-  void  set_hop(int hop, IPAddress p) { 
-    in_addr *ndx = (in_addr *) (this + 1);
-    ndx[hop] = p.in_addr();
-  }
-
-};
 
 #ifndef sr_assert
 #define sr_assert(e) ((e) ? (void) 0 : sr_assert_(__FILE__, __LINE__, #e))

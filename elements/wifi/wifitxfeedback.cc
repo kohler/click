@@ -18,11 +18,21 @@ CLICK_DECLS
  * --jbicket
  */
 
+
 class TXFMap { public:
   enum { TXF_MAP_SIZE = 10 };
   WifiTXFeedback *_map[TXF_MAP_SIZE];
 
   void initialize() {
+    _txf_count = 0;
+    for (int x = 0; x < TXF_MAP_SIZE; x++) {
+      _map[x] = 0;
+    }
+  }
+
+  void cleanup() {
+    register_click_wifi_tx_cb(NULL, NULL);
+    _txf_count = 0;
     for (int x = 0; x < TXF_MAP_SIZE; x++) {
       _map[x] = 0;
     }
@@ -30,7 +40,11 @@ class TXFMap { public:
   int insert(WifiTXFeedback *txf) {
     for (int x = 0; x < TXF_MAP_SIZE; x++) {
       if (!_map[x]) {
+	_txf_count++;
 	_map[x] = txf;
+	if (_txf_count == 1) {
+	  register_click_wifi_tx_cb(&got_skb, this);
+	}
 	return x;
       }
     }
@@ -40,56 +54,48 @@ class TXFMap { public:
   bool remove(int x) {
     if (x >= 0 && x < TXF_MAP_SIZE) {
       _map[x] = 0;
+      _txf_count--;
+      if (_txf_count == 0) {
+	register_click_wifi_tx_cb(NULL, NULL);
+      }
       return true;
     }
     return false;
   }
 
-  void got_skb(struct sk_buff *skb) {
-    for (int x = 0; x < TXF_MAP_SIZE; x++) {
-      if (_map[x]) {
-	_map[x]->got_skb(skb);
-	return;
+  static int got_skb(struct sk_buff *skb, void *n) {
+    TXFMap *m = (TXFMap *) n;
+    if (m) {
+      for (int x = 0; x < TXF_MAP_SIZE; x++) {
+	if (m->_map[x]) {
+	  m->_map[x]->got_skb(skb);
+	  return 0;
+	}
       }
     }
-    click_chatter("TXFMap couldn't find element for skb - there's a leak!!\n");
+    kfree_skb(skb);
+    return 0;
   }
+
+  int _txf_count;
 };
-static int txf_count;
+
 static TXFMap txf_map;
 
-static int static_got_skb(struct sk_buff *skb, void *)
+
+
+void
+WifiTXFeedback::static_initialize()
 {
-  txf_map.got_skb(skb);
+  txf_map.initialize();
 }
 
 
-static int
-static_initialize(WifiTXFeedback *txf)
+void
+WifiTXFeedback::static_cleanup()
 {
-  txf_count++;
-  int ndx = -1;
-  if (txf_count == 1) {
-    txf_map.initialize();
-    ndx = txf_map.insert(txf);
-    register_click_wifi_tx_cb(&static_got_skb, NULL);
-  } else {
-    ndx = txf_map.insert(txf);
-  }
-  return ndx;
+  txf_map.cleanup();
 }
-
-static bool 
-static_cleanup(int ndx) 
-{
-  txf_count--;
-  if (txf_count == 0) {
-    register_click_wifi_tx_cb(NULL, NULL);
-  }
-  return txf_map.remove(ndx);
-
-}
-
 
 
 
@@ -133,7 +139,8 @@ WifiTXFeedback::initialize(ErrorHandler *errh)
   
   ScheduleInfo::initialize_task(this, &_task, 1, errh);
 
-  _map_index = ::static_initialize(this);
+  _map_index = txf_map.insert(this);
+
   if (_map_index < 0) {
     click_chatter("%{element}: couldn't intialize, got %d !!!\n",
 		  this,
@@ -154,7 +161,7 @@ WifiTXFeedback::cleanup(CleanupStage)
     _queue[i]->kill();
   _head = _tail = 0;    
 
-  if (!::static_cleanup(_map_index)) {
+  if (!txf_map.remove(_map_index)) {
     click_chatter("%{element}: couldn't cleanup - %d !!!\n",
 		  this,
 		  _map_index);
@@ -224,7 +231,7 @@ WifiTXFeedback::static_print_stats(Element *e, void *)
   sa << " failures " << n->_failures;
   sa << " head " << n->_head;
   sa << " tail " << n->_tail;
-  sa << " txf_count " << txf_count;
+  sa << " txf_count " << txf_map._txf_count;
   sa << " runs " << n->_runs;
   sa << " scheduled " << n->_task.scheduled();
   sa << "\n";

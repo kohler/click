@@ -42,6 +42,7 @@ class PacketLogger2 : public Element { public:
   
   const char *class_name() const		{ return "PacketLogger2"; }
   const char *processing() const		{ return AGNOSTIC; }
+  const char *flow_code() const			{ return "#/#"; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }

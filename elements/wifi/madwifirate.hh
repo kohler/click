@@ -54,6 +54,7 @@ class MadwifiRate : public Element { public:
   
   const char *class_name() const		{ return "MadwifiRate"; }
   const char *processing() const		{ return "ah/a"; }
+  const char *flow_code() const			{ return "#/#"; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }

@@ -48,19 +48,18 @@ SetTXPower::configure(Vector<String> &conf, ErrorHandler *errh)
     return -1;
   }
 
-  if (_power < 0) {
-    return errh->error("POWER must be between 0 and 63");
-  }
   return 0;
 }
 
 Packet *
 SetTXPower::simple_action(Packet *p_in)
 {
-  click_ether *eh = (click_ether *) p_in->data();
-  SET_WIFI_FROM_CLICK(p_in);
-  SET_WIFI_TX_POWER_ANNO(p_in, _power);  
-  return p_in;
+  if (p_in) {
+    SET_WIFI_FROM_CLICK(p_in);
+    SET_WIFI_TX_POWER_ANNO(p_in, _power);  
+    return p_in;
+  }
+  return 0;
 }
 
 enum {H_POWER,

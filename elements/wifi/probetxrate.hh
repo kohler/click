@@ -5,6 +5,7 @@
 #include <click/etheraddress.hh>
 #include <click/bighashmap.hh>
 #include <click/glue.hh>
+#include <clicknet/wifi.h>
 CLICK_DECLS
 
 /*
@@ -47,62 +48,6 @@ CLICK_DECLS
  */
 
 
-#define max(a, b) ((a) > (b) ? (a) : (b))
-#define min(a, b) ((a) < (b) ? (a) : (b))
-
-
-static inline int calc_usecs_packet(int length, int rate, int retries) {
-  assert(rate);
-  assert(length);
-  assert(retries >= 0);
-
-  if (!rate || !length || retries < 0) {
-    return 1;
-  }
-
-  int pbcc = 0;
-  int t_plcp_header = 96;
-  int t_slot = 20;
-  int t_ack = 304;
-  int t_difs = 50;
-  int t_sifs = 10;
-  int cw_min = 31;
-  int cw_max = 1023;
-
-
-  switch (rate) {
-  case 2:
-    /* short preamble at 1 mbit/s */
-    t_plcp_header = 192;
-    /* fallthrough */
-  case 4:
-  case 11:
-  case 22:
-    t_ack = 304;
-    break;
-  default:
-    /* with 802.11g, things are at 6 mbit/s */
-    t_plcp_header = 46;
-    t_slot = 9;
-    t_ack = 20;
-    t_difs = 28;
-  }
-  int packet_tx_time = (2 * (t_plcp_header + (((length + pbcc) * 8))))/ rate;
-  
-  int cw = cw_min;
-  int expected_backoff = 0;
-
-  /* there is backoff, even for the first packet */
-  for (int x = 0; x <= retries; x++) {
-    expected_backoff += t_slot * cw / 2;
-    cw = min(cw_max, (cw + 1) * 2);
-  }
-
-  return expected_backoff + t_difs + (retries + 1) * (
-					     packet_tx_time + 
-					     t_sifs + t_ack);
-}
-
 class ProbeTXRate : public Element { public:
   
   ProbeTXRate();
@@ -110,6 +55,7 @@ class ProbeTXRate : public Element { public:
   
   const char *class_name() const		{ return "ProbeTXRate"; }
   const char *processing() const		{ return "ah/a"; }
+  const char *flow_code() const			{ return "#/#"; }
   
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const		{ return true; }
@@ -174,7 +120,7 @@ class ProbeTXRate : public Element { public:
       _perfect_usecs = Vector<int>(_rates.size(), 0);
       
       for (int x = 0; x < _rates.size(); x++) {
-	_perfect_usecs[x] = calc_usecs_packet(1500, _rates[x], 0);
+	_perfect_usecs[x] = calc_usecs_wifi_packet(1500, _rates[x], 0);
       }
     }
 
@@ -206,7 +152,7 @@ class ProbeTXRate : public Element { public:
 	} else {
 	  _total_fail[ndx]--;
 	}
-	int usecs = calc_usecs_packet(1500, t._rate, t._retries);
+	int usecs = calc_usecs_wifi_packet(1500, t._rate, t._retries);
 	_total_usecs[ndx] -= usecs;
 	_total_tries[ndx] -= (t._retries + 1);
 	
@@ -317,7 +263,7 @@ class ProbeTXRate : public Element { public:
       }
       assert(rate);
       assert(retries >= 0);
-      _total_usecs[ndx] += calc_usecs_packet(1500, rate, retries);
+      _total_usecs[ndx] += calc_usecs_wifi_packet(1500, rate, retries);
       _total_tries[ndx] += retries + 1;
       if (success) {
 	_total_success[ndx]++;

@@ -137,7 +137,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
   int status = WIFI_TX_STATUS_ANNO(p_in);  
-  int retries = min (3, WIFI_RETRIES_ANNO(p_in));
+  int retries = MIN(3, WIFI_RETRIES_ANNO(p_in));
   int rate = WIFI_RATE_ANNO(p_in);
 
   struct timeval now;
@@ -155,6 +155,11 @@ ProbeTXRate::process_feedback(Packet *p_in) {
 
   if (0 == rate) {
     /* rate wasn't set */
+    if (_debug) {
+          click_chatter("%{element} no rate set for %s\n",
+			this,
+			dst.s().cc());
+    }
     return;
   }
   
@@ -164,11 +169,21 @@ ProbeTXRate::process_feedback(Packet *p_in) {
      * since they can skew what rate
      * we should be at 
      */
+    if (_debug) {
+          click_chatter("%{element} short success for %s\n",
+			this,
+			dst.s().cc());
+    }
     return;
   }
 
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {
+    if (_debug) {
+          click_chatter("%{element} no info for %s\n",
+			this,
+			dst.s().cc());
+    }
     return;
   }
 

@@ -55,9 +55,26 @@
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
 #include <elements/wifi/arptable.hh>
+#include <clicknet/wifi.h>
 CLICK_DECLS
 
 class Timer;
+
+
+class RateSize {
+public:
+  int _rate;
+  int _size;
+  RateSize(int r, int s): _rate(r), _size(s) { };
+  
+  inline bool
+  operator==(RateSize other)
+  {
+    return (other._rate == _rate && other._size == _size);
+  }
+};
+
+
 
 class ETTStat : public Element {
 
@@ -70,41 +87,37 @@ public:
   // link_probe header.
 
   enum {
-    PROBE_SMALL = (1<<0),
-    PROBE_2 = (1<<1),
-    PROBE_4 = (1<<2),
-    PROBE_11 = (1<<5),
-    PROBE_22 = (1<<11),
+    PROBE_AVAILABLE_RATES = (1<<0),
   };
+
   struct link_probe {
     unsigned short cksum;     // internet checksum
     unsigned short psz;       // total packet size, including eth hdr
 
+    uint32_t rate;
+    uint32_t size;
     uint32_t ip;
     uint32_t flags;
     unsigned int seq_no;
     unsigned int period;      // period of this node's probe broadcasts, in msecs
     unsigned int tau;         // this node's loss-rate averaging period, in msecs
     unsigned int sent;        // how many probes this node has sent
+    unsigned int num_probes;
     unsigned int num_links;   // number of wifi_link_entry entries following
 
     link_probe() : cksum(0), psz(0), ip(0), seq_no(0), period(0), tau(0), sent(0), num_links(0) { }
 
   };
   
+  struct link_info {
+    uint16_t size;
+    uint8_t rate;
+    uint8_t fwd;
+    uint8_t rev;
+  };
   struct link_entry {
-    uint8_t fwd_small;
-    uint8_t rev_small;
-    uint8_t fwd_2;
-    uint8_t rev_2;
-    uint8_t fwd_4;
-    uint8_t rev_4;
-    uint8_t fwd_11;
-    uint8_t rev_11;
-    uint8_t fwd_22;
-    uint8_t rev_22;
-
     uint32_t ip;
+    uint8_t num_rates;
     link_entry() { }
     link_entry(IPAddress __ip) : ip(__ip.addr()) { }
   };
@@ -113,8 +126,6 @@ private:
   unsigned int _window; // sequence numbers
   unsigned int _tau;    // msecs
   unsigned int _period; // msecs
-
-  unsigned int _probe_size; // bytes
 
   unsigned int _seq;
   uint32_t _sent;
@@ -135,9 +146,15 @@ private:
   // record probes received from other hosts
   struct probe_t {
     struct timeval when;  
-    unsigned int   seq_no;  
-    probe_t(const struct timeval &t, unsigned int s) : when(t), seq_no(s) { }
+    uint32_t   seq_no;
+    uint8_t _rate;
+    uint16_t _size;
+    probe_t(const struct timeval &t, 
+	    uint32_t s,
+	    uint8_t r,
+	    uint16_t sz) : when(t), seq_no(s), _rate(r), _size(sz) { }
   };
+
 
   struct probe_list_t {
     IPAddress ip;
@@ -145,32 +162,21 @@ private:
     int tau;      // this node's stats averaging period, as reported by the node
     int sent;
 
-    uint8_t fwd_small;
-    uint8_t fwd_2;
-    uint8_t fwd_4;
-    uint8_t fwd_11;
-    uint8_t fwd_22;
-
+    Vector<RateSize> probe_types;
+    
+    Vector<int> _fwd_rates;
+    
     struct timeval last_rx;
-    DEQueue<probe_t> probes_small;   // most recently received probes
-    DEQueue<probe_t> probes_2;   // most recently received probes
-    DEQueue<probe_t> probes_4;   // most recently received probes
-    DEQueue<probe_t> probes_11;   // most recently received probes
-    DEQueue<probe_t> probes_22;   // most recently received probes
+    DEQueue<probe_t> probes;   // most recently received probes
     probe_list_t(const IPAddress &p, unsigned int per, unsigned int t) : 
       ip(p), 
       period(per), 
       tau(t),
-      sent(0), 
-      fwd_small(0), 
-      fwd_2(0), 
-      fwd_4(0), 
-      fwd_11(0), 
-      fwd_22(0)
+      sent(0)
     { }
     probe_list_t() : period(0), tau(0) { }
 
-    int rev_rate(struct timeval start, int rate) {
+    int rev_rate(struct timeval start, int rate, int size) {
       struct timeval now;
       struct timeval p = { tau / 1000, 1000 * (tau % 1000) };
       struct timeval earliest;
@@ -179,66 +185,38 @@ private:
 
 
       if (period == 0) {
+	click_chatter("period is 0\n");
 	return 0;
       }
       int num = 0;
-      DEQueue<probe_t> *probes;
-      switch (rate) {
-      case 0:
-	probes = &probes_small;
-	break;
-      case 2:
-	probes = &probes_2;
-	break;
-      case 4:
-	probes = &probes_4;
-	break;
-      case 11:
-	probes = &probes_11;
-	break;
-      case 22:
-	probes = &probes_22;
-	break;
-      default:
-	return 0;
-      }
-      if (!probes) {
-	click_chatter("no probes!\n");
-	return 0;
-      }
-      for (int i = probes->size() - 1; i >= 0; i--) {
-	if (timercmp(&earliest, &((*probes)[i].when), <)) {
-	  num++;
-	} else {
+      for (int i = probes.size() - 1; i >= 0; i--) {
+	if (timercmp(&earliest, &(probes[i].when), >)) {
 	  break;
+	} 
+	if ( probes[i]._size == size &&
+	    probes[i]._rate == rate) {
+	  num++;
 	}
       }
-
-      int num_expected = tau / period;
+      
       struct timeval since_start;
-      struct timeval foo = start;
-      timersub(&now, &foo, &since_start);
-      int ms_since_start = since_start.tv_sec*1000 + since_start.tv_sec/1000;
+      timersub(&now, &start, &since_start);
 
-      if (num_expected > (ms_since_start / period)) {
-	num_expected = (ms_since_start / period);
+      int ms_since_start = since_start.tv_sec * 1000 + since_start.tv_usec / 1000;
+      if (ms_since_start < tau) {
+	tau = ms_since_start;
       }
+      assert(probe_types.size());
+      int num_expected = tau / period;
 
-      if (num_expected > sent) {
-	struct timeval since_last_rx;
-	timersub(&now, &last_rx, &since_last_rx);
-	int ms_since_rx = since_last_rx.tv_sec*1000 + since_last_rx.tv_sec/1000;
+      if (sent < num_expected) {
 	num_expected = sent;
-	if (period) {
-	  num_expected += (ms_since_rx / period);
-	}
-	//click_chatter("sent %d, ms_since_rx %d, tau %d num_expected %d num %d",
-	//sent, ms_since_rx, tau, num_expected, num);
       }
       if (!num_expected) {
 	num_expected = 1;
       }
-      return 100 * num / num_expected;
+
+      return MIN(100, 100 * num / num_expected);
 
     }
   };
@@ -265,29 +243,21 @@ private:
   static int write_tau(const String &, Element *, void *, ErrorHandler *);
   
   void add_bcast_stat(IPAddress, const link_probe &);
+  
+  void calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev);
+  void send_probe_hook();
+  void send_probe();
+  static void static_send_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(); }
 
-  void send_probe_hook(int rate);
-  void send_probe(unsigned int size, int rate);
-  static void static_send_small_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(0); }
-  static void static_send_2_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(2); }
-  static void static_send_4_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(4); }
-  static void static_send_11_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(11); }
-  static void static_send_22_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(22); }
+  Timer *_timer;
+
+  struct timeval _next;
+
+  Vector <RateSize> _ads_rs;
+  int _ads_rs_index;
 
 
-  Timer *_timer_small;
-  Timer *_timer_2;
-  Timer *_timer_4;
-  Timer *_timer_11;
-  Timer *_timer_22;
-
-  struct timeval _next_small;
-  struct timeval _next_2;
-  struct timeval _next_4;
-  struct timeval _next_11;
-  struct timeval _next_22;
-
-  bool _2hop_linkstate;
+  class AvailableRates *_rtable;
  public:
 
 

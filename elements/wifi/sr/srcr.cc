@@ -31,7 +31,7 @@ CLICK_DECLS
 
 
 SRCR::SRCR()
-  :  Element(3,1),
+  :  Element(3,2),
      _timer(this), 
      _ip(),
      _en(),
@@ -675,12 +675,12 @@ void
 SRCR::push(int port, Packet *p_in)
 {
 
-  if (port == 1) {
+  if (port == 2) {
     process_data(p_in);
     p_in->kill();
     return;
   }
-  if (port == 2) {
+  if (port == 1) {
     bool sent_packet = false;
     IPAddress dst = p_in->dst_ip_anno();
 
@@ -726,7 +726,11 @@ SRCR::push(int port, Packet *p_in)
 	current_path->_p = best;
 	click_gettimeofday(&current_path->_last_switch);
       }
-      _sr_forwarder->send(p_in, current_path->_p, 0);
+      p_in = _sr_forwarder->encap(p_in, current_path->_p, 0);
+      if (p_in) {
+	output(1).push(p_in);
+      }
+      //_sr_forwarder->send(p_in, current_path->_p, 0);
       sent_packet = true;
     } else {
       p_in->kill();
@@ -745,9 +749,9 @@ SRCR::push(int port, Packet *p_in)
     }
     if (sent_packet && 
 	best_metric < 2 * q->_metric && 
-	best_metric < 7777) {
+	best_metric < 777777) {
       /* don't send another query if we have a within 2x path
-       * that is valid (ie metric is < 7777)
+       * that is valid (ie metric is < 777777)
        */
       return;
     }

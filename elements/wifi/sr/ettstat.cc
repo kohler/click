@@ -1,5 +1,5 @@
 /*
- * Douglas S. J. De Couto
+ * John Bicket
  *
  * Copyright (c) 1999-2003 Massachusetts Institute of Technology
  *
@@ -24,6 +24,7 @@
 #include "ettstat.hh"
 #include "ettmetric.hh"
 #include <click/packet_anno.hh>
+#include <elements/wifi/availablerates.hh>
 CLICK_DECLS
 
 // packet data should be 4 byte aligned                                         
@@ -37,17 +38,14 @@ ETTStat::ETTStat()
   : _window(100), 
     _tau(10000), 
     _period(1000), 
-    _probe_size(1000),
     _seq(0), 
     _sent(0),
     _ett_metric(0),
     _arp_table(0),
     _next_neighbor_to_ad(0),
-    _timer_small(0),
-    _timer_2(0),
-    _timer_4(0),
-    _timer_11(0),
-    _timer_22(0)
+    _timer(0),
+    _ads_rs_index(0),
+    _rtable(0)
 {
   MOD_INC_USE_COUNT;
   add_input();
@@ -71,9 +69,7 @@ ETTStat::notify_noutputs(int n)
 int
 ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-
-
-  _2hop_linkstate = true;
+  String probes;
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
 			"ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -82,18 +78,30 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			"ETH", cpEtherAddress, "Source Ethernet address", &_eth,
 			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,
 			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
-			"SIZE", cpUnsigned, "Probe size (bytes)", &_probe_size,
 			"ETT", cpElement, "ETT Metric element", &_ett_metric,
 			"ARP", cpElement, "ARPTable element", &_arp_table,
-			"2HOP_LINKSTATE", cpBool, "enable 2hop linkstate", &_2hop_linkstate,
+			"PROBES", cpString, "PROBES", &probes,
+			"RT", cpElement, "AvailabeRates", &_rtable,
 			cpEnd);
+
+
+  Vector<String> a;
+  cp_spacevec(probes, a);
+
+  for (int x = 0; x < a.size() - 1; x += 2) {
+    int rate;
+    int size;
+    if (!cp_integer(a[x], &rate)) {
+      return errh->error("invalid PROBES rate value\n");
+    }
+    if (!cp_integer(a[x + 1], &size)) {
+      return errh->error("invalid PROBES size value\n");
+    }
+    _ads_rs.push_back(RateSize(rate, size));
+  }
+
   if (res < 0)
     return res;
-  
-  unsigned min_sz = sizeof(click_ether) + sizeof(struct link_probe);
-  if (_probe_size < min_sz)
-    return errh->error("Specified packet size is less than the minimum probe size of %u",
-		       min_sz);
 
   if (!_et) {
     return errh->error("Must specify ETHTYPE");
@@ -109,10 +117,18 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
   if (_ett_metric && _ett_metric->cast("ETTMetric") == 0) {
     return errh->error("ETTMetric element is not a ETTMetric");
   }
+  if (_rtable && _rtable->cast("AvailableRates") == 0) {
+    return errh->error("RT element is not a AvailableRates");
+  }
   if (_arp_table && _arp_table->cast("ARPTable") == 0) {
     return errh->error("ARPTable element is not a ARPTable");
   }
+
+  assert(_ads_rs.size());
   return res;
+
+
+
 }
 
 
@@ -143,36 +159,11 @@ ETTStat::take_state(Element *e, ErrorHandler *errh)
   struct timeval now;
   click_gettimeofday(&now);
 
-  if (timercmp(&now, &q->_next_small, <)) {
-    _timer_small->unschedule();
-    _timer_small->schedule_at(q->_next_small);
-    _next_small = q->_next_small;
+  if (timercmp(&now, &q->_next, <)) {
+    _timer->unschedule();
+    _timer->schedule_at(q->_next);
+    _next = q->_next;
   }
-
-  if (timercmp(&now, &q->_next_2, <)) {
-    _timer_2->unschedule();
-    _timer_2->schedule_at(q->_next_2);
-    _next_2 = q->_next_2;
-  }
-  
-  if (timercmp(&now, &q->_next_4, <)) {
-    _timer_4->unschedule();
-    _timer_4->schedule_at(q->_next_4);
-    _next_4 = q->_next_4;
-  }
-  
-  if (timercmp(&now, &q->_next_11, <)) {
-    _timer_11->unschedule();
-    _timer_11->schedule_at(q->_next_11);
-    _next_11 = q->_next_11;
-  }
-
-  if (timercmp(&now, &q->_next_22, <)) {
-    _timer_22->unschedule();
-    _timer_22->schedule_at(q->_next_22);
-    _next_22 = q->_next_22;
-  }
-
 
   
 }
@@ -194,59 +185,115 @@ void add_jitter(unsigned int max_jitter, struct timeval *t) {
 }
 
 void 
-ETTStat::send_probe_hook(int rate) 
+ETTStat::calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev) 
 {
-  unsigned max_jitter = _period / 10;
-  unsigned int size = _probe_size;
-  if (rate == 0) {
-    size = sizeof(struct link_probe) + sizeof(click_ether);
+  int one_ack_fwd = 0;
+  int one_ack_rev = 0;
+  int six_ack_fwd = 0;
+  int six_ack_rev = 0;
+
+  for (int x = 0; x < rs.size(); x++) {
+    if (rs[x]._size <= 100) {
+      if (rs[x]._rate == 2) {
+	one_ack_fwd = fwd[x];
+	one_ack_rev = rev[x];
+      } else if (rs[x]._rate == 12) {
+	six_ack_fwd = fwd[x];
+	six_ack_rev = rev[x];
+      }
+    }
   }
-  send_probe(size, rate);
+  
+  if (!one_ack_fwd && !six_ack_fwd &&
+      !one_ack_rev && !six_ack_rev) {
+    return;
+  }
+  int rev_metric = 0;
+  int fwd_metric = 0;
+  int best_rev_rate = 0;
+  int best_fwd_rate = 0;
+  
+  for (int x = 0; x < rs.size(); x++) {
+    if (rs[x]._size > 500) {
+      int ack_fwd = 0;
+      int ack_rev = 0;
+      if ((rs[x]._rate == 2) ||
+	  (rs[x]._rate == 4) ||
+	  (rs[x]._rate == 11) ||
+	  (rs[x]._rate == 22)) {
+	ack_fwd = one_ack_fwd;
+	ack_rev = one_ack_rev;
+      } else {
+	ack_fwd = six_ack_fwd;
+	ack_rev = six_ack_rev;
+      }
+      int metric = ett_metric(ack_rev,               
+			      fwd[x],
+			      rs[x]._rate);
+      if (!fwd_metric || (metric && metric < fwd_metric)) {
+	best_fwd_rate = rs[x]._rate;
+	fwd_metric = metric;
+      }
+      
+      metric = ett_metric(ack_fwd,               
+			  rev[x],
+			  rs[x]._rate);
+      
+      if (!rev_metric || (metric && metric < rev_metric)) {
+	rev_metric = metric;
+	best_rev_rate= rs[x]._rate;
+      }
+    }
+  }
+  
+  if (_ett_metric) {
+    _ett_metric->update_link(from, to, fwd_metric, rev_metric,
+			     best_fwd_rate, best_rev_rate);
+  }
+  
+}
+  
+
+
+
+
+
+void 
+ETTStat::send_probe_hook() 
+{
+
+  unsigned max_jitter = _period / 10;
+
+  send_probe();
+  
 
   struct timeval period;
   timerclear(&period);
-  period.tv_usec += (_period * 1000);
+  int p = _period / _ads_rs.size();
+  period.tv_usec += (p * 1000);
   period.tv_sec += period.tv_usec / 1000000;
   period.tv_usec = (period.tv_usec % 1000000);
 
-  switch (rate) {
-  case 0:
-    timeradd(&period, &_next_small, &_next_small);
-    add_jitter(max_jitter, &_next_small);
-    _timer_small->schedule_at(_next_small);
-    break;
-  case 2:
-    timeradd(&period, &_next_2, &_next_2);
-    add_jitter(max_jitter, &_next_2);
-    _timer_2->schedule_at(_next_2);
-    break;
-  case 4:
-    timeradd(&period, &_next_4, &_next_4);
-    add_jitter(max_jitter, &_next_4);
-    _timer_4->schedule_at(_next_4);
-    break;
-  case 11:
-    timeradd(&period, &_next_11, &_next_11);
-    add_jitter(max_jitter, &_next_11);
-    _timer_11->schedule_at(_next_11);
-    break;
-  case 22:        
-    timeradd(&period, &_next_22, &_next_22);
-    add_jitter(max_jitter, &_next_22);
-    _timer_22->schedule_at(_next_22);
-    break;
-  default:
-    return;
-  }
+  timeradd(&period, &_next, &_next);
+  add_jitter(max_jitter, &_next);
+  _timer->schedule_at(_next);
 }
 
 void
-ETTStat::send_probe(unsigned int size, int rate) 
+ETTStat::send_probe() 
 {
+  assert(_ads_rs.size());
+  int size = _ads_rs[_ads_rs_index]._size;
+  int rate = _ads_rs[_ads_rs_index]._rate;
 
+  _ads_rs_index = (_ads_rs_index + 1) % _ads_rs.size();
+
+  if (_ads_rs_index == 0) {
+    _sent++;
+  }
   unsigned min_packet_sz = sizeof(click_ether) + sizeof(struct link_probe);
-  
-  if (size < min_packet_sz) {
+
+  if ((unsigned) size < min_packet_sz) {
     click_chatter("%{element} cannot send packet size %d: min is %d\n",
 		  this, 
 		  size,
@@ -273,85 +320,74 @@ ETTStat::send_probe(unsigned int size, int rate)
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _eth.data(), 6);
 
-  // calculate number of entries
-
-  unsigned max_entries = (size - min_packet_sz) / sizeof(struct link_entry);
-  
-  static bool size_warning = false;
-  if (rate != 0 && !size_warning && max_entries < (unsigned) _neighbors.size()) {
-    size_warning = true;
-    click_chatter("ETTStat %s: WARNING, probe packet is too small; rotating entries", id().cc());
-  }
-  
-
-  
-  unsigned num_entries = max_entries < (unsigned) _neighbors.size() 
-    ? max_entries 
-    : _neighbors.size();
-  
-  if (rate == 0 && _sent <= (_tau / _period)+1) {
-    _sent++;
-  }
-  
-
   link_probe *lp = (struct link_probe *) (p->data() + sizeof(click_ether));
   lp->ip = _ip.addr();
-  lp->seq_no = _seq;
+  lp->seq_no = _seq++;
   lp->period = _period;
   lp->tau = _tau;
   lp->sent = _sent;
-  lp->num_links = num_entries;
   lp->flags = 0;
-  switch (rate) {
-  case 0: 
-    lp->flags |= PROBE_SMALL;
-    break;
-  case 2:
-    lp->flags |= PROBE_2;
-    break;
-  case 4:
-    lp->flags |= PROBE_4;
-    break;
-  case 11:
-    lp->flags |= PROBE_11;
-    break;
-  case 22:
-    lp->flags |= PROBE_22;
-    break;
-  default:
-    click_chatter("weird rate %d\n", 
-		  rate);
-  }
-  _seq++;
+  lp->rate = rate;
+  lp->size = size;
+  lp->num_probes = _ads_rs.size();
   
-  if (rate != 0) {
-    link_entry *entry = (struct link_entry *)(lp+1); 
-    for (int i = 0; (unsigned) i < num_entries; i++) {
-      _next_neighbor_to_ad = (_next_neighbor_to_ad + 1) % _neighbors.size();
-      probe_list_t *probe = _bcast_stats.findp(_neighbors[_next_neighbor_to_ad]);
-      if (!probe) {
-	click_chatter("%{element}: lookup for %s (i=%d), %d failed in ad \n", 
-		      this,
-		      _neighbors[_next_neighbor_to_ad].s().cc(),
-		      i,
-		      _next_neighbor_to_ad);
-      } else {
-	entry->ip = probe->ip;
-	entry->fwd_small = probe->fwd_small;
-	entry->fwd_2 = probe->fwd_2;
-	entry->fwd_4 = probe->fwd_4;
-	entry->fwd_11 = probe->fwd_11;
-	entry->fwd_22 = probe->fwd_22;
-	
-	entry->rev_small = probe->rev_rate(_start, 0);
-	entry->rev_2 = probe->rev_rate(_start, 2);
-	entry->rev_4 = probe->rev_rate(_start, 4);
-	entry->rev_11 = probe->rev_rate(_start, 11);
-	entry->rev_22 = probe->rev_rate(_start, 22);
-      }
-      entry = (entry+1);
-    }
+  uint8_t *ptr =  (uint8_t *) (lp + 1);
+  uint8_t *end  = (uint8_t *) p->data() + p->length();
+
+  
+  Vector<int> rates;
+  if (_rtable) {
+    rates = _rtable->lookup(_eth);
   }
+  if (rates.size() && 1 + ptr + rates.size() < end) {
+    ptr[0] = rates.size();
+    ptr++;
+    int x = 0;
+    while (ptr < end && x < rates.size()) {
+	ptr[x] = rates[x];
+	x++;
+    }
+    ptr += rates.size();
+    lp->flags |= PROBE_AVAILABLE_RATES;
+  }
+
+  int num_entries = 0;
+  while (ptr < end && num_entries < _neighbors.size()) {
+    _next_neighbor_to_ad = (_next_neighbor_to_ad + 1) % _neighbors.size();
+    if (_next_neighbor_to_ad >= _neighbors.size()) {
+      break;
+    }
+    probe_list_t *probe = _bcast_stats.findp(_neighbors[_next_neighbor_to_ad]);
+    if (!probe) {
+      click_chatter("%{element}: lookup for %s, %d failed in ad \n", 
+		    this,
+		    _neighbors[_next_neighbor_to_ad].s().cc(),
+		    _next_neighbor_to_ad);
+    } else {
+
+      int size = probe->probe_types.size()*sizeof(link_info) + sizeof(link_entry);
+      if (ptr + size > end) {
+	break;
+      }
+      num_entries++;
+      link_entry *entry = (struct link_entry *)(ptr); 
+      entry->ip = probe->ip;
+      entry->num_rates = probe->probe_types.size();
+      ptr += sizeof(link_entry);
+      for (int x = 0; x < probe->probe_types.size(); x++) {
+	RateSize rs = probe->probe_types[x];
+	link_info *lnfo = (struct link_info *) (ptr + x*sizeof(link_info));
+	lnfo->size = rs._size;
+	lnfo->rate = rs._rate;
+	lnfo->fwd = probe->_fwd_rates[x];
+	lnfo->rev = probe->rev_rate(_start, rs._rate, rs._size);
+      }
+      ptr += probe->probe_types.size()*sizeof(link_info);
+    }
+
+  }
+  
+  lp->num_links = num_entries;
   lp->psz = sizeof(link_probe) + lp->num_links*sizeof(link_entry);
   lp->cksum = 0;
   lp->cksum = click_in_cksum((unsigned char *) lp, lp->psz);
@@ -374,42 +410,18 @@ ETTStat::initialize(ErrorHandler *errh)
     if (!_eth) 
       return errh->error("Source Ethernet address must be specified to send probes");
     
-    _timer_small = new Timer(static_send_small_hook, this);
-    _timer_small->initialize(this);
-
-    _timer_2 = new Timer(static_send_2_hook, this);
-    _timer_2->initialize(this);
-
-    _timer_4 = new Timer(static_send_4_hook, this);
-    _timer_4->initialize(this);
-
-    _timer_11 = new Timer(static_send_11_hook, this);
-    _timer_11->initialize(this);
-
-    _timer_22 = new Timer(static_send_22_hook, this);
-    _timer_22->initialize(this);
+    _timer = new Timer(static_send_hook, this);
+    _timer->initialize(this);
 
     struct timeval now;
     click_gettimeofday(&now);
     
-    _next_small = now;
-    _next_2 = now;
-    _next_4 = now;
-    _next_11 = now;
-    _next_22 = now;
+    _next = now;
 
     unsigned max_jitter = _period / 10;
-    add_jitter(max_jitter, &_next_small);
-    add_jitter(max_jitter, &_next_2);
-    add_jitter(max_jitter, &_next_4);
-    add_jitter(max_jitter, &_next_11);
-    add_jitter(max_jitter, &_next_22);
+    add_jitter(max_jitter, &_next);
 
-    _timer_small->schedule_at(_next_small);
-    _timer_2->schedule_at(_next_2);
-    _timer_4->schedule_at(_next_4);
-    _timer_11->schedule_at(_next_11);
-    _timer_22->schedule_at(_next_22);
+    _timer->schedule_at(_next);
   }
   click_gettimeofday(&_start);
   return 0;
@@ -420,6 +432,11 @@ ETTStat::initialize(ErrorHandler *errh)
 Packet *
 ETTStat::simple_action(Packet *p)
 {
+
+  
+  struct timeval now;
+  click_gettimeofday(&now);
+
   unsigned min_sz = sizeof(click_ether) + sizeof(link_probe);
   if (p->length() < min_sz) {
     click_chatter("ETTStat %s: packet is too small", id().cc());
@@ -451,17 +468,21 @@ ETTStat::simple_action(Packet *p)
 
 
   IPAddress ip = IPAddress(lp->ip);
+
+  if (ip == _ip) {
+    p->kill();
+    return 0;
+  }
   if (_arp_table) {
     _arp_table->insert(ip, EtherAddress(eh->ether_shost));
     _rev_arp.insert(EtherAddress(eh->ether_shost), ip);
   }
 
-  struct timeval now;
-  click_gettimeofday(&now);
-  probe_t probe(now, lp->seq_no);
+  uint8_t rate = WIFI_RATE_ANNO(p);
+  probe_t probe(now, lp->seq_no, lp->rate, lp->size);
   int new_period = lp->period;
   probe_list_t *l = _bcast_stats.findp(ip);
-
+  int x = 0;
   if (!l) {
     _bcast_stats.insert(ip, probe_list_t(ip, new_period, lp->tau));
     l = _bcast_stats.findp(ip);
@@ -471,177 +492,127 @@ ETTStat::simple_action(Packet *p)
   } else if (l->period != new_period) {
     click_chatter("ETTStat %s: %s has changed its link probe period from %u to %u; clearing probe info",
 		  id().cc(), ip.s().cc(), l->period, new_period);
-    l->probes_small.clear();
-    l->probes_2.clear();
-    l->probes_4.clear();
-    l->probes_11.clear();
-    l->probes_22.clear();
+    l->probes.clear();
+  }
+  
+  RateSize rs = RateSize(rate, lp->size);
+  l->period = new_period;
+  l->tau = lp->tau;
+  l->sent = lp->sent;
+  l->last_rx = now;
+  
+  l->probes.push_back(probe);
+
+  /* only keep stats for last _window *unique* sequence numbers */
+  while ((unsigned) l->probes.size() > _window) 
+    l->probes.pop_front();
+
+  
+  for (x = 0; x < l->probe_types.size(); x++) {
+    if (rs == l->probe_types[x]) {
+      break;
+    }
+  }
+  
+  if (x == l->probe_types.size()) {
+    l->probe_types.push_back(rs);
+    l->_fwd_rates.push_back(0);
   }
 
   if (lp->sent < (unsigned)l->sent) {
     click_chatter("ETTStat %s: %s has reset; clearing probe info",
 		  id().cc(), ip.s().cc());
-    l->probes_small.clear();
-    l->probes_2.clear();
-    l->probes_4.clear();
-    l->probes_11.clear();
-    l->probes_22.clear();
+    l->probes.clear();
   }
-
-  l->period = new_period;
-  l->tau = lp->tau;
-  l->sent = lp->sent;
-  l->last_rx = now;
-
-  if (lp->flags & PROBE_SMALL) {
-    l->probes_small.push_back(probe);
-  } else if (lp->flags & PROBE_2) {
-      l->probes_2.push_back(probe);
-  } else if (lp->flags & PROBE_4) {
-      l->probes_4.push_back(probe);
-  } else if (lp->flags & PROBE_11) {
-      l->probes_11.push_back(probe);
-  } else if (lp->flags & PROBE_22) {
-      l->probes_22.push_back(probe);
-  } else {
-    click_chatter("Weird probe\n");
-  }
-
 
   
-  /* only keep stats for last _window *unique* sequence numbers */
-  while ((unsigned) l->probes_small.size() > _window) 
-    l->probes_small.pop_front();
-
-  while ((unsigned) l->probes_2.size() > _window) 
-    l->probes_2.pop_front();
-
-  while ((unsigned) l->probes_4.size() > _window) 
-    l->probes_4.pop_front();
-
-  while ((unsigned) l->probes_11.size() > _window) 
-    l->probes_11.pop_front();
-
-  while ((unsigned) l->probes_22.size() > _window) 
-    l->probes_22.pop_front();
 
 
 
-  // look in received packet for info about our outgoing link
-  unsigned int max_entries = (p->length() - sizeof(*eh) - sizeof(link_probe)) / sizeof(link_entry);
-  unsigned int num_entries = lp->num_links;
-  if (num_entries > max_entries) {
-    click_chatter("ETTStat %s: WARNING, probe packet from %s contains fewer link entries (at most %u) than claimed (%u)", 
-		  id().cc(), IPAddress(lp->ip).s().cc(), max_entries, num_entries);
-    num_entries = max_entries;
-  }
+
+  uint8_t *ptr =  (uint8_t *) (lp + 1);
+
+  uint8_t *end  = (uint8_t *) p->data() + p->length();
 
 
-  const unsigned char *d = p->data() + sizeof(click_ether) + sizeof(link_probe);
-  for (unsigned i = 0; i < num_entries; i++, d += sizeof(link_entry)) {
-    link_entry *le = (struct link_entry *) d;
-    if (IPAddress(le->ip) == _ip) {
-      l->fwd_small = le->rev_small;
-      l->fwd_2 = le->rev_2;
-      l->fwd_4 = le->rev_4;
-      l->fwd_11 = le->rev_11;
-      l->fwd_22 = le->rev_22;
-    } else {
-      if (_2hop_linkstate && _ett_metric) {
-	_ett_metric->update_link(ip, le->ip, 
-				 le->fwd_small, le->rev_small,
-				 le->fwd_2, le->rev_2,
-				 le->fwd_4, le->rev_4,
-				 le->fwd_11, le->rev_11,
-				 le->fwd_22, le->rev_22
-				 );
-      }
+  if (lp->flags &= PROBE_AVAILABLE_RATES) {
+    int num_rates = ptr[0];
+    Vector<int> rates;
+    ptr++;
+    int x = 0;
+    while (ptr < end && x < num_rates) {
+      int rate = ptr[x];
+      rates.push_back(rate);
+      x++;
+    }
+    ptr += num_rates;
+    if(_rtable) {
+      _rtable->insert(EtherAddress(eh->ether_shost), rates);
     }
   }
+  int link_number = 0;
+  while (ptr < end && (unsigned) link_number < lp->num_links) {
+    link_number++;
+    link_entry *entry = (struct link_entry *)(ptr); 
+    IPAddress neighbor = entry->ip;
+    int num_rates = entry->num_rates;
+    if (0) {
+      click_chatter("%{element} on link number %d / %d: neighbor %s, num_rates %d\n",
+		    this,
+		    link_number,
+		    lp->num_links,
+		    neighbor.s().cc(),
+		    num_rates);
+    }
 
-  /* 
-   * always update the metric from us to them, even if we didn't hear 
-   * the fwd metric
-   */
-  if (_ett_metric) {
-    _ett_metric->update_link(_ip, ip, 
-			     l->fwd_small, l->rev_rate(_start, 0),
-			     l->fwd_2, l->rev_rate(_start, 2),
-			     l->fwd_4, l->rev_rate(_start, 4),
-			     l->fwd_11, l->rev_rate(_start, 11),
-			     l->fwd_22, l->rev_rate(_start, 22)
-			     );
+    ptr += sizeof(struct link_entry);
+    Vector<RateSize> rates;
+    Vector<int> fwd;
+    Vector<int> rev;
+    for (int x = 0; x < num_rates; x++) {
+      struct link_info *nfo = (struct link_info *) (ptr + x * (sizeof(struct link_info)));
+
+      if (0) {
+	click_chatter("%{element} on %s neighbor %s: size %d rate %d fwd %d rev %d\n",
+		      this,
+		      ip.s().cc(),
+		      neighbor.s().cc(),
+		      nfo->size,
+		      nfo->rate,
+		      nfo->fwd,
+		      nfo->rev);
+      }
+      
+      RateSize rs = RateSize(nfo->rate, nfo->size);
+      /* update other link stuff */
+      rates.push_back(rs);
+      fwd.push_back(nfo->fwd);
+      if (neighbor == _ip) {
+	rev.push_back(l->rev_rate(_start, rates[x]._rate, rates[x]._size));
+      } else {
+	rev.push_back(nfo->rev);
+      }
+
+      if (neighbor == _ip) {
+	/* set the fwd rate */
+	for (int x = 0; x < l->probe_types.size(); x++) {
+	  if (rs == l->probe_types[x]) {
+	    l->_fwd_rates[x] = nfo->rev;
+	    
+	    break;
+	  }
+	}
+      }
+    }
+    calc_ett(ip, neighbor, rates, fwd, rev);
+    ptr += num_rates * sizeof(struct link_info);
+    
   }
-  
+
   p->kill();
   return 0;
 }
   
-
-
-int 
-ETTStat::get_etx(int fwd, int rev) {
-
-  fwd = min(fwd, 100);
-  rev = min(rev, 100);
-  
-  if (fwd > 0 && rev > 0) {
-    if (fwd >= 80 && rev >= 80) {
-      fwd += ((fwd/10)-7)*20;
-      rev += ((rev/10)-7)*20;
-    }  
-    int val = (100 * 100 * 100) / (fwd * rev);
-    return val;
-  } 
-  
-  return 7777;
-
-}
-void
-ETTStat::update_links(IPAddress ip) {
-  probe_list_t *l = _bcast_stats.findp(ip);
-  if (_ett_metric) {
-    if (l) {
-      _ett_metric->update_link(_ip, ip,
-			       l->fwd_small, l->rev_rate(_start, 0),
-			       l->fwd_2, l->rev_rate(_start, 2),
-			       l->fwd_4, l->rev_rate(_start, 4),
-			       l->fwd_11, l->rev_rate(_start, 11),
-			       l->fwd_22, l->rev_rate(_start, 22)
-			       );
-    } else {
-      _ett_metric->update_link(_ip, ip,
-			       0,0,
-			       0,0,
-			       0,0,
-			       0,0,
-			       0,0
-			       );
-    }			       
-  }
-}
-
-
-String
-ETTStat::read_window(Element *xf, void *)
-{
-  ETTStat *f = (ETTStat *) xf;
-  return String(f->_window) + "\n";
-}
-
-String
-ETTStat::read_period(Element *xf, void *)
-{
-  ETTStat *f = (ETTStat *) xf;
-  return String(f->_period) + "\n";
-}
-
-String
-ETTStat::read_tau(Element *xf, void *)
-{
-  ETTStat *f = (ETTStat *) xf;
-  return String(f->_tau) + "\n";
-}
 
 String
 ETTStat::read_bcast_stats(Element *xf, void *)
@@ -673,20 +644,17 @@ ETTStat::read_bcast_stats(Element *xf, void *)
     } else {
       sa << " ?";
     }
+    for (int x = 0; x < pl->probe_types.size(); x++) {
+      sa << " [ " << pl->probe_types[x]._rate << " ";
+      sa << pl->probe_types[x]._size << " ";
+      int rev_rate = pl->rev_rate(e->_start, pl->probe_types[x]._rate, 
+				  pl->probe_types[x]._size);
+      sa << pl->_fwd_rates[x] << " ";
+      sa << rev_rate << " ]";
+    }
     sa << " period " << pl->period;
     sa << " tau " << pl->tau;
     sa << " sent " << pl->sent;
-    sa << " fwd_small " << (int)pl->fwd_small;
-    sa << " rev_small " << pl->rev_rate(e->_start, 0);
-    sa << " fwd_2 " << (int)pl->fwd_2;
-    sa << " rev_2 " << pl->rev_rate(e->_start, 2);
-    sa << " fwd_4 " << (int)pl->fwd_4;
-    sa << " rev_4 " << pl->rev_rate(e->_start, 4);
-    sa << " fwd_11 " << (int)pl->fwd_11;
-    sa << " rev_11 " << pl->rev_rate(e->_start, 11);
-    sa << " fwd_22 " << (int)pl->fwd_22;
-    sa << " rev_22 " << pl->rev_rate(e->_start, 22);
-    sa << " etx " << e->get_etx(pl->fwd_2, pl->rev_rate(e->_start, 0));
     sa << " last_rx " << now - pl->last_rx;
     sa << "\n";
     
@@ -696,50 +664,11 @@ ETTStat::read_bcast_stats(Element *xf, void *)
 }
 
 
-int
-ETTStat::write_window(const String &arg, Element *el, 
-		       void *, ErrorHandler *errh)
-{
-  ETTStat *e = (ETTStat *) el;
-  if (!cp_unsigned(arg, &e->_window))
-    return errh->error("window must be >= 0");
-  return 0;
-}
-
-int
-ETTStat::write_period(const String &arg, Element *el, 
-		       void *, ErrorHandler *errh)
-{
-  ETTStat *e = (ETTStat *) el;
-  if (!cp_unsigned(arg, &e->_period))
-    return errh->error("period must be >= 0");
-
-  return 0;
-}
-
-int
-ETTStat::write_tau(const String &arg, Element *el, 
-		       void *, ErrorHandler *errh)
-{
-  ETTStat *e = (ETTStat *) el;
-  if (!cp_unsigned(arg, &e->_tau))
-    return errh->error("tau must be >= 0");
-  return 0;
-}
-
-
 void
 ETTStat::add_handlers()
 {
   add_read_handler("bcast_stats", read_bcast_stats, 0);
 
-  add_read_handler("window", read_window, 0);
-  add_read_handler("tau", read_tau, 0);
-  add_read_handler("period", read_period, 0);
-
-  add_write_handler("window", write_window, 0);
-  add_write_handler("tau", write_tau, 0);
-  add_write_handler("period", write_period, 0);
 }
 IPAddress 
 ETTStat::reverse_arp(EtherAddress eth)

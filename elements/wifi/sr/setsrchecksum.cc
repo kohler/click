@@ -41,10 +41,9 @@ SetSRChecksum::~SetSRChecksum()
 Packet *
 SetSRChecksum::simple_action(Packet *xp)
 {
-  WritablePacket *p = xp->uniqueify();
-  click_ether *eh = (click_ether *) p->data();
+  click_ether *eh = (click_ether *) xp->data();
   struct srpacket *pk = (struct srpacket *) (eh+1);
-  unsigned plen = p->length();
+  unsigned plen = xp->length();
   unsigned int tlen = 0;
 
   if (!pk)
@@ -65,14 +64,14 @@ SetSRChecksum::simple_action(Packet *xp)
   pk->_version = _sr_version;
   pk->set_checksum();
 
-  return p;
+  return xp;
 
  bad:
   click_chatter("%s: bad lengths plen %d, tlen %d", 
 		id().cc(),
 		plen,
 		tlen);
-  p->kill();
+  xp->kill();
   return(0);
 }
 

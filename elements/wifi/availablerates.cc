@@ -77,6 +77,10 @@ AvailableRates::parse_and_insert(String s, ErrorHandler *errh)
     }
   }
   
+  if (default_rates) {
+    return 0;
+  }
+
   DstInfo d = DstInfo(e);
   d._rates = rates;
   d._eth = e;
@@ -159,6 +163,13 @@ AvailableRates_read_param(Element *e, void *thunk)
     return String(td->_debug) + "\n";
   case H_RATES: {
     StringAccum sa;
+    if (td->_default_rates.size()) {
+      sa << "DEFAULT ";
+      for (int x = 0; x < td->_default_rates.size(); x++) {
+	sa << " " << td->_default_rates[x];
+      }
+      sa << "\n";
+    }
     for (AvailableRates::RIter iter = td->_rtable.begin(); iter; iter++) {
       AvailableRates::DstInfo n = iter.value();
       sa << n._eth.s().cc() << " ";

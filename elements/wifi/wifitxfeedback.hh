@@ -45,6 +45,9 @@ public:
     
     WifiTXFeedback();
     ~WifiTXFeedback();
+
+    static void static_initialize();
+    static void static_cleanup();
     
     const char *class_name() const { return "WifiTXFeedback"; }
     const char *processing() const { return PUSH; }
