@@ -62,6 +62,12 @@ FromBPF::initialize(ErrorHandler *errh)
   else if (!_ifname)
     return errh->error("interface not set");
   
+  /* 
+   * Later versions of pcap distributed with linux (e.g. the redhat
+   * linux pcap-0.4-16) want to have a filter installed before they
+   * will pick up any packets.
+   */
+
 #ifdef HAVE_PCAP
   char *ifname = _ifname.mutable_c_str();
   char ebuf[PCAP_ERRBUF_SIZE];
@@ -72,6 +78,27 @@ FromBPF::initialize(ErrorHandler *errh)
                          ebuf);
   if (!_pcap)
     return errh->error("%s: %s", ifname, ebuf);
+
+  bpf_u_int32 netmask;
+  bpf_u_int32 localnet;
+  if (pcap_lookupnet(ifname, &localnet, &netmask, ebuf) < 0) {
+    errh->warning("%s: %s", ifname, ebuf);
+  }
+  
+  struct bpf_program fcode;
+  /* 
+   * assume we can use 0 pointer for program string and get ``empty''
+   * filter program.  
+   */
+  if (pcap_compile(_pcap, &fcode, 0, 0, netmask) < 0) {
+    return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
+  }
+
+  if (pcap_setfilter(_pcap, &fcode) < 0) {
+    return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
+  }
+
+
 #else
   errh->warning("can't get packets: not compiled with pcap support");
 #endif
