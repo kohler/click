@@ -7360,6 +7360,7 @@ _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
+#include <poll.h>
 #ifdef _POLL_EMUL_H_
 # error "error"
 #endif

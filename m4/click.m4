@@ -701,7 +701,8 @@ AC_DEFUN([CLICK_CHECK_POLL_H], [
     if test "$ac_cv_poll_h" = yes; then
 	AC_CACHE_CHECK([whether <poll.h> is emulated], 
 	    ac_cv_emulated_poll_h,
-	    [AC_TRY_COMPILE([#ifdef _POLL_EMUL_H_
+	    [AC_TRY_COMPILE([#include <poll.h>
+#ifdef _POLL_EMUL_H_
 # error "error"
 #endif
 ], [], ac_cv_emulated_poll_h=no, ac_cv_emulated_poll_h=yes)])
