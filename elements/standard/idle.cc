@@ -32,7 +32,7 @@ Idle::~Idle()
 void *
 Idle::cast(const char *name)
 {
-  if (strcmp(name, "Notifier") == 0)
+  if (strcmp(name, Notifier::EMPTY_NOTIFIER) == 0)
     return static_cast<Notifier *>(this);
   else if (strcmp(name, "Idle") == 0)
     return this;

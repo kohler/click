@@ -28,6 +28,7 @@ CLICK_DECLS
 static uint32_t signals[NUM_SIGNALS / 32];
 
 const uint32_t NotifierSignal::true_value = 0xFFFFFFFFU;
+const char * const Notifier::EMPTY_NOTIFIER = "Notifier.EMPTY";
 
 
 NotifierSignal &
@@ -168,27 +169,28 @@ ActiveNotifier::listeners(Vector<Task *> &v) const
 namespace {
 
 class NotifierElementFilter : public ElementFilter { public:
-    NotifierElementFilter();
+    NotifierElementFilter(const char *name);
     bool check_match(Element *, int, PortType);
     Vector<Notifier *> _notifiers;
     NotifierSignal _signal;
     bool _pass2;
     bool _need_pass2;
+    const char *_name;
 };
 
-NotifierElementFilter::NotifierElementFilter()
-    : _signal(false), _pass2(false), _need_pass2(false)
+NotifierElementFilter::NotifierElementFilter(const char *name)
+    : _signal(false), _pass2(false), _need_pass2(false), _name(name)
 {
 }
 
 bool
 NotifierElementFilter::check_match(Element *e, int port, PortType pt)
 {
-    if (Notifier *n = (Notifier *) (e->cast("Notifier"))) {
+    if (Notifier *n = (Notifier *) (e->cast(_name))) {
 	_notifiers.push_back(n);
 	_signal += n->notifier_signal();
 	Notifier::SearchOp search_op = n->notifier_search_op();
-	if (search_op == Notifier::SEARCH_UPSTREAM_LISTENERS) {
+	if (search_op == Notifier::SEARCH_WAKE_CONTINUE) {
 	    _need_pass2 = true;
 	    return !_pass2;
 	} else
@@ -211,9 +213,9 @@ NotifierElementFilter::check_match(Element *e, int port, PortType pt)
 
 
 NotifierSignal
-Notifier::upstream_pull_signal(Element *e, int port, Task *t)
+Notifier::upstream_empty_signal(Element *e, int port, Task *t)
 {
-    NotifierElementFilter filter;
+    NotifierElementFilter filter(EMPTY_NOTIFIER);
     Vector<Element *> v;
     int ok = e->router()->upstream_elements(e, port, &filter, v);
 

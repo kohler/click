@@ -36,7 +36,7 @@ NotifierQueue::cast(const char *n)
 {
     if (strcmp(n, "Queue") == 0)
 	return (NotifierQueue *)this;
-    else if (strcmp(n, "Notifier") == 0)
+    else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
 	return static_cast<Notifier *>(this);
     else
 	return SimpleQueue::cast(n);

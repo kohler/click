@@ -62,7 +62,7 @@ LinkUnqueue::initialize(ErrorHandler *errh)
 {
     ScheduleInfo::initialize_task(this, &_task, errh);
     _timer.initialize(this);
-    _signal = Notifier::upstream_pull_signal(this, 0, &_task);
+    _signal = Notifier::upstream_empty_signal(this, 0, &_task);
     Storage::_capacity = 0x7FFFFFFF;
     _state = S_ASLEEP;
     return 0;

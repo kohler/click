@@ -70,7 +70,7 @@ int
 StrideSched::initialize(ErrorHandler *)
 {
   for (Client *c = _list->_next; c != _list; c = _list->_next)
-    c->_signal = Notifier::upstream_pull_signal(this, c->_port, 0);
+    c->_signal = Notifier::upstream_empty_signal(this, c->_port, 0);
   return 0;
 }
 

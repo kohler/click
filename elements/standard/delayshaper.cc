@@ -41,7 +41,7 @@ DelayShaper::cast(const char *n)
 {
     if (strcmp(n, "DelayShaper") == 0)
 	return (DelayShaper *)this;
-    else if (strcmp(n, "Notifier") == 0)
+    else if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
 	return static_cast<Notifier *>(this);
     else
 	return Element::cast(n);
@@ -50,7 +50,7 @@ DelayShaper::cast(const char *n)
 Notifier::SearchOp
 DelayShaper::notifier_search_op()
 {
-    return SEARCH_UPSTREAM_LISTENERS;
+    return SEARCH_WAKE_CONTINUE;
 }
 
 int
@@ -65,7 +65,7 @@ int
 DelayShaper::initialize(ErrorHandler *)
 {
     _timer.initialize(this);
-    _upstream_signal = Notifier::upstream_pull_signal(this, 0, 0);
+    _upstream_signal = Notifier::upstream_empty_signal(this, 0, 0);
     return 0;
 }
 

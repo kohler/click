@@ -311,7 +311,7 @@ KernelTun::initialize(ErrorHandler *errh)
 	return -1;
     if (input_is_pull(0)) {
 	ScheduleInfo::join_scheduler(this, &_task, errh);
-	_signal = Notifier::upstream_pull_signal(this, 0, &_task);
+	_signal = Notifier::upstream_empty_signal(this, 0, &_task);
     }
     add_select(_fd, SELECT_READ);
     return 0;

@@ -37,7 +37,7 @@ DRRSched::~DRRSched()
 void *
 DRRSched::cast(const char *n)
 {
-    if (strcmp(n, "Notifier") == 0)
+    if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
 	return static_cast<Notifier *>(this);
     else
 	return Element::cast(n);
@@ -46,7 +46,7 @@ DRRSched::cast(const char *n)
 Notifier::SearchOp
 DRRSched::notifier_search_op()
 {
-    return SEARCH_UPSTREAM_LISTENERS;
+    return SEARCH_WAKE_CONTINUE;
 }
 
 void
@@ -74,7 +74,7 @@ DRRSched::initialize(ErrorHandler *errh)
     for (int i = 0; i < ninputs(); i++) {
 	_head[i] = 0;
 	_deficit[i] = 0;
-	_signals[i] = Notifier::upstream_pull_signal(this, i, 0);
+	_signals[i] = Notifier::upstream_empty_signal(this, i, 0);
     }
     _next = 0;
     return 0;

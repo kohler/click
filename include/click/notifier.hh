@@ -43,13 +43,15 @@ class Notifier { public:
 
     virtual NotifierSignal notifier_signal();
     
-    enum SearchOp { SEARCH_DONE = 0, SEARCH_CONTINUE, SEARCH_UPSTREAM_LISTENERS };
+    enum SearchOp { SEARCH_DONE = 0, SEARCH_CONTINUE, SEARCH_WAKE_CONTINUE };
     virtual SearchOp notifier_search_op();
     
     virtual int add_listener(Task *);
     virtual void remove_listener(Task *);
 
-    static NotifierSignal upstream_pull_signal(Element *, int port, Task *);
+    static const char * const EMPTY_NOTIFIER;
+    
+    static NotifierSignal upstream_empty_signal(Element *, int port, Task *);
     
 };
 
@@ -88,7 +90,7 @@ class ActiveNotifier : public PassiveNotifier { public:
     // Note: An ActiveNotifier MUST NOT call wake_listeners() while in a
     // function that a listener has called from its Task, or the router will
     // crash. One common interpretation: An ActiveNotifier element MUST NOT
-    // call wake_listeners() from its pull() function; similarly, it mus tnot
+    // call wake_listeners() from its pull() function; similarly, it must not
     // call set_listeners(true) unless the signal is already active.
     
   private:

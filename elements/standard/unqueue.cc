@@ -53,7 +53,7 @@ Unqueue::initialize(ErrorHandler *errh)
 {
   _count = 0;
   ScheduleInfo::initialize_task(this, &_task, _active, errh);
-  _signal = Notifier::upstream_pull_signal(this, 0, &_task);
+  _signal = Notifier::upstream_empty_signal(this, 0, &_task);
   if (_burst < 0)
     _burst = 0x7FFFFFFFU;
   else if (_burst == 0)

@@ -146,7 +146,7 @@ ToDevice::initialize(ErrorHandler *errh)
 
   if (input_is_pull(0)) {
     ScheduleInfo::join_scheduler(this, &_task, errh);
-    _signal = Notifier::upstream_pull_signal(this, 0, &_task);
+    _signal = Notifier::upstream_empty_signal(this, 0, &_task);
   }
   return 0;
 }

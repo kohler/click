@@ -38,7 +38,7 @@ TimeSortedSched::~TimeSortedSched()
 void *
 TimeSortedSched::cast(const char *n)
 {
-    if (strcmp(n, "Notifier") == 0)
+    if (strcmp(n, Notifier::EMPTY_NOTIFIER) == 0)
 	return static_cast<Notifier *>(this);
     else
 	return Element::cast(n);
@@ -47,7 +47,7 @@ TimeSortedSched::cast(const char *n)
 Notifier::SearchOp
 TimeSortedSched::notifier_search_op()
 {
-    return SEARCH_UPSTREAM_LISTENERS;
+    return SEARCH_WAKE_CONTINUE;
 }
 
 void
@@ -76,7 +76,7 @@ TimeSortedSched::initialize(ErrorHandler *errh)
 	return errh->error("out of memory!");
     for (int i = 0; i < ninputs(); i++) {
 	_vec[i] = 0;
-	_signals[i] = Notifier::upstream_pull_signal(this, i, 0);
+	_signals[i] = Notifier::upstream_empty_signal(this, i, 0);
     }
     return 0;
 }
