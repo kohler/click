@@ -1,3 +1,22 @@
+2004-04-28 Wednesday 17:21  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.28),
+	elements/test/comparepackets.cc (1.1),
+	elements/test/comparepackets.hh (1.1),
+	include/click/standard/drivermanager.hh (1.17): wait_for =>
+	wait_time, and add a correct ComparePackets
+
+2004-04-28 Wednesday 17:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.27),
+	include/click/router.hh (1.56),
+	include/click/standard/drivermanager.hh (1.16),
+	linuxmodule/module.cc (1.84), linuxmodule/sched.cc (1.46),
+	userlevel/click.cc (1.90), lib/master.cc (1.9), lib/router.cc
+	(1.160), ns/nsclick.cc (1.18): DriverManager fixes for correct
+	behavior; wait_for doesnt consume a driver stop event; rename
+	driver_reservations() to runcount()
+
 2004-04-28 Wednesday 14:01  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* conf/test.click (1.10): add Align to prevent confusion
