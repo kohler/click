@@ -1,3 +1,8 @@
+2002-05-21 Tuesday 11:43  Eddie Kohler <kohler@aciri.org>
+
+	* conf/: make-ip-conf.pl (1.17), make-ip-conf.pl (1.18): more
+	changes from Scott
+
 2002-05-20 Monday 15:09  Eddie Kohler <kohler@aciri.org>
 
 	* conf/make-ip-conf.pl (1.16): Adopt and adapt Scott's cleanups of
