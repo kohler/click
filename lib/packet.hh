@@ -16,7 +16,7 @@ public:
     unsigned char dst_ip6[16];
     bool mac_broadcast : 1; // flag: MAC address was a broadcast or multicast
     bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
-    bool sniffed : 1;	// packet been sniffed before
+    unsigned char sniff_flags : 6;   // flags used for sniffers
     char param_off;     // for ICMP Parameter Problem, byte offset of error
     char color;         // one of 255 colors set by Paint element
     int fwd_rate;
@@ -153,8 +153,8 @@ private:
   const IP6Address &dst_ip6_anno() const;
   void set_dst_ip6_anno(const IP6Address &a);
 
-  bool sniffed_anno() const		{ return anno()->sniffed; }
-  void set_sniffed_anno(bool s)		{ anno()->sniffed = s; }
+  unsigned char sniff_flags_anno() const{ return anno()->sniff_flags; }
+  void set_sniff_flags_anno(unsigned char c)   { anno()->sniff_flags = c; }
   bool mac_broadcast_anno() const	{ return anno()->mac_broadcast; }
   void set_mac_broadcast_anno(bool b)	{ anno()->mac_broadcast = b; }
   bool fix_ip_src_anno() const		{ return anno()->fix_ip_src; }

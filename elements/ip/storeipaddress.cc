@@ -1,6 +1,6 @@
 /*
- * storeipaddress.{cc,hh} -- element sets IP destination to value of
- * destination address annotation
+ * storeipaddress.{cc,hh} -- element stores IP destination annotation into
+ * packet
  * Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
