@@ -19,11 +19,11 @@ class Timer { public:
   ~Timer()				{ if (scheduled()) unschedule(); }
 
   // functions on Timers
-  bool attached() const			{ return _head != 0; }
+  bool initialized() const		{ return _head != 0; }
   bool scheduled() const		{ return _prev != 0; }
-  void attach(Timer *);
-  void attach(Router *);
-  void attach(Element *);
+  void initialize(Timer *);
+  void initialize(Router *);
+  void initialize(Element *);
   void schedule_at(const struct timeval &);
   void schedule_after_ms(int);
   void unschedule();
@@ -54,9 +54,9 @@ class Timer { public:
 };
 
 inline void
-Timer::attach(Timer *t)
+Timer::initialize(Timer *t)
 {
-  assert(!attached() && t->is_head());
+  assert(!initialized() && t->is_head());
   _head = t;
 }
 

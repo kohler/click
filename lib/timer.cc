@@ -80,17 +80,15 @@ Timer::task_hook(Timer *, void *thunk)
 }
 
 void
-Timer::attach(Router *r)
+Timer::initialize(Router *r)
 {
-  assert(!attached());
-  attach(r->timer_head());
+  initialize(r->timer_head());
 }
 
 void
-Timer::attach(Element *e)
+Timer::initialize(Element *e)
 {
-  assert(!attached());
-  attach(e->router()->timer_head());
+  initialize(e->router()->timer_head());
 }
 
 inline void
@@ -111,7 +109,7 @@ Timer::finish_schedule()
 void
 Timer::schedule_at(const struct timeval &when)
 {
-  assert(!is_head() && attached());
+  assert(!is_head() && initialized());
   if (scheduled())
     unschedule();
   _expires = when;
@@ -121,7 +119,7 @@ Timer::schedule_at(const struct timeval &when)
 void
 Timer::schedule_after_ms(int ms)
 {
-  assert(!is_head() && attached());
+  assert(!is_head() && initialized());
   if (scheduled())
     unschedule();
   click_gettimeofday(&_expires);
