@@ -1,3 +1,11 @@
+2003-11-18 Tuesday 11:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: e2elossmetric.cc (1.2), e2elossmetric.hh (1.2),
+	etxmetric.cc (1.2), lirmetric.cc (1.2), lirmetric.hh (1.2),
+	threshmetric.cc (1.1), threshmetric.hh (1.1): added new
+	ThresholdMetric, ala DARPA PRNet; fixed compile errors and bugs in
+	other new metrics
+
 2003-11-17 Monday 14:36  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: e2elossmetric.cc (1.1), e2elossmetric.hh (1.1),
