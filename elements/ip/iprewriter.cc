@@ -140,8 +140,7 @@ IPRewriter::Pattern::Pattern(const IPAddress &saddr, int sportl, int sporth,
 }
 
 IPRewriter::Pattern *
-IPRewriter::Pattern::make(const String &conf, IPRewriter *rewriter,
-			  ErrorHandler *errh)
+IPRewriter::Pattern::make(const String &conf, ErrorHandler *errh)
 {
   Vector<String> words;
   cp_spacevec(conf, words);
@@ -200,14 +199,12 @@ IPRewriter::Pattern::make(const String &conf, IPRewriter *rewriter,
     return 0;
   }
 
-  if (!cp_integer(words[4], foutput) || foutput < 0
-      || (rewriter && foutput >= rewriter->noutputs())) {
+  if (!cp_integer(words[4], foutput) || foutput < 0) {
     errh->error("bad forward output `%s' in pattern spec", words[4].cc());
     return 0;
   }
   
-  if (!cp_integer(words[5], routput) || routput < 0
-      || (rewriter && routput >= rewriter->noutputs())) {
+  if (!cp_integer(words[5], routput) || routput < 0) {
     errh->error("bad reverse output `%s' in pattern spec", words[5].cc());
     return 0;
   }
@@ -448,6 +445,15 @@ IPRewriter::configure(const String &conf, ErrorHandler *errh)
       errh->message("  pattern from input spec %d: %s", all_pat_source[i], s.cc());
       errh->message("  pattern from input spec %d: %s", all_pat_source[j], t.cc());
     }
+
+  // check patterns for bad output numbers
+  for (int i = 0; i < all_pat.size(); i++) {
+    int f = all_pat[i]->forward_output(), r = all_pat[i]->reverse_output();
+    if (f < 0 || f >= noutputs())
+      errh->error("pattern from input spec %d: bad forward output `%d'", all_pat_source[i], f);
+    if (r < 0 || r >= noutputs())
+      errh->error("pattern from input spec %d: bad reverse output `%d'", all_pat_source[i], r);
+  }
   
   return (errh->nerrors() == before ? 0 : -1);
 }

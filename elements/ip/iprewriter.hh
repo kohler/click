@@ -176,12 +176,14 @@ class IPRewriter : public Element {
    public:
     
     Pattern(const IPAddress &, int, int, const IPAddress &, int, int, int);
-    static Pattern *make(const String &, IPRewriter *, ErrorHandler *);
+    static Pattern *make(const String &, ErrorHandler *);
     
     bool possible_conflict(const Pattern &) const;
     bool definite_conflict(const Pattern &) const;
     
     operator bool() const { return _saddr || _sporth || _daddr || _dport; }
+    int forward_output() const			{ return _forward_output; }
+    int reverse_output() const			{ return _reverse_output; }
     
     bool create_mapping(const IPFlowID &, Mapping *&, Mapping *&);
     void mapping_freed(Mapping *);

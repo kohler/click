@@ -9,10 +9,10 @@
  * Calculates the IP header's checksum and sets the checksum header field.
  *
  * You will not normally need SetIPChecksum. Most elements that modify an IP
- * header, like DecIPTTL, SetIPDSCP, and Rewriter, already update the checksum
- * incrementally.
+ * header, like DecIPTTL, SetIPDSCP, and IPRewriter, already update the
+ * checksum incrementally.
  *
- * =a CheckIPHeader DecIPTTL SetIPDSCP Rewriter */
+ * =a CheckIPHeader DecIPTTL SetIPDSCP IPRewriter */
 
 #include "element.hh"
 #include "glue.hh"
@@ -23,7 +23,7 @@ public:
   ~SetIPChecksum();
   
   const char *class_name() const		{ return "SetIPChecksum"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   SetIPChecksum *clone() const;
 
   Packet *simple_action(Packet *);
