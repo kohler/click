@@ -6,10 +6,13 @@
 #include "straccum.hh"
 #include <stdio.h>
 
-RouterT::RouterT()
-  : _element_type_map(-1), _element_name_map(-1)
+RouterT::RouterT(RouterT *enclosing)
+  : _enclosing_scope(enclosing),
+    _element_type_map(-1), _element_name_map(-1)
 {
-  // add space for tunnel type
+  if (_enclosing_scope)
+    _enclosing_scope->use();
+  // add space for tunnel and upref types
   _element_type_names.push_back("<tunnel>");
   _element_type_map.insert("<tunnel>", TUNNEL_TYPE);
   _element_classes.push_back(0);
@@ -20,6 +23,7 @@ RouterT::RouterT()
 
 RouterT::RouterT(const RouterT &o)
   : ElementClassT(),
+    _enclosing_scope(o._enclosing_scope),
     _element_type_map(o._element_type_map),
     _element_type_names(o._element_type_names),
     _element_classes(o._element_classes),
@@ -29,6 +33,8 @@ RouterT::RouterT(const RouterT &o)
     _hookup_to(o._hookup_to),
     _hookup_landmark(o._hookup_landmark)
 {
+  if (_enclosing_scope)
+    _enclosing_scope->use();
   for (int i = 0; i < _element_classes.size(); i++)
     if (_element_classes[i])
       _element_classes[i]->use();
@@ -36,22 +42,45 @@ RouterT::RouterT(const RouterT &o)
 
 RouterT::~RouterT()
 {
+  _enclosing_scope->unuse();
   for (int i = 0; i < _element_classes.size(); i++)
     if (_element_classes[i])
       _element_classes[i]->unuse();
 }
 
 
+ElementClassT *
+RouterT::find_element_class(const String &s) const
+{
+  const RouterT *r = this;
+  while (r) {
+    int i = r->_element_type_map[s];
+    if (i >= 0) return r->_element_classes[i];
+    r = r->_enclosing_scope;
+  }
+  return 0;
+}
+
 int
-RouterT::get_type_index(const String &s, ElementClassT *fclass = 0)
+RouterT::get_type_index(const String &s)
+{
+  int i = _element_type_map[s];
+  if (i >= 0)
+    return i;
+  else
+    return get_type_index(s, find_element_class(s));
+}
+
+int
+RouterT::get_type_index(const String &s, ElementClassT *eclass)
 {
   int i = _element_type_map[s];
   if (i < 0) {
     i = _element_classes.size();
     _element_type_map.insert(s, i);
     _element_type_names.push_back(s);
-    _element_classes.push_back(fclass);
-    if (fclass) fclass->use();
+    _element_classes.push_back(eclass);
+    if (eclass) eclass->use();
   }
   return i;
 }
@@ -63,6 +92,20 @@ RouterT::get_anon_type_index(const String &name, ElementClassT *fclass)
   _element_type_names.push_back(name);
   _element_classes.push_back(fclass);
   if (fclass) fclass->use();
+  return i;
+}
+
+int
+RouterT::set_type_index(const String &s, ElementClassT *eclass)
+{
+  int i = _element_type_map[s];
+  if (i < 0 || _element_classes[i] != eclass) {
+    i = _element_classes.size();
+    _element_type_map.insert(s, i);
+    _element_type_names.push_back(s);
+    _element_classes.push_back(eclass);
+    if (eclass) eclass->use();
+  }
   return i;
 }
 
@@ -480,7 +523,7 @@ RouterT::expand_compound(ElementT &compound, RouterT *r, ErrorHandler *errh)
 {
   // complain about configuration string
   if (compound.configuration && errh)
-    errh->lwarning(compound.landmark, "compound element cannot have configuration string");
+    errh->lerror(compound.landmark, "compound element `%s' given configuration string", compound.name.cc());
 
   // create prefix
   String prefix;

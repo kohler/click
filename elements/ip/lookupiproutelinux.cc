@@ -6,6 +6,12 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
+#ifdef __KERNEL__
+# define new xxx_new
+# include <linux/netdevice.h>
+# include <net/route.h>
+# undef new
+#endif
 
 LookupIPRouteLinux::LookupIPRouteLinux()
 {

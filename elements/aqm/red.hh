@@ -17,7 +17,7 @@ class Queue;
  * proportional to that sum.
  *
  * =e
- * ... -> RED(5, 50, 0.02) -> Queue(200) -> ...
+ * = ... -> RED(5, 50, 0.02) -> Queue(200) -> ...
  * 
  * =a Queue
  */

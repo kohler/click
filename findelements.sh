@@ -2,6 +2,9 @@
 
 # determine mode
 expand=0
+prefix=""
+all=0
+while [ x"$1" != x ]; do
 case $1 in
   -m|--m|--ma|--mak|--make|--makef|--makefi|--makefil|--makefile)
      makefile=1; shift 1;;
@@ -9,19 +12,30 @@ case $1 in
      makefile=0; shift 1;;
   -x|--e|--ex|--exp|--expa|--expan|--expand)
      expand=1; shift 1;;
+  -p|--p|--pr|--pre|--pref|--prefi|--prefix)
+     shift 1; prefix="$1/"; shift 1;;
+  -a|--a|--al|--all)
+     all=1; shift 1;;
   *)
      echo "Usage: ./findelements.sh [-m|-c|-x] < [FILES AND DIRECTORIES]" 1>&2
      exit 1;;
 esac
+done
 
 # expand list of files
+if test $all = 1; then
+  first_files=`cd ${prefix}elements; ls`
+else
+  first_files=`cat`
+fi
+
 files=""
-for i in `cat`; do
-  if test -d elements/$i; then
+for i in $first_files; do
+  if test -d "${prefix}elements/$i"; then
     if echo "$i" | grep '/'; then
       :
     else
-      i="elements/$i"
+      i="${prefix}elements/$i"
     fi
   fi
   if test -d $i; then

@@ -593,8 +593,6 @@ LexerT::yelementclass()
     String n = tname.string();
     if (_router->findex(n) >= 0)
       lerror("`%s' already used as an element name", n.cc());
-    else if (_router->type_index(n) >= 0)
-      lerror("element type `%s' already exists", n.cc());
     else
       facclass_name = n;
   }
@@ -602,7 +600,7 @@ LexerT::yelementclass()
   expect('{');
   RouterT *old_router = _router;
   int old_offset = _anonymous_offset;
-  _router = new RouterT;
+  _router = new RouterT(old_router);
   _router->get_findex("input", RouterT::TUNNEL_TYPE);
   _router->get_findex("output", RouterT::TUNNEL_TYPE);
   _anonymous_offset = 2;
@@ -613,7 +611,7 @@ LexerT::yelementclass()
   // '}' was consumed
 
   if (facclass_name)
-    old_router->get_type_index(facclass_name, _router);
+    old_router->set_type_index(facclass_name, _router);
 
   _router->unuse();
   _router = old_router;
@@ -658,7 +656,7 @@ LexerT::ylocal()
   // '{' was already read
   RouterT *old_router = _router;
   int old_offset = _anonymous_offset;
-  _router = new RouterT;
+  _router = new RouterT(old_router);
   _router->get_findex("input", RouterT::TUNNEL_TYPE);
   _router->get_findex("output", RouterT::TUNNEL_TYPE);
   _anonymous_offset = 2;

@@ -6,6 +6,8 @@
 
 class RouterT : public ElementClassT {
 
+  RouterT *_enclosing_scope;
+  
   HashMap<String, int> _element_type_map;
   Vector<String> _element_type_names;
   Vector<ElementClassT *> _element_classes;
@@ -27,7 +29,7 @@ class RouterT : public ElementClassT {
   static const int TUNNEL_TYPE = 0;
   static const int UPREF_TYPE = 1;
   
-  RouterT();
+  RouterT(RouterT * = 0);
   RouterT(const RouterT &);
   virtual ~RouterT();
 
@@ -35,8 +37,11 @@ class RouterT : public ElementClassT {
   const String &type_name(int i) const	{ return _element_type_names[i]; }
   ElementClassT *element_class(int i) const { return _element_classes[i]; }
   int type_index(const String &s) const { return _element_type_map[s]; }
-  int get_type_index(const String &, ElementClassT * = 0);
-  int get_anon_type_index(const String &, ElementClassT * = 0);
+  ElementClassT *find_element_class(const String &) const;
+  int get_type_index(const String &);
+  int get_type_index(const String &, ElementClassT *);
+  int set_type_index(const String &, ElementClassT *);
+  int get_anon_type_index(const String &, ElementClassT *);
 
   int nelements() const			{ return _elements.size(); }
   int findex(const String &s) const	{ return _element_name_map[s]; }

@@ -93,7 +93,9 @@ struct ip {
 #define IPOPT_RA        148     /* router alert */
 
 #ifdef CLICK_LINUXMODULE
-#include <net/checksum.h>
+# define new xxx_new
+# include <net/checksum.h>
+# undef new
 # define in_cksum(addr, len)	ip_compute_csum(addr, len)
 #else
 # ifdef __cplusplus

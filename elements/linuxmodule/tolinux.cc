@@ -2,6 +2,7 @@
 # include <config.h>
 #endif
 #include "tolinux.hh"
+#include <linux/if_ether.h>
 
 ToLinux::ToLinux()
 {

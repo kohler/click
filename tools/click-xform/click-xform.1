@@ -1,0 +1,256 @@
+.\" -*- mode: nroff -*-
+.ds V 1.0
+.ds E " \-\- 
+.if t .ds E \(em
+.de OP
+.BR "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de OA
+.IR "\fB\\$1\& \|\fI\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
+..
+.de QO
+.RB ` "\\$1" "'\\$2"
+..
+.de Sp
+.if n .sp
+.if t .sp 0.4
+..
+.de Es
+.Sp
+.RS 5
+.nf
+..
+.de Ee
+.fi
+.RE
+.PP
+..
+.de Rs
+.RS
+.Sp
+..
+.de Re
+.Sp
+.RE
+..
+'.html <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
+'.html <html><head><title>click-xform Man Page</title></head>
+'.html <body bgcolor="#FFFFFF" text="#000000" link="#FF0000" vlink="#000080">
+'.html <h1>click-xform Man Page</h1>
+.TH CLICK 5 "16/Oct/1999" "Version \*V"
+.SH NAME
+click-xform \- pattern-based Click router configuration optimizer
+'
+.SH SYNOPSIS
+.B click-xform
+.I patternfile
+.I \%[configfile]
+'
+.SH DESCRIPTION
+The
+.B click-xform
+tool is a Click router configuration optimizer. It reads a file giving
+Click configuration patterns and their replacements
+.RI ( patternfile ),
+and a router configuration file
+.RI ( configfile ).
+Then it replaces patterns in the configuration until no patterns remain,
+and writes the new configuration to the standard output. If either
+.IR patternfile " or " configfile
+is a single dash "-",
+or if
+.I configfile
+is missing,
+.B click-xform
+will read that file from the standard input.
+.PP
+The pattern file uses the Click language (see
+.BR click (5)).
+It should contain an even number of `elementclass' definitions: half are
+patterns, and half are replacements. The replacement for a pattern named 
+.RI ` pattern '
+must be named
+.RI ` pattern _Replacement'.
+This example pattern file replaces all Queues with Queue-Shaper
+combinations:
+.Rs
+.nf
+elementclass QueuePattern {
+  input -> Queue -> output;
+}
+elementclass QueuePattern_Replacement {
+  input -> Queue -> Shaper(200) -> output;
+}
+.fi
+.Re
+.PP
+A pattern can contain an arbitrary number of elements, and an arbitrary
+number of input and output ports. Basically, a pattern matches a
+configuration subset when all its component elements match; all its
+connections are duplicated in the configuration subset; and any connections
+into or out of the configuration subset correspond to connections to or
+from the pattern's input and output ports. The full definition of matching
+is given below.
+.PP
+Any configuration strings in the pattern must match the configuration
+strings in the configuration subset. The pattern can use variables, which
+look like `$[letters, numbers and underscores]', to match a set of
+configuration strings; except for variables, the strings must match
+verbatim. A variable matches a single configuration argument. The same
+variable can be used multiple times in a pattern; if so, then it must match
+the same text on each occurrence. If a variable is used in the
+replacement's configuration strings, then when a replacement is made, the
+text that matched in the pattern will be inserted instead. For example,
+applying this pattern
+.Rs
+.nf
+elementclass Meters {
+  input -> Meter($r1)
+        -> Shaper($r2) -> output;
+}
+elementclass Meters_Replacement {
+  input -> PacketMeter($r2)
+        -> PacketShaper($r1) -> output;
+}
+.fi
+.Re
+to this configuration
+.Rs
+.nf
+\&... -> Meter(1000) -> Shaper(2000) -> ...
+.fi
+.Re
+will create this result:
+.Rs
+.nf
+\&... -> PacketMeter(2000) -> PacketShaper(1000) -> ...
+.fi
+.Re
+.PP
+The optimizer will not apply the same pattern to a configuration subset
+twice in succession. Specifically, every replacement element is marked with
+the pattern that it came from; a pattern will not match a configuration
+subset if every element in that subset came from that pattern. Thus, a
+pattern like the QueuePattern above won't cause an infinite loop. You can
+still cause an infinite loop, if you'd like, by having two patterns that
+match the same text:
+.Rs
+.nf
+elementclass Evil1 {
+  input -> Queue -> output;
+}
+elementclass Evil1_Replacement {
+  input -> Queue -> output;
+}
+elementclass Evil2 {
+  input -> Queue -> output;
+}
+elementclass Evil2_Replacement {
+  input -> Queue -> output;
+}
+.fi
+.Re
+This collection of patterns will make the optimizer run forever on any
+configuration that has a Queue.
+'
+.SS "Full definition of matching"
+'
+A pattern
+.I P
+matches a subset
+.I S
+of the configuration's elements if the following conditions hold:
+.TP 4
+\(bu
+There is a one-to-one mapping 
+.I map
+from
+.I P
+to
+.I S
+that respects element classes (that is, if an element
+.IR p " in " P
+has class
+.IR K ,
+then
+.RI map( p ") also has class " K ).
+.TP 4
+\(bu
+The configuration strings match, possibly by using a consistent variable
+assignment.
+.TP 4
+\(bu
+For every connection
+.RI ` p1 " [" x "] -> [" y "] " p2 '
+in the pattern
+.IR P ,
+there exists a connection
+.RI `map( p1 ") [" x "] -> [" y "] map(" p2 )'
+in the configuration subset
+.IR S .
+.TP 4
+\(bu
+For every connection
+.RI ` c1 " [" x "] -> [" y "] " c2 '
+in the configuration, one of four conditions hold:
+.RS
+.TP 3
+\(bu
+The connection is wholly outside the subset
+.IR S .
+(That is,
+.IR c1 " is not in " S
+and
+.IR c2 " is not in " S .)
+.TP 3
+\(bu
+The connection is inside the subset, and corresponds to a connection in the
+pattern. (That is,
+.IR c1 " is in " S ,
+.IR c2 " is in " S ,
+and
+.I P
+has a connection
+.RI "`map-1(" c1 ") [" x "] -> [" y "] map-1(" c2 ")'.)"
+.TP 3
+\(bu
+The connection goes into the subset, and corresponds to an input port in
+the pattern. (That is,
+.IR c1 " is not in " S
+but
+.IR c2 " is in " S ,
+and there exists an input port number
+.I i
+so that
+.I P
+has a connection
+.RI "`input [" i "] -> [" y "] map-1(" c2 ")',"
+and for every connection in the pattern
+.RI "`input [" i "] -> [" z "] " q ',
+there is a connection in the configuration
+.RI ` c1 " [" x "] -> [" z "] map(" q ")'.)"
+.TP 3
+\(bu
+The connection goes out of the subset, and corresponds to an output port in
+the pattern. (That is,
+.IR c1 " is in " S
+but
+.IR c2 " is not in " S ,
+and there exists an output port number
+.I o
+so that
+.I P
+has a connection
+.RI "`map-1(" c1 ") [" x "] -> [" o "] output',"
+and for every connection in the pattern
+.RI ` q " [" z "] -> [" o "] output',"
+there is a connection in the configuration
+.RI "`map(" q ") [" z "] -> [" y "] " c2 "'.)"
+.RE
+'
+.SH AUTHOR
+.na
+Eddie Kohler, eddietwo@lcs.mit.edu
+.br
+http://www.pdos.lcs.mit.edu/click/
+'

@@ -24,7 +24,7 @@
  * Wraps packets in an IP header specifying IP protocol 4
  * (IP-in-IP), with source 18.26.4.24 and destination 140.247.60.147:
  *
- * IPEncap(4, 18.26.4.24, 140.247.60.147)
+ * = IPEncap(4, 18.26.4.24, 140.247.60.147)
  *
  * =a Strip
  */

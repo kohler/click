@@ -24,7 +24,7 @@ extern "C" {
  * =e
  * For example, 
  *
- *   xokReader(32, 12/0806 14/99)
+ * = xokReader(32, 12/0806 14/99)
  * 
  * says that the reader should keep a ring size of 32. output 0 should get
  * packets that have 0x0806 at byte 12 and 0x99 at byte 14.

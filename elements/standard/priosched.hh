@@ -14,7 +14,7 @@
  * The inputs usually come from Queues or other pull schedulers.
  *
  * =a Queue
- * =a RRSched
+ * =a RoundRobinSched
  */
 
 class PrioSched : public UnlimitedElement {

@@ -91,6 +91,8 @@ class Lexer {
 
   String anon_element_name(const String &) const;
   int get_element(String, int, const String & = String());
+  void lexical_scoping_back(int, int);
+  void lexical_scoping_forward(int, int);
   int make_compound_element(String, int, const String &);
   void add_router_connections(int, const Vector<int> &, Router *);
   

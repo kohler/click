@@ -22,6 +22,7 @@ fi
 AC_SUBST(KERNEL_CXX)
 
 AC_PROG_RANLIB
+AC_PROG_INSTALL
 
 dnl
 dnl autoconf and autoheader
@@ -29,7 +30,7 @@ dnl
 
 missing_dir=`cd $srcdir && pwd`
 
-AC_MSG_CHECKING(working autoheader)
+AC_MSG_CHECKING(for working autoheader)
 if (autoheader --version) < /dev/null > /dev/null 2>&1; then
   AUTOHEADER=autoheader
   AC_MSG_RESULT(found)
@@ -38,7 +39,7 @@ else
   AC_MSG_RESULT(missing)
 fi
 
-AC_MSG_CHECKING(working autoconf)
+AC_MSG_CHECKING(for working autoconf)
 if (autoconf --version) < /dev/null > conftest.out 2>&1; then
   if test `head -1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
     AUTOCONF=autoconf
@@ -170,7 +171,6 @@ AC_SUBST(TARGETS)
 
 dnl check userlevel for pcap library
 
-ac_cv_pcap_header_path=
 if test "${PCAP_HEADER_PATH-NO}" != NO; then
   ac_cv_pcap_header_path="$PCAP_HEADER_PATH"
 else
@@ -190,7 +190,6 @@ else
   fi
 fi
 
-ac_cv_pcap_library_path=
 if test ${PCAP_LIBRARY_PATH-NO} != NO; then
   ac_cv_pcap_header_path="$PCAP_LIBRARY_PATH"
 else
@@ -242,10 +241,32 @@ if you want to compile Click as a Linux module.)
 fi
 
 dnl
+dnl Perl5
+dnl
+
+if test ${PERL-NO} = NO; then
+  AC_CHECK_PROGS(ac_cv_perl5, perl5 perl, missing)
+  if test $ac_cv_perl5 = missing -o `$ac_cv_perl5 -v | head -2 | sed 's/.*version \(.\).*/\1/'` -lt 5; then
+    AC_CHECK_PROGS(ac_cv_perl5_local, perl5 perl, missing, /usr/local/bin)
+    if test "$ac_cv_perl5_local" != "missing"; then
+      ac_cv_perl5="/usr/local/bin/$ac_cv_perl5_local"
+    fi
+  fi
+  if test "$ac_cv_perl5" = "missing"; then
+    AC_MSG_WARN(I can't find Perl 5, so I won't be able to make 
+manual pages for you.)
+    PERL="$missing_dir/missing perl"
+  else
+    PERL="$ac_cv_perl5"
+  fi
+fi
+AC_SUBST(PERL)
+
+dnl
 dnl Output
 dnl
 
-config_files="Makefile tools/Makefile tools/click-xform/Makefile mkelemlist.sh"
+config_files="Makefile mkelemlist.sh tools/Makefile tools/click-xform/Makefile doc/Makefile"
 for dir in $POSSIBLE_TARGETS; do
   config_files="$config_files $dir/Makefile"
 done

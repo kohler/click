@@ -11,6 +11,7 @@ top_srcdir = @top_srcdir@
 srcdir = @srcdir@
 AUTOHEADER = @AUTOHEADER@
 AUTOCONF = @AUTOCONF@
+INSTALL = @INSTALL@
 
 all: @TARGETS@ tools Makefile
 
@@ -22,6 +23,11 @@ exopc: Makefile
 	@cd exopc; $(MAKE) all
 tools: Makefile
 	@cd tools; $(MAKE) all
+
+install:
+	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d; $(MAKE) install); done
+install-man:
+	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d; $(MAKE) install-man); done
 
 elemlist elemlists:
 	$(SHELL) mkelemlist.sh
@@ -39,17 +45,18 @@ check-filenames:
 	if test -z $$a; then echo OK; else echo "*** warning: duplicate object file names:"; echo "$$a"; fi
 
 clean:
-	@-for d in @POSSIBLE_TARGETS@; do (cd $dir; $(MAKE) clean); done
-	@-cd tools; $(MAKE) clean
+	@-for d in @POSSIBLE_TARGETS@ tools; do (cd $$d; $(MAKE) clean); done
 distclean:
-	@-for d in @POSSIBLE_TARGETS@; do (cd $dir; $(MAKE) distclean); done
-	@-cd tools; $(MAKE) distclean
+	@-for d in @POSSIBLE_TARGETS@ tools; do (cd $$d; $(MAKE) distclean); done
 	-rm -f config.h Makefile config.status
-	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
+	-rm -f config.cache config.log mkelemlist.sh
 
 
-DISTFILES = Makefile.in acconfig.h config.h.in configure.in configure \
-	mkelemlist.sh stamp-h.in \
+DISTFILES = INSTALL \
+	doc/Makefile.in doc/click.5 doc/element2man.pl \
+	Makefile.in acconfig.h config.h.in configure.in configure \
+	install-sh missing mkinstalldirs findelements.sh mkelemlist.sh.in \
+	etc/linux-2.2-patch \
 	lib/bitvector.cc lib/bitvector.hh \
 	lib/click_ether.h \
 	lib/click_icmp.h \
@@ -99,8 +106,8 @@ distdir:
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
-	mkdir $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
-	@-chmod 777 $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
+	mkdir $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
+	@-chmod 777 $(distdir)/doc $(distdir)/etc $(distdir)/lib $(distdir)/userlevel $(distdir)/linuxmodule
 	@for file in $(DISTFILES); do \
 	  d=$(srcdir); \
 	  if test -d $$d/$$file; then \
@@ -128,4 +135,5 @@ distdir:
 
 
 .PHONY: all elemlist elemlists elemlist-simple \
-	linuxmodule userlevel exopc tools clean distclean dist distdir
+	linuxmodule userlevel exopc tools clean distclean dist distdir \
+	install install-man

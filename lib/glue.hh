@@ -2,10 +2,9 @@
 #define GLUE_HH
 
 /*
- * Junk required to compile as a Linux kernel module
- * as well as in user-space.
- *
- * Use glue.hh instead of #include <anything>.
+ * Junk required to compile as a Linux kernel module as well as in user-space.
+ * Removes many common #include <header>s and abstracts differences between
+ * kernel and user space.
  */
 
 /* produce debugging output on the console or stderr */
@@ -38,16 +37,10 @@ extern "C" {
 #define class xxx_class
 typedef unsigned long long u_quad_t;
 #include <linux/skbuff.h>
-#include <linux/socket.h>
-#include <linux/in.h>
 #include <linux/malloc.h>
 #include <linux/string.h>
 #include <linux/ctype.h>
 #include <linux/time.h>
-#include <linux/ip.h>
-#include <linux/netdevice.h>
-#include <net/route.h>
-#include <net/pkt_sched.h>
 #undef new
 #undef this
 #undef delete

@@ -1,11 +1,20 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "glue.hh"
 #include "todevice.hh"
 #include "error.hh"
 #include "etheraddress.hh"
 #include "confparse.hh"
 #include "router.hh"
+#define new xxx_new
+#define class xxx_class
+#define delete xxx_delete
+#include <linux/netdevice.h>
+#include <net/pkt_sched.h>
+#undef new
+#undef class
+#undef delete
 
 static int min_ifindex;
 static Vector<ToDevice *> *ifindex_map;

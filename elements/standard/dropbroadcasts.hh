@@ -9,8 +9,8 @@
  * Drop packets that arrived as link-level broadcast or multicast.
  * Used to implement the requirement that IP routers not forward
  * link-level broadcasts.
- * Looks at the mac_broadcast annotation, which KernelReader sets.
- * =a KernelReader
+ * Looks at the mac_broadcast annotation, which FromDevice sets.
+ * =a FromDevice
  */
 
 class DropBroadcasts : public Element {

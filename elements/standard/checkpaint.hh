@@ -14,9 +14,9 @@
  * Intended to produce redirects in conjunction with Paint and
  * ICMPError as follows:
  *
- * KernelReader(eth7) -> Paint(7) -> ...
- * routingtable[7] -> cp :: CheckPaint(7) -> ... -> KernelWriter(eth7)
- * cp[1] -> ICMPError(18.26.4.24, 5, 1) -> [0]routingtable;
+ * = FromDevice(eth7) -> Paint(7) -> ...
+ * = routingtable[7] -> cp :: CheckPaint(7) -> ... -> ToDevice(eth7)
+ * = cp[1] -> ICMPError(18.26.4.24, 5, 1) -> [0]routingtable;
  *
  * =a Paint
  * =a ICMPError

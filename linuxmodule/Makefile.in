@@ -5,6 +5,12 @@ top_srcdir := @top_srcdir@
 top_builddir := ..
 subdir := linuxmodule
 
+prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
+sbindir = @sbindir@
+libdir = @libdir@
+
 VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/linuxmodule@elements_vpath@
 
 CC = @CC@
@@ -13,6 +19,8 @@ CXX = @KERNEL_CXX@
 CXXCPP = @CXXCPP@
 PACKAGE = @PACKAGE@
 VERSION = @VERSION@
+INSTALL = @INSTALL@
+mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 .SUFFIXES:
 .SUFFIXES: .S .c .cc .o .s
@@ -80,9 +88,14 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
+install: click.o
+	$(mkinstalldirs) $(libdir)
+	$(INSTALL) click.o $(libdir)/click.o
+install-man:
+
 clean:
 	-rm -f *.d *.o elements.mk elements.cc
 distclean: clean
 	-rm -f Makefile elements.conf
 
-.PHONY: all clean distclean elemlist
+.PHONY: all clean distclean elemlist install install-man

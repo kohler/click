@@ -1,12 +1,13 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
+#include "glue.hh"
 #include "fromdevice.hh"
 #include "error.hh"
 #include "packet.hh"
 #include "confparse.hh"
-#include "glue.hh"
 #include "router.hh"
+#include <linux/netdevice.h>
 
 static int min_ifindex;
 static Vector<FromDevice *> *ifindex_map;

@@ -23,7 +23,7 @@
  * This element is only available at user level.
  * 
  * =e
- * FromBPF(eth0, 0)
+ * = FromBPF(eth0, 0)
  *
  * =a ToBPF
  * =a FromDump

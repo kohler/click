@@ -34,10 +34,10 @@
  * =e
  * For example,
  *
- *   Classifier(12/0806 20/0001,
- *              12/0806 20/0002,
- *              12/0800,
- *              -);
+ * = Classifier(12/0806 20/0001,
+ * =            12/0806 20/0002,
+ * =            12/0800,
+ * =            -);
  *
  * creates an element with four outputs intended to process
  * Ethernet packets.

@@ -1,0 +1,341 @@
+
+Index: include/linux/netdevice.h
+--- include/linux/netdevice.h.orig	Wed Jul  7 11:01:35 1999
++++ include/linux/netdevice.h	Thu Oct  7 01:09:37 1999
+@@ -349,6 +349,11 @@
+ extern int		unregister_netdevice(struct device *dev);
+ extern int 		register_netdevice_notifier(struct notifier_block *nb);
+ extern int		unregister_netdevice_notifier(struct notifier_block *nb);
++extern int 		register_net_in(struct notifier_block *nb); /* Click */
++extern int		unregister_net_in(struct notifier_block *nb); /* Click */
++extern int 		register_net_out(struct notifier_block *nb); /* Click */
++extern int		unregister_net_out(struct notifier_block *nb); /* Click */
++extern void		ptype_dispatch(struct sk_buff *skb, unsigned short type); /* Click */
+ extern int		dev_new_index(void);
+ extern struct device	*dev_get_by_index(int ifindex);
+ extern int		dev_restart(struct device *dev);
+
+Index: net/core/dev.c
+--- net/core/dev.c.orig	Thu Mar 25 12:23:34 1999
++++ net/core/dev.c	Sun Oct 17 16:04:25 1999
+@@ -145,6 +145,9 @@
+  
+ static struct notifier_block *netdev_chain=NULL;
+ 
++/* input packet handlers -- might steal packets from net_bh(). for Click. */
++static struct notifier_block *net_in_chain = 0;
++
+ /*
+  *	Device drivers call our routines to queue packets here. We empty the
+  *	queue in the bottom half handler.
+@@ -503,6 +506,22 @@
+ }
+ 
+ /*
++ * Allow Click modules to ask to intercept input packets.
++ * Must add these to ../netsyms.c
++ */
++int
++register_net_in(struct notifier_block *nb)
++{
++  return(notifier_chain_register(&net_in_chain, nb));
++}
++
++int
++unregister_net_in(struct notifier_block *nb)
++{
++  return(notifier_chain_unregister(&net_in_chain, nb));
++}
++
++/*
+  *	Support routine. Sends outgoing frames to any network
+  *	taps currently in use.
+  */
+@@ -748,6 +767,8 @@
+ 	}
+ }
+ 
++int (*udpcount_hook)(struct sk_buff *skb);
++
+ /*
+  *	Receive a packet from a device driver and queue it for the upper
+  *	(protocol) levels.  It always succeeds. 
+@@ -755,6 +776,9 @@
+ 
+ void netif_rx(struct sk_buff *skb)
+ {
++  if(udpcount_hook && udpcount_hook(skb))
++    return;
++
+ #ifndef CONFIG_CPU_IS_SLOW
+ 	if(skb->stamp.tv_sec==0)
+ 		get_fast_time(&skb->stamp);
+@@ -819,6 +843,84 @@
+ }
+ #endif
+ 
++/*
++ * Hand a packet to the ordinary Linux protocol stack.
++ * Broke this out from net_bh() so that Click can call it.
++ * Always frees the skb one way or another.
++ *
++ * skb->pkt_type needs to be set to PACKET_{BROADCAST,MULTICAST,OTHERHOST}
++ * maybe skb->mac.raw must point to ether header.
++ * skb->protocol must be set to a htons(ETHERTYPE_?).
++ * skb->data must point to the ethernet payload (e.g. the IP header).
++ * skb->nh.raw must point to the ethernet payload also.
++ */
++void
++ptype_dispatch(struct sk_buff *skb, unsigned short type)
++{
++	struct packet_type *ptype;
++	struct packet_type *pt_prev;
++
++		/*
++		 *	We got a packet ID.  Now loop over the "known protocols"
++		 * 	list. There are two lists. The ptype_all list of taps (normally empty)
++		 *	and the main protocol list which is hashed perfectly for normal protocols.
++		 */
++
++		pt_prev = NULL;
++		for (ptype = ptype_all; ptype!=NULL; ptype=ptype->next)
++		{
++			if (!ptype->dev || ptype->dev == skb->dev) {
++				if(pt_prev)
++				{
++					struct sk_buff *skb2=skb_clone(skb, GFP_ATOMIC);
++					if(skb2)
++						pt_prev->func(skb2,skb->dev, pt_prev);
++				}
++				pt_prev=ptype;
++			}
++		}
++
++		for (ptype = ptype_base[ntohs(type)&15]; ptype != NULL; ptype = ptype->next) 
++		{
++			if (ptype->type == type && (!ptype->dev || ptype->dev==skb->dev))
++			{
++				/*
++				 *	We already have a match queued. Deliver
++				 *	to it and then remember the new match
++				 */
++				if(pt_prev)
++				{
++					struct sk_buff *skb2;
++
++					skb2=skb_clone(skb, GFP_ATOMIC);
++
++					/*
++					 *	Kick the protocol handler. This should be fast
++					 *	and efficient code.
++					 */
++
++					if(skb2)
++						pt_prev->func(skb2, skb->dev, pt_prev);
++				}
++				/* Remember the current last to do */
++				pt_prev=ptype;
++			}
++		} /* End of protocol list loop */
++
++		/*
++		 *	Is there a last item to send to ?
++		 */
++
++		if(pt_prev)
++			pt_prev->func(skb, skb->dev, pt_prev);
++		/*
++		 * 	Has an unknown packet has been received ?
++		 */
++	 
++		else {
++			kfree_skb(skb);
++		}
++}
+ 
+ /*
+  *	When we are called the queue is ready to grab, the interrupts are
+@@ -830,10 +932,8 @@
+  
+ void net_bh(void)
+ {
+-	struct packet_type *ptype;
+-	struct packet_type *pt_prev;
+-	unsigned short type;
+ 	unsigned long start_time = jiffies;
++	unsigned short type;
+ #ifdef CONFIG_CPU_IS_SLOW
+ 	static unsigned long start_busy = 0;
+ 	static unsigned long ave_busy = 0;
+@@ -932,66 +1032,19 @@
+ 		handle_bridge(skb, type); 
+ #endif
+ 
+-		/*
+-		 *	We got a packet ID.  Now loop over the "known protocols"
+-		 * 	list. There are two lists. The ptype_all list of taps (normally empty)
+-		 *	and the main protocol list which is hashed perfectly for normal protocols.
+-		 */
++                /* does Click want to steal this packet? */
++                if(notifier_call_chain(&net_in_chain, skb_queue_len(&backlog), skb) & NOTIFY_STOP_MASK)
++                  continue;
+ 
+-		pt_prev = NULL;
+-		for (ptype = ptype_all; ptype!=NULL; ptype=ptype->next)
+-		{
+-			if (!ptype->dev || ptype->dev == skb->dev) {
+-				if(pt_prev)
+-				{
+-					struct sk_buff *skb2=skb_clone(skb, GFP_ATOMIC);
+-					if(skb2)
+-						pt_prev->func(skb2,skb->dev, pt_prev);
+-				}
+-				pt_prev=ptype;
+-			}
+-		}
+ 
+-		for (ptype = ptype_base[ntohs(type)&15]; ptype != NULL; ptype = ptype->next) 
+-		{
+-			if (ptype->type == type && (!ptype->dev || ptype->dev==skb->dev))
+-			{
+-				/*
+-				 *	We already have a match queued. Deliver
+-				 *	to it and then remember the new match
+-				 */
+-				if(pt_prev)
+-				{
+-					struct sk_buff *skb2;
++                /*
++                 * Ordinary Linux dispatch based on packet type.
++                 * Moved into a function so Click can call it.
++                 */
++                ptype_dispatch(skb, type);
+ 
+-					skb2=skb_clone(skb, GFP_ATOMIC);
+-
+-					/*
+-					 *	Kick the protocol handler. This should be fast
+-					 *	and efficient code.
+-					 */
+-
+-					if(skb2)
+-						pt_prev->func(skb2, skb->dev, pt_prev);
+-				}
+-				/* Remember the current last to do */
+-				pt_prev=ptype;
+-			}
+-		} /* End of protocol list loop */
+ 
+-		/*
+-		 *	Is there a last item to send to ?
+-		 */
+ 
+-		if(pt_prev)
+-			pt_prev->func(skb, skb->dev, pt_prev);
+-		/*
+-		 * 	Has an unknown packet has been received ?
+-		 */
+-	 
+-		else {
+-			kfree_skb(skb);
+-		}
+   	}	/* End of queue loop */
+   	
+   	/*
+
+Index: net/sched/sch_generic.c
+--- net/sched/sch_generic.c.orig	Sun Mar 21 10:22:00 1999
++++ net/sched/sch_generic.c	Mon Jul 12 15:29:31 1999
+@@ -76,6 +76,24 @@
+ 	return q->q.qlen;
+ }
+ 
++/*
++ * Click hooks to be notified when a network device
++ * is idle and could send a packet.
++ */
++static struct notifier_block *net_out_chain = 0;
++
++int
++register_net_out(struct notifier_block *nb)
++{
++  return(notifier_chain_register(&net_out_chain, nb));
++}
++
++int
++unregister_net_out(struct notifier_block *nb)
++{
++  return(notifier_chain_unregister(&net_out_chain, nb));
++}
++
+ /* Scan transmission queue and kick devices.
+ 
+    Deficiency: slow devices (ppp) and fast ones (100Mb ethernet)
+@@ -93,9 +111,14 @@
+ 	hp = &qdisc_head.forw;
+ 	while ((h = *hp) != &qdisc_head) {
+ 		int res = -1;
++                int res1 = -1;
+ 		struct Qdisc *q = (struct Qdisc*)h;
+ 		struct device *dev = q->dev;
+ 
++                /* Click */
++                if(dev->tbusy == 0)
++                  res1 = notifier_call_chain(&net_out_chain, 0, dev);
++
+ 		while (!dev->tbusy && (res = qdisc_restart(dev)) < 0)
+ 			/* NOTHING */;
+ 
+@@ -108,7 +131,7 @@
+ 		   No problem, we will unlink it during the next round.
+ 		 */
+ 
+-		if (res == 0 && *hp == h) {
++		if (res1 == 0 && res == 0 && *hp == h) {
+ 			*hp = h->forw;
+ 			h->forw = NULL;
+ 			continue;
+
+Index: net/netsyms.c
+--- net/netsyms.c.orig	Sat Apr 24 20:51:48 1999
++++ net/netsyms.c	Sun Oct 17 16:01:36 1999
+@@ -431,6 +431,17 @@
+ EXPORT_SYMBOL(register_netdevice_notifier);
+ EXPORT_SYMBOL(unregister_netdevice_notifier);
+ 
++/* Click */
++EXPORT_SYMBOL(register_net_in);
++EXPORT_SYMBOL(unregister_net_in);
++EXPORT_SYMBOL(register_net_out);
++EXPORT_SYMBOL(unregister_net_out);
++EXPORT_SYMBOL(ptype_dispatch);
++struct inet_protocol *inet_get_protocol(unsigned char prot);
++EXPORT_SYMBOL(inet_get_protocol);
++extern int (*udpcount_hook)(struct sk_buff *skb);
++EXPORT_SYMBOL(udpcount_hook);
++
+ /* support for loadable net drivers */
+ #ifdef CONFIG_NET
+ EXPORT_SYMBOL(loopback_dev);
+
+Index: include/linux/signal.h
+--- include/linux/signal.h.orig	Sun Oct 17 15:56:25 1999
++++ include/linux/signal.h	Fri Sep 10 11:25:09 1999
+@@ -189,7 +189,7 @@
+ 		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
+ 		break;
+ 	case 2: set->sig[1] = 0;
+-	case 1:
++	case 1: ;
+ 	}
+ }
+ 
+@@ -201,7 +201,7 @@
+ 		memset(&set->sig[1], -1, sizeof(long)*(_NSIG_WORDS-1));
+ 		break;
+ 	case 2: set->sig[1] = -1;
+-	case 1:
++	case 1: ;
+ 	}
+ }
+ 

@@ -13,11 +13,9 @@
  * =e
  * Sends ARP packets to 18.26.4.1 (with ether addr 0:e0:2b:b:1a:0)
  * claiming that 18.26.4.99's ethernet address is 00:a0:c9:9c:fd:9c.
- * 
-<pre>
-ARPFaker(18.26.4.1, 0:e0:2b:b:1a:0, 18.26.4.99, 00:a0:c9:9c:fd:9c) ->
-  ToBPF(eth0);
-</pre>
+ *
+ * = ARPFaker(18.26.4.1, 0:e0:2b:b:1a:0, 18.26.4.99, 00:a0:c9:9c:fd:9c) ->
+ * = ToBPF(eth0);
  * 
  * =n
  * You probably want to use ARPResponder rather than ARPFaker.

@@ -8,10 +8,10 @@ Makefiles. There is no GNU-specific code, only GNU-specific compiler
 options.)
 
 The user-level version of Click should compile and run on any Intel x86
-Unix systems that have the pcap library. (The pcap library is necessary to
-communicate with the network.) The Linux kernel module requires a patched
-Linux 2.2 system; we've tested on recent Linux kernels like 2.2.10 and
-2.2.11.
+Unix system that has the pcap library. (The pcap library is necessary to
+communicate with the network. See the end of this document for portability
+notes.) The Linux kernel module requires a patched Linux 2.2 system; we've
+tested on recent Linux kernels like 2.2.10 and 2.2.11.
 
 First, run
 
@@ -24,11 +24,21 @@ cannot compile a version.
 USERLEVEL
 ---------
 
+Build the user-level Click program in the `userlevel' directory:
+
+	cd CLICKDIR/userlevel
+	gmake
+
+This will eventually create an executable named `click'. Run it by passing
+it the filename of a Click-language router description:
+
+	./click router.ipb
+
 The configure script may not be able to find your pcap library if it's in a
 nonstandard place. To fix this, set your `PCAP_HEADER_PATH' and
 `PCAP_LIBRARY_PATH' environment variables and rerun `./configure'. The
-`PCAP_HEADER_PATH' variable is for options that tell the C preprocessor
-where to find `pcap.h'; the `PCAP_LIBRARY_PATH' variable is for options
+`PCAP_HEADER_PATH' variable contains options that tell the C preprocessor
+where to find `pcap.h'; the `PCAP_LIBRARY_PATH' variable contains options
 that tell the linker where to find `libpcap.a'. One example setting would
 be `PCAP_HEADER_PATH=-I/usr/local/include/pcap' and
 `PCAP_LIBRARY_PATH=-L/usr/local/lib/pcap'.
@@ -36,35 +46,74 @@ be `PCAP_HEADER_PATH=-I/usr/local/include/pcap' and
 LINUX MODULE
 ------------
 
-Before you can compile or use the Click loadable kernel module, you
-need to install, patch, compile, and boot a compatible Linux kernel.
-Start by making sure you have a copy of Linux 2.2.X sources in (or
-symbolically linked to by) /usr/src/linux. If you need to fetch source
-from www.kernel.org, make sure it's the version of 2.2.X reported by
-uname -r.
+Before you can compile or use the Click loadable kernel module, you need to
+install, patch, compile, and boot a compatible Linux kernel. These
+instructions assume you have at least passing familiarity with compiling
+and running Linux kernels.
 
-Install the Click Linux kernel patch:
+ 1. Archive a complete, working Linux kernel and any corresponding modules.
+    This is in case something goes wrong and you need to revert to an old
+    kernel.
 
-  cd /usr/src/linux
-  patch -p0 -b < $d/patch-2.2
+ 2. Get a copy of the Linux 2.2.x kernel source distribution, for example
+    from www.kernel.org. Unpack this distribution into /usr/src/linux.
+    (Save the old kernel source tree, if you had one.)
 
-Configure and compile the kernel:
+ 3. Install the Click Linux kernel patch:
 
-  cd /usr/src/linux
-  make menuconfig
-  make dep
-  make bzImage
-make install? so EXTRAVERSION?
+	cd /usr/src/linux
+	patch -p0 -b < CLICKDIR/etc/linux-2.2-patch
 
-Boot the new kernel.
+    The patch has been tested with 2.2.10 and 2.2.11 kernels; it probably
+    works for other 2.2 kernels. The patch fixes syntax errors in several
+    header files (the C++ compiler doesn't accept them) and adds several
+    new functions. It does not change any kernel data structures.
+    Therefore, if you compiled your old kernel without module versioning,
+    you don't strictly need to recompile modules.
 
-Compile the Click kernel module:
+ 4. Configure the new kernel. The Click patch does not add any
+    configuration options, so you can start from your old 2.2
+    configuration, or you can do the usual `make menuconfig'.
 
-  cd $d
-  ./configure
-  cd linuxmodule
-  gmake
+ 5. If your archived, working kernel has the same version number as the
+    patched kernel (they're both 2.2.11, for example), then it is a good
+    idea to change the patched kernel's `EXTRAVERSION'. This way, the
+    modules for the new kernel won't overwrite the old, working modules.
+    Edit /usr/src/linux/Makefile and change the line `EXTRAVERSION =' to
+    `EXTRAVERSION = click', or whatever you would like.
 
-Install the module:
+ 6. Compile and install the kernel:
 
-  /sbin/insmod $d/linuxmodule/click.o
+	make dep
+	make bzImage			(or zImage)
+	(copy the bzImage file to the boot directory)
+	make modules
+	make modules_install
+
+ 7. Edit /etc/lilo.conf to tell it about the new kernel, then run
+    /sbin/lilo.
+
+ 8. Reboot your machine with the new kernel.
+
+Now you are ready to compile and install the Click module. Rerun
+`./configure' to tell the system about your new kernel:
+
+	rm -f config.cache ; ./configure
+
+Then build the module:
+
+	cd linuxmodule
+	gmake
+
+Eventually, this will create a module object file, `click.o'. Install this
+module with
+
+	/sbin/insmod click.o
+
+PORTABILITY
+-----------
+
+The Click system currently relies on the x86's support for unaligned
+accesses. Click may compile on non-x86 architectures that also support
+unaligned accesses. If you try running it on such an architecture, please
+let us know how it goes.

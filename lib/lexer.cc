@@ -46,10 +46,11 @@ class Lexer::Compound : public Element {
   String _body;
   unsigned _lineno;
   int _previous_type;
+  int _type_count;
   
  public:
   
-  Compound(const String &, const String &, unsigned, int);
+  Compound(const String &, const String &, unsigned, int, int);
   
   const char *class_name() const	{ return _name.cc(); }
   bool is_a(const char *) const;
@@ -58,12 +59,14 @@ class Lexer::Compound : public Element {
   const String &body() const		{ return _body; }
   unsigned lineno() const		{ return _lineno; }
   int previous_type() const		{ return _previous_type; }
+  int type_count() const		{ return _type_count; }
   
 };
 
 Lexer::Compound::Compound(const String &name, const String &body,
-			  unsigned lineno, int previous_type)
-  : _name(name), _body(body), _lineno(lineno), _previous_type(previous_type)
+			  unsigned lineno, int previous_type, int tcount)
+  : _name(name), _body(body), _lineno(lineno), _previous_type(previous_type),
+    _type_count(tcount)
 {
 }
 
@@ -552,6 +555,33 @@ Lexer::anon_element_name(const String &class_name) const
   return _element_prefix + class_name + String(buf);
 }
 
+void
+Lexer::lexical_scoping_back(int first, int last)
+{
+  // must go backwards in case more than one new element class with the same
+  // name -- want to restore earliest one last, to get oldest definition
+  for (int i = last - 1; i >= first; i--) {
+    Element *e = _element_types[i];
+    String name = e->class_name();
+    if (_element_type_map[name] == i) {
+      if (e->is_a("Lexer::Compound"))
+	_element_type_map.insert(name, ((Compound *)e)->previous_type());
+      else // can't happen
+	_element_type_map.insert(name, -1);
+    }
+  }
+}
+
+void
+Lexer::lexical_scoping_forward(int first, int last)
+{
+  for (int i = first; i < last; i++) {
+    Element *e = _element_types[i];
+    String name = e->class_name();
+    _element_type_map.insert(name, i);
+  }
+}
+
 int
 Lexer::make_compound_element(String name, int etype, const String &conf)
 {
@@ -562,7 +592,7 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   name = name.substring(_element_prefix.length());
   
   if (conf)
-    lerror("compound elements may not be configured");
+    lerror("compound element `%s' given configuration string", name.cc());
 
   // `name_slash' is `name' constrained to end with a slash
   String name_slash;
@@ -598,9 +628,10 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   _tpos = _tfull;
   // manipulate the anonymous offset so anon elements in 2 instances of the
   // compound have identical suffixes
+  int old_elements_size = _elements.size();
   _anonymous_offset = _elements.size();
-  // lexical scoping of compound name
-  _element_type_map.insert(compound->class_name(), compound->previous_type());
+  // lexical scoping of types
+  lexical_scoping_back(etype, old_type_count);
   
   while (ystatement())
     /* do nothing */;
@@ -615,25 +646,18 @@ Lexer::make_compound_element(String name, int etype, const String &conf)
   _tcircle = old_tcircle;
   _tpos = old_tpos;
   _tfull = old_tfull;
-  _anonymous_offset = old_anonymous_offset + 3;	// 3 to skip pseudoports
+  // manipulate the anonymous offset to get consistent results with tools
+  _anonymous_offset = old_anonymous_offset + _elements.size()
+    - old_elements_size + 2;
 
+  // lexical scoping fixup
+  lexical_scoping_back(old_type_count, _element_types.size());
+  lexical_scoping_forward(etype, old_type_count);
+  
   // get rid of new compound elements
-  // must go backwards in case more than one new element class with the same
-  // name -- want to restore earliest one last, to get old definition
-  for (int i = _element_types.size() - 1; i >= old_type_count; i--) {
-    Element *e = _element_types[i];
-    String name = e->class_name();
-    if (_element_type_map[name] == i) {
-      if (e->is_a("Lexer::Compound"))
-	_element_type_map.insert(name, ((Compound *)e)->previous_type());
-      else // can't happen
-	_element_type_map.insert(name, -1);
-    }
-    e->unuse();
-  }
+  for (int i = old_type_count; i < _element_types.size(); i++)
+    _element_types[i]->unuse();
   _element_types.resize(old_type_count);
-  // restore lexical scoping of compound type name
-  _element_type_map.insert(compound->class_name(), etype);
   
   return fake_index;
 }
@@ -922,7 +946,8 @@ Lexer::yelementclass()
   if (tname.is(lexIdent)) {
     String name = tname.string();
     int previous_type = _element_type_map[name];
-    Compound *c = new Compound(name, body, original_lineno, previous_type);
+    Compound *c = new Compound(name, body, original_lineno, previous_type,
+			       _element_types.size());
 
     int i = _element_types.size();
     _element_type_map.insert(name, i);
@@ -970,9 +995,11 @@ Lexer::ylocal()
   unsigned original_lineno = _lineno;
   String body = lex_compound_body();
   expect('}');
+  
+  Compound *c = new Compound(name, body, original_lineno, -1,
+			     _element_types.size());
 
   int etid = _element_types.size();
-  Compound *c = new Compound(name, body, original_lineno, -1);
   _element_types.push_back(c);
   c->use();
   return etid;

@@ -1,0 +1,33 @@
+SHELL = @SHELL@
+
+srcdir := @srcdir@
+top_srcdir := @top_srcdir@
+top_builddir := ..
+subdir := doc
+
+prefix = @prefix@
+mandir = @mandir@
+
+PACKAGE = @PACKAGE@
+VERSION = @VERSION@
+PERL = @PERL@
+INSTALL_DATA = @INSTALL@ -m 644
+mkinstalldirs = @top_srcdir@/mkinstalldirs
+
+all: install Makefile
+
+Makefile: $(srcdir)/Makefile.in
+	cd $(top_builddir) \
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+
+install: install-man
+install-man:
+	$(mkinstalldirs) $(mandir)/man5 $(mandir)/mann
+	/bin/sh $(top_srcdir)/findelements.sh -x -a -p $(top_srcdir) | $(PERL) element2man.pl -d $(mandir)/mann -f - $(top_srcdir)/lib/errorelement.hh
+	$(INSTALL_DATA) click.5 $(mandir)/man5/click.5
+
+clean:
+distclean: clean
+	-rm -f Makefile
+
+.PHONY: all clean distclean install install-man

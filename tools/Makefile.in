@@ -6,25 +6,32 @@ SHELL = @SHELL@
 
 top_srcdir = @top_srcdir@
 srcdir = @srcdir@
+top_builddir = ..
+subdir = tools
 
-all: click-xform
+TOOLS = click-xform
+
+all: $(TOOLS)
 
 click-xform: Makefile
 	@cd click-xform; $(MAKE) all
 
 Makefile: $(srcdir)/Makefile.in
 	cd $(top_builddir) \
-	  && CONFIG_FILES=$(subdir)/$@ CONFIG_FACLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
+	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
 clean:
-	@-cd click-xform; $(MAKE) clean
+	@-for d in $(TOOLS); do cd $$d; $(MAKE) clean; done
 distclean:
-	@-cd click-xform; $(MAKE) distclean
+	@-for d in $(TOOLS); do cd $$d; $(MAKE) distclean; done
 	-rm -f Makefile
 
+install:
+	@for d in $(TOOLS); do cd $$d; $(MAKE) install; done
+install-man:
+	@for d in $(TOOLS); do cd $$d; $(MAKE) install-man; done
 
 DISTFILES = Makefile.in \
-	lib/confparset.cc lib/confparset.hh \
 	lib/elementt.cc lib/elementt.hh \
 	lib/lexert.cc lib/lexert.hh \
 	lib/routert.cc lib/routert.hh \
@@ -50,4 +57,4 @@ distdir:
 	done
 
 
-.PHONY: all click-xform clean distclean distdir
+.PHONY: all click-xform clean distclean distdir install install-man

@@ -102,6 +102,8 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
+install install-man:
+
 clean:
 	rm -f *.d *.o click elements.mk elements.cc gcc g++ *.aout
 distclean: clean

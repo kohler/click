@@ -13,7 +13,7 @@
  * Encapsulate packets in an ethernet header with type
  * ETHERTYPE_IP (0x0800):
  * 
- * EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
+ * = EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
  *
  * =n
  * For IP packets you probably want to use ArpQuerier instead.

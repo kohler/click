@@ -34,9 +34,9 @@
 .RE
 ..
 '.html <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2//EN">
-'.html <html><head><title>Xmahjongg Man Page</title></head>
+'.html <html><head><title>Click Language Man Page</title></head>
 '.html <body bgcolor="#FFFFFF" text="#000000" link="#FF0000" vlink="#000080">
-'.html <h1>Xmahjongg Man Page</h1>
+'.html <h1>Click Language Man Page</h1>
 .TH CLICK 5 "16/Oct/1999" "Version \*V"
 .SH NAME
 click \- Click router configuration language
@@ -359,7 +359,9 @@ like
 Nothing prevents a user from declaring an element named like a compound
 element component. We suggest that users generally avoid using the `/'
 character in their element names.
-.PP
+'
+.SS "The `elementclass' statement"
+'
 The `elementclass' statement lets the user name a frequently-occurring
 compound element, and use the name as if it were a primitive element class.
 Syntactically, it looks like this:
@@ -395,6 +397,35 @@ which roughly expands to:
 .Rs
 a -> Queue -> Shaper(1000) -> b;
 .Re
+.PP
+The user can declare element classes that have the names of previously
+existing element classes:
+.Rs
+elementclass Queue {
+.br
+  input -> Queue -> Shaper(1000) -> output;
+.br
+}
+.Re
+Element classes are nonrecursive and lexically scoped, so the `Queue'
+inside this definition refers to the original `Queue'. Also, elementclass
+statements don't affect elements declared earlier:
+.Rs
+elementclass A {
+.br
+  input -> B -> output;
+.br
+}
+.br
+elementclass B {
+.br
+  input -> C -> output;
+.br
+}
+.br
+\&... -> A -> ...
+.Re
+expands to `... -> B -> ...', not `... -> C -> ...'.
 '
 .SH "CONNECTION TUNNELS"
 '
