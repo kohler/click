@@ -1,3 +1,17 @@
+2004-06-18 Friday 16:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/linuxmodule/: sortedsched.cc (1.7), sortedsched.hh
+	(1.5), threadmonitor.cc (1.6), threadmonitor.hh (1.5):
+	ThreadMonitor should work again; begin work on SortedTaskSched
+
+2004-06-18 Friday 16:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.12), configure.in (1.231): add "smpclick" provision
+
+2004-06-18 Friday 16:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/task.cc (1.33): clean up task on deletion
+
 2004-06-18 Friday 02:41  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* configure (1.11), configure.in (1.230), etc/libclick/DISTFILES
