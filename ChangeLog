@@ -1,3 +1,9 @@
+2004-11-13 Saturday 16:48  John Bicket <jbicket@mit.edu>
+
+	* elements/standard/: infinitesource.cc (1.47), infinitesource.hh
+	(1.38): add a downstream notifier when infinite source is a pull
+	(ie only do pulls when ACTIVE is true).
+
 2004-11-12 Friday 23:03  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/userlevel/todump.cc (1.60): whitespace
