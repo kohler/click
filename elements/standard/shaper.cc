@@ -17,8 +17,6 @@
 #include "shaper.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "elemfilter.hh"
-#include "router.hh"
 
 Shaper::Shaper()
 {
@@ -67,18 +65,9 @@ Shaper::pull(int)
   _rate.update_time();
   
   int r = _rate.average();
-  if (r >= _meter1) {
-#if 0
-    if (_puller1)
-      _puller1->run_scheduled();
-    else {
-      int n = _pullers.size();
-      for (int i = 0; i < n; i++)
-	_pullers[i]->run_scheduled();
-    }
-#endif
+  if (r >= _meter1)
     return 0;
-  } else {
+  else {
     Packet *p = input(0).pull();
     if (p) _rate.update_now(p->length());
     return p;
