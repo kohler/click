@@ -155,23 +155,24 @@ class Element : public ElementLink { public:
   
  private:
   
+  static const int INLINE_PORTS = 4;
+
+  Connection *_inputs;
+  Connection *_outputs;
+  Connection _ports0[INLINE_PORTS];
+
+  int _ninputs;
+  int _noutputs;
+  
   String _id;
   String _landmark;
   int _number;
   int _refcount;
-  
-  static const int InlinePorts = 1;
-  int _ninputs;
-  Connection *_inputs;
-  Connection _input0[InlinePorts];
-  int _noutputs;
-  Connection *_outputs;
-  Connection _output0[InlinePorts];
 
   Element(const Element &);
   Element &operator=(const Element &);
   
-  void set_nports(int &, Connection *&, Connection *, int count);
+  void set_nports(int, int);
   
 };
 

@@ -31,26 +31,27 @@ int Element::nelements_allocated;
 #endif
 
 Element::Element()
-  : ELEMENT_CTOR_STATS _refcount(0), _ninputs(0), _inputs(&_input0[0]),
-    _noutputs(0), _outputs(&_output0[0])
+  : ELEMENT_CTOR_STATS _inputs(&_ports0[0]), _outputs(&_ports0[0]),
+    _ninputs(0), _noutputs(0), _refcount(0)
 {
   nelements_allocated++;
 }
 
 Element::Element(int ninputs, int noutputs)
-  : ELEMENT_CTOR_STATS _refcount(0), _ninputs(0), _inputs(&_input0[0]),
-    _noutputs(0), _outputs(&_output0[0])
+  : ELEMENT_CTOR_STATS _inputs(&_ports0[0]), _outputs(&_ports0[0]),
+    _ninputs(0), _noutputs(0), _refcount(0)
 {
-  set_ninputs(ninputs);
-  set_noutputs(noutputs);
+  set_nports(ninputs, noutputs);
   nelements_allocated++;
 }
 
 Element::~Element()
 {
   nelements_allocated--;
-  if (_ninputs > InlinePorts) delete[] _inputs;
-  if (_noutputs > InlinePorts) delete[] _outputs;
+  if (_inputs != _ports0)
+    delete[] _inputs;
+  if (_outputs != _ports0 && _outputs != _ports0 + _ninputs)
+    delete[] _outputs;
 }
 
 void
@@ -86,47 +87,77 @@ Element::declaration() const
 // INPUTS AND OUTPUTS
 
 void
-Element::set_nports(int &store_n, Connection *&store_vec,
-		    Connection *store_inline, int new_n)
+Element::set_nports(int new_ninputs, int new_noutputs)
 {
-  if (new_n < 0) return;
-  int old_n = store_n;
-  store_n = new_n;
-  
-  if (new_n < old_n) {
-    if (old_n > InlinePorts && store_n <= InlinePorts) {
-      memcpy(store_inline, store_vec, store_n * sizeof(Connection));
-      delete[] store_vec;
-      store_vec = store_inline;
-    }
+  // exit on bad counts
+  if (new_ninputs < 0 || new_noutputs < 0)
+    return;
+
+  // decide if inputs & outputs were inlined
+  bool old_in_inline =
+    (_inputs == _ports0);
+  bool old_out_inline =
+    (_outputs == _ports0 || _outputs == _ports0 + _ninputs);
+
+  // decide if inputs & outputs should be inlined
+  bool new_in_inline =
+    (new_ninputs + new_noutputs <= INLINE_PORTS
+     || (new_ninputs <= INLINE_PORTS && new_ninputs > new_noutputs
+	 && default_processing() != PUSH)
+     || new_ninputs == 0);
+  bool new_out_inline =
+    (new_ninputs + new_noutputs <= INLINE_PORTS
+     || (new_noutputs <= INLINE_PORTS && !new_in_inline)
+     || new_noutputs == 0);
+
+  // save inlined ports
+  Connection ports_storage[INLINE_PORTS];
+  memcpy(ports_storage, _ports0, sizeof(Connection) * INLINE_PORTS);
+
+  // create new port arrays
+  Connection *old_inputs =
+    (old_in_inline ? ports_storage : _inputs);
+  Connection *new_inputs =
+    (new_in_inline ? _ports0 : new Connection[new_ninputs]);
+  if (!new_inputs)		// out of memory -- return
+    return;
+
+  Connection *old_outputs =
+    (old_out_inline ? ports_storage + (_outputs - _ports0) : _outputs);
+  Connection *new_outputs =
+    (new_out_inline ? (new_in_inline ? _ports0 + new_ninputs : _ports0)
+     : new Connection[new_noutputs]);
+  if (!new_outputs) {		// out of memory -- return
+    if (!new_in_inline)
+      delete[] new_inputs;
     return;
   }
-  
-  Connection *new_vec;
-  if (store_n <= InlinePorts)
-    new_vec = store_inline;
-  else
-    new_vec = new Connection[store_n];
-  if (!new_vec) {
-    // out of memory -- restore old value of old_n
-    store_n = old_n;
-    return;
-  }
-  
-  if (new_vec != store_vec && old_n)
-    memcpy(new_vec, store_vec, old_n * sizeof(Connection));
-  if (old_n > InlinePorts)
-    delete[] store_vec;
-  store_vec = new_vec;
-  
-  for (int i = old_n; i < store_n; i++)
-    store_vec[i] = Connection(this);
+
+  // set up ports
+  int smaller_ninputs = (_ninputs < new_ninputs ? _ninputs : new_ninputs);
+  int smaller_noutputs = (_noutputs < new_noutputs ? _noutputs : new_noutputs);
+  memcpy(new_inputs, old_inputs, sizeof(Connection) * smaller_ninputs);
+  memcpy(new_outputs, old_outputs, sizeof(Connection) * smaller_noutputs);
+  for (int i = _ninputs; i < new_ninputs; i++)
+    new_inputs[i] = Connection(this);
+  for (int i = _noutputs; i < new_noutputs; i++)
+    new_outputs[i] = Connection(this);
+
+  // install information
+  if (!old_in_inline)
+    delete[] _inputs;
+  if (!old_out_inline)
+    delete[] _outputs;
+  _inputs = new_inputs;
+  _outputs = new_outputs;
+  _ninputs = new_ninputs;
+  _noutputs = new_noutputs;
 }
 
 void
 Element::set_ninputs(int count)
 {
-  set_nports(_ninputs, _inputs, &_input0[0], count);
+  set_nports(count, _noutputs);
 }
 
 void
@@ -147,7 +178,7 @@ Element::connect_input(int i, Element *f, int port)
 void
 Element::set_noutputs(int count)
 {
-  set_nports(_noutputs, _outputs, &_output0[0], count);
+  set_nports(_ninputs, count);
 }
 
 void
