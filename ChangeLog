@@ -1,3 +1,18 @@
+2000-11-13 Monday 13:29  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-elem2man, doc/elementdoc.7,
+	elements/icmp/icmppingrewriter.cc, elements/ip/ipfilter.cc,
+	include/click/packet.hh, lib/confparse.cc: other bug fixes: fixed
+	crash in IPFilter parsing, preserve case in IPFilter expressions,
+	added version of Packet::timestamp_anno() that returns a non-const
+	struct timeval, ICMPPingRewriter buglet, etc.
+
+2000-11-13 Monday 13:28  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, lib/element.cc, lib/router.cc: after
+	running the processing determination algorithm, assign any
+	remaining agnostics to push
+
 2000-11-11 Saturday 13:03  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* acconfig.h, configure.in, elements/userlevel/todevice.hh: we no
