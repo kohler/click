@@ -1,3 +1,8 @@
+2002-10-16 Wednesday 14:16  Eddie Kohler <kohler@icir.org>
+
+	* tools/: click2xml/xml2click.cc (1.4), lib/eclasst.cc (1.19):
+	xml2click: add non-working support for compound elements
+
 2002-10-16 Wednesday 00:57  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/fakepcap.cc (1.11): support IP6 ethertype
