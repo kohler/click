@@ -26,7 +26,7 @@
 #include <click/lexer.hh>
 
 static String *current_config = 0;
-int click_config_generation;
+unsigned click_config_generation;
 
 
 /*************************** Parsing configurations **************************/
