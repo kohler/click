@@ -82,7 +82,17 @@ class CxxClass {
   
 };
 
-class CxxInfo {
+class CxxInfo { public:
+
+  CxxInfo();
+  ~CxxInfo();
+  
+  void parse_file(const String &, bool header, String * = 0);
+
+  CxxClass *find_class(const String &) const;
+  CxxClass *make_class(const String &);
+    
+ private:
 
   HashMap<String, int> _class_map;
   Vector<CxxClass *> _classes;
@@ -97,16 +107,6 @@ class CxxInfo {
   int parse_class(const String &text, int p, const String &original,
 		  CxxClass *cxx_class);
   
- public:
-
-  CxxInfo();
-  ~CxxInfo();
-  
-  void parse_file(const String &, bool header, String * = 0);
-
-  CxxClass *find_class(const String &) const;
-  CxxClass *make_class(const String &);
-    
 };
 
 

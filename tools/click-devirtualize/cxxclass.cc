@@ -329,7 +329,7 @@ CxxClass::find_should_rewrite()
   _has_pull.assign(nfunctions(), 0);
   _should_rewrite.assign(nfunctions(), 0);
   
-  if (_fn_map["devirtualize_never"] >= 0)
+  if (_fn_map["never_devirtualize"] >= 0)
     return false;
   
   String push_pattern = compile_pattern("output(#0).push(#1)");
