@@ -322,7 +322,7 @@ element_read_cycles(Element *f, void *)
 #endif
 
 String
-Element::configure_read_handler(Element *element, void *vno)
+Element::configuration_read_handler(Element *element, void *vno)
 {
   Router *router = element->router();
   Vector<String> args;

@@ -381,13 +381,13 @@ to add these default handlers as well as its own.
 '
 .Sp
 .TP
-.BR "static String configure_read_handler(" "Element *\fIe\fP,"
+.BR "static String configuration_read_handler(" "Element *\fIe\fP,"
 .TP
 .RB "\%            void *\fIthunk\fP" )
 This generic read handler (see HandlerRegistry(3)) is provided as a
 convenience. It implements the common case where a read handler returns a
 single argument in a multi-argument configuration string. The
-.B configure_read_handler()
+.B configuration_read_handler()
 function determines the argument number by casting \fIthunk\fP to an
 integer; it decomposes the current configuration string and returns the
 \fIthunk\fPth argument.
@@ -395,7 +395,7 @@ integer; it decomposes the current configuration string and returns the
 Think twice before using this generic handler. For example, it behaves
 oddly for optional configuration arguments: if an optional argument was
 left off,
-.B configure_read_handler()
+.B configuration_read_handler()
 will return an empty string for that argument. You probably want to return
 the defaulted value instead, which requires that you write your own
 handler.
