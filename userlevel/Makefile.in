@@ -36,6 +36,8 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(COMPILE) -c $<
 .cc.o:
 	$(CXXCOMPILE) -c $<
+.cc.s:
+	$(CXXCOMPILE) -S $<
 .cc.ii:
 	$(CXXCOMPILE) -E $< > $@
 
