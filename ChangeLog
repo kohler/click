@@ -31,8 +31,8 @@
 
 2003-03-16 Sunday 17:03  Eddie Kohler <kohler@icir.org>
 
-	* test/testie (1.12): better testie semantics: allow %file FILE1
-	FILE2 and the like
+	* test/: testie (1.12), FromIPSummaryDump/ipopt01.testie (1.6):
+	better testie semantics: allow %file FILE1 FILE2 and the like
 
 2003-03-16 Sunday 17:02  Eddie Kohler <kohler@icir.org>
 
@@ -68,10 +68,12 @@
 
 2003-03-09 Sunday 20:02  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/: fromipsumdump.cc (1.49), toipsumdump.cc
-	(1.43), toipsumdump.hh (1.36): change IP and TCP option formats
-	(especially: use ; as a separator, not ,); plus parsing bug fixes
-	from test
+	* elements/analysis/fromipsumdump.cc (1.49),
+	elements/analysis/toipsumdump.cc (1.43),
+	elements/analysis/toipsumdump.hh (1.36),
+	test/FromIPSummaryDump/ipopt01.testie (1.5): change IP and TCP
+	option formats (especially: use ; as a separator, not ,); plus
+	parsing bug fixes from test
 
 2003-03-09 Sunday 20:01  Eddie Kohler <kohler@icir.org>
 
@@ -84,9 +86,12 @@
 
 2003-03-07 Friday 01:05  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/: fromipsumdump.cc (1.48), fromipsumdump.hh
-	(1.27), toipsumdump.cc (1.42), toipsumdump.hh (1.35): add TS option
-	to IPSummaryDump (more to go)
+	* elements/analysis/fromipsumdump.cc (1.48),
+	elements/analysis/fromipsumdump.hh (1.27),
+	elements/analysis/toipsumdump.cc (1.42),
+	elements/analysis/toipsumdump.hh (1.35),
+	test/FromIPSummaryDump/ipopt01.testie (1.4): add TS option to
+	IPSummaryDump (more to go)
 
 2003-03-06 Thursday 21:04  Michael Neufeld <Michael.Neufeld@cs.colorado.edu>
 
@@ -150,17 +155,24 @@
 
 2003-03-04 Tuesday 16:19  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/: fromipsumdump.cc (1.47), toipsumdump.cc
-	(1.41): update ipopt01 test for empty options and the like; improve
-	output for SSRR and LSRR (show pointer as *); add ICMPError source
-	routing test
+	* elements/analysis/fromipsumdump.cc (1.47),
+	elements/analysis/toipsumdump.cc (1.41),
+	test/FromIPSummaryDump/ipopt01.testie (1.3),
+	test/ICMPError/sr01.testie (1.1): update ipopt01 test for empty
+	options and the like; improve output for SSRR and LSRR (show
+	pointer as *); add ICMPError source routing test
 
 2003-03-04 Tuesday 15:53  Eddie Kohler <kohler@icir.org>
 
-	* elements/analysis/toipsumdump.cc (1.40), test/testie (1.11):
-	update regression test for binary options; fix testie against perl
-	bugs; and regression test found bug with binary option handling
-	(fixed)
+	* elements/analysis/toipsumdump.cc (1.40), test/testie (1.11),
+	test/FromIPSummaryDump/ipopt01.testie (1.2): update regression test
+	for binary options; fix testie against perl bugs; and regression
+	test found bug with binary option handling (fixed)
+
+2003-03-04 Tuesday 15:27  Eddie Kohler <kohler@icir.org>
+
+	* test/FromIPSummaryDump/ipopt01.testie (1.1): test for IP options
+	stuff (ASCII only)
 
 2003-03-04 Tuesday 15:27  Eddie Kohler <kohler@icir.org>
 
@@ -1850,13 +1862,13 @@
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
-	typename where required by later GCCs
+	* include/click/packet.hh (1.42): add end_data() function (= data()
+	+ length())
 
 2002-10-15 Tuesday 13:11  Eddie Kohler <kohler@icir.org>
 
-	* include/click/packet.hh (1.42): add end_data() function (= data()
-	+ length())
+	* include/click/: bighashmap.cc (1.18), hashmap.cc (1.14): add
+	typename where required by later GCCs
 
 2002-10-14 Monday 20:26  Eddie Kohler <kohler@icir.org>
 
@@ -1935,13 +1947,13 @@
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
-	* include/click/task.hh (1.19): remove unused method
-
-2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
-
 	* include/click/routerthread.hh (1.12), lib/routerthread.cc (1.26):
 	RouterThread::driver() gives waiting threads a chance before
 	restarting (Mz)
+
+2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
+
+	* include/click/task.hh (1.19): remove unused method
 
 2002-10-05 Saturday 13:43  Eddie Kohler <kohler@icir.org>
 
