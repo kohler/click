@@ -48,7 +48,7 @@ class HashMap { public:
   
  private:
   
-  struct Elt { K k; V v; };
+  struct Elt { K k; V v; Elt(): k(), v() { } };
   
   int _capacity;
   int _grow_limit;

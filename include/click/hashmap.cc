@@ -19,7 +19,7 @@
 
 template <class K, class V>
 HashMap<K, V>::HashMap()
-  : _capacity(0), _grow_limit(0), _n(0), _e(0)
+  : _capacity(0), _grow_limit(0), _n(0), _e(0), _default_v()
 {
   increase();
 }

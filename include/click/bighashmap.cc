@@ -40,6 +40,7 @@ BigHashMap<K, V>::initialize()
 
 template <class K, class V>
 BigHashMap<K, V>::BigHashMap()
+  : _default_v()
 {
   initialize();
 }
