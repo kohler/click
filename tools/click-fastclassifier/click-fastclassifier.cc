@@ -862,7 +862,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-fastclassifier (Click) %s\n", VERSION);
-      printf("Copyright (c) 1999-2000 Massachusetts Institute of Technologyn\
+      printf("Copyright (c) 1999-2000 Massachusetts Institute of Technology\n\
 Copyright (c) 2000 Mazu Networks, Inc.\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
