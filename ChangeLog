@@ -1,3 +1,12 @@
+2004-06-30 Wednesday 01:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/: handlers/kernel-01.testie (1.5),
+	linuxmodule/ToHost-01.testie (1.6): update kernel tests
+
+2004-06-30 Wednesday 01:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/testie (1.36): don't apply regex opts to blank lines
+
 2004-06-29 Tuesday 13:47  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/incseqno.cc (1.4), elements/grid/incseqno.hh (1.4),
