@@ -1,3 +1,11 @@
+2004-07-16 Friday 16:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.33), configure (1.22), configure.in (1.240),
+	doc/click.o.8 (1.15), linuxmodule/Makefile.in (1.90),
+	linuxmodule/config.cc (1.18), linuxmodule/module.cc (1.87),
+	linuxmodule/modulepriv.hh (1.37), linuxmodule/proc_click.cc (1.54):
+	remove --disable-clickfs
+
 2004-07-16 Friday 14:32  John Bicket <jbicket@mit.edu>
 
 	* conf/gen_config_roofnet.pl (1.3): update config_roofnet.pl
