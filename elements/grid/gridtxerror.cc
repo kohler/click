@@ -21,6 +21,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 GridTxError::GridTxError() 
   : Element(1, 0), _log(0)
@@ -65,6 +66,6 @@ GridTxError::push(int, Packet *p)
   p->kill();
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridTxError);
-

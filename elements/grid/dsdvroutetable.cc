@@ -28,6 +28,7 @@
 #include <click/straccum.hh>
 #include "dsdvroutetable.hh"
 #include "timeutils.hh"
+CLICK_DECLS
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -1495,7 +1496,8 @@ ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(DSDVRouteTable)
 
 #include <click/bighashmap.cc>
+#include <click/vector.cc>
 template class BigHashMap<IPAddress, DSDVRouteTable::RTEntry>;
 template class BigHashMap<IPAddress, Timer *>;
-#include <click/vector.cc>
 template class Vector<DSDVRouteTable::RTEntry>;
+CLICK_ENDDECLS

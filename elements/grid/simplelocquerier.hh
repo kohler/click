@@ -22,6 +22,7 @@
 #include <click/ipaddress.hh>
 #include <click/bighashmap.hh>
 #include "grid.hh"
+CLICK_DECLS
 
 class SimpleLocQuerier : public Element {
  public:
@@ -50,4 +51,5 @@ class SimpleLocQuerier : public Element {
   static int add_entry(const String &arg, Element *element, void *, ErrorHandler *errh);
 };
 
+CLICK_ENDDECLS
 #endif

@@ -20,6 +20,7 @@
 #include "sendpattern.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 SendPattern::SendPattern()
   : Element(0, 1)
@@ -57,4 +58,5 @@ SendPattern::pull(int)
   return p;
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SendPattern)

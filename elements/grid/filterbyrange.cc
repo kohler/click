@@ -23,6 +23,7 @@
 #include <click/router.hh>
 #include <clicknet/ether.h>
 #include <click/glue.hh>
+CLICK_DECLS
 
 FilterByRange::FilterByRange() : Element(1, 2), _locinfo(0)
 {
@@ -91,5 +92,6 @@ FilterByRange::push(int, Packet *p)
     output(1).push(p);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(FilterByRange)

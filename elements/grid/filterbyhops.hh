@@ -1,5 +1,7 @@
-#ifndef FILTERBYHOPS_HH
-#define FILTERBYHOPS_HH
+#ifndef CLICK_FILTERBYHOPS_HH
+#define CLICK_FILTERBYHOPS_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -14,8 +16,6 @@
  *
  * =a FilterByRange
  */
-
-#include <click/element.hh>
 
 class FilterByGridHops : public Element {
   
@@ -36,4 +36,5 @@ private:
   unsigned int _max_hops;
 };
 
+CLICK_ENDDECLS
 #endif

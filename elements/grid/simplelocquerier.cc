@@ -24,6 +24,7 @@
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 SimpleLocQuerier::SimpleLocQuerier()
   : Element(1, 1)
@@ -130,3 +131,4 @@ EXPORT_ELEMENT(SimpleLocQuerier)
 
 #include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, grid_location>;
+CLICK_ENDDECLS

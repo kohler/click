@@ -1620,7 +1620,6 @@ Classifier::sort_and_expr_subtree(int from, int success, int failure)
 
 
 #undef UBYTES
-CLICK_ENDDECLS
 ELEMENT_REQUIRES(AlignmentInfo)
 EXPORT_ELEMENT(Classifier)
 ELEMENT_MT_SAFE(Classifier)
@@ -1628,7 +1627,6 @@ ELEMENT_MT_SAFE(Classifier)
 // generate Vector template instance
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-CLICK_DECLS
 template class Vector<Classifier::Expr>;
-CLICK_ENDDECLS
 #endif
+CLICK_ENDDECLS

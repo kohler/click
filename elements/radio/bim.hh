@@ -1,5 +1,8 @@
 #ifndef CLICK_BIM_HH
 #define CLICK_BIM_HH
+#include <click/element.hh>
+#include <click/task.hh>
+CLICK_DECLS
 
 /*
  * BIM(/dev/cuaa0, speed)
@@ -8,9 +11,6 @@
  * Takes care of low-level framing.
  * Pulls *and* pushes packets.
  */
-
-#include <click/element.hh>
-#include <click/task.hh>
 
 class BIM : public Element {
  public:
@@ -45,4 +45,5 @@ class BIM : public Element {
   void send_packet(const unsigned char buf[], unsigned int len);
 };
 
+CLICK_ENDDECLS
 #endif

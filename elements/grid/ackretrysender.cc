@@ -24,6 +24,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include "ackretrysender.hh"
 #include "ackresponder.hh"
+CLICK_DECLS
 
 ACKRetrySender::ACKRetrySender() 
   : Element(2, 1), _timeout(0), _max_retries(0), 
@@ -169,4 +170,5 @@ ACKRetrySender::check()
   assert(_num_retries <= _max_retries);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ACKRetrySender)

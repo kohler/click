@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 GridGatewayInfo::GridGatewayInfo()
 {
@@ -83,5 +84,6 @@ GridGatewayInfo::add_handlers()
   add_write_handler("is_gateway", gw_write_handler, (void *) 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridGatewayInfo)

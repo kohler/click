@@ -28,6 +28,7 @@
 #include "gridroutetable.hh"
 #include "timeutils.hh"
 #include "gridlogger.hh"
+CLICK_DECLS
 
 #define NEXT_HOP_ETH_FIXUP 0
 
@@ -1600,9 +1601,10 @@ ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridRouteTable)
 
 #include <click/bighashmap.cc>
+#include <click/vector.cc>
 template class BigHashMap<IPAddress, GridRouteTable::RTEntry>;
 template class BigHashMap<IPAddress, bool>;
-#include <click/vector.cc>
 template class Vector<IPAddress>;
 template class Vector<GridRouteTable::RTEntry>;
 template class Vector<GridGenericRouteTable::RouteEntry>;
+CLICK_ENDDECLS

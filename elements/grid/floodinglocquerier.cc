@@ -25,6 +25,7 @@
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 #define NOISY 1
 
@@ -430,9 +431,4 @@ EXPORT_ELEMENT(FloodingLocQuerier)
 #include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, FloodingLocQuerier::LocEntry>;
 template class BigHashMap<IPAddress, FloodingLocQuerier::seq_t>;
-
-
-
-
-
-
+CLICK_ENDDECLS

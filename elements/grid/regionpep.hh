@@ -18,6 +18,7 @@
 #include "grid.hh"
 #include "elements/grid/gridlocationinfo.hh"
 #include "region.hh"
+CLICK_DECLS
 
 class EstimateRouterRegion : public GridLocationInfo {
   
@@ -70,4 +71,5 @@ private:
   double radio_range(grid_location); 
 };
 
+CLICK_ENDDECLS
 #endif

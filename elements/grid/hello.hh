@@ -26,6 +26,7 @@
 #include <click/timer.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 class SendGridHello : public Element {
   
@@ -54,5 +55,5 @@ private:
   Timer _timer;
 };
 
+CLICK_ENDDECLS
 #endif
-

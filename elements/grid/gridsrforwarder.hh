@@ -3,6 +3,7 @@
 
 #include <click/element.hh>
 #include <click/ipaddress.hh>
+CLICK_DECLS
 
 class GridSRForwarder : public Element {
 
@@ -26,4 +27,5 @@ private:
   void handle_host(Packet *p);
 };
 
+CLICK_ENDDECLS
 #endif

@@ -25,6 +25,7 @@
 #include <click/ipaddress.hh>
 #include <clicknet/ether.h>
 #include "grid.hh"
+CLICK_DECLS
 
 PrintGrid::PrintGrid()
   : Element(1, 1), _print_routes(false), _verbose(true)
@@ -237,5 +238,6 @@ PrintGrid::get_entries(grid_hello *gh)
   return ret;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(PrintGrid)

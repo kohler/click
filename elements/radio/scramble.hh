@@ -1,5 +1,7 @@
 #ifndef SCRAMBLE_HH
 #define SCRAMBLE_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * Scramble()
@@ -12,8 +14,6 @@
  *
  * Scramble is its own inverse.
  */
-
-#include <click/element.hh>
 
 class Scramble : public Element {
 public:
@@ -29,4 +29,5 @@ public:
 
 };
 
+CLICK_ENDDECLS
 #endif

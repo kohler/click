@@ -1,7 +1,6 @@
 #ifndef GRIDTXERR_HH
 #define GRIDTXERR_HH
 
-
 /*
  * =c
  * GridTxError
@@ -17,6 +16,7 @@
 
 #include <click/element.hh>
 #include "gridlogger.hh"
+CLICK_DECLS
 
 class GridTxError : public Element { public:
   
@@ -36,4 +36,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif

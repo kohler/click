@@ -21,6 +21,7 @@
 #include <click/error.hh>
 #include <click/confparse.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 B8B10::B8B10()
   : Element(1, 1)
@@ -159,5 +160,6 @@ B8B10::simple_action(Packet *p)
   }
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(BIM)
 EXPORT_ELEMENT(B8B10)

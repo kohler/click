@@ -25,6 +25,7 @@
 #include "grid.hh"
 #include <math.h>
 #include "timeutils.hh"
+CLICK_DECLS
 
 LinkTracker::LinkTracker()
 {
@@ -346,3 +347,4 @@ EXPORT_ELEMENT(LinkTracker)
 #include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, LinkTracker::stat_t>;
 template class BigHashMap<IPAddress, LinkTracker::bcast_t>;
+CLICK_ENDDECLS

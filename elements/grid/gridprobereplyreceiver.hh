@@ -1,5 +1,12 @@
 #ifndef GRIDPROBEREPLYRECEIVER_HH
 #define GRIDPROBEREPLYRECEIVER_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/vector.hh>
+#include <click/bighashmap.hh>
+#include <click/timer.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -22,14 +29,6 @@
  *
  * =a GridProbeSender, GridProbeHandler, ChatterSocket */
 
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include <click/vector.hh>
-#include <click/bighashmap.hh>
-#include <click/timer.hh>
-
 class GridProbeReplyReceiver : public Element {
 
  public:
@@ -48,4 +47,5 @@ private:
   ErrorHandler *_repl_errh;
 };
 
+CLICK_ENDDECLS
 #endif

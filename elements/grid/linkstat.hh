@@ -23,6 +23,7 @@
 #include <click/etheraddress.hh>
 
 #include "airoinfo.hh"
+CLICK_DECLS
 
 class LinkStat : public Element {
 private:
@@ -81,4 +82,5 @@ private:
   Packet *simple_action(Packet *);
 };
 
+CLICK_ENDDECLS
 #endif

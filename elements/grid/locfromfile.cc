@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 LocFromFile::LocFromFile()
 {
@@ -92,3 +93,4 @@ EXPORT_ELEMENT(LocFromFile)
 
 #include <click/vector.cc>
 template class Vector<LocFromFile::delta>;
+CLICK_ENDDECLS

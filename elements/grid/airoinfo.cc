@@ -51,6 +51,8 @@
    environment */
 #endif
 
+CLICK_DECLS
+
 AiroInfo::AiroInfo() : 
   Element(0, 0), _fd(-1)
 {
@@ -233,6 +235,6 @@ AiroInfo::clear_tx_stats()
 #endif
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(AiroInfo)

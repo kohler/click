@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 MovementSimulator::MovementSimulator() 
   : _event_timer(event_hook, this)
@@ -156,3 +157,4 @@ EXPORT_ELEMENT(MovementSimulator)
 
 #include <click/vector.cc>
 template class Vector<MovementSimulator::node_event>;
+CLICK_ENDDECLS

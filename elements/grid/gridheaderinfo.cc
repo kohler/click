@@ -20,7 +20,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <clicknet/ether.h>
-
+CLICK_DECLS
 
 /*
  * At this point, I have to ask myself, ``is this really making your
@@ -119,5 +119,6 @@ GridHeaderInfo::add_handlers()
     add_read_handler(handler_info_array[i].name, ghi_read_handler, (void *) i);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridHeaderInfo)

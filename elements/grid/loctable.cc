@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 LocationTable::LocationTable()
 {
@@ -126,9 +127,9 @@ LocationTable::add_handlers()
 
 
 
-
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LocationTable)
 
 #include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, LocationTable::entry>;
+CLICK_ENDDECLS

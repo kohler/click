@@ -63,6 +63,7 @@
 #include <click/ipaddress.hh>
 #include "grid.hh"
 #include <click/timer.hh>
+CLICK_DECLS
 
 class UpdateGridRoutes : public Element {
 
@@ -192,9 +193,5 @@ private:
   { return (age > decr ? age - decr : 0); }
 };
 
+CLICK_ENDDECLS
 #endif
-
-
-
-
-

@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include <stdio.h>
 #include "region.hh"
+CLICK_DECLS
 
 static double 
 max(double a, double b) 
@@ -68,5 +69,6 @@ RectRegion::expand(double l)
   return r;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 ELEMENT_PROVIDES(RectRegion)

@@ -23,6 +23,7 @@
 #include "grid.hh"
 #include <click/router.hh>
 #include <clicknet/ether.h>
+CLICK_DECLS
 
 FixSrcLoc::FixSrcLoc() : Element(1, 1), _locinfo(0)
 {
@@ -86,6 +87,6 @@ FixSrcLoc::simple_action(Packet *xp)
   return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(FixSrcLoc)
-

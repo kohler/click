@@ -16,6 +16,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <clicknet/ip6.h>
+CLICK_DECLS
 
 class SetIP6DSCP : public Element {
 
@@ -42,4 +43,5 @@ class SetIP6DSCP : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

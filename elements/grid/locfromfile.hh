@@ -27,6 +27,7 @@
 
 #include <click/element.hh>
 #include "elements/grid/gridlocationinfo.hh"
+CLICK_DECLS
 
 class LocFromFile : public GridLocationInfo {
 public:
@@ -53,4 +54,5 @@ private:
   int _next;
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,5 +1,9 @@
-#ifndef FIXDSTLOC_HH
-#define FIXDSTLOC_HH
+#ifndef CLICK_FIXDSTLOC_HH
+#define CLICK_FIXDSTLOC_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+#include "loctable.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -12,10 +16,6 @@
  * a LocationTable element as its argument.
  *
  * =a */
-
-#include <click/element.hh>
-#include <click/glue.hh>
-#include "loctable.hh"
 
 class FixDstLoc : public Element {
 
@@ -36,4 +36,5 @@ private:
   LocationTale *_loctab;
 };
 
+CLICK_ENDDECLS
 #endif

@@ -18,6 +18,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include "elements/grid/gridlocationinfo.hh"
+CLICK_DECLS
 
 class FixSrcLoc : public Element {
 
@@ -38,4 +39,5 @@ private:
   GridLocationInfo *_locinfo;
 };
 
+CLICK_ENDDECLS
 #endif

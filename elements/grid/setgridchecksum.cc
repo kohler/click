@@ -23,6 +23,7 @@
 #include "grid.hh"
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
+CLICK_DECLS
 
 SetGridChecksum::SetGridChecksum()
 {
@@ -70,5 +71,6 @@ SetGridChecksum::simple_action(Packet *xp)
   return(0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(SetGridChecksum)

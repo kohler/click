@@ -25,6 +25,7 @@
 #include <click/glue.hh>
 #include "grid.hh"
 #include <math.h>
+CLICK_DECLS
 
 FilterByGridHops::FilterByGridHops() : Element(1, 2)
 {
@@ -71,6 +72,6 @@ FilterByGridHops::push(int, Packet *p)
     output(1).push(p);
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel GridLocationInfo)
 EXPORT_ELEMENT(FilterByGridHops)

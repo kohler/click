@@ -1,5 +1,9 @@
 #ifndef GRIDLOCATIONINFO_HH
 #define GRIDLOCATIONINFO_HH
+#include <click/element.hh>
+#include "grid.hh"
+#include <click/timer.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -70,10 +74,6 @@
  * =a
  * FixSrcLoc */
 
-#include <click/element.hh>
-#include "grid.hh"
-#include <click/timer.hh>
-
 class GridLocationInfo : public Element {
   
 public:
@@ -128,4 +128,5 @@ protected:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -23,6 +23,7 @@
 #include "elements/userlevel/todevice.hh"
 #include <click/router.hh>
 #include "grid.hh"
+CLICK_DECLS
 
 SendGridLRHello::SendGridLRHello()
   : Element(0, 1), _timer(this), _nbr(0), _hops(1)
@@ -161,6 +162,6 @@ click_chatter("num_nbrs = %d , _hops = %d, nbrs.size() = %d",
   return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(SendGridLRHello)
-

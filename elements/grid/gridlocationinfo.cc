@@ -23,6 +23,7 @@
 #include <click/error.hh>
 
 #include <math.h>
+CLICK_DECLS
 
 GridLocationInfo::GridLocationInfo() : _seq_no(0), _logging_timer(logging_hook, this)
 {
@@ -344,6 +345,6 @@ grid_location::calc_range(const grid_location &l1, const grid_location &l2)
   return sqrt(r_squared);
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridLocationInfo)

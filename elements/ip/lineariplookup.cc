@@ -313,8 +313,8 @@ LinearIPLookup::add_handlers()
     add_read_handler("table", table_handler, 0);
 }
 
-CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRouteTable)
 EXPORT_ELEMENT(LinearIPLookup)
 
 #include <click/vector.cc>
+CLICK_ENDDECLS

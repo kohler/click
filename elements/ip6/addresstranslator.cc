@@ -785,7 +785,6 @@ click_ip6 *ip6 = (click_ip6 *)p->data();
     }
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(AddressTranslator)
 
 // generate Vector template instance
@@ -796,3 +795,4 @@ template class Vector<AddressTranslator::EntryMap>;
 template class BigHashMap<IP6FlowID, AddressTranslator::Mapping *>
 template class BigHashMapIterator<IP6FlowID, AddressTranslator::Mapping *>;
 #endif
+CLICK_ENDDECLS

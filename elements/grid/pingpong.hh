@@ -20,7 +20,7 @@
 #include <click/glue.hh>
 #include <click/ipaddress.hh>
 #include "linkstat.hh"
-
+CLICK_DECLS
 
 class PingPong : public Element {
 
@@ -42,4 +42,5 @@ public:
   Packet *simple_action(Packet *);
 };
 
+CLICK_ENDDECLS
 #endif

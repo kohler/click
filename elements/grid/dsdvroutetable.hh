@@ -1,5 +1,16 @@
-#ifndef DSDVROUTETABLE_HH
-#define DSDVROUTETABLE_HH
+#ifndef CLICK_DSDVROUTETABLE_HH
+#define CLICK_DSDVROUTETABLE_HH
+#include <click/bighashmap.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <elements/grid/gridgatewayinfo.hh>
+#include <elements/grid/linktracker.hh>
+#include <elements/grid/linkstat.hh>
+#include "grid.hh"
+#include "gridgenericrt.hh"
+#include <click/timer.hh>
+#include "gridlogger.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -90,17 +101,6 @@
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
  * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable, GridLogger */
-
-#include <click/bighashmap.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include <elements/grid/gridgatewayinfo.hh>
-#include <elements/grid/linktracker.hh>
-#include <elements/grid/linkstat.hh>
-#include "grid.hh"
-#include "gridgenericrt.hh"
-#include <click/timer.hh>
-#include "gridlogger.hh"
 
 class DSDVRouteTable : public GridGenericRouteTable {
 
@@ -446,4 +446,5 @@ dsdv_jiffies()
   return j; 
 }
 
+CLICK_ENDDECLS
 #endif

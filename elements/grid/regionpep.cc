@@ -20,6 +20,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include "grid.hh"
+CLICK_DECLS
 
 EstimateRouterRegion::EstimateRouterRegion()
   : _timer(this)
@@ -398,3 +399,4 @@ EXPORT_ELEMENT(EstimateRouterRegion)
 
 #include <click/vector.cc>
 template class Vector<EstimateRouterRegion::Entry>;
+CLICK_ENDDECLS

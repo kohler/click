@@ -225,10 +225,8 @@ create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh)
     return sa.take_string();
 }
 
-CLICK_ENDDECLS
 
 // generate Vector template instance
 #include <click/vector.cc>
-CLICK_DECLS
 template class Vector<ArchiveElement>;
 CLICK_ENDDECLS

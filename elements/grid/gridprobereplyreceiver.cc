@@ -26,6 +26,7 @@
 #include <click/router.hh>
 #include "grid.hh"
 #include "timeutils.hh"
+CLICK_DECLS
 
 GridProbeReplyReceiver::GridProbeReplyReceiver() 
 {
@@ -106,5 +107,6 @@ GridProbeReplyReceiver::simple_action(Packet *p)
   return 0;   
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridProbeReplyReceiver)

@@ -27,6 +27,7 @@
 #include <click/router.hh>
 #include <click/glue.hh>
 #include "gridgatewayinfo.hh"
+CLICK_DECLS
 
 int GridRouteActor::_next_free_cb = 0;
 
@@ -348,5 +349,6 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
   }
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LookupLocalGridRoute)

@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include "grid.hh"
 #include <math.h>
+CLICK_DECLS
 
 PEP::PEP()
   : _timer(this)
@@ -436,3 +437,4 @@ EXPORT_ELEMENT(PEP)
 
 #include <click/vector.cc>
 template class Vector<PEP::Entry>;
+CLICK_ENDDECLS

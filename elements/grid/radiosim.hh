@@ -40,6 +40,7 @@
 #include <click/vector.hh>
 #include "grid.hh"
 #include <click/task.hh>
+CLICK_DECLS
 
 class RadioSim : public Element {
   
@@ -83,4 +84,5 @@ private:
   bool _use_xy;
 };
 
+CLICK_ENDDECLS
 #endif

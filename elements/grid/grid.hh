@@ -1,5 +1,6 @@
 #ifndef GRID_HH
 #define GRID_HH
+CLICK_DECLS
 
 // REMINDER: UPDATE GRID_VERSION WITH EVERY MODIFICATION TO HEADERS
 
@@ -323,4 +324,5 @@ grid_hdr::type_string(unsigned char type)
   }
 }
 
+CLICK_ENDDECLS
 #endif

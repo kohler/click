@@ -17,8 +17,8 @@
 
 #ifndef GRIDROUTECB_HH
 #define GRIDROUTECB_HH
-
 #include <click/packet_anno.hh>
+CLICK_DECLS
 
 class GridRouteActionCallback {
 public:
@@ -101,6 +101,5 @@ protected:
   }
 };
 
-
-
+CLICK_ENDDECLS
 #endif GRIDROUTECB_HH

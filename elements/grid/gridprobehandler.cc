@@ -25,7 +25,7 @@
 #include <click/glue.hh>
 #include <click/router.hh>
 #include "grid.hh"
-
+CLICK_DECLS
 
 GridProbeHandler::GridProbeHandler() : 
   _gf_cb_id(-1), _fq_cb_id(-1), _lr_cb_id(-1), 
@@ -257,6 +257,6 @@ GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int 
   }
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridProbeHandler)

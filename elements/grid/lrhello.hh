@@ -27,6 +27,7 @@
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include "updateroutes.hh"
+CLICK_DECLS
 
 class SendGridLRHello : public Element {
   
@@ -57,5 +58,5 @@ private:
   int _hops;
 };
 
+CLICK_ENDDECLS
 #endif
-

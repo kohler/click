@@ -267,12 +267,10 @@ RFC2507c::simple_action(Packet *p)
   return(q);
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(RFC2507c)
     
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-CLICK_DECLS
 template class HashMap<IPFlowID, int>;
-CLICK_ENDDECLS
 #endif
+CLICK_ENDDECLS

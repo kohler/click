@@ -24,6 +24,7 @@
 #include "grid.hh"
 #include <math.h>
 #include "timeutils.hh"
+CLICK_DECLS
 
 PingPong::PingPong()
 {
@@ -119,5 +120,6 @@ PingPong::simple_action(Packet *p)
   return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(PingPong)

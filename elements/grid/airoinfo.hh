@@ -1,5 +1,18 @@
-#ifndef AIROINFO_HH
-#define AIROINFO_HH
+#ifndef CLICK_AIROINFO_HH
+#define CLICK_AIROINFO_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#ifdef __linux__
+#include <linux/wireless.h>
+#else
+/* OpenBSD 2.9 doesn't protect <net/if.h> from multiple inclusion, but
+   later versions do */
+#ifndef CLICK_NET_IF_H
+#define CLICK_NET_IF_H
+#include <net/if.h>
+#endif
+#endif
+CLICK_DECLS
 
 /*
  * =c
@@ -18,20 +31,6 @@
  * modified to automatically add entries to the ``spy list''.
  * 
  * =a ToDevice */
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-
-#ifdef __linux__
-#include <linux/wireless.h>
-#else
-/* OpenBSD 2.9 doesn't protect <net/if.h> from multiple inclusion, but
-   later versions do */
-#ifndef CLICK_NET_IF_H
-#define CLICK_NET_IF_H
-#include <net/if.h>
-#endif
-#endif
 
 class AiroInfo : public Element {
   
@@ -73,4 +72,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif

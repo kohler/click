@@ -1,5 +1,7 @@
-#ifndef B8B10_HH
-#define B8B10_HH
+#ifndef CLICK_B8B10_HH
+#define CLICK_B8B10_HH
+#include <click/element.hh>
+CLICK_DECLS
 
 /*
  * B8B10(flag)
@@ -11,8 +13,6 @@
  * many 0s as 1s. The point is to keep the BIM-4xx-RS232
  * radio happy.
  */
-
-#include <click/element.hh>
 
 class B8B10 : public Element {
 public:
@@ -33,4 +33,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif

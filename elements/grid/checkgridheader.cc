@@ -24,6 +24,7 @@
 #include "grid.hh"
 #include <clicknet/ether.h>
 #include <clicknet/ip.h>
+CLICK_DECLS
 
 CheckGridHeader::CheckGridHeader()
   : _drops(0)
@@ -127,5 +128,6 @@ CheckGridHeader::add_handlers()
   add_read_handler("drops", CheckGridHeader_read_drops, 0);
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(CheckGridHeader)

@@ -626,8 +626,8 @@ IPRateMonitor::llrpc(unsigned command, void *data)
     return Element::llrpc(command, data);
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(IPRateMonitor)
 
 // template instances
 #include <click/ewma.cc>
+CLICK_ENDDECLS

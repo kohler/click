@@ -63,6 +63,7 @@ struct click_ip6 {
 #define IP6_V_MASK			0xF0000000U
 #define IP6_V_SHIFT			28
 
+CLICK_DECLS
 
 unsigned short 
 in_ip4_cksum(const unsigned  saddr,
@@ -90,4 +91,5 @@ unsigned short in6_cksum(struct click_in6_addr *saddr,
 			 unsigned char *addr,
 			 unsigned short len2);
 
+CLICK_ENDDECLS
 #endif

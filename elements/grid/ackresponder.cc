@@ -21,6 +21,7 @@
 #include <click/confparse.hh>
 #include <click/packet.hh>
 #include "ackresponder.hh"
+CLICK_DECLS
 
 ACKResponder::ACKResponder() : Element(1, 2)
 {
@@ -57,4 +58,5 @@ ACKResponder::configure(Vector<String> &conf, ErrorHandler *errh)
 		     cpEnd);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ACKResponder)

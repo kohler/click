@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/string.hh>
 #include "grid.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -60,4 +61,5 @@ private:
   bool _timestamp;
 };
 
+CLICK_ENDDECLS
 #endif

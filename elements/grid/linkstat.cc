@@ -24,6 +24,7 @@
 #include <sys/time.h>
 #include "grid.hh"
 #include "timeutils.hh"
+CLICK_DECLS
 
 LinkStat::LinkStat()
   : _ai(0)
@@ -252,17 +253,4 @@ EXPORT_ELEMENT(LinkStat)
 template class BigHashMap<EtherAddress, LinkStat::stat_t>;
 template class Vector<LinkStat::bcast_t>;
 template class BigHashMap<EtherAddress, Vector<LinkStat::bcast_t> >;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+CLICK_ENDDECLS

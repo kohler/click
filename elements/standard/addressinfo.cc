@@ -303,9 +303,9 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
   return false;
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(AddressInfo)
 ELEMENT_HEADER(<click/standard/addressinfo.hh>)
 
 // template instance
 #include <click/vector.cc>
+CLICK_ENDDECLS

@@ -17,6 +17,7 @@
 
 #include <click/config.h>
 #include "scramble.hh"
+CLICK_DECLS
 
 Scramble::Scramble()
   : Element(1, 1)
@@ -65,4 +66,5 @@ Scramble::simple_action(Packet *p_in)
   return(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(Scramble)

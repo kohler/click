@@ -48,6 +48,7 @@
 #include <click/task.hh>
 #include "gridlogger.hh"
 #include "linktracker.hh"
+CLICK_DECLS
 
 class GridGatewayInfo;
 
@@ -87,5 +88,5 @@ private:
   GridLogger *_log;
 };
 
-
+CLICK_ENDDECLS
 #endif

@@ -83,7 +83,7 @@
 #include "grid.hh"
 #include "gridgenericrt.hh"
 #include <click/timer.hh>
-
+CLICK_DECLS
 
 
 
@@ -381,4 +381,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif

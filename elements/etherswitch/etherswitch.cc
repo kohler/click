@@ -132,12 +132,10 @@ EtherSwitch::add_handlers()
   add_read_handler("table", read_table, 0);
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(EtherSwitch)
 
 #include <click/hashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-CLICK_DECLS
 template class HashMap<EtherAddress, EtherSwitch::AddrInfo*>;
-CLICK_ENDDECLS
 #endif
+CLICK_ENDDECLS

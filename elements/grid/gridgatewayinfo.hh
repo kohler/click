@@ -1,5 +1,8 @@
 #ifndef GRIDGATEWAYINFO_HH
 #define GRIDGATEWAYINFO_HH
+#include <click/element.hh>
+#include "grid.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -18,10 +21,6 @@
  * =h is_gateway read/write
  * Returns or sets boolean value of whether or not this node is a
  * gateway. */
-
-
-#include <click/element.hh>
-#include "grid.hh"
 
 class GridGatewayInfo : public Element {
   
@@ -51,4 +50,5 @@ protected:
 
 };
 
+CLICK_ENDDECLS
 #endif

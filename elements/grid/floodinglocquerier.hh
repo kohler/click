@@ -1,5 +1,13 @@
-#ifndef FLOODLOCQUERIER_HH
-#define FLOODLOCQUERIER_HH
+#ifndef CLICK_FLOODLOCQUERIER_HH
+#define CLICK_FLOODLOCQUERIER_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/timer.hh>
+#include "elements/grid/gridlocationinfo.hh"
+#include <click/bighashmap.hh>
+#include "gridroutecb.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -28,14 +36,6 @@
  *
  * =a
  * LocQueryResponder, GridLocationInfo, SimpleLocQuerier */
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include <click/timer.hh>
-#include "elements/grid/gridlocationinfo.hh"
-#include <click/bighashmap.hh>
-#include "gridroutecb.hh"
 
 class FloodingLocQuerier : public Element, public GridRouteActor {
  public:
@@ -103,4 +103,5 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
   
 };
 
+CLICK_ENDDECLS
 #endif

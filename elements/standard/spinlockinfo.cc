@@ -98,8 +98,8 @@ SpinlockInfo::query(const String &name,
   }
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(SpinlockInfo)
 
 // template instance
 #include <click/vector.cc>
+CLICK_ENDDECLS

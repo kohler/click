@@ -1,5 +1,6 @@
-#ifndef amoeba_hh
-#define amoeba_hh
+#ifndef CLICK_amoeba_hh
+#define CLICK_amoeba_hh
+CLICK_DECLS
 
 /*
  * A function minimizer.
@@ -34,4 +35,5 @@ private:
                 int ihi, double fac);
 };
 
+CLICK_ENDDECLS
 #endif

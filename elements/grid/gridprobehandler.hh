@@ -1,5 +1,16 @@
 #ifndef GRIDPROBEHANDLER_HH
 #define GRIDPROBEHANDLER_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/vector.hh>
+#include <click/bighashmap.hh>
+#include <click/timer.hh>
+#include "gridroutecb.hh"
+#include "lookuplocalgridroute.hh"
+#include "lookupgeogridroute.hh"
+#include "floodinglocquerier.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -20,18 +31,6 @@
  *
  * =a GridProbeSender, GridProbeReplyReceiver, LookupLocalGridRoute,
  * LookupGeographicGridroute, FloodingLocQuerier */
-
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include <click/vector.hh>
-#include <click/bighashmap.hh>
-#include <click/timer.hh>
-#include "gridroutecb.hh"
-#include "lookuplocalgridroute.hh"
-#include "lookupgeogridroute.hh"
-#include "floodinglocquerier.hh"
 
 class GridProbeHandler : public Element, GridRouteActionCallback {
 
@@ -64,4 +63,5 @@ private:
   Packet *_cached_reply_pkt;
 };
 
+CLICK_ENDDECLS
 #endif

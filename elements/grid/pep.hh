@@ -61,6 +61,7 @@
 #include "pep_proto.hh"
 #include "grid.hh"
 #include "elements/grid/gridlocationinfo.hh"
+CLICK_DECLS
 
 class PEP : public GridLocationInfo {
   
@@ -112,4 +113,5 @@ private:
   grid_location algorithm2();
 };
 
+CLICK_ENDDECLS
 #endif

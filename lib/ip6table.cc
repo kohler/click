@@ -79,5 +79,4 @@ IP6Table::del(const IP6Address &dst, const IP6Address &mask)
 // generate Vector template instance
 #include <click/vector.cc>
 template class Vector<IP6Table::Entry>;
-
 CLICK_ENDDECLS

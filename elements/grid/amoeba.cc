@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
+CLICK_DECLS
 
 Amoeba::Amoeba(int dimensions)
 {
@@ -245,5 +246,6 @@ main()
 }
 #endif
 
+CLICK_ENDDECLS
 ELEMENT_PROVIDES(Amoeba)
 ELEMENT_REQUIRES(userlevel)

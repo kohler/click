@@ -19,7 +19,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/ipaddress.hh>
-
+CLICK_DECLS
 
 class LinkTracker : public Element {
 
@@ -73,4 +73,5 @@ public:
   Packet *simple_action(Packet *);
 };
 
+CLICK_ENDDECLS
 #endif

@@ -25,7 +25,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include <click/router.hh>
 #include "grid.hh"
-
+CLICK_DECLS
 
 UpdateGridRoutes::UpdateGridRoutes() : Element(1, 2), _max_hops(3), 
   _hello_timer(hello_hook, this), 
@@ -593,16 +593,15 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   output(1).push(p);
 }
 
-
-
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(UpdateGridRoutes)
 
 #include <click/bighashmap.cc>
+#include <click/vector.cc>
 template class BigHashMap<IPAddress, UpdateGridRoutes::NbrEntry>;
 template class BigHashMap<IPAddress, UpdateGridRoutes::far_entry>;
-#include <click/vector.cc>
 #if 0 // now included in the new DSDV implementation, gridroutetable.cc
 template class Vector<IPAddress>;
 #endif
 template class Vector<grid_nbr_entry>;
+CLICK_ENDDECLS

@@ -1,5 +1,12 @@
 #ifndef GRIDPROBESENDER_HH
 #define GRIDPROBESENDER_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/ipaddress.hh>
+#include <click/vector.hh>
+#include <click/bighashmap.hh>
+#include <click/timer.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -19,14 +26,6 @@
  * 
  *
  * =a GridProbeReplyReceiver, GridProbeHandler, LookupLocalGridRoute */
-
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/ipaddress.hh>
-#include <click/vector.hh>
-#include <click/bighashmap.hh>
-#include <click/timer.hh>
 
 class GridProbeSender : public Element {
 
@@ -49,4 +48,5 @@ private:
   EtherAddress _eth;
 };
 
+CLICK_ENDDECLS
 #endif

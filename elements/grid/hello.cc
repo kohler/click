@@ -23,6 +23,7 @@
 #include "elements/userlevel/todevice.hh"
 #include <click/router.hh>
 #include "grid.hh"
+CLICK_DECLS
 
 SendGridHello::SendGridHello()
   : Element(0, 1), _timer(this)
@@ -119,5 +120,6 @@ SendGridHello::make_hello()
   return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(SendGridHello)

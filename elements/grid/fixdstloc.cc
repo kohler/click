@@ -23,6 +23,7 @@
 #include "grid.hh"
 #include <click/router.hh>
 #include <clicknet/ether.h>
+CLICK_DECLS
 
 FixDstLoc::FixDstLoc() : Element(1, 1), _loctab(0)
 {
@@ -76,6 +77,6 @@ FixDstLoc::simple_action(Packet *xp)
   return p;
 }
 
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel LocationTable/)
 EXPORT_ELEMENT(FixDstLoc)
-

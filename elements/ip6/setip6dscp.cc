@@ -20,6 +20,7 @@
 #include <clicknet/ip6.h>
 #include <click/confparse.hh>
 #include <click/error.hh>
+CLICK_DECLS
 
 SetIP6DSCP::SetIP6DSCP()
   : Element(1, 1)
@@ -98,5 +99,6 @@ SetIP6DSCP::add_handlers()
   add_write_handler("dscp", reconfigure_positional_handler, (void *)0);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(SetIP6DSCP)
 ELEMENT_MT_SAFE(SetIP6DSCP)

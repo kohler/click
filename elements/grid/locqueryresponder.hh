@@ -26,6 +26,7 @@
 #include <click/vector.hh>
 #include <click/bighashmap.hh>
 #include <click/timer.hh>
+CLICK_DECLS
 
 class LocQueryResponder : public Element {
 
@@ -63,4 +64,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif

@@ -6,6 +6,7 @@
 #include <clicknet/udp.h>
 #include <click/packet.hh>
 #include "gridsrforwarder.hh"
+CLICK_DECLS
 
 GridSRForwarder::GridSRForwarder() : Element(1, 2)
 {
@@ -149,9 +150,9 @@ GridSRForwarder::handle_host(Packet *p)
   }
 }
 
-#include <click/vector.cc>
-template class Vector<unsigned short>;
-
-
 EXPORT_ELEMENT(GridSRForwarder)
 ELEMENT_REQUIRES(userlevel)
+
+#include <click/vector.cc>
+template class Vector<unsigned short>;
+CLICK_ENDDECLS

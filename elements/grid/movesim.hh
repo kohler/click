@@ -23,6 +23,7 @@
 #include <click/timer.hh>
 #include <click/vector.hh>
 #include "elements/grid/gridlocationinfo.hh"
+CLICK_DECLS
 
 class MovementSimulator : public Element {
   
@@ -63,4 +64,5 @@ private:
   bool find_entry(unsigned int t, event_entry **retval);
 };
 
+CLICK_ENDDECLS
 #endif

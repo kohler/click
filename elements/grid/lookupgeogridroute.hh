@@ -39,6 +39,7 @@
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
+CLICK_DECLS
 
 class LookupGeographicGridRoute : public Element, public GridRouteActor {
   public:
@@ -77,7 +78,5 @@ private:
   Task _task;
 };
 
-
+CLICK_ENDDECLS
 #endif
-
-

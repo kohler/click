@@ -28,6 +28,7 @@
 #include <termios.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
+CLICK_DECLS
 
 BIM::BIM()
   : Element(1, 1), _task(this)
@@ -245,5 +246,6 @@ BIM::send_packet(const unsigned char buf[], unsigned int len)
 #endif
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(BIM)
 ELEMENT_REQUIRES(userlevel)

@@ -1,5 +1,8 @@
-#ifndef FILTERBYRANGE_HH
-#define FILTERBYRANGE_HH
+#ifndef CLICK_FILTERBYRANGE_HH
+#define CLICK_FILTERBYRANGE_HH
+#include <click/element.hh>
+#include "elements/grid/gridlocationinfo.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -18,9 +21,6 @@
  * =a
  * GridLocationInfo 
  * FilterByGridHops */
-
-#include <click/element.hh>
-#include "elements/grid/gridlocationinfo.hh"
 
 class FilterByRange : public Element {
   
@@ -43,4 +43,5 @@ private:
   int _range; // in metres, negative meand don't filter
 };
 
+CLICK_ENDDECLS
 #endif

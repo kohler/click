@@ -25,6 +25,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include "grid.hh"
+CLICK_DECLS
 
 #define NOISY 1
 
@@ -159,3 +160,4 @@ EXPORT_ELEMENT(LocQueryResponder)
 
 #include <click/bighashmap.cc>
 template class BigHashMap<IPAddress, LocQueryResponder::seq_t>;
+CLICK_ENDDECLS

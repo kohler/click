@@ -112,8 +112,8 @@ TCPDemux::remove_flow(IPAddress sa, unsigned short sp,
   return _flows.remove(IPFlowID(sa, sp, da, dp));
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(TCPDemux)
 
 #include <click/bighashmap.cc>
 template class BigHashMap<IPFlowID, int>;
+CLICK_ENDDECLS

@@ -1,5 +1,11 @@
-#ifndef ACKRETRYSENDER_HH
-#define ACKRETRYSENDER_HH
+#ifndef CLICK_ACKRETRYSENDER_HH
+#define CLICK_ACKRETRYSENDER_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+#include <click/packet.hh>
+#include <click/task.hh>
+#include <click/timer.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -40,13 +46,6 @@
  * =a 
  * ACKResponder */
 
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
-#include <click/packet.hh>
-#include <click/task.hh>
-#include <click/timer.hh>
-
 class ACKRetrySender : public Element {
 public:
   ACKRetrySender();
@@ -83,5 +82,5 @@ private:
   void check();
 };
 
-
+CLICK_ENDDECLS
 #endif

@@ -159,10 +159,10 @@ RadixIPLookup::get(int i, unsigned &dst, unsigned &mask, unsigned &gw, unsigned 
     return true;
 }
 
-CLICK_ENDDECLS
 ELEMENT_REQUIRES(IPRouteTable)
 EXPORT_ELEMENT(RadixIPLookup)
 
 // generate Vector template instance
 #include <click/vector.cc>
 //template class Vector<RadixIPLookup::Entry>;
+CLICK_ENDDECLS

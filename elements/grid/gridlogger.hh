@@ -1,5 +1,17 @@
 #ifndef GRIDLOGGER_HH
 #define GRIDLOGGER_HH
+#include <sys/types.h>
+#include <sys/uio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <clicknet/ether.h>
+#include <clicknet/ip.h>
+#include <clicknet/udp.h>
+#include <click/string.hh>
+#include <click/element.hh>
+#include "grid.hh"
+#include "gridgenericrt.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -48,18 +60,6 @@
  * =a
  * GridRouteTable, DSDVRouteTable, GridTxError, LookupLocalGridRoute
  */
-
-#include <sys/types.h>
-#include <sys/uio.h>
-#include <unistd.h>
-#include <fcntl.h>
-#include <clicknet/ether.h>
-#include <clicknet/ip.h>
-#include <clicknet/udp.h>
-#include <click/string.hh>
-#include <click/element.hh>
-#include "grid.hh"
-#include "gridgenericrt.hh"
 
 class GridLogger : public Element {
   
@@ -377,4 +377,5 @@ public:
 
 };
 
+CLICK_ENDDECLS
 #endif

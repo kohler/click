@@ -1,5 +1,8 @@
 #ifndef GRIDHEADERINFO_HH
 #define GRIDHEADERINFO_HH
+#include <click/element.hh>
+#include "grid.hh"
+CLICK_DECLS
 
 /*
  * =c
@@ -62,9 +65,6 @@
  * =h offsetof_grid_loc_query_dst_ip read-only
  * Returns C<offsetof(grid_loc_query, dst_ip)> */
 
-#include <click/element.hh>
-#include "grid.hh"
-
 class GridHeaderInfo : public Element {
   
 public:
@@ -89,4 +89,5 @@ public:
   };
 };
 
+CLICK_ENDDECLS
 #endif

@@ -1,14 +1,14 @@
 #ifndef GRIDGENERICRT_HH
 #define GRIDGENERICRT_HH
-
-// public interface class to Grid routetables.  yes, i know, this is
-// not a great abstraction but it works for now.
-
 #include <click/element.hh>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
 #include <click/vector.hh>
 #include "grid.hh"
+CLICK_DECLS
+
+// public interface class to Grid routetables.  yes, i know, this is
+// not a great abstraction but it works for now.
 
 class GridGenericRouteTable : public Element {
 
@@ -61,6 +61,5 @@ public:
   virtual ~GridGenericRouteTable() { }
 };
 
-
-
+CLICK_ENDDECLS
 #endif

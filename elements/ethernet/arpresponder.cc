@@ -222,13 +222,11 @@ ARPResponder::add_handlers()
   add_read_handler("table", read_handler, (void *)0);
 }
 
-CLICK_ENDDECLS
 EXPORT_ELEMENT(ARPResponder)
 
 // generate Vector template instance
 #include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-CLICK_DECLS
 template class Vector<ARPResponder::Entry>;
-CLICK_ENDDECLS
 #endif
+CLICK_ENDDECLS

@@ -36,78 +36,7 @@
 #include <stdio.h>
 
 #include <click/string.hh>
-
-#if 0
-inline bool
-operator== (const timeval &a, const timeval &b)
-{
-  return a.tv_usec == b.tv_usec && a.tv_sec == b.tv_sec;
-}
-inline bool
-operator!= (const timeval &a, const timeval &b)
-{
-  return a.tv_usec != b.tv_usec || a.tv_sec != b.tv_sec;
-}
-
-inline int
-tvcmp (const timeval &a, const timeval &b)
-{
-  if (a.tv_sec < b.tv_sec)
-    return -1;
-  if (b.tv_sec < a.tv_sec)
-    return 1;
-  if (a.tv_usec < b.tv_usec)
-    return -1;
-  return b.tv_usec < a.tv_usec;
-};
-
-inline bool
-operator< (const timeval &a, const timeval &b)
-{
-  return tvcmp (a, b) < 0;
-}
-inline bool
-operator<= (const timeval &a, const timeval &b)
-{
-  return tvcmp (a, b) <= 0;
-}
-inline bool
-operator> (const timeval &a, const timeval &b)
-{
-  return tvcmp (a, b) > 0;
-}
-inline bool
-operator>= (const timeval &a, const timeval &b)
-{
-  return tvcmp (a, b) >= 0;
-}
-
-inline timeval
-operator+ (const timeval &a, const timeval &b)
-{
-  timeval tv;
-  tv.tv_sec = a.tv_sec + b.tv_sec;
-  if ((tv.tv_usec = a.tv_usec + b.tv_usec) > 1000000) {
-    tv.tv_usec -= 1000000;
-    ++tv.tv_sec;
-  }
-  return tv;
-}
-
-inline timeval
-operator- (const timeval &a, const timeval &b)
-{
-  timeval tv;
-  tv.tv_sec = a.tv_sec - b.tv_sec;
-  if (a.tv_usec > b.tv_usec)
-    tv.tv_usec = a.tv_usec - b.tv_usec;
-  else {
-    tv.tv_usec = a.tv_usec + 1000000 - b.tv_usec;
-    --tv.tv_sec;
-  }
-  return tv;
-}
-#endif
+CLICK_DECLS
 
 inline timeval
 hton(const timeval &tv) {
@@ -152,4 +81,5 @@ timeval_to_double(const timeval &tv)
   return d + frac * 1e-6;
 }
 
+CLICK_ENDDECLS
 #endif 

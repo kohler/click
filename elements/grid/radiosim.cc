@@ -22,6 +22,7 @@
 #include <click/standard/scheduleinfo.hh>
 #include <math.h>
 #include "elements/grid/filterbyrange.hh"
+CLICK_DECLS
 
 RadioSim::RadioSim()
   : _task(this), _use_xy(false)
@@ -212,3 +213,4 @@ EXPORT_ELEMENT(RadioSim)
 
 #include <click/vector.cc>
 template class Vector<RadioSim::Node>;
+CLICK_ENDDECLS

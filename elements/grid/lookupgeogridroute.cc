@@ -27,6 +27,7 @@
 #include <click/router.hh>
 #include <click/glue.hh>
 #include "filterbyrange.hh"
+CLICK_DECLS
 
 LookupGeographicGridRoute::LookupGeographicGridRoute()
   : Element(1, 2), _rt(0), _task(this)
@@ -361,7 +362,6 @@ LookupGeographicGridRoute::get_dest_loc(const Packet *p) const
  * ``lookup-and-modify-packet'' element that lets me plug in the
  * appropriate visitors... i guess i could use the iterators... */
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LookupGeographicGridRoute)
-  

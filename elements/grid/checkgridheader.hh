@@ -1,5 +1,8 @@
 #ifndef CHECKGRIDHEADER_HH
 #define CHECKGRIDHEADER_HH
+#include <click/element.hh>
+#include <click/glue.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -14,9 +17,6 @@
  * =a
  * SetGridChecksum
  */
-
-#include <click/element.hh>
-#include <click/glue.hh>
 
 class CheckGridHeader : public Element {
 
@@ -42,4 +42,5 @@ class CheckGridHeader : public Element {
 
 };
 
+CLICK_ENDDECLS
 #endif

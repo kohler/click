@@ -1,6 +1,7 @@
-#ifndef SENDPATTERN_HH
-#define SENDPATTERN_HH
+#ifndef CLICK_SENDPATTERN_HH
+#define CLICK_SENDPATTERN_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * SendPattern(len)
@@ -31,4 +32,5 @@ class SendPattern : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

@@ -19,6 +19,7 @@
 #include "checkpattern.hh"
 #include <click/glue.hh>
 #include <click/confparse.hh>
+CLICK_DECLS
 
 CheckPattern::CheckPattern()
   : Element(1, 1)
@@ -60,4 +61,5 @@ CheckPattern::simple_action(Packet *p)
   return(p);
 }
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(CheckPattern)

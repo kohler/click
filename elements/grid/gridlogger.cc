@@ -20,6 +20,7 @@
 #include <click/glue.hh>
 #include <click/error.hh>
 #include "gridlogger.hh"
+CLICK_DECLS
 
 int
 GridLogger::configure(Vector<String> &conf, ErrorHandler *errh)
@@ -121,6 +122,6 @@ GridLogger::close_log() {
   }
 }
 
-
+CLICK_ENDDECLS
 ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(GridLogger)

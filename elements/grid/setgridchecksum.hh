@@ -14,6 +14,7 @@
 
 #include <click/element.hh>
 #include <click/glue.hh>
+CLICK_DECLS
 
 class SetGridChecksum : public Element {
 public:
@@ -27,4 +28,5 @@ public:
   Packet *simple_action(Packet *);
 };
 
+CLICK_ENDDECLS
 #endif

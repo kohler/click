@@ -1,6 +1,7 @@
 #ifndef CHECKPATTERN_HH
 #define CHECKPATTERN_HH
 #include <click/element.hh>
+CLICK_DECLS
 
 /*
  * CheckPattern(len)
@@ -27,4 +28,5 @@ class CheckPattern : public Element {
   
 };
 
+CLICK_ENDDECLS
 #endif

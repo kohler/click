@@ -1,5 +1,8 @@
-#ifndef ACKRESPONDER_HH
-#define ACKRESPONDER_HH
+#ifndef CLICK_ACKRESPONDER_HH
+#define CLICK_ACKRESPONDER_HH
+#include <click/element.hh>
+#include <click/etheraddress.hh>
+CLICK_DECLS
 
 /*
  * =c
@@ -16,10 +19,6 @@
  * 
  * =a 
  * ACKRetrySender */
-
-
-#include <click/element.hh>
-#include <click/etheraddress.hh>
 
 #define ETHERTYPE_GRID_ACK 0x7ffe
 
@@ -41,5 +40,5 @@ private:
   EtherAddress _eth;
 };
 
-
+CLICK_ENDDECLS
 #endif

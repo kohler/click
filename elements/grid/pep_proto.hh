@@ -6,6 +6,7 @@
 //
 
 #include "grid.hh"
+CLICK_DECLS
 
 static const int pep_proto_fixes = 5;  // Max # of fixes in a packet.
 static const int pep_max_hops = 10;    // Don't propagate farther than this.
@@ -51,5 +52,5 @@ struct pep_rgn_proto {
   struct pep_rgn_fix fixes[pep_proto_fixes];
 };
 
-
+CLICK_ENDDECLS
 #endif

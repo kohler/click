@@ -26,7 +26,7 @@
 #include <clicknet/icmp6.h>
 #include <clicknet/tcp.h>
 #include <clicknet/udp.h>
-
+CLICK_DECLS
 
 ProtocolTranslator64::ProtocolTranslator64()
 {
@@ -358,6 +358,5 @@ ProtocolTranslator64::handle_ip6(Packet *p)
     }
 } 
 
+CLICK_ENDDECLS
 EXPORT_ELEMENT(ProtocolTranslator64)
-
-

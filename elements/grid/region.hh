@@ -3,6 +3,7 @@
 
 #include <assert.h>
 #include <click/string.hh>
+CLICK_DECLS
 
 class RectRegion {
 
@@ -53,5 +54,5 @@ private:
   double _h;
 };
 
-
+CLICK_ENDDECLS
 #endif

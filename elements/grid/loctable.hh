@@ -29,6 +29,7 @@
 #include <click/element.hh>
 #include "grid.hh"
 #include <click/bighashmap.hh>
+CLICK_DECLS
 
 class LocationTable : public Element {
   
@@ -64,4 +65,5 @@ private:
 
 };
 
+CLICK_ENDDECLS
 #endif
