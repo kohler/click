@@ -64,6 +64,7 @@ my(%section_headers) =
       'measurement' => 'Measurement and Profiling',
       'debugging' => 'Debugging',
       'profiling' => 'Measurement and Profiling',
+      'analysis' => 'Trace Analysis and Manipulation',
       'information' => 'Informational Elements',
       'Ethernet' => 'Ethernet',
       'IP' => 'IP, ICMP, and IGMP',
@@ -808,8 +809,9 @@ EOD;
 		 'Classification', 'Checking Validity',
 		 'Duplication', 'Storage', 'Dropping',
 		 'Packet Scheduling', 'Encapsulation',
-		 'Modification', 'Annotations', 'Measurement',
-		 'Debugging and Profiling', 'Informational Elements',
+		 'Modification', 'Annotations', 'Measurement and Profiling',
+		 'Trace Analysis and Manipulation',
+		 'Debugging', 'Informational Elements',
 		 'Ethernet', 'IP, ICMP, and IGMP', 'UDP and TCP',
 		 sort { lc($a) cmp lc($b) } keys(%summaries_by_section) ) {
     next if $did_section{$sec};
