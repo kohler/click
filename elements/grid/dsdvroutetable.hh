@@ -3,7 +3,7 @@
 
 /*
  * =c
- * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW, LinkTracker, LinkStat [, I<KEYWORDS>])
+ * DSDVRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GridGatewayInfo, LinkTracker, LinkStat [, I<KEYWORDS>])
  *
  * =s Grid
  * Run DSDV local routing protocol
@@ -11,17 +11,73 @@
  * =d 
  *
  * This is meant to be an ``official'' implementation of DSDV.  It is
- * intended to exactly replicate the behavior of DSDV as describe din
+ * intended to exactly replicate the behavior of DSDV as described in
  * the original Perkins paper, the CMU ad-hoc bakeoff paper, and the
  * CMU ns implementation.  I make no guarantees that any of the above
  * are actually achieved.
  *
  * There must only be one of DSDVRouteTable or GridRouteTable in a
- * grid configuration.
+ * grid configuration.  There can only be one DSDVRouteTable per
+ * configuration.
+ *
+ * Regular arguments are:
+ *
+ * =over 8
+ *
+ * =item TIMEOUT
+ * 
+ * Unsigned integer.  Milliseconds.
+ *
+ * =item PERIOD
+ *
+ * Unsigned integer.  Milliseconds.
+ *
+ * =item JITTER
+ *
+ * Unsigned integer.  Milliseconds.
+ *
+ * =item ETH
+ *
+ * This node's ethernet hardware address.
+ *
+ * =item IP
+ *
+ * This node's IP address.
+ *
+ * =back
+ *
+ * Keywords arguments are:
+ *
+ * =over 8
+ *
+ * =item MAX_HOPS
+ * 
+ * Unsigned integer.  The maximum number of hops for which a route
+ * should propagate.  The default number of hops is 3.
+ *
+ * =item METRIC
+ *
+ * String.  The type of metric that should be used to compare two
+ * routes.  Allowable values are: ``hopcount'',
+ * ``cumulative_delivery_rate'', ``min_delivery_rate'',
+ * ``min_sig_strength'', and ``min_sig_quality''.  The default is to
+ * use hopcount.
+ *
+ * =item LOGFILE
+ *
+ * String.  Filename of file to log activity to in binary format.
+ *
+ * =item WST0 (zero, not``oh'')
+ * 
+ * Unsigned integer.  Initial weighted settling time.  Milliseconds.
+ *
+ * =item ALPHA. 
+ * 
+ * Double.  DSDV settling time weighting parameter.  Between 0 and 1 inclusive.
  *
  * =a
- * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes, 
- * LinkStat, LinkTracker, GridRouteTable */
+ * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, LookupGeographicGridRoute
+ * GridGatewayInfo, LinkStat, LinkTracker, GridRouteTable */
 
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
@@ -33,21 +89,16 @@
 #include "gridgenericrt.hh"
 #include <click/timer.hh>
 
-
-
-
 class GridLogger;
 
 class DSDVRouteTable : public GridGenericRouteTable {
+
 public:
   // generic rt methods
   bool current_gateway(RouteEntry &entry);
   bool get_one_entry(IPAddress &dest_ip, RouteEntry &entry);
   void get_all_entries(Vector<RouteEntry> &vec);
  
-
-public:
-
   DSDVRouteTable();
   ~DSDVRouteTable();
 
@@ -55,7 +106,7 @@ public:
   void *cast(const char *);
   const char *processing() const		{ return "h/h"; }
   const char *flow_code() const                 { return "x/y"; }
-  DSDVRouteTable *clone() const;
+  DSDVRouteTable *clone() const                 { return new DSDVRouteTable; }
   
   int configure(Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -68,6 +119,15 @@ public:
   
 
 private:
+
+  struct metric_t {
+    static const unsigned int bad_metric = 777777;    
+    bool valid;
+    unsigned int val;
+    metric_t() : valid(false), val(bad_metric) { }
+    metric_t(unsigned int m, bool v = true) : valid(v), val(m) { }
+  };
+  
   /* 
    * route table entry
    */
@@ -76,8 +136,8 @@ private:
     bool                _init;
 
   public:
-    class EtherAddress  dest_eth;              // hardware address of destination; may be all 0s if we don't hear any ads...
-    
+    class EtherAddress  dest_eth;              // hardware address of destination; 
+                                               // may be all 0s if we don't hear any ads...
     bool                is_gateway;
 
     unsigned int        ttl;                   // msecs
@@ -85,15 +145,19 @@ private:
 
     // metrics are invalid until updated to incorporate the last hop's
     // link, i.e. by calling initialize_metric or update_metric.
-    unsigned int        metric;                // generic metric -- routing code must interpret this as neccessary
-    bool                metric_valid;          
+    metric_t            metric;
 
-    static const unsigned int bad_metric = 777777;    
 
+    // DSDV book-keeping
+    double              wst;                   // weighted settling time (msecs)
+    metric_t            last_adv_metric;       // last metric we advertised
+    int                 last_seq_jiffies;      // last time the seq_no changed
+    int                 advertise_ok_jiffies;  // when it is ok to advertise route
+    bool                need_advertisement;    // do we need to advertise this route?
 
     RTEntry() : 
       _init(false), is_gateway(false), ttl(0), last_updated_jiffies(-1), 
-      metric(bad_metric), metric_valid(false)
+      wst(0), last_seq_jiffies(0), advertise_ok_jiffies(0), need_advertisement(false)
     { }
     
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
@@ -103,7 +167,8 @@ private:
       RouteEntry(_dest_ip, _loc_good, _loc_err, _loc, _next_hop_eth, _next_hop_ip,
 		 _seq_no, _num_hops), 
       _init(true), is_gateway(_is_gateway), ttl(_ttl),
-      last_updated_jiffies(_last_updated_jiffies), metric_valid(false)
+      last_updated_jiffies(_last_updated_jiffies), 
+      wst(0), last_seq_jiffies(0), advertise_ok_jiffies(0), need_advertisement(false)
     { }
 
     /* constructor for 1-hop route entry, converting from net byte order */
@@ -111,7 +176,7 @@ private:
 	    unsigned int jiff) :
       RouteEntry(ip, gh->loc_good, gh->loc_err, gh->loc, eth, ip, hlo->seq_no, 1),
       _init(true), dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
-      metric_valid(false)
+      wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_advertisement(false)
     { 
       loc_err = ntohs(loc_err); 
       seq_no = ntohl(seq_no); 
@@ -124,12 +189,13 @@ private:
       RouteEntry(nbr->ip, nbr->loc_good, nbr->loc_err, nbr->loc,
 		 eth, ip, nbr->seq_no, nbr->num_hops + 1),
       _init(true), is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
-      metric(nbr->metric), metric_valid(nbr->metric_valid)
+      metric(nbr->metric, nbr->metric_valid),
+      wst(0), last_seq_jiffies(0), advertise_ok_jiffies(0), need_advertisement(false)
     {
       loc_err = ntohs(loc_err);
       seq_no = ntohl(seq_no);
       ttl = ntohl(ttl);
-      metric = ntohl(metric);
+      metric.val = ntohl(metric.val);
     }
     
     /* copy data from this into nb, converting to net byte order */
@@ -139,35 +205,46 @@ private:
   
   typedef BigHashMap<IPAddress, RTEntry> RTable;
   typedef RTable::Iterator RTIter;
-
+  
   /* the route table */
-  RTable _rtes;
+  // Invariants: 
 
-  void get_rtes(Vector<RTEntry> *retval);
+  // 1. every route in the table that is not expired (num_hops > 0) is
+  // valid: i.e. its ttl has not run out, nor has it been in the table
+  // past its timeout.  There is a expire timer for this route in
+  // _expire_timers.
 
-private:
+  // 2. no route in the table that *is* expired (num_hops == 0) has an
+  // entry in _expire_timers.
+
+  // 3. expired routes *are* allowed in the table, since that's what
+  // the DSDV description does.
+
+  class RTable _rtes;
+  
+  void insert_route(const RTEntry &);
+  void schedule_triggered_update(const IPAddress &ip, int when);
+  
+  typedef BigHashMap<IPAddress, Timer *> TMap;
+  typedef TMap::Iterator TMIter;
+
+  class TMap _expire_timers;
+  class TMap _trigger_timers;
+
   /* max time to keep an entry in RT */
-  int _timeout; // msecs, -1 if we are not timing out entries
-  int _timeout_jiffies;
+  unsigned int _timeout; // msecs
 
   /* route broadcast timing parameters */
-  int _period;
-  int _jitter;
+  unsigned int _period; // msecs
+  unsigned int _jitter; // msecs
 
-  GridGatewayInfo *_gw_info;
-  LinkTracker *_link_tracker;
-  LinkStat *_link_stat;
-
-  /* interval at which to check RT entries for expiry */
-  static const unsigned int EXPIRE_TIMER_PERIOD = 100; // msecs
-
-  /* extended logging */
-  ErrorHandler *_extended_logging_errh;
-  void DSDVRouteTable::log_route_table(); // print route table on 'routelog' chatter channel
+  class GridGatewayInfo *_gw_info;
+  class LinkTracker     *_link_tracker;
+  class LinkStat        *_link_stat;
 
   /* binary logging */
-  GridLogger *_log;
-  unsigned int _dump_tick;
+  class GridLogger          *_log;
+  static const unsigned int _log_dump_period = 30 * 1000; // msecs
 
   /* this node's addresses */
   IPAddress _ip;
@@ -180,22 +257,38 @@ private:
   unsigned int _seq_delay;
 
   /* local DSDV radius */
-  int _max_hops;
+  unsigned int _max_hops;
 
-  Timer _expire_timer;
-  Timer _hello_timer;
+  /* settling time constants */
+  double          _alpha;
+  unsigned int    _wst0;  // msecs
 
-  /* runs to expire route entries */
-  static void expire_hook(Timer *, void *);
+  /* misc. DSDV constants */
+  static const unsigned int _min_triggered_update_period = 1000; // msecs
 
-  /* expires routes; returns the expired routes */
-  Vector<RTEntry> expire_routes();
-  
-  /* runs to broadcast route advertisements and triggered updates */
-  static void hello_hook(Timer *, void *);
-  
-  /* send a route advertisement containing the entries in rte_info */
-  void send_routing_update(Vector<RTEntry> &rtes_to_send, bool update_seq = true, bool check_ttls = true);
+  /* track route ads */
+  unsigned int _last_periodic_update;  // jiffies
+  unsigned int _last_triggered_update; // jiffies
+
+  class Timer _hello_timer;
+  static void static_hello_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->hello_hook(); }
+  void hello_hook();
+
+  class Timer _log_dump_timer;
+  static void static_log_dump_hook(Timer *, void *e) { ((DSDVRouteTable *) e)->log_dump_hook(); }
+  void log_dump_hook();
+
+  static void static_expire_hook(Timer *, void *v) { _instance->expire_hook((unsigned int) v); }
+  void expire_hook(const IPAddress &);
+
+  static void static_trigger_hook(Timer *, void *v) { _instance->trigger_hook((unsigned int) v); }
+  void trigger_hook(const IPAddress &);
+
+  void send_full_update();
+  void send_triggered_update(const IPAddress &);
+
+  /* send a route advertisement containing the specified entries */
+  void build_and_tx_ad(Vector<RTEntry> &);
 
   static unsigned int decr_ttl(unsigned int ttl, unsigned int decr)
   { return (ttl > decr ? ttl - decr : 0); }
@@ -206,17 +299,24 @@ private:
   static int msec_to_jiff(int m)
   { return (CLICK_HZ * m) / 1000; }
 
+  class RouteEntry make_generic_rte(const RTEntry &rte) { return rte; }
+
   /* update route metric with the last hop from the advertising node */
   void update_metric(RTEntry &);
 
   /* initialize the metric for a 1-hop neighbor */
   void init_metric(RTEntry &);
 
+  /* update weight settling time */
+  void update_wst(RTEntry *old_r, RTEntry &new_r);
+
   /* true iff first route's metric is preferable to second route's
      metric -- note that this is a strict comparison, if the metrics
      are equivalent, then the function returns false.  this is
      necessary to get stability, e.g. when using the hopcount metric */
   bool metric_is_preferable(const RTEntry &, const RTEntry &);
+
+  bool metric_different(const metric_t &, const metric_t &);
 
   /* true iff we should replace the first route with the second route */
   bool should_replace_old_route(const RTEntry &, const RTEntry &);
@@ -232,9 +332,6 @@ private:
   static String print_metric_type(Element *e, void *);
   static int write_metric_type(const String &, Element *, void *, ErrorHandler *);
 
-  static String print_metric_range(Element *e, void *);
-  static int write_metric_range(const String &, Element *, void *, ErrorHandler *);
-
   static String print_est_type(Element *e, void *);
   static int write_est_type(const String &, Element *, void *, ErrorHandler *);
 
@@ -247,11 +344,8 @@ private:
   static String print_frozen(Element *e, void *);
   static int write_frozen(const String &, Element *, void *, ErrorHandler *);
 
-  unsigned int qual_to_pct(int q);
-  unsigned int sig_to_pct(int s);
-
-  bool est_forward_delivery_rate(const IPAddress, double &);
-  bool est_reverse_delivery_rate(const IPAddress, double &);
+  bool est_forward_delivery_rate(const IPAddress &, double &);
+  bool est_reverse_delivery_rate(const IPAddress &, double &);
 
   enum MetricType {
     MetricUnknown = -1,
@@ -262,23 +356,19 @@ private:
   static String metric_type_to_string(MetricType t);
   static MetricType check_metric_type(const String &);
   
-  MetricType _metric_type;
+  enum MetricType _metric_type;
+  unsigned int    _est_type;
 
-  static const unsigned int _bad_metric = RTEntry::bad_metric;
-
-  enum {
-    EstByQual = 0,
+  enum {  // estimator types;try to keep vals in sync with GridRouteTable
     EstByMeas = 3
   };
 
-  unsigned int _est_type;
+  static const metric_t _bad_metric; // default value is ``bad''
 
   bool _frozen;
 
-  RouteEntry make_generic_rte(const RTEntry &rte) {
-    return rte;
-  }
-
+  // this class is singleton 
+  static DSDVRouteTable *_instance;
 };
 
 #endif
