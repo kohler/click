@@ -41,6 +41,7 @@ TimedSink::configure(const String &conf, ErrorHandler *errh)
 int
 TimedSink::initialize(ErrorHandler *)
 {
+  _timer.attach(this);
   _timer.schedule_after_ms(_interval);
   return 0;
 }

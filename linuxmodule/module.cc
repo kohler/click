@@ -18,6 +18,7 @@
 #include "lexer.hh"
 #include "router.hh"
 #include "elements/linuxmodule/fromdevice.hh"
+#include "elements/linuxmodule/polldevice.hh"
 #include "elements/linuxmodule/todevice.hh"
 #include "kernelerror.hh"
 #include "straccum.hh"
@@ -82,9 +83,10 @@ parse_router(String s)
   int cookie = lexer->begin_parse(s, "line ", &lextra);
   while (lexer->ystatement())
     /* do nothing */;
-  Router *r = lexer->create_router();
-  lexer->end_parse(cookie);
   
+  Router *r = lexer->create_router();
+  
+  lexer->end_parse(cookie);
   return r;
 }
 
@@ -106,7 +108,7 @@ void
 install_current_router(Router *r)
 {
   current_router = r;
-  current_router->use();
+  r->use();
   init_router_element_procs();
   if (r->initialized())
     start_click_sched(r, kernel_errh);
@@ -417,6 +419,7 @@ init_module()
   ErrorHandler::static_initialize(new KernelErrorHandler);
   AnyDevice::static_initialize();
   FromDevice::static_initialize();
+  PollDevice::static_initialize();
   ToDevice::static_initialize();
   kernel_errh = ErrorHandler::default_handler();
   extern ErrorHandler *click_chatter_errh;

@@ -87,6 +87,7 @@ EtherSpanTree::initialize(ErrorHandler *)
     set_state(i, FORWARD);
   }
   _best.reset(((u_int64_t)_bridge_priority << 48) | _bridge_id);
+  _hello_timer.attach(this);
   _hello_timer.schedule_after_ms(_best._hello_time * 1000);
   return 0;
 }

@@ -882,7 +882,7 @@ Router::wait()
   // do not wait if anything is scheduled
   tv.tv_sec = (scheduled_next() == this ? 0 : 1);
   tv.tv_usec = 0;
-  if (!any && !Timer::get_next_delay(&tv))
+  if (!any && !_timer_head.get_next_delay(&tv))
     return;
   
   int n = select(FD_SETSIZE, &mask, (fd_set*)0, (fd_set*)0, &tv);
@@ -905,7 +905,7 @@ Router::wait()
 #endif
   
   // always run timers
-  Timer::run_timers();
+  _timer_head.run();
 }
 
 

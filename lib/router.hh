@@ -1,6 +1,7 @@
 #ifndef ROUTER_HH
 #define ROUTER_HH
 #include "element.hh"
+#include "timer.hh"
 #include "bitvector.hh"
 class ElementFilter;
 
@@ -36,10 +37,12 @@ class Router : public ElementLink {
   Handler *_handlers;
   int _nhandlers;
   int _handlers_cap;
-  
+
+  Timer _timer_head;
   bool _please_stop_driver;
   
   Router(const Router &);
+  Router &operator=(const Router &);
   
   void remove_hookup(int);
   void hookup_error(const Hookup &, bool, const char *, ErrorHandler *);
@@ -118,6 +121,8 @@ class Router : public ElementLink {
   const Handler &handler(int i) const;
   
   int live_reconfigure(int, const String &, ErrorHandler *);
+
+  Timer *timer_head()				{ return &_timer_head; }
   
   void driver();
   void driver_once();
@@ -129,7 +134,8 @@ class Router : public ElementLink {
   String element_inputs_string(int) const;
   String element_outputs_string(int) const;
   
-  void please_stop_driver()		{ _please_stop_driver = 1; }
+  void please_stop_driver()			{ _please_stop_driver = 1; }
+  
 };
 
 

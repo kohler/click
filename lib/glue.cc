@@ -54,6 +54,8 @@ click_chatter(const char *fmt, ...)
 unsigned click_new_count = 0;
 unsigned click_outstanding_news = 0;
 
+#define CLICK_MEMDEBUG 0
+
 #define CHUNK_MAGIC -49281
 struct Chunk {
   int magic;
@@ -156,7 +158,11 @@ print_and_free_chunks()
 #if CLICK_MEMDEBUG
   for (Chunk *c = chunks; c; ) {
     Chunk *n = c->next;
-    printk("<1>  chunk at %p size %d alloc in %d\n", (void *)(c + 1), c->size, c->where);
+    printk("<1>  chunk at %p size %d alloc in %d data ", (void *)(c + 1), c->size, c->where);
+    unsigned char *d = (unsigned char *)(c + 1);
+    for (int i = 0; i < 20 && i < c->size; i++)
+      printk("%02x", d[i]);
+    printk("\n");
     kfree((void *)c);
     c = n;
   }

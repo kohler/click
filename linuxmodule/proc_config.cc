@@ -135,24 +135,24 @@ DECLARE_WRITE_FILEOP(click_config_write)
     memset(x, 0, f_pos - last_len);
   if (copy_from_user(x + (f_pos - last_len), buffer, count) > 0)
     return -EFAULT;
-  
+
   FILEOP_F_POS += count;
   return count;
 }
 
-static void
+static int
 hotswap_config()
 {
   String s = build_config->take_string();
   Router *r = parse_router(s);
   if (!r)
-    return;
+    return -EINVAL;
   
   /* prevent interrupts */
   unsigned cli_flags;
   save_flags(cli_flags);
   cli();
-    
+
   if (r->initialize(kernel_errh) >= 0) {
     // perform hotswap
     if (current_router && current_router->initialized())
@@ -166,9 +166,10 @@ hotswap_config()
   
   /* allow interrupts */
   restore_flags(cli_flags);
+  return 0;
 }
 
-static void
+static int
 swap_config()
 {
   *current_config = build_config->take_string();
@@ -177,7 +178,9 @@ swap_config()
   if (router) {
     router->initialize(kernel_errh);
     install_current_router(router);
-  }
+    return router->initialized() ? 0 : -EINVAL;
+  } else
+    return -EINVAL;
 }
 
 static
@@ -190,7 +193,8 @@ DECLARE_RELEASE_FILEOP(click_config_release)
   }
   if (!config_write_lock)
     return -EIO;
-  
+
+  int success = -EINVAL;
   if (build_config) {
     if (!current_config)
       current_config = new String;
@@ -198,15 +202,15 @@ DECLARE_RELEASE_FILEOP(click_config_release)
       reset_proc_click_errors();
       unsigned inum = filp->f_dentry->d_inode->i_ino;
       if (inum == proc_click_hotconfig_entry.low_ino)
-	hotswap_config();
+	success = hotswap_config();
       else
-	swap_config();
+	success = swap_config();
       proc_click_config_entry.size = current_config->length();
     }
   }
   config_write_lock = 0;
   MOD_DEC_USE_COUNT;
-  return (current_router && current_router->initialized() ? 0 : -EINVAL);
+  return success;
 }
 
 }

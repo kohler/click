@@ -96,9 +96,10 @@ String::claim_string(const char *cc, int cclen)
     cclen = 0;
   else if (cclen < 0)
     cclen = strlen(cc);
-  if (cclen == 0)
+  if (cclen == 0) {
+    delete[] cc;
     return String();
-  else {
+  } else {
     Memo *memo = new Memo;
     memo->_refcount = 0;
     memo->_capacity = cclen;

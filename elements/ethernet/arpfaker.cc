@@ -22,6 +22,7 @@
 #include "glue.hh"
 
 ARPFaker::ARPFaker()
+  : _timer(this)
 {
   add_output();
 }
@@ -62,7 +63,8 @@ ARPFaker::configure(const String &conf, ErrorHandler *errh)
 int
 ARPFaker::initialize(ErrorHandler *)
 {
-  timer_schedule_after_ms(1 * 1000); // Send an ARP reply periodically.
+  _timer.attach(this);
+  _timer.schedule_after_ms(1 * 1000); // Send an ARP reply periodically.
   return 0;
 }
 
@@ -73,7 +75,7 @@ ARPFaker::run_scheduled()
                                _ip1.data(),
                                _eth2.data(),
                                _ip2.data()));
-  timer_schedule_after_ms(10 * 1000);
+  _timer.schedule_after_ms(10 * 1000);
 }
 
 Packet *

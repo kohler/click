@@ -45,7 +45,6 @@ click_sched(void *thunk)
   current->pgrp = 1;
   sprintf(current->comm, "click");
   printk("<1>click: starting router %p\n", router);
-  router->use();
 
   router->driver();
 
@@ -58,14 +57,16 @@ click_sched(void *thunk)
 int
 start_click_sched(Router *r, ErrorHandler *kernel_errh)
 {
-  /* if (click_sched_pid > 0) { 
-    kernel_errh->error("another Click thread is already running"); 
-    return; 
-    } */
+  /* no thread if no router */
+  if (r->nelements() == 0)
+    return 0;
+  
   atomic_inc(&num_click_threads);
+  r->use();
   pid_t pid = kernel_thread 
     (click_sched, r, CLONE_FS | CLONE_FILES | CLONE_SIGHAND); 
   if (pid < 0) {
+    r->unuse();
     atomic_dec(&num_click_threads);
     kernel_errh->error("cannot create kernel thread!"); 
     return -1;

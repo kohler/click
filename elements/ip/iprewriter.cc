@@ -455,6 +455,7 @@ IPRewriter::configure(const String &conf, ErrorHandler *errh)
 int
 IPRewriter::initialize(ErrorHandler *errh)
 {
+  _timer.attach(this);
   _timer.schedule_after_ms(GC_INTERVAL_SEC * 1000);
 #if defined(CLICK_LINUXMODULE) && !defined(HAVE_TCP_PROT)
   errh->message

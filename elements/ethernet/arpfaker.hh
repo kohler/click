@@ -24,13 +24,16 @@
  * =a ARPResponder
  */
 
-#include "timedelement.hh"
+#include "element.hh"
+#include "timer.hh"
 #include "etheraddress.hh"
 #include "ipaddress.hh"
 #include "hashmap.hh"
 
-class ARPFaker : public TimedElement {
+class ARPFaker : public Element {
+  
 public:
+  
   ARPFaker();
   ~ARPFaker();
   
@@ -52,6 +55,8 @@ private:
   EtherAddress _eth1;
   IPAddress _ip2;
   EtherAddress _eth2;
+
+  Timer _timer;
   
 };
 

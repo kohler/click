@@ -321,7 +321,7 @@ int
 main(int argc, char **argv)
 {
   String::static_initialize();
-  Timer::static_initialize();
+  Element::static_initialize();
   ErrorHandler *errh = new FileErrorHandler(stderr, "");
   ErrorHandler::static_initialize(errh);
 

@@ -28,6 +28,13 @@ Version 1.0.5
 ** The click user-level driver can now automatically compile any required
    package sources. (Click-install has been able to do this for a while.)
 
+** Every router has its own list of Timers. Originally requested by Leigh
+   Stoller <stoller@fast.cs.utah.edu>. This changed the Timer abstraction;
+   you now need to call Timer::attach() on a Timer before using it. See
+   timedsource.cc for an example.
+
+** Fixed bugs and memory leaks.
+
 * Tools
 
 ** click-xform: Bug fixes and performance improvements. Also, click-xform
@@ -46,9 +53,13 @@ Version 1.0.5
 
 ** Removed UnlimitedElement in favor of `notify_n{in,out}puts()'.
 
+** Removed TimedElement.
+
 ** Removed Broadcast in favor of Tee.
 
 ** Added select_fd() and selected() to ToBPF.
+
+** Various other fixes.
 
 * Configurations
 

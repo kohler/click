@@ -70,6 +70,7 @@ int
 PeekHandlers::initialize(ErrorHandler *)
 {
   _pos = 0;
+  _timer.attach(this);
   if (_h_timeout.size() != 0)
     _timer.schedule_after_ms(_h_timeout[0] + 1);
   return 0;

@@ -20,6 +20,7 @@
 #include "click_udp.h"
 
 RIPSend::RIPSend()
+  : _timer(this)
 {
   add_output();
 }
@@ -43,7 +44,8 @@ RIPSend::configure(const String &conf, ErrorHandler *errh)
 int
 RIPSend::initialize(ErrorHandler *)
 {
-  timer_schedule_after_ms(3 * 1000);
+  _timer.attach(this);
+  _timer.schedule_after_ms(3 * 1000);
   return 0;
 }
 
@@ -90,7 +92,7 @@ RIPSend::run_scheduled()
   
   output(0).push(p);
 
-  timer_schedule_after_ms(30 * 1000);
+  _timer.schedule_after_ms(30 * 1000);
 }
 
 EXPORT_ELEMENT(RIPSend)

@@ -114,7 +114,6 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	lib/strerror.c \
 	lib/string.cc lib/string.hh \
 	lib/subvector.hh \
-	lib/timedelement.cc lib/timedelement.hh \
 	lib/timer.cc lib/timer.hh \
 	lib/userutils.cc lib/userutils.hh \
 	lib/vector.cc lib/vector.hh lib/vectori.cc lib/vectorv.cc \
@@ -164,6 +163,9 @@ distdir:
 	@for subdir in tools; do \
 	  (cd $$subdir && $(MAKE) $(AM_MAKEFLAGS) top_distdir=../$(distdir) distdir=../$(distdir)/$$subdir distdir) \
 	      || exit 1; \
+	done
+	@cd $(distdir); for i in `cat $(srcdir)/NODIST`; do \
+	  rm -r $$i; \
 	done
 
 

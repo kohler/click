@@ -30,7 +30,6 @@ int
 main(int argc, char **argv)
 {
   String::static_initialize();
-  Timer::static_initialize();
   ErrorHandler *errh = new FileErrorHandler(stderr, "ipb: ");
   ErrorHandler::static_initialize(errh);
   

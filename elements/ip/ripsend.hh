@@ -1,6 +1,7 @@
 #ifndef RIPSEND_HH
 #define RIPSEND_HH
-#include "timedelement.hh"
+#include "element.hh"
+#include "timer.hh"
 #include "ipaddress.hh"
 
 /*
@@ -21,13 +22,15 @@
  * Note that this is just a tiny piece of a full RIP implementation.
  */
 
-class RIPSend : public TimedElement {
+class RIPSend : public Element {
   
   IPAddress _src; // IP header src field
   IPAddress _dst; // IP header dst field
   IPAddress _what; // Route to advertise
   IPAddress _mask;
   int _metric;
+
+  Timer _timer;
   
  public:
   
