@@ -21,16 +21,14 @@
 #include "straccum.hh"
 #include "confparse.hh"
 
-struct proc_dir_entry proc_click_entry = {
+static struct click_x_proc_dir_entry proc_click_x_entry = {
   0,				// dynamic inode
   5, "click",			// name
   S_IFDIR | S_IRUGO | S_IXUGO,
   2, 0, 0,			// nlink, uid, gid
   0, &proc_dir_inode_operations,
-  NULL, NULL,
-  NULL,
-  NULL, NULL
 };
+click_proc_dir_entry *proc_click_entry = reinterpret_cast<click_proc_dir_entry *>(&proc_click_x_entry);
 
 ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
@@ -320,29 +318,6 @@ read_requirements(Element *, void *)
     return "";
 }
 
-#if 0
-static int
-write_driver(const String &conf_in, Element *, void *, ErrorHandler *errh)
-{
-  int num;
-  String conf = cp_subst(conf_in);
-  if (!conf)
-    num = 1;
-  else if (!cp_integer(conf, num)) {
-    errh->error("write an integer to /proc/click/driver");
-    return -EINVAL;
-  }
-  if (!current_router) {
-    errh->error("no router to drive");
-    return -EINVAL;
-  }
-  printk("driving %d times\n", num);
-  for (int i = 0; i < num; i++)
-    current_router->driver_once();
-  return 0;
-}
-#endif
-
 
 extern "C" void
 click_provide(const char *name)
@@ -392,7 +367,7 @@ next_root_handler(const char *name, ReadHandler read, void *read_thunk,
   root_handlers[i].read_thunk = read_thunk;
   root_handlers[i].write = write;
   root_handlers[i].write_thunk = write_thunk;
-  register_handler(&proc_click_entry, -1, i);
+  register_handler(proc_click_entry, -1, i);
 }
 
 extern "C" int
@@ -410,7 +385,7 @@ init_module()
   
   current_router = 0;
   
-  click_register_pde(&proc_root, &proc_click_entry);
+  click_register_pde(&proc_root, proc_click_entry);
   init_click_proc();  
   init_proc_click_config();
   init_proc_click_elements();
@@ -428,9 +403,6 @@ init_module()
   next_root_handler("classes", read_classes, 0, 0, 0);
   next_root_handler("packages", read_packages, 0, 0, 0);
   next_root_handler("requirements", read_requirements, 0, 0, 0);
-#if 0 && !HAVE_POLLING
-  next_root_handler("driver", 0, 0, write_driver, 0);
-#endif
 
   return 0;
 }
@@ -447,7 +419,7 @@ cleanup_module()
   cleanup_proc_click_errors();
   cleanup_proc_click_elements();
   cleanup_proc_click_config();
-  click_unregister_pde(&proc_click_entry);
+  click_unregister_pde(proc_click_entry);
   cleanup_click_proc();
   cleanup_click_sched();
   delete lexer;

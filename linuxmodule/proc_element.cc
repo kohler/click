@@ -17,11 +17,16 @@
 #include "router.hh"
 #include "error.hh"
 
-static proc_dir_entry **element_pdes = 0;
+static click_proc_dir_entry **element_pdes = 0;
 static char *numbers = 0;
 static int numbers_ndigits = 0;
 
-static struct proc_dir_entry proc_element_elemdir_prototype = {
+static String *handler_strings = 0;
+static int *handler_strings_next = 0;
+static int handler_strings_cap = 0;
+static int handler_strings_free = -1;
+
+static proc_dir_entry proc_element_elemdir_prototype = {
   0,				// dynamic inode
   0, "",			// name
   S_IFDIR | S_IRUGO | S_IXUGO,
@@ -42,7 +47,7 @@ proc_elementlink_readlink_proc(proc_dir_entry *pde, char *page)
   // must add 1 to (int)pde->data as directories are numbered from 1
   int pos = 0;
   proc_dir_entry *parent = pde->parent;
-  while (parent != &proc_click_entry) {
+  while (parent != proc_click_entry) {
     sprintf(page + pos, "../");
     pos += 3;
     parent = parent->parent;
@@ -50,11 +55,11 @@ proc_elementlink_readlink_proc(proc_dir_entry *pde, char *page)
   return pos + sprintf(page + pos, "%d", (int)pde->data + 1);
 }
 
-static struct proc_dir_entry proc_element_elemdir_link_prototype = {
+static proc_dir_entry proc_element_elemdir_link_prototype = {
   0,
   0, "",
   S_IFLNK | S_IRUGO | S_IWUGO | S_IXUGO,
-  1, 0, 0,
+  1, 0, 0,			// nlink, uid, gid
   64, NULL,			// size, inode operations
   NULL, NULL,			// get_info, fill_inode
   NULL, NULL, NULL,		// next, parent, subdir
@@ -90,7 +95,7 @@ static struct file_operations proc_element_handler_operations = {
 
 static struct inode_operations proc_element_handler_inode_operations;
 
-static struct proc_dir_entry proc_element_read_handler_prototype = {
+static proc_dir_entry proc_element_read_handler_prototype = {
   0,				// dynamic inode
   0, "",			// name
   S_IFREG | S_IRUGO,
@@ -100,7 +105,7 @@ static struct proc_dir_entry proc_element_read_handler_prototype = {
   NULL, NULL, NULL,
 };
 
-static struct proc_dir_entry proc_element_write_handler_prototype = {
+static proc_dir_entry proc_element_write_handler_prototype = {
   0,				// dynamic inode
   0, "",			// name
   S_IFREG | S_IWUSR | S_IWGRP,
@@ -110,7 +115,7 @@ static struct proc_dir_entry proc_element_write_handler_prototype = {
   NULL, NULL, NULL,
 };
 
-static struct proc_dir_entry proc_element_read_write_handler_prototype = {
+static proc_dir_entry proc_element_read_write_handler_prototype = {
   0,				// dynamic inode
   0, "",			// name
   S_IFREG | S_IRUGO | S_IWUSR | S_IWGRP,
@@ -121,6 +126,55 @@ static struct proc_dir_entry proc_element_read_write_handler_prototype = {
 };
 
 // OPERATIONS
+
+static int
+increase_handler_strings()
+{
+  int new_cap = (handler_strings_cap ? 2*handler_strings_cap : 16);
+  String *new_strs = new String[new_cap];
+  if (!new_strs)
+    return -1;
+  int *new_nexts = new int[new_cap];
+  if (!new_nexts) {
+    delete[] new_strs;
+    return -1;
+  }
+  for (int i = 0; i < handler_strings_cap; i++)
+    new_strs[i] = handler_strings[i];
+  for (int i = handler_strings_cap; i < new_cap; i++)
+    new_nexts[i] = i + 1;
+  new_nexts[new_cap - 1] = handler_strings_free;
+  memcpy(new_nexts, handler_strings_next, sizeof(int) * handler_strings_cap);
+
+  // atomic
+  unsigned cli_flags;
+  save_flags(cli_flags);
+  cli();
+  
+  delete[] handler_strings;
+  delete[] handler_strings_next;
+  handler_strings_free = handler_strings_cap;
+  handler_strings_cap = new_cap;
+  handler_strings = new_strs;
+  handler_strings_next = new_nexts;
+  
+  restore_flags(cli_flags);
+  return 0;
+}
+
+static int
+next_handler_string()
+{
+  if (handler_strings_free < 0)
+    increase_handler_strings();
+  if (handler_strings_free < 0)
+    return -1;
+  else {
+    int i = handler_strings_free; // atomicity?
+    handler_strings_free = handler_strings_next[i];
+    return i;
+  }
+}
 
 static const Router::Handler *
 find_handler(int eindex, int handlerno)
@@ -141,7 +195,7 @@ find_handler(int eindex, int handlerno)
 }
 
 static int
-prepare_handler_read(int eindex, int handlerno, String **store)
+prepare_handler_read(int eindex, int handlerno, int stringno)
 {
   Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
   String s;
@@ -165,12 +219,12 @@ prepare_handler_read(int eindex, int handlerno, String **store)
   
   if (String::out_of_memory_count() != out_of_memory)
     return -ENOMEM;
-  
-  *store = new String(s);
-  if (!*store)
-    return -ENOMEM;
-  
-  return 0;
+
+  if (stringno >= 0 && stringno < handler_strings_cap) {
+    handler_strings[stringno] = s;
+    return 0;
+  } else
+    return -EINVAL;
 }
 
 static int
@@ -186,7 +240,7 @@ prepare_handler_write(int eindex, int handlerno)
 }
 
 static int
-finish_handler_write(int eindex, int handlerno, String *s)
+finish_handler_write(int eindex, int handlerno, int stringno)
 {
   Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
   const Router::Handler *h = find_handler(eindex, handlerno);
@@ -194,6 +248,8 @@ finish_handler_write(int eindex, int handlerno, String *s)
     return -ENOENT;
   else if (!h->write)
     return -EPERM;
+  else if (stringno < 0 || stringno >= handler_strings_cap)
+    return -EINVAL;
   
   String context_string = "In write handler `" + h->name + "'";
   if (e) context_string += String(" for `") + e->declaration() + "'";
@@ -204,7 +260,7 @@ finish_handler_write(int eindex, int handlerno, String *s)
   save_flags(cli_flags);
   cli();
 
-  int result = h->write(*s, e, h->write_thunk, &cerrh);
+  int result = h->write(handler_strings[stringno], e, h->write_thunk, &cerrh);
 
   // restore interrupts
   restore_flags(cli_flags);
@@ -215,7 +271,7 @@ finish_handler_write(int eindex, int handlerno, String *s)
 static int
 parent_proc_dir_eindex(proc_dir_entry *pde)
 {
-  if (pde->parent == &proc_click_entry)
+  if (pde->parent == proc_click_entry)
     return -1;
   else {
     int eindex = (int)(pde->parent->data);
@@ -238,25 +294,27 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
   
   proc_dir_entry *pde = (proc_dir_entry *)ino->u.generic_ip;
   int eindex = parent_proc_dir_eindex(pde);
-  if (eindex < -1) return eindex;
-  
-  String *s = 0;
+  if (eindex < -1)
+    return eindex;
+
+  int stringno = next_handler_string();
+  if (stringno < 0)
+    return -ENOMEM;
   int retval;
   if (writing) {
     retval = prepare_handler_write(eindex, (int)pde->data);
-    if (retval >= 0) {
-      s = new String;
-      if (!s) return -ENOMEM;
-    }
+    handler_strings[stringno] = String();
   } else
-    retval = prepare_handler_read(eindex, (int)pde->data, &s);
+    retval = prepare_handler_read(eindex, (int)pde->data, stringno);
   
   if (retval >= 0) {
-    filp->private_data = (void *)s;
-    MOD_INC_USE_COUNT;
+    filp->private_data = (void *)stringno;
     return 0;
   } else {
-    filp->private_data = 0;
+    // free handler string
+    handler_strings_next[stringno] = handler_strings_free;
+    handler_strings_free = stringno;
+    filp->private_data = (void *)-1;
     return retval;
   }
 }
@@ -265,12 +323,13 @@ static ssize_t
 proc_element_handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 {
   loff_t f_pos = *store_f_pos;
-  String *s = (String *)filp->private_data;
-  if (!s)
-    return -ENOMEM;
-  if (f_pos + count > s->length())
-    count = s->length() - f_pos;
-  if (copy_to_user(buffer, s->data() + f_pos, count) > 0)
+  int stringno = reinterpret_cast<int>(filp->private_data);
+  if (stringno < 0 || stringno >= handler_strings_cap)
+    return -EINVAL;
+  const String &s = handler_strings[stringno];
+  if (f_pos + count > s.length())
+    count = s.length() - f_pos;
+  if (copy_to_user(buffer, s.data() + f_pos, count) > 0)
     return -EFAULT;
   *store_f_pos += count;
   return count;
@@ -280,28 +339,29 @@ static ssize_t
 proc_element_handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store_f_pos)
 {
   loff_t f_pos = *store_f_pos;
-  String *s = (String *)filp->private_data;
-  if (!s)
-    return -ENOMEM;
-  int old_length = s->length();
+  int stringno = reinterpret_cast<int>(filp->private_data);
+  if (stringno < 0 || stringno >= handler_strings_cap)
+    return -EINVAL;
+  String &s = handler_strings[stringno];
+  int old_length = s.length();
   
   if (f_pos + count > LARGEST_HANDLER_WRITE)
     return -EFBIG;
   
   if (f_pos + count > old_length) {
     int out_of_memory = String::out_of_memory_count();
-    s->append(0, f_pos + count - old_length);
+    s.append(0, f_pos + count - old_length);
     if (String::out_of_memory_count() != out_of_memory)
       return -ENOMEM;
   }
   
-  int length = s->length();
+  int length = s.length();
   if (f_pos > length)
     return -EFBIG;
   else if (f_pos + count > length)
     count = length - f_pos;
   
-  char *data = s->mutable_data();
+  char *data = s.mutable_data();
   if (f_pos > old_length)
     memset(data + old_length, 0, f_pos - old_length);
   
@@ -316,6 +376,7 @@ static int
 proc_element_handler_release(struct inode *, struct file *filp)
 {
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
+  int stringno = reinterpret_cast<int>(filp->private_data);
   int retval = 0;
   
   if (writing) {
@@ -324,12 +385,15 @@ proc_element_handler_release(struct inode *, struct file *filp)
     if (eindex < -1)
       retval = eindex;
     else
-      retval = finish_handler_write(eindex, (int)(pde->data),
-				    (String *)filp->private_data);
+      retval = finish_handler_write(eindex, (int)pde->data, stringno);
+  }
+
+  // free handler string
+  if (stringno >= 0 && stringno < handler_strings_cap) {
+    handler_strings_next[stringno] = handler_strings_free;
+    handler_strings_free = stringno;
   }
   
-  delete ((String *)filp->private_data);
-  MOD_DEC_USE_COUNT;
   return retval;
 }
 
@@ -398,7 +462,7 @@ make_compound_element_symlink(int fi)
   // under `proc_click_entry' -- we must save it in
   // element_pdes[fi+nelements]. otherwise it will not be removed when the
   // router is destroyed.
-  proc_dir_entry *parent_dir = &proc_click_entry;
+  proc_dir_entry *parent_dir = proc_click_entry;
   int nelements = current_router->nelements();
   
   // divide into path components and create directories
@@ -426,13 +490,13 @@ make_compound_element_symlink(int fi)
     // otherwise, it was an intermediate component. make a directory for it
     assert(last_pos > first_pos && last_pos < len);
     String component = id.substring(first_pos, last_pos - first_pos);
-    proc_dir_entry *subdir = click_find_pde(parent_dir, component);
+    click_proc_dir_entry *subdir = click_find_pde(parent_dir, component);
     if (!subdir) {
       // make the directory
       subdir = click_register_new_dynamic_pde
 	(parent_dir, &proc_element_elemdir_prototype,
 	 last_pos - first_pos, data + first_pos, (void *)0);
-      if (parent_dir == &proc_click_entry)
+      if (parent_dir == proc_click_entry)
 	element_pdes[fi + nelements] = subdir;
     } else if (subdir->ops != &proc_dir_inode_operations)
       // not a directory; can't deal
@@ -453,10 +517,10 @@ make_compound_element_symlink(int fi)
     return;
 
   // make the link
-  proc_dir_entry *link = click_register_new_dynamic_pde
+  click_proc_dir_entry *link = click_register_new_dynamic_pde
     (parent_dir, &proc_element_elemdir_link_prototype,
      last_pos - first_pos, data + first_pos, (void *)fi);
-  if (parent_dir == &proc_click_entry)
+  if (parent_dir == proc_click_entry)
     element_pdes[fi + nelements] = link;
 }
 
@@ -482,8 +546,8 @@ init_router_element_procs()
   
   if (!numbers) return;
   
-  element_pdes = (proc_dir_entry **)
-    kmalloc(sizeof(proc_dir_entry *) * 2 * nelements, GFP_ATOMIC);
+  element_pdes = (click_proc_dir_entry **)
+    kmalloc(sizeof(click_proc_dir_entry *) * 2 * nelements, GFP_ATOMIC);
   if (!element_pdes) return;
   for (int i = 0; i < 2*nelements; i++)
     element_pdes[i] = 0;
@@ -493,7 +557,7 @@ init_router_element_procs()
   for (int i = 0; i < nelements; i++) {
     if (i+1 >= next_namegap) namelen++, next_namegap *= 10;
     element_pdes[i] = click_register_new_dynamic_pde
-      (&proc_click_entry, &proc_element_elemdir_prototype,
+      (proc_click_entry, &proc_element_elemdir_prototype,
        namelen, numbers + numbers_ndigits * i, (void *)i);
   }
   
@@ -504,9 +568,9 @@ init_router_element_procs()
       if (memchr(id.data(), '/', id.length()) != 0)
 	make_compound_element_symlink(i);
       else {
-	if (click_find_pde(&proc_click_entry, id)) continue;
+	if (click_find_pde(proc_click_entry, id)) continue;
 	element_pdes[i + nelements] = click_register_new_dynamic_pde
-	  (&proc_click_entry, &proc_element_elemdir_link_prototype,
+	  (proc_click_entry, &proc_element_elemdir_link_prototype,
 	   id.length(), id.data(), (void *)i);
       }
     }
@@ -548,4 +612,6 @@ cleanup_proc_click_elements()
 {
   cleanup_router_element_procs();
   kfree(numbers);
+  delete[] handler_strings;
+  delete[] handler_strings_next;
 }

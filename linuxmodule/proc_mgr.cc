@@ -16,17 +16,59 @@
 #include "modulepriv.hh"
 #include "string.hh"
 
-static proc_dir_entry *all_pde = 0;
-static proc_dir_entry *free_pde = 0;
+struct click_proc_dir_set {
+  click_proc_dir_set *next;
+  click_proc_dir_entry e[48];
+};
+
+static click_proc_dir_set *all_pde = 0;
+static click_proc_dir_entry *free_pde = 0;
+
+/*
+ * fill_inode procedure to keep track of inodes
+ */
+
+extern "C" {
+
+static void
+click_proc_fill_inode(struct inode *inode, int fill)
+{
+  struct proc_dir_entry *pde = reinterpret_cast<proc_dir_entry *>(inode->u.generic_ip);
+  struct click_proc_dir_entry *cpde = static_cast<click_proc_dir_entry *>(pde);
+  if (cpde) {
+    if (fill) {
+      //click_chatter("inode %.*s %p", pde->namelen, pde->name, inode);
+      if (cpde->inode && cpde->inode != inode)
+	click_chatter("inode reused for %.*s %p %p", pde->namelen, pde->name, cpde->inode, inode);
+      else
+	cpde->inode = inode;
+    } else {
+      //click_chatter("~inode %.*s %p", pde->namelen, pde->name, inode);
+      cpde->inode = 0;
+    }
+  }
+}
+
+}
 
 /*
  * Register a proc_dir_entry with Linux
  */
 
 int
-click_register_pde(proc_dir_entry *parent, proc_dir_entry *child)
+click_register_pde(proc_dir_entry *parent, click_proc_dir_entry *child)
 {
+  if (child->fill_inode)
+    click_chatter("child %.*s fill inode on", child->namelen, child->name);
+  child->fill_inode = click_proc_fill_inode;
+  child->inode = 0;
   return proc_register(parent, child);
+}
+
+int
+click_register_pde(proc_dir_entry *parent, click_x_proc_dir_entry *child)
+{
+  return click_register_pde(parent, reinterpret_cast<click_proc_dir_entry *>(child));
 }
 
 /*
@@ -34,11 +76,15 @@ click_register_pde(proc_dir_entry *parent, proc_dir_entry *child)
  */
 
 int
-click_unregister_pde(proc_dir_entry *child)
+click_unregister_pde(click_proc_dir_entry *child)
 {
   while (child->subdir)
-    click_unregister_pde(child->subdir);
-  return proc_unregister(child->parent, child->low_ino);
+    click_unregister_pde(static_cast<click_proc_dir_entry *>(child->subdir));
+  if (child->inode) {
+    child->inode->i_op = 0;
+    child->inode->u.generic_ip = 0;
+  }
+  int retval = proc_unregister(child->parent, child->low_ino);
 }
 
 /*
@@ -46,22 +92,22 @@ click_unregister_pde(proc_dir_entry *child)
  * be freed when the module is unloaded
  */
 
-proc_dir_entry *
+click_proc_dir_entry *
 click_new_dynamic_pde()
 {
   if (!free_pde) {
-    proc_dir_entry *new_pde = (proc_dir_entry *)
-      kmalloc(sizeof(proc_dir_entry) * 48, GFP_ATOMIC);
-    if (!new_pde) return 0;
-    new_pde[0].next = all_pde;
-    all_pde = new_pde;
-    for (int i = 2; i < 48; i++)
-      all_pde[i].next = &all_pde[i-1];
-    all_pde[1].next = 0;
-    free_pde = &all_pde[47];
+    click_proc_dir_set *new_set = (click_proc_dir_set *)
+      kmalloc(sizeof(click_proc_dir_set), GFP_ATOMIC);
+    if (!new_set) return 0;
+    new_set->next = all_pde;
+    all_pde = new_set;
+    for (int i = 0; i < 47; i++)
+      new_set->e[i].next = &new_set->e[i+1];
+    new_set->e[47].next = 0;
+    free_pde = &new_set->e[0];
   }
-  proc_dir_entry *result = free_pde;
-  free_pde = free_pde->next;
+  click_proc_dir_entry *result = free_pde;
+  free_pde = static_cast<click_proc_dir_entry *>(free_pde->next);
   result->next = 0;
   result->subdir = 0;
   result->low_ino = 0;
@@ -72,14 +118,14 @@ click_new_dynamic_pde()
  * Make and register a dynamically allocated proc_dir_entry in a single step
  */
 
-proc_dir_entry *
+click_proc_dir_entry *
 click_register_new_dynamic_pde(proc_dir_entry *parent,
 			       const proc_dir_entry *pattern,
 			       int namelen, const char *name, void *data)
 {
-  proc_dir_entry *pde = click_new_dynamic_pde();
+  click_proc_dir_entry *pde = click_new_dynamic_pde();
   if (!pde) return 0;
-  *pde = *pattern;
+  memcpy(pde, pattern, sizeof(proc_dir_entry));
   if (namelen >= 0) {
     pde->namelen = namelen;
     pde->name = name;
@@ -98,15 +144,23 @@ click_register_new_dynamic_pde(proc_dir_entry *parent,
  */
 
 int
-click_kill_dynamic_pde(proc_dir_entry *pde)
+click_kill_dynamic_pde(click_proc_dir_entry *pde)
 {
   while (pde->subdir)
-    click_kill_dynamic_pde(pde->subdir);
+    click_kill_dynamic_pde(static_cast<click_proc_dir_entry *>(pde->subdir));
+
+  // clean up inode operations and proc_dir_entry pointer
+  if (pde->inode) {
+    pde->inode->i_op = 0;
+    pde->inode->u.generic_ip = 0;
+  }
+  
   int result;
   if (pde->low_ino != 0)
     result = proc_unregister(pde->parent, pde->low_ino);
   else
     result = 0;
+  
   pde->next = free_pde;
   free_pde = pde;
   return result;
@@ -116,13 +170,13 @@ click_kill_dynamic_pde(proc_dir_entry *pde)
  * Find a proc_dir_entry based on name
  */
 
-proc_dir_entry *
+click_proc_dir_entry *
 click_find_pde(proc_dir_entry *parent, const String &s)
 {
   int len = s.length();
   for (proc_dir_entry *pde = parent->subdir; pde; pde = pde->next)
     if (pde->namelen == len && memcmp(pde->name, s.data(), len) == 0)
-      return pde;
+      return static_cast<click_proc_dir_entry *>(pde);
   return 0;
 }
 
@@ -140,7 +194,7 @@ void
 cleanup_click_proc()
 {
   while (all_pde) {
-    proc_dir_entry *next = all_pde->next;
+    click_proc_dir_set *next = all_pde->next;
     kfree(all_pde);
     all_pde = next;
   }

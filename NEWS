@@ -103,9 +103,14 @@ Version 1.1
    previous version of Click, you must unapply the old kernel patch and
    apply the new kernel patch before compiling.
 
-** Cleaned up polling interface in Linux.
+** Improved /proc handling. It is now safe to keep open file descriptors to
+   handler files even while uninstalling the kernel module or installing a
+   new configuration. These files will become unusable after the
+   (un)installation -- every operation will return EINVAL -- but the kernel
+   will not crash and the Click module's reference count will not get
+   screwed up.
 
-** Added ToLinuxSniffers element.
+** Cleaned up polling interface in Linux.
 
 * Elements
 

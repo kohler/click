@@ -49,7 +49,7 @@ static struct file_operations proc_click_config_operations = {
 
 static struct inode_operations proc_click_config_inode_operations;
 
-static struct proc_dir_entry proc_click_config_entry = {
+static click_x_proc_dir_entry proc_click_config_entry = {
   0,				// dynamic inode
   6, "config",
   S_IFREG | S_IRUGO | S_IWUSR | S_IWGRP,
@@ -57,7 +57,7 @@ static struct proc_dir_entry proc_click_config_entry = {
   0, &proc_click_config_inode_operations, // inode size, operations
 };
 
-static struct proc_dir_entry proc_click_hotconfig_entry = {
+static click_x_proc_dir_entry proc_click_hotconfig_entry = {
   0,				// dynamic inode
   9, "hotconfig",
   S_IFREG | S_IWUSR | S_IWGRP,
@@ -66,7 +66,6 @@ static struct proc_dir_entry proc_click_hotconfig_entry = {
 };
 
 static struct wait_queue *proc_click_config_wait_queue = 0;
-static struct inode *proc_click_config_inode = 0;
 
 
 //
@@ -82,7 +81,7 @@ click_config_open(struct inode *, struct file *filp)
       || (filp->f_flags & O_APPEND)
       || (writing && !(filp->f_flags & O_TRUNC))
       || (!writing && (filp->f_dentry->d_inode->i_ino & 0xFFFF) ==
-	  proc_click_hotconfig_entry.low_ino))
+	  proc_click_hotconfig_entry.u.low_ino))
     return -EACCES;
   
   if (writing) {
@@ -98,7 +97,6 @@ click_config_open(struct inode *, struct file *filp)
     config_write_lock = 1;
   }
   
-  MOD_INC_USE_COUNT;
   return 0;
 }
 
@@ -163,9 +161,10 @@ set_current_config(const String &s)
   *current_config = s;
 
   // change inode status
-  proc_click_config_inode->i_mtime = proc_click_config_inode->i_ctime
-    = CURRENT_TIME;
-  proc_click_config_inode->i_size = s.length();
+  if (inode *ino = proc_click_config_entry.inode) {
+    ino->i_mtime = ino->i_ctime = CURRENT_TIME;
+    ino->i_size = s.length();
+  }
   
   // wake up anyone waiting for errors
   wake_up_interruptible(&proc_click_config_wait_queue);
@@ -218,10 +217,8 @@ static int
 click_config_release(struct inode *, struct file *filp)
 {
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
-  if (!writing) {
-    MOD_DEC_USE_COUNT;
+  if (!writing)
     return 0;
-  }
   
   if (!config_write_lock)
     return -EIO;
@@ -230,22 +227,14 @@ click_config_release(struct inode *, struct file *filp)
     reset_proc_click_errors();
     unsigned my_ino = filp->f_dentry->d_inode->i_ino;
 
-    // find proc_click_config_inode
-    if (!proc_click_config_inode) {
-      struct dentry *parent = filp->f_dentry->d_parent;
-      int ino = proc_click_config_entry.low_ino | (my_ino & ~(0xFFFF));
-      proc_click_config_inode = iget(parent->d_sb, ino);
-    }
-    
-    if ((my_ino & 0xFFFF) == proc_click_hotconfig_entry.low_ino)
+    if ((my_ino & 0xFFFF) == proc_click_hotconfig_entry.u.low_ino)
       success = hotswap_config();
     else
       success = swap_config();
     
-    proc_click_config_entry.size = current_config->length();
+    proc_click_config_entry.u.size = current_config->length();
   }
   config_write_lock = 0;
-  MOD_DEC_USE_COUNT;
   return success;
 }
 
@@ -258,8 +247,8 @@ init_proc_click_config()
   // work around proc_lookup not being exported
   proc_click_config_inode_operations = proc_dir_inode_operations;
   proc_click_config_inode_operations.default_file_ops = &proc_click_config_operations;
-  click_register_pde(&proc_click_entry, &proc_click_config_entry);
-  click_register_pde(&proc_click_entry, &proc_click_hotconfig_entry);
+  click_register_pde(proc_click_entry, &proc_click_config_entry);
+  click_register_pde(proc_click_entry, &proc_click_hotconfig_entry);
   current_config = new String;
 }
 

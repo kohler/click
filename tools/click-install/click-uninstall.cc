@@ -25,6 +25,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <unistd.h>
+#include <sys/time.h>
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
@@ -157,7 +158,7 @@ particular purpose.\n");
   // first, write nothing to /proc/click/config -- frees up modules
   FILE *f = fopen("/proc/click/config", "w");
   if (!f)
-    errh->fatal("cannot install configuration: %s", strerror(errno));
+    errh->fatal("can't install blank configuration: %s", strerror(errno));
   fputs("// nothing\n", f);
   fclose(f);
 
@@ -173,12 +174,19 @@ particular purpose.\n");
     String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
     (void) system(cmdline);
   }
-  //fprintf(stderr, "dead!\n");
   (void) system("/sbin/rmmod click");
-  //fprintf(stderr, "dead!2\n");
+
+  // see if we successfully removed it
+  // wait some time before complaining in case rmmod is slow
+  int tries = 0;
+  while (tries < 3 && access("/proc/click", F_OK) >= 0) {
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 200000;
+    select(0, 0, 0, 0, &tv);
+  }
   if (access("/proc/click", F_OK) >= 0)
     errh->fatal("could not uninstall Click module");
-  //fprintf(stderr, "dead!3\n");
   
   return 0;
 }

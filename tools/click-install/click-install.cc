@@ -24,6 +24,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -266,6 +267,7 @@ main(int argc, char **argv)
       
      case VERSION_OPT:
       printf("click-install (Click) %s\n", VERSION);
+      printf("Click packages in %s, binaries in %s\n", CLICK_LIBDIR, CLICK_BINDIR);
       printf("Copyright (C) 1999-2000 Massachusetts Institute of Technology\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
@@ -324,7 +326,7 @@ particular purpose.\n");
   if (uninstall && access("/proc/click", F_OK) >= 0) {
     // install blank configuration
     if (verbose)
-      errh->message("Installing blank configuration to /proc/click/config");
+      errh->message("Writing blank configuration to /proc/click/config");
     FILE *f = fopen("/proc/click/config", "w");
     if (!f)
       errh->fatal("cannot uninstall configuration: %s", strerror(errno));
@@ -346,6 +348,16 @@ particular purpose.\n");
     if (verbose)
       errh->message("Removing Click module");
     (void) system("/sbin/rmmod click");
+
+    // see if we successfully removed it
+    // wait some time before complaining in case rmmod is slow
+    int tries = 0;
+    while (tries < 3 && access("/proc/click", F_OK) >= 0) {
+      struct timeval tv;
+      tv.tv_sec = 0;
+      tv.tv_usec = 200000;
+      select(0, 0, 0, 0, &tv);
+    }
     if (access("/proc/click", F_OK) >= 0)
       errh->warning("could not uninstall Click module");
   }
@@ -438,7 +450,7 @@ particular purpose.\n");
   // write flattened configuration to /proc/click/config
   const char *config_place = (hotswap ? "/proc/click/hotconfig" : "/proc/click/config");
   if (verbose)
-    errh->message("Installing configuration to %s", config_place);
+    errh->message("Writing configuration to %s", config_place);
   FILE *f = fopen(config_place, "w");
   if (!f)
     errh->fatal("cannot install configuration: %s", strerror(errno));

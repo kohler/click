@@ -39,7 +39,7 @@ static struct file_operations proc_click_errors_operations = {
 
 static struct inode_operations proc_click_errors_inode_operations;
 
-static struct proc_dir_entry proc_click_errors_entry = {
+static click_x_proc_dir_entry proc_click_errors_entry = {
   0,				// dynamic inode
   6, "errors",
   S_IFREG | S_IRUGO,
@@ -48,7 +48,6 @@ static struct proc_dir_entry proc_click_errors_entry = {
 };
 
 static struct wait_queue *proc_click_errors_wait_queue = 0;
-static struct inode *proc_click_errors_inode = 0;
 
 
 static void
@@ -72,12 +71,11 @@ update_proc_click_errors()
   unsigned len = (all_errors ? all_errors->length() : 0);
   
   // change inode status
-  if (proc_click_errors_inode) {
-    proc_click_errors_inode->i_mtime = proc_click_errors_inode->i_ctime
-      = CURRENT_TIME;
-    proc_click_errors_inode->i_size = len;
+  if (inode *ino = proc_click_errors_entry.inode) {
+    ino->i_mtime = ino->i_ctime = CURRENT_TIME;
+    ino->i_size = len;
   }
-  proc_click_errors_entry.size = len;
+  proc_click_errors_entry.u.size = len;
   
   // wake up anyone waiting for errors
   wake_up_interruptible(&proc_click_errors_wait_queue);
@@ -109,10 +107,6 @@ SyslogErrorHandler::vmessage(Seriousness seriousness, const String &message)
 static ssize_t
 click_errors_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 {
-  // cache inode
-  if (!proc_click_errors_inode)
-    proc_click_errors_inode = filp->f_dentry->d_inode;
-
   // exit if no errors
   if (!all_errors) return 0;
   
@@ -152,7 +146,7 @@ init_proc_click_errors()
   // work around proc_lookup not being exported
   proc_click_errors_inode_operations = proc_dir_inode_operations;
   proc_click_errors_inode_operations.default_file_ops = &proc_click_errors_operations;
-  click_register_pde(&proc_click_entry, &proc_click_errors_entry);
+  click_register_pde(proc_click_entry, &proc_click_errors_entry);
   
   all_errors = new StringAccum;
 }
