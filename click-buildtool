@@ -37,6 +37,33 @@ Try \`click-buildtool findelem --help' for more information." 1>&2
     exit 1
 }
 
+findelem_elementmap_provisions () {
+    elementmap="$1"
+    $awk '/^<elementmap (.* |)provides="([^"]*)"/ {
+  sub(/.* provides="/, "", $0);
+  sub(/".*/, "", $0);
+  split($0, d, / +/);
+  for (j in d) deps[d[j]] = 1;
+}
+/^<entry (.* |)provides="([^"]*)"/ {
+  sub(/.* provides="/, "", $0);
+  sub(/".*/, "", $0);
+  split($0, d, / +/);
+  for (j in d) deps[d[j]] = 1;
+}
+/^<entry (.* |)name="([^"]*)"/ {
+  sub(/.* name="/, "", $0);
+  sub(/".*/, "", $0);
+  deps[$0] = 1;
+}
+END {
+  # delete references to drivers
+  delete deps["userlevel"]; delete deps["linuxmodule"]; 
+  delete deps["bsdmodule"]; delete deps["ns"];
+  for (j in deps) print j;
+}' <"$elementmap"
+}
+
 findelements () {
     prefix=""
     all=
@@ -83,6 +110,18 @@ $unprovisions"; shift 1;;
     --u=*|--un=*|--unp=*|--unpr=*|--unpro=*|--unprov=*|--unprovi=*|--unprovid=*|--unprovide=*)
 	unprovisions=`echo "$1" | sed 's/^[^=]*=//'`"
 $unprovisions"; shift 1;;
+    -e|--e|--el|--ele|--elem|--eleme|--elemen|--element|--elementm|--elementma|--elementmap)
+	if test $# -lt 2; then findelem_usage; fi
+	shift 1; provisions=`findelem_elementmap_provisions $1`"
+$provisions"; shift 1;;
+    -e*)
+	emap=`echo "$1" | sed 's/^-e//'`
+	provisions=`findelem_elementmap_provisions $emap`"
+$provisions"; shift 1;;
+    --e=*|--el=*|--ele=*|--elem=*|--eleme=*|--elemen=*|--element=*|--elementm=*|--elementma=*|--elementmap=*)
+	emap=`echo "$1" | sed 's/^[^=]*=//'`
+	provisions=`findelem_elementmap_provisions $emap`"
+$provisions"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
 `Click-buildtool findelem' locates valid Click element source code. It starts
@@ -103,6 +142,7 @@ Options:
   -V, --verbose              Print more information about dependency checking.
   -p, --prefix PREFIX        Preprend PREFIX to every file and/or directory.
   -r, --provide REQ          Mark requirement(s) REQ as available.
+  -e, --elementmap EMAP      Mark requirement(s) from EMAP as available.
   -S, --standards            Mark standard elements as available.
   -x, --unprovide REQ        Mark requirement(s) REQ as unavailable.
   -f, --filenames            Output filenames only.
@@ -129,6 +169,14 @@ EOF
     # expand provisions and unprovisions: require one per line
     provisions=`echo "$provisions" | tr -s ' \011\015\014\013' '\012'`
     unprovisions=`echo "$unprovisions" | tr -s ' \011\015\014\013' '\012'`
+    if test -n "$verbose" -a -n "$provisions"; then
+	echo 1>&2
+	echo "Provisions: $provisions" 1>&2
+    fi
+    if test -n "$verbose" -a -n "$unprovisions"; then
+	echo 1>&2
+	echo "Unprovisions: $unprovisions" 1>&2
+    fi
 
     # expand list of files
     if test -n "$all"; then
@@ -186,9 +234,9 @@ s/ELEMENT_PROVIDES(\(.*\)).*/\1/' | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
   }
 }' | sort | uniq`
     if test -n "$verbose" -a -n "$bad_files"; then
-	echo
+	echo 1>&2
 	echo "Files: $files" 1>&2
-	echo
+	echo 1>&2
 	echo "Bad files: $bad_files" 1>&2
     fi
     if test -n "$bad_files"; then
@@ -222,9 +270,9 @@ $bad_files" | sort | uniq -u`
   }
 }' | sort | uniq`
 	if test -n "$verbose"; then
-	    echo
+	    echo 1>&2
 	    echo "Files: $files" 1>&2
-	    echo
+	    echo 1>&2
 	    echo "Bad files: $new_bad_files" 1>&2
 	fi
 	if test -z "$new_bad_files"; then

@@ -12,9 +12,13 @@ package := sample
 top_builddir := .
 subdir := .
 
-# Set `clicksrcdir' to the Click source directory.
+# Set `clicksharedir' to the Click share directory.
 # Generally, you will provide a `--with-click=CLICKPREFIX' option, and set:
-clicksrcdir := @clickprefix@/share/click/src
+clicksharedir := @clickprefix@/share/click
+
+# Set `clicksrcdir' to the Click source directory.
+# Generally, you will set:
+clicksrcdir := $(clicksharedir)/src
 
 # Set `clickbindir' to the Click binary directory.
 # Generally, you will set:
@@ -166,11 +170,11 @@ elemlist:
 	@rm -f $(CONFFILES)
 	@$(MAKE) $(CONFFILES)
 uelements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel -r $(package) > uelements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel -r $(package) -e $(clicksharedir)/elementmap.xml > uelements.conf
 kelements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r $(package) > kelements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r $(package) -e $(clicksharedir)/elementmap.xml > kelements.conf
 belements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r bsdmodule -r $(package) > belements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r bsdmodule -r $(package) -e $(clicksharedir)/elementmap.xml > belements.conf
 elements.mk: $(CONFFILES) $(clickbindir)/click-buildtool
 	@rm -f elements.mk
 	[ ! -f uelements.conf ] || $(clickbindir)/click-buildtool elem2make -t userlevel < uelements.conf >> elements.mk
@@ -187,7 +191,7 @@ bpackage.cc: belements.conf $(clickbindir)/click-buildtool
 	@rm -f bpackage.bd
 
 elementmap-$(package).xml: $(clickbindir)/click-mkelemmap always
-	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$$r" | $(clickbindir)/click-mkelemmap -r "$$r" > elementmap-$(package).xml
+	r="$(DRIVERS) $(package)"; echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$$r" -e $(clicksharedir)/elementmap.xml | $(clickbindir)/click-mkelemmap -r "$$r" > elementmap-$(package).xml
 always:
 	@:
 
@@ -212,7 +216,7 @@ install-obj: $(TARGETS) always
 install-man: always
 	$(mkinstalldirs) $(mandir)
 	$(mkinstalldirs) $(mandir)/mann
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -p $(package) -f -
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r "$(DRIVERS)" -r $(package) -e $(clicksharedir)/elementmap.xml | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -p $(package) -f -
 
 clean:
 	-rm -f *.d *.ud *.kd *.bd *.o *.uo *.ko *.bo elements.mk upackage.cc kpackage.cc bpackage.cc uelements.conf kelements.conf belements.conf elementmap-$(package).xml conftest.*
