@@ -22,6 +22,7 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 #include <clicknet/wifi.h>
+#include <clicknet/llc.h>
 CLICK_DECLS
 
 WifiDecap::WifiDecap()
@@ -114,10 +115,25 @@ WifiDecap::simple_action(Packet *p)
     p->kill();
     return 0;
   }
+
   p_out->pull(sizeof(click_wifi));
-  p_out->push_mac_header(12);
+
+
+  struct llc *llc = (struct llc *) p_out->data();
+
+  uint16_t ether_type;
+  if (llc->llc_dsap == LLC_SNAP_LSAP && llc->llc_ssap == LLC_SNAP_LSAP &&
+      llc->llc_un.type_u.control == LLC_UI && llc->llc_un.type_snap.org_code[0] == 0 &&
+      llc->llc_un.type_snap.org_code[1] == 0 && llc->llc_un.type_snap.org_code[2] == 0) {
+    ether_type = llc->llc_un.type_snap.ether_type;
+    p_out->pull(sizeof(struct llc));
+  }
+
+
+  p_out->push_mac_header(14);
   memcpy(p_out->data(), dst.data(), 6);
   memcpy(p_out->data() + 6, src.data(), 6);
+  memcpy(p_out->data() + 12, &ether_type, 2);
 
   if (_debug) {
     click_chatter("%{element}: dir %d src %s dst %s bssid %s\n",
