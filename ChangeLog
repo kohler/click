@@ -1,3 +1,9 @@
+2004-04-27 Tuesday 20:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fromfile.cc (1.4): correct
+	!HAVE_INDIFFERENT_ALIGNMENT portion of FromFile, reported by Remo
+	Strotkamp
+
 2004-04-27 Tuesday 13:03  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/drivermanager.cc (1.26),
