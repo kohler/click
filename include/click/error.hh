@@ -29,24 +29,27 @@ class ErrorHandler { public:
 
   // all error functions always return -EINVAL
 
-  void debug(const char *, ...);
-  void message(const char *, ...);
-  int warning(const char *, ...);
-  int error(const char *, ...);
-  int fatal(const char *, ...);
+  void debug(const char *format, ...);
+  void message(const char *format, ...);
+  int warning(const char *format, ...);
+  int error(const char *format, ...);
+  int fatal(const char *format, ...);
 
-  void ldebug(const String &, const char *, ...);
-  void lmessage(const String &, const char *, ...);
-  int lwarning(const String &, const char *, ...);
-  int lerror(const String &, const char *, ...);
-  int lfatal(const String &, const char *, ...);
+  void ldebug(const String &landmark, const char *format, ...);
+  void lmessage(const String &landmark, const char *format, ...);
+  int lwarning(const String &landmark, const char *format, ...);
+  int lerror(const String &landmark, const char *format, ...);
+  int lfatal(const String &landmark, const char *format, ...);
 
-  int verror(Seriousness, const String &, const char *, va_list);
+  int verror(Seriousness, const String &landmark, const char *format, va_list);
+  int verror_text(Seriousness, const String &landmark, const String &text);
   
   String make_text(Seriousness, const char *, ...);
   virtual String make_text(Seriousness, const char *, va_list);
   virtual String decorate_text(Seriousness, const String &, const String &, const String &);
   virtual void handle_text(Seriousness, const String &) = 0;
+
+  virtual void set_error_code(int);
 
   static String prepend_lines(const String &, const String &);
   

@@ -472,6 +472,21 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
   return -EINVAL;
 }
 
+int
+ErrorHandler::verror_text(Seriousness seriousness, const String &where,
+			  const String &text)
+{
+  // text is already made
+  String dec_text = decorate_text(seriousness, String(), where, text);
+  handle_text(seriousness, dec_text);
+  return -EINVAL;
+}
+
+void
+ErrorHandler::set_error_code(int)
+{
+}
+
 String
 ErrorHandler::prepend_lines(const String &prepend, const String &text)
 {
