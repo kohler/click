@@ -187,6 +187,19 @@ Configuration Strings
 * Config String Structure::     
 * Quoting::                     
 * Config String Splitting::     
+* Parsing Functions::           
+
+Parsing Functions
+
+* Parsing Strings::             
+* Parsing Booleans::            
+* Parsing Integers::            
+* Parsing Reals::               
+* Parsing IP Addresses::        
+* Parsing IPv6 Addresses::      
+* Parsing Ethernet Addresses::  
+* Parsing Element Names::       
+* Parsing Miscellaneous::       
 
 Tasks
 
@@ -1463,8 +1476,9 @@ Returns a pointer to this IP address's data.
 @end deftypemethod
 
 @deftypemethod IPAddress int mask_to_prefix_bits () const
-Returns the number @var{k} so that this IP address equals
-@code{make_prefix(@var{k})}, or @math{-1} if there is no such number.
+Returns the prefix length @var{k} so that this IP address equals
+@code{make_prefix(@var{k})}, or @math{-1} if there is no such prefix
+length.
 @end deftypemethod
 
 @deftypemethod IPAddress unsigned hashcode () const
@@ -1487,6 +1501,18 @@ to @code{@var{addr1}.addr() == @var{addr2}.addr()}.
 @deftypefun bool {operator!=} (IPAddress @var{addr1}, IPAddress @var{addr2})
 Returns true if and only if @var{addr1} does not equal @var{addr2}.
 @end deftypefun
+
+@deftypemethod IPAddress bool matches_prefix (@w{IPAddress @var{addr1}}, @w{IPAddress @var{mask}}) const
+Returns true if and only if this @code{IPAddress} matches the IP prefix
+specified by @var{addr1} and the netmask @var{mask}. Equivalent to
+@code{(addr() & @var{mask}.addr()) == @var{addr1}.addr()}.
+@end deftypemethod
+
+@deftypemethod IPAddress bool mask_more_specific (@w{IPAddress @var{mask}}) const
+Returns true if and only if this @code{IPAddress}, interpreted as a
+netmask, is more specific than @var{mask}. Equivalent to @code{(addr() &
+@var{mask}.addr()) == @var{mask}.addr()}.
+@end deftypemethod
 
 @deftypefun IPAddress {operator&} (IPAddress @var{addr1}, IPAddress @var{addr2})
 Returns a new IP address equal to @var{addr1} masked by @var{addr2}.
@@ -3586,6 +3612,7 @@ Click users interact with a running router through @dfn{handlers}.
 * Config String Structure::     
 * Quoting::                     
 * Config String Splitting::     
+* Parsing Functions::           
 @end menu
 
 @node Config String Structure, Quoting, Configuration Strings, Configuration Strings
@@ -3735,7 +3762,7 @@ For example:
 @t{cp_quote(}@samp{quote ,}@t{)} @result{} @samp{"quote ,"}
 @end display
 
-@node Config String Splitting,  , Quoting, Configuration Strings
+@node Config String Splitting, Parsing Functions, Quoting, Configuration Strings
 @section Splitting and Combining
 
 @deftypefun void cp_argvec (@w{const String &@var{str}}, @w{Vector<String> &@var{conf}})
@@ -3804,15 +3831,47 @@ For example:
 @t{cp_unargvec(}[ ]@t{)}
        @result{} @samp{}
 @t{cp_unargvec(}[@samp{,}, @samp{,}]@t{)}
-       (Probably an error: caller should have quoted the arguments!)
+       (Probably a mistake: caller should have quoted the arguments!)
        @result{} @samp{,, ,}
 @t{cp_unspacevec(}[@samp{xy" z"}, @samp{\<de>}, @samp{','}]@t{)}
        @result{} @samp{xy" z" \<de> ','}
 @end display
 
 
-@node Parsing Functions
+@node Parsing Functions,  , Config String Splitting, Configuration Strings
 @section Parsing Functions
+
+Click's @dfn{parsing functions} parse strings into various kinds of
+data, such as integers, fixed-point real numbers, and IP addresses.
+Parsing functions follow some consistent conventions:
+
+@itemize @bullet
+@item
+Their first argument, @code{const String &@var{str}}, contains the
+string to be parsed.
+
+@item
+At least one additional argument points to a location where any parsed
+result should be stored. These @var{result} arguments have pointer type.
+
+@item
+Their return type is @code{bool}.
+
+@item
+They return true if and only if parsing succeeds.
+
+@item
+The values pointed to by the @var{result} arguments are modified only if
+parsing succeeds.
+
+@item
+Most parsing functions expect to parse the entire supplied string. Any
+extraneous characters, such as spaces, cause parsing to fail.
+
+@item
+Parsing functions never report errors to any source; they simply return
+false when parsing fails.
+@end itemize
 
 @menu
 * Parsing Strings::             
@@ -3826,14 +3885,19 @@ For example:
 * Parsing Miscellaneous::       
 @end menu
 
-@node Parsing Strings
+@node Parsing Strings, Parsing Booleans, Parsing Functions, Parsing Functions
 @subsection Strings and Words
 
-@deftypefun bool cp_string (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
+These functions parse strings from their input strings. The resulting
+strings may be arbitrary (@code{cp_string}) or constrained
+(@code{cp_word}, @code{cp_keyword}). As noted above (@pxref{Parsing
+Functions}), the functions have @code{bool} return type; they return
+true if parsing was successful.
+
+@deftypefn {Parsing Function} bool cp_string (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
 Parses a string from the beginning of @var{str} and stores the result in
-@code{*@var{result}}. Returns true if and only if @var{str} contained a
-valid string. The parsed string may contain single and double quotes and
-hex strings (@samp{\< @dots{} >}), which are processed as by
+@code{*@var{result}}. The parsed string may contain single and double
+quotes and hex strings (@samp{\< @dots{} >}), which are processed as by
 @code{cp_unquote} (@pxref{Quoting}).
 
 If the @var{rest} argument is null and @var{str} contains any unquoted
@@ -3847,6 +3911,8 @@ For example:
 @t{cp_string(}@samp{"a b c d"}@t{, @var{result})} @result{} true
        @t{*@var{result}} = @samp{a b c d}
 @t{cp_string(}@samp{}@t{, @var{result})} @result{} false
+@t{cp_string(}@samp{""}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @samp{}
 @t{cp_string(}@samp{ "a b c d"}@t{, @var{result})} @result{} false
        (@var{str} began with an unquoted space)
 @t{cp_string(}@samp{"a b c d" e}@t{, @var{result})} @result{} false
@@ -3854,37 +3920,481 @@ For example:
 @t{cp_string(}@samp{"a b c d" e}@t{, @var{result}, @var{rest})} @result{} true
        @t{*@var{result}} = @samp{a b c d}, @t{*@var{rest}} = @samp{ e}
 @end display
-@end deftypefun
+@end deftypefn
 
-@deftypefun bool cp_word (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
-@end deftypefun
+@deftypefn {Parsing Function} bool cp_word (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
+Parses a word from the beginning of @var{str} and stores the result in
+@code{*@var{result}}. A @dfn{word} is a string that does not contain
+spaces, control characters, non-ASCII characters (with values 127 or
+higher), or special characters (@samp{'}, @samp{"}, @samp{\}, or
+@samp{,}). @var{str} may contain single and double quotes and hex
+strings (@samp{\< @dots{} >}), which are processed as by
+@code{cp_unquote} (@pxref{Quoting}). The unquoted result must not
+contain quote marks, spaces, or other special characters, however.
+Returns true if and only if @var{str} contained a valid word.
 
-@deftypefun bool cp_keyword (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
-@end deftypefun
+If the @var{rest} argument is null and @var{str} contains any unquoted
+spaces, then parsing will fail. If @var{rest} is not null, then parsing
+stops at the first unquoted space, and the remains of @var{str},
+starting at that unquoted space, are stored in @code{*@var{rest}}.
 
-@node Parsing Booleans
+For example:
+
+@display
+@t{cp_word(}@samp{word}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @samp{word}
+@t{cp_word(}@samp{"wor"\<64>}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @samp{word}
+@t{cp_word(}@samp{"wor d"}@t{, @var{result})} @result{} false
+       (processed string contained a space)
+@end display
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_keyword (@w{const String &@var{str}}, @w{String *@var{result}}, @w{String *@var{rest} = 0})
+Parses a keyword from the beginning of @var{str} and stores the result
+in @code{*@var{result}}. A @dfn{keyword} is a string consisting of one
+or more letters, numbers, underscores (@samp{_}), periods (@samp{.}),
+and colons (@samp{:}). Keywords may not contain quoted
+substrings---@samp{'}, @samp{"}, and @samp{\<} are not allowed. Returns
+true if and only if @var{str} contained a valid keyword.
+
+If the @var{rest} argument is null and @var{str} contains any unquoted
+spaces, then parsing will fail. If @var{rest} is not null, then parsing
+stops at the first unquoted space, and the remains of @var{str},
+starting at that unquoted space, are stored in @code{*@var{rest}}.
+
+For example:
+
+@display
+@t{cp_keyword(}@samp{word}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @samp{word}
+@t{cp_keyword(}@samp{"wor"\<64>}@t{, @var{result})} @result{} false
+       (quotes not allowed in keywords)
+@end display
+@end deftypefn
+
+To summarize:
+
+@itemize @bullet
+@item
+@code{cp_string} and @code{cp_word} allow quoted substrings;
+@code{cp_keyword} does not.
+
+@item
+@code{cp_string} results may contain arbitrary characters;
+@code{cp_word} and @code{cp_keyword} restrict the characters allowed in
+their results.
+
+@item
+If @code{cp_keyword(@var{str}, @var{result})} is true, then
+@code{cp_word(@var{str}, @var{result})} is true.
+
+@item
+If @code{cp_word(@var{str}, @var{result})} is true, then
+@code{cp_string(@var{str}, @var{result})} is true.
+@end itemize
+
+
+@node Parsing Booleans, Parsing Integers, Parsing Strings, Parsing Functions
 @subsection Booleans
 
-@node Parsing Integers
+The @code{cp_bool} function parses a string into a Boolean value.
+
+@deftypefn {Parsing Function} bool cp_bool (@w{const String &@var{str}}, @w{bool *@var{result}})
+Parses @var{str} into a Boolean value and stores the result in
+@code{*@var{result}}. Allowable Boolean strings are as follows:
+
+@table @asis
+@item @samp{0}, @samp{false}, @samp{no}
+The result is false.
+
+@item @samp{1}, @samp{true}, @samp{yes}
+The result is true.
+@end table
+
+@noindent
+The words must be all lower case.
+@end deftypefn
+
+
+@node Parsing Integers, Parsing Reals, Parsing Booleans, Parsing Functions
 @subsection Integers
 
-@node Parsing Reals
+@code{cp_integer} and @code{cp_unsigned} parse strings into @code{int}
+and @code{unsigned int} values, respectively. 
+
+Each function comes in two variants, one that specifies the relevant
+base with a @var{base} parameter, and one that does not. If @var{base}
+is 0 or unspecified, then the string is examined to determine the base.
+Strings beginning with @samp{0x} or @samp{0X} (after the optional sign)
+use base 16; other strings beginning with @samp{0} use base 8; and all
+other strings use base 10. Nonzero @var{base}s must be at least 2 and no
+more than 36.
+
+The functions accept the same strings as C's @code{strtol} function
+(almost---@code{strtol} will accept leading space and trailing
+characters that are not part of the parsed integer). The string should
+contain, in order:
+
+@itemize @bullet
+@item
+An optional @samp{+} or @samp{-} sign. (The @code{cp_unsigned} functions
+do not accept a minus sign.)
+
+@item
+An optional @samp{0x} or @samp{0X}, if the @var{base} argument is 0 or
+16.
+
+@item
+One or more alphanumeric digits. The maximum allowed digit is specified
+by @var{base}.
+@end itemize
+
+If a string contains a valid number too large (or small) to represent,
+the parsing function sets @code{cp_errno} to @code{CPE_OVERFLOW}, stores
+the largest (or smallest) allowable number in @var{result}, and returns
+true. If a function succeeds without overflow, @code{cp_errno} is set to
+@code{CPE_OK}.
+
+@deftypefn {Parsing Function} bool cp_integer (@w{const String &@var{str}}, @w{int *@var{result}})
+@deftypefnx {Parsing Function} bool cp_integer (@w{const String &@var{str}}, @w{int @var{base}}, @w{int *@var{result}})
+Parses @var{str} into a signed integer in base @var{base} and stores the
+result in @code{*@var{result}}. Detects overflow on numbers greater than
+2147483647 or less than @math{-2147483648}.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_unsigned (@w{const String &@var{str}}, @w{unsigned *@var{result}})
+@deftypefnx {Parsing Function} bool cp_unsigned (@w{const String &@var{str}}, @w{int @var{base}}, @w{unsigned *@var{result}})
+Parses @var{str} into an unsigned integer in base @var{base} and stores
+the result in @code{*@var{result}}. Detects overflow on numbers greater
+than 4294967295.
+@end deftypefn
+
+For example:
+
+@display
+@t{cp_integer(}@samp{-0x8000}@t{, @var{result})} @result{} true
+       @t{*@var{result}} = @math{-32768}, @t{cp_errno} = @t{CPE_OK}
+@t{cp_integer(}@samp{-0x8000 }@t{, @var{result})} @result{} false
+       (trailing space not allowed)
+@t{cp_unsigned(}@samp{3333333333333333}@t{, 4, @var{result})} @result{} true
+       @t{*@var{result}} = @math{4294967295}, @t{cp_errno} = @t{CPE_OK}
+@t{cp_unsigned(}@samp{33333333333333333}@t{, 4, @var{result})} @result{} true
+       @t{*@var{result}} = @math{4294967295}, @t{cp_errno} = @t{CPE_OVERFLOW}
+@end display
+
+
+@node Parsing Reals, Parsing IP Addresses, Parsing Integers, Parsing Functions
 @subsection Real Numbers
 
-@node Parsing IP Addresses
+Several functions parse real numbers into fixed-point integers. (Some
+drivers, such as the Linux kernel driver, can't use floating point
+arithmetic, so @code{double}s are not allowed.)
+
+Each function takes an integer argument that determines how many digits
+of fraction the result should have. Since the result is a single
+fixed-point number, the more digits of fraction in the result, the fewer
+digits are available for the integer part. 
+
+You may request binary or decimal digits of fraction. The @code{real10}
+function variants use decimal digits, while the @code{real2} variants
+use binary digits: bits. For example, @t{cp_real10(}@samp{1}@t{, 2,
+@var{result})}, which parses the string @samp{1} with 2 decimal digits
+of fraction, yields the number 100 (@math{10^2}). The similar call to a
+binary-digit function, @t{cp_real2(}@samp{1}@t{, 2, @var{result})},
+yields 4 (@math{2^2}). Parsing @samp{0.5} with the same functions yields
+50 and 2, respectively.
+
+A real number string should contain, in order:
+
+@itemize @bullet
+@item
+An optional @samp{+} or @samp{-} sign. (The @code{unsigned} variants do
+not accept minus signs.)
+
+@item
+An optional sequence of decimal digits representing the integer part.
+
+@item
+An optional fraction point @samp{.}.
+
+@item
+An optional sequence of decimal digits representing the fraction part.
+
+@item
+An optional @dfn{exponent}---an @samp{E} or @samp{e} character followed
+by a signed decimal integer.
+@end itemize
+
+@noindent
+The string must contain at least one digit in either the integer part or
+the fraction part.
+
+All the parsing functions round to the nearest relevant number. For
+example, @t{cp_real10(}@samp{0.59}@t{, 1, @var{result})} stores 6 in
+@var{result}, since 0.59 rounded to one digit of fraction is 0.6.
+
+If a string contains a real number too large in magnitude for the
+specified format, the parsing function will set @code{cp_errno} to
+@code{CPE_OVERFLOW}, store the largest representable number in
+@var{result}, and return true. For example, the largest number
+representable as an unsigned integer with 16 bits of fraction is
+@math{65535.99998}, which has the bit pattern @t{0xFFFFFFFF}. Therefore,
+@t{cp_unsigned_real2(}@samp{65536}@t{, 16, @var{result})} stores
+@t{0xFFFFFFFF} in @var{result} and sets @code{cp_errno} to
+@code{CPE_OVERFLOW}. If there was no overflow or other error,
+@code{cp_errno} is set to @code{CPE_OK}.
+
+@deftypefn {Parsing Function} bool cp_unsigned_real10 (@w{const String &@var{str}}, @w{int @var{frac_digits}}, @w{unsigned *@var{result}})
+Parses @var{str} into an unsigned real number, and stores the result in
+@var{result} as an unsigned integer with @var{frac_digits} decimal
+digits of fraction.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_real10 (@w{const String &@var{str}}, @w{int @var{frac_digits}}, @w{int *@var{result}})
+Parses @var{str} into a unsigned real number, and stores the result in
+@var{result} as an integer with @var{frac_digits} decimal digits of
+fraction.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_unsigned_real2 (@w{const String &@var{str}}, @w{int @var{frac_bits}}, @w{unsigned *@var{result}})
+Parses @var{str} into an unsigned real number, and stores the result in
+@var{result} as an unsigned integer with @var{frac_bits} bits of
+fraction.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_real2 (@w{const String &@var{str}}, @w{int @var{frac_bits}}, @w{int *@var{result}})
+Parses @var{str} into a real number, and stores the result in
+@var{result} as an integer with @var{frac_bits} bits of fraction.
+@end deftypefn
+
+The fixed-point real parsing functions are built on a lower-level
+variant that returns the integer and fraction parts in two different
+@code{unsigned int}s.
+
+@deftypefn {Parsing Function} bool cp_unsigned_real10 (@w{const String &@var{str}}, @w{int @var{frac_digits}}, @w{unsigned *@var{int_result}}, @w{unsigned *@var{frac_result}})
+Parses @var{str} into an unsigned real number and stores the result in
+@var{int_result} and @var{frac_result}. @var{int_result} holds the
+integral part of the resulting real, while @var{frac_result} holds its
+fractional part as a fixed-point number with @var{frac_digits} decimal
+digits of fraction. @var{frac_result} is always less than
+@math{10^@var{frac_digits}}.
+@end deftypefn
+
+For example:
+
+@display
+@t{cp_unsigned_real10(}@samp{10.952}@t{, 3, @var{int_result}, @var{frac_result})} @result{} true
+       @t{*@var{int_result}} = @math{10}, @t{*@var{frac_result}} = @math{952}
+@t{cp_unsigned_real10(}@samp{10.9526}@t{, 3, @var{int_result}, @var{frac_result})} @result{} true
+       @t{*@var{int_result}} = @math{10}, @t{*@var{frac_result}} = @math{953}
+       (note rounding)
+@t{cp_unsigned_real10(}@samp{10.9996}@t{, 3, @var{int_result}, @var{frac_result})} @result{} true
+       @t{*@var{int_result}} = @math{11}, @t{*@var{frac_result}} = @math{0}
+@end display
+
+
+@node Parsing IP Addresses, Parsing IPv6 Addresses, Parsing Reals, Parsing Functions
 @subsection IP Addresses
 
-@node Parsing IPv6 Addresses
+The @code{cp_ip_address} functions parse strings into IP addresses.
+Related @code{cp_ip_prefix} and @code{cp_ip_address_set} functions parse
+strings into IP address/netmask pairs and sets of IP addresses,
+respectively.
+
+Parsable IP addresses are simply dotted quads like @samp{18.26.4.44}. IP
+prefixes may be specified using CIDR notation, such as
+@samp{18.26.4.44/16}; as explicit address/netmask pairs, such as
+@samp{18.26.4.44/255.255.0.0}; or, optionally, as bare IP addresses,
+such as @samp{18.26.4.44} (which means
+@samp{18.26.4.44/255.255.255.255}).
+
+Besides these conventional forms, the @code{cp_ip} functions understand
+user-defined shorthand names for IP addresses and prefixes. Shorthand
+names are router-specific; users define them with @click{AddressInfo}
+elements. Furthermore, a name's meaning is dependent on its context: an
+@click{AddressInfo} inside a compound element defines shorthand names
+local to that compound element. The @code{cp_ip} functions, then, take
+optional @w{@code{Element *@var{context}}} arguments to specify any
+router and compound-element context. If a @code{cp_ip} function's
+@var{context} argument is null, it will parse only the conventional IP
+address forms described above.
+
+@deftypefn {Parsing Function} bool cp_ip_address (@w{const String &@var{str}}, @w{unsigned char *@var{result}}, @w{Element *@var{context} = 0})
+@deftypefnx {Parsing Function} bool cp_ip_address (@w{const String &@var{str}}, @w{IPAddress *@var{result}}, @w{Element *@var{context} = 0})
+Parses @var{str} into an IP address and stores the result in
+@code{*@var{result}}. @var{context} supplies any element context.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_ip_prefix (@w{const String &@var{str}}, @w{unsigned char *@var{result_addr}}, @w{unsigned char *@var{result_mask}}, @w{Element *@var{context} = 0})
+@deftypefnx {Parsing Function} bool cp_ip_prefix (@w{const String &@var{str}}, @w{IPAddress *@var{result_addr}}, @w{IPAddress *@var{result_mask}}, @w{Element *@var{context} = 0})
+Parses @var{str} into an IP address/netmask pair and stores the
+resulting address in @code{*@var{result_addr}}, and the resulting
+netmask in @code{*@var{result_mask}}. The resulting address is not
+pre-masked by the resulting mask. For example,
+@t{cp_ip_prefix(}@samp{18.26.4.44/16}@t{, @var{result_addr},
+@var{result_mask})} stores 18.26.4.44 in @var{result_addr}, not
+18.26.0.0. Bare addresses, such as @samp{18.26.4.44}, are never allowed.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_ip_prefix (@w{const String &@var{str}}, @w{unsigned char *@var{result_addr}}, @w{unsigned char *@var{result_mask}}, @w{bool @var{allow_bare_addr}}, @w{Element *@var{context} = 0})
+@deftypefnx {Parsing Function} bool cp_ip_prefix (@w{const String &@var{str}}, @w{IPAddress *@var{result_addr}}, @w{IPAddress *@var{result_mask}}, @w{bool @var{allow_bare_addr}}, @w{Element *@var{context} = 0})
+Parses @var{str} into an IP address/netmask pair and stores the
+resulting address in @code{*@var{result_addr}} and netmask in
+@code{*@var{result_mask}}. Bare addresses, such as @samp{18.26.4.44},
+are allowed if and only if @var{allow_bare_addr} is true. The netmask
+corresponding to a bare address is 255.255.255.255.
+@end deftypefn
+
+Finally, the @code{cp_ip_address_set} function parses a space-separated
+list of IP addresses into to an @code{IPAddressSet} object.
+
+@deftypefn {Parsing Function} bool cp_ip_address_set (@w{const String &@var{str}}, @w{IPAddressSet *@var{result}}, @w{Element *@var{context} = 0})
+Parses @var{str} into a set of IP addresses and stores the result in
+@code{*@var{result}}. @var{str} must be a space-separated list of IP
+addresses, which can take any of the forms accepted by
+@code{cp_ip_address}.
+@end deftypefn
+
+
+@node Parsing IPv6 Addresses, Parsing Ethernet Addresses, Parsing IP Addresses, Parsing Functions
 @subsection IPv6 Addresses
 
-@node Parsing Ethernet Addresses
+The @code{cp_ip6_address} functions parse strings into IPv6 addresses.
+Related @code{cp_ip6_prefix} functions parse strings into IPv6
+address/netmask pairs.
+
+Parsable IPv6 addresses and prefixes take any of the forms described in
+@uref{ftp://ftp.ietf.org/rfc/rfc2373.txt,,RFC 2373}, @i{IP Version 6
+Addressing Architecture}. A nonabbreviated address consists of eight
+colon-separated 16-bit hexadecimal numbers, as in
+@samp{1080:0:0:0:8:800:200C:417A}. Strings of zero bits may be
+abbreviated with two colons, as in @samp{1080::8:800:200C:417A}, and an
+address may end in an embedded IPv4 address, as in @samp{::13.1.68.3}
+and @samp{::FFFF:129.144.52.38}. IPv6 prefixes are written in
+@samp{@var{address}/@var{prefixlen}} form, like
+@samp{12AB:0:0:CD30::/60}. Click also supports the
+@samp{@var{address}/@var{netmask}} syntax, where @var{netmask} is an
+IPv6 address. @var{netmask} must correspond to some contiguous prefix,
+however: @samp{12AB:0:0:CD30::/60} and
+@samp{12AB:0:0:CD30::/FFFF:FFFF:FFFF:FFF0::} are equivalent, but
+@samp{12AB:0:0:CD30::/FFFF::1} is illegal.
+
+Analogously to the @code{cp_ip} functions (@pxref{Parsing IP
+Addresses}), the @code{cp_ip6} functions understand
+@click{AddressInfo}'s shorthand names for IPv6 addresses, and take
+optional @w{@code{Element *@var{context}}} arguments to specify any
+router and compound-element context.
+
+@deftypefn {Parsing Function} bool cp_ip6_address (@w{const String &@var{str}}, @w{unsigned char *@var{result}}, @w{Element *@var{context} = 0})
+@deftypefnx {Parsing Function} bool cp_ip6_address (@w{const String &@var{str}}, @w{IP6Address *@var{result}}, @w{Element *@var{context} = 0})
+Parses @var{str} into an IPv6 address and stores the result in
+@code{*@var{result}}. @var{context} supplies any element context.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_ip6_prefix (@w{const String &@var{str}}, @w{unsigned char *@var{result_addr}}, @w{int *@var{result_prefix_len}}, @w{bool @var{allow_bare_addr}}, @w{Element *@var{context} = 0})
+@deftypefnx {Parsing Function} bool cp_ip6_prefix (@w{const String &@var{str}}, @w{IP6Address *@var{result_addr}}, @w{int *@var{result_prefix_len}}, @w{bool @var{allow_bare_addr}}, @w{Element *@var{context} = 0})
+Parse @var{str} into an IPv6 address/prefix length pair and stores the
+resulting address in @code{*@var{result_addr}}, and the resulting prefix
+length in @code{*@var{result_prefix_len}}. Bare addresses, such as
+@samp{1080::8:800:200C:417A}, are allowed if and only if
+@var{allow_bare_addr} is true. The prefix length corresponding to a bare
+address is 128.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_ip6_prefix (@w{const String &@var{str}}, @w{unsigned char *@var{result_addr}}, @w{unsigned char *@var{result_mask}}, @w{bool @var{allow_bare_addr}}, @w{Element *@var{context} = 0})
+@deftypefnx {Parsing Function} bool cp_ip6_prefix (@w{const String &@var{str}}, @w{IP6Address *@var{result_addr}}, @w{IP6Address *@var{result_mask}}, @w{bool @var{allow_bare_addr}}, @w{Element *@var{context} = 0})
+Parse @var{str} into an IPv6 address/prefix length pair and stores the
+resulting address in @code{*@var{result_addr}}, and the netmask
+corresponding to the resulting prefix length in
+@code{*@var{result_mask}}. Bare addresses are allowed if and only if
+@var{allow_bare_addr} is true.
+@end deftypefn
+
+
+@node Parsing Ethernet Addresses, Parsing Element Names, Parsing IPv6 Addresses, Parsing Functions
 @subsection Ethernet Addresses
 
-@node Parsing Element Names
+The @code{cp_ethernet_address} functions parse strings into Ethernet
+addresses. A parsable Ethernet address consists of six colon-separated
+8-bit hexadecimal numbers, as in @samp{0:2:B3:06:36:EE}.
+
+Analogously to the @code{cp_ip} functions (@pxref{Parsing IP
+Addresses}), the @code{cp_ethernet_address} functions understand
+@click{AddressInfo}'s shorthand names for Ethernet addresses, and take
+optional @w{@code{Element *@var{context}}} arguments to specify any
+router and compound-element context.
+
+@deftypefn {Parsing Function} bool cp_ethernet_address (@w{const String &@var{str}}, @w{unsigned char *@var{result}}, @w{Element *@var{context} = 0})
+@deftypefnx {Parsing Function} bool cp_ethernet_address (@w{const String &@var{str}}, @w{EtherAddress *@var{result}}, @w{Element *@var{context} = 0})
+Parses @var{str} into an Ethernet address and stores the result in
+@code{*@var{result}}. @var{context} supplies any element context.
+@end deftypefn
+
+
+@node Parsing Element Names, Parsing Miscellaneous, Parsing Ethernet Addresses, Parsing Functions
 @subsection Element Names
 
-@node Parsing Miscellaneous
+@code{cp_element} parses an element name into a pointer to an element in
+some router configuration. It differs from other parsing functions in two
+important ways. First, it returns its result, or a null pointer on
+error; parsing functions store their results in some pointer. Second, it
+reports errors to the supplied @code{ErrorHandler}.
+
+The @var{context} argument supplies the relevant router configuration
+and any compound element context. Inside a compound element named
+@samp{x}, the string @samp{y} parses to an element named @samp{x/y}, if
+such an element exists. Click will check for an element named @samp{y}
+only after checking for @samp{x/y}. More explicitly, the
+@code{cp_element} function uses the following procedure to search for an
+element named @var{str}:
+
+@enumerate
+@item
+Set @var{prefix} to @code{@var{context}->id()}.
+
+@item
+Remove the final component of @var{prefix}.
+
+@item
+Search for an element named @samp{@var{prefix}@var{str}} in
+@code{@var{context}->router()}. If one is found, return it.
+
+@item
+Otherwise, no element was found. If @var{prefix} is already empty,
+parsing fails; report an error to @var{errh} and return a null pointer.
+Otherwise, return to step 2.
+@end enumerate
+
+@deftypefn {Function} {Element *} cp_element (@w{const String &@var{str}}, @w{Element *@var{context}}, @w{ErrorHandler *@var{errh}})
+Returns a element named @var{str} in @var{context}'s router
+configuration. @var{context} determines both the relevant router
+configuration and any compound element context. Returns a null pointer
+if no element is found; if @var{errh} is nonnull and no element is
+found, additionally reports an error to @var{errh}.
+@end deftypefn
+
+@node Parsing Miscellaneous,  , Parsing Element Names, Parsing Functions
 @subsection Miscellaneous
+
+The @code{cp_milliseconds} and @code{cp_timeval} functions parse strings
+into types related to time.
+
+@deftypefn {Parsing Function} bool cp_milliseconds (@w{const String &@var{str}}, @w{int *@var{result}})
+Parses @var{str} as a real number with 3 decimal digits of fraction.
+Fails on negative numbers. Basically equivalent to
+@code{cp_unsigned_real10(@var{str}, 3, @var{result})}.
+@end deftypefn
+
+@deftypefn {Parsing Function} bool cp_timeval (@w{const String &@var{str}}, @w{struct timeval *@var{result}})
+Parses @var{str} as a @code{struct timeval} representing some number of
+seconds and microseconds. Textually, this looks like a nonnegative real
+number with 6 decimal digits of fraction. Stores the integer part of the
+result in @code{@var{result}->tv_sec} and the fraction part in
+@code{@var{result}->tv_usec}. Basically equivalent to
+@code{cp_unparse_real10(@var{str}, 6, &@var{result}->tv_sec,
+&@var{result}->tv_usec)}.
+@end deftypefn
 
 @node Tasks, Timers, Configuration Strings, Top
 @chapter Tasks
