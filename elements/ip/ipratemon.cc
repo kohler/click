@@ -147,6 +147,7 @@ void
 IPRateMonitor::clean(_stats *s)
 {
   for(int i = 0; i < MAX_COUNTERS; i++) {
+    s->counter[i].total = 0;
     s->counter[i].flags = CLEAN;
     s->counter[i].next_level = NULL;
   }
@@ -214,7 +215,7 @@ IPRateMonitor::print(_stats *s, String ip = "")
       if (nonzero) {
 	bool updated = false;
 	ret += "\t"; 
-	ret += (int)(((long)s->counter[i].total)/(jiffs-_resettime));
+	// ret += (int)(((long)s->counter[i].total)/(jiffs-_resettime));
 	for(int j = 1; j < _no_of_rates; j++) { 
 	  if ((jiffs - s->counter[i].last_update) > CLICK_HZ) {
 	    s->counter[i].values[j].update(0);
