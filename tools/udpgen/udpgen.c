@@ -4,7 +4,7 @@
  *
  * parameter	default		description
  * ---------	-------		-----------
- * data		UDP data!\n	data in UDP packet. Will be repeated as
+ * data		UDP packet!\n	data in UDP packet. Will be repeated as
  *				necessary to fill a packet to `len' bytes.
  * len		-1		total length of packet w/all headers. < 0 means
  *				calculate based on `data'.
@@ -427,8 +427,7 @@ slow_output_packet(struct udpgen_opt *uopt)
   if (result == 0) {
     memcpy(skb->mac.raw, new_skb->mac.raw, dev->hard_header_len);
     uopt->have_hh = 1;
-  } else
-    kfree_skb(new_skb);
+  }
   
   kfree_skb(new_skb);
   uopt->slow_path_sent++;

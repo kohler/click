@@ -15,7 +15,7 @@
 #endif
 #include "ewma.hh"
 
-template <int stability_shift, int scale>
+template <unsigned stability_shift, unsigned scale>
 void
 DirectEWMAX<stability_shift, scale>::update_zero_period(unsigned period)
 {

@@ -31,12 +31,12 @@ PacketMeter::push(int, Packet *p)
 {
   _rate.update(1);		// packets, not bytes
 
-  int r = _rate.average();
+  unsigned r = _rate.average();
   if (_nmeters < 2) {
     int n = (r >= _meter1);
     output(n).push(p);
   } else {
-    int *meters = _meters;
+    unsigned *meters = _meters;
     int nmeters = _nmeters;
     for (int i = 0; i < nmeters; i++)
       if (r < meters[i]) {

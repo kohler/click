@@ -13,7 +13,7 @@
  * =d
  *
  * Passes packets unchanged from its input to its output, maintaining
- * statistics information about packet count and packet rate using historical
+ * statistics information about packet count and packet rate using a strict
  * average.
  *
  * =h count read-only

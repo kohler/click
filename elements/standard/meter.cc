@@ -45,19 +45,17 @@ Meter::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (conf.size() == 0)
     return errh->error("too few arguments to Meter(int, ...)");
 
-  Vector<int> vals(conf.size(), 0);
+  Vector<unsigned> vals(conf.size(), 0);
   for (int i = 0; i < conf.size(); i++)
-    if (!cp_integer(conf[i], &vals[i]))
-      return errh->error("argument %d should be int (rate)", i+1);
-    else if (vals[i] <= 0)
-      return errh->error("argument %d (rate) must be >= 0", i+1);
+    if (!cp_unsigned(conf[i], &vals[i]))
+      return errh->error("argument %d should be unsigned (rate)", i+1);
     else if (i > 0 && vals[i] <= vals[i-1])
       return errh->error("rate %d must be > rate %d", i+1, i);
-  
-  int max_value = ((0xFFFFFFFF<<_rate.scale) & ~0x80000000);
+
+  unsigned max_value = 0xFFFFFFFF >> _rate.scale;
   for (int i = 0; i < conf.size(); i++) {
     if (vals[i] > max_value)
-      return errh->error("rate %d too large (max %d)", i+1, max_value);
+      return errh->error("rate %d too large (max %u)", i+1, max_value);
     vals[i] = (vals[i]<<_rate.scale) / _rate.freq();
   }
   
@@ -65,7 +63,7 @@ Meter::configure(const Vector<String> &conf, ErrorHandler *errh)
     _meter1 = vals[0];
     _nmeters = 1;
   } else {
-    _meters = new int[vals.size()];
+    _meters = new unsigned[vals.size()];
     memcpy(_meters, &vals[0], vals.size() * sizeof(int));
     _nmeters = vals.size();
   }
@@ -86,12 +84,12 @@ Meter::push(int, Packet *p)
 {
   _rate.update(p->length());
 
-  int r = _rate.average();
+  unsigned r = _rate.average();
   if (_nmeters < 2) {
     int n = (r >= _meter1);
     output(n).push(p);
   } else {
-    int *meters = _meters;
+    unsigned *meters = _meters;
     int nmeters = _nmeters;
     for (int i = 0; i < nmeters; i++)
       if (r < meters[i]) {

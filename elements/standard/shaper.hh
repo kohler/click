@@ -10,20 +10,18 @@
  * =s shapes traffic to maximum rate
  * V<packet scheduling>
  * =d
- * Shaper is a pull element that allows a maxmimum of RATE
+ * Shaper is a pull element that allows a maximum of RATE
  * bytes per second to pass through. It measures RATE using
  * an exponential weighted moving average.
  *
- * There are usually Queues both upstream and downstream
- * of Shaper elements.
- * =a PacketShaper
+ * =a PacketShaper, Meter, PacketMeter
  */
 
 class Shaper : public Element { protected:
 
   RateEWMA _rate;
   
-  int _meter1;
+  unsigned _meter1;
 
  public:
   

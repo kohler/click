@@ -31,14 +31,7 @@
 #endif
 #include <stdarg.h>
 
-enum CpErrors {
-  CPE_OK = 0,
-  CPE_FORMAT,
-  CPE_NEGATIVE,
-  CPE_OVERFLOW,
-  CPE_INVALID,
-};
-static int cp_errno;
+int cp_errno;
 
 bool
 cp_eat_space(String &str)
@@ -474,120 +467,114 @@ cp_bool(const String &str, bool *return_value)
 {
   const char *s = str.data();
   int len = str.length();
-  int take;
-
-  bool value;
-  if (len >= 1 && s[0] == '0') {
-    value = false;
-    take = 1;
-  } else if (len >= 1 && s[0] == '1') {
-    value = true;
-    take = 1;
-  } else if (len >= 5 && strncmp(s, "false", 5) == 0) {
-    value = false;
-    take = 5;
-  } else if (len >= 4 && strncmp(s, "true", 4) == 0) {
-    value = true;
-    take = 4;
-  } else if (len >= 2 && strncmp(s, "no", 2) == 0) {
-    value = false;
-    take = 2;
-  } else if (len >= 3 && strncmp(s, "yes", 3) == 0) {
-    value = true;
-    take = 3;
-  } else
+  
+  if (len == 1 && s[0] == '0')
+    *return_value = false;
+  else if (len == 1 && s[0] == '1')
+    *return_value = true;
+  else if (len == 5 && memcmp(s, "false", 5) == 0)
+    *return_value = false;
+  else if (len == 4 && memcmp(s, "true", 4) == 0)
+    *return_value = true;
+  else if (len == 2 && memcmp(s, "no", 2) == 0)
+    *return_value = false;
+  else if (len == 3 && memcmp(s, "yes", 3) == 0)
+    *return_value = true;
+  else
     return false;
 
-  if (take != len)
-    return false;
-  else {
-    *return_value = value;
-    return true;
-  }
+  return true;
 }
 
 bool
-cp_integer(String str, int base, int *return_value)
+cp_unsigned(const String &str, int base, unsigned *return_value)
 {
-  int i = 0;
-  const char *s = str.cc();
+  const char *s = str.data();
   int len = str.length();
+  int i = 0;
   
-  bool network_byte_order = false;
-  bool negative = false;
-  if (i < len && s[i] == '-') {
-    negative = true;
-    i++;
-  } else if (i < len && s[i] == '+')
+  if (i < len && s[i] == '+')
     i++;
 
-  if (base < 0) {
-    if (i < len && s[i] == '0') {
-      if (i < len - 1 && (s[i+1] == 'x' || s[i+1] == 'X')) {
-	i += 2;
-	base = 16;
-      } else if (i < len - 1 && (s[i+1] == 'n' || s[i+1] == 'N')) {
-	i += 2;
-	base = 16;
-	network_byte_order = true;
-      } else
-	base = 8;
-    } else
-      base = 10;
-  }
-  
-  if (i >= len)			// all spaces
-    return false;
-  
-  char *end;
-  int value = strtol(s + i, &end, base);
-  if (negative) value = -value;
+  if ((base <= 0 || base == 16) && i < len - 1
+      && s[i] == '0' && (s[i+1] == 'x' || s[i+1] == 'X')) {
+    i += 2;
+    base = 16;
+  } else if (base <= 0 && s[i] == '0')
+    base = 8;
+  else if (base <= 0)
+    base = 10;
 
-  if (end - s == i)		// no characters in integer
+  if (i == len)			// no digits
     return false;
   
-  if (network_byte_order) {
-    if (end - s <= i + 2)
-      /* do nothing */;
-    else if (end - s <= i + 4)
-      value = htons(value);
-    else if (end - s <= i + 8)
-      value = htonl(value);
+  unsigned val = 0;
+  cp_errno = CPE_OK;
+  while (i < len) {
+    unsigned new_val = val * base;
+    if (s[i] >= '0' && s[i] <= '9' && s[i] - '0' < base)
+      new_val += s[i] - '0';
+    else if (s[i] >= 'A' && s[i] <= 'Z' && s[i] - 'A' + 10 < base)
+      new_val += s[i] - 'A' + 10;
+    else if (s[i] >= 'a' && s[i] <= 'z' && s[i] - 'a' + 10 < base)
+      new_val += s[i] - 'a' + 10;
     else
-      return false;
+      break;
+    if (new_val < val)
+      cp_errno = CPE_OVERFLOW;
+    val = new_val;
+    i++;
   }
 
-  if (end - s != len)
+  if (i != len)			// bad characters
     return false;
   else {
-    *return_value = value;
+    *return_value = (cp_errno ? 0xFFFFFFFFU : val);
     return true;
   }
 }
 
 bool
-cp_integer(String str, int *return_value)
+cp_unsigned(const String &str, unsigned *return_value)
+{
+  return cp_unsigned(str, 0, return_value);
+}
+
+bool
+cp_integer(const String &str, int base, int *return_value)
+{
+  unsigned value;
+  bool negative = false;
+  bool ok;
+  if (str.length() == 0)
+    return false;
+  else if (str[0] == '-') {
+    negative = true;
+    ok = cp_unsigned(str.substring(1), base, &value);
+  } else
+    ok = cp_unsigned(str, base, &value);
+
+  if (!ok)
+    return false;
+  if (cp_errno == CPE_OVERFLOW)
+    *return_value = 0x7FFFFFFF;
+  else if (!negative && value >= 0x80000000U) {
+    cp_errno = CPE_OVERFLOW;
+    *return_value = 0x7FFFFFFF;
+  } else if (negative && value > 0x80000000U) {
+    cp_errno = CPE_OVERFLOW;
+    *return_value = 0x80000000;
+  } else if (negative)
+    *return_value = -value;
+  else
+    *return_value = value;
+  return true;
+}
+
+bool
+cp_integer(const String &str, int *return_value)
 {
   return cp_integer(str, -1, return_value);
-}
-
-bool
-cp_ulong(String str, unsigned long *return_value)
-{
-  const char *s = str.cc();
-  int len = str.length();
-  char *end;
-
-  unsigned long value = strtoul(s, &end, 10);
-  
-  if (end == s)        // no characters in integer
-    return false;
-  else if (end - s != len) 
-    return false;
-  else {
-    *return_value = value;
-    return true;
-  }
 }
 
 bool
@@ -1227,7 +1214,7 @@ struct Values {
   union {
     bool b;
     int i;
-    unsigned long ul;
+    unsigned u;
     unsigned char address[32];
 #ifndef CLICK_TOOL
     Element *element;
@@ -1248,7 +1235,6 @@ cp_command_name(int cp_command)
    case cpByte: return "byte";
    case cpInteger: return "int";
    case cpUnsigned: return "unsigned";
-   case cpUnsignedLong: return "unsigned long";
    case cpReal: return "real";
    case cpMilliseconds: return "time in seconds";
    case cpNonnegReal: case cpNonnegFixed: return "unsigned real";
@@ -1287,7 +1273,6 @@ store_value(int cp_command, Values &v)
    }
    
    case cpInteger:
-   case cpUnsigned:
    case cpReal:
    case cpNonnegReal:
    case cpMilliseconds:
@@ -1297,9 +1282,9 @@ store_value(int cp_command, Values &v)
      break;
    }
   
-   case cpUnsignedLong: { 
-     unsigned long *istore = (unsigned long *)v.store; 
-     *istore = v.v.ul; 
+   case cpUnsigned: { 
+     unsigned *ustore = (unsigned *)v.store; 
+     *ustore = v.v.u; 
      break; 
    }
 
@@ -1435,27 +1420,30 @@ cp_va_parsev(const Vector<String> &args,
        break;
      }
      
-     case cpInteger:
-     case cpUnsigned: {
+     case cpInteger: {
        const char *desc = va_arg(val, const char *);
        v.store = va_arg(val, int *);
        if (skip) break;
        if (!cp_integer(args[argno], &v.v.i))
 	 errh->error("%s %d should be %s (integer)", argname, argno+1, desc);
-       else if (cp_command == cpUnsigned && v.v.i < 0)
-	 errh->error("%s %d (%s) must be >= 0", argname, argno+1, desc);
+       else if (cp_errno == CPE_OVERFLOW)
+	 errh->warning("integer overflow on %s %d (%s)", argname, argno+1, desc);
        break;
      }
 
-     case cpUnsignedLong: {
+     case cpUnsigned: {
        const char *desc = va_arg(val, const char *);
-       v.store = va_arg(val, int *);
+       v.store = va_arg(val, unsigned *);
        if (skip) break;
-       if (!cp_ulong(args[argno], &v.v.ul))
-	 errh->error("%s %d should be %s (unsigned long)", argname, argno+1, desc);
+       if (!cp_unsigned(args[argno], &v.v.u))
+	 errh->error("%s %d should be %s (unsigned)", argname, argno+1, desc);
+       else if (args[argno][0] == '-')
+	 errh->error("%s %d (%s) must be >= 0", argname, argno+1, desc);
+       else if (cp_errno == CPE_OVERFLOW)
+	 errh->warning("integer overflow on %s %d (%s)", argname, argno+1, desc);
        break;
      }
-     
+
      case cpReal:
      case cpNonnegReal: {
        const char *desc = va_arg(val, const char *);
@@ -1724,9 +1712,8 @@ cp_unparse_bool(bool b)
 }
 
 String
-cp_unparse_real(int real, int frac_bits)
+cp_unparse_real(unsigned real, int frac_bits)
 {
-  // XXX signed reals
   StringAccum sa;
   sa << (real >> frac_bits);
   int frac = real & ((1<<frac_bits) - 1);
@@ -1770,6 +1757,15 @@ cp_unparse_real(int real, int frac_bits)
   }
   
   return sa.take_string();
+}
+
+String
+cp_unparse_real(int real, int frac_bits)
+{
+  if (real < 0)
+    return "-" + cp_unparse_real(static_cast<unsigned>(-real), frac_bits);
+  else
+    return cp_unparse_real(static_cast<unsigned>(real), frac_bits);
 }
 
 String

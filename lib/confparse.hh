@@ -25,11 +25,21 @@ String cp_unspacevec(const Vector<String> &);
 String cp_unquote(const String &);
 String cp_quote(const String &, bool allow_newlines = false);
 
+enum CpErrors {
+  CPE_OK = 0,
+  CPE_FORMAT,
+  CPE_NEGATIVE,
+  CPE_OVERFLOW,
+  CPE_INVALID,
+};
+extern int cp_errno;
+
 // numbers
 bool cp_bool(const String &, bool *);
-bool cp_integer(String, int *);
-bool cp_integer(String, int base, int *);
-bool cp_ulong(String, unsigned long *);
+bool cp_unsigned(const String &, unsigned *);
+bool cp_unsigned(const String &, int base, unsigned *);
+bool cp_integer(const String &, int *);
+bool cp_integer(const String &, int base, int *);
 bool cp_real(const String &, int frac_digits, int *, int *);
 bool cp_real(const String &, int frac_digits, int *);
 bool cp_real2(const String &, int frac_bits, int *);
@@ -72,8 +82,7 @@ enum CpVaParseCmd {
   cpBool,	// bool *value
   cpByte,	// unsigned char *value
   cpInteger,	// int *value
-  cpUnsigned,	// int *value
-  cpUnsignedLong, // unsigned long *value
+  cpUnsigned,	// unsigned *value
   cpReal,	// int frac_digits, int *value
   cpNonnegReal,	// int frac_digits, int *value
   cpMilliseconds, // int *value_milliseconds
@@ -104,6 +113,7 @@ int cp_va_space_parse(const String &, CP_VA_PARSE_ARGS_REST);
 // unless it succeeds.
 
 String cp_unparse_bool(bool);
+String cp_unparse_real(unsigned, int frac_bits);
 String cp_unparse_real(int, int frac_bits);
 String cp_unparse_ulonglong(unsigned long long, int base, bool uppercase);
 

@@ -53,7 +53,7 @@ class RED : public Element {
   Vector<Storage *> _queues;
   
   // Queue sizes are shifted by this much.
-  static const int QUEUE_SCALE = 10;
+  static const unsigned QUEUE_SCALE = 10;
 
   unsigned _min_thresh;		// scaled by QUEUE_SCALE
   unsigned _max_thresh;		// scaled by QUEUE_SCALE

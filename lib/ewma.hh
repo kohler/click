@@ -2,31 +2,31 @@
 #define EWMA_HH
 #include "glue.hh"
 
-template <int Stability_shift, int Scale>
+template <unsigned Stability_shift, unsigned Scale>
 class DirectEWMAX {
   
-  int _avg;
+  unsigned _avg;
   
  public:
 
   DirectEWMAX()				{ _avg = 0; }
 
-  int average() const			{ return _avg; }
-  static const int stability_shift = Stability_shift;
-  static const int scale = Scale;
+  unsigned average() const		{ return _avg; }
+  static const unsigned stability_shift = Stability_shift;
+  static const unsigned scale = Scale;
   
   void clear()				{ _avg = 0; }
   
-  inline void update_with(int);
+  inline void update_with(unsigned);
   void update_zero_period(unsigned);
   
 };
 
-template <int Stability_shift, int Scale, int N, class Timer>
+template <unsigned Stability_shift, unsigned Scale, unsigned N, class Timer>
 class RateEWMAX {
   
   unsigned _now_time;
-  int _total[N];
+  unsigned _total[N];
   DirectEWMAX<Stability_shift, Scale> _avg[N];
   
  public:
@@ -45,6 +45,7 @@ class RateEWMAX {
   inline void update_time();
   inline void update_now(int delta, unsigned which = 0);
   inline void update(int delta, unsigned which = 0);
+  
 };
 
 struct JiffiesTimer {
@@ -55,9 +56,9 @@ struct JiffiesTimer {
 typedef DirectEWMAX<4, 10> DirectEWMA;
 typedef RateEWMAX<4, 10, 1, JiffiesTimer> RateEWMA;
 
-template <int stability_shift, int scale>
+template <unsigned stability_shift, unsigned scale>
 inline void
-DirectEWMAX<stability_shift, scale>::update_with(int val)
+DirectEWMAX<stability_shift, scale>::update_with(unsigned val)
 {
   int val_scaled = val << scale;
   int compensation = 1 << (stability_shift - 1); // round off
@@ -65,24 +66,24 @@ DirectEWMAX<stability_shift, scale>::update_with(int val)
   // XXX implementation-defined right shift behavior
 }
 
-template <int stability_shift, int scale, int n, class Timer>
+template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
 inline void
 RateEWMAX<stability_shift, scale, n, Timer>::initialize()
 {
   _now_time = now();
-  for (int i = 0; i < n; i++) {
+  for (unsigned i = 0; i < n; i++) {
     _total[i] = 0;
     _avg[i].clear();
   }
 }
 
-template <int stability_shift, int scale, int n, class Timer>
+template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
 inline void
 RateEWMAX<stability_shift, scale, n, Timer>::update_time(unsigned now)
 {
   unsigned jj = _now_time;
   if (now != jj) {
-    for (int i = 0; i < n; i++) {
+    for (unsigned i = 0; i < n; i++) {
       // adjust the average rate using the last measured packets
       _avg[i].update_with(_total[i]);
 
@@ -94,8 +95,8 @@ RateEWMAX<stability_shift, scale, n, Timer>::update_time(unsigned now)
     _now_time = now;
   }
 }
-  
-template <int stability_shift, int scale, int n, class Timer>
+
+template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
 inline void 
 RateEWMAX<stability_shift, scale, n, Timer>::update_now(int delta, 
                                                         unsigned which)
@@ -103,14 +104,14 @@ RateEWMAX<stability_shift, scale, n, Timer>::update_now(int delta,
   _total[which] += delta; 
 }
 
-template <int stability_shift, int scale, int n, class Timer>
+template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
 inline void
 RateEWMAX<stability_shift, scale, n, Timer>::update_time()
 {
   update_time(now());
 }
 
-template <int stability_shift, int scale, int n, class Timer>
+template <unsigned stability_shift, unsigned scale, unsigned n, class Timer>
 inline void
 RateEWMAX<stability_shift, scale, n, Timer>::update(int delta, unsigned which)
 {

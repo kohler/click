@@ -37,8 +37,8 @@ class Meter : public Element { protected:
 
   RateEWMA _rate;
 
-  int _meter1;
-  int *_meters;
+  unsigned _meter1;
+  unsigned *_meters;
   int _nmeters;
 
   static String meters_read_handler(Element *, void *);
@@ -49,11 +49,11 @@ class Meter : public Element { protected:
   ~Meter();
   
   const char *class_name() const		{ return "Meter"; }
-  const char *processing() const	{ return PUSH; }
+  const char *processing() const		{ return PUSH; }
   
-  int rate() const				{ return _rate.average(); }
-  int rate_scale() const			{ return _rate.scale; }
-  int rate_freq() const				{ return _rate.freq(); }
+  unsigned rate() const				{ return _rate.average(); }
+  unsigned rate_scale() const			{ return _rate.scale; }
+  unsigned rate_freq() const			{ return _rate.freq(); }
   
   Meter *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);

@@ -47,14 +47,14 @@ TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandl
   unsigned int saddr, daddr;
   unsigned short sport, dport;
   unsigned char bits;
-  unsigned long seqn, ackn;
+  unsigned seqn, ackn;
   if(cp_va_space_parse(conf, me, errh,
        cpIPAddress, "source address", &saddr,
        cpInteger, "source port", &sport,
        cpIPAddress, "destination address", &daddr,
        cpInteger, "destinatin port", &dport,
-       cpUnsignedLong, "seq number", &seqn,
-       cpUnsignedLong, "ack number", &ackn,
+       cpUnsigned, "seq number", &seqn,
+       cpUnsigned, "ack number", &ackn,
        cpByte, "bits", &bits,
        0) < 0)
     return -1;

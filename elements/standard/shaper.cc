@@ -37,15 +37,15 @@ Shaper::clone() const
 int
 Shaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int rate;
+  unsigned rate;
   if (cp_va_parse(conf, this, errh,
 		  cpUnsigned, "max allowable rate", &rate,
 		  0) < 0)
     return -1;
   
-  int max_value = ((0xFFFFFFFF<<_rate.scale) & ~0x80000000);
+  unsigned max_value = 0xFFFFFFFF >> _rate.scale;
   if (rate > max_value)
-    return errh->error("rate too large (max %d)", max_value);
+    return errh->error("rate too large (max %u)", max_value);
   
   _meter1 = (rate << _rate.scale) / _rate.freq();
   return 0;
