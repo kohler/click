@@ -5,7 +5,8 @@
 /*
  * =c
  * IPRewriter(INPUTSPEC1, ..., INPUTSPECn)
- * =s rewrites UDP/TCP packets' addresses and ports
+ * =s
+ * rewrites UDP/TCP packets' addresses and ports
  * V<modifies>
  * =d
  *

@@ -5,7 +5,8 @@
 /*
  * =c
  * TCPRewriter(INPUTSPEC1, ..., INPUTSPECn)
- * =s rewrites TCP packets' addresses, ports, and sequence numbers
+ * =s
+ * rewrites TCP packets' addresses, ports, and sequence numbers
  * V<modifies>
  * =d
  *
