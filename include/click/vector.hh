@@ -236,8 +236,8 @@ class Vector<T*>: private Vector<void*> {
   // modifiers
   void push_back(T* e)		{ Base::push_back((void*)e); }
   void pop_back()		{ Base::pop_back(); }
-  iterator erase(iterator i)	{ return Base::erase((void**)i); }
-  iterator erase(iterator i, iterator j) { return Base::erase((void**)i, (void**)j); }
+  iterator erase(iterator i)	{ return (iterator)Base::erase((void**)i); }
+  iterator erase(iterator i, iterator j) { return (iterator)Base::erase((void**)i, (void**)j); }
   void swap(Vector<T *> &o)	{ Base::swap(o); }
   void clear()			{ Base::clear(); }
     
