@@ -1,3 +1,25 @@
+2000-12-07 Thursday 19:02  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/app/ftpportmapper.cc, elements/icmp/icmprewriter.cc,
+	elements/ip/ipaddrrewriter.cc, elements/ip/ipaddrrewriter.hh,
+	elements/ip/ipclassifier.hh, elements/ip/iprewriter.cc,
+	elements/ip/iprewriter.hh, elements/ip/iprw.cc,
+	elements/ip/iprw.hh, elements/ip/iprwpatterns.cc,
+	elements/ip/rripmapper.cc, elements/ip/rripmapper.hh,
+	elements/ip/tcprewriter.cc, elements/ip/tcprewriter.hh,
+	include/click/ipaddress.hh, include/click/ipflowid.hh,
+	lib/ipaddress.cc: IPRewriter updates to support IPAddrRewriter, and
+	also to support multiple protocols
+
+2000-12-07 Thursday 19:01  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipfilter.cc, ipfilter.hh: IPClassifier updates:
+	more ports, "tcpudp" pseudoprotocol, fixed error messages (Mz)
+
+2000-12-07 Thursday 18:59  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/click_ip.h: added IP_PROTO_TCP_OR_UDP
+
 2000-12-06 Wednesday 18:02  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/linuxmodule/cpuswitch.cc: file cpuswitch.cc was
