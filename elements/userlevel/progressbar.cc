@@ -65,6 +65,7 @@ ProgressBar::initialize(ErrorHandler *errh)
 		    cpReadHandler, "size handler", &_size_element, &_size_hi,
 		    cpKeywords,
 		    "UPDATE", cpSecondsAsMilli, "update interval (s)", &_interval,
+		    "BANNER", cpString, "banner string", &_banner,
 		    0) < 0)
 	return -1;
 
@@ -273,6 +274,8 @@ ProgressBar::run_scheduled()
     // start sa
     StringAccum sa;
     sa << "\r";
+    if (_banner)
+	sa << _banner << ' ';
     
     // get position
     String s = cp_uncomment(router()->handler(_pos_hi).call_read(_pos_element));
@@ -292,7 +295,7 @@ ProgressBar::run_scheduled()
     if (!have_pos)
 	thermpos = -1;
     else if (!_have_size) {
-	thermpos = (pos / 10000) % 200;
+	thermpos = (pos / 100000) % 200;
 	if (thermpos > 100) thermpos = 200 - thermpos;
     } else if (_size > 0) {
 	thermpos = (int)(100.0 * pos / _size);
@@ -308,13 +311,16 @@ ProgressBar::run_scheduled()
 	sa << "     ";
 
     // print the bar
-    int barlength = getttywidth() - 51;
+    int barlength = getttywidth() - (sa.length() + 25);
     barlength = (barlength <= max_bar_length ? barlength : max_bar_length);
     if (barlength > 0) {
 	int barchar = (barlength * thermpos / 100);
-	if (thermpos < 0)
+	if (thermpos < 0 || (!_have_size && _status == ST_DONE))
 	    sa.snprintf(barlength + 10, "|%.*s|", barlength, bad_bar);
-	else if (!_have_size)
+	else if (!_have_size && barlength > 3) {
+	    barchar = ((barlength - 2) * thermpos / 100);
+	    sa.snprintf(barlength + 10, "|%*s***%*s|", barchar, "", barlength - barchar - 3, "");
+	} else if (!_have_size)
 	    sa.snprintf(barlength + 10, "|%*s*%*s|", barchar, "", barlength - barchar - 1, "");
 	else
 	    sa.snprintf(barlength + 10, "|%.*s%*s|", barchar, bar, barlength - barchar, "");

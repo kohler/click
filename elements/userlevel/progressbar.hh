@@ -165,6 +165,7 @@ class ProgressBar : public Element { public:
     struct timeval _start_time;
     struct timeval _stall_time;
     struct timeval _last_time;
+    String _banner;
 
     Timer _timer;
     uint32_t _interval;
