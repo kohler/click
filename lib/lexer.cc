@@ -327,6 +327,11 @@ Lexer::Compound::expand_into(Lexer *lexer, int which, const VariableEnvironment 
     if (eidx_map[hf.idx] >= 0 && eidx_map[ht.idx] >= 0)
       lexer->connect(eidx_map[hf.idx], hf.port, eidx_map[ht.idx], ht.port);
   }
+
+  // now expand those
+  for (int i = 2; i < eidx_map.size(); i++)
+    if (eidx_map[i] >= 0)
+      lexer->expand_compound_element(eidx_map[i], ve);
 }
 
 //
@@ -1448,13 +1453,24 @@ Lexer::add_router_connections(int c, const Vector<int> &router_id,
 }
 
 void
-Lexer::expand_compound_element(int which, Vector<int> &environment_map, Vector<VariableEnvironment *> &environments)
+Lexer::expand_compound_element(int which, const VariableEnvironment &ve)
 {
   String name = _element_names[which];
   int etype = _elements[which];
   assert(name);
-  int old_nelements = _elements.size();
-    
+
+  // avoid TUNNEL_TYPE
+  if (etype == TUNNEL_TYPE)
+    return;
+  
+  // must use `cast()' in case we have a synonym!
+  Compound *c = (Compound *)_element_types[etype]->cast("Lexer::Compound");
+  
+  // check for compound element; if not, just expand its config string
+  _element_configurations[which] = ve.interpolate(_element_configurations[which]);
+  if (!c)
+    return;
+  
   // find right version
   Vector<String> args;
   cp_argvec(_element_configurations[which], args);
@@ -1466,8 +1482,7 @@ Lexer::expand_compound_element(int which, Vector<int> &environment_map, Vector<V
     if (hf.idx == which && hf.port >= outputs_used)
       outputs_used = hf.port + 1;
   }
-  // must use `cast()' in case we have a synonym!
-  Compound *c = (Compound *)_element_types[etype]->cast("Lexer::Compound");
+  
   Element *found_c = c->find_relevant_class(inputs_used, outputs_used, args);
   if (!found_c) {
     _errh->lerror(c->landmark(), "no match for `%s'", Compound::signature(c->name(), inputs_used, outputs_used, args.size()).cc());
@@ -1489,25 +1504,13 @@ Lexer::expand_compound_element(int which, Vector<int> &environment_map, Vector<V
     _elements[which] = ERROR_TYPE;
     return;
   }
-  
-  int vei = environment_map[which];
-  if (args.size() == 0 && found_comp->depth() == 0)
-    vei = 0;
-  else if (args.size() || environments[vei]->depth() >= found_comp->depth()) {
-    VariableEnvironment *new_ve = new VariableEnvironment;
-    if (vei > 0)
-      new_ve->enter(*environments[vei]);
-    new_ve->limit_depth(found_comp->depth());
-    new_ve->enter(found_comp->formals(), args, found_comp->depth());
-    environments.push_back(new_ve);
-    vei = environments.size() - 1;
-  }
 
-  found_comp->expand_into(this, which, *environments[vei]);
+  VariableEnvironment new_ve;
+  new_ve.enter(ve);
+  new_ve.limit_depth(found_comp->depth());
+  new_ve.enter(found_comp->formals(), args, found_comp->depth());
 
-  // mark new environments
-  for (int i = old_nelements; i < _elements.size(); i++)
-    environment_map.push_back(vei);
+  found_comp->expand_into(this, which, new_ve);
 }
 
 Router *
@@ -1518,19 +1521,11 @@ Lexer::create_router()
     return 0;
   
   // expand compounds
-  Vector<int> environment_map(_elements.size(), 0);
-  Vector<VariableEnvironment *> environments;
-  environments.push_back(new VariableEnvironment);
-  
-  for (int i = 0; i < _elements.size(); i++) {
-    int t = _elements[i];
-    if (t != TUNNEL_TYPE && _element_types[t]->cast("Lexer::Compound"))
-      expand_compound_element(i, environment_map, environments);
-  }
+  int initial_elements_size = _elements.size();
+  VariableEnvironment ve;
+  for (int i = 0; i < initial_elements_size; i++)
+    expand_compound_element(i, ve);
 
-  for (int i = 0; i < environments.size(); i++)
-    delete environments[i];
-  
   // add elements to router
   Vector<int> router_id;
   for (int i = 0; i < _elements.size(); i++)

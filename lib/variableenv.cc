@@ -17,7 +17,6 @@
  */
 
 #include <click/config.h>
-
 #include <click/variableenv.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
@@ -71,10 +70,23 @@ VariableEnvironment::limit_depth(int deepest)
   _depths.resize(s);
 }
 
+static void
+interpolate_string(StringAccum &output, const String &config, int pos1,
+		   int pos2, String value, int quote)
+{
+  output << config.substring(pos1, pos2 - pos1);
+  if (quote == '\"') {		// interpolate inside the quotes
+    value = cp_quote(cp_unquote(value));
+    if (value[0] == '\"')
+      value = value.substring(1, value.length() - 2);
+  }
+  output << value;
+}
+
 String
 VariableEnvironment::interpolate(const String &config) const
 {
-  if (_formals.size() == 0 || !config)
+  if (!config || (_formals.size() == 0 && config.find_left('$') < 0))
     return config;
   
   const char *data = config.data();
@@ -105,31 +117,40 @@ VariableEnvironment::interpolate(const String &config) const
 	  }
       }
     } else if (data[pos] == '$' && quote != '\'') {
-      unsigned word_pos = pos;
-      String name;
+      int word_pos = pos;
+      
+      String name, extension;
+      int extension_pos = 0;
       if (pos < len - 1 && data[pos+1] == '{') {
 	for (pos += 2; pos < len && data[pos] != '}'; pos++)
-	  /* nada */;
-	name = "$" + config.substring(word_pos + 2, pos - word_pos - 2);
+	  if (data[pos] == '-')
+	    extension_pos = pos;
+	if (!extension_pos)
+	  extension_pos = pos;
+	name = "$" + config.substring(word_pos + 2, extension_pos - word_pos - 2);
+	extension = config.substring(extension_pos, pos - extension_pos);
 	if (pos < len) pos++;
       } else {
 	for (pos++; pos < len && (isalnum(data[pos]) || data[pos] == '_'); pos++)
 	  /* nada */;
 	name = config.substring(word_pos, pos - word_pos);
       }
+
       for (int variable = _formals.size() - 1; variable >= 0; variable--)
 	if (name == _formals[variable]) {
-	  output << config.substring(config_pos, word_pos - config_pos);
-	  String value = _values[variable];
-	  if (quote == '\"') {	// interpolate inside the quotes
-	    value = cp_quote(cp_unquote(value));
-	    if (value[0] == '\"')
-	      value = value.substring(1, value.length() - 2);
-	  }
-	  output << value;
+	  interpolate_string(output, config, config_pos, word_pos, _values[variable], quote);
 	  config_pos = pos;
-	  break;
+	  goto found_expansion;
 	}
+
+      // no expansion if we get here
+      if (extension && extension[0] == '-') {
+	// interpolate default value
+	interpolate_string(output, config, config_pos, word_pos, extension.substring(1), quote);
+	config_pos = pos;
+      }
+      
+     found_expansion:
       pos--;
     }
 

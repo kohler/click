@@ -163,7 +163,7 @@ class Lexer { public:
   int lexical_scoping_in() const;
   void lexical_scoping_out(int);
   int make_compound_element(int);
-  void expand_compound_element(int, Vector<int> &, Vector<VariableEnvironment *> &);
+  void expand_compound_element(int, const VariableEnvironment &);
   void add_router_connections(int, const Vector<int> &, Router *);
 
   friend class Compound;

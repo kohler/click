@@ -456,6 +456,11 @@ expands to this:
 .Re
 You can avoid this substitution by putting the dollar sign inside single
 quotes.
+.PP
+Use braces, like `${a}', to avoid including following letters in a variable
+name. Click also supports the shell-like `${VAR-DEFAULT}' syntax, which
+substitutes the value of `$VAR', or `DEFAULT' when that variable was not
+set.
 '
 .SS "Overloading"
 '
