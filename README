@@ -46,6 +46,8 @@ CLICKDIR/etc			Linux patches and other files
 CLICKDIR/etc/samplepackage	sample source code for Click element package
 CLICKDIR/etc/samplellrpc	sample source code for reading Click LLRPCs
 CLICKDIR/etc/diagrams		files for drawing Click diagrams
+CLICKDIR/include/click		common header files
+CLICKDIR/include/clicknet	header files defining network headers
 CLICKDIR/lib			common non-element source code
 CLICKDIR/linuxmodule		Linux kernel module driver
 CLICKDIR/tools			Click tools
