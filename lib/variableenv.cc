@@ -109,8 +109,8 @@ VariableEnvironment::interpolate(const String &config) const
 	    quote = '\"';
 	else if (*s == quote)
 	    quote = 0;
-	else if (*s == '/' && s + 1 < end)
-	    s = cp_skip_comment_space(s, end);
+	else if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*') && quote == 0)
+	    s = cp_skip_comment_space(s, end) - 1;
 	else if (*s == '$' && quote != '\'') {
 	    const char *word = s;
       
