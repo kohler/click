@@ -222,17 +222,18 @@ RouterT::add_element(const ElementT &elt_in)
     return elt;
 }
 
-int
-RouterT::get_eindex(const String &name, ElementClassT *type,
-		    const String &config, const String &landmark)
+ElementT *
+RouterT::get_element(const String &name, ElementClassT *type,
+		     const String &config, const String &landmark)
 {
     int i = _element_name_map[name];
-    if (i < 0) {
+    if (i >= 0)
+	return _elements[i];
+    else {
 	ElementT *e = add_element(ElementT(name, type, config, landmark));
-	i = e->idx();
-	_element_name_map.insert(name, i);
+	_element_name_map.insert(name, e->idx());
+	return e;
     }
-    return i;
 }
 
 ElementT *
@@ -290,7 +291,7 @@ RouterT::update_ninputs(int e)
 }
 
 bool
-RouterT::add_connection(const Hookup &hfrom, const Hookup &hto,
+RouterT::add_connection(const PortT &hfrom, const PortT &hto,
 			const String &landmark)
 {
     assert(hfrom.router() == this && hfrom.elt->live()
@@ -318,13 +319,6 @@ RouterT::add_connection(const Hookup &hfrom, const Hookup &hto,
 	hto.elt->_ninputs = hto.port + 1;
 
     return true;
-}
-
-bool
-RouterT::add_connection(const HookupI &hfromi, const HookupI &htoi,
-			const String &landmark)
-{
-    return add_connection(Hookup(hfromi, this), Hookup(htoi, this), landmark);
 }
 
 void
@@ -453,7 +447,7 @@ RouterT::kill_bad_connections()
 }
 
 void
-RouterT::change_connection_from(int c, Hookup h)
+RouterT::change_connection_from(int c, PortT h)
 {
     assert(h.router() == this);
     unlink_connection_from(c);
@@ -468,7 +462,7 @@ RouterT::change_connection_from(int c, Hookup h)
 }
 
 void
-RouterT::change_connection_to(int c, Hookup h)
+RouterT::change_connection_to(int c, PortT h)
 {
     assert(h.router() == this);
     unlink_connection_to(c);
@@ -483,7 +477,7 @@ RouterT::change_connection_to(int c, Hookup h)
 }
 
 int
-RouterT::find_connection(const Hookup &hfrom, const Hookup &hto) const
+RouterT::find_connection(const PortT &hfrom, const PortT &hto) const
 {
     assert(hfrom.router() == this && hto.router() == this);
     int c = _first_conn[hfrom.idx()].from;
@@ -496,25 +490,26 @@ RouterT::find_connection(const Hookup &hfrom, const Hookup &hto) const
 }
 
 bool
-RouterT::find_connection_from(const HookupI &h, HookupI &out) const
+RouterT::find_connection_from(const PortT &h, PortT &out) const
 {
-    int c = _first_conn[h.idx].from;
+    assert(h.router() == this);
+    int c = _first_conn[h.idx()].from;
     int p = h.port;
-    out.idx = -1;
+    out = PortT(0, -1);
     while (c >= 0) {
-	if (_conn[c].from().port == p) {
-	    if (out.idx == -1)
+	if (_conn[c].from_port() == p) {
+	    if (out.port == -1)
 		out = _conn[c].to();
 	    else
-		out.idx = -2;
+		out.port = -2;
 	}
 	c = _conn[c].next_from();
     }
-    return out.idx >= 0;
+    return out.port >= 0;
 }
 
 void
-RouterT::find_connections_from(const Hookup &h, Vector<Hookup> &v) const
+RouterT::find_connections_from(const PortT &h, Vector<PortT> &v) const
 {
     assert(h.router() == this);
     int c = _first_conn[h.idx()].from;
@@ -527,7 +522,7 @@ RouterT::find_connections_from(const Hookup &h, Vector<Hookup> &v) const
 }
 
 void
-RouterT::find_connections_from(const Hookup &h, Vector<int> &v) const
+RouterT::find_connections_from(const PortT &h, Vector<int> &v) const
 {
     assert(h.router() == this);
     int c = _first_conn[h.idx()].from;
@@ -540,7 +535,7 @@ RouterT::find_connections_from(const Hookup &h, Vector<int> &v) const
 }
 
 void
-RouterT::find_connections_to(const Hookup &h, Vector<Hookup> &v) const
+RouterT::find_connections_to(const PortT &h, Vector<PortT> &v) const
 {
     assert(h.router() == this);
     int c = _first_conn[h.idx()].to;
@@ -553,7 +548,7 @@ RouterT::find_connections_to(const Hookup &h, Vector<Hookup> &v) const
 }
 
 void
-RouterT::find_connections_to(const Hookup &h, Vector<int> &v) const
+RouterT::find_connections_to(const PortT &h, Vector<int> &v) const
 {
     assert(h.router() == this);
     int c = _first_conn[h.idx()].to;
@@ -602,35 +597,33 @@ RouterT::find_connection_vector_to(ElementT *e, Vector<int> &v) const
 }
 
 bool
-RouterT::insert_before(const HookupI &inserter, const HookupI &h)
+RouterT::insert_before(const PortT &inserter, const PortT &h)
 {
     if (!add_connection(inserter, h))
 	return false;
-    Hookup inserterh(inserter, this);
 
-    int i = _first_conn[h.idx].to;
+    int i = _first_conn[h.idx()].to;
     while (i >= 0) {
 	int next = _conn[i].next_to();
 	if (_conn[i].to() == h && connection_live(i)
 	    && _conn[i].from() != inserter)
-	    change_connection_to(i, inserterh);
+	    change_connection_to(i, inserter);
 	i = next;
     }
     return true;
 }
 
 bool
-RouterT::insert_after(const HookupI &inserter, const HookupI &h)
+RouterT::insert_after(const PortT &inserter, const PortT &h)
 {
     if (!add_connection(h, inserter))
 	return false;
-    Hookup inserterh(inserter, this);
 
-    int i = _first_conn[h.idx].from;
+    int i = _first_conn[h.idx()].from;
     while (i >= 0) {
 	int next = _conn[i].next_from();
 	if (_conn[i].from() == h && _conn[i].to() != inserter)
-	    change_connection_from(i, inserterh);
+	    change_connection_from(i, inserter);
 	i = next;
     }
     return true;
@@ -641,11 +634,12 @@ void
 RouterT::add_tunnel(String in, String out, const String &landmark,
 		    ErrorHandler *errh)
 {
+    if (!errh)
+	errh = ErrorHandler::silent_handler();
+
     ElementClassT *tun = ElementClassT::tunnel_type();
-    int in_idx = get_eindex(in, tun, String(), landmark);
-    int out_idx = get_eindex(out, tun, String(), landmark);
-    if (!errh) errh = ErrorHandler::silent_handler();
-    ElementT *ein = _elements[in_idx], *eout = _elements[out_idx];
+    ElementT *ein = get_element(in, tun, String(), landmark);
+    ElementT *eout = get_element(out, tun, String(), landmark);
 
     if (!ein->tunnel())
 	errh->lerror(landmark, "redeclaration of element `%s'", in.cc());
@@ -844,18 +838,19 @@ RouterT::expand_into(RouterT *tor, const VariableEnvironment &env, ErrorHandler 
     assert(tor != this);
 
     int nelements = _elements.size();
-    Vector<int> new_fidx(nelements, -1);
+    Vector<ElementT *> new_e(nelements, 0);
 
     // add tunnel pairs and expand below
     for (int i = 0; i < nelements; i++)
-	new_fidx[i] = ElementClassT::expand_element(this, i, tor, env, errh);
+	if (_elements[i]->live())
+	    new_e[i] = ElementClassT::expand_element(_elements[i], tor, env, errh);
 
     // add hookup
     int nh = _conn.size();
     for (int i = 0; i < nh; i++) {
-	const HookupI &hf = _conn[i].from(), &ht = _conn[i].to();
-	tor->add_connection(Hookup(tor->_elements[new_fidx[hf.idx]], hf.port),
-			    Hookup(tor->_elements[new_fidx[ht.idx]], ht.port),
+	const PortT &hf = _conn[i].from(), &ht = _conn[i].to();
+	tor->add_connection(PortT(new_e[hf.idx()], hf.port),
+			    PortT(new_e[ht.idx()], ht.port),
 			    _conn[i].landmark());
     }
 
@@ -880,12 +875,12 @@ static const int PORT_NOT_EXPANDED = -1;
 static const int PORT_EXPANDING = -2;
 
 void
-RouterT::expand_tunnel(Vector<Hookup> *port_expansions,
-		       const Vector<Hookup> &ports,
+RouterT::expand_tunnel(Vector<PortT> *port_expansions,
+		       const Vector<PortT> &ports,
 		       bool is_output, int which,
 		       ErrorHandler *errh) const
 {
-    Vector<Hookup> &expanded = port_expansions[which];
+    Vector<PortT> &expanded = port_expansions[which];
 
     // quit if circular or already expanded
     if (expanded.size() != 1 || expanded[0].port != PORT_NOT_EXPANDED)
@@ -894,15 +889,15 @@ RouterT::expand_tunnel(Vector<Hookup> *port_expansions,
     // expand if not expanded yet
     expanded[0].port = PORT_EXPANDING;
 
-    const Hookup &me = ports[which];
+    const PortT &me = ports[which];
     ElementT *other_elt = (is_output ? me.elt->tunnel_input() : me.elt->tunnel_output());
     
     // find connections from tunnel input
-    Vector<Hookup> connections;
+    Vector<PortT> connections;
     if (is_output)
-	find_connections_to(Hookup(other_elt, me.port), connections);
+	find_connections_to(PortT(other_elt, me.port), connections);
     else			// or to tunnel output
-	find_connections_from(Hookup(other_elt, me.port), connections);
+	find_connections_from(PortT(other_elt, me.port), connections);
 
     // give good errors for unused or nonexistent compound element ports
     if (!connections.size()) {
@@ -927,14 +922,14 @@ RouterT::expand_tunnel(Vector<Hookup> *port_expansions,
     }
 
     // expand them
-    Vector<Hookup> store;
+    Vector<PortT> store;
     for (int i = 0; i < connections.size(); i++) {
 	// if connected to another tunnel, expand that recursively
 	if (connections[i].elt->tunnel()) {
 	    int x = connections[i].index_in(ports);
 	    if (x >= 0) {
 		expand_tunnel(port_expansions, ports, is_output, x, errh);
-		const Vector<Hookup> &v = port_expansions[x];
+		const Vector<PortT> &v = port_expansions[x];
 		if (v.size() > 1 || (v.size() == 1 && v[0].port >= 0))
 		    for (int j = 0; j < v.size(); j++)
 			store.push_back(v[j]);
@@ -956,7 +951,7 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 	errh = ErrorHandler::silent_handler();
 
     // find tunnel connections, mark connections by setting index to 'magice'
-    Vector<Hookup> inputs, outputs;
+    Vector<PortT> inputs, outputs;
     int nhook = _conn.size();
     for (int i = 0; i < nhook; i++) {
 	const ConnectionT &c = _conn[i];
@@ -970,13 +965,13 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 
     // expand tunnels
     int nin = inputs.size(), nout = outputs.size();
-    Vector<Hookup> *in_expansions = new Vector<Hookup>[nin];
-    Vector<Hookup> *out_expansions = new Vector<Hookup>[nout];
+    Vector<PortT> *in_expansions = new Vector<PortT>[nin];
+    Vector<PortT> *out_expansions = new Vector<PortT>[nout];
     // initialize to placeholders
     for (int i = 0; i < nin; i++)
-	in_expansions[i].push_back(Hookup(0, PORT_NOT_EXPANDED));
+	in_expansions[i].push_back(PortT(0, PORT_NOT_EXPANDED));
     for (int i = 0; i < nout; i++)
-	out_expansions[i].push_back(Hookup(0, PORT_NOT_EXPANDED));
+	out_expansions[i].push_back(PortT(0, PORT_NOT_EXPANDED));
     // actually expand
     for (int i = 0; i < nin; i++)
 	expand_tunnel(in_expansions, inputs, false, i, errh);
@@ -987,7 +982,7 @@ RouterT::remove_tunnels(ErrorHandler *errh)
     int nelements = _elements.size();
     int old_nhook = _conn.size();
     for (int i = 0; i < old_nhook; i++) {
-	const Hookup &hf = _conn[i].from(), &ht = _conn[i].to();
+	const PortT &hf = _conn[i].from(), &ht = _conn[i].to();
 
 	// skip if uninteresting
 	if (hf.dead() || !hf.elt->tunnel() || ht.elt->tunnel())
@@ -998,9 +993,9 @@ RouterT::remove_tunnels(ErrorHandler *errh)
 
 	// add cross product
 	// hf, ht are invalidated by adding new connections!
-	Hookup safe_ht(ht);
+	PortT safe_ht(ht);
 	String landmark = _conn[i].landmark(); // must not be reference!
-	const Vector<Hookup> &v = out_expansions[idx];
+	const Vector<PortT> &v = out_expansions[idx];
 	for (int j = 0; j < v.size(); j++)
 	    add_connection(v[j], safe_ht, landmark);
     }
@@ -1025,7 +1020,7 @@ RouterT::remove_compound_elements(ErrorHandler *errh)
     VariableEnvironment env;
     for (int i = 0; i < nelements; i++)
 	if (_elements[i]->live()) // allow deleted elements
-	    ElementClassT::expand_element(this, i, this, env, errh);
+	    ElementClassT::expand_element(_elements[i], this, env, errh);
 }
 
 void
@@ -1131,8 +1126,9 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
     Vector<int> next(nc, -1);
     Bitvector startchain(nc, true);
     for (int c = 0; c < nc; c++) {
-	const HookupI &ht = _conn[c].to();
-	if (ht.port != 0 || used[c]) continue;
+	const PortT &ht = _conn[c].to();
+	if (ht.port != 0 || used[c])
+	    continue;
 	int result = -1;
 	for (int d = 0; d < nc; d++)
 	    if (d != c && _conn[d].from() == ht && !used[d]) {
@@ -1162,11 +1158,11 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
     while (!done) {
 	// print chains
 	for (int c = 0; c < nc; c++) {
-	    const HookupI &hf = _conn[c].from();
+	    const PortT &hf = _conn[c].from();
 	    if (used[c] || !startchain[c])
 		continue;
 	    
-	    sa << indent << ename(hf.idx);
+	    sa << indent << hf.elt->name();
 	    if (hf.port)
 		sa << " [" << hf.port << "]";
 
@@ -1176,10 +1172,10 @@ RouterT::unparse_connections(StringAccum &sa, const String &indent) const
 		    sa << " -> ";
 		else
 		    sa << "\n" << indent << "    -> ";
-		const HookupI &ht = _conn[d].to();
+		const PortT &ht = _conn[d].to();
 		if (ht.port)
 		    sa << "[" << ht.port << "] ";
-		sa << ename(ht.idx);
+		sa << ht.elt->name();
 		used[d] = true;
 		d = next[d];
 	    }

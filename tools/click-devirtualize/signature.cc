@@ -68,13 +68,13 @@ Signatures::check_port_numbers(int eid, const ProcessingT &pt)
   Vector<int> new_ports;
   int ni = pt.ninputs(eid), no = pt.noutputs(eid);
   for (int i = 0; i < ni; i++) {
-    HookupI h = pt.input_connection(eid, i);
-    if (h.idx >= 0)
+    const PortT &h = pt.input_connection(eid, i);
+    if (h.elt)
       new_ports.push_back(h.port);
   }
   for (int i = 0; i < no; i++) {
-    HookupI h = pt.output_connection(eid, i);
-    if (h.idx >= 0)
+    const PortT &h = pt.output_connection(eid, i);
+    if (h.elt)
       new_ports.push_back(h.port);
   }
 
@@ -124,14 +124,14 @@ Signatures::next_phase(int phase, int eid, Vector<int> &new_sigid,
   Vector<int> new_connections;
   int ni = pt.ninputs(eid), no = pt.noutputs(eid);
   for (int i = 0; i < ni; i++) {
-    HookupI h = pt.input_connection(eid, i);
-    if (h.idx >= 0)
-      new_connections.push_back(_sigid[h.idx]);
+    const PortT &h = pt.input_connection(eid, i);
+    if (h.elt)
+      new_connections.push_back(_sigid[h.idx()]);
   }
   for (int i = 0; i < no; i++) {
-    HookupI h = pt.output_connection(eid, i);
-    if (h.idx >= 0)
-      new_connections.push_back(_sigid[h.idx]);
+    const PortT &h = pt.output_connection(eid, i);
+    if (h.elt)
+      new_connections.push_back(_sigid[h.idx()]);
   }
 
   // add new node to list

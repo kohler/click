@@ -7,6 +7,7 @@
 #include <click/hashmap.hh>
 #include "etraits.hh"
 class RouterT;
+class ElementT;
 class VariableEnvironment;
 class ErrorHandler;
 class StringAccum;
@@ -37,11 +38,11 @@ class ElementClassT { public:
     bool requires(const String &) const;
     bool provides(const String &) const;
 
-    static int expand_element(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
+    static ElementT *expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
     virtual ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
     virtual void report_signatures(const String &, String, ErrorHandler *);
-    virtual int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+    virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     virtual void collect_primitive_classes(HashMap<String, int> &);
 
     virtual void unparse_declaration(StringAccum &, const String &);
@@ -72,7 +73,7 @@ class ElementClassT { public:
     ElementClassT &operator=(const ElementClassT &);
 
     const ElementTraits &find_traits() const;
-    int direct_expand_element(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
+    ElementT *direct_expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
 };
 
@@ -81,7 +82,7 @@ class SynonymElementClassT : public ElementClassT { public:
     SynonymElementClassT(const String &, ElementClassT *);
 
     ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
-    int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     void collect_primitive_classes(HashMap<String, int> &);
 
     void unparse_declaration(StringAccum &, const String &);
@@ -109,7 +110,7 @@ class CompoundElementClassT : public ElementClassT { public:
 
     ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
     void report_signatures(const String &, String, ErrorHandler *);
-    int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
     void collect_primitive_classes(HashMap<String, int> &);
 
     void unparse_declaration(StringAccum &, const String &);

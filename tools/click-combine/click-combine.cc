@@ -92,11 +92,10 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 
 static Vector<String> router_names;
 static Vector<RouterT *> routers;
-static Vector<HookupI> links_from;
-static Vector<HookupI> links_to;
+typedef PortT RouterPortT;	// except that `port' is the router index
+static Vector<RouterPortT> links_from;
+static Vector<RouterPortT> links_to;
 static Vector<int> link_id;
-static Vector<HookupI> link_port_from;
-static Vector<HookupI> link_port_to;
 
 static void
 read_router(String name, String &next_name, int &next_number,
@@ -127,7 +126,7 @@ read_router(String name, String &next_name, int &next_number,
   next_number++;
 }
 
-static int
+static ElementT *
 try_find_device(String devname, String class1, String class2,
 		int rn, ErrorHandler *errh)
 {
@@ -143,23 +142,26 @@ try_find_device(String devname, String class1, String class2,
   
   ElementClassT *t1 = r->try_type(class1);
   ElementClassT *t2 = r->try_type(class2);
-  int found = -1;
+  ElementT *found = 0;
+  bool duplicate = false;
   for (int i = 0; i < r->nelements(); i++) {
-    const ElementT *e = r->element(i);
+    ElementT *e = r->element(i);
     if (e->live() && (e->type() == t1 || e->type() == t2)) {
       Vector<String> words;
       cp_argvec(e->configuration(), words);
       if (words.size() >= 1 && words[0] == devname) {
 	// found it, but check for duplication
-	if (found >= 0) {
+	if (!found && !duplicate)
+	  found = e;
+	else if (!duplicate) {
 	  if (class2)
 	    errh->error("more than one `%s(%s)' or `%s(%s)' element in router `%s'", class1.cc(), devname.cc(), class2.cc(), devname.cc(), router_name.cc());
 	  else
 	    errh->error("more than one `%s(%s)' element in router `%s'",
 			class1.cc(), devname.cc(), router_name.cc());
-	  found = -2;
-	} else if (found == -1)
-	  found = i;
+	  duplicate = true;
+	  found = 0;
+	}
       }
     }
   }
@@ -201,21 +203,23 @@ parse_link(String text, ErrorHandler *errh)
     if (router2 < 0) errh->error("no router named `%s'", words[4].cc());
     return -1;
   }
-  int element1 = routers[router1]->eindex(words[2]);
-  if (element1 < 0)
+  ElementT *element1 = routers[router1]->element(words[2]);
+  if (!element1)
     element1 = try_find_device(words[2], "ToDevice", "", router1, errh);
-  int element2 = routers[router2]->eindex(words[6]);
-  if (element2 < 0)
+  ElementT *element2 = routers[router2]->element(words[6]);
+  if (!element2)
     element2 = try_find_device(words[6], "FromDevice", "PollDevice", router2, errh);
-  if (element1 < 0 || element2 < 0) {
-    if (element1 < 0) errh->error("router `%s' has no element or device named `%s'", words[0].cc(), words[2].cc());
-    if (element2 < 0) errh->error("router `%s' has no element or device named `%s'", words[4].cc(), words[6].cc());
+  if (!element1 || !element2) {
+    if (!element1)
+      errh->error("router `%s' has no element or device named `%s'", words[0].cc(), words[2].cc());
+    if (!element2)
+      errh->error("router `%s' has no element or device named `%s'", words[4].cc(), words[6].cc());
     return -1;
   }
 
   // check element types
-  String tn1 = routers[router1]->etype_name(element1);
-  String tn2 = routers[router2]->etype_name(element2);
+  String tn1 = element1->type_name();
+  String tn2 = element2->type_name();
   if (tn1 != "ToDevice") {
     errh->warning("router `%s' element `%s' has unexpected class", words[0].cc(), words[2].cc());
     errh->message("  expected ToDevice, got %s", tn1.cc());
@@ -226,8 +230,8 @@ parse_link(String text, ErrorHandler *errh)
   }
   
   // append link definition
-  links_from.push_back(HookupI(router1, element1));
-  links_to.push_back(HookupI(router2, element2));
+  links_from.push_back(RouterPortT(element1, router1));
+  links_to.push_back(RouterPortT(element2, router2));
   return -1;
 }
 
@@ -251,8 +255,8 @@ combine_links(ErrorHandler *errh)
   for (int i = 1; i < links_from.size(); i++)
     for (int j = 0; j < i; j++)
       if (links_from[i] == links_to[j] || links_from[j] == links_to[i]) {
-	const HookupI &h = links_from[i];
-	errh->error("router `%s' element `%s' used as both source and destination", router_names[h.idx].cc(), routers[h.idx]->ename(h.port).cc());
+	const RouterPortT &h = links_from[i];
+	errh->error("router `%s' element `%s' used as both source and destination", router_names[h.port].cc(), h.elt->name_cc());
       }
   if (errh->nerrors() != before)
     return -1;
@@ -277,39 +281,39 @@ combine_links(ErrorHandler *errh)
 }
 
 static void
-make_link(const Vector<HookupI> &from, const Vector<HookupI> &to,
+make_link(const Vector<RouterPortT> &from, const Vector<RouterPortT> &to,
 	  RouterT *combined)
 {
   static int linkno = 0;
   
-  Vector<HookupI> all(from);
+  Vector<RouterPortT> all(from);
   for (int i = 0; i < to.size(); i++)
     all.push_back(to[i]);
 
-  Vector<int> combes;
+  Vector<ElementT *> combes;
   Vector<String> words;
   for (int i = 0; i < all.size(); i++) {
-    int r = all[i].idx, e = all[i].port;
-    String name = router_names[r] + "/" + routers[r]->ename(e);
-    combes.push_back(combined->eindex(name));
-    assert(combes.back() >= 0);
-    words.push_back(router_names[r] + " " + routers[r]->ename(e)
-		    + " " + routers[r]->etype_name(e));
-    words.push_back(routers[r]->econfiguration(e));
+    int r = all[i].port;
+    ElementT *e = all[i].elt;
+    String name = router_names[r] + "/" + e->name();
+    combes.push_back(combined->element(name));
+    assert(combes.back());
+    words.push_back(router_names[r] + " " + e->name() + " " + e->type_name());
+    words.push_back(e->configuration());
   }
 
   // add new element
   ElementClassT *link_type = combined->get_type("RouterLink");
-  int newe = combined->get_eindex
+  ElementT *newe = combined->get_element
     ("link" + String(++linkno), link_type, cp_unargvec(words), "<click-combine>");
 
   for (int i = 0; i < from.size(); i++) {
-    combined->insert_before(HookupI(newe, i), HookupI(combes[i], 0));
-    combined->free_element(combined->elt(combes[i]));
+    combined->insert_before(PortT(newe, i), PortT(combes[i], 0));
+    combined->free_element(combes[i]);
   }
   for (int j = from.size(); j < combes.size(); j++) {
-    combined->insert_after(HookupI(newe, j-from.size()), HookupI(combes[j], 0));
-    combined->free_element(combined->elt(combes[j]));
+    combined->insert_after(PortT(newe, j - from.size()), PortT(combes[j], 0));
+    combined->free_element(combes[j]);
   }
 }
 
@@ -320,7 +324,7 @@ add_links(RouterT *r)
   for (int i = 0; i < links_from.size(); i++)
     if (!done[link_id[i]]) {
       // find all input & output ports
-      Vector<HookupI> from, to;
+      Vector<RouterPortT> from, to;
       for (int j = 0; j < links_from.size(); j++)
 	if (link_id[j] == link_id[i]) {
 	  if (links_from[j].index_in(from) < 0)

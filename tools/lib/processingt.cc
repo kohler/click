@@ -76,9 +76,9 @@ ProcessingT::create_pidx(ErrorHandler *errh)
 
     // complain about dead elements with live connections
     if (errh) {
-	for (int i = 0; i < ne; i++)
-	    if (_router->edead(i) && (ninputs(i) > 0 || noutputs(i) > 0))
-		errh->lwarning(_router->elandmark(i), "dead element %s has live connections", _router->ename(i).cc());
+	for (RouterT::const_iterator x = _router->first_element(); x; x++)
+	    if (x->dead() && (x->ninputs() > 0 || x->noutputs() > 0))
+		errh->lwarning(x->landmark(), "dead element %s has live connections", x->name_cc());
     }
 }
 
@@ -120,11 +120,12 @@ void
 ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
 {
     // don't handle uprefs or tunnels
-    ElementClassT *etype = _router->etype(ei);
+    const ElementT *e = _router->element(ei);
+    ElementClassT *etype = e->type();
     if (!etype || etype == ElementClassT::tunnel_type())
 	return;
 
-    String landmark = _router->elandmark(ei);
+    String landmark = e->landmark();
     String pc = etype->traits().processing_code();
     if (!pc) {
 	errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype->name_cc());
@@ -208,7 +209,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 			 port, noutputs, &bv);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
-		    conn.push_back(ConnectionT(Hookup(e, j), Hookup(e, port), "<agnostic>"));
+		    conn.push_back(ConnectionT(PortT(e, j), PortT(e, port), "<agnostic>"));
 	}
 
     // spread personalities
@@ -277,14 +278,14 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	if (conn[c].dead())
 	    continue;
 
-	const Hookup &hf = conn[c].from(), &ht = conn[c].to();
+	const PortT &hf = conn[c].from(), &ht = conn[c].to();
 	int fp = output_pidx(hf), tp = input_pidx(ht);
 
 	if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' push output %d",
 			 hf.elt->name_cc(), hf.port);
-	    errh->lmessage(_router->hookup_landmark(output_used[fp]),
+	    errh->lmessage(conn[output_used[fp]].landmark(),
 			   "  `%s' output %d previously used here",
 			   hf.elt->name_cc(), hf.port);
 	} else
@@ -294,7 +295,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' pull input %d",
 			 ht.elt->name_cc(), ht.port);
-	    errh->lmessage(_router->hookup_landmark(input_used[tp]),
+	    errh->lmessage(conn[input_used[tp]].landmark(),
 			   "  `%s' input %d previously used here",
 			   ht.elt->name_cc(), ht.port);
 	} else
@@ -305,26 +306,29 @@ ProcessingT::check_connections(ErrorHandler *errh)
     for (int i = 0; i < ninput_pidx(); i++)
 	if (input_used[i] < 0) {
 	    int ei = _input_eidx[i];
-	    if (_router->edead(ei))
+	    const ElementT *e = _router->element(ei);
+	    if (e->dead())
 		continue;
 	    int port = i - _input_pidx[ei];
-	    errh->lerror(_router->elandmark(ei),
+	    errh->lerror(e->landmark(),
 			 "`%s' %s input %d not connected",
-			 _router->ename(ei).cc(), processing_name(_input_processing[i]), port);
+			 e->name_cc(), processing_name(_input_processing[i]), port);
 	}
 
     for (int i = 0; i < noutput_pidx(); i++)
 	if (output_used[i] < 0) {
 	    int ei = _output_eidx[i];
-	    if (_router->edead(ei)) continue;
+	    const ElementT *e = _router->element(ei);
+	    if (e->dead())
+		continue;
 	    int port = i - _output_pidx[ei];
-	    errh->lerror(_router->elandmark(ei),
+	    errh->lerror(e->landmark(),
 			 "`%s' %s output %d not connected",
-			 _router->ename(ei).cc(), processing_name(_output_processing[i]), port);
+			 e->name_cc(), processing_name(_output_processing[i]), port);
 	}
 
     // Set _connected_* properly.
-    HookupI crap(-1, -1);
+    PortT crap(0, -1);
     _connected_input.assign(ninput_pidx(), crap);
     _connected_output.assign(noutput_pidx(), crap);
     for (int i = 0; i < ninput_pidx(); i++)
@@ -339,7 +343,8 @@ int
 ProcessingT::reset(const RouterT *r, ErrorHandler *errh)
 {
   _router = r;
-  if (!errh) errh = ErrorHandler::silent_handler();
+  if (!errh)
+      errh = ErrorHandler::silent_handler();
   int before = errh->nerrors();
 
   // create pidx and eidx arrays, warn about dead elements

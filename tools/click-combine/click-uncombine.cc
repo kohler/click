@@ -82,7 +82,7 @@ Options:\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
-static Vector<int> component_endpoints;
+static Vector<ElementT *> component_endpoints;
 
 static void
 remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
@@ -94,18 +94,17 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
   component_endpoints.clear();
 
   // find all links
-  Vector<int> links;
-  for (int i = 0; i < r->nelements(); i++)
-    if (r->etype(i) == link_type)
-      links.push_back(i);
+  Vector<ElementT *> links;
+  for (RouterT::type_iterator x = r->first_element(link_type); x; x++)
+    links.push_back(x);
 
   for (int i = 0; i < links.size(); i++) {
     // check configuration string for correctness
-    String link_name = r->ename(links[i]);
+    String link_name = links[i]->name();
     Vector<String> words;
-    cp_argvec(r->econfiguration(links[i]), words);
-    int ninputs = r->elt(links[i])->ninputs();
-    int noutputs = r->elt(links[i])->noutputs();
+    cp_argvec(links[i]->configuration(), words);
+    int ninputs = links[i]->ninputs();
+    int noutputs = links[i]->noutputs();
     if (words.size() != 2 * (ninputs + noutputs) || !ninputs || !noutputs) {
       errh->error("RouterLink `%s' has strange configuration", link_name.cc());
       continue;
@@ -126,7 +125,8 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 	subcomponent = true;
     }
     if (subcomponent && !bad && !interesting)
-      component_endpoints.push_back(i);	// save as part of this component
+      // save as part of this component
+      component_endpoints.push_back(links[i]);
     if (bad || !interesting)
       continue;
 
@@ -135,21 +135,21 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
       Vector<String> clauses;
       cp_spacevec(words[j], clauses);
       String name = clauses[0] + "/" + clauses[1];
-      if (r->eindex(name) >= 0) {
-	errh->lerror(r->elandmark(links[i]), "RouterLink `%s' element `%s' already exists", link_name.cc(), name.cc());
-	errh->lerror(r->elandmark(r->eindex(name)), "(previous definition was here)");
+      if (ElementT *preexist = r->element(name)) {
+	errh->lerror(links[i]->landmark(), "RouterLink `%s' element `%s' already exists", link_name.cc(), name.cc());
+	errh->lerror(preexist->landmark(), "(previous definition was here)");
       } else if (clauses[0] == component) {
-	int newe = r->get_eindex(clauses[1], r->get_type(clauses[2]), words[j+1], "<click-uncombine>");
+	ElementT *newe = r->get_element(clauses[1], r->get_type(clauses[2]), words[j+1], "<click-uncombine>");
 	if (j/2 < ninputs)
-	  r->insert_before(newe, HookupI(links[i], j/2));
+	  r->insert_before(newe, PortT(links[i], j/2));
 	else
-	  r->insert_after(newe, HookupI(links[i], j/2 - ninputs));
+	  r->insert_after(newe, PortT(links[i], j/2 - ninputs));
 	component_endpoints.push_back(newe);
       }
     }
 
     // remove link
-    r->free_element(r->element(links[i]));
+    r->free_element(links[i]);
   }
 }
 
@@ -164,7 +164,7 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
   
   // mark endpoints
   for (int i = 0; i < component_endpoints.size(); i++)
-    live[component_endpoints[i]] = 1;
+    live[component_endpoints[i]->idx()] = 1;
 
   // mark everything named with a `compname' prefix
   int compname_len = compname.length();
@@ -197,19 +197,17 @@ mark_component(RouterT *r, String compname, Vector<int> &live)
 static void
 frob_nested_routerlinks(RouterT *r, const String &compname)
 {
-  int ne = r->nelements();
   ElementClassT *t = r->get_type("RouterLink");
   int cnamelen = compname.length();
-  for (int i = 0; i < ne; i++)
-    if (r->etype(i) == t) {
-      Vector<String> words;
-      cp_argvec(r->econfiguration(i), words);
-      for (int j = 0; j < words.size(); j += 2) {
-	if (words[j].substring(0, cnamelen) == compname)
-	  words[j] = words[j].substring(cnamelen);
-      }
-      r->econfiguration(i) = cp_unargvec(words);
+  for (RouterT::type_iterator x = r->first_element(t); x; x++) {
+    Vector<String> words;
+    cp_argvec(x->configuration(), words);
+    for (int j = 0; j < words.size(); j += 2) {
+      if (words[j].substring(0, cnamelen) == compname)
+	words[j] = words[j].substring(cnamelen);
     }
+    x->configuration() = cp_unargvec(words);
+  }
 }
 
 static void

@@ -2,7 +2,6 @@
 #ifndef CLICK_ELEMENTT_HH
 #define CLICK_ELEMENTT_HH
 #include "eclasst.hh"
-class Hookup;
 
 struct ElementT {
     
@@ -68,34 +67,13 @@ struct ElementT {
     
 };
 
-struct HookupI {
-  
-    int idx;
-    int port;
-
-    HookupI()				: idx(-1) { }
-    HookupI(int i, int p)		: idx(i), port(p) { }
-    HookupI(const Hookup &h);
-
-    bool live() const			{ return idx >= 0; }
-    bool dead() const			{ return idx < 0; }
-
-    int index_in(const Vector<HookupI> &, int start = 0) const;
-    int force_index_in(Vector<HookupI> &, int start = 0) const;
-
-    static int sorter(const void *, const void *);
-    static void sort(Vector<HookupI> &);
-
-};
-
-struct Hookup {
+struct PortT {
   
     ElementT *elt;
     int port;
 
-    Hookup()				: elt(0) { }
-    Hookup(ElementT *e, int p)		: elt(e), port(p) { }
-    Hookup(const HookupI &, const RouterT *);
+    PortT()				: elt(0) { }
+    PortT(ElementT *e, int p)		: elt(e), port(p) { }
 
     bool live() const			{ return elt != 0; }
     bool dead() const			{ return elt == 0; }
@@ -103,29 +81,29 @@ struct Hookup {
 
     int idx() const			{ return (elt ? elt->idx() : -1); }
     
-    int index_in(const Vector<Hookup> &, int start = 0) const;
-    int force_index_in(Vector<Hookup> &, int start = 0) const;
+    int index_in(const Vector<PortT> &, int start = 0) const;
+    int force_index_in(Vector<PortT> &, int start = 0) const;
 
     String unparse_input() const;
     String unparse_output() const;
     
     static int sorter(const void *, const void *);
-    static void sort(Vector<Hookup> &);
+    static void sort(Vector<PortT> &);
 
 };
 
 class ConnectionT { public:
 
     ConnectionT();
-    ConnectionT(const Hookup &, const Hookup &, const String & = String());
-    ConnectionT(const Hookup &, const Hookup &, const String &, int, int);
+    ConnectionT(const PortT &, const PortT &, const String & = String());
+    ConnectionT(const PortT &, const PortT &, const String &, int, int);
 
     bool live() const			{ return _from.live(); }
     bool dead() const			{ return _from.dead(); }
     void kill()				{ _from.elt = 0; }
     
-    const Hookup &from() const		{ return _from; }
-    const Hookup &to() const		{ return _to; }
+    const PortT &from() const		{ return _from; }
+    const PortT &to() const		{ return _to; }
     ElementT *from_elt() const		{ return _from.elt; }
     int from_idx() const		{ return _from.idx(); }
     int from_port() const		{ return _from.port; }
@@ -141,8 +119,8 @@ class ConnectionT { public:
 
   private:
 
-    Hookup _from;
-    Hookup _to;
+    PortT _from;
+    PortT _to;
     String _landmark;
     int _next_from;
     int _next_to;
@@ -183,80 +161,38 @@ ElementT::tunnel_connected() const
     return _tunnel_input || _tunnel_output;
 }
 
-inline
-HookupI::HookupI(const Hookup &h)
-    : idx(h.idx()), port(h.port)
-{
-}
-
 inline bool
-operator==(const HookupI &h1, const HookupI &h2)
-{
-    return h1.idx == h2.idx && h1.port == h2.port;
-}
-
-inline bool
-operator!=(const HookupI &h1, const HookupI &h2)
-{
-    return h1.idx != h2.idx || h1.port != h2.port;
-}
-
-inline bool
-operator<(const HookupI &h1, const HookupI &h2)
-{
-    return h1.idx < h2.idx || (h1.idx == h2.idx && h1.port < h2.port);
-}
-
-inline bool
-operator>(const HookupI &h1, const HookupI &h2)
-{
-    return h1.idx > h2.idx || (h1.idx == h2.idx && h1.port > h2.port);
-}
-
-inline bool
-operator<=(const HookupI &h1, const HookupI &h2)
-{
-    return h1.idx < h2.idx || (h1.idx == h2.idx && h1.port <= h2.port);
-}
-
-inline bool
-operator>=(const HookupI &h1, const HookupI &h2)
-{
-    return h1.idx > h2.idx || (h1.idx == h2.idx && h1.port >= h2.port);
-}
-
-inline bool
-operator==(const Hookup &h1, const Hookup &h2)
+operator==(const PortT &h1, const PortT &h2)
 {
     return h1.elt == h2.elt && h1.port == h2.port;
 }
 
 inline bool
-operator!=(const Hookup &h1, const Hookup &h2)
+operator!=(const PortT &h1, const PortT &h2)
 {
     return h1.elt != h2.elt || h1.port != h2.port;
 }
 
 inline bool
-operator<(const Hookup &h1, const Hookup &h2)
+operator<(const PortT &h1, const PortT &h2)
 {
     return h1.idx() < h2.idx() || (h1.elt == h2.elt && h1.port < h2.port);
 }
 
 inline bool
-operator>(const Hookup &h1, const Hookup &h2)
+operator>(const PortT &h1, const PortT &h2)
 {
     return h1.idx() > h2.idx() || (h1.elt == h2.elt && h1.port > h2.port);
 }
 
 inline bool
-operator<=(const Hookup &h1, const Hookup &h2)
+operator<=(const PortT &h1, const PortT &h2)
 {
     return h1.idx() < h2.idx() || (h1.elt == h2.elt && h1.port <= h2.port);
 }
 
 inline bool
-operator>=(const Hookup &h1, const Hookup &h2)
+operator>=(const PortT &h1, const PortT &h2)
 {
     return h1.idx() > h2.idx() || (h1.elt == h2.elt && h1.port >= h2.port);
 }

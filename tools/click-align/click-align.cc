@@ -438,11 +438,11 @@ particular purpose.\n");
 	if (have <= want || want.bad())
 	  /* do nothing */;
 	else {
-	  int ei = router->get_eindex
+	  ElementT *e = router->get_element
 	    (aligner_name(anonymizer), align_class,
 	     String(want.chunk()) + ", " + String(want.offset()),
 	     "<click-align>");
-	  router->insert_before(ei, HookupI(i, j));
+	  router->insert_before(e, PortT(router->elt(i), j));
 	  anonymizer++;
 	  num_aligns_added++;
 	}
@@ -458,7 +458,7 @@ particular purpose.\n");
 	  && router->etype(conn[i].to_idx()) == align_class
 	  && router->etype(conn[i].from_idx()) == align_class) {
 	// skip over hf[i]
-	Vector<Hookup> above, below;
+	Vector<PortT> above, below;
 	router->find_connections_to(conn[i].from(), above);
 	router->find_connections_from(conn[i].from(), below);
 	if (below.size() == 1) {
@@ -495,11 +495,11 @@ particular purpose.\n");
 	if (have <= want || want.bad())
 	  /* do nothing */;
 	else {
-	  int ei = router->get_eindex
+	  ElementT *e = router->get_element
 	    (aligner_name(anonymizer), align_class,
 	     String(want.chunk()) + ", " + String(want.offset()),
 	     "<click-align>");
-	  router->insert_before(ei, HookupI(i, j));
+	  router->insert_before(e, PortT(router->elt(i), j));
 	  anonymizer++;
 	  num_aligns_added++;
 	}
@@ -524,7 +524,7 @@ particular purpose.\n");
 	Alignment want = ral._oalign[ ral._ooffset[conn[i].to_idx()] ];
 	if (have <= want) {
 	  changed = true;
-	  Vector<Hookup> align_dest;
+	  Vector<PortT> align_dest;
 	  router->find_connections_from(conn[i].to(), align_dest);
 	  for (int j = 0; j < align_dest.size(); j++)
 	    router->add_connection(conn[i].from(), align_dest[j]);
@@ -568,9 +568,9 @@ particular purpose.\n");
       }
     }
     
-    router->get_eindex(String("AlignmentInfo@click_align@") + String(nelem+1),
-		       aligninfo_class, sa.take_string(),
-		       "<click-align>");
+    router->get_element(String("AlignmentInfo@click_align@") + String(nelem+1),
+			aligninfo_class, sa.take_string(),
+			"<click-align>");
   }
 
   // warn if added aligns

@@ -162,10 +162,10 @@ combine_classifiers(RouterT *router, ElementT *from, int from_port, ElementT *to
   // change connections
   router->kill_connection(first_hop[from_port]);
   for (int i = from_port + 1; i < first_hop.size(); i++)
-    router->change_connection_from(first_hop[i], Hookup(from, i + to_words.size() - 1));
+    router->change_connection_from(first_hop[i], PortT(from, i + to_words.size() - 1));
   const Vector<ConnectionT> &conn = router->connections();
   for (int i = 0; i < second_hop.size(); i++)
-    router->add_connection(Hookup(from, from_port + i), conn[second_hop[i]].to());
+    router->add_connection(PortT(from, from_port + i), conn[second_hop[i]].to());
 
   return true;
 }
@@ -178,8 +178,8 @@ try_combine_classifiers(RouterT *router, ElementT *classifier)
     // cannot combine IPClassifiers yet
     return false;
 
-  Vector<Hookup> branches;
-  router->find_connections_to(Hookup(classifier, 0), branches);
+  Vector<PortT> branches;
+  router->find_connections_to(PortT(classifier, 0), branches);
   for (int i = 0; i < branches.size(); i++)
     if (branches[i].elt->type() == classifier_t) {
       // perform a combination
@@ -196,8 +196,8 @@ static void
 try_remove_classifiers(RouterT *router, Vector<ElementT *> &classifiers)
 {
   for (int i = 0; i < classifiers.size(); i++) {
-    Vector<Hookup> v;
-    router->find_connections_to(Hookup(classifiers[i], 0), v);
+    Vector<PortT> v;
+    router->find_connections_to(PortT(classifiers[i], 0), v);
     if (v.size() == 0) {
       classifiers[i]->kill();
       classifiers[i] = classifiers.back();
@@ -377,12 +377,9 @@ change_landmark(ElementT *e)
 static void
 copy_elements(RouterT *oldr, RouterT *newr, ElementClassT *type)
 {
-  if (type) {
-    int nelements = oldr->nelements();
-    for (int i = 0; i < nelements; i++)
-      if (oldr->etype(i) == type)
-	newr->get_eindex(oldr->ename(i), type, oldr->econfiguration(i), "");
-  }
+  if (type)
+    for (RouterT::type_iterator x = oldr->first_element(type); x; x++)
+      newr->get_element(x->name(), type, x->configuration(), "");
 }
 
 static void
@@ -408,9 +405,8 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
     classifier_map.insert(c->name(), i);
     
     // add new classifier and connections to idle
-    int classifier_nei =
-      nr.get_eindex(c->name(), c->type(), c->configuration(), c->landmark());
-    ElementT *nc = nr.element(classifier_nei);
+    ElementT *nc =
+      nr.get_element(c->name(), c->type(), c->configuration(), c->landmark());
   
     nr.add_connection(idle, i, nc, 0);
     // count number of output ports

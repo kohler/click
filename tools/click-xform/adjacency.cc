@@ -65,7 +65,7 @@ AdjacencyMatrix::init(RouterT *r)
 
   _default_match.assign(n, -2);
   for (int i = 0; i < n; i++) {
-    int t = r->etype_uid(i);
+    int t = r->element(i)->type_uid();
     if (t >= 0 && t != ElementClassT::TUNNEL_UID) {
       _x[i + (i<<cap)] = type_indicator(t);
       _default_match[i] = -1;
@@ -113,7 +113,7 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
       _x[ k + (j<<cap) ] = _x[ j + (k<<cap) ] = 0;
 
     // set type
-    int t = r->etype_uid(j);
+    int t = r->element(j)->type_uid();
     if (t >= 0 && t != ElementClassT::TUNNEL_UID) {
       _x[ j + (j<<cap) ] = type_indicator(t);
       _default_match[j] = -1;
@@ -183,6 +183,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
   unsigned *pat_x = _x;
   int input_cap = input->_cap;
   unsigned *input_x = input->_x;
+  RouterT *input_r = input->_router;
 
   // assign 'matchv' from 'matchv_e'
   Vector<int> matchv(_default_match);
@@ -221,12 +222,11 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
       // `input' or `output'). In this case, the match to E2 will be the
       // single element connected from (match[E1])[0]. Find it directly so we
       // don't have to scan over all elements in the input.
-      HookupI out;
-      if (rover > 0
-	  || !input->_router->find_connection_from(HookupI(match[output_0_of[match_idx]], 0), out))
+      PortT output(input_r->elt(match[output_0_of[match_idx]]), 0), result;
+      if (rover > 0 || !input_r->find_connection_from(output, result))
 	max_rover = -1;
       else {
-	rover = out.idx;
+	rover = output.idx();
 	max_rover = rover + 1;
       }
     } else
@@ -277,7 +277,7 @@ AdjacencyMatrix::next_subgraph_isomorphism(const AdjacencyMatrix *input,
   matchv_e.assign(matchv.size(), 0);
   for (int i = 0; i < match_idx; i++)
     if (match[i] >= 0)
-      matchv_e[i] = input->_router->element(match[i]);
+      matchv_e[i] = input_r->element(match[i]);
   
   //for (int i = 0; i < pat_n; i++) fprintf(stderr,"%d ", match[i]);/* >= 0 ? input->_crap->ename(match[i]).cc() : "<crap>");*/fputs("\n",stderr);
   return (match_idx >= 0 ? true : false);
@@ -295,8 +295,8 @@ check_subgraph_isomorphism(const RouterT *pat, const RouterT *input,
     int fi = conn[i].from_idx(), ti = conn[i].to_idx();
     if (!match[fi] || !match[ti])
       continue;
-    if (!input->has_connection(Hookup(match[fi], conn[i].from_port()),
-			       Hookup(match[ti], conn[i].to_port())))
+    if (!input->has_connection(PortT(match[fi], conn[i].from_port()),
+			       PortT(match[ti], conn[i].to_port())))
       return false;
   }
   return true;

@@ -356,14 +356,12 @@ particular purpose.\n");
 
   // follow instructions embedded in router definition
   ElementClassT *devirtualize_info_class = router->get_type("DevirtualizeInfo");
-  for (int i = 0; i < router->nelements(); i++)
-    if (router->etype(i) == devirtualize_info_class) {
-      const String &s = router->econfiguration(i);
-      Vector<String> args;
-      cp_argvec(s, args);
-      for (int j = 0; j < args.size(); j++)
-	parse_instruction(args[j], sigs, p_errh);
-    }
+  for (RouterT::type_iterator x = router->first_element(devirtualize_info_class); x; x++) {
+    Vector<String> args;
+    cp_argvec(x->configuration(), args);
+    for (int j = 0; j < args.size(); j++)
+      parse_instruction(args[j], sigs, p_errh);
+  }
 
   // follow instructions from command line
   {

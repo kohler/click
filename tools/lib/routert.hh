@@ -11,6 +11,7 @@ typedef HashMap<String, int> StringMap;
 class RouterT { public:
 
     class iterator;
+    class const_iterator;
     class live_iterator;
     class type_iterator;
 
@@ -30,6 +31,7 @@ class RouterT { public:
     void collect_active_types(Vector<ElementClassT *> &) const;
 
     iterator first_element();
+    const_iterator first_element() const;
     live_iterator first_live_element();
     type_iterator first_element(ElementClassT *);
     
@@ -50,15 +52,9 @@ class RouterT { public:
     bool edead(int ei) const		{ return _elements[ei]->dead(); }
     String ename(int) const;
     ElementClassT *etype(int) const;
-    int etype_uid(int) const;
     String etype_name(int) const;
-    String edeclaration(int) const;
-    const String &econfiguration(int) const;
-    String &econfiguration(int i)	{return _elements[i]->configuration();}
-    int eflags(int i) const		{ return _elements[i]->flags; }
-    const String &elandmark(int i) const{ return _elements[i]->landmark(); }
 
-    int get_eindex(const String &name, ElementClassT *, const String &configuration, const String &landmark);
+    ElementT *get_element(const String &name, ElementClassT *, const String &configuration, const String &landmark);
     ElementT *add_anon_element(ElementClassT *, const String &configuration = String(), const String &landmark = String());
     void change_ename(int, const String &);
     void free_element(ElementT *);
@@ -68,15 +64,12 @@ class RouterT { public:
 
     int nconnections() const			{ return _conn.size(); }
     const Vector<ConnectionT> &connections() const { return _conn; }
+    const ConnectionT &connection(int c) const	{ return _conn[c]; }
     bool connection_live(int c) const		{ return _conn[c].live(); }
-    const Hookup &hookup_from(int c) const	{ return _conn[c].from(); }
-    const Hookup &hookup_to(int c) const	{ return _conn[c].to(); }
-    const String &hookup_landmark(int c) const	{ return _conn[c].landmark(); }
 
     void add_tunnel(String, String, const String &, ErrorHandler *);
 
-    bool add_connection(const Hookup &, const Hookup &, const String &landmark = String());
-    bool add_connection(const HookupI &, const HookupI &, const String &landmark = String());
+    bool add_connection(const PortT &, const PortT &, const String &landmark = String());
     bool add_connection(ElementT *, int, ElementT *, int, const String &landmark = String());
     void kill_connection(int);
     void kill_bad_connections();
@@ -95,31 +88,22 @@ class RouterT { public:
     ArchiveElement &archive(const String &s);
     const ArchiveElement &archive(const String &s) const;
 
-    bool has_connection(const Hookup &, const Hookup &) const;
-    int find_connection(const Hookup &, const Hookup &) const;
-    void change_connection_to(int, Hookup);
-    void change_connection_from(int, Hookup);
-    bool find_connection_from(const HookupI &, HookupI &) const;
-    void find_connections_from(const Hookup &, Vector<Hookup> &) const;
-    void find_connections_from(const Hookup &, Vector<int> &) const;
-    void find_connections_to(const Hookup &, Vector<Hookup> &) const;
-    void find_connections_to(const Hookup &, Vector<int> &) const;
+    bool has_connection(const PortT &, const PortT &) const;
+    int find_connection(const PortT &, const PortT &) const;
+    void change_connection_to(int, PortT);
+    void change_connection_from(int, PortT);
+    bool find_connection_from(const PortT &, PortT &) const;
+    void find_connections_from(const PortT &, Vector<PortT> &) const;
+    void find_connections_from(const PortT &, Vector<int> &) const;
+    void find_connections_to(const PortT &, Vector<PortT> &) const;
+    void find_connections_to(const PortT &, Vector<int> &) const;
     void find_connection_vector_from(ElementT *, Vector<int> &) const;
     void find_connection_vector_to(ElementT *, Vector<int> &) const;
 
-    bool has_connection(const HookupI &, const HookupI &) const;
-    int find_connection(const HookupI &, const HookupI &) const;
-    void find_connections_from(const HookupI &, Vector<Hookup> &) const;
-    void find_connections_from(const HookupI &, Vector<int> &) const;
-    void find_connections_to(const HookupI &, Vector<Hookup> &) const;
-    void find_connections_to(const HookupI &, Vector<int> &) const;
-    //void find_connection_vector_from(int, Vector<int> &) const;
-    //void find_connection_vector_to(int, Vector<int> &) const;
-
-    bool insert_before(const HookupI &, const HookupI &);
-    bool insert_after(const HookupI &, const HookupI &);
-    bool insert_before(int e, const HookupI &h)	{ return insert_before(HookupI(e, 0), h); }
-    bool insert_after(int e, const HookupI &h)	{ return insert_after(HookupI(e, 0), h); }
+    bool insert_before(const PortT &, const PortT &);
+    bool insert_after(const PortT &, const PortT &);
+    bool insert_before(ElementT *, const PortT &);
+    bool insert_after(ElementT *, const PortT &);
 
     void add_components_to(RouterT *, const String &prefix = String()) const;
 
@@ -193,7 +177,7 @@ class RouterT { public:
     void free_connection(int ci);
     void unlink_connection_from(int ci);
     void unlink_connection_to(int ci);
-    void expand_tunnel(Vector<Hookup> *port_expansions, const Vector<Hookup> &ports, bool is_output, int which, ErrorHandler *) const;
+    void expand_tunnel(Vector<PortT> *port_expansions, const Vector<PortT> &ports, bool is_output, int which, ErrorHandler *) const;
     String interpolate_arguments(const String &, const Vector<String> &) const;
 
 };
@@ -207,6 +191,18 @@ class RouterT::iterator { public:
     ElementT *operator->() const	{ return _router->element(_idx); }
   private:
     RouterT *_router;
+    int _idx;
+};
+
+class RouterT::const_iterator { public:
+    const_iterator(const RouterT *r)	: _router(r), _idx(0) { }
+    operator bool() const		{ return _idx < _router->nelements(); }
+    int idx() const			{ return _idx; }
+    void operator++(int = 0)		{ _idx++; }
+    operator const ElementT *() const	{ return _router->element(_idx); }
+    const ElementT *operator->() const	{ return _router->element(_idx); }
+  private:
+    const RouterT *_router;
     int _idx;
 };
 
@@ -244,6 +240,12 @@ inline RouterT::iterator
 RouterT::first_element()
 {
     return iterator(this);
+}
+
+inline RouterT::const_iterator
+RouterT::first_element() const
+{
+    return const_iterator(this);
 }
 
 inline RouterT::live_iterator
@@ -296,41 +298,35 @@ RouterT::etype(int e) const
     return _elements[e]->type();
 }
 
-inline int
-RouterT::etype_uid(int e) const
-{
-    return _elements[e]->type_uid();
-}
-
 inline String
 RouterT::etype_name(int e) const
 {
     return _elements[e]->type()->name();
 }
 
-inline String
-RouterT::edeclaration(int e) const
-{
-    return _elements[e]->declaration();
-}
-
-inline const String &
-RouterT::econfiguration(int e) const
-{
-    return _elements[e]->configuration();
-}
-
 inline bool
 RouterT::add_connection(ElementT *from_elt, int from_port, ElementT *to_elt,
 			int to_port, const String &landmark)
 {
-    return add_connection(Hookup(from_elt, from_port), Hookup(to_elt, to_port), landmark);
+    return add_connection(PortT(from_elt, from_port), PortT(to_elt, to_port), landmark);
 }
 
 inline bool
-RouterT::has_connection(const Hookup &hfrom, const Hookup &hto) const
+RouterT::has_connection(const PortT &hfrom, const PortT &hto) const
 {
     return find_connection(hfrom, hto) >= 0;
+}
+
+inline bool
+RouterT::insert_before(ElementT *e, const PortT &h)
+{
+    return insert_before(PortT(e, 0), h);
+}
+
+inline bool
+RouterT::insert_after(ElementT *e, const PortT &h)
+{
+    return insert_after(PortT(e, 0), h);
 }
 
 inline ArchiveElement &
@@ -344,55 +340,5 @@ RouterT::archive(const String &name) const
 {
     return _archive[_archive_map[name]];
 }
-
-inline bool
-RouterT::has_connection(const HookupI &hfrom, const HookupI &hto) const
-{
-    return has_connection(Hookup(hfrom, this), Hookup(hto, this));
-}
-
-inline int
-RouterT::find_connection(const HookupI &hfrom, const HookupI &hto) const
-{
-    return find_connection(Hookup(hfrom, this), Hookup(hto, this));
-}
-
-inline void
-RouterT::find_connections_from(const HookupI &h, Vector<Hookup> &v) const
-{
-    find_connections_from(Hookup(h, this), v);
-}
-
-inline void
-RouterT::find_connections_from(const HookupI &h, Vector<int> &v) const
-{
-    find_connections_from(Hookup(h, this), v);
-}
-
-inline void
-RouterT::find_connections_to(const HookupI &h, Vector<Hookup> &v) const
-{
-    find_connections_to(Hookup(h, this), v);
-}
-
-inline void
-RouterT::find_connections_to(const HookupI &h, Vector<int> &v) const
-{
-    find_connections_to(Hookup(h, this), v);
-}
-
-#if 0
-inline void
-RouterT::find_connection_vector_from(int ei, Vector<int> &v) const
-{
-    find_connection_vector_from(_elements[ei], v);
-}
-
-inline void
-RouterT::find_connection_vector_to(int ei, Vector<int> &v) const
-{
-    find_connection_vector_to(_elements[ei], v);
-}
-#endif
 
 #endif

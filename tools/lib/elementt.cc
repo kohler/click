@@ -63,7 +63,7 @@ ElementT::~ElementT()
 
 
 int
-Hookup::index_in(const Vector<Hookup> &v, int start) const
+PortT::index_in(const Vector<PortT> &v, int start) const
 {
     int size = v.size();
     for (int i = start; i < size; i++)
@@ -73,7 +73,7 @@ Hookup::index_in(const Vector<Hookup> &v, int start) const
 }
 
 int
-Hookup::force_index_in(Vector<Hookup> &v, int start) const
+PortT::force_index_in(Vector<PortT> &v, int start) const
 {
     int size = v.size();
     for (int i = start; i < size; i++)
@@ -84,9 +84,9 @@ Hookup::force_index_in(Vector<Hookup> &v, int start) const
 }
 
 int
-Hookup::sorter(const void *av, const void *bv)
+PortT::sorter(const void *av, const void *bv)
 {
-    const Hookup *a = (const Hookup *)av, *b = (const Hookup *)bv;
+    const PortT *a = (const PortT *)av, *b = (const PortT *)bv;
     if (a->elt == b->elt)
 	return a->port - b->port;
     else
@@ -94,73 +94,13 @@ Hookup::sorter(const void *av, const void *bv)
 }
 
 void
-Hookup::sort(Vector<Hookup> &v)
+PortT::sort(Vector<PortT> &v)
 {
-    qsort(&v[0], v.size(), sizeof(Hookup), &sorter);
-}
-
-
-int
-HookupI::index_in(const Vector<HookupI> &v, int start) const
-{
-    int size = v.size();
-    for (int i = start; i < size; i++)
-	if (v[i] == *this)
-	    return i;
-    return -1;
-}
-
-int
-HookupI::force_index_in(Vector<HookupI> &v, int start) const
-{
-    int size = v.size();
-    for (int i = start; i < size; i++)
-	if (v[i] == *this)
-	    return i;
-    v.push_back(*this);
-    return size;
-}
-
-int
-HookupI::sorter(const void *av, const void *bv)
-{
-    const HookupI *a = (const HookupI *)av, *b = (const HookupI *)bv;
-    if (a->idx == b->idx)
-	return a->port - b->port;
-    else
-	return a->idx - b->idx;
-}
-
-void
-HookupI::sort(Vector<HookupI> &v)
-{
-    qsort(&v[0], v.size(), sizeof(HookupI), &sorter);
-}
-
-
-ConnectionT::ConnectionT()
-    : _from(), _to(), _landmark(), _next_from(-1), _next_to(-1)
-{
-}
-
-ConnectionT::ConnectionT(const Hookup &from, const Hookup &to, const String &lm)
-    : _from(from), _to(to), _landmark(lm), _next_from(-1), _next_to(-1)
-{
-}
-
-ConnectionT::ConnectionT(const Hookup &from, const Hookup &to, const String &lm, int next_from, int next_to)
-    : _from(from), _to(to), _landmark(lm),
-      _next_from(next_from), _next_to(next_to)
-{
-}
-
-Hookup::Hookup(const HookupI &h, const RouterT *r)
-    : elt(const_cast<ElementT *>(r->elt(h.idx))), port(h.port)
-{
+    qsort(&v[0], v.size(), sizeof(PortT), &sorter);
 }
 
 String
-Hookup::unparse_input() const
+PortT::unparse_input() const
 {
     if (elt)
 	return "[" + String(port) + "]" + elt->name();
@@ -169,12 +109,29 @@ Hookup::unparse_input() const
 }
 
 String
-Hookup::unparse_output() const
+PortT::unparse_output() const
 {
     if (elt)
 	return elt->name() + "[" + String(port) + "]";
     else
 	return "<>";
+}
+
+
+ConnectionT::ConnectionT()
+    : _from(), _to(), _landmark(), _next_from(-1), _next_to(-1)
+{
+}
+
+ConnectionT::ConnectionT(const PortT &from, const PortT &to, const String &lm)
+    : _from(from), _to(to), _landmark(lm), _next_from(-1), _next_to(-1)
+{
+}
+
+ConnectionT::ConnectionT(const PortT &from, const PortT &to, const String &lm, int next_from, int next_to)
+    : _from(from), _to(to), _landmark(lm),
+      _next_from(next_from), _next_to(next_to)
+{
 }
 
 String

@@ -17,8 +17,8 @@ class ProcessingT { public:
     int ninput_pidx() const	{ return _input_pidx.back(); }
     int noutput_pidx() const	{ return _output_pidx.back(); }
 
-    int input_pidx(const Hookup &) const;
-    int output_pidx(const Hookup &) const;
+    int input_pidx(const PortT &) const;
+    int output_pidx(const PortT &) const;
     int input_pidx(int ei, int p = 0) const	{ return _input_pidx[ei]+p; }
     int output_pidx(int ei, int p = 0) const	{ return _output_pidx[ei]+p; }
     
@@ -29,8 +29,8 @@ class ProcessingT { public:
     int output_processing(int i, int p) const;
     bool input_is_pull(int i, int p) const;
     bool output_is_push(int i, int p) const;
-    const HookupI &input_connection(int i, int p) const;
-    const HookupI &output_connection(int i, int p) const;
+    const PortT &input_connection(int i, int p) const;
+    const PortT &output_connection(int i, int p) const;
 
     bool is_internal_flow(int i, int ip, int op) const;
   
@@ -44,15 +44,15 @@ class ProcessingT { public:
   private:
 
     const RouterT *_router;
-  
+
     Vector<int> _input_pidx;
     Vector<int> _output_pidx;
     Vector<int> _input_eidx;
     Vector<int> _output_eidx;
     Vector<int> _input_processing;
     Vector<int> _output_processing;
-    Vector<HookupI> _connected_input;
-    Vector<HookupI> _connected_output;
+    Vector<PortT> _connected_input;
+    Vector<PortT> _connected_output;
 
     void create_pidx(ErrorHandler *);
 
@@ -66,14 +66,14 @@ class ProcessingT { public:
 
 
 inline int
-ProcessingT::input_pidx(const Hookup &h) const
+ProcessingT::input_pidx(const PortT &h) const
 {
     assert(h.router() == _router);
     return input_pidx(h.idx(), h.port);
 }
 
 inline int
-ProcessingT::output_pidx(const Hookup &h) const
+ProcessingT::output_pidx(const PortT &h) const
 {
     assert(h.router() == _router);
     return output_pidx(h.idx(), h.port);
@@ -103,13 +103,13 @@ ProcessingT::output_is_push(int i, int p) const
   return output_processing(i, p) == VPUSH;
 }
 
-inline const HookupI &
+inline const PortT &
 ProcessingT::input_connection(int i, int p) const
 {
   return _connected_input[input_pidx(i, p)];
 }
 
-inline const HookupI &
+inline const PortT &
 ProcessingT::output_connection(int i, int p) const
 {
   return _connected_output[output_pidx(i, p)];

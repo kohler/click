@@ -140,22 +140,22 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
     ElementT *idle = r->add_anon_element(idlet, "", "<click-undead>");
     int idle_in = 0, idle_out = 0;
     
-    Hookup jump_hook;
+    PortT jump_hook;
     if (val < 0 || val >= x->noutputs() || connv_out[val] < 0)
-      jump_hook = Hookup(idle, idle_in++);
+      jump_hook = PortT(idle, idle_in++);
     else
-      jump_hook = r->hookup_to(connv_out[val]);
+      jump_hook = r->connection(connv_out[val]).to();
     
-    Vector<Hookup> conns_to;
-    r->find_connections_to(Hookup(x, 0), conns_to);
+    Vector<PortT> conns_to;
+    r->find_connections_to(PortT(x, 0), conns_to);
     for (int j = 0; j < conns_to.size(); j++) {
-      int k = r->find_connection(conns_to[j], Hookup(x, 0));
+      int k = r->find_connection(conns_to[j], PortT(x, 0));
       r->change_connection_to(k, jump_hook);
     }
 
     for (int j = 0; j < connv_out.size(); j++)
       if (j != val)
-	r->change_connection_from(connv_out[j], Hookup(idle, idle_out++));
+	r->change_connection_from(connv_out[j], PortT(idle, idle_out++));
 
     x->kill();
   }
@@ -190,29 +190,29 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
     ElementT *idle = r->add_anon_element(idlet, "", "<click-undead>");
     int idle_in = 0, idle_out = 0;
     
-    Hookup jump_hook;
+    PortT jump_hook;
     if (val < 0 || val >= x->ninputs() || connv_in[val] < 0)
-      jump_hook = Hookup(idle, idle_out++);
+      jump_hook = PortT(idle, idle_out++);
     else
-      jump_hook = r->hookup_from(connv_in[val]);
+      jump_hook = r->connection(connv_in[val]).from();
     
-    Vector<Hookup> conns_from;
-    r->find_connections_from(Hookup(x, 0), conns_from);
+    Vector<PortT> conns_from;
+    r->find_connections_from(PortT(x, 0), conns_from);
     for (int j = 0; j < conns_from.size(); j++) {
-      int k = r->find_connection(Hookup(x, 0), conns_from[j]);
+      int k = r->find_connection(PortT(x, 0), conns_from[j]);
       r->change_connection_from(k, jump_hook);
     }
 
     for (int j = 0; j < connv_in.size(); j++)
       if (j != val)
-	r->change_connection_to(connv_in[j], Hookup(idle, idle_in++));
+	r->change_connection_to(connv_in[j], PortT(idle, idle_in++));
 
     x->kill();
   }
 }
 
 static void
-skip_over_push(RouterT *r, const Hookup &old_to, const Hookup &new_to)
+skip_over_push(RouterT *r, const PortT &old_to, const PortT &new_to)
 {
   Vector<int> connv;
   r->find_connections_to(old_to, connv);
@@ -221,7 +221,7 @@ skip_over_push(RouterT *r, const Hookup &old_to, const Hookup &new_to)
 }
 
 static void
-skip_over_pull(RouterT *r, const Hookup &old_from, const Hookup &new_from)
+skip_over_pull(RouterT *r, const PortT &old_from, const PortT &new_from)
 {
   Vector<int> connv;
   r->find_connections_from(old_from, connv);
@@ -243,14 +243,14 @@ remove_nulls(RouterT *r, ElementClassT *t, ErrorHandler *errh)
     }
     
     Vector<int> hprev, hnext;
-    r->find_connections_to(Hookup(x, 0), hprev);
-    r->find_connections_from(Hookup(x, 0), hnext);
+    r->find_connections_to(PortT(x, 0), hprev);
+    r->find_connections_from(PortT(x, 0), hnext);
     if (hprev.size() > 1 && hnext.size() > 1)
       errh->lwarning(x->landmark(), "odd connections to `%s'", x->declaration().cc());
     else if (hprev.size() == 1)
-      skip_over_pull(r, Hookup(x, 0), r->hookup_from(hprev[0]));
+      skip_over_pull(r, PortT(x, 0), r->connection(hprev[0]).from());
     else if (hnext.size() == 1)
-      skip_over_push(r, Hookup(x, 0), r->hookup_to(hnext[0]));
+      skip_over_push(r, PortT(x, 0), r->connection(hnext[0]).to());
 
     x->kill();
   }
@@ -283,7 +283,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
     }
     
     for (int p = 0; p < hprev.size(); p++)
-      if (hprev[p] == -1 || (hprev[p] >= 0 && r->hookup_from(hprev[p]).elt->type() == idlet)) {
+      if (hprev[p] == -1 || (hprev[p] >= 0 && r->connection(hprev[p]).from_elt()->type() == idlet)) {
 	// remove that scheduler port
 	// check configuration first
 	if (config_eq_ninputs) {
@@ -296,7 +296,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
 	// now do connections
 	int bad_connection = hprev[p];
 	for (int pp = p + 1; pp < hprev.size(); pp++) {
-	  r->change_connection_to(hprev[pp], Hookup(x, pp - 1));
+	  r->change_connection_to(hprev[pp], PortT(x, pp - 1));
 	  hprev[pp - 1] = hprev[pp];
 	}
 	if (bad_connection >= 0)
@@ -308,7 +308,7 @@ remove_redundant_schedulers(RouterT *r, ElementClassT *t,
     if (hprev.size() == 1) {
       if (verbose)
 	errh->lerror(x->landmark(), "removing redundant scheduler `%s'", x->declaration().cc());
-      skip_over_pull(r, Hookup(x, 0), r->hookup_from(hprev[0]));
+      skip_over_pull(r, PortT(x, 0), r->connection(hprev[0]).from());
       x->kill();
       changed = true;
     }
@@ -341,11 +341,11 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
     r->find_connection_vector_from(x, hnext);
     
     for (int p = hnext.size() - 1; p >= (is_pull_tee ? 1 : 0); p--)
-      if (hnext[p] == -1 || (hnext[p] >= 0 && r->hookup_from(hnext[p]).elt->type() == idlet)) {
+      if (hnext[p] == -1 || (hnext[p] >= 0 && r->connection(hnext[p]).from_elt()->type() == idlet)) {
 	// remove that tee port
 	int bad_connection = hnext[p];
 	for (int pp = p + 1; pp < hnext.size(); pp++) {
-	  r->change_connection_from(hnext[pp], Hookup(x, pp - 1));
+	  r->change_connection_from(hnext[pp], PortT(x, pp - 1));
 	  hnext[pp - 1] = hnext[pp];
 	}
 	if (bad_connection >= 0)
@@ -359,9 +359,9 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
       if (is_pull_tee) {
 	Vector<int> hprev;
 	r->find_connection_vector_to(x, hprev);
-	skip_over_pull(r, Hookup(x, 0), r->hookup_from(hprev[0]));
+	skip_over_pull(r, PortT(x, 0), r->connection(hprev[0]).from());
       } else
-	skip_over_push(r, Hookup(x, 0), r->hookup_to(hnext[0]));
+	skip_over_push(r, PortT(x, 0), r->connection(hnext[0]).to());
       x->kill();
       changed = true;
     }
@@ -375,7 +375,7 @@ remove_redundant_tee_ports(RouterT *r, ElementClassT *t, bool is_pull_tee,
 }
 
 static void
-find_live_elements(const RouterT *r, const char *filename,
+find_live_elements(/*const*/ RouterT *r, const char *filename,
 		   ElementMap &full_elementmap, int driver,
 		   bool indifferent,
 		   Bitvector &live_elements, ErrorHandler *errh)
@@ -396,53 +396,51 @@ find_live_elements(const RouterT *r, const char *filename,
   Bitvector dead(r->nelements(), false);
 
   // find initial sources and sinks
-  for (int ei = 0; ei < r->nelements(); ei++) {
-    const ElementT &e = *(r->element(ei));
-    if (e.live()) {
-      int nin = processing.ninputs(ei);
-      int nout = processing.noutputs(ei);
-      int source_flag = e.type()->traits().flag_value('S');
+  for (RouterT::live_iterator x = r->first_live_element(); x; x++) {
+    int nin = x->ninputs();
+    int nout = x->noutputs();
+    int source_flag = x->type()->traits().flag_value('S');
+    int ei = x->idx();
 
-      if (source_flag == 0) {	// neither source nor sink
-	dead[ei] = true;
-	continue;
-      } else if (source_flag == 1) { // source
-	sources[ei] = true;
-	if (verbose)
-	  errh->lmessage(r->elandmark(ei), "`%s' is source", r->edeclaration(ei).cc());
-	continue;
-      } else if (source_flag == 2) { // sink
-	sinks[ei] = true;
-	if (verbose)
-	  errh->lmessage(r->elandmark(ei), "`%s' is sink", r->edeclaration(ei).cc());
-	continue;
-      } else if (source_flag == 3) { // source and sink
-	sources[ei] = sinks[ei] = true;
-	if (verbose)
-	  errh->lmessage(r->elandmark(ei), "`%s' is source and sink", r->edeclaration(ei).cc());
-	continue;
-      } else if (source_flag > 0)
-	errh->lwarning(r->elandmark(ei), "`%s' has strange source/sink flag value %d", r->edeclaration(ei).cc(), source_flag);
+    if (source_flag == 0) {	// neither source nor sink
+      dead[ei] = true;
+      continue;
+    } else if (source_flag == 1) { // source
+      sources[ei] = true;
+      if (verbose)
+	errh->lmessage(x->landmark(), "`%s' is source", x->declaration().cc());
+      continue;
+    } else if (source_flag == 2) { // sink
+      sinks[ei] = true;
+      if (verbose)
+	errh->lmessage(x->landmark(), "`%s' is sink", x->declaration().cc());
+      continue;
+    } else if (source_flag == 3) { // source and sink
+      sources[ei] = sinks[ei] = true;
+      if (verbose)
+	errh->lmessage(x->landmark(), "`%s' is source and sink", x->declaration().cc());
+      continue;
+    } else if (source_flag > 0)
+      errh->lwarning(x->landmark(), "`%s' has strange source/sink flag value %d", x->declaration().cc(), source_flag);
 
-      // if no source/sink flags, make an educated guess
-      if (nin == 0) {
-	for (int p = 0; p < nout; p++)
-	  if (processing.output_is_push(ei, p)) {
-	    sources[ei] = true;
-	    if (verbose)
-	      errh->lmessage(r->elandmark(ei), "assuming `%s' is source", r->edeclaration(ei).cc());
-	    break;
-	  }
-      }
-      if (nout == 0) {
-	for (int p = 0; p < nin; p++)
-	  if (processing.input_is_pull(ei, p)) {
-	    sinks[ei] = true;
-	    if (verbose)
-	      errh->lmessage(r->elandmark(ei), "assuming `%s' is sink", r->edeclaration(ei).cc());
-	    break;
-	  }
-      }
+    // if no source/sink flags, make an educated guess
+    if (nin == 0) {
+      for (int p = 0; p < nout; p++)
+	if (processing.output_is_push(ei, p)) {
+	  sources[ei] = true;
+	  if (verbose)
+	    errh->lmessage(x->landmark(), "assuming `%s' is source", x->declaration().cc());
+	  break;
+	}
+    }
+    if (nout == 0) {
+      for (int p = 0; p < nin; p++)
+	if (processing.input_is_pull(ei, p)) {
+	  sinks[ei] = true;
+	  if (verbose)
+	    errh->lmessage(x->landmark(), "assuming `%s' is sink", x->declaration().cc());
+	  break;
+	}
     }
   }
 
@@ -475,26 +473,25 @@ find_live_elements(const RouterT *r, const char *filename,
   live_elements = sources & sinks;
 
   // find independently live elements
-  for (int ei = 0; ei < r->nelements(); ei++) {
-    const ElementT &e = *(r->element(ei));
-    if (e.live() && !live_elements[ei]) {
-      int live_flag = e.type()->traits().flag_value('L');
+  for (RouterT::live_iterator x = r->first_live_element(); x; x++)
+    if (!live_elements[x->idx()]) {
+      int ei = x->idx();
+      int live_flag = x->type()->traits().flag_value('L');
       if (live_flag == 0)	// not live
 	continue;
       else if (live_flag == 1) { // live
 	live_elements[ei] = true;
 	continue;
       } else if (live_flag > 0)
-	errh->lwarning(r->elandmark(ei), "`%s' has strange live flag value %d", r->edeclaration(ei).cc(), live_flag);
+	errh->lwarning(x->landmark(), "`%s' has strange live flag value %d", x->declaration().cc(), live_flag);
 
       // if no live flag, make an educated guess
-      if (processing.ninputs(ei) == 0 && processing.noutputs(ei) == 0) {
+      if (x->ninputs() == 0 && x->noutputs() == 0) {
 	live_elements[ei] = true;
 	if (verbose)
-	  errh->lmessage(r->elandmark(ei), "assuming `%s' is live", r->edeclaration(ei).cc());
+	  errh->lmessage(x->landmark(), "assuming `%s' is live", x->declaration().cc());
       }
     }
-  }
 }
 
 static void
@@ -677,9 +674,10 @@ particular purpose.\n");
   // remove Idles
   for (int i = 0; i < r->nelements(); i++)
     if (!live_vec[i]) {
+      ElementT *e = r->element(i);
       if (verbose)
-	default_errh->lmessage(r->elandmark(i), "removing `%s'", r->edeclaration(i).cc());
-      r->element(i)->kill();
+	default_errh->lmessage(e->landmark(), "removing `%s'", e->declaration().cc());
+      e->kill();
     }
   
   // remove dead connections (not elements yet: keep indexes in 'processing'

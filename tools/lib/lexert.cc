@@ -559,7 +559,7 @@ LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
 	}
     }
     _lexinfo->notify_element_declaration(name, type, _compound_class, location.pos1(), location.pos2(), (decl_pos2 < 0 ? location.pos2() : decl_pos2));
-    return _router->get_eindex(name, type, conf, lm ? lm : landmark());
+    return _router->get_element(name, type, conf, lm ? lm : landmark())->idx();
 }
 
 int
@@ -578,8 +578,8 @@ LexerT::connect(int element1, int port1, int port2, int element2)
     if (port2 < 0)
 	port2 = 0;
     _router->add_connection
-	(Hookup(_router->elt(element1), port1),
-	 Hookup(_router->elt(element2), port2), landmark());
+	(PortT(_router->elt(element1), port1),
+	 PortT(_router->elt(element2), port2), landmark());
 }
 
 
@@ -731,10 +731,9 @@ LexerT::ydeclaration(const Lexeme &first_element)
 
     for (int i = 0; i < decls.size(); i++) {
 	String name = decls[i].string();
-	int old_eidx = _router->eindex(name);
-	if (old_eidx >= 0) {
+	if (ElementT *old_e = _router->element(name)) {
 	    lerror(decls[i], "redeclaration of element `%s'", name.cc());
-	    _errh->lerror(_router->elandmark(old_eidx), "`%s' previously declared here", _router->edeclaration(old_eidx).cc());
+	    _errh->lerror(old_e->landmark(), "`%s' previously declared here", old_e->declaration().cc());
 	} else if (_router->try_type(name))
 	    lerror(decls[i], "`%s' is an element class", name.cc());
 	else
@@ -922,8 +921,8 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     
     while (1) {
 	_router = new RouterT(old_router);
-	_router->get_eindex("input", ElementClassT::tunnel_type(), String(), landmark());
-	_router->get_eindex("output", ElementClassT::tunnel_type(), String(), landmark());
+	_router->get_element("input", ElementClassT::tunnel_type(), String(), landmark());
+	_router->get_element("output", ElementClassT::tunnel_type(), String(), landmark());
 	_compound_class = new CompoundElementClassT(name, landmark(), _router, created, _compound_depth);
 	_anonymous_offset = 2;
 
