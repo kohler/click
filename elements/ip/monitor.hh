@@ -3,10 +3,11 @@
 
 /*
  * =c
- * Monitor(THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]])
+ * Monitor(PB, THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]])
  * =d
  * Input: IP packets (no ether header).
  *
+ * PB is a string ("PACKETS" or "BYTES")
  * THRESH is "amount per second" (see explanation below). Integer.
  * SDx is a string ("SRC" or "DST").
  * VARx is an integer.
@@ -14,18 +15,22 @@
  * Monitors traffic by counting the number of packets going to/coming from
  * (a cluster of) IP addresses.
  *
- * In its simplest form (i.e. "Monitor(DST, 1)"), Monitor uses the first byte of
- * the destination IP address of each packet to index into a table (with, of
- * course, 256 records) and increases the value in that record by 1. In other
- * words, the Monitor clusters destination addresses by the their first byte. As
- * soon as the value associated with such a cluster increases with more than
- * THRESH per second, then the entry is marked and subsequent packets to that
- * cluster are split on the 2nd byte of the destination IP address in a similar
- * table. This can go up to the 4th byte.
+ * In its simplest form (i.e. "Monitor(PACKETS, 100, DST 1)"), Monitor uses the
+ * first byte of the destination IP address of each packet to index into a table
+ * (with, of course, 256 records) and increases the value in that record by 1.
+ * In other words, the Monitor clusters destination addresses by the their first
+ * byte. As soon as the value associated with such a cluster increases with more
+ * than THRESH (100 in this example) per second, then the entry is marked and
+ * subsequent packets to that cluster are split on the 2nd byte of the
+ * destination IP address in a similar table. This can go up to the 4th byte.
  *
- * Everytime a packet passes the monitor, the sibling annotation is set denoting
- * the number of packets from the same cluster that preceded this packet. Block
- * drops packets based on the sibling annotation.
+ * When BYTES is used in stead of PACKETS, then VARx is multiplied with the
+ * packet length in bytes. In other words: Monitor can be used to either count
+ * number of packets or load going to/coming from IP addresses.
+ *
+ * Everytime a packet passes the Monitor, the sibling annotation is set denoting
+ * the number of packets from the same cluster that preceded this packet. The
+ * Block element drops packets based on this sibling annotation.
  *
  * THRESH is a value denoting an amount of packets per second. If the value
  * associated with a cluster of IP addresses increases with more than THRESH per
@@ -41,16 +46,15 @@
  * specific features.
  *
  * =h look (read)
- * Returns the number of packets counted to/from a cluster of IP addresses.
+ * Returns the number of packets/bytes counted to/from a cluster of IP
+ * addresses. The first printed line is the number of 'jiffies' that have past
+ * since the last reset. There are 100 jiffies in one second.
  * 
  * =h thresh (read-write)
  * Used to read/write THRESH value.
  *
  * =h reset (write)
  * Resets all entries to the supplied value.
- *
- * =h since (read)
- * Time of last reset.
  *
  * =e
  *
@@ -60,7 +64,7 @@
  * =
  * = ... -> c;
  *
- * = m :: Monitor(10, DST 1, DST -1);
+ * = m :: Monitor(PACKETS, 10, DST 1, DST -1);
  * =
  * = c[0] -> [0]m -> ...
  * = c[1] -> [1]m -> ...
@@ -106,6 +110,10 @@ private:
 #define SRC 0
 #define DST 1
 
+  unsigned char _pb;
+#define PACKETS 0
+#define BYTES 1
+
   // One of these associated with each input.
   struct _inp {
     int change;
@@ -135,17 +143,16 @@ private:
   int _thresh;
   Vector<struct _inp *> _inputs;        // value associated with each input
   struct _stats *_base;                 // base struct for monitoring
-  long unsigned int _since;             // time of last reset
+  long unsigned int _resettime;         // time of last reset
 
   void clean(_stats *s, int value = 0, bool recurse = false);
-  void set_since();
+  void set_resettime();
   int update(IPAddress a, int val);
   String print(_stats *s, String ip = "");
 
   void add_handlers();
   static String thresh_read_handler(Element *e, void *);
   static String look_read_handler(Element *e, void *);
-  static String since_read_handler(Element *e, void *);
 
   static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
   static int reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);

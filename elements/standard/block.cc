@@ -19,7 +19,7 @@
 #include "confparse.hh"
 
 Block::Block()
-  : Element(1, 1)
+  : Element(1, 2)
 {
 }
 
@@ -42,7 +42,7 @@ Block::configure(const String &conf, ErrorHandler *errh)
   }
 
   // THRESH
-  if(!cp_integer(args[0], _block)) {
+  if(!cp_integer(args[0], _thresh)) {
     errh->error("Not an integer");
     return -1;
   }
@@ -59,8 +59,8 @@ Block::initialize(ErrorHandler *)
 void
 Block::push(int, Packet *packet)
 {
-  if(packet->siblings_anno() > _block)
-    packet->kill();
+  if(packet->siblings_anno() > _thresh)
+    output(1).push(packet);
   else
     output(0).push(packet);
 }
@@ -76,17 +76,39 @@ Block::push(int, Packet *packet)
 
 
 // HANDLERS
-
-static String
-block_read_drops(Element *, void *)
+int
+Block::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
-  return "\n";
+  Vector<String> args;
+  cp_argvec(conf, args);
+  Block* me = (Block *) e;
+
+  if(args.size() != 1) {
+    errh->error("expecting 1 integer");
+    return -1;
+  }
+  int thresh;
+  if(!cp_integer(args[0], thresh)) {
+    errh->error("not an integer");
+    return -1;
+  }
+  me->_thresh = thresh;
+  return 0;
+}
+
+
+String
+Block::thresh_read_handler(Element *e, void *)
+{
+  Block *me = (Block *) e;
+  return String(me->_thresh) + "\n";
 }
 
 void
 Block::add_handlers()
 {
-  add_read_handler("drops", block_read_drops, 0);
+  add_read_handler("thresh", thresh_read_handler, 0);
+  add_write_handler("thresh", thresh_write_handler, 0);
 }
 
 EXPORT_ELEMENT(Block)

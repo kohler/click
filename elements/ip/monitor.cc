@@ -20,7 +20,7 @@
 #include "glue.hh"
 
 Monitor::Monitor()
-  : Element(1,1), _base(NULL)
+  : Element(1,1), _pb(PACKETS), _base(NULL)
 {
 }
 
@@ -36,14 +36,24 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 1) {
+  if(args.size() < 2) {
     errh->error("too few arguments");
     return -1;
   }
 
+  // PACKETS/BYTES
+  if(args[0] == "PACKETS")
+    _pb = PACKETS;
+  else if(args[0] == "BYTES")
+    _pb = BYTES;
+  else {
+    errh->error("first argument should be \"PACKETS\" or \"BYTES\"");
+    return -1;
+  }
+
   // THRESH
-  if(!cp_integer(args[0], _thresh)) {
-    errh->error("first argument expected THRESH. Not found.");
+  if(!cp_integer(args[1], _thresh)) {
+    errh->error("second argument expected THRESH. Not found.");
     return -1;
   }
 
@@ -59,7 +69,7 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   int change;
   String srcdst;
   struct _inp *inp;
-  for (int i = 1; i < args.size(); i++) {
+  for (int i = 2; i < args.size(); i++) {
     String arg = args[i];
     if(cp_word(arg, srcdst, &arg) &&
        cp_eat_space(arg) &&
@@ -93,7 +103,7 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
     _inputs.push_back(inp);
   }
 
-  set_since();
+  set_resettime();
   return 0;
 #else
   click_chatter("Monitor doesn't know how to handle non-IPv4!");
@@ -115,13 +125,18 @@ Monitor::push(int port, Packet *p)
 
   assert(_inputs[port]->srcdst == SRC || _inputs[port]->srcdst == DST);
 
-  if(_inputs[port]->srcdst == SRC) {
-    click_ip *ip = (click_ip *) p->data();
+  click_ip *ip = (click_ip *) p->data();
+  if(_inputs[port]->srcdst == SRC)
     a = IPAddress(ip->ip_src);
-  } else
+  else
     a = p->dst_ip_anno();
 
-  p->set_siblings_anno(update(a, _inputs[port]->change));
+  // Measuring # of packets or # of bytes?
+  int val = _inputs[port]->change;
+  if(_pb == BYTES)
+    val *= ip->ip_len;
+
+  p->set_siblings_anno(update(a, val));
   output(port).push(p);
 }
 
@@ -221,19 +236,29 @@ Monitor::print(_stats *s, String ip = "")
 
 
 inline void
-Monitor::set_since()
+Monitor::set_resettime()
 {
-  struct timeval t;
-  click_gettimeofday(&t);
-  _since = t.tv_sec;
+  /* struct timeval t;       */
+  /* click_gettimeofday(&t); */
+  _resettime = click_jiffies();
 }
 
 
+// First line: number of jiffies since last reset.
+// Other lines:
+// tabs address ['*' number | number]
+//
+// tabs = 0 - 3 tabs
+// address = string of form v[.w[.x[.y]]] denoting a (partial) IP address
+// number = integer denoting the value associated with this IP address group
 String
 Monitor::look_read_handler(Element *e, void *)
 {
   Monitor *me = (Monitor*) e;
-  return me->print(me->_base);
+
+  /* struct timeval t;       */
+  /* click_gettimeofday(&t); */
+  return String(click_jiffies() - me->_resettime) + "\n" + me->print(me->_base);
 }
 
 
@@ -242,14 +267,6 @@ Monitor::thresh_read_handler(Element *e, void *)
 {
   Monitor *me = (Monitor *) e;
   return String(me->_thresh) + "\n";
-}
-
-
-String
-Monitor::since_read_handler(Element *e, void *)
-{
-  Monitor *me = (Monitor *) e;
-  return String(me->_since) + "\n";
 }
 
 
@@ -292,7 +309,7 @@ Monitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandle
     return -1;
   }
   me->clean(me->_base, init, true);
-  me->set_since();
+  me->set_resettime();
   return 0;
 }
 
@@ -305,7 +322,6 @@ Monitor::add_handlers()
 
   add_write_handler("reset", reset_write_handler, 0);
   add_read_handler("look", look_read_handler, 0);
-  add_read_handler("since", since_read_handler, 0);
 }
 
 EXPORT_ELEMENT(Monitor)
