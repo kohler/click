@@ -1,3 +1,14 @@
+2002-04-23 Tuesday 18:46  Eddie Kohler <kohler@aciri.org>
+
+	* DISTFILES (1.53), etc/libclick/DISTFILES (1.11),
+	etc/libclick/lc-libsrc-Makefile.in (1.8): include notifier.{hh,cc}
+	in DISTFILES and libclick
+
+2002-04-23 Tuesday 18:45  Eddie Kohler <kohler@aciri.org>
+
+	* elements/bsdmodule/: anydevice.hh (1.5), fromdevice.cc (1.12):
+	compilation nitlet; not sure whether this code works, though
+
 2002-04-22 Monday 20:51  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/router.hh (1.29), lib/router.cc (1.121): Router
