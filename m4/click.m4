@@ -141,7 +141,7 @@ dnl already.
 dnl
 
 AC_DEFUN([CLICK_CHECK_BUILD_DYNAMIC_LINKING], [
-    saver="SAVE_CXX='$CXX' SAVE_CXXCPP='$CXXCPP' ac_cv_header_dlfcn_h='$ac_cv_header_dlfcn_h' ac_cv_func_dlopen='$ac_cv_func_dlopen' ac_cv_lib_dl_dlopen='$ac_cv_lib_dl_dlopen'"
+    saver="CXX='$CXX' CXXCPP='$CXXCPP' ac_cv_header_dlfcn_h='$ac_cv_header_dlfcn_h' ac_cv_func_dlopen='$ac_cv_func_dlopen' ac_cv_lib_dl_dlopen='$ac_cv_lib_dl_dlopen'"
     CXX="$BUILD_CXX"; CXXCPP="$BUILD_CXX -E"
     unset ac_cv_header_dlfcn_h ac_cv_func_dlopen ac_cv_lib_dl_dlopen
     BUILD_DL_LIBS=
@@ -160,7 +160,8 @@ Build system and host system don't have the same dynamic linking state!
 =========================================])
     fi
     AC_SUBST(BUILD_DL_LIBS)
-    eval "export $saver"
+    eval "$saver"
+    echo $CXX
 ])
 
 
