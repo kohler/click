@@ -2,11 +2,11 @@
 #define CLICK_SYNC_HH
 #include <click/glue.hh>
 #include <click/atomic.hh>
-#if defined(__KERNEL__) && defined(__SMP__)
-# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
-#  include <linux/tasks.h>
-# else
+#if defined(CLICK_LINUXMODULE) && defined(__SMP__)
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
 #  include <linux/threads.h>
+# else
+#  include <linux/tasks.h>
 # endif
 # include <linux/sched.h>
 # define my_cpu current->processor
@@ -16,7 +16,7 @@ CLICK_DECLS
 // loop-in-cache spinlock implementation: 8 bytes. if the size of this class
 // changes, change size of padding in ReadWriteLock below.
 
-#if defined(__KERNEL__) && defined(__SMP__)
+#if defined(CLICK_LINUXMODULE) && defined(__SMP__)
 
 class Spinlock { public:
 
@@ -115,7 +115,7 @@ Spinlock::release()
   }
 }
 
-#else /* defined(__KERNEL__) && defined(__SMP__) */
+#else /* defined(CLICK_LINUXMODULE) && defined(__SMP__) */
 
 class Spinlock { public:
 
@@ -128,7 +128,7 @@ class Spinlock { public:
   
 };
 
-#endif /* defined(__KERNEL__) && defined(__SMP__) */
+#endif /* defined(CLICK_LINUXMODULE) && defined(__SMP__) */
 
 
 // read-write lock:
@@ -140,7 +140,7 @@ class Spinlock { public:
 // that because we'd like to avoid a cache miss for read acquires. this makes
 // reads very fast, and writes more expensive
 
-#if defined(__KERNEL__) && defined(__SMP__)
+#if defined(CLICK_LINUXMODULE) && defined(__SMP__)
 
 class ReadWriteLock {
 
@@ -230,7 +230,7 @@ ReadWriteLock::release_write()
     _l[i]._lock.release();
 }
 
-#else /* defined(__KERNEL__) && defined(__SMP__) */
+#else /* defined(CLICK_LINUXMODULE) && defined(__SMP__) */
 
 class ReadWriteLock { public:
   
@@ -245,7 +245,7 @@ class ReadWriteLock { public:
 
 };
 
-#endif /* defined(__KERNEL__) && defined(__SMP__) */
+#endif /* defined(CLICK_LINUXMODULE) && defined(__SMP__) */
 
 CLICK_ENDDECLS
 #endif
