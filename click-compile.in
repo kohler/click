@@ -254,13 +254,13 @@ MODULE_LICENSE("Dual BSD/GPL");
 EOF
 	fi
 	exec_command $c_command $vfile.c
-	exec_command "ld -r -o $package $files"
+	exec_command "ld -r -o $package $cflags $files"
 	exit 0
     elif test $target = userlevel -o $target = tool -o $target = ns; then
-	exec_command "${CXX-@CXX@} @LDMODULEFLAGS@ -o $package $files"
+	exec_command "${CXX-@CXX@} @LDMODULEFLAGS@ -o $package $cflags $files"
 	exit 0
     elif test $target = bsdmodule; then
-	exec_command "ld -Bshareable -o $package $files"
+	exec_command "ld -Bshareable -o $package $cflags $files"
 	exit 0
     fi
 else
