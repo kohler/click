@@ -41,7 +41,7 @@ ErrorHandler *kernel_errh = 0;
 static Lexer *lexer = 0;
 Router *current_router = 0;
 
-Router::Handler root_handlers[ROOT_HANDLERS_CAP];
+Router::Handler *root_handlers;
 int nroot_handlers = 0;
 
 static Vector<String> packages;
@@ -405,16 +405,14 @@ next_root_handler(const char *name, ReadHandler read, void *read_thunk,
 {
   if (nroot_handlers >= ROOT_HANDLERS_CAP)
     return;
-  root_handlers[nroot_handlers].element = 0;
-  root_handlers[nroot_handlers].name = name;
-  root_handlers[nroot_handlers].namelen = strlen(name);
-  root_handlers[nroot_handlers].read = read;
-  root_handlers[nroot_handlers].read_thunk = read_thunk;
-  root_handlers[nroot_handlers].write = write;
-  root_handlers[nroot_handlers].write_thunk = write_thunk;
-  root_handlers[nroot_handlers].next = -1;
-  register_handler(&proc_click_entry, &root_handlers[nroot_handlers]);
+  int i = nroot_handlers;
   nroot_handlers++;
+  root_handlers[i].name = name;
+  root_handlers[i].read = read;
+  root_handlers[i].read_thunk = read_thunk;
+  root_handlers[i].write = write;
+  root_handlers[i].write_thunk = write_thunk;
+  register_handler(&proc_click_entry, -1, i);
 }
 
 extern "C" int
@@ -446,6 +444,7 @@ init_module()
 
   // add handlers to the root directory. warning: this only works if there
   // is no current_router while the handlers are being added.
+  root_handlers = new Router::Handler[ROOT_HANDLERS_CAP];
   next_root_handler("version", read_version, 0, 0, 0);
   next_root_handler("meminfo", read_meminfo, 0, 0, 0);
   next_root_handler("cycles", read_cycles, 0, 0, 0);
@@ -478,10 +477,11 @@ cleanup_module()
   delete lexer;
 
   cleanup_click_sched();
-    
+  
   extern ErrorHandler *click_chatter_errh;
   click_chatter_errh = 0;
-  
+
+  delete[] root_handlers;
   ErrorHandler::static_cleanup();
   FromDevice::static_cleanup();
   ToDevice::static_cleanup();

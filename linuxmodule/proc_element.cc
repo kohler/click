@@ -194,8 +194,7 @@ finish_handler_write(int elementno, int handlerno, String *s)
   else if (!h->write)
     return -EPERM;
   
-  String context_string = "While writing `"
-    + String(h->name, h->namelen) + "'";
+  String context_string = "While writing `" + h->name + "'";
   if (e) context_string += String(" for `") + e->declaration() + "'";
   ContextErrorHandler cerrh(kernel_errh, context_string + ":");
   
@@ -338,9 +337,10 @@ DECLARE_RELEASE_FILEOP(proc_element_handler_release)
 //
 
 void
-register_handler(proc_dir_entry *directory, const Router::Handler *h)
+register_handler(proc_dir_entry *directory, int elementno, int handlerno)
 {
   const proc_dir_entry *pattern = 0;
+  const Router::Handler *h = (elementno >= 0 ? &current_router->handler(handlerno) : &root_handlers[handlerno]);
   if (h->read && h->write)
     pattern = &proc_element_read_write_handler_prototype;
   else if (h->write)
@@ -349,13 +349,8 @@ register_handler(proc_dir_entry *directory, const Router::Handler *h)
     pattern = &proc_element_read_handler_prototype;
   else
     return;
-  int which;
-  if (h->element)
-    which = (h - &current_router->handler(0));
-  else
-    which = (h - root_handlers);
   click_register_new_dynamic_pde
-    (directory, pattern, h->namelen, h->name, (void *)which);
+    (directory, pattern, h->name.length(), h->name.cc(), (void *)handlerno);
 }
 
 //
@@ -515,12 +510,14 @@ init_router_element_procs()
     }
 
   // hook up per-element proc entries
-  int nhandlers = current_router->nhandlers();
-  for (int i = 0; i < nhandlers; i++) {
-    const Router::Handler &h = current_router->handler(i);
-    int which = h.element->number();
-    if (proc_dir_entry *fpde = element_pdes[which])
-      register_handler(fpde, &h);
+  Vector<int> handlers;
+  for (int i = 0; i < nelements; i++) {
+    handlers.clear();
+    current_router->element_handlers(i, handlers);
+    for (int j = 0; j < handlers.size(); j++) {
+      if (proc_dir_entry *fpde = element_pdes[i])
+	register_handler(fpde, i, handlers[j]);
+    }
   }
 }
 

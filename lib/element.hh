@@ -96,8 +96,8 @@ class Element : public ElementLink { public:
   virtual void take_state(Element *, ErrorHandler *);
   
   // HANDLERS
-  void add_read_handler(const char *, ReadHandler, void *);
-  void add_write_handler(const char *, WriteHandler, void *);
+  void add_read_handler(const String &, ReadHandler, void *);
+  void add_write_handler(const String &, WriteHandler, void *);
   void add_default_handlers(bool allow_write_config);
   virtual void add_handlers();
   static String configuration_read_handler(Element *, void *);

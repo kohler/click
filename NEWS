@@ -29,6 +29,8 @@ Version 1.0.7
 
 ** Added new `tickets' handler, available by default on every element.
 
+** Improved support for large numbers of handlers by reducing memory usage.
+
 * User-level driver
 
 ** User-level Click will no longer stop by default when an InfiniteSource

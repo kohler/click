@@ -803,7 +803,11 @@ Router::initialize(ErrorHandler *errh)
   }
 
   // clear handler offsets
-  _handler_offset.assign(nelements(), -1);
+  _ehandler_first_by_element.assign(nelements(), -1);
+  assert(_ehandler_to_handler.size() == 0 && _ehandler_next.size() == 0
+	 && _handler_names.size() == 0 && _handler_first_by_name.size() == 0
+	 && _handler_next_by_name.size() == 0 && _handler_use_count.size() == 0
+	 && _nhandlers == 0);
 
   // If there were errors, uninitialize any elements that we initialized
   // successfully and return -1 (error). Otherwise, we're all set!
@@ -840,71 +844,159 @@ Router::take_state(Router *r, ErrorHandler *errh)
 
 // HANDLERS
 
+// 11.Jul.2000 - We had problems with handlers for medium-sized configurations
+// (~400 elements): the Linux kernel would crash with a "kmalloc too large".
+// The solution: Observe that most handlers are shared. For example, all
+// `name' handlers can share a Handler structure, since they share the same
+// read function, read thunk, write function (0), write thunk, and name. This
+// introduced a bunch of structure to go from elements to handler indices and
+// from handler names to handler indices, but it was worth it: it reduced the
+// amount of space required by a normal set of Router::Handlers by about a
+// factor of 100 -- there used to be 2998 Router::Handlers, now there are 30.
+// (Some of this space is still not available for system use -- it gets used
+// up by the indexing structures, particularly _ehandlers. Every element has
+// its own list of "element handlers", even though most elements with element
+// class C could share one such list. The space cost is about (48 bytes * # of
+// elements) more or less. Detecting this sharing would be harder to
+// implement.)
+
 int
-Router::find_handler(Element *element, const char *name, int namelen,
-		     bool force)
+Router::put_handler(const Handler &to_add)
 {
-  int prev = -1, o = _handler_offset[element->number()];
-  while (o >= 0 && (_handlers[o].namelen != namelen
-		    || memcmp(_handlers[o].name, name, namelen) != 0)) {
-    prev = o;
-    o = _handlers[o].next;
+  // Find space in _handlers for `to_add'. This might be shared, if another
+  // element has already installed a handler corresponding to `to_add'.
+  
+  assert(_handler_use_count.size() == _nhandlers
+	 && _handler_next_by_name.size() == _nhandlers
+	 && _handler_names.size() == _handler_first_by_name.size());
+  
+  // find the offset in _name_handlers
+  int name_offset;
+  for (name_offset = 0; name_offset < _handler_names.size(); name_offset++)
+    if (_handler_names[name_offset] == to_add.name)
+      break;
+  if (name_offset == _handler_names.size()) {
+    _handler_names.push_back(to_add.name);
+    _handler_first_by_name.push_back(-1);
   }
 
-  if (o < 0 && force) {
-    if (_nhandlers >= _handlers_cap) {
-      _handlers_cap = (_handlers_cap ? 2*_handlers_cap : 6*nelements());
-      Handler *new_handlers = new Handler[_handlers_cap];
-      if (new_handlers)
-	memcpy(new_handlers, _handlers, sizeof(Handler) * _nhandlers);
-      delete[] _handlers;
-      _handlers = new_handlers;
-      if (!_handlers)		// out of memory
-	return -1;
+  // now find a similar handler, if any exists
+  int hi = _handler_first_by_name[name_offset];
+  while (hi >= 0) {
+    Handler &h = _handlers[hi];
+    if (_handler_use_count[hi] == 0)
+      h = to_add;
+    if (h.read == to_add.read && h.write == to_add.write
+	&& h.read_thunk == to_add.read_thunk
+	&& h.write_thunk == to_add.write_thunk) {
+      _handler_use_count[hi]++;
+      return hi;
     }
-    o = _nhandlers;
-    if (prev < 0)
-      _handler_offset[element->number()] = o;
-    else
-      _handlers[prev].next = o;
-    _handlers[o].element = element;
-    _handlers[o].name = name;
-    _handlers[o].namelen = namelen;
-    _handlers[o].read = 0;
-    _handlers[o].write = 0;
-    _handlers[o].next = -1;
-    _nhandlers++;
+    hi = _handler_next_by_name[hi];
+  }
+  
+  // no handler found; add one
+  if (_nhandlers >= _handlers_cap) {
+    int new_cap = (_handlers_cap ? 2*_handlers_cap : 16);
+    Handler *new_handlers = new Handler[new_cap];
+    if (!new_handlers)	// out of memory
+      return -1;
+    for (int i = 0; i < _nhandlers; i++)
+      new_handlers[i] = _handlers[i];
+    delete[] _handlers;
+    _handlers = new_handlers;
+    _handlers_cap = new_cap;
   }
 
-  return o;
+  hi = _nhandlers;
+  _nhandlers++;
+  _handlers[hi] = to_add;
+  _handler_use_count.push_back(1);
+  _handler_next_by_name.push_back(_handler_first_by_name[name_offset]);
+  _handler_first_by_name[name_offset] = hi;
+  return hi;
+}
+
+int
+Router::find_ehandler(Element *element, const String &name, bool force)
+{
+  int elementno = element->number();
+  int eh = _ehandler_first_by_element[elementno];
+  while (eh >= 0) {
+    int h = _ehandler_to_handler[eh];
+    if (h >= 0 && _handlers[h].name == name)
+      return eh;
+    eh = _ehandler_next[eh];
+  }
+
+  if (force) {
+    eh = _ehandler_to_handler.size();
+    _ehandler_to_handler.push_back(-1);
+    _ehandler_next.push_back(_ehandler_first_by_element[elementno]);
+    _ehandler_first_by_element[elementno] = eh;
+  }
+
+  return eh;
 }
 
 void
-Router::add_read_handler(Element *element, const char *name, int namelen,
+Router::add_read_handler(Element *element, const String &name,
 			 ReadHandler read, void *thunk)
 {
-  int o = find_handler(element, name, namelen, true);
-  if (o >= 0) {
-    _handlers[o].read = read;
-    _handlers[o].read_thunk = thunk;
+  int eh = find_ehandler(element, name, true);
+  Handler to_add;
+  int h = _ehandler_to_handler[eh];
+  if (h >= 0) {
+    to_add = _handlers[h];
+    _handler_use_count[h]--;
+  } else {
+    to_add.name = name;
+    to_add.write = 0;
+    to_add.write_thunk = 0;
   }
+  to_add.read = read;
+  to_add.read_thunk = thunk;
+  _ehandler_to_handler[eh] = put_handler(to_add);
 }
 
 void
-Router::add_write_handler(Element *element, const char *name, int namelen,
+Router::add_write_handler(Element *element, const String &name,
 			  WriteHandler write, void *thunk)
 {
-  int o = find_handler(element, name, namelen, true);
-  if (o >= 0) {
-    _handlers[o].write = write;
-    _handlers[o].write_thunk = thunk;
+  int eh = find_ehandler(element, name, true);
+  Handler to_add;
+  int h = _ehandler_to_handler[eh];
+  if (h >= 0) {
+    to_add = _handlers[h];
+    _handler_use_count[h]--;
+  } else {
+    to_add.name = name;
+    to_add.read = 0;
+    to_add.read_thunk = 0;
   }
+  to_add.write = write;
+  to_add.write_thunk = thunk;
+  _ehandler_to_handler[eh] = put_handler(to_add);
 }
 
 int
 Router::find_handler(Element *element, const String &name)
 {
-  return find_handler(element, name.data(), name.length(), false);
+  int eh = find_ehandler(element, name, false);
+  return (eh >= 0 ? _ehandler_to_handler[eh] : -1);
+}
+
+void
+Router::element_handlers(int elementno, Vector<int> &handlers) const
+{
+  assert(elementno >= 0 && elementno < _elements.size());
+  for (int eh = _ehandler_first_by_element[elementno];
+       eh >= 0;
+       eh = _ehandler_next[eh]) {
+    int h = _ehandler_to_handler[eh];
+    if (h >= 0)
+      handlers.push_back(h);
+  }
 }
 
 

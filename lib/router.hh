@@ -37,7 +37,15 @@ class Router : public ElementLink {
   bool _have_connections: 1;
   bool _have_hookpidx: 1;
 
-  Vector<int> _handler_offset;
+  Vector<int> _ehandler_first_by_element;
+  Vector<int> _ehandler_to_handler;
+  Vector<int> _ehandler_next;
+
+  Vector<String> _handler_names;
+  Vector<int> _handler_first_by_name;
+  Vector<int> _handler_next_by_name;
+  Vector<int> _handler_use_count;
+  
   Handler *_handlers;
   int _nhandlers;
   int _handlers_cap;
@@ -70,7 +78,8 @@ class Router : public ElementLink {
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
   Element *find(String, const String &, ErrorHandler * = 0) const;
-  int find_handler(Element *, const char *, int, bool);
+  int find_ehandler(Element *, const String &, bool);
+  int put_handler(const Handler &);
   
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
@@ -115,9 +124,10 @@ class Router : public ElementLink {
   int initialize(ErrorHandler *);
   void take_state(Router *, ErrorHandler *);
 
-  void add_read_handler(Element *, const char *, int, ReadHandler, void *);
-  void add_write_handler(Element *, const char *, int, WriteHandler, void *);
+  void add_read_handler(Element *, const String &, ReadHandler, void *);
+  void add_write_handler(Element *, const String &, WriteHandler, void *);
   int find_handler(Element *, const String &);
+  void element_handlers(int, Vector<int> &) const;
   int nhandlers() const				{ return _nhandlers; }
   const Handler &handler(int i) const;
   
@@ -149,14 +159,11 @@ struct Router::Hookup {
 };
 
 struct Router::Handler {
-  Element *element;
-  const char *name;
-  int namelen;
+  String name;
   ReadHandler read;
   void *read_thunk;
   WriteHandler write;
   void *write_thunk;
-  int next;
 };
   
 

@@ -465,15 +465,15 @@ read_element_cycles(Element *f, void *)
 #endif
 
 void
-Element::add_read_handler(const char *name, ReadHandler h, void *thunk)
+Element::add_read_handler(const String &name, ReadHandler h, void *thunk)
 {
-  router()->add_read_handler(this, name, strlen(name), h, thunk);
+  router()->add_read_handler(this, name, h, thunk);
 }
 
 void
-Element::add_write_handler(const char *name, WriteHandler h, void *thunk)
+Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
 {
-  router()->add_write_handler(this, name, strlen(name), h, thunk);
+  router()->add_write_handler(this, name, h, thunk);
 }
 
 void

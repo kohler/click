@@ -106,8 +106,12 @@ sub process_comment ($$) {
     push @classes, $1 if !exists $classes{$1};
     $classes{$1} = 1;
   }
+  if (!@classes && $x{'c'} =~ /^\s*([\w@]+)\s*$/) {
+    push @classes, $1;
+    $classes{$1} = 1;
+  }
   if (!@classes) {
-    print STDERR "$filename: no class definitions\n    (did you forget `()' in the =c section?\n";
+    print STDERR "$filename: no class definitions\n    (did you forget `()' in the =c section?)\n";
     return;
   }
   my($classes_plural) = (@classes == 1 ? '' : 's');

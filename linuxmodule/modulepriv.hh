@@ -56,8 +56,8 @@ void init_click_sched();
 int cleanup_click_sched();
 
 #define ROOT_HANDLERS_CAP 16
-extern Router::Handler root_handlers[ROOT_HANDLERS_CAP];
+extern Router::Handler *root_handlers;
 extern int nroot_handlers;
-void register_handler(proc_dir_entry *, const Router::Handler *);
+void register_handler(proc_dir_entry *, int elementno, int handlerno);
 
 #endif
