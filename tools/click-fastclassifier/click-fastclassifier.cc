@@ -219,7 +219,7 @@ get_string_from_process(String cmdline, const String &input,
     errh->fatal("`%s': %s", cmdline.cc(), strerror(errno));
 
   StringAccum sa;
-  while (!feof(p) && sa.length() < 10000) {
+  while (!feof(p) && sa.length() < 20000) {
     int x = fread(sa.reserve(2048), 1, 2048, p);
     if (x > 0) sa.forward(x);
   }
