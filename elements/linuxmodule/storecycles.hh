@@ -14,8 +14,6 @@
 class StoreCycles : public Element {
   unsigned short _idx1;
   unsigned short _idx2;
-  unsigned long long _sum;
-  unsigned long long _pkt_cnt;
   
  public:
   
@@ -28,10 +26,15 @@ class StoreCycles : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers(HandlerRegistry *fcr);
   
   inline void smaction(Packet *);
   void push(int, Packet *p);
   Packet *pull(int);
+  
+  // statistics 
+  unsigned long long _sum;
+  unsigned long long _pkt_cnt;
   
 };
 

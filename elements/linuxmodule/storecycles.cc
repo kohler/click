@@ -54,10 +54,6 @@ StoreCycles::initialize(ErrorHandler *errh)
 void
 StoreCycles::uninitialize()
 {
-  String total(_sum);
-  String pkts(_pkt_cnt);
-  click_chatter("%s: total cycles %s, total packets %s", 
-      declaration().cc(), total.cc(), pkts.cc());
 }
 
 inline void
@@ -85,6 +81,21 @@ StoreCycles::pull(int)
   if(p)
     smaction(p);
   return(p);
+}
+
+static String
+StoreCycles_read_cycles(Element *f, void *)
+{
+  StoreCycles *s = (StoreCycles *)f;
+  return
+    String(s->_sum) + " cycles\n" +
+    String(s->_pkt_cnt) + " packets\n";
+}
+
+void
+StoreCycles::add_handlers(HandlerRegistry *fcr)
+{
+  fcr->add_read("cycles", StoreCycles_read_cycles, 0);
 }
 
 EXPORT_ELEMENT(StoreCycles)

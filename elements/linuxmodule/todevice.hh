@@ -62,15 +62,15 @@ class ToDevice : public Element {
   int _drain_returns;// # of times returned because queue was empty.
   int _busy_returns; // # of times returned because dev->tbusy.
   int _rejected;     // # of packets rejected by hard_start_xmit().
+  int _pkts_sent;    // # number of packet sent
+  int _activations;  // # number of activations
   
  private:
 
   String _devname;
   struct device *_dev;
   int _registered;
-  int _idle; // # of times pull didn't get a packet
-  int _pkts_sent;
-  int _activations;
+  int _idle; 	     // # of times pull didn't get a packet
 };
 
 #endif

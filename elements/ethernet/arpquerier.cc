@@ -33,8 +33,6 @@ ARPQuerier::ARPQuerier()
 
 ARPQuerier::~ARPQuerier()
 {
-  click_chatter("%s: sent %d arp queries, killed %d packets", 
-      declaration().cc(), _arp_queries, _pkts_killed);
 }
 
 Bitvector
@@ -267,11 +265,22 @@ ARPQuerier_read_table(Element *f, void *)
   return(s);
 }
 
+static String
+ARPQuerier_read_pkts(Element *f, void *)
+{
+  ARPQuerier *q = (ARPQuerier *)f;
+  return
+    String(q->_pkts_killed) + " packets killed\n" +
+    String(q->_arp_queries) + " arp queries sent\n";
+}
+
 void
 ARPQuerier::add_handlers(HandlerRegistry *fcr)
 {
   fcr->add_read("table", ARPQuerier_read_table, (void *)0);
+  fcr->add_read("pkts", ARPQuerier_read_pkts, (void *)0);
 }
+
 
 EXPORT_ELEMENT(ARPQuerier)
 

@@ -115,8 +115,6 @@ PollDevice::uninitialize()
 
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
-    click_chatter("PollDevice(%s): %d intrs, %d rcvd", 
-	_dev->name, _total_intr_wait, _pkts_received);
   }
 }
 
@@ -131,7 +129,6 @@ PollDevice::run_scheduled()
   /* order of && clauses important */
   while(got<POLLDEV_MAX_PKTS_PER_RUN && (skb = _dev->rx_poll(_dev))) {
     _pkts_received++;
-    _dev->fill_rx(_dev);
 
     if (_idle >= POLLDEV_IDLE_LIMIT)
       _num_idle_polldevices--; 
@@ -153,6 +150,10 @@ PollDevice::run_scheduled()
     output(0).push(p);
     got++;
   }
+  /* !!! careful: if POLLDEV_MAX_PKTS_PER_RUN is greater than RX ring size, we
+   * need to fill_rx more often... by default, RX ring size is 32, and we set
+   * POLLDEV_MAX_PKTS_PER_RUN to 8, so we can fill once per run */
+  _dev->fill_rx(_dev);
   _dev->clean_tx(_dev);
   _idle++;
 
@@ -215,5 +216,19 @@ PollDevice::woke_up()
   join_scheduler();
 }
 
+static String
+PollDevice_read_calls(Element *f, void *)
+{
+  PollDevice *kw = (PollDevice *)f;
+  return
+    String(kw->_pkts_received) + " packets received\n" +
+    String(kw->_total_intr_wait) + " waits with interrupts on\n";
+}
+
+void
+PollDevice::add_handlers(HandlerRegistry *fcr)
+{
+  fcr->add_read("calls", PollDevice_read_calls, 0);
+}
+
 EXPORT_ELEMENT(PollDevice)
-ELEMENT_REQUIRES(false)

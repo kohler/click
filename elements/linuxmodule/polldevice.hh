@@ -44,6 +44,7 @@ class PollDevice : public Element {
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
   void uninitialize();
+  void add_handlers(HandlerRegistry *);
   
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
@@ -53,11 +54,13 @@ class PollDevice : public Element {
   void woke_up();
 
   void run_scheduled();
+ 
+  // statistics
+  int _total_intr_wait;
+  int _pkts_received;
   
  private:
-  int _total_intr_wait;
   int _idle;
-  int _pkts_received;
   String _devname;
   struct device *_dev;
   struct wait_queue _self_wq;

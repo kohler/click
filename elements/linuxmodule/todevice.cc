@@ -49,7 +49,7 @@ ToDevice::ToDevice()
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
     _pull_calls(0), _idle_calls(0), _drain_returns(0), 
-    _busy_returns(0), _idle(0), _pkts_sent(0), _activations(0)
+    _busy_returns(0), _rejected(0), _idle(0), _pkts_sent(0), _activations(0)
 {
 }
 
@@ -176,8 +176,6 @@ ToDevice::uninitialize()
       ifindex_map->pop_back();
     
     _registered = 0;
-    click_chatter("ToDevice(%s): %d sent, %d activations", 
-	declaration().cc(), _pkts_sent, _activations);
   }
   unschedule();
 }
@@ -355,7 +353,9 @@ ToDevice_read_calls(Element *f, void *)
     String(kw->_idle_calls) + " tx ready calls\n" +
     String(kw->_drain_returns) + " queue empty returns\n" +
     String(kw->_busy_returns) + " device busy returns\n" +
-    String(kw->_rejected) + " hard_start rejections\n";
+    String(kw->_rejected) + " hard_start rejections\n" +
+    String(kw->_activations) + " transmit activations\n" +
+    String(kw->_pkts_sent) + " packets sent\n";
 }
 
 void
