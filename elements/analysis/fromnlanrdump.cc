@@ -71,6 +71,8 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     timerclear(&last_time_off);
     timerclear(&interval);
     _sampling_prob = (1 << SAMPLING_SHIFT);
+    _packet_filepos = 0;
+    bool force_ip = true;
 
     if (_ff.configure_keywords(conf, 1, this, errh) < 0)
 	return -1;
@@ -78,16 +80,18 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    cpFilename, "dump file name", &_ff.filename(),
 		    cpKeywords,
 		    "FORMAT", cpWord, "file format", &format,
-		    "TIMING", cpBool, "use original packet timing?", &timing,
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
-		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
+		    "FORCE_IP", cpBool, "ignored for compatibility", &force_ip,
 		    "START", cpTimeval, "starting time", &first_time,
 		    "START_AFTER", cpTimeval, "starting time offset", &first_time_off,
 		    "END", cpTimeval, "ending time", &last_time,
 		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
 		    "INTERVAL", cpTimeval, "time interval", &interval,
 		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_last_time_h,
+		    "FILEPOS", cpFileOffset, "starting file position", &_packet_filepos,
+		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
+		    "TIMING", cpBool, "use original packet timing?", &timing,
 		    0) < 0)
 	return -1;
 
@@ -172,11 +176,14 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 FromNLANRDump::initialize(ErrorHandler *errh)
 {
-    if (_ff.initialize(errh) < 0)
-	return -1;
-    
-    // check handler call
+    // check handler call, initialize Task
     if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
+	return -1;
+    if (output_is_push(0))
+	ScheduleInfo::initialize_task(this, &_task, _active, errh);
+
+    // open file
+    if (_ff.initialize(errh) < 0)
 	return -1;
     
     // try reading a packet
@@ -186,9 +193,13 @@ FromNLANRDump::initialize(ErrorHandler *errh)
 	timersub(&now, &_packet->timestamp_anno(), &_time_offset);
     }
 
-    if (output_is_push(0))
-	ScheduleInfo::initialize_task(this, &_task, _active, errh);
-    return 0;
+    // maybe skip ahead in the file
+    if (_packet_filepos != 0) {
+	int result = _ff.seek(_packet_filepos, errh);
+	_packet_filepos = 0;
+	return result;
+    } else
+	return 0;
 }
 
 void
@@ -208,32 +219,6 @@ FromNLANRDump::set_active(bool active)
 	if (active && output_is_push(0) && !_task.scheduled())
 	    _task.reschedule();
     }
-}
-
-static inline uint64_t
-swapq(uint64_t q)
-{
-#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-    return ((q & 0xff00000000000000LL) >> 56)
-	| ((q & 0x00ff000000000000LL) >> 40)
-	| ((q & 0x0000ff0000000000LL) >> 24)
-	| ((q & 0x000000ff00000000LL) >>  8)
-	| ((q & 0x00000000ff000000LL) <<  8)
-	| ((q & 0x0000000000ff0000LL) << 24)
-	| ((q & 0x000000000000ff00LL) << 40)
-	| ((q & 0x00000000000000ffLL) << 56);
-#elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-    return q;
-#else
-#error "neither big nor little endian"
-#endif
-}
-
-void
-FromNLANRDump::stamp_to_timeval(uint64_t stamp, struct timeval &tv) const
-{
-    tv.tv_sec = (uint32_t) (stamp >> 32);
-    tv.tv_usec = (uint32_t) ((stamp * 1000000) >> 32);
 }
 
 void
@@ -263,7 +248,10 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
     if (!more)
 	return false;
     
-    // we may need to read bits of the file
+    // record file position
+    _packet_filepos = _ff.file_pos();
+
+    // read the cell
     cell = reinterpret_cast<const TSHCell *>(_ff.get_aligned(_cell_size, &static_cell, errh));
     if (!cell)
 	return false;
@@ -376,8 +364,8 @@ FromNLANRDump::pull(int)
 }
 
 enum {
-    SAMPLING_PROB_THUNK, ACTIVE_THUNK, ENCAP_THUNK, STOP_THUNK,
-    EXTEND_INTERVAL_THUNK
+    H_SAMPLING_PROB, H_ACTIVE, H_ENCAP, H_STOP, H_PACKET_FILEPOS,
+    H_EXTEND_INTERVAL
 };
 
 String
@@ -385,12 +373,14 @@ FromNLANRDump::read_handler(Element *e, void *thunk)
 {
     FromNLANRDump *fd = static_cast<FromNLANRDump *>(e);
     switch ((intptr_t)thunk) {
-      case SAMPLING_PROB_THUNK:
+      case H_SAMPLING_PROB:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
-      case ACTIVE_THUNK:
+      case H_ACTIVE:
 	return cp_unparse_bool(fd->_active) + "\n";
-      case ENCAP_THUNK:
+      case H_ENCAP:
 	return "IP\n";
+      case H_PACKET_FILEPOS:
+	return String(fd->_packet_filepos) + "\n";
       default:
 	return "<error>\n";
     }
@@ -402,7 +392,7 @@ FromNLANRDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorH
     FromNLANRDump *fd = static_cast<FromNLANRDump *>(e);
     String s = cp_uncomment(s_in);
     switch ((intptr_t)thunk) {
-      case ACTIVE_THUNK: {
+      case H_ACTIVE: {
 	  bool active;
 	  if (cp_bool(s, &active)) {
 	      fd->set_active(active);
@@ -410,11 +400,11 @@ FromNLANRDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorH
 	  } else
 	      return errh->error("`active' should be Boolean");
       }
-      case STOP_THUNK:
+      case H_STOP:
 	fd->set_active(false);
 	fd->router()->please_stop_driver();
 	return 0;
-      case EXTEND_INTERVAL_THUNK: {
+      case H_EXTEND_INTERVAL: {
 	  struct timeval tv;
 	  if (cp_timeval(s, &tv)) {
 	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
@@ -432,12 +422,13 @@ FromNLANRDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorH
 void
 FromNLANRDump::add_handlers()
 {
-    add_read_handler("sampling_prob", read_handler, (void *)SAMPLING_PROB_THUNK);
-    add_read_handler("active", read_handler, (void *)ACTIVE_THUNK);
-    add_write_handler("active", write_handler, (void *)ACTIVE_THUNK);
-    add_read_handler("encap", read_handler, (void *)ENCAP_THUNK);
-    add_write_handler("stop", write_handler, (void *)STOP_THUNK);
-    add_write_handler("extend_interval", write_handler, (void *)EXTEND_INTERVAL_THUNK);
+    add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
+    add_read_handler("active", read_handler, (void *)H_ACTIVE);
+    add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("encap", read_handler, (void *)H_ENCAP);
+    add_write_handler("stop", write_handler, (void *)H_STOP);
+    add_read_handler("packet_filepos", read_handler, (void *)H_PACKET_FILEPOS);
+    add_write_handler("extend_interval", write_handler, (void *)H_EXTEND_INTERVAL);
     _ff.add_handlers(this);
     if (output_is_push(0))
 	add_task_handlers(&_task);
