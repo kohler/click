@@ -19,7 +19,7 @@ A. You need a specific version of Linux. The patch we are distributing (as
 
 Q. How fast can Click route packets?
 
-A. On a 700 MHz Pentium III, we could get 435,000 64-byte packets a second
+A. On a 700 MHz Pentium III, we could get 456,000 64-byte packets a second
    through a Click router with eight active DEC Tulip fast Ethernet cards.
 
 
