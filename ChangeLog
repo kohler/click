@@ -1,3 +1,22 @@
+2002-06-18 Tuesday 13:59  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/: ipreassembler.cc (1.14), ipreassembler.hh (1.9):
+	use new "next" annotation
+
+2002-06-18 Tuesday 13:59  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/timeutils.hh (1.2): comment out operators for
+	struct timeval, in favor of those in glue.hh
+
+2002-06-18 Tuesday 13:58  Eddie Kohler <kohler@icir.org>
+
+	* include/click/packet.hh (1.35): add "next" annotation for packets
+
+2002-06-18 Tuesday 13:58  Eddie Kohler <kohler@icir.org>
+
+	* include/click/glue.hh (1.25): add operator overloading for
+	"struct timeval"
+
 2002-06-17 Monday 13:05  Eddie Kohler <kohler@icir.org>
 
 	* conf/make-ip-conf.pl (1.19): use /usr/bin/perl instead of

@@ -1,3 +1,13 @@
+2002-06-18 Tuesday 13:58  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: packet.hh, packet.hh: add "next" annotation for
+	packets
+
+2002-06-18 Tuesday 13:58  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: glue.hh, glue.hh: add operator overloading for
+	"struct timeval"
+
 2002-06-10 Monday 19:55  Eddie Kohler <kohler@icir.org>
 
 	* include/click/confparse.hh, include/click/confparse.hh,
