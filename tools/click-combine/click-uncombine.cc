@@ -95,7 +95,7 @@ remove_component_links(RouterT *r, ErrorHandler *errh, const String &component)
 
   // find all links
   Vector<ElementT *> links;
-  for (RouterT::type_iterator x = r->first_element(link_type); x; x++)
+  for (RouterT::type_iterator x = r->begin_elements(link_type); x; x++)
     links.push_back(x);
 
   for (int i = 0; i < links.size(); i++) {
@@ -199,7 +199,7 @@ frob_nested_routerlinks(RouterT *r, const String &compname)
 {
   ElementClassT *t = r->get_type("RouterLink");
   int cnamelen = compname.length();
-  for (RouterT::type_iterator x = r->first_element(t); x; x++) {
+  for (RouterT::type_iterator x = r->begin_elements(t); x; x++) {
     Vector<String> words;
     cp_argvec(x->configuration(), words);
     for (int j = 0; j < words.size(); j += 2) {

@@ -124,7 +124,7 @@ process(const char *infile, bool file_is_expr, const char *outfile,
     ElementMap::push_default(&emap);
 
     // print elements
-    for (RouterT::iterator e = r->first_element(); e; e++) {
+    for (RouterT::iterator e = r->begin_elements(); e; e++) {
 	// XXX anonymous element class names?
 	fprintf(outf, "<element name='%s' class='%s'",
 		e->name_cc(), e->type_name_cc());
@@ -134,14 +134,14 @@ process(const char *infile, bool file_is_expr, const char *outfile,
 	    fprintf(outf, "\n\tfile='%s' line='%s'", s.substring(0, colon).cc(), s.substring(colon + 1).cc());
 	fprintf(outf, "\n\tninputs='%d' noutputs='%d' processing='%s'",
 		e->ninputs(), e->noutputs(), processing.processing_code(e).cc());
-	fprintf(outf, "/>\n");
+	fprintf(outf, " />\n");
     }
 
     // print connections
     const Vector<ConnectionT> &conn = r->connections();
     for (int i = 0; i < conn.size(); i++) {
 	int p = processing.output_processing(conn[i].from());
-	fprintf(outf, "<connection fromelement='%s' fromport='%d' toelement='%s' toport='%d' processing='%c'/>\n",
+	fprintf(outf, "<connection fromelement='%s' fromport='%d' toelement='%s' toport='%d' processing='%c' />\n",
 		conn[i].from_elt()->name_cc(), conn[i].from_port(),
 		conn[i].to_elt()->name_cc(), conn[i].to_port(),
 		ProcessingT::processing_letters[p]);

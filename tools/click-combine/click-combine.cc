@@ -463,7 +463,7 @@ particular purpose.\n");
 
   // nested combinations: change config strings of included RouterLinks
   ElementClassT *link_type = combined->try_type("RouterLink");
-  for (RouterT::type_iterator x = combined->first_element(link_type); x; x++)
+  for (RouterT::type_iterator x = combined->begin_elements(link_type); x; x++)
     frob_nested_routerlink(x);
 
   // make links

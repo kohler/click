@@ -349,7 +349,7 @@ static void
 copy_elements(RouterT *oldr, RouterT *newr, ElementClassT *type)
 {
   if (type)
-    for (RouterT::type_iterator x = oldr->first_element(type); x; x++)
+    for (RouterT::type_iterator x = oldr->begin_elements(type); x; x++)
       newr->get_element(x->name(), type, x->configuration(), "");
 }
 
@@ -955,7 +955,7 @@ particular purpose.\n");
 
   // find Classifiers
   Vector<ElementT *> classifiers;
-  for (RouterT::iterator x = r->first_element(); x; x++)
+  for (RouterT::iterator x = r->begin_elements(); x; x++)
     if (cid_name_map[x->type_name()] >= 0)
       classifiers.push_back(x);
 

@@ -697,7 +697,7 @@ ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const 
 
     // get list of elements and/or types
     HashMap<int, int> done_types(-1);
-    for (RouterT::iterator x = r->first_element(); x; x++) {
+    for (RouterT::iterator x = r->begin_elements(); x; x++) {
 	_elements.push_back(x);
 	if (do_elements)
 	    _entries.push_back(x);

@@ -85,7 +85,7 @@ ProcessingT::create_pidx(ErrorHandler *errh)
 
     // complain about dead elements with live connections
     if (errh) {
-	for (RouterT::const_iterator x = _router->first_element(); x; x++)
+	for (RouterT::const_iterator x = _router->begin_elements(); x; x++)
 	    if (x->dead() && (x->ninputs() > 0 || x->noutputs() > 0))
 		errh->lwarning(x->landmark(), "dead element %s has live connections", x->name_cc());
     }

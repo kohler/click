@@ -362,7 +362,7 @@ particular purpose.\n");
 
   // follow instructions embedded in router definition
   ElementClassT *devirtualize_info_class = router->get_type("DevirtualizeInfo");
-  for (RouterT::type_iterator x = router->first_element(devirtualize_info_class); x; x++) {
+  for (RouterT::type_iterator x = router->begin_elements(devirtualize_info_class); x; x++) {
     Vector<String> args;
     cp_argvec(x->configuration(), args);
     for (int j = 0; j < args.size(); j++)

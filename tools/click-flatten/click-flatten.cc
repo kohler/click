@@ -203,7 +203,7 @@ particular purpose.\n");
 
    case DECLARATIONS_OPT: {
      Vector<String> decls;
-     for (RouterT::iterator x = router->first_element(); x; x++)
+     for (RouterT::iterator x = router->begin_elements(); x; x++)
        decls.push_back(x->name() + " :: " + x->type_name());
      output_sorted_one_per_line(decls, out);
      break;
@@ -211,7 +211,7 @@ particular purpose.\n");
 
    case ELEMENTS_OPT: {
      Vector<String> elts;
-     for (RouterT::iterator x = router->first_element(); x; x++)
+     for (RouterT::iterator x = router->begin_elements(); x; x++)
        elts.push_back(x->name());
      output_sorted_one_per_line(elts, out);
      break;

@@ -77,7 +77,7 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
     _pat_input(0), _pat_output(0)
 {
   // check tunnel situation
-  for (RouterT::iterator x = _pat->first_element(); x; x++) {
+  for (RouterT::iterator x = _pat->begin_elements(); x; x++) {
     if (!x->tunnel())
       /* nada */;
     else if (x->tunnel_connected())
@@ -260,7 +260,7 @@ uniqueify_prefix(const String &base_prefix, RouterT *r)
     
     // look for things starting with that name
     int plen = prefix.length();
-    for (RouterT::iterator x = r->first_element(); x; x++) {
+    for (RouterT::iterator x = r->begin_elements(); x; x++) {
       const String &n = x->name();
       if (n.length() > plen + 1 && n.substring(0, plen) == prefix
 	  && n[plen] == '/')

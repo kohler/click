@@ -81,7 +81,7 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
   _oalign.assign(od, Alignment());
   // find aligners
   _aligners.assign(_router->nelements(), default_aligner());
-  for (RouterT::iterator x = _router->first_element(); x; x++) {
+  for (RouterT::iterator x = _router->begin_elements(); x; x++) {
     AlignClass *eclass = (AlignClass *)x->type()->cast("AlignClass");
     if (eclass)
       _aligners[x->idx()] = eclass->create_aligner(x, _router, errh);
@@ -211,7 +211,7 @@ RouterAlign::adjust()
 void
 RouterAlign::print(FILE *f)
 {
-  for (RouterT::iterator x = _router->first_element(); x; x++) {
+  for (RouterT::iterator x = _router->begin_elements(); x; x++) {
     int i = x->idx();
     fprintf(f, "%s :", x->name_cc());
     for (int j = 0; j < _icount[i]; j++) {
@@ -542,7 +542,7 @@ particular purpose.\n");
   // remove unused Aligns (they have no input) and old AlignmentInfos
   ElementClassT *aligninfo_class = router->get_type("AlignmentInfo");
   {
-    for (RouterT::iterator x = router->first_element(); x; x++)
+    for (RouterT::iterator x = router->begin_elements(); x; x++)
       if (x->type() == align_class && (x->ninputs() == 0 || x->noutputs() == 0)) {
 	x->kill();
 	num_aligns_added--;
@@ -560,7 +560,7 @@ particular purpose.\n");
 
     // collect alignment information, delete old AlignmentInfos
     StringAccum sa;
-    for (RouterT::iterator x = router->first_element(); x; x++) {
+    for (RouterT::iterator x = router->begin_elements(); x; x++) {
       if (sa.length())
 	sa << ",\n  ";
       sa << x->name();

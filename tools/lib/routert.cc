@@ -1254,16 +1254,6 @@ RouterT::configuration_string() const
 
 
 void
-RouterT::iterator::step(RouterT *r, int idx)
-{
-    int n = (r ? r->nelements() : -1);
-    while (idx < n && (_e = r->element(idx), _e->dead()))
-	idx++;
-    if (idx >= n)
-	_e = 0;
-}
-
-void
 RouterT::const_iterator::step(const RouterT *r, int idx)
 {
     int n = (r ? r->nelements() : -1);

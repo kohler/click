@@ -33,7 +33,7 @@ class ElementMap { public:
     String documentation_url(const Traits &) const;
     
     class TraitsIterator;
-    TraitsIterator first_element() const;
+    TraitsIterator begin_elements() const;
 
     int add(const Traits &);
     int add(const String &name, const String &cxx, const String &header_file,
@@ -177,7 +177,7 @@ ElementMap::provides_global(const String &req) const
 }
 
 inline ElementMap::TraitsIterator
-ElementMap::first_element() const
+ElementMap::begin_elements() const
 {
     return TraitsIterator(this, true);
 }

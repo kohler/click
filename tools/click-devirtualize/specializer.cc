@@ -34,13 +34,13 @@ Specializer::Specializer(RouterT *router, const ElementMap &em)
 {
   _etinfo.push_back(ElementTypeInfo());
   
-  for (RouterT::iterator x = router->first_element(); x; x++) {
+  for (RouterT::iterator x = router->begin_elements(); x; x++) {
     _noutputs[x->idx()] = x->noutputs();
     _ninputs[x->idx()] = x->ninputs();
   }
 
   // prepare from element map
-  for (ElementMap::TraitsIterator x = em.first_element(); x; x++) {
+  for (ElementMap::TraitsIterator x = em.begin_elements(); x; x++) {
     const Traits &e = x.value();
     add_type_info(e.name, e.cxx, e.header_file, em.source_directory(e));
   }
