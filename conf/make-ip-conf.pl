@@ -67,8 +67,8 @@ c$i :: Classifier(12/0806 20/0001,
                   12/0806 20/0002,
                   12/0800,
                   -);
-$fromdevice($eth) -> PullToPush -> [0]c$i;
-out$i :: Queue(200) -> ToDevice($eth);
+$fromdevice($eth) -> [0]c$i;
+out$i :: Queue(200) -> todevice$i :: ToDevice($eth);
 arpq$i :: ARPQuerier($ip, $ena);
 c$i [1] -> t;
 t[$i] -> [1]arpq$i;
