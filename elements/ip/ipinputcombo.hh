@@ -35,7 +35,7 @@ CheckIPHeader's versions.
 
 class IPInputCombo : public Element {
   
-  uatomic32_t _drops;
+  atomic_uint32_t _drops;
   int _color;
   
   IPAddressList _bad_src;

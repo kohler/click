@@ -50,8 +50,8 @@ class RouterThread : public Task { public:
     int _id;
 
     Spinlock _lock;
-    uatomic32_t _task_lock_waiting;
-    uatomic32_t _pending;
+    atomic_uint32_t _task_lock_waiting;
+    atomic_uint32_t _pending;
 
 #ifdef CLICK_LINUXMODULE
     struct task_struct *_sleeper;

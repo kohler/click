@@ -35,7 +35,7 @@ class DropBroadcasts : public Element {
   Packet *simple_action(Packet *);
 
 private:
-  uatomic32_t _drops;
+  atomic_uint32_t _drops;
 };
 
 CLICK_ENDDECLS

@@ -31,9 +31,9 @@ CLICK_DECLS
 class MSQueue : public Element {
 
   int _capacity;
-  uatomic32_t _head;
-  uatomic32_t _tail;
-  uatomic32_t _drops;
+  atomic_uint32_t _head;
+  atomic_uint32_t _tail;
+  atomic_uint32_t _drops;
   Packet **_q;
   Spinlock _lock;
 
@@ -57,7 +57,7 @@ class MSQueue : public Element {
   
   int size() const; 
   int capacity() const                          { return _capacity; }
-  uatomic32_t drops() const			{ return _drops; }
+  uint32_t drops() const			{ return _drops; }
 
   Packet *head() const;
 

@@ -58,7 +58,7 @@ TCPIPSend::send_write_handler(const String &conf, Element *e, void *, ErrorHandl
        cpIPAddress, "source address", &saddr,
        cpTCPPort, "source port", &sport,
        cpIPAddress, "destination address", &daddr,
-       cpTCPPort, "destinatin port", &dport,
+       cpTCPPort, "destination port", &dport,
        cpUnsigned, "seq number", &seqn,
        cpUnsigned, "ack number", &ackn,
        cpByte, "bits", &bits,

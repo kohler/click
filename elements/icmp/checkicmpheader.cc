@@ -68,7 +68,7 @@ CheckICMPHeader::configure(Vector<String> &conf, ErrorHandler *errh)
   
   _verbose = verbose;
   if (details)
-    _reason_drops = new uatomic32_t[NREASONS];
+    _reason_drops = new atomic_uint32_t[NREASONS];
   
   return 0;
 }

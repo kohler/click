@@ -66,8 +66,8 @@ class CheckICMPHeader : public Element { public:
  private:
   
   bool _verbose : 1;
-  uatomic32_t _drops;
-  uatomic32_t *_reason_drops;
+  atomic_uint32_t _drops;
+  atomic_uint32_t *_reason_drops;
 
   enum Reason {
     NOT_ICMP,

@@ -44,8 +44,8 @@ class IPFragmenter : public Element {
 
   bool _honor_df;
   unsigned _mtu;
-  uatomic32_t _drops;
-  uatomic32_t _fragments;
+  atomic_uint32_t _drops;
+  atomic_uint32_t _fragments;
 
   void fragment(Packet *);
   int optcopy(const click_ip *ip1, click_ip *ip2);

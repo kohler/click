@@ -20,7 +20,7 @@ CLICK_DECLS
 
 class RoundRobinSwitch : public Element {
 
-  uatomic32_t _next;
+  atomic_uint32_t _next;
   
  public:
   

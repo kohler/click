@@ -36,9 +36,9 @@ CLICK_DECLS
 
 class AverageCounter : public Element { protected:
   
-  uatomic32_t _count;
-  uatomic32_t _first;
-  uatomic32_t _last;
+  atomic_uint32_t _count;
+  atomic_uint32_t _first;
+  atomic_uint32_t _last;
   uint32_t _ignore;
   
  public:

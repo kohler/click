@@ -53,7 +53,7 @@ class IPGWOptions : public Element { public:
   
  private:
   
-  uatomic32_t _drops;
+  atomic_uint32_t _drops;
   struct in_addr _preferred_addr;
   IPAddressList _my_addrs;
 

@@ -133,8 +133,8 @@ class CheckIPHeader : public Element { public:
   IPAddressList _good_dst;	// array of IP dst addrs for which _bad_src
 				// does not apply
 
-  uatomic32_t _drops;
-  uatomic32_t *_reason_drops;
+  atomic_uint32_t _drops;
+  atomic_uint32_t *_reason_drops;
 
   enum Reason {
     MINISCULE_PACKET,

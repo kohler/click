@@ -42,7 +42,7 @@ private:
   IPAddress _src_prefix;
   IPAddress _mask;
   IPAddress _dst;
-  uatomic32_t _id;
+  atomic_uint32_t _id;
 
   // TCP Control Block
   class CB {

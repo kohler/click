@@ -41,7 +41,7 @@ public:
 private:
 
   int _op;
-  uatomic32_t _drops;
+  atomic_uint32_t _drops;
 
   enum { COMPUTE_AUTH = 0, VERIFY_AUTH = 1 };
 };

@@ -89,7 +89,7 @@ class RandomSample : public Element { public:
     
     uint32_t _sampling_prob;		// out of (1<<SAMPLING_SHIFT)
     bool _active;
-    uatomic32_t _drops;
+    atomic_uint32_t _drops;
 
     static String read_handler(Element *, void *);
     

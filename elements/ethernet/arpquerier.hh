@@ -94,8 +94,8 @@ class ARPQuerier : public Element { public:
   };
 
   // statistics
-  uatomic32_t _arp_queries;
-  uatomic32_t _pkts_killed;
+  atomic_uint32_t _arp_queries;
+  atomic_uint32_t _pkts_killed;
   
  private:
   ReadWriteLock _lock;

@@ -48,7 +48,7 @@ class DecIPTTL : public Element { public:
   
  private:
 
-  uatomic32_t _drops;
+  atomic_uint32_t _drops;
   
 };
 
