@@ -82,12 +82,12 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "IP_BYTES", cpBool, "do not count link header bytes?", &ip_bytes,
 		    "MULTIPACKET", cpBool, "use packet count annotation?", &packet_count,
 		    "EXTRA_LENGTH", cpBool, "use extra length annotation?", &extra_length,
-		    "FREEZE_AFTER_AGG", cpUnsigned, "freeze after N nonzero aggregates", &freeze_nnz,
-		    "FREEZE_AFTER_COUNT", cpUnsigned64, "freeze after count reaches N", &freeze_count,
-		    "STOP_AFTER_AGG", cpUnsigned, "stop router after N nonzero aggregates", &stop_nnz,
-		    "STOP_AFTER_COUNT", cpUnsigned64, "stop router after count reaches N", &stop_count,
-		    "CALL_AFTER_AGG", cpArgument, "call handler after N nonzero aggregates", &call_nnz,
-		    "CALL_AFTER_COUNT", cpArgument, "call handler after count reaches N", &call_count,
+		    "AGGREGATE_FREEZE", cpUnsigned, "freeze after N nonzero aggregates", &freeze_nnz,
+		    "COUNT_FREEZE", cpUnsigned64, "freeze after count reaches N", &freeze_count,
+		    "AGGREGATE_STOP", cpUnsigned, "stop router after N nonzero aggregates", &stop_nnz,
+		    "COUNT_STOP", cpUnsigned64, "stop router after count reaches N", &stop_count,
+		    "AGGREGATE_CALL", cpArgument, "call handler after N nonzero aggregates", &call_nnz,
+		    "COUNT_CALL", cpArgument, "call handler after count reaches N", &call_count,
 		    "BANNER", cpString, "output banner", &_output_banner,
 		    0) < 0)
 	return -1;
@@ -98,7 +98,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
     _use_extra_length = extra_length;
 
     if ((freeze_nnz != (uint32_t)(-1)) + (stop_nnz != (uint32_t)(-1)) + ((bool)call_nnz) > 1)
-	return errh->error("`FREEZE_AFTER_AGG', `STOP_AFTER_AGG', and `CALL_AFTER_AGG' are mutually exclusive");
+	return errh->error("`AGGREGATE_FREEZE', `AGGREGATE_STOP', and `AGGREGATE_CALL' are mutually exclusive");
     else if (freeze_nnz != (uint32_t)(-1)) {
 	_call_nnz = freeze_nnz;
 	_call_nnz_h = new HandlerCall(id() + ".freeze true");
@@ -107,12 +107,12 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_call_nnz_h = new HandlerCall(id() + ".stop");
     } else if (call_nnz) {
 	if (!cp_unsigned(cp_pop_spacevec(call_nnz), &_call_nnz))
-	    return errh->error("`CALL_AFTER_AGG' first word should be unsigned (number of aggregates)");
+	    return errh->error("`AGGREGATE_CALL' first word should be unsigned (number of aggregates)");
 	_call_nnz_h = new HandlerCall(call_nnz);
     }
     
     if ((freeze_count != (uint64_t)(-1)) + (stop_count != (uint64_t)(-1)) + ((bool)call_count) > 1)
-	return errh->error("`FREEZE_AFTER_COUNT', `STOP_AFTER_COUNT', and `CALL_AFTER_COUNT' are mutually exclusive");
+	return errh->error("`COUNT_FREEZE', `COUNT_STOP', and `COUNT_CALL' are mutually exclusive");
     else if (freeze_count != (uint64_t)(-1)) {
 	_call_count = freeze_count;
 	_call_count_h = new HandlerCall(id() + ".freeze true");
@@ -121,7 +121,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 	_call_count_h = new HandlerCall(id() + ".stop");
     } else if (call_count) {
 	if (!cp_unsigned64(cp_pop_spacevec(call_count), &_call_count))
-	    return errh->error("`CALL_AFTER_COUNT' first word should be unsigned (count)");
+	    return errh->error("`COUNT_CALL' first word should be unsigned (count)");
 	_call_count_h = new HandlerCall(call_count);
     }
     
@@ -438,7 +438,7 @@ AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk
 
 enum {
     AC_FROZEN, AC_ACTIVE, AC_BANNER, AC_STOP, AC_REAGGREGATE, AC_CLEAR,
-    AC_CALL_AFTER_AGG, AC_CALL_AFTER_COUNT, AC_NAGG
+    AC_AGGREGATE_CALL, AC_COUNT_CALL, AC_NAGG
 };
 
 String
@@ -452,12 +452,12 @@ AggregateCounter::read_handler(Element *e, void *thunk)
 	return cp_unparse_bool(ac->_active) + "\n";
       case AC_BANNER:
 	return ac->_output_banner;
-      case AC_CALL_AFTER_AGG:
+      case AC_AGGREGATE_CALL:
 	if (ac->_call_nnz == (uint32_t)(-1))
 	    return "";
 	else
 	    return String(ac->_call_nnz) + " " + ac->_call_nnz_h->unparse(ac);
-      case AC_CALL_AFTER_COUNT:
+      case AC_COUNT_CALL:
 	if (ac->_call_count == (uint64_t)(-1))
 	    return "";
 	else
@@ -505,7 +505,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	return 0;
       case AC_CLEAR:
 	return ac->clear(errh);
-      case AC_CALL_AFTER_AGG:
+      case AC_AGGREGATE_CALL:
 	if (!s) {
 	    ac->_call_nnz = (uint32_t)(-1);
 	    return 0;
@@ -513,13 +513,13 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	if (!ac->_call_nnz_h)
 	    ac->_call_nnz_h = new HandlerCall;
 	if (!cp_unsigned(cp_pop_spacevec(s), &ac->_call_nnz))
-	    return errh->error("argument to `call_after_agg' should be `N HANDLER [VALUE]'");
+	    return errh->error("argument to `aggregate_call' should be `N HANDLER [VALUE]'");
 	else if (ac->_call_nnz_h->initialize_write(s, ac, errh) < 0) {
 	    ac->_call_nnz = (uint32_t)(-1);
 	    return -1;
 	} else
 	    return 0;
-      case AC_CALL_AFTER_COUNT:
+      case AC_COUNT_CALL:
 	if (!s) {
 	    ac->_call_count = (uint64_t)(-1);
 	    return 0;
@@ -527,7 +527,7 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 	if (!ac->_call_count_h)
 	    ac->_call_count_h = new HandlerCall;
 	if (!cp_unsigned64(cp_pop_spacevec(s), &ac->_call_count))
-	    return errh->error("argument to `call_after_count' should be `N HANDLER [VALUE]'");
+	    return errh->error("argument to `count_call' should be `N HANDLER [VALUE]'");
 	else if (ac->_call_count_h->initialize_write(s, ac, errh) < 0) {
 	    ac->_call_count = (uint64_t)(-1);
 	    return -1;
@@ -553,10 +553,10 @@ AggregateCounter::add_handlers()
     add_read_handler("banner", read_handler, (void *)AC_BANNER);
     add_write_handler("banner", write_handler, (void *)AC_BANNER);
     add_write_handler("clear", write_handler, (void *)AC_CLEAR);
-    add_read_handler("call_after_agg", read_handler, (void *)AC_CALL_AFTER_AGG);
-    add_write_handler("call_after_agg", write_handler, (void *)AC_CALL_AFTER_AGG);
-    add_read_handler("call_after_count", read_handler, (void *)AC_CALL_AFTER_COUNT);
-    add_write_handler("call_after_count", write_handler, (void *)AC_CALL_AFTER_COUNT);
+    add_read_handler("aggregate_call", read_handler, (void *)AC_AGGREGATE_CALL);
+    add_write_handler("aggregate_call", write_handler, (void *)AC_AGGREGATE_CALL);
+    add_read_handler("count_call", read_handler, (void *)AC_COUNT_CALL);
+    add_write_handler("count_call", write_handler, (void *)AC_COUNT_CALL);
     add_read_handler("nagg", read_handler, (void *)AC_NAGG);
 }
 

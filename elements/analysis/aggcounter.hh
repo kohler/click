@@ -19,7 +19,7 @@ each aggregate value. Each aggregate annotation value gets a different count.
 Call its C<write_file> or C<write_ascii_file> write handler to get a dump of
 the information.
 
-The C<freeze> handler, and the C<FREEZE_AFTER_AGG> and C<FREEZE_AFTER_COUNT>
+The C<freeze> handler, and the C<AGGREGATE_FREEZE> and C<COUNT_FREEZE>
 keyword arguments, can put AggregateCounter in a frozen state. Frozen
 AggregateCounters only update existing counters; they do not create new
 counters for previously unseen aggregate values.
@@ -55,40 +55,40 @@ Boolean. If true, and BYTES is true, then include packets' extra length
 annotations in the byte counts. Elements like FromDump set this annotation.
 Default is true.
 
-=item STOP_AFTER_AGG
+=item AGGREGATE_STOP
 
 Unsigned. Stop the router once I<N> distinct aggregates have been seen.
 Default is never to stop.
 
-=item FREEZE_AFTER_AGG
+=item AGGREGATE_FREEZE
 
 Unsigned. Freeze the AggregateCounter once I<N> distinct aggregates have been
 seen. Default is never to freeze.
 
-=item CALL_AFTER_AGG
+=item AGGREGATE_CALL
 
 Argument is `I<N> I<HANDLER> [I<VALUE>]'. Call the given write handler, with
 the supplied value, once I<N> distinct aggregates have been seen.
 
-The three AFTER_AGG keywords are mutually exclusive. Supply at most one of
+The three AGGREGATE keywords are mutually exclusive. Supply at most one of
 them.
 
-=item STOP_AFTER_COUNT
+=item COUNT_STOP
 
 Unsigned. Stop the router once the total count (of bytes or packets) has
 reached or exceeded I<N>. Default is never to stop.
 
-=item FREEZE_AFTER_COUNT
+=item COUNT_FREEZE
 
 Unsigned. Freeze the AggregateCounter once the total count has reached or
 exceeded I<N>. Default is never to freeze.
 
-=item CALL_AFTER_COUNT
+=item COUNT_CALL
 
 Argument is `I<N> I<HANDLER> [I<VALUE>]'. Call the given write handler, with
 the supplied value, once the total count has reached or exceeded I<N>.
 
-The three AFTER_COUNT keywords are mutually exclusive. Supply at most one of
+The three COUNT keywords are mutually exclusive. Supply at most one of
 them.
 
 =item BANNER
@@ -150,13 +150,13 @@ aggregate, with its number of occurrences in the multiset as its count.
 
 Returns or sets the BANNER setting.
 
-=h call_after_agg read/write
+=h aggregate_call read/write
 
-Returns or sets the CALL_AFTER_AGG setting.
+Returns or sets the AGGREGATE_CALL setting.
 
-=h call_after_count read/write
+=h count_call read/write
 
-Returns or sets the CALL_AFTER_COUNT setting.
+Returns or sets the COUNT_CALL setting.
 
 =h nagg read-only
 
