@@ -1,3 +1,8 @@
+2003-10-23 Thursday 14:50  Eddie Kohler <kohler@icir.org>
+
+	* ns/nsclick.cc (1.15): adapt to new initialization procedure;
+	reported by Matthias Gerlach
+
 2003-10-22 Wednesday 18:34  Eddie Kohler <kohler@icir.org>
 
 	* click-compile.in (1.26), etc/samplepackage/Makefile.in (1.36):
