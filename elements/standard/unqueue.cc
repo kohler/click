@@ -74,8 +74,10 @@ Unqueue::run_task()
 	    worked++;
 	    output(0).push(p);
 	} else {
-	    if (!_signal)
+	    if (!_signal) {
+		_count += worked;
 		return worked > 0;
+	    }
 	    break;
 	}
     }
