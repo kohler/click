@@ -1,3 +1,11 @@
+2001-03-19 Monday 19:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: remove conftest* files
+
+2001-03-19 Monday 19:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES, tools/Makefile.in: DISTFILES
+
 2001-03-19 Monday 17:47  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* configure.in: configure.in updates: call AC_TRY_RUN less
