@@ -1,3 +1,11 @@
+2003-05-28 Wednesday 19:07  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromipsumdump.cc (1.50),
+	elements/analysis/ipsumdumpinfo.cc (1.9),
+	elements/analysis/toipsumdump.cc (1.44), elements/ip/rfc2507c.cc
+	(1.26), include/clicknet/tcp.h (1.4): support the ECN Nonce Sum TCP
+	flag in ipsumdump elements; reserve character "N"
+
 2003-05-26 Monday 21:04  jbicket
 
 	* elements/: grid/gridgatewayinfo.cc (1.6), grid/gridproxy.cc
