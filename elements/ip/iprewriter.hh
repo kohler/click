@@ -76,7 +76,7 @@ class IPRewriter : public Element {
 
   Timer _timer;
 
-  static const int GC_INTERVAL_SEC = 10;
+  static const int GC_INTERVAL_SEC = 600;
 
   void mark_live_tcp();
   void clean_map(HashMap<IPFlowID, Mapping *> &);

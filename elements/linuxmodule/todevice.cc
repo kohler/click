@@ -150,8 +150,6 @@ ToDevice::initialize(ErrorHandler *errh)
   /* start out with default number of tickets, inflate up to max */
   int max_tickets = ScheduleInfo::query(this, errh);
   set_max_tickets(max_tickets);
-// Don't adapt dynamically for demo. --maxp
-//  set_tickets(ScheduleInfo::DEFAULT);
   set_tickets(max_tickets);
 #endif
   join_scheduler();
