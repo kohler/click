@@ -1,3 +1,11 @@
+2004-08-05 Thursday 10:29  Max Krohn <krohn@mit.edu>
+
+	* etc/debian-2.4.26-patch (1.2): Included patch for
+	drivers/i2c/i2c-core.c; there were some elements to struct member
+	"ctl_table," which had to be renamed as "ctl_table_member;"
+	otherwise, there was a clash between the member name and the type
+	"ctl_table."
+
 2004-08-04 Wednesday 13:39  Max Krohn <krohn@mit.edu>
 
 	* conf/click-mkclgw.pl (1.10): Don't allow labels with '-'
