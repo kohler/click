@@ -8,19 +8,22 @@ sub mysystem ($) {
 }
 
 my($INSTALL) = 1;
-my($MANUALS) = 1;
+my($ELEMENTS) = 1;
+my($PROGMAN) = 1;
+my($DOC_TAR_GZ) = 1;
 while ($ARGV[0] =~ /^-/) {
     $_ = shift @ARGV;
     if (/^-x$/ || /^--no-install$/) {
 	$INSTALL = 0;
-    } elsif (/^-m$/ || /^--no-manuals$/) {
-	$MANUALS = 0;
+    } elsif (/^-p$/ || /^--progman$/) {
+	$PROGMAN = 1;
+	$ELEMENTS = $DOC_TAR_GZ = 0;
     } else {
-	die "Usage: ./mkwebdoc.pl [-x] [-m] CLICKWEBDIR";
+	die "Usage: ./mkwebdoc.pl [-x] [-p|--progman] CLICKWEBDIR";
     }
 }
 
-@ARGV == 1 || die "Usage: ./mkwebdoc.pl [-x] [-m] CLICKWEBDIR";
+@ARGV == 1 || die "Usage: ./mkwebdoc.pl [-x] [-p|--progman] CLICKWEBDIR";
 my($WEBDIR) = $ARGV[0];
 $WEBDIR =~ s/\/+$//;
 my($DOCDIR, $EXDIR) = ("$WEBDIR/doc", "$WEBDIR/ex");
@@ -48,7 +51,10 @@ close MK;
 # 1. install manual pages and click-pretty tool
 if ($INSTALL) {
     mysystem("/bin/rm -rf /tmp/%click-webdoc");
-    mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-man EXTRA_PROVIDES='linuxmodule i586 i686 linux_2_2 linux_2_4' && gmake install-local EXTRA_PROVIDES='linuxmodule i586 i686 linux_2_2 linux_2_4'");
+    mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --disable-linuxmodule --disable-bsdmodule --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-local EXTRA_PROVIDES='linuxmodule bsdmodule i586 i686 linux_2_2 linux_2_4'");
+    if ($ELEMENTS) {
+	mysystem("cd click-$VERSION && gmake install-local EXTRA_PROVIDES='linuxmodule bsdmodule i586 i686 linux_2_2 linux_2_4'");
+    }
     mysystem("cd tools/click-pretty && gmake install");
     mysystem("cd /tmp/%click-webdoc/share/click && echo '\$webdoc ../doc/%s.n.html' | cat - elementmap > emap2 && mv emap2 elementmap");
 }
@@ -70,8 +76,6 @@ foreach $i (@examples) {
 }
 
 # 2.0. read elementmap
-exit 0 if !$MANUALS;
-open(EMAP, "/tmp/%click-webdoc/share/click/elementmap") || die "/tmp/%click-webdoc/share/click/elementmap: $!\n";
 my(%ereq, $reqindex, $classindex, $provindex, $docnameindex);
 
 sub em_unquote ($) {
@@ -88,24 +92,28 @@ sub em_unquote ($) {
     $x;
 }
 
-while (<EMAP>) {
-    s/\"(([^\"]|\\.)*)\"/\370$1\371/g;
-    1 while s/(\370[^\371]*)\s/$1\372/;
-    my(@x) = split(/\s+/, $_);
-    if ($x[0] eq '$data') {
-	for ($i = 1; $i < @x; $i++) {
-	    $reqindex = $i - 1 if $x[$i] eq 'requirements';
-	    $classindex = $i - 1 if $x[$i] eq 'class';
-	    $provindex = $i - 1 if $x[$i] eq 'provisions';
-	    $docnameindex = $i - 1 if $x[$i] eq 'doc_name';
-	}
-    } elsif ($x[0] !~ /^\$/ && defined($reqindex) && $reqindex < @x) {
-	my($e, $r, $p, $dn) = (em_unquote($x[$classindex]), em_unquote($x[$reqindex]), em_unquote($x[$provindex]), em_unquote($x[$docnameindex]));
-	$ereq{$e} = ($ereq{$e} ? 'xxx' : $r) if $e;
-	foreach $i (split(/\s+/, $p)) {
-	    $ereq{$i} = $r;
+if ($ELEMENTS) {
+    open(EMAP, "/tmp/%click-webdoc/share/click/elementmap") || die "/tmp/%click-webdoc/share/click/elementmap: $!\n";
+    while (<EMAP>) {
+	s/\"(([^\"]|\\.)*)\"/\370$1\371/g;
+	1 while s/(\370[^\371]*)\s/$1\372/;
+	my(@x) = split(/\s+/, $_);
+	if ($x[0] eq '$data') {
+	    for ($i = 1; $i < @x; $i++) {
+		$reqindex = $i - 1 if $x[$i] eq 'requirements';
+		$classindex = $i - 1 if $x[$i] eq 'class';
+		$provindex = $i - 1 if $x[$i] eq 'provisions';
+		$docnameindex = $i - 1 if $x[$i] eq 'doc_name';
+	    }
+	} elsif ($x[0] !~ /^\$/ && defined($reqindex) && $reqindex < @x) {
+	    my($e, $r, $p, $dn) = (em_unquote($x[$classindex]), em_unquote($x[$reqindex]), em_unquote($x[$provindex]), em_unquote($x[$docnameindex]));
+	    $ereq{$e} = ($ereq{$e} ? 'xxx' : $r) if $e;
+	    foreach $i (split(/\s+/, $p)) {
+		$ereq{$i} = $r;
+	    }
 	}
     }
+    close EMAP;
 }
 
 # 2.1. spread requirements
@@ -125,27 +133,31 @@ sub expand_ereq ($) {
     $ereq{$e};
 }
 
-map { expand_ereq($_) } keys %ereq;
+if ($ELEMENTS) {
+    map { expand_ereq($_) } keys %ereq;
+}
 
 
 # 2.2. changetemplate.pl
 my(@esubj, @ealpha, @esections, $cocked, %edeprecated);
-open(IN, "/tmp/%click-webdoc/man/mann/elements.n") || die "/tmp/%click-webdoc/man/mann/elements.n: $!\n";
-while (<IN>) {
-    push @{$esections[-1]}, scalar(@esubj) if /^\.SS/ && @esections;
-    push @esections, [$1, scalar(@esubj)] if /^\.SS \"(.*)\"/;
-    push @esubj, $1 if /^\.M (.*) n/ && $cocked;
-    $cocked = ($_ =~ /^\.TP/);
-    last if (/^\.SH \"ALPHABETICAL/);
+if ($ELEMENTS) {
+    open(IN, "/tmp/%click-webdoc/man/mann/elements.n") || die "/tmp/%click-webdoc/man/mann/elements.n: $!\n";
+    while (<IN>) {
+	push @{$esections[-1]}, scalar(@esubj) if /^\.SS/ && @esections;
+	push @esections, [$1, scalar(@esubj)] if /^\.SS \"(.*)\"/;
+	push @esubj, $1 if /^\.M (.*) n/ && $cocked;
+	$cocked = ($_ =~ /^\.TP/);
+	last if (/^\.SH \"ALPHABETICAL/);
+    }
+    push @{$esections[-1]}, scalar(@esubj);
+    while (<IN>) {
+	push @ealpha, $1 if /^\.M (.*) n/ && $cocked;
+	$edeprecated{$1} = 1 if /^\.M (.*) n .*deprecated/ && $cocked;
+	$cocked = ($_ =~ /^\.TP/);
+    }
+    @ealpha = sort { lc($a) cmp lc($b) } @ealpha;
+    close IN;
 }
-push @{$esections[-1]}, scalar(@esubj);
-while (<IN>) {
-    push @ealpha, $1 if /^\.M (.*) n/ && $cocked;
-    $edeprecated{$1} = 1 if /^\.M (.*) n .*deprecated/ && $cocked;
-    $cocked = ($_ =~ /^\.TP/);
-}
-@ealpha = sort { lc($a) cmp lc($b) } @ealpha;
-close IN;
 
 sub element_li ($) {
     my($e) = @_;
@@ -162,94 +174,68 @@ sub element_li ($) {
     "$t</li>\n";
 }
 
-open(IN, "$DOCDIR/index.html") || die "$DOCDIR/index.html: $!\n";
-open(OUT, ">$DOCDIR/index.html.new") || die "$DOCDIR/index.html.new: $!\n";
-while (<IN>) {
-    if (/^<!-- clickdoc: ealpha (\d+)\/(\d+)/) {
-	print OUT;
-	my($num, $total) = ($1, $2);
-	my($amt) = int((@ealpha - 1) / $2) + 1;
-	my($index) = ($num - 1) * $amt;
-	for ($i = $index; $i < $index + $amt && $i < @ealpha; $i++) {
-	    print OUT element_li($ealpha[$i]);
-	}
-	1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
-	print OUT;
-    } elsif (/^<!-- clickdoc: esubject (\d+)\/(\d+)/) {
-	print OUT;
-	my($num, $total) = ($1, $2);
-	my($amt) = int((@esubj + 2*@esections - 1) / $2) + 1;
-	my($index) = ($num - 1) * $amt;
-
-	# find first section number
-	my($secno, $secno2);
-	for ($secno = 0; $secno < @esections; $secno++) {
-	    my($diffa, $diffb) = ($esections[$secno]->[1] + 2*$secno - $index, $esections[$secno]->[2] + 2*($secno + 1) - $index);
-	    last if $diffa >= 0;
-	    last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
-	}
-
-	# find last section number
-	$index += $amt;
-	for ($secno2 = $secno; $secno2 < @esections; $secno2++) {
-	    my($diffa, $diffb) = ($esections[$secno2]->[1] + 2*$secno2 - $index, $esections[$secno2]->[2] + 2*($secno2 + 1) - $index);
-	    last if $diffa >= 0;
-	    last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
-	}
-
-	# iterate over sections
-	for ($i = $secno; $i < $secno2; $i++) {
-	    print OUT "<p class='esubject'>", $esections[$i]->[0], "</p>\n";
-	    for ($j = $esections[$i]->[1]; $j < $esections[$i]->[2]; $j++) {
-		print OUT element_li($esubj[$j]);
+if ($ELEMENTS) {
+    open(IN, "$DOCDIR/index.html") || die "$DOCDIR/index.html: $!\n";
+    open(OUT, ">$DOCDIR/index.html.new") || die "$DOCDIR/index.html.new: $!\n";
+    while (<IN>) {
+	if (/^<!-- clickdoc: ealpha (\d+)\/(\d+)/) {
+	    print OUT;
+	    my($num, $total) = ($1, $2);
+	    my($amt) = int((@ealpha - 1) / $2) + 1;
+	    my($index) = ($num - 1) * $amt;
+	    for ($i = $index; $i < $index + $amt && $i < @ealpha; $i++) {
+		print OUT element_li($ealpha[$i]);
 	    }
-	}
+	    1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
+	    print OUT;
+	} elsif (/^<!-- clickdoc: esubject (\d+)\/(\d+)/) {
+	    print OUT;
+	    my($num, $total) = ($1, $2);
+	    my($amt) = int((@esubj + 2*@esections - 1) / $2) + 1;
+	    my($index) = ($num - 1) * $amt;
+
+	    # find first section number
+	    my($secno, $secno2);
+	    for ($secno = 0; $secno < @esections; $secno++) {
+		my($diffa, $diffb) = ($esections[$secno]->[1] + 2*$secno - $index, $esections[$secno]->[2] + 2*($secno + 1) - $index);
+		last if $diffa >= 0;
+		last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
+	    }
+
+	    # find last section number
+	    $index += $amt;
+	    for ($secno2 = $secno; $secno2 < @esections; $secno2++) {
+		my($diffa, $diffb) = ($esections[$secno2]->[1] + 2*$secno2 - $index, $esections[$secno2]->[2] + 2*($secno2 + 1) - $index);
+		last if $diffa >= 0;
+		last if $diffb > 0 && $diffa < 0 && -$diffa < $diffb;
+	    }
+
+	    # iterate over sections
+	    for ($i = $secno; $i < $secno2; $i++) {
+		print OUT "<p class='esubject'>", $esections[$i]->[0], "</p>\n";
+		for ($j = $esections[$i]->[1]; $j < $esections[$i]->[2]; $j++) {
+		    print OUT element_li($esubj[$j]);
+		}
+	    }
 	
-	1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
-	print OUT;
-    } else {
-	print OUT;
+	    1 while (defined($_ = <IN>) && !/^<!-- \/clickdoc/);
+	    print OUT;
+	} else {
+	    print OUT;
+	}
     }
-}
-close IN;
-close OUT;
-if (system("cmp $DOCDIR/index.html $DOCDIR/index.html.new >/dev/null 2>&1")) {
-    unlink("$DOCDIR/index.html") || die "unlink $DOCDIR/index.html: $!\n";
-    rename("$DOCDIR/index.html.new", "$DOCDIR/index.html") || die "rename $DOCDIR/index.html.new: $!\n";
-} else {
-    unlink("$DOCDIR/index.html.new") || die "unlink $DOCDIR/index.html.new: $!\n";
+    close IN;
+    close OUT;
+    if (system("cmp $DOCDIR/index.html $DOCDIR/index.html.new >/dev/null 2>&1")) {
+	unlink("$DOCDIR/index.html") || die "unlink $DOCDIR/index.html: $!\n";
+	rename("$DOCDIR/index.html.new", "$DOCDIR/index.html") || die "rename $DOCDIR/index.html.new: $!\n";
+    } else {
+	unlink("$DOCDIR/index.html.new") || die "unlink $DOCDIR/index.html.new: $!\n";
+    }
 }
 
 # 3. call `man2html'
 mysystem("man2html -l -m '<b>@</b>' -t $DOCDIR/template -d $DOCDIR /tmp/%click-webdoc/man/man*/*.?");
-
-# 4. change `elements.n.html' into `index.html'
-if (0) {
-    open(IN, "$DOCDIR/elements.n.html") || die "$DOCDIR/elements.n.html: $!\n";
-    open(OUT, ">$DOCDIR/index.html") || die "$DOCDIR/index.html: $!\n";
-    while (<IN>) {
-	s|<h1><a.*?>elements</a></h1>|<h1>Click documentation</h1>|;
-	s|<p>documented Click element classes||;
-	s|<h2><a.*?>DESCRIPTION</a></h2>||;
-	s|<a href="index\.html">(.*?)</a>|<b>$1</b>|;
-	if (/<p>This page lists all Click element classes that have manual page documentation./) {
-	    print OUT <<"EOF";
-	    <p>Here is the programmer\'s documentation available for Click. All
-these files have been automatically translated from documentation provided
-with the distribution, which you can get <a
-href=\"http://www.pdos.lcs.mit.edu/click/\">here</a>. You may also be
-interested in <a
-href=\"http://www.pdos.lcs.mit.edu/papers/click:tocs00/\">our TOCS
-paper</a>.</p>
-<p>The Click element classes that have manual page documentation are:</p>
-EOF
-            next;
-	}
-	print OUT;
-    }
-    close IN;
-    close OUT;
-}
 
 # 5. call `changelog2html'
 mysystem("changelog2html -d $DOCDIR click-$VERSION/NEWS $WEBDIR/news.html");
@@ -273,50 +259,54 @@ unlink("$WEBDIR/news.html") || die "unlink $WEBDIR/news.html: $!\n";
 rename("$WEBDIR/news.html.new", "$WEBDIR/news.html") || die "rename $WEBDIR/news.html.new: $!\n";
 
 # 7. install programming manual
-mysystem("cd click-$VERSION/doc && gmake click.html") if ($INSTALL);
+if ($PROGMAN) {
+    mysystem("cd click-$VERSION/doc && gmake click.html") if ($INSTALL);
 
-open(IN, "click-$VERSION/doc/click.html") || die "couldn't make click.html";
-open(OUT, ">$DOCDIR/progman.html") || die;
-open(TMP, "$DOCDIR/template") || die;
+    open(IN, "click-$VERSION/doc/click.html") || die "couldn't make click.html";
+    open(OUT, ">$DOCDIR/progman.html") || die;
+    open(TMP, "$DOCDIR/template") || die;
 
-while (<TMP>) {
-  s/&mantitle;/Click Programming Manual/g;
-  print OUT;
-  if (/^\<!-- man2html -->/) {
-    1 while defined($_ = <IN>) && !m{^\</head>};
-    $_ = <IN>;		# get rid of line
-    print OUT $_ while defined($_ = <IN>) && !m{^\</body>};
-    1 while defined($_ = <TMP>) && !m{^\<!-- /man2html -->};
-    print OUT $_;
-  }
+    while (<TMP>) {
+	s/&mantitle;/Click Programming Manual/g;
+	print OUT;
+	if (/^\<!-- man2html -->/) {
+	    1 while defined($_ = <IN>) && !m{^\</head>};
+	    $_ = <IN>;		# get rid of line
+	    print OUT $_ while defined($_ = <IN>) && !m{^\</body>};
+	    1 while defined($_ = <TMP>) && !m{^\<!-- /man2html -->};
+	    print OUT $_;
+	}
+    }
+
+    close IN;
+    close OUT;
+    close TMP;
 }
-
-close IN;
-close OUT;
-close TMP;
 
 # 8. create doc.tar.gz
-$DOCDIR = "/tmp/%click-webdoc/click-doc-$VERSION";
-mysystem("rm -rf $DOCDIR && mkdir $DOCDIR");
-mysystem("cp $WEBDIR/doc/*.css $DOCDIR");
-mysystem("cp $WEBDIR/_.gif $DOCDIR");
-mysystem("cp $WEBDIR/el_*.gif $DOCDIR");
+if ($DOC_TAR_GZ) {
+    $DOCDIR = "/tmp/%click-webdoc/click-doc-$VERSION";
+    mysystem("rm -rf $DOCDIR && mkdir $DOCDIR");
+    mysystem("cp $WEBDIR/doc/*.css $DOCDIR");
+    mysystem("cp $WEBDIR/_.gif $DOCDIR");
+    mysystem("cp $WEBDIR/el_*.gif $DOCDIR");
 
-opendir(DIR, "$WEBDIR/doc") || die;
-my(@htmlfiles) = grep { /\.html$/ } readdir(DIR);
-closedir(DIR);
+    opendir(DIR, "$WEBDIR/doc") || die;
+    my(@htmlfiles) = grep { /\.html$/ } readdir(DIR);
+    closedir(DIR);
 
-undef $/;
-foreach $f (@htmlfiles) {
-    open(IN, "$WEBDIR/doc/$f");
-    $_ = <IN>;
-    close IN;
-    open(OUT, ">$DOCDIR/$f");
-    s{src='\.\./}{src='}g;
-    s{href='\.\./?'}{href='http://www.pdos.lcs.mit.edu/click/'}g;
-    print OUT;
-    close OUT;
+    undef $/;
+    foreach $f (@htmlfiles) {
+	open(IN, "$WEBDIR/doc/$f");
+	$_ = <IN>;
+	close IN;
+	open(OUT, ">$DOCDIR/$f");
+	s{src='\.\./}{src='}g;
+	s{href='\.\./?'}{href='http://www.pdos.lcs.mit.edu/click/'}g;
+	print OUT;
+	close OUT;
+    }
+
+    mysystem("cd /tmp/%click-webdoc && gtar czf click-doc-$VERSION.tar.gz click-doc-$VERSION");
+    mysystem("mv /tmp/%click-webdoc/click-doc-$VERSION.tar.gz $WEBDIR");
 }
-
-mysystem("cd /tmp/%click-webdoc && gtar czf click-doc-$VERSION.tar.gz click-doc-$VERSION");
-mysystem("mv /tmp/%click-webdoc/click-doc-$VERSION.tar.gz $WEBDIR");
