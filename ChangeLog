@@ -1,3 +1,33 @@
+2003-06-26 Thursday 15:27  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: lookupgeogridroute.cc (1.31),
+	lookupgeogridroute.hh (1.14): remove dependence on
+	gridroutetable.hh
+
+2003-06-26 Thursday 15:26  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridgenericrt.hh (1.7): semantics of
+	current_gateway() changed to return _best_ gw available
+
+2003-06-26 Thursday 15:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.53), dsdvroutetable.hh
+	(1.38), gridgatewayinfo.cc (1.7), gridgatewayinfo.hh (1.6): remove
+	GridGatewayInfo's dependence on DSDVRouteTable; it should depend on
+	GridGenericRouteTable instead.	 Remove
+	DSDVRouteTable::best_gateway(); its functionality is acocmplished
+	by GridGenericRouteTable::current_gateway()
+
+2003-06-26 Thursday 15:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.52), dsdvroutetable.hh
+	(1.37): use DEQueue instead of hack QVec
+
+2003-06-26 Thursday 15:00  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/dequeue.cc (1.2): oops.  people who check-in
+	cut&paste errors ought to be shot.
+
 2003-06-26 Thursday 14:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* include/click/: dequeue.cc (1.1), dequeue.hh (1.1): Added DEQueue
