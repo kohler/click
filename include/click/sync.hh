@@ -141,7 +141,7 @@ class SpinlockIRQ { public:
 
     inline SpinlockIRQ();
 
-    typedef int flags_t;
+    typedef unsigned long flags_t;
     
     inline flags_t acquire();
     inline void release(flags_t);
@@ -163,7 +163,6 @@ SpinlockIRQ::acquire()
 {
     flags_t flags;
     local_irq_save(flags);
-    local_irq_disable();
     spin_lock(&_lock);
     return flags;
 }
