@@ -1,3 +1,7 @@
+2004-08-03 Tuesday 15:33  Max Krohn <krohn@mit.edu>
+
+	* conf/click-mkclgw.pl (1.9): added https.
+
 2004-08-01 Sunday 03:17  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/icmppingrewriter.hh (1.12): unsigned short =>
