@@ -1,4 +1,6 @@
 .\" -*- mode: nroff -*-
+.ds V 1.0.5
+.ds D 29/Apr/2000
 .ds E " \-\- 
 .if t .ds E \(em
 .de Sp
@@ -35,7 +37,7 @@
 .de RK
 .RB "\\$1" "\\$2" "\\$3" "\\$4" "\\$5" "\\$6"
 ..
-.TH ELEMENT 3 "19/Oct/1999" "Version \*V"
+.TH ELEMENT 3 "\*D" "Version \*V"
 .SH NAME
 Element \- Click superclass for elements
 '
@@ -367,6 +369,40 @@ before the live reconfiguration was attempted. The default implementation
 just calls
 .BR configure( "\fIconfig_string\fP, \fIerrh\fP" )
 and returns its value.
+'
+.Sp
+.TP
+.BR "virtual void take_state(" "Element *\fIold_element\fP,"
+.TP
+.RB "\%            ErrorHandler *\fIerrh\fP" )
+Called during a hot-swap reconfiguration when this element should take
+\fIold_element\fP's state. (This element and \fIold_element\fP have the
+same name, but
+.K this
+is in the new router and \fIold_element\fP is in the old router. For
+example,
+.M Queue n 's
+.B take_state
+method moves old enqueued packets into the new Queue.) The 
+.B take_state
+method is called after the new router has been completely and correctly
+initialized. In particular, this element's
+.B initialize
+method has already been called, and it returned zero (success).
+.Sp
+The method cannot make any assumptions about \fIold_element\fP. For
+example, it may have a different element class than
+.K this .
+The first lines of a
+.B take_state
+method usually call
+.B cast()
+to check \fIold_element\fP's class.
+.Sp
+Any warnings should be reported to the \fIerrh\fP ErrorHandler. (The new
+router will definitely be installed, so error messages, which would
+indicate a serious problem, are not appropriate.) The default
+implementation does nothing.
 .PD
 '
 .SH "HANDLERS"

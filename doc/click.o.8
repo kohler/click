@@ -1,4 +1,6 @@
 .\" -*- mode: nroff -*-
+.ds V 1.0.5
+.ds D 27/Apr/2000
 .ds E " \-\- 
 .if t .ds E \(em
 .de Sp
@@ -29,7 +31,7 @@
 .de RM
 .RB "\\$1" "\\$2" "(\\$3)\\$4"
 ..
-.TH CLICK.O 8 "19/Oct/1999" "Version \*V"
+.TH CLICK.O 8 "\*D" "Version \*V"
 .SH NAME
 click.o \- Click kernel module for Linux
 '
@@ -55,13 +57,16 @@ for its API. It creates a number of files under /proc/click, some read-only
 and some read/write (writable by the superuser). You control the module by
 writing to these files.
 .PP
-A router configuration is installed by writing it to the /proc/click/config
-file. The configuration can use most of Click's element classes (see
+Install a router configuration by writing it to /proc/click/config or
+/proc/click/hotconfig. The configuration can use most of Click's element
+classes (see
 .M elements n ).
-Three element classes control how the module receives and transmits
+Several element classes control how the module receives and transmits
 packets:
 .M FromDevice n
-steals packets from devices before Linux process them,
+and
+.M PollDevice n
+steal packets from devices before Linux processes them,
 .M ToDevice n
 sends packets directly to devices, and
 .M ToLinux n
@@ -76,7 +81,21 @@ Read/write. Contains a Click-language description (see
 .M click 5 )
 of the most recent router configuration, not including any run-time
 reconfiguration. Write a Click-language router description to this file to
-change the configuration.
+install a new router configuration.
+'
+.TP
+.B /proc/click/hotconfig
+Write-only. Write a Click-language router description to this file to
+hot-swap install a new router configuration. The new router is installed
+only if it initializes correctly; otherwise, error messages will be
+reported to /proc/click/errors, but the old router will keep working
+without interruption. If the new router initializes successfully, state
+from the old router, such as any packets stored in
+.M Queue n
+elements, will be moved into the new router before it is installed. This
+happens on a per-element basis, and it only works if the new element and
+the old element have the same name. This behavior differs from
+/proc/click/config, which always throws away the old router.
 '
 .TP
 .B /proc/click/errors
@@ -186,14 +205,15 @@ before installing it.
 .M click 5 ,
 .M elements n ,
 .M FromDevice n ,
+.M PollDevice n ,
 .M ToDevice n ,
-.M ToLinux n
+.M FromLinux n ,
+.M ToLinux n ,
+.M Queue n
 '
 .SH AUTHOR
 .na
 Eddie Kohler, eddietwo@lcs.mit.edu
-.br
-John Jannotti, jj@lcs.mit.edu
 .br
 Robert Morris, rtm@lcs.mit.edu
 .br

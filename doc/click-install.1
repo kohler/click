@@ -1,5 +1,6 @@
 .\" -*- mode: nroff -*-
-.ds V 1.0
+.ds V 1.0.5
+.ds D 27/Apr/2000
 .ds E " \-\- 
 .if t .ds E \(em
 .de Sp
@@ -30,7 +31,7 @@
 .de RM
 .RB "\\$1" "\\$2" "(\\$3)\\$4"
 ..
-.TH CLICK-INSTALL 1 "27/Nov/1999" "Version \*V"
+.TH CLICK-INSTALL 1 "\*D" "Version \*V"
 .SH NAME
 click-install \- installs a router configuration into the Click kernel module
 '
@@ -69,8 +70,28 @@ The default is the standard input.
 '
 .Sp
 .TP 5
+.BR \-h ", " \-\-hot\-swap
+Hot-swap install the new configuration. If you supply this option, the new
+configuration will only be installed if it initializes correctly. If it
+fails, the old configuration will continue to route packets without
+interruption. Furthermore, state from the old configuration\*Esuch as
+packets contained in
+.M Queue n
+elements\*Ewill be swapped into the new configuration under certain
+conditions. See under
+.B /proc/click/hotconfig
+in
+.M click.o 8
+for details.
+'
+.Sp
+.TP 5
 .BR \-u ", " \-\-uninstall
 Uninstall and reinstall the Click kernel module.
+.B \-\-hot\-swap
+and
+.B \-\-uninstall
+are mutually exclusive.
 '
 .Sp
 .TP 5
