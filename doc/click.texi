@@ -250,8 +250,35 @@ will never be called.
 @node processing, initialize, configure, Element Initialization
 @section @code{processing}---Push and Pull Processing
 
-Elements use the @code{processing} and @code{processing_vector} methods
-to specify whether their ports push, pull, or agnostic. 
+Elements use the @code{processing} method to specify whether their ports
+are push, pull, or agnostic. This method returns a @dfn{processing
+specification}---an ASCII string that, properly interpreted, specifies
+the processing type for each port.
+
+@deftypemethod Element {virtual const char *} processing () const
+@end deftypemethod
+
+Processing specifications look like this:
+
+@display
+@var{inputspec}@code{/}@var{outputspec}
+@end display
+
+@noindent
+Each of @var{inputspec} and @var{outputspec} is a sequence of @samp{h},
+@samp{l}, and @samp{a} characters, containing at least one character.
+@samp{h} indicates a push port, @samp{l} a pull port, and @samp{a} an
+agnostic port. The first character in each sequence represents the first
+port (port 0), and so forth. For example, @code{"a/ah"} says that the
+element's first input and first output ports are both agnostic, but the
+second output port is push.
+
+@var{Inputspec} and @var{outputspec} need not have the correct numbers
+of characters. The last character in each specification is duplicated as
+many times as necessary; any extra characters are ignored. Thus, the
+processing specifications @code{"aaaaaaaa/haaaaaaa"} and @code{"a/ha"}
+behave identically.
+
 
 
 @node initialize, configure_phase, processing, Element Initialization
@@ -305,13 +332,13 @@ The following basic configure phase constants are defined in
 @code{<click/element.hh>}:
 
 @table @code
-@item CONFIGURE_PHASE_ZERO
+@item CONFIGURE_PHASE_FIRST
 Configure first.
 @item CONFIGURE_PHASE_INFO
 Configure early. Appropriate for most information elements.
 @item CONFIGURE_PHASE_DEFAULT
 Default configuration phase. Appropriate for most elements.
-@item CONFIGURE_PHASE_LATE
+@item CONFIGURE_PHASE_LAST
 Configure last.
 @end table
 
