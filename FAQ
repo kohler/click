@@ -1,1 +1,66 @@
-empty
+CLICK FAQ
+=========
+
+SECTION 1: GENERAL QUESTIONS
+----------------------------
+
+Q. Is Click experimental software?
+
+A. Yes.
+
+
+Q. The Click Linux patch does not apply cleanly.
+
+A. You need a specific version of Linux. The patch we are distributing (as
+   of version 1.0) is for Linux 2.2.14. Most of the patch will apply no
+   matter what version of Linux 2.2 you use. The problem is the Tulip
+   device driver, which seems to be changing a lot between versions.
+
+
+Q. How fast can Click route packets?
+
+A. On a 700 MHz Pentium III, we could get 435,000 64-byte packets a second
+   through a Click router with eight active DEC Tulip fast Ethernet cards.
+
+
+Q. How do you do that?
+
+A. Device driver improvements, including polling, and language-level
+   optimizations.
+
+
+Q. Can I get that many packets through a Click router?
+
+A. You should be able to do that right now if you use DEC Tulip fast
+   Ethernet cards. This is currently the only device driver that we have
+   changed to use our polling extensions to Linux.
+
+
+Q. How does Click run inside a Linux kernel?
+
+A. As a kernel thread. It continually loops over a list of things to do,
+   and does them---basically busy waiting. Other processes on the machine
+   will get run, but not as often.
+
+
+SECTION 2: QUESTIONS ABOUT POLLING
+----------------------------------
+
+Q. How can I change a device driver to use the Click polling extensions?
+
+A. Benjie Chen, who designed the extensions, will be writing a document
+   soon that describes how to do this. For now, though, you'll have to look
+   at our additions to Linux's `struct device', and the way they are used
+   by our Tulip driver. You can always write us and ask for help:
+   <click@pdos.lcs.mit.edu>.
+
+
+Q. Can I use Click without updating device drivers (that is, without
+   polling)?
+
+A. Sure you can. Just use FromDevice elements instead of PollDevice
+   elements. However, your performance will suck. It may suck even more
+   than it used to. Earlier versions of Click had a couple hacks that made
+   performance a bit better on a non-polling system. We removed those hacks
+   for Click 1.0, now that we know how to make a high-performance system:
+   use polling.

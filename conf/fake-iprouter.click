@@ -2,10 +2,11 @@
 
 // This file is a network-independent version of the IP router
 // configuration used in our SOSP paper.
-// The network sources (FromDevice elements) have been replaced with
-// an InfiniteSource, which sends exactly the packets we sent in our tests.
-// The ARPQueriers have been replaced with EtherEncaps, and the network
-// sinks (ToDevice elements) have been replaced with Discards.
+
+// The network sources (FromDevice or PollDevice elements) have been
+// replaced with an InfiniteSource, which sends exactly the packets we sent
+// in our tests. The ARPQueriers have been replaced with EtherEncaps, and
+// the network sinks (ToDevice elements) have been replaced with Discards.
 // Thus, you can play around with IP routing -- benchmark our code, for
 // example -- even if you don't have the Linux module or the pcap library.
 
