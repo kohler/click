@@ -1,3 +1,8 @@
+2004-12-19 Sunday 23:24  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.37), test/standard/notifier-04.testie (1.2): test
+	updates
+
 2004-12-19 Sunday 16:16  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/: fullnotequeue.cc (1.2), fullnotequeue.hh
