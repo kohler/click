@@ -547,11 +547,12 @@ Master::run_selects(bool more_tasks)
     // never wait if anything is scheduled; otherwise, if no timers, block
     // indefinitely.
 # if HAVE_POLL_H
-    int timeout = -1;
+    int timeout = 0;
     if (!more_tasks) {
 	Timestamp next_expiry = next_timer_expiry();
-	if (next_expiry._sec > 0
-	    && (next_expiry -= Timestamp::now(), next_expiry._sec > 0)) {
+	if (next_expiry._sec == 0)
+	    timeout = -1;
+	else if ((next_expiry -= Timestamp::now(), next_expiry._sec > 0)) {
 	    if (next_expiry._sec >= INT_MAX / 1000)
 		timeout = INT_MAX - 1000;
 	    else
@@ -586,7 +587,6 @@ Master::run_selects(bool more_tasks)
 #endif /* CLICK_NS */
 
 #if HAVE_POLL_H
-
     int n = poll(_pollfds.begin(), _pollfds.size(), timeout);
 
     if (n < 0 && errno != EINTR)
