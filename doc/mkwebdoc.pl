@@ -54,7 +54,7 @@ if ($INSTALL) {
     mysystem("/bin/rm -rf /tmp/%click-webdoc");
     mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --disable-linuxmodule --disable-bsdmodule --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-local EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4'");
     if ($ELEMENTS) {
-	mysystem("cd click-$VERSION && gmake install-local EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4'");
+	mysystem("cd click-$VERSION && gmake install-doc EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4'");
     }
     mysystem("cd tools/click-pretty && gmake install");
     mysystem("cd /tmp/%click-webdoc/share/click && echo '\$webdoc ../doc/%s.n.html' | cat - elementmap > emap2 && mv emap2 elementmap");
