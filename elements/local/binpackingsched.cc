@@ -54,17 +54,40 @@ BinPackingScheduler::run_scheduled()
   Vector<Task*> tasks;
   unsigned total_load = 0;
   unsigned avg_load;
+  int n = router()->nthreads();
+  int load[n];
+  
+  for(int i=0; i<n; i++) load[i] = 0;
+
   TaskList *task_list = router()->task_list();
   task_list->lock();
   Task *t = task_list->all_tasks_next();
   while (t != task_list) {
     total_load += t->cycles();
+    if (t->thread_preference() >= 0) 
+      load[t->thread_preference()] += t->cycles();
     tasks.push_back(t);
     t = t->all_tasks_next();
   }
   task_list->unlock();
-  
+  avg_load = total_load / n;
+
+  int i;
+  for(i=0; i<n; i++) {
+    unsigned diff = avg_load>load[i] ? avg_load-load[i] : load[i]-avg_load;
+    if (diff > (avg_load>>3)) {
 #if DEBUG > 0
+      click_chatter("load balance, avg %u, diff %u", avg_load, diff);
+#endif
+      break;
+    }
+  }
+  if (i == n) {
+    _timer.schedule_after_ms(_interval);
+    return;
+  }
+  
+#if DEBUG > 1
   int print = 0;
   int high = 0;
 #endif
@@ -83,12 +106,12 @@ BinPackingScheduler::run_scheduled()
     assert(which >= 0);
     sorted.push_back(tasks[which]);
     tasks[which] = 0;
-#if DEBUG > 0
+#if DEBUG > 1
     if (i == 0) high = max;
 #endif
   }
 
-#if DEBUG > 0
+#if DEBUG > 1
   if (high >= 500) {
     print = 1;
     unsigned now = click_jiffies();
@@ -103,40 +126,23 @@ BinPackingScheduler::run_scheduled()
   }
 #endif
 
-  int n = router()->nthreads();
-  int load[n];
   Vector<Task*> schedule[n];
-  avg_load = total_load / n;
-
   for(int i=0; i<n; i++) load[i] = 0;
-  // for(int i=0; i<sorted.size(); i++) {
   for(int i=sorted.size()-1; i>=0; i--) {
     int min = load[0];
     int which = 0;
-    
     for (int j = 1; j < n; j++) {
       if (load[j] < min) {
 	which = j;
 	min = load[j];
       }
     }
-
     load[which] += sorted[i]->cycles();
     schedule[which].push_back(sorted[i]);
     sorted[i]->change_thread(which);
-#if 0
-    int old = sorted[i]->thread_preference();
-    if (old >= 0 && old != which) {
-      sorted[i]->set_thread_preference(which);
-      router()->thread(old)->add_task_request
-	(RouterThread::MOVE_TASK, sorted[i]);
-    } else if (old < 0) 
-      router()->thread(which)->add_task_request
-	(RouterThread::SCHEDULE_TASK, sorted[i]);
-#endif
   }
   
-#if DEBUG > 0
+#if DEBUG > 1
   if (print) {
     unsigned now = click_jiffies();
     for(int i=0; i<sorted.size(); i++) {
