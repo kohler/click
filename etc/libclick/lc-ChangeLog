@@ -1,3 +1,9 @@
+2001-10-24 Wednesday 10:56  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/lexer.hh, include/click/lexer.hh, libsrc/lexer.cc,
+	libsrc/variableenv.cc: support ${VAR-DEFAULT} in Lexer, fix some
+	static binding errors
+
 2001-10-23 Tuesday 16:12  Eddie Kohler <kohler@aciri.org>
 
 	* libsrc/routerthread.cc: nitlets

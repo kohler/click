@@ -1,3 +1,14 @@
+2001-10-24 Wednesday 10:58  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/Makefile.in (1.9), linuxmodule/Makefile.in (1.62): add
+	HandlerCall to module objects
+
+2001-10-24 Wednesday 10:56  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click.5 (1.26), include/click/lexer.hh (1.7), lib/lexer.cc
+	(1.54), lib/variableenv.cc (1.5): support ${VAR-DEFAULT} in Lexer,
+	fix some static binding errors
+
 2001-10-23 Tuesday 16:12  Eddie Kohler <kohler@aciri.org>
 
 	* conf/urewrite.click (1.4), lib/routerthread.cc (1.18): nitlets
