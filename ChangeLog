@@ -1,3 +1,24 @@
+2004-07-16 Friday 20:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/khandlerproxy.cc (1.18),
+	elements/userlevel/khandlerproxy.hh (1.9), include/click/router.hh
+	(1.61), lib/router.cc (1.165): add Router::add_blank_handler(),
+	which makes it easier to write KernelHandlerProxy
+
+2004-07-16 Friday 19:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/element.hh (1.35), lib/element.cc (1.88): spacing
+	nits, and add add_select_handler() (currently nonfunctional)
+
+2004-07-16 Friday 19:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/router.hh (1.60), lib/router.cc (1.164): add select
+	handlers, spacing nits
+
+2004-07-16 Friday 19:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/ino.hh (1.6): space nits
+
 2004-07-16 Friday 19:39  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/handlers/KernelHandlerProxy-01.testie (1.1): add
