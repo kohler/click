@@ -21,9 +21,9 @@
 `\arg\'
 @end macro
 
-@macro strcode {arg}
+@rmacro strcode {arg}
 @t{\arg\}
-@end macro
+@end rmacro
 
 @syncodeindex vr cp
 @syncodeindex fn cp
@@ -98,9 +98,9 @@ ErrorHandler
 * Reporting Errors::            
 * Error Format Strings::        
 * Counting Errors::             
-* Basic Error Handlers::        
+* Basic ErrorHandlers::        
 * Error Veneers::               
-* Writing Error Handlers::       
+* Writing ErrorHandlers::       
 
 IPAddress
 
@@ -864,16 +864,42 @@ with error veneers, and how to write new @code{ErrorHandler}s.
 @code{<click/error.hh>}.
 
 @menu
+* ErrorHandler Initialization::  
 * Reporting Errors::            
 * Error Format Strings::        
 * Counting Errors::             
-* Basic Error Handlers::        
+* Basic ErrorHandlers::        
 * Error Veneers::               
-* Writing Error Handlers::       
+* Writing ErrorHandlers::      
 @end menu
 
 
-@node Reporting Errors, Error Format Strings, ErrorHandler, ErrorHandler
+@node ErrorHandler Initialization, Reporting Errors, ErrorHandler, ErrorHandler
+@subsection Initialization
+
+The @code{ErrorHandler} class maintains some global state that must be
+initialized by calling @code{static_initialize} at the beginning of the
+program, and may be freed by calling @code{static_cleanup} when
+execution is complete.
+
+@deftypeop {Static method} ErrorHandler void static_initialize (ErrorHandler *@var{default_errh})
+This function should be called exactly once, at the beginning of the
+program, before any error messages are reported to any
+@code{ErrorHandler}. It is OK to create arbitrary @code{ErrorHandler}
+objects before calling this method, however. The @var{default_errh}
+argument becomes the default @code{ErrorHandler}; see @ref{Basic
+ErrorHandlers}.
+@end deftypeop
+
+@deftypeop {Static method} ErrorHandler void static_cleanup ()
+This function should be called exactly once, just before the program
+exits. Destroys the default and silent @code{ErrorHandler}s and cleans
+up other @code{ErrorHandler}-related memory. It is an error to call any
+@code{ErrorHandler} method after calling @code{static_cleanup}.
+@end deftypeop
+
+
+@node Reporting Errors, Error Format Strings, ErrorHandler Initialization, ErrorHandler
 @subsection Reporting Errors
 
 @code{ErrorHandler}'s basic error reporting methods take a format
@@ -1094,7 +1120,7 @@ Note that @code{ErrorHandler} does not support the @samp{e}, @samp{E},
 @samp{f}, @samp{F}, @samp{g}, @samp{G}, and @samp{n} conversions.
 
 
-@node Counting Errors, Basic Error Handlers, Error Format Strings, ErrorHandler
+@node Counting Errors, Basic ErrorHandlers, Error Format Strings, ErrorHandler
 @subsection Counting Errors
 
 @code{ErrorHandler} objects count the number of errors and warnings they
@@ -1122,28 +1148,32 @@ if (errh->nerrors() != before_nerrors) @{
 @end example
 
 
-@node Basic Error Handlers, Error Veneers, Counting Errors, ErrorHandler
-@subsection Basic Error Handlers
+@node Basic ErrorHandlers, Error Veneers, Counting Errors, ErrorHandler
+@subsection Basic @code{ErrorHandler}s
 
-Basic @code{ErrorHandler}s print the error messages they receive. Every
-Click error message eventually reaches some basic @code{ErrorHandler}.
-The particular @code{ErrorHandler} depends on where Click is running; in
-the user-level driver, the basic @code{ErrorHandler} prints error
-messages to standard error, while in the Linux kernel module, it logs
-messages to the syslog and stores them for access via
-@file{/proc/click/errors}.
+Every Click error message eventually reaches some @dfn{basic}
+@code{ErrorHandler}, which generally prints the messages it receives.
+The user-level driver's basic @code{ErrorHandler} prints error messages
+to standard error, while in the Linux kernel module, the basic
+@code{ErrorHandler} logs messages to the syslog and stores them for
+access via @file{/proc/click/errors}.
 
 @cindex default @code{ErrorHandler}
 @cindex @code{ErrorHandler}, default
-The @code{ErrorHandler} class maintains a @dfn{default
-@code{ErrorHandler}} accessible via the @code{default_handler} static
-method. The user defines this default handler by supplying it to the
-@code{static_initialize} method. Another static method,
-@code{silent_handler}, returns an @code{ErrorHandler} that ignores the
-error messages it receives.
+Two basic @code{ErrorHandlers} are always accessible via static methods:
+the @dfn{default @code{ErrorHandler}}, returned by
+@code{default_handler} and set by @code{set_default_handler}; and the
+@dfn{silent @code{ErrorHandler}}, returned by @code{silent_handler},
+which ignores any error messages it receives.
 
 @deftypeop {Static method} ErrorHandler {ErrorHandler *} default_handler ()
 Returns the default @code{ErrorHandler}.
+@end deftypeop
+
+@deftypeop {Static method} ErrorHandler void set_default_handler (@w{ErrorHandler *errh})
+Sets the default @code{ErrorHandler} to @var{errh}. The
+@code{static_initialize} method also sets the default
+@code{ErrorHandler}; see @ref{ErrorHandler Initialization}.
 @end deftypeop
 
 @deftypeop {Static method} ErrorHandler {ErrorHandler *} silent_handler ()
@@ -1152,34 +1182,19 @@ messages it receives. It maintains correct @code{nwarnings} and
 @code{nerrors} counts, however.
 @end deftypeop
 
-@deftypeop {Static method} ErrorHandler void static_initialize (ErrorHandler *@var{default_errh})
-Sets the default @code{ErrorHandler} to @var{default_errh}. This
-function should be called exactly once, at the beginning of the program,
-before any error messages are reported to any @code{ErrorHandler}. It is
-OK to create arbitrary @code{ErrorHandler} objects before calling this
-method, however.
-@end deftypeop
+@code{FileErrorHandler}, a kind of basic @code{ErrorHandler}, is
+available in any user-level program. It prints every message it receives
+to some file, usually standard error. It can also prepend an optional
+context string to every line of every error message.
 
-@deftypeop {Static method} ErrorHandler void static_cleanup ()
-Destroys the default and silent @code{ErrorHandler}s and cleans up other
-@code{ErrorHandler}-related memory. This function should be called
-exactly once, just before the program exits. It is an error to call any
-@code{ErrorHandler} method after calling @code{static_cleanup}.
-@end deftypeop
-
-Finally, the @code{FileErrorHandler} class is available in any
-user-level program. This @code{ErrorHandler} prints every message it
-receives to some file, usually standard error. It can also prepend an
-optional context string to every line of every error message.
-
-@deftypeop Constructor FileErrorHandler {} FileErrorHandler (FILE *@var{f}, const String &@var{prefix} = "")
+@deftypeop Constructor FileErrorHandler {} FileErrorHandler (FILE *@var{f}, @w{const String &@var{prefix} = ""})
 Constructs a @code{FileErrorHandler} that prints error messages to file
 @var{f}. If @var{prefix} is nonempty, then every line of every error
 message is prepended by @var{prefix}.
 @end deftypeop
 
 
-@node Error Veneers, Writing Error Handlers, Basic Error Handlers, ErrorHandler
+@node Error Veneers, Writing ErrorHandlers, Basic ErrorHandlers, ErrorHandler
 @subsection Error Veneers---Adding Context to Error Messages
 
 @dfn{Error veneers} wrap around basic @code{ErrorHandler} objects and
@@ -1197,10 +1212,10 @@ calls to the base handler.
 
 Click comes with three error veneers: one for adding context, one for
 prepending text to every line, and one for supplying missing landmarks.
-It is easy to write others; see @ref{Writing Error Handlers}, for
+It is easy to write others; see @ref{Writing ErrorHandlers}, for
 details.
 
-@deftypeop Constructor ContextErrorHandler {} ContextErrorHandler (ErrorHandler *@var{base_errh}, const String &@var{context}, const String &@var{indent} = "@w{@ @ }")
+@deftypeop Constructor ContextErrorHandler {} ContextErrorHandler (@w{ErrorHandler *@var{base_errh}}, @w{const String &@var{context}}, @w{const String &@var{indent} = "@w{@ @ }"})
 Constructs a @code{ContextErrorHandler} with @var{base_errh} as base.
 
 The first time this handler receives an error message, it will precede
@@ -1210,14 +1225,14 @@ received error message is prepended with @var{indent}, two spaces by
 default, to set off the message from its context.
 @end deftypeop
 
-@deftypeop Constructor PrefixErrorHandler {} PrefixErrorHandler (ErrorHandler *@var{base_errh}, const String &@var{prefix})
+@deftypeop Constructor PrefixErrorHandler {} PrefixErrorHandler (@w{ErrorHandler *@var{base_errh}}, @w{const String &@var{prefix}})
 Constructs a @code{PrefixErrorHandler} with @var{base_errh} as base.
 
 This handler precedes every line of every error message with
 @var{prefix}.
 @end deftypeop
 
-@deftypeop Constructor LandmarkErrorHandler {} LandmarkErrorHandler (ErrorHandler *@var{base_errh}, const String &@var{landmark})
+@deftypeop Constructor LandmarkErrorHandler {} LandmarkErrorHandler (@w{ErrorHandler *@var{base_errh}}, @w{const String &@var{landmark}})
 Constructs a @code{LandmarkErrorHandler} with @var{base_errh} as base.
 
 This handler supplies @var{landmark} in place of any blank landmark
@@ -1285,8 +1300,8 @@ f(&errh4);
 @end example
 
 
-@node Writing Error Handlers,  , Error Veneers, ErrorHandler
-@subsection Writing Error Handlers
+@node Writing ErrorHandlers,  , Error Veneers, ErrorHandler
+@subsection Writing @code{ErrorHandler}s
 
 @code{ErrorHandler} constructs an error message using three virtual
 functions. The first, @code{make_text}, parses a format string and
@@ -2378,10 +2393,10 @@ methods follows:
 @end itemize
 
 @noindent
-These methods always return a null pointer on out-of-memory. The methods
-that were manipulating an existing packet---@code{uniqueify},
-@code{push}, @code{put}, @code{nonunique_push}, and
-@code{nonunique_put}---additionally free the existing packet before
+These methods always return a null pointer on out-of-memory. Methods
+that manipulate existing packets---@code{uniqueify}, @code{push},
+@code{put}, @code{nonunique_push}, and
+@code{nonunique_put}---additionally free any existing packet before
 returning a null pointer. You should always check the results of these
 methods to see if you have run out of memory.
 
@@ -3567,25 +3582,147 @@ Click users interact with a running router through @dfn{handlers}.
 @node Configuration String Structure,  , Configuration Strings, Configuration Strings
 @section Structure
 
-A configuration string may contain comments and quoted substrings.
+Configuration strings consist of a list of comma-separated
+@dfn{arguments}. For example, this configuration string has three
+arguments, @samp{a}, @samp{b}, and @samp{c}:
 
-Configuration strings use C++-style comments. There are two forms of
-comment, @samp{// @dots{} @r{EOL}} and @samp{/* @dots{} */}. The first
-form begins with two adjacent slashes, @samp{//}, and continues up to
-and including the next end of line. The second form begins with a
-slash-star combination, @samp{/*}, and continues up to and including the
-next star-slash, @samp{*/}.
+@example
+a,    b          , c
+@end example
 
-The quoted substring forms escape characters like commas and spaces. A
-double-quoted substring is set off with double quotes @samp{"}. Escape
-sequences introduced by @samp{\} may be used inside the double quotes. A
-single-quoted substring is set off with single quotes @samp{'}; escape
-sequences are not interpreted inside single quotes.
+@noindent
+Leading and trailing spaces are trimmed from each argument.
 
-A configuration string consists of zero or more @dfn{arguments}
-separated by commas. Commas inside comments and quoted strings are
-ignored.
+Configuration strings can contain two kinds of @dfn{comments} and three
+kinds of @dfn{quoted strings}. Comments let you document a configuration
+string; they behave like spaces. With quoted strings, you can protect
+special characters like spaces, commas, and comment-starting sequences
+from interpretation.
 
+@table @asis
+@item @samp{//} comments
+Begins with two adjacent slashes, @samp{//}, and continues up to and
+including the next end-of-line (@samp{\n}, @samp{\r}, or @samp{\r\n}).
+Comment starters (@samp{//} and @samp{/*}) and the quote sequences
+(@samp{'}, @samp{"}, and @samp{\<}) have no special meaning inside
+@samp{//} comments.
+
+@item @samp{/* @dots{} */} comments
+Begins with slash-star, @samp{/*}, and continues up to and including the
+next star-slash, @samp{*/}. Comment starters (@samp{/*} and @samp{//})
+and the quote sequences (@samp{'}, @samp{"}, and @samp{\<}) have no
+special meaning inside @samp{/*} comments.
+@end table
+
+@table @asis
+@item Single-quoted strings @samp{' @dots{} '}
+Begins with a single-quote character @samp{'} and continues up to the
+next single quote. Comments, double quotes, and backslashes have no
+special meaning inside single quotes. There is no way to include a
+single quote in a single-quoted string.
+
+@item Double-quoted strings @samp{" @dots{} "}
+Begins with a double-quote character @samp{"} and continues up to the
+next unescaped double quote. Backslash @samp{\} acts as an escape
+character inside double quotes, as in C. Click's escape sequences are
+described below. Comments and single quotes have no special meaning
+inside double quotes. @samp{\<} retains its usual meaning, however.
+
+@item Hex strings @samp{\< @dots{} >}
+The @samp{\<} sequence begins a string of hexadecimal digits terminated
+by @samp{>}. Each pair of digits expands to the corresponding character
+value. For example, @samp{\<48454c4c4F>} expands to @samp{HELLO}. Spaces
+and comments (either @samp{//} or @samp{/*} style) may be arbitrarily
+interleaved with the hex digits; any @samp{>} characters inside comments
+are ignored. Characters other than spaces, hex digits, comments, and
+@samp{>} should not appear inside a hex string.
+
+Hex strings may be placed within double-quoted strings.
+@end table
+
+@subsubheading Escape Sequences
+
+Most of Click's escape sequences are borrowed from C, and behave the
+same way. The @samp{\< @dots{} >} escape sequence is new, however.
+
+@table @asis
+@item @samp{\@key{END-OF-LINE}}
+A backslash followed by an end-of-line sequence---@samp{\n}, @samp{\r},
+or @samp{\r\n}---is removed from the string. This string
+
+@example
+"a\
+b"
+@end example
+
+@noindent
+is equivalent to @strcode{"ab"}.
+
+@item @samp{\a}, @samp{\b}, @samp{\t}, @samp{\n}, @samp{\v}, @samp{\f}, @samp{\r}
+These escape sequences produce the characters with decimal ASCII values
+7, 8, 9, 10, 11, 12, and 13, respectively.
+
+@item @samp{\\}, @samp{\"}, @samp{\'}, @samp{\$}
+These escape sequences expand to a literal backslash, double quote,
+single quote, and dollar sign, respectively.
+
+@item @samp{\@key{1 TO 3 OCTAL DIGITS}}
+A backslash followed by 1 to 3 octal digits (@samp{0} @dots{} @samp{7})
+expands to the character with that octal value. For example, @samp{\046}
+expands to @samp{&}.
+
+@item @samp{\x@key{HEX DIGITS}}
+@samp{\x} followed by an arbitrary number of hexadecimal digits expands
+to the single character whose value equals the lower 8 bits of that
+number. Thus, @samp{\x45} and @samp{\x94839E89DB00ACF45} both expand to
+@samp{E}.
+
+@item @samp{\< @key{HEX DIGITS} >}
+@samp{\<} introduces a hex string, as described above.
+@end table
+
+Any other escape sequence @samp{\@key{CHAR}} is an error. Currently,
+such sequences expand to @samp{@key{CHAR}}, but their semantics may
+eventually change.
+
+
+@node Quoting
+@section Quoting and Unquoting
+
+These functions interpret quote sequences and comments in configuration
+strings. @code{cp_unquote} expands quote sequences and removes comments.
+@code{cp_quote} protects special characters, such as spaces and commas,
+within double quotes. Finally, @code{cp_uncomment} removes comments and
+leading and trailing spaces, but does not expand quote sequences.
+
+@deftypefun String cp_unquote (@w{const String &@var{text}})
+Processes @var{text} by replacing every quoted string by its expansion
+and every comment by a single space, and returns the result.
+@end deftypefun
+
+@deftypefun String cp_quote (@w{const String &@var{text}}, @w{bool @var{allow_newlines} = false})
+Returns a quoted version of @var{text}. Any spaces, commas, comments,
+quote sequences, and non-ASCII characters in @var{text} are protected
+within double quotes. If @var{allow_newlines} is true, then the result
+may contain newline characters (within double quotes); otherwise, any
+newline characters in @var{text} are replaced by @samp{\n} sequences.
+The returned result is never empty (unless Click has run out of memory).
+If @var{text} is the empty string, @code{cp_quote} will return @samp{""}
+(a string containing two double quotes).
+@end deftypefun
+
+@deftypefun String cp_uncomment (@w{const String &@var{text}})
+Replaces any comments in @var{text} by single spaces, then removes any
+leading and trailing space and returns the result.
+@end deftypefun
+
+For example:
+
+@display
+@t{cp_uncomment(}@samp{  /* blah */ "quote"/*xx*/\<2 c>}@t{)} @result{} @samp{"quote" \<2 c>}
+@t{cp_unquote(}@samp{  /* blah */ "quote"/*xx*/\<2 c>}@t{)} @result{} @samp{    quote ,}
+@t{cp_quote(}@samp{quote ,}@t{)} @result{} @samp{"quote ,"}
+@end display
 
 @node Tasks, Timers, Configuration Strings, Top
 @chapter Tasks
