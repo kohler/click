@@ -1,3 +1,46 @@
+2000-12-18 Monday 18:25  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/packet.hh: better arrangement of annotation area
+
+2000-12-18 Monday 18:22  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ipsec/: README, des.cc, des.hh, desp.cc, desp.hh,
+	esp.cc, esp.hh: some ipsec fixes
+
+2000-12-18 Monday 18:13  Benjie Chen <benjie@lcs.mit.edu>
+
+	* acconfig.h, configure.in, elements/icmp/checkicmpheader.cc,
+	elements/icmp/checkicmpheader.hh, elements/icmp/icmperror.cc,
+	elements/icmp/icmppingresponder.cc, elements/icmp/icmpsendpings.cc,
+	elements/ip/checkipheader.cc, elements/ip/checkipheader.hh,
+	elements/ip/checkipheader2.cc, elements/ip/decipttl.cc,
+	elements/ip/decipttl.hh, elements/ip/fixipsrc.cc,
+	elements/ip/getipaddress.cc, elements/ip/ipclassifier.cc,
+	elements/ip/ipencap.cc, elements/ip/ipencap.hh,
+	elements/ip/ipfragmenter.cc, elements/ip/ipfragmenter.hh,
+	elements/ip/ipgwoptions.cc, elements/ip/ipgwoptions.hh,
+	elements/ip/ipinputcombo.cc, elements/ip/ipinputcombo.hh,
+	elements/ip/ipmirror.cc, elements/ip/ipoutputcombo.cc,
+	elements/ip/ipratemon.cc, elements/ip/iprw.cc,
+	elements/ip/lookupiproutemp.cc, elements/ip/lookupiproutemp.hh,
+	elements/ip/markipheader.cc, elements/ip/saveipfields.cc,
+	elements/ip/setipaddress.cc, elements/ip/setipchecksum.cc,
+	elements/ip/setipdscp.cc, elements/ip/storeipaddress.cc,
+	elements/ip/stripipheader.cc, elements/ip/unstripipheader.cc,
+	elements/linuxmodule/cpuswitch.cc,
+	elements/linuxmodule/cpuswitch.hh,
+	elements/linuxmodule/fastudpsrc.cc,
+	elements/linuxmodule/fastudpsrc.hh,
+	elements/tcpudp/checktcpheader.cc,
+	elements/tcpudp/checktcpheader.hh,
+	elements/tcpudp/checkudpheader.cc,
+	elements/tcpudp/checkudpheader.hh,
+	elements/tcpudp/dynudpipencap.cc, elements/tcpudp/dynudpipencap.hh,
+	elements/tcpudp/udpipencap.cc, elements/tcpudp/udpipencap.hh,
+	include/click/atomic.hh, include/click/mplock.hh,
+	include/click/sync.hh: smp merge first step: changed elements that
+	keep counters to use u_atomic32_t instead
+
 2000-12-17 Sunday 15:28  Benjie Chen <benjie@lcs.mit.edu>
 
 	* linuxmodule/skbmgr.c: file skbmgr.c was initially added on branch
