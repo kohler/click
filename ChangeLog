@@ -1,3 +1,8 @@
+2003-05-20 Tuesday 10:13  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.16), rtmdsr.hh (1.19): Record
+	packet statistics.
+
 2003-05-19 Monday 11:04  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.15), rtmdsr.hh (1.18): Mark
