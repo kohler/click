@@ -20,14 +20,20 @@ Version 1.2.2   1.Sep.2001
 
 ** Add `--enable-greedy' configuration option, which prevents the Linux
    kernel driver from giving up the CPU. Use only if you have multiple
-   CPUs!
+   CPUs. (Benjie Chen)
 
 ** Many bug fixes.
 
 * Drivers
 
+** Add preliminary support for a polling FreeBSD kernel driver!! (Nickolai
+   B. Zeldovich)
+
 ** Add polling support for EEpro 100 devices (Nickolai B. Zeldovich), and
    improve polling support for Tulip and Acenic (Benjie Chen, Nickolai).
+
+** Significantly more stable support for Linux 2.4, and update the kernel
+   patch to Linux 2.4.9.
 
 * Parsing
 

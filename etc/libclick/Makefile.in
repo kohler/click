@@ -30,7 +30,8 @@ bindir = @bindir@
 datadir = @datadir@/click
 
 all:
-	/bin/true
+	@echo This Makefile does not build anything.
+	@echo Its only important target is '`make dist'"'".
 
 Makefile: $(top_builddir)/config.status $(srcdir)/Makefile.in
 	cd $(top_builddir) && \

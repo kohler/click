@@ -1,11 +1,3 @@
-elements/linuxmodule/cyclecount.hh
-elements/linuxmodule/cyclecount.cc
-elements/linuxmodule/storecycles.hh
-elements/linuxmodule/storecycles.cc
-elements/linuxmodule/perfinfo.hh
-elements/linuxmodule/perfinfo.cc
-elements/linuxmodule/perfcount.hh
-elements/linuxmodule/perfcount.cc
 elements/local/*.hh
 elements/local/*.cc
 elements/standard/block.hh

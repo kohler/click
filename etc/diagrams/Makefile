@@ -17,6 +17,9 @@ all: $(FIGS)
 	TEX=$(LATEX) $(METAPOST) $<
 	perl -pi -e 's#([ /]cm[a-z]+)#\U\1\E#g;' $(subst .mp,,$<).[0-9]*
 
+fonts.mp:
+	echo '% nothing' > fonts.mp
+
 always:
 	@:
 
