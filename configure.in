@@ -327,6 +327,16 @@ fi
 
 
 dnl
+dnl use intel specific asm instructions
+dnl
+
+AC_ARG_ENABLE(intel, [  --enable-intel          enable intel specific instructions [no]], :, enable_intel=no)
+if test $enable_intel=yes; then
+  AC_DEFINE_UNQUOTED(HAVE_INTEL_CPU, 1)
+fi
+
+
+dnl
 dnl type of scheduling
 dnl
 

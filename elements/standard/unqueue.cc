@@ -77,11 +77,13 @@ Unqueue::run_scheduled()
     else 
       p_next = 0;
 #ifdef __KERNEL__
+#if __i386__ && HAVE_INTEL_CPU
     if (p_next) {
       struct sk_buff *skb = p_next->steal_skb();
       asm volatile("prefetcht0 %0" : : "m" (skb->len));
       asm volatile("prefetcht0 %0" : : "m" (skb->cb[0]));
     }
+#endif
 #endif
     output(0).push(p);
     _packets++;

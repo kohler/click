@@ -2526,7 +2526,9 @@ ProcessTransmitInterrupts(bd_config_t * bdp, int clean)
             skb->next = NULL;
             skb_last = skb;
           }
+#if __i386__ && HAVE_INTEL_CPU
           asm volatile("prefetcht0 %0" :: "m" (skb->head));
+#endif
 	}
         Adapter->TxSkBuffs[di] = 0;
         NumTxSwPacketsCleaned++;
@@ -3998,7 +4000,9 @@ e1000_rx_poll(struct device *dev, int *want)
       next_skb = 
 	Adapter->RxSkBuffs[PrefetchDescriptor-Adapter->FirstRxDescriptor];
       /* this does not seem to matter much */
+#if __i386__ && HAVE_INTEL_CPU
       asm volatile("prefetcht0 %0" :: "m" (PrefetchDescriptor->ReceiveStatus));
+#endif
     }
 #endif
 
@@ -4083,7 +4087,6 @@ e1000_tx_queue(struct device *dev, struct sk_buff *skb)
 static int
 e1000_tx_start(struct device *dev)
 { 
-  printk("e1000_tx_start called\n");
   e1000_tx_eob(dev);
   return 0;
 }

@@ -42,7 +42,7 @@ MSQueue::cast(const char *n)
 int
 MSQueue::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  int new_capacity = 1000;
+  int new_capacity = 128;
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpUnsigned, "maximum queue length", &new_capacity,
@@ -84,12 +84,14 @@ MSQueue::uninitialize()
 }
 
 #ifdef __KERNEL__
+#if __i386__ && HAVE_INTEL_CPU
 static inline void
 prefetch_packet(Packet *p)
 {
   struct sk_buff *skb = p->steal_skb();
   asm volatile("prefetcht0 %0" : : "m" (skb->data));
 }
+#endif
 #endif
 
 void
@@ -124,8 +126,10 @@ MSQueue::pull(int)
       _head = next_i(h);
 #if PREFETCH
 #ifdef __KERNEL__
+#if __i386__ && HAVE_INTEL_CPU
       h = _head.value();
       if (_q[h] != 0) prefetch_packet(_q[h]);
+#endif
 #endif
 #endif
       return p;

@@ -258,9 +258,11 @@ PollDevice::run_scheduled()
     if (skb_list) {
       // prefetch annotation area, and first 2 cache
       // lines that contain ethernet and ip headers.
+#if __i386__ && HAVE_INTEL_CPU
       asm volatile("prefetcht0 %0" : : "m" (skb_list->cb[0]));
       asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data)));
       asm volatile("prefetcht0 %0" : : "m" (*(skb_list->data+32)));
+#endif
     }
 
     /* Retrieve the ether header. */
