@@ -1,3 +1,16 @@
+2004-07-07 Wednesday 13:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/handlers/kernel-01.testie (1.6): update test
+
+2004-07-07 Wednesday 12:58  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* NEWS (1.153): update NEWS
+
+2004-07-07 Wednesday 12:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click.texi (1.60): update programming manual on cleanup(),
+	static_initialize(), and static_cleanup()
+
 2004-07-07 Wednesday 12:24  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.83), doc/click-mkmindriver.1 (1.6): DISTFILES, doc
