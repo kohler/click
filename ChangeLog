@@ -1,3 +1,14 @@
+2002-03-04 Monday 03:47  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/activity.cc (1.2):
+	ActivityNotifier::listen_upstream_pull checks that everyone can
+	notify it
+
+2002-03-04 Monday 03:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/elemfilter.hh (1.4), lib/elemfilter.cc (1.13):
+	ElementFilters count how many times they matched
+
 2002-03-04 Monday 03:17  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/notifierqueue.cc (1.2): fix _sleepiness

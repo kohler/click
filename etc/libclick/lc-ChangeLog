@@ -1,3 +1,9 @@
+2002-03-04 Monday 03:47  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/elemfilter.hh, include/click/elemfilter.hh,
+	libsrc/elemfilter.cc: ElementFilters count how many times they
+	matched
+
 2002-03-04 Monday 03:02  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/confparse.hh, include/click/confparse.hh,
