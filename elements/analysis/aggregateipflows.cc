@@ -7,9 +7,9 @@
 #include <click/hashmap.hh>
 #include <click/straccum.hh>
 #include <click/confparse.hh>
-#include <click/click_ip.h>
-#include <click/click_tcp.h>
-#include <click/click_udp.h>
+#include <clicknet/ip.h>
+#include <clicknet/tcp.h>
+#include <clicknet/udp.h>
 #include <click/packet_anno.hh>
 
 AggregateFlows::AggregateFlows()
