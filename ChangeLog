@@ -1,3 +1,18 @@
+2002-08-19 Monday 15:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.21), dsdvroutetable.hh
+	(1.17), gridgenericrt.hh (1.6), gridroutetable.cc (1.58),
+	gridroutetable.hh (1.36), lookupgeogridroute.cc (1.26),
+	lookupgeogridroute.hh (1.12), lookuplocalgridroute.cc (1.43),
+	lookuplocalgridroute.hh (1.16): preliminary multiple-interface
+	support in Grid routing elements
+
+2002-08-19 Monday 15:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/standard/: paintswitch.cc (1.2), paintswitch.hh (1.2):
+	PaintSwitch now interprets the paint annotation of 255 as 'all
+	ports'
+
 2002-08-19 Monday 13:58  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/: paintswitch.cc (1.1), paintswitch.hh (1.1):
