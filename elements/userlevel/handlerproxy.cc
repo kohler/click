@@ -21,48 +21,48 @@
 CLICK_DECLS
 
 HandlerProxy::HandlerProxy()
-  : _err_rcvs(0), _nerr_rcvs(0)
+    : _err_rcvs(0), _nerr_rcvs(0)
 {
-  MOD_INC_USE_COUNT;
+    MOD_INC_USE_COUNT;
 }
 
 HandlerProxy::~HandlerProxy()
 {
-  MOD_DEC_USE_COUNT;
+    MOD_DEC_USE_COUNT;
 }
 
 int
 HandlerProxy::add_error_receiver(ErrorReceiverHook hook, void *thunk)
 {
-  ErrorReceiver *new_err_rcvs = new ErrorReceiver[_nerr_rcvs + 1];
-  if (!new_err_rcvs) return -ENOMEM;
-  memcpy(new_err_rcvs, _err_rcvs, sizeof(ErrorReceiver) * _nerr_rcvs);
-  new_err_rcvs[_nerr_rcvs].hook = hook;
-  new_err_rcvs[_nerr_rcvs].thunk = thunk;
-  delete[] _err_rcvs;
-  _err_rcvs = new_err_rcvs;
-  _nerr_rcvs++;
-  return 0;
+    ErrorReceiver *new_err_rcvs = new ErrorReceiver[_nerr_rcvs + 1];
+    if (!new_err_rcvs) return -ENOMEM;
+    memcpy(new_err_rcvs, _err_rcvs, sizeof(ErrorReceiver) * _nerr_rcvs);
+    new_err_rcvs[_nerr_rcvs].hook = hook;
+    new_err_rcvs[_nerr_rcvs].thunk = thunk;
+    delete[] _err_rcvs;
+    _err_rcvs = new_err_rcvs;
+    _nerr_rcvs++;
+    return 0;
 }
 
 int
 HandlerProxy::remove_error_receiver(ErrorReceiverHook hook, void *thunk)
 {
-  for (int i = 0; i < _nerr_rcvs; i++)
-    if (_err_rcvs[i].hook == hook && _err_rcvs[i].thunk == thunk) {
-      memcpy(&_err_rcvs[i], &_err_rcvs[_nerr_rcvs - 1], sizeof(ErrorReceiver));
-      _nerr_rcvs--;
-      return 0;
-    }
-  return -1;
+    for (int i = 0; i < _nerr_rcvs; i++)
+	if (_err_rcvs[i].hook == hook && _err_rcvs[i].thunk == thunk) {
+	    memcpy(&_err_rcvs[i], &_err_rcvs[_nerr_rcvs - 1], sizeof(ErrorReceiver));
+	    _nerr_rcvs--;
+	    return 0;
+	}
+    return -1;
 }
 
 int
 HandlerProxy::check_handler(const String &hname, bool, ErrorHandler *errh)
 {
-  errh->set_error_code(CSERR_UNSPECIFIED);
-  errh->error("Handler `%#s' status unknown", hname.printable().cc());
-  return -1;
+    errh->set_error_code(CSERR_UNSPECIFIED);
+    errh->error("Handler '%#s' status unknown", hname.printable().cc());
+    return -1;
 }
 
 CLICK_ENDDECLS
