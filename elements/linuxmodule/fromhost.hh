@@ -64,7 +64,7 @@ class FromLinux : public AnyDevice {
 
   int configure_phase() const		{ return FROMLINUX_CONFIGURE_PHASE; }
   int configure(const Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
+  int initialize_device(ErrorHandler *);
   void uninitialize();
 
 };

@@ -75,7 +75,7 @@ FromLinux::configure(const Vector<String> &conf, ErrorHandler *errh)
   if (res < 0)
     return res;
   _devname = _devname.substring(0, IFNAMSIZ-1);
-  return res;
+  return initialize_device(errh);
 }
 
 int
@@ -139,7 +139,7 @@ FromLinux::init_rt(void)
 }
 
 int
-FromLinux::initialize(ErrorHandler *errh)
+FromLinux::initialize_device(ErrorHandler *errh)
 {
   int res;
   
