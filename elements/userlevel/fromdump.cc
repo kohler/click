@@ -69,7 +69,7 @@ FromDump::initialize(ErrorHandler *errh)
 #endif
 
   if (_pending_packet) 
-    ScheduleInfo::join_scheduler(this, errh);
+    SchedulerInfo::join_scheduler(this, errh);
   
   return 0;
 }
