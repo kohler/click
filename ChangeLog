@@ -1,3 +1,9 @@
+2001-09-26 Wednesday 17:55  Eddie Kohler <kohler@aciri.org>
+
+	* elements/bsdmodule/fromdevice.cc (1.4), etc/freebsd-4.3-patch
+	(1.7): BSD: treat click_divert as a counter, not a boolean, to
+	solve problems when configurations are installed/uninstalled
+
 2001-09-26 Wednesday 03:57  Eddie Kohler <kohler@aciri.org>
 
 	* elements/ethernet/arpquerier.cc (1.38): Atanu Ghosh found a bug:
