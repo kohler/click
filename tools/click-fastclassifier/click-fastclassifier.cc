@@ -497,7 +497,7 @@ particular purpose.\n");
 
   // quit early if no Classifiers
   if (classifiers.size() == 0) {
-    fputs(r->configuration_string().cc(), outf);
+    write_router_file(r, outf, errh);
     exit(0);
   }
 

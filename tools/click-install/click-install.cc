@@ -179,7 +179,7 @@ particular purpose.\n");
     const Vector<ArchiveElement> &archive = r->archive();
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].name.length() > 2
-	  && archive[i].name.substring(-2) == ".ko") {
+	  && archive[i].name.substring(-3) == ".ko") {
 	
 	// choose module name
 	String module_name = archive[i].name.substring(0, -3);
