@@ -1,3 +1,38 @@
+2001-09-25 Tuesday 04:57  Eddie Kohler <kohler@aciri.org>
+
+	* etc/linux-2.4.9-patch (1.6): don't patch Makefile by default
+
+2001-09-25 Tuesday 04:50  Eddie Kohler <kohler@aciri.org>
+
+	* elements/ethernet/arpquerier.hh (1.27),
+	elements/icmp/checkicmpheader.cc (1.9),
+	elements/icmp/checkicmpheader.hh (1.4),
+	elements/ip/checkipheader.cc (1.39), elements/ip/checkipheader.hh
+	(1.29), elements/ip/checkipheader2.cc (1.24),
+	elements/ip/decipttl.hh (1.15), elements/ip/ipencap.hh (1.20),
+	elements/ip/ipfragmenter.hh (1.18), elements/ip/ipgwoptions.hh
+	(1.16), elements/ip/ipinputcombo.hh (1.16), elements/ip/markipce.hh
+	(1.3), elements/ipsec/esp.hh (1.11), elements/ipsec/sha1.hh (1.5),
+	elements/local/webgen.hh (1.4), elements/standard/averagecounter.hh
+	(1.9), elements/standard/checkcrc32.hh (1.8),
+	elements/standard/dropbroadcasts.hh (1.15),
+	elements/standard/msqueue.hh (1.4),
+	elements/standard/randomlossage.hh (1.15),
+	elements/standard/rrswitch.hh (1.9),
+	elements/tcpudp/checktcpheader.cc (1.8),
+	elements/tcpudp/checktcpheader.hh (1.3),
+	elements/tcpudp/checkudpheader.cc (1.8),
+	elements/tcpudp/checkudpheader.hh (1.3),
+	elements/tcpudp/dynudpipencap.hh (1.3),
+	elements/tcpudp/udpipencap.hh (1.4), include/click/atomic.hh (1.6),
+	include/click/router.hh (1.24), include/click/task.hh (1.11),
+	linuxmodule/skbmgr.cc (1.11): fix uatomic32_t stuff for Linux 2.4
+
+2001-09-25 Tuesday 04:50  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/sched.cc (1.30): the Click kernel thread is now
+	called "kclick"
+
 2001-09-24 Monday 17:02  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/make-client-ron.pl (1.4): changed to UDP encap

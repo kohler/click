@@ -1,3 +1,8 @@
+2001-09-25 Tuesday 04:50  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: atomic.hh, router.hh, task.hh, atomic.hh,
+	router.hh, task.hh: fix uatomic32_t stuff for Linux 2.4
+
 2001-09-21 Friday 20:29  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in: libclick: don't enable Linux module by default
