@@ -23,7 +23,7 @@
 #include "elements/grid/filterbyrange.hh"
 
 RadioSim::RadioSim()
-  : _task(this)
+  : _task(this), _use_xy(false)
 {
   MOD_INC_USE_COUNT;
 }
@@ -46,6 +46,19 @@ RadioSim::configure(Vector<String> &conf, ErrorHandler *errh)
 
   _nodes.clear();
   for(i = 0; i < conf.size(); i++){
+    // check for keywords
+    String kw;
+    String rest;
+    if (cp_keyword(conf[i], &kw, &rest)) {
+      if (kw == "USE_XY") {
+	bool res = cp_bool(rest, &_use_xy);
+	if (!res)
+	  return errh->error("unable to parse boolean arg to USE_XY keyword");
+      continue;
+      }
+    }
+
+    // otherwise it's coordinates
     Vector<String> words;
     cp_spacevec(conf[i], words);
     if(words.size() != 2)
@@ -102,10 +115,18 @@ RadioSim::run_scheduled()
     Packet *p = input(in).pull();
     if(p){
       for(out = 0; out < noutputs(); out++){
-        grid_location g1 = grid_location(_nodes[in]._lat, _nodes[in]._lon);
-        grid_location g2 = grid_location(_nodes[out]._lat, _nodes[out]._lon);
-        double r = grid_location::calc_range(g1, g2);
-        if(r < 250){
+	double r;
+	if (_use_xy) {
+	  double dx = _nodes[in]._lat - _nodes[out]._lat;
+	  double dy = _nodes[in]._lon - _nodes[out]._lon;
+	  r = sqrt(dx*dx + dy*dy);
+	}
+	else {
+	  grid_location g1 = grid_location(_nodes[in]._lat, _nodes[in]._lon);
+	  grid_location g2 = grid_location(_nodes[out]._lat, _nodes[out]._lon);
+	  r = grid_location::calc_range(g1, g2);
+	}
+        if (r < 250){
           output(out).push(p->clone());
         }
       }
@@ -116,13 +137,13 @@ RadioSim::run_scheduled()
   _task.fast_reschedule();
 }
 
-grid_location
+RadioSim::Node
 RadioSim::get_node_loc(int i)
 {
   if(i >= 0 && i < _nodes.size())
-    return(grid_location(_nodes[i]._lat, _nodes[i]._lon));
-  else
-    return(grid_location(0, 0));
+    return _nodes[i];
+  else 
+    return Node(0, 0);
 }
 
 void
@@ -136,9 +157,9 @@ RadioSim::set_node_loc(int i, double lat, double lon)
 
 // Expects a line that looks like
 // node-index latitude longitude
-static int
-rs_write_handler(const String &arg, Element *element,
-		  void *, ErrorHandler *errh)
+int
+RadioSim::rs_write_handler(const String &arg, Element *element,
+			   void *, ErrorHandler *errh)
 {
   RadioSim *l = (RadioSim *) element;
   Vector<String> words;
@@ -159,8 +180,8 @@ rs_write_handler(const String &arg, Element *element,
   }
 }
 
-static String
-rs_read_handler(Element *f, void *)
+String
+RadioSim::rs_read_handler(Element *f, void *)
 {
   RadioSim *l = (RadioSim *) f;
   String s;
@@ -168,10 +189,10 @@ rs_read_handler(Element *f, void *)
 
   n = l->nnodes();
   for(i = 0; i < n; i++){
-    grid_location loc = l->get_node_loc(i);
+    Node n = l->get_node_loc(i);
     const int BUFSZ = 255;
     char buf[BUFSZ];
-    snprintf(buf, BUFSZ, "%d %f %f\n", i, loc.lat(), loc.lon());
+    snprintf(buf, BUFSZ, "%d %f %f\n", i, n._lat, n._lon);
     s += buf;
   }
   return s;
