@@ -74,7 +74,7 @@ public:
   }
 };
 
-
+static const uint8_t _ett_version = 0x01;
 
 class ETTStat : public Element {
 
@@ -90,22 +90,24 @@ public:
     PROBE_AVAILABLE_RATES = (1<<0),
   };
 
+  
   struct link_probe {
+    uint8_t _version;
     unsigned short cksum;     // internet checksum
     unsigned short psz;       // total packet size, including eth hdr
 
-    uint32_t rate;
-    uint32_t size;
+    uint16_t rate;
+    uint16_t size;
     uint32_t ip;
     uint32_t flags;
-    unsigned int seq_no;
+    unsigned int seq;
     unsigned int period;      // period of this node's probe broadcasts, in msecs
     unsigned int tau;         // this node's loss-rate averaging period, in msecs
     unsigned int sent;        // how many probes this node has sent
     unsigned int num_probes;
     unsigned int num_links;   // number of wifi_link_entry entries following
 
-    link_probe() : cksum(0), psz(0), ip(0), seq_no(0), period(0), tau(0), sent(0), num_links(0) { }
+    link_probe() : cksum(0), psz(0), ip(0), seq(0), period(0), tau(0), sent(0), num_links(0) { }
 
   };
   
@@ -118,6 +120,7 @@ public:
   struct link_entry {
     uint32_t ip;
     uint8_t num_rates;
+    uint32_t seq;
     link_entry() { }
     link_entry(IPAddress __ip) : ip(__ip.addr()) { }
   };
@@ -146,13 +149,13 @@ private:
   // record probes received from other hosts
   struct probe_t {
     struct timeval when;  
-    uint32_t   seq_no;
+    uint32_t   _seq;
     uint8_t _rate;
     uint16_t _size;
     probe_t(const struct timeval &t, 
 	    uint32_t s,
 	    uint8_t r,
-	    uint16_t sz) : when(t), seq_no(s), _rate(r), _size(sz) { }
+	    uint16_t sz) : when(t), _seq(s), _rate(r), _size(sz) { }
   };
 
 
@@ -161,7 +164,7 @@ private:
     int period;   // period of this node's probes, as reported by the node
     int tau;      // this node's stats averaging period, as reported by the node
     int sent;
-
+    uint32_t seq;
     Vector<RateSize> probe_types;
     
     Vector<int> _fwd_rates;
@@ -244,7 +247,7 @@ private:
   
   void add_bcast_stat(IPAddress, const link_probe &);
   
-  void calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev);
+  void calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev, uint32_t seq);
   void send_probe_hook();
   void send_probe();
   static void static_send_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(); }

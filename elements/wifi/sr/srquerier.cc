@@ -143,8 +143,8 @@ SRQuerier::start_query(IPAddress dstip)
   pk->_flags = 0;
   pk->_qdst = dstip;
   pk->_seq = htonl(++_seq);
-  pk->set_num_hops(1);
-  pk->set_hop(0,_ip);
+  pk->set_num_links(0);
+  pk->set_link_node(0,_ip);
   output(1).push(p);
 }
 
@@ -214,6 +214,10 @@ SRQuerier::push(int, Packet *p_in)
     sent_packet = true;
   } else {
     /* no valid route, don't send. */
+    click_chatter("%{element}::%s no valid route to %s\n",
+		  this,
+		  __func__,
+		  dst.s().cc());
     p_in->kill();
   }
 

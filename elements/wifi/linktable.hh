@@ -66,29 +66,22 @@ public:
   void take_state(Element *, ErrorHandler *);
   void *cast(const char *n);
   /* read/write handlers */
-  static String static_print_routes(Element *e, void *);
   String print_routes();
-  static String static_print_links(Element *e, void *);
   String print_links();
-  static String static_print_hosts(Element *e, void *);
   String print_hosts();
-  static int static_clear(const String &arg, Element *e,
-			  void *, ErrorHandler *errh); 
-  static int static_top_n_routes(const String &arg, Element *e,
-			  void *, ErrorHandler *errh); 
-  void clear();
 
   static int static_update_link(const String &arg, Element *e,
-			  void *, ErrorHandler *errh); 
-  static int static_dijkstra(const String &arg, Element *e,
-			  void *, ErrorHandler *errh); 
+				void *, ErrorHandler *errh);
+  void clear();
 
   String routes_to_string(Vector< Vector<IPAddress> > routes);
   /* other public functions */
-  bool update_link(IPAddress from, IPAddress to, unsigned metric);
-  bool update_both_links(IPAddress a, IPAddress b, unsigned metric) {
-    if (update_link(a,b,metric)) {
-      return update_link(b,a,metric);
+  bool update_link(IPAddress from, IPAddress to, 
+		   uint32_t seq, uint32_t metric);
+  bool update_both_links(IPAddress a, IPAddress b, 
+			 uint32_t seq, uint32_t metric) {
+    if (update_link(a,b,seq,metric)) {
+      return update_link(b,a,seq,metric);
     }
     return false;
   }
@@ -111,11 +104,13 @@ public:
   public:
     IPAddress _from;
     IPAddress _to;
-    unsigned _metric;
-    Link() : _from(), _to(), _metric(0) { }
-    Link(IPAddress from, IPAddress to, unsigned metric) {
+    uint32_t _seq;
+    uint32_t _metric;
+    Link() : _from(), _to(), _seq(0), _metric(0) { }
+    Link(IPAddress from, IPAddress to, uint32_t seq, uint32_t metric) {
       _from = from;
       _to = to;
+      _seq = seq;
       _metric = metric;
     }
   };
@@ -135,34 +130,37 @@ private:
     IPAddress _from;
     IPAddress _to;
     unsigned _metric;
+    uint32_t _seq;
     struct timeval _last_updated;
-    LinkInfo() { _from = IPAddress(); _to = IPAddress(); _metric = 0; _last_updated.tv_sec = 0; }
+    LinkInfo() { 
+      _from = IPAddress(); 
+      _to = IPAddress(); 
+      _metric = 0; 
+      _seq = 0;
+      _last_updated.tv_sec = 0; 
+    }
     
-    LinkInfo(IPAddress from, IPAddress to, unsigned metric)
-    { 
+    LinkInfo(IPAddress from, IPAddress to, 
+	     uint32_t seq, unsigned metric) { 
       _from = from;
       _to = to;
       _metric = metric;
+      _seq = seq;
       click_gettimeofday(&_last_updated);
     }
-    LinkInfo(const LinkInfo &p) : _from(p._from), _to(p._to), _metric(p._metric), _last_updated(p._last_updated) { }
-    void update(unsigned metric) {
-      if (9999 == _metric) {
-	/* once a link is marked as bad, 
-	 * don't let anyone change it for
-	 * at least two minutes
-	 */
-	struct timeval now;
-	struct timeval diff;
-	struct timeval expire;
-	expire.tv_sec = 120;
-	click_gettimeofday(&now);
-	timersub(&now, &_last_updated, &diff);
-	if (timercmp(&diff, &expire, <)) {
-	  return;
-	}
+
+    LinkInfo(const LinkInfo &p) : 
+      _from(p._from), _to(p._to), 
+      _metric(p._metric), _seq(p._seq), 
+      _last_updated(p._last_updated) 
+    { }
+
+    void update(unsigned seq, unsigned metric) {
+      if (seq < _seq) {
+	return;
       }
       _metric = metric; 
+      _seq = seq;
       click_gettimeofday(&_last_updated); 
     }
     
@@ -174,10 +172,28 @@ private:
     unsigned _metric;
     IPAddress _prev;
     bool _marked;
-    HostInfo() { _ip = IPAddress(); _prev = IPAddress(); _metric = 0; _marked = false;}
-    HostInfo(IPAddress p) { _ip = p; _prev = IPAddress(); _metric = 0; _marked = false; }
-    HostInfo(const HostInfo &p) : _ip(p._ip), _metric(p._metric), _prev(p._prev), _marked(p._marked) { }
-    void clear() { _prev = IPAddress(); _metric = 0; _marked = false;}
+    HostInfo(IPAddress p) { 
+      _ip = p; 
+      _prev = IPAddress(); 
+      _metric = 0; 
+      _marked = false; 
+    }
+    HostInfo() { 
+      HostInfo(IPAddress());
+    }
+
+    HostInfo(const HostInfo &p) : 
+      _ip(p._ip), 
+      _metric(p._metric), 
+      _prev(p._prev), 
+      _marked(p._marked) 
+    { }
+    
+    void clear() { 
+      _prev = IPAddress(); 
+      _metric = 0; 
+      _marked = false;
+    }
 
   };
 
@@ -195,7 +211,6 @@ private:
   IPAddress _ip;
   struct timeval _stale_timeout;
   Timer _timer;
-  static void _lt_assert_(const char *, int, const char *);
 };
   
 

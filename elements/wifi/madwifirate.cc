@@ -52,11 +52,15 @@ MadwifiRate::~MadwifiRate()
 int
 MadwifiRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+  _alt_rate = false;
+  _active = true;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
 			"OFFSET", cpUnsigned, "offset", &_offset,
 			"RT", cpElement, "availablerates", &_rtable,
 			"THRESHOLD", cpUnsigned, "xxx", &_packet_size_threshold,
+			"ALT_RATE", cpBool, "xxx", &_alt_rate,
+			"ACTIVE", cpBool, "xxx", &_active,
 			0);
   return ret;
 }
@@ -206,7 +210,7 @@ MadwifiRate::assign_rate(Packet *p_in)
     nfo->_retries = 0;
     nfo->_failures = 0;
     /* initial to max? */
-    nfo->_current_index = nfo->_rates.size() - 1;
+    nfo->_current_index = 0;
     click_chatter("%{element} initial rate for %s is %d\n",
 		  this,
 		  nfo->_eth.s().cc(),
@@ -214,11 +218,14 @@ MadwifiRate::assign_rate(Packet *p_in)
   }
 
   int rate = nfo->pick_rate();
-  int alt_rate = nfo->pick_alt_rate();
+  int retries = (_alt_rate) ? 3 : 8;
+  int alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
+  int alt_retries = (_alt_rate) ? 4 : 0;
+
   SET_WIFI_RATE_ANNO(p_in, rate);
-  SET_WIFI_MAX_RETRIES_ANNO(p_in, 4);
+  SET_WIFI_MAX_RETRIES_ANNO(p_in, retries);
   SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);
-  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, 4);
+  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, alt_retries);
   return;
   
 }
@@ -228,7 +235,7 @@ Packet *
 MadwifiRate::pull(int port)
 {
   Packet *p = input(port).pull();
-  if (p) {
+  if (p && _active) {
     assign_rate(p);
   }
   return p;
@@ -241,10 +248,14 @@ MadwifiRate::push(int port, Packet *p_in)
     return;
   }
   if (port != 0) {
-    process_feedback(p_in);
+    if (_active) {
+      process_feedback(p_in);
+    }
     p_in->kill();
   } else {
-    assign_rate(p_in);
+    if (_active) {
+      assign_rate(p_in);
+    }
     output(port).push(p_in);
   }
 }
@@ -269,7 +280,8 @@ MadwifiRate::print_rates()
 }
 
 
-enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, H_OFFSET};
+enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, 
+      H_OFFSET, H_ACTIVE};
 
 
 static String
@@ -290,6 +302,8 @@ MadwifiRate_read_param(Element *e, void *thunk)
   case H_RATES: {
     return td->print_rates();
   }
+  case H_ACTIVE: 
+    return String(td->_active) + "\n";
   default:
     return String();
   }
@@ -339,6 +353,14 @@ MadwifiRate_write_param(const String &in_s, Element *e, void *vparam,
   case H_RESET: 
     f->_neighbors.clear();
     break;
+
+ case H_ACTIVE: {
+    bool active;
+    if (!cp_bool(s, &active)) 
+      return errh->error("active must be boolean");
+    f->_active = active;
+    break;
+  }
   }
   return 0;
 }
@@ -355,6 +377,7 @@ MadwifiRate::add_handlers()
   add_read_handler("stepup", MadwifiRate_read_param, (void *) H_STEPUP);
   add_read_handler("stepdown", MadwifiRate_read_param, (void *) H_STEPDOWN);
   add_read_handler("offset", MadwifiRate_read_param, (void *) H_OFFSET);
+  add_read_handler("active", MadwifiRate_read_param, (void *) H_ACTIVE);
 
   add_write_handler("debug", MadwifiRate_write_param, (void *) H_DEBUG);
   add_write_handler("threshold", MadwifiRate_write_param, (void *) H_THRESHOLD);
@@ -362,6 +385,7 @@ MadwifiRate::add_handlers()
   add_write_handler("stepdown", MadwifiRate_write_param, (void *) H_STEPDOWN);
   add_write_handler("offset", MadwifiRate_write_param, (void *) H_OFFSET);
   add_write_handler("reset", MadwifiRate_write_param, (void *) H_RESET);
+  add_write_handler("active", MadwifiRate_write_param, (void *) H_ACTIVE);
 
 }
 // generate Vector template instance

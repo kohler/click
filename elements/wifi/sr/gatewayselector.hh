@@ -62,9 +62,7 @@ class GatewaySelector : public Element {
   void push(int, Packet *);
   void run_timer();
 
-  int get_fwd_metric(IPAddress other);
-  int get_rev_metric(IPAddress other);
-  bool update_link(IPAddress from, IPAddress to, int metric);
+  bool update_link(IPAddress from, IPAddress to, uint32_t seq, uint32_t metric);
   void forward_ad_hook();
   IPAddress best_gateway();
 private:
@@ -82,6 +80,7 @@ private:
     Vector<IPAddress> _hops;
     Vector<int> _fwd_metrics;
     Vector<int> _rev_metrics;
+    Vector<uint32_t> _seqs;
     Seen(IPAddress gw, u_long seq, int fwd, int rev) {
       _gw = gw; _seq = seq; _count = 0; _rev_metric = rev; _fwd_metric = fwd;
     }

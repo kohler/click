@@ -52,6 +52,8 @@ AutoRateFallback::~AutoRateFallback()
 int
 AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+  _alt_rate = false;
+  _active = true;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
 			"OFFSET", cpUnsigned, "offset", &_offset,
@@ -59,6 +61,8 @@ AutoRateFallback::configure(Vector<String> &conf, ErrorHandler *errh)
 			"STEPDOWN", cpInteger, "0-100", &_stepdown,
 			"RT", cpElement, "availablerates", &_rtable,
 			"THRESHOLD", cpUnsigned, "xxx", &_packet_size_threshold,
+			"ALT_RATE", cpBool, "xxx", &_alt_rate,
+			"ACTIVE", cpBool, "xxx", &_active,
 			cpEnd);
   return ret;
 }
@@ -175,8 +179,8 @@ AutoRateFallback::assign_rate(Packet *p_in)
     nfo = _neighbors.findp(dst);
     nfo->_rates = _rtable->lookup(dst);
     nfo->_successes = 0;
-    /* initial to max? */
-    nfo->_current_index = nfo->_rates.size() - 1;
+
+    nfo->_current_index = 0;
     click_chatter("%{element} initial rate for %s is %d\n",
 		  this,
 		  nfo->_eth.s().cc(),
@@ -184,11 +188,15 @@ AutoRateFallback::assign_rate(Packet *p_in)
   }
 
   int rate = nfo->pick_rate();
-  int alt_rate = nfo->pick_alt_rate();
+  int alt_rate = (_alt_rate) ? nfo->pick_alt_rate() : 0;
+  int max_retries = (_alt_rate) ? 4 : 8;
+  int alt_max_retries = (_alt_rate) ? 4 : 0;
   SET_WIFI_RATE_ANNO(p_in, rate);
-  SET_WIFI_MAX_RETRIES_ANNO(p_in, 4);
+  SET_WIFI_MAX_RETRIES_ANNO(p_in, max_retries);
+
+
   SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);
-  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, 4);
+  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, alt_max_retries);
   return;
   
 }
@@ -198,7 +206,7 @@ Packet *
 AutoRateFallback::pull(int port)
 {
   Packet *p = input(port).pull();
-  if (p) {
+  if (p && _active) {
     assign_rate(p);
   }
   return p;
@@ -211,10 +219,14 @@ AutoRateFallback::push(int port, Packet *p_in)
     return;
   }
   if (port != 0) {
-    process_feedback(p_in);
+    if (_active) {
+      process_feedback(p_in);
+    }
     p_in->kill();
   } else {
-    assign_rate(p_in);
+    if (_active) {
+      assign_rate(p_in);
+    }
     output(port).push(p_in);
   }
 }
@@ -234,7 +246,8 @@ AutoRateFallback::print_rates()
 }
 
 
-enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, H_OFFSET};
+enum {H_DEBUG, H_STEPUP, H_STEPDOWN, H_THRESHOLD, H_RATES, H_RESET, 
+      H_OFFSET, H_ACTIVE};
 
 
 static String
@@ -255,6 +268,8 @@ AutoRateFallback_read_param(Element *e, void *thunk)
   case H_RATES: {
     return td->print_rates();
   }
+  case H_ACTIVE: 
+    return String(td->_active) + "\n";
   default:
     return String();
   }
@@ -304,6 +319,13 @@ AutoRateFallback_write_param(const String &in_s, Element *e, void *vparam,
   case H_RESET: 
     f->_neighbors.clear();
     break;
+ case H_ACTIVE: {
+    bool active;
+    if (!cp_bool(s, &active)) 
+      return errh->error("active must be boolean");
+    f->_active = active;
+    break;
+  }
   }
   return 0;
 }
@@ -320,6 +342,7 @@ AutoRateFallback::add_handlers()
   add_read_handler("stepup", AutoRateFallback_read_param, (void *) H_STEPUP);
   add_read_handler("stepdown", AutoRateFallback_read_param, (void *) H_STEPDOWN);
   add_read_handler("offset", AutoRateFallback_read_param, (void *) H_OFFSET);
+  add_read_handler("active", AutoRateFallback_read_param, (void *) H_ACTIVE);
 
   add_write_handler("debug", AutoRateFallback_write_param, (void *) H_DEBUG);
   add_write_handler("threshold", AutoRateFallback_write_param, (void *) H_THRESHOLD);
@@ -327,6 +350,7 @@ AutoRateFallback::add_handlers()
   add_write_handler("stepdown", AutoRateFallback_write_param, (void *) H_STEPDOWN);
   add_write_handler("reset", AutoRateFallback_write_param, (void *) H_RESET);
   add_write_handler("offset", AutoRateFallback_write_param, (void *) H_OFFSET);
+  add_write_handler("active", AutoRateFallback_write_param, (void *) H_ACTIVE);
 
 }
 // generate Vector template instance

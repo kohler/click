@@ -111,7 +111,7 @@ CounterFlood::forward(Broadcast *bcast) {
     hops = 1;
     len = srpacket::len_with_data(hops, p_in->length());
   } else {
-    hops = pk_in->num_hops() + 1;
+    hops = pk_in->num_links() + 1;
     len = srpacket::len_with_data(hops, pk_in->data_len());
   }
 
@@ -128,11 +128,11 @@ CounterFlood::forward(Broadcast *bcast) {
   pk->_type = PT_DATA;
   pk->_flags = 0;
   pk->_qdst = _bcast_ip;
-  pk->set_num_hops(hops);
-  for (int x = 0; x < hops - 1; x++) {
-    pk->set_hop(x, pk_in->get_hop(x));
+  pk->set_num_links(hops);
+  for (int x = 0; x < hops; x++) {
+    pk->set_link_node(x, pk_in->get_link_node(x));
   }
-  pk->set_hop(hops - 1,_ip);
+  pk->set_link_node(hops,_ip);
   pk->set_next(hops);
   pk->set_seq(bcast->_seq);
   uint32_t link_seq = random();
@@ -246,7 +246,7 @@ CounterFlood::push(int port, Packet *p_in)
       }
     }
 
-    IPAddress src = pk->get_hop(pk->num_hops() - 1);
+    IPAddress src = pk->get_link_node(pk->num_links() - 1);
     if (index == -1) {
       /* haven't seen this packet before */
       index = _packets.size();

@@ -132,7 +132,7 @@ SRQueryForwarder::get_fwd_metric(IPAddress other)
   if (_metric) {
     metric = _metric->get_fwd_metric(other);
   }
-  if (metric && !update_link(_ip, other, metric)) {
+  if (metric && !update_link(_ip, other, 0, metric)) {
     click_chatter("%{element} couldn't update get_fwd_metric %s > %d > %s\n",
 		  this,
 		  _ip.s().cc(),
@@ -150,7 +150,7 @@ SRQueryForwarder::get_rev_metric(IPAddress other)
   if (_metric) {
     metric = _metric->get_rev_metric(other);
   }
-  if (metric && !update_link(other, _ip, metric)) {
+  if (metric && !update_link(other, _ip, 0, metric)) {
     click_chatter("%{element} couldn't update get_rev_metric %s > %d > %s\n",
 		  this,
 		  other.s().cc(),
@@ -161,8 +161,12 @@ SRQueryForwarder::get_rev_metric(IPAddress other)
 }
 
 bool
-SRQueryForwarder::update_link(IPAddress from, IPAddress to, int metric) {
-  if (_link_table && !_link_table->update_link(from, to, metric)) {
+SRQueryForwarder::update_link(IPAddress from, IPAddress to, uint32_t seq, 
+			      uint32_t metric) {
+  assert(from);
+  assert(to);
+  assert(metric);
+  if (_link_table && !_link_table->update_link(from, to, seq, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
@@ -178,7 +182,7 @@ SRQueryForwarder::update_link(IPAddress from, IPAddress to, int metric) {
 void
 SRQueryForwarder::process_query(struct srpacket *pk1)
 {
-  IPAddress src(pk1->get_hop(0));
+  IPAddress src(pk1->get_link_node(0));
   IPAddress dst(pk1->_qdst);
   u_long seq = ntohl(pk1->_seq);
   int si;
@@ -186,40 +190,37 @@ SRQueryForwarder::process_query(struct srpacket *pk1)
   Vector<IPAddress> hops;
   Vector<int> fwd_metrics;
   Vector<int> rev_metrics;
-
+  Vector<int> seqs;
   if (dst == _ip) {
     /* don't forward queries for me */
     return;
   }
   int fwd_metric = 0;
   int rev_metric = 0;
-  for(int i = 0; i < pk1->num_hops(); i++) {
-    IPAddress hop = IPAddress(pk1->get_hop(i));
-    if (i != pk1->num_hops() - 1) {
-      fwd_metrics.push_back(pk1->get_fwd_metric(i));
-      rev_metrics.push_back(pk1->get_rev_metric(i));
-      fwd_metric += pk1->get_fwd_metric(i);
-      rev_metric += pk1->get_rev_metric(i);
-    }
+  for(int i = 0; i < pk1->num_links(); i++) {
+    IPAddress hop = IPAddress(pk1->get_link_node(i));
+    seqs.push_back(pk1->get_link_seq(i));
+    fwd_metrics.push_back(pk1->get_link_fwd(i));
+    rev_metrics.push_back(pk1->get_link_rev(i));
+    fwd_metric += pk1->get_link_fwd(i);
+    rev_metric += pk1->get_link_rev(i);
     hops.push_back(hop);
     if (hop == _ip) {
       /* I'm already in this route! */
       return;
     }
   }
+  hops.push_back(pk1->get_link_node(pk1->num_links()));
+
   _link_table->dijkstra();
+
   /* also get the metric from the neighbor */
-  IPAddress neighbor = pk1->get_hop(pk1->num_hops()-1);
+  IPAddress neighbor = pk1->get_link_node(pk1->num_links());
   int fwd_m = get_fwd_metric(neighbor);
   int rev_m = get_rev_metric(neighbor);
   rev_metric += rev_m;
   fwd_metric += fwd_m;
-  fwd_metrics.push_back(fwd_m);
-  rev_metrics.push_back(rev_m);
 
-  hops.push_back(_ip);
-
-  
   for(si = 0; si < _seen.size(); si++){
     if(src == _seen[si]._src && seq == _seen[si]._seq){
       break;
@@ -239,15 +240,13 @@ SRQueryForwarder::process_query(struct srpacket *pk1)
     return;
   }
 
-  _seen[si]._rev_metric = rev_metric;
-  _seen[si]._fwd_metric = fwd_metric;
-
   click_gettimeofday(&_seen[si]._when);
   
 
   _seen[si]._hops = hops;
   _seen[si]._fwd_metrics = fwd_metrics;
   _seen[si]._rev_metrics = rev_metrics;
+  _seen[si]._seqs = seqs;
   if (timercmp(&_seen[si]._when, &_seen[si]._to_send, <)) {
     /* a timer has already been scheduled */
     return;
@@ -287,13 +286,14 @@ SRQueryForwarder::forward_query(Seen *s)
 		  s->_src.s().cc(),
 		  s->_dst.s().cc());
   }
-  int nhops = s->_hops.size();
+  int links = s->_hops.size();
 
   sr_assert(s->_hops.size() == s->_fwd_metrics.size()+1);
   sr_assert(s->_hops.size() == s->_rev_metrics.size()+1);
+  sr_assert(s->_hops.size() == s->_seqs.size()+1);
 
   //click_chatter("forward query called");
-  int len = srpacket::len_wo_data(nhops);
+  int len = srpacket::len_wo_data(links);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
@@ -305,17 +305,28 @@ SRQueryForwarder::forward_query(Seen *s)
   pk->_flags = 0;
   pk->_qdst = s->_dst;
   pk->_seq = htonl(s->_seq);
-  pk->set_num_hops(nhops);
+  pk->set_num_links(links);
 
-  for(int i=0; i < nhops; i++) {
-    pk->set_hop(i, s->_hops[i]);
+  for (int i = 0; i < links - 1; i++) {
+    pk->set_link(i,
+		 s->_hops[i], s->_hops[i+1],
+		 s->_fwd_metrics[i], s->_rev_metrics[i],
+		 0);
   }
+  IPAddress neighbor = s->_hops[links-1];
+  click_chatter("neighbor is %s links %d hops %d\n", 
+		neighbor.s().cc(),
+		links,
+		s->_hops.size());
+  /* set my neighbor metrics + seq with up to date info */
+  pk->set_link(links - 1,
+	       neighbor, _ip,
+	       (_metric) ? _metric->get_fwd_metric(neighbor) : 0,
+	       (_metric) ? _metric->get_rev_metric(neighbor) : 0,
+	       (_metric) ? _metric->get_seq(neighbor) : 0);
 
-  for(int i=0; i < nhops - 1; i++) {
-    pk->set_fwd_metric(i, s->_fwd_metrics[i]);
-    pk->set_rev_metric(i, s->_rev_metrics[i]);
-  }
-
+	       
+	       
   s->_forwarded = true;
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
@@ -352,21 +363,21 @@ SRQueryForwarder::push(int, Packet *p_in)
 
   
   /* update the metrics from the packet */
-  for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    int fwd_m = pk->get_fwd_metric(i);
-    int rev_m = pk->get_fwd_metric(i);
+  for(int i = 0; i < pk->num_links(); i++) {
+    IPAddress a = pk->get_link_node(i);
+    IPAddress b = pk->get_link_node(i+1);
+    int fwd_m = pk->get_link_fwd(i);
+    int rev_m = pk->get_link_fwd(i);
     if (a != _ip && b != _ip) {
       /* don't update my immediate neighbor. see below */
-      if (fwd_m && !update_link(a,b,fwd_m)) {
+      if (fwd_m && !update_link(a,b,0,fwd_m)) {
 	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
 		      this,
 		      a.s().cc(),
 		      fwd_m,
 		      b.s().cc());
       }
-      if (rev_m && !update_link(b,a,rev_m)) {
+      if (rev_m && !update_link(b,a,0,rev_m)) {
 	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
 		      this,
 		      b.s().cc(),
@@ -377,7 +388,7 @@ SRQueryForwarder::push(int, Packet *p_in)
   }
   
   
-  IPAddress neighbor = pk->get_hop(pk->num_hops()-1);
+  IPAddress neighbor = pk->get_link_node(pk->num_links());
   sr_assert(neighbor);
   
   if (!_neighbors.findp(neighbor)) {

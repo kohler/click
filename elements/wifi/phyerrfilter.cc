@@ -61,7 +61,7 @@ PhyErrFilter::simple_action(Packet *p)
 {
 
   int status = WIFI_RX_STATUS_ANNO(p);
-  if (status == 0) {
+  if (status == 0 && !WIFI_RX_ERR_ANNO(p)) {
     return p;
   } 
 

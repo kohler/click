@@ -89,13 +89,15 @@ public:
   void *cast(const char *);
 
   static String read_stats(Element *xf, void *);
-  unsigned get_fwd_metric(IPAddress ip);
-  unsigned get_rev_metric(IPAddress ip);
-  
+  uint32_t get_fwd_metric(IPAddress ip);
+  uint32_t get_rev_metric(IPAddress ip);
+  uint32_t get_seq(IPAddress ip);
+
   Vector <IPAddress> get_neighbors();
   void update_link(IPAddress from, IPAddress to, 
 		   unsigned fwd, unsigned rev,
-		   int fwd_rate, int rev_rate);
+		   int fwd_rate, int rev_rate,
+		   uint32_t seq);
 
   int get_tx_rate(EtherAddress);
   class LinkInfo {
@@ -105,7 +107,7 @@ public:
     int _fwd_rate;
     unsigned _rev;
     int _rev_rate;
-
+    uint32_t _seq;
     struct timeval _last;
     LinkInfo() { }
     LinkInfo(IPOrderedPair p) {

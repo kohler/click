@@ -38,7 +38,6 @@ ETTStat::ETTStat()
   : _window(100), 
     _tau(10000), 
     _period(1000), 
-    _seq(0), 
     _sent(0),
     _ett_metric(0),
     _arp_table(0),
@@ -152,7 +151,6 @@ ETTStat::take_state(Element *e, ErrorHandler *errh)
   _neighbors = q->_neighbors;
   _bcast_stats = q->_bcast_stats;
   _rev_arp = q->_rev_arp;
-  _seq = q->_seq;
   _sent = q->_sent;
   _start = q->_start;
 
@@ -185,7 +183,7 @@ void add_jitter(unsigned int max_jitter, struct timeval *t) {
 }
 
 void 
-ETTStat::calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev) 
+ETTStat::calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev, uint32_t seq)
 {
   int one_ack_fwd = 0;
   int one_ack_rev = 0;
@@ -248,7 +246,8 @@ ETTStat::calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int>
   
   if (_ett_metric) {
     _ett_metric->update_link(from, to, fwd_metric, rev_metric,
-			     best_fwd_rate, best_rev_rate);
+			     best_fwd_rate, best_rev_rate,
+			     seq);
   }
   
 }
@@ -321,8 +320,9 @@ ETTStat::send_probe()
   memcpy(eh->ether_shost, _eth.data(), 6);
 
   link_probe *lp = (struct link_probe *) (p->data() + sizeof(click_ether));
+  lp->_version = _ett_version;
   lp->ip = _ip.addr();
-  lp->seq_no = _seq++;
+  lp->seq = now.tv_sec;
   lp->period = _period;
   lp->tau = _tau;
   lp->sent = _sent;
@@ -372,6 +372,10 @@ ETTStat::send_probe()
       num_entries++;
       link_entry *entry = (struct link_entry *)(ptr); 
       entry->ip = probe->ip;
+      entry->seq = probe->seq;	
+      if ((uint32_t) probe->ip > (uint32_t) _ip) {
+	entry->seq = lp->seq;
+      }
       entry->num_rates = probe->probe_types.size();
       ptr += sizeof(link_entry);
       for (int x = 0; x < probe->probe_types.size(); x++) {
@@ -453,6 +457,14 @@ ETTStat::simple_action(Packet *p)
     return 0;
   }
   link_probe *lp = (link_probe *)(p->data() + sizeof(click_ether));
+  if (lp->_version != _ett_version) {
+    click_chatter ("%{element}: unknown sr version %x from %s", 
+		   this,
+		   lp->_version,
+		   EtherAddress(eh->ether_shost).s().cc());
+    p->kill();
+    return 0;
+  }
 
 
   if (click_in_cksum((unsigned char *) lp, lp->psz) != 0) {
@@ -480,7 +492,7 @@ ETTStat::simple_action(Packet *p)
   }
 
   uint8_t rate = WIFI_RATE_ANNO(p);
-  probe_t probe(now, lp->seq_no, lp->rate, lp->size);
+  probe_t probe(now, lp->seq, lp->rate, lp->size);
   int new_period = lp->period;
   probe_list_t *l = _bcast_stats.findp(ip);
   int x = 0;
@@ -503,7 +515,7 @@ ETTStat::simple_action(Packet *p)
   l->last_rx = now;
   
   l->probes.push_back(probe);
-
+  l->seq = probe._seq;
   /* only keep stats for last _window *unique* sequence numbers */
   while ((unsigned) l->probes.size() > _window) 
     l->probes.pop_front();
@@ -605,7 +617,13 @@ ETTStat::simple_action(Packet *p)
 	}
       }
     }
-    calc_ett(ip, neighbor, rates, fwd, rev);
+    int seq = entry->seq;
+    if (neighbor == ip && 
+	((uint32_t) neighbor > (uint32_t) _ip)) {
+      seq = now.tv_sec;
+    }
+    calc_ett(ip, neighbor, rates, fwd, rev, seq);
+
     ptr += num_rates * sizeof(struct link_info);
     
   }
@@ -633,7 +651,7 @@ ETTStat::read_bcast_stats(Element *xf, void *)
   for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
     IPAddress ip  = i.key();
     probe_list_t *pl = e->_bcast_stats.findp(ip);
-    sa << e->_ip << " " << e->_eth << " ";
+    //sa << e->_ip << " " << e->_eth << " ";
     sa << ip;
     if (e->_arp_table) {
       EtherAddress eth_dest = e->_arp_table->lookup(ip);
@@ -653,6 +671,7 @@ ETTStat::read_bcast_stats(Element *xf, void *)
       sa << pl->_fwd_rates[x] << " ";
       sa << rev_rate << " ]";
     }
+    sa << " seq " << pl->seq;
     sa << " period " << pl->period;
     sa << " tau " << pl->tau;
     sa << " sent " << pl->sent;
@@ -678,7 +697,7 @@ enum {H_RESET};
 
 static int 
 ETTStat_write_param(const String &in_s, Element *e, void *vparam,
-		      ErrorHandler *errh)
+		      ErrorHandler *)
 {
   ETTStat *f = (ETTStat *)e;
   String s = cp_uncomment(in_s);

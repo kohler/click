@@ -99,7 +99,7 @@ LocalBroadcast::push(int port, Packet *p_in)
   
   if (port == 1) {
     /* from me */
-    int hops = 1;
+    int hops = 0;
     int extra = srpacket::len_wo_data(hops) + sizeof(click_ether);
     int payload_len = p_in->length();
     WritablePacket *p = p_in->push(extra);
@@ -120,8 +120,8 @@ LocalBroadcast::push(int port, Packet *p_in)
     pk->_flags = 0;
     pk->_qdst = _bcast_ip;
     pk->_seq = htonl(++_seq);
-    pk->set_num_hops(hops);
-    pk->set_hop(0,_ip);
+    pk->set_num_links(hops);
+    pk->set_link_node(0,_ip);
     pk->set_next(0);
 
     _packets_tx++;

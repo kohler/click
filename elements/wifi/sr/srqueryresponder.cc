@@ -108,7 +108,7 @@ SRQueryResponder::send(WritablePacket *p)
   click_ether *eh = (click_ether *) p->data();
   struct srpacket *pk = (struct srpacket *) (eh+1);
   int next = pk->next();
-  IPAddress next_ip = pk->get_hop(next);
+  IPAddress next_ip = pk->get_link_node(next);
   EtherAddress eth_dest = _arp_table->lookup(next_ip);
 
   sr_assert(next_ip != _ip);
@@ -125,10 +125,12 @@ SRQueryResponder::get_fwd_metric(IPAddress other)
 {
   sr_assert(other);
   int metric = 9999;
+  uint32_t seq = 0;
   if (_metric) {
     metric = _metric->get_fwd_metric(other);
+    seq = _metric->get_seq(other);
   }
-  if (metric && !update_link(_ip, other, metric)) {
+  if (metric && !update_link(_ip, other, seq, metric)) {
     click_chatter("%{element} couldn't update get_fwd_metric %s > %d > %s\n",
 		  this,
 		  _ip.s().cc(),
@@ -143,10 +145,12 @@ SRQueryResponder::get_rev_metric(IPAddress other)
 {
   sr_assert(other);
   int metric = 9999;
+  uint32_t seq = 0;
   if (_metric) {
     metric = _metric->get_rev_metric(other);
+    seq = _metric->get_seq(other);
   }
-  if (metric && !update_link(other, _ip, metric)) {
+  if (metric && !update_link(other, _ip, seq, metric)) {
     click_chatter("%{element} couldn't update get_rev_metric %s > %d > %s\n",
 		  this,
 		  other.s().cc(),
@@ -157,8 +161,8 @@ SRQueryResponder::get_rev_metric(IPAddress other)
 }
 
 bool
-SRQueryResponder::update_link(IPAddress from, IPAddress to, int metric) {
-  if (_link_table && !_link_table->update_link(from, to, metric)) {
+SRQueryResponder::update_link(IPAddress from, IPAddress to, uint32_t seq, int metric) {
+  if (_link_table && !_link_table->update_link(from, to, seq, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
@@ -180,21 +184,21 @@ SRQueryResponder::forward_reply(struct srpacket *pk1)
   if (_debug) {
     click_chatter("%{element}: forward_reply %s <- %s\n", 
 		  this,
-		  pk1->get_hop(0).s().cc(),
+		  pk1->get_link_node(0).s().cc(),
 		  IPAddress(pk1->_qdst).s().cc());
   }
-  if(pk1->next() >= pk1->num_hops()) {
+  if(pk1->next() >= pk1->num_links()) {
     click_chatter("%{element} forward_reply strange next=%d, nhops=%d", 
 		  this,
 		  pk1->next(), 
-		  pk1->num_hops());
+		  pk1->num_links());
     return;
   }
 
   Path fwd;
   Path rev;
-  for (int i = 0; i < pk1->num_hops(); i++) {
-    fwd.push_back(pk1->get_hop(i));
+  for (int i = 0; i < pk1->num_links(); i++) {
+    fwd.push_back(pk1->get_link_node(i));
   }
   rev = reverse_path(fwd);
   struct timeval now;
@@ -217,12 +221,12 @@ SRQueryResponder::forward_reply(struct srpacket *pk1)
 void SRQueryResponder::start_reply(struct srpacket *pk_in)
 {
 
-  int len = srpacket::len_wo_data(pk_in->num_hops()+1);
+  int len = srpacket::len_wo_data(pk_in->num_links()+1);
   _link_table->dijkstra();
   if (_debug) {
     click_chatter("%{element}: start_reply %s <- %s\n",
 		  this,
-		  pk_in->get_hop(0).s().cc(),
+		  pk_in->get_link_node(0).s().cc(),
 		  IPAddress(pk_in->_qdst).s().cc());
   }
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
@@ -237,27 +241,25 @@ void SRQueryResponder::start_reply(struct srpacket *pk_in)
   pk_out->_type = PT_REPLY;
   pk_out->_flags = 0;
   pk_out->_seq = pk_in->_seq;
-  pk_out->set_num_hops(pk_in->num_hops()+1);
-  pk_out->set_next(pk_in->num_hops() - 1);
+  pk_out->set_num_links(pk_in->num_links()+1);
+  pk_out->set_next(pk_in->num_links());
   pk_out->_qdst = pk_in->_qdst;
 
 
-  for (int x = 0; x < pk_in->num_hops(); x++) {
-    IPAddress hop = pk_in->get_hop(x);
-    pk_out->set_hop(x, hop);
-    if (x < pk_in->num_hops() - 1) {
-      int fwd_m = pk_in->get_fwd_metric(x);
-      int rev_m = pk_in->get_fwd_metric(x);
-      pk_out->set_fwd_metric(x, fwd_m);
-      pk_out->set_rev_metric(x, rev_m);
-    }
+  for (int x = 0; x < pk_in->num_links(); x++) {
+    pk_out->set_link(x,
+		     pk_in->get_link_node(x),
+		     pk_in->get_link_node(x+1),
+		     pk_in->get_link_fwd(x),
+		     pk_in->get_link_rev(x),
+		     pk_in->get_link_seq(x));
   }
-  IPAddress prev = pk_in->get_hop(pk_in->num_hops()-1);
-  int rev_m = get_rev_metric(prev);
-  int fwd_m = get_fwd_metric(prev);
-  pk_out->set_hop(pk_in->num_hops(), _ip);
-  pk_out->set_fwd_metric(pk_in->num_hops()-1, fwd_m);
-  pk_out->set_rev_metric(pk_in->num_hops()-1, rev_m);
+  IPAddress neighbor = pk_in->get_link_node(pk_in->num_links());
+  pk_out->set_link(pk_in->num_links(),
+		   neighbor, _ip, 
+		   (_metric) ? _metric->get_fwd_metric(neighbor) : 0,
+		   (_metric) ? _metric->get_rev_metric(neighbor) : 0,
+		   (_metric) ? _metric->get_seq(neighbor) : 0);
 
   send(p);
 }
@@ -315,22 +317,36 @@ SRQueryResponder::push(int, Packet *p_in)
     return;
   }
 
-  /* update the metrics from the packet */
-  for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    int fwd_m = pk->get_fwd_metric(i);
-    int rev_m = pk->get_fwd_metric(i);
+  if(pk->get_link_node(pk->next()) != _ip){
+    // it's not for me. these are supposed to be unicast,
+    // so how did this get to me?
+    click_chatter("%{element}: reply not for me %d/%d %s",
+		  this,
+		  pk->next(),
+		  pk->num_links(),
+		  pk->get_link_node(pk->next()).s().cc());
+    p_in->kill();
+    return;
+  }
+  
+
+    /* update the metrics from the packet */
+  for(int i = 0; i < pk->num_links(); i++) {
+    IPAddress a = pk->get_link_node(i);
+    IPAddress b = pk->get_link_node(i+1);
+    int fwd_m = pk->get_link_fwd(i);
+    int rev_m = pk->get_link_fwd(i);
+    uint32_t seq = pk->get_link_seq(i);
     if (a != _ip && b != _ip) {
       /* don't update my immediate neighbor. see below */
-      if (fwd_m && !update_link(a,b,fwd_m)) {
+      if (fwd_m && !update_link(a,b,seq,fwd_m)) {
 	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
 		      this,
 		      a.s().cc(),
 		      fwd_m,
 		      b.s().cc());
       }
-      if (rev_m && !update_link(b,a,rev_m)) {
+      if (rev_m && !update_link(b,a,seq,rev_m)) {
 	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
 		      this,
 		      b.s().cc(),
@@ -340,40 +356,27 @@ SRQueryResponder::push(int, Packet *p_in)
     }
   }
   
-    
-    IPAddress neighbor = pk->get_hop(pk->next()+1);
-    sr_assert(neighbor);
-
-    _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
-    /* 
-     * calling these functions updates the neighbor link 
-     * in the link_table, so we can ignore the return value.
-     */
-    get_fwd_metric(neighbor);
-    get_rev_metric(neighbor);
-
-
-    if(pk->get_hop(pk->next()) != _ip){
-      // it's not for me. these are supposed to be unicast,
-      // so how did this get to me?
-      click_chatter("%{element}: reply not for me %d/%d %s",
-		    this,
-		    pk->next(),
-		    pk->num_hops(),
-		    pk->get_hop(pk->next()).s().cc());
-      p_in->kill();
-      return;
-    }
-    if(pk->next() == 0){
-      // I'm the ultimate consumer of this reply. Add to routing tbl.
-      got_reply(pk);
-    } else {
-      // Forward the reply.
-      forward_reply(pk);
-    }
-    p_in->kill();
-    return;
   
+  IPAddress neighbor = pk->get_link_node(pk->num_links());
+  assert(neighbor);
+  
+  /* 
+   * calling these functions updates the neighbor link 
+   * in the link_table, so we can ignore the return value.
+   */
+  get_fwd_metric(neighbor);
+  get_rev_metric(neighbor);
+
+  if(pk->next() == 0){
+    // I'm the ultimate consumer of this reply. Add to routing tbl.
+    got_reply(pk);
+  } else {
+    // Forward the reply.
+    forward_reply(pk);
+  }
+  p_in->kill();
+  return;
+    
 }
 
 enum {H_DEBUG, H_IP};

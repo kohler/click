@@ -106,7 +106,7 @@ SRForwarder::get_fwd_metric(IPAddress other)
   sr_assert(other);
   if (_metric) {
     metric = _metric->get_fwd_metric(other);
-    if (metric && !update_link(_ip, other, metric)) {
+    if (metric && !update_link(_ip, other, 0, metric)) {
       click_chatter("%{element} couldn't update fwd_metric %s > %d > %s\n",
 		    this,
 		    _ip.s().cc(),
@@ -127,7 +127,7 @@ SRForwarder::get_rev_metric(IPAddress other)
   sr_assert(other);
   if (_metric) {
     metric = _metric->get_rev_metric(other);
-    if (metric && !update_link(other, _ip, metric)) {
+    if (metric && !update_link(other, _ip, 0, metric)) {
       click_chatter("%{element} couldn't update rev_metric %s > %d > %s\n",
 		    this,
 		    other.s().cc(),
@@ -141,9 +141,10 @@ SRForwarder::get_rev_metric(IPAddress other)
 }
 
 bool
-SRForwarder::update_link(IPAddress from, IPAddress to, int metric) 
+SRForwarder::update_link(IPAddress from, IPAddress to, 
+			 uint32_t seq, uint32_t metric) 
 {
-  if (_link_table && !_link_table->update_link(from, to, metric)) {
+  if (_link_table && !_link_table->update_link(from, to, seq, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
@@ -161,15 +162,14 @@ Packet *
 SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 {
   sr_assert(r.size() > 1);
-  int hops = r.size();
-  int extra = srpacket::len_wo_data(hops) + sizeof(click_ether);
-  int payload_len = p_in->length();
+  int hops = r.size() - 1;
+  unsigned extra = srpacket::len_wo_data(hops) + sizeof(click_ether);
+  unsigned payload_len = p_in->length();
   WritablePacket *p = p_in->push(extra);
-  click_ether *eh = (click_ether *) p->data();
-  struct srpacket *pk = (struct srpacket *) (eh+1);
-  memset(pk, '\0', srpacket::len_wo_data(hops));
 
-  memcpy(eh->ether_shost, _eth.data(), 6);
+  assert(extra + payload_len == p_in->length());
+
+
   int next = index_of(r, _ip) + 1;
   if (next < 0 || next >= r.size()) {
     click_chatter("SRForwarder %s: encap couldn't find %s (%d) in path %s",
@@ -186,19 +186,29 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 		  id().cc(),
 		  r[next].s().cc());
   }
+  
+  click_ether *eh = (click_ether *) p->data();
+  memcpy(eh->ether_shost, _eth.data(), 6);
   memcpy(eh->ether_dhost, eth_dest.data(), 6);
   eh->ether_type = htons(_et);
+    
+
+  struct srpacket *pk = (struct srpacket *) (eh+1);
+  memset(pk, '\0', srpacket::len_wo_data(hops));
+
   pk->_version = _sr_version;
   pk->_type = PT_DATA;
   pk->_dlen = htons(payload_len);
 
-  pk->set_num_hops(r.size());
+  pk->set_num_links(hops);
   pk->set_next(next);
   pk->set_flag(flags);
   int i;
   for(i = 0; i < hops; i++) {
-    pk->set_hop(i, r[i]);
+    pk->set_link_node(i, r[i]);
   }
+
+  pk->set_link_node(hops, r[r.size()-1]);
 
   PathInfo *nfo = _paths.findp(r);
   if (!nfo) {
@@ -212,10 +222,8 @@ SRForwarder::encap(Packet *p_in, Vector<IPAddress> r, int flags)
 
   /* set the ip header anno */
   const click_ip *ip = reinterpret_cast<const click_ip *>
-    (pk->data());
-  p->set_ip_header(ip, pk->data_len());
-
-  SET_WIFI_NUM_FAILURES(p, 0);
+    (p->data() + pk->hlen_wo_data() + sizeof(click_ether));
+  p->set_ip_header(ip, sizeof(click_ip));
   return p;
 }
 
@@ -254,7 +262,7 @@ SRForwarder::push(int port, Packet *p_in)
 
 
 
-  if(port == 0 && pk->get_hop(pk->next()) != _ip){
+  if(port == 0 && pk->get_link_node(pk->next()) != _ip){
     if (EtherAddress(eh->ether_dhost) != _bcast) {
       /* 
        * if the arp doesn't have a ethernet address, it
@@ -265,8 +273,8 @@ SRForwarder::push(int port, Packet *p_in)
 		    id().cc(),
 		    pk->data_seq(),
 		    pk->next(),
-		    pk->num_hops(),
-		    pk->get_hop(pk->next()).s().cc(),
+		    pk->num_links(),
+		    pk->get_link_node(pk->next()).s().cc(),
 		    EtherAddress(eh->ether_dhost).s().cc());
     }
     p->kill();
@@ -278,15 +286,16 @@ SRForwarder::push(int port, Packet *p_in)
   IPAddress r_to = pk->get_random_to();
   int r_fwd_metric = pk->get_random_fwd_metric();
   int r_rev_metric = pk->get_random_rev_metric();
+  uint32_t seq = pk->get_random_seq();
   if (r_from && r_to) {
-    if (r_fwd_metric && !update_link(r_from, r_to, r_fwd_metric)) {
+    if (r_fwd_metric && !update_link(r_from, r_to, seq, r_fwd_metric)) {
       click_chatter("%{element} couldn't update r_fwd %s > %d > %s\n",
 		    this,
 		    r_from.s().cc(),
 		    r_fwd_metric,
 		    r_to.s().cc());
     }
-    if (r_rev_metric && !update_link(r_to, r_from, r_rev_metric)) {
+    if (r_rev_metric && !update_link(r_to, r_from, seq, r_rev_metric)) {
       click_chatter("%{element} couldn't update r_rev %s > %d > %s\n",
 		    this,
 		    r_to.s().cc(),
@@ -295,21 +304,21 @@ SRForwarder::push(int port, Packet *p_in)
     }
   }
 
-  for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    int fwd_m = pk->get_fwd_metric(i);
-    int rev_m = pk->get_rev_metric(i);
+  for(int i = 0; i < pk->num_links(); i++) {
+    IPAddress a = pk->get_link_node(i);
+    IPAddress b = pk->get_link_node(i+1);
+    int fwd_m = pk->get_link_fwd(i);
+    int rev_m = pk->get_link_rev(i);
     if (a != _ip && b != _ip) {
       /* don't update my immediate neighbor. see below */
-      if (fwd_m && !update_link(a,b,fwd_m)) {
+      if (fwd_m && !update_link(a,b,0,fwd_m)) {
 	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
 		      this,
 		      a.s().cc(),
 		      fwd_m,
 		      b.s().cc());
       }
-      if (rev_m && !update_link(b,a,rev_m)) {
+      if (rev_m && !update_link(b,a,0,rev_m)) {
 	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
 		      this,
 		      b.s().cc(),
@@ -320,49 +329,54 @@ SRForwarder::push(int port, Packet *p_in)
   }
   
 
-  IPAddress prev = pk->get_hop(pk->next()-1);
+  IPAddress prev = pk->get_link_node(pk->next()-1);
   _arp_table->insert(prev, EtherAddress(eh->ether_shost));
 
+
+  /* set the ip header anno */
+  const click_ip *ip = reinterpret_cast<const click_ip *>
+    (pk->data());
+  p->set_ip_header(ip, sizeof(click_ip));
+  
   /* 
    * these functions also update the link
    * table, so we don't need to call update_link
    */
 
-  int prev_fwd_metric = get_fwd_metric(prev);
-  int prev_rev_metric = get_rev_metric(prev);
+  uint32_t prev_fwd_metric = get_fwd_metric(prev);
+  uint32_t prev_rev_metric = get_rev_metric(prev);
 
-  if(pk->next() == pk->num_hops() - 1){
+  if(pk->next() == pk->num_links()){
     // I'm the ultimate consumer of this data.
     /*
      * set the dst to the gateway it came from 
      * this is kinda weird.
      */
-    SET_MISC_IP_ANNO(p, pk->get_hop(0));
+    SET_MISC_IP_ANNO(p, pk->get_link_node(0));
     output(1).push(p);
     return;
   } 
 
-  pk->set_fwd_metric(pk->next() - 1, prev_fwd_metric);
-  pk->set_rev_metric(pk->next() - 1, prev_rev_metric);
-  pk->set_next(pk->next() + 1);
+  pk->set_link(pk->next()-1,
+	       pk->get_link_node(pk->next()-1), _ip,
+	       prev_fwd_metric, prev_rev_metric,
+	       0);
 
+  pk->set_next(pk->next() + 1);
+  IPAddress nxt = pk->get_link_node(pk->next());
   sr_assert(pk->next() < 8);
-  IPAddress nxt = pk->get_hop(pk->next());
+
   
   EtherAddress eth_dest = _arp_table->lookup(nxt);
   if (eth_dest == _arp_table->_bcast) {
-    click_chatter("SRForwarder %s: arp lookup failed for %s",
-		  id().cc(),
+    click_chatter("%{element}::%s arp lookup failed for %s",
+		  this,
+		  __func__,
 		  nxt.s().cc());
   }
   memcpy(eh->ether_dhost, eth_dest.data(), 6);
   memcpy(eh->ether_shost, _eth.data(), 6);
 
-  /* set the ip header anno */
-  const click_ip *ip = reinterpret_cast<const click_ip *>
-    (pk->data());
-  p->set_ip_header(ip, pk->data_len());
-  SET_WIFI_NUM_FAILURES(p, 0);
   output(0).push(p);
   return;
 

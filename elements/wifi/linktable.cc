@@ -25,10 +25,6 @@
 #include <click/straccum.hh>
 CLICK_DECLS
 
-#ifndef lt_assert
-#define lt_assert(e) ((e) ? (void) 0 : _lt_assert_(__FILE__, __LINE__, #e))
-#endif /* dsr_assert */
-
 LinkTable::LinkTable() 
   : _timer(this)
 {
@@ -98,109 +94,6 @@ LinkTable::take_state(Element *e, ErrorHandler *) {
   dijkstra();
 }
 
-enum {H_BLACKLIST, H_BLACKLIST_CLEAR, H_BLACKLIST_ADD, H_BLACKLIST_REMOVE};
-
-static String 
-LinkTable_read_param(Element *e, void *thunk)
-{
-  LinkTable *td = (LinkTable *)e;
-    switch ((uintptr_t) thunk) {
-    case H_BLACKLIST: {
-      StringAccum sa;
-      typedef HashMap<IPAddress, IPAddress> IPTable;
-      typedef IPTable::const_iterator IPIter;
-  
-
-      for (IPIter iter = td->_blacklist.begin(); iter; iter++) {
-	sa << iter.value() << " ";
-      }
-      return sa.take_string() + "\n";
-    }
-    default:
-      return String();
-    }
-}
-static int 
-LinkTable_write_param(const String &in_s, Element *e, void *vparam,
-		      ErrorHandler *errh)
-{
-  LinkTable *f = (LinkTable *)e;
-  String s = cp_uncomment(in_s);
-  switch((int)vparam) {
-  case H_BLACKLIST_CLEAR: {
-    f->_blacklist.clear();
-    break;
-  }
-  case H_BLACKLIST_ADD: {
-    IPAddress m;
-    if (!cp_ip_address(s, &m)) 
-      return errh->error("blacklist_add parameter must be ipaddress");
-    f->_blacklist.insert(m, m);
-    break;
-  }
-  case H_BLACKLIST_REMOVE: {
-    IPAddress m;
-    if (!cp_ip_address(s, &m)) 
-      return errh->error("blacklist_add parameter must be ipaddress");
-    f->_blacklist.remove(m);
-    break;
-  }
-  }
-  return 0;
-}
-
-
-void
-LinkTable::add_handlers() {
-  add_default_handlers(false);
-  add_read_handler("routes", static_print_routes, 0);
-  add_read_handler("links", static_print_links, 0);
-  add_read_handler("hosts", static_print_hosts, 0);
-  add_write_handler("clear", static_clear, 0);
-  add_write_handler("update_link", static_update_link, 0);
-  add_write_handler("dijkstra", static_dijkstra, 0);
-  add_write_handler("top_n_routes", static_top_n_routes, 0);
-
-  add_read_handler("blacklist", LinkTable_read_param, (void *)H_BLACKLIST);
-  add_write_handler("blacklist_clear", LinkTable_write_param, (void *)H_BLACKLIST_CLEAR);
-  add_write_handler("blacklist_add", LinkTable_write_param, (void *)H_BLACKLIST_ADD);
-  add_write_handler("blacklist_remove", LinkTable_write_param, (void *)H_BLACKLIST_REMOVE);
-
-}
-
-
-int
-LinkTable::static_clear(const String &arg, Element *e,
-			void *, ErrorHandler *errh) 
-{
-  LinkTable *n = (LinkTable *) e;
-  bool b;
-
-  if (!cp_bool(arg, &b))
-    return errh->error("`frozen' must be a boolean");
-
-  if (b) {
-    n->clear();
-  }
-  return 0;
-}
-
-int
-LinkTable::static_dijkstra(const String &arg, Element *e,
-			void *, ErrorHandler *errh) 
-{
-  LinkTable *n = (LinkTable *) e;
-  bool b;
-
-  if (!cp_bool(arg, &b))
-    return errh->error("`frozen' must be a boolean");
-
-  if (b) {
-    n->dijkstra();
-  }
-  return 0;
-}
-
 int
 LinkTable::static_update_link(const String &arg, Element *e,
 			      void *, ErrorHandler *errh) 
@@ -229,7 +122,7 @@ LinkTable::static_update_link(const String &arg, Element *e,
     return errh->error("Couldn't read metric");
   }
   
-  n->update_link(from, to, metric);
+  n->update_link(from, to, 0, metric);
   return 0;
 
 }
@@ -241,10 +134,10 @@ LinkTable::clear()
 
 }
 bool 
-LinkTable::update_link(IPAddress from, IPAddress to, unsigned metric)
+LinkTable::update_link(IPAddress from, IPAddress to, uint32_t seq, uint32_t metric)
 {
-  lt_assert(from);
-  lt_assert(to);
+  assert(from);
+  assert(to);
   
   if (!from || !to || !metric) {
     return false;
@@ -262,15 +155,15 @@ LinkTable::update_link(IPAddress from, IPAddress to, unsigned metric)
     nto = _hosts.findp(to);
   }
   
-  lt_assert(nfrom);
-  lt_assert(nto);
+  assert(nfrom);
+  assert(nto);
 
   IPPair p = IPPair(from, to);
   LinkInfo *lnfo = _links.findp(p);
   if (!lnfo) {
-    _links.insert(p, LinkInfo(from, to, metric));
+    _links.insert(p, LinkInfo(from, to, seq, metric));
   } else {
-    lnfo->update(metric);
+    lnfo->update(seq, metric);
   }
   return true;
 }
@@ -284,7 +177,7 @@ LinkTable::random_link()
   for (LTIter iter = _links.begin(); iter; iter++, current_ndx++) {
     if (current_ndx == ndx) {
       LinkInfo n = iter.value();
-      return Link(n._from, n._to, n._metric);
+      return Link(n._from, n._to, n._seq, n._metric);
     }
   }
   click_chatter("LinkTable %s: random_link overestimated number of elements\n",
@@ -305,7 +198,7 @@ LinkTable::get_hosts()
 unsigned 
 LinkTable::get_host_metric(IPAddress s)
 {
-  lt_assert(s);
+  assert(s);
   if (!s) {
     return 0;
   }
@@ -319,8 +212,8 @@ LinkTable::get_host_metric(IPAddress s)
 unsigned 
 LinkTable::get_hop_metric(IPAddress from, IPAddress to) 
 {
-  lt_assert(from);
-  lt_assert(to);
+  assert(from);
+  assert(to);
   if (!from || !to) {
     return 0;
   }
@@ -402,7 +295,7 @@ LinkTable::best_route(IPAddress dst)
 {
   Vector<IPAddress> reverse_route;
   Vector<IPAddress> route;
-  lt_assert(dst);
+  assert(dst);
   if (!dst) {
     return route;
   }
@@ -467,89 +360,7 @@ String routes_to_string(Vector<Path> routes) {
   }
   return sa.take_string();
 }
-Vector <Vector <IPAddress> >
-LinkTable::top_n_routes(IPAddress dst, int n)
-{
-  lt_assert(dst);
-  Vector<Path> routes;
-  
-  {
-    Vector<IPAddress> route;
-    route.push_back(_ip);
-    route.push_back(dst);
-    routes = update_routes(routes, n, route);
-  }
-  /* two hop */
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    Vector<IPAddress> route;
 
-    HostInfo h = iter.value();
-    route.push_back(_ip);
-    route.push_back(h._ip);
-    route.push_back(dst);
-    routes = update_routes(routes, n, route);
-  }
-  
-  /* three hop */
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    for (HTIter iter2 = _hosts.begin(); iter2; iter2++) {
-      Vector<IPAddress> route;
-      
-      HostInfo h = iter.value();
-      HostInfo h2 = iter2.value();
-      route.push_back(_ip);
-      route.push_back(h._ip);
-      route.push_back(h2._ip);
-      route.push_back(dst);
-      routes = update_routes(routes, n, route);
-    }
-  }
-
-  /* four hop */
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    for (HTIter iter2 = _hosts.begin(); iter2; iter2++) {
-      for (HTIter iter3 = _hosts.begin(); iter3; iter3++) {
-      Vector<IPAddress> route;
-      
-      HostInfo h = iter.value();
-      HostInfo h2 = iter2.value();
-      HostInfo h3 = iter3.value();
-      route.push_back(_ip);
-      route.push_back(h._ip);
-      route.push_back(h2._ip);
-      route.push_back(h3._ip);
-      route.push_back(dst);
-      routes = update_routes(routes, n, route);
-      }
-    }
-  }
-
-  return routes;
-}
-
-String
-LinkTable::static_print_links(Element *e, void *)
-{
-  LinkTable *n = (LinkTable *) e;
-  return n->print_links();
-
-
-}
-
-int
-LinkTable::static_top_n_routes(const String &arg, Element *e,
-			       void *, ErrorHandler *errh) 
-{
-  LinkTable *n = (LinkTable *) e;
-  IPAddress dst;
-  
-  if (!cp_ip_address(arg, &dst))
-    return errh->error("dst must be an IPAddress");
-  
-  Vector <Vector <IPAddress> > routes = n->top_n_routes(dst, 5);
-  click_chatter("top_n_routes finished:\n%s\n", n->routes_to_string(routes).cc());
-  return 0;
-}
 
 String 
 LinkTable::print_links() 
@@ -559,19 +370,14 @@ LinkTable::print_links()
   click_gettimeofday(&now);
   for (LTIter iter = _links.begin(); iter; iter++) {
     LinkInfo n = iter.value();
-    sa << n._from.s().cc() << " " << n._to.s().cc() << " ";
-    sa << n._metric << " " << " " << now - n._last_updated << "\n";
+    sa << n._from.s().cc() << " " << n._to.s().cc();
+    sa << " " << n._metric;
+    sa << " " << n._seq << " " << now - n._last_updated << "\n";
   }
   return sa.take_string();
 }
 
 
-String
-LinkTable::static_print_routes(Element *e, void *)
-{
-  LinkTable *n = (LinkTable *) e;
-  return n->print_routes();
-}
 
 String 
 LinkTable::print_routes() 
@@ -595,8 +401,9 @@ LinkTable::print_routes()
 	sa << " " << r[i] << " ";
 	if (i != r.size()-1) {
 	  LinkInfo *l = _links.findp(IPPair(r[i], r[i+1]));
-	  lt_assert(l);
+	  assert(l);
 	  sa << l->_metric;
+	  sa << " (" << l->_seq << ")";
 	}
       }
       sa << "\n";
@@ -605,13 +412,6 @@ LinkTable::print_routes()
   return sa.take_string();
 }
 
-
-String
-LinkTable::static_print_hosts(Element *e, void *)
-{
-  LinkTable *n = (LinkTable *) e;
-  return n->print_hosts();
-}
 
 String 
 LinkTable::print_hosts() 
@@ -664,7 +464,7 @@ LinkTable::get_neighbors(IPAddress ip)
 
   for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
     HostInfo *neighbor = _hosts.findp(i.key());
-    lt_assert(neighbor);
+    assert(neighbor);
     if (ip != neighbor->_ip) {
       LinkInfo *lnfo = _links.findp(IPPair(ip, neighbor->_ip));
       if (lnfo) {
@@ -699,20 +499,20 @@ LinkTable::dijkstra()
   HostInfo *root_info = _hosts.findp(src);
 
 
-  lt_assert(root_info);
+  assert(root_info);
   root_info->_prev = root_info->_ip;
   root_info->_metric = 0;
   IPAddress current_min_ip = root_info->_ip;
 
   while (current_min_ip) {
     HostInfo *current_min = _hosts.findp(current_min_ip);
-    lt_assert(current_min);
+    assert(current_min);
     current_min->_marked = true;
 
 
     for (IPMap::const_iterator i = ip_addrs.begin(); i; i++) {
       HostInfo *neighbor = _hosts.findp(i.key());
-      lt_assert(neighbor);
+      assert(neighbor);
       if (!neighbor->_marked && !_blacklist.findp(neighbor->_ip)) {
 	LinkInfo *lnfo = _links.findp(IPPair(current_min->_ip, neighbor->_ip));
 	if (lnfo && lnfo->_metric && (!neighbor->_metric || neighbor->_metric > current_min->_metric + lnfo->_metric)) {
@@ -742,18 +542,92 @@ LinkTable::dijkstra()
 }
 
 
-void
-LinkTable::_lt_assert_(const char *file, int line, const char *expr)
+enum {H_BLACKLIST, 
+      H_BLACKLIST_CLEAR, 
+      H_BLACKLIST_ADD, 
+      H_BLACKLIST_REMOVE,
+      H_LINKS,
+      H_ROUTES,
+      H_HOSTS,
+      H_CLEAR,
+      H_DIJKSTRA};
+
+static String 
+LinkTable_read_param(Element *e, void *thunk)
 {
-  click_chatter("LinkTable assertion \"%s\" failed: file %s, line %d",
-		expr, file, line);
-#ifdef CLICK_USERLEVEL  
-  abort();
-#else
-  click_chatter("Continuing execution anyway, hold on to your hats!\n");
-#endif
+  LinkTable *td = (LinkTable *)e;
+    switch ((uintptr_t) thunk) {
+    case H_BLACKLIST: {
+      StringAccum sa;
+      typedef HashMap<IPAddress, IPAddress> IPTable;
+      typedef IPTable::const_iterator IPIter;
+  
+
+      for (IPIter iter = td->_blacklist.begin(); iter; iter++) {
+	sa << iter.value() << " ";
+      }
+      return sa.take_string() + "\n";
+    }
+    case H_LINKS:  return td->print_links();
+    case H_ROUTES: return td->print_routes();
+    case H_HOSTS:  return td->print_hosts();
+    default:
+      return String();
+    }
+}
+static int 
+LinkTable_write_param(const String &in_s, Element *e, void *vparam,
+		      ErrorHandler *errh)
+{
+  LinkTable *f = (LinkTable *)e;
+  String s = cp_uncomment(in_s);
+  switch((int)vparam) {
+  case H_BLACKLIST_CLEAR: {
+    f->_blacklist.clear();
+    break;
+  }
+  case H_BLACKLIST_ADD: {
+    IPAddress m;
+    if (!cp_ip_address(s, &m)) 
+      return errh->error("blacklist_add parameter must be ipaddress");
+    f->_blacklist.insert(m, m);
+    break;
+  }
+  case H_BLACKLIST_REMOVE: {
+    IPAddress m;
+    if (!cp_ip_address(s, &m)) 
+      return errh->error("blacklist_add parameter must be ipaddress");
+    f->_blacklist.remove(m);
+    break;
+  }
+  case H_CLEAR: f->clear(); break;
+  case H_DIJKSTRA: f->dijkstra(); break;
+  }
+  return 0;
+}
+
+
+void
+LinkTable::add_handlers() {
+  add_default_handlers(false);
+  add_read_handler("routes", LinkTable_read_param, (void *)H_ROUTES);
+  add_read_handler("links", LinkTable_read_param, (void *)H_LINKS);
+  add_read_handler("hosts", LinkTable_read_param, (void *)H_HOSTS);
+  add_read_handler("blacklist", LinkTable_read_param, (void *)H_BLACKLIST);
+
+  add_write_handler("clear", LinkTable_write_param, (void *)H_CLEAR);
+  add_write_handler("blacklist_clear", LinkTable_write_param, (void *)H_BLACKLIST_CLEAR);
+  add_write_handler("blacklist_add", LinkTable_write_param, (void *)H_BLACKLIST_ADD);
+  add_write_handler("blacklist_remove", LinkTable_write_param, (void *)H_BLACKLIST_REMOVE);
+  add_write_handler("dijkstra", LinkTable_write_param, (void *)H_DIJKSTRA);
+
+
+  add_write_handler("update_link", static_update_link, 0);
+
 
 }
+
+
 
 #include <click/bighashmap.cc>
 #include <click/hashmap.cc>

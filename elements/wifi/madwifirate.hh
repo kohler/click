@@ -141,7 +141,8 @@ class MadwifiRate : public Element { public:
   class NeighborTable _neighbors;
 
   class AvailableRates *_rtable;
-
+  bool _alt_rate;
+  bool _active;
 };
 
 CLICK_ENDDECLS

@@ -101,7 +101,7 @@ ETTMetric::get_tx_rate(EtherAddress eth)
       IPOrderedPair p = IPOrderedPair(_ip, ip);
       LinkInfo *nfo = _links.findp(p);
       if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
-	return 2;
+	return p.first(ip) ? nfo->_fwd_rate : nfo->_rev_rate;
       }
     }
   }
@@ -111,7 +111,8 @@ ETTMetric::get_tx_rate(EtherAddress eth)
 void
 ETTMetric::update_link(IPAddress from, IPAddress to, 
 		       unsigned fwd, unsigned rev,
-		       int fwd_rate, int rev_rate)
+		       int fwd_rate, int rev_rate,
+		       uint32_t seq)
 {
 
   if (!from || !to) {
@@ -126,7 +127,7 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   if (!p.first(from)) {
     return update_link(to, from, 
 		       fwd, rev,
-		       fwd_rate, rev_rate);
+		       fwd_rate, rev_rate,seq);
   }
   LinkInfo *nfo = _links.findp(p);
   if (!nfo) {
@@ -134,12 +135,24 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
     nfo = _links.findp(p);
     nfo->_fwd = 0;
     nfo->_rev = 0;
+    nfo->_seq = 0;
   }
 
   if (!fwd && !rev) {
     return;
   }
 
+  if (nfo->_seq > seq) {
+    click_chatter("%{element}::%s old seq %d vs %d %s -> %s\n",
+		  this,
+		  __func__,
+		  seq,
+		  nfo->_seq,
+		  from.s().cc(),
+		  to.s().cc());
+		  
+    return;
+  }
   struct timeval now;
   click_gettimeofday(&now);
   
@@ -148,16 +161,17 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   nfo->_rev = rev;
   nfo->_fwd_rate = fwd_rate;
   nfo->_rev_rate = rev_rate;
+  nfo->_seq = seq;
 
   /* update linktable */
-  if (nfo->_fwd && _link_table && !_link_table->update_link(from, to, fwd)) {
+  if (nfo->_fwd && _link_table && !_link_table->update_link(from, to, seq, fwd)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
 		  fwd,
 		  to.s().cc());
   }
-  if (nfo->_rev && _link_table && !_link_table->update_link(to, from, rev)){
+  if (nfo->_rev && _link_table && !_link_table->update_link(to, from, seq, rev)){
     click_chatter("%{element} couldn't update link %s < %d < %s\n",
 		  this,
 		  from.s().cc(),
@@ -166,13 +180,9 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   }
 }
 
-unsigned 
+uint32_t 
 ETTMetric::get_fwd_metric(IPAddress ip)
 {
-  if (_ett_stat) {
-    //_ett_stat->update_links(ip);
-  }
-
   struct timeval now;
   click_gettimeofday(&now);
   IPOrderedPair p = IPOrderedPair(_ip, ip);
@@ -183,12 +193,9 @@ ETTMetric::get_fwd_metric(IPAddress ip)
   return 777777;
 }
 
-unsigned 
+uint32_t 
 ETTMetric::get_rev_metric(IPAddress ip)
 {
-  if (_ett_stat) {
-    //_ett_stat->update_links(ip);
-  }
   struct timeval now;
   click_gettimeofday(&now);
   IPOrderedPair p = IPOrderedPair(_ip, ip);
@@ -199,6 +206,17 @@ ETTMetric::get_rev_metric(IPAddress ip)
   return 777777;
 }
 
+uint32_t 
+ETTMetric::get_seq(IPAddress ip) {
+  struct timeval now;
+  click_gettimeofday(&now);
+  IPOrderedPair p = IPOrderedPair(_ip, ip);
+  LinkInfo *nfo = _links.findp(p);
+    if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
+      return nfo->_seq;
+  }
+  return 0;
+}
 String
 ETTMetric::read_stats(Element *xf, void *)
 {

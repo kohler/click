@@ -108,6 +108,7 @@ AvailableRates::take_state(Element *e, ErrorHandler *)
   AvailableRates *q = (AvailableRates *)e->cast("AvailableRates");
   if (!q) return;
   _rtable = q->_rtable;
+  _default_rates = _default_rates;
 
 }
 

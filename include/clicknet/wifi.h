@@ -321,12 +321,15 @@ typedef struct {
 #define LWNG_CAPHDR_VERSION 0x80211001
 
 
-static inline unsigned calc_usecs_wifi_packet(int length, int rate, int retries) {
+
+static inline unsigned calc_usecs_wifi_packet_tries(int length, 
+					      int rate, 
+					      int try0, int tryN) {
   assert(rate);
   assert(length);
-  assert(retries >= 0);
+  assert(try0 <= tryN);
 
-  if (!rate || !length || retries < 0) {
+  if (!rate || !length || try0 > tryN) {
     return 1;
   }
 
@@ -364,17 +367,28 @@ static inline unsigned calc_usecs_wifi_packet(int length, int rate, int retries)
 
   
   /* there is backoff, even for the first packet */
-  for (int x = 0; x <= retries; x++) {
+  for (int x = 0; x < try0; x++) {
     expected_backoff += t_slot * cw / 2;
     cw = MAX(cw_max, (cw + 1) * 2);
   }
 
-  return expected_backoff + t_difs + (retries + 1) * (
+  for (int x = try0; x <= tryN; x++) {
+    expected_backoff += t_slot * cw / 2;
+    cw = MAX(cw_max, (cw + 1) * 2);
+  }
+
+  return expected_backoff + t_difs + (tryN - try0 + 1) * (
 					     packet_tx_time + 
 					     t_sifs + t_ack);
 }
 
 
+
+static inline unsigned calc_usecs_wifi_packet(int length, 
+					      int rate, int retries) {
+  return calc_usecs_wifi_packet_tries(length, rate,
+				0, retries);
+}
 
 
 

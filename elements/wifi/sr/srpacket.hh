@@ -28,13 +28,15 @@ enum SRCRPacketFlags {
   FLAG_ECN = (1<<7)
 };
 
-static const uint8_t _sr_version = 0x09;
+static const uint8_t _sr_version = 0x0a;
+
 
 // Packet format.
-struct srpacket {
+CLICK_SIZE_PACKED_STRUCTURE(
+struct srpacket {,
   uint8_t _version; /* see _srcr_version */
   uint8_t _type;  /* see enum SRCRPacketType */
-  uint8_t _nhops;
+  uint8_t _nlinks;
   uint8_t _next;   // Index of next node who should process this packet.
 
 
@@ -43,9 +45,6 @@ struct srpacket {
   uint16_t _flags; 
   uint16_t _dlen;
 
-  uint32_t _random_fwd_metric;
-  uint32_t _random_rev_metric;
-
   /* PT_QUERY
    * _qdst is used for the query destination in control packets
    * and a extra 32 bit seq number in data packets
@@ -53,16 +52,25 @@ struct srpacket {
   uint32_t _qdst;
 
 
-  uint32_t _random_from;
-  uint32_t _random_to;
-
-
   uint32_t _seq;   // seq number
   uint32_t _seq2;  // another seq number
 
   
-  /* uin32_t ip[_nhops] */
-  /* uin32_t metrics[_nhops] */
+  /* uin32_t ip[_nlinks] */
+  /* uin32_t metrics[_nlinks] */
+
+
+  /* ip */
+  /* fwd */
+  /* rev */
+  /* seq */
+  /* ip */
+
+  uint32_t _random_from;
+  uint32_t _random_fwd_metric;
+  uint32_t _random_rev_metric;
+  uint32_t _random_seq;
+  uint32_t _random_to;
 
 
   void set_random_from(IPAddress ip) {
@@ -78,35 +86,91 @@ struct srpacket {
   void set_random_rev_metric(uint32_t m) {
     _random_rev_metric = m;
   }
+  void set_random_seq(uint32_t s) {
+    _random_seq = s;
+  }
+
   IPAddress get_random_from() {
     return _random_from;
   }
   IPAddress get_random_to() {
     return _random_to;
   }
-  int get_random_fwd_metric() {
+  uint32_t get_random_fwd_metric() {
     return _random_fwd_metric;
   }
-  int get_random_rev_metric() {
+  uint32_t get_random_rev_metric() {
     return _random_rev_metric;
   }
 
-  
+  uint32_t get_random_seq() {
+    return _random_seq;
+  }
+
+
+  void set_link(int link,
+		IPAddress a, IPAddress b, 
+		uint32_t fwd, uint32_t rev,
+		uint32_t seq) {
+    
+    uint32_t *ndx = (uint32_t *) (this+1);
+    ndx += link * 4;
+
+    ndx[0] = a;
+    ndx[1] = fwd;
+    ndx[2] = rev;
+    ndx[3] = seq;
+    ndx[4] = b;
+  }
+
+  uint32_t get_link_fwd(int link) {
+    uint32_t *ndx = (uint32_t *) (this+1);
+    ndx += link * 4;
+    return ndx[1];
+  }
+  uint32_t get_link_rev(int link) {
+    uint32_t *ndx = (uint32_t *) (this+1);
+    ndx += link * 4;
+    return ndx[2];
+  }
+
+  uint32_t get_link_seq(int link) {
+    uint32_t *ndx = (uint32_t *) (this+1);
+    ndx += link * 4;
+    return ndx[3];
+  }
+  IPAddress get_link_node(int link) {
+    uint32_t *ndx = (uint32_t *) (this+1);
+    ndx += link * 4;
+    return ndx[0];
+  }
+
+
+  void set_link_node(int link, IPAddress ip) {
+    uint32_t *ndx = (uint32_t *) (this+1);
+    ndx += link * 4;
+    ndx[0] = ip;
+  }
+
+
+
+
   // How long should the packet be?
-  size_t hlen_wo_data() const { return len_wo_data(_nhops); }
-  size_t hlen_with_data() const { return len_with_data(_nhops, ntohs(_dlen)); }
+  size_t hlen_wo_data() const { return len_wo_data(_nlinks); }
+  size_t hlen_with_data() const { return len_with_data(_nlinks, ntohs(_dlen)); }
   
-  static size_t len_wo_data(int nhops) {
-    return sizeof(struct srpacket) 
-      + nhops * sizeof(uint32_t)        // each ip address
-      + 2 * (nhops) * sizeof(uint32_t); //metrics in both directions
+  static size_t len_wo_data(int nlinks) {
+    return sizeof(struct srpacket) +
+      sizeof(uint32_t) + 
+      (nlinks) * sizeof(uint32_t) * 4;
+
   }
-  static size_t len_with_data(int nhops, int dlen) {
-    return len_wo_data(nhops) + dlen;
+  static size_t len_with_data(int nlinks, int dlen) {
+    return len_wo_data(nlinks) + dlen;
   }
   
-  int num_hops() {
-    return _nhops;
+  int num_links() {
+    return _nlinks;
   }
 
   int next() {
@@ -114,8 +178,8 @@ struct srpacket {
   }
   Path get_path() {
     Path p;
-    for (int x = 0; x < num_hops(); x++) {
-      p.push_back(get_hop(x));
+    for (int x = 0; x <= num_links(); x++) {
+      p.push_back(get_link_node(x));
     }
     return p;
   }
@@ -142,8 +206,8 @@ struct srpacket {
     _next = n;
   }
 
-  void set_num_hops(uint8_t n) {
-    _nhops = n;
+  void set_num_links(uint8_t n) {
+    _nlinks = n;
   }
   void set_data_len(uint16_t len) {
     _dlen = htons(len);
@@ -167,38 +231,10 @@ struct srpacket {
     _flags = htons(flags & !f);
   }
 
-  uint32_t get_fwd_metric(int h) { 
-    uint32_t *ndx = (uint32_t *) (this+1);
-    return ndx[2*h + num_hops()];
-  }
-  void set_fwd_metric(int hop, uint32_t s) { 
-    uint32_t *ndx = (uint32_t *) (this+1);
-    ndx[2*hop + num_hops()] = s;
-  }
 
-  uint32_t get_rev_metric(int h) { 
-    uint32_t *ndx = (uint32_t *) (this+1);
-    return ndx[1 + 2*h  + num_hops()];
-  }
-  void set_rev_metric(int hop, uint32_t s) { 
-    uint32_t *ndx = (uint32_t *) (this+1);
-    ndx[1 + 2*hop + num_hops()] = s;
-  }
+  /* remember that if you call this you must have set the number of links in this packet! */
+  u_char *data() { return (((u_char *)this) + len_wo_data(num_links())); }
 
-
-  IPAddress get_hop(int h) { 
-    in_addr *ndx = (in_addr *) (this + 1);
-    return IPAddress(ndx[h]);
-  }
-  
-  void  set_hop(int hop, IPAddress p) { 
-    in_addr *ndx = (in_addr *) (this + 1);
-    ndx[hop] = p.in_addr();
-  }
-  
-  /* remember that if you call this you must have set the number of hops in this packet! */
-  u_char *data() { return (((u_char *)this) + len_wo_data(num_hops())); }
-  String s();
 
   void set_checksum() {
     unsigned int tlen = 0;
@@ -210,7 +246,7 @@ struct srpacket {
     _cksum = 0;
     _cksum = click_in_cksum((unsigned char *) this, tlen);
   }
-};
+});
 
 
 

@@ -136,7 +136,7 @@ PrintSR::simple_action(Packet *p)
   }
 
   sa << " seq " << pk->_seq;
-  sa << " nhops " << pk->num_hops();
+  sa << " nhops " << pk->num_links();
   sa << " next " << pk->next();
 
   if (pk->get_random_from() || pk->get_random_to()) {
@@ -146,15 +146,14 @@ PrintSR::simple_action(Packet *p)
   }
 
   sa << " [";
-  for(int i = 0; i< pk->num_hops(); i++) {
-    sa << " "<< pk->get_hop(i).s().cc() << " ";
-    int fwd = pk->get_fwd_metric(i);
-    int rev = pk->get_rev_metric(i);
-    if (i != pk->num_hops() - 1) {
-      sa << "<" << fwd << "," << rev << ">";
-    }
-
+  for(int i = 0; i< pk->num_links(); i++) {
+    sa << " "<< pk->get_link_node(i).s().cc() << " ";
+    int fwd = pk->get_link_fwd(i);
+    int rev = pk->get_link_rev(i);
+    int seq = pk->get_link_seq(i);
+    sa << "<" << fwd << "," << seq << "," << rev << ">";
   }
+  sa << " "<< pk->get_link_node(pk->num_links()).s().cc() << " ";
   sa << "]";
 
   

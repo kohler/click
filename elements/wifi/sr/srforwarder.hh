@@ -79,7 +79,8 @@ private:
   int get_fwd_metric(IPAddress other);
   int get_rev_metric(IPAddress other);
 
-  bool update_link(IPAddress from, IPAddress to, int metric);
+  bool update_link(IPAddress from, IPAddress to, 
+		   uint32_t seq, uint32_t metric);
 };
 
 

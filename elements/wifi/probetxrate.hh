@@ -79,14 +79,15 @@ class ProbeTXRate : public Element { public:
   struct tx_result {
     struct timeval _when;
     int _rate;
-    int _retries;
     bool _success;
+    int _time;
     
-    tx_result(const struct timeval &t, int rate, int retries, bool success) : 
+    tx_result(const struct timeval &t, int rate, 
+	      bool success, int time) : 
       _when(t), 
       _rate(rate), 
-      _retries(retries), 
-      _success(success)
+      _success(success),
+      _time(time)
     { }
     tx_result() {}
   };
@@ -100,25 +101,26 @@ class ProbeTXRate : public Element { public:
 
     Vector<int> _rates;
     
-    
+    Vector<int> _packets;
     Vector<int> _total_usecs;
-    Vector<int> _total_tries;
     Vector<int> _total_success;
     Vector<int> _total_fail;
     Vector<int> _perfect_usecs;
-
+    
+    unsigned _count;
     DstInfo() { 
     }
 
     DstInfo(EtherAddress eth, Vector<int> rates) { 
       _eth = eth;
       _rates = rates;
+      _packets = Vector<int>(_rates.size(), 0);
       _total_usecs = Vector<int>(_rates.size(), 0);
-      _total_tries = Vector<int>(_rates.size(), 0);
       _total_success = Vector<int>(_rates.size(), 0);
       _total_fail = Vector<int>(_rates.size(), 0);
       _perfect_usecs = Vector<int>(_rates.size(), 0);
       
+      _count = 0;
       for (int x = 0; x < _rates.size(); x++) {
 	_perfect_usecs[x] = calc_usecs_wifi_packet(1500, _rates[x], 0);
       }
@@ -135,6 +137,58 @@ class ProbeTXRate : public Element { public:
       return (ndx == _rates.size()) ? -1 : ndx;
     }
 
+    void add_result(struct timeval now, int rate, int success,
+		    int time) {
+      int ndx = rate_index(rate);
+      if (ndx < 0 || ndx > _rates.size()){
+	return;
+      }
+      assert(rate);
+      _total_usecs[ndx] += time;
+      if (success) {
+	_total_success[ndx]++;
+      } else {
+	_total_fail[ndx]++;
+      }
+      _results.push_back(tx_result(now, rate, 
+				   success, time));
+    }
+
+
+    void check () {
+      for (int x = 0; x < _rates.size(); x++) {
+	int sum_success = 0;
+	int sum_fail = 0;
+	int sum_time = 0;
+	for (int y = 0; y < _results.size(); y++) {
+	  if (_results[y]._rate != _rates[x]) {
+	    continue;
+	  }
+	  if (_results[y]._success) {
+	    sum_success++;
+	  } else {
+	    sum_fail++;
+	  }
+	  sum_time += _results[y]._time;
+	}
+      
+      if (sum_success != _total_success[x]) {
+	click_chatter("rate %d mismatch success %d %d\n",
+		      _rates[x],
+		      sum_success, _total_success[x]);
+      }
+      if (sum_fail != _total_fail[x]) {
+	click_chatter("rate %d mismatch fail %d %d\n",
+		      _rates[x],
+		      sum_fail, _total_fail[x]);
+      }
+      if (sum_time != _total_usecs[x]) {
+	click_chatter("rate %d mismatch time %d %d\n",
+		      _rates[x],
+		      sum_time, _total_usecs[x]);
+      }
+      }
+    }
     void trim(struct timeval t) {
       while (_results.size() && timercmp(&_results[0]._when, &t, <)) {
 	tx_result t = _results[0];
@@ -152,9 +206,7 @@ class ProbeTXRate : public Element { public:
 	} else {
 	  _total_fail[ndx]--;
 	}
-	int usecs = calc_usecs_wifi_packet(1500, t._rate, t._retries);
-	_total_usecs[ndx] -= usecs;
-	_total_tries[ndx] -= (t._retries + 1);
+	_total_usecs[ndx] -= t._time;
 	
       }
     }
@@ -178,7 +230,7 @@ class ProbeTXRate : public Element { public:
       return (found) ? best_ndx : -1;
     }
 
-    int pick_alt_rate() {
+    int pick_alt_rate(bool aggressive) {
       /*
        * pick the fastest rate that hasn't failed yet.
        */
@@ -187,6 +239,9 @@ class ProbeTXRate : public Element { public:
       bool found = false;
       if (!_rates.size()) {
 	return -1;
+      }
+      if (!aggressive) {
+	return _rates[0];
       }
       for (int x = 0; x < _rates.size(); x++) {
 	if (_total_success[x] && !_total_fail[x]) {
@@ -211,67 +266,42 @@ class ProbeTXRate : public Element { public:
       }
       
       if (best_ndx < 0) {
-	for (int x = _rates.size() - 1; x >= 0; x--) {
-	  /* pick the first rate that hasn't failed yet */
-	  if (_total_tries[x] == 0) {
-	    return _rates[x];
-	  }
-	}
 	/* no rate has had a successful packet yet. 
 	 * pick the lowest rate possible */
 	return _rates[0];
       }
-
+      
       int best_usecs = _total_usecs[best_ndx] / _total_success[best_ndx];
-
-      int probe_ndx = -1;
+      
+      Vector<int> possible_rates;
       for (int x = 0; x < _rates.size(); x++) {
 	if (best_usecs < _perfect_usecs[x]) {
 	  /* couldn't possibly be better */
 	  continue;
 	}
 	
-
-	if (_total_tries[x] && _total_tries[x] >=  2 * _total_success[x]) {
-	  /* this rate doesn't work */
+	if (_total_fail[x] && _total_success[x] < _total_fail[x]) {
 	  if (_rates[x] >= 22) {
 	    /* give up now */
 	    break;
 	  }
 	  continue;
 	}
-	
-	if (_total_tries[x] > 10) {
-	  continue;
+
+	if (_total_success[x] + _total_fail[x] < 5) {
+	  possible_rates.push_back(_rates[x]);
 	}
-	
-	probe_ndx = x;
-	break;
       }
       
-      if (probe_ndx == -1) {
+      
+      if (!possible_rates.size()) {
 	return _rates[best_ndx];
       }
-      return _rates[probe_ndx];
-    }
+      return possible_rates[random() % possible_rates.size()];
 
-
-    void add_result(struct timeval now, int rate, int retries, int success) {
-      int ndx = rate_index(rate);
-      if (ndx < 0 || ndx > _rates.size()){
-	return;
-      }
-      assert(rate);
-      assert(retries >= 0);
-      _total_usecs[ndx] += calc_usecs_wifi_packet(1500, rate, retries);
-      _total_tries[ndx] += retries + 1;
-      if (success) {
-	_total_success[ndx]++;
-      } else {
-	_total_fail[ndx]++;
-      }
-      _results.push_back(tx_result(now, rate, retries, success));
     }
+    
+    
   };
   typedef HashMap<EtherAddress, DstInfo> NeighborTable;
   typedef NeighborTable::const_iterator NIter;
@@ -286,6 +316,8 @@ class ProbeTXRate : public Element { public:
   bool _filter_never_success;
   bool _aggressive_alt_rate;
 
+  bool _alt_rate;
+  bool _active;
 };
 
 CLICK_ENDDECLS

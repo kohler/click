@@ -50,7 +50,7 @@ class SRQueryResponder : public Element {
 
   int get_fwd_metric(IPAddress other);
   int get_rev_metric(IPAddress other);
-  bool update_link(IPAddress from, IPAddress to, int metric);
+  bool update_link(IPAddress from, IPAddress to, uint32_t seq, int metric);
 
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.

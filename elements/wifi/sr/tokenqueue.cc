@@ -550,7 +550,6 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    sa << id() << " " << now;
 	    sa << " first_rx";
 	    sa << " seq " << pk->seq2();
-	    sa << " towards " << pk->get_path()[pk->num_hops()-1];
 	    sa << " since_tx " << now - nfo->_last_tx;
 	    click_chatter("%s", sa.take_string().cc());
 	}
@@ -562,7 +561,6 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    sa << id() << " " << now;
 	    sa << " dup_token";
 	    sa << " seq " << pk->seq2();
-	    sa << " towards " << pk->get_path()[pk->num_hops()-1];
 	    click_chatter("%s", sa.take_string().cc());
 	} else {
 	    nfo->_expected_rx = pk->seq() + 1;
@@ -572,7 +570,6 @@ TokenQueue::process_forward(struct srpacket *pk)
 		sa << id() << " " << now;
 		sa << " token_rx";
 		sa << " seq " << pk->seq2();
-		sa << " towards " << pk->get_path()[pk->num_hops()-1];
 		sa << " expected " << nfo->_expected_rx;
 		sa << " packets_rx " << nfo->_packets_rx;
 		sa << " rx_time " << now - nfo->_first_rx;
@@ -588,7 +585,6 @@ TokenQueue::process_forward(struct srpacket *pk)
 	    sa << id() << " " << now;
 	    sa << " final_rx";
 	    sa << " seq " << pk->seq2();
-	    sa << " towards " << pk->get_path()[pk->num_hops()-1];
 	    sa << " rx_time " << now - nfo->_first_rx;
 	    click_chatter("%s", sa.take_string().cc());
 	}
@@ -637,7 +633,7 @@ TokenQueue::push(int port, Packet *p_in)
 		output(1).push(p_out);
 	    }
 	    return;
-	} else if (_sr_forwarder->ip() == pk->get_hop(0)) {
+	} else if (_sr_forwarder->ip() == pk->get_link_node(0)) {
 	    process_source(pk);
 	}
 	if (pk->flag(FLAG_SCHEDULE_FAKE)) {
@@ -842,9 +838,10 @@ TokenQueue::add_handlers()
 }
 // generate template instances
 #include <click/bighashmap.cc>
-
+#include <click/vector.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
 template class HashMap<Path, PathInfo>;
+template class Vector< Vector<IPAddress> >;
 #endif
 
 CLICK_ENDDECLS

@@ -42,11 +42,13 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _ett_l = 0;
   _rate = 0;
   _et = 0;
+  _offset = 0;
   if (cp_va_parse(conf, this, errh,
 		  cpKeywords, 
 		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		  "RATE", cpUnsigned, "rate", &_rate, 
 		  "ETT", cpElement, "ETTMetric element", &_ett_l,
+		  "OFFSET", cpUnsigned, "offset", &_offset,
 		  cpEnd) < 0) {
     return -1;
   }
@@ -70,13 +72,16 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SetTXRate::simple_action(Packet *p_in)
 {
-  click_ether *eh = (click_ether *) p_in->data();
+  uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
+  click_ether *eh = (click_ether *) dst_ptr;
 
   if (_et && eh->ether_type != htons(_et)) {
     return p_in;
   }
-
   SET_WIFI_FROM_CLICK(p_in);
+  SET_WIFI_RATE_ANNO(p_in, _rate ? _rate : 2);
+  SET_WIFI_MAX_RETRIES_ANNO(p_in, 7);
+
   if (_auto) {
     EtherAddress dst = EtherAddress(eh->ether_dhost);
     int rate = 0;
@@ -89,7 +94,6 @@ SetTXRate::simple_action(Packet *p_in)
       return p_in;
     }
   }
-  SET_WIFI_RATE_ANNO(p_in, _rate);  
   return p_in;
 }
 String

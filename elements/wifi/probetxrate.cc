@@ -27,6 +27,9 @@
 CLICK_DECLS
 
 
+#define MAX_RETRIES 16
+#define ORIGINAL_RETRIES 2
+
 ProbeTXRate::ProbeTXRate()
   : Element(2, 1),
     _offset(0),
@@ -53,6 +56,8 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
   _filter_never_success = false;
   _aggressive_alt_rate = false;
   _debug = false;
+  _alt_rate = false;
+  _active = true;
   int ret = cp_va_parse(conf, this, errh,
 			cpKeywords, 
 			"OFFSET", cpUnsigned, "offset", &_offset,
@@ -63,6 +68,8 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 			"FILTER_LOW_RATES", cpBool, "foo", &_filter_low_rates,
 			"FILTER_NEVER_SUCCESS", cpBool, "foo", &_filter_never_success,
 			"AGGRESSIVE_ALT_RATE", cpBool, "foo", &_aggressive_alt_rate,
+			"ALT_RATE", cpBool, "xxx", &_alt_rate,
+			"ACTIVE", cpBool, "xxx", &_active,
 			cpEnd);
   if (ret < 0) {
     return ret;
@@ -118,11 +125,14 @@ ProbeTXRate::assign_rate(Packet *p_in) {
   timersub(&now, &_rate_window, &old);
   nfo->trim(old);
   int rate = nfo->pick_rate();
-  int alt_rate = nfo->pick_alt_rate();
+  int retries = (_alt_rate) ? ORIGINAL_RETRIES : MAX_RETRIES;
+  int alt_rate = (_alt_rate) ? nfo->pick_alt_rate(_aggressive_alt_rate) : 0;
+  int alt_retries = (_alt_rate) ? MAX_RETRIES - ORIGINAL_RETRIES : 0;
+
   SET_WIFI_RATE_ANNO(p_in, rate);
-  SET_WIFI_MAX_RETRIES_ANNO(p_in, 3);
+  SET_WIFI_MAX_RETRIES_ANNO(p_in, retries);
   SET_WIFI_ALT_RATE_ANNO(p_in, alt_rate);
-  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, 3);
+  SET_WIFI_ALT_MAX_RETRIES_ANNO(p_in, alt_retries);
   return;
 }
 
@@ -137,8 +147,11 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   uint8_t *dst_ptr = (uint8_t *) p_in->data() + _offset;
   EtherAddress dst = EtherAddress(dst_ptr);
   int status = WIFI_TX_STATUS_ANNO(p_in);  
-  int retries = MIN(3, WIFI_RETRIES_ANNO(p_in));
+  int retries = _alt_rate ? MAX(ORIGINAL_RETRIES, WIFI_RETRIES_ANNO(p_in)) :
+    WIFI_RETRIES_ANNO(p_in);
+  int alt_retries = WIFI_RETRIES_ANNO(p_in) - retries;
   int rate = WIFI_RATE_ANNO(p_in);
+  int alt_rate = WIFI_ALT_RATE_ANNO(p_in);
 
   struct timeval now;
   click_gettimeofday(&now);
@@ -192,7 +205,8 @@ ProbeTXRate::process_feedback(Packet *p_in) {
 		  this,
 		  status);
   }
-  if ((status & WIFI_FAILURE)) {
+  bool success = (status & WIFI_FAILURE) == 0;
+  if (!success) {
     click_chatter("%{element} packet failed %s status %d retries %d rate %d alt %d\n",
 		  this,
 		  dst.s().cc(),
@@ -201,8 +215,31 @@ ProbeTXRate::process_feedback(Packet *p_in) {
 		  rate,
 		  WIFI_ALT_RATE_ANNO(p_in));
   }
-  nfo->add_result(now, rate, retries , (status == 0));
+  bool packet_failed_alt_rate = (_alt_rate && status & WIFI_FAILURE);
+  bool packet_failed_original_rate = status & WIFI_TX_STATUS_USED_ALT_RATE;
 
+  unsigned time = 0;
+  unsigned alt_time = 0;
+  time += calc_usecs_wifi_packet(1500, rate, retries);
+  if (_alt_rate && packet_failed_original_rate) {
+    alt_time += calc_usecs_wifi_packet_tries(1500, alt_rate, 
+					     ORIGINAL_RETRIES, ORIGINAL_RETRIES + alt_retries);
+  }
+  time += alt_time;
+
+  if (0) {
+    click_chatter(" rate %d retries %d time %d alt_rate %d alt_retries %d\n",
+		  rate, retries, time,
+		  alt_rate, alt_retries);
+  }
+  nfo->add_result(now, rate, success, time);
+
+  if (!success && alt_rate) {
+    /* packet actually failed */
+    nfo->add_result(now, alt_rate, false, alt_time);
+  }
+ 
+  nfo->check();
   return ;
 }
 
@@ -210,7 +247,7 @@ Packet *
 ProbeTXRate::pull(int port)
 {
   Packet *p = input(port).pull();
-  if (p) {
+  if (p && _active) {
     assign_rate(p);
   }
   return p;
@@ -223,10 +260,14 @@ ProbeTXRate::push(int port, Packet *p_in)
     return;
   }
   if (port != 0) {
-    process_feedback(p_in);
+    if (_active) {
+      process_feedback(p_in);
+    }
     p_in->kill();
   } else {
-    assign_rate(p_in);
+    if (_active) {
+      assign_rate(p_in);
+    }
     output(port).push(p_in);
   }
 }
@@ -242,12 +283,11 @@ ProbeTXRate::print_rates()
     sa << nfo._eth << "\n";
     for (int x = 0; x < nfo._rates.size(); x++) {
       sa << " " << nfo._rates[x];
-      sa << " " << nfo._total_tries[x];
-      sa << " " << nfo._total_success[x];
-      sa << " " << nfo._total_fail[x];
-      sa << " " << nfo._total_usecs[x];
-      sa << " " << nfo._perfect_usecs[x];
-      sa << " ";
+      sa << " success " << nfo._total_success[x];
+      sa << " fail " << nfo._total_fail[x];
+      sa << " total_usecs " << nfo._total_usecs[x];
+      sa << " perfect_usecs " << nfo._perfect_usecs[x];
+      sa << " average_usecs ";
       if (nfo._total_success[x]) {
 	int usecs = nfo._total_usecs[x] / nfo._total_success[x];
 	sa << usecs;
@@ -266,6 +306,8 @@ enum {H_DEBUG, H_RATES, H_THRESHOLD, H_RESET,
       H_FILTER_NEVER_SUCCESS,
       H_AGGRESSIVE_ALT_RATE,
       H_OFFSET,
+      H_ACTIVE, 
+      H_ALT_RATE,
      };
 
 
@@ -289,6 +331,10 @@ ProbeTXRate_read_param(Element *e, void *thunk)
   case H_RATES: {
     return td->print_rates();
   }
+  case H_ACTIVE: 
+    return String(td->_active) + "\n";
+  case H_ALT_RATE: 
+    return String(td->_alt_rate) + "\n";
   default:
     return String();
   }
@@ -345,6 +391,20 @@ ProbeTXRate_write_param(const String &in_s, Element *e, void *vparam,
   case H_RESET:
     f->_neighbors.clear();
     break;
+ case H_ACTIVE: {
+    bool active;
+    if (!cp_bool(s, &active)) 
+      return errh->error("active must be boolean");
+    f->_active = active;
+    break;
+  }
+ case H_ALT_RATE: {
+    bool alt_rate;
+    if (!cp_bool(s, &alt_rate)) 
+      return errh->error("alt_rate must be boolean");
+    f->_alt_rate = alt_rate;
+    break;
+  }
   }
   return 0;
 }
@@ -363,6 +423,8 @@ ProbeTXRate::add_handlers()
   add_read_handler("rates", ProbeTXRate_read_param, (void *) H_RATES);
   add_read_handler("threshold", ProbeTXRate_read_param, (void *) H_THRESHOLD);
   add_read_handler("offset", ProbeTXRate_read_param, (void *) H_OFFSET);
+  add_read_handler("active", ProbeTXRate_read_param, (void *) H_ACTIVE);
+  add_read_handler("alt_rate", ProbeTXRate_read_param, (void *) H_ALT_RATE);
 
   add_write_handler("debug", ProbeTXRate_write_param, (void *) H_DEBUG);
   add_write_handler("filter_low_rates", ProbeTXRate_write_param, (void *) H_FILTER_LOW_RATES);
@@ -371,6 +433,8 @@ ProbeTXRate::add_handlers()
   add_write_handler("threshold", ProbeTXRate_write_param, (void *) H_THRESHOLD);
   add_write_handler("offset", ProbeTXRate_write_param, (void *) H_OFFSET);
   add_write_handler("reset", ProbeTXRate_write_param, (void *) H_RESET);
+  add_write_handler("active", ProbeTXRate_write_param, (void *) H_ACTIVE);
+  add_write_handler("alt_rate", ProbeTXRate_write_param, (void *) H_ALT_RATE);
   
 }
 // generate Vector template instance

@@ -63,6 +63,7 @@ class SetTXRate : public Element { public:
   class ETTMetric *_ett_l;
   bool _auto;
   uint16_t _et;     // This protocol's ethertype
+  unsigned _offset;
 };
 
 CLICK_ENDDECLS

@@ -152,7 +152,7 @@ ARPTable::static_insert(const String&arg, Element *e,
   EtherAddress eth;
   cp_spacevec(arg, args);
   if (args.size() % 2 != 0) {
-    return errh->error("Must have mode xtwo arguments: currently has %d: %s",
+    return errh->error("Must have mod two arguments: currently has %d: %s",
 		       args.size(),
 		       args[0].cc());
   }

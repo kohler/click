@@ -148,8 +148,8 @@ GatewaySelector::start_ad()
   pk->_flags = 0;
   pk->_qdst = _ip;
   pk->_seq = htonl(++_seq);
-  pk->set_num_hops(1);
-  pk->set_hop(0,_ip);
+  pk->set_num_links(0);
+  pk->set_link_node(0,_ip);
   send(p);
 }
 
@@ -168,50 +168,10 @@ GatewaySelector::send(WritablePacket *p)
   output(0).push(p);
 }
 
-int
-GatewaySelector::get_fwd_metric(IPAddress other)
-{
-  int metric = 0;
-  sr_assert(other);
-  if (_metric) {
-    metric = _metric->get_fwd_metric(other);
-    if (metric && !update_link(_ip, other, metric)) {
-      click_chatter("%{element} couldn't update fwd_metric %s > %d > %s\n",
-		    this,
-		    _ip.s().cc(),
-		    metric,
-		    other.s().cc());
-    }
-    return metric;
-  } else {
-    return 0;
-  }
-}
-
-
-int
-GatewaySelector::get_rev_metric(IPAddress other)
-{
-  int metric = 0;
-  sr_assert(other);
-  if (_metric) {
-    metric = _metric->get_rev_metric(other);
-    if (metric && !update_link(other, _ip, metric)) {
-      click_chatter("%{element} couldn't update rev_metric %s > %d > %s\n",
-		    this,
-		    other.s().cc(),
-		    metric,
-		    _ip.s().cc());
-    }
-    return metric;
-  } else {
-    return 0;
-  }
-}
-
 bool
-GatewaySelector::update_link(IPAddress from, IPAddress to, int metric) {
-  if (_link_table && !_link_table->update_link(from, to, metric)) {
+GatewaySelector::update_link(IPAddress from, IPAddress to, uint32_t seq, 
+			     uint32_t metric) {
+  if (_link_table && !_link_table->update_link(from, to, seq, metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
@@ -236,12 +196,13 @@ GatewaySelector::forward_ad_hook()
 void
 GatewaySelector::forward_ad(Seen *s)
 {
-  int nhops = s->_hops.size();
+  int links = s->_hops.size();
 
-  sr_assert(s->_hops.size() == s->_fwd_metrics.size()+1);
-  sr_assert(s->_hops.size() == s->_rev_metrics.size()+1);
+  assert(s->_hops.size() == s->_fwd_metrics.size()+1);
+  assert(s->_hops.size() == s->_rev_metrics.size()+1);
+  assert(s->_hops.size() == s->_seqs.size()+1);
 
-  int len = srpacket::len_wo_data(nhops);
+  int len = srpacket::len_wo_data(links);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
@@ -253,17 +214,23 @@ GatewaySelector::forward_ad(Seen *s)
   pk->_flags = 0;
   pk->_qdst = s->_gw;
   pk->_seq = htonl(s->_seq);
-  pk->set_num_hops(nhops);
+  pk->set_num_links(links);
 
-  for(int i=0; i < nhops; i++) {
-    pk->set_hop(i, s->_hops[i]);
+  for(int i=0; i < links-1; i++) {
+    assert(i + 1 < s->_hops.size());
+    pk->set_link(i,
+		 s->_hops[i], s->_hops[i+1],
+		 s->_fwd_metrics[i], s->_rev_metrics[i],
+		 s->_seqs[i]);
   }
 
-  for(int i=0; i < nhops - 1; i++) {
-    pk->set_fwd_metric(i, s->_fwd_metrics[i]);
-    pk->set_rev_metric(i, s->_rev_metrics[i]);
-  }
-
+  assert(links-1 < s->_hops.size());
+  IPAddress neighbor = s->_hops[links-1];
+  pk->set_link(links-1,
+	       neighbor, _ip,
+	       (_metric) ? _metric->get_fwd_metric(neighbor) : 0,
+	       (_metric) ? _metric->get_rev_metric(neighbor) : 0,
+	       (_metric) ? _metric->get_seq(neighbor) : 0);
   s->_forwarded = true;
   send(p);
 }
@@ -354,23 +321,42 @@ GatewaySelector::push(int port, Packet *p_in)
     return;
   }
     
-  
-  /* update the metrics from the packet */
-  for(int i = 0; i < pk->num_hops()-1; i++) {
-    IPAddress a = pk->get_hop(i);
-    IPAddress b = pk->get_hop(i+1);
-    int fwd_m = pk->get_fwd_metric(i);
-    int rev_m = pk->get_fwd_metric(i);
+  Vector<IPAddress> hops;
+  Vector<int> fwd_metrics;
+  Vector<int> rev_metrics;
+  Vector<uint32_t> seqs;
+  int fwd_metric = 0;
+  int rev_metric = 0;
+  for(int i = 0; i < pk->num_links(); i++) {
+    IPAddress a = pk->get_link_node(i);
+    IPAddress b = pk->get_link_node(i+1);
+    hops.push_back(a);
+    if (a == _ip) {
+      /* I'm already in this route! */
+      p_in->kill();
+      return;
+    }
+
+    uint32_t fwd_m = pk->get_link_fwd(i);
+    uint32_t rev_m = pk->get_link_rev(i);
+    uint32_t seq = pk->get_link_seq(i);
+    fwd_metrics.push_back(fwd_m);
+    rev_metrics.push_back(rev_m);
+    seqs.push_back(seq);
+    fwd_metric += fwd_m;
+    rev_metric += rev_m;
+
+
     if (a != _ip && b != _ip) {
       /* don't update my immediate neighbor. see below */
-      if (fwd_m && !update_link(a,b,fwd_m)) {
+      if (fwd_m && !update_link(a,b,seq,fwd_m)) {
 	click_chatter("%{element} couldn't update fwd_m %s > %d > %s\n",
 		      this,
 		      a.s().cc(),
 		      fwd_m,
 		      b.s().cc());
       }
-      if (rev_m && !update_link(b,a,rev_m)) {
+      if (rev_m && !update_link(b,a,seq,rev_m)) {
 	click_chatter("%{element} couldn't update rev_m %s > %d > %s\n",
 		      this,
 		      b.s().cc(),
@@ -378,53 +364,18 @@ GatewaySelector::push(int port, Packet *p_in)
 		      a.s().cc());
       }
     }
-
+    
   }
-    
-    
-  IPAddress neighbor = IPAddress();
-  neighbor = pk->get_hop(pk->num_hops()-1);
 
+  IPAddress neighbor = pk->get_link_node(pk->num_links());
+  hops.push_back(neighbor);
   _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
-  /* 
-   * calling these functions updates the neighbor link 
-   * in the link_table, so we can ignore the return value.
-   */
-  get_fwd_metric(neighbor);
-  get_rev_metric(neighbor);
-
-
-  Vector<IPAddress> hops;
-  Vector<int> fwd_metrics;
-  Vector<int> rev_metrics;
-
-  int fwd_metric = 0;
-  int rev_metric = 0;
-  for(int i = 0; i < pk->num_hops(); i++) {
-    IPAddress hop = IPAddress(pk->get_hop(i));
-    if (i != pk->num_hops() - 1) {
-      int fwd_m = pk->get_fwd_metric(i);
-      int rev_m = pk->get_rev_metric(i);
-      fwd_metrics.push_back(fwd_m);
-      rev_metrics.push_back(rev_m);
-      fwd_metric += fwd_m;
-      rev_metric += rev_m;
-    }
-    hops.push_back(hop);
-    if (hop == _ip) {
-      /* I'm already in this route! */
-      p_in->kill();
-      return;
-    }
-  }
+  
   /* also get the metric from the neighbor */
-  int fwd_m = get_fwd_metric(pk->get_hop(pk->num_hops()-1));
-  int rev_m = get_rev_metric(pk->get_hop(pk->num_hops()-1));
+  int fwd_m =  (_metric) ? _metric->get_fwd_metric(neighbor) : 0;
+  int rev_m =  (_metric) ? _metric->get_rev_metric(neighbor) : 0;
   fwd_metric += fwd_m;
   rev_metric += rev_m;
-  fwd_metrics.push_back(fwd_m);
-  rev_metrics.push_back(rev_m);
-  hops.push_back(_ip);
 
   IPAddress gw = pk->_qdst;
   sr_assert(gw);
@@ -459,14 +410,13 @@ GatewaySelector::push(int port, Packet *p_in)
     return;
   }
 
+  click_gettimeofday(&_seen[si]._when);
+  _seen[si]._hops = hops;
   _seen[si]._fwd_metric = fwd_metric;
   _seen[si]._rev_metric = rev_metric;
-
-  click_gettimeofday(&_seen[si]._when);
-  
-  _seen[si]._hops = hops;
   _seen[si]._fwd_metrics = fwd_metrics;
   _seen[si]._rev_metrics = rev_metrics;
+  _seen[si]._seqs = seqs;
 
 
   if (timercmp(&_seen[si]._when, &_seen[si]._to_send, <)) {
