@@ -1,3 +1,9 @@
+2003-06-13 Friday 02:43  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh (1.48), lib/router.cc (1.144): * handlers
+	(used by KernelHandlerProxy) didn't work -- they led to infinite
+	loops and crashes; now they do. Reported at Mazu
+
 2003-06-13 Friday 01:51  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/tohost.hh (1.26): doc nit
