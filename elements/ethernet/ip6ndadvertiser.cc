@@ -134,8 +134,9 @@ IP6NDAdvertiser::make_response(u_char dha[6],   /*  des eth address */
   //set Neighborhood Solicitation Validation Message
   ea->type = 0x88; 
   ea->code =0;
- 
-  ea->flags = 0x60; //  this is the same as setting the following
+
+  // fixed from 0x60 thanks to Simona Fischera
+  ea->flags = 0xC0; //  this is the same as setting the following
                     //  ea->sender_is_router = 1;
                     //  ea->solicited =1;
                     //  ea->override = 0;
@@ -192,8 +193,9 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
   //set Neighbor Solicitation Validation Message
   ea->type = 0x88; 
   ea->code =0;
- 
-  ea->flags = 0x60; //  this is the same as setting the following
+
+  // fixed from 0x60 thanks to Simona Fischera
+  ea->flags = 0xC0; //  this is the same as setting the following
                     //  ea->sender_is_router = 1;
                     //  ea->solicited =1;
                     //  ea->override = 0;
