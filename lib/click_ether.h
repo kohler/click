@@ -32,7 +32,7 @@ struct click_arp6req {
   unsigned short int checksum;
   unsigned int reserved;
   unsigned char arp_tpa[16];
-  unsigned char note:4;
+  unsigned char note[2];
   unsigned char arp_sha[6];
 };
 
@@ -41,10 +41,11 @@ struct click_arp6resp {
   unsigned char type;
   unsigned char code;
   unsigned short int checksum;
-  bool sender_is_router : 1;
-  bool solicited : 1;
-  bool override :1;
-  unsigned int reserved : 29;
+  unsigned char flags; // bit 1: sender_is_router
+                       // bit 2: solicited
+                       // bit 3: override
+                       // all other bits should be zero
+  unsigned char reserved[3];
   unsigned char arp_tpa[16];
 };
 
@@ -53,9 +54,9 @@ struct click_arp6resp {
 
 /* ARP protocol opcodes. */
 #define ARPOP_REQUEST   1       /* ARP request          */
-#define ARPOP_REPLY 2       /* ARP reply            */
-#define NEIGH_SOLI 0x0087      /* Neighborhood Solicitation Message Type */
-#define NEIGH_ADV 0x0088      /* Neighborhood Advertisement Message Type */
+#define ARPOP_REPLY 2           /* ARP reply            */
+#define NEIGH_SOLI 0x0087       /* Neighborhood Solicitation Message Type */
+#define NEIGH_ADV 0x0088        /* Neighborhood Advertisement Message Type */
 
 struct click_ether_arp {
   struct click_arp ea_hdr;    /* fixed-size header */
