@@ -1,3 +1,9 @@
+2002-07-09 Tuesday 14:43  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.15), aclocal.m4 (1.15), config-userlevel.h.in
+	(1.7): update checks for uintXX_t by looking for u_intXX_t. Fixes
+	cygwin builds. Suggested by, and patch provided by, el Doug
+
 2002-07-08 Monday 15:07  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* include/click/glue.hh (1.26), elements/userlevel/fromdump.cc
