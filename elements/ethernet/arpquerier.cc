@@ -183,11 +183,14 @@ ARPQuerier::send_query_for(const IPAddress &want_ip)
     assert(0);
   }
   memset(q->data(), '\0', q->length());
+  
   click_ether *e = (click_ether *) q->data();
-  click_ether_arp *ea = (click_ether_arp *) (e + 1);
+  q->set_ether_header(e);
   memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
   memcpy(e->ether_shost, _my_en.data(), 6);
   e->ether_type = htons(ETHERTYPE_ARP);
+
+  click_ether_arp *ea = (click_ether_arp *) (e + 1);
   ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
   ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
   ea->ea_hdr.ar_hln = 6;
@@ -196,6 +199,7 @@ ARPQuerier::send_query_for(const IPAddress &want_ip)
   memcpy(ea->arp_tpa, want_ip.data(), 4);
   memcpy(ea->arp_sha, _my_en.data(), 6);
   memcpy(ea->arp_spa, _my_ip.data(), 4);
+
   _arp_queries++;
   output(noutputs()-1).push(q);
 }
@@ -229,8 +233,8 @@ ARPQuerier::handle_ip(Packet *p)
 
   if (ae) {
     if (ae->ok) {
-      WritablePacket *q = p->push(sizeof(click_ether));
-      click_ether *e = reinterpret_cast<click_ether *>(q->data());
+      WritablePacket *q = p->push_mac_header(sizeof(click_ether));
+      click_ether *e = q->ether_header();
       memcpy(e->ether_shost, _my_en.data(), 6);
       memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP);

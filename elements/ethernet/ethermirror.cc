@@ -34,12 +34,15 @@ EtherMirror::~EtherMirror()
 Packet *
 EtherMirror::simple_action(Packet *p)
 {
-  click_ether *ethh = (click_ether *)p->data();
-  unsigned char tmpa[6];
-  tmpa = ethh->ether_dhost;
-  ethh->ether_dhost = ethh->ether_shost;
-  ethh->ether_shost = tmpa;
-  return p;
+  if (WritablePacket *q = p->uniqueify()) {
+    click_ether *ethh = reinterpret_cast<click_ether *>(q->data());
+    unsigned char tmpa[6];
+    tmpa = ethh->ether_dhost;
+    ethh->ether_dhost = ethh->ether_shost;
+    ethh->ether_shost = tmpa;
+    return q;
+  } else
+    return 0;
 }
 
 EXPORT_ELEMENT(EtherMirror)

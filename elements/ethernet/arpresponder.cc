@@ -129,11 +129,14 @@ ARPResponder::make_response(u_char tha[6], /* him */
   q->set_device_anno(p->device_anno());
   
   memset(q->data(), '\0', q->length());
+  
   click_ether *e = (click_ether *) q->data();
-  click_ether_arp *ea = (click_ether_arp *) (e + 1);
+  q->set_ether_header(e);
   memcpy(e->ether_dhost, tha, 6);
   memcpy(e->ether_shost, sha, 6);
   e->ether_type = htons(ETHERTYPE_ARP);
+  
+  click_ether_arp *ea = (click_ether_arp *) (e + 1);
   ea->ea_hdr.ar_hrd = htons(ARPHRD_ETHER);
   ea->ea_hdr.ar_pro = htons(ETHERTYPE_IP);
   ea->ea_hdr.ar_hln = 6;
@@ -143,6 +146,7 @@ ARPResponder::make_response(u_char tha[6], /* him */
   memcpy(ea->arp_tpa, tpa, 4);
   memcpy(ea->arp_sha, sha, 6);
   memcpy(ea->arp_spa, spa, 4);
+  
   return q;
 }
 
@@ -152,7 +156,7 @@ ARPResponder::lookup(IPAddress a, EtherAddress &ena) const
   int best = -1;
   for (int i = 0; i < _v.size(); i++)
     if (a.matches_prefix(_v[i].dst, _v[i].mask)) {
-      if (best < 0 || _v[i].mask.mask_as_long(_v[best].mask))
+      if (best < 0 || _v[i].mask.mask_as_specific(_v[best].mask))
         best = i;
     }
 

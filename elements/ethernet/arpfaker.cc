@@ -80,6 +80,7 @@ ARPFaker::make_response(u_char tha[6], /* him */
   click_ether *e;
   click_ether_arp *ea;
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*ea));
+  q->set_mac_header(q->data(), 14);
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
   ea = (click_ether_arp *) (e + 1);

@@ -57,7 +57,7 @@ EtherEncap::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 EtherEncap::smaction(Packet *p)
 {
-  if (WritablePacket *q = p->push(14)) {
+  if (WritablePacket *q = p->push_mac_header(14)) {
     memcpy(q->data(), &_ethh, 14);
     return q;
   } else
