@@ -405,8 +405,8 @@ LexerT::lex()
 void
 LexerT::unlex(const Lexeme &t)
 {
-  _tcircle[_tfull] = t;
-  _tfull = (_tfull + 1) % TCIRCLE_SIZE;
+  _tpos = (_tpos + TCIRCLE_SIZE - 1) % TCIRCLE_SIZE;
+  _tcircle[_tpos] = t;
   assert(_tfull != _tpos);
 }
 
@@ -506,7 +506,7 @@ LexerT::force_element_type(const Lexeme &t)
 	type = _base_type_map[name];
     if (!type) {
 	if (_router->eindex(name) >= 0)
-	    lerror(t, "`%s' was previously used as an element name", name.c_str());
+	    lerror(t, "'%s' was previously used as an element name", name.c_str());
 	type = ElementClassT::base_type(name);
 	_base_type_map.insert(name, type);
     }
@@ -528,14 +528,14 @@ int
 LexerT::make_element(String name, const Lexeme &location, int decl_pos2,
 		     ElementClassT *type, const String &conf, const String &lm)
 {
-    // check `name' for validity
+    // check 'name' for validity
     for (int i = 0; i < name.length(); i++) {
 	bool ok = false;
 	for (; i < name.length() && name[i] != '/'; i++)
 	    if (!isdigit(name[i]))
 		ok = true;
 	if (!ok) {
-	    lerror(location, "element name `%s' has all-digit component", name.cc());
+	    lerror(location, "element name '%s' has all-digit component", name.cc());
 	    break;
 	}
     }
@@ -683,7 +683,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	else if (tsep.is(lex2Colon))
 	    break;
 	else {
-	    lerror(tsep, "syntax error: expected `::' or `,'");
+	    lerror(tsep, "syntax error: expected '::' or ','");
 	    unlex(tsep);
 	    return;
 	}
@@ -716,7 +716,7 @@ LexerT::ydeclaration(const Lexeme &first_element)
 	if (ElementT *old_e = _router->element(name))
 	    ElementT::redeclaration_error(_errh, "element", name, landmark(), old_e->landmark());
 	else if (_router->declared_type(name) || _base_type_map[name])
-	    lerror(decls[i], "class `%s' used as element name", name.c_str());
+	    lerror(decls[i], "class '%s' used as element name", name.c_str());
 	else
 	    make_element(name, decls[i], decl_pos2, etype, configuration.string(), lm);
     }
@@ -756,9 +756,9 @@ LexerT::yconnection()
 	  case lex2Colon:
 	    if (router()->element(element2)->anonymous())
 		// type used as name
-		lerror(t, "class `%s' used as element name", router()->etype_name(element2).c_str());
+		lerror(t, "class '%s' used as element name", router()->etype_name(element2).c_str());
 	    else
-		lerror(t, "syntax error before `%s'", t.string().c_str());
+		lerror(t, "syntax error before '%s'", t.string().c_str());
 	    goto relex;
       
 	  case lexArrow:
@@ -785,14 +785,14 @@ LexerT::yconnection()
 	    return true;
       
 	  default:
-	    lerror(t, "syntax error near `%#s'", t.string().c_str());
+	    lerror(t, "syntax error near '%#s'", t.string().c_str());
 	    if (t.kind() >= lexIdent)	// save meaningful tokens
 		unlex(t);
 	    return true;
       
 	}
     
-	// have `x ->'
+	// have 'x ->'
 	element1 = element2;
     }
 }
@@ -808,7 +808,7 @@ LexerT::yelementclass(int pos1)
     } else {
 	String n = tname.string();
 	if (_router->eindex(n) >= 0)
-	    lerror(tname, "`%s' already used as an element name", n.cc());
+	    lerror(tname, "'%s' already used as an element name", n.cc());
 	else
 	    eclass_name = n;
     }
@@ -826,7 +826,7 @@ LexerT::yelementclass(int pos1)
 	}
 	
     } else
-	lerror(tnext, "syntax error near `%#s'", tnext.string().c_str());
+	lerror(tnext, "syntax error near '%#s'", tnext.string().c_str());
 }
 
 void
@@ -868,8 +868,8 @@ LexerT::ycompound_arguments(RouterT *comptype)
       } else {
 	if (comptype->nformals() > 0)
 	  lerror(t2, "expected variable");
-	unlex(t1);
 	unlex(t2);
+	unlex(t1);
 	break;
       }
     } else if (t1.is(lexVariable))
@@ -1048,12 +1048,12 @@ LexerT::ystatement(bool nested)
     
    case lexEOF:
     if (nested)
-      lerror(t, "expected `}'");
+      lerror(t, "expected '}'");
     return false;
     
    default:
    syntax_error:
-    lerror(t, "syntax error near `%#s'", t.string().c_str());
+    lerror(t, "syntax error near '%#s'", t.string().c_str());
     return true;
     
   }

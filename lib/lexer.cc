@@ -755,8 +755,8 @@ Lexer::lex()
 void
 Lexer::unlex(const Lexeme &t)
 {
-  _tcircle[_tfull] = t;
-  _tfull = (_tfull + 1) % TCIRCLE_SIZE;
+  _tpos = (_tpos + TCIRCLE_SIZE - 1) % TCIRCLE_SIZE;
+  _tcircle[_tpos] = t;
   assert(_tfull != _tpos);
 }
 
@@ -1333,8 +1333,8 @@ Lexer::ycompound_arguments(Compound *comptype)
       } else {
 	if (comptype->nformals() > 0)
 	  lerror("expected variable");
-	unlex(t1);
 	unlex(t2);
+	unlex(t1);
 	break;
       }
     } else if (t1.is(lexVariable))
