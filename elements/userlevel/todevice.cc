@@ -126,6 +126,14 @@ ToDevice::initialize(ErrorHandler *errh)
   
 #endif
 
+  // check for duplicate writers
+  void *&used = router()->force_attachment("device_writer_" + String(ifindex()));
+  if (used) {
+    uninitialize();
+    return errh->error("duplicate writer for device `%s'", _devname.cc());
+  }
+  used = this;
+
   if (input_is_pull(0))
     ScheduleInfo::join_scheduler(this, &_task, errh);
   return 0;
