@@ -32,14 +32,15 @@ PacketTest::~PacketTest()
 
 #define CHECK(x) if (!(x)) return errh->error("%s:%d: test `%s' failed", __FILE__, __LINE__, #x);
 #define CHECK_DATA(x, y, l) CHECK(memcmp((x), (y), (l)) == 0)
+#define CHECK_ALIGNED(x) CHECK((reinterpret_cast<uintptr_t>((x)) & 3) == 0)
 
 int
 PacketTest::initialize(ErrorHandler *errh)
 {
-    const unsigned char *lowers = (const unsigned char *)"abcdefghijklmnopqrstuvwxyz";
+    const unsigned char *lowers = (const unsigned char *)"abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz";
     IPAddress addr(String("1.2.3.4"));
     
-    WritablePacket *p = Packet::make(10, lowers, 20, 30);
+    Packet *p = Packet::make(10, lowers, 20, 30);
     CHECK(p->headroom() >= 10);
     CHECK(p->tailroom() >= 30);
     CHECK(p->length() == 20);
@@ -88,6 +89,38 @@ PacketTest::initialize(ErrorHandler *errh)
 
     p1->kill();
     p3->kill();
+
+    // test shift_data()
+    p = Packet::make(10, lowers, 60, 4);
+    CHECK(p->headroom() == 10 && p->tailroom() == 4);
+    p = p->shift_data(-2);
+    CHECK(p->headroom() == 8 && p->tailroom() == 6);
+    CHECK(p->length() == 60);
+    CHECK_DATA(p->data(), lowers, 60);
+    CHECK_ALIGNED(p->data());
+    p->kill();
+    
+    p = Packet::make(9, lowers, 60, 4);
+    p = p->shift_data(3);
+    CHECK(p->headroom() == 12 && p->tailroom() == 1 && p->length() == 60);
+    CHECK_DATA(p->data(), lowers, 60);
+    CHECK_ALIGNED(p->data());
+    p->kill();
+    
+    p = Packet::make(1, lowers, 60, 4);
+    p = p->shift_data(-5);
+    CHECK(p->tailroom() >= 9 && p->length() == 60);
+    CHECK_DATA(p->data(), lowers, 60);
+    CHECK_ALIGNED(p->data());
+    p->kill();
+    
+    p = Packet::make(5, lowers, 60, 2);
+    p = p->shift_data(3);
+    CHECK(p->headroom() >= 8 && p->length() == 60);
+    CHECK_DATA(p->data(), lowers, 60);
+    CHECK_ALIGNED(p->data());
+    p->kill();
+    
     errh->message("All tests pass!");
     return 0;
 }
