@@ -2,11 +2,11 @@
 #define CLICK_PACKAGE_HH
 #include <click/vector.hh>
 #include <click/string.hh>
-#ifndef CLICK_TOOL
 CLICK_DECLS
+#ifndef CLICK_TOOL
 class Element;
-CLICK_ENDDECLS
 #endif
+CLICK_ENDDECLS
 
 extern "C" {
 
