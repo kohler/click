@@ -1,7 +1,7 @@
 // userlevel/click < conf/testbpf.ipb
 //
 // Tests whether Click can read packets from the BPF.
-// You'll need to modify the device name in FromBPF.
+// You may need to modify the device name in FromBPF.
 // You'll probably need to be root to run this.
 
 FromBPF(eth0) -> Print(ok) -> Discard;
