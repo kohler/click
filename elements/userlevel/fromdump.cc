@@ -451,7 +451,17 @@ FromDump::read_packet(ErrorHandler *errh)
     
     // we may need to read bits of the file
     if (_pos + sizeof(*ph) <= _len) {
+#if HAVE_INDIFFERENT_ALIGNMENT
 	ph = reinterpret_cast<const fake_pcap_pkthdr *>(_buffer + _pos);
+#else
+	// make a copy if required for alignment
+	if (((uintptr_t)(_buffer + _pos) & 3) == 0)
+	    ph = reinterpret_cast<const fake_pcap_pkthdr *>(_buffer + _pos);
+	else {
+	    ph = &swapped_ph;
+	    memcpy(&swapped_ph, _buffer + _pos, sizeof(*ph));
+	}
+#endif
 	_pos += sizeof(*ph);
     } else {
 	ph = &swapped_ph;
