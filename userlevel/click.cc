@@ -4,7 +4,7 @@
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000 Mazu Networks, Inc.
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2001-2003 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -136,79 +136,6 @@ catch_signal(int sig)
 }
 
 
-// functions for packages
-
-static String::Initializer crap_initializer;
-static Lexer *lexer;
-static String configuration_string;
-static Vector<ArchiveElement> archive;
-
-extern "C" int
-click_add_element_type(const char *ename, Element *e)
-{
-  return lexer->add_element_type(ename, e);
-}
-
-extern "C" void
-click_remove_element_type(int which)
-{
-  lexer->remove_element_type(which);
-}
-
-
-// global handlers for ControlSocket
-
-enum {
-  GH_LIST, GH_CLASSES, GH_CONFIG,
-  GH_FLATCONFIG, GH_PACKAGES, GH_REQUIREMENTS
-};
-
-String
-read_global_handler(Element *, void *thunk)
-{
-  StringAccum sa;
-
-  switch (reinterpret_cast<int>(thunk)) {
-
-   case GH_LIST:
-    return router->element_list_string();
-  
-   case GH_CLASSES: {
-     Vector<String> v;
-     lexer->element_type_names(v);
-     for (int i = 0; i < v.size(); i++)
-       sa << v[i] << "\n";
-     return sa.take_string();
-   }
-
-   case GH_CONFIG:
-    return configuration_string;
-
-   case GH_FLATCONFIG:
-    return router->flat_configuration_string();
-
-   case GH_PACKAGES: {
-     Vector<String> p;
-     click_public_packages(p);
-     for (int i = 0; i < p.size(); i++)
-       sa << p[i] << "\n";
-     return sa.take_string();
-   }
-
-   case GH_REQUIREMENTS: {
-     const Vector<String> &v = router->requirements();
-     for (int i = 0; i < v.size(); i++)
-       sa << v[i] << "\n";
-     return sa.take_string();
-   }
-
-   default:
-    return "<error>\n";
-
-  }
-}
-
-
 // report handler results
 
 static int
@@ -285,28 +212,6 @@ call_read_handlers(Vector<String> &handlers, ErrorHandler *errh)
 }
 
 
-// include requirements
-
-class RequireLexerExtra : public LexerExtra { public:
-
-  RequireLexerExtra()			{ }
-
-  void require(String, ErrorHandler *);
-  
-};
-
-void
-RequireLexerExtra::require(String name, ErrorHandler *errh)
-{
-#ifdef HAVE_DYNAMIC_LINKING
-  if (!click_has_provision(name.c_str()))
-    clickdl_load_requirement(name, &archive, errh);
-#endif
-  if (!click_has_provision(name.c_str()))
-    errh->error("requirement `%s' not available", name.cc());
-}
-
-
 // main
 
 extern void export_elements(Lexer *);
@@ -314,14 +219,8 @@ extern void export_elements(Lexer *);
 int
 main(int argc, char **argv)
 {
-  String::static_initialize();
-  cp_va_static_initialize();
-
-  errh = new FileErrorHandler(stderr, "");
-  ErrorHandler::static_initialize(errh);
-
-  Router::static_initialize();
-  CLICK_DEFAULT_PROVIDES;
+  click_static_initialize();
+  errh = ErrorHandler::default_handler();
 
   // read command line arguments
   Clp_Parser *clp =
@@ -416,6 +315,7 @@ main(int argc, char **argv)
      case VERSION_OPT:
       printf("click (Click) %s\n", CLICK_VERSION);
       printf("Copyright (C) 1999-2001 Massachusetts Institute of Technology\n\
+Copyright (C) 2001-2003 International Computer Science Institute\n\
 This is free software; see the source for copying conditions.\n\
 There is NO warranty, not even for merchantability or fitness for a\n\
 particular purpose.\n");
@@ -435,47 +335,9 @@ particular purpose.\n");
   }
   
  done:
-  String config_str;
-  if (file_is_expr)
-    config_str = router_file;
-  else
-    config_str = file_string(router_file, errh);
-  if (errh->nerrors() > 0)
+  router = click_read_router(router_file, file_is_expr, errh, false);
+  if (!router)
     exit(1);
-  if (file_is_expr)
-    router_file = "<expr>";
-  else if (!router_file || strcmp(router_file, "-") == 0)
-    router_file = "<stdin>";
-
-  // prepare lexer (for packages)
-  lexer = new Lexer(errh);
-  export_elements(lexer);
-  
-  // find config string in archive
-  if (config_str.length() != 0 && config_str[0] == '!') {
-    separate_ar_string(config_str, archive, errh);
-    bool found_config = false;
-    for (int i = 0; i < archive.size(); i++)
-      if (archive[i].name == "config") {
-	config_str = archive[i].data;
-	found_config = true;
-      }
-    if (!found_config) {
-      errh->error("archive has no `config' section");
-      config_str = String();
-    }
-  }
-
-  // save config_str
-  ::configuration_string = config_str;
-
-  // lex
-  RequireLexerExtra lextra;
-  int cookie = lexer->begin_parse(config_str, router_file, &lextra);
-  while (lexer->ystatement())
-    /* do nothing */;
-  router = lexer->create_router();
-  lexer->end_parse(cookie);
 
   if (router->nelements() == 0 && warnings)
     errh->warning("%s: configuration has no elements", router_file);
@@ -501,14 +363,6 @@ particular purpose.\n");
   for (int i = 0; i < unix_sockets.size(); i++)
     router->add_element(new ControlSocket, "click_driver@@ControlSocket@" + String(i + ports.size()), "unix, " + cp_quote(unix_sockets[i]), "click");
 
-  // add global handlers
-  Router::add_read_handler(0, "list", read_global_handler, (void *)GH_LIST);
-  Router::add_read_handler(0, "classes", read_global_handler, (void *)GH_CLASSES);
-  Router::add_read_handler(0, "config", read_global_handler, (void *)GH_CONFIG);
-  Router::add_read_handler(0, "flatconfig", read_global_handler, (void *)GH_FLATCONFIG);
-  Router::add_read_handler(0, "packages", read_global_handler, (void *)GH_PACKAGES);
-  Router::add_read_handler(0, "requirements", read_global_handler, (void *)GH_REQUIREMENTS);
-
   // catch control-C and SIGTERM
   signal(SIGINT, catch_signal);
   signal(SIGTERM, catch_signal);
@@ -532,9 +386,11 @@ particular purpose.\n");
     } else
       f = stdout;
     if (f) {
-      String s = router->flat_configuration_string();
-      fputs(s.cc(), f);
-      if (f != stdout) fclose(f);
+      Element *root = router->root_element();
+      String s = Router::handler(root, "flatconfig")->call_read(root);
+      fwrite(s.data(), 1, s.length(), f);
+      if (f != stdout)
+	fclose(f);
     }
   }
 
@@ -570,6 +426,6 @@ particular purpose.\n");
       exit_value = 1;
 
   delete router;
-  delete lexer;
+  click_static_cleanup();
   exit(exit_value);
 }

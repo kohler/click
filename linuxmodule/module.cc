@@ -75,19 +75,6 @@ read_packages(Element *, void *)
   return sa.take_string();
 }
 
-static String
-read_requirements(Element *, void *)
-{
-  if (click_router) {
-    const Vector<String> &v = click_router->requirements();
-    StringAccum sa;
-    for (int i = 0; i < v.size(); i++)
-      sa << v[i] << "\n";
-    return sa.take_string();
-  } else
-    return "";
-}
-
 
 /****************************** Error handlers *******************************/
 
@@ -199,7 +186,6 @@ init_module()
   
   // global handlers
   Router::add_read_handler(0, "packages", read_packages, 0);
-  Router::add_read_handler(0, "requirements", read_requirements, 0);
   Router::add_read_handler(0, "meminfo", read_meminfo, 0);
   Router::add_read_handler(0, "cycles", read_cycles, 0);
   Router::add_read_handler(0, "errors", read_errors, 0);

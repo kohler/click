@@ -45,12 +45,6 @@ read_cycles(Element *, void *)
 }
 
 static String
-read_version(Element *, void *)
-{
-  return String(CLICK_VERSION) + "\n";
-}
-
-static String
 read_meminfo(Element *, void *)
 {
   extern int click_new_count; /* glue.cc */
@@ -59,18 +53,6 @@ read_meminfo(Element *, void *)
   sa << "outstanding news " << click_outstanding_news << "\n";
   sa << "news " << click_new_count << "\n";
   return sa.take_string();
-}
-
-static int
-write_stop(const String &s, Element *, void *, ErrorHandler *errh)
-{
-  if (click_router) {
-    int n = 1;
-    (void) cp_integer(cp_uncomment(s), &n);
-    click_router->adjust_driver_reservations(-n);
-  } else
-    errh->message("no router installed");
-  return 0;
 }
 
 static String
@@ -82,19 +64,6 @@ read_packages(Element *, void *)
   for (int i = 0; i < v.size(); i++)
     sa << v[i] << "\n";
   return sa.take_string();
-}
-
-static String
-read_requirements(Element *, void *)
-{
-  if (click_router) {
-    const Vector<String> &v = click_router->requirements();
-    StringAccum sa;
-    for (int i = 0; i < v.size(); i++)
-      sa << v[i] << "\n";
-    return sa.take_string();
-  } else
-    return "";
 }
 
 
@@ -206,7 +175,6 @@ init_module()
 
   // global handlers
   Router::add_read_handler(0, "packages", read_packages, 0);
-  Router::add_read_handler(0, "requirements", read_requirements, 0);
   Router::add_read_handler(0, "meminfo", read_meminfo, 0);
   Router::add_read_handler(0, "cycles", read_cycles, 0);
   Router::add_read_handler(0, "errors", read_errors, 0);
