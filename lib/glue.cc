@@ -253,6 +253,29 @@ strtol(const char *nptr, char **endptr, int base)
     return simple_strtoul(nptr, endptr, base);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && __GNUC__ == 2 && __GNUC_MINOR__ == 96
+int
+click_strcmp(const char *a, const char *b)
+{
+int d0, d1;
+register int __res;
+__asm__ __volatile__(
+	"1:\tlodsb\n\t"
+	"scasb\n\t"
+	"jne 2f\n\t"
+	"testb %%al,%%al\n\t"
+	"jne 1b\n\t"
+	"xorl %%eax,%%eax\n\t"
+	"jmp 3f\n"
+	"2:\tsbbl %%eax,%%eax\n\t"
+	"orb $1,%%al\n"
+	"3:"
+	:"=a" (__res), "=&S" (d0), "=&D" (d1)
+		     :"1" (a),"2" (b));
+return __res;
+}
+#endif
+
 };
 
 #else /* !__KERNEL__ */

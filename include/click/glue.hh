@@ -82,6 +82,16 @@ strtoul(const char *nptr, char **endptr, int base)
   return simple_strtoul(nptr, endptr, base);
 }
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && __GNUC__ == 2 && __GNUC_MINOR__ == 96
+int click_strcmp(const char *, const char *);
+
+inline int
+strcmp(const char *a, const char *b)
+{
+  return click_strcmp(a, b);
+}
+#endif
+
 }
 
 #define CLICK_HZ HZ
