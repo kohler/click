@@ -11,6 +11,7 @@ extern "C" {
 #else
 # define MOD_INC_USE_COUNT
 # define MOD_DEC_USE_COUNT
+# define MOD_IN_USE		0
 #endif
 
 void click_provide(const char *);
