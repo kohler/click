@@ -28,7 +28,6 @@ CLICK_DECLS
 
 CounterFlood::CounterFlood()
   :  Element(2,2),
-     _timer(this), 
      _en(),
      _et(0),
      _packets_originated(0),
@@ -36,11 +35,6 @@ CounterFlood::CounterFlood()
      _packets_rx(0)
 {
   MOD_INC_USE_COUNT;
-
-  // Pick a starting sequence number that we have not used before.
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  _seq = tv.tv_usec;
 
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -56,12 +50,16 @@ CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   _debug = false;
+  _count = 1;
+  _max_delay_ms = 750;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
                     "IP", cpIPAddress, "IP address", &_ip,
                     "BCAST_IP", cpIPAddress, "IP address", &_bcast_ip,
 		    "ETH", cpEtherAddress, "EtherAddress", &_en,
+		    "COUNT", cpInteger, "Count", &_count,
+		    "MAX_DELAY", cpUnsigned, "Max Delay (ms)", &_max_delay_ms,
 		    /* below not required */
 		    "DEBUG", cpBool, "Debug", &_debug,
                     0);
@@ -87,69 +85,143 @@ CounterFlood::clone () const
 int
 CounterFlood::initialize (ErrorHandler *)
 {
-  _timer.initialize (this);
-  _timer.schedule_now ();
-
   return 0;
 }
 
 void
-CounterFlood::run_timer ()
-{
-  _timer.schedule_after_ms(1000);
-}
+CounterFlood::forward(Broadcast *bcast) {
+  Packet *p_in = bcast->_p;
+  click_ether *eh_in = (click_ether *) p_in->data();
+  struct srpacket *pk_in = (struct srpacket *) (eh_in+1);
 
-// Send a packet.
-// fills in ethernet header
-void
-CounterFlood::send(WritablePacket *p)
-{
+  int hops = 1;
+  if (!bcast->_originated) {
+    hops = pk_in->num_hops() + 1;
+  }
+  
+  int len = srpacket::len_wo_data(hops);
+  WritablePacket *p = Packet::make(len + sizeof(click_ether));
+  if (p == 0)
+    return;
+
   click_ether *eh = (click_ether *) p->data();
+  struct srpacket *pk = (struct srpacket *) (eh+1);
+
+  memset(pk, '\0', len);
+
+  pk->_version = _sr_version;
+  pk->_type = PT_DATA;
+  pk->_flags = 0;
+  pk->_qdst = _bcast_ip;
+  pk->set_num_hops(hops);
+  for (int x = 0; x < hops - 1; x++) {
+    pk->set_hop(x, pk_in->get_hop(x));
+  }
+  pk->set_hop(hops - 1,_ip);
+  pk->set_next(hops);
+  pk->set_seq(bcast->_seq);
+  if (bcast->_originated) {
+    memcpy(pk->data(), p_in->data(), p_in->length());
+    pk->set_data_len(p_in->length());
+
+  } else {
+    memcpy(pk->data(), pk_in->data(), pk_in->data_len());
+    pk->set_data_len(pk_in->data_len());
+  }
+  bcast->_forwarded = true;
 
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
   memset(eh->ether_dhost, 0xff, 6);
   _packets_tx++;
   output(0).push(p);
+
 }
+
+void
+CounterFlood::forward_hook() 
+{
+  struct timeval now;
+  click_gettimeofday(&now);
+  for (int x = 0; x < _packets.size(); x++) {
+    if (timercmp(&_packets[x]._to_send, &now, <) && !_packets[x]._forwarded) {
+      forward(&_packets[x]);
+    }
+  }
+}
+
 
 void
 CounterFlood::push(int port, Packet *p_in)
 {
+  struct timeval now;
+  click_gettimeofday(&now);
   
   if (port == 1) {
-    /* from me */
-    int hops = 1;
-    int extra = srpacket::len_wo_data(hops) + sizeof(click_ether);
-    int payload_len = p_in->length();
-    WritablePacket *p = p_in->push(extra);
-    if(p == 0)
-      return;
-
-    click_ether *eh = (click_ether *) p->data();
-    struct srpacket *pk = (struct srpacket *) (eh+1);
-
-    memset(pk, '\0', srpacket::len_wo_data(hops));
-    pk->_version = _sr_version;
-    pk->_type = PT_DATA;
-    pk->_dlen = htons(payload_len);
-    pk->_flags = 0;
-    pk->_qdst = _bcast_ip;
-    pk->_seq = htonl(++_seq);
-    pk->set_num_hops(hops);
-    pk->set_hop(0,_ip);
-    pk->set_next(0);
     _packets_originated++;
-    send(p);
-
+    /* from me */
+    int index = _packets.size();
+    _packets.push_back(Broadcast());
+    _packets[index]._seq = random();
+    _packets[index]._originated = true;
+    _packets[index]._p = p_in;
+    _packets[index]._num_rx = 0;
+    _packets[index]._first_rx = now;
+    _packets[index]._forwarded = false;
+    _packets[index].t = NULL;
+    _packets[index]._to_send = now;
+    forward(&_packets[index]);
     return;
 
   } else {
     _packets_rx++;
-    output(1).push(p_in);
-    return;
-  }
 
+    click_ether *eh = (click_ether *) p_in->data();
+    struct srpacket *pk = (struct srpacket *) (eh+1);
+    
+    uint32_t seq = pk->seq();
+    
+    int index = -1;
+    for (int x = 0; x < _packets.size(); x++) {
+      if (_packets[x]._seq == seq) {
+	index = x;
+	break;
+      }
+    }
+
+    if (index == -1) {
+      /* haven't seen this packet before */
+      index = _packets.size();
+      _packets.push_back(Broadcast());
+      _packets[index]._seq = seq;
+      _packets[index]._originated = false;
+      _packets[index]._p = p_in;
+      _packets[index]._num_rx = 0;
+      _packets[index]._first_rx = now;
+      _packets[index]._forwarded = false;
+      _packets[index].t = NULL;
+
+      /* schedule timer */
+      int delay_time = (random() % _max_delay_ms) + 1;
+      sr_assert(delay_time > 0);
+      
+      struct timeval delay;
+      delay.tv_sec = 0;
+      delay.tv_usec = delay_time*1000;
+      timeradd(&now, &delay, &_packets[index]._to_send);
+      _packets[index].t = new Timer(static_forward_hook, (void *) this);
+      _packets[index].t->initialize(this);
+      _packets[index].t->schedule_at(_packets[index]._to_send);
+    } else {
+      /* we've seen this packet before */
+      p_in->kill();
+      _packets[index]._num_rx++;
+      if (_packets[index]._num_rx > _count) {
+	/* unschedule */
+	_packets[index].del_timer();
+      }
+    }
+  }
 }
 
 
@@ -203,11 +275,9 @@ CounterFlood::add_handlers()
 
 // generate Vector template instance
 #include <click/vector.cc>
-#include <click/hashmap.cc>
 #include <click/dequeue.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES
-template class Vector<CounterFlood::IPAddress>;
-template class DEQueue<CounterFlood::Seen>;
+template class Vector<CounterFlood::Broadcast>;
 #endif
 
 CLICK_ENDDECLS

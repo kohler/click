@@ -52,14 +52,36 @@ class CounterFlood : public Element {
   String print_stats();
 
   void push(int, Packet *);
-  void run_timer();
 
   void add_handlers();
 private:
 
-  void send(WritablePacket *p);
-  u_long _seq;      // Next query sequence number to use.
-  Timer _timer;
+
+  class Broadcast {
+  public:
+    uint32_t _seq;
+    bool _originated; /* this node started the bcast */
+    Packet *_p;
+    int _num_rx;
+    struct timeval _first_rx;
+    bool _forwarded;
+    Timer *t;
+    struct timeval _to_send;
+
+
+
+    void del_timer() {
+      if (t) {
+	t->unschedule();
+	delete t;
+	t = NULL;
+      }
+    }
+  };
+
+
+  DEQueue<Broadcast> _packets;
+
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   uint32_t _et;     // This protocol's ethertype
@@ -73,6 +95,15 @@ private:
   int _packets_originated;
   int _packets_tx;
   int _packets_rx;
+
+  int _count;
+  int _max_delay_ms;
+
+  void forward(Broadcast *bcast);
+  void forward_hook();
+  static void static_forward_hook(Timer *, void *e) { 
+    ((CounterFlood *) e)->forward_hook(); 
+  }
 };
 
 
