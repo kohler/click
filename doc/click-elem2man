@@ -5,7 +5,8 @@
 # Eddie Kohler
 # Robert Morris - original make-faction-html script
 #
-# Copyright (c) 1999-2001 Massachusetts Institute of Technology.
+# Copyright (c) 1999-2001 Massachusetts Institute of Technology
+# Copyright (c) 2001-2003 International Computer Science Institute
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -148,18 +149,25 @@ sub fixfP ($$) {
 
 sub nroffize_text ($) {
   my($t) = @_;
-  my($i);
+  my($i, $pos);
 
   # embolden & manpageize
-  foreach $i (@Related) {
-    $t =~ s{(^|[^\w@/<])($i)($|[^\w@/]|[A-Z]<)}{$1L<$2>$3}gs;
+  foreach my $r (@Related) {
+      my $l = length($r);
+      for ($pos = index($t, $r); $pos >= 0; $pos = index($t, $r, $pos + 1)) {
+ 	  if (($pos == 0 || substr($t, $pos - 1, 1) =~ /^[^\w@\/<]$/s)
+ 	      && (substr($t, $pos + $l, 1) =~ /^[^\w@\/]$/s)) {
+ 	      substr($t, $pos, $l) = "L<" . $r . ">";
+ 	      $pos += 2 + $l;
+ 	  }
+      }
   }
-
+  
   $t =~ s/\\/\\\\/g;
   $t =~ s/^\./\\&./gm;
   $t =~ s/^'/\\&'/gm;
   $t =~ s/^\s*$/.PP\n/gm;
-  $t =~ s/^(\.PP\n)+/.PP\n/gm;
+  $t =~ s/^\.PP\n(?:\.PP\n)+/.PP\n/gm;
   $t =~ s{\A\s*(\.PP\n)?}{}s;
   if (@Over > 0) {
     $t =~ s/^\.PP$/.IP \"\" $Over[-1]/gm;
@@ -209,6 +217,7 @@ sub nroffize_text ($) {
   $t =~ s/\n+/\n/sg;
   $t =~ s/^\n+//;
   $t =~ s/\n+$//;
+
   $t;
 }
 
@@ -305,6 +314,7 @@ sub do_section_x ($$$) {
     }
     return;
   }
+
   print OUT nroffize($text), "\n";
 }
 
@@ -398,7 +408,7 @@ sub process_comment ($$) {
     print STDERR "$Filename: warning: multiple \`=$i' sections; some may be ignored\n"
 	if $num_sections{$i} && $num_sections{$i} > 1;
   }
-  
+
   # read class names from configuration arguments section
   $i = $first_in_section{'c'};
   if (!defined($i)) {
@@ -478,7 +488,6 @@ sub process_comment ($$) {
   }
   map(delete $RelatedSource{$_}, @outfiles);
   @Related = sort { length($b) <=> length($a) } (keys %RelatedSource, @classes);
-  @Related = map { s{([\]\[\^\$\(\)\|\\\.])}{\\$1}g; $_ } @Related;
 
   # front matter
   my($oneliner) = (@classes == 1 ? "Click element" : "Click elements");
