@@ -32,24 +32,26 @@ extern "C" {
 #include "asm/msr.h"
 
 PollDevice::PollDevice()
-  : _dev(0), _last_rx(0)
+  : _dev(0), _activations(0), _last_rx(0)
 {
   add_output();
 #if DEV_KEEP_STATS
   _idle_calls = 0;
   _pkts_received = 0;
-  _activations = 0;
-  _time_recv = 0;
+  _time_poll = 0;
+  _time_refill = 0;
   _time_pushing = 0;
-  _l2misses_pushing = 0;
-  _dcu_cycles_pushing = 0;
-  _l2misses_rx = 0;
-  _dcu_cycles_rx = 0;
+  _perfcnt1_poll = 0;
+  _perfcnt1_refill = 0;
+  _perfcnt1_pushing = 0;
+  _perfcnt2_poll = 0;
+  _perfcnt2_refill = 0;
+  _perfcnt2_pushing = 0;
 #endif
 }
 
 PollDevice::PollDevice(const String &devname)
-  : _devname(devname), _dev(0), _last_rx(0)
+  : _devname(devname), _dev(0), _activations(0), _last_rx(0)
 {
 #ifdef CLICK_BENCHMARK
   _bm_done = 0;
@@ -58,13 +60,15 @@ PollDevice::PollDevice(const String &devname)
 #if DEV_KEEP_STATS
   _idle_calls = 0;
   _pkts_received = 0;
-  _activations = 0;
-  _time_recv = 0;
+  _time_poll = 0;
+  _time_refill = 0;
   _time_pushing = 0;
-  _l2misses_pushing = 0;
-  _dcu_cycles_pushing = 0;
-  _l2misses_rx = 0;
-  _dcu_cycles_rx = 0;
+  _perfcnt1_poll = 0;
+  _perfcnt1_refill = 0;
+  _perfcnt1_pushing = 0;
+  _perfcnt2_poll = 0;
+  _perfcnt2_refill = 0;
+  _perfcnt2_pushing = 0;
 #endif
 }
 
@@ -147,6 +151,11 @@ PollDevice::run_scheduled()
 #if HAVE_POLLING
   struct sk_buff *skb_list, *skb;
   int got=0;
+#if DEV_KEEP_STATS
+  unsigned long time_now;
+  unsigned high;
+  unsigned low00, low01, low10, low11;
+#endif
   
   /* need to have this somewhere */
   /* _dev->tx_clean(_dev); */
@@ -154,30 +163,24 @@ PollDevice::run_scheduled()
 #ifdef BATCH_PKT_PROC
 
 #if DEV_KEEP_STATS
-  unsigned high;
-  unsigned low00, low01, low10, low11;
-
   rdpmc(0, low00, high);
   rdpmc(1, low10, high);
-  
-  unsigned long time_now = get_cycles();
+  time_now = get_cycles();
 #endif   
   
   got = POLLDEV_MAX_PKTS_PER_RUN;
   skb_list = _dev->rx_poll(_dev, &got);
-  _dev->rx_refill(_dev);
+
+  if (got > 0 || _activations > 0) _activations++;
 
 #if DEV_KEEP_STATS
-  if (_activations > 0 || got > 0) {
-    _activations++;
-    _time_recv += get_cycles()-time_now;
-    
+  if (_activations > 0) {
+    _time_poll += get_cycles()-time_now;
     rdpmc(0, low01, high);
     rdpmc(1, low11, high);
-    
-    _l2misses_rx += 
+    _perfcnt1_poll += 
       (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
-    _dcu_cycles_rx += 
+    _perfcnt2_poll += 
       (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
     
     _pkts_received += got;
@@ -185,7 +188,23 @@ PollDevice::run_scheduled()
   
     rdpmc(0, low00, high); 
     rdpmc(1, low10, high);
-    
+    time_now = get_cycles();
+  }
+#endif
+  
+  _dev->rx_refill(_dev);
+
+#if DEV_KEEP_STATS
+  if (_activations > 0) {
+    _time_refill += get_cycles()-time_now;
+    rdpmc(0, low01, high);
+    rdpmc(1, low11, high);
+    _perfcnt1_refill += 
+      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _perfcnt2_refill += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+    rdpmc(0, low00, high); 
+    rdpmc(1, low10, high);
     time_now = get_cycles();
   }
 #endif
@@ -215,13 +234,11 @@ PollDevice::run_scheduled()
 #if DEV_KEEP_STATS
   if (_activations > 0) {
     _time_pushing += get_cycles()-time_now;
-
     rdpmc(0, low01, high);
     rdpmc(1, low11, high);
-  
-    _dcu_cycles_pushing += 
+    _perfcnt1_pushing += 
       (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
-    _l2misses_pushing += 
+    _perfcnt2_pushing += 
       (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
   }
 #endif
@@ -232,11 +249,31 @@ PollDevice::run_scheduled()
   got = 0;
   while(i > 0 && got < POLLDEV_MAX_PKTS_PER_RUN) {
     i = 1;
+
+#if DEV_KEEP_STATS
+    rdpmc(0, low00, high);
+    rdpmc(1, low10, high);
+    time_now = get_cycles();
+#endif   
+  
     skb_list = _dev->rx_poll(_dev, &i);
-    got += i;
+
     if (i > 0) {
-      skb = skb_list;
+#if DEV_KEEP_STATS
+      _time_poll += get_cycles()-time_now;
+      rdpmc(0, low01, high);
+      rdpmc(1, low11, high);
+      _perfcnt1_poll += 
+        (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+      _perfcnt2_poll += 
+        (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
       
+      rdpmc(0, low00, high); 
+      rdpmc(1, low10, high);
+      time_now = get_cycles();
+#endif
+      got += i;
+      skb = skb_list;
       assert(skb);
       assert(skb->data - skb->head >= 14);
       assert(skb->mac.raw == skb->data - 14);
@@ -250,9 +287,57 @@ PollDevice::run_scheduled()
         p->set_mac_broadcast_anno(1);
   
       output(0).push(p);
+
+#if DEV_KEEP_STATS
+      _time_pushing += get_cycles()-time_now;
+      rdpmc(0, low01, high);
+      rdpmc(1, low11, high);
+      _perfcnt1_pushing += 
+        (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+      _perfcnt2_pushing += 
+        (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+      
+      rdpmc(0, low00, high); 
+      rdpmc(1, low10, high);
+      time_now = get_cycles();
+#endif
     }
   }
+
+  if (got > 0 || _activations > 0) _activations++;
+
+#if DEV_KEEP_STATS
+  if (_activations > 0) {
+    _time_poll += get_cycles()-time_now;
+    rdpmc(0, low01, high);
+    rdpmc(1, low11, high);
+    _perfcnt1_poll += 
+      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _perfcnt2_poll += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+      
+    rdpmc(0, low00, high); 
+    rdpmc(1, low10, high);
+    time_now = get_cycles();
+  }
+#endif
+
   _dev->rx_refill(_dev);
+
+#if DEV_KEEP_STATS
+  if (_activations > 0) {
+    _time_refill += get_cycles()-time_now;
+    rdpmc(0, low01, high);
+    rdpmc(1, low11, high);
+    _perfcnt1_refill += 
+      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _perfcnt2_refill += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+        
+    if (got == 0) _idle_calls++;
+    else _pkts_received+=got;
+  }
+#endif
 
 #endif /* !BATCH_PKT_PROC */
 
@@ -280,6 +365,8 @@ PollDevice::run_scheduled()
 
 #endif /* !RR_SCHED */
 
+  if ((_activations % 2048)==0) _dev->get_stats(_dev);
+
 #endif /* HAVE_POLLING */
 }
  
@@ -291,16 +378,17 @@ PollDevice_read_calls(Element *f, void *)
 #if DEV_KEEP_STATS
     String(kw->_idle_calls) + " idle calls\n" +
     String(kw->_pkts_received) + " packets received\n" +
-    String(kw->_time_recv) + " cycles rx\n" +
+    String(kw->_time_poll) + " cycles poll\n" +
+    String(kw->_time_refill) + " cycles refill\n" +
     String(kw->_time_pushing) + " cycles pushing\n" +
-    String(kw->_l2misses_rx) + " l2 misses rx\n" +
-    String(kw->_dcu_cycles_rx) + " dcu cycles rx\n" +
-    String(kw->_l2misses_pushing) + " l2 misses pushing\n" +
-    String(kw->_dcu_cycles_pushing) + " dcu cycles pushing\n" +
-    String(kw->_activations) + " activations\n";
-#else
-    String();
+    String(kw->_perfcnt1_poll) + " perfctr1 poll\n" +
+    String(kw->_perfcnt1_refill) + " perfctr1 refill\n" +
+    String(kw->_perfcnt1_pushing) + " perfctr1 pushing\n" +
+    String(kw->_perfcnt2_poll) + " perfctr2 poll\n" +
+    String(kw->_perfcnt2_refill) + " perfctr2 refill\n" +
+    String(kw->_perfcnt2_pushing) + " perfctr2 pushing\n" +
 #endif
+    String(kw->_activations) + " activations\n";
 }
 
 void

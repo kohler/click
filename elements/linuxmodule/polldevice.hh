@@ -52,17 +52,20 @@ class PollDevice : public Element {
 #if DEV_KEEP_STATS
   // statistics
   unsigned long long _pkts_received;
-  unsigned long long _activations;
   unsigned long long _idle_calls;
-  unsigned long long _time_recv;
+  unsigned long long _time_poll;
+  unsigned long long _time_refill;
   unsigned long long _time_pushing;
-  unsigned long long _l2misses_rx;
-  unsigned long long _dcu_cycles_rx;
-  unsigned long long _l2misses_pushing;
-  unsigned long long _dcu_cycles_pushing;
+  unsigned long long _perfcnt1_poll;
+  unsigned long long _perfcnt1_refill;
+  unsigned long long _perfcnt1_pushing;
+  unsigned long long _perfcnt2_poll;
+  unsigned long long _perfcnt2_refill;
+  unsigned long long _perfcnt2_pushing;
 #endif
-  
   struct device *_dev;
+  unsigned long _activations;
+
  private:
   String _devname;
   unsigned int _last_rx;

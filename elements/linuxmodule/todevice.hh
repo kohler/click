@@ -56,13 +56,20 @@ class ToDevice : public Element {
   unsigned long long _idle_calls;
   unsigned long long _idle_pulls;
   unsigned long long _busy_returns;
-  unsigned long long _activations; 
   unsigned long long _pkts_sent;    
+  unsigned long long _time_pull;
   unsigned long long _time_clean;
-  unsigned long long _time_tx;
+  unsigned long long _time_queue;
+  unsigned long long _perfcnt1_pull;
+  unsigned long long _perfcnt1_clean;
+  unsigned long long _perfcnt1_queue;
+  unsigned long long _perfcnt2_pull;
+  unsigned long long _perfcnt2_clean;
+  unsigned long long _perfcnt2_queue;
 #endif
   unsigned long _rejected;
   unsigned long _hard_start;
+  unsigned long _activations; 
   
  private:
 

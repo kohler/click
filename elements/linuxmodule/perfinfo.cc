@@ -39,6 +39,8 @@ PerfInfo::configure(const String &conf, ErrorHandler *errh)
     return errh->error("only one PerfInfo element allowed per configuration"); 
 
   _metrics.insert("DCU_MISS_OUTSTANDING", 0x48);
+  _metrics.insert("INST_RETIRED", 0xC0);
+  _metrics.insert("IFU_IFETCH", 0x80);
   _metrics.insert("IFU_IFETCH_MISS", 0x81);
   _metrics.insert("L2_IFETCH", 0x28 | (0xf<<8));
   _metrics.insert("L2_LD", 0x29 | (0xf<<8));

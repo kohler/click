@@ -33,6 +33,9 @@ extern "C" {
 #undef delete
 }
 
+#include "perfcount.hh"
+#include "asm/msr.h"
+
 static int min_ifindex;
 static Vector<ToDevice *> *ifindex_map;
 static struct notifier_block notifier;
@@ -43,32 +46,44 @@ extern "C" int click_ToDevice_out(struct notifier_block *nb, unsigned long val, 
 ToDevice::ToDevice()
   : Element(1, 0), _dev(0), _registered(0), 
     _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
-    _rejected(0), _hard_start(0)
+    _rejected(0), _hard_start(0), _activations(0)
 {
 #if DEV_KEEP_STATS
   _idle_pulls = 0; 
   _idle_calls = 0; 
   _busy_returns = 0; 
-  _activations = 0; 
   _pkts_sent = 0; 
+  _time_pull = 0;
   _time_clean = 0;
-  _time_tx = 0;
+  _time_queue = 0;
+  _perfcnt1_pull = 0;
+  _perfcnt1_clean = 0;
+  _perfcnt1_queue = 0;
+  _perfcnt2_pull = 0;
+  _perfcnt2_clean = 0;
+  _perfcnt2_queue = 0;
 #endif
 }
 
 ToDevice::ToDevice(const String &devname)
   : Element(1, 0), _devname(devname), _dev(0), _registered(0),
     _dev_idle(0), _last_dma_length(0), _last_tx(0), _last_busy(0), 
-    _rejected(0), _hard_start(0)
+    _rejected(0), _hard_start(0), _activations(0)
 {
 #if DEV_KEEP_STATS
   _idle_pulls = 0; 
   _idle_calls = 0; 
   _busy_returns = 0; 
-  _activations = 0; 
   _pkts_sent = 0; 
+  _time_pull = 0;
   _time_clean = 0;
-  _time_tx = 0;
+  _time_queue = 0;
+  _perfcnt1_pull = 0;
+  _perfcnt1_clean = 0;
+  _perfcnt1_queue = 0;
+  _perfcnt2_pull = 0;
+  _perfcnt2_clean = 0;
+  _perfcnt2_queue = 0;
 #endif
 }
 
@@ -254,40 +269,81 @@ ToDevice::tx_intr()
   int sent = 0;
   int queued_pkts;
 
-#if DEV_KEEP_STATS
-  unsigned long time_now = get_cycles();
-#endif
-
 #if HAVE_POLLING
+
+#if DEV_KEEP_STATS
+  unsigned high;
+  unsigned low00, low01, low10, low11;
+  rdpmc(0, low00, high);
+  rdpmc(1, low10, high);
+  unsigned long time_now = get_cycles();
+#endif   
+  
   queued_pkts = _dev->tx_clean(_dev);
 
 #if DEV_KEEP_STATS
-  if (_activations>0)
+  if (_activations > 0) {
     _time_clean += get_cycles()-time_now;
-  unsigned long time_now_tx = get_cycles();
+    rdpmc(0, low01, high);
+    rdpmc(1, low11, high);
+    _perfcnt1_clean += 
+      (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+    _perfcnt2_clean += 
+      (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+    rdpmc(0, low00, high); 
+    rdpmc(1, low10, high);
+    time_now = get_cycles();
+  }
 #endif
+
 #endif
 
   while (sent<TODEV_MAX_PKTS_PER_RUN && (busy=_dev->tbusy)==0) {
+    int r;
     Packet *p;
     if (p = input(0).pull()) {
-      if (queue_packet(p) < 0)
-	break;
+
+#if DEV_KEEP_STATS
+      _time_pull += get_cycles()-time_now;
+      rdpmc(0, low01, high);
+      rdpmc(1, low11, high);
+      _perfcnt1_pull += 
+        (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+      _perfcnt2_pull += 
+        (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+      rdpmc(0, low00, high); 
+      rdpmc(1, low10, high);
+      time_now = get_cycles();
+#endif
+
+      r = queue_packet(p);
+
+#if DEV_KEEP_STATS
+      _time_queue += get_cycles()-time_now;
+      rdpmc(0, low01, high);
+      rdpmc(1, low11, high);
+      _perfcnt1_queue += 
+        (low01 >= low00)?low01 - low00 : (UINT_MAX - low00 + low01);
+      _perfcnt2_queue += 
+        (low11 >= low10)?low11 - low10 : (UINT_MAX - low10 + low11);
+      rdpmc(0, low00, high); 
+      rdpmc(1, low10, high);
+      time_now = get_cycles();
+#endif
+      if (r < 0) break;
       sent++;
     }
     else break;
   }
 
+  if (sent > 0 || _activations > 0) _activations++;
+
 #if DEV_KEEP_STATS
-  if (_activations > 0 || sent > 0) {
-    _activations++;
+  if (_activations > 0) {
     if (sent == 0) _idle_calls++;
     if (sent == 0 && !busy) _idle_pulls++;
     if (sent > 0) _pkts_sent+=sent;
     if (busy) _busy_returns++;
-#if HAVE_POLLING
-    if (sent>0) _time_tx += get_cycles()-time_now_tx;
-#endif
   }
 #endif
 
@@ -413,12 +469,17 @@ ToDevice_read_calls(Element *f, void *)
     String(td->_idle_pulls) + " idle pulls\n" +
     String(td->_busy_returns) + " device busy returns\n" +
     String(td->_pkts_sent) + " packets sent\n" +
-    String(td->_time_clean) + " cycles cleaning\n" +
-    String(td->_time_tx) + " cycles tx\n" +
-    String(td->_activations) + " transmit activations\n";
-#else
-    String();
+    String(td->_time_pull) + " cycles pull\n" +
+    String(td->_time_clean) + " cycles clean\n" +
+    String(td->_time_queue) + " cycles queue\n" +
+    String(td->_perfcnt1_pull) + " perfctr1 pull\n" +
+    String(td->_perfcnt1_clean) + " perfctr1 clean\n" +
+    String(td->_perfcnt1_queue) + " perfctr1 queue\n" +
+    String(td->_perfcnt2_pull) + " perfctr2 pull\n" +
+    String(td->_perfcnt2_clean) + " perfctr2 clean\n" +
+    String(td->_perfcnt2_queue) + " perfctr2 queue\n" +
 #endif
+    String(td->_activations) + " transmit activations\n";
 }
 
 void
