@@ -149,6 +149,8 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     void add_handlers();
     void cleanup(CleanupStage);
 
+    bool stats() const			{ return _conninfo_file; }
+    
     void push(int, Packet *);
     Packet *pull(int);
 
@@ -164,13 +166,21 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     struct FlowInfo {
 	uint32_t _ports;
 	uint32_t _aggregate;
-	unsigned _active_sec;
+	struct timeval _last_timestamp;
 	unsigned _flow_over : 2;
 	bool _reverse : 1;
 	FlowInfo *_next;
+	// have 24 bytes; statistics would double
+	// + 8 + 8 = 16 bytes
 	FlowInfo(uint32_t ports, FlowInfo *next, uint32_t agg) : _ports(ports), _aggregate(agg), _flow_over(0), _next(next) { }
 	uint32_t aggregate() const { return _aggregate; }
 	bool reverse() const	{ return _reverse; }
+    };
+
+    struct StatFlowInfo : public FlowInfo {
+	struct timeval _first_timestamp;
+	uint32_t _filepos;
+	StatFlowInfo(uint32_t ports, FlowInfo *next, uint32_t agg) : FlowInfo(ports, next, agg) { }
     };
 
     struct HostPairInfo {
@@ -201,8 +211,8 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     unsigned _fragments : 2;
     bool _timestamp_warning : 1;
 
-    FILE *_flowinfo_file;
-    String _flowinfo_filename;
+    FILE *_conninfo_file;
+    String _conninfo_filename;
 
     static const click_ip *icmp_encapsulated_header(const Packet *);
     
@@ -212,6 +222,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 
     inline int relevant_timeout(const FlowInfo *, const Map &) const;
     inline void packet_emit_hook(const Packet *, const click_ip *, FlowInfo *);
+    inline void delete_flowinfo(const HostPair &, FlowInfo *, bool really_delete = true);
     void assign_aggregate(Map &, HostPairInfo *, int emit_before_sec);
     FlowInfo *find_flow_info(Map &, HostPairInfo *, uint32_t ports, bool flipped, const Packet *);
 
