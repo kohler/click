@@ -50,7 +50,7 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
 {
     // use the encapsulated IP header for ICMP errors
     if (_ip_p == IP_PROTO_ICMP) {
-	const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
+	const click_icmp *icmph = p->icmp_header();
 	// should assert some things here
 	const click_ip *embedded_iph = reinterpret_cast<const click_ip *>(icmph + 1);
 	_flowid = IPFlowID(embedded_iph);
