@@ -1,3 +1,30 @@
+2004-04-26 Monday 02:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: aggpktcounter.cc (1.3), aggpktcounter.hh
+	(1.3): add "receivedN" handlers, and improve documentation
+
+2004-04-26 Monday 02:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromcapdump.cc (1.4), fromcapdump.hh (1.3),
+	aggcounter.hh (1.27): improve documentation
+
+2004-04-26 Monday 02:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromipsumdump.cc (1.61), fromipsumdump.hh
+	(1.35): prefer CONTENTS and FLOWID to DEFAULT_CONTENTS and
+	DEFAULT_FLOWID
+
+2004-04-26 Monday 02:00  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/confparse.hh (1.43), lib/confparse.cc (1.122):
+	change type of CpVaParseCmd: "const" is added outside
+
+2004-04-26 Monday 01:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/drivermanager.cc (1.25),
+	include/click/standard/drivermanager.hh (1.13): add "save"
+	instruction available at userlevel
+
 2004-04-25 Sunday 21:34  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/analysis/: aggpktcounter.cc (1.2), aggpktcounter.hh
