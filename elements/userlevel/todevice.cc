@@ -147,12 +147,8 @@ ToDevice::uninitialize()
 void
 ToDevice::send_packet(Packet *p)
 {
-  struct timeval tp;
   int retval;
   const char *syscall;
-
-  gettimeofday(&tp, NULL);
-  //click_chatter("pOUT_TODEV: (%d,%d)", tp.tv_sec, tp.tv_usec);
 
 #if TODEVICE_WRITE
   retval = (write(_fd, p->data(), p->length()) > 0 ? 0 : -1);
