@@ -1,7 +1,7 @@
 /*
- * vector.{cc,hh} -- simple array template class
+ * dequeue.{cc,hh} -- double-ended queue template class
  * Douglas S. J. De Couto
- * Based on code from Click Vector<> class.
+ * Based on code from Click Vector<> class (vector.{cc,hh}).
  *
  * Copyright (c) 2003 Massachusetts Institute of Technology
  *
@@ -16,8 +16,8 @@
  * legally binding.
  */
 
-#ifndef CLICK_VECTOR_CC
-#define CLICK_VECTOR_CC
+#ifndef CLICK_DEQUEUE_CC
+#define CLICK_DEQUEUE_CC
 
 CLICK_ENDDECLS
 #include <click/dequeue.hh>
