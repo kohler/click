@@ -87,6 +87,8 @@ FromIPSummaryDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "MULTIPACKET", cpBool, "generate multiple packets per record?", &multipacket,
 		    "DEFAULT_CONTENTS", cpArgument, "default contents of log", &default_contents,
 		    "DEFAULT_FLOWID", cpArgument, "default flow ID", &default_flowid,
+		    "CONTENTS", cpArgument, "default contents of log", &default_contents,
+		    "FLOWID", cpArgument, "default flow ID", &default_flowid,
 		    0) < 0)
 	return -1;
     if (_sampling_prob > (1 << SAMPLING_SHIFT)) {
