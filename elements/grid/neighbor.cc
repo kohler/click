@@ -247,7 +247,7 @@ print_nbrs(Element *e, void *)
   for (Neighbor::FarTable::Iterator iter = n->_nbrs.first(); iter; iter++) {
     Neighbor::far_entry f = iter.value();
     s += IPAddress(f.nbr.ip).s() + " " + IPAddress(f.nbr.next_hop_ip).s() 
-      + " " + String(f.nbr.num_hops) + " " + f.nbr.loc.s() 
+      + " " + String((int) f.nbr.num_hops) + " " + f.nbr.loc.s() 
       + " " + String(f.nbr.seq_no) + "\n";
   }
 
