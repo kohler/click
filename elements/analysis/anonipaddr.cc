@@ -23,6 +23,7 @@
 #include <click/error.hh>
 #include <clicknet/ip.h>
 #include <clicknet/udp.h>
+#include <clicknet/icmp.h>
 #include <click/llrpc.h>
 #include <click/integers.hh>	// for first_bit_set
 #ifdef CLICK_USERLEVEL
@@ -248,6 +249,39 @@ AnonymizeIPAddr::anonymize_addr(uint32_t a)
 	return 0;
 }
 
+void
+AnonymizeIPAddr::handle_icmp(WritablePacket *q)
+{
+    click_icmp *icmph = q->icmp_header();
+    if (icmph->icmp_type == ICMP_UNREACH || icmph->icmp_type == ICMP_TIMXCEED
+	|| icmph->icmp_type == ICMP_PARAMPROB
+	|| icmph->icmp_type == ICMP_SOURCEQUENCH
+	|| icmph->icmp_type == ICMP_REDIRECT) {
+	// check length of embedded IP header
+	click_ip *embedded_iph = reinterpret_cast<click_ip *>(icmph + 1);
+	unsigned hlen = embedded_iph->ip_hl << 2;
+	if (q->transport_length() < (int)(sizeof(click_icmp) + hlen + 8)
+	    || hlen < sizeof(click_ip))
+	    return;
+
+	uint32_t src = embedded_iph->ip_src.s_addr, dst = embedded_iph->ip_dst.s_addr;
+	
+	// incrementally update IP checksum according to RFC1624:
+	// new_sum = ~(~old_sum + ~old_halfword + new_halfword)
+	uint32_t icmp_sum = (~icmph->icmp_cksum & 0xFFFF)
+	    + (~src & 0xFFFF) + (~src >> 16) + (~dst & 0xFFFF) + (~dst >> 16);
+	
+	embedded_iph->ip_src.s_addr = src = anonymize_addr(src);
+	embedded_iph->ip_dst.s_addr = dst = anonymize_addr(dst);
+
+	icmp_sum += (src & 0xFFFF) + (src >> 16) + (dst & 0xFFFF) + (dst >> 16);
+	icmp_sum = (icmp_sum & 0xFFFF) + (icmp_sum >> 16);
+	icmph->icmp_cksum = ~(icmp_sum + (icmp_sum >> 16));
+
+	// XXX ICMP-in-ICMP?
+    }
+}
+
 Packet *
 AnonymizeIPAddr::simple_action(Packet *p)
 {
@@ -270,6 +304,10 @@ AnonymizeIPAddr::simple_action(Packet *p)
 	sum += (src & 0xFFFF) + (src >> 16) + (dst & 0xFFFF) + (dst >> 16);
 	sum = (sum & 0xFFFF) + (sum >> 16);
 	iph->ip_sum = ~(sum + (sum >> 16));
+
+	// check encapsulated headers for ICMP
+	if (iph->ip_p == IP_PROTO_ICMP)
+	    handle_icmp(q);
 	
 	return q;
     } else

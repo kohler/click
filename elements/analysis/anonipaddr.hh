@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_ANONIPADDR_HH
 #define CLICK_ANONIPADDR_HH
 #include <click/element.hh>
@@ -43,16 +44,16 @@ if the corresponding input address was in class A. If CLASS is 2, then class B
 is preserved as well. CLASS 3 preserves classes A, B, and C, and CLASS 4
 preserves classes A, B, C, and D. The CLASS flag works by preserving leading
 one bits; higher CLASSes, up to 32, preserve more one bits. Default CLASS is 0
-(no preservation).
+E<lparen>no preservation).
 
 =item PRESERVE_8
 
 Space-separated list of integers. Preserve the listed 8-bit prefixes. For
-example, with `PRESERVE_8 18', an output address is in the network 18.0.0.0/8
+example, with 'PRESERVE_8 18', an output address is in the network 18.0.0.0/8
 if and only if the input address was in that network. Default is empty.
 
 In a prefix-preserving anonymization, PRESERVE_8 introduces structure into
-nearby 8-bit prefixes. For example, `PRESERVE_8 18' also maps net 19 to net
+nearby 8-bit prefixes. For example, 'PRESERVE_8 18' also maps net 19 to net
 19: nets 18 and 19 share their top 7 bits, so
 because of prefix preservation, net 19 must map to itself. Other nearby
 networks are permuted: nets 16 and 17, for example, must map to themselves or
@@ -73,7 +74,7 @@ to each other. Here is the complete list:
 
 Boolean. By default, AnonymizeIPAddr seeds the random number generator with
 with an approximation of random data, thus protecting the anonymized results
-from random-number guess attacks. Say `SEED false' if you do not want it to
+from random-number guess attacks. Say 'SEED false' if you do not want it to
 do this. Default is true.
 
 =back
@@ -139,6 +140,8 @@ class AnonymizeIPAddr : public Element { public:
     Node *make_peer(uint32_t, Node *);
     Node *find_node(uint32_t);
     inline uint32_t anonymize_addr(uint32_t);
+
+    void handle_icmp(WritablePacket *);
     
 };
 
