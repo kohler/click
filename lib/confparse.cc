@@ -852,7 +852,6 @@ cp_keyword(const String &str, String *return_value, String *rest)
      case '\r':
      case '\t':
      case '\v':
-     case '=':
       if (quote_state == 0)
 	goto done;
       break;
@@ -865,8 +864,14 @@ cp_keyword(const String &str, String *return_value, String *rest)
 	quote_state = 0;
       break;
 
+      // characters allowed unquoted in keywords
+     case '_':
+     case '.':
+     case ':':
+      break;
+      
      default:
-      if (quote_state == 0 && !isalnum(s[i]) && s[i] != '_' && s[i] != '.')
+      if (quote_state == 0 && !isalnum(s[i]))
 	return false;
       break;
       
@@ -877,14 +882,8 @@ cp_keyword(const String &str, String *return_value, String *rest)
     return false;
 
   String keyword = cp_unquote(str.substring(0, i));
-  // disallow zero-length keywords, or keywords that start with digits or '.'
-  if (keyword.length() == 0 || isdigit(keyword[0]) || keyword[0] == '.')
-    return false;
-  
   *return_value = keyword;
 
-  if (i < len && s[i] == '=')
-    i++;
   for (; i < len; i++)
     if (!isspace(s[i]))
       break;
@@ -1522,17 +1521,17 @@ default_parsefunc(cp_value *v, const String &arg,
     
    case cpiString:
     if (!cp_string(arg, &v->v_string))
-      errh->error("%s should be %s (string)", argname, desc);
+      errh->error("%s takes string (%s)", argname, desc);
     break;
     
    case cpiWord:
     if (!cp_word(arg, &v->v_string))
-      errh->error("%s should be %s (word)", argname, desc);
+      errh->error("%s takes word (%s)", argname, desc);
     break;
     
    case cpiBool:
     if (!cp_bool(arg, &v->v.b))
-      errh->error("%s should be %s (bool)", argname, desc);
+      errh->error("%s takes bool (%s)", argname, desc);
     break;
 
    case cpiByte:
@@ -1559,7 +1558,7 @@ default_parsefunc(cp_value *v, const String &arg,
 
    handle_signed:
     if (!cp_integer(arg, &v->v.i))
-      errh->error("%s should be %s (%s)", argname, desc, argtype->description);
+      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("integer overflow on %s (%s)", argname, desc);
     else if (v->v.i < underflower)
@@ -1570,7 +1569,7 @@ default_parsefunc(cp_value *v, const String &arg,
 
    handle_unsigned:
     if (!cp_unsigned(arg, &v->v.u))
-      errh->error("%s should be %s (%s)", argname, desc, argtype->description);
+      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
     else if (cp_errno == CPE_OVERFLOW)
       errh->error("integer overflow on %s (%s)", argname, desc);
     else if (v->v.u > overflower)
@@ -1583,7 +1582,7 @@ default_parsefunc(cp_value *v, const String &arg,
       if (cp_errno == CPE_OVERFLOW)
 	errh->error("overflow on %s (%s)", argname, desc);
       else
-	errh->error("%s should be %s (real)", argname, desc);
+	errh->error("%s takes real (%s)", argname, desc);
     } else if (argtype->internal == cpiNonnegReal && v->v.i < 0)
       errh->error("%s (%s) must be >= 0", argname, desc);
     break;
@@ -1595,7 +1594,7 @@ default_parsefunc(cp_value *v, const String &arg,
       else if (cp_errno == CPE_NEGATIVE)
 	errh->error("%s (%s) must be >= 0", argname, desc);
       else
-	errh->error("%s should be %s (time in seconds)", argname, desc);
+	errh->error("%s takes time in seconds (%s)", argname, desc);
     }
     break;
 
@@ -1607,7 +1606,7 @@ default_parsefunc(cp_value *v, const String &arg,
        else if (cp_errno == CPE_NEGATIVE)
 	 errh->error("%s (%s) must be >= 0", argname, desc);
        else
-	 errh->error("%s should be %s (time in seconds)", argname, desc);
+	 errh->error("%s takes seconds since the epoch (%s)", argname, desc);
      } else {
        v->v.is[0] = tv.tv_sec;
        v->v.is[1] = tv.tv_usec;
@@ -1625,27 +1624,27 @@ default_parsefunc(cp_value *v, const String &arg,
       else if (cp_errno == CPE_INVALID)
 	errh->error("%s (%s) is an invalid real", argname, desc);
       else
-	errh->error("%s should be %s (real)", argname, desc);
+	errh->error("%s takes real (%s)", argname, desc);
     }
     break;
 
    case cpiIPAddress:
     if (!cp_ip_address(arg, v->v.address CP_PASS_CONTEXT))
-      errh->error("%s should be %s (IP address)", argname, desc);
+      errh->error("%s takes IP address (%s)", argname, desc);
     break;
 
    case cpiIPPrefix:
    case cpiIPAddressOrPrefix: {
      bool mask_optional = (argtype->internal == cpiIPAddressOrPrefix);
      if (!cp_ip_prefix(arg, v->v.address, v->v.address + 4, mask_optional CP_PASS_CONTEXT))
-       errh->error("%s should be %s (IP address prefix)", argname, desc);
+       errh->error("%s takes IP address prefix (%s)", argname, desc);
      break;
    }
 
    case cpiIPAddressSet: {
      IPAddressSet crap;
      if (!cp_ip_address_set(arg, &crap CP_PASS_CONTEXT))
-       errh->error("%s should be %s (set of IP addresses)", argname, desc);
+       errh->error("%s takes set of IP addresses (%s)", argname, desc);
      else
        v->v_string = arg;
      break;
@@ -1653,26 +1652,26 @@ default_parsefunc(cp_value *v, const String &arg,
 
    case cpiIP6Address:
     if (!cp_ip6_address(arg, (unsigned char *)v->v.address))
-      errh->error("%s should be %s (IPv6 address)", argname, desc);
+      errh->error("%s takes IPv6 address (%s)", argname, desc);
     break;
 
    case cpiIP6Prefix:
    case cpiIP6AddressOrPrefix: {
      bool mask_optional = (argtype->internal == cpiIP6AddressOrPrefix);
      if (!cp_ip6_prefix(arg, v->v.address, v->v.address + 16, mask_optional CP_PASS_CONTEXT))
-       errh->error("%s should be %s (IPv6 address prefix)", argname, desc);
+       errh->error("%s takes IPv6 address prefix (%s)", argname, desc);
      break;
    }
 
    case cpiEthernetAddress:
     if (!cp_ethernet_address(arg, v->v.address CP_PASS_CONTEXT))
-      errh->error("%s should be %s (Ethernet address)", argname, desc);
+      errh->error("%s takes Ethernet address (%s)", argname, desc);
     break;
 
 #ifdef HAVE_IPSEC
    case cpiDesCblock:
     if (!cp_des_cblock(arg, v->v.address))
-      errh->error("%s should be %s (DES encryption block)", argname, desc);
+      errh->error("%s takes DES encryption block (%s)", argname, desc);
     break;
 #endif
 
@@ -1831,9 +1830,14 @@ assign_keyword_argument(const String &arg, int npositional, int nvalues)
   // extract keyword
   if (!cp_keyword(arg, &keyword, &rest))
     return kwNoKeyword;
+  // doesn't count as a keyword if there was no accompanying data
+  // (XXX is this a great idea?)
+  if (!rest)
+    return kwNoKeyword;
   // look for keyword value
   for (int i = npositional; i < nvalues; i++)
     if (keyword == cp_values[i].keyword) {
+      // report error if keyword used already
       if (cp_values[i].v.i)
 	return kwDupKeyword;
       cp_values[i].v.i = 1;
@@ -1881,8 +1885,11 @@ cp_va_parsev(const Vector<String> &args,
   bool mixed_keywords = false;
   bool ignore_rest = false;
   int nerrors_in = errh->nerrors();
-  if (keywords_only)
+  
+  if (keywords_only) {
     nrequired = npositional = 0;
+    ignore_rest = true;
+  }
 
   while (1) {
     
@@ -2293,6 +2300,7 @@ cp_va_static_initialize()
   cp_register_argtype(cpNonnegReal, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegReal);
   cp_register_argtype(cpNonnegFixed, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiNonnegFixed);
   cp_register_argtype(cpMilliseconds, "time in seconds", 0, default_parsefunc, default_storefunc, cpiMilliseconds);
+  cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
   cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);
   cp_register_argtype(cpIPPrefix, "IP address prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPPrefix);
   cp_register_argtype(cpIPAddressOrPrefix, "IP address or prefix", cpArgStore2, default_parsefunc, default_storefunc, cpiIPAddressOrPrefix);
