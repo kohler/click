@@ -266,8 +266,6 @@ sub do_section_x ($$$) {
     }
     print STDERR "click-elem2man: $Filename: section '=$name' requires arguments\n"
 	if ($xsection_takes_args{$name} && !$args);
-    print STDERR "click-elem2man: $Filename: section '=$name' arguments ignored\n"
-	if (!$xsection_takes_args{$name} && $args);
 
     # handle '=begin' .. '=end'
     if ($name eq 'end') {
@@ -284,7 +282,7 @@ sub do_section_x ($$$) {
     } elsif ($name eq 'head2') {
 	print OUT ".SS \"", nroffize($args), "\"\n";
     } elsif ($name eq 'over') {
-	if ($args =~ /^\s*(\d+)\s*/s) {
+	if ($args =~ /^\s*(\d+)\s*$/s) {
 	    print OUT ".RS $Over[-1]\n" if @Over;
 	    push @Over, $1;
 	} else {
@@ -297,12 +295,20 @@ sub do_section_x ($$$) {
 	    print OUT ".IP \"", nroffize($args), "\" $Over[-1]\n";
 	}
     } elsif ($name eq 'back') {
+	my($overarg);
+	if ($args =~ /^\s*(\d+)\s*$/s) {
+	    $overarg = $1;
+	} elsif ($args !~ /^\s*$/s) {
+	    print STDERR "click-elem2man: $Filename: bad arguments to '=back'\n";
+	}
 	if (@Over == 0) {
 	    print STDERR "click-elem2man: $Filename: too many '=back's\n";
 	} else {
-	    pop @Over;
+	    my($over) = pop @Over;
 	    print OUT ".RE\n" if @Over;
 	    print OUT (@Over ? ".IP \"\" $Over[-1]\n" : ".PP\n");
+	    print STDERR "click-elem2man: $Filename: '=back $overarg' paired with '=over $over'\n"
+		if defined($overarg) && $over != $overarg;
 	}
     } elsif ($name eq 'for') {
 	my($fortext);
