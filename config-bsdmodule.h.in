@@ -6,7 +6,9 @@
 #ifndef __FreeBSD__
 # error "I must be compiled on a FreeBSD machine"
 #endif
-#define _KERNEL
+#ifndef _KERNEL
+# define _KERNEL
+#endif
 #define MODULE
 #define NDEBUG 1
 
@@ -16,8 +18,8 @@
 /* Define if your BSD kernel has polling extensions. */
 #undef HAVE_BSD_POLLING
 
-/* Include integer type definitions. */
-#include <sys/inttypes.h>
+/* Include integer and other type definitions. */
+#include <sys/types.h>
 
 #ifdef __cplusplus
 
