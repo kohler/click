@@ -1,3 +1,11 @@
+2002-08-26 Monday 21:18  Eddie Kohler <kohler@icir.org>
+
+	* include/click/bitvector.hh, include/click/bitvector.hh,
+	libsrc/bitvector.cc: Bitvector bug fixes; the bugs seem to have
+	been latent. Also allow static Bitvectors in the kernel (but you
+	must assign them before using them, and call the destructor
+	yourself).
+
 2002-08-26 Monday 04:28  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: straccum.hh, straccum.hh: add set_length() and

@@ -1,3 +1,14 @@
+2002-08-26 Monday 21:25  Eddie Kohler <kohler@icir.org>
+
+	* tools/lib/processingt.cc (1.24): adapt to Bitvector changes
+
+2002-08-26 Monday 21:18  Eddie Kohler <kohler@icir.org>
+
+	* include/click/bitvector.hh (1.9), lib/bitvector.cc (1.16):
+	Bitvector bug fixes; the bugs seem to have been latent. Also allow
+	static Bitvectors in the kernel (but you must assign them before
+	using them, and call the destructor yourself).
+
 2002-08-26 Monday 12:59  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.32), toipsumdump.cc
