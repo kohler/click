@@ -245,6 +245,10 @@ prepare_classes()
 	new CombinedAligner(new ShifterAligner(14),
 			    new WantAligner(Alignment(4, 2)))));
 
+  ElementClassT::set_default_class(new AlignClass("GridEncap",
+	new CombinedAligner(new ShifterAligner(98),
+			    new WantAligner(Alignment(4, 0)))));
+
   // no alignment requirements, and do not transmit packets between input and
   // output
   Aligner *a = new NullAligner;
