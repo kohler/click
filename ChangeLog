@@ -1,3 +1,17 @@
+2001-07-11 Wednesday 14:07  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: todump.cc (1.29), todump.hh (1.17): ToDump:
+	can write to standard output, and add keyword arguments
+
+2001-07-11 Wednesday 13:01  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/tcpconn.cc (1.3): small fix
+
+2001-07-11 Wednesday 12:58  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/: bufconv.cc (1.1), bufconv.hh (1.1), tcpconn.cc
+	(1.2), tcpconn.hh (1.2): buffer/packet converter, and other changes
+
 2001-07-10 Tuesday 22:14  Benjie Chen <benjie@lcs.mit.edu>
 
 	* conf/test-tcp.click (1.2): more examples
