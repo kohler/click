@@ -1,3 +1,11 @@
+2001-04-30 Monday 19:17  Peilei Fan <peilei@lcs.mit.edu>
+
+	* NODIST: [no log message]
+
+2001-04-30 Monday 18:46  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* INSTALL: add cvs note to INSTALL
+
 2001-04-30 Monday 17:20  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* DISTFILES: dont distribute old Linux patches
