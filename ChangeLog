@@ -1,3 +1,8 @@
+2003-08-26 Tuesday 11:33  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/linktable.hh (1.14): fix alignment bugs and man
+	pages for elements I wrote.
+
 2003-08-24 Sunday 21:23  Eddie Kohler <kohler@icir.org>
 
 	* apps/csclient/csclient.cc (1.7), apps/csclient/csclient.hh (1.6),
