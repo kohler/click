@@ -1,3 +1,31 @@
+2001-05-30 Wednesday 18:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/chattersocket.cc (1.4): ChatterSocket: nitlet
+
+2001-05-30 Wednesday 18:15  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/controlsocket.cc (1.24),
+	elements/userlevel/controlsocket.hh (1.15), include/click/llrpc.h
+	(1.8): ControlSocket: adds PROXY, VERBOSE, and READONLY keyword
+	arguments; support reading error messages from proxies
+
+2001-05-30 Wednesday 18:10  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/: khandlerproxy.cc (1.1), khandlerproxy.hh
+	(1.1): KernelHandlerProxy: added element, donated by Mazu; improved
+	element by adding "error receivers", so KHP can inform
+	ControlSocket (or other elements) of what kinds of errors it has
+	seen
+
+2001-05-30 Wednesday 17:56  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/router.hh (1.14), lib/router.cc (1.94),
+	linuxmodule/module.cc (1.56), linuxmodule/modulepriv.hh (1.21),
+	linuxmodule/proc_element.cc (1.32), userlevel/click.cc (1.58): add
+	global handlers to Router; in both linuxmodule and userlevel
+	drivers, use Router's global handlers rather than per-driver global
+	handlers.
+
 2001-05-30 Wednesday 01:29  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* configure.in (1.122), missing (1.5): search for install-info, as
