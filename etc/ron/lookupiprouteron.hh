@@ -98,7 +98,7 @@ public:
   unsigned outstanding_syns;
   //Vector<Packet*> waiting;
   bool valid, all_answered;
-  unsigned syn_seq;
+  unsigned long syn_seq;
 
   FlowTableEntry() {valid = 1; all_answered = 1;}
 

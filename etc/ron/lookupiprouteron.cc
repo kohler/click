@@ -266,6 +266,10 @@ void LookupIPRouteRON::push_forward_packet(Packet *p)
 
 void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p) 
 {
+  WritablePacket *rst_pkt;
+  click_ip *iphdr;
+  click_tcp *tcphdr;
+
   const click_tcp *tcph;
   FlowTableEntry *match = NULL;
   tcph = p->tcp_header();
@@ -296,44 +300,46 @@ void LookupIPRouteRON::push_reverse_synack(unsigned inport, Packet *p)
 	output(0).push(p);
 	return;
       } else {
-	click_chatter("Incorrect return port, replying with RST\n");
-	WritablePacket *rst_pkt = Packet::make(40);
-	rst_pkt->set_ip_header((click_ip*)rst_pkt->data(),0);
+	rtprintf("Incorrect return port, replying with RST\n");
+
+	rst_pkt = WritablePacket::make(40);
 	rst_pkt->set_network_header(rst_pkt->data(), 20);
-
-	click_chatter("ip_header(): %u\n", rst_pkt->ip_header());
-	click_chatter("tcp_header(): %u\n", rst_pkt->tcp_header());
-
-	click_ip *iphdr   = reinterpret_cast<click_ip *>(rst_pkt->ip_header());
-	click_tcp *tcphdr = reinterpret_cast<click_tcp*>(rst_pkt->tcp_header());
+	iphdr  = rst_pkt->ip_header();
+	tcphdr = rst_pkt->tcp_header();
 
 	tcphdr->th_sport = p->tcp_header()->th_dport;	
 	tcphdr->th_dport = p->tcp_header()->th_sport;
-	tcphdr->th_seq   = match->syn_seq;
-	tcphdr->th_ack   = p->tcp_header()->th_seq + 1;
-	tcphdr->th_win   = 16384;
+	tcphdr->th_seq   = htonl(match->syn_seq);
+	tcphdr->th_ack   = htonl(ntohl(p->tcp_header()->th_seq) + 1);
+	tcphdr->th_off   = 5;
+	tcphdr->th_flags  = TH_RST | TH_ACK;
+	tcphdr->th_win   = ntohs(16384);
 	tcphdr->th_urp   = 0;
 	tcphdr->th_sum   = 0;
 	
 	memset(iphdr, '\0', 9);
-
+	iphdr->ip_sum = 0;
+	iphdr->ip_len = htons(20);
+	iphdr->ip_p   = IP_PROTO_TCP;
 	iphdr->ip_src = p->ip_header()->ip_dst;
  	iphdr->ip_dst = p->ip_header()->ip_src;
-	iphdr->ip_len = htons(40);
 
+	//set tcp checksum
 	tcphdr->th_sum = click_in_cksum((unsigned char *)iphdr, 40);
+	iphdr->ip_len = htons(40);
 
 	iphdr->ip_v   = 4;
 	iphdr->ip_hl  = 5;
 	iphdr->ip_id  = htons(0x1234);
-	iphdr->ip_off = htons(0);
-	iphdr->ip_ttl = htons(32);
-	iphdr->ip_p   = htons(IP_PROTO_TCP);
+	iphdr->ip_off = 0; 
+	iphdr->ip_ttl = 32;
 	iphdr->ip_sum = 0;
-	iphdr->ip_sum = click_in_cksum(rst_pkt->data(), 40);
+
+	// set ip checksum
+	iphdr->ip_sum = click_in_cksum(rst_pkt->data(), 20);
 
 	p->kill();
-	duplicate_pkt(rst_pkt);
+	output(inport).push(rst_pkt);
 	return;
       }    
 
