@@ -1095,7 +1095,8 @@ Router::store_local_handler(int eindex, const Handler &to_store)
       }
       for (int i = 0; i < _nhandlers; i++)
 	new_handlers[i] = _handlers[i];
-      delete[] _handlers;
+      if (_handlers)
+	delete[] _handlers;
       _handlers = new_handlers;
       _handlers_cap = new_cap;
     }
