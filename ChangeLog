@@ -1,3 +1,8 @@
+2003-05-11 Sunday 07:49  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: rtmdsr.cc (1.6), rtmdsr.hh (1.6): Fixed packet
+	size bug.
+
 2003-05-10 Saturday 21:57  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/local/: rtmdsr.cc (1.5), rtmdsr.hh (1.5): Multi-hop
