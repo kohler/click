@@ -24,7 +24,6 @@ CLICK_DECLS
 class PrintSRCR : public Element {
   
   String _label;
-  uint16_t _et;     // This protocol's ethertype.
   
  public:
   

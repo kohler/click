@@ -23,6 +23,7 @@
 #include <click/glue.hh>
 #include <elements/grid/linkstat.hh>
 #include <click/straccum.hh>
+#include <clicknet/ether.h>
 CLICK_DECLS
 
 PrintSRCR::PrintSRCR()
@@ -48,12 +49,10 @@ PrintSRCR::configure(Vector<String> &conf, ErrorHandler* errh)
 {
   int ret;
   ret = cp_va_parse(conf, this, errh,
-		  cpUnsigned, "Ethernet encapsulation type", &_et,
                   cpOptional,
 		  cpString, "label", &_label,
 		  cpKeywords,
 		    cpEnd);
-  _et = htons(_et);
   return ret;
 }
 
@@ -62,14 +61,20 @@ PrintSRCR::simple_action(Packet *p)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
 
-  if(pk->ether_type != _et){
-    click_chatter("PrintSRCR %s: bad ether_type %04x",
-                  ntohs(pk->ether_type));
+  if(pk->ether_type != ETHERTYPE_SRCR){
+    click_chatter("PrintSRCR %s%s%s: not a srcr packet",
+		  id().cc(),
+		  _label.cc()[0] ? " " : "",
+                  _label.cc());
     return (0);
   }
 
   StringAccum sa;
   sa << "PrintSRCR ";
+  if (_label[0] != 0) {
+    sa << _label.cc() << " ";
+  }
+
   String type;
   switch (pk->_type) {
   case PT_QUERY:

@@ -1,6 +1,7 @@
 /*
- * SRCR.{cc,hh} -- toy DSR implementation
+ * SRCR.{cc,hh} -- DSR implementation
  * Robert Morris
+ * John Bicket
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
  *
@@ -23,11 +24,12 @@
 #include <click/glue.hh>
 #include <elements/grid/linkstat.hh>
 #include <click/straccum.hh>
+#include <clicknet/ether.h>
 CLICK_DECLS
 
-#ifndef dsr_assert
-#define dsr_assert(e) ((e) ? (void) 0 : dsr_assert_(__FILE__, __LINE__, #e))
-#endif /* dsr_assert */
+#ifndef srcr_assert
+#define srcr_assert(e) ((e) ? (void) 0 : srcr_assert_(__FILE__, __LINE__, #e))
+#endif /* srcr_assert */
 
 
 SRCR::SRCR()
@@ -70,12 +72,10 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
   ret = cp_va_parse(conf, this, errh,
                     cpIPAddress, "IP address", &_ip,
                     cpEthernetAddress, "Ethernet address", &_en,
-                    cpUnsigned, "Ethernet encapsulation type", &_et,
 		    cpElement, "LinkTable element", &_link_table,
                     cpKeywords,
                     "LS", cpElement, "LinkStat element", &_link_stat,
                     0);
-  _et = htons(_et);
   return ret;
 }
 
@@ -129,7 +129,7 @@ SRCR::find_dst(IPAddress ip, bool create)
   if(create){
     _dsts.push_back(Dst(ip));
     i = find_dst(ip, false);
-    dsr_assert(i >= 0);
+    srcr_assert(i >= 0);
     return i;
   }
 
@@ -225,8 +225,6 @@ SRCR::start_query(IPAddress dstip)
   pk->_nhops = htons(1);
   pk->set_hop(0,_ip.in_addr());
   
-  IPAddress tmp = IPAddress(pk->get_hop(0));
-  click_chatter("DSR:  put %s, got %s", _ip.s().cc(), tmp.s().cc());
   d._when = now;
 
   Vector<IPAddress> hops;
@@ -248,7 +246,7 @@ SRCR::got_arp(IPAddress ip, u_char xen[6])
   for(i = 0; i < _arp.size(); i++){
     if(_arp[i]._ip == ip){
       if(_arp[i]._en != en){
-        click_chatter("DSR %s: got_arp %s changed from %s to %s",
+        click_chatter("SRCR %s: got_arp %s changed from %s to %s",
                       _ip.s().cc(),
                       ip.s().cc(),
                       _arp[i]._en.s().cc(),
@@ -276,7 +274,7 @@ SRCR::find_arp(IPAddress ip, u_char en[6])
       return true;
     }
   }
-  click_chatter("DSR %s: find_arp %s ???",
+  click_chatter("SRCR %s: find_arp %s ???",
                 _ip.s().cc(),
                 ip.s().cc());
   memcpy(en, "\xff\xff\xff\xff\xff\xff", 6);
@@ -291,7 +289,7 @@ SRCR::send(WritablePacket *p)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p->data();
 
-  pk->ether_type = _et;
+  pk->ether_type = ETHERTYPE_SRCR;
   memcpy(pk->ether_shost, _en.data(), 6);
 
   u_char type = pk->_type;
@@ -301,7 +299,7 @@ SRCR::send(WritablePacket *p)
     _querybytes += p->length();
   } else if(type == PT_REPLY || type == PT_DATA){
     u_short next = ntohs(pk->_next);
-    dsr_assert(next < MaxHops + 2);
+    srcr_assert(next < MaxHops + 2);
     struct in_addr nxt = pk->get_hop(next);
     find_arp(IPAddress(nxt), pk->ether_dhost);
     if(type == PT_REPLY){
@@ -312,7 +310,7 @@ SRCR::send(WritablePacket *p)
       _databytes += p->length();
     }
   } else {
-    dsr_assert(0);
+    srcr_assert(0);
     return;
   }
 
@@ -386,10 +384,6 @@ SRCR::process_query(struct sr_pkt *pk1)
       seen_before = true;
       if(metric < _seen[si]._metric){
         // OK, pass this new better route.
-        click_chatter("DSR %s: better old=%d",
-                      _ip.s().cc(),
-                      _seen[si]._metric);
-                      
         _seen[si]._metrics = metrics;
 	_seen[si]._nhops = nhops;
 	_seen[si]._hops = hops;
@@ -410,34 +404,22 @@ SRCR::process_query(struct sr_pkt *pk1)
     return;
   }
 
-  click_chatter("DSR %s: process_query src=%s, dst=%s seq=%d metric=%d hops=%d",
-		_ip.s().cc(),
-		src.s().cc(),
-		dst.s().cc(),
-		seq,
-		metric,
-		nhops);
-
   /* update the link stats */
   timeval now = get_timeval();
   for(int i = 0; i < nhops-1; i++) {
     IPAddress a = hops[i];
     IPAddress b = hops[i+1];
     u_short m = metrics[i];
-    click_chatter("updating link %d: %s -> %s <%d>", i, a.s().cc(), b.s().cc(), m);
     _link_table->update_link(IPPair(a,b), m, now);
   }
-  click_chatter("running dijkstra...");
   _link_table->dijkstra(_ip);
-  click_chatter("finished running dijkstra");
 
-  click_chatter("DSR %s: current network: \n %s", _ip.s().cc(), _link_table->take_string().cc());
 
 
   if (!seen_before) {
     int delay_time = (last_hop_metric- 100)/10;
-    click_chatter("DSR %s: setting timer in %d milliseconds", _ip.s().cc(), delay_time);
-    dsr_assert(delay_time > 0);
+    //click_chatter("SRCR %s: setting timer in %d milliseconds", _ip.s().cc(), delay_time);
+    srcr_assert(delay_time > 0);
 
     Seen s = Seen(src, dst, seq, get_timeval(), metric, metrics, hops, nhops);
     _seen.push_back(s);
@@ -448,23 +430,17 @@ SRCR::process_query(struct sr_pkt *pk1)
     t->schedule_after_ms(delay_time);
   } else if (already_forwarded) {
 
-    click_chatter("DSR %s: forwarding immediately", _ip.s().cc());
+    //click_chatter("SRCR %s: forwarding immediately", _ip.s().cc());
     forward_query(Seen(src, dst, seq, get_timeval(), metric, metrics, hops, nhops));
   }
   
-  click_chatter("DSR %s: finished process_query\n", _ip.s().cc());
+  //click_chatter("SRCR %s: finished process_query\n", _ip.s().cc());
 }
 void
 SRCR::forward_query(Seen s)
 {
   u_short nhops = s._nhops;
-  IPAddress src = s._hops[0];
-  IPAddress dst = s._dst;
-  click_chatter("DSR %s: foward_query src=%s, dst=%s seq %d %s",
-		_ip.s().cc(),
-		src.s().cc(),
-		dst.s().cc(),
-		s._seq);
+
 
   int len = sr_pkt::len_wo_data(nhops);
   WritablePacket *p = Packet::make(len);
@@ -504,11 +480,11 @@ SRCR::forward_reply(struct sr_pkt *pk1)
   u_short next = ntohs(pk1->_next);
   u_short nhops = ntohs(pk1->_nhops);
   
-  dsr_assert(type == PT_REPLY);
+  srcr_assert(type == PT_REPLY);
   next = next - 1;
 
   if(next >= nhops) {
-    click_chatter("DSR %s: forward_reply strange next=%d, nhops=%d", 
+    click_chatter("SRCR %s: forward_reply strange next=%d, nhops=%d", 
 		  _ip.s().cc(), 
 		  next, 
 		  nhops);
@@ -525,7 +501,6 @@ SRCR::forward_reply(struct sr_pkt *pk1)
   }
   _link_table->dijkstra(_ip);
 
-  click_chatter("DSR %s: current network: \n %s", _ip.s().cc(), _link_table->take_string().cc());
   int len = pk1->hlen_wo_data();
   WritablePacket *p = Packet::make(len);
   if(p == 0)
@@ -553,12 +528,12 @@ SRCR::forward_data(struct sr_pkt *pk1)
   /* add the last hop's data onto the metric */
   u_short last_hop_metric = get_metric(pk1->get_hop(next - 1));
 
-  dsr_assert(type == PT_DATA);
+  srcr_assert(type == PT_DATA);
   
   next = next + 1;
 
   if(next >= nhops) {
-    click_chatter("DSR %s: forward_data strange next=%d, nhops=%d", 
+    click_chatter("SRCR %s: forward_data strange next=%d, nhops=%d", 
 		  _ip.s().cc(), 
 		  next, 
 		  nhops);
@@ -576,7 +551,6 @@ SRCR::forward_data(struct sr_pkt *pk1)
   }
   _link_table->dijkstra(_ip);
 
-  click_chatter("DSR %s: current network: \n %s", _ip.s().cc(), _link_table->take_string().cc());
 
   int len = pk1->hlen_with_data();
   WritablePacket *p = Packet::make(len);
@@ -635,10 +609,6 @@ SRCR::start_reply(struct sr_pkt *pk1)
   pk->set_metric(nhops - 1, get_metric(IPAddress(pk->get_hop(nhops-2))));
   pk->_next = htons(nhops - 1); // Indicates next hop.
 
-  click_chatter("DSR %s: start_reply%s",
-                _ip.s().cc(),
-                (pk->_flags & PF_BETTER) ? " B" : "");
-
   send(p);
 }
 
@@ -649,14 +619,14 @@ SRCR::got_reply(struct sr_pkt *pk)
 {
   int di = find_dst(pk->_qdst, false);
   if(di < 0){
-    click_chatter("DSR %s: reply but no Dst %s",
+    click_chatter("SRCR %s: reply but no Dst %s",
                   _ip.s().cc(),
                   IPAddress(pk->_qdst).s().cc());
     return;
   }
   Dst &dst = _dsts[di];
   if(ntohl(pk->_seq) != dst._seq){
-    click_chatter("DSR %s: reply but wrong seq %d %d",
+    click_chatter("SRCR %s: reply but wrong seq %d %d",
                   _ip.s().cc(),
                   ntohl(pk->_seq),
                   dst._seq);
@@ -669,12 +639,9 @@ SRCR::got_reply(struct sr_pkt *pk)
     IPAddress a = pk->get_hop(i);
     IPAddress b = pk->get_hop(i+1);
     u_short m = pk->get_metric(i);
-    click_chatter("updating link %d: %s -> %s <%d>", i, a.s().cc(), b.s().cc(), m);
     _link_table->update_link(IPPair(a,b), m, now);
   }
-  click_chatter("running dijkstra...");
   _link_table->dijkstra(_ip);
-  click_chatter("DSR %s: current network: \n %s", _ip.s().cc(), _link_table->take_string().cc());
 
 }
 
@@ -683,15 +650,16 @@ void
 SRCR::got_sr_pkt(Packet *p_in)
 {
   struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
+  //click_chatter("SRCR %s: got sr packet", _ip.s().cc());
   if(p_in->length() < 20 || p_in->length() < pk->hlen_wo_data()){
-    click_chatter("DSR %s: bad sr_pkt len %d, expected %d",
+    click_chatter("SRCR %s: bad sr_pkt len %d, expected %d",
                   _ip.s().cc(),
                   p_in->length(),
 		  pk->hlen_wo_data());
     return;
   }
-  if(pk->ether_type != _et){
-    click_chatter("DSR %s: bad ether_type %04x",
+  if(pk->ether_type != ETHERTYPE_SRCR){
+    click_chatter("SRCR %s: bad ether_type %04x",
                   _ip.s().cc(),
                   ntohs(pk->ether_type));
     return;
@@ -712,7 +680,7 @@ SRCR::got_sr_pkt(Packet *p_in)
     if(pk->get_hop(next) != _ip.in_addr()){
       // it's not for me. these are supposed to be unicast,
       // so how did this get to me?
-      click_chatter("DSR %s: reply not for me %d/%d %s",
+      click_chatter("SRCR %s: reply not for me %d/%d %s",
                     _ip.s().cc(),
                     ntohs(pk->_next),
                     ntohs(pk->_nhops),
@@ -734,7 +702,7 @@ SRCR::got_sr_pkt(Packet *p_in)
     if(pk->get_hop(next) != _ip.in_addr()){
       // it's not for me. these are supposed to be unicast,
       // so how did this get to me?
-      click_chatter("DSR %s: data not for me %d/%d %s",
+      click_chatter("SRCR %s: data not for me %d/%d %s",
                     _ip.s().cc(),
                     ntohs(pk->_next),
                     ntohs(pk->_nhops),
@@ -749,7 +717,7 @@ SRCR::got_sr_pkt(Packet *p_in)
       forward_data(pk);
     }
   } else {
-    click_chatter("DSR %s: bad sr_pkt type=%x",
+    click_chatter("SRCR %s: bad sr_pkt type=%x",
                   _ip.s().cc(),
                   type);
   }
@@ -774,12 +742,7 @@ SRCR::push(int port, Packet *p_in)
 {
   if(port == 0){
     // Packet from upper layers in same host.
-    click_chatter("got data packet\n");
     Vector<IPAddress> r = _link_table->best_route(p_in->dst_ip_anno());
-    click_chatter("DSR %s: data to %s: %s",
-                  _ip.s().cc(),
-                  p_in->dst_ip_anno().s().cc(),
-		  route_to_string(r).cc());
     if(r.size() > 1)
       start_data(p_in->data(), p_in->length(), r);
     else
@@ -794,7 +757,7 @@ SRCR::push(int port, Packet *p_in)
 void
 SRCR::query_hook(Timer *t) 
 {
-  dsr_assert(t);
+  srcr_assert(t);
 
   Vector<Seen> v;
   timeval now = get_timeval();
@@ -812,27 +775,66 @@ SRCR::query_hook(Timer *t)
 
 }
 
-static String
-SRCR_read_stats(Element *f, void *)
+String
+SRCR::static_print_stats(Element *f, void *)
 {
   SRCR *d = (SRCR *) f;
+  return d->print_stats();
+}
+
+String
+SRCR::print_stats()
+{
+  
   return
-    String(d->_queries) + " queries sent\n" +
-    String(d->_querybytes) + " bytes of query sent\n" +
-    String(d->_replies) + " replies sent\n" +
-    String(d->_replybytes) + " bytes of reply sent\n" +
-    String(d->_datas) + " datas sent\n" +
-    String(d->_databytes) + " bytes of data sent\n";
+    String(_queries) + " queries sent\n" +
+    String(_querybytes) + " bytes of query sent\n" +
+    String(_replies) + " replies sent\n" +
+    String(_replybytes) + " bytes of reply sent\n" +
+    String(_datas) + " datas sent\n" +
+    String(_databytes) + " bytes of data sent\n";
+
+}
+
+int
+SRCR::static_clear(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  SRCR *n = (SRCR *) e;
+  bool b;
+
+  if (!cp_bool(arg, &b))
+    return errh->error("`frozen' must be a boolean");
+
+  if (b) {
+    n->clear();
+  }
+  return 0;
+}
+void
+SRCR::clear() 
+{
+  _link_table->clear();
+  _dsts.clear();
+  _seen.clear();
+
+  _queries = 0;
+  _querybytes = 0;
+  _replies = 0;
+  _replybytes = 0;
+  _datas = 0;
+  _databytes = 0;
 }
 
 void
 SRCR::add_handlers()
 {
-  add_read_handler("stats", SRCR_read_stats, 0);
+  add_read_handler("stats", static_print_stats, 0);
+  add_write_handler("clear", static_clear, 0);
 }
 
  void
-SRCR::dsr_assert_(const char *file, int line, const char *expr) const
+SRCR::srcr_assert_(const char *file, int line, const char *expr) const
 {
   click_chatter("SRCR %s assertion \"%s\" failed: file %s, line %d",
 		id().cc(), expr, file, line);

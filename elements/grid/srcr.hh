@@ -71,11 +71,11 @@ ls -> td;
  */
 
 
-enum DSRPacketType { PT_QUERY = 0x11,
+enum SRCRPacketType { PT_QUERY = 0x11,
 		     PT_REPLY = 0x22,
 		     PT_DATA  = 0x33 };
 
-enum DSRPacketFlags { PF_BETTER = 1 };
+enum SRCRPacketFlags { PF_BETTER = 1 };
 
 
 
@@ -101,7 +101,8 @@ struct sr_pkt {
   // Route
   u_short _nhops;
   u_short _next;   // Index of next node who should process this packet.
-  
+  u_short _gateway;
+
   // How long should the packet be?
   size_t hlen_wo_data() const { return len_wo_data(ntohs(_nhops)); }
   size_t hlen_with_data() const { return len_with_data(ntohs(_nhops), ntohs(_dlen)); }
@@ -152,10 +153,23 @@ class SRCR : public Element {
   int initialize(ErrorHandler *);
   SRCR *clone() const;
   int configure(Vector<String> &conf, ErrorHandler *errh);
+
+
+  /* handler stuff */
   void add_handlers();
-  
+  static int static_clear(const String &arg, Element *e,
+			  void *, ErrorHandler *errh); 
+  void clear();
+
+  static String static_print_stats(Element *e, void *);
+  String print_stats();
+
+
   void push(int, Packet *);
   void run_timer();
+
+
+
   static timeval get_timeval(void);
   static timeval add_millisec(timeval t, int milli);
   static bool timeval_past(timeval a, timeval b); // return if a is past b
@@ -179,7 +193,7 @@ private:
   Timer _timer;
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
-  uint16_t _et;     // This protocol's ethertype.
+
   class LinkTable *_link_table;
   class LinkStat *_link_stat;
   
@@ -254,7 +268,7 @@ private:
 
   void query_hook(Timer *t);
 
-  void dsr_assert_(const char *, int, const char *) const;
+  void srcr_assert_(const char *, int, const char *) const;
 };
 
 

@@ -54,19 +54,33 @@ public:
 
 class LinkTable: public Element{
 public: 
+
+  /* generic click-mandated stuff*/
   LinkTable();
   ~LinkTable();
+  void add_handlers();
+  const char* class_name() const { return "LinkTable"; }
+  LinkTable *clone() const { return new LinkTable(); }
+  int configure(Vector<String> &conf, ErrorHandler *errh);
+
+  /* read/write handlers */
+  static String static_print_routes(Element *e, void *);
+  String print_routes();
+  static String static_print_links(Element *e, void *);
+  String print_links();
+  static String static_print_hosts(Element *e, void *);
+  String print_hosts();
+  static int static_clear(const String &arg, Element *e,
+			  void *, ErrorHandler *errh); 
+  void clear();
+
+  /* other public functions */
   void update_link(IPPair p, u_short metric, timeval now);
   u_short get_hop_metric(IPPair p);
   u_short get_route_metric(Vector<IPAddress> route, int size);
   void dijkstra(IPAddress src);
   Vector<IPAddress> best_route(IPAddress dst);
-  String take_string();
 
-
-  const char* class_name() const { return "LinkTable"; }
-  LinkTable *clone() const { return new LinkTable(); }
-  int configure(Vector<String> &conf, ErrorHandler *errh);
 
 private: 
   class LinkInfo {

@@ -53,6 +53,39 @@ LinkTable::configure (Vector<String> &conf, ErrorHandler *errh)
 }
 
 
+
+void
+LinkTable::add_handlers() {
+  add_default_handlers(false);
+  add_read_handler("routes", static_print_routes, 0);
+  add_read_handler("links", static_print_links, 0);
+  add_read_handler("hosts", static_print_hosts, 0);
+  add_write_handler("clear", static_clear, 0);
+}
+
+
+int
+LinkTable::static_clear(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  LinkTable *n = (LinkTable *) e;
+  bool b;
+
+  if (!cp_bool(arg, &b))
+    return errh->error("`frozen' must be a boolean");
+
+  if (b) {
+    n->clear();
+  }
+  return 0;
+}
+void
+LinkTable::clear() 
+{
+  _hosts.clear();
+  _links.clear();
+
+}
 void 
 LinkTable::update_link(IPPair p, u_short metric, timeval now) 
 {
@@ -114,9 +147,7 @@ LinkTable::best_route(IPAddress dst)
   Vector<IPAddress> route;
   HostInfo *nfo = _hosts.findp(dst);
   
-  click_chatter("looking up route for %s", dst.s().cc());
   while (nfo && nfo->_metric != 9999 && nfo->_metric != 0) {
-    click_chatter("pushing back %s", _ip.s().cc());
     reverse_route.push_back(nfo->_ip);
     nfo = _hosts.findp(nfo->_prev);
   }
@@ -149,17 +180,73 @@ LinkTable::extract_min()
 }
 
 String
-LinkTable::take_string() 
+LinkTable::static_print_links(Element *e, void *)
+{
+  LinkTable *n = (LinkTable *) e;
+  return n->print_links();
+}
+
+String 
+LinkTable::print_links() 
 {
   StringAccum sa;
-
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    HostInfo n = iter.value();
-    sa << n._ip << " m="<< n._metric << " next=" << n._prev <<"\n";
+  for (LTIter iter = _links.begin(); iter; iter++) {
+    LinkInfo n = iter.value();
+    sa << n._p._a.s().cc() << " " << n._p._b.s().cc() << " : ";
+    sa << n._metric << " " << " " << n._last_updated << "\n";
   }
-
   return sa.take_string();
 }
+
+
+
+String
+LinkTable::static_print_routes(Element *e, void *)
+{
+  LinkTable *n = (LinkTable *) e;
+  return n->print_routes();
+}
+
+String 
+LinkTable::print_routes() 
+{
+  StringAccum sa;
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    HostInfo n = iter.value();
+    Vector <IPAddress> r = best_route(n._ip);
+    sa << n._ip.s().cc() << " : ";
+    for (int i = 0; i < r.size(); i++) {
+      sa << " " << r[i] << " ";
+      if (i != r.size()-1) {
+	LinkInfo *l = _links.findp(IPPair(r[i], r[i+1]));
+	lt_assert(l);
+	sa << "<" << l->_metric << ">";
+      }
+    }
+    sa << "\n";
+  }
+  return sa.take_string();
+}
+
+
+String
+LinkTable::static_print_hosts(Element *e, void *)
+{
+  LinkTable *n = (LinkTable *) e;
+  return n->print_links();
+}
+
+String 
+LinkTable::print_hosts() 
+{
+  StringAccum sa;
+  for (HTIter iter = _hosts.begin(); iter; iter++) {
+    HostInfo n = iter.value();
+    sa << n._ip.s().cc() << "\n";
+  }
+  return sa.take_string();
+}
+
 void
 LinkTable::dijkstra(IPAddress src) 
 {
@@ -187,7 +274,6 @@ LinkTable::dijkstra(IPAddress src)
 
     current_min->_marked = true;
 
-    click_chatter("Selected current min: %s", current_min_ip.s().cc());
 
     for (IPTable::iterator iter = current_min->_neighbors.begin(); iter; iter++) {
       HostInfo *neighbor = _hosts.findp(iter.value());
@@ -195,18 +281,11 @@ LinkTable::dijkstra(IPAddress src)
       if (!neighbor->_marked) {
 	LinkInfo *lnfo = _links.findp(IPPair(current_min->_ip, neighbor->_ip));
 	lt_assert(lnfo);
-	click_chatter("neighbor metric = %d, current_min->metroc =%d, link metric = %d", 
-		      neighbor->_metric, current_min->_metric, lnfo->_metric);
 
 	if (neighbor->_metric > current_min->_metric + lnfo->_metric) {
-	  click_chatter("LinkTable %s: updating metric on pair (%s,%s)", _ip.s().cc(), 
-			current_min->_ip.s().cc(), neighbor->_ip.s().cc());
 	  neighbor->_metric = current_min->_metric + lnfo->_metric;
 	  neighbor->_prev = current_min_ip;
-	} else {
-	  click_chatter("LinkTable %s: didn't update pair (%s,%s)", _ip.s().cc(), 
-			current_min->_ip.s().cc(), neighbor->_ip.s().cc());
-	}
+	} 
       }
     }
 
