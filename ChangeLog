@@ -1,3 +1,7 @@
+2002-03-06 Wednesday 18:52  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/module.cc (1.6): declare click_add_element_type
+
 2002-03-05 Tuesday 21:40  Eddie Kohler <kohler@aciri.org>
 
 	* bsdmodule/vnode_if.pl (1.2): remove hacked vnode_if.pl
