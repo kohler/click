@@ -266,6 +266,16 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
       memcpy(store, info->ether, 6);
       return true;
     }
+
+#ifdef CLICK_LINUXMODULE
+  // if it's a device name, return its Ethernet address
+  net_device *dev = dev_get_by_name(s.cc());
+  if (dev && dev->type == ARPHRD_ETHER) {
+    memcpy(store, dev->dev_addr, 6);
+    return true;
+  }
+#endif
+  
   return false;
 }
 

@@ -7,50 +7,64 @@
 #endif
 
 /*
- * =c
- * AddressInfo(NAME ADDRESS [ADDRESS...], ...)
- * =s information
- * specifies address information
- * =io
- * None
- * =d
- *
- * Lets you use mnemonic names for IPv4 and IPv6 addresses, IPv4 and IPv6
- * address prefixes, and Ethernet addresses. Each argument has the form `NAME
- * ADDRESS [ADDRESS...]', which associates the given ADDRESSes with NAME. For
- * example, if a configuration contains this AddressInfo element,
- *
- *    AddressInfo(mauer 10.0.0.1, mazu 10.0.0.10);
- *
- * then other configuration strings can use C<mauer> and C<mazu> as mnemonics
- * for the IP addresses 10.0.0.1 and 10.0.0.10, respectively.
- *
- * The mnemonic names introduced by AddressInfo elements are local with
- * respect to compound elements. That is, names created inside a compound
- * element apply only within that compound element and its subelements. For
- * example:
- *
- *    AddressInfo(mauer 10.0.0.1);
- *    compound :: {
- *      AddressInfo(mazu 10.0.0.10);
- *      ... -> IPEncap(6, mauer, mazu) -> ...  // OK
- *    };
- *    ... -> IPEncap(6, mauer, mazu) -> ...    // error: `mazu' undefined
- *
- * Any name can be simultaneously associated with an IP address, an IP network
- * address, and an Ethernet address. The kind of address that is returned is
- * generally determined from context. For example:
- *
- *    AddressInfo(mauer 10.0.0.1/8 00:50:BA:85:84:A9);
- *    ... -> IPEncap(6, mauer, ...)                  // as IP address
- *        -> EtherEncap(0x0800, mauer, ...) -> ...   // as Ethernet address
- *    ... -> ARPResponder(mauer) -> ...              // as IP prefix AND Ethernet address!
- *
- * An optional suffix makes the context unambiguous. C<NAME> is an ambiguous
- * reference to some address, but C<NAME:ip> is always an IPv4 address,
- * C<NAME:ipnet> is always an IPv4 network address (IPv4 address prefix),
- * C<NAME:ip6> is always an IPv6 address, C<NAME:ip6net> is always an IPv6
- * network address, and C<NAME:eth> is always an Ethernet address. */
+=c
+
+AddressInfo(NAME ADDRESS [ADDRESS...], ...)
+
+=s information
+
+specifies address information
+
+=io
+
+None
+
+=d
+
+Lets you use mnemonic names for IPv4 and IPv6 addresses, IPv4 and IPv6
+address prefixes, and Ethernet addresses. Each argument has the form `NAME
+ADDRESS [ADDRESS...]', which associates the given ADDRESSes with NAME. For
+example, if a configuration contains this AddressInfo element,
+
+   AddressInfo(mauer 10.0.0.1, mazu 10.0.0.10);
+
+then other configuration strings can use C<mauer> and C<mazu> as mnemonics
+for the IP addresses 10.0.0.1 and 10.0.0.10, respectively.
+
+The mnemonic names introduced by AddressInfo elements are local with
+respect to compound elements. That is, names created inside a compound
+element apply only within that compound element and its subelements. For
+example:
+
+   AddressInfo(mauer 10.0.0.1);
+   compound :: {
+     AddressInfo(mazu 10.0.0.10);
+     ... -> IPEncap(6, mauer, mazu) -> ...  // OK
+   };
+   ... -> IPEncap(6, mauer, mazu) -> ...    // error: `mazu' undefined
+
+Any name can be simultaneously associated with an IP address, an IP network
+address, and an Ethernet address. The kind of address that is returned is
+generally determined from context. For example:
+
+   AddressInfo(mauer 10.0.0.1/8 00:50:BA:85:84:A9);
+   ... -> IPEncap(6, mauer, ...)                  // as IP address
+       -> EtherEncap(0x0800, mauer, ...) -> ...   // as Ethernet address
+   ... -> ARPResponder(mauer) -> ...              // as IP prefix AND Ethernet address!
+
+An optional suffix makes the context unambiguous. C<NAME> is an ambiguous
+reference to some address, but C<NAME:ip> is always an IPv4 address,
+C<NAME:ipnet> is always an IPv4 network address (IPv4 address prefix),
+C<NAME:ip6> is always an IPv6 address, C<NAME:ip6net> is always an IPv6
+network address, and C<NAME:eth> is always an Ethernet address.
+
+=head1 DEFAULT ADDRESSES
+
+AddressInfo gives some names default values: if you do not define a value,
+AddressInfo will use the default.
+
+In the Linux kernel driver, C<DEVNAME:eth> defaults to DEVNAME's Ethernet
+address, if DEVNAME refers to an Ethernet device such as C<eth0>. */
 
 class AddressInfo : public Element { public:
   

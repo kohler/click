@@ -80,7 +80,7 @@ find_device_by_ether_address(const String &name, Element *context)
   if (!cp_ethernet_address(name, en, context))
     return 0;
   for (net_device *dev = dev_base; dev; dev = dev->next)
-    if (dev->addr_len == 6 && memcmp(en, dev->dev_addr, 6) == 0)
+    if (dev->type == ARPHRD_ETHER && memcmp(en, dev->dev_addr, 6) == 0)
       return dev;
   return 0;
 }
