@@ -3,24 +3,10 @@
 #include <assert.h>
 #include <click/glue.hh>
 
-class Bitvector {
+class Bitvector { public:
 
-  static const int INLINE_BITS = 64;
-  static const int INLINE_UNSIGNEDS = 2;
-  
-  int _max;
-  unsigned *_data;
-  unsigned _f0;
-  unsigned _f1;
-  
   class Bit;
-  
-  void finish_copy_constructor(const Bitvector &);
-  void clear_last();
-  void resize_x(int, bool);
-  
- public:
-  
+
   Bitvector()			: _max(-1), _data(&_f0), _f0(0), _f1(0) { }
   explicit Bitvector(int);
   explicit Bitvector(unsigned);
@@ -60,20 +46,30 @@ class Bitvector {
   Bitvector &assign(int, bool);
   
   void or_at(const Bitvector &, int);
+  bool nonzero_intersection(const Bitvector &);
   
   // exposing the implementation
   int u_max() const		{ return (_max < 0 ? -1 : _max>>5); }
   unsigned *u_data()		{ return _data; }
   
+ private:
+
+  static const int INLINE_BITS = 64;
+  static const int INLINE_UNSIGNEDS = 2;
+  
+  int _max;
+  unsigned *_data;
+  unsigned _f0;
+  unsigned _f1;
+  
+  void finish_copy_constructor(const Bitvector &);
+  void clear_last();
+  void resize_x(int, bool);
+  
 };
 
-class Bitvector::Bit {
-  
-  unsigned &_p;
-  unsigned _mask;
-  
- public:
-  
+class Bitvector::Bit { public:
+
   Bit(unsigned &p, int off)		: _p(p), _mask(1U<<off) { }
   
   operator bool() const			{ return (_p & _mask) != 0; }
@@ -81,6 +77,11 @@ class Bitvector::Bit {
   
   bool operator=(bool b);
   bool operator=(const Bit &);
+  
+ private:
+  
+  unsigned &_p;
+  unsigned _mask;
   
 };
 

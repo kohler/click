@@ -172,3 +172,16 @@ Bitvector::or_at(const Bitvector &o, int offset)
     if (o_pos > o_u_max) break;
   }
 }
+
+bool
+Bitvector::nonzero_intersection(const Bitvector &o)
+{
+  int nn = o.u_max();
+  if (nn > u_max())
+    nn = u_max();
+  unsigned *data = _data, *o_data = o._data;
+  for (int i = 0; i <= nn; i++)
+    if (data[i] & o_data[i])
+      return true;
+  return false;
+}
