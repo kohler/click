@@ -350,45 +350,48 @@ AggregateCounter::reaggregate_counts()
 // HANDLERS
 
 static void
-write_batch(FILE *f, bool binary, uint32_t *buffer, int pos,
-	    ErrorHandler *)
+write_batch(FILE *f, AggregateCounter::WriteFormat format,
+	    uint32_t *buffer, int pos, ErrorHandler *)
 {
-    if (binary)
+    if (format == AggregateCounter::WR_BINARY)
 	fwrite(buffer, sizeof(uint32_t), pos, f);
+    else if (format == AggregateCounter::WR_ASCII_IP)
+	for (int i = 0; i < pos; i += 2)
+	    fprintf(f, "%d.%d.%d.%d %u\n", (buffer[i] >> 24) & 255, (buffer[i] >> 16) & 255, (buffer[i] >> 8) & 255, buffer[i] & 255, buffer[i+1]);
     else
 	for (int i = 0; i < pos; i += 2)
 	    fprintf(f, "%u %u\n", buffer[i], buffer[i+1]);
 }
 
 void
-AggregateCounter::write_nodes(Node *n, FILE *f, bool binary,
-				 uint32_t *buffer, int &pos, int len,
-				 ErrorHandler *errh)
+AggregateCounter::write_nodes(Node *n, FILE *f, WriteFormat format,
+			      uint32_t *buffer, int &pos, int len,
+			      ErrorHandler *errh)
 {
     if (n->count > 0) {
 	buffer[pos++] = n->aggregate;
 	buffer[pos++] = n->count;
 	if (pos == len) {
-	    write_batch(f, binary, buffer, pos, errh);
+	    write_batch(f, format, buffer, pos, errh);
 	    pos = 0;
 	}
     }
 
     if (n->child[0])
-	write_nodes(n->child[0], f, binary, buffer, pos, len, errh);
+	write_nodes(n->child[0], f, format, buffer, pos, len, errh);
     if (n->child[1])
-	write_nodes(n->child[1], f, binary, buffer, pos, len, errh);
+	write_nodes(n->child[1], f, format, buffer, pos, len, errh);
 }
 
 int
-AggregateCounter::write_file(String where, bool binary,
-				ErrorHandler *errh) const
+AggregateCounter::write_file(String where, WriteFormat format,
+			     ErrorHandler *errh) const
 {
     FILE *f;
     if (where == "-")
 	f = stdout;
     else
-	f = fopen(where.cc(), (binary ? "wb" : "w"));
+	f = fopen(where.cc(), (format == WR_BINARY ? "wb" : "w"));
     if (!f)
 	return errh->error("%s: %s", where.cc(), strerror(errno));
 
@@ -396,21 +399,22 @@ AggregateCounter::write_file(String where, bool binary,
     if (_output_banner.length() && _output_banner.back() != '\n')
 	fputc('\n', f);
     fprintf(f, "$num_nonzero %u\n", _num_nonzero);
+    if (format == WR_BINARY) {
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-    if (binary)
 	fprintf(f, "$packed_be\n");
 #elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
-    if (binary)
 	fprintf(f, "$packed_le\n");
 #else
-    binary = false;
+	format = WR_ASCII;
 #endif
+    } else if (format == WR_ASCII_IP)
+	fprintf(f, "$ip\n");
     
     uint32_t buf[1024];
     int pos = 0;
-    write_nodes(_root, f, binary, buf, pos, 1024, errh);
+    write_nodes(_root, f, format, buf, pos, 1024, errh);
     if (pos)
-	write_batch(f, binary, buf, pos, errh);
+	write_batch(f, format, buf, pos, errh);
 
     bool had_err = ferror(f);
     if (f != stdout)
@@ -428,7 +432,8 @@ AggregateCounter::write_file_handler(const String &data, Element *e, void *thunk
     String fn;
     if (!cp_filename(cp_uncomment(data), &fn))
 	return errh->error("argument should be filename");
-    return ac->write_file(fn, (thunk != 0), errh);
+    int int_thunk = (int)thunk;
+    return ac->write_file(fn, (WriteFormat)int_thunk, errh);
 }
 
 enum {
@@ -536,8 +541,9 @@ AggregateCounter::write_handler(const String &data, Element *e, void *thunk, Err
 void
 AggregateCounter::add_handlers()
 {
-    add_write_handler("write_ascii_file", write_file_handler, (void *)0);
-    add_write_handler("write_file", write_file_handler, (void *)1);
+    add_write_handler("write_ascii_file", write_file_handler, (void *)WR_ASCII);
+    add_write_handler("write_file", write_file_handler, (void *)WR_BINARY);
+    add_write_handler("write_ip_file", write_file_handler, (void *)WR_ASCII_IP);
     add_read_handler("freeze", read_handler, (void *)AC_FROZEN);
     add_write_handler("freeze", write_handler, (void *)AC_FROZEN);
     add_read_handler("active", read_handler, (void *)AC_ACTIVE);

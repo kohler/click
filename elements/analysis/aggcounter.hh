@@ -115,6 +115,12 @@ containing all current data to the specified filename. The format is a couple
 ASCII lines, followed by N data lines, each containing the aggregate ID in
 decimal, a space, then the count in decimal.
 
+=h write_ip_file write-only
+
+Argument is a filename, or `C<->', meaning standard out. Write an ASCII file
+containing all current data to the specified filename. The format is as in
+C<write_ascii_file>, except that aggregate IDs are printed as IP addresses.
+
 =h freeze read/write
 
 Returns or sets the AggregateCounter's frozen state, which is `true' or
@@ -204,7 +210,8 @@ class AggregateCounter : public Element { public:
 
     bool empty() const			{ return _num_nonzero == 0; }
     int clear(ErrorHandler * = 0);
-    int write_file(String, bool, ErrorHandler *) const;
+    enum WriteFormat { WR_ASCII = 0, WR_BINARY = 1, WR_ASCII_IP = 2 };
+    int write_file(String, WriteFormat, ErrorHandler *) const;
     void reaggregate_counts();
     
   private:
@@ -244,7 +251,7 @@ class AggregateCounter : public Element { public:
     void reaggregate_node(Node *);
     void clear_node(Node *);
 
-    static void write_nodes(Node *, FILE *, bool, uint32_t *, int &, int, ErrorHandler *);
+    static void write_nodes(Node *, FILE *, WriteFormat, uint32_t *, int &, int, ErrorHandler *);
     static int write_file_handler(const String &, Element *, void *, ErrorHandler *);
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
