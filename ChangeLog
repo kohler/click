@@ -1,3 +1,8 @@
+2002-05-10 Friday 01:13  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fakepcap.cc (1.6): FakePcap's force_ip
+	processing sets destination address annotation to reduce surprises
+
 2002-05-10 Friday 00:19  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fakepcap.cc (1.5): signedness nitlet
