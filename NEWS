@@ -2,9 +2,16 @@ Click NEWS
 
 Version 1.0.6   
 
-* Fix UDPEncap to optionally not perform UDP checksum. Also fixed UDPEncap to
-  encode length in network order. Previously the htons was missing. Reported
-  by Richard Mortier <rmm1002@cam.ac.uk>.
+* Kernel and user-level drivers
+
+** Fixed Packet::expensive_push. Patch by Richard Mortier
+   <rmm1002@cam.ac.uk>.
+
+* Elements
+
+** Fix UDPEncap to optionally not perform UDP checksum. Also fixed UDPEncap to
+   encode length in network order. Previously the htons was missing. Patch
+   by Richard Mortier <Richard.Mortier@cl.cam.ac.uk>.
 
 
 Version 1.0.5   1.May.2000
