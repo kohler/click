@@ -1,3 +1,8 @@
+2002-09-17 Tuesday 00:16  Eddie Kohler <kohler@icir.org>
+
+	* lib/templatei.cc (1.13), tools/lib/hashmapi.cc (1.10): accomodate
+	crappy gccs
+
 2002-09-16 Monday 01:30  Eddie Kohler <kohler@icir.org>
 
 	* elements/etherswitch/etherswitch.cc (1.17),

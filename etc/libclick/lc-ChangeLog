@@ -1,3 +1,7 @@
+2002-09-17 Tuesday 00:16  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/templatei.cc: accomodate crappy gccs
+
 2002-09-16 Monday 01:30  Eddie Kohler <kohler@icir.org>
 
 	* include/click/bighashmap.hh, include/click/hashmap.cc,
