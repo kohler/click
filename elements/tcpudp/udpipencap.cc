@@ -123,22 +123,8 @@ UDPIPEncap::simple_action(Packet *p_in)
   udp->uh_ulen = htons(len);
   udp->uh_sum = 0;
   if (_cksum) {
-    unsigned csum = ~click_in_cksum((unsigned char *)udp, len) & 0xFFFF;
-#ifdef CLICK_LINUXMODULE
-    udp->uh_sum = csum_tcpudp_magic(_saddr.s_addr, _daddr.s_addr,
-				    len, IP_PROTO_UDP, csum);
-#else
-    const uint16_t *words = (const uint16_t *)&ip->ip_src;
-    csum += words[0];
-    csum += words[1];
-    csum += words[2];
-    csum += words[3];
-    csum += htons(IP_PROTO_UDP);
-    csum += htons(len);
-    while (csum >> 16)
-      csum = (csum & 0xFFFF) + (csum >> 16);
-    udp->uh_sum = ~csum & 0xFFFF;
-#endif
+    unsigned csum = click_in_cksum((unsigned char *)udp, len);
+    udp->uh_sum = click_in_cksum_pseudohdr(csum, _saddr.s_addr, _daddr.s_addr, IP_PROTO_UDP, len);
   }
   
   return p;

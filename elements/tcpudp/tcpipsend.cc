@@ -118,24 +118,8 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
   tcp->th_urp = htons(0);
 
   // now calculate tcp header cksum
-  unsigned csum =
-    ~click_in_cksum((unsigned char *)tcp, sizeof(click_tcp)) & 0xFFFF;
-#ifdef CLICK_LINUXMODULE
-  tcp->th_sum = csum_tcpudp_magic
-    (ip->ip_src.s_addr, ip->ip_dst.s_addr, sizeof(click_tcp),
-     IP_PROTO_TCP, csum);
-#else
-  unsigned short *words = (unsigned short *)&ip->ip_src;
-  csum += words[0];
-  csum += words[1];
-  csum += words[2];
-  csum += words[3];
-  csum += htons(IP_PROTO_TCP);
-  csum += htons(sizeof(click_tcp));
-  while (csum >> 16)
-    csum = (csum & 0xFFFF) + (csum >> 16);
-  tcp->th_sum = ~csum & 0xFFFF;
-#endif
+  unsigned csum = click_in_cksum((unsigned char *)tcp, sizeof(click_tcp));
+  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip->ip_src.s_addr, ip->ip_dst.s_addr, IP_PROTO_TCP, sizeof(click_tcp));
 
   return q;
 }

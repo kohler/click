@@ -78,11 +78,11 @@ FTPPortMapper::initialize(ErrorHandler *errh)
 {
   // make sure that _control_rewriter is downstream
   CastElementFilter filter("TCPRewriter");
-  Vector<Element *> downstream;
-  router()->downstream_elements(this, 0, &filter, downstream);
-  filter.filter(downstream);
-  for (int i = 0; i < downstream.size(); i++)
-    if (downstream[i] == _control_rewriter)
+  Vector<Element *> elts;
+  router()->downstream_elements(this, 0, &filter, elts);
+  filter.filter(elts);
+  for (int i = 0; i < elts.size(); i++)
+    if (elts[i] == _control_rewriter)
       goto found_control_rewriter;
   errh->warning("control packet rewriter `%s' is not downstream", _control_rewriter->declaration().cc());
 
@@ -208,29 +208,13 @@ FTPPortMapper::simple_action(Packet *p)
   if (TCPRewriter::TCPMapping *p_mapping = _control_rewriter->get_mapping(IP_PROTO_TCP, p_flow)) {
     tcp_seq_t interesting_seqno = ntohl(wp_tcph->th_seq) + len;
     p_mapping->update_seqno_delta(interesting_seqno, buflen - port_arg_len);
-  }
+  } else
+    click_chatter("%{element}: control packet with no mapping", this);
 
   wp_tcph->th_sum = 0;
   unsigned wp_tcp_len = wp->length() - wp->transport_header_offset();
-  unsigned csum = ~click_in_cksum((unsigned char *)wp_tcph, wp_tcp_len) & 0xFFFF;
-#ifdef CLICK_LINUXMODULE
-  csum = csum_tcpudp_magic(wp_iph->ip_src.s_addr, wp_iph->ip_dst.s_addr,
-			   wp_tcp_len, IP_PROTO_TCP, csum);
-#else
-  {
-    unsigned short *words = (unsigned short *)&wp_iph->ip_src;
-    csum += words[0];
-    csum += words[1];
-    csum += words[2];
-    csum += words[3];
-    csum += htons(IP_PROTO_TCP);
-    csum += htons(wp_tcp_len);
-    while (csum >> 16)
-      csum = (csum & 0xFFFF) + (csum >> 16);
-    csum = ~csum & 0xFFFF;
-  }
-#endif
-  wp_tcph->th_sum = csum;
+  unsigned csum = click_in_cksum((unsigned char *)wp_tcph, wp_tcp_len);
+  wp_tcph->th_sum = click_in_cksum_pseudohdr(csum, wp_iph->ip_src.s_addr, wp_iph->ip_dst.s_addr, IP_PROTO_TCP, wp_tcp_len);
   
   return wp;
 }

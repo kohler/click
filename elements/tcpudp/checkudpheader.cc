@@ -113,24 +113,9 @@ CheckUDPHeader::simple_action(Packet *p)
     return drop(BAD_LENGTH, p);
 
   if (udph->uh_sum != 0) {
-    unsigned csum = ~click_in_cksum((unsigned char *)udph, len) & 0xFFFF;
-#ifdef CLICK_LINUXMODULE
-    if (csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
-			  len, IP_PROTO_UDP, csum) != 0)
+    unsigned csum = click_in_cksum((unsigned char *)udph, len);
+    if (click_in_cksum_pseudohdr(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, IP_PROTO_UDP, len) != 0)
       return drop(BAD_CHECKSUM, p);
-#else
-    unsigned short *words = (unsigned short *)&iph->ip_src;
-    csum += words[0];
-    csum += words[1];
-    csum += words[2];
-    csum += words[3];
-    csum += htons(IP_PROTO_UDP);
-    csum += htons(len);
-    while (csum >> 16)
-      csum = (csum & 0xFFFF) + (csum >> 16);
-    if (csum != 0xFFFF)
-      return drop(BAD_CHECKSUM, p);
-#endif
   }
 
   return p;

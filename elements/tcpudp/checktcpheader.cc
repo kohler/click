@@ -114,26 +114,9 @@ CheckTCPHeader::simple_action(Packet *p)
       || p->length() < len + iph_len + p->ip_header_offset())
     return drop(BAD_LENGTH, p);
 
-  csum = ~click_in_cksum((unsigned char *)tcph, len) & 0xFFFF;
-#ifdef CLICK_LINUXMODULE
-  csum = csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
-			   len, IP_PROTO_TCP, csum);
-  if (csum != 0)
+  csum = click_in_cksum((unsigned char *)tcph, len);
+  if (click_in_cksum_pseudohdr(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, IP_PROTO_TCP, len) != 0)
     return drop(BAD_CHECKSUM, p);
-#else
-  {
-    unsigned short *words = (unsigned short *)&iph->ip_src;
-    csum += words[0];
-    csum += words[1];
-    csum += words[2];
-    csum += words[3];
-    csum += htons(IP_PROTO_TCP);
-    csum += htons(len);
-    csum = (csum & 0xFFFF) + (csum >> 16);
-    if (((csum + (csum >> 16)) & 0xFFFF) != 0xFFFF)
-      return drop(BAD_CHECKSUM, p);
-  }
-#endif
 
   return p;
 }

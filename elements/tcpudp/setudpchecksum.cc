@@ -54,22 +54,8 @@ SetUDPChecksum::simple_action(Packet *p_in)
     }
 
     udph->uh_sum = 0;
-    unsigned csum = ~click_in_cksum((unsigned char *)udph, len) & 0xFFFF;
-#ifdef CLICK_LINUXMODULE
-    udph->uh_sum = csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
-				     len, IP_PROTO_UDP, csum);
-#else
-    const uint16_t *words = (const uint16_t *)&iph->ip_src;
-    csum += words[0];
-    csum += words[1];
-    csum += words[2];
-    csum += words[3];
-    csum += htons(IP_PROTO_UDP);
-    csum += htons(len);
-    while (csum >> 16)
-	csum = (csum & 0xFFFF) + (csum >> 16);
-    udph->uh_sum = ~csum & 0xFFFF;
-#endif
+    unsigned csum = click_in_cksum((unsigned char *)udph, len);
+    udph->uh_sum = click_in_cksum_pseudohdr(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, IP_PROTO_UDP, len);
 
     return p;
 }
