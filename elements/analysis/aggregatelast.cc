@@ -20,10 +20,11 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/packet_anno.hh>
+#include <click/router.hh>
 CLICK_DECLS
 
 AggregateLast::AggregateLast()
-    : Element(1, 1), _agg_notifier(0), _clean_task(this), _needs_clean(0)
+    : Element(1, 1), _agg_notifier(0), _clear_task(this), _needs_clear(0)
 {
     MOD_INC_USE_COUNT;
     memset(_packets, 0, sizeof(_packets));
@@ -45,10 +46,12 @@ int
 AggregateLast::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
+    _stop_after_clear = false;
     
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "NOTIFIER", cpElement, "aggregate creation and deletion notifier", &e,
+		    "STOP_AFTER_CLEAR", cpBool, "stop router after 'clear' completes?", &_stop_after_clear,
 		    0) < 0)
 	return -1;
     
@@ -63,7 +66,7 @@ AggregateLast::initialize(ErrorHandler *errh)
 {
     if (_agg_notifier)
 	_agg_notifier->add_listener(this);
-    _clean_task.initialize(this, false);
+    _clear_task.initialize(this, false);
     return 0;
 }
 
@@ -118,8 +121,8 @@ void
 AggregateLast::push(int, Packet *p)
 {
     // clean if we should clean
-    if (_clean_task.scheduled()) {
-	_clean_task.unschedule();
+    if (_clear_task.scheduled()) {
+	_clear_task.unschedule();
 	run_scheduled();
     }
     
@@ -131,8 +134,10 @@ AggregateLast::push(int, Packet *p)
 	if (*r) {
 	    SET_EXTRA_PACKETS_ANNO(p, EXTRA_PACKETS_ANNO(p) + 1 + EXTRA_PACKETS_ANNO(*r));
 	    SET_EXTRA_LENGTH_ANNO(p, EXTRA_LENGTH_ANNO(p) + (*r)->length() + EXTRA_LENGTH_ANNO(*r));
+	    SET_FIRST_TIMESTAMP_ANNO(p, FIRST_TIMESTAMP_ANNO(*r));
 	    checked_output_push(1, *r);
-	}
+	} else
+	    SET_FIRST_TIMESTAMP_ANNO(p, p->timestamp_anno());
 	*r = p;
     }
 }
@@ -172,9 +177,9 @@ AggregateLast::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet
 void
 AggregateLast::run_scheduled()
 {
-    if (!_needs_clean)
+    if (!_needs_clear)
 	return;
-    _needs_clean = 0;
+    _needs_clear = 0;
     
     // may take a long time!
     for (int i = 0; i < NPLANE; i++)
@@ -193,6 +198,9 @@ AggregateLast::run_scheduled()
     
     memset(_packets, 0, sizeof(_packets));
     memset(_counts, 0, sizeof(_counts));
+
+    if (_stop_after_clear)
+	router()->please_stop_driver();
 }
 
 enum { H_CLEAR };
@@ -203,8 +211,8 @@ AggregateLast::write_handler(const String &, Element *e, void *thunk, ErrorHandl
     AggregateLast *al = reinterpret_cast<AggregateLast *>(e);
     switch (reinterpret_cast<intptr_t>(thunk)) {
       case H_CLEAR:
-	al->_needs_clean = 1;
-	al->_clean_task.reschedule();
+	al->_needs_clear = 1;
+	al->_clear_task.reschedule();
 	break;
     }
     return 0;

@@ -12,13 +12,17 @@ AggregateLast([I<KEYWORDS>])
 
 =s measurement
 
-lets through first packet per aggregate annotation
+lets through last packet per aggregate annotation
 
 =d
 
-AggregateLast forwards only the first packet with a given aggregate
-annotation value. Second and subsequent packets with that aggregate annotation
-are emitted on the second output, if it exists, or dropped if it does not.
+AggregateLast forwards only the final packet with a given aggregate annotation
+value. All previous packets with that aggregate annotation are emitted on the
+second output, if it exists, or dropped if it does not.
+
+The output packet will have EXTRA_PACKETS_ANNO, EXTRA_LENGTH_ANNO, and
+FIRST_TIMESTAMP_ANNO set to the values reflecting the total volume of the
+aggregate.
 
 Keyword arguments are:
 
@@ -27,22 +31,35 @@ Keyword arguments are:
 =item NOTIFIER
 
 The name of an AggregateNotifier element, like AggregateIPFlows. If given,
-then AggregateLast will prune information about old aggregates. This can save
-significant memory on long traces.
+then AggregateLast will output a packet when the AggregateNotifier informs it
+that the packet's aggregate is complete. This can save significant memory on
+long traces.
+
+=item STOP_AFTER_CLEAR
+
+Boolean. If true, then stop the router after the 'clear' handler is called and
+completes. Default is false.
 
 =back
 
+=h clear write-only
+
+When written, AggregateLast will output every packet it has stored and clear
+its tables. This is the only time AggregateLast will emit packets if NOTIFIER
+was not set.
+
 =n
 
-AggregateLast forwards the last packet with a given aggregate annotation
-value, and additionally annotates the packet with the observed packet and byte
-counts. AggregateLast has significantly lower memory requirements, however.
+AggregateFirst forwards the the first packet with a given aggregate annotation
+value, rather than the last packet. It has significantly smaller memory
+requirements than AggregateLast.
 
 Only available in user-level processes.
 
 =a
 
-AggregateLast, AggregateIP, AggregateIPFlows, AggregateCounter, AggregateFilter */
+AggregateFirst, AggregateIP, AggregateIPFlows, AggregateCounter,
+AggregateFilter */
 
 class AggregateLast : public Element, public AggregateListener { public:
   
@@ -74,8 +91,9 @@ class AggregateLast : public Element, public AggregateListener { public:
     AggregateNotifier *_agg_notifier;
     uint32_t *_counts[NPLANE];
     
-    Task _clean_task;
-    uint32_t _needs_clean;	// XXX atomic
+    Task _clear_task;
+    uint32_t _needs_clear;	// XXX atomic
+    bool _stop_after_clear;
 
     Packet **create_row(uint32_t agg);
     inline Packet **row(uint32_t agg);
