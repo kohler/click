@@ -1,3 +1,12 @@
+2004-10-08 Friday 17:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: todevice.cc (1.38), todevice.hh (1.28): fix
+	ToDevice processing() value: reported by Peter De Cleyn
+
+2004-10-08 Friday 17:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.33): newer autoconf
+
 2004-10-08 Friday 17:26  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* config-userlevel.h.in (1.21), configure (1.32), configure.in
