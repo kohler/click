@@ -74,7 +74,7 @@ class AnyDevice : public Element { public:
   void set_next(AnyDevice *d)		{ _next = d; }
 
   void adjust_tickets(int work);
-
+  
  protected:
 
   String _devname;

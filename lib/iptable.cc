@@ -31,7 +31,7 @@ IPTable::~IPTable()
 }
 
 bool
-IPTable::lookup(unsigned dst, unsigned &gw, int &index)
+IPTable::lookup(unsigned dst, unsigned &gw, int &index) const
 {
   int i, besti = -1;
 

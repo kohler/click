@@ -13,7 +13,7 @@ public:
   IPTable();
   ~IPTable();
 
-  bool lookup(unsigned dst, unsigned &gw, int &index);
+  bool lookup(unsigned dst, unsigned &gw, int &index) const;
   void add(unsigned dst, unsigned mask, unsigned gw, int index);
   void del(unsigned dst, unsigned mask);
   void clear() { _v.clear(); }

@@ -160,30 +160,6 @@ Queue::push(int, Packet *packet)
     _q[_tail] = packet;
     _tail = next;
 
-#if 0
-    /* Now taken care of by scheduler */
-    
-    /* comment is now a lie --  the problem is the same, the
-       solution is different; FromDevice reschedules itself
-       on busy, which means it will be run "soon", possibly
-       sonner than if we relied on queue length passing a 16
-       packet length boundary
-    // The Linux net_bh() code processes all queued incoming
-    // packets before checking whether output devices have
-    // gone idle. Under high load this could leave outputs idle
-    // even though packets are Queued. So cause output idleness
-    // every 16 packets as well as when we go non-empty. */
-    if (was_empty) {
-      if (_puller1)
-        _puller1->join_scheduler();
-      else {
-	int n = _pullers.size();
-	for (int i = 0; i < n; i++)
-          _pullers[i]->join_scheduler();
-      }
-    }
-#endif
-    
     int s = size();
     if (s > _highwater_length)
       _highwater_length = s;
