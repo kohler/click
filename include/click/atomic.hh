@@ -31,8 +31,10 @@ class atomic_uint32_t { public:
     // returns true if value is 0 after decrement
     bool dec_and_test()			{ return atomic_dec_and_test(&_val); }
 
+# ifdef __i386__
     inline uint32_t read_and_add(int x);
     inline uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
+# endif
   
   private:
 
@@ -43,21 +45,35 @@ class atomic_uint32_t { public:
 inline atomic_uint32_t &
 atomic_uint32_t::operator|=(uint32_t u)
 {
+# ifdef __arm__
+    unsigned long flags;
+    __save_flags_cli(flags);
+    _val.counter |= u;
+    __restore_flags(flags);
+# else
     atomic_set_mask(u, &_val);
+# endif
     return *this;
 }
 
 inline atomic_uint32_t &
 atomic_uint32_t::operator&=(uint32_t u)
 {
+# ifdef __arm__
+    unsigned long flags;
+    __save_flags_cli(flags);
+    _val.counter &= u;
+    __restore_flags(flags);
+# else
     atomic_clear_mask(~u, &_val);
+# endif
     return *this;
 }
 
+# ifdef __i386__
 inline uint32_t
 atomic_uint32_t::read_and_add(int x)
 {
-# ifdef __i386__
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     asm volatile (LOCK "xaddl %0,%1"
 		  : "=r" (x), "=m" (_val.counter) 
@@ -67,16 +83,12 @@ atomic_uint32_t::read_and_add(int x)
 		  : "=r" (x), "=m" (__atomic_fool_gcc(&_val)) 
 		  : "0" (x), "m" (__atomic_fool_gcc(&_val)));
 #  endif
-# else
-    static_assert("no support for SMP on non-i386 machines");
-# endif
     return x;
 }
 
 inline uint32_t
 atomic_uint32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
 {
-# ifdef __i386__
     int result;
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     asm (LOCK "cmpxchgl %2,%0"
@@ -94,11 +106,8 @@ atomic_uint32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
     // return old value: compare and swap fails if old value is different from
     // val, succeeds otherwise.
     return result;
-# else
-    static_assert("no support for SMP on non-i386 machines");
-    return 0;
-# endif
 }
+# endif
 
 # undef LOCK
 #else /* !__KERNEL__ */
@@ -120,12 +129,12 @@ class atomic_uint32_t { public:
   
     void operator++(int)		{ _val++; }
     void operator--(int)		{ _val--; }
-  
-    inline uint32_t read_and_add(int x);
-    inline uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
- 
+
     // returns true if value is 0 after decrement
     bool dec_and_test()			{ _val--; return _val == 0; }
+
+    inline uint32_t read_and_add(int x);
+    inline uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
 
   private:
 
@@ -145,7 +154,8 @@ inline uint32_t
 atomic_uint32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
 {
     uint32_t ov = _val;
-    if (_val == old_value) _val = new_value;
+    if (_val == old_value)
+	_val = new_value;
     return ov;
 }
 
