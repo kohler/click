@@ -140,7 +140,7 @@ void RONRouteModular::push_reverse_packet(int inport, Packet *p)
   }
 
   entry = _flowtable->lookup(p->ip_header()->ip_src, ntohs(tcph->th_sport),
-			   p->ip_header()->ip_dst, ntohs(tcph->th_dport));
+			     p->ip_header()->ip_dst, ntohs(tcph->th_dport));
   if (!entry) {
     d2printf(" Could not find flow");
     p->kill();

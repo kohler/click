@@ -14,6 +14,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  */
+#include <sys/time.h>
 #include "ronroutemodular.hh"
 
 class PolicyProbe : public RONRouteModular::Policy {
@@ -38,6 +39,14 @@ public:
 protected:
   class FlowTable;
   class FlowTableEntry;  
+
+  FlowTable *_flowtable;
+
+  static long double tolongdouble(struct timeval *tv) {
+    return tv->tv_sec + (long double)((long double) tv->tv_usec 
+				      / (long double)1000000);
+  }
+
 };
 
 
@@ -53,15 +62,34 @@ class PolicyProbe::FlowTableEntry {
 public:
   IPAddress src, dst;
   unsigned short sport, dport; // network order
+  Vector<int> ports_tried;
+  Vector<long double> sent_time;
+  Packet *syn_pkt;
 
   FlowTableEntry(IPAddress s, unsigned short sp,
-		 IPAddress d, unsigned short dp, int p) {
+		 IPAddress d, unsigned short dp) {
     src = s; sport = sp;
     dst = d; dport = dp;
   } 
+  ~FlowTableEntry() {
+    syn_pkt->kill();
+  }
+
   bool match(IPAddress s, unsigned short sp,
 	     IPAddress d, unsigned short dp) {
     return ((src == s) && (dst == d) && (sport == sp) && (dport == dp));
+  }
+  void sent_syn(int port, long double time) {
+    int i;
+    for(i=0; i<ports_tried.size(); i++) {
+      if (ports_tried[i] == port){
+	sent_time[i] = time;
+	return;
+      }
+    }
+    ports_tried.push_back(port);
+    sent_time.push_back(time);
+    assert(ports_tried.size() == sent_time.size());
   }
 };
 
@@ -74,7 +102,7 @@ public:
 
   PolicyProbe::FlowTableEntry * 
   insert(IPAddress src, unsigned short sport,
-	 IPAddress dst, unsigned short dport, int policy);
+	 IPAddress dst, unsigned short dport);
   
   PolicyProbe::FlowTableEntry * 
   lookup(IPAddress src, unsigned short sport,

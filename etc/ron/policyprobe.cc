@@ -33,14 +33,35 @@ PolicyProbe::PolicyProbe(RONRouteModular *parent,
   : RONRouteModular::Policy(parent)
 { 
   
-  
+  _flowtable = new FlowTable();
 }
 PolicyProbe::~PolicyProbe(){
 }
 
 void PolicyProbe::push_forward_syn(Packet *p) {
+  int first_syn=0;
+  FlowTableEntry *entry;
+  struct timeval tv;
+  const click_tcp *tcph= p->tcp_header();
+
   click_chatter("SAW FORWARD PKT");
-  
+
+  // Lookup this flow
+  entry = _flowtable->lookup(p->ip_header()->ip_src, ntohs(tcph->th_sport),
+			     p->ip_header()->ip_dst, ntohs(tcph->th_dport));
+  // If there's no matching flow, create one
+  if (!entry) {
+    first_syn = 1;
+    entry = _flowtable->insert(p->ip_header()->ip_src, ntohs(tcph->th_sport),
+			       p->ip_header()->ip_dst, ntohs(tcph->th_dport));
+  }
+
+  if (first_syn) {
+    gettimeofday(&tv, NULL);
+    entry->sent_syn(1, tolongdouble(&tv));
+    entry->syn_pkt = p->clone(); // save the pkt for later
+  }
+
 }
 void PolicyProbe::push_forward_fin(Packet *p) {
 }
@@ -64,8 +85,7 @@ void PolicyProbe::expire_hook(Timer *, void *thunk) {
 
 PolicyProbe::FlowTableEntry * 
 PolicyProbe::FlowTable::insert(IPAddress src, unsigned short sport,
-			       IPAddress dst, unsigned short dport, 
-			       int policy) {
+			       IPAddress dst, unsigned short dport) {
   int i;
   for(i=_v.size()-1; i>=0; i--)
     if (_v[i].match(src,sport,dst,dport)) {
@@ -73,7 +93,7 @@ PolicyProbe::FlowTable::insert(IPAddress src, unsigned short sport,
       return &_v[i];
     }
   
-  FlowTableEntry e(src, sport, dst, dport, policy);
+  FlowTableEntry e(src, sport, dst, dport);
   _v.push_back(e);
   return &_v[_v.size()-1];
 }
@@ -100,5 +120,8 @@ PolicyProbe::FlowTable::remove(IPAddress src, unsigned short sport,
       _v.pop_back();
     }  
 }
+
+#include <click/vector.cc>
+template class Vector<PolicyProbe::FlowTableEntry*>;
 ELEMENT_PROVIDES(PolicyProbe)
 
