@@ -1,3 +1,7 @@
+2002-06-05 Wednesday 01:21  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipratemon.hh (1.64): nitlet
+
 2002-06-03 Monday 19:05  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: bighashmap.cc (1.11), bighashmap.hh (1.10):
