@@ -585,6 +585,7 @@ sub help () {
 Usage: testie [OPTIONS] [FILE]...
 
 Options:
+  VARIABLE=VALUE             Variable settings for test script.
   -V, --verbose              Print information for successful tests.
   --preserve-temporaries     Preserve temporary files.
   -v, --version              Print version information and exit.
@@ -696,6 +697,13 @@ test fails due to an internal error.
 =head1 OPTIONS
 
 =over 8
+
+=item I<VARIABLE>=I<VALUE>
+
+Provide a setting for I<VARIABLE>. Occurrences in the script of
+`C<$VARIABLE>' or `C<${VARIABLE}>' will be replaced by I<VALUE>. Note that
+this is not an environment variable setting. Variable references to unset
+variables are left unchanged.
 
 =item -V, --verbose
 
