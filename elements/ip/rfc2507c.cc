@@ -126,7 +126,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
   if(ipp->ip_v != ctx->_ip.ip_v ||
      ipp->ip_hl != ctx->_ip.ip_hl ||
      ipp->ip_tos != ctx->_ip.ip_tos ||
-     (ipp->ip_off & IP_DF) != (ctx->_ip.ip_off & IP_DF) ||
+     (ipp->ip_off & htons(IP_DF)) != (ctx->_ip.ip_off & htons(IP_DF)) ||
      ipp->ip_ttl != ctx->_ip.ip_ttl ||
      tcpp->th_off != ctx->_tcp.th_off){
     click_chatter("full1");
@@ -227,7 +227,7 @@ RFC2507c::simple_action(Packet *p)
   
   if(ipp->ip_hl != 5 ||
      ipp->ip_v != 4 ||
-     (ntohs(ipp->ip_off) & (IP_OFFMASK | IP_MF)) != 0 ||
+     (ipp->ip_off & htons(IP_OFFMASK | IP_MF)) != 0 ||
      ipp->ip_p != IPPROTO_TCP ||
      (tcpp->th_flags & (TH_FIN|TH_SYN|TH_RST|TH_ACK)) != TH_ACK){
     /* cannot compress this packet */
