@@ -1,3 +1,50 @@
+2000-11-15 Wednesday 23:21  Peilei Fan <peilei@lcs.mit.edu>
+
+	* elements/ethernet/ip6ndadvertiser.cc,
+	elements/ethernet/ip6ndsolicitor.cc,
+	elements/ip6/addresstranslator.cc, elements/ip6/icmp6error.cc,
+	elements/ip6/protocoltranslator.cc, lib/ip6address.cc,
+	include/click/click_ip6.h: in6_fast_cksum arguments changed.
+
+2000-11-15 Wednesday 18:38  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/linux-2.2.16-patch-smp: file linux-2.2.16-patch-smp was
+	initially added on branch smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* AUTHORS: test click smp branch checkin and merge
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* lib/skbmgr.cc: file skbmgr.cc was initially added on branch
+	smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/skbmgr.hh: file skbmgr.hh was initially added on
+	branch smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/sync.hh: file sync.hh was initially added on branch
+	smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* include/click/routerthread.hh: file routerthread.hh was initially
+	added on branch smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/lookupiproutemp.hh: file lookupiproutemp.hh was
+	initially added on branch smp_click.
+
+2000-11-15 Wednesday 16:40  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/lookupiproutemp.cc: file lookupiproutemp.cc was
+	initially added on branch smp_click.
+
 2000-11-14 Tuesday 17:43  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/ip/: udpipencap.cc, udpipencap.hh: allow port numbers to
