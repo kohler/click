@@ -6,18 +6,17 @@
  * =c
  * CompareBlock(FWD_WEIGHT, REV_WEIGHT, THRESH)
  * =d
- * FWD_WEIGHT and REV_WEIGHT are integers
+ * FWD_WEIGHT, REV_WEIGHT, and THRESH are integers
  *
- * Splits packets based on the rate annotation set by IPRateMonitor. If either
- * rate annotation is greater than THRESH and FWD_WEIGHT*fwd_rate_anno() >=
- * REV_WEIGHT*rev_rate_anno(), the packet is pushed on output 0, otherwise on
- * 1. By default, FWD_WEIGHT is 0, and REV_WEIGHT is 1 (all packets go to
- * output 0).
+ * Splits packets based on the fwd_rate_anno and rev_rate_anno rate annotations
+ * set by IPRateMonitor. If either annotation is greater than THRESH,
+ * and FWD_WEIGHT*fwd_rate_anno > REV_WEIGHT*rev_rate_anno, 
+ * the packet is pushed on output 1, otherwise on output 0.
  *
  * =e
- * = b :: CompareBlock(5, 2);
- * if 5*fwd_rate >= 2*rev_rate AND fwd_rate or rev_rate > THRESH, send out
- * output 0.
+ * = b :: CompareBlock(5, 2, 100);
+ * if (5*fwd_rate > 2*rev_rate) AND (fwd_rate > 100 or rev_rate > 100), send
+ * packet out on output 1, otherwise on output 0.
  * 
  * =h fwd_weight read/write
  * value of FWD_WEIGHT

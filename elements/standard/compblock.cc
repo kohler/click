@@ -42,12 +42,11 @@ CompareBlock::configure(const String &conf, ErrorHandler *errh)
 void
 CompareBlock::push(int, Packet *p)
 {
-  if (_fwd_weight == 0 || 
-      (p->fwd_rate_anno() < _thresh && p->rev_rate_anno() < _thresh) ||
-      _fwd_weight * p->fwd_rate_anno() >= _rev_weight * p->rev_rate_anno())
-    output(0).push(p);
-  else
+  if ((p->fwd_rate_anno() > _thresh || p->rev_rate_anno() > _thresh) && 
+      _fwd_weight * p->fwd_rate_anno() > _rev_weight * p->rev_rate_anno())
     output(1).push(p);
+  else
+    output(0).push(p);
 }
 
 
