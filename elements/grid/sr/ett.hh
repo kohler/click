@@ -17,7 +17,8 @@ CLICK_DECLS
 
 /*
  * =c
- * ETT(IP, ETH, ETHERTYPE, SRCR element, LinkTable element, ARPtable element, [LS link-state-element], [WARMUP period in seconds])
+ * ETT(IP, ETH, ETHERTYPE, SRCR element, LinkTable element, ARPtable element, 
+ *    [METRIC GridGenericMetric], [WARMUP period in seconds])
  * =d
  * DSR-inspired end-to-end ad-hoc routing protocol.
  * Input 0: ethernet packets 

@@ -67,6 +67,10 @@ ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
 EtherAddress 
 ARPTable::lookup(IPAddress ip)
 {
+  if (!ip) {
+    click_chatter("%s: lookup called with NULL ip!\n", id().cc());
+    return _bcast;
+  }
   DstInfo *dst = _table.findp(ip);
   if (dst) {
     return dst->_eth;
@@ -77,6 +81,10 @@ ARPTable::lookup(IPAddress ip)
 IPAddress
 ARPTable::reverse_lookup(EtherAddress eth)
 {
+  if (!eth) {
+    click_chatter("%s: lookup called with NULL eth!\n", id().cc());
+    return IPAddress();
+  }
   IPAddress *ip = _rev_table.findp(eth);
 
   if (ip) {

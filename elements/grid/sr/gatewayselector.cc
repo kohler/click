@@ -175,12 +175,17 @@ GatewaySelector::send(WritablePacket *p)
 int
 GatewaySelector::get_metric(IPAddress other)
 {
-  int metric = 0;
-  if (!_metric || !_arp_table) {
-    metric = 9999;
-  } else if (_metric && _arp_table) {
+  int metric = 9999;
+  gatewayselector_assert(other);
+  if (_metric && _arp_table) {
     EtherAddress neighbor = _arp_table->lookup(other);
-    metric = _metric->get_link_metric(neighbor).val();
+    gatewayselector_assert(neighbor);
+    GridGenericMetric::metric_t t = _metric->get_link_metric(neighbor);
+    if (t.good()) {
+      metric = t.val();
+    } else {
+      metric = 9999;
+    }
   }
   update_link(_ip, other, metric);
   return metric;
@@ -242,7 +247,7 @@ GatewaySelector::forward_ad(Seen *s)
 bool
 GatewaySelector::pick_new_gateway() 
 {
-  IPAddress best_gw;
+  IPAddress best_gw = IPAddress();
   int best_metric = 0;
   struct timeval expire;
   struct timeval now;
@@ -387,7 +392,7 @@ GatewaySelector::push(int port, Packet *p_in)
   hops.push_back(_ip);
 
   IPAddress gw = pk->_qdst;
-
+  gatewayselector_assert(gw);
   GWInfo *nfo = _gateways.findp(gw);
   if (!nfo) {
     _gateways.insert(gw, GWInfo());
@@ -521,6 +526,24 @@ GatewaySelector::write_is_gateway(bool b)
   _is_gw = b;
 }
 
+
+
+int
+GatewaySelector::static_pick_new_gateway(const String &arg, Element *el,
+			     void *, ErrorHandler *errh)
+{
+  GatewaySelector *d = (GatewaySelector *) el;
+  bool b;
+  if (!cp_bool(arg, &b)) {
+    return errh->error("arg must be bool");
+  }
+
+  if (b) {
+    d->pick_new_gateway();
+  }
+  return 0;
+}
+
 String
 GatewaySelector::static_print_current_gateway(Element *f, void *)
 {
@@ -543,6 +566,7 @@ GatewaySelector::add_handlers()
   add_read_handler("current_gateway", static_print_current_gateway, 0);
   add_read_handler("print_is_gateway", static_print_is_gateway, 0);
   add_write_handler("write_is_gateway", static_write_is_gateway, 0);
+  add_write_handler("pick_new_gateway", static_pick_new_gateway, 0);
 }
 
 void

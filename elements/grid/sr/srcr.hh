@@ -15,7 +15,8 @@ CLICK_DECLS
 
 /*
  * =c
- * SRCR(ETHERTYPE, IP, ETH, ARPTable element, LT LinkTable element)
+ * SRCR(ETHERTYPE, IP, ETH, ARPTable element, LT LinkTable element
+ *     [ETT element], [METRIC GridGenericMetric] )
  * =d
  * DSR-inspired ad-hoc routing protocol.
  * Input 0: Incoming ethernet packets for me

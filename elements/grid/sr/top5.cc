@@ -35,7 +35,7 @@ Top5::Top5()
   :  Element(3,2),
      _timer(this), 
      _warmup(0),
-     _link_stat(0),
+     _metric(0),
      _arp_table(0),
      _num_queries(0),
      _bytes_queries(0),
@@ -78,7 +78,7 @@ Top5::configure (Vector<String> &conf, ErrorHandler *errh)
 		    cpElement, "LinkTable element", &_link_table,
 		    cpElement, "ARPTable element", &_arp_table,
                     cpKeywords,
-		    "LS", cpElement, "LinkStat element", &_link_stat,
+		    "METRIC", cpElement, "GridGenericMetric element", &_metric,
 		    "WARMUP", cpUnsigned, "Warmup period", &_warmup_period,
                     0);
 
@@ -86,8 +86,8 @@ Top5::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("SRCR element is not a SRCR");
   if (_link_table && _link_table->cast("LinkTable") == 0) 
     return errh->error("LinkTable element is not a LinkTable");
-  if (_link_stat && _link_stat->cast("LinkStat") == 0) 
-    return errh->error("Link element is not a LinkStat");
+  if (_metric && _metric->cast("GridGenericMetric") == 0) 
+    return errh->error("METRIC element is not a GridGenericMetric");
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
@@ -130,6 +130,14 @@ Top5::start_query(IPAddress dstip)
 		_ip.s().cc(),
 		dstip.s().cc());
 
+
+  Dst *d = _dsts.findp(dstip);
+  if (!d) {
+    _dsts.insert(dstip, Dst());
+    d = _dsts.findp(dstip);
+    d->_ip = dstip;
+    d->_started = false;
+  }
   int len = sr_pkt::len_wo_data(1);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
@@ -186,23 +194,16 @@ int
 Top5::get_metric(IPAddress other)
 {
   int metric = 0;
-  if (!_link_stat || !_arp_table) {
-    metric = 9999;
-  } else {
-    unsigned int tau;
-    struct timeval tv;
-    unsigned int frate, rrate;
-    if(!_link_stat->get_forward_rate(_arp_table->lookup(other), 
-				     &frate, &tau, &tv)) {
-      metric = 9999;
-    } else if (!_link_stat->get_reverse_rate(_arp_table->lookup(other), 
-					     &rrate, &tau)) {
-      metric = 9999;
-    } else if (frate == 0 || rrate == 0) {
-      metric = 9999;
+
+  if (_metric && _arp_table) {
+    EtherAddress neighbor = _arp_table->lookup(other);
+
+    GridGenericMetric::metric_t t = _metric->get_link_metric(neighbor);
+    if (t.good()) {
+      metric = t.val();
     } else {
-      metric = 100 * 100 * 100 / (frate * (int) rrate);
-    } 
+      metric = 9999;
+    }
   }
   update_link(_ip, other, metric);
   return metric;
@@ -311,6 +312,7 @@ Top5::process_query(struct sr_pkt *pk1)
   }
 
   _seen[si]._queries[better_than]._p = hops;
+  _seen[si]._queries[better_than]._metrics = metrics;
   _seen[si]._queries[better_than]._src = src;
   _seen[si]._queries[better_than]._dst = dst;
   _seen[si]._queries[better_than]._seq = seq;
@@ -546,6 +548,16 @@ Top5::push(int port, Packet *p_in)
       click_chatter("Top5 %s: no dst found for %s\n",
 		    id().cc(),
 		    dst.s().cc());
+      start(dst);
+      p_in->kill();
+      return;
+    }
+
+    if (!d->_started) {
+      click_chatter("Top5 %s: dst %s hasn't started yet\n",
+		    id().cc(),
+		    dst.s().cc());
+
       p_in->kill();
       return;
     }

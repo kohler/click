@@ -19,7 +19,7 @@ CLICK_DECLS
  * =c
  * GatewaySelector(IP, ETH, ETHERTYPE, LinkTable, ARPTable, 
  *                 [PERIOD timeout], [GW is_gateway], 
- *                 [LS link-state-element])
+ *                 [METRIC GridGenericMetric])
  * =d
 
  * Input 0: packets from dev
@@ -66,6 +66,8 @@ class GatewaySelector : public Element {
 				     void *, ErrorHandler *errh);
   void write_is_gateway(bool b);
 
+  static int static_pick_new_gateway(const String &arg, Element *el,
+				     void *, ErrorHandler *errh);
   void push(int, Packet *);
   void run_timer();
 

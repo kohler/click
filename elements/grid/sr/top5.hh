@@ -18,7 +18,7 @@ CLICK_DECLS
 
 /*
  * =c
- * Top5(IP, ETH, ETHERTYPE, [LS link-state-element])
+ * Top5(IP, ETH, ETHERTYPE, [METRIC GridGenericMetric])
  * =d
  * DSR-inspired end-to-end ad-hoc routing protocol.
  * Input 0: ethernet packets 
@@ -102,6 +102,7 @@ private:
     Vector<Path> _paths;
     Vector<int> _count;
     int _current_path;
+    bool _started;
   };
 
   typedef HashMap<IPAddress, Dst> DstTable;
@@ -153,7 +154,7 @@ private:
 
   class SRCR *_srcr;
   class LinkTable *_link_table;
-  class LinkStat *_link_stat;
+  class GridGenericMetric *_metric;
   class ARPTable *_arp_table;
 
   // Statistics for handlers.

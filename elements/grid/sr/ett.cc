@@ -142,6 +142,7 @@ ETT::get_random_neighbor()
 void
 ETT::start_query(IPAddress dstip)
 {
+  ett_assert(dstip);
   Query *q = _queries.findp(dstip);
   if (!q) {
     Query foo = Query(dstip);
@@ -213,13 +214,20 @@ ETT::send(WritablePacket *p)
 int
 ETT::get_metric(IPAddress other)
 {
+  ett_assert(other);
   BadNeighbor *n = _black_list.findp(other);
-  int metric = 0;
+  int metric = 9999;
   if (n && n->still_bad() ) {
     metric = 9999;
   } else if (_metric && _arp_table) {
     EtherAddress neighbor = _arp_table->lookup(other);
-    metric = _metric->get_link_metric(neighbor).val();
+    ett_assert(neighbor);
+    GridGenericMetric::metric_t t = _metric->get_link_metric(neighbor);
+    if (t.good()) {
+      metric = t.val();
+    } else {
+      metric = 9999;
+    }
   }
   update_link(_ip, other, metric);
   return metric;
@@ -471,7 +479,7 @@ ETT::got_reply(struct sr_pkt *pk)
 {
 
   IPAddress dst = IPAddress(pk->_qdst);
-
+  ett_assert(dst);
   click_chatter("ETT %s: got_reply %s <- %s\n", 
 		id().cc(),
 		_ip.s().cc(),
@@ -615,6 +623,9 @@ ETT::push(int port, Packet *p_in)
       if (p_out) {
 	sent_packet = true;
 	output(1).push(p_out);
+      } else {
+	click_chatter("%s: couldn't encap new packet!\n",
+		      id().cc());
       }
     }
 
@@ -691,6 +702,7 @@ ETT::push(int port, Packet *p_in)
       ett_assert(0);
     }
 
+    ett_assert(neighbor);
     if (!_neighbors.findp(neighbor)) {
       _neighbors.insert(neighbor, true);
       _neighbors_v.push_back(neighbor);
