@@ -1501,7 +1501,7 @@ Router::run_selects(bool more_tasks)
     perror("poll");
   else if (n > 0) {
     for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
-      if (p->revents & (POLLIN | POLLOUT)) {
+      if (p->revents) {
 	int pi = p - _pollfds.begin();
 
 	// Beware: calling 'selected()' might call remove_select(), causing
@@ -1509,8 +1509,8 @@ Router::run_selects(bool more_tasks)
 	// out.
 
 	int fd = p->fd;
-	int read_elt = (p->revents & POLLIN ? _read_poll_elements[pi] : -1);
-	int write_elt = (p->revents & POLLOUT ? _write_poll_elements[pi] : -1);
+	int read_elt = (p->revents & ~POLLOUT ? _read_poll_elements[pi] : -1);
+	int write_elt = (p->revents & ~POLLIN ? _write_poll_elements[pi] : -1);
 
 	if (read_elt >= 0)
 	  _elements[read_elt]->selected(fd);
