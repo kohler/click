@@ -1,3 +1,7 @@
+2004-06-16 Wednesday 21:43  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* INSTALL (1.32): wee docnit
+
 2004-06-16 Wednesday 21:25  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* test/userlevel/uhotswap-01.testie (1.1): add regression test for
