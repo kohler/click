@@ -88,6 +88,7 @@ AggregateCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "STOP_AFTER_COUNT", cpUnsigned64, "stop router after count reaches N", &stop_count,
 		    "CALL_AFTER_AGG", cpArgument, "call handler after N nonzero aggregates", &call_nnz,
 		    "CALL_AFTER_COUNT", cpArgument, "call handler after count reaches N", &call_count,
+		    "BANNER", cpString, "output banner", &_output_banner,
 		    0) < 0)
 	return -1;
     

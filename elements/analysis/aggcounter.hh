@@ -91,6 +91,11 @@ the supplied value, once the total count has reached or exceeded I<N>.
 The three AFTER_COUNT keywords are mutually exclusive. Supply at most one of
 them.
 
+=item BANNER
+
+String. This banner is written to the head of any output file. It should
+probably begin with a comment character, like `!' or `#'. Default is empty.
+
 =back
 
 =h write_file write-only
@@ -137,8 +142,7 @@ aggregate, with its number of occurrences in the multiset as its count.
 
 =h banner read/write
 
-Returns or sets the banner that is written to the head of any output file.
-Default is empty.
+Returns or sets the BANNER setting.
 
 =h call_after_agg read/write
 
