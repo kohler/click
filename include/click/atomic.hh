@@ -31,10 +31,8 @@ class atomic_uint32_t { public:
     // returns true if value is 0 after decrement
     bool dec_and_test()			{ return atomic_dec_and_test(&_val); }
 
-# ifdef __i386__
-    inline uint32_t read_and_add(int x);
-    inline uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
-# endif
+    inline uint32_t read_and_add(uint32_t delta);
+    inline uint32_t compare_and_swap(uint32_t test, uint32_t new_value);
   
   private:
 
@@ -70,47 +68,71 @@ atomic_uint32_t::operator&=(uint32_t u)
     return *this;
 }
 
-# ifdef __i386__
 inline uint32_t
-atomic_uint32_t::read_and_add(int x)
+atomic_uint32_t::read_and_add(uint32_t delta)
 {
+# ifdef __i386__
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     asm volatile (LOCK "xaddl %0,%1"
-		  : "=r" (x), "=m" (_val.counter) 
-		  : "0" (x), "m" (_val.counter));
+		  : "=r" (delta), "=m" (_val.counter) 
+		  : "0" (delta), "m" (_val.counter));
 #  else
     asm volatile (LOCK "xaddl %0,%1"
-		  : "=r" (x), "=m" (__atomic_fool_gcc(&_val)) 
-		  : "0" (x), "m" (__atomic_fool_gcc(&_val)));
+		  : "=r" (delta), "=m" (__atomic_fool_gcc(&_val)) 
+		  : "0" (delta), "m" (__atomic_fool_gcc(&_val)));
 #  endif
-    return x;
+    return delta;
+# else
+    unsigned long flags;
+    __save_flags_cli(flags);
+    uint32_t old_value = value();
+    *this += delta;
+    __restore_flags(flags);
+    return old_value;
+# endif
 }
 
 inline uint32_t
-atomic_uint32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
+atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
 {
-    int result;
+    // Pseudocode:
+    //   begin_atomic_section();
+    //   uint32_t old_value = *this;
+    //   if (*this == test_value)
+    //       *this = new_value;
+    //   end_atomic_section();
+    //   return old_value;
+
+    uint32_t old_value;
+# ifdef __i386__
 #  if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
     asm (LOCK "cmpxchgl %2,%0"
-	 : "=m" (_val.counter), "=a" (result)
-	 : "r" (new_value), "m" (_val.counter), "a" (old_value)
+	 : "=m" (_val.counter), "=a" (old_value)
+	 : "r" (new_value), "m" (_val.counter), "a" (test_value)
 	 // : "eax", "cc", "memory");
 	 : "cc", "memory");
 #  else
     asm (LOCK "cmpxchgl %2,%0"
-	 : "=m" (__atomic_fool_gcc(&_val)), "=a" (result)
-	 : "r" (new_value), "m" (__atomic_fool_gcc(&_val)), "a" (old_value)
+	 : "=m" (__atomic_fool_gcc(&_val)), "=a" (old_value)
+	 : "r" (new_value), "m" (__atomic_fool_gcc(&_val)), "a" (test_value)
 	 // : "eax", "cc", "memory");
 	 : "cc", "memory");
 #  endif
-    // return old value: compare and swap fails if old value is different from
-    // val, succeeds otherwise.
-    return result;
-}
+# else
+    unsigned long flags;
+    __save_flags_cli(flags);
+    old_value = value();
+    if (old_value == test_value)
+	*this = new_value;
+    __restore_flags(flags);
 # endif
+    return old_value;
+}
+
 
 # undef LOCK
 #else /* !__KERNEL__ */
+
 
 class atomic_uint32_t { public:
   
@@ -133,8 +155,8 @@ class atomic_uint32_t { public:
     // returns true if value is 0 after decrement
     bool dec_and_test()			{ _val--; return _val == 0; }
 
-    inline uint32_t read_and_add(int x);
-    inline uint32_t compare_and_swap(uint32_t old_value, uint32_t new_value);
+    inline uint32_t read_and_add(uint32_t delta);
+    inline uint32_t compare_and_swap(uint32_t test_value, uint32_t new_value);
 
   private:
 
@@ -143,20 +165,20 @@ class atomic_uint32_t { public:
 };
 
 inline uint32_t
-atomic_uint32_t::read_and_add(int x)
+atomic_uint32_t::read_and_add(uint32_t delta)
 {
-    uint32_t ov = _val;
-    _val += x;
-    return ov;
+    uint32_t old_value = _val;
+    _val += delta;
+    return old_value;
 }
 
 inline uint32_t
-atomic_uint32_t::compare_and_swap(uint32_t old_value, uint32_t new_value)
+atomic_uint32_t::compare_and_swap(uint32_t test_value, uint32_t new_value)
 {
-    uint32_t ov = _val;
-    if (_val == old_value)
+    uint32_t old_value = _val;
+    if (_val == test_value)
 	_val = new_value;
-    return ov;
+    return old_value;
 }
 
 #endif /* __KERNEL__ */
