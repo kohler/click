@@ -1,3 +1,8 @@
+2002-09-13 Friday 14:46  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.19), aclocal.m4 (1.19), config-userlevel.h.in
+	(1.10): #include <new> preferred to #include <new.h>
+
 2002-09-11 Wednesday 22:51  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* conf/webgen.click (1.1), elements/local/webgen.cc (1.12),
