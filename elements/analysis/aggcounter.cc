@@ -269,7 +269,7 @@ AggregateCounter::update(Packet *p, bool frozen)
     
     uint32_t amount;
     if (!_bytes)
-	amount = (_use_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
+	amount = 1 + (_use_packet_count ? EXTRA_PACKETS_ANNO(p) : 0);
     else {
 	amount = p->length() + (_use_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
 	if (_ip_bytes && p->network_header())
