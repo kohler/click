@@ -65,11 +65,14 @@ my(@examples) = ([ 'test.click', 'Trivial Test Configuration' ],
 		 [ 'test2.click', 'Simple RED Example' ],
 		 [ 'test3.click', 'Simple Scheduler Example' ],
 		 [ 'test-device.click', 'Device Test' ],
-		 [ 'test-tap.click', 'KernelTap Test' ],
+		 [ 'test-tun.click', 'KernelTun Test' ],
 		 [ 'udpgen.click', 'UDP Generator' ],
+		 [ 'udpcount.click', 'UDP Counter' ],
 		 [ 'mazu-nat.click', 'Sample Firewall/NAT' ],
 		 [ 'fake-iprouter.click', 'IP Router Simulation' ],
-		 [ 'fromhost-tunnel.click', 'Kernel FromHost Tunnel Example' ]);
+		 [ 'fromhost-tunnel.click', 'Kernel FromHost Tunnel Example' ],
+		 [ 'dnsproxy.click', 'Trivial DNS Proxy' ],
+		 [ 'simple-dsdv.click', 'Simple DSDV Configuration' ]);
 foreach $i (@examples) {
     my($fn, $title) = ('"' . $i->[0] . '"', '"' . $i->[1] . '"');
     my($html) = $fn;
