@@ -131,7 +131,7 @@ GridSRForwarder::handle_host(Packet *p)
     iph->ip_dst.s_addr = htonl((ntohl(_ip.addr()) & 0xffFFff00) | hops[1]);
 
     // rewrite udp checksum
-    uh->uh_sum = click_in_cksum((unsigned char *) uh, uh->uh_ulen);
+    uh->uh_sum = click_in_cksum((unsigned char *) uh, ntohs(uh->uh_ulen));
   }
 }
 
