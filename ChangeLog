@@ -1,3 +1,11 @@
+2003-08-08 Friday 13:38  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* README (1.38): changed my name!
+
+2003-08-08 Friday 13:01  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/linktable.cc (1.12): minor nits in read handlers
+
 2003-08-08 Friday 11:49  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: etxmetric.cc (1.1), etxmetric.hh (1.1),
