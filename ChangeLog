@@ -1,3 +1,7 @@
+2001-10-30 Tuesday 03:08  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.158): nitlet
+
 2001-10-30 Tuesday 01:35  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in (1.157), tools/click-align/Makefile.in (1.11),
