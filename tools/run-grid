@@ -80,6 +80,12 @@ sub my_system {
 
 $SYSTEM_TYPE = `uname`;
 
+if ($SYSTEM_TYPE =~ /FreeBSD/) {
+    $ANCIFFLAG = "-i";
+} elsif ($SYSTEM_TYPE =~ /OpenBSD/) {
+    $ANCIFFLAG = "";
+}
+
 print "run_grid:  using config file $GRID_CONFIG_FILE\n";
 open(grid_config, "$GRID_CONFIG_FILE") || die "run_grid: can't open config file ", $GRID_CONFIG_FILE, "\n";
 
@@ -328,7 +334,7 @@ if ( fork () ) {
     
     sleep 10;
     
-    if ($SYSTEM_TYPE =~ /OpenBSD/) {
+    if ($SYSTEM_TYPE =~ /BSD/) {
 	
 	if ($STATIC_IP) {
 	    my_system "route add 10.2.0.0/16 -interface $GRID_IP";
@@ -352,7 +358,7 @@ sub setup_net_info {
 # get MAC address and other net info required by click, and
 # possibly for restoring original values after click finishes
     
-    if ($SYSTEM_TYPE == 'OpenBSD') {
+    if ($SYSTEM_TYPE =~ /BSD/) {
 	
 	$GRID_HW_ADDR = "";
 	$GW_HW_ADDR = "";
@@ -410,9 +416,9 @@ sub setup_net_info {
 
 # set the wireless adapter to ad-hoc mode
 	if ($RADIO_TYPE eq 'aironet') {
-	    my_system "ancontrol $GRID_IF -o 0";
-	    my_system "ancontrol $GRID_IF -c $GRID_CHANNEL";
-	    my_system "ancontrol $GRID_IF -n $GRID_SSID";
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -o 0";
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -c $GRID_CHANNEL";
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -n $GRID_SSID";
 	} elsif ($RADIO_TYPE eq 'wavelan') {
 	    
 	    print "-----------------------------------------------------------------------------\n";
@@ -715,7 +721,7 @@ sub setup_net_info {
 sub do_cleanup {
     print "run_grid: cleaning up...\n";
     
-    if ($SYSTEM_TYPE == 'OpenBSD') {	
+    if ($SYSTEM_TYPE =~ /BSD/) {	
 
 	my_system "/sbin/ifconfig tun0 delete";
 	my_system "/sbin/ifconfig tun0 down";
@@ -726,9 +732,9 @@ sub do_cleanup {
 	}
 
 	if ($RADIO_TYPE eq 'aironet') {
-	    my_system "ancontrol $GRID_IF -o 1";
-	    my_system "ancontrol $GRID_IF -c 1";
-	    my_system "ancontrol $GRID_IF -n ''";
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -o 1";
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -c 1";
+	    my_system "ancontrol $ANCIFFLAG $GRID_IF -n ''";
 	} elsif ($RADIO_TYPE eq 'wavelan') {
 	    my_system "wicontrol $GRID_IF -p 1"; # infra
 	    my_system "wicontrol $GRID_IF -n ''";
@@ -749,7 +755,9 @@ sub do_cleanup {
 #	    my_system "/sbin/route add default $OLD_GW";
 #	}
 
-   } elsif ($SYSTEM_TYPE == 'FreeBSD') {
+   } 
 
-    }    
+#    elsif ($SYSTEM_TYPE == 'FreeBSD') {
+#
+#    }    
 }
