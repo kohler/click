@@ -97,8 +97,6 @@ public:
   typedef RateEWMAX<5, 10, 2, IPRateMonitor_HalfSecondsTimer> MyEWMA;
   struct Stats; struct Counter;	// so they can find one another
   
- private:
-
   struct Counter {
     // fwd_and_rev_rate.average[0] is forward rate
     // fwd_and_rev_rate.average[1] is reverse rate
