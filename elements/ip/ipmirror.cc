@@ -48,10 +48,13 @@ IPMirror::simple_action(Packet *p_in)
   iph->ip_src = iph->ip_dst;
   iph->ip_dst = tmpa;
   
-  click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
-  unsigned short tmpp = udph->uh_sport;
-  udph->uh_sport = udph->uh_dport;
-  udph->uh_dport = tmpp;
+  // may mirror ports as well
+  if ((iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP) && IP_FIRSTFRAG(iph) && p->length() >= p->transport_header_offset() + 8) {
+    click_udp *udph = reinterpret_cast<click_udp *>(p->transport_header());
+    unsigned short tmpp = udph->uh_sport;
+    udph->uh_sport = udph->uh_dport;
+    udph->uh_dport = tmpp;
+  }
   
   return p;
 }
