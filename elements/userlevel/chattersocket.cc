@@ -82,14 +82,23 @@ ChatterSocketErrorHandler::handle_text(Seriousness seriousness, const String &m)
 
 
 static ChatterSocketErrorHandler *chatter_socket_errh;
+static ErrorHandler *base_default_errh;
 
 ChatterSocket::ChatterSocket()
+  : _channel("default")
 {
   MOD_INC_USE_COUNT;
 }
 
 ChatterSocket::~ChatterSocket()
 {
+  // make sure we delete chatter sockets!
+  if (_channel != "default")
+    if (void *&v = router()->force_attachment("ChatterChannel." + _channel)) {
+      ChatterSocketErrorHandler *cserrh = (ChatterSocketErrorHandler *)v;
+      delete cserrh;
+      v = 0;
+    }
   MOD_DEC_USE_COUNT;
 }
 
@@ -97,6 +106,9 @@ int
 ChatterSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _socket_fd = -1;
+  _channel = "default";
+  bool quiet_channel = true;
+  bool greeting = true;
   
   String socktype;
   if (cp_va_parse(conf, this, errh,
@@ -110,6 +122,10 @@ ChatterSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh,
 		    cpIgnore,
 		    cpUnsignedShort, "port number", &portno,
+		    cpKeywords,
+		    "CHANNEL", cpWord, "chatter channel", &_channel,
+		    "QUIET_CHANNEL", cpBool, "channel is quiet?", &quiet_channel,
+		    "GREETING", cpBool, "greet connectors?", &greeting,
 		    cpEnd) < 0)
       return -1;
 
@@ -135,6 +151,10 @@ ChatterSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh,
 		    cpIgnore,
 		    cpString, "filename", &_unix_pathname,
+		    cpKeywords,
+		    "CHANNEL", cpWord, "chatter channel", &_channel,
+		    "QUIET_CHANNEL", cpBool, "channel is quiet?", &quiet_channel,
+		    "GREETING", cpBool, "greet connectors?", &greeting,
 		    cpEnd) < 0)
       return -1;
 
@@ -158,7 +178,24 @@ ChatterSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   } else
     return errh->error("unknown socket type `%s'", socktype.cc());
-  
+
+  _greeting = greeting;
+
+  // create channel now, so that other configure() methods will get it.
+  if (_channel == "default" && !chatter_socket_errh) {
+    base_default_errh = ErrorHandler::default_handler();
+    chatter_socket_errh = new ChatterSocketErrorHandler(base_default_errh);
+    ErrorHandler::set_default_handler(chatter_socket_errh);
+  } else if (_channel != "default") {
+    void *v = router()->attachment("ChatterChannel." + _channel);
+    if (!v) {
+      ErrorHandler *base = (quiet_channel ? ErrorHandler::silent_handler() : base_default_errh);
+      if (!base) base = ErrorHandler::default_handler();
+      ErrorHandler *cserrh = new ChatterSocketErrorHandler(base);
+      router()->set_attachment("ChatterChannel." + _channel, cserrh);
+    }
+  }
+
   return 0;
 }
 
@@ -180,13 +217,29 @@ ChatterSocket::initialize(ErrorHandler *errh)
   _live_fds = 0;
 
   // install ChatterSocketErrorHandler
-  if (!chatter_socket_errh) {
-    chatter_socket_errh = new ChatterSocketErrorHandler(ErrorHandler::default_handler());
-    ErrorHandler::set_default_handler(chatter_socket_errh);
+  if (_channel == "default")
+    chatter_socket_errh->add_chatter_socket(this);
+  else {
+    ChatterSocketErrorHandler *cserrh =
+      (ChatterSocketErrorHandler *)(router()->attachment("ChatterChannel." + _channel));
+    cserrh->add_chatter_socket(this);
   }
-  chatter_socket_errh->add_chatter_socket(this);
   
   return 0;
+}
+
+static void
+remove_chatter_channel(ChatterSocketErrorHandler *&cserrh, ChatterSocket *cs)
+{
+  if (cserrh) {
+    cserrh->remove_chatter_socket(cs);
+    if (!cserrh->nchatter_sockets()) {
+      if (cserrh == chatter_socket_errh)
+	ErrorHandler::set_default_handler(base_default_errh);
+      delete cserrh;
+      cserrh = 0;
+    }
+  }
 }
 
 void
@@ -204,18 +257,18 @@ ChatterSocket::uninitialize()
       _fd_alive[i] = 0;
     }
   _live_fds = 0;
-  if (chatter_socket_errh) {
-    chatter_socket_errh->remove_chatter_socket(this);
-    if (!chatter_socket_errh->nchatter_sockets()) {
-      ErrorHandler::set_default_handler(chatter_socket_errh->base_errh());
-      delete chatter_socket_errh;
-      chatter_socket_errh = 0;
-    }
-  }
+
+  // unhook from chatter socket error handler
+  if (_channel == "default")
+    remove_chatter_channel(chatter_socket_errh, this);
+  else
+    remove_chatter_channel
+      ((ChatterSocketErrorHandler *&)(router()->force_attachment("ChatterChannel." + _channel)),
+       this);
 }
 
 int
-ChatterSocket::write_chatter(int fd, int min_useful_message)
+ChatterSocket::flush(int fd, int min_useful_message)
 {
   // check file descriptor
   if (fd >= _fd_alive.size() || !_fd_alive[fd])
@@ -262,13 +315,13 @@ ChatterSocket::write_chatter(int fd, int min_useful_message)
 }
 
 void
-ChatterSocket::write_chatter()
+ChatterSocket::flush()
 {
   int min_useful_message = _messages.size();
   if (min_useful_message)
     for (int i = 0; i < _fd_alive.size(); i++)
       if (_fd_alive[i] >= 0)
-	min_useful_message = write_chatter(i, min_useful_message);
+	min_useful_message = flush(i, min_useful_message);
 
   // cull old messages
   if (min_useful_message >= 10) {
@@ -308,14 +361,16 @@ ChatterSocket::selected(int fd)
 
     fd = new_fd;
 
-    // XXX - assume that this write will succeed
-    String s = String("Click::ChatterSocket/") + protocol_version + "\r\n";
-    int w = write(fd, s.data(), s.length());
-    if (w != s.length())
-      click_chatter("%s fd %d: unable to write banner!", declaration().cc(), fd);
+    if (_greeting) {
+      // XXX - assume that this write will succeed
+      String s = String("Click::ChatterSocket/") + protocol_version + "\r\n";
+      int w = write(fd, s.data(), s.length());
+      if (w != s.length())
+	click_chatter("%s fd %d: unable to write greeting!", declaration().cc(), fd);
+    }
   }
 
-  write_chatter(fd, 0);
+  flush(fd, 0);
 }
 
 ELEMENT_REQUIRES(userlevel)
