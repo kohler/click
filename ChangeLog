@@ -1,3 +1,14 @@
+2004-06-28 Monday 16:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.17), configure.in (1.235): add
+	--enable-all-elements, and change the order of configuration so the
+	--enable-wifi logic works
+
+2004-06-28 Monday 16:06  John Bicket <jbicket@mit.edu>
+
+	* conf/gen_config_roofnet.pl (1.1): automatically generate a
+	roofnet config.
+
 2004-06-28 Monday 15:09  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.81), Makefile.in (1.117), etc/libclick/DISTFILES
