@@ -1,3 +1,14 @@
+2004-05-11 Tuesday 15:18  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/bandwidthmeter.cc (1.14),
+	elements/standard/bandwidthmeter.hh (1.9),
+	elements/standard/bandwidthshaper.hh (1.12),
+	elements/standard/bwratedsplitter.hh (1.9),
+	elements/standard/bwratedunqueue.hh (1.9),
+	elements/standard/linkunqueue.hh (1.4), include/click/confparse.hh
+	(1.49), lib/confparse.cc (1.128): bandwidth arguments warn when no
+	unit is provided
+
 2004-05-10 Monday 21:31  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.78), elements/linuxmodule/sortedsched.cc (1.6),
