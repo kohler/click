@@ -174,22 +174,21 @@ ProcessingT::initial_processing(ErrorHandler *errh)
 }
 
 void
-ProcessingT::processing_error(const HookupI &hfrom, const HookupI &hto,
-			      int which, int processing_from,
+ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
 			      ErrorHandler *errh)
 {
   const char *type1 = (processing_from == VPUSH ? "push" : "pull");
   const char *type2 = (processing_from == VPUSH ? "pull" : "push");
-  if (which < _router->nconnections())
-    errh->lerror(_router->hookup_landmark(which),
-		 "`%s' %s output %d connected to `%s' %s input %d",
-		 _router->ename(hfrom.idx).cc(), type1, hfrom.port,
-		 _router->ename(hto.idx).cc(), type2, hto.port);
-  else
-    errh->lerror(_router->elandmark(hfrom.idx),
+  if (conn.landmark() == "<agnostic>")
+    errh->lerror(conn.from_elt()->landmark(),
 		 "agnostic `%s' in mixed context: %s input %d, %s output %d",
-		 _router->ename(hfrom.idx).cc(), type2, hto.port,
-		 type1, hfrom.port);
+		 conn.from_elt()->name_cc(), type2, conn.to_port(),
+		 type1, conn.from_port());
+  else
+    errh->lerror(conn.landmark(),
+		 "`%s' %s output %d connected to `%s' %s input %d",
+		 conn.from_elt()->name_cc(), type1, conn.from_port(),
+		 conn.to_elt()->name_cc(), type2, conn.to_port());
 }
 
 void
@@ -209,7 +208,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 			 port, noutputs, &bv);
 	    for (int j = 0; j < noutputs; j++)
 		if (bv[j] && _output_processing[opidx + j] == VAGNOSTIC)
-		    conn.push_back(ConnectionT(Hookup(e, j), Hookup(e, port)));
+		    conn.push_back(ConnectionT(Hookup(e, j), Hookup(e, port), "<agnostic>"));
 	}
 
     // spread personalities
@@ -240,7 +239,7 @@ ProcessingT::check_processing(ErrorHandler *errh)
 		    _output_processing[offf] = pt;
 		    changed = true;
 		} else if (pf != pt) {
-		    processing_error(conn[c].from(), conn[c].to(), c, pf,errh);
+		    processing_error(conn[c], pf, errh);
 		    conn[c].kill();
 		}
 		break;
@@ -278,26 +277,26 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	if (conn[c].dead())
 	    continue;
 
-	const HookupI &hf = conn[c].from(), &ht = conn[c].to();
+	const Hookup &hf = conn[c].from(), &ht = conn[c].to();
 	int fp = output_pidx(hf), tp = input_pidx(ht);
 
 	if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' push output %d",
-			 _router->ename(hf.idx).cc(), hf.port);
+			 hf.elt->name_cc(), hf.port);
 	    errh->lmessage(_router->hookup_landmark(output_used[fp]),
 			   "  `%s' output %d previously used here",
-			   _router->ename(hf.idx).cc(), hf.port);
+			   hf.elt->name_cc(), hf.port);
 	} else
 	    output_used[fp] = c;
     
 	if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' pull input %d",
-			 _router->ename(ht.idx).cc(), ht.port);
+			 ht.elt->name_cc(), ht.port);
 	    errh->lmessage(_router->hookup_landmark(input_used[tp]),
 			   "  `%s' input %d previously used here",
-			   _router->ename(ht.idx).cc(), ht.port);
+			   ht.elt->name_cc(), ht.port);
 	} else
 	    input_used[tp] = c;
     }
