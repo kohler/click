@@ -7,9 +7,6 @@
  * Copyright (c) 2005 International Computer Science Institute
  * Copyright (c) 2005 University of Zagreb
  *
- * XXX - are we legally clear to proceed with distribution under bellow
- * conditions? XXX!!!
- * 
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
  * to deal in the Software without restriction, subject to the conditions
@@ -94,7 +91,7 @@ DirectIPLookup::add_route(IPAddress dest, IPAddress mask, IPAddress gw,
 	vport_unref(_rtable[rt_i].vport);
     } else {
 	need_update = true;
-	if (_rt_empty_head > 0) {
+	if (_rt_empty_head >= 0) {
 	    rt_i = _rt_empty_head;
 	    _rt_empty_head = _rtable[_rt_empty_head].ll_next;
 	} else {
@@ -237,16 +234,17 @@ DirectIPLookup::remove_route(IPAddress dest, IPAddress mask, IPAddress,
 	_rtable[rt_i].ll_next = _rt_empty_head;
 	_rt_empty_head = rt_i;
 
-	// Find an entry covering prefix/len with the longest prefix.
-	for (newmask = plen - 1 ; newmask >= 0 ; newmask--) {
-	    if (newmask > 0)
+	// Find an entry covering current prefix/len with the longest prefix.
+	for (newmask = plen - 1 ; newmask >= 0 ; newmask--)
+	    if (newmask == 0) {
+		newent = 0;	// rtable[0] is always the default route
+		break;
+	    } else {
 		newent = find_entry(prefix & (0xffffffff << (32 - newmask)),
 				    newmask);
-	    else
-		newent = find_entry(0, 0);
-	    if (newent >= 0)
-		break;
-	}
+		if (newent > 0)
+		    break;
+	    }
 
 	// Replace prefix/plen with newent/mask in lookup tables
 	start = prefix >> 8;
