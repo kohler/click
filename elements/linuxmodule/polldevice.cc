@@ -227,7 +227,7 @@ PollDevice::run_scheduled()
     GET_STATS_RESET(low00, low10, time_now, 
 	            _perfcnt1_pushing, _perfcnt2_pushing, _time_pushing);
 #if _CLICK_STATS_
-    if ((_activations % 1000) == 0) _dev->get_stats(_dev);
+    if ((_activations % 2048) == 0) _dev->get_stats(_dev);
 #endif
   }
 

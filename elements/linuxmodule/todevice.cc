@@ -264,9 +264,7 @@ ToDevice::tx_intr()
     if (sent == 0 && !busy) _idle_pulls++;
     if (sent > 0) _pkts_sent+=sent;
     if (busy) _busy_returns++;
-    if ((_activations % 10000) == 0) {
-      _dev->get_stats(_dev);
-    }
+    if ((_activations % 2048) == 0) _dev->get_stats(_dev);
   }
 #endif
 
@@ -311,6 +309,7 @@ ToDevice::tx_intr()
 
 #ifndef RR_SCHED
 #ifdef ADJ_TICKETS
+  /* WARNING: fined tuned black magic below, don't change! */
 #if HAVE_POLLING
   int dma_thresh_high = _dev->tx_dma_length-_dev->tx_dma_length/8;
   int dma_thresh_low  = _dev->tx_dma_length/4;
@@ -319,7 +318,7 @@ ToDevice::tx_intr()
   int dma_thresh_low  = 16/4;
 #endif
   int adj = tickets()/4;
-  if (adj < 4) adj = 4;
+  if (adj < 2) adj = 2;
 
   /* tx dma ring was fairly full, slow down */
   if (busy && queued_pkts > dma_thresh_high 
@@ -329,6 +328,11 @@ ToDevice::tx_intr()
   /* handle burstiness: start a bit faster */
   else if (sent > dma_thresh_high && !busy && 
            _last_tx < dma_thresh_low && !_last_busy) adj*=2;
+  /* prevent backlog and keep device running */ 
+  else if (sent > dma_thresh_low/2) { 
+    /* semi-bursty: start a bit faster if we sent a lot */ 
+    if (sent > dma_thresh_high) if (adj<8) adj=8; 
+  }
   else adj = 0;
 
   adj_tickets(adj);
