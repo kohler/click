@@ -21,6 +21,7 @@
 ForceIP::ForceIP()
   : Element(1, 1)
 {
+  _count = 0;
 }
 
 ForceIP::~ForceIP()
@@ -43,8 +44,7 @@ ForceIP::simple_action(Packet *p_in)
   ip->ip_v = 4;
   ip->ip_len = htons(plen);
 
-  unsigned off = ntohs(ip->ip_off);
-  if((off & 0x8000) || (off & 0x4000)){
+  if((_count++ & 7) != 1){
     ip->ip_off = 0;
   }
 

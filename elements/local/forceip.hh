@@ -26,6 +26,8 @@
 
 class ForceIP : public Element {
 
+  int _count;
+
  public:
   
   ForceIP();
