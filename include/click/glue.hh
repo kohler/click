@@ -12,11 +12,6 @@ void click_chatter(const char *fmt, ...);
 
 #ifdef __KERNEL__
 
-typedef unsigned int u_int32_t;
-typedef unsigned long long u_int64_t;
-typedef unsigned short u_int16_t;
-typedef unsigned char u_int8_t;
-
 #if CLICK_DMALLOC
 extern int click_dmalloc_where;
 # define CLICK_DMALLOC_REG(s) do { const unsigned char *__str = reinterpret_cast<const unsigned char *>(s); click_dmalloc_where = (__str[0]<<24) | (__str[1]<<16) | (__str[2]<<8) | __str[3]; } while (0)
@@ -34,7 +29,6 @@ extern "C" {
 # define __OPTIMIZE__ /* get ntohl() macros. otherwise undefined. */
 #endif
 
-#include <linux/types.h>
 #include <linux/config.h>
 #include <linux/kernel.h>
 #include <linux/version.h>
@@ -59,25 +53,24 @@ typedef unsigned long long u_quad_t;
 typedef struct device net_device;
 #endif
 
-__inline__ unsigned int
+__inline__ unsigned
 random()
 {
-  static unsigned long seed=152L;
-  seed=seed*69069L+1;
+  static unsigned seed = 152L;
+  seed = seed*69069L + 1;
   return seed^jiffies;
 }
 
-__inline__ unsigned long long
+__inline__ u_int64_t
 click_get_cycles()
 {
-    unsigned long low, high;
-    unsigned long long x;
-
-    __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
-    x = high;
-    x <<= 32;
-    x |= low;
-    return(x);
+  u_int32_t low, high;
+  u_int64_t x;
+  __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
+  x = high;
+  x <<= 32;
+  x |= low;
+  return x;
 }
 
 long strtol(const char *, char **, int);
@@ -101,7 +94,6 @@ strtoul(const char *nptr, char **endptr, int base)
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h>
