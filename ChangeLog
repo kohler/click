@@ -1,3 +1,29 @@
+2002-01-20 Sunday 15:15  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/proc_element.cc (1.39): nitlet
+
+2002-01-20 Sunday 15:12  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/proc_element.cc (1.38): #include <linux/spinlock.h>
+
+2002-01-20 Sunday 15:12  Eddie Kohler <kohler@aciri.org>
+
+	* lib/element.cc (1.64): nitlet: change algorithm for when \n is
+	appended to /proc/click/E/config
+
+2002-01-20 Sunday 15:02  Eddie Kohler <kohler@aciri.org>
+
+	* linuxmodule/: modulepriv.hh (1.24), proc_config.cc (1.27),
+	proc_element.cc (1.37), sched.cc (1.31), sched.cc (1.32): fixes
+	from Mazu: protect handler_strings with a spinlock; kill current
+	router threads before performing a hotswap
+
+2002-01-20 Sunday 15:01  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh (1.21), lib/string.cc (1.36): String: fix
+	String::equals() with regards to out-of-memory strings; remove
+	out_of_memory_count(); nitlets
+
 2002-01-18 Friday 13:41  Eddie Kohler <kohler@aciri.org>
 
 	* doc/click-pretty.1 (1.7): nitlet
