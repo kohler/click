@@ -1,7 +1,7 @@
 /*
  * packet.{cc,hh} -- a packet structure. In the Linux kernel, a synonym for
  * `struct sk_buff'
- * Eddie Kohler, Robert Morris
+ * Eddie Kohler, Robert Morris, Nickolai Zeldovich
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  *
@@ -20,11 +20,13 @@
 
 #include <click/packet.hh>
 #include <click/glue.hh>
+#ifndef _KERNEL
 #include <stdarg.h>
 #include <unistd.h>
+#endif
 #include <assert.h>
 
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
 
 Packet::Packet()
 {
@@ -55,7 +57,7 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
     return 0;
 }
 
-#else /* !__KERNEL__ */
+#else		/* User-space or BSD kernel module */
 
 inline
 Packet::Packet()
@@ -64,6 +66,9 @@ Packet::Packet()
   _data_packet = 0;
   _head = _data = _tail = _end = 0;
   _destructor = 0;
+#ifdef _KERNEL	/* BSD kernel module */
+  _m = 0;
+#endif
   clear_annotations();
 }
 
@@ -73,8 +78,23 @@ Packet::~Packet()
     _data_packet->kill();
   else if (_head && _destructor)
     _destructor(_head, _end - _head);
-  else
+  else {
+#ifdef CLICK_USERLEVEL
     delete[] _head;
+#endif
+
+#ifdef CLICK_BSDMODULE
+    struct mbuf *n;
+
+    /*
+     * We really shouldn't have any mbuf chains here, but just in case..
+     */
+    while (_m) {
+      MFREE(_m, n);
+      _m = n;
+    }
+#endif
+  }
   _head = _data = 0;
 }
 
@@ -83,6 +103,8 @@ Packet::make(int, int, int)
 {
   return static_cast<WritablePacket *>(new Packet(6, 6, 6));
 }
+
+#ifdef CLICK_USERLEVEL
 
 WritablePacket *
 Packet::make(unsigned char *data, unsigned len, void (*destruct)(unsigned char *, size_t))
@@ -96,6 +118,8 @@ Packet::make(unsigned char *data, unsigned len, void (*destruct)(unsigned char *
   return p;
 }
 
+#endif
+
 bool
 Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
 {
@@ -105,12 +129,31 @@ Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
     n = MIN_BUFFER_LENGTH;
   }
   _destructor = 0;
+#ifdef _KERNEL		/* BSD kernel module */
+  if (n > MCLBYTES) {
+    click_chatter("trying to allocate %d bytes: too many\n", n);
+    return false;
+  }
+  MGETHDR(_m, M_WAIT, MT_DATA);
+  if (!_m)
+    return false;
+  if (n > MHLEN) {
+    MCLGET(_m, M_WAIT);
+    if (!(_m->m_flags & M_EXT))
+      return false;
+  }
+  _m->m_data += headroom;
+  _m->m_len = len;
+  _m->m_pkthdr.len = len;
+  assimilate_mbuf();
+#else			/* User-space */
   _head = new unsigned char[n];
   if (!_head)
     return false;
   _data = _head + headroom;
   _tail = _data + len;
   _end = _head + n;
+#endif
   return true;
 }
 
@@ -160,7 +203,7 @@ Packet::expensive_uniqueify()
   return reinterpret_cast<WritablePacket *>(nskb);
 }
 
-#else /* user level */
+#else		/* User-level or BSD kernel module */
 
 Packet *
 Packet::clone()
@@ -173,6 +216,9 @@ Packet::clone()
     p->_use_count = 1;
     p->_data_packet = this;
     p->_destructor = 0;
+#ifdef _KERNEL		/* BSD kernel module */
+    p->_m = 0;
+#endif
     // increment our reference count because of _data_packet reference
     _use_count++;
     return p;
@@ -207,6 +253,24 @@ Packet::expensive_uniqueify()
 
 #endif
 
+#ifdef _KERNEL		/* BSD kernel module */
+
+struct mbuf *
+Packet::steal_m()
+{
+  struct Packet *p;
+  struct mbuf *m2;
+
+  p = uniqueify();
+  m2 = p->m();
+
+  /* Clear the mbuf from the packet: otherwise kill will MFREE it */
+  p->_m = 0;
+  p->kill();
+  return m2;
+}
+
+#endif	/* _KERNEL */
 
 //
 // EXPENSIVE_PUSH, EXPENSIVE_PUT
@@ -228,7 +292,7 @@ Packet::expensive_push(unsigned int nbytes)
   WritablePacket *q = Packet::make((nbytes + 128) & ~3, buffer_data(), buffer_length(), 0);
   if (q) {
     // [N+128, H+L+T, 0 / H+L+T]
-#ifdef __KERNEL__
+#ifdef __KERNEL__	/* Linux kernel module */
     sk_buff *skb = q->skb();
     skb->data -= nbytes - headroom();
     // [128+H, N+L+T, 0 / H+L+T]
@@ -236,11 +300,18 @@ Packet::expensive_push(unsigned int nbytes)
     // [128+H, N+L, T / H+L+T]
     skb->len += nbytes - tailroom() - headroom();
     // [128+H, N+L, T / N+L]
-#else
+#else			/* User-space and BSD kernel module */
     q->_data -= nbytes - headroom();
     // [128+H, N+L+T, 0]
     q->_tail -= tailroom();
     // [128+H, N+L, T]
+#ifdef _KERNEL		/* BSD kernel module */
+    q->m()->m_data -= nbytes - headroom();
+    // [128+H, N+L+T, 0]
+    q->m()->m_len -= tailroom();
+    q->m()->m_pkthdr.len -= tailroom();
+    // [128+H, N+L, T]
+#endif
 #endif
     q->copy_annotations(this);
     if (network_header())
@@ -266,9 +337,14 @@ Packet::expensive_put(unsigned int nbytes)
     skb->tail += nbytes - tailroom();
     skb->data += headroom();
     skb->len += nbytes - tailroom() - headroom();
-#else
+#else			/* User-space and BSD module */
     q->_tail += nbytes - tailroom();
     q->_data += headroom();
+#ifdef _KERNEL		/* BSD */
+    q->m()->m_len += nbytes - tailroom();
+    q->m()->m_pkthdr.len += nbytes - tailroom();
+    q->m()->m_data += headroom();
+#endif
 #endif
     q->copy_annotations(this);
     if (network_header())

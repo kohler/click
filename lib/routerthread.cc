@@ -20,6 +20,7 @@ CLICK_CXX_UNPROTECT
 #define DRIVER_ITER_TIMERS	32
 #define DRIVER_ITER_SELECT	64
 #define DRIVER_ITER_LINUXSCHED	256
+#define DRIVER_ITER_BSDSCHED	256
 
 
 RouterThread::RouterThread(Router *r)
@@ -197,9 +198,14 @@ RouterThread::wait(int iter)
 #if CLICK_USERLEVEL
     if (iter % DRIVER_ITER_SELECT == 0)
       router()->run_selects(!empty());
-#else /* __KERNEL__ */
+#elif defined(CLICK_LINUXMODULE)	/* Linux kernel module */
     if (iter % DRIVER_ITER_LINUXSCHED == 0) 
       schedule();
+#elif defined(CLICK_BSDMODULE)		/* BSD kernel module */
+    if (iter % DRIVER_ITER_BSDSCHED == 0)
+      yield(curproc, NULL);
+#else
+#error Compiling for unknown target.
 #endif
     lock_tasks();
   }
