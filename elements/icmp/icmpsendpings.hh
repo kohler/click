@@ -22,6 +22,9 @@ Periodically emits ping packets with source IP address SRC and destination
 address DST. Advances the "sequence" field by one each time. (The sequence
 field is stored in network byte order in the packet.)
 
+ICMPPingSource's optional input accepts ping replies, printing ping(1)-style
+reports as they arrive.
+
 Keyword arguments are:
 
 =over 8
@@ -48,7 +51,38 @@ String. Extra data in emitted pings. Default is the empty string (nothing).
 
 Boolean.  Whether ICMPPingSource is active.  Default is true.
 
+=item VERBOSE
+
+Boolean.  Whether ICMPPingSource should print reports when echo replies
+arrive.  Default is true.
+
 =back
+
+=h active read/write
+
+Returns or sets the ACTIVE argument.
+
+=h count read-only
+
+Reports the number of packets sent so far.
+
+=h limit write-only
+
+Sets the LIMIT argument.
+
+=h interval write-only
+
+Sets the INTERVAL argument.
+
+=h reset_counts write-only
+
+Resets all counters to zero.
+
+=h summary read-only
+
+Returns ping(1)-style summary information: number of packets sent and
+received, loss rate, and RTT statistics.  Only available if ICMPPingSource had
+an input.
 
 =a
 
@@ -81,6 +115,7 @@ class ICMPPingSource : public Element { public:
     Timer _timer;
     String _data;
     bool _active;
+    bool _verbose;
 
 #ifdef HAVE_INT64_TYPES
     typedef uint64_t counter_t;
@@ -98,6 +133,7 @@ class ICMPPingSource : public Element { public:
     };
     ReceiverInfo *_receiver;
 
+    static String read_handler(Element*, void*);
     static int write_handler(const String&, Element*, void*, ErrorHandler*);
     
 };

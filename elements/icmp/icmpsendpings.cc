@@ -25,6 +25,8 @@
 #include <clicknet/icmp.h>
 #include <click/packet_anno.hh>
 #include <click/integers.hh>
+#include <click/handlercall.hh>
+#include <click/straccum.hh>
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -58,6 +60,7 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
     _interval = 1000;
     _data = String();
     _active = true;
+    _verbose = true;
     if (cp_va_parse(conf, this, errh,
 		    cpIPAddress, "source IP address", &_src,
 		    cpIPAddress, "destination IP address", &_dst,
@@ -67,6 +70,7 @@ ICMPPingSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "DATA", cpString, "payload", &_data,
 		    "LIMIT", cpInteger, "total packet count", &_limit,
 		    "ACTIVE", cpBool, "active?", &_active,
+		    "VERBOSE", cpBool, "be verbose?", &_verbose,
 		    cpEnd) < 0)
 	return -1;
 #ifndef __linux__
@@ -101,14 +105,10 @@ void
 ICMPPingSource::cleanup(CleanupStage)
 {
     if (_receiver) {
-	click_chatter("%s: %u packets transmitted, %u received, %d%% packet loss", declaration().c_str(), _count, (_receiver->nreceived - _receiver->nduplicate), (int)((_count - _receiver->nreceived - _receiver->nduplicate) * 100) / _count);
-	if (_receiver->nreceived) {
-	    counter_t avg = _receiver->time_sum / _receiver->nreceived;
-	    counter_t avg_sq = _receiver->time_sq_sum / _receiver->nreceived;
-	    counter_t stdev = int_sqrt(avg_sq - avg * avg);
-	    click_chatter("%s: rtt min/avg/max/mdev = %u.%03u/%u.%03u/%u.%03u/%u.%03u", declaration().c_str(), _receiver->time_min / 1000, _receiver->time_min % 1000, (unsigned)(avg / 1000), (unsigned)(avg % 1000), _receiver->time_max / 1000, _receiver->time_max % 1000, (unsigned)(stdev / 1000), (unsigned)(stdev % 1000));
+	if (_verbose) {
+	    PrefixErrorHandler perrh(ErrorHandler::default_handler(), declaration() + ": ");
+	    perrh.message("%s", HandlerCall::call_read(this, "summary", &perrh).c_str());
 	}
-	
 #if CLICK_LINUXMODULE
 	vfree(_receiver);
 #else
@@ -198,13 +198,45 @@ ICMPPingSource::push(int, Packet *p)
 #else
 	    uint16_t readable_seq = ntohs(icmph->icmp_sequence);
 #endif
-	    click_chatter("%s: %d bytes from %s: icmp_seq=%u ttl=%u time=%d.%d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), IPAddress(iph->ip_dst).s().c_str(), readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
+	    if (_verbose)
+		click_chatter("%s: %d bytes from %s: icmp_seq=%u ttl=%u time=%d.%d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), IPAddress(iph->ip_dst).s().c_str(), readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
 	}
     }
     p->kill();
 }
 
-enum { H_ACTIVE, H_LIMIT, H_INTERVAL, H_RESET_COUNTS };
+enum { H_ACTIVE, H_LIMIT, H_INTERVAL, H_RESET_COUNTS, H_COUNT, H_SUMMARY };
+
+String
+ICMPPingSource::read_handler(Element *e, void *thunk)
+{
+    ICMPPingSource *ps = static_cast<ICMPPingSource *>(e);
+    switch ((uintptr_t)thunk) {
+      case H_ACTIVE:
+	return String(ps->_active) + "\n";
+      case H_COUNT:
+	return String(ps->_count) + "\n";
+      case H_SUMMARY: {
+	  ReceiverInfo *ri = ps->_receiver;
+	  StringAccum sa;
+	  sa << ps->_count << " packets transmitted"
+	     << ", " << (ri->nreceived - ri->nduplicate) << " received";
+	  if (ri->nduplicate)
+	      sa << ", +" << ri->nduplicate << " duplicates";
+	  if (ps->_count)
+	      sa << ", " << (int)(((ps->_count - ri->nreceived - ri->nduplicate) * 100) / ps->_count) << "% packet loss\n";
+	  if (ri->nreceived) {
+	      counter_t avg = ri->time_sum / ri->nreceived;
+	      counter_t avg_sq = ri->time_sq_sum / ri->nreceived;
+	      counter_t stdev = int_sqrt(avg_sq - avg * avg);
+	      sa.snprintf(256, "rtt min/avg/max/mdev = %u.%03u/%u.%03u/%u.%03u/%u.%03u\n", ri->time_min / 1000, ri->time_min % 1000, (unsigned)(avg / 1000), (unsigned)(avg % 1000), ri->time_max / 1000, ri->time_max % 1000, (unsigned)(stdev / 1000), (unsigned)(stdev % 1000));
+	  }
+	  return sa.take_string();
+	}
+      default:
+	return "";
+    }
+}
 
 int
 ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, ErrorHandler *errh)
@@ -245,10 +277,14 @@ ICMPPingSource::write_handler(const String &str_in, Element *e, void *thunk, Err
 void
 ICMPPingSource::add_handlers()
 {
+    add_read_handler("active", read_handler, (void *)H_ACTIVE);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("count", read_handler, (void *)H_COUNT);
     add_write_handler("limit", write_handler, (void *)H_LIMIT);
     add_write_handler("interval", write_handler, (void *)H_INTERVAL);
     add_write_handler("reset_counts", write_handler, (void *)H_RESET_COUNTS);
+    if (ninputs() > 0)
+	add_read_handler("summary", read_handler, (void *)H_SUMMARY);
 }
 
 CLICK_ENDDECLS
