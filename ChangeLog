@@ -1,3 +1,12 @@
+2000-10-15 Sunday 23:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: polldevice.cc, polldevice.hh: Changed
+	PollDevice stat collection. Should not be user-visible.
+
+2000-10-15 Sunday 15:54  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES: changelog added to distfiles
+
 2000-10-15 Sunday 11:23  Douglas De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/filterbyrange.cc: [no log message]
