@@ -640,7 +640,27 @@ AC_DEFUN([CLICK_CHECK_INTEGER_BUILTINS], [
 	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[volatile long long x = 11;]], [[int y = __builtin_clzll(x);]])], [ac_cv_have___builtin_clzll=yes], [ac_cv_have___builtin_clzll=no])])
     if test $ac_cv_have___builtin_clzll = yes; then
 	AC_DEFINE([HAVE___BUILTIN_CLZLL], [1], [Define if you have the __builtin_clzll function.])
-    fi])
+    fi
+
+    AC_CACHE_CHECK([for __builtin_ffs], [ac_cv_have___builtin_ffs],
+	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[volatile int x = 11;]], [[int y = __builtin_ffs(x);]])], [ac_cv_have___builtin_ffs=yes], [ac_cv_have___builtin_ffs=no])])
+    if test $ac_cv_have___builtin_ffs = yes; then
+	AC_DEFINE([HAVE___BUILTIN_FFS], [1], [Define if you have the __builtin_ffs function.])
+    fi
+    AC_CACHE_CHECK([for __builtin_ffsl], [ac_cv_have___builtin_ffsl],
+	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[volatile long x = 11;]], [[int y = __builtin_ffsl(x);]])], [ac_cv_have___builtin_ffsl=yes], [ac_cv_have___builtin_ffsl=no])])
+    if test $ac_cv_have___builtin_ffsl = yes; then
+	AC_DEFINE([HAVE___BUILTIN_FFSL], [1], [Define if you have the __builtin_ffsl function.])
+    fi
+    AC_CACHE_CHECK([for __builtin_ffsll], [ac_cv_have___builtin_ffsll],
+	 [AC_COMPILE_IFELSE([AC_LANG_PROGRAM([[volatile long long x = 11;]], [[int y = __builtin_ffsll(x);]])], [ac_cv_have___builtin_ffsll=yes], [ac_cv_have___builtin_ffsll=no])])
+    if test $ac_cv_have___builtin_ffsll = yes; then
+	AC_DEFINE([HAVE___BUILTIN_FFSLL], [1], [Define if you have the __builtin_ffsll function.])
+    fi
+
+    AC_CHECK_HEADERS(strings.h)
+    AC_CHECK_FUNCS(ffs ffsl ffsll)
+    ])
 
 
 dnl

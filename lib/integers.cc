@@ -22,9 +22,9 @@
 #include <click/integers.hh>
 CLICK_DECLS
 
-// first_bit_set(uint32_t) borrowed from tcpdpriv
+// ffs_msb(uint32_t) borrowed from tcpdpriv
 
-#if !(HAVE___BUILTIN_CLZ && SIZEOF_INT == 4)
+#if !HAVE___BUILTIN_CLZ
 int
 ffs_msb(uint32_t value)
 {
@@ -48,12 +48,11 @@ ffs_msb(uint32_t value)
     else
 	value >>= 4;
 
-    return add + bvals[value & 0xf];
+    return add + bvals[value & 0xF];
 }
 #endif
 
-
-#if HAVE_INT64_TYPES && !(HAVE___BUILTIN_CLZLL && SIZEOF_LONG_LONG == 8) && !(HAVE___BUILTIN_CLZL && SIZEOF_LONG == 8)
+#if HAVE_INT64_TYPES && !(HAVE___BUILTIN_CLZLL && SIZEOF_LONG_LONG == 8) && !(HAVE___BUILTIN_CLZL && SIZEOF_LONG == 8) && !(HAVE___BUILTIN_CLZ && SIZEOF_INT == 8)
 int
 ffs_msb(uint64_t value)
 {
@@ -65,6 +64,49 @@ ffs_msb(uint64_t value)
 	return ffs_msb(hi);
 }
 #endif
+
+
+#if !HAVE___BUILTIN_FFS && !HAVE_FFS
+int
+ffs_lsb(uint32_t value)
+{
+    int add = 0;
+    static uint8_t bvals[] = { 0, 1, 2, 1, 3, 1, 2, 1, 4, 1, 2, 1, 3, 1, 2, 1 };
+
+    if ((value & 0x0000FFFF) == 0) {
+	if (value == 0)		/* zero input ==> zero output */
+	    return 0;
+	add += 16;
+	value >>= 16;
+    }
+
+    if ((value & 0x00FF) == 0) {
+	add += 8;
+	value >>= 8;
+    }
+
+    if ((value & 0x0F) == 0) {
+	add += 4;
+	value >>= 4;
+    }
+
+    return add + bvals[value & 0xF];
+}
+#endif
+
+#if HAVE_INT64_TYPES && !(HAVE___BUILTIN_FFSLL && SIZEOF_LONG_LONG == 8) && !(HAVE___BUILTIN_FFSL && SIZEOF_LONG == 8) && !(HAVE___BUILTIN_FFS && SIZEOF_INT == 8)
+int
+ffs_lsb(uint64_t value)
+{
+    uint32_t lo = (uint32_t)value;
+    if (lo == 0) {
+	uint32_t hi = (uint32_t)(value >> 32);
+	return (hi ? 32 + ffs_lsb(hi) : 0);
+    } else
+	return ffs_lsb(lo);
+}
+#endif
+
 
 uint32_t
 int_sqrt(uint32_t u)

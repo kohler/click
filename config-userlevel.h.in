@@ -14,6 +14,15 @@
 /* Define if dynamic linking is possible. */
 #undef HAVE_DYNAMIC_LINKING
 
+/* Define if you have the ffs function. */
+#undef HAVE_FFS
+
+/* Define if you have the ffsl function. */
+#undef HAVE_FFSL
+
+/* Define if you have the ffsll function. */
+#undef HAVE_FFSLL
+
 /* Floating point arithmetic is allowed. */
 #define HAVE_FLOAT_TYPES 1
 
@@ -64,6 +73,9 @@
 
 /* Define if you have the strerror function. */
 #undef HAVE_STRERROR
+
+/* Define if you have the <strings.h> header file. */
+#undef HAVE_STRINGS_H
 
 /* Define if you have the strtoul function. */
 #undef HAVE_STRTOUL
