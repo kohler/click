@@ -140,6 +140,11 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     bool run_task();
     Packet *pull(int);
 
+    enum { DO_IPOPT_PADDING = 1, DO_IPOPT_ROUTE = 2,
+	   DO_IPOPT_UNKNOWN = 32,
+	   DO_IPOPT_ALL = 0xFFFFFFFFU, DO_IPOPT_ALL_NOPAD = 0xFFFFFFFEU };
+    static int parse_ip_opt_ascii(const char *, int, String *, int);
+
     enum { DO_TCPOPT_PADDING = 1, DO_TCPOPT_MSS = 2, DO_TCPOPT_WSCALE = 4,
 	   DO_TCPOPT_SACK = 8, DO_TCPOPT_TIMESTAMP = 16,
 	   DO_TCPOPT_UNKNOWN = 32,
@@ -157,6 +162,7 @@ class FromIPSummaryDump : public Element, public IPSummaryDumpInfo { public:
     int _len;
     int _buffer_len;
     int _save_char;
+    int _recordno;
 
     Vector<int> _contents;
     uint16_t _default_proto;
