@@ -1,3 +1,7 @@
+2003-02-13 Thursday 11:58  Eddie Kohler <kohler@icir.org>
+
+	* lib/routerthread.cc (1.30): unlock_tasks() around run_os()
+
 2003-02-13 Thursday 03:50  Eddie Kohler <kohler@icir.org>
 
 	* linuxmodule/: sched.cc (1.37), sched.cc (1.38): clickfs access to

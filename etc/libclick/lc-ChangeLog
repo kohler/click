@@ -1,3 +1,7 @@
+2003-02-13 Thursday 11:58  Eddie Kohler <kohler@icir.org>
+
+	* libsrc/routerthread.cc: unlock_tasks() around run_os()
+
 2003-02-13 Thursday 03:49  Eddie Kohler <kohler@icir.org>
 
 	* include/click/routerthread.hh, include/click/routerthread.hh,
