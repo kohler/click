@@ -63,7 +63,9 @@
 #undef HAVE_REUSE_SKB
 
 /* Define if your Linux kernel is running in SMP mode. */
+#ifdef __KERNEL__
 #undef __SMP__
+#endif
 
 /* Define if you have -lpcap and pcap.h. */
 #undef HAVE_PCAP

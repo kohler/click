@@ -253,8 +253,7 @@ AC_CACHE_CHECK(for SMP, ac_cv_smp,
 else ac_cv_smp=no; fi])
 if test $ac_cv_smp = yes; then
   AC_DEFINE_UNQUOTED(__SMP__, 1)
-  saveflags="$CPPFLAGS" 
-  CPPFLAGS="$saveflags -D__SMP__"
+  KERNEL_CXX="$KERNEL_CXX -D__SMP__"
 fi
 
 fi
