@@ -1,6 +1,5 @@
 #ifndef CLICK_TASK_HH
 #define CLICK_TASK_HH
-#include <click/glue.hh>
 #include <click/element.hh>
 #if __MTCLICK__
 # include <click/ewma.hh>
@@ -9,6 +8,7 @@
 #define PASS_GT(a, b)	((int)(a - b) > 0)
 
 typedef void (*TaskHook)(void *);
+class TaskList;
 
 class Task { public:
 
@@ -20,15 +20,14 @@ class Task { public:
   Task(TaskHook, void *);
   Task(Element *);
 
-  bool attached() const			{ return _list; }
+  bool initialized() const		{ return _all_prev; }
   bool scheduled() const		{ return _prev; }
-  Task *next_task() const		{ return _next; }
-  Task *prev_task() const		{ return _prev; }
-  Task *task_list() const		{ return _list; }
+  
+  Task *scheduled_next() const		{ return _next; }
+  Task *scheduled_prev() const		{ return _prev; }
+  TaskList *scheduled_list() const	{ return _list; }
 
-  bool is_list() const		{ return _list == this; }
-  bool empty() const		{ assert(is_list()); return _next == this; }
-  void initialize_list()	{ _prev = _next = _list = this; }
+  bool is_list() const;
 
 #ifndef RR_SCHED
   int tickets() const			{ return _tickets; }
@@ -41,14 +40,22 @@ class Task { public:
 
   bool urgent() const			{ return _urgent; }
   void set_urgent(bool v)		{ _urgent = v; }
- 
+
+  void initialize(TaskList *);
+  void initialize(Element *);
+  void initialize(Router *);
+  void uninitialize();
+
+  void join_scheduler(TaskList *);
   void join_scheduler(Element *);
   void join_scheduler(Router *);
-  void join_scheduler(Task *);
   
-  void schedule_immediately();
-  void unschedule();
   void reschedule();
+  void unschedule();
+  void schedule_immediately();
+
+  void fast_reschedule();
+  void fast_unschedule();
 
   void call_hook();
 
@@ -58,6 +65,9 @@ class Task { public:
   int thread_preference() const		{ return _thread_preference; }
   void set_thread_preference(int s)	{ _thread_preference = s; }
 #endif
+
+  Task *initialized_prev() const	{ return _all_prev; }
+  Task *initialized_next() const	{ return _all_next; }
 
  private:
 
@@ -77,15 +87,33 @@ class Task { public:
   void *_thunk;
   bool _urgent;
   
-  Task *_list;
-
 #if __MTCLICK__
   DirectEWMA _cycles;
   int _thread_preference;
 #endif
 
-  void join_scheduler();
+  TaskList *_list;
 
+  Task *_all_prev;
+  Task *_all_next;
+
+  friend class TaskList;
+
+};
+
+class TaskList : public Task { public:
+
+  TaskList();
+
+  bool empty() const			{ return _next == this; }
+
+  void lock()				{ }
+  void unlock()				{ }
+  
+ private:
+
+  friend class Task;
+  
 };
 
 
@@ -95,10 +123,11 @@ Task::Task()
 #ifndef RR_SCHED
     _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
 #endif
-    _hook(0), _thunk(0), _urgent(false), _list(0)
+    _hook(0), _thunk(0), _urgent(false),
 #if __MTCLICK__
-    , _thread_preference(-1)
+    _thread_preference(-1),
 #endif
+    _list(0), _all_prev(0), _all_next(0)
 {
 }
 
@@ -108,10 +137,11 @@ Task::Task(TaskHook hook, void *thunk)
 #ifndef RR_SCHED
     _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
 #endif
-    _hook(hook), _thunk(thunk), _urgent(false), _list(0)
+    _hook(hook), _thunk(thunk), _urgent(false),
 #if __MTCLICK__
-    , _thread_preference(-1)
+    _thread_preference(-1),
 #endif
+    _list(0), _all_prev(0), _all_next(0)
 {
 }
 
@@ -121,15 +151,22 @@ Task::Task(Element *e)
 #ifndef RR_SCHED
     _pass(0), _stride(0), _tickets(-1), _max_tickets(-1),
 #endif
-    _hook(0), _thunk(e), _urgent(false), _list(0)
+    _hook(0), _thunk(e), _urgent(false),
 #if __MTCLICK__
-    , _thread_preference(-1)
+    _thread_preference(-1),
 #endif
+    _list(0), _all_prev(0), _all_next(0)
 {
 }
 
+inline bool
+Task::is_list() const
+{
+  return _list == this;
+}
+
 inline void
-Task::unschedule()
+Task::fast_unschedule()
 {
   if (_next) {
     _next->_prev = _prev;
@@ -159,13 +196,16 @@ Task::adj_tickets(int delta)
 }
 
 inline void
-Task::reschedule()
+Task::fast_reschedule()
 {
   // should not be scheduled at this point
+  assert(!_next);
+#if 0
   if (_next) {
     _next->_prev = _prev;
     _prev->_next = _next;
   }
+#endif
 
   // increase pass
   _pass += _stride;
@@ -198,7 +238,7 @@ Task::reschedule()
 #else /* RR_SCHED */
 
 inline void
-Task::reschedule()
+Task::fast_reschedule()
 {
   _prev = _list->_prev;
   _next = _list;
@@ -209,24 +249,17 @@ Task::reschedule()
 #endif /* RR_SCHED */
 
 inline void
-Task::join_scheduler(Element *e)
+Task::join_scheduler(TaskList *task_list)
 {
-  join_scheduler(e->router());
+  assert(initialized() && !_prev && !_next && task_list->is_list());
+  _list = task_list;
+  reschedule();
 }
 
 inline void
-Task::schedule_immediately()
+Task::join_scheduler(Element *e)
 {
-  // should not be scheduled at this point
-  if (_next) {
-    _next->_prev = _prev;
-    _prev->_next = _next;
-  }
-
-  _next = _list->_next;
-  _prev = _list;
-  _list->_next = this;
-  _next->_prev = this;
+  join_scheduler(e->router());
 }
 
 inline void
