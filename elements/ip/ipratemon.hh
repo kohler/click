@@ -107,10 +107,8 @@ private:
 #define CLEAN    0x0000
 #define INIT     0x0001
 #define SPLIT    0x0010
-    union {
-      EWMA2 values[MAX_NRATES];
-      struct _stats *next_level;
-    };
+    EWMA2 values[MAX_NRATES];
+    struct _stats *next_level;
     int last_update;
   };
 
@@ -163,8 +161,11 @@ IPRateMonitor::update(IPAddress a, int val)
     unsigned char byte = (saddr >> bitshift) & 0x000000ff;
     c = &(s->counter[byte]);
 
-    if(c->flags & SPLIT)
+    if(c->flags & SPLIT) {
+      for(int i = 0; i < _no_of_rates; i++)
+        c->values[i].update(val);
       s = c->next_level;
+    }
     else
       break;
   }

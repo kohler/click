@@ -219,10 +219,7 @@ IPRateMonitor::print(_stats *s, String ip = "")
       this_ip = String(i);
 
 
-    if(s->counter[i].flags & SPLIT) {
-      ret += this_ip + "\t*\n";
-      ret += print(s->counter[i].next_level, "\t" + this_ip);
-    } else if (s->counter[i].flags != 0) { 
+    if (s->counter[i].flags != 0) { 
       int j;
       ret += this_ip;
   
@@ -237,6 +234,9 @@ IPRateMonitor::print(_stats *s, String ip = "")
       }
       ret += "\n";
     }
+    
+    if(s->counter[i].flags & SPLIT)
+      ret += print(s->counter[i].next_level, "\t" + this_ip);
   }
   return ret;
 }
