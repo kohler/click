@@ -1,3 +1,30 @@
+2004-07-06 Tuesday 20:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/: click-align/alignclass.cc (1.18),
+	click-align/click-align.cc (1.52), click-check/click-check.cc
+	(1.27), click-combine/click-combine.cc (1.38),
+	click-combine/click-uncombine.cc (1.33),
+	click-devirtualize/click-devirtualize.cc (1.43),
+	click-devirtualize/cxxclass.cc (1.12),
+	click-devirtualize/specializer.cc (1.36),
+	click-fastclassifier/click-fastclassifier.cc (1.64),
+	click-flatten/click-flatten.cc (1.20),
+	click-install/click-install.cc (1.56),
+	click-install/click-uninstall.cc (1.25), click-install/common.cc
+	(1.19), click-pretty/click-pretty.cc (1.27),
+	click-undead/click-undead.cc (1.37), click-xform/adjacency.cc
+	(1.24), click-xform/click-xform.cc (1.58), click2xml/click2xml.cc
+	(1.16), lib/elementmap.cc (1.14), lib/elementt.cc (1.33),
+	lib/processingt.cc (1.32), lib/routert.cc (1.79), lib/toolutils.cc
+	(1.53): get rid of backticks in comments and messages
+
+2004-07-06 Tuesday 20:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/: click-mkmindriver/click-mkmindriver.cc (1.30),
+	lib/etraits.cc (1.9), lib/etraits.hh (1.6): fix click-mkmindriver
+	problem reported by Harvey Jones: correctly handle driver
+	requirements and "userlevel|ns" type requirements
+
 2004-07-06 Tuesday 20:36  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click.texi (1.59): doc update: do not mention nonexistent
