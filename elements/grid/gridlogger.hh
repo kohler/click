@@ -40,8 +40,10 @@ class GridLogger {
     return true;
   }
   void write_buf() {
-    if (!log_is_open())
+    if (!log_is_open()) {
+      _bufptr = 0;
       return; // no log active now
+    }
     int res = write(_fd, _buf, _bufptr);
     if (res < 0)
       click_chatter("GridLogger: error writing log buffer: %s",
@@ -86,7 +88,7 @@ public:
     _fn = filename;
     _fd = open(_fn.cc(), O_WRONLY | O_CREAT, 0777);
     if (_fd == -1) {
-      click_chatter("GridLogger: unable to open log file %s, %s",
+      click_chatter("GridLogger: unable to open log file ``%s'', %s",
 		    _fn.cc(), strerror(errno));
       return false;
     }
