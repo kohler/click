@@ -894,6 +894,18 @@ Lexer::anon_element_name(const String &class_name) const
   return name;
 }
 
+String
+Lexer::anon_element_class_name(String prefix) const
+{
+  int anonymizer = _elements.size() - _anonymous_offset + 1;
+  String name = prefix + String(anonymizer);
+  while (_element_type_map[name] >= 0) {
+    anonymizer++;
+    name = prefix + String(anonymizer);
+  }
+  return name;
+}
+
 void
 Lexer::connect(int element1, int port1, int element2, int port2)
 {
@@ -1230,9 +1242,8 @@ Lexer::ycompound_arguments(Compound *comptype)
 int
 Lexer::ycompound(String name)
 {
-  // OK because every used ycompound() corresponds to at least one element
   if (!name)
-    name = "@Class" + String(_elements.size() - _anonymous_offset + 1);
+    name = anon_element_class_name("@Class");
 
   HashMap<String, int> old_element_map(-1);
   old_element_map.swap(_element_map);

@@ -427,6 +427,18 @@ LexerT::anon_element_name(const String &class_name) const
   return name;
 }
 
+String
+LexerT::anon_element_class_name(String prefix) const
+{
+  int anonymizer = _router->nelements() - _anonymous_offset + 1;
+  String name = prefix + String(anonymizer);
+  while (_router->type_index(name) >= 0) {
+    anonymizer++;
+    name = prefix + String(anonymizer);
+  }
+  return name;
+}
+
 int
 LexerT::make_element(String name, int ftype, const String &conf,
 		     const String &lm)
@@ -753,8 +765,7 @@ LexerT::ycompound(String name)
 {
   bool anonymous = (name.length() == 0);
   if (anonymous)
-    // OK because every used ylocal() corresponds to at least one element
-    name = "@Class" + String(_router->nelements() - _anonymous_offset + 1);
+    name = anon_element_class_name("@Class");
   
   // '{' was already read
   RouterT *old_router = _router;

@@ -103,6 +103,7 @@ class Lexer {
   int lerror(const char *, ...);
 
   String anon_element_name(const String &) const;
+  String anon_element_class_name(String) const;
   int get_element(String, int, const String & = String(), const String & = String());
   int lexical_scoping_in() const;
   void lexical_scoping_out(int);

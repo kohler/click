@@ -75,6 +75,7 @@ class LexerT { protected:
   
   int lerror(const char *, ...);
   String anon_element_name(const String &) const;
+  String anon_element_class_name(String) const;
   
  public:
   
