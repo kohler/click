@@ -1,3 +1,19 @@
+2002-12-11 Wednesday 23:11  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4, acclick.m4: support version numbers with patchlevels
+
+2002-12-11 Wednesday 23:01  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4: use -W -Wall for all user-level compiles
+
+2002-12-11 Wednesday 22:42  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4, config-userlevel.h.in, include/click/bighashmap.cc,
+	include/click/bighashmap.cc, include/click/bighashmap.hh,
+	include/click/hashmap.cc, include/click/bighashmap.hh,
+	include/click/hashmap.cc: support for newer GCCs, including more
+	warnings
+
 2002-11-22 Friday 12:19  Eddie Kohler <kohler@icir.org>
 
 	* README: driver READMEs

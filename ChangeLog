@@ -1,3 +1,30 @@
+2002-12-11 Wednesday 23:11  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.27), aclocal.m4 (1.27), acclick.m4 (1.28),
+	aclocal.m4 (1.28): support version numbers with patchlevels
+
+2002-12-11 Wednesday 23:04  Eddie Kohler <kohler@icir.org>
+
+	* drivers/: e1000-2.x/Makefile (1.8), e1000-4.x/src/Makefile (1.3):
+	oops
+
+2002-12-11 Wednesday 23:01  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.26), aclocal.m4 (1.26), drivers/e1000-2.x/Makefile
+	(1.7), drivers/e1000-4.x/src/Makefile (1.2): use -W -Wall for all
+	user-level compiles
+
+2002-12-11 Wednesday 22:42  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.25), aclocal.m4 (1.25), config-ns.h.in (1.2),
+	config-userlevel.h.in (1.12), configure.in (1.193),
+	elements/grid/gridroutecb.hh (1.10), elements/ip/rfc2507c.cc
+	(1.25), elements/ip6/ip6mirror.hh (1.5),
+	etc/samplepackage/Makefile.in (1.31), include/click/bighashmap.cc
+	(1.19), include/click/bighashmap.hh (1.15),
+	include/click/hashmap.cc (1.15), linuxmodule/Makefile.in (1.76):
+	support for newer GCCs, including more warnings
+
 2002-12-09 Monday 15:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: airoinfo.cc (1.8), airoinfo.hh (1.5): expanded
