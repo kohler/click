@@ -1,3 +1,24 @@
+2004-04-28 Wednesday 13:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/kerneltun.cc (1.48): test for SIOCSIFMTU
+
+2004-04-28 Wednesday 13:21  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.7), configure.in (1.226),
+	elements/userlevel/ipflowrawsockets.cc (1.4): add pcap provision,
+	and IPFlowRawSockets requires it
+
+2004-04-28 Wednesday 12:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.6): configure nit
+
+2004-04-28 Wednesday 12:48  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure.in (1.225), bsdmodule/Makefile.in (1.29),
+	exopc/Makefile.in (1.16), linuxmodule/Makefile.in (1.86),
+	ns/Makefile.in (1.13), userlevel/Makefile.in (1.79): fix
+	elements_vpath for Solaris sed (reported by Ryan Cunningham)
+
 2004-04-28 Wednesday 04:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/click.1 (1.14), userlevel/click.cc (1.89): add "click
