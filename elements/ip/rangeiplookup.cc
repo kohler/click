@@ -203,9 +203,9 @@ void
 RangeIPLookup::flush_table()
 {
     _helper.flush_table();
-    bzero(_range_base, sizeof(_range_base));
-    bzero(_range_len, sizeof(_range_len));
-    bzero(_range_t, sizeof(_range_t));
+    memset(_range_base, 0, sizeof(_range_base));
+    memset(_range_len, 0, sizeof(_range_len));
+    memset(_range_t, 0, sizeof(_range_t));
 }
 
 int

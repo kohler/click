@@ -28,8 +28,8 @@ more than once.
 RangeIPLookup aims at achieving high lookup speeds through exploiting the CPU
 cache locality.  The routing table is expanded into a very small lookup
 structure, typically occupying less then 4 bytes per IP prefix.  As an example,
-a lookup structure corresponding to a routing table with 167000 entries
-(a realistic snapshot taken from a core Internet router) occupies only around
+a lookup structure corresponding to a routing table with 167000 entries (a
+realistic snapshot taken from a core Internet router) occupies only around
 512 KBytes of RAM.  Depending on how sucessfully the CPU cache
 affinity can be maintained, worst-case lookup rates exceeding 20 million
 lookups per second can be achieved using modern commodity CPUs.
@@ -78,7 +78,7 @@ elements.
 =a IPRouteTable, RadixIPLookup, DirectIPLookup, LinearIPLookup,
 SortedIPLookup, StaticIPLookup, LinuxIPLookup
 
- */
+*/
 
 class RangeIPLookup : public IPRouteTable { public:
 
