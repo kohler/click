@@ -215,7 +215,7 @@ class IPMapper { public:
     virtual ~IPMapper()			{ }
 
     void notify_rewriter(IPRw *, ErrorHandler *);
-    IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);
+    virtual IPRw::Mapping *get_map(IPRw *, int ip_p, const IPFlowID &, Packet *);
 
 };
 
