@@ -28,131 +28,137 @@
 #include <click/integers.hh>
 CLICK_DECLS
 
-static const int field_def[] = {
-  ((10*8+ 0)<<16) | 16,		// checksum
-  ((2*8 + 0)<<16) | 16,		// len
-  ((4*8 + 0)<<16) | 16,		// id
-  ((0*8 + 0)<<16) | 4,		// version
-  ((0*8 + 4)<<16) | 4,		// hl
-  ((1*8 + 0)<<16) | 8,		// tos
-  ((1*8 + 0)<<16) | 6,		// dscp
-  ((8*8 + 0)<<16) | 8,		// ttl
-};
+static IPFilter::Wordmap* wordmap;
 
-static HashMap<String, int> *wordmap;
-#define WT(t, d)		((t << WT_TYPE_SHIFT) | d)
-#define WT_TYPE(wt)		((wt & IPFilter::WT_TYPE_MASK) >> IPFilter::WT_TYPE_SHIFT)
+IPFilter::Wordmap::Wordmap()
+  : _map(0)
+{
+}
 
-HashMap<String, int> *
+void
+IPFilter::Wordmap::insert(const String &name, uint32_t type, uint32_t data)
+{
+  if (type <= 0x7FFF && data <= 0xFFFF)
+    _map.insert(name, (type << 16) | data);
+  else {
+    _map.insert(name, 0x80000000 | _type.size());
+    _type.push_back(type);
+    _data.push_back(data);
+  }
+}
+
+IPFilter::Wordmap*
 IPFilter::create_wordmap()
 {
-  HashMap<String, int> *wordmap = new HashMap<String, int>(0);
+  IPFilter::Wordmap* wordmap = new Wordmap;
 
-  wordmap->insert("host",	WT(TYPE_TYPE, TYPE_HOST));
-  wordmap->insert("net",	WT(TYPE_TYPE, TYPE_NET));
-  wordmap->insert("port",	WT(TYPE_TYPE, TYPE_PORT));
-  wordmap->insert("proto",	WT(TYPE_TYPE, TYPE_PROTO));
-  wordmap->insert("opt",	WT(TYPE_TYPE, TYPE_TCPOPT));
-  wordmap->insert("tos",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_TOS));
-  wordmap->insert("ttl",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_TTL));
-  wordmap->insert("dscp",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_DSCP));
-  wordmap->insert("type",	WT(TYPE_TYPE, TYPE_ICMP_TYPE));
-  wordmap->insert("frag",	WT(TYPE_TYPE, TYPE_IPFRAG));
-  wordmap->insert("unfrag",	WT(TYPE_TYPE, TYPE_IPUNFRAG));
-  wordmap->insert("ect",	WT(TYPE_TYPE, TYPE_IPECT));
-  wordmap->insert("ce",		WT(TYPE_TYPE, TYPE_IPCE));
-  wordmap->insert("len",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_IPLEN));
-  wordmap->insert("vers",	WT(TYPE_TYPE, TYPE_FIELD | FIELD_VERSION));
-  wordmap->insert("hl",		WT(TYPE_TYPE, TYPE_FIELD | FIELD_HL));
-  wordmap->insert("id",		WT(TYPE_TYPE, TYPE_FIELD | FIELD_ID));
+  wordmap->insert("host",	TYPE_TYPE, TYPE_HOST);
+  wordmap->insert("net",	TYPE_TYPE, TYPE_NET);
+  wordmap->insert("port",	TYPE_TYPE, TYPE_PORT);
+  wordmap->insert("proto",	TYPE_TYPE, TYPE_PROTO);
+  wordmap->insert("opt",	TYPE_TYPE, TYPE_TCPOPT);
+  wordmap->insert("tos",	TYPE_TYPE, FIELD_TOS);
+  wordmap->insert("ttl",	TYPE_TYPE, FIELD_TTL);
+  wordmap->insert("dscp",	TYPE_TYPE, FIELD_DSCP);
+  wordmap->insert("type",	TYPE_TYPE, FIELD_ICMP_TYPE);
+  wordmap->insert("frag",	TYPE_TYPE, TYPE_IPFRAG);
+  wordmap->insert("unfrag",	TYPE_TYPE, TYPE_IPUNFRAG);
+  wordmap->insert("ect",	TYPE_TYPE, TYPE_IPECT);
+  wordmap->insert("ce",		TYPE_TYPE, TYPE_IPCE);
+  wordmap->insert("len",	TYPE_TYPE, FIELD_IPLEN);
+  wordmap->insert("vers",	TYPE_TYPE, FIELD_VERSION);
+  wordmap->insert("hl",		TYPE_TYPE, FIELD_HL);
+  wordmap->insert("id",		TYPE_TYPE, FIELD_ID);
+  wordmap->insert("win",	TYPE_TYPE, FIELD_TCP_WIN);
   
-  wordmap->insert("icmp",	WT(TYPE_PROTO, IP_PROTO_ICMP));
-  wordmap->insert("igmp",	WT(TYPE_PROTO, IP_PROTO_IGMP));
-  wordmap->insert("ipip",	WT(TYPE_PROTO, IP_PROTO_IPIP));
-  wordmap->insert("tcp",	WT(TYPE_PROTO, IP_PROTO_TCP));
-  wordmap->insert("udp",	WT(TYPE_PROTO, IP_PROTO_UDP));
-  wordmap->insert("tcpudp",	WT(TYPE_PROTO, IP_PROTO_TCP_OR_UDP));
+  wordmap->insert("icmp",	TYPE_PROTO, IP_PROTO_ICMP);
+  wordmap->insert("igmp",	TYPE_PROTO, IP_PROTO_IGMP);
+  wordmap->insert("ipip",	TYPE_PROTO, IP_PROTO_IPIP);
+  wordmap->insert("tcp",	TYPE_PROTO, IP_PROTO_TCP);
+  wordmap->insert("udp",	TYPE_PROTO, IP_PROTO_UDP);
+  wordmap->insert("tcpudp",	TYPE_PROTO, IP_PROTO_TCP_OR_UDP);
   
-  wordmap->insert("echo",	WT(TYPE_PORT, 7));
-  wordmap->insert("discard",	WT(TYPE_PORT, 9));
-  wordmap->insert("daytime",	WT(TYPE_PORT, 13));
-  wordmap->insert("chargen",	WT(TYPE_PORT, 19));
-  wordmap->insert("ftp-data",	WT(TYPE_PORT, 20));
-  wordmap->insert("ftp",	WT(TYPE_PORT, 21));
-  wordmap->insert("ssh",	WT(TYPE_PORT, 22));
-  wordmap->insert("telnet",	WT(TYPE_PORT, 23));
-  wordmap->insert("smtp",	WT(TYPE_PORT, 25));
-  wordmap->insert("domain",	WT(TYPE_PORT, 53));
-  wordmap->insert("dns",	WT(TYPE_PORT, 53));
-  wordmap->insert("bootps",	WT(TYPE_PORT, 67));
-  wordmap->insert("bootpc",	WT(TYPE_PORT, 68));
-  wordmap->insert("tftp",	WT(TYPE_PORT, 69));
-  wordmap->insert("finger",	WT(TYPE_PORT, 79));
-  wordmap->insert("www",	WT(TYPE_PORT, 80));
-  wordmap->insert("pop3",	WT(TYPE_PORT, 110));
-  wordmap->insert("sunrpc",	WT(TYPE_PORT, 111));
-  wordmap->insert("auth",	WT(TYPE_PORT, 113));
-  wordmap->insert("nntp",	WT(TYPE_PORT, 119));
-  wordmap->insert("ntp",	WT(TYPE_PORT, 123));
-  wordmap->insert("netbios-ns",	WT(TYPE_PORT, 137));
-  wordmap->insert("netbios-dgm",WT(TYPE_PORT, 138));
-  wordmap->insert("netbios-ssn",WT(TYPE_PORT, 139));
-  wordmap->insert("snmp",	WT(TYPE_PORT, 161));
-  wordmap->insert("snmp-trap",	WT(TYPE_PORT, 162));
-  wordmap->insert("irc",	WT(TYPE_PORT, 194));
-  wordmap->insert("imap3",	WT(TYPE_PORT, 220));
-  wordmap->insert("https",	WT(TYPE_PORT, 443));
-  wordmap->insert("rip",	WT(TYPE_PORT, 520));
-  wordmap->insert("route",	WT(TYPE_PORT, 520));
-  wordmap->insert("imaps",	WT(TYPE_PORT, 993));
-  wordmap->insert("pop3s",	WT(TYPE_PORT, 995));
+  wordmap->insert("echo",	TYPE_PORT, 7);
+  wordmap->insert("discard",	TYPE_PORT, 9);
+  wordmap->insert("daytime",	TYPE_PORT, 13);
+  wordmap->insert("chargen",	TYPE_PORT, 19);
+  wordmap->insert("ftp-data",	TYPE_PORT, 20);
+  wordmap->insert("ftp",	TYPE_PORT, 21);
+  wordmap->insert("ssh",	TYPE_PORT, 22);
+  wordmap->insert("telnet",	TYPE_PORT, 23);
+  wordmap->insert("smtp",	TYPE_PORT, 25);
+  wordmap->insert("domain",	TYPE_PORT, 53);
+  wordmap->insert("dns",	TYPE_PORT, 53);
+  wordmap->insert("bootps",	TYPE_PORT, 67);
+  wordmap->insert("bootpc",	TYPE_PORT, 68);
+  wordmap->insert("tftp",	TYPE_PORT, 69);
+  wordmap->insert("finger",	TYPE_PORT, 79);
+  wordmap->insert("www",	TYPE_PORT, 80);
+  wordmap->insert("pop3",	TYPE_PORT, 110);
+  wordmap->insert("sunrpc",	TYPE_PORT, 111);
+  wordmap->insert("auth",	TYPE_PORT, 113);
+  wordmap->insert("nntp",	TYPE_PORT, 119);
+  wordmap->insert("ntp",	TYPE_PORT, 123);
+  wordmap->insert("netbios-ns",	TYPE_PORT, 137);
+  wordmap->insert("netbios-dgm",TYPE_PORT, 138);
+  wordmap->insert("netbios-ssn",TYPE_PORT, 139);
+  wordmap->insert("snmp",	TYPE_PORT, 161);
+  wordmap->insert("snmp-trap",	TYPE_PORT, 162);
+  wordmap->insert("irc",	TYPE_PORT, 194);
+  wordmap->insert("imap3",	TYPE_PORT, 220);
+  wordmap->insert("https",	TYPE_PORT, 443);
+  wordmap->insert("rip",	TYPE_PORT, 520);
+  wordmap->insert("route",	TYPE_PORT, 520);
+  wordmap->insert("imaps",	TYPE_PORT, 993);
+  wordmap->insert("pop3s",	TYPE_PORT, 995);
 
-  wordmap->insert("syn",	WT(TYPE_TCPOPT, TH_SYN));
-  wordmap->insert("fin",	WT(TYPE_TCPOPT, TH_FIN));
-  wordmap->insert("ack",	WT(TYPE_TCPOPT, TH_ACK));
-  wordmap->insert("rst",	WT(TYPE_TCPOPT, TH_RST));
-  wordmap->insert("psh",	WT(TYPE_TCPOPT, TH_PUSH));
-  wordmap->insert("urg",	WT(TYPE_TCPOPT, TH_URG));
+  wordmap->insert("syn",	TYPE_TCPOPT, TH_SYN);
+  wordmap->insert("fin",	TYPE_TCPOPT, TH_FIN);
+  wordmap->insert("ack",	TYPE_TCPOPT, TH_ACK);
+  wordmap->insert("rst",	TYPE_TCPOPT, TH_RST);
+  wordmap->insert("psh",	TYPE_TCPOPT, TH_PUSH);
+  wordmap->insert("urg",	TYPE_TCPOPT, TH_URG);
 
-  wordmap->insert("echo-reply",	WT(TYPE_ICMP_TYPE, ICMP_ECHOREPLY));
-  wordmap->insert("unreachable", WT(TYPE_ICMP_TYPE, ICMP_UNREACH));
-  wordmap->insert("sourcequench", WT(TYPE_ICMP_TYPE, ICMP_SOURCEQUENCH));
-  wordmap->insert("redirect",	WT(TYPE_ICMP_TYPE, ICMP_REDIRECT));
-  wordmap->insert("echo+",	WT(TYPE_ICMP_TYPE, ICMP_ECHO));
-  wordmap->insert("routeradvert", WT(TYPE_ICMP_TYPE, ICMP_ROUTERADVERT));
-  wordmap->insert("routersolicit", WT(TYPE_ICMP_TYPE, ICMP_ROUTERSOLICIT));
-  wordmap->insert("timeexceeded", WT(TYPE_ICMP_TYPE, ICMP_TIMXCEED));
-  wordmap->insert("parameterproblem", WT(TYPE_ICMP_TYPE, ICMP_PARAMPROB));
-  wordmap->insert("timestamp",	WT(TYPE_ICMP_TYPE, ICMP_TSTAMP));
-  wordmap->insert("timestamp-reply", WT(TYPE_ICMP_TYPE, ICMP_TSTAMPREPLY));
-  wordmap->insert("inforeq",	WT(TYPE_ICMP_TYPE, ICMP_IREQ));
-  wordmap->insert("inforeq-reply", WT(TYPE_ICMP_TYPE, ICMP_IREQREPLY));
-  wordmap->insert("maskreq",	WT(TYPE_ICMP_TYPE, ICMP_MASKREQ));
-  wordmap->insert("maskreq-reply", WT(TYPE_ICMP_TYPE, ICMP_MASKREQREPLY));
+  wordmap->insert("echo-reply",	FIELD_ICMP_TYPE, ICMP_ECHOREPLY);
+  wordmap->insert("unreachable", FIELD_ICMP_TYPE, ICMP_UNREACH);
+  wordmap->insert("sourcequench", FIELD_ICMP_TYPE, ICMP_SOURCEQUENCH);
+  wordmap->insert("redirect",	FIELD_ICMP_TYPE, ICMP_REDIRECT);
+  wordmap->insert("echo+",	FIELD_ICMP_TYPE, ICMP_ECHO);
+  wordmap->insert("routeradvert", FIELD_ICMP_TYPE, ICMP_ROUTERADVERT);
+  wordmap->insert("routersolicit", FIELD_ICMP_TYPE, ICMP_ROUTERSOLICIT);
+  wordmap->insert("timeexceeded", FIELD_ICMP_TYPE, ICMP_TIMXCEED);
+  wordmap->insert("parameterproblem", FIELD_ICMP_TYPE, ICMP_PARAMPROB);
+  wordmap->insert("timestamp",	FIELD_ICMP_TYPE, ICMP_TSTAMP);
+  wordmap->insert("timestamp-reply", FIELD_ICMP_TYPE, ICMP_TSTAMPREPLY);
+  wordmap->insert("inforeq",	FIELD_ICMP_TYPE, ICMP_IREQ);
+  wordmap->insert("inforeq-reply", FIELD_ICMP_TYPE, ICMP_IREQREPLY);
+  wordmap->insert("maskreq",	FIELD_ICMP_TYPE, ICMP_MASKREQ);
+  wordmap->insert("maskreq-reply", FIELD_ICMP_TYPE, ICMP_MASKREQREPLY);
 
   // deprecated variants
-  wordmap->insert("echo_reply",	WT(TYPE_ICMP_TYPE, ICMP_ECHOREPLY));
-  wordmap->insert("dst_unreachable", WT(TYPE_ICMP_TYPE, ICMP_UNREACH));
-  wordmap->insert("source_quench", WT(TYPE_ICMP_TYPE, ICMP_SOURCEQUENCH));
-  wordmap->insert("time_exceeded", WT(TYPE_ICMP_TYPE, ICMP_TIMXCEED));
-  wordmap->insert("parameter_problem", WT(TYPE_ICMP_TYPE, ICMP_PARAMPROB));
-  wordmap->insert("time_stamp", WT(TYPE_ICMP_TYPE, ICMP_TSTAMP));
-  wordmap->insert("time_stamp_reply", WT(TYPE_ICMP_TYPE, ICMP_TSTAMPREPLY));
-  wordmap->insert("info_request", WT(TYPE_ICMP_TYPE, ICMP_IREQ));
-  wordmap->insert("info_request_reply", WT(TYPE_ICMP_TYPE, ICMP_IREQREPLY));
+  wordmap->insert("echo_reply",	FIELD_ICMP_TYPE, ICMP_ECHOREPLY);
+  wordmap->insert("dst_unreachable", FIELD_ICMP_TYPE, ICMP_UNREACH);
+  wordmap->insert("source_quench", FIELD_ICMP_TYPE, ICMP_SOURCEQUENCH);
+  wordmap->insert("time_exceeded", FIELD_ICMP_TYPE, ICMP_TIMXCEED);
+  wordmap->insert("parameter_problem", FIELD_ICMP_TYPE, ICMP_PARAMPROB);
+  wordmap->insert("time_stamp", FIELD_ICMP_TYPE, ICMP_TSTAMP);
+  wordmap->insert("time_stamp_reply", FIELD_ICMP_TYPE, ICMP_TSTAMPREPLY);
+  wordmap->insert("info_request", FIELD_ICMP_TYPE, ICMP_IREQ);
+  wordmap->insert("info_request_reply", FIELD_ICMP_TYPE, ICMP_IREQREPLY);
 
   return wordmap;
 }
 
-static void
-accum_wt_names(HashMap<String, int> *wordmap, String word, StringAccum &sa)
+void
+IPFilter::Wordmap::accum_names(String word, StringAccum &sa) const
 {
-  int t = (*wordmap)[word];
+  int t = _map[word];
   Vector<int> types;
   while (t != 0) {
-    types.push_back(WT_TYPE(t));
+    int t_type = (t & 0x80000000 ? _type[t & 0x7FFFFFFF] : (t >> 16));
+    types.push_back(t_type);
     word += "+";
-    t = (*wordmap)[word];
+    t = _map[word];
   }
 
   if (types.size() == 0)
@@ -168,45 +174,66 @@ accum_wt_names(HashMap<String, int> *wordmap, String word, StringAccum &sa)
   }
 }
 
+static bool
+protos_compatible(int p1, int p2)
+{
+  return (p1 == p2
+	  || (p1 == IP_PROTO_TCP_OR_UDP && (p2 == IP_PROTO_TCP || p2 == IP_PROTO_UDP))
+	  || (p2 == IP_PROTO_TCP_OR_UDP && (p1 == IP_PROTO_TCP || p2 == IP_PROTO_UDP)));
+}
+
 int
-IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto, String word, ErrorHandler *errh)
+IPFilter::Wordmap::lookup(String word, int type, int transp_proto, uint32_t &data, ErrorHandler *errh) const
 {
   String orig_word = word;
-  int t = (*wordmap)[word];
+  int t = _map[word];
   if (t == 0)
     return -1;
 
   int num_matches = 0;
-  int last_match = -1;
+  int last_t_match = -1;
+  uint32_t last_d_match = 0;
   int transp_dropped = 0;
 
   while (t != 0) {
-    if (type != 0 && WT_TYPE(t) != type)
+    // unpack into type and data
+    int t_type, t_data;
+    if (t & 0x80000000)
+      t_type = _type[t & 0x7FFFFFFF], t_data = _data[t & 0x7FFFFFFF];
+    else
+      t_type = (t >> 16), t_data = (t & 0xFFFF);
+
+    // what transport protocol does this type imply?
+    int t_proto = 0;
+    if (t_type == TYPE_TCPOPT)
+      t_proto = IP_PROTO_TCP;
+    else if (t_type == TYPE_PORT)
+      t_proto = IP_PROTO_TCP_OR_UDP;
+    else if (t_type & TYPE_FIELD)
+      t_proto = (t_type & FIELD_PROTO_MASK) >> FIELD_PROTO_SHIFT;
+    
+    if (type != 0 && t_type != type)
       /* not interesting */;
-    else if (WT_TYPE(t) == TYPE_TCPOPT && transp_proto != UNKNOWN && transp_proto != IP_PROTO_TCP && transp_proto != IP_PROTO_TCP_OR_UDP) {
-      /* not interesting */
-      transp_dropped++;
-    } else if (WT_TYPE(t) == TYPE_ICMP_TYPE && transp_proto != UNKNOWN && transp_proto != IP_PROTO_ICMP) {
-      /* not interesting */
-      transp_dropped++;
-    } else if (WT_TYPE(t) == TYPE_PORT && transp_proto != UNKNOWN && transp_proto != IP_PROTO_TCP && transp_proto != IP_PROTO_UDP && transp_proto != IP_PROTO_TCP_OR_UDP) {
+    else if (t_proto && transp_proto != UNKNOWN && !protos_compatible(t_proto, transp_proto)) {
       /* not interesting */
       transp_dropped++;
     } else {
       num_matches++;
-      last_match = t;
+      last_t_match = t_type;
+      last_d_match = t_data;
     }
 
     word += "+";
-    t = (*wordmap)[word];
+    t = _map[word];
   }
 
-  if (num_matches == 1)
-    return last_match;
-  else if (num_matches > 1) {
+  if (num_matches == 1) {
+    data = last_d_match;
+    return last_t_match;
+  } else if (num_matches > 1) {
     if (errh) {
       StringAccum sa;
-      accum_wt_names(wordmap, orig_word, sa);
+      accum_names(orig_word, sa);
       errh->error("'%s' is ambiguous; specify %s", orig_word.cc(), sa.cc());
     }
     return -2;
@@ -216,7 +243,7 @@ IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto,
       String tr = Primitive::unparse_transp_proto(transp_proto);
       if (tr) tr += " ";
       StringAccum sa;
-      accum_wt_names(wordmap, orig_word, sa);
+      accum_names(orig_word, sa);
       errh->error("'%s%s %s' is meaningless; specify %s with %s", tr.cc(), tn.cc(), orig_word.cc(), sa.cc(), orig_word.cc());
     }
     return -2;
@@ -280,7 +307,7 @@ IPFilter::Primitive::set_srcdst(int x, ErrorHandler *errh)
 void
 IPFilter::Primitive::set_transp_proto(int x, ErrorHandler *errh)
 {
-  if (_transp_proto != UNKNOWN)
+  if (_transp_proto != UNKNOWN && _transp_proto != x)
     errh->error("transport protocol specified twice");
   _transp_proto = x;
 }
@@ -344,14 +371,13 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
    case TYPE_IPFRAG: sa << "ip frag"; break;
    case TYPE_PORT: sa << "port"; break;
    case TYPE_TCPOPT: sa << "tcp opt"; break;
-   case TYPE_ICMP_TYPE: sa << "icmp type"; break;
    case TYPE_NET: sa << "ip net"; break;
    case TYPE_IPUNFRAG: sa << "ip unfrag"; break;
    case TYPE_IPECT: sa << "ip ect"; break;
    case TYPE_IPCE: sa << "ip ce"; break;
    default:
     if (type & TYPE_FIELD) {
-      switch (type & ~TYPE_FIELD) {
+      switch (type) {
        case FIELD_IPLEN: sa << "ip len"; break;
        case FIELD_ID: sa << "ip id"; break;
        case FIELD_VERSION: sa << "ip vers"; break;
@@ -359,6 +385,8 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
        case FIELD_TOS: sa << "ip tos"; break;
        case FIELD_DSCP: sa << "ip dscp"; break;
        case FIELD_TTL: sa << "ip ttl"; break;
+       case FIELD_TCP_WIN: sa << "tcp win"; break;
+       case FIELD_ICMP_TYPE: sa << "icmp type"; break;
        default: sa << "<unknown type " << type << ">";
       }
     } else
@@ -428,7 +456,6 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
      case TYPE_HOST:
      case TYPE_NET:
      case TYPE_TCPOPT:
-     case TYPE_ICMP_TYPE:
       _type = _data;
       if (!_srcdst)
 	_srcdst = p._srcdst;
@@ -447,8 +474,8 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       break;
       
      case TYPE_INT:
-      if (!(p._type & TYPE_FIELD) && p._type != TYPE_PORT && p._type != TYPE_ICMP_TYPE)
-	return errh->error("specify header field, 'port', or 'icmp type'");
+      if (!(p._type & TYPE_FIELD) && p._type != TYPE_PORT)
+	return errh->error("specify header field or 'port'");
       _data = p._type;
       goto retry;
 
@@ -460,7 +487,13 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       break;
       
      default:
-      return errh->error("unknown type '%s'", unparse_type(0, _data).cc());
+      if (_data & TYPE_FIELD) {
+	_type = _data;
+	if ((_type & FIELD_PROTO_MASK) && _transp_proto == UNKNOWN)
+	  _transp_proto = (_type & FIELD_PROTO_MASK) >> FIELD_PROTO_SHIFT;
+      } else
+	return errh->error("unknown type '%s'", unparse_type(0, _data).cc());
+      break;
 
     }
   }
@@ -487,7 +520,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 
    case TYPE_PROTO:
     if (_data == TYPE_INT || _data == TYPE_PROTO) {
-      if (_transp_proto != UNKNOWN)
+      if (_transp_proto != UNKNOWN && _transp_proto != _u.i)
 	return errh->error("transport protocol specified twice");
       _data = TYPE_NONE;
     } else
@@ -544,7 +577,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 	return -1;
     } else
       return errh->error("weird data given to 'ip ect' directive");
-    _type = TYPE_FIELD | FIELD_TOS;
+    _type = FIELD_TOS;
     break;
 
    case TYPE_IPCE:
@@ -552,20 +585,7 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return errh->error("'ip ce' directive takes no data");
     _mask.u = IP_ECNMASK;
     _u.u = IP_ECN_CE;
-    _type = TYPE_FIELD | FIELD_TOS;
-    break;
-
-   case TYPE_ICMP_TYPE:
-    if (_data == TYPE_INT)
-      _data = TYPE_ICMP_TYPE;
-    if (_data != TYPE_ICMP_TYPE)
-      return errh->error("ICMP type missing in 'icmp type' directive");
-    if (_transp_proto == UNKNOWN)
-      _transp_proto = IP_PROTO_ICMP;
-    else if (_transp_proto != IP_PROTO_ICMP)
-      return errh->error("bad protocol %d for 'icmp type' directive", _transp_proto);
-    if (set_mask(0xFF, 0, errh) < 0)
-      return -1;
+    _type = FIELD_TOS;
     break;
 
    case TYPE_IPFRAG:
@@ -584,9 +604,9 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
 
    default:
     if (_type & TYPE_FIELD) {
-      if (_data != TYPE_INT)
+      if (_data != TYPE_INT && _data != _type)
 	return errh->error("value missing in '%s' directive", unparse_type().c_str());
-      int nbits = field_def[_type & ~TYPE_FIELD] & 0xFFFF;
+      int nbits = ((_type & FIELD_LENGTH_MASK) >> FIELD_LENGTH_SHIFT) + 1;
       uint32_t mask = (nbits == 32 ? 0xFFFFFFFFU : (1 << nbits) - 1);
       if (set_mask(mask, 0, errh) < 0)
 	return -1;
@@ -691,7 +711,7 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
 
   // enforce first fragment: fragmentation offset == 0
   // (before transport protocol to enhance later optimizations)
-  if (_type == TYPE_PORT || _type == TYPE_TCPOPT || _type == TYPE_ICMP_TYPE)
+  if (_type == TYPE_PORT || _type == TYPE_TCPOPT || ((_type & TYPE_FIELD) && (_type & FIELD_PROTO_MASK)))
     c->add_expr(tree, 4, 0, htonl(0x00001FFF));
   
   // handle transport protocol uniformly
@@ -734,16 +754,13 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
     c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, htonl(_u.u << 16), htonl(_mask.u << 16));
     break;
 
-   case TYPE_ICMP_TYPE:
-    add_comparison_exprs(c, tree, TRANSP_FAKE_OFFSET, 24);
-    break;
-
    default:
     if (_type & TYPE_FIELD) {
-      int field = field_def[_type & ~TYPE_FIELD];
-      int offset = field >> 16, length = field & 0xFFFF;
+      int offset = (_type & FIELD_OFFSET_MASK) >> FIELD_OFFSET_SHIFT;
+      int length = ((_type & FIELD_LENGTH_MASK) >> FIELD_LENGTH_SHIFT) + 1;
       int word_offset = (offset >> 3) & ~3, bit_offset = offset & 0x1F;
-      add_comparison_exprs(c, tree, word_offset, 32 - (bit_offset + length));
+      int transp_offset = (_type & FIELD_PROTO_MASK ? TRANSP_FAKE_OFFSET : 0);
+      add_comparison_exprs(c, tree, transp_offset + word_offset, 32 - (bit_offset + length));
     } else
       assert(0);
     break;
@@ -942,13 +959,16 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // collect qualifiers
   for (; pos < words.size(); pos++) {
     String wd = words[pos];
-    int wt = lookup_word(wordmap, 0, UNKNOWN, wd, 0);
+    uint32_t wdata;
+    int wt = wordmap->lookup(wd, 0, UNKNOWN, wdata, 0);
 
-    if (wt >= 0 && WT_TYPE(wt) == TYPE_TYPE)
-      prim.set_type(wt & WT_DATA, errh);
+    if (wt >= 0 && wt == TYPE_TYPE) {
+      prim.set_type(wdata, errh);
+      if ((wdata & TYPE_FIELD) && (wdata & FIELD_PROTO_MASK))
+	prim.set_transp_proto((wdata & FIELD_PROTO_MASK) >> FIELD_PROTO_SHIFT, errh);
 
-    else if (wt >= 0 && WT_TYPE(wt) == TYPE_PROTO)
-      prim.set_transp_proto(wt & WT_DATA, errh);
+    } else if (wt >= 0 && wt == TYPE_PROTO)
+      prim.set_transp_proto(wdata, errh);
 
     else if (wt != -1)
       break;
@@ -1005,28 +1025,17 @@ IPFilter::parse_factor(const Vector<String> &words, int pos,
   // now collect the actual data
   if (pos < words.size()) {
     wd = words[pos];
-    int wt = lookup_word(wordmap, prim._type, prim._transp_proto, wd, errh);
+    uint32_t wdata;
+    int wt = wordmap->lookup(wd, prim._type, prim._transp_proto, wdata, errh);
     pos++;
     
     if (wt == -2)		// ambiguous or incorrect word type
       /* absorb word, but do nothing */
       prim._type = -2;
 
-    else if (WT_TYPE(wt) == TYPE_PROTO) {
-      prim._data = TYPE_PROTO;
-      prim._u.u = (wt & WT_DATA);
-
-    } else if (WT_TYPE(wt) == TYPE_PORT) {
-      prim._data = TYPE_PORT;
-      prim._u.u = (wt & WT_DATA);
-
-    } else if (WT_TYPE(wt) == TYPE_TCPOPT) {
-      prim._data = TYPE_TCPOPT;
-      prim._u.u = (wt & WT_DATA);
-
-    } else if (WT_TYPE(wt) == TYPE_ICMP_TYPE) {
-      prim._data = TYPE_ICMP_TYPE;
-      prim._u.u = (wt & WT_DATA);
+    else if (wt != -1 && wt != TYPE_TYPE) {
+      prim._data = wt;
+      prim._u.u = wdata;
 
     } else if (cp_integer(wd, &prim._u.i))
       prim._data = TYPE_INT;

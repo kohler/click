@@ -28,21 +28,21 @@ Matches packets of the given protocol.
 
 =item B<[SRCORDST] host IPADDR>
 
-IPADDR is an IP address and SRCORDST is `src', `dst', `src or dst', or `src
-and dst'. (If SRCORDST is missing, `src or dst' is assumed.) Matches
+IPADDR is an IP address and SRCORDST is 'src', 'dst', 'src or dst', or 'src
+and dst'. (If SRCORDST is missing, 'src or dst' is assumed.) Matches
 packets sent to and/or from the given machine.
 
 =item B<[SRCORDST] net NETADDR>
 
-NETADDR is an IP network address (either CIDR-style `IPADDR/BITS' or
-`IPADDR mask MASK') and SRCORDST is as above. Matches packets sent to
+NETADDR is an IP network address (either CIDR-style 'IPADDR/BITS' or
+'IPADDR mask MASK') and SRCORDST is as above. Matches packets sent to
 and/or from the given network.
 
 =item B<[SRCORDST] [tcp | udp] port PORT>
 
 PORT is a TCP or UDP port name (see below) or number and SRCORDST is as
 above. Matches packets sent to and/or from the given TCP or UDP port. If
-you leave out `tcp' or `udp', then either TCP or UDP is accepted.
+you leave out 'tcp' or 'udp', then either TCP or UDP is accepted.
 
 =item B<ip vers VERSION>
 
@@ -87,12 +87,17 @@ set and/or a nonzero fragment offset).
 
 =item B<ip unfrag>
 
-Equivalent to `not ip frag'.
+Equivalent to 'not ip frag'.
 
 =item B<tcp opt TCPOPT>
 
 TCPOPT is a TCP option name (see below). Matches TCP packets with the given
 option.
+
+=item B<tcp win TCPWIN>
+
+TCPWIN is a TCP receive window length. Matches TCP packets with the given
+window length. Note that window scaling is not applied.
 
 =item B<icmp type TYPE>
 
@@ -109,34 +114,34 @@ Matches no packets.
 
 =back
 
-These primitives can be combined with the connectives `and', `or', and `not'
-V<>(synonyms `&&', `||', and `!'), with the ternary operator `?:' (the colon
-must be surrounded by spaces!), and with parentheses. For example, `(dst port
+These primitives can be combined with the connectives 'and', 'or', and 'not'
+V<>(synonyms '&&', '||', and '!'), with the ternary operator '?:' (the colon
+must be surrounded by spaces!), and with parentheses. For example, '(dst port
 www or dst port ssh) and tcp opt syn'.
 
-All primitives except B<tcp opt> accept an optional OPERATION, `==' or `!=',
-which can occur before the actual option. If no OPERATION is specified, `=='
-is assumed. `src host == 10.0.0.10' matches packets whose source host is
-10.0.0.10; `src host != 10.0.0.10' matches packets whose source host I<is not>
-10.0.0.10. Directives with integer values also support the `<', `>', `<=',
-and `>=' operations.
+All primitives except B<tcp opt> accept an optional OPERATION, '==' or '!=',
+which can occur before the actual option. If no OPERATION is specified, '=='
+is assumed. 'src host == 10.0.0.10' matches packets whose source host is
+10.0.0.10; 'src host != 10.0.0.10' matches packets whose source host I<is not>
+10.0.0.10. Directives with integer values also support the '<', '>', '<=',
+and '>=' operations.
 
-For B<port> and B<icmp type> directives, `DIRECTIVE != VALUE' is not the
-same as `not (DIRECTIVE == VALUE)'. For example, `src tcp port != 5'
-matches TCP packets whose source port is not 5, while `!(src tcp port ==
-5)' matches non-TCP packets as well. (The `src tcp port != 5' option is
-effectively equivalent to `tcp and not src tcp port 5'.) Similarly, `icmp
-type != 4' will not match non-ICMP packets. The same goes for the `<', `>',
-`<=', and `>=' relations.
+For B<port> and B<icmp type> directives, 'DIRECTIVE != VALUE' is not the
+same as 'not (DIRECTIVE == VALUE)'. For example, 'src tcp port != 5'
+matches TCP packets whose source port is not 5, while '!(src tcp port ==
+5)' matches non-TCP packets as well. (The 'src tcp port != 5' option is
+effectively equivalent to 'tcp and not src tcp port 5'.) Similarly, 'icmp
+type != 4' will not match non-ICMP packets. The same goes for the '<', '>',
+'<=', and '>=' relations.
 
 The B<port>, B<icmp type>, and B<tcp opt> directives will only match first
 fragments.
 
-You can omit a lot of this syntax. For example, instead of `ip proto tcp',
-you can just say `tcp'; and similarly for `port www' (just say `www'), `tcp
-opt syn' (just say `syn'), `net 10.0.0.0/24' (just say `10.0.0.0/24'), and
-`ip unfrag' (just say `unfrag'). You can often eliminate repetitive
-qualifiers, too: `src port 80 or 81' is the same as `src port 80 or src
+You can omit a lot of this syntax. For example, instead of 'ip proto tcp',
+you can just say 'tcp'; and similarly for 'port www' (just say 'www'), 'tcp
+opt syn' (just say 'syn'), 'net 10.0.0.0/24' (just say '10.0.0.0/24'), and
+'ip unfrag' (just say 'unfrag'). You can often eliminate repetitive
+qualifiers, too: 'src port 80 or 81' is the same as 'src port 80 or src
 port 81'.
 
 As a special case, a pattern consisting of "-", "any", or "all" matches
@@ -146,30 +151,30 @@ The patterns are scanned in order, and the packet is sent to the output
 corresponding to the first matching pattern. Thus more specific patterns
 should come before less specific ones. You will get a warning if no packet
 will ever match a pattern. Usually, this is because an earlier pattern is
-more general, or because your pattern is contradictory (`src port www and
+more general, or because your pattern is contradictory ('src port www and
 src port ftp').
 
 =n
 
-Valid IP port names: `echo', `discard', `daytime', `chargen', `ftp-data',
-`ftp', `ssh', `telnet', `smtp', `domain', `dns', `bootps', `bootpc',
-`tftp', `finger', `www', `pop3', `sunrpc', `auth', `nntp', `ntp',
-`netbios-ns', `netbios-dgm', `netbios-ssn', `snmp', `snmp-trap', `irc',
-`imap3', `https', `rip', `route', `imaps', `pop3s'
+Valid IP port names: 'echo', 'discard', 'daytime', 'chargen', 'ftp-data',
+'ftp', 'ssh', 'telnet', 'smtp', 'domain', 'dns', 'bootps', 'bootpc',
+'tftp', 'finger', 'www', 'pop3', 'sunrpc', 'auth', 'nntp', 'ntp',
+'netbios-ns', 'netbios-dgm', 'netbios-ssn', 'snmp', 'snmp-trap', 'irc',
+'imap3', 'https', 'rip', 'route', 'imaps', 'pop3s'
 
-Valid IP protocol names: `icmp', `igmp', `ipip', `tcp', `udp'
+Valid IP protocol names: 'icmp', 'igmp', 'ipip', 'tcp', 'udp'
 
-Valid TCP options: `syn', `fin', `ack', `rst', `psh', `urg'
+Valid TCP options: 'syn', 'fin', 'ack', 'rst', 'psh', 'urg'
 
-Valid ICMP type names: `echo-reply', `unreachable', `sourcequench',
-`redirect', `echo', `routeradvert', `routersolicit', `timeexceeded',
-`parameterproblem', `timestamp', `timestamp-reply', `inforeq',
-`inforeq-reply', `maskreq', `maskreq-reply'
+Valid ICMP type names: 'echo-reply', 'unreachable', 'sourcequench',
+'redirect', 'echo', 'routeradvert', 'routersolicit', 'timeexceeded',
+'parameterproblem', 'timestamp', 'timestamp-reply', 'inforeq',
+'inforeq-reply', 'maskreq', 'maskreq-reply'
 
 This element correctly handles IP packets with options.
 
-B<[tcp | udp] port>, B<icmp type>, and B<tcp opt> directives can only be
-true on the first fragment of a fragmented packet.
+B<[tcp | udp] port>, B<icmp type>, B<tcp opt>, and B<tcp win> directives can
+only be true on the first fragment of a fragmented packet.
 
 Every IPClassifier element has an equivalent corresponding IPFilter element
 and vice versa. Use the element whose syntax is more convenient for your

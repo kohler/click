@@ -23,9 +23,9 @@ order, and are processed according to the ACTION in the first filter that
 matched.
 
 Each ACTION is either a port number, which specifies that the packet should be
-sent out on that port; `C<allow>', which is equivalent to `C<0>'; or `C<drop>'
-, which means drop the packet. You can also say `C<deny>' instead of
-`C<drop>', but see the compatibility note below.
+sent out on that port; 'C<allow>', which is equivalent to 'C<0>'; or 'C<drop>'
+, which means drop the packet. You can also say 'C<deny>' instead of
+'C<drop>', but see the compatibility note below.
 
 The IPFilter element has an arbitrary number of outputs. Input packets must
 have their IP header annotation set; CheckIPHeader and MarkIPHeader do
@@ -37,9 +37,9 @@ Every IPFilter element has an equivalent corresponding IPClassifier element
 and vice versa. Use the element whose syntax is more convenient for your
 needs.
 
-B<Compatibility note>: `C<deny>' formerly meant `C<1>' if the element had at
-least two outputs and `C<drop>' if it did not. We decided this was
-error-prone; now it just means `C<drop>'. For now, however, `C<deny>' will
+B<Compatibility note>: 'C<deny>' formerly meant 'C<1>' if the element had at
+least two outputs and 'C<drop>' if it did not. We decided this was
+error-prone; now it just means 'C<drop>'. For now, however, 'C<deny>' will
 print a warning if used on an element with more than one output.
 
 =e
@@ -127,15 +127,11 @@ class IPFilter : public Classifier { public:
   int configure(Vector<String> &, ErrorHandler *);
   
   void push(int port, Packet *);
-  
-  static HashMap<String, int> *create_wordmap();
-  static int lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto, String word, ErrorHandler *errh);
+
+  class Wordmap;
+  static Wordmap* create_wordmap();
   
   enum {
-    WT_TYPE_MASK = 0x3FFF0000,
-    WT_DATA	= 0x0000FFFF,
-    WT_TYPE_SHIFT = 16,
-
     TYPE_NONE	= 0,		// data types
     TYPE_TYPE	= 1,
     TYPE_INT	= 2,
@@ -145,22 +141,34 @@ class IPFilter : public Classifier { public:
     TYPE_IPFRAG	= 12,
     TYPE_PORT	= 13,
     TYPE_TCPOPT = 14,
-    TYPE_ICMP_TYPE = 15,
-    TYPE_FIELD	= 0x2000,
     
     TYPE_NET	= 30,		// shorthands
     TYPE_IPUNFRAG = 31,
     TYPE_IPECT	= 32,
     TYPE_IPCE	= 33,
 
-    FIELD_CSUM	= 0,
-    FIELD_IPLEN	= 1,
-    FIELD_ID	= 2,
-    FIELD_VERSION = 3,
-    FIELD_HL	= 4,
-    FIELD_TOS	= 5,
-    FIELD_DSCP	= 6,
-    FIELD_TTL	= 7,
+    TYPE_FIELD	= 0x40000000,
+    // bit 31 must be zero
+    // bit 30 must be one
+    // bits 29-21 represent IP protocol (9 bits); 0 means no protocol
+    // bits 20-5 represent field offset into header in bits (16 bits)
+    // bits 4-0 represent field length in bits minus one (5 bits)
+    FIELD_PROTO_SHIFT = 21,
+    FIELD_PROTO_MASK = (0x1FF << FIELD_PROTO_SHIFT),
+    FIELD_OFFSET_SHIFT = 5,
+    FIELD_OFFSET_MASK = (0xFFFF << FIELD_OFFSET_SHIFT),
+    FIELD_LENGTH_SHIFT = 0,
+    FIELD_LENGTH_MASK = (0x1F << FIELD_LENGTH_SHIFT),
+    FIELD_CSUM	= (TYPE_FIELD | ((10*8) << FIELD_OFFSET_SHIFT) | 15),
+    FIELD_IPLEN	= (TYPE_FIELD | ((2*8) << FIELD_OFFSET_SHIFT) | 15),
+    FIELD_ID	= (TYPE_FIELD | ((4*8) << FIELD_OFFSET_SHIFT) | 15),
+    FIELD_VERSION = (TYPE_FIELD | (0 << FIELD_OFFSET_SHIFT) | 3),
+    FIELD_HL	= (TYPE_FIELD | (4 << FIELD_OFFSET_SHIFT) | 3),
+    FIELD_TOS	= (TYPE_FIELD | ((1*8) << FIELD_OFFSET_SHIFT) | 7),
+    FIELD_DSCP	= (TYPE_FIELD | ((1*8) << FIELD_OFFSET_SHIFT) | 5),
+    FIELD_TTL	= (TYPE_FIELD | ((8*8) << FIELD_OFFSET_SHIFT) | 7),
+    FIELD_TCP_WIN = (TYPE_FIELD | (IP_PROTO_TCP << FIELD_PROTO_SHIFT) | ((14*8) << FIELD_OFFSET_SHIFT) | 15),
+    FIELD_ICMP_TYPE = (TYPE_FIELD | (IP_PROTO_ICMP << FIELD_PROTO_SHIFT) | (0 << FIELD_OFFSET_SHIFT) | 7),
     
     UNKNOWN = -1000,
     
@@ -247,6 +255,17 @@ IPFilter::Primitive::negation_is_simple() const
   else
     return _type == TYPE_HOST || (_type & TYPE_FIELD) || _type == TYPE_IPFRAG;
 }
+
+class IPFilter::Wordmap { public:
+  Wordmap();
+  void insert(const String &name, uint32_t type, uint32_t data);
+  int lookup(String word, int type, int transp_proto, uint32_t &data, ErrorHandler *errh) const;
+ private:
+  HashMap<String, int> _map;
+  Vector<uint32_t> _type;
+  Vector<uint32_t> _data;
+  void accum_names(String word, StringAccum &sa) const;
+};
 
 CLICK_ENDDECLS
 #endif
