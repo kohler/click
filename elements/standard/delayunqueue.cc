@@ -47,11 +47,7 @@ int
 DelayUnqueue::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, &_task, errh);
-  
-  // initialize Timer if we have a long delay (>= 0.1sec)
-  if (_delay.tv_sec > 0 || _delay.tv_usec >= 100000)
-    _timer.initialize(this);
-  
+  _timer.initialize(this);
   _signal = Notifier::upstream_pull_signal(this, 0, &_task);
   return 0;
 }
@@ -66,24 +62,38 @@ DelayUnqueue::cleanup(CleanupStage)
 void
 DelayUnqueue::run_scheduled()
 {
+ retry:
+  // read a packet
   if (!_p && (_p = input(0).pull())) {
     if (!_p->timestamp_anno().tv_sec) // get timestamp if not set
       click_gettimeofday(&_p->timestamp_anno());
-    timeradd(&_p->timestamp_anno(), &_delay, &_p->timestamp_anno());
-    if (_timer.initialized()) {	// long delay, use timer
-      _timer.schedule_at(_p->timestamp_anno());
-      return;			// without rescheduling
-    }
-  } else if (_p) {
-    struct timeval now;
+    _p->timestamp_anno() += _delay;
+  }
+  
+  if (_p) {
+    struct timeval now, diff;
     click_gettimeofday(&now);
-    if (!timercmp(&now, &_p->timestamp_anno(), <)) {
+    diff = _p->timestamp_anno() - now;
+
+    if (diff.tv_sec < 0 || (diff.tv_sec == 0 && diff.tv_usec == 0)) {
+      // packet ready for output
       _p->timestamp_anno() = now;
       output(0).push(_p);
       _p = 0;
+      goto retry;
+    } else if (diff.tv_sec == 0 && diff.tv_usec < 100000)
+      // small delta, reschedule Task
+      /* Task rescheduled below */;
+    else {
+      // large delta, schedule Timer
+      _timer.schedule_at(_p->timestamp_anno());
+      return;			// without rescheduling
     }
-  } else if (!_signal)
-    return;			// without rescheduling
+  } else {
+    // no Packet available
+    if (!_signal)
+      return;			// without rescheduling
+  }
 
   _task.fast_reschedule();
 }
