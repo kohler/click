@@ -145,7 +145,7 @@ Queue::push(int, Packet *packet)
     // gone idle. Under high load this could leave outputs idle
     // even though packets are Queued. So cause output idleness
     // every 16 packets as well as when we go non-empty. */
-#if 0 
+#ifndef CLICK_POLLDEV
     if (was_empty) {
       if (_puller1)
         _puller1->join_scheduler();

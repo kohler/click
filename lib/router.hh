@@ -32,9 +32,6 @@ class Router : public ElementLink {
   
   bool _please_stop_driver;
   
-  // stride scheduling stuff
-  Vector<Element *> _waiting_elements;
-
   Router(const Router &);
   
   void remove_hookup(int);
@@ -92,9 +89,6 @@ class Router : public ElementLink {
   int ninput_pidx() const			{ return _input_fidx.size(); }
   int noutput_pidx() const			{ return _output_fidx.size(); }
 
-  // stride scheduling
-  void can_wait(Element *e)		{ _waiting_elements.push_back(e); }
-  
   int downstream_elements(Element *, int o, ElementFilter*, Vector<Element*>&);
   int downstream_elements(Element *, int o, Vector<Element *> &);
   int downstream_elements(Element *, Vector<Element *> &);

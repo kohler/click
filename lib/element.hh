@@ -101,15 +101,6 @@ class Element : public ElementLink { public:
   virtual int select_fd()		{ return(-1); }
   virtual void selected(int)		{ }
 
-#ifdef CLICK_POLLDEV
-  /* this function should tell elements to wait for an event using the current
-   * thread, and it MUST wake up the current thread when the event occurs */
-  virtual void set_wakeup_when_busy()   { }
-  /* we can get rid of this if we knew who woke up, but we don't... may be we
-   * need a better "waiting" interface all together */
-  virtual void woke_up()		{ }
-#endif
-  
   // Hooks for a non-empty Queue to tell an output driver to pull().
   virtual bool wants_packet_upstream() const;
   virtual void run_scheduled();

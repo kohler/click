@@ -812,36 +812,6 @@ Router::wait()
         f->selected(fd);
     }
   }
-#else
-
-#ifdef CLICK_POLLDEV
-
-#if 0
-  if (_waiting_elements.size() == 0) return;
-
-  /* set state to be interruptible, so if in between now and actually waiting
-   * someone triggers an event we want to wait on, it will be captured */
-
-  current->state = TASK_INTERRUPTIBLE;
-    
-  for (int i = 0; i < _waiting_elements.size(); i++) 
-  {
-    Element *f = _waiting_elements[i];
-    f->set_wakeup_when_busy();
-  }
-  
-  if (current->state != TASK_RUNNING)
-    schedule();
-  
-  for (int i = 0; i < _waiting_elements.size(); i++) 
-  {
-    Element *f = _waiting_elements[i];
-    f->woke_up();
-  }
-#endif
-
-#endif /* CLICK_POLLDEV */
-
 #endif
 }
 

@@ -49,10 +49,6 @@ class PollDevice : public Element {
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
 
-  bool still_busy() const;
-  void set_wakeup_when_busy();
-  void woke_up();
-
   void run_scheduled();
  
   // statistics

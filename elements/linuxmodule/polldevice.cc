@@ -91,8 +91,6 @@ PollDevice::initialize(ErrorHandler *errh)
   if (!_dev->pollable) 
     return errh->error("device `%s' not pollable", _devname.cc());
 
-  router()->can_wait(this);
-
   _dev->intr_off(_dev);
   _dev->intr_defer = 1;
   _idle = 0;
@@ -158,30 +156,6 @@ PollDevice::run_scheduled()
   _dev->clean_tx(_dev);
   _idle++;
 
-#if 0
-  if (_idle >= POLLDEV_IDLE_LIMIT) {
-    if (_idle == POLLDEV_IDLE_LIMIT)
-      _num_idle_polldevices++;
-    if (_num_idle_polldevices == _num_polldevices)
-    {
-      Vector<PollDevice *> polldevices;
-      ElementLink *n = scheduled_list()->scheduled_next();
-      while(n != scheduled_list()) {
-        if (!((Element*)n)->is_a(class_name())) {
-          reschedule();
-          return;
-        }
-	else 
-	  polldevices.push_back((PollDevice*)n);
-        n = n->scheduled_next();
-      }
-      PollDevice *p;
-      for(int i=0; i<polldevices.size(); i++)
-	polldevices[i]->unschedule();
-      return;
-    }
-  }
-#endif 
   if (got == POLLDEV_MAX_PKTS_PER_RUN)
     adj_tickets(max_ntickets());
   else if (_idle > 2) {
@@ -192,32 +166,6 @@ PollDevice::run_scheduled()
   reschedule();
 }
  
-void
-PollDevice::set_wakeup_when_busy()
-{
-  /* put self on intr wait queue */
-  _self_wq.task = current;
-  _self_wq.next = NULL;
-  add_wait_queue(&(_dev->intr_wq), &_self_wq);
-
-  /* turn interrupts back on */
-  _total_intr_wait++;
-  _dev->intr_on(_dev);
-}
-
-void
-PollDevice::woke_up()
-{
-  _dev->intr_off(_dev);
-  remove_wait_queue(&(_dev->intr_wq), &_self_wq);
-    
-  if (_idle >= POLLDEV_IDLE_LIMIT) 
-    _num_idle_polldevices--; 
-  _idle = 0;
-
-  join_scheduler();
-}
-
 static String
 PollDevice_read_calls(Element *f, void *)
 {
