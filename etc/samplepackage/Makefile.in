@@ -169,7 +169,7 @@ uelements.conf: $(clickbindir)/click-buildtool
 kelements.conf: $(clickbindir)/click-buildtool
 	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r $(package) > kelements.conf
 belements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r bsdmodule -r $(package) > kelements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r bsdmodule -r $(package) > belements.conf
 elements.mk: $(CONFFILES) $(clickbindir)/click-buildtool
 	@rm -f elements.mk
 	[ ! -f uelements.conf ] || $(clickbindir)/click-buildtool elem2make -t userlevel < uelements.conf >> elements.mk

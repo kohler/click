@@ -62,7 +62,9 @@ dnl extract properties of the Click installation
 dnl
 
 click_have_linuxmodule=`if grep 'define HAVE_LINUXMODULE_TARGET' $clickprefix/include/click/config-linuxmodule.h >/dev/null 2>&1; then echo 1; else echo 0; fi`
-click_linuxdir=`grep LINUX_SRCDIR $clickprefix/include/click/pathvars.h | sed 's/.*"\(.*\)".*/\1/'`
+linuxdir=`grep LINUX_SRCDIR $clickprefix/include/click/pathvars.h | sed 's/.*"\(.*\)".*/\1/'`
+click_have_bsdmodule=`if grep 'define HAVE_BSDMODULE_TARGET' $clickprefix/include/click/config-bsdmodule.h >/dev/null 2>&1; then echo 1; else echo 0; fi`
+freebsd_includedir=`grep FREEBSD_INCLUDEDIR $clickprefix/include/click/pathvars.h | sed 's/.*"\(.*\)".*/\1/'`
 
 
 dnl
@@ -107,26 +109,8 @@ AC_ARG_ENABLE(bsdmodule, [  --enable-bsdmodule      enable FreeBSD kernel driver
 
 
 dnl
-dnl Are we compiling on Linux?
+dnl Check for Linux source
 dnl
-
-AC_ARG_WITH(linux, [  --with-linux[=DIR]      Linux source code is in DIR [/usr/src/linux]],
-    [linuxdir=$withval; if test -z "$withval" -o "$withval" = yes; then linuxdir=/usr/src/linux; fi],
-    linuxdir=NONE)
-
-if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno; then
-    linuxdir=$click_linuxdir
-fi
-
-if test "x$linuxdir" != xNONE -a "x$linuxdir" != "x$click_linuxdir" -a "x$enable_linuxmodule" = xyes; then
-    AC_MSG_WARN([
-=========================================
-
-The Linux directory you specified for this package, \`$linuxdir',
-differs from the Linux directory used for Click, \`$click_linuxdir'.
-
-=========================================])
-fi
 
 if test "x$linuxdir" = xNONE -o "x$linuxdir" = xno -o "x$enable_linuxmodule" != xyes; then
     ac_have_linux_kernel=n
@@ -146,12 +130,42 @@ else
   AC_MSG_ERROR([
 =========================================
 
-I can't find $linuxdir/include/linux/skbuff.h!
-Are you sure $linuxdir contains Linux kernel source?
+I can't find $linuxdir/include/linux/skbuff.h, although Click
+thinks $linuxdir contains Linux kernel source!
 
 =========================================])
 fi
+
 AC_SUBST(linuxdir)
+
+
+dnl
+dnl Check for FreeBSD source
+dnl
+
+if test "x$freebsd_includedir" = xNONE -o "x$freebsd_includedir" = xno -o "x$enable_bsdmodule" != xyes; then
+    freebsd_includedir=NONE
+elif test -r $freebsd_includedir/net/if_var.h; then
+    if test $click_have_bsdmodule = 0; then
+	AC_MSG_WARN([
+=========================================
+
+Compiling package for FreeBSD kernel module,
+although Click reports it has not compiled a FreeBSD kernel module.
+
+=========================================])
+    fi
+else
+  AC_MSG_ERROR([
+=========================================
+
+I can't find $freebsd_includedir/net/if_var.h, although Click
+thinks $freebsd_includedir contains FreeBSD kernel includes!
+
+=========================================])
+fi
+
+AC_SUBST(freebsd_includedir)
 
 
 dnl
@@ -160,7 +174,7 @@ dnl
 
 HAVE_USERLEVEL_TARGET=`if test "x$enable_userlevel" = xyes; then echo 1; else echo 0; fi`
 HAVE_LINUXMODULE_TARGET=`if test "x$linuxdir" = xNONE; then echo 0; else echo 1; fi`
-HAVE_BSDMODULE_TARGET=`if test "x$linuxdir" = xNONE; then echo 0; else echo 1; fi`
+HAVE_BSDMODULE_TARGET=`if test "x$freebsd_includedir" = xNONE; then echo 0; else echo 1; fi`
 AC_SUBST(HAVE_USERLEVEL_TARGET)
 AC_SUBST(HAVE_LINUXMODULE_TARGET)
 AC_SUBST(HAVE_BSDMODULE_TARGET)
