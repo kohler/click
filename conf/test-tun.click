@@ -4,7 +4,7 @@
 //   route add 1.0.0.0 -interface 1.0.0.1
 // after you start the click configuration.
 
-tun :: Tun(1.0.0.1, 255.0.0.0);
+tun :: KernelTap(1.0.0.1/8);
 
 ICMPSendPings(1.0.0.2, 1.0.0.1) ->
   EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) ->
