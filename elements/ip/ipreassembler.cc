@@ -1,9 +1,10 @@
-
+// -*- c-basic-offset: 4 -*-
 /*
  * ipreassembler.{cc,hh} -- defragments IP packets
- * Alexander Yip
+ * Alexander Yip, Eddie Kohler
  *
  * Copyright (c) 2001 Massachusetts Institute of Technology
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -29,441 +30,287 @@
 #include <click/bitvector.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
+
+#define PACKET_LINK(p)		((PacketLink *)((p)->all_user_anno_u()))
+#define PACKET_DLEN(p)		((p)->transport_length())
+#define Q_PACKET_JIFFIES(p)	((p)->timestamp_anno().tv_usec)
+#define IP_BYTE_OFF(iph)	((ntohs((iph)->ip_off) & IP_OFFMASK) << 3)
 
 IPReassembler::IPReassembler()
-  : _expire_timer(expire_hook, (void *) this)
+    : Element(1, 1), _expire_timer(expire_hook, (void *) this)
 {
-  MOD_INC_USE_COUNT;
-  add_input();
-  add_output();
-  _mem_used = 0;
-  for(int i=0; i<NMAP; i++)
-    _map[i] = 0;
-
+    MOD_INC_USE_COUNT;
+    _mem_used = 0;
+    for (int i = 0; i < NMAP; i++)
+	_map[i] = 0;
+    static_assert(sizeof(PacketLink) <= Packet::USER_ANNO_SIZE);
 }
 
 IPReassembler::~IPReassembler()
 {
-  MOD_DEC_USE_COUNT;
-}
-
-IPReassembler *
-IPReassembler::clone() const
-{
-  return new IPReassembler;
+    MOD_DEC_USE_COUNT;
 }
 
 int
 IPReassembler::initialize(ErrorHandler *)
 {
-  _expire_timer.initialize(this);
-  _expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
-
-  return 0;
+    _expire_timer.initialize(this);
+    _expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
+    return 0;
 }
+
 void
 IPReassembler::cleanup(CleanupStage)
 {
-  for (int i = 0; i < NMAP; i++) {
-    for (IPQueue *t = _map[i]; t; ) {
-      IPQueue *n = t->next;
-      if (t)
-	queue_free(t, 1);
-
-      t = n;
-    }
-    _map[i] = 0;
-  }
+    for (int i = 0; i < NMAP; i++)
+	while (_map[i])
+	    clean_queue(_map[i], &_map[i]);
 }
 
-Packet *
-IPReassembler::simple_action(Packet *p_in)
+void
+IPReassembler::clean_queue(Packet *q, Packet **q_pprev)
 {
-  struct IPQueue *qp;
-  unsigned int flags, offset;
-  int i, ihl, end;
-  struct FragEntry *prev, *next, *tmp, *tfp;
-  Packet *outPacket = NULL;
-  unsigned char const *ptr;
-
-  // clean up memory if necessary
-  if (_mem_used > IPFRAG_HIGH_THRESH)
-    queue_evictor();
-  
-  // look for the IPQueue matching this packet
-  qp = queue_find(p_in->ip_header());
-
-  // figure out offset & flags
-  offset = ntohs(p_in->ip_header()->ip_off );
-  flags  = offset & ~IP_OFFMASK;
-  offset &= IP_OFFMASK;
-  offset <<= 3;
-  ihl = (int)p_in->ip_header()->ip_hl << 2;
-
-  // check if we need to create a new IPQueue
-  if (qp) {
-    // IPQueue already exists
-    if (offset == 0) {
-      //saw first fragment
-      if ((flags & IP_MF) == 0) 
-	goto out_freequeue;
-      qp->ihlen = ihl;
-      qp->iph = p_in->ip_header(); // save header info
+    *q_pprev = PACKET_LINK(q)->bucket_next;
+    while (q) {
+	Packet *next = PACKET_LINK(q)->next;
+	q->kill();
+	q = next;
     }
-  } else {
-    // fragmented frame replaced by unfragmented copy?
-    if ((offset == 0) && (flags & IP_MF)==0){
-      outPacket = p_in;
-      goto out_skb; // this packet is not a fragment, just send it along
-    }  
-
-    // create a new IPQueue
-    qp = queue_create(p_in->ip_header());
-    if (!qp)
-      goto out_freeskb;
-  }
-
-  // reject oversized packets
-  if ((ntohs(p_in->ip_header()->ip_len) + (int)offset) > 65535){
-    click_chatter(" rejected because oversized");
-    goto out_oversize;
-  }
-
-
-  // find right place for packet
-  end = offset + ntohs(p_in->ip_header()->ip_len) - ihl;
-
-  // check if last packet, set total packet length
-  if ((flags & IP_MF) == 0)
-    qp->len = end;
-
-  // Find out which fragments are in front and at the back of us
-  // in the chain of fragments so far. We must know where to put
-  // this fragment, right?
-  prev = NULL;
-  for (next = qp->frags; next != NULL; next = next->next) {
-    if (next->offset >= offset)
-      break; // bingo !
-    prev = next;
-  }
-
-  // point into the IP datagram 'data' part
-  ptr = p_in->data() + ((int)p_in->ip_header()->ip_hl << 2);
-
-  // We found where to put this one. Check for overlap with
-  // preceding fragment, and, if needed, align things so that
-  // any overlaps are eliminated.
-  if ((prev != NULL) && (offset < prev->end)) {
-    i = prev->end - offset;
-    offset += i;  // ptr into datagram
-    ptr += i;     // ptr into fragment data
-  }
-
-  // Look for overlap with succeeding segments.
-  // If we can merge fragments, do it.
-  for (tmp = next; tmp != NULL; tmp = tfp) {
-    tfp = tmp->next;
-    if (tmp->offset >= end)
-      break;   // no overlaps
-
-    // cut tmp (cut existing fragment)
-    i = end - next->offset;  // overlap is 'i' bytes
-    tmp->len -= i;    // 
-    tmp->offset += i;
-    tmp->ptr += i;
-
-    // If we get a frag size <= 0, remove it, and the packet 
-    // that goes with it.
-    if (tmp->len <= 0) {
-      if (tmp->prev != NULL) 
-	tmp->prev->next = tmp->next;
-      else
-	qp->frags = tmp->next;
-
-      if (tmp->next != NULL)
-	tmp->next->prev = tmp->prev;
-
-      // We have killed the original next frame.
-      next = tfp;
-
-      // kill that frag packet & it's FragEntry
-      tmp->p->kill();
-      delete(tmp);
-    }
-  }
-
-  // Create a FragEntry to hold this frag if theres enough memory
-  tfp = frag_create(offset, end, p_in);
-  if (!tfp)
-    goto out_freeskb;
-
-  // Insert this fragment in the chain of fragments
-  tfp->prev = prev;
-  tfp->next = next;
-  if (prev != NULL)
-    prev->next = tfp;
-  else
-    qp->frags = tfp;
-
-  if (next != NULL) 
-    next->prev = tfp;
-
-  // OK, so we inserted this new fragment into the chain.
-  // Check if we now have a full IP datagram which we can
-  // bump up to the IP layer...
-  if (queue_done(qp)){
-    
-    // create a new packet containing all the fragments
-    outPacket = queue_glue(qp);
-    
- out_freequeue:
-    // free everything except the first packet if outPacket exists
-    // free everything if the outPacket is NULL
-    queue_free(qp, outPacket == NULL);
-      
- out_skb:
-    return outPacket;
-  }
-  
-  
- out_timer:
-  qp->last_touched_jiffy = click_jiffies(); // refresh this queue
-
- out:
-  return NULL;
-  
- out_oversize:
-  
-
- out_freeskb:
-  // the queue is still active... reset its timer
-  p_in->kill();
-  if (qp)
-    goto out_timer;
-  
-  goto out;
-
 }
 
-
-void 
-IPReassembler::queue_free(struct IPQueue *qp, int free_first) {
-  
-  struct FragEntry *fp;
-    
-  // remove this entry from the incomplete datagrams queue
-  if (qp->next)
-    qp->next->pprev = qp->pprev;
-
-  *qp->pprev = qp->next;
-
-  // release all fragment data
-  fp = qp->frags;
-  while(fp) {
-    struct FragEntry *xp = fp->next;
-
-    // free this memory
-    _mem_used -= fp->original_size;
-    
-    // dont free first packet unless specified (first packet 
-    //  is usually pushed onto the next click element
-    if (free_first || fp != qp->frags){
-      fp->p->kill();  
-    }
-
-    // free FragEntry
-    delete(fp);
-    
-    fp = xp;
-  }    
-  
-  // finally release the IPQueue
-  delete(qp);
-  return;
-  
-}
-
-struct IPReassembler::FragEntry *
-IPReassembler::frag_create(int offset, int end, Packet *p) 
+void
+IPReassembler::check_error(ErrorHandler *errh, int bucket, const Packet *p, const char *format, ...)
 {
-  FragEntry *fp = new FragEntry;
-
-  fp->original_size = ntohs(p->ip_header()->ip_len);
-  fp->offset = offset;
-  fp->end = end;
-  fp->len = end-offset;
-  fp->p = p;
-  fp->ptr = p->data() + ((int)p->ip_header()->ip_hl << 2) ;
-  fp->next = fp->prev = NULL;
-
-  // remember how much memory this frag takes up
-  _mem_used += fp->original_size;
-  
-  return fp;
+    const click_ip *iph = p->ip_header();
+    va_list val;
+    va_start(val, format);
+    StringAccum sa;
+    sa << "buck " << bucket << ": ";
+    if (iph)
+	sa << iph->ip_src << " > " << iph->ip_dst << " [" << ntohs(iph->ip_id) << '@' << IP_BYTE_OFF(iph) << '+' << PACKET_DLEN(p) << ((iph->ip_off & htons(IP_MF)) ? "+]: " : "]: ");
+    sa << format;
+    errh->verror(ErrorHandler::ERR_ERROR, String(), sa.cc(), val);
+    va_end(val);
 }
 
-struct IPReassembler::IPQueue *
-IPReassembler::queue_create(const click_ip *ipheader){
-  int hashvalue;
-
-  IPQueue *qp = new IPQueue;
-
-  qp->iph = ipheader;
-  qp->frags = NULL;
-  qp->len = 0;
-  qp->ihlen = ipheader->ip_hl * 4; 
-  qp->next = NULL;
-  qp->last_touched_jiffy = click_jiffies(); // touched
-  
-  // add this entr to the queue
-  hashvalue = hashfn(ipheader->ip_id, ipheader->ip_src.s_addr, 
-		     ipheader->ip_dst.s_addr, ipheader->ip_p);
-  
-  if ((qp->next = _map[hashvalue]) != NULL)
-    qp->next->pprev = &qp->next;
-
-  _map[hashvalue] = qp;
-  qp->pprev = &_map[hashvalue];
-
-  return qp;
-}
-  
-
-
-struct IPReassembler::IPQueue * 
-IPReassembler::queue_find(const struct click_ip *iph) 
-{
-  unsigned int id = iph->ip_id;
-  unsigned long  saddr = iph->ip_src.s_addr;
-  unsigned long  daddr = iph->ip_dst.s_addr;
-  unsigned short protocol = iph->ip_p;
-  IPQueue *qp ;
-
-  unsigned int hashvalue;
-
-  hashvalue = hashfn(id, saddr, daddr, protocol);
-
-  for (qp = _map[hashvalue]; qp; qp = qp->next) {
-  
-    if ((qp->iph->ip_id == id) &&
-	(qp->iph->ip_src.s_addr == saddr) &&
- 	(qp->iph->ip_dst.s_addr == daddr) &&
-	(qp->iph->ip_p == protocol)) {
-      
-      break;
-    }
-  }
-  return qp;
-}
-
-
-
-/**
- * returns 0 if the queue does not contain all fragments.
- * returns non-zero if the queue contains a complete packet.
- */
 int
-IPReassembler::queue_done(IPQueue *qp) 
+IPReassembler::check(ErrorHandler *errh)
 {
-  
-  FragEntry *fp;
-  int offset;
-  
-  // only possible if we received the final fragment
-  if (qp->len == 0)
+    if (!errh)
+	errh = ErrorHandler::default_handler();
+    //errh->message("------");
+    for (int b = 0; b < NMAP; b++)
+	for (Packet *q = _map[b]; q; q = PACKET_LINK(q)->bucket_next)
+	    if (const click_ip *qip = q->ip_header()) {
+		if (bucketno(qip) != b)
+		    check_error(errh, b, q, "in wrong bucket");
+		int prev_pos = 0;
+		for (Packet *p = q; p; p = PACKET_LINK(p)->next) {
+		    const click_ip *pip = p->ip_header();
+		    //check_error(errh, b, p, "OK");
+		    int pos = IP_BYTE_OFF(pip);
+		    int endpos = pos + PACKET_DLEN(p);
+		    if (PACKET_DLEN(p) > (int32_t)(ntohs(pip->ip_len) - (pip->ip_hl << 2)) || PACKET_DLEN(p) <= 0)
+			check_error(errh, b, p, "odd anno length %d", PACKET_DLEN(p));
+		    if (endpos > prev_pos && p != q)
+			check_error(errh, b, p, "overlapping segments");
+		    if ((pip->ip_off & htons(IP_MF)) == 0 && p != q)
+			check_error(errh, b, p, "MF on intermediate segment");
+		    if (!same_segment(pip, qip))
+			check_error(errh, b, p, "on chain of wrong segment");
+		    prev_pos = pos;
+		}
+	    } else
+		errh->error("buck %d: missing IP header", b);
     return 0;
-
-  // check all fragment offsets to see if they connect
-  fp = qp->frags;
-  offset = 0;
-
-  //  if (!fp)
-
-  //no frags in queue
-  while (fp) {
-    if (fp->offset > offset)
-      return(0);  // fragment missing
-    offset = fp->end;
-    fp = fp->next;
-  }
-  
-  return 1; // all fragments are present
 }
 
-
-/**
- * returns a packet composed of all the fragments in <q>
- */
 Packet *
-IPReassembler::queue_glue(IPQueue *qp)
+IPReassembler::find_queue(Packet *p, Packet ***store_pprev)
 {
-  int len, count;
-  FragEntry *first, *next;
-  WritablePacket *wp;
-
-  next = qp->frags;
-
-  
-#if 0
-  while(next){
-    
-    pos = 0;
-    for (unsigned i = 0; i < 32 && i < next->p->length(); i++) {
-      sprintf(_buf + pos, "%02x", next->p->data()[i] & 0xff);
-      pos += 2;
-      if ((i % 4) == 3) _buf[pos++] = ' ';
+    const click_ip *iph = p->ip_header();
+    check();
+    int bucket = bucketno(iph);
+    Packet **pprev = &_map[bucket];
+    Packet *q;
+    for (q = *pprev; q; pprev = &PACKET_LINK(q)->bucket_next, q = *pprev) {
+	const click_ip *qiph = q->ip_header();
+	if (same_segment(iph, qiph)) {
+	    *store_pprev = pprev;
+	    return q;
+	}
     }
-    _buf[pos++] = '\0';
-    click_chatter(" glue: (%d) %s", next->p->length(),  _buf);
-    
+    *store_pprev = &_map[bucket];
+    return 0;
+}
 
-    next = next->next;
-  }
+Packet *
+IPReassembler::emit_whole_packet(Packet *q, Packet **q_pprev, Packet *p_in,
+				  Packet *first_packet)
+{
+    const click_ip *first_iph = first_packet->ip_header();
+    int lastoff = IP_BYTE_OFF(q->ip_header()) + PACKET_DLEN(q);
+    assert(IP_BYTE_OFF(first_iph) == 0);
+    
+    WritablePacket *m = Packet::make((const unsigned char *)0, lastoff + (first_iph->ip_hl << 2));
+    if (!m) {
+	click_chatter("out of memory");
+	clean_queue(q, q_pprev);
+	return 0;
+    }
+
+    m->set_network_header(m->data(), first_iph->ip_hl << 2);
+    memcpy(m->ip_header(), first_iph, first_iph->ip_hl << 2);
+    click_ip *m_iph = m->ip_header();
+    m_iph->ip_off = first_iph->ip_off & ~htons(IP_OFFMASK | IP_MF);
+    m_iph->ip_len = htons(lastoff + (m_iph->ip_hl << 2));
+    m_iph->ip_sum = 0;
+    m_iph->ip_sum = click_in_cksum((const unsigned char *)m_iph, m_iph->ip_hl << 2);
+
+    m->copy_annotations(first_packet);
+    // zero out the annotations we used
+    memset(&PACKET_LINK(m)->next, 0, sizeof(struct PacketLink) - offsetof(struct PacketLink, next));
+    m->set_timestamp_anno(p_in->timestamp_anno());
+
+    *q_pprev = PACKET_LINK(q)->bucket_next;
+    for (Packet *p = q; p; ) {
+	assert(IP_BYTE_OFF(p->ip_header()) + PACKET_DLEN(p) == lastoff);
+	lastoff -= PACKET_DLEN(p);
+	memcpy(m->transport_header() + lastoff, p->transport_header(), PACKET_DLEN(p));
+	Packet *next = PACKET_LINK(p)->next;
+	p->kill();
+	p = next;
+    }
+
+    return m;
+}
+
+Packet *
+IPReassembler::simple_action(Packet *p)
+{
+    // check common case: not a fragment 
+    const click_ip *iph = p->ip_header();
+    assert(iph);
+    if (!IP_ISFRAG(iph))
+	return p;
+
+    // calculate packet edges
+    int p_off = IP_BYTE_OFF(iph);
+    int p_lastoff = p_off + ntohs(iph->ip_len) - (iph->ip_hl << 2);
+
+    // check uncommon, but annoying, case: bad length, bad length + offset,
+    // or middle fragment length not a multiple of 8 bytes
+    if (p_lastoff > 0xFFFF || p_lastoff <= p_off
+	|| ((p_lastoff & 7) != 0 && (iph->ip_off & htons(IP_MF)) != 0)
+	|| PACKET_DLEN(p) < p_lastoff - p_off) {
+	p->kill();
+	return 0;
+    }
+    p->take(PACKET_DLEN(p) - (p_lastoff - p_off));
+
+    // otherwise, we need to keep the packet
+
+#if 0
+    // clean up memory if necessary
+    if (_mem_used > IPFRAG_HIGH_THRESH)
+	queue_evictor();
 #endif
 
-  // reject if oversized
-  len = qp->len + qp->ihlen;
-  if (len > 65535)
-    goto out_oversize;
-
-  // use header in first packet
-  first = qp->frags;
-
-  // resize first packet, and copy info from other fragments
-  first->p = first->p->put(qp->len - first->len);
-  wp = (WritablePacket *)first->p;
-
-  count = qp->ihlen + first->len;
-  next = first->next;
-
-  while(next) {
-
-    if ((next->len <= 0) || (count + next->len) > len) {
-      //click_chatter(" invalid packet ");
-      goto out_invalid;
+    // get its Packet queue
+    Packet **q_pprev;
+    Packet *q = find_queue(p, &q_pprev);
+    if (!q) {			// make a new queue
+	PACKET_LINK(p)->bucket_next = *q_pprev;
+	PACKET_LINK(p)->next = 0;
+	*q_pprev = p;
+	Q_PACKET_JIFFIES(p) = click_jiffies();
+	return 0;
     }
-    
-    // copy from frag into final packet.
-    memcpy(wp->data() + next->offset + qp->ihlen, 
-	   next->ptr, next->len);
-    count += next->len;
-    next = next->next;
-  }
+    Packet *q_bucket_next = PACKET_LINK(q)->bucket_next;
 
-  // fix up header
-  wp->ip_header()->ip_hl = qp->ihlen >> 2;
-  wp->ip_header()->ip_len = htons(count);
-  wp->ip_header()->ip_off = 0;
-  wp->ip_header()->ip_sum = 0;
-  wp->ip_header()->ip_sum = click_in_cksum((unsigned char*)(wp->data()), qp->ihlen);
-  wp->set_ip_header(wp->ip_header(), count);
+    // traverse the queue, looking for the right place to insert 'p'
+    // notation: greater offsets -- [LAST_OFF.......OFF) -- lesser offsets
+    Packet **pprev = q_pprev, *trav = q;
+    while (trav) {
+	int trav_off = IP_BYTE_OFF(trav->ip_header());
+	int trav_lastoff = trav_off + PACKET_DLEN(trav);
+	if (p_off >= trav_lastoff) {
+	    // [----p----)[----trav----); insert p here
+	    break;
+	} else if (p_lastoff > trav_off) { // packets overlap
+	    if (p_lastoff >= trav_lastoff && trav_off >= p_off) {
+		//    [--trav--)
+		// [------p-------); free trav, try again
+		*pprev = PACKET_LINK(trav)->next;
+		trav->kill();
+		trav = *pprev;
+	    } else if (trav_lastoff >= p_lastoff && p_off >= trav_off) {
+		// [-----trav-----)
+		//    [---p---); free p
+		p->kill();
+		return 0;
+	    } else if (p_lastoff > trav_lastoff) {
+		//     [-----trav-----)
+		// [------p-------); chop trav's length, try again
+		trav->take(trav_lastoff - p_off);
+	    } else {
+		assert(trav_lastoff > p_lastoff);
+		// [----trav----)
+		//    [-------p------); chop p's length, try again
+		p->take(p_lastoff - trav_off);
+		p_lastoff = trav_off;
+	    }
+	} else {
+	    // [----trav----)[----p----); move past 'trav'
+	    pprev = &PACKET_LINK(trav)->next;
+	    trav = *pprev;
+	}
+    }
 
-  return wp;
- out_invalid:
- out_oversize:
-  return NULL;
+    // Insert 'p' after '*pprev' and before 'trav'.
+    *pprev = p;
+    PACKET_LINK(p)->next = trav;
+
+    // Check whether the queue changed.
+    if (*q_pprev != q) {
+	assert(*q_pprev == p);
+	PACKET_LINK(p)->bucket_next = q_bucket_next;
+	q = p;
+	// It is an error to add a fragment after the last.
+	if ((trav = PACKET_LINK(q)->next)
+	    && (trav->ip_header()->ip_off & htons(IP_MF)) == 0) {
+	    clean_queue(q, q_pprev);
+	    return 0;
+	}
+    }
+
+    // Are we done with this packet?
+    if ((q->ip_header()->ip_off & htons(IP_MF)) == 0) {
+	// search for a hole
+	Packet *first_packet = q;
+	int prev_off = IP_BYTE_OFF(q->ip_header());
+	for (trav = PACKET_LINK(q)->next; trav; trav = PACKET_LINK(trav)->next) {
+	    int off = IP_BYTE_OFF(trav->ip_header());
+	    if (off + PACKET_DLEN(trav) != prev_off)
+		goto hole;
+	    first_packet = trav;
+	    prev_off = off;
+	}
+	if (prev_off == 0)
+	    return emit_whole_packet(q, q_pprev, p, first_packet);
+    }
+
+    // Otherwise, done for now
+  hole:
+    // mark the queue packet with the current time
+    Q_PACKET_JIFFIES(q) = click_jiffies();
+    //check();
+    return 0;
 }
 
+
+#if 0
 void
 IPReassembler::queue_evictor()
 {
@@ -495,54 +342,29 @@ IPReassembler::queue_evictor()
   click_chatter(" panic! queue_evictor: memcount");
 
 }
+#endif
 
 
 void
 IPReassembler::expire_hook(Timer *, void *thunk)
 {
-  // look at all queues. If no activity for 30 seconds, kill that queue
+    // look at all queues. If no activity for 30 seconds, kill that queue
 
-  IPReassembler *ipr = (IPReassembler *) thunk;
-  int jiff = click_jiffies();
-  int gap;
+    IPReassembler *ipr = reinterpret_cast<IPReassembler *>(thunk);
+    int kill_time = click_jiffies() - EXPIRE_TIMEOUT * CLICK_HZ;
 
-  for (int i=0; i<NMAP; i++) {
-    IPQueue *prev = 0;
+    for (int i = 0; i < NMAP; i++) {
+	Packet **q_pprev = &ipr->_map[i];
+	for (Packet *q = *q_pprev; q; ) {
+	    if (Q_PACKET_JIFFIES(q) < kill_time)
+		clean_queue(q, q_pprev);
+	    else
+		q_pprev = &PACKET_LINK(q)->bucket_next;
+	    q = *q_pprev;
+	}
+    }
 
-    while(1) {
-      IPQueue *qp = (prev ? prev->next : ipr->_map[i]);
-      if (!qp)
-	break;
-      
-      gap = jiff - qp->last_touched_jiffy;
-      
-      // if idle for 30 seconds get rid of it.
-      if (gap > EXPIRE_TIMEOUT*CLICK_HZ){
-	ipr->queue_free(qp, 1); 
-      }
-      prev = qp;
-    }    
-  }
-  ipr->_expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
+    ipr->_expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
 }
-
-int 
-IPReassembler::hashfn(unsigned short id, unsigned src, unsigned dst, unsigned char prot) 
-{ 
-  return ((((id) >> 1) ^ (src) ^ (dst) ^ (prot)) & (NMAP - 1));
-}
-
-
-
-
-
-
-
-
 
 EXPORT_ELEMENT(IPReassembler)
-
-
-
-
-
