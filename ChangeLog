@@ -1,3 +1,8 @@
+2002-05-09 Thursday 11:47  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/userlevel/todevice.cc (1.26): remember to save errno
+	after write() error for later logging
+
 2002-05-08 Wednesday 19:16  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/gridlogger.hh (1.7): [no log message]
