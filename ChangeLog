@@ -1,3 +1,20 @@
+2001-12-11 Tuesday 14:14  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/gridprobehandler.cc (1.4): [no log message]
+
+2001-12-11 Tuesday 13:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/grid.hh (1.33), elements/grid/gridprobehandler.cc
+	(1.3), elements/grid/gridprobehandler.hh (1.2),
+	elements/grid/gridprobereplyreceiver.cc (1.6),
+	elements/grid/gridroutecb.hh (1.1),
+	elements/grid/lookupgeogridroute.cc (1.18),
+	elements/grid/lookupgeogridroute.hh (1.7),
+	elements/grid/lookuplocalgridroute.cc (1.29),
+	elements/grid/lookuplocalgridroute.hh (1.9),
+	include/click/packet_anno.hh (1.7): added route action tracking to
+	grid route probes replies
+
 2001-12-09 Sunday 23:18  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-check/click-check.cc (1.22),
