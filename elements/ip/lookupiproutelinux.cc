@@ -187,4 +187,5 @@ LookupIPRouteLinux::push(int, Packet *p)
   }
 }
 
+ELEMENT_REQUIRES(userlevel|linuxmodule)
 EXPORT_ELEMENT(LookupIPRouteLinux)

@@ -152,8 +152,18 @@ $i"
   for (j in deps) {
     i = deps[j]
     if (!dep[i]) {
-      print $1;
-      break;
+      bad = 1;
+      if (i ~ /\|/) {
+	split(i, or_deps, /\|+/);
+	for (k in or_deps) {
+	  if (dep[ or_deps[k] ])
+	    bad = 0;
+	}
+      }
+      if (bad) {
+	print $1;
+	break;
+      }
     }
   }
 }' | sort | uniq`
