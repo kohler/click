@@ -1,3 +1,13 @@
+2002-03-07 Thursday 19:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridroutetable.cc (1.41), gridroutetable.hh
+	(1.23): fixed up link loss tracking
+
+2002-03-07 Thursday 19:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: grid.hh (1.38), gridroutetable.cc (1.40),
+	gridroutetable.hh (1.22), linkstat.cc (1.7): paper! paper! paper!
+
 2002-03-07 Thursday 18:24  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridroutetable.cc (1.39), gridroutetable.hh
