@@ -43,6 +43,8 @@ DISTFILES = Makefile.in \
 	click-xform/vectori.cc \
 	click-align/Makefile.in \
 	click-align/click-align.cc \
+	click-align/alignment.cc click-align/alignment.hh \
+	click-align/alignclass.cc click-align/alignclass.hh \
 	click-align/hashmapi.cc \
 	click-align/vectori.cc
 

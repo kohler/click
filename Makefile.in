@@ -54,7 +54,7 @@ distclean:
 	-rm -f config.cache config.log mkelemlist.sh
 
 
-DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE README \
+DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
 	doc/Makefile.in doc/click.5 doc/click.o.8 doc/click-xform.1 \
 	doc/element2man.pl \
 	doc/Element.3 doc/Connection.3 doc/HandlerRegistry.3 \

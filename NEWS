@@ -1,0 +1,13 @@
+Click NEWS
+
+Version 0.51   12.Nov.1999
+
+* Support for required-alignment machines via `click-align' tool. Added
+  click-align tool, Align and AlignmentInfo elements.
+
+* More documentation.
+
+
+Version 0.5   20.Oct.1999
+
+* First public release.
