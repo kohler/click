@@ -19,15 +19,16 @@ class HandlerCall;
 # define CP_CONTEXT
 #endif
 
+const char *cp_skip_space(const char *begin, const char *end);
 bool cp_eat_space(String &);
-bool cp_is_space(const String &);
+inline bool cp_is_space(const String &);
 bool cp_is_word(const String &);
 bool cp_is_click_id(const String &);
 
 String cp_unquote(const String &);
 String cp_quote(const String &, bool allow_newlines = false);
 String cp_uncomment(const String &);
-const char *cp_process_backslash(const char *data, const char *end, StringAccum &);
+const char *cp_process_backslash(const char *begin, const char *end, StringAccum &);
 
 // argument lists <-> lists of arguments
 void cp_argvec(const String &, Vector<String> &);
@@ -294,6 +295,11 @@ struct cp_value {
 #undef CP_VA_ARGS_REST
 #undef CP_OPT_CONTEXT
 #undef CP_CONTEXT
+
+inline bool cp_is_space(const String &str)
+{
+    return cp_skip_space(str.begin(), str.end()) == str.end();
+}
 
 inline bool cp_unsigned(const String &str, uint32_t *return_value)
 {

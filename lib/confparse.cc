@@ -52,27 +52,18 @@ CLICK_DECLS
 
 int cp_errno;
 
-bool
-cp_eat_space(String &str)
+const char *
+cp_skip_space(const char *begin, const char *end)
 {
-  const char *s = str.data();
-  int len = str.length();
-  int i = 0;
-  while (i < len && isspace(s[i]))
-    i++;
-  str = str.substring(i);
-  return true;
+  while (begin < end && isspace(*begin))
+    begin++;
+  return begin;
 }
 
 bool
-cp_is_space(const String &str)
+cp_eat_space(String &str)
 {
-  const char *s = str.data();
-  int len = str.length();
-  for (int i = 0; i < len; i++)
-    if (!isspace(s[i]))
-      return false;
-  return true;
+  return str.substring(cp_skip_space(str.begin(), str.end()), str.end());
 }
 
 bool
