@@ -69,7 +69,6 @@ static String::Initializer string_initializer;
 static const char *program_name;
 static HashMap<String, String> definitions;
 static int specified_driver = -1;
-static const ElementMap *element_map;
 
 static const char *default_template = "\
 <!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 3.2//EN\">\n\
@@ -1029,7 +1028,6 @@ pretty_process(const char *infile, const char *outfile,
     emap.set_driver(driver);
     ProcessingT processing(r, &emap, errh);
 
-    element_map = &emap;
     ElementMap::push_default(&emap);
     
     // process template
@@ -1085,7 +1083,6 @@ main(int argc, char **argv)
     const char *router_file = 0;
     const char *output_file = 0;
     String html_template = default_template;
-    bool output = false;
     bool write_template = false;
 
     while (1) {
@@ -1158,7 +1155,6 @@ particular purpose.\n");
 		goto bad_option;
 	    }
 	    output_file = clp->arg;
-	    output = true;
 	    break;
 
 	  case USERLEVEL_OPT:

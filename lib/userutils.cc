@@ -127,8 +127,6 @@ glob_match(const String &str, const String &pattern)
     } else
       return false;
   }
-
-  return (spos == slen && ppos == plen);
 }
 
 String

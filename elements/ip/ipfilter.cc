@@ -443,12 +443,10 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       break;
       
      case TYPE_INT:
-      if (p._type == TYPE_PROTO || p._type == TYPE_PORT || p._type == TYPE_ICMP_TYPE || p._type == TYPE_IPLEN) {
-	_data = p._type;
-	goto retry;
-      } else
+      if (p._type != TYPE_PROTO && p._type != TYPE_PORT && p._type != TYPE_ICMP_TYPE && p._type != TYPE_IPLEN)
 	return errh->error("specify `proto', `port', `icmp type', or `ip len'");
-      break;
+      _data = p._type;
+      goto retry;
 
      case TYPE_NONE:
       if (_transp_proto != UNKNOWN)

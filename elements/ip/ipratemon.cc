@@ -226,11 +226,8 @@ IPRateMonitor::show_agelist(void)
 {
   click_chatter("\n----------------");
   click_chatter("_base = %p, _first: %p, _last = %p\n", _base, _first, _last);
-  Stats *prev_r = 0;
-  for (Stats *r = _first; r; r = r->_next) {
+  for (Stats *r = _first; r; r = r->_next)
     click_chatter("r = %p, r->_prev = %p, r->_next = %p", r, r->_prev, r->_next);
-    prev_r = r;
-  }
 }
 
 
