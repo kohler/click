@@ -16,11 +16,12 @@
 # include <config.h>
 #endif
 #include "glue.hh"
-#include "fromdevice.hh"
+#include "polldevice.hh"
 #include "error.hh"
 #include "packet.hh"
 #include "confparse.hh"
 #include "router.hh"
+
 extern "C" {
 #include <linux/netdevice.h>
 }
@@ -82,8 +83,12 @@ PollDevice::initialize(ErrorHandler *errh)
   _dev = dev_get(_devname.cc());
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
+  if (!_dev->pollable) 
+    return errh->error("device `%s' not pollable", _devname.cc());
   _dev->intr_off(_dev);
   _dev->intr_defer = 1;
+  idle = 0;
+  total_intr_wait = 0;
   return 0;
 }
 
@@ -91,8 +96,13 @@ PollDevice::initialize(ErrorHandler *errh)
 void
 PollDevice::uninitialize()
 {
-  _dev->intr_defer = 0;
-  _dev->intr_on(_dev);
+  if (_dev)
+  { 
+    _dev->intr_defer = 0; 
+    _dev->intr_on(_dev);
+    click_chatter
+	("PollDevice: waited with intr on %d times\n", total_intr_wait);
+  }
 }
 
 
@@ -105,9 +115,11 @@ PollDevice::pull(int)
 
   skb = _dev->rx_poll(_dev);
   _dev->fill_rx(_dev);
+  _dev->clean_tx(_dev);
 
   if (skb != 0L)
   {
+    idle = 0;
     rtm_ipackets++;
     rtm_ibytes += skb->len;
 
@@ -123,10 +135,37 @@ PollDevice::pull(int)
       p->set_mac_broadcast_anno(1);
 
     return p;
+  } 
+  else 
+  {
+    idle++;
+    return 0L;
   }
-
-  return 0L;
 }
+  
+
+struct wait_queue** 
+PollDevice::get_wait_queue()
+{
+  if (idle > 100) 
+    return &_dev->intr_wq;
+  else
+    return NULL;
+}
+
+void 
+PollDevice::do_waiting()
+{ 
+  total_intr_wait++;
+  _dev->intr_on(_dev);
+}
+
+void
+PollDevice::finish_waiting()
+{
+  _dev->intr_off(_dev);
+}
+
 
 ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(PollDevice)

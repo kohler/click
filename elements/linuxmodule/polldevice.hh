@@ -45,11 +45,20 @@ class PollDevice : public Element {
   
   /* process a packet. return 0 if not wanted after all. */
   int got_skb(struct sk_buff *);
+
+  struct wait_queue** get_wait_queue(); 
+  void do_waiting();
+  void finish_waiting();
+
+  Packet *pull(int port);
   
  private:
-  
+
+  int total_intr_wait;
+  int idle;
   String _devname;
   struct device *_dev;
 };
 
-#endif
+#endif 
+
