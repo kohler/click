@@ -1,3 +1,8 @@
+2002-07-16 Tuesday 21:14  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: cxxprotect.h, cxxunprotect.h, cxxprotect.h,
+	cxxunprotect.h: protect namespace keyword
+
 2002-07-14 Sunday 19:16  Eddie Kohler <kohler@icir.org>
 
 	* include/click/crc32.h, include/click/crc32.h, libsrc/crc32.c:

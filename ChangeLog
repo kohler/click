@@ -1,3 +1,12 @@
+2002-07-16 Tuesday 21:16  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.188): update protected symbols
+
+2002-07-16 Tuesday 21:14  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: cxxprotect.h (1.3), cxxunprotect.h (1.3): protect
+	namespace keyword
+
 2002-07-14 Sunday 19:16  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/iprw.cc (1.44), elements/standard/checkcrc32.cc
