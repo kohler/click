@@ -1,3 +1,7 @@
+2004-11-12 Friday 23:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/todump.cc (1.60): whitespace
+
 2004-11-12 Friday 20:53  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* doc/man2html (1.2): add man2html
