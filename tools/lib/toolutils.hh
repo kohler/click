@@ -49,6 +49,7 @@ class ElementMap { public:
   const String &name(int i) const		{ return _e[i].name; }
   const String &cxx(int i) const		{ return _e[i].cxx; }
   const String &header_file(int i) const	{ return _e[i].header_file; }
+  const String &source_file(int i) const	{ return _e[i].source_file; }
   const String &source_directory(int i) const;
   const String &processing_code(int i) const	{return _e[i].processing_code;}
   const String &flow_code(int i) const		{ return _e[i].flow_code; }

@@ -20,7 +20,7 @@ my(%processing_constants) =
      'PUSH_TO_PULL' => 'h/l', 'PULL_TO_PUSH' => 'l/h');
 my(%flow_code_constants) =
     ('COMPLETE_FLOW' => 'x/x');
-my(@class_file, @click_name, @cxx_name,
+my(@source_file, @header_file, @click_name, @cxx_name,
    @parents, @processing, @flow_code, @flags, @requirements, @provisions,
    %click_name_to_id, %cxx_name_to_id);
 my(@includes) = ( '.' );
@@ -60,7 +60,8 @@ sub process_file ($) {
     my($cxx_class) = (/^\s*(\w+)(\s|:\s).*\{/);
     next if !$cxx_class;
     push @cxx_name, $cxx_class;
-    push @class_file, $headername;
+    push @source_file, $filename;
+    push @header_file, $headername;
     $cxx_name_to_id{$cxx_class} = @cxx_name - 1;
     if (/\A\s*\w*\s*:\s*([\w\s,]+)/) {
       my $p = $1;
@@ -124,8 +125,8 @@ sub process_file ($) {
 	# ok
       } else {
 	print STDERR "invalid multiple definition of element class \`$click_name[$i]'\n";
-	print STDERR $class_file[$j], ": first definition here\n";
-	print STDERR $class_file[$i], ": second definition here\n";
+	print STDERR $header_file[$j], ": first definition here\n";
+	print STDERR $header_file[$i], ": second definition here\n";
 	print STDERR "(Two classes may share a name only if one of them is valid only at userlevel\nand the other is valid only in the Linux kernel module. Add explicit\nELEMENT_REQUIRES(linuxmodule) and ELEMENT_REQUIRES(userlevel) statements.)\n";
       }
     }
@@ -260,16 +261,19 @@ open(OUT, ">&STDOUT");
 
 my($sourcedir) = `/bin/pwd`;
 $sourcedir =~ s{\s+$}{}s;
-print OUT "\$sourcedir\t\"$sourcedir\"\n";
-print OUT "\$provides\t\"", join(' ', @provides), "\"\n";
-print OUT "\$data\tclass\tcxx_class\theader_file\tprocessing\tflow_code\tflags\trequirements\tprovisions\n";
+print OUT "\$sourcedir \"$sourcedir\"\n";
+print OUT "\$provides \"", join(' ', @provides), "\"\n";
+print OUT "\$data class cxx_class header_file source_file processing flow_code flags requirements provisions\n";
 
 foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($n) = $click_name[$id];
   $n = '""' if !$n;
   
-  my($f) = $class_file[$id];
-  $f =~ s/^$prefix\/*//;
+  my($hf) = $header_file[$id];
+  $hf =~ s/^$prefix\/*//;
+
+  my($sf) = $source_file[$id];
+  $sf =~ s/^$prefix\/*//;
 
   my($p) = $processing[$id];
   $p = parents_processing($id) if !$p;
@@ -286,7 +290,9 @@ foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
   my($req) = $requirements[$id];
   my($prov) = $provisions[$id];
   
-  print OUT $n, "\t", $cxx_name[$id], "\t", $f, "\t", $p, "\t", $flow,
-  "\t\"", $flags, "\"\t\"", $req, "\"\t\"", $prov, "\"\n";
+  print OUT $n, " ", $cxx_name[$id], " ", $hf, " ", $sf, " ", $p, " ", $flow;
+  print OUT ' "', $flags, '" "', $req, '" "', $prov, '"'
+      if $flags || $req || $prov;
+  print OUT "\n";
 }
 close OUT;
