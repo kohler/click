@@ -427,7 +427,7 @@ IPRewriter::dump_mappings_handler(Element *e, void *thunk)
   StringAccum sa;
   for (Map::Iterator iter = map->first(); iter; iter++) {
     Mapping *m = iter.value();
-    if (!m->is_reverse())
+    if (m->is_primary())
       sa << m->s() << "\n";
   }
 #if IPRW_SPINLOCKS

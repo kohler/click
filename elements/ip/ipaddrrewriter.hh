@@ -1,5 +1,6 @@
-#ifndef IPADDRREWRITER_HH
-#define IPADDRREWRITER_HH
+// -*- mode: c++; c-basic-offset: 4 -*-
+#ifndef CLICK_IPADDRREWRITER_HH
+#define CLICK_IPADDRREWRITER_HH
 #include "elements/ip/iprw.hh"
 
 /*
@@ -112,63 +113,63 @@ ICMPRewriter, ICMPPingRewriter */
 
 class IPAddrRewriter : public IPRw { public:
 
-  class IPAddrMapping : public Mapping { public:
+    class IPAddrMapping : public Mapping { public:
 
-    IPAddrMapping()		{ }
+	IPAddrMapping()		{ }
 
-    IPAddrMapping *reverse() const { return static_cast<IPAddrMapping *>(_reverse); }
+	IPAddrMapping *reverse() const { return static_cast<IPAddrMapping *>(reverse()); }
 
-    void apply(WritablePacket *p);
+	void apply(WritablePacket *p);
 
-    String s() const;
+	String s() const;
     
-  };
+    };
 
-  IPAddrRewriter();
-  ~IPAddrRewriter();
-  
-  const char *class_name() const		{ return "IPAddrRewriter"; }
-  void *cast(const char *);
-  const char *processing() const		{ return PUSH; }
-  IPAddrRewriter *clone() const			{ return new IPAddrRewriter; }
-  void notify_noutputs(int);
+    IPAddrRewriter();
+    ~IPAddrRewriter();
 
-  int configure(const Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void uninitialize();
-  //void take_state(Element *, ErrorHandler *);
-  
-  void run_scheduled();
+    const char *class_name() const		{ return "IPAddrRewriter"; }
+    void *cast(const char *);
+    const char *processing() const		{ return PUSH; }
+    IPAddrRewriter *clone() const		{ return new IPAddrRewriter; }
+    void notify_noutputs(int);
 
-  int notify_pattern(Pattern *, ErrorHandler *);
-  IPAddrMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
-  Mapping *get_mapping(int, const IPFlowID &) const;
-  
-  void push(int, Packet *);
+    int configure(const Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void uninitialize();
+    //void take_state(Element *, ErrorHandler *);
 
-  void add_handlers();
+    void run_scheduled();
 
- private:
+    int notify_pattern(Pattern *, ErrorHandler *);
+    IPAddrMapping *apply_pattern(Pattern *, int ip_p, const IPFlowID &, int, int);
+    Mapping *get_mapping(int, const IPFlowID &) const;
 
-  Map _map;
+    void push(int, Packet *);
 
-  Vector<InputSpec> _input_specs;
-  Timer _timer;
+    void add_handlers();
 
-  static const int GC_INTERVAL_SEC = 7200;
+  private:
 
-  static String dump_mappings_handler(Element *, void *);
-  static String dump_nmappings_handler(Element *, void *);
-  static String dump_patterns_handler(Element *, void *);
-  
+    Map _map;
+
+    Vector<InputSpec> _input_specs;
+    Timer _timer;
+
+    static const int GC_INTERVAL_SEC = 7200;
+
+    static String dump_mappings_handler(Element *, void *);
+    static String dump_nmappings_handler(Element *, void *);
+    static String dump_patterns_handler(Element *, void *);
+
 };
 
 
 inline IPRw::Mapping *
 IPAddrRewriter::get_mapping(int, const IPFlowID &in) const
 {
-  IPFlowID flow_no_ports(in.saddr(), 0, in.daddr(), 0);
-  return _map[flow_no_ports];
+    IPFlowID flow_no_ports(in.saddr(), 0, in.daddr(), 0);
+    return _map[flow_no_ports];
 }
 
 #endif

@@ -33,10 +33,10 @@ IPAddrRewriter::IPAddrMapping::apply(WritablePacket *p)
   assert(iph);
   
   // IP header
-  if (is_reverse())
-    iph->ip_dst = _mapto.daddr();
-  else
+  if (is_primary())
     iph->ip_src = _mapto.saddr();
+  else
+    iph->ip_dst = _mapto.daddr();
 
   unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
   sum = (sum & 0xFFFF) + (sum >> 16);
@@ -51,14 +51,14 @@ IPAddrRewriter::IPAddrMapping::s() const
   IPFlowID rev_rev = reverse()->flow_id().rev();
   const char *format;
   IPAddress one, two;
-  if (is_reverse()) {
-    format = "(-, %d.%d.%d.%d) => (-, %d.%d.%d.%d) [%d]";
-    one = rev_rev.daddr();
-    two = flow_id().daddr();
-  } else {
+  if (is_primary()) {
     format = "(%d.%d.%d.%d, -) => (%d.%d.%d.%d, -) [%d]";
     one = rev_rev.saddr();
     two = flow_id().saddr();
+  } else {
+    format = "(-, %d.%d.%d.%d) => (-, %d.%d.%d.%d) [%d]";
+    one = rev_rev.daddr();
+    two = flow_id().daddr();
   }
   char buf[128];
   sprintf(buf, format, one.data()[0], one.data()[1], one.data()[2], one.data()[3], two.data()[0], two.data()[1], two.data()[2], two.data()[3], output());
@@ -245,7 +245,7 @@ IPAddrRewriter::dump_mappings_handler(Element *e, void *)
   StringAccum sa;
   for (Map::Iterator iter = rw->_map.first(); iter; iter++) {
     Mapping *m = iter.value();
-    if (!m->is_reverse())
+    if (m->is_primary())
       sa << m->s() << "\n";
   }
   return sa.take_string();
