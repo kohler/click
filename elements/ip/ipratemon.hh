@@ -13,11 +13,11 @@
  * src_rate_anno with the rates for dst or src IP address (specified by the
  * ANNOBY argument).
  *
- * PB (default to PACKETS): PACKETS or BYTES. Count number of packets or bytes.
+ * PB: PACKETS or BYTES. Count number of packets or bytes.
  *
- * OFF (default to 0): offset in packet where IP header starts
+ * OFF: offset in packet where IP header starts
  *
- * THRESH (default to 10): IPRateMonitor further splits a subnet if rate is
+ * THRESH: IPRateMonitor further splits a subnet if rate is
  * over THRESH number packets or bytes per second.
  * 
  * =h look (read)
