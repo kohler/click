@@ -1,3 +1,8 @@
+2001-12-04 Tuesday 22:50  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.172), etc/libclick/lc-configure.in (1.16): bump
+	version number to 1.2.3a
+
 2001-12-04 Tuesday 20:20  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.44), etc/libclick/DISTFILES (1.8): more DISTFILES
