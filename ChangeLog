@@ -1,3 +1,14 @@
+2004-06-28 Monday 15:09  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* DISTFILES (1.81), Makefile.in (1.117), etc/libclick/DISTFILES
+	(1.21): remove lc-ChangeLog
+
+2004-06-28 Monday 15:07  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/libclick/lc-configure.in (1.30),
+	etc/libclick/lc-libsrc-Makefile.in (1.14), userlevel/Makefile.in
+	(1.81): libclick updates
+
 2004-06-28 Monday 14:09  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.80), README (1.44), apps/csclient/test.click (1.2),
