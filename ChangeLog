@@ -1,3 +1,12 @@
+2001-08-29 Wednesday 13:12  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdump.cc (1.43): fix FDDI encapsulation
+	error reported by Vern
+
+2001-08-29 Wednesday 13:03  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdevice.cc (1.30): nitlet reported by Vern
+
 2001-08-29 Wednesday 11:07  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/: make-client-ron.pl (1.2), make-server-ron.pl (1.3):
