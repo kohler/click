@@ -1,3 +1,9 @@
+2001-08-16 Thursday 13:27  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/: anydevice.cc (1.21), todevice.cc (1.115):
+	fix reference count mistake in AnyDevice: dropped pointers to down
+	devices without calling dev_put (Linux 2.4)
+
 2001-08-16 Thursday 09:41  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* conf/ron/3yipal2.conf (1.1): config for yipal2 used in 3 node ron
