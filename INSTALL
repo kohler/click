@@ -93,15 +93,15 @@ and running Linux kernels.
     old kernel source tree, if you had one.)
 
     We supply patches for Linux 2.2.18 through 2.2.21, and a
-    preliminary patch for Linux 2.4.9.
+    preliminary patch for Linux 2.4.18.
 
  3. Install the Click Linux kernel patch:
 
 	cd /usr/src/linux
 	patch -p0 -b < CLICKDIR/etc/linux-VERSION-patch
 
-    VERSION is generally the kernel version you chose, but for Linux
-    2.2.20 or 2.2.21, use `linux-2.2.19-patch'.
+    VERSION is generally the kernel version you chose. For Linux 2.2.20 or
+    2.2.21, use `linux-2.2.19-patch'.
 
     The patch fixes syntax errors in several header files (the C++ compiler
     doesn't accept them), adds several new functions, and changes the
