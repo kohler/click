@@ -350,7 +350,6 @@ IPReassembler::simple_action(Packet *p)
     return 0;
 }
 
-
 void
 IPReassembler::garbage_collect()
 {
@@ -376,7 +375,6 @@ IPReassembler::garbage_collect()
 
     click_chatter("IPReassembler: cannot free enough memory!");
 }
-
 
 void
 IPReassembler::expire_hook(Timer *, void *thunk)
