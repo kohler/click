@@ -1,6 +1,7 @@
 #ifndef ELEMENTT_HH
 #define ELEMENTT_HH
 #include "string.hh"
+#include <stddef.h>
 #include "vector.hh"
 class RouterT;
 class ErrorHandler;

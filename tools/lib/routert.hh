@@ -1,9 +1,8 @@
 #ifndef ROUTERT_HH
 #define ROUTERT_HH
-#include "vector.hh"
-#include "hashmap.hh"
 #include "elementt.hh"
 #include "error.hh"
+#include "hashmap.hh"
 
 class RouterT : public ElementClassT {
 
