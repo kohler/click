@@ -42,7 +42,7 @@ close MK;
 
 if ($INSTALL) {
   mysystem("/bin/rm -rf /tmp/%click-webdoc");
-  mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid && gmake install-man");
+  mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid && gmake install-man EXTRA_MAN_ELEMENTS='linuxmodule'");
 }
 
 # 2. changetemplate.pl
