@@ -509,8 +509,8 @@
 2001-08-27 Monday 17:25  Eddie Kohler <kohler@aciri.org>
 
 	* elements/: standard/classifier.cc (1.35), standard/classifier.hh
-	(1.23), userlevel/fakepcap.h (1.8): remove useless stuff from
-	fakepcap
+	(1.23), userlevel/fakepcap.h (1.8), userlevel/fakepcap.hh (1.8):
+	remove useless stuff from fakepcap
 
 2001-08-25 Saturday 14:27  Eddie Kohler <kohler@aciri.org>
 
@@ -536,8 +536,8 @@
 
 2001-08-25 Saturday 01:38  Eddie Kohler <kohler@aciri.org>
 
-	* elements/userlevel/: fakepcap.h (1.7), fromdump.cc (1.41): add
-	attempt at FDDI
+	* elements/userlevel/: fakepcap.h (1.7), fakepcap.hh (1.7),
+	fromdump.cc (1.41): add attempt at FDDI
 
 2001-08-24 Friday 22:06  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
@@ -2436,9 +2436,10 @@
 
 2001-06-04 Monday 20:11  Eddie Kohler <kohler@aciri.org>
 
-	* elements/userlevel/: fakepcap.h (1.6), fromdump.cc (1.31),
-	todump.cc (1.28): add initial support for modified libpcap files, a
-	la Linux (which sometimes is pretty stupid, apparently)
+	* elements/userlevel/: fakepcap.h (1.6), fakepcap.hh (1.6),
+	fromdump.cc (1.31), todump.cc (1.28): add initial support for
+	modified libpcap files, a la Linux (which sometimes is pretty
+	stupid, apparently)
 
 2001-06-04 Monday 17:36  Eddie Kohler <kohler@aciri.org>
 
@@ -7174,10 +7175,10 @@
 
 2000-11-10 Friday 12:36  Eddie Kohler <kohler@aciri.org>
 
-	* elements/userlevel/: fakepcap.h (1.5), todump.cc (1.21),
-	todump.hh (1.15): ToDump() actually generated bad files -- fix
-	that, and remove dependence on libpcap (just write the file format
-	independently) (Mazu)
+	* elements/userlevel/: fakepcap.h (1.5), fakepcap.hh (1.5),
+	todump.cc (1.21), todump.hh (1.15): ToDump() actually generated bad
+	files -- fix that, and remove dependence on libpcap (just write the
+	file format independently) (Mazu)
 
 2000-11-10 Friday 12:35  Eddie Kohler <kohler@aciri.org>
 
@@ -16265,9 +16266,10 @@
 	(1.3), elements/radio/bim.cc (1.3), elements/standard/counter.cc
 	(1.3), elements/standard/meter.cc (1.3),
 	elements/standard/shaper.cc (1.3), elements/userlevel/fakepcap.h
-	(1.4), elements/userlevel/frombpf.cc (1.4),
-	elements/userlevel/fromdump.cc (1.4), elements/userlevel/todump.cc
-	(1.4), elements/userlevel/tun.cc (1.3), lib/glue.hh (1.5),
+	(1.4), elements/userlevel/fakepcap.hh (1.4),
+	elements/userlevel/frombpf.cc (1.4), elements/userlevel/fromdump.cc
+	(1.4), elements/userlevel/todump.cc (1.4),
+	elements/userlevel/tun.cc (1.3), lib/glue.hh (1.5),
 	lib/ipaddress.cc (1.2), lib/ipaddress.hh (1.3), lib/timer.hh (1.2),
 	tools/click-xform/Makefile.in (1.4),
 	tools/click-xform/click-xform.1 (1.2): fixes to compile cleanly on
@@ -16320,6 +16322,7 @@
 1999-10-18 Monday 18:35  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fakepcap.h (1.3),
+	elements/userlevel/fakepcap.hh (1.3),
 	elements/userlevel/fromdump.cc (1.3),
 	elements/userlevel/fromdump.hh (1.3), elements/userlevel/todump.cc
 	(1.3), configure.in (1.11), userlevel/Makefile.in (1.6): more pcap
@@ -16328,8 +16331,9 @@
 1999-10-18 Monday 18:28  Robert Morris <rtm@lcs.mit.edu>
 
 	* elements/: etherswitch/bridgemessage.hh (1.5),
-	userlevel/fakepcap.h (1.2), userlevel/frombpf.hh (1.5),
-	userlevel/tobpf.hh (1.4): fake bpf fixes
+	userlevel/fakepcap.h (1.2), userlevel/fakepcap.hh (1.2),
+	userlevel/frombpf.hh (1.5), userlevel/tobpf.hh (1.4): fake bpf
+	fixes
 
 1999-10-18 Monday 18:28  Eddie Kohler <kohler@aciri.org>
 
@@ -16343,10 +16347,10 @@
 
 	* acconfig.h (1.4), configure.in (1.10),
 	elements/linuxmodule/fromdevice.cc (1.5),
-	elements/userlevel/fakepcap.h (1.1), elements/userlevel/frombpf.cc
-	(1.3), elements/userlevel/frombpf.hh (1.4),
-	elements/userlevel/tobpf.cc (1.3), elements/userlevel/tobpf.hh
-	(1.3): added pcap stuff
+	elements/userlevel/fakepcap.h (1.1), elements/userlevel/fakepcap.hh
+	(1.1), elements/userlevel/frombpf.cc (1.3),
+	elements/userlevel/frombpf.hh (1.4), elements/userlevel/tobpf.cc
+	(1.3), elements/userlevel/tobpf.hh (1.3): added pcap stuff
 
 1999-10-18 Monday 18:11  Robert Morris <rtm@lcs.mit.edu>
 
