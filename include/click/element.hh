@@ -130,8 +130,8 @@ class Element { public:
 #if CLICK_USERLEVEL
   // SELECT
   enum { SELECT_READ = 1, SELECT_WRITE = 2 };
-  int add_select(int fd, int mask) const;
-  int remove_select(int fd, int mask) const;
+  int add_select(int fd, int mask);
+  int remove_select(int fd, int mask);
 #endif
 
   // METHODS USED BY `ROUTER'

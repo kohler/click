@@ -25,6 +25,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/router.hh>
+#include <click/master.hh>
 #include <click/straccum.hh>
 #if CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
@@ -543,15 +544,15 @@ Element::configuration() const
 #if CLICK_USERLEVEL
 
 int
-Element::add_select(int fd, int mask) const
+Element::add_select(int fd, int mask)
 {
-  return router()->add_select(fd, eindex(), mask);
+  return router()->master()->add_select(fd, this, mask);
 }
 
 int
-Element::remove_select(int fd, int mask) const
+Element::remove_select(int fd, int mask)
 {
-  return router()->remove_select(fd, eindex(), mask);
+  return router()->master()->remove_select(fd, this, mask);
 }
 
 void

@@ -22,6 +22,9 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#if CLICK_USERLEVEL
+# include <unistd.h>
+#endif
 #if defined(__linux__) && CLICK_USERLEVEL
 # include <net/if.h>
 # include <sys/ioctl.h>

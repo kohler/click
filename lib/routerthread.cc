@@ -21,6 +21,7 @@
 #include <click/glue.hh>
 #include <click/router.hh>
 #include <click/routerthread.hh>
+#include <click/master.hh>
 #ifdef CLICK_LINUXMODULE
 # include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -268,7 +269,7 @@ RouterThread::run_os()
     unlock_tasks();
 
 #if CLICK_USERLEVEL
-    router()->run_selects(!empty());
+    router()->master()->run_selects(!empty());
 #elif !defined(CLICK_GREEDY)
 # if CLICK_LINUXMODULE			/* Linux kernel module */
     schedule();
@@ -370,7 +371,7 @@ RouterThread::wait(int iter)
 #endif
 
     if (iter % DRIVER_ITER_TIMERS == 0) {
-	router()->run_timers();
+	router()->master()->timer_list()->run(router()->driver_runcount_ptr());
 #ifdef CLICK_NS
 	// If there's another timer, tell the simulator to make us
 	// run when it's due to go off.

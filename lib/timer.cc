@@ -1,4 +1,4 @@
-// -*- c-basic-offset: 2; related-file-name: "../include/click/timer.hh" -*-
+// -*- c-basic-offset: 4; related-file-name: "../include/click/timer.hh" -*-
 /*
  * timer.{cc,hh} -- portable timers
  * Eddie Kohler
@@ -22,6 +22,7 @@
 #include <click/router.hh>
 #include <click/routerthread.hh>
 #include <click/task.hh>
+#include <click/master.hh>
 CLICK_DECLS
 
 /*
@@ -35,55 +36,55 @@ CLICK_DECLS
 static void
 element_hook(Timer *, void *thunk)
 {
-  Element *e = (Element *)thunk;
-  e->run_timer();
+    Element *e = (Element *)thunk;
+    e->run_timer();
 }
 
 static void
 task_hook(Timer *, void *thunk)
 {
-  Task *task = (Task *)thunk;
-  task->reschedule();
+    Task *task = (Task *)thunk;
+    task->reschedule();
 }
 
 static void
 list_hook(Timer *, void *)
 {
-  assert(0);
+    assert(0);
 }
 
 
 Timer::Timer(TimerHook hook, void *thunk)
-  : _prev(0), _next(0), _hook(hook), _thunk(thunk), _head(0)
+    : _prev(0), _next(0), _hook(hook), _thunk(thunk), _head(0)
 {
 }
 
 Timer::Timer(Element *e)
-  : _prev(0), _next(0), _hook(element_hook), _thunk(e), _head(0)
+    : _prev(0), _next(0), _hook(element_hook), _thunk(e), _head(0)
 {
 }
 
 Timer::Timer(Task *t)
-  : _prev(0), _next(0), _hook(task_hook), _thunk(t), _head(0)
+    : _prev(0), _next(0), _hook(task_hook), _thunk(t), _head(0)
 {
 }
 
 TimerList::TimerList()
-  : Timer(list_hook, 0)
+    : Timer(list_hook, 0)
 {
-  _prev = _next = _head = this;
+    _prev = _next = _head = this;
 }
 
 void
 Timer::initialize(Router *r)
 {
-  initialize(r->timer_list());
+    initialize(r->master()->timer_list());
 }
 
 void
 Timer::initialize(Element *e)
 {
-  initialize(e->router()->timer_list());
+    initialize(e->router()->master()->timer_list());
 }
 
 void

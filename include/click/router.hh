@@ -6,12 +6,6 @@
 #include <click/sync.hh>
 #include <click/bitvector.hh>
 #include <click/task.hh>
-#if CLICK_USERLEVEL
-# include <unistd.h>
-# if HAVE_POLL_H
-#  include <poll.h>
-# endif
-#endif
 #if CLICK_NS
 # include <click/simclick.h>
 #endif
@@ -20,6 +14,7 @@ CLICK_DECLS
 class ElementFilter;
 class RouterThread;
 class HashMap_ArenaFactory;
+class Master;
 
 class Router { public:
 
@@ -92,6 +87,9 @@ class Router { public:
   ErrorHandler *chatter_channel(const String &) const;
   HashMap_ArenaFactory *arena_factory() const;
 
+  // MASTER
+  Master *master() const			{ return _master; }
+  
   // THREADS
   int nthreads() const				{ return _threads.size() - 1; }
   RouterThread *thread(int id) const		{ return _threads[id + 1]; }
@@ -108,18 +106,7 @@ class Router { public:
   const volatile int *driver_runcount_ptr() const { return &_driver_runcount; }
 
   // TIMERS AND SELECTS
-  TimerList *timer_list()			{ return &_timer_list; }
   TaskList *task_list()				{ return &_task_list; }
-#if CLICK_USERLEVEL
-  enum { SELECT_READ = Element::SELECT_READ, SELECT_WRITE = Element::SELECT_WRITE };
-  int add_select(int fd, int element, int mask);
-  int remove_select(int fd, int element, int mask);
-#endif
-
-#if CLICK_USERLEVEL
-  void run_selects(bool more_tasks);
-#endif
-  void run_timers();
   
   // UNPARSING
   const String &configuration_string() const	{ return _configuration; }
@@ -164,25 +151,12 @@ class Router { public:
 #endif
   
  private:
+
+  Master *_master;
   
-  TimerList _timer_list;
   TaskList _task_list;
   volatile int _driver_runcount;
   Spinlock _runcount_lock;
-
-#if CLICK_USERLEVEL
-# if !HAVE_POLL_H
-  struct pollfd;
-  enum { POLLIN = SELECT_READ, POLLOUT = SELECT_WRITE };
-  fd_set _read_select_fd_set;
-  fd_set _write_select_fd_set;
-  int _max_select_fd;
-# endif
-  Vector<struct pollfd> _pollfds;
-  Vector<int> _read_poll_elements;
-  Vector<int> _write_poll_elements;
-  Spinlock _wait_lock;
-#endif
 
   uatomic32_t _refcount;
   
@@ -325,14 +299,6 @@ class Router::Handler { public:
 #define LARGEST_HANDLER_WRITE 65536
 
 
-#if CLICK_USERLEVEL && !HAVE_POLL_H
-struct Router::pollfd {
-  int fd;
-  int events;
-};
-#endif
-
-
 inline bool
 operator==(const Router::Hookup &a, const Router::Hookup &b)
 {
@@ -395,12 +361,6 @@ Router::Handler::compatible(const Handler &h) const
   return (_read == h._read && _read_thunk == h._read_thunk
 	  && _write == h._write && _write_thunk == h._write_thunk
 	  && _flags == h._flags);
-}
-
-inline void
-Router::run_timers()
-{
-  _timer_list.run(&_driver_runcount);
 }
 
 inline HashMap_ArenaFactory *
