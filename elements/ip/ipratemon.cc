@@ -622,7 +622,6 @@ IPRateMonitor::llrpc(unsigned command, void *data)
   
     when *= MyEWMA::freq(); 
     when += MyEWMA::now();
-    ipaddr = ntohl(ipaddr);
 
     _lock->acquire();
     set_anno_level(ipaddr, static_cast<unsigned>(level), 
