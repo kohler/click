@@ -2,6 +2,17 @@ Click NEWS
 
 Version 1.0.5
 
+* New linux kernel patch (etc/linux-2.2.14-patch): removed more race
+  conditions between normal linux operations and polling operations.
+
+* More changes to ToDevice to enable Linux and Click to send packets
+  independently and not cause race conditions. When Click is not running on
+  top of a polling capable kernel, it does not use a scheduler thread. In this
+  case, ToDevice only sends packets when Linux asks it to do so via a
+  notifier. Since Linux only calls the notifier in net_bh, there are no races.
+  When Click is running with a scheduler thread, we synchronize ToDevice's
+  send operation in kernel with a bit lock.
+
 * RatedSource::run_scheduled() now places a dummy timer for 0 ms if it 
   has other things to do. In userlevel, this is needed because RatedSource
   doesn't listen on a descriptor, so Router::wait() must be notified, somehow,
@@ -10,7 +21,8 @@ Version 1.0.5
 
 * Added select_fd() and selected() to ToBPF
 
-* conf/make-udpgen.pl: a perl script that generates udpgen click configuration
+* conf/make-udpgen.pl: a perl script that generates udpgen configuration
+* conf/make-udpcount.pl: a perl script that generates udpcount configuration
 
 
 Version 1.0.4   13.Apr.2000
