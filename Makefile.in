@@ -61,6 +61,7 @@ install-include: stamp-h
 	$(mkinstalldirs) $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.cc $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/config.h $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/pathvars.h $(includedir)
 	$(mkinstalldirs) $(includedir)/standard
