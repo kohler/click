@@ -1,6 +1,6 @@
 /*
  * ip6table.{cc,hh} -- a stupid IP6 routing table, best for small routing tables
- * Robert Morris / Peilei Fan
+ * Peilei Fan, Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
@@ -33,7 +33,6 @@ IP6Table::lookup(IP6Address dst, IP6Address &gw, int &index)
     if(_v[i]._valid && IP6Address((dst & _v[i]._mask)) == _v[i]._dst){
       if(besti == -1 || _v[i]._mask >_v[besti]._mask){
         besti = i;
-	//click_chatter("find the match in the routing table -entry is %d", besti);
       }
     }
   }

@@ -162,14 +162,14 @@ in6_fast_cksum(struct click_in6_addr *saddr,
 	
 	//get the sum of source and destination address
 	for (int i=0; i<4; i++) {
-	  //click_chatter("src address: %8x", ntohl(saddr->s6_addr32[i]));
+	  
 	  csum += ntohl(saddr->s6_addr32[i]);
 	  carry = (csum < ntohl(saddr->s6_addr32[i]));
 	  csum += carry;
 	}
 
 	for (int i=0; i<4; i++) {
-	  //click_chatter("dst address: %8x", ntohl(daddr->s6_addr32[i])); 
+	 
 	   csum += ntohl(daddr->s6_addr32[i]);
 	   carry = (csum < ntohl(daddr->s6_addr32[i]));
 	   csum += carry;
@@ -177,11 +177,9 @@ in6_fast_cksum(struct click_in6_addr *saddr,
 
 	//get the sum of other fields:  packet length, protocal
 	ulen = ntohs(len);
-	//click_chatter("packet length: %4x", ulen);
 	csum += ulen;
 
 	uproto = proto;
-	//click_chatter(" protocol: %4x", uproto);
 	csum += uproto;
 	
 	//get the sum of the ICMP6 package
@@ -189,7 +187,6 @@ in6_fast_cksum(struct click_in6_addr *saddr,
 	const unsigned short *w = (const unsigned short *)addr;
 	while (nleft > 1)  { 
 	    unsigned short w2=*w++;
-	    //click_chatter(" packet content: %2x", ntohs(w2));
 	    csum += ntohs(w2); 
 	    nleft -=2;
 	 }
@@ -197,7 +194,6 @@ in6_fast_cksum(struct click_in6_addr *saddr,
 	 //mop up an odd byte, if necessary 
 	  if (nleft == 1) { 
 	    *(unsigned char *)(&answer) = *(const unsigned char *)w ;
-	    //click_chatter(" last packet content: %2x", ntohs(answer));
 	    csum += ntohs(answer); 	 
 	  }  
 	  csum -= ntohs(ori_csum); //get rid of the effect of ori_csum in the calculation
@@ -208,7 +204,6 @@ in6_fast_cksum(struct click_in6_addr *saddr,
 	  }
 	  
 	  answer = ~csum;          // truncate to 16 bits 
-	  //click_chatter("answer: %x", answer); 
 	  return answer;
 }
 
@@ -231,22 +226,18 @@ in6_cksum(struct click_in6_addr *saddr,
 	
 	//get the sum of source and destination address
 	for (int i=0; i<8; i++) {
-	  //click_chatter("src address: %4x", ntohs(saddr->s6_addr16[i]));
 	  csum += ntohs(saddr->s6_addr16[i]);
 	}
 
 	for (int i=0; i<8; i++) {
-	  //click_chatter("dst address: %4x", ntohs(daddr->s6_addr16[i]));
 	   csum += ntohs(daddr->s6_addr16[i]);
 	}
 
 	//get the sum of other fields:  packet length, protocal
 	ulen = ntohs(len);
-	//click_chatter("packet length: %4x", ulen);
 	csum += ulen;
 
 	uproto = proto;
-	//click_chatter(" protocol: %4x", uproto);
 	csum += uproto;
 	
 	//get the sum of the ICMP6 package
@@ -254,7 +245,6 @@ in6_cksum(struct click_in6_addr *saddr,
 	const unsigned short *w = (const unsigned short *)addr;
 	while (nleft > 1)  { 
 	    unsigned short w2=*w++;
-	    //click_chatter(" packet content: %2x", ntohs(w2));
 	    csum += ntohs(w2); 
 	    nleft -=2;
 	 }
@@ -262,7 +252,6 @@ in6_cksum(struct click_in6_addr *saddr,
 	 //mop up an odd byte, if necessary 
 	  if (nleft == 1) { 
 	    *(unsigned char *)(&answer) = *(const unsigned char *)w ;
-	    //click_chatter(" last packet content: %2x", ntohs(answer));
 	    csum += ntohs(answer); 	 
 	  }  
 	  csum -= ntohs(ori_csum); //get rid of the effect of ori_csum in the calculation
@@ -273,6 +262,5 @@ in6_cksum(struct click_in6_addr *saddr,
 	  }
 	  
 	  answer = ~csum;          // truncate to 16 bits 
-	  //click_chatter("answer: %x", answer); 
 	  return answer;
 }
