@@ -29,12 +29,14 @@
  * factor that actually keeps rates over the past 1.5hr.
  */
 
+typedef long long quad_t;
+
 class EWMA2 {
   
   int _now_jiffies;
   
-  long long _now;
-  long long _avg;
+  quad_t _now;
+  quad_t _avg;
   int _stability_shift;
 
   static const int METER_SCALE = 30;
@@ -63,12 +65,11 @@ EWMA2::update_time()
   int jj = _now_jiffies;
   if (j != jj) {
     // adjust the average rate using the last measured packets
-    long long now_scaled = _now << METER_SCALE;
+    quad_t now_scaled = _now << METER_SCALE;
     int compensation = 1 << (_stability_shift - 1); // round off
     _avg += (now_scaled - _avg + compensation) >> _stability_shift;
 
-    // adjust for time w/ no packets (XXX: should use table)
-    // (inline copy of update_zero_period)
+    // adjust for time w/ no packets
     for (int t = jj + 1; t != j; t++)
       _avg += (-_avg + compensation) >> _stability_shift;
     
@@ -87,7 +88,6 @@ EWMA2::update(int delta)
 inline int 
 EWMA2::set_stability_shift(int shift)
 {
-  click_chatter("setting stability_shift to %d\n", shift);
   if (shift > METER_SCALE-1)
     return -1;
   else {
