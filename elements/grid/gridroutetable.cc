@@ -245,6 +245,12 @@ GridRouteTable::est_forward_delivery_rate(const IPAddress ip, double &rate)
       double z2 = 1 / (1 + exp(z));
       double thresh = 0.8;
       bool link_good = z2 > thresh;
+      /* paper fuckedness: */
+      if (link_good)
+	rate = 1;
+      else
+	rate = 0.1;
+      return true;
       h(3);
       if (!link_good && !res) {
 	h(4);
@@ -317,6 +323,13 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
     double thresh = 0.8;
     bool link_good = z2 > thresh;
     
+    /* paper fuckedness: */
+    if (link_good)
+      rate = 1;
+    else
+      rate = 0.1;
+    return true;
+    
     unsigned int window = 0;
     unsigned int num_rx = 0;
     unsigned int num_expected = 0;
@@ -368,6 +381,9 @@ GridRouteTable::est_reverse_delivery_rate(const IPAddress ip, double &rate)
       return false;
     double num_rx_ = num_rx;
     double num_expected_ = num_expected;
+    if (num_rx > num_expected)
+      click_chatter("WARNING: est_reverse_delivery_rate: num_rx (%d) > num_expected (%d) for %s",
+		    num_rx, num_expected, r->next_hop_eth.s().cc());
     rate = (num_rx_ - 0.5) / num_expected_;
     return true;
     break;
@@ -432,6 +448,9 @@ GridRouteTable::init_metric(RTEntry &r)
   }
   break;
   case MetricEstTxCount: {
+#if 1
+    click_chatter("XXX");
+#endif
     double fwd_rate = 0;
     double rev_rate = 0;
     bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
@@ -445,7 +464,20 @@ GridRouteTable::init_metric(RTEntry &r)
     click_chatter(buf);
 #endif
     if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
+      if (fwd_rate >= 1) {
+	click_chatter("init_metric ERROR: fwd rate %d is too high for %s",
+		      (int) (100 * fwd_rate), r.next_hop_ip.s().cc());
+	fwd_rate = 1;
+      }
+      if (rev_rate >= 1) {
+	click_chatter("init_metric ERROR: rev rate %d is too high for %s",
+		      (int) (100 * rev_rate), r.next_hop_ip.s().cc());
+	rev_rate = 1;
+      }
       r.metric = (int) (100 / (fwd_rate * rev_rate));
+      if (r.metric < 100) 
+	click_chatter("init_metric WARNING: metric too small (%d) for %s",
+		      r.metric, r.next_hop_ip.s().cc());
       r.metric_valid = true;
       h(201);
     } 
@@ -485,9 +517,17 @@ GridRouteTable::update_metric(RTEntry &r)
   switch (_metric_type) {
   case MetricHopCount:
     if (next_hop->metric > 1)
-      click_chatter("GridRouteTable: ERROR metric type is hop count but next-hop %s metric is > 1 (%u)",
+      click_chatter("GridRouteTable: WARNING metric type is hop count but next-hop %s metric is > 1 (%u)",
 		    next_hop->dest_ip.s().cc(), next_hop->metric);
   case MetricEstTxCount: 
+    if (_metric_type == MetricEstTxCount) {
+      if (r.metric < (unsigned) 100 * (r.num_hops - 1))
+	click_chatter("update_metric WARNING received metric (%d) too low for %s (%d hops)",
+		      r.metric, r.dest_ip.s().cc(), r.num_hops);
+      if (next_hop->metric < 100)
+	click_chatter("update_metric WARNING next hop %s for %s metric is too low (%d)",
+		      next_hop->dest_ip.s().cc(), r.dest_ip.s().cc(), next_hop->metric);
+    }
     r.metric += next_hop->metric;
     break;
   case MetricCumulativeDeliveryRate:
@@ -558,9 +598,15 @@ GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry
   
   /* if neither metric is valid, just keep the route we have -- to aid
    * in stability -- as if I have any notion about that....
+   *
+   * actually, that's fucked.  would you prefer a 5-hop route or a 
+   * 2-hop route, given that you don't have any other information about
+   * them?  duh.  fall back to hopcount. 
    * bwahhhaaaahahaha!!! */
-  if (!old_route.metric_valid && !new_route.metric_valid)
-    return false;;
+  if (!old_route.metric_valid && !new_route.metric_valid) {
+    // return false;
+    return new_route.num_hops < old_route.num_hops;
+  }
   
   // both metrics are valid
   /* update is from same node as last update, we should accept it to avoid unwarranted timeout */

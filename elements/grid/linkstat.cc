@@ -100,7 +100,8 @@ void
 LinkStat::remove_all_stats(const EtherAddress &e)
 {
   _stats.remove(e);
-  _bcast_stats.remove(e);
+  /* don't want to remove bcast stats: window may be > expire timer */
+  // _bcast_stats.remove(e);
 
 }
 

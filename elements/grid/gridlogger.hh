@@ -17,8 +17,9 @@ class GridLogger {
 
   state_t _state;
   int _fd;
+  String _fn;
   bool _log_full_ip;
-
+  
   unsigned char _buf[1024];
   size_t _bufptr; // index of next byte available in buf
 
@@ -83,14 +84,16 @@ public:
   };
 
   GridLogger(const String &filename, bool log_full_ip = false) 
-    : _state(NOT_READY), _fd(-1), _log_full_ip(log_full_ip), _bufptr(0) {
-    _fd = open(((String &) filename).cc(), O_WRONLY | O_CREAT, 0004);
+    : _state(NOT_READY), _fd(-1), _fn(filename),
+      _log_full_ip(log_full_ip), _bufptr(0) {
+    _fd = open(_fn.cc(), O_WRONLY | O_CREAT, 0777);
     if (_fd == -1) {
       click_chatter("GridLogger: unable to open log file %s, %s",
-		    ((String &) filename).cc(), strerror(errno));
+		    _fn.cc(), strerror(errno));
       return;
     }
     _state = WAITING;
+    click_chatter("GridLogger: started logging to %s", _fn.cc());
   }
 
   bool ok() { return _state != NOT_READY; }
@@ -172,8 +175,10 @@ public:
   }
 
   ~GridLogger() {
-    if (_fd != -1)
+    if (_fd != -1) {
       close(_fd);
+      click_chatter("GridLogger: stopped logging on %s",_fn.cc());
+    }
   }
 };
 
