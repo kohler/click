@@ -90,8 +90,8 @@ dnl
 missing_dir=`cd $srcdir && pwd`
 
 AC_MSG_CHECKING(for working autoheader)
-if (autoheader --version) < /dev/null > /dev/null 2>&1; then
-  AUTOHEADER=autoheader
+AUTOHEADER=${AUTOHEADER-autoheader}
+if ($AUTOHEADER --version) < /dev/null > /dev/null 2>&1; then
   AC_MSG_RESULT(found)
 else
   AUTOHEADER="$missing_dir/missing autoheader"
@@ -99,9 +99,9 @@ else
 fi
 
 AC_MSG_CHECKING(for working autoconf)
-if (autoconf --version) < /dev/null > conftest.out 2>&1; then
+AUTOCONF=${AUTOCONF-autoconf}
+if ($AUTOCONF --version) < /dev/null > conftest.out 2>&1; then
   if test `head -1 conftest.out | sed 's/.*2\.\([[0-9]]*\).*/\1/'` -ge 13 2>/dev/null; then
-    AUTOCONF=autoconf
     AC_MSG_RESULT(found)
   else
     AUTOCONF="$missing_dir/missing autoconf"
@@ -574,6 +574,31 @@ manual pages for you.)
   fi
 fi
 AC_SUBST(PERL)
+
+dnl
+dnl Makeinfo and texi2dvi
+dnl
+
+AC_MSG_CHECKING(for working makeinfo)
+MAKEINFO=${MAKEINFO-makeinfo}
+if ($MAKEINFO --version) < /dev/null > /dev/null 2>&1; then
+  AC_MSG_RESULT(found)
+else
+  MAKEINFO="$missing_dir/missing makeinfo"
+  AC_MSG_RESULT(missing)
+fi
+
+AC_MSG_CHECKING(for working texi2dvi)
+TEXI2DVI=${TEXI2DVI-texi2dvi}
+if ($TEXI2DVI --version) < /dev/null > /dev/null 2>&1; then
+  AC_MSG_RESULT(found)
+else
+  TEXI2DVI="$missing_dir/missing texi2dvi"
+  AC_MSG_RESULT(missing)
+fi
+
+AC_SUBST(MAKEINFO)
+AC_SUBST(TEXI2DVI)
 
 dnl
 dnl Output
