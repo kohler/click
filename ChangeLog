@@ -1,3 +1,7 @@
+2002-06-19 Wednesday 17:56  Eddie Kohler <kohler@icir.org>
+
+	* etc/diagrams/elemfig.sty (1.2): add \lportlabel and friends
+
 2002-06-19 Wednesday 14:22  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.19), dsdvroutetable.hh
