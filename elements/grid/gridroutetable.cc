@@ -30,7 +30,7 @@
 #include "gridlogger.hh"
 
 GridRouteTable::GridRouteTable() : 
-  Element(1, 1), _log(0),
+  Element(1, 1), _log(0), _dump_tick(0),
   _seq_no(0), _fake_seq_no(0), _bcast_count(0),
   _seq_delay(1),
   _max_hops(3), 
@@ -1238,6 +1238,18 @@ GridRouteTable::expire_routes()
    * expired routes which is suitable for inclusion in a broken route
    * advertisement. 
    */
+
+  /* overloading this timer function to occasionally dump full route table to log */
+  _dump_tick++;
+  if (_dump_tick == 50) {
+    _dump_tick = 0;
+    if (_log) {
+      struct timeval tv;
+      gettimeofday(&tv, 0);
+      _log->log_route_dump(_rtes, tv);
+    }
+  }
+      
 
   assert(_timeout > 0);
   int jiff = click_jiffies();

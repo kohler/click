@@ -39,6 +39,8 @@ class GridLogger {
 		    strerror(errno));
     _bufptr = 0;
   }
+  void clear_buf() { _bufptr = 0; }
+  size_t bufsz() { return _bufptr; }
   void add_bytes(void *bytes, size_t n) {
     if (!check_space(n))
       return;
@@ -50,7 +52,7 @@ class GridLogger {
     if (_log_full_ip)
       add_bytes(&ip, sizeof(ip));
     else
-      add_one_byte(ip & 0xff);
+      add_one_byte(ntohl(ip) & 0xff);
   }
   void add_long(unsigned long v) {
     v = htonl(v);
@@ -64,23 +66,24 @@ class GridLogger {
 
 public:
 
-  static const unsigned char SENT_AD_CODE = 0x1;
-  static const unsigned char BEGIN_RECV_CODE = 0x2;
-  static const unsigned char END_RECV_CODE = 0x3;
-  static const unsigned char BEGIN_EXPIRE_CODE = 0x4;
-  static const unsigned char END_EXPIRE_CODE = 0x5;
-  static const unsigned char TRUNCATED_CODE = 0x6;
-  static const unsigned char RECV_ADD_ROUTE_CODE = 0x7;
-  static const unsigned char RECV_TRIGGER_ROUTE_CODE = 0x8;
-  static const unsigned char RECV_EXPIRE_ROUTE_CODE = 0x9;
+  static const unsigned char SENT_AD_CODE               = 0x01;
+  static const unsigned char BEGIN_RECV_CODE            = 0x02;
+  static const unsigned char END_RECV_CODE              = 0x03;
+  static const unsigned char BEGIN_EXPIRE_CODE          = 0x04;
+  static const unsigned char END_EXPIRE_CODE            = 0x05;
+  static const unsigned char TRUNCATED_CODE             = 0x06;
+  static const unsigned char RECV_ADD_ROUTE_CODE        = 0x07;
+  static const unsigned char RECV_TRIGGER_ROUTE_CODE    = 0x08;
+  static const unsigned char RECV_EXPIRE_ROUTE_CODE     = 0x09;
+  static const unsigned char ROUTE_DUMP_CODE            = 0x0A;
 
   // these need to be different than the above codes
   enum reason_t {
-    WAS_SENDER = 101,
-    WAS_ENTRY = 102,
-    BROKEN_AD = 103,
-    TIMEOUT = 104,
-    NEXT_HOP_EXPIRED = 105
+    WAS_SENDER        = 0xf1,
+    WAS_ENTRY         = 0xf2,
+    BROKEN_AD         = 0xf3,
+    TIMEOUT           = 0xf4,
+    NEXT_HOP_EXPIRED  = 0xf5
   };
 
   GridLogger(const String &filename, bool log_full_ip = false) 
@@ -171,6 +174,26 @@ public:
       return;
     _state = WAITING;
     add_one_byte(END_EXPIRE_CODE);
+    if (bufsz() <= 2 + sizeof(struct timeval))
+      clear_buf(); // don't log if nothing actually expired
+    else
+      write_buf();
+  }
+
+  void log_route_dump(const GridRouteTable::RTable &rt, struct timeval when) {
+    if (_state != WAITING)
+      return;
+    add_one_byte(ROUTE_DUMP_CODE);
+    add_timeval(when);
+    int n = rt.size();
+    add_long(n);
+    for (GridRouteTable::RTIter i = rt.first(); i; i++) {
+      const GridRouteTable::RTEntry &r = i.value();
+      add_ip(r.dest_ip);
+      add_ip(r.next_hop_ip);
+      add_one_byte(r.num_hops);
+      add_long(r.seq_no);
+    }
     write_buf();
   }
 

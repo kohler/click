@@ -217,6 +217,7 @@ private:
 
   /* binary logging */
   GridLogger *_log;
+  unsigned int _dump_tick;
 
   /* this node's addresses */
   IPAddress _ip;
