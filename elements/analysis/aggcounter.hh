@@ -166,7 +166,7 @@ Returns the number of aggregates that have been seen so far.
 =n
 
 The aggregate identifier is stored in host byte order. Thus, the aggregate ID
-corresponding to IP address 128.0.0.0 equals 2147483648.
+corresponding to IP address 128.0.0.0 is 2147483648.
 
 Only available in user-level processes.
 
