@@ -42,8 +42,9 @@ class Element : public ElementLink { public:
   String landmark() const;
   
   Router *router() const		{ return (Router *)scheduled_list(); }
-  int elementno() const			{ return _elementno; }
-  void set_elementno(int n)		{ _elementno = n; }
+  int eindex() const			{ return _eindex; }
+  int eindex(Router *) const;
+  void set_eindex(int n)		{ _eindex = n; }
 
   // INPUTS
   int ninputs() const				{ return _ninputs; }
@@ -172,7 +173,7 @@ class Element : public ElementLink { public:
   int _ninputs;
   int _noutputs;
   
-  int _elementno;
+  int _eindex;
 
   Element(const Element &);
   Element &operator=(const Element &);
@@ -181,6 +182,12 @@ class Element : public ElementLink { public:
   
 };
 
+
+inline int
+Element::eindex(Router *r) const
+{
+  return (router() == r ? eindex() : -1);
+}
 
 inline const Element::Connection &
 Element::input(int i) const

@@ -110,7 +110,6 @@ class Router : public ElementLink {
   
   int nelements() const				{ return _elements.size(); }
   Element *element(int) const;
-  int eindex(Element *);
   const String &ename(int) const;
   const String &econfiguration(int) const;
   const String &elandmark(int) const;

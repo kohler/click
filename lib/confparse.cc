@@ -181,6 +181,17 @@ cp_unargvec(const Vector<String> &args)
 }
 
 String
+cp_unspacevec(const Vector<String> &args)
+{
+  StringAccum sa;
+  for (int i = 0; i < args.size(); i++) {
+    if (i) sa << " ";
+    sa << args[i];
+  }
+  return sa.take_string();
+}
+
+String
 cp_subst(const String &str)
 {
   Vector<String> v;

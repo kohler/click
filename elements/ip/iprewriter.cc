@@ -14,6 +14,7 @@
 # include <config.h>
 #endif
 #include "iprewriter.hh"
+#include "elements/ip/iprwpatterns.hh"
 #include "click_ip.h"
 #include "click_tcp.h"
 #include "click_udp.h"
@@ -66,18 +67,20 @@ IPRewriter::Mapping::Mapping(const IPFlowID &in, const IPFlowID &out,
 bool
 IPRewriter::Mapping::make_pair(const IPFlowID &inf, const IPFlowID &outf,
 			       Pattern *pattern, int foutput, int routput,
-			       Mapping *&in_map, Mapping *&out_map)
+			       Mapping **in_map, Mapping **out_map)
 {
-  in_map = new Mapping(inf, outf, pattern, foutput, false);
-  if (!in_map)
+  Mapping *im = new Mapping(inf, outf, pattern, foutput, false);
+  if (!im)
     return false;
-  out_map = new Mapping(outf.rev(), inf.rev(), pattern, routput, true);
-  if (!out_map) {
-    delete in_map;
+  Mapping *om = new Mapping(outf.rev(), inf.rev(), pattern, routput, true);
+  if (!om) {
+    delete im;
     return false;
   }
-  in_map->_reverse = out_map;
-  out_map->_reverse = in_map;
+  im->_reverse = om;
+  om->_reverse = im;
+  *in_map = im;
+  *out_map = om;
   return true;
 }
 
@@ -132,85 +135,96 @@ IPRewriter::Mapping::pat_unlink()
 //
 
 IPRewriter::Pattern::Pattern(const IPAddress &saddr, int sportl, int sporth,
-			     const IPAddress &daddr, int dport,
-			     int forward_output, int reverse_output)
+			     const IPAddress &daddr, int dport)
   : _saddr(saddr), _sportl(sportl), _sporth(sporth), _daddr(daddr),
-    _dport(dport), _forward_output(forward_output),
-    _reverse_output(reverse_output), _rover(0)
+    _dport(dport), _rover(0)
 {
 }
 
-IPRewriter::Pattern *
-IPRewriter::Pattern::make(const String &conf, ErrorHandler *errh)
+int
+IPRewriter::Pattern::parse(const String &conf, Pattern **pstore,
+			   Element *e, ErrorHandler *errh)
 {
   Vector<String> words;
   cp_spacevec(conf, words);
-  if (words.size() != 6) {
-    errh->error("bad pattern spec: expected `SADDR SPORT[-SPORT2] DADDR DPORT FORWARD-OUTPUT REVERSE-OUTPUT'");
-    return 0;
+
+  // check for IPRewriterPatterns reference
+  if (words.size() == 1) {
+    if (Pattern *p = IPRewriterPatterns::find(e, cp_unquote(words[0]), errh)) {
+      *pstore = p;
+      return 0;
+    } else
+      return -1;
   }
 
+  // otherwise, pattern definition
+  if (words.size() != 4)
+    return errh->error("bad pattern spec: should be `NAME FOUTPUT ROUTPUT' or\n`SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT'");
+  
   IPAddress saddr, daddr;
-  int sportl, sporth, dport, foutput, routput;
+  int sportl, sporth, dport;
   
   if (words[0] == "-")
     saddr = 0;
-  else if (!cp_ip_address(words[0], saddr)) {
-    errh->error("bad source address `%s' in pattern spec", words[0].cc());
-    return 0;
-  }
-
+  else if (!cp_ip_address(words[0], saddr))
+    return errh->error("bad source address `%s' in pattern spec", words[0].cc());
+  
   if (words[1] == "-")
     sportl = sporth = 0;
   else {
     String rest;
-    if (!cp_integer(words[1], &sportl, &rest)) {
-      errh->error("bad source port `%s' in pattern spec", words[1].cc());
-      return 0;
-    }
+    if (!cp_integer(words[1], &sportl, &rest))
+      return errh->error("bad source port `%s' in pattern spec", words[1].cc());
     if (rest) {
-      if (!cp_integer(rest, &sporth) || sporth > 0) {
-	errh->error("bad source port `%s' in pattern spec", words[1].cc());
-	return 0;
-      }
+      if (!cp_integer(rest, &sporth) || sporth > 0)
+	return errh->error("bad source port `%s' in pattern spec", words[1].cc());
       sporth = -sporth;
     } else
       sporth = sportl;
   }
-  if (sportl > sporth || sportl < 0 || sporth > USHRT_MAX) {
-    errh->error("source port(s) %d-%d out of range in pattern spec", sportl, sporth);
-    return 0;
-  }
+  if (sportl > sporth || sportl < 0 || sporth > USHRT_MAX)
+    return errh->error("source port(s) %d-%d out of range in pattern spec", sportl, sporth);
 
   if (words[2] == "-")
     daddr = 0;
-  else if (!cp_ip_address(words[2], daddr)) {
-    errh->error("bad destination address `%s' in pattern spec", words[2].cc());
-    return 0;
-  }
+  else if (!cp_ip_address(words[2], daddr))
+    return errh->error("bad destination address `%s' in pattern spec", words[2].cc());
   
   if (words[3] == "-")
     dport = 0;
-  else if (!cp_integer(words[3], &dport)) {
-    errh->error("bad destination port `%s' in pattern spec", words[3].cc());
-    return 0;
-  }
-  if (dport < 0 || dport > USHRT_MAX) {
-    errh->error("destination port %d out of range in pattern spec", dport);
-    return 0;
-  }
+  else if (!cp_integer(words[3], &dport))
+    return errh->error("bad destination port `%s' in pattern spec", words[3].cc());
+  if (dport < 0 || dport > USHRT_MAX)
+    return errh->error("destination port %d out of range in pattern spec", dport);
 
-  if (!cp_integer(words[4], &foutput) || foutput < 0) {
-    errh->error("bad forward output `%s' in pattern spec", words[4].cc());
+  *pstore = new Pattern(saddr, sportl, sporth, daddr, dport);
+  return 0;
+}
+
+int
+IPRewriter::Pattern::parse_with_ports(const String &conf, Pattern **pstore,
+				      int *fport_store, int *rport_store,
+				      Element *e, ErrorHandler *errh)
+{
+  Vector<String> words;
+  cp_spacevec(conf, words);
+  int fport, rport;
+
+  if (words.size() <= 2
+      || !cp_integer(words[words.size() - 2], &fport)
+      || !cp_integer(words[words.size() - 1], &rport))
+    return errh->error("bad forward and/or reverse ports in pattern spec");
+  words.resize(words.size() - 2);
+
+  // check for IPRewriterPatterns reference
+  Pattern *p;
+  if (parse(cp_unspacevec(words), &p, e, errh) >= 0) {
+    *pstore = p;
+    *fport_store = fport;
+    *rport_store = rport;
     return 0;
-  }
-  
-  if (!cp_integer(words[5], &routput) || routput < 0) {
-    errh->error("bad reverse output `%s' in pattern spec", words[5].cc());
-    return 0;
-  }
-  
-  return new Pattern(saddr, sportl, sporth, daddr, dport, foutput, routput);
+  } else
+    return -1;
 }
 
 static bool
@@ -282,8 +296,8 @@ IPRewriter::Pattern::find_sport()
 }
 
 bool
-IPRewriter::Pattern::create_mapping(const IPFlowID &in,
-				    Mapping *&forward, Mapping *&reverse)
+IPRewriter::Pattern::create_mapping(const IPFlowID &in, int fport, int rport,
+				    Mapping **fmap, Mapping **rmap)
 {
   unsigned short new_sport;
   if (!_sportl)
@@ -300,10 +314,9 @@ IPRewriter::Pattern::create_mapping(const IPFlowID &in,
   if (!_saddr) out.set_saddr(in.saddr());
   if (!_daddr) out.set_daddr(in.daddr());
 
-  if (Mapping::make_pair(in, out, this, _forward_output, _reverse_output,
-			 forward, reverse)) {
-    forward->pat_insert_after(_rover);
-    _rover = forward;
+  if (Mapping::make_pair(in, out, this, fport, rport, fmap, rmap)) {
+    (*fmap)->pat_insert_after(_rover);
+    _rover = *fmap;
     return true;
   } else
     return false;
@@ -318,46 +331,6 @@ IPRewriter::Pattern::mapping_freed(Mapping *m)
       _rover = 0;
   }
   m->pat_unlink();
-}
-
-bool
-IPRewriter::Pattern::accept_mapping(const IPFlowID &in, const IPFlowID &out,
-				    Mapping *&forward, Mapping *&reverse)
-{
-  if ((in.saddr() == out.saddr() && !_saddr)
-      || out.saddr() == _saddr) {
-    if ((in.sport() == out.sport() && !_sportl)
-	|| out.sport() >= _sportl && out.sport() <= _sporth) {
-      if ((in.daddr() == out.daddr() && !_daddr)
-	  || out.daddr() == _daddr) {
-	if ((in.dport() == out.dport() && !_dport)
-	    || out.dport() == _dport)
-	  return true;
-      }
-    }
-  }
-
-  unsigned short want_sport = out.sport();
-  if (_rover) {
-    Mapping *r = _rover;
-    Mapping *p = 0;
-    do {
-      if (r->sport() == want_sport)
-	return false;
-      else if (r->sport() < want_sport && (!p || p->sport() < r->sport()))
-	p = r;
-      r = r->pat_next();
-    } while (r != _rover);
-    _rover = p;
-  }
-
-  if (Mapping::make_pair(in, out, this, _forward_output, _reverse_output,
-			 forward, reverse)) {
-    forward->pat_insert_after(_rover);
-    _rover = forward;
-    return true;
-  } else
-    return false;
 }
 
 String
@@ -411,28 +384,6 @@ IPRewriter::notify_noutputs(int n)
   set_noutputs(n < 1 ? 1 : n);
 }
 
-void
-IPRewriter::collect_patterns(Vector<Pattern *> &pv, Vector<int> &sv)
-{
-  for (int i = 0; i < _input_specs.size(); i++)
-    switch (_input_specs[i].kind) {
-      
-     case INPUT_SPEC_PATTERN:
-      pv.push_back(_input_specs[i].u.pattern);
-      sv.push_back(i);
-      break;
-      
-     case INPUT_SPEC_MAPPER:
-      _input_specs[i].u.mapper->mapper_patterns(pv, this);
-      sv.resize(pv.size(), i);
-      break;
-      
-     default:
-      break;
-      
-    }
-}
-
 int
 IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
@@ -466,9 +417,10 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	errh->error("bad input %d spec; expected `drop'", i);
 
     } else if (word == "pattern") {
-      if (Pattern *p = Pattern::make(rest, errh)) {
+      if (Pattern::parse_with_ports(rest, &is.u.pattern.p, &is.u.pattern.fport,
+				    &is.u.pattern.rport, this, errh) >= 0) {
+	is.u.pattern.p->use();
 	is.kind = INPUT_SPEC_PATTERN;
-	is.u.pattern = p;
       }
 
     } else if (Element *e = cp_element(word, this, 0)) {
@@ -486,31 +438,8 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
     _input_specs.push_back(is);
   }
 
-  // check patterns for conflicts
-  Vector<Pattern *> all_pat;
-  Vector<int> all_pat_source;
-  collect_patterns(all_pat, all_pat_source);
-  for (int i = 0; i < all_pat.size(); i++)
-    for (int j = 0; j < i; j++) {
-      if (all_pat[j]->definite_conflict(*all_pat[i]))
-	errh->error("pattern conflict");
-      else if (all_pat[j]->possible_conflict(*all_pat[i]))
-	errh->warning("possible pattern conflict");
-      else
-	continue;
-      String s = all_pat[i]->s(), t = all_pat[j]->s();
-      errh->message("  pattern from input spec %d: %s", all_pat_source[i], s.cc());
-      errh->message("  pattern from input spec %d: %s", all_pat_source[j], t.cc());
-    }
 
-  // check patterns for bad output numbers
-  for (int i = 0; i < all_pat.size(); i++) {
-    int f = all_pat[i]->forward_output(), r = all_pat[i]->reverse_output();
-    if (f < 0 || f >= noutputs())
-      errh->error("pattern from input spec %d: bad forward output `%d'", all_pat_source[i], f);
-    if (r < 0 || r >= noutputs())
-      errh->error("pattern from input spec %d: bad reverse output `%d'", all_pat_source[i], r);
-  }
+  // ... all_pat ...
   
   return (errh->nerrors() == before ? 0 : -1);
 }
@@ -534,45 +463,6 @@ IPRewriter::initialize(ErrorHandler *errh)
 }
 
 void
-IPRewriter::take_map_state(bool is_tcp,
-			   const HashMap<IPFlowID, Mapping *> &omap,
-			   const Vector<Pattern *> &all_pat,
-			   const Vector<int> &, ErrorHandler *errh)
-{
-  bool warned = false;
-  
-  int i = 0;
-  IPFlowID flow;
-  Mapping *m;
-  while (omap.each(i, flow, m))
-    if (m && m->is_forward()) {
-      Mapping *new_f = 0, *new_r = 0;
-      for (int j = 0; j < all_pat.size() && !new_f; j++)
-	all_pat[j]->accept_mapping(flow, m->flow_id(), new_f, new_r);
-      if (new_f)
-	install(is_tcp, new_f, new_r);
-      else if (!warned) {
-	errh->warning("not all old %s mappings could be transferred",
-		      (is_tcp ? "TCP" : "UDP"));
-	warned = true;
-      }
-    }
-}
-
-void
-IPRewriter::take_state(Element *e, ErrorHandler *errh)
-{
-  IPRewriter *rw = (IPRewriter *)e->cast("IPRewriter");
-  if (!rw) return;
-
-  Vector<Pattern *> all_pat;
-  Vector<int> all_pat_source;
-  collect_patterns(all_pat, all_pat_source);
-  take_map_state(false, rw->_udp_map, all_pat, all_pat_source, errh);
-  take_map_state(true, rw->_tcp_map, all_pat, all_pat_source, errh);
-}
-
-void
 IPRewriter::uninitialize()
 {
   _timer.unschedule();
@@ -582,7 +472,7 @@ IPRewriter::uninitialize()
 
   for (int i = 0; i < _input_specs.size(); i++)
     if (_input_specs[i].kind == INPUT_SPEC_PATTERN)
-      delete _input_specs[i].u.pattern;
+      _input_specs[i].u.pattern.p->unuse();
 }
 
 void
@@ -708,9 +598,11 @@ IPRewriter::push(int port, Packet *p_in)
       break;
 
      case INPUT_SPEC_PATTERN: {
-       Pattern *pat = is.u.pattern;
+       Pattern *pat = is.u.pattern.p;
+       int fport = is.u.pattern.fport;
+       int rport = is.u.pattern.rport;
        Mapping *reverse;
-       if (pat->create_mapping(flow, m, reverse))
+       if (pat->create_mapping(flow, fport, rport, &m, &reverse))
 	 install(tcp, m, reverse);
        break;
      }
@@ -740,11 +632,11 @@ IPRewriter::dump_table()
   Mapping *m;
   while (_tcp_map.each(i, in, m))
     if (m && !m->is_reverse())
-      tcps += in.s() + " ==> " + m->flow_id().s() + "\n";
+      tcps += in.s() + " ==> " + m->flow_id().s() + " [" + String(m->output()) + "]\n";
   i = 0;
   while (_udp_map.each(i, in, m))
     if (m && !m->is_reverse())
-      udps += in.s() + " ==> " + m->flow_id().s() + "\n";
+      udps += in.s() + " ==> " + m->flow_id().s() + " [" + String(m->output()) + "]\n";
   if (tcps && udps)
     return "TCP:\n" + tcps + "\nUDP:\n" + udps;
   else if (tcps)
@@ -761,7 +653,7 @@ IPRewriter::dump_patterns()
   String s;
   for (int i = 0; i < _input_specs.size(); i++)
     if (_input_specs[i].kind == INPUT_SPEC_PATTERN)
-      s += _input_specs[i].u.pattern->s() + "\n";
+      s += _input_specs[i].u.pattern.p->s() + "\n";
   return s;
 }
 
@@ -782,10 +674,11 @@ patterns_dump(Element *f, void *)
 void
 IPRewriter::add_handlers()
 {
-  add_read_handler("rewrite_table", table_dump, (void *)0);
+  add_read_handler("mappings", table_dump, (void *)0);
   add_read_handler("patterns", patterns_dump, (void *)0);
 }
 
+ELEMENT_REQUIRES(IPRewriterPatterns)
 EXPORT_ELEMENT(IPRewriter)
 
 #include "hashmap.cc"

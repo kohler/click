@@ -27,7 +27,7 @@ int
 AlignmentInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   // check for an earlier AlignmentInfo
-  int my_number = router()->eindex(this);
+  int my_number = eindex();
   const Vector<Element *> &ev = router()->elements();
   for (int i = 0; i < my_number; i++)
     if (AlignmentInfo *ai = (AlignmentInfo *)ev[i]->cast("AlignmentInfo"))
@@ -42,7 +42,7 @@ AlignmentInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
       errh->warning("empty configuration argument %d", i);
     
     else if (Element *e = router()->find(this, parts[0], 0)) {
-      int number = router()->eindex(e);
+      int number = e->eindex();
       if (_elem_offset.size() <= number) {
 	_elem_offset.resize(number + 1, -1);
 	_elem_icount.resize(number + 1, -1);
@@ -81,7 +81,7 @@ AlignmentInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
 bool
 AlignmentInfo::query1(Element *e, int port, int &chunk, int &offset) const
 {
-  int idx = router()->eindex(e);
+  int idx = e->eindex();
   if (idx < 0 || idx >= _elem_offset.size() || _elem_offset[idx] < 0
       || port >= _elem_icount[idx])
     return false;

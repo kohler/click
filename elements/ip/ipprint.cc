@@ -43,25 +43,42 @@ int
 IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
 {
   _bytes = 1500;
-  _hex = false;
-
+  String contents = "no";
   if (cp_va_parse(conf, this, errh,
 		  cpString, "label", &_label,
 		  cpOptional,
-		  cpBool, "print packet contents in hex?", &_hex,
+		  cpWord, "print packet contents (no/hex/ascii)", &contents,
 		  cpInteger, "number of bytes to dump", &_bytes,
 		  cpEnd) < 0)
     return -1;
-  delete[] _buf;
 
-  if(_hex) {
+  contents = contents.upper();
+  if (contents == "NO" || contents == "FALSE")
+    _contents = 0;
+  else if (contents == "YES" || contents == "TRUE" || contents == "HEX")
+    _contents = 1;
+  else if (contents == "ASCII")
+    _contents = 2;
+  else
+    return errh->error("bad contents value `%s'; should be NO, HEX, or ASCII", contents.cc());
+  
+  delete[] _buf;
+  _buf = 0;
+
+  if (_contents) {
     _buf = new char[3*_bytes+(_bytes/4+1)+3*(_bytes/24+1)+1];
-    if (_buf)
-      return 0;
-    else
+    if (!_buf)
       return errh->error("out of memory");
   }
+  
   return 0;
+}
+
+void
+IPPrint::uninitialize()
+{
+  delete[] _buf;
+  _buf = 0;
 }
 
 Packet *
@@ -131,15 +148,34 @@ IPPrint::simple_action(Packet *p)
 
   click_chatter("%s: %s", _label.cc(), s.cc());
 
-  if (_hex) {
+  const unsigned char *data = p->data();
+  if (_contents == 1) {
     int pos = 0;  
     for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
-      sprintf(_buf+pos, "%02x", p->data()[i] & 0xff);
+      sprintf(_buf+pos, "%02x", data[i] & 0xff);
       pos += 2;
-      if ((i % 4) == 3) _buf[pos++] = ' ';
       if ((i % 24) == 23) {
 	_buf[pos++] = '\n'; _buf[pos++] = ' ';	_buf[pos++] = ' ';
-      }
+      } else if ((i % 4) == 3)
+	_buf[pos++] = ' ';
+    }
+    _buf[pos++] = '\0';
+#ifdef __KERNEL__
+    printk("  %s\n", _buf);
+#else
+    fprintf(stderr, "  %s\n", _buf);
+#endif
+  } else if (_contents == 2) {
+    int pos = 0;  
+    for (unsigned i = 0; i < _bytes && i < p->length(); i++) {
+      if (data[i] < 32 || data[i] > 126)
+	_buf[pos++] = '.';
+      else
+	_buf[pos++] = data[i];
+      if ((i % 48) == 47) {
+	_buf[pos++] = '\n'; _buf[pos++] = ' ';	_buf[pos++] = ' ';
+      } else if ((i % 8) == 7)
+	_buf[pos++] = ' ';
     }
     _buf[pos++] = '\0';
 #ifdef __KERNEL__

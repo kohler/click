@@ -34,9 +34,8 @@ ScheduleInfo::configure(const Vector<String> &conf, ErrorHandler *errh)
     _prefix = String();
 
   // check for an earlier ScheduleInfo with the same prefix
-  int my_number = router()->eindex(this);
   const Vector<Element *> &ev = router()->elements();
-  for (int i = 0; i < my_number; i++)
+  for (int i = 0; i < eindex(); i++)
     if (ScheduleInfo *si = (ScheduleInfo *)ev[i]->cast("ScheduleInfo"))
       if (_prefix == si->_prefix) {
 	_active = false;

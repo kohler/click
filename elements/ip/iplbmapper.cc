@@ -14,9 +14,6 @@
 # include <config.h>
 #endif
 #include "iplbmapper.hh"
-#include "click_ip.h"
-#include "click_tcp.h"
-#include "click_udp.h"
 #include "confparse.hh"
 #include "error.hh"
 
@@ -42,12 +39,24 @@ IPLoadBalancingMapper::configure(const Vector<String> &conf, ErrorHandler *errh)
   int before = errh->nerrors();
   
   for (int i = 0; i < conf.size(); i++) {
-    IPRewriter::Pattern *p = IPRewriter::Pattern::make(conf[i], errh);
-    if (p)
+    IPRewriter::Pattern *p;
+    int f, r;
+    if (IPRewriter::Pattern::parse_with_ports(conf[i], &p, &f, &r, this, errh) >= 0) {
+      p->use();
       _patterns.push_back(p);
+      _forward_outputs.push_back(f);
+      _reverse_outputs.push_back(r);
+    }
   }
   
   return (errh->nerrors() == before ? 0 : -1);
+}
+
+void
+IPLoadBalancingMapper::uninitialize()
+{
+  for (int i = 0; i < _patterns.size(); i++)
+    _patterns[i]->unuse();
 }
 
 void
@@ -64,9 +73,11 @@ IPLoadBalancingMapper::get_map(bool tcp, const IPFlowID &flow, IPRewriter *rw)
   IPRewriter::Mapping *forward, *reverse;
   int first_pattern = _last_pattern;
   do {
-    IPRewriter::Pattern *pat = _patterns[_last_pattern];
+    IPRewriter::Pattern *p = _patterns[_last_pattern];
+    int fport = _forward_outputs[_last_pattern];
+    int rport = _reverse_outputs[_last_pattern];
     _last_pattern++;
-    if (pat->create_mapping(flow, forward, reverse)) {
+    if (p->create_mapping(flow, fport, rport, &forward, &reverse)) {
       rw->install(tcp, forward, reverse);
       return forward;
     }

@@ -44,7 +44,7 @@ IPFlowID::s() const
   const unsigned char *q = (const unsigned char *)&_daddr;
   String s;
   char tmp[128];
-  sprintf(tmp, "%d.%d.%d.%d/%hu -> %d.%d.%d.%d/%hu",
+  sprintf(tmp, "%d.%d.%d.%d:%hu -> %d.%d.%d.%d:%hu",
 	  p[0], p[1], p[2], p[3], ntohs(_sport),
 	  q[0], q[1], q[2], q[3], ntohs(_dport));
   return String(tmp);

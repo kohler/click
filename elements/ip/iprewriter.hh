@@ -9,49 +9,75 @@ class IPMapper;
 
 /*
  * =c
- * IPRewriter(PATTERN1, ..., PATTERNn)
+ * IPRewriter(INPUTSPEC1, ..., INPUTSPECn)
  * =d
  *
- * Rewrites UDP and TCP packets by changing their source address, source port,
- * destination address, and/or destination port. The UDP and TCP packets are
- * identified by <i>flow identifier</i>: their source address/source
- * port/destination address/destination port quadruple. Two packets with the
- * same flow identifier will be consistently mapped to the same new flow
- * identifier. IPRewriter can also perform the reverse mapping.
+ * Rewrites UDP and TCP flows by changing their source address, source port,
+ * destination address, and/or destination port.
  *
- * Has one or two inputs and one or more outputs.
+ * Has one or more inputs and one or more outputs. Input packets must have
+ * their IP header annotations set. Output packets are valid IP packets; for
+ * instance, rewritten packets have their checksums incrementally updated.
  *
- * A mapping says that one flow ID (SADDR, SPORT, DADDR, DPORT) corresponds to
- * another (SADDR', SPORT', DADDR', DPORT'). Packets that arrive with the
- * first flow ID, (SADDR, SPORT, DADDR, DPORT), will be rewritten to the
- * second flow ID, (SADDR', SPORT', DADDR', DPORT'). Mappings come in pairs.
- * For every mapping (SADDR, SPORT, DADDR, DPORT) -> (SADDR', SPORT', DADDR',
- * DPORT'), there is another mapping (DADDR', DPORT', SADDR', SPORT') ->
- * (DADDR, DPORT, SADDR, SPORT), which changes replies to the rewritten
- * packets so they look like replies to the original packets.
+ * A flow is identified by its (source address, source port, destination
+ * address, destination port) quadruple, called its <i>flow identifier</i>.
+ * IPRewriter maintains a set of <i>mappings</i>, which say that one flow
+ * identifier should be rewritten into another. A mapping consists of an input
+ * flow ID, an output flow ID, a protocol, and an output port number. For
+ * example, consider an IPRewriter that contains the mapping (1.0.0.1, 20,
+ * 2.0.0.2, 30) => (1.0.0.1, 20, 5.0.0.5, 80) with protocol TCP and output 4.
+ * Then say a TCP packet arrives on some input port with flow ID (1.0.0.1, 20,
+ * 2.0.0.2, 30). (Thus, the packet is going from port 20 on machine 1.0.0.1,
+ * to paort 30 on machine 2.0.0.2.) The IPRewriter will change that packet's
+ * data so the packet has flow ID (1.0.0.1, 20, 5.0.0.5, 80) -- the packet is
+ * now heading to machine 5.0.0.5. It will then output the packet on output
+ * port 4. Furthermore, if reply packets from 5.0.0.5 go through the
+ * IPRewriter, they will be rewritten to look as if they came from 2.0.0.2;
+ * this corresponds to an extra mapping (5.0.0.5, 80, 1.0.0.1, 20) =>
+ * (2.0.0.2, 30, 1.0.0.1, 20).
  *
- * Each PATTERN describes a way to rewrite a packet's source and destination.
- * A PATTERN is either a single dash `-', meaning do no rewriting; or it has
- * four components, `SADDR SPORT DADDR DPORT'. Each component is either an IP
- * address or port number, meaning the rewritten packet will have that exact
- * address or port, or `-', meaning the rewritten packet's component will not
- * be changed. The SPORT component can also be a range `SPORT1-SPORT2',
- * meaning the rewriter will choose an unused port number in that range.
+ * When it is first initialized, IPRewriter has no mappings. Mappings are
+ * created on the fly as new flows are encountered (in the form of packets
+ * with no existing mapping). There are as many input ports as INPUTSPEC
+ * configuration arguments. Each INPUTSPEC specifies whether and how a mapping
+ * should be created when a new flow is encountered on the corresponding input
+ * port. There are four forms of INPUTSPEC:
  *
- * The first PATTERN is special. When a packet that has no mapping arrives on
- * input 0, a new mapping is created corresponding to PATTERN1 and the packet
- * is sent to output 0. The IPRewriter itself does nothing with the other
- * PATTERNs. They are useful for other elements that manipulate IPRewriter.
+ * (`drop') Packets with no existing mapping are dropped.
  *
- * Input 0 is the "remap" input. If a packet arrives on input 0 with
- * flow ID (SADDR, SPORT, DADDR, DPORT), IPRewriter finds the corresponding
- * mapping, rewrites the packet's flow ID to (SADDR', SPORT', DADDR', DPORT'),
- * and pushes the packet to output OUTPUT. If there is no mapping, a new
- * mapping is created from the first pattern.
+ * (`nochange PORT') Packets with no existing mapping are sent to output port
+ * PORT. No mappings are installed.
  *
- * Input 1 is like input 0, except that if a packet arrives with no mapping,
- * the packet is dropped.
- */
+ * (`pattern SADDR SPORT DADDR DPORT FOUTPUT ROUTPUT') Packets with no
+ * existing mapping are rewritten according to the given pattern, `SADDR SPORT
+ * DADDR DPORT'. The SADDR and DADDR portions may be fixed IP addresses (in
+ * which case the corresponding packet field is set to that address) or a dash
+ * `-' (in which case the corresponding packet field is left unchanged).
+ * Similarly, DPORT is a port number or `-'. The SPORT field may be a port
+ * number, a `-' to leave the source port unchanged, or a port range `L-H', in
+ * which case a port number in the range L-H is chosen. IPRewriter makes sure
+ * that a port number in the range is chosen only if none of that pattern's
+ * existing mappings uses that port number. If there is no such port number,
+ * the packet is dropped. (However, two different patterns with matching
+ * SADDR, SPORT, and DADDR and overlapping DPORT ranges might pick the same
+ * destination port number, resulting in an ambiguous mapping. You should
+ * probably avoid this situation.)
+ *
+ * A new mapping is installed. Packets whose flow is like the input packet's
+ * are rewritten and sent to FOUTPUT; packets in the reply flow are rewritten
+ * and sent to ROUTPUT.
+ *
+ * (`pattern PATNAME FOUTPUT ROUTPUT') Packets with no existing
+ * mapping are rewritten according to the pattern PATNAME, which was specified
+ * in an IPRewriterPatterns element. Use this form if two or more INPUTSPECs
+ * (possibly in different IPRewriter elements) share a single port range.
+ *
+ * (`ELEMENTNAME') Packets with no existing mapping are rewritten according to
+ * the element ELEMENTNAME. This element must implement the IPMapper
+ * interface. One example mapper is IPLoadBalancingMapper.
+ *
+ * =a IPRewriterPatterns
+ * =a IPLoadBalancingMapper */
 
 class IPRewriter : public Element {
 
@@ -65,7 +91,11 @@ class IPRewriter : public Element {
     int kind;
     union {
       int output;
-      Pattern *pattern;
+      struct {
+	Pattern *p;
+	int fport;
+	int rport;
+      } pattern;
       IPMapper *mapper;
     } u;
   };
@@ -82,10 +112,6 @@ class IPRewriter : public Element {
   void clean_map(HashMap<IPFlowID, Mapping *> &);
   void clean();
   void clear_map(HashMap<IPFlowID, Mapping *> &);
-  void collect_patterns(Vector<Pattern *> &, Vector<int> &);
-  void take_map_state(bool, const HashMap<IPFlowID, Mapping *> &,
-		      const Vector<Pattern *> &, const Vector<int> &,
-		      ErrorHandler *);
 
  public:
 
@@ -96,10 +122,15 @@ class IPRewriter : public Element {
   IPRewriter *clone() const			{ return new IPRewriter; }
   void notify_noutputs(int);
   const char *processing() const		{ return PUSH; }
-  
+
+  enum ConfigurePhase {
+    CONFIGURE_PHASE_PATTERNS = CONFIGURE_PHASE_INFO,
+    CONFIGURE_PHASE_REWRITER = CONFIGURE_PHASE_DEFAULT,
+  };
+
+  int configure_phase() const		{ return CONFIGURE_PHASE_REWRITER; }
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *);
-  void take_state(Element *, ErrorHandler *);
   void uninitialize();
   void add_handlers();
   void run_scheduled();
@@ -134,7 +165,7 @@ class IPRewriter : public Element {
    public:
     
     static bool make_pair(const IPFlowID &, const IPFlowID &, Pattern *,
-			  int, int, Mapping *&, Mapping *&);
+			  int, int, Mapping **, Mapping **);
     
     const IPFlowID &flow_id() const	{ return _mapto; }
     Pattern *pattern() const		{ return _pat; }
@@ -172,27 +203,28 @@ class IPRewriter : public Element {
     IPAddress _daddr;
     int _dport;				// host byte order
 
-    int _forward_output;
-    int _reverse_output;
-    
     Mapping *_rover;		// walks along circular list ordered by port
+
+    int _refcount;
     
     unsigned short find_sport();
     
    public:
     
-    Pattern(const IPAddress &, int, int, const IPAddress &, int, int, int);
-    static Pattern *make(const String &, ErrorHandler *);
+    Pattern(const IPAddress &, int, int, const IPAddress &, int);
+    static int parse(const String &, Pattern **, Element *, ErrorHandler *);
+    static int parse_with_ports(const String &, Pattern **, int *, int *,
+				Element *, ErrorHandler *);
+
+    void use()				{ _refcount++; }
+    void unuse()			{ if (--_refcount <= 0) delete this; }
     
     operator bool() const { return _saddr || _sporth || _daddr || _dport; }
-    int forward_output() const			{ return _forward_output; }
-    int reverse_output() const			{ return _reverse_output; }
     
     bool possible_conflict(const Pattern &) const;
     bool definite_conflict(const Pattern &) const;
     
-    bool create_mapping(const IPFlowID &, Mapping *&, Mapping *&);
-    bool accept_mapping(const IPFlowID &, const IPFlowID &, Mapping *&, Mapping *&);    
+    bool create_mapping(const IPFlowID &, int, int, Mapping **, Mapping **);
     void mapping_freed(Mapping *);
     
     String s() const;
@@ -207,10 +239,6 @@ class IPMapper {
 
  public:
 
-  enum ConfigurePhase {
-    CONFIGURE_PHASE_IPMAPPER = 30
-  };
-  
   IPMapper()				{ }
   virtual ~IPMapper()			{ }
 

@@ -89,19 +89,10 @@ Router::find(String prefix, const String &name, ErrorHandler *errh) const
 Element *
 Router::find(Element *me, const String &name, ErrorHandler *errh) const
 {
-  String prefix = _element_names[me->elementno()];
+  String prefix = _element_names[me->eindex()];
   int slash = prefix.find_right('/');
   return find((slash >= 0 ? prefix.substring(0, slash + 1) : String()),
 	      name, errh);
-}
-
-int
-Router::eindex(Element *f)
-{
-  for (int i = 0; i < _elements.size(); i++)
-    if (_elements[i] == f)
-      return i;
-  return -1;
 }
 
 Element *
@@ -154,7 +145,7 @@ Router::add_element(Element *e, const String &ename, const String &conf,
   _element_landmarks.push_back(landmark);
   _configurations.push_back(conf);
   int i = _elements.size() - 1;
-  e->set_elementno(i);
+  e->set_eindex(i);
   /* make all elements use Router as its link: subsequent calls to
    * schedule_xxxx places elements on this link, therefore allow
    * driver to see them */
@@ -543,7 +534,7 @@ Router::downstream_inputs(Element *first_element, int first_output,
   Bitvector diff;
   
   Bitvector outputs(nopidx, false);
-  int first_fid = eindex(first_element);
+  int first_fid = first_element->eindex(this);
   if (first_fid < 0) return -1;
   for (int i = 0; i < _elements[first_fid]->noutputs(); i++)
     if (first_output < 0 || first_output == i)
@@ -617,7 +608,7 @@ Router::upstream_outputs(Element *first_element, int first_input,
   Bitvector diff;
   
   Bitvector inputs(nipidx, false);
-  int first_fid = eindex(first_element);
+  int first_fid = first_element->eindex(this);
   if (first_fid < 0) return -1;
   for (int i = 0; i < _elements[first_fid]->ninputs(); i++)
     if (first_input < 0 || first_input == i)
@@ -838,7 +829,7 @@ Router::take_state(Router *r, ErrorHandler *errh)
   assert(_initialized);
   for (int i = 0; i < _elements.size(); i++) {
     Element *e = _elements[i];
-    Element *other = r->find(_element_names[e->elementno()]);
+    Element *other = r->find(_element_names[e->eindex()]);
     if (other) {
       ContextErrorHandler cerrh
 	(errh, context_message(i, "While hot-swapping state into"));
@@ -927,8 +918,8 @@ Router::put_handler(const Handler &to_add)
 int
 Router::find_ehandler(Element *element, const String &name, bool force)
 {
-  int elementno = element->elementno();
-  int eh = _ehandler_first_by_element[elementno];
+  int eindex = element->eindex();
+  int eh = _ehandler_first_by_element[eindex];
   while (eh >= 0) {
     int h = _ehandler_to_handler[eh];
     if (h >= 0 && _handlers[h].name == name)
@@ -939,8 +930,8 @@ Router::find_ehandler(Element *element, const String &name, bool force)
   if (force) {
     eh = _ehandler_to_handler.size();
     _ehandler_to_handler.push_back(-1);
-    _ehandler_next.push_back(_ehandler_first_by_element[elementno]);
-    _ehandler_first_by_element[elementno] = eh;
+    _ehandler_next.push_back(_ehandler_first_by_element[eindex]);
+    _ehandler_first_by_element[eindex] = eh;
   }
 
   return eh;
@@ -994,10 +985,10 @@ Router::find_handler(Element *element, const String &name)
 }
 
 void
-Router::element_handlers(int elementno, Vector<int> &handlers) const
+Router::element_handlers(int eindex, Vector<int> &handlers) const
 {
-  assert(elementno >= 0 && elementno < _elements.size());
-  for (int eh = _ehandler_first_by_element[elementno];
+  assert(eindex >= 0 && eindex < _elements.size());
+  for (int eh = _ehandler_first_by_element[eindex];
        eh >= 0;
        eh = _ehandler_next[eh]) {
     int h = _ehandler_to_handler[eh];
@@ -1010,36 +1001,36 @@ Router::element_handlers(int elementno, Vector<int> &handlers) const
 // LIVE RECONFIGURATION
 
 int
-Router::live_reconfigure(int elementno, const Vector<String> &conf,
+Router::live_reconfigure(int eindex, const Vector<String> &conf,
 			 ErrorHandler *errh)
 {
   assert(_initialized);
-  if (elementno < 0 || elementno >= nelements())
-    return errh->error("no element number %d", elementno);
-  Element *f = _elements[elementno];
+  if (eindex < 0 || eindex >= nelements())
+    return errh->error("no element number %d", eindex);
+  Element *f = _elements[eindex];
   if (!f->can_live_reconfigure())
     return errh->error("cannot reconfigure `%s' live", f->declaration().cc());
   int result = f->live_reconfigure(conf, errh);
   if (result >= 0)
-    _configurations[elementno] = cp_unargvec(conf);
+    _configurations[eindex] = cp_unargvec(conf);
   return result;
 }
 
 int
-Router::live_reconfigure(int elementno, const String &confstr,
+Router::live_reconfigure(int eindex, const String &confstr,
 			 ErrorHandler *errh)
 {
   Vector<String> conf;
   cp_argvec(confstr, conf);
-  return live_reconfigure(elementno, conf, errh);
+  return live_reconfigure(eindex, conf, errh);
 }
 
 void
-Router::set_configuration(int elementno, const String &conf)
+Router::set_configuration(int eindex, const String &conf)
 {
   assert(_initialized);
-  if (elementno >= 0 && elementno < nelements())
-    _configurations[elementno] = conf;
+  if (eindex >= 0 && eindex < nelements())
+    _configurations[eindex] = conf;
 }
 
 

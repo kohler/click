@@ -19,6 +19,7 @@ String cp_subst(const String &);
 void cp_argvec(const String &, Vector<String> &);
 void cp_spacevec(const String &, Vector<String> &);
 String cp_unargvec(const Vector<String> &);
+String cp_unspacevec(const Vector<String> &);
 String cp_unquote(const String &);
 String cp_quote(const String &, bool allow_newlines = false);
 
@@ -90,8 +91,6 @@ int cp_va_space_parse(const String &, CP_VA_PARSE_ARGS_REST);
 String cp_unparse_bool(bool);
 String cp_unparse_real(int, int frac_bits);
 String cp_unparse_ulonglong(unsigned long long, int base, bool uppercase);
-
-void cp_argvec(const String &, Vector<String> &);
 
 #undef CP_VA_ARGS_REST
 #endif

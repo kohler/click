@@ -85,7 +85,7 @@ Element::id() const
 {
   String s;
   if (Router *r = router())
-    s = r->ename(_elementno);
+    s = r->ename(_eindex);
   return (s ? s : String("<unknown>"));
 }
 
@@ -100,7 +100,7 @@ Element::landmark() const
 {
   String s;
   if (Router *r = router())
-    s = r->elandmark(_elementno);
+    s = r->elandmark(_eindex);
   return (s ? s : String("<unknown>"));
 }
 
@@ -369,13 +369,13 @@ Element::take_state(Element *, ErrorHandler *)
 int
 Element::add_select(int fd, int mask) const
 {
-  return router()->add_select(fd, elementno(), mask);
+  return router()->add_select(fd, eindex(), mask);
 }
 
 int
 Element::remove_select(int fd, int mask) const
 {
-  return router()->remove_select(fd, elementno(), mask);
+  return router()->remove_select(fd, eindex(), mask);
 }
 
 void
@@ -403,7 +403,7 @@ read_element_name(Element *e, void *)
 static String
 read_element_config(Element *e, void *)
 {
-  String s = e->router()->econfiguration(e->elementno());
+  String s = e->router()->econfiguration(e->eindex());
   if (s) {
     int c = s[s.length() - 1];
     if (c != '\n' && c != '\\')
@@ -417,7 +417,7 @@ write_element_config(const String &conf, Element *e, void *,
 		     ErrorHandler *errh)
 {
   if (e->can_live_reconfigure())
-    return e->router()->live_reconfigure(e->elementno(), conf, errh);
+    return e->router()->live_reconfigure(e->eindex(), conf, errh);
   else
     return -EPERM;
 }
@@ -425,13 +425,13 @@ write_element_config(const String &conf, Element *e, void *,
 static String
 read_element_inputs(Element *e, void *)
 {
-  return e->router()->element_inputs_string(e->elementno());
+  return e->router()->element_inputs_string(e->eindex());
 }
 
 static String
 read_element_outputs(Element *e, void *)
 {
-  return e->router()->element_outputs_string(e->elementno());
+  return e->router()->element_outputs_string(e->eindex());
 }
 
 static String
@@ -532,7 +532,7 @@ Element::configuration_read_handler(Element *element, void *vno)
 {
   Router *router = element->router();
   Vector<String> args;
-  cp_argvec(router->econfiguration(element->elementno()), args);
+  cp_argvec(router->econfiguration(element->eindex()), args);
   int no = (int)vno;
   if (no >= args.size())
     return String();
@@ -552,12 +552,12 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
 {
   Router *router = element->router();
   Vector<String> args;
-  cp_argvec(router->econfiguration(element->elementno()), args);
+  cp_argvec(router->econfiguration(element->eindex()), args);
   int no = (int)vno;
   while (args.size() <= no)
     args.push_back(String());
   args[no] = arg;
-  if (router->live_reconfigure(element->elementno(), args, errh) < 0)
+  if (router->live_reconfigure(element->eindex(), args, errh) < 0)
     return -EINVAL;
   else
     return 0;
@@ -566,7 +566,7 @@ Element::reconfigure_write_handler(const String &arg, Element *element,
 void
 Element::set_configuration(const String &conf)
 {
-  router()->set_configuration(elementno(), conf);
+  router()->set_configuration(eindex(), conf);
 }
 
 void
@@ -574,11 +574,11 @@ Element::set_configuration_argument(int which, const String &arg)
 {
   assert(which >= 0);
   Vector<String> args;
-  cp_argvec(router()->econfiguration(elementno()), args);
+  cp_argvec(router()->econfiguration(eindex()), args);
   while (args.size() <= which)
     args.push_back(String());
   args[which] = arg;
-  router()->set_configuration(elementno(), cp_unargvec(args));
+  router()->set_configuration(eindex(), cp_unargvec(args));
 }
 
 // RUNNING
