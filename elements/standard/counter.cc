@@ -126,6 +126,7 @@ Counter::read_handler(Element *e, void *thunk)
    case H_BYTE_COUNT:
     return String(c->_byte_count) + "\n";
    case H_RATE:
+    c->_rate.update_time();	// drop rate after zero period
     return c->_rate.unparse() + "\n";
    default:
     return "<error>\n";
@@ -179,6 +180,7 @@ Counter::llrpc(unsigned command, void *data)
     uint32_t *val = reinterpret_cast<uint32_t *>(data);
     if (*val != 0)
       return -EINVAL;
+    _rate.update_time();	// drop rate after zero period
     *val = _rate.rate();
     return 0;
 
