@@ -1,3 +1,24 @@
+2003-02-16 Sunday 12:13  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/timesortedsched.hh (1.4): doc nits
+
+2003-02-16 Sunday 12:10  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromipsumdump.cc (1.44),
+	elements/analysis/fromipsumdump.hh (1.24),
+	elements/analysis/fromnetflowsumdump.cc (1.12),
+	elements/analysis/fromnetflowsumdump.hh (1.9),
+	elements/analysis/mergebyts.cc (1.7),
+	elements/analysis/mergebyts.hh (1.6),
+	elements/analysis/timesortedsched.cc (1.1),
+	elements/analysis/timesortedsched.hh (1.1),
+	elements/standard/queue.cc (1.45), elements/standard/queue.hh
+	(1.34), elements/userlevel/fromdump.cc (1.77),
+	elements/userlevel/fromdump.hh (1.44), include/click/notifier.hh
+	(1.6), lib/notifier.cc (1.8), elements/analysis/timesortedsched.hh
+	(1.2), elements/analysis/timesortedsched.hh (1.3): dump elements
+	provide notification; required some updates to Notifier
+
 2003-02-16 Sunday 03:15  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/toipflowdumps.hh (1.16): docnits

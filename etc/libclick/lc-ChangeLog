@@ -1,3 +1,9 @@
+2003-02-16 Sunday 12:10  Eddie Kohler <kohler@icir.org>
+
+	* include/click/notifier.hh, include/click/notifier.hh,
+	libsrc/notifier.cc: dump elements provide notification; required
+	some updates to Notifier
+
 2003-02-15 Saturday 23:09  Eddie Kohler <kohler@icir.org>
 
 	* AUTHORS, README: expand NEWS and the like for 1.3pre1; bump
