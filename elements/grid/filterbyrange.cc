@@ -49,8 +49,6 @@ FilterByRange::configure(const Vector<String> &conf, ErrorHandler *errh)
                         cpElement, "GridLocationInfo element", &_locinfo,
 			0);
 
-  if (_range < 0)
-    return errh->error("range must be positive");
   return res;
 }
 
@@ -73,6 +71,12 @@ void
 FilterByRange::push(int, Packet *p)
 {
   assert(p);
+
+  if (_range < 0) { // negative range means: don't filter
+    output(0).push(p);
+    return;
+  }
+
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
   grid_location remote_loc(gh->tx_loc);
 
