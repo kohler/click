@@ -37,12 +37,10 @@ class HandlerCall { public:
     // Call the specified handler and return its result. Returns the empty
     // string or negative if the handler isn't valid.
     static String call_read(Element *, const String &hname, ErrorHandler * = 0);
-    static int call_write(Element *, const String &hname, const String &value = String(), ErrorHandler * = 0);
-    
-    // Call the described handler and return its result. Returns the empty
-    // string or negative if the handler isn't valid.
     static String call_read(const String &hdesc, Router *, ErrorHandler * = 0);
-    static int call_write(const String &hdesc, Router *, ErrorHandler * = 0);
+    static int call_write(Element *, const String &hname, const String &value = String(), ErrorHandler * = 0);
+    static int call_write(const String &hdesc_with_value, Router *, ErrorHandler * = 0);
+    static int call_write(const String &hdesc, const String &value, Router *, ErrorHandler * = 0);
     
     // Replace 'hcall' with a handler call parsed from 'hdesc'. A new
     // HandlerCall may be allocated if 'hcall' is null. 'hcall' is not changed

@@ -174,6 +174,17 @@ HandlerCall::call_write(const String &hdesc, Router *router, ErrorHandler *errh)
 	return -EINVAL;
 }
 
+int
+HandlerCall::call_write(const String &hdesc, const String &value, Router *router, ErrorHandler *errh)
+{
+    HandlerCall hcall(hdesc);
+    if (hcall.initialize_write(router->root_element(), errh) >= 0) {
+	hcall.set_value(value);
+	return hcall.call_write(errh);
+    } else
+	return -EINVAL;
+}
+
 
 String
 HandlerCall::unparse() const
