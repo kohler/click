@@ -50,8 +50,6 @@ class BigHashMap { public:
   const_iterator begin() const;
   iterator begin();
   
-  typedef iterator Iterator;		// for compatibility
-
   // dynamic resizing
   void resize(int);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
@@ -184,9 +182,9 @@ class BigHashMap<K, void *> { public:
   
   void set_arena(BigHashMap_ArenaFactory *);
   
-  int nbuckets() const			{ return _nbuckets; }
   int size() const			{ return _n; }
   bool empty() const			{ return _n == 0; }
+  int nbuckets() const			{ return _nbuckets; }
   
   void *find(const K &) const;
   void **findp(const K &) const;
@@ -206,8 +204,6 @@ class BigHashMap<K, void *> { public:
   const_iterator begin() const;
   iterator begin();
 
-  typedef iterator Iterator;		// for compatibility
-  
   // dynamic resizing
   void resize(int);
   bool dynamic_resizing() const		{ return _capacity < 0x7FFFFFFF; }
@@ -344,9 +340,9 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
   
   void set_arena(BigHashMap_ArenaFactory *af) { inherited::set_arena(af); }
   
-  int nbuckets() const			{ return inherited::nbuckets(); }
-  int size() const			{ return inherited::size(); }
-  bool empty() const			{ return inherited::empty(); }
+  // int size() const			inherited
+  // bool empty() const			inherited
+  // int nbuckets() const		inherited
   
   T *find(const K &k) const { return reinterpret_cast<T *>(inherited::find(k)); }
   T **findp(const K &k) const { return reinterpret_cast<T **>(inherited::findp(k)); }
@@ -354,8 +350,8 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
   T *&find_force(const K &k) { return reinterpret_cast<T *>(inherited::find_force(k)); }
   
   bool insert(const K &k, T *v)		{ return inherited::insert(k, v); }
-  bool remove(const K &k)		{ return inherited::remove(k); }
-  void clear()				{ inherited::clear(); }
+  // bool remove(const K &)		inherited
+  // void clear()			inherited
 
   void swap(BigHashMap<K, T *> &o)	{ inherited::swap(o); }
 
@@ -365,12 +361,7 @@ class BigHashMap<K, T *> : public BigHashMap<K, void *> { public:
   const_iterator begin() const;
   iterator begin();
 
-  typedef iterator Iterator;		// for compatibility
-
-  // dynamic resizing
-  void resize(int s)			{ inherited::resize(s); }
-  bool dynamic_resizing() const		{ return inherited::dynamic_resizing(); }
-  void set_dynamic_resizing(bool dr)	{ inherited::set_dynamic_resizing(dr); }
+  // dynamic resizing methods		inherited
 
   struct Pair {
     K key;

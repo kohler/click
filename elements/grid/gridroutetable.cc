@@ -1381,14 +1381,14 @@ GridRouteTable::expire_routes()
   
   /* 3. Then, push all expired entries onto the return vector and
      erase them from the RT.  */
-  for (xip_t::Iterator i = expired_rtes.begin(); i; i++) {
+  for (xip_t::iterator i = expired_rtes.begin(); i; i++) {
     RTEntry *r = _rtes.findp(i.key());
     assert(r);
     r->invalidate();
     r->ttl = grid_hello::MAX_TTL_DEFAULT;
     retval.push_back(*r);
   }
-  for (xip_t::Iterator i = expired_rtes.begin(); i; i++) {
+  for (xip_t::iterator i = expired_rtes.begin(); i; i++) {
     bool removed = _rtes.remove(i.key());
     assert(removed);
   }

@@ -213,7 +213,7 @@ private:
   }; 
  
   typedef BigHashMap<IPAddress, RTEntry> RTable;
-  typedef RTable::Iterator RTIter;
+  typedef RTable::iterator RTIter;
 
   /* the route table */
   RTable _rtes;

@@ -98,7 +98,7 @@ FloodingLocQuerier::expire_hook(Timer *, void *thunk)
   // expire stale outstanding queries and query responses
   /* XXX differentiate between stale outstanding queries, and stale
      cached query responses */
-  typedef qmap::Iterator qmi_t;
+  typedef qmap::iterator qmi_t;
   Vector<IPAddress> old_entries;
   for (qmi_t i = locq-> _queries.begin(); i; i++) {
     if (jiff - i.value().last_response_jiffies > locq->_timeout_jiffies) {

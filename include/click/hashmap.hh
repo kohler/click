@@ -21,8 +21,6 @@ template <class K, class V> class _HashMapIterator;
 template <class K, class V>
 class HashMap { public:
 
-  typedef _HashMapIterator<K, V> iterator;
-  
   HashMap();
   explicit HashMap(const V &);
   HashMap(const HashMap<K, V> &);
@@ -40,6 +38,7 @@ class HashMap { public:
   bool insert(const K &, const V &);
   void clear();
   
+  typedef _HashMapIterator<K, V> iterator;
   iterator begin() const		{ return iterator(this); }
   
   HashMap<K, V> &operator=(const HashMap<K, V> &);
