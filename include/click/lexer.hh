@@ -122,6 +122,8 @@ class Lexer {
   
   int begin_parse(const String &data, const String &filename, LexerExtra *);
   void end_parse(int);
+
+  ErrorHandler *errh() const		{ return _errh; }
   
   const Lexeme &lex();
   void unlex(const Lexeme &);
@@ -142,6 +144,7 @@ class Lexer {
 
   void connect(int f1, int p1, int f2, int p2);
   String element_name(int) const;
+  String element_landmark(int) const;
   
   void add_tunnel(String, String);
   

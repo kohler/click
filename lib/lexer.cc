@@ -894,22 +894,33 @@ Lexer::connect(int element1, int port1, int element2, int port2)
 }
 
 String
-Lexer::element_name(int fid) const
+Lexer::element_name(int eid) const
 {
-  if (fid < 0 || fid >= _elements.size())
+  if (eid < 0 || eid >= _elements.size())
     return "##no-such-element##";
-  else if (_element_names[fid])
-    return _element_names[fid];
+  else if (_element_names[eid])
+    return _element_names[eid];
   else {
     char buf[100];
-    sprintf(buf, "@%d", fid);
-    if (_elements[fid] == _tunnel_element_type)
+    sprintf(buf, "@%d", eid);
+    if (_elements[eid] == _tunnel_element_type)
       return "<tunnel " + String(buf) + ">";
-    else if (!_elements[fid])
+    else if (!_elements[eid])
       return "<null " + String(buf) + ">";
     else
-      return _elements[fid]->class_name() + String(buf);
+      return _elements[eid]->class_name() + String(buf);
   }
+}
+
+String
+Lexer::element_landmark(int eid) const
+{
+  if (eid < 0 || eid >= _elements.size())
+    return "##no-such-element##";
+  else if (_element_landmarks[eid])
+    return _element_landmarks[eid];
+  else
+    return "<unknown>";
 }
 
 
@@ -1345,12 +1356,12 @@ Lexer::add_router_connections(int c, const Vector<int> &router_id,
   Vector<Hookup> hto;
   expand_connection(_hookup_to[c], false, hto);
   for (int f = 0; f < hfrom.size(); f++) {
-    int fidx = router_id[hfrom[f].idx];
-    if (fidx >= 0)
+    int eidx = router_id[hfrom[f].idx];
+    if (eidx >= 0)
       for (int t = 0; t < hto.size(); t++) {
 	int tidx = router_id[hto[t].idx];
 	if (tidx >= 0)
-	  router->add_connection(fidx, hfrom[f].port, tidx, hto[t].port);
+	  router->add_connection(eidx, hfrom[f].port, tidx, hto[t].port);
       }
   }
 }
@@ -1457,7 +1468,31 @@ Lexer::TunnelEnd::expand(const Lexer *lexer, Vector<Router::Hookup> &into)
     
     Vector<Router::Hookup> connections;
     lexer->find_connections(_other->_port, !_output, connections);
-    
+
+    // give good errors for unused or nonexistent compound element ports
+    if (!connections.size()) {
+      Hookup inh = (_output ? _other->_port : _port);
+      Hookup outh = (_output ? _port : _other->_port);
+      String in_name = lexer->element_name(inh.idx);
+      String out_name = lexer->element_name(outh.idx);
+      if (in_name + "/input" == out_name) {
+	const char *message = (_output ? "`%s' input %d unused"
+			       : "`%s' has no input %d");
+	lexer->errh()->lerror(lexer->element_landmark(inh.idx), message,
+			      in_name.cc(), inh.port);
+      } else if (in_name == out_name + "/output") {
+	const char *message = (_output ? "`%s' has no output %d"
+			       : "`%s' output %d unused");
+	lexer->errh()->lerror(lexer->element_landmark(outh.idx), message,
+			      out_name.cc(), outh.port);
+      } else {
+	lexer->errh()->lerror(lexer->element_landmark(_other->_port.idx),
+			      "tunnel `%s -> %s' %s %d unused",
+			      in_name.cc(), out_name.cc(),
+			      (_output ? "input" : "output"), _port.idx);
+      }
+    }
+
     for (int i = 0; i < connections.size(); i++)
       lexer->expand_connection(connections[i], _output, _correspond);
     
@@ -1492,9 +1527,8 @@ Lexer::expand_connection(const Hookup &this_end, bool is_out,
     if (dp)
       dp->expand(this, into);
     else if ((dp = (is_out ? _definputs : _defoutputs)->find(this_end)))
-      _errh->error("connection tunnel %s `%s' used as %s",
-		   element_name(this_end.idx).cc(),
-		   (is_out ? "input" : "output"),
-		   (is_out ? "output" : "input"));
+      _errh->lerror(_element_landmarks[this_end.idx],
+		    (is_out ? "`%s' used as output" : "`%s' used as input"),
+		    element_name(this_end.idx).cc());
   }
 }

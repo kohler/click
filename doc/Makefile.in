@@ -6,10 +6,13 @@ top_builddir := ..
 subdir := doc
 
 prefix = @prefix@
+exec_prefix = @exec_prefix@
+bindir = @bindir@
 mandir = @mandir@
 datadir = @datadir@/click
 
 PERL = @PERL@
+INSTALL = @INSTALL@
 INSTALL_DATA = @INSTALL@ -m 644
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
@@ -20,6 +23,8 @@ Makefile: $(srcdir)/Makefile.in
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 
 install: install-man
+	$(mkinstalldirs) $(bindir)
+	$(INSTALL) $(srcdir)/click-elem2man $(bindir)/click-elem2man
 install-man:
 	$(mkinstalldirs) $(mandir)/man1 $(mandir)/man3 $(mandir)/man5 $(mandir)/man7 $(mandir)/man8 $(mandir)/mann
 	$(INSTALL_DATA) $(srcdir)/click.1 $(mandir)/man1/click.1
@@ -37,7 +42,7 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/Element.3 $(mandir)/man3/Element.3
 	$(INSTALL_DATA) $(srcdir)/Connection.3 $(mandir)/man3/Connection.3
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
-	$(top_srcdir)/click-buildtool findelem -a -p $(top_srcdir) | $(PERL) $(srcdir)/element2man.pl -l -d $(mandir)/mann -f -
+	$(top_srcdir)/click-buildtool findelem -a -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -f -
 
 clean:
 distclean: clean

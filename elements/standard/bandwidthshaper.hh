@@ -8,7 +8,7 @@
  * =s shapes traffic to maximum rate (bytes/s) 
  * V<packet scheduling>
  * =processing
- * Push inputs, pull outputs
+ * Pull
  * =d
  *
  * BandwidthShaper is a pull element that allows a maximum of RATE bytes per

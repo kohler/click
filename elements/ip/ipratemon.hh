@@ -25,8 +25,8 @@
  * THRESH: IPRateMonitor further splits a subnet if rate is over THRESH number
  * packets or bytes per second. Always specify value as if RATIO were 1.
  *
- * MEMORY: How much memory can IPRateMonitor use in kilobytes? Minimum of 100 is
- * enforced. 0 is unlimited memory.
+ * MEMORY: How much memory can IPRateMonitor use in kilobytes? Minimum of 100
+ * is enforced. 0 is unlimited memory.
  *
  * ANNO: if on (by default, it is), annotate packets with rates.
  *
@@ -49,7 +49,7 @@
  * seconds, any level below 18.26.4 may be reached again.
  *
  * =e
- *   IPRateMonitor(PACKETS, 0, 0.5, 256, 600);
+ *   IPRateMonitor(PACKETS, 0.5, 256, 600);
  *
  * Monitors packet rates. The memory usage is limited to 600K. When rate for a
  * network address (e.g. 18.26.*.*) exceeds 256 packets per second, start

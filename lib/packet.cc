@@ -54,7 +54,7 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
     click_chatter("oops, kernel could not allocate memory for skbuff");
     return 0;
   }
-  Packet *p = (Packet *) skb;
+  Packet *p = reinterpret_cast<Packet *>(skb);
   p->clear_annotations();
   return static_cast<WritablePacket *>(p);
 }
@@ -173,7 +173,6 @@ Packet::uniqueify_copy()
     p->_nh.raw = 0;
     p->_h_raw = 0;
   }
-  memcpy(p->_cb, _cb, sizeof(_cb));
   kill();
   return p;
 }

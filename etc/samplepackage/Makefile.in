@@ -7,17 +7,17 @@ SHELL = @SHELL@
 # If you are making a standalone package, provide a `--with-click=CLICKPREFIX'
 # configuration option, and set
 #	clicksrcdir := @clickprefix@/share/click/src
-clicksrcdir := @top_srcdir@
+clicksrcdir := @prefix@/share/click/src
 
 # SET `clickbindir' TO THE CLICK BINARY DIRECTORY.
 # If you are making a standalone package, set
 #	clickbindir := @clickprefix@/bin
-clickbindir := @top_srcdir@
+clickbindir := @prefix@/bin
 
 # SET `clickincludedir' TO THE CLICK INCLUDE DIRECTORY.
 # If you are making a standalone package, set
 #	clickincludedir := @clickprefix@/include
-clickincludedir := @top_srcdir@/include
+clickincludedir := @prefix@/include
 
 # SET `package' TO THE NAME OF YOUR PACKAGE.
 package := sample
@@ -43,6 +43,7 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 linuxdir = @linuxdir@
+mandir = @mandir@
 datadir = @datadir@/click
 
 VPATH = .:$(top_srcdir)/$(subdir):$(top_srcdir)
@@ -84,7 +85,7 @@ K_OBJS = $(K_ELEMENT_OBJS) kpackage.ko kernelversion.ko
 U_OBJS = $(U_ELEMENT_OBJS) upackage.uo
 
 K_CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_LINUXMODULE
-U_CPPFLAGS = @CPPFLAGS@ -MD -DCLICK_USERLEVEL
+U_CPPFLAGS = @CPPFLAGS@ -g -MD -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@
 
@@ -112,12 +113,12 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
 
 elemlist:
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule > kelements.conf
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel > uelements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r $(package) > kelements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel -r $(package) > uelements.conf
 kelements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule > kelements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r $(package) > kelements.conf
 uelements.conf: $(clickbindir)/click-buildtool
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel > uelements.conf
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r userlevel -r $(package) > uelements.conf
 elements.mk: kelements.conf uelements.conf $(clickbindir)/click-buildtool
 	$(clickbindir)/click-buildtool elem2make -t kernel < kelements.conf > elements.mk
 	$(clickbindir)/click-buildtool elem2make -t user < uelements.conf >> elements.mk
@@ -129,7 +130,7 @@ upackage.cc: uelements.conf $(clickbindir)/click-buildtool
 	@rm -f upackage.ud
 
 elementmap.$(package): $(clickbindir)/click-mkelemmap always
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r userlevel | $(clickbindir)/click-mkelemmap -f - > elementmap.$(package)
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r userlevel -r $(package) | $(clickbindir)/click-mkelemmap -f - > elementmap.$(package)
 always:
 	@:
 
@@ -138,12 +139,15 @@ ifneq ($(DEPFILES),)
 include $(DEPFILES)
 endif
 
-install: $(TARGETS) elementmap.$(package)
+install: $(TARGETS) elementmap.$(package) install-man
 	$(mkinstalldirs) $(libdir)
 	for i in $(TARGETS); do $(INSTALL_DATA) $$i $(libdir)/$$i; done
 	$(mkinstalldirs) $(datadir)
 	$(INSTALL_DATA) elementmap.$(package) $(datadir)/elementmap.$(package)
 install-man:
+	$(mkinstalldirs) $(mandir)
+	$(mkinstalldirs) $(mandir)/mann
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -r linuxmodule -r userlevel -r $(package) | $(clickbindir)/click-elem2man -l -d $(mandir)/mann -f -
 
 clean:
 	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package)

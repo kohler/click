@@ -5,11 +5,12 @@
  * =c
  * SamplePackageElement()
  * =s
- * Demonstrates how to write a package.
+ * demonstrates how to write a package
  * =d
  *
  * This is the only element in the `sample' package. It demonstrates how to
- * write an element that will be placed in a package. */
+ * write an element that will be placed in a package. It does nothing except
+ * report that the package was successfully loaded when it initializes. */
 
 #include <click/element.hh>
 

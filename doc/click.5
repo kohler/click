@@ -324,17 +324,18 @@ c -> Y -> d;
 The `input' and `output' pseudo-elements have no existence in a running
 router; they serve as placeholders for connections from outside. (In fact,
 they are connection tunnel endpoints. See below for more on connection
-tunnels.) If no one from outside connects to one of a compound element's
-input or output ports, then all connections involving that port are removed
-from the expansion. For example:
-.Rs
-{ input -> X -> output } -> b;
-.Re
-expands to
-.Rs
-X -> b;
-.Re
-with no connection to X's input.
+tunnels.)
+.\" If no one from outside connects to one of a compound element's
+.\" input or output ports, then all connections involving that port are removed
+.\" from the expansion. For example:
+.\" .Rs
+.\" { input -> X -> output } -> b;
+.\" .Re
+.\" expands to
+.\" .Rs
+.\" X -> b;
+.\" .Re
+.\" with no connection to X's input.
 .PP
 The actual expansions will differ from these examples because the elements
 will have different names. A prefix is prepended to the components' names,

@@ -24,6 +24,7 @@ doc/click.1
 doc/click.5
 doc/click.o.8
 doc/click-align.1
+doc/click-elem2man
 doc/click-combine.1
 doc/click-devirtualize.1
 doc/click-fastclassifier.1
@@ -32,7 +33,6 @@ doc/click-uncombine.1
 doc/click-undead.1
 doc/click-uninstall.1
 doc/click-xform.1
-doc/element2man.pl
 doc/Element.3
 doc/Connection.3
 doc/elementdoc.7

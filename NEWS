@@ -13,6 +13,11 @@ Version 1.1
    configuration shell scripts, and added a new directory,
    `etc/samplepackage', to show how packages should be compiled.
 
+** Minor change to compound element semantics: Connecting to a compound
+   element port whose corresponding `input' or `output' was not mentioned
+   inside the compound element is now an error. Leaving a compound element
+   input or output port unused is also an error.
+
 
 Version 1.1b1   4.Oct.2000
 

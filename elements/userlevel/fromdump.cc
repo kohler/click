@@ -119,6 +119,7 @@ FromDump::pcap_packet_hook(u_char* clientdata,
   }
 
   e->_pending_packet = Packet::make(data, pkthdr->caplen);
+  e->_pending_packet->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
   
   // Fill pkthdr and bump the timestamp by offset
   memcpy(&e->_pending_pkthdr, pkthdr, sizeof(pcap_pkthdr));

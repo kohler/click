@@ -312,17 +312,13 @@ Router::check_hookup_completeness(ErrorHandler *errh)
   // Check for unused inputs and outputs.
   for (int i = 0; i < ninput_pidx(); i++)
     if (!used_inputs[i]) {
-      Element *f = _elements[input_pidx_element(i)];
-      int p = input_pidx_port(i);
-      element_lerror(errh, f, "`%e' %s input %d not connected", f,
-		     (f->input_is_pull(p) ? "pull" : "push"), p);
+      Hookup h(input_pidx_element(i), input_pidx_port(i));
+      hookup_error(h, false, "`%e' %s %d unused", errh);
     }
   for (int i = 0; i < noutput_pidx(); i++)
     if (!used_outputs[i]) {
-      Element *f = _elements[output_pidx_element(i)];
-      int p = output_pidx_port(i);
-      element_lerror(errh, f, "`%e' %s output %d not connected", f,
-		     (f->output_is_push(p) ? "push" : "pull"), p);
+      Hookup h(output_pidx_element(i), output_pidx_port(i));
+      hookup_error(h, true, "`%e' %s %d unused", errh);
     }
 }
 

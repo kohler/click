@@ -115,7 +115,7 @@ EOF
 	    provisions=`echo $i | sed 's/^\.\///'`"
 $provisions"
 	    files="$files
-"`find ${pprefix}$i \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
+"`find ${pprefix}$i -follow \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
 	else
 	    files="$files
 $i"

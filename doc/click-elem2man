@@ -1,4 +1,4 @@
-#!/usr/local/bin/perl -w
+#!/usr/bin/perl -w
 
 # element2man.pl -- creates man pages from structured comments in element
 # source code
@@ -521,6 +521,7 @@ EOD;
 sub process_file ($) {
   my($filename) = @_;
   $filename =~ s/\.cc$/\.hh/;
+  return if !-e $filename;
   if (!open(IN, $filename)) {
     print STDERR "$filename: $!\n";
     return;

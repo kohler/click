@@ -113,11 +113,17 @@ class Packet { public:
   void set_packet_type_anno(PacketType p) { skb()->pkt_type = p; }
   struct device *device_anno() const	{ return skb()->dev; }
   void set_device_anno(struct device *dev) { skb()->dev = dev; }
+  const struct timeval &timestamp_anno() const	{ return skb()->stamp; }
+  void set_timestamp_anno(const struct timeval &tv)	{ skb()->stamp = tv; }
+  void set_timestamp_anno(int s, int us) { skb()->stamp.tv_sec = s; skb()->stamp.tv_usec = us; }
 #else
   PacketType packet_type_anno() const	{ return _pkt_type; }
   void set_packet_type_anno(PacketType p) { _pkt_type = p; }
   struct device *device_anno() const	{ return 0; }
   void set_device_anno(struct device *) { }
+  const struct timeval &timestamp_anno() const	{ return _timestamp; }
+  void set_timestamp_anno(const struct timeval &tv) { _timestamp = tv; }
+  void set_timestamp_anno(int s, int us) { _timestamp.tv_sec = s; _timestamp.tv_usec = us; }
 #endif
   bool fix_ip_src_anno() const		{ return anno()->fix_ip_src; }
   void set_fix_ip_src_anno(bool f)	{ anno()->fix_ip_src = f; }
@@ -169,6 +175,7 @@ class Packet { public:
   } _nh;
   unsigned char *_h_raw;
   PacketType _pkt_type;
+  struct timeval _timestamp;
 #endif
   
   Packet();
@@ -415,6 +422,7 @@ inline void
 Packet::copy_annotations(Packet *p)
 {
   *anno() = *p->anno();
+  set_timestamp_anno(p->timestamp_anno());
 }
 
 inline void
@@ -423,6 +431,7 @@ Packet::clear_annotations()
   memset(anno(), '\0', sizeof(Anno));
   set_packet_type_anno(HOST);
   set_device_anno(0);
+  set_timestamp_anno(0, 0);
   set_network_header(0, 0);
 }
 
