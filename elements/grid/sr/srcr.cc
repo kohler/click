@@ -214,7 +214,9 @@ SRCR::send(WritablePacket *p)
   } else if(type == PT_REPLY){
     int next = pk->next();
     srcr_assert(next < MaxHops);
-    EtherAddress eth_dest = _arp_table->lookup(pk->get_hop(next));
+    IPAddress next_ip = pk->get_hop(next);
+    srcr_assert(next_ip != _ip);
+    EtherAddress eth_dest = _arp_table->lookup(next_ip);
     memcpy(eh->ether_dhost, eth_dest.data(), 6);
     _num_replies++;
     _bytes_replies += p->length();

@@ -30,7 +30,8 @@ CLICK_DECLS
 
 PrintSR::PrintSR()
   : Element(1, 1),
-    _print_anno(false)
+    _print_anno(false),
+    _print_checksum(false)
 {
   MOD_INC_USE_COUNT;
   _label = "";
@@ -91,7 +92,7 @@ PrintSR::simple_action(Packet *p)
   }
   String flags = "";
   sa << type;
-  sa << " flags (";
+  sa << " (";
   if (pk->flag(FLAG_ERROR)) {
     sa << " ERROR ";
   }
@@ -118,8 +119,10 @@ PrintSR::simple_action(Packet *p)
   } else {
     sa << " len " << pk->hlen_wo_data();
   }
-  
-  sa << " cksum " << (unsigned long) ntohs(pk->_cksum);
+
+  if (_print_checksum) {
+    sa << " cksum " << (unsigned long) ntohs(pk->_cksum);
+  }
   if (_print_anno) {
     int failures = WIFI_NUM_FAILURES(p);
     sa << " failures " << failures;
@@ -132,7 +135,6 @@ PrintSR::simple_action(Packet *p)
     sa << " dataseq " << pk->data_seq();
   } else {
     sa << " qdst " << IPAddress(pk->_qdst);
-    sa << " seq " << pk->_seq;
   }
 
   if (pk->_type == PT_DATA) {
@@ -142,6 +144,12 @@ PrintSR::simple_action(Packet *p)
   sa << " seq " << pk->_seq;
   sa << " nhops " << pk->num_hops();
   sa << " next " << pk->next();
+
+  if (pk->get_random_from() || pk->get_random_to()) {
+    sa << " [r " << pk->get_random_from();
+    sa << " <" << pk->get_random_fwd_metric() << "," << pk->get_random_rev_metric() << ">";
+    sa << " " << pk->get_random_to() << " r]";
+  }
 
   sa << " [";
   for(int i = 0; i< pk->num_hops(); i++) {

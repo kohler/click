@@ -32,7 +32,8 @@ AutoTXRate::AutoTXRate()
   : Element(1, 1),
     _stepup(0),
     _stepdown(0),
-    _before_switch(0),
+    _before_switch_up(0),
+    _before_switch_down(0),
     _max_rate(0)
 {
   MOD_INC_USE_COUNT;
@@ -63,7 +64,8 @@ AutoTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 			"RATE_WINDOW", cpUnsigned, "ms", &rate_window,
 			"STEPUP", cpInteger, "0-100", &_stepup,
 			"STEPDOWN", cpInteger, "0-100", &_stepdown,
-			"BEFORE_SWITCH", cpInteger, "packets", &_before_switch,
+			"BEFORE_SWITCH_UP", cpInteger, "packets", &_before_switch_up,
+			"BEFORE_SWITCH_DOWN", cpInteger, "packets", &_before_switch_up,
 			0);
   if (ret < 0) {
     return ret;
@@ -159,13 +161,17 @@ AutoTXRate::update_rate(EtherAddress dst)
   
   int total = nfo->_successes + nfo->_failures;
   
-  if (!total || total < _before_switch) {
-    return;
-  }
-  if ((100*nfo->_successes)/total < _stepdown) {
+  int old_rate = nfo->_rate;
+  if (total > _before_switch_down && 
+      (100*nfo->_successes)/total < _stepdown) {
     nfo->_rate = next_lower_rate(nfo->_rate);
-  } else if ((100*nfo->_successes)/total > _stepup) {
+  } else if (total > _before_switch_up && 
+	     (100*nfo->_successes)/total > _stepup) {
     nfo->_rate = next_higher_rate(nfo->_rate);
+  }
+
+  if (old_rate != nfo->_rate) {
+    nfo->_results.clear();
   }
 
   return;
@@ -207,7 +213,14 @@ AutoTXRate::simple_action(Packet *p_in)
     p_in->kill();
     return 0;
   }
-
+  if (success && p_in->length() < 1000) {
+    /* 
+     * don't deal with short packets, 
+     * since they can skew what rate
+     * we should be at 
+     */
+    return p_in;
+  }
 
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {
@@ -249,10 +262,10 @@ AutoTXRate::print_stats()
     sa << " failures " << n->_failures;
     sa << " percent ";
     int total = n->_successes + n->_failures;
-    if (!total || total  <  _before_switch) {
-      sa << "xxx";
+    if (total) {
+    sa << (n->_successes*100) / total;
     } else {
-      sa << (n->_successes*100) / total;
+      sa << "0";
     }
     sa << "\n";
   }
@@ -274,7 +287,7 @@ AutoTXRate::static_write_rate_window(const String &arg, Element *e,
 }
 
 int
-AutoTXRate::static_write_before_switch(const String &arg, Element *e,
+AutoTXRate::static_write_before_switch_up(const String &arg, Element *e,
 				     void *, ErrorHandler *errh) 
 {
   AutoTXRate *n = (AutoTXRate *) e;
@@ -283,7 +296,22 @@ AutoTXRate::static_write_before_switch(const String &arg, Element *e,
   if (!cp_integer(arg, &b))
     return errh->error("`before_switch' must be an integer");
 
-  n->_before_switch = b;
+  n->_before_switch_up = b;
+  return 0;
+}
+
+
+int
+AutoTXRate::static_write_before_switch_down(const String &arg, Element *e,
+				     void *, ErrorHandler *errh) 
+{
+  AutoTXRate *n = (AutoTXRate *) e;
+  int b;
+
+  if (!cp_integer(arg, &b))
+    return errh->error("`before_switch' must be an integer");
+
+  n->_before_switch_down = b;
   return 0;
 }
 
@@ -393,11 +421,20 @@ AutoTXRate::static_read_stepdown(Element *f, void *)
 
 
 String
-AutoTXRate::static_read_before_switch(Element *f, void *)
+AutoTXRate::static_read_before_switch_down(Element *f, void *)
 {
   StringAccum sa;
   AutoTXRate *d = (AutoTXRate *) f;
-  sa << d->_before_switch << "\n";
+  sa << d->_before_switch_down << "\n";
+  return sa.take_string();
+}
+
+String
+AutoTXRate::static_read_before_switch_up(Element *f, void *)
+{
+  StringAccum sa;
+  AutoTXRate *d = (AutoTXRate *) f;
+  sa << d->_before_switch_up << "\n";
   return sa.take_string();
 }
 
@@ -425,8 +462,11 @@ AutoTXRate::add_handlers()
   add_write_handler("stepdown", static_write_stepdown, 0);
   add_read_handler("stepdown", static_read_stepdown, 0);
 
-  add_write_handler("before_switch", static_write_before_switch, 0);
-  add_read_handler("before_switch", static_read_before_switch, 0);
+  add_write_handler("before_switch_up", static_write_before_switch_up, 0);
+  add_read_handler("before_switch_up", static_read_before_switch_up, 0);
+
+  add_write_handler("before_switch_down", static_write_before_switch_down, 0);
+  add_read_handler("before_switch_down", static_read_before_switch_down, 0);
 
   add_write_handler("max_rate", static_write_max_rate, 0);
   add_read_handler("max_rate", static_read_max_rate, 0);

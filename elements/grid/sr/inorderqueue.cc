@@ -217,20 +217,33 @@ InOrderQueue::bubble_up(Packet *p_in)
 	if (p == p2) {
 	    if (pk->data_seq() == pk2->data_seq()) {
 		/* packet dup */
+		struct timeval now;
+		click_gettimeofday(&now);
+		StringAccum sa;
+		sa << id() << " " << now;
+		sa << " dup! ";
+		sa << " pk->seq " << pk->data_seq();
+		sa << " on ";
+		sa << path_to_string(p);
+		click_chatter("%s", sa.take_string().cc());
+
+		p_in->kill();
 		return 0;
 	    } else if (pk->data_seq() < pk2->data_seq()) {
 		if (!reordered) {
 		    reordered = true;
-		    struct timeval now;
-		    click_gettimeofday(&now);
-		    StringAccum sa;
-		    sa << id() << " " << now;
-		    sa << " reordering ";
-		    sa << " pk->seq " << pk->data_seq();
-		    sa << " pk2->seq " << pk2->data_seq();
-		    sa << " on ";
-		    sa << path_to_string(p);
-		    click_chatter("%s", sa.take_string().cc());
+		    if (_debug) {
+			struct timeval now;
+			click_gettimeofday(&now);
+			StringAccum sa;
+			sa << id() << " " << now;
+			sa << " reordering ";
+			sa << " pk->seq " << pk->data_seq();
+			sa << " pk2->seq " << pk2->data_seq();
+			sa << " on ";
+			sa << path_to_string(p);
+			click_chatter("%s", sa.take_string().cc());
+		    }
 		}
 		Packet *tmp = _q[x];
 		_q[x] = p_in;

@@ -55,7 +55,7 @@ public:
   ~DSRArpTable();
   
   const char *class_name() const	{ return "DSRArpTable"; }
-  const char *processing() const	{ return "lh/lh"; }
+  const char *processing() const	{ return "llh/llh"; }
   
   DSRArpTable *clone() const;
   int configure(Vector<String> &, ErrorHandler *);
@@ -79,7 +79,7 @@ private:
   void add_entry(IPAddress, EtherAddress);
   void delete_entry(IPAddress);
   EtherAddress lookup_ip(IPAddress);
-
+  bool _debug;
 };
 #endif
 

@@ -121,6 +121,8 @@ private:
   EtherAddress _eth;
 public:
   IPAddress _ip;
+  IPAddress reverse_arp(EtherAddress);
+
 private:
   class ETTMetric *_ett_metric;
   class ARPTable *_arp_table;
@@ -241,6 +243,9 @@ private:
   // Per-sender map of received probes.
   typedef HashMap<IPAddress, probe_list_t> ProbeMap;
   ProbeMap _bcast_stats;
+
+  typedef HashMap<EtherAddress, IPAddress> RevARP;
+  RevARP _rev_arp;
 
   Vector <IPAddress> _neighbors;
   int _next_neighbor_to_ad;

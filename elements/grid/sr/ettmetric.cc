@@ -75,6 +75,54 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
   return 0;
 }
 
+
+int 
+ETTMetric::get_tx_rate(EtherAddress eth) 
+{
+  if (_ett_stat) {
+    IPAddress ip = _ett_stat->reverse_arp(eth);
+    if (ip) {
+      _ett_stat->update_links(ip);
+      struct timeval now;
+      click_gettimeofday(&now);
+      IPOrderedPair p = IPOrderedPair(_ip, ip);
+      LinkInfo *nfo = _links.findp(p);
+      if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
+      return  p.first(_ip) ? nfo->_fwd_rate : nfo->_rev_rate;
+      }
+    }
+  }
+  return 1;
+}
+
+void get_rate_and_tput(int *tput, int *rate, 
+		       int fwd_1,
+		       int fwd_2, int fwd_5, 
+		       int fwd_11,  int rev_small)
+{
+  if (!rate || !tput) {
+    click_chatter("get_rate_and_tput called with %d, %d\n", rate, tput);
+    return;
+  }
+  *rate = 1;
+  *tput = rev_small * fwd_1;
+
+  if (*tput < rev_small * (3*fwd_2)/2) {
+    *tput = rev_small * (3*fwd_2)/2;
+    *rate = 2;
+  }
+  if (*tput < rev_small * fwd_5 * 3) {
+    *tput = rev_small * fwd_5 * 3;
+    *rate = 5;
+  }
+
+  if (*tput < rev_small * fwd_11 * 5) {
+    *tput = rev_small * fwd_11 * 5;
+    *rate = 11;
+  }
+
+
+}
 void
 ETTMetric::update_link(IPAddress from, IPAddress to, 
 		       int fwd_small, int rev_small,
@@ -95,16 +143,25 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
 		       rev_11, fwd_11);
   }
 
-
-  int fwd = max(max(max(fwd_1,fwd_2*2), fwd_5*3), fwd_11*5) * rev_small;
+  int fwd = 0;
+  int fwd_rate = 1;
+  get_rate_and_tput(&fwd, &fwd_rate,
+		    fwd_1,
+		    fwd_2, fwd_5,
+		    fwd_11, rev_small);
 
   if (fwd == 0) {
     fwd = 7777;
   } else {
     fwd = (100*100*100)/fwd;
   }
+  int rev = 0;
+  int rev_rate = 1;
+  get_rate_and_tput(&rev, &rev_rate,
+		    rev_1,
+		    rev_2, rev_5,
+		    rev_11, fwd_small);
 
-  int rev = max(max(max(rev_1, rev_2*2), rev_5*3), rev_11*5) * fwd_small;
   if (rev == 0) {
     rev = 7777;
   } else {
@@ -128,6 +185,8 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
   nfo->_fwd = fwd;
   nfo->_rev = rev;
   nfo->_last = now;
+  nfo->_fwd_rate = fwd_rate;
+  nfo->_rev_rate = rev_rate;
   
   if (now.tv_sec - nfo->_last.tv_sec < 30) {
     /* update linktable */
@@ -161,7 +220,7 @@ ETTMetric::get_fwd_metric(IPAddress ip)
   IPOrderedPair p = IPOrderedPair(_ip, ip);
   LinkInfo *nfo = _links.findp(p);
   if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
-    return nfo->_fwd;
+    return  p.first(_ip) ? nfo->_fwd : nfo->_rev;
   }
   return 7777;
 }
@@ -177,7 +236,7 @@ ETTMetric::get_rev_metric(IPAddress ip)
   IPOrderedPair p = IPOrderedPair(_ip, ip);
   LinkInfo *nfo = _links.findp(p);
     if (nfo && (now.tv_sec - nfo->_last.tv_sec < 30)) {
-    return nfo->_rev;
+      return  p.first(_ip) ? nfo->_rev : nfo->_fwd;
   }
   return 7777;
 }
@@ -193,7 +252,9 @@ ETTMetric::read_stats(Element *xf, void *)
     LinkInfo nfo = i.value();
     sa << nfo._p._a << " " << nfo._p._b;
     sa << " fwd " << nfo._fwd;
+    sa << " fwd_rate " << nfo._fwd_rate;
     sa << " rev " << nfo._rev;
+    sa << " rev_rate " << nfo._rev_rate;
     sa << " last " << now - nfo._last;
     sa << "\n";
   }

@@ -387,6 +387,7 @@ ETTStat::simple_action(Packet *p)
   IPAddress ip = IPAddress(lp->ip);
   if (_arp_table) {
     _arp_table->insert(ip, EtherAddress(eh->ether_shost));
+    _rev_arp.insert(EtherAddress(eh->ether_shost), ip);
   }
 
   struct timeval now;
@@ -674,7 +675,12 @@ ETTStat::add_handlers()
   add_write_handler("tau", write_tau, 0);
   add_write_handler("period", write_period, 0);
 }
-
+IPAddress 
+ETTStat::reverse_arp(EtherAddress eth)
+{
+  IPAddress *ip = _rev_arp.findp(eth);
+  return (ip) ? IPAddress(ip->addr()) : IPAddress();
+}
 
 
 EXPORT_ELEMENT(ETTStat)

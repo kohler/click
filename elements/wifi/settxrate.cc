@@ -44,7 +44,8 @@ SetTXRate::clone() const
 int
 SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  _auto_l = NULL;
+  _auto_l = 0;
+  _ett_l = 0;
   _rate = 0;
   _et = 0;
   if (cp_va_parse(conf, this, errh,
@@ -52,6 +53,7 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
 		  "RATE", cpUnsigned, "rate", &_rate, 
 		  "AUTO", cpElement, "AutoTXRate element", &_auto_l,
+		  "ETT", cpElement, "ETTMetric element", &_ett_l,
 		  0) < 0) {
     return -1;
   }
@@ -75,7 +77,15 @@ SetTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("AUTO element is not a AutoTXRate");
   }
 
-  _auto = (_auto_l);
+
+  if (_ett_l && _ett_l->cast("ETTMetric") == 0) {
+    return errh->error("ETT element is not a ETTMetric");
+  }
+
+  if (_auto_l && _ett_l) {
+    return errh->error("can't specify both ETT and AUTO");
+  }
+  _auto = (_auto_l) || (_ett_l);
 
   return 0;
 }
@@ -93,6 +103,12 @@ SetTXRate::simple_action(Packet *p_in)
   EtherAddress dst = EtherAddress(eh->ether_dhost);
   if (_auto_l) {
     int rate = _auto_l->get_tx_rate(dst);
+    if (rate) {
+      SET_WIFI_RATE_ANNO(p_in, rate);  
+      return p_in;
+    }
+  } else if (_ett_l) {
+    int rate = _ett_l->get_tx_rate(dst);
     if (rate) {
       SET_WIFI_RATE_ANNO(p_in, rate);  
       return p_in;
@@ -145,7 +161,7 @@ SetTXRate::auto_write_handler(const String &arg, Element *e,
   if (!cp_bool(arg, &b))
     return errh->error("`auto' must be an boolean");
   
-  if (b && !(n->_auto_l)) {
+  if (b && !((n->_auto_l) || (n->_ett_l))) {
     return errh->error("`auto' is true but no auto_rate element configured");
   }
 

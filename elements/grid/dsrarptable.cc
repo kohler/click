@@ -33,13 +33,16 @@
 #include "dsrarptable.hh"
 #include "dsr.hh"
 
-#define DEBUG_CHATTER  if (1) click_chatter
+#define DEBUG_CHATTER  if (_debug) click_chatter
 
 DSRArpTable::DSRArpTable()
+  : _debug(false)
 {
   MOD_INC_USE_COUNT;
   add_input();
   add_input();
+  add_input();
+  add_output();
   add_output();
   add_output();
 }
@@ -64,6 +67,7 @@ DSRArpTable::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpEthernetAddress,"ethernet address", &_me_ether,
                   cpKeywords,
                   "ETHERTYPE", cpUnsigned, "Ethernet encapsulation type", &etht,
+		  "DEBUG", cpBool, "Debug", &_debug,
 		  0) < 0)
     return -1;
 
@@ -81,16 +85,16 @@ DSRArpTable::initialize(ErrorHandler *)
 Packet *
 DSRArpTable::pull(int port)
 {
-  assert(port == 0);
+  assert(port == 0 || port == 1);
 
   // packets to which we want to add an ethernet header
-  Packet *p_in = input(0).pull();
+  Packet *p_in = input(port).pull();
   if (!p_in)
     return NULL;
 
   WritablePacket *q = p_in->push(sizeof(click_ether));
   if (!q) {
-    DEBUG_CHATTER("DSRArpTable::push:  could not push space for ethernet header\n");
+    click_chatter("DSRArpTable::push:  could not push space for ethernet header\n");
     return NULL;
   }
   
@@ -119,13 +123,13 @@ DSRArpTable::push(int port, Packet *p_in)
 {
   // packets from which we want to extract MAC addresses
 
-  assert(port == 1); 
+  assert(port == 2); 
   
   const click_ip *iph = (const click_ip*)(p_in->data() + sizeof(click_ether));
   
   if (iph->ip_p != IP_PROTO_DSR) {
     DEBUG_CHATTER ("DSRArpTable::push:  non-DSR packet passing through DSRArpTable\n");
-    output(1).push(p_in);
+    output(2).push(p_in);
     return;
   }
 
@@ -153,7 +157,7 @@ DSRArpTable::push(int port, Packet *p_in)
   SET_DSR_LAST_HOP_ETH_ANNO2(p, d[1]);
   SET_DSR_LAST_HOP_ETH_ANNO3(p, d[2]);
 
-  output(1).push(p);
+  output(2).push(p);
 }
 
 // returns the ip of the last forwarder of this packet.  if this is a

@@ -34,7 +34,7 @@
 
 CLICK_DECLS
 
-#define DEBUG_CHATTER  if (1) click_chatter
+#define DEBUG_CHATTER  if (_debug) click_chatter
 
 
 DSRRouteTable::DSRRouteTable()
@@ -43,7 +43,8 @@ DSRRouteTable::DSRRouteTable()
     _sendbuffer_timer(static_sendbuffer_timer_hook, this),
     _sendbuffer_check_routes(false),
     _blacklist_timer(static_blacklist_timer_hook, this),
-    _outq(0), _ls(0), _use_blacklist(true)
+    _outq(0), _ls(0), _use_blacklist(true),
+    _debug(false)
 {
   me = new IPAddress;
   
@@ -94,6 +95,7 @@ DSRRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 		      "OUTQUEUE", cpElement, "SimpleQueue element", &_outq,
 		      "LINKSTAT", cpElement, "LinkStat element", &_ls,
 		      "USE_BLACKLIST", cpBool, "use blacklist?", &_use_blacklist,
+		      "DEBUG", cpBool, "Debug", &_debug,
 		      0)<0);
 
   if (_outq && _outq->cast("SimpleQueue") == 0)
@@ -1442,7 +1444,7 @@ DSRRouteTable::next_hop(Packet *p)
       dsr_option = (click_dsr_option *)(dsr_rrep->next_option());
       
       if (dsr_option->dsr_type != DSR_TYPE_SOURCE_ROUTE) {
-	DEBUG_CHATTER(" * DSRArpTable::last_hop: source route option did not follow route reply option\n");
+	click_chatter(" * DSRArpTable::last_hop: source route option did not follow route reply option\n");
 	
 	IPAddress zeros;
 	return zeros;
@@ -1463,7 +1465,7 @@ DSRRouteTable::next_hop(Packet *p)
       dsr_option = (click_dsr_option *)(dsr_rerr->next_option());
       
       if (dsr_option->dsr_type != DSR_TYPE_SOURCE_ROUTE) {
-	DEBUG_CHATTER(" * source route option did not follow route error option\n");
+	click_chatter(" * source route option did not follow route error option\n");
 	
 	IPAddress zeros;
 	return zeros;

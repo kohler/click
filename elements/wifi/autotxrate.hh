@@ -113,14 +113,17 @@ class AutoTXRate : public Element { public:
 				 void *, ErrorHandler *errh);
   static int static_write_stepdown(const String &arg, Element *e,
 				   void *, ErrorHandler *errh);
-  static int static_write_before_switch(const String &arg, Element *e,
+  static int static_write_before_switch_up(const String &arg, Element *e,
+					void *, ErrorHandler *errh);
+  static int static_write_before_switch_down(const String &arg, Element *e,
 					void *, ErrorHandler *errh);
   static int static_write_max_rate(const String &arg, Element *e,
 				   void *, ErrorHandler *errh);
   static String static_read_rate_window(Element *, void *);
   static String static_read_stepup(Element *, void *);
   static String static_read_stepdown(Element *, void *);
-  static String static_read_before_switch(Element *, void *);
+  static String static_read_before_switch_up(Element *, void *);
+  static String static_read_before_switch_down(Element *, void *);
   static String static_read_max_rate(Element *, void *);
 
 
@@ -129,7 +132,8 @@ class AutoTXRate : public Element { public:
   int _stepup;
   int _stepdown;
 
-  int _before_switch;
+  int _before_switch_up;
+  int _before_switch_down;
   int _max_rate;
 };
 

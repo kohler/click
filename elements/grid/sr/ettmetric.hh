@@ -83,23 +83,20 @@ public:
 		   int fwd_11, int rev_11
 		   ); 
 
+  int get_tx_rate(EtherAddress);
   class LinkInfo {
   public:
     IPOrderedPair _p;
     int _fwd;
     int _rev;
+    int _fwd_rate;
+    int _rev_rate;
+
     struct timeval _last;
     LinkInfo() { }
     LinkInfo(IPOrderedPair p) {
       _p = p;
     }
-
-    void update(int fwd, int rev) {
-      _fwd = fwd;
-      _rev = rev;
-      click_gettimeofday(&_last);
-    }
-
   };
 
   typedef HashMap<IPOrderedPair, LinkInfo> LTable;

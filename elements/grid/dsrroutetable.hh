@@ -437,7 +437,7 @@ private:
   void flush_sendbuffer();
 
   EtherAddress last_forwarder_eth(Packet *);
-
+  bool _debug;
 };
 
 inline unsigned int hashcode(const DSRRouteTable::ForwardedReqKey &f) {

@@ -38,6 +38,7 @@ class PrintSR : public Element {
   Packet *simple_action(Packet *);
 
   bool _print_anno;
+  bool _print_checksum;
 };
 
 CLICK_ENDDECLS
