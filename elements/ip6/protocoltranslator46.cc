@@ -155,7 +155,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
     icmp6->sequence = icmp->sequence;
     memcpy(ip6, (unsigned char *)ip, icmp6_length);
     icmp->icmp_cksum  = 0;
-  icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.addr(), &ip6_dst.addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
+  icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
   
   }
   break; 
@@ -177,7 +177,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
 	icmp6->pointer = 6;
 	memcpy(ip6, (unsigned char *)ip, icmp6_length);
 	icmp->icmp_cksum  = 0;
-	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.addr(), &ip6_dst.addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
+	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
       }
       break;
 	    
@@ -194,7 +194,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
 
 	memcpy(ip6, (unsigned char *)ip, icmp6_length);
 	icmp->icmp_cksum  = 0;
-	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.addr(), &ip6_dst.addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
+	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
       }
       break;
       default: ; 
@@ -236,7 +236,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
 	icmp6->icmp6_code = icmp6_code;
 	memcpy(ip6, (unsigned char *)ip, icmp6_length);
 	icmp->icmp_cksum  = 0;
-	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.addr(), &ip6_dst.addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
+	icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
       }
       break;
       }
@@ -256,7 +256,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
     icmp6->icmp6_code = icmp_code;
     memcpy(ip6, (unsigned char *)ip, icmp6_length);
     icmp->icmp_cksum  = 0;
-    icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.addr(), &ip6_dst.addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
+    icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
   }
   break;
 
@@ -281,7 +281,7 @@ ProtocolTranslator46::make_icmp_translate46(IP6Address ip6_src,
     }
      memcpy(ip6, (unsigned char *)ip, icmp6_length);
     icmp->icmp_cksum  = 0;
-    icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.addr(), &ip6_dst.addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
+    icmp6->icmp6_cksum = htons(in6_fast_cksum(&ip6_src.in6_addr(), &ip6_dst.in6_addr(), htons(icmp6_length), 0x3a, 0, (unsigned char *)icmp6, htons(icmp6_length)));
   }
   break;
 

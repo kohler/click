@@ -48,13 +48,12 @@ IP6NDAdvertiser::clone() const
 }
 
 void
-IP6NDAdvertiser::add_map(IP6Address ipa, IP6Address mask, EtherAddress ena)
+IP6NDAdvertiser::add_map(const IP6Address &ipa, const IP6Address &mask, const EtherAddress &ena)
 {
   struct Entry e;
-
-  e._dst = ipa;
-  e._mask = mask;
-  e._ena = ena;
+  e.dst = ipa;
+  e.mask = mask;
+  e.ena = ena;
   _v.push_back(e);
 }
 
@@ -90,7 +89,7 @@ IP6NDAdvertiser::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (first == _v.size())
       errh->error("argument %d had no IP6 address and masks", i);
     for (int j = first; j < _v.size(); j++)
-      _v[j]._ena = ena;
+      _v[j].ena = ena;
   }
 
   return (before == errh->nerrors() ? 0 : -1);
@@ -220,24 +219,20 @@ IP6NDAdvertiser::make_response2(u_char dha[6],   /*  des eth address */
 
 
 bool
-IP6NDAdvertiser::lookup(IP6Address a, EtherAddress &ena)
+IP6NDAdvertiser::lookup(const IP6Address &a, EtherAddress &ena) const
 {
-  int i, besti = -1;
-
-  for(i = 0; i < _v.size(); i++) {
-    if ((a & _v[i]._mask) == _v[i]._dst)
-      {
-      if(besti == -1 || ~_v[i]._mask < ~_v[besti]._mask ){
-        besti = i;
-      }
+  int best = -1;
+  for (int i = 0; i < _v.size(); i++)
+    if (a.matches_prefix(_v[i].dst, _v[i].mask)) {
+      if (best < 0 || _v[i].mask.mask_more_specific(_v[best].mask))
+	best = i;
     }
-  }
 
-  if(besti == -1){
-    return(false);
-  } else {
-    ena = _v[besti]._ena;
-    return(true);
+  if (best < 0)
+    return false;
+  else {
+    ena = _v[best].ena;
+    return true;
   }
 }
 

@@ -313,19 +313,13 @@ ProtocolTranslator64::push(int port, Packet *p)
 void 
 ProtocolTranslator64::handle_ip6(Packet *p)
 {
-  
   click_ip6 *ip6 = (click_ip6 *) p->data();
   IP6Address ip6_dst = IP6Address(ip6->ip6_dst);
   IP6Address ip6_src = IP6Address(ip6->ip6_src);
 
-  unsigned char ip4_dst[4];
-  unsigned char ip4_src[4];
-  if (ip6_dst.get_ip4address(ip4_dst)
-      && ip6_src.get_ip4address(ip4_src))
+  IPAddress ipa_dst, ipa_src;
+  if (ip6_dst.ip4_address(ipa_dst) && ip6_src.ip4_address(ipa_src))
     {
-       
-       IPAddress ipa_dst = IPAddress(ip4_dst);  
-       IPAddress ipa_src = IPAddress(ip4_src);
        
        //translate protocol according to SIIT
        unsigned char * start_of_p= (unsigned char *)(ip6+1);

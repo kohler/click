@@ -135,7 +135,7 @@ LookupIP6Route::push(int, Packet *p)
   }
   
  
-  if (_t.lookup(IP6Address(a.addr()), gw, ifi) == true) {
+  if (_t.lookup(a, gw, ifi)) {
 #ifdef IP_RT_CACHE2
     _last_addr2 = _last_addr;
     _last_gw2 = _last_gw;

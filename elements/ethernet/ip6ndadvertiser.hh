@@ -36,8 +36,8 @@
 #include <click/ip6address.hh>
 #include <click/vector.hh>
 
-class IP6NDAdvertiser : public Element {
-public:
+class IP6NDAdvertiser : public Element { public:
+  
   IP6NDAdvertiser();
   ~IP6NDAdvertiser();
   
@@ -61,18 +61,18 @@ public:
                         unsigned char dpa[16], unsigned char spa[16],
 			unsigned char tpa[16]);
 
-  bool lookup(IP6Address, EtherAddress &);
+  bool lookup(const IP6Address &, EtherAddress &) const;
 
-private:
+ private:
 
   struct Entry {
-    IP6Address _dst;
-    IP6Address _mask;
-    EtherAddress _ena;
+    IP6Address dst;
+    IP6Address mask;
+    EtherAddress ena;
   };
   Vector<Entry> _v;
   
-  void add_map(IP6Address dst, IP6Address mask, EtherAddress);
+  void add_map(const IP6Address &dst, const IP6Address &mask, const EtherAddress &);
 
 };
 
