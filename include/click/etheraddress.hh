@@ -13,7 +13,7 @@ class EtherAddress { public:
     
   unsigned char *data();
   const unsigned char *data() const;
-  const unsigned short *sdata() const	{ return _data; }
+  const uint16_t *sdata() const		{ return _data; }
 
   String unparse() const;
 
@@ -22,7 +22,7 @@ class EtherAddress { public:
   
  private:
   
-  unsigned short _data[3];
+  uint16_t _data[3];
   
 };
 
