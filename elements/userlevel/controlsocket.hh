@@ -5,8 +5,8 @@
 /*
 =c
 
-ControlSocket("TCP", PORTNUMBER [, READONLY?])
-ControlSocket("UNIX", FILENAME [, READONLY?])
+ControlSocket("TCP", PORTNUMBER [, READONLY?, I<KEYWORDS>])
+ControlSocket("UNIX", FILENAME [, READONLY?, I<KEYWORDS>])
 
 =s debugging
 
@@ -21,8 +21,9 @@ None
 Opens a control socket that allows other user-level programs to call read or
 write handlers on the router. Depending on its configuration string,
 ControlSocket will listen on TCP port PORTNUMBER, or on a UNIX-domain socket
-named FILENAME. Disallows write handlers if READONLY? is true; it is false by
-default.
+named FILENAME. Disallows write handlers if READONLY? is true (it is false by
+default). With the PROXY keyword argument, you can make ControlSocket speak to
+a kernel driver; see below.
 
 The "server" (that is, the ControlSocket element) speaks a relatively
 simple line-based protocol. Commands sent to the server are single lines of
@@ -40,6 +41,29 @@ lines are always terminated by CRLF.
 When a connection is opened, the server responds by stating its protocol
 version number with a line like "Click::ControlSocket/1.0". The current
 version number is 1.0.
+
+Keyword arguments are:
+
+=over 8
+
+=item READONLY
+
+Boolean. Same as the READONLY? argument.
+
+=item PROXY
+
+String. Specifies an element proxy. When a user requests the value of handler
+E.H, ControlSocket will actually return the value of `PROXY.E.H'. This is
+useful with elements like KernelHandlerProxy. Default is empty (no proxy).
+
+=item VERBOSE
+
+Boolean. When true, ControlSocket will print messages whenever it accepts a
+new connection or drops an old one. Default is false.
+
+=back
+
+=head1 SERVER COMMANDS
 
 The server currently supports the following commands:
 
@@ -93,29 +117,22 @@ The command failed.
 
 Here are some of the particular error messages:
 
-200 OK.
+  200 OK.
+  220 OK, but the handler reported some warnings.
+  500 Syntax error.
+  501 Unimplemented command.
+  510 No such element.
+  511 No such handler.
+  520 Handler error.
+  530 Permission denied.
 
-220 OK, but the handler reported some warnings.
-
-500 Syntax error.
-
-501 Unimplemented command.
-
-510 No such element.
-
-511 No such handler.
-
-520 Handler error.
-
-530 Permission denied.
-
-Only available in user-level processes.
+ControlSocket is only available in user-level processes.
 
 =e
 
   ControlSocket(unix, /tmp/clicksocket);
 
-=a ChatterSocket */
+=a ChatterSocket, KernelHandlerProxy */
 
 class ControlSocket : public Element { public:
 
@@ -133,28 +150,46 @@ class ControlSocket : public Element { public:
 
   int message(int fd, int code, const String &, bool continuation = false);
   
+  enum {
+    CSERR_OK			= 200,
+    CSERR_OK_HANDLER_WARNING	= 220,
+    CSERR_SYNTAX		= 500,
+    CSERR_UNIMPLEMENTED		= 501,
+    CSERR_NO_SUCH_ELEMENT	= 510,
+    CSERR_NO_SUCH_HANDLER	= 511,
+    CSERR_UNSPECIFIED		= 512,
+    CSERR_HANDLER_ERROR		= 520,
+    CSERR_PERMISSION		= 530,
+  };
+  
  private:
 
   String _unix_pathname;
   int _socket_fd;
-  bool _read_only;
+  bool _read_only : 1;
+  bool _verbose : 1;
+  Element *_proxy;
+  
   Vector<String> _in_texts;
   Vector<String> _out_texts;
   Vector<int> _flags;
 
+  Vector<String> _herror_handlers;
+  Vector<int> _herror_messages;
+
   enum { READ_CLOSED = 1, WRITE_CLOSED = 2 };
   static const int ANY_ERR = -1;
-  static const int NAME_ERR = -2;
 
-  static const char *protocol_version;
+  static const char * const protocol_version;
 
-  int global_read_handler(int, const String &, String *);
   int parse_handler(int fd, const String &, Element **);
+  int read_command(int fd, const String &);
   int write_command(int fd, const String &, const String &);
   int parse_command(int fd, const String &);
 
-};
+  int report_proxy_errors(int fd, const String &);
+  static void proxy_error_function(const String &, int, void *);
 
-extern bool click_userlevel_global_handler_string(Router *, const String &, String *);
+};
 
 #endif
