@@ -159,11 +159,11 @@ sub _read_text_into ($$$) {
 
 sub _read_script_section ($$$) {
     my($fh, $tt, $args) = @_;
-    $tt->file_err("arguments to `%script' ignored") if $args ne '';
-    $tt->file_err("multiple `%script' sections defined") if $tt->{'script'};
+    $tt->file_err("arguments to '%script' ignored") if $args ne '';
+    $tt->file_err("multiple '%script' sections defined") if $tt->{'script'};
     my($r, $t) = _read_text($fh);
     my($what) = _shell_split(@{$tt->{'script'}}, @{$tt->{'script_lineno'}}, $r, $.);
-    $tt->file_err("$what in `%script'") if $what ne '';
+    $tt->file_err("$what in '%script'") if $what ne '';
     $t;
 }
 
@@ -207,14 +207,14 @@ sub _read_file_section ($$$$) {
 	if (($fn eq 'stdin' && $secname ne 'file')
 	    || (($fn eq 'stdout' || $fn eq 'stderr') && $secname eq 'file')
 	    || ($fn eq 'all' && $secname ne 'ignore')) {
-	    $tt->file_err("`$fn' not meaningful for `%$secname'");
+	    $tt->file_err("'$fn' not meaningful for '\%$secname'");
 	}
 
 	my($hashkey) = substr($secname, 0, 1) . ":" . $fn;
 	if (exists $tt->{$hashkey}) {
-	    $tt->file_err("file `$fn' already defined");
+	    $tt->file_err("file '$fn' already defined");
 	} elsif ($fn !~ m/^[A-Za-z_.0-9]+$/) {
-	    $tt->file_err("fileref error: `$fn' contains illegal characters");
+	    $tt->file_err("fileref error: '$fn' contains illegal characters");
 	} else {
 	    push @{$tt->{$secname}}, $fn;
 	}
@@ -239,7 +239,7 @@ sub read (*;$) {
     my($fh, $fn) = @_;
     $fh = ::qualify_to_ref($fh, caller);
     
-    my($tt) = bless { 'filename' => $fn, 'err' => 0 }, Testie;
+    my($tt) = bless { 'filename' => $fn, 'err' => 0, 'errprefix' => $fn . ": " }, Testie;
     
     my($t, $read_command) = (undef, 0);
     $t = <$fh>;
@@ -250,8 +250,11 @@ sub read (*;$) {
 	    if ($command eq 'script' || $command eq 'test') {
 		$t = _read_script_section($fh, $tt, $args);
 	    } elsif ($command eq 'info') {
-		$tt->file_err("arguments to `%info' ignored") if $args ne '';
+		$tt->file_err("arguments to '\%info' ignored") if $args ne '';
 		$t = _read_text_into($fh, $tt, 'info');
+	    } elsif ($command eq 'desc') {
+		$tt->file_err("arguments to '\%desc' ignored") if $args ne '';
+		$t = _read_text_into($fh, $tt, 'desc');
 	    } elsif ($command eq 'stdin' || $command eq 'input') {
 		$t = _read_file_section($fh, $tt, $args, 'file');
 	    } elsif ($command eq 'file') {
@@ -275,13 +278,13 @@ sub read (*;$) {
 	    } elsif ($command eq 'eof') {
 		last;
 	    } else {
-		$tt->file_err("unrecognized command `$command'");
+		$tt->file_err("unrecognized command '$command'");
 		$t = _skip_section($fh, $tt);
 	    }
 	    $read_command = 1;
 	} else {
 	    if ($t =~ /^%/) {
-		$tt->file_err("bad `%' command");
+		$tt->file_err("bad '\%' command");
 	    } elsif ($t !~ /^[\#!]/ && $t =~ /\S/) {
 		$tt->file_err("warning: garbage ignored") if $read_command;
 		$read_command = 0;
@@ -300,8 +303,7 @@ sub have_file ($$) {
 
 sub empty ($) {
     my($tt) = @_;
-    !(@{$tt->{'file'}} || @{$tt->{'script'}}
-      || @{$tt->{'expect'}} || @{$tt->{'expectx'}} || @{$tt->{'expectv'}});
+    !exists($tt->{'script'});
 }
 
 sub save_files ($&) {
@@ -338,7 +340,7 @@ EOD
     
     foreach my $i (0..$#{$tt->{'script'}}) {
 	my($ln, $text) = ($tt->{'script_lineno'}[$i], $tt->{'script'}[$i]);
-	$t .= "echo >&2; echo testie_lineno:" . ::shquote($tt->lineno($ln)) . " >&2\n";
+	$t .= "echo >&2; echo testie_lineno:$ln >&2\n";
 	my(@c, @d);
 	_shell_split(@c, @d, $text, 0, $code);
 	die if @c != 1;
@@ -356,10 +358,10 @@ EOD
 
 sub output_error ($$) {
     my($tt, $fileref_subr) = @_;
-    my($fn) = $tt->filename;
+    my($fp) = $tt->{'errprefix'};
     
     if (!open(ERR, $fileref_subr->('stderr'))) {
-	print STDERR "$fn: $!\n";
+	print STDERR $fp, $!, "\n";
 	return -1;
     }
     
@@ -388,18 +390,23 @@ sub output_error ($$) {
     $errortext =~ s/\s*\Z//;
     
     my($cmd) = $tt->command_at($lineno);
-    $lineno = $fn if !defined($cmd);
+    if ($fp =~ /: $/) {
+	chop $fp;
+    } else {
+	$lineno = "line $lineno";
+    }
+    $lineno = $tt->filename if !defined($cmd);
 
     if ($errortext =~ /^testie_error:/) {
 	while ($errortext =~ /^testie_error:([^\n]*)/g) {
-	    print STDERR "$lineno: $1\n";
+	    print STDERR $fp, $lineno, ": ", $1, "\n";
 	}
 	$errortext =~ s/^testie_error:([^\n]*)//g;
 	$errortext =~ s/\s*//;
-	print STDERR "$lineno: (There were other errors as well.)\n"
+	print STDERR $fp, $lineno, ": (There were other errors as well.)\n"
 	    if $errortext ne '';
     } elsif (!defined($cmd)) {
-	print STDERR "$lineno: $failure_text at undefined point in script\n";
+	print STDERR $fp, $lineno, ": $failure_text at undefined point in script\n";
     } else {
 	$cmd =~ s/^\s*|\s*$//g;
 	$cmd =~ s/([\000-\037])/'^' . chr(ord($1) + ord('@'))/eg;
@@ -407,9 +414,9 @@ sub output_error ($$) {
 	if (length($cmd) > 40) {
 	    $cmd = substr($cmd, 0, 40) . "...";
 	}
-	print STDERR "$lineno: $failure_text at `$cmd'\n";
+	print STDERR $fp, $lineno, ": $failure_text at '$cmd'\n";
 	while ($errortext =~ /([^\n]*)/g) {
-	    print STDERR "$lineno:   $1\n" if $1 ne '';
+	    print STDERR $fp, $lineno, ":   $1\n" if $1 ne '';
 	}
     }
 
@@ -417,15 +424,15 @@ sub output_error ($$) {
 }
 
 sub _output_expectation_error ($$$$$) {
-    my($fn, $efn, $lineno, $wanted, $got) = @_;
+    my($fp, $efn, $lineno, $wanted, $got) = @_;
     
     # output message
     if ($efn eq 'stdout') {
-	print STDERR "$fn: standard output has unexpected value starting at line $lineno\n";
+	print STDERR $fp, "standard output has unexpected value starting at line $lineno\n";
     } elsif ($efn eq 'stderr') {
-	print STDERR "$fn: standard error has unexpected value starting at line $lineno\n";
+	print STDERR $fp, "standard error has unexpected value starting at line $lineno\n";
     } else {
-	print STDERR "$fn: file $efn has unexpected value starting at line $lineno\n";
+	print STDERR $fp, "file $efn has unexpected value starting at line $lineno\n";
     }
 
     # output '$wanted' and '$got' if possible
@@ -434,13 +441,13 @@ sub _output_expectation_error ($$$$$) {
     $got = "<end of file>" if $got eq "\376";
     $got =~ s/\r?\n?\Z//;
     if ($wanted =~ /\A[\t\040-\176]*\Z/ && $got =~ /\A[\t\040-\176]*\Z/) {
-	print STDERR "$fn: $efn:$lineno: expected '$wanted'\n$fn: $efn:$lineno: but got  '$got'\n";
+	print STDERR $fp, "$efn:$lineno: expected '$wanted'\n", $fp, "$efn:$lineno: but got  '$got'\n";
     }
 }
 
 sub check_expects ($$) {
     my($tt, $fileref_subr) = @_;
-    my($fn) = $tt->filename;
+    my($fp) = $tt->{'errprefix'};
     local($/) = undef;
     my($retval) = 0;
     my($expectx) = 0;
@@ -453,7 +460,7 @@ sub check_expects ($$) {
 	}
 	
 	if (!open(IN, $fileref_subr->($efn))) {
-	    print STDERR "$fn: ---$!\n";
+	    print STDERR $fp, "---", $!, "\n";
 	    $retval = 1;
 	    next;
 	}
@@ -522,7 +529,7 @@ sub check_expects ($$) {
 	}
 	next if $tp >= @tl || $ep >= @el;
 
-	_output_expectation_error($fn, $efn, $tp + 1, $el[$ep], $tl[$tp]);
+	_output_expectation_error($fp, $efn, $tp + 1, $el[$ep], $tl[$tp]);
 
 	$retval = 1;
     }
@@ -530,7 +537,7 @@ sub check_expects ($$) {
     # check expectv files
     foreach my $efn (@{$tt->{'expectv'}}) {
 	if (!open(IN, $fileref_subr->($efn))) {
-	    print STDERR "$fn: $!\n";
+	    print STDERR $fp, $!, "\n";
 	    $retval = 1;
 	    next;
 	}
@@ -545,7 +552,7 @@ sub check_expects ($$) {
 	my(@el) = split(/\n/, $tt->{"e:$efn"});
 	my($p) = 0;
 	$p++ while ($p < @tl && $p < @el && $tl[$p] eq $el[$p]);
-	_output_expectation_error($fn, $efn, $p + 1, $el[$p], $tl[$p]);
+	_output_expectation_error($fp, $efn, $p + 1, $el[$p], $tl[$p]);
 
 	$retval = 1;
     }
@@ -556,7 +563,7 @@ sub check_expects ($$) {
 
 package main;
 
-my($dir, @show, $show_stdout, $show_stderr);
+my($dir, @show, $show_stdout, $show_stderr, $any_tests_done);
 
 sub script_fn_to_fn ($) {
     my($fn) = @_;
@@ -571,6 +578,21 @@ sub out_script_fn_to_fn ($) {
 sub execute_test ($$$) {
     my($tt, $fn, $verbose) = @_;
     my($f);
+
+    # print description in superverbose mode
+    if ($verbose > 1) {
+	return 0 if $tt->empty;
+	print "\n" if $any_tests_done;
+	if ($tt->{'desc'}) {
+	    my($desc) = $tt->{'desc'};
+	    $desc =~ s/^(.*?)\t/$1 . (' ' x (8 - (length($1) % 8)))/egm
+		while $desc =~ /\t/;
+	    $desc =~ s/^/  /;
+	    print $fn, " Description:\n", $desc;
+	}
+	print $fn, " Results:\n";
+	$tt->{'errprefix'} = "  ";
+    }
     
     # save the files it names
     $tt->save_files(\&out_script_fn_to_fn);
@@ -585,6 +607,7 @@ sub execute_test ($$$) {
     my($actual_stdout) = ($show_stdout || $tt->have_file('stdout') ? script_fn_to_fn('stdout') : "/dev/null");
     my($actual_stderr) = script_fn_to_fn('stderr');
     my($exitval) = system("cd $dir; /bin/sh ./+script+ <$actual_stdin >$actual_stdout 2>$actual_stderr");
+    $any_tests_done = 1;
 
     # echo files
     foreach $f (@show) {
@@ -611,7 +634,7 @@ sub execute_test ($$$) {
     }
 
     if ($verbose && !$tt->empty) {
-	print "$fn: success\n";
+	print STDERR $tt->{'errprefix'}, "Success!\n";
     }
 
     0;
@@ -665,13 +688,14 @@ $SIG{'INT'} = $SIG{'QUIT'} = $SIG{'TERM'} = $SIG{'__DIE__'} = sub {
 
 sub help () {
     print <<'EOD;';
-`Testie' is a simple test harness.
+'Testie' is a simple test harness.
 
 Usage: testie [OPTIONS] [FILE]...
 
 Options:
   VARIABLE=VALUE             Variable settings for test script.
   -V, --verbose              Print information for successful tests.
+  -VV, --superverbose        Print %desc information for all tests.
   -s, --show TESTIEFILE      Show contents of TESTIEFILE on completion.
   --preserve-temporaries     Preserve temporary files.
   -v, --version              Print version information and exit.
@@ -692,8 +716,8 @@ EOD;
 
 sub print_version () {
     print <<'EOD;';
-Testie 1.0
-Copyright (c) 2002 International Computer Science Institute
+Testie 1.1
+Copyright (c) 2002-2003 International Computer Science Institute
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for a
 particular purpose.
@@ -740,6 +764,7 @@ sub search_dir ($$) {
 $dir = "/tmp/testie$$";
 
 my(@tests, $verbose, $preserve_temporaries, $arg);
+$verbose = 0;
 
 while (@ARGV) {
     $_ = shift @ARGV;
@@ -757,16 +782,18 @@ while (@ARGV) {
 	print_version;
     } elsif (/^-V$/ || argcmp($_, '--verbose', 4)) {
 	$verbose = 1;
+    } elsif (/^-VV$/ || argcmp($_, '--superverbose', 2)) {
+	$verbose = 2;
     } elsif (argcmp($_, '--help', 1)) {
 	help;
     } elsif (argcmp($_, '--preserve-temporaries', 1)) {
 	$preserve_temporaries = 1;
-    } elsif (/^-s$/ || argcmp($_, '--show', 1)) {
+    } elsif (/^-s$/ || argcmp($_, '--show', 2)) {
 	usage if @ARGV == 0;
 	push @show, (shift @ARGV);
     } elsif (/^-s(.+)$/) {
 	push @show, $1;
-    } elsif (argcmp($_, '--show', 1, $arg)) {
+    } elsif (argcmp($_, '--show', 2, $arg)) {
 	push @show, $arg;
     } else {
 	usage;
@@ -830,13 +857,18 @@ test fails due to an internal error.
 =item I<VARIABLE>=I<VALUE>
 
 Provide a setting for I<VARIABLE>. Occurrences in the script of
-`C<$VARIABLE>' or `C<${VARIABLE}>' will be replaced by I<VALUE>. Note that
+'C<$VARIABLE>' or 'C<${VARIABLE}>' will be replaced by I<VALUE>. Note that
 this is not an environment variable setting. Variable references to unset
 variables are left unchanged.
 
 =item -V, --verbose
 
 Print information about successful tests as well as unsuccessful tests.
+
+=item -VV, --superverbose
+
+Like --verbose, but use a slightly different format, and additionally print
+every test's %desc section before the test results.
 
 =item -v, --version
 
@@ -874,20 +906,25 @@ The shell script (in sh syntax) that controls the test. Testie will run
 each command in sequence. Every command must succeed, with exit status 0,
 or the test will fail.
 
+=item %desc
+
+A short description of the test.  In --superverbose mode, its contents are
+printed before the test results.
+
 =item %info
 
-This section is ignored. You can use it for comments.
+This section is ignored. You can use it for longer comments.
 
 =item %file [+LENGTH] FILENAME...
 
-Create an input file for the script. FILENAME can be `stdin', which sets
+Create an input file for the script. FILENAME can be 'stdin', which sets
 the script's standard input. If LENGTH is provided, the file data consists
 of the LENGTH bytes following this line; otherwise, it consists of the data
 up to the next section. FILENAME cannot contain slashes.
 
 =item %expectv [+LENGTH] FILENAME...
 
-An expected output file for the script. FILENAME can be `stdout', for
+An expected output file for the script. FILENAME can be 'stdout', for
 standard output. If LENGTH is provided, the file data consists of the
 LENGTH bytes following this line; otherwise, it consists of the data up to
 the next section.
@@ -897,7 +934,7 @@ with the provided data. They must match exactly or the test fails.
 
 =item %expect [+LENGTH] FILENAME...
 
-An expected output file for the script. FILENAME can be `stdout', for
+An expected output file for the script. FILENAME can be 'stdout', for
 standard output, or a filename. If LENGTH is provided, the file data
 consists of the LENGTH bytes following this line; otherwise, it consists of
 the data up to the next section. 
@@ -912,7 +949,7 @@ sets of braces; so the %expect line
 
     foo{{(bar)?}}
 
-matches either `foo' or `foobar'.
+matches either 'foo' or 'foobar'.
 
 =item %expectx [+LENGTH] FILENAME...
 
@@ -921,11 +958,11 @@ regular expression (so there is no need for the "{{ }}" escapes).
 
 =item %stdin [+LENGTH]
 
-Same as `%file stdin [+LENGTH]'.
+Same as '%file stdin [+LENGTH]'.
 
 =item %stdout [+LENGTH]
 
-Same as `%expect stdout [+LENGTH]'.
+Same as '%expect stdout [+LENGTH]'.
 
 =item %ignore [[+LENGTH] FILENAME]
 
