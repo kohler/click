@@ -53,6 +53,8 @@ Version 1.2.0
 
 ** IPRewriter garbage collection optimizations from Benjie.
 
+** Added AddressTranslator, ProtocolTranslator46, ProtocolTranslator64 elementsthat can do various translation between IPv6 networks and IPv4 networks.
+
 * Tools
 
 ** Added click-mkmindriver(1).
