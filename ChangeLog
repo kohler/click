@@ -1,3 +1,14 @@
+2002-08-26 Monday 04:37  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.31), fromipsumdump.hh
+	(1.21), ipsumdumpinfo.cc (1.3), toipsumdump.cc (1.26),
+	toipsumdump.hh (1.24): add support for binary tcp_opt and tcp_sack
+
+2002-08-26 Monday 04:28  Eddie Kohler <kohler@icir.org>
+
+	* include/click/straccum.hh (1.21): add set_length() and
+	append(unsigned char *,int) methods
+
 2002-08-26 Monday 00:59  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/: fromipsumdump.cc (1.30), fromipsumdump.hh

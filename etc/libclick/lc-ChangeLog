@@ -1,3 +1,8 @@
+2002-08-26 Monday 04:28  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: straccum.hh, straccum.hh: add set_length() and
+	append(unsigned char *,int) methods
+
 2002-08-26 Monday 00:59  Eddie Kohler <kohler@icir.org>
 
 	* include/clicknet/: tcp.h, tcp.h: add definitions of TCP options
