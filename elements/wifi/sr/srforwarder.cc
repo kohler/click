@@ -28,7 +28,7 @@
 #include "srpacket.hh"
 #include "linkmetric.hh"
 #include "srcr.hh"
-#include "elements/grid/arptable.hh"
+#include "elements/wifi/arptable.hh"
 CLICK_DECLS
 
 

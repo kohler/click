@@ -22,7 +22,6 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#include <elements/grid/linkstat.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
 #include <click/packet_anno.hh>

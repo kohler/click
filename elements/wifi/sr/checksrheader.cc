@@ -2,7 +2,7 @@
  * checksrheader.{cc,hh} -- element checks SR header for correctness
  * (checksums, lengths)
  * John Bicket
- * apapted from checkgridheader.{cc,hh} by Douglas S. J. De Couto
+ * apapted from checkwifiheader.{cc,hh} by Douglas S. J. De Couto
  * from checkipheader.{cc,hh} by Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology

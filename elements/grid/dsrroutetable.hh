@@ -9,7 +9,7 @@
 #include <assert.h>
 #include <click/bighashmap.hh>
 
-#include "linktable.hh"
+#include <elements/wifi/linktable.hh>
 #include <elements/standard/simplequeue.hh>
 
 #include "dsr.hh"

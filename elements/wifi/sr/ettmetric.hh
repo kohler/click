@@ -3,7 +3,7 @@
 #include <click/element.hh>
 #include "linkmetric.hh"
 #include <click/hashmap.hh>
-#include <elements/grid/linktable.hh>
+#include <elements/wifi/linktable.hh>
 CLICK_DECLS
 
 /*

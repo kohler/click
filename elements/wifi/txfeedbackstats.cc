@@ -226,7 +226,7 @@ TXFeedbackStats::add_handlers()
 }
 
 EXPORT_ELEMENT(TXFeedbackStats)
-
+ELEMENT_REQUIRES(false)
 #include <click/dequeue.cc>
 template class DEQueue<TXFeedbackStats::stat_t>;
 

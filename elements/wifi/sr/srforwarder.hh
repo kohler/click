@@ -5,9 +5,9 @@
 #include <click/timer.hh>
 #include <click/ipaddress.hh>
 #include <click/etheraddress.hh>
-#include <elements/grid/linktable.hh>
+#include <elements/wifi/linktable.hh>
 #include <click/vector.hh>
-#include <elements/grid/sr/path.hh>
+#include <elements/wifi/sr/path.hh>
 CLICK_DECLS
 
 /*

@@ -54,7 +54,7 @@
 #include <click/element.hh>
 #include <click/glue.hh>
 #include <click/etheraddress.hh>
-#include <elements/grid/arptable.hh>
+#include <elements/wifi/arptable.hh>
 CLICK_DECLS
 
 class Timer;
@@ -86,7 +86,7 @@ public:
     unsigned int period;      // period of this node's probe broadcasts, in msecs
     unsigned int tau;         // this node's loss-rate averaging period, in msecs
     unsigned int sent;        // how many probes this node has sent
-    unsigned int num_links;   // number of grid_link_entry entries following
+    unsigned int num_links;   // number of wifi_link_entry entries following
 
     link_probe() : cksum(0), psz(0), ip(0), seq_no(0), period(0), tau(0), sent(0), num_links(0) { }
 

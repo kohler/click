@@ -24,9 +24,9 @@
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
 #include <click/elemfilter.hh>
-#include <elements/grid/sr/path.hh>
+#include <elements/wifi/sr/path.hh>
 #include <elements/standard/notifierqueue.hh>
-#include <elements/grid/sr/srforwarder.hh>
+#include <elements/wifi/sr/srforwarder.hh>
 #include "srpacket.hh"
 #include <click/router.hh>
 #include <clicknet/tcp.h>

@@ -8,9 +8,9 @@
 #include <click/vector.hh>
 #include <click/hashmap.hh>
 #include <click/dequeue.hh>
-#include <elements/grid/linktable.hh>
-#include <elements/grid/arptable.hh>
-#include <elements/grid/sr/path.hh>
+#include <elements/wifi/linktable.hh>
+#include <elements/wifi/arptable.hh>
+#include <elements/wifi/sr/path.hh>
 #include "flashflood.hh"
 //#include "ettmetric.hh"
 #include <elements/wifi/rxstats.hh>

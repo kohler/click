@@ -1,7 +1,7 @@
 /*
  * setsrchecksum.{cc,hh} -- element sets SR header checksum
  * John Bicket
- * apapted from setgridchecksum.{cc,hh} by Douglas S. J. De Couto
+ * apapted from setwifichecksum.{cc,hh} by Douglas S. J. De Couto
  * adapted from setipchecksum.{cc,hh} by Robert Morris
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology

@@ -19,7 +19,7 @@
 #include <click/straccum.hh>
 #include "ettmetric.hh"
 #include "ettstat.hh"
-#include <elements/grid/linktable.hh>
+#include <elements/wifi/linktable.hh>
 CLICK_DECLS 
 
 #define max(a, b) ((a) > (b) ? (a) : (b))

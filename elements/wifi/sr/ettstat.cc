@@ -21,12 +21,13 @@
 #include <click/glue.hh>
 #include <click/timer.hh>
 #include <click/straccum.hh>
-#include <elements/grid/grid.hh>
 #include "ettstat.hh"
 #include "ettmetric.hh"
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
+// packet data should be 4 byte aligned                                         
+#define ASSERT_ALIGNED(p) assert(((unsigned int)(p) % 4) == 0)
 
 #define MIN(x,y)      ((x)<(y) ? (x) : (y))
 #define MAX(x,y)      ((x)>(y) ? (x) : (y));
