@@ -69,9 +69,10 @@ static struct proc_dir_entry proc_element_elemdir_link_prototype = {
 //
 
 static int proc_element_handler_open(struct inode *, struct file *);
-static DECLARE_READ_FILEOP(proc_element_handler_read);
-static DECLARE_WRITE_FILEOP(proc_element_handler_write);
-static DECLARE_RELEASE_FILEOP(proc_element_handler_release);
+static ssize_t proc_element_handler_read(struct file *, char *, size_t, loff_t *);
+static ssize_t proc_element_handler_write(struct file *, const char *, size_t, loff_t *);
+static int proc_element_handler_release(struct inode *, struct file *);
+static int proc_element_handler_ioctl(struct inode *, struct file *, unsigned, unsigned long);
 
 static struct file_operations proc_element_handler_operations = {
     NULL,			// lseek
@@ -79,7 +80,7 @@ static struct file_operations proc_element_handler_operations = {
     proc_element_handler_write,	// write
     NULL,			// readdir
     NULL,			// select
-    NULL,			// ioctl
+    proc_element_handler_ioctl,	// ioctl
     NULL,			// mmap
     proc_element_handler_open,	// open
     NULL,			// flush
@@ -122,11 +123,11 @@ static struct proc_dir_entry proc_element_read_write_handler_prototype = {
 // OPERATIONS
 
 static const Router::Handler *
-find_handler(int elementno, int handlerno)
+find_handler(int eindex, int handlerno)
 {
   if (handlerno < 0)
     return 0;
-  if (elementno < 0) {
+  if (eindex < 0) {
     if (handlerno >= nroot_handlers)
       return 0;
     else
@@ -140,13 +141,13 @@ find_handler(int elementno, int handlerno)
 }
 
 static int
-prepare_handler_read(int elementno, int handlerno, String **store)
+prepare_handler_read(int eindex, int handlerno, String **store)
 {
-  Element *e = (elementno >= 0 ? current_router->element(elementno) : 0);
+  Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
   String s;
   int out_of_memory = String::out_of_memory_count();
 
-  const Router::Handler *h = find_handler(elementno, handlerno);
+  const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
     return -ENOENT;
   else if (!h->read)
@@ -173,9 +174,9 @@ prepare_handler_read(int elementno, int handlerno, String **store)
 }
 
 static int
-prepare_handler_write(int elementno, int handlerno)
+prepare_handler_write(int eindex, int handlerno)
 {
-  const Router::Handler *h = find_handler(elementno, handlerno);
+  const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
     return -ENOENT;
   else if (!h->write)
@@ -185,10 +186,10 @@ prepare_handler_write(int elementno, int handlerno)
 }
 
 static int
-finish_handler_write(int elementno, int handlerno, String *s)
+finish_handler_write(int eindex, int handlerno, String *s)
 {
-  Element *e = (elementno >= 0 ? current_router->element(elementno) : 0);
-  const Router::Handler *h = find_handler(elementno, handlerno);
+  Element *e = (eindex >= 0 ? current_router->element(eindex) : 0);
+  const Router::Handler *h = find_handler(eindex, handlerno);
   if (!h)
     return -ENOENT;
   else if (!h->write)
@@ -212,17 +213,17 @@ finish_handler_write(int elementno, int handlerno, String *s)
 }
 
 static int
-parent_proc_dir_elementno(proc_dir_entry *pde)
+parent_proc_dir_eindex(proc_dir_entry *pde)
 {
   if (pde->parent == &proc_click_entry)
     return -1;
   else {
-    int elementno = (int)(pde->parent->data);
-    if (!current_router || elementno < 0
-	|| elementno >= current_router->nelements())
+    int eindex = (int)(pde->parent->data);
+    if (!current_router || eindex < 0
+	|| eindex >= current_router->nelements())
       return -ENOENT;
     else
-      return elementno;
+      return eindex;
   }
 }
 
@@ -236,19 +237,19 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
     return -EACCES;
   
   proc_dir_entry *pde = (proc_dir_entry *)ino->u.generic_ip;
-  int elementno = parent_proc_dir_elementno(pde);
-  if (elementno < -1) return elementno;
+  int eindex = parent_proc_dir_eindex(pde);
+  if (eindex < -1) return eindex;
   
   String *s = 0;
   int retval;
   if (writing) {
-    retval = prepare_handler_write(elementno, (int)pde->data);
+    retval = prepare_handler_write(eindex, (int)pde->data);
     if (retval >= 0) {
       s = new String;
       if (!s) return -ENOMEM;
     }
   } else
-    retval = prepare_handler_read(elementno, (int)pde->data, &s);
+    retval = prepare_handler_read(eindex, (int)pde->data, &s);
   
   if (retval >= 0) {
     filp->private_data = (void *)s;
@@ -260,10 +261,10 @@ proc_element_handler_open(struct inode *ino, struct file *filp)
   }
 }
 
-static
-DECLARE_READ_FILEOP(proc_element_handler_read)
+static ssize_t
+proc_element_handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 {
-  loff_t f_pos = FILEOP_F_POS;
+  loff_t f_pos = *store_f_pos;
   String *s = (String *)filp->private_data;
   if (!s)
     return -ENOMEM;
@@ -271,14 +272,14 @@ DECLARE_READ_FILEOP(proc_element_handler_read)
     count = s->length() - f_pos;
   if (copy_to_user(buffer, s->data() + f_pos, count) > 0)
     return -EFAULT;
-  FILEOP_F_POS += count;
+  *store_f_pos += count;
   return count;
 }
 
-static
-DECLARE_WRITE_FILEOP(proc_element_handler_write)
+static ssize_t
+proc_element_handler_write(struct file *filp, const char *buffer, size_t count, loff_t *store_f_pos)
 {
-  loff_t f_pos = FILEOP_F_POS;
+  loff_t f_pos = *store_f_pos;
   String *s = (String *)filp->private_data;
   if (!s)
     return -ENOMEM;
@@ -307,23 +308,23 @@ DECLARE_WRITE_FILEOP(proc_element_handler_write)
   if (copy_from_user(data + f_pos, buffer, count) > 0)
     return -EFAULT;
   
-  FILEOP_F_POS += count;
+  *store_f_pos += count;
   return count;
 }
 
-static
-DECLARE_RELEASE_FILEOP(proc_element_handler_release)
+static int
+proc_element_handler_release(struct inode *, struct file *filp)
 {
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
   int retval = 0;
   
   if (writing) {
     proc_dir_entry *pde = (proc_dir_entry *)filp->f_dentry->d_inode->u.generic_ip;
-    int elementno = parent_proc_dir_elementno(pde);
-    if (elementno < -1)
-      retval = elementno;
+    int eindex = parent_proc_dir_eindex(pde);
+    if (eindex < -1)
+      retval = eindex;
     else
-      retval = finish_handler_write(elementno, (int)(pde->data),
+      retval = finish_handler_write(eindex, (int)(pde->data),
 				    (String *)filp->private_data);
   }
   
@@ -332,15 +333,27 @@ DECLARE_RELEASE_FILEOP(proc_element_handler_release)
   return retval;
 }
 
+static int
+proc_element_handler_ioctl(struct inode *ino, struct file *filp,
+			   unsigned command, unsigned long address)
+{
+  proc_dir_entry *pde = (proc_dir_entry *)ino->u.generic_ip;
+  int eindex = parent_proc_dir_eindex(pde);
+  if (eindex < 0) return eindex;
+  
+  Element *e = current_router->element(eindex);
+  return e->llrpc(command, reinterpret_cast<void *>(address));
+}
+
 //
 // CREATING HANDLERS
 //
 
 void
-register_handler(proc_dir_entry *directory, int elementno, int handlerno)
+register_handler(proc_dir_entry *directory, int eindex, int handlerno)
 {
   const proc_dir_entry *pattern = 0;
-  const Router::Handler *h = (elementno >= 0 ? &current_router->handler(handlerno) : &root_handlers[handlerno]);
+  const Router::Handler *h = (eindex >= 0 ? &current_router->handler(handlerno) : &root_handlers[handlerno]);
   if (h->read && h->write)
     pattern = &proc_element_read_write_handler_prototype;
   else if (h->write)
@@ -475,7 +488,7 @@ init_router_element_procs()
   for (int i = 0; i < 2*nelements; i++)
     element_pdes[i] = 0;
 
-  // make ELEMENTNO directories
+  // make EINDEX directories
   int namelen = 1, next_namegap = 10;
   for (int i = 0; i < nelements; i++) {
     if (i+1 >= next_namegap) namelen++, next_namegap *= 10;
@@ -484,7 +497,7 @@ init_router_element_procs()
        namelen, numbers + numbers_ndigits * i, (void *)i);
   }
   
-  // add symlinks for ELEMENTNAME -> ELEMENTNO
+  // add symlinks for ELEMENTNAME -> EINDEX
   for (int i = 0; i < nelements; i++)
     if (proc_dir_entry *pde = element_pdes[i]) {
       const String &id = current_router->element(i)->id();

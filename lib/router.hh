@@ -87,7 +87,7 @@ class Router : public ElementLink {
   int element_lerror(ErrorHandler *, Element *, const char *, ...) const;
   
   Element *find(String, const String &, ErrorHandler * = 0) const;
-  int find_ehandler(Element *, const String &, bool);
+  int find_ehandler(int, const String &, bool);
   int put_handler(const Handler &);
   
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
@@ -132,13 +132,13 @@ class Router : public ElementLink {
   int initialize(ErrorHandler *);
   void take_state(Router *, ErrorHandler *);
 
-  void add_read_handler(Element *, const String &, ReadHandler, void *);
-  void add_write_handler(Element *, const String &, WriteHandler, void *);
+  void add_read_handler(int, const String &, ReadHandler, void *);
+  void add_write_handler(int, const String &, WriteHandler, void *);
   int find_handler(Element *, const String &);
   void element_handlers(int, Vector<int> &) const;
   int nhandlers() const				{ return _nhandlers; }
   const Handler &handler(int i) const;
-  
+
   int live_reconfigure(int, const String &, ErrorHandler *);
   int live_reconfigure(int, const Vector<String> &, ErrorHandler *);
   void set_configuration(int, const String &);

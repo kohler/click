@@ -20,7 +20,7 @@
 
 static StringAccum *all_errors = 0;
 
-static DECLARE_READ_FILEOP(click_errors_read);
+static ssize_t click_errors_read(struct file *, char *, size_t, loff_t *);
 
 static struct file_operations proc_click_errors_operations = {
     NULL,			// lseek
@@ -84,10 +84,10 @@ SyslogErrorHandler::vmessage(Seriousness seriousness, const String &message)
 }
 
 
-static
-DECLARE_READ_FILEOP(click_errors_read)
+static ssize_t
+click_errors_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 {
-  loff_t f_pos = FILEOP_F_POS;
+  loff_t f_pos = *store_f_pos;
   if (!all_errors) return 0;
   if (f_pos > all_errors->length())
     return 0;
@@ -95,7 +95,7 @@ DECLARE_READ_FILEOP(click_errors_read)
     count = all_errors->length() - f_pos;
   if (copy_to_user(buffer, all_errors->data() + f_pos, count) > 0)
     return -EFAULT;
-  FILEOP_F_POS += count;
+  *store_f_pos += count;
   return count;
 }
 

@@ -114,6 +114,7 @@ DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	lib/iptable2.cc lib/iptable2.hh \
 	lib/ip6table.cc lib/ip6table.hh \
 	lib/lexer.cc lib/lexer.hh \
+	lib/llrpc.hh \
 	lib/packet.cc lib/packet.hh \
 	lib/radix.cc lib/radix.hh \
 	lib/router.cc lib/router.hh \

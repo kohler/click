@@ -104,6 +104,8 @@ class Element : public ElementLink { public:
   static String configuration_read_handler(Element *, void *);
   static int reconfigure_write_handler(const String &, Element *, void *,
 				       ErrorHandler *);
+
+  virtual int llrpc(unsigned command, void *arg);
   
   // RUNTIME
   virtual void run_scheduled();

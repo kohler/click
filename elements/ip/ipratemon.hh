@@ -8,13 +8,13 @@
  *
  * =d
  * Monitors network traffic rates. Can monitor either packet or byte rate (per
- * second) to and from an address. When forward or reverse rate for a particular
- * address exceeds THRESH, rates will then be kept for host or subnet addresses
- * within that address. May update each packet's dst_rate_anno and src_rate_anno
- * with the rates for dst or src IP address.
+ * second) to and from an address. When forward or reverse rate for a
+ * particular address exceeds THRESH, rates will then be kept for host or
+ * subnet addresses within that address. May update each packet's
+ * dst_rate_anno and src_rate_anno with the rates for dst or src IP address.
  *
- * Packets coming in one input 0 are inspected on src address. Packets coming in
- * on input 1 are insepected on dst address. This enables IPRateMonitor to
+ * Packets coming in one input 0 are inspected on src address. Packets coming
+ * in on input 1 are insepected on dst address. This enables IPRateMonitor to
  * annotate packets with both the forward rate and reverse rate.
  *
  * PB: PACKETS or BYTES. Count number of packets or bytes.
@@ -57,8 +57,7 @@
  * network address (e.g. 18.26.*.*) exceeds 256 packets per second, start
  * monitor subnet or host addresses (e.g. 18.26.4.*).
  *
- * =a IPFlexMonitor, CompareBlock
- */
+ * =a IPFlexMonitor, CompareBlock */
 
 #include "glue.hh"
 #include "click_ip.h"
@@ -92,6 +91,8 @@ public:
 
   void push(int port, Packet *p);
   Packet *pull(int port);
+
+  int llrpc(unsigned, void *);
 
 private:
 
@@ -137,8 +138,8 @@ private:
   static const int PERIODIC_FOLD_INIT = 8192; 
   static const unsigned MEMMAX_MIN = 100; // kbytes
   
-  bool _anno_packets;		// annotate packets?
   bool _count_packets;		// packets or bytes
+  bool _anno_packets;		// annotate packets?
   int _offset;			// offset in packet
   int _thresh;			// threshold, when to split
   unsigned int _memmax;		// max. memory usage
@@ -153,7 +154,7 @@ private:
   Stats *_prev_deleted, *_next_deleted;
 
   void update_rates(Packet *, bool, bool);
-  void update(IPAddress, int, Packet *, bool, bool);
+  void update(unsigned, int, Packet *, bool, bool);
   void forced_fold();
   void fold(int);
   Counter *make_counter(Stats *, unsigned char, MyEWMA *);
@@ -210,19 +211,20 @@ IPRateMonitor::set_anno_level(IPAddress saddr, unsigned level, unsigned when)
 // Dives in tables based on addr and raises all rates by val.
 //
 inline void
-IPRateMonitor::update(IPAddress saddr, int val, Packet *p, 
+IPRateMonitor::update(unsigned addr, int val, Packet *p, 
                       bool forward, bool update_ewma)
 {
-  unsigned int addr = saddr.addr();
   struct Stats *s = _base;
   Counter *c = 0;
-  int bitshift;
   unsigned now = MyEWMA::now();
   static unsigned prev_fold_time = now;
 
   // zoom in to deepest opened level
-  for (bitshift = 0; bitshift <= MAX_SHIFT; bitshift += 8) {
-    unsigned char byte = (addr >> bitshift) & 0x000000ff;
+  addr = ntohl(addr);		// need it in network order
+  
+  int bitshift;
+  for (bitshift = 24; bitshift >= 0; bitshift -= 8) {
+    unsigned char byte = (addr >> bitshift) & 255;
 
     // allocate Counter if it doesn't exist yet
     if (!(c = s->counter[byte]))
@@ -266,10 +268,10 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
   //
   if (c->anno_this < now &&
       (fwd_rate >= _thresh || rev_rate >= _thresh) &&
-      ((bitshift < MAX_SHIFT) &&
+      ((bitshift > 0) &&
       (!_memmax || (_alloced_mem+sizeof(Counter)+sizeof(Stats)) <= _memmax)))
   {
-    unsigned char next_byte = (addr >> (bitshift+8)) & 0x000000ff;
+    unsigned char next_byte = (addr >> bitshift) & 255;
     if (!(c->next_level = new Stats(this)) ||
        !make_counter(c->next_level, next_byte, &c->fwd_and_rev_rate))
     {
@@ -306,9 +308,9 @@ IPRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
   int val = _count_packets ? 1 : ip->ip_len;
 
   if (forward)
-    update(IPAddress(ip->ip_src), val, p, true, update_ewma);
+    update(ip->ip_src.s_addr, val, p, true, update_ewma);
   else
-    update(IPAddress(ip->ip_dst), val, p, false, update_ewma);
+    update(ip->ip_dst.s_addr, val, p, false, update_ewma);
 }
 
 #endif /* IPRATEMON_HH */

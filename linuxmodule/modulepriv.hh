@@ -10,12 +10,6 @@ extern "C" {
 #undef new
 }
 
-// definitions for portable proc filesystems
-#define DECLARE_READ_FILEOP(name) ssize_t name(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
-#define DECLARE_WRITE_FILEOP(name) ssize_t name(struct file *filp, const char *buffer, size_t count, loff_t *store_f_pos)
-#define DECLARE_RELEASE_FILEOP(name) int name(struct inode *, struct file *filp)
-#define FILEOP_F_POS (*store_f_pos)
-
 extern proc_dir_entry proc_click_entry;
 
 void init_click_proc();

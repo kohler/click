@@ -20,10 +20,12 @@
 #include "error.hh"
 #include "glue.hh"
 #include "mplock.hh"
+#include "llrpc.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : _count_packets(true), _offset(0), _thresh(1), _memmax(0), _ratio(1),
-    _anno_packets(true), _base(NULL), _alloced_mem(0), _first(0), 
+  : _count_packets(true), _anno_packets(true),
+    _offset(0), _thresh(1), _memmax(0), _ratio(1),
+    _base(NULL), _alloced_mem(0), _first(0), 
     _last(0), _prev_deleted(0)
 {
 }
@@ -488,6 +490,44 @@ IPRateMonitor::add_handlers()
   add_write_handler("anno_level", anno_level_write_handler, 0);
   add_write_handler("reset", reset_write_handler, 0);
   add_write_handler("memmax", memmax_write_handler, 0);
+}
+
+int
+IPRateMonitor::llrpc(unsigned command, void *data)
+{
+  if (command == CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG
+      || command == CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG) {
+    int which = (command == CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG ? 0 : 1);
+    unsigned *udata = (unsigned *)data;
+    unsigned level, ipaddr;
+    if (CLICK_LLRPC_GET(level, udata) < 0)
+      return -EFAULT;
+    if (CLICK_LLRPC_GET(ipaddr, udata + 1) < 0)
+      return -EFAULT;
+    if (level > 3)
+      return -EINVAL;
+    
+    int averages[256];
+    
+    // ipaddr is in network order
+    Stats *s = _base;
+    ipaddr = ntohl(ipaddr);
+    for (int bitshift = 24; bitshift > 0 && level > 0; bitshift -= 8, level--) {
+      unsigned char b = (ipaddr >> bitshift) & 255;
+      if (!s->counter[b] && !s->counter[b]->next_level)
+	return -EAGAIN;
+      s = s->counter[b]->next_level;
+    }
+
+    for (int i = 0; i < 256; i++)
+      if (s->counter[i])
+	averages[i] = s->counter[i]->fwd_and_rev_rate.average(which);
+      else
+	averages[i] = -1;
+    return CLICK_LLRPC_PUT_DATA(data, averages, sizeof(averages));
+    
+  } else
+    return Element::llrpc(command, data);
 }
 
 EXPORT_ELEMENT(IPRateMonitor)

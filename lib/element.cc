@@ -493,13 +493,13 @@ read_element_cycles(Element *f, void *)
 void
 Element::add_read_handler(const String &name, ReadHandler h, void *thunk)
 {
-  router()->add_read_handler(this, name, h, thunk);
+  router()->add_read_handler(eindex(), name, h, thunk);
 }
 
 void
 Element::add_write_handler(const String &name, WriteHandler h, void *thunk)
 {
-  router()->add_write_handler(this, name, h, thunk);
+  router()->add_write_handler(eindex(), name, h, thunk);
 }
 
 void
@@ -579,6 +579,12 @@ Element::set_configuration_argument(int which, const String &arg)
     args.push_back(String());
   args[which] = arg;
   router()->set_configuration(eindex(), cp_unargvec(args));
+}
+
+int
+Element::llrpc(unsigned, void *)
+{
+  return -EINVAL;
 }
 
 // RUNNING

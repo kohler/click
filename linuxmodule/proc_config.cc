@@ -28,9 +28,9 @@ static StringAccum *build_config = 0;
 extern "C" {
 
 static int click_config_open(struct inode *, struct file *);
-static DECLARE_RELEASE_FILEOP(click_config_release);
-static DECLARE_READ_FILEOP(click_config_read);
-static DECLARE_WRITE_FILEOP(click_config_write);
+static int click_config_release(struct inode *, struct file *);
+static ssize_t click_config_read(struct file *, char *, size_t, loff_t *);
+static ssize_t click_config_write(struct file *, const char *, size_t, loff_t *);
 
 static struct file_operations proc_click_config_operations = {
     NULL,			// lseek
@@ -98,10 +98,10 @@ click_config_open(struct inode *, struct file *filp)
   return 0;
 }
 
-static
-DECLARE_READ_FILEOP(click_config_read)
+static ssize_t
+click_config_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 {
-  loff_t f_pos = FILEOP_F_POS;
+  loff_t f_pos = *store_f_pos;
   if (!current_config)
     return 0;
   loff_t len = current_config->length();
@@ -111,14 +111,14 @@ DECLARE_READ_FILEOP(click_config_read)
     count = len - f_pos;
   if (copy_to_user(buffer, current_config->data() + f_pos, count) > 0)
     return -EFAULT;
-  FILEOP_F_POS += count;
+  *store_f_pos += count;
   return count;
 }
 
-static
-DECLARE_WRITE_FILEOP(click_config_write)
+static ssize_t
+click_config_write(struct file *filp, const char *buffer, size_t count, loff_t *store_f_pos)
 {
-  loff_t f_pos = FILEOP_F_POS;
+  loff_t f_pos = *store_f_pos;
   
   if (!build_config)
     return -ENOMEM;
@@ -138,7 +138,7 @@ DECLARE_WRITE_FILEOP(click_config_write)
   if (copy_from_user(x + (f_pos - last_len), buffer, count) > 0)
     return -EFAULT;
 
-  FILEOP_F_POS += count;
+  *store_f_pos += count;
   return count;
 }
 
@@ -185,8 +185,8 @@ swap_config()
     return -EINVAL;
 }
 
-static
-DECLARE_RELEASE_FILEOP(click_config_release)
+static int
+click_config_release(struct inode *, struct file *filp)
 {
   bool writing = (filp->f_flags & O_ACCMODE) == O_WRONLY;
   if (!writing) {
