@@ -1058,9 +1058,11 @@ IPFilter::configure(Vector<String> &conf, ErrorHandler *errh)
 	slot = 0;
 	if (noutputs() == 0)
 	  cerrh.error("`allow' is meaningless, element has zero outputs");
-      } else if (slotwd == "deny")
-	slot = 1;
-      else if (slotwd == "drop")
+      } else if (slotwd == "deny") {
+	slot = noutputs();
+	if (noutputs() > 1)
+	  cerrh.warning("meaning of `deny' has changed (now it means `drop')");
+      } else if (slotwd == "drop")
 	slot = noutputs();
       else if (cp_integer(slotwd, &slot)) {
 	if (slot < 0 || slot >= noutputs()) {
