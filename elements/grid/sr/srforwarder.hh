@@ -47,7 +47,8 @@ class SRForwarder : public Element {
 
   void push(int, Packet *);
   
-  Packet *encap(const u_char *payload, u_long len, Vector<IPAddress>);
+  void send(const u_char *payload, u_long len, Vector<IPAddress>, int flags);
+  Packet *encap(const u_char *payload, u_long len, Vector<IPAddress>, int flags);
 private:
 
   IPAddress _ip;    // My IP address.

@@ -36,7 +36,7 @@ CLICK_DECLS
 
 
 Top5::Top5()
-  :  Element(3,2),
+  :  Element(2,2),
      _et(0),
      _ip(),
      _en(),
@@ -89,7 +89,7 @@ Top5::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "LT", cpElement, "LinkTable element", &_link_table,
 		    "ARP", cpElement, "ARPTable element", &_arp_table,
 		    "SS", cpElement, "SrcrStat element", &_srcr_stat,
-		    "PATH_DURATION", cpUnsigned, "Timer per path", &path_duration,
+		    "PATH_DURATION", cpUnsigned, "Timer per path in ms", &path_duration,
 		    "TAG", cpInteger, "Number of random links to add at each hop", &_tag,
 		    "FIVE", cpInteger, "Number of routes to try", &_five,
                     0);
@@ -161,9 +161,13 @@ Top5::start_query(IPAddress dstip)
     _dsts.insert(dstip, Dst());
     d = _dsts.findp(dstip);
     d->_ip = dstip;
-    d->_started = false;
   }
-  int len = srpacket::len_wo_data(1);
+  d->_started = false;
+  d->_finished = false;
+  d->_seq = random();
+
+  int len = srpacket::len_wo_data(1) + 
+    extra_link_info::len(0);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if(p == 0)
     return;
@@ -223,14 +227,15 @@ Top5::get_metric(IPAddress other)
   if (_srcr_stat) {
     metric = _srcr_stat->get_etx(other);
   }
-  update_link(_ip, other, metric);
   return metric;
 }
 
 void
 Top5::update_link(IPAddress from, IPAddress to, int metric) {
-  _link_table->update_link(from, to, metric);
-  _link_table->update_link(to, from, metric);
+  if (metric) {
+    _link_table->update_link(from, to, metric);
+    _link_table->update_link(to, from, metric);
+  }
 }
 
 // Continue flooding a query by broadcast.
@@ -379,14 +384,14 @@ Top5::forward_query(Seen *s)
 		s->_src.s().cc(),
 		s->_dst.s().cc());
   int nhops = s->_hops.size();
-  int extra_num_hops = s->_extra_hosts.size()+5;
+  int extra_num_hops = s->_extra_hosts.size()+_tag;
   top5_assert(s->_hops.size() == s->_metrics.size()+1);
   
   //click_chatter("forward query called");
   int len = srpacket::len_wo_data(nhops) + 
     extra_link_info::len(extra_num_hops);
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
-  if(p == 0)
+  if(p == 0) 
     return;
   click_ether *eh = (click_ether *) p->data();
   struct srpacket *pk = (struct srpacket *) (eh+1);
@@ -406,28 +411,35 @@ Top5::forward_query(Seen *s)
     pk->set_metric(i, s->_metrics[i]);
   }
 
+  click_chatter("before extra. extra_num_hops = %d",
+		extra_num_hops);
   struct extra_link_info *extra = (struct extra_link_info *) pk->data();
   extra->set_num_hops(extra_num_hops);
-  for (int i = 0; i < extra_num_hops; i++) {
-    extra->set_hop(i, s->_extra_metrics[i]);
-    if (i != extra_num_hops - 1) {
+  for (int i = 0; i < s->_extra_hosts.size(); i++) {
+    extra->set_hop(i, s->_extra_hosts[i]);
+    if (i < extra_num_hops - 1) {
       extra->set_metric(i, s->_extra_metrics[i]);
     } 
   }
   
-  for (int i = 0; i < _tag; i += 2) {
+  click_chatter("tagging on random links\n");
+  for (int i = s->_extra_hosts.size(); i < extra_num_hops - 1; i += 2) {
+    click_chatter("on hosts %d and %d\n",
+		  i, i+1);
     /* get random link, add to extra */
     LinkTable::Link l = _link_table->random_link();
     extra->set_hop(i, l._from);
     extra->set_metric(i, l._metric);
     extra->set_hop(i+1, l._to);
     if (i > 0) {
-      /* set the intermediate ho if we have that information */
+      /* set the intermediate hop if we have that information */
       IPAddress f = extra->get_hop(i-1);
       int extra_metric = _link_table->get_hop_metric(l._from, f);
       extra->set_metric(i-1, extra_metric);
     }
   }
+
+  click_chatter("sending packet\n");
   s->_forwarded = true;
   send(p);
 }
@@ -493,11 +505,20 @@ void Top5::start_reply(class Reply *r)
 {
 
   _link_table->dijkstra();
-  Vector<Path> paths = _link_table->top_n_routes(r->_dst, _five);
-  
+  Vector<Path> paths = _link_table->top_n_routes(r->_src, _five);
+
+  click_chatter("num of paths = %d\n", paths.size());
+  StringAccum sa;
+  sa << _ip.s().cc() << " reply for top " << _five << " routes to " << r->_src.s().cc() << ":\n";
+  for (int x = 0; x < paths.size(); x++) {
+    sa << path_to_string(paths[x]).cc() << "\n";
+  }
+  click_chatter("%s", sa.take_string().cc());
+
+
   int num_hosts = paths[0].size();
   if (num_hosts < 2) {
-      click_chatter("Top5 %s: not path for reply %s <- %s\n",
+      click_chatter("Top5 %s: no path for reply %s <- %s\n",
 		id().cc(),
 		r->_src.s().cc(),
 		r->_dst.s().cc());
@@ -531,12 +552,13 @@ void Top5::start_reply(class Reply *r)
   pk_out->_flags = 0;
   pk_out->_seq = r->_seq;
   pk_out->set_num_hops(num_hosts);
-  pk_out->set_next(paths[0].size() - 1);
+  pk_out->set_next(paths[0].size() - 2);
   pk_out->_qdst = _ip;
-
-  for (int x = 0; x < paths[0].size(); x++) {
-      IPAddress ip = paths[0][x];
-      pk_out->set_hop(x, ip);
+  
+  Path path_from = reverse_path(paths[0]);
+  for (int x = 0; x < path_from.size(); x++) {
+    IPAddress ip = path_from[x];
+    pk_out->set_hop(x, ip);
   }
 
   for (int x = 0; x < paths[0].size()-1; x++) {
@@ -550,8 +572,8 @@ void Top5::start_reply(class Reply *r)
   extra->set_num_hops(extra_num_hosts);
   int current_hop = 0;
 
-  for (int x = 0; x < paths.size(); x++) {
-    for (int y = 0; y < paths[x].size(); y += 2) {
+  for (int x = 1; x < paths.size(); x++) {
+    for (int y = 0; y < paths[x].size() - 1; y += 2) {
       IPAddress from = paths[x][y];
       IPAddress to = paths[x][y+1];
       int metric = _link_table->get_hop_metric(from, to);
@@ -564,6 +586,39 @@ void Top5::start_reply(class Reply *r)
   send(p);
 }
 
+
+void Top5::got_best_route_reply(struct srpacket *pk) 
+{
+  Path p;
+  for (int x = 0; x < pk->num_hops(); x++) {
+    p.push_back(pk->get_hop(x));
+  }
+  
+  IPAddress dst = p[p.size()-1];
+  Dst *d = _dsts.findp(dst);
+  if (!d) {
+    click_chatter("Top5 %s: got_best_route_reply couldn't find dst %s\n",
+		  id().cc(),
+		  dst.s().cc());
+		  
+    return;
+  }
+
+  for(int x = 0; x < d->_paths.size(); x++) {
+    if (p == d->_paths[x]) {
+      click_chatter("Top5 %s: got_best_route: %s\n",
+		    id().cc(),
+		    path_to_string(p).cc());
+      d->_best_path = x;
+      d->_message_back = true;
+      return;
+    }
+  }
+
+  click_chatter("Top5 %s: couldn't find route from reply %s\n",
+		id().cc(),
+		path_to_string(p).cc());
+}
 // Got a reply packet whose ultimate consumer is us.
 // Make a routing table entry if appropriate.
 void
@@ -576,10 +631,9 @@ Top5::got_reply(struct srpacket *pk)
 		id().cc(),
 		_ip.s().cc(),
 		dst.s().cc());
-  
   struct extra_link_info *extra = (struct extra_link_info *) pk->data();
   int extra_num_hosts = extra->num_hops();
-
+  click_chatter("Got reply with %d hosts\n", extra_num_hosts);
   for (int x = 0; x < extra_num_hosts - 1; x++) {
     IPAddress from = extra->get_hop(x);
     IPAddress to = extra->get_hop(x+1);
@@ -590,9 +644,7 @@ Top5::got_reply(struct srpacket *pk)
   }
 
 
-  Vector<Path> paths;
-  paths = _link_table->top_n_routes(dst, _five);
-
+  Vector<Path> paths = _link_table->top_n_routes(dst, _five);
   Dst *d = _dsts.findp(dst);
   if (!d) {
     _dsts.insert(dst, Dst());
@@ -600,53 +652,41 @@ Top5::got_reply(struct srpacket *pk)
     d->_ip = dst;
   }
   d->_paths = paths;
-  for (int x = 0; x < paths.size(); x++) {
-    d->_count.push_back(0);
-  }
   d->_current_path = 0;
+  d->_best_path = 0;
+  d->_packets_sent_on_current_path = 0;
+  d->_started = true;
+  d->_finished = false;
+  d->_message_back = false;
 
 }
 
 
-void
-Top5::process_data(Packet *)
-{
-  return;
-
-}
 void
 Top5::push(int port, Packet *p_in)
 {
 
+
   if (port == 1) {
-    process_data(p_in);
-    p_in->kill();
-    return;
-  }
-  if (port == 2) {
     IPAddress dst = p_in->dst_ip_anno();
     top5_assert(dst);
     Dst *d = _dsts.findp(dst);
 
     if (!d) {
-      click_chatter("Top5 %s: no dst found for %s\n",
-		    id().cc(),
-		    dst.s().cc());
-      start(dst);
+      start_query(dst);
       p_in->kill();
       return;
     }
 
     if (d->_finished) {
       Path p = d->_paths[d->_best_path];
-      Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p);
-      output(1).push(p_out);
+      _sr_forwarder->encap(p_in->data(), p_in->length(), p, 0);
       p_in->kill();
       return;
     }
 
     if (!d->_started) {
-      click_chatter("Top5 %s: dst %s hasn't started yet\n",
+      click_chatter("Top5 %s: no reply from dst %s\n",
 		    id().cc(),
 		    dst.s().cc());
 
@@ -655,22 +695,53 @@ Top5::push(int port, Packet *p_in)
     }
     struct timeval now;
     click_gettimeofday(&now);
+
+    if (d->_packets_sent_on_current_path == 0) {
+      click_chatter("trying new path number %d\n", d->_current_path);
+      d->_current_path_start = now;
+    }
+    d->_packets_sent_on_current_path++;
     struct timeval path_expire;
     timeradd(&d->_current_path_start, &_time_per_path, &path_expire);
     
-    if (timercmp(&now, &path_expire, >)) {
+    if (timercmp(&now, &path_expire, >) && d->_current_path < d->_paths.size()) {
       d->_current_path++;
     }
-    
-    if (d->_current_path > d->_paths.size()) {
-      click_chatter("Top5 %s: done with current paths, but no response\n",
-		    id().cc());
+
+    if (d->_current_path >= d->_paths.size()) {
+      if (d->_message_back) {
+	click_chatter("Top5 %s: done with routes, _best_path = %d\n",
+		      id().cc(),
+		      d->_best_path);
+      }
+      Path p = d->_paths[d->_best_path];
+      
+      Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p, 0);
+      click_ether *eh_out = (click_ether *) p_out->data();
+      struct srpacket *pk_out = (struct srpacket *) (eh_out+1);
+      pk_out->set_seq(d->_seq);
+      if (!d->_message_back) {
+	/*
+	 * we haven't heard a result. try the first path
+	 * and mark that we want a result back!
+	 */
+	click_chatter("Top5 %s: setting request_result flag\n",
+		      id().cc());
+	pk_out->set_flag(FLAG_TOP5_REQUEST_RESULT);
+
+      }
+      output(1).push(p_out);
       p_in->kill();
       return;
     }
 
     Path p = d->_paths[d->_current_path];
-    Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p);
+
+    Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p, 0);
+    click_ether *eh_out = (click_ether *) p_out->data();
+    struct srpacket *pk_out = (struct srpacket *) (eh_out+1);
+    pk_out->set_seq(d->_seq);
+
     output(1).push(p_out);
     p_in->kill();
     return;
@@ -701,7 +772,6 @@ Top5::push(int port, Packet *p_in)
       if (m != 0 && a != _ip && b != _ip) {
 	/* 
 	 * don't update the link for my neighbor
-	 * we'll do that below
 	 */
 	update_link(a,b,m);
       }
@@ -721,7 +791,6 @@ Top5::push(int port, Packet *p_in)
     }
 
     _arp_table->insert(neighbor, EtherAddress(eh->ether_shost));
-    update_link(_ip, neighbor, get_metric(neighbor));
     if(type == PT_QUERY){
       process_query(pk);
       
@@ -739,7 +808,12 @@ Top5::push(int port, Packet *p_in)
       }
       if(pk->next() == 0){
 	// I'm the ultimate consumer of this reply. Add to routing tbl.
-	got_reply(pk);
+	if (pk->flag(FLAG_TOP5_BEST_ROUTE)) {
+	  got_best_route_reply(pk);
+	  return;
+	} else {
+	  got_reply(pk);
+	}
       } else {
 	// Forward the reply.
 	forward_reply(pk);

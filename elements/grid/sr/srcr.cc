@@ -627,14 +627,8 @@ SRCR::push(int port, Packet *p_in)
     int metric = _link_table->get_route_metric(p);
 
     if (_link_table->valid_route(p)) {
-      Packet *p_out = _sr_forwarder->encap(p_in->data(), p_in->length(), p);
-      if (p_out) {
-	sent_packet = true;
-	output(1).push(p_out);
-      } else {
-	click_chatter("%s: couldn't encap new packet!\n",
-		      id().cc());
-      }
+      _sr_forwarder->send(p_in->data(), p_in->length(), p, 0);
+      sent_packet = true;
     }
 
     p_in->kill();

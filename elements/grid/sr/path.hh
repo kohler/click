@@ -30,6 +30,12 @@ operator==(const Path &p1, const Path &p2)
   return true;
 }
 
+inline bool
+operator!=(const Path &p1, const Path &p2)
+{
+  return (!(p1 == p2));
+}
+
 inline String path_to_string(const Path &p) 
 {
   StringAccum sa;

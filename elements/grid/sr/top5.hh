@@ -98,11 +98,13 @@ private:
   class Dst {
   public:
     IPAddress _ip;
+    uint32_t _seq;
     Vector<Path> _paths;
-    Vector<int> _count;
     int _current_path;
+    int _packets_sent_on_current_path;
     bool _started;
     bool _finished;
+    bool _message_back;
     struct timeval _current_path_start;
     int _best_path;
   };
@@ -185,6 +187,7 @@ private:
   void forward_query(Seen *s);
   void start_reply(Reply *r);
   void forward_reply(struct srpacket *pk);
+  void got_best_route_reply(struct srpacket *pk);
   void got_reply(struct srpacket *pk);
   void start_data(const u_char *data, u_long len, Vector<IPAddress> r);
   void send(WritablePacket *);

@@ -340,7 +340,7 @@ LinkTable::best_route(IPAddress dst)
   return route;
 }
 Vector<Vector<IPAddress> > 
-LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPAddress> route)
+LinkTable::update_routes(Vector<Path> routes, int size, Vector<IPAddress> route)
 {
   int x = 0;
   int y = 0;
@@ -375,16 +375,19 @@ LinkTable::update_routes(Vector<Vector<IPAddress> > routes, int size, Vector<IPA
   routes[x] = route;
   return routes;
 }
+
+String routes_to_string(Vector<Path> routes) {
+  StringAccum sa;
+  for (int x = 1; x < routes.size(); x++) {
+    sa << path_to_string(routes[x]).cc() << "\n";
+  }
+  return sa.take_string();
+}
 Vector <Vector <IPAddress> >
 LinkTable::top_n_routes(IPAddress dst, int n)
 {
   lt_assert(dst);
-  click_chatter("LinkTable %s: top_n_routes(%s, %d)\n",
-		id().cc(),
-		dst.s().cc(),
-		n);
-
-  Vector<Vector<IPAddress> > routes;
+  Vector<Path> routes;
 
   {
     Vector<IPAddress> route;
@@ -392,7 +395,6 @@ LinkTable::top_n_routes(IPAddress dst, int n)
     route.push_back(dst);
     routes = update_routes(routes, n, route);
   }
-  
   /* two hop */
   for (HTIter iter = _hosts.begin(); iter; iter++) {
     Vector<IPAddress> route;
@@ -437,6 +439,7 @@ LinkTable::top_n_routes(IPAddress dst, int n)
       }
     }
   }
+
   return routes;
 }
 

@@ -3,16 +3,21 @@
 #include <click/ipaddress.hh>
 
 
-enum SRCRPacketType { PT_QUERY = (1<<0),
-		      PT_REPLY = (1<<1),
-		      PT_DATA  = (1<<2),
-                      PT_GATEWAY = (1<<3)};
+enum SRCRPacketType { PT_QUERY = 0x01,
+		      PT_REPLY = 0x02,
+                      PT_TOP5_RESULT = 0x03,
+		      PT_DATA  = 0x04,
+                      PT_GATEWAY = 0x08,
+};
 
 
 
 enum SRCRPacketFlags {
   FLAG_ERROR = (1<<0),
-  FLAG_UPDATE = (1<<0),
+  FLAG_UPDATE = (1<<1),
+  FLAG_TOP5_REQUEST_RESULT = (1<<2),
+  FLAG_TOP5_BEST_ROUTE = (1<<3),
+  FLAG_SCHEDULE = (1<<4)
 };
 
 static const uint8_t _sr_version = 0x06;
@@ -81,6 +86,13 @@ struct srpacket {
     return _next;
   }
 
+
+  void set_seq(uint32_t n) {
+    _seq = htonl(n);
+  }
+  uint32_t seq() {
+    return ntohl(_seq);
+  }
   void set_next(uint8_t n) {
     _next = n;
   }
@@ -94,6 +106,18 @@ struct srpacket {
   uint16_t data_len() {
     return ntohs(_dlen);
   }
+
+
+  void set_flag(uint16_t f) {
+    uint16_t flags = ntohs(_flags);
+    _flags = htons(flags | f);
+  }
+  
+  bool flag(int f) {
+    int x = ntohs(_flags);
+    return x & f;
+  }
+
   uint16_t get_metric(int h) { 
     uint16_t *ndx = (uint16_t *) (this+1);
     return ndx[h + num_hops()*2];

@@ -138,8 +138,16 @@ SRForwarder::update_link(IPAddress from, IPAddress to, int metric)
 }
 
 
+
+void
+SRForwarder::send(const u_char *payload, u_long payload_len, Vector<IPAddress> r, int flags)
+{
+  Packet *p_out = encap(payload, payload_len, r, flags);
+  output(0).push(p_out);
+
+}
 Packet *
-SRForwarder::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r)
+SRForwarder::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> r, int flags)
 {
   int hops = r.size();
   int len = srpacket::len_with_data(hops, payload_len);
@@ -167,6 +175,7 @@ SRForwarder::encap(const u_char *payload, u_long payload_len, Vector<IPAddress> 
   }
   pk->set_num_hops(r.size());
   pk->set_next(1);
+  pk->set_flag(flags);
   int i;
   for(i = 0; i < hops; i++) {
     pk->set_hop(i, r[i]);
