@@ -95,7 +95,7 @@ Print::simple_action(Packet *p)
 
   // sa.reserve() must return non-null; we checked capacity above
   int len;
-  sprintf(sa.reserve(9), "%4d | %n", p->length(), &len);
+  len = sprintf(sa.reserve(9), "%4d | ", p->length());
   sa.forward(len);
 
   char *buf = sa.data() + sa.length();

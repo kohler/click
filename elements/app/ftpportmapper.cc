@@ -167,9 +167,8 @@ FTPPortMapper::simple_action(Packet *p)
   unsigned new_sport = ntohs(new_flow.sport());
   char buf[30];
   unsigned buflen;
-  sprintf(buf, "%d,%d,%d,%d,%d,%d%n", (new_saddr>>24)&255, (new_saddr>>16)&255,
-	  (new_saddr>>8)&255, new_saddr&255, (new_sport>>8)&255, new_sport&255,
-	  &buflen);
+  buflen = sprintf(buf, "%d,%d,%d,%d,%d,%d", (new_saddr>>24)&255, (new_saddr>>16)&255,
+	  (new_saddr>>8)&255, new_saddr&255, (new_sport>>8)&255, new_sport&255);
   click_chatter("%s", forward->s().cc());
   //click_chatter("%s", buf);
 

@@ -86,7 +86,7 @@ operator<<(StringAccum &sa, IPAddress ipa)
   const unsigned char *p = ipa.data();
   char buf[20];
   int amt;
-  sprintf(buf, "%d.%d.%d.%d%n", p[0], p[1], p[2], p[3], &amt);
+  amt = sprintf(buf, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
   sa.append(buf, amt);
   return sa;
 }

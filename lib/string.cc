@@ -104,7 +104,7 @@ String::String(uint64_t q)
 
 #endif
 
-#ifndef __KERNEL__
+#ifdef CLICK_USERLEVEL
 
 String::String(double d)
 {

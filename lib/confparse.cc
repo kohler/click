@@ -39,7 +39,7 @@
 # define CP_CONTEXT_ARG
 # define CP_PASS_CONTEXT
 #endif
-#ifndef CLICK_LINUXMODULE
+#ifdef CLICK_USERLEVEL
 # include <pwd.h>
 #endif
 #include <stdarg.h>
@@ -1696,7 +1696,7 @@ cp_des_cblock(const String &str, unsigned char *return_value)
 }
 #endif
 
-#ifndef CLICK_LINUXMODULE
+#ifdef CLICK_USERLEVEL
 bool
 cp_filename(const String &str, String *return_value)
 {
@@ -2148,7 +2148,7 @@ default_parsefunc(cp_value *v, const String &arg,
    }
 #endif
 
-#ifndef CLICK_LINUXMODULE
+#ifdef CLICK_USERLEVEL
    case cpiFilename:
     if (!cp_filename(arg, &v->v_string))
       errh->error("%s takes filename (%s)", argname, desc);
@@ -2624,7 +2624,7 @@ cp_va_parsev(const Vector<String> &args,
   // parse arguments
   char argname_buf[128];
   int argname_offset;
-  sprintf(argname_buf, "%s %n", argname, &argname_offset);
+  argname_offset = sprintf(argname_buf, "%s ", argname);
 
   for (int i = 0; i < npositional; i++) {
     cp_value *v = &cp_values[i];
@@ -2989,7 +2989,7 @@ cp_va_static_initialize()
 #ifdef HAVE_IPSEC
   cp_register_argtype(cpDesCblock, "DES cipher block", 0, default_parsefunc, default_storefunc, cpiDesCblock);
 #endif
-#ifndef CLICK_LINUXMODULE
+#ifdef CLICK_USERLEVEL
   cp_register_argtype(cpFilename, "filename", 0, default_parsefunc, default_storefunc, cpiFilename);
 #endif
 

@@ -136,7 +136,7 @@ IP6Address::unparse() const
   char *s = buf;
   int word, n;
   for (word = 0; word < 8 && _addr.s6_addr16[word] != 0; word++) {
-    sprintf(s, (word ? ":%X%n" : "%X%n"), ntohs(_addr.s6_addr16[word]), &n);
+    n = sprintf(s, (word ? ":%X" : "%X"), ntohs(_addr.s6_addr16[word]));
     s += n;
   }
   if (word == 0 || (word < 7 && _addr.s6_addr16[word+1] == 0)) {
@@ -147,7 +147,7 @@ IP6Address::unparse() const
       *s++ = ':';
   }
   for (; word < 8; word++) {
-    sprintf(s, ":%X%n", ntohs(_addr.s6_addr16[word]), &n);
+    n = sprintf(s, ":%X", ntohs(_addr.s6_addr16[word]));
     s += n;
   }
   *s++ = 0;
