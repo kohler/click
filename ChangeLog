@@ -1,3 +1,22 @@
+2003-02-24 Monday 20:38  Eddie Kohler <kohler@icir.org>
+
+	* include/click/driver.hh (1.2), lib/packageutils.cc (1.8): add
+	click_static_{initialize,cleanup}() functions, and
+	click_read_router(), taking over most of userlevel/click.cc's
+	functionality; this will make it easier to write other drivers
+
+2003-02-24 Monday 20:35  Eddie Kohler <kohler@icir.org>
+
+	* include/click/router.hh (1.44), lib/router.cc (1.140):
+	Router::Router() takes a configuration string argument, and add
+	Router::configuration_string() to return it; add more global
+	handlers ("config", "flatconfig", "list", "requirements")
+
+2003-02-24 Monday 20:33  Eddie Kohler <kohler@icir.org>
+
+	* include/click/lexer.hh (1.12), lib/lexer.cc (1.62): Lexer takes
+	an ErrorHandler at begin_parse, not at construction time
+
 2003-02-24 Monday 17:34  Eddie Kohler <kohler@icir.org>
 
 	* elements/ip/ipreassembler.cc (1.18), elements/ip6/ip6print.cc
