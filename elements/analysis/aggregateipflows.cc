@@ -15,7 +15,7 @@
 CLICK_DECLS
 
 AggregateIPFlows::AggregateIPFlows()
-    : Element(1, 1)
+    : Element(1, 1), _flowinfo_file(0)
 {
     MOD_INC_USE_COUNT;
 }
@@ -57,6 +57,7 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "UDP_TIMEOUT", cpSeconds, "timeout for UDP connections", &_udp_timeout,
 		    "REAP", cpSeconds, "garbage collection interval", &_gc_interval,
 		    "ICMP", cpBool, "handle ICMP errors?", &handle_icmp_errors,
+		    "FLOWINFO", cpFilename, "filename for flow info file", &_flowinfo_filename,
 		    0) < 0)
 	return -1;
     _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);
@@ -66,11 +67,24 @@ AggregateIPFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 int
-AggregateIPFlows::initialize(ErrorHandler *)
+AggregateIPFlows::initialize(ErrorHandler *errh)
 {
     _next = 1;
     _active_sec = _gc_sec = 0;
+    if (_flowinfo_filename == "-")
+	_flowinfo_file = stdout;
+    else if (_flowinfo_filename && !(_flowinfo_file = fopen(_flowinfo_filename.cc(), "w")))
+	return errh->error("%s: %s", _flowinfo_filename.cc(), strerror(errno));
+    else if (_flowinfo_file)
+	fprintf(_flowinfo_file, "!IPSummaryDump 1.1\n!creator \"AggregateIPFlows flow info file\"\n!data timestamp aggregate ip_src sport ip_dst dport ip_proto\n");
     return 0;
+}
+
+void
+AggregateIPFlows::cleanup(CleanupStage)
+{
+    if (_flowinfo_file && _flowinfo_file != stdout)
+	fclose(_flowinfo_file);
 }
 
 void
@@ -221,8 +235,12 @@ AggregateIPFlows::simple_action(Packet *p)
     SET_PAINT_ANNO(p, paint);
 
     // notify about the new flow if necessary
-    if (_next != old_next)
+    if (_next != old_next) {
 	notify(_next - 1, AggregateListener::NEW_AGG, p);
+	if (_flowinfo_file)
+	    fprintf(_flowinfo_file, "%ld.%06ld %u > %s %d %s %d %c\n", p->timestamp_anno().tv_sec, p->timestamp_anno().tv_usec, _next - 1, flow.saddr().s().cc(), ntohs(flow.sport()), flow.daddr().s().cc(), ntohs(flow.dport()), (iph->ip_p == IP_PROTO_TCP ? 'T' : 'U'));
+    }
+    
     // GC if necessary
     if (_active_sec >= _gc_sec)
 	reap();

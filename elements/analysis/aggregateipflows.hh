@@ -67,6 +67,10 @@ aggregate annotation corresponding to that connection. ICMP error packets get
 paint annotations equal to 2 plus the paint color of the encapsulated packet.
 Default is false.
 
+=item FLOWINFO
+
+Filename. If provided, output information about each flow to that filename.
+
 =back
 
 AggregateIPFlows is an AggregateNotifier, so AggregateListeners can request
@@ -89,9 +93,10 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     const char *processing() const	{ return "a/ah"; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
 
     Packet *simple_action(Packet *);
-    
+
   private:
 
     struct FlowInfo {
@@ -124,6 +129,9 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
 
     bool _handle_icmp_errors : 1;
 
+    FILE *_flowinfo_file;
+    String _flowinfo_filename;
+    
     void clean_map(Map &, uint32_t, uint32_t);
     void reap();
     const click_ip *icmp_encapsulated_header(const Packet *) const;
