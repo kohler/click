@@ -1,3 +1,12 @@
+2005-03-07 Monday 18:30  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.32), elements/ip/directiplookup.hh (1.12),
+	elements/ip/iproutetable.hh (1.19), elements/ip/lineariplookup.hh
+	(1.15), elements/ip/lookupiproute.hh (1.28),
+	elements/ip/radixiplookup.hh (1.18), elements/ip/sortediplookup.cc
+	(1.11), elements/ip/sortediplookup.hh (1.6): docuemntation updates:
+	include Markos performance comparison
+
 2005-03-06 Sunday 18:32  Max Krohn <krohn@mit.edu>
 
 	* conf/click-mkclgw.pl (1.13): both internal and external Eth
