@@ -20,16 +20,19 @@
  * Returns or sets the queue's capacity.
  * =h drops read-only
  * Returns the number of packets dropped by the Queue so far.
- * =a RED
+ * =a RED FrontDropQueue
  */
 
-class Storage { protected:
+class Storage {
 
   int _capacity;
   int _head;
   int _tail;
 
   int _empty_jiffies;
+
+  friend class Queue;
+  friend class FrontDropQueue;
   
  public:
 
@@ -52,6 +55,8 @@ class Queue : public Element, public Storage {
 
   int next_i(int i) const		{ return (i!=_capacity ? i+1 : 0); }
   int prev_i(int i) const		{ return (i!=0 ? i-1 : _capacity); }
+
+  friend class FrontDropQueue;
   
  public:
   

@@ -110,23 +110,23 @@ Queue::take_state(Element *e, ErrorHandler *errh)
     errh->error("already have packets enqueued, can't take state");
     return;
   }
-  
-  _tail = _capacity;
-  int i = _capacity, j = q->_tail;
-  while (i > 0 && j != q->_head) {
-    i--;
-    j = q->prev_i(j);
+
+  _head = 0;
+  int i = 0, j = q->_head;
+  while (i < _capacity && j != q->_tail) {
     _q[i] = q->_q[j];
+    i++;
+    j = q->next_i(j);
   }
-  _head = i;
+  _tail = i;
   _max_length = size();
 
-  if (j != q->_head)
+  if (j != q->_tail)
     errh->warning("some packets lost (old length %d, new capacity %d)",
 		  q->size(), _capacity);
-  while (j != q->_head) {
-    j = q->prev_i(j);
+  while (j != q->_tail) {
     q->_q[j]->kill();
+    j = q->next_i(j);
   }
   q->_head = q->_tail = 0;
 }
