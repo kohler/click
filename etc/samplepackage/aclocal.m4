@@ -615,3 +615,30 @@ int main(int argc, char *argv[]) {
     AC_DEFINE_UNQUOTED(CLICK_BYTE_ORDER, $ac_cv_endian)
     AC_CHECK_HEADERS(byteswap.h)
 ])
+
+
+dnl
+dnl CLICK_CHECK_ADDRESSABLE_VA_LIST
+dnl Checks whether the va_list type is addressable.
+dnl
+
+AC_DEFUN([CLICK_CHECK_ADDRESSABLE_VA_LIST], [
+    AC_LANG_CPLUSPLUS
+    AC_CACHE_CHECK([for addressable va_list type], 
+	ac_cv_va_list_addr,
+	[AC_TRY_COMPILE([#include <cstdarg>
+void f(va_list *) {
+}
+void g(va_list val) {
+    f(&val);
+}
+void h(int a, ...) {
+    va_list val;
+    va_start(val, a);
+    g(val);
+    va_end(val);
+}], [h(2, 3, 4);], ac_cv_va_list_addr=yes, ac_cv_va_list_addr=no)])
+    if test "x$ac_cv_va_list_addr" = xyes; then
+	AC_DEFINE(HAVE_ADDRESSABLE_VA_LIST)
+    fi
+])

@@ -629,13 +629,15 @@ AC_DEFUN([CLICK_CHECK_ADDRESSABLE_VA_LIST], [
 	[AC_TRY_COMPILE([#include <cstdarg>
 void f(va_list *) {
 }
-void g(int a, ...) {
+void g(va_list val) {
+    f(&val);
+}
+void h(int a, ...) {
     va_list val;
     va_start(val, a);
-    f(&val);
+    g(val);
     va_end(val);
-}
-], [g(2, 3, 4);], ac_cv_va_list_addr=yes, ac_cv_va_list_addr=no)])
+}], [h(2, 3, 4);], ac_cv_va_list_addr=yes, ac_cv_va_list_addr=no)])
     if test "x$ac_cv_va_list_addr" = xyes; then
 	AC_DEFINE(HAVE_ADDRESSABLE_VA_LIST)
     fi
