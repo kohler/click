@@ -21,7 +21,7 @@ CLICK_DECLS
  * TYPE and CODE may be integers between 0 and 255 or mnemonic names; CODE
  * defaults to 0. Valid named TYPEs are `unreachable' [3], `sourcequench' [4],
  * `redirect' [5], `timeexceeded' [11], and `parameterproblem' [12]. Valid
- * named CODEs are `net' [0], `host' [1], `proto' [2], `port' [3], and
+ * named CODEs are `net' [0], `host' [1], `protocol' [2], `port' [3], and
  * `needfrag' [4] for `unreachable'; `net' [0] and `host' [1] for `redirect';
  * `transit' [0] and `reassembly' [1] for `timeexceeded'; and `erroratptr'
  * [0], `missingopt' [1], and `length' [2] for `parameterproblem'.
