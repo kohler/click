@@ -346,7 +346,6 @@ ControlSocket::selected(int fd)
 
     fd = new_fd;
     _out_texts[new_fd] = "Click::ControlSocket/" + String(protocol_version) + "\r\n";
-    message(fd, CSERR_OK, "Hello! Ready for commands");
   }
 
   // find file descriptor

@@ -86,8 +86,11 @@ Version 1.1
 ** Fixed ToLinux: now calls ptype_dispatch inside start_bh_atomic() and
    end_bh_atomic().
 
-** Modified ToDevice: ToDevice now sends linux packets if device is idle. This
-   prevents click from starving out packets sent by other processes or Linux.
+** Modified kernel ToDevice: ToDevice now sends Linux's packets when the
+   device is idle. This prevents Click from starving out packets sent by
+   other processes or Linux.
+
+** Improved Classifier optimizations.
 
 ** Radio elements are not compiled by default.
 
