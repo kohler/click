@@ -10220,11 +10220,11 @@ test -z "$INSTALL_DATA" && INSTALL_DATA='${INSTALL} -m 644'
 echo $ECHO_N "checking whether install accepts -C... $ECHO_C" >&6
     echo X > conftest.1
     if $INSTALL -C conftest.1 conftest.2 >/dev/null 2>&1; then
-	INSTALL_IF_CHANGED="$INSTALL -C"
+	INSTALL_IF_CHANGED='$(INSTALL) -C'
 	echo "$as_me:$LINENO: result: yes" >&5
 echo "${ECHO_T}yes" >&6
     else
-	INSTALL_IF_CHANGED="$INSTALL"
+	INSTALL_IF_CHANGED='$(INSTALL)'
 	echo "$as_me:$LINENO: result: no" >&5
 echo "${ECHO_T}no" >&6
     fi

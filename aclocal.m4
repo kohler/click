@@ -348,10 +348,10 @@ AC_DEFUN([CLICK_PROG_INSTALL], [
     AC_MSG_CHECKING(whether install accepts -C)
     echo X > conftest.1
     if $INSTALL -C conftest.1 conftest.2 >/dev/null 2>&1; then
-	INSTALL_IF_CHANGED="$INSTALL -C"
+	INSTALL_IF_CHANGED='$(INSTALL) -C'
 	AC_MSG_RESULT(yes)
     else
-	INSTALL_IF_CHANGED="$INSTALL"
+	INSTALL_IF_CHANGED='$(INSTALL)'
 	AC_MSG_RESULT(no)
     fi
     rm -f conftest.1 conftest.2
