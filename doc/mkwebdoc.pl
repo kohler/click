@@ -56,7 +56,11 @@ while (<IN>) {
     last if (/^\.SH \"ALPHABETICAL/);
 }
 push @{$esections[-1]}, scalar(@elements);
-@ealpha = sort { lc($a) cmp lc($b) } @elements;
+while (<IN>) {
+    push @ealpha, $1 if /^\.M (.*) n/ && $cocked;
+    $cocked = ($_ =~ /^\.TP/);
+}
+@ealpha = sort { lc($a) cmp lc($b) } @ealpha;
 close IN;
 
 open(IN, "$WEBDIR/index.html") || die "$WEBDIR/index.html: $!\n";
