@@ -288,10 +288,9 @@ CompoundElementClassT::finish(ErrorHandler *errh)
     if (!errh)
 	errh = ErrorHandler::silent_handler();
 
-    int einput = _router->eindex("input");
-    if (einput >= 0) {
-	_ninputs = _router->element(einput)->noutputs();
-	if (_router->element(einput)->ninputs())
+    if (ElementT *einput = _router->element("input")) {
+	_ninputs = einput->noutputs();
+	if (einput->ninputs())
 	    errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", name_cc());
 
 	if (_ninputs) {
@@ -305,10 +304,9 @@ CompoundElementClassT::finish(ErrorHandler *errh)
     } else
 	_ninputs = 0;
 
-    int eoutput = _router->eindex("output");
-    if (eoutput >= 0) {
-	_noutputs = _router->element(eoutput)->ninputs();
-	if (_router->element(eoutput)->noutputs())
+    if (ElementT *eoutput = _router->element("output")) {
+	_noutputs = eoutput->ninputs();
+	if (eoutput->noutputs())
 	    errh->lerror(_landmark, "`%s' pseudoelement `output' may only be used as input", name_cc());
 
 	if (_noutputs) {
