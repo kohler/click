@@ -13,3 +13,21 @@ For this version of Linux	Use this patch
 Patch Linux using a command like this:
 % cd LINUXDIR
 % patch -p0 < CLICKDIR/etc/linux-VERSION-patch
+
+
+WiFi patches
+------------
+
+The patch `linux-2.4.20-wifi-patch' adds the Click WiFi extensions to
+Linux 2.4.20.  It has three main effects:
+
+1. adds new click_wifi module;
+2. modifies airo.c Cisco/Aironet driver to support some Click WiFi extensions;
+3. adds the HostAP driver for Prism cards, including Click WiFi modifications.
+
+Apply the patch in the same way as the regular Click patch:
+% cd LINUXDIR
+% patch -p0 < CLICKDIR/etc/linux-VERSION-wifi-patch
+
+This patch adds new configuration options for the HostAP drivers,
+which can be enabled when configuring your kernel.
