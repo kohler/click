@@ -114,8 +114,7 @@ class IPRateMonitor : public Element { public:
 
   void set_resettime();
   void update_rates(Packet *, bool forward);
-  void update(IPAddress dstaddr, IPAddress srcaddr, 
-              int val, Packet *p, bool forward);
+  void update(IPAddress saddr, int val, Packet *p, bool forward);
 
   String print(Stats *s, String ip = "");
 
@@ -132,10 +131,10 @@ class IPRateMonitor : public Element { public:
 // Dives in tables based on a and raises all rates by val.
 //
 inline void
-IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
+IPRateMonitor::update(IPAddress saddr, int val,
 		      Packet *p, bool forward)
 {
-  unsigned int addr = paddr.addr();
+  unsigned int addr = saddr.addr();
   int now = MyEWMA::now();
 
   struct Stats *s = _base;
@@ -161,13 +160,19 @@ IPRateMonitor::update(IPAddress paddr, IPAddress, int val,
   p->set_fwd_rate_anno(fwd_rate);
   int rev_rate = c->rev_rate.average(); 
   p->set_rev_rate_anno(rev_rate);
+  /*
+  click_chatter("ipratemon (%s -> %s) %d >> %d",
+              IPAddress(((click_ip *)(p->data() + _offset))->ip_src.s_addr).s().cc(),
+              IPAddress(((click_ip *)(p->data() + _offset))->ip_dst.s_addr).s().cc(),
+              fwd_rate, rev_rate);
+  */
 
   // did value get larger than THRESH in the specified period?
   if (fwd_rate >= _thresh || rev_rate >= _thresh) {
     if (bitshift < MAX_SHIFT) {
       c->next_level = new Stats(this, c->fwd_rate, c->rev_rate);
       if(!c->next_level) {
-        // XXX: Clean up and try again
+        // XXX: Clean up
       }
     }
   }
@@ -179,9 +184,9 @@ IPRateMonitor::update_rates(Packet *p, bool forward)
   click_ip *ip = (click_ip *) (p->data() + _offset);
   int val = (_pb == COUNT_PACKETS) ? 1 : ip->ip_len;
   if (forward)
-    update(IPAddress(ip->ip_src), IPAddress(ip->ip_dst), val, p, true);
+    update(IPAddress(ip->ip_src), val, p, true);
   else
-    update(IPAddress(ip->ip_dst), IPAddress(ip->ip_src), val, p, false);
+    update(IPAddress(ip->ip_dst), val, p, false);
 }
 
 #endif /* IPRATEMON_HH */
