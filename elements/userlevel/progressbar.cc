@@ -20,21 +20,12 @@
 #include "progressbar.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
-#include <click/standard/scheduleinfo.hh>
 #include <click/error.hh>
-#include <click/glue.hh>
-#include <click/handlercall.hh>
-#include <click/packet_anno.hh>
 #include <click/straccum.hh>
-#include "fakepcap.hh"
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#ifdef ALLOW_MMAP
-#include <sys/mman.h>
-#endif
+#ifdef HAVE_TERMIO_H
 #include <termio.h>
+#endif
+#include <termios.h>
 
 ProgressBar::ProgressBar()
     : _timer(this)
