@@ -232,9 +232,8 @@ ToDevice::run_timer()
 {
   if (_debug) {
     click_chatter("%s %{element} %s at %s\n",
-		  this,
-		  __func__,
-		  Timestamp::now().unparse().cc());
+		  Timestamp::now().unparse().cc(), this, __func__);
+
   }
 
   if (_q || _signal) {
