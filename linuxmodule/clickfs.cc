@@ -147,7 +147,7 @@ click_inode(struct super_block *sb, ino_t ino)
 
     if (INO_ISHANDLER(ino)) {
 	int hi = INO_HANDLERNO(ino);
-	if (const Router::Handler *h = Router::handler(click_router, hi)) {
+	if (const Handler *h = Router::handler(click_router, hi)) {
 	    inode->i_mode = S_IFREG | (h->read_visible() ? click_mode_r : 0) | (h->write_visible() ? click_mode_w : 0);
 	    inode->i_uid = inode->i_gid = 0;
 	    inode->i_op = &click_handler_inode_ops;
@@ -451,7 +451,7 @@ increase_handler_strings()
 }
 
 static int
-next_handler_string(const Router::Handler *h)
+next_handler_string(const Handler *h)
 {
     SPIN_LOCK(&handler_strings_lock, __FILE__, __LINE__);
     if (handler_strings_free < 0)
@@ -489,7 +489,7 @@ handler_open(struct inode *inode, struct file *filp)
     
     int retval = 0;
     int stringno = -1;
-    const Router::Handler *h;
+    const Handler *h;
     
     if ((reading && writing)
 	|| (filp->f_flags & O_APPEND)
@@ -531,7 +531,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
     if (handler_strings_info[stringno].flags & (HANDLER_REREAD | HANDLER_NEED_READ)) {
 	LOCK_CONFIG_READ();
 	int retval;
-	const Router::Handler *h;
+	const Handler *h;
 	struct inode *inode = filp->f_dentry->d_inode;
 	if (inode_out_of_date(inode)
 	    || !(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino))))
@@ -616,7 +616,7 @@ handler_flush(struct file *filp)
 	LOCK_CONFIG_WRITE();
 	
 	struct inode *inode = filp->f_dentry->d_inode;
-	const Router::Handler *h;
+	const Handler *h;
 	
 	if (inode_out_of_date(inode)
 	    || !(h = Router::handler(click_router, INO_HANDLERNO(inode->i_ino)))

@@ -71,25 +71,25 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 	    /* ignore empty arguments */;
 	else if (word == "quit" || word == "stop") {
 	    if (i < conf.size() - 1 || text)
-		errh->warning("arguments after `%s' directive ignored", word.cc());
+		errh->warning("arguments after '%s' directive ignored", word.cc());
 	    add(STOP_MARKER, "", "", next_timeout);
 	    break;
 	} else if (word == "loop") {
 	    if (i < conf.size() - 1 || text)
-		errh->warning("arguments after `loop' directive ignored");
+		errh->warning("arguments after 'loop' directive ignored");
 	    add(LOOP_MARKER, "", "", next_timeout);
 	    break;
 	} else if (word == "pause") {
 	    add(PAUSE_MARKER, "", "", next_timeout);
 	    next_timeout = 0;
 	} else if (word == "read" || word == "print") {
-	    if (cp_handler(text, this, &e, &hname, errh)) {
+	    if (cp_handler_name(text, &e, &hname, this, errh)) {
 		add(e, hname, String::stable_string(READ_MARKER), next_timeout);
 		next_timeout = 0;
 	    }
 	} else if (word == "write") {
 	    word = cp_pop_spacevec(text);
-	    if (cp_handler(word, this, &e, &hname, errh)) {
+	    if (cp_handler_name(word, &e, &hname, this, errh)) {
 		add(e, hname, text, next_timeout);
 		next_timeout = 0;
 	    }
@@ -97,11 +97,11 @@ PokeHandlers::configure(Vector<String> &conf, ErrorHandler *errh)
 	    if (cp_seconds_as_milli(text, &timeout))
 		next_timeout += timeout;
 	    else
-		errh->error("missing time in `wait TIME'");
+		errh->error("missing time in 'wait TIME'");
 	} else if (cp_seconds_as_milli(word, &timeout) && !text)
 	    next_timeout += timeout;
 	else
-	    errh->error("unknown directive `%#s'", word.cc());
+	    errh->error("unknown directive '%#s'", word.cc());
     }
 
     if (_timer.initialized()) {
@@ -191,23 +191,23 @@ PokeHandlers::timer_hook(Timer *, void *thunk)
 	    break;
 	}
 	
-	const Router::Handler *h = Router::handler(he, hname);
+	const Handler *h = Router::handler(he, hname);
 	if (!h)
-	    errh->error("%s: no handler `%s'", poke->id().cc(), Router::Handler::unparse_name(he, hname).cc());
+	    errh->error("%s: no handler '%s'", poke->id().cc(), Handler::unparse_name(he, hname).cc());
 	else if (poke->_h_value[hpos].data() == READ_MARKER) {
 	    if (h->readable()) {
 		ErrorHandler *errh = ErrorHandler::default_handler();
 		String value = h->call_read(he);
 		errh->message("%s:\n%s\n", h->unparse_name(he).cc(), value.cc());
 	    } else
-		errh->error("%s: no read handler `%s'", poke->id().cc(), h->unparse_name(he).cc());
+		errh->error("%s: no read handler '%s'", poke->id().cc(), h->unparse_name(he).cc());
 	} else {
 	    if (h->writable()) {
 		ContextErrorHandler cerrh
-		    (errh, "In write handler `" + h->unparse_name(he) + "':");
+		    (errh, "In write handler '" + h->unparse_name(he) + "':");
 		h->call_write(poke->_h_value[hpos], he, &cerrh);
 	    } else
-		errh->error("%s: no write handler `%s'", poke->id().cc(), h->unparse_name(he).cc());
+		errh->error("%s: no write handler '%s'", poke->id().cc(), h->unparse_name(he).cc());
 	}
 	hpos++;
     } while (hpos < poke->_h_timeout.size() && poke->_h_timeout[hpos] == 0);

@@ -23,6 +23,7 @@
 #include <click/error.hh>
 #include <click/router.hh>
 #include <click/straccum.hh>
+#include <click/handlercall.hh>
 CLICK_DECLS
 
 DriverManager::DriverManager()
@@ -63,58 +64,50 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
     int before = errh->nerrors();
 
     for (int i = 0; i < conf.size(); i++) {
-	Vector<String> words;
-	cp_spacevec(conf[i], words);
-
-	String insn_name;
-	if (words.size() == 0)	// ignore as benign
+	String insn_name = cp_pop_spacevec(conf[i]);
+	if (!insn_name)		// ignore as benign
 	    /* nada */;
 
-	else if (!cp_keyword(words[0], &insn_name))
+	else if (!cp_keyword(insn_name, &insn_name))
 	    errh->error("missing or bad instruction name; should be 'INSNNAME [ARG]'");
     
 	else if (insn_name == "wait_stop" || insn_name == "wait_pause"
-		 || (insn_name == "wait" && words.size() == 1)) {
+		 || (insn_name == "wait" && !conf[i])) {
 	    unsigned n = 1;
-	    if (words.size() > 2 || (words.size() == 2 && !cp_unsigned(words[1], &n)))
-		errh->error("expected '%s [COUNT]'", insn_name.cc());
-	    else
+	    if (!conf[i] || cp_unsigned(conf[i], &n))
 		add_insn(INSN_WAIT_STOP, n, 0);
-
-	} else if (insn_name == "write" || insn_name == "write_skip" || insn_name == "call") {
-	    int insn = (insn_name == "write_skip" ? INSN_WRITE_SKIP : INSN_WRITE);
-	    if (words.size() == 2)
-		add_insn(insn, 0, 0, words[1]);
-	    else if (words.size() == 3)
-		add_insn(insn, 0, 0, words[1] + " " + cp_unquote(words[2]));
-	    else if (words.size() > 3)
-		add_insn(insn, 0, 0, cp_unspacevec(words.begin()+1, words.end()));
 	    else
-		errh->error("expected '%s ELEMENT.HANDLER [ARGS]'", insn_name.cc());
+		errh->error("expected '%s [COUNT]'", insn_name.c_str());
+
+	} else if (insn_name == "write" || insn_name == "call") {
+	    add_insn(INSN_WRITE, 0, 0, conf[i]);
+
+	} else if (insn_name == "write_skip") {
+	    add_insn(INSN_WRITE_SKIP, 0, 0, conf[i]);
 
 	} else if (insn_name == "read" || insn_name == "print") {
-	    if (words.size() == 2)
-		add_insn(INSN_READ, 0, 0, words[1]);
-	    else
-		errh->error("expected '%s ELEMENT.HANDLER'", insn_name.cc());
+	    add_insn(INSN_READ, 0, 0, conf[i]);
 
 #if CLICK_USERLEVEL || CLICK_TOOL
 	} else if (insn_name == "save" || insn_name == "append") {
-	    if (words.size() == 3)
-		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, 0, words[1] + " " + cp_unquote(words[2]));
+	    String handler, filename;
+	    if ((handler = cp_pop_spacevec(conf[i]))
+		&& cp_filename(cp_pop_spacevec(conf[i]), &filename)
+		&& !conf[i])
+		add_insn((insn_name == "save" ? INSN_SAVE : INSN_APPEND), 0, 0, handler + " " + filename);
 	    else
 		errh->error("expected '%s ELEMENT.HANDLER FILE'", insn_name.c_str());
 #endif
 	    
 	} else if (insn_name == "wait_time" || insn_name == "wait_for" || insn_name == "wait") {
 	    timeval tv;
-	    if (words.size() == 2 && cp_timeval(words[1], &tv))
+	    if (cp_timeval(conf[i], &tv))
 		add_insn(INSN_WAIT_TIME, tv.tv_sec, tv.tv_usec);
 	    else
 		errh->error("expected '%s TIME'", insn_name.cc());
 
 	} else if (insn_name == "stop" || insn_name == "quit") {
-	    if (words.size() == 1) {
+	    if (!conf[i]) {
 		if (i < conf.size() - 1)
 		    errh->warning("arguments after '%s' ignored", insn_name.cc());
 		add_insn(INSN_STOP, 0);
@@ -123,7 +116,7 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 
 #if CLICK_USERLEVEL || CLICK_TOOL
 	} else if (insn_name == "loop") {
-	    if (words.size() == 1)
+	    if (!conf[i])
 		add_insn(INSN_GOTO, 0);
 	    else
 		errh->error("expected '%s'", insn_name.cc());
@@ -148,28 +141,32 @@ DriverManager::initialize(ErrorHandler *errh)
     int before = errh->nerrors();
     
     // process 'read' and 'write' instructions
-    Element *e;
     for (int i = 0; i < _insns.size(); i++) {
-	String text;
-	bool read;
+	int flags;
 	switch (_insns[i]) {
 	  case INSN_WRITE:
 	  case INSN_WRITE_SKIP:
-	    read = false;
+	    flags = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_VALUE;
 	    goto parse;
 	  case INSN_READ:
+	    flags = HandlerCall::CHECK_READ;
+	    goto parse;
 #if CLICK_USERLEVEL || CLICK_TOOL
 	  case INSN_SAVE:
 	  case INSN_APPEND:
-#endif
-	    read = true;
+	    flags = HandlerCall::CHECK_READ | HandlerCall::ALLOW_VALUE;
 	    goto parse;
-	  parse:
-	    if (cp_handler(cp_pop_spacevec(_args3[i]), this, read, !read, &e, &_args2[i], errh))
-		_args[i] = e->eindex();
-	    else
-		_insns[i] = INSN_IGNORE;
-	    break;
+#endif
+	  parse: {
+		HandlerCall hc(_args3[i]);
+		if (hc.initialize(flags, this, errh) >= 0) {
+		    _args[i] = hc.element()->eindex();
+		    _args2[i] = (intptr_t) (hc.handler());
+		    _args3[i] = hc.value();
+		} else
+		    _insns[i] = INSN_IGNORE;
+		break;
+	    }
 	}
     }
 
@@ -203,7 +200,7 @@ DriverManager::step_insn()
       case INSN_WRITE: {
 	  StringAccum sa;
 	  Element *e = router()->element(_args[_insn_pos]);
-	  const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	  const Handler *h = (const Handler*) _args2[_insn_pos];
 	  sa << "While calling '" << h->unparse_name(e) << "' from " << declaration() << ":";
 	  ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
 	  h->call_write(_args3[_insn_pos], e, &cerrh);
@@ -211,7 +208,7 @@ DriverManager::step_insn()
       }
       case INSN_READ: {
 	  Element *e = router()->element(_args[_insn_pos]);
-	  const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	  const Handler *h = (const Handler*) _args2[_insn_pos];
 	  String result = h->call_read(e);
 	  ErrorHandler *errh = ErrorHandler::default_handler();
 	  errh->message("%s:\n%s\n", h->unparse_name(e).cc(), result.cc());
@@ -221,7 +218,7 @@ DriverManager::step_insn()
       case INSN_SAVE:
       case INSN_APPEND: {
 	  Element *e = router()->element(_args[_insn_pos]);
-	  const Router::Handler *h = router()->handler(_args2[_insn_pos]);
+	  const Handler *h = (const Handler*) _args2[_insn_pos];
 	  String result = h->call_read(e);
 	  FILE *f;
 	  if (_args3[_insn_pos] == "-")

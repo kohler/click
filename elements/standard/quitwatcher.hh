@@ -3,6 +3,7 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 CLICK_DECLS
+class Handler;
 
 /*
 =c
@@ -37,8 +38,8 @@ class QuitWatcher : public Element { public:
 
  private:
     
-  Vector<Element *> _e;
-  Vector<int> _handlers;
+  Vector<Element*> _e;
+  Vector<const Handler*> _handlers;
   Timer _timer;
   
 };

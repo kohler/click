@@ -4,6 +4,7 @@
 CLICK_DECLS
 class ControlSocketErrorHandler;
 class Timer;
+class Handler;
 
 /*
 =c
@@ -244,7 +245,7 @@ class ControlSocket : public Element { public:
 			ControlSocketErrorHandler *);
   
   String proxied_handler_name(const String &) const;
-  int parse_handler(int fd, const String &, Element **);
+  const Handler* parse_handler(int fd, const String &, Element **);
   int read_command(int fd, const String &);
   int write_command(int fd, const String &, const String &);
   int check_command(int fd, const String &, bool write);

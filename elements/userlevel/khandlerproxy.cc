@@ -147,7 +147,7 @@ KernelHandlerProxy::star_write_handler(const String &str, Element *e, void *, Er
     KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
     if (khp->check_handler_name(str, errh) < 0)
 	return -1;
-    Router::Handler* h = khp->router()->add_blank_handler(e, str);
+    Handler* h = khp->router()->add_blank_handler(e, str);
     h->set_read(read_handler, (void*) h);
     h->set_write(write_handler, (void*) h);
     return Router::hindex(e, str);
@@ -182,7 +182,7 @@ String
 KernelHandlerProxy::read_handler(Element *e, void *thunk)
 {
   KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
-  const Router::Handler* h = static_cast<const Router::Handler*>(thunk);
+  const Handler* h = static_cast<const Handler*>(thunk);
   const String& hname = h->name();
 
   errno = 0;
@@ -204,7 +204,7 @@ int
 KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, ErrorHandler *errh)
 {
   KernelHandlerProxy *khp = static_cast<KernelHandlerProxy *>(e);
-  const Router::Handler* h = static_cast<const Router::Handler*>(thunk);
+  const Handler* h = static_cast<const Handler*>(thunk);
   const String& hname = h->name();
 
   String fn = handler_name_to_file_name(hname);
@@ -241,8 +241,8 @@ int
 KernelHandlerProxy::llrpc(unsigned command, void *data)
 {
   if (command == CLICK_LLRPC_PROXY) {
-    click_llrpc_proxy_st *proxy = static_cast<click_llrpc_proxy_st *>(data);
-    const Router::Handler *h = router()->handler(proxy->proxied_handler_index);
+    click_llrpc_proxy_st* proxy = static_cast<click_llrpc_proxy_st*>(data);
+    const Handler* h = static_cast<const Handler*>(proxy->proxied_handler);
     
     String fn = handler_name_to_file_name(h->name());
     int fd = open(fn.c_str(), O_RDONLY);

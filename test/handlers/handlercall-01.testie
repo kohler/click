@@ -1,0 +1,13 @@
+%script
+
+click -e '
+InfiniteSource(LIMIT 100, STOP true)
+  -> Counter(COUNT_CALL 5 s.switch 1)
+  -> s :: Switch
+  -> c :: Counter
+  -> d :: Discard
+s[1] -> d
+' -h c.count
+
+%expect stdout
+4

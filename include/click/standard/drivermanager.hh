@@ -65,16 +65,10 @@ defaults to one.
 Call a read handler and print the result.  HANDLER will either be a global
 handler, such as 'C<config>', or an element handler, such as 'C<c.count>'.
 
-=item 'C<write> HANDLER [ARG]'
+=item 'C<write> HANDLER [ARG...]'
 
-Call a write handler, passing it ARG; then go to the next instruction.  ARG, a
-string, is unquoted before being passed to HANDLER.  ARG may be omitted, in
-which case the handler is passed the empty string.
-
-=item 'C<write> HANDLER ARG ARG...'
-
-Like 'C<write>', but pass the ARGs as is (without removing a level of
-quoting).
+Call a write handler, then go to the next instruction.  ARGs, if supplied, are
+passed to the handler as is.
 
 =item 'C<write_skip> HANDLER [ARG]'
 

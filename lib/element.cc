@@ -639,7 +639,7 @@ read_handlers_handler(Element *e, void *)
     Router::element_hindexes(e, hindexes);
     StringAccum sa;
     for (int* hip = hindexes.begin(); hip < hindexes.end(); hip++) {
-	const Router::Handler* h = Router::handler(e, *hip);
+	const Handler* h = Router::handler(e, *hip);
 	if (h->read_visible() || h->write_visible())
 	    sa << h->name() << '\t' << (h->read_visible() ? "r" : "") << (h->write_visible() ? "w" : "") << '\n';
     }

@@ -193,7 +193,7 @@ ClickIno::calculate_handler_conflicts(int parent_elementno)
     Router::element_hindexes(Router::element(_router, parent_elementno), his);
     Vector<String> names;
     for (int* hip = his.begin(); hip < his.end(); hip++) {
-	const Router::Handler* h = Router::handler(_router, *hip);
+	const Handler* h = Router::handler(_router, *hip);
 	if (h->visible())
 	    names.push_back(h->name());
     }
@@ -365,7 +365,7 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	Vector<int> his;
 	Router::element_hindexes(element, his);
 	while (f_pos >= RD_HOFF && f_pos < his.size() + RD_HOFF) {
-	    const Router::Handler* h = Router::handler(_router, his[f_pos - RD_HOFF]);
+	    const Handler* h = Router::handler(_router, his[f_pos - RD_HOFF]);
 	    if (h->visible())
 		FILLDIR(h->name().data(), h->name().length(), INO_MKHANDLER(elementno, his[f_pos - RD_HOFF]), DT_REG, f_pos, thunk);
 	    f_pos++;

@@ -147,8 +147,8 @@ static int
 call_read_handler(Element *e, String handler_name,
 		  bool print_name, ErrorHandler *errh)
 {
-  const Router::Handler *rh = Router::handler(e, handler_name);
-  String full_name = Router::Handler::unparse_name(e, handler_name);
+  const Handler *rh = Router::handler(e, handler_name);
+  String full_name = Handler::unparse_name(e, handler_name);
   if (!rh || !rh->visible())
     return errh->error("no '%s' handler", full_name.cc());
   else if (!rh->read_visible())
@@ -174,7 +174,7 @@ expand_handler_elements(const String &pattern, const String &handler_name,
     const String &id = router->ename(i);
     if (glob_match(id, pattern)) {
       any_elements = true;
-      if (const Router::Handler *h = Router::handler(router->element(i), handler_name))
+      if (const Handler *h = Router::handler(router->element(i), handler_name))
 	if (h->read_visible())
 	  elements.push_back(router->element(i));
     }

@@ -22,8 +22,9 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/straccum.hh>
+#include <click/handlercall.hh>
 #ifdef HAVE_TERMIO_H
-#include <termio.h>
+# include <termio.h>
 #endif
 #include <termios.h>
 #include <unistd.h>
@@ -79,10 +80,10 @@ ProgressBar::initialize(ErrorHandler *errh)
     _first_pos_h = words.size();
     cp_spacevec(position_str, words);
     _es.assign(words.size(), 0);
-    _his.assign(words.size(), -1);
+    _hs.assign(words.size(), 0);
 
     for (int i = 0; i < words.size(); i++)
-	if (!cp_handler(words[i], this, true, false, &_es[i], &_his[i], errh))
+	if (!cp_handler(words[i], HandlerCall::CHECK_READ, &_es[i], &_hs[i], this, errh))
 	    return -1;
 
     if (!isatty(STDERR_FILENO) || (check_stdout && isatty(STDOUT_FILENO)))
@@ -161,7 +162,7 @@ ProgressBar::get_value(int first, int last, double *value)
     *value = 0;
     bool all_known = true;
     for (int i = first; i < last; i++) {
-	String s = cp_uncomment(router()->handler(_his[i])->call_read(_es[i]));
+	String s = cp_uncomment(_hs[i]->call_read(_es[i]));
 	double this_value;
 	bool ok = cp_double(s, &this_value);
 	if (ok)
@@ -378,7 +379,7 @@ ProgressBar::read_handler(Element *e, void *thunk)
 	  StringAccum sa;
 	  for (int i = (is_pos ? pb->_first_pos_h : 0); i < (is_pos ? pb->_es.size() : pb->_first_pos_h); i++) {
 	      if (sa.length()) sa << ' ';
-	      sa << pb->router()->handler(pb->_his[i])->unparse_name(pb->_es[i]);
+	      sa << pb->_hs[i]->unparse_name(pb->_es[i]);
 	  }
 	  sa << '\n';
 	  return sa.take_string();
@@ -416,21 +417,19 @@ ProgressBar::write_handler(const String &in_str, Element *e, void *thunk, ErrorH
 	  int total = (is_pos ? pb->_first_pos_h + words.size() : pb->_es.size() - pb->_first_pos_h + words.size());
 	  int offset = (is_pos ? pb->_first_pos_h : 0);
 	  
-	  Vector<Element *> es;
-	  Vector<int> his;
-	  es.assign(total, 0);
-	  his.assign(total, -1);
+	  Vector<Element*> es(total, 0);
+	  Vector<const Handler*> hs(total, 0);
 
 	  for (int i = 0; i < words.size(); i++)
-	      if (!cp_handler(words[i], pb, true, false, &es[i + offset], &his[i + offset], errh))
+	      if (!cp_handler(words[i], HandlerCall::CHECK_READ, &es[i+offset], &hs[i+offset], pb, errh))
 		  return -1;
 
 	  offset = (is_pos ? 0 : words.size() - pb->_first_pos_h);
 	  for (int i = (is_pos ? 0 : pb->_first_pos_h); i < (is_pos ? pb->_first_pos_h : pb->_es.size()); i++)
-	      es[i + offset] = pb->_es[i], his[i + offset] = pb->_his[i];
+	      es[i + offset] = pb->_es[i], hs[i + offset] = pb->_hs[i];
 	  
 	  es.swap(pb->_es);
-	  his.swap(pb->_his);
+	  hs.swap(pb->_hs);
 	  if (!is_pos) {
 	      pb->_have_size = false;
 	      pb->_first_pos_h = words.size();

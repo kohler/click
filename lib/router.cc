@@ -42,7 +42,7 @@
 
 CLICK_DECLS
 
-static Router::Handler *globalh;
+static Handler *globalh;
 static int nglobalh;
 static int globalh_cap;
 
@@ -784,7 +784,7 @@ configure_order_compar(const void *athunk, const void *bthunk)
 }
 }
 
-inline Router::Handler*
+inline Handler*
 Router::xhandler(int hi) const
 {
     return &_handler_bufs[hi / HANDLER_BUFSIZ][hi % HANDLER_BUFSIZ];
@@ -991,7 +991,7 @@ Router::set_hotswap_router(Router *r)
 // HANDLERS
 
 String
-Router::Handler::unparse_name(Element *e, const String &hname)
+Handler::unparse_name(Element *e, const String &hname)
 {
     if (e && e != e->router()->root_element())
 	return e->id() + "." + hname;
@@ -1000,7 +1000,7 @@ Router::Handler::unparse_name(Element *e, const String &hname)
 }
 
 String
-Router::Handler::unparse_name(Element *e) const
+Handler::unparse_name(Element *e) const
 {
     return unparse_name(e, _name);
 }
@@ -1015,12 +1015,12 @@ Router::Handler::unparse_name(Element *e) const
 // read function, read thunk, write function (0), write thunk, and name. This
 // introduced a bunch of structure to go from elements to handler indices and
 // from handler names to handler indices, but it was worth it: it reduced the
-// amount of space required by a normal set of Router::Handlers by about a
-// factor of 100 -- there used to be 2998 Router::Handlers, now there are 30.
-// (Some of this space is still not available for system use -- it gets used
-// up by the indexing structures, particularly _ehandlers. Every element has
-// its own list of "element handlers", even though most elements with element
-// class C could share one such list. The space cost is about (48 bytes * # of
+// amount of space required by a normal set of Handlers by about a factor of
+// 100 -- there used to be 2998 Handlers, now there are 30.  (Some of this
+// space is still not available for system use -- it gets used up by the
+// indexing structures, particularly _ehandlers. Every element has its own
+// list of "element handlers", even though most elements with element class C
+// could share one such list. The space cost is about (48 bytes * # of
 // elements) more or less. Detecting this sharing would be harder to
 // implement.)
 
@@ -1047,7 +1047,7 @@ Router::find_ehandler(int eindex, const String& name) const
     return eh;
 }
 
-inline Router::Handler
+inline Handler
 Router::fetch_handler(const Element* e, const String& name)
 {
     if (const Handler* h = handler(e, name))
@@ -1164,7 +1164,7 @@ Router::store_global_handler(const Handler &h)
   
     if (nglobalh >= globalh_cap) {
 	int n = (globalh_cap ? 2 * globalh_cap : 4);
-	Router::Handler *hs = new Router::Handler[n];
+	Handler *hs = new Handler[n];
 	if (!hs)			// out of memory
 	    return;
 	for (int i = 0; i < nglobalh; i++)
@@ -1191,7 +1191,7 @@ Router::store_handler(const Element* e, const Handler& to_store)
 
 // Public functions for finding handlers
 
-const Router::Handler*
+const Handler*
 Router::handler(const Router* r, int hi)
 {
     if (r && hi >= 0 && hi < r->_nhandlers_bufs)
@@ -1202,7 +1202,7 @@ Router::handler(const Router* r, int hi)
 	return 0;
 }
 
-const Router::Handler *
+const Handler *
 Router::handler(const Element* e, const String& hname)
 {
     if (e && e != e->router()->_root_element) {
@@ -1252,7 +1252,7 @@ Router::element_hindexes(const Element* e, Vector<int>& hindexes)
 
 // Public functions for storing handlers
 
-Router::Handler*
+Handler*
 Router::add_blank_handler(const Element* e, const String& name)
 {
     Handler to_add(name);

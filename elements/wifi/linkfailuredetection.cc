@@ -52,7 +52,7 @@ LinkFailureDetection::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("THRESHOLD must be >= 1");
   }
 
-  if (!cp_handler(conf[1], this, &_handler_e, &_handler_name, errh)) {
+  if (!cp_handler_name(conf[1], this, &_handler_e, &_handler_name, errh)) {
     return errh->error("invalid handler %s", conf[1].cc());
   }
   return 0;

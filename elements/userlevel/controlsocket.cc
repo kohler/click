@@ -336,7 +336,7 @@ ControlSocket::proxied_handler_name(const String &n) const
     return n;
 }
 
-int
+const Handler*
 ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
 {
   // Parse full_name into element_name and handler_name.
@@ -349,15 +349,18 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
     _proxied_handler = proxied_handler_name(canonical_name);
     _proxied_errh = &errh;
     
-    int hid = Router::hindex(_proxy, _proxied_handler);
+    const Handler* h = Router::handler(_proxy, _proxied_handler);
     
-    if (errh.nerrors() > 0)
-      return transfer_messages(fd, CSERR_NO_SUCH_HANDLER, String(), &errh);
-    else if (hid < 0)
-      return message(fd, CSERR_NO_SUCH_HANDLER, "No proxied handler named '" + full_name + "'");
-    
-    *es = _proxy;
-    return hid;
+    if (errh.nerrors() > 0) {
+      transfer_messages(fd, CSERR_NO_SUCH_HANDLER, String(), &errh);
+      return 0;
+    } else if (!h) {
+      message(fd, CSERR_NO_SUCH_HANDLER, "No proxied handler named '" + full_name + "'");
+      return 0;
+    } else {
+      *es = _proxy;
+      return h;
+    }
   }
 
   // Otherwise, find element.
@@ -373,8 +376,10 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
       if (cp_integer(ename, &num) && num > 0 && num <= router()->nelements())
 	e = router()->element(num - 1);
     }
-    if (!e)
-      return message(fd, CSERR_NO_SUCH_ELEMENT, "No element named '" + ename + "'");
+    if (!e) {
+      message(fd, CSERR_NO_SUCH_ELEMENT, "No element named '" + ename + "'");
+      return 0;
+    }
     hname = canonical_name.substring(dot + 1, canonical_name.end());
   } else {
     e = router()->root_element();
@@ -382,24 +387,24 @@ ControlSocket::parse_handler(int fd, const String &full_name, Element **es)
   }
 
   // Then find handler.
-  int hid = Router::hindex(e, hname);
-  if (hid < 0 || !router()->handler(hid)->visible())
-    return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named '" + full_name + "'");
-
-  // Return.
-  *es = e;
-  return hid;
+  const Handler* h = Router::handler(e, hname);
+  if (h && h->visible()) {
+    *es = e;
+    return h;
+  } else {
+    message(fd, CSERR_NO_SUCH_HANDLER, "No handler named '" + full_name + "'");
+    return 0;
+  }
 }
 
 int
 ControlSocket::read_command(int fd, const String &handlername)
 {
   Element *e;
-  int hid = parse_handler(fd, handlername, &e);
-  if (hid < 0)
-    return hid;
-  const Router::Handler *h = router()->handler(hid);
-  if (!h->read_visible())
+  const Handler* h = parse_handler(fd, handlername, &e);
+  if (!h)
+    return ANY_ERR;
+  else if (!h->read_visible())
     return message(fd, CSERR_PERMISSION, "Handler '" + handlername + "' write-only");
 
   // collect errors from proxy
@@ -423,11 +428,10 @@ int
 ControlSocket::write_command(int fd, const String &handlername, const String &data)
 {
   Element *e;
-  int hid = parse_handler(fd, handlername, &e);
-  if (hid < 0)
-    return hid;
-  const Router::Handler *h = router()->handler(hid);
-  if (!h->writable())
+  const Handler* h = parse_handler(fd, handlername, &e);
+  if (!h)
+    return ANY_ERR;
+  else if (!h->writable())
     return message(fd, CSERR_PERMISSION, "Handler '" + handlername + "' read-only");
 
   if (_read_only)
@@ -477,10 +481,9 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
     ok = _full_proxy->check_handler(phname, write, &errh);
   } else {
     Element *e;
-    int hid = parse_handler(fd, hname, &e);
-    if (hid < 0)
+    const Handler* h = parse_handler(fd, hname, &e);
+    if (!h)
       return 0;			// error messages already reported
-    const Router::Handler *h = router()->handler(hid);
     ok = (h->visible() && (write ? h->write_visible() : h->read_visible()));
     any_visible = h->visible();
   }
@@ -510,9 +513,9 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
   command = CLICK_LLRPC_NTOH(command);
   
   Element *e;
-  int hid = parse_handler(fd, llrpcname.substring(llrpcname.begin(), octothorp) + ".name", &e);
-  if (hid < 0)
-    return hid;
+  const Handler* h = parse_handler(fd, llrpcname.substring(llrpcname.begin(), octothorp) + ".name", &e);
+  if (!h)
+    return ANY_ERR;
 
   int size = _CLICK_IOC_SIZE(command);
   if (!size || !(command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)) || !(command & _CLICK_IOC_FLAT))
@@ -535,7 +538,7 @@ ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
   int retval;
   if (_proxy) {
     struct click_llrpc_proxy_st pst;
-    pst.proxied_handler_index = hid;
+    pst.proxied_handler = (void*) h;
     pst.proxied_command = command;
     pst.proxied_data = data.mutable_data();
     retval = _proxy->llrpc(CLICK_LLRPC_PROXY, &pst);

@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/timer.hh>
 CLICK_DECLS
+class Handler;
 
 /*
 =c
@@ -173,8 +174,8 @@ class ProgressBar : public Element { public:
     uint32_t _delay_ms;
     bool _active;
 
-    Vector<Element *> _es;
-    Vector<int> _his;
+    Vector<Element*> _es;
+    Vector<const Handler*> _hs;
     int _first_pos_h;
 
     bool get_value(int first, int last, double *);

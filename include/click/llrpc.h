@@ -74,9 +74,9 @@
 #define CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL	_CLICK_IO(13)
 
 struct click_llrpc_proxy_st {
-  int proxied_handler_index;
+  void* proxied_handler;	/* const Router::Handler* */
   uint32_t proxied_command;
-  void *proxied_data;
+  void* proxied_data;
 };
 
 #define CLICK_LLRPC_COUNTS_SIZE 8

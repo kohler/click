@@ -22,6 +22,7 @@
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/error.hh>
+#include <click/handlercall.hh>
 #include <click/standard/scheduleinfo.hh>
 CLICK_DECLS
 
@@ -51,11 +52,10 @@ QuitWatcher::initialize(ErrorHandler *errh)
   configuration(conf);
 
   for (int i = 0; i < conf.size(); i++) {
-    Element *e;
-    int hi;
-    if (cp_handler(conf[i] + ".scheduled", this, true, false, &e, &hi, errh)) {
-      _e.push_back(e);
-      _handlers.push_back(hi);
+    HandlerCall hc(conf[i] + ".scheduled");
+    if (hc.initialize_read(this, errh) >= 0) {
+      _e.push_back(hc.element());
+      _handlers.push_back(hc.handler());
     }
   }
 
@@ -72,8 +72,7 @@ QuitWatcher::run_timer()
 {
   String unscheduled_string = "false\n";
   for (int i = 0; i < _e.size(); i++) {
-    const Router::Handler *h = router()->handler(_handlers[i]);
-    String s = h->call_read(_e[i]);
+    String s = _handlers[i]->call_read(_e[i]);
     if (s == unscheduled_string) {
       router()->please_stop_driver();
       return;

@@ -1803,8 +1803,9 @@ cp_element(const String &text_in, Router *router, ErrorHandler *errh)
 }
 
 bool
-cp_handler(const String &str, Element *context, Element **result_element,
-	   String *result_hname, ErrorHandler *errh)
+cp_handler_name(const String& str,
+		Element** result_element, String* result_hname,
+		Element* context, ErrorHandler* errh)
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
@@ -1835,60 +1836,18 @@ cp_handler(const String &str, Element *context, Element **result_element,
 }
 
 bool
-cp_handler(const String &str, Element *context, bool need_read,
-	   bool need_write, Element **result_element, int *result_hid,
-	   ErrorHandler *errh)
+cp_handler(const String &str, int flags,
+	   Element** result_element, const Handler** result_h,
+	   Element* context, ErrorHandler* errh)
 {
-  if (!errh)
-    errh = ErrorHandler::silent_handler();
-
-  const Router *r = context->router();
-  Element *e;
-  String hname;
-  if (!cp_handler(str, context, &e, &hname, errh))
+  HandlerCall hc(str);
+  if (hc.initialize(flags, context, errh) < 0)
     return false;
-
-  int hid = Router::hindex(e, hname);
-  if (hid < 0) {
-    if (e != r->root_element()) {
-      errh->error("element '%s' has no '%s' handler", e->id().cc(), hname.cc());
-      if (!r->handlers_ready())
-	errh->error("because handlers have not been added yet");
-    } else
-      errh->error("no global '%s' handler", hname.cc());
-    return false;
-  }
-
-  const Router::Handler *h = r->handler(hid);
-  if (need_read && !h->readable()) {
-    errh->error("'%s' is not a read handler", h->unparse_name(e).cc());
-    return false;
-  } else if (need_write && !h->writable()) {
-    errh->error("'%s' is not a write handler", h->unparse_name(e).cc());
-    return false;
-  } else {
-    *result_element = e;
-    *result_hid = hid;
+  else {
+    *result_element = hc.element();
+    *result_h = hc.handler();
     return true;
   }
-}
-
-bool
-cp_handler(const String &str, Element *context, Element **result_element, int *result_hid, ErrorHandler *errh)
-{
-  return cp_handler(str, context, false, false, result_element, result_hid, errh);
-}
-
-bool
-cp_handler_call(const String &str, Element *context, bool is_write, HandlerCall **hcall, ErrorHandler *errh)
-{
-  HandlerCall *verkrappen = 0;
-  if (hcall == 0)
-    hcall = &verkrappen;
-  bool ok = (HandlerCall::reset(*hcall, str, is_write, context, errh) >= 0);
-  delete verkrappen;		// if no storage provided, delete the created
-				// call
-  return ok;
 }
 #endif
 
@@ -2065,9 +2024,6 @@ enum {
   cpiUDPPort,
   cpiElement,
   cpiHandlerName,
-  cpiHandler,
-  cpiReadHandler,
-  cpiWriteHandler,
   cpiReadHandlerCall,
   cpiWriteHandlerCall,
   cpiIP6Address,
@@ -2404,25 +2360,22 @@ default_parsefunc(cp_value *v, const String &arg,
    
    case cpiHandlerName: {
      ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
-     cp_handler(arg, context, &v->v.element, &v->v2_string, &cerrh);
-     break;
-   }
-
-   case cpiHandler:
-   case cpiReadHandler:
-   case cpiWriteHandler: {
-     ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
-     cp_handler(arg, context, argtype->internal == cpiReadHandler,
-		argtype->internal == cpiWriteHandler,
-		&v->v.element, &v->v2.i, &cerrh);
+     cp_handler_name(arg, &v->v.element, &v->v2_string, context, &cerrh);
      break;
    }
 
    case cpiReadHandlerCall:
-   case cpiWriteHandlerCall: {
+    underflower = HandlerCall::CHECK_READ | HandlerCall::ALLOW_PREINITIALIZE;
+    goto handler_call;
+
+   case cpiWriteHandlerCall:
+    underflower = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_VALUE | HandlerCall::ALLOW_PREINITIALIZE;
+    goto handler_call;
+
+   handler_call: {
      ContextErrorHandler cerrh(errh, String(argname) + " (" + desc + "):");
-     cp_handler_call(arg, context, argtype->internal == cpiWriteHandlerCall,
-		     (HandlerCall **)0, &cerrh);
+     HandlerCall garbage(arg);
+     garbage.initialize(underflower, context, &cerrh);
      break;
    }
 #endif
@@ -2440,7 +2393,7 @@ default_parsefunc(cp_value *v, const String &arg,
 static void
 default_storefunc(cp_value *v  CP_CONTEXT_ARG)
 {
-  int address_bytes;
+  int helper;
   const cp_argtype *argtype = v->argtype;
   
   if (v->store_confirm)
@@ -2561,28 +2514,28 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    }
 
    case cpiIPAddress:
-    address_bytes = 4;
+    helper = 4;
     goto address;
 
 #ifdef HAVE_IP6
    case cpiIP6Address:
-    address_bytes = 16;
+    helper = 16;
     goto address;
 #endif
 
    case cpiEthernetAddress:
-    address_bytes = 6;
+    helper = 6;
     goto address;
 
 #ifdef HAVE_IPSEC
    case cpiDesCblock:
-    address_bytes = 8;
+    helper = 8;
     goto address;
 #endif
    
    address: {
      unsigned char *addrstore = (unsigned char *)v->store;
-     memcpy(addrstore, v->v.address, address_bytes);
+     memcpy(addrstore, v->v.address, helper);
      break;
    }
 
@@ -2628,23 +2581,17 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
      break;
    }
 
-   case cpiHandler:
-   case cpiReadHandler:
-   case cpiWriteHandler: {
-     Element **elementstore = (Element **)v->store;
-     int *hidstore = (int *)v->store2;
-     *elementstore = v->v.element;
-     *hidstore = v->v2.i;
-     break;
-   }
-
    case cpiReadHandlerCall:
-   case cpiWriteHandlerCall: {
-     cp_handler_call
-       (v->v_string, context, argtype->internal == cpiWriteHandlerCall,
-	(HandlerCall **)v->store, (ErrorHandler *)0);
-     break;
-   }
+    helper = HandlerCall::CHECK_READ | HandlerCall::ALLOW_PREINITIALIZE;
+    goto handler_call;
+
+   case cpiWriteHandlerCall:
+    helper = HandlerCall::CHECK_WRITE | HandlerCall::ALLOW_VALUE | HandlerCall::ALLOW_PREINITIALIZE;
+    goto handler_call;
+
+   handler_call:
+    HandlerCall::reset(*(HandlerCall**)v->store, v->v_string, helper, context, (ErrorHandler*)0);
+    break;
 #endif
 
    default:
@@ -3587,9 +3534,6 @@ cp_va_static_initialize()
 #ifndef CLICK_TOOL
   cp_register_argtype(cpElement, "element name", 0, default_parsefunc, default_storefunc, cpiElement);
   cp_register_argtype(cpHandlerName, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandlerName);
-  cp_register_argtype(cpHandler, "handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiHandler);
-  cp_register_argtype(cpReadHandler, "read handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiReadHandler);
-  cp_register_argtype(cpWriteHandler, "write handler name", cpArgStore2, default_parsefunc, default_storefunc, cpiWriteHandler);
   cp_register_argtype(cpReadHandlerCall, "read handler name", 0, default_parsefunc, default_storefunc, cpiReadHandlerCall);
   cp_register_argtype(cpWriteHandlerCall, "write handler name and value", 0, default_parsefunc, default_storefunc, cpiWriteHandlerCall);
 #endif

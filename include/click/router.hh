@@ -17,10 +17,11 @@ class RouterThread;
 class HashMap_ArenaFactory;
 class NotifierSignal;
 class ThreadSched;
+class Handler;
 
 class Router { public:
 
-    struct Handler;
+    typedef ::CLICK_NAME(Handler) Handler;
     struct Hookup {
 	int idx;
 	int port;
@@ -36,9 +37,12 @@ class Router { public:
     static void static_initialize();
     static void static_cleanup();
 
-    enum { ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
-	   ROUTER_LIVE, ROUTER_DEAD };
+    enum {
+	ROUTER_NEW, ROUTER_PRECONFIGURE, ROUTER_PREINITIALIZE,
+	ROUTER_LIVE, ROUTER_DEAD		// order is important
+    };
     bool initialized() const			{ return _state == ROUTER_LIVE; }
+    bool handlers_ready() const			{ return _state > ROUTER_PRECONFIGURE; }
 
     // ELEMENTS
     int nelements() const			{ return _elements.size(); }
@@ -66,7 +70,6 @@ class Router { public:
 
     // HANDLERS
     enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
-    bool handlers_ready() const	      { return _handler_first_by_name.size(); }
     static int hindex(const Element*, const String&);
     static void element_hindexes(const Element*, Vector<int>&);
 
@@ -251,7 +254,7 @@ class Router { public:
 };
 
 
-class Router::Handler { public:
+class Handler { public:
 
     enum {
 	DRIVER_FLAG_0 = 1, DRIVER_FLAG_1 = 2, DRIVER_FLAG_2 = 4,
@@ -323,46 +326,46 @@ Router::find(const String& name, ErrorHandler *errh) const
     return find(name, "", errh);
 }
 
-inline const Router::Handler*
+inline const Handler*
 Router::handler(const Element* e, int hi)
 {
     return handler(e ? e->router() : 0, hi);
 }
 
-inline const Router::Handler*
+inline const Handler*
 Router::handler(int hi) const
 {
     return handler(this, hi);
 }
 
 inline
-Router::Handler::Handler()
+Handler::Handler()
     : _read(0), _read_thunk(0), _write(0), _write_thunk(0),
       _select(0), _select_thunk(0), _flags(0), _use_count(0), _next_by_name(-1)
 {
 }
 
 inline
-Router::Handler::Handler(const String &name)
+Handler::Handler(const String &name)
     : _name(name), _read(0), _read_thunk(0), _write(0), _write_thunk(0),
       _select(0), _select_thunk(0), _flags(0), _use_count(0), _next_by_name(-1)
 {
 }
 
 inline String
-Router::Handler::call_read(Element* e) const
+Handler::call_read(Element* e) const
 {
     return _read(e, _read_thunk);
 }
 
 inline int
-Router::Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
+Handler::call_write(const String& s, Element* e, ErrorHandler* errh) const
 {
     return _write(s, e, _write_thunk, errh);
 }
 
 inline bool
-Router::Handler::compatible(const Handler& h) const
+Handler::compatible(const Handler& h) const
 {
     return (_read == h._read && _read_thunk == h._read_thunk
 	    && _write == h._write && _write_thunk == h._write_thunk
@@ -371,28 +374,28 @@ Router::Handler::compatible(const Handler& h) const
 }
 
 inline void
-Router::Handler::set_read(ReadHandler h, void* thunk)
+Handler::set_read(ReadHandler h, void* thunk)
 {
     _read = h;
     _read_thunk = thunk;
 }
 
 inline void
-Router::Handler::set_write(WriteHandler h, void* thunk)
+Handler::set_write(WriteHandler h, void* thunk)
 {
     _write = h;
     _write_thunk = thunk;
 }
 
 inline void
-Router::Handler::set_select(SelectHandler h, void* thunk)
+Handler::set_select(SelectHandler h, void* thunk)
 {
     _select = h;
     _select_thunk = thunk;
 }
 
 inline void
-Router::Handler::set_flags(uint32_t flags)
+Handler::set_flags(uint32_t flags)
 {
     _flags = flags;
 }
