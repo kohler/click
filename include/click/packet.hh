@@ -19,10 +19,10 @@ class Packet { public:
   static const unsigned DEFAULT_HEADROOM = 28;
   static const unsigned MIN_BUFFER_LENGTH = 64;
   
-  static WritablePacket *make(unsigned);
-  static WritablePacket *make(const char *, unsigned);
-  static WritablePacket *make(const unsigned char *, unsigned);
-  static WritablePacket *make(unsigned, const unsigned char *, unsigned, unsigned);
+  static WritablePacket *make(uint32_t);
+  static WritablePacket *make(const char *, uint32_t);
+  static WritablePacket *make(const unsigned char *, uint32_t);
+  static WritablePacket *make(uint32_t, const unsigned char *, uint32_t, uint32_t);
   
 #ifdef __KERNEL__	/* Linux kernel module */
   // Packet::make(sk_buff *) wraps a Packet around an existing sk_buff.
@@ -43,7 +43,7 @@ class Packet { public:
   static void assimilate_mbuf(Packet *p);
   void assimilate_mbuf();
 #else			/* User-space */
-  static WritablePacket *make(unsigned char *, unsigned, void (*destructor)(unsigned char *, size_t));
+  static WritablePacket *make(unsigned char *, uint32_t, void (*destructor)(unsigned char *, size_t));
   void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
 
@@ -56,29 +56,29 @@ class Packet { public:
   
 #ifdef __KERNEL__	/* Linux kernel module */
   const unsigned char *data() const	{ return skb()->data; }
-  unsigned length() const		{ return skb()->len; }
-  unsigned headroom() const		{ return skb()->data - skb()->head; }
-  unsigned tailroom() const		{ return skb()->end - skb()->tail; }
+  uint32_t length() const		{ return skb()->len; }
+  uint32_t headroom() const		{ return skb()->data - skb()->head; }
+  uint32_t tailroom() const		{ return skb()->end - skb()->tail; }
   const unsigned char *buffer_data() const { return skb()->head; }
-  unsigned buffer_length() const	{ return skb()->end - skb()->head; }
+  uint32_t buffer_length() const	{ return skb()->end - skb()->head; }
 #else			/* Userspace module and BSD kernel module */
   const unsigned char *data() const	{ return _data; }
-  unsigned length() const		{ return _tail - _data; }
-  unsigned headroom() const		{ return _data - _head; }
-  unsigned tailroom() const		{ return _end - _tail; }
+  uint32_t length() const		{ return _tail - _data; }
+  uint32_t headroom() const		{ return _data - _head; }
+  uint32_t tailroom() const		{ return _end - _tail; }
   const unsigned char *buffer_data() const { return _head; }
-  unsigned buffer_length() const	{ return _end - _head; }
+  uint32_t buffer_length() const	{ return _end - _head; }
 #endif
   
-  WritablePacket *push(unsigned nb);	// Add more space before packet.
-  Packet *nonunique_push(unsigned nb);
-  void pull(unsigned nb);		// Get rid of initial bytes.
-  WritablePacket *put(unsigned nb);	// Add bytes to end of pkt.
-  Packet *nonunique_put(unsigned nb);
-  void take(unsigned nb);		// Delete bytes from end of pkt.
+  WritablePacket *push(uint32_t nb);	// Add more space before packet.
+  Packet *nonunique_push(uint32_t nb);
+  void pull(uint32_t nb);		// Get rid of initial bytes.
+  WritablePacket *put(uint32_t nb);	// Add bytes to end of pkt.
+  Packet *nonunique_put(uint32_t nb);
+  void take(uint32_t nb);		// Delete bytes from end of pkt.
 
 #if !defined(__KERNEL__) && !defined(_KERNEL)
-  void change_headroom_and_length(unsigned headroom, unsigned length);
+  void change_headroom_and_length(uint32_t headroom, uint32_t length);
 #endif
 
   // HEADER ANNOTATIONS
@@ -92,11 +92,11 @@ class Packet { public:
   const click_ip6 *ip6_header() const           { return _nh.ip6h; }
 #endif
   int network_header_offset() const;
-  unsigned network_header_length() const;
+  uint32_t network_header_length() const;
   int ip_header_offset() const;
-  unsigned ip_header_length() const;
+  uint32_t ip_header_length() const;
   int ip6_header_offset() const;
-  unsigned ip6_header_length() const;
+  uint32_t ip6_header_length() const;
 
 #ifdef __KERNEL__	/* Linux kernel module */
   const unsigned char *transport_header() const	{ return skb()->h.raw; }
@@ -107,12 +107,12 @@ class Packet { public:
   const click_tcp *tcp_header() const	{ return _h.th; }
   const click_udp *udp_header() const	{ return _h.uh; }
 #endif
-  unsigned transport_header_offset() const;
+  uint32_t transport_header_offset() const;
 
-  void set_network_header(const unsigned char *, unsigned);
-  void set_ip_header(const click_ip *, unsigned);
+  void set_network_header(const unsigned char *, uint32_t);
+  void set_ip_header(const click_ip *, uint32_t);
   void set_ip6_header(const click_ip6 *);
-  void set_ip6_header(const click_ip6 *, unsigned);
+  void set_ip6_header(const click_ip6 *, uint32_t);
   
   // ANNOTATIONS
 
@@ -173,13 +173,13 @@ class Packet { public:
   static const int USER_ANNO_U_SIZE = 3;
   static const int USER_ANNO_I_SIZE = 3;
   
-  unsigned char user_anno_c(int i) const { return anno()->user_flags.c[i]; }
-  void set_user_anno_c(int i, unsigned char v) { anno()->user_flags.c[i] = v; }
-  unsigned user_anno_u(int i) const	{ return anno()->user_flags.u[i]; }
-  void set_user_anno_u(int i, unsigned v) { anno()->user_flags.u[i] = v; }
-  unsigned *all_user_anno_u()		{ return &anno()->user_flags.u[0]; }
-  int user_anno_i(int i) const		{ return anno()->user_flags.i[i]; }
-  void set_user_anno_i(int i, int v)	{ anno()->user_flags.i[i] = v; }
+  uint8_t user_anno_c(int i) const	{ return anno()->user_flags.c[i]; }
+  void set_user_anno_c(int i, uint8_t v) { anno()->user_flags.c[i] = v; }
+  uint32_t user_anno_u(int i) const	{ return anno()->user_flags.u[i]; }
+  void set_user_anno_u(int i, uint32_t v) { anno()->user_flags.u[i] = v; }
+  uint32_t *all_user_anno_u()		{ return &anno()->user_flags.u[0]; }
+  int32_t user_anno_i(int i) const	{ return anno()->user_flags.i[i]; }
+  void set_user_anno_i(int i, int32_t v) { anno()->user_flags.i[i] = v; }
 
   void clear_annotations();
   void copy_annotations(const Packet *);
@@ -194,9 +194,9 @@ class Packet { public:
     } dst_ip;
     
     union {
-      unsigned char c[USER_ANNO_SIZE];
-      unsigned u[USER_ANNO_U_SIZE];
-      int i[USER_ANNO_I_SIZE];
+      uint8_t c[USER_ANNO_SIZE];
+      uint32_t u[USER_ANNO_U_SIZE];
+      int32_t i[USER_ANNO_I_SIZE];
     } user_flags;
     // flag allocations: see packet_anno.hh
     
@@ -243,12 +243,12 @@ class Packet { public:
 #if !defined(__KERNEL__)
   Packet(int, int, int)			{ }
   static WritablePacket *make(int, int, int);
-  bool alloc_data(unsigned, unsigned, unsigned);
+  bool alloc_data(uint32_t, uint32_t, uint32_t);
 #endif
 
   WritablePacket *expensive_uniqueify();
-  WritablePacket *expensive_push(unsigned int nbytes);
-  WritablePacket *expensive_put(unsigned int nbytes);
+  WritablePacket *expensive_push(uint32_t nbytes);
+  WritablePacket *expensive_put(uint32_t nbytes);
   
   friend class WritablePacket;
 
@@ -289,19 +289,19 @@ class WritablePacket : public Packet { public:
 
 
 inline WritablePacket *
-Packet::make(unsigned len)
+Packet::make(uint32_t len)
 {
   return make(DEFAULT_HEADROOM, (const unsigned char *)0, len, 0);
 }
 
 inline WritablePacket *
-Packet::make(const char *s, unsigned len)
+Packet::make(const char *s, uint32_t len)
 {
   return make(DEFAULT_HEADROOM, (const unsigned char *)s, len, 0);
 }
 
 inline WritablePacket *
-Packet::make(const unsigned char *s, unsigned len)
+Packet::make(const unsigned char *s, uint32_t len)
 {
   return make(DEFAULT_HEADROOM, (const unsigned char *)s, len, 0);
 }
@@ -352,7 +352,7 @@ Packet::assimilate_mbuf(Packet *p)
 }
 
 inline void
-Packet::assimilate_mbuf(void)
+Packet::assimilate_mbuf()
 {
   assimilate_mbuf(this);
 }
@@ -393,7 +393,7 @@ Packet::uniqueify()
 }
 
 inline WritablePacket *
-Packet::push(unsigned int nbytes)
+Packet::push(uint32_t nbytes)
 {
   if (headroom() >= nbytes && !shared()) {
     WritablePacket *q = (WritablePacket *)this;
@@ -413,7 +413,7 @@ Packet::push(unsigned int nbytes)
 }
 
 inline Packet *
-Packet::nonunique_push(unsigned int nbytes)
+Packet::nonunique_push(uint32_t nbytes)
 {
   if (headroom() >= nbytes) {
 #ifdef __KERNEL__	/* Linux kernel module */
@@ -433,7 +433,7 @@ Packet::nonunique_push(unsigned int nbytes)
 
 /* Get rid of some bytes at the start of a packet */
 inline void
-Packet::pull(unsigned int nbytes)
+Packet::pull(uint32_t nbytes)
 {
   if (nbytes > length()) {
     click_chatter("Packet::pull %d > length %d\n", nbytes, length());
@@ -452,7 +452,7 @@ Packet::pull(unsigned int nbytes)
 }
 
 inline WritablePacket *
-Packet::put(unsigned int nbytes)
+Packet::put(uint32_t nbytes)
 {
   if (tailroom() >= nbytes && !shared()) {
     WritablePacket *q = (WritablePacket *)this;
@@ -471,7 +471,7 @@ Packet::put(unsigned int nbytes)
 }
 
 inline Packet *
-Packet::nonunique_put(unsigned int nbytes)
+Packet::nonunique_put(uint32_t nbytes)
 {
   if (tailroom() >= nbytes) {
 #ifdef __KERNEL__	/* Linux kernel module */
@@ -490,7 +490,7 @@ Packet::nonunique_put(unsigned int nbytes)
 
 /* Get rid of some bytes at the end of a packet */
 inline void
-Packet::take(unsigned int nbytes)
+Packet::take(uint32_t nbytes)
 {
   if (nbytes > length()) {
     click_chatter("Packet::take %d > length %d\n", nbytes, length());
@@ -510,7 +510,7 @@ Packet::take(unsigned int nbytes)
 
 #if !defined(__KERNEL__) && !defined(_KERNEL)
 inline void
-Packet::change_headroom_and_length(unsigned headroom, unsigned length)
+Packet::change_headroom_and_length(uint32_t headroom, uint32_t length)
 {
   if (headroom + length <= buffer_length()) {
     _data = _head + headroom;
@@ -544,7 +544,7 @@ Packet::set_dst_ip_anno(IPAddress a)
 }
 
 inline void
-Packet::set_network_header(const unsigned char *h, unsigned len)
+Packet::set_network_header(const unsigned char *h, uint32_t len)
 {
 #ifdef __KERNEL__	/* Linux kernel module */
   skb()->nh.raw = const_cast<unsigned char *>(h);
@@ -556,13 +556,13 @@ Packet::set_network_header(const unsigned char *h, unsigned len)
 }
 
 inline void
-Packet::set_ip_header(const click_ip *iph, unsigned len)
+Packet::set_ip_header(const click_ip *iph, uint32_t len)
 {
   set_network_header(reinterpret_cast<const unsigned char *>(iph), len);
 }
 
 inline void
-Packet::set_ip6_header(const click_ip6 *ip6h, unsigned len)
+Packet::set_ip6_header(const click_ip6 *ip6h, uint32_t len)
 {
   set_network_header(reinterpret_cast<const unsigned char *>(ip6h), len);
 }
@@ -579,7 +579,7 @@ Packet::network_header_offset() const
   return network_header() - data();
 }
 
-inline unsigned
+inline uint32_t
 Packet::network_header_length() const
 {
   return transport_header() - network_header();
@@ -591,7 +591,7 @@ Packet::ip_header_offset() const
   return network_header_offset();
 }
 
-inline unsigned
+inline uint32_t
 Packet::ip_header_length() const
 {
   return network_header_length();
@@ -603,13 +603,13 @@ Packet::ip6_header_offset() const
   return network_header_offset();
 }
 
-inline unsigned
+inline uint32_t
 Packet::ip6_header_length() const
 {
   return network_header_length();
 }
 
-inline unsigned
+inline uint32_t
 Packet::transport_header_offset() const
 {
   return transport_header() - data();

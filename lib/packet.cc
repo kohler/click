@@ -40,8 +40,8 @@ Packet::~Packet()
 }
 
 WritablePacket *
-Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
-	     unsigned tailroom)
+Packet::make(uint32_t headroom, const unsigned char *data,
+	     uint32_t len, uint32_t tailroom)
 {
   int want = 1;
   if (struct sk_buff *skb = skbmgr_allocate_skbs(headroom, len + tailroom, &want)) {
@@ -107,7 +107,7 @@ Packet::make(int, int, int)
 #ifdef CLICK_USERLEVEL
 
 WritablePacket *
-Packet::make(unsigned char *data, unsigned len, void (*destruct)(unsigned char *, size_t))
+Packet::make(unsigned char *data, uint32_t len, void (*destruct)(unsigned char *, size_t))
 {
   WritablePacket *p = new WritablePacket;
   if (p) {
@@ -121,9 +121,9 @@ Packet::make(unsigned char *data, unsigned len, void (*destruct)(unsigned char *
 #endif
 
 bool
-Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
+Packet::alloc_data(uint32_t headroom, uint32_t len, uint32_t tailroom)
 {
-  unsigned n = len + headroom + tailroom;
+  uint32_t n = len + headroom + tailroom;
   if (n < MIN_BUFFER_LENGTH) {
     tailroom = MIN_BUFFER_LENGTH - len - headroom;
     n = MIN_BUFFER_LENGTH;
@@ -158,8 +158,8 @@ Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
 }
 
 WritablePacket *
-Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
-	     unsigned tailroom)
+Packet::make(uint32_t headroom, const unsigned char *data, uint32_t len,
+	     uint32_t tailroom)
 {
   WritablePacket *p = new WritablePacket;
   if (!p)
@@ -281,7 +281,7 @@ Packet::steal_m()
  * May kill this packet and return a new one.
  */
 WritablePacket *
-Packet::expensive_push(unsigned int nbytes)
+Packet::expensive_push(uint32_t nbytes)
 {
   static int chatter = 0;
   if (headroom() < nbytes && chatter < 5) {
@@ -322,7 +322,7 @@ Packet::expensive_push(unsigned int nbytes)
 }
 
 WritablePacket *
-Packet::expensive_put(unsigned int nbytes)
+Packet::expensive_put(uint32_t nbytes)
 {
   static int chatter = 0;
   if (tailroom() < nbytes && chatter < 5) {
