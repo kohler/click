@@ -149,7 +149,6 @@ ElementLink::join_scheduler()
 inline void
 ElementLink::reschedule()
 {
-  ElementLink *n = _list->_next;
   _prev = _list->_prev;
   _next = _list;
   _list->_prev = this;

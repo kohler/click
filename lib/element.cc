@@ -459,8 +459,8 @@ read_element_handlers(Element *e, void *)
 static String
 read_element_tickets(Element *e, void *)
 {
-#if RR_SCHED
-  return (e->scheduled() ? "scheduled\n" : "unscheduled\n");
+#ifdef RR_SCHED
+  return String(e->scheduled() ? "scheduled\n" : "unscheduled\n");
 #else
   String s = String(e->tickets()) + " " + String(e->max_tickets());
   s += (e->scheduled() ? " scheduled\n" : " unscheduled\n");
