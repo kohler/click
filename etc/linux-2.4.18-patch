@@ -1150,18 +1150,18 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #ifdef __KERNEL__
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/asm-arm/mmu.h ./include/asm-arm/mmu.h
 --- ../x/linux-2.4.18-pure/include/asm-arm/mmu.h	2000-12-29 14:07:23.000000000 -0800
-+++ ./include/asm-arm/mmu.h	2002-11-21 12:19:16.000000000 -0800
++++ ./include/asm-arm/mmu.h	2003-02-07 17:04:09.000000000 -0800
 @@ -2,6 +2,6 @@
  #define __ARM_MMU_H
  
  /* The ARM doesn't have a mmu context */
 -typedef struct { } mm_context_t;
-+typedef EMPTY_STRUCT_DECL() mm_context_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) mm_context_t;
  
  #endif
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
 --- ../x/linux-2.4.18-pure/include/asm-i386/highmem.h	2002-06-08 23:28:47.000000000 -0700
-+++ ./include/asm-i386/highmem.h	2002-11-21 13:51:40.000000000 -0800
++++ ./include/asm-i386/highmem.h	2003-01-13 15:16:16.000000000 -0800
 @@ -91,7 +91,7 @@
  	if (page < highmem_start_page)
  		return page_address(page);
@@ -1255,7 +1255,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  {
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/highmem.h ./include/linux/highmem.h
 --- ../x/linux-2.4.18-pure/include/linux/highmem.h	2002-06-08 23:28:47.000000000 -0700
-+++ ./include/linux/highmem.h	2002-11-21 13:51:40.000000000 -0800
++++ ./include/linux/highmem.h	2003-01-13 15:16:16.000000000 -0800
 @@ -18,7 +18,7 @@
  
  static inline char *bh_kmap(struct buffer_head *bh)
@@ -1299,7 +1299,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	read_unlock(&inetdev_lock);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/mm.h ./include/linux/mm.h
 --- ../x/linux-2.4.18-pure/include/linux/mm.h	2002-06-08 23:28:47.000000000 -0700
-+++ ./include/linux/mm.h	2002-11-21 13:51:40.000000000 -0800
++++ ./include/linux/mm.h	2003-01-13 15:16:16.000000000 -0800
 @@ -509,7 +509,6 @@
  		return 0;
  }
@@ -1310,7 +1310,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern unsigned long page_unuse(struct page *);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/netdevice.h ./include/linux/netdevice.h
 --- ../x/linux-2.4.18-pure/include/linux/netdevice.h	2002-06-08 23:28:47.000000000 -0700
-+++ ./include/linux/netdevice.h	2002-11-21 13:53:15.000000000 -0800
++++ ./include/linux/netdevice.h	2003-01-13 15:17:30.000000000 -0800
 @@ -415,6 +415,46 @@
  	/* this will get initialized at each interface type init routine */
  	struct divert_blk	*divert;
@@ -1370,7 +1370,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern struct net_device	*__dev_get_by_index(int ifindex);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/reiserfs_fs_sb.h ./include/linux/reiserfs_fs_sb.h
 --- ../x/linux-2.4.18-pure/include/linux/reiserfs_fs_sb.h	2002-02-25 11:38:13.000000000 -0800
-+++ ./include/linux/reiserfs_fs_sb.h	2002-11-21 13:51:40.000000000 -0800
++++ ./include/linux/reiserfs_fs_sb.h	2003-01-13 15:16:16.000000000 -0800
 @@ -378,8 +378,7 @@
    } journal;
  } reiserfs_proc_info_data_t;
@@ -1383,7 +1383,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /* reiserfs union of in-core super block data */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/skbuff.h ./include/linux/skbuff.h
 --- ../x/linux-2.4.18-pure/include/linux/skbuff.h	2002-06-08 23:28:47.000000000 -0700
-+++ ./include/linux/skbuff.h	2002-11-21 13:52:05.000000000 -0800
++++ ./include/linux/skbuff.h	2003-01-13 15:16:34.000000000 -0800
 @@ -126,15 +126,31 @@
  	skb_frag_t	frags[MAX_SKB_FRAGS];
  };
@@ -1487,7 +1487,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/spinlock.h ./include/linux/spinlock.h
 --- ../x/linux-2.4.18-pure/include/linux/spinlock.h	2001-11-22 11:46:19.000000000 -0800
-+++ ./include/linux/spinlock.h	2002-11-21 13:51:40.000000000 -0800
++++ ./include/linux/spinlock.h	2003-02-07 16:43:22.000000000 -0800
 @@ -2,6 +2,7 @@
  #define __LINUX_SPINLOCK_H
  
@@ -1507,7 +1507,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 -  typedef struct { int gcc_is_buggy; } spinlock_t;
 -  #define SPIN_LOCK_UNLOCKED (spinlock_t) { 0 }
 -#endif
-+typedef EMPTY_STRUCT_DECL() spinlock_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) spinlock_t;
 +#define SPIN_LOCK_UNLOCKED EMPTY_STRUCT_INIT(spinlock_t)
  
  #define spin_lock_init(lock)	do { } while(0)
@@ -1523,14 +1523,14 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 -  typedef struct { int gcc_is_buggy; } rwlock_t;
 -  #define RW_LOCK_UNLOCKED (rwlock_t) { 0 }
 -#endif
-+typedef EMPTY_STRUCT_DECL() rwlock_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) rwlock_t;
 +#define RW_LOCK_UNLOCKED EMPTY_STRUCT_INIT(rwlock_t)
  
  #define rwlock_init(lock)	do { } while(0)
  #define read_lock(lock)		(void)(lock) /* Not "unused variable". */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/linux/swap.h ./include/linux/swap.h
 --- ../x/linux-2.4.18-pure/include/linux/swap.h	2002-06-08 23:28:47.000000000 -0700
-+++ ./include/linux/swap.h	2002-11-21 13:51:40.000000000 -0800
++++ ./include/linux/swap.h	2003-01-13 15:16:16.000000000 -0800
 @@ -98,7 +98,7 @@
  struct vm_area_struct;
  struct sysinfo;
@@ -1567,7 +1567,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #endif /* _LINUX_TYPES_H */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../x/linux-2.4.18-pure/include/net/route.h ./include/net/route.h
 --- ../x/linux-2.4.18-pure/include/net/route.h	2002-06-08 23:28:47.000000000 -0700
-+++ ./include/net/route.h	2002-11-21 13:54:49.000000000 -0800
++++ ./include/net/route.h	2003-01-13 15:18:46.000000000 -0800
 @@ -136,7 +136,13 @@
  static inline int ip_route_output(struct rtable **rp,
  				      u32 daddr, u32 saddr, u32 tos, int oif)

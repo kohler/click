@@ -1165,13 +1165,13 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #ifdef __KERNEL__
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-arm/mmu.h ./include/asm-arm/mmu.h
 --- ../linux-2.4.20-pure/include/asm-arm/mmu.h	2000-12-29 14:07:23.000000000 -0800
-+++ ./include/asm-arm/mmu.h	2003-01-22 16:34:29.000000000 -0800
++++ ./include/asm-arm/mmu.h	2003-02-07 17:03:43.000000000 -0800
 @@ -2,6 +2,6 @@
  #define __ARM_MMU_H
  
  /* The ARM doesn't have a mmu context */
 -typedef struct { } mm_context_t;
-+typedef EMPTY_STRUCT_DECL() mm_context_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) mm_context_t;
  
  #endif
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
@@ -1336,6 +1336,19 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	if (in_dev)
  		atomic_inc(&in_dev->refcnt);
  	read_unlock(&inetdev_lock);
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/intermezzo_kml.h ./include/linux/intermezzo_kml.h
+--- ../linux-2.4.20-pure/include/linux/intermezzo_kml.h	2001-11-11 10:20:21.000000000 -0800
++++ ./include/linux/intermezzo_kml.h	2003-02-07 17:16:44.000000000 -0800
+@@ -70,8 +70,7 @@
+ 	int 			gid;
+ };
+ 
+-struct kml_open {
+-};
++EMPTY_STRUCT_DECL(kml_open);
+ 
+ struct kml_mkdir {
+ 	char 			*path;
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/list.h ./include/linux/list.h
 --- ../linux-2.4.20-pure/include/linux/list.h	2002-11-28 15:53:15.000000000 -0800
 +++ ./include/linux/list.h	2003-01-26 18:52:00.000000000 -0800
@@ -1549,7 +1562,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/spinlock.h ./include/linux/spinlock.h
 --- ../linux-2.4.20-pure/include/linux/spinlock.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/spinlock.h	2003-01-22 17:35:06.000000000 -0800
++++ ./include/linux/spinlock.h	2003-02-07 17:03:29.000000000 -0800
 @@ -2,6 +2,7 @@
  #define __LINUX_SPINLOCK_H
  
@@ -1569,7 +1582,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 -  typedef struct { int gcc_is_buggy; } spinlock_t;
 -  #define SPIN_LOCK_UNLOCKED (spinlock_t) { 0 }
 -#endif
-+typedef EMPTY_STRUCT_DECL() spinlock_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) spinlock_t;
 +#define SPIN_LOCK_UNLOCKED EMPTY_STRUCT_INIT(spinlock_t)
  
  #define spin_lock_init(lock)	do { } while(0)
@@ -1585,7 +1598,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 -  typedef struct { int gcc_is_buggy; } rwlock_t;
 -  #define RW_LOCK_UNLOCKED (rwlock_t) { 0 }
 -#endif
-+typedef EMPTY_STRUCT_DECL() rwlock_t;
++typedef EMPTY_STRUCT_DECL(/* unnamed */) rwlock_t;
 +#define RW_LOCK_UNLOCKED EMPTY_STRUCT_INIT(rwlock_t)
  
  #define rwlock_init(lock)	do { } while(0)
