@@ -33,10 +33,12 @@
 #define VERSION_OPT		301
 #define ROUTER_OPT		302
 #define UNINSTALL_OPT		303
+#define HOTSWAP_OPT		304
 
 static Clp_Option options[] = {
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
+  { "hot-swap", 'h', HOTSWAP_OPT, 0, Clp_Negate },
   { "uninstall", 'u', UNINSTALL_OPT, 0, Clp_Negate },
   { "version", 'v', VERSION_OPT, 0, 0 },
 };
@@ -61,6 +63,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
+  -h, --hot-swap                Hot-swap install new configuration.\n\
   -u, --uninstall               Uninstall Click from kernel, then reinstall.\n\
       --help                    Print this message and exit.\n\
   -v, --version                 Print version number and exit.\n\
@@ -242,6 +245,7 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   bool uninstall = false;
+  bool hotswap = false;
   
   while (1) {
     int opt = Clp_Next(clp);
@@ -274,6 +278,10 @@ particular purpose.\n");
       uninstall = !clp->negated;
       break;
 
+     case HOTSWAP_OPT:
+      hotswap = !clp->negated;
+      break;
+      
      bad_option:
      case Clp_BadOption:
       short_usage();
@@ -287,6 +295,10 @@ particular purpose.\n");
   }
   
  done:
+  // check options
+  if (hotswap && uninstall)
+    errh->warning("`--hotswap' and `--uninstall' are mutually exclusive");
+  
   RouterT *r = read_router_file(router_file, errh);
   if (!r || errh->nerrors() > 0)
     exit(1);
@@ -297,7 +309,7 @@ particular purpose.\n");
     // install blank configuration
     FILE *f = fopen("/proc/click/config", "w");
     if (!f)
-      errh->fatal("cannot install configuration: %s", strerror(errno));
+      errh->fatal("cannot uninstall configuration: %s", strerror(errno));
     fputs("// nothing\n", f);
     fclose(f);
     // find current packages
@@ -390,7 +402,8 @@ particular purpose.\n");
   }
   
   // write flattened configuration to /proc/click/config
-  FILE *f = fopen("/proc/click/config", "w");
+  const char *config_place = (hotswap ? "/proc/click/hotconfig" : "/proc/click/config");
+  FILE *f = fopen(config_place, "w");
   if (!f)
     errh->fatal("cannot install configuration: %s", strerror(errno));
   // XXX include packages?
