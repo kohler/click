@@ -578,7 +578,7 @@ Router::check_driver()
       while (1) {
 	int was_runcount = _driver_runcount;
 	dm->handle_stopped_driver();
-	if (_driver_runcount <= was_runcount)
+	if (_driver_runcount <= was_runcount || _driver_runcount > 0)
 	  break;
       }
   }
