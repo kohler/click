@@ -10,6 +10,7 @@
 
 #define FAKE_DLT_EN10MB			1	/* Ethernet (10Mb) */
 #define FAKE_DLT_FDDI			10	/* FDDI */
+#define FAKE_DLT_ATM_RFC1483		11	/* RFC 1483-encapsulated ATM */
 #define FAKE_DLT_RAW			12	/* raw IP */
 
 /*
@@ -28,8 +29,7 @@ struct fake_pcap_file_header {
 	uint32_t linktype;	/* data link type (DLT_*) */
 };
 
-struct fake_bpf_timeval
-{
+struct fake_bpf_timeval {
 	int32_t tv_sec;
 	int32_t tv_usec;
 };
@@ -61,6 +61,7 @@ int fake_pcap_parse_dlt(const String &);
 const char *fake_pcap_unparse_dlt(int);
 
 // Handling FORCE_IP.
+bool fake_pcap_dlt_force_ipable(int);
 bool fake_pcap_force_ip(Packet *, int);
 
 #endif

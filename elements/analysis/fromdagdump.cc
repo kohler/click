@@ -1,10 +1,9 @@
 // -*- mode: c++; c-basic-offset: 4 -*-
 /*
- * fromdump.{cc,hh} -- element reads packets from tcpdump file
+ * fromdagdump.{cc,hh} -- element reads packets from tcpdump file
  * Eddie Kohler
  *
- * Copyright (c) 1999-2000 Massachusetts Institute of Technology
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -18,7 +17,7 @@
  */
 
 #include <click/config.h>
-#include "fromdump.hh"
+#include "fromdagdump.hh"
 #include <click/confparse.hh>
 #include <click/router.hh>
 #include <click/standard/scheduleinfo.hh>
@@ -26,7 +25,8 @@
 #include <click/glue.hh>
 #include <click/handlercall.hh>
 #include <click/packet_anno.hh>
-#include "fakepcap.hh"
+#include <click/click_rfc1483.h>
+#include "elements/userlevel/fakepcap.hh"
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -40,14 +40,16 @@
 #define	SWAPSHORT(y) \
 	( (((y)&0xff)<<8) | ((u_short)((y)&0xff00)>>8) )
 
-FromDump::FromDump()
+FromDAGDump::FromDAGDump()
     : Element(0, 1), _fd(-1), _buffer(0), _data_packet(0), _packet(0),
       _last_time_h(0), _task(this), _pipe(0)
 {
     MOD_INC_USE_COUNT;
+    static_assert(sizeof(DAGCell) == 64);
+    static_assert(sizeof(((DAGCell *) 0)->payload) == sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET);
 }
 
-FromDump::~FromDump()
+FromDAGDump::~FromDAGDump()
 {
     MOD_DEC_USE_COUNT;
     delete _last_time_h;
@@ -55,13 +57,13 @@ FromDump::~FromDump()
 }
 
 void
-FromDump::notify_noutputs(int n)
+FromDAGDump::notify_noutputs(int n)
 {
     set_noutputs(n <= 1 ? 1 : 2);
 }
 
 int
-FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
+FromDAGDump::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true, force_ip = false;
 #ifdef __linux__
@@ -138,6 +140,7 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     _timing = timing;
     _stop = stop;
     _force_ip = force_ip;
+    _linktype = FAKE_DLT_ATM_RFC1483;
 #ifdef ALLOW_MMAP
     _mmap = mmap;
 #else
@@ -148,29 +151,8 @@ FromDump::configure(const Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
-static void
-swap_file_header(const fake_pcap_file_header *hp, fake_pcap_file_header *outp)
-{
-    outp->magic = SWAPLONG(hp->magic);
-    outp->version_major = SWAPSHORT(hp->version_major);
-    outp->version_minor = SWAPSHORT(hp->version_minor);
-    outp->thiszone = SWAPLONG(hp->thiszone);
-    outp->sigfigs = SWAPLONG(hp->sigfigs);
-    outp->snaplen = SWAPLONG(hp->snaplen);
-    outp->linktype = SWAPLONG(hp->linktype);
-}
-
-static void
-swap_packet_header(const fake_pcap_pkthdr *hp, fake_pcap_pkthdr *outp)
-{
-    outp->ts.tv_sec = SWAPLONG(hp->ts.tv_sec);
-    outp->ts.tv_usec = SWAPLONG(hp->ts.tv_usec);
-    outp->caplen = SWAPLONG(hp->caplen);
-    outp->len = SWAPLONG(hp->len);
-}
-
 int
-FromDump::error_helper(ErrorHandler *errh, const char *x)
+FromDAGDump::error_helper(ErrorHandler *errh, const char *x)
 {
     if (errh)
 	errh->error("%s: %s", _filename.cc(), x);
@@ -184,11 +166,11 @@ static void
 munmap_destructor(unsigned char *data, size_t amount)
 {
     if (munmap((caddr_t)data, amount) < 0)
-	click_chatter("FromDump: munmap: %s", strerror(errno));
+	click_chatter("FromDAGDump: munmap: %s", strerror(errno));
 }
 
 int
-FromDump::read_buffer_mmap(ErrorHandler *errh)
+FromDAGDump::read_buffer_mmap(ErrorHandler *errh)
 {
     if (_mmap_unit == 0) {  
 	size_t page_size = getpagesize();
@@ -234,7 +216,7 @@ FromDump::read_buffer_mmap(ErrorHandler *errh)
 #endif
 
 int
-FromDump::read_buffer(ErrorHandler *errh)
+FromDAGDump::read_buffer(ErrorHandler *errh)
 {
     if (_data_packet)
 	_data_packet->kill();
@@ -278,7 +260,7 @@ FromDump::read_buffer(ErrorHandler *errh)
 }
 
 int
-FromDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
+FromDAGDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
 {
     unsigned char *data = reinterpret_cast<unsigned char *>(vdata);
     uint32_t dpos = 0;
@@ -300,7 +282,7 @@ FromDump::read_into(void *vdata, uint32_t dlen, ErrorHandler *errh)
 }
 
 int
-FromDump::initialize(ErrorHandler *errh)
+FromDAGDump::initialize(ErrorHandler *errh)
 {
     if (_filename == "-") {
 	_fd = STDIN_FILENO;
@@ -322,9 +304,6 @@ FromDump::initialize(ErrorHandler *errh)
     } else if (result == 0) {
 	uninitialize();
 	return errh->error("%s: empty file", _filename.cc());
-    } else if (_len < sizeof(fake_pcap_file_header)) {
-	uninitialize();
-	return errh->error("%s: not a tcpdump file (too short)", _filename.cc());
     }
 
     // check for a gziped or bzip2d dump
@@ -332,7 +311,9 @@ FromDump::initialize(ErrorHandler *errh)
 	/* cannot handle gzip or bzip2 */;
     else if (_len >= 3
 	     && ((_buffer[0] == 037 && _buffer[1] == 0213)
-		 || (_buffer[0] == 'B' && _buffer[1] == 'Z' && _buffer[2] == 'h'))) {
+		 || (_buffer[0] == 'B' && _buffer[1] == 'Z' && _buffer[2] == 'h'))
+	     && (_len < DAGCell::PAYLOAD_OFFSET + RFC1483_SNAP_EXPECTED_LEN
+		 || memcmp(_buffer + DAGCell::PAYLOAD_OFFSET, RFC1483_SNAP_EXPECTED, RFC1483_SNAP_EXPECTED_LEN) != 0)) {
 	close(_fd);
 	_fd = -1;
 	String command = (_buffer[0] == '\037' ? "zcat " : "bzcat ") + _filename;
@@ -343,47 +324,20 @@ FromDump::initialize(ErrorHandler *errh)
 	goto retry_file;
     }
     
-    // check magic number
-    fake_pcap_file_header swapped_fh;
-    const fake_pcap_file_header *fh = (const fake_pcap_file_header *)_buffer;
-
-    if (fh->magic == FAKE_PCAP_MAGIC || fh->magic == FAKE_MODIFIED_PCAP_MAGIC)
-	_swapped = false;
-    else {
-	swap_file_header(fh, &swapped_fh);
-	_swapped = true;
-	fh = &swapped_fh;
-    }
-    if (fh->magic != FAKE_PCAP_MAGIC && fh->magic != FAKE_MODIFIED_PCAP_MAGIC) {
-	uninitialize();
-	return errh->error("%s: not a tcpdump file (bad magic number)", _filename.cc());
-    }
-    // compensate for extra crap appended to packet headers
-    _extra_pkthdr_crap = (fh->magic == FAKE_PCAP_MAGIC ? 0 : sizeof(fake_modified_pcap_pkthdr) - sizeof(fake_pcap_pkthdr));
-
-    if (fh->version_major != FAKE_PCAP_VERSION_MAJOR) {
-	uninitialize();
-	return errh->error("%s: unknown major version %d", _filename.cc(), fh->version_major);
-    }
-    _minor_version = fh->version_minor;
-    _linktype = fh->linktype;
-
     // if forcing IP packets, check datalink type to ensure we understand it
     if (_force_ip) {
 	if (!fake_pcap_dlt_force_ipable(_linktype))
 	    return errh->error("%s: unknown linktype %d; can't force IP packets", _filename.cc(), _linktype);
 	if (_timing)
 	    return errh->error("FORCE_IP and TIMING options are incompatible");
-    } else if (_linktype == FAKE_DLT_RAW)
-	// force FORCE_IP.
-	_force_ip = true;	// XXX _timing?
+    }
 
     // check handler call
     if (_last_time_h && _last_time_h->initialize_write(this, errh) < 0)
 	return -1;
     
     // try reading a packet
-    _pos = sizeof(fake_pcap_file_header);
+    _pos = 0;
     if (read_packet(errh)) {
 	struct timeval now;
 	click_gettimeofday(&now);
@@ -396,7 +350,7 @@ FromDump::initialize(ErrorHandler *errh)
 }
 
 void
-FromDump::uninitialize()
+FromDAGDump::uninitialize()
 {
     if (_pipe)
 	pclose(_pipe);
@@ -412,7 +366,7 @@ FromDump::uninitialize()
 }
 
 void
-FromDump::set_active(bool active)
+FromDAGDump::set_active(bool active)
 {
     if (_active != active) {
 	_active = active;
@@ -421,24 +375,50 @@ FromDump::set_active(bool active)
     }
 }
 
+static inline uint64_t
+swapq(uint64_t q)
+{
+#if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
+    return ((q & 0xff00000000000000LL) >> 56)
+	| ((q & 0x00ff000000000000LL) >> 40)
+	| ((q & 0x0000ff0000000000LL) >> 24)
+	| ((q & 0x000000ff00000000LL) >>  8)
+	| ((q & 0x00000000ff000000LL) <<  8)
+	| ((q & 0x0000000000ff0000LL) << 24)
+	| ((q & 0x000000000000ff00LL) << 40)
+	| ((q & 0x00000000000000ffLL) << 56);
+#elif CLICK_BYTE_ORDER == CLICK_LITTLE_ENDIAN
+    return q;
+#else
+#error "neither big nor little endian"
+#endif
+}
+
 void
-FromDump::prepare_times(const fake_bpf_timeval &btv)
+FromDAGDump::stamp_to_timeval(uint64_t stamp, struct timeval &tv) const
+{
+    tv.tv_sec = (uint32_t) (stamp >> 32);
+    tv.tv_usec = (uint32_t) ((stamp * 1000000) >> 32);
+}
+
+void
+FromDAGDump::prepare_times(struct timeval &tv)
 {
     if (_first_time_relative)
-	timeradd(&btv, &_first_time, &_first_time);
+	timeradd(&tv, &_first_time, &_first_time);
     if (_last_time_relative)
-	timeradd(&btv, &_last_time, &_last_time);
+	timeradd(&tv, &_last_time, &_last_time);
     else if (_last_time_interval)
 	timeradd(&_first_time, &_last_time, &_last_time);
     _have_any_times = true;
 }
 
 bool
-FromDump::read_packet(ErrorHandler *errh)
+FromDAGDump::read_packet(ErrorHandler *errh)
 {
-    fake_pcap_pkthdr swapped_ph;
-    const fake_pcap_pkthdr *ph;
-    int len, caplen;
+    const DAGCell *cell;
+    static DAGCell static_cell;
+    struct timeval tv;
     Packet *p;
     bool more = true;
     _packet = 0;
@@ -449,50 +429,27 @@ FromDump::read_packet(ErrorHandler *errh)
 	return false;
     
     // we may need to read bits of the file
-    if (_pos + sizeof(*ph) <= _len) {
-	ph = reinterpret_cast<const fake_pcap_pkthdr *>(_buffer + _pos);
-	_pos += sizeof(*ph);
+    if (_pos + sizeof(DAGCell) <= _len) {
+	cell = reinterpret_cast<const DAGCell *>(_buffer + _pos);
+	_pos += sizeof(DAGCell);
     } else {
-	ph = &swapped_ph;
-	if (read_into(&swapped_ph, sizeof(*ph), errh) < (int)sizeof(*ph))
+	cell = &static_cell;
+	if (read_into(&static_cell, sizeof(DAGCell), errh) < (int)sizeof(DAGCell))
 	    return false;
     }
 
-    if (_swapped) {
-	swap_packet_header(ph, &swapped_ph);
-	ph = &swapped_ph;
-    }
-
-    // may need to swap 'caplen' and 'len' fields at or before version 2.3
-    if (_minor_version > 3 || (_minor_version == 3 && ph->caplen <= ph->len)) {
-	len = ph->len;
-	caplen = ph->caplen;
-    } else {
-	len = ph->caplen;
-	caplen = ph->len;
-    }
-
-    // check for errors
-    if (caplen > len || caplen > 65535) {
-	error_helper(errh, "bad packet header; giving up");
-	return false;
-    }
-
-    // compensate for modified pcap versions
-    _pos += _extra_pkthdr_crap;
-
     // check times
   check_times:
+    stamp_to_timeval(swapq(cell->timestamp), tv);
     if (!_have_any_times)
-	prepare_times(ph->ts);
+	prepare_times(tv);
     if (_have_first_time) {
-	if (timercmp(&ph->ts, &_first_time, <)) {
-	    _pos += caplen;
+	if (timercmp(&tv, &_first_time, <))
 	    goto retry;
-	} else
+	else
 	    _have_first_time = false;
     }
-    if (_have_last_time && !timercmp(&ph->ts, &_last_time, <)) {
+    if (_have_last_time && !timercmp(&tv, &_last_time, <)) {
 	_have_last_time = false;
 	(void) _last_time_h->call_write(this, errh);
 	if (!_active)
@@ -507,39 +464,27 @@ FromDump::read_packet(ErrorHandler *errh)
     
     // checking sampling probability
     if (_sampling_prob < (1 << SAMPLING_SHIFT)
-	&& (uint32_t)(random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob) {
-	_pos += caplen;
+	&& (uint32_t)(random() & ((1<<SAMPLING_SHIFT)-1)) >= _sampling_prob)
 	goto retry;
-    }
     
     // create packet
-    if (_pos + caplen <= _len) {
+    if (cell != &static_cell) {
 	p = _data_packet->clone();
 	if (!p) {
 	    error_helper(errh, "out of memory!");
 	    return false;
 	}
-	p->change_headroom_and_length(_pos, caplen);
-	p->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
-	SET_EXTRA_LENGTH_ANNO(p, len - caplen);
-	_pos += caplen;
+	p->change_headroom_and_length(_pos - sizeof(DAGCell) + DAGCell::PAYLOAD_OFFSET, sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET);
+	p->set_timestamp_anno(tv);
 	
     } else {
-	WritablePacket *wp = Packet::make(0, 0, caplen, 0);
+	WritablePacket *wp = Packet::make(0, 0, sizeof(DAGCell) - DAGCell::PAYLOAD_OFFSET, 0);
 	if (!wp) {
 	    error_helper(errh, "out of memory!");
 	    return false;
 	}
-	// set annotations now: may unmap earlier memory!
-	wp->set_timestamp_anno(ph->ts.tv_sec, ph->ts.tv_usec);
-	SET_EXTRA_LENGTH_ANNO(wp, len - caplen);
-	
-	if (read_into(wp->data(), caplen, errh) < caplen) {
-	    // XXX error message too annoying
-	    // error_helper(errh, "short packet");
-	    wp->kill();
-	    return false;
-	}
+	memcpy(wp->data(), &cell->payload, sizeof(cell->payload));
+	wp->set_timestamp_anno(tv);
 	
 	p = wp;
     }
@@ -554,7 +499,7 @@ FromDump::read_packet(ErrorHandler *errh)
 }
 
 void
-FromDump::run_scheduled()
+FromDAGDump::run_scheduled()
 {
     if (!_active)
 	return;
@@ -582,7 +527,7 @@ FromDump::run_scheduled()
 }
 
 Packet *
-FromDump::pull(int)
+FromDAGDump::pull(int)
 {
     if (!_active)
 	return 0;
@@ -615,9 +560,9 @@ enum {
 };
 
 String
-FromDump::read_handler(Element *e, void *thunk)
+FromDAGDump::read_handler(Element *e, void *thunk)
 {
-    FromDump *fd = static_cast<FromDump *>(e);
+    FromDAGDump *fd = static_cast<FromDAGDump *>(e);
     switch ((int)thunk) {
       case SAMPLING_PROB_THUNK:
 	return cp_unparse_real2(fd->_sampling_prob, SAMPLING_SHIFT) + "\n";
@@ -640,9 +585,9 @@ FromDump::read_handler(Element *e, void *thunk)
 }
 
 int
-FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh)
+FromDAGDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandler *errh)
 {
-    FromDump *fd = static_cast<FromDump *>(e);
+    FromDAGDump *fd = static_cast<FromDAGDump *>(e);
     String s = cp_uncomment(s_in);
     switch ((int)thunk) {
       case ACTIVE_THUNK: {
@@ -673,7 +618,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 }
 
 void
-FromDump::add_handlers()
+FromDAGDump::add_handlers()
 {
     add_read_handler("sampling_prob", read_handler, (void *)SAMPLING_PROB_THUNK);
     add_read_handler("active", read_handler, (void *)ACTIVE_THUNK);
@@ -687,5 +632,5 @@ FromDump::add_handlers()
 	add_task_handlers(&_task);
 }
 
-ELEMENT_REQUIRES(userlevel FakePcap)
-EXPORT_ELEMENT(FromDump)
+ELEMENT_REQUIRES(userlevel int64 FakePcap)
+EXPORT_ELEMENT(FromDAGDump)

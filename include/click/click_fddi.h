@@ -1,4 +1,4 @@
-// -*- mode: c; c-basic-offset: 4 -*-
+/* -*- mode: c; c-basic-offset: 4 -*- */
 #ifndef CLICK_FDDI_H
 #define CLICK_FDDI_H
 

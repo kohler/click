@@ -227,8 +227,7 @@ FromDevice::initialize(ErrorHandler *errh)
   add_select(fd, SELECT_READ);
 
   _datalink = pcap_datalink(_pcap);
-  if (_force_ip && _datalink != DLT_RAW && _datalink != DLT_EN10MB
-      && _datalink != DLT_FDDI)
+  if (_force_ip && !fake_pcap_dlt_force_ipable(_datalink))
     errh->warning("%s: strange data link type %d, FORCE_IP will not work", ifname, _datalink);
 
 #elif FROMDEVICE_LINUX

@@ -169,7 +169,6 @@ class FromIPSummaryDump : public Element { public:
     Task _task;
     Vector<String> _words;	// for speed
 
-    struct timeval _time_offset;
     String _filename;
     FILE *_pipe;
     off_t _file_offset;
