@@ -1,3 +1,22 @@
+2001-12-27 Thursday 14:07  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-align/click-align.cc (1.37),
+	click-combine/click-uncombine.cc (1.21),
+	click-devirtualize/specializer.cc (1.25),
+	click-fastclassifier/click-fastclassifier.cc (1.46),
+	click-undead/click-undead.cc (1.23), click-xform/adjacency.cc
+	(1.15), click-xform/click-xform.cc (1.40), lib/elementt.cc (1.22),
+	lib/elementt.hh (1.17), lib/lexert.cc (1.41), lib/processingt.cc
+	(1.15), lib/routert.cc (1.52), lib/routert.hh (1.42),
+	lib/vectori.cc (1.10): continuing tools updates: move to
+	ConnectionT objects, rather than separate hookup_from, hookup_to,
+	and hookup_landmarks
+
+2001-12-27 Thursday 14:07  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/printold.cc (1.7): adapt to StringAccum
+	changes
+
 2001-12-26 Wednesday 16:07  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-align/alignclass.cc (1.14),
