@@ -209,12 +209,14 @@ struct grid_loc_query {
 
 struct grid_route_probe {
   unsigned int nonce;
+  struct timeval send_time;
 };
 
 struct grid_route_reply {
   unsigned int nonce;
   unsigned int probe_dest;
   unsigned char reply_hop;
+  struct timeval probe_send_time;
 };
 
 

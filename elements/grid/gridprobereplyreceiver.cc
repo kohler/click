@@ -66,6 +66,22 @@ GridProbeReplyReceiver::configure(const Vector<String> &conf, ErrorHandler *errh
 }
 
 
+timeval
+operator-(const timeval &a, const timeval &b)
+{
+  timeval tv;
+  tv.tv_sec = a.tv_sec - b.tv_sec;
+  if (a.tv_usec > b.tv_usec)
+    tv.tv_usec = a.tv_usec - b.tv_usec;
+  else {
+    tv.tv_usec = a.tv_usec + 1000000 - b.tv_usec;
+    --tv.tv_sec;
+  }
+  return tv;
+}
+
+
+
 Packet *
 GridProbeReplyReceiver::simple_action(Packet *p)
 {
@@ -81,13 +97,20 @@ GridProbeReplyReceiver::simple_action(Packet *p)
     return 0;
   }
 
+  struct timeval tx_time = rr->probe_send_time;
+  tx_time.tv_sec = ntohl(tx_time.tv_sec);
+  tx_time.tv_usec = ntohl(tx_time.tv_usec);
+
+  struct timeval rtt = p->timestamp_anno() - tx_time;
+
   char buf[100];
   snprintf(buf, sizeof(buf),
-	   "dest=%s nonce=%u hop=%s hopcount=%u",
+	   "dest=%s nonce=%u hop=%s hopcount=%u rtt=%lu.%06lu",
 	   IPAddress(rr->probe_dest).s().cc(),
 	   (unsigned int) ntohl(rr->nonce),
 	   IPAddress(gh->ip).s().cc(),
-	   (unsigned int) rr->reply_hop);
+	   (unsigned int) rr->reply_hop,
+	   rtt.tv_sec, rtt.tv_usec);
   
   _repl_errh->message(buf);
   p->kill();

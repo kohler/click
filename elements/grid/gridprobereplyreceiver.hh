@@ -12,12 +12,13 @@
  * to the Click chatter channel specified by C<CHANNEL>.  An example
  * message is:
  *
- * C<dest=18.26.7.100 nonce=197355 hop=18.26.7.4 hopcount=3>
+ * C<dest=18.26.7.100 nonce=197355 hop=18.26.7.4 hopcount=3 rtt=0.003456>
  *
  * where C<dest> is the node to which the original probe was headed,
  * C<nonce> is the nonce from that probe, C<hop> is the node which
- * produced this reply from the probe, and C<hopcount> is the number
- * of hops away the reply sender is from the probe sender.
+ * produced this reply from the probe, C<hopcount> is the number of
+ * hops away the reply sender is from the probe sender, and C<rtt> is
+ * the probe reply's round trip time, in seconds.
  *
  * =a GridProbeSender, GridProbeHandler, ChatterSocket */
 

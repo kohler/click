@@ -112,6 +112,8 @@ GridProbeHandler::push(int port, Packet *p)
   nb2->hops_travelled = 0;
 
   rr->nonce = rp->nonce; /* keep in net byte order */
+  rr->probe_send_time = rp->send_time;
+
   rr->probe_dest = nb->dst_ip;
   rr->reply_hop = nb->hops_travelled;
 

@@ -93,7 +93,9 @@ GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
   nb->hops_travelled = 0;
 
   rp->nonce = htonl(nonce);
-
+  rp->send_time.tv_sec = htonl(tv.tv_sec);
+  rp->send_time.tv_usec = htonl(tv.tv_usec);
+  
   output(0).push(q);
 }
 
