@@ -1,3 +1,33 @@
+2003-11-07 Friday 16:04  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/controlsocket.hh (1.33): nit
+
+2003-11-07 Friday 16:00  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.74): DISTFILES tweak
+
+2003-11-07 Friday 15:51  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/controlsocket.cc (1.46),
+	elements/userlevel/controlsocket.hh (1.32), include/click/llrpc.h
+	(1.23): rename CLICK_NTOH_LLRPC to CLICK_LLRPC_NTOH; update
+	documentation; all LLRPC constants in ControLSocket use network
+	format
+
+2003-11-07 Friday 15:40  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/controlsocket.cc (1.45),
+	elements/userlevel/controlsocket.hh (1.31),
+	elements/userlevel/khandlerproxy.cc (1.13),
+	elements/userlevel/khandlerproxy.hh (1.6), include/click/llrpc.h
+	(1.22): add support for user-level LLRPCs via the ControlSocket
+	element, requested by bc Wong
+
+2003-11-07 Friday 15:40  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/: clickfs.cc (1.35), proc_click.cc (1.51): refer to
+	_CLICK_IOC_SIZE() not _IOC_SIZE()
+
 2003-11-07 Friday 15:39  Eddie Kohler <kohler@icir.org>
 
 	* config-userlevel.h.in (1.16): fix #include <cassert> (should be
