@@ -93,9 +93,16 @@ ARPTable::reverse_lookup(EtherAddress eth)
   return IPAddress();
 
 }
-void
+int
 ARPTable::insert(IPAddress ip, EtherAddress eth) 
 {
+  if (!(ip && eth)) {
+    click_chatter("ARPTable %s: You fool, you tried to insert %s, %s\n",
+		  id().cc(),
+		  ip.s().cc(),
+		  eth.s().cc());
+    return -1;
+  }
   DstInfo *dst = _table.findp(ip);
   if (!dst) {
     _table.insert(ip, DstInfo(ip));
@@ -106,6 +113,7 @@ ARPTable::insert(IPAddress ip, EtherAddress eth)
 
 
   _rev_table.insert(eth, ip);
+  return 0;
 }
 String
 ARPTable::static_print_mappings(Element *e, void *)
@@ -130,13 +138,44 @@ ARPTable::print_mappings()
   }
   return sa.take_string();
 }
+
+int
+ARPTable::static_insert(const String&arg, Element *e,
+			void *, ErrorHandler *errh)
+{
+  ARPTable *n = (ARPTable *) e;
+  Vector<String> args;
+  IPAddress ip;
+  EtherAddress eth;
+  cp_spacevec(arg, args);
+  if (args.size() != 2) {
+    return errh->error("Must have two arguments: currently has %d: %s",
+		       args.size(),
+		       args[0].cc());
+  }
+
+  if (!cp_ip_address(args[0], &ip)) {
+    return errh->error("Couldn't read IPAddress out of ip");
+  }
+
+  if (!cp_ethernet_address(args[1], &eth)) {
+    return errh->error("Couldn't read EtherAddress out of eth");
+  }
+
+  return n->insert(ip, eth);
+}
 void
 ARPTable::add_handlers()
 {
   add_default_handlers(true);
   add_read_handler("mappings", static_print_mappings, 0);
-
+  add_write_handler("insert", static_insert, 0);
+  
 }
+
+
+
+
 // generate Vector template instance
 #include <click/bighashmap.cc>
 #if EXPLICIT_TEMPLATE_INSTANCES

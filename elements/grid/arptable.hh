@@ -32,14 +32,15 @@ class ARPTable : public Element { public:
 
   static String static_print_mappings(Element *e, void *);
   String print_mappings();
-
+  static int static_insert(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
 
   /* returns ff:ff:ff:ff:ff:ff if none is found */
   EtherAddress lookup(IPAddress ip);
 
   IPAddress reverse_lookup(EtherAddress eth);
 
-  void insert(IPAddress ip, EtherAddress eth);
+  int insert(IPAddress ip, EtherAddress eth);
  private:
   
   // Poor man's ARP cache. 
