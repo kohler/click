@@ -57,10 +57,7 @@ install-include:
 
 elemlist elemlists: stamp-egroup
 	for dir in @TARGETS@; do \
-	  f=$$dir/elements.conf; \
-	  echo $$dir `cat stamp-egroup` | (cd $(top_srcdir); ./click-buildtool findelem) > $$f~; \
-	  if test -r $$f && diff $$f $$f~ >/dev/null 2>&1; then :; else \
-	    mv $$f~ $$f; rm -f $$dir/elements.d; fi; \
+	  echo $$dir @element_groups@ | (cd $(top_srcdir); ./click-buildtool findelem) > $$dir/elements.conf; \
 	done
 
 elementmap: $(srcdir)/mkelementmap.pl
