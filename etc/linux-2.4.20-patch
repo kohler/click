@@ -1174,6 +1174,35 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
 +typedef EMPTY_STRUCT_DECL(/* unnamed */) mm_context_t;
  
  #endif
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-cris/io.h ./include/asm-cris/io.h
+--- ../linux-2.4.20-pure/include/asm-cris/io.h	2001-10-08 11:43:54.000000000 -0700
++++ ./include/asm-cris/io.h	2003-02-10 10:22:15.000000000 -0800
+@@ -24,8 +24,8 @@
+  ({ int _Foofoo; __asm__ volatile ("bmod [%0],%0" : "=r" (_Foofoo) : "0" \
+ 			       (255)); _Foofoo; })
+ 
+-#define TRACE_OFF() do { __asm__ volatile ("bmod [%0],%0" :: "r" (254)); } while (0)
+-#define SIM_END() do { __asm__ volatile ("bmod [%0],%0" :: "r" (28)); } while (0)
++#define TRACE_OFF() do { __asm__ volatile ("bmod [%0],%0" : : "r" (254)); } while (0)
++#define SIM_END() do { __asm__ volatile ("bmod [%0],%0" : : "r" (28)); } while (0)
+ #define CRIS_CYCLES() __extension__ \
+  ({ unsigned long c; asm ("bmod [%1],%0" : "=r" (c) : "r" (27)); c;})
+ #else  /* ! defined CONFIG_SVINTO_SIM */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/desc.h ./include/asm-i386/desc.h
+--- ../linux-2.4.20-pure/include/asm-i386/desc.h	2001-07-26 13:40:32.000000000 -0700
++++ ./include/asm-i386/desc.h	2003-02-10 10:22:47.000000000 -0800
+@@ -56,9 +56,9 @@
+ #define idt_descr (*(struct Xgt_desc_struct *)((char *)&idt - 2))
+ #define gdt_descr (*(struct Xgt_desc_struct *)((char *)&gdt - 2))
+ 
+-#define load_TR(n) __asm__ __volatile__("ltr %%ax"::"a" (__TSS(n)<<3))
++#define load_TR(n) __asm__ __volatile__("ltr %%ax": :"a" (__TSS(n)<<3))
+ 
+-#define __load_LDT(n) __asm__ __volatile__("lldt %%ax"::"a" (__LDT(n)<<3))
++#define __load_LDT(n) __asm__ __volatile__("lldt %%ax": :"a" (__LDT(n)<<3))
+ 
+ /*
+  * This is the ldt that every process will get unless we need
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/highmem.h ./include/asm-i386/highmem.h
 --- ../linux-2.4.20-pure/include/asm-i386/highmem.h	2002-08-02 17:39:45.000000000 -0700
 +++ ./include/asm-i386/highmem.h	2003-01-26 18:57:06.000000000 -0800
@@ -1196,6 +1225,18 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  	if (vaddr < FIXADDR_START) // FIXME
  		return;
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/pgtable.h ./include/asm-i386/pgtable.h
+--- ../linux-2.4.20-pure/include/asm-i386/pgtable.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-i386/pgtable.h	2003-02-10 10:21:40.000000000 -0800
+@@ -43,7 +43,7 @@
+ 			"movl %%cr3, %0;  # flush TLB \n"		\
+ 			"movl %0, %%cr3;              \n"		\
+ 			: "=r" (tmpreg)					\
+-			:: "memory");					\
++			: : "memory");					\
+ 	} while (0)
+ 
+ /*
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-i386/rwlock.h ./include/asm-i386/rwlock.h
 --- ../linux-2.4.20-pure/include/asm-i386/rwlock.h	2002-08-02 17:39:45.000000000 -0700
 +++ ./include/asm-i386/rwlock.h	2003-01-22 16:41:58.000000000 -0800
@@ -1268,6 +1309,729 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  
  static inline void * __memcpy(void * to, const void * from, size_t n)
  {
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/delay.h ./include/asm-ia64/delay.h
+--- ../linux-2.4.20-pure/include/asm-ia64/delay.h	2001-04-05 12:51:47.000000000 -0700
++++ ./include/asm-ia64/delay.h	2003-02-10 10:23:26.000000000 -0800
+@@ -21,7 +21,7 @@
+ static __inline__ void
+ ia64_set_itm (unsigned long val)
+ {
+-	__asm__ __volatile__("mov cr.itm=%0;; srlz.d;;" :: "r"(val) : "memory");
++	__asm__ __volatile__("mov cr.itm=%0;; srlz.d;;" : : "r"(val) : "memory");
+ }
+ 
+ static __inline__ unsigned long
+@@ -29,20 +29,20 @@
+ {
+ 	unsigned long result;
+ 
+-	__asm__ __volatile__("mov %0=cr.itm;; srlz.d;;" : "=r"(result) :: "memory");
++	__asm__ __volatile__("mov %0=cr.itm;; srlz.d;;" : "=r"(result) : : "memory");
+ 	return result;
+ }
+ 
+ static __inline__ void
+ ia64_set_itv (unsigned long val)
+ {
+-	__asm__ __volatile__("mov cr.itv=%0;; srlz.d;;" :: "r"(val) : "memory");
++	__asm__ __volatile__("mov cr.itv=%0;; srlz.d;;" : : "r"(val) : "memory");
+ }
+ 
+ static __inline__ void
+ ia64_set_itc (unsigned long val)
+ {
+-	__asm__ __volatile__("mov ar.itc=%0;; srlz.d;;" :: "r"(val) : "memory");
++	__asm__ __volatile__("mov ar.itc=%0;; srlz.d;;" : : "r"(val) : "memory");
+ }
+ 
+ static __inline__ unsigned long
+@@ -50,10 +50,10 @@
+ {
+ 	unsigned long result;
+ 
+-	__asm__ __volatile__("mov %0=ar.itc" : "=r"(result) :: "memory");
++	__asm__ __volatile__("mov %0=ar.itc" : "=r"(result) : : "memory");
+ #ifdef CONFIG_ITANIUM
+ 	while (__builtin_expect ((__s32) result == -1, 0))
+-		__asm__ __volatile__("mov %0=ar.itc" : "=r"(result) :: "memory");
++		__asm__ __volatile__("mov %0=ar.itc" : "=r"(result) : : "memory");
+ #endif
+ 	return result;
+ }
+@@ -67,9 +67,9 @@
+ 		return;
+ 
+ 	__asm__ __volatile__("mov %0=ar.lc;;" : "=r"(saved_ar_lc));
+-	__asm__ __volatile__("mov ar.lc=%0;;" :: "r"(loops - 1));
++	__asm__ __volatile__("mov ar.lc=%0;;" : : "r"(loops - 1));
+         __asm__ __volatile__("1:\tbr.cloop.sptk.few 1b;;");
+-	__asm__ __volatile__("mov ar.lc=%0" :: "r"(saved_ar_lc));
++	__asm__ __volatile__("mov ar.lc=%0" : : "r"(saved_ar_lc));
+ }
+ 
+ static __inline__ void
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/io.h ./include/asm-ia64/io.h
+--- ../linux-2.4.20-pure/include/asm-ia64/io.h	2002-08-02 17:39:45.000000000 -0700
++++ ./include/asm-ia64/io.h	2003-02-10 10:23:37.000000000 -0800
+@@ -67,7 +67,7 @@
+  * Memory fence w/accept.  This should never be used in code that is
+  * not IA-64 specific.
+  */
+-#define __ia64_mf_a()	__asm__ __volatile__ ("mf.a" ::: "memory")
++#define __ia64_mf_a()	__asm__ __volatile__ ("mf.a" : : : "memory")
+ 
+ static inline const unsigned long
+ __ia64_get_io_port_base (void)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/pgalloc.h ./include/asm-ia64/pgalloc.h
+--- ../linux-2.4.20-pure/include/asm-ia64/pgalloc.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-ia64/pgalloc.h	2003-02-10 10:23:43.000000000 -0800
+@@ -194,7 +194,7 @@
+ 	flush_tlb_range(vma->vm_mm, (addr & PAGE_MASK), (addr & PAGE_MASK) + PAGE_SIZE);
+ #else
+ 	if (vma->vm_mm == current->active_mm)
+-		asm volatile ("ptc.l %0,%1" :: "r"(addr), "r"(PAGE_SHIFT << 2) : "memory");
++		asm volatile ("ptc.l %0,%1" : : "r"(addr), "r"(PAGE_SHIFT << 2) : "memory");
+ 	else
+ 		vma->vm_mm->context = 0;
+ #endif
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/processor.h ./include/asm-ia64/processor.h
+--- ../linux-2.4.20-pure/include/asm-ia64/processor.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-ia64/processor.h	2003-02-10 10:31:59.000000000 -0800
+@@ -414,14 +414,14 @@
+ ia64_set_kr (unsigned long regnum, unsigned long r)
+ {
+ 	switch (regnum) {
+-	      case 0: asm volatile ("mov ar.k0=%0" :: "r"(r)); break;
+-	      case 1: asm volatile ("mov ar.k1=%0" :: "r"(r)); break;
+-	      case 2: asm volatile ("mov ar.k2=%0" :: "r"(r)); break;
+-	      case 3: asm volatile ("mov ar.k3=%0" :: "r"(r)); break;
+-	      case 4: asm volatile ("mov ar.k4=%0" :: "r"(r)); break;
+-	      case 5: asm volatile ("mov ar.k5=%0" :: "r"(r)); break;
+-	      case 6: asm volatile ("mov ar.k6=%0" :: "r"(r)); break;
+-	      case 7: asm volatile ("mov ar.k7=%0" :: "r"(r)); break;
++	      case 0: asm volatile ("mov ar.k0=%0" : : "r"(r)); break;
++	      case 1: asm volatile ("mov ar.k1=%0" : : "r"(r)); break;
++	      case 2: asm volatile ("mov ar.k2=%0" : : "r"(r)); break;
++	      case 3: asm volatile ("mov ar.k3=%0" : : "r"(r)); break;
++	      case 4: asm volatile ("mov ar.k4=%0" : : "r"(r)); break;
++	      case 5: asm volatile ("mov ar.k5=%0" : : "r"(r)); break;
++	      case 6: asm volatile ("mov ar.k6=%0" : : "r"(r)); break;
++	      case 7: asm volatile ("mov ar.k7=%0" : : "r"(r)); break;
+ 	}
+ }
+ 
+@@ -448,8 +448,8 @@
+ extern void ia32_load_state (struct task_struct *task);
+ #endif
+ 
+-#define ia64_fph_enable()	asm volatile (";; rsm psr.dfh;; srlz.d;;" ::: "memory");
+-#define ia64_fph_disable()	asm volatile (";; ssm psr.dfh;; srlz.d;;" ::: "memory");
++#define ia64_fph_enable()	asm volatile (";; rsm psr.dfh;; srlz.d;;" : : : "memory");
++#define ia64_fph_disable()	asm volatile (";; ssm psr.dfh;; srlz.d;;" : : : "memory");
+ 
+ /* load fp 0.0 into fph */
+ static inline void
+@@ -478,25 +478,25 @@
+ static inline void
+ ia64_fc (void *addr)
+ {
+-	asm volatile ("fc %0" :: "r"(addr) : "memory");
++	asm volatile ("fc %0" : : "r"(addr) : "memory");
+ }
+ 
+ static inline void
+ ia64_sync_i (void)
+ {
+-	asm volatile (";; sync.i" ::: "memory");
++	asm volatile (";; sync.i" : : : "memory");
+ }
+ 
+ static inline void
+ ia64_srlz_i (void)
+ {
+-	asm volatile (";; srlz.i ;;" ::: "memory");
++	asm volatile (";; srlz.i ;;" : : : "memory");
+ }
+ 
+ static inline void
+ ia64_srlz_d (void)
+ {
+-	asm volatile (";; srlz.d" ::: "memory");
++	asm volatile (";; srlz.d" : : : "memory");
+ }
+ 
+ static inline __u64
+@@ -510,7 +510,7 @@
+ static inline void
+ ia64_set_rr (__u64 reg_bits, __u64 rr_val)
+ {
+-	asm volatile ("mov rr[%0]=%1" :: "r"(reg_bits), "r"(rr_val) : "memory");
++	asm volatile ("mov rr[%0]=%1" : : "r"(reg_bits), "r"(rr_val) : "memory");
+ }
+ 
+ static inline __u64
+@@ -524,7 +524,7 @@
+ static inline void
+ ia64_set_dcr (__u64 val)
+ {
+-	asm volatile ("mov cr.dcr=%0;;" :: "r"(val) : "memory");
++	asm volatile ("mov cr.dcr=%0;;" : : "r"(val) : "memory");
+ 	ia64_srlz_d();
+ }
+ 
+@@ -539,7 +539,7 @@
+ static inline void
+ ia64_invala (void)
+ {
+-	asm volatile ("invala" ::: "memory");
++	asm volatile ("invala" : : : "memory");
+ }
+ 
+ /*
+@@ -551,7 +551,7 @@
+ ia64_clear_ic (void)
+ {
+ 	__u64 psr;
+-	asm volatile ("mov %0=psr;; rsm psr.i | psr.ic;; srlz.i;;" : "=r"(psr) :: "memory");
++	asm volatile ("mov %0=psr;; rsm psr.i | psr.ic;; srlz.i;;" : "=r"(psr) : : "memory");
+ 	return psr;
+ }
+ 
+@@ -561,7 +561,7 @@
+ static inline void
+ ia64_set_psr (__u64 psr)
+ {
+-	asm volatile (";; mov psr.l=%0;; srlz.d" :: "r" (psr) : "memory");
++	asm volatile (";; mov psr.l=%0;; srlz.d" : : "r" (psr) : "memory");
+ }
+ 
+ /*
+@@ -573,14 +573,14 @@
+ 	  __u64 vmaddr, __u64 pte,
+ 	  __u64 log_page_size)
+ {
+-	asm volatile ("mov cr.itir=%0" :: "r"(log_page_size << 2) : "memory");
+-	asm volatile ("mov cr.ifa=%0;;" :: "r"(vmaddr) : "memory");
++	asm volatile ("mov cr.itir=%0" : : "r"(log_page_size << 2) : "memory");
++	asm volatile ("mov cr.ifa=%0;;" : : "r"(vmaddr) : "memory");
+ 	if (target_mask & 0x1)
+ 		asm volatile ("itr.i itr[%0]=%1"
+-				      :: "r"(tr_num), "r"(pte) : "memory");
++				      : : "r"(tr_num), "r"(pte) : "memory");
+ 	if (target_mask & 0x2)
+ 		asm volatile (";;itr.d dtr[%0]=%1"
+-				      :: "r"(tr_num), "r"(pte) : "memory");
++				      : : "r"(tr_num), "r"(pte) : "memory");
+ }
+ 
+ /*
+@@ -591,13 +591,13 @@
+ ia64_itc (__u64 target_mask, __u64 vmaddr, __u64 pte,
+ 	  __u64 log_page_size)
+ {
+-	asm volatile ("mov cr.itir=%0" :: "r"(log_page_size << 2) : "memory");
+-	asm volatile ("mov cr.ifa=%0;;" :: "r"(vmaddr) : "memory");
++	asm volatile ("mov cr.itir=%0" : : "r"(log_page_size << 2) : "memory");
++	asm volatile ("mov cr.ifa=%0;;" : : "r"(vmaddr) : "memory");
+ 	/* as per EAS2.6, itc must be the last instruction in an instruction group */
+ 	if (target_mask & 0x1)
+-		asm volatile ("itc.i %0;;" :: "r"(pte) : "memory");
++		asm volatile ("itc.i %0;;" : : "r"(pte) : "memory");
+ 	if (target_mask & 0x2)
+-		asm volatile (";;itc.d %0;;" :: "r"(pte) : "memory");
++		asm volatile (";;itc.d %0;;" : : "r"(pte) : "memory");
+ }
+ 
+ /*
+@@ -608,16 +608,16 @@
+ ia64_ptr (__u64 target_mask, __u64 vmaddr, __u64 log_size)
+ {
+ 	if (target_mask & 0x1)
+-		asm volatile ("ptr.i %0,%1" :: "r"(vmaddr), "r"(log_size << 2));
++		asm volatile ("ptr.i %0,%1" : : "r"(vmaddr), "r"(log_size << 2));
+ 	if (target_mask & 0x2)
+-		asm volatile ("ptr.d %0,%1" :: "r"(vmaddr), "r"(log_size << 2));
++		asm volatile ("ptr.d %0,%1" : : "r"(vmaddr), "r"(log_size << 2));
+ }
+ 
+ /* Set the interrupt vector address.  The address must be suitably aligned (32KB).  */
+ static inline void
+ ia64_set_iva (void *ivt_addr)
+ {
+-	asm volatile ("mov cr.iva=%0;; srlz.i;;" :: "r"(ivt_addr) : "memory");
++	asm volatile ("mov cr.iva=%0;; srlz.i;;" : : "r"(ivt_addr) : "memory");
+ }
+ 
+ /* Set the page table address and control bits.  */
+@@ -625,7 +625,7 @@
+ ia64_set_pta (__u64 pta)
+ {
+ 	/* Note: srlz.i implies srlz.d */
+-	asm volatile ("mov cr.pta=%0;; srlz.i;;" :: "r"(pta) : "memory");
++	asm volatile ("mov cr.pta=%0;; srlz.i;;" : : "r"(pta) : "memory");
+ }
+ 
+ static inline __u64
+@@ -640,13 +640,13 @@
+ static inline void
+ ia64_eoi (void)
+ {
+-	asm ("mov cr.eoi=r0;; srlz.d;;" ::: "memory");
++	asm ("mov cr.eoi=r0;; srlz.d;;" : : : "memory");
+ }
+ 
+ static inline void
+ ia64_set_lrr0 (unsigned long val)
+ {
+-	asm volatile ("mov cr.lrr0=%0;; srlz.d" :: "r"(val) : "memory");
++	asm volatile ("mov cr.lrr0=%0;; srlz.d" : : "r"(val) : "memory");
+ }
+ 
+ #define cpu_relax()	do { } while (0)
+@@ -655,13 +655,13 @@
+ static inline void
+ ia64_set_lrr1 (unsigned long val)
+ {
+-	asm volatile ("mov cr.lrr1=%0;; srlz.d" :: "r"(val) : "memory");
++	asm volatile ("mov cr.lrr1=%0;; srlz.d" : : "r"(val) : "memory");
+ }
+ 
+ static inline void
+ ia64_set_pmv (__u64 val)
+ {
+-	asm volatile ("mov cr.pmv=%0" :: "r"(val) : "memory");
++	asm volatile ("mov cr.pmv=%0" : : "r"(val) : "memory");
+ }
+ 
+ static inline __u64
+@@ -676,7 +676,7 @@
+ static inline void
+ ia64_set_pmc (__u64 regnum, __u64 value)
+ {
+-	asm volatile ("mov pmc[%0]=%1" :: "r"(regnum), "r"(value));
++	asm volatile ("mov pmc[%0]=%1" : : "r"(regnum), "r"(value));
+ }
+ 
+ static inline __u64
+@@ -691,7 +691,7 @@
+ static inline void
+ ia64_set_pmd (__u64 regnum, __u64 value)
+ {
+-	asm volatile ("mov pmd[%0]=%1" :: "r"(regnum), "r"(value));
++	asm volatile ("mov pmd[%0]=%1" : : "r"(regnum), "r"(value));
+ }
+ 
+ /*
+@@ -759,7 +759,7 @@
+ static inline void
+ ia64_set_cmcv (__u64 val)
+ {
+-	asm volatile ("mov cr.cmcv=%0" :: "r"(val) : "memory");
++	asm volatile ("mov cr.cmcv=%0" : : "r"(val) : "memory");
+ }
+ 
+ /*
+@@ -770,7 +770,7 @@
+ {
+ 	__u64 val;
+ 
+-	asm volatile ("mov %0=cr.cmcv" : "=r"(val) :: "memory");
++	asm volatile ("mov %0=cr.cmcv" : "=r"(val) : : "memory");
+ 	return val;
+ }
+ 
+@@ -785,7 +785,7 @@
+ static inline void
+ ia64_set_tpr (__u64 val)
+ {
+-	asm volatile ("mov cr.tpr=%0" :: "r"(val));
++	asm volatile ("mov cr.tpr=%0" : : "r"(val));
+ }
+ 
+ static inline __u64
+@@ -799,7 +799,7 @@
+ static inline void
+ ia64_set_irr0 (__u64 val)
+ {
+-	asm volatile("mov cr.irr0=%0;;" :: "r"(val) : "memory");
++	asm volatile("mov cr.irr0=%0;;" : : "r"(val) : "memory");
+ 	ia64_srlz_d();
+ }
+ 
+@@ -816,7 +816,7 @@
+ static inline void
+ ia64_set_irr1 (__u64 val)
+ {
+-	asm volatile("mov cr.irr1=%0;;" :: "r"(val) : "memory");
++	asm volatile("mov cr.irr1=%0;;" : : "r"(val) : "memory");
+ 	ia64_srlz_d();
+ }
+ 
+@@ -833,7 +833,7 @@
+ static inline void
+ ia64_set_irr2 (__u64 val)
+ {
+-	asm volatile("mov cr.irr2=%0;;" :: "r"(val) : "memory");
++	asm volatile("mov cr.irr2=%0;;" : : "r"(val) : "memory");
+ 	ia64_srlz_d();
+ }
+ 
+@@ -850,7 +850,7 @@
+ static inline void
+ ia64_set_irr3 (__u64 val)
+ {
+-	asm volatile("mov cr.irr3=%0;;" :: "r"(val) : "memory");
++	asm volatile("mov cr.irr3=%0;;" : : "r"(val) : "memory");
+ 	ia64_srlz_d();
+ }
+ 
+@@ -876,13 +876,13 @@
+ static inline void
+ ia64_set_ibr (__u64 regnum, __u64 value)
+ {
+-	asm volatile ("mov ibr[%0]=%1" :: "r"(regnum), "r"(value));
++	asm volatile ("mov ibr[%0]=%1" : : "r"(regnum), "r"(value));
+ }
+ 
+ static inline void
+ ia64_set_dbr (__u64 regnum, __u64 value)
+ {
+-	asm volatile ("mov dbr[%0]=%1" :: "r"(regnum), "r"(value));
++	asm volatile ("mov dbr[%0]=%1" : : "r"(regnum), "r"(value));
+ #ifdef CONFIG_ITANIUM
+ 	asm volatile (";; srlz.d");
+ #endif
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/spinlock.h ./include/asm-ia64/spinlock.h
+--- ../linux-2.4.20-pure/include/asm-ia64/spinlock.h	2002-08-02 17:39:45.000000000 -0700
++++ ./include/asm-ia64/spinlock.h	2003-02-10 10:32:08.000000000 -0800
+@@ -45,7 +45,7 @@
+ 		"(p15) br.call.spnt.few b7=ia64_spinlock_contention\n"			\
+ 		";;\n"									\
+ 		"1:\n"				/* force a new bundle */		\
+-		:: "r"(addr)								\
++		: : "r"(addr)								\
+ 		: "ar.ccv", "ar.pfs", "b7", "p15", "r28", "r29", "r30", "memory");	\
+ }
+ 
+@@ -93,7 +93,7 @@
+ 	"cmp4.eq p0,p7 = r0, r2\n"				\
+ 	"(p7) br.cond.spnt.few 1b\n"				\
+ 	";;\n"							\
+-	:: "r"(&(x)->lock) : "ar.ccv", "p7", "r2", "r29", "memory")
++	: : "r"(&(x)->lock) : "ar.ccv", "p7", "r2", "r29", "memory")
+ 
+ #define spin_is_locked(x)	((x)->lock != 0)
+ #define spin_unlock(x)		do { barrier(); ((spinlock_t *) x)->lock = 0; } while (0)
+@@ -156,7 +156,7 @@
+ 		"cmp4.eq p0,p7 = r0, r2\n"					\
+ 		"(p7) br.cond.spnt.few 1b\n"					\
+ 		";;\n"								\
+-		:: "r"(rw) : "ar.ccv", "p7", "r2", "r29", "memory");		\
++		: : "r"(rw) : "ar.ccv", "p7", "r2", "r29", "memory");		\
+ } while(0)
+ 
+ #define write_unlock(x)									\
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-ia64/system.h ./include/asm-ia64/system.h
+--- ../linux-2.4.20-pure/include/asm-ia64/system.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-ia64/system.h	2003-02-10 10:32:17.000000000 -0800
+@@ -57,7 +57,7 @@
+ static inline void
+ ia64_insn_group_barrier (void)
+ {
+-	__asm__ __volatile__ (";;" ::: "memory");
++	__asm__ __volatile__ (";;" : : : "memory");
+ }
+ 
+ /*
+@@ -82,7 +82,7 @@
+  * it's (presumably) much slower than mf and (b) mf.a is supported for
+  * sequential memory pages only.
+  */
+-#define mb()	__asm__ __volatile__ ("mf" ::: "memory")
++#define mb()	__asm__ __volatile__ ("mf" : : : "memory")
+ #define rmb()	mb()
+ #define wmb()	mb()
+ 
+@@ -121,7 +121,7 @@
+ do {											\
+ 	unsigned long ip, psr;								\
+ 											\
+-	__asm__ __volatile__ ("mov %0=psr;; rsm psr.i;;" : "=r" (psr) :: "memory");	\
++	__asm__ __volatile__ ("mov %0=psr;; rsm psr.i;;" : "=r" (psr) : : "memory");	\
+ 	if (psr & (1UL << 14)) {							\
+ 		__asm__ ("mov %0=ip" : "=r"(ip));					\
+ 		last_cli_ip = ip;							\
+@@ -133,7 +133,7 @@
+ do {											\
+ 	unsigned long ip, psr;								\
+ 											\
+-	__asm__ __volatile__ ("mov %0=psr;; rsm psr.i;;" : "=r" (psr) :: "memory");	\
++	__asm__ __volatile__ ("mov %0=psr;; rsm psr.i;;" : "=r" (psr) : : "memory");	\
+ 	if (psr & (1UL << 14)) {							\
+ 		__asm__ ("mov %0=ip" : "=r"(ip));					\
+ 		last_cli_ip = ip;							\
+@@ -160,21 +160,21 @@
+ #else /* !CONFIG_IA64_DEBUG_IRQ */
+   /* clearing of psr.i is implicitly serialized (visible by next insn) */
+ # define local_irq_save(x)	__asm__ __volatile__ ("mov %0=psr;; rsm psr.i;;"	\
+-						      : "=r" (x) :: "memory")
+-# define local_irq_disable()	__asm__ __volatile__ (";; rsm psr.i;;" ::: "memory")
++						      : "=r" (x) : : "memory")
++# define local_irq_disable()	__asm__ __volatile__ (";; rsm psr.i;;" : : : "memory")
+ /* (potentially) setting psr.i requires data serialization: */
+ # define local_irq_restore(x)	__asm__ __volatile__ ("cmp.ne p6,p7=%0,r0;;"		\
+ 						      "(p6) ssm psr.i;"			\
+ 						      "(p7) rsm psr.i;;"		\
+ 						      "srlz.d"				\
+-						      :: "r"((x) & IA64_PSR_I)		\
++						      : : "r"((x) & IA64_PSR_I)		\
+ 						      : "p6", "p7", "memory")
+ #endif /* !CONFIG_IA64_DEBUG_IRQ */
+ 
+-#define local_irq_enable()	__asm__ __volatile__ (";; ssm psr.i;; srlz.d" ::: "memory")
++#define local_irq_enable()	__asm__ __volatile__ (";; ssm psr.i;; srlz.d" : : : "memory")
+ 
+ #define __cli()			local_irq_disable ()
+-#define __save_flags(flags)	__asm__ __volatile__ ("mov %0=psr" : "=r" (flags) :: "memory")
++#define __save_flags(flags)	__asm__ __volatile__ ("mov %0=psr" : "=r" (flags) : : "memory")
+ #define __save_and_cli(flags)	local_irq_save(flags)
+ #define save_and_cli(flags)	__save_and_cli(flags)
+ #define __sti()			local_irq_enable ()
+@@ -307,7 +307,7 @@
+ 	      case 8: _o_ = (__u64) (long) (old); break;				\
+ 	      default: break;								\
+ 	}										\
+-	 __asm__ __volatile__ ("mov ar.ccv=%0;;" :: "rO"(_o_));				\
++	 __asm__ __volatile__ ("mov ar.ccv=%0;;" : : "rO"(_o_));				\
+ 	switch (size) {									\
+ 	      case 1:									\
+ 		__asm__ __volatile__ ("cmpxchg1."sem" %0=[%1],%2,ar.ccv"		\
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-mips/processor.h ./include/asm-mips/processor.h
+--- ../linux-2.4.20-pure/include/asm-mips/processor.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-mips/processor.h	2003-02-10 10:32:16.000000000 -0800
+@@ -256,6 +256,6 @@
+  * overhead of a function call by forcing the compiler to save the return
+  * address register on the stack.
+  */
+-#define return_address() ({__asm__ __volatile__("":::"$31");__builtin_return_address(0);})
++#define return_address() ({__asm__ __volatile__("": : :"$31");__builtin_return_address(0);})
+ 
+ #endif /* _ASM_PROCESSOR_H */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-mips64/processor.h ./include/asm-mips64/processor.h
+--- ../linux-2.4.20-pure/include/asm-mips64/processor.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-mips64/processor.h	2003-02-10 10:32:16.000000000 -0800
+@@ -307,6 +307,6 @@
+  * functions.  We avoid the overhead of a function call by forcing the
+  * compiler to save the return address register on the stack.
+  */
+-#define return_address() ({__asm__ __volatile__("":::"$31");__builtin_return_address(0);})
++#define return_address() ({__asm__ __volatile__("": : :"$31");__builtin_return_address(0);})
+ 
+ #endif /* _ASM_PROCESSOR_H */
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-parisc/system.h ./include/asm-parisc/system.h
+--- ../linux-2.4.20-pure/include/asm-parisc/system.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-parisc/system.h	2003-02-10 10:32:16.000000000 -0800
+@@ -145,7 +145,7 @@
+ ** The __asm__ op below simple prevents gcc/ld from reordering
+ ** instructions across the mb() "call".
+ */
+-#define mb()		__asm__ __volatile__("":::"memory");	/* barrier() */
++#define mb()		__asm__ __volatile__("": : :"memory");	/* barrier() */
+ #define rmb()		mb()
+ #define wmb()		mb()
+ #define smp_mb()	mb()
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-s390/uaccess.h ./include/asm-s390/uaccess.h
+--- ../linux-2.4.20-pure/include/asm-s390/uaccess.h	2002-08-02 17:39:45.000000000 -0700
++++ ./include/asm-s390/uaccess.h	2003-02-10 10:32:15.000000000 -0800
+@@ -36,7 +36,7 @@
+ 
+ #define get_ds()        (KERNEL_DS)
+ #define get_fs()        (current->addr_limit)
+-#define set_fs(x)       ({asm volatile("sar   4,%0"::"a" ((x).ar4)); \
++#define set_fs(x)       ({asm volatile("sar   4,%0": :"a" ((x).ar4)); \
+                          current->addr_limit = (x);})
+ 
+ #define segment_eq(a,b) ((a).ar4 == (b).ar4)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-s390x/uaccess.h ./include/asm-s390x/uaccess.h
+--- ../linux-2.4.20-pure/include/asm-s390x/uaccess.h	2002-08-02 17:39:45.000000000 -0700
++++ ./include/asm-s390x/uaccess.h	2003-02-10 10:32:15.000000000 -0800
+@@ -36,7 +36,7 @@
+ 
+ #define get_ds()	(KERNEL_DS)
+ #define get_fs()	(current->addr_limit)
+-#define set_fs(x)       ({asm volatile("sar   4,%0"::"a" ((x).ar4));\
++#define set_fs(x)       ({asm volatile("sar   4,%0": :"a" ((x).ar4));\
+                           current->addr_limit = (x);})
+ 
+ #define segment_eq(a,b)	((a).ar4 == (b).ar4)
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-sparc/system.h ./include/asm-sparc/system.h
+--- ../linux-2.4.20-pure/include/asm-sparc/system.h	2001-10-30 15:08:11.000000000 -0800
++++ ./include/asm-sparc/system.h	2003-02-10 10:32:14.000000000 -0800
+@@ -280,9 +280,9 @@
+ #define wmb()	mb()
+ #define set_mb(__var, __value)  do { __var = __value; mb(); } while(0)
+ #define set_wmb(__var, __value) set_mb(__var, __value)
+-#define smp_mb()	__asm__ __volatile__("":::"memory");
+-#define smp_rmb()	__asm__ __volatile__("":::"memory");
+-#define smp_wmb()	__asm__ __volatile__("":::"memory");
++#define smp_mb()	__asm__ __volatile__("": : :"memory");
++#define smp_rmb()	__asm__ __volatile__("": : :"memory");
++#define smp_wmb()	__asm__ __volatile__("": : :"memory");
+ 
+ #define nop() __asm__ __volatile__ ("nop");
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-sparc64/system.h ./include/asm-sparc64/system.h
+--- ../linux-2.4.20-pure/include/asm-sparc64/system.h	2002-08-02 17:39:45.000000000 -0700
++++ ./include/asm-sparc64/system.h	2003-02-10 10:32:14.000000000 -0800
+@@ -110,9 +110,9 @@
+ #define smp_rmb()	rmb()
+ #define smp_wmb()	wmb()
+ #else
+-#define smp_mb()	__asm__ __volatile__("":::"memory");
+-#define smp_rmb()	__asm__ __volatile__("":::"memory");
+-#define smp_wmb()	__asm__ __volatile__("":::"memory");
++#define smp_mb()	__asm__ __volatile__("": : :"memory");
++#define smp_rmb()	__asm__ __volatile__("": : :"memory");
++#define smp_wmb()	__asm__ __volatile__("": : :"memory");
+ #endif
+ 
+ #define flushi(addr)	__asm__ __volatile__ ("flush %0" : : "r" (addr) : "memory")
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/desc.h ./include/asm-x86_64/desc.h
+--- ../linux-2.4.20-pure/include/asm-x86_64/desc.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-x86_64/desc.h	2003-02-10 10:32:13.000000000 -0800
+@@ -73,9 +73,9 @@
+ #define __CPU_DESC_INDEX(x,field) \
+ 	((x) * sizeof(struct per_cpu_gdt) + offsetof(struct per_cpu_gdt, field) + __GDT_HEAD_SIZE)
+ 
+-#define load_TR(cpu) asm volatile("ltr %w0"::"r" (__CPU_DESC_INDEX(cpu, tss)));
+-#define __load_LDT(cpu) asm volatile("lldt %w0"::"r" (__CPU_DESC_INDEX(cpu, ldt)));
+-#define clear_LDT(n)  asm volatile("lldt %w0"::"r" (0))
++#define load_TR(cpu) asm volatile("ltr %w0": :"r" (__CPU_DESC_INDEX(cpu, tss)));
++#define __load_LDT(cpu) asm volatile("lldt %w0": :"r" (__CPU_DESC_INDEX(cpu, ldt)));
++#define clear_LDT(n)  asm volatile("lldt %w0": :"r" (0))
+ 
+ extern struct gate_struct idt_table[]; 
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/page.h ./include/asm-x86_64/page.h
+--- ../linux-2.4.20-pure/include/asm-x86_64/page.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-x86_64/page.h	2003-02-10 10:32:13.000000000 -0800
+@@ -85,9 +85,9 @@
+        char *filename;    /* should use 32bit offset instead, but the assembler doesn't like it */ 
+        unsigned short line; 
+ } __attribute__((packed)); 
+-#define BUG() asm volatile("ud2 ; .quad %c1 ; .short %c0" :: "i"(__LINE__), \
++#define BUG() asm volatile("ud2 ; .quad %c1 ; .short %c0" : : "i"(__LINE__), \
+ 		"i" (__stringify(KBUILD_BASENAME)))
+-#define HEADER_BUG() asm volatile("ud2 ; .quad %c1 ; .short %c0" :: "i"(__LINE__), \
++#define HEADER_BUG() asm volatile("ud2 ; .quad %c1 ; .short %c0" : : "i"(__LINE__), \
+ 		"i" (__stringify(__FILE__)))
+ #define PAGE_BUG(page) BUG()
+ 
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/pda.h ./include/asm-x86_64/pda.h
+--- ../linux-2.4.20-pure/include/asm-x86_64/pda.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-x86_64/pda.h	2003-02-10 10:32:13.000000000 -0800
+@@ -47,9 +47,9 @@
+ 
+ #define pda_to_op(op,field,val) do { \
+        switch (sizeof_field(struct x8664_pda, field)) { 		\
+-       case 2: asm volatile(op "w %0,%%gs:" __STR2(pda_ ## field) ::"r" (val):"memory"); break;	\
+-       case 4: asm volatile(op "l %0,%%gs:" __STR2(pda_ ## field) ::"r" (val):"memory"); break;	\
+-       case 8: asm volatile(op "q %0,%%gs:" __STR2(pda_ ## field) ::"r" (val):"memory"); break;	\
++       case 2: asm volatile(op "w %0,%%gs:" __STR2(pda_ ## field) : :"r" (val):"memory"); break;	\
++       case 4: asm volatile(op "l %0,%%gs:" __STR2(pda_ ## field) : :"r" (val):"memory"); break;	\
++       case 8: asm volatile(op "q %0,%%gs:" __STR2(pda_ ## field) : :"r" (val):"memory"); break;	\
+        default: __bad_pda_field(); 					\
+        } \
+        } while (0)
+@@ -58,9 +58,9 @@
+ #define pda_from_op(op,field) ({ \
+        typedef typeof_field(struct x8664_pda, field) T__; T__ ret__; \
+        switch (sizeof_field(struct x8664_pda, field)) { 		\
+-       case 2: asm volatile(op "w %%gs:" __STR2(pda_ ## field) ",%0":"=r" (ret__)::"memory"); break;	\
+-       case 4: asm volatile(op "l %%gs:" __STR2(pda_ ## field) ",%0":"=r" (ret__)::"memory"); break;	\
+-       case 8: asm volatile(op "q %%gs:" __STR2(pda_ ## field) ",%0":"=r" (ret__)::"memory"); break;	\
++       case 2: asm volatile(op "w %%gs:" __STR2(pda_ ## field) ",%0":"=r" (ret__): :"memory"); break;	\
++       case 4: asm volatile(op "l %%gs:" __STR2(pda_ ## field) ",%0":"=r" (ret__): :"memory"); break;	\
++       case 8: asm volatile(op "q %%gs:" __STR2(pda_ ## field) ",%0":"=r" (ret__): :"memory"); break;	\
+        default: __bad_pda_field(); 					\
+        } \
+        ret__; })
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/pgtable.h ./include/asm-x86_64/pgtable.h
+--- ../linux-2.4.20-pure/include/asm-x86_64/pgtable.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-x86_64/pgtable.h	2003-02-10 10:32:12.000000000 -0800
+@@ -49,7 +49,7 @@
+ 			"movq %%cr3, %0;  # flush TLB \n"		\
+ 			"movq %0, %%cr3;              \n"		\
+ 			: "=r" (tmpreg)					\
+-			:: "memory");					\
++			: : "memory");					\
+ 	} while (0)
+ 
+ /*
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/rwlock.h ./include/asm-x86_64/rwlock.h
+--- ../linux-2.4.20-pure/include/asm-x86_64/rwlock.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-x86_64/rwlock.h	2003-02-10 10:32:11.000000000 -0800
+@@ -31,7 +31,7 @@
+ 		     "2:\tcall " helper "\n\t" \
+ 		     "jmp 1b\n" \
+ 		    LOCK_SECTION_END \
+-		     ::"a" (rw) : "memory")
++		     : :"a" (rw) : "memory")
+ 
+ #define __build_read_lock_const(rw, helper)   \
+ 	asm volatile(LOCK "subl $1,%0\n\t" \
+@@ -44,7 +44,7 @@
+ 		     "popq %%rax\n\t" \
+ 		     "jmp 1b\n" \
+ 		    LOCK_SECTION_END \
+-		     :"=m" (*((volatile int *)rw))::"memory")
++		     :"=m" (*((volatile int *)rw)): :"memory")
+ 
+ #define __build_read_lock(rw, helper)	do { \
+ 						if (__builtin_constant_p(rw)) \
+@@ -61,7 +61,7 @@
+ 		     "2:\tcall " helper "\n\t" \
+ 		     "jmp 1b\n" \
+ 		     LOCK_SECTION_END \
+-		     ::"a" (rw) : "memory")
++		     : :"a" (rw) : "memory")
+ 
+ #define __build_write_lock_const(rw, helper) \
+ 	asm volatile(LOCK "subl $" RW_LOCK_BIAS_STR ",(%0)\n\t" \
+@@ -74,7 +74,7 @@
+ 		     "popq %%rax\n\t" \
+ 		     "jmp 1b\n" \
+ 		    LOCK_SECTION_END \
+-		     :"=m" (*((volatile long *)rw))::"memory")
++		     :"=m" (*((volatile long *)rw)): :"memory")
+ 
+ #define __build_write_lock(rw, helper)	do { \
+ 						if (__builtin_constant_p(rw)) \
+diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/asm-x86_64/system.h ./include/asm-x86_64/system.h
+--- ../linux-2.4.20-pure/include/asm-x86_64/system.h	2002-11-28 15:53:15.000000000 -0800
++++ ./include/asm-x86_64/system.h	2003-02-10 10:32:10.000000000 -0800
+@@ -230,9 +230,9 @@
+  * but I'd also expect them to finally get their act together
+  * and add some real memory barriers if so.
+  */
+-#define mb() 	asm volatile("mfence":::"memory")
+-#define rmb()	asm volatile("lfence":::"memory")
+-#define wmb()	asm volatile("sfence":::"memory")
++#define mb() 	asm volatile("mfence": : :"memory")
++#define rmb()	asm volatile("lfence": : :"memory")
++#define wmb()	asm volatile("sfence": : :"memory")
+ #define set_mb(var, value) do { xchg(&var, value); } while (0)
+ #define set_wmb(var, value) do { var = value; wmb(); } while (0)
+ 
+@@ -273,7 +273,7 @@
+ #endif
+ 
+ /* Default simics "magic" breakpoint */
+-#define icebp() asm volatile("xchg %%bx,%%bx" ::: "ebx")
++#define icebp() asm volatile("xchg %%bx,%%bx" : : : "ebx")
+ 
+ /*
+  * disable hlt during certain critical i/o operations
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/atalk.h ./include/linux/atalk.h
 --- ../linux-2.4.20-pure/include/linux/atalk.h	2001-11-22 11:47:11.000000000 -0800
 +++ ./include/linux/atalk.h	2003-01-27 15:57:46.000000000 -0800
@@ -1282,7 +2046,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern struct at_addr *atalk_find_dev_addr(struct net_device *dev);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/highmem.h ./include/linux/highmem.h
 --- ../linux-2.4.20-pure/include/linux/highmem.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/highmem.h	2003-01-26 18:57:06.000000000 -0800
++++ ./include/linux/highmem.h	2003-02-10 10:45:29.000000000 -0800
 @@ -17,7 +17,7 @@
  
  static inline char *bh_kmap(struct buffer_head *bh)
@@ -1351,7 +2115,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	char 			*path;
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/list.h ./include/linux/list.h
 --- ../linux-2.4.20-pure/include/linux/list.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/list.h	2003-01-26 18:52:00.000000000 -0800
++++ ./include/linux/list.h	2003-02-10 10:45:29.000000000 -0800
 @@ -91,8 +91,8 @@
  static inline void list_del(struct list_head *entry)
  {
@@ -1365,7 +2129,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  /**
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/mm.h ./include/linux/mm.h
 --- ../linux-2.4.20-pure/include/linux/mm.h	2002-08-02 17:39:45.000000000 -0700
-+++ ./include/linux/mm.h	2003-01-26 18:57:06.000000000 -0800
++++ ./include/linux/mm.h	2003-02-10 10:45:29.000000000 -0800
 @@ -576,7 +576,6 @@
  		return 0;
  }
@@ -1445,7 +2209,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  extern void		dev_queue_xmit_nit(struct sk_buff *skb, struct net_device *dev);
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/reiserfs_fs_sb.h ./include/linux/reiserfs_fs_sb.h
 --- ../linux-2.4.20-pure/include/linux/reiserfs_fs_sb.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/reiserfs_fs_sb.h	2003-01-26 18:57:06.000000000 -0800
++++ ./include/linux/reiserfs_fs_sb.h	2003-02-10 10:45:29.000000000 -0800
 @@ -405,8 +405,7 @@
    } journal;
  } reiserfs_proc_info_data_t;
@@ -1562,7 +2326,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  	    __pskb_pull_tail(skb, len-skb_headlen(skb)) == NULL)
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/spinlock.h ./include/linux/spinlock.h
 --- ../linux-2.4.20-pure/include/linux/spinlock.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/spinlock.h	2003-02-07 17:03:29.000000000 -0800
++++ ./include/linux/spinlock.h	2003-02-10 10:45:29.000000000 -0800
 @@ -2,6 +2,7 @@
  #define __LINUX_SPINLOCK_H
  
@@ -1605,7 +2369,7 @@ diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags
  #define read_lock(lock)		(void)(lock) /* Not "unused variable". */
 diff -ru --exclude=.depend --exclude='*.o' --exclude='*.orig' --exclude='*.flags' ../linux-2.4.20-pure/include/linux/swap.h ./include/linux/swap.h
 --- ../linux-2.4.20-pure/include/linux/swap.h	2002-11-28 15:53:15.000000000 -0800
-+++ ./include/linux/swap.h	2003-01-22 17:35:06.000000000 -0800
++++ ./include/linux/swap.h	2003-02-10 10:45:29.000000000 -0800
 @@ -100,7 +100,7 @@
  struct vm_area_struct;
  struct sysinfo;
