@@ -430,9 +430,8 @@ DivertSocket::selected(int fd)
 		 p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
 	      */) {
 
-    //(void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno()); 
-    // YIPAL fix this timestamp 
-    
+    // set the timestamp 
+    click_gettimeofday(&p->timestamp_anno());
     p->change_headroom_and_length(2, len);		 
     output(0).push(p);
 
