@@ -388,7 +388,7 @@ static int
 slow_output_packet(struct udpgen_opt *uopt)
 {
   struct sk_buff *skb = uopt->skb_cache;
-  struct hh_cache *hh;
+  struct hh_cache hh;
   struct rtable *rt;
   int result;
 
@@ -400,13 +400,20 @@ slow_output_packet(struct udpgen_opt *uopt)
     return -1;
   }
   /* XXX - check broadcast */
+
+  /* attempt to create a hard header cache */
+  memset(&hh, 0, sizeof(struct hh_cache));
+  hh.hh_type = ETH_P_IP;
+  atomic_set(&hh.hh_refcnt, 0);
+  hh.hh_next = NULL;
   
-  hh = rt->u.dst.hh;
   skb->dev = rt->u.dst.dev;
   dst_release(skb->dst);
   skb->dst = dst_clone(&rt->u.dst);
+
+  if (!dev->hard_header_cache(rt->neighbour, &hh)) {
   
-  if (hh) {
+    /*if (hh) {*/
     /* read_lock_irq(&hh->hh_lock); */
     memcpy(skb->data - 16, hh->hh_data, 16);
     /* read_unlock_irq(&hh->hh_lock); */
