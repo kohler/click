@@ -1,6 +1,6 @@
 /*
- * meter.{cc,hh} -- element sends packets out one of several outputs
- * depending on recent rate (bytes/s)
+ * packetmeter.{cc,hh} -- element sends packets out one of several outputs
+ * depending on recent rate (packets/s)
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -15,18 +15,9 @@
 # include <config.h>
 #endif
 #include "meter.hh"
-#include "error.hh"
-#include "confparse.hh"
-#include <errno.h>
 
 Meter::Meter()
-  : Element(1, 1), _meters(0), _nmeters(0)
 {
-}
-
-Meter::~Meter()
-{
-  delete[] _meters;
 }
 
 Meter *
@@ -35,54 +26,10 @@ Meter::clone() const
   return new Meter;
 }
 
-int
-Meter::configure(const Vector<String> &conf, ErrorHandler *errh)
-{
-  delete[] _meters;
-  _meters = 0;
-  _nmeters = 0;
-
-  if (conf.size() == 0)
-    return errh->error("too few arguments to Meter(int, ...)");
-
-  Vector<unsigned> vals(conf.size(), 0);
-  for (int i = 0; i < conf.size(); i++)
-    if (!cp_unsigned(conf[i], &vals[i]))
-      return errh->error("argument %d should be unsigned (rate)", i+1);
-    else if (i > 0 && vals[i] <= vals[i-1])
-      return errh->error("rate %d must be > rate %d", i+1, i);
-
-  unsigned max_value = 0xFFFFFFFF >> _rate.scale;
-  for (int i = 0; i < conf.size(); i++) {
-    if (vals[i] > max_value)
-      return errh->error("rate %d too large (max %u)", i+1, max_value);
-    vals[i] = (vals[i]<<_rate.scale) / _rate.freq();
-  }
-  
-  if (vals.size() == 1) {
-    _meter1 = vals[0];
-    _nmeters = 1;
-  } else {
-    _meters = new unsigned[vals.size()];
-    memcpy(_meters, &vals[0], vals.size() * sizeof(int));
-    _nmeters = vals.size();
-  }
-
-  set_noutputs(_nmeters + 1);
-  return 0;
-}
-
-int
-Meter::initialize(ErrorHandler *)
-{
-  _rate.initialize();
-  return 0;
-}
-
 void
 Meter::push(int, Packet *p)
 {
-  _rate.update(p->length());
+  _rate.update(1);		// packets, not bytes
 
   unsigned r = _rate.average();
   if (_nmeters < 2) {
@@ -98,34 +45,6 @@ Meter::push(int, Packet *p)
       }
     output(nmeters).push(p);
   }
-}
-
-String
-Meter::meters_read_handler(Element *f, void *)
-{
-  Meter *m = (Meter *)f;
-  if (m->_nmeters == 1)
-    return cp_unparse_real(m->_meter1*m->rate_freq(), m->rate_scale()) + "\n";
-  else {
-    String s;
-    for (int i = 0; i < m->_nmeters; i++)
-      s = s + cp_unparse_real(m->_meters[i]*m->rate_freq(), m->rate_scale()) + "\n";
-    return s;
-  }
-}
-
-static String
-read_rate_handler(Element *f, void *)
-{
-  Meter *c = (Meter *)f;
-  return cp_unparse_real(c->rate()*c->rate_freq(), c->rate_scale()) + "\n";
-}
-
-void
-Meter::add_handlers()
-{
-  add_read_handler("rate", read_rate_handler, 0);
-  add_read_handler("meters", Meter::meters_read_handler, 0);
 }
 
 EXPORT_ELEMENT(Meter)

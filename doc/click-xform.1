@@ -93,8 +93,8 @@ elementclass Meters {
         -> Shaper($b) -> output;
 }
 elementclass Meters_Replacement {
-  input -> PacketMeter($b)
-        -> PacketShaper($a) -> output;
+  input -> Meter($b)
+        -> SlowShaper($a) -> output;
 }
 .fi
 .Re
@@ -107,7 +107,7 @@ to this configuration
 will create this result:
 .Rs
 .nf
-\&... -> PacketMeter(2000) -> PacketShaper(1000) -> ...
+\&... -> Meter(2000) -> SlowShaper(1000) -> ...
 .fi
 .Re
 .PP

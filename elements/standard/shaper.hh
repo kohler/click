@@ -1,45 +1,33 @@
 #ifndef SHAPER_HH
 #define SHAPER_HH
-#include "element.hh"
-#include "timer.hh"
-#include "ewma.hh"
+#include "bandwidthshaper.hh"
 
 /*
  * =c
  * Shaper(RATE)
- * =s shapes traffic to maximum rate
+ * =s shapes traffic to maximum rate (pkt/s)
  * V<packet scheduling>
  * =d
- * Shaper is a pull element that allows a maximum of RATE
- * bytes per second to pass through. It measures RATE using
- * an exponential weighted moving average.
+ * Shaper is a pull element that allows a maximum of RATE packets per
+ * second to pass through. It measures RATE using an exponential weighted
+ * moving average. Because the granularity of the timer used for calculating
+ * the moving average is coarse, Shaper is not accurate for rates less
+ * than 30000. Use SlowShaper instead for those rates.
  *
- * =a PacketShaper, Meter, PacketMeter
+ * There are usually Queues both upstream and downstream
+ * of Shaper elements.
+ * =a SlowShaper, BandwidthShaper, Meter, BandwidthMeter
  */
 
-class Shaper : public Element { protected:
-
-  RateEWMA _rate;
-  
-  unsigned _meter1;
+class Shaper : public BandwidthShaper {
 
  public:
   
   Shaper();
-  ~Shaper();
   
   const char *class_name() const                { return "Shaper"; }
-  const char *processing() const		{ return PULL; }
-
-  int rate() const				{ return _rate.average(); }
-  int rate_freq() const				{ return _rate.freq(); }
-  int rate_scale() const			{ return _rate.scale; }
-  
   Shaper *clone() const;
-  int configure(const Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void add_handlers();
-
+  
   Packet *pull(int);
   
 };

@@ -61,9 +61,8 @@ ports.
 .Sp
 .TP
 .BR "virtual Element *clone() const"
-Should create and return a new element with the same class as this element.
-The new element need not have the same configuration or private data as
-this element, however. No default implementation.
+Should create and return a fresh new element with the same class as this
+element. No default implementation.
 .PD
 '
 .SH "IDENTIFICATION"
@@ -71,7 +70,8 @@ this element, however. No default implementation.
 .TP 5
 .BR "virtual const char *class_name() const"
 Should return the element's class name as a C string. No default
-implementation.
+implementation. You should define this function in your element's header
+file so that its result can be automatically extracted.
 '
 .Sp
 .TP
@@ -86,7 +86,7 @@ iff \fIname\fP equals
 '
 .Sp
 .TP
-.BR "const String &id() const"
+.BR "String id() const"
 Returns the element's name as set in the configuration file.
 '
 .Sp
@@ -96,10 +96,9 @@ Returns a string of the form ``\fIELEMENTNAME\fP :: \fICLASSNAME\fR''.
 '
 .Sp
 .TP
-.BR "const String &landmark() const"
+.BR "String landmark() const"
 Returns a string that specifies the source file location of the element's
-declaration. At user level, has the form ``\fIFILE\fP:\fILINE\fP''; in the
-Linux kernel module, has the form ``line \fILINE\fP''.
+declaration. Generally has the form ``\fIFILE\fP:\fILINE\fP''.
 .PD
 '
 .SH "INPUT AND OUTPUT PORTS"
@@ -194,6 +193,8 @@ push.
 .Sp
 This function is used by the default implementation of
 .BR processing_vector() .
+You should define this function in your element's header file so that its
+result can be automatically extracted.
 .Sp
 '
 .TP 5
@@ -275,6 +276,25 @@ Bitvector.
 .SH "CONFIGURATION AND INITIALIZATION"
 '
 .PD 0
+.TP 5
+.BR "virtual const char *flags() const"
+Returns a string describing this element's extra flags. These flags are not
+used by any driver; they are automatically extracted during the
+initialization process and then used by tools. You should define this
+function in your element's header file so that its result can be
+automatically extracted.
+'
+.Sp
+.TP 5
+.BR "virtual int configure_phase() const"
+Returns an integer describing when this element should be configured
+relative to other elements; lower integers will be configured first. Use
+this method to ensure that all elements of a given class are configured
+before any elements of another class. The default implementation returns
+the constant
+.K CONFIGURE_PHASE_DEFAULT .
+'
+.Sp
 .TP 5
 .BR "virtual int configure(" "const String &\fIconfig_string\fP,"
 .TP
@@ -424,8 +444,8 @@ this function, register a handler by calling
 .BR add_write_handler() ,
 or both. These methods are described below. The default
 .BR add_handlers()
-implementation does nothing. (The default "class", "config", "inputs",
-"name", and "outputs" handlers, described in
+implementation does nothing. (The default "class", "config", "handlers",
+"name", "ports", and "tickets" handlers, described in
 .M click.o 8 ,
 are added by the
 .BR add_default_handlers()
@@ -514,6 +534,18 @@ integer; it decomposes the current configuration string, replaces the
 \fIthunk\fPth argument with \fIs\fP, and calls
 .B live_reconfigure()
 on the given element with the new configuration string.
+'
+.Sp
+.TP
+.BR "virtual int llrpc(" "unsigned \fIcommand\fP, void *\fIdata\fP" ")"
+This function is called when the user requests a low-level RPC. This
+facility is currently used only in the kernel, where it corresponds to
+\f(CWioctl\fP system calls on an element's handler files in \f(CW/proc\fP.
+\fICommand\fP is the LLRPC number, and \fIdata\fP is the data pointer
+passed by the user. The return value should be zero on success, or the
+negative of an error constant in \f(CWerrno.h\fP on failure. The element is
+responsible for checking that \fIcommand\fP is meaningful; return -EINVAL
+if it is not.
 .PD
 '
 .SH "PACKET PASSING"
@@ -586,6 +618,31 @@ an element can schedule itself or other elements with
 they will be run at some later time. The default
 implementation reports an error.
 .PD
+'
+.SH "FILE DESCRIPTOR SELECTION"
+.PD 0
+.TP 5
+.BR "int add_select(" "int \fIfd\fP, int \fImask\fP" ")"
+Adds a request for the user-level driver to monitor the file descriptor
+\fIfd\fP for the events specified by \fImask\fP. (\fIMask\fP should be
+SELECT_READ, SELECT_WRITE, or SELECT_READ|SELECT_WRITE.) Only available in
+the user-level driver. Returns a negative value if another element is
+already listening to the corresponding event on \fIfd\fP.
+'
+.Sp
+.TP 5
+.BR "int remove_select(" "int \fIfd\fP, int \fImask\fP" ")"
+Removes a selection monitoring request that was filed earlier with
+\fBadd_select\fP.
+'
+.Sp
+.TP 5
+.BR "virtual void selected(" "int \fIfd\fP" ")"
+Called by the Router when a monitored event (reading or writing) becomes
+possible on the file descriptor \fIfd\fP. The default implementation does
+nothing.
+.PD
+
 '
 .SH "SEE ALSO"
 .M Connection 3 ,

@@ -1,5 +1,5 @@
 /*
- * slowpacketshaper.{cc,hh} -- element limits number of successful pulls per
+ * slowshaper.{cc,hh} -- element limits number of successful pulls per
  * second to a given rate (packets/s). unlike packetshaper, does not use EWMA.
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -14,29 +14,29 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "slowpacketshaper.hh"
+#include "slowshaper.hh"
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
 
-SlowPacketShaper::SlowPacketShaper()
+SlowShaper::SlowShaper()
 {
   add_input();
   add_output();
 }
 
-SlowPacketShaper::~SlowPacketShaper()
+SlowShaper::~SlowShaper()
 {
 }
 
-SlowPacketShaper *
-SlowPacketShaper::clone() const
+SlowShaper *
+SlowShaper::clone() const
 {
-  return new SlowPacketShaper;
+  return new SlowShaper;
 }
 
 int
-SlowPacketShaper::configure(const Vector<String> &conf, ErrorHandler *errh)
+SlowShaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int rate;
   if (cp_va_parse(conf, this, errh,
@@ -53,7 +53,7 @@ SlowPacketShaper::configure(const Vector<String> &conf, ErrorHandler *errh)
 }
 
 Packet *
-SlowPacketShaper::pull(int)
+SlowShaper::pull(int)
 {
   struct timeval now;
   click_gettimeofday(&now);
@@ -80,5 +80,5 @@ SlowPacketShaper::pull(int)
   return 0;
 }
 
-EXPORT_ELEMENT(SlowPacketShaper)
+EXPORT_ELEMENT(SlowShaper)
 

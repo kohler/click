@@ -58,9 +58,9 @@ RatedSplitter::push(int, Packet *p)
 
     if (need > _total && _meter > 0) {
       _total++;
-      output(1).push(p);
-    } else
       output(0).push(p);
+    } else
+      output(1).push(p);
 
     if (_total > _meter * 360) {
       _total = 0;

@@ -1,6 +1,6 @@
 /*
  * shaper.{cc,hh} -- element limits number of successful pulls
- * per second to a given rate (bytes/s)
+ * per second to a given rate (packets/s)
  * Eddie Kohler
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -16,16 +16,8 @@
 # include <config.h>
 #endif
 #include "shaper.hh"
-#include "confparse.hh"
-#include "error.hh"
 
 Shaper::Shaper()
-{
-  add_input();
-  add_output();
-}
-
-Shaper::~Shaper()
 {
 }
 
@@ -33,31 +25,6 @@ Shaper *
 Shaper::clone() const
 {
   return new Shaper;
-}
-
-int
-Shaper::configure(const Vector<String> &conf, ErrorHandler *errh)
-{
-  unsigned rate;
-  if (cp_va_parse(conf, this, errh,
-		  cpUnsigned, "max allowable rate", &rate,
-		  0) < 0)
-    return -1;
-  
-  unsigned max_value = 0xFFFFFFFF >> _rate.scale;
-  if (rate > max_value)
-    return errh->error("rate too large (max %u)", max_value);
-  
-  _meter1 = (rate << _rate.scale) / _rate.freq();
-  return 0;
-}
-
-int
-Shaper::initialize(ErrorHandler *)
-{
-  _rate.initialize();
-
-  return 0;
 }
 
 Packet *
@@ -70,22 +37,11 @@ Shaper::pull(int)
     return 0;
   else {
     Packet *p = input(0).pull();
-    if (p) _rate.update_now(p->length());
+    if (p) {
+      _rate.update_now(1);	// packets, not bytes
+    }
     return p;
   }
-}
-
-static String
-read_rate_handler(Element *f, void *)
-{
-  Shaper *c = (Shaper *)f;
-  return cp_unparse_real(c->rate()*c->rate_freq(), c->rate_scale()) + "\n";
-}
-
-void
-Shaper::add_handlers()
-{
-  add_read_handler("rate", read_rate_handler, 0);
 }
 
 EXPORT_ELEMENT(Shaper)

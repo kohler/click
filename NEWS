@@ -28,6 +28,11 @@ Version 1.1
 ** Renamed the HashDemux element to HashSwitch, and the CheckPaint element
    to PaintTee.
 
+** Renamed the Meter and Shaper elements. The elements that measure bytes
+   per second are now named BandwidthMeter and BandwidthShaper. The
+   elements that measure packets per second have taken the names Meter and
+   Shaper.
+
 ** Removed the SaveIPFields and IPsec elements (they were rotting).
 
 * Incompatible C++ API changes
