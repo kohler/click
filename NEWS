@@ -75,6 +75,10 @@ Version 1.1
 
 ** Improved support for large numbers of handlers by reducing memory usage.
 
+** Click configurations can contain cpp(1)-style `#line LINENUMBER' or `#
+   LINENUMBER' directives. The tools generate them, too, so you will get
+   better error messages than you used to.
+
 * User-level driver
 
 ** User-level Click will no longer stop by default when an InfiniteSource
@@ -145,6 +149,13 @@ Version 1.1
 ** click-fastclassifier(1): Works on IPClassifier.
 
 ** Added `--verbose' option to click-install(1).
+
+* Documentation
+
+** Changed element documentation format to add functionality. Now it is a
+   lot like Perl PODs. See elementdoc(7) for details.
+
+** Added grouping to the elements(n) manual page.
 
 
 Version 1.0.6   6.May.2000
