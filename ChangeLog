@@ -1,3 +1,7 @@
+2001-11-05 Monday 12:15  Eddie Kohler <kohler@aciri.org>
+
+	* lib/packageutils.cc (1.4): fix typo in error message
+
 2001-11-04 Sunday 15:38  Eddie Kohler <kohler@aciri.org>
 
 	* userlevel/Makefile.in (1.61): add install-lib and clean-lib

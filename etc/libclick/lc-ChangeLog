@@ -1,3 +1,7 @@
+2001-11-05 Monday 12:15  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/packageutils.cc: fix typo in error message
+
 2001-11-01 Thursday 15:40  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/: packet.hh, packet.hh: add Packet::addr_anno(),
