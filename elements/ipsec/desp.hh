@@ -2,16 +2,20 @@
 #define IPSEC_DESP_HH
 
 /*
- * IPsec_DESP
+ * =c
+ * IPsecESPUnencap
+ * =s encapsulation
+ * removes IPSec encapsulation
+ * =d
  * 
- * De-encapsulate a packet using ESP per RFC2406.
- */
+ * removes and verifies ESP header, added by IPsecESPEncap, according to RFC
+ * 2406. does not perform anti-replay attack checks.
+ *
+ * =a IPsecESPUnencap, IPsecDES */
 
 
 #include <click/element.hh>
 #include <click/glue.hh>
-
-class Address;
 
 class DeEsp : public Element {
 public:

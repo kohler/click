@@ -1,5 +1,12 @@
-The IPsec elements have been removed because no one is updating them. Are
-you interested in reviving IPsec support yourself, or is IPsec important
+
+These elements do not support IPsec fully. The stuff that are missing are:
+
+  - anti-reply attack detection during ESP unencapsulation process
+  - on DES decryption, does not deal with packet reordering right now
+  - to use IPsec, you would need to hook up a Classifier to statically
+    configure a SAD. we need a better way to do this!
+
+Are you interested in reviving IPsec support yourself, or is IPsec important
 for you? If so, please contact the Click team via email:
 
 	click@pdos.lcs.mit.edu

@@ -67,7 +67,7 @@ DeEsp::simple_action(Packet *p)
 
   // Verify padding
   blks = p->length();
-  click_chatter("got %d left", blks);
+  // click_chatter("got %d left", blks);
   blk = p->data();
   if((blk[blks - 2] != blk[blks - 3]) && (blk[blks -2] != 0)) {
     click_chatter("Invalid padding length");
@@ -84,8 +84,13 @@ DeEsp::simple_action(Packet *p)
   }
 
   // Chop off padding
-  return Packet::make(p->data(), p->length() - (blks + 2));
+  // Packet *q = Packet::make(p->data(), p->length() - (blks + 2));
+  // p->kill();
+  // return q;
+  p->take(blks+2);
+  return p;
 }
 
-ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(DeEsp)
+ELEMENT_MT_SAFE(DeEsp)
+

@@ -83,7 +83,6 @@ Esp::initialize(ErrorHandler *errh)
 Packet *
 Esp::simple_action(Packet *p)
 {
-
   int i;
 
   // Extract Protocol Header 
@@ -93,21 +92,23 @@ Esp::simple_action(Packet *p)
   // Make room for ESP header and padding
   int plen = p->length();
   int padding = ((_blks - ((plen + 2) % _blks)) % _blks) + 2;
-  WritablePacket *q = Packet::make(sizeof(esp_new) + plen + padding);
   
-  // Copy data and packet annotations
-  memcpy((q->data() + sizeof(esp_new)), p->data(), plen);
-  (void) q->set_ip_ttl_anno(p->ip_ttl_anno());
-  (void) q->set_ip_tos_anno(p->ip_tos_anno());
-  (void) q->set_ip_off_anno(p->ip_off_anno());
-  p->kill();
+  // WritablePacket *q = Packet::make(sizeof(esp_new) + plen + padding);
+  // // Copy data
+  // memcpy((q->data() + sizeof(esp_new)), p->data(), plen);
+  // p->kill();
+
+  WritablePacket *q = p->push(sizeof(esp_new));
+  q = q->put(padding);
   
   struct esp_new *esp = (struct esp_new *) q->data();  
   u_char *pad = ((u_char *) q->data()) + sizeof(esp_new) + plen;
 
   // Copy in ESP header
   esp->esp_spi = htonl(_spi);
-  esp->esp_rpl = htonl(++_rpl);
+  _rpl++;
+  int rpl = _rpl;
+  esp->esp_rpl = htonl(rpl);
   memcpy(q->data(), esp, sizeof(struct esp_new));
 
   // Self describing padding
@@ -120,5 +121,6 @@ Esp::simple_action(Packet *p)
   return(q);
 }
 
-ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(Esp)
+ELEMENT_MT_SAFE(Esp)
+
