@@ -301,16 +301,15 @@ ToDevice::tx_intr()
   }
 #endif
  
-#ifndef RR_SCHED
-#ifdef ADJ_TICKETS
+#if CLICK_DEVICE_ADJUST_TICKETS
   /* WARNING: fined tuned black magic below, don't change! */
-#if HAVE_POLLING
+# if HAVE_POLLING
   int dma_thresh_high = _dev->tx_dma_length-_dev->tx_dma_length/8;
   int dma_thresh_low  = _dev->tx_dma_length/4;
-#else
+# else
   int dma_thresh_high = 16-16/8;
   int dma_thresh_low  = 16/4;
-#endif
+# endif
   int adj = tickets()/4;
   if (adj < 2) adj = 2;
 
@@ -330,13 +329,12 @@ ToDevice::tx_intr()
   else adj = 0;
 
   adj_tickets(adj);
-#endif /* ADJ_TICKETS */
+#endif
   
   _last_dma_length = queued_pkts;
   _last_tx = sent;
   _last_busy = busy;
   reschedule();
-#endif /* !RR_SCHED */
 }
 
 int

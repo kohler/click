@@ -17,7 +17,10 @@ extern "C" {
 
 // #define _CLICK_STATS_ 1
 // #define _DEV_OVRN_STATS_ 1
-#define ADJ_TICKETS 1
+
+#ifndef RR_SCHED
+# define CLICK_DEVICE_ADJUST_TICKETS 1
+#endif
 
 #if _CLICK_STATS_
 

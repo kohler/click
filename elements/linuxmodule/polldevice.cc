@@ -37,7 +37,7 @@ static AnyDeviceMap poll_device_map;
 
 
 PollDevice::PollDevice()
-  : _registered(0), _last_rx(0), _manage_tx(1)
+  : _registered(0), _manage_tx(1)
 {
   add_output();
 #if _CLICK_STATS_
@@ -137,6 +137,11 @@ PollDevice::initialize(ErrorHandler *errh)
   set_max_tickets(max_tickets);
   set_tickets(ScheduleInfo::DEFAULT);
 #endif
+
+#if CLICK_DEVICE_ADJUST_TICKETS
+  _last_rx = 0;
+#endif
+
   join_scheduler();
   
   return 0;
@@ -232,8 +237,7 @@ PollDevice::run_scheduled()
   }
 #endif
 
-#ifndef RR_SCHED
-#ifdef ADJ_TICKETS
+#if CLICK_DEVICE_ADJUST_TICKETS
   /* adjusting tickets */
   int adj = tickets()/4;
   if (adj<2) adj=2;
@@ -248,11 +252,10 @@ PollDevice::run_scheduled()
   else adj=0;
 
   adj_tickets(adj);
+  _last_rx = got;
 #endif
 
-  _last_rx = got;
   reschedule();
-#endif /* !RR_SCHED */
 
 #endif /* HAVE_POLLING */
 }

@@ -236,18 +236,17 @@ FromDevice::run_scheduled()
     output(0).push(p);
   }
 
-#ifndef RR_SCHED
-#ifdef ADJ_TICKETS
+#if CLICK_DEVICE_ADJUST_TICKETS
   int adj = tickets() / 8;
   if (adj < 4) adj = 4;
   
   if (i == INPUT_MAX_PKTS_PER_RUN) adj *= 2;
   if (i < INPUT_MAX_PKTS_PER_RUN/4) adj = 0 - adj;
-
+	
   adj_tickets(adj);
-#endif /* ADJ_TICKETS */
+#endif
+
   reschedule();
-#endif /* RR_SCHED */
 }
 
 EXPORT_ELEMENT(FromDevice)
