@@ -23,10 +23,10 @@ CLICK_CXX_UNPROTECT
 #include <click/driver.hh>
 #include <click/error.hh>
 
-#define HANDLER_REREAD                  (Router::Handler::DRIVER_FLAG_0)
-#define HANDLER_NEED_READ               (Router::Handler::DRIVER_FLAG_1)
-#define HANDLER_SPECIAL_INODE           (Router::Handler::DRIVER_FLAG_2)
-#define HANDLER_WRITE_UNLIMITED         (Router::Handler::DRIVER_FLAG_3)
+#define HANDLER_REREAD                  (Handler::DRIVER_FLAG_0)
+#define HANDLER_NEED_READ               (Handler::DRIVER_FLAG_1)
+#define HANDLER_SPECIAL_INODE           (Handler::DRIVER_FLAG_2)
+#define HANDLER_WRITE_UNLIMITED         (Handler::DRIVER_FLAG_3)
 
 
 class KernelErrorHandler : public BaseErrorHandler { public:

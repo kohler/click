@@ -120,7 +120,7 @@ clickfs_tree_add_dir(struct clickfs_dirent *cde, char *name, int perm)
 
 void
 clickfs_tree_add_handle(struct clickfs_dirent *cde,
-			const Router::Handler *h,
+			const Handler *h,
 			int eindex, int handle)
 {
     struct clickfs_dirent *de;

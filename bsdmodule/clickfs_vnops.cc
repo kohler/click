@@ -254,11 +254,11 @@ clickfs_readdir(struct vop_readdir_args *ap)
     return error;
 }
 
-const Router::Handler *
+const Handler *
 clickfs_int_get_handler(struct clickfs_dirent *cde)
 {
     int handle = cde->data.handle.handle;
-    const Router::Handler *h = Router::handler(click_router, handle);
+    const Handler *h = Router::handler(click_router, handle);
     return h;
 }
 
@@ -279,7 +279,7 @@ clickfs_open(struct vop_open_args *ap)
 
     if (cde->type == CLICKFS_DIRENT_HANDLE) {
 	Element *e = clickfs_int_get_element(cde);
-	const Router::Handler *h = clickfs_int_get_handler(cde);
+	const Handler *h = clickfs_int_get_handler(cde);
 
 	if (!h)
 	    return ENOENT;
@@ -314,7 +314,7 @@ clickfs_read(struct vop_read_args *ap)
     }
     if (!cde->data.handle.rbuf) {   /* try to read */
 	Element *e = clickfs_int_get_element(cde);
-	const Router::Handler *h = clickfs_int_get_handler(cde);
+	const Handler *h = clickfs_int_get_handler(cde);
 	if (!h)
 	    return ENOENT;
 	if (!h->read_visible())
@@ -358,7 +358,7 @@ clickfs_write(struct vop_write_args *ap)
 	return EOPNOTSUPP;
 
     if (cde->data.handle.wbuf == NULL) {
-	const Router::Handler *h = clickfs_int_get_handler(cde);
+	const Handler *h = clickfs_int_get_handler(cde);
 
 	if (!h)
 	    return ENOENT;
@@ -387,7 +387,7 @@ clickfs_fsync_body(struct clickfs_dirent *cde)
     int retval = 0;
 
     if (cde->type == CLICKFS_DIRENT_HANDLE) {
-	const Router::Handler *h = clickfs_int_get_handler(cde);
+	const Handler *h = clickfs_int_get_handler(cde);
  
 	if (cde->data.handle.rbuf == NULL && cde->data.handle.wbuf == NULL) {
 	    // empty write, prepare something.

@@ -5,11 +5,11 @@
  */
 
 #include <click/config.h>
-#include <clicknet/ip.h>
 #if CLICK_BSDMODULE
 # include <sys/param.h>
 # include <sys/proc.h>
 #endif
+#include <clicknet/ip.h>
 #if CLICK_LINUXMODULE
 # include <linux/string.h>
 #else
