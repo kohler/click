@@ -1,3 +1,19 @@
+2004-05-06 Thursday 14:14  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* linuxmodule/sched.cc (1.47): add declaration for click_threads()
+	(Nikitas Liogkas)
+
+2004-05-06 Thursday 14:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/routerthread.cc (1.37): fix Click SMP (reported by Nikitas):
+	RouterThread::run_os() is called on all threads (not just thread id
+	0), and unlock the thread lock before calling check_driver()
+
+2004-05-06 Thursday 14:12  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/master.cc (1.12): fix Click SMP (reported by Nikitas): Master
+	removes a router after it has stopped, in check_driver()
+
 2004-05-05 Wednesday 17:57  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* tools/lib/lexert.cc (1.60): nit
