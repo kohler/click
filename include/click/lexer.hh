@@ -73,7 +73,7 @@ class Lexer { public:
 
   void element_type_names(Vector<String> &) const;
   
-  void remove_element_type(int);
+  int remove_element_type(int t)	{ return remove_element_type(t, 0); }
 
   void connect(int element1, int port1, int element2, int port2);
   String element_name(int) const;
@@ -129,6 +129,7 @@ class Lexer { public:
   HashMap<String, int> _element_type_map;
   Vector<Element *> _element_types;
   Vector<String> _element_type_names;
+  enum { ET_SCOPED = 0x80000000, ET_TMASK = 0x7FFFFFFF, ET_NULL = 0x7FFFFFFF };
   Vector<int> _element_type_next;
   int _last_element_type;
   int _free_element_type;
@@ -163,6 +164,7 @@ class Lexer { public:
   int get_element(String, int, const String & = String(), const String & = String());
   int lexical_scoping_in() const;
   void lexical_scoping_out(int);
+  int remove_element_type(int, int *);
   int make_compound_element(int);
   void expand_compound_element(int, const VariableEnvironment &);
   void add_router_connections(int, const Vector<int> &, Router *);

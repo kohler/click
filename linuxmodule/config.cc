@@ -36,7 +36,10 @@ static Lexer *lexer = 0;
 extern "C" int
 click_add_element_type(const char *name, Element *e)
 {
-  return lexer->add_element_type(name, e);
+  if (name)
+    return lexer->add_element_type(name, e);
+  else
+    return lexer->add_element_type(e);
 }
 
 extern "C" void

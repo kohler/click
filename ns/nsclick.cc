@@ -117,7 +117,10 @@ static String configuration_string;
 extern "C" int
 click_add_element_type(const char *, Element *)
 {
-  //return lexer->add_element_type(ename, e);
+  // if (name)
+  //   return lexer->add_element_type(name, e);
+  // else
+  //   return lexer->add_element_type(e);
   fprintf(stderr,"Hey! Need to do click_add_element_type!\n");
   return 0;
 }

@@ -365,13 +365,13 @@ Lexer::Lexer()
   : _data(0), _len(0), _pos(0), _lineno(1), _lextra(0),
     _tpos(0), _tfull(0),
     _element_type_map(-1),
-    _last_element_type(-1),
+    _last_element_type(ET_NULL),
     _free_element_type(-1),
     _element_map(-1),
     _definputs(0), _defoutputs(0),
     _errh(ErrorHandler::default_handler())
 {
-  end_parse(-1);		// clear private state
+  end_parse(ET_NULL);		// clear private state
   add_element_type("<tunnel>", new ErrorElement);
   add_element_type("Error", new ErrorElement);
   assert(element_type("<tunnel>") == TUNNEL_TYPE && element_type("Error") == ERROR_TYPE);
@@ -379,11 +379,14 @@ Lexer::Lexer()
 
 Lexer::~Lexer()
 {
-  end_parse(-1);
+  end_parse(ET_NULL);
 
   // get rid of nonscoped element types
   for (Element **e = _element_types.begin(); e != _element_types.end(); e++)
-    delete *e;
+    if (*e) {
+      (*e)->cleanup(Element::CLEANUP_NO_ROUTER);
+      delete *e;
+    }
 }
 
 int
@@ -810,18 +813,16 @@ Lexer::add_element_type(const String &name, Element *e, bool scoped)
     tid = _element_types.size();
     _element_types.push_back(e);
     _element_type_names.push_back(name);
-    _element_type_next.push_back(scoped ? _last_element_type : -1);
+    _element_type_next.push_back(_last_element_type | (scoped ? (int)ET_SCOPED : 0));
   } else {
     tid = _free_element_type;
     _free_element_type = _element_type_next[tid];
     _element_types[tid] = e;
     _element_type_names[tid] = name;
-    _element_type_next[tid] = (scoped ? _last_element_type : -1);
+    _element_type_next[tid] = _last_element_type | (scoped ? (int)ET_SCOPED : 0);
   }
-  if (name)
-    _element_type_map.insert(name, tid);
-  if (scoped)
-    _last_element_type = tid;
+  _element_type_map.insert(name, tid);
+  _last_element_type = tid;
   return tid;
 }
 
@@ -850,42 +851,43 @@ Lexer::lexical_scoping_in() const
 void
 Lexer::lexical_scoping_out(int last)
 {
-  if (last != -1) {
-    for (int t = _last_element_type; t >= 0; t = _element_type_next[t])
-      if (t == last)
-	goto ok;
-    return;
+  int *prev = &_last_element_type;
+  while (*prev != last && *prev != ET_NULL) {
+    assert(!(*prev & ET_SCOPED));
+    int next = _element_type_next[*prev];
+    if (next & ET_SCOPED)
+      remove_element_type(*prev, prev);
+    else
+      prev = &_element_type_next[*prev];
   }
-
- ok:
-  while (_last_element_type != last)
-    remove_element_type(_last_element_type);
 }
 
-void
-Lexer::remove_element_type(int removed)
+int
+Lexer::remove_element_type(int removed, int *prev_hint)
 {
-  // patch next array
-  int prev = -1, trav = _last_element_type;
-  while (trav != removed && trav >= 0) {
-    prev = trav;
-    trav = _element_type_next[trav];
-  }
-  if (trav < 0)
-    return;
-  if (prev >= 0)
-    _element_type_next[prev] = _element_type_next[removed];
-  else
-    _last_element_type = _element_type_next[removed];
+  // exit early if trying to remove bad type
+  if (removed < 0 || removed >= _element_types.size() || _element_types[removed] == 0)
+    return -1;
 
+  // fix _element_type_next chain
+  if (!prev_hint || (int)(*prev_hint & ET_TMASK) != removed)
+    for (prev_hint = &_last_element_type;
+	 (*prev_hint & ET_TMASK) != ET_NULL && (int)(*prev_hint & ET_TMASK) != removed;
+	 prev_hint = &_element_type_next[*prev_hint & ET_TMASK])
+      /* nada */;
+  assert(prev_hint);
+  if ((int)(*prev_hint & ET_TMASK) == removed)
+    *prev_hint = (*prev_hint & ~ET_TMASK) | (_element_type_next[removed] & ET_TMASK);
+  
   // fix up element type name map
   const String &name = _element_type_names[removed];
   if (_element_type_map[name] == removed) {
-    for (trav = _element_type_next[removed];
-	 trav >= 0 && _element_type_names[trav] != name;
-	 trav = _element_type_next[trav])
+    int trav;
+    for (trav = _element_type_next[removed] & ET_TMASK;
+	 trav != ET_NULL && _element_type_names[trav] != name;
+	 trav = _element_type_next[trav] & ET_TMASK)
       /* nada */;
-    _element_type_map.insert(name, trav);
+    _element_type_map.insert(name, (trav == ET_NULL ? -1 : trav));
   }
 
   // remove stuff
@@ -896,6 +898,8 @@ Lexer::remove_element_type(int removed)
   _element_type_names[removed] = String();
   _element_type_next[removed] = _free_element_type;
   _free_element_type = removed;
+
+  return 0;
 }
 
 void
