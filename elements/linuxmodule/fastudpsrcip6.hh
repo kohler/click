@@ -1,18 +1,18 @@
-#ifndef FASTUDPSRC_HH
-#define FASTUDPSRC_HH
+#ifndef FASTUDPSRCIP6_HH
+#define FASTUDPSRCIP6_HH
 
 /*
  * =c
- * FastUDPSource(RATE, LIMIT, LEN, SETHADDR, SIPADDR, SPORT, DETHADDR, DIPADDR, DPORT [, CHECKSUM?, INTERVAL, ACTIVE])
+ * FastUDPSourceIP6(RATE, LIMIT, LEN, SETHADDR, SIP6ADDR, SPORT, DETHADDR, DIP6ADDR, DPORT [, CHECKSUM?, INTERVAL, ACTIVE])
  * =s sources
- * creates packets with static UDP/IP/Ethernet headers
+ * creates packets with static UDP/IP6/Ethernet headers
  * =d
- * FastUDPSource is a benchmark tool. At initialization
- * time, FastUDPSource creates a UDP/IP packet of length
+ * FastUDPSourceIP6 is a benchmark tool. At initialization
+ * time, FastUDPSourceIP6 creates a UDP/IP6 packet of length
  * LEN (min 60), with source ethernet address SETHADDR,
- * source IP address SIPADDR, source port SPORT,
- * destination ethernet address DETHADDR, destination IP
- * address DIPADDR, and destination port DPORT. The UDP
+ * source IP6 address SIP6ADDR, source port SPORT,
+ * destination ethernet address DETHADDR, destination IP6
+ * address DIP6ADDR, and destination port DPORT. The UDP
  * checksum is calculated if CHECKSUM? is true; it is
  * true by default. Each time the FastUDPSource element
  * is called, it increments the reference count on the
@@ -45,8 +45,8 @@
  * Change ACTIVE
  *
  * =e
- *  FastUDPSource(100000, 500000, 60, 0:0:0:0:0:0, 1.0.0.1, 1234, 
- *                                    1:1:1:1:1:1, 2.0.0.2, 1234) 
+ *  FastUDPSourceIP6(100000, 500000, 60, 0:0:0:0:0:0, 3ffe::1.0.0.1, 1234, 
+ *                                    1:1:1:1:1:1, 3ff2::2.0.0.2, 1234) 
  *    -> ToDevice;
  */
 
