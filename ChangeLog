@@ -1,3 +1,8 @@
+2002-12-12 Thursday 00:56  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplepackage/configure.in (1.7): include
+	CLICK_PROG_KERNEL_CC
+
 2002-12-11 Wednesday 23:11  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.27), aclocal.m4 (1.27), acclick.m4 (1.28),
