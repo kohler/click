@@ -15,6 +15,7 @@ class HandlerProxy : public Element { public:
   virtual int check_handler(const String &, bool write, ErrorHandler *);
   
   enum {
+    CSERR_OK			= 200,
     CSERR_SYNTAX		= 500,
     CSERR_NO_SUCH_ELEMENT	= 510,
     CSERR_NO_SUCH_HANDLER	= 511,

@@ -174,7 +174,7 @@ KernelHandlerProxy::check_handler(const String &hname, bool write, ErrorHandler 
     errh->error("No handler named `%#s'", hname.printable().cc());
     return 0;
   } else {
-    errh->message("Handler `%s' OK", hname.printable().cc());
+    errh->message("%s handler `%s' OK", (write ? "Write" : "Read"), hname.printable().cc());
     return 1;
   }
 }

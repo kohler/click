@@ -171,7 +171,7 @@ class ControlSocket : public Element { public:
 			ControlSocketErrorHandler *);
   
   enum {
-    CSERR_OK			= 200,
+    CSERR_OK			= HandlerProxy::CSERR_OK,	       // 200
     CSERR_OK_HANDLER_WARNING	= 220,
     CSERR_SYNTAX		= HandlerProxy::CSERR_SYNTAX,          // 500
     CSERR_UNIMPLEMENTED		= 501,

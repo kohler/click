@@ -235,7 +235,7 @@ ControlSocket::transfer_messages(int fd, int default_code, const String &msg,
     else
       message(fd, code, msg, false);
   }
-    
+  
   for (int i = 0; i < messages.size(); i++)
     message(fd, code, messages[i], i < messages.size() - 1);
   
@@ -390,6 +390,7 @@ int
 ControlSocket::check_command(int fd, const String &hname, bool write)
 {
   int ok = 0;
+  int any_visible = 0;
   ControlSocketErrorHandler errh;
 
   if (_full_proxy) {
@@ -403,10 +404,8 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
     if (hid < 0)
       return 0;			// error messages already reported
     const Router::Handler &h = router()->handler(hid);
-    if (!h.visible())
-      return message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + hname + "'");
-    if (write ? !h.write_visible() : !h.read_visible())
-      return message(fd, CSERR_PERMISSION, "Handler `" + hname + (write ? "' read-only" : "' write-only"));
+    ok = (h.visible() && (write ? h.write_visible() : h.read_visible()));
+    any_visible = h.visible();
   }
 
   // remember _read_only!
@@ -415,9 +414,11 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
   else if (errh.messages().size() > 0)
     transfer_messages(fd, CSERR_OK, String(), &errh);
   else if (ok)
-    message(fd, CSERR_OK, "Handler `" + hname + "' OK");
+    message(fd, CSERR_OK, String(write ? "Write" : "Read") + " handler `" + hname + "' OK");
+  else if (any_visible)
+    message(fd, CSERR_NO_SUCH_HANDLER, "Handler `" + hname + (write ? "' not writable" : "' not readable"));
   else
-    message(fd, CSERR_NO_SUCH_HANDLER, "No handler named `" + hname + "'");
+    message(fd, CSERR_NO_SUCH_HANDLER, "No " + String(write ? "write" : "read") + " handler named `" + hname + "'");
   return 0;
 }
 
