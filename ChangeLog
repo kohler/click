@@ -1,3 +1,52 @@
+2004-09-29 Wednesday 21:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* test/standard/notifier-04.testie (1.1): add nonfull notification
+	test
+
+2004-09-29 Wednesday 21:04  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: fullnotequeue.cc (1.1), fullnotequeue.hh
+	(1.1): add FullNoteQueue: a NotifierQueue that adds a nonfull
+	notifier
+
+2004-09-29 Wednesday 21:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: linuxmodule/fromhost.cc (1.49),
+	linuxmodule/fromhost.hh (1.38), standard/infinitesource.cc (1.46),
+	standard/infinitesource.hh (1.37): InfiniteSource and FromHost
+	listen downstream for nonfull queue notification
+
+2004-09-29 Wednesday 21:03  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/confparse.cc (1.135), tools/lib/processingt.cc (1.33),
+	tools/lib/processingt.hh (1.17): avoid <ctype.h> functions, because
+	of char signedness and locale issues
+
+2004-09-29 Wednesday 21:02  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/Makefile.in (1.53): nit
+
+2004-09-29 Wednesday 21:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/notifier.hh (1.14), lib/notifier.cc (1.14):
+	Notifier nit: fix pull<->push detection in
+	upstream_empty/downstream_nonfull
+
+2004-09-29 Wednesday 21:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/router.cc (1.172): adapt
+
+2004-09-29 Wednesday 21:01  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/element.hh (1.38), lib/element.cc (1.93): make
+	_inputs and _outputs => _ports[0] and _ports[1]; simplifies
+	implementation of port-generic methods like port() and
+	port_allowed().  Also, avoid isalpha()
+
+2004-09-29 Wednesday 20:59  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* configure (1.31): newer autoconf generated this
+
 2004-09-29 Wednesday 19:17  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/standard/frontdropqueue.cc (1.17),
