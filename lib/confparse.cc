@@ -1980,8 +1980,6 @@ const CpVaParseCmd
   cpElement		= "element",
   cpHandlerName		= "handler_name",
   cpHandler		= "handler",
-  cpReadHandler		= "read_handler",
-  cpWriteHandler	= "write_handler",
   cpReadHandlerCall	= "read_handler_call",
   cpWriteHandlerCall	= "write_handler_call",
   cpIP6Address		= "ip6_addr",
