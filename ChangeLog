@@ -1,3 +1,11 @@
+2001-06-28 Thursday 11:37  yipal
+
+	* elements/ip/: ipdecappaint.cc (1.1), ipdecappaint.hh (1.1),
+	ipencap2.cc (1.1), ipencap2.hh (1.1), ipencappaint.cc (1.1),
+	ipencappaint.hh (1.1), ipreassembler.cc (1.1), ipreassembler.hh
+	(1.1), lookupiprouteron.cc (1.1), lookupiprouteron.hh (1.1):
+	Initial checkin
+
 2001-06-27 Wednesday 15:18  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/ip6/: checkip6header.cc (1.17), checkip6header.hh (1.8):
