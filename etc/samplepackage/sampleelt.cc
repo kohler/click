@@ -58,4 +58,5 @@ SamplePackageElement::add_handlers()
   add_read_handler("scheduled", read_handler, 0);
 }
 
+ELEMENT_REQUIRES(Classifier)
 EXPORT_ELEMENT(SamplePackageElement)

@@ -50,7 +50,7 @@ install-man: Makefile
 	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(mandir)/man1/click-uninstall.1
 	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
-	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@ @TARGETS@ $(EXTRA_PROVIDES)" | $(PERL) $(subdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f -)
+	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@TARGETS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f -
 install-info: Makefile $(srcdir)/click.info
 	$(mkinstalldirs) $(infodir)
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
@@ -67,7 +67,7 @@ uninstall-man:
 	cd $(mandir)/man5; /bin/rm -f click.5
 	cd $(mandir)/man8; /bin/rm -f click.o.8
 	cd $(mandir)/man7; /bin/rm -f elementdoc.7
-	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@ @TARGETS@ $(EXTRA_PROVIDES)" | $(PERL) $(subdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f - -u)
+	echo @TARGETS@ @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "@TARGETS@ $(EXTRA_PROVIDES)" -p $(top_srcdir) | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -p DEFAULT -f - -u
 uninstall-info: $(srcdir)/click.info
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \
 	  if test -f $(srcdir)/$$f; then \

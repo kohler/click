@@ -37,9 +37,9 @@ libsrc: Makefile always stamp-h
 install: install-lib install-local install-include
 install-lib: stamp-h
 	@(cd libsrc && $(MAKE) install) || exit 1
-install-local: $(srcdir)/click-buildtool click-compile
+install-local: click-buildtool click-compile
 	$(mkinstalldirs) $(bindir)
-	$(INSTALL_IF_CHANGED) $(srcdir)/click-buildtool $(bindir)/click-buildtool
+	$(INSTALL_IF_CHANGED) click-buildtool $(bindir)/click-buildtool
 	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
 install-include: stamp-h
@@ -53,7 +53,11 @@ install-include: stamp-h
 	$(mkinstalldirs) $(netincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/clicknet/*.h $(netincludedir)
 
-click-compile: $(srcdir)/click-compile.in
+click-buildtool: $(srcdir)/click-buildtool.in config.status
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	@chmod +x click-buildtool; touch click-buildtool
+click-compile: $(srcdir)/click-compile.in config.status
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
@@ -107,7 +111,7 @@ distclean:
 	@cd libsrc && $(MAKE) distclean
 	-rm -f config.h Makefile config.status
 	-rm -f include/click/config.h include/click/pathvars.h
-	-rm -f config.cache config.log click-compile stamp-h
+	-rm -f config.cache config.log click-buildtool click-compile stamp-h
 
 
 .PHONY: all always libsrc clean distclean distdir dist \

@@ -4,8 +4,9 @@
 # Eddie Kohler
 #
 # Copyright (c) 2000-2001 Massachusetts Institute of Technology
-# Copyright (c) 2000-2001 Mazu Networks, Inc.
-# Copyright (c) 2001-2002 International Computer Science Institute
+# Copyright (c) 2000-2004 Mazu Networks, Inc.
+# Copyright (c) 2001-2003 International Computer Science Institute
+# Copyright (c) 2004 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -16,6 +17,11 @@
 # The Software is provided WITHOUT ANY WARRANTY, EXPRESS OR IMPLIED. This
 # notice is a summary of the Click LICENSE file; the license in that file is
 # legally binding.
+
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+datadir=@datadir@
+clickdatadir=${datadir}/click
 
 verbose=""
 elem2=""
@@ -33,7 +39,7 @@ fi
 
 findelem_usage () {
     echo "Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
-Try \'click-buildtool findelem --help' for more information." 1>&2
+Try 'click-buildtool findelem --help' for more information." 1>&2
     exit 1
 }
 
@@ -43,33 +49,34 @@ findelem_elementmap_provisions () {
   sub(/.* provides="/, "", $0);
   sub(/".*/, "", $0);
   split($0, d, / +/);
-  for (j in d) deps[d[j]] = 1;
+  for (j in d) prov[d[j]] = 1;
 }
 /^<entry( .* | )provides="([^"]*)"/ {
   sub(/.* provides="/, "", $0);
   sub(/".*/, "", $0);
   split($0, d, / +/);
-  for (j in d) deps[d[j]] = 1;
+  for (j in d) prov[d[j]] = 1;
 }
 /^<entry( .* | )name="([^"]*)"/ {
   sub(/.* name="/, "", $0);
   sub(/".*/, "", $0);
-  deps[$0] = 1;
+  prov[$0] = 1;
 }
 END {
   # delete references to drivers
-  delete deps["userlevel"]; delete deps["linuxmodule"]; 
-  delete deps["bsdmodule"]; delete deps["ns"];
-  for (j in deps) print j;
+  delete prov["userlevel"]; delete prov["linuxmodule"]; 
+  delete prov["bsdmodule"]; delete prov["ns"];
+  for (j in prov) print j;
 }' <"$elementmap"
 }
 
-findelements () {
-    prefix=""
+findelem () {
+    prefix=
     all=
-    provisions=""
-    filenames=""
-    standards=''
+    provisions=
+    default_provisions="@provisions@"
+    filenames=
+    standards=
     unprovisions='false 0'
     while [ x"$1" != x ]; do
     case $1 in
@@ -122,6 +129,9 @@ $provisions"; shift 1;;
 	emap=`echo "$1" | sed 's/^[^=]*=//'`
 	provisions=`findelem_elementmap_provisions $emap`"
 $provisions"; shift 1;;
+    -P|--pa|--pac|--pack|--packa|--packag|--package)
+	provisions=`findelem_elementmap_provisions ${clickdatadir}/elementmap.xml`"
+$provisions"; shift 1;;
     -h|--h|--he|--hel|--help)
 	cat <<'EOF' 1>&2
 'Click-buildtool findelem' locates valid Click element source code. It starts
@@ -133,16 +143,17 @@ considered. The initial list of available requirements is the list of
 requirements specified with '-r', plus the list of EXPORT_ELEMENT() and
 ELEMENT_PROVIDES() keywords.
 
-Usage: click-buildtool findelem [-a] [-V] [-p PREFIX] < [FILES AND DIRECTORIES]
+Usage: click-buildtool findelem [OPTIONS] < [FILES AND DIRECTORIES]
 
 Options:
   -a, --all                  Include all subdirectories of 'elements' rather
                              than reading standard input, and pretend all
                              requirements are available (except for '-x').
   -V, --verbose              Print more information about dependency checking.
-  -p, --prefix PREFIX        Preprend PREFIX to every file and/or directory.
-  -r, --provide REQ          Mark requirement(s) REQ as available.
-  -e, --elementmap EMAP      Mark requirement(s) from EMAP as available.
+  -p, --prefix PREFIX        Prepend PREFIX to every file and/or directory.
+  -r, --provide REQ          Provide requirement(s) in REQ.
+  -e, --elementmap EMAP      Provide requirement(s) from EMAP.
+  -P, --package              Provide requirement(s) from default elementmap.
   -S, --standards            Mark standard elements as available.
   -x, --unprovide REQ        Mark requirement(s) REQ as unavailable.
   -f, --filenames            Output filenames only.
@@ -160,6 +171,9 @@ EOF
     if test -n "$verbose" -a -n "$prefix"; then
 	echo "Prefix: $prefix" 1>&2
     fi
+
+    # add defaults to provisions
+    provisions="$provisions $default_provisions"
 
     # add standards to provisions if necessary
     if test "x$standards" != x; then
@@ -699,7 +713,7 @@ Report bugs to <click@pdos.lcs.mit.edu>.
 EOF
      exit 0;;
   findelem)
-     shift 1; findelements "$@"; exit 0;;
+     shift 1; findelem "$@"; exit 0;;
   elem2make)
      elem2="make"; shift 1; elem2make "$@"; exit 0;;
   elem2export)

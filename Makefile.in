@@ -41,15 +41,15 @@ ALL_TARGETS = $(TARGETS) $(OTHER_TARGETS)
 
 all: $(ALL_TARGETS) Makefile
 
-bsdmodule: Makefile stamp-h
+bsdmodule: Makefile click-buildtool stamp-h
 	@cd bsdmodule && $(MAKE) all
-linuxmodule: Makefile stamp-h
+linuxmodule: Makefile click-buildtool stamp-h
 	@cd linuxmodule && $(MAKE) all
-ns: Makefile stamp-h
+ns: Makefile click-buildtool stamp-h
 	@cd ns && $(MAKE) all
-userlevel: Makefile click-compile stamp-h
+userlevel: Makefile click-buildtool click-compile stamp-h
 	@cd userlevel && $(MAKE) all
-exopc: Makefile stamp-h
+exopc: Makefile click-buildtool stamp-h
 	@cd exopc && $(MAKE) all
 tools: Makefile
 	@cd tools && $(MAKE) all
@@ -57,9 +57,9 @@ tools: Makefile
 install: click-compile stamp-h
 	@for d in $(ALL_TARGETS); do (cd $$d && $(MAKE) install) || exit 1; done
 	@$(MAKE) install-local install-doc install-local-include
-install-local: elementmap.xml $(srcdir)/click-buildtool click-compile
+install-local: elementmap.xml click-buildtool click-compile
 	$(mkinstalldirs) $(bindir)
-	$(INSTALL_IF_CHANGED) $(srcdir)/click-buildtool $(bindir)/click-buildtool
+	$(INSTALL_IF_CHANGED) click-buildtool $(bindir)/click-buildtool
 	$(INSTALL_IF_CHANGED) click-compile $(bindir)/click-compile
 	$(INSTALL_IF_CHANGED) $(srcdir)/click-mkelemmap $(bindir)/click-mkelemmap
 	$(mkinstalldirs) $(clickdatadir)
@@ -101,12 +101,16 @@ elemlist elemlists:
 	@for d in $(TARGETS); do (cd $$d && $(MAKE) elemlist) || exit 1; done
 
 MKELEMMAPFLAGS =
-elementmap.xml: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@ $(TARGETS) $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "$(PROVISIONS) $(TARGETS)" | $(PERL) ./click-mkelemmap -r "$(PROVISIONS) $$t" -Iinclude $(MKELEMMAPFLAGS)) > elementmap.xml
+elementmap.xml: click-buildtool $(srcdir)/click-mkelemmap always
+	t="@element_groups@ $(TARGETS) $(EXTRA_PROVIDES)"; echo $$t | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(TARGETS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS) $$t" -p $(top_srcdir) -Iinclude -s `cd $(top_srcdir) && pwd` $(MKELEMMAPFLAGS) > elementmap.xml
 always:
 	@:
 
-click-compile: $(srcdir)/click-compile.in
+click-buildtool: $(srcdir)/click-buildtool.in config.status
+	cd $(top_builddir) && \
+	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
+	@chmod +x click-buildtool; touch click-buildtool
+click-compile: $(srcdir)/click-compile.in config.status
 	cd $(top_builddir) && \
 	  CONFIG_FILES=$(subdir)/$@ CONFIG_HEADERS= $(SHELL) ./config.status
 	@chmod +x click-compile; touch click-compile
@@ -135,7 +139,7 @@ distclean:
 	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f Makefile config.status etc/libclick/Makefile
 	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
-	-rm -f config.cache config.log click-compile stamp-h
+	-rm -f config.cache config.log click-buildtool click-compile stamp-h
 	-rm -f elementmap.xml conftest.*
 
 

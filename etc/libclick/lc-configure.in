@@ -366,12 +366,13 @@ dnl Output
 dnl
 
 test ! -d include && mkdir include
-config_files="Makefile click-compile libsrc/Makefile"
+config_files="Makefile click-buildtool click-compile libsrc/Makefile"
 
 AC_OUTPUT_COMMANDS([for ac_file in $CONFIG_HEADERS; do
   test $ac_file = include/click/config.h:config.h.in && echo > stamp-h
 done
 for ac_file in $CONFIG_FILES; do
+  test $ac_file = click-buildtool && chmod +x click-buildtool
   test $ac_file = click-compile && chmod +x click-compile
   test -z "$GMAKE" && echo $ac_file | grep Makefile >/dev/null && $ac_given_srcdir/missing gmake $ac_file
 done], GMAKE="$GMAKE")

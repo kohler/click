@@ -314,7 +314,7 @@ sub help () {
 'Click-mkelemmap' creates an elementmap file from a collection of Click
 elements.
 
-Usage: click-mkelemmap [-l | -L] [-d DIRECTORY] [-f FILE | SRCFILE]...
+Usage: click-mkelemmap [OPTIONS] [-f FILE | SRCFILE]...
 
 Each SRCFILE is a Click header file. '-' means standard input. Default is
 '-f -' if no '-f' or 'SRCFILE' options are supplied.
@@ -324,7 +324,9 @@ Options:
                           from FILE.
   -r, --provide PROV      Record provisions PROV in output.
       --webdoc DOCSTR     Record Web documentation DOCSTR in output.
+  -p, --prefix PFX        Remove PFX from filenames in output.
   -I, --include DIR       Look for header files in DIR.
+  -s, --sourcedir DIR     Record DIR as source directory in output.
   -h, --help              Print this message and exit.
 
 Report bugs to <click\@pdos.lcs.mit.edu>.
@@ -333,7 +335,7 @@ EOD;
 }
 
 undef $/;
-my(@files, @provides, $fn, $prefix, $any_files, $webdoc);
+my(@files, @provides, $fn, $prefix, $any_files, $webdoc, $sourcedir);
 $prefix = "";
 
 while (@ARGV) {
@@ -362,6 +364,13 @@ while (@ARGV) {
 	push @includes, $1;
     } elsif (/^-I(.+)$/) {
 	push @includes, $1;
+    } elsif (/^-s$/ || long_option_match($_, '--sourcedir', 3)) {
+	die "not enough arguments" if !@ARGV;
+	$sourcedir = shift @ARGV;
+    } elsif (long_option_match($_, '--sourcedir', 3) && /^[^=]*=(.*)$/) {
+	$sourcedir = $1;
+    } elsif (/^-s(.+)$/) {
+	$sourcedir = $1;
     } elsif (long_option_match($_, '--webdoc', 3)) {
 	die "not enough arguments" if !@ARGV;
 	die "repeated --webdoc" if defined($webdoc);
@@ -390,10 +399,10 @@ foreach $fn (@files) {
 umask(022);
 open(OUT, ">&STDOUT");
 
-my($sourcedir) = `/bin/pwd`;
-$sourcedir =~ s/\s+$//s;
 print OUT "<?xml version=\"1.0\" standalone=\"yes\"?>
-<elementmap xmlns=\"http://www.lcdf.org/click/xml/\" sourcedir=\"$sourcedir\" provides=\"", join(' ', @provides), "\"";
+<elementmap xmlns=\"http://www.lcdf.org/click/xml/\"";
+print OUT " sourcedir=\"$sourcedir\"" if defined($sourcedir);
+print OUT " provides=\"", join(' ', @provides), "\"";
 print OUT " webdoc=\"$webdoc\"" if defined($webdoc);
 print OUT ">\n";
 
