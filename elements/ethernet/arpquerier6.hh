@@ -7,32 +7,39 @@
  * =s
  * V<ARP, encapsulation>
  * =d
- * Handles most of the ARP protocol. Argument I should be
- * this host's IP6 address, and E should be this host's
- * ethernet address.
+ * Handles most of the Neighborhood Discovery(ND) protocol. 
+ * Argument I should be this host's IP6 address, and E should 
+ * be this host's ethernet address.
  *
  * Expects ordinary IP6 packets on input 0, each with a destination
  * address annotation. If an ethernet address is already known
  * for the destination, the IP6 packet is wrapped in an ethernet
  * header and sent to output 0. Otherwise the IP6 packet is saved and
- * an ARP query is sent to output 0. If an ARP response arrives
+ * an Neighborhood Solicitation Message is sent to output 0. 
+ * If an Neighborhood Advertisement Message arrives
  * on input 1 for an IP6 address that we need, the mapping is
- * recorded and the saved IP packet is sent.
+ * recorded and the saved IP6 packet is sent.
  *
- * The ARP reply packets on input 1 should include the ethernet header.
+ * The packets on input 1 should include the ethernet header.
  *
  * If a host has multiple interfaces, it will need multiple
- * instances of ARPQuerier.
+ * instances of ARPQuerier6.
+ *
+ * ARPQuerier6 may have one or two outputs. If it has two, then ARP queries
+ * are sent to the second output.
  *
  * =e
- *    c :: Classifier(12/0806 20/0001, 12/0800, ...);
- *    a :: ARPQuerier6(0::121A:0459, 00:00:C0:AE:67:EF);
- *    c[0] -> a[1];
- *    c[1] -> ... -> a[0];
+ *    c :: Classifier(12/86dd 20/3aff 53/87,
+ *		      12/86dd 20/3aff 53/88,
+ *		      12/86dd);
+ *    a :: ARPQuerier6(3ffe:1ce1:2::1, 00:e0:29:05:e5:6f);
+ *    c[0] -> ...
+ *    c[1] -> a[1];
+ *    c[2] -> ... -> a[0];
  *    a[0] -> ... -> ToDevice(eth0);
  *
  * =a
- * ARPResponder6, ARPFaker6
+ * ARPResponder6
  */
 
 #include "element.hh"
