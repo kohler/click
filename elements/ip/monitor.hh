@@ -3,26 +3,35 @@
 
 /*
  * =c
- * Monitor("SRC"|"DST", MAX [, VAR1, VAR2, ..., VARn])
+ * Monitor(THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]])
  * =d
  * Input: IP packets (no ether header).
  *
+ * THRESH is "amount per second" (see explanation below). Integer.
+ * SDx is a string ("SRC" or "DST").
+ * VARx is an integer.
+ *
  * Monitors traffic by counting the number of packets going to/coming from
- * (clusters of) IP addresses.
+ * (a cluster of) IP addresses.
  *
- * The first argument is either "SRC" or "DST". SRC will instruct Monitor to
- * collect statistics based on the source address in the IP header. DST will
- * instruct Monitor to collect statistics based on the destination address.
+ * In its simplest form (i.e. "Monitor(DST, 1)"), Monitor uses the first byte of
+ * the destination IP address of each packet to index into a table (with, of
+ * course, 256 records) and increases the value in that record by 1. In other
+ * words, the Monitor clusers destination addresses by the their first byte. As
+ * soon as the value associated with such a cluster increases with more than
+ * THRESH per second, then the entry is marked and subsequent packets to that
+ * cluster are split on the 2nd byte of the destination IP address in a similar
+ * table. This can go up to the 4th byte.
  *
- * MAX is a value denoting an amount of packets per second. Normally, Monitor
- * clusters IP addresses based on the first byte of the IP address. When the
- * number of packets going to/coming from a cluster exceeds MAX, it is split
- * based on the second byte, and so on.
+ * THRESH is a value denoting an amount of packets per second. If the value
+ * associated with a cluster of IP addresses increases with more than THRESH per
+ * second, it is split.
  *
- * The number of inputs for Monitor equals n in VARn. Each VARx is related to
- * one input. Packets coming in on input x will cause the value of that src/dst
- * cluster to be changed with the value of VARx. If no VAR is supplied, then
- * Monitor has one input with a weight of 1.
+ * The number of inputs for Monitor equals n in VARn. Each SDx and VARx are
+ * related to one input. The "SRC" or "DST" tells the Monitor to use either the
+ * source or the destination IP address to index into the described table(s).
+ * VARx is the amount by which the value associated with a cluster should be
+ * increased or decreased.
  *
  * Monitor should be used together with Classifier to count packets with
  * specific features.
@@ -30,13 +39,10 @@
  * =h look (read)
  * Returns the number of packets counted to/from a cluster of IP addresses.
  * 
- * =h max (read-write)
- * Used to read/write MAX value.
+ * =h thresh (read-write)
+ * Used to read/write THRESH value.
  *
- * =h srcdst (read-write)
- * Used to read/write SRC/DST value. Resets all counters to 0.
- *
- * = reset (write)
+ * =h reset (write)
  * Resets all entries to the supplied value.
  *
  * =e
@@ -47,7 +53,7 @@
  * =
  * = ... -> c;
  *
- * = m :: Monitor(DST, 10, 1, -2);
+ * = m :: Monitor(10, D 1, D -2);
  * =
  * = c[0] -> [0]m -> ...
  * = c[1] -> [1]m -> ...
@@ -61,8 +67,8 @@
  * =a Classifier
  * =a Funnel
  */
-
 #include "glue.hh"
+#include "click_ip.h"
 #include "element.hh"
 #include "monitor.hh"
 #include "vector.hh"
@@ -82,10 +88,23 @@ public:
 
 private:
 
+// XXX: Is this somewhere defined already?
+#if IPVERSION == 4
+#define BYTES 4
+#endif
+
+#define SRC 0
+#define DST 1
+
+  // One of these associated with each input.
+  struct _inp {
+    int change;
+    unsigned char srcdst;
+  };
+
   struct _stats;
 
-  // value entry is either used to count packets or - if flags & SPLIT - as a
-  // pointer to another struct.
+  // For each (cluster of) IP address(es).
   struct _counter {
     unsigned char flags;
 #define SPLIT     0x0001
@@ -99,16 +118,11 @@ private:
   };
 
   struct _stats {
-    unsigned int level;
     struct _counter counter[256];
   };
 
-  int _src_dst;
-#define SRC 0
-#define DST 1
-
-  int _max;
-  Vector<int> _inputs;          // value associated with each input
+  int _thresh;
+  Vector<struct _inp *> _inputs;          // value associated with each input
   struct _stats *_base;
 
   void clean(_stats *s, int value = 0, bool recurse = false);
@@ -116,12 +130,11 @@ private:
   String print(_stats *s, String ip = "");
 
   void add_handlers();
-  static String srcdst_rhandler(Element *e, void *);
-  static String max_rhandler(Element *e, void *);
-  static String look_handler(Element *e, void *);
-  static int srcdst_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
-  static int max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
-  static int reset_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  static String thresh_read_handler(Element *e, void *);
+  static String look_read_handler(Element *e, void *);
+
+  static int thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  static int reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
 };
 
 #endif /* MONITOR_HH */

@@ -36,24 +36,14 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   cp_argvec(conf, args);
 
   // Enough args?
-  if(args.size() < 2) {
+  if(args.size() < 1) {
     errh->error("too few arguments");
     return -1;
   }
 
-  // SRC|DST
-  if(args[0] == "SRC")
-    _src_dst = SRC;
-  else if(args[0] == "DST")
-    _src_dst = DST;
-  else {
-    errh->error("first argument expected \"SRC\" or \"DST\". Found neither.");
-    return -1;
-  }
-
-  // MAX
-  if(!cp_integer(args[1], _max)) {
-    errh->error("second argument expected MAX. Not found.");
+  // THRESH
+  if(!cp_integer(args[0], _thresh)) {
+    errh->error("first argument expected THRESH. Not found.");
     return -1;
   }
 
@@ -64,24 +54,43 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   }
   clean(_base);
 
-  // VAL1, ..., VALn
+  // SD1 VAL1, ..., SDx VALx
   int change;
-  for (int i = 2; i < args.size(); i++) {
+  String srcdst;
+  struct _inp *inp;
+  for (int i = 1; i < args.size(); i++) {
     String arg = args[i];
-    if(cp_integer(arg, change, &arg) && cp_eat_space(arg))
-      _inputs.push_back(change);
-    else {
-      errh->error("expects \"SRC\"|\"DST\", MAX [, VAL1, VAL2, ..., VALn]");
-      return -1;
-    }
+    if(cp_word(arg, srcdst, &arg) &&
+       cp_eat_space(arg) &&
+       cp_integer(arg, change)) {
+
+      inp = new struct _inp;
+      inp->change = change;
+
+      if(srcdst == "SRC")
+        inp->srcdst = SRC;
+      else if(srcdst == "DST")
+        inp->srcdst = DST;
+      else {
+        errh->error("SDx should be \"SRC\" or \"DST\"");
+        return -1;
+      }
+
+      _inputs.push_back(inp);
+    } else
+        errh->error("Expecting \"THRESH, [, SD1 VAR1 [, SD2 VAR2 [, ... [, SDn VARn]]]]\"");
   }
 
   // Add default if not supplied.
   if(_inputs.size()) {
     set_ninputs(_inputs.size());
     set_noutputs(_inputs.size());
-  } else
-    _inputs.push_back(1);
+  } else {
+    inp = new struct _inp;
+    inp->change = 1;
+    inp->srcdst = DST;
+    _inputs.push_back(inp);
+  }
 
   return 0;
 #else
@@ -100,14 +109,25 @@ Monitor::clone() const
 void
 Monitor::push(int port, Packet *p)
 {
-  IPAddress a = p->dst_ip_anno();
-  update(a, _inputs[port]);
+  IPAddress a;
+
+  assert(_inputs[port]->srcdst == SRC || _inputs[port]->srcdst == DST);
+
+  if(_inputs[port]->srcdst == SRC) {
+    click_ip *ip = (click_ip *) p->data();
+    a = IPAddress(ip->ip_src);
+  } else
+    a = p->dst_ip_anno();
+
+  update(a, _inputs[port]->change);
   output(port).push(p);
 }
 
 
 //
 // Dives in tables based on a and raises the appropriate entry by val.
+//
+// XXX: Make this interrupt driven.
 //
 void
 Monitor::update(IPAddress a, int val)
@@ -118,10 +138,11 @@ Monitor::update(IPAddress a, int val)
   struct _stats *s = _base;
   struct _counter *c = NULL;
   int bitshift;
-  for(bitshift = 24; bitshift >= 0; bitshift -= 8) {
+  for(bitshift = ((BYTES-1)*8); bitshift >= 0; bitshift -= 8) {
     unsigned char byte = ((saddr >> bitshift) & 0x000000ff);
     // click_chatter("byte is %d", byte);
     c = &(s->counter[byte]);
+
     if(c->flags & SPLIT)
       s = c->next_level;
     else
@@ -134,11 +155,11 @@ Monitor::update(IPAddress a, int val)
 
   c->value += val;
 
-  // Did value get larger than MAX within one second?
-  if(c->value >= _max) {
-    int diffjiff = c->last_update - click_jiffies();
-    if(diffjiff < 100) {
-      if(bitshift) {
+  // Did value get larger than THRESH within one second?
+  if(c->value >= _thresh) {
+    int jiffdiff = c->last_update - click_jiffies();
+    if(jiffdiff < 100) {        // 100 jiffs per second
+      if(bitshift) {            // can't split last level
         c->flags |= SPLIT;
         c->next_level = new struct _stats;
         clean(c->next_level);
@@ -178,11 +199,12 @@ Monitor::print(_stats *s, String ip = "")
       this_ip = ip + "." + String(i);
     else
       this_ip = String(i);
+
+
     if(s->counter[i].flags & SPLIT) {
       ret += this_ip + "\t*\n";
       ret += print(s->counter[i].next_level, "\t" + this_ip);
-    }
-    else
+    } else if(s->counter[i].value != 0)
       ret += this_ip + "\t" + String(s->counter[i].value) + "\n";
   }
   return ret;
@@ -191,53 +213,23 @@ Monitor::print(_stats *s, String ip = "")
 
 
 String
-Monitor::look_handler(Element *e, void *)
+Monitor::look_read_handler(Element *e, void *)
 {
   Monitor *me = (Monitor*) e;
   return me->print(me->_base);
 }
 
+
 String
-Monitor::srcdst_rhandler(Element *e, void *)
+Monitor::thresh_read_handler(Element *e, void *)
 {
   Monitor *me = (Monitor *) e;
-  return (me->_src_dst == SRC ? String("SRC\n") : String("DST\n"));
+  return String(me->_thresh) + "\n";
 }
 
 
 int
-Monitor::srcdst_whandler(const String &conf, Element *e, void *, ErrorHandler *errh)
-{
-  Vector<String> args;
-  cp_argvec(conf, args);
-  Monitor* me = (Monitor *) e;
-
-  if(args.size() != 1) {
-    errh->error("expecting \"SRC\" or \"DST\" and nothing more or less");
-    return -1;
-  } else if(args[0] == "SRC")
-    me->_src_dst = SRC;
-  else if(args[0] == "DST")
-    me->_src_dst = DST;
-  else {
-    errh->error("expected \"SRC\" or \"DST\". Found neither.");
-    return -1;
-  }
-  me->clean(me->_base, 0, true);
-  return 0;
-}
-
-
-String
-Monitor::max_rhandler(Element *e, void *)
-{
-  Monitor *me = (Monitor *) e;
-  return String(me->_max) + "\n";
-}
-
-
-int
-Monitor::max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh)
+Monitor::thresh_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -247,17 +239,17 @@ Monitor::max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh
     errh->error("expecting 1 integer");
     return -1;
   }
-  int max;
-  if(!cp_integer(args[0], max)) {
+  int thresh;
+  if(!cp_integer(args[0], thresh)) {
     errh->error("not an integer");
     return -1;
   }
-  me->_max = max;
+  me->_thresh = thresh;
   return 0;
 }
 
 int
-Monitor::reset_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
+Monitor::reset_write_handler(const String &conf, Element *e, void *, ErrorHandler *errh)
 {
   Vector<String> args;
   cp_argvec(conf, args);
@@ -276,17 +268,15 @@ Monitor::reset_handler(const String &conf, Element *e, void *, ErrorHandler *err
   return 0;
 }
 
+
 void
 Monitor::add_handlers()
 {
-  add_read_handler("max", max_rhandler, 0);
-  add_write_handler("max", max_whandler, 0);
+  add_read_handler("thresh", thresh_read_handler, 0);
+  add_write_handler("thresh", thresh_write_handler, 0);
 
-  add_read_handler("srcdst", srcdst_rhandler, 0);
-  add_write_handler("srcdst", srcdst_whandler, 0);
-
-  add_write_handler("reset", reset_handler, 0);
-  add_read_handler("look", look_handler, 0);
+  add_write_handler("reset", reset_write_handler, 0);
+  add_read_handler("look", look_read_handler, 0);
 }
 
 EXPORT_ELEMENT(Monitor)
