@@ -22,8 +22,6 @@
 
 QueueNotify::QueueNotify()
 {
-  click_chatter("Queue is constructed");
-  
 }
 
 

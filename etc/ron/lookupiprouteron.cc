@@ -87,7 +87,7 @@ LookupIPRouteRON::initialize(ErrorHandler *)
 
 int
 LookupIPRouteRON::myrandom(int x) {
-  return (int) (x * ( (float)(random() & 0xffff) / (float)(0xffff)));
+  return (int) (x * ( (float)(random() & 0xfffe) / (float)(0xffff)));
 }
 
 void LookupIPRouteRON::policy_handle_syn(FlowTableEntry *flow, Packet *p, bool first_syn)
@@ -397,7 +397,7 @@ void LookupIPRouteRON::push_forward_syn(Packet *p)
 #if MULTI_POLICY
       // We're seeing the first syn, choose policy
       new_entry->policy = myrandom(NUM_POLICIES);
-      new_entry->policy = 4;
+      new_entry->policy = POLICY_PROBE_ALL;
       click_chatter("Policy(%d)", new_entry->policy);
       policy_handle_syn(new_entry, p, true);
 #else
@@ -1042,6 +1042,7 @@ LookupIPRouteRON::DstTableEntry::sent_probe(int port)
       p->last_probe_time = tv.tv_sec;
       p->rtt_sec = 0xffff;
       p->rtt_usec = 0xffff;
+      p->first_syn = true;
       if (prev) {
 	prev->next = p->next;
 	p->next = probes;
@@ -1059,6 +1060,7 @@ LookupIPRouteRON::DstTableEntry::sent_probe(int port)
   p->last_probe_time = tv.tv_sec;
   p->rtt_sec = 0xffff;
   p->rtt_usec = 0xffff;
+  p->first_syn = true;
 
   p->next = probes;
   probes = p;
@@ -1073,8 +1075,11 @@ LookupIPRouteRON::DstTableEntry::save_rtt(int port, long sec, long usec)
   for(p = probes; p != NULL; p = p->next) {
     //click_chatter("checking port %d to %d", p->port_number, port);
     if (p->port_number == port) {
-      p->rtt_sec = sec;
-      p->rtt_usec = usec;
+      if (p->first_syn) {
+	p->rtt_sec = sec;
+	p->rtt_usec = usec;
+	p->first_syn = false;
+      }
       return;
     }
   }

@@ -46,22 +46,28 @@ public:
   // rtt for the SYN/SYN-ACK is chosen.
   static const int POLICY_PROBE3                = 2;
 
-  // In POLICY_PROBE3_LOCAL, two random paths and the local path are chosen to
-  // be probed. The path with the shorted rtt for the SYN/SYN-ACK is chosen.
-  static const int POLICY_PROBE3_LOCAL          = 3;
-
-
-
   // In POLICY_PROBE3_UNPROBED, two least recently probed paths and the path with
   // previous shortest rtt are chosen to be probed.
-  static const int POLICY_PROBE3_UNPROBED       = 4;
+  static const int POLICY_PROBE3_UNPROBED       = 3;
+
+
+
+
+  // In POLICY_PROBE3_LOCAL, two random paths and the local path are chosen to
+  // be probed. The path with the shorted rtt for the SYN/SYN-ACK is chosen.
+  static const int POLICY_PROBE3_LOCAL          = 10;
+
+
+
+
+
   
   // In POLICY_PROBE3_UNPROBED_LOCAL, one least recently probed path, the path 
   // with the shortest rtt, and the local path are chosen to be probed.
   static const int POLICY_PROBE3_UNPROBED_LOCAL = 5;
 
   // In POLICY_PROBE_ALL, all paths are probed in parallel.
-  static const int POLICY_PROBE_ALL             = 6;
+  static const int POLICY_PROBE_ALL             = 11;
 
 
 
@@ -214,6 +220,7 @@ class LookupIPRouteRON::DstTableEntry {
     int port_number;
     long last_probe_time;
     unsigned long rtt_sec, rtt_usec;
+    bool first_syn;
     struct ProbeInfo *next;
   };
 
@@ -235,10 +242,9 @@ public:
   //unsigned get_age()          { return click_jiffies() - probe_time; }
 
   bool is_valid()             { return outgoing_port != 0; }
-  bool is_recent()            { return (probe_time + DST_TABLE_TIMEOUT
-					>= click_jiffies());}
+  //bool is_recent()            { return (probe_time + DST_TABLE_TIMEOUT >= click_jiffies());}
 
-  
+  bool is_recent() { return true; }
 };
 
 class LookupIPRouteRON::DstTable {
