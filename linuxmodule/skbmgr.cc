@@ -7,6 +7,7 @@
 # include <config.h>
 #endif
 #include <click/glue.hh>
+#include <click/atomic.hh>
 #include <click/skbmgr.hh>
 #include <assert.h>
 extern "C" {
@@ -293,7 +294,7 @@ RecycledSkbPool::find_consumer(int cpu, int bucket)
   pool[cpu]._last_producer = max_pool;
   if (pool[cpu]._last_producer >= 0)
     pool[pool[cpu]._last_producer]._consumers++;
-  return pools[cpu]._last_producer;
+  return pool[cpu]._last_producer;
 }
 
 #endif
@@ -413,11 +414,11 @@ skbmgr_allocate_skbs(unsigned size, int *want)
   int bucket = size_to_higher_bucket(size);
 
   if (pool[producer].bucket(bucket).size() < *want && smp_num_cpus > 1) {
-    if (pools[cpu]._last_producer < 0 ||
+    if (pool[cpu]._last_producer < 0 ||
 	pool[pool[cpu]._last_producer].bucket(bucket).size() < *want)
       find_consumer(cpu, bucket);
-    if (pools[cpu]._last_producer >= 0)
-      producer = pools[cpu]._last_producer;
+    if (pool[cpu]._last_producer >= 0)
+      producer = pool[cpu]._last_producer;
   }
   return pool[producer].allocate(size, *want, want);
 #else
