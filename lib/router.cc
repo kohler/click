@@ -37,7 +37,8 @@
 
 Router::Router()
   : _please_stop_driver(0), _refcount(0),
-    _initialized(0), _have_connections(0), _have_hookpidx(0),
+    _preinitialized(0), _initialized(0),
+    _have_connections(0), _have_hookpidx(0),
     _handlers(0), _nhandlers(0), _handlers_cap(0)
 {
   initialize_head();
@@ -148,7 +149,7 @@ Router::add_element(Element *e, const String &ename, const String &conf,
 		    const String &landmark)
 {
   // router now owns the element
-  if (_initialized || !e) return -1;
+  if (_preinitialized || !e) return -1;
   _elements.push_back(e);
   _element_names.push_back(ename);
   _element_landmarks.push_back(landmark);
@@ -165,7 +166,7 @@ Router::add_element(Element *e, const String &ename, const String &conf,
 int
 Router::add_connection(int from_idx, int from_port, int to_idx, int to_port)
 {
-  if (_initialized) return -1;
+  if (_preinitialized) return -1;
   Hookup hfrom(from_idx, from_port);
   Hookup hto(to_idx, to_port);
   // only add new connections
@@ -734,16 +735,31 @@ qsort_configure_order(Vector<int> &order, const Vector<int> &phase,
   }
 }
 
-int
-Router::initialize(ErrorHandler *errh)
+void
+Router::preinitialize()
 {
-  assert(!_initialized);
 #if CLICK_USERLEVEL
   FD_ZERO(&_read_select_fd_set);
   FD_ZERO(&_write_select_fd_set);
   _max_select_fd = -1;
   assert(!_selectors.size());
 #endif
+  
+  // clear handler offsets
+  _ehandler_first_by_element.assign(nelements(), -1);
+  assert(_ehandler_to_handler.size() == 0 && _ehandler_next.size() == 0
+	 && _handler_first_by_name.size() == 0
+	 && _handler_next_by_name.size() == 0
+	 && _handler_use_count.size() == 0
+	 && _nhandlers == 0);
+}
+
+int
+Router::initialize(ErrorHandler *errh)
+{
+  assert(!_initialized);
+  if (!_preinitialized)
+    preinitialize();
 
 #if CLICK_DMALLOC
   char dmalloc_buf[12];
@@ -824,14 +840,6 @@ Router::initialize(ErrorHandler *errh)
   CLICK_DMALLOC_REG("iXXX");
 #endif
   
-  // clear handler offsets
-  _ehandler_first_by_element.assign(nelements(), -1);
-  assert(_ehandler_to_handler.size() == 0 && _ehandler_next.size() == 0
-	 && _handler_first_by_name.size() == 0
-	 && _handler_next_by_name.size() == 0
-	 && _handler_use_count.size() == 0
-	 && _nhandlers == 0);
-
   // If there were errors, uninitialize any elements that we initialized
   // successfully and return -1 (error). Otherwise, we're all set!
   if (!all_ok) {

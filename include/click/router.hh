@@ -49,7 +49,8 @@ class Router : public ElementLink { public:
   int upstream_elements(Element *, int i, ElementFilter*, Vector<Element*>&);
   int upstream_elements(Element *, int i, Vector<Element *> &);  
   int upstream_elements(Element *, Vector<Element *> &);
-  
+
+  void preinitialize();
   int initialize(ErrorHandler *);
   void take_state(Router *, ErrorHandler *);
 
@@ -115,9 +116,10 @@ class Router : public ElementLink { public:
 
   Vector<String> _requirements;
 
-  bool _initialized: 1;
-  bool _have_connections: 1;
-  bool _have_hookpidx: 1;
+  bool _preinitialized : 1;
+  bool _initialized : 1;
+  bool _have_connections : 1;
+  bool _have_hookpidx : 1;
 
   Vector<int> _ehandler_first_by_element;
   Vector<int> _ehandler_to_handler;
