@@ -11,4 +11,7 @@
 //    click-install conf/testdevice.click
 // (runs inside a Linux kernel).
 
+// If you run this inside the kernel, your kernel's ordinary IP stack
+// will stop getting packets from eth0. This might not be convenient.
+
 FromDevice(eth0) -> Print(ok) -> Discard;
