@@ -380,6 +380,10 @@ Lexer::Lexer()
 Lexer::~Lexer()
 {
   end_parse(-1);
+
+  // get rid of nonscoped element types
+  for (Element **e = _element_types.begin(); e != _element_types.end(); e++)
+    delete *e;
 }
 
 int
