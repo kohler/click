@@ -294,3 +294,6 @@ while (<TMP>) {
 close IN;
 close OUT;
 close TMP;
+
+# 8. create doc.tar.gz
+mysystem("cd $WEBDIR && gtar czf doc.tar.gz doc");
