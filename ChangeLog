@@ -1,3 +1,7 @@
+2002-01-05 Saturday 20:43  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-pretty/click-pretty.cc (1.15): click-pretty nitlets
+
 2002-01-05 Saturday 04:58  Eddie Kohler <kohler@aciri.org>
 
 	* doc/: click-pretty.1 (1.5), click-pretty.1 (1.6): doc nitlet
