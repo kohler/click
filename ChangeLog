@@ -1,3 +1,15 @@
+2003-01-28 Tuesday 01:46  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/: clickfs.cc (1.25), proclikefs.c (1.8): fix
+	proclikefs bugs: inode list became garbage on unload/reload, and
+	allow unmount by making the root inode of each superblock not quite
+	"bad"
+
+2003-01-28 Tuesday 01:44  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-install/: click-install.cc (1.53), click-uninstall.cc
+	(1.21), common.cc (1.12): add --verbose option to click-uninstall
+
 2003-01-27 Monday 19:03  Eddie Kohler <kohler@icir.org>
 
 	* etc/linux-2.4.20-patch (1.3): nitlet: fix AppleTalk function
