@@ -728,7 +728,7 @@ static String
 read_task_scheduled(Element *e, void *thunk)
 {
   Task *task = (Task *)((uint8_t *)e + (intptr_t)thunk);
-  return String(task->scheduled() ? "true\n" : "false\n");
+  return String(task->scheduled()) + "\n";
 }
 
 #if __MTCLICK__

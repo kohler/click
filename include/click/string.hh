@@ -24,6 +24,7 @@ class String { public:
 #ifdef HAVE_PERMSTRING
   inline String(PermString p);
 #endif
+  explicit inline String(bool);
   explicit inline String(char);
   explicit inline String(unsigned char);
   explicit String(int);
@@ -195,6 +196,13 @@ String::deref() const
 inline
 String::String()
   : _data(null_memo->_real_data), _length(0), _memo(null_memo)
+{
+  _memo->_refcount++;
+}
+
+inline
+String::String(bool b)
+  : _data(b ? "true" : "false"), _length(b ? 4 : 5), _memo(permanent_memo)
 {
   _memo->_refcount++;
 }
