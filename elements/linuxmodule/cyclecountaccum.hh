@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 #ifndef CLICK_CYCLECOUNTACCUM_HH
 #define CLICK_CYCLECOUNTACCUM_HH
 
@@ -11,9 +12,10 @@ collects differences in cycle counters
 
 =d
 
-Expects incoming packets to have their cycle counter annotation set.
-Measures the current value of the cycle counter, and keeps track of the
-total accumulated difference.
+Incoming packets should have their cycle counter annotation set.  Measures the
+current value of the cycle counter, and keeps track of the total accumulated
+difference.  Packets whose cycle counter annotations are zero are not added to
+the count or difference.
 
 =n
 
@@ -21,13 +23,21 @@ A packet has room for either exactly one cycle count or exactly one
 performance metric.
 
 =h count read-only
+
 Returns the number of packets that have passed.
 
 =h cycles read-only
+
 Returns the accumulated cycles for all passing packets.
 
+=h zero_count read-only
+
+Returns the number of packets with zero-valued cycle counter annotations that
+have passed.  These aren't included in the C<count>.
+
 =h reset_counts write-only
-Resets C<count> and C<cycles> counters to zero when written.
+
+Resets C<count>, C<cycles>, and C<zero_count> counters to zero when written.
 
 =a SetCycleCount, RoundTripCycleCount, SetPerfCount, PerfCountAccum */
 
@@ -35,26 +45,26 @@ Resets C<count> and C<cycles> counters to zero when written.
 
 class CycleCountAccum : public Element { public:
   
-  CycleCountAccum();
-  ~CycleCountAccum();
+    CycleCountAccum();
+    ~CycleCountAccum();
   
-  const char *class_name() const		{ return "CycleCountAccum"; }
-  const char *processing() const		{ return AGNOSTIC; }
+    const char *class_name() const	{ return "CycleCountAccum"; }
+    const char *processing() const	{ return AGNOSTIC; }
 
-  int initialize(ErrorHandler *);
-  void add_handlers();
+    void add_handlers();
 
-  inline void smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+    inline void smaction(Packet *);
+    void push(int, Packet *p);
+    Packet *pull(int);
 
- private:
+  private:
   
-  uint64_t _accum;
-  uint64_t _count;
+    uint64_t _accum;
+    uint64_t _count;
+    uint64_t _zero_count;
 
-  static String read_handler(Element *, void *);
-  static int reset_handler(const String &, Element *, void *, ErrorHandler *);
+    static String read_handler(Element *, void *);
+    static int reset_handler(const String &, Element*, void*, ErrorHandler*);
   
 };
 
