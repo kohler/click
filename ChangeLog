@@ -1,3 +1,34 @@
+2003-03-03 Monday 02:23  Eddie Kohler <kohler@icir.org>
+
+	* elements/: icmp/icmperror.cc (1.15), ip/ipgwoptions.cc (1.33):
+	authorship
+
+2003-03-03 Monday 02:21  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipoutputcombo.cc (1.21): IPOutputCombo: update with
+	new code from IPGWOptions
+
+2003-03-03 Monday 02:21  Eddie Kohler <kohler@icir.org>
+
+	* elements/ip/ipgwoptions.cc (1.32): IPGWOptions: fix bug: was
+	processing wrong portion of the packet
+
+2003-03-03 Monday 02:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/icmppingresponder.hh (1.5): note bug that
+	ICMPPingResponder doesn't understand source routing options
+
+2003-03-03 Monday 02:20  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/: icmperror.cc (1.14), icmperror.hh (1.6): better
+	standard compliance: reverse source routes when appropriate, and
+	include more of the packet in the error message, up to a
+	configurable MTU
+
+2003-03-03 Monday 02:19  Eddie Kohler <kohler@icir.org>
+
+	* configure.in (1.203): Texinfo configury
+
 2003-03-02 Sunday 14:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/dsdvroutetable.cc (1.41): (potentially) sending
