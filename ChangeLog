@@ -1,3 +1,7 @@
+2001-10-31 Wednesday 18:51  Eddie Kohler <kohler@aciri.org>
+
+	* doc/: Makefile.in (1.40), mkwebdoc.pl (1.19): doc updates
+
 2001-10-31 Wednesday 18:27  Eddie Kohler <kohler@aciri.org>
 
 	* doc/click-elem2man (1.15), elements/analysis/anonipaddr.hh (1.2),
