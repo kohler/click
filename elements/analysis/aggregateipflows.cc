@@ -97,7 +97,7 @@ AggregateIPFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
     timeout = _active_sec - timeout;
     done_timeout = _active_sec - done_timeout;
 
-    for (Map::Iterator iter = table.first(); iter; iter++)
+    for (Map::iterator iter = table.begin(); iter; iter++)
 	if (!iter.value().reverse()) {
 	    FlowInfo *finfo = const_cast<FlowInfo *>(&iter.value());
 	    // circular comparison
