@@ -35,7 +35,8 @@ const char *cp_process_backslash(const char *begin, const char *end, StringAccum
 void cp_argvec(const String &, Vector<String> &);
 String cp_unargvec(const Vector<String> &);
 void cp_spacevec(const String &, Vector<String> &);
-String cp_unspacevec(const Vector<String> &);
+String cp_unspacevec(const String *begin, const String *end);
+inline String cp_unspacevec(const Vector<String> &);
 String cp_pop_spacevec(String &);
 
 enum CpErrors {
@@ -320,6 +321,11 @@ struct cp_value {
 #undef CP_VA_ARGS_REST
 #undef CP_OPT_CONTEXT
 #undef CP_CONTEXT
+
+inline String cp_unspacevec(const Vector<String> &conf)
+{
+    return cp_unspacevec(conf.begin(), conf.end());
+}
 
 inline bool cp_is_space(const String &str)
 {

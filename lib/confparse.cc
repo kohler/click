@@ -534,13 +534,12 @@ cp_unargvec(const Vector<String> &args)
 }
 
 String
-cp_unspacevec(const Vector<String> &args)
+cp_unspacevec(const String *begin, const String *end)
 {
   StringAccum sa;
-  for (int i = 0; i < args.size(); i++) {
-    if (i) sa << " ";
-    sa << args[i];
-  }
+  for (; begin < end; begin++)
+    sa << *begin << ' ';
+  sa.pop_back();
   return sa.take_string();
 }
 
