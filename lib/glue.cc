@@ -24,6 +24,9 @@
 #ifndef CLICK_LINUXMODULE
 # include <stdarg.h>
 #endif
+#ifdef CLICK_USERLEVEL
+# include <unistd.h>
+#endif
 
 void
 click_chatter(const char *fmt, ...)
@@ -373,4 +376,32 @@ click_jiffies()
   return (tv.tv_sec * 100) + (tv.tv_usec / 10000);
 }
 
-#endif /* CLICK_USERLEVEL || CLICK_BSDMODULE */
+#endif /* CLICK_USERLEVEL */
+
+void
+click_random_srandom()
+{
+    static const int bufsiz = 16;
+    uint32_t buf[bufsiz];
+    int pos = 0;
+    click_gettimeofday((struct timeval *)(buf + pos));
+    pos += sizeof(struct timeval) / sizeof(uint32_t);
+#ifdef CLICK_USERLEVEL
+    FILE *f = fopen("/dev/random", "rb");
+    if (f) {
+	fread(buf + pos, sizeof(uint32_t), bufsiz - pos, f);
+	fclose(f);
+	pos = bufsiz;
+    } else {
+	buf[pos++] = getpid();
+	buf[pos++] = getuid();
+    }
+#endif
+
+    uint32_t result = 0;
+    for (int i = 0; i < pos; i++) {
+	result ^= buf[i];
+	result = (result << 1) | (result >> 31);
+    }
+    srandom(result);
+}

@@ -10,16 +10,15 @@
 // produce debugging output on the console or stderr
 void click_chatter(const char *fmt, ...);
 
-#if defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE)
-
-#if CLICK_DMALLOC
+#if CLICK_DMALLOC && (defined(CLICK_LINUXMODULE) || defined(CLICK_BSDMODULE))
 extern int click_dmalloc_where;
 # define CLICK_DMALLOC_REG(s) do { const unsigned char *__str = reinterpret_cast<const unsigned char *>(s); click_dmalloc_where = (__str[0]<<24) | (__str[1]<<16) | (__str[2]<<8) | __str[3]; } while (0)
 #else
 # define CLICK_DMALLOC_REG(s)
 #endif
 
-#endif	/* CLICK_LINUXMODULE || CLICK_BSDMODULE */
+// set random seed randomly
+extern void click_random_srandom();
 
 #ifdef CLICK_LINUXMODULE
 
@@ -28,37 +27,37 @@ extern int click_dmalloc_where;
  */
 
 // ask for ino_t, off_t, &c to be defined
-#define _LOOSE_KERNEL_NAMES 1
-#undef __KERNEL_STRICT_NAMES
+# define _LOOSE_KERNEL_NAMES 1
+# undef __KERNEL_STRICT_NAMES
 
-#ifndef __OPTIMIZE__
-# define __OPTIMIZE__ /* get ntohl() macros. otherwise undefined. */
-#endif
+# ifndef __OPTIMIZE__
+#  define __OPTIMIZE__ /* get ntohl() macros. otherwise undefined. */
+# endif
 
-#include <click/cxxprotect.h>
+# include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#if defined(CLICK_PACKAGE) || defined(WANT_MOD_USE_COUNT)
-# define __NO_VERSION__
-# include <linux/module.h>
-# define HAVE_MOD_USE_COUNT 1
-#endif
-#include <linux/config.h>
-#include <linux/kernel.h>
-#include <linux/version.h>
-#include <linux/string.h>
-#include <linux/skbuff.h>
-#include <linux/malloc.h>
-#include <linux/ctype.h>
-#include <linux/time.h>
-#include <linux/errno.h>
+# if defined(CLICK_PACKAGE) || defined(WANT_MOD_USE_COUNT)
+#  define __NO_VERSION__
+#  include <linux/module.h>
+#  define HAVE_MOD_USE_COUNT 1
+# endif
+# include <linux/config.h>
+# include <linux/kernel.h>
+# include <linux/version.h>
+# include <linux/string.h>
+# include <linux/skbuff.h>
+# include <linux/malloc.h>
+# include <linux/ctype.h>
+# include <linux/time.h>
+# include <linux/errno.h>
 CLICK_CXX_UNPROTECT
-#include <click/cxxunprotect.h>
+# include <click/cxxunprotect.h>
 
 // provide a definition for net_device for kernel compatibility
-#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
+# if LINUX_VERSION_CODE < KERNEL_VERSION(2, 4, 0)
 typedef struct device net_device;
-#define dev_get_by_name dev_get
-#endif
+#  define dev_get_by_name dev_get
+# endif
 
 extern "C" {
 
@@ -76,7 +75,7 @@ extern void srandom(uint32_t);
 __inline__ uint64_t
 click_get_cycles()
 {
-#if __i386__
+# if __i386__
   uint32_t low, high;
   uint64_t x;
   __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
@@ -84,10 +83,10 @@ click_get_cycles()
   x <<= 32;
   x |= low;
   return x;
-#else
+# else
   // add other architectures here
   return 0;
-#endif
+# endif
 }
 
 long strtol(const char *, char **, int);
@@ -98,7 +97,7 @@ strtoul(const char *nptr, char **endptr, int base)
   return simple_strtoul(nptr, endptr, base);
 }
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && __GNUC__ == 2 && __GNUC_MINOR__ == 96
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0) && __GNUC__ == 2 && __GNUC_MINOR__ == 96
 int click_strcmp(const char *, const char *);
 
 inline int
@@ -106,13 +105,13 @@ strcmp(const char *a, const char *b)
 {
   return click_strcmp(a, b);
 }
-#endif
+# endif
 
 }
 
-#define CLICK_HZ HZ
-#define click_gettimeofday(tvp) (do_gettimeofday(tvp))
-#define click_jiffies()		((unsigned)jiffies)
+# define CLICK_HZ HZ
+# define click_gettimeofday(tvp) (do_gettimeofday(tvp))
+# define click_jiffies()	 ((unsigned)jiffies)
 
 #elif defined(CLICK_BSDMODULE)
 
@@ -120,45 +119,45 @@ strcmp(const char *a, const char *b)
  * Glue specific to the BSD kernel module.
  */
 
-#include <click/cxxprotect.h>
+# include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
-#include <sys/ctype.h>
-#include <sys/systm.h>
-#include <sys/time.h>
-#include <sys/param.h>
-#include <sys/kernel.h>
-#include <sys/mbuf.h>
-#include <sys/malloc.h>
-#include <sys/libkern.h>
-#include <sys/proc.h>
-#include <sys/sysproto.h>
+# include <sys/ctype.h>
+# include <sys/systm.h>
+# include <sys/time.h>
+# include <sys/param.h>
+# include <sys/kernel.h>
+# include <sys/mbuf.h>
+# include <sys/malloc.h>
+# include <sys/libkern.h>
+# include <sys/proc.h>
+# include <sys/sysproto.h>
 CLICK_CXX_UNPROTECT
-#include <click/cxxunprotect.h>
+# include <click/cxxunprotect.h>
 
 /* Char-type glue */
 
-#define _U	0x01	/* upper */
-#define	_L	0x02	/* lower */
-#define	_D	0x04	/* digit */
-#define _C	0x08	/* cntrl */
-#define _P	0x10	/* punct */
-#define _S	0x20	/* white space (space/lf/tab) */
-#define	_X	0x40	/* hex digit */
-#define	_SP	0x80	/* hard space (0x20) */
+# define _U	0x01	/* upper */
+# define _L	0x02	/* lower */
+# define _D	0x04	/* digit */
+# define _C	0x08	/* cntrl */
+# define _P	0x10	/* punct */
+# define _S	0x20	/* white space (space/lf/tab) */
+# define _X	0x40	/* hex digit */
+# define _SP	0x80	/* hard space (0x20) */
 
 extern unsigned char _ctype[];
 
-#define	__ismask(x)	(_ctype[(int)(unsigned char)(x)])
-#define	isalnum(c)	((__ismask(c)&(_U|_L|_D)) != 0)
+# define __ismask(x)	(_ctype[(int)(unsigned char)(x)])
+# define isalnum(c)	((__ismask(c)&(_U|_L|_D)) != 0)
 
-#define	strchr(s, c)		index(s, c)
+# define strchr(s, c)	index(s, c)
 
-#define click_get_cycles()	rdtsc()
-#define	CLICK_HZ hz
-#define click_gettimeofday(tvp)	(getmicrotime(tvp))
-#define click_jiffies()		((unsigned)ticks)
+# define click_get_cycles()		rdtsc()
+# define CLICK_HZ			hz
+# define click_gettimeofday(tvp)	(getmicrotime(tvp))
+# define click_jiffies()		((unsigned)ticks)
 
-#define	memmove(dst, src, len)	bcopy((src), (dst), (len))
+# define memmove(dst, src, len)		bcopy((src), (dst), (len))
 
 typedef struct ifnet net_device;
 
@@ -168,16 +167,14 @@ typedef struct ifnet net_device;
  * User-space glue.
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <ctype.h>
-#include <errno.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <sys/time.h>
-
-#define CLICK_DMALLOC_REG(s)
+# include <stdio.h>
+# include <stdlib.h>
+# include <string.h>
+# include <ctype.h>
+# include <errno.h>
+# include <sys/socket.h>
+# include <netinet/in.h>
+# include <sys/time.h>
 
 __inline__ unsigned long long
 click_get_cycles()
@@ -185,8 +182,8 @@ click_get_cycles()
   return(0);
 }
 
-#define click_gettimeofday(tvp) (gettimeofday(tvp, (struct timezone *) 0))
-#define CLICK_HZ 100		// click_jiffies rate
+# define click_gettimeofday(tvp) (gettimeofday(tvp, (struct timezone *) 0))
+# define CLICK_HZ 100		// click_jiffies rate
 extern unsigned click_jiffies();
 
 // provide a definition for net_device
