@@ -1112,6 +1112,27 @@ cp_real2(const String &str, int frac_bits, int32_t *return_value)
   return cp_real_base(str, frac_bits, return_value, cp_unsigned_real2);
 }
 
+#ifdef HAVE_FLOAT_TYPES
+bool
+cp_double(const String &in_str, double *result)
+{
+  cp_errno = CPE_FORMAT;
+  if (in_str.length() == 0 || isspace(in_str[0]))
+    // check for space because strtod() accepts leading whitespace
+    return false;
+
+  errno = 0;
+  String str = in_str;
+  char *endptr;
+  double val = strtod(str.cc(), &endptr);
+  if (*endptr)			// bad format; garbage after number
+    return false;
+
+  cp_errno = (errno == ERANGE ? CPE_OVERFLOW : 0);
+  *result = val;
+  return true;
+}
+#endif
 
 // PARSING TIME
 
@@ -1823,6 +1844,7 @@ CpVaParseCmd
   cpReal10		= "real10",
   cpUnsignedReal10	= "u_real10",
   cpNonnegReal10	= "u_real10", // synonym
+  cpDouble		= "double",
   cpSecondsAsMilli	= "msec",
   cpSecondsAsMicro	= "usec",
   cpMilliseconds	= "msec", // synonym
@@ -1868,6 +1890,7 @@ enum {
   cpiUnsignedReal2,
   cpiReal10,
   cpiUnsignedReal10,
+  cpiDouble,
   cpiSecondsAsMilli,
   cpiSecondsAsMicro,
   cpiTimeval,
@@ -2076,6 +2099,15 @@ default_parsefunc(cp_value *v, const String &arg,
     }
     break;
 
+#ifdef HAVE_FLOAT_TYPES
+   case cpiDouble:
+    if (!cp_double(arg, &v->v.d))
+      errh->error("%s takes %s (%s)", argname, argtype->description, desc);
+    else if (cp_errno == CPE_OVERFLOW)
+      errh->error("%s (%s) out of range; limit %g", argname, desc, v->v.d);
+    break;
+#endif
+
    case cpiSecondsAsMilli:
     if (!cp_seconds_as_milli(arg, &v->v.u))
       errh->error("%s takes time in seconds (%s)", argname, desc);
@@ -2271,6 +2303,14 @@ default_storefunc(cp_value *v  CP_CONTEXT_ARG)
    case cpiUnsigned64: {
      uint64_t *ullstore = (uint64_t *)v->store;
      *ullstore = v->v.u64;
+     break;
+   }
+#endif
+
+#ifdef HAVE_FLOAT_TYPES
+   case cpiDouble: {
+     double *dstore = (double *)v->store;
+     *dstore = v->v.d;
      break;
    }
 #endif
@@ -3040,6 +3080,9 @@ cp_va_static_initialize()
   cp_register_argtype(cpUnsignedReal2, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal2);
   cp_register_argtype(cpReal10, "real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiReal10);
   cp_register_argtype(cpUnsignedReal10, "unsigned real", cpArgExtraInt, default_parsefunc, default_storefunc, cpiUnsignedReal10);
+#ifdef HAVE_FLOAT_TYPES
+  cp_register_argtype(cpDouble, "double", 0, default_parsefunc, default_storefunc, cpiDouble);
+#endif
   cp_register_argtype(cpSecondsAsMilli, "time in sec (msec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMilli);
   cp_register_argtype(cpSecondsAsMicro, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMicro);
   cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);

@@ -52,6 +52,9 @@
 #endif
 #include <sys/types.h>
 
+/* Floating point arithmetic is allowed. */
+#define HAVE_FLOAT_TYPES 1
+
 /* Prototype strerror if we don't have it. */
 #ifndef HAVE_STRERROR
 char *strerror(int errno);

@@ -61,6 +61,9 @@ bool cp_unsigned_real2(const String &, int frac_bits, uint32_t *);
 bool cp_real10(const String &, int frac_digits, int32_t *);
 bool cp_unsigned_real10(const String &, int frac_digits, uint32_t *);
 bool cp_unsigned_real10(const String &, int frac_dig, uint32_t *, uint32_t *);
+#ifdef HAVE_FLOAT_TYPES
+bool cp_double(const String &, double *);
+#endif
 bool cp_seconds_as_milli(const String &, uint32_t *);
 bool cp_seconds_as_micro(const String &, uint32_t *);
 bool cp_timeval(const String &, struct timeval *);
@@ -141,11 +144,16 @@ extern CpVaParseCmd
   cpUnsignedShort, // unsigned short *result
   cpInteger,	// int *result
   cpUnsigned,	// unsigned *result
+#ifdef HAVE_INT64_TYPES
   cpInteger64,	// int64_t *result
   cpUnsigned64,	// uint64_t *result
+#endif
   cpUnsignedReal2,  // int frac_bits, unsigned *result
   cpReal10,	    // int frac_digits, int *result
   cpUnsignedReal10, // int frac_digits, unsigned *result
+#ifdef HAVE_FLOAT_TYPES
+  cpDouble,	// double *result
+#endif
   cpSecondsAsMilli, // int *result_milli
   cpSecondsAsMicro, // int *result_micro
   cpTimeval,	// struct timeval *result
@@ -226,6 +234,9 @@ struct cp_value {
 #ifdef HAVE_INT64_TYPES
     int64_t i64;
     uint64_t u64;
+#endif
+#ifdef HAVE_FLOAT_TYPES
+    double d;
 #endif
     unsigned char address[16];
     int is[4];
