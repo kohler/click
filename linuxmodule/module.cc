@@ -139,8 +139,8 @@ KernelErrorHandler::handle_text(Seriousness seriousness, const String &message)
   const char *end = message.end();
   while (begin < end) {
     String x = message.substring(begin, find(begin, end, '\n'));
-    printk("<1>%s\n", x.c_str());
     begin = x.end() + 1;
+    printk("<1>%s\n", x.c_str());
   }
 
   // log message if required
