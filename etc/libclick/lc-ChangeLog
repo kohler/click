@@ -1,3 +1,8 @@
+2002-12-18 Wednesday 12:27  Eddie Kohler <kohler@icir.org>
+
+	* include/click/: glue.hh, glue.hh: nitlet found by Xiao Phong
+	<xiaophong2002@yahoo.com>
+
 2002-12-17 Tuesday 18:39  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: bighashmap.cc, bighashmap.hh, bighashmap.cc,

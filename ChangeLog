@@ -1,3 +1,8 @@
+2002-12-18 Wednesday 12:27  Eddie Kohler <kohler@icir.org>
+
+	* include/click/glue.hh (1.33): nitlet found by Xiao Phong
+	<xiaophong2002@yahoo.com>
+
 2002-12-17 Tuesday 19:48  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromipsumdump.cc (1.37): don't set IP header
