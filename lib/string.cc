@@ -110,8 +110,8 @@ String::String(uint64_t q)
 String::String(double d)
 {
   char buf[128];
-  sprintf(buf, "%f", d);
-  assign(buf, -1);
+  int len = sprintf(buf, "%.12g", d);
+  assign(buf, len);
 }
 
 #endif

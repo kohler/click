@@ -128,7 +128,7 @@ StringAccum &
 operator<<(StringAccum &sa, double d)
 {
   if (char *x = sa.reserve(256)) {
-    int len = sprintf(x, "%g", d);
+    int len = sprintf(x, "%.12g", d);
     sa.forward(len);
   }
   return sa;
