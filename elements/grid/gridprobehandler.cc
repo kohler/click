@@ -218,8 +218,6 @@ GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int 
     return;
   }  
 
-  
-
   grid_route_reply *rr = (grid_route_reply *) (_cached_reply_pkt->data() + sizeof(click_ether) 
 					      + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
   if (rr->probe_dest != dest_ip) {
@@ -234,10 +232,10 @@ GridProbeHandler::route_cb(int id, unsigned int dest_ip, Action a, unsigned int 
   rr->data2 = htonl(data2);
 
   switch (a) {
+  case QueuedForLocQuery:
   case SendToIP:
   case ForwardDSDV:
   case ForwardGF:
-  case QueuedForLocQuery:
   case Drop:
     output(1).push(_cached_reply_pkt);
     _cached_reply_pkt = 0;

@@ -57,7 +57,6 @@ private:
   int _fq_cb_id;
   int _lr_cb_id;
 
-
   LookupLocalGridRoute *_lr_el;
   LookupGeographicGridRoute *_gf_el;
   FloodingLocQuerier *_fq_el;

@@ -289,7 +289,10 @@ FloodingLocQuerier::handle_reply(Packet *p)
   ae->loc_good = gh->loc_good;
   ae->loc_seq_no = loc_seq_no;
   ae->last_response_jiffies = click_jiffies();
-  
+
+  if (!ae->loc_good)
+    click_chatter("FloodingLocQuerier %s: caching bad location info from %s", id().cc(), ip_repl.s().cc());
+
   Packet *cached_packet = ae->p;
   ae->p = 0;
 
