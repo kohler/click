@@ -32,49 +32,147 @@ AggregateFlows::notify_noutputs(int n)
 int
 AggregateFlows::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _bidi = false;
-    _ports = true;
-    return cp_va_parse(conf, this, errh,
-		       cpKeywords,
-		       "BIDI", cpBool, "bidirectional?", &_bidi,
-		       "PORTS", cpBool, "use ports?", &_ports,
-		       0);
+    _tcp_timeout = 24 * 60 * 60;
+    _tcp_done_timeout = 30;
+    _udp_timeout = 60;
+    _gc_interval = 20 * 60;
+    if (cp_va_parse(conf, this, errh,
+		    cpKeywords,
+		    "TCP_TIMEOUT", cpSeconds, "timeout for active TCP connections", &_tcp_timeout,
+		    "TCP_DONE_TIMEOUT", cpSeconds, "timeout for completed TCP connections", &_tcp_done_timeout,
+		    "UDP_TIMEOUT", cpSeconds, "timeout for UDP connections", &_udp_timeout,
+		    "REAP", cpSeconds, "garbage collection interval", &_gc_interval,
+		    0) < 0)
+	return -1;
+    _smallest_timeout = (_tcp_timeout < _tcp_done_timeout ? _tcp_timeout : _tcp_done_timeout);
+    _smallest_timeout = (_smallest_timeout < _udp_timeout ? _smallest_timeout : _udp_timeout);
+    return 0;
 }
 
 int
 AggregateFlows::initialize(ErrorHandler *)
 {
     _next = 1;
+    _active_sec = _gc_sec = 0;
     return 0;
+}
+
+void
+AggregateFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
+{
+    FlowInfo *to_free = 0;
+    timeout = _active_sec - timeout;
+    done_timeout = _active_sec - done_timeout;
+
+    for (Map::Iterator iter = table.first(); iter; iter++)
+	if (!iter.value().reverse()) {
+	    FlowInfo *finfo = const_cast<FlowInfo *>(&iter.value());
+	    if (finfo->uu.active_sec < (finfo->flow_over == 3 ? done_timeout : timeout)) {
+		finfo->uu.other = to_free;
+		to_free = finfo;
+	    }
+	}
+
+    while (to_free) {
+	FlowInfo *next = to_free->uu.other;
+	IPFlowID flow = table.key_of_value(to_free);
+	table.remove(flow);
+	table.remove(flow.rev());
+	to_free = next;
+    }
+}
+
+void
+AggregateFlows::reap()
+{
+    clean_map(_tcp_map, _tcp_timeout, _tcp_done_timeout);
+    clean_map(_udp_map, _udp_timeout, _udp_timeout);
+    _gc_sec = _active_sec + _gc_interval;
 }
 
 Packet *
 AggregateFlows::simple_action(Packet *p)
 {
     const click_ip *iph = p->ip_header();
-    if (!iph || (_ports && iph->ip_p != IP_PROTO_TCP && iph->ip_p != IP_PROTO_UDP)) {
+    if (!iph || (iph->ip_p != IP_PROTO_TCP && iph->ip_p != IP_PROTO_UDP)
+	|| !IP_FIRSTFRAG(iph)
+	|| p->transport_length() < (int)sizeof(click_udp)) {
 	checked_output_push(1, p);
 	return 0;
     }
 
-    IPFlowID flow;
-    if (_ports)
-	flow = IPFlowID(p);
-    else
-	flow = IPFlowID(iph->ip_src, 0, iph->ip_dst, 0);
+    // find relevant FlowInfo
+    IPFlowID flow(p);
+    Map &m = (iph->ip_p == IP_PROTO_TCP ? _tcp_map : _udp_map);
+    FlowInfo *finfo = m.findp_force(flow);
+    int paint;
+    unsigned p_sec = p->timestamp_anno().tv_sec;
 
-    Map &m = (iph->ip_p == IP_PROTO_TCP && _ports ? _tcp_map : _udp_map);
-    
-    uint32_t agg = m.find(flow);
-    if (!agg && _bidi)
-	agg = m.find(flow.rev());
-    if (!agg) {
-	agg = _next;
-	m.insert(flow, agg);
-	_next++;
+    if (!finfo) {
+	click_chatter("out of memory!");
+	checked_output_push(1, p);
+	return 0;
+    } else if (finfo->fresh()) {
+	finfo->_aggregate = _next;
+	FlowInfo *rfinfo = m.findp_force(flow.rev());
+	rfinfo->uu.other = finfo;
+	rfinfo->_reverse = 1;
+	paint = 0;
+	_next++;		// XXX check for 2^32
+	goto new_flow;
+    } else if (finfo->reverse()) {
+	finfo = finfo->uu.other;
+	paint = 1;
+    } else
+	paint = 0;
+
+    // check whether flow is old; if so, we'll use a new number
+    if (p_sec && p_sec > finfo->uu.active_sec + _smallest_timeout) {
+	unsigned timeout;
+	if (iph->ip_p == IP_PROTO_UDP)
+	    timeout = _udp_timeout;
+	else if (finfo->flow_over == 3)
+	    timeout = _tcp_done_timeout;
+	else
+	    timeout = _tcp_timeout;
+	if (p_sec > finfo->uu.active_sec + timeout) {
+	    if (paint) {	// switch sides
+		FlowInfo *rfinfo = m.findp(flow);
+		assert(rfinfo && rfinfo != finfo);
+		finfo->_aggregate = 0;
+		finfo->uu.other = rfinfo;
+		finfo->_reverse = true;
+		rfinfo->_reverse = false;
+		finfo = rfinfo;
+		paint = 0;
+	    }
+	    finfo->_aggregate = _next;
+	    finfo->flow_over = 0;
+	    _next++;
+	}
     }
 
-    SET_AGGREGATE_ANNO(p, agg);
+  new_flow:
+    if (p_sec)
+	_active_sec = finfo->uu.active_sec = p_sec;
+
+    // check whether this indicates the flow is over
+    if (iph->ip_p == IP_PROTO_TCP
+	&& p->transport_length() >= (int)sizeof(click_tcp)) {
+	if (p->tcp_header()->th_flags & TH_RST)
+	    finfo->flow_over = 3;
+	else if (p->tcp_header()->th_flags & TH_FIN)
+	    finfo->flow_over |= (1 << paint);
+	else if (p->tcp_header()->th_flags & TH_SYN)
+	    finfo->flow_over = 0;
+    }
+
+    // mark packet with aggregate number and paint
+    SET_AGGREGATE_ANNO(p, finfo->aggregate());
+    SET_PAINT_ANNO(p, paint);
+
+    if (_active_sec >= _gc_sec)
+	reap();
     return p;
 }
 

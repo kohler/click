@@ -104,7 +104,7 @@ address:
 
 =a
 
-AggregateLength, AggregateCounter
+AggregateLength, AggregateFlows, AggregateCounter
 
 */
 
