@@ -539,23 +539,17 @@ particular purpose.\n");
     else {
       if (verbose)
 	errh->message("Waiting for errors");
-      off_t pos = 0;
-      struct stat s;
       while (1) {
-	if (fstat(fd, &s) < 0) { // find length of errors file
-	  errh->error("%s: %s", clickfs_errors.cc(), strerror(errno));
-	  break;
-	}
-	if (pos >= s.st_size)
-	  break;
-	size_t want = s.st_size - pos;
-	if (want > 1024 || want <= 0)
-	  want = 1024;
-	ssize_t got = read(fd, buf, want);
-	if (got >= 0) {
+	struct timeval wait;
+	wait.tv_sec = 0;
+	wait.tv_usec = 50000;
+	(void) select(0, 0, 0, 0, &wait);
+	ssize_t got = read(fd, buf, 1024);
+	if (got > 0)
 	  fwrite(buf, 1, got, stderr);
-	  pos += got;
-	} else if (errno != EINTR && errno != EAGAIN) {
+	else if (got == 0)
+	  break;
+	else if (errno != EINTR && errno != EAGAIN) {
 	  errh->error("%s: %s", clickfs_errors.cc(), strerror(errno));
 	  break;
 	}
