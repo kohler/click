@@ -77,7 +77,7 @@ distdir: $(srcdir)/configure
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)
-	@echo Copying library, documentation, configuration, and driver files...
+	@echo Copying library and configuration files...
 	@for file in `cat $(srcdir)/DISTFILES`; do \
 	  d=$(srcdir); \
 	  if test -d "$$d/$$file"; then \

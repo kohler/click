@@ -67,6 +67,7 @@ distdir:
 	  echo $$df >>$(distdir)/DISTFILES; \
 	done
 	cd $(distdir) && $(AUTOCONF)
+	echo configure >>$(distdir)/DISTFILES
 
 
 .PHONY: all dist distdir
