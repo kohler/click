@@ -1,3 +1,13 @@
+2001-06-05 Tuesday 13:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/: bighashmap.hh (1.6), hashmap.cc (1.4), hashmap.hh
+	(1.4): updated HashMap to follow BigHashMap's interface
+
+2001-06-05 Tuesday 13:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipprint.cc (1.27), ipprint.hh (1.14): Dimitri
+	Stratton Vlachos at Mazu added LENGTH option
+
 2001-06-04 Monday 20:11  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* etc/samplepackage/Makefile.in (1.16): nitlet
