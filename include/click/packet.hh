@@ -8,6 +8,7 @@
 #endif
 struct click_ether;
 struct click_ip;
+struct click_icmp;
 struct click_ip6;
 struct click_tcp;
 struct click_udp;
@@ -98,6 +99,7 @@ class Packet { public:
   const click_ip6 *ip6_header() const	{ return (click_ip6 *)skb()->nh.ipv6h; }
 
   const unsigned char *transport_header() const	{ return skb()->h.raw; }
+  const click_icmp *icmp_header() const	{ return (click_icmp*)skb()->h.icmph; }
   const click_tcp *tcp_header() const	{ return (click_tcp *)skb()->h.th; }
   const click_udp *udp_header() const	{ return (click_udp *)skb()->h.uh; }
 #else			/* User space and BSD kernel module */
@@ -109,6 +111,7 @@ class Packet { public:
   const click_ip6 *ip6_header() const           { return _nh.ip6h; }
 
   const unsigned char *transport_header() const	{ return _h.raw; }
+  const click_icmp *icmp_header() const	{ return _h.icmph; }
   const click_tcp *tcp_header() const	{ return _h.th; }
   const click_udp *udp_header() const	{ return _h.uh; }
 #endif
@@ -311,6 +314,7 @@ class Packet { public:
     unsigned char *raw;
     click_tcp *th;
     click_udp *uh;
+    click_icmp *icmph;
   } _h;
   PacketType _pkt_type;
   struct timeval _timestamp;
@@ -360,6 +364,7 @@ class WritablePacket : public Packet { public:
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
   click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }
   unsigned char *transport_header() const	{ return skb()->h.raw; }
+  click_icmp *icmp_header() const	{ return (click_icmp*)skb()->h.icmph; }
   click_tcp *tcp_header() const		{ return (click_tcp*)skb()->h.th; }
   click_udp *udp_header() const		{ return (click_udp*)skb()->h.uh; }
 #else				/* User-space or BSD kernel module */
@@ -372,6 +377,7 @@ class WritablePacket : public Packet { public:
   click_ip *ip_header() const			{ return _nh.iph; }
   click_ip6 *ip6_header() const                 { return _nh.ip6h; }
   unsigned char *transport_header() const	{ return _h.raw; }
+  click_icmp *icmp_header() const		{ return _h.icmph; }
   click_tcp *tcp_header() const			{ return _h.th; }
   click_udp *udp_header() const			{ return _h.uh; }
 #endif
