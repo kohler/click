@@ -86,6 +86,10 @@ Boolean. If true, then output any interesting TCP options present on TCP
 packets. Interesting options are MSS, window scaling, and SACK options;
 timestamp options are not interesting. Defaults to false.
 
+=item IP_ID
+
+Boolean. If true, then output packets' IP IDs. Defaults to false.
+
 =item OUTPUT_LARGER
 
 Unsigned. Generate output only for flows with more than OUTPUT_LARGER packets.
@@ -164,7 +168,8 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     class Flow { public:
 
-	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq, bool binary, bool opt);
+	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq, bool binary, bool opt, bool ip_id);
+	~Flow();
 
 	uint32_t aggregate() const	{ return _aggregate; }
 	uint32_t npackets() const	{ return _packet_count; }
@@ -200,6 +205,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	Note _note[NNOTE];
 	StringAccum _note_text;
 	StringAccum _opt_info;
+	uint16_t *_ip_ids;
 
 	int create_directories(const String &, ErrorHandler *);
 	void output_binary(StringAccum &);
@@ -221,6 +227,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     bool _absolute_seq : 1;
     bool _binary : 1;
     bool _opt : 1;
+    bool _ip_id : 1;
 
     uint32_t _output_larger;
     

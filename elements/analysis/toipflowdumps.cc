@@ -44,7 +44,7 @@ CLICK_DECLS
 
 ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
 			  bool absolute_time, bool absolute_seq,
-			  bool binary, bool opt)
+			  bool binary, bool opt, bool ip_id)
     : _next(0),
       _flowid(p), _ip_p(p->ip_header()->ip_p),
       _aggregate(AGGREGATE_ANNO(p)), _packet_count(0), _note_count(0),
@@ -71,8 +71,18 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
     else			// make first packet have timestamp .000001
 	_first_timestamp = p->timestamp_anno() - make_timeval(0, 1);
 
+    if (ip_id)
+	_ip_ids = new uint16_t[NPKT];
+    else
+	_ip_ids = 0;
+    
     // sanity checks
     assert(_aggregate && (_ip_p == IP_PROTO_TCP || _ip_p == IP_PROTO_UDP));
+}
+
+ToIPFlowDumps::Flow::~Flow()
+{
+    delete[] _ip_ids;
 }
 
 int
@@ -99,8 +109,8 @@ void
 ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 {
     union {
-	uint32_t u[7];
-	char c[30];
+	uint32_t u[8];
+	char c[32];
     } buf;
     int pi = 0, ni = 0;
     const uint16_t *opt = reinterpret_cast<const uint16_t *>(_opt_info.data());
@@ -108,28 +118,35 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
     
     while (pi < _npkt || ni < _nnote)
 	if (ni >= _nnote || _note[ni].before_pkt > pi) {
+	    int pos;
 	    buf.u[1] = ntohl(_pkt[pi].timestamp.tv_sec);
 	    buf.u[2] = ntohl(_pkt[pi].timestamp.tv_usec);
-	    buf.c[12] = _pkt[pi].direction;
 	    if (_ip_p == IP_PROTO_TCP) {
-		buf.c[13] = _pkt[pi].th_flags;
-		PUT4NET(buf.c + 14, _pkt[pi].th_seq);
-		PUT4NET(buf.c + 18, _pkt[pi].payload_len);
-		PUT4NET(buf.c + 22, _pkt[pi].th_ack);
-		buf.u[0] = ntohl(26);
-		sa.append(&buf.c[0], 26);
-
-		if (opt < end_opt && opt[0] == pi) {
-		    int original_pos = sa.length() - 26;
-		    ToIPSummaryDump::store_tcp_opt_binary(reinterpret_cast<const uint8_t *>(opt + 2), opt[1], ToIPSummaryDump::DO_TCPOPT_MSS | ToIPSummaryDump::DO_TCPOPT_WSCALE | ToIPSummaryDump::DO_TCPOPT_SACK, sa);
-		    PUT4NET(sa.data() + original_pos, sa.length() - original_pos);
-		    opt += 2 + (opt[1] / 2);
-		}
-		
+		buf.u[3] = ntohl(_pkt[pi].th_seq);
+		buf.u[4] = ntohl(_pkt[pi].payload_len);
+		buf.u[5] = ntohl(_pkt[pi].th_ack);
+		buf.c[24] = _pkt[pi].th_flags;
+		pos = 25;
 	    } else {
-		PUT4NET(buf.c + 13, _pkt[pi].th_seq);
-		buf.u[0] = ntohl(17);
-		sa.append(&buf.c[0], 17);
+		buf.u[3] = ntohl(_pkt[pi].payload_len);
+		pos = 16;
+	    }
+
+	    if (_ip_ids) {
+		buf.c[pos++] = _ip_ids[pi] >> 8;
+		buf.c[pos++] = _ip_ids[pi] & 255;
+	    }
+	    
+	    buf.c[pos++] = _pkt[pi].direction;
+	    buf.u[0] = ntohl(pos);
+	    sa.append(&buf.c[0], pos);
+
+	    // handle TCP options specially
+	    if (opt < end_opt && opt[0] == pi) {
+		int original_pos = sa.length() - pos;
+		ToIPSummaryDump::store_tcp_opt_binary(reinterpret_cast<const uint8_t *>(opt + 2), opt[1], ToIPSummaryDump::DO_TCPOPT_MSS | ToIPSummaryDump::DO_TCPOPT_WSCALE | ToIPSummaryDump::DO_TCPOPT_SACK, sa);
+		PUT4NET(sa.data() + original_pos, sa.length() - original_pos);
+		opt += 2 + (opt[1] / 2);
 	    }
 
 	    pi++;
@@ -169,13 +186,31 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	   << _flowid.daddr() << ' ' << ntohs(_flowid.dport()) << ' '
 	   << (_ip_p == IP_PROTO_TCP ? 'T' : 'U')
 	   << "\n!aggregate " << _aggregate << '\n';
-	if (_ip_p == IP_PROTO_TCP) {
-	    sa << "!data timestamp direction tcp_flags tcp_seq payload_len tcp_ack";
-	    if (_opt)
+
+	sa << "!data timestamp";
+	if (_binary) {
+	    if (_ip_p == IP_PROTO_TCP)
+		sa << " tcp_seq payload_len tcp_ack tcp_flags";
+	    else
+		sa << " payload_len";
+	    if (_ip_ids)
+		sa << " ip_id";
+	    sa << " direction";
+	    if (_ip_p == IP_PROTO_TCP && _opt)
 		sa << " tcp_opt";
-	    sa << '\n';
-	} else
-	    sa << "!data timestamp direction payload_len\n";
+	} else {
+	    sa << " direction";
+	    if (_ip_ids)
+		sa << " ip_id";
+	    if (_ip_p == IP_PROTO_TCP) {
+		sa << " tcp_flags tcp_seq payload_len tcp_ack";
+		if (_opt)
+		    sa << " tcp_opt";
+	    } else
+		sa << " payload_len";
+	}
+	sa << '\n';
+	
 	if (_have_first_seq[0] && _first_seq[0] && _ip_p == IP_PROTO_TCP)
 	    sa << "!firstseq > " << _first_seq[0] << '\n';
 	if (_have_first_seq[1] && _first_seq[1] && _ip_p == IP_PROTO_TCP)
@@ -198,6 +233,9 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 		int direction = _pkt[pi].direction;
 		sa << _pkt[pi].timestamp << ' '
 		   << (direction == 0 ? '>' : '<') << ' ';
+
+		if (_ip_ids)
+		    sa << _ip_ids[pi] << ' ';
 		
 		if (_ip_p == IP_PROTO_TCP) {
 		    int flags = _pkt[pi].th_flags;
@@ -373,6 +411,9 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
     _pkt[_npkt].timestamp = p->timestamp_anno() - _first_timestamp;
     _pkt[_npkt].direction = direction;
 
+    if (_ip_ids)
+	_ip_ids[_npkt] = iph->ip_id;
+
     if (_ip_p == IP_PROTO_TCP) {
 	const click_tcp *tcph = p->tcp_header();
 	
@@ -450,7 +491,7 @@ int
 ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
-    bool absolute_time = false, absolute_seq = false, binary = false, opt = false;
+    bool absolute_time = false, absolute_seq = false, binary = false, opt = false, ip_id = false;
     _output_larger = 0;
     
     if (cp_va_parse(conf, this, errh,
@@ -463,6 +504,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "ABSOLUTE_SEQ", cpBool, "print absolute sequence numbers?", &absolute_seq,
 		    "BINARY", cpBool, "output binary records?", &binary,
 		    "OPT", cpBool, "output TCP options?", &opt,
+		    "IP_ID", cpBool, "output IP IDs?", &ip_id,
 		    "OUTPUT_LARGER", cpUnsigned, "output flows with more than this many packets", &_output_larger,
 		    0) < 0)
 	return -1;
@@ -479,6 +521,7 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     _absolute_seq = absolute_seq;
     _binary = binary;
     _opt = opt;
+    _ip_id = ip_id;
 
     return 0;
 }
@@ -601,7 +644,7 @@ ToIPFlowDumps::find_aggregate(uint32_t agg, const Packet *p)
 
     if (f)
 	/* nada */;
-    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq, _binary, _opt)))
+    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq, _binary, _opt, _ip_id)))
 	prev = f;
     else
 	return 0;
