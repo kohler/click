@@ -1,3 +1,48 @@
+2002-06-14 Friday 21:46  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/module.cc (1.69): rearrange orders of initialization
+	and termination (noop)
+
+2002-06-14 Friday 21:45  Eddie Kohler <kohler@icir.org>
+
+	* tools/click-install/: common.cc (1.7), common.hh (1.3): be more
+	forgiving about empty files
+
+2002-06-14 Friday 21:45  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/sched.cc (1.34): current->files might be null (Mz)
+
+2002-06-14 Friday 21:45  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/proclikefs.c (1.5): be more careful with Linux
+	version codes
+
+2002-06-14 Friday 21:44  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/proc_click.cc (1.45): stop deadlocks on SMP machines:
+	don't turn off interrupts while calling handlers (Mz)
+
+2002-06-14 Friday 21:43  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/clickfs.cc (1.10): fix clickfs lock bugs: SMP exposed
+	some deadlocks (Mz)
+
+2002-06-14 Friday 21:41  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/Makefile.in (1.73),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.20): make
+	linuxmodule builds more like userlevel builds: always include the
+	"standard" elements (AddressInfo, AlignmentInfo, DriverManager,
+	Error, and ScheduleInfo).
+
+2002-06-14 Friday 21:38  Eddie Kohler <kohler@icir.org>
+
+	* elements/: analysis/fromflandump.cc (1.3),
+	analysis/fromflandump.hh (1.3), standard/delayshaper.cc (1.7),
+	standard/delayunqueue.cc (1.12), standard/idle.hh (1.17),
+	standard/infinitesource.cc (1.34): cleanup() nitlets: remove
+	useless code
+
 2002-06-14 Friday 17:35  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.18), dsdvroutetable.hh
