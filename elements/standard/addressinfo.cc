@@ -23,6 +23,12 @@
 #include <click/router.hh>
 #include <click/error.hh>
 
+#if defined(__linux__) && CLICK_USERLEVEL
+# include <net/if.h>
+# include <sys/ioctl.h>
+# include <net/if_arp.h>
+#endif
+
 AddressInfo::AddressInfo()
   : _map(-1)
 {
@@ -268,12 +274,29 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
       return true;
     }
 
-#ifdef CLICK_LINUXMODULE
   // if it's a device name, return its Ethernet address
+#ifdef CLICK_LINUXMODULE
+  // in the Linux kernel, just look at the device list
   net_device *dev = dev_get_by_name(s.cc());
   if (dev && dev->type == ARPHRD_ETHER) {
     memcpy(store, dev->dev_addr, 6);
     return true;
+  }
+#elif defined(__linux__) && CLICK_USERLEVEL
+  // on Linux userlevel, call ioctl on a socket opened for the purpose
+  // -- based on patch from Jose Vasconcellos <jvasco@bellatlantic.net>
+  struct ifreq ifr;
+  if ((size_t) s.length() < sizeof(ifr.ifr_name)) {
+    strcpy(ifr.ifr_name, s.cc());
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    if (fd >= 0) {
+      int ret = ioctl(fd, SIOCGIFHWADDR, &ifr);
+      close(fd);
+      if (ret >= 0 && ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER) {
+	memcpy(store, ifr.ifr_hwaddr.sa_data, 6);
+	return true;
+      }
+    }
   }
 #endif
   
