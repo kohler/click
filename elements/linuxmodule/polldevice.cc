@@ -52,7 +52,7 @@ polldev_static_cleanup()
 }
 
 PollDevice::PollDevice()
-  : _registered(0), _manage_tx(1)
+  : _registered(false), _promisc(false)
 {
   add_output();
 #if CLICK_DEVICE_STATS
@@ -84,6 +84,8 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_devname,
+		  cpOptional,
+		  cpBool, "promiscuous mode", &_promisc,
 		  cpEnd) < 0)
     return -1;
 #if HAVE_POLLING
@@ -114,10 +116,7 @@ PollDevice::initialize(ErrorHandler *errh)
   for (int fi = 0; fi < router()->nelements(); fi++) {
     Element *e = router()->element(fi);
     if (e == this) continue;
-    if (ToDevice *td = (ToDevice *) (e->cast("ToDevice"))) {
-      if (td->ifindex() == ifindex())
-	_manage_tx = 0;
-    } else if (PollDevice *pd=(PollDevice *)(e->cast("PollDevice"))) {
+    if (PollDevice *pd=(PollDevice *)(e->cast("PollDevice"))) {
       if (pd->ifindex() == ifindex())
 	return errh->error("duplicate PollDevice for `%s'", _devname.cc());
     } else if (FromDevice *fd = (FromDevice *)(e->cast("FromDevice"))) {
@@ -129,12 +128,17 @@ PollDevice::initialize(ErrorHandler *errh)
   
   if (poll_device_map.insert(this) < 0)
     return errh->error("cannot use PollDevice for device `%s'", _devname.cc());
-  _registered = 1;
+  _registered = true;
   
   AnyDevice *l = poll_device_map.lookup(ifindex());
   if (l->next() == 0) {
     /* turn off interrupt if interrupts weren't already off */
     _dev->poll_on(_dev);
+  }
+
+  if (_promisc) {
+    if (_dev->promiscuity == 0) 
+      dev_set_promiscuity(_dev, 1);
   }
 
 #ifndef RR_SCHED
@@ -164,11 +168,15 @@ PollDevice::uninitialize()
 #if HAVE_POLLING
   assert(_registered);
   poll_device_map.remove(this);
-  _registered = 0;
+  _registered = false;
   if (poll_device_map.lookup(ifindex()) == 0) {
     if (_dev && _dev->polling > 0)
       _dev->poll_off(_dev);
   } 
+  if (_promisc) {
+    if (_dev->promiscuity > 0) 
+      dev_set_promiscuity(_dev, -1);
+  }
   unschedule();
 #endif
 }
@@ -183,9 +191,6 @@ PollDevice::run_scheduled()
   unsigned long time_now;
   unsigned low00, low10;
 #endif
-
-  if (_manage_tx) 
-    _dev->tx_clean(_dev);
 
   SET_STATS(low00, low10, time_now);
 

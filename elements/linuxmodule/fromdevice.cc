@@ -55,7 +55,7 @@ fromdev_static_cleanup()
 }
 
 FromDevice::FromDevice()
-  : _registered(0), _puller_ptr(0), _pusher_ptr(0), _drops(0)
+  : _registered(false), _puller_ptr(0), _pusher_ptr(0), _drops(0)
 {
   fromdev_static_initialize();
   add_output();
@@ -73,6 +73,8 @@ FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   if (cp_va_parse(conf, this, errh, 
 	          cpString, "interface name", &_devname, 
+		  cpOptional,
+		  cpBool, "promiscuous", &_promisc,
 		  cpEnd) < 0)
     return -1;
   _dev = dev_get(_devname.cc());
@@ -104,7 +106,7 @@ FromDevice::initialize(ErrorHandler *errh)
   if (from_device_map.insert(this) < 0)
     return errh->error("cannot use FromDevice for device `%s'", _devname.cc());
   
-  _registered = 1;
+  _registered = true;
   
   if (!registered_readers) {
 #ifdef HAVE_CLICK_KERNEL
@@ -115,6 +117,11 @@ FromDevice::initialize(ErrorHandler *errh)
 #endif
   }
   registered_readers++;
+  
+  if (_promisc) {
+    if (_dev->promiscuity == 0) 
+      dev_set_promiscuity(_dev, 1);
+  }
   
 #ifndef RR_SCHED
     // start out with default number of tickets, inflate up to max
@@ -136,11 +143,16 @@ FromDevice::uninitialize()
 #endif
   if (_registered)
     from_device_map.remove(this);
-  _registered = 0;
+  _registered = false;
   unschedule();
   for (unsigned i = _puller_ptr; i != _pusher_ptr; i = next_i(i))
     _queue[i]->kill();
   _puller_ptr = _pusher_ptr = 0;
+
+  if (_promisc) {
+    if (_dev->promiscuity > 0) 
+      dev_set_promiscuity(_dev, -1);
+  }
 }
 
 void

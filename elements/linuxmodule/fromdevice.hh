@@ -3,7 +3,7 @@
 
 /*
  * =c
- * FromDevice(DEVNAME)
+ * FromDevice(DEVNAME [, PROMISC])
  * =s
  * reads packets from network device (kernel)
  * V<devices>
@@ -12,10 +12,13 @@
  * This manual page describes the Linux kernel module version of the
  * FromDevice element. For the user-level element, read the FromDevice.u
  * manual page.
- *
+ * 
  * Intercepts all packets received by the Linux network interface
  * named DEVNAME and pushes them out output 0.
  * The packets include the link-level header.
+ *
+ * If PROMISC is set (by default, it is not), then the device is put into
+ * promiscuous mode.
  *
  * Linux won't see any packets from the device.
  * If you want Linux to process packets, you should
@@ -32,6 +35,7 @@
 class FromDevice : public AnyDevice {
   
   bool _registered;
+  bool _promisc;
   unsigned _drops;
   unsigned _puller_ptr;
   unsigned _pusher_ptr;

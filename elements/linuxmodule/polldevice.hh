@@ -3,7 +3,7 @@
 
 /*
  * =c
- * PollDevice(DEVNAME)
+ * PollDevice(DEVNAME [, PROMISC])
  * =s
  * polls packets from network device (kernel)
  * V<devices>
@@ -12,8 +12,13 @@
  * Packets will be pushed to output 0. The packets include the link-level
  * header.
  *
+ * If PROMISC is set (by default, it is not), then the device is put into
+ * promiscuous mode.
+ *
  * Linux won't see any packets from the device. If you want Linux to process
- * packets, you should hand them to ToLinux.
+ * packets, you should hand them to ToLinux. Also, if you would like to send
+ * packets while using PollDevice, you should also define a ToDevice on the
+ * same device.
  *
  * This element can only be used with devices that support the Click polling
  * extension. We have written polling patches for the Tulip Ethernet driver.
@@ -60,9 +65,9 @@ class PollDevice : public AnyDevice {
 #endif
   
  private:
- 
+
   bool _registered;
-  unsigned _manage_tx;
+  bool _promisc;
 
 #if CLICK_DEVICE_ADJUST_TICKETS
   unsigned int _last_rx;
