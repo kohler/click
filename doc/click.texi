@@ -5124,6 +5124,11 @@ Tasks are generally called very frequently, up to tens of thousands of
 times per second. For infrequent events, it is far more efficient to use
 timers than to use tasks; see @ref{Timers}.
 
+Executing a task should not take a long time. The Click driver loop is
+not currently adaptive, so very long tasks can inappropriately delay
+timers and other periodic events. We may address this problem in a
+future release, but for now, keep tasks short.
+
 The @code{Task} class is defined in the @code{<click/task.hh>} header
 file.
 
