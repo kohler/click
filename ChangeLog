@@ -1,3 +1,18 @@
+2001-08-16 Thursday 04:04  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/fromdump.hh (1.24): nitlet
+
+2001-08-16 Thursday 03:58  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/: fromlinux.cc (1.33), fromlinux.hh (1.27):
+	FromLinux: add ETHER keyword argument for Robert Gardner
+	<robert_gardner@agilent.com>
+
+2001-08-16 Thursday 03:58  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/etheraddress.hh (1.4), lib/etheraddress.cc (1.13):
+	EtherAddress nitlets: missing const, unparse()
+
 2001-08-15 Wednesday 13:18  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* etc/: linux-2.4.4-patch (1.5), make-linux24-patch (1.1),
