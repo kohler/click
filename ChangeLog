@@ -1,3 +1,8 @@
+2001-06-26 Tuesday 11:20  kolya
+
+	* include/click/.cvsignore (1.2): pathvars.h is also automatically
+	generated
+
 2001-06-21 Thursday 16:21  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/linuxmodule/polldevice.cc (1.110): fix when
