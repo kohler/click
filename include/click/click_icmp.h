@@ -34,10 +34,10 @@
 /* most icmp request types */
 struct icmp_generic 
 {
-  unsigned char icmp_type;		/* one of the ICMP_TYPE_*'s above */
-  unsigned char icmp_code;		/* one of the ICMP_CODE_*'s above */
-  unsigned short icmp_cksum;		/* 16 1's comp csum */
-  unsigned int unused;			/* should be zero */
+  uint8_t icmp_type;		/* one of the ICMP_TYPE_*'s above */
+  uint8_t icmp_code;		/* one of the ICMP_CODE_*'s above */
+  uint16_t icmp_cksum;		/* 16 1's comp csum */
+  uint32_t unused;		/* should be zero */
   /* followed by original IP header and first 8 octets of data */
 };
 
@@ -45,11 +45,11 @@ struct icmp_generic
 /* parameter problem header */
 struct icmp_param 
 {
-  unsigned char icmp_type;		/* one of the ICMP_TYPE_*'s above */
-  unsigned char icmp_code;		/* one of the ICMP_CODE_*'s above */
-  unsigned short icmp_cksum;		/* 16 1's comp csum */
-  unsigned char pointer;		/* which octet was a problem */
-  unsigned char unused[3];		/* should be zero */
+  uint8_t icmp_type;		/* one of the ICMP_TYPE_*'s above */
+  uint8_t icmp_code;		/* one of the ICMP_CODE_*'s above */
+  uint16_t icmp_cksum;		/* 16 1's comp csum */
+  uint8_t pointer;		/* which octet was a problem */
+  uint8_t unused[3];		/* should be zero */
   /* followed by original IP header and first 8 octets of data */
 };
 
@@ -57,10 +57,10 @@ struct icmp_param
 /* redirect header */
 struct icmp_redirect 
 {
-  unsigned char icmp_type;		/* one of the ICMP_TYPE_*'s above */
-  unsigned char icmp_code;		/* one of the ICMP_CODE_*'s above */
-  unsigned short icmp_cksum;		/* 16 1's comp csum */
-  unsigned int gateway;			/* address of gateway */
+  uint8_t icmp_type;		/* one of the ICMP_TYPE_*'s above */
+  uint8_t icmp_code;		/* one of the ICMP_CODE_*'s above */
+  uint16_t icmp_cksum;		/* 16 1's comp csum */
+  uint32_t gateway;			/* address of gateway */
   /* followed by original IP header and first 8 octets of data */
 };
 
@@ -68,25 +68,25 @@ struct icmp_redirect
 /* struct for things with sequence numbers */
 struct icmp_sequenced 
 {
-  unsigned char icmp_type;		/* one of the ICMP_TYPE_*'s above */
-  unsigned char icmp_code;		/* one of the ICMP_CODE_*'s above */
-  unsigned short icmp_cksum;		/* 16 1's comp csum */
-  unsigned short identifier;
-  unsigned short sequence;
+  uint8_t icmp_type;		/* one of the ICMP_TYPE_*'s above */
+  uint8_t icmp_code;		/* one of the ICMP_CODE_*'s above */
+  uint16_t icmp_cksum;		/* 16 1's comp csum */
+  uint16_t identifier;
+  uint16_t sequence;
 };
 
 
 /* timestamp header */
 struct icmp_time 
 {
-  unsigned char icmp_type;		/* one of the ICMP_TYPE_*'s above */
-  unsigned char icmp_code;		/* one of the ICMP_CODE_*'s above */
-  unsigned short icmp_cksum;		/* 16 1's comp csum */
-  unsigned short identifier;
-  unsigned short sequence;
-  unsigned int orig;			/* orignate timestamp */
-  unsigned int receive;			/* receive timestamp */
-  unsigned int transmit;		/* transmit timestamp */
+  uint8_t icmp_type;		/* one of the ICMP_TYPE_*'s above */
+  uint8_t icmp_code;		/* one of the ICMP_CODE_*'s above */
+  uint16_t icmp_cksum;		/* 16 1's comp csum */
+  uint16_t identifier;
+  uint16_t sequence;
+  uint32_t orig;		/* orignate timestamp */
+  uint32_t receive;		/* receive timestamp */
+  uint32_t transmit;		/* transmit timestamp */
 };
 
 

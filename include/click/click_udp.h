@@ -7,10 +7,10 @@
  */
 
 struct click_udp {
-  unsigned short uh_sport;
-  unsigned short uh_dport;
-  unsigned short uh_ulen;
-  unsigned short uh_sum;
+    uint16_t uh_sport;
+    uint16_t uh_dport;
+    uint16_t uh_ulen;
+    uint16_t uh_sum;
 };
 
 #endif

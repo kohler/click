@@ -61,6 +61,15 @@
 #endif
 #endif /* __cplusplus */
 
+/* Define macros for declaring packed structures. */
+#ifdef __GNUC__
+#define CLICK_PACKED_STRUCTURE(open, close) open close __attribute__((packed))
+#define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close __attribute__((packed))
+#else
+#define CLICK_PACKED_STRUCTURE(open, close) _Cannot_pack_structure__Use_GCC
+#define CLICK_SIZE_PACKED_STRUCTURE(open, close) open close
+#endif
+
 /* EXPORT_ELEMENT, ELEMENT_REQUIRES, ELEMENT_PROVIDES, ELEMENT_HEADER, and
    ELEMENT_MT_SAFE are noops. */
 #define EXPORT_ELEMENT(x)

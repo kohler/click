@@ -6,16 +6,13 @@
  * click_ether.h -- our own definitions of Ethernet and ARP headers
  * based on a file from one of the BSDs
  */
-
-#ifndef __GNUC__
-# error "GNU C's __attribute__((packed)) extension required"
-#endif
   
-struct click_ether {
+CLICK_SIZE_PACKED_STRUCTURE(
+struct click_ether {,
     uint8_t	ether_dhost[6];
     uint8_t	ether_shost[6];
     uint16_t	ether_type;
-} __attribute__ ((packed));
+});
 #define ETHERTYPE_IP	0x0800
 #define ETHERTYPE_IP6	0x86DD
 #define ETHERTYPE_ARP	0x0806

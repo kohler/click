@@ -36,43 +36,35 @@ public:
 
   String s(String tag = "") const;
 
-#ifdef __GNUC__
-# define CLICK_PACKED(x) x __attribute__((packed))
-#else
-# error "GNU C's __attribute__((packed)) extension required"
-#endif
-  
-  struct wire {
+  CLICK_PACKED_STRUCTURE(
+  struct wire {,
   public:
-    uint8_t dst[6];		// 12
-    uint8_t src[6];
+    uint8_t dst[6];		// 0-5
+    uint8_t src[6];		// 6-11
 
-    uint16_t length;		// 5
-    uint16_t sap;
-    uint8_t ctl;
+    uint16_t length;		// 12-13
+    uint16_t sap;		// 14-15
+    uint8_t ctl;		// 16
 
+    uint16_t protocol;		// 17-18
+    uint8_t version;		// 19
+    uint8_t type;		// 20
+    unsigned tc:1;		// 21
+    unsigned reserved:6;
+    unsigned tca:1;
+    uint64_t root;		// 22-29
+    uint32_t cost;		// 30-33
+    uint64_t bridge_id;		// 34-41
+    uint16_t port_id;		// 42-43
+    uint16_t message_age;	// 44-45
+    uint16_t max_age;		// 46-47
+    uint16_t hello_time;	// 48-49
+    uint16_t forward_delay;	// 50-51
 
-    CLICK_PACKED(uint16_t protocol);	// 35
-    uint8_t version;
-    uint8_t type;
-    uint8_t tc:1;
-    uint8_t reserved:6;
-    uint8_t tca:1;
-    CLICK_PACKED(uint64_t root);
-    CLICK_PACKED(uint32_t cost);
-    CLICK_PACKED(uint64_t bridge_id);
-    CLICK_PACKED(uint16_t port_id);
-    CLICK_PACKED(uint16_t message_age);
-    CLICK_PACKED(uint16_t max_age);
-    CLICK_PACKED(uint16_t hello_time);
-    CLICK_PACKED(uint16_t forward_delay);
-
-    uint8_t padding[8];	// 8
+    uint8_t padding[8];		// 52-59
 
     String s(String tag = "") const;
-  };
-
-#undef packed
+  });
 
   // Parameters that get propagated
   uint32_t _max_age;		// in seconds
