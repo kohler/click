@@ -16,6 +16,9 @@
  * legally binding.
  */
 
+// N.B. does not work in kernel because of odd handling of _out2dev; should
+// pay attention to device up/down and do reference counting correctly
+
 #include <click/config.h>
 #include "lookupiproutelinux.hh"
 #include <click/ipaddress.hh>
@@ -190,5 +193,5 @@ LinuxIPLookup::push(int, Packet *p)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel|linuxmodule)
+ELEMENT_REQUIRES(userlevel)
 EXPORT_ELEMENT(LinuxIPLookup)
