@@ -180,7 +180,8 @@ AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
 dnl
 dnl CLICK_CHECK_DYNAMIC_LINKING
 dnl Defines HAVE_DYNAMIC_LINKING and DL_LIBS if <dlfcn.h> and -ldl exist 
-dnl and work.
+dnl and work.  Also defines LDMODULEFLAGS, the flags to pass to the linker
+dnl when building a loadable module.
 dnl
 
 AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
@@ -193,6 +194,16 @@ AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
 	ac_have_dynamic_linking=yes
     fi
     AC_SUBST(DL_LIBS)
+
+    AC_MSG_CHECKING(compiler flags for building loadable modules)
+    LDMODULEFLAGS=-shared
+    if test "x$ac_have_dynamic_linking" = xyes; then
+	if echo "$ac_cv_target" | grep apple-darwin >/dev/null 2>&1; then
+	    LDMODULEFLAGS='-bundle -flat_namespace -undefined suppress'
+	fi
+    fi
+    AC_MSG_RESULT($LDMODULEFLAGS)
+    AC_SUBST(LDMODULEFLAGS)
 ])
 
 

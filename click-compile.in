@@ -34,36 +34,36 @@ compileflag=-c
 quiet=
 gpl=y
 while true; do
-  bad=x
-  case $1 in
-    --de|--def|--defs)
-      echo @PCAP_INCLUDES@ -I$includedir
-      exit 0;;
-    --l|--li|--lib|--libs)
-      echo -L$libdir -lclick @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
-      exit 0;;
-    --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
-      echo @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
-      exit 0;;
-    -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
-      directory=$2; shift 2;;
-    --di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
-      directory=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
-    -t|--t|--ta|--tar|--targ|--targe|--target)
-      target=$2; shift 2;;
-    --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
-      target=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
-    -p|--p|--pa|--pac|--pack|--packa|--packag|--package)
-      package=$2; shift 2;;
-    --p=*|--pa=*|--pac=*|--pack=*|--packa=*|--packag=*|--package=*)
-      package=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
-    -q|--q|--qu|--qui|--quie|--quiet)
-      quiet=y; shift 1;;
-    --no-g|--no-gp|--no-gpl)
-      gpl=n; shift 1;;
-    -h|--h|--he|--hel|--help)
-      cat <<'EOF'
-`Click-compile' compiles a Click source file, or outputs any compiler options
+    bad=x
+    case $1 in
+      --de|--def|--defs)
+	echo @PCAP_INCLUDES@ -I$includedir
+	exit 0;;
+      --l|--li|--lib|--libs)
+	echo -L$libdir -lclick @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
+	exit 0;;
+      --o|--ot|--oth|--othe|--other|--otherl|--otherli|--otherlib|--otherlibs)
+	echo @PCAP_LIBS@ @DL_LIBS@ @SOCKET_LIBS@
+	exit 0;;
+      -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
+	directory=$2; shift 2;;
+      --di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
+	directory=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
+      -t|--t|--ta|--tar|--targ|--targe|--target)
+	target=$2; shift 2;;
+      --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
+	target=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
+      -p|--p|--pa|--pac|--pack|--packa|--packag|--package)
+	package=$2; shift 2;;
+      --p=*|--pa=*|--pac=*|--pack=*|--packa=*|--packag=*|--package=*)
+	package=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
+      -q|--q|--qu|--qui|--quie|--quiet)
+	quiet=y; shift 1;;
+      --no-g|--no-gp|--no-gpl)
+	gpl=n; shift 1;;
+      -h|--h|--he|--hel|--help)
+	cat <<'EOF'
+'Click-compile' compiles a Click source file, or outputs any compiler options
 relevant for userlevel Click drivers.
 
 Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
@@ -84,33 +84,36 @@ Options:
 
 Report bugs to <click@pdos.lcs.mit.edu>.
 EOF
-      exit 0;;
-    -v|--v|--ve|--ver|--vers|--versi|--versio|--version)
-      echo click-compile '(Click)' $CLICK_VERSION
-      cat <<"EOF"
+	exit 0;;
+      -v|--v|--ve|--ver|--vers|--versi|--versio|--version)
+	echo click-compile '(Click)' $CLICK_VERSION
+	cat <<"EOF"
 Copyright (C) 1999-2001 Massachusetts Institute of Technology
 Copyright (C) 2002 International Computer Science Institute
+Copyright (C) 2004 Regents of the University of California
 This is free software; see the source for copying conditions.
 There is NO warranty, not even for merchantability or fitness for any
 particular purpose.
 EOF
-      exit 0;;
-    -*)
-      if test $1 = -E -o $1 = -c -o $1 = -S; then
-        compileflag=$1
-      else cflags="$cflags '$1'"; fi
-      shift 1;;
-    *)
-      bad=;;
-  esac
-  if test -z "$bad"; then break; fi
+	exit 0;;
+      -*)
+	if test "$1" = -E -o "$1" = -c -o "$1" = -S; then
+	    compileflag=$1
+	else
+	    cflags="$cflags '$1'"
+	fi
+	shift 1;;
+      *)
+	bad=;;
+    esac
+    if test -z "$bad"; then break; fi
 done
 
 cd $directory
 
 # test directory function
 test_dir () {
-  test -d "$1" -a -d "$1/elements" -a -d "$1/lib"
+    test -d "$1" -a -d "$1/elements" -a -d "$1/lib"
 }
 
 # analyze CLICKPATH to find sources
@@ -118,41 +121,41 @@ path=${CLICKPATH-:}
 tried_defaults=
 include_source=
 while true; do
-  case $path in
-    :*)
-      if test -z "$tried_defaults" && test_dir "$srcdir"; then
-        include_source="-I$srcdir"
-      else
-        tried_defaults=y
-      fi
-      path=`echo "$path" | sed 's/://'`
-      ;;
-    *:*)
-      dir=`echo "$path" | sed 's/:.*//'`
-      if test_dir "$dir"; then include_source="-I$dir"; fi
-      path=`echo "$path" | sed 's/[^:]*://'`
-      ;;
-    *:)
-      dir=`echo "$path" | sed 's/:.*//'`
-      if test_dir "$dir"; then include_source="-I$dir"; fi
-      path=":"
-      ;;
-    *)
-      if test_dir "$path"; then include_source="-I$path"; fi
-      path=""
-      ;;
-  esac
-  if test -z "$path" -o -n "$include_source"; then break; fi
+    case $path in
+      :*)
+	if test -z "$tried_defaults" && test_dir "$srcdir"; then
+	    include_source="-I$srcdir"
+	else
+	    tried_defaults=y
+	fi
+	path=`echo "$path" | sed 's/://'`
+	;;
+      *:*)
+	dir=`echo "$path" | sed 's/:.*//'`
+	if test_dir "$dir"; then include_source="-I$dir"; fi
+	path=`echo "$path" | sed 's/[^:]*://'`
+	;;
+      *:)
+	dir=`echo "$path" | sed 's/:.*//'`
+	if test_dir "$dir"; then include_source="-I$dir"; fi
+	path=":"
+	;;
+      *)
+	if test_dir "$path"; then include_source="-I$path"; fi
+	path=""
+	;;
+    esac
+    if test -z "$path" -o -n "$include_source"; then break; fi
 done
 
 if test ! -d "$includedir"; then
-  echo "click-compile: Cannot find Click include directory!" 1>&2
-  echo "  (Have you installed Click yet?)" 1>&2
-  exit 1
+    echo "click-compile: Cannot find Click include directory!" 1>&2
+    echo "  (Have you installed Click yet?)" 1>&2
+    exit 1
 elif test -z "$include_source"; then
-  if test -z "$quiet"; then
-    echo "click-compile: warning: cannot find full Click source" 1>&2
-  fi
+    if test -z "$quiet"; then
+	echo "click-compile: warning: cannot find full Click source" 1>&2
+    fi
 fi
 
 
@@ -201,62 +204,66 @@ case $target in
 esac
 
 exec_command () {
-  if test -z "$quiet"; then
-    echo "$@" 1>&2
-  fi
-  eval "$@" || exit 1
+    if test -z "$quiet"; then
+	echo "$@" 1>&2
+    fi
+    eval "$@" || exit 1
 }
 
 compile_file () {
-  option=
-  source="$1"; shift
-  if test -r "$source"; then
-    option=`head -5 $source | grep '^/\*\* click-compile:' | sed -e 's/\/\*\* click-compile://g' -e 's/\*\///g'`
-  fi
-  exec_command $command $option $source "$@"
+    option=
+    source="$1"; shift
+    if test -r "$source"; then
+	option=`head -5 $source | grep '^/\*\* click-compile:' | sed -e 's/\/\*\* click-compile://g' -e 's/\*\///g'`
+    fi
+    exec_command $command $option $source "$@"
 }
 
 # do stuff
 if test "x$package" != "xNONE"; then
-  command="$command -DCLICK_PACKAGE"
-  files=; rmfiles=
-  trap 'rm -f $files $rmfiles' 0
-  trap 'rm -f $files $rmfiles; exit 1' 1 2 15
-  for file; do
-    objfile=`echo $file | sed 's/\.c*$/'"$$"'\.o/;s/^.*\///'`
-    compile_file $file -o $objfile
-    files="$files $objfile"
-    rmfiles="$rmfiles "`echo $objfile | sed 's/\.o/\.d/'`
-  done
-  if test $target = linuxmodule; then
-    vfile=kernelversion$$
-    test -f $vfile.c && echo "click-compile: A file \`$vfile.c' already exists in this directory!" 1>&2 && echo "click-compile: You must remove it, or run me somewhere else." 1>&2 && exit 1
-    files="$files $vfile.o"
-    rmfiles="$rmfiles $vfile.c $vfile.d"
-    cat > $vfile.c <<EOF
+    command="$command -DCLICK_PACKAGE"
+    files=; rmfiles=
+    trap 'rm -f $rmfiles' 0
+    trap 'rm -f $rmfiles; exit 1' 1 2 15
+    for file; do
+	if echo "$file" | grep '\.cc*$' >/dev/null 2>&1; then
+	    objfile=`echo "$file" | sed 's/\.c*$/'"$$"'\.o/;s/^.*\///'`
+	    compile_file $file -o $objfile
+	    rmfiles="$rmfiles $objfile "`echo $objfile | sed 's/\.o/\.d/'`
+	else
+	    objfile="$file"
+	fi
+	files="$files $objfile"
+    done
+    if test $target = linuxmodule; then
+	vfile=kernelversion$$
+	test -f $vfile.c && echo "click-compile: A file \`$vfile.c' already exists in this directory!" 1>&2 && echo "click-compile: You must remove it, or run me somewhere else." 1>&2 && exit 1
+	files="$files $vfile.o"
+	rmfiles="$rmfiles $vfile.o $vfile.c $vfile.d"
+	cat > $vfile.c <<EOF
 #include <click/config.h>
 #include <linux/module.h>
 /* a new version of EXPORT_NO_SYMBOLS that works */
 const int __ksymtab_nothing[0] __attribute__((section("__ksymtab"))) = { };
 EOF
-    if test $gpl = y; then
-	cat >> $vfile.c <<EOF
+	if test $gpl = y; then
+	    cat >> $vfile.c <<EOF
 #ifdef MODULE_LICENSE
 MODULE_LICENSE("Dual BSD/GPL");
 #endif
 EOF
+	fi
+	exec_command $c_command $vfile.c
+	exec_command "ld -r -o $package $files"
+	exit 0
+    elif test $target = userlevel -o $target = tool -o $target = ns; then
+	exec_command "${CXX-@CXX@} @LDMODULEFLAGS@ -o $package $files"
+	exit 0
+    elif test $target = bsdmodule; then
+	exec_command "ld -Bshareable -o $package $files"
+	exit 0
     fi
-    exec_command $c_command $vfile.c
-    exec_command "ld -r -o $package $files"
-    exit 0 
-  elif test $target = userlevel -o $target = tool -o $target = ns; then
-    exec_command "${CXX-@CXX@} -shared -o $package $files"
-    exit 0
-  elif test $target = bsdmodule; then
-    exec_command "ld -Bshareable -o $package $files"
-    exit 0
-  fi
 else
-  exec_command "$command $@"
-  exit 0
+    exec_command "$command $@"
+    exit 0
 fi

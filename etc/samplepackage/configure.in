@@ -72,15 +72,6 @@ dnl The rest of this file is based on Click `configure.in'. You shouldn't
 dnl generally need to change it, although you may want to add to it.
 dnl
 
-CLICK_PROG_CC
-AC_PROG_CPP
-CLICK_PROG_CXX
-AC_PROG_CXXCPP
-CLICK_PROG_KERNEL_CC
-CLICK_PROG_KERNEL_CXX
-
-AC_PATH_PROG(AR, ar)
-AC_PATH_PROG(LD, ld)
 AC_PATH_PROG(RANLIB, ranlib, :)
 AC_PATH_PROG(STRIP, strip, :)
 

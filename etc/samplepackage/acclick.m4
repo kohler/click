@@ -180,7 +180,8 @@ AC_DEFUN([CLICK_PROG_KERNEL_CXX], [
 dnl
 dnl CLICK_CHECK_DYNAMIC_LINKING
 dnl Defines HAVE_DYNAMIC_LINKING and DL_LIBS if <dlfcn.h> and -ldl exist 
-dnl and work.
+dnl and work.  Also defines LDMODULEFLAGS, the flags to pass to the linker
+dnl when building a loadable module.
 dnl
 
 AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
@@ -193,6 +194,16 @@ AC_DEFUN([CLICK_CHECK_DYNAMIC_LINKING], [
 	ac_have_dynamic_linking=yes
     fi
     AC_SUBST(DL_LIBS)
+
+    AC_MSG_CHECKING(compiler flags for building loadable modules)
+    LDMODULEFLAGS=-shared
+    if test "x$ac_have_dynamic_linking" = xyes; then
+	if echo "$ac_cv_target" | grep apple-darwin >/dev/null 2>&1; then
+	    LDMODULEFLAGS='-bundle -flat_namespace -undefined suppress'
+	fi
+    fi
+    AC_MSG_RESULT($LDMODULEFLAGS)
+    AC_SUBST(LDMODULEFLAGS)
 ])
 
 
@@ -626,7 +637,7 @@ AC_DEFUN([CLICK_CHECK_ADDRESSABLE_VA_LIST], [
     AC_LANG_CPLUSPLUS
     AC_CACHE_CHECK([for addressable va_list type], 
 	ac_cv_va_list_addr,
-	[AC_TRY_COMPILE([#include <cstdarg>
+	[AC_TRY_COMPILE([#include <stdarg.h>
 void f(va_list *) {
 }
 void g(va_list val) {
@@ -641,4 +652,37 @@ void h(int a, ...) {
     if test "x$ac_cv_va_list_addr" = xyes; then
 	AC_DEFINE(HAVE_ADDRESSABLE_VA_LIST)
     fi
+])
+
+
+dnl
+dnl CLICK_CHECK_LARGE_FILE_SUPPORT
+dnl Check whether C library supports large files. Defines
+dnl HAVE_LARGE_FILE_SUPPORT.
+dnl
+
+AC_DEFUN([CLICK_CHECK_LARGE_FILE_SUPPORT], [
+    AC_LANG_CPLUSPLUS
+    AC_CACHE_CHECK([for large file support in C library], 
+	ac_cv_large_file_support,
+	[AC_TRY_COMPILE([#define _LARGEFILE_SOURCE 1
+#define _FILE_OFFSET_BITS 64
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+void h(off_t a) {
+    int fd = open("/tmp/whatever", 0);
+    lseek(fd, a, 0);
+}], [h(15);], ac_cv_large_file_support=yes, ac_cv_large_file_support=no)])
+    if test "x$ac_cv_large_file_support" = xyes; then
+	AC_DEFINE(HAVE_LARGE_FILE_SUPPORT)
+    fi
+
+    AC_CHECK_SIZEOF(off_t, [], [#ifdef HAVE_LARGE_FILE_SUPPORT
+# define _LARGEFILE_SOURCE 1
+# define _FILE_OFFSET_BITS 64
+#endif
+#include <stdio.h>
+#include <sys/types.h>])
 ])
