@@ -72,7 +72,7 @@ class IPRw : public Element { public:
 
 class IPRw::Mapping { public:
 
-    Mapping();
+    Mapping(bool dst_anno);
 
     void initialize(int ip_p, const IPFlowID &, const IPFlowID &, int, bool, Mapping *);
     static void make_pair(int ip_p, const IPFlowID &, const IPFlowID &,
@@ -129,6 +129,7 @@ class IPRw::Mapping { public:
     bool _marked : 1;
     bool _flow_over : 1;
     bool _free_tracked : 1;
+    bool _dst_anno : 1;
     uint8_t _ip_p;
     uint8_t _output;
     unsigned _used;

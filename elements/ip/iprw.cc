@@ -40,9 +40,9 @@ extern "C" {
 // IPRw::Mapping
 //
 
-IPRw::Mapping::Mapping()
+IPRw::Mapping::Mapping(bool dst_anno)
   : _is_reverse(false), /* _used(false), */ _marked(false),
-    _flow_over(false), _free_tracked(false),
+    _flow_over(false), _free_tracked(false), _dst_anno(dst_anno),
     _ip_p(0), _pat(0), _pat_prev(0), _pat_next(0), _free_next(0)
 {
 }
@@ -96,6 +96,8 @@ IPRw::Mapping::apply(WritablePacket *p)
   // IP header
   iph->ip_src = _mapto.saddr();
   iph->ip_dst = _mapto.daddr();
+  if (_dst_anno)
+    p->set_dst_ip_anno(_mapto.daddr());
 
   unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
   sum = (sum & 0xFFFF) + (sum >> 16);

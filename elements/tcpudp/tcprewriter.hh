@@ -13,9 +13,10 @@ rewrites TCP packets' addresses, ports, and sequence numbers
 
 =d
 
-Rewrites TCP flows by changing their source address, source port,
-destination address, and/or destination port, and optionally, their
-sequence numbers and acknowledgement numbers.
+Rewrites TCP flows by changing their source address, source port, destination
+address, and/or destination port, and optionally, their sequence numbers and
+acknowledgement numbers. It also changes the destination IP address
+annotation; see the DST_ANNO keyword argument below.
 
 This element is an IPRewriter-like element. Please read the IPRewriter
 documentation for more information and a detailed description of its
@@ -51,6 +52,11 @@ mapping as stale. Default is 1 hour.
 Reap timed-out completed TCP connections every I<time> seconds. Default is 10
 seconds.
 
+=item DST_ANNO
+
+Boolean. If true, then set the destination IP address annotation on passing
+packets to the rewritten destination address. Default is true.
+
 =back
 
 =h mappings read-only
@@ -72,7 +78,7 @@ class TCPRewriter : public IPRw { public:
     
    public:
 
-    TCPMapping();
+    TCPMapping(bool dst_anno);
 
     TCPMapping *reverse() const		{ return static_cast<TCPMapping *>(_reverse); }
 
@@ -118,6 +124,7 @@ class TCPRewriter : public IPRw { public:
   Mapping *_tcp_done_tail;
 
   Vector<InputSpec> _input_specs;
+  bool _dst_anno;
 
   int _tcp_gc_interval;
   int _tcp_done_gc_interval;

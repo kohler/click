@@ -83,7 +83,7 @@ class IPAddrRewriter : public IPRw { public:
 
     class IPAddrMapping : public Mapping { public:
 
-	IPAddrMapping()		{ }
+	IPAddrMapping(bool dst_anno)	: Mapping(dst_anno) { }
 
 	IPAddrMapping *reverse() const { return static_cast<IPAddrMapping *>(reverse()); }
 

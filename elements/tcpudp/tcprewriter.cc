@@ -29,8 +29,8 @@
 
 // TCPMapping
 
-TCPRewriter::TCPMapping::TCPMapping()
-  : _seqno_delta(0), _ackno_delta(0), _interesting_seqno(0)
+TCPRewriter::TCPMapping::TCPMapping(bool dst_anno)
+  : Mapping(dst_anno), _seqno_delta(0), _ackno_delta(0), _interesting_seqno(0)
 {
 }
 
@@ -63,6 +63,8 @@ TCPRewriter::TCPMapping::apply(WritablePacket *p)
   // IP header
   iph->ip_src = _mapto.saddr();
   iph->ip_dst = _mapto.daddr();
+  if (_dst_anno)
+    p->set_dst_ip_anno(_mapto.daddr());
 
   unsigned sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
   sum = (sum & 0xFFFF) + (sum >> 16);
@@ -170,15 +172,19 @@ TCPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   _tcp_done_timeout_jiffies = 240;	// 4 minutes
   _tcp_gc_interval = 3600;		// 1 hour
   _tcp_done_gc_interval = 10;		// 10 seconds
+  _dst_anno = true;
+
+  if (cp_va_parse_remove_keywords
+      (conf, 0, this, errh,
+       "REAP_TCP", cpSeconds, "reap interval for active TCP connections", &_tcp_gc_interval,
+       "REAP_TCP_DONE", cpSeconds, "reap interval for completed TCP connections", &_tcp_done_gc_interval,
+       "TCP_TIMEOUT", cpSeconds, "TCP timeout interval", &_tcp_timeout_jiffies,
+       "TCP_DONE_TIMEOUT", cpSeconds, "completed TCP timeout interval", &_tcp_done_timeout_jiffies,
+       "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
+       0) < 0)
+    return -1;
 
   for (int i = 0; i < conf.size(); i++) {
-    if (cp_va_parse_keyword(conf[i], this, errh,
-			    "REAP_TCP", cpSeconds, "reap interval for active TCP connections", &_tcp_gc_interval,
-			    "REAP_TCP_DONE", cpSeconds, "reap interval for completed TCP connections", &_tcp_done_gc_interval,
-			    "TCP_TIMEOUT", cpSeconds, "TCP timeout interval", &_tcp_timeout_jiffies,
-			    "TCP_DONE_TIMEOUT", cpSeconds, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
-			    0) != 0)
-      continue;
     InputSpec is;
     if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0) {
       _input_specs.push_back(is);
@@ -281,8 +287,8 @@ TCPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
 {
   assert(fport >= 0 && fport < noutputs() && rport >= 0 && rport < noutputs()
 	 && ip_p == IP_PROTO_TCP);
-  TCPMapping *forward = new TCPMapping;
-  TCPMapping *reverse = new TCPMapping;
+  TCPMapping *forward = new TCPMapping(_dst_anno);
+  TCPMapping *reverse = new TCPMapping(_dst_anno);
 
   if (forward && reverse) {
     if (!pattern)

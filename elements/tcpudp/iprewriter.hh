@@ -19,8 +19,9 @@ destination address, and/or destination port.
 
 Has one or more inputs and one or more outputs. Input packets must have their
 IP header annotations set. Output packets are valid IP packets; for instance,
-rewritten packets have their checksums incrementally updated. However,
-IPRewriter does not change the destination IP address annotation.
+rewritten packets have their checksums incrementally updated. IPRewriter also
+changes the destination IP address annotation; see the DST_ANNO keyword
+argument below.
 
 A flow is identified by its (source address, source port, destination
 address, destination port) quadruple, called its I<flow identifier>.
@@ -135,6 +136,11 @@ seconds.
 
 Reap timed-out UDP connections every I<time> seconds. Default is 10 seconds.
 
+=item DST_ANNO
+
+Boolean. If true, then set the destination IP address annotation on passing
+packets to the rewritten destination address. Default is true.
+
 =back
 
 =h tcp_mappings read-only
@@ -193,6 +199,7 @@ class IPRewriter : public IPRw { public:
   Mapping *_tcp_done_tail;
 
   Vector<InputSpec> _input_specs;
+  bool _dst_anno;
 
   bool _tcp_done_gc_incr;
   int _tcp_done_gc_interval;
@@ -204,7 +211,6 @@ class IPRewriter : public IPRw { public:
   int _udp_timeout_jiffies;
   int _tcp_timeout_jiffies;
   int _tcp_done_timeout_jiffies;
-  int _instance_index;
 
 #if IPRW_SPINLOCKS
   Spinlock _spinlock;
@@ -224,7 +230,6 @@ class IPRewriter : public IPRw { public:
   static String dump_nmappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);
  
-  static int _global_instance_counter;
 };
 
 

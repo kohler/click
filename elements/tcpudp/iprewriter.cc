@@ -28,8 +28,6 @@
 #include <click/llrpc.h>
 #include <limits.h>
 
-int IPRewriter::_global_instance_counter = 0;
-
 IPRewriter::IPRewriter()
   : _tcp_map(0), _udp_map(0), _tcp_done(0), 
     _tcp_done_tail(0),
@@ -81,18 +79,22 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
   _tcp_done_gc_interval = 10;		// 10 seconds
   _udp_gc_interval = 10;		// 10 seconds
   _tcp_done_gc_incr = false;
+  _dst_anno = true;
+  
+  if (cp_va_parse_remove_keywords
+      (conf, 0, this, errh,
+       "REAP_TCP", cpSeconds, "TCP garbage collection interval", &_tcp_gc_interval,
+       "REAP_TCP_DONE", cpSeconds, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
+       "REAP_UDP", cpSeconds, "UDP garbage collection interval", &_udp_gc_interval,
+       "TCP_TIMEOUT", cpSeconds, "TCP timeout interval", &_tcp_timeout_jiffies,
+       "TCP_DONE_TIMEOUT", cpSeconds, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
+       "UDP_TIMEOUT", cpSeconds, "UDP timeout interval", &_udp_timeout_jiffies,
+       "TCP_DONE_GC_INCR", cpBool, "clean tcp completed sessions incrementally", &_tcp_done_gc_incr,
+       "DST_ANNO", cpBool, "set destination IP addr annotation?", &_dst_anno,
+       0) < 0)
+    return -1;
   
   for (int i = 0; i < conf.size(); i++) {
-    if (cp_va_parse_keyword(conf[i], this, errh,
-			    "REAP_TCP", cpSeconds, "TCP garbage collection interval", &_tcp_gc_interval,
-			    "REAP_TCP_DONE", cpSeconds, "TCP garbage collection interval for completed sessions", &_tcp_done_gc_interval,
-			    "REAP_UDP", cpSeconds, "UDP garbage collection interval", &_udp_gc_interval,
-			    "TCP_TIMEOUT", cpSeconds, "TCP timeout interval", &_tcp_timeout_jiffies,
-			    "TCP_DONE_TIMEOUT", cpSeconds, "Completed TCP timeout interval", &_tcp_done_timeout_jiffies,
-			    "UDP_TIMEOUT", cpSeconds, "UDP timeout interval", &_udp_timeout_jiffies,
-			    "TCP_DONE_GC_INCR", cpBool, "clean tcp completed sessions incrementally", &_tcp_done_gc_incr,
-			    0) != 0)
-      continue;
     InputSpec is;
     if (parse_input_spec(conf[i], is, "input spec " + String(i), errh) >= 0) {
       _input_specs.push_back(is);
@@ -119,7 +121,6 @@ IPRewriter::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 IPRewriter::initialize(ErrorHandler *)
 {
-  _instance_index = IPRewriter::_global_instance_counter++;
   _nmapping_failures = 0;
 
   _tcp_gc_timer.initialize(this);
@@ -263,8 +264,8 @@ IPRewriter::apply_pattern(Pattern *pattern, int ip_p, const IPFlowID &flow,
   if (ip_p != IP_PROTO_TCP && ip_p != IP_PROTO_UDP)
     return 0;
   
-  Mapping *forward = new Mapping;
-  Mapping *reverse = new Mapping;
+  Mapping *forward = new Mapping(_dst_anno);
+  Mapping *reverse = new Mapping(_dst_anno);
 
   if (forward && reverse) {
     if (!pattern)

@@ -33,8 +33,11 @@ IPAddrRewriter::IPAddrMapping::apply(WritablePacket *p)
   // IP header
   if (is_primary())
     iph->ip_src = _mapto.saddr();
-  else
+  else {
     iph->ip_dst = _mapto.daddr();
+    if (_dst_anno)
+      p->set_dst_ip_anno(_mapto.daddr());
+  }
 
   uint32_t sum = (~iph->ip_sum & 0xFFFF) + _ip_csum_delta;
   sum = (sum & 0xFFFF) + (sum >> 16);
@@ -154,8 +157,8 @@ IPAddrRewriter::apply_pattern(Pattern *pattern, int,
   assert(fport >= 0 && fport < noutputs() && rport >= 0 && rport < noutputs());
 
   IPFlowID flow(in_flow.saddr(), 0, 0, 0);
-  IPAddrMapping *forward = new IPAddrMapping;
-  IPAddrMapping *reverse = new IPAddrMapping;
+  IPAddrMapping *forward = new IPAddrMapping(true);
+  IPAddrMapping *reverse = new IPAddrMapping(true);
 
   if (forward && reverse) {
     if (!pattern)
