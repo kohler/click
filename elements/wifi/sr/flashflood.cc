@@ -23,7 +23,6 @@
 #include <click/glue.hh>
 #include <click/straccum.hh>
 #include <clicknet/ether.h>
-#include "ettmetric.hh"
 #include "srpacket.hh"
 CLICK_DECLS
 

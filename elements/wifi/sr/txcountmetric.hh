@@ -1,5 +1,5 @@
-#ifndef ETTMETRIC_HH
-#define ETTMETRIC_HH
+#ifndef TXCOUNTMETRIC_HH
+#define TXCOUNTMETRIC_HH
 #include <click/element.hh>
 #include "linkmetric.hh"
 #include <click/hashmap.hh>
@@ -10,7 +10,7 @@ CLICK_DECLS
 
 /*
  * =c
- * ETTMetric(LinkStat, LinkStat)
+ * TXCountMetric(LinkStat, LinkStat)
  * =s Wifi
  * =io
  * None
@@ -19,7 +19,7 @@ CLICK_DECLS
 
 
 
-inline unsigned ett_metric(int ack_prob, int data_prob, int data_rate) 
+inline unsigned txcount_metric(int ack_prob, int data_prob, int data_rate) 
 {
   
   if (!ack_prob || ! data_prob) {
@@ -37,14 +37,14 @@ inline unsigned ett_metric(int ack_prob, int data_prob, int data_rate)
 
 class ETTStat;
 
-class ETTMetric : public LinkMetric {
+class TXCountMetric : public LinkMetric {
   
 public:
 
 
-  ETTMetric();
-  ~ETTMetric();
-  const char *class_name() const { return "ETTMetric"; }
+  TXCountMetric();
+  ~TXCountMetric();
+  const char *class_name() const { return "TXCountMetric"; }
   const char *processing() const { return AGNOSTIC; }
 
   int configure(Vector<String> &, ErrorHandler *);
@@ -58,8 +58,6 @@ public:
 		   Vector<RateSize> rs, 
 		   Vector<int> fwd, Vector<int> rev, 
 		   uint32_t seq);
-
-  int get_tx_rate(EtherAddress);
 
 private:
   class LinkTable *_link_table;

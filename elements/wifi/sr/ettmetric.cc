@@ -27,7 +27,6 @@ CLICK_DECLS
 
 ETTMetric::ETTMetric()
   : LinkMetric(), 
-    _ett_stat(0),
     _link_table(0)
 {
   MOD_INC_USE_COUNT;
@@ -54,29 +53,21 @@ ETTMetric::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
-			"ETT",cpElement, "ETTStat element", &_ett_stat,
 			"LT", cpElement, "LinkTable element", &_link_table, 
 			cpEnd);
   if (res < 0)
     return res;
-  if (_ett_stat == 0) 
-    return errh->error("no ETTStat element specified");
   if (_link_table == 0) {
     click_chatter("%{element}: no LTelement specified",
 		  this);
   }
-  if (_ett_stat->cast("ETTStat") == 0)
-    return errh->error("ETTStat argument is wrong element type (should be ETTStat)");
   if (_link_table && _link_table->cast("LinkTable") == 0) {
     return errh->error("LinkTable element is not a LinkTable");
   }
   return 0;
 }
 
-Vector<IPAddress>
-ETTMetric::get_neighbors() {
-  return _ett_stat->get_neighbors();
-}
+
 int 
 ETTMetric::get_tx_rate(EtherAddress) 
 {
@@ -86,8 +77,8 @@ ETTMetric::get_tx_rate(EtherAddress)
 
 void
 ETTMetric::update_link(IPAddress from, IPAddress to, 
-		       unsigned fwd, unsigned rev,
-		       int , int,
+		       Vector<RateSize> rs, 
+		       Vector<int> fwd, Vector<int> rev, 
 		       uint32_t seq)
 {
 
@@ -99,23 +90,99 @@ ETTMetric::update_link(IPAddress from, IPAddress to,
     return;
   }
 
-  if (!fwd && !rev) {
+
+    int one_ack_fwd = 0;
+  int one_ack_rev = 0;
+  int six_ack_fwd = 0;
+  int six_ack_rev = 0;
+
+
+  /* 
+   * if we don't have a few probes going out, just pick
+   * the smallest size for fwd rate
+  */
+  int one_ack_size = 0;
+  int six_ack_size = 0;
+
+
+  for (int x = 0; x < rs.size(); x++) {
+    if (rs[x]._rate == 2 && 
+	(!one_ack_size ||
+	 one_ack_size > rs[x]._size)) {
+      one_ack_size = rs[x]._size;
+      one_ack_fwd = fwd[x];
+      one_ack_rev = rev[x];
+    } else if (rs[x]._rate == 12 && 
+	       (!six_ack_size ||
+		six_ack_size > rs[x]._size)) {
+      six_ack_size = rs[x]._size;
+      six_ack_fwd = fwd[x];
+      six_ack_rev = rev[x];
+    }
+  }
+  
+  
+  if (!one_ack_fwd && !six_ack_fwd &&
+      !one_ack_rev && !six_ack_rev) {
     return;
   }
+  int rev_metric = 0;
+  int fwd_metric = 0;
+  int best_rev_rate = 0;
+  int best_fwd_rate = 0;
+  
+  for (int x = 0; x < rs.size(); x++) {
+    if (rs[x]._size >= 100) {
+      int ack_fwd = 0;
+      int ack_rev = 0;
+      if ((rs[x]._rate == 2) ||
+	  (rs[x]._rate == 4) ||
+	  (rs[x]._rate == 11) ||
+	  (rs[x]._rate == 22)) {
+	ack_fwd = one_ack_fwd;
+	ack_rev = one_ack_rev;
+      } else {
+	ack_fwd = six_ack_fwd;
+	ack_rev = six_ack_rev;
+      }
+      int metric = ett_metric(ack_rev,               
+			      fwd[x],
+			      rs[x]._rate);
+
+      if (!fwd_metric || (metric && metric < fwd_metric)) {
+	best_fwd_rate = rs[x]._rate;
+	fwd_metric = metric;
+      }
+      
+      metric = ett_metric(ack_fwd,               
+			  rev[x],
+			  rs[x]._rate);
+      
+      if (!rev_metric || (metric && metric < rev_metric)) {
+	rev_metric = metric;
+	best_rev_rate= rs[x]._rate;
+      }
+    }
+  }
+  
 
   /* update linktable */
-  if (fwd && _link_table && !_link_table->update_link(from, to, seq, 0,fwd)) {
+  if (fwd_metric && 
+      _link_table && 
+      !_link_table->update_link(from, to, seq, 0, fwd_metric)) {
     click_chatter("%{element} couldn't update link %s > %d > %s\n",
 		  this,
 		  from.s().cc(),
-		  fwd,
+		  fwd_metric,
 		  to.s().cc());
   }
-  if (rev && _link_table && !_link_table->update_link(to, from, seq, 0, rev)){
+  if (rev_metric && 
+      _link_table && 
+      !_link_table->update_link(to, from, seq, 0, rev_metric)){
     click_chatter("%{element} couldn't update link %s < %d < %s\n",
 		  this,
 		  from.s().cc(),
-		  rev,
+		  rev_metric,
 		  to.s().cc());
   }
 }

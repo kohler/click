@@ -143,6 +143,7 @@ public:
   }
 private:
   class ETTMetric *_ett_metric;
+  class TXCountMetric *_etx_metric;
   class ARPTable *_arp_table;
   uint16_t _et;     // This protocol's ethertype
 
@@ -246,7 +247,7 @@ private:
   
   void add_bcast_stat(IPAddress, const link_probe &);
   
-  void calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev, uint32_t seq);
+  void update_link(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev, uint32_t seq);
   void send_probe_hook();
   void send_probe();
   static void static_send_hook(Timer *, void *e) { ((ETTStat *) e)->send_probe_hook(); }

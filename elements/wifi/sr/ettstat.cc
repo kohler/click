@@ -23,6 +23,7 @@
 #include <click/straccum.hh>
 #include "ettstat.hh"
 #include "ettmetric.hh"
+#include "txcountmetric.hh"
 #include <click/packet_anno.hh>
 #include <elements/wifi/availablerates.hh>
 CLICK_DECLS
@@ -39,6 +40,7 @@ ETTStat::ETTStat()
     _period(1000), 
     _sent(0),
     _ett_metric(0),
+    _etx_metric(0),
     _arp_table(0),
     _next_neighbor_to_ad(0),
     _timer(0),
@@ -77,6 +79,7 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			"PERIOD", cpUnsigned, "Probe broadcast period (msecs)", &_period,
 			"TAU", cpUnsigned, "Loss-rate averaging period (msecs)", &_tau,
 			"ETT", cpElement, "ETT Metric element", &_ett_metric,
+			"ETX", cpElement, "ETX Metric element", &_etx_metric,
 			"ARP", cpElement, "ARPTable element", &_arp_table,
 			"PROBES", cpString, "PROBES", &probes,
 			"RT", cpElement, "AvailabeRates", &_rtable,
@@ -118,6 +121,9 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 
   if (_ett_metric && _ett_metric->cast("ETTMetric") == 0) {
     return errh->error("ETTMetric element is not a ETTMetric");
+  }
+  if (_etx_metric && _etx_metric->cast("TXCountMetric") == 0) {
+    return errh->error("ETXMetric element is not a ETXMetric");
   }
   if (_rtable && _rtable->cast("AvailableRates") == 0) {
     return errh->error("RT element is not a AvailableRates");
@@ -182,71 +188,14 @@ void add_jitter(unsigned int max_jitter, struct timeval *t) {
 }
 
 void 
-ETTStat::calc_ett(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev, uint32_t seq)
+ETTStat::update_link(IPAddress from, IPAddress to, Vector<RateSize> rs, Vector<int> fwd, Vector<int> rev, uint32_t seq)
 {
-  int one_ack_fwd = 0;
-  int one_ack_rev = 0;
-  int six_ack_fwd = 0;
-  int six_ack_rev = 0;
-
-  for (int x = 0; x < rs.size(); x++) {
-    if (rs[x]._size <= 100) {
-      if (rs[x]._rate == 2) {
-	one_ack_fwd = fwd[x];
-	one_ack_rev = rev[x];
-      } else if (rs[x]._rate == 12) {
-	six_ack_fwd = fwd[x];
-	six_ack_rev = rev[x];
-      }
-    }
-  }
-  
-  if (!one_ack_fwd && !six_ack_fwd &&
-      !one_ack_rev && !six_ack_rev) {
-    return;
-  }
-  int rev_metric = 0;
-  int fwd_metric = 0;
-  int best_rev_rate = 0;
-  int best_fwd_rate = 0;
-  
-  for (int x = 0; x < rs.size(); x++) {
-    if (rs[x]._size > 500) {
-      int ack_fwd = 0;
-      int ack_rev = 0;
-      if ((rs[x]._rate == 2) ||
-	  (rs[x]._rate == 4) ||
-	  (rs[x]._rate == 11) ||
-	  (rs[x]._rate == 22)) {
-	ack_fwd = one_ack_fwd;
-	ack_rev = one_ack_rev;
-      } else {
-	ack_fwd = six_ack_fwd;
-	ack_rev = six_ack_rev;
-      }
-      int metric = ett_metric(ack_rev,               
-			      fwd[x],
-			      rs[x]._rate);
-      if (!fwd_metric || (metric && metric < fwd_metric)) {
-	best_fwd_rate = rs[x]._rate;
-	fwd_metric = metric;
-      }
-      
-      metric = ett_metric(ack_fwd,               
-			  rev[x],
-			  rs[x]._rate);
-      
-      if (!rev_metric || (metric && metric < rev_metric)) {
-	rev_metric = metric;
-	best_rev_rate= rs[x]._rate;
-      }
-    }
-  }
-  
   if (_ett_metric) {
-    _ett_metric->update_link(from, to, fwd_metric, rev_metric,
-			     best_fwd_rate, best_rev_rate,
-			     seq);
+    _ett_metric->update_link(from, to, rs, fwd, rev, seq);
+  }
+
+  if (_etx_metric) {
+    _etx_metric->update_link(from, to, rs, fwd, rev, seq);
   }
   
 }
@@ -401,7 +350,7 @@ ETTStat::send_probe()
 	fwd.push_back(lnfo->fwd);
 	rev.push_back(lnfo->rev);
       }
-      calc_ett(_ip, entry->ip, rates, fwd, rev, entry->seq);
+      update_link(_ip, entry->ip, rates, fwd, rev, entry->seq);
 
       ptr += probe->probe_types.size()*sizeof(link_info);
     }
@@ -646,7 +595,7 @@ ETTStat::simple_action(Packet *p)
 	((uint32_t) neighbor > (uint32_t) _ip)) {
       seq = now.tv_sec;
     }
-    calc_ett(ip, neighbor, rates, fwd, rev, seq);
+    update_link(ip, neighbor, rates, fwd, rev, seq);
     ptr += num_rates * sizeof(struct link_info);
     
   }
