@@ -193,7 +193,7 @@ dnl sockets
 dnl
 
 SOCKET_LIBS=
-AC_CHECK_LIB(nsl, gethostbyname, SOCKET_LIBS="-lnsl $SOCKET_LIBS")
+dnl AC_CHECK_LIB(nsl, gethostbyname, SOCKET_LIBS="-lnsl $SOCKET_LIBS")
 AC_CHECK_LIB(socket, connect, SOCKET_LIBS="-lsocket $SOCKET_LIBS")
 AC_SUBST(SOCKET_LIBS)
 
