@@ -47,6 +47,7 @@ ToIPSummaryDump::static_initialize()
     IPSummaryDump::anno_register_unparsers();
     IPSummaryDump::ip_register_unparsers();
     IPSummaryDump::tcp_register_unparsers();
+    IPSummaryDump::udp_register_unparsers();
 }
 
 int

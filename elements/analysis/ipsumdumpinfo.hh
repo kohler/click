@@ -76,6 +76,7 @@ void ip_prepare(PacketDesc&);
 void anno_register_unparsers();
 void ip_register_unparsers();
 void tcp_register_unparsers();
+void udp_register_unparsers();
 
 enum { DO_IPOPT_PADDING = 1,
        DO_IPOPT_ROUTE = 2,

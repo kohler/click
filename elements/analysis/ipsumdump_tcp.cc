@@ -23,6 +23,7 @@
 #include <click/packet.hh>
 #include <clicknet/ip.h>
 #include <clicknet/tcp.h>
+#include <clicknet/udp.h>
 CLICK_DECLS
 
 enum { T_TCP_SEQ, T_TCP_ACK, T_TCP_FLAGS, T_TCP_WINDOW, T_TCP_URP, T_TCP_OPT,
@@ -325,6 +326,33 @@ void tcp_register_unparsers()
     register_synonym("tcp_seqno", "tcp_seq");
     register_synonym("tcp_ackno", "tcp_ack");
     register_synonym("tcp_win", "tcp_window");
+}
+
+
+enum { T_UDP_LEN };
+
+static bool udp_extract(PacketDesc& d, int thunk)
+{
+    int transport_length = d.p->transport_length();
+    switch (thunk & ~B_TYPEMASK) {
+	
+#define CHECK(l) do { if (!d.udph || transport_length < (l)) return field_missing(d, MISSING_IP_TRANSPORT, "UDP", (l)); } while (0)
+	
+      case T_UDP_LEN:
+	CHECK(6);
+	d.v = ntohs(d.udph->uh_ulen);
+	return true;
+	
+#undef CHECK
+
+      default:
+	return false;
+    }
+}
+
+void udp_register_unparsers()
+{
+    register_unparser("udp_len", T_UDP_LEN | B_4, ip_prepare, udp_extract, num_outa, outb);
 }
 
 }
