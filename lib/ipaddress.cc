@@ -35,11 +35,11 @@ IPAddress::IPAddress(const String &str)
 String
 IPAddress::s() const
 {
-  unsigned char *p = (unsigned char *)&_saddr;
+  const unsigned char *p = (const unsigned char *)&_saddr;
   String s;
   char tmp[64];
   sprintf(tmp, "%d.%d.%d.%d", p[0], p[1], p[2], p[3]);
-  return(String(tmp));
+  return String(tmp);
 }
 
 void

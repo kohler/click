@@ -6,7 +6,7 @@
  * based on a file from one of the BSDs
  */
 
-struct udphdr {
+struct click_udp {
   unsigned short uh_sport;
   unsigned short uh_dport;
   unsigned short uh_ulen;

@@ -155,6 +155,18 @@ HashMap<K, V>::each(int &ival, K &k, V &v) const
   return true;
 }
 
+template <class K, class V> bool
+HashMap<K, V>::eachp(int &ival, K *&kp, V *&vp) const
+{
+  if (ival < 0) return false;
+  while (ival < _size && !(bool)_e[ival].k) ival++;
+  if (ival >= _size) return false;
+  kp = &_e[ival].k;
+  vp = &_e[ival].v;
+  ival++;
+  return true;
+}
+
 template <class K, class V> void
 HashMap<K, V>::swap(HashMap<K, V> &o)
 {

@@ -25,7 +25,7 @@ class IPAddress {
   
   unsigned hashcode() const	{ return _saddr; }
   
-  operator String() const	{ return(s()); }
+  operator String() const	{ return s(); }
   String s() const;
   void print();
   

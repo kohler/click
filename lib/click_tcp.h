@@ -13,11 +13,11 @@
 
 typedef	unsigned int tcp_seq;
 
-struct tcp_header {
+struct click_tcp {
     unsigned short th_sport;		/* source port */
     unsigned short th_dport;		/* destination port */
-    tcp_seq th_seq;		/* sequence number */
-    tcp_seq th_ack;		/* acknowledgement number */
+    tcp_seq th_seq;			/* sequence number */
+    tcp_seq th_ack;			/* acknowledgement number */
 #if __BYTE_ORDER == __LITTLE_ENDIAN
     unsigned char th_x2:4;		/* (unused) */
     unsigned char th_off:4;		/* data offset */

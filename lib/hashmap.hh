@@ -35,6 +35,7 @@ class HashMap {
   void clear();
   
   bool each(int &, K &, V &) const;
+  bool eachp(int &, K *&, V *&) const;
   
   HashMap<K, V> &operator=(const HashMap<K, V> &);
   void swap(HashMap<K, V> &);
