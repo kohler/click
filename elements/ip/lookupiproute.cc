@@ -51,7 +51,7 @@ LookupIPRoute::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
-    unsigned int dst, mask, gw;
+    unsigned int dst, mask, gw = 0;
     int output_num;
     bool ok = false;
 

@@ -26,6 +26,13 @@
 #include <click/error.hh>
 #include <click/glue.hh>
 
+#include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+#include <linux/sched.h>
+CLICK_CXX_UNPROTECT
+#include <click/cxxunprotect.h>
+
+
 LookupIPRouteMP::LookupIPRouteMP()
 {
   MOD_INC_USE_COUNT;
@@ -51,7 +58,7 @@ LookupIPRouteMP::configure(const Vector<String> &conf, ErrorHandler *errh)
   
   int before = errh->nerrors();
   for (int i = 0; i < conf.size(); i++) {
-    unsigned int dst, mask, gw;
+    unsigned int dst, mask, gw = 0;
     int output_num;
     bool ok = false;
 
@@ -94,12 +101,6 @@ LookupIPRouteMP::initialize(ErrorHandler *)
   }
   return 0;
 }
-
-#ifdef __KERNEL__
-extern "C" {
-#include <linux/sched.h>
-}
-#endif
 
 void
 LookupIPRouteMP::push(int, Packet *p)

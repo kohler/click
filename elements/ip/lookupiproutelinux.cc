@@ -25,14 +25,15 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
-#ifdef __KERNEL__
-extern "C" {
-# define new xxx_new
+
+#ifdef CLICK_LINUXMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
 # include <linux/netdevice.h>
 # include <linux/ip.h>
 # include <net/route.h>
-# undef new
-}
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
 #endif
 
 LookupIPRouteLinux::LookupIPRouteLinux()
@@ -90,7 +91,7 @@ LookupIPRouteLinux::init_routes(ErrorHandler *errh)
   _out2dev[0] = 0;
   int i;
   for(i = 0; i < _nout; i++){
-    net_device *dev = dev_get(_out2devname[i].cc());
+    net_device *dev = dev_get_by_name(_out2devname[i].cc());
     if(dev == 0)
       return errh->error("Cannot find device %s", _out2devname[i].cc());
   }
