@@ -94,7 +94,6 @@ class RouterThread : public Task { public:
     inline void client_update_pass(int client, const struct timeval &before, const struct timeval &after);
     inline void check_restride(struct timeval &before, const struct timeval &now, int &restride_iter);
 #endif
-    void wait(int iter);
     
     friend class Task;
     friend class Master;

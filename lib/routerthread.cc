@@ -43,10 +43,8 @@ CLICK_DECLS
 #define PROFILE_ELEMENT		20
 
 #ifdef CLICK_NS
-# define DRIVER_ITER_ANY	1
 # define DRIVER_ITER_TIMERS	1
 #else
-# define DRIVER_ITER_ANY	32
 # define DRIVER_ITER_TIMERS	32
 #endif
 #ifdef CLICK_USERLEVEL
@@ -313,6 +311,31 @@ RouterThread::driver()
   driver_loop:
 #endif
 
+    if (*runcount > 0) {
+	// run occasional tasks: timers, select, etc.
+	iter++;
+	
+#ifndef HAVE_ADAPTIVE_SCHEDULER	/* Adaptive scheduler runs OS itself. */
+	// WHat the fuck?!?
+	if (/* thread_id() == 0 && */ (iter % DRIVER_ITER_OS) == 0)
+	    run_os();
+#endif
+
+	if (iter % DRIVER_ITER_TIMERS == 0) {
+	    _master->run_timers();
+#ifdef CLICK_NS
+	    // If there's another timer, tell the simulator to make us
+	    // run when it's due to go off.
+	    struct timeval now, nextdelay, nexttime;
+	    if (_master->timer_delay(&nextdelay)) {
+		click_gettimeofday(&now);
+		timeradd(&now, &nextdelay, &nexttime);
+		simclick_sim_schedule(_master->_siminst, _master->_clickinst, &nexttime);
+	    }
+#endif
+	}
+    }
+
     // run task requests (1)
     if (_pending)
 	_master->process_pending(this);
@@ -348,13 +371,6 @@ RouterThread::driver()
     }
 #endif
 
-    if (*runcount > 0) {
-	// run occasional tasks: timers, select, etc.
-	iter++;
-	if (iter % DRIVER_ITER_ANY == 0)
-	    wait(iter);
-    }
-
 #ifndef CLICK_NS
     // run loop again, unless driver is stopped
     if (*runcount > 0)
@@ -375,30 +391,6 @@ RouterThread::driver()
 #ifdef HAVE_ADAPTIVE_SCHEDULER
     _cur_click_share = 0;
 #endif
-}
-
-void
-RouterThread::wait(int iter)
-{
-#ifndef HAVE_ADAPTIVE_SCHEDULER	/* Adaptive scheduler runs OS itself. */
-    // WHat the fuck?!?
-    if (/* thread_id() == 0 && */ (iter % DRIVER_ITER_OS) == 0)
-	run_os();
-#endif
-
-    if (iter % DRIVER_ITER_TIMERS == 0) {
-	_master->run_timers();
-#ifdef CLICK_NS
-	// If there's another timer, tell the simulator to make us
-	// run when it's due to go off.
-	struct timeval now, nextdelay, nexttime;
-	if (_master->timer_delay(&nextdelay)) {
-	    click_gettimeofday(&now);
-	    timeradd(&now, &nextdelay, &nexttime);
-	    simclick_sim_schedule(_master->_siminst, _master->_clickinst, &nexttime);
-	}
-#endif
-    }
 }
 
 
