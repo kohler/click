@@ -68,7 +68,7 @@ SetTCPChecksum::simple_action(Packet *p_in)
 
   tcph->th_sum = 0;
   csum = click_in_cksum((unsigned char *)tcph, plen);
-  tcph->th_sum = click_in_cksum_pseudohdr(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, IP_PROTO_TCP, plen);
+  tcph->th_sum = click_in_cksum_pseudohdr(csum, iph, plen);
 
   return p;
 

@@ -108,7 +108,7 @@ CheckUDPHeader::simple_action(Packet *p)
 
   if (udph->uh_sum != 0) {
     unsigned csum = click_in_cksum((unsigned char *)udph, len);
-    if (click_in_cksum_pseudohdr(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, IP_PROTO_UDP, len) != 0)
+    if (click_in_cksum_pseudohdr(csum, iph, len) != 0)
       return drop(BAD_CHECKSUM, p);
   }
 

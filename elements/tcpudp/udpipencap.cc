@@ -113,7 +113,7 @@ UDPIPEncap::simple_action(Packet *p_in)
   udp->uh_sum = 0;
   if (_cksum) {
     unsigned csum = click_in_cksum((unsigned char *)udp, len);
-    udp->uh_sum = click_in_cksum_pseudohdr(csum, _saddr.s_addr, _daddr.s_addr, IP_PROTO_UDP, len);
+    udp->uh_sum = click_in_cksum_pseudohdr(csum, ip, len);
   }
   
   return p;

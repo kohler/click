@@ -113,7 +113,7 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
 
   // now calculate tcp header cksum
   unsigned csum = click_in_cksum((unsigned char *)tcp, sizeof(click_tcp));
-  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip->ip_src.s_addr, ip->ip_dst.s_addr, IP_PROTO_TCP, sizeof(click_tcp));
+  tcp->th_sum = click_in_cksum_pseudohdr(csum, ip, sizeof(click_tcp));
 
   return q;
 }

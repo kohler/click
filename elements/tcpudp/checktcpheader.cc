@@ -109,7 +109,7 @@ CheckTCPHeader::simple_action(Packet *p)
     return drop(BAD_LENGTH, p);
 
   csum = click_in_cksum((unsigned char *)tcph, len);
-  if (click_in_cksum_pseudohdr(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, IP_PROTO_TCP, len) != 0)
+  if (click_in_cksum_pseudohdr(csum, iph, len) != 0)
     return drop(BAD_CHECKSUM, p);
 
   return p;

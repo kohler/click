@@ -214,7 +214,7 @@ FTPPortMapper::simple_action(Packet *p)
   wp_tcph->th_sum = 0;
   unsigned wp_tcp_len = wp->length() - wp->transport_header_offset();
   unsigned csum = click_in_cksum((unsigned char *)wp_tcph, wp_tcp_len);
-  wp_tcph->th_sum = click_in_cksum_pseudohdr(csum, wp_iph->ip_src.s_addr, wp_iph->ip_dst.s_addr, IP_PROTO_TCP, wp_tcp_len);
+  wp_tcph->th_sum = click_in_cksum_pseudohdr(csum, wp_iph, wp_tcp_len);
   
   return wp;
 }

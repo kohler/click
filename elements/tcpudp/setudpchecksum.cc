@@ -55,7 +55,7 @@ SetUDPChecksum::simple_action(Packet *p_in)
 
     udph->uh_sum = 0;
     unsigned csum = click_in_cksum((unsigned char *)udph, len);
-    udph->uh_sum = click_in_cksum_pseudohdr(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, IP_PROTO_UDP, len);
+    udph->uh_sum = click_in_cksum_pseudohdr(csum, iph, len);
 
     return p;
 }

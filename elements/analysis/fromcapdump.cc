@@ -150,7 +150,7 @@ set_checksums(WritablePacket *q, click_ip *iph)
     click_tcp *tcph = q->tcp_header();
     tcph->th_sum = 0;
     unsigned csum = click_in_cksum((uint8_t *)tcph, q->transport_length());
-    tcph->th_sum = click_in_cksum_pseudohdr(csum, iph->ip_src.s_addr, iph->ip_dst.s_addr, IP_PROTO_TCP, q->transport_length());
+    tcph->th_sum = click_in_cksum_pseudohdr(csum, iph, q->transport_length());
 }
 
 Packet *
