@@ -66,12 +66,6 @@
 #include "ewma.hh"
 #include "vector.hh"
 
-#define BYTES 4                         // in one IP address
-#define MAX_SHIFT ((BYTES-1)*8)
-#define MAX_COUNTERS 256
-
-#define PERIODIC_FOLD_INIT     8192     // every n packets, a fold() is done
-
 struct HalfSecondsTimer {
   static unsigned now()			{ return click_jiffies() >> 3; }
   static unsigned freq()                { return CLICK_HZ >> 3; }
@@ -112,6 +106,7 @@ private:
   // last update which is now seperate. Takes more space than necessary.
   //
   // one Counter for each address in a subnet
+  static const int MAX_COUNTERS = 256;
   struct Stats;
   struct Counter {
     // two rates must use same EWMA class
@@ -149,19 +144,20 @@ protected:
 
 private:
 
-  Spinlock* _lock;		    // synchronize handlers and update
+  static const int MAX_SHIFT = 24;
+  static const int PERIODIC_FOLD_INIT = 8192; // every n packets, a fold() is done
+  static const unsigned MEMMAX_MIN = 100; // kbytes
 
-#define COUNT_PACKETS 0
-#define COUNT_BYTES 1
-  unsigned char _pb;                // packets or bytes
-  int _offset;                      // offset in packet
-  int _thresh;                      // threshold, when to split
+  Spinlock* _lock;		// synchronize handlers and update
+
+  bool _count_packets;		// packets or bytes
+  int _offset;			// offset in packet
+  int _thresh;			// threshold, when to split
 
 
-#define MEMMAX_MIN      100         // kbytes
-  unsigned int _memmax;             // max. memory usage
-  unsigned int _ratio;              // inspect 1 in how many packets?
-  bool _anno_packets;		    // annotate packets?
+  unsigned int _memmax;		// max. memory usage
+  unsigned int _ratio;		// inspect 1 in how many packets?
+  bool _anno_packets;		// annotate packets?
 
   struct Stats *_base;              // first level stats
   long unsigned int _resettime;     // time of last reset
@@ -330,7 +326,7 @@ inline void
 IPRateMonitor::update_rates(Packet *p, bool forward, bool update_ewma)
 {
   click_ip *ip = (click_ip *) (p->data() + _offset);
-  int val = (_pb == COUNT_PACKETS) ? 1 : ip->ip_len;
+  int val = _count_packets ? 1 : ip->ip_len;
 
   if (forward)
     update(IPAddress(ip->ip_src), val, p, true, update_ewma);

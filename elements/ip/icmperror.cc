@@ -197,7 +197,7 @@ ICMPError::simple_action(Packet *p)
   // guaranteed that packet data is aligned
   memset(q->data(), '\0', q->length());
   nip = reinterpret_cast<click_ip *>(q->data());
-  nip->ip_v = IPVERSION;
+  nip->ip_v = 4;
   nip->ip_hl = sizeof(click_ip) >> 2;
   nip->ip_len = htons(q->length());
   nip->ip_id = htons(id++);

@@ -22,7 +22,7 @@
 #include "mplock.hh"
 
 IPRateMonitor::IPRateMonitor()
-  : _pb(COUNT_PACKETS), _offset(0), _thresh(1), _memmax(0), _ratio(1),
+  : _count_packets(true), _offset(0), _thresh(1), _memmax(0), _ratio(1),
     _anno_packets(true), _base(NULL), _alloced_mem(0), _first(0), 
     _last(0), _prev_deleted(0)
 {
@@ -61,10 +61,10 @@ IPRateMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpBool, "annotate", &_anno_packets,
 		  0) < 0)
     return -1;
-  if (count_what == "PACKETS")
-    _pb = COUNT_PACKETS;
-  else if (count_what == "BYTES")
-    _pb = COUNT_BYTES;
+  if (count_what.upper() == "PACKETS")
+    _count_packets = true;
+  else if (count_what.upper() == "BYTES")
+    _count_packets = false;
   else
     return errh->error("monitor type should be \"PACKETS\" or \"BYTES\"");
 

@@ -20,7 +20,7 @@
 #include "glue.hh"
 
 IPFlexMonitor::IPFlexMonitor()
-  : Element(1,1), _pb(COUNT_PACKETS), _offset(0), _base(NULL)
+  : Element(1,1), _offset(0), _base(NULL)
 {
 }
 
@@ -31,7 +31,6 @@ IPFlexMonitor::~IPFlexMonitor()
 int
 IPFlexMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-#if IPVERSION == 4
   // Enough args?
   if(conf.size() < 3) {
     errh->error("too few arguments");
@@ -39,10 +38,10 @@ IPFlexMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
   }
 
   // PACKETS/BYTES
-  if(conf[0] == "PACKETS")
-    _pb = COUNT_PACKETS;
-  else if(conf[0] == "BYTES")
-    _pb = COUNT_BYTES;
+  if(conf[0].upper() == "PACKETS")
+    _count_packets = true;
+  else if(conf[0].upper() == "BYTES")
+    _count_packets = false;
   else {
     errh->error("first argument should be \"PACKETS\" or \"BYTES\"");
     return -1;
@@ -110,10 +109,6 @@ IPFlexMonitor::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   set_resettime();
   return 0;
-#else
-  click_chatter("IPFlexMonitor doesn't know how to handle non-IPv4!");
-  return -1;
-#endif
 }
 
 
@@ -136,7 +131,7 @@ IPFlexMonitor::push(int port, Packet *p)
 
   // Measuring # of packets or # of bytes?
   int val = _inputs[port]->change;
-  if(_pb == COUNT_BYTES)
+  if (!_count_packets)
     val *= ip->ip_len;
 
   update(a, val);
@@ -264,7 +259,7 @@ String
 IPFlexMonitor::what_read_handler(Element *e, void *)
 {
   IPFlexMonitor *me = (IPFlexMonitor *) e;
-  return (me->_pb == COUNT_PACKETS ? "PACKETS\n" : "BYTES\n");
+  return (me->_count_packets ? "PACKETS\n" : "BYTES\n");
 }
 
 

@@ -100,20 +100,12 @@ public:
 
 private:
 
-// XXX: Is this somewhere defined already?
-#if IPVERSION == 4
-#define BYTES 4
-#endif
+  // XXX: Is this somewhere defined already?
+  static const int MAX_SHIFT = 24;
+  static const int SRC = 0;
+  static const int DST = 1;
 
-#define MAX_SHIFT ((BYTES-1)*8)
-
-#define SRC 0
-#define DST 1
-
-  unsigned char _pb;
-#define COUNT_PACKETS 0
-#define COUNT_BYTES 1
-
+  bool _count_packets;
   unsigned int _offset;
 
   // One of these associated with each input.

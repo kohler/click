@@ -76,7 +76,7 @@ IPEncap::simple_action(Packet *p_in)
   WritablePacket *p = p_in->push(sizeof(click_ip));
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
   
-  ip->ip_v = IPVERSION;
+  ip->ip_v = 4;
   ip->ip_hl = sizeof(click_ip) >> 2;
   ip->ip_len = htons(p->length());
   ip->ip_id = htons(_id++);

@@ -64,7 +64,7 @@ ICMPSendPings::run_scheduled()
   memset(q->data(), '\0', q->length());
 
   click_ip *nip = reinterpret_cast<click_ip *>(q->data());
-  nip->ip_v = IPVERSION;
+  nip->ip_v = 4;
   nip->ip_hl = sizeof(click_ip) >> 2;
   nip->ip_len = htons(q->length());
   nip->ip_id = htons(_id++);

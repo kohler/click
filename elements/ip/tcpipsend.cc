@@ -84,7 +84,7 @@ TCPIPSend::make_packet(unsigned int saddr, unsigned int daddr,
   tcp = (struct click_tcp *) (ip + 1);
   
   // IP fields
-  ip->ip_v = IPVERSION;
+  ip->ip_v = 4;
   ip->ip_hl = 5;
   ip->ip_tos = 0;
   ip->ip_len = htons(q->length());
