@@ -1,3 +1,33 @@
+2002-01-01 Tuesday 19:55  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-align/click-align.cc (1.40),
+	click-combine/click-combine.cc (1.27),
+	click-devirtualize/click-devirtualize.cc (1.30),
+	click-devirtualize/specializer.cc (1.26),
+	click-devirtualize/specializer.hh (1.8),
+	click-flatten/click-flatten.cc (1.7), click-pretty/click-pretty.cc
+	(1.4), click-undead/click-undead.cc (1.27),
+	click-xform/click-xform.cc (1.45), lib/eclasst.cc (1.8),
+	lib/eclasst.hh (1.4), lib/lexert.cc (1.43), lib/lexertinfo.cc
+	(1.3), lib/lexertinfo.hh (1.4), lib/routert.cc (1.56),
+	lib/routert.hh (1.47): further updates to connections; add element
+	tables to click-pretty
+
+2002-01-01 Tuesday 19:54  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: toipsumdump.cc (1.9), toipsumdump.hh (1.6):
+	better handling for bad packets (ipsumdump 1.19)
+
+2002-01-01 Tuesday 19:53  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/userutils.hh (1.8), lib/userutils.cc (1.20): add
+	click_strcmp(const String &, const String &) function: compare two
+	Click identifiers in the most natural way
+
+2002-01-01 Tuesday 19:53  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/string.hh (1.20): add String::compare static method
+
 2001-12-31 Monday 14:45  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-devirtualize/signature.cc (1.12),
