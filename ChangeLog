@@ -1,3 +1,24 @@
+2002-03-13 Wednesday 18:43  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.118): Router::run_selects() update: redo
+	blocking logic; now, only return early if there are no selectors
+	and more tasks to run.
+
+2002-03-13 Wednesday 18:22  Eddie Kohler <kohler@aciri.org>
+
+	* bsdmodule/Makefile.in (1.19), elements/standard/activity.cc
+	(1.3), elements/standard/activity.hh (1.2),
+	elements/standard/delayunqueue.cc (1.9),
+	elements/standard/delayunqueue.hh (1.7),
+	elements/standard/notifierqueue.cc (1.3),
+	elements/standard/notifierqueue.hh (1.3),
+	elements/userlevel/todevice.cc (1.22),
+	elements/userlevel/todevice.hh (1.13), include/click/notifier.hh
+	(1.2), lib/notifier.cc (1.3), linuxmodule/Makefile.in (1.64),
+	userlevel/Makefile.in (1.63): move ActivityNotifier stuff into
+	<click/notifier.hh>; rename to Notifier and NotifierSignal; and add
+	Notifier capability to the ToDevice element
+
 2002-03-11 Monday 22:45  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/addressinfo.cc (1.18): patch derived from Jose
@@ -235,7 +256,7 @@
 
 2002-03-04 Monday 03:47  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/activity.cc (1.2):
+	* elements/standard/activity.cc (1.2), lib/notifier.cc (1.2):
 	ActivityNotifier::listen_upstream_pull checks that everyone can
 	notify it
 
@@ -285,9 +306,12 @@
 
 2002-03-04 Monday 03:00  Eddie Kohler <kohler@aciri.org>
 
-	* elements/standard/: activity.cc (1.1), activity.hh (1.1),
-	notifierqueue.cc (1.1), notifierqueue.hh (1.1): add ActivitySignal
-	and ActivityNotifier and NotifierQueue, a queue that wakes up Tasks
+	* elements/standard/activity.cc (1.1),
+	elements/standard/activity.hh (1.1),
+	elements/standard/notifierqueue.cc (1.1),
+	elements/standard/notifierqueue.hh (1.1), include/click/notifier.hh
+	(1.1), lib/notifier.cc (1.1): add ActivitySignal and
+	ActivityNotifier and NotifierQueue, a queue that wakes up Tasks
 	downstream when appropriate
 
 2002-02-28 Thursday 12:18  Eddie Kohler <kohler@aciri.org>
