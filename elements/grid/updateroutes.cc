@@ -388,9 +388,10 @@ UpdateGridRoutes::add_handlers()
 
 
 void
-UpdateGridRoutes::get_rtes(Vector<grid_nbr_entry> *retval) const
+UpdateGridRoutes::get_rtes(Vector<grid_nbr_entry> *retval) 
 {
   assert(retval != 0);
+  expire_routes();
   for (UpdateGridRoutes::FarTable::Iterator iter = _rtes.first(); iter; iter++)
     retval->push_back(iter.value().nbr);
 }
@@ -415,6 +416,13 @@ UpdateGridRoutes::expire_hook(Timer *, void *thunk)
   UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
 
   // decrement the ages of the route entries
+  /* why don't we do this is in expire_routes also?  i think i
+     remember: because expire_routes gets called all the time,
+     vs. this hook which is actually called on a time basis. */
+  /* decrement age separately from expiring routes; we expire the
+     routes often in private functions to clean up, and we may not
+     want to adjust the age by a whole _period.  yes, basically the
+     time handling is junky here */
   for (UpdateGridRoutes::FarTable::Iterator iter = n->_rtes.first(); iter; iter++) {
     // XXX yucky
     *((unsigned int *) &(iter.value().nbr.age)) = decr_age(iter.value().nbr.age, EXPIRE_TIMER_PERIOD);
@@ -422,7 +430,7 @@ UpdateGridRoutes::expire_hook(Timer *, void *thunk)
   
   Vector<grid_nbr_entry> expired_info = n->expire_routes();
   
-  if(expired_info.size() > 0){
+  if (expired_info.size() > 0) {
     // make and send the packet advertising any broken routes
     n->send_routing_update(expired_info, false);
   }
@@ -490,6 +498,8 @@ UpdateGridRoutes::hello_hook(Timer *, void *thunk)
 {
   UpdateGridRoutes *n = (UpdateGridRoutes *) thunk;
 
+  /* XXX is this a bug?  we expire some routes, but don't advertise
+     them as broken anymore... */
   n->expire_routes();
 
   Vector<grid_nbr_entry> rte_entries;
@@ -556,7 +566,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
 
   // Update the sequence number for periodic updates, but not
   // for triggered updates.
-  if(update_seq) {
+  if (update_seq) {
     /* originating sequence numbers are even, starting at 0.  odd
        numbers are reserved for other nodes to advertise a broken route
        to us.  from DSDV paper. */
@@ -585,7 +595,7 @@ UpdateGridRoutes::make_hello()
   
   expire_routes();
 
-  int num_rtes =_rtes.count();
+  int num_rtes = _rtes.count();
 
   psz += sizeof(grid_nbr_entry) * num_rtes;
 
