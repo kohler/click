@@ -59,9 +59,11 @@
 #define UNIX_SOCKET_OPT		310
 #define NO_WARNINGS_OPT		311
 #define WARNINGS_OPT		312
+#define EXPRESSION_OPT		313
 
 static Clp_Option options[] = {
   { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
+  { "expression", 'e', EXPRESSION_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
   { "handler", 'h', HANDLER_OPT, Clp_ArgString, 0 },
   { "help", 0, HELP_OPT, 0, 0 },
@@ -98,6 +100,7 @@ Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
   -f, --file FILE               Read router configuration from FILE.\n\
+  -e, --expression EXPR         Use EXPR as router configuration.\n\
   -p, --port PORT               Listen for control connections on TCP port.\n\
   -u, --unix-socket FILE        Listen for control connections on Unix socket.\n\
   -h, --handler ELEMENT.H       Call ELEMENT's read handler H after running\n\
@@ -333,6 +336,7 @@ main(int argc, char **argv)
 
   const char *router_file = 0;
   const char *output_file = 0;
+  const char *expression = 0;
   bool quit_immediately = false;
   bool report_time = false;
   bool stop = false;
@@ -349,13 +353,21 @@ main(int argc, char **argv)
       
      case Clp_NotOption:
      case ROUTER_OPT:
-      if (router_file) {
-	errh->error("router file specified twice");
+      if (router_file || expression) {
+	errh->error("router file or expression specified twice");
 	goto bad_option;
       }
       router_file = clp->arg;
       break;
 
+     case EXPRESSION_OPT:
+      if (router_file || expression) {
+	errh->error("router file or expression specified twice");
+	goto bad_option;
+      }
+      expression = clp->arg;
+      break;
+      
      case OUTPUT_OPT:
       if (output_file) {
 	errh->error("output file specified twice");
@@ -435,10 +447,16 @@ particular purpose.\n");
   }
   
  done:
-  String config_str = file_string(router_file, errh);
+  String config_str;
+  if (expression)
+    config_str = expression;
+  else
+    config_str = file_string(router_file, errh);
   if (errh->nerrors() > 0)
     exit(1);
-  if (!router_file || strcmp(router_file, "-") == 0)
+  if (expression)
+    router_file = "<expr>";
+  else if (!router_file || strcmp(router_file, "-") == 0)
     router_file = "<stdin>";
 
   // prepare lexer (for packages)
