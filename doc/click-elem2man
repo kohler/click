@@ -169,14 +169,16 @@ sub nroffize_text ($) {
 sub nroffize ($) {
   my($t) = @_;
 
-  $t =~ s{\n[ \t\r]+$}{\n}gm;
+  #$t =~ s{\n[ \t\r]+$}{\n}gm;
   
   if ($t =~ /^[ \t]/m) {
     # worry about verbatims
     my(@x) = split(/(^[ \t].*$)/m, $t);
     my($o, $i) = '';
     for ($i = 0; $i < @x; $i += 2) {
-      $o .= nroffize_text($x[$i]) . "\n" if $x[$i];
+      if ($x[$i]) {
+	$o .= nroffize_text($x[$i]) . "\n";
+      }
       if ($x[$i+1]) {
 	$x[$i+1] =~ s/\t/        /g;
 	$x[$i+1] =~ s/\\/\\e/g;
