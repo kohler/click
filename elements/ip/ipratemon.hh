@@ -51,9 +51,7 @@
 #include "ewma.hh"
 #include "vector.hh"
 
-#if IPVERSION == 4
 #define BYTES 4
-#endif
 #define MAX_SHIFT ((BYTES-1)*8)
 #define MAX_COUNTERS 256
 #define MAX_PORT_PAIRS 16
@@ -73,6 +71,7 @@ class IPRateMonitor : public Element { public:
   IPRateMonitor *clone() const;
   void notify_ninputs(int);  
   int configure(const String &, ErrorHandler *);
+  int initialize(ErrorHandler *);
   void uninitialize() 				{ _base->clear(); }
 
   void push(int port, Packet *p);

@@ -46,32 +46,25 @@ IPRateMonitor::notify_ninputs(int n)
 int
 IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
 {
-#if IPVERSION == 4
-  Vector<String> args;
-  cp_argvec(conf, args);
-
-  // Enough args?
-  if(args.size() != 3)
-    return errh->error("too few arguments.");
-
-  // PACKETS/BYTES
-  if(args[0] == "PACKETS")
+  String count_what;
+  if (cp_va_parse(conf, this, errh,
+		  cpString, "monitor type", &count_what,
+		  cpUnsigned, "offset", &_offset,
+		  cpUnsigned, "threshold", &_thresh,
+		  0) < 0)
+    return -1;
+  if (count_what == "PACKETS")
     _pb = COUNT_PACKETS;
-  else if(args[0] == "BYTES")
+  else if (count_what == "BYTES")
     _pb = COUNT_BYTES;
   else
-    return errh->error("second argument should be \"PACKETS\" or \"BYTES\".");
+    return errh->error("monitor type should be \"PACKETS\" or \"BYTES\"");
+  return 0;
+}
 
-  // OFFSET
-  if(!cp_integer(args[1], _offset) || _offset < 0)
-    return errh->error
-      ("offset should be a non-negative integer.");
-
-  // THRESH
-  if(!cp_integer(args[2], _thresh) || _thresh < 0)
-    return errh->error
-      ("thresh should be non-negative integer.");
- 
+int
+IPRateMonitor::initialize(ErrorHandler *errh)
+{
   set_resettime();
 
   // Make _base
@@ -80,10 +73,6 @@ IPRateMonitor::configure(const String &conf, ErrorHandler *errh)
     return errh->error("cannot allocate data structure.");
 
   return 0;
-#else
-  click_chatter("IPRateMonitor doesn't know how to handle non-IPv4!");
-  return -1;
-#endif
 }
 
 void
