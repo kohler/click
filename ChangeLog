@@ -1,3 +1,37 @@
+2004-03-19 Friday 02:29  Eddie Kohler <kohler@icir.org>
+
+	* README (1.42): README nits
+
+2004-03-19 Friday 02:17  Eddie Kohler <kohler@icir.org>
+
+	* NEWS (1.148), README (1.41): minor updates
+
+2004-03-19 Friday 02:17  Eddie Kohler <kohler@icir.org>
+
+	* DISTFILES (1.77), Makefile.in (1.113): new DISTFILES style (can
+	generate DISTFILES from ls -R)
+
+2004-03-19 Friday 02:16  Eddie Kohler <kohler@icir.org>
+
+	* AUTHORS (1.25), LICENSE (1.6): update
+
+2004-03-19 Friday 02:16  Eddie Kohler <kohler@icir.org>
+
+	* conf/compress.ipb (1.4): bad old config
+
+2004-03-19 Friday 02:16  Eddie Kohler <kohler@icir.org>
+
+	* etc/libclick/lc-configure.in (1.28): update from main
+
+2004-03-19 Friday 02:16  Eddie Kohler <kohler@icir.org>
+
+	* tools/click2xml/clickconfig.dtd (1.4): mention "key" type
+
+2004-03-19 Friday 02:15  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/: packetlogger.hh (1.2), packetlogger2.hh (1.4):
+	use an enum to avoid multiple-definition problems
+
 2004-03-18 Thursday 21:28  Eddie Kohler <kohler@icir.org>
 
 	* elements/linuxmodule/: fromdevice.cc (1.79), polldevice.cc
