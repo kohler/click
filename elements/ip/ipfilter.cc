@@ -197,12 +197,14 @@ IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto,
     }
     return -2;
   } else {
-    String tn = Primitive::unparse_type(0, type);
-    String tr = Primitive::unparse_transp_proto(transp_proto);
-    if (tr) tr += " ";
-    StringAccum sa;
-    accum_wt_names(wordmap, orig_word, sa);
-    errh->error("`%s%s %s' is meaningless; specify %s with %s", tr.cc(), tn.cc(), orig_word.cc(), sa.cc(), orig_word.cc());
+    if (errh) {
+      String tn = Primitive::unparse_type(0, type);
+      String tr = Primitive::unparse_transp_proto(transp_proto);
+      if (tr) tr += " ";
+      StringAccum sa;
+      accum_wt_names(wordmap, orig_word, sa);
+      errh->error("`%s%s %s' is meaningless; specify %s with %s", tr.cc(), tn.cc(), orig_word.cc(), sa.cc(), orig_word.cc());
+    }
     return -2;
   }
 }
