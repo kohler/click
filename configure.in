@@ -156,14 +156,29 @@ DL_LIBRARY="-ldl"])])
 AC_SUBST(DL_LIBRARY)
 
 dnl
+dnl check for under Linux
+dnl
+
+if test -d /usr/src/linux -a -d /usr/include/linux; then
+  ac_under_linux=y
+else
+  ac_under_linux=n
+  AC_MSG_WARN(can't find /usr/src/linux or /usr/include/linux: not compiling for Linux)
+fi
+
+dnl
 dnl check for stuff in the linux kernel
 dnl
 
 LINUXMODULE_SCHED_OBJ=
-if test `uname` = Linux; then
+if test $ac_under_linux = y; then
+
+if test ! -f /usr/src/linux/System.map; then
+  AC_MSG_ERROR(can't find /usr/src/linux/System.map)
+fi
 
 AC_CACHE_CHECK(for Click Linux kernel extensions, ac_cv_click_kernel,
-if grep register_net_out /proc/ksyms >/dev/null 2>&1; then
+if grep register_net_out /usr/src/linux/System.map >/dev/null 2>&1; then
   ac_cv_click_kernel=yes
 else ac_cv_click_kernel=no; fi)
 if test $ac_cv_click_kernel = yes; then
@@ -171,7 +186,7 @@ if test $ac_cv_click_kernel = yes; then
 fi
 
 AC_CACHE_CHECK(for read_net_skbcount kernel extension, ac_cv_read_net_skbcount,
-[if grep read_net_skbcount /proc/ksyms >/dev/null 2>&1; then
+[if grep read_net_skbcount /usr/src/linux/System.map >/dev/null 2>&1; then
   ac_cv_read_net_skbcount=yes
 else ac_cv_read_net_skbcount=no; fi])
 if test $ac_cv_read_net_skbcount = yes; then
@@ -179,7 +194,7 @@ if test $ac_cv_read_net_skbcount = yes; then
 fi
 
 AC_CACHE_CHECK(for tcp_prot kernel symbol, ac_cv_tcp_prot,
-[if grep tcp_prot /proc/ksyms >/dev/null 2>&1; then
+[if grep tcp_prot /usr/src/linux/System.map >/dev/null 2>&1; then
   ac_cv_tcp_prot=yes
 else ac_cv_tcp_prot=no; fi])
 if test $ac_cv_tcp_prot = yes; then
@@ -312,7 +327,7 @@ AC_SUBST(PCAP_LIBRARY)
 
 dnl check linuxmodule for Linux
 
-if test `uname` = Linux; then
+if test $ac_under_linux = y; then
   AC_CACHE_CHECK(for C++-includable system header files,
     ac_cv_cxx_aware_system,
     AC_LANG_CPLUSPLUS

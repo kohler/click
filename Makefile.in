@@ -66,7 +66,7 @@ distclean:
 	-rm -f config.cache config.log mkelemlist.sh
 
 
-DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
+DISTFILES = AUTHORS COPYRIGHT FAQ INSTALL LICENSE NEWS README \
 	doc/Makefile.in doc/click.1 doc/click.5 doc/click.o.8 \
 	doc/click-align.1 doc/click-fastclassifier.1 doc/click-install.1 \
 	doc/click-uninstall.1 doc/click-xform.1 \
