@@ -37,7 +37,7 @@ extern "C" {
 #undef new
 }
 
-static pid_t click_sched_pid = -1;  /* kernel thread ID for click scheduler */
+pid_t click_sched_pid = -1;  /* kernel thread ID for click scheduler */
 
 extern "C" void start_click_sched(ErrorHandler *);
 extern "C" void kill_click_sched();
