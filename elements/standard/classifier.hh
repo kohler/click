@@ -112,6 +112,8 @@ class Classifier : public Element { public:
     bool not_implies(const Expr &) const;
     bool not_implies_not(const Expr &) const;
     bool compatible(const Expr &) const;
+    bool flippable() const;
+    void flip();
     String s() const;
   };
 

@@ -94,6 +94,25 @@ Classifier::Expr::compatible(const Expr &e) const
   return (value.u & both_mask) == (e.value.u & both_mask);
 }
 
+bool
+Classifier::Expr::flippable() const
+{
+  if (!mask.u)
+    return false;
+  else
+    return ((mask.u & (mask.u - 1)) == 0);
+}
+
+void
+Classifier::Expr::flip()
+{
+  assert(flippable());
+  value.u ^= mask.u;
+  int tmp = yes;
+  yes = no;
+  no = tmp;
+}
+
 StringAccum &
 operator<<(StringAccum &sa, const Classifier::Expr &e)
 {
@@ -582,8 +601,14 @@ Classifier::combine_compatible_states()
 {
   for (int i = 0; i < _exprs.size(); i++) {
     Expr &e = _exprs[i];
-    if (e.yes > 0 && e.no == _exprs[e.yes].no && _exprs[e.yes].compatible(e)) {
-      Expr &ee = _exprs[e.yes];
+    if (e.no > 0 && _exprs[e.no].compatible(e) && e.flippable())
+      e.flip();
+    if (e.yes <= 0)
+      continue;
+    Expr &ee = _exprs[e.yes];
+    if (e.no == ee.yes && ee.flippable())
+      ee.flip();
+    if (e.no == ee.no && ee.compatible(e)) {
       e.yes = ee.yes;
       e.value.u = (e.value.u & e.mask.u) | (ee.value.u & ee.mask.u);
       e.mask.u |= ee.mask.u;
@@ -599,7 +624,7 @@ Classifier::optimize_exprs(ErrorHandler *errh)
   do {
     for (int i = 0; i < _exprs.size(); i++)
       drift_expr(i);
-    //combine_compatible_states();
+    combine_compatible_states();
   } while (remove_unused_states()); // || remove_duplicate_states());
   
   //{ String sxxx = program_string(this, 0); click_chatter("%s", sxxx.cc()); }
