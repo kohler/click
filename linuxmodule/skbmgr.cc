@@ -320,7 +320,7 @@ RecycledSkbPool::recycle(struct sk_buff *skbs)
     struct sk_buff *skb = skbs;
     skbs = skbs->next;
     // where should sk_buff go?
-    int bucket = size_to_lower_bucket(skb->truesize);
+    int bucket = size_to_lower_bucket(skb->end - skb->head);
     // try to put in that bucket
     if (bucket >= 0) {
       int tail = _buckets[bucket]._tail;
