@@ -82,7 +82,9 @@ class String { public:
   String &operator=(PermString);
 #endif
 
-  void append(const char *, int);
+  void append(const char *, int len);
+  void append_fill(int c, int len);
+  void append_space(int len);
   String &operator+=(const String &);
   String &operator+=(const char *);
   String &operator+=(char);

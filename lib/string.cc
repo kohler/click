@@ -181,9 +181,10 @@ String::assign(const char *str, int len)
 void
 String::append(const char *suffix, int suffix_len)
 {
-  if (!suffix)
+  if (!suffix) {
+    assert(suffix_len <= 0);
     suffix_len = 0;
-  else if (suffix_len < 0)
+  } else if (suffix_len < 0)
     suffix_len = strlen(suffix);
 
   if (suffix_len == 0)
@@ -218,6 +219,90 @@ String::append(const char *suffix, int suffix_len)
   char *new_data = new_memo->_real_data;
   memcpy(new_data, _data, _length);
   memcpy(new_data + _length, suffix, suffix_len);
+  
+  deref();
+  _data = new_data;
+  _length += suffix_len;
+  _memo = new_memo;
+}
+
+void
+String::append_fill(int c, int suffix_len)
+{
+  assert(suffix_len >= 0);
+  if (suffix_len == 0)
+    return;
+  
+  // If we can, append into unused space. First, we check that there's enough
+  // unused space for `suffix_len' characters to fit; then, we check that the
+  // unused space immediately follows the data in `*this'.
+  if (_memo->_capacity > _memo->_dirty + suffix_len) {
+    char *real_dirty = _memo->_real_data + _memo->_dirty;
+    if (real_dirty == _data + _length) {
+      memset(real_dirty, c, suffix_len);
+      _length += suffix_len;
+      _memo->_dirty += suffix_len;
+      assert(_memo->_dirty < _memo->_capacity);
+      return;
+    }
+  }
+  
+  // Now we have to make new space. Make sure the new capacity is a
+  // multiple of 16 characters and that it is at least 16.
+  int new_capacity = (_length + 16) & ~15;
+  while (new_capacity < _length + suffix_len)
+    new_capacity *= 2;
+  Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
+  if (!new_memo || !new_memo->_real_data) {
+    delete new_memo;
+    out_of_memory();
+    return;
+  }
+
+  char *new_data = new_memo->_real_data;
+  memcpy(new_data, _data, _length);
+  memset(new_data + _length, c, suffix_len);
+  
+  deref();
+  _data = new_data;
+  _length += suffix_len;
+  _memo = new_memo;
+}
+
+void
+String::append_space(int suffix_len)
+{
+  assert(suffix_len >= 0);
+  if (suffix_len == 0)
+    return;
+  
+  // If we can, append into unused space. First, we check that there's enough
+  // unused space for `suffix_len' characters to fit; then, we check that the
+  // unused space immediately follows the data in `*this'.
+  if (_memo->_capacity > _memo->_dirty + suffix_len) {
+    char *real_dirty = _memo->_real_data + _memo->_dirty;
+    if (real_dirty == _data + _length) {
+      _length += suffix_len;
+      _memo->_dirty += suffix_len;
+      assert(_memo->_dirty < _memo->_capacity);
+      return;
+    }
+  }
+  
+  // Now we have to make new space. Make sure the new capacity is a
+  // multiple of 16 characters and that it is at least 16.
+  int new_capacity = (_length + 16) & ~15;
+  while (new_capacity < _length + suffix_len)
+    new_capacity *= 2;
+  Memo *new_memo = new Memo(_length + suffix_len, new_capacity);
+  if (!new_memo || !new_memo->_real_data) {
+    delete new_memo;
+    out_of_memory();
+    return;
+  }
+
+  char *new_data = new_memo->_real_data;
+  memcpy(new_data, _data, _length);
   
   deref();
   _data = new_data;
