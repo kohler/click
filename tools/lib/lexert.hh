@@ -134,8 +134,6 @@ class LexerT { public:
     int make_anon_element(const Lexeme &, int decl_pos2, ElementClassT *, const String &, const String &);
     void connect(int f1, int p1, int p2, int f2);
   
-    void run_parser_package(String);
-
 };
 
 #endif
