@@ -97,21 +97,16 @@ LookupIP6Route::initialize(ErrorHandler *)
 void
 LookupIP6Route::push(int, Packet *p)
 {
-  // click_chatter("Lookupip6route::push starts");
+ 
   IP6Address a = p->dst_ip6_anno();
-  //click_chatter("\n packet's dst = ");  
-  //a.print();
-  //click_chatter("\n");
-  
   IP6Address gw;
   int ifi = -1;
-
+  
   if (a) {
     if (a == _last_addr     ) {
       if (_last_gw)
 	p->set_dst_ip6_anno(_last_gw);
       output(_last_output).push(p);
-    //click_chatter("push in LookupIP6Route successful");
       return;
     }
  #ifdef IP_RT_CACHE2
@@ -130,6 +125,7 @@ LookupIP6Route::push(int, Packet *p)
     }
 #endif
   }
+  
  
   if (_t.lookup(IP6Address(a.addr()), gw, ifi) == true) {
 #ifdef IP_RT_CACHE2
@@ -137,11 +133,9 @@ LookupIP6Route::push(int, Packet *p)
     _last_gw2 = _last_gw;
     _last_output2 = _last_output;
 #endif
-    //click_chatter("another direction in push of lookup ip6Route \n");
+   
     _last_addr = a;
     _last_gw = gw;
-    //click_chatter("gateway assigned is \n");
-    //IP6Address(gw).print();
     _last_output = ifi;
     if (gw != 0)
       p->set_dst_ip6_anno(IP6Address(gw));
