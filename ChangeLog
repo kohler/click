@@ -1,3 +1,58 @@
+2000-12-21 Thursday 00:02  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* acconfig.h, elements/icmp/checkicmpheader.cc,
+	elements/icmp/icmperror.cc, elements/icmp/icmpsendpings.cc,
+	elements/ip/decipttl.cc, elements/ip/fixipsrc.cc,
+	elements/ip/getipaddress.cc, elements/ip/ipclassifier.cc,
+	elements/ip/ipencap.cc, elements/ip/ipfragmenter.cc,
+	elements/ip/ipgwoptions.cc, elements/ip/ipinputcombo.cc,
+	elements/ip/ipmirror.cc, elements/ip/ipoutputcombo.cc,
+	elements/ip/markipheader.cc, elements/ip/saveipfields.cc,
+	elements/ip/setipaddress.cc, elements/ip/setipchecksum.cc,
+	elements/ip/setipdscp.cc, elements/ip/storeipaddress.cc,
+	elements/ip/stripipheader.cc, elements/ipsec/desp.cc,
+	elements/ipsec/esp.cc, elements/linuxmodule/fastudpsrc.cc,
+	elements/linuxmodule/fastudpsrc.hh,
+	elements/linuxmodule/fromdevice.cc,
+	elements/linuxmodule/fromdevice.hh,
+	elements/linuxmodule/perfcountinfo.cc,
+	elements/standard/checklength.hh, elements/tcpudp/udpipencap.cc:
+	nitlets (Mazu)
+
+2000-12-21 Thursday 00:01  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipprint.cc, ipprint.hh: added PAINT keyword
+	argument
+
+2000-12-21 Thursday 00:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/string.cc: String::find_left(String, int) fix (Mz)
+
+2000-12-21 Thursday 00:00  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: checkpaint.cc, checkpaint.hh: made CheckPaint
+	actually check paint (it is now different from PaintTee) (Mz)
+
+2000-12-20 Wednesday 12:03  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/cpuqueue.cc: file cpuqueue.cc was initially
+	added on branch smp_click.
+
+2000-12-20 Wednesday 12:03  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/cpuqueue.hh: file cpuqueue.hh was initially
+	added on branch smp_click.
+
+2000-12-20 Wednesday 11:58  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/duppath.cc: file duppath.cc was initially added on
+	branch smp_click.
+
+2000-12-20 Wednesday 11:58  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/duppath.hh: file duppath.hh was initially added on
+	branch smp_click.
+
 2000-12-18 Monday 18:25  Benjie Chen <benjie@lcs.mit.edu>
 
 	* include/click/packet.hh: better arrangement of annotation area
