@@ -18,7 +18,11 @@
  * handler-name(handler-arg) to be run.
  *
  * The number of chars in the command string must be less than
- * MAXCMDLEN, which default to 255.  */
+ * MAXCMDLEN, which default to 255.  
+ *
+ * see ~decouto/src/writeunixsock.cc for a program that will write
+ * properly formatted commands to this element.
+ */
 
 /* XXX hmmm... the select implementation was working briefly but no it
    stopped, once i put in the UWH_USE_SELECT macro... */

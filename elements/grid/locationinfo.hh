@@ -3,14 +3,18 @@
 
 /*
  * =c
- * LocationInfo
+ * LocationInfo(LATITUDE, LONGITUDE)
  * =io
  * None
  * =d
- * Not sure yet!  A part of Grid.
  *
- * =a StaticLocationInfo
- */
+ * LATITUDE and LONGITUDE are in decimal degrees (Real).  Positive is
+ * North and East, negative is South and West.
+ *
+ * =h loc read/write Returns or sets the element's location
+ * information, in this format: ``lat, lon''.
+ *
+ * =a FixSrcLoc */
 
 #include "element.hh"
 #include "grid.hh"
@@ -23,11 +27,16 @@ public:
   const char *class_name() const { return "LocationInfo"; }
 
   LocationInfo *clone() const { return new LocationInfo; }
-  
+  int configure(const Vector<String> &, ErrorHandler *);
+  bool can_live_reconfigure() const { return true; }
+
   grid_location get_current_location() { return _loc; }
+
+  void add_handlers();
 
 protected:
   grid_location _loc;
+
 };
 
 #endif

@@ -142,7 +142,7 @@ Tun::push(int, Packet *p)
     fprintf(stderr, "bimtun writetun pkt too big\n");
     return;
   }
-  bzero(big, 16);
+  memset(big, 0, 16);
   memcpy(big+2, from, sizeof(from)); // linux won't accept ethertap packets from eth addr 0.
   memcpy(big+8, to, sizeof(to)); // linux TCP doesn't like packets to 0??
   memcpy(big+14, &protocol, 2);
