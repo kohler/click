@@ -153,6 +153,10 @@ hotswap_config(const String &s)
     return -EINVAL;
 
   // XXX should we lock the kernel?
+
+  // register hotswap router on new router
+  if (click_router && click_router->initialized())
+    r->pre_take_state(click_router);
   
   if (click_logged_errh->nerrors() == before_errors
       && r->initialize(click_logged_errh) >= 0) {
@@ -161,7 +165,7 @@ hotswap_config(const String &s)
       // turn off all threads on current router before you take_state
       if (click_kill_router_threads() >= 0) {
 	printk("<1>click: performing hotswap\n");
-	r->take_state(click_router, click_logged_errh);
+	r->take_state(click_logged_errh);
       }
     }
     // install

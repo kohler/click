@@ -245,6 +245,10 @@ parse_configuration(const String &text, bool text_is_expr, bool hotswap,
     signal(SIGPIPE, SIG_IGN);
   }
 
+  // register hotswap router on new router
+  if (hotswap && router && router->initialized())
+    r->pre_take_state(router);
+  
   if (errh->nerrors() > 0 || r->initialize(errh) < 0) {
     delete r;
     return 0;
@@ -269,7 +273,7 @@ hotconfig_handler(const String &text, Element *, void *, ErrorHandler *errh)
 static void
 finish_hotswap()
 {
-  hotswap_router->take_state(router, errh);
+  hotswap_router->take_state(errh);
   delete router;
   router = hotswap_router;
   hotswap_router = 0;
@@ -384,7 +388,7 @@ particular purpose.\n");
   }
   
  done:
-  router = parse_configuration(router_file ? router_file : "-", file_is_expr, false, errh);
+  router = parse_configuration(router_file, file_is_expr, false, errh);
   if (!router)
     exit(1);
 
