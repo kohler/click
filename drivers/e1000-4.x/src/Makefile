@@ -103,9 +103,9 @@ endif
 
 # pick a compiler
 ifneq (,$(findstring egcs-2.91.66, $(shell cat /proc/version)))
-  CC := kgcc296 gcc296 cc
+  CC := kgcc gcc cc
 else
-  CC := gcc296 cc
+  CC := gcc cc
 endif
 test_cc = $(shell which $(cc) > /dev/null 2>&1 && echo $(cc))
 CC := $(foreach cc, $(CC), $(test_cc))

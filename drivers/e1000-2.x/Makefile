@@ -3,7 +3,7 @@
 # 			Copyright (C) 1999 - 2000 Intel
 #
 
-CC = gcc296
+CC = gcc
 
 LINUX = /usr/src/linux
 
