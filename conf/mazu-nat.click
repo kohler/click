@@ -70,7 +70,7 @@ elementclass SniffGatewayDevice {
   input -> q :: Queue(1024)
 	-> t2 :: PullTee
 	-> to :: ToDevice($device);
-  t1[1] -> Print(x \$device) -> ToLinuxSniffers;
+  t1[1] -> ToLinuxSniffers;
   t2[1] -> ToLinuxSniffers($device);
   ScheduleInfo(from .1, to 1);
 }
@@ -116,7 +116,7 @@ rw :: IPRewriter(// internal traffic to outside world
 		 pattern to_server_pat 1 1,
 		 // virtual wire to output 0 if no mapping
 		 nochange 0,
-		 // drop if no mapping
+		 // virtual wire to output 2 if no mapping
 		 nochange 2);
 
 tcp_rw :: TCPRewriter(// internal traffic to outside world
@@ -143,9 +143,9 @@ rw[0] -> ip_to_extern_class :: IPClassifier(dst host intern, -);
   ip_to_extern_class[1] -> ip_to_extern;
 // to server
 rw[1] -> ip_to_intern;
-rw[2] -> ip_to_intern_class :: IPClassifier(dst host extern, -);
+// only accept packets from outside world to gateway
+rw[2] -> ip_to_intern_class :: IPClassifier(dst host extern);
   ip_to_intern_class[0] -> to_linux;
-  ip_to_intern_class[1] -> ip_to_intern;
 
 // tcp_rw is used only for FTP control traffic
 tcp_rw[0] -> ip_to_extern;
@@ -169,7 +169,7 @@ ip_from_extern[0] -> my_ip_from_extern;
   my_ip_from_extern[0] -> [1]rw; // SSH traffic (rewrite to server)
   my_ip_from_extern[1] -> [1]rw; // HTTP(S) traffic (rewrite to server)
   my_ip_from_extern[2] -> [1]tcp_rw; // FTP control traffic, rewrite w/tcp_rw
-  my_ip_from_extern[3] -> [4]rw; // other TCP or UDP traffic, rewrite or drop
+  my_ip_from_extern[3] -> [4]rw; // other TCP or UDP traffic, rewrite or to gw
   my_ip_from_extern[4] -> Discard; // non TCP or UDP traffic is dropped
 ip_from_extern[1] -> Discard;	// stuff for other people
 
