@@ -31,7 +31,8 @@ flow number. UDP, active TCP, and completed TCP flows have different timeouts.
 Flow numbers are assigned sequentially, starting from 1. Different flows get
 different numbers. Paint annotations are set to 0 or 1, depending on whether
 packets are on the forward or reverse subflow. (The first packet seen on each
-flow gets paint color 0; reply packets get paint color 1.)
+flow gets paint color 0; reply packets get paint color 1. ICMP errors get
+paints 2 and 3.)
 
 AggregateFlows can optionally apply aggregate annotations to ICMP errors. See
 the ICMP keyword argument below.
