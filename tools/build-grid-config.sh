@@ -175,7 +175,7 @@ fi
 	
 # check for gateway device
 if [ -n "$gw_dev" ]; then
-    foo=`ifconfig -a | sed -n -e "s/^\($gw_dev\).*/\1/p"`
+    foo=`/sbin/ifconfig -a | sed -n -e "s/^\($gw_dev\).*/\1/p"`
     if [ -z "$foo" ]; then 
 	echo "Error: gateway device $gw_dev does not exist." 1>&2
 	exit 1
@@ -187,11 +187,11 @@ if [ -n "$gw_dev" ]; then
     if [ -z "$gw_ip" ]; then
 	# get the gateway device IP
 	# thanks to Thomer for this phat regexp...
-	gw_ip=`ifconfig $gw_dev | sed -n -e 's/[[:space:]]*inet[^0-9]*\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'`
+	gw_ip=`/sbin/ifconfig $gw_dev | sed -n -e 's/[[:space:]]*inet[^0-9]*\([0-9]*\.[0-9]*\.[0-9]*\.[0-9]*\).*/\1/p'`
     fi
 
     # get the gateway device MAC address
-    gw_mac=`ifconfig $gw_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
+    gw_mac=`/sbin/ifconfig $gw_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
     if [ -z "$grid_mac" ]; then
 	# fallback case for OpenBSD, which doesn't put Ethernet MAC in ifconfig output
 	gw_mac=`netstat -n -I $gw_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
@@ -200,14 +200,14 @@ fi
 
 
 # check for Grid device
-foo=`ifconfig -a | sed -n -e "s/^\($grid_dev\).*/\1/p"`
+foo=`/sbin/ifconfig -a | sed -n -e "s/^\($grid_dev\).*/\1/p"`
 if [ "$foo" != "$grid_dev" ]; then 
     echo "Error: Grid device $grid_dev does not exist." 1>&2
     exit 1
 fi
 
 # get Grid device MAC address
-grid_mac=`ifconfig $grid_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
+grid_mac=`/sbin/ifconfig $grid_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`
 if [ -z "$grid_mac" ]; then
     # fallback case for OpenBSD, which doesn't put Ethernet MAC in ifconfig output
     grid_mac=`netstat -n -I $grid_dev | sed -n -e 's/.*\(\([0-9a-fA-F]\{2\}:\)\{5\}[0-9a-fA-f]\{2\}\).*/\1/p'`

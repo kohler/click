@@ -455,7 +455,7 @@ sub setup_net_info {
 	    $old_ip_addr = $1;
 	    if (!($old_ip_addr =~ /(\d+.\d+.\d+).\d+/)) {
 		print "Unable to get Grid device net address\n";
-		exit 1;
+#		exit 1;
 	    }
 	    $old_grid_dev_net = "$1"; # keep as only the first 3 digits
 	}
@@ -473,23 +473,23 @@ sub setup_net_info {
 	}
 	
 	# get LAN device params for routing
-	$ifconfig_lan_out = `ifconfig $lan_if`;
+	$ifconfig_lan_out = `/sbin/ifconfig $lan_if`;
 	if (!($ifconfig_lan_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)) {
 	    print "Unable to get LAN device MAC address\n";
-	    exit 1; # we really need to know that...
+#	    exit 1; # we really need to know that...
 	}
 	else {
 	    $lan_hw_addr = $1;
 	}
 	if (!($ifconfig_lan_out =~ /inet addr:(\d+.\d+.\d+.\d+)/)) {
 	    print "Unable to get LAN device IP address\n";
-	    exit 1;
+#	    exit 1;
 	}
 	else {
 	    $lan_addr = $1;
 	    if (!($lan_addr =~ /(\d+.\d+.\d+).\d+/)) {
 		print "Unable to get LAN device net address\n";
-		exit 1;
+#		exit 1;
 	    }
 	    $lan_net = "$1"; # keep as only the first 3 digits
 	}
@@ -509,7 +509,7 @@ sub setup_net_info {
 	$route_info = `route -n`;
 	if (!($route_info =~ /\n0.0.0.0\s+($lan_net.\d+)/)) {
 	    print "Unable to get LAN device gateway\n";
-	    exit 1;
+#	    exit 1;
 	}
 	else {
 	    $lan_gw = $1;
@@ -525,18 +525,19 @@ sub setup_net_info {
 
 
 	# remove all routes through the grid interface, and make sure it is up
-	my_system "ifconfig $grid_if down";
-	my_system "ifconfig $grid_if 0";
+	my_system "ifconfig $GRID_IF down";
+	my_system "ifconfig $GRID_IF 0";
 	
 	# set the adapter to ad-hoc mode
-	if ($RADIO_TYPE eq "wavelan") {
-	    my_system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
+	if ($RADIO_TYPE eq "wavelan" || $RADIO_TYPE eq "aironet") {
+	    my_system "iwconfig $GRID_IF essid $GRID_SSID mode ad-hoc channel $GRID_CHANNEL";
 	}
-	elsif ($RADIO_TYPE eq "aironet") {
-	    my_system "echo \"Mode: adhoc\" > /proc/aironet/$grid_if/Config";
-	    my_system "echo \"Channel: $grid_channel\" > /proc/aironet/$grid_if/Config";
-	    my_system "echo \"$grid_ssid\" > /proc/aironet/$grid_if/SSID";
-	} else {
+# 	elsif ($RADIO_TYPE eq "aironet") {
+# 	    my_system "echo \"Mode: adhoc\" > /proc/aironet/$GRID_IF/Config";
+# 	    my_system "echo \"Channel: $GRID_CHANNEL\" > /proc/aironet/$GRID_IF/Config";
+# 	    my_system "echo \"$grid_ssid\" > /proc/aironet/$GRID_IF/SSID";
+# 	} 
+	else {
 	    die "run_grid: radio type $RADIO_TYPE not supported\n";
 	}
 
@@ -548,7 +549,7 @@ sub setup_net_info {
 	# decrease mtu on the kerneltap so we don't get packets too big to encapsulate.  
 	# this is hacky, maybe it should be in the kerneltap code with the ifconfig/route calls.  
 	# but i forget why those are in there at all...
-	my_system "/sbin/ifconfig tap0 mtu 1400";
+	my_system "/sbin/ifconfig tap0 mtu 1350";
 
     } else {
 	
