@@ -89,15 +89,17 @@ int
 AggregatePacketCounter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
-    _use_packetno = true;
+    _packetno = 0;
     
     if (cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
-		    "PACKETNO", cpBool, "use packet number annotations?", &_use_packetno,
+		    "PACKETNO", cpInteger, "packet number annotation (-1..1)", &_packetno,
 		    0) < 0)
 	return -1;
 
+    if (_packetno > 1)
+	return errh->error("'PACKETNO' cannot be bigger than 1");
     /*if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
       return errh->error("%s is not an AggregateNotifier", e->id().cc()); */
 
@@ -174,8 +176,12 @@ inline void
 AggregatePacketCounter::smaction(int port, Packet *p)
 {
     _total_packets++;
-    if (Flow *f = find_flow(AGGREGATE_ANNO(p)))
-	f->add(_use_packetno ? PACKET_NUMBER_ANNO(p) : 0, port);
+    if (Flow *f = find_flow(AGGREGATE_ANNO(p))) {
+	if (_packetno >= 0)
+	    f->add(PACKET_NUMBER_ANNO(p, _packetno), port);
+	else
+	    f->add(0, port);
+    }
 }
 
 void

@@ -184,7 +184,7 @@ class AggregatePacketCounter : public Element { public:
     uint32_t _total_flows;
     packetctr_t _total_packets;
 
-    bool _use_packetno;
+    int _packetno;
     
     Flow *find_flow(uint32_t aggregate);
     void end_flow(Flow *, ErrorHandler *);
