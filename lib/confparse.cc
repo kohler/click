@@ -247,6 +247,8 @@ cp_spacevec(const String &conf, Vector<String> &vec)
       break;
 
      case '\\':			// check for \<...> strings
+      if (start < 0)
+	start = i;
       if (i < len - 1 && s[i+1] == '<')
 	for (i += 2; i < len && s[i] != '>'; i++)
 	  /* nada */;
@@ -270,6 +272,9 @@ cp_spacevec(const String &conf, Vector<String> &vec)
       break;
       
     }
+
+  if (start >= 0)
+    vec.push_back(conf.substring(start, len - start));
 }
 
 String

@@ -12,8 +12,8 @@ Version 1.0.7
    ErrorHandler *)' to `int configure(const Vector<String> &, ErrorHandler
    *)', and updated elements.
 
-** The `cp_DATATYPE' functions take pointers instead of references. The
-   pointer are much clearer.
+** The `cp_DATATYPE' functions take pointers instead of references. This
+   makes using them much clearer.
 
 ** Changed Element method `bool configure_first() const' to `int
    configure_phase() const'. Now element classes can specify their relative
