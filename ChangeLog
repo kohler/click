@@ -1,3 +1,9 @@
+2001-10-20 Saturday 03:48  Eddie Kohler <kohler@aciri.org>
+
+	* elements/: analysis/fromipsumdump.cc (1.7),
+	userlevel/progressbar.cc (1.8), userlevel/progressbar.hh (1.4):
+	documentation
+
 2001-10-20 Saturday 03:01  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/progressbar.cc (1.7): nitlet
