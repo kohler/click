@@ -1,3 +1,19 @@
+2001-12-31 Monday 14:14  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: click-align/click-align.cc (1.39),
+	click-combine/click-combine.cc (1.26),
+	click-combine/click-uncombine.cc (1.23),
+	click-devirtualize/click-devirtualize.cc (1.29),
+	click-devirtualize/signature.cc (1.11),
+	click-fastclassifier/click-fastclassifier.cc (1.48),
+	click-undead/click-undead.cc (1.26), click-xform/adjacency.cc
+	(1.17), click-xform/click-xform.cc (1.43), lib/eclasst.cc (1.7),
+	lib/eclasst.hh (1.3), lib/elementt.cc (1.25), lib/elementt.hh
+	(1.20), lib/lexert.cc (1.42), lib/processingt.cc (1.18),
+	lib/processingt.hh (1.9), lib/routert.cc (1.55), lib/routert.hh
+	(1.45), lib/vectori.cc (1.11): more tool updates: use Hookup
+	everywhere (it contains ElementT pointers, not indices)
+
 2001-12-31 Monday 02:50  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-align/click-align.cc (1.38),
