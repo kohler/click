@@ -2,6 +2,7 @@
 use Symbol 'qualify_to_ref';
 no locale;
 use bytes;
+require 5.006;
 
 ($attempts, $internal_errors, $errors, $require_errors) = (0, 0, 0, 0);
 
@@ -488,7 +489,7 @@ sub check_expects ($$) {
 	}
 	
 	if (!open(IN, $fileref_subr->($efn))) {
-	    print STDERR $fp, $!, "\n";
+	    print STDERR $fp, $efn, ": ", $!, "\n";
 	    $::errors++;
 	    next;
 	}
@@ -587,8 +588,8 @@ sub check_expects ($$) {
 
 package main;
 
-my($dir, @show, $show_stdout, $show_stderr, $any_tests_done);
-my($SHELL) = "/bin/sh -e";
+my($dir, @show, $show_stdout, $show_stderr, $any_tests_done, $can_setpgrp);
+my($SHELL) = "/bin/sh";
 
 sub script_fn_to_fn ($) {
     my($fn) = @_;
@@ -598,6 +599,30 @@ sub script_fn_to_fn ($) {
 sub out_script_fn_to_fn ($) {
     my($fn) = @_;
     "$dir/$fn";
+}
+
+sub _shell ($$$$$) {
+    my($dir, $scriptfn, $stdin, $stdout, $stderr) = @_;
+    $scriptfn = "./$scriptfn" if $scriptfn !~ m|^/|;
+
+    # Create a new process group so we can (likely) kill any children
+    # processes the script carelessly left behind.  Thanks, Chuck Blake!
+    my($child_pid) = fork();
+    if (!defined($child_pid)) {
+	die "cannot fork: $!\n";
+    } elsif ($child_pid == 0) {
+	eval { setpgrp() };
+	chdir($dir);
+	open(STDIN, "<", $stdin) || die "$stdin: $!\n";
+	open(STDOUT, ">", $stdout) || die "$stdout: $!\n";
+	open(STDERR, ">", $stderr) || die "$stderr: $!\n";
+	exec $SHELL, "-e", $scriptfn;
+    } else {
+	waitpid($child_pid, 0);	# assume it succeeds
+	my($result) = $?;
+	kill('HUP', -$child_pid); # kill any processes left behind
+	$result;
+    }
 }
 
 sub execute_test ($$$) {
@@ -628,8 +653,7 @@ sub execute_test ($$$) {
 	print SCR $tt->script_text(\&script_fn_to_fn, 'require');
 	close SCR;
 	
-	my($actual_stderr) = script_fn_to_fn('stderr');
-	my($exitval) = system("cd $dir; $SHELL ./+require+ </dev/null >/dev/null 2>$actual_stderr");
+	my($exitval) = _shell($dir, '+require+', '/dev/null', '/dev/null', script_fn_to_fn('stderr'));
 
 	# if it exited with a bad value, quit
 	if ($exitval) {
@@ -651,7 +675,7 @@ sub execute_test ($$$) {
     my($actual_stdin) = ($tt->have_file('stdin') ? script_fn_to_fn('stdin') : "/dev/null");
     my($actual_stdout) = ($show_stdout || $tt->have_file('stdout') ? script_fn_to_fn('stdout') : "/dev/null");
     my($actual_stderr) = script_fn_to_fn('stderr');
-    my($exitval) = system("cd $dir; $SHELL ./+script+ <$actual_stdin >$actual_stdout 2>$actual_stderr");
+    my($exitval) = _shell($dir, '+script+', $actual_stdin, $actual_stdout, $actual_stderr);
     $any_tests_done = 1;
 
     # echo files
