@@ -1,3 +1,22 @@
+2001-09-19 Wednesday 14:03  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* tools/run-grid (1.4): lots of fixes; changed ssid/channel, proper
+	setup of gateway after startup, etc.
+
+2001-09-19 Wednesday 14:02  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* conf/grid.click (1.34): lots of fixes
+
+2001-09-19 Wednesday 13:26  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.6), lookupiprouteron.hh (1.5):
+	removed debug prints
+
+2001-09-19 Wednesday 13:22  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: divertsocket.cc (1.13), divertsocket.hh (1.7): added
+	debug prints
+
 2001-09-18 Tuesday 21:04  Eddie Kohler <kohler@aciri.org>
 
 	* elements/userlevel/fromdump.cc (1.45): FromDump: fix so that MMAP
