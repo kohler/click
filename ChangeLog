@@ -1,3 +1,8 @@
+2001-06-20 Wednesday 02:41  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* DISTFILES (1.28), etc/linux-2.2.17-patch (1.2): backported
+	linux-2.2.18-patch to linux-2.2.17-patch
+
 2001-06-19 Tuesday 19:53  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* apps/ClickController/: ClickController.java (1.10),
