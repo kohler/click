@@ -200,7 +200,7 @@ sub process_file ($) {
       if (($dm_a & $dm_b) == 0) {
 	# ok
       } else {
-	print STDERR "invalid multiple definition of element class \`$click_name[$i]'\n";
+	print STDERR "invalid multiple definition of element class '$click_name[$i]'\n";
 	print STDERR $header_file[$j], ": first definition here\n";
 	print STDERR $header_file[$i], ": second definition here\n";
 	print STDERR "(Two classes may share a name only if they work in disjoint drivers.\nAdd explicit ELEMENT_REQUIRES() statements.)\n";
@@ -311,16 +311,16 @@ sub long_option_match ($$$) {
 
 sub help () {
     print STDERR <<"EOD;";
-\`Click-mkelemmap' creates an elementmap file from a collection of Click
+'Click-mkelemmap' creates an elementmap file from a collection of Click
 elements.
 
 Usage: click-mkelemmap [-l | -L] [-d DIRECTORY] [-f FILE | SRCFILE]...
 
-Each SRCFILE is a Click header file. \`-' means standard input. Default is
-\`-f -' if no \`-f' or \`SRCFILE' options are supplied.
+Each SRCFILE is a Click header file. '-' means standard input. Default is
+'-f -' if no '-f' or 'SRCFILE' options are supplied.
 
 Options:
-  -f, --files FILE        Read header filenames, or an \`elements.conf' file,
+  -f, --files FILE        Read header filenames, or an 'elements.conf' file,
                           from FILE.
   -r, --provide PROV      Record provisions PROV in output.
       --webdoc DOCSTR     Record Web documentation DOCSTR in output.
@@ -372,7 +372,7 @@ while (@ARGV) {
     } elsif (/^-h$/ || long_option_match($_, '--help', 3)) {
 	help();
     } elsif (/^-./) {
-	die "unknown option `$_'\n";
+	die "unknown option '$_'\n";
     } elsif (/^-$/) {
 	push @files, "-";
 	$any_files = 1;
