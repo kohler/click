@@ -29,3 +29,8 @@ template class _HashMap_const_iterator<String, String>;
 template class HashMap<int, int>;
 template class _HashMap_iterator<int, int>;
 template class _HashMap_const_iterator<int, int>;
+
+#include "eclasst.hh"
+template class HashMap<ElementClassT *, int>;
+template class _HashMap_iterator<ElementClassT *, int>;
+template class _HashMap_const_iterator<ElementClassT *, int>;

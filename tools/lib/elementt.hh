@@ -13,20 +13,18 @@ struct ElementT {
 
     RouterT *router() const		{ return _owner; }
     int eindex() const			{ return _eindex; }
-    inline ElementClassT *enclosing_type() const;
     
     bool live() const			{ return _type; }
     bool dead() const			{ return !_type; }
     void kill();
 
     const String &name() const		{ return _name; }
-    const char *name_cc() const		{ return _name.cc(); }
+    const char *name_c_str() const	{ return _name.c_str(); }
     bool anonymous() const		{ return _name && _name[0] == ';'; }
     
     ElementClassT *type() const		{ return _type; }
     String type_name() const		{ return _type->name(); }
-    const char *type_name_cc() const	{ return _type->printable_name_cc(); }
-    int type_uid() const		{ return _type ? _type->uid() : -1; }
+    const char *type_name_c_str() const	{ return _type->printable_name_c_str(); }
     void set_type(ElementClassT *);
 
     const String &config() const	{ return _configuration; }
@@ -60,7 +58,7 @@ struct ElementT {
   private:
 
     int _eindex;
-    mutable String _name;		// mutable for cc()
+    mutable String _name;		// mutable for c_str()
     ElementClassT *_type;
     String _configuration;
     String _landmark;

@@ -105,8 +105,8 @@ ElementT::redeclaration_error(ErrorHandler *errh, const char *what, String name,
     if (!what)
 	what = "";
     const char *sp = (strlen(what) ? " " : "");
-    errh->lerror(landmark, "redeclaration of %s%s`%s'", what, sp, name.cc());
-    errh->lerror(old_landmark, "`%s' previously declared here", name.cc());
+    errh->lerror(landmark, "redeclaration of %s%s`%s'", what, sp, name.c_str());
+    errh->lerror(old_landmark, "`%s' previously declared here", name.c_str());
 }
 
 

@@ -123,15 +123,18 @@ handle_router(String filename_in, const ElementMap &default_map, ErrorHandler *e
   StringAccum missing_sa;
   int nmissing = 0;
 
-  HashMap<String, int> primitives(-1);
-  router->collect_primitive_types(primitives);
-  for (HashMap<String, int>::iterator i = primitives.begin(); i; i++) {
-    if (!emap.has_traits(i.key()))
-      missing_sa << (nmissing++ ? ", " : "") << i.key();
-    else if (emap.package(i.key()))
+  HashMap<ElementClassT *, int> primitives(-1);
+  router->collect_types(primitives);
+  for (HashMap<ElementClassT *, int>::iterator i = primitives.begin(); i; i++) {
+    if (!i.key()->primitive())
+      continue;
+    String tname = i.key()->name();
+    if (!emap.has_traits(tname))
+      missing_sa << (nmissing++ ? ", " : "") << tname;
+    else if (emap.package(tname))
       /* do nothing; element was defined in a package */;
     else
-      initial_requirements.insert(i.key(), 1);
+      initial_requirements.insert(tname, 1);
   }
 
   if (nmissing == 1)

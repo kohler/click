@@ -262,7 +262,7 @@ combine_links(ErrorHandler *errh)
     for (int j = 0; j < i; j++)
       if (links_from[i] == links_to[j] || links_from[j] == links_to[i]) {
 	const RouterPortT &h = links_from[i];
-	errh->error("router `%s' element `%s' used as both source and destination", router_names[h.port].cc(), h.element->name_cc());
+	errh->error("router `%s' element `%s' used as both source and destination", router_names[h.port].c_str(), h.element->name_c_str());
       }
   if (errh->nerrors() != before)
     return -1;

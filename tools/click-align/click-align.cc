@@ -213,7 +213,7 @@ RouterAlign::print(FILE *f)
 {
   for (RouterT::iterator x = _router->begin_elements(); x; x++) {
     int i = x->eindex();
-    fprintf(f, "%s :", x->name_cc());
+    fprintf(f, "%s :", x->name_c_str());
     for (int j = 0; j < _icount[i]; j++) {
       const Alignment &a = _ialign[ _ioffset[i] + j ];
       fprintf(f, " %d/%d", a.chunk(), a.offset());

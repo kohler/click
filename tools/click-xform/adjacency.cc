@@ -33,9 +33,9 @@ AdjacencyMatrix::~AdjacencyMatrix()
 }
 
 static inline unsigned
-type_indicator(int t)
+type_indicator(ElementClassT *t)
 {
-  return t;
+  return (unsigned) (reinterpret_cast<uintptr_t>(t));
 }
 
 static inline unsigned
@@ -64,10 +64,11 @@ AdjacencyMatrix::init(RouterT *r)
     _x[i] = 0;
 
   _default_match.assign(n, -2);
-  for (int i = 0; i < n; i++) {
-    int t = r->element(i)->type_uid();
-    if (t >= 0 && t != ElementClassT::TUNNEL_UID) {
-      _x[i + (i<<cap)] = type_indicator(t);
+  ElementClassT *tunnelt = ElementClassT::tunnel_type();
+  for (int i = 0; i < r->nelements(); i++) {
+    const ElementT *e = r->element(i);
+    if (e->type() != tunnelt) {
+      _x[i + (i<<cap)] = type_indicator(e->type());
       _default_match[i] = -1;
     }
   }
@@ -103,6 +104,7 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
   // clear out columns and rows
   _default_match.resize(_n, -2);
   Vector<int> updated_eindexes(_n, 0);
+  ElementClassT *tunnelt = ElementClassT::tunnel_type();
   for (int i = 0; i < changed_eindexes.size(); i++) {
     int j = changed_eindexes[i];
     if (updated_eindexes[j])
@@ -113,8 +115,8 @@ AdjacencyMatrix::update(const Vector<int> &changed_eindexes)
       _x[ k + (j<<cap) ] = _x[ j + (k<<cap) ] = 0;
 
     // set type
-    int t = r->element(j)->type_uid();
-    if (t >= 0 && t != ElementClassT::TUNNEL_UID) {
+    ElementClassT *t = r->element(j)->type();
+    if (t != tunnelt) {
       _x[ j + (j<<cap) ] = type_indicator(t);
       _default_match[j] = -1;
     } else

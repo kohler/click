@@ -552,7 +552,7 @@ analyze_classifiers(RouterT *r, const Vector<ElementT *> &classifiers,
   // complain if any programs missing
   for (int i = 0; i < iprograms.size(); i++)
     if (program_map[i] < 0)
-      errh->fatal("classifier program missing for `%s :: %s'!", classifiers[i]->name_cc(), classifiers[i]->type_name().cc());
+      errh->fatal("classifier program missing for `%s :: %s'!", classifiers[i]->name_c_str(), classifiers[i]->type_name().cc());
 }
 
 static void
@@ -776,17 +776,15 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   parse_tabbed_lines(fc_ae.data, &click_names, &old_type_names,
 		     &configurations, (void *)0);
 
-  // prepare type_index_map : type_index -> configuration #
-  HashMap<int, int> type_uid_map(-1);
-  for (int i = 0; i < click_names.size(); i++) {
-    int x = ElementClassT::base_type(click_names[i])->uid();
-    type_uid_map.insert(x, i);
-  }
+  // prepare type_map : type -> configuration #
+  HashMap<ElementClassT *, int> type_map(-1);
+  for (int i = 0; i < click_names.size(); i++)
+    type_map.insert(ElementClassT::base_type(click_names[i]), i);
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {
     ElementT *e = r->element(i);
-    int x = type_uid_map[e->type_uid()];
+    int x = type_map[e->type()];
     if (x >= 0) {
       e->set_configuration(configurations[x]);
       e->set_type(ElementClassT::base_type(old_type_names[x]));

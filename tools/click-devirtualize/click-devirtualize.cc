@@ -145,18 +145,18 @@ reverse_transformation(RouterT *r, ErrorHandler *)
   Vector<String> new_click_names, old_click_names;
   parse_tabbed_lines(fc_ae.data, &new_click_names, &old_click_names, (void *)0);
 
-  // prepare type_index_map : type_index -> configuration #
-  HashMap<int, int> new_uid_map(-1);
+  // prepare type_index_map : type -> configuration #
+  HashMap<ElementClassT *, int> new_type_map(-1);
   Vector<ElementClassT *> old_class;
   for (int i = 0; i < new_click_names.size(); i++) {
-    new_uid_map.insert(ElementClassT::base_type(new_click_names[i])->uid(), old_class.size());
+    new_type_map.insert(ElementClassT::base_type(new_click_names[i]), old_class.size());
     old_class.push_back(ElementClassT::base_type(old_click_names[i]));
   }
 
   // change configuration
   for (int i = 0; i < r->nelements(); i++) {
     ElementT *e = r->element(i);
-    int nnm = new_uid_map[e->type_uid()];
+    int nnm = new_type_map[e->type()];
     if (nnm >= 0)
       e->set_type(old_class[nnm]);
   }

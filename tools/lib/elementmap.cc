@@ -527,15 +527,15 @@ ElementMap::collect_indexes(const RouterT *router, Vector<int> &indexes,
 			    ErrorHandler *errh) const
 {
     indexes.clear();
-    HashMap<String, int> primitives(-1);
-    router->collect_primitive_types(primitives);
-    for (HashMap<String, int>::iterator i = primitives.begin(); i; i++)
-	if (i.value() > 0) {
-	    int t = _name_map[i.key()];
+    HashMap<ElementClassT *, int> types(-1);
+    router->collect_types(types);
+    for (HashMap<ElementClassT *, int>::iterator i = types.begin(); i; i++)
+	if (i.key()->primitive()) {
+	    int t = _name_map[i.key()->name()];
 	    if (t > 0)
 		indexes.push_back(t);
 	    else if (errh)
-		errh->error("unknown element class `%s'", String(i.key()).cc());
+		errh->error("unknown element class `%s'", i.key()->printable_name_c_str());
 	}
 }
 

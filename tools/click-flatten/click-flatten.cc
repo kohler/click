@@ -202,11 +202,12 @@ particular purpose.\n");
    }
 
    case CLASSES_OPT: {
-     HashMap<String, int> m(-1);
-     router->collect_primitive_types(m);
+     HashMap<ElementClassT *, int> m(-1);
+     router->collect_types(m);
      Vector<String> classes;
-     for (HashMap<String, int>::iterator iter = m.begin(); iter; iter++)
-       classes.push_back(iter.key());
+     for (HashMap<ElementClassT *, int>::iterator iter = m.begin(); iter; iter++)
+       if (iter.key()->primitive())
+	 classes.push_back(iter.key()->name());
      output_sorted_one_per_line(classes, out);
      break;
    }

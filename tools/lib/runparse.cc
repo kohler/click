@@ -58,7 +58,7 @@ SynonymElementClassT::unparse_declaration(StringAccum &sa, const String &indent,
 }
 
 void
-CompoundElementClassT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind uk, ElementClassT *stop)
+RouterT::unparse_declaration(StringAccum &sa, const String &indent, UnparseKind uk, ElementClassT *stop)
 {
     assert(!_circularity_flag && (name() || uk != UNPARSE_NAMED));
 
@@ -76,8 +76,8 @@ CompoundElementClassT::unparse_declaration(StringAccum &sa, const String &indent
     else if (uk == UNPARSE_ANONYMOUS)
 	sa << '{';
 
-    if (_prev) {
-	_prev->unparse_declaration(sa, indent, UNPARSE_OVERLOAD, stop);
+    if (_overload_type) {
+	_overload_type->unparse_declaration(sa, indent, UNPARSE_OVERLOAD, stop);
 	sa << indent << "||";
     }
 
@@ -88,7 +88,7 @@ CompoundElementClassT::unparse_declaration(StringAccum &sa, const String &indent
 	sa << " |";
     sa << "\n";
 
-    _router->unparse(sa, indent + "  ");
+    unparse(sa, indent + "  ");
 
     if (uk == UNPARSE_NAMED)
 	sa << indent << "}\n";
@@ -114,21 +114,65 @@ RouterT::unparse_requirements(StringAccum &sa, const String &indent) const
 
 
 #if 0
-RouterUnparserT::RouterUnparserT()
-    : _tuid_map(-1)
+
+RouterUnparserT::RouterUnparserT(ErrorHandler *errh)
+    : _tuid_map(-1), _relation(X_UNK), _errh(errh ? errh : ErrorHandler::silent_handler())
 {
+}
+
+int RouterUnparseT::relation_negater[X_NUM] = {
+    X_BAD, X_UNK, X_GT, X_GEQ, X_EQ, X_LEQ, X_LT
+};
+
+uint8_t RouterUnparseT::relation_combiner[X_NUM][X_NUM] = {
+    //X_BAD, X_UNK, X_LT,  X_LEQ, X_EQ,  X_GEQ, X_GT
+    { X_BAD, X_BAD, X_BAD, X_BAD, X_BAD, X_BAD, X_BAD }, // X_BAD
+    { X_BAD, X_UNK, X_LT,  X_LEQ, X_EQ,  X_GEQ, X_GT  }, // X_UNK
+    { X_BAD, X_LT,  X_LT,  X_LT,  X_BAD, X_BAD, X_BAD }, // X_LT
+    { X_BAD, X_LEQ, X_LT,  X_LEQ, X_EQ,  X_EQ,  X_BAD }, // X_LEQ
+    { X_BAD, X_EQ,  X_BAD, X_EQ,  X_EQ,  X_EQ,  X_BAD }, // X_EQ
+    { X_BAD, X_GEQ, X_BAD, X_EQ,  X_EQ,  X_GEQ, X_GT  }, // X_GEQ
+    { X_BAD, X_GT,  X_BAD, X_BAD, X_BAD, X_GT,  X_GT  }  // X_GT
+};
+
+int
+RouterUnparseT::apply_relation(ElementClassT *a, ElementClassT *b, int new_relation)
+{
+    assert(new_relation >= X_LT && new_relation <= X_GT);
+    if (a->uid() > b->uid()) {
+	swap(a, b);
+	new_relation = relation_negater[new_relation];
+    }
+    
+    int *relation = _relation.findp(make_pair(a, b));
+    int old_relation = *relation;
+    *relation = relation_combiner[old_relation][new_relation];
+    return (*relation != X_BAD || old_relation == X_BAD ? 0 : -1);
 }
 
 void
-RouterUnparserT::track_types(RouterT *r)
+RouterUnparseT::collect_types()
 {
-    for (const Router::ElementType *t = r->_declared_types.begin(); t < r->_declared_types.end(); t++)
-	if ();
+    HashMap<int, ElementClassT *> class_map;
+    collect_types(class_map);
+    for (HashMap<int, ElementClassT *>::iterator i = class_map.begin(); i; i++) {
+	_tuid_map.insert(k.key(), _types.size());
+	_types.push_back(k.value());
+    }
 }
-#endif
 
+void
+RouterUnparseT::relate_types()
+{
+    // collect type relations
+    for (Vector<ElementClassT *>::iterator i = _types.begin(); i != _types.end(); i++)
+	if (CompoundElementClassT *c = i->cast_compound())
+	    if (c->previous() && apply_relation(c, c->previous(), X_GEQ))
+		_errh->lerror(c->landmark(), "circular type relationship involving '%s'", c->printable_name_c_str());
+}
 
-#if 1
+#else
+
 void
 RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 {
@@ -139,20 +183,20 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
     // We may need to interleave element class declarations and element
     // declarations because of scope issues.
 
-    // uid_to_scope[] maps each type name to the latest scope in which it is
+    // type_to_scope[] maps each type name to the latest scope in which it is
     // good.
-    HashMap<int, int> uid_to_scope(-2);
+    HashMap<ElementClassT *, int> type_to_scope(-2);
     for (int i = 0; i < ntypes; i++) {
 	const ElementType &t = _declared_types[i];
-	uid_to_scope.insert(t.type->uid(), _scope_cookie);
+	type_to_scope.insert(t.type, _scope_cookie);
 	if (t.prev_name >= 0) {
 	    const ElementType &pt = _declared_types[t.prev_name];
-	    uid_to_scope.insert(pt.type->uid(), pt.scope_cookie);
+	    type_to_scope.insert(pt.type, pt.scope_cookie);
 	}
     }
     // XXX FIXME
     //for (const_iterator e = begin_elements(); e; e++)
-    //    assert(e->tunnel() || uid_to_scope[e->type_uid()] >= -1);
+    //    assert(e->tunnel() || type_to_scope[e->type()] >= -1);
 
     // For each scope:
     // First print the element class declarations with that scope,
@@ -171,7 +215,7 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 
 	for (const_iterator e = begin_elements(); e; e++) {
 	    if (e->dead() || e->tunnel()
-		|| uid_to_scope[e->type_uid()] != scope)
+		|| type_to_scope[e->type()] != scope)
 		continue;
 	    if (print_state == 1)
 		sa << "\n";

@@ -12,7 +12,6 @@ class RouterT;
 class ElementT;
 class VariableEnvironment;
 class ElementMap;
-class CompoundElementClassT;
 class SynonymElementClassT;
 
 class ElementClassT { public:
@@ -28,11 +27,13 @@ class ElementClassT { public:
     void unuse()			{ if (--_use_count <= 0) delete this; }
 
     const String &name() const		{ return _name; }
-    const char *printable_name_cc();
-    int uid() const			{ return _unique_id; }
-    static int max_uid();
-    enum { TUNNEL_UID = 1 };
+    const char *printable_name_c_str();
+    virtual String landmark() const	{ return String(); }
 
+    // 'primitive' means 'not tunnel, not compound, not synonym'.
+    virtual bool primitive() const	{ return true; }
+    bool tunnel() const			{ return this == tunnel_type(); }
+    
     const ElementTraits &traits() const;
     virtual const ElementTraits *find_traits() const;
     
@@ -44,36 +45,32 @@ class ElementClassT { public:
     const String &documentation_name() const;
     String documentation_url() const;
 
+    // where was this type declared?
+    virtual RouterT *declaration_scope() const;
+    virtual ElementClassT *overload_type() const;
+    virtual int overload_depth() const;
+    
+    virtual void collect_types(HashMap<ElementClassT *, int> &) const;
+    virtual void collect_overloads(Vector<ElementClassT *> &) const;
+
     static ElementT *expand_element(ElementT *, RouterT *, const VariableEnvironment &, ErrorHandler *);
 
-    virtual ElementClassT *find_relevant_type(int ninputs, int noutputs, const Vector<String> &);
-    virtual void report_signatures(String, ErrorHandler *);
+    virtual ElementClassT *resolve(int ninputs, int noutputs, const Vector<String> &args);
     virtual ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
-    virtual void collect_primitive_types(HashMap<String, int> &);
-    virtual void collect_prerequisites(Vector<ElementClassT *> &);
 
     enum UnparseKind { UNPARSE_NAMED, UNPARSE_ANONYMOUS, UNPARSE_OVERLOAD };
     virtual void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *stop);
-
-    virtual bool primitive() const		{ return true; }
-    virtual String landmark() const		{ return String(); }
+    virtual String unparse_signature() const;
+    static String unparse_signature(const String &, int, int, int);
 
     virtual void *cast(const char *)		{ return 0; }
     virtual SynonymElementClassT *cast_synonym() { return 0; }
-    virtual CompoundElementClassT *cast_compound() { return 0; }
     virtual RouterT *cast_router()		{ return 0; }
 
-    static String signature(const String &, int, int, int);
-
-  protected:
-
-    ElementClassT(const String &, int);
-    
   private:
 
     String _name;
     int _use_count;
-    int _unique_id;
 
     mutable int _traits_version;
     mutable const ElementTraits *_traits;
@@ -89,80 +86,33 @@ class ElementClassT { public:
 
 class SynonymElementClassT : public ElementClassT { public:
 
-    SynonymElementClassT(const String &, ElementClassT *);
+    SynonymElementClassT(const String &, ElementClassT *, RouterT *);
 
     ElementClassT *synonym_of() const	{ return _eclass; }
 
-    ElementClassT *find_relevant_type(int ninputs, int noutputs, const Vector<String> &);
+    ElementClassT *resolve(int, int, const Vector<String> &);
     ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
-    void collect_primitive_types(HashMap<String, int> &);
-    void collect_prerequisites(Vector<ElementClassT *> &);
+    
+    void collect_types(HashMap<ElementClassT *, int> &) const;
+    void collect_overloads(Vector<ElementClassT *> &) const;
 
     void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
 
     bool primitive() const		{ return false; }
     const ElementTraits *find_traits() const;
     
+    RouterT *declaration_scope() const;
+    ElementClassT *overload_type() const { return _eclass; }
+    int overload_depth() const		{ return _eclass->overload_depth(); }
+    
     SynonymElementClassT *cast_synonym() { return this; }
-    CompoundElementClassT *cast_compound();
     RouterT *cast_router();
   
   private:
 
     ElementClassT *_eclass;
+    RouterT *_declaration_scope;
 
-};
-
-class CompoundElementClassT : public ElementClassT { public:
-
-    CompoundElementClassT(const String &name, ElementClassT *next_class, int depth, RouterT *enclosing_scope, const String &landmark);
-    CompoundElementClassT(const String &name, RouterT *);
-    ~CompoundElementClassT();
-
-    int nformals() const		{ return _formals.size(); }
-    const Vector<String> &formals() const { return _formals; }
-    void add_formal(const String &n)	{ _formals.push_back(n); }
-    int ninputs() const			{ return _ninputs; }
-    int noutputs() const		{ return _noutputs; }
-    ElementClassT *previous() const	{ return _prev; }
-    
-    int finish(ErrorHandler *);
-    void check_duplicates_until(ElementClassT *, ErrorHandler *);
-
-    ElementClassT *find_relevant_type(int ninputs, int noutputs, const Vector<String> &);
-    void report_signatures(String, ErrorHandler *);
-    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
-    void collect_primitive_types(HashMap<String, int> &);
-    void collect_prerequisites(Vector<ElementClassT *> &);
-
-    void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);
-    
-    bool primitive() const		{ return false; }
-    String landmark() const		{ return _landmark; }
-    const ElementTraits *find_traits() const;
-    
-    CompoundElementClassT *cast_compound() { return this; }
-    RouterT *cast_router()		{ return _router; }
-
-    String signature() const;
-
-  private:
-    
-    String _landmark;
-    RouterT *_router;
-    int _depth;
-    Vector<String> _formals;
-    int _ninputs;
-    int _noutputs;
-
-    ElementClassT *_prev;
-
-    bool _circularity_flag;
-
-    mutable ElementTraits _traits;
-    
-    int actual_expand(RouterT *, int, RouterT *, const VariableEnvironment &, ErrorHandler *);
-  
 };
 
 
@@ -213,12 +163,6 @@ inline bool
 ElementClassT::provides(const String &req) const
 {
     return traits().provides(req);
-}
-
-inline int
-hashcode(ElementClassT *e)
-{
-    return e->uid();
 }
 
 #endif

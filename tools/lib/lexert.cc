@@ -70,8 +70,9 @@ void
 LexerT::clear()
 {
     if (_router)
-	delete _router;
+	_router->unuse();
     _router = new RouterT;
+    _router->use();		// hold a reference to the router
 
     _big_string = "";
     // _data was freed by _big_string
@@ -85,7 +86,6 @@ LexerT::clear()
 
     _base_type_map.clear();
     _anonymous_offset = 0;
-    _compound_depth = 0;
 }
 
 void
@@ -819,7 +819,7 @@ LexerT::yelementclass(int pos1)
     else if (tnext.is(lexIdent)) {
 	ElementClassT *ec = force_element_type(tnext);
 	if (eclass_name) {
-	    ElementClassT *new_ec = new SynonymElementClassT(eclass_name, ec);
+	    ElementClassT *new_ec = new SynonymElementClassT(eclass_name, ec, _router);
 	    _router->add_declared_type(new_ec, false);
 	    _lexinfo->notify_class_declaration(new_ec, false, pos1, tname.pos1(), tnext.pos2());
 	}
@@ -850,7 +850,7 @@ LexerT::ytunnel()
 }
 
 void
-LexerT::ycompound_arguments(CompoundElementClassT *comptype)
+LexerT::ycompound_arguments(RouterT *comptype)
 {
   while (1) {
     const Lexeme &tvar = lex();
@@ -879,7 +879,6 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     // '{' was already read
     RouterT *old_router = _router;
     int old_offset = _anonymous_offset;
-    _compound_depth++;
     
     ElementClassT *created = 0;
 
@@ -901,7 +900,7 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
     int pos2;
     
     while (1) {
-	CompoundElementClassT *compound_class = new CompoundElementClassT(name, created, _compound_depth, old_router, landmark());
+	RouterT *compound_class = new RouterT(name, landmark(), old_router, created);
 	_router = compound_class->cast_router();
 	_anonymous_offset = 2;
 
@@ -909,7 +908,15 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
 	while (ystatement(true))
 	    /* nada */;
 
-	compound_class->finish(_errh);
+	compound_class->finish_type(_errh);
+
+	// check for redeclaration with same signature
+	if (created) {
+	    ElementClassT *t = created->resolve(compound_class->ninputs(), compound_class->noutputs(), compound_class->formals());
+	    if (t && t->overload_depth() > (first ? first->overload_depth() : -1))
+		ElementT::redeclaration_error(_errh, "", compound_class->unparse_signature(), compound_class->landmark(), t->landmark());
+	}
+	
 	created = compound_class;
 
 	// check for '||' or '}'
@@ -920,11 +927,9 @@ LexerT::ycompound(String name, int decl_pos1, int name_pos1)
 	}
     }
 
-    _compound_depth--;
     _anonymous_offset = old_offset;
     _router = old_router;
     
-    created->cast_compound()->check_duplicates_until(first, _errh);
     _lexinfo->notify_class_declaration(created, anonymous, decl_pos1, name_pos1, pos2);
 
     old_router->add_declared_type(created, anonymous);
@@ -1016,6 +1021,7 @@ LexerT::finish()
     _router = 0;
     // resolve anonymous element names
     r->deanonymize_elements();
+    // returned router has one reference count
     return r;
 }
 

@@ -87,7 +87,7 @@ Matcher::Matcher(RouterT *pat, AdjacencyMatrix *pat_m,
     else if (x->name() == "output" && !_pat_output)
       _pat_output = x;
     else
-      errh->lerror(x->landmark(), "connection tunnel with funny name `%s'", x->name_cc());
+      errh->lerror(x->landmark(), "connection tunnel with funny name `%s'", x->name_c_str());
   }
 }
 
@@ -321,9 +321,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
 
   // expand 'replacement' into '_body'; need crap compound element
   Vector<String> crap_args;
-  CompoundElementClassT comp("<replacement>", replacement);
-  comp.use();
-  comp.complex_expand_element(new_e, String(), crap_args, _body, VariableEnvironment(), errh);
+  replacement->complex_expand_element(new_e, String(), crap_args, _body, VariableEnvironment(), errh);
 
   // mark replacement
   for (int i = 0; i < changed_elements.size(); i++) {
@@ -479,10 +477,10 @@ read_pattern_file(const char *name, ErrorHandler *errh)
   
   for (int i = 0; i < compounds.size(); i++) {
     String name = compounds[i]->name();
-    if (compounds[i]->cast_compound() && name.length() > 12
+    if (compounds[i]->cast_router() && name.length() > 12
 	&& name.substring(-12) == "_Replacement") {
       ElementClassT *tt = pat_file->locally_declared_type(name.substring(0, -12));
-      if (tt && tt->cast_compound()) {
+      if (tt && tt->cast_router()) {
 	RouterT *rep = compounds[i]->cast_router();
 	RouterT *pat = tt->cast_router();
 	if (rep && pat) {

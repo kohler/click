@@ -185,53 +185,49 @@ TABLE.conntable TR TD {\n\
 
 // list of classes
 
-static Vector<ElementClassT *> classes;
-static HashMap<int, String> class_hrefs;
+static HashMap<ElementClassT *, int> class2cid(-1);
+static Vector<ElementClassT *> cid2class;
+static Vector<String> cid_hrefs;
 static HashMap<String, String> package_hrefs;
 
-static void
-notify_class(ElementClassT *c)
+static int
+cid(ElementClassT *type)
 {
-    int uid = c->uid();
-    if (uid >= classes.size())
-	classes.resize(uid + 1, 0);
-    classes[uid] = c;
+    int *cidp = class2cid.findp_force(type, -1);
+    if (*cidp < 0) {
+	*cidp = cid2class.size();
+	cid2class.push_back(type);
+	cid_hrefs.push_back(String());
+    }
+    return *cidp;
 }
 
 static void
-add_class_href(int class_uid, const String &href)
+add_class_href(ElementClassT *type, const String &href)
 {
-    class_hrefs.insert(class_uid, href);
+    cid_hrefs[cid(type)] = href;
 }
 
 static String
-class_href(ElementClassT *ec)
+class_href(ElementClassT *type)
 {
-    String *sp = class_hrefs.findp(ec->uid());
+    String &sp = cid_hrefs[cid(type)];
     if (sp)
-	return *sp;
-    else if (String href = ec->documentation_url()) {
-	add_class_href(ec->uid(), href);
+	return sp;
+    else if (String href = type->documentation_url()) {
+	add_class_href(type, href);
 	return href;
-    } else if (String doc_name = ec->documentation_name()) {
-	String package_href = package_hrefs["x" + ec->package()];
+    } else if (String doc_name = type->documentation_name()) {
+	String package_href = package_hrefs["x" + type->package()];
 	if (!package_href)
 	    package_href = package_hrefs["x"];
 	String href = percent_substitute(package_href, 's', doc_name.cc(), 0);
-	add_class_href(ec->uid(), href);
+	add_class_href(type, href);
 	return href;
     } else {
-	add_class_href(ec->uid(), String());
+	add_class_href(type, String());
 	return String();
     }
-}
-
-static String
-class_href(int uid)
-{
-    ElementClassT *ec = classes[uid];
-    assert(ec);
-    return class_href(ec);
 }
 
 
@@ -354,9 +350,9 @@ prepare_items(int last_pos)
     for (int i = 0; i < items.size(); i++) {
 	OutputItem *s = &items[i], *e = s->other();
 	if (s->text[0] == '{') {
-	    int uid;
-	    cp_integer(s->text.substring(1), &uid);
-	    if (String href = class_href(uid)) {
+	    int cid;
+	    cp_integer(s->text.substring(1), &cid);
+	    if (String href = class_href(cid2class[cid])) {
 		s->text = "<a href='" + href + "'>";
 		e->text = "</a>";
 	    } else
@@ -383,16 +379,16 @@ prepare_items(int last_pos)
 }
 
 static String
-link_class_decl(ElementClassT *ec)
+link_class_decl(ElementClassT *type)
 {
-    return "decl" + String(ec->uid());
+    return "decl" + String(cid(type));
 }
 
 static String
 link_element_decl(ElementT *e)
 {
-    if (ElementClassT *enclose = e->enclosing_type())
-	return "e" + String(enclose->uid()) + "-" + e->name();
+    if (e->router()->declaration_scope())
+	return "e" + String(cid(e->router())) + "-" + e->name();
     else
 	return "e-" + e->name();
 }
@@ -418,15 +414,13 @@ class PrettyLexerTInfo : public LexerTInfo { public:
 	    add_item(name_pos1, "<a name='" + link_class_decl(ec) + "'><span class='c-cd'>", name_pos1 + ec->name().length(), "</span></a>");
 	else
 	    add_item(decl_pos1, "<a name='" + link_class_decl(ec) + "'>", decl_pos1 + 1, "</a>");
-	add_class_href(ec->uid(), "#" + link_class_decl(ec));
+	add_class_href(ec, "#" + link_class_decl(ec));
     }
     void notify_class_extension(ElementClassT *ec, int pos1, int pos2) {
-	notify_class(ec);
-	add_item(pos1, "{" + String(ec->uid()), pos2, "");
+	add_item(pos1, "{" + String(cid(ec)), pos2, "");
     }
     void notify_class_reference(ElementClassT *ec, int pos1, int pos2) {
-	notify_class(ec);
-	add_item(pos1, "{" + String(ec->uid()), pos2, "");
+	add_item(pos1, "{" + String(cid(ec)), pos2, "");
     }
     void notify_element_declaration(ElementT *e, int pos1, int pos2, int decl_pos2) {
 	add_item(pos1, "<a name='" + link_element_decl(e) + "'>", pos2, "</a>");
@@ -696,15 +690,15 @@ ElementsOutput::ElementsOutput(RouterT *r, const ProcessingT &processing, const 
     bool do_types = main_attrs["typeentry"];
 
     // get list of elements and/or types
-    HashMap<int, int> done_types(-1);
+    HashMap<ElementClassT *, int> done_types(-1);
     for (RouterT::iterator x = r->begin_elements(); x; x++) {
 	_elements.push_back(x);
 	if (do_elements)
 	    _entries.push_back(x);
-	if (do_types && done_types[x->type_uid()] < 0) {
+	if (do_types && done_types[x->type()] < 0) {
 	    ElementT *fake = new ElementT(x->type_name(), x->type(), "", type_landmark);
 	    _entries.push_back(fake);
-	    done_types.insert(x->type_uid(), 1);
+	    done_types.insert(x->type(), 1);
 	}
     }
 

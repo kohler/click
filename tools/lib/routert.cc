@@ -22,31 +22,63 @@
 
 #include "routert.hh"
 #include "eclasst.hh"
+#include "elementmap.hh"
+#include "processingt.hh"
 #include <click/bitvector.hh>
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/variableenv.hh>
 #include <stdio.h>
 
-RouterT::RouterT(ElementClassT *type, RouterT *enclosing_scope)
-    : _use_count(0), _enclosing_type(type),
-      _enclosing_scope(enclosing_scope), _scope_cookie(0),
-      _declared_type_map(-1), _element_name_map(-1),
-      _free_element(0), _n_live_elements(0), _new_eindex_collector(0),
-      _free_conn(-1), _archive_map(-1)
+RouterT::RouterT()
+    : ElementClassT("<router>"),
+      _element_name_map(-1), _free_element(0), _n_live_elements(0),
+      _new_eindex_collector(0),
+      _free_conn(-1),
+      _declared_type_map(-1),
+      _archive_map(-1),
+      _declaration_scope(0), _declaration_depth(0), _scope_cookie(0),
+      _ninputs(0), _noutputs(0), _overload_type(0), _overload_depth(0),
+      _circularity_flag(false)
 {
-    // borrow definitions from `enclosing'
-    if (_enclosing_scope) {
-	_enclosing_scope_cookie = _enclosing_scope->_scope_cookie;
-	_enclosing_scope->_scope_cookie++;
-	_enclosing_scope->use();
-    }
+}
+
+RouterT::RouterT(const String &name, const String &landmark, RouterT *declaration_scope, ElementClassT *overload)
+    : ElementClassT(name),
+      _element_name_map(-1), _free_element(0), _n_live_elements(0),
+      _new_eindex_collector(0),
+      _free_conn(-1),
+      _declared_type_map(-1),
+      _archive_map(-1),
+      _declaration_scope(declaration_scope), _scope_cookie(0),
+      _ninputs(0), _noutputs(0), _overload_type(overload),
+      _overload_depth(overload ? overload->overload_depth() + 1 : 1),
+      _type_landmark(landmark), _circularity_flag(false)
+{
+    // borrow definitions from `declaration'
+    if (_overload_type)
+	_overload_type->use();
+    if (_declaration_scope) {
+	_declaration_scope_cookie = _declaration_scope->_scope_cookie;
+	_declaration_scope->_scope_cookie++;
+	_declaration_scope->use();
+	_declaration_depth = _declaration_scope->_declaration_depth + 1;
+    } else
+	_declaration_depth = 0;
+    // create input and output pseudoelements
+    get_element("input", ElementClassT::tunnel_type(), String(), landmark);
+    get_element("output", ElementClassT::tunnel_type(), String(), landmark);
+    *(_traits.component(Traits::D_CLASS)) = name;
 }
 
 RouterT::~RouterT()
 {
     for (int i = 0; i < _elements.size(); i++)
 	delete _elements[i];
+    if (_overload_type)
+	_overload_type->unuse();
+    if (_declaration_scope)
+	_declaration_scope->unuse();
 }
 
 void
@@ -74,10 +106,10 @@ RouterT::check() const
     assert(nt_found == nt);
 
     // check element types
-    HashMap<int, int> type_uid_map(-1);
+    HashMap<ElementClassT *, int> type_map(-1);
     for (int i = 0; i < nt; i++) {
-	assert(type_uid_map[_declared_types[i].type->uid()] < 0);
-	type_uid_map.insert(_declared_types[i].type->uid(), i);
+	assert(type_map[_declared_types[i].type] < 0);
+	type_map.insert(_declared_types[i].type, i);
     }
     
     // check element names
@@ -148,37 +180,6 @@ RouterT::check() const
 }
 
 
-ElementClassT *
-RouterT::locally_declared_type(const String &name) const
-{
-    int i = _declared_type_map[name];
-    return (i >= 0 ? _declared_types[i].type : 0);
-}
-
-ElementClassT *
-RouterT::declared_type(const String &name, int scope_cookie) const
-{
-    for (const RouterT *r = this; r; scope_cookie = r->_enclosing_scope_cookie, r = r->_enclosing_scope)
-	for (int i = r->_declared_type_map[name]; i >= 0; i = r->_declared_types[i].prev_name)
-	    if (r->_declared_types[i].scope_cookie <= scope_cookie)
-		return r->_declared_types[i].type;
-    return 0;
-}
-
-void
-RouterT::add_declared_type(ElementClassT *ec, bool anonymous)
-{
-    assert(ec);
-    if (anonymous || !ec->name()) 
-	_declared_types.push_back(ElementType(ec, _scope_cookie, -1));
-    else if (locally_declared_type(ec->name()) != ec) {
-	int prev = _declared_type_map[ec->name()];
-	if (prev >= 0)		// increment scope_cookie if redefining class
-	    _scope_cookie++;
-	_declared_types.push_back(ElementType(ec, _scope_cookie, prev));
-	_declared_type_map.insert(ec->name(), _declared_types.size() - 1);
-    }
-}
 
 ElementT *
 RouterT::add_element(const ElementT &elt_in)
@@ -268,11 +269,56 @@ RouterT::deanonymize_elements()
 	    assign_element_name(i);
 }
 
-void
-RouterT::collect_primitive_types(HashMap<String, int> &m) const
+
+//
+// TYPES
+//
+
+ElementClassT *
+RouterT::locally_declared_type(const String &name) const
 {
-    for (int i = 0; i < _elements.size(); i++)
-	_elements[i]->type()->collect_primitive_types(m);
+    int i = _declared_type_map[name];
+    return (i >= 0 ? _declared_types[i].type : 0);
+}
+
+ElementClassT *
+RouterT::declared_type(const String &name, int scope_cookie) const
+{
+    for (const RouterT *r = this; r; scope_cookie = r->_declaration_scope_cookie, r = r->_declaration_scope)
+	for (int i = r->_declared_type_map[name]; i >= 0; i = r->_declared_types[i].prev_name)
+	    if (r->_declared_types[i].scope_cookie <= scope_cookie)
+		return r->_declared_types[i].type;
+    return 0;
+}
+
+void
+RouterT::add_declared_type(ElementClassT *ec, bool anonymous)
+{
+    assert(ec);
+    if (anonymous || !ec->name()) 
+	_declared_types.push_back(ElementType(ec, _scope_cookie, -1));
+    else if (locally_declared_type(ec->name()) != ec) {
+	int prev = _declared_type_map[ec->name()];
+	if (prev >= 0)		// increment scope_cookie if redefining class
+	    _scope_cookie++;
+	_declared_types.push_back(ElementType(ec, _scope_cookie, prev));
+	_declared_type_map.insert(ec->name(), _declared_types.size() - 1);
+    }
+}
+
+void
+RouterT::collect_types(HashMap<ElementClassT *, int> &m) const
+{
+    int *collected = m.findp_force(const_cast<RouterT *>(this), 0);
+    if (*collected == 0) {
+	*collected = 1;
+	for (int i = 0; i < _declared_types.size(); i++)
+	    _declared_types[i].type->collect_types(m);
+	for (int i = 0; i < _elements.size(); i++)
+	    _elements[i]->type()->collect_types(m);
+	if (_overload_type)
+	    _overload_type->collect_types(m);
+    }
 }
 
 void
@@ -281,6 +327,19 @@ RouterT::collect_locally_declared_types(Vector<ElementClassT *> &v) const
     for (Vector<ElementType>::const_iterator i = _declared_types.begin(); i != _declared_types.end(); i++)
 	v.push_back(i->type);
 }
+
+void
+RouterT::collect_overloads(Vector<ElementClassT *> &v) const
+{
+    if (_overload_type)
+	_overload_type->collect_overloads(v);
+    v.push_back(const_cast<RouterT *>(this));
+}
+
+
+//
+// CONNECTIONS
+//
 
 void
 RouterT::update_noutputs(int e)
@@ -680,6 +739,10 @@ RouterT::add_tunnel(const String &namein, const String &nameout,
     }
 }
 
+
+//
+// REQUIREMENTS
+//
 
 void
 RouterT::add_requirement(const String &s)
@@ -1087,5 +1150,158 @@ RouterT::const_type_iterator::step(const RouterT *r, ElementClassT *type, int ei
     if (eindex >= n)
 	_e = 0;
 }
+
+
+//
+// TYPE METHODS
+//
+
+const ElementTraits *
+RouterT::find_traits() const
+{
+    if (ElementMap::default_map()) {
+	ErrorHandler *errh = ErrorHandler::silent_handler();
+	ProcessingT pt(this, errh);
+	*(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
+	*(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code(errh);
+    }
+    return &_traits;
+}
+
+int
+RouterT::finish_type(ErrorHandler *errh)
+{
+    if (!errh)
+	errh = ErrorHandler::silent_handler();
+    int before_nerrors = errh->nerrors();
+
+    if (ElementT *einput = element("input")) {
+	_ninputs = einput->noutputs();
+	if (einput->ninputs())
+	    errh->lerror(_type_landmark, "`%s' pseudoelement `input' may only be used as output", printable_name_c_str());
+
+	if (_ninputs) {
+	    Vector<int> used;
+	    find_connection_vector_from(einput, used);
+	    assert(used.size() == _ninputs);
+	    for (int i = 0; i < _ninputs; i++)
+		if (used[i] == -1)
+		    errh->lerror(_type_landmark, "compound element `%s' input %d unused", printable_name_c_str(), i);
+	}
+    } else
+	_ninputs = 0;
+
+    if (ElementT *eoutput = element("output")) {
+	_noutputs = eoutput->ninputs();
+	if (eoutput->noutputs())
+	    errh->lerror(_type_landmark, "`%s' pseudoelement `output' may only be used as input", printable_name_c_str());
+
+	if (_noutputs) {
+	    Vector<int> used;
+	    find_connection_vector_to(eoutput, used);
+	    assert(used.size() == _noutputs);
+	    for (int i = 0; i < _noutputs; i++)
+		if (used[i] == -1)
+		    errh->lerror(_type_landmark, "compound element `%s' output %d unused", printable_name_c_str(), i);
+	}
+    } else
+	_noutputs = 0;
+
+    // resolve anonymous element names
+    deanonymize_elements();
+
+    return (errh->nerrors() == before_nerrors ? 0 : -1);
+}
+
+ElementClassT *
+RouterT::resolve(int ninputs, int noutputs, const Vector<String> &args)
+{
+    // Try to return an element class, even if it is wrong -- the error
+    // messages are friendlier
+    RouterT *r = this;
+    RouterT *closest = 0;
+    int nclosest = 0;
+
+    while (1) {
+	if (r->_ninputs == ninputs && r->_noutputs == noutputs && r->_formals.size() == args.size())
+	    return r;
+
+	// replace `closest'
+	if (r->_formals.size() == args.size()) {
+	    closest = r;
+	    nclosest++;
+	}
+
+	ElementClassT *overload = r->_overload_type;
+	if (!overload)
+	    return (nclosest == 1 ? closest : 0);
+	else if ((r = overload->cast_router()))
+	    /* run through the loop again */;
+	else if (ElementClassT *result = overload->resolve(ninputs, noutputs, args))
+	    return result;
+	else
+	    return (nclosest == 1 ? closest : 0);
+    }
+}
+
+ElementT *
+RouterT::complex_expand_element(
+	ElementT *compound, const String &, Vector<String> &args,
+	RouterT *tor, const VariableEnvironment &env, ErrorHandler *errh)
+{
+    RouterT *fromr = compound->router();
+    assert(fromr != this && tor != this);
+    assert(!_circularity_flag);
+    // ensure we don't delete ourselves before we're done!
+    use();
+    _circularity_flag = true;
+
+    // parse configuration string
+    int nargs = _formals.size();
+    if (args.size() != nargs) {
+	const char *whoops = (args.size() < nargs ? "few" : "many");
+	String signature;
+	for (int i = 0; i < nargs; i++) {
+	    if (i) signature += ", ";
+	    signature += _formals[i];
+	}
+	if (errh)
+	    errh->lerror(compound->landmark(),
+			 "too %s arguments to compound element `%s(%s)'",
+			 whoops, printable_name_c_str(), signature.c_str());
+	for (int i = args.size(); i < nargs; i++)
+	    args.push_back("");
+    }
+
+    // create prefix
+    assert(compound->name());
+    VariableEnvironment new_env(env, compound->name());
+    String prefix = env.prefix();
+    String new_prefix = new_env.prefix(); // includes previous prefix
+    new_env.limit_depth(_declaration_depth);
+    new_env.enter(_formals, args, _declaration_depth);
+
+    // create input/output tunnels
+    if (fromr == tor)
+	compound->set_type(tunnel_type());
+    tor->add_tunnel(prefix + compound->name(), new_prefix + "input", compound->landmark(), errh);
+    tor->add_tunnel(new_prefix + "output", prefix + compound->name(), compound->landmark(), errh);
+    ElementT *new_e = tor->element(prefix + compound->name());
+
+    // dump compound router into `tor'
+    expand_into(tor, new_env, errh);
+
+    // yes, we expanded it
+    _circularity_flag = false;
+    unuse();
+    return new_e;
+}
+
+String
+RouterT::unparse_signature() const
+{
+    return ElementClassT::unparse_signature(name(), ninputs(), noutputs(), nformals());
+}
+
 
 #include <click/vector.cc>

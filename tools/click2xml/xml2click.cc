@@ -31,6 +31,7 @@
 #include "toolutils.hh"
 #include "processingt.hh"
 #include "elementmap.hh"
+#include "xml2click.hh"
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
@@ -75,62 +76,9 @@ xml_error(XML_Parser parser, const char *format, ...)
 }
 
 
-struct CxElement {
-    String name;
-    String class_name;
-    String class_id;
-    String config;
-    int ninputs;
-    int noutputs;
-    String landmark;
-    String xml_landmark;
-    CxElement()			: ninputs(-1), noutputs(-1) { }
-};
-
-struct CxConnection {
-    String from;
-    int fromport;
-    String to;
-    int toport;
-    String xml_landmark;
-    CxConnection()		: fromport(0), toport(0) { }
-};
-
-struct CxConfig {
-    Vector<CxElement> _elements;
-    Vector<CxConnection> _connections;
-    
-    Vector<String> _formals;
-    CxConfig *_enclosing;
-    int _depth;
-    String _name;
-    String _id;
-    String _prev_class_name;
-    String _prev_class_id;
-    bool _is_synonym;
-    bool _filled;
-    String _landmark;
-    String _xml_landmark;
-
-    int _decl_ninputs;
-    int _decl_noutputs;
-    int _decl_nformals;
-
-    ElementClassT *_type;
-    bool _completing;
-    RouterT *_router;
-    
-    CxConfig(CxConfig *enclosing, int depth, const String &xml_landmark);
-    ~CxConfig();
-
-    String readable_name() const;
-    RouterT *router(ErrorHandler *);
-    int complete_elementclass(ErrorHandler *);
-    int complete(ErrorHandler *);
-};
-
-CxConfig::CxConfig(CxConfig *enclosing, int depth, const String &xml_landmark)
-    : _enclosing(enclosing), _depth(depth), _filled(false),
+CxConfig::CxConfig(CxConfig *enclosing, const String &xml_landmark)
+    : _enclosing(enclosing), _depth(enclosing ? enclosing->_depth + 1 : 0),
+      _filled(false),
       _xml_landmark(xml_landmark),
       _decl_ninputs(-1), _decl_noutputs(-1), _decl_nformals(-1),
       _type(0), _completing(false), _router(0)
@@ -274,7 +222,7 @@ do_start_elementclass(XML_Parser parser, const XML_Char **attrs, ErrorHandler *e
 	return CX_ERROR;
     }
 
-    CxConfig *nc = new CxConfig(xstack.back(), xstack.size(), landmark);
+    CxConfig *nc = new CxConfig(xstack.back(), landmark);
     
     String file, line;
     for (const XML_Char **a = attrs; *a; a += 2)
@@ -430,7 +378,7 @@ start_element_handler(void *v, const XML_Char *name, const XML_Char **attrs)
 	if (xstack.size())
 	    xml_errh->lerror(landmark, "additional configuration section ignored");
 	else {
-	    xstack.push_back(new CxConfig(0, 0, landmark));
+	    xstack.push_back(new CxConfig(0, landmark));
 	    next_state = CX_CONFIGURATION;
 	}
 	
@@ -503,7 +451,7 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     ContextErrorHandler cerrh(errh, String("In definition of elementclass '") + _name + "' (id '" + _id + "'):", "  ", _xml_landmark);
     int before_nerrors = cerrh.nerrors();
 
-    // get referred-to class
+    // get previous class
     ElementClassT *prev_class;
     if (_prev_class_id)
 	prev_class = ::complete_elementclass(_prev_class_id, _xml_landmark, &cerrh);
@@ -512,19 +460,21 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
     else
 	prev_class = 0;
 
+    // get enclosing scope
+    CompoundElementClassT *enclosing_type = _enclosing->compound(errh);
+    
     // check for synonym or empty
     if (!_filled)		// error already reported
 	return 0;
     if (_is_synonym && prev_class) {
-	_type = new SynonymElementClassT(_name, prev_class);
+	_type = new SynonymElementClassT(_name, prev_class, enclosing_type);
 	_type->use();
 	return 0;
     }
 
     // otherwise, compound
     assert(_enclosing);
-    RouterT *enclosing_scope = _enclosing->router(&cerrh);
-    CompoundElementClassT *c = new CompoundElementClassT(_name, prev_class, _depth, enclosing_scope, (_landmark ? _landmark : _xml_landmark));
+    CompoundElementClassT *c = new CompoundElementClassT(_name, prev_class, enclosing_type, (_landmark ? _landmark : _xml_landmark));
     _type = c;
     _type->use();
     _router = c->cast_router();
@@ -543,14 +493,14 @@ CxConfig::complete_elementclass(ErrorHandler *errh)
 	cerrh.lerror(_xml_landmark, "<formal> count and 'nformals' attribute disagree");
 
     // add to enclosing scope
-    enclosing_scope->add_declared_type(c, true);
+    enclosing_type->cast_router()->add_declared_type(c, true);
     
     // handle elements
     if (complete(&cerrh) < 0)
 	return -1;
 
     // finally, finish elementclass
-    if (c->finish(&cerrh) < 0)
+    if (c->finish_type(&cerrh) < 0)
 	return -1;
     if (_decl_ninputs >= 0 && c->ninputs() != _decl_ninputs)
 	cerrh.lerror(_xml_landmark, "input port count and 'ninputs' attribute disagree");
@@ -572,6 +522,14 @@ CxConfig::router(ErrorHandler *errh)
 	    _router = new RouterT;
     }
     return _router;
+}
+
+CompoundElementClassT *
+CxConfig::compound(ErrorHandler *errh)
+{
+    assert(!_is_synonym);
+    complete_elementclass(errh);
+    return (CompoundElementClassT *)_type;
 }
 
 int

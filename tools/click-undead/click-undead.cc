@@ -127,7 +127,7 @@ remove_static_switches(RouterT *r, ErrorHandler *errh)
     String config = cp_uncomment(x->configuration());
     int val;
     if (!cp_integer(config, &val)) {
-      errh->lerror(x->landmark(), "%s: bad configuration `StaticSwitch(%s)'", x->name_cc(), config.cc());
+      errh->lerror(x->landmark(), "%s: bad configuration `StaticSwitch(%s)'", x->name_c_str(), config.cc());
       val = -1;
     }
 
@@ -174,7 +174,7 @@ remove_static_pull_switches(RouterT *r, ErrorHandler *errh)
     String config = cp_uncomment(x->configuration());
     int val;
     if (!cp_integer(config, &val)) {
-      errh->lerror(x->landmark(), "%s: bad configuration `StaticSwitch(%s)'", x->name_cc(), config.cc());
+      errh->lerror(x->landmark(), "%s: bad configuration `StaticSwitch(%s)'", x->name_c_str(), config.cc());
       val = -1;
     }
 

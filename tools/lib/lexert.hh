@@ -6,7 +6,6 @@
 #include <stdio.h>
 class RouterT;
 class ElementClassT;
-class CompoundElementClassT;
 class StringAccum;
 class LexerTInfo;
 
@@ -69,7 +68,7 @@ class LexerT { public:
     bool yelement(int &element, bool comma_ok);
     void ydeclaration(const Lexeme &first_element = Lexeme());
     bool yconnection();
-    void ycompound_arguments(CompoundElementClassT *);
+    void ycompound_arguments(RouterT *);
     void yelementclass(int pos1);
     void ytunnel();
     ElementClassT *ycompound(String, int decl_pos1, int name_pos1);
@@ -112,7 +111,6 @@ class LexerT { public:
     RouterT *_router;
     
     int _anonymous_offset;
-    int _compound_depth;
   
     // what names represent types? (builds up linearly)
     HashMap<String, ElementClassT *> _base_type_map;

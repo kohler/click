@@ -32,19 +32,21 @@
 static String::Initializer string_initializer;
 static HashMap<String, int> base_type_map(-1);
 static Vector<ElementClassT *> base_types;
-static int unique_id_storage = ElementClassT::TUNNEL_UID;
 
 typedef ElementTraits Traits;
 
+namespace {
+
 class TraitsElementClassT : public ElementClassT { public:
-    TraitsElementClassT(const String &, int uid, int component, ...);
+    TraitsElementClassT(const String &, int component, ...);
+    bool primitive() const		{ return false; }
     const ElementTraits *find_traits() const;
   private:
     ElementTraits _the_traits;
 };
 
-TraitsElementClassT::TraitsElementClassT(const String &name, int uid, int component, ...)
-    : ElementClassT(name, uid)
+TraitsElementClassT::TraitsElementClassT(const String &name, int component, ...)
+    : ElementClassT(name)
 {
     *(_the_traits.component(Traits::D_CLASS)) = name;
     va_list val;
@@ -56,6 +58,7 @@ TraitsElementClassT::TraitsElementClassT(const String &name, int uid, int compon
 	component = va_arg(val, int);
     }
     va_end(val);
+    use();			// make sure we hold onto this forever
 }
 
 const ElementTraits *
@@ -64,56 +67,43 @@ TraitsElementClassT::find_traits() const
     return &_the_traits;
 }
 
-ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel>", TUNNEL_UID, Traits::D_PROCESSING, "a/a", Traits::D_FLOW_CODE, "x/y", 0);
+}
+
+ElementClassT *ElementClassT::the_tunnel_type = new TraitsElementClassT("<tunnel>", Traits::D_PROCESSING, "a/a", Traits::D_FLOW_CODE, "x/y", 0);
 
 
 ElementClassT::ElementClassT(const String &name)
-    : _name(name), _use_count(0), _unique_id(unique_id_storage++),
-      _traits_version(-1)
+    : _name(name), _use_count(0), _traits_version(-1)
 {
-    //fprintf(stderr, "%p: %s\n", this, printable_name_cc());
-}
-
-ElementClassT::ElementClassT(const String &name, int uid)
-    : _name(name), _use_count(0), _unique_id(uid), _traits_version(-1)
-{
-    assert(uid >= unique_id_storage);
-    unique_id_storage = uid + 1;
-    //fprintf(stderr, "%p: %s\n", this, printable_name_cc());
+    //fprintf(stderr, "%p: %s\n", this, printable_name_c_str());
 }
 
 ElementClassT::~ElementClassT()
 {
-    //fprintf(stderr, "%p: ~%s\n", this, printable_name_cc());
-}
-
-int
-ElementClassT::max_uid()
-{
-    return unique_id_storage;
+    //fprintf(stderr, "%p: ~%s\n", this, printable_name_c_str());
 }
 
 const char *
-ElementClassT::printable_name_cc()
+ElementClassT::printable_name_c_str()
 {
     if (_name)
-	return _name.cc();
+	return _name.c_str();
     else
 	return "<anonymous>";
 }
 
 void
-ElementClassT::set_base_type(ElementClassT *ec)
+ElementClassT::set_base_type(ElementClassT *t)
 {
-    int i = base_type_map[ec->name()];
+    t->use();
+    int i = base_type_map[t->name()];
     if (i < 0) {
-	base_type_map.insert(ec->name(), base_types.size());
-	base_types.push_back(ec);
+	base_type_map.insert(t->name(), base_types.size());
+	base_types.push_back(t);
     } else {
 	base_types[i]->unuse();
-	base_types[i] = ec;
+	base_types[i] = t;
     }
-    ec->use();
 }
 
 ElementClassT *
@@ -152,15 +142,9 @@ ElementClassT::documentation_url() const
 
 
 ElementClassT *
-ElementClassT::find_relevant_type(int, int, const Vector<String> &)
+ElementClassT::resolve(int, int, const Vector<String> &)
 {
     return this;
-}
-
-void
-ElementClassT::report_signatures(String name, ErrorHandler *errh)
-{
-    errh->message("`%s[...]'", name.cc());
 }
 
 ElementT *
@@ -224,12 +208,18 @@ ElementClassT::expand_element(
     String new_configuration = env.interpolate(e->configuration());
     cp_argvec(new_configuration, args);
 
-    ElementClassT *found_c = c->find_relevant_type(inputs_used, outputs_used, args);
+    ElementClassT *found_c = c->resolve(inputs_used, outputs_used, args);
     if (!found_c) {
+	// report error message
 	String lm = e->landmark(), name = e->type_name();
-	errh->lerror(lm, "no match for `%s'", name.cc(), signature(name, inputs_used, outputs_used, args.size()).cc());
+	errh->lerror(lm, "no match for `%s'", name.cc(), unparse_signature(name, inputs_used, outputs_used, args.size()).cc());
+	Vector<ElementClassT *> overloads;
+	c->collect_overloads(overloads);
 	ContextErrorHandler cerrh(errh, "possibilities are:", "  ", lm);
-	c->report_signatures(name, &cerrh);
+	for (int i = 0; i < overloads.size(); i++)
+	    cerrh.lmessage(overloads[i]->landmark(), "'%s'", overloads[i]->unparse_signature().c_str());
+
+	// destroy element
 	if (fromr == tor)
 	    e->kill();
 	return 0;
@@ -248,20 +238,8 @@ ElementClassT::complex_expand_element(
     return direct_expand_element(e, tor, env, errh);
 }
 
-void
-ElementClassT::collect_primitive_types(HashMap<String, int> &m)
-{
-    if (_unique_id > TUNNEL_UID)
-	m.insert(_name, 1);
-}
-
-void
-ElementClassT::collect_prerequisites(Vector<ElementClassT *> &)
-{
-}
-
 String
-ElementClassT::signature(const String &name, int ninputs, int noutputs, int nargs)
+ElementClassT::unparse_signature(const String &name, int ninputs, int noutputs, int nargs)
 {
     const char *pl_args = (nargs == 1 ? " argument, " : " arguments, ");
     const char *pl_ins = (ninputs == 1 ? " input, " : " inputs, ");
@@ -272,16 +250,16 @@ ElementClassT::signature(const String &name, int ninputs, int noutputs, int narg
 }
 
 
-SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *eclass)
-    : ElementClassT(name), _eclass(eclass)
+SynonymElementClassT::SynonymElementClassT(const String &name, ElementClassT *eclass, RouterT *declaration_scope)
+    : ElementClassT(name), _eclass(eclass), _declaration_scope(declaration_scope)
 {
     assert(eclass);
 }
 
 ElementClassT *
-SynonymElementClassT::find_relevant_type(int ninputs, int noutputs, const Vector<String> &args)
+SynonymElementClassT::resolve(int ninputs, int noutputs, const Vector<String> &args)
 {
-    return _eclass->find_relevant_type(ninputs, noutputs, args);
+    return _eclass->resolve(ninputs, noutputs, args);
 }
 
 ElementT *
@@ -293,29 +271,10 @@ SynonymElementClassT::complex_expand_element(
     return 0;
 }
 
-void
-SynonymElementClassT::collect_primitive_types(HashMap<String, int> &m)
-{
-    _eclass->collect_primitive_types(m);
-}
-
-void
-SynonymElementClassT::collect_prerequisites(Vector<ElementClassT *> &v)
-{
-    _eclass->collect_prerequisites(v);
-    v.push_back(_eclass);
-}
-
 const ElementTraits *
 SynonymElementClassT::find_traits() const
 {
     return _eclass->find_traits();
-}
-
-CompoundElementClassT *
-SynonymElementClassT::cast_compound()
-{
-    return _eclass->cast_compound();
 }
 
 RouterT *
@@ -325,228 +284,67 @@ SynonymElementClassT::cast_router()
 }
 
 
-//
-// Compound
-//
-
-CompoundElementClassT::CompoundElementClassT
-	(const String &name, ElementClassT *prev, int depth,
-	 RouterT *enclosing_router, const String &landmark)
-    : ElementClassT(name), _landmark(landmark), _depth(depth),
-      _ninputs(0), _noutputs(0), _prev(prev),
-      _circularity_flag(false)
+RouterT *
+ElementClassT::declaration_scope() const
 {
-    _router = new RouterT(this, enclosing_router);
-    _router->get_element("input", ElementClassT::tunnel_type(), String(), landmark);
-    _router->get_element("output", ElementClassT::tunnel_type(), String(), landmark);
-    _router->use();
-    if (_prev)
-	_prev->use();
-    *(_traits.component(Traits::D_CLASS)) = name;
+    return 0;
 }
 
-CompoundElementClassT::CompoundElementClassT(const String &name, RouterT *r)
-    : ElementClassT(name), _router(r), _depth(0), _ninputs(0), _noutputs(0),
-      _prev(0), _circularity_flag(false)
+RouterT *
+SynonymElementClassT::declaration_scope() const
 {
-    _router->use();
-    *(_traits.component(Traits::D_CLASS)) = name;
+    return _declaration_scope;
 }
 
-CompoundElementClassT::~CompoundElementClassT()
+
+ElementClassT *
+ElementClassT::overload_type() const
 {
-    _router->unuse();
-    if (_prev)
-	_prev->unuse();
+    return 0;
 }
 
 int
-CompoundElementClassT::finish(ErrorHandler *errh)
+ElementClassT::overload_depth() const
 {
-    if (!errh)
-	errh = ErrorHandler::silent_handler();
-    int before_nerrors = errh->nerrors();
-
-    if (ElementT *einput = _router->element("input")) {
-	_ninputs = einput->noutputs();
-	if (einput->ninputs())
-	    errh->lerror(_landmark, "`%s' pseudoelement `input' may only be used as output", printable_name_cc());
-
-	if (_ninputs) {
-	    Vector<int> used;
-	    _router->find_connection_vector_from(einput, used);
-	    assert(used.size() == _ninputs);
-	    for (int i = 0; i < _ninputs; i++)
-		if (used[i] == -1)
-		    errh->lerror(_landmark, "compound element `%s' input %d unused", printable_name_cc(), i);
-	}
-    } else
-	_ninputs = 0;
-
-    if (ElementT *eoutput = _router->element("output")) {
-	_noutputs = eoutput->ninputs();
-	if (eoutput->noutputs())
-	    errh->lerror(_landmark, "`%s' pseudoelement `output' may only be used as input", printable_name_cc());
-
-	if (_noutputs) {
-	    Vector<int> used;
-	    _router->find_connection_vector_to(eoutput, used);
-	    assert(used.size() == _noutputs);
-	    for (int i = 0; i < _noutputs; i++)
-		if (used[i] == -1)
-		    errh->lerror(_landmark, "compound element `%s' output %d unused", printable_name_cc(), i);
-	}
-    } else
-	_noutputs = 0;
-
-    // resolve anonymous element names
-    _router->deanonymize_elements();
-
-    return (errh->nerrors() == before_nerrors ? 0 : -1);
+    return 0;
 }
 
-void
-CompoundElementClassT::check_duplicates_until(ElementClassT *last, ErrorHandler *errh)
-{
-  if (this == last || !_prev)
-    return;
-  
-  ElementClassT *n = _prev;
-  while (n && n != last) {
-    CompoundElementClassT *nc = n->cast_compound();
-    if (!nc) break;
-    if (nc->_ninputs == _ninputs && nc->_noutputs == _noutputs && nc->_formals.size() == _formals.size()) {
-      ElementT::redeclaration_error(errh, "", signature(), _landmark, nc->_landmark);
-      break;
-    }
-    n = nc->_prev;
-  }
-
-  if (CompoundElementClassT *nc = _prev->cast_compound())
-    nc->check_duplicates_until(last, errh);
-}
-
-ElementClassT *
-CompoundElementClassT::find_relevant_type(int ninputs, int noutputs, const Vector<String> &args)
-{
-    // Try to return an element class, even if it is wrong -- the error
-    // messages are friendlier
-    CompoundElementClassT *ct = this;
-    CompoundElementClassT *closest = 0;
-    int nclosest = 0;
-
-    while (1) {
-	if (ct->_ninputs == ninputs && ct->_noutputs == noutputs && ct->_formals.size() == args.size())
-	    return ct;
-
-	// replace `closest'
-	if (ct->_formals.size() == args.size()) {
-	    closest = ct;
-	    nclosest++;
-	}
-
-	ElementClassT *e = ct->_prev;
-	if (!e)
-	    return (nclosest == 1 ? closest : 0);
-	else if (CompoundElementClassT *next = e->cast_compound())
-	    ct = next;
-	else
-	    return e->find_relevant_type(ninputs, noutputs, args);
-    }
-}
 
 String
-CompoundElementClassT::signature() const
+ElementClassT::unparse_signature() const
 {
-    return ElementClassT::signature(name(), _ninputs, _noutputs, _formals.size());
+    return name() + "[...]";
+}
+
+
+void
+ElementClassT::collect_types(HashMap<ElementClassT *, int> &m) const
+{
+    m.insert(const_cast<ElementClassT *>(this), 1);
 }
 
 void
-CompoundElementClassT::report_signatures(String name, ErrorHandler *errh)
+SynonymElementClassT::collect_types(HashMap<ElementClassT *, int> &m) const
 {
-    if (_prev)
-	_prev->report_signatures(name, errh);
-    errh->lmessage(landmark(), "`%s'", signature().cc());
+    HashMap<ElementClassT *, int>::Pair *p = m.find_pair_force(const_cast<SynonymElementClassT *>(this), 0);
+    if (p && p->value == 0) {
+	p->value = 1;
+	_eclass->collect_types(m);
+    }
 }
 
-ElementT *
-CompoundElementClassT::complex_expand_element(
-	ElementT *compound, const String &, Vector<String> &args,
-	RouterT *tor, const VariableEnvironment &env, ErrorHandler *errh)
+
+void
+ElementClassT::collect_overloads(Vector<ElementClassT *> &v) const
 {
-    RouterT *fromr = compound->router();
-    assert(fromr != _router && tor != _router);
-    assert(!_circularity_flag);
-    // ensure we don't delete ourselves before we're done!
-    use();
-    _circularity_flag = true;
-
-    // parse configuration string
-    int nargs = _formals.size();
-    if (args.size() != nargs) {
-	const char *whoops = (args.size() < nargs ? "few" : "many");
-	String signature;
-	for (int i = 0; i < nargs; i++) {
-	    if (i) signature += ", ";
-	    signature += _formals[i];
-	}
-	if (errh)
-	    errh->lerror(compound->landmark(),
-			 "too %s arguments to compound element `%s(%s)'",
-			 whoops, printable_name_cc(), signature.cc());
-	for (int i = args.size(); i < nargs; i++)
-	    args.push_back("");
-    }
-
-    // create prefix
-    assert(compound->name());
-    VariableEnvironment new_env(env, compound->name());
-    String prefix = env.prefix();
-    String new_prefix = new_env.prefix(); // includes previous prefix
-    new_env.limit_depth(_depth);
-    new_env.enter(_formals, args, _depth);
-
-    // create input/output tunnels
-    if (fromr == tor)
-	compound->set_type(tunnel_type());
-    tor->add_tunnel(prefix + compound->name(), new_prefix + "input", compound->landmark(), errh);
-    tor->add_tunnel(new_prefix + "output", prefix + compound->name(), compound->landmark(), errh);
-    ElementT *new_e = tor->element(prefix + compound->name());
-
-    // dump compound router into `tor'
-    _router->expand_into(tor, new_env, errh);
-
-    // yes, we expanded it
-    _circularity_flag = false;
-    unuse();
-    return new_e;
+    v.push_back(const_cast<ElementClassT *>(this));
 }
 
 void
-CompoundElementClassT::collect_primitive_types(HashMap<String, int> &m)
+SynonymElementClassT::collect_overloads(Vector<ElementClassT *> &v) const
 {
-    _router->collect_primitive_types(m);
-    if (_prev)
-	_prev->collect_primitive_types(m);
+    _eclass->collect_overloads(v);
 }
 
-void
-CompoundElementClassT::collect_prerequisites(Vector<ElementClassT *> &v)
-{
-    if (_prev) {
-	_prev->collect_prerequisites(v);
-	v.push_back(_prev);
-    }
-}
 
-const ElementTraits *
-CompoundElementClassT::find_traits() const
-{
-    if (ElementMap::default_map()) {
-	ErrorHandler *errh = ErrorHandler::silent_handler();
-	ProcessingT pt(_router, errh);
-	*(_traits.component(Traits::D_PROCESSING)) = pt.compound_processing_code();
-	*(_traits.component(Traits::D_FLOW_CODE)) = pt.compound_flow_code(errh);
-    }
-    return &_traits;
-}
+#include <click/hashmap.cc>

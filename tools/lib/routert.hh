@@ -8,23 +8,22 @@
 #include <click/archive.hh>
 typedef HashMap<String, int> StringMap;
 
-class RouterT { public:
+class RouterT : public ElementClassT { public:
 
-    RouterT(ElementClassT * = 0, RouterT * = 0);
+    RouterT();
+    RouterT(const String &name, const String &landmark, RouterT *enclosing_scope = 0, ElementClassT *overload = 0);
     virtual ~RouterT();
 
-    void use()				{ _use_count++; }
-    void unuse()			{ if (--_use_count <= 0) delete this; }
-
-    ElementClassT *enclosing_type() const { return _enclosing_type; }
-
-    void check() const;
-
-    ElementClassT *locally_declared_type(const String &) const;
-    inline ElementClassT *declared_type(const String &) const;
-    void add_declared_type(ElementClassT *, bool anonymous);
-    void collect_primitive_types(HashMap<String, int> &) const;
-    void collect_locally_declared_types(Vector<ElementClassT *> &) const;
+    // ELEMENTS
+    int nelements() const		{ return _elements.size(); }
+    int n_live_elements() const		{ return _n_live_elements; }
+    
+    inline const ElementT *element(const String &) const;
+    inline ElementT *element(const String &);
+    int eindex(const String &s) const	{ return _element_name_map[s]; }
+    
+    const ElementT *element(int i) const{ return _elements[i]; }
+    ElementT *element(int i)		{ return _elements[i]; }
     
     class iterator;
     class const_iterator;
@@ -37,22 +36,12 @@ class RouterT { public:
     inline iterator end_elements();
     inline const_iterator end_elements() const;
     
-    int nelements() const		{ return _elements.size(); }
-    int n_live_elements() const		{ return _n_live_elements; }
-    
-    inline const ElementT *element(const String &) const;
-    inline ElementT *element(const String &);
-    int eindex(const String &s) const	{ return _element_name_map[s]; }
-    
-    const ElementT *element(int i) const{ return _elements[i]; }
-    ElementT *element(int i)		{ return _elements[i]; }
-    
     bool elive(int i) const		{ return _elements[i]->live(); }
     bool edead(int i) const		{ return _elements[i]->dead(); }
     inline String ename(int) const;
     inline ElementClassT *etype(int) const;
     inline String etype_name(int) const;
-
+    
     ElementT *get_element(const String &name, ElementClassT *, const String &configuration, const String &landmark);
     ElementT *add_anon_element(ElementClassT *, const String &configuration = String(), const String &landmark = String());
     void change_ename(int, const String &);
@@ -62,6 +51,16 @@ class RouterT { public:
 
     void set_new_eindex_collector(Vector<int> *v) { _new_eindex_collector=v; }
 
+    // TYPES
+    ElementClassT *locally_declared_type(const String &) const;
+    inline ElementClassT *declared_type(const String &) const;
+    void add_declared_type(ElementClassT *, bool anonymous);
+
+    void collect_types(HashMap<ElementClassT *, int> &) const;
+    void collect_locally_declared_types(Vector<ElementClassT *> &) const;
+    void collect_overloads(Vector<ElementClassT *> &) const;
+
+    // CONNECTIONS
     int nconnections() const			{ return _conn.size(); }
     const Vector<ConnectionT> &connections() const { return _conn; }
     const ConnectionT &connection(int c) const	{ return _conn[c]; }
@@ -74,19 +73,6 @@ class RouterT { public:
     void kill_connection(int);
     void kill_bad_connections();
     void compact_connections();
-
-    void add_requirement(const String &);
-    void remove_requirement(const String &);
-    const Vector<String> &requirements() const	{ return _requirements; }
-
-    void add_archive(const ArchiveElement &);
-    int narchive() const			{ return _archive.size(); }
-    int archive_index(const String &s) const	{ return _archive_map[s]; }
-    const Vector<ArchiveElement> &archive() const{ return _archive; }
-    ArchiveElement &archive(int i)		{ return _archive[i]; }
-    const ArchiveElement &archive(int i) const	{ return _archive[i]; }
-    inline ArchiveElement &archive(const String &s);
-    inline const ArchiveElement &archive(const String &s) const;
 
     inline bool has_connection(const PortT &, const PortT &) const;
     int find_connection(const PortT &, const PortT &) const;
@@ -105,7 +91,25 @@ class RouterT { public:
     inline bool insert_before(ElementT *, const PortT &);
     inline bool insert_after(ElementT *, const PortT &);
 
+    // REQUIREMENTS
+    void add_requirement(const String &);
+    void remove_requirement(const String &);
+    const Vector<String> &requirements() const	{ return _requirements; }
+
+    // ARCHIVE
+    void add_archive(const ArchiveElement &);
+    int narchive() const			{ return _archive.size(); }
+    int archive_index(const String &s) const	{ return _archive_map[s]; }
+    const Vector<ArchiveElement> &archive() const{ return _archive; }
+    ArchiveElement &archive(int i)		{ return _archive[i]; }
+    const ArchiveElement &archive(int i) const	{ return _archive[i]; }
+    inline ArchiveElement &archive(const String &s);
+    inline const ArchiveElement &archive(const String &s) const;
+
     void add_components_to(RouterT *, const String &prefix = String()) const;
+
+    // CHECKING, FLATTENING AND EXPANDING
+    void check() const;
 
     void remove_duplicate_connections();
     void remove_dead_elements(ErrorHandler * = 0);
@@ -116,11 +120,38 @@ class RouterT { public:
     void expand_into(RouterT *, const VariableEnvironment &, ErrorHandler *);
     void flatten(ErrorHandler *);
 
+    // UNPARSING
     void unparse(StringAccum &, const String & = String()) const;
     void unparse_requirements(StringAccum &, const String & = String()) const;
     void unparse_declarations(StringAccum &, const String & = String()) const;
     void unparse_connections(StringAccum &, const String & = String()) const;
     String configuration_string() const;
+
+    // COMPOUND ELEMENTS
+    String landmark() const		{ return _type_landmark; }
+    const ElementTraits *find_traits() const;
+    
+    bool primitive() const		{ return false; }
+    
+    int nformals() const		{ return _formals.size(); }
+    const Vector<String> &formals() const { return _formals; }
+    void add_formal(const String &n)	{ _formals.push_back(n); }
+    int ninputs() const			{ return _ninputs; }
+    int noutputs() const		{ return _noutputs; }
+    
+    RouterT *enclosing_scope() const;
+    ElementClassT *overload_type() const { return _overload_type; }
+    int overload_depth() const		{ return _overload_depth; }
+
+    int finish_type(ErrorHandler *);
+    
+    ElementClassT *resolve(int, int, const Vector<String> &);
+    ElementT *complex_expand_element(ElementT *, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
+
+    String unparse_signature() const;
+    void unparse_declaration(StringAccum &, const String &, UnparseKind, ElementClassT *);    
+
+    RouterT *cast_router()		{ return this; }
 
   private:
   
@@ -143,16 +174,6 @@ class RouterT { public:
 	ElementType &operator=(const ElementType &);
     };
 
-    int _use_count;
-    ElementClassT *_enclosing_type;
-
-    RouterT *_enclosing_scope;
-    int _enclosing_scope_cookie;
-    int _scope_cookie;
-    
-    StringMap _declared_type_map;
-    Vector<ElementType> _declared_types;
-
     StringMap _element_name_map;
     Vector<ElementT *> _elements;
     ElementT *_free_element;
@@ -162,12 +183,29 @@ class RouterT { public:
     Vector<ConnectionT> _conn;
     Vector<Pair> _first_conn;
     int _free_conn;
+    
+    StringMap _declared_type_map;
+    Vector<ElementType> _declared_types;
 
     Vector<String> _requirements;
 
     StringMap _archive_map;
     Vector<ArchiveElement> _archive;
 
+    RouterT *_declaration_scope;
+    int _declaration_scope_cookie;
+    int _declaration_depth;
+    int _scope_cookie;
+
+    Vector<String> _formals;
+    int _ninputs;
+    int _noutputs;
+    ElementClassT *_overload_type;
+    int _overload_depth;
+    String _type_landmark;
+    mutable ElementTraits _traits;
+    bool _circularity_flag;
+    
     RouterT(const RouterT &);
     RouterT &operator=(const RouterT &);
 
@@ -363,12 +401,6 @@ inline const ArchiveElement &
 RouterT::archive(const String &name) const
 {
     return _archive[_archive_map[name]];
-}
-
-inline ElementClassT *
-ElementT::enclosing_type() const
-{
-    return (_owner ? _owner->enclosing_type() : 0);
 }
 
 inline bool

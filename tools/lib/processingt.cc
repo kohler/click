@@ -87,7 +87,7 @@ ProcessingT::create_pidx(ErrorHandler *errh)
     if (errh) {
 	for (RouterT::const_iterator x = _router->begin_elements(); x; x++)
 	    if (x->dead() && (x->ninputs() > 0 || x->noutputs() > 0))
-		errh->lwarning(x->landmark(), "dead element %s has live connections", x->name_cc());
+		errh->lwarning(x->landmark(), "dead element %s has live connections", x->name_c_str());
     }
 }
 
@@ -118,7 +118,7 @@ next_processing_code(const String &str, int &pos, ErrorHandler *errh,
 	return -2;
 
       default:
-	errh->lerror(landmark, "bad character `%c' in processing code for `%s'", s[pos], etype->printable_name_cc());
+	errh->lerror(landmark, "bad character `%c' in processing code for `%s'", s[pos], etype->printable_name_c_str());
 	pos++;
 	return -1;
     
@@ -137,7 +137,7 @@ ProcessingT::initial_processing_for(int ei, ErrorHandler *errh)
     String landmark = e->landmark();
     String pc = etype->traits().processing_code();
     if (!pc) {
-	errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype->printable_name_cc());
+	errh->lwarning(landmark, "`%s' has no processing code; assuming agnostic", etype->printable_name_c_str());
 	return;
     }
 
@@ -192,13 +192,13 @@ ProcessingT::processing_error(const ConnectionT &conn, int processing_from,
   if (conn.landmark() == "<agnostic>")
     errh->lerror(conn.from_element()->landmark(),
 		 "agnostic `%s' in mixed context: %s input %d, %s output %d",
-		 conn.from_element()->name_cc(), type2, conn.to_port(),
+		 conn.from_element()->name_c_str(), type2, conn.to_port(),
 		 type1, conn.from_port());
   else
     errh->lerror(conn.landmark(),
 		 "`%s' %s output %d connected to `%s' %s input %d",
-		 conn.from_element()->name_cc(), type1, conn.from_port(),
-		 conn.to_element()->name_cc(), type2, conn.to_port());
+		 conn.from_element()->name_c_str(), type1, conn.from_port(),
+		 conn.to_element()->name_c_str(), type2, conn.to_port());
 }
 
 void
@@ -293,20 +293,20 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	if (_output_processing[fp] == VPUSH && output_used[fp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' push output %d",
-			 hf.element->name_cc(), hf.port);
+			 hf.element->name_c_str(), hf.port);
 	    errh->lmessage(conn[output_used[fp]].landmark(),
 			   "  `%s' output %d previously used here",
-			   hf.element->name_cc(), hf.port);
+			   hf.element->name_c_str(), hf.port);
 	} else
 	    output_used[fp] = c;
 
 	if (_input_processing[tp] == VPULL && input_used[tp] >= 0) {
 	    errh->lerror(conn[c].landmark(),
 			 "reuse of `%s' pull input %d",
-			 ht.element->name_cc(), ht.port);
+			 ht.element->name_c_str(), ht.port);
 	    errh->lmessage(conn[input_used[tp]].landmark(),
 			   "  `%s' input %d previously used here",
-			   ht.element->name_cc(), ht.port);
+			   ht.element->name_c_str(), ht.port);
 	} else
 	    input_used[tp] = c;
     }
@@ -320,7 +320,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	    int port = i - _input_pidx[e->eindex()];
 	    errh->lerror(e->landmark(),
 			 "`%s' %s input %d not connected",
-			 e->name_cc(), processing_name(_input_processing[i]), port);
+			 e->name_c_str(), processing_name(_input_processing[i]), port);
 	}
 
     for (int i = 0; i < noutput_pidx(); i++)
@@ -331,7 +331,7 @@ ProcessingT::check_connections(ErrorHandler *errh)
 	    int port = i - _output_pidx[e->eindex()];
 	    errh->lerror(e->landmark(),
 			 "`%s' %s output %d not connected",
-			 e->name_cc(), processing_name(_output_processing[i]), port);
+			 e->name_c_str(), processing_name(_output_processing[i]), port);
 	}
 
     // Set _connected_* properly.

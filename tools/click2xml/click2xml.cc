@@ -79,7 +79,7 @@ open_output_file(const char *outfile, ErrorHandler *errh)
     return outf;
 }
 
-static HashMap<int, int> generated_types(0);
+static HashMap<ElementClassT *, int> generated_types(0);
 
 static void
 space_until(String &s, int last_col, int want_col)
@@ -121,7 +121,7 @@ print_class_reference(FILE *f, ElementClassT *c, const char *prefix)
     if (c->primitive())
 	fprintf(f, "%sclassname=\"%s\"", prefix, String(c->name()).cc());
     else
-	fprintf(f, "%sclassid=\"c%d\"", prefix, c->uid());
+	fprintf(f, "%sclassid=\"c%p\"", prefix, c);
 }
 
 static void
@@ -137,14 +137,12 @@ static void generate_router(RouterT *, FILE *, String, bool, ErrorHandler *);
 static void
 generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 {
-    if (!c || c->primitive() || generated_types[c->uid()])
+    if (!c || c->primitive() || generated_types[c] || c->tunnel())
 	return;
-    generated_types.insert(c->uid(), 1);
+    generated_types.insert(c, 1);
 
-    Vector<ElementClassT *> prerequisites;
-    c->collect_prerequisites(prerequisites);
-    for (int i = 0; i < prerequisites.size(); i++)
-	generate_type(prerequisites[i], f, indent, errh);
+    if (ElementClassT *older = c->overload_type())
+	generate_type(older, f, indent, errh);
 
     fprintf(f, "%s<elementclass ", indent.cc());
     if (c->name())
@@ -155,10 +153,10 @@ generate_type(ElementClassT *c, FILE *f, String indent, ErrorHandler *errh)
 	fprintf(f, ">\n%s  <synonym ", indent.cc());
 	print_class_reference(f, synonym->synonym_of(), "");
 	fprintf(f, " />\n");
-    } else if (CompoundElementClassT *compound = c->cast_compound()) {
+    } else if (RouterT *compound = c->cast_router()) {
 	print_landmark_attributes(f, compound->landmark());
 	fprintf(f, ">\n%s  <compound", indent.cc());
-	if (ElementClassT *prev = compound->previous()) {
+	if (ElementClassT *prev = compound->overload_type()) {
 	    fprintf(f, " ");
 	    print_class_reference(f, prev, "prev");
 	}
@@ -191,7 +189,7 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
     
     for (RouterT::iterator e = r->begin_elements(); e; e++)
 	if (!e->tunnel()) {
-	    fprintf(f, "%s<element name=\"%s\" ", indent.cc(), e->name_cc());
+	    fprintf(f, "%s<element name=\"%s\" ", indent.cc(), e->name_c_str());
 	    print_class_reference(f, e->type(), "");
 	    print_landmark_attributes(f, e->landmark());
 	    fprintf(f, " ninputs=\"%d\" noutputs=\"%d\"",
@@ -209,8 +207,8 @@ generate_router(RouterT *r, FILE *f, String indent, bool top, ErrorHandler *errh
 	int p = processing.output_processing(conn[i].from());
 	fprintf(f, "%s<connection from=\"%s\" fromport=\"%d\" to=\"%s\" toport=\"%d\" processing=\"%c\" />\n",
 		indent.cc(),
-		conn[i].from_element()->name_cc(), conn[i].from_port(),
-		conn[i].to_element()->name_cc(), conn[i].to_port(),
+		conn[i].from_element()->name_c_str(), conn[i].from_port(),
+		conn[i].to_element()->name_c_str(), conn[i].to_port(),
 		ProcessingT::processing_letters[p]);
     }
 }
