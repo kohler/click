@@ -1,3 +1,49 @@
+2001-12-01 Saturday 22:01  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in (1.15), tools/click-xform/click-xform.cc (1.36):
+	nitlets
+
+2001-12-01 Saturday 22:01  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click-mkmindriver.1 (1.2),
+	tools/click-mkmindriver/click-mkmindriver.cc (1.16):
+	click-mkmindriver: support --align, --elements, and --all options
+
+2001-12-01 Saturday 22:00  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: elementt.cc (1.16), elementt.hh (1.13): support
+	ElementClassT::collect_primitive_classes()
+
+2001-12-01 Saturday 22:00  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: toolutils.cc (1.40), toolutils.hh (1.28): add
+	read_router_string() function; ElementMap::driver_compatible() can
+	take non-flattened routers
+
+2001-12-01 Saturday 21:59  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: routert.cc (1.46), routert.hh (1.38): refactoring:
+	element classes are listed in a single _etypes vector, rather than
+	two other vectors; possible bug fixes related to anonymous element
+	classes
+
+2001-12-01 Saturday 21:58  Eddie Kohler <kohler@aciri.org>
+
+	* tools/: Makefile.in (1.45), lib/lexert.cc (1.37), lib/lexert.hh
+	(1.19), lib/lexertinfo.hh (1.1): add support for click-pretty
+	(which is itself not yet checked in)
+
+2001-12-01 Saturday 21:57  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click-flatten.1 (1.4), tools/click-flatten/click-flatten.cc
+	(1.5): click-flatten: support expressions on the command line with
+	--expr
+
+2001-12-01 Saturday 21:55  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.163): support distributions with partial tool
+	sets
+
 2001-12-01 Saturday 15:53  Eddie Kohler <kohler@aciri.org>
 
 	* config-bsdmodule.h.in (1.2): fix from Luigi Rizzo

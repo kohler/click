@@ -1,3 +1,7 @@
+2001-12-01 Saturday 22:01  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in: nitlets
+
 2001-12-01 Saturday 15:53  Eddie Kohler <kohler@aciri.org>
 
 	* config-bsdmodule.h.in: fix from Luigi Rizzo
