@@ -257,6 +257,7 @@ FromDevice::got_skb(struct sk_buff *skb)
 	Packet *p = Packet::make(skb);
 	_queue[_tail] = p; /* hand it to run_task */
 	_tail = next;
+	_task.reschedule();
 
     } else {
 	/* queue full, drop */
@@ -280,7 +281,8 @@ FromDevice::run_task()
 #if CLICK_DEVICE_ADJUST_TICKETS
     adjust_tickets(npq);
 #endif
-    _task.fast_reschedule();
+    if (npq > 0)
+	_task.fast_reschedule();
     return npq > 0;
 }
 
