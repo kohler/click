@@ -151,6 +151,7 @@ for($i=0; $i<$neigh; $i++) {
 print "mainclassifier[", $neigh, "]\n";
 print "\t-> Strip(14)\n";
 print "\t-> CheckIPHeader\n";
+print "\t-> fragforA::IPFragmenter(1400)\n";
 print "\t-> Print(InClassPort1)\n";
 print "\t-> IPReassembler\n";
 print "\t-> IPPrint(InClassPort1)\n";
@@ -174,7 +175,7 @@ print "\t-> dirPathC;\n\n";
 for($i=2; $i<$neigh+2; $i++) {
     print "routingtable[", $i, "]\n";
     print "\t-> Print(ROUTE2(forw", $i, "_))\n";
-    print "\t-> fragfor", $i-2, "::IPFragmenter(1400)\n";
+    print "\t-> fragforB", $i-2, "::IPFragmenter(1400)\n";
     print "\t-> SetIPAddress(", $neighbors[$i-2], ")\n";
     print "\t-> IPEncapPaint(0, 4, ", $meIP, ") // FORWARD pkts get painted 0 \n";
     print "\t-> setgw;\n\n";
@@ -232,9 +233,10 @@ print "icmppingrw[1] -> IPPrint(IPPingRewritten2) -> setgw; // this is only for 
 print "setgw -> [0]arpq;\n";
 print "//setlaptop -> [0]arpq;\n\n";
 
-print "icmperror :: ICMPError(", $meIP, ", 3, 4) -> arpq;\n";
+print "icmperror :: ICMPError(", $exitIP, ", 3, 4) -> SetIPAddress(", $gwIP, ") -> arpq;\n";
+print "fragforA[1] -> icmperror;\n";
 for($i=0; $i<$neigh; $i++) {
-    print "fragfor", $i, "[1] -> icmperror;\n";
+    print "fragforB", $i, "[1] -> icmperror;\n";
     print "fragrev", $i, "[1] -> icmperror;\n";
 }
 
