@@ -128,7 +128,10 @@ ToHostSniffers::push(int port, Packet *p)
 #  if LINUX_VERSION_CODE >= 0x020400
     local_bh_disable();
     br_read_lock(BR_NETPROTO_LOCK);
+    struct net_device *dev = skb->dev;
+    dev_hold(dev);
     ptype_dispatch(skb, 0xFFFF);	// unlikely protocol
+    dev_put(dev);
     br_read_unlock(BR_NETPROTO_LOCK);
     local_bh_enable();
 #  else
