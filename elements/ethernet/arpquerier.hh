@@ -44,7 +44,7 @@ are sent to the second output.
 
 =e
 
-   c :: Classifier(12/0806 20/0001, 12/0800, ...);
+   c :: Classifier(12/0806 20/0002, 12/0800, ...);
    a :: ARPQuerier(18.26.4.24, 00:00:C0:AE:67:EF);
    c[0] -> a[1];
    c[1] -> ... -> a[0];
