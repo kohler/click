@@ -69,7 +69,6 @@ NDSol::notify_noutputs(int n)
 int
 NDSol::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  click_chatter("NDSol::configure !");
   return cp_va_parse(conf, this, errh,
 		     cpIP6Address, "IP6 address", &_my_ip6,
 		     cpEthernetAddress, "Ethernet address", &_my_en,

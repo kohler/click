@@ -8,8 +8,6 @@
  */
 
 /* types for ICMP6 packets */
-
-
 #define ICMP6_DST_UNREACHABLE 1
 #define ICMP6_PKT_TOOBIG 2
 #define ICMP6_TYPE_TIME_EXCEEDED 3
@@ -22,13 +20,21 @@
 #define ICMP6_GRP_MEM_RED 132
 
 /* codes for spefic types of ICMP6 packets */
-/* dest unreachable packets */
-#//define ICMP_CODE_PROTUNREACH 2
+/* ICMP6 Error Message - Type: 1 */
+#define ICMP6_CODE_NOROUTE_TO_DST 0
+#define ICMP6_CODE_DST_COMM_PROH 1
+#define ICMP6_CODE_NOT_A_NEIGH 2
+#define ICMP6_CODE_ADD_UNREACH 3
 #define ICMP6_CODE_PORTUNREACH 4
-/* echo packets */
-//#define ICMP6_CODE_ECHO 0
-/* timestamp packets */
-//#define ICMP6_CODE_TIMESTAMP 0
+
+/* ICMP6 Time Exceeded Message - Type: 3 */
+#define ICMP6_CODE_HOP_LIM_EXC 0
+#define ICMP6_CODE_FRG_REASSEM_TIME_EXC 1
+
+/* ICMP6 Time Exceeded Message - Type: 4 */
+#define ICMP6_CODE_ERR_HEAD_FIELD 0
+#define ICMP6_CODE_UNRCG_NXT_HEADER 1
+#define ICMP6_CODE_UNRCG_IP6_OPTION 2
 
 
 /* most ICMP6 request types */
@@ -54,16 +60,15 @@ struct icmp6_pkt_toobig
 /* parameter problem header */
 struct icmp6_param 
 {
-  unsigned char icmp_type;		/* one of the ICMP_TYPE_*'s above */
-  unsigned char icmp_code;		/* one of the ICMP6_CODE_*'s above */
+  unsigned char icmp6_type;		/* one of the ICMP_TYPE_*'s above */
+  unsigned char icmp6_code;		/* one of the ICMP6_CODE_*'s above */
   unsigned short icmp_cksum;		/* 16 1's comp csum */
-  unsigned char pointer[3];		/* which octect was a problem */
-  unsigned char unused;		/* should be zero */
-  /* followed by original IP header and first 8 octets of data */
+  unsigned int  pointer;		/* which octect in orig. IP6 pkt was a problem */
+  /* followed by as much of invoking packet as will fit without the ICMPv6 packet exceeding 576 octets*/
 };
 
 
-/* struct for things with sequence numbers */
+/* struct for things with sequence numbers - echo request & echo reply msgs*/
 struct icmp6_sequenced 
 {
   unsigned char icmp6_type;		/* one of the ICMP6_TYPE_*'s above */
@@ -71,6 +76,9 @@ struct icmp6_sequenced
   unsigned short icmp6_cksum;		/* 16 1's comp csum */
   unsigned short identifier;
   unsigned short sequence;
+  /* Followed by: */
+  /* Echo Request: zero or more octets of arbitary data */
+  /* Echo Reply: the data fromm the invoking Echo Request msg */
 };
 
 /* struct for group membership messages */
@@ -86,10 +94,8 @@ struct icmp6_group
 
 
 /* different struct names for each type of packet */
-#define icmp6_unreach icmp6_generic
-#define icmp6_exceeded icmp6_generic
-//#define icmp_quence icmp_generic
-//#define icmp_info icmp_sequenced
+#define icmp6_dst_unreach icmp6_generic
+#define icmp6_time_exceeded icmp6_generic
 #define icmp_echo icmp6_sequenced
 
 #endif

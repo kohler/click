@@ -1,13 +1,14 @@
 
-//Suppose grunt ping6 frenulum
-//It is first sending its N.solicitation message to local link for mindwipe's link layer address since mindwipe is it's default route. mindwipe respond it with N.Advertisement message. grunt send echo Request dst to frenulum to mindwipe, mindwipe route it to frenulum (it first send N. solicitation message on the local link, frenulum respondes it with N. Advertisement message, then mindwipe send the packet to frenulum's with encapsulated ethernet header). If frenulum knows grunts' link layer address, it replies with a echo reply message. 
+//Suppose machine A (grunt) ping6 machine B(frenulum) through our click router (mindwipe)
+
+//grunt first sends its N.solicitation message to local link for mindwipe's link layer address since mindwipe is it's default route. mindwipe will respond it with N.Advertisement message. grunt then sends echo Request dst to frenulum to mindwipe, mindwipe routes it to frenulum (it first sends N. solicitation message on the local link, frenulum respondes it with N. Advertisement message, then mindwipe sends the packet to frenulum's with encapsulated ethernet header). If frenulum knows grunts' link layer address, it replies with a echo reply message. 
 
 //We could set mindwipe as the router for frenulum if des is grunt. Then we have the exact process of the above from frenulum to grunt.
 
 //grunt - ip6 address is : 3ffe:1ce1:2:0:200::2
 //frenulum -ip6 address is 3ffe:1ce1:2::1
 //mindwipe - ip6 addresses are : 3ffe:1ce1:2:0:200::1 and 3ffe:1ce1:2::2 
-//mindwipe is our click router, the above two IP6 address is by imagination, not real, i.e. the router itself sees itself have these two ip6 address.
+//mindwipe is our click router, the above two IP6 address is by imagination, not real, i.e. the router may be just a IPv4 only node, it can assume itself have these two ip6 address.
 
 //Type the following for the test:
 
@@ -18,6 +19,8 @@
 //grunt: route add -inet6 3ffe:1ce1:2::1 3ffe:1ce1:2:0:200::1
 //grunt: ping6 3ffe:1ce1:2::1
 
+//If you want to run this test, you can replace the router's addresses with your machine' IP6 Addresses and Ethernet Addresses in the following elements: NDAdv, NDSol, LookupIP6Route. 
+
 
 
 
@@ -27,13 +30,12 @@ FromDevice(eth0, 1)
 			 12/86dd); 
 	nda::NDAdv(3ffe:1ce1:2:0:200::1/128 00:A0:C9:9C:FD:9E, 
 				fe80::2a0:c9ff:fe9c:fd9e/128 00:A0:C9:9C:FD:9E); 
-	c[0] ->Print(Rec:N.Solicitation, 200)
-  	->nda
-	->Print(Send:N.Adv, 200)
+
+   c[0] ->nda
 	->Queue(1024)
 	->ToDevice(eth0);
 
-  	c[2] -> Print(Rec:IP6-packet, 200) ->Strip(14)
+  	c[2] ->Strip(14)
 	-> CheckIP6Header(3ffe:1ce1:2:0:200::ffff 3ffe:1ce1:2::ffff)
 	-> GetIP6Address(24)
 	-> rt :: LookupIP6Route(
@@ -45,12 +47,14 @@ FromDevice(eth0, 1)
   	::0/0 ::c0a8:1 3);
 	nds :: NDSol(fe80::2a0:c9ff:fe9c:fd9e, 00:a0:c9:9c:fd:9e);
 	
-	rt[1] 	-> Print(route1-ok, 200) 
+	rt[1] 	-> dh:: DecIP6HLIM
 		-> [0]nds;
 		
-	c[1] 	-> Print(Rec:N.Adv, 200) ->[1]nds;
-	nds[0]	-> Print(send:N.AdvOrIP6, 200)
-		-> ToDevice(eth0);
+	dh[1]	-> ICMP6Error(3ffe:1ce1:2:0:200::1, 3, 0)
+		-> [0]nds;
+	
+	c[1]    ->[1]nds;
+	nds[0]	-> ToDevice(eth0);
 
 	
 
