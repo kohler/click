@@ -206,7 +206,8 @@ class Router { public:
   bool _cleaned : 1;
   bool _have_connections : 1;
   bool _have_hookpidx : 1;
-
+  mutable bool _allow_star_handler : 1;
+  
   Vector<int> _ehandler_first_by_element;
   Vector<int> _ehandler_to_handler;
   Vector<int> _ehandler_next;
@@ -257,7 +258,7 @@ class Router { public:
 
   // private handler methods
   void initialize_handlers(bool, bool);
-  int find_ehandler(int, const String &, bool star_ok = false) const;
+  int find_ehandler(int, const String &) const;
   static inline Handler fetch_handler(const Element *, const String &);
   void store_local_handler(int, const Handler &);
   static void store_global_handler(const Handler &);

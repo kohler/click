@@ -47,6 +47,7 @@ static int globalh_cap;
 Router::Router(const String &configuration)
   : _preinitialized(false), _initialized(false), _initialize_attempted(false),
     _cleaned(false), _have_connections(false), _have_hookpidx(false),
+    _allow_star_handler(true),
     _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
     _configuration(configuration), _arena_factory(new BigHashMap_ArenaFactory),
     _hotswap_router(0)
@@ -834,6 +835,7 @@ Router::initialize_handlers(bool defaults, bool specifics)
   _ehandler_first_by_element.assign(nelements(), -1);
   _ehandler_to_handler.clear();
   _ehandler_next.clear();
+  _allow_star_handler = true;
 
   _handler_first_by_name.clear();
 
@@ -1040,7 +1042,7 @@ Router::Handler::unparse_name(Element *e) const
 // implement.)
 
 int
-Router::find_ehandler(int eindex, const String &name, bool call_star) const
+Router::find_ehandler(int eindex, const String &name) const
 {
   int eh = _ehandler_first_by_element[eindex];
   int star_h = -1;
@@ -1053,11 +1055,13 @@ Router::find_ehandler(int eindex, const String &name, bool call_star) const
       star_h = h;
     eh = _ehandler_next[eh];
   }
-  if (call_star && star_h >= 0 && _handlers[star_h].writable()) {
+  if (_allow_star_handler && star_h >= 0 && _handlers[star_h].writable()) {
+    _allow_star_handler = false;
     if (_handlers[star_h].call_write(name, element(eindex), ErrorHandler::default_handler()) >= 0)
-      return find_ehandler(eindex, name, false);
+      eh = find_ehandler(eindex, name);
+    _allow_star_handler = true;
   }
-  return -1;
+  return eh;
 }
 
 inline Router::Handler
@@ -1072,7 +1076,10 @@ Router::fetch_handler(const Element *e, const String &name)
 void
 Router::store_local_handler(int eindex, const Handler &to_store)
 {
+  bool allow_star_handler = _allow_star_handler;
+  _allow_star_handler = false;
   int old_eh = find_ehandler(eindex, to_store.name());
+  _allow_star_handler = allow_star_handler;
   if (old_eh >= 0)
     _handlers[_ehandler_to_handler[old_eh]]._use_count--;
   
