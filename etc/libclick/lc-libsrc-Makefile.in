@@ -19,7 +19,7 @@ CC = @CC@
 CPP = @CPP@
 CXX = @CXX@
 CXXCPP = @CXXCPP@
-AR = @AR@
+AR_CREATE = @AR@ @AR_CREATEFLAGS@
 RANLIB = @RANLIB@
 INSTALL = @INSTALL@
 mkinstalldirs = $(conf_auxdir)/mkinstalldirs
@@ -39,6 +39,8 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 	$(CXXCOMPILE) -E $< > $@
 
 
+INSTALLLIBS = libclick.a
+
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
 	ipaddress.o ipaddresslist.o ipflowid.o etheraddress.o \
@@ -53,9 +55,9 @@ GENERIC_OBJS = string.o straccum.o \
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
-LIBOBJS = $(GENERIC_OBJS) \
-	addressinfo.o alignmentinfo.o drivermanager.o errorelement.o \
-	portinfo.o scheduleinfo.o clp.o
+LIBOBJS = $(GENERIC_OBJS) $(STD_ELEMENT_OBJS) clp.o
+STD_ELEMENT_OBJS = addressinfo.o alignmentinfo.o drivermanager.o \
+	errorelement.o portinfo.o scheduleinfo.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_USERLEVEL
 CFLAGS = @CFLAGS@
@@ -75,10 +77,11 @@ COMPILE = $(CC) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CFLAGS) $(DEPCFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
-all: libclick.a
+
+all: $(INSTALLLIBS)
 
 libclick.a: Makefile $(LIBOBJS)
-	$(AR) cru libclick.a $(LIBOBJS)
+	$(AR_CREATE) libclick.a $(LIBOBJS)
 	$(RANLIB) libclick.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
@@ -92,14 +95,19 @@ include $(DEPFILES)
 endif
 #!end gmake
 
-install: libclick.a
+install: install-lib
+install-lib: $(INSTALLLIBS)
 	$(mkinstalldirs) $(libdir)
-	$(INSTALL) libclick.a $(libdir)/libclick.a
-install-man:
+	for i in $(INSTALLLIBS); do $(INSTALL) $$i $(libdir)/$$i; done
+uninstall:
+	for i in $(INSTALLLIBS); do rm -f $(libdir)/$$i; done
 
 clean:
 	rm -f *.d *.o libclick.a
+clean-lib:
+	rm -f $(LIBOBJS) libclick.a
 distclean: clean
 	-rm -f Makefile
 
-.PHONY: all clean distclean elemlist install install-man
+.PHONY: all clean clean-lib distclean elemlist \
+	install install-lib uninstall
