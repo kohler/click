@@ -1,3 +1,46 @@
+2000-11-30 Thursday 01:10  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/restore-linux: file restore-linux was initially added on
+	branch smp_click.
+
+2000-11-30 Thursday 01:10  Benjie Chen <benjie@lcs.mit.edu>
+
+	* etc/make-linux-patch: file make-linux-patch was initially added
+	on branch smp_click.
+
+2000-11-29 Wednesday 12:12  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/udpipencap.cc: debenjification
+
+2000-11-29 Wednesday 11:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/router.cc: fixed "ports" handler problem reported by Brecht
+	Vermeulen
+
+2000-11-29 Wednesday 11:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: changed version number to 1.1
+
+2000-11-29 Wednesday 10:32  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/dynudpipencap.cc: file dynudpipencap.cc was initially
+	added on branch smp_click.
+
+2000-11-29 Wednesday 10:32  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/dynudpipencap.hh: file dynudpipencap.hh was initially
+	added on branch smp_click.
+
+2000-11-29 Wednesday 10:31  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/ip/: udpipencap.cc, udpipencap.hh: revert back to old
+	udpipencap
+
+2000-11-29 Wednesday 09:18  Robert Morris <rtm@lcs.mit.edu>
+
+	* conf/dnsproxy.click: Simple configuration demonstrating how to
+	turn a normal DNS server into a transparent caching DNS proxy.
+
 2000-11-27 Monday 21:19  Benjie Chen <benjie@lcs.mit.edu>
 
 	* lib/skbmgr.c: file skbmgr.c was initially added on branch
