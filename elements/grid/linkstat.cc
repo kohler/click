@@ -18,6 +18,7 @@
 #include <click/config.h>
 #include <click/confparse.hh>
 #include <click/click_ether.h>
+#include <click/error.hh>
 #include "linkstat.hh"
 #include <click/glue.hh>
 #include <sys/time.h>
@@ -150,6 +151,15 @@ LinkStat::add_bcast_stat(const EtherAddress &e, unsigned int seqno)
 }
 
 String
+LinkStat::read_window(Element *xf, void *)
+{
+  LinkStat *f = (LinkStat *) xf;
+  return String(f->_window);
+}
+
+
+
+String
 LinkStat::read_stats(Element *xf, void *)
 {
   LinkStat *f = (LinkStat *) xf;
@@ -184,11 +194,31 @@ LinkStat::read_bcast_stats(Element *xf, void *)
   return s;
 }
 
+
+int
+LinkStat::write_window(const String &arg, Element *el, 
+		       void *, ErrorHandler *errh)
+{
+  LinkStat *e = (LinkStat *) el;
+  int window = atoi(((String) arg).cc());
+  if (window < 0)
+    return errh->error("window must be >= 0");
+  e->_window = window;
+
+  /* clear all stats to avoid confusing data */
+  e->_bcast_stats.clear();
+
+  return 0;
+}
+
+
 void
 LinkStat::add_handlers()
 {
   add_read_handler("stats", read_stats, 0);
   add_read_handler("bcast_stats", read_bcast_stats, 0);
+  add_read_handler("window", read_window, 0);
+  add_write_handler("window", write_window, 0);
 }
 
 ELEMENT_REQUIRES(userlevel)

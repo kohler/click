@@ -38,7 +38,9 @@ private:
 
   static String read_stats(Element *, void *);
   static String read_bcast_stats(Element *, void *);
-
+  
+  static String read_window(Element *, void *);
+  static int write_window(const String &, Element *, void *, ErrorHandler *);
   
   void add_bcast_stat(const EtherAddress &e, unsigned int seqno);
 
