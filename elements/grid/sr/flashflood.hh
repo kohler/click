@@ -95,6 +95,7 @@ private:
     int _num_rx;
     int _num_tx;
     struct timeval _first_rx;
+    bool _scheduled;
     bool _sent;
     Timer *t;
     struct timeval _to_send;

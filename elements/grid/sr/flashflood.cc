@@ -153,6 +153,7 @@ FlashFlood::forward(Broadcast *bcast) {
   output(0).push(p);
 
   bcast->_sent = true;
+  bcast->_scheduled = false;
   bcast->_num_tx++;
   _packets_tx++;
   bcast->del_timer();
@@ -169,7 +170,7 @@ FlashFlood::forward_hook()
   for (int x = 0; x < _packets.size(); x++) {
     if (timercmp(&_packets[x]._to_send, &now, <=)) {
       /* this timer has expired */
-      if (!_packets[x]._sent) {
+      if (!_packets[x]._sent && _packets[x]._scheduled) {
 	/* we haven't sent this packet yet */
 	forward(&_packets[x]);
       }
@@ -213,6 +214,7 @@ FlashFlood::push(int port, Packet *p_in)
     _packets[index]._num_tx = 0;
     _packets[index]._first_rx = now;
     _packets[index]._sent = false;
+    _packets[index]._scheduled = false;
     _packets[index].t = NULL;
     _packets[index]._to_send = now;
     forward(&_packets[index]);
@@ -243,6 +245,7 @@ FlashFlood::push(int port, Packet *p_in)
       _packets[index]._num_tx = 0;
       _packets[index]._first_rx = now;
       _packets[index]._sent = false;
+      _packets[index]._scheduled = false;
       _packets[index].t = NULL;
 
       /* clone the packet and push it out */
@@ -266,7 +269,18 @@ FlashFlood::push(int port, Packet *p_in)
 int
 FlashFlood::get_link_prob(IPAddress from, IPAddress to) 
 {
-  return 100 * 100 / _link_table->get_hop_metric(from, to);
+
+  int metric = _link_table->get_hop_metric(from, to);
+  int prob = 100 * 100 / metric;
+
+  prob = min(prob, 100);
+
+  if (_lossy) {
+    return prob;
+  }
+  /* if sba, just bimodal links! */
+  return (prob > _neighbor_threshold) ? 100 : 0;
+
 }
 
 
@@ -276,6 +290,10 @@ FlashFlood::update_probs(IPAddress src, Broadcast *bcast) {
   Vector<IPAddress> neighbors = _link_table->get_neighbors(src);
   bcast->_node_to_prob.insert(src, 100);
   for (int x = 0; x < neighbors.size(); x++) {
+    if (neighbors[x] == _ip) {
+      /* don't update my prob, it's one */
+      continue;
+    }
     /*
      * p(got packet ever) = (1 - p(never))
      *                    = (1 - (p(not before))*(p(not now)))
@@ -283,13 +301,19 @@ FlashFlood::update_probs(IPAddress src, Broadcast *bcast) {
      *
      */
     int p_now = get_link_prob(src, neighbors[x]);
-    if (!_lossy) {
-      /* if sba, just bimodal links! */
-      p_now = (p_now > _neighbor_threshold) ? 100 : 0;
-    }
     int *p_before_ptr = bcast->_node_to_prob.findp(neighbors[x]);
     int p_before = (p_before_ptr) ? *p_before_ptr : 0;
     int p_ever = (100 - (((100 - p_before) * (100 - p_now))/100));
+    if (p_ever > 100) {
+      click_chatter("%{element} src %s neighbor %s p_ever %d p_before %d p_now %d\n",
+		    this,
+		    src.s().cc(),
+		    neighbors[x].s().cc(),
+		    p_ever,
+		    p_before,
+		    p_now);
+      sr_assert(false);
+    }
     bcast->_node_to_prob.insert(neighbors[x], p_ever);
   }
 }
@@ -301,19 +325,17 @@ FlashFlood::reschedule_bcast(Broadcast *bcast) {
     int my_neighbor_weight = 0;
     int max_neighbor_weight = 0;
     for (int x = 0; x < neighbors.size(); x++) {
-      
+      if (neighbors[x] == _ip) {
+	/* don't update my prob, it's one */
+	continue;
+      }
       int neighbor_neighbor_weight = 0;
       
       /* first, find the neighbor's neighbor weight */
       Vector<IPAddress> neighbor_neighbors = _link_table->get_neighbors(neighbors[x]);
       for (int y = 0; y < neighbor_neighbors.size(); y++) {
-	int m;
-	if (_lossy) {
-	  m = get_link_prob(neighbors[x], neighbor_neighbors[y]);
-	} else {
-	  m = (get_link_prob(neighbors[x], neighbor_neighbors[y]) > _neighbor_threshold) ? 100 : 0;
-	}
-	if (_debug) {
+	int m = get_link_prob(neighbors[x], neighbor_neighbors[y]);
+	if (_debug && 0) {
 	  click_chatter("%{element} neighbor %s neighbor %s metric %d\n",
 			this,
 			neighbors[x].s().cc(),
@@ -331,25 +353,27 @@ FlashFlood::reschedule_bcast(Broadcast *bcast) {
 	p_ever_ptr = bcast->_node_to_prob.findp(neighbors[x]);
       }
       int p_ever = *p_ever_ptr;
-
-      int metric;
-      if (_lossy) {
-	metric = get_link_prob(_ip, neighbors[x]);
-      } else {
-	metric = (get_link_prob(_ip, neighbors[x]) > _neighbor_threshold) ? 100 : 0;
+      if (p_ever > 100) {
+	click_chatter("%{element} p_ever is %d\n",
+		      this,
+		      p_ever);
+	sr_assert(false);
       }
+      int metric = get_link_prob(_ip, neighbors[x]);
       my_neighbor_weight += metric;
-      expected_rx += ((100 - p_ever) * 
-		      get_link_prob(_ip, neighbors[x]))/100;
+      int neighbor_expected_rx = ((100 - p_ever) * 
+				  get_link_prob(_ip, neighbors[x]))/100;
+      expected_rx += neighbor_expected_rx;
 
 
       if (_debug) {
-	click_chatter("%{element} reschedule_bcast neighbor %s neighbor_weight %d prob %d metric %d\n",
+	click_chatter("%{element} rbcast neighbor %s neighbor_weight %d prob %d metric %d good %d\n",
 		      this,
 		      neighbors[x].s().cc(),
 		      neighbor_neighbor_weight,
 		      p_ever,
-		      metric);
+		      metric,
+		      neighbor_expected_rx);
       }
     }
     
@@ -371,17 +395,20 @@ FlashFlood::reschedule_bcast(Broadcast *bcast) {
 		    _threshold);
     }
     if (expected_rx < _threshold || !my_neighbor_weight) {
-      click_chatter("%{element} not rescheduling seq %d\n",
-		    this,
-		    bcast->_seq);
+      if (_debug) {
+	click_chatter("%{element} not rescheduling seq %d\n",
+		      this,
+		      bcast->_seq);
+      }
 
     } else {
       int max_delay_ms = min(1000, 100 * max_neighbor_weight / my_neighbor_weight);
       int delay_time = (random() % max_delay_ms) + 1;
 
       if (_debug) {
-	click_chatter("%{element} delay time is %d / max %d ms\n",
+	click_chatter("%{element} seq %d delay time is %d / max %d ms\n",
 		      this,
+		      bcast->_seq,
 		      delay_time,
 		      max_delay_ms);
       }
@@ -394,6 +421,7 @@ FlashFlood::reschedule_bcast(Broadcast *bcast) {
       timeradd(&now, &delay, &bcast->_to_send);
       bcast->del_timer();
       /* schedule timer */
+      bcast->_scheduled = true;
       bcast->_sent = false;
       bcast->t = new Timer(static_forward_hook, (void *) this);
       bcast->t->initialize(this);

@@ -369,6 +369,8 @@ ETTStat::send_probe(unsigned int size, int rate)
   checked_output_push(0, p);
 }
 
+
+
 int
 ETTStat::initialize(ErrorHandler *errh)
 {
@@ -399,12 +401,13 @@ ETTStat::initialize(ErrorHandler *errh)
     _next_2 = now;
     _next_5 = now;
     _next_11 = now;
-    
-    _next_small.tv_sec += 1;
-    _next_1.tv_sec += 2;
-    _next_2.tv_sec += 3;
-    _next_5.tv_sec += 4;
-    _next_11.tv_sec += 5;
+
+    unsigned max_jitter = _period / 10;
+    add_jitter(max_jitter, &_next_small);
+    add_jitter(max_jitter, &_next_1);
+    add_jitter(max_jitter, &_next_2);
+    add_jitter(max_jitter, &_next_5);
+    add_jitter(max_jitter, &_next_11);
 
     _timer_small->schedule_at(_next_small);
     _timer_1->schedule_at(_next_1);
