@@ -15,6 +15,8 @@ CLICK_DECLS
  * Pulls packets at the given RATE in packets per second, and pushes them out
  * its single output.
  *
+ * =h rate read/write
+ *
  * =a BandwidthRatedUnqueue, Unqueue, Shaper, RatedSplitter */
 
 class RatedUnqueue : public Element { public:
