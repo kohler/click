@@ -17,8 +17,14 @@
 #define FWD_RATE_ANNO(p)		((p)->user_anno_i(1))
 #define SET_FWD_RATE_ANNO(p, v)		((p)->set_user_anno_i(1, (v)))
 
+#define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(1))
+#define SET_EXTRA_LENGTH_ANNO(p, v)	((p)->set_user_anno_u(1, (v)))
+
 // bytes 8-11
 #define REV_RATE_ANNO(p)		((p)->user_anno_i(2))
 #define SET_REV_RATE_ANNO(p, v)		((p)->set_user_anno_i(2, (v)))
+
+#define PACKET_COUNT_ANNO(p)		((p)->user_anno_u(2))
+#define SET_PACKET_COUNT_ANNO(p, v)	((p)->set_user_anno_u(2, (v)))
 
 #endif
