@@ -93,12 +93,10 @@ SPAN.c-et-decl {\n\
   foreground: black;\n\
 }\n\
 SPAN.c-et-port {\n\
-  font-family: monospace;\n\
   font-style: italic;\n\
   font-size: small;\n\
 }\n\
 SPAN.c-et-conn {\n\
-  font-family: monospace;\n\
   font-size: small;\n\
 }\n\
 P.c-ei, P.c-eit {\n\
