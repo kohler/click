@@ -1,3 +1,9 @@
+2004-02-24 Tuesday 19:45  Eddie Kohler <kohler@icir.org>
+
+	* elements/linuxmodule/polldevice.cc (1.133),
+	include/click/routerthread.hh (1.20): ensure that <linux/sched.h>
+	is included before you call wake_up_process (reported by max krohn)
+
 2004-02-24 Tuesday 07:51  max
 
 	* elements/ip/: siphmapper.cc (1.2), siphmapper.hh (1.2): bug
