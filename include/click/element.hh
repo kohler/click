@@ -22,10 +22,10 @@ class Element { public:
   static const char * const PUSH_TO_PULL, * const PULL_TO_PUSH;
 
   enum ConfigurePhase {
-    CONFIGURE_PHASE_ZERO = 0,
+    CONFIGURE_PHASE_FIRST = 0,
     CONFIGURE_PHASE_INFO = 20,
     CONFIGURE_PHASE_DEFAULT = 100,
-    CONFIGURE_PHASE_LATE = 2000
+    CONFIGURE_PHASE_LAST = 2000
   };
   
   class Connection;

@@ -85,7 +85,7 @@ class AddressInfo : public Element {
   const char *class_name() const	{ return "AddressInfo"; }
   
   AddressInfo *clone() const		{ return new AddressInfo; }
-  int configure_phase() const		{ return CONFIGURE_PHASE_ZERO; }
+  int configure_phase() const		{ return CONFIGURE_PHASE_FIRST; }
   int configure(const Vector<String> &, ErrorHandler *);
 
   static bool query_ip(String, unsigned char *, Element *);
