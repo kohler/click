@@ -1,3 +1,7 @@
+2003-07-09 Wednesday 16:56  John Bicket <jbicket@mit.edu>
+
+	* configure.in (1.210): added experimental flag for --enable-wifi
+
 2003-07-09 Wednesday 15:36  Eddie Kohler <kohler@icir.org>
 
 	* acclick.m4 (1.31), aclocal.m4 (1.31), config.h.in (1.22),
