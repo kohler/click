@@ -105,6 +105,24 @@ main(int argc, char **argv)
     if (j >= 0) 
       elements.push_back(j); 
   }
+  
+  int j = full_elementmap.find("QuitWatcher"); 
+  for (int z=0; z<elements.size(); z++) { 
+    if (elements[z] == j) { 
+      j = -1; 
+      break; 
+    } 
+  }
+  if (j >= 0) elements.push_back(j); 
+  j = full_elementmap.find("ControlSocket"); 
+  for (int z=0; z<elements.size(); z++) { 
+    if (elements[z] == j) { 
+      j = -1; 
+      break; 
+    } 
+  }
+  if (j >= 0) elements.push_back(j); 
+  
 
   for (int i=0; i<elements.size(); i++) {
     String requirement = full_elementmap.requirements(elements[i]); 

@@ -19,8 +19,18 @@ $click_dir = $ARGV[0];
 $build_dir = $ARGV[1];
 $conf_file = $ARGV[2];
 
+if ($build_dir[0] eq '/' ||
+    $build_dir[0] eq '~' ||
+    $build_dir[0] eq '.') {
+  print "build directory must be a relative path from $click_dir.\n";
+  print "  (e.g. setup.pl $click_dir tiny $conf_file\n";
+  print "   will create a build environment in $click_dir/tiny)\n";
+  exit;
+}    
+
 $dir = "$click_dir/$build_dir";
 
+print "creating $dir/Makefile.in\n";
 $r = system("mkdir -p $dir");
 if ($r != 0) {
   print "cannot create $dir, exiting...\n";

@@ -5,20 +5,20 @@ happen, you first need to
 
   1. have a click src directory. for now, assume it is ~/click
   2. build userlevel click in ~/click
-  3. run "gmake elementmap" in ~/click
+  3. run gmake install in ~/click
 
 if you have a configuration file called ~/click/conf/test.conf, you can create
 a build environment for that configuration file by doing the following:
 
   1. cd ~/click/tools/click-shrink
-  2. gmake
-  3. ./setup ~/click tiny ~/click/conf/test.conf
+  2. ./setup ~/click tiny ~/click/conf/test.conf
 
 this last step will create a build environment for you in ~/click/tiny.  the
 Makefile in that directory will parse ~/click/conf/test.conf and create the
-appropriate executable.
+appropriate executable. 
 
-The executable created will only run ~/click/conf/test.conf, or other
+the second argument to setup must be a relative path from ~/click. the
+executable created will only run ~/click/conf/test.conf, or other
 configuration files that use elements or a subset of the elements in
 test.conf.
 
