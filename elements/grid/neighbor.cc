@@ -70,6 +70,8 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (_timeout_jiffies < 1)
       return errh->error("timeout interval is too small");
   }
+  else
+    click_chatter("%s: not timing out table entries", id().cc());
 
   if (_period <= 0)
     return errh->error("period must be greater than 0");
@@ -88,7 +90,7 @@ Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 Neighbor::initialize(ErrorHandler *errh)
 {
-  ScheduleInfo::join_scheduler(this, errh);
+  //  ScheduleInfo::join_scheduler(this, errh);
   _hello_timer.attach(this);
   _hello_timer.schedule_after_ms(_period); // Send periodically
 
@@ -316,6 +318,7 @@ Neighbor::expire_hook(unsigned long thunk)
 {
   Neighbor *n = (Neighbor *) thunk;
   n->expire_routes();
+  n->_expire_timer.schedule_after_ms(n->_timeout);
 }
 
 
