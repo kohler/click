@@ -22,7 +22,7 @@ deleting of routes.
 
 Outputs a human-readable version of the current routing table.
 
-=a LinearIPLookup, LinuxIPLookup, RadixIPLookup */
+=a LinearIPLookup, LinuxIPLookup, TrieIPLookup, DirectIPLookup */
 
 class StaticIPLookup : public LinearIPLookup { public:
 

@@ -54,7 +54,7 @@ Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
 
 Clears the entire routing table in a single atomic operation.
 
-=a StaticIPLookup, LinearIPLookup, RadixIPLookup, TrieIPLookup
+=a StaticIPLookup, LinearIPLookup, TrieIPLookup
 
 Pankaj Gupta, Steven Lin, and Nick McKeown.  "Routing Lookups in Hardware at
 Memory Access Speeds".  In Proc. IEEE Infocom 1998, Vol. 3, pp. 1240-1247.

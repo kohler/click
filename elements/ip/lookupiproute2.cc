@@ -42,4 +42,5 @@ LookupIPRoute2::configure(Vector<String> &, ErrorHandler *errh)
 }
 
 CLICK_ENDDECLS
+ELEMENT_REQUIRES(false)
 EXPORT_ELEMENT(LookupIPRoute2)

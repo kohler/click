@@ -17,7 +17,7 @@ IP lookup using an array of hashmaps
 =d
 
 Performs IP lookup using an array of hashmaps in logarithmic time, at the cost
-of approximately n log n initialization time.
+of approximately n log n initialization time (and a large constant factor).
 
 Expects a destination IP address annotation with each packet. Looks up that
 address in its routing table, using longest-prefix-match, sets the destination

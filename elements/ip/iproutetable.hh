@@ -97,7 +97,7 @@ the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
 
 =back
 
-=a StaticIPLookup, LinearIPLookup, RadixIPLookup */
+=a StaticIPLookup, LinearIPLookup, DirectIPLookup */
 
 class IPRouteTable : public Element { public:
 
