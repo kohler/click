@@ -1,3 +1,18 @@
+2002-06-08 Saturday 14:32  Eddie Kohler <kohler@icir.org>
+
+	* elements/grid/gridlogger.cc (1.2): require userlevel
+
+2002-06-08 Saturday 14:24  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/fromipsumdump.cc (1.21),
+	elements/grid/radiosim.cc (1.18), include/click/confparse.hh
+	(1.30), lib/confparse.cc (1.99): FromIPSummaryDump can handle the
+	"payload" type
+
+2002-06-08 Saturday 14:24  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/compblock.cc (1.19): nits
+
 2002-06-07 Friday 14:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: dsdvroutetable.cc (1.10), gridroutetable.cc

@@ -1,3 +1,9 @@
+2002-06-08 Saturday 14:24  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh, include/click/confparse.hh,
+	libsrc/confparse.cc: FromIPSummaryDump can handle the "payload"
+	type
+
 2002-06-03 Monday 19:05  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: bighashmap.cc, bighashmap.hh, bighashmap.cc,
