@@ -767,7 +767,10 @@ ETTStat::clear_stale()
     IPAddress n = _neighbors[x];
     probe_list_t *l = _bcast_stats.findp(n);
     if (!l || 
-	now.tv_sec - l->_last_rx.tv_sec > (signed) l->_tau/l->_period) {
+	(unsigned) now.tv_sec - l->_last_rx.tv_sec > 2 * l->_tau/1000) {
+      click_chatter("%{element} clearing stale neighbor %s age %d\n ",
+		    this, n.s().cc(),
+		    now.tv_sec - l->_last_rx.tv_sec);
       _bcast_stats.remove(n);
     } else {
       new_neighbors.push_back(n);

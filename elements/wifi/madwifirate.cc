@@ -112,7 +112,7 @@ MadwifiRate::process_feedback(Packet *p_in)
     return;
   }
 
-  if (!success) {
+  if (!success && _debug) {
     click_chatter("%{element} packet failed %s success %d rate %d alt %d\n",
 		  this,
 		  dst.s().cc(),
@@ -149,11 +149,13 @@ MadwifiRate::process_feedback(Packet *p_in)
 
   if (stepdown) {
     if (nfo->_rates.size()) {
-      click_chatter("%{element} steping down for %s from %d to %d\n",
-		    this,
-		    nfo->_eth.s().cc(),
-		    nfo->_rates[nfo->_current_index],
-		    nfo->_rates[max(0, nfo->_current_index - 1)]);
+      if (_debug && max(nfo->_current_index - 1, 0) != nfo->_current_index) {
+	click_chatter("%{element} stepping down for %s from %d to %d\n",
+		      this,
+		      nfo->_eth.s().cc(),
+		      nfo->_rates[nfo->_current_index],
+		      nfo->_rates[max(0, nfo->_current_index - 1)]);
+      }
     }
     nfo->_current_index = max(nfo->_current_index - 1, 0);
     nfo->_successes = 0;
@@ -164,12 +166,14 @@ MadwifiRate::process_feedback(Packet *p_in)
       return;
     }
     if (nfo->_rates.size()) {
-      click_chatter("%{element} steping up for %s from %d to %d\n",
-		    this,
-		    nfo->_eth.s().cc(),
-		    nfo->_rates[nfo->_current_index],
-		    nfo->_rates[min(nfo->_rates.size() - 1, 
-				    nfo->_current_index + 1)]);
+      if (_debug) {
+	click_chatter("%{element} steping up for %s from %d to %d\n",
+		      this,
+		      nfo->_eth.s().cc(),
+		      nfo->_rates[nfo->_current_index],
+		      nfo->_rates[min(nfo->_rates.size() - 1, 
+				      nfo->_current_index + 1)]);
+      }
     }
     nfo->_current_index = min(nfo->_current_index + 1, nfo->_rates.size() - 1);
     nfo->_successes = 0;
@@ -215,10 +219,12 @@ MadwifiRate::assign_rate(Packet *p_in)
     nfo->_failures = 0;
     /* initial to max? */
     nfo->_current_index = 0;
-    click_chatter("%{element} initial rate for %s is %d\n",
-		  this,
-		  nfo->_eth.s().cc(),
-		  nfo->_rates[nfo->_current_index]);
+    if (_debug) {
+      click_chatter("%{element} initial rate for %s is %d\n",
+		    this,
+		    nfo->_eth.s().cc(),
+		    nfo->_rates[nfo->_current_index]);
+    }
   }
 
   ceh->rate = nfo->pick_rate();
