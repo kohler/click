@@ -1,3 +1,13 @@
+2001-11-04 Sunday 15:38  Eddie Kohler <kohler@aciri.org>
+
+	* userlevel/Makefile.in (1.61): add install-lib and clean-lib
+	targets
+
+2001-11-04 Sunday 15:37  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.10), fromipsumdump.hh
+	(1.9): FromIPSummaryDump speed improvements, small bug fixes
+
 2001-11-04 Sunday 01:35  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/: timefilter.cc (1.4), timefilter.hh (1.5):
