@@ -187,28 +187,18 @@ Packet::uniqueify_copy()
  * May return the same packet if it has only one reference.
  */
 Packet *
-Packet::push(unsigned int nbytes)
+Packet::expensive_push(unsigned int nbytes)
 {
-  if (headroom() >= nbytes) {
-    Packet *p = uniqueify();
+  click_chatter("expensive Packet::push");
 #ifdef __KERNEL__
-    skb_push(p->skb(), nbytes);
+  Packet *q = Packet::make(skb_realloc_headroom(skb(), nbytes));
 #else
-    p->_data -= nbytes;
+  Packet *q = Packet::make(length() + nbytes);
+  memcpy(q->data() + nbytes, data(), length());
+  memcpy(q->anno(), anno(), sizeof(Anno));
 #endif
-    return p;
-  } else {
-    click_chatter("expensive Packet::push");
-#ifdef __KERNEL__
-    Packet *q = Packet::make(skb_realloc_headroom(skb(), nbytes));
-#else
-    Packet *q = Packet::make(length() + nbytes);
-    memcpy(q->data() + nbytes, data(), length());
-    memcpy(q->anno(), anno(), sizeof(Anno));
-#endif
-    kill();
-    return q;
-  }
+  kill();
+  return q;
 }
 
 Packet *

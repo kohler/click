@@ -188,7 +188,6 @@ ARPQuerier::handle_ip(Packet *p)
       memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP);
       output(0).push(q);
-      
     } else {
       if (ae->p) {
         ae->p->kill();

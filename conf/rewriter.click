@@ -25,7 +25,7 @@ arr :: ARPResponder(10.0.0.1 255.255.255.255 1:1:1:1:1:1,
 arq :: ARPQuerier(18.26.4.47, 00:E0:98:03:7C:AE)
 rw :: Rewriter(10.0.0.0,18.26.4.47,10)
 
-ElementSched(rw 1);
+ScheduleInfo(rw 1);
 
 FromDevice(eth0) -> cl1
 cl1[0] -> exceptny

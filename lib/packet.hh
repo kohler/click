@@ -47,6 +47,8 @@ class Packet {
   static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
 
   Packet *uniqueify_copy();
+
+  Packet *expensive_push(unsigned int nbytes);
   
 #ifdef __KERNEL__
   const Anno *anno() const		{ return (const Anno *)skb()->cb; }
@@ -188,6 +190,21 @@ Packet::uniqueify()
     return uniqueify_copy();
   else
     return this;
+}
+
+inline Packet *
+Packet::push(unsigned int nbytes)
+{
+  if (headroom() >= nbytes) {
+    Packet *p = uniqueify();
+#ifdef __KERNEL__
+    skb_push(p->skb(), nbytes);
+#else
+    p->_data -= nbytes;
+#endif
+    return p;
+  } else
+    return expensive_push(nbytes);
 }
 
 /*
