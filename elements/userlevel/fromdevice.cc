@@ -203,21 +203,21 @@ FromDevice::initialize(ErrorHandler *errh)
     int pcap_fd = fd();
     fcntl(pcap_fd, F_SETFL, O_NONBLOCK);
 
-#ifdef BIOCSSEESENT
+# ifdef BIOCSSEESENT
     {
 	int accept = _outbound;
 	if (ioctl(pcap_fd, BIOCSSEESENT, &accept) != 0)
 	    return errh->error("FromDevice: BIOCSEESENT failed");
     }
-#endif
+# endif
 
-#if defined(BIOCIMMEDIATE) && !defined(__sun) // pcap/bpf ioctl, not in DLPI/bufmod
+# if defined(BIOCIMMEDIATE) && !defined(__sun) // pcap/bpf ioctl, not in DLPI/bufmod
     {
 	int yes = 1;
 	if (ioctl(pcap_fd, BIOCIMMEDIATE, &yes) != 0)
 	    return errh->error("FromDevice: BIOCIMMEDIATE failed");
     }
-#endif
+# endif
 
     bpf_u_int32 netmask;
     bpf_u_int32 localnet;
@@ -337,11 +337,10 @@ CLICK_DECLS
 void
 FromDevice::selected(int)
 {
-#ifdef FROMDEVICE_PCAP
+#if defined(FROMDEVICE_PCAP)
     // Read and push() at most one packet.
     pcap_dispatch(_pcap, 1, FromDevice_get_packet, (u_char *) this);
-#endif
-#ifdef FROMDEVICE_LINUX
+#elif defined(FROMDEVICE_LINUX)
     struct sockaddr_ll sa;
     socklen_t fromlen = sizeof(sa);
     // store data offset 2 bytes into the packet, assuming that first 14
@@ -375,7 +374,7 @@ FromDevice::selected(int)
 void
 FromDevice::kernel_drops(bool& known, int& max_drops) const
 {
-#ifdef FROMDEVICE_PCAP
+#if defined(FROMDEVICE_PCAP)
     struct pcap_stat stats;
     if (pcap_stats(_pcap, &stats) >= 0)
 	known = true, max_drops = stats.ps_drop;

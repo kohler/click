@@ -21,8 +21,8 @@
 #include <click/element.hh>
 #include <click/router.hh>
 #include <click/standard/drivermanager.hh>
-#ifdef CLICK_USERLEVEL
-# include <unistd.h>
+#if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
+# include <sys/event.h>
 #endif
 CLICK_DECLS
 
@@ -42,6 +42,10 @@ Master::Master(int nthreads)
     _task_list.make_list();
     
 #if CLICK_USERLEVEL
+# if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+    _kqueue = kqueue();
+    _selected_callno = 0;
+# endif
 # if !HAVE_POLL_H
     FD_ZERO(&_read_select_fd_set);
     FD_ZERO(&_write_select_fd_set);
@@ -65,6 +69,10 @@ Master::~Master()
 {
     for (int i = 0; i < _threads.size(); i++)
 	delete _threads[i];
+#if CLICK_USERLEVEL && HAVE_SYS_EVENT_H && HAVE_KQUEUE
+    if (_kqueue >= 0)
+	close(_kqueue);
+#endif
 }
 
 void
@@ -208,32 +216,17 @@ Master::remove_router(Router *router)
     // Remove selects
     _select_lock.acquire();
     for (int pi = 0; pi < _pollfds.size(); pi++) {
-	if (_read_poll_elements[pi] && _read_poll_elements[pi]->router() == router) {
-	    _read_poll_elements[pi] = 0;
-	    _pollfds[pi].events &= ~POLLIN;
-	}
-	if (_write_poll_elements[pi] && _write_poll_elements[pi]->router() == router) {
-	    _write_poll_elements[pi] = 0;
-	    _pollfds[pi].events &= ~POLLOUT;
-	}
-	if (_pollfds[pi].events == 0) {
-	    remove_pollfd(pi);
+	int fd = _pollfds[pi].fd;
+	// take components out of the arrays early
+	Element* read_element = _read_poll_elements[pi];
+	Element* write_element = _write_poll_elements[pi];
+	if (read_element && read_element->router() == router)
+	    remove_pollfd(pi, POLLIN);
+	if (write_element && write_element->router() == router)
+	    remove_pollfd(pi, POLLOUT);
+	if (pi < _pollfds.size() && _pollfds[pi].fd != fd)
 	    pi--;
-	}
     }
-# if !HAVE_POLL_H
-    FD_ZERO(&_read_select_fd_set);
-    FD_ZERO(&_write_select_fd_set);
-    _max_select_fd = -1;
-    for (struct pollfd* p = _pollfds.begin(); p < _pollfds.end(); p++) {
-	if (p->events & POLLIN)
-	    FD_SET(p->fd, &_read_select_fd_set);
-	if (p->events & POLLOUT)
-	    FD_SET(p->fd, &_write_select_fd_set);
-	if (p->fd > _max_select_fd)
-	    _max_select_fd = p->fd;
-    }
-# endif
     _select_lock.release();
 #endif
 
@@ -405,47 +398,97 @@ Master::add_select(int fd, Element *element, int mask)
 {
     if (fd < 0)
 	return -1;
+    if (mask == 0)
+	return 0;
     assert(element && (mask & ~(SELECT_READ | SELECT_WRITE)) == 0);
     _select_lock.acquire();
 
-    int si;
-    for (si = 0; si < _pollfds.size(); si++)
-	if (_pollfds[si].fd == fd) {
+    int pi, free_pi = _pollfds.size();
+    for (pi = 0; pi < _pollfds.size(); pi++)
+	if (_pollfds[pi].fd == fd) {
 	    // There is exactly one match per fd.
-	    if (((mask & SELECT_READ) && (_pollfds[si].events & POLLIN) && _read_poll_elements[si] != element)
-		|| ((mask & SELECT_WRITE) && (_pollfds[si].events & POLLOUT) && _write_poll_elements[si] != element)) {
+	    if (((mask & SELECT_READ) && (_pollfds[pi].events & POLLIN) && _read_poll_elements[pi] != element)
+		|| ((mask & SELECT_WRITE) && (_pollfds[pi].events & POLLOUT) && _write_poll_elements[pi] != element)) {
 		_select_lock.release();
 		return -1;
 	    }
 	    break;
-	}
+	} else if (_pollfds[pi].fd < 0)
+	    free_pi = pi;
 
     // Add a new selector
-    if (si == _pollfds.size()) {
+    pi = free_pi;
+    if (pi == _pollfds.size()) {
 	_pollfds.push_back(pollfd());
-	_pollfds.back().fd = fd;
+	_pollfds[pi].events = 0;
 	_read_poll_elements.push_back(0);
 	_write_poll_elements.push_back(0);
+#if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+	_selected_callnos.push_back(0);
+#endif
     }
+    _pollfds[pi].fd = fd;
 
     // Add selectors
     if (mask & SELECT_READ) {
-	_pollfds[si].events |= POLLIN;
-	_read_poll_elements[si] = element;
+	_pollfds[pi].events |= POLLIN;
+	_read_poll_elements[pi] = element;
     }
     if (mask & SELECT_WRITE) {
-	_pollfds[si].events |= POLLOUT;
-	_write_poll_elements[si] = element;
+	_pollfds[pi].events |= POLLOUT;
+	_write_poll_elements[pi] = element;
     }
 
+#if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+    if (_kqueue >= 0) {
+	// Add events to the kqueue
+	struct kevent kev[2];
+	int nkev = 0;
+	if (mask & SELECT_READ) {
+	    EV_SET(&kev[nkev], fd, EVFILT_READ, EV_ADD, 0, 0, (void*) ((intptr_t) pi));
+	    nkev++;
+	}
+	if (mask & SELECT_WRITE) {
+	    EV_SET(&kev[nkev], fd, EVFILT_WRITE, EV_ADD, 0, 0, (void*) ((intptr_t) pi));
+	    nkev++;
+	}
+	int r = kevent(_kqueue, &kev[0], nkev, 0, 0, 0);
+	if (r < 0) {
+	    // Not all file descriptors are kqueueable.  So if we encounter
+	    // a problem, fall back to select() or poll().
+	    click_chatter("Master::add_select(%d, %d): kevent: %s", (int) kev[0].ident, kev[0].filter, strerror(errno));
+	    close(_kqueue);
+	    _kqueue = -1;
+	    // Clean blank entries out of the _pollfds array.
+	    for (pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
+		if (p->fd < 0) {
+		    *p = _pollfds.back();
+		    _pollfds.pop_back();
+		    p--;
+		}
+	}
+    }
+#endif
+	
 #if !HAVE_POLL_H
     // Add 'mask' to the fd_sets
-    if (mask & SELECT_READ)
-	FD_SET(fd, &_read_select_fd_set);
-    if (mask & SELECT_WRITE)
-	FD_SET(fd, &_write_select_fd_set);
-    if ((mask & (SELECT_READ | SELECT_WRITE)) && fd > _max_select_fd)
-	_max_select_fd = fd;
+    if (fd < FD_SETSIZE) {
+	if (mask & SELECT_READ)
+	    FD_SET(fd, &_read_select_fd_set);
+	if (mask & SELECT_WRITE)
+	    FD_SET(fd, &_write_select_fd_set);
+	if (fd > _max_select_fd)
+	    _max_select_fd = fd;
+    } else {
+	static int warned = 0;
+# if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+	if (_kqueue < 0)
+# endif
+	    if (!warned) {
+		click_chatter("Master::add_select(%d): fd > FD_SETSIZE", fd);
+		warned = 1;
+	    }
+    }
 #endif
 
     _select_lock.release();
@@ -453,8 +496,48 @@ Master::add_select(int fd, Element *element, int mask)
 }
 
 void
-Master::remove_pollfd(int pi)
+Master::remove_pollfd(int pi, int event)
 {
+    assert(event == POLLIN || event == POLLOUT);
+
+    // remove event
+    _pollfds[pi].events &= ~event;
+    if (event == POLLIN)
+	_read_poll_elements[pi] = 0;
+    else
+	_write_poll_elements[pi] = 0;
+
+#if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+    // remove event from kqueue
+    if (_kqueue >= 0) {
+	struct kevent kev;
+	EV_SET(&kev, _pollfds[pi].fd, (event == POLLIN ? EVFILT_READ : EVFILT_WRITE), EV_DELETE, 0, 0, (void*) ((intptr_t) pi));
+	int r = kevent(_kqueue, &kev, 1, 0, 0, 0);
+	if (r < 0)
+	    click_chatter("Master::remove_pollfd(fd %d): kevent: %s", _pollfds[pi].fd, strerror(errno));
+    }
+#endif
+#if !HAVE_POLL_H
+    // remove event from select list
+    if (_pollfds[pi].fd < FD_SETSIZE) {
+	fd_set *fd_ptr = (event == POLLIN ? &_read_select_fd_set : &_write_select_fd_set);
+	FD_CLR(_pollfds[pi].fd, fd_ptr);
+    }
+#endif
+
+    // exit unless there are no events left
+    if (_pollfds[pi].events)
+	return;
+    
+    // remove whole pollfd
+#if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+    // except we don't need to under kqueue
+    if (_kqueue >= 0) {
+	_pollfds[pi].fd = -1;
+	return;
+    }
+#endif
+    
     _pollfds[pi] = _pollfds.back();
     _pollfds.pop_back();
     // 31.Oct.2003 - Peter Swain: keep fds and elements in sync
@@ -478,7 +561,8 @@ Master::remove_select(int fd, Element *element, int mask)
 
 #if !HAVE_POLL_H
     // Exit early if no selector defined
-    if ((!(mask & SELECT_READ) || !FD_ISSET(fd, &_read_select_fd_set))
+    if (fd < FD_SETSIZE
+	&& (!(mask & SELECT_READ) || !FD_ISSET(fd, &_read_select_fd_set))
 	&& (!(mask & SELECT_WRITE) || !FD_ISSET(fd, &_write_select_fd_set))) {
 	_select_lock.release();
 	return 0;
@@ -491,21 +575,13 @@ Master::remove_select(int fd, Element *element, int mask)
 	    int pi = p - _pollfds.begin();
 	    int ok = 0;
 	    if ((mask & SELECT_READ) && (p->events & POLLIN) && _read_poll_elements[pi] == element) {
-		p->events &= ~POLLIN;
-#if !HAVE_POLL_H
-		FD_CLR(fd, &_read_select_fd_set);
-#endif
+		remove_pollfd(pi, POLLIN);
 		ok++;
 	    }
 	    if ((mask & SELECT_WRITE) && (p->events & POLLOUT) && _write_poll_elements[pi] == element) {
-		p->events &= ~POLLOUT;
-#if !HAVE_POLL_H
-		FD_CLR(fd, &_write_select_fd_set);
-#endif
+		remove_pollfd(pi, POLLOUT);
 		ok++;
 	    }
-	    if (!p->events)
-		remove_pollfd(pi);
 	    _select_lock.release();
 	    return (ok ? 0 : -1);
 	}
@@ -514,84 +590,108 @@ Master::remove_select(int fd, Element *element, int mask)
     return -1;
 }
 
+
+#if HAVE_SYS_EVENT_H && HAVE_KQUEUE
 void
-Master::run_selects(bool more_tasks)
+Master::run_selects_kqueue(bool more_tasks)
 {
-    // Wait in select() for input or timer, and call relevant elements'
-    // selected() methods.
-
-    if (!_master_lock.attempt())
-	return;
-    if (_master_paused > 0 || !_select_lock.attempt()) {
-	_master_lock.release();
-	return;
-    }
-
-    // Return early if there are no selectors and there are tasks to run.
-    if (_pollfds.size() == 0 && more_tasks) {
-	_select_lock.release();
-	_master_lock.release();
-	return;
-    }
-
     // Decide how long to wait.
-#if CLICK_NS
-    // never block if we're running in the simulator
-# if HAVE_POLL_H
-    int timeout = -1;
-# else
-    struct timeval wait, *wait_ptr = &wait;
-    timerclear(&wait);
-# endif
-#else /* !CLICK_NS */
-    // never wait if anything is scheduled; otherwise, if no timers, block
+# if CLICK_NS
+    // Never block if we're running in the simulator.
+    struct timespec wait, *wait_ptr = &wait;
+    wait.tv_sec = wait.tv_nsec = 0;
+# else /* !CLICK_NS */
+    // Never wait if anything is scheduled; otherwise, if no timers, block
     // indefinitely.
-# if HAVE_POLL_H
-    int timeout = 0;
+#  if SIZEOF_STRUCT_TIMESPEC == 8
+    Timestamp t;
+    struct timespec *wait_ptr = (struct timespec*) &t;
     if (!more_tasks) {
-	Timestamp next_expiry = next_timer_expiry();
-	if (next_expiry._sec == 0)
-	    timeout = -1;
-	else if ((next_expiry -= Timestamp::now(), next_expiry._sec > 0)) {
-	    if (next_expiry._sec >= INT_MAX / 1000)
-		timeout = INT_MAX - 1000;
-	    else
-		timeout = next_expiry.msec1();
-	}
-    }
-# else /* !HAVE_POLL_H */
-#  if TIMESTAMP_PUNS_TIMEVAL
-    Timestamp wait;
-    struct timeval *wait_ptr = (struct timeval*) &wait;
-    if (more_tasks || !(wait = next_timer_expiry()))
-	/* nada */;
-    else {
-	wait -= Timestamp::now();
-	if (wait._sec < 0)
-	    wait._sec = wait._subsec = 0;
+	t = next_timer_expiry();
+	if (t._sec == 0)
+	    wait_ptr = 0;
+	else if ((t -= Timestamp::now(), t._sec >= 0))
+	    // fix up subseconds <-> microseconds
+	    t._subsec = Timestamp::subsec_to_nsec(t._subsec);
 	else
-	    wait._subsec = Timestamp::subsec_to_usec(wait._subsec);
+	    t._sec = t._subsec = 0;
     }
-#  else /* !TIMESTAMP_PUNS_TIMEVAL */
-    struct timeval wait, *wait_ptr = &wait;
+#  else /* SIZEOF_STRUCT_TIMESPEC != 8 */
+    struct timespec wait, *wait_ptr = &wait;
     timerclear(&wait);
-    if (more_tasks)
-	/* nada */;
-    else if (Timestamp t = next_timer_expiry()) {
-	t -= Timestamp::now();
-	if (t._sec > 0)
-	    wait = t.to_timeval();
+    if (!more_tasks) {
+	Timestamp t = next_timer_expiry();
+	if (t._sec == 0)
+	    wait_ptr = 0;
+	else if ((t -= Timestamp::now(), t._sec >= 0))
+	    wait = t.to_timespec();
     }
-#  endif /* TIMESTAMP_PUNS_TIMEVAL */
-# endif /* HAVE_POLL_H */
-#endif /* CLICK_NS */
+#  endif /* SIZEOF_STRUCT_TIMESPEC == 8 */
+# endif
+
+    // Bump selected_callno
+    _selected_callno++;
+    if (_selected_callno == 0) { // be anal about wraparound
+	memset(_selected_callnos.begin(), 0, _selected_callnos.size() * sizeof(int));
+	_selected_callno++;
+    }
+    
+    struct kevent kev[64];
+    int n = kevent(_kqueue, 0, 0, &kev[0], 64, wait_ptr);
+
+    if (n < 0 && errno != EINTR)
+	perror("kevent");
+    else if (n > 0)
+	for (struct kevent *p = &kev[0]; p < &kev[n]; p++) {
+	    Element *e = 0;
+	    int pi = (intptr_t) p->udata;
+	    // check _pollfds[pi].fd in case 'selected()' called
+	    // remove_select()
+	    if (_pollfds[pi].fd != (int) p->ident)
+		/* do nothing */;
+	    else if (p->filter == EVFILT_READ && (_pollfds[pi].events & POLLIN))
+		e = _read_poll_elements[pi];
+	    else if (p->filter == EVFILT_WRITE && (_pollfds[pi].events & POLLOUT))
+		e = _write_poll_elements[pi];
+	    if (e && (_selected_callnos[pi] != _selected_callno
+		      || _read_poll_elements[pi] != _write_poll_elements[pi])) {
+		e->selected(p->ident);
+		_selected_callnos[pi] = _selected_callno;
+	    }
+	}
+}
+#endif /* HAVE_SYS_EVENT_H && HAVE_KQUEUE */
 
 #if HAVE_POLL_H
+void
+Master::run_selects_poll(bool more_tasks)
+{
+    // Decide how long to wait.
+# if CLICK_NS
+    // Never block if we're running in the simulator.
+    int timeout = -1;
+# else
+    // Never wait if anything is scheduled; otherwise, if no timers, block
+    // indefinitely.
+    int timeout = 0;
+    if (!more_tasks) {
+	Timestamp t = next_timer_expiry();
+	if (t._sec == 0)
+	    timeout = -1;
+	else if ((t -= Timestamp::now(), t._sec >= 0)) {
+	    if (t._sec >= INT_MAX / 1000)
+		timeout = INT_MAX - 1000;
+	    else
+		timeout = t.msec1();
+	}
+    }
+# endif /* CLICK_NS */
+
     int n = poll(_pollfds.begin(), _pollfds.size(), timeout);
 
     if (n < 0 && errno != EINTR)
 	perror("poll");
-    else if (n > 0) {
+    else if (n > 0)
 	for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
 	    if (p->revents) {
 		int pi = p - _pollfds.begin();
@@ -615,19 +715,56 @@ Master::run_selects(bool more_tasks)
 		if (p < _pollfds.end() && fd != p->fd)
 		    p--;
 	    }
-    }
+}
 
 #else /* !HAVE_POLL_H */
+void
+Master::run_selects_select(bool more_tasks)
+{
+    // Decide how long to wait.
+# if CLICK_NS
+    // Never block if we're running in the simulator.
+    struct timeval wait, *wait_ptr = &wait;
+    timerclear(&wait);
+# else /* !CLICK_NS */
+    // Never wait if anything is scheduled; otherwise, if no timers, block
+    // indefinitely.
+#  if SIZEOF_STRUCT_TIMEVAL == 8
+    Timestamp t;
+    struct timeval *wait_ptr = (struct timeval*) &t;
+    if (!more_tasks) {
+	t = next_timer_expiry();
+	if (t._sec == 0)
+	    wait_ptr = 0;
+	else if ((t -= Timestamp::now(), t._sec >= 0))
+	    // fix up subseconds <-> microseconds
+	    t._subsec = Timestamp::subsec_to_usec(t._subsec);
+	else
+	    t._sec = t._subsec = 0;
+    }
+#  else /* SIZEOF_STRUCT_TIMEVAL != 8 */
+    struct timeval wait, *wait_ptr = &wait;
+    timerclear(&wait);
+    if (!more_tasks) {
+	Timestamp t = next_timer_expiry();
+	if (t._sec == 0)
+	    wait_ptr = 0;
+	else if ((t -= Timestamp::now(), t._sec >= 0))
+	    wait = t.to_timeval();
+    }
+#  endif /* SIZEOF_STRUCT_TIMEVAL == 8 */
+# endif /* CLICK_NS */
+
     fd_set read_mask = _read_select_fd_set;
     fd_set write_mask = _write_select_fd_set;
 
-    int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set *)0, wait_ptr);
+    int n = select(_max_select_fd + 1, &read_mask, &write_mask, (fd_set*) 0, wait_ptr);
   
     if (n < 0 && errno != EINTR)
 	perror("select");
-    else if (n > 0) {
+    else if (n > 0)
 	for (struct pollfd *p = _pollfds.begin(); p < _pollfds.end(); p++)
-	    if (FD_ISSET(p->fd, &read_mask) || FD_ISSET(p->fd, &write_mask)) {
+	    if (p->fd > FD_SETSIZE || FD_ISSET(p->fd, &read_mask) || FD_ISSET(p->fd, &write_mask)) {
 		int pi = p - _pollfds.begin();
 
 		// Beware: calling 'selected()' might call remove_select(),
@@ -635,8 +772,8 @@ Master::run_selects(bool more_tasks)
 		// vectors before calling out.
 
 		int fd = p->fd;
-		Element *read_elt = (FD_ISSET(fd, &read_mask) ? _read_poll_elements[pi] : 0);
-		Element *write_elt = (FD_ISSET(fd, &write_mask) ? _write_poll_elements[pi] : 0);
+		Element *read_elt = (fd > FD_SETSIZE || FD_ISSET(fd, &read_mask) ? _read_poll_elements[pi] : 0);
+		Element *write_elt = (fd > FD_SETSIZE || FD_ISSET(fd, &write_mask) ? _write_poll_elements[pi] : 0);
 
 		if (read_elt)
 		    read_elt->selected(fd);
@@ -649,9 +786,45 @@ Master::run_selects(bool more_tasks)
 		if (p < _pollfds.end() && fd != p->fd)
 		    p--;
 	    }
-    }
+}
 #endif /* HAVE_POLL_H */
 
+void
+Master::run_selects(bool more_tasks)
+{
+    // Wait in select() for input or timer, and call relevant elements'
+    // selected() methods.
+
+    if (!_master_lock.attempt())
+	return;
+    if (_master_paused > 0 || !_select_lock.attempt()) {
+	_master_lock.release();
+	return;
+    }
+
+    // Return early if there are no selectors and there are tasks to run.
+    if (_pollfds.size() == 0 && more_tasks) {
+	_select_lock.release();
+	_master_lock.release();
+	return;
+    }
+
+    // Call the relevant selector implementation.
+#if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+    if (_kqueue >= 0) {
+	run_selects_kqueue(more_tasks);
+	goto done;
+    }
+#endif
+#if HAVE_POLL_H
+    run_selects_poll(more_tasks);
+#else
+    run_selects_select(more_tasks);
+#endif
+
+#if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+  done:
+#endif
     _select_lock.release();
     _master_lock.release();
 }

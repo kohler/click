@@ -85,6 +85,11 @@ class Master { public:
 
 #if CLICK_USERLEVEL
     // SELECT
+# if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+    int _kqueue;
+    int _selected_callno;
+    Vector<int> _selected_callnos;
+# endif
 # if !HAVE_POLL_H
     struct pollfd {
 	int fd;
@@ -93,12 +98,20 @@ class Master { public:
     fd_set _read_select_fd_set;
     fd_set _write_select_fd_set;
     int _max_select_fd;
-# endif
+# endif /* HAVE_POLL_H */
     Vector<struct pollfd> _pollfds;
     Vector<Element*> _read_poll_elements;
     Vector<Element*> _write_poll_elements;
     Spinlock _select_lock;
-    void remove_pollfd(int);
+    void remove_pollfd(int pi, int event);
+# if HAVE_SYS_EVENT_H && HAVE_KQUEUE
+    void run_selects_kqueue(bool);
+# endif
+# if HAVE_POLL_H
+    void run_selects_poll(bool);
+# else
+    void run_selects_select(bool);
+# endif
 #endif
 
 #if CLICK_NS

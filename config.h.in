@@ -56,6 +56,9 @@
 /* Define to 1 since we have Strings. */
 #define HAVE_STRING 1
 
+/* Define to 1 if the system has the type `struct timespec'. */
+#undef HAVE_STRUCT_TIMESPEC
+
 #ifdef HAVE_STRIDE_SCHED
 /* Define if you want task scheduling to use a heap, not a linked list. */
 #undef HAVE_TASK_HEAP
@@ -69,6 +72,9 @@
 
 /* The size of a `long long', as computed by sizeof. */
 #undef SIZEOF_LONG_LONG
+
+/* The size of a `struct timespec', as computed by sizeof. */
+#undef SIZEOF_STRUCT_TIMESPEC
 
 /* The size of a `struct timeval', as computed by sizeof. */
 #undef SIZEOF_STRUCT_TIMEVAL

@@ -300,7 +300,11 @@ if test "x$enable_int64" = xyes; then
     AC_CHECK_SIZEOF(long long)
     CLICK_CHECK_INT64_TYPES
 fi
-AC_CHECK_SIZEOF(struct timeval)
+AC_CHECK_SIZEOF([struct timeval])
+AC_CHECK_TYPES([struct timespec], have_timespec=yes, have_timespec=no)
+if test "x$have_timespec" = xyes; then
+    AC_CHECK_SIZEOF([struct timespec])
+fi
 CLICK_CHECK_ENDIAN
 CLICK_CHECK_ADDRESSABLE_VA_LIST
 CLICK_CHECK_INTEGER_BUILTINS
@@ -317,11 +321,12 @@ fi
 
 
 dnl
-dnl headers, dynamic linking
+dnl headers, event detection, dynamic linking
 dnl
 
-AC_CHECK_HEADERS(unistd.h termio.h netdb.h)
+AC_CHECK_HEADERS(unistd.h termio.h netdb.h sys/event.h)
 CLICK_CHECK_POLL_H
+AC_CHECK_FUNCS(kqueue)
 CLICK_CHECK_DYNAMIC_LINKING
 if test "$HOST_TOOLS" != host -a "$enable_tools" != no; then
     CLICK_CHECK_BUILD_DYNAMIC_LINKING

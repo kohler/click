@@ -23,6 +23,9 @@
 /* Define if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define if you have the kqueue function. */
+#undef HAVE_KQUEUE
+
 /* Define if your C library contains large file support. */
 #undef HAVE_LARGE_FILE_SUPPORT
 
@@ -64,6 +67,9 @@
 
 /* Define if you have the strtoul function. */
 #undef HAVE_STRTOUL
+
+/* Define if you have the <sys/event.h> header file. */
+#undef HAVE_SYS_EVENT_H
 
 /* Define if you have the <sys/mman.h> header file. */
 #undef HAVE_SYS_MMAN_H

@@ -7,6 +7,9 @@ class String;
 #if !HAVE_NANOTIMESTAMP && SIZEOF_STRUCT_TIMEVAL == 8
 # define TIMESTAMP_PUNS_TIMEVAL 1
 #endif
+#if HAVE_STRUCT_TIMESPEC && HAVE_NANOTIMESTAMP && SIZEOF_STRUCT_TIMESPEC == 8
+# define TIMESTAMP_PUNS_TIMESPEC 1
+#endif
 
 #if HAVE_NANOTIMESTAMP
 # define PRITIMESTAMP "%d.%09d"
@@ -37,6 +40,9 @@ class Timestamp { public:
     Timestamp()				: _sec(0), _subsec(0) { }
     Timestamp(int32_t s, int32_t ss)	: _sec(s), _subsec(ss) { }
     Timestamp(const struct timeval& tv)	: _sec(tv.tv_sec), _subsec(usec_to_subsec(tv.tv_usec)) { }
+#if HAVE_STRUCT_TIMESPEC
+    Timestamp(const struct timespec& tv) : _sec(tv.tv_sec), _subsec(nsec_to_subsec(tv.tv_nsec)) { }
+#endif
 #if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
     inline Timestamp(double);
 #endif
@@ -46,6 +52,13 @@ class Timestamp { public:
     const timeval& to_timeval() const	{ return *(const timeval*) this; }
 #else
     inline timeval to_timeval() const;
+#endif
+#if HAVE_STRUCT_TIMESPEC
+# if TIMESTAMP_PUNS_TIMESPEC
+    const timespec& to_timespec() const	{ return *(const timespec*) this; }
+# else
+    inline timespec to_timespec() const;
+# endif
 #endif
     inline double to_double() const;
     
@@ -133,13 +146,24 @@ Timestamp::make_nsec(int32_t s, int32_t ns)
     return Timestamp(s, nsec_to_subsec(ns));
 }
 
-#if HAVE_NANOTIMESTAMP
+#if !TIMESTAMP_PUNS_TIMEVAL
 inline struct timeval
 Timestamp::to_timeval() const
 {
     struct timeval tv;
     tv.tv_sec = _sec;
     tv.tv_usec = usec();
+    return tv;
+}
+#endif
+
+#if HAVE_STRUCT_TIMESPEC && !TIMESTAMP_PUNS_TIMESPEC
+inline struct timespec
+Timestamp::to_timespec() const
+{
+    struct timespec tv;
+    tv.tv_sec = _sec;
+    tv.tv_nsec = nsec();
     return tv;
 }
 #endif
@@ -246,6 +270,18 @@ operator*(const Timestamp &a, double b)
 }
 
 inline Timestamp
+operator*(const Timestamp &a, int b)
+{
+    return Timestamp(a.to_double() * b);
+}
+
+inline Timestamp
+operator*(const Timestamp &a, unsigned b)
+{
+    return Timestamp(a.to_double() * b);
+}
+
+inline Timestamp
 operator*(double a, const Timestamp &b)
 {
     return Timestamp(b.to_double() * a);
@@ -253,6 +289,12 @@ operator*(double a, const Timestamp &b)
 
 inline Timestamp
 operator*(int a, const Timestamp &b)
+{
+    return Timestamp(b.to_double() * a);
+}
+
+inline Timestamp
+operator*(unsigned a, const Timestamp &b)
 {
     return Timestamp(b.to_double() * a);
 }
