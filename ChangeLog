@@ -1,3 +1,12 @@
+2003-03-27 Thursday 19:12  Eddie Kohler <kohler@icir.org>
+
+	* bsdmodule/kernelerror.cc (1.2), bsdmodule/module.cc (1.13),
+	elements/userlevel/controlsocket.cc (1.43), include/click/error.hh
+	(1.19), include/click/router.hh (1.45), lib/error.cc (1.43),
+	lib/router.cc (1.142), linuxmodule/module.cc (1.77): add verbosity
+	settings to ErrorHandler::Seriousness values; use those settings in
+	VerboseFilterErrorHandler (don't print oververbose messages)
+
 2003-03-27 Thursday 14:09  Eddie Kohler <kohler@icir.org>
 
 	* etc/libclick/: DISTFILES (1.15), lc-libsrc-Makefile.in (1.10):
