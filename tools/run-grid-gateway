@@ -3,7 +3,7 @@
 # Douglas S. J. De Couto
 # stolen from run-grid-node
 
-# $Id: run-grid-gateway,v 1.1 2000/08/06 20:38:38 decouto Exp $
+# $Id: run-grid-gateway,v 1.2 2000/08/06 22:30:58 decouto Exp $
 
 # assume we run in <clickdir>/conf XXX
 
@@ -120,6 +120,8 @@ $grid_hw_addr = "";
 $old_ip = "";
 $old_netmask = "";
 $old_bcast = "";
+$old_grid_dev_gw = "";
+$old_grid_dev_net = "";
 $tun_dev_type = "";
 
 $lan_addr = "";
@@ -142,6 +144,11 @@ if ($system_type =~ /Linux/) {
     }
     else {
 	$old_ip_addr = $1;
+	if (!($old_ip_addr =~ /(\d+.\d+.\d+).\d+/)) {
+	    print "Unable to get Grid device net address\n";
+	    exit 1;
+	}
+	$old_grid_dev_net = "$1"; # keep as only the first 3 digits
     }
     if (!($ifconfig_out =~ /Mask:(\d+.\d+.\d+.\d+)/)) {
 	print "Unable to get old Grid device netmask\n";
@@ -193,9 +200,16 @@ if ($system_type =~ /Linux/) {
     $route_info = `route -n`;
     if (!($route_info =~ /\n0.0.0.0\s+($lan_net.\d+)/)) {
 	print "Unable to get LAN device gateway\n";
+	exit 1;
     }
     else {
 	$lan_gw = $1;
+    }
+    if (!($route_info =~ /\n0.0.0.0\s+($old_grid_dev_net.\d+)/)) {
+	print "Unable to get Grid device gateway\n";
+    }
+    else {
+	$old_grid_dev_gw = $1;
     }
 
     $tun_dev = "tap";
@@ -326,12 +340,17 @@ close click_config_file;
 
 if ($do_cleanup) {
     print "Cleaning up...\n";
+
     if ($system_type =~ /Linux/) {
 	my_system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
 	my_system "iwconfig $grid_if mode managed";	
 	my_system "ifconfig $lan_if $lan_addr netmask $old_lan_netmask broadcast $old_lan_bcast";
 	my_system "route add default gw $lan_gw";
+	if ($old_grid_dev_gw) {
+	    my_system "route add default gw $old_grid_dev_gw";
+	}
     }
+
     elsif ($system_type =~ /FreeBSD/) {
 	my_system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
 	my_system "wicontrol -i $grid_if -p 1";

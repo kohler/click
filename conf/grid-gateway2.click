@@ -51,20 +51,20 @@ eth_demux [3] -> Strip(14) -> Discard // linux handles -> to_tun2
 eth_demux [4] -> Strip(14) -> to_nb_ip :: GetIPAddress(16) -> [1] lr
 
 wvlan_demux [0] -> check_grid :: CheckGridHeader [0]
-                -> fr :: FilterByRange(1000, nb) [0] 
+                -> fr :: FilterByRange(RANGE, li) [0] 
                 -> nb
                 -> Classifier(15/GRID_NBR_ENCAP_PROTO)
                 -> [0] lr
 check_grid [1]-> Print(bad_grid_hdr) -> Discard
-fr [1] -> Print(out_of_range) -> Discard
-wvlan_demux [1] -> Discard
+fr [1] -> Discard // out of range
+wvlan_demux [1] -> Discard // not a grid packet
 
 ip_cl [0] -> to_tun1
 ip_cl [1] -> to_tun2
 ip_cl [2] -> to_nb_ip // send 18.26.7.* to Grid processing
 ip_cl [3] -> gw_cl :: Classifier(16/GW_HEX_NET, -) // get local wired IP for 18.26.4.*
-gw_cl [0] -> GetIPAddress(16) -> [0] arpq // ARP and send local net traffic
-gw_cl [1] -> SetIPAddress(GW_REAL_IP) -> [0] arpq // ARP and send gateway traffic
+gw_cl [0] -> Print(for_this_net) -> GetIPAddress(16) -> [0] arpq // ARP and send local net traffic
+gw_cl [1] -> Print(for_gw) -> SetIPAddress(GW_REAL_IP) -> [0] arpq // ARP and send gateway traffic
 
 tun1 -> ip_cl
 tun2 -> ip_cl
