@@ -1,3 +1,8 @@
+2004-07-16 Friday 18:33  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* ns/nsclick.cc (1.21): use the right functions for accessing
+	handlers
+
 2004-07-16 Friday 16:51  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* INSTALL (1.33), configure (1.22), configure.in (1.240),
