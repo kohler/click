@@ -66,7 +66,7 @@ class String { public:
   char back() const			{ return _data[_length-1]; }
   int find_left(int c, int start = 0) const;
   int find_left(const String &s, int start = 0) const;
-  int find_right(int c, int start = ~(-1)) const;
+  int find_right(int c, int start = 0x7FFFFFFF) const;
   
   bool equals(const char *, int) const;
   // bool operator==(const String &, const String &);
