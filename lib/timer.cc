@@ -131,6 +131,21 @@ Timer::schedule_after_ms(int ms)
 }
 
 void
+Timer::reschedule_after_ms(int ms)
+{
+  assert(!is_list() && initialized());
+  _head->_lock.acquire();
+  if (scheduled())
+    unschedule();
+  struct timeval interval;
+  interval.tv_sec = ms / 1000;
+  interval.tv_usec = (ms % 1000) * 1000;
+  timeradd(&_expires, &interval, &_expires);
+  finish_schedule();
+  _head->_lock.release();
+}
+
+void
 Timer::unschedule()
 {
   if (_head) 
