@@ -261,6 +261,7 @@ lib/bitvector.cc
 lib/clp.c
 lib/confparse.cc
 lib/crc32.c
+lib/driver.cc
 lib/element.cc
 lib/elemfilter.cc
 lib/error.cc
@@ -281,7 +282,6 @@ lib/iptable.cc
 lib/ip6table.cc
 lib/lexer.cc
 lib/notifier.cc
-lib/packageutils.cc
 lib/packet.cc
 lib/router.cc
 lib/routerthread.cc
