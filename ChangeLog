@@ -1,3 +1,8 @@
+2001-04-12 Thursday 15:01  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/linuxmodule/: anydevice.hh, polldevice.cc: debug:
+	activations count should be incremented if it is non zero already
+
 2001-04-12 Thursday 11:07  Benjie Chen <benjie@lcs.mit.edu>
 
 	* include/click/perfctr.hh, elements/linuxmodule/perfcountuser.cc:
