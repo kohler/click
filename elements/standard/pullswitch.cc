@@ -22,6 +22,7 @@
 #include "pullswitch.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/llrpc.h>
 
 PullSwitch::PullSwitch()
 {
@@ -99,6 +100,40 @@ PullSwitch::add_handlers()
 {
   add_read_handler("switch", read_param, (void *)0);
   add_write_handler("switch", write_param, (void *)0);
+}
+
+int
+PullSwitch::llrpc(unsigned command, void *data)
+{
+  if (command == CLICK_LLRPC_SET_SWITCH) {
+    int d;
+    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || d != 0)
+      return -EINVAL;
+    _input = (d >= ninputs() ? -1 : d);
+    return 0;
+
+  } else if (command == CLICK_LLRPC_GET_SWITCH) {
+    return CLICK_LLRPC_PUT_DATA(data, &_input, sizeof(_input));
+
+  } else
+    return Element::llrpc(command, data);
+}
+
+int
+PullSwitch::local_llrpc(unsigned command, void *data)
+{
+  if (command == CLICK_LLRPC_SET_SWITCH) {
+    int *i = (int *)data;
+    _input = (*i >= ninputs() ? -1 : *i);
+    return 0;
+
+  } else if (command == CLICK_LLRPC_GET_SWITCH) {
+    int *i = (int *)data;
+    *i = _input;
+    return 0;
+
+  } else
+    return Element::local_llrpc(command, data);
 }
 
 EXPORT_ELEMENT(PullSwitch)

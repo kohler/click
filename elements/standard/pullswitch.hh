@@ -3,22 +3,35 @@
 #include <click/element.hh>
 
 /*
- * =c
- * PullSwitch([K])
- * =s packet scheduling
- * forwards pull requests to settable input
- * =d
- *
- * On every pull, PullSwitch returns the packet pulled from one of its input
- * ports -- specifically, input number K. The default K is zero; negative Ks
- * mean always return a null packet. You can change K with a write handler.
- * PullSwitch has an unlimited number of inputs.
- *
- * =h switch read/write
- * Return or set the K parameter.
- *
- * =a StaticPullSwitch, PrioSched, RoundRobinSched, StrideSched, Switch
- */
+=c
+
+PullSwitch([K])
+
+=s packet scheduling
+
+forwards pull requests to settable input
+
+=d
+
+On every pull, PullSwitch returns the packet pulled from one of its input
+ports -- specifically, input number K. The default K is zero; negative Ks
+mean always return a null packet. You can change K with a write handler.
+PullSwitch has an unlimited number of inputs.
+
+=h switch read/write
+
+Return or set the K parameter.
+
+=h CLICK_LLRPC_GET_SWITCH llrpc
+
+Argument is a pointer to an integer, in which the Switch's K parameter is
+stored.
+
+=h CLICK_LLRPC_SET_SWITCH llrpc
+
+Argument is a pointer to an integer. Sets the K parameter to that integer.
+
+=a StaticPullSwitch, PrioSched, RoundRobinSched, StrideSched, Switch */
 
 class PullSwitch : public Element { public:
 
@@ -36,6 +49,9 @@ class PullSwitch : public Element { public:
   void add_handlers();  
   
   Packet *pull(int);
+
+  int llrpc(unsigned, void *);
+  int local_llrpc(unsigned, void *);
   
  private:
 
