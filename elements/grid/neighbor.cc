@@ -121,14 +121,12 @@ Neighbor::simple_action(Packet *packet)
     _nbrs.push_back(far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1)));
     _nbrs[i].last_updated_jiffies = jiff;
     _nbrs[i].nbr.loc = gh->loc;
-  }
-  else { 
+  } else { 
     // update pre-existing information
     _nbrs[i].last_updated_jiffies = jiff;
     _nbrs[i].nbr.num_hops = 1;
     _nbrs[i].nbr.next_hop_ip = gh->ip;
     _nbrs[i].nbr.loc = gh->loc;
-    }
   }
   
   /*
