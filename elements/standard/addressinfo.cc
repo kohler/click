@@ -82,8 +82,13 @@ AddressInfo::add_info(const Vector<String> &conf, const String &prefix,
 	simclick_sim_macaddr_from_name(mysiminst, simif.cc(), tmp, 255);
 	simeth = tmp;
 
-	parts.push_back(simip);
-	parts.push_back(simeth);
+	if (simip.length()) {
+	  parts.push_back(simip);
+	}
+
+	if (simeth.length()) {
+	  parts.push_back(simeth);
+	}
       }
 #endif
       for (int j = 1; j < parts.size(); j++)
