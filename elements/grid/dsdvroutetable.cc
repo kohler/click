@@ -28,6 +28,9 @@
 #include "dsdvroutetable.hh"
 #include "timeutils.hh"
 
+#define max(a, b) ((a) > (b) ? (a) : (b))
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
 const DSDVRouteTable::metric_t DSDVRouteTable::_bad_metric; // default metric state is ``bad''
 DSDVRouteTable *DSDVRouteTable::_instance = 0;
 
@@ -62,8 +65,6 @@ DSDVRouteTable::DSDVRouteTable() :
   _est_type(EstByMeas),
   _frozen(false)
 {
-  assert(!_instance);
-  _instance = this;
   MOD_INC_USE_COUNT;
 }
 
@@ -139,6 +140,9 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 DSDVRouteTable::initialize(ErrorHandler *)
 {
+  assert(!_instance);
+  _instance = this;
+
   _hello_timer.initialize(this);
   _hello_timer.schedule_after_ms(_period);
   _log_dump_timer.initialize(this);
@@ -207,16 +211,10 @@ DSDVRouteTable::insert_route(const RTEntry &r, const bool was_sender)
 {
   RTEntry *old_r = _rtes.findp(r.dest_ip);
   
-  // clear old 1-hop stats 
-  if (r.num_hops > 1 && old_r && old_r->num_hops == 1) {
-    _link_tracker->remove_all_stats(old_r->dest_ip);
-    _link_stat->remove_all_stats(old_r->next_hop_eth);
-  }
-  
   // invariant check: running timers exist for all current good
   // routes.  no timers or bogus timer entries exist for bad routes.
   Timer **old = _expire_timers.findp(r.dest_ip);
-  if (old_r && old_r->num_hops > 0)
+  if (old_r && old_r->good())
     assert(old && *old && (*old)->scheduled());
   else 
     assert(old == 0);
@@ -233,10 +231,12 @@ DSDVRouteTable::insert_route(const RTEntry &r, const bool was_sender)
   // so we install a timeout for *every* newly installed route.
   Timer *t = new Timer(static_expire_hook, (void *) ((unsigned int) r.dest_ip));
   t->initialize(this);
-  t->schedule_after_ms(_timeout > r.ttl ? r.ttl : _timeout);
+  t->schedule_after_ms(min(r.ttl, _timeout));
   
   _expire_timers.insert(r.dest_ip, t);
   _rtes.insert(r.dest_ip, r);
+
+  // note, we don't change any pending triggered update for this updated dest.
 
   if (_log)
     _log->log_added_route(was_sender? GridLogger::WAS_SENDER : GridLogger::WAS_ENTRY, 
@@ -255,7 +255,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   assert(r != 0);
   
   // 2. route to expire should be good
-  assert(r->num_hops > 0 && (r->seq_no & 1) == 0);
+  assert(r->good() && (r->seq_no & 1) == 0);
   
   if (_log) {
     timeval tv;
@@ -270,26 +270,25 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   // own next hop in that case.  So we explicitly note that ip is
   // expired before the loop.
 
-  Vector<RTEntry> expired_routes;
-  expired_routes.push_back(*r);
+  Vector<IPAddress> expired_dests;
+  expired_dests.push_back(ip);
   
-  // Only do the next-hop expiration checks if this node is actually
+  // Do next-hop expiration checks, but only if this node is actually
   // its own next hop.  With hopcount, it is always the case that if a
   // node n1 is some node n2's next hop, then n1 is its own next hop;
   // therefore the if() will be true.  For other metrics, there can be
   // cases where we should not expire n2 just because n1 expires, if
   // n1 is not its own next hop.
   if (r->num_hops == 1) {
+    assert(r->next_hop_ip == r->dest_ip);
     for (RTIter i = _rtes.first(); i; i++) {
       RTEntry r = i.value();
       if (r.dest_ip == ip)
 	continue; // don't expire this dest twice!
 
-      if (r.num_hops > 0 && // only expire good routes
+      if (r.good() && 
 	  r.next_hop_ip == ip) {
-
-	expired_routes.push_back(r);
-	  
+	expired_dests.push_back(r.dest_ip);
 	if (_log)
 	  _log->log_expired_route(GridLogger::NEXT_HOP_EXPIRED, r.dest_ip);
       }
@@ -298,34 +297,37 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 
   int jiff = click_jiffies();
 
-  for (int i = 0; i < expired_routes.size(); i++) {
-    RTEntry &r = expired_routes[i];
+  for (int i = 0; i < expired_dests.size(); i++) {
+    RTEntry *r = _rtes.findp(expired_dests[i]);
+    assert(r);
 
     // invariant check: 
     // 1. route to expire must be good, and thus should have existing
     // expire timer
-    Timer **exp_timer = _expire_timers.findp(r.dest_ip);
+    Timer **exp_timer = _expire_timers.findp(r->dest_ip);
     assert(exp_timer && *exp_timer);
 
     // 2. that existing timer should still be scheduled, except for
     // the timer whose expiry called this hook
-    assert(r.dest_ip != ip ? (*exp_timer)->scheduled() : true);
+    assert(r->dest_ip != ip ? (*exp_timer)->scheduled() : true);
     
     // cleanup pending timers
     if ((*exp_timer)->scheduled())
       (*exp_timer)->unschedule();
     delete *exp_timer;
-    _expire_timers.remove(r.dest_ip);
+    _expire_timers.remove(r->dest_ip);
 
     // mark route as broken
-    r.num_hops = 0;
-    r.seq_no++;
+    r->num_hops = 0;
+    r->seq_no++;
+    r->ttl = grid_hello::MAX_TTL_DEFAULT;
+    r->last_expired_jiffies = jiff;
 
     // set up triggered ad
-    r.advertise_ok_jiffies = jiff;
-    r.need_seq_ad = true;
-    r.need_metric_ad = true;
-    schedule_triggered_update(r.dest_ip, jiff);
+    r->advertise_ok_jiffies = jiff;
+    r->need_seq_ad = true;
+    r->need_metric_ad = true;
+    schedule_triggered_update(r->dest_ip, jiff);
   }
 
   if (_log)
@@ -363,23 +365,30 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   int jiff = click_jiffies();
   int next_trigger_time = _last_triggered_update + _min_triggered_update_period;
 
-  if (jiff < next_trigger_time) {
-    // it's too early to send this update
+  if (jiff >= next_trigger_time) {
+    // It's ok to send a triggered update now.  Cleanup expired timer.
+    delete *old;
+    _trigger_timers.remove(ip);
 
+    send_triggered_update(ip);
+  }
+  else {
+    // it's too early to send this update, so cancel all oustanding
+    // triggered updates that would also be too early
     Vector<IPAddress> remove_list;
-
-    // cancel all oustanding triggered updates that would also be too early
     for (TMIter i = _trigger_timers.first(); i; i++) {
       if (i.key() == ip)
 	continue; // don't touch this timer, we'll reschedule it
 
+      // invariant checks
       RTEntry *r = _rtes.findp(i.key());
       assert(r);
       assert(r->need_seq_ad || r->need_metric_ad);
 
+      Timer *old2 = i.value();
+      assert(old2 && old2->scheduled());
+
       if (r->advertise_ok_jiffies < next_trigger_time) {
-	Timer *old2 = i.value();
-	assert(old2 && old2->scheduled());
 	delete old2;
 	remove_list.push_back(i.key());
       }
@@ -388,15 +397,10 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
     for (int i = 0; i < remove_list.size(); i++)
       _trigger_timers.remove(remove_list[i]);
 
-    // reschedule this timer to earliest possible time
+    // reschedule this timer to earliest possible time -- when it
+    // fires, its update will also include updates that would have
+    // fired before then but were cancelled just above.
     (*old)->schedule_after_ms(jiff_to_msec(next_trigger_time - jiff));
-  }
-  else {
-    // cleanup expired timer
-    delete *old;
-    _trigger_timers.remove(ip);
-
-    send_triggered_update(ip);
   }
 }
 
@@ -463,6 +467,11 @@ DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r)
   
   // XXX what happens when our current route is broken, and the new
   // route is good, what happens to wst?
+
+  // from dsdv ns code: Note that in the if we don't touch the
+  // changed_at time, so that when wst is computed, it doesn't
+  // consider the infinte metric the best one at that sequence number.
+
 }
 
 void 
@@ -813,6 +822,9 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
       + " seq=" + String(f.seq_no)
       + " metric_valid=" + (f.metric.valid ? "yes" : "no")
       + " metric=" + String(f.metric.val)
+      + " ttl=" + String(f.ttl)
+      + " need_seq_ad=" + (f.need_seq_ad ? "yes" : "no")
+      + " need_metric_ad=" + (f.need_metric_ad ? "yes" : "no")
       + "\n";
   }
   
@@ -831,8 +843,6 @@ DSDVRouteTable::print_rtes(Element *e, void *)
       + " next=" + f.next_hop_ip.s() 
       + " hops=" + String((int) f.num_hops) 
       + " gw=" + (f.is_gateway ? "y" : "n")
-      //      + " loc=" + f.loc.s()
-      //      + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
       + " seq=" + String(f.seq_no)
       + "\n";
   }
@@ -847,11 +857,11 @@ DSDVRouteTable::print_nbrs_v(Element *e, void *)
   
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
-    /* only print immediate neighbors */
-    if (i.value().num_hops != 1) // XXX
+    // /* only print immediate neighbors 
+    if (i.value().dest_eth) 
       continue;
     s += i.key().s();
-    s += " eth=" + i.value().next_hop_eth.s();
+    s += " eth=" + i.value().dest_eth.s();
     char buf[300];
     snprintf(buf, 300, " metric_valid=%s metric=%d",
 	     i.value().metric.valid ? "yes" : "no", i.value().metric.val);
@@ -869,11 +879,11 @@ DSDVRouteTable::print_nbrs(Element *e, void *)
   
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
-    /* only print immediate neighbors */
-    if (i.value().num_hops != 1)
+    // only print immediate neighbors 
+    if (i.value().dest_eth)
       continue;
     s += i.key().s();
-    s += " eth=" + i.value().next_hop_eth.s();
+    s += " eth=" + i.value().dest_eth.s();
     s += "\n";
   }
 
@@ -1030,7 +1040,7 @@ DSDVRouteTable::print_links(Element *e, void *)
 
   for (RTIter i = rt->_rtes.first(); i; i++) {
     const RTEntry &r = i.value();
-    if (r.num_hops > 1)
+    if (!r.dest_eth)
       continue;
 
     /* get our measurements of the link *from* this neighbor */
@@ -1126,7 +1136,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
 
   int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
   int max_rtes = (1500 - hdr_sz) / sizeof(grid_nbr_entry);
-  int num_rtes = (max_rtes < rtes_to_send.size() ? max_rtes : rtes_to_send.size()); // min
+  int num_rtes = min(max_rtes, rtes_to_send.size()); 
   int psz = hdr_sz + sizeof(grid_nbr_entry) * num_rtes;
 
   assert(psz <= 1500);
@@ -1202,7 +1212,10 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
   nb->metric = htonl(metric.val);
   nb->metric_valid = metric.valid;
   nb->is_gateway = is_gateway;
-  nb->ttl = htonl(ttl);
+
+  unsigned int jiff = click_jiffies();
+  unsigned int ttl_decrement = jiff_to_msec(good() ? jiff - last_updated_jiffies : jiff - last_expired_jiffies);
+  nb->ttl = htonl(decr_ttl(ttl, max(ttl_decrement, grid_hello::MIN_TTL_DECREMENT)));
   
   /* ping-pong link stats back to sender */
   nb->link_qual = 0;

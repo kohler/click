@@ -132,8 +132,6 @@ private:
    */
   class RTEntry : public RouteEntry {
 
-    bool                _init;
-
   public:
     class EtherAddress  dest_eth;              // hardware address of destination; 
                                                // may be all 0s if we don't hear any ads...
@@ -154,31 +152,24 @@ private:
     int                 advertise_ok_jiffies;  // when it is ok to advertise route
     bool                need_seq_ad;
     bool                need_metric_ad;
+    int                 last_expired_jiffies;  // when the route was expired (if broken)
 
     bool broken() { return num_hops == 0; }
     bool good()   { return num_hops != 0; }
 
     RTEntry() : 
-      _init(false), is_gateway(false), ttl(0), last_updated_jiffies(-1), wst(0), 
-      last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false)
-    { }
-    
-    RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
-	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 
-	    bool _loc_good, bool _is_gateway, unsigned int _seq_no, unsigned int _ttl, 
-	    int _last_updated_jiffies) :
-      RouteEntry(_dest_ip, _loc_good, _loc_err, _loc, _next_hop_eth, _next_hop_ip,
-		 _seq_no, _num_hops), 
-      _init(true), is_gateway(_is_gateway), ttl(_ttl), last_updated_jiffies(_last_updated_jiffies), 
-      wst(0), last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false)
+      is_gateway(false), ttl(0), last_updated_jiffies(-1), wst(0), 
+      last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false), 
+      need_metric_ad(false), last_expired_jiffies(0)
     { }
 
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
 	    unsigned int jiff) :
       RouteEntry(ip, gh->loc_good, gh->loc_err, gh->loc, eth, ip, hlo->seq_no, 1),
-      _init(true), dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
-      wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false)
+      dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
+      wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_seq_ad(false), 
+      need_metric_ad(false), last_expired_jiffies(0)
     { 
       loc_err = ntohs(loc_err); 
       seq_no = ntohl(seq_no); 
@@ -190,9 +181,10 @@ private:
 	    unsigned int jiff) :
       RouteEntry(nbr->ip, nbr->loc_good, nbr->loc_err, nbr->loc,
 		 eth, ip, nbr->seq_no, nbr->num_hops > 0 ? nbr->num_hops + 1 : 0),
-      _init(true), is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
+      is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
       metric(nbr->metric, nbr->metric_valid), wst(0), last_seq_jiffies(0), 
-      advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false)
+      advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false),
+      last_expired_jiffies(0)
     {
       loc_err = ntohs(loc_err);
       seq_no = ntohl(seq_no);
@@ -226,12 +218,19 @@ private:
 
   void handle_update(RTEntry &, const bool was_sender);  
   void insert_route(const RTEntry &, const bool was_Sender);
-  void schedule_triggered_update(const IPAddress &ip, int when);
+  void schedule_triggered_update(const IPAddress &ip, int when); // when is in jiffies
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
   typedef TMap::Iterator TMIter;
 
+  // Expire timer map invariants: every good route (r.good() is true)
+  // has a running timer in _expire_timers.  No broken routes have a
+  // timer.
   class TMap _expire_timers;
+
+  // Trigger timer invariants: any route may have a timer in this
+  // table.  A route with a timer in this table has need_seq_ad or
+  // need_metric_ad set.  All timers in the table must be running.
   class TMap _trigger_timers;
 
   /* max time to keep an entry in RT */
@@ -247,7 +246,7 @@ private:
 
   /* binary logging */
   class GridLogger          *_log;
-  static const unsigned int _log_dump_period = 30 * 1000; // msecs
+  static const unsigned int _log_dump_period = 5 * 1000; // msecs
 
   /* this node's addresses */
   IPAddress _ip;
@@ -293,6 +292,7 @@ private:
   /* send a route advertisement containing the specified entries */
   void build_and_tx_ad(Vector<RTEntry> &);
 
+public:
   static unsigned int decr_ttl(unsigned int ttl, unsigned int decr)
   { return (ttl > decr ? ttl - decr : 0); }
 
@@ -302,6 +302,7 @@ private:
   static int msec_to_jiff(int m)
   { return (CLICK_HZ * m) / 1000; }
 
+private:
   class RouteEntry make_generic_rte(const RTEntry &rte) { return rte; }
 
   /* update route metric with the last hop from the advertising node */
@@ -367,7 +368,7 @@ private:
 
   bool _frozen;
 
-  // this class is singleton 
+  // this class is singleton, at least in terms of how many can be configured
   static DSDVRouteTable *_instance;
 };
 
