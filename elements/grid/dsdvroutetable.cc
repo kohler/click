@@ -37,6 +37,8 @@ CLICK_DECLS
 #define DBG2 0
 #define DBG3 0
 
+#define FULL_DUMP_ON_TRIG_UPDATE 0
+
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
@@ -809,14 +811,14 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
 	r.advertise_ok_jiffies <= jiff)
       triggered_routes.push_back(r);    
   }
-
+#if FULL_DUMP_ON_TRIG_UPDATE
   // ns implementation of dsdv has this ``heuristic'' to decide when
   // to just do a full update.  slightly bogus, i mean, why > 3?
   if (3*triggered_routes.size() > _rtes.size() && triggered_routes.size() > 3) {
     send_full_update();
     return;
   }
-
+#endif
   if (triggered_routes.size() == 0)
     return;
 
