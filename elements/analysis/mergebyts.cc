@@ -78,7 +78,7 @@ MergeByTimestamp::pull(int)
     
     if (which >= 0) {
 	Packet *p = _vec[which];
-	_vec[which] = 0;
+	_vec[which] = input(which).pull();
 	return p;
     } else {
 	if (_stop)
