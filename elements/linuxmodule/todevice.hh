@@ -94,6 +94,9 @@ class ToDevice : public AnyTaskDevice { public:
   
   ToDevice();
   ~ToDevice();
+
+  static void static_initialize();
+  static void static_cleanup();
   
   const char *class_name() const	{ return "ToDevice"; }
   const char *processing() const	{ return PULL; }

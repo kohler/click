@@ -36,7 +36,6 @@ static int registered_readers;
 static struct notifier_block packet_notifier;
 #endif
 static struct notifier_block device_notifier;
-static int from_device_count;
 
 extern "C" {
 #ifdef HAVE_CLICK_KERNEL
@@ -45,45 +44,39 @@ static int packet_notifier_hook(struct notifier_block *nb, unsigned long val, vo
 static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
 }
 
-static void
-fromdev_static_initialize()
+void
+FromDevice::static_initialize()
 {
-    if (++from_device_count == 1) {
-	from_device_map.initialize();
+    from_device_map.initialize();
 #ifdef HAVE_CLICK_KERNEL
-	packet_notifier.notifier_call = packet_notifier_hook;
-	packet_notifier.priority = 1;
+    packet_notifier.notifier_call = packet_notifier_hook;
+    packet_notifier.priority = 1;
 #endif
-	device_notifier.notifier_call = device_notifier_hook;
-	device_notifier.priority = 1;
-	device_notifier.next = 0;
-	register_netdevice_notifier(&device_notifier);
-    }
+    device_notifier.notifier_call = device_notifier_hook;
+    device_notifier.priority = 1;
+    device_notifier.next = 0;
+    register_netdevice_notifier(&device_notifier);
 }
 
-static void
-fromdev_static_cleanup()
+void
+FromDevice::static_cleanup()
 {
-    if (--from_device_count <= 0) {
 #ifdef HAVE_CLICK_KERNEL
-	if (registered_readers)
-	    unregister_net_in(&packet_notifier);
+    if (registered_readers)
+	unregister_net_in(&packet_notifier);
 #endif
-	unregister_netdevice_notifier(&device_notifier);
-    }
+    unregister_netdevice_notifier(&device_notifier);
 }
 
 FromDevice::FromDevice()
 {
     MOD_INC_USE_COUNT;
-    fromdev_static_initialize();
     add_output();
     _head = _tail = 0;
 }
 
 FromDevice::~FromDevice()
 {
-    fromdev_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
 

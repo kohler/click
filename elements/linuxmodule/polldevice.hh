@@ -73,6 +73,9 @@ class PollDevice : public AnyTaskDevice { public:
   
   PollDevice();
   ~PollDevice();
+
+  static void static_initialize();
+  static void static_cleanup();
   
   const char *class_name() const	{ return "PollDevice"; }
   const char *processing() const	{ return PUSH; }

@@ -27,12 +27,9 @@
 #include <click/packet_anno.hh>
 CLICK_DECLS
 
-ICMPError::ICMPError()
+void
+ICMPError::static_initialize()
 {
-  MOD_INC_USE_COUNT;
-  add_input();
-  add_output();
-  _code = _type = -1;
   if (cp_register_stringlist_argtype("ICMP.type", "ICMP message type", cpArgAllowNumbers) == 0)
     cp_extend_stringlist_argtype("ICMP.type",
 				 "echo-reply", ICMP_ECHOREPLY,
@@ -69,11 +66,23 @@ ICMPError::ICMPError()
   }
 }
 
+void
+ICMPError::static_cleanup()
+{
+  cp_unregister_argtype("ICMP.type");
+  cp_unregister_argtype("ICMP.code");
+}
+
+
+ICMPError::ICMPError()
+  : Element(1, 1), _type(-1), _code(-1)
+{
+  MOD_INC_USE_COUNT;
+}
+
 ICMPError::~ICMPError()
 {
   MOD_DEC_USE_COUNT;
-  cp_unregister_argtype("ICMP.type");
-  cp_unregister_argtype("ICMP.code");
 }
 
 int

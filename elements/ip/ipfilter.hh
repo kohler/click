@@ -116,6 +116,9 @@ class IPFilter : public Classifier { public:
   
   IPFilter();
   ~IPFilter();
+
+  static void static_initialize();
+  static void static_cleanup();
   
   const char *class_name() const		{ return "IPFilter"; }
   const char *processing() const		{ return PUSH; }

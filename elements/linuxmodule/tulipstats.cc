@@ -38,7 +38,6 @@ CLICK_CXX_UNPROTECT
 
 /* for hot-swapping */
 static AnyDeviceMap tulip_stats_map;
-static int tulip_stats_count;
 static int tulip_stats_active;
 
 #if HAVE_LINUX_TULIP_INTERRUPT_HOOK
@@ -101,31 +100,21 @@ static const char *intr_names[] = {
   "NIS (normal intr summary)"
 };
 
-static void
-tulipstats_static_initialize()
+void
+TulipStats::static_initialize()
 {
-  tulip_stats_count++;
-  if (tulip_stats_count > 1) return;
   tulip_stats_map.initialize();
-}
-
-static void
-tulipstats_static_cleanup()
-{
-  tulip_stats_count--;
 }
 
 TulipStats::TulipStats()
   : _task(this)
 {
   // no MOD_INC_USE_COUNT; rely on AnyDevice
-  tulipstats_static_initialize();
 }
 
 TulipStats::~TulipStats()
 {
   // no MOD_DEC_USE_COUNT; rely on AnyDevice
-  tulipstats_static_cleanup();
 }
 
 

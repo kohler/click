@@ -23,6 +23,10 @@ class CheckIPHeader2 : public CheckIPHeader { public:
   
   CheckIPHeader2();
   ~CheckIPHeader2();
+
+  // prevent CheckIPHeader::static_initialize() from being called twice
+  static void static_initialize()		{ }
+  static void static_cleanup()			{ }
   
   const char *class_name() const		{ return "CheckIPHeader2"; }
 

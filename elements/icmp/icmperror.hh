@@ -82,6 +82,9 @@ class ICMPError : public Element {
 public:
   ICMPError();
   ~ICMPError();
+
+  static void static_initialize();
+  static void static_cleanup();
   
   const char *class_name() const		{ return "ICMPError"; }
   const char *processing() const		{ return AGNOSTIC; }

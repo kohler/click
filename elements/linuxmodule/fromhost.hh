@@ -75,6 +75,8 @@ class FromHost : public AnyDevice { public:
     FromHost();
     ~FromHost();
 
+    static void static_initialize();
+    
     const char *class_name() const	{ return "FromHost"; }
     const char *processing() const	{ return PUSH; }
 

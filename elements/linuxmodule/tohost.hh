@@ -83,6 +83,9 @@ class ToHost : public AnyDevice { public:
     ToHost();
     ~ToHost();
 
+    static void static_initialize();
+    static void static_cleanup();
+
     const char *class_name() const	{ return "ToHost"; }
     const char *processing() const	{ return PUSH; }
     const char *flags() const		{ return "S2"; }

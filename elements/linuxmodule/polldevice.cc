@@ -41,41 +41,35 @@ CLICK_CXX_UNPROTECT
 
 /* for hot-swapping */
 static AnyDeviceMap poll_device_map;
-static int poll_device_count;
 static struct notifier_block device_notifier;
 extern "C" {
 static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
 }
 
-static void
-polldev_static_initialize()
+void
+PollDevice::static_initialize()
 {
-    if (++poll_device_count == 1) {
-	poll_device_map.initialize();
-	device_notifier.notifier_call = device_notifier_hook;
-	device_notifier.priority = 1;
-	device_notifier.next = 0;
-	register_netdevice_notifier(&device_notifier);
-    }
+    poll_device_map.initialize();
+    device_notifier.notifier_call = device_notifier_hook;
+    device_notifier.priority = 1;
+    device_notifier.next = 0;
+    register_netdevice_notifier(&device_notifier);
 }
 
-static void
-polldev_static_cleanup()
+void
+PollDevice::static_cleanup()
 {
-    if (--poll_device_count <= 0)
-	unregister_netdevice_notifier(&device_notifier);
+    unregister_netdevice_notifier(&device_notifier);
 }
 
 PollDevice::PollDevice()
 {
     MOD_INC_USE_COUNT;
-    polldev_static_initialize();
     add_output();
 }
 
 PollDevice::~PollDevice()
 {
-    polldev_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
 

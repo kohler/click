@@ -41,42 +41,36 @@ CLICK_CXX_UNPROTECT
 
 /* for watching when devices go offline */
 static AnyDeviceMap to_device_map;
-static int to_device_count;
 static struct notifier_block device_notifier;
 extern "C" {
 static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
 }
 
-static void
-todev_static_initialize()
+void
+ToDevice::static_initialize()
 {
-    if (++to_device_count == 1) {
-	to_device_map.initialize();
-	device_notifier.notifier_call = device_notifier_hook;
-	device_notifier.priority = 1;
-	device_notifier.next = 0;
-	register_netdevice_notifier(&device_notifier);
-    }
+    to_device_map.initialize();
+    device_notifier.notifier_call = device_notifier_hook;
+    device_notifier.priority = 1;
+    device_notifier.next = 0;
+    register_netdevice_notifier(&device_notifier);
 }
 
-static void
-todev_static_cleanup()
+void
+ToDevice::static_cleanup()
 {
-    if (--to_device_count <= 0)
-	unregister_netdevice_notifier(&device_notifier);
+    unregister_netdevice_notifier(&device_notifier);
 }
 
 ToDevice::ToDevice()
     : _dev_idle(0), _rejected(0), _hard_start(0), _no_pad(false)
 {
     MOD_INC_USE_COUNT;
-    todev_static_initialize();
     add_input();
 }
 
 ToDevice::~ToDevice()
 {
-    todev_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
 

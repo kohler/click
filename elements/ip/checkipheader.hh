@@ -108,6 +108,9 @@ class CheckIPHeader : public Element { public:
 
   CheckIPHeader();
   ~CheckIPHeader();
+
+  static void static_initialize();
+  static void static_cleanup();
   
   const char *class_name() const		{ return "CheckIPHeader"; }
   const char *processing() const		{ return "a/ah"; }

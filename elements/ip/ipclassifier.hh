@@ -208,12 +208,14 @@ classifier pattern.
 =a Classifier, IPFilter, CheckIPHeader, MarkIPHeader, CheckIPHeader2,
 tcpdump(1) */
 
-class IPClassifier : public IPFilter {
-
- public:
+class IPClassifier : public IPFilter { public:
   
   IPClassifier();
   ~IPClassifier();
+
+  // prevent IPFilter::static_initialize() from being called twice
+  static void static_initialize()		{ }
+  static void static_cleanup()			{ }
   
   const char *class_name() const		{ return "IPClassifier"; }
   const char *processing() const		{ return PUSH; }

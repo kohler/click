@@ -39,8 +39,6 @@ const char * const CheckIPHeader::reason_texts[NREASONS] = {
 #define IPADDR_LIST_BADSRC		((void *)1)
 #define IPADDR_LIST_BADSRC_OLD		((void *)2)
 
-static int checkipheader_count = 0;
-
 static void
 ipaddr_list_parse(cp_value *v, const String &arg, ErrorHandler *errh, const char *argname, Element *context)
 {
@@ -100,41 +98,33 @@ ipaddr_list_store(cp_value *v, Element *)
   }
 }
 
-static void
-checkipheader_static_initialize()
+void
+CheckIPHeader::static_initialize()
 {
-  if (++checkipheader_count == 1) {
-    cp_register_argtype("CheckIPHeader.INTERFACES", "list of router IP addresses and prefixes", cpArgStore2, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_INTERFACES);
-    cp_register_argtype("CheckIPHeader.BADSRC", "list of IP addresses", cpArgNormal, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_BADSRC);
-    cp_register_argtype("CheckIPHeader.BADSRC_OLD", "list of IP addresses", cpArgNormal, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_BADSRC_OLD);
-  }
+  cp_register_argtype("CheckIPHeader.INTERFACES", "list of router IP addresses and prefixes", cpArgStore2, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_INTERFACES);
+  cp_register_argtype("CheckIPHeader.BADSRC", "list of IP addresses", cpArgNormal, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_BADSRC);
+  cp_register_argtype("CheckIPHeader.BADSRC_OLD", "list of IP addresses", cpArgNormal, ipaddr_list_parse, ipaddr_list_store, IPADDR_LIST_BADSRC_OLD);
 }
 
-static void
-checkipheader_static_cleanup()
+void
+CheckIPHeader::static_cleanup()
 {
-  if (--checkipheader_count == 0) {
-    cp_unregister_argtype("CheckIPHeader.INTERFACES");
-    cp_unregister_argtype("CheckIPHeader.BADSRC");
-    cp_unregister_argtype("CheckIPHeader.BADSRC_OLD");
-  }
+  cp_unregister_argtype("CheckIPHeader.INTERFACES");
+  cp_unregister_argtype("CheckIPHeader.BADSRC");
+  cp_unregister_argtype("CheckIPHeader.BADSRC_OLD");
 }
 
 CheckIPHeader::CheckIPHeader()
-  : _checksum(true), _reason_drops(0)
+  : Element(1, 1), _checksum(true), _reason_drops(0)
 {
   MOD_INC_USE_COUNT;
-  add_input();
-  add_output();
   _drops = 0;
-  checkipheader_static_initialize();
 }
 
 CheckIPHeader::~CheckIPHeader()
 {
   MOD_DEC_USE_COUNT;
   delete[] _reason_drops;
-  checkipheader_static_cleanup();
 }
 
 void

@@ -40,7 +40,6 @@ static const int field_def[] = {
 };
 
 static HashMap<String, int> *wordmap;
-static int ip_filter_count;
 #define WT(t, d)		((t << WT_TYPE_SHIFT) | d)
 #define WT_TYPE(wt)		((wt & IPFilter::WT_TYPE_MASK) >> IPFilter::WT_TYPE_SHIFT)
 
@@ -224,24 +223,28 @@ IPFilter::lookup_word(HashMap<String, int> *wordmap, int type, int transp_proto,
   }
 }
 
+void
+IPFilter::static_initialize()
+{
+  wordmap = create_wordmap();
+}
+
+void
+IPFilter::static_cleanup()
+{
+  delete wordmap;
+  wordmap = 0;
+}
+
+
 IPFilter::IPFilter()
 {
   // no MOD_INC_USE_COUNT; rely on Classifier
-  if (ip_filter_count == 0)
-    wordmap = create_wordmap();
-  else
-    assert(wordmap);
-  ip_filter_count++;
 }
 
 IPFilter::~IPFilter()
 {
   // no MOD_DEC_USE_COUNT; rely on Classifier
-  ip_filter_count--;
-  if (ip_filter_count == 0) {
-    delete wordmap;
-    wordmap = 0;
-  }
 }
 
 //

@@ -71,6 +71,9 @@ class FromDevice : public AnyTaskDevice, public Storage { public:
     FromDevice();
     ~FromDevice();
 
+    static void static_initialize();
+    static void static_cleanup();
+
     const char *class_name() const	{ return "FromDevice"; }
     const char *processing() const	{ return PUSH; }
     void *cast(const char *);

@@ -132,12 +132,12 @@
 #include "elements/linuxmodule/anydevice.hh"
 #include "elements/linuxmodule/fromhost.hh"
 
-class TulipStats : public AnyTaskDevice {
-  
- public:
+class TulipStats : public AnyTaskDevice { public:
   
   TulipStats();
   ~TulipStats();
+
+  static void static_initialize();
   
   const char *class_name() const	{ return "TulipStats"; }
   

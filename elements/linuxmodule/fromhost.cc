@@ -49,18 +49,10 @@ static void fl_wakeup(Timer *, void *);
 static int from_linux_count;
 static AnyDeviceMap fromlinux_map;
 
-static void
-fromlinux_static_initialize()
+void
+FromHost::static_initialize()
 {
-    from_linux_count++;
-    if (from_linux_count == 1)
-	fromlinux_map.initialize();
-}
-
-static void
-fromlinux_static_cleanup()
-{
-    from_linux_count--;
+    fromlinux_map.initialize();
 }
 
 FromHost::FromHost()
@@ -68,14 +60,12 @@ FromHost::FromHost()
       _task(this), _wakeup_timer(fl_wakeup, this), _queue(0)
 {
     MOD_INC_USE_COUNT;
-    fromlinux_static_initialize();
     add_output();
     memset(&_stats, 0, sizeof(_stats));
 }
 
 FromHost::~FromHost()
 {
-    fromlinux_static_cleanup();
     MOD_DEC_USE_COUNT;
 }
 

@@ -69,7 +69,7 @@ PerfCountUser::prepare(const String &name, ErrorHandler *errh, int force)
 {
   int which = string_to_perfctr(name);
   if (which == -1)
-    return errh->error("unknown performance metric `%s'", name.c_str());
+    return errh->error("unknown performance metric '%s'", name.c_str());
   
   // find the base PerfCountUser
   PerfCountUser *base = 0;

@@ -37,10 +37,25 @@ CLICK_CXX_UNPROTECT
 
 // for watching when devices go offline
 static AnyDeviceMap to_host_map;
-static int to_host_count;
 static struct notifier_block device_notifier;
 extern "C" {
 static int device_notifier_hook(struct notifier_block *nb, unsigned long val, void *v);
+}
+
+void
+ToHost::static_initialize()
+{
+    to_host_map.initialize();
+    device_notifier.notifier_call = device_notifier_hook;
+    device_notifier.priority = 1;
+    device_notifier.next = 0;
+    register_netdevice_notifier(&device_notifier);
+}
+
+void
+ToHost::static_cleanup()
+{
+    unregister_netdevice_notifier(&device_notifier);
 }
 
 ToHost::ToHost()
@@ -48,24 +63,11 @@ ToHost::ToHost()
 {
     MOD_INC_USE_COUNT;
     add_input();
-
-    // static initialize
-    if (++to_host_count == 1) {
-	to_host_map.initialize();
-	device_notifier.notifier_call = device_notifier_hook;
-	device_notifier.priority = 1;
-	device_notifier.next = 0;
-	register_netdevice_notifier(&device_notifier);
-    }
 }
 
 ToHost::~ToHost()
 {
     MOD_DEC_USE_COUNT;
-
-    // static cleanup
-    if (--to_host_count <= 0)
-	unregister_netdevice_notifier(&device_notifier);
 }
 
 int
