@@ -56,7 +56,7 @@ Index: net/if_ethersubr.c
  	register struct llc *l;
  #endif
  
-+    if (ifp->click_divert) {
++    if (ifp->click_divert > 0) {
 +	/*
 +	 * Put the packet on Click's receive queue.  Click will
 +	 * pick them up from the queue itself.

@@ -1,3 +1,4 @@
+// -*- mode: c++; c-basic-offset: 4 -*-
 /*
  * fromdevice.{cc,hh} -- element steals packets from kernel devices using
  * register_net_in
@@ -40,13 +41,13 @@ static int from_device_count;
 static int
 register_rx(struct ifnet *d, int qSize)
 {
-    int s;
-
     assert(d);
-    s = splimp();
+    int s = splimp();
+    d->click_divert++;
     d->click_intrq.ifq_maxlen = qSize;
-    d->click_divert = 1;
+    d->click_intrq.ifq_drops = 0;
     splx(s);
+    registered_readers++;
 }
 
 /*
@@ -55,23 +56,23 @@ register_rx(struct ifnet *d, int qSize)
 static int
 unregister_rx(struct ifnet *d)
 {
-    int s;
-
     assert(d);
-    s = splimp();
-    d->click_divert = 0;
+    int s = splimp();
+    d->click_divert--;
 
     /*
-     * Flush the receive queue..
+     * Flush the receive queue.
      */
-    for (int i = 0; i <= d->click_intrq.ifq_maxlen; i++) {
-	struct mbuf *m;
-	IF_DEQUEUE(&d->click_intrq, m);
-	if (NULL == m) break;
-	m_freem(m);
-    }
+    if (d->click_divert <= 0)
+	for (int i = 0; i <= d->click_intrq.ifq_maxlen; i++) {
+	    struct mbuf *m;
+	    IF_DEQUEUE(&d->click_intrq, m);
+	    if (!m) break;
+	    m_freem(m);
+	}
 
     splx(s);
+    registered_readers--;
 }
 #endif
 
@@ -96,9 +97,9 @@ fromdev_static_cleanup()
 
 FromDevice::FromDevice()
 {
-  // no MOD_INC_USE_COUNT; rely on AnyDevice
-  add_output();
-  fromdev_static_initialize();
+    // no MOD_INC_USE_COUNT; rely on AnyDevice
+    add_output();
+    fromdev_static_initialize();
 }
 
 FromDevice::~FromDevice()
@@ -166,14 +167,11 @@ FromDevice::initialize(ErrorHandler *errh)
     if (_promisc && _dev)
 	ifpromisc(_dev, 1);
     
-    if (!registered_readers) {
 #ifdef HAVE_CLICK_BSD_KERNEL
-	register_rx(_dev, QSIZE);
+    register_rx(_dev, QSIZE);
 #else
-	errh->warning("can't get packets: not compiled for a Click kernel");
+    errh->warning("can't get packets: not compiled for a Click kernel");
 #endif
-    }
-    registered_readers++;
 
     ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
 #ifdef HAVE_STRIDE_SCHED
@@ -181,9 +179,6 @@ FromDevice::initialize(ErrorHandler *errh)
     _max_tickets = _task.tickets();
     _task.set_tickets(Task::DEFAULT_TICKETS);
 #endif
-
-    // Clear the input queue drop counter
-    _dev->click_intrq.ifq_drops = 0;
 
 #if CLICK_DEVICE_STATS
     // Initialize performance stats
@@ -203,10 +198,8 @@ FromDevice::initialize(ErrorHandler *errh)
 void
 FromDevice::uninitialize()
 {
-    registered_readers--;
 #ifdef HAVE_CLICK_BSD_KERNEL
-    if (registered_readers == 0)
-	unregister_rx(_dev);
+    unregister_rx(_dev);
 #endif
     
     _task.unschedule();
