@@ -35,7 +35,7 @@ sub process_file ($) {
     my($cxx_class) = (/^\s*(\w+)(\s|:\s).*\{/);
     next if !$cxx_class;
     push @cxx_name, $cxx_class;
-    push @class_file, $filename;
+    push @class_file, $headername;
     $cxx_name_to_id{$cxx_class} = @cxx_name - 1;
     if (/\A\s*\w*\s*:\s*([\w\s,]+)/) {
       my $p = $1;
