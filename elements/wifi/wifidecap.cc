@@ -92,10 +92,10 @@ WifiDecap::simple_action(Packet *p)
     bssid = EtherAddress(w->i_addr3);
     break;
   default:
+    click_chatter("%{element}: invalid dir %d\n",
+		  this,
+		  dir);
     if (_strict) {
-      click_chatter("%{element}: invalid dir %d\n",
-		    this,
-		    dir);
       p->kill();
       return 0;
     }

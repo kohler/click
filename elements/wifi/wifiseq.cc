@@ -68,8 +68,14 @@ WifiSeq::configure(Vector<String> &conf, ErrorHandler *errh)
 }
 
 
+void
+WifiSeq::reset()
+{
+  _seq = 0;
+}
+
 Packet *
-WifiSeq::apply_seq(Packet *p_in) {
+WifiSeq::simple_action(Packet *p_in) {
   WritablePacket *p = p_in ? p_in->uniqueify() : 0;
 
   if (p && p->length() > _offset + _bytes) {
@@ -84,25 +90,9 @@ WifiSeq::apply_seq(Packet *p_in) {
     _seq++;
   }
   return p;
-}
-
-void
-WifiSeq::reset()
-{
-  _seq = 0;
-}
-
-Packet *
-WifiSeq::pull(int port) {
-  Packet *p = input(port).pull();
-  return apply_seq(p);
 
 }
-void 
-WifiSeq::push(int port, Packet *p) {
-  p = apply_seq(p);
-  output(port).push(p);
-}
+
 enum {H_DEBUG, H_SEQ, H_OFFSET, H_BYTES, H_SHIFT, H_RESET};
 
 String 

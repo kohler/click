@@ -52,6 +52,12 @@ foreach my $line (@lines) {
 }
 
 system "/sbin/iwconfig ath0 channel $best_channel";
+
+if ($best_channel < 15) {
+    system "write_handler.pl set_rate.rate 22";
+} else {
+    system "write_handler.pl set_rate.rate 12";
+}
 system "write_handler.pl winfo.bssid $best_bssid";
 system "write_handler.pl winfo.channel $best_channel";
 system "write_handler.pl winfo.ssid $best_ssid";

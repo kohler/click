@@ -27,6 +27,10 @@
 #include "printwifi.hh"
 CLICK_DECLS
 
+
+#define min(x,y)      ((x)<(y) ? (x) : (y))
+#define max(x,y)      ((x)>(y) ? (x) : (y))
+
 PrintWifi::PrintWifi()
   : Element(1, 1),
     _print_anno(false),
@@ -55,6 +59,213 @@ PrintWifi::configure(Vector<String> &conf, ErrorHandler* errh)
   return ret;
 }
 
+String unparse_beacon(Packet *p) {
+  uint8_t *ptr;
+  struct click_wifi *w = (struct click_wifi *) p->data();
+  StringAccum sa;
+  
+  ptr = (uint8_t *) (w+1);
+  
+  //uint8_t *ts = ptr;
+  ptr += 8;
+
+  uint16_t beacon_int = le16_to_cpu(*(uint16_t *) ptr);
+  ptr += 2;
+
+  uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
+  ptr += 2;
+
+
+  uint8_t *end  = (uint8_t *) p->data() + p->length();
+
+  uint8_t *ssid_l = NULL;
+  uint8_t *rates_l = NULL;
+  uint8_t *xrates_l = NULL;
+  uint8_t *ds_l = NULL;
+  while (ptr < end) {
+    switch (*ptr) {
+    case WIFI_ELEMID_SSID:
+      ssid_l = ptr;
+      break;
+    case WIFI_ELEMID_RATES:
+      rates_l = ptr;
+      break;
+    case WIFI_ELEMID_XRATES:
+      xrates_l = ptr;
+      break;
+    case WIFI_ELEMID_FHPARMS:
+      break;
+    case WIFI_ELEMID_DSPARMS:
+      ds_l = ptr;
+      break;
+    case WIFI_ELEMID_IBSSPARMS:
+      break;
+    case WIFI_ELEMID_TIM:
+      break;
+    case WIFI_ELEMID_ERP:
+      break;
+    case WIFI_ELEMID_VENDOR:
+      break;
+    case 133: /* ??? */
+      break;
+    case 150: /* ??? */
+      break;
+    }
+    ptr += ptr[1] + 2;
+
+  }
+
+  EtherAddress bssid = EtherAddress(w->i_addr3);
+  sa << bssid << " ";
+
+  String ssid = "";
+  if (ssid_l && ssid_l[1]) {
+    ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
+  }
+
+  if (ssid == "") {
+    sa << "(none)";
+  } else {
+    sa << ssid;
+  }
+
+  int chan = (ds_l) ? ds_l[2] : 0;
+  sa << " chan " << chan;
+  sa << " b_int " << beacon_int << " ";
+
+  Vector<int> basic_rates;
+  Vector<int> rates;
+  if (rates_l) {
+    for (int x = 0; x < min((int)rates_l[1], WIFI_RATE_SIZE); x++) {
+      uint8_t rate = rates_l[x + 2];
+      
+      if (rate & WIFI_RATE_BASIC) {
+	basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
+      } else {
+	rates.push_back((int)(rate & WIFI_RATE_VAL));
+      }
+    }
+  }
+
+  
+  if (xrates_l) {
+    for (int x = 0; x < min((int)xrates_l[1], WIFI_RATE_SIZE); x++) {
+      uint8_t rate = xrates_l[x + 2];
+      
+      if (rate & WIFI_RATE_BASIC) {
+	basic_rates.push_back((int)(rate & WIFI_RATE_VAL));
+      } else {
+	rates.push_back((int)(rate & WIFI_RATE_VAL));
+      }
+    }
+  }
+  
+
+  
+  sa << "[ ";
+  if (capability & WIFI_CAPINFO_ESS) {
+    sa << "ESS ";
+  }
+  if (capability & WIFI_CAPINFO_IBSS) {
+    sa << "IBSS ";
+  }
+  if (capability & WIFI_CAPINFO_CF_POLLABLE) {
+    sa << "CF_POLLABLE ";
+  }
+  if (capability & WIFI_CAPINFO_CF_POLLREQ) {
+    sa << "CF_POLLREQ ";
+  }
+  if (capability & WIFI_CAPINFO_PRIVACY) {
+    sa << "PRIVACY ";
+  }
+  sa << "] ";
+  
+  sa << "({";
+  for (int x = 0; x < basic_rates.size(); x++) {
+    sa << basic_rates[x];
+    if (x != basic_rates.size()-1) {
+      sa << " ";
+    }
+  }
+  sa << "} ";
+  for (int x = 0; x < rates.size(); x++) {
+    sa << rates[x];
+    if (x != rates.size()-1 ) {
+      sa << " ";
+    }
+  }
+  
+  sa << ")";
+  
+  return sa.take_string();
+}
+
+String reason_string(int reason) {
+  switch (reason) {
+  case WIFI_REASON_UNSPECIFIED: return "unspecified";
+  case WIFI_REASON_AUTH_EXPIRE:	return "auth_expire";
+  case WIFI_REASON_AUTH_LEAVE:	return "auth_leave";
+  case WIFI_REASON_ASSOC_EXPIRE: return "assoc_expire/inactive";
+  case WIFI_REASON_ASSOC_TOOMANY: return "assoc_toomany";
+  case WIFI_REASON_NOT_AUTHED:  return "not_authed";
+  case WIFI_REASON_NOT_ASSOCED: return "not_assoced";
+  case WIFI_REASON_ASSOC_LEAVE: return "assoc_leave";
+  case WIFI_REASON_ASSOC_NOT_AUTHED: return "assoc_not_authed";
+  default: return "unknown reason " + String(reason);
+  }
+
+}
+
+String status_string(int status) {
+  switch (status) {
+
+  case WIFI_STATUS_SUCCESS: return "success";
+  case WIFI_STATUS_UNSPECIFIED: return "unspecified";
+  case WIFI_STATUS_CAPINFO: return "capinfo";
+  case WIFI_STATUS_NOT_ASSOCED: return "not_assoced";
+  case WIFI_STATUS_OTHER: return "other";
+  case WIFI_STATUS_ALG: return "alg";
+  case WIFI_STATUS_SEQUENCE: return "seq";
+  case WIFI_STATUS_CHALLENGE: return "challenge";
+  case WIFI_STATUS_TIMEOUT: return "timeout";
+  case WIFI_STATUS_BASIC_RATES: return "basic_rates";
+  case WIFI_STATUS_TOO_MANY_STATIONS: return "too_many_stations";
+  case WIFI_STATUS_RATES: return "rates";
+  case WIFI_STATUS_SHORTSLOT_REQUIRED: return "shortslot_required";
+  default: return "unknown status " + String(status);    
+  }
+}
+String capability_string(int capability) {
+  StringAccum sa;
+  sa << "[";
+  bool any = false;
+  if (capability & WIFI_CAPINFO_ESS) {
+    sa << "ESS";
+    any = true;
+  }
+  if (capability & WIFI_CAPINFO_IBSS) {
+    if (any) { sa << " ";}
+    sa << "IBSS";
+    any = true;
+  }
+  if (capability & WIFI_CAPINFO_CF_POLLABLE) {
+    if (any) { sa << " ";}
+    sa << "CF_POLLABLE";
+    any = true;
+  }
+  if (capability & WIFI_CAPINFO_CF_POLLREQ) {
+    if (any) { sa << " ";}
+    sa << "CF_POLLREQ";
+    any = true;
+  }
+  if (capability & WIFI_CAPINFO_PRIVACY) {
+    if (any) { sa << " ";}
+    sa << "PRIVACY";
+    any = true;
+  }
+  sa << "]";
+  return sa.take_string();
+}
 Packet *
 PrintWifi::simple_action(Packet *p)
 {
@@ -62,7 +273,7 @@ PrintWifi::simple_action(Packet *p)
   struct click_wifi_extra *ceh = (struct click_wifi_extra *) p->all_user_anno();  
   int type = wh->i_fc[0] & WIFI_FC0_TYPE_MASK;
   int subtype = wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK;
-
+  int duration = cpu_to_le16(*(uint16_t *) wh->i_dur);
   EtherAddress src;
   EtherAddress dst;
   EtherAddress bssid;
@@ -122,22 +333,61 @@ PrintWifi::simple_action(Packet *p)
     sa << "??? ";
   }
 
-
+  uint8_t *ptr = (uint8_t *) p->data() + sizeof(click_wifi);
   switch (type) {
   case WIFI_FC0_TYPE_MGT:
     sa << "mgmt ";
 
     switch (subtype) {
     case WIFI_FC0_SUBTYPE_ASSOC_REQ:      sa << "assoc_req "; break;
-    case WIFI_FC0_SUBTYPE_ASSOC_RESP:     sa << "assoc_resp "; break;
+    case WIFI_FC0_SUBTYPE_ASSOC_RESP: {     
+      uint16_t capability = le16_to_cpu(*(uint16_t *) ptr);
+      ptr += 2;
+      
+      uint16_t status = le16_to_cpu(*(uint16_t *) ptr);
+      ptr += 2;
+      
+      uint16_t associd = le16_to_cpu(*(uint16_t *) ptr);
+      ptr += 2;
+      sa << "assoc_resp "; 
+      sa << capability_string(capability);
+      sa << " status " << status_string(status);
+      sa << " associd " << associd << " ";
+      break;
+    }
     case WIFI_FC0_SUBTYPE_REASSOC_REQ:    sa << "reassoc_req "; break;
     case WIFI_FC0_SUBTYPE_REASSOC_RESP:   sa << "reassoc_resp "; break;
     case WIFI_FC0_SUBTYPE_PROBE_REQ:      sa << "probe_req "; break;
-    case WIFI_FC0_SUBTYPE_PROBE_RESP:     sa << "probe_resp "; break;
-    case WIFI_FC0_SUBTYPE_BEACON:         sa << "beacon "; break;
+    case WIFI_FC0_SUBTYPE_PROBE_RESP:     
+      sa << "probe_resp "; 
+      sa << unparse_beacon(p);
+      goto done;
+    case WIFI_FC0_SUBTYPE_BEACON:         
+      sa << "beacon "; 
+      sa << unparse_beacon(p);
+      goto done;
     case WIFI_FC0_SUBTYPE_ATIM:           sa << "atim "; break;
-    case WIFI_FC0_SUBTYPE_DISASSOC:       sa << "disassco "; break;
-    case WIFI_FC0_SUBTYPE_AUTH:           sa << "auth "; break;
+    case WIFI_FC0_SUBTYPE_DISASSOC:       {
+      uint16_t reason = le16_to_cpu(*(uint16_t *) ptr);
+      sa << "disassoc " << reason_string(reason) << " ";
+      break;
+    }
+    case WIFI_FC0_SUBTYPE_AUTH: {
+      sa << "auth "; 
+      uint16_t algo = le16_to_cpu(*(uint16_t *) ptr);
+      ptr += 2;
+      
+      uint16_t seq = le16_to_cpu(*(uint16_t *) ptr);
+      ptr += 2;
+      
+      uint16_t status =le16_to_cpu(*(uint16_t *) ptr);
+      ptr += 2;
+      sa << "alg " << (int)  algo;
+      sa << " auth_seq " << (int) seq;
+      sa << " status " << status_string(status) << " ";
+      break;
+
+    }
     case WIFI_FC0_SUBTYPE_DEAUTH:         sa << "deauth "; break;
     default:
       sa << "unknown-subtype-" << (int) (wh->i_fc[0] & WIFI_FC0_SUBTYPE_MASK) << " ";
@@ -150,7 +400,7 @@ PrintWifi::simple_action(Packet *p)
     case WIFI_FC0_SUBTYPE_PS_POLL:    sa << "psp  "; break;
     case WIFI_FC0_SUBTYPE_RTS:        sa << "rts  "; break;
     case WIFI_FC0_SUBTYPE_CTS:	      sa << "cts  "; break;
-    case WIFI_FC0_SUBTYPE_ACK:	      sa << "ack  "; break;
+    case WIFI_FC0_SUBTYPE_ACK:	      sa << "ack  " << duration << " "; break;
     case WIFI_FC0_SUBTYPE_CF_END:     sa << "cfe  "; break;
     case WIFI_FC0_SUBTYPE_CF_END_ACK: sa << "cfea "; break;
     default:
@@ -168,6 +418,15 @@ PrintWifi::simple_action(Packet *p)
     break;
   default:
     sa << "unknown-type-" << (int) (wh->i_fc[0] & WIFI_FC0_TYPE_MASK) << " ";
+  }
+
+
+
+  if (subtype == WIFI_FC0_SUBTYPE_BEACON || subtype == WIFI_FC0_SUBTYPE_PROBE_RESP) {
+
+    click_chatter("%s\n", sa.cc());
+    return p;
+    
   }
 
 
@@ -209,24 +468,13 @@ PrintWifi::simple_action(Packet *p)
   if (wh->i_fc[1] & WIFI_FC1_RETRY) {
     sa << " RETRY ";
   }
+  if (wh->i_fc[1] & WIFI_FC1_WEP) {
+    sa << " WEP ";
+  }
   sa << "] ";
 
-  uint8_t *ptr;
-  ptr = (uint8_t *) p->data() + sizeof(struct click_wifi);
-
-  if (subtype == WIFI_FC0_SUBTYPE_AUTH) {
-    uint16_t algo = le16_to_cpu(*(uint16_t *) ptr);
-    ptr += 2;
-    
-    uint16_t seq = le16_to_cpu(*(uint16_t *) ptr);
-    ptr += 2;
-    
-    uint16_t status =le16_to_cpu(*(uint16_t *) ptr);
-    ptr += 2;
-    sa << "alg " << (int)  algo << " seq " << (int) seq << " status " << status;
-  }
+ done:
   click_chatter("%s\n", sa.cc());
-
   return p;
 }
 

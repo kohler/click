@@ -275,6 +275,9 @@ typedef u_int8_t *	wifi_mgt_auth_t;
 #define	WIFI_WEP_CRCLEN			4	/* CRC-32 */
 #define	WIFI_WEP_NKID			4	/* number of key ids */
 
+#define WIFI_WEP_HEADERSIZE (WIFI_WEP_IVLEN + WIFI_WEP_KIDLEN)
+
+
 #define WIFI_WEP_NOSUP	-1
 #define WIFI_WEP_OFF	0
 #define WIFI_WEP_ON	1
@@ -300,6 +303,14 @@ typedef u_int8_t *	wifi_mgt_auth_t;
 #define WIFI_SEQ_FRAG_SHIFT                0
 #define WIFI_SEQ_SEQ_MASK                  0xfff0
 #define WIFI_SEQ_SEQ_SHIFT                 4
+
+
+/*
+ * 802.11 protocol crypto-related definitions.
+ */
+#define	WIFI_KEYBUF_SIZE	16
+#define	WIFI_MICBUF_SIZE	(8+8)	/* space for both tx+rx keys */
+
 
 #ifndef MAX
 #define MAX(a, b) ((a) > (b) ? (a) : (b))

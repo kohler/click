@@ -47,7 +47,7 @@ int
 OpenAuthRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 {
 
-  _debug = true;
+  _debug = false;
   if (cp_va_parse(conf, this, errh,
 		  /* not required */
 		  cpKeywords,

@@ -47,7 +47,7 @@ winfo :: WirelessInfo(SSID "", BSSID 00:00:00:00:00:00, CHANNEL 1);
 rates :: AvailableRates(DEFAULT 2 4 11 22);
 
 q :: Queue(10)
--> SetTXRate(22)
+-> set_rate :: SetTXRate(22)
 -> SetTXPower(63)
 -> seq :: WifiSeq()
 -> extra_encap :: ExtraEncap()
@@ -59,6 +59,7 @@ from_dev :: FromDevice(ath0, PROMISC true)
 -> extra_decap :: ExtraDecap()
 -> FilterPhyErr()
 -> tx_filter :: FilterTX()
+-> HostEtherFilter(station_address, OFFSET 4)
 -> dupe :: WifiDupeFilter()
 -> wifi_cl :: Classifier(0/00%0c, //mgt
 			 0/08%0c, //data
@@ -78,28 +79,27 @@ wifi_cl [0] -> management_cl :: Classifier(0/00%f0, //assoc req
 station_probe :: ProbeRequester(ETH station_address,
 				WIRELESS_INFO winfo,
 				RT rates) 
--> PrintWifi(probe-req) -> Print(probe-req) -> q;
+-> PrintWifi() -> Print(probe-req) -> q;
 
 station_auth :: OpenAuthRequester(ETH station_address, WIRELESS_INFO winfo) 
--> PrintWifi(auth-req) 
+-> PrintWifi() 
 -> q;
 
 station_assoc ::  AssociationRequester(ETH station_address,
 				       WIRELESS_INFO winfo,
 				       RT rates) 
--> Print("sent assoc_req", 60) 
--> PrintWifi(assoc-req) 
+-> PrintWifi() 
 -> q;
 
-management_cl [0] -> Print ("assoc_req") -> Discard;
-management_cl [1] -> Print ("assoc_resp", 60) -> station_assoc;
+management_cl [0] -> PrintWifi() -> Discard;
+management_cl [1] -> PrintWifi() -> station_assoc;
 management_cl [2] -> beacon_t :: Tee(2) 
 -> bs :: BeaconScanner(RT rates, WIRELESS_INFO winfo) ->  Discard;
 beacon_t [1] -> tracker :: BeaconTracker(WIRELESS_INFO winfo, TRACK 10) -> Discard;
 
-management_cl [3] -> Print ("dissoc") -> station_assoc;
+management_cl [3] -> PrintWifi() -> station_assoc;
 management_cl [4] -> bs;
-management_cl [5] -> PrintWifi(auth) -> station_auth;
+management_cl [5] -> PrintWifi() -> station_auth;
 
 wifi_cl [1] 
 //-> PrintWifi(data)

@@ -246,11 +246,12 @@ AssociationRequester::process_response(Packet *p)
   }
 
   sa << ")";
-
-  click_chatter("%{element}: response %s\n",
-		this,
-		sa.take_string().cc());
-
+  if (_debug) {
+    click_chatter("%{element}: response %s\n",
+		  this,
+		  sa.take_string().cc());
+  }
+    
   if (_rtable) {
     _rtable->insert(bssid, all_rates);
   }

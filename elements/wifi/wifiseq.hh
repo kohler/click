@@ -45,14 +45,13 @@ class WifiSeq : public Element { public:
 
   const char *class_name() const	{ return "WifiSeq"; }
   const char *processing() const	{ return AGNOSTIC; }
-  const char *flow_code() const         { return "#/#"; }
+
 
   void notify_noutpus(int n) { set_noutputs(n); }
   int configure(Vector<String> &, ErrorHandler *);
   bool can_live_reconfigure() const	{ return true; }
 
-  Packet *pull(int);
-  void push(int, Packet *);
+  Packet *simple_action(Packet *);
 
   void add_handlers();
   static String read_param(Element *, void *);
