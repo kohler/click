@@ -560,7 +560,16 @@ EOD;
 
 sub process_file ($) {
   my($filename) = @_;
-  $filename =~ s/\.cc$/\.hh/;
+
+  # extract header filename
+  if ($filename =~ /^.*:"(.*)"$/) {
+    $filename = $1;
+  } elsif ($filename =~ /^.*:<(.*)>$/) {
+    $filename = "include/$1";
+  } else {
+    $filename =~ s/\.cc$/\.hh/;
+  }
+  
   return if !-e $filename;
   if (!open(IN, $filename)) {
     print STDERR "$filename: $!\n";

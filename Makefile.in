@@ -75,7 +75,7 @@ elemlist elemlists:
 	done
 
 elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@ @TARGETS@"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -f -r "@provisions@" | $(PERL) ./click-mkelemmap -f - -r "@provisions@" -r "$$t") > elementmap
+	t="@element_groups@ @TARGETS@"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -F -r "@provisions@" | $(PERL) ./click-mkelemmap -f - -r "@provisions@" -r "$$t") > elementmap
 always:
 	@:
 

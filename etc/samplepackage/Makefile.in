@@ -152,7 +152,7 @@ upackage.cc: uelements.conf $(clickbindir)/click-buildtool
 	@rm -f upackage.ud
 
 elementmap.$(package): $(clickbindir)/click-mkelemmap always
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -f -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-mkelemmap -f - > elementmap.$(package)
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -F -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-mkelemmap -f - > elementmap.$(package)
 always:
 	@:
 
@@ -170,7 +170,7 @@ install-obj: $(TARGETS) always
 install-man: always
 	$(mkinstalldirs) $(mandir)
 	$(mkinstalldirs) $(mandir)/mann
-	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -f -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -f -
+	echo $(srcdir) | $(clickbindir)/click-buildtool findelem -F -r "$(DRIVERS)" -r $(package) | $(clickbindir)/click-elem2man -L -d $(mandir)/mann -f -
 
 clean:
 	-rm -f *.d *.kd *.ud *.o *.ko *.uo elements.mk kpackage.cc upackage.cc kelements.conf uelements.conf elementmap.$(package) conftest.*

@@ -46,7 +46,7 @@ install-man:
 	$(INSTALL_DATA) $(srcdir)/click-uninstall.1 $(mandir)/man1/click-uninstall.1
 	$(INSTALL_DATA) $(srcdir)/click-xform.1 $(mandir)/man1/click-xform.1
 	$(INSTALL_DATA) $(srcdir)/elementdoc.7 $(mandir)/man7/elementdoc.7
-	echo @TARGETS@ @element_groups@ | $(top_srcdir)/click-buildtool findelem -f -p $(top_srcdir) -r "@provisions@" | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -f -
+	echo @TARGETS@ @element_groups@ | $(top_srcdir)/click-buildtool findelem -F -p $(top_srcdir) -r "@provisions@" | $(PERL) $(srcdir)/click-elem2man -l -d $(mandir)/mann -f -
 install-info: $(srcdir)/click.info
 	$(mkinstalldirs) $(infodir)
 	@for f in `cd $(srcdir) && echo click.info click.info-[0-9] click.info-[0-9][0-9]`; do \

@@ -26,8 +26,17 @@ my(@class_file, @click_name, @cxx_name,
 
 sub process_file ($) {
   my($filename) = @_;
-  my($headername) = $filename;
-  $headername =~ s/\.cc$/\.hh/;
+  my($headername);
+
+  if ($filename =~ /^(.*):"(.*)"$/) {
+      ($filename, $headername) = ($1, $2);
+  } elsif ($filename =~ /^(.*):<(.*)>$/) {
+      ($filename, $headername) = ($1, "include/$2");
+  } else {
+      $headername = $filename;
+      $headername =~ s/\.cc$/.hh/;
+  }
+  
   if (!open(IN, $headername)) {
     print STDERR "$headername: $!\n" if $headername eq $filename;
     return;
