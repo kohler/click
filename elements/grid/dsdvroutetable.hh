@@ -171,8 +171,13 @@ private:
     bool broken() const { check(); return num_hops() == 0; }
     bool good()   const { check(); return num_hops() != 0; }
 
-    void dump()   const; // click_chatter info about this entry
-    void check()  const { assert(_init); assert((num_hops() > 0) != (seq_no() & 1)); } 
+    String dump()  const; 
+    void   check() const { 
+      assert(_init); 
+      assert((num_hops() > 0) != (seq_no() & 1)); 
+      assert(last_seq_jiffies ? last_updated_jiffies >= last_seq_jiffies : true); // only check if last_seq_jiff has been set
+      assert(wst >= 0);
+    } 
 
     void invalidate(unsigned int jiff) {
       check();
@@ -396,11 +401,13 @@ private:
   static String print_est_type(Element *e, void *);
   static int write_est_type(const String &, Element *, void *, ErrorHandler *);
 
-  static String print_seq_delay(Element *e, void *);
-  static int write_seq_delay(const String &, Element *, void *, ErrorHandler *);
+  static String print_seqno(Element *e, void *);
+  static int write_seqno(const String &, Element *, void *, ErrorHandler *);
 
   static String print_frozen(Element *e, void *);
   static int write_frozen(const String &, Element *, void *, ErrorHandler *);
+
+  static String print_dump(Element *e, void *);
 
   bool est_forward_delivery_rate(const IPAddress &, double &);
   bool est_reverse_delivery_rate(const IPAddress &, double &);
@@ -426,6 +433,17 @@ private:
   bool _frozen;
 
   void dsdv_assert_(const char *, int, const char *) const;
+
 };
+
+inline unsigned 
+dsdv_jiffies() 
+{
+  static unsigned last_click_jiffies = 0;
+  unsigned j = click_jiffies(); 
+  assert(j >= last_click_jiffies); 
+  last_click_jiffies = j; 
+  return j; 
+}
 
 #endif

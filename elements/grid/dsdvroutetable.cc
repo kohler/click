@@ -25,6 +25,7 @@
 #include <click/router.hh>
 #include <click/element.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
 #include "dsdvroutetable.hh"
 #include "timeutils.hh"
 
@@ -337,7 +338,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
     }
   }
 
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
 
   for (int i = 0; i < expired_dests.size(); i++) {
     RTEntry *r = _rtes.findp(expired_dests[i]);
@@ -399,7 +400,7 @@ DSDVRouteTable::schedule_triggered_update(const IPAddress &ip, unsigned int when
   HookPair *hp = new HookPair(this, ip);
   Timer *t = new Timer(static_trigger_hook, (void *) hp);
   t->initialize(this);
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
   t->schedule_after_ms(jiff_to_msec(jiff > when ? 0 : when - jiff));
   _trigger_timers.insert(ip, t);
   _trigger_hooks.insert(ip, hp);
@@ -418,7 +419,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
   HookPair **oldhp = _trigger_hooks.findp(ip);
   dsdv_assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
 
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
   unsigned int next_trigger_time = _last_triggered_update + _min_triggered_update_period;
 
   if (jiff >= next_trigger_time) {
@@ -510,32 +511,41 @@ DSDVRouteTable::init_metric(RTEntry &r)
 void
 DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r, unsigned int jiff)
 {
+  if (old_r) {
+    old_r->check();
+    dsdv_assert(old_r->last_updated_jiffies <= new_r.last_updated_jiffies);
+  }
+
   if (old_r == 0) {
     new_r.wst = _wst0;
     new_r.last_seq_jiffies = jiff;
+    new_r.check();
   }
   else if (old_r->seq_no() == new_r.seq_no()) {
     new_r.wst = old_r->wst;
     new_r.last_seq_jiffies = old_r->last_seq_jiffies;
+    new_r.check();
   }
   else if (old_r->seq_no() < new_r.seq_no()) {
-    dsdv_assert(old_r->last_updated_jiffies >= old_r->last_seq_jiffies);
+    dsdv_assert(old_r->last_updated_jiffies >= old_r->last_seq_jiffies); // XXX failed!
     new_r.wst = _alpha * old_r->wst + 
       (1 - _alpha) * jiff_to_msec(old_r->last_updated_jiffies - old_r->last_seq_jiffies);
     new_r.last_seq_jiffies = jiff;
+    new_r.check();
   }
   else {
     dsdv_assert(old_r->seq_no() > new_r.seq_no());
-    // Do nothing.  We will never accept this route anyway.
+    // Do nothing.  We will never accept this route anyway.  Well,
+    // almost never.  See the reboot/wraparound handling in
+    // handle_update()
   }
   
-  // XXX what happens when our current route is broken, and the new
-  // route is good, what happens to wst?
+  // XXX when our current route is broken, and the new route is good,
+  // what happens to wst?
 
-  // from dsdv ns code: Note that in the if we don't touch the
-  // changed_at time, so that when wst is computed, it doesn't
-  // consider the infinte metric the best one at that sequence number.
-
+  // from dsdv ns code: Note that we don't touch the changed_at time,
+  // so that when wst is computed, it doesn't consider the infinte
+  // metric the best one at that sequence number.
 }
 
 void 
@@ -631,7 +641,7 @@ DSDVRouteTable::send_full_update()
 {
   check_invariants();
 
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
   Vector<RTEntry> routes;
   
   for (RTIter i = _rtes.first(); i; i++) {
@@ -676,7 +686,7 @@ DSDVRouteTable::send_triggered_update(const IPAddress &ip)
   RTEntry *r = _rtes.findp(ip);
   dsdv_assert(r);
 
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
 
   Vector<RTEntry> triggered_routes;
   for (RTIter i = _rtes.first(); i; i++) {
@@ -787,7 +797,7 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
 	new_r.need_seq_ad = true;
 	new_r.need_metric_ad = true;
 	new_r.last_seq_jiffies = jiff; // not done by update_wst() becaue seq is less, so do it here
-	dsdv_assert(new_r.last_updated_jiffies = new_r.last_seq_jiffies);
+	dsdv_assert(new_r.last_updated_jiffies == new_r.last_seq_jiffies);
 	schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
 	insert_route(new_r, was_sender ? GridLogger::REBOOT_SEQ_SENDER : GridLogger::REBOOT_SEQ);
       }
@@ -802,7 +812,7 @@ DSDVRouteTable::simple_action(Packet *packet)
   check_invariants();
 
   dsdv_assert(packet);
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
 
   /* 
    * sanity check the packet, get pointers to headers 
@@ -930,7 +940,7 @@ DSDVRouteTable::print_rtes_v(Element *e, void *)
 {
   DSDVRouteTable *n = (DSDVRouteTable *) e;
 
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
 
   String s;
   for (RTIter i = n->_rtes.first(); i; i++) {
@@ -1105,6 +1115,25 @@ DSDVRouteTable::write_est_type(const String &arg, Element *el,
 }
 
 String
+DSDVRouteTable::print_seqno(Element *e, void *)
+{
+  DSDVRouteTable *rt = (DSDVRouteTable *) e;
+  return String(rt->_seq_no) + "\n";
+}
+
+int
+DSDVRouteTable::write_seqno(const String &arg, Element *el, 
+			       void *, ErrorHandler *errh)
+{
+  DSDVRouteTable *rt = (DSDVRouteTable *) el;
+  unsigned u = atoi(((String) arg).cc());
+  if (u & 1)
+    return errh->error("DSDVRouteTable %s: sequence number must be even", rt->id().cc());
+  rt->_seq_no = u;
+  return 0;
+}
+
+String
 DSDVRouteTable::print_frozen(Element *e, void *)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) e;
@@ -1117,8 +1146,21 @@ DSDVRouteTable::write_frozen(const String &arg, Element *el,
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
   rt->_frozen = atoi(((String) arg).cc());
-  click_chatter("DSDVRouteTable: setting _frozen to %s", rt->_frozen ? "true" : "false");
+  click_chatter("DSDVRouteTable %s: setting _frozen to %s", 
+		rt->id().cc(), rt->_frozen ? "true" : "false");
   return 0;
+}
+
+String
+DSDVRouteTable::print_dump(Element *e, void *)
+{
+  DSDVRouteTable *rt = (DSDVRouteTable *) e;
+  StringAccum sa;
+  for (RTIter i = rt->_rtes.first(); i; i++) {
+    sa << i.value().dump() << "\n";
+  }
+
+  return sa.take_string();
 }
 
 String
@@ -1177,8 +1219,11 @@ DSDVRouteTable::add_handlers()
   add_write_handler("metric_type", write_metric_type, 0);
   add_read_handler("est_type", print_est_type, 0);
   add_write_handler("est_type", write_est_type, 0);
+  add_read_handler("seqno", print_seqno, 0);
+  add_write_handler("seqno", write_seqno, 0);
   add_read_handler("frozen", print_frozen, 0);
   add_write_handler("frozen", write_frozen, 0);
+  add_read_handler("dump", print_dump, 0);
 }
 
 void
@@ -1186,7 +1231,7 @@ DSDVRouteTable::hello_hook()
 {
   unsigned int msecs_to_next_ad = _period;
 
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
   dsdv_assert(jiff >= _last_periodic_update);
   unsigned int msec_since_last = jiff_to_msec(jiff - _last_periodic_update);
   if (msec_since_last < 2 * _period / 3) {
@@ -1306,7 +1351,7 @@ DSDVRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls) const
   nb->metric_valid = metric.valid;
   nb->is_gateway = is_gateway;
 
-  unsigned int jiff = click_jiffies();
+  unsigned int jiff = dsdv_jiffies();
   unsigned int ttl_decrement = jiff_to_msec(good() ? jiff - last_updated_jiffies : jiff - last_expired_jiffies);
   nb->ttl = htonl(decr_ttl(ttl, max(ttl_decrement, grid_hello::MIN_TTL_DECREMENT)));
   
@@ -1360,25 +1405,30 @@ DSDVRouteTable::log_dump_hook(bool reschedule)
     _log_dump_timer.schedule_after_ms(_log_dump_period); 
 }
 
-void
+String
 DSDVRouteTable::RTEntry::dump() const
 {
   check();
-  unsigned int jiff = click_jiffies();
-  click_chatter(" 	dest_ip: %s", dest_ip.s().cc());
-  click_chatter("      dest_eth: %s", dest_eth.s().cc());
-  click_chatter("   next_hop_ip: %s", next_hop_ip.s().cc());
-  click_chatter("  next_hop_eth: %s", next_hop_eth.s().cc());
-  click_chatter(" 	 seq_no: %u", seq_no());
-  click_chatter("      num_hops: %u", (unsigned int) num_hops());
-  click_chatter("  last_updated: %s", jiff_diff_string(last_updated_jiffies, jiff).cc());
-  click_chatter("  last_expired: %s", jiff_diff_string(last_expired_jiffies, jiff).cc());
-  click_chatter("      last_seq: %s", jiff_diff_string(last_seq_jiffies, jiff).cc());
-  click_chatter("  advertise_ok: %s", jiff_diff_string(advertise_ok_jiffies, jiff).cc());
-  click_chatter(" 	 metric: %u", metric.val);
-  click_chatter("need_metric_ad: %s", need_metric_ad ? "yes" : "no");
-  click_chatter("   need_seq_ad: %s", need_seq_ad ? "yes" : "no");
-  click_chatter("           wst: %u", (unsigned int) wst);
+
+  unsigned int jiff = dsdv_jiffies();
+  
+  StringAccum sa;
+  sa << "  curr jiffies: "  << jiff << "\n"
+     << "       dest_ip: " << dest_ip.s().cc() << "\n"
+     << "      dest_eth: " << dest_eth.s().cc() << "\n"
+     << "   next_hop_ip: " << next_hop_ip.s().cc() << "\n"
+     << "  next_hop_eth: " << next_hop_eth.s().cc() << "\n"
+     << "        seq_no: " << seq_no() << "\n"
+     << "      num_hops: " << (unsigned int) num_hops() << "\n"
+     << "  last_updated: " << jiff_diff_string(last_updated_jiffies, jiff).cc() << "\n"
+     << "  last_expired: " << jiff_diff_string(last_expired_jiffies, jiff).cc() << "\n"
+     << "      last_seq: " << jiff_diff_string(last_seq_jiffies, jiff).cc() << "\n"
+     << "  advertise_ok: " << jiff_diff_string(advertise_ok_jiffies, jiff).cc() << "\n"
+     << "        metric: " << metric.val << "\n"
+     << "need_metric_ad: " << need_metric_ad << "\n"
+     << "   need_seq_ad: " << need_seq_ad << "\n"
+     << "           wst: " << (unsigned int) wst << "\n";
+  return sa.take_string();
 }
 
 void
@@ -1435,8 +1485,7 @@ DSDVRouteTable::dsdv_assert_(const char *file, int line, const char *expr) const
 		expr, file, line);
   click_chatter("Routing table state:");
   for (RTIter i = _rtes.first(); i; i++) {
-    i.value().dump();
-    click_chatter("");
+    click_chatter("%s\n", i.value().dump().cc());
   }
   
   abort();
