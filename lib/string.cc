@@ -454,6 +454,23 @@ String::trim_space() const
     return (_length ? String() : *this);
 }
 
+String
+String::hex() const
+{
+    StringAccum sa;
+    sa << "\\<";
+    const uint8_t *x = reinterpret_cast<const u_int8_t *>(data());
+    char *buf = sa.reserve(length()*2);
+    for (int j = 0; j < length(); j++) {
+	sprintf(buf+j*2, "%02x", x[j]);
+    }
+    sa.forward(length()*2);
+
+    sa << ">";
+    return sa.take_string();
+
+}
+
 int
 hashcode(const String &s)
 {
