@@ -89,6 +89,7 @@ FromNetFlowSummaryDump::read_buffer(ErrorHandler *errh)
     if (_len == buffer_len) {
 	memmove(data, data + _pos, _len - _pos);
 	_len -= _pos;
+	_file_offset += _pos;
 	_pos = 0;
     }
     int initial_len = _len;
@@ -154,7 +155,7 @@ FromNetFlowSummaryDump::initialize(ErrorHandler *errh)
     if (_fd < 0)
 	return errh->error("%s: %s", _filename.cc(), strerror(errno));
 
-    _pos = _len = 0;
+    _pos = _len = _file_offset = 0;
     _buffer = String();
     int result = read_buffer(errh);
     if (result < 0) {
@@ -366,15 +367,27 @@ FromNetFlowSummaryDump::pull(int)
     return p;
 }
 
+
+enum { H_ACTIVE, H_ENCAP, H_FILESIZE, H_FILEPOS };
+
 String
 FromNetFlowSummaryDump::read_handler(Element *e, void *thunk)
 {
     FromNetFlowSummaryDump *fd = static_cast<FromNetFlowSummaryDump *>(e);
     switch ((int)thunk) {
-      case 1:
+      case H_ACTIVE:
 	return cp_unparse_bool(fd->_active) + "\n";
-      case 2:
+      case H_ENCAP:
 	return "IP\n";
+      case H_FILESIZE: {
+	  struct stat s;
+	  if (fd->_fd >= 0 && fstat(fd->_fd, &s) >= 0 && S_ISREG(s.st_mode))
+	      return String(s.st_size) + "\n";
+	  else
+	      return "-\n";
+      }
+      case H_FILEPOS:
+	return String(fd->_file_offset + fd->_pos) + "\n";
       default:
 	return "<error>\n";
     }
@@ -386,7 +399,7 @@ FromNetFlowSummaryDump::write_handler(const String &s_in, Element *e, void *thun
     FromNetFlowSummaryDump *fd = static_cast<FromNetFlowSummaryDump *>(e);
     String s = cp_uncomment(s_in);
     switch ((int)thunk) {
-      case 1: {
+      case H_ACTIVE: {
 	  bool active;
 	  if (cp_bool(s, &active)) {
 	      fd->_active = active;
@@ -404,9 +417,11 @@ FromNetFlowSummaryDump::write_handler(const String &s_in, Element *e, void *thun
 void
 FromNetFlowSummaryDump::add_handlers()
 {
-    add_read_handler("active", read_handler, (void *)1);
-    add_write_handler("active", write_handler, (void *)1);
-    add_read_handler("encap", read_handler, (void *)2);
+    add_read_handler("active", read_handler, (void *)H_ACTIVE);
+    add_write_handler("active", write_handler, (void *)H_ACTIVE);
+    add_read_handler("encap", read_handler, (void *)H_ENCAP);
+    add_read_handler("filesize", read_handler, (void *)H_FILESIZE);
+    add_read_handler("filepos", read_handler, (void *)H_FILEPOS);
     if (output_is_push(0))
 	add_task_handlers(&_task);
 }

@@ -85,6 +85,15 @@ Value is a Boolean.
 
 Returns `IP'. Useful for ToDump's USE_ENCAP_FROM option.
 
+=h filesize read-only
+
+Returns the length of the NetFlow summary file, in bytes, or "-" if that
+length cannot be determined.
+
+=h filepos read-only
+
+Returns FromNetFlowSummaryDump's position in the file, in bytes.
+
 =a
 
 FromDump, FromIPSummaryDump */
@@ -130,6 +139,7 @@ class FromNetFlowSummaryDump : public Element { public:
     struct timeval _time_offset;
     String _filename;
     FILE *_pipe;
+    off_t _file_offset;
 
     int error_helper(ErrorHandler *, const char *);
     int read_buffer(ErrorHandler *);
