@@ -19,8 +19,8 @@ class GapRate { public:
   void update()					{ _sec_count++; }
   void update_with(int incr)			{ _sec_count += incr; }
 
-  static const unsigned UGAP_SHIFT = 12;
-  static const unsigned MAX_RATE = 1000000 << UGAP_SHIFT;
+  enum { UGAP_SHIFT = 12 };
+  enum { MAX_RATE = 1000000U << UGAP_SHIFT };
 
  private:
   

@@ -25,6 +25,8 @@
 # include <net/checksum.h>
 #endif
 
+const unsigned FastUDPSourceIP6::NO_LIMIT;
+
 FastUDPSourceIP6::FastUDPSourceIP6()
   : _packet(0)
 {

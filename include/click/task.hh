@@ -17,10 +17,8 @@ class TaskList;
 class Task { public:
 
 #ifdef HAVE_STRIDE_SCHED
-  static const unsigned STRIDE1 = 1U<<16;
-  static const unsigned MAX_STRIDE = 1U<<31;
-  static const int MAX_TICKETS = 1<<15;
-  static const int DEFAULT_TICKETS = 1<<10;
+  enum { STRIDE1 = 1U<<16, MAX_STRIDE = 1U<<31 };
+  enum { MAX_TICKETS = 1<<15, DEFAULT_TICKETS = 1<<10 };
 #endif
 
   Task(TaskHook, void *);

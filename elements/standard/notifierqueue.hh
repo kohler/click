@@ -69,7 +69,7 @@ class NotifierQueue : public Queue, public Notifier { public:
 
   private:
 
-    static const int SLEEPINESS_TRIGGER = 8;
+    enum { SLEEPINESS_TRIGGER = 8 };
     int _sleepiness;
     
 };

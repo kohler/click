@@ -172,7 +172,7 @@ class FromDAGDump : public Element { public:
 	uint32_t crc;
 	uint32_t atm;
 	uint8_t payload[48];
-	static const int PAYLOAD_OFFSET = 16;
+	enum { PAYLOAD_OFFSET = 16 };
     };
     
     static const uint32_t BUFFER_SIZE = 32768;

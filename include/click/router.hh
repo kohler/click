@@ -72,7 +72,7 @@ class Router { public:
   void add_read_handler(int, const String &, ReadHandler, void *);
   void add_write_handler(int, const String &, WriteHandler, void *);
   
-  static const int FIRST_GLOBAL_HANDLER = 0x40000000;
+  enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
   static int nglobal_handlers();
   static bool global_handler_ok(int);
   static const Handler &global_handler(int);

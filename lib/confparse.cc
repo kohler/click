@@ -34,7 +34,7 @@
 # include <click/router.hh>
 # include <click/handlercall.hh>
 # include <click/standard/addressinfo.hh>
-# define CP_CONTEXT_ARG , Element *context = 0
+# define CP_CONTEXT_ARG , Element *context
 # define CP_PASS_CONTEXT , context
 #else
 # define CP_CONTEXT_ARG
@@ -353,7 +353,7 @@ cp_unquote(const String &in_str)
 }
 
 String
-cp_quote(const String &str, bool allow_newlines = false)
+cp_quote(const String &str, bool allow_newlines)
 {
   if (!str)
     return String("\"\"");
@@ -557,7 +557,7 @@ cp_unspacevec(const Vector<String> &args)
 // PARSING STRINGS
 
 bool
-cp_string(const String &str, String *return_value, String *rest = 0)
+cp_string(const String &str, String *return_value, String *rest)
 {
   const char *s = str.data();
   int len = str.length();
@@ -602,7 +602,7 @@ cp_string(const String &str, String *return_value, String *rest = 0)
 }
 
 bool
-cp_word(const String &str, String *return_value, String *rest = 0)
+cp_word(const String &str, String *return_value, String *rest)
 {
   String word;
   if (!cp_string(str, &word, rest))

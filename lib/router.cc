@@ -875,7 +875,7 @@ Router::initialize_handlers(bool defaults, bool specifics)
 }
 
 int
-Router::initialize(ErrorHandler *errh, bool verbose_errors = true)
+Router::initialize(ErrorHandler *errh, bool verbose_errors)
 {
   assert(!_initialized);
   if (!_preinitialized)

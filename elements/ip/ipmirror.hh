@@ -1,5 +1,5 @@
-#ifndef IPMIRROR_HH
-#define IPMIRROR_HH
+#ifndef CLICK_IPMIRROR_HH
+#define CLICK_IPMIRROR_HH
 #include <click/element.hh>
 
 /*
@@ -39,4 +39,4 @@ class IPMirror : public Element {
   
 };
 
-#endif IPMIRROR_HH
+#endif // CLICK_IPMIRROR_HH

@@ -49,7 +49,7 @@ private:
 
   int _spi;
   uatomic32_t _rpl;
-  static const unsigned int _blks = 8;
+  enum { BLKS = 8 };
 };
 
 #endif

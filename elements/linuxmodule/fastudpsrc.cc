@@ -25,6 +25,8 @@
 # include <net/checksum.h>
 #endif
 
+const unsigned FastUDPSource::NO_LIMIT;
+
 FastUDPSource::FastUDPSource()
   : _packet(0)
 {

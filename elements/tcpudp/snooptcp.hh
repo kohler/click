@@ -66,8 +66,8 @@ class SnoopTCP : public Element { public:
 
 struct SnoopTCP::PCB {
 
-  static const int S_CACHE_SIZE = 1024;
-  static const int S_CACHE_HIGHWATER = (9*S_CACHE_SIZE / 10);
+  enum { S_CACHE_SIZE = 1024,
+	 S_CACHE_HIGHWATER = (9*S_CACHE_SIZE / 10) };
   
   SCacheEntry _s_cache[S_CACHE_SIZE];
   int _head;

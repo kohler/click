@@ -156,7 +156,7 @@ class IPFilter : public Classifier { public:
     OP_EQ = 0, OP_GT = 1, OP_LT = 2,
     
     // if you change this, change click-fastclassifier.cc also
-    TRANSP_FAKE_OFFSET = 64,
+    TRANSP_FAKE_OFFSET = 64
   };
 
   struct Primitive {

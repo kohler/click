@@ -158,7 +158,7 @@ class Classifier : public Element { public:
     Vector<int> _dom_start;
     Vector<int> _domlist_start;
 
-    static const int MAX_DOMLIST = 4;
+    enum { MAX_DOMLIST = 4 };
     
     Classifier::Expr &expr(int state) const;
     int nexprs() const;

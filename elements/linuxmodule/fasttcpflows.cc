@@ -26,6 +26,8 @@
 # include <net/checksum.h>
 #endif
 
+const unsigned FastTCPFlows::NO_LIMIT;
+
 FastTCPFlows::FastTCPFlows()
   : _flows(0)
 {

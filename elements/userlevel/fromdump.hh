@@ -164,8 +164,7 @@ class FromDump : public Element { public:
     
   private:
 
-    static const uint32_t BUFFER_SIZE = 32768;
-    static const int SAMPLING_SHIFT = 28;
+    enum { BUFFER_SIZE = 32768, SAMPLING_SHIFT = 28 };
     
     int _fd;
     const unsigned char *_buffer;
@@ -195,7 +194,7 @@ class FromDump : public Element { public:
     int _linktype;
 
 #ifdef ALLOW_MMAP
-    static const uint32_t WANT_MMAP_UNIT = 4194304; // 4 MB
+    enum { WANT_MMAP_UNIT = 4194304 }; // 4 MB
     size_t _mmap_unit;
     off_t _mmap_off;
 #endif

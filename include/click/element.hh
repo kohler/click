@@ -187,7 +187,7 @@ class Element { public:
   virtual int live_reconfigure(const Vector<String> &, ErrorHandler *);
   virtual void configuration(Vector<String> &, bool *) const;
   
-  static const int INLINE_PORTS = 4;
+  enum { INLINE_PORTS = 4 };
 
   Port *_inputs;
   Port *_outputs;

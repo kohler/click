@@ -57,7 +57,7 @@ int
 IPReassembler::initialize(ErrorHandler *)
 {
   _expire_timer.initialize(this);
-  _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  _expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
 
   return 0;
 }
@@ -523,7 +523,7 @@ IPReassembler::expire_hook(Timer *, void *thunk)
       prev = qp;
     }    
   }
-  ipr->_expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  ipr->_expire_timer.schedule_after_ms(EXPIRE_TIMER_INTERVAL_MS);
 }
 
 int 

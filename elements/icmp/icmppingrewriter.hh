@@ -116,7 +116,7 @@ class ICMPPingRewriter : public Element { public:
   IPAddress _new_dst;
   unsigned short _identifier;
 
-  static const int GC_INTERVAL_SEC = 300;
+  enum { GC_INTERVAL_SEC = 300 };
 
   Mapping *apply_pattern(const IPFlowID &);
 

@@ -181,7 +181,7 @@ class ControlSocket : public Element { public:
     CSERR_DATA_TOO_BIG		= 521,
     CSERR_PERMISSION		= HandlerProxy::CSERR_PERMISSION,      // 530
     CSERR_NO_ROUTER		= HandlerProxy::CSERR_NO_ROUTER,       // 540
-    CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED,     // 590
+    CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED      // 590
   };
   
  private:
@@ -200,8 +200,7 @@ class ControlSocket : public Element { public:
   String _proxied_handler;
   ErrorHandler *_proxied_errh;
 
-  enum { READ_CLOSED = 1, WRITE_CLOSED = 2 };
-  static const int ANY_ERR = -1;
+  enum { READ_CLOSED = 1, WRITE_CLOSED = 2, ANY_ERR = -1 };
 
   static const char * const protocol_version;
 

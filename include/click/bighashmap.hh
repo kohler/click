@@ -77,7 +77,7 @@ class BigHashMap { public:
   Elt *slow_alloc();
   void free(Elt *);
 
-  static const int MAX_NBUCKETS = 32768;
+  enum { MAX_NBUCKETS = 32768 };
   
   friend class BigHashMapIterator<K, V>;
   
@@ -89,7 +89,8 @@ class BigHashMapIterator { public:
   BigHashMapIterator(const BigHashMap<K, V> *);
 
   operator bool() const			{ return _elt; }
-  void operator++(int = 0);
+  void operator++(int);
+  void operator++()			{ (*this)++; }
   
   const K &key() const			{ return _elt->k; }
   const V &value() const		{ return _elt->v; }
@@ -97,7 +98,7 @@ class BigHashMapIterator { public:
  private:
 
   const BigHashMap<K, V> *_hm;
-  BigHashMap<K, V>::Elt *_elt;
+  typename BigHashMap<K, V>::Elt *_elt;
   int _bucket;
 
 };
@@ -188,7 +189,7 @@ class BigHashMap<K, void *> { public:
   Elt *slow_alloc();
   void free(Elt *);
 
-  static const int MAX_NBUCKETS = 32768;
+  enum { MAX_NBUCKETS = 32768 };
   
   friend class BigHashMapIterator<K, void *>;
   
@@ -200,7 +201,8 @@ class BigHashMapIterator<K, void *> { public:
   BigHashMapIterator(const BigHashMap<K, void *> *);
 
   operator bool() const			{ return _elt; }
-  void operator++(int = 0);
+  void operator++(int);
+  void operator++()			{ (*this)++; }
   
   const K &key() const			{ return _elt->k; }
   void *value() const			{ return _elt->v; }
@@ -208,7 +210,7 @@ class BigHashMapIterator<K, void *> { public:
  private:
 
   const BigHashMap<K, void *> *_hm;
-  BigHashMap<K, void *>::Elt *_elt;
+  typename BigHashMap<K, void *>::Elt *_elt;
   int _bucket;
 
 };
@@ -287,6 +289,7 @@ class BigHashMapIterator<K, T *> : public BigHashMapIterator<K, void *> { public
 
   operator bool() const			{ return Base::operator bool(); }
   void operator++(int)			{ Base::operator++(0); }
+  void operator++()			{ Base::operator++(); }
   
   const K &key() const	{ return Base::key(); }
   T *value() const	{ return reinterpret_cast<T *>(Base::value()); }

@@ -1,5 +1,5 @@
-#ifndef ETHERMIRROR_HH
-#define ETHERMIRROR_HH
+#ifndef CLICK_ETHERMIRROR_HH
+#define CLICK_ETHERMIRROR_HH
 #include <click/element.hh>
 
 /*
@@ -25,4 +25,4 @@ class EtherMirror : public Element { public:
   
 };
 
-#endif ETHERMIRROR_HH
+#endif // CLICK_ETHERMIRROR_HH

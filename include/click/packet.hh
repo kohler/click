@@ -18,8 +18,7 @@ class WritablePacket;
 class Packet { public:
 
   // PACKET CREATION
-  static const unsigned DEFAULT_HEADROOM = 28;
-  static const unsigned MIN_BUFFER_LENGTH = 64;
+  enum { DEFAULT_HEADROOM = 28, MIN_BUFFER_LENGTH = 64 };
   
   static WritablePacket *make(uint32_t);
   static WritablePacket *make(const char *, uint32_t);
@@ -145,7 +144,7 @@ class Packet { public:
     LOOPBACK = 5, FASTROUTE = 6
   };
 
-  static const int ADDR_ANNO_SIZE = 16;
+  enum { ADDR_ANNO_SIZE = 16 };
 
   uint8_t *addr_anno()			{ return anno()->addr.c; }
   const uint8_t *addr_anno() const	{ return anno()->addr.c; }
@@ -186,11 +185,11 @@ class Packet { public:
   void set_packet_type_anno(PacketType p) { _pkt_type = p; }
 #endif
 
-  static const int USER_ANNO_SIZE = 12;
-  static const int USER_ANNO_US_SIZE = 6;
-  static const int USER_ANNO_S_SIZE = 6;
-  static const int USER_ANNO_U_SIZE = 3;
-  static const int USER_ANNO_I_SIZE = 3;
+  enum { USER_ANNO_SIZE = 12,
+	 USER_ANNO_US_SIZE = 6,
+	 USER_ANNO_S_SIZE = 6,
+	 USER_ANNO_U_SIZE = 3,
+	 USER_ANNO_I_SIZE = 3 };
   
   uint8_t user_anno_c(int i) const	{ return anno()->user.c[i]; }
   void set_user_anno_c(int i, uint8_t v) { anno()->user.c[i] = v; }

@@ -33,6 +33,8 @@ void init_proc_click_elements();
 void cleanup_proc_click_elements();
 void init_proc_click_errors();
 void cleanup_proc_click_errors();
+void init_proc_click_dir();
+void cleanup_proc_click_dir();
 
 extern ErrorHandler *kernel_errh;
 extern ErrorHandler *kernel_syslog_errh;

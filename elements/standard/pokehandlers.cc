@@ -24,6 +24,8 @@
 #include <click/router.hh>
 
 static const char * const READ_MARKER = "r";
+Element * const PokeHandlers::STOP_MARKER = (Element *)1;
+Element * const PokeHandlers::LOOP_MARKER = (Element *)2;
 
 PokeHandlers::PokeHandlers()
     : _timer(timer_hook, this)

@@ -74,7 +74,7 @@ HandlerCall::call_write(Router *router, ErrorHandler *errh) const
 }
 
 String
-HandlerCall::call_read(Router *router, Element *e, const String &hname, ErrorHandler *errh = 0)
+HandlerCall::call_read(Router *router, Element *e, const String &hname, ErrorHandler *errh)
 {
     const Router::Handler *h = 0;
     int hi = router->find_handler(e, hname);
@@ -91,7 +91,7 @@ HandlerCall::call_read(Router *router, Element *e, const String &hname, ErrorHan
 }
 
 String
-HandlerCall::call_read(Router *router, const String &ename, const String &hname, ErrorHandler *errh = 0)
+HandlerCall::call_read(Router *router, const String &ename, const String &hname, ErrorHandler *errh)
 {
     Element *e = 0;
     if (ename) {
@@ -102,7 +102,7 @@ HandlerCall::call_read(Router *router, const String &ename, const String &hname,
 }
 
 int
-HandlerCall::call_write(Router *router, Element *e, const String &hname, const String &value, ErrorHandler *errh = 0)
+HandlerCall::call_write(Router *router, Element *e, const String &hname, const String &value, ErrorHandler *errh)
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();
@@ -121,7 +121,7 @@ HandlerCall::call_write(Router *router, Element *e, const String &hname, const S
 }
 
 int
-HandlerCall::call_write(Router *router, const String &ename, const String &hname, const String &value, ErrorHandler *errh = 0)
+HandlerCall::call_write(Router *router, const String &ename, const String &hname, const String &value, ErrorHandler *errh)
 {
     Element *e = 0;
     if (ename) {

@@ -124,7 +124,7 @@ class IPAddrRewriter : public IPRw { public:
     Vector<InputSpec> _input_specs;
     Timer _timer;
 
-    static const int GC_INTERVAL_SEC = 7200;
+    enum { GC_INTERVAL_SEC = 7200 };
 
     static String dump_mappings_handler(Element *, void *);
     static String dump_nmappings_handler(Element *, void *);

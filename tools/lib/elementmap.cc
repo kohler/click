@@ -311,7 +311,7 @@ ElementMap::driver_indifferent(const RouterT *r, int driver_mask, ErrorHandler *
 }
 
 bool
-ElementMap::driver_compatible(const RouterT *r, int driver, ErrorHandler *errh = 0) const
+ElementMap::driver_compatible(const RouterT *r, int driver, ErrorHandler *errh) const
 {
     Vector<int> indexes;
     collect_indexes(r, indexes, errh);
@@ -355,7 +355,7 @@ ElementMap::parse_default_file(const String &default_path, ErrorHandler *errh)
 }
 
 bool
-ElementMap::parse_requirement_files(RouterT *r, const String &default_path, ErrorHandler *errh, String *not_found_store = 0)
+ElementMap::parse_requirement_files(RouterT *r, const String &default_path, ErrorHandler *errh, String *not_found_store)
 {
     String not_found;
 

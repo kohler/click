@@ -22,7 +22,7 @@ class HandlerProxy : public Element { public:
     CSERR_HANDLER_ERROR		= 520,
     CSERR_PERMISSION		= 530,
     CSERR_NO_ROUTER		= 540,
-    CSERR_UNSPECIFIED		= 590,
+    CSERR_UNSPECIFIED		= 590
   };
   
  protected:

@@ -65,13 +65,13 @@ class IPReassembler : public Element {
 
 private:
   
-  static const int IPFRAG_HIGH_THRESH = 256 * 1024;
-  static const int IPFRAG_LOW_THRESH  = 192 * 1024;
-  static const int EXPIRE_TIMEOUT = 30; // seconds
-  static const int EXPIRE_TIMEOUT_MS = EXPIRE_TIMEOUT * 100; // ms
+  enum { IPFRAG_HIGH_THRESH = 256 * 1024,
+	 IPFRAG_LOW_THRESH  = 192 * 1024,
+	 EXPIRE_TIMEOUT = 30, // seconds
+	 EXPIRE_TIMER_INTERVAL_MS = 3000 }; // ms
   
   int _mem_used;
-  static const int NMAP = 256;
+  enum { NMAP = 256 };
   IPQueue *_map[NMAP];
 
   Timer _expire_timer;

@@ -83,7 +83,7 @@ class Radix { public:
     struct RadixNode *root;
     static unsigned bits(unsigned x, unsigned y, unsigned char idx);
     RadixNode *node_lookup(unsigned v);
-    static const int KEYSIZE = 32;
+    enum { KEYSIZE = 32 };
     
 };
 

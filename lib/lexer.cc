@@ -718,7 +718,7 @@ Lexer::unlex(const Lexeme &t)
 }
 
 bool
-Lexer::expect(int kind, bool report_error = true)
+Lexer::expect(int kind, bool report_error)
 {
   // Never adds anything to '_tcircle'. This requires a nonobvious
   // implementation.

@@ -20,7 +20,7 @@ enum {
     lex3Dot,
     lexTunnel,
     lexElementclass,
-    lexRequire,
+    lexRequire
 };
 
 class Lexeme { public:
@@ -103,7 +103,7 @@ class LexerT { public:
     static String lexeme_string(int);
   
     // parser
-    static const int TCIRCLE_SIZE = 8;
+    enum { TCIRCLE_SIZE = 8 };
     Lexeme _tcircle[TCIRCLE_SIZE];
     int _tpos;
     int _tfull;

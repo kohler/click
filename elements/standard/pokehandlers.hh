@@ -74,8 +74,8 @@ class PokeHandlers : public Element { public:
 
   private:
 
-    static Element * const STOP_MARKER = (Element *)1;
-    static Element * const LOOP_MARKER = (Element *)2;
+    static Element * const STOP_MARKER;
+    static Element * const LOOP_MARKER;
 
     int _pos;
     Vector<Element *> _h_element;

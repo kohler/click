@@ -108,7 +108,7 @@ private:
   };
 
   // one Stats for each subnet
-  static const int MAX_COUNTERS = 256;
+  enum { MAX_COUNTERS = 256 };
   struct Stats {
     Counter *_parent;               // equals NULL for _base->_parent
     Stats *_prev, *_next;           // to maintain age-list
@@ -133,10 +133,8 @@ protected:
 
 private:
 
-  static const int MAX_SHIFT = 24;
+  enum { MAX_SHIFT = 24, PERIODIC_FOLD_INIT = 8192, MEMMAX_MIN = 100 };
   // every n packets, a fold() is done
-  static const int PERIODIC_FOLD_INIT = 8192; 
-  static const unsigned MEMMAX_MIN = 100; // kbytes
   
   bool _count_packets;		// packets or bytes
   bool _anno_packets;		// annotate packets?

@@ -2,6 +2,7 @@
 #ifndef CLICK_PRETTY_HTML_HH
 #define CLICK_PRETTY_HTML_HH
 #include <click/string.hh>
+#include <click/straccum.hh>
 #include <click/hashmap.hh>
 #include <stdio.h>
 

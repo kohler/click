@@ -70,7 +70,7 @@ class HashMapIterator { public:
   HashMapIterator(const HashMap<K, V> *);
 
   operator bool() const			{ return _pos < _hm->_capacity; }
-  void operator++(int = 0);
+  void operator++(int);
   
   const K &key() const			{ return _hm->_e[_pos].k; }
   V &value()				{ return _hm->_e[_pos].v; }

@@ -60,7 +60,7 @@ GENERIC_OBJS = string.o straccum.o \
 	$(EXTRA_DRIVER_OBJS)
 
 LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \
-	proc_config.o proc_element.o proc_mgr.o read-pmc.o
+	proc_config.o proc_element.o proc_mgr.o proc_dir.o read-pmc.o
 
 EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 

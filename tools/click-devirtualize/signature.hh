@@ -20,7 +20,7 @@ struct SignatureNode {
 
 class Signatures { public:
 
-  static const int SIG_NOT_SPECIAL = 0;
+  enum { SIG_NOT_SPECIAL = 0 };
 
   Signatures(const RouterT *);
 

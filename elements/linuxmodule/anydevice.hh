@@ -75,8 +75,7 @@ class AnyDeviceMap;
 
 class AnyDevice : public Element { public:
 
-    static const int F_IN_MAP = 1;
-    static const int F_PROMISC = 2;
+    enum { F_IN_MAP = 1, F_PROMISC = 2 };
     
     AnyDevice();
     ~AnyDevice();
@@ -152,7 +151,7 @@ class AnyDeviceMap { public:
 
   private:
 
-    static const int MAP_SIZE = 64;
+    enum { MAP_SIZE = 64 };
     AnyDevice *_unknown_map;
     AnyDevice *_map[MAP_SIZE];
 

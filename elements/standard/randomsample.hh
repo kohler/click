@@ -83,8 +83,8 @@ class RandomSample : public Element { public:
 
   private:
 
-    static const int SAMPLING_SHIFT = 28;
-    static const uint32_t SAMPLING_MASK = (1 << SAMPLING_SHIFT) - 1;
+    enum { SAMPLING_SHIFT = 28 };
+    enum { SAMPLING_MASK = (1 << SAMPLING_SHIFT) - 1 };
     
     uint32_t _sampling_prob;		// out of (1<<SAMPLING_SHIFT)
     bool _active;

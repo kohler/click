@@ -320,7 +320,7 @@ BigHashMapIterator<K, V>::BigHashMapIterator(const BigHashMap<K, V> *hm)
 
 template <class K, class V>
 void
-BigHashMapIterator<K, V>::operator++(int = 0)
+BigHashMapIterator<K, V>::operator++(int)
 {
   if (_elt->next)
     _elt = _elt->next;
@@ -671,7 +671,7 @@ BigHashMapIterator<K, void *>::BigHashMapIterator(const BigHashMap<K, void *> *h
 
 template <class K>
 void
-BigHashMapIterator<K, void *>::operator++(int = 0)
+BigHashMapIterator<K, void *>::operator++(int)
 {
   if (_elt->next)
     _elt = _elt->next;

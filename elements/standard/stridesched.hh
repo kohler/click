@@ -28,8 +28,7 @@
 
 class StrideSched : public Element { protected:
   
-  static const unsigned STRIDE1 = 1U<<16;
-  static const int MAX_TICKETS = 1U<<15;
+  enum { STRIDE1 = 1U<<16, MAX_TICKETS = 1U<<15 };
 
   struct Client {
 

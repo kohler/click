@@ -95,7 +95,7 @@ class FloodingLocQuerier : public Element, public GridRouteActor {
   void handle_reply(Packet *);
   void handle_query(Packet *);
 
-  static const int EXPIRE_TIMEOUT_MS = 15 * 1000;
+  enum { EXPIRE_TIMEOUT_MS = 15 * 1000 };
   int _timeout_jiffies;
   static void expire_hook(Timer *, void *);
   static String read_table(Element *, void *);

@@ -35,12 +35,12 @@ public:
 
 private:
   /* constants specified in the RFC */
-  static const int TCP_SPACE = 15; /* max CID value for TCP. 3..255 are legal. */
+  enum { TCP_SPACE = 15 }; /* max CID value for TCP. 3..255 are legal. */
 
   /* first byte of packet indicates type */
-  static const int PT_OTHER = 0; /* ordinary packet (not compressed, no CID) */
-  static const int PT_FULL_HEADER = 1; /* one byte CID, then full ip/tcp */
-  static const int PT_COMPRESSED_TCP = 2; /* CID, compressed packet */
+  enum { PT_OTHER = 0, /* ordinary packet (not compressed, no CID) */
+	 PT_FULL_HEADER = 1, /* one byte CID, then full ip/tcp */
+	 PT_COMPRESSED_TCP = 2 }; /* CID, compressed packet */
 
   /* per-connection control block, indexed by CID */
   struct ccb {

@@ -37,8 +37,7 @@ class HandlerCall { public:
   private:
     
     static const char * const READ_MARKER;
-    static const int READ_HI = -9998;
-    static const int WRITE_HI = -9999;
+    enum { READ_HI = -9998, WRITE_HI = -9999 };
     
     Element *_e;
     int _hi;

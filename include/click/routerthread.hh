@@ -47,12 +47,14 @@ class RouterThread : public Task { public:
 #endif
 
   // task request IDs
-  static const unsigned SCHEDULE_TASK = 1;
-  static const unsigned UNSCHEDULE_TASK = 2;
+  enum TaskRequest {
+    SCHEDULE_TASK = 1,
+    UNSCHEDULE_TASK = 2
 #if __MTCLICK__
-  static const unsigned MOVE_TASK = 3;
+    , MOVE_TASK = 3
 #endif
-  void add_task_request(unsigned, Task *);
+  };
+  void add_task_request(TaskRequest, Task *);
   void process_task_requests();
   void wait(int iter);
   

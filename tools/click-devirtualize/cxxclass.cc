@@ -739,7 +739,7 @@ CxxInfo::parse_class(const String &text, int p, const String &original,
 
 void
 CxxInfo::parse_file(const String &original_text, bool header,
-		    String *store_includes = 0)
+		    String *store_includes)
 {
   String clean_text = remove_crap(original_text);
   CxxFunction::parsing_header_file = header;

@@ -81,7 +81,7 @@ IPsecESPEncap::simple_action(Packet *p)
   
   // make room for ESP header and padding
   int plen = p->length();
-  int padding = ((_blks - ((plen + 2) % _blks)) % _blks) + 2;
+  int padding = ((BLKS - ((plen + 2) % BLKS)) % BLKS) + 2;
   
   WritablePacket *q = p->push(sizeof(esp_new));
   q = q->put(padding);

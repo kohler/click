@@ -69,7 +69,7 @@ class ChuckCheck : public Element {
     unsigned saddr;
   };
 
-  static const unsigned BUCKETS = 4096;
+  enum { BUCKETS = 4096 };
   
   Stat _info[BUCKETS];
   unsigned _head;

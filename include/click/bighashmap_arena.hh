@@ -3,7 +3,7 @@
 
 struct BigHashMap_Arena {
   
-  static const int SIZE = 128;
+  enum { SIZE = 128 };
   int _first;
   int _padding;		// pad to 8-byte boundary
   unsigned char _x[0];

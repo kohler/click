@@ -186,7 +186,8 @@ class RouterT::iterator { public:
     iterator(RouterT *r)		{ step(r, 0); }
     operator bool() const		{ return _e; }
     int idx() const			{ return _e->idx(); }
-    void operator++(int = 0)		{ if (_e) step(_e->router(), idx()+1);}
+    void operator++(int)		{ if (_e) step(_e->router(), idx()+1);}
+    void operator++()			{ (*this)++; }
     operator ElementT *() const		{ return _e; }
     ElementT *operator->() const	{ return _e; }
   private:
@@ -198,7 +199,8 @@ class RouterT::const_iterator { public:
     const_iterator(const RouterT *r)	{ step(r, 0); }
     operator bool() const		{ return _e; }
     int idx() const			{ return _e->idx(); }
-    void operator++(int = 0)		{ if (_e) step(_e->router(), idx()+1);}
+    void operator++(int)		{ if (_e) step(_e->router(), idx()+1);}
+    void operator++()			{ (*this)++; }
     operator const ElementT *() const	{ return _e; }
     const ElementT *operator->() const	{ return _e; }
   private:
@@ -210,7 +212,8 @@ class RouterT::type_iterator { public:
     type_iterator(RouterT *, ElementClassT *);
     operator bool() const		{ return _e; }
     int idx() const			{ return _e->idx(); }
-    void operator++(int = 0)		{ if (_e) step(_e->router(), idx()+1);}
+    void operator++(int)		{ if (_e) step(_e->router(), idx()+1);}
+    void operator++()			{ (*this)++; }
     operator ElementT *() const		{ return _e; }
     ElementT *operator->() const	{ return _e; }
   private:

@@ -302,7 +302,7 @@ IPRateMonitor::Stats::~Stats()
 // Prints out nice data.
 //
 String
-IPRateMonitor::print(Stats *s, String ip = "")
+IPRateMonitor::print(Stats *s, String ip)
 {
   String ret = "";
   for (int i = 0; i < MAX_COUNTERS; i++) {

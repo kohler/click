@@ -641,7 +641,7 @@ Classifier::start_expr_subtree(Vector<int> &tree)
 
 void
 Classifier::finish_expr_subtree(Vector<int> &tree, bool is_and,
-				int success = SUCCESS, int failure = FAILURE)
+				int success, int failure)
 {
   int level = tree[0];
   Vector<int> subtrees;

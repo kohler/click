@@ -46,8 +46,7 @@ public:
 
   Packet *simple_action(Packet *);
 
-  static const unsigned DES_DECRYPT = 0;
-  static const unsigned DES_ENCRYPT = 1;
+  enum { DES_DECRYPT = 0, DES_ENCRYPT = 1 };
   
 private:
 

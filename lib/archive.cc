@@ -64,7 +64,7 @@ read_uint(const char *data, int max_len,
 
 int
 separate_ar_string(const String &s, Vector<ArchiveElement> &v,
-		   ErrorHandler *errh = 0)
+		   ErrorHandler *errh)
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();
@@ -160,7 +160,7 @@ separate_ar_string(const String &s, Vector<ArchiveElement> &v,
 }
 
 String
-create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh = 0)
+create_ar_string(const Vector<ArchiveElement> &v, ErrorHandler *errh)
 {
   if (!errh)
     errh = ErrorHandler::silent_handler();

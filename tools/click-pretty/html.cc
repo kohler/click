@@ -23,7 +23,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
-#include <click/straccum.hh>
 
 static String::Initializer string_initializer;
 static HashMap<String, String> html_entities;
@@ -130,7 +129,7 @@ html_unquote(const char *x, const char *end)
 
 const char *
 process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
-	    bool &ended, bool unquote_value = true)
+	    bool &ended, bool unquote_value)
 {
     // process tag
     while (isspace(*x))
@@ -207,7 +206,7 @@ process_tag(const char *x, String &tag, HashMap<String, String> &attrs,
 const char *
 output_template_until_tag(const char *templ, StringAccum &sa,
 			  String &tag, HashMap<String, String> &attrs,
-			  bool unquote = true, String *sep = 0)
+			  bool unquote, String *sep)
 {
     // skip to next directive
     tag = String();
@@ -238,7 +237,7 @@ output_template_until_tag(const char *templ, StringAccum &sa,
 const char *
 output_template_until_tag(const char *templ, FILE *outf,
 			  String &tag, HashMap<String, String> &attrs,
-			  bool unquote = true, String *sep = 0)
+			  bool unquote, String *sep)
 {
     StringAccum sa;
     templ = output_template_until_tag(templ, sa, tag, attrs, unquote, sep);

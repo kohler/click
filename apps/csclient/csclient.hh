@@ -206,18 +206,20 @@ private:
 
   string _name;
 
-  static const int CODE_OK = 200;
-  static const int CODE_OK_WARN = 220;
-  static const int CODE_SYNTAX_ERR = 500;
-  static const int CODE_UNIMPLEMENTED = 501;
-  static const int CODE_NO_ELEMENT = 510;
-  static const int CODE_NO_HANDLER = 511;
-  static const int CODE_HANDLER_ERR = 520;
-  static const int CODE_PERMISSION = 530;
-  static const int CODE_NO_ROUTER = 540;
+  enum {
+    CODE_OK = 200,
+    CODE_OK_WARN = 220,
+    CODE_SYNTAX_ERR = 500,
+    CODE_UNIMPLEMENTED = 501,
+    CODE_NO_ELEMENT = 510,
+    CODE_NO_HANDLER = 511,
+    CODE_HANDLER_ERR = 520,
+    CODE_PERMISSION = 530,
+    CODE_NO_ROUTER = 540,
   
-  static const int PROTOCOL_MAJOR_VERSION = 1;
-  static const int PROTOCOL_MINOR_VERSION = 0;
+    PROTOCOL_MAJOR_VERSION = 1,
+    PROTOCOL_MINOR_VERSION = 0
+  };
   
   /* Try to read a '\n'-terminated line (including the '\n') from the
    * socket.  */

@@ -31,8 +31,7 @@ class ElementClassT { public:
     const char *name_cc()		{ return _name.cc(); }
     int unique_id() const		{ return _unique_id; }
     int uid() const			{ return _unique_id; }
-    static const int UNUSED_UID = -1;
-    static const int TUNNEL_UID = 0;
+    enum { UNUSED_UID = -1, TUNNEL_UID = 0 };
 
     const ElementTraits &traits() const;
     virtual const ElementTraits *find_traits() const;

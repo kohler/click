@@ -28,7 +28,7 @@
 #include <click/variableenv.hh>
 #include <stdio.h>
 
-RouterT::RouterT(ElementClassT *type = 0, RouterT *enclosing_scope = 0)
+RouterT::RouterT(ElementClassT *type, RouterT *enclosing_scope)
     : _use_count(0), _enclosing_type(type),
       _enclosing_scope(enclosing_scope), _scope_cookie(0),
       _etype_map(-1), _element_name_map(-1),
@@ -162,7 +162,7 @@ RouterT::try_type(const String &name) const
 }
 
 ElementClassT *
-RouterT::get_type(ElementClassT *ec, bool install_name = false)
+RouterT::get_type(ElementClassT *ec, bool install_name)
 {
     if (install_name && try_type(ec->name()) != ec) {
 	int i = _etype_map[ec->name()];
@@ -727,7 +727,7 @@ RouterT::remove_duplicate_connections()
 
 
 void
-RouterT::remove_dead_elements(ErrorHandler *errh = 0)
+RouterT::remove_dead_elements(ErrorHandler *errh)
 {
     if (!errh)
 	errh = ErrorHandler::silent_handler();

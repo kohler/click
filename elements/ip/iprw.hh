@@ -41,7 +41,7 @@ class IPRw : public Element { public:
 	CONFIGURE_PHASE_PATTERNS = CONFIGURE_PHASE_INFO,
 	CONFIGURE_PHASE_REWRITER = CONFIGURE_PHASE_DEFAULT,
 	CONFIGURE_PHASE_MAPPER = CONFIGURE_PHASE_REWRITER - 1,
-	CONFIGURE_PHASE_USER = CONFIGURE_PHASE_REWRITER + 1,
+	CONFIGURE_PHASE_USER = CONFIGURE_PHASE_REWRITER + 1
     };
 
     int configure_phase() const 	{ return CONFIGURE_PHASE_REWRITER; }
@@ -56,7 +56,7 @@ class IPRw : public Element { public:
 
     Vector<Pattern *> _all_patterns;
 
-    static const int GC_INTERVAL_SEC = 3600;
+    enum { GC_INTERVAL_SEC = 3600 };
 
     void take_state_map(Map &, Mapping **free_head, Mapping **free_tail,
 			const Vector<Pattern *> &, const Vector<Pattern *> &);

@@ -423,7 +423,7 @@ set_clickpath(const char *p)
 
 String
 clickpath_find_file(const String &filename, const char *subdir,
-		    String default_path, ErrorHandler *errh = 0)
+		    String default_path, ErrorHandler *errh)
 {
   const char *path = clickpath();
   String was_default_path = default_path;
@@ -471,7 +471,7 @@ path_allows_default_path(String path)
 }
 
 String
-click_mktmpdir(ErrorHandler *errh = 0)
+click_mktmpdir(ErrorHandler *errh)
 {
   String tmpdir;
   if (const char *path = getenv("TMPDIR"))

@@ -37,7 +37,7 @@ enum CpErrors {
   CPE_FORMAT,
   CPE_NEGATIVE,
   CPE_OVERFLOW,
-  CPE_INVALID,
+  CPE_INVALID
 };
 extern int cp_errno;
 

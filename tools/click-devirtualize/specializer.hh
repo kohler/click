@@ -58,8 +58,7 @@ class Specializer { public:
   
  private:
 
-  static const int SPCE_NOT_DONE = -2;
-  static const int SPCE_NOT_SPECIAL = -1;
+  enum { SPCE_NOT_DONE = -2, SPCE_NOT_SPECIAL = -1 };
   
   RouterT *_router;
   int _nelements;

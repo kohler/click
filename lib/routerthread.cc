@@ -60,7 +60,7 @@ RouterThread::~RouterThread()
 }
 
 void
-RouterThread::add_task_request(unsigned op, Task *t)
+RouterThread::add_task_request(TaskRequest op, Task *t)
 {
   _taskreq_lock.acquire();
   _taskreq_ops.push_back(op);

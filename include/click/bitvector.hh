@@ -56,8 +56,7 @@ class Bitvector { public:
 
   private:
     
-    static const int INLINE_BITS = 64;
-    static const int INLINE_UNSIGNEDS = 2;
+    enum { INLINE_BITS = 64, INLINE_UNSIGNEDS = 2 };
 
     int _max;
     uint32_t *_data;

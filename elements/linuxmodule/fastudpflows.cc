@@ -26,6 +26,8 @@
 # include <net/checksum.h>
 #endif
 
+const unsigned FastUDPFlows::NO_LIMIT;
+
 FastUDPFlows::FastUDPFlows()
   : _flows(0)
 {

@@ -100,7 +100,7 @@ class ARPQuerier : public Element { public:
  private:
   ReadWriteLock _lock;
 
-  static const int NMAP = 256;
+  enum { NMAP = 256 };
   ARPEntry *_map[NMAP];
   EtherAddress _my_en;
   IPAddress _my_ip;
@@ -111,7 +111,7 @@ class ARPQuerier : public Element { public:
   void handle_ip(Packet *);
   void handle_response(Packet *);
 
-  static const int EXPIRE_TIMEOUT_MS = 60 * 1000;
+  enum { EXPIRE_TIMEOUT_MS = 60 * 1000 };
   static void expire_hook(Timer *, void *);
   static String read_table(Element *, void *);
   
