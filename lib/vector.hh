@@ -62,7 +62,7 @@ Vector<T>::push_back(const T &e)
 template <class T> inline void
 Vector<T>::pop_back()
 {
-  assert(_n >= 0);
+  assert(_n > 0);
   _l[--_n].~T();
 }
 

@@ -2,7 +2,7 @@
 #define CLICK_UDP_H
 
 /*
- * click_ucp.h -- our own definition of the UDP header
+ * click_udp.h -- our own definition of the UDP header
  * based on a file from one of the BSDs
  */
 

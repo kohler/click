@@ -175,6 +175,14 @@ if test $ac_cv_read_net_skbcount = yes; then
   AC_DEFINE_UNQUOTED(HAVE_READ_NET_SKBCOUNT, 1)
 fi
 
+AC_CACHE_CHECK(for tcp_prot, ac_cv_tcp_prot,
+[if grep tcp_prot /proc/ksyms >/dev/null 2>&1; then
+  ac_cv_tcp_prot=yes
+else ac_cv_tcp_prot=no; fi])
+if test $ac_cv_tcp_prot = yes; then
+  AC_DEFINE_UNQUOTED(HAVE_TCP_PROT, 1)
+fi
+
 dnl
 dnl check for GNU make
 dnl

@@ -41,6 +41,9 @@
 /* Define if your Linux kernel has read_net_skbcount. */
 #undef HAVE_READ_NET_SKBCOUNT
 
+/* Define if your Linux kernel exposes tcp_prot. */
+#undef HAVE_TCP_PROT
+
 /* Define if you have -lpcap and pcap.h. */
 #undef HAVE_PCAP
 

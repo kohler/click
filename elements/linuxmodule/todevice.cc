@@ -295,6 +295,7 @@ ToDevice::push(int port, Packet *p)
    * I can't figure out where Linux does this, so I don't
    * know the correct procedure.
    */
+
   if(skb1->len < 60){
     if(skb_tailroom(skb1) < 60 - skb1->len){
       printk("ToDevice: too small: len %d tailroom %d\n",

@@ -208,4 +208,4 @@ PollDevice::woke_up()
 }
 
 EXPORT_ELEMENT(PollDevice)
-
+ELEMENT_REQUIRES(false)
