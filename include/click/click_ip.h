@@ -7,7 +7,7 @@ CLICK_CXX_PROTECT
 #if CLICK_LINUXMODULE
 # include <net/checksum.h>
 # include <linux/in.h>
-# define click_in_cksum(addr, len) ip_compute_csum((addr), (len))
+# define click_in_cksum(addr, len) ip_compute_csum((unsigned char *)(addr), (len))
 #else
 # include <sys/types.h>
 # include <netinet/in.h>
