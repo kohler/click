@@ -191,6 +191,9 @@ struct e1000_desc_ring {
 	((((R)->next_to_clean > (R)->next_to_use) ? 0 : (R)->count) + \
 	(R)->next_to_clean - (R)->next_to_use)
 
+#define E1000_NEW_RX_DESC_UNUSED(R) \
+((((R)->next_to_clean + (R)->count) - ((R)->next_to_use)) % ((R)->count)) 
+
 #define E1000_GET_DESC(R, i, type)	(&(((struct type *)((R).desc))[i]))
 #define E1000_RX_DESC(R, i)		E1000_GET_DESC(R, i, e1000_rx_desc)
 #define E1000_TX_DESC(R, i)		E1000_GET_DESC(R, i, e1000_tx_desc)

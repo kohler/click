@@ -570,7 +570,7 @@ e1000_probe(struct pci_dev *pdev,
         netdev->polling = 0;
         netdev->rx_poll = e1000_rx_poll;
         netdev->rx_refill = e1000_rx_refill;
-        netdev->tx_queue = e1000_tx_pqueue;
+        netdev->tx_queue = e1000_tx_pqueue; // e1000_xmit_frame_clickpoll;
         netdev->tx_eob = e1000_tx_eob;
         netdev->tx_start = e1000_tx_start;
         netdev->tx_clean = e1000_tx_clean;
@@ -3393,7 +3393,7 @@ e1000_rx_refill(struct net_device *dev, struct sk_buff **skbs)
 	struct sk_buff *skb_list;
 
 	if(skbs == 0)
-		return E1000_RX_DESC_UNUSED(&adapter->rx_ring);
+		return E1000_NEW_RX_DESC_UNUSED(&adapter->rx_ring);
 
 	i = adapter->rx_ring.next_to_use;
 	skb_list = *skbs;
@@ -3442,7 +3442,7 @@ e1000_rx_refill(struct net_device *dev, struct sk_buff **skbs)
 		e1000_watchdog_1(adapter);
 	}
 
-	return E1000_RX_DESC_UNUSED(&adapter->rx_ring);
+	return E1000_NEW_RX_DESC_UNUSED(&adapter->rx_ring);
 }
 
 static int
