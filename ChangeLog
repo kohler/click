@@ -1,3 +1,31 @@
+2001-04-25 Wednesday 16:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/error.hh, include/click/packet.hh,
+	include/click/router.hh, include/click/straccum.hh,
+	include/click/string.hh, lib/error.cc, lib/router.cc,
+	lib/routerthread.cc, lib/straccum.cc, lib/string.cc,
+	linuxmodule/proc_config.cc: more updates, including fixing
+	unsigned64, and fixing problems with Router initialization relative
+	to erroneous configurations
+
+2001-04-25 Wednesday 16:42  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/etherswitch/bridgemessage.cc: use new
+	cp_unparse_unsigned64 function (renamed from cp_unparse_ulonglong)
+
+2001-04-25 Wednesday 16:42  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: use
+	HAVE_INT64_TYPES symbol to conditionalize "long long" type
+	functions; change names to integer64 and unsigned64 (rather than
+	ulonglong); add cp_integer64() functions (for unparsing, rather
+	than parsing)
+
+2001-04-25 Wednesday 16:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/glue.hh: remove redundant u_int32_t definitions,
+	and other cleanups
+
 2001-04-25 Wednesday 16:39  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/standard/: burster.cc, timedsink.cc, timedsource.cc: use
@@ -11,7 +39,8 @@
 
 2001-04-25 Wednesday 16:37  Eddie Kohler <eddietwo@lcs.mit.edu>
 
-	* userlevel/click.cc: nitlets
+	* userlevel/click.cc, include/click/hashmap.hh,
+	include/click/vector.hh: nitlets
 
 2001-04-25 Wednesday 16:37  Eddie Kohler <eddietwo@lcs.mit.edu>
 
