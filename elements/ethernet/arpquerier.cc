@@ -25,6 +25,7 @@
 #include <click/ipaddress.hh>
 #include <click/confparse.hh>
 #include <click/bitvector.hh>
+#include <click/router.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
 
@@ -156,6 +157,7 @@ void
 ARPQuerier::expire_hook(Timer *, void *thunk)
 {
   ARPQuerier *arpq = (ARPQuerier *)thunk;
+  arpq->_lock.acquire_write();
   int jiff = click_jiffies();
   for (int i = 0; i < NMAP; i++) {
     ARPEntry *prev = 0;
@@ -181,6 +183,7 @@ ARPQuerier::expire_hook(Timer *, void *thunk)
     }
   }
   arpq->_expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
+  arpq->_lock.release_write();
 }
 
 void
@@ -230,6 +233,9 @@ ARPQuerier::handle_ip(Packet *p)
   
   IPAddress ipa = p->dst_ip_anno();
   int bucket = (ipa.data()[0] + ipa.data()[3]) % NMAP;
+
+  _lock.acquire_read();
+
   ARPEntry *ae = _map[bucket];
 
   while (ae && ae->ip != ipa)
@@ -237,33 +243,45 @@ ARPQuerier::handle_ip(Packet *p)
 
   if (ae) {
     if (ae->polling) {
-      send_query_for(ae->ip);
+      IPAddress addr = ae->ip;
       ae->polling = 0;
+      _lock.release_read();
+      send_query_for(addr);
     }
     
-    if (ae->ok) {
+    else if (ae->ok) {
       WritablePacket *q = p->push(sizeof(click_ether));
       click_ether *e = reinterpret_cast<click_ether *>(q->data());
       memcpy(e->ether_shost, _my_en.data(), 6);
       memcpy(e->ether_dhost, ae->en.data(), 6);
       e->ether_type = htons(ETHERTYPE_IP);
+      _lock.release_read();
       output(0).push(q);
-    } else {
+    } 
+    
+    else {
+      _lock.release_read();
+      _lock.acquire_write();
       if (ae->p) {
         ae->p->kill();
 	_pkts_killed++;
       }
       ae->p = p;
+      _lock.release_write();
       send_query_for(p->dst_ip_anno());
     }
-    
-  } else {
+  } 
+  
+  else {
+    _lock.release_read();
+    _lock.acquire_write();
     ARPEntry *ae = new ARPEntry;
     ae->ip = ipa;
     ae->ok = ae->polling = 0;
     ae->p = p;
     ae->next = _map[bucket];
     _map[bucket] = ae;
+    _lock.release_write();
     send_query_for(p->dst_ip_anno());
   }
 }
@@ -288,14 +306,16 @@ ARPQuerier::handle_response(Packet *p)
       && ntohs(arph->ea_hdr.ar_pro) == ETHERTYPE_IP
       && ntohs(arph->ea_hdr.ar_op) == ARPOP_REPLY
       && !ena.is_group()) {
-    
     int bucket = (ipa.data()[0] + ipa.data()[3]) % NMAP;
+
+    _lock.acquire_write();
     ARPEntry *ae = _map[bucket];
     while (ae && ae->ip != ipa)
       ae = ae->next;
-    if (!ae)
+    if (!ae) {
+      _lock.release_write();
       return;
-    
+    }
     if (ae->ok && ae->en != ena)
       click_chatter("ARPQuerier overwriting an entry");
     ae->en = ena;
@@ -304,6 +324,8 @@ ARPQuerier::handle_response(Packet *p)
     ae->last_response_jiffies = click_jiffies();
     Packet *cached_packet = ae->p;
     ae->p = 0;
+    _lock.release_write();
+
     if (cached_packet)
       handle_ip(cached_packet);
   }
@@ -337,8 +359,8 @@ ARPQuerier_read_stats(Element *e, void *)
 {
   ARPQuerier *q = (ARPQuerier *)e;
   return
-    String(q->_pkts_killed) + " packets killed\n" +
-    String(q->_arp_queries) + " ARP queries sent\n";
+    String(q->_pkts_killed.value()) + " packets killed\n" +
+    String(q->_arp_queries.value()) + " ARP queries sent\n";
 }
 
 void
@@ -349,3 +371,5 @@ ARPQuerier::add_handlers()
 }
 
 EXPORT_ELEMENT(ARPQuerier)
+ELEMENT_MT_SAFE(ARPQuerier)
+

@@ -26,9 +26,12 @@
 #include <click/confparse.hh>
 #include <click/straccum.hh>
 #include <click/error.hh>
+#include <click/timer.hh>
 #include <click/llrpc.h>
-
 #include <limits.h>
+
+#define USE_SP_LOCKS 1
+
 
 IPRewriter::IPRewriter()
   : _tcp_map(0), _udp_map(0), _tcp_done(0),
@@ -72,9 +75,9 @@ IPRewriter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   int before = errh->nerrors();
   int ninputs = 0;
-  _tcp_gc_interval = 86400000;	// 24 hours
+  _tcp_gc_interval = 86400000;		// 24 hours
   _tcp_done_gc_interval = 240000;	// 4 minutes
-  _udp_gc_interval = 60000;	// 1 minute
+  _udp_gc_interval = 60000;		// 1 minute
   
   for (int i = 0; i < conf.size(); i++) {
     if (cp_va_parse_keyword(conf[i], this, errh,
@@ -170,7 +173,13 @@ void
 IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.acquire();
+#endif
   rw->clean_map(rw->_tcp_map);
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.release();
+#endif
   timer->schedule_after_ms(rw->_tcp_gc_interval);
 }
 
@@ -178,7 +187,13 @@ void
 IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.acquire();
+#endif
   rw->clean_map_free_tracked(rw->_tcp_map, &rw->_tcp_done);
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.release();
+#endif
   timer->schedule_after_ms(rw->_tcp_done_gc_interval);
 }
 
@@ -186,7 +201,13 @@ void
 IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 {
   IPRewriter *rw = (IPRewriter *)thunk;
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.acquire();
+#endif
   rw->clean_map(rw->_udp_map);
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.release();
+#endif
   timer->schedule_after_ms(rw->_udp_gc_interval);
 }
 
@@ -242,7 +263,10 @@ IPRewriter::push(int port, Packet *p_in)
       p->kill();
     return;
   }
-  
+ 
+#if USE_SP_LOCKS > 0
+  _spinlock.acquire();
+#endif
   Mapping *m = (ip_p == IP_PROTO_TCP ? _tcp_map.find(flow) : _udp_map.find(flow));
   
   if (!m) {			// create new mapping
@@ -250,6 +274,9 @@ IPRewriter::push(int port, Packet *p_in)
     switch (is.kind) {
 
      case INPUT_SPEC_NOCHANGE:
+#if USE_SP_LOCKS > 0
+      _spinlock.release();
+#endif
       output(is.u.output).push(p);
       return;
 
@@ -278,20 +305,32 @@ IPRewriter::push(int port, Packet *p_in)
       
     }
     if (!m) {
+#if USE_SP_LOCKS > 0
+      _spinlock.release();
+#endif
       p->kill();
       return;
     }
   }
   
   m->apply(p);
+#if USE_SP_LOCKS > 0
+  _spinlock.release();
+#endif
   output(m->output()).push(p);
 
+#if USE_SP_LOCKS > 0
+  _spinlock.acquire();
+#endif
   // add to list for dropping TCP connections faster
   if (ip_p == IP_PROTO_TCP && !m->free_tracked()) {
     click_tcp *tcph = reinterpret_cast<click_tcp *>(p->transport_header());
     if ((tcph->th_flags & (TH_FIN | TH_RST)) && m->session_over())
       _tcp_done = m->add_to_free_tracked(_tcp_done);
   }
+#if USE_SP_LOCKS > 0
+  _spinlock.release();
+#endif
 }
 
 
@@ -301,12 +340,18 @@ IPRewriter::dump_mappings_handler(Element *e, void *thunk)
   IPRewriter *rw = (IPRewriter *)e;
   Map *map = (thunk ? &rw->_udp_map : &rw->_tcp_map);
   
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.acquire();
+#endif
   StringAccum sa;
   for (Map::Iterator iter = map->first(); iter; iter++) {
     Mapping *m = iter.value();
     if (!m->is_reverse())
       sa << m->s() << "\n";
   }
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.release();
+#endif
   return sa.take_string();
 }
 
@@ -315,11 +360,17 @@ IPRewriter::dump_tcp_done_mappings_handler(Element *e, void *)
 {
   IPRewriter *rw = (IPRewriter *)e;
   
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.acquire();
+#endif
   StringAccum sa;
   for (Mapping *m = rw->_tcp_done; m; m = m->free_next()) {
     if (m->session_over())
       sa << m->s() << "\n";
   }
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.release();
+#endif
   return sa.take_string();
 }
 
@@ -335,9 +386,15 @@ IPRewriter::dump_patterns_handler(Element *e, void *)
 {
   IPRewriter *rw = (IPRewriter *)e;
   String s;
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.acquire();
+#endif
   for (int i = 0; i < rw->_input_specs.size(); i++)
     if (rw->_input_specs[i].kind == INPUT_SPEC_PATTERN)
       s += rw->_input_specs[i].u.pattern.p->s() + "\n";
+#if USE_SP_LOCKS > 0
+  rw->_spinlock.release();
+#endif
   return s;
 }
 
@@ -365,10 +422,20 @@ IPRewriter::llrpc(unsigned command, void *data)
     IPFlowID flowid;
     if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
       return -EFAULT;
+#if USE_SP_LOCKS > 0
+    _spinlock.acquire();
+#endif
     Mapping *m = get_mapping(IP_PROTO_TCP, flowid);
-    if (!m)
+    if (!m) {
+#if USE_SP_LOCKS > 0
+      _spinlock.release();
+#endif
       return -EAGAIN;
+    }
     flowid = m->flow_id();
+#if USE_SP_LOCKS > 0
+    _spinlock.release();
+#endif
     if (CLICK_LLRPC_PUT_DATA(data, &flowid, sizeof(IPFlowID)) < 0)
       return -EFAULT;
     return 0;
@@ -384,10 +451,20 @@ IPRewriter::llrpc(unsigned command, void *data)
     IPFlowID flowid;
     if (CLICK_LLRPC_GET_DATA(&flowid, data, sizeof(IPFlowID)) < 0)
       return -EFAULT;
+#if USE_SP_LOCKS > 0
+    _spinlock.acquire();
+#endif
     Mapping *m = get_mapping(IP_PROTO_UDP, flowid);
-    if (!m)
+    if (!m) {
+#if USE_SP_LOCKS > 0
+      _spinlock.release();
+#endif
       return -EAGAIN;
+    }
     flowid = m->flow_id();
+#if USE_SP_LOCKS > 0
+    _spinlock.release();
+#endif
     if (CLICK_LLRPC_PUT_DATA(data, &flowid, sizeof(IPFlowID)) < 0)
       return -EFAULT;
     return 0;

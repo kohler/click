@@ -1,6 +1,7 @@
 #ifndef IPREWRITER_HH
 #define IPREWRITER_HH
 #include "elements/ip/iprw.hh"
+#include <click/sync.hh>
 
 /*
 =c
@@ -167,6 +168,7 @@ class IPRewriter : public IPRw { public:
   int llrpc(unsigned, void *);
 
  private:
+  Spinlock _spinlock;
 
   Map _tcp_map;
   Map _udp_map;
@@ -189,7 +191,6 @@ class IPRewriter : public IPRw { public:
   static String dump_tcp_done_mappings_handler(Element *, void *);
   static String dump_nmappings_handler(Element *, void *);
   static String dump_patterns_handler(Element *, void *);
-  
 };
 
 

@@ -24,7 +24,7 @@
 #include <click/bitvector.hh>
 #include <click/glue.hh>
 #include <click/sync.hh>
-#include "queue.hh"
+#include "elements/standard/queue.hh"
 
 
 class MSQueue : public Element {
@@ -56,6 +56,7 @@ class MSQueue : public Element {
   
   int size() const; 
   int capacity() const                          { return _capacity; }
+  u_atomic32_t drops() const			{ return _drops; }
 
   Packet *head() const;
 
@@ -67,7 +68,24 @@ class MSQueue : public Element {
   
   void push(int port, Packet *);
   Packet *pull(int port);
+
+#ifdef __KERNEL__
+#if __i386__ && HAVE_INTEL_CPU
+  static void prefetch_packet(Packet *p);
+#endif
+#endif
 };
+
+#ifdef __KERNEL__
+#if __i386__ && HAVE_INTEL_CPU
+inline void
+MSQueue::prefetch_packet(Packet *p)
+{
+  struct sk_buff *skb = p->steal_skb();
+  asm volatile("prefetcht0 %0" : : "m" (skb->data));
+}
+#endif
+#endif
 
 inline int
 MSQueue::size() const

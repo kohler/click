@@ -45,6 +45,7 @@
 #include <click/element.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
+#include <click/sync.hh>
 #include <click/timer.hh>
 
 class ARPQuerier : public Element { public:
@@ -86,10 +87,11 @@ class ARPQuerier : public Element { public:
   };
 
   // statistics
-  int _arp_queries;
-  int _pkts_killed;
+  u_atomic32_t _arp_queries;
+  u_atomic32_t _pkts_killed;
   
  private:
+  ReadWriteLock _lock;
 
   static const int NMAP = 256;
   ARPEntry *_map[NMAP];

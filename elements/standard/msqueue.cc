@@ -77,19 +77,7 @@ MSQueue::uninitialize()
   }
   delete[] _q;
   _q = 0;
-  click_chatter("%d packets dropped", _drops.value());
 }
-
-#ifdef __KERNEL__
-#if __i386__ && HAVE_INTEL_CPU
-static inline void
-prefetch_packet(Packet *p)
-{
-  struct sk_buff *skb = p->steal_skb();
-  asm volatile("prefetcht0 %0" : : "m" (skb->data));
-}
-#endif
-#endif
 
 void
 MSQueue::push(int, Packet *p)
@@ -153,6 +141,8 @@ MSQueue::read_handler(Element *e, void *thunk)
     return String(q->size()) + "\n";
    case 1:
     return String(q->capacity()) + "\n";
+   case 2:
+    return String(q->drops()) + "\n";
    default:
     return "";
   }
@@ -163,6 +153,7 @@ MSQueue::add_handlers()
 {
   add_read_handler("length", read_handler, (void *)0);
   add_read_handler("capacity", read_handler, (void *)1);
+  add_read_handler("drops", read_handler, (void *)2);
 }
 
 EXPORT_ELEMENT(MSQueue)
