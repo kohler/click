@@ -368,7 +368,8 @@ Lexer::Lexer()
     _last_element_type(-1),
     _free_element_type(-1),
     _element_map(-1),
-    _definputs(0), _defoutputs(0)
+    _definputs(0), _defoutputs(0),
+    _errh(ErrorHandler::default_handler())
 {
   end_parse(-1);		// clear private state
   add_element_type("<tunnel>", new ErrorElement);
