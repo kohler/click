@@ -52,6 +52,7 @@ CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
   _debug = false;
   _count = 1;
   _max_delay_ms = 750;
+  _history = 100;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -62,6 +63,7 @@ CounterFlood::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "MAX_DELAY", cpUnsigned, "Max Delay (ms)", &_max_delay_ms,
 		    /* below not required */
 		    "DEBUG", cpBool, "Debug", &_debug,
+		    "HISTORY", cpUnsigned, "history", &_history,
                     0);
 
   if (!_et) 
@@ -95,11 +97,15 @@ CounterFlood::forward(Broadcast *bcast) {
   struct srpacket *pk_in = (struct srpacket *) (eh_in+1);
 
   int hops = 1;
-  if (!bcast->_originated) {
+  int len = 0;
+  if (bcast->_originated) {
+    hops = 1;
+    len = srpacket::len_with_data(hops, p_in->length());
+  } else {
     hops = pk_in->num_hops() + 1;
+    len = srpacket::len_with_data(hops, pk_in->data_len());
   }
-  
-  int len = srpacket::len_wo_data(hops);
+
   WritablePacket *p = Packet::make(len + sizeof(click_ether));
   if (p == 0)
     return;
@@ -129,11 +135,11 @@ CounterFlood::forward(Broadcast *bcast) {
     pk->set_data_len(pk_in->data_len());
   }
   bcast->_forwarded = true;
-
+  _packets_tx++;
+  
   eh->ether_type = htons(_et);
   memcpy(eh->ether_shost, _en.data(), 6);
   memset(eh->ether_dhost, 0xff, 6);
-  _packets_tx++;
   output(0).push(p);
 
 }
@@ -144,13 +150,35 @@ CounterFlood::forward_hook()
   struct timeval now;
   click_gettimeofday(&now);
   for (int x = 0; x < _packets.size(); x++) {
-    if (timercmp(&_packets[x]._to_send, &now, <) && !_packets[x]._forwarded) {
-      forward(&_packets[x]);
+    if (timercmp(&_packets[x]._to_send, &now, <=)) {
+      /* this timer has expired */
+      if (!_packets[x]._forwarded && 
+	  (!_count || _packets[x]._num_rx < _count)) {
+	/* we haven't forwarded this packet yet */
+	forward(&_packets[x]);
+      }
     }
   }
 }
 
 
+void
+CounterFlood::trim_packets() {
+  /* only keep track of the last _max_packets */
+  while ((_packets.size() > _history)) {
+    /* unschedule and remove packet*/
+    if (_debug) {
+      click_chatter("%{element} removing seq %d\n",
+		    this,
+		    _packets[0]._seq);
+    }
+    _packets[0].del_timer();
+    if (_packets[0]._p) {
+      _packets[0]._p->kill();
+    }
+    _packets.pop_front();
+  }
+}
 void
 CounterFlood::push(int port, Packet *p_in)
 {
@@ -171,8 +199,6 @@ CounterFlood::push(int port, Packet *p_in)
     _packets[index].t = NULL;
     _packets[index]._to_send = now;
     forward(&_packets[index]);
-    return;
-
   } else {
     _packets_rx++;
 
@@ -196,7 +222,7 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index]._seq = seq;
       _packets[index]._originated = false;
       _packets[index]._p = p_in;
-      _packets[index]._num_rx = 0;
+      _packets[index]._num_rx = 1;
       _packets[index]._first_rx = now;
       _packets[index]._forwarded = false;
       _packets[index].t = NULL;
@@ -212,16 +238,18 @@ CounterFlood::push(int port, Packet *p_in)
       _packets[index].t = new Timer(static_forward_hook, (void *) this);
       _packets[index].t->initialize(this);
       _packets[index].t->schedule_at(_packets[index]._to_send);
+
+      /* finally, clone the packet and push it out */
+      Packet *p_out = p_in->clone();
+      output(1).push(p_out);
     } else {
       /* we've seen this packet before */
       p_in->kill();
       _packets[index]._num_rx++;
-      if (_packets[index]._num_rx > _count) {
-	/* unschedule */
-	_packets[index].del_timer();
-      }
     }
   }
+
+  trim_packets();
 }
 
 
