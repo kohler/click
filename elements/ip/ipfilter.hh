@@ -136,10 +136,11 @@ class IPFilter : public Classifier { public:
     TYPE_HOST	= 10,		// expression types
     TYPE_PROTO	= 11,
     TYPE_TOS	= 12,
-    TYPE_IPFRAG	= 13,
-    TYPE_PORT	= 14,
-    TYPE_TCPOPT = 15,
-    TYPE_ICMP_TYPE = 16,
+    TYPE_TTL	= 13,
+    TYPE_IPFRAG	= 14,
+    TYPE_PORT	= 15,
+    TYPE_TCPOPT = 16,
+    TYPE_ICMP_TYPE = 17,
     
     TYPE_NET	= 20,		// shorthands
     TYPE_DSCP	= 21,

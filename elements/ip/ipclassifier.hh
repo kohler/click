@@ -68,6 +68,10 @@ of TOS).
 Matches IP packets with the ECN Congestion Experienced bit set (the lowest bit
 of TOS).
 
+=item B<ip ttl TTL>
+
+TTL is a value between 0 and 255. Matches IP packets with the given TTL value.
+
 =item B<ip frag>
 
 Matches fragmented IP packets (that is, packets with the more-fragments bit
@@ -100,7 +104,7 @@ All primitives except B<tcp opt> accept an optional OPERATION, `==' or
 `!=', which can occur before the actual option. `src host == 10.0.0.10'
 matches packets whose source host is 10.0.0.10; `src host != 10.0.0.10'
 matches packets whose source host I<is not> 10.0.0.10. The B<ip
-proto>, B<port>, B<ip tos>, B<ip dscp>, and B<icmp type>
+proto>, B<port>, B<ip tos>, B<ip dscp>, B<ip ttl>, and B<icmp type>
 directives also support `<', `>', `<=', and `>=' operations for limited
 integer values. (Specifically, you can say `< POW', `> POW-1', `<= POW-1',
 or `>= POW' if POW is a power of 2.) If no OPERATION is specified, `==' is

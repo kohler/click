@@ -45,6 +45,7 @@ IPFilter::create_wordmap()
   wordmap->insert("proto",	WT(TYPE_TYPE, TYPE_PROTO));
   wordmap->insert("opt",	WT(TYPE_TYPE, TYPE_TCPOPT));
   wordmap->insert("tos",	WT(TYPE_TYPE, TYPE_TOS));
+  wordmap->insert("ttl",	WT(TYPE_TYPE, TYPE_TTL));
   wordmap->insert("dscp",	WT(TYPE_TYPE, TYPE_DSCP));
   wordmap->insert("type",	WT(TYPE_TYPE, TYPE_ICMP_TYPE));
   wordmap->insert("frag",	WT(TYPE_TYPE, TYPE_IPFRAG));
@@ -309,6 +310,7 @@ IPFilter::Primitive::unparse_type(int srcdst, int type)
    case TYPE_PORT: sa << "port "; break;
    case TYPE_TCPOPT: sa << "tcp opt "; break;
    case TYPE_TOS: sa << "ip tos "; break;
+   case TYPE_TTL: sa << "ip ttl "; break;
    case TYPE_DSCP: sa << "ip dscp "; break;
    case TYPE_IPECT: sa << "ip ect "; break;
    case TYPE_IPCE: sa << "ip ce "; break;
@@ -407,22 +409,26 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
   }
 
   // check that _data and _type agree
-  if (_type == TYPE_HOST) {
+  switch (_type) {
+
+   case TYPE_HOST:
     if (_data != TYPE_HOST)
       return errh->error("IP address missing in `host' directive");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with `host'");
     _mask.u = 0xFFFFFFFFU;
-    
-  } else if (_type == TYPE_NET) {
+    break;
+
+   case TYPE_NET:
     if (_data != TYPE_NET)
       return errh->error("IP prefix missing in `net' directive");
     if (_op != OP_EQ)
       return errh->error("can't use relational operators with `net'");
     _type = TYPE_HOST;
     // _mask already set
-    
-  } else if (_type == TYPE_PROTO) {
+    break;
+
+   case TYPE_PROTO:
     if (_data == TYPE_INT || _data == TYPE_PROTO) {
       if (_transp_proto != UNKNOWN)
 	return errh->error("transport protocol specified twice");
@@ -440,8 +446,9 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return -1;
     if (_mask.u == 0xFF && !_op_negated) // set _transp_proto if allowed
       _transp_proto = _u.i;
-    
-  } else if (_type == TYPE_PORT) {
+    break;
+
+   case TYPE_PORT:
     if (_data == TYPE_INT)
       _data = TYPE_PORT;
     if (_data != TYPE_PORT)
@@ -452,8 +459,9 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return errh->error("bad protocol %d for `port' directive", _transp_proto);
     if (set_mask(0xFFFF, 0, errh) < 0)
       return -1;
+    break;
 
-  } else if (_type == TYPE_TCPOPT) {
+   case TYPE_TCPOPT:
     if (_data == TYPE_INT)
       _data = TYPE_TCPOPT;
     if (_data != TYPE_TCPOPT)
@@ -467,33 +475,45 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
     if (_u.i < 0 || _u.i > 255)
       return errh->error("value %d out of range", _u.i);
     _mask.i = _u.i;
+    break;
 
-  } else if (_type == TYPE_TOS) {
+   case TYPE_TOS:
     if (_data != TYPE_INT)
       return errh->error("TOS value missing in `ip tos' directive");
     if (set_mask(0xFF, 0, errh) < 0)
       return -1;
+    break;
 
-  } else if (_type == TYPE_DSCP) {
+   case TYPE_DSCP:
     if (_data != TYPE_INT)
       return errh->error("DSCP missing in `ip dscp' directive");
     if (set_mask(0x3F, 2, errh) < 0)
       return -1;
     _type = TYPE_TOS;
+    break;
 
-  } else if (_type == TYPE_IPECT) {
+   case TYPE_IPECT:
     if (_data != TYPE_NONE)
       return errh->error("`ip ect' directive takes no data");
     _type = TYPE_TOS;
     _u.u = _mask.u = IP_ECN_ECT;
+    break;
 
-  } else if (_type == TYPE_IPCE) {
+   case TYPE_IPCE:
     if (_data != TYPE_NONE)
       return errh->error("`ip ce' directive takes no data");
     _type = TYPE_TOS;
     _u.u = _mask.u = IP_ECN_CE;
+    break;
 
-  } else if (_type == TYPE_ICMP_TYPE) {
+   case TYPE_TTL:
+    if (_data != TYPE_INT)
+      return errh->error("TTL value missing in `ip ttl' directive");
+    if (set_mask(0xFF, 0, errh) < 0)
+      return -1;
+    break;
+
+   case TYPE_ICMP_TYPE:
     if (_data == TYPE_INT)
       _data = TYPE_ICMP_TYPE;
     if (_data != TYPE_ICMP_TYPE)
@@ -504,16 +524,20 @@ IPFilter::Primitive::check(const Primitive &p, ErrorHandler *errh)
       return errh->error("bad protocol %d for `icmp type' directive", _transp_proto);
     if (set_mask(0xFF, 0, errh) < 0)
       return -1;
-    
-  } else if (_type == TYPE_IPFRAG) {
+    break;
+
+   case TYPE_IPFRAG:
     if (_data != TYPE_NONE)
       return errh->error("`ip frag' directive takes no data");
-    
-  } else if (_type == TYPE_IPUNFRAG) {
+    break;
+
+   case TYPE_IPUNFRAG:
     if (_data != TYPE_NONE)
       return errh->error("`ip unfrag' directive takes no data");
     _op_negated = true;
     _type = TYPE_IPFRAG;
+    break;
+    
   }
 
   // fix _srcdst
@@ -576,6 +600,14 @@ IPFilter::Primitive::add_exprs(Classifier *c, Vector<int> &tree) const
    case TYPE_TOS: {
      c->start_expr_subtree(tree);
      c->add_expr(tree, 0, htonl(_u.u << 16), htonl(_mask.u << 16));
+     c->finish_expr_subtree(tree, true);
+     if (_op_negated) c->negate_expr_subtree(tree);
+     break;
+   }
+
+   case TYPE_TTL: {
+     c->start_expr_subtree(tree);
+     c->add_expr(tree, 8, htonl(_u.u << 24), htonl(_mask.u << 24));
      c->finish_expr_subtree(tree, true);
      if (_op_negated) c->negate_expr_subtree(tree);
      break;
