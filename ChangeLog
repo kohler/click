@@ -1,3 +1,11 @@
+2003-02-06 Thursday 10:21  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.32), dsdvroutetable.hh
+	(1.25), grid.hh (1.45), gridroutetable.cc (1.65), linkstat.cc
+	(1.17), linkstat.hh (1.7), printgrid.cc (1.29), printgrid.hh (1.8):
+	Reworked design and implementation of LinkStat element for
+	measuring broadcast loss rates
+
 2003-02-05 Wednesday 15:30  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/standard/: infinitesource.cc (1.38), infinitesource.hh
