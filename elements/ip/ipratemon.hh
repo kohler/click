@@ -108,7 +108,7 @@ private:
 #define INIT     0x0001
 #define SPLIT    0x0010
     EWMA2 values[MAX_NRATES];
-    unsigned long long total;
+    unsigned long total;
     int last_update;
     struct _stats *next_level;
   };
