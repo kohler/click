@@ -257,23 +257,23 @@ ToDevice::tx_intr()
   if (_activations > 0 || sent > 0) {
     _activations++;
     _tks_allocated += ntickets();
-    if (sent == 0 && !busy) _idle_calls++;
+    if (sent == 0) _idle_calls++;
   }
   
   if (sent > 0) _pkts_sent+=sent;
 
+#if HAVE_POLLING
   if (queued_pkts == _last_dma_length + _last_tx && queued_pkts != 0) {
     _dev_idle++;
     if (_dev_idle==1024) {
-#if HAVE_POLLING
       /* device didn't send anything, ping it */
       _dev->start_tx(_dev);
-#endif
       _hard_start++;
       _dev_idle=0;
     }
   } else
     _dev_idle = 0;
+#endif
   
   /*
    * If we have packets left in the queue, arrange for
@@ -293,45 +293,49 @@ ToDevice::tx_intr()
   if (busy)
     _busy_returns++;
 
-  /* adjusting tickets */
+  /* adjusting tickets. goal: each time we are called, we should send a few
+   * packets, but also keep dma ring floating between 1/3 to 3/4 full.
+   */
 
-  int adj = 0;
 #if HAVE_POLLING
   int dmal = _dev->tx_dma_length;
 #else
-  int dmal = 250;
+  int dmal = 16;
 #endif
-  int dma_thresh = dmal-dmal/4;
+  int dma_thresh_high = dmal-dmal/4;
+  int dma_thresh_low  = dmal/4;
+  int adj = ntickets()/4;
+  if (adj<2) adj=2;
 
   /* tx dma ring was fairly full, and it was full last time as well, so we
    * should slow down */
-  if (busy && queued_pkts > dma_thresh && _last_dma_length > dma_thresh) {
-    adj = 0-ntickets()/4; 
-    if (adj==0) adj=-1;
+
+  if (busy && queued_pkts > dma_thresh_high 
+      && _last_dma_length > dma_thresh_high) { 
+    adj = 0-adj;
     if (_activations>0) _dma_full_resched++;
   }
 
   /* not much there upstream, so slow down */
-  else if (!busy && sent < dmal/8) {
-    adj = 0-ntickets()/8;
-    if (adj==0) adj=-1;
+  else if (!busy && sent < dma_thresh_low) {
+    adj = 0-adj;
     if (_activations>0) _q_empty_resched++;
   }
   
   /* handle burstiness */
-  else if (sent > dmal/2) {
-    adj = ntickets()/2;
-    if (adj<4) adj=4;
+  else if (sent > dma_thresh_high && !busy && 
+           _last_tx < dma_thresh_low && !_last_busy) {
+    adj *= 2;
     if (_activations>0) _q_burst_resched++;
   }
   
-  /* prevent backlog and also try to keep device occupied */
-  else if (sent > dmal/3) {
-    adj = ntickets()/8;
-    if (adj==0) adj=1;
+  /* prevent backlog and keep device running */
+  else if (sent > dmal/2) {
     if (_activations>0) _q_full_resched++;
   }
-
+  
+  else adj = 0;
+  
   adj_tickets(adj);
   _last_dma_length = queued_pkts;
   _last_tx = sent;
