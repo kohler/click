@@ -1,3 +1,7 @@
+2001-07-16 Monday 02:06  Eddie Kohler <kohler@aciri.org>
+
+	* lib/router.cc (1.97): nitlet with ports strings
+
 2001-07-14 Saturday 13:35  Eddie Kohler <kohler@aciri.org>
 
 	* DISTFILES (1.31), README (1.26), etc/samplellrpc/.cvsignore
