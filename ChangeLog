@@ -1,3 +1,12 @@
+2001-03-14 Wednesday 19:39  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/: binpackingsched.cc, binpackingsched.hh,
+	threadmonitor.cc: minor whitespace and debug output changes
+
+2001-03-14 Wednesday 19:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: check version numbers for texi2dvi and makeinfo
+
 2001-03-14 Wednesday 18:09  Benjie Chen <benjie@lcs.mit.edu>
 
 	* include/click/routerthread.hh, lib/routerthread.cc: crancked up
