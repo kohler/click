@@ -6,53 +6,98 @@
 CLICK_DECLS
 
 /*
- * =c
- * IPRouteTable
- * =s IP, classification
- * ip routing table super class
- * =d
- *
- * IPRouteTable defines the interface each IP routing table lookup
- * element must implement.
- *
- * IPRouteTable expects IP packets with dest IP addr annotations. for
- * each packet, it looks up the dest IP addr annotation in the routing
- * table, replaces the dest IP addr annotation with the new gateway,
- * and pushes the packet out on one of the outputs.
- *
- * Subclasses of IPRouteTable needs to implement four routines:
- * add_route, remove_route, lookup_route, and dump_routes. Replacing
- * annotation and pushing packets around are all taken care of by
- * IPRouteTable. the signatures for the routines that need to be
- * written are:
- *
- * void add_route(IPAddress dst, IPAddress mask, IPAddress gw, int port);
- * void remove_route(IPAddress dst, IPAddress mask);
- * int lookup_route(IPAddress dst, IPAddress &gw);  // returns port
- * String dump_routes();
- *
- * =h ctrl write
- * Take in changes to the routing table, in the format of 
- *
- *    add ip/mask [gw] output
- *    remove ip/mask
- *
- * for example,
- *
- *    add 18.26.4.0/24 18.26.4.1 0
- *
- * says all packets to 18.26.4.0/24 subnet should use gateway
- * 18.26.4.1, and go out on output port 0. and
- *
- *    remove 18.26.4.0/24
- *
- * removes the route.
- *
- * =h look read-only
- * Returns the contents of the routing table.
- *
- * =a StaticIPLookup, RadixIPLookup
- */
+=c
+
+IPRouteTable
+
+=s IP, classification
+
+IP routing table superclass
+
+=d
+
+IPRouteTable defines an interface useful for implementing IPv4 route lookup
+elements. It parses configuration strings -- see LinearIPLookup for an example
+-- and calls virtual functions to add the resulting routes. A default C<push>
+function uses those virtual functions to look up routes and output packets
+accordingly. There are also some functions useful for implementing handlers.
+
+These four IPRouteTable virtual functions should generally be overridden by
+particular routing table elements.
+
+=over 4
+
+=item C<int B<add_route>(IPAddress dst, IPAddress mask, IPAddress gw, int p, ErrorHandler *errh)>
+
+Adds a route sending packets with destination addresses matching C<dst/mask>
+to gateway C<gw>, via the element's output port C<p>. Any errors are reported
+to C<errh>. Should return 0 on success and negative on failure. The default
+implementation reports an error "cannot add routes to this routing table".
+
+=item C<int B<remove_route>(IPAddress dst, IPAddress mask, IPAddress gw, int p, ErrorHandler *errh)>
+
+Removes the route sending packets with destination addresses matching
+C<dst/mask> to gateway C<gw>, via the element's output port C<p>. Any errors
+are reported to C<errh>. Should return 0 on success and negative on failure.
+The default implementation reports an error "cannot delete routes from this
+routing table".
+
+=item C<int B<lookup_route>(IPAddress dst, IPAddress &gw_return) const>
+
+Looks up the route associated with address C<dst>. Should set C<gw_return> to
+the resulting gateway and return the relevant output port (or negative if
+there is no route). The default implementation returns -1.
+
+=item C<String B<dump_routes>() const>
+
+Returns a textual description of the current routing table. The default
+implementation returns an empty string.
+
+=back
+
+The following functions, overridden by IPRouteTable, are available for use by
+subclasses.
+
+=over 4
+
+=item C<int B<configure>(VectorE<lt>StringE<gt> &conf, ErrorHandler *)>
+
+The default implementation of B<configure> parses C<conf> as a list of routes,
+where each route is the space-separated list `C<address/mask [gateway]
+output>'. The routes are successively added to the element with B<add_route>.
+
+=item C<void B<push>(int port, Packet *p)>
+
+The default implementation of B<push> uses B<lookup_route> to perform IP
+routing lookup. Normally, subclasses implement their own B<push> methods,
+avoiding virtual function call overhead.
+
+=item C<static int B<add_route_handler>(const String &, Element *, void *, ErrorHandler *)>
+
+This write handler callback parses its input as an add-route request
+and calls B<add_route> with the results. Normally hooked up to the `C<add>'
+handler.
+
+=item C<static int B<remove_route_handler>(const String &, Element *, void *, ErrorHandler *)>
+
+This write handler callback parses its input as a remove-route request and
+calls B<remove_route> with the results. Normally hooked up to the `C<remove>'
+handler.
+
+=item C<static int B<ctrl_handler>(const String &, Element *, void *, ErrorHandler *)>
+
+This write handler callback function parses its input as a route control
+request and calls B<add_route> or B<remove_route> as directed. Normally hooked
+up to the `C<ctrl>' handler.
+
+=item C<static String B<table_handler>(Element *, void *)>
+
+This read handler callback function returns the element's routing table via
+the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
+
+=back
+
+=a StaticIPLookup, LinearIPLookup, RadixIPLookup */
 
 class IPRouteTable : public Element { public:
 
