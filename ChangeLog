@@ -1,3 +1,14 @@
+2003-04-25 Friday 14:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* include/click/.cvsignore (1.4), ns/.cvsignore (1.1),
+	tools/click-pretty/.cvsignore (1.1): Tell CVS to ignore some
+	generated files
+
+2003-04-25 Friday 14:41  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* tools/run-grid (1.19): Make run-grid slightly more friendly, e.g.
+	for MacOS X
+
 2003-04-25 Friday 11:40  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/userlevel/todevice.hh (1.24): Tell ToDevice.u that it
