@@ -116,6 +116,20 @@ ETXMetric::add_handlers()
   add_default_handlers(true);
 }
 
+unsigned char
+ETXMetric::scale_to_char(const metric_t &m) const
+{
+  if (!m.good() || m.val() > (0xff * 10))
+    return 0xff;
+  else
+    return m.val() / 10;
+}
+
+GridGenericMetric::metric_t
+ETXMetric::unscale_from_char(unsigned char c) const
+{
+  return metric_t(c * 10);
+}
 
 ELEMENT_PROVIDES(GridGenericMetric)
 EXPORT_ELEMENT(ETXMetric)
