@@ -916,6 +916,19 @@ Lexer::get_element(String name, int etype, const String &conf,
 
   int eid = _elements.size();
   _element_map.insert(name, eid);
+  
+  // check `name' for validity
+  for (int i = 0; i < name.length(); i++) {
+    bool ok = false;
+    for (; i < name.length() && name[i] != '/'; i++)
+      if (!isdigit(name[i]))
+	ok = true;
+    if (!ok) {
+      lerror("element name `%s' has all-digit component", name.cc());
+      break;
+    }
+  }
+  
   _element_names.push_back(name);
   _element_configurations.push_back(conf);
   _element_landmarks.push_back(lm ? lm : landmark());

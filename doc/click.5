@@ -612,7 +612,9 @@ Click identifiers are nonempty sequences of letters, numbers, underscores
 system uses `@' and `/' for special purposes: `@' in constructed names for
 anonymous elements and prefixes, and `/' in names for components of
 compound elements. Users are discouraged from using these characters in
-their own identifiers. Identifiers are case-sensitive.
+their own identifiers. Identifiers are case-sensitive. No component of an
+identifier may consist solely of numbers; for example, `1/x' is an illegal
+identifier.
 .PP
 The keywords `connectiontunnel', `elementclass' and `require' may not be
 used as identifiers. The normal identifiers `input' and `output' have

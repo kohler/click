@@ -485,6 +485,18 @@ int
 LexerT::make_element(String name, int ftype, const String &conf,
 		     const String &lm)
 {
+  // check `name' for validity
+  for (int i = 0; i < name.length(); i++) {
+    bool ok = false;
+    for (; i < name.length() && name[i] != '/'; i++)
+      if (!isdigit(name[i]))
+	ok = true;
+    if (!ok) {
+      lerror("element name `%s' has all-digit component", name.cc());
+      break;
+    }
+  }
+
   return _router->get_eindex(name, ftype, conf, lm ? lm : landmark());
 }
 
