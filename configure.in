@@ -297,6 +297,17 @@ ELEMENTS_ARG_ENABLE(test, [include regression test elements], no)
 elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
 AC_SUBST(elements_vpath)
 
+
+dnl
+dnl kernel features
+dnl
+
+AC_ARG_ENABLE(adaptive, [  --enable-adaptive       use adaptive scheduler to flexibly arbitrate between    
+                          Click and the kernel (EXPERIMENTAL)], :, enable_adaptive=no)
+if test "x$enable_adaptive" = xyes; then
+    AC_DEFINE(HAVE_ADAPTIVE_SCHEDULER)
+fi
+
 AC_ARG_ENABLE(greedy, [  --enable-greedy         kernel module keeps CPU forever (requires SMP;
                           provides more predictable performance)], :, enable_greedy=no)
 if test "x$enable_greedy" = xyes; then
@@ -308,7 +319,7 @@ if test "x$enable_warp9" = xyes; then
     AC_DEFINE(CLICK_WARP9)
 fi
 
-AC_ARG_ENABLE(clickfs, [  --enable-clickfs        enable Click filesystem (instead of /proc)], :, enable_clickfs=no)
+AC_ARG_ENABLE(clickfs, [  --disable-clickfs       disable Click filesystem (use /proc instead)], :, enable_clickfs=yes)
 if test "x$enable_clickfs" = xyes; then
     AC_DEFINE(HAVE_CLICKFS)
     HAVE_CLICKFS=1

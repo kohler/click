@@ -27,6 +27,14 @@
 /* Define if your Linux kernel is running in SMP mode. */
 #undef __SMP__
 
+/* Define if Click should not give up processor to OS for more predictable
+   performance; use only if you have more than one processor! */
+#undef CLICK_GREEDY
+
+/* Define if Click should use an adaptive scheduler to share the CPU(s) more
+   fairly with the kernel. */
+#undef HAVE_ADAPTIVE_SCHEDULER
+
 /* Include integer type definitions. */
 #include <linux/types.h>
 typedef ptrdiff_t intptr_t;

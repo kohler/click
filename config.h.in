@@ -11,10 +11,6 @@
 /* Define if IPsec support is enabled. */
 #undef HAVE_IPSEC
 
-/* Define if Click should not give up processor to OS for more predictable
- * performance; use only if you have more than one processor! */
-#undef CLICK_GREEDY
-
 /* Define if PollDevice should run fast to get good benchmark numbers */
 #undef CLICK_WARP9
 
