@@ -237,10 +237,10 @@ Packet::expensive_uniqueify()
       p->copy_annotations(this);
       if (_nh.raw) {
 	p->_nh.raw = p->_data + network_header_offset();
-	p->_h_raw = p->_data + transport_header_offset();
+	p->_h.raw = p->_data + transport_header_offset();
       } else {
 	p->_nh.raw = 0;
-	p->_h_raw = 0;
+	p->_h.raw = 0;
       }
     } else {
       delete p;

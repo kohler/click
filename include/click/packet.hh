@@ -9,6 +9,8 @@
 class IP6Address;
 struct click_ip;
 struct click_ip6;
+struct click_tcp;
+struct click_udp;
 class WritablePacket;
 
 class Packet { public:
@@ -98,8 +100,12 @@ class Packet { public:
 
 #ifdef __KERNEL__	/* Linux kernel module */
   const unsigned char *transport_header() const	{ return skb()->h.raw; }
+  const click_tcp *tcp_header() const	{ return (click_tcp *)skb()->h.th; }
+  const click_udp *udp_header() const	{ return (click_udp *)skb()->h.uh; }
 #else			/* User-space and BSD kernel module */
-  const unsigned char *transport_header() const	{ return _h_raw; }
+  const unsigned char *transport_header() const	{ return _h.raw; }
+  const click_tcp *tcp_header() const	{ return _h.th; }
+  const click_udp *udp_header() const	{ return _h.uh; }
 #endif
   unsigned transport_header_offset() const;
 
@@ -213,11 +219,15 @@ class Packet { public:
   void (*_destructor)(unsigned char *, size_t);
   unsigned char _cb[48];
   union {
+    unsigned char *raw;
     click_ip *iph;
     click_ip6 *ip6h;
-    unsigned char *raw;
   } _nh;
-  unsigned char *_h_raw;
+  union {
+    unsigned char *raw;
+    click_tcp *th;
+    click_udp *uh;
+  } _h;
   PacketType _pkt_type;
   struct timeval _timestamp;
 #ifdef CLICK_BSDMODULE
@@ -254,13 +264,17 @@ class WritablePacket : public Packet { public:
   click_ip *ip_header() const		{ return (click_ip *)skb()->nh.iph; }
   click_ip6 *ip6_header() const         { return (click_ip6*)skb()->nh.ipv6h; }
   unsigned char *transport_header() const	{ return skb()->h.raw; }
+  click_tcp *tcp_header() const		{ return (click_tcp*)skb()->h.th; }
+  click_udp *udp_header() const		{ return (click_udp*)skb()->h.uh; }
 #else			/* User-space or BSD kernel module */
   unsigned char *data() const			{ return _data; }
   unsigned char *buffer_data() const		{ return _head; }
   unsigned char *network_header() const		{ return _nh.raw; }
   click_ip *ip_header() const			{ return _nh.iph; }
   click_ip6 *ip6_header() const                 { return _nh.ip6h; }
-  unsigned char *transport_header() const	{ return _h_raw; }
+  unsigned char *transport_header() const	{ return _h.raw; }
+  click_tcp *tcp_header() const			{ return _h.th; }
+  click_udp *udp_header() const			{ return _h.uh; }
 #endif
 
  private:
@@ -537,7 +551,7 @@ Packet::set_network_header(const unsigned char *h, unsigned len)
   skb()->h.raw = const_cast<unsigned char *>(h) + len;
 #else			/* User-space and BSD kernel module */
   _nh.raw = const_cast<unsigned char *>(h);
-  _h_raw = const_cast<unsigned char *>(h) + len;
+  _h.raw = const_cast<unsigned char *>(h) + len;
 #endif
 }
 
