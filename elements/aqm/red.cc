@@ -196,7 +196,8 @@ RED::push(int, Packet *packet)
   if (drop()) {
     packet->kill();
     _drops++;
-    click_chatter("RED drop");
+    if (_drops == 1)
+      click_chatter("RED drop");
   } else
     return output(0).push(packet);
 }
