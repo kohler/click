@@ -84,11 +84,11 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 	} else if (insn_name == "write" || insn_name == "write_skip" || insn_name == "call") {
 	    int insn = (insn_name == "write_skip" ? INSN_WRITE_SKIP : INSN_WRITE);
 	    if (words.size() == 2)
-		add_insn(insn, 0, words[1] + " ''");
-	    else if (words.size() == 3)
-		add_insn(insn, 0, words[1] + " " + words[2]);
+		add_insn(insn, 0, words[1] + " " + cp_unquote(words[2]));
+	    else if (words.size() > 2)
+		add_insn(insn, 0, cp_unspacevec(words.begin()+1, words.end()));
 	    else
-		errh->error("expected '%s ELEMENT.HANDLER [ARG]'", insn_name.cc());
+		errh->error("expected '%s ELEMENT.HANDLER [ARGS]'", insn_name.cc());
 
 	} else if (insn_name == "read" || insn_name == "print") {
 	    if (words.size() == 2)
@@ -140,34 +140,26 @@ DriverManager::initialize(ErrorHandler *errh)
     
     // process 'read' and 'write' instructions
     Element *e;
-    int hi;
     for (int i = 0; i < _insns.size(); i++) {
 	String text;
-	CpVaParseCmd command;
+	bool read;
 	switch (_insns[i]) {
 	  case INSN_WRITE:
 	  case INSN_WRITE_SKIP:
-	    command = cpWriteHandler;
+	    read = false;
 	    goto parse;
 	  case INSN_READ:
 #if CLICK_USERLEVEL || CLICK_TOOL
 	  case INSN_SAVE:
 	  case INSN_APPEND:
 #endif
-	    command = cpReadHandler;
+	    read = true;
 	    goto parse;
 	  parse:
-	    if (cp_va_space_parse(_args3[i], this, errh,
-				  command, "handler", &e, &hi,
-				  cpOptional,
-				  cpString, "data", &text,
-				  0) < 0)
-		_insns[i] = INSN_IGNORE;
-	    else {
+	    if (cp_handler(cp_pop_spacevec(_args3[i]), this, read, !read, &e, &_args2[i], errh))
 		_args[i] = e->eindex();
-		_args2[i] = hi;
-		_args3[i] = text;
-	    }
+	    else
+		_insns[i] = INSN_IGNORE;
 	    break;
 	}
     }

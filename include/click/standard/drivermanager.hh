@@ -59,16 +59,22 @@ first; then go to the next instruction.  Any driver stop is not consumed.
 Consume COUNT driver stop events, then go to the next instruction.  COUNT
 defaults to one.
 
-=item 'C<read> ELEMENT.HANDLER'
+=item 'C<read> HANDLER'
 
-Call ELEMENT's read handler named HANDLER and print the result.
+Call a read handler and print the result.  HANDLER will either be a global
+handler, such as 'C<config>', or an element handler, such as 'C<c.count>'.
 
-=item 'C<write> ELEMENT.HANDLER [DATA]'
+=item 'C<write> HANDLER [ARG]'
 
-Call ELEMENT's write handler named HANDLER, passing it the string DATA; then
-go to the next instruction. DATA defaults to the empty string.
+Call a write handler, passing it ARG; then go to the next instruction.  ARG, a
+string, is unquoted before being passed to HANDLER.
 
-=item 'C<write_skip> ELEMENT.HANDLER [DATA]'
+=item 'C<write> HANDLER ARG ARG...'
+
+Like 'C<write>', but pass the ARGs as is (without removing a level of
+quoting).
+
+=item 'C<write_skip> HANDLER [ARG]'
 
 Same as 'C<write>', except that this directive is skipped when there is
 another driver stop event pending.
@@ -79,14 +85,14 @@ The user level driver supports two additional instructions:
 
 =over 8
 
-=item 'C<save> ELEMENT.HANDLER FILE'
+=item 'C<save> HANDLER FILE'
 
-Call ELEMENT's read handler named HANDLER and save the result to FILE.  If
-FILE is 'C<->', writes the handler value to the standard output.
+Call a read handler and save the result to FILE.  If FILE is 'C<->', writes
+the handler value to the standard output.
 
-=item 'C<append> ELEMENT.HANDLER FILE'
+=item 'C<append> HANDLER FILE'
 
-Call ELEMENT's read handler named HANDLER and append the result to FILE.  If
+Call a read handler and append the result to FILE.  If
 FILE is 'C<->', writes the handler value to the standard output.
 
 =back
