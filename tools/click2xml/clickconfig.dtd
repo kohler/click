@@ -49,6 +49,7 @@ line NMTOKEN #IMPLIED>
 <!ATTLIST elementmap src CDATA #IMPLIED
 sourcedir CDATA #IMPLIED
 provides CDATA #IMPLIED
+drivers CDATA #IMPLIED
 dochref CDATA #IMPLIED
 webdoc CDATA #IMPLIED>
 

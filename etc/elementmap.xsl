@@ -26,6 +26,11 @@ SPAN.element { font-weight: bold; }
 
 <xsl:template match='click:elementmap' >
 
+<xsl:if test='@drivers'>
+  <p><i>Drivers: </i>
+  <xsl:value-of select='@drivers' /></p>
+</xsl:if>
+
 <xsl:if test='@provides'>
   <p><i>Provides: </i>
   <xsl:value-of select='@provides' /></p>

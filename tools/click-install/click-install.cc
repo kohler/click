@@ -194,7 +194,7 @@ compile_archive_packages(RouterT *r, ErrorHandler *errh)
     fclose(f);
     
     // run click-compile
-    String compile_command = click_compile_prog + " --target=" COMPILETARGET " --package=" + req + OBJSUFFIX " " + filename;
+    String compile_command = click_compile_prog + " --driver=" COMPILETARGET " --package=" + req + OBJSUFFIX " " + filename;
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
       cerrh.fatal("could not run '%s'", compile_command.cc());

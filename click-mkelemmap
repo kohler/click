@@ -329,6 +329,7 @@ Options:
   -f, --files FILE        Read header filenames, or an 'elements.conf' file,
                           from FILE.
   -r, --provide PROV      Record provisions PROV in output.
+  -t, --drivers DRIVERS   Record drivers DRIVERS in output.
       --dochref DOCSTR    Record documentation URL pattern DOCSTR in output.
   -p, --prefix PFX        Remove PFX from filenames in output.
   -I, --include DIR       Look for header files in DIR.
@@ -341,7 +342,7 @@ EOD;
 }
 
 undef $/;
-my(@files, @provides, $fn, $prefix, $any_files, $dochref, $sourcedir);
+my(@files, @provides, @drivers, $fn, $prefix, $any_files, $dochref, $sourcedir);
 $prefix = "";
 
 while (@ARGV) {
@@ -365,6 +366,11 @@ while (@ARGV) {
     } elsif (/^-r$/ || long_option_match($_, '--provide', 5)) {
 	die "not enough arguments" if !@ARGV;
 	push @provides, split(/\s+/, shift @ARGV);
+    } elsif (long_option_match($_, '--drivers', 4) && /^[^=]*=(.*)$/) {
+	push @drivers, split(/\s+/, $1);
+    } elsif (/^-t$/ || long_option_match($_, '--drivers', 4)) {
+	die "not enough arguments" if !@ARGV;
+	push @drivers, split(/\s+/, shift @ARGV);
     } elsif (long_option_match($_, '--include', 3) && /^[^=]*=(.*)$/) {
 	push @includes, $prefix . $1;
     } elsif (/^-I$/ || long_option_match($_, '--include', 3)) {
@@ -379,11 +385,11 @@ while (@ARGV) {
 	$sourcedir = xml_quote(shift @ARGV);
     } elsif (/^-s(.+)$/) {
 	$sourcedir = xml_quote($1);
-    } elsif ((long_option_match($_, '--dochref', 3) || long_option_match($_, '--webdoc', 3))
+    } elsif ((long_option_match($_, '--dochref', 4) || long_option_match($_, '--webdoc', 3))
 	     && /^[^=]*=(.*)$/) {
 	die "repeated --dochref" if defined($dochref);
 	$dochref = $1;
-    } elsif (long_option_match($_, '--dochref', 3) || long_option_match($_, '--webdoc', 3)) {
+    } elsif (long_option_match($_, '--dochref', 4) || long_option_match($_, '--webdoc', 3)) {
 	die "not enough arguments" if !@ARGV;
 	die "repeated --dochref" if defined($dochref);
 	$dochref = shift @ARGV;
@@ -415,6 +421,7 @@ print OUT "<elementmap xmlns=\"http://www.lcdf.org/click/xml/\"";
 print OUT " sourcedir=\"$sourcedir\"" if defined($sourcedir);
 print OUT " src=\"file://$sourcedir\"" if defined($sourcedir) && $sourcedir =~ m|^/|;
 print OUT " provides=\"", join(' ', @provides), "\"";
+print OUT " drivers=\"", join(' ', @drivers), "\"" if @drivers;
 print OUT " dochref=\"$dochref\"" if defined($dochref);
 print OUT ">\n";
 

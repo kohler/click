@@ -5,6 +5,7 @@
 #
 # Copyright (c) 1999 Massachusetts Institute of Technology
 # Copyright (c) 2001 International Computer Science Institute
+# Copyright (c) 2005 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -28,7 +29,7 @@ CLICK_VERSION=@CLICK_VERSION@
 
 # determine mode
 directory=.
-target=
+driver=
 package=NONE
 cflags=
 compileflag=-c
@@ -37,6 +38,12 @@ gpl=y
 while true; do
     bad=x
     case $1 in
+      -t|--dr|--dri|--driv|--drive|--driver)
+	driver=$2; shift 2;;
+      -t*)
+        driver=`echo "$1" | sed 's/^-t//'`; shift 1;;
+      --dr=*|--dri=*|--driv=*|--drive=*|--driver=*)
+	driver=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
       --de|--def|--defs)
 	echo @PCAP_INCLUDES@ -I$includedir
 	exit 0;;
@@ -48,14 +55,20 @@ while true; do
 	exit 0;;
       -d|--di|--dir|--dire|--direc|--direct|--directo|--director|--directory)
 	directory=$2; shift 2;;
+      -d*)
+	directory=`echo "$1" | sed 's/^-d//'`; shift 1;;
       --di=*|--dir=*|--dire=*|--direc=*|--direct=*|--directo=*|--director=*|--directory=*)
 	directory=`echo "$1" | sed 's/^[^=]*=//'`; shift 1;;
-      -t|--t|--ta|--tar|--targ|--targe|--target)
-	target=$2; shift 2;;
+      --t|--ta|--tar|--targ|--targe|--target)
+        echo "click-compile: '--target' is obsolete; change your script to use '--driver'" 1>&2
+	driver=$2; shift 2;;
       --t=*|--ta=*|--tar=*|--targ=*|--targe=*|--target=*)
-	target=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
+        echo "click-compile: '--target' is obsolete; change your script to use '--driver'" 1>&2
+	driver=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
       -p|--p|--pa|--pac|--pack|--packa|--packag|--package)
 	package=$2; shift 2;;
+      -p*)
+	package=`echo "$1" | sed 's/^-p//'`; shift 1;;
       --p=*|--pa=*|--pac=*|--pack=*|--packa=*|--packag=*|--package=*)
 	package=`echo "$1" | sed 's/[-a-z]*=//'`; shift 1;;
       -q|--q|--qu|--qui|--quie|--quiet)
@@ -67,13 +80,13 @@ while true; do
 'Click-compile' compiles a Click source file, or outputs any compiler options
 relevant for userlevel Click drivers.
 
-Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
+Usage: click-compile -t DRIVER [OPTIONS] SOURCEFILE...
 
 Options:
       --defs              Outputs preprocessor options for userlevel drivers.
       --libs              Outputs link options for userlevel drivers.
       --otherlibs         Like '--libs' minus the Click library.
-  -t, --target TARGET     Sets target to 'bsdmodule', 'linuxmodule',
+  -t, --driver DRIVER     Sets target driver to 'bsdmodule', 'linuxmodule',
                           'userlevel', 'ns', or 'tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
   -d, --directory DIR     Change to directory DIR.
@@ -160,7 +173,7 @@ elif test -z "$include_source"; then
 fi
 
 
-case $target in
+case $driver in
   u|us|use|user|userl|userle|userlev|userleve|userlevel)
     idefs="@DEFS@ -DCLICK_USERLEVEL"
     iincludes="${include_source} -I${includedir}"
@@ -169,7 +182,7 @@ case $target in
     icflags="@CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
-    target=userlevel;;
+    driver=userlevel;;
   k|ke|ker|kern|kerne|kernel|l|li|lin|linu|linux|linuxm|linuxmo|linuxmod|linuxmodu|linuxmodul|linuxmodule)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
     iincludes="${include_source} -I${includedir} -I${linuxdir}/include"
@@ -178,7 +191,7 @@ case $target in
     icflags="@CFLAGS_NDEBUG@ @DEPCFLAGS@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
-    target=linuxmodule;;
+    driver=linuxmodule;;
   b|bs|bsd|bsdm|bsdmo|bsdmod|bsdmodu|bsdmodul|bsdmodule)
     idefs="@DEFS@ -DCLICK_BSDMODULE"
     iincludes="-nostdinc ${include_source} -I${includedir}"
@@ -187,7 +200,7 @@ case $target in
     icflags="@CFLAGS_NDEBUG@ @DEPCFLAGS@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
-    target=bsdmodule;;
+    driver=bsdmodule;;
   ns|nsm|nsmo|nsmod|nsmodu|nsmodul|nsmodule)
     idefs="@DEFS@ -DCLICK_NS"
     iincludes="${include_source} -I${includedir}"
@@ -196,7 +209,7 @@ case $target in
     icflags="@CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
-    target=ns;;
+    driver=ns;;
   t|to|too|tool)
     idefs="@DEFS@ -DCLICK_TOOL"
     iincludes="${include_source} -I${includedir}"
@@ -205,11 +218,12 @@ case $target in
     icflags="@CFLAGS@ @DEPCFLAGS@"
     command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-$icppflags} ${CFLAGS-$icflags} $cflags $compileflag"
-    target=tool;;
+    driver=tool;;
   "")
-    echo "click-compile: you must specify a target" 1>&2; exit 1;;
+    echo "click-compile: you must specify a driver" 1>&2; exit 1;;
   *)
-    echo "click-compile: acceptable targets are \`linuxmodule', \`userlevel', and \`tool'" 1>&2; exit 1;;
+    echo "click-compile: acceptable drivers are 'userlevel', 'linuxmodule'," 1>&2
+    echo "click-compile:   'bsdmodule', and 'tool'" 1>&2; exit 1;;
 esac
 
 exec_command () {
@@ -244,9 +258,9 @@ if test "x$package" != "xNONE"; then
 	fi
 	files="$files $objfile"
     done
-    if test $target = linuxmodule; then
+    if test $driver = linuxmodule; then
 	vfile=kernelversion$$
-	test -f $vfile.c && echo "click-compile: A file \`$vfile.c' already exists in this directory!" 1>&2 && echo "click-compile: You must remove it, or run me somewhere else." 1>&2 && exit 1
+	test -f $vfile.c && echo "click-compile: A file '$vfile.c' already exists in this directory!" 1>&2 && echo "click-compile: You must remove it, or run me somewhere else." 1>&2 && exit 1
 	files="$files $vfile.o"
 	rmfiles="$rmfiles $vfile.o $vfile.c $vfile.d"
 	cat > $vfile.c <<EOF
@@ -266,10 +280,10 @@ EOF
 	exec_command $c_command_nowarn $vfile.c
 	exec_command "ld -r -o $package $cflags $files"
 	exit 0
-    elif test $target = userlevel -o $target = tool -o $target = ns; then
+    elif test $driver = userlevel -o $driver = tool -o $driver = ns; then
 	exec_command "${CXX-@CXX@} @LDMODULEFLAGS@ -o $package $cflags $files"
 	exit 0
-    elif test $target = bsdmodule; then
+    elif test $driver = bsdmodule; then
 	exec_command "ld -Bshareable -o $package $cflags $files"
 	exit 0
     fi

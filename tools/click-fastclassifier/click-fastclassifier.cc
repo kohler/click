@@ -677,7 +677,7 @@ compile_classifiers(RouterT *r, const String &package_name,
     
 	// compile kernel module
 	if (compile_kernel) {
-	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
+	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=kernel --package=" + package_name + ".ko " + cxx_filename;
 	    int compile_retval = system(compile_command.cc());
 	    if (compile_retval == 127)
 		errh->fatal("could not run '%s'", compile_command.cc());
@@ -689,7 +689,7 @@ compile_classifiers(RouterT *r, const String &package_name,
 
 	// compile userlevel
 	if (compile_user) {
-	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=user --package=" + package_name + ".uo " + cxx_filename;
+	    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=user --package=" + package_name + ".uo " + cxx_filename;
 	    int compile_retval = system(compile_command.cc());
 	    if (compile_retval == 127)
 		errh->fatal("could not run '%s'", compile_command.cc());

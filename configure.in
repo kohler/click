@@ -560,22 +560,22 @@ AC_CHECK_HEADERS(linux/if_tun.h net/if_tun.h)
 
 
 dnl
-dnl possible targets
+dnl possible drivers
 dnl
 
-POSSIBLE_TARGETS=
+POSSIBLE_DRIVERS=
 for i in bsdmodule exopc linuxmodule ns userlevel; do
-    test -f $srcdir/$i/Makefile.in && POSSIBLE_TARGETS="$POSSIBLE_TARGETS $i"
+    test -f $srcdir/$i/Makefile.in && POSSIBLE_DRIVERS="$POSSIBLE_DRIVERS $i"
 done
-AC_SUBST(POSSIBLE_TARGETS)
+AC_SUBST(POSSIBLE_DRIVERS)
 
 
 dnl
-dnl default targets
+dnl default drivers
 dnl
 
-TARGETS=
-AC_SUBST(TARGETS)
+DRIVERS=
+AC_SUBST(DRIVERS)
 
 OTHER_TARGETS=
 AC_SUBST(OTHER_TARGETS)
@@ -604,7 +604,7 @@ pcap.h and/or -lpcap not found; user-level driver can't steal packets.
 
 =========================================])
     fi
-    TARGETS="$TARGETS userlevel"
+    DRIVERS="$DRIVERS userlevel"
     AC_DEFINE(HAVE_USERLEVEL_DRIVER)
 fi
 
@@ -724,7 +724,7 @@ if test $ac_have_linux_kernel = y; then
     CPPFLAGS="$saveflags"
 
     if test $ac_cv_cxx_aware_system = yes; then
-	TARGETS="$TARGETS linuxmodule"
+	DRIVERS="$DRIVERS linuxmodule"
 	TOOL_TARGETS="$TOOL_TARGETS click-install"
 	AC_DEFINE(HAVE_LINUXMODULE_DRIVER)
     else
@@ -750,8 +750,8 @@ fi
 dnl check bsdmodule for BSD
 
 if test $ac_have_bsd_kernel = y; then
-    TARGETS="$TARGETS bsdmodule"
-    if echo "$TARGETS" | grep linuxmodule >/dev/null 2>&1; then :; else
+    DRIVERS="$DRIVERS bsdmodule"
+    if echo "$DRIVERS" | grep linuxmodule >/dev/null 2>&1; then :; else
 	TOOL_TARGETS="$TOOL_TARGETS click-install"
     fi
     AC_DEFINE(HAVE_BSDMODULE_DRIVER)
@@ -761,7 +761,7 @@ fi
 dnl check ns
 
 if test "x$enable_nsclick" = xyes; then
-    TARGETS="$TARGETS ns"
+    DRIVERS="$DRIVERS ns"
 fi
 
 
@@ -939,7 +939,7 @@ dnl Output
 dnl
 
 config_files="Makefile click-buildtool click-compile tools/Makefile tools/lib/Makefile doc/Makefile etc/libclick/Makefile"
-for ac_dir in $POSSIBLE_TARGETS; do
+for ac_dir in $POSSIBLE_DRIVERS; do
     config_files="$config_files $ac_dir/Makefile"
 done
 for ac_dir in $TOOLDIRS; do

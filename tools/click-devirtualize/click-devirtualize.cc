@@ -493,7 +493,7 @@ particular purpose.\n");
     
     // compile kernel module
     if (compile_kernel > 0) {
-      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=kernel --package=" + package_name + ".ko " + cxx_filename;
+      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=kernel --package=" + package_name + ".ko " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
 	errh->fatal("could not run '%s'", compile_command.cc());
@@ -505,7 +505,7 @@ particular purpose.\n");
     
     // compile userlevel
     if (compile_user > 0) {
-      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=user --package=" + package_name + ".uo " + cxx_filename;
+      String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=user --package=" + package_name + ".uo " + cxx_filename;
       int compile_retval = system(compile_command.cc());
       if (compile_retval == 127)
 	errh->fatal("could not run '%s'", compile_command.cc());

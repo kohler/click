@@ -35,9 +35,9 @@ bindir = @bindir@
 datadir = @datadir@
 clickdatadir = $(datadir)/click
 
-TARGETS = @TARGETS@
+DRIVERS = @DRIVERS@
 OTHER_TARGETS = @OTHER_TARGETS@
-ALL_TARGETS = $(TARGETS) $(OTHER_TARGETS)
+ALL_TARGETS = $(DRIVERS) $(OTHER_TARGETS)
 
 all: $(ALL_TARGETS) Makefile
 
@@ -102,11 +102,11 @@ uninstall-local-include:
 	cd $(srcdir)/include/clicknet; for i in *.h; do /bin/rm -f $(DESTDIR)$(netincludedir)/$$i; done
 
 elemlist elemlists:
-	@for d in $(TARGETS); do (cd $$d && $(MAKE) elemlist) || exit 1; done
+	@for d in $(DRIVERS); do (cd $$d && $(MAKE) elemlist) || exit 1; done
 
 MKELEMMAPFLAGS =
 elementmap.xml: click-buildtool $(srcdir)/click-mkelemmap always
-	echo $(TARGETS) @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(TARGETS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -p $(top_srcdir) -Iinclude -s "`cd $(top_srcdir) && pwd`" $(MKELEMMAPFLAGS) > elementmap.xml
+	echo $(DRIVERS) @element_groups@ $(EXTRA_PROVIDES) | $(top_builddir)/click-buildtool findelem -r "$(PROVISIONS) $(DRIVERS)" -p $(top_srcdir) | $(PERL) $(top_srcdir)/click-mkelemmap -r "$(PROVISIONS)" -t "$(DRIVERS)" -p $(top_srcdir) -Iinclude -s "`cd $(top_srcdir) && pwd`" $(MKELEMMAPFLAGS) > elementmap.xml
 always:
 	@:
 
@@ -137,10 +137,10 @@ check-filenames:
 	if test -z $$a; then echo OK; else echo "*** warning: duplicate object file names:"; echo "$$a"; fi
 
 clean:
-	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) clean); done
+	@-for d in @POSSIBLE_DRIVERS@ tools doc; do (cd $$d && $(MAKE) clean); done
 	-rm -f elementmap.xml conftest.*
 distclean:
-	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
+	@-for d in @POSSIBLE_DRIVERS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f Makefile config.status etc/libclick/Makefile
 	-rm -f include/click/config.h include/click/config-*.h include/click/pathvars.h
 	-rm -f config.cache config.log click-buildtool click-compile stamp-h

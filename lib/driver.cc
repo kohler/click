@@ -219,7 +219,7 @@ compile_archive_file(String package, const Vector<ArchiveElement> *archive, int 
     fclose(f);
   
     // run click-compile
-    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --target=" + target + " --package=" + package_file + " " + filename;
+    String compile_command = click_compile_prog + " --directory=" + tmpdir + " --driver=" + target + " --package=" + package_file + " " + filename;
     errh->message("%s", compile_command.cc());
     int compile_retval = system(compile_command.cc());
     if (compile_retval == 127)
