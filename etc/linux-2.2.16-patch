@@ -503,7 +503,7 @@ Index: net/netsyms.c
 
 Index: drivers/net/tulip.c
 --- drivers/net/tulip.c.orig	Tue Jul 25 18:09:58 2000
-+++ drivers/net/tulip.c	Tue Jul 25 18:10:56 2000
++++ drivers/net/tulip.c	Wed Jul 26 10:44:26 2000
 @@ -26,9 +26,6 @@
  
  /* A few user-configurable values. */
@@ -618,7 +618,7 @@ Index: drivers/net/tulip.c
  	/* Caution: the write order is important here, set the field
  	   with the ownership bits last. */
  
-@@ -2576,18 +2605,43 @@
+@@ -2576,18 +2605,35 @@
  		flag = 0xe0000000 | DESC_RING_WRAP;
  
  	tp->tx_ring[entry].length = cpu_to_le32(skb->len | flag);
@@ -643,16 +643,8 @@ Index: drivers/net/tulip.c
  }
  
 +/* polling extension - intr stats */
-+unsigned int otheri = 0;
 +unsigned int txdied = 0;
-+unsigned int rxdied = 0;
-+unsigned int txunderflow = 0;
 +unsigned int pollintr = 0;
-+unsigned int wastedintr = 0;
-+unsigned long tulip_intr_calls = 0;
-+unsigned long tulip_intr_pkts = 0;
-+unsigned long long tulip_intr_cycles = 0;
-+// #define TULIP_INTR_STATS 1
 +
 +static __inline__ unsigned long long
 +tulip_get_cycles(void)
@@ -669,7 +661,7 @@ Index: drivers/net/tulip.c
  /* The interrupt handler does all of the Rx thread work and cleans up
     after the Tx thread. */
  static void tulip_interrupt(int irq, void *dev_instance, struct pt_regs *regs)
-@@ -2597,13 +2651,17 @@
+@@ -2597,13 +2643,13 @@
  	long ioaddr = dev->base_addr;
  	int csr5;
  	int entry;
@@ -681,30 +673,16 @@ Index: drivers/net/tulip.c
  	int maxtx = TX_RING_SIZE;
  	int maxoi = TX_RING_SIZE;
 +	int first_time = 1;
-+#ifdef TULIP_INTR_STATS
-+    unsigned long p0;
-+    unsigned long long c0;
-+#endif
  
  #if defined(__i386__) && defined(SMP_CHECK)
  	if (test_and_set_bit(0, (void*)&dev->interrupt)) {
-@@ -2622,25 +2680,51 @@
- #endif
- 
- 	tp->nir++;
-+#ifdef TULIP_INTR_STATS
-+    c0 = tulip_get_cycles();
-+	p0 = tulip_intr_pkts;
-+#endif
+@@ -2625,22 +2671,37 @@
  
  	do {
  		csr5 = inl(ioaddr + CSR5);
 +		
 +		if ((csr5 & (NormalIntr|AbnormalIntr)) == 0) {
-+		    if (dev->polling > 0) {
-+			    wastedintr++; 
-+				goto out;
-+			}
++		    if (dev->polling > 0) goto out;
 +			if (first_time) goto out;
 +			else break;
 +		}
@@ -715,12 +693,8 @@ Index: drivers/net/tulip.c
 +		
 +		if (dev->polling > 0) {
 +			pollintr++;
-+			if (csr5 & RxDied) rxdied++;
 +			if (csr5 & TxDied) txdied++;
-+			if (csr5 & TxFIFOUnderflow) txunderflow++;
-+			if (csr5 & (TimerInt|AbnormalIntr)) otheri++;
-+			if ((csr5 & (TxDied|TimerInt|AbnormalIntr))==0)
-+				goto out;
++			if ((csr5 & (TxDied|TimerInt|AbnormalIntr))==0) goto out;
 +		}
  
  		if (tulip_debug > 4)
@@ -747,7 +721,7 @@ Index: drivers/net/tulip.c
  			unsigned int dirty_tx;
  
  			for (dirty_tx = tp->dirty_tx; tp->cur_tx - dirty_tx > 0;
-@@ -2705,14 +2789,15 @@
+@@ -2705,14 +2766,15 @@
  			}
  
  			tp->dirty_tx = dirty_tx;
@@ -771,7 +745,7 @@ Index: drivers/net/tulip.c
  		}
  
  		/* Log errors. */
-@@ -2731,8 +2816,11 @@
+@@ -2731,8 +2793,11 @@
  				outl(0, ioaddr + CSR1);
  			}
  			if (csr5 & RxDied) {		/* Missed a Rx frame. */
@@ -784,7 +758,7 @@ Index: drivers/net/tulip.c
  				outl(tp->csr6 | 0x2002, ioaddr + CSR6);
  			}
  			if (csr5 & (TPLnkPass | TPLnkFail | 0x08000000)) {
-@@ -2772,7 +2860,9 @@
+@@ -2772,7 +2837,9 @@
  		}
  	} while (1);
  
@@ -795,7 +769,7 @@ Index: drivers/net/tulip.c
  
  	/* check if we card is in suspend mode */
  	entry = tp->dirty_rx % RX_RING_SIZE;
-@@ -2790,14 +2880,23 @@
+@@ -2790,14 +2857,17 @@
  		}
  	}
  
@@ -810,26 +784,10 @@ Index: drivers/net/tulip.c
  			   dev->name, inl(ioaddr + CSR5));
  
 +out:
-+#ifdef TULIP_INTR_STATS
-+	if (tulip_intr_pkts > p0) {
-+	    tulip_intr_calls++;
-+	    tulip_intr_cycles += tulip_get_cycles() - c0;
-+	}
-+#endif
  #if defined(__i386__)
  	clear_bit(0, (void*)&dev->interrupt);
  #else
-@@ -2916,6 +3015,9 @@
- #endif
- 		}
- 		received++;
-+#ifdef TULIP_INTR_STATS
-+		tulip_intr_pkts++;
-+#endif
- 		entry = (++tp->cur_rx) % RX_RING_SIZE;
- 	}
- 
-@@ -2943,8 +3045,12 @@
+@@ -2943,8 +3013,12 @@
  	if (tp->chip_id == DC21040)
  		outl(0x00000004, ioaddr + CSR13);
  
@@ -844,7 +802,7 @@ Index: drivers/net/tulip.c
  
  	del_timer(&tp->timer);
  
-@@ -2987,9 +3093,14 @@
+@@ -2987,9 +3061,14 @@
  	struct tulip_private *tp = (struct tulip_private *)dev->priv;
  	long ioaddr = dev->base_addr;
  
@@ -862,7 +820,7 @@ Index: drivers/net/tulip.c
  	return &tp->stats;
  }
  
-@@ -3186,7 +3297,7 @@
+@@ -3186,7 +3265,7 @@
  			/* Same setup recently queued, we need not add it. */
  		} else {
  			unsigned long flags;
@@ -871,7 +829,7 @@ Index: drivers/net/tulip.c
  
  			save_flags(flags); cli();
  			entry = tp->cur_tx++ % TX_RING_SIZE;
-@@ -3197,7 +3308,12 @@
+@@ -3197,7 +3276,12 @@
  				tp->tx_ring[entry].length =
  					(entry == TX_RING_SIZE-1) ? cpu_to_le32(DESC_RING_WRAP) : 0;
  				tp->tx_ring[entry].buffer1 = 0;
@@ -884,7 +842,7 @@ Index: drivers/net/tulip.c
  				entry = tp->cur_tx++ % TX_RING_SIZE;
  			}
  
-@@ -3212,6 +3328,10 @@
+@@ -3212,6 +3296,10 @@
  				set_bit(0, (void*)&dev->tbusy);
  				tp->tx_full = 1;
  			}
@@ -895,7 +853,7 @@ Index: drivers/net/tulip.c
  			restore_flags(flags);
  			/* Trigger an immediate transmit demand. */
  			outl(0, ioaddr + CSR1);
-@@ -3356,3 +3476,334 @@
+@@ -3356,3 +3444,330 @@
   *  tab-width: 4
   * End:
   */
@@ -1078,12 +1036,8 @@ Index: drivers/net/tulip.c
 +void
 +tulip_print_stats(void)
 +{
-+  	printk("tulip - %d poll intrs, %d wasted: %d txdied %d rxdied %d txunderflow %d otherintr\n", pollintr, wastedintr, txdied, rxdied, txunderflow, otheri); 
-+	printk("tulip - %ld pkts, %ld intrs, 0x%x 0x%x cycles\n", 
-+		   tulip_intr_pkts,
-+		   tulip_intr_calls, 
-+		   *(((int *)&tulip_intr_cycles)+1),
-+		   *((int *)&tulip_intr_cycles));
++  	printk("tulip - %d interrupts in polling mode, tx died %d times.\n", 
++		   pollintr, txdied);
 +}
 +
 +
