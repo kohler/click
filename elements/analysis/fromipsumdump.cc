@@ -913,6 +913,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 		  case W_PROTO:
 		  case W_TCP_FLAGS:
 		  case W_LINK:
+		  case W_IP_TOS:
+		  case W_IP_TTL:
 		    u1 = GET1(data + pos);
 		    pos++;
 		    break;
@@ -977,6 +979,8 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_COUNT:
 	      case W_AGGREGATE:
 	      case W_TCP_WINDOW:
+	      case W_IP_TOS:
+	      case W_IP_TTL:
 		u1 = strtoul(data + pos, &next, 0);
 		pos = next - data;
 		break;
@@ -1173,6 +1177,16 @@ FromIPSummaryDump::read_packet(ErrorHandler *errh)
 	      case W_PROTO:
 		if (u1 <= 255)
 		    iph->ip_p = u1, ip_ok++;
+		break;
+
+	      case W_IP_TOS:
+		if (u1 <= 255)
+		    iph->ip_tos = u1, ip_ok++;
+		break;
+
+	      case W_IP_TTL:
+		if (u1 <= 255)
+		    iph->ip_ttl = u1, ip_ok++;
 		break;
 
 	      case W_IPID:

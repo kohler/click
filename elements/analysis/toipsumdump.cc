@@ -528,6 +528,14 @@ ToIPSummaryDump::summary(Packet *p, StringAccum &sa) const
 	    if (!iph) goto no_data;
 	    sa << IPAddress(iph->ip_dst);
 	    break;
+	  case W_IP_TOS:
+	    if (!iph) goto no_data;
+	    sa << iph->ip_tos;
+	    break;
+	  case W_IP_TTL:
+	    if (!iph) goto no_data;
+	    sa << iph->ip_ttl;
+	    break;
 	  case W_FRAG:
 	    if (!iph) goto no_data;
 	    sa << (IP_ISFRAG(iph) ? (IP_FIRSTFRAG(iph) ? 'F' : 'f') : '.');
@@ -880,6 +888,14 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	    if (iph)
 		v = iph->ip_dst.s_addr;
 	    goto output_4_net;
+	  case W_IP_TOS:
+	    if (iph)
+		v = iph->ip_tos;
+	    goto output_1;
+	  case W_IP_TTL:
+	    if (iph)
+		v = iph->ip_ttl;
+	    goto output_1;
 	  case W_FRAG:
 	    if (iph)
 		v = (IP_ISFRAG(iph) ? (IP_FIRSTFRAG(iph) ? 'F' : 'f') : '.');
@@ -965,14 +981,18 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 	      break;
 	  }
 	  case W_LENGTH:
-	    if (iph)
-		v = ntohs(iph->ip_len) + EXTRA_LENGTH_ANNO(p);
-	    else
+	    if (iph) {
+		v = ntohs(iph->ip_len);
+		if (v == 65535 && p->length() + EXTRA_LENGTH_ANNO(p) > v)
+		    v = p->length() + EXTRA_LENGTH_ANNO(p);
+	    } else
 		v = p->length() + EXTRA_LENGTH_ANNO(p);
 	    goto output_4_host;
 	  case W_PAYLOAD_LENGTH:
-	    v = EXTRA_LENGTH_ANNO(p);
 	    if (iph) {
+		v = ntohs(iph->ip_len);
+		if (v == 65535 && p->length() + EXTRA_LENGTH_ANNO(p) > v)
+		    v = p->length() + EXTRA_LENGTH_ANNO(p);
 		int32_t off = p->transport_header_offset();
 		if (tcph)
 		    off += (tcph->th_off << 2);
@@ -980,9 +1000,9 @@ ToIPSummaryDump::binary_summary(Packet *p, const click_ip *iph, const click_tcp 
 		    off += sizeof(click_udp);
 		else if (IP_FIRSTFRAG(iph) && (iph->ip_p == IP_PROTO_TCP || iph->ip_p == IP_PROTO_UDP))
 		    off = ntohs(iph->ip_len) + p->network_header_offset();
-		v += ntohs(iph->ip_len) + p->network_header_offset() - off;
+		v = ntohs(iph->ip_len) + p->network_header_offset() - off;
 	    } else
-		v += p->length();
+		v = p->length() + EXTRA_LENGTH_ANNO(p);
 	    goto output_4_host;
 	  case W_COUNT:
 	    v = 1 + EXTRA_PACKETS_ANNO(p);

@@ -45,10 +45,12 @@ contain those fields. Valid field names, with examples, are:
                 later frag), or '.' (not frag)
    ip_fragoff   IP fragmentation offset: '0', '0+' (suffix
                 '+' means MF is set; offset in bytes)
-   len          Packet length: '132'
-   proto        IP protocol: '10', or 'I' for ICMP, 'T' for
+   ip_len       IP length: '132'
+   ip_proto     IP protocol: '10', or 'I' for ICMP, 'T' for
                 TCP, 'U' for UDP
    ip_id        IP ID: '48759'
+   ip_tos       IP type of service: '29'
+   ip_ttl       IP time-to-live: '254'
    ip_opt       IP options (see below)
    sport        TCP/UDP source port: '22'
    dport        TCP/UDP destination port: '2943'
@@ -251,6 +253,8 @@ the 'C<!data>' line, as follows:
    ip_len           4    IP length field
    ip_proto         1    IP protocol
    ip_id            2    IP ID
+   ip_tos           1    IP TOS
+   ip_ttl           1    IP TTL
    ip_frag          1    fragment descriptor
                          ('F', 'f', or '.')
    ip_fragoff       2    IP fragment offset field
