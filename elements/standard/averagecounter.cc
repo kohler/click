@@ -78,7 +78,7 @@ void
 AverageCounter::add_handlers()
 {
   add_read_handler("count", averagecounter_read_count_handler, 0);
-  add_read_handler("average", averagecounter_read_rate_handler, 0);
+  add_read_handler("rate", averagecounter_read_rate_handler, 0);
   add_write_handler("reset", averagecounter_reset_write_handler, 0);
 }
 
