@@ -296,25 +296,26 @@ close OUT;
 close TMP;
 
 # 8. create doc.tar.gz
-mysystem("cp -r $WEBDIR/doc /tmp/%click-webdoc/click-doc-$VERSION");
-mysystem("rm -rf /tmp/%click-webdoc/click-doc-$VERSION/CVS");
-mysystem("cp $WEBDIR/_.gif /tmp/%click-webdoc/click-doc-$VERSION");
-mysystem("cp $WEBDIR/el_*.gif /tmp/%click-webdoc/click-doc-$VERSION");
+$DOCDIR = "/tmp/%click-webdoc/click-doc-$VERSION";
+mysystem("rm -rf $DOCDIR && mkdir $DOCDIR");
+mysystem("cp $WEBDIR/doc/*.css $DOCDIR");
+mysystem("cp $WEBDIR/_.gif $DOCDIR");
+mysystem("cp $WEBDIR/el_*.gif $DOCDIR");
 
-opendir(DIR, "/tmp/%click-webdoc/click-doc-$VERSION") || die;
+opendir(DIR, "$WEBDIR/doc") || die;
 my(@htmlfiles) = grep { /\.html$/ } readdir(DIR);
 closedir(DIR);
 
 undef $/;
 foreach $f (@htmlfiles) {
-    open(IN, "+</tmp/%click-webdoc/click-doc-$VERSION/$f");
+    open(IN, "$WEBDIR/doc/$f");
     $_ = <IN>;
-    seek(IN, 0, 0);
-    truncate(IN, 0) || die;
+    close IN;
+    open(OUT, ">$DOCDIR/$f");
     s{src='\.\./}{src='}g;
     s{href='\.\./?'}{href='http://www.pdos.lcs.mit.edu/click/'}g;
-    print IN;
-    close IN;
+    print OUT;
+    close OUT;
 }
 
 mysystem("cd /tmp/%click-webdoc && gtar czf click-doc-$VERSION.tar.gz click-doc-$VERSION");
