@@ -32,23 +32,34 @@ CLICK_DECLS
 
 #define DEBUG_RT_SCHED		0
 
-#ifdef CLICK_NS
-#define DRIVER_TASKS_PER_ITER	256
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+# define DRIVER_TASKS_PER_ITER	64
+#elif defined(CLICK_NS)
+# define DRIVER_TASKS_PER_ITER	256
 #else
-#define DRIVER_TASKS_PER_ITER	128
+# define DRIVER_TASKS_PER_ITER	128
 #endif
 #define PROFILE_ELEMENT		20
 
 #ifdef CLICK_NS
-#define DRIVER_ITER_ANY		1
-#define DRIVER_ITER_TIMERS	1
+# define DRIVER_ITER_ANY	1
+# define DRIVER_ITER_TIMERS	1
 #else
-#define DRIVER_ITER_ANY		32
-#define DRIVER_ITER_TIMERS	32
+# define DRIVER_ITER_ANY	32
+# define DRIVER_ITER_TIMERS	32
 #endif
-#define DRIVER_ITER_SELECT	64
-#define DRIVER_ITER_LINUXSCHED	256
-#define DRIVER_ITER_BSDSCHED	256
+#ifdef CLICK_USERLEVEL
+# define DRIVER_ITER_OS		64	/* iterations per select() */
+#else
+# define DRIVER_ITER_OS		256	/* iterations per OS schedule() */
+#endif
+
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+# define DRIVER_TOTAL_TICKETS	128	/* # tickets shared between clients */
+# define DRIVER_GLOBAL_STRIDE	(Task::STRIDE1 / DRIVER_TOTAL_TICKETS)
+# define DRIVER_QUANTUM		8	/* # microseconds per stride */
+# define DRIVER_RESTRIDE_INTERVAL 80	/* microseconds between restrides */
+#endif
 
 
 RouterThread::RouterThread(Router *r)
@@ -57,6 +68,11 @@ RouterThread::RouterThread(Router *r)
     _prev = _next = _thread = this;
 #ifdef CLICK_BSDMODULE
     _wakeup_list = 0;
+#endif
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+    _max_click_fraction = 80 * Task::MAX_UTILIZATION / 100;
+    _min_click_fraction = Task::MAX_UTILIZATION / 200;
+    _cur_click_fraction = 0;	// because we aren't yet running
 #endif
     _task_lock_waiting = 0;
     _pending = 0;
@@ -104,10 +120,110 @@ RouterThread::nice_lock_tasks()
 }
 
 
-/*******************/
-/* The driver loop */
-/*                 */
-/*******************/
+/******************************/
+/* Adaptive scheduler         */
+/******************************/
+
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+
+void
+RouterThread::set_click_fraction(unsigned min_frac, unsigned max_frac)
+{
+    if (min_frac == 0)
+	min_frac = 1;
+    if (min_frac > MAX_UTILIZATION - 1)
+	min_frac = MAX_UTILIZATION - 1;
+    if (max_frac > MAX_UTILIZATION - 1)
+	max_frac = MAX_UTILIZATION - 1;
+    if (max_frac < min_frac)
+	max_frac = min_frac;
+    _min_click_fraction = min_frac;
+    _max_click_fraction = max_frac;
+}
+
+void
+RouterThread::client_set_tickets(int client, int new_tickets)
+{
+    Client &c = _clients[client];
+
+    // pin 'tickets' in a reasonable range
+    if (new_tickets < 1)
+	new_tickets = 1;
+    else if (new_tickets > Task::MAX_TICKETS)
+	new_tickets = Task::MAX_TICKETS;
+    unsigned new_stride = Task::STRIDE1 / new_tickets;
+    assert(new_stride < Task::MAX_STRIDE);
+
+    // calculate new pass, based possibly on old pass
+    // start with a full stride on initialization (c.tickets == 0)
+    if (c.tickets == 0)
+	c.pass = _global_pass + new_stride;
+    else {
+	int delta = (c.pass - _global_pass) * new_stride / c.stride;
+	c.pass = _global_pass + delta;
+    }
+
+    c.tickets = new_tickets;
+    c.stride = new_stride;
+}
+
+inline void
+RouterThread::client_update_pass(int client, const struct timeval &t_before, const struct timeval &t_after)
+{
+    Client &c = _clients[client];
+    int elapsed = (1000000 * (t_after.tv_sec - t_before.tv_sec)) + (t_after.tv_usec - t_before.tv_usec);
+    if (elapsed > 0)
+	c.pass += (c.stride * elapsed) / DRIVER_QUANTUM;
+    else
+	c.pass += c.stride;
+}
+
+inline void
+RouterThread::check_restride(struct timeval &t_before, const struct timeval &t_now, int &restride_iter)
+{
+    int elapsed = (1000000 * (t_now.tv_sec - t_before.tv_sec)) + (t_now.tv_usec - t_before.tv_usec);
+    if (elapsed > DRIVER_RESTRIDE_INTERVAL || elapsed < 0) {
+	// mark new measurement period
+	t_before = t_now;
+	
+	// reset passes every 10 _m_quanta, or if time moved backwards
+	if (++restride_iter == 10 || elapsed < 0) {
+	    _global_pass = _clients[C_CLICK].tickets = _clients[C_KERNEL].tickets = 0;
+	    restride_iter = 0;
+	} else
+	    _global_pass += (DRIVER_GLOBAL_STRIDE * elapsed) / DRIVER_QUANTUM;
+
+	// find out the maximum amount of work any task performed
+	int click_utilization = 0;
+	for (Task *t = scheduled_next(); t != this; t = t->scheduled_next()) {
+	    int u = t->utilization();
+	    t->clear_runs();
+	    if (u > click_utilization)
+		click_utilization = u;
+	}
+
+	// constrain to bounds
+	if (click_utilization < _min_click_fraction)
+	    click_utilization = _min_click_fraction;
+	if (click_utilization > _max_click_fraction)
+	    click_utilization = _max_click_fraction;
+
+	// set tickets
+	int click_tix = (DRIVER_TOTAL_TICKETS * click_utilization) / Task::MAX_UTILIZATION;
+	if (click_tix < 1)
+	    click_tix = 1;
+	client_set_tickets(C_CLICK, click_tix);
+	client_set_tickets(C_KERNEL, DRIVER_TOTAL_TICKETS - _clients[C_CLICK].tickets);
+	_cur_click_fraction = click_utilization;
+    }
+}
+
+#endif
+
+
+/******************************/
+/* The driver loop            */
+/******************************/
 
 /* Run at most 'ntasks' tasks. */
 inline void
@@ -116,11 +232,6 @@ RouterThread::run_tasks(int ntasks)
     // never run more than 32768 tasks
     if (ntasks > 32768)
 	ntasks = 32768;
-
-#if HAVE_ADAPTIVE_SCHEDULER
-    // how much work has Click successfully accomplished?
-    int work_done = 0;
-#endif
 
 #if __MTCLICK__
     // cycle counter for adaptive scheduling among processors
@@ -138,11 +249,7 @@ RouterThread::run_tasks(int ntasks)
 	t->fast_unschedule();
 #endif
 
-#if HAVE_ADAPTIVE_SCHEDULER
-	work_done += t->call_hook();
-#else
 	t->call_hook();
-#endif
 
 #if __MTCLICK__
 	if (runs > PROFILE_ELEMENT) {
@@ -153,9 +260,24 @@ RouterThread::run_tasks(int ntasks)
 
 	ntasks--;
     }
+}
 
-#if HAVE_ADAPTIVE_SCHEDULER
-    _task_work_done += work_done;
+inline void
+RouterThread::run_os()
+{
+#if CLICK_USERLEVEL
+    router()->run_selects(!empty());
+#elif !defined(CLICK_GREEDY)
+# if CLICK_LINUXMODULE			/* Linux kernel module */
+    schedule();
+# else					/* BSD kernel module */
+    extern int click_thread_priority;
+    int s = splhigh();
+    curproc->p_priority = curproc->p_usrpri = click_thread_priority;
+    setrunqueue(curproc);
+    mi_switch();
+    splx(s);
+# endif
 #endif
 }
 
@@ -164,16 +286,41 @@ RouterThread::driver()
 {
     const volatile int * const runcount = _router->driver_runcount_ptr();
     int iter = 0;
-  
-    nice_lock_tasks();
 
-# ifndef CLICK_NS
+    nice_lock_tasks();
+    
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+    int restride_iter = 0;
+    struct timeval t_before, restride_t_before, t_now;
+    client_set_tickets(C_CLICK, DRIVER_TOTAL_TICKETS / 2);
+    client_set_tickets(C_KERNEL, DRIVER_TOTAL_TICKETS / 2);
+    _cur_click_fraction = Task::MAX_UTILIZATION / 2;
+    click_gettimeofday(&restride_t_before);
+#endif
+
+#ifndef CLICK_NS
   driver_loop:
-# endif
+#endif
+
+#ifndef HAVE_ADAPTIVE_SCHEDULER
     // run a bunch of tasks
     run_tasks(DRIVER_TASKS_PER_ITER);
+#else
+    click_gettimeofday(&t_before);
+    int client;
+    if (PASS_GT(_clients[C_KERNEL].pass, _clients[C_CLICK].pass)) {
+	client = C_CLICK;
+	run_tasks(DRIVER_TASKS_PER_ITER);
+    } else {
+	client = C_KERNEL;
+	run_os();
+    }
+    click_gettimeofday(&t_now);
+    client_update_pass(client, t_before, t_now);
+    check_restride(restride_t_before, t_now, restride_iter);
+#endif
 
-# ifdef CLICK_BSDMODULE
+#ifdef CLICK_BSDMODULE
     // wake up tasks that went to sleep, waiting on packets
     if (_wakeup_list) {
 	int s = splimp();
@@ -184,7 +331,7 @@ RouterThread::driver()
 	}
 	splx(s);
     }
-# endif
+#endif
 
     if (*runcount > 0) {
 	// run task requests
@@ -197,59 +344,30 @@ RouterThread::driver()
 	    wait(iter);
     }
 
-# ifndef CLICK_NS
+#ifndef CLICK_NS
     // run loop again, unless driver is stopped
     if (*runcount > 0 || _router->check_driver())
 	goto driver_loop;
-# endif
+#endif
     
     unlock_tasks();
-}
 
-void
-RouterThread::driver_once()
-{
-    if (!_router->check_driver())
-	return;
-  
-    lock_tasks();
-    Task *t = scheduled_next();
-    if (t != this) {
-	t->fast_unschedule();
-	t->call_hook();
-    }
-    unlock_tasks();
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+    _cur_click_fraction = 0;
+#endif
 }
 
 void
 RouterThread::wait(int iter)
 {
+#ifndef HAVE_ADAPTIVE_SCHEDULER	/* Adaptive scheduler runs OS itself. */
     if (thread_id() == 0) {
 	unlock_tasks();
-#if CLICK_USERLEVEL
-	if (iter % DRIVER_ITER_SELECT == 0)
-	    router()->run_selects(!empty());
-#else
-# ifndef CLICK_GREEDY
-#  if defined(CLICK_LINUXMODULE)	/* Linux kernel module */
-	if (iter % DRIVER_ITER_LINUXSCHED == 0) 
-	    schedule();
-#  elif defined(CLICK_BSDMODULE)	/* BSD kernel module */
-	if (iter % DRIVER_ITER_BSDSCHED == 0) {
-	    extern int click_thread_priority;
-	    int s = splhigh();
-	    curproc->p_priority = curproc->p_usrpri = click_thread_priority;
-	    setrunqueue(curproc);
-	    mi_switch();
-	    splx(s);
-	}
-#  else
-#   error Compiling for unknown target.
-#  endif  /* CLICK_LINUXMODULE */
-# endif  /* CLICK_GREEDY */
-#endif  /* !CLICK_USERLEVEL */
+	if (iter % DRIVER_ITER_OS == 0)
+	    run_os();
 	nice_lock_tasks();
     }
+#endif
 
     if (iter % DRIVER_ITER_TIMERS == 0) {
 	router()->run_timers();
@@ -265,6 +383,26 @@ RouterThread::wait(int iter)
 	}
 #endif
     }
+}
+
+
+/******************************/
+/* Secondary driver functions */
+/******************************/
+
+void
+RouterThread::driver_once()
+{
+    if (!_router->check_driver())
+	return;
+  
+    lock_tasks();
+    Task *t = scheduled_next();
+    if (t != this) {
+	t->fast_unschedule();
+	t->call_hook();
+    }
+    unlock_tasks();
 }
 
 void

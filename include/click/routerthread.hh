@@ -29,6 +29,15 @@ class RouterThread : public Task { public:
 
     void unschedule_all_tasks();
 
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+    // min_click_fraction() and max_click_fraction() are expressed on a scale
+    // with Task::MAX_UTILIZATION == 100%.
+    unsigned min_click_fraction() const	{ return _min_click_fraction; }
+    unsigned max_click_fraction() const	{ return _max_click_fraction; }
+    unsigned cur_click_fraction() const	{ return _cur_click_fraction; }
+    void set_click_fraction(unsigned min_frac, unsigned max_frac);
+#endif
+
   private:
     
     Router *_router;
@@ -43,15 +52,19 @@ class RouterThread : public Task { public:
     Task *_wakeup_list;
 #endif
 
-#if HAVE_ADAPTIVE_SCHEDULER
-    struct Client {
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+    enum { C_CLICK, C_KERNEL, NCLIENTS };
+    struct Client {			// top-level stride clients
 	unsigned pass;
 	unsigned stride;
 	int tickets;
-	unsigned remain;
+	Client() : pass(0), tickets(0)	{ }
     };
-    enum { C_GLOBAL = 0, C_TASKS, C_LINUX, NCLIENTS };
     Client _clients[NCLIENTS];
+    unsigned _global_pass;		// global pass
+    unsigned _max_click_fraction;	// maximum acceptable Click fraction
+    unsigned _min_click_fraction;	// minimum acceptable Click fraction
+    unsigned _cur_click_fraction;	// current Click fraction
 #endif
 
     // called by Router
@@ -64,6 +77,12 @@ class RouterThread : public Task { public:
     // task running functions
     inline void nice_lock_tasks();
     inline void run_tasks(int ntasks);
+    inline void run_os();
+#ifdef HAVE_ADAPTIVE_SCHEDULER
+    void client_set_tickets(int client, int tickets);
+    inline void client_update_pass(int client, const struct timeval &before, const struct timeval &after);
+    inline void check_restride(struct timeval &before, const struct timeval &now, int &restride_iter);
+#endif
     void wait(int iter);
     
     friend class Task;
