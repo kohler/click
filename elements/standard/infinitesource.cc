@@ -126,7 +126,7 @@ InfiniteSource::pull(int)
 {
   if (!_active)
     return 0;
-  if (_limit >= 0 && _count + 1 >= _limit) {
+  if (_limit >= 0 && _count >= _limit) {
     if (_stop)
       router()->please_stop_driver();
     return 0;
