@@ -49,14 +49,14 @@ ARPTable::clone() const
 int
 ARPTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  if (cp_va_parse(conf, this, errh,
-		  cpKeywords, 
-		  0) < 0) {
-    return -1;
-  }
+  int res;
+  res = cp_va_parse(conf, this, errh,
+		    cpKeywords, 
+		    0);
 
-  return 0;
+  return res;
 }
+
 EtherAddress 
 ARPTable::lookup(IPAddress ip)
 {

@@ -29,6 +29,8 @@ RXStats::RXStats()
   : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
+  static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
+  _bcast = EtherAddress(bcast_addr);
 }
 
 RXStats::~RXStats()
@@ -59,21 +61,25 @@ RXStats::simple_action(Packet *p_in)
 {
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress src = EtherAddress(eh->ether_shost);
-  int rate = WIFI_RATE_ANNO(p_in);
-  int signal = WIFI_SIGNAL_ANNO(p_in);
-  int noise = WIFI_NOISE_ANNO(p_in);
-
-  DstInfo *nfo = _neighbors.findp(src);
-  if (!nfo) {
-    DstInfo foo = DstInfo(src);
-    _neighbors.insert(src, foo);
-    nfo = _neighbors.findp(src);
+  EtherAddress dst = EtherAddress(eh->ether_dhost);
+  /* ignore broadcast packets, they're all at 1Mb */
+  if (dst != _bcast) {
+    int rate = WIFI_RATE_ANNO(p_in);
+    int signal = WIFI_SIGNAL_ANNO(p_in);
+    int noise = WIFI_NOISE_ANNO(p_in);
+    
+    DstInfo *nfo = _neighbors.findp(src);
+    if (!nfo) {
+      DstInfo foo = DstInfo(src);
+      _neighbors.insert(src, foo);
+      nfo = _neighbors.findp(src);
+    }
+    
+    nfo->_rate = rate;
+    nfo->_signal = signal;
+    nfo->_noise = noise;
+    click_gettimeofday(&nfo->_last_received);
   }
-
-  nfo->_rate = rate;
-  nfo->_signal = signal;
-  nfo->_noise = noise;
-  click_gettimeofday(&nfo->_last_received);
 
   return p_in;
 }

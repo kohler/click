@@ -70,6 +70,7 @@ class RXStats : public Element { public:
   typedef NeighborTable::const_iterator NIter;
 
   class NeighborTable _neighbors;
+  EtherAddress _bcast;
 };
 
 CLICK_ENDDECLS

@@ -539,6 +539,7 @@ ESRCR::static_start(const String &arg, Element *e,
 void
 ESRCR::start(IPAddress dst) 
 {
+  click_chatter("write handler called with dst %s", dst.s().cc());
   start_query(dst);
 }
 

@@ -24,6 +24,7 @@
 #include <click/glue.hh>
 #include <elements/grid/linkstat.hh>
 #include <click/straccum.hh>
+#include <elements/grid/arptable.hh>
 #include <clicknet/ether.h>
 CLICK_DECLS
 
@@ -58,15 +59,9 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    "LS", cpElement, "LinkStat element", &_link_stat,
                     0);
 
-  if (!_arp_table || _arp_table->cast("ARPTable") != 0)
-    return errh->error("Incorrect ARPTable element specified");
-
-  if (!_link_table || _link_table->cast("LinkTable") != 0)
-    return errh->error("Incorrect LinkTable element specified");
-
-  if (_link_stat && _link_stat->cast("LinkStat") != 0)
-    return errh->error("Incorrect LinkStat element specified");
-  
+  if (res < 0) {
+    return res;
+  }
   return res;
 }
 
