@@ -58,7 +58,7 @@ Block::initialize(ErrorHandler *)
 void
 Block::push(int, Packet *packet)
 {
-  if(packet->siblings_anno() > _thresh)
+  if(_thresh != 0 && packet->siblings_anno() > _thresh)
     output(1).push(packet);
   else
     output(0).push(packet);

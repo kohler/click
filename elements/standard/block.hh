@@ -12,6 +12,8 @@
  * annotation is less or equal to THRESH, the packet is pushed on output 0,
  * otherwise on 1.
  *
+ * Is THRESH is 0 then all packets are pushed on output 0.
+ *
  * =e
  * = b :: Block(500);
  * = 
