@@ -1,3 +1,11 @@
+2003-07-27 Sunday 18:59  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: arptable.cc (1.4), arptable.hh (1.3),
+	linktable.cc (1.8), linktable.hh (1.8): move back to ip4 (doh!).
+	plus gateway fixes for ett.
+	
+	--jbicket
+
 2003-07-25 Friday 01:02  John Bicket <jbicket@mit.edu>
 
 	* elements/grid/: esrcr.cc (1.5), esrcr.hh (1.4), etx.cc (1.3),
