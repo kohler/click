@@ -29,10 +29,11 @@ class Strip : public Element {
   
   Strip *clone() const;
   int configure(const String &, ErrorHandler *);
-  
-  inline void smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+
+  Packet *simple_action(Packet *);
+  /* inline void smaction(Packet *);
+     void push(int, Packet *p);
+     Packet *pull(int); */
   
 };
 

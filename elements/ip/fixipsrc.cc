@@ -48,6 +48,25 @@ FixIPSrc::configure(const String &conf, ErrorHandler *errh)
   return 0;
 }
 
+Packet *
+FixIPSrc::simple_action(Packet *p)
+{
+  click_ip *ip = p->ip_header();
+  if(p->fix_ip_src_anno() && ip){
+    p->set_fix_ip_src_anno(0);
+    click_chatter("FixIPSrc changed %x to %x",
+                  ip->ip_src.s_addr,
+                  _my_ip.s_addr);
+    ip->ip_src = _my_ip;
+    int hlen = ip->ip_hl << 2;
+    ip->ip_sum = 0;
+    ip->ip_sum = in_cksum((unsigned char *)ip, hlen);
+  }
+
+  return(p);
+}
+
+#if 0
 inline Packet *
 FixIPSrc::smaction(Packet *p)
 {
@@ -81,5 +100,6 @@ FixIPSrc::pull(int)
     p = smaction(p);
   return(p);
 }
+#endif
 
 EXPORT_ELEMENT(FixIPSrc)

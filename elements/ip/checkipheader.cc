@@ -90,6 +90,64 @@ CheckIPHeader::configure(const String &conf, ErrorHandler *errh)
   return 0;
 }
 
+Packet *
+CheckIPHeader::simple_action(Packet *p)
+{
+  click_ip *ip = (click_ip *) p->data();
+  unsigned int src;
+  unsigned hlen;
+  
+  if(p->length() < sizeof(click_ip))
+    goto bad;
+  
+  if(ip->ip_v != 4)
+    goto bad;
+  
+  hlen = ip->ip_hl << 2;
+  if(hlen < sizeof(click_ip))
+    goto bad;
+  
+  if(hlen > p->length())
+    goto bad;
+  
+  if(in_cksum((unsigned char *)ip, hlen) != 0)
+    goto bad;
+  
+  if(ntohs(ip->ip_len) < hlen)
+    goto bad;
+
+  /*
+   * RFC1812 5.3.7 and 4.2.2.11: discard illegal source addresses.
+   * Configuration string should have listed all subnet
+   * broadcast addresses known to this router.
+   */
+  src = ip->ip_src.s_addr;
+  for(int i = 0; i < _n_bad_src; i++)
+    if(src == _bad_src[i])
+      goto bad;
+
+  /*
+   * RFC1812 4.2.3.1: discard illegal destinations.
+   * We now do this in the IP routing table.
+   */
+
+  p->set_ip_header(ip);
+  return(p);
+  
+ bad:
+  if (_drops == 0)
+    click_chatter("IP checksum failed");
+  _drops++;
+  
+  if (noutputs() == 2)
+    output(1).push(p);
+  else
+    p->kill();
+  
+  return 0;
+}
+
+#if 0 
 inline Packet *
 CheckIPHeader::smaction(Packet *p)
 {
@@ -162,6 +220,7 @@ CheckIPHeader::pull(int)
     p = smaction(p);
   return(p);
 }
+#endif
 
 static String
 CheckIPHeader_read_drops(Element *xf, void *)

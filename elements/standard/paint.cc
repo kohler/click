@@ -43,6 +43,14 @@ Paint::configure(const String &conf, ErrorHandler *errh)
 		     0);
 }
 
+Packet *
+Paint::simple_action(Packet *p)
+{
+  p->set_color_anno(_color);
+  return p;
+}
+
+/*
 inline void
 Paint::smaction(Packet *p)
 {
@@ -64,5 +72,6 @@ Paint::pull(int)
     smaction(p);
   return(p);
 }
+*/
 
 EXPORT_ELEMENT(Paint)

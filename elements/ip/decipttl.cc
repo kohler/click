@@ -51,6 +51,40 @@ DecIPTTL::clone() const
   return new DecIPTTL;
 }
 
+Packet *
+DecIPTTL::simple_action(Packet *p)
+{
+  click_ip *ip = p->ip_header();
+  assert(ip);
+  
+  if (ip->ip_ttl <= 1) {
+    _drops++;
+    if (noutputs() == 2)
+      output(1).push(p);
+    else
+      p->kill();
+    return 0;
+    
+  } else {
+    p = p->uniqueify();
+    ip = p->ip_header();
+    ip->ip_ttl--;
+    
+    // 19.Aug.1999 - incrementally update IP checksum as suggested by SOSP
+    // reviewers, according to RFC1141, as updated by RFC1624.
+    // new_sum = ~(~old_sum + ~old_halfword + new_halfword)
+    //         = ~(~old_sum + ~old_halfword + (old_halfword - 0x0100))
+    //         = ~(~old_sum + ~old_halfword + old_halfword + ~0x0100)
+    //         = ~(~old_sum + ~0 + ~0x0100)
+    //         = ~(~old_sum + 0xFEFF)
+    unsigned long sum = (~ntohs(ip->ip_sum) & 0xFFFF) + 0xFEFF;
+    ip->ip_sum = ~htons(sum + (sum >> 16));
+    
+    return p;
+  }
+}
+
+#if 0
 inline Packet *
 DecIPTTL::smaction(Packet *p)
 {
@@ -99,6 +133,7 @@ DecIPTTL::pull(int)
     p = smaction(p);
   return p;
 }
+#endif
 
 static String
 DecIPTTL_read_drops(Element *xf, void *)

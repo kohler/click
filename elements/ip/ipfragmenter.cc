@@ -92,12 +92,9 @@ IPFragmenter::optcopy(click_ip *ip1, click_ip *ip2)
   return(i2);
 }
 
-inline Packet *
-IPFragmenter::smaction(Packet *p)
+void
+IPFragmenter::fragment(Packet *p)
 {
-  if (p->length() <= _mtu)
-    return(p);
-
   click_ip *ip = p->ip_header();
   assert(ip);
   
@@ -115,7 +112,7 @@ IPFragmenter::smaction(Packet *p)
       output(1).push(p);
     else
       p->kill();
-    return 0;
+    return;
   }
 
   int olen = optcopy(ip, (click_ip *)0);
@@ -162,8 +159,16 @@ IPFragmenter::smaction(Packet *p)
   ip->ip_sum = 0;
   ip->ip_sum = in_cksum((unsigned char *) ip, hlen);
   p->set_ip_header(ip);
+  output(0).push(p);
+}
 
-  return(p);
+void
+IPFragmenter::push(int, Packet *p)
+{
+  if (p->length() <= _mtu)
+    output(0).push(p);
+  else
+    fragment(p);
 }
 
 static String
@@ -185,25 +190,6 @@ IPFragmenter::add_handlers(HandlerRegistry *fcr)
 {
   fcr->add_read("drops", IPFragmenter_read_drops, 0);
   fcr->add_read("fragments", IPFragmenter_read_fragments, 0);
-}
-
-
-void
-IPFragmenter::push(int, Packet *p)
-{
-  if (p->length() <= _mtu)
-    output(0).push(p);
-  else if ((p = smaction(p)) != 0)
-    output(0).push(p);
-}
-
-Packet *
-IPFragmenter::pull(int)
-{
-  Packet *p = input(0).pull();
-  if(p)
-    p = smaction(p);
-  return(p);
 }
 
 

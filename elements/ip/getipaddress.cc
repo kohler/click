@@ -38,6 +38,14 @@ GetIPAddress::configure(const String &conf, ErrorHandler *errh)
 		     0);
 }
 
+Packet *
+GetIPAddress::simple_action(Packet *p)
+{
+  p->set_dst_ip_anno(IPAddress(p->data() + _offset));
+  return p;
+}
+
+#if 0
 inline void
 GetIPAddress::smaction(Packet *p)
 {
@@ -59,5 +67,6 @@ GetIPAddress::pull(int)
     smaction(p);
   return(p);
 }
+#endif
 
 EXPORT_ELEMENT(GetIPAddress)

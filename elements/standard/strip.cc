@@ -41,7 +41,14 @@ Strip::configure(const String &conf, ErrorHandler *errh)
 		     0);
 }
 
-inline void
+Packet *
+Strip::simple_action(Packet *p)
+{
+  p->pull(_nbytes);
+  return p;
+}
+
+/* inline void
 Strip::smaction(Packet *p)
 {
   p->pull(_nbytes);
@@ -61,6 +68,6 @@ Strip::pull(int)
   if(p)
     smaction(p);
   return(p);
-}
+} */
 
 EXPORT_ELEMENT(Strip)

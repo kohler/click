@@ -25,10 +25,11 @@ class DropBroadcasts : public Element {
   void add_handlers(HandlerRegistry *);
 
   int drops() const { return(_drops); }
-  
-  inline Packet *smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+
+  Packet *simple_action(Packet *);
+  /* inline Packet *smaction(Packet *);
+     void push(int, Packet *p);
+     Packet *pull(int); */
 
 private:
   int _drops;

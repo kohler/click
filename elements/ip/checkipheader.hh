@@ -46,9 +46,10 @@ class CheckIPHeader : public Element {
   CheckIPHeader *clone() const;
   void add_handlers(HandlerRegistry *fcr);
 
-  inline Packet *smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+  Packet *simple_action(Packet *);
+  /* inline Packet *smaction(Packet *);
+     void push(int, Packet *p);
+     Packet *pull(int); */
 
 };
 

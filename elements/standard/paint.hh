@@ -23,10 +23,11 @@ class Paint : public Element {
   Processing default_processing() const	{ return AGNOSTIC; }
   Paint *clone() const;
   int configure(const String &, ErrorHandler *);
-  
-  inline void smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
+
+  Packet *simple_action(Packet *);
+  /*inline void smaction(Packet *);
+    void push(int, Packet *p);
+    Packet *pull(int);*/
   
 };
 

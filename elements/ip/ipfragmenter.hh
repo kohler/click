@@ -35,6 +35,9 @@ class IPFragmenter : public Element {
   unsigned _mtu;
   int _drops;
   int _fragments;
+
+  void fragment(Packet *);
+  int optcopy(click_ip *ip1, click_ip *ip2);
   
  public:
   
@@ -52,10 +55,7 @@ class IPFragmenter : public Element {
   IPFragmenter *clone() const;
   void add_handlers(HandlerRegistry *fcr);
 
-  inline Packet *smaction(Packet *);
-  void push(int, Packet *p);
-  Packet *pull(int);
-  int optcopy(click_ip *ip1, click_ip *ip2);
+  void push(int, Packet *);
   
 };
 
