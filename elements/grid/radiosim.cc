@@ -17,6 +17,7 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "elements/standard/scheduleinfo.hh"
+#include "elements/grid/filterbyrange.hh"
 
 RadioSim::RadioSim()
 {
@@ -31,6 +32,23 @@ RadioSim::clone() const
 int
 RadioSim::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
+  int i;
+
+  _nodes.clear();
+  for(i = 0; i < conf.size(); i++){
+    Vector<String> words;
+    cp_spacevec(conf[i], words);
+    if(words.size() != 2)
+      return errh->error("argument %d doesn't have lat and lon", i);
+    int xlat, xlon;
+    if(!cp_real(words[0], 5, &xlat) || !cp_real(words[1], 5, &xlon))
+      return errh->error("could not parse lat or lon from arg %d", i);
+    Node n;
+    n._lat = ((double)xlat) / 100000.0;
+    n._lon = ((double)xlon) / 100000.0;
+    _nodes.push_back(n);
+  }
+
   return 0;
 }
 
@@ -49,7 +67,19 @@ RadioSim::notify_ninputs(int n)
 int
 RadioSim::initialize(ErrorHandler *errh)
 {
+  int n, i;
+  
+  n = ninputs();
+  assert(n == noutputs());
+  for(i = _nodes.size(); i < n; i++){
+    Node no;
+    no._lat = 0;
+    no._lon = 0;
+    _nodes.push_back(no);
+  }
+
   ScheduleInfo::join_scheduler(this, errh);
+
   return 0;
 }
 
@@ -68,7 +98,12 @@ RadioSim::run_scheduled()
     Packet *p = input(in).pull();
     if(p){
       for(out = 0; out < noutputs(); out++){
-        output(out).push(p->clone());
+        grid_location g1 = grid_location(_nodes[in]._lat, _nodes[in]._lon);
+        grid_location g2 = grid_location(_nodes[out]._lat, _nodes[out]._lon);
+        double r = FilterByRange::calc_range(g1, g2);
+        if(r < 250){
+          output(out).push(p->clone());
+        }
       }
       p->kill();
     }
@@ -77,4 +112,76 @@ RadioSim::run_scheduled()
   reschedule();
 }
 
+grid_location
+RadioSim::get_node_loc(int i)
+{
+  if(i >= 0 && i < _nodes.size())
+    return(grid_location(_nodes[i]._lat, _nodes[i]._lon));
+  else
+    return(grid_location(0, 0));
+}
+
+void
+RadioSim::set_node_loc(int i, double lat, double lon)
+{
+  if(i >= 0 && i < _nodes.size()){
+    _nodes[i]._lat = lat;
+    _nodes[i]._lon = lon;
+  }
+}
+
+// Expects a line that looks like
+// node-index latitude longitude
+static int
+rs_write_handler(const String &arg, Element *element,
+		  void *, ErrorHandler *errh)
+{
+  RadioSim *l = (RadioSim *) element;
+  Vector<String> words;
+  cp_spacevec(arg, words);
+  int xi, xlat, xlon;
+  if(words.size() != 3 ||
+     !cp_integer(words[0], 10, &xi) ||
+     !cp_real(words[1], 5, &xlat) ||
+     !cp_real(words[2], 5, &xlon))
+    return errh->error("%s: expecting node-index lat lon", l->id().cc());
+  if(xi >= 0 && xi < l->nnodes()){
+    double lat = ((double)xlat) / 100000.0;
+    double lon = ((double)xlon) / 100000.0;
+    l->set_node_loc(xi, lat, lon);
+    return(0);
+  } else {
+    return errh->error("%s: illegal index %d", l->id().cc(), xi);
+  }
+}
+
+static String
+rs_read_handler(Element *f, void *)
+{
+  RadioSim *l = (RadioSim *) f;
+  String s;
+  int i, n;
+
+  n = l->nnodes();
+  for(i = 0; i < n; i++){
+    grid_location loc = l->get_node_loc(i);
+    const int BUFSZ = 255;
+    char buf[BUFSZ];
+    snprintf(buf, BUFSZ, "%d %f %f\n", i, loc.lat(), loc.lon());
+    s += buf;
+  }
+  return s;
+}
+
+void
+RadioSim::add_handlers()
+{
+  add_default_handlers(true);
+  add_write_handler("loc", rs_write_handler, (void *) 0);
+  add_read_handler("loc", rs_read_handler, (void *) 0);
+}
+
 EXPORT_ELEMENT(RadioSim)
+
+#include "vector.cc"
+template class Vector<RadioSim::Node>;

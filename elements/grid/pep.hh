@@ -10,9 +10,10 @@
  *
  * Produces packets with just the PEP payload. The Grid configuration
  * must arrange to encapsulate them appropriately. I expect this
- * means UDP/IP/Ether.
+ * means UDP/IP/Ether. Expects packets with just PEP payload.
  *
- * Also expects packets with just PEP payload.
+ * The status handler prints out node id, estimated position,
+ * and the table of nearby nodes with known locations.
  *
  * A node that knows its location originates a PEP "fix" every
  * second. Each fix update has a new sequence number.
@@ -74,9 +75,11 @@ public:
   int initialize(ErrorHandler *);
   virtual void *cast(const char *);
   void run_scheduled();
+  void add_handlers();
   Packet *simple_action(Packet *p);
   
   grid_location get_current_location(void);
+  String s();
 
   bool _debug;
   

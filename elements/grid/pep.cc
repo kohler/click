@@ -108,7 +108,8 @@ PEP::purge_old()
       _entries[i++] = _entries[j];
     } else {
       if(_debug)
-        click_chatter("PEP %s: purging old entry for %s (%d %d %d)",
+        click_chatter("PEP %s %s: purging old entry for %s (%d %d %d)",
+                      id().cc(),
                       _my_ip.s().cc(),
                       IPAddress(_entries[j]._fix.fix_id).s().cc(),
                       (int) _entries[j]._when.tv_sec,
@@ -215,7 +216,8 @@ PEP::findEntry(unsigned id, bool create)
 
   if(create){
     if(_debug)
-      click_chatter("PEP %s: new entry for %s",
+      click_chatter("PEP %s %s: new entry for %s",
+                    this->id().cc(),
                     _my_ip.s().cc(),
                     IPAddress(id).s().cc());
     i = _entries.size();
@@ -269,7 +271,8 @@ PEP::simple_action(Packet *p)
       _entries[j]._fix = f;
       _entries[j]._when = tv;
       if(_debug && f.fix_hops != oh)
-        click_chatter("PEP %s: updating %s, seq %d -> %d, hops %d -> %d, my pos %s",
+        click_chatter("PEP %s %s: updating %s, seq %d -> %d, hops %d -> %d, my pos %s",
+                      id().cc(),
                       _my_ip.s().cc(),
                       IPAddress(f.fix_id).s().cc(),
                       os,
@@ -314,6 +317,52 @@ PEP::get_current_location()
   return(grid_location(lat / weight, lon / weight));
 }
 
+static String
+pep_read_handler(Element *f, void *)
+{
+  PEP *l = (PEP *) f;
+  return(l->s());
+}
+
+String
+PEP::s()
+{
+  String s;
+  int i, n;
+  struct timeval now;
+
+  click_gettimeofday(&now);
+
+  if(_fixed){
+    s = _my_ip.s() + " " +
+      grid_location(_lat, _lon).s() + "\n";
+  } else {
+    s = _my_ip.s() + "\n";
+  }
+
+  s += get_current_location().s() + "\n";
+
+  n = _entries.size();
+  for(i = 0; i < n; i++){
+    pep_fix f = _entries[i]._fix;
+    char buf[512];
+    snprintf(buf, sizeof(buf), "%s seq=%d %s hops=%d age=%d\n",
+             IPAddress(f.fix_id).s().cc(),
+             f.fix_seq,
+             f.fix_loc.s().cc(),
+             f.fix_hops,
+             (int)(now.tv_sec - _entries[i]._when.tv_sec));
+    s += buf;
+  }
+  return s;
+}
+
+void
+PEP::add_handlers()
+{
+  add_default_handlers(true);
+  add_read_handler("status", pep_read_handler, (void *) 0);
+}
 
 EXPORT_ELEMENT(PEP)
 

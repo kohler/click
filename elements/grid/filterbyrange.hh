@@ -35,10 +35,11 @@ public:
   
   void push(int port, Packet *);
 
+  static double calc_range(grid_location l1, grid_location l2);
+
 private:
   LocationInfo *_locinfo;
   int _range; // in metres
-  static double calc_range(grid_location l1, grid_location l2);
 };
 
 #endif

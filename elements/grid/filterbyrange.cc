@@ -81,6 +81,7 @@ FilterByRange::push(int, Packet *p)
 
 #define sign(x) (((x) < 0) ? -1 : 1)
 
+// What is the distance getween l1 and l2 in meters?
 double
 FilterByRange::calc_range(grid_location l1, grid_location l2)
 {

@@ -248,7 +248,7 @@ ARPQuerier6::handle_ip6(Packet *p)
     ae->next = _map[bucket];
     _map[bucket] = ae;
     send_query_for(p->dst_ip6_anno().data());
-    unsigned  char *d = p->dst_ip6_anno().data();
+    //unsigned  char *d = p->dst_ip6_anno().data();
     //click_chatter("ARPQuerier6:: %x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x:%x%x", d[0], d[1], d[2], d[3],d[4], d[5],d[6], d[7],d[8], d[9],d[10], d[11],d[12], d[13],d[14], d[15]);
   }
 }

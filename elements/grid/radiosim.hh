@@ -3,18 +3,32 @@
 
 /*
  * =c
- * RadioSim()
+ * RadioSim([lat1 lon1, lat2 lon2, ...])
  * =s
  * duplicates packets
  * V<duplication>
  * =d
- * RadioSim sends a copy of each incoming packet out each output.
+ * RadioSim simulates reachability and broadcast in an 802.11-like
+ * radio network.
+ *
+ * Each corresponding input/output pair corresponds to one node.
+ * Each node has a latitude/longitude, given by the <i>th
+ * configuration argument.
+ *
+ * When node <i> sends a packet into RadioSim's input <i>,
+ * RadioSim sends a copy to each output whose node is
+ * within 250 meters of node <i>.
  *
  * Inputs are pull, outputs are push. Services inputs in round
  * robin order.
+ *
+ * The loc read/write handler format is
+ *   node-index latitude longitude
  */
 
 #include "element.hh"
+#include "vector.hh"
+#include "grid.hh"
 
 class RadioSim : public Element {
   
@@ -30,8 +44,21 @@ class RadioSim : public Element {
   int configure(const Vector<String> &, ErrorHandler *);
   int initialize(ErrorHandler *errh);
   void uninitialize();
+  void add_handlers();
 
   void run_scheduled();
+
+  grid_location get_node_loc(int i);
+  void set_node_loc(int i, double lat, double lon);
+  int nnodes() { return(_nodes.size()); }
+
+private:
+
+  struct Node {
+    double _lat;
+    double _lon;
+  };
+  Vector<Node> _nodes;
 };
 
 #endif
