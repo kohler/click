@@ -64,6 +64,7 @@ class KernelHandlerProxy : public HandlerProxy { public:
   int check_handler(const String &, bool write, ErrorHandler *errh);
   
   void add_handlers();
+  int llrpc(unsigned, void *);
 
  private:
 

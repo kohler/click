@@ -128,6 +128,8 @@ handlers or nonexistent handlers.
 
 Checks whether a I<handler> exists and is writable.
 
+=item LLRPC I<element>#I<llrpc> [I<n>]
+
 =item QUIT
 
 Close the connection.
@@ -190,6 +192,7 @@ class ControlSocket : public Element { public:
     CSERR_NO_SUCH_HANDLER	= HandlerProxy::CSERR_NO_SUCH_HANDLER, // 511
     CSERR_HANDLER_ERROR		= HandlerProxy::CSERR_HANDLER_ERROR,   // 520
     CSERR_DATA_TOO_BIG		= 521,
+    CSERR_LLRPC_ERROR		= 522,
     CSERR_PERMISSION		= HandlerProxy::CSERR_PERMISSION,      // 530
     CSERR_NO_ROUTER		= HandlerProxy::CSERR_NO_ROUTER,       // 540
     CSERR_UNSPECIFIED		= HandlerProxy::CSERR_UNSPECIFIED      // 590
@@ -233,6 +236,7 @@ class ControlSocket : public Element { public:
   int read_command(int fd, const String &);
   int write_command(int fd, const String &, const String &);
   int check_command(int fd, const String &, bool write);
+  int llrpc_command(int fd, const String &, String);
   int parse_command(int fd, const String &);
   void flush_write(int fd);
 

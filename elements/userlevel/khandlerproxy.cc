@@ -21,6 +21,7 @@
 #include <click/router.hh>
 #include <click/confparse.hh>
 #include <click/userutils.hh>
+#include <click/llrpc.h>
 #include <unistd.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -238,6 +239,35 @@ KernelHandlerProxy::write_handler(const String &str, Element *e, void *thunk, Er
     return -err;
   } else
     return 0;
+}
+
+int
+KernelHandlerProxy::llrpc(unsigned command, void *data)
+{
+  if (command == CLICK_LLRPC_PROXY) {
+    click_llrpc_proxy_st *proxy = static_cast<click_llrpc_proxy_st *>(data);
+    const Router::Handler *h = router()->handler(proxy->proxied_handler_index);
+    
+    String fn = handler_name_to_file_name(h->name());
+    int fd = open(fn.c_str(), O_RDONLY);
+    int err = errno;
+    
+    if (fd < 0) {
+      if (_verbose)
+	complain_about_open(ErrorHandler::default_handler(), h->name(), err);
+      // complain to error receivers and return
+      return complain_about_open(0, h->name(), err);
+    }
+
+    click_chatter("about to %x on %s", proxy->proxied_command, fn.c_str());
+    int retval = ioctl(fd, proxy->proxied_command, proxy->proxied_data);
+    err = errno;
+
+    close(fd);
+    return (retval >= 0 ? retval : -err);
+    
+  } else
+    return Element::llrpc(command, data);
 }
 
 CLICK_ENDDECLS

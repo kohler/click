@@ -209,8 +209,7 @@ ControlSocket::initialize(ErrorHandler *errh)
 {
   // check for a full proxy
   if (_proxy)
-    if (void *v = _proxy->cast("HandlerProxy"))
-      _full_proxy = (HandlerProxy *)v;
+    _full_proxy = static_cast<HandlerProxy *>(_proxy->cast("HandlerProxy"));
   
   // ask the proxy to send us errors
   if (_full_proxy)
@@ -499,6 +498,72 @@ ControlSocket::check_command(int fd, const String &hname, bool write)
 }
 
 int
+ControlSocket::llrpc_command(int fd, const String &llrpcname, String data)
+{
+  int octothorp = llrpcname.find_left('#');
+  bool portable = (octothorp >= 0 && octothorp + 1 < llrpcname.length() && llrpcname[octothorp + 1] == '#');
+  int post_octothorp = octothorp + (portable ? 2 : 1);
+  uint32_t command;
+  if (octothorp < 0 || !cp_unsigned(llrpcname.substring(post_octothorp), 16, &command))
+    return message(fd, CSERR_SYNTAX, "Syntax error in LLRPC name `" + llrpcname + "'");
+  // transform net LLRPC id into host LLRPC id if required
+  if (portable)
+    command = CLICK_NTOH_LLRPC(command);
+  
+  Element *e;
+  int hid = parse_handler(fd, llrpcname.substring(0, octothorp) + ".name", &e);
+  if (hid < 0)
+    return hid;
+
+  int size = _CLICK_IOC_SIZE(command);
+  if (!size || !(command & (_CLICK_IOC_IN | _CLICK_IOC_OUT)))
+    return message(fd, CSERR_UNIMPLEMENTED, "Cannot call LLRPC `" + llrpcname + "' remotely");
+
+  if (_read_only)		// can't tell whether an LLRPC is read-only;
+    				// so disallow them all
+    return message(fd, CSERR_PERMISSION, "Permission denied for `" + llrpcname + "'");
+
+  if ((command & _CLICK_IOC_IN) && data.length() != size)
+    return message(fd, CSERR_LLRPC_ERROR, "LLRPC `" + llrpcname + "' requires " + String(size) + " bytes input data");
+  else if (command & _CLICK_IOC_OUT)
+    data = String::garbage_string(size);
+
+  // collect errors from proxy
+  ControlSocketErrorHandler errh;
+  _proxied_handler = llrpcname;
+  _proxied_errh = &errh;
+  
+  int retval;
+  if (_proxy) {
+    struct click_llrpc_proxy_st pst;
+    pst.proxied_handler_index = hid;
+    pst.proxied_command = command;
+    pst.proxied_data = data.mutable_data();
+    retval = _proxy->llrpc(CLICK_LLRPC_PROXY, &pst);
+  } else
+    retval = e->llrpc(command, data.mutable_data());
+  
+  // did we get an error message?
+  String msg;
+  if (retval < 0)
+    msg = "LLRPC `" + llrpcname + "' error: " + String(strerror(-retval));
+  else if (errh.nerrors() > 0)
+    msg = "LLRPC `" + llrpcname + "' error";
+  else
+    msg = "LLRPC `" + llrpcname + "' OK";
+  int code = (retval < 0 || errh.nerrors() > 0 ? CSERR_LLRPC_ERROR : CSERR_OK);
+  transfer_messages(fd, code, msg, &errh);
+
+  if (code == CSERR_OK) {
+    if (!(command & _CLICK_IOC_OUT))
+      data = String();
+    _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
+    _out_texts[fd] += data;
+  }
+  return 0;
+}
+
+int
 ControlSocket::parse_command(int fd, const String &line)
 {
   // split `line' into words; don't use cp_ functions since they strip comments
@@ -557,7 +622,23 @@ ControlSocket::parse_command(int fd, const String &line)
     if (words.size() != 2)
       return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
     return check_command(fd, words[1], true);
-    
+
+  } else if (command == "LLRPC") {
+    if (words.size() != 2 && words.size() != 3)
+      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
+    int datalen = 0;
+    if (words.size() == 3 && (!cp_integer(words[2], &datalen) || datalen < 0))
+      return message(fd, CSERR_SYNTAX, "Syntax error in `llrpc'");
+    if (_in_texts[fd].length() < datalen) {
+      if (_flags[fd] & READ_CLOSED)
+	return message(fd, CSERR_SYNTAX, "Not enough data");
+      else			// retry
+	return 1;
+    }
+    String data = _in_texts[fd].substring(0, datalen);
+    _in_texts[fd] = _in_texts[fd].substring(datalen);
+    return llrpc_command(fd, words[1], data);
+
   } else if (command == "CLOSE" || command == "QUIT") {
     if (words.size() != 1)
       message(fd, CSERR_SYNTAX, "Bad command syntax");

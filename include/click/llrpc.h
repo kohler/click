@@ -4,27 +4,29 @@
 # include <linux/errno.h>
 # include <linux/ioctl.h>
 #else
-# ifdef __cplusplus
-#  include <cerrno>
-# else
-#  include <errno.h>
-# endif
+# include <errno.h>
 # include <sys/ioctl.h>
 #endif
 
 /* Click low-level RPC interface */
 
-/* Ioctl numbers are not consistent across platforms. */
-#ifdef __linux__
+/* Ioctl numbers are not consistent across platforms unless you #define
+   HAVE_PORTABLE_LLRPC. */
+#define _CLICK_NET_IOC_VOID	0x20000000
+#define _CLICK_NET_IOC_OUT	0x40000000
+#define _CLICK_NET_IOC_IN	0x80000000
+#if HAVE_PORTABLE_LLRPC || !defined(__linux__)
+# define _CLICK_IOC_VOID	_CLICK_NET_IOC_VOID
+# define _CLICK_IOC_OUT		_CLICK_NET_IOC_OUT
+# define _CLICK_IOC_IN		_CLICK_NET_IOC_IN
+#else
 # define _CLICK_IOC_VOID	(_IOC_NONE << _IOC_DIRSHIFT)
 # define _CLICK_IOC_OUT		(_IOC_READ << _IOC_DIRSHIFT)
 # define _CLICK_IOC_IN		(_IOC_WRITE << _IOC_DIRSHIFT)
-#else
-# define _CLICK_IOC_VOID	0x20000000
-# define _CLICK_IOC_OUT		0x40000000
-# define _CLICK_IOC_IN		0x80000000
 #endif
+#define _CLICK_IOC_BASE_MASK	0x0FFFFFFF
 #define _CLICK_IOC_SAFE		0x00008000
+#define _CLICK_IOC_SIZE(io)	((io) >> 16 & 0xFFF)
 
 /* _CLICK_IO[S]: data transfer direction unknown, pass pointer unchanged;
    _CLICK_IOR[S]: data of specified size sent from kernel to user;
@@ -47,19 +49,26 @@
 #define _CLICK_IOWS(n, sz)	_CLICK_IOXS(_CLICK_IOC_IN, (n), (sz))
 #define _CLICK_IOWRS(n, sz)	_CLICK_IOXS(_CLICK_IOC_IN|_CLICK_IOC_OUT, (n), (sz))
 
-#define CLICK_LLRPC_GET_RATE			_CLICK_IOWRS(0, 4)
-#define CLICK_LLRPC_GET_RATES			_CLICK_IOS(1)
-#define CLICK_LLRPC_GET_COUNT			_CLICK_IOWRS(2, 4)
-#define CLICK_LLRPC_GET_COUNTS			_CLICK_IOS(3)
-#define CLICK_LLRPC_GET_SWITCH			_CLICK_IORS(4, 4)
-#define CLICK_LLRPC_SET_SWITCH			_CLICK_IOW(5, 4)
-#define CLICK_LLRPC_MAP_IPADDRESS		_CLICK_IOWR(6, 4)
-#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWRS(7, 12)
-#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWRS(8, 12)
-#define CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG	_CLICK_IO(9)
-#define CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG	_CLICK_IO(10)
-#define CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG	_CLICK_IO(11)
-#define CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL	_CLICK_IO(12)
+#define CLICK_LLRPC_PROXY			_CLICK_IO(0)
+#define CLICK_LLRPC_GET_RATE			_CLICK_IOWRS(1, 4)
+#define CLICK_LLRPC_GET_RATES			_CLICK_IOS(2)
+#define CLICK_LLRPC_GET_COUNT			_CLICK_IOWRS(3, 4)
+#define CLICK_LLRPC_GET_COUNTS			_CLICK_IOS(4)
+#define CLICK_LLRPC_GET_SWITCH			_CLICK_IORS(5, 4)
+#define CLICK_LLRPC_SET_SWITCH			_CLICK_IOW(6, 4)
+#define CLICK_LLRPC_MAP_IPADDRESS		_CLICK_IOWR(7, 4)
+#define CLICK_LLRPC_IPREWRITER_MAP_TCP		_CLICK_IOWRS(8, 12)
+#define CLICK_LLRPC_IPREWRITER_MAP_UDP		_CLICK_IOWRS(9, 12)
+#define CLICK_LLRPC_IPRATEMON_LEVEL_FWD_AVG	_CLICK_IO(10)
+#define CLICK_LLRPC_IPRATEMON_LEVEL_REV_AVG	_CLICK_IO(11)
+#define CLICK_LLRPC_IPRATEMON_FWD_N_REV_AVG	_CLICK_IO(12)
+#define CLICK_LLRPC_IPRATEMON_SET_ANNO_LEVEL	_CLICK_IO(13)
+
+struct click_llrpc_proxy_st {
+  int proxied_handler_index;
+  uint32_t proxied_command;
+  void *proxied_data;
+};
 
 #define CLICK_LLRPC_COUNTS_SIZE 8
 struct click_llrpc_counts_st {
@@ -131,6 +140,25 @@ extern "C" {
 # define CLICK_LLRPC_GET(local_obj, remote_addr) ((void)(local_obj), (void)(remote_addr), -EFAULT)
 # define CLICK_LLRPC_PUT(remote_addr, local_obj) ((void)(local_obj), (void)(remote_addr), -EFAULT)
 
+#endif
+
+/* CLICK_NTOH_LLRPC: portable LLRPC numbers to host LLRPC numbers */
+/* CLICK_HTON_LLRPC: host LLRPC numbers to portable LLRPC numbers */
+/* both macros are only suitable for integer constants and the like */
+#if _CLICK_IOC_VOID != _CLICK_NET_IOC_VOID || _CLICK_IOC_OUT != _CLICK_NET_IOC_OUT || _CLICK_IOC_IN != _CLICK_NET_IOC_IN
+# define CLICK_NTOH_LLRPC(command) \
+	(((command) & _CLICK_NET_IOC_VOID ? _CLICK_IOC_VOID : 0) \
+	 | ((command) & _CLICK_NET_IOC_OUT ? _CLICK_IOC_OUT : 0) \
+	 | ((command) & _CLICK_NET_IOC_IN ? _CLICK_IOC_IN : 0) \
+	 | ((command) & _CLICK_IOC_BASE_MASK))
+# define CLICK_HTON_LLRPC(command) \
+	(((command) & _CLICK_IOC_VOID ? _CLICK_NET_IOC_VOID : 0) \
+	 | ((command) & _CLICK_IOC_OUT ? _CLICK_NET_IOC_OUT : 0) \
+	 | ((command) & _CLICK_IOC_IN ? _CLICK_NET_IOC_IN : 0) \
+	 | ((command) & _CLICK_IOC_BASE_MASK))
+#else
+# define CLICK_NTOH_LLRPC(command) (command)
+# define CLICK_HTON_LLRPC(command) (command)
 #endif
 
 /* sanity checks */
