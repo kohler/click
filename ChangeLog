@@ -1,3 +1,8 @@
+2001-06-28 Thursday 17:46  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
+
+	* etc/linux-2.2.18-patch (1.5): Add polling support for the
+	eepro100 driver (not heavily tested but appears to work.)
+
 2001-06-28 Thursday 11:37  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* elements/ip/: ipdecappaint.cc (1.1), ipdecappaint.hh (1.1),
