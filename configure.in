@@ -210,7 +210,7 @@ dnl
 
 TARGETS=
 AC_SUBST(TARGETS)
-TOOL_TARGETS="click-align click-fastclassifier click-xform"
+TOOL_TARGETS="click-align click-compile click-fastclassifier click-xform"
 AC_SUBST(TOOL_TARGETS)
 
 dnl check userlevel for pcap library

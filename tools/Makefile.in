@@ -40,9 +40,10 @@ click-compile: $(srcdir)/click-compile.in
 	@chmod +x click-compile
 
 clean:
-	@-for d in $(TOOLS); do (cd $$d; $(MAKE) clean); done
+	@-for d in $(TOOLS); do (cd $$d 2>/dev/null && $(MAKE) clean); done
+	rm -f click-compile
 distclean:
-	@-for d in $(TOOLS); do (cd $$d; $(MAKE) distclean); done
+	@-for d in $(TOOLS); do (cd $$d 2>/dev/null && $(MAKE) distclean); done
 	-rm -f Makefile
 
 install: install-subdirs install-local
