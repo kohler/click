@@ -164,9 +164,7 @@ FastUDPSource::pull(int)
   if (!_active || (_limit != NO_LIMIT && _count >= _limit)) return 0;
 
   if(_rate_limited){
-    struct timeval now;
-    click_gettimeofday(&now);
-    if (_rate.need_update(now)) {
+    if (_rate.need_update(Timestamp::now())) {
       _rate.update();
       atomic_inc(&_skb->users); 
       p = reinterpret_cast<Packet *>(_skb);

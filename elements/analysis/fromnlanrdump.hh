@@ -234,18 +234,18 @@ class FromNLANRDump : public Element { public:
     int _format;
     int _cell_size;
 
-    struct timeval _first_time;
-    struct timeval _last_time;
+    Timestamp _first_time;
+    Timestamp _last_time;
     HandlerCall *_end_h;
     
     Task _task;
 
-    struct timeval _time_offset;
+    Timestamp _time_offset;
     off_t _packet_filepos;
 
     bool read_packet(ErrorHandler *);
 
-    void prepare_times(struct timeval &);
+    void prepare_times(const Timestamp &);
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

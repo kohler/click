@@ -80,9 +80,8 @@ LinkTestReceiver::simple_action(Packet *p)
 
   LinkTester::payload_t *payload = (LinkTester::payload_t *) (eh + 1);
   
-  struct timeval &tv = p->timestamp_anno();
-  click_chatter("%u.%06u,%u.%06u,%s,%s,%hu,%d,%u,%u\n",
-		tv.tv_sec, tv.tv_usec,
+  click_chatter("%{timestamp},%u.%06u,%s,%s,%hu,%d,%u,%u\n",
+		&p->timestamp_anno(),
 		ntohl(payload->tx_sec), ntohl(payload->tx_usec),
 		src.s().cc(), dst.s().cc(), ntohs(payload->size),
 		payload->before ? 1 : 0, ntohl(payload->iteration), 

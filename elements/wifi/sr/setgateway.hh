@@ -60,8 +60,8 @@ private:
   public:
     class IPFlowID _id;
     IPAddress _gw;
-    struct timeval _oldest_unanswered;
-    struct timeval _last_reply;
+    Timestamp _oldest_unanswered;
+    Timestamp _last_reply;
     int _outstanding_syns;
     bool _fwd_alive;
     bool _rev_alive;
@@ -83,26 +83,21 @@ private:
 
     void saw_forward_packet() {
       if (_all_answered) {
-	click_gettimeofday(&_oldest_unanswered);
-	_all_answered = false;
+	  _oldest_unanswered = Timestamp::now();
+	  _all_answered = false;
       }
     }
     void saw_reply_packet() {
-      click_gettimeofday(&_last_reply);
+      _last_reply = Timestamp::now();
       _all_answered = true;
     }
     bool is_pending() const    { return (_outstanding_syns > 0);}
 
-    struct timeval age() {
-      struct timeval age;
-      struct timeval now;
-      timerclear(&age);
-      if (_fwd_alive || _rev_alive) {
-	return age;
-      }
-      click_gettimeofday(&now);
-      timersub(&now, &_last_reply, &age);
-      return age;
+    Timestamp age() {
+      if (_fwd_alive || _rev_alive)
+	  return Timestamp();
+      else
+	  return Timestamp::now() - _last_reply;
     }
   };
 

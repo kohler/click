@@ -379,7 +379,7 @@ KernelTun::selected(int fd)
 	}
 
 	if (ok) {
-	    (void) click_gettimeofday(&p->timestamp_anno());
+	    p->timestamp_anno().set_now();
 	    output(0).push(p);
 	} else
 	    checked_output_push(1, p);

@@ -101,9 +101,9 @@ DriverManager::configure(Vector<String> &conf, ErrorHandler *errh)
 #endif
 	    
 	} else if (insn_name == "wait_time" || insn_name == "wait_for" || insn_name == "wait") {
-	    timeval tv;
-	    if (cp_timeval(conf[i], &tv))
-		add_insn(INSN_WAIT_TIME, tv.tv_sec, tv.tv_usec);
+	    Timestamp ts;
+	    if (cp_time(conf[i], &ts))
+		add_insn(INSN_WAIT_TIME, ts.sec(), ts.subsec());
 	    else
 		errh->error("expected '%s TIME'", insn_name.cc());
 
@@ -180,7 +180,7 @@ DriverManager::initialize(ErrorHandler *errh)
     int insn = _insns[_insn_pos];
     assert(insn <= INSN_WAIT_TIME);
     if (insn == INSN_WAIT_TIME)
-	_timer.schedule_after(make_timeval(_args[_insn_pos], _args2[_insn_pos]));
+	_timer.schedule_after(Timestamp(_args[_insn_pos], _args2[_insn_pos]));
     else if (insn == INSN_INITIAL)
 	// get rid of the initial runcount so we get called right away
 	router()->adjust_runcount(-1);
@@ -255,7 +255,7 @@ DriverManager::step_insn()
 	router()->adjust_runcount(-1);
 	return false;
       case INSN_WAIT_TIME:
-	_timer.schedule_after(make_timeval(_args[_insn_pos], _args2[_insn_pos]));
+	_timer.schedule_after(Timestamp(_args[_insn_pos], _args2[_insn_pos]));
 	return false;
       case INSN_WAIT_STOP:
       default:

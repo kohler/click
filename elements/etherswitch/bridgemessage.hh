@@ -3,6 +3,7 @@
 #include <click/glue.hh>
 #include <click/string.hh>
 #include <click/integers.hh>
+#include <click/timestamp.hh>
 CLICK_DECLS
 
 class BridgeMessage {
@@ -19,7 +20,7 @@ public:
   static void fill_tcm(wire* msg);
 
   
-  bool expire(const timeval* cutoff);	// Possibly expire, based on timestamp
+  bool expire(const Timestamp& cutoff);	// Possibly expire, based on timestamp
   void expire();		// Set fields to worst values
 
 
@@ -79,7 +80,7 @@ public:  uint32_t _cost; private: // Put in an incrementer JJJ
 
   bool _tc;
 
-  timeval _timestamp; // When the message should be considered to have
+  Timestamp _timestamp; // When the message should be considered to have
 		      // been created, used for expiration.
 
   static void prep_msg(wire* msg);

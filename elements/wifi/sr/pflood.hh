@@ -88,11 +88,11 @@ private:
     bool _originated; /* this node started the bcast */
     Packet *_p;
     int _num_rx;
-    struct timeval _first_rx;
+    Timestamp _first_rx;
     bool _forwarded;
     bool _actually_sent;
     Timer *t;
-    struct timeval _to_send;
+    Timestamp _to_send;
 
     void del_timer() {
       if (t) {

@@ -36,10 +36,10 @@ SetTimestamp::~SetTimestamp()
 int
 SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-    _tv.tv_sec = -1;
+    _tv._sec = -1;
     if (cp_va_parse(conf, this, errh,
 		    cpOptional,
-		    cpTimeval, "timestamp", &_tv,
+		    cpTimestamp, "timestamp", &_tv,
 		    cpEnd) < 0)
 	return -1;
     return 0;
@@ -48,11 +48,11 @@ SetTimestamp::configure(Vector<String> &conf, ErrorHandler *errh)
 Packet *
 SetTimestamp::simple_action(Packet *p)
 {
-    struct timeval &tv = p->timestamp_anno();
-    if (_tv.tv_sec >= 0)
+    Timestamp& tv = p->timestamp_anno();
+    if (_tv._sec >= 0)
 	tv = _tv;
     else
-	click_gettimeofday(&tv);
+	tv.set_now();
     return p;
 }
 

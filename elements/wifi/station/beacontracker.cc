@@ -145,16 +145,8 @@ BeaconTracker::simple_action(Packet *p)
 void
 BeaconTracker::trim() 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
-  
-  int f = _track * _beacon_int;
-  struct timeval earliest;
-  struct timeval diff = {f / 1000, f % 1000};
-
-  timersub(&now, &diff, &earliest);
-
-  while (_beacons.size() && timercmp(&_beacons[0].rx, &earliest, <)) {
+  Timestamp earliest = Timestamp::now() - Timestamp::make_msec(_track * _beacon_int);
+  while (_beacons.size() && _beacons[0].rx < earliest) {
     _beacons.pop_front();
   }  
 

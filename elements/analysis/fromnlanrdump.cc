@@ -65,12 +65,7 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true;
     String format = "guess";
-    struct timeval first_time, first_time_off, last_time, last_time_off, interval;
-    timerclear(&first_time);
-    timerclear(&first_time_off);
-    timerclear(&last_time);
-    timerclear(&last_time_off);
-    timerclear(&interval);
+    Timestamp first_time, first_time_off, last_time, last_time_off, interval;
     _sampling_prob = (1 << SAMPLING_SHIFT);
     _packet_filepos = 0;
     bool force_ip = true;
@@ -84,11 +79,11 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
 		    "FORCE_IP", cpBool, "ignored for compatibility", &force_ip,
-		    "START", cpTimeval, "starting time", &first_time,
-		    "START_AFTER", cpTimeval, "starting time offset", &first_time_off,
-		    "END", cpTimeval, "ending time", &last_time,
-		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
-		    "INTERVAL", cpTimeval, "time interval", &interval,
+		    "START", cpTimestamp, "starting time", &first_time,
+		    "START_AFTER", cpTimestamp, "starting time offset", &first_time_off,
+		    "END", cpTimestamp, "ending time", &last_time,
+		    "END_AFTER", cpTimestamp, "ending time offset", &last_time_off,
+		    "INTERVAL", cpTimestamp, "time interval", &interval,
 		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_end_h,
 		    "FILEPOS", cpFileOffset, "starting file position", &_packet_filepos,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
@@ -107,24 +102,22 @@ FromNLANRDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _have_first_time = _have_last_time = true;
     _first_time_relative = _last_time_relative = _last_time_interval = false;
     
-    if ((timerisset(&first_time) != 0) + (timerisset(&first_time_off) != 0) > 1)
+    if ((bool) first_time + (bool) first_time_off > 1)
 	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
-    else if (timerisset(&first_time))
+    else if (first_time)
 	_first_time = first_time;
-    else if (timerisset(&first_time_off))
+    else if (first_time_off)
 	_first_time = first_time_off, _first_time_relative = true;
-    else {
-	timerclear(&_first_time);
+    else
 	_have_first_time = false, _first_time_relative = true;
-    }
     
-    if ((timerisset(&last_time) != 0) + (timerisset(&last_time_off) != 0) + (timerisset(&interval) != 0) > 1)
+    if ((bool) last_time + (bool) last_time_off + (bool) interval > 1)
 	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
-    else if (timerisset(&last_time))
+    else if (last_time)
 	_last_time = last_time;
-    else if (timerisset(&last_time_off))
+    else if (last_time_off)
 	_last_time = last_time_off, _last_time_relative = true;
-    else if (timerisset(&interval))
+    else if (interval)
 	_last_time = interval, _last_time_interval = true;
     else
 	_have_last_time = false;
@@ -191,11 +184,8 @@ FromNLANRDump::initialize(ErrorHandler *errh)
 	return -1;
     
     // try reading a packet
-    if (read_packet(errh)) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &_packet->timestamp_anno(), &_time_offset);
-    }
+    if (read_packet(errh))
+	_time_offset = Timestamp::now() - _packet->timestamp_anno();
 
     // maybe skip ahead in the file
     if (_packet_filepos != 0) {
@@ -226,14 +216,14 @@ FromNLANRDump::set_active(bool active)
 }
 
 void
-FromNLANRDump::prepare_times(struct timeval &tv)
+FromNLANRDump::prepare_times(const Timestamp &tv)
 {
     if (_first_time_relative)
-	timeradd(&tv, &_first_time, &_first_time);
+	_first_time += tv;
     if (_last_time_relative)
-	timeradd(&tv, &_last_time, &_last_time);
+	_last_time += tv;
     else if (_last_time_interval)
-	timeradd(&_first_time, &_last_time, &_last_time);
+	_last_time += _first_time;
     _have_any_times = true;
 }
 
@@ -242,7 +232,7 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
 {
     const TSHCell *cell;
     static TSHCell static_cell;
-    struct timeval tv;
+    Timestamp tv;
     Packet *p;
     bool more = true;
     _packet = 0;
@@ -264,18 +254,18 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
   check_times:
     uint32_t usec = ntohl(cell->timestamp_usec);
     if (_format == C_TSH)
-	tv = make_timeval(ntohl(cell->timestamp_sec), usec & 0xFFFFFF);
+	tv = Timestamp(ntohl(cell->timestamp_sec), usec & 0xFFFFFF);
     else if (_format == C_FRPLUS || _format == C_FR)
-	tv = make_timeval(ntohl(cell->timestamp_sec), usec);
+	tv = Timestamp(ntohl(cell->timestamp_sec), usec);
     if (!_have_any_times)
 	prepare_times(tv);
     if (_have_first_time) {
-	if (timercmp(&tv, &_first_time, <))
+	if (tv < _first_time)
 	    goto retry;
 	else
 	    _have_first_time = false;
     }
-    if (_have_last_time && !timercmp(&tv, &_last_time, <)) {
+    if (_have_last_time && tv >= _last_time) {
 	_have_last_time = false;
 	(void) _end_h->call_write(errh);
 	if (!_active)
@@ -295,7 +285,7 @@ FromNLANRDump::read_packet(ErrorHandler *errh)
     
     // create packet
     if (_format != C_FR)
-	p = _ff.get_packet_from_data(&cell->iph, _cell_size - 8, _cell_size - 8, tv.tv_sec, tv.tv_usec, errh);
+	p = _ff.get_packet_from_data(&cell->iph, _cell_size - 8, _cell_size - 8, tv.sec(), tv.subsec(), errh);
     else
 	p = 0;
     if (!p)
@@ -321,14 +311,10 @@ FromNLANRDump::run_task()
 
     bool more;
     if (_packet || read_packet(0)) {
-	if (_timing) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_time_offset, &now);
-	    if (timercmp(&_packet->timestamp_anno(), &now, >)) {
-		_task.fast_reschedule();
-		return false;
-	    }
+	if (_timing
+	    && _packet->timestamp_anno() > Timestamp::now() - _time_offset) {
+	    _task.fast_reschedule();
+	    return false;
 	}
 	output(0).push(_packet);
 	more = read_packet(0);
@@ -351,13 +337,9 @@ FromNLANRDump::pull(int)
     bool more;
     Packet *p;
     if (_packet || read_packet(0)) {
-	if (_timing) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_time_offset, &now);
-	    if (timercmp(&_packet->timestamp_anno(), &now, >))
-		return 0;
-	}
+	if (_timing
+	    && _packet->timestamp_anno() > Timestamp::now() - _time_offset)
+	    return 0;
 	p = _packet;
 	more = read_packet(0);
     } else {
@@ -412,9 +394,9 @@ FromNLANRDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorH
 	fd->router()->please_stop_driver();
 	return 0;
       case H_EXTEND_INTERVAL: {
-	  struct timeval tv;
-	  if (cp_timeval(s, &tv)) {
-	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
+	  Timestamp tv;
+	  if (cp_time(s, &tv)) {
+	      fd->_last_time += tv;
 	      if (fd->_end_h)
 		  fd->_have_last_time = true, fd->set_active(true);
 	      return 0;

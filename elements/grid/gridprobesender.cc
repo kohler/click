@@ -63,10 +63,7 @@ GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*gh) + sizeof(*nb) + sizeof(*rp) + 2);
   q->pull(2);
   
-  struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    q->set_timestamp_anno(tv);
+  q->set_timestamp_anno(Timestamp::now());
 
   memset(q->data(), 0, q->length());
   e = (click_ether *) q->data();
@@ -89,8 +86,8 @@ GridProbeSender::send_probe(IPAddress &ip, unsigned int nonce)
   nb->hops_travelled = 0;
 
   rp->nonce = htonl(nonce);
-  rp->send_time.tv_sec = htonl(tv.tv_sec);
-  rp->send_time.tv_usec = htonl(tv.tv_usec);
+  rp->send_time.tv_sec = htonl(q->timestamp_anno().sec());
+  rp->send_time.tv_usec = htonl(q->timestamp_anno().usec());
   
   output(0).push(q);
 }

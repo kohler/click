@@ -103,63 +103,48 @@ PrintGrid::simple_action(Packet *p)
 
   String type = grid_hdr::type_string(gh->type);
 
-  String line("PrintGrid ");
+  StringAccum line;
+  line << "PrintGrid ";
   if (_verbose)
-    line += id() + " ";
+      line << id() << " ";
   if (_label[0] != 0)
-    line += _label + " ";
-  if (_timestamp) {
-    char buf[30];
-    snprintf(buf, sizeof(buf), "%ld.%06ld ",
-	     (long) p->timestamp_anno().tv_sec,
-	     (long) p->timestamp_anno().tv_usec);
-    line += buf;
-  }
+      line << _label << " ";
+  if (_timestamp)
+      line << p->timestamp_anno() << ' ';
 
   if (_print_eth) {
-    char buf[100];
-    snprintf(buf, sizeof(buf), "%s %s %04hx ", 
-	     EtherAddress(eh->ether_shost).s().cc(), EtherAddress(eh->ether_dhost).s().cc(),
-	     ntohs(eh->ether_type));
-    line += buf;
+      line << EtherAddress(eh->ether_shost) << ' ' << EtherAddress(eh->ether_dhost) << ' ';
+      line.snprintf(10, "%04hx ", ntohs(eh->ether_type));
   }
 
-  line += ": " + type + " ";
+  line << ": " << type << " ";
   if (_verbose)
-    line += "hdr_len=" + String((unsigned int) gh->hdr_len) + " ";
+      line << "hdr_len="  << gh->hdr_len << " ";
 
   // packet originator info
-  line += "ip=" + IPAddress(gh->ip).s() + " ";
+  line << "ip=" << IPAddress(gh->ip).s() << " ";
   if (_verbose) {
-    if (gh->loc_good) {
-      char buf[50];
-      snprintf(buf, 50, "loc=%s ", gh->loc.s().cc());
-      line += buf;
-      line += "loc_err=" + String(ntohs(gh->loc_err)) + " ";
-    }
+    if (gh->loc_good)
+	line << "loc=" << gh->loc.s() << " loc_err=" << ntohs(gh->loc_err) << ' ';
     else
-      line += "bad-loc ";
-    line += "loc_seq_no=" + String(ntohl(gh->loc_seq_no)) + " ";
+	line << "bad-loc ";
+    line << "loc_seq_no=" << ntohl(gh->loc_seq_no) << " ";
   }
   
   // packet transmitter info
-  line += "tx_ip=" + IPAddress(gh->tx_ip).s() + " ";
+  line << "tx_ip=" << IPAddress(gh->tx_ip) << " ";
   if (_verbose) {
-    if (gh->tx_loc_good) {
-      char buf[50];
-      snprintf(buf, 50, "tx_loc=%s ", gh->tx_loc.s().cc());
-      line += buf;
-      line += "tx_loc_err=" + String(ntohs(gh->tx_loc_err)) + " ";
-    }
+    if (gh->tx_loc_good)
+	line << "tx_loc=" << gh->tx_loc.s() << " tx_loc_err=" << ntohs(gh->tx_loc_err) << ' ';
     else
-      line += "bad-tx-loc ";
-    line += "tx_loc_seq_no=" + String(ntohl(gh->tx_loc_seq_no)) + " ";
+	line << "bad-tx-loc ";
+    line << "tx_loc_seq_no=" << ntohl(gh->tx_loc_seq_no) << " ";
   }
 
   if (_verbose)
-    line += "pkt_len=" + String(ntohs(gh->total_len)) + " ";
+      line << "pkt_len=" << ntohs(gh->total_len) << " ";
 
-  line += "** ";
+  line << "** ";
 
   grid_hello *gh2 = 0;
   grid_nbr_encap *nb = 0;
@@ -171,58 +156,58 @@ PrintGrid::simple_action(Packet *p)
 
   case grid_hdr::GRID_LR_HELLO:
     gh2 = (grid_hello *) (gh + 1);
-    line += "seq_no=" + String(ntohl(gh2->seq_no)) + " ";
+    line << "seq_no=" << ntohl(gh2->seq_no) << " ";
     if (_verbose)
-      line += "age=" + String(ntohl(gh2->age)) + " ";
-    line += "num_nbrs=" + String((unsigned int) gh2->num_nbrs);
+	line << "age=" << ntohl(gh2->age) << " ";
+    line << "num_nbrs=" << (unsigned int) gh2->num_nbrs;
     if (_print_routes)
-      line += get_entries(gh2);
+	line << get_entries(gh2);
     break;
 
   case grid_hdr::GRID_NBR_ENCAP:
   case grid_hdr::GRID_LOC_REPLY:
     nb = (grid_nbr_encap *) (gh + 1);
-    line += encap_to_string(nb);
+    line << encap_to_string(nb);
     break;
 
   case grid_hdr::GRID_LOC_QUERY:
     lq = (grid_loc_query *) (gh + 1);
-    line += "dst_ip=" + IPAddress(lq->dst_ip).s() + " ";
-    line += "seq_no=" + String(ntohl(lq->seq_no));
+    line << "dst_ip=" << IPAddress(lq->dst_ip) << " "
+	 << "seq_no=" << ntohl(lq->seq_no);
     break;
 
   case grid_hdr::GRID_ROUTE_PROBE: 
     nb = (grid_nbr_encap *) (gh + 1);
-    line += encap_to_string(nb);
+    line << encap_to_string(nb);
     rp = (grid_route_probe *) (nb + 1);
-    line += " nonce=" + String(ntohl(rp->nonce));
+    line << " nonce=" << ntohl(rp->nonce);
     break;
 
   case grid_hdr::GRID_ROUTE_REPLY: 
     nb = (grid_nbr_encap *) (gh + 1);
-    line += encap_to_string(nb);
+    line << encap_to_string(nb);
     rr = (grid_route_reply *) (nb + 1);
-    line += " nonce=" + String(ntohl(rr->nonce));
-    line += " probe_dest=" + IPAddress(rr->probe_dest).s();
-    line += " reply_hop=" + String((unsigned int) rr->reply_hop);
+    line << " nonce=" << ntohl(rr->nonce)
+	 << " probe_dest=" << IPAddress(rr->probe_dest)
+	 << " reply_hop=" << (unsigned int) rr->reply_hop;
     break;
 
   case grid_hdr::GRID_LINK_PROBE: {
     grid_link_probe *lp = (grid_link_probe *) (gh + 1);
-    line += " seq_no=" + String(ntohl(lp->seq_no));
-    line += " period=" + String(ntohl(lp->period));
-    line += " tau=" + String(ntohl(lp->tau));
-    line += " num_links=" + String(ntohl(lp->num_links));
+    line << " seq_no=" << ntohl(lp->seq_no)
+	 << " period=" << ntohl(lp->period)
+	 << " tau=" << ntohl(lp->tau)
+	 << " num_links=" << ntohl(lp->num_links);
     if (_print_probe_entries)
-      line += get_probe_entries(lp);
+	line << get_probe_entries(lp);
     break;
   }
 
   default:
-    line += "Unknown grid header type " + String((int) gh->type);
+    line << "Unknown grid header type " << (int) gh->type;
   }
   
-  click_chatter("%s", line.cc());
+  click_chatter("%s", line.c_str());
 
   return p;
 }
@@ -236,13 +221,8 @@ PrintGrid::print_ether_linkstat(Packet *p) const
     line << id() << " ";
   if (_label[0] != 0)
     line << _label << " ";
-  if (_timestamp) {
-    char buf[30];
-    snprintf(buf, sizeof(buf), "%ld.%06ld ",
-	     (long) p->timestamp_anno().tv_sec,
-	     (long) p->timestamp_anno().tv_usec);
-    line << buf;
-  }
+  if (_timestamp)
+      line << p->timestamp_anno();
 
   unsigned min_sz = sizeof(click_ether) + LinkStat::link_probe::size;
   if (p->length() < min_sz) {
@@ -320,38 +300,30 @@ PrintGrid::get_probe_entries(const grid_link_probe *lp) const
 String
 PrintGrid::get_entries(const grid_hello *gh) const
 {
-  String ret;
+  StringAccum ret;
   char *cp = (char *) (gh + 1);
   for (int i = 0; i < gh->num_nbrs; i++) {
     grid_nbr_entry *na = (grid_nbr_entry *) (cp + gh->nbr_entry_sz * i);
-    char buf[1024];
-    snprintf(buf, sizeof(buf), "\n\tip=%s next=%s hops=%d seq=%lu ",
-	     IPAddress(na->ip).s().cc(),
-	     IPAddress(na->next_hop_ip).s().cc(),
-	     (int) na->num_hops,
-	     (unsigned long) ntohl(na->seq_no));
-    ret += buf;
+    ret << "\n\tip=" << IPAddress(na->ip)
+	<< " next=" << IPAddress(na->next_hop_ip)
+	<< " hops=" << (int) na->num_hops
+	<< " seq=" << (unsigned) ntohl(na->seq_no) << ' ';
 
-    if (na->metric_valid) {
-      snprintf(buf, sizeof(buf), "metric=%lu", (unsigned long) ntohl(na->metric));
-      ret += buf;
-    }
+    if (na->metric_valid)
+	ret << "metric=" << (unsigned) ntohl(na->metric);
     else
-      ret += "bad-metric";
+	ret << "bad-metric";
 
     if (_verbose) {
-      ret += String(" gw=") + (na->is_gateway ? "yes" : "no");
-      ret += String(" ttl=") + String(ntohl(na->ttl));
-      if (na->loc_good) {
-	snprintf(buf, sizeof(buf), " loc=%s loc_err=%us",
-		 na->loc.s().cc(), ntohs(na->loc_err));
-	ret += buf;
-      }
+	ret << " gw=" << (na->is_gateway ? "yes" : "no")
+	    << " ttl=" << ntohl(na->ttl);
+      if (na->loc_good)
+	  ret << " loc=" << na->loc.s() << " loc_err=" << (unsigned short) na->loc_err;
       else
-	ret += " bad-loc";
+	  ret << " bad-loc";
     }
   }
-  return ret;
+  return ret.take_string();
 }
 
 CLICK_ENDDECLS

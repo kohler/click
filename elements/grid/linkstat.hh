@@ -207,7 +207,7 @@ private:
   void send_hook();
 
   Timer *_send_timer;
-  struct timeval _next_bcast;
+  Timestamp _next_bcast;
 
   bool _use_proto2;
 

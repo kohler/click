@@ -58,12 +58,8 @@ void
 GridTxError::push(int, Packet *p) 
 {
   /* log the error */
-  int err = SEND_ERR_ANNO(p);
-  struct timeval tv;
-  click_gettimeofday(&tv);
-
   if (_log)
-    _log->log_tx_err(p, err, tv);
+    _log->log_tx_err(p, SEND_ERR_ANNO(p), Timestamp::now());
 
   p->kill();
 }

@@ -150,7 +150,7 @@ ICMPPingSource::run_timer()
     
     q->set_dst_ip_anno(IPAddress(_dst));
     q->set_ip_header(nip, sizeof(click_ip));
-    click_gettimeofday(&q->timestamp_anno());
+    q->timestamp_anno().set_now();
 
     if (_receiver)
 	_receiver->send_timestamp[icp->icmp_sequence] = q->timestamp_anno();
@@ -171,18 +171,18 @@ ICMPPingSource::push(int, Packet *p)
 	&& p->transport_length() >= (int)sizeof(click_icmp_echo)
 	&& icmph->icmp_type == ICMP_ECHOREPLY
 	&& icmph->icmp_identifier == _icmp_id) {
-	struct timeval *send_ts = &_receiver->send_timestamp[icmph->icmp_sequence];
+	Timestamp *send_ts = &_receiver->send_timestamp[icmph->icmp_sequence];
 	
-	if (!timerisset(send_ts))
+	if (!*send_ts)
 	    /* error */;
 	else {
-	    if (send_ts->tv_usec >= 1000000) {
+	    if (send_ts->_subsec < 0) {
 		_receiver->nduplicate++;
-		send_ts->tv_usec -= 1000000;
+		send_ts->_subsec ^= 0xFFFFFFFF;
 	    }
 	    
-	    struct timeval diff = p->timestamp_anno() - *send_ts;
-	    uint32_t diffval = (diff.tv_sec * 1000000) + diff.tv_usec;
+	    Timestamp diff = p->timestamp_anno() - *send_ts;
+	    uint32_t diffval = diff.usec1();
 	    if (diffval < _receiver->time_min || !_receiver->nreceived)
 		_receiver->time_min = diffval;
 	    if (diffval > _receiver->time_max || !_receiver->nreceived)
@@ -191,7 +191,7 @@ ICMPPingSource::push(int, Packet *p)
 	    _receiver->time_sq_sum += ((counter_t)diffval) * diffval;
 
 	    _receiver->nreceived++;
-	    send_ts->tv_usec += 1000000;
+	    send_ts->_subsec ^= 0xFFFFFFFF;
 	    
 #ifdef __linux__
 	    uint16_t readable_seq = icmph->icmp_sequence;
@@ -199,7 +199,7 @@ ICMPPingSource::push(int, Packet *p)
 	    uint16_t readable_seq = ntohs(icmph->icmp_sequence);
 #endif
 	    if (_verbose)
-		click_chatter("%s: %d bytes from %s: icmp_seq=%u ttl=%u time=%d.%d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), IPAddress(iph->ip_dst).s().c_str(), readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
+		click_chatter("%s: %d bytes from %s: icmp_seq=%u ttl=%u time=%d.%03d ms", declaration().c_str(), ntohs(iph->ip_len) - (iph->ip_hl << 2) - sizeof(*icmph), IPAddress(iph->ip_dst).s().c_str(), readable_seq, iph->ip_ttl, (unsigned)(diffval/1000), (unsigned)(diffval % 1000));
 	}
     }
     p->kill();

@@ -61,8 +61,8 @@ class MetricFlood : public Element {
     u_long _seq;
     Packet *_p;
     int _count;
-    struct timeval _when; /* when we saw the first query */
-    struct timeval _to_send;
+    Timestamp _when; /* when we saw the first query */
+    Timestamp _to_send;
     bool _forwarded;
 
 

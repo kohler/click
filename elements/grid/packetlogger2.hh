@@ -57,7 +57,7 @@ class PacketLogger2 : public Element { public:
   enum { NBYTES = 18 };
   
   struct log_entry {
-    struct timeval timestamp;
+    Timestamp timestamp;
     unsigned length;
     uint8_t anno[Packet::USER_ANNO_SIZE];
     uint8_t bytes[NBYTES];

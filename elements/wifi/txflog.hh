@@ -48,7 +48,7 @@ class TXFLog : public Element { public:
 
   
   DEQueue<struct click_wifi_extra> _p;
-  DEQueue<struct timeval> _t;
+  DEQueue<Timestamp> _t;
 
 };
 

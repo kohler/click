@@ -121,9 +121,9 @@ private:
   unsigned int _history_length;
 
   struct tx_result_t {
-    tx_result_t(const struct timeval &t, unsigned n, bool s) 
+    tx_result_t(const Timestamp &t, unsigned n, bool s) 
       : pkt_time(t), num_tx(n), success(s) { }
-    struct timeval pkt_time;
+    Timestamp pkt_time;
     unsigned num_tx;
     bool success;
   };
@@ -146,7 +146,7 @@ private:
 
   void check();
 
-  void add_stat(const struct timeval &t, unsigned num_tx, bool succ);
+  void add_stat(const Timestamp &t, unsigned num_tx, bool succ);
 
   static String print_history(Element *e, void *);
   static String print_summary(Element *e, void *);

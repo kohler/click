@@ -105,38 +105,34 @@ EtherSpanTree::add_handlers()
 
 void
 EtherSpanTree::periodic() {
-  // Push LISTEN and LEARN ports forward.
-  timeval now;
-  timeval cutoff;
-  click_gettimeofday(&now);
-  cutoff = now;
-  cutoff.tv_sec -= _best._forward_delay;
+    // Push LISTEN and LEARN ports forward.
+    Timestamp cutoff = Timestamp::now();
+    cutoff._sec -= _best._forward_delay;
 
-  for (int i = 0; i < _port.size(); i++) {
-    if (_port[i].state == LISTEN || _port[i].state == LEARN)
-      if (timercmp(&_port[i].since, &cutoff, <)) {
-	set_state(i, FORWARD);
-      }
-  }
+    for (int i = 0; i < _port.size(); i++) {
+	if (_port[i].state == LISTEN || _port[i].state == LEARN)
+	    if (_port[i].since < cutoff) {
+		set_state(i, FORWARD);
+	    }
+    }
 
-  expire();
-  find_tree();
+    expire();
+    find_tree();
 }
 
 bool
 EtherSpanTree::expire() {
-  timeval t;
-  click_gettimeofday(&t);
-  t.tv_sec -= _best._max_age;
+    Timestamp t = Timestamp::now();
+    t._sec -= _best._max_age;
 
-  bool expired = false;
-  for (int i = 0; i < _port.size(); i++) {
-    if (_port[i].msg.expire(&t)) {
-      expired = true;
-      click_chatter("Expiring message on port %d", i);
+    bool expired = false;
+    for (int i = 0; i < _port.size(); i++) {
+	if (_port[i].msg.expire(t)) {
+	    expired = true;
+	    click_chatter("Expiring message on port %d", i);
+	}
     }
-  }
-  return expired;
+    return expired;
 }
 
 
@@ -206,7 +202,7 @@ EtherSpanTree::set_state(int i, PortState state)
   click_chatter("Changing port %d from %d to %d", i, _port[i].state, state);
 
   _port[i].state = state;
-  click_gettimeofday(&_port[i].since);
+  _port[i].since = Timestamp::now();
 
 
   switch (state) {
@@ -294,10 +290,9 @@ EtherSpanTree::generate_packet(int output)
     msg->bridge_id = htonq(((uint64_t)_bridge_priority << 48) | _bridge_id);
     msg->port_id = htons(output);
     if (_topology_change) {
-      timeval cutoff;
-      click_gettimeofday(&cutoff);
-      cutoff.tv_sec -= _best._forward_delay + _best._max_age;
-      if (timercmp(_topology_change, &cutoff, <)) {
+      Timestamp cutoff = Timestamp::now();
+      cutoff._sec -= _best._forward_delay + _best._max_age;
+      if (*_topology_change < cutoff) {
 	delete _topology_change;
 	_topology_change = 0;
       } else {

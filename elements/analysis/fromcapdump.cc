@@ -229,7 +229,7 @@ FromCapDump::read_packet(ErrorHandler *errh)
 	    for (; data < end && isdigit(*data); data++)
 		/* nada */;
 	}
-	q->set_timestamp_anno(u1, u2);
+	q->set_timestamp_anno(Timestamp(u1, u2));
 	data = cp_skip_space(data, end);
 
 	// read sequence numbers and lengths

@@ -240,14 +240,11 @@ SetGateway::push(int port, Packet *p_in)
 void 
 SetGateway::cleanup() {
   FlowTable new_table;
-  struct timeval timeout;
-  timeout.tv_sec = 1*60;
-  timeout.tv_usec = 0;
+  Timestamp timeout(60, 0);
 
   for(FTIter i = _flow_table.begin(); i; i++) {
     FlowTableEntry f = i.value();
-    struct timeval age = f.age();
-    if (timercmp(&age, &timeout, <)) {
+    if (f.age() < timeout) {
       new_table.insert(f._id, f);
     }
   }
@@ -271,8 +268,7 @@ SetGateway::print_flows()
   click_gettimeofday(&now);
   for(FTIter iter = _flow_table.begin(); iter; iter++) {
     FlowTableEntry f = iter.value();
-    struct timeval age = f.age();
-    sa << f._id << " gw " << f._gw << " age " << age << "\n";
+    sa << f._id << " gw " << f._gw << " age " << f.age() << "\n";
   }
 
   return sa.take_string();

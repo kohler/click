@@ -144,10 +144,9 @@ PFlood::forward(Broadcast *bcast) {
 void
 PFlood::forward_hook() 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   for (int x = 0; x < _packets.size(); x++) {
-    if (timercmp(&_packets[x]._to_send, &now, <=)) {
+    if (_packets[x]._to_send <= now) {
       /* this timer has expired */
       if (!_packets[x]._forwarded) {
 	/* we haven't forwarded this packet yet */
@@ -181,24 +180,23 @@ PFlood::trim_packets() {
 void
 PFlood::push(int port, Packet *p_in)
 {
-  struct timeval now;
-  click_gettimeofday(&now);
+    Timestamp now = Timestamp::now();
   
-  if (port == 1) {
-    _packets_originated++;
-    /* from me */
-    int index = _packets.size();
-    _packets.push_back(Broadcast());
-    _packets[index]._seq = random();
-    _packets[index]._originated = true;
-    _packets[index]._p = p_in;
-    _packets[index]._num_rx = 0;
-    _packets[index]._first_rx = now;
-    _packets[index]._forwarded = true;
-    _packets[index]._actually_sent = false;
-    _packets[index].t = NULL;
-    _packets[index]._to_send = now;
-    forward(&_packets[index]);
+    if (port == 1) {
+	_packets_originated++;
+	/* from me */
+	int index = _packets.size();
+	_packets.push_back(Broadcast());
+	_packets[index]._seq = random();
+	_packets[index]._originated = true;
+	_packets[index]._p = p_in;
+	_packets[index]._num_rx = 0;
+	_packets[index]._first_rx = now;
+	_packets[index]._forwarded = true;
+	_packets[index]._actually_sent = false;
+	_packets[index].t = NULL;
+	_packets[index]._to_send = now;
+	forward(&_packets[index]);
   } else {
     _packets_rx++;
 
@@ -232,13 +230,9 @@ PFlood::push(int port, Packet *p_in)
       int delay_time = (random() % _max_delay_ms) + 1;
       sr_assert(delay_time > 0);
       
-      struct timeval delay;
-      delay.tv_sec = 0;
-      delay.tv_usec = delay_time*1000;
-      timeradd(&now, &delay, &_packets[index]._to_send);
       _packets[index].t = new Timer(static_forward_hook, (void *) this);
       _packets[index].t->initialize(this);
-      _packets[index].t->schedule_at(_packets[index]._to_send);
+      _packets[index].t->schedule_at(now + Timestamp::make_msec(delay_time));
 
       /* finally, clone the packet and push it out */
       Packet *p_out = p_in->clone();

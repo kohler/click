@@ -175,7 +175,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     struct FlowInfo {
 	uint32_t _ports;
 	uint32_t _aggregate;
-	struct timeval _last_timestamp;
+	Timestamp _last_timestamp;
 	unsigned _flow_over : 2;
 	bool _reverse : 1;
 	FlowInfo *_next;
@@ -187,7 +187,7 @@ class AggregateIPFlows : public Element, public AggregateNotifier { public:
     };
 
     struct StatFlowInfo : public FlowInfo {
-	struct timeval _first_timestamp;
+	Timestamp _first_timestamp;
 	uint32_t _filepos;
 	uint32_t _packets[2];
 	StatFlowInfo(uint32_t ports, FlowInfo *next, uint32_t agg) : FlowInfo(ports, next, agg) { _packets[0] = _packets[1] = 0; }

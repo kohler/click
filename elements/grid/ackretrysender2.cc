@@ -251,7 +251,7 @@ ACKRetrySender2::reset_stats(const String &, Element *e, void *, ErrorHandler *)
 }
 
 void
-ACKRetrySender2::add_stat(const struct timeval &t, unsigned num_tx, bool succ) 
+ACKRetrySender2::add_stat(const Timestamp &t, unsigned num_tx, bool succ) 
 {
   _history.push_back(tx_result_t(t, num_tx, succ));
   while (_history.size() > (int) _history_length)

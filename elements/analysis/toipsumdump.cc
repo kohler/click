@@ -162,7 +162,8 @@ ToIPSummaryDump::initialize(ErrorHandler *errh)
     // data description
     sa << "!data ";
     for (int i = 0; i < _fields.size(); i++)
-	sa << (i ? " " : "") << _fields[i]->name;
+	sa << (i ? " " : "")
+	   << (strcmp(_fields[i]->name, "ntimestamp") == 0 && !_binary ? "timestamp" : _fields[i]->name);
     sa << '\n';
 
     // binary marker
@@ -203,8 +204,7 @@ ToIPSummaryDump::summary(Packet* p, StringAccum& sa, StringAccum* bad_sa) const
 	for (int i = 0; i < _fields.size(); i++) {
 	    if (i)
 		sa << ' ';
-	    if (_fields[i]->extract(d, _fields[i]->thunk)
-		&& _fields[i]->outa)
+	    if (_fields[i]->extract(d, _fields[i]->thunk) && _fields[i]->outa)
 		_fields[i]->outa(d, _fields[i]->thunk);
 	    else
 		sa << '-';
@@ -226,13 +226,13 @@ ToIPSummaryDump::write_packet(Packet* p, bool multipacket)
 	    total_len = count * len;
 
 	// do timestamp stepping
-	struct timeval end_timestamp = p->timestamp_anno();
-	struct timeval timestamp_delta;
-	if (timerisset(&FIRST_TIMESTAMP_ANNO(p))) {
+	Timestamp end_timestamp = p->timestamp_anno();
+	Timestamp timestamp_delta;
+	if (FIRST_TIMESTAMP_ANNO(p)) {
 	    timestamp_delta = (end_timestamp - FIRST_TIMESTAMP_ANNO(p)) / (count - 1);
 	    p->set_timestamp_anno(FIRST_TIMESTAMP_ANNO(p));
 	} else
-	    timestamp_delta = make_timeval(0, 0);
+	    timestamp_delta = Timestamp();
 	
 	SET_EXTRA_PACKETS_ANNO(p, 0);
 	for (uint32_t i = count; i > 0; i--) {

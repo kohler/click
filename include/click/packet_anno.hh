@@ -49,7 +49,7 @@
 #define SET_PACKET_NUMBER_ANNO(p, n, v)	((p)->set_user_anno_u(4 + (n), (v)))
 
 // bytes 16-23
-#define FIRST_TIMESTAMP_ANNO(p)		(*((const struct timeval *)((p)->all_user_anno_u() + 4)))
-#define SET_FIRST_TIMESTAMP_ANNO(p, v)	(*((struct timeval *)((p)->all_user_anno_u() + 4)) = (v))
+#define FIRST_TIMESTAMP_ANNO(p)		(*((const Timestamp*) ((p)->all_user_anno_u() + 4)))
+#define SET_FIRST_TIMESTAMP_ANNO(p, v)	(*((Timestamp*) ((p)->all_user_anno_u() + 4)) = (v))
 
 #endif

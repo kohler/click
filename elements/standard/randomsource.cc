@@ -70,7 +70,7 @@ RandomSource::make_packet()
     for( ; i < _length; i++)
 	*(d + i) = random();
 
-    click_gettimeofday(&p->timestamp_anno());
+    p->timestamp_anno().set_now();
     return p;
 }
 

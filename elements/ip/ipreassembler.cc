@@ -237,10 +237,10 @@ IPReassembler::simple_action(Packet *p)
 	return p;
 
     // reap if necessary
-    int now = p->timestamp_anno().tv_sec;
+    int now = p->timestamp_anno().sec();
     if (!now) {
-	click_gettimeofday(&p->timestamp_anno());
-	now = p->timestamp_anno().tv_sec;
+	p->timestamp_anno().set_now();
+	now = p->timestamp_anno().sec();
     }
     if (now >= _reap_time)
 	reap(now);
@@ -371,7 +371,7 @@ IPReassembler::reap_overfull(int now)
 	for (int bucket = 0; bucket < NMAP; bucket++) {
 	    WritablePacket **pprev = &_map[bucket];
 	    for (WritablePacket *q = *pprev; q; q = *pprev)
-		if (q->timestamp_anno().tv_sec < now - delta) {
+		if (q->timestamp_anno().sec() < now - delta) {
 		    *pprev = (WritablePacket *)q->next();
 		    _mem_used -= IPH_MEM_USED + q->transport_length();
 		    q->set_next(0);
@@ -395,7 +395,7 @@ IPReassembler::reap(int now)
     for (int i = 0; i < NMAP; i++) {
 	WritablePacket **q_pprev = &_map[i];
 	for (WritablePacket *q = *q_pprev; q; ) {
-	    if (q->timestamp_anno().tv_sec < kill_time) {
+	    if (q->timestamp_anno().sec() < kill_time) {
 		*q_pprev = (WritablePacket *)q->next();
 		q->set_next(0);
 		checked_output_push(1, q);

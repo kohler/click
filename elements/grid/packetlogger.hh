@@ -46,7 +46,7 @@ class PacketLogger : public Element { public:
   enum { NBYTES = 8 };
 
   struct log_entry {
-    struct timeval timestamp;
+    Timestamp timestamp;
     uint8_t src_mac[6];
     uint8_t bytes[NBYTES];
   };

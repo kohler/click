@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.cc,v 1.6 2004/07/07 16:06:08 eddietwo Exp $
+ * $Id: ipflowrawsockets.cc,v 1.7 2004/12/30 23:51:47 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -307,7 +307,7 @@ IPFlowRawSockets_get_packet(u_char* clientdata,
     assert(p);
 
     // set annotations
-    p->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
+    p->timestamp_anno().set(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
     SET_EXTRA_LENGTH_ANNO(p, pkthdr->len - length);
 }
 }

@@ -153,13 +153,13 @@ class FromNetFlowSummaryDump : public Element { public:
     uint8_t _link;
     Packet *_work_packet;
     uint32_t _multipacket_length;
-    struct timeval _multipacket_timestamp_delta;
-    struct timeval _multipacket_end_timestamp;
+    Timestamp _multipacket_timestamp_delta;
+    Timestamp _multipacket_end_timestamp;
 
     Task _task;
     ActiveNotifier _notifier;
 
-    struct timeval _time_offset;
+    Timestamp _time_offset;
 
     Packet *read_packet(ErrorHandler *);
     Packet *handle_multipacket(Packet *);

@@ -65,10 +65,8 @@ bool
 RatedUnqueue::run_task()
 {
 #if 1    // listening for notifications
-    struct timeval now;
-    click_gettimeofday(&now);
     bool worked = false;
-    if (_rate.need_update(now)) {
+    if (_rate.need_update(Timestamp::now())) {
 	//_rate.update();  // uncomment this if you want it to run periodically
 	if (Packet *p = input(0).pull()) {
 	    _rate.update();  
@@ -82,10 +80,8 @@ RatedUnqueue::run_task()
     return worked;
 
 #else   // no notification
-    struct timeval now;
-    click_gettimeofday(&now);
     bool worked = false;
-    if (_rate.need_update(now)) {
+    if (_rate.need_update(Timestamp::now())) {
 	if (Packet *p = input(0).pull()) {
 	    _rate.update();
 	    output(0).push(p);

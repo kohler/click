@@ -697,11 +697,10 @@ GridRouteTable::simple_action(Packet *packet)
   grid_hello *hlo = (grid_hello *) (gh + 1);
    
   // extended logging
-  timeval tv;
-  gettimeofday(&tv, 0);
-  _extended_logging_errh->message("recvd %u from %s %ld %ld", ntohl(hlo->seq_no), ipaddr.s().cc(), tv.tv_sec, tv.tv_usec);
+  Timestamp ts = Timestamp::now();
+  _extended_logging_errh->message("recvd %u from %s %d %d", ntohl(hlo->seq_no), ipaddr.s().cc(), ts.sec(), ts.usec());
   if (_log)
-    _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, tv);
+    _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, ts);
   
   if (_frozen) {
     if (_log)
@@ -1303,11 +1302,9 @@ GridRouteTable::expire_routes()
   if (_dump_tick == 50) {
     _dump_tick = 0;
     if (_log) {
-      struct timeval tv;
-      gettimeofday(&tv, 0);
       Vector<RouteEntry> vec;
       get_all_entries(vec);
-      _log->log_route_dump(vec, tv);
+      _log->log_route_dump(vec, Timestamp::now());
     }
   }
       
@@ -1324,11 +1321,9 @@ GridRouteTable::expire_routes()
   xip_t expired_rtes;
   xip_t expired_next_hops;
 
-  timeval tv;
-  gettimeofday(&tv, 0);
-
+  Timestamp ts = Timestamp::now();
   if (_log)
-    _log->log_start_expire_handler(tv);
+    _log->log_start_expire_handler(ts);
 
   bool table_changed = false;
 
@@ -1341,7 +1336,7 @@ GridRouteTable::expire_routes()
 	decr_ttl(i.value().ttl, jiff_to_msec(jiff - i.value().last_updated_jiffies)) == 0) {
       expired_rtes.insert(i.value().dest_ip, true);
 
-      _extended_logging_errh->message ("expiring %s %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+      _extended_logging_errh->message ("expiring %s %d %d", i.value().dest_ip.s().cc(), ts.sec(), ts.usec());  // extended logging
       table_changed = true;
 
       if (_log)
@@ -1365,7 +1360,7 @@ GridRouteTable::expire_routes()
 	!expired_rtes.findp(i.value().dest_ip)) {
       expired_rtes.insert(i.value().dest_ip, true);
 
-      _extended_logging_errh->message("next to %s expired %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
+      _extended_logging_errh->message("next to %s expired %d %d", i.value().dest_ip.s().cc(), ts.sec(), ts.usec());  // extended logging
       
       if (_log)
 	_log->log_expired_route(GridLogger::NEXT_HOP_EXPIRED, i.value().dest_ip);
@@ -1488,10 +1483,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   memset(p->data(), 0, p->length());
 
   /* fill in the timestamp */
-  struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    p->set_timestamp_anno(tv);
+  p->set_timestamp_anno(Timestamp::now());
 
   /* fill in ethernet header */
   click_ether *eh = (click_ether *) p->data();
@@ -1515,10 +1507,10 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
   hlo->is_gateway = _gw_info->is_gateway ();
 
   /* extended logging */
-  gettimeofday(&tv, 0);
-  _extended_logging_errh->message("sending %u %ld %ld", _seq_no, tv.tv_sec, tv.tv_usec);
+  Timestamp now = Timestamp::now();
+  _extended_logging_errh->message("sending %u %ld %ld", _seq_no, now.sec(), now.usec());
   if (_log)
-    _log->log_sent_advertisement(_seq_no, tv);
+    _log->log_sent_advertisement(_seq_no, now);
 
   /* 
    * Update the sequence number for periodic updates, but not for

@@ -146,7 +146,7 @@ class ICMPPingSource : public Element { public:
 	uint32_t time_max;
 	counter_t time_sum;
 	counter_t time_sq_sum;
-	struct timeval send_timestamp[65536];
+	Timestamp send_timestamp[65536];
     };
     ReceiverInfo *_receiver;
 

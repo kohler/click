@@ -84,7 +84,7 @@ ICMPPingResponder::simple_action(Packet *p_in)
     // set annotations
     // (dst_ip_anno bug reported by Sven Hirsch <hirschs@gmx.de>)
     q->set_dst_ip_anno(iph->ip_dst);
-    click_gettimeofday(&q->timestamp_anno());
+    q->timestamp_anno().set_now();
     SET_PAINT_ANNO(q, 0);
 
     // set ICMP packet type to ICMP_ECHOREPLY and recalculate checksum

@@ -180,12 +180,12 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 
 	// annotations
 	if (cp_unsigned(words[7], &j))
-	    SET_FIRST_TIMESTAMP_ANNO(q, make_timeval(j, 0)), ok++;
+	    SET_FIRST_TIMESTAMP_ANNO(q, Timestamp(j, 0)), ok++;
 	if (cp_unsigned(words[8], &j)) {
 	    if (j)
-		q->set_timestamp_anno(j, 0);
+		q->timestamp_anno().set(j, 0);
 	    else
-		q->set_timestamp_anno(FIRST_TIMESTAMP_ANNO(q));
+		q->timestamp_anno() = FIRST_TIMESTAMP_ANNO(q);
 	    ok++;
 	}
 	if (cp_unsigned(words[5], &j))
@@ -288,11 +288,11 @@ FromNetFlowSummaryDump::handle_multipacket(Packet *p)
 	}
 	// set timestamps
 	_multipacket_end_timestamp = p->timestamp_anno();
-	if (timerisset(&FIRST_TIMESTAMP_ANNO(p))) {
+	if (FIRST_TIMESTAMP_ANNO(p)) {
 	    _multipacket_timestamp_delta = (p->timestamp_anno() - FIRST_TIMESTAMP_ANNO(p)) / (count - 1);
 	    p->timestamp_anno() = FIRST_TIMESTAMP_ANNO(p);
 	} else
-	    _multipacket_timestamp_delta = make_timeval(0, 0);
+	    _multipacket_timestamp_delta = Timestamp();
 	// prepare IP lengths for _multipacket_length
 	_work_packet = set_packet_lengths(p, _multipacket_length - p->length());
 	if (!_work_packet)

@@ -275,8 +275,7 @@ PollDevice::run_task()
     Packet *p = Packet::make(skb); 
    
 # ifndef CLICK_WARP9
-    struct timeval &tv = p->timestamp_anno(); 
-    click_gettimeofday(&tv);
+    p->timestamp_anno().set_now();
 # endif
 
     _npackets++;

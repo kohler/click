@@ -143,14 +143,14 @@ public:
   class ARPTable *_arp_table;
   uint16_t _et;     // This protocol's ethertype
 
-  struct timeval _start;
+  Timestamp _start;
   // record probes received from other hosts
   struct probe_t {
-    struct timeval _when;  
+    Timestamp _when;  
     uint32_t   _seq;
     uint8_t _rate;
     uint16_t _size;
-    probe_t(const struct timeval &t, 
+    probe_t(const Timestamp &t, 
 	    uint32_t s,
 	    uint8_t r,
 	    uint16_t sz) : _when(t), _seq(s), _rate(r), _size(sz) { }
@@ -168,7 +168,7 @@ public:
     
     Vector<int> _fwd_rates;
     
-    struct timeval _last_rx;
+    Timestamp _last_rx;
     DEQueue<probe_t> _probes;   // most recently received probes
     probe_list_t(const IPAddress &p, unsigned int per, unsigned int t) : 
       _ip(p), 
@@ -178,13 +178,9 @@ public:
     { }
     probe_list_t() : _period(0), _tau(0) { }
 
-    int rev_rate(struct timeval start, int rate, int size) {
-      struct timeval now;
-      struct timeval p = { _tau / 1000, 1000 * (_tau % 1000) };
-      struct timeval earliest;
-      click_gettimeofday(&now);
-      timersub(&now, &p, &earliest);
-
+    int rev_rate(const Timestamp &start, int rate, int size) {
+      Timestamp now = Timestamp::now();
+      Timestamp earliest = now - Timestamp::make_msec(_tau);
 
       if (_period == 0) {
 	click_chatter("period is 0\n");
@@ -192,7 +188,7 @@ public:
       }
       int num = 0;
       for (int i = _probes.size() - 1; i >= 0; i--) {
-	if (timercmp(&earliest, &(_probes[i]._when), >)) {
+	if (earliest > _probes[i]._when) {
 	  break;
 	} 
 	if ( _probes[i]._size == size &&
@@ -201,10 +197,9 @@ public:
 	}
       }
       
-      struct timeval since_start;
-      timersub(&now, &start, &since_start);
+      Timestamp since_start = now - start;
 
-      uint32_t ms_since_start = MAX(0, since_start.tv_sec * 1000 + since_start.tv_usec / 1000);
+      uint32_t ms_since_start = MAX(0, since_start.msec1());
       uint32_t fake_tau = MIN(_tau, ms_since_start);
       assert(_probe_types.size());
       int num_expected = fake_tau / _period;
@@ -244,7 +239,7 @@ public:
   Timer _stale_timer;
 
   void run_timer();
-  struct timeval _next;
+  Timestamp _next;
 
   Vector <RateSize> _ads_rs;
   int _ads_rs_index;

@@ -122,9 +122,7 @@ LocQueryResponder::simple_action(Packet *p)
   ASSERT_ALIGNED(q->data());
   q->pull(2);
 
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  p->set_timestamp_anno(tv);
+  p->set_timestamp_anno(Timestamp::now());
 
   memset(q->data(), 0, q->length());
   e = (click_ether *) q->data();

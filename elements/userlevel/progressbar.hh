@@ -163,10 +163,10 @@ class ProgressBar : public Element { public:
     int _status;
     double _size;
     double _last_pos;
-    struct timeval _start_time;
-    struct timeval _stall_time;
-    struct timeval _last_time;
-    struct timeval _delay_time;
+    Timestamp _start_time;
+    Timestamp _stall_time;
+    Timestamp _last_time;
+    Timestamp _delay_time;
     String _banner;
 
     Timer _timer;

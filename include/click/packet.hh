@@ -3,6 +3,7 @@
 #define CLICK_PACKET_HH
 #include <click/ipaddress.hh>
 #include <click/glue.hh>
+#include <click/timestamp.hh>
 #ifdef CLICK_LINUXMODULE
 # include <click/skbmgr.hh>
 #endif
@@ -186,10 +187,9 @@ class Packet { public:
   void set_dst_ip6_anno(const IP6Address &);
 
 #ifdef CLICK_LINUXMODULE
-  const struct timeval &timestamp_anno() const { return skb()->stamp; }
-  struct timeval &timestamp_anno()	{ return skb()->stamp; }
-  void set_timestamp_anno(const struct timeval &tv) { skb()->stamp = tv; }
-  void set_timestamp_anno(int s, int us) { skb()->stamp.tv_sec = s; skb()->stamp.tv_usec = us; }
+  const Timestamp &timestamp_anno() const { return *(const Timestamp*) &skb()->stamp; }
+  Timestamp &timestamp_anno()		{ return *(Timestamp*) &skb()->stamp; }
+  void set_timestamp_anno(const Timestamp &tv) { memcpy(&skb()->stamp, &tv, 8); }
   net_device *device_anno() const	{ return skb()->dev; }
   void set_device_anno(net_device *dev)	{ skb()->dev = dev; }
   PacketType packet_type_anno() const	{ return (PacketType)(skb()->pkt_type & PACKET_TYPE_MASK); }
@@ -201,10 +201,9 @@ class Packet { public:
 
 #else			/* User-space and BSD kernel module */
 
-  const struct timeval &timestamp_anno() const { return _timestamp; }
-  struct timeval &timestamp_anno()	{ return _timestamp; }
-  void set_timestamp_anno(const struct timeval &tv) { _timestamp = tv; }
-  void set_timestamp_anno(int s, int us) { _timestamp.tv_sec = s; _timestamp.tv_usec = us; }
+  const Timestamp &timestamp_anno() const { return _timestamp; }
+  Timestamp &timestamp_anno()		{ return _timestamp; }
+  void set_timestamp_anno(const Timestamp &tv) { _timestamp = tv; }
 #ifdef CLICK_NS
   class SimPacketinfoWrapper {
   public:
@@ -317,7 +316,7 @@ class Packet { public:
     click_icmp *icmph;
   } _h;
   PacketType _pkt_type;
-  struct timeval _timestamp;
+  Timestamp _timestamp;
 #ifdef CLICK_BSDMODULE
   struct mbuf *_m;
 #endif
@@ -814,7 +813,7 @@ Packet::clear_annotations()
   memset(anno(), '\0', sizeof(Anno));
   set_packet_type_anno(HOST);
   set_device_anno(0);
-  set_timestamp_anno(0, 0);
+  set_timestamp_anno(Timestamp());
   set_mac_header(0);
   set_network_header(0, 0);
   set_next(0);

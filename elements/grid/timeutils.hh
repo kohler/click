@@ -30,33 +30,5 @@ ntoh(const timeval &tv) {
   return tv2;
 }
 
-inline String
-timeval_to_str(const timeval &tv)
-{
-  char buf[80];
-  snprintf(buf, sizeof(buf), "%ld.%06ld", (long) tv.tv_sec, (long) tv.tv_usec);
-  return buf;
-}
-
-#ifdef CLICK_USERLEVEL
-inline timeval
-double_to_timeval(double t)
-{
-  timeval tv;
-  tv.tv_sec = (time_t) floor(t);
-  double frac = t - tv.tv_sec;
-  tv.tv_usec = (long) (frac * 1e6);
-  return tv;
-}
-
-inline double
-timeval_to_double(const timeval &tv)
-{
-  double d = tv.tv_sec;
-  double frac = tv.tv_usec;
-  return d + frac * 1e-6;
-}
-#endif
-
 CLICK_ENDDECLS
 #endif 

@@ -4,8 +4,8 @@
 #include <click/packet.hh>
 CLICK_DECLS
 
-#define FAKE_PCAP_MAGIC			0xa1b2c3d4
-#define	FAKE_MODIFIED_PCAP_MAGIC	0xa1b2cd34
+#define FAKE_PCAP_MAGIC			0xA1B2C3D4
+#define	FAKE_MODIFIED_PCAP_MAGIC	0xA1B2CD34
 #define FAKE_PCAP_VERSION_MAJOR		2
 #define FAKE_PCAP_VERSION_MINOR		4
 
@@ -46,6 +46,7 @@ struct fake_pcap_file_header {
 struct fake_bpf_timeval {
 	int32_t tv_sec;
 	int32_t tv_usec;
+	inline static const Timestamp *make_timestamp(const fake_bpf_timeval *tv, fake_bpf_timeval *storage);
 };
 
 /*
@@ -71,20 +72,33 @@ struct fake_modified_pcap_pkthdr {
 };
 
 // Parsing and unparsing.
-int fake_pcap_parse_dlt(const String &);
+int fake_pcap_parse_dlt(const String&);
 String fake_pcap_unparse_dlt(int);
 int fake_pcap_canonical_dlt(int, bool from_file);
 
 // Handling FORCE_IP.
 bool fake_pcap_dlt_force_ipable(int);
-bool fake_pcap_force_ip(Packet *&, int);
-bool fake_pcap_force_ip(WritablePacket *&, int);
+bool fake_pcap_force_ip(Packet*&, int);
+bool fake_pcap_force_ip(WritablePacket*&, int);
 
 
 inline bool
-fake_pcap_force_ip(WritablePacket *&p, int dlt)
+fake_pcap_force_ip(WritablePacket*& p, int dlt)
 {
-    return fake_pcap_force_ip(reinterpret_cast<Packet *&>(p), dlt);
+    return fake_pcap_force_ip(reinterpret_cast<Packet*&>(p), dlt);
+}
+
+inline const Timestamp *
+fake_bpf_timeval::make_timestamp(const fake_bpf_timeval *tv, fake_bpf_timeval *ts_storage)
+{
+#if HAVE_NANOTIMESTAMP
+    ts_storage->tv_sec = tv->tv_sec;
+    ts_storage->tv_usec = Timestamp::usec_to_subsec(tv->tv_usec);
+    return reinterpret_cast<Timestamp*>(ts_storage);
+#else
+    (void) ts_storage;
+    return reinterpret_cast<const Timestamp*>(tv);
+#endif
 }
 
 CLICK_ENDDECLS

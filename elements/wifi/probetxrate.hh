@@ -80,12 +80,12 @@ class ProbeTXRate : public Element { public:
   String print_rates();
 
   struct tx_result {
-    struct timeval _when;
+    Timestamp _when;
     int _rate;
     bool _success;
     int _time;
     
-    tx_result(const struct timeval &t, int rate, 
+    tx_result(const Timestamp &t, int rate, 
 	      bool success, int time) : 
       _when(t), 
       _rate(rate), 
@@ -177,7 +177,7 @@ class ProbeTXRate : public Element { public:
       }
     }
 
-    void add_result(struct timeval now, int rate, int success,
+    void add_result(const Timestamp &now, int rate, int success,
 		    int time) {
       int ndx = rate_index(rate);
       if (!rate || ndx < 0 || ndx > _rates.size()){
@@ -195,9 +195,9 @@ class ProbeTXRate : public Element { public:
 
 
 
-    void trim(struct timeval t) {
+    void trim(const Timestamp &ts) {
       int trimmed = 0;
-      while (_results.size() && timercmp(&_results[0]._when, &t, <)) {
+      while (_results.size() && _results[0]._when < ts) {
 	trimmed++;
 	tx_result t = _results[0];
 	_results.pop_front();
@@ -292,7 +292,7 @@ class ProbeTXRate : public Element { public:
   NeighborTable _neighbors;
   EtherAddress _bcast;
   int _rate_window_ms;
-  struct timeval _rate_window;
+  Timestamp _rate_window;
 
   AvailableRates *_rtable;
   bool _filter_low_rates;

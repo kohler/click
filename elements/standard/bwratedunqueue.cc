@@ -34,10 +34,8 @@ BandwidthRatedUnqueue::~BandwidthRatedUnqueue()
 bool
 BandwidthRatedUnqueue::run_task()
 {
-    struct timeval now;
-    click_gettimeofday(&now);
     bool worked = false;
-    if (_rate.need_update(now)) {
+    if (_rate.need_update(Timestamp::now())) {
 	if (Packet *p = input(0).pull()) {
 	    _rate.update_with(p->length());
 	    worked = true;

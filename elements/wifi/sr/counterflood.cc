@@ -166,10 +166,9 @@ CounterFlood::forward(Broadcast *bcast) {
 void
 CounterFlood::forward_hook() 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   for (int x = 0; x < _packets.size(); x++) {
-    if (timercmp(&now, &_packets[x]._to_send, >)) {
+    if (now > _packets[x]._to_send) {
       /* this timer has expired */
       if (!_packets[x]._forwarded && 
 	  (!_count || _packets[x]._num_rx < _count)) {
@@ -204,8 +203,7 @@ CounterFlood::trim_packets() {
 void
 CounterFlood::push(int port, Packet *p_in)
 {
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   
   if (port == 1) {
     _packets_originated++;
@@ -266,10 +264,7 @@ CounterFlood::push(int port, Packet *p_in)
       int delay_time = (random() % _max_delay_ms) + 1;
       sr_assert(delay_time > 0);
       
-      struct timeval delay;
-      delay.tv_sec = 0;
-      delay.tv_usec = delay_time*1000;
-      timeradd(&now, &delay, &_packets[index]._to_send);
+      _packets[index]._to_send = now + Timestamp::make_msec(delay_time);
       _packets[index].t = new Timer(static_forward_hook, (void *) this);
       _packets[index].t->initialize(this);
       _packets[index].t->schedule_at(_packets[index]._to_send);

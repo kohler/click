@@ -58,7 +58,7 @@ class DelayShaper : public Element, public ActiveNotifier { public:
   private:
 
     Packet *_p;
-    struct timeval _delay;
+    Timestamp _delay;
     Timer _timer;
     NotifierSignal _upstream_signal;
 

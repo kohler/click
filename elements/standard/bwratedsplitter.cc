@@ -33,9 +33,7 @@ BandwidthRatedSplitter::~BandwidthRatedSplitter()
 void
 BandwidthRatedSplitter::push(int, Packet *p)
 {
-    struct timeval now;
-    click_gettimeofday(&now);
-    if (_rate.need_update(now)) {
+    if (_rate.need_update(Timestamp::now())) {
 	_rate.update_with(p->length());
 	output(0).push(p);
     } else

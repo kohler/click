@@ -190,27 +190,18 @@ ToDevice::selected(int)
     
     if (retval < 0) {
       if (errno == ENOBUFS || errno == EAGAIN) {
-	struct timeval now;
-	struct timeval after;
 	assert(!_q);
 	_q = p;
 	/* we should backoff */
 	remove_select(_fd, SELECT_WRITE);
 
-	click_gettimeofday(&now);
 	_backoff = (!_backoff) ? 1 : _backoff*2;
-	after.tv_usec = _backoff % 1000000;
-	after.tv_sec = _backoff / 1000000;
-	timeradd(&now, &after, &after);
-	_timer.schedule_at(after);
+	_timer.schedule_after(Timestamp::make_usec(_backoff));
 
 	if (_debug) {
-	  StringAccum sa;
-	  sa << now;
-	  click_chatter("%{element} backing off for %d at %s\n",
-			this,
-			_backoff,
-			sa.take_string().cc());
+	    Timestamp now = Timestamp::now();
+	    click_chatter("%{element} backing off for %d at %{timestamp}\n",
+			  this, _backoff, &now);
 	}
 	return;
       } else {

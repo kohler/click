@@ -165,11 +165,8 @@ LookupLocalGridRoute2::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 
     notify_route_cbs(packet, dest_ip, GRCB::Drop, GRCB::NoLocalRoute, 0);
 
-    if (_log) {
-      struct timeval tv;
-      click_gettimeofday(&tv);
-      _log->log_no_route(packet, tv);
-    }
+    if (_log)
+      _log->log_no_route(packet, Timestamp::now());
 
     packet->kill();
     return 0;

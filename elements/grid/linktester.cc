@@ -110,21 +110,19 @@ LinkTester::initialize(ErrorHandler *errh)
   if (!res)
     return errh->error("Unable to initialize random number generator");
 
-  struct timeval tv;
-  click_gettimeofday(&tv);
+  Timestamp now = Timestamp::now();
 
   if (_start_time < 0) // start ``immediately''
-    _start_time = tv.tv_sec + 5;
+    _start_time = now.sec() + 5;
 
-  if (tv.tv_sec >= (int) _start_time)
+  if (now.sec() >= (int) _start_time)
     return errh->error("Start time %u has alread passed", _start_time);
 
   _timer.initialize(this);
-  _start_time_tv.tv_sec = _start_time;
-  _start_time_tv.tv_usec = 0;
+  _start_time_tv = Timestamp(_start_time, 0);
   _timer.schedule_at(_start_time_tv);
 
-  _last_time = tv;
+  _last_time = now;
   _next_time = _start_time_tv;
 
   return 0;
@@ -133,11 +131,10 @@ LinkTester::initialize(ErrorHandler *errh)
 void
 LinkTester::timer_hook()
 {
-  struct timeval tv;
-  click_gettimeofday(&tv);
+  Timestamp tv = Timestamp::now();
 #if 1
-  click_chatter("OK %s    (delta: %s)\n", timeval_to_str(tv).cc(),
-		timeval_to_str(tv - _last_time).cc());
+  click_chatter("OK %{timestamp}    (delta: %s)\n", tv.unparse().cc(),
+		(tv - _last_time).unparse().cc());
 #endif
   _last_time = tv;
   switch (_curr_state) {
@@ -153,7 +150,7 @@ LinkTester::timer_hook()
 }
 
 void 
-LinkTester::handle_timer_waiting(const struct timeval &tv)
+LinkTester::handle_timer_waiting(const Timestamp &tv)
 {
   assert(_curr_state == WAITING_TO_START);
   _iterations_done = 0;
@@ -171,8 +168,7 @@ LinkTester::handle_timer_waiting(const struct timeval &tv)
   else {
     _curr_state = LISTENING;
     int listen_for = calc_listen_time() + calc_pad_time();
-    _next_time.tv_sec = _start_time + (listen_for / 1000);
-    _next_time.tv_usec = 1000 * (listen_for % 1000);
+    _next_time = _start_time_tv + Timestamp::make_msec(listen_for);
     
     assert(_next_time > tv);
     _timer.schedule_at(_next_time);
@@ -180,7 +176,7 @@ LinkTester::handle_timer_waiting(const struct timeval &tv)
 }
 
 void 
-LinkTester::handle_timer_listening(const struct timeval &tv)
+LinkTester::handle_timer_listening(const Timestamp &tv)
 {
   assert(_curr_state == LISTENING);
 
@@ -199,7 +195,7 @@ LinkTester::handle_timer_listening(const struct timeval &tv)
 }
 
 void 
-LinkTester::handle_timer_bcast(const struct timeval &tv)
+LinkTester::handle_timer_bcast(const Timestamp &tv)
 {
   assert(_curr_state == BCAST_1 || _curr_state == BCAST_2);
   send_broadcast_packet((unsigned short) _bcast_packet_size, tv, 
@@ -209,7 +205,7 @@ LinkTester::handle_timer_bcast(const struct timeval &tv)
 
   // when would we like to send the next bcast packet?
   unsigned int delta = draw_random_msecs(_bcast_lambda);
-  struct timeval new_next_time = _next_time + msecs_to_timeval(delta);
+  Timestamp new_next_time = _next_time + Timestamp::make_msec(delta);
   
   // is there enough time left to send the next packet?
   if (new_next_time <= last_bcast_time(_iterations_done,
@@ -254,14 +250,14 @@ LinkTester::handle_timer_bcast(const struct timeval &tv)
 }
  
 void 
-LinkTester::handle_timer_unicast(const struct timeval &tv)
+LinkTester::handle_timer_unicast(const Timestamp &tv)
 {
   assert(_curr_state == UNICAST);
   send_unicast_packet(tv, _packets_sent, _iterations_done);
   _packets_sent++;
 
   unsigned int delta = draw_random_msecs(_lambda);
-  struct timeval new_next_time = _next_time + msecs_to_timeval(delta);
+  Timestamp new_next_time = _next_time + Timestamp::make_msec(delta);
 
   // is there enough time left to sent the next packet?
   if (new_next_time <= last_unicast_time(_iterations_done))
@@ -296,7 +292,7 @@ LinkTester::calc_bcast_time()
   return _bcast_send_time;
 }
 
-struct timeval
+Timestamp
 LinkTester::first_unicast_time(unsigned int iter)
 {
   unsigned int iter_time = 2 * (calc_listen_time() + calc_pad_time());
@@ -304,10 +300,10 @@ LinkTester::first_unicast_time(unsigned int iter)
   delta += calc_bcast_time() + calc_pad_time();
   if (!_send_first) // let other node send first
     delta += calc_listen_time() + calc_pad_time();
-  return msecs_to_timeval(delta) + _start_time_tv;
+  return Timestamp::make_msec(delta) + _start_time_tv;
 }
 
-struct timeval
+Timestamp
 LinkTester::first_bcast_time(unsigned int iter, bool before)
 {
   unsigned int iter_time = 2 * (calc_listen_time() + calc_pad_time());
@@ -316,23 +312,23 @@ LinkTester::first_bcast_time(unsigned int iter, bool before)
     delta += calc_listen_time() + calc_pad_time();
   if (!before)
     delta += calc_bcast_time() + calc_pad_time() + calc_unicast_time() + calc_pad_time();
-  return msecs_to_timeval(delta) + _start_time_tv;
+  return Timestamp::make_msec(delta) + _start_time_tv;
 }
 
-struct timeval
+Timestamp
 LinkTester::last_unicast_time(unsigned int iter)
 {
-  return first_unicast_time(iter) + msecs_to_timeval(calc_unicast_time());
+  return first_unicast_time(iter) + Timestamp::make_msec(calc_unicast_time());
 }
 
-struct timeval
+Timestamp
 LinkTester::last_bcast_time(unsigned int iter, bool before)
 {
-  return first_bcast_time(iter, before) + msecs_to_timeval(calc_bcast_time());
+  return first_bcast_time(iter, before) + Timestamp::make_msec(calc_bcast_time());
 }
 
 void
-LinkTester::send_unicast_packet(const struct timeval &tv,
+LinkTester::send_unicast_packet(const Timestamp &tv,
 				unsigned int seq, unsigned int iter)
 {
   WritablePacket *p = Packet::make(_packet_size);
@@ -347,8 +343,8 @@ LinkTester::send_unicast_packet(const struct timeval &tv,
   payload->size = htons(_packet_size);
   payload->iteration = htonl(iter);
   payload->seq_no = htonl(seq);
-  payload->tx_sec = htonl(tv.tv_sec);
-  payload->tx_usec = htonl(tv.tv_usec);
+  payload->tx_sec = htonl(tv.sec());
+  payload->tx_usec = htonl(tv.usec());
 
   unsigned int data_sz = _packet_size - sizeof(click_ether) - sizeof(payload_t);
   if (data_sz > 0)
@@ -358,7 +354,7 @@ LinkTester::send_unicast_packet(const struct timeval &tv,
 }
 
 void
-LinkTester::send_broadcast_packet(unsigned short psz, const struct timeval &tv,
+LinkTester::send_broadcast_packet(unsigned short psz, const Timestamp &tv,
 				  bool before, unsigned int seq, unsigned int iter)
 {
   assert(psz >= sizeof(click_ether) + sizeof(payload_t));
@@ -376,8 +372,8 @@ LinkTester::send_broadcast_packet(unsigned short psz, const struct timeval &tv,
   payload->before = before ? 1 : 0;
   payload->iteration = htonl(iter);
   payload->seq_no = htonl(seq);
-  payload->tx_sec = htonl(tv.tv_sec);
-  payload->tx_usec = htonl(tv.tv_usec);
+  payload->tx_sec = htonl(tv.sec());
+  payload->tx_usec = htonl(tv.usec());
 
   unsigned int data_sz = psz - sizeof(click_ether) - sizeof(payload_t);
   if (data_sz > 0)
@@ -391,15 +387,6 @@ LinkTester::finish_experiment()
 {
   click_chatter("DONE\n");
   router()->please_stop_driver();
-}
-
-struct timeval
-LinkTester::msecs_to_timeval(unsigned int msecs)
-{
-  struct timeval tv;
-  tv.tv_sec = msecs / 1000;
-  tv.tv_usec = 1000 * (msecs % 1000);
-  return tv;
 }
 
 bool

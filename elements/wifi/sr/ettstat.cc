@@ -234,10 +234,7 @@ ETTStat::take_state(Element *e, ErrorHandler *errh)
   _sent = q->_sent;
   _start = q->_start;
 
-  struct timeval now;
-  click_gettimeofday(&now);
-
-  if (timercmp(&now, &q->_next, <)) {
+  if (Timestamp::now() < q->_next) {
     _timer->unschedule();
     _timer->schedule_at(q->_next);
     _next = q->_next;
@@ -246,18 +243,12 @@ ETTStat::take_state(Element *e, ErrorHandler *errh)
   
 }
 
-void add_jitter(unsigned int max_jitter, struct timeval *t) {
-  struct timeval jitter;
+void add_jitter(unsigned int max_jitter, Timestamp *t) {
   unsigned j = (unsigned) (random() % (max_jitter + 1));
-  unsigned int delta_us = 1000 * j;
-  timerclear(&jitter);
-  jitter.tv_usec += delta_us;
-  jitter.tv_sec +=  jitter.tv_usec / 1000000;
-  jitter.tv_usec = (jitter.tv_usec % 1000000);
   if (random() & 1) {
-    timeradd(t, &jitter, t);
+      *t += Timestamp::make_msec(j);
   } else {
-    timersub(t, &jitter, t);
+      *t -= Timestamp::make_msec(j);
   }
   return;
 }
@@ -288,15 +279,7 @@ ETTStat::send_probe_hook()
 
   send_probe();
   
-
-  struct timeval period;
-  timerclear(&period);
-
-  period.tv_usec += (p * 1000);
-  period.tv_sec += period.tv_usec / 1000000;
-  period.tv_usec = (period.tv_usec % 1000000);
-
-  timeradd(&period, &_next, &_next);
+  _next += Timestamp::make_msec(p);
   add_jitter(max_jitter, &_next);
   _timer->schedule_at(_next);
 }
@@ -337,9 +320,7 @@ ETTStat::send_probe()
   p->pull(2);
   memset(p->data(), 0, p->length());
 
-  struct timeval now;
-  click_gettimeofday(&now);
-  p->set_timestamp_anno(now);
+  p->set_timestamp_anno(Timestamp::now());
   
   // fill in ethernet header 
   click_ether *eh = (click_ether *) p->data();
@@ -350,7 +331,7 @@ ETTStat::send_probe()
   link_probe *lp = (struct link_probe *) (p->data() + sizeof(click_ether));
   lp->_version = _ett_version;
   lp->_ip = _ip.addr();
-  lp->_seq = now.tv_sec;
+  lp->_seq = p->timestamp_anno().sec();
   lp->_period = _period;
   lp->_tau = _tau;
   lp->_sent = _sent;
@@ -456,10 +437,8 @@ ETTStat::initialize(ErrorHandler *errh)
 
     _stale_timer.initialize(this);
     _stale_timer.schedule_now();
-    struct timeval now;
-    click_gettimeofday(&now);
     
-    _next = now;
+    _next = Timestamp::now();
 
     unsigned max_jitter = _period / 10;
     add_jitter(max_jitter, &_next);
@@ -478,8 +457,7 @@ ETTStat::simple_action(Packet *p)
 {
 
   
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
 
   unsigned min_sz = sizeof(click_ether) + sizeof(link_probe);
   if (p->length() < min_sz) {
@@ -588,7 +566,7 @@ ETTStat::simple_action(Packet *p)
 
   /* keep stats for at least the averaging period */
   while ((unsigned) l->_probes.size() &&
-	 now.tv_sec - l->_probes[0]._when.tv_sec > (signed) (1 + (l->_tau / 1000)))
+	 now._sec - l->_probes[0]._when._sec > (signed) (1 + (l->_tau / 1000)))
     l->_probes.pop_front();
   
 
@@ -681,7 +659,7 @@ ETTStat::simple_action(Packet *p)
     int seq = entry->_seq;
     if (neighbor == ip && 
 	((uint32_t) neighbor > (uint32_t) _ip)) {
-      seq = now.tv_sec;
+      seq = now._sec;
     }
     update_link(ip, neighbor, rates, fwd, rev, seq);
     ptr += num_rates * sizeof(struct link_info);
@@ -721,8 +699,7 @@ ETTStat::read_bcast_stats()
   for (ProbeMap::const_iterator i = _bcast_stats.begin(); i; i++) 
     ip_addrs.push_back(i.key());
 
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
 
   StringAccum sa;
 
@@ -785,16 +762,15 @@ ETTStat::clear_stale()
 {
   Vector<IPAddress> new_neighbors;
 
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   for (int x = 0; x < _neighbors.size(); x++) {
     IPAddress n = _neighbors[x];
     probe_list_t *l = _bcast_stats.findp(n);
     if (!l || 
-	(unsigned) now.tv_sec - l->_last_rx.tv_sec > 2 * l->_tau/1000) {
+	(unsigned) now._sec - l->_last_rx._sec > 2 * l->_tau/1000) {
       click_chatter("%{element} clearing stale neighbor %s age %d\n ",
 		    this, n.s().cc(),
-		    now.tv_sec - l->_last_rx.tv_sec);
+		    now._sec - l->_last_rx._sec);
       _bcast_stats.remove(n);
     } else {
       new_neighbors.push_back(n);
@@ -815,7 +791,7 @@ ETTStat::reset()
   _rev_arp.clear();
   _seq = 0;
   _sent = 0;
-  click_gettimeofday(&_start);
+  _start = Timestamp::now();
 }
 
 

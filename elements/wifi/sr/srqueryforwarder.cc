@@ -42,12 +42,9 @@ SRQueryForwarder::SRQueryForwarder()
   MaxHops = 30;
 
   // Pick a starting sequence number that we have not used before.
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  _seq = tv.tv_usec;
+  _seq = Timestamp::now().usec();
 
-  _query_wait.tv_sec = 5;
-  _query_wait.tv_usec = 0;
+  _query_wait = Timestamp(5, 0);
 
 
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
@@ -171,17 +168,14 @@ SRQueryForwarder::process_query(struct srpacket *pk1)
   si = _seen.size() - 1;
   
   _seen[si]._count++;
-  click_gettimeofday(&_seen[si]._when);
+  _seen[si]._when = Timestamp::now();
 
   
   /* schedule timer */
   int delay_time = random() % 1750 + 1;
   sr_assert(delay_time > 0);
   
-  struct timeval delay;
-  delay.tv_sec = 0;
-  delay.tv_usec = delay_time*1000;
-  timeradd(&_seen[si]._when, &delay, &_seen[si]._to_send);
+  _seen[si]._to_send = _seen[si]._when + Timestamp::make_msec(delay_time);
   _seen[si]._forwarded = false;
   Timer *t = new Timer(static_forward_query_hook, (void *) this);
   t->initialize(this);
@@ -191,10 +185,9 @@ SRQueryForwarder::process_query(struct srpacket *pk1)
 void
 SRQueryForwarder::forward_query_hook() 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   for (int x = 0; x < _seen.size(); x++) {
-    if (timercmp(&_seen[x]._to_send, &now, <) && !_seen[x]._forwarded) {
+    if (_seen[x]._to_send < now && !_seen[x]._forwarded) {
       forward_query(&_seen[x]);
     }
   }
@@ -206,10 +199,8 @@ SRQueryForwarder::forward_query(Seen *s)
   s->_forwarded = true;
   _link_table->dijkstra(false);
   if (0) {
-    struct timeval now;
-    click_gettimeofday(&now);
     StringAccum sa;
-    sa << now - s->_when;
+    sa << (Timestamp::now() - s->_when);
     click_chatter("%{element} :: %s :: waited %s\n",
 		  this,
 		  __func__,

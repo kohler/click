@@ -4,6 +4,7 @@
 #include <click/sync.hh>
 #include <click/glue.hh>
 #include <click/element.hh>
+#include <click/timestamp.hh>
 CLICK_DECLS
 class Element;
 class Router;
@@ -14,28 +15,28 @@ typedef void (*TimerHook)(Timer *, void *);
 
 class Timer { public:
 
-    Timer(TimerHook, void *);
-    Timer(Element *);			// call element->run_timer()
-    Timer(Task *);			// call task->reschedule()
+    Timer(TimerHook, void*);
+    Timer(Element*);			// call element->run_timer()
+    Timer(Task*);			// call task->reschedule()
     ~Timer()				{ if (scheduled()) unschedule(); }
 
     bool initialized() const		{ return _router != 0; }
     bool scheduled() const		{ return _schedpos >= 0; }
-    const timeval &expiry() const	{ return _expiry; }
+    const Timestamp &expiry() const	{ return _expiry; }
   
-    inline void initialize(Router *);
-    inline void initialize(Element *);
+    inline void initialize(Router*);
+    inline void initialize(Element*);
     void cleanup()			{ unschedule(); }
     void uninitialize()			{ cleanup(); }	// deprecated
 
-    void schedule_at(const timeval &);
-    inline void reschedule_at(const timeval &); // synonym
+    void schedule_at(const Timestamp&);
+    inline void reschedule_at(const Timestamp&); // synonym
 
     inline void schedule_now();
-    void schedule_after(const timeval &);
+    void schedule_after(const Timestamp&);
     inline void schedule_after_s(uint32_t);
     inline void schedule_after_ms(uint32_t);
-    inline void reschedule_after(const timeval &);
+    inline void reschedule_after(const Timestamp&);
     inline void reschedule_after_s(uint32_t);
     inline void reschedule_after_ms(uint32_t);
 
@@ -44,7 +45,7 @@ class Timer { public:
   private:
   
     int _schedpos;
-    timeval _expiry;
+    Timestamp _expiry;
     TimerHook _hook;
     void *_thunk;
     Router *_router;
@@ -70,9 +71,9 @@ Timer::initialize(Element *element)
 }
 
 inline void
-Timer::reschedule_at(const timeval &tv)
+Timer::reschedule_at(const Timestamp &ts)
 {
-    schedule_at(tv);
+    schedule_at(ts);
 }
 
 inline void
@@ -84,17 +85,17 @@ Timer::schedule_now()
 inline void
 Timer::schedule_after_s(uint32_t s)
 {
-    schedule_after(make_timeval(s, 0));
+    schedule_after(Timestamp(s, 0));
 }
 
 inline void
 Timer::schedule_after_ms(uint32_t ms)
 {
-    schedule_after(make_timeval(ms / 1000, (ms % 1000) * 1000));
+    schedule_after(Timestamp::make_msec(ms));
 }
 
 inline void
-Timer::reschedule_after(const timeval &delta)
+Timer::reschedule_after(const Timestamp &delta)
 {
     schedule_at(_expiry + delta);
 }
@@ -102,13 +103,13 @@ Timer::reschedule_after(const timeval &delta)
 inline void
 Timer::reschedule_after_s(uint32_t s)
 {
-    schedule_at(make_timeval(s + _expiry.tv_sec, _expiry.tv_usec));
+    schedule_at(Timestamp(_expiry.sec() + s, _expiry.subsec()));
 }
 
 inline void
 Timer::reschedule_after_ms(uint32_t ms)
 {
-    schedule_at(_expiry + make_timeval(ms / 1000, (ms % 1000) * 1000));
+    schedule_at(_expiry + Timestamp::make_msec(ms));
 }
 
 CLICK_ENDDECLS

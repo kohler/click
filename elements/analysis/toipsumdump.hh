@@ -36,7 +36,9 @@ Keyword arguments are:
 Space-separated list of field names. Each line of the summary dump will
 contain those fields. Valid field names, with examples, are:
 
-   timestamp    Packet timestamp: '996033261.451094'
+   timestamp    Packet timestamp: '996033261.451094' (either
+		microsecond or nanosecond precision, depending
+		on how Click was compiled)
    ts_sec       Seconds portion of timestamp: '996033261'
    ts_usec      Microseconds portion of timestamp: '451094'
    ts_usec1     Packet timestamp in microseconds
@@ -253,8 +255,10 @@ Regular packet records have binary fields stored in the order indicated by
 the 'C<!data>' line, as follows:
 
    Field Name    Length  Description
-   timestamp        8    timestamp sec + usec
-   ts_sec, ts_usec  4    timestamp sec/usec
+   timestamp	    8	 timestamp sec + usec
+   utimestamp	    8	 timestamp sec + usec
+   ntimestamp	    8	 timestamp sec + nsec
+   ts_sec, ts_usec  4	 timestamp sec/usec
    ts_usec1         8    timestamp in usec
    ip_src           4    source IP address
    ip_dst           4    destination IP address

@@ -100,12 +100,12 @@ private:
     Packet *_p;
     int _num_rx;
     int _num_tx;
-    struct timeval _first_rx;
+    Timestamp _first_rx;
     bool _actual_first_rx;
     bool _scheduled;
     bool _sent;
     Timer *t;
-    struct timeval _to_send;
+    Timestamp _to_send;
     
     Vector<IPAddress> _rx_from; /* who I got this packet from */
     Vector<uint32_t> _rx_from_seq;

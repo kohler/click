@@ -58,7 +58,7 @@ DelayShaper::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     ActiveNotifier::initialize(router());
     return cp_va_parse(conf, this, errh,
-		       cpInterval, "delay", &_delay, cpEnd);
+		       cpTimestamp, "delay", &_delay, cpEnd);
 }
 
 int
@@ -81,23 +81,22 @@ DelayShaper::pull(int)
 {
     // read a packet
     if (!_p && (_p = input(0).pull())) {
-	if (!_p->timestamp_anno().tv_sec) // get timestamp if not set
-	    click_gettimeofday(&_p->timestamp_anno());
+	if (!_p->timestamp_anno()._sec) // get timestamp if not set
+	    _p->timestamp_anno().set_now();
 	_p->timestamp_anno() += _delay;
     }
     
     if (_p) {
-	struct timeval now, diff;
-	click_gettimeofday(&now);
-	diff = _p->timestamp_anno() - now;
+	Timestamp now = Timestamp::now();
+	Timestamp diff = _p->timestamp_anno() - now;;
 	
-	if (diff.tv_sec < 0 || (diff.tv_sec == 0 && diff.tv_usec == 0)) {
+	if (diff._sec < 0 || (diff._sec == 0 && diff._subsec == 0)) {
 	    // packet ready for output
 	    Packet *p = _p;
 	    p->timestamp_anno() = now;
 	    _p = 0;
 	    return p;
-	} else if (diff.tv_sec == 0 && diff.tv_usec < 100000) {
+	} else if (diff._sec == 0 && diff._subsec < Timestamp::usec_to_subsec(100000)) {
 	    // small delta, don't go to sleep -- but mark our Signal as active,
 	    // since we have something ready. NB: should not wake listeners --
 	    // we are in pull()!
@@ -132,8 +131,8 @@ int
 DelayShaper::write_param(const String &s, Element *e, void *, ErrorHandler *errh)
 {
     DelayShaper *u = (DelayShaper *)e;
-    if (!cp_timeval(cp_uncomment(s), &u->_delay))
-	return errh->error("delay must be a timeval");
+    if (!cp_time(cp_uncomment(s), &u->_delay))
+	return errh->error("delay must be a timestamp");
     return 0;
 }
 

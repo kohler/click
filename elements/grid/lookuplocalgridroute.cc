@@ -360,10 +360,8 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     // logging
     notify_route_cbs(packet, dest_ip, GRCB::FallbackToGF, 0, 0);
 
-    struct timeval tv = { 0, 0 };
-    click_gettimeofday(&tv);
     if (_log)
-      _log->log_no_route(packet, tv);
+      _log->log_no_route(packet, Timestamp::now());
 
     output(2).push(packet);
   }

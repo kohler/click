@@ -96,7 +96,7 @@ Packet*
 TimeSortedSched::pull(int)
 {
     int which = -1;
-    struct timeval* tv = 0;
+    Timestamp* tv = 0;
     bool signals_on = false;
     
     for (int i = 0; i < ninputs(); i++) {
@@ -105,8 +105,8 @@ TimeSortedSched::pull(int)
 	    signals_on = true;
 	}
 	if (_vec[i]) {
-	    struct timeval *this_tv = &_vec[i]->timestamp_anno();
-	    if (!tv || timercmp(this_tv, tv, <)) {
+	    Timestamp* this_tv = &_vec[i]->timestamp_anno();
+	    if (!tv || *this_tv < *tv) {
 		which = i;
 		tv = this_tv;
 	    }

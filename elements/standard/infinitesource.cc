@@ -116,7 +116,7 @@ InfiniteSource::run_task()
   if (n > 0) {
     for (int i = 0; i < n; i++) {
       Packet *p = _packet->clone();
-      click_gettimeofday(&p->timestamp_anno());
+      p->timestamp_anno().set_now();
       output(0).push(p);
     }
     _count += n;
@@ -149,7 +149,7 @@ InfiniteSource::pull(int)
   }
   _count++;
   Packet *p = _packet->clone();
-  click_gettimeofday(&p->timestamp_anno());
+  p->timestamp_anno().set_now();
   return p;
 }
 

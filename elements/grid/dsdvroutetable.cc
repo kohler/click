@@ -421,9 +421,7 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
   dsdv_assert(old && *old && !(*old)->scheduled() && oldhp && *oldhp);
 
   if (_log) {
-    timeval tv;
-    click_gettimeofday(&tv);
-    _log->log_start_expire_handler(tv);
+    _log->log_start_expire_handler(Timestamp::now());
     _log->log_expired_route(GridGenericLogger::TIMEOUT, ip);
   }
 
@@ -1026,11 +1024,8 @@ DSDVRouteTable::simple_action(Packet *packet)
 
   grid_hello *hlo = (grid_hello *) (gh + 1);
    
-  if (_log) {
-    struct timeval tv;
-    click_gettimeofday(&tv);
-    _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, tv);
-  }
+  if (_log)
+    _log->log_start_recv_advertisement(ntohl(hlo->seq_no), ipaddr, Timestamp::now());
   
   // assume CheckGridHeader was used to check for truncated packets
   // and bad checksums.  Sanity check number of entries.
@@ -1511,9 +1506,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   memset(p->data(), 0, p->length());
 
   /* fill in the timestamp */
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  p->set_timestamp_anno(tv);
+  p->set_timestamp_anno(Timestamp::now());
 
   /* fill in ethernet header */
   click_ether *eh = (click_ether *) p->data();
@@ -1537,7 +1530,7 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
   hlo->is_gateway = _gw_info ? _gw_info->is_gateway() : false;
 
   if (_log)
-    _log->log_sent_advertisement(_seq_no, tv);
+    _log->log_sent_advertisement(_seq_no, p->timestamp_anno());
   
   _bcast_count++;
   grid_hdr::set_pad_bytes(*gh, htonl(_bcast_count));
@@ -1584,11 +1577,9 @@ void
 DSDVRouteTable::log_dump_hook(bool reschedule)
 {
   if (_log) {
-    struct timeval tv;
-    click_gettimeofday(&tv);
     Vector<RouteEntry> vec;
     get_all_entries(vec);
-    _log->log_route_dump(vec, tv);
+    _log->log_route_dump(vec, Timestamp::now());
   }
   if (reschedule)
     _log_dump_timer.schedule_after_ms(_log_dump_period); 

@@ -122,9 +122,8 @@ IPOutputCombo::push(int, Packet *p_in)
 	int flg = woa[oi+3] & 0xf;
 	bool overflowed = 0;
 
-	struct timeval tv;
-	click_gettimeofday(&tv);
-	int ms = htonl((tv.tv_sec % 86400) * 1000 + tv.tv_usec / 1000);
+	Timestamp now = Timestamp::now();
+	int ms = htonl((now.sec() % 86400)*1000 + now.msec());
 
 	if(p < 4){
 	  problem_offset = oi + 2;

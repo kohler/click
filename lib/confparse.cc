@@ -41,6 +41,7 @@
 # define CP_PASS_CONTEXT , context
 #else
 # include <click/hashmap.hh>
+# include <click/timestamp.hh>
 # define CP_CONTEXT_ARG
 # define CP_PASS_CONTEXT
 #endif
@@ -1292,22 +1293,26 @@ bool cp_seconds_as_micro(const String &str_in, uint32_t *return_value)
   return cp_seconds_as(6, str_in, return_value);
 }
 
-bool cp_timeval(const String &str, struct timeval *return_value)
+bool cp_time(const String &str, Timestamp* return_value)
 {
-  int power = 0, factor = 1;
-  const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
-  uint32_t tv_sec, tv_usec;
-  if (!cp_unsigned_real10(str.substring(str.begin(), after_unit), 6, power, &tv_sec, &tv_usec))
-    return false;
-  if (factor != 1) {
-    tv_usec *= factor;
-    int delta = tv_usec / 1000000;
-    tv_usec -= delta * 1000000;
-    tv_sec = (tv_sec * factor) + delta;
-  }
-  return_value->tv_sec = tv_sec;
-  return_value->tv_usec = tv_usec;
-  return true;
+    int power = 0, factor = 1;
+    const char *after_unit = read_unit(str.begin(), str.end(), seconds_units, sizeof(seconds_units), seconds_prefixes, &power, &factor);
+    uint32_t sec, nsec;
+    if (!cp_unsigned_real10(str.substring(str.begin(), after_unit), 9, power, &sec, &nsec))
+	return false;
+    if (factor != 1) {
+	nsec *= factor;
+	int delta = nsec / 1000000000;
+	nsec -= delta * 1000000000;
+	sec = (sec * factor) + delta;
+    }
+    *return_value = Timestamp::make_nsec(sec, nsec);
+    return true;
+}
+
+bool cp_time(const String &str, timeval *return_value)
+{
+    return cp_time(str, (Timestamp*) return_value);
 }
 
 
@@ -1959,6 +1964,7 @@ const CpVaParseCmd
   cpSecondsAsMilli	= "msec",
   cpSecondsAsMicro	= "usec",
   cpTimeval		= "timeval",
+  cpTimestamp		= "timestamp",
   cpInterval		= "interval",
   cpBandwidth		= "bandwidth_Bps",
   cpIPAddress		= "ip_addr",
@@ -2250,7 +2256,7 @@ default_parsefunc(cp_value *v, const String &arg,
    case cpiTimeval:
    case cpiInterval: {
      struct timeval tv;
-     if (!cp_timeval(arg, &tv)) {
+     if (!cp_time(arg, &tv)) {
        if (cp_errno == CPE_NEGATIVE)
 	 errh->error("%s (%s) must be >= 0", argname, desc);
        else
@@ -3431,53 +3437,59 @@ cp_unparse_real10(uint32_t real, int frac_digits)
 String
 cp_unparse_real10(int32_t real, int frac_digits)
 {
-  if (real < 0)
-    return "-" + cp_unparse_real10(static_cast<uint32_t>(-real), frac_digits);
-  else
-    return cp_unparse_real10(static_cast<uint32_t>(real), frac_digits);
+    if (real < 0)
+	return "-" + cp_unparse_real10(static_cast<uint32_t>(-real), frac_digits);
+    else
+	return cp_unparse_real10(static_cast<uint32_t>(real), frac_digits);
 }
 
 String
 cp_unparse_milliseconds(uint32_t ms)
 {
-  if (ms && ms < 1000)
-    return String(ms) + "ms";
-  else
-    return cp_unparse_real10(ms, 3) + "s";
+    if (ms && ms < 1000)
+	return String(ms) + "ms";
+    else
+	return cp_unparse_real10(ms, 3) + "s";
 }
 
 String
 cp_unparse_microseconds(uint32_t us)
 {
-  if (us && us < 1000)
-    return String(us) + "us";
-  else
-    return cp_unparse_real10(us, 6) + "s";
+    if (us && us < 1000)
+	return String(us) + "us";
+    else
+	return cp_unparse_real10(us, 6) + "s";
 }
 
 String
-cp_unparse_interval(const struct timeval &tv)
+cp_unparse_interval(const Timestamp& ts)
 {
-  if (!tv.tv_sec)
-    return cp_unparse_microseconds(tv.tv_usec);
-  else {
-    StringAccum sa;
-    sa << tv << 's';
-    return sa.take_string();
-  }
+    if (ts.sec() == 0)
+	return cp_unparse_microseconds(ts.usec());
+    else {
+	StringAccum sa;
+	sa << ts << 's';
+	return sa.take_string();
+    }
+}
+
+String
+cp_unparse_interval(const timeval& tv)
+{
+    return cp_unparse_interval(*(const Timestamp*) &tv);
 }
 
 String
 cp_unparse_bandwidth(uint32_t bw)
 {
-  if (bw >= 0x20000000U)
-    return cp_unparse_real10(bw, 6) + "MBps";
-  else if (bw >= 125000000)
-    return cp_unparse_real10(bw * 8, 9) + "Gbps";
-  else if (bw >= 125000)
-    return cp_unparse_real10(bw * 8, 6) + "Mbps";
-  else
-    return cp_unparse_real10(bw * 8, 3) + "kbps";
+    if (bw >= 0x20000000U)
+	return cp_unparse_real10(bw, 6) + "MBps";
+    else if (bw >= 125000000)
+	return cp_unparse_real10(bw * 8, 9) + "Gbps";
+    else if (bw >= 125000)
+	return cp_unparse_real10(bw * 8, 6) + "Mbps";
+    else
+	return cp_unparse_real10(bw * 8, 3) + "kbps";
 }
 
 
@@ -3524,6 +3536,7 @@ cp_va_static_initialize()
     cp_register_argtype(cpSecondsAsMilli, "time in sec (msec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMilli);
     cp_register_argtype(cpSecondsAsMicro, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiSecondsAsMicro);
     cp_register_argtype(cpTimeval, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
+    cp_register_argtype(cpTimestamp, "seconds since the epoch", 0, default_parsefunc, default_storefunc, cpiTimeval);
     cp_register_argtype(cpInterval, "time in sec (usec precision)", 0, default_parsefunc, default_storefunc, cpiInterval);
     cp_register_argtype(cpBandwidth, "bandwidth", 0, default_parsefunc, default_storefunc, cpiBandwidth);
     cp_register_argtype(cpIPAddress, "IP address", 0, default_parsefunc, default_storefunc, cpiIPAddress);

@@ -21,6 +21,7 @@
 #include <click/string.hh>
 #include <click/glue.hh>
 #include <click/confparse.hh>
+#include <click/timestamp.hh>
 #include <stdarg.h>
 CLICK_DECLS
 
@@ -144,20 +145,6 @@ operator<<(StringAccum &sa, double d)
     return sa;
 }
 #endif
-
-StringAccum &
-operator<<(StringAccum &sa, const struct timeval &tv)
-{
-    if (char *x = sa.reserve(30)) {
-	int len;
-	if (tv.tv_sec >= 0)
-	    len = sprintf(x, "%ld.%06ld", (long)tv.tv_sec, (long)tv.tv_usec);
-	else
-	    len = sprintf(x, "-%ld.%06ld", -((long)tv.tv_sec) - 1L, 1000000L - (long)tv.tv_usec);
-	sa.forward(len);
-    }
-    return sa;
-}
 
 StringAccum &
 operator<<(StringAccum &sa, void *v)

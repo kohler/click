@@ -1,7 +1,7 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/gaprate.cc" -*-
 #ifndef CLICK_GAPRATE_HH
 #define CLICK_GAPRATE_HH
-#include <click/glue.hh>
+#include <click/timestamp.hh>
 CLICK_DECLS
 class ErrorHandler;
 
@@ -16,7 +16,7 @@ class GapRate { public:
     void set_rate(unsigned, ErrorHandler *);
     inline void reset();
 
-    inline bool need_update(const struct timeval &);
+    inline bool need_update(const Timestamp &);
     void update()				{ _sec_count++; }
     void update_with(int incr)			{ _sec_count += incr; }
 
@@ -30,7 +30,7 @@ class GapRate { public:
     int _tv_sec;
     unsigned _rate;
 #if DEBUG_GAPRATE
-    struct timeval _last;
+    Timestamp _last;
 #endif
 
 };
@@ -40,7 +40,7 @@ GapRate::reset()
 {
     _tv_sec = -1;
 #if DEBUG_GAPRATE
-    _last.tv_sec = 0;
+    _last._sec = 0;
 #endif
 }
 
@@ -70,20 +70,20 @@ GapRate::GapRate(unsigned rate)
 }
 
 inline bool
-GapRate::need_update(const struct timeval &now)
+GapRate::need_update(const Timestamp &now)
 {
     if (_tv_sec < 0) {
-	_tv_sec = now.tv_sec;
-	_sec_count = ((now.tv_usec << UGAP_SHIFT) / _ugap) + 1;
-    } else if (now.tv_sec > _tv_sec) {
-	_tv_sec = now.tv_sec;
+	_tv_sec = now.sec();
+	_sec_count = ((now.usec() << UGAP_SHIFT) / _ugap) + 1;
+    } else if (now.sec() > _tv_sec) {
+	_tv_sec = now.sec();
 	if (_sec_count > 0)
 	    _sec_count -= _rate;
     }
 
-    unsigned need = (now.tv_usec << UGAP_SHIFT) / _ugap;
+    unsigned need = (now.usec() << UGAP_SHIFT) / _ugap;
 #if DEBUG_GAPRATE
-    click_chatter("%lu.%06lu -> %u @ %u [%d]", now.tv_sec, now.tv_usec, need, _sec_count, (int)need >= _sec_count);
+    click_chatter("%{timestamp} -> %u @ %u [%d]", &now, need, _sec_count, (int)need >= _sec_count);
 #endif
     return ((int)need >= _sec_count);
 }

@@ -64,7 +64,7 @@ Timer::Timer(Task* t)
 }
 
 void
-Timer::schedule_at(const timeval& when)
+Timer::schedule_at(const Timestamp& when)
 {
     // acquire lock, unschedule
     assert(_router && initialized());
@@ -90,11 +90,9 @@ Timer::schedule_at(const timeval& when)
 }
 
 void
-Timer::schedule_after(const timeval &delta)
+Timer::schedule_after(const Timestamp &delta)
 {
-    timeval t;
-    click_gettimeofday(&t);
-    schedule_at(t + delta);
+    schedule_at(Timestamp::now() + delta);
 }
 
 void

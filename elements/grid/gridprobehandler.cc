@@ -122,10 +122,7 @@ GridProbeHandler::push(int port, Packet *p)
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*gh2) + sizeof(*nb2) + sizeof(*rr) + 2);
   q->pull(2);
   
-  struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    q->set_timestamp_anno(tv);
+  q->set_timestamp_anno(Timestamp::now());
 
   memset(q->data(), 0, q->length());
   e = (click_ether *) q->data();

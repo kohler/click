@@ -47,7 +47,7 @@ class SetTimestampDelta : public Element { public:
     
   private:
 
-    struct timeval _first;
+    Timestamp _first;
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler*);

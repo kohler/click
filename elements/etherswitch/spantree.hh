@@ -38,7 +38,7 @@ private:
   Suppressor* _input_sup;
   Suppressor* _output_sup;
   EtherSwitch* _switch;
-  timeval* _topology_change;	// If set, tc should be sent with messages.
+  Timestamp* _topology_change;	// If set, tc should be sent with messages.
   bool _send_tc_msg;		// If true, tcm should be sent to root port.
   
   uint64_t _bridge_id;		// Should be 48 bits
@@ -55,7 +55,7 @@ private:
   enum PortState {BLOCK, LISTEN, LEARN, FORWARD};
   struct PortInfo {
     PortState state;
-    timeval since;		// When the port entered the state
+    Timestamp since;		// When the port entered the state
     bool needs_tca;
     BridgeMessage msg;
     PortInfo() { state = BLOCK; needs_tca = false; }

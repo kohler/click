@@ -76,13 +76,14 @@ private:
     IPAddress _gw;
     u_long _seq;
     int _count;
-    struct timeval _when; /* when we saw the first query */
-    struct timeval _to_send;
+    Timestamp _when; /* when we saw the first query */
+    Timestamp _to_send;
     bool _forwarded;
     Seen(IPAddress gw, u_long seq, int fwd, int rev) {
-      _gw = gw; 
-      _seq = seq; 
-      _count = 0;
+	(void) fwd, (void) rev;
+	_gw = gw; 
+	_seq = seq; 
+	_count = 0;
     }
     Seen();
   };
@@ -99,7 +100,7 @@ private:
   class GWInfo {
   public:
     IPAddress _ip;
-    struct timeval _last_update;
+    Timestamp _last_update;
     GWInfo() {memset(this,0,sizeof(*this)); }
   };
 
@@ -110,7 +111,7 @@ private:
 
   int MaxSeen;   // Max size of table of already-seen queries.
   int MaxHops;   // Max hop count for queries.
-  struct timeval _gw_expire;
+  Timestamp _gw_expire;
   u_long _seq;      // Next query sequence number to use.
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.

@@ -76,14 +76,14 @@ class LinkUnqueue : public Element, public Storage { public:
 
     Packet *_qhead;
     Packet *_qtail;
-    struct timeval _latency;
+    Timestamp _latency;
     enum { S_TASK, S_TIMER, S_ASLEEP } _state;
     uint32_t _bandwidth;
     Task _task;
     Timer _timer;
     NotifierSignal _signal;
 
-    void delay_by_bandwidth(Packet *, const struct timeval &) const;
+    void delay_by_bandwidth(Packet *, const Timestamp &) const;
     static String read_param(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);
 

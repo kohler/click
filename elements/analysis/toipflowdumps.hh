@@ -170,7 +170,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     virtual void add_note(uint32_t, const String &, ErrorHandler * = 0);
 
     struct Pkt {
-	struct timeval timestamp;
+	Timestamp timestamp;
 	tcp_seq_t th_seq;
 	tcp_seq_t th_ack;
 	uint8_t direction;
@@ -218,7 +218,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	int _tcp_opt;
 	int _npkt;
 	int _nnote;
-	struct timeval _first_timestamp;
+	Timestamp _first_timestamp;
 	bool _have_first_seq[2];
 	tcp_seq_t _first_seq[2];
 	Pkt _pkt[NPKT];

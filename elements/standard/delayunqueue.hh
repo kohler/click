@@ -30,27 +30,27 @@ DelayShaper, SetTimestamp */
 
 class DelayUnqueue : public Element { public:
   
-  DelayUnqueue();
-  ~DelayUnqueue();
+    DelayUnqueue();
+    ~DelayUnqueue();
 
-  const char *class_name() const	{ return "DelayUnqueue"; }
-  const char *processing() const	{ return PULL_TO_PUSH; }
+    const char *class_name() const	{ return "DelayUnqueue"; }
+    const char *processing() const	{ return PULL_TO_PUSH; }
 
-  int configure(Vector<String> &, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void cleanup(CleanupStage);
-  void add_handlers();
+    int configure(Vector<String> &, ErrorHandler *);
+    int initialize(ErrorHandler *);
+    void cleanup(CleanupStage);
+    void add_handlers();
   
-  bool run_task();
-  static String read_param(Element *e, void *);
+    bool run_task();
+    static String read_param(Element *e, void *);
 
- private:
+  private:
 
-  Packet *_p;
-  struct timeval _delay;
-  Task _task;
-  Timer _timer;
-  NotifierSignal _signal;
+    Packet *_p;
+    Timestamp _delay;
+    Task _task;
+    Timer _timer;
+    NotifierSignal _signal;
   
 };
 

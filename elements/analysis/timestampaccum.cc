@@ -43,9 +43,7 @@ TimestampAccum::initialize(ErrorHandler *)
 inline Packet *
 TimestampAccum::simple_action(Packet *p)
 {
-    struct timeval now;
-    click_gettimeofday(&now);
-    _usec_accum += (now.tv_sec - p->timestamp_anno().tv_sec) + (now.tv_usec - p->timestamp_anno().tv_usec)/1E6;
+    _usec_accum += (Timestamp::now() - p->timestamp_anno()).to_double();
     _count++;
     return p;
 }

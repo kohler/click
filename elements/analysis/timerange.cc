@@ -43,22 +43,20 @@ TimeRange::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "SIMPLE", cpBool, "timestamps arrive in increasing order?", &_simple,
 		    cpEnd) < 0)
 	return -1;
-    timerclear(&_first);
-    timerclear(&_last);
     return 0;
 }
 
 Packet *
 TimeRange::simple_action(Packet *p)
 {
-    const struct timeval &tv = p->timestamp_anno();
-    if (!timerisset(&_first))
+    const Timestamp& tv = p->timestamp_anno();
+    if (!_first)
 	_first = _last = tv;
     else if (_simple)
 	_last = tv;
-    else if (timercmp(&_last, &tv, <))
+    else if (_last < tv)
 	_last = tv;
-    else if (timercmp(&tv, &_first, <))
+    else if (tv < _first)
 	_first = tv;
     return p;
 }
@@ -78,12 +76,9 @@ TimeRange::read_handler(Element *e, void *thunk)
       case 2:
 	sa << tr->_first << ' ' << tr->_last;
 	break;
-      case 3: {
-	  struct timeval tv;
-	  timersub(&tr->_last, &tr->_first, &tv);
-	  sa << tv;
-	  break;
-      }
+      case 3:
+	sa << (tr->_last - tr->_first);
+	break;
       default:
 	sa << "<error>";
     }
@@ -95,8 +90,7 @@ int
 TimeRange::write_handler(const String &, Element *e, void *, ErrorHandler *)
 {
     TimeRange *tr = static_cast<TimeRange *>(e);
-    timerclear(&tr->_first);
-    timerclear(&tr->_last);
+    tr->_first = tr->_last = Timestamp();
     return 0;
 }
 

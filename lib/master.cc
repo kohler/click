@@ -357,23 +357,19 @@ Master::timer_reheapify_from(int pos, Timer* t)
 // How long until next timer expires.
 
 int
-Master::timer_delay(struct timeval* tv)
+Master::timer_delay(Timestamp* tv)
 {
     int retval;
     _timer_lock.acquire();
     if (_timer_heap.size() == 0) {
-	tv->tv_sec = 1000;
-	tv->tv_usec = 0;
+	*tv = Timestamp(1000, 0);
 	retval = 0;
     } else {
-	struct timeval now;
-	click_gettimeofday(&now);
-	if (timercmp(&_timer_heap.at_u(0)->_expiry, &now, >)) {
-	    timersub(&_timer_heap.at_u(0)->_expiry, &now, tv);
-	} else {
-	    tv->tv_sec = 0;
-	    tv->tv_usec = 0;
-	}
+	Timestamp now = Timestamp::now();
+	if (_timer_heap.at_u(0)->_expiry > now)
+	    *tv = _timer_heap.at_u(0)->_expiry - now;
+	else
+	    *tv = Timestamp();
 	retval = 1;
     }
     _timer_lock.release();
@@ -385,8 +381,7 @@ Master::run_timers()
 {
     if (_master_lock.attempt()) {
 	if (_master_paused == 0 && _timer_lock.attempt()) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
+	    Timestamp now = Timestamp::now();
 	    Timer* t;
 	    while (_timer_heap.size() > 0 && _runcount > 0
 		   && (t = _timer_heap.at_u(0), t->_expiry <= now)) {
@@ -562,16 +557,19 @@ Master::run_selects(bool more_tasks)
     if (more_tasks)
 	timeout = 0;
     else {
-	struct timeval wait;
+	Timestamp wait;
 	bool timers = timer_delay(&wait);
-	timeout = (timers ? wait.tv_sec * 1000 + wait.tv_usec / 1000 : -1);
+	timeout = (timers ? (int) wait.msec1() : -1);
     }
 # else /* !HAVE_POLL_H */
-    struct timeval wait, *wait_ptr = &wait;
+    Timestamp wait;
+    struct timeval *wait_ptr = (struct timeval*) &wait;
     if (more_tasks)
-	timerclear(&wait);
+	/* nada */;
     else if (!timer_delay(&wait))
 	wait_ptr = 0;
+    else
+	wait.convert_to_timeval();
 # endif /* HAVE_POLL_H */
 #endif /* CLICK_NS */
 

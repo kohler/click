@@ -56,7 +56,7 @@ PrintOld::configure(Vector<String> &conf, ErrorHandler* errh)
 Packet *
 PrintOld::simple_action(Packet *p)
 {
-  if (p->timestamp_anno().tv_sec == 0) {
+  if (p->timestamp_anno()._sec == 0) {
     click_chatter("%s: packet timestamp not set", id().cc());
     return p;
   }
@@ -67,15 +67,10 @@ PrintOld::simple_action(Packet *p)
     return p;
   }
 
-  struct timeval tv_now;
-  int res = gettimeofday(&tv_now, 0);
-  if (res != 0) {
-    click_chatter("%s: unable to get time of day", id().cc());
-    return p;
-  }
+  Timestamp now = Timestamp::now();
 
-  long age_s = tv_now.tv_sec - p->timestamp_anno().tv_sec;
-  long age_u = tv_now.tv_usec - p->timestamp_anno().tv_usec;
+  long age_s = tv_now._sec - p->timestamp_anno()._sec;
+  long age_u = tv_now.usec() - p->timestamp_anno().usec();
 
   // skankyness... 
   long age_ms = age_s * 1000 + age_u / 1000;
@@ -83,10 +78,8 @@ PrintOld::simple_action(Packet *p)
 #if 1
   assert(sizeof(long) == sizeof(int));
   if (age_ms > _thresh)
-    click_chatter("%s Now-FromDevice age is %d (FromDevice time: %ld.%06ld  dsec %ld  dusec %ld)", 
-		  id().cc(), age_ms, 
-		  p->timestamp_anno().tv_sec, p->timestamp_anno().tv_usec,
-		  age_s, age_u);
+    click_chatter("%s Now-FromDevice age is %d (FromDevice time: %{timestamp}  dsec %ld  dusec %ld)", 
+		  id().cc(), age_ms, &p->timestamp_anno(), age_s, age_u);
 #endif
 
 #if 1
@@ -136,5 +129,5 @@ PrintOld::simple_action(Packet *p)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel false)
 EXPORT_ELEMENT(PrintOld)

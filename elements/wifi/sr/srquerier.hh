@@ -52,10 +52,10 @@ class SRQuerier : public Element {
     IPAddress _ip;
     int _best_metric;
     int _count;
-    struct timeval _last_query;
+    Timestamp _last_query;
     Path _p;
-    struct timeval _last_switch;    // last time we picked a new best route
-    struct timeval _first_selected; // when _p was first selected as best route
+    Timestamp _last_switch;    // last time we picked a new best route
+    Timestamp _first_selected; // when _p was first selected as best route
     
   };
 
@@ -63,7 +63,7 @@ class SRQuerier : public Element {
   typedef HashMap<IPAddress, DstInfo> DstTable;
   DstTable _queries;
 
-  struct timeval _query_wait;
+  Timestamp _query_wait;
 
   u_long _seq;      // Next query sequence number to use.
   IPAddress _ip;    // My IP address.

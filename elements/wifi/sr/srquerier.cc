@@ -43,8 +43,7 @@ SRQuerier::SRQuerier()
   click_gettimeofday(&tv);
   _seq = tv.tv_usec;
 
-  _query_wait.tv_sec = 5;
-  _query_wait.tv_usec = 0;
+  _query_wait = Timestamp(5, 0);
 
   static unsigned char bcast_addr[] = { 0xff, 0xff, 0xff, 0xff, 0xff, 0xff };
   _bcast = EtherAddress(bcast_addr);
@@ -147,30 +146,23 @@ SRQuerier::push(int, Packet *p_in)
   if (best_valid) {
     if (!q->_p.size()) {
       q->_p = best;
-      click_gettimeofday(&q->_last_switch);
-      click_gettimeofday(&q->_first_selected);
+      q->_last_switch = q->_first_selected = Timestamp::now();
     }
     bool current_path_valid = _link_table->valid_route(q->_p);
     int current_path_metric = _link_table->get_route_metric(q->_p);
     
-    struct timeval expire;
-    struct timeval now;
-    click_gettimeofday(&now);
-    
-    struct timeval max_switch;
-    max_switch.tv_sec = _time_before_switch_sec;
-    max_switch.tv_usec = 0;
-    timeradd(&q->_last_switch, &max_switch, &expire);
+    Timestamp now = Timestamp::now();
+    Timestamp expire = q->_last_switch + Timestamp(_time_before_switch_sec, 0);
     
     if (!_route_dampening ||
 	!current_path_valid || 
 	current_path_metric > 100 + best_metric ||
-	timercmp(&expire, &now, <)) {
+	expire < now) {
       if (q->_p != best) {
-	click_gettimeofday(&q->_first_selected);
+	q->_first_selected = now;
       }
       q->_p = best;
-      click_gettimeofday(&q->_last_switch);
+      q->_last_switch = now;
     }
     p_in = _sr_forwarder->encap(p_in, q->_p, 0);
     if (p_in) {
@@ -210,11 +202,8 @@ SRQuerier::push(int, Packet *p_in)
   }
   
   if (do_query) {
-    struct timeval n;
-    click_gettimeofday(&n);
-    struct timeval expire;
-    timeradd(&q->_last_query, &_query_wait, &expire);
-    if (timercmp(&expire, &n, <)) {
+    Timestamp expire = q->_last_query + _query_wait;
+    if (expire < Timestamp::now()) {
       send_query(dst);
     }
   }
@@ -234,8 +223,7 @@ read_param(Element *e, void *thunk)
 	return String(td->_debug) + "\n";
     case H_QUERIES: {
         StringAccum sa;
-	struct timeval now;
-	click_gettimeofday(&now);
+	Timestamp now = Timestamp::now();
 	for (SRQuerier::DstTable::const_iterator iter = td->_queries.begin(); iter; iter++) {
 	  SRQuerier::DstInfo dst = iter.value();
 	  sa << dst._ip;

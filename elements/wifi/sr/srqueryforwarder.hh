@@ -62,8 +62,8 @@ class SRQueryForwarder : public Element {
     u_long _seq;
 
     int _count;
-    struct timeval _when; /* when we saw the first query */
-    struct timeval _to_send;
+    Timestamp _when; /* when we saw the first query */
+    Timestamp _to_send;
     bool _forwarded;
 
 
@@ -84,7 +84,7 @@ class SRQueryForwarder : public Element {
 
   int MaxSeen;   // Max size of table of already-seen queries.
   int MaxHops;   // Max hop count for queries.
-  struct timeval _query_wait;
+  Timestamp _query_wait;
   u_long _seq;      // Next query sequence number to use.
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.

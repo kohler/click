@@ -197,15 +197,14 @@ ToDump::write_packet(Packet *p)
 {
     struct fake_pcap_pkthdr ph;
   
-    const struct timeval &ts = p->timestamp_anno();
-    if (!ts.tv_sec && !ts.tv_usec) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	ph.ts.tv_sec = now.tv_sec;
-	ph.ts.tv_usec = now.tv_usec;
+    const Timestamp& ts = p->timestamp_anno();
+    if (!ts) {
+	Timestamp now = Timestamp::now();
+	ph.ts.tv_sec = now.sec();
+	ph.ts.tv_usec = now.usec();
     } else {
-	ph.ts.tv_sec = ts.tv_sec;
-	ph.ts.tv_usec = ts.tv_usec;
+	ph.ts.tv_sec = ts.sec();
+	ph.ts.tv_usec = ts.usec();
     }
 
     unsigned to_write = p->length();

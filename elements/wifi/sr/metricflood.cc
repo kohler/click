@@ -133,10 +133,9 @@ MetricFlood::update_link(IPAddress from, IPAddress to,
 void
 MetricFlood::forward_query_hook() 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
   for (int x = 0; x < _seen.size(); x++) {
-    if (timercmp(&_seen[x]._to_send, &now, <) && !_seen[x]._forwarded) {
+    if (_seen[x]._to_send < now && !_seen[x]._forwarded) {
       forward_query(&_seen[x]);
     }
   }
@@ -156,10 +155,8 @@ MetricFlood::forward_query(Seen *s)
   }
 
   if (0) {
-    struct timeval now;
-    click_gettimeofday(&now);
     StringAccum sa;
-    sa << now - s->_when;
+    sa << Timestamp::now() - s->_when;
     click_chatter("%{element} :: %s :: waited %s\n",
 		  this,
 		  __func__,
@@ -365,17 +362,14 @@ MetricFlood::process_flood(Packet *p_in) {
   si = _seen.size() - 1;
   
   _seen[si]._count++;
-  click_gettimeofday(&_seen[si]._when);
+  _seen[si]._when = Timestamp::now();
   _seen[si]._p = p_in->clone();
   
   /* schedule timer */
   int delay_time = random() % 1750 + 1;
   sr_assert(delay_time > 0);
   
-  struct timeval delay;
-  delay.tv_sec = 0;
-  delay.tv_usec = delay_time*1000;
-  timeradd(&_seen[si]._when, &delay, &_seen[si]._to_send);
+  _seen[si]._to_send = _seen[si]._when + Timestamp::make_msec(delay_time);
   _seen[si]._forwarded = false;
   Timer *t = new Timer(static_forward_query_hook, (void *) this);
   t->initialize(this);

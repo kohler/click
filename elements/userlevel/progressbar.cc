@@ -185,13 +185,9 @@ ProgressBar::run_timer()
 	if (!_have_size)
 	    _have_size = get_value(0, _first_pos_h, &_size);
 	_last_pos = 0;
-	click_gettimeofday(&_start_time);
-	_last_time = _start_time;
-	timerclear(&_stall_time);
-	struct timeval delay;
-	delay.tv_sec = _delay_ms / 1000;
-	delay.tv_usec = (_delay_ms % 1000) * 1000;
-	timeradd(&_start_time, &delay, &_delay_time);
+	_last_time = _start_time = Timestamp::now();
+	_stall_time = Timestamp();
+	_delay_time = _start_time + Timestamp::make_msec(_delay_ms);
 	if (_status == ST_FIRST)
 	    _status = ST_MIDDLE;
     }
@@ -203,11 +199,10 @@ ProgressBar::run_timer()
     }
 
     // get current time
-    struct timeval now;
-    click_gettimeofday(&now);
+    Timestamp now = Timestamp::now();
 
     // exit if wait time not passed
-    if (timercmp(&now, &_delay_time, <)) {
+    if (now < _delay_time) {
 	_timer.reschedule_at(_delay_time);
 	return;
     }
@@ -276,27 +271,23 @@ ProgressBar::run_timer()
 	sa << " -----   ";
 
     // check wait time
-    struct timeval wait;
-    timersub(&now, &_last_time, &wait);
+    Timestamp wait = now - _last_time;
     if (pos > _last_pos) {
 	_last_time = now;
 	_last_pos = pos;
-	if (wait.tv_sec >= STALLTIME)
-	    timeradd(&_stall_time, &wait, &_stall_time);
-	wait.tv_sec = 0;
+	if (wait._sec >= STALLTIME)
+	    _stall_time += wait;
+	wait._sec = 0;
     }
 
     // check elapsed time
-    struct timeval tv;
-    timersub(&now, &_start_time, &tv);
-    timersub(&tv, &_stall_time, &tv);
-    double elapsed = tv.tv_sec + (tv.tv_usec / 1000000.0);
+    double elapsed = (now - _start_time - _stall_time).to_double();
 
     // collect time
     if (_status < ST_DONE
 	&& (!_have_size || elapsed <= 0.0 || pos > _size))
 	sa << "   --:-- ETA";
-    else if (wait.tv_sec >= STALLTIME)
+    else if (wait._sec >= STALLTIME)
 	sa << " - stalled -";
     else {
 	int time_remaining;

@@ -34,7 +34,7 @@ class SetTimestamp : public Element { public:
 
   private:
 
-    struct timeval _tv;
+    Timestamp _tv;
 
 };
 

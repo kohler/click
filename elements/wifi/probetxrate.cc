@@ -87,8 +87,7 @@ ProbeTXRate::configure(Vector<String> &conf, ErrorHandler *errh)
     return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
 
-  _rate_window.tv_sec = _rate_window_ms / 1000;
-  _rate_window.tv_usec = (_rate_window_ms % 1000) * 1000;
+  _rate_window = Timestamp::make_msec(_rate_window_ms);
 
   return ret;
 }
@@ -124,11 +123,7 @@ ProbeTXRate::assign_rate(Packet *p_in) {
     nfo = _neighbors.findp(dst);
   }
 
-  struct timeval now;
-  struct timeval old;
-  click_gettimeofday(&now);
-  timersub(&now, &_rate_window, &old);
-  nfo->trim(old);
+  nfo->trim(Timestamp::now() - _rate_window);
   //nfo->check();
 
   int best_ndx = nfo->best_rate_ndx();
@@ -178,8 +173,7 @@ ProbeTXRate::process_feedback(Packet *p_in) {
   int retries = _alt_rate ? MIN(_original_retries, ceh->retries) :
     ceh->retries;
 
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
 
   if (dst == _bcast) {
     /* don't record info for bcast packets */

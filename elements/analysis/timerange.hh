@@ -69,8 +69,8 @@ class TimeRange : public Element { public:
     
   private:
 
-    struct timeval _first;
-    struct timeval _last;
+    Timestamp _first;
+    Timestamp _last;
     
     bool _simple;
 

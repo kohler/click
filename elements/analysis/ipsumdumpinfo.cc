@@ -77,6 +77,10 @@ IPSummaryDumpInfo::parse_content(const String &word)
 	return W_AGGREGATE;
     else if (word == "first_timestamp" || word == "first_ts")
 	return W_FIRST_TIMESTAMP;
+    else if (word == "ntimestamp")
+	return W_NTIMESTAMP;
+    else if (word == "first_ntimestamp")
+	return W_FIRST_NTIMESTAMP;
     else if (word == "tcp_window" || word == "tcp_win")
 	return W_TCP_WINDOW;
     else if (word == "ip_opt")
@@ -107,8 +111,9 @@ static int content_binary_sizes[] = {
     4, 4, 4, 4, 8,      // W_AGGREGATE, W_TCP_SACK, W_TCP_OPT, W_TCP_NTOPT,
 			// W_FIRST_TIMESTAMP
     2, 4, 1, 1, 8,	// W_TCP_WINDOW, W_IP_OPT, W_IP_TOS, W_IP_TTL,
-    			// W_TIMESTAMP_USEC1
-    4, 2		// W_IP_CAPTURE_LEN, W_TCP_URP
+			// W_TIMESTAMP_USEC1
+    4, 2, 8, 8		// W_IP_CAPTURE_LEN, W_TCP_URP, W_NTIMESTAMP,
+			// W_FIRST_NTIMESTAMP
 };
 
 int

@@ -253,7 +253,7 @@ FromSocket::handle(int fd)
   }
 
   // set timestamp
-  click_gettimeofday(&p->timestamp_anno());
+  p->timestamp_anno().set_now();
 
   if (p->length())
     output(0).push(p);

@@ -39,17 +39,13 @@ private:
     public:
 	Path _p;
 	uint32_t _seq;
-	struct timeval _last_tx;
+	Timestamp _last_tx;
 
 	PathInfo() : _p(), _seq(0) { }
 	PathInfo(Path p) : _p(p), _seq(0) { }
 
-	struct timeval last_tx_age() {
-	    struct timeval age;
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_last_tx, &age);
-	    return age;
+	Timestamp last_tx_age() {
+	    return Timestamp::now() - _last_tx;
 	}
     };
     
@@ -90,7 +86,7 @@ private:
     
     bool _debug;
     unsigned int _max_tx_packet_ms;
-    struct timeval _packet_timeout;
+    Timestamp _packet_timeout;
     Timer _timer;
 };
 

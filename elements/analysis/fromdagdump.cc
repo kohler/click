@@ -65,13 +65,8 @@ int
 FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true, force_ip = false;
-    struct timeval first_time, first_time_off, last_time, last_time_off, interval;
+    Timestamp first_time, first_time_off, last_time, last_time_off, interval;
     String encap;
-    timerclear(&first_time);
-    timerclear(&first_time_off);
-    timerclear(&last_time);
-    timerclear(&last_time_off);
-    timerclear(&interval);
     _sampling_prob = (1 << SAMPLING_SHIFT);
 
     if (_ff.configure_keywords(conf, 1, this, errh) < 0)
@@ -82,11 +77,11 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "STOP", cpBool, "stop driver when done?", &stop,
 		    "ACTIVE", cpBool, "start active?", &active,
 		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
-		    "START", cpTimeval, "starting time", &first_time,
-		    "START_AFTER", cpTimeval, "starting time offset", &first_time_off,
-		    "END", cpTimeval, "ending time", &last_time,
-		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
-		    "INTERVAL", cpTimeval, "time interval", &interval,
+		    "START", cpTimestamp, "starting time", &first_time,
+		    "START_AFTER", cpTimestamp, "starting time offset", &first_time_off,
+		    "END", cpTimestamp, "ending time", &last_time,
+		    "END_AFTER", cpTimestamp, "ending time offset", &last_time_off,
+		    "INTERVAL", cpTimestamp, "time interval", &interval,
 		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_end_h,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "TIMING", cpBool, "use original packet timing?", &timing,
@@ -105,24 +100,22 @@ FromDAGDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _have_first_time = _have_last_time = true;
     _first_time_relative = _last_time_relative = _last_time_interval = false;
     
-    if ((timerisset(&first_time) != 0) + (timerisset(&first_time_off) != 0) > 1)
+    if ((bool) first_time + (bool) first_time_off > 1)
 	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
-    else if (timerisset(&first_time))
+    else if ((bool) first_time)
 	_first_time = first_time;
-    else if (timerisset(&first_time_off))
+    else if ((bool) first_time_off)
 	_first_time = first_time_off, _first_time_relative = true;
-    else {
-	timerclear(&_first_time);
+    else
 	_have_first_time = false, _first_time_relative = true;
-    }
     
-    if ((timerisset(&last_time) != 0) + (timerisset(&last_time_off) != 0) + (timerisset(&interval) != 0) > 1)
+    if ((bool) last_time + (bool) last_time_off + (bool) interval > 1)
 	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
-    else if (timerisset(&last_time))
+    else if ((bool) last_time)
 	_last_time = last_time;
-    else if (timerisset(&last_time_off))
+    else if ((bool) last_time_off)
 	_last_time = last_time_off, _last_time_relative = true;
-    else if (timerisset(&interval))
+    else if ((bool) interval)
 	_last_time = interval, _last_time_interval = true;
     else
 	_have_last_time = false;
@@ -170,11 +163,8 @@ FromDAGDump::initialize(ErrorHandler *errh)
 	return -1;
     
     // try reading a packet
-    if (read_packet(errh)) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &_packet->timestamp_anno(), &_time_offset);
-    }
+    if (read_packet(errh))
+	_time_offset = Timestamp::now() - _packet->timestamp_anno();
 
     if (output_is_push(0))
 	ScheduleInfo::initialize_task(this, &_task, _active, errh);
@@ -220,28 +210,29 @@ swapq(uint64_t q)
 }
 
 void
-FromDAGDump::stamp_to_timeval(uint64_t stamp, struct timeval &tv) const
+FromDAGDump::stamp_to_time(uint64_t stamp, Timestamp &tv) const
 {
-    tv.tv_sec = (uint32_t) (stamp >> 32);
+    uint32_t sec = (uint32_t) (stamp >> 32);
     // based on a code description in an Endace document
-    stamp = (stamp & 0xFFFFFFFFULL) * 1000000;
+    stamp = (stamp & 0xFFFFFFFFULL) * 1000000000;
     stamp += (stamp & 0x80000000ULL) << 1; // rounding
-    tv.tv_usec = (uint32_t) (stamp >> 32);
-    if (tv.tv_usec >= 1000000) {
-	tv.tv_usec -= 1000000;
-	tv.tv_sec += 1;
+    uint32_t nsec = (uint32_t) (stamp >> 32);
+    if (nsec >= 1000000000) {
+	nsec -= 1000000000;
+	sec += 1;
     }
+    tv = Timestamp::make_nsec(sec, nsec);
 }
 
 void
-FromDAGDump::prepare_times(struct timeval &tv)
+FromDAGDump::prepare_times(const Timestamp &tv)
 {
     if (_first_time_relative)
-	timeradd(&tv, &_first_time, &_first_time);
+	_first_time += tv;
     if (_last_time_relative)
-	timeradd(&tv, &_last_time, &_last_time);
+	_last_time += tv;
     else if (_last_time_interval)
-	timeradd(&_first_time, &_last_time, &_last_time);
+	_last_time += _first_time;
     _have_any_times = true;
 }
 
@@ -250,7 +241,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 {
     const DAGCell *cell;
     static DAGCell static_cell;
-    struct timeval tv;
+    Timestamp tv;
     Packet *p;
     bool more = true;
     _packet = 0;
@@ -267,16 +258,16 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 
     // check times
   check_times:
-    stamp_to_timeval(swapq(cell->timestamp), tv);
+    stamp_to_time(swapq(cell->timestamp), tv);
     if (!_have_any_times)
 	prepare_times(tv);
     if (_have_first_time) {
-	if (timercmp(&tv, &_first_time, <))
+	if (tv < _first_time)
 	    goto retry;
 	else
 	    _have_first_time = false;
     }
-    if (_have_last_time && !timercmp(&tv, &_last_time, <)) {
+    if (_have_last_time && tv >= _last_time) {
 	_have_last_time = false;
 	(void) _end_h->call_write(errh);
 	if (!_active)
@@ -304,7 +295,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	  case FAKE_DLT_ATM_RFC1483:
 	  case FAKE_DLT_PPP:
 	  case FAKE_DLT_PPP_HDLC:
-	    p = _ff.get_packet(DAGCell::CELL_SIZE - DAGCell::HEADER_SIZE, tv.tv_sec, tv.tv_usec, errh);
+	    p = _ff.get_packet(DAGCell::CELL_SIZE - DAGCell::HEADER_SIZE, tv.sec(), tv.subsec(), errh);
 	    break;
 	    
 	  case FAKE_DLT_C_HDLC:
@@ -316,16 +307,16 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	    goto cell;
 
 	  case FAKE_DLT_SUNATM:
-	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 12, 4, DAGCell::CELL_SIZE - 12, tv.tv_sec, tv.tv_usec, errh);
+	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 12, 4, DAGCell::CELL_SIZE - 12, tv.sec(), tv.subsec(), errh);
 	    break;
 	    
 	  case FAKE_DLT_EN10MB:
 	    wire_length = htons(*(reinterpret_cast<const uint16_t*>(cell) + 4));
-	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 10, 6, DAGCell::CELL_SIZE - 10, tv.tv_sec, tv.tv_usec, errh);
+	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 10, 6, DAGCell::CELL_SIZE - 10, tv.sec(), tv.subsec(), errh);
 	    break;
 	    
 	  default:
-	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 8, 8, DAGCell::CELL_SIZE - 8, tv.tv_sec, tv.tv_usec, errh);
+	    p = _ff.get_packet_from_data(reinterpret_cast<const uint8_t*>(cell) + 8, 8, DAGCell::CELL_SIZE - 8, tv.sec(), tv.subsec(), errh);
 	    break;
 	}
 
@@ -352,7 +343,7 @@ FromDAGDump::read_packet(ErrorHandler *errh)
 	}
 	if (read_length < DAGCell::HEADER_SIZE)
 	    return false;
-	p = _ff.get_packet(read_length - DAGCell::HEADER_SIZE, tv.tv_sec, tv.tv_usec, errh);
+	p = _ff.get_packet(read_length - DAGCell::HEADER_SIZE, tv.sec(), tv.subsec(), errh);
     }
     
     // check packet
@@ -378,14 +369,10 @@ FromDAGDump::run_task()
 
     bool more;
     if (_packet || read_packet(0)) {
-	if (_timing) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_time_offset, &now);
-	    if (timercmp(&_packet->timestamp_anno(), &now, >)) {
-		_task.fast_reschedule();
-		return false;
-	    }
+	if (_timing
+	    && _packet->timestamp_anno() > Timestamp::now() - _time_offset) {
+	    _task.fast_reschedule();
+	    return false;
 	}
 	output(0).push(_packet);
 	more = read_packet(0);
@@ -408,13 +395,9 @@ FromDAGDump::pull(int)
     bool more;
     Packet *p;
     if (_packet || read_packet(0)) {
-	if (_timing) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
-	    timersub(&now, &_time_offset, &now);
-	    if (timercmp(&_packet->timestamp_anno(), &now, >))
-		return 0;
-	}
+	if (_timing
+	    && _packet->timestamp_anno() > Timestamp::now() - _time_offset)
+	    return 0;
 	p = _packet;
 	more = read_packet(0);
     } else {
@@ -466,9 +449,9 @@ FromDAGDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHan
 	fd->router()->please_stop_driver();
 	return 0;
       case H_EXTEND_INTERVAL: {
-	  struct timeval tv;
-	  if (cp_timeval(s, &tv)) {
-	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
+	  Timestamp tv;
+	  if (cp_time(s, &tv)) {
+	      fd->_last_time += tv;
 	      if (fd->_end_h)
 		  fd->_have_last_time = true, fd->set_active(true);
 	      return 0;

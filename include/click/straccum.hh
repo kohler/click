@@ -99,7 +99,6 @@ StringAccum &operator<<(StringAccum &, uint64_t);
 #if defined(CLICK_USERLEVEL) || defined(CLICK_TOOL)
 StringAccum &operator<<(StringAccum &, double);
 #endif
-StringAccum &operator<<(StringAccum &, const struct timeval &);
 
 StringAccum &operator<<(StringAccum &, void *);
 

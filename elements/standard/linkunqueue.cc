@@ -84,39 +84,34 @@ LinkUnqueue::cleanup(CleanupStage)
 }
 
 void
-LinkUnqueue::delay_by_bandwidth(Packet *p, const struct timeval &tv) const
+LinkUnqueue::delay_by_bandwidth(Packet *p, const Timestamp &tv) const
 {
     uint32_t length = p->length() + EXTRA_LENGTH_ANNO(p);
     uint32_t delay = (length * 10000) / _bandwidth;
-    struct timeval &timestamp = p->timestamp_anno();
+    Timestamp &timestamp = p->timestamp_anno();
     timestamp = tv;
     if (delay >= 1000000) {
-	timestamp.tv_sec += delay / 1000000;
-	timestamp.tv_usec += delay % 1000000;
+	timestamp._sec += delay / 1000000;
+	timestamp._subsec += Timestamp::usec_to_subsec(delay % 1000000);
     } else
-	timestamp.tv_usec += delay;
-    if (timestamp.tv_usec >= 1000000)
-	timestamp.tv_sec++, timestamp.tv_usec -= 1000000;
+	timestamp._subsec += Timestamp::usec_to_subsec(delay);
+    timestamp.add_fix();
 }
 
 #if 0
 #include <click/straccum.hh>
 static void print_queue(Packet *head) {
-    static struct timeval first;
-    if (!timerisset(&first) && head)
+    static Timestamp first;
+    if (!first && head)
 	first = head->timestamp_anno();
     StringAccum sa;
     sa << '[';
     while (head) {
-	struct timeval diff = head->timestamp_anno() - first;
+	Timestamp diff = head->timestamp_anno() - first;
 	sa << ' ' << diff;
 	head = head->next();
     }
-    sa << ' ' << ']';
-    struct timeval now;
-    click_gettimeofday(&now);
-    now = now - first;
-    sa << ' ' << '@' << now;
+    sa << ' ' << ']' << ' ' << '@' << (Timestamp::now() - first);
     click_chatter("%s", sa.c_str());
 }
 #endif
@@ -125,12 +120,11 @@ bool
 LinkUnqueue::run_task()
 {
     bool worked = false;
-    struct timeval now;
-    click_gettimeofday(&now);
+    Timestamp now = Timestamp::now();
 
     // Read a new packet if there's room
     if (_signal) {
-	struct timeval now_delayed = now + _latency;
+	Timestamp now_delayed = now + _latency;
 	
 	// check for timer problems
 	if (_state == S_TIMER && _qtail
@@ -146,7 +140,7 @@ LinkUnqueue::run_task()
 		    delay_by_bandwidth(p, _qtail->timestamp_anno());
 		else
 		    delay_by_bandwidth(p, now_delayed);
-		//click_chatter("%{timeval}: %d GOT NEW %{timeval}", &now, _state, &_qtail->timestamp_anno());
+		//click_chatter("%{timestamp}: %d GOT NEW %{timestamp}", &now, _state, &_qtail->timestamp_anno());
 	    } else {
 		_qhead = p;
 		delay_by_bandwidth(p, now_delayed);
@@ -165,7 +159,7 @@ LinkUnqueue::run_task()
 	if (!_qhead)
 	    _qtail = 0;
 	p->set_next(0);
-	//click_chatter("%{timeval}: RELEASE %{timeval}", &now, &p->timestamp_anno());
+	//click_chatter("%{timestamp}: RELEASE %{timestamp}", &now, &p->timestamp_anno());
 	output(0).push(p);
 	Storage::_tail--;
 	worked = true;
@@ -174,15 +168,15 @@ LinkUnqueue::run_task()
     // Figure out when to schedule next
     //print_queue(_qhead);
     if (_qhead) {
-	click_gettimeofday(&now);
-	struct timeval expiry = _qhead->timestamp_anno();
+	now = Timestamp::now();
+	Timestamp expiry = _qhead->timestamp_anno();
 	if (_signal) {
-	    struct timeval expiry2 = _qtail->timestamp_anno() - _latency;
+	    Timestamp expiry2 = _qtail->timestamp_anno() - _latency;
 	    if (expiry2 < expiry)
 		expiry = expiry2;
 	}
-	//{ struct timeval diff = expiry - now; click_chatter("%{timeval}: %{timeval} > + %{timeval}", &now, &expiry, &diff); }
-	expiry -= make_timeval(0, 5000);
+	//{ Timestamp diff = expiry - now; click_chatter("%{timestamp}: %{timestamp} > + %{timestamp}", &now, &expiry, &diff); }
+	expiry -= Timestamp(0, 5000);
 	if (expiry <= now) {
 	    // small delay, reschedule Task
 	    _state = S_TASK;

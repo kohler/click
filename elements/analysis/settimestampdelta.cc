@@ -27,7 +27,6 @@ SetTimestampDelta::SetTimestampDelta()
     : Element(1, 1)
 {
     MOD_INC_USE_COUNT;
-    timerclear(&_first);
 }
 
 SetTimestampDelta::~SetTimestampDelta()
@@ -38,9 +37,9 @@ SetTimestampDelta::~SetTimestampDelta()
 Packet *
 SetTimestampDelta::simple_action(Packet *p)
 {
-    struct timeval &tv = p->timestamp_anno();
-    if (timerisset(&tv)) {
-	if (!timerisset(&_first))
+    Timestamp& tv = p->timestamp_anno();
+    if (tv) {
+	if (!_first)
 	    _first = tv;
 	tv -= _first;
     }
@@ -67,7 +66,7 @@ int
 SetTimestampDelta::write_handler(const String &, Element *e, void *, ErrorHandler *)
 {
     SetTimestampDelta *td = static_cast<SetTimestampDelta *>(e);
-    timerclear(&td->_first);
+    td->_first = Timestamp();
     return 0;
 }
 

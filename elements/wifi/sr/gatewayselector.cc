@@ -88,11 +88,8 @@ GatewaySelector::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_arp_table && _arp_table->cast("ARPTable") == 0) 
     return errh->error("ARPTable element is not an ARPtable");
 
-  _gw_expire.tv_usec = 0;
-  _gw_expire.tv_sec = _period*4;
-
-  struct timeval now;
-  click_gettimeofday(&now);
+  _gw_expire._subsec = 0;
+  _gw_expire._sec = _period*4;
 
   return ret;
 }
@@ -112,17 +109,12 @@ GatewaySelector::run_timer ()
   if (_is_gw) {
     start_ad();
   }
-  struct timeval _next_ad;
-  click_gettimeofday(&_next_ad);
   unsigned p = _period * 1000;
   unsigned max_jitter = p / 7;
   long r2 = random();
   unsigned j = (unsigned) ((r2 >> 1) % (max_jitter + 1));
   unsigned int delta_us = 1000 * ((r2 & 1) ? p - j : p + j);
-  _next_ad.tv_usec += delta_us;
-  _next_ad.tv_sec +=  _next_ad.tv_usec / 1000000;
-  _next_ad.tv_usec = (_next_ad.tv_usec % 1000000);
-  _timer.schedule_at(_next_ad);
+  _timer.schedule_at(Timestamp::now() + Timestamp::make_usec(delta_us));
 }
 
 void
@@ -177,13 +169,12 @@ GatewaySelector::update_link(IPAddress from, IPAddress to, uint32_t seq,
 void
 GatewaySelector::forward_ad_hook() 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
-  for (int x = 0; x < _seen.size(); x++) {
-    if (timercmp(&_seen[x]._to_send, &now, <) && !_seen[x]._forwarded) {
-      forward_ad(&_seen[x]);
+    Timestamp now = Timestamp::now();
+    for (int x = 0; x < _seen.size(); x++) {
+	if (_seen[x]._to_send < now && !_seen[x]._forwarded) {
+	    forward_ad(&_seen[x]);
+	}
     }
-  }
 }
 void
 GatewaySelector::forward_ad(Seen *s)
@@ -243,18 +234,16 @@ GatewaySelector::best_gateway()
 {
   IPAddress best_gw = IPAddress();
   int best_metric = 0;
-  struct timeval expire;
-  struct timeval now;
+  Timestamp now = Timestamp::now();
   
   _link_table->dijkstra(false);
-  click_gettimeofday(&now);
   
   for(GWIter iter = _gateways.begin(); iter; iter++) {
     GWInfo nfo = iter.value();
-    timeradd(&nfo._last_update, &_gw_expire, &expire);
+    Timestamp expire = nfo._last_update + _gw_expire;
     Path p = _link_table->best_route(nfo._ip, false);
     int metric = _link_table->get_route_metric(p);
-    if (timercmp(&now, &expire, <) && 
+    if (now < expire &&
 	metric && 
 	((!best_metric) || best_metric > metric) &&
 	!_ignore.findp(nfo._ip) &&
@@ -274,12 +263,7 @@ GatewaySelector::valid_gateway(IPAddress gw)
     return false;
   }
   GWInfo *nfo = _gateways.findp(gw);
-  struct timeval now;
-  struct timeval expire;
-  click_gettimeofday(&now);
-  
-  timeradd(&nfo->_last_update, &_gw_expire, &expire);
-  return timercmp(&now, &expire, <);
+  return Timestamp::now() < (nfo->_last_update + _gw_expire);
 
 }
 
@@ -368,7 +352,7 @@ GatewaySelector::push(int port, Packet *p_in)
     nfo = _gateways.findp(gw);
   }
   nfo->_ip = gw;
-  click_gettimeofday(&nfo->_last_update);
+  nfo->_last_update = Timestamp::now();
 
   if (_is_gw) {
     p_in->kill();
@@ -399,10 +383,7 @@ GatewaySelector::push(int port, Packet *p_in)
   int delay_time = (random() % 2000) + 1;
   sr_assert(delay_time > 0);
   
-  struct timeval delay;
-  delay.tv_sec = 0;
-  delay.tv_usec = delay_time*1000;
-  timeradd(&_seen[si]._when, &delay, &_seen[si]._to_send);
+  _seen[si]._to_send = _seen[si]._when + Timestamp::make_msec(delay_time);
   _seen[si]._forwarded = false;
   Timer *t = new Timer(static_forward_ad_hook, (void *) this);
   t->initialize(this);
@@ -419,8 +400,7 @@ String
 GatewaySelector::print_gateway_stats()
 {
     StringAccum sa;
-    struct timeval now;
-    click_gettimeofday(&now);
+    Timestamp now = Timestamp::now();
     for(GWIter iter = _gateways.begin(); iter; iter++) {
       GWInfo nfo = iter.value();
       sa << nfo._ip.s().cc() << " ";

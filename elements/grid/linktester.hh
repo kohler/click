@@ -100,10 +100,10 @@ private:
 
   bool experiment_params_ok(ErrorHandler *);
 
-  void handle_timer_waiting(const struct timeval &tv);
-  void handle_timer_listening(const struct timeval &tv);
-  void handle_timer_bcast(const struct timeval &tv);
-  void handle_timer_unicast(const struct timeval &tv);
+  void handle_timer_waiting(const Timestamp &tv);
+  void handle_timer_listening(const Timestamp &tv);
+  void handle_timer_bcast(const Timestamp &tv);
+  void handle_timer_unicast(const Timestamp &tv);
 
   // msecs, including any internal pad times, e.g. between broadcast
   // and unicast phases, but not including pads at either end of
@@ -116,19 +116,17 @@ private:
 
   // time at which (before which) to send the first (last) packet of the iter'th iteration
   // before => first broadcast set, !before => second broadcast set
-  struct timeval first_unicast_time(unsigned int iter);
-  struct timeval first_bcast_time(unsigned int iter, bool before);
-  struct timeval last_unicast_time(unsigned int iter);
-  struct timeval last_bcast_time(unsigned int iter, bool before);
+  Timestamp first_unicast_time(unsigned int iter);
+  Timestamp first_bcast_time(unsigned int iter, bool before);
+  Timestamp last_unicast_time(unsigned int iter);
+  Timestamp last_bcast_time(unsigned int iter, bool before);
 
-  void send_unicast_packet(const struct timeval &, 
+  void send_unicast_packet(const Timestamp &, 
 			   unsigned int seq, unsigned int iter);
-  void send_broadcast_packet(unsigned short psz, const struct timeval &,
+  void send_broadcast_packet(unsigned short psz, const Timestamp &,
 			     bool before, unsigned int seq, unsigned int iter);
 
   void finish_experiment();
-
-  static struct timeval msecs_to_timeval(unsigned int msecs);
 
   bool init_random();
   double draw_random(double lambda);
@@ -146,7 +144,7 @@ private:
   };
 
   int _start_time; // unix epoch seconds
-  struct timeval _start_time_tv;
+  Timestamp _start_time_tv;
   class EtherAddress _src_eth;
   class EtherAddress _dst_eth;
   class Timer _timer;
@@ -174,8 +172,8 @@ private:
 
   unsigned char *_data_buf;
 
-  struct timeval _last_time;  // when timer was actually last fired
-  struct timeval _next_time;  // when we *want* the next packet to be sent
+  Timestamp _last_time;		// when timer was actually last fired
+  Timestamp _next_time;		// when we *want* the next packet to be sent
 
 };
 

@@ -484,12 +484,12 @@ FromFile::get_string(size_t size, ErrorHandler *errh)
 }
 
 Packet *
-FromFile::get_packet(size_t size, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *errh)
+FromFile::get_packet(size_t size, uint32_t sec, uint32_t subsec, ErrorHandler *errh)
 {
     if (_pos + size <= _len) {
 	if (Packet *p = _data_packet->clone()) {
 	    p->shrink_data(_buffer + _pos, size);
-	    p->set_timestamp_anno(tv_sec, tv_usec);
+	    p->timestamp_anno().set(sec, subsec);
 	    _pos += size;
 	    return p;
 	}
@@ -499,7 +499,7 @@ FromFile::get_packet(size_t size, uint32_t tv_sec, uint32_t tv_usec, ErrorHandle
 		p->kill();
 		return 0;
 	    } else {
-		p->set_timestamp_anno(tv_sec, tv_usec);
+		p->timestamp_anno().set(sec, subsec);
 		return p;
 	    }
 	}
@@ -509,13 +509,13 @@ FromFile::get_packet(size_t size, uint32_t tv_sec, uint32_t tv_usec, ErrorHandle
 }
 
 Packet *
-FromFile::get_packet_from_data(const void *data_void, size_t data_size, size_t size, uint32_t tv_sec, uint32_t tv_usec, ErrorHandler *errh)
+FromFile::get_packet_from_data(const void *data_void, size_t data_size, size_t size, uint32_t sec, uint32_t subsec, ErrorHandler *errh)
 {
     const uint8_t *data = reinterpret_cast<const uint8_t *>(data_void);
     if (data >= _buffer && data + size <= _buffer + _len) {
 	if (Packet *p = _data_packet->clone()) {
 	    p->shrink_data(data, size);
-	    p->set_timestamp_anno(tv_sec, tv_usec);
+	    p->timestamp_anno().set(sec, subsec);
 	    return p;
 	}
     } else {
@@ -526,7 +526,7 @@ FromFile::get_packet_from_data(const void *data_void, size_t data_size, size_t s
 		p->kill();
 		return 0;
 	    }
-	    p->set_timestamp_anno(tv_sec, tv_usec);
+	    p->timestamp_anno().set(sec, subsec);
 	    return p;
 	}
     }

@@ -163,13 +163,13 @@ AggregateIPFlows::delete_flowinfo(const HostPair &hp, FlowInfo *finfo, bool real
 	int sport = (ntohl(sinfo->_ports) >> (sinfo->reverse() ? 0 : 16)) & 0xFFFF;
 	IPAddress dst(sinfo->reverse() ? hp.a : hp.b);
 	int dport = (ntohl(sinfo->_ports) >> (sinfo->reverse() ? 16 : 0)) & 0xFFFF;
-	struct timeval duration = sinfo->_last_timestamp - sinfo->_first_timestamp;
-	fprintf(_traceinfo_file, "<flow aggregate='%u' src='%s' sport='%d' dst='%s' dport='%d' begin='%ld.%06ld' duration='%ld.%06ld'",
+	Timestamp duration = sinfo->_last_timestamp - sinfo->_first_timestamp;
+	fprintf(_traceinfo_file, "<flow aggregate='%u' src='%s' sport='%d' dst='%s' dport='%d' begin='" PRITIMESTAMP "' duration='" PRITIMESTAMP "'",
 
 		sinfo->_aggregate,
 		src.s().cc(), sport, dst.s().cc(), dport,
-		sinfo->_first_timestamp.tv_sec, sinfo->_first_timestamp.tv_usec,
-		duration.tv_sec, duration.tv_usec);
+		sinfo->_first_timestamp.sec(), sinfo->_first_timestamp.subsec(),
+		duration.sec(), duration.subsec());
 	if (sinfo->_filepos)
 	    fprintf(_traceinfo_file, " filepos='%u'", sinfo->_filepos);
 	fprintf(_traceinfo_file, ">\n\
@@ -270,7 +270,7 @@ AggregateIPFlows::assign_aggregate(Map &table, HostPairInfo *hpinfo, int emit_be
     // emit packets at the beginning of the list that have the same IP ID
     const click_ip *iph;
     while (first && (iph = good_ip_header(first)) && iph->ip_id == want_ip_id
-	   && (SEC_OLDER(first->timestamp_anno().tv_sec, emit_before_sec)
+	   && (SEC_OLDER(first->timestamp_anno().sec(), emit_before_sec)
 	       || !IP_ISFRAG(iph))) {
 	Packet *p = first;
 	hpinfo->_fragment_head = first = p->next();
@@ -310,7 +310,7 @@ AggregateIPFlows::reap_map(Map &table, uint32_t timeout, uint32_t done_timeout)
     for (Map::iterator iter = table.begin(); iter; iter++) {
 	HostPairInfo *hpinfo = &iter.value();
 	// fragments
-	while (hpinfo->_fragment_head && hpinfo->_fragment_head->timestamp_anno().tv_sec < frag_timeout)
+	while (hpinfo->_fragment_head && hpinfo->_fragment_head->timestamp_anno().sec() < frag_timeout)
 	    assign_aggregate(table, hpinfo, frag_timeout);
 
 	// can't delete any flows if there are fragments
@@ -322,7 +322,7 @@ AggregateIPFlows::reap_map(Map &table, uint32_t timeout, uint32_t done_timeout)
 	FlowInfo *f = *pprev;
 	while (f) {
 	    // circular comparison
-	    if (SEC_OLDER(f->_last_timestamp.tv_sec, (f->_flow_over == 3 ? done_timeout : timeout))) {
+	    if (SEC_OLDER(f->_last_timestamp.sec(), (f->_flow_over == 3 ? done_timeout : timeout))) {
 		notify(f->_aggregate, AggregateListener::DELETE_AGG, 0);
 		*pprev = f->_next;
 		delete_flowinfo(iter.key(), f);
@@ -384,7 +384,7 @@ AggregateIPFlows::find_flow_info(Map &m, HostPairInfo *hpinfo, uint32_t ports, b
 	if (finfo->_ports == ports) {
 	    // if this flow is actually dead (but has not yet been garbage
 	    // collected), then kill it for consistent semantics
-	    int age = p->timestamp_anno().tv_sec - finfo->_last_timestamp.tv_sec;
+	    int age = p->timestamp_anno().sec() - finfo->_last_timestamp.sec();
 	    // 4.Feb.2004 - Also start a new flow if the old flow closed off,
 	    // and we have a SYN.
 	    if ((age > _smallest_timeout
@@ -441,14 +441,14 @@ AggregateIPFlows::handle_fragment(Packet *p, int paint, Map &table, HostPairInfo
     p->set_next(0);
     SET_AGGREGATE_ANNO(p, 0);
     SET_PAINT_ANNO(p, paint);
-    if (int p_sec = p->timestamp_anno().tv_sec)
+    if (int p_sec = p->timestamp_anno().sec())
 	_active_sec = p_sec;
 
     // get rid of old fragments
     int frag_timeout = _active_sec - _fragment_timeout;
     Packet *head;
     while ((head = hpinfo->_fragment_head)
-	   && (head->timestamp_anno().tv_sec < frag_timeout || !IP_ISFRAG(good_ip_header(head))))
+	   && (head->timestamp_anno().sec() < frag_timeout || !IP_ISFRAG(good_ip_header(head))))
 	assign_aggregate(table, hpinfo, frag_timeout);
 
     return ACT_NONE;
@@ -461,12 +461,12 @@ AggregateIPFlows::handle_packet(Packet *p)
     int paint = 0;
 
     // assign timestamp if no timestamp given
-    if (!timerisset(&p->timestamp_anno())) {
+    if (!p->timestamp_anno()) {
 	if (!_timestamp_warning) {
 	    click_chatter("%{element}: warning: packet received without timestamp", this);
 	    _timestamp_warning = true;
 	}
-	click_gettimeofday(&p->timestamp_anno());
+	p->timestamp_anno().set_now();
     }
 	
     // extract encapsulated ICMP header if appropriate
@@ -514,8 +514,8 @@ AggregateIPFlows::handle_packet(Packet *p)
     }
 
     // mark packet with aggregate number and paint
-    finfo->_last_timestamp.tv_sec = _active_sec = p->timestamp_anno().tv_sec;
-    finfo->_last_timestamp.tv_usec = p->timestamp_anno().tv_usec;
+    _active_sec = p->timestamp_anno().sec();
+    finfo->_last_timestamp = p->timestamp_anno();
     SET_AGGREGATE_ANNO(p, finfo->aggregate());
     if (finfo->reverse())
 	paint ^= 1;

@@ -120,9 +120,7 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
   ASSERT_ALIGNED(q->data());
   q->pull(2);
 
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  q->set_timestamp_anno(tv);
+  q->set_timestamp_anno(Timestamp::now());
 
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();

@@ -36,9 +36,7 @@ Packet *
 BandwidthShaper::pull(int)
 {
     Packet *p = 0;
-    struct timeval now;
-    click_gettimeofday(&now);
-    if (_rate.need_update(now)) {
+    if (_rate.need_update(Timestamp::now())) {
 	if ((p = input(0).pull()))
 	    _rate.update_with(p->length());
     }

@@ -216,19 +216,19 @@ class FromDump : public Element { public:
     int _minor_version;
     int _linktype;
 
-    struct timeval _first_time;
-    struct timeval _last_time;
+    Timestamp _first_time;
+    Timestamp _last_time;
     HandlerCall *_end_h;
     
     Task _task;
     ActiveNotifier _notifier;
 
-    struct timeval _time_offset;
+    Timestamp _time_offset;
     off_t _packet_filepos;
 
     bool read_packet(ErrorHandler *);
 
-    void prepare_times(const struct fake_bpf_timeval &);
+    void prepare_times(const Timestamp &);
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

@@ -22,6 +22,7 @@
 #ifndef CLICK_TOOL
 # include <click/element.hh>
 #endif
+#include <click/timestamp.hh>
 #include <click/hashmap.hh>
 #include <click/confparse.hh>
 CLICK_DECLS
@@ -645,6 +646,18 @@ timeval_error_hook(int, VA_LIST_REF_T val)
     return "(null)";
 }
 
+static String
+timestamp_error_hook(int, VA_LIST_REF_T val)
+{
+  const Timestamp *tsp = va_arg(VA_LIST_DEREF(val), const Timestamp *);
+  if (tsp) {
+    StringAccum sa;
+    sa << *tsp;
+    return sa.take_string();
+  } else
+    return "(null)";
+}
+
 #ifndef CLICK_TOOL
 static String
 element_error_hook(int, VA_LIST_REF_T val)
@@ -663,6 +676,7 @@ ErrorHandler::static_initialize(ErrorHandler *default_handler)
   the_default_handler = default_handler;
   the_silent_handler = new SilentErrorHandler;
   add_conversion("timeval", timeval_error_hook);
+  add_conversion("timestamp", timestamp_error_hook);
 #ifndef CLICK_TOOL
   add_conversion("element", element_error_hook);
 #endif

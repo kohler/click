@@ -237,18 +237,18 @@ class FromDAGDump : public Element { public:
     int _linktype;
     int _base_linktype;
 
-    struct timeval _first_time;
-    struct timeval _last_time;
+    Timestamp _first_time;
+    Timestamp _last_time;
     HandlerCall *_end_h;
     
     Task _task;
 
-    struct timeval _time_offset;
+    Timestamp _time_offset;
 
     bool read_packet(ErrorHandler *);
 
-    void stamp_to_timeval(uint64_t, struct timeval &) const;
-    void prepare_times(struct timeval &);
+    void stamp_to_time(uint64_t, Timestamp &) const;
+    void prepare_times(const Timestamp &);
 
     static String read_handler(Element *, void *);
     static int write_handler(const String &, Element *, void *, ErrorHandler *);

@@ -217,25 +217,25 @@ private:
 
 public:
 
-  void log_sent_advertisement(unsigned seq_no, struct timeval when) { 
+  void log_sent_advertisement(unsigned seq_no, const Timestamp &when) { 
     if (!check_state(WAITING)) 
       return;
     if (!check_space(1 + sizeof(seq_no) + sizeof(when)))
       return;
     add_one_byte(SENT_AD_CODE);
     add_long(seq_no);
-    add_timeval(when);
+    add_timeval(when.to_timeval());
     write_buf();
   }
 
-  void log_start_recv_advertisement(unsigned seq_no, unsigned ip, struct timeval when) {
+  void log_start_recv_advertisement(unsigned seq_no, unsigned ip, const Timestamp &when) {
     if (!check_state(WAITING)) 
       return;
     _state = RECV_AD;
     add_one_byte(BEGIN_RECV_CODE);
     add_ip(ip);
     add_long(seq_no);
-    add_timeval(when);
+    add_timeval(when.to_timeval());
   }
   
   void log_added_route(reason_t why, const GridGenericRouteTable::RouteEntry &r) {
@@ -291,12 +291,12 @@ public:
     write_buf();
   }
 
-  void log_start_expire_handler(struct timeval when) {
+  void log_start_expire_handler(const Timestamp &when) {
     if (!check_state(WAITING)) 
       return;
     _state = EXPIRE_HANDLER;
     add_one_byte(BEGIN_EXPIRE_CODE);
-    add_timeval(when);
+    add_timeval(when.to_timeval());
   }
 
   void log_end_expire_handler() {
@@ -310,11 +310,11 @@ public:
       write_buf();
   }
 
-  void log_route_dump(const Vector<GridGenericRouteTable::RouteEntry> &rt, struct timeval when) {
+  void log_route_dump(const Vector<GridGenericRouteTable::RouteEntry> &rt, const Timestamp &when) {
     if (!check_state(WAITING))
       return;
     add_one_byte(ROUTE_DUMP_CODE);
-    add_timeval(when);
+    add_timeval(when.to_timeval());
     int n = rt.size();
     add_long(n);
     for (int i = 0; i < rt.size(); i++) {
@@ -328,27 +328,27 @@ public:
   }
 
   // assumes Grid packet
-  void log_tx_err(const Packet *p, int err, struct timeval when) {
+  void log_tx_err(const Packet *p, int err, const Timestamp &when) {
     if (!check_state(WAITING)) 
       return;
     struct click_ether *eh = (click_ether *) (p->data());
      if (eh->ether_type != htons(ETHERTYPE_GRID)) 
       return;
     add_one_byte(TX_ERR_CODE);
-    add_timeval(when);
+    add_timeval(when.to_timeval());
     add_long((unsigned long) err);
     log_pkt(eh);
     write_buf();
   }
 
-  void log_no_route(const Packet *p, struct timeval when) {
+  void log_no_route(const Packet *p, const Timestamp &when) {
     if (!check_state(WAITING))
       return;
     struct click_ether *eh = (click_ether *) (p->data());
     if (eh->ether_type != htons(ETHERTYPE_GRID)) 
       return;
     add_one_byte(NO_ROUTE_CODE);
-    add_timeval(when);
+    add_timeval(when.to_timeval());
     log_pkt(eh);
     write_buf();
   }

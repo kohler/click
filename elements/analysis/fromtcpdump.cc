@@ -395,7 +395,7 @@ FromTcpdump::read_packet(ErrorHandler *errh)
 
 	// first, read timestamp
 	const char *s2 = find(s, end, ' ');
-	if (!cp_timeval(line.substring(s, s2), &q->timestamp_anno()))
+	if (!cp_time(line.substring(s, s2), &q->timestamp_anno()))
 	    break;
 	s = s2 + 1;
 

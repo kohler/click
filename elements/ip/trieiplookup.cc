@@ -247,9 +247,8 @@ TrieIPLookup::build_trie()
 void
 TrieIPLookup::build_main()
 {
-    struct timeval tv;
-    click_gettimeofday(&tv);
-    click_chatter("starting to init data structure: %d\n", tv.tv_sec);
+    Timestamp ts = Timestamp::now();
+    click_chatter("starting to init data structure: %d\n", ts.sec());
 
     check_route_vector_sorted();
 
@@ -258,22 +257,22 @@ TrieIPLookup::build_main()
     build_init();
     check_init();
 
-    click_gettimeofday(&tv);
-    click_chatter("starting to build trie: %d\n", tv.tv_sec);
+    ts = Timestamp::now();
+    click_chatter("starting to build trie: %d\n", ts.sec());
 
     // build trie
     build_trie();
     check_trie(_trie_vector[0]);
 
-    click_gettimeofday(&tv);
-    click_chatter("starting to set children lengths: %d\n", tv.tv_sec);
+    ts = Timestamp::now();
+    click_chatter("starting to set children lengths: %d\n", ts.sec());
 
     // set children lengths
     build_children_lengths(0);
     check_lengths(_trie_vector[0]);
 
-    click_gettimeofday(&tv);
-    click_chatter("starting to rebuild hash: %d\n", tv.tv_sec);
+    ts = Timestamp::now();
+    click_chatter("starting to rebuild hash: %d\n", ts.sec());
 
     // rebuild hash
     for (int i = 0; i <= 32; i++) {
@@ -281,8 +280,8 @@ TrieIPLookup::build_main()
     }
     build_hash(0);
 
-    click_gettimeofday(&tv);
-    click_chatter("done initializaton: %d\n", tv.tv_sec);
+    ts = Timestamp::now();
+    click_chatter("done initializaton: %d\n", ts.sec());
 
     _trie_vector.clear();
 }

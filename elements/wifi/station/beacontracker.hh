@@ -40,7 +40,7 @@ class BeaconTracker : public Element { public:
   Packet *simple_action(Packet *);
 
   struct beacon_t {
-    struct timeval rx;
+    Timestamp rx;
     uint16_t seq;
   };
   DEQueue<beacon_t> _beacons;

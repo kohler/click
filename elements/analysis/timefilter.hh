@@ -94,8 +94,8 @@ class TimeFilter : public Element { public:
     
   private:
 
-    struct timeval _first;
-    struct timeval _last;
+    Timestamp _first;
+    Timestamp _last;
     
     bool _ready : 1;
     bool _first_relative : 1;
@@ -106,7 +106,7 @@ class TimeFilter : public Element { public:
     bool _last_h_ready : 1;
     HandlerCall *_last_h;
 
-    void first_packet(const struct timeval &);
+    void first_packet(const Timestamp&);
     Packet *kill(Packet *);
 
     static int write_handler(const String &, Element *, void*, ErrorHandler *);

@@ -76,7 +76,7 @@ void
 BridgeMessage::reset(uint64_t bridge_id) {
   _root = _bridge_id = bridge_id;
   _cost = 0;
-  _timestamp.tv_sec = ~(1 << 31); // Never expire
+  _timestamp._sec = ~(1 << 31); // Never expire
   _tc = false;
   _max_age = 20;
   _hello_time = 2;
@@ -85,8 +85,8 @@ BridgeMessage::reset(uint64_t bridge_id) {
 
 /* If message's timestamp is older than cutoff, make the message as
    bad as possible. */
-bool BridgeMessage::expire(const timeval* cutoff) {
-  if (timercmp(&_timestamp, cutoff, >))
+bool BridgeMessage::expire(const Timestamp& cutoff) {
+  if (_timestamp > cutoff)
     return false;
   expire();
   return true;
@@ -97,7 +97,7 @@ bool BridgeMessage::expire(const timeval* cutoff) {
 void BridgeMessage::expire() {
   _root = _bridge_id = ~(uint64_t)0; // Worst possible
   _cost = ~(uint16_t)0;	// Worst possible
-  _timestamp.tv_sec = ~(1 << 31); // Never expire
+  _timestamp._sec = ~(1 << 31); // Never expire
   _tc = false;
 }
 
@@ -108,18 +108,11 @@ BridgeMessage::from_wire(const BridgeMessage::wire* msg) {
   _bridge_id = ntohq(msg->bridge_id);
   _port_id = ntohs(msg->port_id);
 
-  click_gettimeofday(&_timestamp);
+  _timestamp = Timestamp::now();
 
   // How stale is this message?
-  const int million = 1000000;
-  int lateness = (ntohs(msg->message_age) * million)/256;
-  _timestamp.tv_sec -= lateness / million;
-  _timestamp.tv_usec -= lateness % million;
-  if (_timestamp.tv_usec < 0) {
-    _timestamp.tv_sec--;
-    _timestamp.tv_usec += million;
-  }
-
+  int lateness = (ntohs(msg->message_age) * 1000000)/256;
+  _timestamp -= Timestamp::make_usec(lateness);
   _tc = msg->tc;
 
   // Propagate Parameters
@@ -142,16 +135,12 @@ BridgeMessage::to_wire(BridgeMessage::wire* msg) const {
   msg->bridge_id = htonq(_bridge_id);
   msg->port_id = htons(_port_id);
   // How stale is this message?
-  const int million = 1000000;
-  if (_timestamp.tv_sec == ~(1<<31)) { // Special "do not expire" value
+  if (_timestamp._sec == ~(1<<31)) { // Special "do not expire" value
     msg->message_age = htons(0);
   } else {
-    timeval t;
-    click_gettimeofday(&t);
-    t.tv_sec -= _timestamp.tv_sec;
-    t.tv_usec -= _timestamp.tv_usec;
-    msg->message_age = htons((t.tv_usec * 256)/million);
-    msg->message_age += htons(t.tv_sec * 256);
+    Timestamp t = Timestamp::now() - _timestamp;
+    msg->message_age = htons((t.usec() * 256)/1000000);
+    msg->message_age += htons(t.sec() * 256);
   }
 
   // Propagate Parameters

@@ -80,7 +80,7 @@ GridProbeReplyReceiver::simple_action(Packet *p)
   tx_time.tv_sec = ntohl(tx_time.tv_sec);
   tx_time.tv_usec = ntohl(tx_time.tv_usec);
 
-  struct timeval rtt = p->timestamp_anno() - tx_time;
+  struct timeval rtt = p->timestamp_anno().to_timeval() - tx_time;
 
   char buf[200];
   snprintf(buf, sizeof(buf),

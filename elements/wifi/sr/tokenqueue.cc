@@ -42,8 +42,7 @@ TokenQueue::TokenQueue()
     set_ninputs(3);
     set_noutputs(2);
     MOD_INC_USE_COUNT;
-    _catchup_timeout.tv_sec = 2;
-    _catchup_timeout.tv_usec = 0;
+    _catchup_timeout = Timestamp(2, 0);
     _tokens = 0;
     _retransmits = 0;
     _normal = 0;
@@ -106,17 +105,11 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
   if (_sr_forwarder->cast("SRForwarder") == 0) 
     return errh->error("SR element is not a SRForwarder");
 
-  unsigned int active_duration_ms = 15 * 1000;
-  timerclear(&_active_duration);
   /* convehop path_duration from ms to a struct timeval */
-  _active_duration.tv_sec = active_duration_ms/1000;
-  _active_duration.tv_usec = (active_duration_ms % 1000) * 1000;
+  _active_duration = Timestamp::make_msec(15 * 1000);
 
-  unsigned int clear_duration_ms = 30 * 1000;
-  timerclear(&_clear_duration);
   /* convehop path_duration from ms to a struct timeval */
-  _clear_duration.tv_sec = clear_duration_ms/1000;
-  _clear_duration.tv_usec = (clear_duration_ms % 1000) * 1000;
+  _clear_duration = Timestamp::make_msec(30 * 1000);
   
   _timer.initialize(this);
   _timer.schedule_now();
@@ -125,15 +118,11 @@ TokenQueue::configure (Vector<String> &conf, ErrorHandler *errh)
 void
 TokenQueue::run_timer() 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
   Vector<Path> to_clear;
   Vector<Path> not_active;
 
   for (PathIter iter = _paths.begin(); iter; iter++) {
       const PathInfo &nfo = iter.value();
-      struct timeval expire;
-      timeradd(&nfo._last_real, &_active_duration, &expire);
       if (nfo._active && nfo.active_timedout()) {
 	  not_active.push_back(nfo._p);
       }
@@ -143,15 +132,13 @@ TokenQueue::run_timer()
       PathInfo *nfo = _paths.findp(not_active[x]);
       nfo->_active = false;
       if (_debug) {
-	  struct timeval now;
-	  click_gettimeofday(&now);
 	  StringAccum sa;
-	  sa << id() << " " << now;
+	  sa << id() << " " << Timestamp::now();
 	  sa << " mark_inactive " << path_to_string(nfo->_p);
 	  click_chatter("%s", sa.take_string().cc());
       }
   }
-  _timer.schedule_after_ms(_active_duration.tv_sec/2);
+  _timer.schedule_after_ms(_active_duration.sec()/2);
 }
 TokenQueue::PathInfo *
 TokenQueue::find_path_info(Path p)
@@ -227,11 +214,10 @@ TokenQueue::pull(int)
     bool follow_up = false;
     Path p = Path();
     PathInfo *nfo = NULL;
-    struct timeval now;
+    Timestamp now = Timestamp::now();
     if (!_normal && !_tokens && !_retransmits) {
 	goto done;
     }
-    click_gettimeofday(&now);
     packet = yank1(yank_filter(this, Path()));
     if (packet) {
 	p_in = packet->uniqueify();
@@ -457,21 +443,16 @@ TokenQueue::process_source(struct srpacket *pk)
     }
     if (!nfo) {
 	if (_debug) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
 	    StringAccum sa;
-	    sa << id() << " " << now;
+	    sa << id() << " " << Timestamp::now();
 	    sa << " create:  new_path " << path_to_string(p);
 	    click_chatter("%s", sa.take_string().cc());
 	}
 	_paths.insert(p, PathInfo(p, this));
 	nfo = _paths.findp(p);
 
-	click_gettimeofday(&nfo->_last_tx);
-	click_gettimeofday(&nfo->_last_rx);
-	click_gettimeofday(&nfo->_first_tx);
-	click_gettimeofday(&nfo->_first_rx);
-	click_gettimeofday(&nfo->_last_real);
+	nfo->_last_tx = nfo->_last_rx = nfo->_first_tx = nfo->_first_rx
+	    = nfo->_last_real = Timestamp::now();
 	nfo->_active = false;
     }
 
@@ -479,7 +460,7 @@ TokenQueue::process_source(struct srpacket *pk)
      * or if we're new *
      */
     if (!nfo->_active) {
-	click_gettimeofday(&nfo->_last_real);
+	nfo->_last_real = Timestamp::now();
 	nfo->_active = true;
 	nfo->_token = true;
 	_tokens++;
@@ -491,8 +472,7 @@ TokenQueue::process_forward(struct srpacket *pk)
 {
     Path p = pk->get_path();
     PathInfo *nfo = find_path_info(p);
-    struct timeval now;
-    click_gettimeofday(&now);
+    Timestamp now = Timestamp::now();
 
     IPAddress towards = p[p.size()-1];
 
@@ -665,8 +645,7 @@ TokenQueue::print_stats()
 {
   StringAccum sa;
 
-  struct timeval now;
-  click_gettimeofday(&now);
+  Timestamp now = Timestamp::now();
 
   sa << " tokens " << _tokens;
   sa << " retransmits " << _retransmits;
@@ -682,7 +661,7 @@ TokenQueue::print_stats()
       sa << " last_rx " << now - nfo._last_rx;
       sa << " packets_rx " << nfo._packets_rx;
       sa << " expected_rx " << nfo._expected_rx;
-      sa << " last_tx " << now - nfo._last_tx;
+      sa << " last_tx " << (now - nfo._last_tx);
       sa << " packets_tx " << nfo._packets_tx;
       sa << "\n";
   }

@@ -83,9 +83,7 @@ LinkStat::send_hook()
   p->pull(2);
   memset(p->data(), 0, p->length());
 
-  struct timeval tv;
-  click_gettimeofday(&tv);
-  p->set_timestamp_anno(tv);
+  p->set_timestamp_anno(Timestamp::now());
   
   // fill in ethernet header 
   click_ether *eh = (click_ether *) p->data();
@@ -129,10 +127,7 @@ LinkStat::send_hook()
   unsigned max_jitter = _period / 10;
   long r2 = random();
   unsigned j = (unsigned) ((r2 >> 1) % (max_jitter + 1));
-  unsigned int delta_us = 1000 * ((r2 & 1) ? _period - j : _period + j);
-  _next_bcast.tv_usec += delta_us;
-  _next_bcast.tv_sec +=  _next_bcast.tv_usec / 1000000;
-  _next_bcast.tv_usec = (_next_bcast.tv_usec % 1000000);
+  _next_bcast += Timestamp::make_usec(1000 * ((r2 & 1) ? _period - j : _period + j));
   _send_timer->schedule_at(_next_bcast);
 
   checked_output_push(0, p);
@@ -177,8 +172,7 @@ LinkStat::initialize(ErrorHandler *errh)
       return errh->error("Source Ethernet address must be specified to send probes");
     _send_timer = new Timer(static_send_hook, this);
     _send_timer->initialize(this);
-    click_gettimeofday(&_next_bcast);
-    _next_bcast.tv_sec++;
+    _next_bcast = Timestamp::now() + Timestamp(1, 0);
     _send_timer->schedule_at(_next_bcast);
   }
   return 0;

@@ -130,24 +130,22 @@ InOrderQueue::ready_for(const Packet *p_in) {
     if (seq == nfo->_seq + 1) {
 	/* this is the normal case */
 	nfo->_seq = max(nfo->_seq, seq);
-	click_gettimeofday(&nfo->_last_tx);
+	nfo->_last_tx = Timestamp::now();
 	return true;
     }
 
     if (!seq || !nfo->_seq) {
 	/* reset on either end*/
 	if (_debug && nfo->_seq) {
-	    struct timeval now;
-	    click_gettimeofday(&now);
 	    StringAccum sa;
-	    sa << id() << " " << now;
+	    sa << id() << " " << Timestamp::now();
 	    sa << " reset [" << path_to_string(nfo->_p) << "]";
 	    sa << " nfo_seq " << nfo->_seq;
 	    sa << " pk_seq " << seq;
 	    click_chatter("%s", sa.take_string().cc());
 	}
 	nfo->_seq = seq;
-	click_gettimeofday(&nfo->_last_tx);
+	nfo->_last_tx = Timestamp::now();
 	return true;
     }
     
@@ -177,12 +175,12 @@ InOrderQueue::ready_for(const Packet *p_in) {
 	    click_chatter("%s", sa.take_string().cc());
 	}
 	nfo->_seq = max(nfo->_seq, seq);
-	click_gettimeofday(&nfo->_last_tx);
+	nfo->_last_tx = Timestamp::now();
 	return true;
     }
 
-    struct timeval age = nfo->last_tx_age();
-    if (timercmp(&age, &_packet_timeout, >)) {
+    Timestamp age = nfo->last_tx_age();
+    if (age > _packet_timeout) {
 	if (_debug) {
 	    struct timeval now;
 	    click_gettimeofday(&now);
@@ -195,7 +193,7 @@ InOrderQueue::ready_for(const Packet *p_in) {
 	    click_chatter("%s", sa.take_string().cc());
 	}
 	nfo->_seq = seq;
-	click_gettimeofday(&nfo->_last_tx);
+	nfo->_last_tx = Timestamp::now();
 	return true;
     }
 
@@ -314,7 +312,7 @@ InOrderQueue::print_stats()
   click_gettimeofday(&now);
   for(PathIter iter = _paths.begin(); iter; iter++) {
       PathInfo f = iter.value();
-      struct timeval age = f.last_tx_age();
+      Timestamp age = f.last_tx_age();
       sa << path_to_string(f._p) << " seq " << f._seq << " age " << age << "\n";
   }
 
@@ -398,8 +396,7 @@ InOrderQueue::set_packet_timeout(ErrorHandler *errh, unsigned int x)
     return errh->error("PACKET_TIMEOUT must not be 0");
   }
   _max_tx_packet_ms = x;
-  _packet_timeout.tv_sec = x/1000;
-  _packet_timeout.tv_usec = (x % 1000) * 1000;
+  _packet_timeout = Timestamp::make_msec(x);
   return 0;
 }
 

@@ -224,8 +224,8 @@ CLICK_ENDDECLS
 // TIMEVAL OPERATIONS
 
 #ifndef timercmp
-/* Convenience macros for operations on timevals.
-   NOTE: `timercmp' does not work for >= or <=.  */
+// Convenience macros for operations on timevals.
+// NOTE: 'timercmp' does not work for >= or <=.
 # define timerisset(tvp)	((tvp)->tv_sec || (tvp)->tv_usec)
 # define timerclear(tvp)	((tvp)->tv_sec = (tvp)->tv_usec = 0)
 # define timercmp(a, b, CMP)			\
@@ -342,65 +342,28 @@ operator-(struct timeval a, const struct timeval &b)
     return a;
 }
 
-# if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
-inline double
-timeval2double(const struct timeval &a)
-{
-    return a.tv_sec + (a.tv_usec / 1000000.);
-}
-
-inline struct timeval
-double2timeval(double d)
-{
-    uint32_t sec = (uint32_t)d;
-    uint32_t usec = (uint32_t)((d - sec)*1000000 + 0.5);
-    return make_timeval(sec, usec);
-}
-
-inline struct timeval
-operator*(const struct timeval &a, double b)
-{
-    return double2timeval(timeval2double(a) * b);
-}
-
-inline struct timeval
-operator*(double a, const struct timeval &b)
-{
-    return double2timeval(timeval2double(b) * a);
-}
-
-inline struct timeval
-operator/(const struct timeval &a, double b)
-{
-    return double2timeval(timeval2double(a) / b);
-}
-
-inline double
-operator/(const struct timeval &a, const struct timeval &b)
-{
-    return timeval2double(a) / timeval2double(b);
-}
-# endif /* !CLICK_LINUXMODULE && !CLICK_BSDMODULE */
-
 #endif
 
-// byte order
+CLICK_DECLS
+class StringAccum;
+StringAccum &operator<<(StringAccum &, const struct timeval &);
+CLICK_ENDDECLS
+
+
+// BYTE ORDER
 
 #if CLICK_BYTE_ORDER == CLICK_BIG_ENDIAN
-
-#define le16_to_cpu(x) bswap_16((x))
-#define cpu_to_le16(x) bswap_16((x))
-#define le32_to_cpu(x) bswap_32((x))
-#define cpu_to_le32(x) bswap_32((x))
-
+# define le16_to_cpu(x) bswap_16((x))
+# define cpu_to_le16(x) bswap_16((x))
+# define le32_to_cpu(x) bswap_32((x))
+# define cpu_to_le32(x) bswap_32((x))
 #else
-
-#define le16_to_cpu(x) (x)
-#define cpu_to_le16(x) (x)
-#define le32_to_cpu(x) (x)
-#define cpu_to_le32(x) (x)
-
+# define le16_to_cpu(x) (x)
+# define cpu_to_le16(x) (x)
+# define le32_to_cpu(x) (x)
+# define cpu_to_le32(x) (x)
 #endif
+
 
 // CYCLE COUNTS
 

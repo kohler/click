@@ -86,16 +86,16 @@ TimedSource::cleanup(CleanupStage)
 void
 TimedSource::run_timer()
 {
-  if (!_active)
-    return;
-  if (_limit < 0 || _count < _limit) {
-    Packet *p = _packet->clone();
-    click_gettimeofday(&p->timestamp_anno());
-    output(0).push(p);
-    _count++;
-    _timer.reschedule_after_ms(_interval);
-  } else if (_stop)
-    router()->please_stop_driver();
+    if (!_active)
+	return;
+    if (_limit < 0 || _count < _limit) {
+	Packet *p = _packet->clone();
+	p->timestamp_anno().set_now();
+	output(0).push(p);
+	_count++;
+	_timer.reschedule_after_ms(_interval);
+    } else if (_stop)
+	router()->please_stop_driver();
 }
 
 String

@@ -28,7 +28,7 @@ class Timestamp { public:
     enum { SUBSEC_PER_SEC = 1000000 };
     inline static int32_t msec_to_subsec(int32_t m)	{ return m * 1000; }
     inline static int32_t usec_to_subsec(int32_t u)	{ return u; }
-    inline static int32_t nsec_to_subsec(int32_t n)	{ return n / 1000; }
+    inline static int32_t nsec_to_subsec(int32_t n)	{ return (n + 500) / 1000; }
     inline static int32_t subsec_to_msec(int32_t ss)	{ return ss / 1000; }
     inline static int32_t subsec_to_usec(int32_t ss)	{ return ss; }
     inline static int32_t subsec_to_nsec(int32_t ss)	{ return ss * 1000; }

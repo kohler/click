@@ -323,17 +323,16 @@ FlashFlood::forward(Broadcast *bcast) {
 void
 FlashFlood::forward_hook() 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
-  for (int x = 0; x < _packets.size(); x++) {
-    if (timercmp(&_packets[x]._to_send, &now, <=)) {
-      /* this timer has expired */
-      if (!_packets[x]._sent && _packets[x]._scheduled) {
-	/* we haven't sent this packet yet */
-	forward(&_packets[x]);
-      }
+    Timestamp now = Timestamp::now();
+    for (int x = 0; x < _packets.size(); x++) {
+	if (_packets[x]._to_send <= now) {
+	    /* this timer has expired */
+	    if (!_packets[x]._sent && _packets[x]._scheduled) {
+		/* we haven't sent this packet yet */
+		forward(&_packets[x]);
+	    }
+	}
     }
-  }
 }
 
 
@@ -381,8 +380,6 @@ FlashFlood::push(int port, Packet *p_in)
 void 
 FlashFlood::start_flood(Packet *p_in) 
 {
-  struct timeval now;
-  click_gettimeofday(&now);
   _packets_originated++;
   /* from me */
   int seq = random();
@@ -399,12 +396,12 @@ FlashFlood::start_flood(Packet *p_in)
   _packets[bcast_index]._p = p_in;
   _packets[bcast_index]._num_rx = 0;
   _packets[bcast_index]._num_tx = 0;
-  _packets[bcast_index]._first_rx = now;
+  _packets[bcast_index]._first_rx = Timestamp::now();
   _packets[bcast_index]._actual_first_rx = true;
   _packets[bcast_index]._sent = false;
   _packets[bcast_index]._scheduled = false;
   _packets[bcast_index].t = NULL;
-  _packets[bcast_index]._to_send = now;
+  _packets[bcast_index]._to_send = _packets[bcast_index]._first_rx;
   forward(&_packets[bcast_index]);
   
 }
@@ -415,12 +412,11 @@ FlashFlood::process_packet(Packet *p_in)
 
     click_ether *eh = (click_ether *) p_in->data();
     struct srpacket *pk = (struct srpacket *) (eh+1);
-    struct timeval now;
     uint32_t seq = pk->seq();
     uint32_t link_seq = pk->seq2();
     IPAddress src = pk->get_link_node(pk->num_links() - 1);
 
-    click_gettimeofday(&now);
+    Timestamp now = Timestamp::now();
 
     int map_index = -1;
     for (int x = 0; x < _mappings.size(); x++) {
@@ -481,10 +477,7 @@ FlashFlood::process_packet(Packet *p_in)
       _packets[bcast_index].t->initialize(this);
       
       int delay_ms = max(get_wait_time(seq, src), 1);
-      struct timeval delay;
-      delay.tv_sec = 0;
-      delay.tv_usec = delay_ms*1000;
-      timeradd(&now, &delay, &_packets[bcast_index]._to_send);
+      _packets[bcast_index]._to_send = now + Timestamp::make_msec(delay_ms);
       
       /* schedule timer */
       _packets[bcast_index].t->schedule_at(_packets[bcast_index]._to_send);

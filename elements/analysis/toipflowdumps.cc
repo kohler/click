@@ -65,9 +65,9 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
     _first_seq[0] = _first_seq[1] = 0;
 
     if (absolute_time)
-	_first_timestamp = make_timeval(0, 0);
+	_first_timestamp = Timestamp();
     else			// make first packet have timestamp .000001
-	_first_timestamp = p->timestamp_anno() - make_timeval(0, 1);
+	_first_timestamp = p->timestamp_anno() - Timestamp::epsilon();
 
     if (ip_id)
 	_ip_ids = new uint16_t[NPKT];
@@ -122,8 +122,12 @@ ToIPFlowDumps::Flow::output_binary(StringAccum &sa)
 	if (ni >= _nnote || _note[ni].before_pkt > pi) {
 	    int pos;
 
-	    buf.u[1] = ntohl(_pkt[pi].timestamp.tv_sec);
-	    buf.u[2] = ntohl(_pkt[pi].timestamp.tv_usec);
+	    buf.u[1] = ntohl(_pkt[pi].timestamp.sec());
+#if HAVE_NANOTIMESTAMP
+	    buf.u[2] = ntohl(_pkt[pi].timestamp.nsec());
+#else
+	    buf.u[2] = ntohl(_pkt[pi].timestamp.usec());
+#endif
 	    if (_ip_p == IP_PROTO_TCP) {
 		buf.u[3] = ntohl(_pkt[pi].th_seq);
 		buf.u[4] = ntohl(_pkt[pi].payload_len);
@@ -194,7 +198,11 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	   << (_ip_p == IP_PROTO_TCP ? 'T' : 'U')
 	   << "\n!aggregate " << _aggregate << '\n';
 
+#if HAVE_NANOTIMESTAMP
+	sa << "!data ntimestamp";
+#else
 	sa << "!data timestamp";
+#endif
 	if (_binary) {
 	    if (_ip_p == IP_PROTO_TCP)
 		sa << " tcp_seq payload_len tcp_ack";
@@ -232,7 +240,7 @@ ToIPFlowDumps::Flow::output(ErrorHandler *errh)
 	    sa << "!firstseq > " << _first_seq[0] << '\n';
 	if (_have_first_seq[1] && _first_seq[1] && _ip_p == IP_PROTO_TCP)
 	    sa << "!firstseq < " << _first_seq[1] << '\n';
-	if (timerisset(&_first_timestamp))
+	if (_first_timestamp)
 	    sa << "!firsttime " << _first_timestamp << '\n';
 	if (_binary)
 	    sa << "!binary\n";

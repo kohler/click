@@ -331,7 +331,7 @@ KernelTap::selected(int fd)
 	    p->pull(2);
 	}
 	
-	(void) click_gettimeofday(&p->timestamp_anno());
+	p->timestamp_anno().set_now();
 	output(0).push(p);
     } else {
 	if (!_ignore_q_errs || !_printed_read_err || (errno != ENOBUFS)) {

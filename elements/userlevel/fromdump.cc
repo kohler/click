@@ -77,12 +77,7 @@ int
 FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     bool timing = false, stop = false, active = true, force_ip = false;
-    struct timeval first_time, first_time_off, last_time, last_time_off, interval;
-    timerclear(&first_time);
-    timerclear(&first_time_off);
-    timerclear(&last_time);
-    timerclear(&last_time_off);
-    timerclear(&interval);
+    Timestamp first_time, first_time_off, last_time, last_time_off, interval;
     _sampling_prob = (1 << SAMPLING_SHIFT);
 #if CLICK_NS
     bool per_node = false;
@@ -101,11 +96,11 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
 		    "ACTIVE", cpBool, "start active?", &active,
 		    "SAMPLE", cpUnsignedReal2, "sampling probability", SAMPLING_SHIFT, &_sampling_prob,
 		    "FORCE_IP", cpBool, "emit IP packets only?", &force_ip,
-		    "START", cpTimeval, "starting time", &first_time,
-		    "START_AFTER", cpTimeval, "starting time offset", &first_time_off,
-		    "END", cpTimeval, "ending time", &last_time,
-		    "END_AFTER", cpTimeval, "ending time offset", &last_time_off,
-		    "INTERVAL", cpTimeval, "time interval", &interval,
+		    "START", cpTimestamp, "starting time", &first_time,
+		    "START_AFTER", cpTimestamp, "starting time offset", &first_time_off,
+		    "END", cpTimestamp, "ending time", &last_time,
+		    "END_AFTER", cpTimestamp, "ending time offset", &last_time_off,
+		    "INTERVAL", cpTimestamp, "time interval", &interval,
 		    "END_CALL", cpWriteHandlerCall, "write handler for ending time", &_end_h,
 #if CLICK_NS
 		    "PER_NODE", cpBool, "prepend unique node name?", &per_node,
@@ -125,24 +120,22 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _have_first_time = _have_last_time = true;
     _first_time_relative = _last_time_relative = _last_time_interval = false;
     
-    if ((timerisset(&first_time) != 0) + (timerisset(&first_time_off) != 0) > 1)
+    if ((bool) first_time + (bool) first_time_off > 1)
 	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
-    else if (timerisset(&first_time))
+    else if (first_time)
 	_first_time = first_time;
-    else if (timerisset(&first_time_off))
+    else if (first_time_off)
 	_first_time = first_time_off, _first_time_relative = true;
-    else {
-	timerclear(&_first_time);
+    else
 	_have_first_time = false, _first_time_relative = true;
-    }
     
-    if ((timerisset(&last_time) != 0) + (timerisset(&last_time_off) != 0) + (timerisset(&interval) != 0) > 1)
+    if ((bool) last_time + (bool) last_time_off + (bool) interval > 1)
 	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
-    else if (timerisset(&last_time))
+    else if (last_time)
 	_last_time = last_time;
-    else if (timerisset(&last_time_off))
+    else if (last_time_off)
 	_last_time = last_time_off, _last_time_relative = true;
-    else if (timerisset(&interval))
+    else if (interval)
 	_last_time = interval, _last_time_interval = true;
     else
 	_have_last_time = false;
@@ -313,19 +306,16 @@ FromDump::set_active(bool active)
 }
 
 void
-FromDump::prepare_times(const fake_bpf_timeval &btv)
+FromDump::prepare_times(const Timestamp &ts)
 {
     if (_first_time_relative)
-	timeradd(&btv, &_first_time, &_first_time);
+	_first_time += ts;
     if (_last_time_relative)
-	timeradd(&btv, &_last_time, &_last_time);
+	_last_time += ts;
     else if (_last_time_interval)
-	timeradd(&_first_time, &_last_time, &_last_time);
-    if (_timing) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &btv, &_time_offset);
-    }
+	_last_time += _first_time;
+    if (_timing)
+	_time_offset = Timestamp::now() - ts;
     _have_any_times = true;
 }
 
@@ -334,6 +324,7 @@ FromDump::read_packet(ErrorHandler *errh)
 {
     fake_pcap_pkthdr swapped_ph;
     const fake_pcap_pkthdr *ph;
+    const Timestamp *ts_ptr;
     int len, caplen, skiplen = 0;
     Packet *p;
     int tries = 0;
@@ -383,16 +374,17 @@ FromDump::read_packet(ErrorHandler *errh)
 
     // check times
   check_times:
+    ts_ptr = fake_bpf_timeval::make_timestamp(&ph->ts, &swapped_ph.ts);
     if (!_have_any_times)
-	prepare_times(ph->ts);
+	prepare_times(*ts_ptr);
     if (_have_first_time) {
-	if (timercmp(&ph->ts, &_first_time, <)) {
+	if (*ts_ptr < _first_time) {
 	    _ff.shift_pos(caplen + skiplen);
 	    goto retry;
 	} else
 	    _have_first_time = false;
     }
-    if (_have_last_time && !timercmp(&ph->ts, &_last_time, <)) {
+    if (_have_last_time && *ts_ptr >= _last_time) {
 	_have_last_time = false;
 	(void) _end_h->call_write(errh);
 	if (!_active) {
@@ -411,7 +403,7 @@ FromDump::read_packet(ErrorHandler *errh)
     }
     
     // create packet
-    p = _ff.get_packet(caplen, ph->ts.tv_sec, ph->ts.tv_usec, errh);
+    p = _ff.get_packet(caplen, ts_ptr->_sec, ts_ptr->_subsec, errh);
     if (!p)
 	return false;
     SET_EXTRA_LENGTH_ANNO(p, len - caplen);
@@ -437,15 +429,11 @@ FromDump::run_task()
     bool more = true;
     if (!_packet)
 	more = read_packet(0);
-    if (_packet && _timing) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &_time_offset, &now);
-	if (timercmp(&_packet->timestamp_anno(), &now, >)) {
+    if (_packet && _timing)
+	if (_packet->timestamp_anno() > Timestamp::now() - _time_offset) {
 	    _task.fast_reschedule();
 	    return false;
 	}
-    }
 
     if (more)
 	_task.fast_reschedule();
@@ -471,13 +459,9 @@ FromDump::pull(int)
     bool more = true;
     if (!_packet)
 	more = read_packet(0);
-    if (_packet && _timing) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	timersub(&now, &_time_offset, &now);
-	if (timercmp(&_packet->timestamp_anno(), &now, >))
+    if (_packet && _timing)
+	if (_packet->timestamp_anno() > Timestamp::now() - _time_offset)
 	    return 0;
-    }
 
     // notify presence/absence of more packets
     _notifier.set_listeners(more);
@@ -531,9 +515,9 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	fd->router()->please_stop_driver();
 	return 0;
       case H_EXTEND_INTERVAL: {
-	  struct timeval tv;
-	  if (cp_timeval(s, &tv)) {
-	      timeradd(&fd->_last_time, &tv, &fd->_last_time);
+	  Timestamp ts;
+	  if (cp_time(s, &ts)) {
+	      fd->_last_time += ts;
 	      if (fd->_end_h)
 		  fd->_have_last_time = true, fd->set_active(true);
 	      return 0;
