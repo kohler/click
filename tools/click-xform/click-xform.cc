@@ -336,7 +336,7 @@ Matcher::replace(RouterT *replacement, const String &try_prefix,
   // save old element name if matched element and some replacement element
   // have the same name
   for (int i = 0; i < _match.size(); i++)
-    if (_match[i] >= 0) {
+    if (_match[i]) {
       String n = _pat->ename(i);
       int new_index = _body->eindex(prefix + "/" + n);
       if (new_index >= 0) 
