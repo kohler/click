@@ -882,44 +882,51 @@ case "$target_cpu" in
   i686|i786) provisions="$provisions i386 i586";;
 esac
 
-dnl add Linux provisions
-if test $ac_have_linux_kernel = y; then
-    ac_linux_version_code=`grep LINUX_VERSION_CODE $linuxdir/include/linux/version.h | sed 's/^.*CODE //'`
-    if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
-	provisions="linux_2_2 $provisions"
-    elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then
-	provisions="linux_2_4 $provisions"
-    fi
+dnl add 'analysis' if analysis elements are available
+if test "x$enable_analysis" = xyes; then
+    provisions="$provisions analysis"
 fi
 
 dnl add 'int64' if 64-bit integers are available
 if test "x$have_int64_types" = xyes; then
-    provisions="int64 $provisions"
-fi
-
-dnl add 'analysis' if analysis elements are available
-if test "x$enable_analysis" = xyes; then
-    provisions="analysis $provisions"
+    provisions="$provisions int64"
 fi
 
 dnl add 'ip6' if ip6 elements are available
 if test "x$enable_ip6" = xyes; then
-    provisions="ip6 $provisions"
+    provisions="$provisions ip6"
 fi
 
-dnl add 'wifi' if wifi elements are available
-if test "x$enable_wifi" = xyes; then
-    provisions="wifi $provisions"
+dnl add 'linux' if compiling under linux
+if test "x$ac_cv_under_linux" = xyes; then
+    provisions="$provisions linux"
+fi
+
+dnl add provision for linux kernel version
+if test $ac_have_linux_kernel = y; then
+    ac_linux_version_code=`grep LINUX_VERSION_CODE $linuxdir/include/linux/version.h | sed 's/^.*CODE //'`
+    if test $ac_linux_version_code -ge 131584 -a $ac_linux_version_code -lt 131840; then
+	provisions="$provisions linux_2_2"
+    elif test $ac_linux_version_code -ge 132096 -a $ac_linux_version_code -lt 132352; then
+	provisions="$provisions linux_2_4"
+    elif test $ac_linux_version_code -ge 132608 -a $ac_linux_version_code -lt 132864; then
+	provisions="$provisions linux_2_6"
+    fi
 fi
 
 dnl add 'pcap' if libpcap is available
 if test "x$HAVE_PCAP" = xyes; then
-    provisions="pcap $provisions"
+    provisions="$provisions pcap"
 fi
 
 dnl add 'smpclick' if compiled with --enable-multithread > 1
 if test "$enable_multithread" -gt 1; then
-    provisions="smpclick $provisions"
+    provisions="$provisions smpclick"
+fi
+
+dnl add 'wifi' if wifi elements are available
+if test "x$enable_wifi" = xyes; then
+    provisions="$provisions wifi"
 fi
 
 AC_SUBST(provisions)
