@@ -27,7 +27,7 @@ bool cp_is_click_id(const String &);
 String cp_unquote(const String &);
 String cp_quote(const String &, bool allow_newlines = false);
 String cp_uncomment(const String &);
-int cp_process_backslash(const char *, int pos, int len, StringAccum &);
+const char *cp_process_backslash(const char *data, const char *end, StringAccum &);
 
 // argument lists <-> lists of arguments
 void cp_argvec(const String &, Vector<String> &);
@@ -53,15 +53,19 @@ bool cp_keyword(const String &, String *, String *rest = 0);
 
 // numbers
 bool cp_bool(const String &, bool *);
-bool cp_integer(const String &, int32_t *);
+const char *cp_integer(const char *begin, const char *end, int base, int32_t *);
 bool cp_integer(const String &, int base, int32_t *);
-bool cp_unsigned(const String &, uint32_t *);
+inline bool cp_integer(const String &, int32_t *);
+const char *cp_unsigned(const char *begin, const char *end, int base, uint32_t *);
 bool cp_unsigned(const String &, int base, uint32_t *);
+inline bool cp_unsigned(const String &, uint32_t *);
 #ifdef HAVE_INT64_TYPES
-bool cp_integer64(const String &, int64_t *);
+const char *cp_integer64(const char *begin, const char *end, int base, int64_t *);
 bool cp_integer64(const String &, int base, int64_t *);
-bool cp_unsigned64(const String &, uint64_t *);
+inline bool cp_integer64(const String &, int64_t *);
+const char *cp_unsigned64(const char *begin, const char *end, int base, uint64_t *);
 bool cp_unsigned64(const String &, int base, uint64_t *);
+inline bool cp_unsigned64(const String &, uint64_t *);
 #endif
 #ifdef CLICK_USERLEVEL
 bool cp_file_offset(const String &, off_t *);
@@ -284,5 +288,28 @@ struct cp_value {
 #undef CP_VA_ARGS_REST
 #undef CP_OPT_CONTEXT
 #undef CP_CONTEXT
+
+inline bool cp_unsigned(const String &str, uint32_t *return_value)
+{
+    return cp_unsigned(str, 0, return_value);
+}
+
+inline bool cp_integer(const String &str, int32_t *return_value)
+{
+    return cp_integer(str, 0, return_value);
+}
+
+#ifdef HAVE_INT64_TYPES
+inline bool cp_unsigned64(const String &str, uint64_t *return_value)
+{
+    return cp_unsigned64(str, 0, return_value);
+}
+
+inline bool cp_integer64(const String &str, int64_t *return_value)
+{
+    return cp_integer64(str, 0, return_value);
+}
+#endif
+
 CLICK_ENDDECLS
 #endif

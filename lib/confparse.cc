@@ -6,6 +6,7 @@
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology
  * Copyright (c) 2000-2001 Mazu Networks, Inc.
  * Copyright (c) 2001-2003 International Computer Science Institute
+ * Copyright (c) 2004 The Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -110,123 +111,126 @@ xvalue(int x)
     return -1;
 }
 
-static int
-skip_comment(const char *s, int pos, int len)
+static const char *
+skip_comment(const char *s, const char *end)
 {
-  assert(pos < len - 1 && s[pos] == '/' && (s[pos+1] == '/' || s[pos+1] == '*'));
+  assert(s + 1 < end && *s == '/' && (s[1] == '/' || s[1] == '*'));
 
-  if (s[pos+1] == '/') {
-    for (pos += 2; pos < len - 1 && s[pos] != '\n' && s[pos] != '\r'; pos++)
+  if (s[1] == '/') {
+    for (s += 2; s + 1 < end && *s != '\n' && *s != '\r'; s++)
       /* nada */;
-    if (pos < len - 1 && s[pos] == '\r' && s[pos+1] == '\n')
-      pos++;
-    return pos + 1;
-  } else { /* s[pos+1] == '*' */
-    for (pos += 2; pos < len - 2 && (s[pos] != '*' || s[pos+1] != '/'); pos++)
+    if (s + 1 < end && *s == '\r' && s[1] == '\n')
+      s++;
+    return s + 1;
+  } else { /* s[1] == '*' */
+    for (s += 2; s + 2 < end && (*s != '*' || s[1] != '/'); s++)
       /* nada */;
-    return pos + 2;
+    return s + 2;
   }
 }
 
-static int
-skip_backslash_angle(const char *s, int pos, int len)
+static const char *
+skip_backslash(const char *s, const char *end)
 {
-  assert(pos < len - 1 && s[pos] == '\\' && s[pos+1] == '<');
-  
-  for (pos += 2; pos < len; )
-    if (s[pos] == '>')
-      return pos + 1;
-    else if (s[pos] == '/' && pos < len - 1 && (s[pos+1] == '/' || s[pos+1] == '*'))
-      pos = skip_comment(s, pos, len);
-    else
-      pos++;
-  
-  return len;
-}
+  assert(s < end && *s == '\\');
 
-static int
-skip_double_quote(const char *s, int pos, int len)
-{
-  assert(pos < len && s[pos] == '\"');
-
-  for (pos++; pos < len; )
-    if (pos < len - 1 && s[pos] == '\\') {
-      if (s[pos+1] == '<')
-	pos = skip_backslash_angle(s, pos, len);
+  if (s + 1 >= end)
+    return s + 1;
+  else if (s[1] == '<') {
+    for (s += 2; s < end; )
+      if (*s == '>')
+	return s + 1;
+      else if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*'))
+	s = skip_comment(s, end);
       else
-	pos += 2;
-    } else if (s[pos] == '\"')
-      return pos + 1;
-    else
-      pos++;
-
-  return len;
+	s++;
+    return s;
+  } else if (s[1] == '\r' && s + 2 < end && s[2] == '\n')
+    return s + 3;
+  else
+    return s + 2;
 }
 
-static int
-skip_single_quote(const char *s, int pos, int len)
+static const char *
+skip_double_quote(const char *s, const char *end)
 {
-  assert(pos < len && s[pos] == '\'');
+  assert(s < end && *s == '\"');
 
-  for (pos++; pos < len; pos++)
-    if (s[pos] == '\'')
-      return pos + 1;
+  for (s++; s < end; )
+    if (*s == '\\')
+      s = skip_backslash(s, end);
+    else if (*s == '\"')
+      return s + 1;
+    else
+      s++;
 
-  return len;
+  return end;
+}
+
+static const char *
+skip_single_quote(const char *s, const char *end)
+{
+  assert(s < end && *s == '\'');
+
+  for (s++; s < end; s++)
+    if (*s == '\'')
+      return s + 1;
+
+  return end;
 }
 
 static String
 partial_uncomment(const String &str, int i, int *comma_pos)
 {
-  const char *s = str.data();
-  int len = str.length();
+  const char *s = str.data() + i;
+  const char *end = str.end();
 
   // skip initial spaces
-  for (; i < len; i++) {
-    if (s[i] == '/' && i < len - 1 && (s[i+1] == '/' || s[i+1] == '*'))
-      i = skip_comment(s, i, len) - 1;
-    else if (!isspace(s[i]))
+  for (; s < end; s++) {
+    if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*'))
+      s = skip_comment(s, end) - 1;
+    else if (!isspace(*s))
       break;
   }
 
   // accumulate text, skipping comments
   StringAccum sa;
-  int left = i;
-  int right = i;
+  const char *left = s;
+  const char *right = s;
   bool closed = false;
 
-  while (i < len) {
-    if (isspace(s[i]))
-      i++;
-    else if (s[i] == '/' && i < len - 1 && (s[i+1] == '/' || s[i+1] == '*')) {
-      i = skip_comment(s, i, len);
+  while (s < end) {
+    if (isspace(*s))
+      s++;
+    else if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*')) {
+      s = skip_comment(s, end);
       closed = true;
-    } else if (s[i] == ',' && comma_pos)
+    } else if (*s == ',' && comma_pos)
       break;
     else {
       if (closed) {
-	sa << str.substring(left, right - left) << ' ';
-	left = i;
+	sa << str.substring(left, right) << ' ';
+	left = s;
 	closed = false;
       }
-      if (s[i] == '\'')
-	i = skip_single_quote(s, i, len);
-      else if (s[i] == '\"')
-	i = skip_double_quote(s, i, len);
-      else if (s[i] == '\\' && i < len - 1 && s[i+1] == '<')
-	i = skip_backslash_angle(s, i, len);
+      if (*s == '\'')
+	s = skip_single_quote(s, end);
+      else if (*s == '\"')
+	s = skip_double_quote(s, end);
+      else if (*s == '\\' && s + 1 < end && s[1] == '<')
+	s = skip_backslash(s, end);
       else
-	i++;
-      right = i;
+	s++;
+      right = s;
     }
   }
 
   if (comma_pos)
-    *comma_pos = i;
+    *comma_pos = s - str.begin();
   if (!sa)
-    return str.substring(left, right - left);
+    return str.substring(left, right);
   else {
-    sa << str.substring(left, right - left);
+    sa << str.substring(left, right);
     return sa.take_string();
   }
 }
@@ -237,65 +241,69 @@ cp_uncomment(const String &str)
   return partial_uncomment(str, 0, 0);
 }
 
-int
-cp_process_backslash(const char *s, int i, int len, StringAccum &sa)
+const char *
+cp_process_backslash(const char *s, const char *end, StringAccum &sa)
 {
-  assert(i < len - 1 && s[i] == '\\');
+  assert(s < end && *s == '\\');
+
+  if (s == end - 1) {
+    sa << '\\';
+    return end;
+  }
   
-  switch (s[i+1]) {
+  switch (s[1]) {
     
    case '\r':
-    return (i < len - 2 && s[i+2] == '\n' ? i + 3 : i + 2);
+    return (s + 2 < end && s[2] == '\n' ? s + 3 : s + 2);
 
    case '\n':
-    return i + 2;
+    return s + 2;
     
-   case 'a': sa << '\a'; return i + 2;
-   case 'b': sa << '\b'; return i + 2;
-   case 'f': sa << '\f'; return i + 2;
-   case 'n': sa << '\n'; return i + 2;
-   case 'r': sa << '\r'; return i + 2;
-   case 't': sa << '\t'; return i + 2;
-   case 'v': sa << '\v'; return i + 2;
+   case 'a': sa << '\a'; return s + 2;
+   case 'b': sa << '\b'; return s + 2;
+   case 'f': sa << '\f'; return s + 2;
+   case 'n': sa << '\n'; return s + 2;
+   case 'r': sa << '\r'; return s + 2;
+   case 't': sa << '\t'; return s + 2;
+   case 'v': sa << '\v'; return s + 2;
     
    case '0': case '1': case '2': case '3':
    case '4': case '5': case '6': case '7': {
      int c = 0, d = 0;
-     for (i++; i < len && s[i] >= '0' && s[i] <= '7' && d < 3;
-	  i++, d++)
-       c = c*8 + s[i] - '0';
+     for (s++; s < end && *s >= '0' && *s <= '7' && d < 3; s++, d++)
+       c = c*8 + *s - '0';
      sa << (char)c;
-     return i;
+     return s;
    }
    
    case 'x': {
      int c = 0;
-     for (i += 2; i < len; i++)
-       if (s[i] >= '0' && s[i] <= '9')
-	 c = c*16 + s[i] - '0';
-       else if (s[i] >= 'A' && s[i] <= 'F')
-	 c = c*16 + s[i] - 'A' + 10;
-       else if (s[i] >= 'a' && s[i] <= 'f')
-	 c = c*16 + s[i] - 'a' + 10;
+     for (s += 2; s < end; s++)
+       if (*s >= '0' && *s <= '9')
+	 c = c*16 + *s - '0';
+       else if (*s >= 'A' && *s <= 'F')
+	 c = c*16 + *s - 'A' + 10;
+       else if (*s >= 'a' && *s <= 'f')
+	 c = c*16 + *s - 'a' + 10;
        else
 	 break;
      sa << (char)c;
-     return i;
+     return s;
    }
    
    case '<': {
      int c = 0, d = 0;
-     for (i += 2; i < len; i++) {
-       if (s[i] == '>')
-	 return i + 1;
-       else if (s[i] >= '0' && s[i] <= '9')
-	 c = c*16 + s[i] - '0';
-       else if (s[i] >= 'A' && s[i] <= 'F')
-	 c = c*16 + s[i] - 'A' + 10;
-       else if (s[i] >= 'a' && s[i] <= 'f')
-	 c = c*16 + s[i] - 'a' + 10;
-       else if (s[i] == '/' && i < len - 1 && (s[i+1] == '/' || s[i+1] == '*')) {
-	 i = skip_comment(s, i, len) - 1;
+     for (s += 2; s < end; s++) {
+       if (*s == '>')
+	 return s + 1;
+       else if (*s >= '0' && *s <= '9')
+	 c = c*16 + *s - '0';
+       else if (*s >= 'A' && *s <= 'F')
+	 c = c*16 + *s - 'A' + 10;
+       else if (*s >= 'a' && *s <= 'f')
+	 c = c*16 + *s - 'a' + 10;
+       else if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*')) {
+	 s = skip_comment(s, end) - 1;
 	 continue;
        } else
 	 continue;	// space (ignore it) or random (error)
@@ -305,13 +313,13 @@ cp_process_backslash(const char *s, int i, int len, StringAccum &sa)
        }
      }
      // ran out of space in string
-     return len;
+     return end;
    }
 
    case '\\': case '\'': case '\"': case '$':
    default:
-    sa << s[i+1];
-    return i + 2;
+    sa << s[1];
+    return s + 2;
     
   }
 }
@@ -321,45 +329,44 @@ cp_unquote(const String &in_str)
 {
   String str = partial_uncomment(in_str, 0, 0);
   const char *s = str.data();
-  int len = str.length();
-  int i = 0;
+  const char *end = str.end();
 
   // accumulate a word
   StringAccum sa;
-  int start = i;
+  const char *start = s;
   int quote_state = 0;
 
-  for (; i < len; i++)
-    switch (s[i]) {
+  for (; s < end; s++)
+    switch (*s) {
 
      case '\"':
      case '\'':
       if (quote_state == 0) {
-	if (start < i) sa << str.substring(start, i - start);
-	start = i + 1;
-	quote_state = s[i];
-      } else if (quote_state == s[i]) {
-	if (start < i) sa << str.substring(start, i - start);
-	start = i + 1;
+	sa << str.substring(start, s); // null string if start >= s
+	start = s + 1;
+	quote_state = *s;
+      } else if (quote_state == *s) {
+	sa << str.substring(start, s);
+	start = s + 1;
 	quote_state = 0;
       }
       break;
       
      case '\\':
-      if (i < len - 1 && (quote_state == '\"'
-			  || (quote_state == 0 && s[i+1] == '<'))) {
-	sa << str.substring(start, i - start);
-	start = cp_process_backslash(s, i, len, sa);
-	i = start - 1;
+      if (s + 1 < end && (quote_state == '\"'
+			  || (quote_state == 0 && s[1] == '<'))) {
+	sa << str.substring(start, s);
+	start = cp_process_backslash(s, end, sa);
+	s = start - 1;
       }
       break;
       
     }
 
-  if (start == 0)
+  if (start == str.begin())
     return str;
   else {
-    sa << str.substring(start, i - start);
+    sa << str.substring(start, s);
     return sa.take_string();
   }
 }
@@ -370,54 +377,53 @@ cp_quote(const String &str, bool allow_newlines)
   if (!str)
     return String("\"\"");
   
-  const unsigned char *s = (const unsigned char *)str.data();
-  int len = str.length();
-  int i = 0;
+  const char *s = str.data();
+  const char *end = str.end();
   
   StringAccum sa;
-  int start = i;
+  const char *start = s;
 
   sa << '\"';
   
-  for (; i < len; i++)
-    switch (s[i]) {
+  for (; s < end; s++)
+    switch (*s) {
       
      case '\\': case '\"': case '$':
-      sa << str.substring(start, i - start) << '\\' << s[i];
-      start = i + 1;
+      sa << str.substring(start, s) << '\\' << *s;
+      start = s + 1;
       break;
       
      case '\t':
-      sa << str.substring(start, i - start) << "\\t";
-      start = i + 1;
+      sa << str.substring(start, s) << "\\t";
+      start = s + 1;
       break;
 
      case '\r':
-      sa << str.substring(start, i - start) << "\\r";
-      start = i + 1;
+      sa << str.substring(start, s) << "\\r";
+      start = s + 1;
       break;
 
      case '\n':
       if (!allow_newlines) {
-	sa << str.substring(start, i - start) << "\\n";
-	start = i + 1;
+	sa << str.substring(start, s) << "\\n";
+	start = s + 1;
       }
       break;
 
      default:
-      if (s[i] < 32 || s[i] >= 127) {
-	unsigned u = s[i];
-	sa << str.substring(start, i - start)
+      if ((unsigned char)*s < 32 || (unsigned char)*s >= 127) {
+	unsigned u = (unsigned char)*s;
+	sa << str.substring(start, s)
 	   << '\\' << (char)('0' + (u >> 6))
 	   << (char)('0' + ((u >> 3) & 7))
 	   << (char)('0' + (u & 7));
-	start = i + 1;
+	start = s + 1;
       }
       break;
       
     }
   
-  sa << str.substring(start, i - start) << '\"';
+  sa << str.substring(start, s) << '\"';
   return sa.take_string();
 }
 
@@ -447,45 +453,18 @@ cp_argvec(const String &conf, Vector<String> &args)
   }
 }
 
-static String
-cp_pop_spacevec(const String &conf, int &pos)
+static const char *
+skip_spacevec_space(const char *s, const char *end)
 {
-  const char *s = conf.data();
-  int len = conf.length();
-  int i = pos;
-  
-  // dump arguments into `vec'
-  int start = -1;
-  
-  for (; i < len; i++)
-    switch (s[i]) {
+  while (s < end)
+    switch (*s) {
       
      case '/':
       // skip comments
-      if (i == len - 1 || (s[i+1] != '/' && s[i+1] != '*'))
-	goto normal;
-      if (start >= 0)
-	goto done;
-      i = skip_comment(s, i, len) - 1;
-      break;
-      
-     case '\"':
-      if (start < 0)
-	start = i;
-      i = skip_double_quote(s, i, len) - 1;
-      break;
-      
-     case '\'':
-      if (start < 0)
-	start = i;
-      i = skip_single_quote(s, i, len) - 1;
-      break;
-
-     case '\\':			// check for \<...> strings
-      if (start < 0)
-	start = i;
-      if (i < len - 1 && s[i+1] == '<')
-	i = skip_backslash_angle(s, i, len) - 1;
+      if (s + 1 == end || (s[1] != '/' && s[1] != '*'))
+	return s;
+      else
+	s = skip_comment(s, end);
       break;
       
      case ' ':
@@ -494,24 +473,58 @@ cp_pop_spacevec(const String &conf, int &pos)
      case '\r':
      case '\t':
      case '\v':
-      if (start >= 0)
-	goto done;
+      s++;
       break;
 
      default:
-     normal:
-      if (start < 0)
-	start = i;
+      return s;
+      
+    }
+  return s;
+}
+
+static const char *
+skip_spacevec_item(const char *s, const char *end)
+{
+  while (s < end)
+    switch (*s) {
+      
+     case '/':
+      // a comment ends the item
+      if (s + 1 < end && (s[1] == '/' || s[1] == '*'))
+	return s;
+      s++;
+      break;
+      
+     case '\"':
+      s = skip_double_quote(s, end);
+      break;
+      
+     case '\'':
+      s = skip_single_quote(s, end);
+      break;
+
+     case '\\':			// check for \<...> strings
+      if (s + 1 < end && s[1] == '<')
+	s = skip_backslash(s, end);
+      else
+	s++;
+      break;
+      
+     case ' ':
+     case '\f':
+     case '\n':
+     case '\r':
+     case '\t':
+     case '\v':
+      return s;
+
+     default:
+      s++;
       break;
       
     }
-
- done:
-  pos = i;
-  if (start >= 0)
-    return conf.substring(start, i - start);
-  else
-    return String();
+  return s;
 }
 
 void
@@ -522,19 +535,23 @@ cp_spacevec(const String &conf, Vector<String> &vec)
     return;
 
   // collect arguments with cp_pop_spacevec
-  String s;
-  int pos = 0;
-  while ((s = cp_pop_spacevec(conf, pos)))
-    vec.push_back(s);
+  const char *s = conf.data();
+  const char *end = conf.end();
+  while ((s = skip_spacevec_space(s, end)) < end) {
+    const char *t = skip_spacevec_item(s, end);
+    vec.push_back(conf.substring(s, t));
+    s = t;
+  }
 }
 
 String
 cp_pop_spacevec(String &conf)
 {
-  int pos = 0;
-  String answer = cp_pop_spacevec(conf, pos);
-  conf = conf.substring(pos);
-  cp_eat_space(conf);
+  const char *item = skip_spacevec_space(conf.begin(), conf.end());
+  const char *item_end = skip_spacevec_item(item, conf.end());
+  String answer = conf.substring(item, item_end);
+  item_end = skip_spacevec_space(item_end, conf.end());
+  conf = conf.substring(item_end, conf.end());
   return answer;
 }
 
@@ -572,12 +589,11 @@ bool
 cp_string(const String &str, String *return_value, String *rest)
 {
   const char *s = str.data();
-  int len = str.length();
-  int i = 0;
+  const char *end = str.end();
 
   // accumulate a word
-  for (; i < len; i++)
-    switch (s[i]) {
+  while (s < end)
+    switch (*s) {
       
      case ' ':
      case '\f':
@@ -588,27 +604,33 @@ cp_string(const String &str, String *return_value, String *rest)
       goto done;
 
      case '\"':
-      i = skip_double_quote(s, i, len) - 1;
+      s = skip_double_quote(s, end);
       break;
 
      case '\'':
-      i = skip_single_quote(s, i, len) - 1;
+      s = skip_single_quote(s, end);
       break;
 
      case '\\':
-      if (i < len - 1 && s[i+1] == '<')
-	i = skip_backslash_angle(s, i, len) - 1;
+      if (s + 1 < end && s[1] == '<')
+	s = skip_backslash(s, end);
+      else
+	s++;
+      break;
+
+     default:
+      s++;
       break;
       
     }
   
  done:
-  if (i == 0 || (!rest && i != len))
+  if (s == str.begin() || (!rest && s != end))
     return false;
   else {
     if (rest)
-      *rest = str.substring(i);
-    *return_value = cp_unquote(str.substring(0, i));
+      *rest = str.substring(s, end);
+    *return_value = cp_unquote(str.substring(str.begin(), s));
     return true;
   }
 }
@@ -631,12 +653,11 @@ bool
 cp_keyword(const String &str, String *return_value, String *rest)
 {
   const char *s = str.data();
-  int len = str.length();
-  int i = 0;
+  const char *end = str.end();
 
   // accumulate a word
-  for (; i < len; i++)
-    switch (s[i]) {
+  for (; s < end; s++)
+    switch (*s) {
       
      case ' ':
      case '\f':
@@ -653,22 +674,22 @@ cp_keyword(const String &str, String *return_value, String *rest)
       break;
       
      default:
-      if (!isalnum(s[i]))
+      if (!isalnum(*s))
 	return false;
       break;
       
     }
   
  done:
-  if (i == 0 || (!rest && i < len))
+  if (s == str.begin() || (!rest && s < end))
     return false;
   else {
-    *return_value = str.substring(0, i);
+    *return_value = str.substring(str.begin(), s);
     if (rest) {
-      for (; i < len; i++)
-	if (!isspace(s[i]))
+      for (; s < end; s++)
+	if (!isspace(*s))
 	  break;
-      *rest = str.substring(i);
+      *rest = str.substring(s, end);
     }
     return true;
   }
@@ -701,89 +722,94 @@ cp_bool(const String &str, bool *return_value)
   return true;
 }
 
-bool
-cp_unsigned(const String &str, int base, uint32_t *return_value)
+const char *
+cp_unsigned(const char *begin, const char *end, int base, uint32_t *return_value)
 {
-  const char *s = str.data();
-  int len = str.length();
-  int i = 0;
-  
-  if (i < len && s[i] == '+')
-    i++;
+  const char *s = begin;
+  if (s < end && *s == '+')
+    s++;
 
-  if ((base == 0 || base == 16) && i < len - 1
-      && s[i] == '0' && (s[i+1] == 'x' || s[i+1] == 'X')) {
-    i += 2;
+  if ((base == 0 || base == 16) && s + 1 < end && *s == '0'
+      && (s[1] == 'x' || s[1] == 'X')) {
+    s += 2;
     base = 16;
-  } else if (base == 0 && s[i] == '0')
+  } else if (base == 0 && s < end && *s == '0')
     base = 8;
   else if (base == 0)
     base = 10;
   else if (base < 2 || base > 36) {
     cp_errno = CPE_INVALID;
-    return false;
+    return begin;
   }
 
-  if (i == len)			// no digits
-    return false;
+  if (s >= end || *s == '_')	// no digits or initial underscore
+    return begin;
 
   uint32_t overflow_val = 0xFFFFFFFFU / base;
   int32_t overflow_digit = 0xFFFFFFFFU - (overflow_val * base);
   
   uint32_t val = 0;
-  cp_errno = CPE_OK;
+  cp_errno = CPE_FORMAT;
   
-  while (i < len) {
+  while (s < end) {
     // find digit
     int digit;
-    if (s[i] >= '0' && s[i] <= '9')
-      digit = s[i] - '0';
-    else if (s[i] >= 'A' && s[i] <= 'Z')
-      digit = s[i] - 'A' + 10;
-    else if (s[i] >= 'a' && s[i] <= 'z')
-      digit = s[i] - 'a' + 10;
-    else if (s[i] == '_' && i > 0 && i < len - 1 && s[i+1] != '_')
+    if (*s >= '0' && *s <= '9')
+      digit = *s - '0';
+    else if (*s >= 'A' && *s <= 'Z')
+      digit = *s - 'A' + 10;
+    else if (*s >= 'a' && *s <= 'z')
+      digit = *s - 'a' + 10;
+    else if (*s == '_' && s + 1 < end && s[1] != '_')
       // skip underscores between digits
       goto next_digit;
     else
       digit = 36;
-    if (digit >= base) {
-      cp_errno = CPE_FORMAT;
-      return false;
-    }
+    if (digit >= base)
+      break;
+    else if (val == 0 && cp_errno == CPE_FORMAT)
+      cp_errno = CPE_OK;
     // check for overflow
     if (val > overflow_val || (val == overflow_val && digit > overflow_digit))
       cp_errno = CPE_OVERFLOW;
     // assign new value
     val = val * base + digit;
    next_digit:
-    i++;
+    s++;
   }
 
-  *return_value = (cp_errno ? 0xFFFFFFFFU : val);
-  return true;
+  if (cp_errno == CPE_FORMAT)
+    return begin;
+  else {
+    *return_value = (cp_errno ? 0xFFFFFFFFU : val);
+    return s;
+  }
 }
 
-bool
-cp_unsigned(const String &str, uint32_t *return_value)
+bool cp_unsigned(const String &str, int base, uint32_t *return_value)
 {
-  return cp_unsigned(str, 0, return_value);
+  uint32_t u;
+  const char *s = cp_unsigned(str.begin(), str.end(), base, &u);
+  if (s == str.end() && str.length()) {
+    *return_value = u;
+    return true;
+  } else
+    return false;
 }
 
-
-bool
-cp_integer(const String &in_str, int base, int32_t *return_value)
+const char *
+cp_integer(const char *begin, const char *end, int base, int32_t *return_value)
 {
-  String str = in_str;
+  const char *s = begin;
   bool negative = false;
-  if (str.length() > 1 && str[0] == '-' && str[1] != '+') {
+  if (s + 1 < end && *s == '-' && s[1] != '+') {
     negative = true;
-    str = in_str.substring(1);
+    s++;
   }
 
   uint32_t value;
-  if (!cp_unsigned(str, base, &value))
-    return false;
+  if ((end = cp_unsigned(s, end, base, &value)) == s)
+    return begin;
 
   uint32_t max = (negative ? 0x80000000U : 0x7FFFFFFFU);
   if (value > max) {
@@ -792,13 +818,18 @@ cp_integer(const String &in_str, int base, int32_t *return_value)
   }
 
   *return_value = (negative ? -value : value);
-  return true;
+  return end;
 }
 
-bool
-cp_integer(const String &str, int32_t *return_value)
+bool cp_integer(const String &str, int base, int32_t *return_value)
 {
-  return cp_integer(str, 0, return_value);
+  int32_t i;
+  const char *s = cp_integer(str.begin(), str.end(), base, &i);
+  if (s == str.end() && str.length()) {
+    *return_value = i;
+    return true;
+  } else
+    return false;
 }
 
 
@@ -806,88 +837,95 @@ cp_integer(const String &str, int32_t *return_value)
 
 static uint64_t unsigned64_overflow_vals[] = { 0, 0, 9223372036854775807ULL, 6148914691236517205ULL, 4611686018427387903ULL, 3689348814741910323ULL, 3074457345618258602ULL, 2635249153387078802ULL, 2305843009213693951ULL, 2049638230412172401ULL, 1844674407370955161ULL, 1676976733973595601ULL, 1537228672809129301ULL, 1418980313362273201ULL, 1317624576693539401ULL, 1229782938247303441ULL, 1152921504606846975ULL, 1085102592571150095ULL, 1024819115206086200ULL, 970881267037344821ULL, 922337203685477580ULL, 878416384462359600ULL, 838488366986797800ULL, 802032351030850070ULL, 768614336404564650ULL, 737869762948382064ULL, 709490156681136600ULL, 683212743470724133ULL, 658812288346769700ULL, 636094623231363848ULL, 614891469123651720ULL, 595056260442243600ULL, 576460752303423487ULL, 558992244657865200ULL, 542551296285575047ULL, 527049830677415760ULL };
 
-bool
-cp_unsigned64(const String &str, int base, uint64_t *return_value)
+const char *
+cp_unsigned64(const char *begin, const char *end, int base, uint64_t *return_value)
 {
-  const char *s = str.data();
-  int len = str.length();
-  int i = 0;
+  const char *s = begin;
+  if (s < end && *s == '+')
+    s++;
 
-  if (i < len && s[i] == '+')
-    i++;
-
-  if ((base == 0 || base == 16) && i < len - 1
-      && s[i] == '0' && (s[i+1] == 'x' || s[i+1] == 'X')) {
-    i += 2;
+  if ((base == 0 || base == 16) && s + 1 < end && *s == '0'
+      && (s[1] == 'x' || s[1] == 'X')) {
+    s += 2;
     base = 16;
-  } else if (base == 0 && s[i] == '0')
+  } else if (base == 0 && *s == '0')
     base = 8;
   else if (base == 0)
     base = 10;
   else if (base < 2 || base > 36) {
     cp_errno = CPE_INVALID;
-    return false;
+    return begin;
   }
 
-  if (i == len)			// no digits
-    return false;
+  if (s >= end || *s == '_')	// no digits or initial underscore
+    return begin;
 
   uint64_t overflow_val = unsigned64_overflow_vals[base];
   int64_t overflow_digit = 0xFFFFFFFFFFFFFFFFULL - (overflow_val * base);
 
   uint64_t val = 0;
-  cp_errno = CPE_OK;
+  cp_errno = CPE_FORMAT;
   
-  while (i < len) {
+  while (s < end) {
     // find digit
     int digit;
-    if (s[i] >= '0' && s[i] <= '9')
-      digit = s[i] - '0';
-    else if (s[i] >= 'A' && s[i] <= 'Z')
-      digit = s[i] - 'A' + 10;
-    else if (s[i] >= 'a' && s[i] <= 'z')
-      digit = s[i] - 'a' + 10;
-    else if (s[i] == '_' && i > 0 && i < len - 1 && s[i+1] != '_')
+    if (*s >= '0' && *s <= '9')
+      digit = *s - '0';
+    else if (*s >= 'A' && *s <= 'Z')
+      digit = *s - 'A' + 10;
+    else if (*s >= 'a' && *s <= 'z')
+      digit = *s - 'a' + 10;
+    else if (*s == '_' && s + 1 < end && s[1] != '_')
       // skip underscores between digits
       goto next_digit;
     else
       digit = 36;
-    if (digit >= base) {
-      cp_errno = CPE_FORMAT;
-      return false;
-    }
+    if (digit >= base)
+      break;
+    else if (val == 0 && cp_errno == CPE_FORMAT)
+      cp_errno = CPE_OK;
     // check for overflow
     if (val > overflow_val || (val == overflow_val && digit > overflow_digit))
       cp_errno = CPE_OVERFLOW;
     // assign new value
     val = val * base + digit;
    next_digit:
-    i++;
+    s++;
   }
 
-  *return_value = (cp_errno ? 0xFFFFFFFFFFFFFFFFULL : val);
-  return true;
+  if (cp_errno == CPE_FORMAT)
+    return begin;
+  else {
+    *return_value = (cp_errno ? 0xFFFFFFFFFFFFFFFFULL : val);
+    return s;
+  }
 }
 
 bool
-cp_unsigned64(const String &str, uint64_t *return_value)
+cp_unsigned64(const String &str, int base, uint64_t *return_value)
 {
-  return cp_unsigned64(str, 0, return_value);
+  uint64_t q;
+  const char *s = cp_unsigned64(str.begin(), str.end(), base, &q);
+  if (s == str.end() && str.length()) {
+    *return_value = q;
+    return true;
+  } else
+    return false;
 }
 
-bool
-cp_integer64(const String &in_str, int base, int64_t *return_value)
+const char *
+cp_integer64(const char *begin, const char *end, int base, int64_t *return_value)
 {
-  String str = in_str;
+  const char *s = begin;
   bool negative = false;
-  if (str.length() > 1 && str[0] == '-' && str[1] != '+') {
+  if (s + 1 < end && *s == '-' && s[1] != '+') {
     negative = true;
-    str = in_str.substring(1);
+    s++;
   }
 
   uint64_t value;
-  if (!cp_unsigned64(str, base, &value))
-    return false;
+  if ((end = cp_unsigned64(s, end, base, &value)) == s)
+    return begin;
 
   uint64_t max = (negative ? 0x8000000000000000ULL : 0x7FFFFFFFFFFFFFFFULL);
   if (value > max) {
@@ -896,13 +934,19 @@ cp_integer64(const String &in_str, int base, int64_t *return_value)
   }
 
   *return_value = (negative ? -value : value);
-  return true;
+  return end;
 }
 
 bool
-cp_integer64(const String &str, int64_t *return_value)
+cp_integer64(const String &str, int base, int64_t *return_value)
 {
-  return cp_integer64(str, 0, return_value);
+  int64_t q;
+  const char *s = cp_integer64(str.begin(), str.end(), base, &q);
+  if (s == str.end() && str.length()) {
+    *return_value = q;
+    return true;
+  } else
+    return false;
 }
 
 #endif
