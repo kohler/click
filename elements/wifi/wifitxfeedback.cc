@@ -27,22 +27,20 @@ class TXFMap { public:
       _map[x] = 0;
     }
   }
-  bool insert(WifiTXFeedback *txf) {
+  int insert(WifiTXFeedback *txf) {
     for (int x = 0; x < TXF_MAP_SIZE; x++) {
       if (!_map[x]) {
 	_map[x] = txf;
-	return true;
+	return x;
       }
     }
-    return false;
+    return -1;
   }
 
-  bool remove(WifiTXFeedback *txf) {
-    for (int x = 0; x < TXF_MAP_SIZE; x++) {
-      if (_map[x] == txf) {
-	_map[x] = 0;
-	return true;
-      }
+  bool remove(int x) {
+    if (x >= 0 && x < TXF_MAP_SIZE) {
+      _map[x] = 0;
+      return true;
     }
     return false;
   }
@@ -66,29 +64,29 @@ static int static_got_skb(struct sk_buff *skb, void *)
 }
 
 
-static bool
+static int
 static_initialize(WifiTXFeedback *txf)
 {
   txf_count++;
-  bool r = false;
+  int ndx = -1;
   if (txf_count == 1) {
     txf_map.initialize();
-    r = txf_map.insert(txf);
+    ndx = txf_map.insert(txf);
     register_click_wifi_tx_cb(&static_got_skb, NULL);
   } else {
-    r = txf_map.insert(txf);
+    ndx = txf_map.insert(txf);
   }
-  return r;
+  return ndx;
 }
 
 static bool 
-static_cleanup(WifiTXFeedback *txf) 
+static_cleanup(int ndx) 
 {
   txf_count--;
   if (txf_count == 0) {
     register_click_wifi_tx_cb(NULL, NULL);
   }
-  return txf_map.remove(txf);
+  return txf_map.remove(ndx);
 
 }
 
@@ -129,9 +127,11 @@ WifiTXFeedback::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 WifiTXFeedback::initialize(ErrorHandler *errh)
 {
-  if (!static_initialize(this)) {
-    click_chatter("%{element}: couldn't intialize!!!\n",
-		  this);
+  _map_index = static_initialize(this);
+  if (_map_index < 0) {
+    click_chatter("%{element}: couldn't intialize, got %d !!!\n",
+		  this,
+		  _map_index);
     return -1;
   }
   return 0;
@@ -141,9 +141,10 @@ WifiTXFeedback::initialize(ErrorHandler *errh)
 void
 WifiTXFeedback::cleanup(CleanupStage)
 {
-  if (!static_cleanup(this)) {
-    click_chatter("%{element}: couldn't cleanup!!!\n",
-		  this);
+  if (!static_cleanup(_map_index)) {
+    click_chatter("%{element}: couldn't cleanup - %d !!!\n",
+		  this,
+		  _map_index);
   }
 }
 

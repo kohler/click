@@ -67,6 +67,7 @@ private:
 
     int _successes;
     int _failures;
+    int _map_index;
 };
 
 CLICK_ENDDECLS
