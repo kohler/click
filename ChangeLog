@@ -1,3 +1,24 @@
+2001-05-30 Wednesday 20:22  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/userlevel/controlsocket.cc (1.25), lib/archive.cc
+	(1.12), lib/confparse.cc (1.71), lib/error.cc (1.29): use new
+	extend() and printable() methods where appropriate
+
+2001-05-30 Wednesday 20:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi (1.24): doc updates
+
+2001-05-30 Wednesday 20:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/string.hh (1.12), lib/string.cc (1.27): String: add
+	new printable() method, to create a printable version of an
+	arbitrary string
+
+2001-05-30 Wednesday 20:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/straccum.hh (1.11): StringAccum: add extend(int
+	len, int extend) method
+
 2001-05-30 Wednesday 18:15  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/userlevel/chattersocket.cc (1.4): ChatterSocket: nitlet
