@@ -313,11 +313,14 @@ ToDevice::tx_intr()
   int adj = tickets()/4;
   if (adj < 2) adj = 2;
 
+#if 0
   /* tx dma ring was fairly full, slow down */
   if (busy && queued_pkts > dma_thresh_high 
       && _last_dma_length > dma_thresh_high) adj=0-adj;
+  else
+#endif
   /* not much there upstream, so slow down */
-  else if (!busy && sent < dma_thresh_low) adj=0-adj;
+  if (!busy && sent < dma_thresh_low) adj=0-adj;
   /* handle burstiness: start a bit faster */
   else if (sent > dma_thresh_high && !busy && 
            _last_tx < dma_thresh_low && !_last_busy) adj*=2;
