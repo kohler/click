@@ -3,16 +3,16 @@
 
 /*
  * =c
- * HostEtherFilter(MACADDR)
+ * HostEtherFilter(MACADDR [, DROP-OWN])
  * =s
  * drops Ethernet packets sent to other machines
  * V<dropping>
  * =d
- * Expects ethernet packets as input. Discards packets that
- * aren't addressed to MACADDR or to a broadcast or
- * multicast address. That is, tries to act like
- * Ethernet input hardware.
- */
+ *
+ * Expects ethernet packets as input. Discards packets that aren't
+ * addressed to MACADDR or to a broadcast or multicast address.  If
+ * DROP-OWN is true, drops packets originated by MACADDR; defaults to
+ * false.  That is, tries to act like Ethernet input hardware.  */
 
 #include "element.hh"
 class EtherAddress;
@@ -33,7 +33,7 @@ class HostEtherFilter : public Element {
   Packet *simple_action(Packet *);
   
 private:
-
+  bool _drop_own;
   unsigned char _addr[6];
 
 };

@@ -20,7 +20,7 @@
 #include "etheraddress.hh"
 #include "click_ether.h"
 
-HostEtherFilter::HostEtherFilter()
+HostEtherFilter::HostEtherFilter() : _drop_own(false)
 {
   add_input();
   add_output();
@@ -35,6 +35,8 @@ HostEtherFilter::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return(cp_va_parse(conf, this, errh,
                      cpEthernetAddress, "Ethernet address", &_addr,
+		     cpOptional,
+		     cpBool, "Drop own packets?", &_drop_own,
                      0));
 }
 
@@ -49,7 +51,12 @@ HostEtherFilter::simple_action(Packet *p)
 {
   click_ether *e = (click_ether *) p->data();
 
-  if((e->ether_dhost[0] & 0x80) || memcmp(e->ether_dhost, _addr, 6) == 0){
+  if (_drop_own && memcmp(e->ether_shost, _addr, 6) == 0) {
+    p->kill();
+    return 0;
+  }
+
+  if ((e->ether_dhost[0] & 0x80) || memcmp(e->ether_dhost, _addr, 6) == 0){
     return(p);
   } else {
     p->kill();
