@@ -1,3 +1,8 @@
+2004-08-16 Monday 20:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromdagdump.cc (1.22), fromdagdump.cc (1.23):
+	fix timestamp manipulation (thanks, Holger Dreger)
+
 2004-08-14 Saturday 16:36  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: availablerates.cc (1.4), linktable.cc (1.6),
