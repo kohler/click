@@ -12,26 +12,25 @@ srcdir = @srcdir@
 AUTOHEADER = autoheader
 AUTOCONF = autoconf
 
-all: @TARGETS@ tools
+all: @TARGETS@ tools Makefile
 
-linuxmodule: stamp-h Makefile
+linuxmodule: stamp-h
 	@cd linuxmodule; $(MAKE) all
-userlevel: stamp-h Makefile
+userlevel: stamp-h
 	@cd userlevel; $(MAKE) all
-exopc: stamp-h Makefile
+exopc: stamp-h
 	@cd exopc; $(MAKE) all
-tools: stamp-h Makefile
+tools: stamp-h
 	@cd tools; $(MAKE) all
 
-elemlist elemlists: stamp-h
+elemlist elemlists:
 	/bin/sh mkelemlist.sh
 
 stamp-h: $(srcdir)/configure
-$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/config.h.in
+$(srcdir)/configure: $(srcdir)/configure.in $(srcdir)/acconfig.h
+	cd $(srcdir); $(AUTOHEADER); touch config.h.in
 	cd $(srcdir); $(AUTOCONF)
 	$(srcdir)/configure @ac_configure_args@
-$(srcdir)/config.h.in: $(srcdir)/configure.in $(srcdir)/acconfig.h
-	cd $(srcdir); $(AUTOHEADER); touch config.h.in
 Makefile: $(srcdir)/configure $(srcdir)/Makefile.in
 	@if echo "$?" | grep -q configure 2>/dev/null; then :; else \
 	  CONFIG_FILES=$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status; fi
@@ -41,14 +40,10 @@ check-filenames:
 	if test -z $$a; then echo OK; else echo "*** warning: duplicate object file names:"; echo "$$a"; fi
 
 clean:
-	@-cd linuxmodule; $(MAKE) clean
-	@-cd userlevel; $(MAKE) clean
-	@-if -d exopc; then cd exopc; $(MAKE) clean; fi
+	@-for d in @POSSIBLE_TARGETS@; do (cd $dir; $(MAKE) clean); done
 	@-cd tools; $(MAKE) clean
 distclean:
-	@-cd linuxmodule; $(MAKE) distclean
-	@-cd userlevel; $(MAKE) distclean
-	@-if -d exopc; then cd exopc; $(MAKE) distclean; fi
+	@-for d in @POSSIBLE_TARGETS@; do (cd $dir; $(MAKE) distclean); done
 	@-cd tools; $(MAKE) distclean
 	-rm -f config.h Makefile config.status
 	-rm -f config.cache config.log stamp-h stamp-h[0-9]*
