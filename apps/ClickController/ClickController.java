@@ -11,7 +11,7 @@ class ClickController extends JPanel {
     private JFrame _frame;
     private JPanel _infoPanel;
     private JMenuItem _closeItem;
-    private JTextField _statusLine;
+    private JLabel _statusLine;
     private boolean _empty;
 
     private static Vector controllers = new Vector();
@@ -170,19 +170,14 @@ class ClickController extends JPanel {
 	addController(this);
 
 	setLayout(new BorderLayout());
-	_statusLine = new JTextField("");
 
-	JPanel top = new JPanel();
-	top.setLayout(new BorderLayout());
-	add(top, BorderLayout.NORTH);
-	
 	JMenuBar menuBar = createMenus();
-	top.add(menuBar, BorderLayout.NORTH);
+	add(menuBar, BorderLayout.NORTH);
 	
 	_infoPanel = new JPanel(new BorderLayout());
-	top.add(_infoPanel, BorderLayout.CENTER);
+	add(_infoPanel, BorderLayout.CENTER);
 
-	_statusLine.setEditable(false);
+	_statusLine = new JLabel("");
 	add(_statusLine, BorderLayout.SOUTH);
 
 	setControlSocket(null);
