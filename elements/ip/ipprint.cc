@@ -29,6 +29,7 @@
 #include <click/straccum.hh>
 
 #include <click/click_ip.h>
+#include <click/click_icmp.h>
 #include <click/click_tcp.h>
 #include <click/click_udp.h>
 
@@ -126,19 +127,20 @@ IPPrint::simple_action(Packet *p)
     unsigned win = ntohs(tcph->th_win);
     unsigned seqlen = ip_len - (iph->ip_hl << 2) - (tcph->th_off << 2);
     int ackp = tcph->th_flags & TH_ACK;
-    String flag = "";
+
+    sa << src << '.' << srcp << " > " << dst << '.' << dstp << ": ";
     if (tcph->th_flags & TH_SYN)
-      flag += "S", seqlen++;
+      sa << 'S', seqlen++;
     if (tcph->th_flags & TH_FIN)
-      flag += "F", seqlen++;
+      sa << 'F', seqlen++;
     if (tcph->th_flags & TH_RST)
-      flag += "R";
+      sa << 'R';
     if (tcph->th_flags & TH_PUSH)
-      flag += "P";
-    if (flag.length() == 0)
-      flag = ".";
-    sa << src.s() << '.' << srcp << " > " << dst.s() << '.' << dstp
-       << ": " << flag << ' ' << seq << ':' << (seq + seqlen)
+      sa << 'P';
+    if (!(tcph->th_flags & (TH_SYN | TH_FIN | TH_RST | TH_PUSH)))
+      sa << '.';
+    
+    sa << ' ' << seq << ':' << (seq + seqlen)
        << '(' << seqlen << ',' << p->length() << ',' << ip_len << ')';
     if (ackp)
       sa << " ack " << ack;
@@ -152,18 +154,26 @@ IPPrint::simple_action(Packet *p)
     unsigned short srcp = ntohs(udph->uh_sport);
     unsigned short dstp = ntohs(udph->uh_dport);
     unsigned len = ntohs(udph->uh_ulen);
-    sa << src.s() << '.' << srcp << " > "
-       << dst.s() << '.' << dstp << ": udp " << len;
+    sa << src << '.' << srcp << " > " << dst << '.' << dstp << ": udp " << len;
     break;
   }
   
   case IP_PROTO_ICMP: {
-    sa << src.s() << " > " << dst.s() << ": icmp";
+    sa << src << " > " << dst << ": icmp";
+    const icmp_generic *icmph = reinterpret_cast<const icmp_generic *>(p->transport_header());
+    if (icmph->icmp_type == ICMP_ECHO_REPLY) {
+      const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
+      sa << ": echo reply (" << ntohs(seqh->identifier) << ", " << ntohs(seqh->sequence) << ")";
+    } else if (icmph->icmp_type == ICMP_ECHO) {
+      const icmp_sequenced *seqh = reinterpret_cast<const icmp_sequenced *>(icmph);
+      sa << ": echo request (" << ntohs(seqh->identifier) << ", " << ntohs(seqh->sequence) << ")";
+    } else
+      sa << ": type " << (int)icmph->icmp_type;
     break;
   }
   
   default: {
-    sa << src.s() << " > " << dst.s() << ": ip protocol " << iph->ip_p;
+    sa << src << " > " << dst << ": ip protocol " << iph->ip_p;
     break;
   }
   

@@ -82,4 +82,7 @@ IPAddress::operator struct in_addr() const
   return in_addr();
 }
 
+class StringAccum;
+StringAccum &operator<<(StringAccum &, IPAddress);
+
 #endif
