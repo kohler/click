@@ -84,7 +84,7 @@
 #include <linux/slab.h>
 #include <asm/io.h>
 
-#if   !( LINUX_VERSION_CODE == KERNEL_VERSION(2,2,18) )
+#if   ( LINUX_VERSION_CODE < KERNEL_VERSION(2,2,18) )
 typedef unsigned long dma_addr_t;
 #endif
 
@@ -155,7 +155,7 @@ extern inline void *pci_alloc_consistent (struct pci_dev *dev,
  * module_exit does the same thing for cleanup_module
  */
 #if ( LINUX_VERSION_CODE < KERNEL_VERSION(2,3,13) )
-#if !( LINUX_VERSION_CODE == KERNEL_VERSION(2,2,18) )
+#if ( LINUX_VERSION_CODE < KERNEL_VERSION(2,2,18) ) || ( LINUX_VERSION_CODE >= KERNEL_VERSION(2,3,0) )
 #define module_init(fn) int  init_module   (void) { return fn(); }
 #define module_exit(fn) void cleanup_module(void) { return fn(); }
 #endif
