@@ -168,7 +168,7 @@ sub nroffize_text ($) {
   $t =~ s/^'/\\&'/gm;
   $t =~ s/^\s*$/.PP\n/gm;
   $t =~ s/^\.PP\n(?:\.PP\n)+/.PP\n/gm;
-  $t =~ s{\A\s*(\.PP\n)?}{}s;
+  $t =~ s{\A\s*(?:\.PP\n)?}{}s;
   if (@Over > 0) {
     $t =~ s/^\.PP$/.IP \"\" $Over[-1]/gm;
   }
