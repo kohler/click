@@ -56,44 +56,42 @@ Packet *
 SetTCPChecksum::simple_action(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
-  click_ip *ip = p->ip_header();
-  unsigned plen = p->length() - p->ip_header_offset();
-  unsigned int hlen, ilen, oisum;
-  char itmp[9];
-  click_tcp *th;
+  click_ip *iph = p->ip_header();
+  click_tcp *tcph = p->tcp_header();
+  unsigned plen = ntohs(iph->ip_len) - (iph->ip_hl << 2);
+  unsigned csum;
 
-  if (!ip || plen < sizeof(click_ip))
+  if (!tcph || plen < sizeof(click_tcp) || plen > (unsigned)p->transport_length())
     goto bad;
+  
+  if (_fixoff) {
+    unsigned off = tcph->th_off << 2;
+    if (off < sizeof(click_tcp))
+      tcph->th_off = sizeof(click_tcp) >> 2;
+    else if (off > plen && !IP_ISFRAG(iph))
+      tcph->th_off = plen >> 2;
+  }
 
-  hlen = ip->ip_hl << 2;
-  if (hlen < sizeof(click_ip) || hlen > plen)
-    goto bad;
-
-  ilen = ntohs(ip->ip_len);
-  if(ilen > plen || ilen < hlen + sizeof(click_tcp))
-    goto bad;
-
-  th = (click_tcp *) (((char *)ip) + hlen);
-
-  if(_fixoff){
-    unsigned int off = th->th_off << 2;
-    if(off < sizeof(click_tcp) || off > (ilen - hlen)){
-      th->th_off = (ilen - hlen) >> 2;
-    }
-  }    
-
-  memcpy(itmp, ip, 9);
-  memset(ip, '\0', 9);
-  oisum = ip->ip_sum;
-  ip->ip_sum = 0;
-  ip->ip_len = htons(ilen - hlen);
-
-  th->th_sum = 0;
-  th->th_sum = click_in_cksum((unsigned char *)ip, ilen);
-
-  memcpy(ip, itmp, 9);
-  ip->ip_sum = oisum;
-  ip->ip_len = htons(ilen);
+  tcph->th_sum = 0;
+  csum = ~click_in_cksum((unsigned char *)tcph, plen) & 0xFFFF;
+#ifdef CLICK_LINUXMODULE
+  csum = csum_tcpudp_magic(iph->ip_src.s_addr, iph->ip_dst.s_addr,
+			   plen, IP_PROTO_TCP, csum);
+#else
+  {
+    unsigned short *words = (unsigned short *)&iph->ip_src;
+    csum += words[0];
+    csum += words[1];
+    csum += words[2];
+    csum += words[3];
+    csum += htons(IP_PROTO_TCP);
+    csum += htons(plen);
+    while (csum >> 16)
+      csum = (csum & 0xFFFF) + (csum >> 16);
+    csum = ~csum & 0xFFFF;
+  }
+#endif
+  tcph->th_sum = csum;
 
   return p;
 
