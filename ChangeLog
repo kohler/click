@@ -1,3 +1,9 @@
+2004-03-17 Wednesday 14:45  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/: linktable.cc (1.23), linktable.hh (1.20),
+	sr/ettmetric.cc (1.13), sr/ettmetric.hh (1.13), sr/flashflood.cc
+	(1.5), sr/flashflood.hh (1.4): add features for flooding protocols.
+
 2004-03-17 Wednesday 02:25  Eddie Kohler <kohler@icir.org>
 
 	* doc/click.5 (1.30), include/click/confparse.hh (1.40),
