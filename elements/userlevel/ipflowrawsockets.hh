@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.hh,v 1.1 2004/04/20 21:03:19 mhuang Exp $
+ * $Id: ipflowrawsockets.hh,v 1.2 2004/04/27 17:03:06 eddietwo Exp $
  */
 
 #ifndef CLICK_IPFLOWRAWSOCKETS_HH
@@ -49,7 +49,7 @@ On some systems, packets larger than SNAPLEN will be truncated;
 default SNAPLEN is 2046 bytes.
 
 On PlanetLab Linux, safe raw sockets are opened
-(http://www.planet-lab.org/raw_sockets/). Safe raw sockets bypass the
+E<lparen>http://www.planet-lab.org/raw_sockets/). Safe raw sockets bypass the
 kernel stack, so no additional firewalling is necessary.
 
 On regular Linux, you will need to firewall the source ports that you
@@ -185,7 +185,7 @@ class IPFlowRawSockets : public Element, public AggregateListener { public:
     Task _task;
     NotifierSignal _signal;
 
-    Timer *_gc_timer;
+    Timer _gc_timer;
     Vector<uint32_t> _gc_aggs;
 
     int _snaplen;

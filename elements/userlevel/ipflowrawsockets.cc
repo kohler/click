@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.cc,v 1.1 2004/04/20 21:03:19 mhuang Exp $
+ * $Id: ipflowrawsockets.cc,v 1.2 2004/04/27 17:03:06 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -165,7 +165,7 @@ IPFlowRawSockets::Flow::send_pkt(Packet *p, ErrorHandler *errh)
 
 IPFlowRawSockets::IPFlowRawSockets()
     : Element(1, 1), _nnoagg(0), _nagg(0), _agg_notifier(0), _task(this),
-      _gc_timer(NULL)
+      _gc_timer(gc_hook, this)
 {
     MOD_INC_USE_COUNT;
     for (int i = 0; i < NFLOWMAP; i++)
@@ -217,8 +217,6 @@ IPFlowRawSockets::cleanup(CleanupStage)
 	}
     if (_nnoagg > 0 && _nagg == 0)
 	errh->lwarning(declaration(), "saw no packets with aggregate annotations");
-    _gc_timer->cleanup();
-    delete _gc_timer;
 }
 
 int
@@ -230,9 +228,7 @@ IPFlowRawSockets::initialize(ErrorHandler *errh)
     }
     if (_agg_notifier)
 	_agg_notifier->add_listener(this);
-    _gc_timer = new Timer(gc_hook, this);
-    assert(_gc_timer);
-    _gc_timer->initialize(this);
+    _gc_timer.initialize(this);
     return 0;
 }
 
@@ -367,8 +363,8 @@ IPFlowRawSockets::aggregate_notify(uint32_t agg, AggregateEvent event, const Pac
     if (event == DELETE_AGG && find_aggregate(agg, 0)) {
 	_gc_aggs.push_back(agg);
 	_gc_aggs.push_back(click_jiffies());
-	if (!_gc_timer->scheduled())
-	    _gc_timer->schedule_after_ms(250);
+	if (!_gc_timer.scheduled())
+	    _gc_timer.schedule_after_ms(250);
     }
 }
 
