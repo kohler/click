@@ -158,6 +158,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     bool absolute_time() const		{ return _absolute_time; }
     bool absolute_seq() const		{ return _absolute_seq; }
+    String output_pattern() const;
     virtual void add_note(uint32_t, const String &, ErrorHandler * = 0);
 
     struct Pkt {

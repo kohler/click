@@ -497,6 +497,12 @@ ToIPFlowDumps::~ToIPFlowDumps()
     MOD_DEC_USE_COUNT;
 }
 
+String
+ToIPFlowDumps::output_pattern() const
+{
+    return (_gzip ? _filename_pattern + ".gz" : _filename_pattern);
+}
+
 void
 ToIPFlowDumps::notify_noutputs(int n)
 {
