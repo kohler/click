@@ -26,7 +26,7 @@ might include IP header info in their checksums: TCP and UDP do, for example.
 You'll need to recalculate their checksums as well. Here's a useful compound
 element:
 
-  elementclass FixChecksums {
+  elementclass FixIPChecksums {
       // fix the IP checksum, and any embedded checksums that
       // include data from the IP header (TCP and UDP in particular)
       input -> SetIPChecksum
