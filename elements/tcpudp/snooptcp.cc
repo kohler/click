@@ -46,25 +46,6 @@ SnoopTCP::~SnoopTCP()
   MOD_DEC_USE_COUNT;
 }
 
-Bitvector
-SnoopTCP::forward_flow(int iport) const
-{
-  // Packets can flow from inputs 0 and 1 to outputs 0 and 1, respectively
-  Bitvector bv(4, false);
-  if (iport >= 0 && iport < 2)
-    bv[iport] = true;
-  return bv;
-}
-
-Bitvector
-SnoopTCP::backward_flow(int oport) const
-{
-  Bitvector bv(2, false);
-  if (oport >= 0 && oport < 2)
-    bv[oport] = true;
-  return bv;
-}
-
 SnoopTCP *
 SnoopTCP::clone() const
 {

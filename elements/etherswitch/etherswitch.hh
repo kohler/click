@@ -10,13 +10,14 @@ class EtherSwitch : public Element {
   
   EtherSwitch();
   ~EtherSwitch();
-  EtherSwitch *clone() const;
   
   const char *class_name() const		{ return "EtherSwitch"; }
   const char *processing() const		{ return "h/h"; }
+  const char *flow_code() const			{ return "#/[^#]"; }
+  
+  EtherSwitch *clone() const;
   void notify_ninputs(int);
-  Bitvector forward_flow(int) const;
-  Bitvector backward_flow(int) const;
+
   void push(int port, Packet* p);
 
   static String read_table(Element* f, void *);

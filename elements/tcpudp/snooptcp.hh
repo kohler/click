@@ -29,10 +29,8 @@ class SnoopTCP : public Element { public:
   ~SnoopTCP();
   
   const char *class_name() const		{ return "SnoopTCP"; }
-  const char *processing() const		{ return "aa/aahh#"; }
-  
-  Bitvector forward_flow(int) const;
-  Bitvector backward_flow(int) const;
+  const char *processing() const		{ return "aa/aahh"; }
+  const char *flow_code() const			{ return "abx/ab"; }
   
   SnoopTCP *clone() const;
 

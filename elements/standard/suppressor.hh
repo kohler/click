@@ -32,10 +32,9 @@ class Suppressor : public Element {
   ~Suppressor();
   
   const char *class_name() const		{ return "Suppressor"; }
-  const char *processing() const		{ return "a/a#"; }
+  const char *processing() const		{ return "a/a"; }
+  const char *flow_code() const			{ return "#/#"; }
   void notify_ninputs(int);
-  Bitvector forward_flow(int) const;
-  Bitvector backward_flow(int) const;
   
   Suppressor *clone() const;
   int initialize(ErrorHandler *);

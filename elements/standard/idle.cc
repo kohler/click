@@ -45,18 +45,6 @@ Idle::notify_noutputs(int n)
   set_noutputs(n);
 }
 
-Bitvector
-Idle::forward_flow(int) const
-{
-  return Bitvector(noutputs(), false);
-}
-
-Bitvector
-Idle::backward_flow(int) const
-{
-  return Bitvector(ninputs(), false);
-}
-
 void
 Idle::push(int, Packet *p)
 {

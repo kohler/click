@@ -24,12 +24,11 @@ class Idle : public Element {
   ~Idle();
   
   const char *class_name() const		{ return "Idle"; }
+  const char *processing() const		{ return "a/a"; }
+  const char *flow_code() const			{ return "x/y"; }
   void notify_ninputs(int);
   void notify_noutputs(int);
-  const char *processing() const		{ return "a/a#"; }
   const char *flags() const			{ return "S0"; }
-  Bitvector forward_flow(int) const;
-  Bitvector backward_flow(int) const;
   
   Idle *clone() const				{ return new Idle; }
   

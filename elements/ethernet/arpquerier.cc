@@ -46,23 +46,6 @@ ARPQuerier::~ARPQuerier()
   uninitialize();
 }
 
-Bitvector
-ARPQuerier::forward_flow(int i) const
-{
-  Bitvector bv(noutputs(), false);
-  // Packets can flow from input 0 to output 0
-  if (i == 0) bv[0] = true;
-  return bv;
-}
-
-Bitvector
-ARPQuerier::backward_flow(int o) const
-{
-  Bitvector bv(2, false);
-  if (o == 0) bv[0] = true;
-  return bv;
-}
-
 ARPQuerier *
 ARPQuerier::clone() const
 {

@@ -45,23 +45,6 @@ IP6NDSolicitor::~IP6NDSolicitor()
   uninitialize();
 }
 
-Bitvector
-IP6NDSolicitor::forward_flow(int i) const
-{
-  Bitvector bv(noutputs(), false);
-  // Packets can flow from input 0 to output 0
-  if (i == 0) bv[0] = true;
-  return bv;
-}
-
-Bitvector
-IP6NDSolicitor::backward_flow(int o) const
-{
-  Bitvector bv(2, false);
-  if (o == 0) bv[0] = true;
-  return bv;
-}
-
 IP6NDSolicitor *
 IP6NDSolicitor::clone() const
 {

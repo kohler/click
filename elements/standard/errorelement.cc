@@ -65,17 +65,4 @@ ErrorElement::initialize(ErrorHandler *)
   return -1;
 }
 
-Bitvector
-ErrorElement::forward_flow(int) const
-{
-  /* packets don't flow anywhere (minimize spurious errors) */
-  return Bitvector(noutputs(), false);
-}
-
-Bitvector
-ErrorElement::backward_flow(int) const
-{
-  return Bitvector(ninputs(), false);
-}
-
 EXPORT_ELEMENT(ErrorElement)

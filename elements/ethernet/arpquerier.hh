@@ -55,8 +55,8 @@ class ARPQuerier : public Element { public:
   
   const char *class_name() const		{ return "ARPQuerier"; }
   const char *processing() const		{ return PUSH; }
-  Bitvector forward_flow(int) const;
-  Bitvector backward_flow(int) const;
+  const char *flow_code() const			{ return "ax/a"; }
+
   void notify_noutputs(int);
   void add_handlers();
   

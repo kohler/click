@@ -52,22 +52,6 @@ EtherSwitch::notify_ninputs(int n)
   set_noutputs(n);
 }
 
-Bitvector
-EtherSwitch::forward_flow(int i) const
-{
-  Bitvector bv(noutputs(), i >= 0 && i < ninputs());
-  if (i >= 0 && i < noutputs()) bv[i] = false;
-  return bv;
-}
-
-Bitvector
-EtherSwitch::backward_flow(int o) const
-{
-  Bitvector bv(ninputs(), o >= 0 && o < noutputs());
-  if (o >= 0 && o < ninputs()) bv[o] = false;
-  return bv;
-}
-
 
 EtherSwitch*
 EtherSwitch::clone() const

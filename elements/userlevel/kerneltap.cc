@@ -53,19 +53,6 @@ KernelTap::clone() const
   return new KernelTap();
 }
 
-Bitvector
-KernelTap::forward_flow(int) const
-{
-  // packets never travel from input to output
-  return Bitvector(1, false);
-}
-
-Bitvector
-KernelTap::backward_flow(int) const
-{
-  return Bitvector(1, false);
-}
-
 int
 KernelTap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {

@@ -41,22 +41,6 @@ Suppressor::notify_ninputs(int i)
   set_noutputs(i);
 }
 
-Bitvector
-Suppressor::forward_flow(int i) const
-{
-  Bitvector bv(noutputs(), false);
-  if (i >= 0 && i < noutputs()) bv[i] = true;
-  return bv;
-}
-
-Bitvector
-Suppressor::backward_flow(int o) const
-{
-  Bitvector bv(ninputs(), false);
-  if (o >= 0 && o < ninputs()) bv[o] = true;
-  return bv;
-}
-
 Suppressor *
 Suppressor::clone() const
 {
