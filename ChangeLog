@@ -1,3 +1,33 @@
+2001-05-16 Wednesday 13:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* Makefile.in (1.82), configure.in (1.118), linuxmodule/Makefile.in
+	(1.55), userlevel/Makefile.in (1.53): define CLICK_SHAREDIR
+	correctly (forgot the trailing /click); also, other makefile fixes
+
+2001-05-16 Wednesday 13:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* Makefile.in (1.81), doc/Makefile.in (1.30),
+	elements/linuxmodule/fromlinux.cc (1.27), linuxmodule/Makefile.in
+	(1.54), userlevel/Makefile.in (1.52): use "-r" options to
+	click-buildtool and click-mkelemmap to add provisions, such as
+	"linux_2_2"
+
+2001-05-16 Wednesday 13:30  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-mkelemmap (1.7), tools/lib/toolutils.cc (1.34): add
+	"$provides" line to elementmap: says which provisions are always
+	available; use that line in click-mkmindriver
+
+2001-05-16 Wednesday 12:53  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in (1.117): add "linux_2_2" and "linux_2_4" provisions,
+	so elements can be predicated on the Linux kernel version
+
+2001-05-16 Wednesday 12:51  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* click-buildtool (1.14): one "-r" option can list multiple
+	provisions, space-separated
+
 2001-05-15 Tuesday 20:21  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/ip/iprw.cc (1.31), elements/linuxmodule/anydevice.hh
