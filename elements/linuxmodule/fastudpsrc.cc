@@ -34,6 +34,9 @@
 FastUDPSource::FastUDPSource()
   : _packet(0)
 {
+  _rate_limited = true;
+  _first = _last = 0;
+  _count = 0;
   add_output();
   MOD_INC_USE_COUNT;
 }
@@ -74,7 +77,12 @@ FastUDPSource::configure(const Vector<String> &conf, ErrorHandler *errh)
   _ethh.ether_type = htons(0x0800);
   _sport = sp;
   _dport = dp;
-  _rate.set_rate(rate, errh);
+  if(rate != 0){
+    _rate_limited = true;
+    _rate.set_rate(rate, errh);
+  } else {
+    _rate_limited = false;
+  }
   _limit = (limit >= 0 ? limit : NO_LIMIT);
   return 0;
 }
@@ -131,22 +139,74 @@ FastUDPSource::uninitialize()
 Packet *
 FastUDPSource::pull(int)
 {
+  Packet *p = 0;
+
   if (_limit != NO_LIMIT && _count >= _limit) return 0;
-#if 1
-  struct timeval now;
-  click_gettimeofday(&now);
-  if (_rate.need_update(now)) {
-    _rate.update();
-    _count++;
+
+  if(_rate_limited){
+    struct timeval now;
+    click_gettimeofday(&now);
+    if (_rate.need_update(now)) {
+      _rate.update();
+      atomic_inc(&_skb->users); 
+      p = reinterpret_cast<Packet *>(_skb);
+    }
+  } else {
     atomic_inc(&_skb->users); 
-    return reinterpret_cast<Packet *>(_skb);
+    p = reinterpret_cast<Packet *>(_skb);
   }
+
+  if(p){
+    _count++;
+    if(_count == 1)
+      _first = click_jiffies();
+    if(_limit != NO_LIMIT && _count >= _limit)
+      _last = click_jiffies();
+  }
+
+  return(p);
+}
+
+void
+FastUDPSource::reset()
+{
+  _count = 0;
+  _first = 0;
+  _last = 0;
+}
+
+static String
+FastUDPSource_read_count_handler(Element *e, void *)
+{
+  FastUDPSource *c = (FastUDPSource *)e;
+  return String(c->count()) + "\n";
+}
+
+static String
+FastUDPSource_read_rate_handler(Element *e, void *)
+{
+  FastUDPSource *c = (FastUDPSource *)e;
+  int d = c->last() - c->first();
+  if (d < 1) d = 1;
+  int rate = c->count() * CLICK_HZ / d;
+  return String(rate) + "\n";
+}
+
+static int
+FastUDPSource_reset_write_handler
+(const String &, Element *e, void *, ErrorHandler *)
+{
+  FastUDPSource *c = (FastUDPSource *)e;
+  c->reset();
   return 0;
-#else
-  _count++;
-  atomic_inc(&_skb->users); 
-  return reinterpret_cast<Packet *>(_skb);
-#endif
+}
+
+void
+FastUDPSource::add_handlers()
+{
+  add_read_handler("count", FastUDPSource_read_count_handler, 0);
+  add_read_handler("rate", FastUDPSource_read_rate_handler, 0);
+  add_write_handler("reset", FastUDPSource_reset_write_handler, 0);
 }
 
 ELEMENT_REQUIRES(linuxmodule)
