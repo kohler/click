@@ -23,8 +23,8 @@ template <class K, class V>
 void
 BigHashMap<K, V>::initialize()
 {
-  _buckets = new Elt *[128];
-  _nbuckets = 128;
+  _buckets = new Elt *[127];
+  _nbuckets = 127;
   for (int i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
   _capacity = _nbuckets * 3;
@@ -128,7 +128,7 @@ template <class K, class V>
 inline int
 BigHashMap<K, V>::bucket(const K &key) const
 {
-  return hashcode(key) & (_nbuckets - 1);
+  return hashcode(key) % _nbuckets;
 }
 
 template <class K, class V>
@@ -192,8 +192,8 @@ BigHashMap<K, V>::resize(int want_nbuckets)
   int new_nbuckets = 1;
   while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
     new_nbuckets <<= 1;
-  assert(new_nbuckets > 0 && new_nbuckets <= MAX_NBUCKETS);
-  resize0(new_nbuckets);
+  assert(new_nbuckets > 0 && new_nbuckets - 1 <= MAX_NBUCKETS);
+  resize0(new_nbuckets - 1);
 }
 
 template <class K, class V>
@@ -208,7 +208,7 @@ BigHashMap<K, V>::insert(const K &key, const V &value)
     }
 
   if (_n >= _capacity && _nbuckets < MAX_NBUCKETS) {
-    resize0(_nbuckets << 1);
+    resize0(((_nbuckets + 1) << 1) - 1);
     b = bucket(key);
   }
   Elt *e = alloc();
@@ -380,8 +380,8 @@ template <class K>
 void
 BigHashMap<K, void *>::initialize()
 {
-  _buckets = new Elt *[128];
-  _nbuckets = 128;
+  _buckets = new Elt *[127];
+  _nbuckets = 127;
   for (int i = 0; i < _nbuckets; i++)
     _buckets[i] = 0;
   _capacity = _nbuckets * 3;
@@ -483,7 +483,7 @@ template <class K>
 inline int
 BigHashMap<K, void *>::bucket(const K &key) const
 {
-  return hashcode(key) & (_nbuckets - 1);
+  return hashcode(key) % _nbuckets;
 }
 
 template <class K>
@@ -547,8 +547,8 @@ BigHashMap<K, void *>::resize(int want_nbuckets)
   int new_nbuckets = 1;
   while (new_nbuckets < want_nbuckets && new_nbuckets < MAX_NBUCKETS)
     new_nbuckets <<= 1;
-  assert(new_nbuckets > 0 && new_nbuckets <= MAX_NBUCKETS);
-  resize0(new_nbuckets);
+  assert(new_nbuckets > 0 && new_nbuckets - 1 <= MAX_NBUCKETS);
+  resize0(new_nbuckets - 1);
 }
 
 template <class K>
@@ -563,7 +563,7 @@ BigHashMap<K, void *>::insert(const K &key, void *value)
     }
 
   if (_n >= _capacity && _nbuckets < MAX_NBUCKETS) {
-    resize0(_nbuckets << 1);
+    resize0(((_nbuckets + 1) << 1) - 1);
     b = bucket(key);
   }
   Elt *e = alloc();

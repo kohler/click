@@ -81,7 +81,7 @@ class BigHashMap { public:
   Elt *slow_alloc();
   void free(Elt *);
 
-  enum { MAX_NBUCKETS = 32768 };
+  enum { MAX_NBUCKETS = 32767 };
   
   friend class BigHashMapIterator<K, V>;
   
@@ -204,7 +204,7 @@ class BigHashMap<K, void *> { public:
   Elt *slow_alloc();
   void free(Elt *);
 
-  enum { MAX_NBUCKETS = 32768 };
+  enum { MAX_NBUCKETS = 32767 };
   
   friend class BigHashMapIterator<K, void *>;
   
