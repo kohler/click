@@ -7,9 +7,10 @@
  * =io
  * None
  * =d
- * Stops router processing once not all the ELEMENTs are scheduled.
+ * Stops router processing when not all the ELEMENTs are scheduled.
  * =n
- * This element is inserted automatically by the click-align tool.
+ * This element is inserted automatically by the user-level driver when
+ * it is given the `--stop' option.
  */
 
 #include "element.hh"
