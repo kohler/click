@@ -64,8 +64,6 @@ public:
   String print_links();
   static String static_print_hosts(Element *e, void *);
   String print_hosts();
-  static String static_print_neighbors(Element *e, void *);
-  String print_neighbors();
   static int static_clear(const String &arg, Element *e,
 			  void *, ErrorHandler *errh); 
   void clear();
@@ -117,13 +115,12 @@ private:
   class HostInfo {
   public:
     IPAddress _ip;
-    IPTable _neighbors;
     int _metric;
     IPAddress _prev;
     bool _marked;
     HostInfo() { _ip = IPAddress(); _prev = IPAddress(); _metric = 0; _marked = false;}
     HostInfo(IPAddress p) { _ip = p; _prev = IPAddress(); _metric = 0; _marked = false; }
-    HostInfo(const HostInfo &p) : _ip(p._ip), _neighbors(p._neighbors), _metric(p._metric), _prev(p._prev), _marked(p._marked) { }
+    HostInfo(const HostInfo &p) : _ip(p._ip), _metric(p._metric), _prev(p._prev), _marked(p._marked) { }
     void clear() { _prev = IPAddress(); _metric = 0; _marked = false;}
 
   };

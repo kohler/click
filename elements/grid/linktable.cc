@@ -70,7 +70,6 @@ LinkTable::add_handlers() {
   add_read_handler("routes", static_print_routes, 0);
   add_read_handler("links", static_print_links, 0);
   add_read_handler("hosts", static_print_hosts, 0);
-  add_read_handler("neighbors", static_print_neighbors, 0);
   add_write_handler("clear", static_clear, 0);
   add_write_handler("update_link", static_update_link, 0);
   add_write_handler("dijkstra", static_dijkstra, 0);
@@ -166,8 +165,6 @@ LinkTable::update_link(IPAddress from, IPAddress to, int metric)
   
   lt_assert(nfrom);
   lt_assert(nto);
-
-  nfrom->_neighbors.insert(from, to);
 
   IPPair p = IPPair(from, to);
   LinkInfo *lnfo = _links.findp(p);
@@ -371,27 +368,6 @@ LinkTable::top_n_routes(IPAddress dst, int n)
 }
 
 String
-LinkTable::static_print_neighbors(Element *e, void *)
-{
-  LinkTable *n = (LinkTable *) e;
-  return n->print_neighbors();
-}
-String 
-LinkTable::print_neighbors() 
-{
-  StringAccum sa;
-  for (HTIter iter = _hosts.begin(); iter; iter++) {
-    HostInfo n = iter.value();
-
-    sa << "neighbors: " << n._ip.s().cc() << ":";
-    for (IPTable::iterator iter = n._neighbors.begin(); iter; iter++) {
-      sa << " " << iter.value().s().cc() << " ";
-    }
-    sa << "\n";
-  }
-  return sa.take_string();
-}
-String
 LinkTable::static_print_links(Element *e, void *)
 {
   LinkTable *n = (LinkTable *) e;
@@ -500,14 +476,15 @@ LinkTable::dijkstra()
   root_info->_prev = root_info->_ip;
   root_info->_metric = 0;
   IPAddress current_min_ip = root_info->_ip;
+
   while (current_min_ip) {
     HostInfo *current_min = _hosts.findp(current_min_ip);
     lt_assert(current_min);
     current_min->_marked = true;
 
 
-    for (IPTable::iterator iter = current_min->_neighbors.begin(); iter; iter++) {
-      HostInfo *neighbor = _hosts.findp(iter.value());
+    for (HTIter iter = _hosts.begin(); iter; iter++) {
+      HostInfo *neighbor = _hosts.findp(iter.value()._ip);
       lt_assert(neighbor);
       if (!neighbor->_marked) {
 	LinkInfo *lnfo = _links.findp(IPPair(current_min->_ip, neighbor->_ip));
@@ -516,6 +493,7 @@ LinkTable::dijkstra()
 	  neighbor->_prev = current_min_ip;
 	}
       }
+
     }
 
     current_min_ip = extract_min();
