@@ -597,19 +597,23 @@ keys for @code{HashMap}s and @code{BigHashMap}s (@pxref{HashMap}).
 @node String Out-of-Memory,  , String Comparison, String
 @subsection Out-of-Memory Conditions
 
-All @code{String} operations are robust against out-of-memory
-conditions. If there is not enough memory to create a particular string,
-the @code{String} implementation will return an empty string instead. If
-there is not enough memory to append to a particular string, the
-@code{String} implementation will erase the existing string, setting it
-to an empty string.
+@code{String} operations are robust against out-of-memory conditions. If
+there is not enough memory to create a particular string, the
+@code{String} implementation returns a special ``out-of-memory'' string
+instead. This is a contagious empty string. Any concatenation operation
+(@code{operator+} or @code{append}) involving an out-of-memory string
+has an out-of-memory result. Out-of-memory strings compare unequal to
+every other string, including themselves.
 
-The @code{out_of_memory_count} static method can help detect whether a
-@code{String} operation has run out of memory.
+All out-of-memory strings share the same @code{data}, which is different
+from the @code{data} of any other string.
 
-@deftypeop {Static Method} String int out_of_memory_count ()
-Returns the number of times that the @code{String} implementation has
-encountered an out-of-memory condition. The result is normally zero.
+@deftypemethod String bool out_of_memory () const
+Returns true iff this string is an out-of-memory string.
+@end deftypemethod
+
+@deftypeop {Static Method} String {const String &} out_of_memory_string ()
+Returns an out-of-memory string.
 @end deftypeop
 
 
@@ -921,14 +925,19 @@ implementation; no data copies are performed.
 @subsection Out-of-Memory Conditions
 
 @code{StringAccum} operations are robust against out-of-memory
-conditions. The @code{operator<<} functions and the @code{append} method
-leave a @code{StringAccum} unchanged if they cannot create the memory
-needed to complete an append. The @code{extend} and @code{reserve}
-methods can return null pointers on out-of-memory; their callers should
-always check that their return values are non-null.
+conditions. If there is not enough memory to complete a particular
+operation, the @code{StringAccum} is erased and turned into a special
+out-of-memory indicator. This is a contagious empty string. Every
+operation on such a buffer (except for @code{clear}) leaves it in the
+out-of-memory state.
 
-@code{StringAccum} has no equivalent to @code{String}'s
-@code{out_of_memory_count} static method.
+@deftypemethod StringAccum bool out_of_memory () const
+Returns true iff this @code{StringAccum} is an out-of-memory indicator.
+@end deftypemethod
+
+The @code{extend} and @code{reserve} methods can return null pointers on
+out-of-memory; their callers should always check that their return
+values are non-null.
 
 
 
@@ -1546,8 +1555,8 @@ Returns true if and only if this IP address does not equal 0.0.0.0.
 Returns this IP address as a @code{struct in_addr} object.
 @end deftypemethod
 
-@deftypemethod IPAddress u_int32_t addr () const
-@deftypemethodx IPAddress {} {operator u_int32_t} () const
+@deftypemethod IPAddress uint32_t addr () const
+@deftypemethodx IPAddress {} {operator uint32_t} () const
 Returns this IP address as an unsigned integer in network byte order.
 @end deftypemethod
   
@@ -2216,7 +2225,7 @@ of @code{unsigned int}s, or an array of @code{int}s. The elements of
 these arrays are numbered from 0 to @math{@var{k} - 1}, where @var{k} is
 the appropriate @code{SIZE} constant.
 
-@deftypemethod Packet unsigned char user_anno_c (@w{int @var{i}}) const
+@deftypemethod Packet {unsigned char} user_anno_c (@w{int @var{i}}) const
 Returns the @var{i}th byte in the user annotation area. @var{i} must be
 between 0 and @code{USER_ANNO_SIZE} @minus{} 1.
 @end deftypemethod
@@ -5113,8 +5122,8 @@ variables, without a preceding underscore. The same goes for the
 components of unions.
 
 @item
-Classes that act like simple types, such as @code{u_atomic32_t}, take
-names similar to the types they replace (in this case @code{u_int32_t}).
+Classes that act like simple types, such as @code{uatomic32_t}, take
+names similar to the types they replace (in this case @code{uint32_t}).
 @end itemize
 
 
