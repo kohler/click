@@ -43,7 +43,7 @@ GENERIC_OBJS = string.o straccum.o \
 	confparse.o lexer.o archive.o elemfilter.o router.o \
 	crc32.o iptable.o ewma.o
 
-LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o \
+LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o sched.o \
 	proc_config.o proc_element.o proc_mgr.o read-pmc.o
 
 -include elements.mk
@@ -51,6 +51,9 @@ LINUXMODULE_OBJS = kernelerror.o kernelversion.o module.o \
 OBJS = $(GENERIC_OBJS) $(ELEMENT_OBJS) $(LINUXMODULE_OBJS) elements.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_LINUXMODULE
+ifdef HAVE_CLICK_SCHEDULER
+CPPFLAGS += -DHAVE_CLICK_SCHEDULER
+endif
 CFLAGS = @CFLAGS_NDEBUG@
 CXXFLAGS = @CXXFLAGS_NDEBUG@ -fno-exceptions -fno-rtti
 
