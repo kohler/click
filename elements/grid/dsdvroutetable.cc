@@ -27,7 +27,6 @@
 #include <click/glue.hh>
 #include "dsdvroutetable.hh"
 #include "timeutils.hh"
-#include "gridlogger.hh"
 
 const DSDVRouteTable::metric_t DSDVRouteTable::_bad_metric; // default metric state is ``bad''
 DSDVRouteTable *DSDVRouteTable::_instance = 0;
@@ -204,29 +203,44 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, double &rate)
 }
 
 void
-DSDVRouteTable::insert_route(const RTEntry &r)
+DSDVRouteTable::insert_route(const RTEntry &r, const bool was_sender)
 {
-  Timer **old = _expire_timers.findp(r.dest_ip);
   RTEntry *old_r = _rtes.findp(r.dest_ip);
-
+  
+  // clear old 1-hop stats 
+  if (r.num_hops > 1 && old_r && old_r->num_hops == 1) {
+    _link_tracker->remove_all_stats(old_r->dest_ip);
+    _link_stat->remove_all_stats(old_r->next_hop_eth);
+  }
+  
   // invariant check: running timers exist for all current good
   // routes.  no timers or bogus timer entries exist for bad routes.
+  Timer **old = _expire_timers.findp(r.dest_ip);
   if (old_r && old_r->num_hops > 0)
     assert(old && *old && (*old)->scheduled());
   else 
     assert(old == 0);
 
+  // get rid of old expire timer
   if (old) {
     (*old)->unschedule();
     delete *old;
   }
   
+  // Note: ns dsdv only schedules a timeout for the sender of each
+  // route ad, relying on the next-hop expiry logic to get all routes
+  // via that next hop.  However, that won't work for general metrics,
+  // so we install a timeout for *every* newly installed route.
   Timer *t = new Timer(static_expire_hook, (void *) ((unsigned int) r.dest_ip));
   t->initialize(this);
   t->schedule_after_ms(_timeout > r.ttl ? r.ttl : _timeout);
   
   _expire_timers.insert(r.dest_ip, t);
   _rtes.insert(r.dest_ip, r);
+
+  if (_log)
+    _log->log_added_route(was_sender? GridLogger::WAS_SENDER : GridLogger::WAS_ENTRY, 
+			  make_generic_rte(r));
 }
 
 void
@@ -309,7 +323,8 @@ DSDVRouteTable::expire_hook(const IPAddress &ip)
 
     // set up triggered ad
     r.advertise_ok_jiffies = jiff;
-    r.need_advertisement = true;
+    r.need_seq_ad = true;
+    r.need_metric_ad = true;
     schedule_triggered_update(r.dest_ip, jiff);
   }
 
@@ -360,7 +375,7 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
 
       RTEntry *r = _rtes.findp(i.key());
       assert(r);
-      assert(r->need_advertisement);
+      assert(r->need_seq_ad || r->need_metric_ad);
 
       if (r->advertise_ok_jiffies < next_trigger_time) {
 	Timer *old2 = i.value();
@@ -376,8 +391,13 @@ DSDVRouteTable::trigger_hook(const IPAddress &ip)
     // reschedule this timer to earliest possible time
     (*old)->schedule_after_ms(jiff_to_msec(next_trigger_time - jiff));
   }
-  else 
+  else {
+    // cleanup expired timer
+    delete *old;
+    _trigger_timers.remove(ip);
+
     send_triggered_update(ip);
+  }
 }
 
 void
@@ -436,6 +456,13 @@ DSDVRouteTable::update_wst(RTEntry *old_r, RTEntry &new_r)
       (1 - _alpha) * jiff_to_msec(old_r->last_updated_jiffies - old_r->last_seq_jiffies);
     new_r.last_seq_jiffies = click_jiffies();
   }
+  else {
+    assert(old_r->seq_no > new_r.seq_no);
+    // Do nothing.  We will never accept this route anyway.
+  }
+  
+  // XXX what happens when our current route is broken, and the new
+  // route is good, what happens to wst?
 }
 
 void 
@@ -482,14 +509,33 @@ DSDVRouteTable::update_metric(RTEntry &r)
 }
 
 bool
-DSDVRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
+DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
 {
+  // prefer a route with a valid metric
+  if (r1.metric.valid && !r2.metric.valid)
+    return false;
+  if (!r1.metric.valid && r2.metric.valid)
+    return true;
+  
+  // If neither metric is valid, fall back to hopcount.  Would you
+  // prefer a 5-hop route or a 2-hop route, given that you don't have
+  // any other information about them?  duh.
+  if (!r1.metric.valid && !r2.metric.valid) {
+    return r1.num_hops < r2.num_hops;
+  }
+  
   assert(r1.metric.valid && r2.metric.valid);
+  return metric_val_lt(r1.metric.val, r2.metric.val);
+}
 
+bool
+DSDVRouteTable::metric_val_lt(unsigned int v1, unsigned int v2)
+{
   switch (_metric_type) {
-  case MetricHopCount:
+  case MetricHopCount: return v1 < v2; break;
   case MetricEstTxCount: 
-    return r1.metric.val < r2.metric.val;
+    // add 0.25 tx count fudge factor
+    return v2 > v1 + 25; break;
   default:
     assert(0);
   }
@@ -497,62 +543,14 @@ DSDVRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
 }
 
 bool
-DSDVRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry &new_route)
-{
-  /* prefer a strictly newer route */
-  if (old_route.seq_no > new_route.seq_no) 
-    return false;
-  if (old_route.seq_no < new_route.seq_no)
-    return true;
-  
-  /* 
-   * routes have same seqno, choose based on metric 
-   */
-  
-  /* prefer a route with a valid metric */
-  if (old_route.metric.valid && !new_route.metric.valid)
-    return false;
-  if (!old_route.metric.valid && new_route.metric.valid)
-    return true;
-  
-  /* if neither metric is valid, just keep the route we have -- to aid
-   * in stability -- as if I have any notion about that....
-   *
-   * actually, that's fucked.  would you prefer a 5-hop route or a 
-   * 2-hop route, given that you don't have any other information about
-   * them?  duh.  fall back to hopcount. 
-   * bwahhhaaaahahaha!!! */
-  if (!old_route.metric.valid && !new_route.metric.valid) {
-    // return false;
-    return new_route.num_hops < old_route.num_hops;
-  }
-  
-  // both metrics are valid
-  /* update is from same node as last update, we should accept it to avoid unwarranted timeout */
-  if (old_route.next_hop_ip == new_route.next_hop_ip)
-    return true;
-   
-  /* update route if the metric is better */
-  return metric_is_preferable(new_route, old_route);
-}
-
-bool
-DSDVRouteTable::metric_different(const metric_t &m1, const metric_t &m2)
+DSDVRouteTable::metrics_differ(const metric_t &m1, const metric_t &m2)
 {
   if (!m1.valid && !m2.valid) return false;
   if (m1.valid && !m2.valid)  return true;
   if (!m1.valid && m2.valid)  return true;
   
   assert(m1.valid && m2.valid);
-  switch (_metric_type) {
-  case MetricHopCount: return m1.val != m2.val; break;
-  case MetricEstTxCount: {
-    unsigned diff = (m1.val > m2.val) ? m1.val - m2.val : m2.val - m1.val;
-    return diff > 25; // ignore differences in tx count of less than 0.25
-  }
-  default: assert(0);
-  }
-  return false;
+  return metric_val_lt(m1.val, m2.val) || metric_val_lt(m2.val, m1.val);
 }
 
 void
@@ -572,7 +570,8 @@ DSDVRouteTable::send_full_update() {
   for (int i = 0; i < routes.size(); i++) {
     RTEntry *r = _rtes.findp(routes[i].dest_ip);
     assert(r);
-    r->need_advertisement = false;
+    r->need_seq_ad = false;
+    r->need_metric_ad = false;
     r->last_adv_metric = r->metric;
   }
   
@@ -598,7 +597,8 @@ DSDVRouteTable::send_triggered_update(const IPAddress &)
   for (RTIter i = _rtes.first(); i; i++) {
     const RTEntry &r = i.value();
     
-    if (r.need_advertisement && r.advertise_ok_jiffies <= jiff)
+    if ((r.need_seq_ad || r.need_metric_ad) && 
+	r.advertise_ok_jiffies <= jiff)
       triggered_routes.push_back(r);    
   }
 
@@ -616,12 +616,77 @@ DSDVRouteTable::send_triggered_update(const IPAddress &)
   for (int i = 0; i < triggered_routes.size(); i++) {
     RTEntry *r = _rtes.findp(triggered_routes[i].dest_ip);
     assert(r);
-    r->need_advertisement = false;
+    r->need_seq_ad = false;
     r->last_adv_metric = r->metric;
   }
 
   build_and_tx_ad(triggered_routes); 
   _last_triggered_update = jiff;
+}
+
+void
+DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender)
+{
+  assert(was_sender ? new_r.num_hops == 1 : new_r.num_hops != 1);
+
+  if (new_r.good() && new_r.num_hops >_max_hops)
+    return; // ignore ``non-local'' routes
+
+  if (was_sender)
+    init_metric(new_r);
+  else
+    update_metric(new_r);
+
+  RTEntry *old_r = _rtes.findp(new_r.dest_ip);
+  update_wst(old_r, new_r);
+
+  int jiff = click_jiffies();
+
+  // If the new route is good, and the old route (if any) was good,
+  // wait for the settling time to expire before advertising.
+  // Otherwise, propagate the route immediately (e.g. a newly
+  // appearing node, or broken route)
+  if (new_r.good() && (!old_r || old_r->good()))
+    new_r.advertise_ok_jiffies = jiff + msec_to_jiff(2 * new_r.wst);
+  else
+    new_r.advertise_ok_jiffies = jiff;
+
+  if (!old_r) {
+    // Never heard of this destination before
+    if (new_r.good()) {
+      new_r.need_metric_ad = true;
+      schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
+    }
+    insert_route(new_r, was_sender);
+  }
+  else if (old_r->seq_no == new_r.seq_no) {
+    // Accept if better route
+    assert(new_r.good() ? old_r->good() : old_r->broken()); // same seq ==> same broken state
+    if (new_r.good() && metric_preferable(new_r, *old_r)) {
+      if (metrics_differ(new_r.metric, new_r.last_adv_metric)) {
+	new_r.need_metric_ad = true;
+	schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
+      }
+      insert_route(new_r, was_sender);
+    }
+  }
+  else if (old_r->seq_no < new_r.seq_no) {
+    // Must *always* accept newer info
+    new_r.need_seq_ad = true; // XXX this may not be best, see bake-off paper
+    schedule_triggered_update(new_r.dest_ip, new_r.advertise_ok_jiffies);
+    if (metrics_differ(new_r.metric, new_r.last_adv_metric))
+      new_r.need_metric_ad = true;
+    insert_route(new_r, was_sender);
+  }
+  else {
+    assert(old_r->seq_no > new_r.seq_no);
+    if (new_r.broken() && old_r->good()) {
+      // Someone has stale info, give them good info
+      old_r->advertise_ok_jiffies = jiff;
+      old_r->need_metric_ad = true;
+      schedule_triggered_update(old_r->dest_ip, jiff);
+    }
+  }
 }
 
 Packet *
@@ -672,179 +737,53 @@ DSDVRouteTable::simple_action(Packet *packet)
     return 0;
   }
 
-  /*
-   * we still do the ping-ponging in route ads as well as pigybacking
-   * on unicast data, in case we aren't sending data to that
-   * destination.  
-   */
-
-  /* 
-   * individual link metric smoothing, or route metric smoothing?  we
-   * will only smooth the ping-pong measurements on individual links;
-   * we won't smooth metrics at the route level.  that's because we
-   * can't even be sure that as the metrics change for a route to some
-   * destination, the metrics are even for the same route, i.e. same
-   * set of links.  
-   */
-
-  /* look for ping-pong link stats about us */
-  int entry_sz = hlo->nbr_entry_sz;
-  char *entry_ptr = (char *) (hlo + 1);
-  for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
-    grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
-    if (_ip == curr->ip && curr->num_hops == 1) {
-      struct timeval tv;
-      tv = ntoh(curr->measurement_time);
-      _link_tracker->add_stat(ipaddr, ntohl(curr->link_sig), ntohl(curr->link_qual), tv);
-      tv = ntoh(curr->last_bcast);
-      _link_tracker->add_bcast_stat(ipaddr, curr->num_rx, curr->num_expected, tv);
-      break;
-    }
-  }
-
-
-  /*
-   * add 1-hop route to packet's transmitter; perform some sanity
-   * checking if entry already existed 
-   */
-
-  // XXX triggered update and weighted settling time calc needs to be done for the first hop.
-
+  // maybe add new route for message transmitter, sanity check existing entry
   RTEntry *r = _rtes.findp(ipaddr);
-
   if (!r)
-    click_chatter("DSDVRouteTable %s: adding new 1-hop route %s -- %s", 
+    click_chatter("DSDVRouteTable %s: new 1-hop nbr %s -- %s", 
 		  id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
   else if (r->dest_eth && r->dest_eth != ethaddr)
     click_chatter("DSDVRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->dest_eth.s().cc(), ethaddr.s().cc());
 
-  if (ntohl(hlo->ttl) > 0) {
-    RTEntry new_r(ipaddr, ethaddr, gh, hlo, jiff);
-    init_metric(new_r);
-
-    if (r && r->seq_no >= new_r.seq_no) {
-      click_chatter("DSDVRouteTable %s: sequence number %d of 1-hop ad from %s is too small (should be > %d)",
-		    id().cc(), new_r.seq_no, ipaddr.s().cc(), r->seq_no);
-      assert(0);
-    }
-
-    update_wst(r, new_r);
-
-    if (r == 0 || should_replace_old_route(*r, new_r)) {
-      if (_log)
-	_log->log_added_route(GridLogger::WAS_SENDER, make_generic_rte(new_r));
-      insert_route(new_r);
-      if (new_r.num_hops > 1 && r && r->num_hops == 1) {
-	/* clear old 1-hop stats */
-	_link_tracker->remove_all_stats(r->dest_ip);
-	_link_stat->remove_all_stats(r->next_hop_eth);
-      }
-    }
-    if (r)
-      r->dest_eth = ethaddr;
-  }
+  RTEntry new_r(ipaddr, ethaddr, gh, hlo, jiff);
+  handle_update(new_r, true);
   
-  /*
-   * loop through and process other route entries in hello message 
-   */
+  // update this dest's eth
+  r = _rtes.findp(ipaddr);
+  assert(r);
+  r->dest_eth = ethaddr;
 
+  // handle each entry in message
   bool need_full_update = false;
-
-  entry_ptr = (char *) (hlo + 1);
+  int entry_sz = hlo->nbr_entry_sz;
+  char *entry_ptr = (char *) (hlo + 1);
   for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
     
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
-    RTEntry route(ipaddr, ethaddr, curr, jiff); // XXX wst,seqno_at, change_at updates?
-
-    /* ignore route if ttl has run out */
-    if (route.ttl <= 0)
-      continue;
-
-    /* ignore route to ourself */
-    if (route.dest_ip == _ip && curr->num_hops > 0)       
-      continue;
-
-    /* over-ride bad info about us */
-    if (route.dest_ip == _ip && curr->num_hops == 0) {
-      need_full_update = true;
-      continue;
-    }      
-
-    /* pseudo-split-horizon: ignore routes from nbrs that go back
-       through us */
-    if (curr->next_hop_ip == (unsigned int) _ip)
-      continue;
-
-    update_metric(route);
-
-    RTEntry *our_rte = _rtes.findp(curr->ip);
-    
-    update_wst(our_rte, route);
-
-    if (curr->num_hops > 0)
-      route.advertise_ok_jiffies = jiff + msec_to_jiff(2 * route.wst);
-    else
-      route.advertise_ok_jiffies = jiff;
-
-    /* 
-     * broken route advertisement 
-     */
-    if (curr->num_hops == 0) {
-      assert(route.seq_no & 1);
-      /* 
-       * if we don't have the route, or... if our next hop to the
-       * destination is this packet's sender, AND if the seq_no is
-       * newer than any information we have, accept the broken route 
-       */
-      if (our_rte == 0 || (our_rte && 
-			   our_rte->next_hop_ip == ipaddr &&
-			   route.seq_no > our_rte->seq_no)) {
-
-	insert_route(route);
-	if (our_rte)
-	  schedule_triggered_update(route.dest_ip, route.advertise_ok_jiffies);
-
-	if (_log)
-	  _log->log_expired_route(GridLogger::BROKEN_AD, route.dest_ip);
-      }
-      /*
-       * otherwise, if we have a good route to the destination with a
-       * newer seq_no, advertise our new information.  
-       */
-      else if (our_rte->num_hops > 0 && 
-	       our_rte->seq_no > route.seq_no && 
-	       our_rte->ttl > 0) {
-	assert(!(our_rte->seq_no & 1));
-	
-	our_rte->advertise_ok_jiffies = jiff;
-	schedule_triggered_update(our_rte->dest_ip, jiff);
-	if (_log)
-	  _log->log_triggered_route(our_rte->dest_ip);
-      }
-      continue;
-    } // end of broken route handling
-
-    /* skip routes with too many hops */
-    // this would change if using proxies
-    if (route.num_hops + 1U > _max_hops)
-      continue;
-
-    /* 
-     * regular route entry -- should we accept it?
-     */
-    if (our_rte == 0 || 
-	should_replace_old_route(*our_rte, route)) {
-      insert_route(route);
-
-      if (!our_rte || 
-	  route.seq_no > our_rte->seq_no || 
-	  metric_different(route.metric, our_rte->last_adv_metric))
-	schedule_triggered_update(route.dest_ip, route.advertise_ok_jiffies);
-
-      if (_log)
-	_log->log_added_route(GridLogger::WAS_ENTRY, make_generic_rte(route));
+        
+    // Check for ping-pong link stats about us. We still do the
+    // ping-ponging in route ads as well as pigybacking on unicast
+    // data, in case we aren't sending data to that destination.
+    if (curr->ip == (unsigned int) _ip && curr->num_hops == 1) {
+      _link_tracker->add_stat(ipaddr, ntohl(curr->link_sig), ntohl(curr->link_qual), 
+			      ntoh(curr->measurement_time));
+      _link_tracker->add_bcast_stat(ipaddr, curr->num_rx, curr->num_expected, ntoh(curr->last_bcast));
     }
+
+    RTEntry route(ipaddr, ethaddr, curr, jiff); 
+    
+    if (route.ttl == 0) // ignore expired ttl
+      continue;
+    if (route.dest_ip == _ip) { // ignore route to self
+      if (route.broken()) // override broken route to us with new ad
+	need_full_update = true;
+      continue;
+    }
+    if (curr->next_hop_ip == (unsigned int) _ip)
+      continue; // pseudo split-horizon
+
+    handle_update(route, false);
   }
 
   if (_log)

@@ -155,6 +155,7 @@ public:
 
   static bool log_is_open() { return _fd >= 0; } 
 
+private:
   static const unsigned char SENT_AD_CODE               = 0x01;
   static const unsigned char BEGIN_RECV_CODE            = 0x02;
   static const unsigned char END_RECV_CODE              = 0x03;
@@ -170,6 +171,7 @@ public:
   static const unsigned char SPECIAL_PKT_CODE           = 0x0D;
   static const unsigned char BORING_PKT_CODE            = 0x0E;
 
+public:
   // these need to be different than the above codes
   enum reason_t {
     WAS_SENDER        = 0xf1,

@@ -87,8 +87,8 @@
 #include "grid.hh"
 #include "gridgenericrt.hh"
 #include <click/timer.hh>
+#include "gridlogger.hh"
 
-class GridLogger;
 
 class DSDVRouteTable : public GridGenericRouteTable {
 
@@ -152,11 +152,15 @@ private:
     metric_t            last_adv_metric;       // last metric we advertised
     int                 last_seq_jiffies;      // last time the seq_no changed
     int                 advertise_ok_jiffies;  // when it is ok to advertise route
-    bool                need_advertisement;    // do we need to advertise this route?
+    bool                need_seq_ad;
+    bool                need_metric_ad;
+
+    bool broken() { return num_hops == 0; }
+    bool good()   { return num_hops != 0; }
 
     RTEntry() : 
-      _init(false), is_gateway(false), ttl(0), last_updated_jiffies(-1), 
-      wst(0), last_seq_jiffies(0), advertise_ok_jiffies(0), need_advertisement(false)
+      _init(false), is_gateway(false), ttl(0), last_updated_jiffies(-1), wst(0), 
+      last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false)
     { }
     
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
@@ -165,9 +169,8 @@ private:
 	    int _last_updated_jiffies) :
       RouteEntry(_dest_ip, _loc_good, _loc_err, _loc, _next_hop_eth, _next_hop_ip,
 		 _seq_no, _num_hops), 
-      _init(true), is_gateway(_is_gateway), ttl(_ttl),
-      last_updated_jiffies(_last_updated_jiffies), 
-      wst(0), last_seq_jiffies(0), advertise_ok_jiffies(0), need_advertisement(false)
+      _init(true), is_gateway(_is_gateway), ttl(_ttl), last_updated_jiffies(_last_updated_jiffies), 
+      wst(0), last_seq_jiffies(0), advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false)
     { }
 
     /* constructor for 1-hop route entry, converting from net byte order */
@@ -175,7 +178,7 @@ private:
 	    unsigned int jiff) :
       RouteEntry(ip, gh->loc_good, gh->loc_err, gh->loc, eth, ip, hlo->seq_no, 1),
       _init(true), dest_eth(eth), is_gateway(hlo->is_gateway), ttl(hlo->ttl), last_updated_jiffies(jiff), 
-      wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_advertisement(false)
+      wst(0), last_seq_jiffies(jiff), advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false)
     { 
       loc_err = ntohs(loc_err); 
       seq_no = ntohl(seq_no); 
@@ -186,10 +189,10 @@ private:
     RTEntry(IPAddress ip, EtherAddress eth, grid_nbr_entry *nbr, 
 	    unsigned int jiff) :
       RouteEntry(nbr->ip, nbr->loc_good, nbr->loc_err, nbr->loc,
-		 eth, ip, nbr->seq_no, nbr->num_hops + 1),
+		 eth, ip, nbr->seq_no, nbr->num_hops > 0 ? nbr->num_hops + 1 : 0),
       _init(true), is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
-      metric(nbr->metric, nbr->metric_valid),
-      wst(0), last_seq_jiffies(0), advertise_ok_jiffies(0), need_advertisement(false)
+      metric(nbr->metric, nbr->metric_valid), wst(0), last_seq_jiffies(0), 
+      advertise_ok_jiffies(0), need_seq_ad(false), need_metric_ad(false)
     {
       loc_err = ntohs(loc_err);
       seq_no = ntohl(seq_no);
@@ -220,8 +223,9 @@ private:
   // the DSDV description does.
 
   class RTable _rtes;
-  
-  void insert_route(const RTEntry &);
+
+  void handle_update(RTEntry &, const bool was_sender);  
+  void insert_route(const RTEntry &, const bool was_Sender);
   void schedule_triggered_update(const IPAddress &ip, int when);
   
   typedef BigHashMap<IPAddress, Timer *> TMap;
@@ -313,12 +317,9 @@ private:
      metric -- note that this is a strict comparison, if the metrics
      are equivalent, then the function returns false.  this is
      necessary to get stability, e.g. when using the hopcount metric */
-  bool metric_is_preferable(const RTEntry &, const RTEntry &);
-
-  bool metric_different(const metric_t &, const metric_t &);
-
-  /* true iff we should replace the first route with the second route */
-  bool should_replace_old_route(const RTEntry &, const RTEntry &);
+  bool metric_preferable(const RTEntry &, const RTEntry &);
+  bool metrics_differ(const metric_t &, const metric_t &);
+  bool metric_val_lt(unsigned int, unsigned int);
 
   static String print_rtes(Element *e, void *);
   static String print_rtes_v(Element *e, void *);
