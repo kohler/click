@@ -1,3 +1,4 @@
+// -*- c-basic-offset: 4 -*-
 /*
  * sched.cc -- kernel scheduler thread for click
  * Benjie Chen, Eddie Kohler
@@ -69,8 +70,8 @@ static unsigned min_click_frac = 5, max_click_frac = 800;
 static void
 soft_spin_lock(spinlock_t *l)
 {
-  while (!spin_trylock(l))
-    schedule();
+    while (!spin_trylock(l))
+	schedule();
 }
 
 static int
