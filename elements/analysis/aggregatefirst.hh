@@ -35,7 +35,7 @@ significant memory on long traces.
 
 AggregateLast forwards the last packet with a given aggregate annotation
 value, and additionally annotates the packet with the observed packet and byte
-counts. AggregateFirst takes significantly more memory, however.
+counts. It takes significantly more memory, however.
 
 Only available in user-level processes.
 
