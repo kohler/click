@@ -55,7 +55,7 @@ int cp_errno;
 const char *
 cp_skip_space(const char *begin, const char *end)
 {
-  while (begin < end && isspace(*begin))
+  while (begin < end && isspace((unsigned char) *begin))
     begin++;
   return begin;
 }
@@ -84,7 +84,7 @@ cp_is_word(const String &str)
 bool
 cp_is_click_id(const String &str)
 {
-  const char *s = str.data();
+  const unsigned char *s = reinterpret_cast<const unsigned char*>(str.data());
   int len = str.length();
   for (int i = 0; i < len; i++)
     if (isalnum(s[i]) || s[i] == '_' || s[i] == '@')
@@ -179,7 +179,7 @@ const char *
 cp_skip_comment_space(const char *begin, const char *end)
 {
   for (; begin < end; begin++) {
-    if (isspace(*begin))
+    if (isspace((unsigned char) *begin))
       /* nada */;
     else if (*begin == '/' && begin + 1 < end && (begin[1] == '/' || begin[1] == '*'))
       begin = skip_comment(begin, end) - 1;
@@ -205,7 +205,7 @@ partial_uncomment(const String &str, int i, int *comma_pos)
   bool closed = false;
 
   while (s < end) {
-    if (isspace(*s))
+    if (isspace((unsigned char) *s))
       s++;
     else if (*s == '/' && s + 1 < end && (s[1] == '/' || s[1] == '*')) {
       s = skip_comment(s, end);
@@ -638,7 +638,7 @@ cp_keyword(const String &str, String *return_value, String *rest)
       break;
       
      default:
-      if (!isalnum(*s))
+      if (!isalnum((unsigned char) *s))
 	return false;
       break;
       
@@ -651,7 +651,7 @@ cp_keyword(const String &str, String *return_value, String *rest)
     *return_value = str.substring(str.begin(), s);
     if (rest) {
       for (; s < end; s++)
-	if (!isspace(*s))
+	if (!isspace((unsigned char) *s))
 	  break;
       *rest = str.substring(s, end);
     }
@@ -958,7 +958,7 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
   // find integer part of string
   const char *int_s = s;
   for (int_s = s; s < last; s++)
-    if (!(isdigit(*s) || (*s == '_' && s > int_s && s < last - 1 && s[1] != '_')))
+    if (!(isdigit((unsigned char) *s) || (*s == '_' && s > int_s && s < last - 1 && s[1] != '_')))
       break;
   int int_chars = s - int_s;
   
@@ -967,7 +967,7 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
   int frac_chars;
   if (s < last && *s == '.') {
     for (frac_s = ++s; s < last; s++)
-      if (!(isdigit(*s) || (*s == '_' && s > frac_s && s < last - 1 && s[1] != '_')))
+      if (!(isdigit((unsigned char) *s) || (*s == '_' && s > frac_s && s < last - 1 && s[1] != '_')))
 	break;
     frac_chars = s - frac_s;
   } else
@@ -986,12 +986,12 @@ cp_unsigned_real10(const String &str, int frac_digits, int exponent_delta,
     bool negexp = (*s == '-');
     if (*s == '-' || *s == '+')
       s++;
-    if (s >= last || !isdigit(*s))
+    if (s >= last || !isdigit((unsigned char) *s))
       return false;
     
     // XXX overflow?
     for (; s < last; s++)
-      if (isdigit(*s))
+      if (isdigit((unsigned char) *s))
 	exponent = 10*exponent + *s - '0';
       else if (*s != '_' || s == last - 1 || s[1] == '_')
 	break;
@@ -1203,7 +1203,7 @@ bool
 cp_double(const String &in_str, double *result)
 {
   cp_errno = CPE_FORMAT;
-  if (in_str.length() == 0 || isspace(in_str[0]))
+  if (in_str.length() == 0 || isspace((unsigned char) in_str[0]))
     // check for space because strtod() accepts leading whitespace
     return false;
 
@@ -1248,7 +1248,7 @@ read_unit(const char *s, const char *end,
 	  }
       }
       
-      while (work > s && isspace(work[-1]))
+      while (work > s && isspace((unsigned char) work[-1]))
 	work--;
       return work;
     } else if (unit[-1] != (unsigned char) work[-1]) {
@@ -1345,7 +1345,7 @@ cp_bandwidth(const String &str, uint32_t *return_value)
 static int
 ip_address_portion(const String &str, unsigned char *value)
 {
-  const char *s = str.data();
+  const unsigned char *s = reinterpret_cast<const unsigned char*>(str.data());
   int len = str.length();
   int pos = 0, part;
 
@@ -1554,14 +1554,14 @@ cp_ip6_address(const String &str, unsigned char *return_value
     if (coloncolon < 0 && pos < len - 1 && s[pos] == ':' && s[pos+1] == ':') {
       coloncolon = d;
       pos += 2;
-    } else if (d && pos < len - 1 && s[pos] == ':' && isxdigit(s[pos+1]))
+    } else if (d && pos < len - 1 && s[pos] == ':' && isxdigit((unsigned char) s[pos+1]))
       pos++;
-    if (pos >= len || !isxdigit(s[pos]))
+    if (pos >= len || !isxdigit((unsigned char) s[pos]))
       break;
     unsigned part = 0;
     last_part_pos = pos;
-    for (; pos < len && isxdigit(s[pos]) && part <= 0xFFFF; pos++)
-      part = (part<<4) + xvalue(s[pos]);
+    for (; pos < len && isxdigit((unsigned char) s[pos]) && part <= 0xFFFF; pos++)
+      part = (part<<4) + xvalue((unsigned char) s[pos]);
     if (part > 0xFFFF)
       return bad_ip6_address(str, return_value  CP_PASS_CONTEXT);
     parts[d] = part;
@@ -1713,7 +1713,7 @@ cp_ethernet_address(const String &str, unsigned char *return_value
 		    CP_CONTEXT_ARG)
 {
   int i = 0;
-  const char *s = str.data();
+  const unsigned char* s = reinterpret_cast<const unsigned char*>(str.data());
   int len = str.length();
 
   unsigned char value[6];
@@ -1759,7 +1759,7 @@ cp_tcpudp_port(const String &str, int ip_p, uint16_t *return_value
 	       CP_CONTEXT_ARG)
 {
   uint32_t value;
-  if (str && isdigit(str[0]) && cp_unsigned(str, &value)) {
+  if (str && isdigit((unsigned char) str[0]) && cp_unsigned(str, &value)) {
     if (value <= 0xFFFF) {
       *return_value = value;
       return true;
@@ -1856,7 +1856,7 @@ bool
 cp_des_cblock(const String &str, unsigned char *return_value)
 {
   int i = 0;
-  const char *s = str.data();
+  const unsigned char *s = reinterpret_cast<const unsigned char*>(str.data());
   int len = str.length();
   
   if (len != 16)

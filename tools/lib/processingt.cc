@@ -24,10 +24,9 @@
 #include <click/bitvector.hh>
 #include <click/straccum.hh>
 #include "elementmap.hh"
-#include <ctype.h>
 #include <string.h>
 
-const char * const ProcessingT::processing_letters = "ahl";
+const char ProcessingT::processing_letters[] = "ahl";
 
 ProcessingT::ProcessingT()
     : _router(0)
@@ -453,7 +452,8 @@ next_flow_code(const char *&p, const char *last,
 	if (p[1] == '^')
 	    negated = true, p++;
 	for (p++; p != last && *p != ']'; p++) {
-	    if (isalpha(*p))
+	    // avoid isalpha() to avoid locale/"signed char" dependencies
+	    if ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z'))
 		code[*p] = true;
 	    else if (*p == '#')
 		code[port + 128] = true;
@@ -467,7 +467,7 @@ next_flow_code(const char *&p, const char *last,
 		errh->error("flow code: missing ']'");
 	    p--;		// don't skip over final '\0'
 	}
-    } else if (isalpha(*p))
+    } else if ((*p >= 'A' && *p <= 'Z') || (*p >= 'a' && *p <= 'z'))
 	code[*p] = true;
     else if (*p == '#')
 	code[port + 128] = true;
