@@ -51,15 +51,6 @@
 #define	ICMP_MASKREQ		17		/* address mask request */
 #define	ICMP_MASKREQREPLY	18		/* address mask reply */
 
-/* codes for spefic types of ICMP packets */
-/* dest unreachable packets */
-//#define ICMP_CODE_PROTUNREACH 2
-//#define ICMP_CODE_PORTUNREACH 3
-/* echo packets */
-//#define ICMP_CODE_ECHO 0
-/* timestamp packets */
-//#define ICMP_CODE_TIMESTAMP 0
-
 
 /* most icmp request types: ICMP_UNREACH, ICMP_SOURCEQUENCH, ICMP_TIMXCEED */
 struct click_icmp {
