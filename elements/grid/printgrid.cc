@@ -160,14 +160,14 @@ PrintGrid::simple_action(Packet *p)
 
   case grid_hdr::GRID_ROUTE_PROBE: 
     nb = (grid_nbr_encap *) (gh + 1);
-    line += encap_to_string(nb) + " ";
+    line += encap_to_string(nb);
     rp = (grid_route_probe *) (nb + 1);
     line += " nonce=" + String(ntohl(rp->nonce));
     break;
 
-  case grid_hdr::GRID_ROUTE_REPLY: break;
+  case grid_hdr::GRID_ROUTE_REPLY: 
     nb = (grid_nbr_encap *) (gh + 1);
-    line += encap_to_string(nb) + " ";
+    line += encap_to_string(nb);
     rr = (grid_route_reply *) (nb + 1);
     line += " nonce=" + String(ntohl(rr->nonce));
     line += " probe_dest=" + IPAddress(rr->probe_dest).s();
