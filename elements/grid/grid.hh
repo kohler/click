@@ -57,17 +57,37 @@ struct grid_hdr {
   unsigned char hdr_len;    // sizeof(grid_hdr). Why do we need this? -- it was changing...
 
   unsigned char type;
-  static const int GRID_HELLO     = 1;  // no additional info in packet beyond header
-  static const int GRID_LR_HELLO  = 2;  // followed by grid_hello and grid_nbr_entries
-  static const int GRID_NBR_ENCAP = 3;  // followed by grid_nbr_encap
-  static const int GRID_FLOOD_LOC_QUERY = 4; // followed by grid_flood_loc_query
-  static const int GRID_FLOOD_LOC_REPLY = 5; // followed by grid_nbr_encap header 
+  static const unsigned char GRID_HELLO     = 1;  // no additional info in packet beyond header
+  static const unsigned char GRID_LR_HELLO  = 2;  // followed by grid_hello and grid_nbr_entries
+  static const unsigned char GRID_NBR_ENCAP = 3;  // followed by grid_nbr_encap
+  static const unsigned char GRID_LOC_QUERY = 4;  // followed by grid_loc_query
+  static const unsigned char GRID_LOC_REPLY = 5;  // followed by grid_nbr_encap header 
 
-  unsigned int ip;          // Sender's IP address.
+  /*
+   * Sender is who originally created this packet and injected it into
+   * the network.  Transmitter is who last transmitted this packet to
+   * us.  i.e. when the packet is first transmitted, the sender and
+   * transmitter are the same.  Also, the transmitter information can
+   * be mapped to the packet's MAC src address. 
+   */
+  unsigned int ip;          // Sender's IP address. 
   struct grid_location loc; // Sender's location, set by FixSrcLoc.
-  int loc_err;              // Error radius of position, in metres.  if negative, don't believe loc
-  static const int BAD_LOC = -1;
+  unsigned short loc_err;   // Error radius of position, in metres.  
+  bool loc_good;            // If false, don't believe loc  
   unsigned int loc_seq_no;  
+
+  unsigned int tx_ip;       // Transmitter 
+  struct grid_location tx_loc;
+  unsigned short tx_loc_err;
+  bool tx_loc_good;
+  unsigned int tx_loc_seq_no;
+
+  /* XXX this location err and sequence number info needs to be
+     incorporated into the grid_location class, which will enable us
+     to avoid manually converting it between host and network order.
+     okay, by the time i have finished writing this i could probably
+     have done it... */
+
   unsigned short total_len; // Of the whole packet, starting at grid_hdr.
                             // Why do we need total_len? What about byte order? -- for cksum.  network order.
   unsigned short cksum;     // Over the whole packet, starting at grid_hdr.
@@ -75,7 +95,7 @@ struct grid_hdr {
   grid_hdr() : hdr_len(sizeof(grid_hdr)), cksum(0) 
   { total_len = htons(sizeof(grid_hdr)); }
 
-  static String type_string(int type);
+  static String type_string(unsigned char type);
 };
 
 struct grid_nbr_entry {
@@ -85,7 +105,8 @@ struct grid_nbr_entry {
   /* 0 for num_hops indicate that this dest. is unreachable.  if so,
      loc fields are meaningless */
   struct grid_location loc;
-  int loc_err;
+  unsigned short loc_err;
+  bool loc_good;
   unsigned int seq_no;
   unsigned int age; 
 
@@ -112,19 +133,19 @@ struct grid_hello {
 struct grid_nbr_encap {
   unsigned int dst_ip;
   struct grid_location dst_loc;
-  int dst_loc_err;
+  unsigned short dst_loc_err;
+  bool dst_loc_good;
   unsigned char hops_travelled;
 };
 
-struct grid_flood_loc_query {
-  unsigned int src_ip; // because gh->ip gets rewritten by every sender
+struct grid_loc_query {
   unsigned int dst_ip;
   unsigned int seq_no;
 };
 
 
 inline String
-grid_hdr::type_string(int type)
+grid_hdr::type_string(unsigned char type)
 {
   switch (type) {
   case GRID_HELLO: return String("GRID_HELLO"); break;

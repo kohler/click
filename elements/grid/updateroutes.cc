@@ -125,7 +125,7 @@ UpdateGridRoutes::simple_action(Packet *packet)
     return packet;
   }
   grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
-  IPAddress ipaddr((unsigned char *) &gh->ip);
+  IPAddress ipaddr((unsigned char *) &gh->tx_ip);
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
 
   if (ethaddr == _ethaddr) {
@@ -148,9 +148,11 @@ UpdateGridRoutes::simple_action(Packet *packet)
     nbr->eth = ethaddr;
   }
   
+  /* XXX need to update (or add) routing entry in _rtes to be the
+     correct one-hop entry for destination of this sender, ipaddr. */
   
   /*
-   * perform further packet processing
+   * perform further packet processing, extrace routing information from DSDV packets
    */
   switch (gh->type) {
   case grid_hdr::GRID_LR_HELLO:
@@ -165,10 +167,16 @@ UpdateGridRoutes::simple_action(Packet *packet)
       if (fe == 0) {
 	// we don't already know about it, so add it
 	/* XXX not using HashMap2 very efficiently --- fix later */
+
+	/* since DSDV update packets on travel one hop, all the tx_ip
+           and tx_loc transmitter info in the grid_hdr is the same as
+           the sender ip and loc info */
+
 	_rtes.insert(ipaddr, far_entry(jiff, grid_nbr_entry(gh->ip, gh->ip, 1, ntohl(hlo->seq_no))));
 	fe = _rtes.findp(ipaddr);
 	fe->nbr.loc = gh->loc;
-	fe->nbr.loc_err = ntohl(gh->loc_err);
+	fe->nbr.loc_err = ntohs(gh->loc_err);
+	fe->nbr.loc_good = gh->loc_good;
 	fe->nbr.age = decr_age(ntohl(hlo->age), grid_hello::MIN_AGE_DECREMENT);
       } else { 
 	/* i guess we always overwrite existing info, because we heard
@@ -178,7 +186,8 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	fe->nbr.num_hops = 1;
 	fe->nbr.next_hop_ip = gh->ip;
 	fe->nbr.loc = gh->loc;
-	fe->nbr.loc_err = ntohl(gh->loc_err);
+	fe->nbr.loc_err = ntohs(gh->loc_err);
+	fe->nbr.loc_good = gh->loc_good;
 	fe->nbr.seq_no = ntohl(hlo->seq_no);
 	fe->nbr.age = decr_age(ntohl(hlo->age), grid_hello::MIN_AGE_DECREMENT);
       }
@@ -255,7 +264,8 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	  _rtes.insert(curr_ip, far_entry(jiff, grid_nbr_entry(curr->ip, gh->ip, curr->num_hops + 1, ntohl(curr->seq_no))));
 	  fe =_rtes.findp(curr_ip);
 	  fe->nbr.loc = curr->loc;
-	  fe->nbr.loc_err = ntohl(curr->loc_err);
+	  fe->nbr.loc_err = ntohs(curr->loc_err);
+	  fe->nbr.loc_good = curr->loc_good;
 	  fe->nbr.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
 	}
 	else { 
@@ -266,7 +276,8 @@ UpdateGridRoutes::simple_action(Packet *packet)
 	    fe->nbr.num_hops = curr->num_hops + 1;
 	    fe->nbr.next_hop_ip = gh->ip;
 	    fe->nbr.loc = curr->loc;
-	    fe->nbr.loc_err = ntohl(curr->loc_err);
+	    fe->nbr.loc_err = ntohs(curr->loc_err);
+	    fe->nbr.loc_good = curr->loc_good;
 	    fe->nbr.seq_no = curr_seq;
 	    fe->last_updated_jiffies = jiff;
 	    fe->nbr.age = decr_age(ntohl(curr->age), grid_hello::MIN_AGE_DECREMENT);
@@ -315,7 +326,7 @@ print_rtes(Element *e, void *)
       + " next_hop=" + IPAddress(f.nbr.next_hop_ip).s() 
       + " num_hops=" + String((int) f.nbr.num_hops) 
       + " loc=" + f.nbr.loc.s()
-      + " err=" + String(f.nbr.loc_err)
+      + " err=" + (f.nbr.loc_good ? "" : "-") + String(f.nbr.loc_err) // negate loc if invalid
       + " seq_no=" + String(f.nbr.seq_no)
       + "\n";
   }
@@ -499,7 +510,7 @@ UpdateGridRoutes::hello_hook(unsigned long thunk)
 
 void
 UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
-                              bool update_seq)
+				      bool update_seq)
 {
   /* build and send routing update packet advertising the contents of
      the rte_info vector.  calling function must fill in each nbr
@@ -524,7 +535,7 @@ UpdateGridRoutes::send_routing_update(Vector<grid_nbr_entry> &rte_info,
   gh->total_len = psz - sizeof(click_ether);
   gh->total_len = htons(gh->total_len);
   gh->type = grid_hdr::GRID_LR_HELLO;
-  memcpy(&gh->ip, _ipaddr.data(), 4);
+  gh->ip = gh->tx_ip = _ipaddr;
 
   grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
   assert(num_rtes <= 255);
@@ -580,7 +591,7 @@ UpdateGridRoutes::make_hello()
   gh->total_len = psz - sizeof(click_ether);
   gh->total_len = htons(gh->total_len);
   gh->type = grid_hdr::GRID_LR_HELLO;
-  memcpy(&gh->ip, _ipaddr.data(), 4);
+  gh->ip = gh->tx_ip = _ipaddr;
 
   grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
   assert(num_rtes <= 255);

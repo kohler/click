@@ -98,6 +98,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     switch (gh->type) {
 
     case grid_hdr::GRID_NBR_ENCAP:
+    case grid_hdr::GRID_LOC_REPLY:
       {/* 
 	* try to either receive the packet or forward it
 	*/
@@ -136,7 +137,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
     // check to see is the desired dest is our neighbor
     IPAddress dst = packet->dst_ip_anno();
     if (dst == _ipaddr) {
-      click_chatter("%s: got IP packet from us for our address; looping it back", id().cc());
+      click_chatter("%s: got IP packet from us for our address; looping it back.  Check the configuration.", id().cc());
       output(1).push(packet);
     }
     else {
@@ -153,6 +154,10 @@ LookupLocalGridRoute::push(int port, Packet *packet)
       gh->total_len = htons(gh->total_len);
       gh->type = grid_hdr::GRID_NBR_ENCAP;
 
+      /* FixSrcLoc will see that the gh->ip and gh->tx_ip fields are
+         the same, and will fill in gh->loc, etc. */
+      gh->ip = _ipaddr; 
+      
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;
       encap->dst_ip = dst.addr();
@@ -224,8 +229,10 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
 
   /*
    * packet must have a MAC hdr, grid_hdr, and a grid_nbr_encap hdr on
-   * it.  This function will update the hop count, src ip (us) and
-   * dst/src MAC addresses.  
+   * it.  This function will update the hop count, transmitter ip and
+   * loc (us) and dst/src MAC addresses.  Sender ip and loc info will
+   * not be touched, so if we are orinigating the packet, those have
+   * to be setup before calling this function.  
    */
 
   if (_nbr == 0) {
@@ -245,11 +252,8 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     memcpy(eh->ether_shost, _ethaddr.data(), 6);
     memcpy(eh->ether_dhost, next_hop_eth.data(), 6);
     struct grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
-    gh->ip = _ipaddr.addr();
+    gh->tx_ip = _ipaddr;
     encap->hops_travelled++;
-    // don't bother setting location information for destinations
-    // to which we have a local route
-    encap->dst_loc_err = htonl(grid_hdr::BAD_LOC);
     // leave src location update to FixSrcLoc element
     output(0).push(packet);
   }

@@ -67,10 +67,7 @@ FixDstLoc::simple_action(Packet *xp)
   grid_nbr_encap *nb = (grid_nbr_encap *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
   IPAddress dst(nb->dst_ip);
   grid_location loc;
-  int err;
-  bool found = _loctab.get_location(dst, loc, err);
-  nb->dst_loc = loc;
-  nb->dst_loc_err = err;
+  nb->dst_loc_good = _loctab.get_location(dst, nb->dst_loc, nb->dst_loc_err);
   return p;
 }
 

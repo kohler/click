@@ -123,7 +123,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     return;
   }
 
-  if (encap->dst_loc_err < 0) {
+  if (!encap->dst_loc_good) {
     click_chatter("LookupGeographicGridroute %s: bad destination location in packet for %s",
                   id().cc(),
                   dest_ip.s().cc());
@@ -133,7 +133,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
 
   WritablePacket *xp = packet->uniqueify();
   /*
-   * This code will update the hop count, src ip (us) and dst/src MAC
+   * This code will update the hop count, tx ip (us) and dst/src MAC
    * addresses.  
    */
   EtherAddress next_hop_eth;
@@ -144,7 +144,7 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
     memcpy(eh->ether_shost, _ethaddr.data(), 6);
     memcpy(eh->ether_dhost, next_hop_eth.data(), 6);
     struct grid_hdr *gh = (grid_hdr *) (xp->data() + sizeof(click_ether));
-    gh->ip = _ipaddr.addr();
+    gh->tx_ip = _ipaddr;
     encap->hops_travelled++;
     // leave src location update to FixSrcLoc element
     output(0).push(xp);
@@ -181,7 +181,7 @@ LookupGeographicGridRoute::get_next_geographic_hop(IPAddress, grid_location dest
   bool found_one = false;
   for (UpdateGridRoutes::FarTable::Iterator iter = _rt->_rtes.first(); iter; iter++) {
     const UpdateGridRoutes::far_entry &fe = iter.value();
-    if (fe.nbr.loc_err < 0)
+    if (!fe.nbr.loc_good)
       continue; // negative err means don't believe info at all
     double new_d = FilterByRange::calc_range(dest_loc, fe.nbr.loc);
     if (!found_one) {
@@ -202,7 +202,11 @@ LookupGeographicGridRoute::get_next_geographic_hop(IPAddress, grid_location dest
      ultimate dest.  the issues is: we can't mark the packet with some
      intermediate destination address, only the next hop and ultimate
      destination... how to `fix' the phase of the packet so we can
-     make progree guarantees? */
+     make progree guarantees? -- Now I think this is okay, assuming
+     the node movement time-scale is much greater than than the packet
+     time-of-flight.  Basically, the DSDV tables will be consistent
+     across hops, so that no intermediate forwarding node will make a
+     backwards decision. -- decouto  */
 
   // find the MAC address
   UpdateGridRoutes::NbrEntry *nent = _rt->_addresses.findp(next_hop);

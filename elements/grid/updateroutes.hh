@@ -82,7 +82,7 @@ public:
   Table _addresses; // immediate nbrs
   /* 
    * _addresses is a mapping from IP to ether for nodes within our
-   * radio range.  this information is extraced by snooping on all
+   * radio range.  this information is extracted by snooping on all
    * packets with grid headers .  
    */
  
@@ -100,9 +100,9 @@ public:
    * _rtes is our routing table; its information is maintained by
    * processing Grid Hello (GRID_LR_HELLO) packets only.  some
    * invariants: any entry listed as one hop in _rtes has an entry in
-   * _addresses.  this table should never include a broken route
-   * (indicated by num_hops == 0).  There may be entries with age 0 
-   */
+   * _addresses (but not neccesarily vice-versa right now...).  this
+   * table should never include a broken route (indicated by num_hops
+   * == 0).  There may be entries with age 0 */
 
   /*
    * will leave _addresses and _rtes exposed to other code so we can

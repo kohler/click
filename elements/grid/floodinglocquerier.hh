@@ -3,7 +3,7 @@
 
 /*
  * =c
- * FloodingLocQuerier(I, E, LocationInfo)
+ * FloodingLocQuerier(I, E)
  * =s
  * Sets Grid Destination location by running a flooding query protocol
  *
@@ -20,16 +20,12 @@
  * location that we need, the mapping is recorded and the saved Grid
  * packet is sent through output 0.
  *
- * Input 1 expects flooding query and response packets that include all headers
- * (MAC, Grid, etc.)
+ * Input 1 expects flooding query packets, and response packets for
+ * us.  Packets must include all headers (MAC, Grid, etc.)
  *
- * Output 2 produces query replies ready to be sent to the routing
- * subsystem, e.g. LookupLocalGridRoute.
- *
- * XXX this needs to be split into a querier and a replier.  It is
- * skanky and I hate it.
  *
  * =a
+ * LocQueryResponder
  * LocationInfo
  * SimpleLocQuerier */
 
@@ -60,7 +56,8 @@ class FloodingLocQuerier : public Element {
   struct LocEntry {
     IPAddress ip;
     grid_location loc;
-    int loc_err;
+    unsigned short loc_err;
+    bool loc_good;
     unsigned int loc_seq_no;;
     int last_response_jiffies;
     unsigned ok: 1;
@@ -85,7 +82,7 @@ class FloodingLocQuerier : public Element {
   EtherAddress _my_en;
   IPAddress _my_ip;
   Timer _expire_timer;
-  LocationInfo *_locinfo;
+
   void send_query_for(const IPAddress &);
   
   void handle_nbr_encap(Packet *);

@@ -30,7 +30,6 @@ FloodingLocQuerier::FloodingLocQuerier()
   add_input(); /* flooding queries and responses */
   add_output(); /* GRID_NBR_ENCAP packets  */
   add_output(); /* flooding queries */
-  add_output(); /* query replies ready for routing subsystem */
 }
 
 FloodingLocQuerier::~FloodingLocQuerier()
@@ -52,20 +51,12 @@ FloodingLocQuerier::configure(const Vector<String> &conf, ErrorHandler *errh)
   return cp_va_parse(conf, this, errh,
 		     cpIPAddress, "IP address", &_my_ip,
 		     cpEthernetAddress, "Ethernet address", &_my_en,
-		     cpElement, "LocationInfo element", &_locinfo,
 		     0);
 }
 
 int
-FloodingLocQuerier::initialize(ErrorHandler *errh)
+FloodingLocQuerier::initialize(ErrorHandler *)
 {
-  if(_locinfo && _locinfo->cast("LocationInfo") == 0) 
-    return errh->error("%s: LocationInfo argument %s has the wrong type",
-		     id().cc(),
-		     _locinfo->id().cc());
-  else if(_locinfo == 0) 
-    return errh->error("%s: no LocationInfo argument", id().cc());
-
   _expire_timer.attach(this);
   _expire_timer.schedule_after_ms(EXPIRE_TIMEOUT_MS);
   _loc_queries = 0;
@@ -126,7 +117,7 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
 {
   click_ether *e;
   grid_hdr *gh;
-  grid_flood_loc_query *fq;
+  grid_loc_query *fq;
   WritablePacket *q = Packet::make(sizeof(*e) + sizeof(*gh) + sizeof(*fq));
   if (q == 0) {
     click_chatter("in %s: cannot make packet!", id().cc());
@@ -135,20 +126,23 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
   memset(q->data(), '\0', q->length());
   e = (click_ether *) q->data();
   gh = (grid_hdr *) (e + 1);
-  fq = (grid_flood_loc_query *) (gh + 1);
+  fq = (grid_loc_query *) (gh + 1);
+
   memcpy(e->ether_dhost, "\xff\xff\xff\xff\xff\xff", 6);
   memcpy(e->ether_shost, _my_en.data(), 6);
   e->ether_type = htons(ETHERTYPE_GRID);
+
   gh->hdr_len = sizeof(grid_hdr);
-  gh->type = grid_hdr::GRID_FLOOD_LOC_QUERY;
-  gh->ip = _my_ip;
-  gh->loc = _locinfo->get_current_location(&gh->loc_seq_no);
-  gh->loc_seq_no = htonl(gh->loc_seq_no);
-  gh->loc_err = 0;
+  gh->type = grid_hdr::GRID_LOC_QUERY;
+  gh->ip = gh->tx_ip = _my_ip;
   gh->total_len = htons(q->length() - sizeof(click_ether));
-  fq->src_ip = _my_ip;
+
   fq->dst_ip = want_ip;
   fq->seq_no = _loc_queries;
+
+  // make sure we never propagate our own queries!
+  _query_seqs.insert(_my_ip, _loc_queries);
+
   _loc_queries++;
   output(1).push(q);
 }
@@ -170,8 +164,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
   grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
 
   // see if packet has location info in it already
-  int loc_err = ntohl(nb->dst_loc_err);
-  if (loc_err >= 0) {
+  if (nb->dst_loc_good) {
     output(0).push(p);
     return;
   }
@@ -193,7 +186,10 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
       WritablePacket *q = p->uniqueify();
       grid_nbr_encap *nb2 = (grid_nbr_encap *) (q->data() + sizeof(click_ether) + sizeof(grid_hdr));
       nb2->dst_loc = ae->loc;
-      nb2->dst_loc_err = htonl(ae->loc_err);
+      nb2->dst_loc_err = htons(ae->loc_err);
+      nb2->dst_loc_good = ae->loc_good;
+      if (!ae->loc_good)
+	click_chatter("FloodingLocQuerier %s: invalid location information in table!  sending packet anyway...", id().cc());
       output(0).push(q);
     } else {
       if (ae->p) {
@@ -240,7 +236,8 @@ FloodingLocQuerier::handle_reply(Packet *p)
   unsigned int loc_seq_no = ntohl(gh->loc_seq_no);
   if (ae->loc_seq_no > loc_seq_no) {
     ae->loc = gh->loc;
-    ae->loc_err = ntohl(gh->loc_err);
+    ae->loc_err = ntohs(gh->loc_err);
+    ae->loc_good = gh->loc_good;
     ae->loc_seq_no = loc_seq_no;
     ae->ok = 1;
     ae->polling = 0;
@@ -258,27 +255,21 @@ void
 FloodingLocQuerier::handle_query(Packet *p)
 {
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-  grid_flood_loc_query *lq = (grid_flood_loc_query *) (gh + 1);
+  grid_loc_query *lq = (grid_loc_query *) (gh + 1);
   if (lq->dst_ip == (unsigned int) _my_ip) {
-    // initiate a query reply packet
-    WritablePacket *q = Packet::make(sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_nbr_encap));
-    memset(q->data(), 0, q->length());
-    click_ether *eth = (click_ether *) q->data();
-    grid_hdr *gh = (grid_hdr *) (eth + 1);
-    grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
-    gh->hdr_len = sizeof(grid_hdr);
-    gh->type = grid_hdr::GRID_FLOOD_LOC_REPLY;
-    gh->ip = _my_ip;
-    gh->total_len = sizeof(grid_hdr) + sizeof(grid_nbr_encap);
-    nb->dst_ip = lq->src_ip;
-    output(2).push(q);
+    click_chatter("FloodingLocQuerier %s: got location query for us, but it should go to the LocQueryResponder.  Check the configuration.", id().cc());
+    p->kill();
+    return;
   }
   else {
     // (possibly) propagate the query
     unsigned int *seq_no = _query_seqs.findp(gh->ip);
     unsigned int q_seq_no = ntohl(lq->seq_no);
-    if (seq_no && *seq_no >= q_seq_no)
-      return; // already handled this query
+    if (seq_no && *seq_no >= q_seq_no) {
+      // already handled this query
+      p->kill();
+      return;
+    }
     _query_seqs.insert(gh->ip, q_seq_no);
     output(1).push(p);
   }    
@@ -291,9 +282,9 @@ FloodingLocQuerier::push(int port, Packet *p)
     handle_nbr_encap(p);
   else {
     grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-    if (gh->type == grid_hdr::GRID_FLOOD_LOC_QUERY)
+    if (gh->type == grid_hdr::GRID_LOC_QUERY)
       handle_query(p);
-    else if (gh->type == grid_hdr::GRID_FLOOD_LOC_REPLY) {
+    else if (gh->type == grid_hdr::GRID_LOC_REPLY) {
       handle_reply(p);
       p->kill();
     }
