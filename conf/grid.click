@@ -45,8 +45,8 @@ ifdef(`IS_GATEWAY',
 ghi :: GridHeaderInfo;
 gl :: GridLogger(SHORT_IP true);
 
-ControlSocket(tcp, CONTROL_PORT, CONTROL_RO);
-ControlSocket(tcp, CONTROL2_PORT, CONTROL2_RO);
+ControlSocket(tcp, CONTROL_PORT, READONLY CONTROL_RO);
+ControlSocket(tcp, CONTROL2_PORT, READONLY CONTROL2_RO);
 
 // general router chatter output
 ChatterSocket(tcp, CHATTER_PORT);
@@ -65,9 +65,6 @@ loc_repl :: LocQueryResponder(GRID_MAC_ADDR, GRID_IP);
 rps :: GridProbeSender(GRID_MAC_ADDR, GRID_IP);
 rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP, lr, geo, fq);
 rpr :: GridProbeReplyReceiver(PROBE_CHANNEL);
-
-ai :: AiroInfo(GRID_NET_DEVICE);
-lt :: LinkTracker(LINK_TRACKER_TAU);
 
 nb :: DSDVRouteTable(ROUTE_TIMEOUT,
 		     BROADCAST_PERIOD, BROADCAST_JITTER, BROADCAST_MIN_PERIOD,
@@ -99,12 +96,25 @@ rph [0] -> PrintGrid("rph0 ") -> [0] lr;     // forward probes that need to cont
 rph [1] -> PrintGrid("rph1 ") -> grid_demux; // insert probe replies into grid demux so we can get our own reply
 
 
-// device layer els
+// input processing
+
+ai :: AiroInfo(GRID_NET_DEVICE);
 
 from_grid_if :: FromDevice(GRID_NET_DEVICE, 0);
-to_grid_if :: TTLChecker;
+  -> Paint(0) // replace with interface number, e.g. 0, 1, 2, etc.
+  -> Classifier(12/GRID_ETH_PROTO)
+  -> HostEtherFilter(GRID_MAC_ADDR, 1)
+  -> check_grid :: CheckGridHeader
+  -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0]
+  -> ls :: LinkStat(ai, LINK_STAT_WINDOW)
+  -> lt :: LinkTracker(LINK_TRACKER_TAU)
+  -> grid_demux;
 
-to_grid_if [0] -> FixSrcLoc(li)
+
+// output processing
+
+to_grid_if :: TTLChecker [0]
+               -> FixSrcLoc(li)
                -> PingPong(ls)
                -> SetGridChecksum
 	       -> ToDevice(GRID_NET_DEVICE, SET_ERROR_ANNO true) 
@@ -116,25 +126,11 @@ tun0 :: KernelTap(GRID_IP/GRID_NETMASK, 1.2.3.4, TUN_INPUT_HEADROOM)
 to_tun0 :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) 
         -> tun0;
 
-from_grid_if 
-  -> Classifier(12/GRID_ETH_PROTO)
-  -> HostEtherFilter(GRID_MAC_ADDR, 1)
-  -> check_grid :: CheckGridHeader
-//  -> PrintGrid("XXX")
-  -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0]
-//  -> PrintGrid("post_fr")
-  -> ls :: LinkStat(ai, LINK_STAT_WINDOW)
-//  -> PrintGrid("post_ls")
-  -> lt
-//  -> PrintGrid("post_lt")
-//  -> Print("post_lt", 80)
-  -> grid_demux;
+
+// input demuxes
 
 grid_demux [0]
-//	       -> PrintGrid("gd0 ")
-//               -> Print("gd0", 80)
                -> Align(4, 2)
-//               -> Print("after_gd0_align")
 	       -> [0] lr;
 
 grid_demux [1]
