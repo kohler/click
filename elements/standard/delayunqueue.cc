@@ -3,6 +3,7 @@
  * the packet to output port.
  *
  * Copyright (c) 1999-2001 Massachusetts Institute of Technology
+ * Copyright (c) 2002 International Computer Science Institute
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -38,7 +39,7 @@ int
 DelayUnqueue::configure(Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
-		     cpSecondsAsMicro, "delay (ms)", &_delay, 0);
+		     cpTimeval, "delay (sec)", &_delay, 0);
 }
 
 int
@@ -46,6 +47,7 @@ DelayUnqueue::initialize(ErrorHandler *errh)
 {
   _p = 0;
   ScheduleInfo::join_scheduler(this, &_task, errh);
+  _signal = ActivityNotifier::listen_upstream_pull(this, 0, &_task);
   return 0;
 }
 
@@ -58,35 +60,22 @@ DelayUnqueue::uninitialize()
   }
 }
 
-static inline unsigned
-elapsed_us(struct timeval tv)
-{
-  struct timeval t;
-  unsigned e = 0;
-  click_gettimeofday(&t);
-  e = (t.tv_sec - tv.tv_sec)*1000000;
-  if (t.tv_usec < tv.tv_usec) {
-    t.tv_usec += 1000000;
-    e -= 1000000;
-  }
-  e += t.tv_usec-tv.tv_usec;
-  return e;
-}
-
 void
 DelayUnqueue::run_scheduled()
 {
-  do {
-    if (!_p) 
-      _p = input(0).pull();
-    if (!_p)
-      break;
-    unsigned t = elapsed_us(_p->timestamp_anno());
-    if (t >= _delay) {
+  if (!_p && (_p = input(0).pull()))
+    timeradd(&_p->timestamp_anno(), &_delay, &_p->timestamp_anno());
+  
+  if (_p) {
+    struct timeval now;
+    click_gettimeofday(&now);
+    if (!timercmp(&now, &_p->timestamp_anno(), <)) {
+      _p->timestamp_anno() = now;
       output(0).push(_p);
       _p = 0;
-    } 
-  } while(!_p);
+    }
+  } else if (!_signal.active())
+    return;			// without rescheduling
 
   _task.fast_reschedule();
 }
@@ -95,7 +84,7 @@ String
 DelayUnqueue::read_param(Element *e, void *)
 {
   DelayUnqueue *u = (DelayUnqueue *)e;
-  return cp_unparse_microseconds(u->_delay) + "\n";
+  return cp_unparse_interval(u->_delay) + "\n";
 }
 
 void
@@ -107,4 +96,3 @@ DelayUnqueue::add_handlers()
 
 EXPORT_ELEMENT(DelayUnqueue)
 ELEMENT_MT_SAFE(DelayUnqueue)
-

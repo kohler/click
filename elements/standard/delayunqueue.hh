@@ -1,7 +1,8 @@
-#ifndef DELAYUNQUEUE_HH
-#define DELAYUNQUEUE_HH
+#ifndef CLICK_DELAYUNQUEUE_HH
+#define CLICK_DELAYUNQUEUE_HH
 #include <click/element.hh>
 #include <click/task.hh>
+#include "activity.hh"
 
 /*
 =c
@@ -10,14 +11,15 @@ DelayUnqueue(DELAY)
 pull-to-push converter
 =d
 
-Pulls packets from input port. queues packet if current timestamp minus packet
-timestamp is less than DELAY seconds (microsecond precision). otherwise push
-packet on output.
+Pulls packets from the single input port. Delays them for at least DELAY
+seconds, with microsecond precision. A packet with timestamp T will be emitted
+no earlier than time (T + DELAY). On output, the packet's timestamp is set to
+the current time.
 
-SetTimestamp element can be used to stamp the packet.
+DelayUnqueue listens for activity notification; see NotifierQueue.
 
-=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue
-*/
+=a Queue, Unqueue, RatedUnqueue, BandwidthRatedUnqueue, SetTimestamp,
+NotifierQueue */
 
 class DelayUnqueue : public Element { public:
   
@@ -38,9 +40,11 @@ class DelayUnqueue : public Element { public:
 
  private:
 
-  uint32_t _delay;
   Packet *_p;
+  struct timeval _delay;
+  ActivitySignal _signal;
   Task _task;
+  
 };
 
 #endif
