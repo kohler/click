@@ -1,3 +1,8 @@
+2003-12-03 Wednesday 18:42  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* conf/make-dsr-config.pl (1.2): fix up for current linkstat,
+	linktable and wifitxfeedback.
+
 2003-12-03 Wednesday 16:01  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/linkstat.hh (1.15): clarify API comments for
