@@ -1,3 +1,12 @@
+2002-07-05 Friday 19:22  Eddie Kohler <kohler@icir.org>
+
+	* include/click/element.hh, include/click/element.hh,
+	include/click/llrpc.h, include/click/llrpc.h, libsrc/element.cc:
+	LLRPC rewrite: Use the operating system's _IOC() macros. The
+	linuxmodule ioctl() wrapper then copies the relevant amount of data
+	to and fro, when required. Also, local_llrpc() is no longer a
+	virtual function.
+
 2002-06-18 Tuesday 13:58  Eddie Kohler <kohler@icir.org>
 
 	* include/click/: packet.hh, packet.hh: add "next" annotation for

@@ -1,3 +1,19 @@
+2002-07-05 Friday 19:22  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/anonipaddr.cc (1.6),
+	elements/analysis/anonipaddr.hh (1.5), elements/standard/counter.cc
+	(1.24), elements/standard/pullswitch.cc (1.19),
+	elements/standard/pullswitch.hh (1.16), elements/standard/switch.cc
+	(1.19), elements/standard/switch.hh (1.20),
+	elements/tcpudp/iprewriter.cc (1.35),
+	elements/tcpudp/tcprewriter.cc (1.25), include/click/element.hh
+	(1.25), include/click/llrpc.h (1.14), lib/element.cc (1.70),
+	linuxmodule/clickfs.cc (1.11), linuxmodule/proc_click.cc (1.46):
+	LLRPC rewrite: Use the operating system's _IOC() macros. The
+	linuxmodule ioctl() wrapper then copies the relevant amount of data
+	to and fro, when required. Also, local_llrpc() is no longer a
+	virtual function.
+
 2002-07-03 Wednesday 14:38  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/fromdump.cc (1.65): FromDump: work around
