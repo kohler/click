@@ -30,8 +30,9 @@ particular routing table elements.
 =item C<int B<add_route>(IPAddress dst, IPAddress mask, IPAddress gw, int p, ErrorHandler *errh)>
 
 Adds a route sending packets with destination addresses matching C<dst/mask>
-to gateway C<gw>, via the element's output port C<p>. Any errors are reported
-to C<errh>. Should return 0 on success and negative on failure. The default
+to gateway C<gw>, via the element's output port C<p>. Any existing route for
+C<dst/mask> is silently overwritten. Any errors are reported to
+C<errh>. Should return 0 on success and negative on failure. The default
 implementation reports an error "cannot add routes to this routing table".
 
 =item C<int B<remove_route>(IPAddress dst, IPAddress mask, IPAddress gw, int p, ErrorHandler *errh)>

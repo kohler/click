@@ -46,13 +46,15 @@ Removes a route from the table. Format should be `C<ADDR/MASK>'.
 =h ctrl write-only
 
 Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
-`C<remove ADDR/MASK>' to remove a route.
+`C<remove ADDR/MASK>' to remove a route. You can supply multiple commands, one
+per line; all commands are executed as one atomic operation.
 
 =h flush write-only
 
 Clears the entire routing table in a single atomic operation.
 
-=a IPRouteTable, StaticIPLookup, LinearIPLookup, RadixIPLookup, TrieIPLookup
+=a IPRouteTable, StaticIPLookup, LinearIPLookup, SortedIPLookup,
+DirectIPLookup, TrieIPLookup
 */
 
 class TrieIPLookup : public IPRouteTable {

@@ -167,14 +167,27 @@ IPRouteTable::remove_route_handler(const String &conf, Element *e, void *, Error
 int
 IPRouteTable::ctrl_handler(const String &conf_in, Element *e, void *thunk, ErrorHandler *errh)
 {
-    String conf = conf_in;
-    String first_word = cp_pop_spacevec(conf);
-    if (first_word == "add")
-	return add_route_handler(conf, e, thunk, errh);
-    else if (first_word == "remove")
-	return remove_route_handler(conf, e, thunk, errh);
-    else
-	return errh->error("bad command, should be `add' or `remove'");
+    String conf = cp_uncomment(conf_in);
+    const char* s = conf.begin(), *end = conf.end();
+    int retval = 0;
+    while (s < end) {
+	const char* nl = find(s, end, '\n');
+	String line = conf.substring(s, nl);
+	String first_word = cp_pop_spacevec(line);
+	int r;
+	if (first_word == "add")
+	    r = add_route_handler(line, e, thunk, errh);
+	else if (first_word == "remove")
+	    r = remove_route_handler(line, e, thunk, errh);
+	else if (!first_word)
+	    r = 0;
+	else
+	    r = errh->error("bad command, should be 'add' or 'remove'");
+	if (r < 0)
+	    retval = r;
+	s = nl + 1;
+    }
+    return retval;
 }
 
 String

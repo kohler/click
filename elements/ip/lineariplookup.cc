@@ -72,18 +72,6 @@ LinearIPLookup::check() const
 		ok = false;
 	    }
 
-    // redundant routes really are redundant
-    for (int i = 0; i < _redundant.size(); i++) {
-	int found = -1;
-	for (int j = 0; j < _t.size() && found < 0; j++)
-	    if (_redundant[i].addr == _t[j].addr && _redundant[i].mask == _t[j].mask)
-		found = j;
-	if (found < 0) {
-	    click_chatter("%s: putatively redundant route for %s has no real route", declaration().cc(), _redundant[i].unparse_addr().cc());
-	    ok = false;
-	}
-    }
-
     // caches point to the right place
     if (_last_addr && lookup_entry(_last_addr) != _last_entry) {
 	click_chatter("%s: bad cache entry for %s", declaration().cc(), _last_addr.unparse().cc());
@@ -112,8 +100,6 @@ LinearIPLookup::add_route(IPAddress addr, IPAddress mask, IPAddress gw,
     // overwrite any existing route
     for (int i = 0; i < _t.size(); i++)
 	if (_t[i].addr == addr && _t[i].mask == mask) {
-	    // save redundant route in case we remove this route later
-	    _redundant.push_back(_t[i]);
 	    _t[i].gw = gw;
 	    _t[i].output = output;
 	    check();
@@ -161,44 +147,16 @@ int
 LinearIPLookup::remove_route(IPAddress a, IPAddress m, IPAddress gw, int output, ErrorHandler *errh)
 {
     int nremoved = 0;
-    int redundant_route = -1;
-
-    // remove routes from redundant table; keep track of a match
-    for (int i = 0; i < _redundant.size(); i++) {
-	Entry &e = _redundant[i];
-	if (e.addr == a && e.mask == m
-	    && (output < 0 || (e.gw == gw && e.output == output && !nremoved))) {
-	    e = _redundant.back();
-	    _redundant.pop_back();
-	    nremoved++;
-	    i--;
-	} else if (e.addr == a && e.mask == m)
-	    redundant_route = i;
-    }
-
-    bool used_redundant = false;
 
     // remove routes from main table; replace with redundant route, if any
     for (int i = 0; i < _t.size(); i++) {
 	Entry &e = _t[i];
 	if (e.addr == a && e.mask == m
 	    && (output < 0 || (e.gw == gw && e.output == output && !nremoved))) {
-	    if (redundant_route >= 0) {
-		e.gw = _redundant[redundant_route].gw;
-		e.output = _redundant[redundant_route].output;
-		used_redundant = true;
-	    } else {
-		e.addr = IPAddress(1);
-		e.mask = IPAddress(0);
-	    }
+	    e.addr = IPAddress(1);
+	    e.mask = IPAddress(0);
 	    nremoved++;
 	}
-    }
-
-    // remove redundant route if it was installed
-    if (used_redundant) {
-	_redundant[redundant_route] = _redundant.back();
-	_redundant.pop_back();
     }
 
     // get rid of caches
@@ -258,15 +216,9 @@ String
 LinearIPLookup::dump_routes() const
 {
     StringAccum sa;
-    if (_t.size())
-	sa << "# Active routes\n";
     for (int i = 0; i < _t.size(); i++)
 	if (!_t[i].addr || _t[i].mask)
 	    sa << _t[i] << '\n';
-    if (_redundant.size())
-	sa << "# Redundant routes\n";
-    for (int i = 0; i < _redundant.size(); i++)
-	sa << _redundant[i] << '\n';
     return sa.take_string();
 }
 

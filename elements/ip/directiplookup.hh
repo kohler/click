@@ -47,14 +47,15 @@ Removes a route from the table. Format should be `C<ADDR/MASK>'.
 
 =h ctrl write-only
 
-Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
-`C<remove ADDR/MASK>' to remove a route.
+Adds or removes a group of routes. Write `C<add ADDR/MASK [GW] OUT>' to add a
+route, and `C<remove ADDR/MASK>' to remove a route. You can supply multiple
+commands, one per line; all commands are executed as one atomic operation.
 
 =h flush write-only
 
 Clears the entire routing table in a single atomic operation.
 
-=a StaticIPLookup, LinearIPLookup, TrieIPLookup
+=a StaticIPLookup, LinearIPLookup, SortedIPLookup, TrieIPLookup LinuxIPLookup
 
 Pankaj Gupta, Steven Lin, and Nick McKeown.  "Routing Lookups in Hardware at
 Memory Access Speeds".  In Proc. IEEE Infocom 1998, Vol. 3, pp. 1240-1247.

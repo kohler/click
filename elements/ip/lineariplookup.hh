@@ -26,11 +26,6 @@ gateway IP address, and an output port.
 LinearIPLookup uses a linear search algorithm that may look at every route on
 each packet. It is therefore most suitable for small routing tables.
 
-Two or more route arguments may refer to the same address prefix. The
-last-specified route takes precedence. However, the earlier-specified routes
-remain in the table; if the last-specified route is deleted, an
-earlier-specified route will take over.
-
 =e
 
 This example delivers broadcasts and packets addressed to the local
@@ -63,9 +58,11 @@ prefix (that is, all routes with the same ADDR and MASK).
 =h ctrl write-only
 
 Adds or removes routes. Write `C<add ADDR/MASK [GW] OUT>' to add a route, and
-`C<remove ADDR/MASK [[GW] OUT]>' to remove a route.
+`C<remove ADDR/MASK [[GW] OUT]>' to remove a route. You can supply multiple
+commands, one per line; all commands are executed as one atomic operation.
 
-=a StaticIPLookup, DirectIPLookup, TrieIPLookup, LinuxIPLookup */
+=a StaticIPLookup, SortedIPLookup, DirectIPLookup, TrieIPLookup,
+LinuxIPLookup */
 
 #define IP_RT_CACHE2 1
 
@@ -108,8 +105,6 @@ class LinearIPLookup : public IPRouteTable { public:
     IPAddress _last_addr2;
     int _last_entry2;
 #endif
-
-    Vector<Entry> _redundant;
 
     int lookup_entry(IPAddress) const;
 
