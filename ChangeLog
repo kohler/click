@@ -1,3 +1,85 @@
+2001-04-17 Tuesday 00:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/proc_element.cc, userlevel/click.cc: drivers: don't
+	register handlers explicitly any more; it is done as part of
+	Router::initialize()
+
+2001-04-17 Tuesday 00:30  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/string.cc: faster implementations of String::lower and
+	String::upper dont create a new string if the existing string is
+	all the correct case
+
+2001-04-17 Tuesday 00:30  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/task.hh, lib/task.cc: Task: add DEFAULT_TICKETS
+	constant, and initialize tickets to that constant as part of
+	initialize()
+
+2001-04-17 Tuesday 00:29  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/router.hh, lib/router.cc: add Router attachment
+	mechanism; also, initialize handlers as part of Router::initialize,
+	between configure() and initialize() phases
+
+2001-04-17 Tuesday 00:28  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/quitwatcher.cc: QuitWatcher: adjust to new ways
+	of parsing handlers
+
+2001-04-17 Tuesday 00:28  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/pokehandlers.cc: PokeHandlers bug fixes:
+	correctly handle handler arguments with no data
+
+2001-04-17 Tuesday 00:27  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/pullswitch.cc, elements/standard/pullswitch.hh,
+	elements/standard/switch.cc, elements/standard/switch.hh,
+	include/click/llrpc.h: Switch, PullSwitch: add LLRPCs for getting
+	and setting the switch value
+
+2001-04-17 Tuesday 00:26  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/confparse.hh, lib/confparse.cc: add
+	cpMandatoryKeywords, cpArguments, cpReadHandler, cpWriteHandler,
+	and cpHandler; also add cp_handler functions to parse a handler
+	name
+
+2001-04-17 Tuesday 00:24  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/tcpudp/iprewriter.cc: fix for real C++ compilers
+
+2001-04-17 Tuesday 00:24  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/: alignmentinfo.cc, scheduleinfo.cc,
+	scheduleinfo.hh: use the Router attachment feature
+
+2001-04-17 Tuesday 00:23  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: fromdevice.cc, polldevice.cc, todevice.cc:
+	tasks are initialized to DEFAULT_TICKETS tickets by default, so
+	dont do it explicitly
+
+2001-04-17 Tuesday 00:22  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/: ipclassifier.hh, ipfilter.cc: IPClassifier,
+	IPFilter: add snmp and snmp-trap port names
+
+2001-04-17 Tuesday 00:22  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/etherswitch/spantree.cc: adapt to confparse changes
+
+2001-04-17 Tuesday 00:22  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ethernet/: hostetherfilter.cc, hostetherfilter.hh:
+	HostEtherFilter: add keyword arguments and set packet_type
+	annotation according to Ethernet address
+
+2001-04-17 Tuesday 00:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click.texi: doc updates
+
 2001-04-13 Friday 16:43  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/: linuxmodule/polldevice.cc, ethernet/arpquerier.hh:
