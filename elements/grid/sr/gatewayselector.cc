@@ -319,11 +319,6 @@ GatewaySelector::push(int port, Packet *p_in)
 
 
 
-  if (_is_gw) {
-    p_in->kill();
-    return;
-  }
-
   struct sr_pkt *pk = (struct sr_pkt *) p_in->data();
   if(pk->ether_type != htons(_et)) {
     click_chatter("GatewaySelector %s: bad ether_type %04x",
@@ -430,6 +425,13 @@ GatewaySelector::push(int port, Packet *p_in)
   
   _seen[si]._hops = hops;
   _seen[si]._metrics = metrics;
+
+  if (_is_gw) {
+    p_in->kill();
+    return;
+  }
+
+
   if (timercmp(&_seen[si]._when, &_seen[si]._to_send, <)) {
     /* a timer has already been scheduled */
     p_in->kill();
@@ -457,14 +459,14 @@ GatewaySelector::push(int port, Packet *p_in)
 
 
 String
-GatewaySelector::static_print_stats(Element *f, void *)
+GatewaySelector::static_print_gateway_stats(Element *f, void *)
 {
   GatewaySelector *d = (GatewaySelector *) f;
-  return d->print_stats();
+  return d->print_gateway_stats();
 }
 
 String
-GatewaySelector::print_stats()
+GatewaySelector::print_gateway_stats()
 {
     StringAccum sa;
     struct timeval now;
@@ -537,7 +539,7 @@ GatewaySelector::print_current_gateway()
 void
 GatewaySelector::add_handlers()
 {
-  add_read_handler("stats", static_print_stats, 0);
+  add_read_handler("gateway_stats", static_print_gateway_stats, 0);
   add_read_handler("current_gateway", static_print_current_gateway, 0);
   add_read_handler("print_is_gateway", static_print_is_gateway, 0);
   add_write_handler("write_is_gateway", static_write_is_gateway, 0);

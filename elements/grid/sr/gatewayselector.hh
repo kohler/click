@@ -46,8 +46,8 @@ class GatewaySelector : public Element {
   /* handler stuff */
   void add_handlers();
 
-  static String static_print_stats(Element *e, void *);
-  String print_stats();
+  static String static_print_gateway_stats(Element *e, void *);
+  String print_gateway_stats();
 
   static String static_print_current_gateway(Element *e, void *);
   String print_current_gateway();
