@@ -1,3 +1,27 @@
+2004-12-30 Thursday 01:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/: grid/dsdvroutetable.hh (1.54), grid/gridproxy.hh
+	(1.6), wifi/autoratefallback.hh (1.11),
+	wifi/linkfailuredetection.hh (1.6), wifi/linktable.cc (1.14),
+	wifi/linktable.hh (1.9), wifi/madwifirate.hh (1.7),
+	wifi/probetxrate.hh (1.15), wifi/rxstats.hh (1.11), wifi/txstat.hh
+	(1.4), wifi/frag/defragment.hh (1.4), wifi/frag/fragmentack.hh
+	(1.4), wifi/frag/fragmentdupefilter.hh (1.3),
+	wifi/frag/fragmentresender.hh (1.3), wifi/sr/checksrheader.hh
+	(1.4), wifi/sr/ettstat.hh (1.12), wifi/sr/ipaddresscounter.hh
+	(1.3), wifi/sr/setgateway.hh (1.3), wifi/station/beaconscanner.hh
+	(1.6): fixes for newer GCCs: remove redundant "class"es
+
+2004-12-30 Thursday 01:13  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/dequeue.hh (1.3): fixes for newer GCCs: change
+	iterator/const_iterator in DEQueue
+
+2004-12-30 Thursday 01:12  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* doc/click-elem2man (1.29): allow argument to =back, which should
+	match =over N
+
 2004-12-30 Thursday 00:09  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* DISTFILES (1.88), NEWS (1.156): DISTFILES update and NEWS
