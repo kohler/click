@@ -60,9 +60,12 @@ install-man:
 # note: install-include installs include/click/config.h, not config.h
 install-include: stamp-h
 	$(mkinstalldirs) $(includedir)
-	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.* $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.h $(includedir)
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/*.hh $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/config.h $(includedir)
 	$(INSTALL_DATA_IF_CHANGED) $(top_builddir)/include/click/pathvars.h $(includedir)
+	$(mkinstalldirs) $(includedir)/standard
+	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/include/click/standard/*.hh $(includedir)/standard
 	$(mkinstalldirs) $(toolincludedir)
 	$(INSTALL_DATA_IF_CHANGED) $(srcdir)/tools/lib/*.hh $(toolincludedir)
 
@@ -72,7 +75,7 @@ elemlist elemlists:
 	done
 
 elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
-	t="@element_groups@ @TARGETS@"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "@provisions@" | $(PERL) ./click-mkelemmap -f - -r "@provisions@" -r "$$t") > elementmap
+	t="@element_groups@ @TARGETS@"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -f -r "@provisions@" | $(PERL) ./click-mkelemmap -f - -r "@provisions@" -r "$$t") > elementmap
 always:
 	@:
 
