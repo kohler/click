@@ -361,7 +361,14 @@ FromNetFlowSummaryDump::handle_multipacket(Packet *p)
     // set up _multipacket variables on new packets (_work_packet == 0)
     if (!_work_packet) {
 	assert(count > 1);
+	// set length of all but the last packet
 	_multipacket_length = (p->length() + EXTRA_LENGTH_ANNO(p)) / count;
+	// beware if there isn't enough EXTRA_LENGTH to cover all the packets
+	if (_multipacket_length < p->length()) {
+	    _multipacket_length = p->length();
+	    SET_EXTRA_LENGTH_ANNO(p, _multipacket_length * (count - 1));
+	}
+	// set timestamps
 	_multipacket_end_timestamp = p->timestamp_anno();
 	if (timerisset(&FIRST_TIMESTAMP_ANNO(p))) {
 	    _multipacket_timestamp_delta = (p->timestamp_anno() - FIRST_TIMESTAMP_ANNO(p)) / (count - 1);
