@@ -1,3 +1,33 @@
+2001-12-02 Sunday 21:36  Eddie Kohler <kohler@aciri.org>
+
+	* elements/linuxmodule/polldevice.cc (1.124),
+	elements/linuxmodule/polldevice.hh (1.57),
+	elements/linuxmodule/todevice.cc (1.121), include/click/packet.hh
+	(1.29), include/click/skbmgr.hh (1.5), linuxmodule/skbmgr.cc
+	(1.12): bug fix: never recycle an sk_buff without fixing it up
+	(that is, get rid of the "dirty" argument to
+	"skbmgr_recycle_skbs()"). This was causing instability and,
+	eventually, crashes (symptom: "skput:over" panics). Found and
+	patched by Robert Morris and Gordon Y. Lee at Mazu
+
+2001-12-02 Sunday 21:34  Eddie Kohler <kohler@aciri.org>
+
+	* tools/click-fastclassifier/: click-fastclassifier.cc (1.42),
+	click-fastclassifier.hh (1.2): parse any number of "interesting
+	handlers", not just "*.program"; occasions a code cleanup (Mazu)
+
+2001-12-02 Sunday 21:00  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/etheraddress.hh (1.6): nitlet
+
+2001-12-02 Sunday 20:48  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.165): refactor POSSIBLE_TARGETS
+
+2001-12-02 Sunday 20:48  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool (1.33): whitespace
+
 2001-12-02 Sunday 18:24  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
 
 	* elements/grid/gridroutetable.cc (1.22): log the right seqno

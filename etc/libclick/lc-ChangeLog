@@ -1,3 +1,20 @@
+2001-12-02 Sunday 21:36  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: packet.hh, skbmgr.hh, packet.hh, skbmgr.hh: bug
+	fix: never recycle an sk_buff without fixing it up (that is, get
+	rid of the "dirty" argument to "skbmgr_recycle_skbs()"). This was
+	causing instability and, eventually, crashes (symptom: "skput:over"
+	panics). Found and patched by Robert Morris and Gordon Y. Lee at
+	Mazu
+
+2001-12-02 Sunday 21:00  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: etheraddress.hh, etheraddress.hh: nitlet
+
+2001-12-02 Sunday 20:48  Eddie Kohler <kohler@aciri.org>
+
+	* click-buildtool: whitespace
+
 2001-12-02 Sunday 15:30  Eddie Kohler <kohler@aciri.org>
 
 	* click-buildtool, click-buildtool: fixes for Brecht Vermeulen:
