@@ -44,6 +44,7 @@ CLICKDIR/elements/standard	... for generic elements
 CLICKDIR/elements/tcpudp	... for TCP and UDP elements
 CLICKDIR/elements/test		... for regression test elements
 CLICKDIR/elements/userlevel	... for user-level-specific elements
+CLICKDIR/elements/wifi	        ... for 802.11-specific 'WiFi' elements
 CLICKDIR/etc			Linux patches and other files
 CLICKDIR/etc/samplepackage	sample source code for Click element package
 CLICKDIR/etc/samplellrpc	sample source code for reading Click LLRPCs

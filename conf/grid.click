@@ -1,5 +1,15 @@
-// grid.click
-// to be used with tools/build-grid-config.sh
+// grid.click 
+//
+// NOTE: (12 August 2003) This configuration is very out of date, and
+// is kept here only for historical purposes, and to show the details
+// of how some of the Grid elements can be put together.
+//
+// More recent information about running Grid can be found at
+// http://pdos.lcs.mit.edu/grid/software.html.
+//
+// This configuration was designed to me pre-processed by the m4 macro
+// processor, which would define the neccessary parameters for each of
+// the elements.
 
 elementclass TTLChecker {
   /* expects grid packets with MAC headers --- place on output path to
