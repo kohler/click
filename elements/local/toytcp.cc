@@ -39,7 +39,7 @@ ToyTCP::ToyTCP()
   _snd_nxt = _iss;
   _grow = 0;
   _wc = 0;
-  _reset = 0;
+  _done = 0;
 
   _ingood = 0;
   _inbad = 0;
@@ -84,7 +84,7 @@ ToyTCP::initialize(ErrorHandler *)
 void
 ToyTCP::run_scheduled()
 {
-  if(_reset == false){
+  if(_done == false){
     tcp_output(0);
     _timer.schedule_after_ms(1000);
     click_chatter("ToyTCP: %d good in, %d bad in, %d out",
@@ -116,10 +116,10 @@ ToyTCP::tcp_input(Packet *p)
   }
 
   if(th->th_flags & TH_RST){
-    if(_reset == false)
+    if(_done == false)
       click_chatter("ToyTCP: RST, in %d, out %d",
                     _ingood, _out);
-    _reset = true;
+    _done = true;
     _inbad++;
   } else {
     _ingood++;
@@ -129,7 +129,7 @@ ToyTCP::tcp_input(Packet *p)
 Packet *
 ToyTCP::simple_action(Packet *p)
 {
-  if(_reset){
+  if(_done){
     p->kill();
   } else {
     tcp_input(p);

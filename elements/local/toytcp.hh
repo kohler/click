@@ -50,7 +50,7 @@ private:
   int _grow;
   int _wc;
 
-  bool _reset;
+  bool _done;  // Have we received an RST?
   int _ingood;
   int _inbad;
   int _out;
