@@ -1,3 +1,27 @@
+2001-06-21 Thursday 16:21  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/polldevice.cc (1.110): fix when
+	!HAVE_POLLING
+
+2001-06-21 Thursday 16:07  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: polldevice.hh (1.55), todevice.hh (1.52):
+	doc updates
+
+2001-06-21 Thursday 15:57  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* linuxmodule/proc_config.cc (1.25): don't turn off interrupts
+	around a hotswap
+
+2001-06-21 Thursday 15:56  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/linuxmodule/: anydevice.cc (1.19), anydevice.hh (1.30),
+	fromdevice.cc (1.60), fromlinux.cc (1.30), polldevice.cc (1.109),
+	polldevice.hh (1.54), todevice.cc (1.109), todevice.hh (1.51),
+	tulipstats.cc (1.10): linuxmodule device elements: watch NETDEV_UP
+	and NETDEV_DOWN notifications so we are robust against drivers
+	being brought down while the configuration is active.
+
 2001-06-20 Wednesday 13:53  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* elements/linuxmodule/: anydevice.cc (1.18), anydevice.hh (1.29),
