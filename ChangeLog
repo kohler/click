@@ -1,3 +1,30 @@
+2001-03-16 Friday 14:34  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* userlevel/Makefile.in, tools/lib/Makefile.in: Changes to
+	configure system to support cross compiling, e.g. on iPaq with
+	arm-linux.  Makefile.in: get correct ``ar'' binary from the
+	configure script
+
+2001-03-16 Friday 14:33  Douglas De Couto <decouto@lcs.mit.edu>
+
+	* config.sub, configure.in, config.guess: Changes to configure
+	system to support cross compiling, e.g. on iPaq with arm-linux. 
+	configure.in: explicitly check host and build types.  figure out
+	the correct compiler names.  config.sub, config.guess: required for
+	macros added to configure.in
+
+2001-03-16 Friday 13:28  Benjie Chen <benjie@lcs.mit.edu>
+
+	* conf/ipsec-3des.click, conf/ipsec-des.click,
+	elements/ipsec/README, elements/ipsec/des.cc,
+	elements/ipsec/des.hh, elements/ipsec/desp.cc,
+	elements/ipsec/desp.hh, elements/ipsec/esp.cc,
+	elements/ipsec/esp.hh, elements/ipsec/sha1.cc,
+	elements/ipsec/sha1.hh, elements/ipsec/sha1_impl.hh: changed
+	interface to IPSec elements: removed parameters that should be
+	defaults; moved SHA1 authentication implementation to a separate
+	element; fix bug in DES decryption
+
 2001-03-16 Friday 09:04  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/ipsec/esp.cc: fix compile bug
