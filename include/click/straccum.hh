@@ -9,19 +9,7 @@
 # include <string.h>
 #endif
 
-class StringAccum {
-  
-  unsigned char *_s;
-  int _len;
-  int _cap;
-  
-  bool grow(int);
-  void erase()				{ _s = 0; _len = 0; _cap = 0; }
-
-  StringAccum(const StringAccum &);
-  StringAccum &operator=(const StringAccum &);
-  
- public:
+class StringAccum { public:
   
   StringAccum()				: _s(0), _len(0), _cap(0) { }
   explicit StringAccum(int);
@@ -47,32 +35,50 @@ class StringAccum {
   unsigned char *take_bytes();
   char *take();
   String take_string();
-  
-  StringAccum &operator<<(char c)		{ push(c); return *this; }
-  StringAccum &operator<<(unsigned char c)	{ push(c); return *this; }
-  StringAccum &operator<<(const char *);
-#ifdef HAVE_PERMSTRING
-  StringAccum &operator<<(PermString);
-#endif
-  StringAccum &operator<<(const String &);
-  StringAccum &operator<<(const StringAccum &);
-  StringAccum &operator<<(short);
-  StringAccum &operator<<(unsigned short);
-  StringAccum &operator<<(int);
-  StringAccum &operator<<(unsigned);
-  StringAccum &operator<<(long);
-  StringAccum &operator<<(unsigned long);
-#ifndef __KERNEL__
-  StringAccum &operator<<(double);
-#endif
-  StringAccum &operator<<(unsigned long long);
+
+  // see also operator<< declarations below
   
   // STRING OPERATIONS
   
   char operator[](int i) const	{ assert(i>=0 && i<_len); return (char)_s[i]; }
   char &operator[](int i)	{ assert(i>=0 && i<_len); return (char &)_s[i]; }
+
+ private:
+  
+  unsigned char *_s;
+  int _len;
+  int _cap;
+  
+  bool grow(int);
+  void erase()				{ _s = 0; _len = 0; _cap = 0; }
+
+  StringAccum(const StringAccum &);
+  StringAccum &operator=(const StringAccum &);
   
 };
+
+StringAccum &operator<<(StringAccum &, char);
+StringAccum &operator<<(StringAccum &, unsigned char);
+StringAccum &operator<<(StringAccum &, const char *);
+StringAccum &operator<<(StringAccum &, const String &);
+StringAccum &operator<<(StringAccum &, const StringAccum &);
+#ifdef HAVE_PERMSTRING
+StringAccum &operator<<(StringAccum &, PermString);
+#endif
+
+StringAccum &operator<<(StringAccum &, short);
+StringAccum &operator<<(StringAccum &, unsigned short);
+StringAccum &operator<<(StringAccum &, int);
+StringAccum &operator<<(StringAccum &, unsigned);
+StringAccum &operator<<(StringAccum &, long);
+StringAccum &operator<<(StringAccum &, unsigned long);
+StringAccum &operator<<(StringAccum &, unsigned long long);
+#ifndef __KERNEL__
+StringAccum &operator<<(StringAccum &, double);
+#endif
+
+struct timeval;
+StringAccum &operator<<(StringAccum &, const struct timeval &);
 
 
 inline
@@ -133,50 +139,64 @@ StringAccum::take()
 }
 
 inline StringAccum &
-StringAccum::operator<<(short i)
+operator<<(StringAccum &sa, char c)
 {
-  return *this << static_cast<long>(i);
+  sa.push(c);
+  return sa;
 }
 
 inline StringAccum &
-StringAccum::operator<<(unsigned short u)
+operator<<(StringAccum &sa, unsigned char c)
 {
-  return *this << static_cast<unsigned long>(u);
+  sa.push(c);
+  return sa;
 }
 
 inline StringAccum &
-StringAccum::operator<<(int i)
+operator<<(StringAccum &sa, short i)
 {
-  return *this << static_cast<long>(i);
+  return sa << static_cast<long>(i);
 }
 
 inline StringAccum &
-StringAccum::operator<<(unsigned u)
+operator<<(StringAccum &sa, unsigned short u)
 {
-  return *this << static_cast<unsigned long>(u);
+  return sa << static_cast<unsigned long>(u);
+}
+
+inline StringAccum &
+operator<<(StringAccum &sa, int i)
+{
+  return sa << static_cast<long>(i);
+}
+
+inline StringAccum &
+operator<<(StringAccum &sa, unsigned u)
+{
+  return sa << static_cast<unsigned long>(u);
 }
 
 #ifdef HAVE_PERMSTRING
 inline StringAccum &
-StringAccum::operator<<(PermString s)
+operator<<(StringAccum &sa, PermString s)
 {
-  push(s.cc(), s.length());
-  return *this;
+  sa.push(s.cc(), s.length());
+  return sa;
 }
 #endif
 
 inline StringAccum &
-StringAccum::operator<<(const String &s)
+operator<<(StringAccum &sa, const String &s)
 {
-  push(s.data(), s.length());
-  return *this;
+  sa.push(s.data(), s.length());
+  return sa;
 }
 
 inline StringAccum &
-StringAccum::operator<<(const StringAccum &sa)
+operator<<(StringAccum &sa, const StringAccum &sb)
 {
-  push(sa.data(), sa.length());
-  return *this;
+  sa.push(sb.data(), sb.length());
+  return sa;
 }
 
 #endif

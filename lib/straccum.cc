@@ -60,50 +60,61 @@ StringAccum::take_string()
 }
 
 StringAccum &
-StringAccum::operator<<(const char *s)
+operator<<(StringAccum &sa, const char *s)
 {
-  push(s, strlen(s));
-  return *this;
+  sa.push(s, strlen(s));
+  return sa;
 }
 
 StringAccum &
-StringAccum::operator<<(long i)
+operator<<(StringAccum &sa, long i)
 {
-  if (char *x = reserve(256)) {
+  if (char *x = sa.reserve(256)) {
     int len;
     sprintf(x, "%ld%n", i, &len);
-    forward(len);
+    sa.forward(len);
   }
-  return *this;
+  return sa;
 }
 
 StringAccum &
-StringAccum::operator<<(unsigned long u)
+operator<<(StringAccum &sa, unsigned long u)
 {
-  if (char *x = reserve(256)) {
+  if (char *x = sa.reserve(256)) {
     int len;
     sprintf(x, "%lu%n", u, &len);
-    forward(len);
+    sa.forward(len);
   }
-  return *this;
+  return sa;
+}
+
+StringAccum &
+operator<<(StringAccum &sa, unsigned long long q)
+{
+  String qstr = cp_unparse_ulonglong(q, 10, false);
+  return sa << qstr;
 }
 
 #ifndef __KERNEL__
 StringAccum &
-StringAccum::operator<<(double d)
+operator<<(StringAccum &sa, double d)
 {
-  if (char *x = reserve(256)) {
+  if (char *x = sa.reserve(256)) {
     int len;
     sprintf(x, "%g%n", d, &len);
-    forward(len);
+    sa.forward(len);
   }
-  return *this;
+  return sa;
 }
 #endif
 
 StringAccum &
-StringAccum::operator<<(unsigned long long q)
+operator<<(StringAccum &sa, const struct timeval &tv)
 {
-  String qstr = cp_unparse_ulonglong(q, 10, false);
-  return *this << qstr;
+  if (char *x = sa.reserve(30)) {
+    int len;
+    sprintf(x, "%ld.%06ld%n", (long)tv.tv_sec, (long)tv.tv_usec, &len);
+    sa.forward(len);
+  }
+  return sa;
 }
