@@ -2,6 +2,7 @@
 #define SNOOPTCP_HH
 #include "element.hh"
 #include "ipaddress.hh"
+#include "ipflowid.hh"
 #include "hashmap.hh"
 #include "click_ip.h"
 #include "click_tcp.h"
@@ -44,16 +45,6 @@ class SnoopTCP : public Element { public:
 
   Packet *handle_packet(int, Packet *);
   
-  struct Quad {
-    unsigned int src;
-    unsigned int dst;
-    unsigned short sport;
-    unsigned short dport;
-    Quad() { src = dst = 0; sport = dport = 0; }
-    operator bool() const { return(src != 0 || dst != 0); }
-    int hashcode();
-  };
-  
   struct SCacheEntry {
     Packet *packet;
     unsigned seq;
@@ -67,7 +58,7 @@ class SnoopTCP : public Element { public:
   
   struct PCB;
   
-  HashMap<struct Quad, PCB *> _map;
+  HashMap<IPFlowID, PCB *> _map;
   
   PCB *find(unsigned s_ip, unsigned short s_port,
 	    unsigned mh_ip, unsigned short mh_port, bool);
@@ -105,21 +96,21 @@ struct SnoopTCP::PCB {
   ~PCB();
   
   void clear(bool is_s);
-  void initialize(bool is_s, tcp_header *, int datalen);
+  void initialize(bool is_s, click_tcp *, int datalen);
   
   int s_cache_size() const	{ return (_head >= _tail ? _head - _tail : S_CACHE_SIZE - (_tail - _head)); }
   
   void clean(unsigned, struct timeval *);
   
-  Packet *s_data(Packet *, tcp_header *, int datalen);
+  Packet *s_data(Packet *, click_tcp *, int datalen);
 
-  void s_ack(Packet *, tcp_header *, int datalen);
+  void s_ack(Packet *, click_tcp *, int datalen);
   
-  void mh_data(Packet *, tcp_header *, int datalen);
+  void mh_data(Packet *, click_tcp *, int datalen);
   
   void mh_new_ack(unsigned ack);
-  Packet *mh_dup_ack(Packet *, tcp_header *, unsigned ack);
-  Packet *mh_ack(Packet *, tcp_header *, int datalen);
+  Packet *mh_dup_ack(Packet *, click_tcp *, unsigned ack);
+  Packet *mh_ack(Packet *, click_tcp *, int datalen);
   
 };
 

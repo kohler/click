@@ -99,7 +99,7 @@ RFC2507d::simple_action(Packet *p)
     struct tcpip *ctx = &_ccbs[cid]._context;
     memcpy(&(ctx->_ip), p->data() + 2, sizeof(click_ip));
     memcpy(&(ctx->_tcp), p->data() + 2 + sizeof(click_ip),
-           sizeof(struct tcp_header));
+           sizeof(struct click_tcp));
     q = Packet::make(p->length() - 2);
     memcpy(q->data(), p->data() + 2, p->length() - 2);
   } else if(p->data()[0] == PT_COMPRESSED_TCP){
@@ -143,7 +143,7 @@ RFC2507d::simple_action(Packet *p)
     }
 
     int len = p->length() - (in - p->data());
-    len += sizeof(click_ip) + sizeof(struct tcp_header);
+    len += sizeof(click_ip) + sizeof(struct click_tcp);
     ctx->_ip.ip_len = htons(len);
 
     ctx->_ip.ip_sum = 0;
@@ -153,8 +153,8 @@ RFC2507d::simple_action(Packet *p)
     memcpy(q->data(), &(ctx->_ip), sizeof(click_ip));
     memcpy(q->data() + sizeof(click_ip),
            &(ctx->_tcp),
-           sizeof(struct tcp_header));
-    memcpy(q->data() + sizeof(click_ip) + sizeof(struct tcp_header),
+           sizeof(struct click_tcp));
+    memcpy(q->data() + sizeof(click_ip) + sizeof(struct click_tcp),
            in,
            p->length() - (in - p->data()));
   } else {
@@ -164,7 +164,7 @@ RFC2507d::simple_action(Packet *p)
  out:
   if(q){
     click_ip iph;
-    struct tcp_header tcph;
+    struct click_tcp tcph;
     memcpy(&iph, q->data(), sizeof(iph));
     memcpy(&tcph, q->data() + sizeof(click_ip), sizeof(tcph));
     click_chatter("seq %d len %d",

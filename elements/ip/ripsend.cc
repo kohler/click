@@ -51,7 +51,7 @@ void
 RIPSend::run_scheduled()
 {
   click_ip *ipp;
-  struct udphdr *udpp;
+  click_udp *udpp;
   Packet *p = Packet::make(sizeof(*ipp) + sizeof(*udpp) + 24);
 
   memset(p->data(), '\0', p->length());
@@ -64,7 +64,7 @@ RIPSend::run_scheduled()
   ipp->ip_dst = _dst.in_addr();
 
   /* RIP payload */
-  udpp = (struct udphdr *) (ipp + 1);
+  udpp = (click_udp *) (ipp + 1);
   unsigned int *r = (unsigned int *) (udpp + 1);
   r[0] = htonl((2 << 24) | (2 << 16) | 0);
   r[1] = htonl((2 << 16) | 0);

@@ -70,16 +70,19 @@ MappingCreator::push(int port, Packet *p)
 {
   RWInfo &rwi = _rwi[port];
   Rewriter *rw = rwi._rw;
-  Rewriter::Connection c1(p), c2;
+  IPFlowID2 c1(p);
+  IPFlowID c2;
 
   if (ninputs() > 1 && (c2 = _eqmap[c1])) {
-    Rewriter::Connection c3 = _rwmap[c2];
+    IPFlowID c3 = _rwmap[c2];
     rw->establish_mapping(c1, c3, 1);
     _rwmap.insert(c1, c3);
   } else {
-    rw->establish_mapping(p, rwi._cpat++);
+    int cpat = rwi._cpat;
+    rw->establish_mapping(p, cpat, cpat);
+    rwi._cpat++;
     rwi._cpat %= rwi._npat;
-    _rwmap.insert(c1, rw->get_mapping(c1));
+    _rwmap.insert(c1, rw->get_mapping(c1).flow_id());
   }
   output(port).push(p);
 }
@@ -123,8 +126,8 @@ MappingCreator::equiv_handler(const String &s, Element *e, void *thunk,
     {
       if (del) {
       } else {
-	Rewriter::Connection c1(s1a, (short)s1p, d1a, (short)d1p);
-	Rewriter::Connection c2(s2a, (short)s2p, d2a, (short)d2p);
+	IPFlowID c1(s1a, (short)s1p, d1a, (short)d1p);
+	IPFlowID c2(s2a, (short)s2p, d2a, (short)d2p);
 	mc->_eqmap.insert(c1, c2);
       }
     } else

@@ -36,7 +36,7 @@ private:
   /* used to store context as well as hash key */
   struct tcpip {
     click_ip _ip;
-    struct tcp_header _tcp;
+    click_tcp _tcp;
     operator bool() const { return(_ip.ip_src.s_addr != 0); }
     tcpip() { _ip.ip_src.s_addr = 0; }
     int hashcode();

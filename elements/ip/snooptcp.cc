@@ -117,7 +117,7 @@ SnoopTCP::PCB::clear(bool is_s)
 }
 
 void
-SnoopTCP::PCB::initialize(bool is_s, tcp_header *tcph, int datalen)
+SnoopTCP::PCB::initialize(bool is_s, click_tcp *tcph, int datalen)
 {
   unsigned seq = ntohl(tcph->th_seq);
   
@@ -168,14 +168,14 @@ SnoopTCP::PCB::clean(unsigned ack, struct timeval *last_cleaned_time)
 
 
 void
-SnoopTCP::PCB::s_ack(Packet *p, tcp_header *tcph, int datalen)
+SnoopTCP::PCB::s_ack(Packet *p, click_tcp *tcph, int datalen)
 {
   // XXX rest
 }
 
 
 Packet *
-SnoopTCP::PCB::s_data(Packet *p, tcp_header *tcph, int datalen)
+SnoopTCP::PCB::s_data(Packet *p, click_tcp *tcph, int datalen)
 {
   // initialize if no connection (half-duplex, or Snoop came up in the middle
   // of a connection). always mark the connection alive
@@ -276,7 +276,7 @@ SnoopTCP::PCB::mh_new_ack(unsigned ack)
 #define SNOOP_RTX_THRESH 1
 
 Packet *
-SnoopTCP::PCB::mh_dup_ack(Packet *p, tcp_header *tcph, unsigned ack)
+SnoopTCP::PCB::mh_dup_ack(Packet *p, click_tcp *tcph, unsigned ack)
 {
   // if snoop cache empty, nothing to do
   if (_head == _tail)
@@ -331,7 +331,7 @@ SnoopTCP::PCB::mh_dup_ack(Packet *p, tcp_header *tcph, unsigned ack)
 }
 
 Packet *
-SnoopTCP::PCB::mh_ack(Packet *p, tcp_header *tcph, int datalen)
+SnoopTCP::PCB::mh_ack(Packet *p, click_tcp *tcph, int datalen)
 {
   // if server connection is dead, do nothing
   if (!_s_exists)
@@ -357,7 +357,7 @@ SnoopTCP::PCB::mh_ack(Packet *p, tcp_header *tcph, int datalen)
 
 
 void
-SnoopTCP::PCB::mh_data(Packet *p, tcp_header *tcph, int datalen)
+SnoopTCP::PCB::mh_data(Packet *p, click_tcp *tcph, int datalen)
 {
   // initialize connection (starting up snoop in the middle of a connection)
   // or mark it alive
@@ -376,11 +376,7 @@ SnoopTCP::PCB *
 SnoopTCP::find(unsigned s_ip, unsigned short s_port,
 	       unsigned int mh_ip, unsigned short mh_port, bool create)
 {
-  Quad q;
-  q.src = s_ip;
-  q.dst = mh_ip;
-  q.sport = s_port;
-  q.dport = mh_port;
+  IPFlowID q(s_ip, s_port, mh_ip, mh_port);
   
   if (PCB **pcbp = _map.findp(q))
     return *pcbp;
@@ -402,7 +398,7 @@ SnoopTCP::handle_packet(int port, Packet *p)
     return p;
   }
   
-  struct tcp_header *tcph = (struct tcp_header *)(((char *)iph) + (iph->ip_hl << 2));
+  click_tcp *tcph = (click_tcp *)(((char *)iph) + (iph->ip_hl << 2));
   int header_len = (iph->ip_hl << 2) + (tcph->th_off << 2);
   int datalen = p->length() - header_len;
   
@@ -464,20 +460,6 @@ SnoopTCP::pull(int port)
     p = handle_packet(port, p);
   return p;
 }
-
-
-int
-SnoopTCP::Quad::hashcode()
-{
-  unsigned int xx;
-  xx = this->src +
-    (this->dst << 1) +
-    (this->sport << 3) +
-    (this->dport << 4);
-  return(xx & 0x7fffffff);
-}
-
-
 
 
 #if 0
@@ -668,4 +650,4 @@ SnoopTCP::PCB::add_ack(Packet *p, unsigned th_ack, int data_len,
 EXPORT_ELEMENT(SnoopTCP)
 
 #include "hashmap.cc"
-template class HashMap<SnoopTCP::Quad, SnoopTCP::PCB *>;
+template class HashMap<IPFlowID, SnoopTCP::PCB *>;

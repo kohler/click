@@ -112,7 +112,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
   int flen = 0;
   char fbuf[512]; /* encode into this buf[flen] */
   click_ip *ipp = (click_ip *) p->data();
-  struct tcp_header *tcpp = (struct tcp_header *) (ipp + 1);
+  struct click_tcp *tcpp = (struct click_tcp *) (ipp + 1);
   int x;
   struct tcpip *ctx = &_ccbs[cid]._context;
   Packet *q = 0;
@@ -173,7 +173,7 @@ RFC2507c::make_compressed(int cid, Packet *p)
     flags |= (1 << 4);
     
   q = Packet::make(p->length() -
-		   sizeof(click_ip) - sizeof(struct tcp_header) +
+		   sizeof(click_ip) - sizeof(struct click_tcp) +
 		   5 + flen);
   q->data()[0] = PT_COMPRESSED_TCP;
   q->data()[1] = cid;
@@ -181,8 +181,8 @@ RFC2507c::make_compressed(int cid, Packet *p)
   memcpy(q->data() + 3, &tcpp->th_sum, 2);
   memcpy(q->data() + 5, fbuf, flen);
   memcpy(q->data() + 5 + flen,
-         p->data() + sizeof(click_ip) + sizeof(struct tcp_header),
-         p->length() - sizeof(click_ip) - sizeof(struct tcp_header));
+         p->data() + sizeof(click_ip) + sizeof(struct click_tcp),
+         p->length() - sizeof(click_ip) - sizeof(struct click_tcp));
   return(q);
 
  full:
@@ -220,7 +220,7 @@ RFC2507c::simple_action(Packet *p)
 {
   click_ip *ipp = p->ip_header();
   assert(ipp && p->ip_header_offset() == 0);
-  struct tcp_header *tcpp = (struct tcp_header *) (ipp + 1);
+  struct click_tcp *tcpp = (struct click_tcp *) (ipp + 1);
   int cid;
   Packet *q = 0;
   

@@ -2,6 +2,13 @@ Click NEWS
 
 Version
 
+* Added Rewriter, MappingCreator, and IPMirror elements for rewriting
+  TCP/IP and UDP/IP streams.
+
+* Added MarkIPHeader, CheckTCPHeader, and CheckUDPHeader elements.
+
+* Fixed FromDump.
+
 * Added optional queue names to RED.
 
 * Removed `is_a()' and `is_a_cast()' methods of Element. The new way,

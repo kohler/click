@@ -39,8 +39,8 @@ class MappingCreator : public UnlimitedElement {
   };
 
   Vector<RWInfo> _rwi;
-  HashMap <Rewriter::Connection, Rewriter::Connection> _eqmap;
-  HashMap <Rewriter::Connection, Rewriter::Connection> _rwmap;
+  HashMap <IPFlowID, IPFlowID> _eqmap;
+  HashMap <IPFlowID, IPFlowID> _rwmap;
   
  public:
 
