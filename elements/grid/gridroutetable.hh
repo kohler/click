@@ -3,7 +3,7 @@
 
 /*
  * =c
- * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW [, I<KEYWORDS>])
+ * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW, AiroInfo, [, I<KEYWORDS>])
  *
  * =s Grid
  * Run DSDV-like local routing protocol
@@ -16,7 +16,9 @@
  * removed TIMEOUT milliseconds after being installed.  PERIOD is the
  * milliseconds between route broadcasts, randomly offset by up to
  * JITTER milliseconds.  ETH and IP describe this node's Grid
- * addresses, and GW is the GridGatewayInfo element.
+ * addresses, and GW is the GridGatewayInfo element.  AiroInfo is an
+ * AiroInfo element for the interface to which this element is
+ * connected.
  *
  * Routing message entries are marked with both a sequence number
  * (originated by the destination of the entry) and a real-time ttl.
@@ -60,8 +62,9 @@
  *
  * String.  The type of metric that should be used to compare two
  * routes.  Allowable values are: ``hopcount'',
- * ``cumulative_delivery_rate'', ``min_delivery_rate'', and
- * ``min_sig_strength''.  The default is to use hopcount.
+ * ``cumulative_delivery_rate'', ``min_delivery_rate'',
+ * ``min_sig_strength'', and ``min_sig_quality''.  The default is to
+ * use hopcount.
  *
  * =a
  * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes */
@@ -70,6 +73,7 @@
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <elements/grid/gridgatewayinfo.hh>
+#include <elements/grid/airoinfo.hh>
 #include "grid.hh"
 #include <click/timer.hh>
 
@@ -157,11 +161,12 @@ public:
       _init(true), dest_ip(nbr->ip), next_hop_ip(ip), next_hop_eth(eth),
       num_hops(nbr->num_hops + 1), loc(nbr->loc), loc_good(nbr->loc_good),  
       is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
-      metric(nbr->metric), metric_valid(false)
+      metric_valid(false)
     {
       loc_err = ntohs(nbr->loc_err);
       seq_no = ntohl(nbr->seq_no);
       ttl = ntohl(nbr->ttl);
+      metric = ntohl(nbr->metric);
     }
     
     /* copy data from this into nb, converting to net byte order */
@@ -190,6 +195,7 @@ private:
   int _jitter;
 
   GridGatewayInfo *_gw_info;
+  AiroInfo *_airo_info;
 
   /* interval at which to check RT entries for expiry */
   static const unsigned int EXPIRE_TIMER_PERIOD = 100; // msecs
@@ -232,13 +238,14 @@ private:
   static int msec_to_jiff(int m)
   { return (CLICK_HZ * m) / 1000; }
 
-  /* update route metric with the last hop from the advertising node */
-  void update_metric(RTEntry &);
+  /* update route metric with the last hop from the advertising node
+     -- if INIT, then initialize the metric with the first link.  */
+  void update_metric(RTEntry &, bool init = false);
 
-  /* initialize metric for one-hop route */
-  void initialize_metric(RTEntry &);
-
-  /* true iff first route's metric is preferable to second route's metric */
+  /* true iff first route's metric is preferable to second route's
+     metric -- note that this is a strict comparison, if the metrics
+     are equivalent, then the function returns false.  this is
+     necessary to get stability, e.g. when using the hopcount metric */
   bool metric_preferable(const RTEntry &, const RTEntry &);
 
   static String print_rtes(Element *e, void *);
@@ -257,7 +264,8 @@ private:
     MetricHopCount = 0,            // unsigned int hop count
     MetricCumulativeDeliveryRate,  // unsigned int percentage (0-100)
     MetricMinDeliveryRate,         // unsigned int percentage (0-100)
-    MetricMinSigStrength           // unsigned int negative dBm.  e.g. -40 dBm is 40
+    MetricMinSigStrength,          // unsigned int negative dBm.  e.g. -40 dBm is 40
+    MetricMinSigQuality            // int ``quality''
   };
 
   int _metric_type;

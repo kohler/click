@@ -91,6 +91,7 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpEthernetAddress, "source Ethernet address", &_eth,
 			cpIPAddress, "source IP address", &_ip,
 			cpElement, "GridGatewayInfo element", &_gw_info,
+			cpElement, "AiroInfo element", &_airo_info,
 			cpKeywords,
 			"MAX_HOPS", cpInteger, "max hops", &_max_hops,
 			"LOGCHANNEL", cpString, "log channel name", &chan,
@@ -160,31 +161,11 @@ GridRouteTable::current_gateway()
 }
 
 
-void
-GridRouteTable::initialize_metric(RTEntry &r)
-{
-  switch (_metric_type) {
-  case MetricHopCount:
-    r.metric = r.num_hops;
-    r.metric_valid = true;
-    break;
-  case MetricCumulativeDeliveryRate:
-    assert(0);
-    break;
-  case MetricMinDeliveryRate:
-    assert(0);
-    break;
-  case MetricMinSigStrength:
-    assert(0);
-    break;
-  default:
-    assert(0);
-  }
-}
-
 void 
-GridRouteTable::update_metric(RTEntry &r)
+GridRouteTable::update_metric(RTEntry &r, bool init)
 {
+  bool got_entry;
+  int dbm, qual;
   switch (_metric_type) {
   case MetricHopCount:
     r.metric = r.num_hops;
@@ -192,12 +173,48 @@ GridRouteTable::update_metric(RTEntry &r)
     break;
   case MetricCumulativeDeliveryRate:
     assert(0);
+    if (init)
+      r.metric = 100;
+    r.metric_valid = true;
     break;
   case MetricMinDeliveryRate:
     assert(0);
+    if (init)
+      r.metric = 100;
+    r.metric_valid = true;
     break;
   case MetricMinSigStrength:
-    assert(0);
+    got_entry = _airo_info->get_signal_info(r.next_hop_eth, dbm, qual);
+    if (got_entry) {
+      if (dbm > 0)
+	click_chatter("GridrouteTable: error!  got funky positive dBm value (%d) for signal strength from %s\n",
+		      dbm, r.next_hop_eth.s().cc());
+      else
+	dbm = -dbm; // deal in -dBm
+      if (dbm > (int) r.metric || init)
+	r.metric = dbm; // choose weakest signal, which is largest -dBm
+      r.metric_valid = true;
+    }
+    else {
+      click_chatter("GridRouteTable: error!  unable to get signal strength info to update metric for %s (next hop: %s / %s)\n",
+		    r.dest_ip.s().cc(), r.next_hop_ip.s().cc(), r.next_hop_eth.s().cc());
+      r.metric_valid = false;
+    }
+    break;
+  case MetricMinSigQuality:
+    got_entry = _airo_info->get_signal_info(r.next_hop_eth, dbm, qual);
+    if (got_entry) {
+      int m = (int) r.metric;
+      if (qual < m || init)
+	m = qual;
+      r.metric = (unsigned int) m;
+      r.metric_valid = true;
+    }
+    else {
+      click_chatter("GridRouteTable: error!  unable to get signal quality info to update metric for %s (next hop: %s / %s)\n",
+		    r.dest_ip.s().cc(), r.next_hop_ip.s().cc(), r.next_hop_eth.s().cc());
+      r.metric_valid = false;
+    }
     break;
   default:
     assert(0);
@@ -208,19 +225,20 @@ GridRouteTable::update_metric(RTEntry &r)
 bool
 GridRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
 {
+  int m1, m2;
   switch (_metric_type) {
-  case MetricHopCount:
+  case MetricHopCount: 
     return r1.num_hops < r2.num_hops;
-    break;
   case MetricCumulativeDeliveryRate:
-    assert(0);
-    break;
+    return r1.metric > r2.metric;
   case MetricMinDeliveryRate:
-    assert(0);
-    break;
-  case MetricMinSigStrength:
-    assert(0);
-    break;
+    return r1.metric > r2.metric;
+  case MetricMinSigStrength: 
+    return r1.metric < r2.metric; // smaller -dBm is stronger signal
+  case MetricMinSigQuality: 
+    m1 = (int) r1.metric;
+    m2 = (int) r2.metric;
+    return m1 > m2; // prefer larger quality number
   default:
     assert(0);
   }
@@ -286,7 +304,7 @@ GridRouteTable::simple_action(Packet *packet)
 
   if (ntohl(hlo->ttl) > 0) {
     RTEntry r(ipaddr, ethaddr, gh, hlo, jiff);
-    initialize_metric(r);
+    update_metric(r, true);
     _rtes.insert(ipaddr, r);
   }
   
@@ -422,6 +440,7 @@ GridRouteTable::print_rtes_v(Element *e, void *)
       + " loc=" + f.loc.s()
       + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
       + " seq=" + String(f.seq_no)
+      + " metric=" + String(f.metric)
       + "\n";
   }
   
@@ -493,6 +512,7 @@ GridRouteTable::print_metric_type(Element *e, void *)
   case MetricCumulativeDeliveryRate: return "cumulative_delivery_rate\n"; break;
   case MetricMinDeliveryRate: return "min_delivery_rate\n"; break;
   case MetricMinSigStrength: return "min_sig_strength\n"; break;
+  case MetricMinSigQuality: return "min_sig_quality\n"; break;
   default: 
     assert(0);
     return "";
@@ -511,6 +531,8 @@ GridRouteTable::check_metric_type(const String &s)
     return MetricMinDeliveryRate;
   else if (s2 == "min_sig_strength")
     return MetricMinSigStrength;
+  else if (s2 == "min_sig_quality")
+    return MetricMinSigQuality;
   else
     return -1;
 }
@@ -778,13 +800,14 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
     const RTEntry &f = rte_info[i];
     snprintf(str, sizeof(str), 
-	     "%s %s %s %d %c %u\n", 
+	     "%s %s %s %d %c %u %u\n", 
 	     f.dest_ip.s().cc(),
 	     f.loc.s().cc(),
 	     f.next_hop_ip.s().cc(),
 	     f.num_hops,
 	     (f.is_gateway ? 'y' : 'n'),
-	     f.seq_no);
+	     f.seq_no, 
+	     f.metric);
     _extended_logging_errh->message(str);
 
     rte_info[i].fill_in(curr);
