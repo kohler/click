@@ -2,13 +2,11 @@
 
 // This Grid gateway's wired address information
 #define GW_IP 18.26.4.15
-#define GW_IP2 18.26.4.15/32
 #define GW_NETMASK 255.255.255.0
 
 #define GW_IP_HEX 16/121a040f // 18.26.4.15
 #define GW_IP_HEX_ETHER 30/121a040f // 18.26.4.15
 
-#define GW_GRID_IP_HEX 16/121a0701 // 18.26.7.1
 #define GW_GRID_IP_HEX_ETHER 30/121a0701 // 18.26.7.1
 
 #define GW_GRID_NET_HEX_ETHER 30/121a07 // 18.26.7.*

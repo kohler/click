@@ -19,7 +19,7 @@ tun2 :: Tun(TUN_DEVICE, GRID_IP, GRID_NETMASK) // gateway's grid address
 to_tun2 :: Queue -> tun2
 
 // get IP for 18.26.4.25, 18.26.7.1, 18.26.7.*, *
-ip_cl :: Classifier(GW_IP_HEX, GW_GRID_IP_HEX, GRID_NET_HEX, -) 
+ip_cl :: Classifier(GW_IP_HEX, GRID_IP_HEX, GRID_NET_HEX, -) 
 
 nb :: Neighbor(NBR_TIMEOUT, MAC_ADDR, GRID_IP)
 nb [0] -> to_eth

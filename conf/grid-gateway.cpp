@@ -21,7 +21,7 @@ to_tun2 :: Queue -> tun2
 
 // get IP for this machine's wired address, its grid address, any grid node, *
 ip_cl :: Classifier(GW_IP_HEX, // ip for us as wired node
-	            GW_GRID_IP_HEX, // ip for us as grid node 
+	            GRID_IP_HEX, // ip for us as grid node 
 		    GRID_NET_HEX, // ip for our grid net
 		    -) // ip for the wired net or outside world
 
