@@ -24,10 +24,10 @@ $CONTROL_PORT = "7777";
 $CONTROL_RO = "false";
 
 $HEADROOM = "64"; # sizeof(grid_hdr) + sizeof(grid_nbr_encap)
-$NUM_HOPS = "1";
+$NUM_HOPS = "100"; # always run DSDV -- assumer less than 100 hops in net ;>
 $POS_LAT = "0";
 $POS_LON = "0";
-$RANGE = "250";
+$RANGE = "-1"; # don't filter
 $GRID_GW = "18.26.7.1";
 $GRID_NETMASK = "255.255.255.0";
 $GRID_NET_HEX = "121a07"; # 18.26.7.*
