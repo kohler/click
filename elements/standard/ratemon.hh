@@ -6,7 +6,7 @@
  * RateMonitor(DS, OFF, PB, THRESH/PERIOD, T1, T2, ...)
  * =d
  *
- * See Monitor.
+ * See FlexMonitor.
  *
  * DS: "SRC" or "DST". Look at src or dst IP address
  * OFF: offset in packet where IP header starts
@@ -20,16 +20,17 @@
  * There are 100 jiffies in one second.
  *
  * =h srcdst (read)
- *
+ * Returns value of DS.
  *
  * =h what (read)
- *
+ * Returns value of PB
  *
  * =h thresh (read-write)
+ * When read, returns THRESH/PERIOD. When written, expects THRESH/PERIOD.
  *
  * =e
  *
- * =a Monitor
+ * =a FlexMonitor
  */
 #include "glue.hh"
 #include "click_ip.h"
