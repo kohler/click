@@ -1,3 +1,12 @@
+2004-03-03 Wednesday 02:34  Eddie Kohler <kohler@icir.org>
+
+	* lib/master.cc (1.4): attempt to fix Doug's reported problems with
+	memory corruption.  Boneheaded error #1: forgot to fix up the
+	_all_prev/_all_next list when a router is removed.  Boneheaded
+	error #2: things fell off the task list inappropriately during
+	hotswaps.  Boneheaded error #3: odd stuff with hotswaps at
+	userlevel; hotswap_thunk_router was getting deleted.
+
 2004-03-01 Monday 12:11  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/packetlogger2.hh (1.2): doc typo
