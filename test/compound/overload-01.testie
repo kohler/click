@@ -1,0 +1,45 @@
+%info
+Test simple overloadings
+
+%script
+click -e '
+elementclass Foo {
+   $a, $b | input -> Print(1) -> output
+|| $a, __REST__ $b | input -> Print(2) -> output
+|| $a, TWO $b, __REST__ $c | input -> Print(3) -> output
+}
+InfiniteSource(DATA "", LIMIT 1, STOP true)
+  -> Foo(A)
+  -> f::Foo(A, TWO B)
+elementclass Foo {
+   $a, $b | input -> Print(4) -> output
+|| ...
+}
+f -> Foo(A, B) -> Foo(A, B, C) -> Discard
+'
+
+click-flatten -e '
+elementclass Foo {
+   $a, $b | input -> Print(1) -> output
+|| $a, __REST__ $b | input -> Print(2) -> output
+|| $a, TWO $b, __REST__ $c | input -> Print(3) -> output
+}
+InfiniteSource(DATA "", LIMIT 1, STOP true)
+  -> Foo(A)
+  -> f::Foo(A, TWO B)
+elementclass Foo {
+   $a, $b | input -> Print(4) -> output
+|| ...
+}
+f -> Foo(A, B) -> Foo(A, B, C) -> Discard
+' | click
+
+%expect stderr
+2:    0 |
+1:    0 |
+4:    0 |
+2:    0 |
+2:    0 |
+1:    0 |
+4:    0 |
+2:    0 |
