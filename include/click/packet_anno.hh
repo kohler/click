@@ -28,7 +28,7 @@
 #define REV_RATE_ANNO(p)		((p)->user_anno_i(2))
 #define SET_REV_RATE_ANNO(p, v)		((p)->set_user_anno_i(2, (v)))
 
-#define PACKET_COUNT_ANNO(p)		((p)->user_anno_u(2))
-#define SET_PACKET_COUNT_ANNO(p, v)	((p)->set_user_anno_u(2, (v)))
+#define EXTRA_PACKETS_ANNO(p)		((p)->user_anno_u(2))
+#define SET_EXTRA_PACKETS_ANNO(p, v)	((p)->set_user_anno_u(2, (v)))
 
 #endif

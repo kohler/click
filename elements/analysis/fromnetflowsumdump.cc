@@ -273,7 +273,7 @@ FromNetFlowSummaryDump::read_packet(ErrorHandler *errh)
 	ok += cp_ip_address(words[0], (unsigned char *)&iph->ip_src);
 	ok += cp_ip_address(words[1], (unsigned char *)&iph->ip_dst);
 	if (cp_unsigned(words[5], &j))
-	    SET_PACKET_COUNT_ANNO(q, j), ok++;
+	    SET_EXTRA_PACKETS_ANNO(q, j - 1), ok++;
 	if (cp_unsigned(words[6], (unsigned *)&byte_count))
 	    ok++;
 	if (cp_unsigned(words[7], &j))
@@ -317,15 +317,15 @@ Packet *
 FromNetFlowSummaryDump::handle_multipacket(Packet *p)
 {
     if (p) {
-	uint32_t count = PACKET_COUNT_ANNO(p);
+	uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
 	if (!_work_packet && count > 1)
 	    _multipacket_extra_length = EXTRA_LENGTH_ANNO(p) / count;
 	_work_packet = (count > 1 ? p : 0);
 	if (_work_packet) {
-	    SET_PACKET_COUNT_ANNO(_work_packet, count - 1);
+	    SET_EXTRA_PACKETS_ANNO(_work_packet, count - 2);
 	    SET_EXTRA_LENGTH_ANNO(_work_packet, EXTRA_LENGTH_ANNO(_work_packet) - _multipacket_extra_length);
 	    if ((p = p->clone())) {
-		SET_PACKET_COUNT_ANNO(p, 1);
+		SET_EXTRA_PACKETS_ANNO(p, 0);
 		SET_EXTRA_LENGTH_ANNO(p, _multipacket_extra_length);
 	    }
 	}

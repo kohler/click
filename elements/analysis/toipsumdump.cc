@@ -247,8 +247,8 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 	      break;
 	  }
 	  case W_COUNT: {
-	      uint32_t count = PACKET_COUNT_ANNO(p);
-	      sa << (count ? count : 1);
+	      uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
+	      sa << count;
 	      break;
 	  }
 	  no_data:
@@ -264,13 +264,13 @@ ToIPSummaryDump::ascii_summary(Packet *p, StringAccum &sa) const
 void
 ToIPSummaryDump::write_packet(Packet *p, bool multipacket)
 {
-    if (multipacket && PACKET_COUNT_ANNO(p) > 1) {
-	uint32_t count = PACKET_COUNT_ANNO(p);
+    if (multipacket && EXTRA_PACKETS_ANNO(p) > 0) {
+	uint32_t count = 1 + EXTRA_PACKETS_ANNO(p);
 	uint32_t total_len = p->length() + EXTRA_LENGTH_ANNO(p);
 	uint32_t len = p->length();
 	if (total_len < count * len)
 	    total_len = count * len;
-	SET_PACKET_COUNT_ANNO(p, 1);
+	SET_EXTRA_PACKETS_ANNO(p, 0);
 	for (uint32_t i = count; i > 0; i--) {
 	    uint32_t l = total_len / i;
 	    SET_EXTRA_LENGTH_ANNO(p, l - len);
