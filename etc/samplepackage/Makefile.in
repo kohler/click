@@ -7,7 +7,6 @@ SHELL = @SHELL@
 # Set `package' to the name of your package.
 package := sample
 
-
 # Set these variables appropriately.
 top_builddir := .
 subdir := .
