@@ -38,7 +38,7 @@ CLICK_DECLS
  *
  * =item ACTIVE
  *
- * Boolean. RandomSample be active or inactive; when inactive, it sends all
+ * Boolean. RandomSample is active or inactive; when inactive, it sends all
  * packets to output 0. Default is true (active).
  *
  * =back
