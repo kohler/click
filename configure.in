@@ -330,7 +330,7 @@ ELEMENTS_ARG_ENABLE(grid, [include Grid elements (see FAQ)], no)
 ELEMENTS_ARG_ENABLE(test, [include regression test elements], no)
 ELEMENTS_ARG_ENABLE(wifi, [include wifi kernel support (requires linuxmodule) (EXPERIMENTAL)], no)
 
-elements_vpath=`echo "$element_groups" | sed -e ['s/ \([^ ][^ ]*\)/:$(top_srcdir)\/elements\/\1/g']`
+elements_vpath=`(cd $srcdir/elements; for i in $element_groups; do find $i -type d -print; done) | grep -v CVS | sed 's/^/$(top_srcdir)\/elements\//' | tr '\012' : | sed 's/:$//'`
 AC_SUBST(elements_vpath)
 
 

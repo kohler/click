@@ -14,7 +14,7 @@ libdir = @libdir@
 freebsd_includedir = @freebsd_includedir@
 freebsd_srcdir = @freebsd_srcdir@
 
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/bsdmodule@elements_vpath@
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/bsdmodule:@elements_vpath@
 
 CC = @CC@
 CPP = @CPP@

@@ -5,7 +5,7 @@ top_srcdir := @top_srcdir@
 top_builddir := ..
 subdir := exopc
 
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/exopc@elements_vpath@
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/exopc:@elements_vpath@
 
 CROSS = ./
 CC = $(CROSS)gcc
