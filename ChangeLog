@@ -1,3 +1,8 @@
+2002-01-24 Thursday 09:43  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.21), lookupiprouteron.hh (1.16):
+	compiles
+
 2002-01-22 Tuesday 17:01  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: lookupiprouteron.hh (1.15), lookupiprouteron.cc (1.20):
