@@ -70,7 +70,7 @@ class FastUDPSource : public Element {
   unsigned short _incr;
   unsigned int _interval;
   bool _cksum;
-  WritablePacket *_packet;
+  struct mbuf *_m;
   unsigned long _first; // jiffies
   unsigned long _last;
 

@@ -1,84 +1,113 @@
 
 Index: net/if_var.h
---- net/if_var.h.orig	Sun Mar  4 16:09:45 2001
-+++ net/if_var.h	Tue Aug 21 18:47:08 2001
-@@ -137,6 +137,45 @@
+--- net/if_var.h.orig	Thu Oct  4 15:24:02 2001
++++ net/if_var.h	Thu Oct  4 15:37:06 2001
+@@ -125,20 +125,53 @@
+ 		__P((struct ifnet *, u_long, caddr_t));
+ 	void	(*if_watchdog)		/* timer routine */
+ 		__P((struct ifnet *));
+-	int	(*if_poll_recv)		/* polled receive routine */
++
++	struct mbuf *	(*if_poll_recv)		/* polled receive routine */
+ 		__P((struct ifnet *, int *));
++	/*
++	 * returns a linked list of mbufs, containing at most as many packets as
++	 * specified by the second parameter. The value of second parameter is
++	 * modified to reflect the actual number of packets returned.
++	 * If second parameter is null, just refill the rx ring.
++	 */
++
+ 	int	(*if_poll_xmit)		/* polled transmit routine */
+-		__P((struct ifnet *, int *));
+-	void	(*if_poll_intren)	/* polled interrupt reenable routine */
+-		__P((struct ifnet *));
++		__P((struct ifnet *, int, struct mbuf *));
++	/*
++	 * Second parameter is the operation:
++	 * 0 -> tx_queue (queue pkt in third arg. on dma ring)
++	 * 1 -> tx_clean (clean tx dma ring)
++	 * 2 -> tx_start (start transmitting)
++	 * 3 -> tx_eob   (signal the end of a batch)
++	 */
++
++	int	(*if_poll_intren)	/* polled interrupt reenable routine */
++		__P((struct ifnet *, int mode));
++	/*
++	 * if if_poll_intren=NULL then the driver does not support polling.
++	 * Otherwise second parameter is used to clear (0), set (1),
++	 * or query (2) which interrupt mode is in use. 1 is default
++	 * and means interrupt enabled, 0 means polling.
++	 */
++
+ 	void	(*if_poll_slowinput)	/* input routine for slow devices */
+ 		__P((struct ifnet *, struct mbuf *));
+ 	void	(*if_init)		/* Init routine */
  		__P((void *));
  	int	(*if_resolvemulti)	/* validate/resolve multicast */
  		__P((struct ifnet *, struct sockaddr **, struct sockaddr *));
 +
-+	/*
-+	 * Modifications for Click, mostly polling support.
-+	 */
-+	int	(*if_click_poll_on)	/* enable polling */
-+		__P((struct ifnet *));
-+	int	(*if_click_poll_off)	/* disable polling */
-+		__P((struct ifnet *));
-+	struct mbuf *(*if_click_rx_poll)/* poll for received packets */
-+		__P((struct ifnet *, int *want));
-+	int	(*if_click_rx_refill)	/* refill the rx ring */
-+		__P((struct ifnet *));
-+	int	(*if_click_tx_queue)	/* queue a packet on the dma ring */
-+		__P((struct ifnet *, struct mbuf *));
-+	int	(*if_click_tx_clean)	/* clean the tx dma ring */
-+		__P((struct ifnet *));
-+	int	(*if_click_tx_start)	/* start transmitting */
-+		__P((struct ifnet *));
-+	int	(*if_click_tx_eob)	/* signal the end of a batch */
-+		__P((struct ifnet *));
-+	/*
-+	 * Polling flag: negative if polling is not supported, zero
-+	 * if polling supported but not enabled, and positive if
-+	 * polling enabled (actual value reflects polling protocol
-+	 * version.)
-+	 */
-+	int	polling;
-+
-+	/*
-+	 * Packet diversion flag: if nonzero, incoming packets should
-+	 * be queued onto click_intrq on this interface.
-+	 */
-+	int	click_divert;
-+	struct ifqueue click_intrq;
-+
-+	/*
-+	 * End of Click polling additions
-+	 */
++        /*
++         * End of Click polling additions
++         */
 +
  	struct	ifqueue if_snd;		/* output queue */
  	struct	ifqueue *if_poll_slowq;	/* input queue for slow devices */
++	/*
++	 * if NULL, then there is no divert to click.
++	 * If not NULL, this is a pointer to the ifqueue.
++	 */
++
  	struct	ifprefixhead if_prefixhead; /* list of prefixes per if */
+ };
+ typedef void if_init_f_t __P((void *));
 
 Index: net/if_ethersubr.c
---- net/if_ethersubr.c.orig	Tue Mar 13 17:00:32 2001
-+++ net/if_ethersubr.c	Tue Aug 21 18:47:08 2001
-@@ -500,6 +500,22 @@
+--- net/if_ethersubr.c.orig	Thu Aug  2 19:47:46 2001
++++ net/if_ethersubr.c	Mon Oct 15 16:49:05 2001
+@@ -500,6 +500,31 @@
  	register struct llc *l;
  #endif
  
-+    if (ifp->click_divert > 0) {
-+	/*
-+	 * Put the packet on Click's receive queue.  Click will
-+	 * pick them up from the queue itself.
-+	 */
-+	inq = &ifp->click_intrq;
-+	s = splimp();
-+	if (IF_QFULL(inq)) {
-+		IF_DROP(inq);
-+		m_freem(m);
-+	} else
-+		IF_ENQUEUE(inq, m);
-+	splx(s);
-+	return;
++#if 1	/* Click */
++    inq = ifp->if_poll_slowq;
++    if (inq != NULL) {
++	/* we want to make a full packet in the mbuf */
++	if (m->m_flags & M_EXT &&
++	    (m->m_data - m->m_ext.ext_buf >= sizeof(*eh))) {
++	    /* Assume that our packet's ext_buf is an mbuf cluster,
++	     * and that we can just go back by sizeof(*eh).
++	     */
++	    m->m_data -= sizeof(*eh);
++	    m->m_len  += sizeof(*eh);
++	    if (m->m_flags & M_PKTHDR)
++		m->m_pkthdr.len += sizeof(*eh);
++	} else {
++	    /* Else just do a normal prepend.  The reason we
++	     * special-case the above is that M_LEADINGSPACE
++	     * returns 0 for M_EXT mbufs.
++	     */
++	    M_PREPEND(m, sizeof(*eh), M_WAIT);
++	    bcopy(eh, mtod(m, struct ether_header *), sizeof(*eh));
++	}
++	goto done;
 +    }
++#endif
 +
  #ifdef BRIDGE
      if (! (do_bridge && BDG_USED(ifp) ) )
  #endif
+@@ -655,6 +680,7 @@
+ #endif /* NETATALK */
+ 	}
+ 
++done:
+ 	s = splimp();
+ 	if (IF_QFULL(inq)) {
+ 		IF_DROP(inq);
 
 Index: pci/if_fxpvar.h
---- pci/if_fxpvar.h.orig	Tue Oct 24 17:47:36 2000
-+++ pci/if_fxpvar.h	Tue Aug 21 18:47:08 2001
+--- pci/if_fxpvar.h.orig	Thu Aug  2 19:45:57 2001
++++ pci/if_fxpvar.h	Thu Oct  4 16:02:03 2001
 @@ -53,6 +53,7 @@
  	bus_space_handle_t sc_sh;	/* bus space handle */
  	struct mbuf *rfa_headm;		/* first mbuf in receive frame area */
@@ -87,10 +116,18 @@ Index: pci/if_fxpvar.h
  	struct fxp_cb_tx *cbl_first;	/* first active TxCB in list */
  	int tx_queued;			/* # of active TxCB's */
  	int need_mcsetup;		/* multicast filter needs programming */
+@@ -74,6 +75,7 @@
+ 	u_int8_t saved_intline;
+ 	u_int8_t saved_cachelnsz;
+ 	u_int8_t saved_lattimer;
++	int intren;			/* interrupts enabled? */
+ };
+ 
+ /* Macros to ease CSR access. */
 
 Index: pci/if_fxpreg.h
---- pci/if_fxpreg.h.orig	Wed Oct  4 06:16:12 2000
-+++ pci/if_fxpreg.h	Tue Aug 21 18:47:08 2001
+--- pci/if_fxpreg.h.orig	Thu Aug  2 19:46:24 2001
++++ pci/if_fxpreg.h	Thu Oct  4 15:20:41 2001
 @@ -97,6 +97,9 @@
  #define FXP_SCB_COMMAND_RU_BASE		6
  #define FXP_SCB_COMMAND_RU_RBDRESUME	7
@@ -103,45 +140,35 @@ Index: pci/if_fxpreg.h
   */
 
 Index: pci/if_fxp.c
---- pci/if_fxp.c.orig	Tue Oct 24 17:47:36 2000
-+++ pci/if_fxp.c	Tue Aug 21 18:47:08 2001
-@@ -237,6 +237,15 @@
+--- pci/if_fxp.c.orig	Thu Aug  2 19:46:53 2001
++++ pci/if_fxp.c	Thu Oct  4 16:31:37 2001
+@@ -237,6 +237,10 @@
  static void fxp_stats_update	__P((void *));
  static void fxp_mc_setup	__P((struct fxp_softc *));
  
-+static int fxp_poll_on		__P((struct ifnet *));
-+static int fxp_poll_off		__P((struct ifnet *));
-+static struct mbuf *fxp_rx_poll	__P((struct ifnet *, int *want));
-+static int fxp_rx_refill	__P((struct ifnet *));
-+static int fxp_tx_queue		__P((struct ifnet *, struct mbuf *));
-+static int fxp_tx_clean		__P((struct ifnet *));
-+static int fxp_tx_start		__P((struct ifnet *));
-+static int fxp_tx_eob		__P((struct ifnet *));
++static int fxp_poll_intren	__P((struct ifnet *, int));
++static struct mbuf *fxp_poll_recv __P((struct ifnet *, int *));
++static int fxp_poll_xmit	__P((struct ifnet *, int, struct mbuf *));
 +
  /*
   * Set initial transmit threshold at 64 (512 bytes). This is
   * increased by 64 (512 bytes) at a time, to maximum of 192
-@@ -616,6 +625,19 @@
+@@ -616,6 +620,14 @@
  	ifp->if_watchdog = fxp_watchdog;
  
  	/*
 +	 * Set up for Click polling support
 +	 */
-+	ifp->if_click_poll_on = fxp_poll_on;
-+	ifp->if_click_poll_off = fxp_poll_off;
-+	ifp->if_click_rx_poll = fxp_rx_poll;
-+	ifp->if_click_rx_refill = fxp_rx_refill;
-+	ifp->if_click_tx_queue = fxp_tx_queue;
-+	ifp->if_click_tx_clean = fxp_tx_clean;
-+	ifp->if_click_tx_start = fxp_tx_start;
-+	ifp->if_click_tx_eob = fxp_tx_eob;
-+	ifp->polling = 0;
++	sc->intren = 1;
++	ifp->if_poll_xmit = fxp_poll_xmit;
++	ifp->if_poll_recv = fxp_poll_recv;
++	ifp->if_poll_intren = fxp_poll_intren;
 +
 +	/*
  	 * Attach the interface.
  	 */
  	ether_ifattach(ifp, ETHER_BPF_SUPPORTED);
-@@ -836,6 +858,7 @@
+@@ -836,6 +848,7 @@
  	/*
  	 * Pre-allocate our receive buffers.
  	 */
@@ -149,11 +176,11 @@ Index: pci/if_fxp.c
  	for (i = 0; i < FXP_NRFABUFS; i++) {
  		if (fxp_add_rfabuf(sc, NULL) != 0) {
  			goto fail;
-@@ -1206,6 +1229,15 @@
+@@ -1206,6 +1219,15 @@
  		return;
  	}
  
-+	if (ifp->polling > 0) {
++	if (!sc->intren) {
 +		/*
 +		 * We shouldn't receive any interrupts while in
 +		 * polling mode, so simply ignore the interrupt.
@@ -165,7 +192,7 @@ Index: pci/if_fxp.c
  	while ((statack = CSR_READ_1(sc, FXP_CSR_SCB_STATACK)) != 0) {
  #if defined(__NetBSD__)
  		claimed = 1;
-@@ -1261,6 +1293,7 @@
+@@ -1261,6 +1283,7 @@
  				 */
  				sc->rfa_headm = m->m_next;
  				m->m_next = NULL;
@@ -173,7 +200,7 @@ Index: pci/if_fxp.c
  
  				/*
  				 * Add a new buffer to the receive chain.
-@@ -1463,6 +1496,7 @@
+@@ -1463,6 +1486,7 @@
  		m_freem(sc->rfa_headm);
  	sc->rfa_headm = NULL;
  	sc->rfa_tailm = NULL;
@@ -181,17 +208,17 @@ Index: pci/if_fxp.c
  	for (i = 0; i < FXP_NRFABUFS; i++) {
  		if (fxp_add_rfabuf(sc, NULL) != 0) {
  			/*
-@@ -1487,6 +1521,9 @@
+@@ -1487,6 +1511,9 @@
  {
  	struct fxp_softc *sc = ifp->if_softc;
  
-+	if (ifp->polling > 0)
++	if (!sc->intren)
 +		return;
 +
  	printf(FXP_FORMAT ": device timeout\n", FXP_ARGS(sc));
  	ifp->if_oerrors++;
  
-@@ -1886,6 +1923,7 @@
+@@ -1886,6 +1913,7 @@
  	} else {
  		sc->rfa_headm = m;
  	}
@@ -199,7 +226,7 @@ Index: pci/if_fxp.c
  	sc->rfa_tailm = m;
  
  	return (m == oldm);
-@@ -2150,4 +2188,284 @@
+@@ -2150,4 +2178,314 @@
  
  	ifp->if_timer = 2;
  	return;
@@ -229,32 +256,38 @@ Index: pci/if_fxp.c
 +	return m;
 +}
 +
-+static int fxp_poll_on(struct ifnet *ifp) {
++static int fxp_poll_intren(struct ifnet *ifp, int mode) {
 +	struct fxp_softc *sc = ifp->if_softc;
 +
-+	if (ifp->polling == 0) {
-+		CSR_WRITE_1(sc, FXP_CSR_SCB_INTRCNTL, FXP_SCB_INTRCNTL_DISABLE);
-+		ifp->polling = 2;
++	switch (mode) {
++	case 0:		/* Disable interrupts */
++		if (sc->intren == 1) {
++			CSR_WRITE_1(sc, FXP_CSR_SCB_INTRCNTL,
++				    FXP_SCB_INTRCNTL_DISABLE);
++			sc->intren = 0;
++		}
++		break;
++
++	case 1:		/* Enable interrupts */
++		if (sc->intren == 0) {
++			CSR_WRITE_1(sc, FXP_CSR_SCB_INTRCNTL,
++				    FXP_SCB_INTRCNTL_ENABLE);
++			sc->intren = 1;
++		}
++		break;
++
++	case 2:		/* Query */
++	default:
++		/* Fall through */
 +	}
 +
-+	return 0;
-+}
-+
-+static int fxp_poll_off(struct ifnet *ifp) {
-+	struct fxp_softc *sc = ifp->if_softc;
-+
-+	if (ifp->polling > 0) {
-+		CSR_WRITE_1(sc, FXP_CSR_SCB_INTRCNTL, FXP_SCB_INTRCNTL_ENABLE);
-+		ifp->polling = 0;
-+	}
-+
-+	return 0;
++	return sc->intren;
 +}
 +
 +static int fxp_ru_check(struct fxp_softc *sc, struct mbuf *last_m) {
 +	struct fxp_rfa *rfa;
 +	struct mbuf *m = fxp_first_free_m(last_m);
-+	int statack;
++	int statack = 0;
 +
 +	/*
 +	 * Optimization: don't read registers unless we've got
@@ -483,11 +516,35 @@ Index: pci/if_fxp.c
 +	CSR_WRITE_1(sc, FXP_CSR_SCB_COMMAND, FXP_SCB_COMMAND_CU_RESUME);
 +
 +	return 0;
++}
++
++static struct mbuf *fxp_poll_recv(struct ifnet *ifp, int *want) {
++	if (want) {
++		return fxp_rx_poll(ifp, want);
++	} else {
++		fxp_rx_refill(ifp);
++		return NULL;
++	}
++}
++
++static int fxp_poll_xmit(struct ifnet *ifp, int func, struct mbuf *m) {
++	switch (func) {
++	case 0:		/* tx_queue */
++		return fxp_tx_queue(ifp, m);
++	case 1:		/* tx_clean */
++		return fxp_tx_clean(ifp);
++	case 2:		/* tx_start */
++		return fxp_tx_start(ifp);
++	case 3:		/* tx_eob */
++		return fxp_tx_eob(ifp);
++	default:	/* ??? */
++		return -1;
++	}
  }
 
 Index: pci/if_wxvar.h
---- pci/if_wxvar.h.orig	Wed Aug 22 12:59:33 2001
-+++ pci/if_wxvar.h	Wed Aug 22 12:59:41 2001
+--- pci/if_wxvar.h.orig	Tue Dec  5 19:54:33 2000
++++ pci/if_wxvar.h	Thu Oct  4 15:20:41 2001
 @@ -176,8 +176,8 @@
  #endif
  
@@ -500,8 +557,8 @@ Index: pci/if_wxvar.h
  	void *			ih;	/* interrupt handler cookie */
 
 Index: pci/if_wxreg.h
---- pci/if_wxreg.h.orig	Thu Aug 23 15:16:01 2001
-+++ pci/if_wxreg.h	Thu Aug 23 15:53:28 2001
+--- pci/if_wxreg.h.orig	Tue Dec  5 19:54:33 2000
++++ pci/if_wxreg.h	Thu Oct  4 15:20:41 2001
 @@ -115,6 +115,23 @@
   * Register access via offsets.
   */
@@ -592,8 +649,8 @@ Index: pci/if_wxreg.h
  #define	WX_RAL_AV		0x80000000
 
 Index: pci/if_wx.c
---- pci/if_wx.c.orig	Wed Aug 22 13:17:28 2001
-+++ pci/if_wx.c	Thu Aug 23 15:40:56 2001
+--- pci/if_wx.c.orig	Tue Dec  5 19:54:33 2000
++++ pci/if_wx.c	Thu Oct  4 15:20:41 2001
 @@ -1087,7 +1087,7 @@
  
  			/*
@@ -605,8 +662,8 @@ Index: pci/if_wx.c
  				sc->wx_xmitrunt++;
 
 Index: sys/namei.h
---- sys/namei.h.orig	Fri Nov  3 10:55:40 2000
-+++ sys/namei.h	Tue Aug 21 18:47:08 2001
+--- sys/namei.h.orig	Thu Aug  2 19:45:12 2001
++++ sys/namei.h	Thu Oct  4 15:20:41 2001
 @@ -40,6 +40,23 @@
  #include <sys/queue.h>
  #include <sys/uio.h>
@@ -676,8 +733,8 @@ Index: sys/namei.h
  	ndp->ni_cnd.cn_flags = flags;
 
 Index: sys/queue.h
---- sys/queue.h.orig	Tue Aug 21 20:18:22 2001
-+++ sys/queue.h	Tue Aug 21 20:19:33 2001
+--- sys/queue.h.orig	Thu Oct  4 15:19:38 2001
++++ sys/queue.h	Thu Oct  4 15:20:41 2001
 @@ -516,7 +516,8 @@
  static __inline void
  insque(void *a, void *b)
@@ -699,8 +756,8 @@ Index: sys/queue.h
  	element->qh_rlink->qh_link = element->qh_link;
 
 Index: sys/libkern.h
---- sys/libkern.h.orig	Tue Aug 21 20:19:41 2001
-+++ sys/libkern.h	Tue Aug 21 20:19:51 2001
+--- sys/libkern.h.orig	Thu Oct  4 15:20:23 2001
++++ sys/libkern.h	Thu Oct  4 15:20:41 2001
 @@ -103,7 +103,7 @@
  	if (c == 0)
  		bzero(b, len);

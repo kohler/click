@@ -101,6 +101,8 @@ class FromDevice : public AnyDevice, public Storage { public:
     long long _time_read, _time_push;
 #endif
 
+    unsigned _readers;		// how many readers registered for this?
+
   private:
 
     bool _promisc;

@@ -82,6 +82,13 @@ class AnyDevice : public Element { public:
     int find_device(bool, ErrorHandler *);
     void adjust_tickets(int work);
 
+#if HAVE_BSD_POLLING
+    // Does this device support polling?
+    bool polling() const	{ return _dev && _dev->if_poll_intren != 0; }
+#else
+    boll polling() const		{ return false; }
+#endif
+
   protected:
 
     String _devname;

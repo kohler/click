@@ -39,40 +39,57 @@ static int from_device_count;
  * Attach ourselves to the current device's packet-receive hook.
  */
 static int
-register_rx(struct ifnet *d, int qSize)
+register_rx(FromDevice *me, struct ifnet *d, int qSize)
 {
     assert(d);
     int s = splimp();
-    d->click_divert++;
-    d->click_intrq.ifq_maxlen = qSize;
-    d->click_intrq.ifq_drops = 0;
-    splx(s);
+    if (d->if_poll_slowq == NULL) {
+	struct ifqueue *inq;
+
+	if (me->_readers != 0)
+	    printf("Warning, _readers mismatch (%d should be 0)\n",
+		   me->_readers);
+	inq = (struct ifqueue *)
+	    malloc(sizeof (struct ifqueue), M_DEVBUF, M_NOWAIT);
+	assert(inq);
+	memset(inq, 0, sizeof (struct ifqueue));
+	inq->ifq_maxlen = qSize;
+	d->if_poll_slowq = inq;
+    } else {
+	if (me->_readers == 0)
+	    printf("Warning, _readers mismatch (should not be 0)\n");
+    }
+    me->_readers++;
     registered_readers++;
+    splx(s);
 }
 
 /*
  * Detach from device's packet-receive hook.
  */
 static int
-unregister_rx(struct ifnet *d)
+unregister_rx(FromDevice *me, struct ifnet *d)
 {
     assert(d);
     int s = splimp();
-    d->click_divert--;
-
-    /*
-     * Flush the receive queue.
-     */
-    if (d->click_divert <= 0)
-	for (int i = 0; i <= d->click_intrq.ifq_maxlen; i++) {
+    registered_readers--;
+    me->_readers--;
+    if (me->_readers == 0) {
+	/*
+	 * Flush the receive queue.
+	 */
+	int i, max = d->if_poll_slowq->ifq_maxlen ;
+	for (i = 0; i < max; i++) {
 	    struct mbuf *m;
-	    IF_DEQUEUE(&d->click_intrq, m);
-	    if (!m) break;
+	    IF_DEQUEUE(d->if_poll_slowq, m);
+	    if (!m)
+		break;
 	    m_freem(m);
 	}
-
+	free(d->if_poll_slowq, M_DEVBUF);
+	d->if_poll_slowq = NULL ;
+    }
     splx(s);
-    registered_readers--;
 }
 #endif
 
@@ -98,6 +115,7 @@ fromdev_static_cleanup()
 FromDevice::FromDevice()
 {
     // no MOD_INC_USE_COUNT; rely on AnyDevice
+    _readers = 0; // noone registered so far
     add_output();
     fromdev_static_initialize();
 }
@@ -168,7 +186,7 @@ FromDevice::initialize(ErrorHandler *errh)
 	ifpromisc(_dev, 1);
     
 #ifdef HAVE_CLICK_BSD_KERNEL
-    register_rx(_dev, QSIZE);
+    register_rx(this, _dev, QSIZE);
 #else
     errh->warning("can't get packets: not compiled for a Click kernel");
 #endif
@@ -199,7 +217,7 @@ void
 FromDevice::uninitialize()
 {
 #ifdef HAVE_CLICK_BSD_KERNEL
-    unregister_rx(_dev);
+    unregister_rx(this, _dev);
 #endif
     
     _task.unschedule();
@@ -233,18 +251,13 @@ FromDevice::run_scheduled()
 
 	struct mbuf *m;
 	int s = splimp();
-	IF_DEQUEUE(&_dev->click_intrq, m);
+	IF_DEQUEUE(_dev->if_poll_slowq, m);
 	splx(s);
 	if (NULL == m) break;
 
 	/*
-	 * Got a packet -- retrieve the MAC header and make a real Packet.
+	 * Got a packet, which includes the MAC header. Make it a real Packet.
 	 */
-	int push_len = 14;
-
-	m->m_data -= push_len;
-	m->m_len += push_len;
-	m->m_pkthdr.len += push_len;
 
 	Packet *p = Packet::make(m);
 	GET_STATS_RESET(low0, low1, time_now,
@@ -264,7 +277,7 @@ FromDevice::run_scheduled()
 int
 FromDevice::get_inq_drops()
 {
-    return _dev->click_intrq.ifq_drops;
+    return _dev->if_poll_slowq->ifq_drops;
 }
 
 static String

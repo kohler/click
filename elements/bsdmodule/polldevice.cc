@@ -99,9 +99,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 #if HAVE_BSD_POLLING
   if (find_device(allow_nonexistent, errh) < 0)
       return -1;
-  // must check both _dev->polling and _dev->poll_on as some drivers
-  // memset() their device structures to all zero
-  if (_dev && (_dev->polling < 0 || !_dev->if_click_poll_on))
+  if ( !polling() )
       return errh->error("device `%s' not pollable, use FromDevice instead", _devname.cc());
 #endif
   
@@ -137,11 +135,11 @@ PollDevice::initialize(ErrorHandler *errh)
   poll_device_map.insert(this);
   if (_dev && _promisc)
       ifpromisc(_dev, 1);
-  if (_dev && !_dev->polling) {
+  if (!polling())
+      return errh->error("PollDevice: device does not support polling");
+  if (_dev && _dev->if_poll_intren(_dev,2) == 1) {
       /* turn off interrupt if interrupts weren't already off */
-      _dev->if_click_poll_on(_dev);
-      if (_dev->polling != 2)
-	  return errh->error("PollDevice detected wrong version of polling patch");
+      _dev->if_poll_intren(_dev, 0);
   }
   
   ScheduleInfo::initialize_task(this, &_task, _dev != 0, errh);
@@ -190,8 +188,8 @@ PollDevice::uninitialize()
 #if HAVE_BSD_POLLING
   poll_device_map.remove(this);
   if (poll_device_map.lookup(_dev) == 0) {
-    if (_dev && _dev->polling > 0)
-      _dev->if_click_poll_off(_dev);
+    if (polling() && _dev->if_poll_intren(_dev,2) == 0)
+      _dev->if_poll_intren(_dev, 1); // re-enable interrupt
   }
   if (_dev && _promisc)
       ifpromisc(_dev, 0);
@@ -213,7 +211,7 @@ PollDevice::run_scheduled()
   SET_STATS(low00, low10, time_now);
 
   got = _burst;
-  m_list = _dev->if_click_rx_poll(_dev, &got);
+  m_list = _dev->if_poll_recv(_dev, &got);
 
 #if CLICK_DEVICE_STATS
   if (got > 0 || _activations > 0) {
@@ -226,7 +224,7 @@ PollDevice::run_scheduled()
   }
 #endif
 
-  _dev->if_click_rx_refill(_dev);
+  _dev->if_poll_recv(_dev, NULL); // refill
 #if 0	/* No useful refill on BSD yet */
   int nskbs = got;
   if (got == 0)

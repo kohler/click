@@ -22,8 +22,10 @@
 #include <click/glue.hh>
 #include <click/standard/alignmentinfo.hh>
 
+#include <machine/limits.h>
+
 FastUDPSource::FastUDPSource()
-  : _packet(0)
+  : _m(0)
 {
   _rate_limited = true;
   _first = _last = 0;
@@ -83,7 +85,7 @@ FastUDPSource::configure(const Vector<String> &conf, ErrorHandler *errh)
 void
 FastUDPSource::incr_ports()
 {
-  click_ip *ip = reinterpret_cast<click_ip *>(_packet->data()+14);
+  click_ip *ip = reinterpret_cast<click_ip *>(_m->m_data+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
   _incr++;
   udp->uh_sport = htons(_sport+_incr);
@@ -109,11 +111,25 @@ FastUDPSource::incr_ports()
 int 
 FastUDPSource::initialize(ErrorHandler *)
 {
+  // Create an mbuf with an mbuf cluster so copies are quick
+  // (we just add a reference to the cluster rather than doing
+  // a memory copy).
+  MGETHDR(_m, M_WAIT, MT_DATA);
+  if (_m == NULL) {
+    click_chatter("unable to get mbuf for FastUDPSource");
+    return -1;
+  }
+  MCLGET(_m, M_WAIT);
+  if ((_m->m_flags & M_EXT) == 0) {
+    click_chatter("unable to get mbuf cluster for FastUDPSource");
+    return -1;
+  }
+  _m->m_len = _m->m_pkthdr.len = _len;
+
   _count = 0;
   _incr = 0;
-  _packet = Packet::make(_len);
-  memcpy(_packet->data(), &_ethh, 14);
-  click_ip *ip = reinterpret_cast<click_ip *>(_packet->data()+14);
+  memcpy(_m->m_data, &_ethh, 14);
+  click_ip *ip = reinterpret_cast<click_ip *>(_m->m_data+14);
   click_udp *udp = reinterpret_cast<click_udp *>(ip + 1);
  
   // set up IP header
@@ -129,8 +145,6 @@ FastUDPSource::initialize(ErrorHandler *)
   ip->ip_ttl = 250;
   ip->ip_sum = 0;
   ip->ip_sum = click_in_cksum((unsigned char *)ip, sizeof(click_ip));
-  _packet->set_dst_ip_anno(IPAddress(_dipaddr));
-  _packet->set_ip_header(ip, sizeof(click_ip));
 
   // set up UDP header
   udp->uh_sport = htons(_sport);
@@ -152,16 +166,16 @@ FastUDPSource::initialize(ErrorHandler *)
     udp->uh_sum = ~csum & 0xFFFF;
   } else
     udp->uh_sum = 0;
-    
+
   return 0;
 }
 
 void
 FastUDPSource::uninitialize()
 {
-  if (_packet) {
-    _packet->kill();
-    _packet=0;
+  if (_m) {
+    m_freem(_m);
+    _m = 0;
   }
 }
 
@@ -169,18 +183,55 @@ Packet *
 FastUDPSource::pull(int)
 {
   Packet *p = 0;
+  struct mbuf *m;
 
   if (!_active || (_limit != NO_LIMIT && _count >= _limit)) return 0;
+
+  /*
+   * Ensure we can safely m_copypacket(_m) without
+   * overflowing the 8-bit refcount.
+   */
+  if ((_m->m_flags & M_EXT) == 0) {
+    static char _mcl_lost = 0;
+    if (!_mcl_lost) {
+      click_chatter("mbuf lost cluster!\n");
+      _mcl_lost = 1;
+    }
+    return 0;
+  }
+
+  if (mclrefcnt[mtocl(_m->m_ext.ext_buf)] >= SCHAR_MAX) {
+    caddr_t mcl, mcl0;
+    MCLALLOC(mcl, M_WAIT);
+    if (!mcl) {
+      click_chatter("failure to allocate new mbuf cluster\n");
+      return 0;
+    }
+
+    bcopy(_m->m_data, mcl, _m->m_len);
+    mcl0 = _m->m_ext.ext_buf;
+    _m->m_data = mcl;
+    _m->m_ext.ext_buf = mcl;
+    MCLFREE(mcl0);
+  }
 
   if(_rate_limited){
     struct timeval now;
     click_gettimeofday(&now);
     if (_rate.need_update(now)) {
       _rate.update();
-      p = _packet->clone();
+      m = m_copypacket(_m, M_WAIT);
+      if (m)
+	p = Packet::make(m);
+      else
+	click_chatter("unable to m_copypacket\n");
     }
   } else {
-    p = _packet->clone();
+    m = m_copypacket(_m, M_WAIT);
+    if (m)
+      p = Packet::make(m);
+    else
+      click_chatter("unable to m_copypacket\n");
   }
 
   if(p) {

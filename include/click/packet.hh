@@ -369,12 +369,8 @@ Packet::make(struct mbuf *m)
 
   Packet *p = new Packet;
   if (m->m_pkthdr.len != m->m_len) {
-printf("-- m_pkthdr.len %d m->m_len %d\n",
-	m->m_pkthdr.len, m->m_len);
 	/* click needs contiguous data */
-	struct mbuf *m1 = m_dup(m, 0);
-	m_freem(m);
-	m = m1;
+	m = m_pulldown(m, 0, m->m_pkthdr.len, NULL);
   }
   p->_m = m;
   assimilate_mbuf(p);

@@ -118,12 +118,6 @@ class ToDevice : public AnyDevice {
   unsigned long _hard_start;
   unsigned long _busy_returns;
 
-#if HAVE_BSD_POLLING
-  bool polling() const			{ return _dev && _dev->polling > 0; }
-#else
-  bool polling() const			{ return false; }
-#endif
-  
  private:
 
   unsigned _burst;
