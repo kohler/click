@@ -1,3 +1,8 @@
+2001-11-11 Sunday 18:43  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: divertsocket.cc (1.14), divertsocket.hh (1.8): added
+	option to avoid automatic firewall rule creation
+
 2001-11-11 Sunday 18:08  Alexander Yip <yipal@pdos.lcs.mit.edu>
 
 	* etc/ron/: lookupiprouteron.cc (1.12), lookupiprouteron.hh (1.8):
