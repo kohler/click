@@ -1,3 +1,8 @@
+2003-07-08 Tuesday 15:43  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: gridheaderinfo.cc (1.10), gridheaderinfo.hh
+	(1.9): add grid length offset handler
+
 2003-07-08 Tuesday 15:27  John Bicket <jbicket@mit.edu>
 
 	* include/click/packet_anno.hh (1.14): Added wifi packet annos.
