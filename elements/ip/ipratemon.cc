@@ -212,6 +212,8 @@ IPRateMonitor::print(_stats *s, String ip = "")
 {
   String ret = "";
   for(int i = 0; i < MAX_COUNTERS; i++) {
+    bool nonzero = false;
+    String rates = "";
     String this_ip;
     if(ip)
       this_ip = ip + "." + String(i);
@@ -221,25 +223,25 @@ IPRateMonitor::print(_stats *s, String ip = "")
 
     if (s->counter[i].flags != CLEAN) {
       int j;
-      bool nonzero = false;
   
       // First rate is hidden
       for(j = 1; j < _no_of_rates; j++) {
 	// Update the rate first, so we have correct info
         s->counter[i].values[j].update(0);
-        this_ip += "\t";
-	this_ip += cp_unparse_real
+        rates += "\t";
+	rates += cp_unparse_real
 	  (s->counter[i].values[j].average() * CLICK_HZ,
 	   s->counter[i].values[j].scale());
 	if (s->counter[i].values[j].average() > 0)
 	  nonzero = true;
       }
-      if (nonzero)
-        ret += this_ip + "\n";
     }
     
-    if(s->counter[i].flags & SPLIT)
-      ret += print(s->counter[i].next_level, "\t" + this_ip);
+    if (nonzero) {
+        ret += this_ip + rates + "\n";
+        if(s->counter[i].flags & SPLIT) 
+	  ret += print(s->counter[i].next_level, "\t" + this_ip);
+    }
   }
   return ret;
 }
