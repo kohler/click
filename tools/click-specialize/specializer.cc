@@ -268,6 +268,10 @@ Specializer::create_class(SpecializedClass &spc)
     (CxxFunction("push_output", false, "inline void",
 		 (_noutputs[eindex] ? "(int i, Packet *p) const" : "(int, Packet *p) const"),
 		 "", ""));
+  new_cxxc->defun
+    (CxxFunction("push_output_checked", false, "inline void",
+		 (_noutputs[eindex] ? "(int i, Packet *p) const" : "(int, Packet *p) const"),
+		 "", ""));
 
   // transfer reachable rewritable functions to new C++ class
   // with pattern replacements
@@ -278,18 +282,29 @@ Specializer::create_class(SpecializedClass &spc)
     String noutputs_repl = String(_noutputs[eindex]);
     String push_pat = compile_pattern("output(#0).push(#1)");
     String checked_push_pat = compile_pattern("checked_push_output(#0, #1)");
+    String checked_push_repl = compile_pattern("push_output_checked(#0, #1)");
     String push_repl = "push_output(#0, #1)";
     String pull_pat = compile_pattern("input(#0).pull()");
     String pull_repl = "pull_input(#0)";
+    bool any_checked_push = false, any_push = false, any_pull = false;
     for (int i = 0; i < old_cxxc->nfunctions(); i++)
       if (old_cxxc->should_rewrite(i)) {
 	CxxFunction &new_fn = new_cxxc->defun(old_cxxc->function(i));
 	while (new_fn.replace_expr(ninputs_pat, ninputs_repl)) ;
 	while (new_fn.replace_expr(noutputs_pat, noutputs_repl)) ;
-	while (new_fn.replace_expr(push_pat, push_repl)) ;
-	while (new_fn.replace_expr(checked_push_pat, push_repl)) ;
-	while (new_fn.replace_expr(pull_pat, pull_repl)) ;
+	while (new_fn.replace_expr(push_pat, push_repl))
+	  any_push = true;
+	while (new_fn.replace_expr(checked_push_pat, checked_push_repl))
+	  any_checked_push = true;
+	while (new_fn.replace_expr(pull_pat, pull_repl))
+	  any_pull = true;
       }
+    if (!any_push && !any_checked_push)
+      new_cxxc->find("push_output")->kill();
+    if (!any_checked_push)
+      new_cxxc->find("push_output_checked")->kill();
+    if (!any_pull)
+      new_cxxc->find("pull_input")->kill();
   }
 }
 
@@ -387,63 +402,77 @@ Specializer::create_connector_methods(SpecializedClass &spc)
     }
   }
 
-  // create input_pull and output_push bodies
-  StringAccum sa;
-  Vector<int> range1, range2;
-  for (int i = 0; i < _ninputs[eindex]; i++)
-    if (i > 0 && input_function[i] == input_function[i-1]
-	&& input_port[i] == input_port[i-1])
-      range2.back() = i;
-    else {
-      range1.push_back(i);
-      range2.push_back(i);
-    }
-  for (int i = 0; i < range1.size(); i++) {
-    int r1 = range1[i], r2 = range2[i];
-    if (r1 == r2)
-      sa << "\n  if (i == " << r1 << ") return "
-	 << input_function[r1] << "(input(" << r1 << ").element(), "
+  // create pull_input
+  if (cxxc->find("pull_input")->alive()) {
+    StringAccum sa;
+    Vector<int> range1, range2;
+    for (int i = 0; i < _ninputs[eindex]; i++)
+      if (i > 0 && input_function[i] == input_function[i-1]
+	  && input_port[i] == input_port[i-1])
+	range2.back() = i;
+      else {
+	range1.push_back(i);
+	range2.push_back(i);
+      }
+    for (int i = 0; i < range1.size(); i++) {
+      int r1 = range1[i], r2 = range2[i];
+      sa << "\n  ";
+      if (i < range1.size() - 1) {
+	if (r1 == r2)
+	  sa << "if (i == " << r1 << ") ";
+	else
+	  sa << "if (i >= " << r1 << " && i <= " << r2 << ") ";
+      }
+      sa << "return " << input_function[r1] << "(input(i).element(), "
 	 << input_port[r1] << ");";
-    else
-      sa << "\n  if (i >= " << r1 << " && i <= " << r2 << ") return "
-	 << input_function[r1] << "(input(i).element(), "
-	 << input_port[r1] << ");";
-  }
-  sa << "\n  return 0;\n";
-  cxxc->find("pull_input")->set_body(sa.take_string());
-
-  range1.clear();
-  range2.clear();
-  for (int i = 0; i < _noutputs[eindex]; i++)
-    if (i > 0 && output_function[i] == output_function[i-1]
-	&& output_port[i] == output_port[i-1])
-      range2.back() = i;
-    else {
-      range1.push_back(i);
-      range2.push_back(i);
     }
-  for (int i = 0; i < range1.size(); i++) {
-    int r1 = range1[i], r2 = range2[i];
-    if (r1 == r2)
-      sa << "\n  if (i == " << r1 << ") { "
-	 << output_function[r1] << "(output(" << r1 << ").element(), "
-	 << output_port[r1] << ", p); return; }";
-    else
-      sa << "\n  if (i >= " << r1 << " && i <= " << r2 << ") { "
-	 << output_function[r1] << "(output(i).element(), "
-	 << output_port[r1] << ", p); return; }";
+    sa << "\n";
+    cxxc->find("pull_input")->set_body(sa.take_string());
+    
+    // save function names
+    for (int i = 0; i < _ninputs[eindex]; i++) {
+      _specfunction_names.push_back(input_function[i]);
+      _specfunction_symbols.push_back(input_symbol[i]);
+    }
   }
-  sa << "\n  p->kill();\n";
-  cxxc->find("push_output")->set_body(sa.take_string());
 
-  // save function names
-  for (int i = 0; i < _ninputs[eindex]; i++) {
-    _specfunction_names.push_back(input_function[i]);
-    _specfunction_symbols.push_back(input_symbol[i]);
-  }
-  for (int i = 0; i < _noutputs[eindex]; i++) {
-    _specfunction_names.push_back(output_function[i]);
-    _specfunction_symbols.push_back(output_symbol[i]);
+  // create push_output
+  if (cxxc->find("push_output")->alive()) {
+    StringAccum sa;
+    Vector<int> range1, range2;
+    for (int i = 0; i < _noutputs[eindex]; i++)
+      if (i > 0 && output_function[i] == output_function[i-1]
+	  && output_port[i] == output_port[i-1])
+	range2.back() = i;
+      else {
+	range1.push_back(i);
+	range2.push_back(i);
+      }
+    for (int i = 0; i < range1.size(); i++) {
+      int r1 = range1[i], r2 = range2[i];
+      sa << "\n  ";
+      if (i < range1.size() - 1) {
+	if (r1 == r2)
+	  sa << "if (i == " << r1 << ") ";
+	else
+	  sa << "if (i >= " << r1 << " && i <= " << r2 << ") ";
+      }
+      sa << "{ " << output_function[r1] << "(output(i).element(), "
+	 << output_port[r1] << ", p); return; }";
+    }
+    sa << "\n";
+    cxxc->find("push_output")->set_body(sa.take_string());
+    
+    sa.clear();
+    sa << "\n  if (i < " << _noutputs[eindex] << ")\n    push_output(i, p);\n";
+    sa << "  else\n    p->kill();\n";
+    cxxc->find("push_output_checked")->set_body(sa.take_string());
+    
+    // save function names
+    for (int i = 0; i < _noutputs[eindex]; i++) {
+      _specfunction_names.push_back(output_function[i]);
+      _specfunction_symbols.push_back(output_symbol[i]);
+    }
   }
 }
 
