@@ -1,3 +1,13 @@
+2003-01-26 Sunday 21:57  Eddie Kohler <kohler@icir.org>
+
+	* etc/linux-2.4.20-patch (1.2): Doug reported a missing conversion
+	problem; added to patch
+
+2003-01-26 Sunday 21:22  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/icmppingrewriter.cc (1.19): fix ICMPPingRewriter
+	arg 2 parsing; reported by Jose Vasconcellos
+
 2003-01-24 Friday 19:04  Eddie Kohler <kohler@icir.org>
 
 	* lib/confparse.cc (1.107): nitlet
