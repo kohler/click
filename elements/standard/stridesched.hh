@@ -18,36 +18,33 @@
  * an input that produces a packet, if any, is found as soon as possible,
  * consistently with the stride scheduler ordering.
  * 
- * =a PrioSched, RoundRobinSched
+ * =a PrioSched
+ * =a RoundRobinSched
  */
 
 class StrideSched : public Element {
   
-  static const int stride1 = 100000;
-  static const long long max_pass = 1LL<<61;
+  static const unsigned STRIDE1 = 1U<<16;
+  static const int MAX_TICKETS = 1U<<15;
 
   struct Client {
 
     Client *_p;
     Client *_n;
-    long long _pass;
-    unsigned int _stride;
+    unsigned _pass;
+    unsigned _stride;
     int _tickets;
     int _id;
     Client *_list;
     
-    void reset_pass(void);
-
-  public:
-    
     Client() : _p(0), _n(0), _pass(0), _stride(0), _tickets(-1), _id(-1) {}
     Client(int id, int tickets);
     
-    void make_head(void);
-    Client *remove_min(void);
+    void make_head();
+    Client *remove_min();
     void insert(Client *c);
-    void stride(void);
-    int id(void) 				{ return _id; }
+    void stride();
+    int id() const 				{ return _id; }
 
   };
   
@@ -57,7 +54,7 @@ public:
   ~StrideSched();
 
   int configure(const String &conf, ErrorHandler *errh);
-  void uninitialize(void);
+  void uninitialize();
   
   const char *class_name() const		{ return "StrideSched"; }
   Processing default_processing() const		{ return PULL; }
@@ -75,13 +72,13 @@ inline
 StrideSched::Client::Client(int id, int tickets)
 {
   _tickets = tickets;
-  _stride = stride1 / tickets;
+  _stride = STRIDE1 / tickets;
   _pass = _stride;
   _id = id;
 }
 
 inline
-void StrideSched::Client::make_head(void)
+void StrideSched::Client::make_head()
 {
   _p = _n = _list = this;
 }
@@ -91,7 +88,7 @@ StrideSched::Client::insert(Client *c)
 {
   assert(this == _list);
   Client *x = _n;
-  while (x != _list && x->_pass < c->_pass)
+  while (x != _list && PASS_GT(c->_pass, x->_pass))
     x = x->_n;
   // insert c before x
   c->_n = x;
@@ -101,36 +98,23 @@ StrideSched::Client::insert(Client *c)
 }
 
 inline StrideSched::Client *
-StrideSched::Client::remove_min(void)
+StrideSched::Client::remove_min()
 {
   assert(this == _list);
   if (_n != this) {
     Client *r = _n;
     _n = r->_n;
     _n->_p = this;
-    r->_n = r->_p = r->_list = NULL;
+    r->_n = r->_p = r->_list = 0;
     return r;
   }
-  return NULL;
+  return 0;
 }
 
 inline void
-StrideSched::Client::reset_pass(void)
-{
-  Client *c = _list->_n;
-  int pass = c->_pass;
-  while (c != _list) {
-    c->_pass -= pass;
-    c = c->_n;
-  }
-}
-
-inline void
-StrideSched::Client::stride(void)
+StrideSched::Client::stride()
 {
   _pass += _stride;
-  if (_pass > max_pass)
-    reset_pass();
 }
 
 #endif STRIDESCHED_HH

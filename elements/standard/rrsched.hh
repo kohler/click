@@ -13,6 +13,7 @@
  * scheduler.
  * 
  * =a PrioSched
+ * =a StrideSched
  */
 
 class RRSched : public UnlimitedElement {

@@ -159,8 +159,7 @@ void
 ScheduleInfo::join_scheduler(Element *e, ErrorHandler *errh)
 {
   int max_tickets = query(e, errh);
-  //errh->message("%s: %d", e->id().cc(), max_tickets);
-  e->set_max_ntickets(max_tickets);
+  e->set_max_tickets(max_tickets);
   e->join_scheduler();
 }
 

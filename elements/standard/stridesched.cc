@@ -37,15 +37,20 @@ StrideSched::configure(const String &conf, ErrorHandler *errh)
   set_ninputs(args.size());
 
   for (int i = 0; i < args.size(); i++) {
-    const char *s;
-    char *e;
-    s = args[i].data();
-    long int v = strtol(s, &e, 10);
-    if (*s == '\0' || s == e) {
-      errh->error("argument %d is not a number", i);
-      return -1;
+    int v;
+    if (!cp_integer(args[i], v))
+      errh->error("argument %d should be number of tickets (integer)", i);
+    else if (v < 0)
+      errh->error("argument %d (number of tickets) must be >= 0", i);
+    else if (v == 0)
+      /* do not ever schedule it */;
+    else {
+      if (v > MAX_TICKETS) {
+	errh->warning("input %d's tickets reduced to %d", i, MAX_TICKETS);
+	v = MAX_TICKETS;
+      }
+      _list->insert(new Client(i, v));
     }
-    _list->insert(new Client(i, v));
   }
   return 0;
 }
@@ -62,39 +67,29 @@ StrideSched::uninitialize(void)
 Packet *
 StrideSched::pull(int)
 {
-  int j, n = ninputs();
-  Client *tmp = new Client();
-  tmp->make_head();
+  // go over list until we find a packet, striding as we go
+  Client *stridden = _list->_n;
+  Client *c = stridden;
+  Packet *p = 0;
+  while (c != _list && !p) {
+    p = input(c->id()).pull();
+    c->stride();
+    c = c->_n;
+  }
 
-  for (j = 0; j < n; j++) {
-    // If an input does not produce a packet, it is added to the tmp
-    // list and is not checked again in this pass even if its stride 
-    // is such that it would be checked in a normal stride scheduler.
-    Client *c = _list->remove_min();
-    Packet *p = input(c->id()).pull();
-    tmp->insert(c);
-    if (p) {
-      // If an input does produce a packet, all inputs on the tmp list
-      // are incremented with a stride and added back to the main _list
-      // before the packet is returned.
-      Client *x;
-      while ((x = tmp->remove_min())) {
-	x->stride();
-	_list->insert(x);
-      }
-      delete tmp;
-      return p;
-    }
+  // remove stridden portion from list
+  _list->_n = c;
+  c->_p = _list;
+
+  // reinsert stridden portion into list
+  while (stridden != c) {
+    Client *next = stridden->_n;
+    _list->insert(stridden);	// `insert' is OK even when `stridden's next
+				// and prev pointers are garbage
+    stridden = next;
   }
-  if (j == n) {
-    Client *x;
-    while ((x = tmp->remove_min())) {
-      x->stride();
-      _list->insert(x);
-    }
-  }
-  delete tmp;
-  return 0;
+
+  return p;
 }
 
 EXPORT_ELEMENT(StrideSched)

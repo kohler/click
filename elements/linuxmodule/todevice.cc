@@ -169,7 +169,11 @@ ToDevice::initialize(ErrorHandler *errh)
       registered_writers++;
     }
     
-    ScheduleInfo::join_scheduler(this, errh);
+    // start out with default number of tickets, inflate up to max
+    int max_tickets = ScheduleInfo::query(this, errh);
+    set_max_tickets(max_tickets);
+    set_tickets(ScheduleInfo::DEFAULT);
+    join_scheduler();
   }
 
   return 0;
@@ -390,7 +394,7 @@ ToDevice_read_calls(Element *f, void *)
 {
   ToDevice *td = (ToDevice *)f;
   return
-    String(td->max_ntickets()) + " maximum number of tickets\n" +
+    String(td->max_tickets()) + " maximum number of tickets\n" +
     String(td->_hard_start) + " hard transmit start\n" +
     String(td->_idle_calls) + " idle tx calls\n" +
     String(td->_busy_returns) + " device busy returns\n" +

@@ -100,9 +100,14 @@ PollDevice::initialize(ErrorHandler *errh)
     return errh->error("no device `%s'", _devname.cc());
   if (!_dev->pollable) 
     return errh->error("device `%s' not pollable", _devname.cc());
-
+  
   _dev->intr_off(_dev);
-  ScheduleInfo::join_scheduler(this, errh);
+
+  // start out with default number of tickets, inflate up to max
+  int max_tickets = ScheduleInfo::query(this, errh);
+  set_max_tickets(max_tickets);
+  set_tickets(ScheduleInfo::DEFAULT);
+  join_scheduler();
   
   return 0;
 #else
@@ -205,7 +210,7 @@ PollDevice_read_calls(Element *f, void *)
 {
   PollDevice *kw = (PollDevice *)f;
   return
-    String(kw->max_ntickets()) + " maximum number of tickets\n" + 
+    String(kw->max_tickets()) + " maximum number of tickets\n" + 
     String(kw->_pkts_received) + " packets received\n" +
     String(kw->_dma_full) + " times DMA ring seems full\n" +
     String(kw->_pkts_on_dma) + " packets seen pending on DMA ring\n" +

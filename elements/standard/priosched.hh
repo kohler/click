@@ -15,6 +15,7 @@
  *
  * =a Queue
  * =a RoundRobinSched
+ * =a StrideSched
  */
 
 class PrioSched : public UnlimitedElement {

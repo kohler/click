@@ -1,11 +1,9 @@
 #ifndef ELEMLINK_HH
 #define ELEMLINK_HH
-
 #include "glue.hh"
 #include <assert.h>
 
-#define STRIDE1     100000
-#define MAX_PASS    (1LL<<61)
+#define PASS_GT(a, b)	((int)(a - b) > 0)
 
 class ElementLink {
 
@@ -14,25 +12,21 @@ class ElementLink {
 
   ElementLink *_prev;
   ElementLink *_next;
-  long long _pass;
-  unsigned int _stride;
-  int _ntickets;
-  int _max_ntickets;
+  unsigned _pass;
+  unsigned _stride;
+  int _tickets;
+  int _max_tickets;
   ElementLink *_list;
   
-  void stride() { _pass += _stride; }
-  void schedule_before(ElementLink *);
-  void schedule_tail();
-
  public:
+
+  static const unsigned STRIDE1 = 1U<<16;
+  static const unsigned MAX_STRIDE = 1U<<31;
+  static const int MAX_TICKETS = 1U<<15;
   
   ElementLink()				
     : _prev(0), _next(0), _pass(0), 
-      _stride(0), _ntickets(-1), _max_ntickets(-1) { }
-  
-  ElementLink(ElementLink *lst)
-    : _prev(0), _next(0), _pass(0), 
-      _stride(0), _ntickets(-1), _max_ntickets(-1), _list(lst) { }
+      _stride(0), _tickets(-1), _max_tickets(-1) { }
 
   bool scheduled() const		{ return _prev; }
   ElementLink *scheduled_next() const	{ return _next; }
@@ -42,15 +36,17 @@ class ElementLink {
   void initialize_link(ElementLink *);
   void initialize_head()		{ _prev = _next = _list = this; }
   
-  int ntickets() const			{ return _ntickets; }
-  int max_ntickets() const		{ return _max_ntickets; }
-  void set_max_ntickets(int);
-  void join_scheduler();
-  void reschedule();
+  int tickets() const			{ return _tickets; }
+  int max_tickets() const		{ return _max_tickets; }
+  
+  void set_max_tickets(int);
+  void set_tickets(int);
   void adj_tickets(int);
+  
+  void join_scheduler();
   void unschedule();
+  void reschedule();
 
-  void refresh_worklist_passes();
 };
 
 
@@ -71,102 +67,71 @@ ElementLink::unschedule()
   _next = _prev = 0;
 }
 
-inline void
-ElementLink::schedule_tail()
+inline void 
+ElementLink::set_tickets(int n)
 {
-  if (!_next) {
-    ElementLink *p = _list->_prev;
-    _next = _list;
-    _prev = p;
-    _list->_prev = this;
-    p->_next = this;
-  }
+  if (n > _max_tickets)
+    n = _max_tickets;
+  else if (n < 1)
+    n = 1;
+  _tickets = n;
+  _stride = STRIDE1 / n;
+  assert(_stride < MAX_STRIDE);
 }
 
 inline void 
-ElementLink::schedule_before(ElementLink *n)
+ElementLink::adj_tickets(int delta)
 {
-  if (n) {
-    unschedule();
-    _next = n;
-    _prev = n->_prev;
-    n->_prev = this;
-    _prev->_next = this;
-  }
-}
-
-inline void 
-ElementLink::adj_tickets(int n)
-{
-  _ntickets += n;
-  if (_ntickets > _max_ntickets)
-    _ntickets = _max_ntickets;
-  else if (_ntickets < 1)
-    _ntickets = 1;
-  _stride = STRIDE1 / _ntickets;
+  set_tickets(_tickets + delta);
 }
 
 inline void
 ElementLink::reschedule()
 {
-  stride();
-  unschedule();
-
-  ElementLink *n = scheduled_list()->scheduled_next();
-
-  while(n != scheduled_list()) {
-    if (n->_pass > _pass) {
-      schedule_before(n);
-      return;
-    }
-    n = n->scheduled_next();
+  // should not be scheduled at this point
+  if (_next) {
+    _next->_prev = _prev;
+    _prev->_next = _next;
   }
 
-  // largest pass value, schedule_tail so we don't reschedule immediately
-  schedule_tail();
-  if (_pass > MAX_PASS) refresh_worklist_passes();
+  // increase pass
+  _pass += _stride;
+
+#if 0
+  // look for element before where we should be scheduled
+  ElementLink *n = _list->_prev;
+  while (n != _list && !PASS_GT(_pass, n->_pass))
+    n = n->_prev;
+
+  // schedule after `n'
+  _next = n->_next;
+  _prev = n;
+  n->_next = this;
+  _next->_prev = this;
+#else
+  // look for element after where we should be scheduled
+  ElementLink *n = _list->_next;
+  while (n != _list && !PASS_GT(n->_pass, _pass))
+    n = n->_next;
+
+  // schedule before `n'
+  _prev = n->_prev;
+  _next = n;
+  _prev->_next = this;
+  n->_prev = this;
+#endif
 }
 
 inline void
 ElementLink::join_scheduler()
 {
-  if (_ntickets < 1 || scheduled()) return;
-  if (scheduled_list()->scheduled_next() == scheduled_list())
+  if (_tickets < 1 || scheduled()) return;
+  if (_list->_next == _list)
     /* nothing on worklist */
     _pass = 0;
   else 
-    _pass = scheduled_list()->scheduled_next()->_pass;
+    _pass = _list->_next->_pass;
   reschedule();
-}
-
-inline void
-ElementLink::set_max_ntickets(int n)
-{
-  _max_ntickets = n;
-  if (n > 0) {
-    _ntickets = 1;
-    _stride = STRIDE1 / _ntickets;
-  } else {
-    _ntickets = -1;
-    _stride = 0;
-  }
-}
-
-inline void 
-ElementLink::refresh_worklist_passes()
-{
-  int base = -1;
-  ElementLink *n = scheduled_list()->scheduled_next();
-
-  click_chatter("redoing worklist");
-
-  while(n != scheduled_list()) {
-    if (base == -1) base = n->_pass;
-    n->_pass -= base;
-    if (n->_pass > MAX_PASS)
-      click_chatter("warning: element has high pass value");
-    n = n->scheduled_next();
-  }
 }
 
 #endif
