@@ -27,7 +27,7 @@
 #include "elements/standard/alignmentinfo.hh"
 
 IPEncap::IPEncap()
-  : Element(1, 1), _ip_p(-1)
+  : Element(1, 1)
 {
   MOD_INC_USE_COUNT;
 }
@@ -46,15 +46,66 @@ IPEncap::clone() const
 int
 IPEncap::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  unsigned char ip_p_uc;
+  click_ip iph;
+  memset(&iph, 0, sizeof(click_ip));
+  iph.ip_v = 4;
+  iph.ip_hl = sizeof(click_ip) >> 2;
+  iph.ip_tos = 0;
+  iph.ip_off = 0;
+  iph.ip_ttl = 250;
+  iph.ip_sum = 0;
+  int tos = -1, dscp = -1;
+  bool ce = false, df = false;
+  String ect_str;
+  
   if (cp_va_parse(conf, this, errh,
-		  cpByte, "IP encapsulation protocol", &ip_p_uc,
-		  cpIPAddress, "source IP address", &_ip_src,
-		  cpIPAddress, "destination IP address", &_ip_dst,
+		  cpByte, "protocol", &iph.ip_p,
+		  cpIPAddress, "source address", &iph.ip_src,
+		  cpIPAddress, "destination address", &iph.ip_dst,
+		  cpKeywords,
+		  "TOS", cpUnsigned, "TOS", &tos,
+		  "TTL", cpByte, "time-to-live", &iph.ip_ttl,
+		  "DSCP", cpUnsigned, "DSCP", &dscp,
+		  "ECT", cpKeyword, "ECN capable transport", &ect_str,
+		  "CE", cpBool, "ECN congestion experienced", &ce,
+		  "DF", cpBool, "don't fragment", &df,
 		  0) < 0)
     return -1;
-  _ip_p = ip_p_uc;
 
+  int ect = 0;
+  if (ect_str) {
+    bool x;
+    if (cp_bool(ect_str, &x))
+      ect = x;
+    else if (ect_str == "2")
+      ect = 2;
+    else
+      return errh->error("bad ECT value `%s'", ect_str.cc());
+  }
+  
+  if (tos >= 0 && dscp >= 0)
+    return errh->error("cannot set both TOS and DSCP");
+  else if (tos >= 0 && (ect || ce))
+    return errh->error("cannot set both TOS and ECN bits");
+  if (tos >= 256 || tos < -1)
+    return errh->error("TOS too large; max 255");
+  else if (dscp >= 63 || dscp < -1)
+    return errh->error("DSCP too large; max 63");
+  if (ect && ce)
+    return errh->error("can set at most one ECN option");
+
+  if (tos >= 0)
+    iph.ip_tos = tos;
+  else if (dscp >= 0)
+    iph.ip_tos = (dscp << 2);
+  if (ect)
+    iph.ip_tos |= (ect == 1 ? IP_ECN_ECT1 : IP_ECN_ECT2);
+  if (ce)
+    iph.ip_tos |= IP_ECN_CE;
+  if (df)
+    iph.ip_off |= htons(IP_DF);
+  _iph = iph;
+  
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   // check alignment
   {
@@ -85,18 +136,10 @@ IPEncap::simple_action(Packet *p_in)
   if (!p) return 0;
   
   click_ip *ip = reinterpret_cast<click_ip *>(p->data());
-  ip->ip_v = 4;
-  ip->ip_hl = sizeof(click_ip) >> 2;
+  memcpy(ip, &_iph, sizeof(click_ip));
   ip->ip_len = htons(p->length());
   ip->ip_id = htons(_id.read_and_add(1));
-  ip->ip_p = _ip_p;
-  ip->ip_src = _ip_src;
-  ip->ip_dst = _ip_dst;
-  ip->ip_tos = 0;
-  ip->ip_off = 0;
-  ip->ip_ttl = 250;
 
-  ip->ip_sum = 0;
 #if HAVE_FAST_CHECKSUM && FAST_CHECKSUM_ALIGNED
   if (_aligned)
     ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
@@ -119,8 +162,8 @@ IPEncap::read_handler(Element *e, void *thunk)
 {
   IPEncap *ipe = static_cast<IPEncap *>(e);
   switch ((int)thunk) {
-   case 0:	return IPAddress(ipe->_ip_src).s() + "\n";
-   case 1:	return IPAddress(ipe->_ip_dst).s() + "\n";
+   case 0:	return IPAddress(ipe->_iph.ip_src).s() + "\n";
+   case 1:	return IPAddress(ipe->_iph.ip_dst).s() + "\n";
    default:	return "<error>\n";
   }
 }
