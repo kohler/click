@@ -11,6 +11,7 @@ For this version of Linux	Use this patch
 2.4.21				linux-2.4.21-patch
 2.4.26				linux-2.4.26-patch
 2.4.26-Debian			debian-2.4.26-patch
+2.4.27				linux-2.4.27-patch
 
 Patch Linux using a command like this:
 % cd LINUXDIR
