@@ -1,3 +1,15 @@
+2004-06-05 Saturday 17:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* Makefile.in (1.115), configure (1.9), configure.in (1.227): add
+	support for --disable-tools
+
+2004-06-05 Saturday 17:51  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/analysis/: fromipsumdump.cc (1.63), ipsumdumpinfo.cc
+	(1.13), ipsumdumpinfo.hh (1.8), toipsumdump.cc (1.50),
+	toipsumdump.hh (1.42): add ts_usec1 type (time as number of
+	microseconds since the epoch)
+
 2004-06-05 Saturday 13:46  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* click-mkelemmap (1.25): nit
