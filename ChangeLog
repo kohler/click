@@ -1,3 +1,9 @@
+2003-03-26 Wednesday 20:59  Eddie Kohler <kohler@icir.org>
+
+	* elements/userlevel/: chattersocket.cc (1.15), chattersocket.hh
+	(1.10), controlsocket.cc (1.42), controlsocket.hh (1.30):
+	documentation updates, and ChatterSocket supports hot-swapping
+
 2003-03-26 Wednesday 19:36  Eddie Kohler <kohler@icir.org>
 
 	* doc/click.1 (1.12), elements/userlevel/controlsocket.cc (1.41),
