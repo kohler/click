@@ -1,0 +1,45 @@
+%info
+
+Check that TCPRewriter (and FTPPortMapper) correctly translate sequence
+numbers and checksums, even for SACK blocks.
+
+%script
+click -e "
+IPRewriterPatterns(pat 1.0.0.1 1024-65535 - -)
+rw :: TCPRewriter(pattern pat 0 0)
+FromIPSummaryDump(IN1, STOP true, CHECKSUM true)
+	-> CheckIPHeader(VERBOSE true)
+	-> CheckTCPHeader(VERBOSE true)
+	-> FTPPortMapper(rw, rw, pat 0 0)
+	-> [0]rw[0]
+	-> CheckIPHeader(VERBOSE true)
+	-> CheckTCPHeader(VERBOSE true)
+	-> ToIPSummaryDump(OUT1, CONTENTS src sport dst dport proto tcp_seq tcp_ack payload tcp_opt)
+"
+
+%file IN1
+!data src sport dst dport proto tcp_seq tcp_ack payload tcp_opt
+# first prime TCPRewriter to create a mapping
+200.200.200.200 30 2.0.0.2 21 T 0 0 "x" .
+200.200.200.200 30 2.0.0.2 21 T 1 0 "PORT 200,200,200,200,200,200\n" .
+200.200.200.200 30 2.0.0.2 21 T 30 0 "fubar\n" .
+2.0.0.2 21 1.0.0.1 1024 T 0 0 "" .
+2.0.0.2 21 1.0.0.1 1024 T 0 1 "" .
+2.0.0.2 21 1.0.0.1 1024 T 0 18 "" .
+2.0.0.2 21 1.0.0.1 1024 T 0 0 "" sack1:18
+2.0.0.2 21 1.0.0.1 1024 T 0 0 "" sack1:10
+2.0.0.2 21 1.0.0.1 1024 T 0 0 "" sack1:10;sack1:18;sack18:20
+
+%expect OUT1
+1.0.0.1 1024 2.0.0.2 21 T 0 0 "x" .
+1.0.0.1 1024 2.0.0.2 21 T 1 0 "PORT 1,0,0,1,4,1\n" .
+1.0.0.1 1024 2.0.0.2 21 T 18 0 "fubar\n" .
+2.0.0.2 21 200.200.200.200 30 T 0 0 "" .
+2.0.0.2 21 200.200.200.200 30 T 0 1 "" .
+2.0.0.2 21 200.200.200.200 30 T 0 30 "" .
+2.0.0.2 21 200.200.200.200 30 T 0 0 "" sack1:30
+2.0.0.2 21 200.200.200.200 30 T 0 0 "" sack1:10
+2.0.0.2 21 200.200.200.200 30 T 0 0 "" sack1:10;sack1:30;sack30:32
+
+%ignore
+!.*
