@@ -1,7 +1,7 @@
 
 Index: include/linux/netdevice.h
---- include/linux/netdevice.h.orig	Thu Jun 15 18:48:13 2000
-+++ include/linux/netdevice.h	Thu Jun 15 18:48:13 2000
+--- include/linux/netdevice.h.orig	Mon Jun 26 12:39:43 2000
++++ include/linux/netdevice.h	Mon Jun 26 19:36:16 2000
 @@ -317,6 +317,32 @@
  	/* Semi-private data. Keep it at the end of device struct. */
  	struct dst_entry	*fastpath[NETDEV_FASTROUTE_HMASK+1];
@@ -49,12 +49,23 @@ Index: include/linux/netdevice.h
  extern int		dev_restart(struct device *dev);
 
 Index: net/core/skbuff.c
---- net/core/skbuff.c.orig	Thu Jun 15 18:40:24 2000
-+++ net/core/skbuff.c	Thu Jun 15 18:36:17 2000
-@@ -258,6 +258,47 @@
+--- net/core/skbuff.c.orig	Mon Jun 26 12:44:17 2000
++++ net/core/skbuff.c	Thu Jul  6 17:40:11 2000
+@@ -4,7 +4,7 @@
+  *	Authors:	Alan Cox <iiitac@pyr.swan.ac.uk>
+  *			Florian La Roche <rzsfl@rz.uni-sb.de>
+  *
+- *	Version:	$Id: linux-2.2.14-patch,v 1.20 2000/07/06 22:17:36 benjie Exp $
++ *	Version:	$Id: linux-2.2.14-patch,v 1.20 2000/07/06 22:17:36 benjie Exp $
+  *
+  *	Fixes:	
+  *		Alan Cox	:	Fixed the worst of the load balancer bugs.
+@@ -256,6 +256,49 @@
+ 	n->destructor = NULL;
+ 	return n;
  }
- 
- /*
++
++/*
 + * Click: recycle a sk_buff by resetting it. if it can be recycled, return it.
 + */
 +struct sk_buff *skb_recycle(struct sk_buff *skb)
@@ -88,21 +99,21 @@ Index: net/core/skbuff.c
 +      return skb;
 +    } 
 +    
-+    else 
-+      kfree_skbmem(skb);
++    else { 
++	  kmem_cache_free(skbuff_head_cache, skb); 
++	  atomic_dec(&net_skbcount);
++	}
 +  }
 +  return 0;
 +}
 +
-+
-+/*
+ 
+ /*
   *	This is slower, and copies the whole data area 
-  */
-  
 
 Index: net/core/dev.c
---- net/core/dev.c.orig	Thu Jun 15 18:34:57 2000
-+++ net/core/dev.c	Thu Jun 15 18:34:57 2000
+--- net/core/dev.c.orig	Mon Jun 26 12:40:19 2000
++++ net/core/dev.c	Mon Jun 26 12:42:34 2000
 @@ -148,6 +148,9 @@
   
  static struct notifier_block *netdev_chain=NULL;
@@ -346,8 +357,8 @@ Index: net/core/dev.c
    	/*
 
 Index: net/sched/sch_generic.c
---- net/sched/sch_generic.c.orig	Thu Jun 15 18:50:53 2000
-+++ net/sched/sch_generic.c	Thu Jun 15 18:50:53 2000
+--- net/sched/sch_generic.c.orig	Mon Jun 26 12:40:35 2000
++++ net/sched/sch_generic.c	Mon Jun 26 12:42:34 2000
 @@ -76,6 +76,24 @@
  	return q->q.qlen;
  }
@@ -399,8 +410,8 @@ Index: net/sched/sch_generic.c
  			continue;
 
 Index: net/netsyms.c
---- net/netsyms.c.orig	Thu Jun 15 18:50:00 2000
-+++ net/netsyms.c	Thu Jun 15 18:50:00 2000
+--- net/netsyms.c.orig	Mon Jun 26 12:40:09 2000
++++ net/netsyms.c	Mon Jun 26 12:42:34 2000
 @@ -330,7 +330,6 @@
  EXPORT_SYMBOL(net_reset_timer);
  EXPORT_SYMBOL(net_delete_timer);
@@ -438,8 +449,8 @@ Index: net/netsyms.c
  EXPORT_SYMBOL(netif_rx);
 
 Index: drivers/net/tulip.c
---- drivers/net/tulip.c.orig	Thu Jun 15 18:46:49 2000
-+++ drivers/net/tulip.c	Thu Jun 15 18:46:49 2000
+--- drivers/net/tulip.c.orig	Mon Jun 26 12:39:32 2000
++++ drivers/net/tulip.c	Mon Jun 26 12:42:34 2000
 @@ -22,9 +22,6 @@
  
  /* A few user-configurable values. */
@@ -1161,8 +1172,8 @@ Index: drivers/net/tulip.c
 +
 
 Index: drivers/net/acenic.c
---- drivers/net/acenic.c.orig	Thu Jun 15 18:46:36 2000
-+++ drivers/net/acenic.c	Thu Jun 15 18:46:36 2000
+--- drivers/net/acenic.c.orig	Mon Jun 26 12:39:18 2000
++++ drivers/net/acenic.c	Mon Jun 26 12:42:34 2000
 @@ -276,6 +276,21 @@
  			printk(version);
  		}
@@ -1677,8 +1688,8 @@ Index: drivers/net/acenic.c
  
 
 Index: drivers/net/acenic.h
---- drivers/net/acenic.h.orig	Thu Jun 15 18:46:36 2000
-+++ drivers/net/acenic.h	Thu Jun 15 18:46:36 2000
+--- drivers/net/acenic.h.orig	Mon Jun 26 12:39:26 2000
++++ drivers/net/acenic.h	Mon Jun 26 12:42:34 2000
 @@ -670,5 +670,15 @@
  static int ace_set_mac_addr(struct device *dev, void *p);
  static struct net_device_stats *ace_get_stats(struct device *dev);
@@ -1697,8 +1708,8 @@ Index: drivers/net/acenic.h
  #endif /* _ACENIC_H_ */
 
 Index: include/linux/signal.h
---- include/linux/signal.h.orig	Thu Jun 15 18:48:16 2000
-+++ include/linux/signal.h	Thu Jun 15 18:48:16 2000
+--- include/linux/signal.h.orig	Mon Jun 26 12:39:53 2000
++++ include/linux/signal.h	Mon Jun 26 19:35:54 2000
 @@ -189,7 +189,7 @@
  		memset(&set->sig[1], 0, sizeof(long)*(_NSIG_WORDS-1));
  		break;
@@ -1719,8 +1730,8 @@ Index: include/linux/signal.h
  
 
 Index: include/linux/skbuff.h
---- include/linux/skbuff.h.orig	Thu Jun 15 18:48:16 2000
-+++ include/linux/skbuff.h	Thu Jun 15 18:48:16 2000
+--- include/linux/skbuff.h.orig	Mon Jun 26 12:40:02 2000
++++ include/linux/skbuff.h	Mon Jun 26 19:35:55 2000
 @@ -145,6 +145,7 @@
  extern struct sk_buff *		skb_peek_copy(struct sk_buff_head *list);
  extern struct sk_buff *		alloc_skb(unsigned int size, int priority);
