@@ -1,6 +1,8 @@
 #!/usr/bin/perl 
+# run-grid-node
+# Douglas S. J. De Couto
 
-# $Id: run-grid-node,v 1.4 2000/08/04 21:01:35 decouto Exp $
+# $Id: run-grid-node,v 1.5 2000/08/05 23:03:07 decouto Exp $
 
 # usage: run-grid-node <ip-addr> [-no-gw -debug]
 
@@ -9,6 +11,9 @@
 $click = "../userlevel/click";
 $click_debug = "cat";
 $click_config_name = "../conf/grid3.click";
+
+
+$grid_channel = "5";
 
 $GRID_GW = "18.26.7.1";
 $GRID_NETMASK = "255.255.255.0";
@@ -40,7 +45,7 @@ if (!($system_type =~ /Linux/ ||
     exit 1;
 }
 
-
+$do_cleanup = 1;
 $grid_addr = $ARGV[0];
 $grid_if = $ARGV[1];
 $grid_gw = $GRID_GW;
@@ -54,9 +59,12 @@ for ($i = 2; $i < @ARGV; $i++) {
     if ($ARGV[$i] eq "-no-gw") {
 	$grid_gw = "0.0.0.0";
     }
+    if ($ARGV[$i] eq "-no-cleanup") {
+	$do_cleanup = 0;
+    }
 }
 
-print "Running Grid with address ", $grid_addr, " on interface ", $grid_if. "\n";
+print "Running Grid with address $grid_addr on interface $grid_if, ad-hoc channel $grid_channel.\n";
 if ($grid_gw != "0.0.0.0") {
     print "Using Grid gateway ", $grid_gw, "\n";
 }
@@ -64,10 +72,14 @@ else {
     print "NOT using Grid gateway\n";
 }
 
-# get MAC address
+# get MAC address and other net info for restoring after click finishes
 
 $ifconfig_out = `ifconfig $grid_if`;
 $hw_addr = "";
+$old_ip = "";
+$old_netmask = "";
+$old_bcast = "";
+$old_gw = "";
 $tun_dev_type = "";
 
 if ($system_type =~ /Linux/) {
@@ -75,8 +87,36 @@ if ($system_type =~ /Linux/) {
 	print "Unable to get MAC address";
 	exit 1;
     }
-    $hw_addr = $1;
-    
+    else {
+	$hw_addr = $1;
+    }
+    if(!($ifconfig_out =~ /inet addr:(\d+.\d+.\d+.\d+)/)){
+	print "Unable to get old IP address\n";
+    }
+    else {
+	$old_ip_addr = $1;
+    }
+    if(!($ifconfig_out =~ /Mask:(\d+.\d+.\d+.\d+)/)){
+	print "Unable to get old netmask\n";
+    }
+    else {
+	$old_netmask = $1;
+    }
+    if(!($ifconfig_out =~ /Bcast:(\d+.\d+.\d+.\d+)/)){
+	print "Unable to get old broadcast address\n";
+    }
+    else {
+	$old_bcast = $1;
+    }
+
+    $route_info = `route -n`;
+    if(!($route_info =~ /\n0.0.0.0\s+(\d+.\d+.\d+.\d+)/)){
+	print "Unable to get old gateway\n";
+    }
+    else {
+	$old_gw = $1;
+    }
+
     $tun_dev = "tap";
 }
 elsif ($system_type =~ /FreeBSD/) {
@@ -97,8 +137,12 @@ else {
 # optionally setup default gw
 
 if ($system_type =~ /Linux/) {
+    # remove all routes through the grid interface, and make sure it is up
     system "ifconfig $grid_if down";
     system "ifconfig $grid_if 0";
+
+    # set the adapter to ad-hoc mode
+    system "iwconfig $grid_if mode ad-hoc channel $grid_channel";
 }
 elsif ($system_type =~ /FreeBSD/) {
     print stderr "Not yet implemented for this system\n";
@@ -140,3 +184,23 @@ while(<click_config_file>) {
 }
 close P;
 close click_config_file;
+
+
+if ($do_cleanup) {
+    if ($system_type =~ /Linux/) {
+	system "ifconfig $grid_if $old_ip_addr netmask $old_netmask broadcast $old_bcast";
+	system "iwconfig $grid_if mode managed";	
+
+        if ($grid_gw != "0.0.0.0") {
+	    system "route add default gw $old_gw";
+	}
+    }
+    elsif ($system_type =~ /FreeBSD/) {
+	print stderr "Not yet implemented for this system\n";
+	exit 1;
+    }
+    else {
+	print stderr "This system is not supported\n";
+	exit 1;
+    }
+}
