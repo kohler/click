@@ -14,7 +14,7 @@ bindir = @bindir@
 sbindir = @sbindir@
 libdir = @libdir@
 
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/ns:$(top_srcdir)/elements/userlevel:@elements_vpath@
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):@elements_vpath@$(top_srcdir)/elements/ns:$(top_srcdir)/elements/userlevel
 
 CC = @CC@
 CPP = @CPP@

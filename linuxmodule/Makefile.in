@@ -15,7 +15,7 @@ sbindir = @sbindir@
 libdir = @libdir@
 linuxdir = @linuxdir@
 
-VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):$(top_srcdir)/elements/linuxmodule:@elements_vpath@
+VPATH = .:$(top_srcdir)/lib:$(top_srcdir)/$(subdir):@elements_vpath@$(top_srcdir)/elements/linuxmodule
 
 CC = @KERNEL_CC@
 CPP = @CPP@
