@@ -29,6 +29,8 @@ Version 1.0.5
 
 * Removed UnlimitedElement in favor of `notify_n{in,out}puts()'.
 
+* Bug fixes in click-xform.
+
 
 Version 1.0.4   13.Apr.2000
 
