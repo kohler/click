@@ -99,7 +99,7 @@ TimedSource::run_scheduled()
     click_gettimeofday(&p->timestamp_anno());
     output(0).push(p);
     _count++;
-    _timer.schedule_after_ms(_interval);
+    _timer.reschedule_after_ms(_interval);
   } else if (_stop)
     router()->please_stop_driver();
 }

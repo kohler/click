@@ -69,7 +69,7 @@ TimedSink::run_scheduled()
   Packet *p = input(0).pull();
   if (p)
     p->kill();
-  _timer.schedule_after_ms(_interval);
+  _timer.reschedule_after_ms(_interval);
 }
 
 EXPORT_ELEMENT(TimedSink)

@@ -85,7 +85,7 @@ Burster::run_scheduled()
   }
 
   // reset timer
-  _timer.schedule_after_ms(_interval);
+  _timer.reschedule_after_ms(_interval);
 }
 
 EXPORT_ELEMENT(Burster)
