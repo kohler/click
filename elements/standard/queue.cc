@@ -58,12 +58,10 @@ Queue::configure(Vector<String> &conf, ErrorHandler *errh)
 int
 Queue::initialize(ErrorHandler *errh)
 {
-  assert(!_q);
+  assert(!_q && _head == 0 && _tail == 0);
   _q = new Packet *[_capacity + 1];
   if (_q == 0)
     return errh->error("out of memory");
-
-  _head = _tail = 0;
   _drops = 0;
   _highwater_length = 0;
   return 0;
@@ -136,12 +134,10 @@ Queue::take_state(Element *e, ErrorHandler *errh)
 void
 Queue::cleanup(CleanupStage)
 {
-  if (_q) {
-    for (int i = _head; i != _tail; i = next_i(i))
-      _q[i]->kill();
-    delete[] _q;
-    _q = 0;
-  }
+  for (int i = _head; i != _tail; i = next_i(i))
+    _q[i]->kill();
+  delete[] _q;
+  _q = 0;
 }
 
 void

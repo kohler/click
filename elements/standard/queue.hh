@@ -52,7 +52,7 @@ When written, drops all packets in the Queue.
 
 class Storage { public:
 
-  Storage()				{ }
+  Storage()				: _head(0), _tail(0) { }
 
   operator bool() const			{ return _head != _tail; }
   bool empty() const			{ return _head == _tail; }
