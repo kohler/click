@@ -9,7 +9,7 @@
 /* Click low-level RPC interface */
 
 /* We want consistent ioctl numbers across platforms, so we choose FreeBSD's
-   numbering system (Linux doesn't seem to apply semantics to its numbering
+   numbering system (Linux doesn't seem to use the semantics of its numbering
    system, which switches IOC_OUT and IOC_IN). */
 #define _CLICK_IOC_VOID		0x20000000
 #define _CLICK_IOC_OUT		0x40000000
