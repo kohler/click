@@ -543,7 +543,7 @@ ElementMap::map_indexes(const RouterT *r, Vector<int> &map_indexes,
 }
 
 bool
-ElementMap::driver_indifferent(const Vector<int> &map_indexes, int driver_mask = ALL_DRIVERS) const
+ElementMap::driver_indifferent(const Vector<int> &map_indexes, int driver_mask) const
 {
   for (int i = 0; i < map_indexes.size(); i++) {
     int idx = map_indexes[i];
