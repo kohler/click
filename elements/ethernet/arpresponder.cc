@@ -29,6 +29,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/straccum.hh>
 
 ARPResponder::ARPResponder()
   : Element(1, 1)
@@ -51,7 +52,7 @@ void
 ARPResponder::add_map(IPAddress ipa, IPAddress mask, EtherAddress ena)
 {
   struct Entry e;
-  e._dst = ipa;
+  e._dst = ipa & mask;
   e._mask = mask;
   e._ena = ena;
   _v.push_back(e);
@@ -73,10 +74,10 @@ ARPResponder::configure(const Vector<String> &conf, ErrorHandler *errh)
     cp_spacevec(conf[i], words);
     
     for (int j = 0; j < words.size(); j++)
-      if (cp_ip_prefix(words[j], &ipa, &mask, this))
-	add_map(ipa, mask, EtherAddress());
-      else if (cp_ip_address(words[j], &ipa, this))
+      if (cp_ip_address(words[j], &ipa, this))
 	add_map(ipa, IPAddress(0xFFFFFFFFU), EtherAddress());
+      else if (cp_ip_prefix(words[j], &ipa, &mask, this))
+	add_map(ipa, mask, EtherAddress());
       else if (cp_ethernet_address(words[j], &ena, this)) {
 	if (have_ena)
 	  errh->error("argument %d has more than one Ethernet address", i);
@@ -184,6 +185,31 @@ ARPResponder::simple_action(Packet *p)
   
   p->kill();
   return(q);
+}
+
+String
+ARPResponder::read_handler(Element *e, void *thunk)
+{
+  ARPResponder *ar = static_cast<ARPResponder *>(e);
+  switch ((int)thunk) {
+
+  case 0: {			// table
+    StringAccum sa;
+    for (int i = 0; i < ar->_v.size(); i++)
+      sa << ar->_v[i]._dst << '/' << ar->_v[i]._mask << ' ' << ar->_v[i]._ena << '\n';
+    return sa.take_string();
+  }
+
+  default:
+    return "<error>\n";
+
+  }
+}
+
+void
+ARPResponder::add_handlers()
+{
+  add_read_handler("table", read_handler, (void *)0);
 }
 
 EXPORT_ELEMENT(ARPResponder)

@@ -20,10 +20,13 @@
  * (`C<18.26.7.0/24>').
  *
  * =n
+ *
  * AddressInfo elements can simplify the arguments to ARPResponder. In
  * particular, if C<NAME> is shorthand for both an IP network address (or IP
- * address) C<IP> and an Ethernet address C<ETH>, then C<ARPResponder(NAME)>
- * is equivalent to C<ARPResponder(IP ETH)>.
+ * address) C<IP> and an Ethernet address C<ETH>, then C<ARPResponder(NAME)> is
+ * equivalent to C<ARPResponder(IP ETH)>. If C<NAME> is short for both an IP
+ * address and an IP network address, then ARPResponder will prefer the IP
+ * address. (You can say C<NAME:ipnet> to use the IP network address.)
  *
  * =e
  * Produce ARP replies for the local machine (18.26.4.24)
@@ -51,7 +54,9 @@ class ARPResponder : public Element { public:
   const char *class_name() const		{ return "ARPResponder"; }
   const char *processing() const		{ return AGNOSTIC; }
   ARPResponder *clone() const;
+
   int configure(const Vector<String> &, ErrorHandler *);
+  void add_handlers();
 
   Packet *simple_action(Packet *);
   
@@ -70,6 +75,8 @@ private:
   Vector<Entry> _v;
   
   void add_map(IPAddress dst, IPAddress mask, EtherAddress);
+
+  static String read_handler(Element *, void *);
   
 };
 

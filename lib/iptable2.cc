@@ -41,6 +41,8 @@ IPTable2::~IPTable2()
 void
 IPTable2::add(unsigned dst, unsigned mask, unsigned gw)
 {
+  dst &= mask;
+  
   for(int i = 0; i < _v.size(); i++)
     if(_v[i]._valid && (_v[i]._dst == dst) && (_v[i]._mask == mask))
       return;

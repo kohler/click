@@ -55,8 +55,9 @@ IPTable::lookup(unsigned dst, unsigned &gw, int &index)
 void
 IPTable::add(unsigned dst, unsigned mask, unsigned gw, int index)
 {
-  struct Entry e;
+  dst &= mask;
 
+  struct Entry e;
   e._dst = dst;
   e._mask = mask;
   e._gw = gw;
