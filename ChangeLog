@@ -1,3 +1,8 @@
+2002-03-11 Monday 12:48  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/vector.hh (1.5): remove references to nonexistent
+	functions
+
 2002-03-07 Thursday 19:55  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: gridroutetable.cc (1.41), gridroutetable.hh

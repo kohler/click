@@ -1,3 +1,8 @@
+2002-03-11 Monday 12:48  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: vector.hh, vector.hh: remove references to
+	nonexistent functions
+
 2002-03-07 Thursday 14:09  Eddie Kohler <kohler@aciri.org>
 
 	* LICENSE, click-buildtool: nitlets
