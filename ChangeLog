@@ -1,3 +1,17 @@
+2005-01-26 Wednesday 02:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* tools/click2xml/: click2xml.cc (1.18), xml2click.cc (1.16): XML
+	namespaces, correctness when landmarks include <>&
+
+2005-01-26 Wednesday 02:42  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* etc/elementmap.xsl (1.1): faced with three hundred things I need
+	to do, I choose to learn XSL
+
+2005-01-26 Wednesday 02:40  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/string.hh (1.36): add String::rfind()
+
 2005-01-25 Tuesday 14:52  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: directiplookup.cc (1.1), directiplookup.hh (1.1):
