@@ -108,11 +108,12 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   int confindex = 5;
   _have_sport = _have_dport = false;
   
-
+#ifdef 0
   for(int i=0; i < conf.size(); i++){
     click_chatter("  %s\n", ((String)conf[i]).cc());
   }
-	   
+#endif	
+   
   if (conf.size() < 6) {
     errh->error("not enough parameters for DivertSocket");
     return -1;
@@ -185,7 +186,6 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 	_have_dport = false;
       else {
 	_have_dport = true;
- 	printf("have dport!\n");
 	confindex++;
       }
     } else if (parse_ports(conf[confindex], errh, &_dportl, &_dporth) >= 0) {
@@ -223,7 +223,7 @@ DivertSocket::initialize(ErrorHandler *errh)
   char fw_chain[32];
 #endif
 
-
+#ifdef 0
   printf("Device  : \t%s\n", _device.cc());
   printf("DIV port: \t%u\n", _divertport);
   printf("Rule Num: \t%u\n", _rulenumber);
@@ -233,12 +233,12 @@ DivertSocket::initialize(ErrorHandler *errh)
   printf("sport   : \t%u - %u\n", _sportl, _sporth);
   printf("dport   : \t%u - %u\n", _dportl, _dporth);
   printf("in/out  : \t%s\n", _inout.cc());
-
+#endif
 
   // Setup socket
   _fd = socket(AF_INET, SOCK_RAW, IPPROTO_DIVERT);
   if (_fd == -1) {
-    errh->error("DivertSocket: %s", strerror(errno));
+    errh->error("DivertSocket(socket): %s", strerror(errno));
     return -1;
   }
   bindPort.sin_family=AF_INET;
@@ -258,7 +258,7 @@ DivertSocket::initialize(ErrorHandler *errh)
 
   if (ret != 0) {
     close(_fd);
-    errh->error("DivertSocket: %s", strerror(errno));
+    errh->error("DivertSocket(bind): %s", strerror(errno));
     return -1;
   }
 
