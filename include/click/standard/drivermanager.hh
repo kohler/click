@@ -53,12 +53,12 @@ to the next instruction.
 Wait for COUNT driver pauses, then go to the next instruction. COUNT defaults
 to one. You may say `C<wait_stop>' instead of `C<wait_pause>'.
 
-=item `C<call> ELEMENT.HANDLER [DATA]'
+=item `C<write> ELEMENT.HANDLER [DATA]'
 
 Call ELEMENT's write handler named HANDLER, passing it the string DATA; then
 go to the next instruction. DATA defaults to the empty string.
 
-=item `C<print> ELEMENT.HANDLER'
+=item `C<read> ELEMENT.HANDLER'
 
 Call ELEMENT's read handler named HANDLER and print the result.
 
@@ -77,7 +77,7 @@ clean itself up before the driver is stopped. It waits for the first driver
 pause, then calls C<k>'s C<cleanup> handler, waits for a tenth of a second,
 and stops the driver.
 
-  DriverManager(wait_pause, call k.cleanup, wait 0.1, stop);
+  DriverManager(wait_pause, write k.cleanup, wait 0.1, stop);
 
 Use this idiom when one of your elements must emit a last packet or two before
 the router configuration is destroyed.
@@ -100,7 +100,7 @@ class DriverManager : public Element { public:
   
  private:
 
-  enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_CALL, INSN_PRINT };
+  enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_WRITE, INSN_READ };
   
   Vector<int> _insns;
   Vector<int> _args;

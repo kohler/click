@@ -67,19 +67,19 @@ DriverManager::configure(const Vector<String> &conf, ErrorHandler *errh)
       else
 	add_insn(INSN_WAIT_STOP, n);
       
-    } else if (insn_name == "call") {
+    } else if (insn_name == "write" || insn_name == "call") {
       if (words.size() == 2)
-	add_insn(INSN_CALL, 0, words[1] + " ''");
+	add_insn(INSN_WRITE, 0, words[1] + " ''");
       else if (words.size() == 3)
-	add_insn(INSN_CALL, 0, words[1] + " " + words[2]);
+	add_insn(INSN_WRITE, 0, words[1] + " " + words[2]);
       else
-	errh->error("expected `call ELEMENT.HANDLER [ARG]'");
+	errh->error("expected `%s ELEMENT.HANDLER [ARG]'", insn_name.cc());
 
-    } else if (insn_name == "print") {
+    } else if (insn_name == "read" || insn_name == "print") {
       if (words.size() == 2)
-	add_insn(INSN_PRINT, 0, words[1]);
+	add_insn(INSN_READ, 0, words[1]);
       else
-	errh->error("expected `print ELEMENT.HANDLER'");
+	errh->error("expected `%s ELEMENT.HANDLER'", insn_name.cc());
       
     } else if (insn_name == "wait") {
       int ms;
@@ -115,7 +115,7 @@ DriverManager::initialize(ErrorHandler *errh)
   Element *e;
   int hi;
   for (int i = 0; i < _insns.size(); i++)
-    if (_insns[i] == INSN_CALL) {
+    if (_insns[i] == INSN_WRITE) {
       String text;
       if (cp_va_space_parse(_args3[i], this, errh,
 			    cpWriteHandler, "write handler", &e, &hi,
@@ -125,7 +125,7 @@ DriverManager::initialize(ErrorHandler *errh)
       _args[i] = e->eindex();
       _args2[i] = hi;
       _args3[i] = text;
-    } else if (_insns[i] == INSN_PRINT) {
+    } else if (_insns[i] == INSN_READ) {
       if (cp_va_space_parse(_args3[i], this, errh,
 			    cpReadHandler, "read handler", &e, &hi,
 			    0) < 0)
@@ -138,7 +138,7 @@ DriverManager::initialize(ErrorHandler *errh)
   _timer.initialize(this);
   
   int insn = _insns[_insn_pos];
-  if (insn == INSN_STOP || insn == INSN_CALL || insn == INSN_PRINT)
+  if (insn == INSN_STOP || insn == INSN_WRITE || insn == INSN_READ)
     _timer.schedule_now();
   else if (insn == INSN_WAIT)
     _timer.schedule_after_ms(_args[_insn_pos]);
@@ -158,7 +158,7 @@ DriverManager::step_insn()
     _timer.schedule_after_ms(_args[_insn_pos]);
   else if (insn == INSN_WAIT_STOP)
     _insn_arg = 0;
-  else if (insn == INSN_CALL) {
+  else if (insn == INSN_WRITE) {
     StringAccum sa;
     Element *e = router()->element(_args[_insn_pos]);
     const Router::Handler &h = router()->handler(_args2[_insn_pos]);
@@ -166,7 +166,7 @@ DriverManager::step_insn()
     ContextErrorHandler cerrh(ErrorHandler::default_handler(), sa.take_string());
     h.write(_args3[_insn_pos], e, h.write_thunk, &cerrh);
     return true;
-  } else if (insn == INSN_PRINT) {
+  } else if (insn == INSN_READ) {
     Element *e = router()->element(_args[_insn_pos]);
     const Router::Handler &h = router()->handler(_args2[_insn_pos]);
     String result = h.read(e, h.read_thunk);
@@ -200,7 +200,7 @@ DriverManager::run_scheduled()
 {
   // called when a timer expires
   int insn = _insns[_insn_pos];
-  if (insn == INSN_WAIT || insn == INSN_CALL || insn == INSN_PRINT)
+  if (insn == INSN_WAIT || insn == INSN_WRITE || insn == INSN_READ)
     while (step_insn()) ;
   else if (insn == INSN_STOP)
     router()->please_stop_driver();
