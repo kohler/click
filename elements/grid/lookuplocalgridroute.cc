@@ -32,7 +32,7 @@ int GridRouteActor::_next_free_cb = 0;
 #define NOISY 0
 
 LookupLocalGridRoute::LookupLocalGridRoute()
-  : Element(2, 4), _rtes(0), _any_gateway_ip("18.26.7.254"), _task(this)
+  : Element(2, 4), _rtes(0), _any_gateway_ip(0), _task(this)
 {
   MOD_INC_USE_COUNT;
 }
@@ -60,6 +60,7 @@ LookupLocalGridRoute::configure(Vector<String> &conf, ErrorHandler *errh)
                         cpElement, "GridRouteTable element", &_rtes,
                         cpElement, "GridGatewayInfo element", &_gw_info,
 			0);
+  _any_gateway_ip = (_ipaddr.addr & 0xFFffFF00) | 254;
   return res;
 }
 
