@@ -24,6 +24,11 @@ Version 1.0.7
 
 ** Added QuitWatcher.
 
+** Fixed FromLinux bug: now supports multiple instances of FromLinux for same
+   device (this happens while installing a new configuration: initialize is
+   called on the new FromLinux before the last FromLinux instance is
+   uninitialized).
+
 * Tools
 
 ** Fixed click-uncombine bugs and changed its order of arguments.
