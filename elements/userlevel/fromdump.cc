@@ -126,7 +126,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     _first_time_relative = _last_time_relative = _last_time_interval = false;
     
     if ((timerisset(&first_time) != 0) + (timerisset(&first_time_off) != 0) > 1)
-	return errh->error("`START' and `START_AFTER' are mutually exclusive");
+	return errh->error("'START' and 'START_AFTER' are mutually exclusive");
     else if (timerisset(&first_time))
 	_first_time = first_time;
     else if (timerisset(&first_time_off))
@@ -137,7 +137,7 @@ FromDump::configure(Vector<String> &conf, ErrorHandler *errh)
     }
     
     if ((timerisset(&last_time) != 0) + (timerisset(&last_time_off) != 0) + (timerisset(&interval) != 0) > 1)
-	return errh->error("`END', `END_AFTER', and `INTERVAL' are mutually exclusive");
+	return errh->error("'END', 'END_AFTER', and 'INTERVAL' are mutually exclusive");
     else if (timerisset(&last_time))
 	_last_time = last_time;
     else if (timerisset(&last_time_off))
@@ -299,14 +299,12 @@ FromDump::cleanup(CleanupStage)
 void
 FromDump::set_active(bool active)
 {
-    if (_active != active) {
-	_active = active;
-	if (active) {
-	    if (output_is_push(0) && !_task.scheduled())
-		_task.reschedule();
-	    else if (!output_is_push(0))
-		_notifier.wake_listeners();
-	}
+    _active = active;
+    if (active) {
+	if (output_is_push(0) && !_task.scheduled())
+	    _task.reschedule();
+	else if (!output_is_push(0))
+	    _notifier.wake_listeners();
     }
 }
 
@@ -526,7 +524,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 	      fd->set_active(active);
 	      return 0;
 	  } else
-	      return errh->error("`active' should be Boolean");
+	      return errh->error("'active' should be Boolean");
       }
       case H_STOP:
 	fd->set_active(false);
@@ -540,7 +538,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 		  fd->_have_last_time = true, fd->set_active(true);
 	      return 0;
 	  } else
-	      return errh->error("`extend_interval' takes a time interval");
+	      return errh->error("'extend_interval' takes a time interval");
       }
       default:
 	return -EINVAL;
@@ -550,7 +548,7 @@ FromDump::write_handler(const String &s_in, Element *e, void *thunk, ErrorHandle
 void
 FromDump::add_handlers()
 {
-    _ff.add_handlers(this);
+    _ff.add_handlers(this, true);
     add_read_handler("sampling_prob", read_handler, (void *)H_SAMPLING_PROB);
     add_read_handler("active", read_handler, (void *)H_ACTIVE);
     add_write_handler("active", write_handler, (void *)H_ACTIVE);

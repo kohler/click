@@ -29,7 +29,7 @@ class FromFile { public:
 
     int configure_keywords(Vector<String> &conf, int first_keyword, Element *, ErrorHandler *);
     int initialize(ErrorHandler *);
-    void add_handlers(Element *) const;
+    void add_handlers(Element *, bool filepos_writable = false) const;
     void cleanup();
     void take_state(FromFile &, ErrorHandler *);
 
@@ -86,6 +86,7 @@ class FromFile { public:
     static String filename_handler(Element *, void *);
     static String filesize_handler(Element *, void *);
     static String filepos_handler(Element *, void *);
+    static int filepos_write_handler(const String&, Element*, void*, ErrorHandler*);
     
 };
 

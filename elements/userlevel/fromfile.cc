@@ -313,7 +313,7 @@ FromFile::peek_line(String &result, ErrorHandler *errh)
 }
 
 int
-FromFile::seek(off_t want, ErrorHandler *errh)
+FromFile::seek(off_t want, ErrorHandler* errh)
 {
     if (want >= _file_offset && want < _file_offset + _len) {
 	_pos = want;
@@ -548,19 +548,31 @@ FromFile::filesize_handler(Element *e, void *thunk)
 }
 
 String
-FromFile::filepos_handler(Element *e, void *thunk)
+FromFile::filepos_handler(Element* e, void* thunk)
 {
-    FromFile *fd = reinterpret_cast<FromFile *>((uint8_t *)e + (intptr_t)thunk);
+    FromFile* fd = reinterpret_cast<FromFile*>((uint8_t*)e + (intptr_t)thunk);
     return String(fd->_file_offset + fd->_pos) + "\n";
 }
 
+int
+FromFile::filepos_write_handler(const String& str, Element* e, void* thunk, ErrorHandler* errh)
+{
+    off_t offset;
+    if (!cp_file_offset(cp_uncomment(str), &offset))
+	return errh->error("argument must be file offset");
+    FromFile* fd = reinterpret_cast<FromFile*>((uint8_t*)e + (intptr_t)thunk);
+    return fd->seek(offset, errh);
+}
+
 void
-FromFile::add_handlers(Element *e) const
+FromFile::add_handlers(Element* e, bool filepos_writable) const
 {
     intptr_t offset = (const uint8_t *)this - (const uint8_t *)e;
     e->add_read_handler("filename", filename_handler, (void *)offset);
     e->add_read_handler("filesize", filesize_handler, (void *)offset);
     e->add_read_handler("filepos", filepos_handler, (void *)offset);
+    if (filepos_writable)
+	e->add_write_handler("filepos", filepos_write_handler, (void *)offset);
 }
 
 CLICK_ENDDECLS

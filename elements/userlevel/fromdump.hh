@@ -148,9 +148,9 @@ Returns the filename supplied to FromDump.
 Returns the length of the FromDump file, in bytes, or "-" if that length
 cannot be determined (because the file was compressed, for example).
 
-=h filepos read-only
+=h filepos read/write
 
-Returns FromDump's position in the (uncompressed) file, in bytes.
+Returns or sets FromDump's position in the (uncompressed) file, in bytes.
 
 =h packet_filepos read-only
 
