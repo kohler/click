@@ -8,6 +8,7 @@ import java.util.Vector;
 
 class NewConnectionDialog extends JDialog {
     
+    private ClickController _cntr;
     private JTextField _hostname;
     private JTextField _port;
 
@@ -20,12 +21,34 @@ class NewConnectionDialog extends JDialog {
 	    this.ok = ok;
         }
         public void actionPerformed(ActionEvent e) {
+	    if (ok) {
+		String hostname = _hostname.getText().trim();
+		String portstr = _port.getText().trim();
+		ControlSocket cs = null;
+		String statusLine;
+		try {
+		    int port = Integer.parseInt(portstr);
+		    InetAddress host_inet = InetAddress.getByName(hostname);
+		    cs = new ControlSocket(host_inet, port);
+		    statusLine = "Connected to " + hostname + ":" + port;
+		} catch (Throwable t) {
+		    statusLine = "Connection error: " + t.getMessage();
+		}
+		if (_cntr.empty()) {
+		    _cntr.setControlSocket(cs);
+		    _cntr.setStatusLine(statusLine);
+		} else {
+		    ClickController.newWindow(cs, statusLine);
+		    _cntr.enableClose();
+		}
+	    }
 	    dialog.dispose();
 	}
     }
 
-    public NewConnectionDialog(Frame frame) {
-	super(frame, "New Connection", true);
+    public NewConnectionDialog(ClickController cntr) {
+	super(cntr.getFrame(), "New Connection", true);
+	_cntr = cntr;
 	
 	getContentPane().setLayout(new BorderLayout());
 	
