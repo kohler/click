@@ -21,6 +21,8 @@ class Element { public:
   static const char * const AGNOSTIC, * const PUSH, * const PULL;
   static const char * const PUSH_TO_PULL, * const PULL_TO_PUSH;
 
+  static const char * const COMPLETE_FLOW;
+
   enum ConfigurePhase {
     CONFIGURE_PHASE_FIRST = 0,
     CONFIGURE_PHASE_INFO = 20,
@@ -71,8 +73,10 @@ class Element { public:
   int connect_output(int output_id, Element *, int);
   
   // FLOW
-  virtual Bitvector forward_flow(int) const;
-  virtual Bitvector backward_flow(int) const;
+  virtual const char *flow_code() const;
+  
+  Bitvector forward_flow(int, ErrorHandler *) const;
+  Bitvector backward_flow(int, ErrorHandler *) const;
   
   // PUSH OR PULL PROCESSING
   virtual const char *processing() const;

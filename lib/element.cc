@@ -44,6 +44,8 @@ const char * const Element::PULL = "l";
 const char * const Element::PUSH_TO_PULL = "h/l";
 const char * const Element::PULL_TO_PUSH = "l/h";
 
+const char * const Element::COMPLETE_FLOW = "a/a";
+
 int Element::nelements_allocated = 0;
 
 #if CLICK_STATS >= 2
@@ -226,24 +228,155 @@ Element::connect_output(int o, Element *f, int port)
 
 // FLOW
 
-Bitvector
-Element::forward_flow(int i) const
+const char *
+Element::flow_code() const
 {
-  return Bitvector(noutputs(), i >= 0 && i < ninputs());
+  return COMPLETE_FLOW;
+}
+
+static void
+skip_flow_code(const char *&p)
+{
+  if (*p != '/' && *p != 0) {
+    if (*p == '[') {
+      for (p++; *p != ']' && *p; p++)
+	/* nada */;
+      if (*p)
+	p++;
+    } else
+      p++;
+  }
+}
+
+static int
+next_flow_code(const char *&p, int port, Bitvector &code,
+	       ErrorHandler *errh)
+{
+  if (*p == '/' || *p == 0) {
+    // back up to last code character
+    if (p[-1] == ']') {
+      for (p -= 2; *p != '['; p--)
+	/* nada */;
+    } else
+      p--;
+  }
+
+  code.assign(256, false);
+
+  if (*p == '[') {
+    bool negated = false;
+    if (p[1] == '^')
+      negated = true, p++;
+    for (p++; *p != ']' && *p; p++) {
+      if (isalnum(*p))
+	code[*p] = true;
+      else if (*p == '#')
+	code[port + 128] = true;
+      else if (errh)
+	errh->error("invalid character `%c' in flow code", *p);
+    }
+    if (negated)
+      code.negate();
+  } else if (isalnum(*p))
+    code[*p] = true;
+  else if (*p == '#')
+    code[port + 128] = true;
+  else {
+    if (errh)
+      errh->error("invalid character `%c' in flow code", *p);
+    p++;
+    return -1;
+  }
+
+  p++;
+  return 0;
 }
 
 Bitvector
-Element::backward_flow(int o) const
+Element::forward_flow(int input_port, ErrorHandler *errh) const
 {
-  return Bitvector(ninputs(), o >= 0 && o < noutputs());
+  const char *f = flow_code();
+  if (input_port < 0 || input_port >= ninputs())
+    return Bitvector(noutputs(), false);
+  else if (!f || f == COMPLETE_FLOW)
+    return Bitvector(noutputs(), true);
+
+  Bitvector bv(noutputs(), false);
+  
+  const char *f_in = f;
+  const char *f_out = strchr(f, '/');
+  if (!f_out) {
+    errh->error("bad flow code `%s': missing `/'", f);
+    return bv;
+  } else if (f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
+    errh->error("bad flow code `%s': missing characters around `/'", f);
+    return bv;
+  }
+  f_out++;
+  
+  Bitvector in_code;
+  for (int i = 0; i < input_port; i++)
+    skip_flow_code(f_in);
+  next_flow_code(f_in, input_port, in_code, errh);
+
+  Bitvector out_code;
+  for (int i = 0; i < noutputs(); i++) {
+    next_flow_code(f_out, i, out_code, errh);
+    if (in_code.nonzero_intersection(out_code))
+      bv[i] = true;
+  }
+  
+  return bv;
+}
+
+Bitvector
+Element::backward_flow(int output_port, ErrorHandler *errh) const
+{
+  const char *f = flow_code();
+  if (output_port < 0 || output_port >= noutputs())
+    return Bitvector(ninputs(), false);
+  else if (!f || f == COMPLETE_FLOW)
+    return Bitvector(ninputs(), true);
+
+  Bitvector bv(ninputs(), false);
+  
+  const char *f_in = f;
+  const char *f_out = strchr(f, '/');
+  if (!f_out) {
+    errh->error("bad flow code: missing `/'");
+    return bv;
+  } else if (f_in == f_out || f_out[1] == 0 || f_out[1] == '/') {
+    errh->error("bad flow code: missing characters around `/'");
+    return bv;
+  }
+  f_out++;
+  
+  Bitvector out_code;
+  for (int i = 0; i < output_port; i++)
+    skip_flow_code(f_out);
+  next_flow_code(f_out, output_port, out_code, errh);
+
+  Bitvector in_code;
+  for (int i = 0; i < ninputs(); i++) {
+    next_flow_code(f_in, i, in_code, errh);
+    if (in_code.nonzero_intersection(out_code))
+      bv[i] = true;
+  }
+  
+  return bv;
 }
 
 // PUSH OR PULL PROCESSING
 
+const char *
+Element::processing() const
+{
+  return AGNOSTIC;
+}
+
 static int
 next_processing_code(const char *&p, ErrorHandler *errh)
 {
-  while (isspace(*p)) p++;
   switch (*p) {
     
    case 'h': case 'H':
@@ -297,12 +430,6 @@ Element::processing_vector(Subvector<int> &in_v, Subvector<int> &out_v,
     if (last_val >= 0) val = last_val;
     out_v[i] = val;
   }
-}
-
-const char *
-Element::processing() const
-{
-  return AGNOSTIC;
 }
 
 const char *
