@@ -69,7 +69,7 @@ add a route, and `C<remove ADDR/MASK>' to remove a route. You can supply
 multiple commands, one per line; all commands are executed as one atomic
 operation.
 
-=a StaticIPLookup, SortedIPLookup, DirectIPLookup, TrieIPLookup,
+=a StaticIPLookup, SortedIPLookup, RadixIPLookup, DirectIPLookup,
 LinuxIPLookup */
 
 #define IP_RT_CACHE2 1

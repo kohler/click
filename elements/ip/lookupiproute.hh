@@ -26,7 +26,7 @@ Outputs a human-readable version of the current routing table.
 
 Reports the OUTput port and GW corresponding to an address.
 
-=a LinearIPLookup, SortedIPLookup, LinuxIPLookup, TrieIPLookup,
+=a LinearIPLookup, SortedIPLookup, RadixIPLookup, LinuxIPLookup,
 DirectIPLookup */
 
 class StaticIPLookup : public LinearIPLookup { public:

@@ -62,7 +62,7 @@ multiple commands, one per line; all commands are executed as one atomic
 operation.
 
 =a IPRouteTable, StaticIPLookup, LinearIPLookup, SortedIPLookup,
-DirectIPLookup, TrieIPLookup
+DirectIPLookup, LinuxIPLookup
 */
 
 class RadixIPLookup : public IPRouteTable { public:

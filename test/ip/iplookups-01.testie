@@ -1,6 +1,6 @@
 %script
 
-for rtable in RadixIPLookup DirectIPLookup LinearIPLookup SortedIPLookup TrieIPLookup; do
+for rtable in RadixIPLookup DirectIPLookup LinearIPLookup SortedIPLookup; do
 	click -e "
 i :: Idle
 	-> r :: $rtable()

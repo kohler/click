@@ -105,8 +105,8 @@ the B<dump_routes> function. Normally hooked up to the `C<table>' handler.
 
 =back
 
-=a StaticIPLookup, LinearIPLookup, DirectIPLookup, RadixIPLookup,
-TrieIPLookup */
+=a RadixIPLookup, StaticIPLookup, LinearIPLookup, DirectIPLookup,
+LinuxIPLookup */
 
 struct IPRoute {
     IPAddress addr;

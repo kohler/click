@@ -65,7 +65,8 @@ operation.
 
 Clears the entire routing table in a single atomic operation.
 
-=a StaticIPLookup, LinearIPLookup, SortedIPLookup, TrieIPLookup LinuxIPLookup
+=a RadixIPLookup, StaticIPLookup, LinearIPLookup, SortedIPLookup,
+LinuxIPLookup
 
 Pankaj Gupta, Steven Lin, and Nick McKeown.  "Routing Lookups in Hardware at
 Memory Access Speeds".  In Proc. IEEE Infocom 1998, Vol. 3, pp. 1240-1247.
