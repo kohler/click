@@ -1,3 +1,11 @@
+2001-11-28 Wednesday 18:10  Eddie Kohler <kohler@aciri.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.12), fromipsumdump.hh
+	(1.10), toipsumdump.cc (1.5), toipsumdump.hh (1.4): add changes
+	from ipsumdump 1.14: check for bad IP/TCP/UDP headers, fix payload
+	length calculation, and add BAD_PACKETS keyword argument and
+	payload content type to ToIPSummaryDump
+
 2001-11-28 Wednesday 08:47  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* tools/run-grid (1.11): [no log message]
