@@ -1,0 +1,48 @@
+%info
+Tests Notifier functionality -- in particular, that 'f3' waking up will wake up
+the ToIPSummaryDump again.
+
+%script
+click -e "
+f1::FromIPSummaryDump(DUMP1);
+f2::FromIPSummaryDump(DUMP2);
+f3::FromIPSummaryDump(DUMP3, ACTIVE false);
+tss::TimeSortedSched(STOP true);
+
+f1 -> [0]tss;
+f2 -> [1]tss;
+f3 -> q::Queue -> [2]tss;
+tss -> ToIPSummaryDump(-, CONTENTS ip_src);
+
+DriverManager(wait, write f3.active true, wait)
+" | grep -v '^!'
+
+
+%file DUMP1
+!data timestamp ip_src
+0.0 1.0.0.0
+0.1 1.0.0.1
+0.2 1.0.0.2
+
+%file DUMP2
+!data timestamp ip_src
+0.05 1.0.1.0
+0.15 1.0.1.1
+0.25 1.0.1.2
+
+%file DUMP3
+!data timestamp ip_src
+0.3 1.0.2.0
+0.4 1.0.2.1
+0.5 1.0.2.2
+
+%expect stdout
+1.0.0.0
+1.0.1.0
+1.0.0.1
+1.0.1.1
+1.0.0.2
+1.0.1.2
+1.0.2.0
+1.0.2.1
+1.0.2.2
