@@ -285,7 +285,7 @@ void
 ChatterSocket::selected(int fd)
 {
   if (fd == _socket_fd) {
-    struct sockaddr_in sa;
+    union { struct sockaddr_in in; struct sockaddr_un un; } sa;
     socklen_t sa_len = sizeof(sa);
     int new_fd = accept(_socket_fd, (struct sockaddr *)&sa, &sa_len);
 
