@@ -387,13 +387,12 @@ cp_bool(String str, bool &return_value, String *rest = 0)
 }
 
 bool
-cp_integer(String str, int &return_value, String *rest = 0)
+cp_integer(String str, int base, int &return_value, String *rest = 0)
 {
   int i = 0;
   const char *s = str.cc();
   int len = str.length();
   
-  int base = 10;
   bool network_byte_order = false;
   bool negative = false;
   if (i < len && s[i] == '-') {
@@ -401,17 +400,20 @@ cp_integer(String str, int &return_value, String *rest = 0)
     i++;
   } else if (i < len && s[i] == '+')
     i++;
-  
-  if (i < len && s[i] == '0') {
-    if (i < len - 1 && (s[i+1] == 'x' || s[i+1] == 'X')) {
-      i += 2;
-      base = 16;
-    } else if (i < len - 1 && (s[i+1] == 'n' || s[i+1] == 'N')) {
-      i += 2;
-      base = 16;
-      network_byte_order = true;
+
+  if (base < 0) {
+    if (i < len && s[i] == '0') {
+      if (i < len - 1 && (s[i+1] == 'x' || s[i+1] == 'X')) {
+	i += 2;
+	base = 16;
+      } else if (i < len - 1 && (s[i+1] == 'n' || s[i+1] == 'N')) {
+	i += 2;
+	base = 16;
+	network_byte_order = true;
+      } else
+	base = 8;
     } else
-      base = 8;
+      base = 10;
   }
   
   if (i >= len)			// all spaces
@@ -440,6 +442,12 @@ cp_integer(String str, int &return_value, String *rest = 0)
     return true;
   } else
     return end - s == len;
+}
+
+bool
+cp_integer(String str, int &return_value, String *rest = 0)
+{
+  return cp_integer(str, -1, return_value, rest);
 }
 
 bool

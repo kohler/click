@@ -18,12 +18,12 @@
 #include "error.hh"
 #include "confparse.hh"
 #include "clp.h"
+#include "toolutils.hh"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <sys/stat.h>
 #include <unistd.h>
 
 #define HELP_OPT		300
@@ -62,71 +62,6 @@ Options:\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
-static String
-path_find_file_2(const String &filename, String path, String default_path,
-		 String subdir)
-{
-  if (subdir.back() != '/') subdir += "/";
-  
-  while (1) {
-    int colon = path.find_left(':');
-    String dir = (colon < 0 ? path : path.substring(0, colon));
-    
-    if (!dir && default_path) {
-      // look in default path
-      String s = path_find_file_2(filename, default_path, String(), 0);
-      if (s) return s;
-      default_path = String();	// don't search default path twice
-      
-    } else if (dir) {
-      if (dir.back() != '/') dir += "/";
-      // look for `dir/filename'
-      String name = dir + filename;
-      struct stat s;
-      if (stat(name.cc(), &s) >= 0)
-	return name;
-      // look for `dir/subdir/filename'
-      if (subdir) {
-	name = dir + subdir + filename;
-	if (stat(name.cc(), &s) >= 0)
-	  return name;
-      }
-    }
-    
-    if (colon < 0) return String();
-    path = path.substring(colon + 1);
-  }
-}
-
-static String
-path_find_file(const String &filename, const char *path_variable,
-	       const String &default_path)
-{
-  const char *path = getenv(path_variable);
-  if (path)
-    return path_find_file_2(filename, path, default_path, 0);
-  else
-    return path_find_file_2(filename, default_path, "", 0);
-}
-
-static String
-clickpath_find_file(const String &filename, const char *subdir,
-		    const String &default_path, ErrorHandler *errh = 0)
-{
-  const char *path = getenv("CLICKPATH");
-  String s;
-  if (path)
-    s = path_find_file_2(filename, path, default_path, subdir);
-  else
-    s = path_find_file_2(filename, default_path, "", 0);
-  if (!s && errh) {
-    errh->message("cannot find file `click.o'");
-    errh->fatal("in CLICKPATH or `%s'", default_path.cc());
-  }
-  return s;
-}
-
-
 static void
 read_packages(HashMap<String, int> &packages, ErrorHandler *errh)
 {
@@ -145,31 +80,6 @@ read_packages(HashMap<String, int> &packages, ErrorHandler *errh)
     }
     fclose(f);
   }
-}
-
-RouterT *
-read_router_file(const char *filename, ErrorHandler *errh)
-{
-  FILE *f;
-  if (filename && strcmp(filename, "-") != 0) {
-    f = fopen(filename, "r");
-    if (!f) {
-      errh->error("%s: %s", filename, strerror(errno));
-      return 0;
-    }
-  } else {
-    f = stdin;
-    filename = "<stdin>";
-  }
-  
-  FileLexerTSource lex_source(filename, f);
-  LexerT lexer(errh);
-  lexer.reset(&lex_source);
-  while (lexer.ystatement()) ;
-  RouterT *r = lexer.take_router();
-  
-  if (f != stdin) fclose(f);
-  return r;
 }
 
 int
@@ -235,21 +145,64 @@ particular purpose.\n");
 
   // check for Click module; install it if not available
   {
-    struct stat s;
-    if (stat("/proc/click", &s) < 0) {
+    if (access("/proc/click", F_OK) < 0) {
       // try to install module
       String click_o =
 	clickpath_find_file("click.o", "lib", CLICK_LIBDIR, errh);
       String cmdline = "/sbin/insmod " + click_o;
       (void) system(cmdline);
-      if (stat("/proc/click", &s) < 0)
+      if (access("/proc/click", F_OK) < 0)
 	errh->fatal("cannot install Click module");
     }
   }
 
+  // find active modules
+  HashMap<String, int> active_modules(-1);
+  {
+    String s = file_string("/proc/modules", errh);
+    int p = 0;
+    while (p < s.length()) {
+      int start = p;
+      while (!isspace(s[p])) p++;
+      active_modules.insert(s.substring(start, p - start), 0);
+      p = s.find_left('\n', p) + 1;
+    }
+  }
+  
   // find current packages
   HashMap<String, int> packages(-1);
   read_packages(packages, errh);
+
+  // install archived objects. mark them with leading underscores.
+  // may require renaming to avoid clashes in `insmod'
+  {
+    const Vector<ArchiveElement> &archive = r->archive();
+    for (int i = 0; i < archive.size(); i++)
+      if (archive[i].name.length() > 2
+	  && archive[i].name.substring(-2) == ".o") {
+	
+	// choose module name
+	String module_name = archive[i].name.substring(0, -2);
+	String insmod_name = "_" + module_name;
+	while (active_modules[insmod_name] >= 0)
+	  insmod_name = "_" + insmod_name;
+
+	// install module
+	String tmpnam = unique_tmpnam("x*.o", errh);
+	if (!tmpnam) exit(1);
+	FILE *f = fopen(tmpnam.cc(), "w");
+	fwrite(archive[i].data.data(), 1, archive[i].data.length(), f);
+	fclose(f);
+	String cmdline = "/sbin/insmod -o " + insmod_name + " " + tmpnam;
+	int retval = system(cmdline);
+	if (retval != 0)
+	  errh->fatal("`insmod %s' failed: %s", module_name.cc(), strerror(errno));
+
+	// cleanup
+	packages.insert(module_name, 1);
+	active_modules.insert(insmod_name, 1);
+      }
+  }
   
   // install missing requirements
   {
@@ -258,7 +211,7 @@ particular purpose.\n");
     while (requirements.each(thunk, key, value))
       if (value >= 0 && packages[key] < 0) {
 	String package = clickpath_find_file
-	  (key + ".o", "packages", CLICK_PACKAGESDIR, errh);
+	  (key + ".o", "packages", CLICK_PACKAGESDIR);
 	if (!package) {
 	  errh->message("cannot find required package `%s.o'", key.cc());
 	  errh->fatal("in CLICKPATH or `%s'", CLICK_PACKAGESDIR);
@@ -267,6 +220,7 @@ particular purpose.\n");
 	int retval = system(cmdline);
 	if (retval != 0)
 	  errh->fatal("`insmod %s' failed: %s", package.cc(), strerror(errno));
+	active_modules.insert(package, 1);
       }
   }
   
@@ -274,8 +228,9 @@ particular purpose.\n");
   FILE *f = fopen("/proc/click/config", "w");
   if (!f)
     errh->fatal("cannot install configuration: %s", strerror(errno));
-  String s = r->configuration_string();
-  fputs(s.cc(), f);
+  // XXX include packages?
+  String config = r->configuration_string();
+  fwrite(config.data(), 1, config.length(), f);
   fclose(f);
 
   // report errors
@@ -295,13 +250,28 @@ particular purpose.\n");
 
   // remove unused packages
   {
-    read_packages(packages, errh);
-    const HashMap<String, int> &requirements = r->requirement_map();
     int thunk = 0, value; String key;
     String to_remove;
-    while (packages.each(thunk, key, value))
-      if (value >= 0 && requirements[key] < 0)
-	to_remove += " " + key;
+    // go over all modules; figure out which ones are Click packages
+    // by checking `packages' array; mark old Click packages for removal
+    while (active_modules.each(thunk, key, value))
+      // only remove packages that weren't used in this configuration.
+      // packages used in this configuration have value > 0
+      if (value == 0) {
+	if (packages[key] >= 0)
+	  to_remove += " " + key;
+	else {
+	  // check for removing an old archive package;
+	  // they are identified by a leading underscore.
+	  int p;
+	  for (p = 0; p < key.length() && key[p] == '_'; p++)
+	    /* nada */;
+	  String s = key.substring(p);
+	  if (s && packages[s] >= 0)
+	    to_remove += " " + key;
+	}
+      }
+    // actually call `rmmod'
     if (to_remove) {
       String cmdline = "/sbin/rmmod " + to_remove + " 2>/dev/null";
       (void) system(cmdline);

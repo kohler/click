@@ -51,14 +51,13 @@ install-local: click-compile
 	@chmod +x click-compile
 	$(INSTALL) click-compile $(bindir)/click-compile
 install-subdirs:
-	@for d in $(TARGETS); do (cd $$d; $(MAKE) install); done
-install-man:
-	@for d in $(TARGETS); do (cd $$d; $(MAKE) install-man); done
+	@for d in $(TARGETS); do (cd $$d 2>/dev/null && $(MAKE) install); done
 
 DISTFILES = Makefile.in \
 	lib/elementt.cc lib/elementt.hh \
 	lib/lexert.cc lib/lexert.hh \
 	lib/routert.cc lib/routert.hh \
+	lib/toolutils.cc lib/toolutils.hh \
 	lib/hashmapi.cc \
 	lib/vectori.cc \
 	click-align/Makefile.in \

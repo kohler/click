@@ -22,7 +22,7 @@
 RouterT::RouterT(RouterT *enclosing)
   : _enclosing_scope(enclosing),
     _element_type_map(-1), _element_name_map(-1),
-    _require_map(-1)
+    _require_map(-1), _archive_map(-1)
 {
   if (_enclosing_scope)
     _enclosing_scope->use();
@@ -46,7 +46,9 @@ RouterT::RouterT(const RouterT &o)
     _hookup_from(o._hookup_from),
     _hookup_to(o._hookup_to),
     _hookup_landmark(o._hookup_landmark),
-    _require_map(o._require_map)
+    _require_map(o._require_map),
+    _archive_map(o._archive_map),
+    _archive(o._archive)
 {
   if (_enclosing_scope)
     _enclosing_scope->use();
@@ -282,6 +284,19 @@ void
 RouterT::add_requirement(const String &s)
 {
   _require_map.insert(s, 0);
+}
+
+
+void
+RouterT::add_archive(const ArchiveElement &ae)
+{
+  int i = _archive_map[ae.name];
+  if (i >= 0)
+    _archive[i] = ae;
+  else {
+    _archive_map.insert(ae.name, _archive.size());
+    _archive.push_back(ae);
+  }
 }
 
 

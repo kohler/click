@@ -19,16 +19,16 @@
 #include "confparse.hh"
 #include "straccum.hh"
 #include "clp.h"
+#include "toolutils.hh"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 #include <errno.h>
-#include <sys/stat.h>
+#include <time.h>
 #include <unistd.h>
+#include <sys/stat.h>
 #include <stdarg.h>
-#include <fcntl.h>
-#include <sys/wait.h>
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
@@ -68,125 +68,6 @@ Options:\n\
   -v, --version                 Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
-}
-
-static String
-path_find_file_2(const String &filename, String path, String default_path,
-		 String subdir)
-{
-  if (subdir && subdir.back() != '/') subdir += "/";
-  
-  while (1) {
-    int colon = path.find_left(':');
-    String dir = (colon < 0 ? path : path.substring(0, colon));
-    
-    if (!dir && default_path) {
-      // look in default path
-      String s = path_find_file_2(filename, default_path, String(), 0);
-      if (s) return s;
-      default_path = String();	// don't search default path twice
-      
-    } else if (dir) {
-      if (dir.back() != '/') dir += "/";
-      // look for `dir/subdir/filename'
-      if (subdir) {
-	String name = dir + subdir + filename;
-	if (access(name.cc(), F_OK) >= 0)
-	  return name;
-      }
-      // look for `dir/filename'
-      String name = dir + filename;
-      if (access(name.cc(), F_OK) >= 0)
-	return name;
-    }
-    
-    if (colon < 0) return String();
-    path = path.substring(colon + 1);
-  }
-}
-
-static String
-path_find_file(const String &filename, const char *path_variable,
-	       const String &default_path)
-{
-  const char *path = getenv(path_variable);
-  if (path)
-    return path_find_file_2(filename, path, default_path, 0);
-  else
-    return path_find_file_2(filename, default_path, "", 0);
-}
-
-static String
-clickpath_find_file(const String &filename, const char *subdir,
-		    const String &default_path, ErrorHandler *errh = 0)
-{
-  const char *path = getenv("CLICKPATH");
-  String s;
-  if (path)
-    s = path_find_file_2(filename, path, default_path, subdir);
-  else
-    s = path_find_file_2(filename, default_path, "", 0);
-  if (!s && subdir
-      && (strcmp(subdir, "bin") == 0 || strcmp(subdir, "sbin") == 0)
-      && (path = getenv("PATH")))
-    s = path_find_file_2(filename, path, "", 0);
-  if (!s && errh) {
-    errh->message("cannot find file `%s'", String(filename).cc());
-    errh->fatal("in CLICKPATH or `%s'", String(default_path).cc());
-  }
-  return s;
-}
-
-static String
-path_writable_file_2(const String &filename, String path, String default_path,
-		     String subdir)
-{
-  if (subdir && subdir.back() != '/') subdir += "/";
-  
-  while (1) {
-    int colon = path.find_left(':');
-    String dir = (colon < 0 ? path : path.substring(0, colon));
-    
-    if (!dir && default_path) {
-      // look in default path
-      String s = path_writable_file_2(filename, default_path, String(), 0);
-      if (s) return s;
-      default_path = String();	// don't search default path twice
-      
-    } else if (dir) {
-      if (dir.back() != '/') dir += "/";
-      // check `dir/subdir'
-      if (subdir) {
-	String name = dir + subdir;
-	if (access(name.cc(), W_OK) >= 0)
-	  return name + filename;
-      }
-      // check `dir'
-      if (access(dir.cc(), W_OK) >= 0)
-	return dir + filename;
-    }
-    
-    if (colon < 0) return String();
-    path = path.substring(colon + 1);
-  }
-}
-
-static String
-clickpath_first_writable_file(const String &filename, const char *subdir,
-			      const String &default_path,
-			      ErrorHandler *errh = 0)
-{
-  const char *path = getenv("CLICKPATH");
-  String s;
-  if (path)
-    s = path_writable_file_2(filename, path, default_path, subdir);
-  else
-    s = path_writable_file_2(filename, default_path, "", 0);
-  if (!s && errh) {
-    errh->message("cannot write file `%s'", String(filename).cc());
-    errh->fatal("in CLICKPATH or `%s'", String(default_path).cc());
-  }
-  return s;
 }
 
 static String
@@ -452,7 +333,7 @@ analyze_classifier(RouterT *r, int classifier_ei, FILE *f, ErrorHandler *errh)
   }
 
   // output corresponding code
-  String class_name = "Classifier@@" + r->ename(classifier_ei);
+  String class_name = "FastClassifier@@" + r->ename(classifier_ei);
   String cxx_name = translate_class_name(class_name);
   gen_eclass_names.push_back(class_name);
   gen_cxxclass_names.push_back(cxx_name);
@@ -498,31 +379,6 @@ void\n%s::length_checked_push(Packet *p)\n{\n",
   classifier_e.configuration = String();
 }
 
-
-RouterT *
-read_router_file(const char *filename, ErrorHandler *errh)
-{
-  FILE *f;
-  if (filename && strcmp(filename, "-") != 0) {
-    f = fopen(filename, "r");
-    if (!f) {
-      errh->error("%s: %s", filename, strerror(errno));
-      return 0;
-    }
-  } else {
-    f = stdin;
-    filename = "<stdin>";
-  }
-  
-  FileLexerTSource lex_source(filename, f);
-  LexerT lexer(errh);
-  lexer.reset(&lex_source);
-  while (lexer.ystatement()) ;
-  RouterT *r = lexer.take_router();
-  
-  if (f != stdin) fclose(f);
-  return r;
-}
 
 int
 main(int argc, char **argv)
@@ -622,18 +478,15 @@ particular purpose.\n");
   }
 
   // find name of module
-  String module_name;
-  int uniqueifier = getpid();
+  String module_name = "fastclassifier";
+  int uniqueifier = 1;
   while (1) {
-    module_name = "fastclassifier" + String(uniqueifier);
-    if (!clickpath_find_file(module_name + ".o", "packages", CLICK_PACKAGESDIR))
+    if (r->archive(module_name) < 0)
       break;
     uniqueifier++;
+    module_name = "fastclassifier" + String(uniqueifier);
   }
   r->add_requirement(module_name);
-  String module_filename = clickpath_first_writable_file(module_name + ".o", "packages", CLICK_PACKAGESDIR);
-  if (!module_filename)
-    errh->fatal("cannot write in Click modules directories");
 
   // create temporary directory
   String tmpdir = click_mktmpdir(errh);
@@ -642,47 +495,67 @@ particular purpose.\n");
     errh->fatal("cannot chdir to %s: %s", tmpdir.cc(), strerror(errno));
   
   // write C++ file
-  String cxx_filename = module_name + ".cc";
+  String cxx_filename = module_name + "x.cc";
   FILE *f = fopen(cxx_filename, "w");
   if (!f)
     errh->fatal("%s: %s", cxx_filename.cc(), strerror(errno));
-  fprintf(f, "#include \"clickmodule.hh\"\n#include \"element.hh\"\n");
+  fprintf(f, "#ifdef HAVE_CONFIG_H\n# include <config.h>\n#endif\n\
+#include \"clickmodule.hh\"\n#include \"element.hh\"\n");
   
   // write Classifier programs
   for (int i = 0; i < classifiers.size(); i++)
     analyze_classifier(r, classifiers[i], f, errh);
 
   // write final text
-  int nclasses = gen_cxxclass_names.size();
-  fprintf(f, "static int hatred_of_rebecca[%d];\n\
+  {
+    int nclasses = gen_cxxclass_names.size();
+    fprintf(f, "static int hatred_of_rebecca[%d];\n\
 extern \"C\" int\ninit_module()\n{\n\
   click_provide(\"%s\");\n",
-	  nclasses, module_name.cc());
-  for (int i = 0; i < nclasses; i++)
-    fprintf(f, "  hatred_of_rebecca[%d] = click_add_element_type(\"%s\", new %s);\n\
+	    nclasses, module_name.cc());
+    for (int i = 0; i < nclasses; i++)
+      fprintf(f, "  hatred_of_rebecca[%d] = click_add_element_type(\"%s\", new %s);\n\
   MOD_DEC_USE_COUNT;\n",
-	    i, gen_eclass_names[i].cc(), gen_cxxclass_names[i].cc());
-  fprintf(f, "  return 0;\n}\nextern \"C\" void\ncleanup_module()\n{\n");
-  for (int i = 0; i < nclasses; i++)
-    fprintf(f, "  MOD_INC_USE_COUNT;\n\
+	      i, gen_eclass_names[i].cc(), gen_cxxclass_names[i].cc());
+    fprintf(f, "  return 0;\n}\nextern \"C\" void\ncleanup_module()\n{\n");
+    for (int i = 0; i < nclasses; i++)
+      fprintf(f, "  MOD_INC_USE_COUNT;\n\
   click_remove_element_type(hatred_of_rebecca[%d]);\n",
-	    i);
-  fprintf(f, "  click_unprovide(\"%s\");\n}\n\
-EXPORT_NO_SYMBOLS\n",
-	  module_name.cc());
+	      i);
+    fprintf(f, "  click_unprovide(\"%s\");\n}\n", module_name.cc());
+    fclose(f);
+  }
 
   // compile file
-  String compile_command = click_compile_prog + " --target=module --package=" + module_filename.cc() + " " + cxx_filename;
-  int compile_retval = system(compile_command.cc());
-  if (compile_retval == 127)
-    errh->fatal("could not run `%s'", compile_command.cc());
-  else if (compile_retval < 0)
-    errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
-  else if (compile_retval != 0)
-    errh->fatal("`%s' failed", compile_command.cc());
+  {
+    String compile_command = click_compile_prog + " --target=module --package=" + module_name + ".o " + cxx_filename;
+    int compile_retval = system(compile_command.cc());
+    if (compile_retval == 127)
+      errh->fatal("could not run `%s'", compile_command.cc());
+    else if (compile_retval < 0)
+      errh->fatal("could not run `%s': %s", compile_command.cc(), strerror(errno));
+    else if (compile_retval != 0)
+      errh->fatal("`%s' failed", compile_command.cc());
+  }
+
+  // read .cc and .o files, add them to archive
+  {
+    ArchiveElement ae;
+    ae.name = module_name + ".cc";
+    ae.date = time(0);
+    ae.uid = geteuid();
+    ae.gid = getegid();
+    ae.mode = 0600;
+    ae.data = file_string(cxx_filename, errh);
+    r->add_archive(ae);
+
+    ae.name = module_name + ".o";
+    ae.data = file_string(module_name + ".o", errh);
+    r->add_archive(ae);
+  }
   
   // write configuration
-  fputs(r->configuration_string().cc(), outf);
+  write_router_file(r, outf, errh);
   return 0;
 }
 

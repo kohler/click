@@ -22,6 +22,7 @@
 #include "kernelerror.hh"
 #include "straccum.hh"
 #include "confparse.hh"
+#include "archive.hh"
 
 struct proc_dir_entry proc_click_entry = {
   0,				// dynamic inode
@@ -56,8 +57,24 @@ LinuxModuleLexerExtra::require(const String &r, ErrorHandler *errh)
 }
 
 void
-initialize_router(const String &s)
+initialize_router(String s)
 {
+  // decompose archive
+  if (s.length() != 0 && s[0] == '!') {
+    Vector<ArchiveElement> archive;
+    separate_ar_string(s, archive, kernel_errh);
+    bool found = false;
+    for (int i = 0; i < archive.size(); i++)
+      if (archive[i].name == "config") {
+	s = archive[i].data;
+	found = true;
+      }
+    if (!found) {
+      kernel_errh->error("archive has no `config' section");
+      s = String();
+    }
+  }
+  
   LexerExtra lextra;
   lexer->reset(s, "line ", &lextra);
   cleanup_router_element_procs();

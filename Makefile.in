@@ -73,6 +73,7 @@ DISTFILES = AUTHORS COPYRIGHT INSTALL LICENSE NEWS README \
 	Makefile.in acconfig.h config.h.in configure.in configure \
 	install-sh missing mkinstalldirs findelements.sh mkelemlist.sh.in \
 	etc/linux-2.2-patch \
+	lib/archive.cc lib/archive.hh \
 	lib/bitvector.cc lib/bitvector.hh \
 	lib/click_ether.h \
 	lib/click_icmp.h \

@@ -47,9 +47,7 @@ StringAccum::take_string()
 StringAccum &
 StringAccum::operator<<(const char *s)
 {
-  int len = strlen(s);
-  if (char *x = extend(len))
-    memcpy(x, s, len);
+  push(s, strlen(s));
   return *this;
 }
 
@@ -57,8 +55,7 @@ StringAccum::operator<<(const char *s)
 StringAccum &
 StringAccum::operator<<(PermString s)
 {
-  if (char *x = extend(s.length()))
-    memcpy(x, s.cc(), s.length());
+  push(s.cc(), s.length());
   return *this;
 }
 #endif
@@ -66,8 +63,7 @@ StringAccum::operator<<(PermString s)
 StringAccum &
 StringAccum::operator<<(const String &s)
 {
-  if (char *x = extend(s.length()))
-    memcpy(x, s.data(), s.length());
+  push(s.data(), s.length());
   return *this;
 }
 
@@ -111,14 +107,13 @@ StringAccum::operator<<(unsigned long long q)
 {
 #ifndef CLICK_TOOL
   String qstr = cp_unparse_ulonglong(q, 10, false);
-  if (char *x = extend(qstr.length()))
-    memcpy(x, qstr.data(), qstr.length());
+  return *this << qstr;
 #else
   if (char *x = reserve(256)) {
     int len;
     sprintf(x, "%qu%n", q, &len);
     forward(len);
   }
-#endif
   return *this;
+#endif
 }

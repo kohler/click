@@ -44,7 +44,7 @@ void cleanup_proc_click_errors();
 
 extern ErrorHandler *kernel_errh;
 extern Router *current_router;
-void initialize_router(const String &);
+void initialize_router(String);
 void reset_proc_click_errors();
 
 class KernelHandlerRegistry : public Element::HandlerRegistry {

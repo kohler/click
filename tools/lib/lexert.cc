@@ -20,7 +20,7 @@
 #include <stdlib.h>
 
 LexerT::LexerT(ErrorHandler *errh)
-  : _data(0), _len(0), _pos(0), _source(0), _lineno(1),
+  : _data(0), _len(0), _pos(0), _lineno(1), _lextra(0),
     _tpos(0), _tfull(0), _router(0),
     _errh(errh)
 {
@@ -35,11 +35,24 @@ LexerT::~LexerT()
 }
 
 void
-LexerT::reset(LexerTSource *source)
+LexerT::reset(const String &data, const String &filename,
+	      LexerTExtra *lextra)
 {
   clear();
-  _source = source;
+  
+  _big_string = data;
+  _data = _big_string.data();
+  _len = _big_string.length();
+
+  if (!filename)
+    _filename = "line ";
+  else if (filename.back() != ':' && !isspace(filename.back()))
+    _filename = filename + ":";
+  else
+    _filename = filename;
   _lineno = 1;
+
+  _lextra = lextra;
 }
 
 void
@@ -54,8 +67,9 @@ LexerT::clear()
   _data = 0;
   _len = 0;
   _pos = 0;
-  _source = 0;
+  _filename = "";
   _lineno = 0;
+  _lextra = 0;
   _tpos = 0;
   _tfull = 0;
   
@@ -65,46 +79,6 @@ LexerT::clear()
 
 
 // LEXING: LOWEST LEVEL
-
-bool
-LexerT::get_data()
-{
-  if (!_source) {
-    _errh->error("no configuration source");
-    return false;
-  }
-  
-  char *data = 0;
-  unsigned cap = 0;
-  unsigned len = 0;
-  
-  while (cap < 65536) {
-    cap = (cap ? cap * 2 : 1024);
-    char *new_data = new char[cap];
-    if (!new_data) break;
-    if (data) memcpy(new_data, data, len);
-    delete[] data;
-    data = new_data;
-    
-    unsigned read = _source->more_data(data + len, cap - len);
-    len += read;
-    if (read == 0)
-      goto done;
-  }
-  
-  _errh->error("configuration file too large (there's currently a 64K max)");
-  delete[] data;
-  data = 0;
-  cap = len = 0;
-  return false;
-  
- done:
-  if (len < cap) data[len] = 0;
-  _big_string = String::claim_string(data, (len < cap ? len + 1 : len));
-  _data = _big_string.data();
-  _len = len;
-  return true;
-}
 
 unsigned
 LexerT::skip_line(unsigned pos)
@@ -140,8 +114,6 @@ LexerT::skip_slash_star(unsigned pos)
 Lexeme
 LexerT::next_lexeme()
 {
-  if (!_data && !get_data()) return Lexeme();
-  
   unsigned pos = _pos;
   while (true) {
     while (pos < _len && isspace(_data[pos])) {
@@ -207,8 +179,6 @@ LexerT::next_lexeme()
 String
 LexerT::lex_config()
 {
-  if (!_data && !get_data()) return String();
-  
   unsigned config_pos = _pos;
   unsigned pos = _pos;
   unsigned paren_depth = 1;
@@ -303,7 +273,7 @@ LexerT::expect(int kind, bool report_error = true)
 String
 LexerT::landmark() const
 {
-  return _source ? _source->landmark(_lineno) : String();
+  return _filename + String(_lineno);
 }
 
 int
@@ -696,7 +666,7 @@ LexerT::yrequire()
     Vector<String> args;
     cp_argvec(requirement, args);
     for (int i = 0; i < args.size(); i++) {
-      _source->require(args[i], _errh);
+      if (_lextra) _lextra->require(args[i], _errh);
       _router->add_requirement(args[i]);
     }
     expect(')');
@@ -761,63 +731,10 @@ LexerT::take_router()
 
 
 //
-// LexerTSOURCES
+// LEXERTEXTRA
 //
 
-String
-LexerTSource::landmark(unsigned lineno) const
-{
-  return String("line ") + String(lineno);
-}
-
 void
-LexerTSource::require(const String &, ErrorHandler *)
+LexerTExtra::require(const String &, ErrorHandler *)
 {
-}
-
-
-#ifndef __KERNEL__
-
-FileLexerTSource::FileLexerTSource(const char *filename, FILE *f)
-  : _filename(filename), _f(f), _own_f(f == 0)
-{
-  if (!_f) _f = fopen(filename, "r");
-}
-
-FileLexerTSource::~FileLexerTSource()
-{
-  if (_f && _own_f) fclose(_f);
-}
-
-unsigned
-FileLexerTSource::more_data(char *data, unsigned max)
-{
-  if (!_f) return 0;
-  
-  return fread(data, 1, max, _f);
-  // if amt == 0, is it possible there's been a transient error?
-}
-
-String
-FileLexerTSource::landmark(unsigned lineno) const
-{
-  return String(_filename) + ":" + String(lineno);
-}
-
-#endif
-
-
-MemoryLexerTSource::MemoryLexerTSource(const char *data, unsigned len)
-  : _data(data), _pos(0), _len(len)
-{
-}
-    
-unsigned
-MemoryLexerTSource::more_data(char *buf, unsigned max)
-{
-  if (_pos + max > _len)
-    max = _len - _pos;
-  memcpy(buf, _data + _pos, max);
-  _pos += max;
-  return max;
 }

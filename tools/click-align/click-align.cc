@@ -20,9 +20,8 @@
 #include "routert.hh"
 #include "alignment.hh"
 #include "alignclass.hh"
+#include "toolutils.hh"
 #include "clp.h"
-#include <string.h>
-#include <errno.h>
 #include <stdio.h>
 #include <ctype.h>
 
@@ -166,32 +165,6 @@ RouterAlign::print(FILE *f)
 }
 
 
-
-String
-read_file_string(const char *filename, ErrorHandler *)
-{
-  FILE *f;
-  if (filename && strcmp(filename, "-") != 0) {
-    f = fopen(filename, "r");
-    if (!f) return String();
-  } else {
-    f = stdin;
-    filename = "<stdin>";
-  }
-
-  StringAccum sa;
-  char buf[4096];
-  while (!feof(f)) {
-    size_t r = fread(buf, 1, 4096, f);
-    if (r > 0)
-      memcpy(sa.extend(r), buf, r);
-  }
-  
-  if (f != stdin) fclose(f);
-  return cp_subst(sa.take_string());
-}
-  
-
 void
 prepare_router(RouterT *r)
 {
@@ -249,32 +222,6 @@ Options:\n\
   -v, --version                 Print version number and exit.\n\
 \n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
-}
-
-RouterT *
-read_router_file(const char *filename, ErrorHandler *errh)
-{
-  FILE *f;
-  if (filename && strcmp(filename, "-") != 0) {
-    f = fopen(filename, "r");
-    if (!f) {
-      errh->error("%s: %s", filename, strerror(errno));
-      return 0;
-    }
-  } else {
-    f = stdin;
-    filename = "<stdin>";
-  }
-
-  FileLexerTSource lex_source(filename, f);
-  LexerT lexer(errh);
-  lexer.reset(&lex_source);
-  prepare_router(lexer.router());
-  while (lexer.ystatement()) ;
-  RouterT *r = lexer.take_router();
-
-  if (f != stdin) fclose(f);
-  return r;
 }
 
 
@@ -351,6 +298,7 @@ particular purpose.\n");
   if (!router || errh->nerrors() > 0)
     exit(1);
   router->flatten(errh);
+  prepare_router(router);
   int align_tindex = router->type_index("Align");
 
   int original_nelements = router->nelements();
@@ -482,16 +430,8 @@ particular purpose.\n");
   }
   
   // write result
-  String config = router->configuration_string();
-  if (output_file && strcmp(output_file, "-") != 0) {
-    FILE *f = fopen(output_file, "w");
-    if (!f)
-      errh->fatal("%s: %s", output_file, strerror(errno));
-    fputs(config.cc(), f);
-    fclose(f);
-  } else
-    fputs(config.cc(), stdout);
-  
+  if (write_router_file(router, output_file, errh) < 0)
+    exit(1);
   return 0;
 }
 

@@ -18,10 +18,9 @@
 #include "error.hh"
 #include "confparse.hh"
 #include "clp.h"
+#include "toolutils.hh"
 #include <stdio.h>
-#include <string.h>
 #include <ctype.h>
-#include <errno.h>
 
 bool match_config(const String &, const String &, HashMap<String, String> &);
 // TODO: allow some special pports to be unconnected
@@ -407,31 +406,6 @@ Options:\n\
 Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 }
 
-RouterT *
-read_router_file(const char *filename, ErrorHandler *errh)
-{
-  FILE *f;
-  if (filename && strcmp(filename, "-") != 0) {
-    f = fopen(filename, "r");
-    if (!f) {
-      errh->error("%s: %s", filename, strerror(errno));
-      return 0;
-    }
-  } else {
-    f = stdin;
-    filename = "<stdin>";
-  }
-  
-  FileLexerTSource lex_source(filename, f);
-  LexerT lexer(errh);
-  lexer.reset(&lex_source);
-  while (lexer.ystatement()) ;
-  RouterT *r = lexer.take_router();
-  
-  if (f != stdin) fclose(f);
-  return r;
-}
-
 static Vector<RouterT *> patterns;
 static Vector<RouterT *> replacements;
 static Vector<String> pat_names;
@@ -569,15 +543,7 @@ particular purpose.\n");
   }
 
   // write result
-  String s = r->configuration_string();
-  if (output_file && strcmp(output_file, "-") != 0) {
-    FILE *f = fopen(output_file, "w");
-    if (!f)
-      errh->fatal("%s: %s", output_file, strerror(errno));
-    fputs(s.cc(), f);
-    fclose(f);
-  } else
-    fputs(s.cc(), stdout);
-  
+  if (write_router_file(r, output_file, errh) < 0)
+    exit(1);
   return 0;
 }

@@ -125,7 +125,7 @@ Lexer::reset(const String &data, const String &filename,
 
   if (!filename)
     _filename = "line ";
-  else if (filename.back() != ':')
+  else if (filename.back() != ':' && !isspace(filename.back()))
     _filename = filename + ":";
   else
     _filename = filename;

@@ -44,7 +44,7 @@ esac
 # do stuff
 if test "x$package" != "xNONE"; then
   for file; do
-    echo $command $file
+    echo $command $file 1>&2
     eval $command $file || exit 1
     files="$files "`echo $file | sed 's/\.c*$/\.o/;s/^.*\///'`
   done
@@ -55,17 +55,19 @@ if test "x$package" != "xNONE"; then
 #define __KERNEL__
 #define MODULE
 #include <linux/module.h>
+/* a new version of EXPORT_NO_SYMBOLS that works */
+const int __ksymtab_nothing[0] __attribute__((section("__ksymtab"))) = { };
 EOF
     command="${CC-@CC@ -w} -I/usr/src/linux/include -c $vfile.c"
-    echo $command
+    echo $command 1>&2
     eval $command || (rm -f $vfile.*; exit 1)
     command="ld -r -o $package $files $vfile.o"
-    echo $command
+    echo $command 1>&2
     eval $command || (rm -f $vfile.*; exit 1)
     rm -f $vfile.*
     exit 0 
   fi
 else
-  echo $command "$@"
+  echo $command "$@" 1>&2
   exec $command "$@"
 fi

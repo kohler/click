@@ -24,6 +24,7 @@ void cp_spacevec(const String &, Vector<String> &);
 // numbers
 bool cp_bool(String, bool &, String *rest = 0);
 bool cp_integer(String, int &, String *rest = 0);
+bool cp_integer(String, int base, int &, String *rest = 0);
 bool cp_real(const String &, int frac_digits, int &, int &, String *rest = 0);
 int cp_real2(const String &, int frac_bits, int &, String *rest = 0);
 

@@ -37,7 +37,8 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 
 OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
-	elementt.o routert.o lexert.o confparse.o alignment.o alignclass.o \
+	elementt.o routert.o lexert.o confparse.o archive.o toolutils.o \
+	alignment.o alignclass.o \
 	clp.o @LIBOBJS@ click-align.o
 
 CPPFLAGS = @CPPFLAGS@ -MMD -DCLICK_TOOL

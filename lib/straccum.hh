@@ -31,6 +31,7 @@ class StringAccum {
   
   void push(unsigned char);
   void push(char);
+  void push(const char *, int);
   
   void pop(int n = 1)			{ if (_len >= n) _len -= n; }
   
@@ -77,6 +78,13 @@ inline void
 StringAccum::push(char c)
 {
   push(static_cast<unsigned char>(c));
+}
+
+inline void
+StringAccum::push(const char *s, int len)
+{
+  if (char *x = extend(len))
+    memcpy(x, s, len);
 }
 
 inline char *

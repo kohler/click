@@ -24,6 +24,7 @@
 #include "timer.hh"
 #include "straccum.hh"
 #include "clp.h"
+#include "archive.hh"
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
@@ -236,22 +237,41 @@ particular purpose.\n");
     filename = "<stdin>";
   }
 
+  // read string from file
   StringAccum config_sa;
   while (!feof(f)) {
-    if (char *x = config_sa.reserve(1024)) {
-      int r = fread(x, 1, 1024, f);
+    if (char *x = config_sa.reserve(2048)) {
+      int r = fread(x, 1, 2048, f);
       config_sa.forward(r);
     } else
       errh->fatal("out of memory");
   }
   if (f != stdin)
     fclose(f);
-  
+
+  // find config string in archive
+  String config_str = config_sa.take_string();
+  if (config_str.length() != 0 && config_str[0] == '!') {
+    Vector<ArchiveElement> archive;
+    separate_ar_string(config_str, archive, errh);
+    bool found = false;
+    for (int i = 0; i < archive.size(); i++)
+      if (archive[i].name == "config") {
+	config_str = archive[i].data;
+	found = true;
+      }
+    if (!found) {
+      errh->error("archive has no `config' section");
+      config_str = String();
+    }
+  }
+
+  // lex
   Lexer *lex = new Lexer(errh);
   export_elements(lex);
   lex->save_element_types();
   
-  lex->reset(config_sa.take_string(), filename);
+  lex->reset(config_str, filename);
   while (lex->ystatement())
     /* do nothing */;
   

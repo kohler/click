@@ -3,6 +3,7 @@
 #include "elementt.hh"
 #include "error.hh"
 #include "hashmap.hh"
+#include "archive.hh"
 
 class RouterT : public ElementClassT {
 
@@ -20,6 +21,9 @@ class RouterT : public ElementClassT {
   Vector<String> _hookup_landmark;
 
   HashMap<String, int> _require_map;
+
+  HashMap<String, int> _archive_map;
+  Vector<ArchiveElement> _archive;
 
   void finish_remove_elements(Vector<int> &, ErrorHandler *);
   void finish_remove_element_types(Vector<int> &);
@@ -77,6 +81,10 @@ class RouterT : public ElementClassT {
 
   void add_requirement(const String &);
   const HashMap<String, int> &requirement_map() const { return _require_map; }
+
+  void add_archive(const ArchiveElement &);
+  int archive(const String &s) const		{ return _archive_map[s]; }
+  const Vector<ArchiveElement> &archive() const	{ return _archive; }
   
   bool has_connection(const Hookup &, const Hookup &) const;
   void find_connections_from(const Hookup &, Vector<Hookup> &) const;

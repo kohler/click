@@ -2,7 +2,7 @@
 #define LEXERT_HH
 #include "error.hh"
 #include <stdio.h>
-class LexerTSource;
+class LexerTExtra;
 class RouterT;
 
 enum {
@@ -42,8 +42,9 @@ class LexerT { protected:
   unsigned _len;
   unsigned _pos;
   
-  LexerTSource *_source;
+  String _filename;
   unsigned _lineno;
+  LexerTExtra *_lextra;
   
   bool get_data();
   unsigned skip_line(unsigned);
@@ -74,7 +75,8 @@ class LexerT { protected:
   LexerT(ErrorHandler * = 0);
   virtual ~LexerT();
   
-  void reset(LexerTSource *);
+  void reset(const String &data, const String &filename = String(),
+	     LexerTExtra * = 0);
   void clear();
   
   const Lexeme &lex();
@@ -107,45 +109,13 @@ class LexerT { protected:
   
 };
 
-class LexerTSource { public:
+class LexerTExtra { public:
   
-  LexerTSource()			{ }
-  virtual ~LexerTSource()		{ }
+  LexerTExtra()				{ }
+  virtual ~LexerTExtra()		{ }
   
-  virtual unsigned more_data(char *, unsigned) = 0;
-  virtual String landmark(unsigned) const;
   virtual void require(const String &, ErrorHandler *);
 
-};
-  
-class FileLexerTSource : public LexerTSource {
-  
-  const char *_filename;
-  FILE *_f;
-  bool _own_f;
-  
- public:
-  
-  FileLexerTSource(const char *, FILE * = 0);
-  ~FileLexerTSource();
-  
-  unsigned more_data(char *, unsigned);
-  String landmark(unsigned lineno) const;
-  
-};
-
-class MemoryLexerTSource : public LexerTSource {
-  
-  const char *_data;
-  unsigned _pos;
-  unsigned _len;
-  
- public:
-  
-  MemoryLexerTSource(const char *, unsigned);
-  
-  unsigned more_data(char *, unsigned);
-  
 };
 
 #endif
