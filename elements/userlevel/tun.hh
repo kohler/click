@@ -15,6 +15,8 @@
  * code if the kernel routing table has entries pointing
  * at the tun device.
  *
+ * On a BSD machine, dev-prefix should be tun. On Linux, tap.
+ *
  * Tun produces and expects IP packets.
  * 
  * Tun allocates a /dev/<dev-prefix>* device (this might fail) and
