@@ -14,7 +14,7 @@ Version 1.0.7
 
 * Kernel driver
 
-** Added patch for Linux kernel 2.2.16.
+** Added patch for Linux kernel 2.2.16 and PCMCIA Card Services 3.1.16.
 
 * Elements
 

@@ -139,8 +139,8 @@ RatedSource::read_param(Element *e, void *vparam)
      struct timeval now, diff;
      click_gettimeofday(&now);
      timersub(&now, &rs->_start_time, &diff);
-     unsigned long r = rs->_count / diff.tv_sec;
-     return String(r) + " XXX\n";
+     unsigned long r = rs->_count / (diff.tv_sec ? diff.tv_sec : 1);
+     return String(r) + " (approximate)\n";
    }
    default:
     return "";

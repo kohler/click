@@ -26,8 +26,8 @@
 class UDPIPEncap : public Element {
   
   struct in_addr _saddr;
-  unsigned short _sport;
   struct in_addr _daddr;
+  unsigned short _sport;
   unsigned short _dport;
   bool _cksum : 1;
   bool _aligned : 1;
