@@ -1,5 +1,24 @@
 Click NEWS
 
+
+* Kernel patch
+
+** Changed device polling interface: skb recycling is moved out of device
+   driver and into Click (linuxmodule/skbmgr.c). skb recycling can now be 
+   used with different device drivers. This requires a different 2.2.18 
+   patch.
+
+** Add new Intel EPro 1000 gigabit driver: this new driver delivers much
+   higher throughput for 64 byte packets. Upto 1 million 64 byte packets
+   can be sent and received.
+
+* Elements
+
+** Device elements are changed. They now use the new polling interface. See
+   "Kernel patch" bullet above.
+
+
+
 Version 1.1   15.Dec.2000
 
 * Element packages
