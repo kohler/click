@@ -9,9 +9,13 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef HAVE_PCAP
 extern "C" {
-#include <pcap.h>
+# include <pcap.h>
 }
+#else
+# include "fakepcap.h"
+#endif
 
 #ifndef TCPDUMP_MAGIC
 #define TCPDUMP_MAGIC 0xa1b2c3d4
@@ -53,7 +57,8 @@ ToDump::initialize(ErrorHandler *errh)
   _fp = fopen(_filename, "wb");
   if (!_fp)
     return errh->error("unable to open dump file");
-  
+
+#ifdef HAVE_PCAP
   struct pcap_file_header h;
   memset(&h, '\0', sizeof(h));
   h.magic = TCPDUMP_MAGIC;
@@ -67,6 +72,9 @@ ToDump::initialize(ErrorHandler *errh)
   if (wrote_header != 1)
     return errh->error("unable to write to dump file");
   return 0;
+#else
+  errh->warning("dropping all packets: not compiled with pcap support");
+#endif
 }
 
 void
@@ -89,7 +97,8 @@ ToDump::run_scheduled()
 {
   Packet *p = input(0).pull();
   if (!p) return;
-  
+
+#if HAVE_PCAP
   struct pcap_pkthdr h;
   click_gettimeofday(&h.ts);
   h.caplen = p->length();
@@ -103,6 +112,9 @@ ToDump::run_scheduled()
   
   fflush(_fp);
   _timer.schedule_after_ms(1);
+#endif
+
+  p->kill();
 }
 
 EXPORT_ELEMENT(ToDump)

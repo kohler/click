@@ -2,7 +2,6 @@
 # include <config.h>
 #endif
 #include "fromdump.hh"
-
 #include "etheraddress.hh"
 #include "confparse.hh"
 #include "error.hh"
@@ -50,14 +49,19 @@ FromDump::initialize(ErrorHandler *errh)
 
   char ebuf[PCAP_ERRBUF_SIZE];
   _pcap = pcap_open_offline((char*)(const char*)_filename, ebuf);
+#ifdef HAVE_PCAP
   if (!_pcap)
     return errh->error("pcap says: %s\n", ebuf);
+#else
+  errh->warning("can't read packets: not compiled with pcap support");
+#endif
   timerclear(&_offset);
   return 0;
 }
 
 bool
 FromDump::ready() {
+#ifdef HAVE_PCAP
   if (!_pending_packet) {
     if (!pcap_dispatch(_pcap, 1, &FromDump::get_packet, (u_char*)this)) {
       return 0;
@@ -68,17 +72,21 @@ FromDump::ready() {
   click_gettimeofday(&now);
 
   return timercmp(&now, &_pending_pkthdr.ts, >);
+#else
+  return 0;
+#endif
 }
 
 void
 FromDump::go() {
-  if (! ready()) {
+  if (!ready()) {
     return;
   }
   output(0).push(_pending_packet);
   _pending_packet = 0;
 }
 
+#ifdef HAVE_PCAP
 void
 FromDump::get_packet(u_char* clientdata,
 		       const struct pcap_pkthdr* pkthdr,
@@ -112,10 +120,6 @@ FromDump::get_packet(const pcap_pkthdr* pkthdr, const u_char* data) {
     _pending_pkthdr.ts.tv_sec++;
   }
 }
-
-void
-timer_print(char* s, timeval* tv) {
-  printf("%s %ld.%6ld\n", s, tv->tv_sec, tv->tv_usec);
-}
+#endif
 
 EXPORT_ELEMENT(FromDump)

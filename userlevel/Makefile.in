@@ -56,7 +56,7 @@ CXXFLAGS = @CXXFLAGS@ -fno-exceptions -fno-rtti
 DEFS = @DEFS@ -I. -I$(top_builddir) -I$(srcdir) -I$(top_srcdir) \
 	-I$(top_srcdir)/lib @PCAP_HEADER_PATH@
 LDFLAGS = @LDFLAGS@ @PCAP_LIBRARY_PATH@
-LIBS = @LIBS@ -lpcap
+LIBS = @LIBS@ @PCAP_LIBRARY@
 
 CXXCOMPILE = $(CXX) $(DEFS) $(INCLUDES) $(CPPFLAGS) $(CXXFLAGS)
 CXXLD = $(CXX)

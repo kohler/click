@@ -199,8 +199,10 @@ else
   LIBS="$savelibs"
   if test "$ac_cv_pcap_library_path" = "found"; then
     PCAP_LIBRARY_PATH=""
+    PCAP_LIBRARY="-lpcap"
   elif test "$ac_cv_pcap_library_path" != "not found"; then
     PCAP_LIBRARY_PATH="$ac_cv_pcap_library_path"
+    PCAP_LIBRARY="-lpcap"
   fi
 fi
 
@@ -213,6 +215,7 @@ TARGETS="$TARGETS userlevel"
 
 AC_SUBST(PCAP_HEADER_PATH)
 AC_SUBST(PCAP_LIBRARY_PATH)
+AC_SUBST(PCAP_LIBRARY)
 
 dnl check linuxmodule for Linux
 

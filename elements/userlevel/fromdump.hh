@@ -16,11 +16,14 @@
  * =a ToBPF
  */
 
+#ifdef HAVE_PCAP
 extern "C" {
-#include <pcap.h>
+# include <pcap.h>
 }
+#else
+# include "fakepcap.h"
+#endif
 #include <sys/types.h>
-
 #include "element.hh"
 
 class FromDump : public Element {
@@ -41,17 +44,21 @@ class FromDump : public Element {
 
  private:
   pcap_t* _pcap;
+#ifdef HAVE_PCAP
   pcap_pkthdr _pending_pkthdr;
+#endif
   Packet* _pending_packet;
   timeval _offset;
   String _filename;
 
   // static get_packet just casts clientdata to a FromDump and calls
   // the method. (used only as a callback)
+#ifdef HAVE_PCAP
   static void get_packet(u_char* clientdata,
 			 const struct pcap_pkthdr* pkthdr,
 			 const u_char* data);
   void get_packet(const pcap_pkthdr* pkthdr, const u_char* data);
+#endif
   
 
 };
