@@ -74,11 +74,9 @@ Report bugs to <click@pdos.lcs.mit.edu>.\n", program_name);
 int
 main(int argc, char **argv)
 {
-  String::static_initialize();
-  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
-  ErrorHandler *errh = new PrefixErrorHandler
-    (ErrorHandler::default_handler(), "click-uninstall: ");
+  click_static_initialize();
   CLICK_DEFAULT_PROVIDES;
+  ErrorHandler *errh = new PrefixErrorHandler(ErrorHandler::default_handler(), "click-uninstall: ");
 
   // read command line arguments
   Clp_Parser *clp =

@@ -523,11 +523,10 @@ replace_blank_ports(RouterT *r)
 int
 main(int argc, char **argv)
 {
-  String::static_initialize();
-  ErrorHandler *default_errh = new FileErrorHandler(stderr);
-  ErrorHandler::static_initialize(default_errh);
-  ErrorHandler *p_errh = new PrefixErrorHandler(default_errh, "click-undead: ");
+  click_static_initialize();
   CLICK_DEFAULT_PROVIDES;
+  ErrorHandler *default_errh = ErrorHandler::default_handler();
+  ErrorHandler *p_errh = new PrefixErrorHandler(default_errh, "click-undead: ");
 
   // read command line arguments
   Clp_Parser *clp =

@@ -815,12 +815,9 @@ void add_fast_classifiers_2();
 int
 main(int argc, char **argv)
 {
-  String::static_initialize();
-  cp_va_static_initialize();
-  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
-  ErrorHandler *errh = new PrefixErrorHandler
-    (ErrorHandler::default_handler(), "click-fastclassifier: ");
+  click_static_initialize();
   CLICK_DEFAULT_PROVIDES;
+  ErrorHandler *errh = new PrefixErrorHandler(ErrorHandler::default_handler(), "click-fastclassifier: ");
 
   // read command line arguments
   Clp_Parser *clp =

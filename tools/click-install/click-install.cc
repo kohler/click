@@ -313,11 +313,10 @@ install_required_packages(RouterT *r, HashMap<String, int> &packages,
 int
 main(int argc, char **argv)
 {
-  String::static_initialize();
-  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
+  click_static_initialize();
+  CLICK_DEFAULT_PROVIDES;
   ErrorHandler *nop_errh = ErrorHandler::default_handler();
   ErrorHandler *errh = new PrefixErrorHandler(nop_errh, "click-install: ");
-  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

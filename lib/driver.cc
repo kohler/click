@@ -20,7 +20,7 @@
 #include <click/config.h>
 #include <click/pathvars.h>
 
-#ifdef CLICK_LINUXMODULE
+#if CLICK_LINUXMODULE
 # define WANT_MOD_USE_COUNT 1	/* glue.hh should not define MOD_USE_COUNTs */
 #endif
 
@@ -29,7 +29,7 @@
 #include <click/hashmap.hh>
 #include <click/error.hh>
 
-#if !defined(CLICK_LINUXMODULE) && !defined(CLICK_BSDMODULE)
+#if !CLICK_LINUXMODULE && !CLICK_BSDMODULE
 # include <click/userutils.hh>
 # include <unistd.h>
 # include <errno.h>
@@ -37,14 +37,15 @@
 # include <stdlib.h>
 #endif
 
-#ifdef CLICK_TOOL
+#if CLICK_TOOL
 # include "lexert.hh"
 # include "routert.hh"
+# include <click/confparse.hh>
 #else
 # include <click/lexer.hh>
 #endif
 
-#ifdef CLICK_USERLEVEL
+#if CLICK_USERLEVEL
 # include <click/master.hh>
 # include <click/straccum.hh>
 #endif
@@ -308,10 +309,10 @@ class RequireLexerExtra : public LexerExtra { public:
 void
 RequireLexerExtra::require(String name, ErrorHandler *errh)
 {
-#ifdef HAVE_DYNAMIC_LINKING
+# ifdef HAVE_DYNAMIC_LINKING
     if (!click_has_provision(name.c_str()))
 	clickdl_load_requirement(name, _archive, errh);
-#endif
+# endif
     if (!click_has_provision(name.c_str()))
 	errh->error("requirement `%s' not available", name.cc());
 }
@@ -442,6 +443,21 @@ click_read_router(String filename, bool is_expr, ErrorHandler *errh, bool initia
 	}
     
     return router;
+}
+
+CLICK_ENDDECLS
+#endif /* CLICK_USERLEVEL */
+
+
+#if CLICK_TOOL
+CLICK_DECLS
+
+void
+click_static_initialize()
+{
+    String::static_initialize();
+    cp_va_static_initialize();
+    ErrorHandler::static_initialize(new FileErrorHandler(stderr, ""));
 }
 
 CLICK_ENDDECLS

@@ -138,11 +138,10 @@ check_once(const RouterT *r, const char *filename,
 int
 main(int argc, char **argv)
 {
-  String::static_initialize();
-  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
+  click_static_initialize();
+  CLICK_DEFAULT_PROVIDES;
   ErrorHandler *errh = ErrorHandler::default_handler();
   ErrorHandler *p_errh = new PrefixErrorHandler(errh, "click-check: ");
-  CLICK_DEFAULT_PROVIDES;
 
   // read command line arguments
   Clp_Parser *clp =

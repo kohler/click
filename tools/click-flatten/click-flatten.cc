@@ -96,11 +96,9 @@ output_sorted_one_per_line(Vector<String> &v, FILE *out)
 int
 main(int argc, char **argv)
 {
-  String::static_initialize();
-  cp_va_static_initialize();
-  ErrorHandler::static_initialize(new FileErrorHandler(stderr));
-  ErrorHandler *errh = ErrorHandler::default_handler();
+  click_static_initialize();
   CLICK_DEFAULT_PROVIDES;
+  ErrorHandler *errh = ErrorHandler::default_handler();
 
   // read command line arguments
   Clp_Parser *clp =
