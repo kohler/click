@@ -39,10 +39,10 @@ Spinlock::Spinlock()
   : _lock(0), _depth(0), _owner(-1), _refcnt(0)
 {
 #ifndef __i386__
-  StaticAssert("no multithread support for non i386 click");
+# error "no multithread support for non i386 click"
 #endif
 } 
-  
+
 inline
 Spinlock::~Spinlock()
 {
