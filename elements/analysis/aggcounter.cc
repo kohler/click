@@ -89,8 +89,8 @@ AggregateCounter::configure(const Vector<String> &conf, ErrorHandler *errh)
 	return -1;
     
     _bytes = bytes;
-    _packet_count = packet_count;
-    _extra_length = extra_length;
+    _use_packet_count = packet_count;
+    _use_extra_length = extra_length;
 
     if ((freeze_nnz != (uint32_t)(-1)) + (stop_nnz != (uint32_t)(-1)) > 1)
 	return errh->error("I can handle at most one of `FREEZE_AFTER_AGG' and `STOP_AFTER_AGG'");
@@ -263,9 +263,9 @@ AggregateCounter::update(Packet *p, bool frozen)
     
     uint32_t amount;
     if (!_bytes)
-	amount = (_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
+	amount = (_use_packet_count && PACKET_COUNT_ANNO(p) ? PACKET_COUNT_ANNO(p) : 1);
     else
-	amount = p->length() + (_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
+	amount = p->length() + (_use_extra_length ? EXTRA_LENGTH_ANNO(p) : 0);
     
     // update _num_nonzero; possibly call handler
     if (amount && !n->count) {

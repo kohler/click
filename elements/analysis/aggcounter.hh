@@ -164,8 +164,8 @@ class AggregateCounter : public Element { public:
     };
 
     bool _bytes : 1;
-    bool _packet_count : 1;
-    bool _extra_length : 1;
+    bool _use_packet_count : 1;
+    bool _use_extra_length : 1;
     bool _frozen : 1;
     bool _active : 1;
     
