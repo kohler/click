@@ -1,3 +1,8 @@
+2004-08-26 Thursday 14:41  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/error.hh (1.26), lib/error.cc (1.50): slight change
+	in the way ContextErrorHandler indents are applied
+
 2004-08-24 Tuesday 19:14  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.122), tools/Makefile.in (1.51),
