@@ -205,13 +205,19 @@ ToDevice::tx_intr()
   }
 
 #if HAVE_POLLING
-  if (_polling && !_dev->tbusy && sent < OUTPUT_BATCH) {
-    /* try to send from linux if click queue is empty */
+  // only try to send from Linux if the device's queue is nonempty. This is
+  // an optimistic check that we use to avoid the expensive spin_lock_irqsave
+  // below.
+  if (_polling && sent < OUTPUT_BATCH && _dev->qdisc->q.qlen && !busy) {
+    
     start_bh_atomic();
+    // lock the skb_queue_lock
+    unsigned long flags;
+    spin_lock_irqsave(&skb_queue_lock, flags);
+    
     while (sent < OUTPUT_BATCH && (busy=_dev->tbusy) == 0) {
-      int r;
-      
-      if ((r = qdisc_restart(_dev)) < 0) {
+      int r = qdisc_restart(_dev);
+      if (r < 0) {
 	/* if qdisc_restart returns -1, that means a packet is sent as long as
 	 * dev->tbusy is not set... see net/sched/sch_generic.c in linux src
 	 * code */
@@ -219,10 +225,14 @@ ToDevice::tx_intr()
 #if CLICK_DEVICE_STATS
         _linux_pkts_sent++;
 #endif
-      }
-      else break;
+      } else
+	break;
     }
+
+    /* unlock */
+    spin_unlock_irqrestore(&skb_queue_lock, flags);
     end_bh_atomic();
+    
   }
 #endif
 
