@@ -1,3 +1,19 @@
+2003-03-09 Sunday 20:03  Eddie Kohler <kohler@icir.org>
+
+	* NEWS (1.146): NEWS update
+
+2003-03-09 Sunday 20:02  Eddie Kohler <kohler@icir.org>
+
+	* elements/analysis/: fromipsumdump.cc (1.49), toipsumdump.cc
+	(1.43), toipsumdump.hh (1.36): change IP and TCP option formats
+	(especially: use ; as a separator, not ,); plus parsing bug fixes
+	from test
+
+2003-03-09 Sunday 20:01  Eddie Kohler <kohler@icir.org>
+
+	* doc/: click.1 (1.11), click.o.8 (1.11): doc updates, including
+	major click.o overhaul (--enable-clickfs, --enable-adaptive)
+
 2003-03-07 Friday 01:29  Eddie Kohler <kohler@icir.org>
 
 	* etc/diagrams/: Makefile (1.4), Makefile (1.5): Makefile nitlet
