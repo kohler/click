@@ -651,7 +651,9 @@ particular purpose.\n");
 
   // catch control-C
   signal(SIGINT, catch_sigint);
-
+  // ignore SIGPIPE
+  signal(SIGPIPE, SIG_IGN);
+  
   if (errh->nerrors() > 0 || router->initialize(errh) < 0)
     exit(1);
 
@@ -708,7 +710,7 @@ particular purpose.\n");
 	   (diff.tv_usec+5000)/10000);
     printf("\n");
   }
-
+  
   // call handlers
   if (handlers.size())
     if (call_read_handlers(handlers, errh) < 0)
