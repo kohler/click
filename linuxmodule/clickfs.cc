@@ -23,6 +23,7 @@
 #include <click/router.hh>
 #include <click/error.hh>
 #include <click/llrpc.h>
+#include <click/ino.hh>
 
 #include <click/cxxprotect.h>
 CLICK_CXX_PROTECT
@@ -38,37 +39,47 @@ static struct inode_operations click_handler_inode_ops;
 static struct dentry_operations click_dentry_ops;
 static struct proclikefs_file_system *clickfs;
 
-static spinlock_t click_config_lock;
-extern atomic_t click_config_generation;
+static spinlock_t config_write_lock;
+static uint32_t config_read_count;
+extern uint32_t click_config_generation;
+
+
+/*************************** Config locking *********************************/
+
+static inline void
+lock_config_read()
+{
+    spin_lock(&config_write_lock);
+    config_read_count++;
+    spin_unlock(&config_write_lock);
+}
+
+static inline void
+unlock_config_read()
+{
+    config_read_count--;
+}
+
+static inline void
+lock_config_write()
+{
+    while (1) {
+	spin_lock(&config_write_lock);
+	if (!config_read_count)
+	    return;
+	spin_unlock(&config_write_lock);
+	schedule();
+    }
+}
+
+static inline void
+unlock_config_write()
+{
+    spin_unlock(&config_write_lock);
+}
 
 
 /*************************** Inode constants ********************************/
-
-#define CSE_NULL			0xFFFFU
-#define CSE_FAKE			1
-#define CSE_HANDLER_CONFLICT		2
-#define CSE_SUBDIR_CONFLICTS_CALCULATED	4
-
-// NB: inode number 0 is reserved for the system.
-#define INO_DIRTYPE(ino)		((ino) >> 28)
-#define INO_ELEMENTNO(ino)		((int)((ino) & 0xFFFFU) - 1)
-#define INO_HANDLERNO(ino)		((((ino) & 0xFFFFU) ? 0 : Router::FIRST_GLOBAL_HANDLER) + (((ino) >> 16) & 0x7FFFU))
-#define INO_DT_H			0x1U /* handlers only */
-#define INO_DT_N			0x2U /* names; >= 2 -> has names */
-#define INO_DT_HN			0x3U /* handlers + names */
-#define INO_DT_GLOBAL			0x4U /* handlers + names + all #s */
-#define INO_DT_HAS_H(ino)		(INO_DIRTYPE((ino)) != INO_DT_N)
-#define INO_DT_HAS_N(ino)		(INO_DIRTYPE((ino)) >= INO_DT_N)
-#define INO_DT_HAS_U(ino)		(INO_DIRTYPE((ino)) == INO_DT_GLOBAL)
-
-#define INO_MKHANDLER(e, hi)		((((hi) & 0x7FFFU) << 16) | (((e) + 1) & 0xFFFFU) | 0x80000000U)
-#define INO_MKHDIR(e)			((INO_DT_H << 28) | (((e) + 1) & 0xFFFFU))
-#define INO_MKHNDIR(e)			((INO_DT_HN << 28) | (((e) + 1) & 0xFFFFU))
-#define INO_GLOBALDIR			(INO_DT_GLOBAL << 28)
-#define INO_ISHANDLER(ino)		(((ino) & 0x80000000U) != 0)
-
-#define INO_NLINK_GLOBAL_HANDLER	1
-#define INO_NLINK_LOCAL_HANDLER		2
 
 #define INODE_INFO(inode)		(*((ClickInodeInfo *)(&(inode)->u)))
 
@@ -81,225 +92,13 @@ inline bool
 inode_out_of_date(struct inode *inode)
 {
     return INO_ELEMENTNO(inode->i_ino) >= 0
-	&& INODE_INFO(inode).config_generation != atomic_read(&click_config_generation);
+	&& INODE_INFO(inode).config_generation != click_config_generation;
 }
 
-
-/*************************** sorted_elements ********************************/
-
-// NB: Assume that no global handlers have names that conflict with element
-// *numbers*.
-
-struct ClickSortedElement {
-    String name;
-    uint16_t elementno;
-    uint16_t skip;
-    uint16_t flags;
-    uint16_t sorted_index;
-};
-
-static ClickSortedElement *sorted_elements;
-static int nsorted_elements, sorted_elements_cap;
-static uint32_t sorted_elements_generation;
-
-static int
-grow_sorted_elements(int min_size)
-{
-    if (sorted_elements_cap >= min_size)
-	return 0;
-    int new_cap = (sorted_elements_cap ? sorted_elements_cap : 128);
-    while (new_cap < min_size)
-	new_cap *= 2;
-    // cheat on memory: bad me!
-    ClickSortedElement *nse = (ClickSortedElement *)(new uint8_t[sizeof(ClickSortedElement) * new_cap]);
-    if (!nse)
-	return -ENOMEM;
-    memcpy(nse, sorted_elements, sizeof(ClickSortedElement) * sorted_elements_cap);
-    for (int i = sorted_elements_cap; i < new_cap; i++)
-	new((void *)&nse[i]) String();
-    delete[] ((uint8_t *)sorted_elements);
-    sorted_elements = nse;
-    sorted_elements_cap = new_cap;
-    return 0;
-}
-
-static void
-free_sorted_elements()
-{
-    for (int i = 0; i < sorted_elements_cap; i++)
-	sorted_elements[i].name.~String();
-    delete[] ((uint8_t *)sorted_elements);
-    sorted_elements = 0;
-    nsorted_elements = sorted_elements_cap = 0;
-}
-
-static int
-sorted_element_compar(const void *v1, const void *v2)
-{
-    const ClickSortedElement *a = reinterpret_cast<const ClickSortedElement *>(v1);
-    const ClickSortedElement *b = reinterpret_cast<const ClickSortedElement *>(v2);
-    return String::compare(a->name, b->name);
-}
-
-static int
-prepare_sorted_elements()
-{
-    // config lock must be held!
-    nsorted_elements = 0;
-    if (!click_router || click_router->nelements() == 0) {
-	sorted_elements_generation = atomic_read(&click_config_generation);
-	return 0;
-    }
-    else if (grow_sorted_elements(click_router->nelements()) < 0)
-	return -ENOMEM;
-
-    // initialize sorted_elements with info from the current router
-    int nelem = click_router->nelements();
-    for (int i = 0; i < nelem; i++) {
-	sorted_elements[i].name = click_router->ename(i);
-	sorted_elements[i].elementno = i;
-	sorted_elements[i].skip = 0;
-	sorted_elements[i].flags = 0;
-    }
-
-    // sort sorted_elements
-    click_qsort(&sorted_elements[0], nelem, sizeof(ClickSortedElement), sorted_element_compar);
-
-    // add new sorted_elements for intermediate directories
-    int n = nelem;
-    for (int i = 0; i < nelem; i++) {
-	String name = sorted_elements[i].name;
-	String last_name = (i ? sorted_elements[i-1].name : String());
-	int slash = name.find_left('/');
-	while (slash >= 0
-	       && (name.substring(0, slash) != last_name.substring(0, slash)
-		   || (last_name.length() > slash && last_name[slash] != '/'))) {
-	    if (n >= sorted_elements_cap && grow_sorted_elements(n + 1) < 0)
-		return -ENOMEM;
-	    sorted_elements[n].name = name.substring(0, slash);
-	    sorted_elements[n].elementno = n;
-	    sorted_elements[n].skip = 0;
-	    sorted_elements[n].flags = CSE_FAKE;
-	    n++;
-	    slash = name.find_left('/', slash + 1);
-	}
-    }
-
-    // resort sorted_elements if necessary
-    if (n != nelem)
-	click_qsort(&sorted_elements[0], n, sizeof(ClickSortedElement), sorted_element_compar);
-
-    // calculate 'skip'
-    for (int i = 0; i < n - 1; i++) {
-	const String &name = sorted_elements[i].name;
-	int length = name.length();
-	int j = i + 1;
-	while (j < n && sorted_elements[j].name.length() > length
-	       && sorted_elements[j].name[length] == '/'
-	       && sorted_elements[j].name.substring(0, length) == name) {
-	    sorted_elements[i].skip++;
-	    j++;
-	}
-    }
-
-    // calculate 'sorted_index'
-    for (int i = 0; i < n; i++)
-	sorted_elements[ sorted_elements[i].elementno ].sorted_index = i;
-
-    // done
-    nsorted_elements = n;
-    sorted_elements_generation = atomic_read(&click_config_generation);
-    return 0;
-}
-
-static int
-string_compar(const void *v1, const void *v2)
-{
-    const String *a = reinterpret_cast<const String *>(v1);
-    const String *b = reinterpret_cast<const String *>(v2);
-    return String::compare(*a, *b);
-}
-
-static void
-calculate_handler_conflicts(int parent_eindex)
-{
-    // configuration lock must be held!
-    
-    // no conflicts if no router
-    assert(parent_eindex < nsorted_elements);
-    int parent_sindex = (parent_eindex < 0 ? -1 : sorted_elements[parent_eindex].sorted_index);
-    if (!click_router)
-	return;
-    if (parent_sindex >= 0 && (sorted_elements[parent_sindex].flags & CSE_SUBDIR_CONFLICTS_CALCULATED))
-	return;
-    if (parent_sindex >= 0 && sorted_elements[parent_sindex].skip == 0) {
-	sorted_elements[parent_sindex].flags |= CSE_SUBDIR_CONFLICTS_CALCULATED;
-	return;
-    }
-
-    // find the relevant handler indexes and names
-    Vector<int> hindexes;
-    click_router->element_handlers(parent_eindex, hindexes);
-    Vector<String> names;
-    for (int i = 0; i < hindexes.size(); i++) {
-	const Router::Handler &h = click_router->handler(hindexes[i]);
-	if (h.visible())
-	    names.push_back(h.name());
-    }
-
-    // sort names
-    if (names.size())
-	click_qsort(&names[0], names.size(), sizeof(String), string_compar);
-
-    // run over the arrays, marking conflicts
-    int sindex = parent_sindex + 1;
-    int last_sindex = (sindex == 0 ? nsorted_elements : sindex + sorted_elements[parent_sindex].skip);
-    int hindex = 0;
-    while (sindex < last_sindex && hindex < names.size()) {
-	int compare = String::compare(sorted_elements[sindex].name, names[hindex]);
-	if (compare == 0) {	// there is a conflict
-	    sorted_elements[sindex].flags |= CSE_HANDLER_CONFLICT;
-	    sindex += sorted_elements[sindex].skip + 1;
-	    hindex++;
-	} else if (compare < 0)
-	    sindex += sorted_elements[sindex].skip + 1;
-	else
-	    hindex++;
-    }
-
-    // mark subdirectory as calculated
-    if (parent_sindex >= 0)
-	sorted_elements[parent_sindex].flags |= CSE_SUBDIR_CONFLICTS_CALCULATED;
-}
+static ClickIno click_ino;
 
 
 /*************************** Inode operations ********************************/
-
-static int
-calculate_inode_nlink(struct inode *inode)
-{
-    // must be called with config_lock held
-    ino_t ino = inode->i_ino;
-    int elementno = INO_ELEMENTNO(ino);
-    int nlink = 2;
-    if (INO_DIRTYPE(ino) != INO_DT_H) {
-	if (INO_DT_HAS_U(ino) && click_router)
-	    nlink += click_router->nelements();
-	if (INO_DT_HAS_N(ino)) {
-	    int first_sindex = (elementno < 0 ? 0 : sorted_elements[elementno].sorted_index + 1);
-	    if (elementno >= 0
-		&& !(sorted_elements[first_sindex - 1].flags & CSE_SUBDIR_CONFLICTS_CALCULATED))
-		calculate_handler_conflicts(elementno);
-	    int last_sindex = (elementno < 0 ? nsorted_elements : first_sindex + sorted_elements[first_sindex - 1].skip);
-	    while (first_sindex < last_sindex) {
-		if (!(sorted_elements[first_sindex].flags & CSE_HANDLER_CONFLICT) || INO_DIRTYPE(ino) == INO_DT_N)
-		    nlink++;
-		first_sindex += sorted_elements[first_sindex].skip + 1;
-	    }
-	}
-    }
-    return nlink;
-}
 
 static struct inode *
 click_inode(struct super_block *sb, ino_t ino)
@@ -313,9 +112,9 @@ click_inode(struct super_block *sb, ino_t ino)
 
     //MDEBUG("entering click_inode");
     int elementno = INO_ELEMENTNO(ino);
-    if (atomic_read(&click_config_generation) != sorted_elements_generation)
-	prepare_sorted_elements();
-    INODE_INFO(inode).config_generation = sorted_elements_generation;
+    if (click_ino.prepare(click_router, click_config_generation) < 0)
+	return 0;
+    INODE_INFO(inode).config_generation = click_config_generation;
     
     if (INO_ISHANDLER(ino)) {
 	int hi = INO_HANDLERNO(ino);
@@ -334,11 +133,6 @@ click_inode(struct super_block *sb, ino_t ino)
 	    inode = 0;
 	    panic("click_inode");
 	}
-    } else if (elementno >= 0 && (!click_router || elementno >= nsorted_elements)) {
-	// can't happen
-	iput(inode);
-	inode = 0;
-	panic("click_inode");
     } else {
 	inode->i_mode = click_mode_dir;
 	inode->i_uid = inode->i_gid = 0;
@@ -346,7 +140,7 @@ click_inode(struct super_block *sb, ino_t ino)
 #ifdef LINUX_2_4
 	inode->i_fop = &click_dir_file_ops;
 #endif
-	inode->i_nlink = calculate_inode_nlink(inode);
+	inode->i_nlink = click_ino.nlink(ino);
     }
 
     //MDEBUG("leaving click_inode");
@@ -362,100 +156,33 @@ extern "C" {
 static struct dentry *
 click_dir_lookup(struct inode *dir, struct dentry *dentry)
 {
-    if (inode_out_of_date(dir))
-	return reinterpret_cast<struct dentry *>(ERR_PTR(-ENOENT));
+    lock_config_read();
 
-    //MDEBUG("click_dir_lookup");
-    ino_t ino = dir->i_ino;
-    int elementno = INO_ELEMENTNO(ino);
-    String dentry_name = String::stable_string(reinterpret_cast<const char *>(dentry->d_name.name), dentry->d_name.len);
     struct inode *inode = 0;
-
-    int error = -ENOENT;
-    int first_sindex, last_sindex, offset;
-
-    // lock the configuration
-    spin_lock(&click_config_lock);
-    
-    // delimit boundaries of search region
-    if (elementno < 0)
-	first_sindex = offset = 0, last_sindex = nsorted_elements - 1;
+    int error;
+    if (inode_out_of_date(dir))
+	error = -ENOENT;
+    else if ((error = click_ino.prepare(click_router, click_config_generation)) < 0)
+	/* save error */;
     else {
-	int sindex = sorted_elements[elementno].sorted_index;
-	offset = sorted_elements[sindex].name.length() + 1;
-	first_sindex = sindex + 1;
-	last_sindex = first_sindex + sorted_elements[sindex].skip - 1;
+	String dentry_name = String::stable_string(reinterpret_cast<const char *>(dentry->d_name.name), dentry->d_name.len);
+	if (ino_t new_ino = click_ino.lookup(dir->i_ino, dentry_name))
+	    inode = click_inode(dir->i_sb, new_ino);
+	else
+	    error = -ENOENT;
     }
 
-    // look for numbers
-    if (INO_DT_HAS_U(ino) && dentry_name.length() && dentry_name[0] >= '1' && dentry_name[0] <= '9') {
-	int eindex = dentry_name[0] - '0';
-	for (int i = 1; i < dentry_name.length(); i++)
-	    if (dentry_name[i] >= '0' && dentry_name[i] <= '9')
-		eindex = (eindex * 10) + dentry_name[i] - '0';
-	    else
-		goto number_failed;
-	eindex--;
-	if (!click_router || eindex >= click_router->nelements())
-	    goto number_failed;
-	inode = click_inode(dir->i_sb, INO_MKHDIR(eindex));
-	goto found;
-    }
-    
-  number_failed:
-    // look for handlers
-    if (INO_DT_HAS_H(ino)) {
-	int hi = Router::find_handler(click_router, elementno, dentry_name);
-	if (hi >= 0) {
-	    const Router::Handler &h = Router::handler(click_router, hi);
-	    if (h.visible()) {
-		inode = click_inode(dir->i_sb, INO_MKHANDLER(elementno, hi));
-		goto found;
-	    }
-	}
-    }
-
-    // look for names
-    if (INO_DT_HAS_N(ino)) {
-	// binary search
-	while (first_sindex <= last_sindex) {
-	    int mid = (first_sindex + last_sindex) >> 1;
-
-	    // a sort of strcmp(dentry_name, sorted_elements[mid].name)
-	    const String &x = sorted_elements[mid].name;
-	    int min_length = (x.length() - offset < dentry_name.length() ? x.length() - offset : dentry_name.length());
-	    const char *ds = dentry_name.data(), *xs = x.data() + offset;
-	    const char *de = ds + min_length;
-	    int cmp = 0;
-	    do {
-		cmp = ((unsigned char)*ds++) - ((unsigned char)*xs++);
-	    } while (cmp == 0 && ds < de);
-	    if (cmp == 0)
-		cmp = dentry_name.length() - (x.length() - offset);
-
-	    if (cmp == 0) {
-		// found it
-		inode = click_inode(dir->i_sb, INO_MKHNDIR(sorted_elements[mid].elementno));
-		goto found;
-	    } else if (cmp < 0)
-		last_sindex = mid - 1;
-	    else
-		first_sindex = mid + 1;
-	}
-    }
-
-    // first_sindex, last_sindex destroyed here
-    spin_unlock(&click_config_lock);
-    return reinterpret_cast<struct dentry *>(ERR_PTR(-ENOENT));
-
-  found:
-    spin_unlock(&click_config_lock);
-    if (inode) {
+    unlock_config_read();
+    if (error != 0)
+	return reinterpret_cast<struct dentry *>(ERR_PTR(error));
+    else if (!inode)
+	// couldn't get an inode
+	return reinterpret_cast<struct dentry *>(ERR_PTR(-EINVAL));
+    else {
 	dentry->d_op = &click_dentry_ops;
 	d_add(dentry, inode);
 	return 0;
-    } else
-	return reinterpret_cast<struct dentry *>(ERR_PTR(-EINVAL));
+    }
 }
 
 static int
@@ -464,121 +191,79 @@ click_dir_revalidate(struct dentry *dentry)
     struct inode *inode = dentry->d_inode;
     if (!inode)
 	return -EINVAL;
-    else if (INODE_INFO(inode).config_generation != atomic_read(&click_config_generation)) {
+    int error;
+    lock_config_read();
+    if (INODE_INFO(inode).config_generation != click_config_generation) {
 	if (INO_ELEMENTNO(inode->i_ino) >= 0) // not a global directory
 	    return -EIO;
-	spin_lock(&click_config_lock);
-	if (atomic_read(&click_config_generation) != sorted_elements_generation)
-	    prepare_sorted_elements();
-	INODE_INFO(inode).config_generation = sorted_elements_generation;
-	inode->i_nlink = calculate_inode_nlink(inode);
-	spin_unlock(&click_config_lock);
+	else if ((error = click_ino.prepare(click_router, click_config_generation)) != 0)
+	    return error;
+	INODE_INFO(inode).config_generation = click_config_generation;
+	inode->i_nlink = click_ino.nlink(inode->i_ino);
     }
+    unlock_config_read();
     return 0;
 }
 
+
+struct my_filldir_container {
+    filldir_t filldir;
+    void *dirent;
+};
+
+static bool
+my_filldir(const char *name, int namelen, ino_t ino, uint32_t f_pos, int mode, void *thunk)
+{
+    my_filldir_container *mfd = (my_filldir_container *)thunk;
 #ifdef LINUX_2_2
-#define DO_FILLDIR(dirent, name, namelen, ino, mode)	do { \
-	if (filldir(dirent, name, namelen, f_pos, ino) < 0) { \
-	    filp->f_pos = f_pos; return 0; \
-	} } while (0)
+    (void)mode;
+    int error = mfd->filldir(mfd->dirent, name, namelen, f_pos, ino);
 #else
-#define DO_FILLDIR(dirent, name, namelen, ino, mode)	do { \
-	if (filldir(dirent, name, namelen, f_pos, ino, mode) < 0) { \
-	    filp->f_pos = f_pos; return 0; \
-	} } while (0)
+    int error = mfd->filldir(mfd->dirent, name, namelen, f_pos, ino, mode);
 #endif
+    return error >= 0;
+}
 
 static int
 click_dir_readdir(struct file *filp, void *dirent, filldir_t filldir)
 {
-    // File positions:
-    // 0		.
-    // 1		..
-    // 2-0xFFFF		handlers
-    // 0x10000-0x1FFFF  numbers
-    // 0x20000-0x2FFFF	names
-
-#define RD_HOFF		2
-#define RD_UOFF		0x10000
-#define RD_NOFF		0x20000
-#define RD_XOFF		0x30000
+    struct my_filldir_container mfd;
+    mfd.filldir = filldir;
+    mfd.dirent = dirent;
     
     struct inode *inode = filp->f_dentry->d_inode;
-    if (inode_out_of_date(inode))
-	return -ENOENT;
-
     ino_t ino = inode->i_ino;
-    int elementno = INO_ELEMENTNO(ino);
     uint32_t f_pos = filp->f_pos;
-    
+
+    lock_config_read();
+
+    int error;
+    if (inode_out_of_date(inode))
+	error = -ENOENT;
+    else
+	error = click_ino.prepare(click_router, click_config_generation);
+
     // '.' and '..'
-    if (f_pos == 0) {
-	DO_FILLDIR(dirent, ".", 1, ino, DT_DIR);
-	f_pos++;
-    }
-    if (f_pos == 1) {
-	DO_FILLDIR(dirent, "..", 2, filp->f_dentry->d_parent->d_inode->i_ino, DT_DIR);
-	f_pos++;
-    }
-
-    // handler names
-    if (f_pos < RD_UOFF && INO_DT_HAS_H(ino)) {
-	Vector<int> hi;
-	Router::element_handlers(click_router, elementno, hi);
-	while (f_pos >= RD_HOFF && f_pos < hi.size() + RD_HOFF) {
-	    const Router::Handler &h = Router::handler(click_router, hi[f_pos - RD_HOFF]);
-	    if (h.visible())
-		DO_FILLDIR(dirent, h.name().data(), h.name().length(), INO_MKHANDLER(elementno, hi[f_pos - RD_HOFF]), DT_REG);
+    if (error >= 0 && f_pos == 0) {
+	if (my_filldir(".", 1, ino, f_pos, DT_DIR, &mfd))
 	    f_pos++;
-	}
+	else
+	    error = -1;
     }
-
-    // figure out edges of directory
-    int first_sindex, last_sindex;
-    if (elementno < 0)
-	first_sindex = 0, last_sindex = nsorted_elements;
-    else {
-	int sindex = sorted_elements[elementno].sorted_index;
-	first_sindex = sindex + 1;
-	last_sindex = first_sindex + sorted_elements[sindex].skip;
-    }
-
-    // subdirectory numbers
-    if (f_pos < RD_UOFF)
-	f_pos = RD_UOFF;
-    if (f_pos >= RD_NOFF)
-	/* do nothing */;
-    else if (INO_DIRTYPE(ino) == INO_DT_GLOBAL) {
-	char buf[10];
-	int nelem = (click_router ? click_router->nelements() : 0);
-	while (f_pos >= RD_UOFF && f_pos < RD_UOFF + nelem) {
-	    int elem = f_pos - RD_UOFF;
-	    sprintf(buf, "%d", elem + 1);
-	    DO_FILLDIR(dirent, buf, strlen(buf), INO_MKHDIR(elem), DT_DIR);
+    if (error >= 0 && f_pos == 1) {
+	if (my_filldir("..", 2, filp->f_dentry->d_parent->d_inode->i_ino, f_pos, DT_DIR, &mfd))
 	    f_pos++;
-	}
+	else
+	    error = -1;
     }
 
-    // subdirectory names
-    if (f_pos < RD_NOFF)
-	f_pos = RD_NOFF;
-    if (f_pos >= RD_XOFF)
-	/* do nothing */;
-    else if (INO_DT_HAS_N(ino)) {
-	bool include_conflicts = (INO_DIRTYPE(ino) == INO_DT_N);
-	int i, j;
-	int parent_length = (first_sindex == 0 ? 0 : sorted_elements[first_sindex - 1].name.length() + 1);
-	for (i = first_sindex, j = RD_NOFF; i < last_sindex; i += sorted_elements[i].skip + 1, j++)
-	    if (f_pos == j) {
-		if (!(sorted_elements[i].flags & CSE_HANDLER_CONFLICT) || include_conflicts)
-		    DO_FILLDIR(dirent, sorted_elements[i].name.data() + parent_length, sorted_elements[i].name.length() - parent_length, INO_MKHNDIR(sorted_elements[i].elementno), DT_DIR);
-		f_pos++;
-	    }
-    }
+    // real entries
+    if (error >= 0)
+	error = click_ino.readdir(ino, f_pos, my_filldir, &mfd);
 
-    filp->f_pos = RD_XOFF;
-    return 1;
+    unlock_config_read();
+    filp->f_pos = f_pos;
+    return (error == -1 ? 0 : error);
 }
 
 } // extern "C"
@@ -637,10 +322,9 @@ click_read_super(struct super_block *sb, void * /* data */, int)
     //sb->s_magic = PROC_SUPER_MAGIC;
     sb->s_op = &click_superblock_ops;
     //MDEBUG("click_config_lock");
-    spin_lock(&click_config_lock);
-    //MDEBUG("click_inode");
+    lock_config_read();
     struct inode *root_inode = click_inode(sb, INO_GLOBALDIR);
-    spin_unlock(&click_config_lock);
+    unlock_config_read();
     //MDEBUG("got root inode %p", root_inode);
     if (!root_inode)
 	goto out_no_root;
@@ -671,9 +355,9 @@ click_reread_super(struct super_block *sb)
     lock_super(sb);
     if (sb->s_root) {
 	struct inode *old_inode = sb->s_root->d_inode;
-	spin_lock(&click_config_lock);
+	lock_config_read();
 	sb->s_root->d_inode = click_inode(sb, INO_GLOBALDIR);
-	spin_unlock(&click_config_lock);
+	unlock_config_read();
 	iput(old_inode);
 	sb->s_blocksize = 1024;
 	sb->s_blocksize_bits = 10;
@@ -793,7 +477,7 @@ extern "C" {
 static int
 handler_open(struct inode *inode, struct file *filp)
 {
-    spin_lock(&click_config_lock);
+    lock_config_read();
 
     bool reading = (filp->f_flags & O_ACCMODE) != O_WRONLY;
     bool writing = (filp->f_flags & O_ACCMODE) != O_RDONLY;
@@ -820,7 +504,7 @@ handler_open(struct inode *inode, struct file *filp)
 	retval = 0;
     }
 
-    spin_unlock(&click_config_lock);
+    unlock_config_read();
     
     if (retval < 0 && stringno >= 0) {
 	free_handler_string(stringno);
@@ -840,7 +524,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 
     // (re)read handler if necessary
     if (handler_strings_info[stringno].flags & (HANDLER_REREAD | HANDLER_NEED_READ)) {
-	spin_lock(&click_config_lock);
+	lock_config_read();
 	int retval;
 	const Router::Handler *h;
 	struct inode *inode = filp->f_dentry->d_inode;
@@ -855,7 +539,7 @@ handler_read(struct file *filp, char *buffer, size_t count, loff_t *store_f_pos)
 	    handler_strings[stringno] = h->call_read(e);
 	    retval = (handler_strings[stringno].out_of_memory() ? -ENOMEM : 0);
 	}
-	spin_unlock(&click_config_lock);
+	unlock_config_read();
 	if (retval < 0)
 	    return retval;
 	handler_strings_info[stringno].flags &= ~HANDLER_NEED_READ;
@@ -924,7 +608,7 @@ handler_flush(struct file *filp)
     
     if (writing && f_count == 1
 	&& stringno >= 0 && stringno < handler_strings_cap) {
-	spin_lock(&click_config_lock);
+	lock_config_write();
 	
 	struct inode *inode = filp->f_dentry->d_inode;
 	const Router::Handler *h;
@@ -944,8 +628,8 @@ handler_flush(struct file *filp)
 	    ContextErrorHandler cerrh(click_logged_errh, context_string + ":");
 	    retval = h->call_write(handler_strings[stringno], e, &cerrh);
 	}
-
-	spin_unlock(&click_config_lock);
+	
+	unlock_config_write();
     }
 
     return retval;
@@ -965,7 +649,7 @@ static int
 handler_ioctl(struct inode *inode, struct file *filp,
 	      unsigned command, unsigned long address)
 {
-    spin_lock(&click_config_lock);
+    lock_config_read();
 
     int retval;
     Element *e;
@@ -1015,7 +699,7 @@ handler_ioctl(struct inode *inode, struct file *filp,
     }
 
   exit:
-    spin_unlock(&click_config_lock);
+    unlock_config_read();
     return retval;
 }
 
@@ -1068,8 +752,9 @@ init_clickfs()
 #endif
 
     spin_lock_init(&handler_strings_lock);
-    spin_lock_init(&click_config_lock);
-    sorted_elements_generation = 0; // click_config_generation starts at 1
+    spin_lock_init(&config_write_lock);
+    config_read_count = 0;
+    click_ino.initialize();
 
     clickfs = proclikefs_register_filesystem("click", click_read_super, click_reread_super);
     if (!clickfs) {
@@ -1094,5 +779,5 @@ cleanup_clickfs()
     handler_strings_free = -1;
     spin_unlock(&handler_strings_lock);
     
-    free_sorted_elements();
+    click_ino.cleanup();
 }

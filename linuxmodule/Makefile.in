@@ -63,7 +63,7 @@ GENERIC_OBJS = string.o straccum.o \
 
 HAVE_CLICKFS = @HAVE_CLICKFS@
 ifeq ($(HAVE_CLICKFS),1)
-CLICKFS_OBJS = clickfs.o
+CLICKFS_OBJS = ino.o clickfs.o
 INSTALLOBJS += proclikefs.o
 else
 CLICKFS_OBJS = proc_click.o

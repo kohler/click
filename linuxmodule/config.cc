@@ -26,7 +26,7 @@
 #include <click/lexer.hh>
 
 static String *current_config = 0;
-atomic_t click_config_generation;
+uint32_t click_config_generation;
 
 
 /*************************** Parsing configurations **************************/
@@ -92,7 +92,7 @@ static void
 set_current_config(const String &s)
 {
   *current_config = s;
-  atomic_inc(&click_config_generation);
+  click_config_generation++;
 }
 
 static void
@@ -226,7 +226,7 @@ click_init_config()
   Router::add_global_read_handler("list", read_list, 0);
   Router::add_global_read_handler("flatconfig", read_flatconfig, 0);
   
-  atomic_set(&click_config_generation, 1);
+  click_config_generation = 1;
   current_config = new String;
 }
 
