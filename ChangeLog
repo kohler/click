@@ -1,3 +1,9 @@
+2001-06-27 Wednesday 02:41  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-combine/click-combine.cc (1.19): click-combine: don't
+	add an elementmap to the archive if you don't add any RouterLink
+	elements
+
 2001-06-27 Wednesday 02:40  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* tools/lib/toolutils.hh (1.24): add ElementMap::empty() function
