@@ -2,6 +2,9 @@
 #define PACKET_HH
 #include <click/ipaddress.hh>
 #include <click/glue.hh>
+extern "C" { 
+#include <click/skbmgr.h> 
+}
 
 class IP6Address;
 struct click_ip;
@@ -155,6 +158,7 @@ class Packet { public:
 
   // Anno must fit in sk_buff's char cb[48].
   struct Anno {
+    
     union {
       unsigned dst_ip4;
       unsigned char dst_ip6[16];
@@ -269,11 +273,14 @@ Packet::make(struct sk_buff *skb)
   else
     return reinterpret_cast<Packet *>(skb_clone(skb, GFP_ATOMIC));
 }
-
-inline void
+  
+inline void 
 Packet::kill()
 {
-  kfree_skb(skb());
+  struct sk_buff *b = skb();
+  b->next = b->prev = 0;
+  b->list = 0L;
+  skbmgr_recycle_skbs(b, 1);
 }
 #endif
 
