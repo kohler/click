@@ -88,7 +88,7 @@ click: Makefile $(OBJS)
 	$(SETMAGIC) click 700
 	mkdir -p $(INSTALLDIR)
 	cp click $(INSTALLDIR)
-	cp samples/* $(INSTALLDIR)
+	cp samples/*.* $(INSTALLDIR)
 
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
