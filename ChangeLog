@@ -1,3 +1,8 @@
+2001-04-10 Tuesday 17:02  Peilei Fan <peilei@lcs.mit.edu>
+
+	* conf/: ip64-nat2.click, ip64-nat.click, ip64-nat3.click,
+	ip64-nat4.click: [no log message]
+
 2001-04-09 Monday 22:05  Peilei Fan <peilei@lcs.mit.edu>
 
 	* include/click/ip6flowid.hh, lib/ip6flowid.cc: [no log message]
