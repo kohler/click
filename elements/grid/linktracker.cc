@@ -344,7 +344,7 @@ LinkTracker::add_handlers()
   add_write_handler("tau", write_tau, 0);
 }
 
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel|ns)
 EXPORT_ELEMENT(LinkTracker)
 
 #include <click/bighashmap.cc>
