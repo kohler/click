@@ -320,7 +320,8 @@ Each SRCFILE is a Click header file. \`-' means standard input. Default is
 Options:
   -f, --files FILE        Read header filenames, or an \`elements.conf' file,
                           from FILE.
-  -r, --provides PROV     Output elementmap notes provisions PROV.
+  -r, --provide PROV      Record provisions PROV in output.
+      --webdoc DOCSTR     Record Web documentation DOCSTR in output.
   -I, --include DIR       Look for header files in DIR.
   -h, --help              Print this message and exit.
 
@@ -330,7 +331,7 @@ EOD;
 }
 
 undef $/;
-my(@files, @provides, $fn, $prefix, $any_files);
+my(@files, @provides, $fn, $prefix, $any_files, $webdoc);
 $prefix = "";
 
 while (@ARGV) {
@@ -359,6 +360,13 @@ while (@ARGV) {
 	push @includes, $1;
     } elsif (/^-I(.+)$/) {
 	push @includes, $1;
+    } elsif (long_option_match($_, '--webdoc', 3)) {
+	die "not enough arguments" if !@ARGV;
+	die "repeated --webdoc" if defined($webdoc);
+	$webdoc = shift @ARGV;
+    } elsif (long_option_match($_, '--webdoc', 3) && /^[^=]*=(.*)$/) {
+	die "repeated --webdoc" if defined($webdoc);
+	$webdoc = $1;
     } elsif (/^-h$/ || long_option_match($_, '--help', 3)) {
 	help();
     } elsif (/^-./) {
@@ -381,10 +389,11 @@ umask(022);
 open(OUT, ">&STDOUT");
 
 my($sourcedir) = `/bin/pwd`;
-$sourcedir =~ s{\s+$}{}s;
+$sourcedir =~ s/\s+$//s;
 print OUT "<?xml version=\"1.0\" standalone=\"yes\"?>
-<elementmap sourcedir=\"$sourcedir\" provides=\"", join(' ', @provides),
-    "\">\n";
+<elementmap xmlns=\"http://www.lcdf.org/click/xml/\" sourcedir=\"$sourcedir\" provides=\"", join(' ', @provides), "\"";
+print OUT " webdoc=\"$webdoc\"" if defined($webdoc);
+print OUT ">\n";
 
 foreach $id (sort { $click_name[$a] cmp $click_name[$b] } 0..$#click_name) {
     print OUT "<entry";

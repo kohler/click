@@ -52,12 +52,12 @@ close MK;
 # 1. install manual pages and click-pretty tool
 if ($INSTALL) {
     mysystem("/bin/rm -rf /tmp/%click-webdoc");
-    mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --disable-linuxmodule --disable-bsdmodule --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm && gmake install-local EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4'");
+    mysystem("cd click-$VERSION && ./configure --prefix=/tmp/%click-webdoc --disable-linuxmodule --disable-bsdmodule --enable-snmp --enable-ipsec --enable-ip6 --enable-etherswitch --enable-radio --enable-grid --enable-analysis --enable-aqm");
+    mysystem("cd click-$VERSION && gmake install-local EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4' MKELEMMAPFLAGS='--webdoc \"../doc/%s.n.html\"'");
     if ($ELEMENTS) {
 	mysystem("cd click-$VERSION && gmake install-doc EXTRA_PROVIDES='linuxmodule bsdmodule ns i586 i686 linux_2_2 linux_2_4'");
     }
     mysystem("cd tools/click-pretty && gmake install");
-    mysystem("cd /tmp/%click-webdoc/share/click && echo '\$webdoc ../doc/%s.n.html' | cat - elementmap > emap2 && mv emap2 elementmap");
 }
 
 # 1.5. install examples
@@ -93,28 +93,55 @@ sub em_unquote ($) {
     $x;
 }
 
+my(%xml_entity) = ('amp' => '&', 'lt' => '<', 'gt' => '>', 'apos' => "'", 'quot' => '"');
+sub xml_unquote_entity ($) {
+    my($x) = @_;
+    if ($x =~ /^\#(\d+)$/) {
+	chr($1);
+    } elsif ($x =~ /^\#(x\w+)$/) {
+	chr(oct("0$1"));
+    } else {
+	$xml_entity{$x};
+    }
+}
+sub xml_unquote ($) {
+    my($x) = @_;
+    $x =~ s/&([^;]*);/xml_quote_entity($1)/eg;
+    $x;
+}
+
 if ($ELEMENTS) {
-    open(EMAP, "/tmp/%click-webdoc/share/click/elementmap") || die "/tmp/%click-webdoc/share/click/elementmap: $!\n";
-    while (<EMAP>) {
-	s/\"(([^\"]|\\.)*)\"/\370$1\371/g;
-	1 while s/(\370[^\371]*)\s/$1\372/;
-	my(@x) = split(/\s+/, $_);
-	if ($x[0] eq '$data') {
-	    for ($i = 1; $i < @x; $i++) {
-		$reqindex = $i - 1 if $x[$i] eq 'requirements';
-		$classindex = $i - 1 if $x[$i] eq 'class';
-		$provindex = $i - 1 if $x[$i] eq 'provisions';
-		$docnameindex = $i - 1 if $x[$i] eq 'doc_name';
-	    }
-	} elsif ($x[0] !~ /^\$/ && defined($reqindex) && $reqindex < @x) {
-	    my($e, $r, $p, $dn) = (em_unquote($x[$classindex]), em_unquote($x[$reqindex]), em_unquote($x[$provindex]), em_unquote($x[$docnameindex]));
-	    $ereq{$e} = ($ereq{$e} ? 'xxx' : $r) if $e;
-	    foreach $i (split(/\s+/, $p)) {
-		$ereq{$i} = $r;
+    open(EMAP, "/tmp/%click-webdoc/share/click/elementmap.xml") || die "/tmp/%click-webdoc/share/click/elementmap.xml: $!\n";
+    local($/) = undef;
+    my($text) = <EMAP>;
+    close(EMAP);
+
+    $text =~ s/<!--.*?-->//gs;	# remove comments
+
+    while ($text =~ /\A.*?<\s*entry\s+(.*)\Z/s) {
+	my(%x, $n, $v);
+	$text = $1;
+	
+	while ($text =~ /\A(\w+)\s*=\s*(.*)\Z/s) {
+	    ($n, $text) = ($1, $2);
+	    if ($text =~ /\A\'([^\']*)\'\s*(.*)\Z/s) {
+		$text = $2;
+		$x{$n} = xml_unquote($1);
+	    } elsif ($text =~ /\A\"([^\"]*)\"\s*(.*)\Z/s) {
+		$text = $2;
+		$x{$n} = xml_unquote($1);
+	    } else {
+		last;
 	    }
 	}
+
+	$v = $x{'requires'};
+	$ereq{ $x{'name'} } = $v if $x{'name'} && $v;
+	next if !$x{'provides'};
+	foreach $i (split(/\s+/, $x{'provides'})) {
+	    $ereq{$i} = $v;
+	}
     }
-    close EMAP;
 }
 
 # 2.1. spread requirements
@@ -124,6 +151,7 @@ sub expand_ereq ($) {
     my($e) = @_;
     return $ereq{$e} if $ereq_expanded{$e};
     $ereq_expanded{$e} = 1;
+    return ($ereq{$e} = '') if !$ereq{$e};
     my(@req) = split(/\s+/, $ereq{$e});
     my($i, $t, $r);
     for ($i = 0; $i < @req; $i++) {
