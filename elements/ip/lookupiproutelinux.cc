@@ -87,14 +87,14 @@ LinuxIPLookup::clone() const
 int
 LinuxIPLookup::init_routes(ErrorHandler *errh)
 {
-  if(_out2dev)
+  if (_out2dev)
     delete[] _out2dev;
   _out2dev = new net_device * [_nout];
   _out2dev[0] = 0;
   int i;
   for(i = 0; i < _nout; i++){
     net_device *dev = dev_get_by_name(_out2devname[i].cc());
-    if(dev == 0)
+    if (dev == 0)
       return errh->error("Cannot find device %s", _out2devname[i].cc());
   }
   return(0);
