@@ -1533,7 +1533,7 @@ Router::element_ports_string(int ei) const
     // processing
     const char *persid = (e->input_is_pull(i) ? "pull" : "push");
     if (in_pers[i] == Element::VAGNOSTIC)
-      sa << persid << "-\t";
+      sa << persid << "~\t";
     else
       sa << persid << "\t";
     
@@ -1562,7 +1562,7 @@ Router::element_ports_string(int ei) const
     // processing
     const char *persid = (e->output_is_push(i) ? "push" : "pull");
     if (out_pers[i] == Element::VAGNOSTIC)
-      sa << "(" << persid << ")\t";
+      sa << persid << "~\t";
     else
       sa << persid << "\t";
     
