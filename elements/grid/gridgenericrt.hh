@@ -35,6 +35,8 @@ public:
   public:
     unsigned int         seq_no()   const { return _seq_no;   }
     unsigned char        num_hops() const { return _num_hops; }
+    bool                 good()     const { return _num_hops != 0; }
+    bool                 broken()   const { return !good(); }
 
     RouteEntry(const IPAddress &dst, 
 	       bool lg, unsigned short le, const grid_location &l, 
@@ -53,7 +55,7 @@ public:
   virtual bool current_gateway(RouteEntry &entry) = 0;
 
   // return false if there is no entry for this dest, else fill in entry
-  virtual bool get_one_entry(IPAddress &dest_ip, RouteEntry &entry) = 0;
+  virtual bool get_one_entry(const IPAddress &dest_ip, RouteEntry &entry) = 0;
 
   // append all the current route entries to vec.  You should clear
   // vec before calling this method, if desired.

@@ -93,7 +93,7 @@ class GridRouteTable : public GridGenericRouteTable {
 public:
   // generic rt methods
   bool current_gateway(RouteEntry &entry);
-  bool get_one_entry(IPAddress &dest_ip, RouteEntry &entry);
+  bool get_one_entry(const IPAddress &dest_ip, RouteEntry &entry);
   void get_all_entries(Vector<RouteEntry> &vec);
  
 

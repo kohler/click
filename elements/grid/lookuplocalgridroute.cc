@@ -294,7 +294,7 @@ LookupLocalGridRoute::get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth,
   }
   
   /* did we have a route? */
-  if (found_route) {
+  if (found_route && rte.good()) {
     *dest_eth = rte.next_hop_eth;
     *next_hop_ip = rte.next_hop_ip;
     *next_hop_interface = rte.next_hop_interface;

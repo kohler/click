@@ -34,7 +34,7 @@ CLICK_DECLS
 #define NEXT_HOP_ETH_FIXUP 0
 
 bool
-GridRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry) 
+GridRouteTable::get_one_entry(const IPAddress &dest_ip, RouteEntry &entry) 
 {
   RTEntry *r = _rtes.findp(dest_ip);
   if (r == 0)
