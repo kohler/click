@@ -24,12 +24,12 @@ Keyword arguments are:
 
 =over 8
 
-=item CALL_AFTER_COUNT
+=item COUNT_CALL
 
 Argument is `I<N> I<HANDLER> [I<VALUE>]'. When the packet count reaches I<N>,
 call the write handler I<HANDLER> with value I<VALUE>.
 
-=item CALL_AFTER_BYTES
+=item BYTE_COUNT_CALL
 
 Argument is `I<N> I<HANDLER> [I<VALUE>]'. When the byte count reaches or
 exceeds I<N>, call the write handler I<HANDLER> with value I<VALUE>.
@@ -53,13 +53,13 @@ weighted moving average, in packets per second.
 
 Resets the counts and rates to zero.
 
-=h call_after_count write-only
+=h count_call write-only
 
-Writes a new CALL_AFTER_COUNT argument. The handler can be omitted.
+Writes a new COUNT_CALL argument. The handler can be omitted.
 
-=h call_after_bytes write-only
+=h byte_count_call write-only
 
-Writes a new CALL_AFTER_BYTES argument. The handler can be omitted.
+Writes a new BYTE_COUNT_CALL argument. The handler can be omitted.
 
 =h CLICK_LLRPC_GET_RATE llrpc
 

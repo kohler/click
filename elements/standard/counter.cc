@@ -51,16 +51,16 @@ Counter::reset()
 int
 Counter::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String call_after_count, call_after_bytes;
+  String count_call, byte_count_call;
   if (cp_va_parse(conf, this, errh,
 		  cpKeywords,
-		  "CALL_AFTER_COUNT", cpArgument, "handler to call after a count", &call_after_count,
-		  "CALL_AFTER_BYTES", cpArgument, "handler to call after a byte count", &call_after_bytes,
+		  "COUNT_CALL", cpArgument, "handler to call after a count", &count_call,
+		  "BYTE_COUNT_CALL", cpArgument, "handler to call after a byte count", &byte_count_call,
 		  0) < 0)
     return -1;
 
-  if (call_after_count) {
-    if (cp_va_space_parse(call_after_count, this, errh,
+  if (count_call) {
+    if (cp_va_space_parse(count_call, this, errh,
 			  parse_cmd, "count trigger", &_count_trigger,
 			  cpWriteHandlerCall, "handler to call", &_count_trigger_h,
 			  0) < 0)
@@ -68,8 +68,8 @@ Counter::configure(Vector<String> &conf, ErrorHandler *errh)
   } else
     _count_trigger = (counter_t)(-1);
 
-  if (call_after_bytes) {
-    if (cp_va_space_parse(call_after_bytes, this, errh,
+  if (byte_count_call) {
+    if (cp_va_space_parse(byte_count_call, this, errh,
 			  parse_cmd, "bytecount trigger", &_byte_trigger,
 			  cpWriteHandlerCall, "handler to call", &_byte_trigger_h,
 			  0) < 0)
@@ -114,7 +114,7 @@ Counter::simple_action(Packet *p)
 
 
 enum { H_COUNT, H_BYTE_COUNT, H_RATE, H_RESET,
-       H_CALL_AFTER_COUNT, H_CALL_AFTER_BYTES };
+       H_COUNT_CALL, H_BYTE_COUNT_CALL };
 
 String
 Counter::read_handler(Element *e, void *thunk)
@@ -138,7 +138,7 @@ Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandl
 {
   Counter *c = (Counter *)e;
   switch ((intptr_t)thunk) {
-   case H_CALL_AFTER_COUNT:
+   case H_COUNT_CALL:
     if (cp_va_space_parse(in_str, c, errh,
 			  parse_cmd, "count trigger", &c->_count_trigger,
 			  cpOptional,
@@ -146,7 +146,7 @@ Counter::write_handler(const String &in_str, Element *e, void *thunk, ErrorHandl
       return -1;
     c->_count_triggered = false;
     return 0;
-   case H_CALL_AFTER_BYTES:
+   case H_BYTE_COUNT_CALL:
     if (cp_va_space_parse(in_str, c, errh,
 			  parse_cmd, "bytecount trigger", &c->_byte_trigger,
 			  cpOptional,
@@ -169,8 +169,8 @@ Counter::add_handlers()
   add_read_handler("byte_count", read_handler, (void *)H_BYTE_COUNT);
   add_read_handler("rate", read_handler, (void *)H_RATE);
   add_write_handler("reset", write_handler, (void *)H_RESET);
-  add_write_handler("call_after_count", write_handler, (void *)H_CALL_AFTER_COUNT);
-  add_write_handler("call_after_bytes", write_handler, (void *)H_CALL_AFTER_BYTES);
+  add_write_handler("count_call", write_handler, (void *)H_COUNT_CALL);
+  add_write_handler("byte_count_call", write_handler, (void *)H_BYTE_COUNT_CALL);
 }
 
 int
