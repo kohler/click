@@ -13,16 +13,18 @@
 
 #define HELP_OPT		300
 #define VERSION_OPT		301
-#define ROUTER_OPT		302
-#define PACKAGE_OPT		303
-#define DIRECTORY_OPT		304
-#define KERNEL_OPT		305
-#define USERLEVEL_OPT		306
+#define CLICKPATH_OPT		302
+#define ROUTER_OPT		303
+#define PACKAGE_OPT		304
+#define DIRECTORY_OPT		305
+#define KERNEL_OPT		306
+#define USERLEVEL_OPT		307
 
 static Clp_Option options[] = {
-  { "help", 0, HELP_OPT, 0, 0 },
+  { "clickpath", 'C', CLICKPATH_OPT, Clp_ArgString, 0 },
   { "directory", 'd', DIRECTORY_OPT, Clp_ArgString, 0 },
   { "file", 'f', ROUTER_OPT, Clp_ArgString, 0 },
+  { "help", 0, HELP_OPT, 0, 0 },
   { "kernel", 'k', KERNEL_OPT, 0, 0 },
   { "package", 'p', PACKAGE_OPT, Clp_ArgString, 0 },
   { "user", 'u', USERLEVEL_OPT, 0, 0 },
@@ -63,6 +65,7 @@ Options:\n\
   -u, --user                Build Makefile for user-level driver (default).\n\
   -d, --directory DIR       Put files in DIR. DIR must contain a `Makefile'\n\
                             for the relevant driver. Default is `.'.\n\
+  -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
   -v, --version             Print version number and exit.\n\
 \n\
@@ -86,12 +89,15 @@ handle_router(const char *filename, const ElementMap &default_map, ErrorHandler 
   emap.parse_requirement_files(router, CLICK_SHAREDIR, errh);
 
   // check whether suitable for driver
-  if (!emap.driver_compatible(router, driver, errh)) {
+  if (!emap.driver_compatible(router, driver)) {
     const char *other_option = (driver == ElementMap::DRIVER_USERLEVEL ? "--kernel" : "--user");
     errh->error("%s: not compatible with %s driver; ignored\n%s: (Supply the `%s' option to include this router.)", filename, ElementMap::driver_name(driver), filename, other_option);
     return;
   }
   emap.limit_driver(driver);
+
+  StringAccum missing_sa;
+  int nmissing = 0;
   
   for (int i = RouterT::FIRST_REAL_TYPE; i < router->ntypes(); i++) {
     String tname = router->type_name(i);
@@ -102,8 +108,13 @@ handle_router(const char *filename, const ElementMap &default_map, ErrorHandler 
       else
 	initial_requirements.insert(tname, 1);
     } else
-      errh->warning("%s: cannot find required element class `%s'", filename, tname.cc());
+      missing_sa << (nmissing++ ? ", " : "") << tname;
   }
+
+  if (nmissing == 1)
+    errh->fatal("%s: cannot locate required element class `%s'\n(This may be due to a missing or out-of-datte elementmap.)", filename, missing_sa.cc());
+  else if (nmissing > 1)
+    errh->fatal("%s: cannot locate these required element classes:\n  %s\n(This may be due to a missing or out-of-date elementmap.)", filename, missing_sa.cc());
 }
 
 static void
@@ -262,6 +273,11 @@ main(int argc, char **argv)
     int opt = Clp_Next(clp);
     switch (opt) {
       
+     case HELP_OPT:
+      usage();
+      exit(0);
+      break;
+
      case VERSION_OPT:
       printf("click-mkmindriver (Click) %s\n", CLICK_VERSION);
       printf("Copyright (c) 2001 Massachusetts Institute of Technology\n\
@@ -272,9 +288,8 @@ particular purpose.\n");
       exit(0);
       break;
       
-     case HELP_OPT:
-      usage();
-      exit(0);
+     case CLICKPATH_OPT:
+      set_clickpath(clp->arg);
       break;
 
      case KERNEL_OPT:
@@ -320,7 +335,8 @@ particular purpose.\n");
     errh->fatal("fatal error: no package name specified\nPlease supply the `-p PKG' option.");
 
   ElementMap default_emap;
-  default_emap.parse_default_file(CLICK_SHAREDIR, errh);
+  if (!default_emap.parse_default_file(CLICK_SHAREDIR, errh))
+    default_emap.report_file_not_found(CLICK_SHAREDIR, false, errh);
   
   for (int i = 0; i < router_filenames.size(); i++)
     handle_router(router_filenames[i], default_emap, errh);
