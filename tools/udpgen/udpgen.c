@@ -68,6 +68,7 @@ struct udpgen_opt {
   __u16 sport;
   __u16 dport;
 
+  struct rtable *rtable_cache;	/* 0 */
   int have_hh;			/* 0 */
   int bound_dev_if;		/* 0 */
 
@@ -209,6 +210,7 @@ new_udpgen_opt(int which)
   uopt->dport = htons(dport[which]);
 
   /* routing, packet storage */
+  uopt->rtable_cache = 0;
   uopt->have_hh = 0;
   uopt->bound_dev_if = 0;
   uopt->skb_cache = 0;
@@ -228,6 +230,8 @@ static void
 free_udpgen_opt(struct udpgen_opt *uopt)
 {
   if (uopt) {
+    if (uopt->rtable_cache)
+      dst_release(&uopt->rtable_cache->u.dst);
     free_cached_udp_packet(uopt);
     kfree(uopt);
   }
@@ -237,7 +241,7 @@ free_udpgen_opt(struct udpgen_opt *uopt)
 static struct sk_buff *
 cache_udp_packet(struct udpgen_opt *uopt)
 {
-  struct rtable *rt = 0;
+  struct rtable *rt;
   int length;
   int pad_length;
   struct sk_buff *skb;
@@ -251,21 +255,34 @@ cache_udp_packet(struct udpgen_opt *uopt)
   uopt->have_hh = 0;
   
   /* destination and routing table */
-  if (ip_route_output(&rt, uopt->daddr, uopt->saddr, uopt->ip_tos,
-		      uopt->bound_dev_if)) {
-    if (rt)
+  rt = uopt->rtable_cache;
+  if (rt) {
+    if (rt->u.dst.obsolete) {
       dst_release(&rt->u.dst);
-    printk("<1>udpgen: no route\n");
-    return 0;
+      rt = 0;
+    } else
+      dst_clone(&rt->u.dst);
   }
-  /* XXX - check broadcast */
+
+  if (!rt) {
+    if (ip_route_output(&rt, uopt->daddr, uopt->saddr, uopt->ip_tos,
+			uopt->bound_dev_if)) {
+      if (rt)
+	dst_release(&rt->u.dst);
+      uopt->rtable_cache = 0;
+      printk("<1>udpgen: no route\n");
+      return 0;
+    }
+    /* XXX - check broadcast */
+    uopt->rtable_cache = rt;
+    dst_clone(&rt->u.dst);
+  }
   
   /* packet length */
   {
     int dev_header_len = rt->u.dst.dev->hard_header_len;
     int min_packet_size =
       dev_header_len + sizeof(struct iphdr) + sizeof(struct udphdr);
-    printk("<1>%d hard header %d src %d dst\n", dev_header_len, rt->rt_src, rt->rt_dst);
     if (min_packet_size < uopt->packet_size)
       length = uopt->packet_size;
     else
@@ -277,16 +294,16 @@ cache_udp_packet(struct udpgen_opt *uopt)
   pad_length = (length < 50 ? 50 : length); /* eth packets have min size */
   {
     int hard_header_len = (rt->u.dst.dev->hard_header_len + 15)&~15;
-    int alloc_len = pad_length + hard_header_len + 19;
+    int alloc_len = pad_length + hard_header_len + 15;
     skb = alloc_skb(alloc_len, GFP_KERNEL);
     if (!skb)
       return 0;
-    skb_reserve(skb, hard_header_len + 4);
+    skb_reserve(skb, hard_header_len);
   }
   
   /* set up IP header and UDP header */
   skb->priority = uopt->ip_priority;
-  skb->dst = 0;
+  skb->dst = dst_clone(&rt->u.dst);
 
   /* set up IP header */
   /* remember that ethernet packets have a minimum size */
@@ -345,11 +362,12 @@ cache_udp_packet(struct udpgen_opt *uopt)
   /* dev_unlock_list(); */ /* XXX why? */
   
   /* device */
+  skb->dev = rt->u.dst.dev;
   skb->protocol = __constant_htons(ETH_P_IP);
+  skb->mac.raw = skb_push(skb, skb->dev->hard_header_len);
   /* printk("<1>udpgen: using device `%s'\n", skb->dev->name); */
   
   /* done! */
-  dst_release(&rt->u.dst);
   uopt->skb_cache = skb;
   return skb;
 }
@@ -375,7 +393,7 @@ fast_output_packet(struct udpgen_opt *uopt)
     ans = -97;
   else
     ans = dev->hard_start_xmit(skb, dev);
-  
+
   if (ans == 0)
     return 0;
   else {
@@ -388,47 +406,25 @@ static int
 slow_output_packet(struct udpgen_opt *uopt)
 {
   struct sk_buff *skb = uopt->skb_cache;
-  struct hh_cache *hh;
-  struct rtable *rt;
+  struct device *dev = skb->dev;
+  struct sk_buff *new_skb = skb_clone(skb, GFP_KERNEL);
   int result;
 
-  if (ip_route_output(&rt, uopt->daddr, uopt->saddr, uopt->ip_tos,
-		      uopt->bound_dev_if)) {
-    if (rt)
-      dst_release(&rt->u.dst);
-    printk("<1>udpgen: no route\n");
-    return -1;
-  }
-  /* XXX - check broadcast */
+  atomic_inc(&new_skb->users);
+  __skb_pull(new_skb, dev->hard_header_len);
+  result = uopt->rtable_cache->u.dst.output(new_skb);
+  memcpy(skb->mac.raw, new_skb->mac.raw, dev->hard_header_len);
+  uopt->have_hh = 1;
+  uopt->slow_path_sent++;
+  kfree_skb(new_skb);
   
-  hh = rt->u.dst.hh;
-  skb->dev = rt->u.dst.dev;
-  dst_release(skb->dst);
-  skb->dst = dst_clone(&rt->u.dst);
-  printk("<1>%d %d\n", rt->u.dst.obsolete, rt->u.dst.error);
-  
-  if (hh) {
-    /* read_lock_irq(&hh->hh_lock); */
-    printk("<1>%x %lx %lx %lx %lx\n", hh->hh_type, hh->hh_data[0], hh->hh_data[1], hh->hh_data[2], hh->hh_data[3]);
-    memcpy(skb->data - 16, hh->hh_data, 16);
-    /* read_unlock_irq(&hh->hh_lock); */
-    skb->mac.raw = skb_push(skb, skb->dev->hard_header_len);
-    uopt->have_hh = 1;
-    result = fast_output_packet(uopt);
-  } else {
-    skb = skb_clone(skb, GFP_KERNEL);
-    uopt->slow_path_sent++;
-    result = rt->u.dst.output(skb);
-  }
-
-  dst_release(&rt->u.dst);
   return result;
 }
 
 inline static int
 write_cached_udp_packet(struct udpgen_opt *uopt)
 {
-  if (!uopt->skb_cache) /* || uopt->rtable_cache->u.dst.obsolete)*/
+  if (!uopt->skb_cache || uopt->rtable_cache->u.dst.obsolete)
     cache_udp_packet(uopt);
   if (!uopt->skb_cache)
     return -EAGAIN;
@@ -464,7 +460,7 @@ run(void *thunk)
   
   i = 0;
   live_uopt = nuopt;
-  while (live_uopt) {
+  while (live_uopt > 0) {
 
     if (uopt[i]) {
       /* How many packets should we have sent by now? */
@@ -503,8 +499,9 @@ run(void *thunk)
     do_gettimeofday(&tv_end);
     sub_timer(&diff, &tv_end, &tv_begin);
     for (i = 0, uopp = uopt1; i < 4 && uopp; i++, uopp = uopp->next) {
-      printk("<1>udpgen: [%d] %d packets sent (%d attempted) in %d.%06d s\n",
+      printk("<1>udpgen: [%d] %d packets sent (%d attempted, %d slow) in %d.%06d s\n",
 	     i, uopp->total_packets_sent, uopp->total_packets_attempted,
+	     uopp->slow_path_sent,
 	     (int)diff.tv_sec, (int)diff.tv_usec);
     }
     MOD_DEC_USE_COUNT;
