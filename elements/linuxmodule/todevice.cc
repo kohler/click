@@ -239,7 +239,7 @@ ToDevice::tx_intr()
     if (sent == 0 && !busy) _idle_pulls++;
   }
 #endif
-  if (busy) _busy_returns++;
+  if (sent == 0 && busy) _busy_returns++;
 
 #if HAVE_POLLING
   if (_polling) {
