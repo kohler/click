@@ -70,7 +70,9 @@ FixSrcLoc::simple_action(Packet *xp)
   gh->tx_loc_seq_no = htonl(gh->loc_seq_no);
   gh->tx_loc_err = 0;
   gh->tx_loc_good = true;
+  // only fill in packet originator info if we are originating...
   if (gh->ip == gh->tx_ip) {
+    // click_chatter("FixSrcLoc %s: rewriting gh->loc info", id().cc());
     gh->loc = gh->tx_loc;
     gh->loc_seq_no = gh->tx_loc_seq_no;
     gh->loc_err = gh->tx_loc_err;

@@ -156,7 +156,7 @@ LookupLocalGridRoute::push(int port, Packet *packet)
 
       /* FixSrcLoc will see that the gh->ip and gh->tx_ip fields are
          the same, and will fill in gh->loc, etc. */
-      gh->ip = _ipaddr; 
+      gh->ip = gh->tx_ip = _ipaddr; 
       
       struct grid_nbr_encap *encap = (grid_nbr_encap *) (new_packet->data() + sizeof(click_ether) + sizeof(grid_hdr));
       encap->hops_travelled = 0;

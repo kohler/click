@@ -55,7 +55,7 @@ LocQueryResponder::simple_action(Packet *p)
   grid_hdr *gh = (grid_hdr *) (e + 1);
   grid_loc_query *lq = (grid_loc_query *) (gh + 1);
   
-  if (gh->type == grid_hdr::GRID_LOC_QUERY) {
+  if (gh->type != grid_hdr::GRID_LOC_QUERY) {
     click_chatter("LocQueryResponder %s: received unexpected Grid packet type %s; is the configuration wrong?",
 		  id().cc(), grid_hdr::type_string(gh->type).cc());
     p->kill();

@@ -86,7 +86,7 @@ public class ControlSocket {
     /* XXX not sure timeout is a good idea; if we do timeout, we should
        reset the connection (close and re-open) to get rid of all old
        data... */
-    public static final int _sock_timeout = 1500; // msecs
+    public static final int _sock_timeout = 0; // 1500; // msecs
 
     /**
      * Constructs a new ControlSocket.

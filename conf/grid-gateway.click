@@ -77,9 +77,9 @@ check_grid [1]-> Print(bad_grid_hdr) -> Discard;
 // fr [1] -> Discard; // out of range
 wvlan_demux [1] -> Discard; // not a grid packet
 
-query_demux :: Classifier(48/GRID_HEX_IP, // loc query for us
+query_demux :: Classifier(62/GRID_HEX_IP, // loc query for us
 			  -);
-reply_demux :: Classifier(48/GRID_HEX_IP, // loc reply for us
+reply_demux :: Classifier(62/GRID_HEX_IP, // loc reply for us
 			  -);
 
 grid_demux [1] -> query_demux;
@@ -91,7 +91,7 @@ reply_demux [1] -> [0] lr; // forward query reply packets like encap packets
 loc_repl -> [0] lr; // forward loc reply packets initiated by us
 
 query_demux [0] -> PrintGrid(qd0) -> loc_repl; // reply to this query
-query_demux [1] -> PrintGrid(qd1) -> [1] fq [1] -> to_wvlan; // propagate this loc query, or initiate a new loc query
+query_demux [1] -> PrintGrid(qd1) -> Print(hex, 70) -> [1] fq [1] -> to_wvlan; // propagate this loc query, or initiate a new loc query
 
 
 ip_cl [0] -> to_tun1;

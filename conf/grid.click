@@ -33,10 +33,10 @@ from_wvlan -> Classifier(12/GRID_ETH_PROTO)
   -> grid_demux [0] 
   -> [0] lr [0] -> to_wvlan;
 
-query_demux :: Classifier(48/GRID_HEX_IP, // loc query for us
+query_demux :: Classifier(70/GRID_HEX_IP, // loc query for us
 			  -);
 
-repl_demux :: Classifier(48/GRID_HEX_IP, // loc reply for us
+repl_demux :: Classifier(70/GRID_HEX_IP, // loc reply for us
 			  -);
 
 grid_demux [1] -> query_demux;

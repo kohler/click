@@ -97,7 +97,7 @@ SendGridHello::make_hello()
   gh->hdr_len = sizeof(grid_hdr);
   gh->total_len = htons(sizeof(grid_hdr));
   gh->type = grid_hdr::GRID_HELLO;
-  memcpy(&gh->ip, _from_ip.data(), 4);
+  gh->ip = _from_ip;
 
   return p;
 }

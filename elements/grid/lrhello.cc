@@ -123,7 +123,7 @@ SendGridLRHello::make_hello()
   gh->total_len = psz - sizeof(click_ether);
   gh->total_len = htons(gh->total_len);
   gh->type = grid_hdr::GRID_LR_HELLO;
-  memcpy(&gh->ip, _from_ip.data(), 4);
+  gh->ip = gh->tx_ip = _from_ip;
   grid_hello *hlo = (grid_hello *) (p->data() + sizeof(click_ether) + sizeof(grid_hdr));
   assert(num_nbrs <= 255);
   hlo->num_nbrs = (unsigned char) num_nbrs;
