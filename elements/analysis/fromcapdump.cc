@@ -37,7 +37,7 @@ CLICK_DECLS
 FromCapDump::FromCapDump()
     : Element(0, 1),
       _flowid(IPAddress(htonl(0x01000001)), htons(1), IPAddress(htonl(0x02000002)), htons(2)),
-      _flowid_is_rcv(false), _aggregate(0), _p2s_map(1024, NO_SEQNO),
+      _flowid_is_rcv(false), _aggregate(1), _p2s_map(1024, NO_SEQNO),
       _task(this)
 {
     _p2s_map[0] = 0;

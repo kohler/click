@@ -6,7 +6,6 @@
 #include <click/notifier.hh>
 #include <click/ipflowid.hh>
 #include "elements/userlevel/fromfile.hh"
-#include "ipsumdumpinfo.hh"
 CLICK_DECLS
 
 /*
@@ -131,7 +130,7 @@ When written, sets `active' to false and stops the driver.
 
 ToIPSummaryDump */
 
-class FromCapDump : public Element, public IPSummaryDumpInfo { public:
+class FromCapDump : public Element { public:
 
     FromCapDump();
     ~FromCapDump();
