@@ -1,3 +1,13 @@
+2003-12-07 Sunday 01:05  John Bicket <jbicket@mit.edu>
+
+	* elements/: grid/sr/dupefilter.cc (1.4), grid/sr/dupefilter.hh
+	(1.2), grid/sr/ecnqueue.hh (1.2), grid/sr/ettmetric.cc (1.9),
+	grid/sr/ettmetric.hh (1.9), grid/sr/inorderqueue.cc (1.7),
+	grid/sr/srcr.cc (1.33), grid/sr/srcr.hh (1.28), wifi/settxrate.cc
+	(1.10), wifi/wifitxfeedback.cc (1.8), wifi/wifitxfeedback.hh (1.6):
+	a bunch of nits in srcr, plus make WifiTXFeedback work for
+	hotswapping.
+
 2003-12-06 Saturday 17:43  Eddie Kohler <kohler@icir.org>
 
 	* elements/analysis/fromtcpdump.cc (1.3): fix heuristic for
