@@ -1,3 +1,12 @@
+2002-06-19 Wednesday 20:07  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/icmppingrewriter.cc (1.15): nitlet
+
+2002-06-19 Wednesday 19:47  Eddie Kohler <kohler@icir.org>
+
+	* elements/icmp/icmppingrewriter.cc (1.14): remove ?: that was
+	causing a crash on gcc-2.95.3, for my lover Douglas
+
 2002-06-19 Wednesday 17:56  Eddie Kohler <kohler@icir.org>
 
 	* etc/diagrams/elemfig.sty (1.2): add \lportlabel and friends
