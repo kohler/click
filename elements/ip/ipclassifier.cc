@@ -268,7 +268,7 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree, bool negate
     c->add_expr(tree, 0, e.value.u, e.mask.u);
     c->finish_expr_subtree(tree, true);
 
-  } else if (_type == TYPE_TCPOPT) {
+  } else if (_type == TYPE_ICMP_TYPE) {
     c->start_expr_subtree(tree);
     e.mask.u = 0;
     e.mask.c[1] = 0xFF;
@@ -277,10 +277,11 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree, bool negate
     c->add_expr(tree, 8, e.value.u, e.mask.u);
     e.mask.u = 0;
     e.mask.c[0] = 0xFF;
+    e.value.u = 0;
     e.value.c[0] = _u.i;
     c->add_expr(tree, TRANSP_FAKE_OFFSET, e.value.u, e.mask.u);
     c->finish_expr_subtree(tree, true);
-  }
+  } 
 
   if (negated)
     c->negate_expr_subtree(tree);
@@ -335,6 +336,7 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
   type_map.insert("opt", TYPE_TCPOPT);
   type_map.insert("tos", TYPE_TOS);
   type_map.insert("dscp", TYPE_DSCP);
+  type_map.insert("type", TYPE_ICMP_TYPE);
   
   HashMap<String, int> ip_proto_map(-1);
   ip_proto_map.insert("icmp", IP_PROTO_ICMP);
