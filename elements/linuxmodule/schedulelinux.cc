@@ -1,7 +1,7 @@
 /*
  * schedulelinux.{cc,hh} -- go back to linux scheduler
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -18,6 +18,7 @@
 #include "confparse.hh"
 #include "error.hh"
 #include "glue.hh"
+#include "elements/standard/scheduleinfo.hh"
 #include <unistd.h>
 
 ScheduleLinux *

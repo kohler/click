@@ -44,6 +44,9 @@
 /* Define if your Linux kernel exposes tcp_prot. */
 #undef HAVE_TCP_PROT
 
+/* Define if your Linux kernel has polling extensions. */
+#undef HAVE_POLLING
+
 /* Define if you have -lpcap and pcap.h. */
 #undef HAVE_PCAP
 

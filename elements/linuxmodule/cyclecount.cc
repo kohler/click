@@ -1,7 +1,7 @@
 /*
  * cyclecount.{cc,hh} -- add cycle counts to element's annotation
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -41,10 +41,25 @@ CycleCount::configure(const String &conf, ErrorHandler *errh)
 		     0);
 }
 
+#if 0
+__inline__ unsigned long long
+click_get_cycles(void)
+{
+    unsigned long low, high;
+    unsigned long long x;
+
+    __asm__ __volatile__("rdtsc":"=a" (low), "=d" (high));
+    x = high;
+    x <<= 32;
+    x |= low;
+    return(x);
+}
+#endif
+
 inline void
 CycleCount::smaction(Packet *p)
 {
-  p->set_cycle_anno(_idx);
+  p->set_cycle_anno(_idx, get_cycles());
 }
 
 void

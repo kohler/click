@@ -3,15 +3,20 @@
 
 /*
  * =c
- * AlignmentInfo(ELEMENT MODULUS OFFSET, ...)
+ * AlignmentInfo(ELEMENT [MODULUS OFFSET ...], ...)
  * =io
  * None
  * =d
- * Stores information about the packet alignment other elements can
- * expect. Each configuration argument has the form `ELEMENT MODULUS OFFSET',
- * meaning that the element named ELEMENT can expect all input packet data to
- * start OFFSET bytes off from a MODULUS-byte boundary. This element is
- * inserted automatically by the click-align tool.
+ * Provides information about the packet alignment specified elements can
+ * expect. Each configuration argument has the form
+ * `ELEMENT [MODULUS0 OFFSET0 MODULUS1 OFFSET1 ...]',
+ * where there are zero or more MODULUS-OFFSET pairs.
+ * This means that the element named ELEMENT
+ * can expect all packets arriving on its <i>n</i>th input
+ * to start `OFFSET<i>n</i>' bytes
+ * off from a `MODULUS<i>n</i>'-byte boundary.
+ * =n
+ * This element is inserted automatically by the click-align tool.
  * =a Align
  */
 

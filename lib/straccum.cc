@@ -2,7 +2,7 @@
  * straccum.{cc,hh} -- build up strings with operator<<
  * Eddie Kohler
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -105,15 +105,6 @@ StringAccum::operator<<(double d)
 StringAccum &
 StringAccum::operator<<(unsigned long long q)
 {
-#ifndef CLICK_TOOL
   String qstr = cp_unparse_ulonglong(q, 10, false);
   return *this << qstr;
-#else
-  if (char *x = reserve(256)) {
-    int len;
-    sprintf(x, "%qu%n", q, &len);
-    forward(len);
-  }
-  return *this;
-#endif
 }

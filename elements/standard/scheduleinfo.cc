@@ -1,8 +1,8 @@
 /*
- * alignmentinfo.{cc,hh} -- element stores alignment information
- * Eddie Kohler
+ * scheduleinfo.{cc,hh} -- element stores schedule parameters
+ * Benjie Chen, Eddie Kohler
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -58,12 +58,12 @@ ScheduleInfo::configure(const String &conf, ErrorHandler *errh)
     int mt;
     cp_spacevec(args[i], parts);
     if (parts.size() != 2 || cp_real2(parts[1], FRAC_BITS, mt) < 0)
-      errh->error("expected `ELEMENTNAME MAXTICKETS'");
+      errh->error("expected `ELEMENTNAME PARAM'");
     else {
       for (int j = 0; j < _element_names.size(); j++)
 	if (_element_names[j] == parts[0]) {
 	  if (_max_tickets[j] != mt)
-	    errh->error("conflicting schedule info for `%s'", parts[0].cc());
+	    errh->error("conflicting ScheduleInfo for `%s'", parts[0].cc());
 	  goto appended;
 	}
       _element_names.push_back(parts[0]);

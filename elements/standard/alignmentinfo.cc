@@ -2,7 +2,7 @@
  * alignmentinfo.{cc,hh} -- element stores alignment information
  * Eddie Kohler
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -78,7 +78,7 @@ AlignmentInfo::configure(const String &conf, ErrorHandler *errh)
 			old_icount * sizeof(int)) != 0
 	      || memcmp(&_offsets[old_offset], &_offsets[_elem_offset[number]],
 			old_icount * sizeof(int)) != 0))
-	errh->error("conflicting alignment info for `%s'", parts[0].cc());
+	errh->error("conflicting AlignmentInfo for `%s'", parts[0].cc());
       
     } else
       errh->warning("no such element `%s'", parts[0].cc());

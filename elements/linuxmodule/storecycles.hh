@@ -21,7 +21,7 @@ class StoreCycles : public Element {
   ~StoreCycles();
   
   const char *class_name() const		{ return "StoreCycles"; }
-  Processing default_processing() const	{ return AGNOSTIC; }
+  Processing default_processing() const		{ return AGNOSTIC; }
   StoreCycles *clone() const;
   int configure(const String &, ErrorHandler *);
   int initialize(ErrorHandler *);
@@ -33,8 +33,8 @@ class StoreCycles : public Element {
   Packet *pull(int);
   
   // statistics 
-  unsigned long long _sum;
-  unsigned long long _pkt_cnt;
+  unsigned long _sum;
+  unsigned long _pkt_cnt;
   
 };
 

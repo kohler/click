@@ -2,7 +2,7 @@
  * vectorv.cc -- template specialization for Vector<void *>
  * Eddie Kohler
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later

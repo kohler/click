@@ -2,7 +2,7 @@
  * string.{cc,hh} -- a String class with shared substrings
  * Eddie Kohler
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -58,6 +58,13 @@ String::String(unsigned u)
 {
   char buf[128];
   sprintf(buf, "%u", u);
+  assign(buf, -1);
+}
+
+String::String(unsigned long u)
+{
+  char buf[128];
+  sprintf(buf, "%lu", u);
   assign(buf, -1);
 }
 

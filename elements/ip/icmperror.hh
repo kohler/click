@@ -39,7 +39,8 @@
  * rate at which such messages can be sent to 10 per second:
  *
  * = dt : DecIPTTL();
- * = dt[1] -> ICMPError(18.26.4.24, 11, 0) -> Shaper(1, 10) -> ...
+ * = dt[1] -> ICMPError(18.26.4.24, 11, 0) -> m :: PacketMeter(10) -> ...
+ * = m[1] -> Discard;
  * =n
  * ICMPError can't decide if the src or dst is an IP directed broadcast
  * address; it is supposed to ignore packets with such addresses.

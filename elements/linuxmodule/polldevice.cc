@@ -1,10 +1,9 @@
-
 /*
  * polldevice.{cc,hh} -- element steals packets from Linux devices by polling.
  * 
  * Benjie Chen
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -89,6 +88,7 @@ PollDevice::configure(const String &conf, ErrorHandler *errh)
 int
 PollDevice::initialize(ErrorHandler *errh)
 {
+#if HAVE_POLLING
   _dev = dev_get(_devname.cc());
   if (!_dev)
     return errh->error("no device `%s'", _devname.cc());
@@ -99,22 +99,28 @@ PollDevice::initialize(ErrorHandler *errh)
   ScheduleInfo::join_scheduler(this, errh);
   
   return 0;
+#else
+  return errh->warning("can't get packets: not compiled with polling extensions");
+#endif
 }
 
 
 void
 PollDevice::uninitialize()
 {
+#if HAVE_POLLING
   if (_dev) {
     _dev->intr_defer = 0; 
     _dev->intr_on(_dev);
     unschedule();
   }
+#endif
 }
 
 void
 PollDevice::run_scheduled()
 {
+#if HAVE_POLLING
   struct sk_buff *skb;
   int got=0;
 
@@ -172,6 +178,7 @@ PollDevice::run_scheduled()
   _last_dma_length = queued_pkts;
 
   reschedule();
+#endif
 }
  
 static String

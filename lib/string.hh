@@ -50,6 +50,7 @@ class String {
   explicit String(char);
   explicit String(int);
   explicit String(unsigned);
+  explicit String(unsigned long);
   explicit String(unsigned long long);
   ~String();
   

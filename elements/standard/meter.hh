@@ -16,7 +16,7 @@
  * output corresponding to the current rate. (So if the rate is less than
  * rate1, packets will be sent on output 0; if it is >= rate1 but < rate2,
  * packets will be sent on output 1; and so on. If it is >= rate<i>n</i>,
- * packets will be sent on output <i>n</i>-1.)
+ * packets will be sent on output <i>n</i>.)
  * =a PacketMeter
  * =a Shaper
  * =a PacketShaper

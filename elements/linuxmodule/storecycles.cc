@@ -1,7 +1,7 @@
 /*
  * storecycles.{cc,hh} -- store cycle count
  *
- * Copyright (c) 1999 Massachusetts Institute of Technology.
+ * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
  *
  * This software is being provided by the copyright holders under the GNU
  * General Public License, either version 2 or, at your discretion, any later
@@ -59,8 +59,8 @@ StoreCycles::uninitialize()
 inline void
 StoreCycles::smaction(Packet *p)
 {
-  unsigned long c1 = p->cycle_anno(_idx1);
-  unsigned long c2 = p->cycle_anno(_idx2);
+  cycles_t c1 = p->cycle_anno(_idx1);
+  cycles_t c2 = p->cycle_anno(_idx2);
   if (c2 != 0 && c1 != 0) {
     _sum += c2 - c1;
     _pkt_cnt++;
