@@ -29,12 +29,14 @@
 #include <click/timer.hh>
 #include <click/error.hh>
 #include "beaconsource.hh"
+#include <elements/wifi/availablerates.hh>
 
 CLICK_DECLS
 
 BeaconSource::BeaconSource()
   : Element(0, 1),
-    _timer(this)
+    _timer(this),
+    _rtable(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -60,19 +62,18 @@ BeaconSource::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "SSID", cpString, "ssid", &_ssid,
 		  "BSSID", cpEthernetAddress, "bssid", &_bssid,
 		  "INTERVAL", cpInteger, "interval_ms", &_interval_ms,
+		  "RT", cpElement, "availablerates", &_rtable,
 		  0) < 0)
     return -1;
 
+
+  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+    return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
 
   if (_interval_ms <= 0) {
     return errh->error("INTERVAL must be >0\n");
   }
-  /* start with normall 802.11b rates */
-  _rates.push_back(2);
-  _rates.push_back(4);
-  _rates.push_back(11);
-  _rates.push_back(22);
 
   return 0;
 }
@@ -96,12 +97,13 @@ void
 BeaconSource::send_beacon()
 {
 
+  Vector<int> rates = _rtable->lookup(_bssid);
   int len = sizeof (struct click_wifi) + 
     8 +                  /* timestamp */
     2 +                  /* beacon interval */
     2 +                  /* cap_info */
     2 + _ssid.length() + /* ssid */
-    2 + min(WIFI_RATES_MAXSIZE, _rates.size()) +  /* rates */
+    2 + min(WIFI_RATES_MAXSIZE, rates.size()) +  /* rates */
     2 + 1 +              /* ds parms */
     2 + 4 +              /* tim */
     0;
@@ -154,16 +156,16 @@ BeaconSource::send_beacon()
 
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(WIFI_RATES_MAXSIZE, _rates.size());
-  for (int x = 0; x < min (WIFI_RATES_MAXSIZE, _rates.size()); x++) {
-    ptr[2 + x] = (uint8_t) _rates[x];
+  ptr[1] = min(WIFI_RATES_MAXSIZE, rates.size());
+  for (int x = 0; x < min (WIFI_RATES_MAXSIZE, rates.size()); x++) {
+    ptr[2 + x] = (uint8_t) rates[x];
     
-    if (_rates[x] == 2) {
+    if (rates[x] == 2) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
     
   }
-  ptr += 2 + _rates.size();
+  ptr += 2 + rates.size();
 
   /* channel */
   ptr[0] = WIFI_ELEMID_DSPARMS;
@@ -188,7 +190,7 @@ BeaconSource::send_beacon()
 }
 
 
-enum {H_DEBUG, H_BSSID, H_SSID, H_CHANNEL, H_RATES, H_CLEAR_RATES, H_INTERVAL};
+enum {H_DEBUG, H_BSSID, H_SSID, H_CHANNEL, H_INTERVAL};
 
 static String 
 BeaconSource_read_param(Element *e, void *thunk)
@@ -205,13 +207,6 @@ BeaconSource_read_param(Element *e, void *thunk)
     return String(td->_channel) + "\n";
   case H_INTERVAL:
     return String(td->_interval_ms) + "\n";
-  case H_RATES: {
-      String s;
-      for (int x = 0; x < td->_rates.size(); x++) {
-	s += String(td->_rates[x]) + " ";
-      }
-      return s + "\n";
-    }
   default:
     return String();
   }
@@ -248,22 +243,12 @@ BeaconSource_write_param(const String &in_s, Element *e, void *vparam,
     f->_channel = channel;
     break;
   }
-  case H_RATES: {    //mode
-    int m;
-    if (!cp_integer(s, &m)) 
-      return errh->error("rate parameter must be int");
-    f->_rates.push_back(m);
-    break;
-  }
   case H_INTERVAL: {    //mode
     int m;
     if (!cp_integer(s, &m)) 
       return errh->error("interval parameter must be int");
     f->_interval_ms = m;
     break;
-  }
-  case H_CLEAR_RATES: {
-    f->_rates.clear();
   }
   }
   return 0;
@@ -278,15 +263,12 @@ BeaconSource::add_handlers()
   add_read_handler("bssid", BeaconSource_read_param, (void *) H_BSSID);
   add_read_handler("ssid", BeaconSource_read_param, (void *) H_SSID);
   add_read_handler("channel", BeaconSource_read_param, (void *) H_CHANNEL);
-  add_read_handler("rates", BeaconSource_read_param, (void *) H_RATES);
   add_read_handler("interval", BeaconSource_read_param, (void *) H_INTERVAL);
 
   add_write_handler("debug", BeaconSource_write_param, (void *) H_DEBUG);
   add_write_handler("bssid", BeaconSource_write_param, (void *) H_BSSID);
   add_write_handler("ssid", BeaconSource_write_param, (void *) H_SSID);
   add_write_handler("channel", BeaconSource_write_param, (void *) H_CHANNEL);
-  add_write_handler("rates", BeaconSource_write_param, (void *) H_RATES);
-  add_write_handler("rates_reset", BeaconSource_write_param, (void *) H_CLEAR_RATES);
   add_write_handler("interval", BeaconSource_write_param, (void *) H_INTERVAL);
 }
 

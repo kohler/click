@@ -86,7 +86,7 @@ TXStat::simple_action(Packet *p_in)
   
   
   //int long_retries = p_in->user_anno_c (TX_ANNO_LONG_RETRIES);
-  int success = WIFI_TX_SUCCESS_ANNO(p_in);
+  int success = WIFI_SUCCESS(WIFI_TX_STATUS_ANNO(p_in));
   int short_retries = WIFI_RETRIES_ANNO(p_in);
   int rate = WIFI_RATE_ANNO(p_in);
   TXNeighborInfo *nfo = _neighbors.findp(dst);

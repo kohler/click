@@ -28,11 +28,13 @@
 #include <click/packet_anno.hh>
 #include <click/error.hh>
 #include "proberequester.hh"
+#include <elements/wifi/availablerates.hh>
 
 CLICK_DECLS
 
 ProbeRequester::ProbeRequester()
-  : Element(0, 1)
+  : Element(0, 1),
+    _rtable(0)  
 {
   MOD_INC_USE_COUNT;
 }
@@ -54,15 +56,12 @@ ProbeRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "SSID", cpString, "ssid", &_ssid,
 		  "ETH", cpEthernetAddress, "bssid", &_eth,
+		  "RT", cpElement, "availablerates", &_rtable,
 		  0) < 0)
     return -1;
 
-
-  /* start with normall 802.11b rates */
-  _rates.push_back(2);
-  _rates.push_back(4);
-  _rates.push_back(11);
-  _rates.push_back(22);
+  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+    return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
   return 0;
 }
@@ -70,10 +69,10 @@ ProbeRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 void
 ProbeRequester::send_probe_request()
 {
-
+  Vector<int> rates = _rtable->lookup(_eth);
   int len = sizeof (struct click_wifi) + 
     2 + _ssid.length() + /* ssid */
-    2 + min(WIFI_RATES_MAXSIZE, _rates.size()) +  /* rates */
+    2 + min(WIFI_RATES_MAXSIZE, rates.size()) +  /* rates */
     0;
     
   WritablePacket *p = Packet::make(len);
@@ -110,23 +109,23 @@ ProbeRequester::send_probe_request()
 
   /* rates */
   ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(WIFI_RATES_MAXSIZE, _rates.size());
-  for (int x = 0; x < min (WIFI_RATES_MAXSIZE, _rates.size()); x++) {
-    ptr[2 + x] = (uint8_t) _rates[x];
+  ptr[1] = min(WIFI_RATES_MAXSIZE, rates.size());
+  for (int x = 0; x < min (WIFI_RATES_MAXSIZE, rates.size()); x++) {
+    ptr[2 + x] = (uint8_t) rates[x];
     
-    if (_rates[x] == 2) {
+    if (rates[x] == 2) {
       ptr [2 + x] |= WIFI_RATE_BASIC;
     }
     
   }
-  ptr += 2 + _rates.size();
+  ptr += 2 + rates.size();
 
   SET_WIFI_FROM_CLICK(p);
   output(0).push(p);
 }
 
 
-enum {H_DEBUG, H_ETH, H_SSID, H_RATES, H_CLEAR_RATES, H_SEND_PROBE};
+enum {H_DEBUG, H_ETH, H_SSID, H_SEND_PROBE};
 
 static String 
 ProbeRequester_read_param(Element *e, void *thunk)
@@ -139,13 +138,6 @@ ProbeRequester_read_param(Element *e, void *thunk)
     return td->_eth.s() + "\n";
   case H_SSID:
     return td->_ssid + "\n";
-  case H_RATES: {
-      String s;
-      for (int x = 0; x < td->_rates.size(); x++) {
-	s += String(td->_rates[x]) + " ";
-      }
-      return s + "\n";
-    }
   default:
     return String();
   }
@@ -175,16 +167,6 @@ ProbeRequester_write_param(const String &in_s, Element *e, void *vparam,
     f->_ssid = s;
     break;
   }
-  case H_RATES: {
-    int m;
-    if (!cp_integer(s, &m)) 
-      return errh->error("rate parameter must be int");
-    f->_rates.push_back(m);
-    break;
-  }
-  case H_CLEAR_RATES: {
-    f->_rates.clear();
-  }
   case H_SEND_PROBE: {
     f->send_probe_request();
   }
@@ -200,13 +182,10 @@ ProbeRequester::add_handlers()
   add_read_handler("debug", ProbeRequester_read_param, (void *) H_DEBUG);
   add_read_handler("eth", ProbeRequester_read_param, (void *) H_ETH);
   add_read_handler("ssid", ProbeRequester_read_param, (void *) H_SSID);
-  add_read_handler("rates", ProbeRequester_read_param, (void *) H_RATES);
 
   add_write_handler("debug", ProbeRequester_write_param, (void *) H_DEBUG);
   add_write_handler("eth", ProbeRequester_write_param, (void *) H_ETH);
   add_write_handler("ssid", ProbeRequester_write_param, (void *) H_SSID);
-  add_write_handler("rates", ProbeRequester_write_param, (void *) H_RATES);
-  add_write_handler("rates_reset", ProbeRequester_write_param, (void *) H_CLEAR_RATES);
   add_write_handler("send_probe", ProbeRequester_write_param, (void *) H_SEND_PROBE);
 }
 

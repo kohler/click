@@ -47,8 +47,13 @@
 #define WIFI_FROM_CLICK(p)           ((p)->user_anno_c(9) == 0xaa)
 #define SET_WIFI_FROM_CLICK(p)    ((p)->set_user_anno_c(9, (0xaa)))
 
-#define WIFI_TX_SUCCESS_ANNO(p)           ((p)->user_anno_c(10))
-#define SET_WIFI_TX_SUCCESS_ANNO(p, v)    ((p)->set_user_anno_c(10, (v)))
+#define WIFI_TX_STATUS_USED_ALT_RATE  0x2;
+#define WIFI_FAILURE = 0x1;
+
+#define WIFI_SUCCESS(p) ((p & 0x1 == 0x0))
+
+#define WIFI_TX_STATUS_ANNO(p)           ((p)->user_anno_c(10))
+#define SET_WIFI_TX_STATUS_ANNO(p, v)    ((p)->set_user_anno_c(10, (v)))
 
 #define WIFI_TX_POWER_ANNO(p)           ((p)->user_anno_c(11))
 #define SET_WIFI_TX_POWER_ANNO(p, v)    ((p)->set_user_anno_c(11, (v)))
@@ -64,6 +69,12 @@
 
 #define WIFI_NOISE_ANNO(p)           ((p)->user_anno_c(15))
 #define SET_WIFI_NOISE_ANNO(p, v)    ((p)->set_user_anno_c(15, (v)))
+
+#define WIFI_ALT_RATE_ANNO(p)       ((p)->user_anno_c(16))
+#define SET_WIFI_ALT_RATE_ANNO(p, v)    ((p)->set_user_anno_c(16, (v)))
+
+#define WIFI_ALT_RETRIES_ANNO(p)    ((p)->user_anno_c(17))
+#define SET_WIFI_ALT_RETRIES_ANNO(p, v)    ((p)->set_user_anno_c(17, (v)))
 
 // bytes 12-15
 #define EXTRA_LENGTH_ANNO(p)		((p)->user_anno_u(3))

@@ -55,12 +55,12 @@ class AssociationResponder : public Element { public:
   bool _debug;
   EtherAddress _bssid;
   String _ssid;
-  Vector<int> _rates;
   int _interval_ms;
 
   uint16_t _associd;
 
   String scan_string();
+  class AvailableRates *_rtable;
  private:
 
 

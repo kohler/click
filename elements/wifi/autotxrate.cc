@@ -191,7 +191,7 @@ AutoTXRate::simple_action(Packet *p_in)
 {
   click_ether *eh = (click_ether *) p_in->data();
   EtherAddress dst = EtherAddress(eh->ether_dhost);
-  int success = WIFI_TX_SUCCESS_ANNO(p_in);
+  int success = WIFI_SUCCESS(WIFI_TX_STATUS_ANNO(p_in));
   int rate = WIFI_RATE_ANNO(p_in);
   struct timeval now;
   click_gettimeofday(&now);

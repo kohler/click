@@ -3,7 +3,7 @@
 #define CLICK_ECNQUEUE_HH
 #include <elements/standard/notifierqueue.hh>
 #include <click/bighashmap.hh>
-#include <elements/wifi/sr/path.hh>
+#include <elements/wifi/sr/srpacket.hh>
 CLICK_DECLS
 
 /*

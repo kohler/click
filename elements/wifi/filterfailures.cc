@@ -1,4 +1,3 @@
-#include <linux/click_wifi.h>
 #include <click/config.h>
 #include <click/error.hh>
 #include <click/confparse.hh>
@@ -49,7 +48,8 @@ Packet *
 FilterFailures::simple_action(Packet *p)
 {
 
-  if (WIFI_TX_SUCCESS_ANNO(p)) {
+  int success = WIFI_SUCCESS(WIFI_TX_STATUS_ANNO(p));
+  if (success) {
     if (_allow_success) {
       return p;
     }
@@ -147,7 +147,7 @@ FilterFailures::add_handlers()
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(linuxmodule)
+
 
 EXPORT_ELEMENT(FilterFailures)
 

@@ -90,7 +90,7 @@ LinkFailureDetection::simple_action(Packet *p_in)
     /* don't record bcast packets */
     return p_in;
   }
-  int success = WIFI_TX_SUCCESS_ANNO(p_in);
+  int success = WIFI_SUCCESS(WIFI_TX_STATUS_ANNO(p_in));
 
   DstInfo *nfo = _neighbors.findp(dst);
   if (!nfo) {

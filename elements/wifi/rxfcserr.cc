@@ -1,4 +1,4 @@
-#include <linux/click_wifi.h>
+#include <click_wifi.h>
 #include <click/config.h>
 #include <click/error.hh>
 #include <click/confparse.hh>

@@ -1,4 +1,4 @@
-#include <linux/click_wifi.h>
+#include <click_wifi.h>
 #include <click/config.h>
 #include <click/error.hh>
 #include <click/confparse.hh>
@@ -194,7 +194,7 @@ WifiTXFeedback::run_task()
     Packet *p = _queue[_head];
     _head = next_i(_head);
 
-    int success = WIFI_TX_SUCCESS_ANNO(p);
+    int success = WIFI_SUCCESS(WIFI_TX_STATUS_ANNO(p));
     if (success) {
       _successes++;
     } else {

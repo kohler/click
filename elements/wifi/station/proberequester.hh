@@ -52,7 +52,7 @@ class ProbeRequester : public Element { public:
   bool _debug;
   EtherAddress _eth;
   String _ssid;
-  Vector<int> _rates;
+  class AvailableRates *_rtable;
 
  private:
 

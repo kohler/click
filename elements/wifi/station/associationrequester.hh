@@ -57,7 +57,7 @@ class AssociationRequester : public Element { public:
   EtherAddress _bssid;
   String _ssid;
   uint16_t _listen_interval;
-  Vector<int> _rates;
+  class AvailableRates *_rtable;
 
   String scan_string();
  private:

@@ -27,11 +27,13 @@
 #include <click/hashmap.hh>
 #include <click/packet_anno.hh>
 #include "associationrequester.hh"
+#include <elements/wifi/availablerates.hh>
 
 CLICK_DECLS
 
 AssociationRequester::AssociationRequester()
-  : Element(1, 1)
+  : Element(1, 1),
+    _rtable(0)
 {
   MOD_INC_USE_COUNT;
 }
@@ -51,27 +53,26 @@ AssociationRequester::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpKeywords,
 		  "DEBUG", cpBool, "Debug", &_debug,
 		  "ETH", cpEthernetAddress, "eth", &_eth,
+		  "RT", cpElement, "availablerates", &_rtable,
 		  0) < 0)
     return -1;
 
-
-  /* start with normall 802.11b rates */
-  _rates.push_back(2);
-  _rates.push_back(4);
-  _rates.push_back(11);
-  _rates.push_back(22);
+  
+  if (!_rtable || _rtable->cast("AvailableRates") == 0) 
+    return errh->error("AvailableRates element is not provided or not a AvailableRates");
 
   return 0;
 }
 void
 AssociationRequester::send_assoc_req()
 {
+  Vector<int> rates = _rtable->lookup(_bssid);
   int len = sizeof (struct click_wifi) + 
     2 + /* cap_info */
     2 + /* listen_int */
     6 + /* current_ap */
     2 + _ssid.length() +
-    2 + min(8, _rates.size());
+    2 + min(8, rates.size());
     
     
   WritablePacket *p = Packet::make(len);
@@ -114,11 +115,11 @@ AssociationRequester::send_assoc_req()
 
 
   ptr[0] = WIFI_ELEMID_RATES;
-  ptr[1] = min(8, _rates.size());
+  ptr[1] = min(8, rates.size());
 
   ptr += 2;
-  for (int x = 0; x < min(8, _rates.size()); x++) {
-    ptr[x] = _rates[x];
+  for (int x = 0; x < min(8, rates.size()); x++) {
+    ptr[x] = rates[x];
     if (1 || ptr[x] == 2) {
       ptr[x] |= WIFI_RATE_BASIC;
     }
@@ -192,6 +193,7 @@ AssociationRequester::push(int port, Packet *p)
   
   Vector<int> basic_rates;
   Vector<int> rates;
+  Vector<int> all_rates;
   if (rates_l) {
     for (int x = 0; x < min((int)rates_l[1], WIFI_RATES_MAXSIZE); x++) {
       uint8_t rate = rates_l[x + 2];
@@ -201,6 +203,7 @@ AssociationRequester::push(int port, Packet *p)
       } else {
 	rates.push_back((int)(rate & WIFI_RATE_VAL));
       }
+      all_rates.push_back((int)(rate & WIFI_RATE_VAL));
     }
   }
 
@@ -245,11 +248,14 @@ AssociationRequester::push(int port, Packet *p)
 		this,
 		sa.take_string().cc());
 
+  if (_rtable) {
+    _rtable->insert(bssid, all_rates);
+  }
   p->kill();
   return;
 }
 
-enum {H_DEBUG, H_BSSID, H_ETH, H_SSID, H_LISTEN_INTERVAL, H_RATES, H_CLEAR_RATES, H_SEND_ASSOC_REQ};
+enum {H_DEBUG, H_BSSID, H_ETH, H_SSID, H_LISTEN_INTERVAL, H_SEND_ASSOC_REQ};
 
 static String 
 AssociationRequester_read_param(Element *e, void *thunk)
@@ -266,13 +272,6 @@ AssociationRequester_read_param(Element *e, void *thunk)
       return td->_ssid + "\n";
     case H_LISTEN_INTERVAL:
       return String(td->_listen_interval) + "\n";
-    case H_RATES: {
-      String s;
-      for (int x = 0; x < td->_rates.size(); x++) {
-	s += String(td->_rates[x]) + " ";
-      }
-      return s + "\n";
-    }
     default:
       return String();
     }
@@ -316,16 +315,6 @@ AssociationRequester_write_param(const String &in_s, Element *e, void *vparam,
     f->_listen_interval = m;
     break;
   }
-  case H_RATES: {    //mode
-    int m;
-    if (!cp_integer(s, &m)) 
-      return errh->error("rate parameter must be int");
-    f->_rates.push_back(m);
-    break;
-  }
-  case H_CLEAR_RATES: {
-    f->_rates.clear();
-  }
   case H_SEND_ASSOC_REQ: {
     f->send_assoc_req();
   }
@@ -343,7 +332,6 @@ AssociationRequester::add_handlers()
   add_read_handler("eth", AssociationRequester_read_param, (void *) H_ETH);
   add_read_handler("ssid", AssociationRequester_read_param, (void *) H_SSID);
   add_read_handler("listen_interval", AssociationRequester_read_param, (void *) H_LISTEN_INTERVAL);
-  add_read_handler("rates", AssociationRequester_read_param, (void *) H_RATES);
 
 
   add_write_handler("debug", AssociationRequester_write_param, (void *) H_DEBUG);
@@ -351,8 +339,6 @@ AssociationRequester::add_handlers()
   add_write_handler("eth", AssociationRequester_write_param, (void *) H_ETH);
   add_write_handler("ssid", AssociationRequester_write_param, (void *) H_SSID);
   add_write_handler("listen_interval", AssociationRequester_write_param, (void *) H_LISTEN_INTERVAL);
-  add_write_handler("rates", AssociationRequester_write_param, (void *) H_RATES);
-  add_write_handler("rates_reset", AssociationRequester_write_param, (void *) H_CLEAR_RATES);
   add_write_handler("send_assoc_req", AssociationRequester_write_param, (void *) H_SEND_ASSOC_REQ);
 
 }

@@ -163,12 +163,9 @@ BeaconScanner::simple_action(Packet *p)
   if (_channel > 0 && ds_l && ds_l[2] != _channel) {
     return p;
   }
-  String ssid;
+  String ssid = "";
   if (ssid_l && ssid_l[1]) {
     ssid = String((char *) ssid_l + 2, min((int)ssid_l[1], WIFI_NWID_MAXSIZE));
-  } else {
-    /* there was no element or it has zero length */
-    ssid = "(none)";
   }
 
   EtherAddress bssid = EtherAddress(w->i_addr3);
@@ -177,11 +174,15 @@ BeaconScanner::simple_action(Packet *p)
   if (!ap) {
     _waps.insert(bssid, wap());
     ap = _waps.findp(bssid);
+    ap->_ssid = "";
   }
 
   
   ap->_eth = bssid;
-  ap->_ssid = ssid;
+  if (ssid != "") {
+    /* don't overwrite blank ssids */
+    ap->_ssid = ssid;
+  }
   ap->_channel = (ds_l) ? ds_l[2] : -1;
   ap->_rssi = WIFI_SIGNAL_ANNO(p);
 
@@ -218,7 +219,13 @@ BeaconScanner::scan_string()
     wap ap = iter.value();
     sa << ap._eth << " ";
     sa << "channel " << ap._channel << " ";
-    sa << "ssid " << ap._ssid << " ";
+    sa << "ssid ";
+    if(ap._ssid == "") {
+      sa << "(none) ";
+    } else {
+      sa << ap._ssid << " ";
+    }
+
     sa << "last_rx " << now - ap._last_rx << " ";
     sa << "+" << ap._rssi << " ";
     sa << "beacon_interval " << ap._beacon_int << " ";

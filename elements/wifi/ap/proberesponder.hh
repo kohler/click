@@ -54,7 +54,7 @@ class ProbeResponder : public Element { public:
   int _channel;
   EtherAddress _bssid;
   String _ssid;
-  Vector<int> _rates;
+  class AvailableRates *_rtable;
   int _interval_ms;
 
 

@@ -120,8 +120,8 @@ PrintSR::simple_action(Packet *p)
   if (_print_anno) {
     int failures = WIFI_NUM_FAILURES(p);
     sa << " failures " << failures;
-    int success = WIFI_TX_SUCCESS_ANNO(p);
-    sa << " success " << success;
+    int status = WIFI_TX_STATUS_ANNO(p);
+    sa << " status " << status;
     int rate = WIFI_RATE_ANNO(p);
     sa << " rate " << rate;
   }
