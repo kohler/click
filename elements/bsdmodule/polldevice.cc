@@ -96,7 +96,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 		  cpEnd) < 0)
     return -1;
   
-#if HAVE_POLLING
+#if HAVE_BSD_POLLING
   if (find_device(allow_nonexistent, errh) < 0)
       return -1;
   // must check both _dev->polling and _dev->poll_on as some drivers
@@ -116,7 +116,7 @@ PollDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 int
 PollDevice::initialize(ErrorHandler *errh)
 {
-#if HAVE_POLLING
+#if HAVE_BSD_POLLING
   /* try to find a ToDevice with the same device: if none exists, then we need
    * to manage tx queue as well as rx queue. need to do it this way because
    * ToDevice may not have been initialized
@@ -187,7 +187,7 @@ PollDevice::reset_counts()
 void
 PollDevice::uninitialize()
 {
-#if HAVE_POLLING
+#if HAVE_BSD_POLLING
   poll_device_map.remove(this);
   if (poll_device_map.lookup(_dev) == 0) {
     if (_dev && _dev->polling > 0)
@@ -202,7 +202,7 @@ PollDevice::uninitialize()
 void
 PollDevice::run_scheduled()
 {
-#if HAVE_POLLING
+#if HAVE_BSD_POLLING
   struct mbuf *m_list, *m;
   int got=0;
 #if CLICK_DEVICE_STATS
@@ -316,7 +316,7 @@ PollDevice::run_scheduled()
   adjust_tickets(got);
   _task.fast_reschedule();
 
-#endif /* HAVE_POLLING */
+#endif /* HAVE_BSD_POLLING */
 }
 
 static String
