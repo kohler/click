@@ -185,11 +185,11 @@ class Packet { public:
   void set_packet_type_anno(PacketType p) { _pkt_type = p; }
 #endif
 
-  enum { USER_ANNO_SIZE = 12,
-	 USER_ANNO_US_SIZE = 6,
-	 USER_ANNO_S_SIZE = 6,
-	 USER_ANNO_U_SIZE = 3,
-	 USER_ANNO_I_SIZE = 3 };
+  enum { USER_ANNO_SIZE = 16,
+	 USER_ANNO_US_SIZE = 8,
+	 USER_ANNO_S_SIZE = 8,
+	 USER_ANNO_U_SIZE = 4,
+	 USER_ANNO_I_SIZE = 4 };
   
   uint8_t user_anno_c(int i) const	{ return anno()->user.c[i]; }
   void set_user_anno_c(int i, uint8_t v) { anno()->user.c[i] = v; }
@@ -199,10 +199,14 @@ class Packet { public:
   void set_user_anno_s(int i, int16_t v) { anno()->user.s[i] = v; }
   uint32_t user_anno_u(int i) const	{ return anno()->user.u[i]; }
   void set_user_anno_u(int i, uint32_t v) { anno()->user.u[i] = v; }
-  uint32_t *all_user_anno_u()		{ return &anno()->user.u[0]; }
   int32_t user_anno_i(int i) const	{ return anno()->user.i[i]; }
   void set_user_anno_i(int i, int32_t v) { anno()->user.i[i] = v; }
 
+  const uint8_t *all_user_anno() const	{ return &anno()->user.c[0]; }
+  uint8_t *all_user_anno()		{ return &anno()->user.c[0]; }
+  const uint32_t *all_user_anno_u() const { return &anno()->user.u[0]; }
+  uint32_t *all_user_anno_u()		{ return &anno()->user.u[0]; }
+  
   void clear_annotations();
   void copy_annotations(const Packet *);
   
