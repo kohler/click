@@ -1,3 +1,9 @@
+2001-03-10 Saturday 14:09  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/: bighashmap.cc, bighashmap.hh: updates; the new
+	rearrange-hashmap-on-access heuristic is optional, based on a
+	#define
+
 2001-03-09 Friday 23:00  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/ethernet/arpquerier.cc, elements/ethernet/arpquerier.hh,
