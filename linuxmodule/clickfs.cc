@@ -212,14 +212,14 @@ struct my_filldir_container {
 };
 
 static bool
-my_filldir(const char *name, int namelen, ino_t ino, uint32_t f_pos, int mode, void *thunk)
+my_filldir(const char *name, int namelen, ino_t ino, int dirtype, uint32_t f_pos, void *thunk)
 {
     my_filldir_container *mfd = (my_filldir_container *)thunk;
 #ifdef LINUX_2_2
-    (void)mode;
+    (void)dirtype;
     int error = mfd->filldir(mfd->dirent, name, namelen, f_pos, ino);
 #else
-    int error = mfd->filldir(mfd->dirent, name, namelen, f_pos, ino, mode);
+    int error = mfd->filldir(mfd->dirent, name, namelen, f_pos, ino, dirtype);
 #endif
     return error >= 0;
 }

@@ -20,6 +20,7 @@
 
 #include <click/glue.hh>
 #include <click/ino.hh>
+#include <click/router.hh>
 
 void
 ClickIno::initialize()
@@ -51,7 +52,7 @@ ClickIno::grow(int min_size)
     Entry *nse = (Entry *)(new uint8_t[sizeof(Entry) * new_cap]);
     if (!nse)
 	return -ENOMEM;
-    memcpy(nse, _x, sizeof(Entry) * sorted_elements_cap);
+    memcpy(nse, _x, sizeof(Entry) * _cap);
     for (int i = _cap; i < new_cap; i++)
 	new((void *)&nse[i]) String();
     delete[] ((uint8_t *)_x);
@@ -131,7 +132,7 @@ ClickIno::true_prepare(Router *r, uint32_t generation)
  
     // resort sorted_elements if necessary
     if (n != nelem)
-	click_qsort(&_x[1], n - 1, sizeof(Entry), sorted_element_compar);
+	click_qsort(&_x[1], n - 1, sizeof(Entry), entry_compar);
 
     // calculate 'skip'
     _x[0].skip = n - 1;
@@ -199,7 +200,7 @@ ClickIno::calculate_handler_conflicts(int parent_elementno)
 
     // run over the arrays, marking conflicts
     int xi = parent_xindex + 1;
-    int next_xi = next_index(parent_elementno);
+    int next_xi = next_xindex(parent_elementno);
     int hi = 0;
     while (xi < next_xi && hi < names.size()) {
 	int compare = String::compare(_x[xi].name, names[hi]);
@@ -339,7 +340,6 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 #define RD_XOFF		0x40000
 #define FILLDIR(a, b, c, d, e, f)  do { if (!filldir(a, b, c, d, e, f)) return 0; } while (0)
     
-    ino_t ino = inode->i_ino;
     int elementno = INO_ELEMENTNO(ino);
 
     // handler names
@@ -347,9 +347,9 @@ ClickIno::readdir(ino_t ino, uint32_t &f_pos, filldir_t filldir, void *thunk)
 	f_pos = RD_HOFF;
     if (f_pos < RD_UOFF && INO_DT_HAS_H(ino)) {
 	Vector<int> hi;
-	Router::element_handlers(click_router, elementno, hi);
+	Router::element_handlers(_router, elementno, hi);
 	while (f_pos >= RD_HOFF && f_pos < hi.size() + RD_HOFF) {
-	    const Router::Handler &h = Router::handler(click_router, hi[f_pos - RD_HOFF]);
+	    const Router::Handler &h = Router::handler(_router, hi[f_pos - RD_HOFF]);
 	    if (h.visible())
 		FILLDIR(h.name().data(), h.name().length(), INO_MKHANDLER(elementno, hi[f_pos - RD_HOFF]), DT_REG, f_pos, thunk);
 	    f_pos++;

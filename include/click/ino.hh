@@ -1,6 +1,7 @@
 // -*- c-basic-offset: 4; related-file-name: "../../lib/ino.cc" -*-
 #ifndef CLICK_INO_HH
 #define CLICK_INO_HH
+#include <click/string.hh>
 class Router;
 
 // NB: inode number 0 is reserved for the system.
