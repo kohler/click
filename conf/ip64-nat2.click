@@ -1,4 +1,4 @@
-//ip64-nat2.click test GNAT: dynamic address binding of AT and PT
+//ip64-nat2.click test GT64: dynamic address binding of AT and PT
 //router and translator: mindwipe
 //00:a0:c9:9c:fd:9e, 18.26.4.116, 3ffe:1ce1:2:0:200::1, fe80::2a0:c9ff:fe9c:fd9e
 // 6-only node: frenulum ::ffff:0.0.0.2 (mapped 4 address: 1.0.0.1)
@@ -14,7 +14,7 @@
 //grunt: route add 1.0.0.1 18.26.4.116
 
 //mindwipe: in click/userlevel directory:
-//mindwipe: ./click ../conf/ip608.click
+//mindwipe: ./click ../conf/ip64-nat2.click
 
 //frenulum: route delete -inet6 ::18.26.4.125 or route flush -inet6
 //frenulum: route add -inet6 ::18.26.4.125 3ffe:1ce1:2:0:200::1
@@ -23,7 +23,7 @@
 //frenulum: telnet ::18.26.4.125 80 (for http) 
 //	    GET / HTTP/1.0
 //frenulum: telnet ::18.26.4.125 5001 (for TTCP grunt: ttcp -r)
-
+//frenulum: nc ::18.26.4.125  9 (for UDP test)
 
 
 arp::ARPQuerier(18.26.4.116, 00:a0:c9:9c:fd:9e);
@@ -66,16 +66,17 @@ rt6 :: LookupIP6Route(
 
 at :: AddressTranslator(
 	1,
-	1 0 1 0 0 0,
+	0,
 	::ffff:0.0.0.3 ::1.0.0.2,
-	1 1 0 0 1 1, 
-	0 0 1 1 1 1,
+	1, 
+	1,
 	0,
 	::1.0.0.1 6000 6010);
 
 
-pt :: ProtocolTranslator();
-	
+//pt :: ProtocolTranslator();
+pt64 :: ProtocolTranslator64();
+pt46 :: ProtocolTranslator46();
 
 FromDevice(eth0, 1)
   	-> c; 
@@ -115,7 +116,7 @@ rt[1]	//->Print(rt1, 200)
 	//-> Print(before-arp0, 200) 
 	->[0]arp;
 rt[2]	//->Print(rt2, 200) 
-	->[1]pt;
+	->[0]pt46;
 rt[3]	->Print(rt3, 200) ->Discard;	
 	
 rt6[0] 	-> Print(route60-ok, 200) -> Discard;
@@ -132,17 +133,17 @@ dh1[1]	-> ICMP6Error(3ffe:1ce1:2:0:200::1, 3, 0)
 dh2[1]	-> ICMP6Error(3ffe:1ce1:2:0:200::1, 3, 0)
 	-> Discard;
 at[0]  	//-> Print(after-at0, 200) 
-	-> [0]pt;
+	-> [0]pt64;
 at[1]  	//-> Print(after-at1, 200) 
 	-> CheckIP6Header()
 	-> GetIP6Address(24)
 	-> [0]rt6;
 	
-pt[0] 	//-> Print(after-pt0, 200) 
+pt64[0] 	//-> Print(after-pt640, 200) 
 	-> CheckIPHeader(18.26.4.255 1.255.255.255)
 	-> GetIPAddress(16)
 	-> [0]rt;
-pt[1]	//-> Print(after-pt1, 200) 
+pt46[0]	//-> Print(after-pt460, 200) 
 	-> [1]at;
 
 arp[0] 	//-> Print(arp0, 200)

@@ -11,7 +11,7 @@
 //grunt: route add 1.0.0.1 18.26.4.116
 
 //mindwipe: in click/userlevel directory:
-//mindwipe: ./click ../conf/ip606.click
+//mindwipe: ./click ../conf/ip64-nat.click
 
 //frenulum: route delete -inet6 ::18.26.4.125 or route flush -inet6
 //frenulum: route add -inet6 ::18.26.4.125 3ffe:1ce1:2:0:200::1
@@ -57,16 +57,15 @@ rt6 :: LookupIP6Route(
 
 at :: AddressTranslator(
 	1,
-	1 0 1 0 0 0,
+	0,
 	::ffff:0.0.0.2 ::1.0.0.1,
-	1 1 0 0 0 0, 
-	0 0 1 1 0 0,
+	1,
+	1,
 	0,
 	::ffff:18.26.4.116 1300 1310);
 
-
-pt :: ProtocolTranslator();
-	
+pt64 :: ProtocolTranslator64();
+pt46 :: ProtocolTranslator46();	
 
 FromDevice(eth0, 1)
   	-> c; 
@@ -109,7 +108,7 @@ rt[1]	//->Print(rt1, 200)
 	//-> Print(before-arp0, 200) 
 	->[0]arp;
 rt[2]	//->Print(rt2, 200) 
-	->[1]pt;
+	->[0]pt46;
 rt[3]	->Print(rt3, 200) ->Discard;	
 	
 rt6[0] 	-> Print(route60-ok, 200) -> Discard;
@@ -126,17 +125,17 @@ dh1[1]	-> ICMP6Error(3ffe:1ce1:2:0:200::1, 3, 0)
 dh2[1]	-> ICMP6Error(3ffe:1ce1:2:0:200::1, 3, 0)
 	-> Discard;
 at[0]  	//-> Print(after-at0, 200) 
-	-> [0]pt;
+	-> [0]pt64;
 at[1]  	//-> Print(after-at1, 200) 
 	-> CheckIP6Header()
 	-> GetIP6Address(24)
 	-> [0]rt6;
 	
-pt[0] 	//-> Print(after-pt0, 200) 
+pt64[0] //-> Print(after-pt640, 200) 
 	-> CheckIPHeader(18.26.4.255 1.255.255.255)
 	-> GetIPAddress(16)
 	-> [0]rt;
-pt[1]	//-> Print(after-pt1, 200) 
+pt46[0]	//-> Print(after-pt460, 200) 
 	-> [1]at;
 
 arp[0] 	//-> Print(arp0, 200)
