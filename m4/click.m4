@@ -73,7 +73,7 @@ and Linux header files are GCC-specific.)
     if test -n "$GXX"; then
 	changequote(<<,>>)GXX_VERSION=`$CXX --version | head -1 | sed 's/^[^0-9]*\([0-9.]*\).*/\1/'`changequote([,])
 	GXX_MAJOR=`echo $GXX_VERSION | sed 's/\..*//'`
-	GXX_MINOR=`echo $GXX_VERSION | sed 's/.*\.//'`
+	GXX_MINOR=`echo $GXX_VERSION | sed 's/^[^.]*\.\([^.]*\).*/\1/'`
 
 	if test $GXX_MAJOR -lt 2 -o \( $GXX_MAJOR -eq 2 -a $GXX_MINOR -le 7 \); then
 	    AC_MSG_ERROR([
