@@ -1,3 +1,12 @@
+2001-07-10 Tuesday 11:47  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/tcpack.cc (1.6): comments
+
+2001-07-10 Tuesday 11:45  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/local/: tcpack.cc (1.5), tcpbuffer.hh (1.5): bug fix in
+	dealing with out of order packets
+
 2001-07-09 Monday 15:19  Benjie Chen <benjie@lcs.mit.edu>
 
 	* elements/local/: tcpack.cc (1.4), tcpack.hh (1.4): fix small bug
