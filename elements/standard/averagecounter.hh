@@ -1,12 +1,12 @@
-#ifndef COUNTER2_HH
-#define COUNTER2_HH
+#ifndef AVERAGECOUNTER_HH
+#define AVERAGECOUNTER_HH
 #include "element.hh"
 #include "ewma.hh"
 #include "timer.hh"
 
 /*
  * =c
- * Counter2()
+ * AverageCounter()
  * =s
  * measures historical packet count and rate
  * V<measurement>
@@ -19,14 +19,14 @@
  * =h count read-only
  * Returns the number of packets that have passed through.
  *
- * =h rate read-only
+ * =h average read-only
  * Returns packet arrival rate.
  *
  * =h reset write-only
  * Resets the count and rate to zero.
  */
 
-class Counter2 : public Element { protected:
+class AverageCounter : public Element { protected:
   
   int _count;
   unsigned long _first;
@@ -34,9 +34,9 @@ class Counter2 : public Element { protected:
   
  public:
 
-  Counter2();
+  AverageCounter();
   
-  const char *class_name() const		{ return "Counter2"; }
+  const char *class_name() const		{ return "AverageCounter"; }
   const char *processing() const		{ return AGNOSTIC; }
 
   int count() const				{ return _count; }
@@ -44,7 +44,7 @@ class Counter2 : public Element { protected:
   unsigned long last() const			{ return _last; }
   void reset();
   
-  Counter2 *clone() const			{ return new Counter2; }
+  AverageCounter *clone() const			{ return new AverageCounter; }
   int initialize(ErrorHandler *);
   void add_handlers();
   

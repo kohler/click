@@ -1,5 +1,5 @@
 /*
- * counter2.{cc,hh} -- element counts packets, measures duration 
+ * averagecounter.{cc,hh} -- element counts packets, measures duration 
  * Benjie Chen
  *
  * Copyright (c) 1999-2000 Massachusetts Institute of Technology.
@@ -13,19 +13,19 @@
 #ifdef HAVE_CONFIG_H
 # include <config.h>
 #endif
-#include "counter2.hh"
+#include "averagecounter.hh"
 #include "confparse.hh"
 #include "straccum.hh"
 #include "glue.hh"
 #include "error.hh"
 
-Counter2::Counter2()
+AverageCounter::AverageCounter()
   : Element(1, 1)
 {
 }
 
 void
-Counter2::reset()
+AverageCounter::reset()
 {
   _count = 0;
   _first = 0;
@@ -33,14 +33,14 @@ Counter2::reset()
 }
 
 int
-Counter2::initialize(ErrorHandler *)
+AverageCounter::initialize(ErrorHandler *)
 {
   reset();
   return 0;
 }
 
 Packet *
-Counter2::simple_action(Packet *p)
+AverageCounter::simple_action(Packet *p)
 {
   _count++;
   if (_first == 0) _first = click_jiffies();
@@ -49,16 +49,16 @@ Counter2::simple_action(Packet *p)
 }
 
 static String
-counter2_read_count_handler(Element *e, void *)
+averagecounter_read_count_handler(Element *e, void *)
 {
-  Counter2 *c = (Counter2 *)e;
+  AverageCounter *c = (AverageCounter *)e;
   return String(c->count()) + "\n";
 }
 
 static String
-counter2_read_rate_handler(Element *e, void *)
+averagecounter_read_rate_handler(Element *e, void *)
 {
-  Counter2 *c = (Counter2 *)e;
+  AverageCounter *c = (AverageCounter *)e;
   int d = c->last() - c->first();
   if (d < 1) d = 1;
   int rate = c->count() * CLICK_HZ / d;
@@ -66,20 +66,21 @@ counter2_read_rate_handler(Element *e, void *)
 }
 
 static int
-counter2_reset_write_handler(const String &, Element *e, void *, ErrorHandler *)
+averagecounter_reset_write_handler
+(const String &, Element *e, void *, ErrorHandler *)
 {
-  Counter2 *c = (Counter2 *)e;
+  AverageCounter *c = (AverageCounter *)e;
   c->reset();
   return 0;
 }
 
 void
-Counter2::add_handlers()
+AverageCounter::add_handlers()
 {
-  add_read_handler("count", counter2_read_count_handler, 0);
-  add_read_handler("rate", counter2_read_rate_handler, 0);
-  add_write_handler("reset", counter2_reset_write_handler, 0);
+  add_read_handler("count", averagecounter_read_count_handler, 0);
+  add_read_handler("average", averagecounter_read_rate_handler, 0);
+  add_write_handler("reset", averagecounter_reset_write_handler, 0);
 }
 
 
-EXPORT_ELEMENT(Counter2)
+EXPORT_ELEMENT(AverageCounter)
