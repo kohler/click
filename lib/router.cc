@@ -28,6 +28,7 @@
 #include <click/confparse.hh>
 #include <click/timer.hh>
 #include <click/master.hh>
+#include <click/notifier.hh>
 #include <click/bighashmap_arena.hh>
 #include <click/standard/errorelement.hh>
 #include <click/standard/drivermanager.hh>
@@ -49,7 +50,9 @@ Router::Router(const String &configuration, Master *m)
     : _master(m), _state(ROUTER_NEW),
       _allow_star_handler(true), _running(RUNNING_INACTIVE),
       _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
-      _configuration(configuration), _arena_factory(new HashMap_ArenaFactory),
+      _configuration(configuration),
+      _notifier_signals(0), _n_notifier_signals(0),
+      _arena_factory(new HashMap_ArenaFactory),
       _hotswap_router(0), _next_router(0)
 {
     _refcount = 0;
@@ -95,6 +98,7 @@ Router::~Router()
   
     delete _root_element;
     delete[] _handlers;
+    delete[] _notifier_signals;
     _master->unuse();
 }
 
@@ -649,29 +653,29 @@ Router::downstream_elements(Element *first_element, int first_output,
 			    ElementFilter *stop_filter,
 			    Vector<Element *> &results)
 {
-  Bitvector bv;
-  if (downstream_inputs(first_element, first_output, stop_filter, bv) < 0)
-    return -1;
-  int last_input_eidx = -1;
-  for (int i = 0; i < ninput_pidx(); i++)
-    if (bv[i] && _input_eidx[i] != last_input_eidx) {
-      last_input_eidx = _input_eidx[i];
-      results.push_back(_elements[last_input_eidx]);
-    }
-  return 0;
+    Bitvector bv;
+    if (downstream_inputs(first_element, first_output, stop_filter, bv) < 0)
+	return -1;
+    int last_input_eidx = -1;
+    for (int i = 0; i < ninput_pidx(); i++)
+	if (bv[i] && _input_eidx[i] != last_input_eidx) {
+	    last_input_eidx = _input_eidx[i];
+	    results.push_back(_elements[last_input_eidx]);
+	}
+    return 0;
 }
 
 int
 Router::downstream_elements(Element *first_element, int first_output,
 			    Vector<Element *> &results)
 {
-  return downstream_elements(first_element, first_output, 0, results);
+    return downstream_elements(first_element, first_output, 0, results);
 }
 
 int
 Router::downstream_elements(Element *first_element, Vector<Element *> &results)
 {
-  return downstream_elements(first_element, -1, 0, results);
+    return downstream_elements(first_element, -1, 0, results);
 }
 
 int
@@ -727,29 +731,29 @@ Router::upstream_elements(Element *first_element, int first_input,
 			  ElementFilter *stop_filter,
 			  Vector<Element *> &results)
 {
-  Bitvector bv;
-  if (upstream_outputs(first_element, first_input, stop_filter, bv) < 0)
-    return -1;
-  int last_output_eidx = -1;
-  for (int i = 0; i < noutput_pidx(); i++)
-    if (bv[i] && _output_eidx[i] != last_output_eidx) {
-      last_output_eidx = _output_eidx[i];
-      results.push_back(_elements[last_output_eidx]);
-    }
-  return 0;
+    Bitvector bv;
+    if (upstream_outputs(first_element, first_input, stop_filter, bv) < 0)
+	return -1;
+    int last_output_eidx = -1;
+    for (int i = 0; i < noutput_pidx(); i++)
+	if (bv[i] && _output_eidx[i] != last_output_eidx) {
+	    last_output_eidx = _output_eidx[i];
+	    results.push_back(_elements[last_output_eidx]);
+	}
+    return 0;
 }
 
 int
 Router::upstream_elements(Element *first_element, int first_input,
 			  Vector<Element *> &results)
 {
-  return upstream_elements(first_element, first_input, 0, results);
+    return upstream_elements(first_element, first_input, 0, results);
 }
 
 int
 Router::upstream_elements(Element *first_element, Vector<Element *> &results)
 {
-  return upstream_elements(first_element, -1, 0, results);
+    return upstream_elements(first_element, -1, 0, results);
 }
 
 
@@ -1161,62 +1165,62 @@ Router::store_handler(const Element *e, const Handler &to_store)
 const Router::Handler *
 Router::handler(const Router *r, int hi)
 {
-  if (r && hi >= 0 && hi < r->_nhandlers)
-    return &r->_handlers[hi];
-  else if (hi >= FIRST_GLOBAL_HANDLER && hi < FIRST_GLOBAL_HANDLER + nglobalh)
-    return &globalh[hi - FIRST_GLOBAL_HANDLER];
-  else
-    return 0;
+    if (r && hi >= 0 && hi < r->_nhandlers)
+	return &r->_handlers[hi];
+    else if (hi >= FIRST_GLOBAL_HANDLER && hi < FIRST_GLOBAL_HANDLER + nglobalh)
+	return &globalh[hi - FIRST_GLOBAL_HANDLER];
+    else
+	return 0;
 }
 
 const Router::Handler *
 Router::handler(const Element *e, const String &hname)
 {
-  if (e && e != e->router()->_root_element) {
-    const Router *r = e->router();
-    int eh = r->find_ehandler(e->eindex(), hname);
-    if (eh >= 0)
-      return &r->_handlers[r->_ehandler_to_handler[eh]];
-  } else {			// global handler
-    for (int i = 0; i < nglobalh; i++)
-      if (globalh[i]._name == hname)
-	return &globalh[i];
-  }
-  return 0;
+    if (e && e != e->router()->_root_element) {
+	const Router *r = e->router();
+	int eh = r->find_ehandler(e->eindex(), hname);
+	if (eh >= 0)
+	    return &r->_handlers[r->_ehandler_to_handler[eh]];
+    } else {			// global handler
+	for (int i = 0; i < nglobalh; i++)
+	    if (globalh[i]._name == hname)
+		return &globalh[i];
+    }
+    return 0;
 }
 
 int
 Router::hindex(const Element *e, const String &hname)
 {
-  if (e && e != e->router()->_root_element) {
-    const Router *r = e->router();
-    int eh = r->find_ehandler(e->eindex(), hname);
-    if (eh >= 0)
-      return r->_ehandler_to_handler[eh];
-  } else {			// global handler
-    for (int i = 0; i < nglobalh; i++)
-      if (globalh[i]._name == hname)
-	return FIRST_GLOBAL_HANDLER + i;
-  }
-  return -1;
+    if (e && e != e->router()->_root_element) {
+	const Router *r = e->router();
+	int eh = r->find_ehandler(e->eindex(), hname);
+	if (eh >= 0)
+	    return r->_ehandler_to_handler[eh];
+    } else {			// global handler
+	for (int i = 0; i < nglobalh; i++)
+	    if (globalh[i]._name == hname)
+		return FIRST_GLOBAL_HANDLER + i;
+    }
+    return -1;
 }
 
 void
 Router::element_hindexes(const Element *e, Vector<int> &handlers)
 {
-  if (e && e != e->router()->_root_element) {
-    const Router *r = e->router();
-    for (int eh = r->_ehandler_first_by_element[e->eindex()];
-	 eh >= 0;
-	 eh = r->_ehandler_next[eh]) {
-      int h = r->_ehandler_to_handler[eh];
-      if (h >= 0)
-	handlers.push_back(h);
+    if (e && e != e->router()->_root_element) {
+	const Router *r = e->router();
+	for (int eh = r->_ehandler_first_by_element[e->eindex()];
+	     eh >= 0;
+	     eh = r->_ehandler_next[eh]) {
+	    int h = r->_ehandler_to_handler[eh];
+	    if (h >= 0)
+		handlers.push_back(h);
+	}
+    } else {
+	for (int i = 0; i < nglobal_handlers(); i++)
+	    handlers.push_back(FIRST_GLOBAL_HANDLER + i);
     }
-  } else {
-    for (int i = 0; i < nglobal_handlers(); i++)
-      handlers.push_back(FIRST_GLOBAL_HANDLER + i);
-  }
 }
 
 
@@ -1226,33 +1230,33 @@ void
 Router::add_read_handler(const Element *e, const String &name,
 			 ReadHandler read, void *thunk)
 {
-  Handler to_add = fetch_handler(e, name);
-  to_add._read = read;
-  to_add._read_thunk = thunk;
-  store_handler(e, to_add);
+    Handler to_add = fetch_handler(e, name);
+    to_add._read = read;
+    to_add._read_thunk = thunk;
+    store_handler(e, to_add);
 }
 
 void
 Router::add_write_handler(const Element *e, const String &name,
 			  WriteHandler write, void *thunk)
 {
-  Handler to_add = fetch_handler(e, name);
-  to_add._write = write;
-  to_add._write_thunk = thunk;
-  store_handler(e, to_add);
+    Handler to_add = fetch_handler(e, name);
+    to_add._write = write;
+    to_add._write_thunk = thunk;
+    store_handler(e, to_add);
 }
 
 int
 Router::change_handler_flags(const Element *e, const String &name,
 			     uint32_t clear_flags, uint32_t set_flags)
 {
-  Handler to_add = fetch_handler(e, name);
-  if (to_add._use_count > 0) {	// only modify existing handlers
-    to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
-    store_handler(e, to_add);
-    return 0;
-  } else
-    return -1;
+    Handler to_add = fetch_handler(e, name);
+    if (to_add._use_count > 0) {	// only modify existing handlers
+	to_add._flags = (to_add._flags & ~clear_flags) | set_flags;
+	store_handler(e, to_add);
+	return 0;
+    } else
+	return -1;
 }
 
 
@@ -1261,7 +1265,7 @@ Router::change_handler_flags(const Element *e, const String &name,
 int
 Router::nglobal_handlers()
 {
-  return nglobalh;
+    return nglobalh;
 }
 
 
@@ -1270,46 +1274,61 @@ Router::nglobal_handlers()
 void *
 Router::attachment(const String &name) const
 {
-  for (int i = 0; i < _attachments.size(); i++)
-    if (_attachment_names[i] == name)
-      return _attachments[i];
-  return 0;
+    for (int i = 0; i < _attachments.size(); i++)
+	if (_attachment_names[i] == name)
+	    return _attachments[i];
+    return 0;
 }
 
 void *&
 Router::force_attachment(const String &name)
 {
-  for (int i = 0; i < _attachments.size(); i++)
-    if (_attachment_names[i] == name)
-      return _attachments[i];
-  _attachment_names.push_back(name);
-  _attachments.push_back(0);
-  return _attachments.back();
+    for (int i = 0; i < _attachments.size(); i++)
+	if (_attachment_names[i] == name)
+	    return _attachments[i];
+    _attachment_names.push_back(name);
+    _attachments.push_back(0);
+    return _attachments.back();
 }
 
 void *
 Router::set_attachment(const String &name, void *value)
 {
-  for (int i = 0; i < _attachments.size(); i++)
-    if (_attachment_names[i] == name) {
-      void *v = _attachments[i];
-      _attachments[i] = value;
-      return v;
-    }
-  _attachment_names.push_back(name);
-  _attachments.push_back(value);
-  return 0;
+    for (int i = 0; i < _attachments.size(); i++)
+	if (_attachment_names[i] == name) {
+	    void *v = _attachments[i];
+	    _attachments[i] = value;
+	    return v;
+	}
+    _attachment_names.push_back(name);
+    _attachments.push_back(value);
+    return 0;
 }
 
 ErrorHandler *
 Router::chatter_channel(const String &name) const
 {
-  if (!name || name == "default")
-    return ErrorHandler::default_handler();
-  else if (void *v = attachment("ChatterChannel." + name))
-    return (ErrorHandler *)v;
-  else
-    return ErrorHandler::silent_handler();
+    if (!name || name == "default")
+	return ErrorHandler::default_handler();
+    else if (void *v = attachment("ChatterChannel." + name))
+	return (ErrorHandler *)v;
+    else
+	return ErrorHandler::silent_handler();
+}
+
+int
+Router::new_notifier_signal(NotifierSignal &signal)
+{
+    if (!_notifier_signals)
+	_notifier_signals = new atomic_uint32_t[NOTIFIER_SIGNALS_CAPACITY / 32];
+    if (_n_notifier_signals >= NOTIFIER_SIGNALS_CAPACITY)
+	return -1;
+    else {
+	signal = NotifierSignal(&_notifier_signals[_n_notifier_signals / 32], 1 << (_n_notifier_signals % 32));
+	signal.set_active(true);
+	_n_notifier_signals++;
+	return 0;
+    }
 }
 
 
@@ -1318,15 +1337,15 @@ Router::chatter_channel(const String &name) const
 void
 Router::unparse_requirements(StringAccum &sa, const String &indent) const
 {
-  // requirements
-  if (_requirements.size())
-    sa << indent << "require(" << cp_unargvec(_requirements) << ");\n\n";
+    // requirements
+    if (_requirements.size())
+	sa << indent << "require(" << cp_unargvec(_requirements) << ");\n\n";
 }
 
 void
 Router::unparse_classes(StringAccum &, const String &) const
 {
-  // there are never any compound element classes here
+    // there are never any compound element classes here
 }
 
 void
@@ -1407,10 +1426,10 @@ Router::unparse_connections(StringAccum &sa, const String &indent) const
 void
 Router::unparse(StringAccum &sa, const String &indent) const
 {
-  unparse_requirements(sa, indent);
-  unparse_classes(sa, indent);
-  unparse_declarations(sa, indent);
-  unparse_connections(sa, indent);
+    unparse_requirements(sa, indent);
+    unparse_classes(sa, indent);
+    unparse_declarations(sa, indent);
+    unparse_connections(sa, indent);
 }
 
 String
@@ -1495,82 +1514,82 @@ enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS };
 String
 Router::router_read_handler(Element *e, void *thunk)
 {
-  Router *r = (e ? e->router() : 0);
-  switch (reinterpret_cast<intptr_t>(thunk)) {
+    Router *r = (e ? e->router() : 0);
+    switch (reinterpret_cast<intptr_t>(thunk)) {
 
-   case GH_VERSION:
-    return String(CLICK_VERSION "\n");
+      case GH_VERSION:
+	return String(CLICK_VERSION "\n");
     
-   case GH_CONFIG:
-    if (r)
-      return r->configuration_string();
-    break;
+      case GH_CONFIG:
+	if (r)
+	    return r->configuration_string();
+	break;
 
-   case GH_FLATCONFIG:
-    if (r) {
-      StringAccum sa;
-      r->unparse(sa);
-      return sa.take_string();
-    }
-    break;
+      case GH_FLATCONFIG:
+	if (r) {
+	    StringAccum sa;
+	    r->unparse(sa);
+	    return sa.take_string();
+	}
+	break;
 
-   case GH_LIST:
-    if (r) {
-      StringAccum sa;
-      sa << r->nelements() << "\n";
-      for (int i = 0; i < r->nelements(); i++)
-	sa << r->_element_names[i] << "\n";
-      return sa.take_string();
-    }
-    break;
+      case GH_LIST:
+	if (r) {
+	    StringAccum sa;
+	    sa << r->nelements() << "\n";
+	    for (int i = 0; i < r->nelements(); i++)
+		sa << r->_element_names[i] << "\n";
+	    return sa.take_string();
+	}
+	break;
 
-   case GH_REQUIREMENTS:
-    if (r) {
-      StringAccum sa;
-      for (int i = 0; i < r->_requirements.size(); i++)
-	sa << r->_requirements[i] << "\n";
-      return sa.take_string();
-    }
-    break;
+      case GH_REQUIREMENTS:
+	if (r) {
+	    StringAccum sa;
+	    for (int i = 0; i < r->_requirements.size(); i++)
+		sa << r->_requirements[i] << "\n";
+	    return sa.take_string();
+	}
+	break;
 
-   default:
-    return "<error>\n";
+      default:
+	return "<error>\n";
     
-  }
-  return String();
+    }
+    return String();
 }
 
 static int
 stop_global_handler(const String &s, Element *e, void *, ErrorHandler *errh)
 {
-  if (e) {
-    int n = 1;
-    (void) cp_integer(cp_uncomment(s), &n);
-    e->router()->adjust_driver_reservations(-n);
-  } else
-    errh->message("no router to stop");
-  return 0;
+    if (e) {
+	int n = 1;
+	(void) cp_integer(cp_uncomment(s), &n);
+	e->router()->adjust_driver_reservations(-n);
+    } else
+	errh->message("no router to stop");
+    return 0;
 }
 
 void
 Router::static_initialize()
 {
-  if (!nglobalh) {
-    add_read_handler(0, "version", router_read_handler, (void *)GH_VERSION);
-    add_read_handler(0, "config", router_read_handler, (void *)GH_CONFIG);
-    add_read_handler(0, "flatconfig", router_read_handler, (void *)GH_FLATCONFIG);
-    add_read_handler(0, "list", router_read_handler, (void *)GH_LIST);
-    add_read_handler(0, "requirements", router_read_handler, (void *)GH_REQUIREMENTS);
-    add_write_handler(0, "stop", stop_global_handler, 0);
-  }
+    if (!nglobalh) {
+	add_read_handler(0, "version", router_read_handler, (void *)GH_VERSION);
+	add_read_handler(0, "config", router_read_handler, (void *)GH_CONFIG);
+	add_read_handler(0, "flatconfig", router_read_handler, (void *)GH_FLATCONFIG);
+	add_read_handler(0, "list", router_read_handler, (void *)GH_LIST);
+	add_read_handler(0, "requirements", router_read_handler, (void *)GH_REQUIREMENTS);
+	add_write_handler(0, "stop", stop_global_handler, 0);
+    }
 }
 
 void
 Router::static_cleanup()
 {
-  delete[] globalh;
-  globalh = 0;
-  nglobalh = globalh_cap = 0;
+    delete[] globalh;
+    globalh = 0;
+    nglobalh = globalh_cap = 0;
 }
 
 

@@ -11,10 +11,11 @@
 #endif
 
 CLICK_DECLS
+class Master;
 class ElementFilter;
 class RouterThread;
 class HashMap_ArenaFactory;
-class Master;
+class NotifierSignal;
 
 class Router { public:
 
@@ -87,8 +88,11 @@ class Router { public:
 
     Router *hotswap_router() const		{ return _hotswap_router; }
     void set_hotswap_router(Router *);
+    
     ErrorHandler *chatter_channel(const String &) const;
     HashMap_ArenaFactory *arena_factory() const;
+
+    int new_notifier_signal(NotifierSignal &);
 
     // MASTER
     Master *master() const			{ return _master; }
@@ -139,7 +143,7 @@ class Router { public:
     
     volatile int _runcount;
 
-    uatomic32_t _refcount;
+    atomic_uint32_t _refcount;
   
     Vector<Element *> _elements;
     Vector<String> _element_names;
@@ -180,6 +184,9 @@ class Router { public:
     Element *_root_element;
     String _configuration;
 
+    enum { NOTIFIER_SIGNALS_CAPACITY = 4096 };
+    atomic_uint32_t *_notifier_signals;
+    int _n_notifier_signals;
     HashMap_ArenaFactory *_arena_factory;
     Router *_hotswap_router;
 
