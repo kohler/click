@@ -11,6 +11,10 @@ CLICK_DECLS
 =c
 ARPTable
 
+=s Wifi 
+
+Tracks IP -> Ethernet mappings for other elements.
+
 =d 
 Tracks ethernet to ip mappings for individual elements. This element
 does not process packets.
@@ -20,7 +24,7 @@ Returns a String with "EtherAddress IP" mappings on each line
 =h insert write-only
 Insert a "EtherAddress IP" pair into the table
 
- */
+*/
 
 
 class ARPTable : public Element { public:

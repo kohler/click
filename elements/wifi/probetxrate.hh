@@ -9,43 +9,45 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * ProbeTXRate([I<KEYWORDS>])
- * 
- * =s wifi
- * 
- * Probematically determine the txrate for a give ethernet dst
- * =over 8
- *
- * =item RATE_WINDOW
- * 
- * How long to remember tx packets
- *
- * =item STEPUP
- *
- * a value from 0 to 100 of what the percentage must be before
- * the rate is increased
- * 
- * =item STEPDOWN
- *
- * a value from 0 to 100. when the percentage of successful packets
- * falls below this value, the card will try the next lowest rate
- *
- * =item BEFORE_SWITCH
- *
- * how many packets must be received before you calculate the rate
- * for a give host. i.e. if you set this to 4, each rate will try
- * at least 4 packets before switching up or down.
- *
- *
- *
- * This element should be used in conjunction with SetTXRate
- * and a wifi-enabled kernel module. (like hostap or airo).
- *
- * =a
- * SetTXRate, WifiTXFeedback
- */
+=c
+
+ProbeTXRate([I<KEYWORDS>])
+
+=s Wifi
+
+Madwifi wireless bit-rate selection algorithm
+
+=d
+
+Probematically determine the txrate for a give ethernet dst
+
+=over 8
+
+=item RATE_WINDOW
+How long to remember tx packets
+
+=item STEPUP
+a value from 0 to 100 of what the percentage must be before
+the rate is increased
+
+=item STEPDOWN
+
+a value from 0 to 100. when the percentage of successful packets
+falls below this value, the card will try the next lowest rate
+
+=item BEFORE_SWITCH
+
+how many packets must be received before you calculate the rate
+for a give host. i.e. if you set this to 4, each rate will try
+at least 4 packets before switching up or down.
+
+This element should be used in conjunction with SetTXRate
+and a wifi-enabled kernel module. (like hostap or airo).
+
+=back 8
+
+=a SetTXRate, WifiTXFeedback
+*/
 
 
 class ProbeTXRate : public Element { public:

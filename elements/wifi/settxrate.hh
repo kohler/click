@@ -9,9 +9,12 @@ CLICK_DECLS
 =c
 SetTXRate([I<KEYWORDS>])
 
-=s wifi
+=s Wifi
+
+Sets the bit-rate for a packet.
 
 =d
+
 Sets the Wifi TXRate Annotation on a packet.
 
 Regular Arguments:

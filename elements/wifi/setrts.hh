@@ -10,9 +10,12 @@ CLICK_DECLS
 
 SetRTS(Bool)
 
-=s wifi
+=s Wifi
+
+Enable/disable RTS/CTS for a packet
 
 =d
+
 Enable/disable RTS/CTS for a packet
 
 =h rts read/write

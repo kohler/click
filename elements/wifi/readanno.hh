@@ -10,7 +10,8 @@ CLICK_DECLS
 =c
 ReadAnno([I<KEYWORDS>])
 
-=s wifi
+=s Wifi
+Pulls annotation from packet and stores it in Packet::anno()
 
 =d
 Pulls Packet::USER_ANNO_SIZE bytes from a packet and copies

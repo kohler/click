@@ -13,7 +13,9 @@ CLICK_DECLS
 
 MadwifiRate([I<KEYWORDS>])
 
-=s wifi
+=s Wifi
+
+Madwifi wireless bit-rate selection algorithm
 
 =d 
 Rate Control present in the Madwifi driver

@@ -7,17 +7,27 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * RXStats()
- * 
- * =s wifi
- * 
- * Accumulate rxstats for each ethernet src you hear a packet from.
- * =over 8
- *
- *
- */
+=c
+
+RXStats
+
+=s Wifi
+
+Track RSSI for each ethernet source.
+
+=d
+Accumulate RSSI, noise for each ethernet source you hear a packet from.
+
+
+=h stats
+Print information accumulated for each source
+
+=h reset
+Clear all information for each source
+
+=a ExtraDecap
+
+*/
 
 
 class RXStats : public Element { public:

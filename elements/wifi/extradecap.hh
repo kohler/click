@@ -8,7 +8,9 @@ CLICK_DECLS
 =c
 ExtraDecap()
 
-=s wifi, decapsulation
+=s Wifi
+
+Pulls the prism2 header from a packet and stores it in Packet::anno()
 
 =d
 Removes the extra header and copies to to Packet->anno(). This contains

@@ -10,8 +10,10 @@ CLICK_DECLS
 
 /*
  * =c
- * ETTMetric(LinkStat, LinkStat)
+ * ETTMetric
  * =s Wifi
+ * Estimated Transmission Time (ETT) metric
+ * 
  * =io
  * None
  *

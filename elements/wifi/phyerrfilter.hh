@@ -10,14 +10,16 @@ CLICK_DECLS
 =c
 PhyErrFilter([I<KEYWORDS>])
 
-=s wifi
+=s Wifi
+
+Filters packets that failed the 802.11 CRC check.
 
 =d
 Filters out packets that have the phy err annotation set
 in the wifi_extra_header, and sends these packets to output 1 
 if it is present.
 
-=a ExtraDecap
+=a ExtraDecap, ExtraEncap
 */
 
 

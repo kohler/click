@@ -14,7 +14,9 @@ CLICK_DECLS
 =c
 AutoRateFallback([, I<KEYWORDS>])
 
-=s wifi
+=s Wifi
+
+ARF wireless bit-rate selection algorithm
 
 =d 
 

@@ -12,9 +12,8 @@ CLICK_DECLS
  * =c
  * TXCountMetric(LinkStat, LinkStat)
  * =s Wifi
- * =io
- * None
- *
+ * The Estimated Transmission Count metric (ETX).
+ * =a ETTMetric
  */
 
 

@@ -5,30 +5,31 @@
 CLICK_DECLS
 
 /*
- * =c
- * 
- * SetTXPower([I<KEYWORDS>])
- * 
- * =s wifi
- * 
- * Sets the Wifi TXPower Annotation on a packet.
- * 
- * Regular Arguments:
- * =over 8
- *
- * =item POWER
- * 
- * Unsigned integer. from 0 to 63
- *
- * =back
- *
- *  Keywords arguments:
- *
- * =a
- * AutoTXPower, WifiTXFeedback
- *
- *
- */
+=c
+
+SetTXPower([I<KEYWORDS>])
+
+=s Wifi
+
+Sets the transmit power for a packet.
+
+=d
+
+Sets the Wifi TXPower Annotation on a packet.
+
+Regular Arguments:
+
+=over 8
+=item POWER
+
+Unsigned integer. from 0 to 63
+=back 8
+
+=h power
+Same as POWER argument.
+
+=a  SetTXRate
+*/
 
 class SetTXPower : public Element { public:
   

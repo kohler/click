@@ -8,26 +8,32 @@ CLICK_DECLS
 /*
 =c
 
-WifiEncap(mode, BSSID)
+WifiEncap(MODE, BSSID)
 
-=s encapsulation, Wifi -> Ethernet
+=s Wifi, Encapsulation
 
-Turns 80211 packets into ethernet packets encapsulates packets in Ethernet header
+Converts ethernet packets to 802.11 packets.
 
 =d
 
+Keyword arguments are:
+
+=over 8
+=item MODE
 Mode is one of:
 0x00 STA->STA
 0x01 STA->AP
 0x02 AP->STA
 0x03 AP->AP
 
- BSSID is an ethernet address
+=item BSSID 
+
+is an ethernet address
+
+=back 8
 
 
 =e
-
-
   wifi_cl :: Classifier (0/00%0c, 
                          0/04%0c,
                          0/08%0c);
@@ -36,9 +42,7 @@ Mode is one of:
   wifi_cl [1] -> Discard; //ctl
   wifi_cl [2] -> wifi_encap :: WifiEncap() -> ...
 
-=a
-
-EtherEncap */
+=a EtherEncap */
 
 class WifiEncap : public Element { public:
   

@@ -11,8 +11,12 @@ CLICK_DECLS
 /*
  * =c
  * LinkTable(IP Address, [STALE timeout])
+ * =s Wifi
+ * Keeps a Link state database and calculates Weighted Shortest Path 
+ * for other elements
  * =d
- * 
+ * Runs dijkstra's algorithm occasionally.
+ * =a ARPTable
  *
  */
 class IPPair {

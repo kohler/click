@@ -10,17 +10,18 @@ CLICK_DECLS
 =c
 FilterTX([, I<KEYWORDS>])
 
-=s wifi
+=s Wifi
+
+Filter out wireless transmission feedback packets
 
 =d
+
 Filters out packets that were sent by this node, and
 received via transmit feedback.
 Sends these packets to output 1 if it is present, 
 otherwise it drops the packets.
 
-=a 
-WifiTXFeedback
-
+=a ExtraEncap, ExtraDecap
 */
 
 

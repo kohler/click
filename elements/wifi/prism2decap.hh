@@ -7,16 +7,18 @@ CLICK_DECLS
 /*
 =c
 
-Prism2Decap()
+Prism2Decap
 
-=s decapsulation, Prism2 -> 802.11
+=s Wifi
 
-Removes the prism2 header and sets the corresponding wifi packet annotations (RSSI, NOISE, and RATE).
+Pulls the prism2 header from a packet and store information in Packet::anno()
+
 =d
+Removes the prism2 header and sets the corresponding wifi packet annotations (RSSI, NOISE, and RATE).
 
-=a
 
-EtherEncap */
+=a Prism2Encap, ExtraDecap, ExtraEncap
+*/
 
 class Prism2Decap : public Element { public:
   

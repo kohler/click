@@ -9,7 +9,9 @@ CLICK_DECLS
 /*
 =c 
 PushAnno([I<KEYWORDS>])
-=s wifi
+=s Wifi
+Pushes Packet::anno() onto front of packet.
+
 =d
 Pushes Packet::USER_ANNO_SIZE bytes on a packet and copies
 Packet::anno() to the beginning of the packet.

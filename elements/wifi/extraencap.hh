@@ -8,9 +8,12 @@ CLICK_DECLS
 =c
 ExtraEncap()
 
-=s wifi, encapsulation
+=s Wifi
+
+Pushes the prism2 header on a packet based on information in Packet::anno()
 
 =d
+
 Copies the wifi_extra_header from Packet::anno() and pushes it onto the packet.
 
 =a ExtraDecap, SetTXRate

@@ -9,13 +9,15 @@ CLICK_DECLS
  * 
  * CopyRXStats(OFFSET)
  * 
- * =s wifi
+ * =s Wifi
+ * Copies rate, signal and noise annotations into the packet at the
+ * specified offset.
  * 
+ * =d
  * Copies rate, signal and noise annotations into the packet at the
  * specified offset.  This is a cheap hack to make it simple to run
  * experiments and accumulate these stats per-packet.
  *
- * =over 8
  *
  */
 

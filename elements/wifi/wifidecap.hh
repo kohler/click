@@ -7,11 +7,11 @@ CLICK_DECLS
 /*
 =c
 
-WifiDecap(ETHERTYPE, SRC, DST)
+WifiDecap
 
-=s decapsulation
+=s Wifi
 
-Turns 802.11 packets into ethernet packets encapsulates packets in Ethernet header
+Turns 802.11 packets into ethernet packets 
 
 =d
 
@@ -26,9 +26,8 @@ Turns 802.11 packets into ethernet packets encapsulates packets in Ethernet head
   wifi_cl [1] -> Discard; //ctl
   wifi_cl [2] -> wifi_decap :: WifiDecap() -> ...
 
-=a
-
-EtherEncap */
+=a WifiEncap
+ */
 
 class WifiDecap : public Element { public:
   
