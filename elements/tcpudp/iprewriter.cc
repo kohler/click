@@ -193,7 +193,6 @@ IPRewriter::take_state(Element *e, ErrorHandler *errh)
 void
 IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 {
-  click_chatter("tcp_gc_hook");
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_tcp_gc_interval;
 #if IPRW_SPINLOCKS
@@ -210,7 +209,6 @@ IPRewriter::tcp_gc_hook(Timer *timer, void *thunk)
 void
 IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 {
-  click_chatter("tcp_done_gc_hook");
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_tcp_done_gc_interval;
 #if IPRW_SPINLOCKS
@@ -229,7 +227,6 @@ IPRewriter::tcp_done_gc_hook(Timer *timer, void *thunk)
 void
 IPRewriter::udp_gc_hook(Timer *timer, void *thunk)
 {
-  click_chatter("udp_gc_hook");
   IPRewriter *rw = (IPRewriter *)thunk;
   unsigned wait = rw->_udp_gc_interval;
 #if IPRW_SPINLOCKS
