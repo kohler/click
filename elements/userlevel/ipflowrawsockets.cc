@@ -15,7 +15,7 @@
  * notice is a summary of the Click LICENSE file; the license in that file is
  * legally binding.
  *
- * $Id: ipflowrawsockets.cc,v 1.2 2004/04/27 17:03:06 eddietwo Exp $
+ * $Id: ipflowrawsockets.cc,v 1.3 2004/04/28 01:04:51 eddietwo Exp $
  */
 
 #include <click/config.h>
@@ -31,6 +31,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
+#include <sys/ioctl.h>
 #include <arpa/inet.h>
 
 #include <click/straccum.hh>
@@ -108,9 +109,11 @@ IPFlowRawSockets::Flow::initialize(ErrorHandler *errh, int snaplen)
     fcntl(_rd, F_SETFL, O_NONBLOCK);
 
 #ifdef BIOCSSEESENT
-    int accept = 0;
-    if (ioctl(pcap_fd, BIOCSSEESENT, &accept) != 0)
-	return errh->error("ioctl: %s", strerror(errno));
+    {
+	int accept = 0;
+	if (ioctl(_rd, BIOCSSEESENT, &accept) != 0)
+	    return errh->error("ioctl: %s", strerror(errno));
+    }
 #endif
 
     // build the BPF filter
