@@ -14,7 +14,7 @@
 % notice is a summary of the Click LICENSE file; the license in that file is
 % legally binding.
 
-input boxes;
+input rboxes;
 prologues := 1;
 string defaultelementfont;
 input fonts;
