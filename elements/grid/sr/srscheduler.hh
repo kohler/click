@@ -46,9 +46,12 @@ class SRScheduler : public Element {
   static int static_clear(const String &arg, Element *e,
 			  void *, ErrorHandler *errh); 
   void clear();
+  static int static_write_debug(const String &arg, Element *e,
+				void *, ErrorHandler *errh); 
   static String static_print_stats(Element *, void *);
   String print_stats();
 
+  static String static_print_debug(Element *, void *);
   void run_timer();
 private:
   class ScheduleInfo {
@@ -110,7 +113,7 @@ private:
       struct timeval now;
       struct timeval expire;
       click_gettimeofday(&now);
-      timeradd(&_last_rx, &_sr->_endpoint_duration, &expire);
+      timeradd(&_last_rx, &_sr->_hop_duration, &expire);
       return timercmp(&expire, &now, <);
     }
 
@@ -132,7 +135,18 @@ private:
       if (!_sr) {
 	return false;
       }
-      timeradd(&_last_tx, &_sr->_rt_duration, &expire);
+      /* round trip timeout is
+       * packets expected * max_tx_time * route_len 
+       */
+      unsigned int rt_duration_ms = 
+	(_sr->_threshold * _sr->_max_tx_packet_ms * (_p.size()+1));
+
+      struct timeval rt_duration;
+      timerclear(&rt_duration);
+      rt_duration.tv_sec = rt_duration_ms/1000;
+      rt_duration.tv_usec = (rt_duration_ms % 1000) * 1000;
+
+      timeradd(&_last_tx, &rt_duration, &expire);
       return timercmp(&expire, &now, <);
     }
 
@@ -164,13 +178,11 @@ private:
   typedef ScheduleTable::const_iterator STIter;
   ScheduleTable _schedules;
 
-  struct timeval _hop_duration; // 1-hop tieout
-  struct timeval _rt_duration; // round trip timeout
-  struct timeval _endpoint_duration; // endpoint timeout before fake packet
+  struct timeval _hop_duration;     // 1-packet timeout
   struct timeval _active_duration;  // how long to fake packets before inactive
+  struct timeval _clear_duration;   // how long to keep nfo's around after inactive
 
-  struct timeval _clear_duration; // how long to keep nfo's around after inactive
-
+  unsigned int _max_tx_packet_ms;
   class SRForwarder *_sr_forwarder;
 
   Vector<NotifierQueue *> _queues;

@@ -45,7 +45,9 @@ CLICK_DECLS
 
 SRScheduler::SRScheduler()
   :  Element(2,2),
+     _max_tx_packet_ms(0),
      _debug_token(false),
+     _threshold(0),
      _timer(this)
 {
   MOD_INC_USE_COUNT;
@@ -60,54 +62,33 @@ int
 SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
-  unsigned int hop_duration_ms = 0;
-  unsigned int rt_duration_ms = 0;
-  unsigned int endpoint_duration_ms = 0;
-  unsigned int active_duration_ms = 0;
   _threshold = 0;
+  _debug_token = false;
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
-		    "RT_TIMEOUT", cpUnsigned, "ms", &rt_duration_ms,
-		    "HOP_TIMEOUT", cpUnsigned, "ms", &hop_duration_ms,
-		    "ENDPOINT_TIMEOUT", cpUnsigned, "ms", &endpoint_duration_ms,
-		    "ACTIVE_TIMEOUT", cpUnsigned, "ms", &active_duration_ms,
+		    "PACKET_TIMEOUT", cpUnsigned, "packet timeout", &_max_tx_packet_ms,
 		    "THRESHOLD", cpInteger, "packets", &_threshold,
 		    "SR", cpElement, "SRForwarder element", &_sr_forwarder,
 		    "DEBUG", cpBool, "Debug", &_debug_token,
                     0);
 
-  if (!rt_duration_ms) 
-    return errh->error("RT_TIMEOUT not specified");
-  if (!hop_duration_ms) 
-    return errh->error("HOP_TIMEOUT not specified");
-  if (!endpoint_duration_ms) 
-    return errh->error("ENDPOINT_TIMEOUT not specified");
-  if (!active_duration_ms) 
-    return errh->error("ACTIVE_TIMEOUT not specified");
+  if (!_max_tx_packet_ms) 
+    return errh->error("PACKET_TIMEOUT not specified");
+
   if (_threshold < 0) 
-    return errh->error("HOP_TIMEOUT must be specified and > 0");
+    return errh->error("THRESHOLD must be specified and > 0");
+
   if (!_sr_forwarder) 
     return errh->error("SR not specified");
-
   if (_sr_forwarder->cast("SRForwarder") == 0) 
     return errh->error("SR element is not a SRForwarder");
-    
-  timerclear(&_rt_duration);
-  /* convert path_duration from ms to a struct timeval */
-  _rt_duration.tv_sec = rt_duration_ms/1000;
-  _rt_duration.tv_usec = (rt_duration_ms % 1000) * 1000;
 
   timerclear(&_hop_duration);
   /* convehop path_duration from ms to a struct timeval */
-  _hop_duration.tv_sec = hop_duration_ms/1000;
-  _hop_duration.tv_usec = (hop_duration_ms % 1000) * 1000;
+  _hop_duration.tv_sec = _max_tx_packet_ms/1000;
+  _hop_duration.tv_usec = (_max_tx_packet_ms % 1000) * 1000;
 
-
-  timerclear(&_endpoint_duration);
-  /* convehop path_duration from ms to a struct timeval */
-  _endpoint_duration.tv_sec = endpoint_duration_ms/1000;
-  _endpoint_duration.tv_usec = (endpoint_duration_ms % 1000) * 1000;
-
+  unsigned int active_duration_ms = 5 * 1000;
   timerclear(&_active_duration);
   /* convehop path_duration from ms to a struct timeval */
   _active_duration.tv_sec = active_duration_ms/1000;
@@ -278,27 +259,41 @@ SRScheduler::push(int port, Packet *p_in)
     }
   }
   
-
-  if (pk->seq() != nfo->_seq && 
-      pk->seq() < nfo->_seq + (nfo->_p.size()-1)) {
-    if (pk->flag(FLAG_SCHEDULE_TOKEN)) {
-      if (_debug_token) {
-	struct timeval now;
-	click_gettimeofday(&now);
-	StringAccum sa;
-	sa << "SRScheduler " << now;
-	sa << " duplicate token";
-	sa << " towards  " << p[p.size()-1];
-	sa << " expected " << nfo->_towards;
-	sa << " pk->seq " << pk->seq();
-	sa << " nfo->seq " << nfo->_seq;
-	click_chatter("%s", sa.take_string().cc());
-      }
+  if (pk->seq() < nfo->_seq ) {
+    if (_debug_token) {
+      struct timeval now;
+      click_gettimeofday(&now);
+      StringAccum sa;
+      sa << "SRScheduler " << now;
+      sa << " rx_after_timeout";
+      sa << " pk->seq " << pk->seq();
+      sa << " nfo->seq " << nfo->_seq;
+      click_chatter("%s", sa.take_string().cc());
     }
     if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
       output(port).push(p_in);
-      return;
     }
+    return;
+  } 
+  if (pk->seq() != nfo->_seq && 
+      pk->seq() < nfo->_seq + (nfo->_p.size()-1)) {
+    if (_debug_token) {
+      struct timeval now;
+      click_gettimeofday(&now);
+      StringAccum sa;
+      sa << "SRScheduler " << now;
+      sa << " token_dup ";
+      sa << " towards  " << p[p.size()-1];
+      sa << " expected " << nfo->_towards;
+      sa << " pk->seq " << pk->seq();
+      sa << " nfo->seq " << nfo->_seq;
+      click_chatter("%s", sa.take_string().cc());
+    }
+    if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
+      output(port).push(p_in);
+    }
+    return;
+
   } else if (p[p.size()-1] != nfo->_towards && !nfo->is_endpoint(_sr_forwarder->ip())) {
     if (_debug_token) {
       struct timeval now;
@@ -313,8 +308,20 @@ SRScheduler::push(int port, Packet *p_in)
       nfo->_towards = p[p.size()-1];
   }
 
+  nfo->_seq = pk->seq();
 
   if (pk->flag(FLAG_SCHEDULE_TOKEN)) {
+    if (_debug_token) {
+      struct timeval now;
+      click_gettimeofday(&now);
+      StringAccum sa;
+      sa << "SRScheduler " << now;
+      sa << " seq " << nfo->_seq;
+      sa << " token_rx";
+      sa << " towards " << p[p.size()-1];
+      sa << " rx " << nfo->_packets_rx;
+      click_chatter("%s", sa.take_string().cc());
+    }
     nfo->_token = true;
     if (nfo->is_endpoint(_sr_forwarder->ip())) {
       nfo->_seq = pk->seq() + (nfo->_p.size() - 1);
@@ -328,6 +335,17 @@ SRScheduler::push(int port, Packet *p_in)
 
   if (nfo->_packets_rx == 1) {
     nfo->_first_rx = nfo->_last_rx;
+    if (_debug_token) {
+      struct timeval now;
+      click_gettimeofday(&now);
+      StringAccum sa;
+      sa << "SRScheduler " << now;
+      sa << " seq " << nfo->_seq;
+      sa << " first_rx";
+      sa << " towards " << p[p.size()-1];
+      sa << " rx " << nfo->_packets_rx;
+      click_chatter("%s", sa.take_string().cc());
+    }
   }
 
   if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
@@ -370,7 +388,7 @@ SRScheduler::ready_for(const Packet *p_in, Path match_this_path) {
       click_gettimeofday(&now);
       StringAccum sa;
       sa << "SRScheduler " << now;
-      sa << " create_token: new_path " << path_to_string(p);
+      sa << " create:  new_path " << path_to_string(p);
       click_chatter("%s", sa.take_string().cc());
     }
     if (!nfo) {
@@ -395,24 +413,35 @@ SRScheduler::ready_for(const Packet *p_in, Path match_this_path) {
       click_gettimeofday(&now);
       StringAccum sa;
       sa << "SRScheduler " << now;
-      sa << " create_token: hop_timedout";
+      sa << " seq " << nfo->_seq;
+      sa << " hop_to  ";
+      sa << " towards " << p[p.size()-1].s();
+      sa << " rx " << nfo->_packets_rx;
+      sa << " last_rx " << now - nfo->_last_rx;
+      sa << " first_rx " << now - nfo->_first_rx;
       click_chatter("%s", sa.take_string().cc());
     }
     nfo->_token = true;
     nfo->_towards = p[p.size()-1];
+    nfo->_seq = nfo->_seq + 1;
     return true;
   } 
-  if (nfo->rt_timedout()) {
+  if (nfo->is_endpoint(_sr_forwarder->ip()) && nfo->rt_timedout()) {
     if (_debug_token) {
       struct timeval now;
       click_gettimeofday(&now);
       StringAccum sa;
       sa << "SRScheduler " << now;
-      sa << " create_token: rt_timeout";
+      sa << " seq " << nfo->_seq;
+      sa << " rt_to   ";
+      sa << " towards " << p[p.size()-1].s();
+      sa << " rx " << nfo->_packets_rx;
+      sa << " last_tx " << now - nfo->_last_tx;
       click_chatter("%s", sa.take_string().cc());
     }
     nfo->_token = true;
     nfo->_towards = p[p.size()-1];
+    nfo->_seq = nfo->_seq + 2*(nfo->_p.size() - 1);
     return true;
   } 
   return false;
@@ -467,7 +496,18 @@ SRScheduler::pull(int)
     click_ether *eh = (click_ether *) p_out->data();
     struct srpacket *pk = (struct srpacket *) (eh+1);
     pk->set_flag(FLAG_SCHEDULE | FLAG_SCHEDULE_TOKEN | FLAG_SCHEDULE_FAKE);
-
+    if (_debug_token) {
+      ScheduleInfo *nfo = find_nfo(p);
+      struct timeval now;
+      click_gettimeofday(&now);
+      StringAccum sa;
+      sa << "SRScheduler " << now;
+      sa << " seq " << nfo->_seq;
+      sa << " fake    ";
+      sa << " towards " << p[p.size()-1].s();
+      sa << " rx " << nfo->_packets_rx;
+      click_chatter("%s", sa.take_string().cc());
+    }
   }
   
   click_ether *eh = (click_ether *) p_out->data();
@@ -488,21 +528,37 @@ SRScheduler::pull(int)
       !_queue1->yank1_peek(sr_filter(this, p))) {
     pk->set_flag(FLAG_SCHEDULE_TOKEN);
   }
-  
-  if(pk->flag(FLAG_SCHEDULE_TOKEN)) {
-    if (_debug_token && 0) {
+  if (nfo->_packets_tx == 0 && _debug_token) {
       struct timeval now;
       click_gettimeofday(&now);
       StringAccum sa;
-      if (pk->flag(FLAG_SCHEDULE_FAKE)) {
-	sa << "SRScheduler " << now << " token_fake";
-      } else {
-	sa << "SRScheduler " << now << " token_pass";
-      }
+      sa << "SRScheduler " << now;
       sa << " seq " << nfo->_seq;
-      sa << " towards endpoint " << p[p.size()-1].s();
-      sa << " received " << nfo->_packets_rx;
-      sa << " sent " << nfo->_packets_tx;
+      sa << " first_tx";
+      sa << " towards " << p[p.size()-1];
+      sa << " rx " << nfo->_packets_rx;
+      click_chatter("%s", sa.take_string().cc());
+  }
+
+
+  nfo->_packets_tx++;    
+  click_gettimeofday(&nfo->_last_tx);
+  pk->set_seq(nfo->_seq);
+  if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
+    nfo->_active = true;
+  }
+
+
+  if (pk->flag(FLAG_SCHEDULE_TOKEN)) {
+    if (_debug_token) {
+      struct timeval now;
+      click_gettimeofday(&now);
+      StringAccum sa;
+      sa << "SRScheduler " << now;
+      sa << " seq " << nfo->_seq;
+      sa << " token_tx";
+      sa << " towards " << p[p.size()-1].s();
+      sa << " tx " << nfo->_packets_tx;
       sa << " time " << now - nfo->_first_rx;
       click_chatter("%s", sa.take_string().cc());
     }
@@ -514,19 +570,21 @@ SRScheduler::pull(int)
     if (!nfo->is_endpoint(ip)) {
       nfo->_towards = nfo->other_endpoint(nfo->_towards);
     }
-  } 
-
-  if (!pk->flag(FLAG_SCHEDULE_FAKE)) {
-    nfo->_active = true;
   }
-  nfo->_packets_tx++;    
-  click_gettimeofday(&nfo->_last_tx);
-  pk->set_seq(nfo->_seq);
   
   /* send */
   return p_out;
 }
   
+
+String
+SRScheduler::static_print_debug(Element *f, void *)
+{
+  StringAccum sa;
+  SRScheduler *d = (SRScheduler *) f;
+  sa << d->_debug_token << "\n";
+  return sa.take_string();
+}
 
 
 
@@ -583,7 +641,7 @@ void
 SRScheduler::clear() 
 {
   
-    struct timeval now;
+  struct timeval now;
   click_gettimeofday(&now);
   Vector<Path> to_clear;
   for (STIter iter = _schedules.begin(); iter; iter++) {
@@ -599,11 +657,26 @@ SRScheduler::clear()
   }
 }
 
+int
+SRScheduler::static_write_debug(const String &arg, Element *e,
+			void *, ErrorHandler *errh) 
+{
+  SRScheduler *n = (SRScheduler *) e;
+  bool b;
+
+  if (!cp_bool(arg, &b))
+    return errh->error("`debug' must be a boolean");
+
+  n->_debug_token = b;
+  return 0;
+}
 void
 SRScheduler::add_handlers()
 {
   add_write_handler("clear", static_clear, 0);
   add_read_handler("stats", static_print_stats, 0);
+  add_write_handler("debug", static_write_debug, 0);
+  add_read_handler("debug", static_print_debug, 0);
 }
 
 void
