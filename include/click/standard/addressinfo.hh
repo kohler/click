@@ -63,8 +63,23 @@ network address, and C<NAME:eth> is always an Ethernet address.
 =head1 DEFAULT ADDRESSES
 
 If you do not define an address for a given name, AddressInfo will use the
-default, if any.  Specifically, C<DEVNAME:eth> defaults to DEVNAME's Ethernet
-address, if DEVNAME refers to an Ethernet device such as C<eth0>.
+default, if any.  Defaults are as follows:
+
+=over 2
+
+=item *
+
+If DEVNAME is the name of an Ethernet device, then C<DEVNAME:eth> defaults to
+DEVNAME's Ethernet address.
+
+=item *
+
+C<DEVNAME:ip> defaults to the first primary IPv4 address associated with the
+device DEVNAME.
+
+=back
+
+These defaults are not available on all platforms.
 
 =a
 

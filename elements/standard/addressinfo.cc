@@ -36,6 +36,13 @@
 # include <click/userutils.hh>
 # include <time.h>
 #endif
+#if CLICK_LINUXMODULE
+# include <click/cxxprotect.h>
+CLICK_CXX_PROTECT
+# include <linux/inetdevice.h>
+CLICK_CXX_UNPROTECT
+# include <click/cxxunprotect.h>
+#endif
 CLICK_DECLS
 
 AddressInfo::AddressInfo()
@@ -215,42 +222,138 @@ AddressInfo::find_element(Element *e)
     return static_cast<AddressInfo *>(e->router()->attachment("AddressInfo"));
 }
 
+
+#if CLICK_USERLEVEL && defined(__linux__)
+
+static bool
+query_netdevice(const String &s, unsigned char *store, int type, int len)
+    // type: should be 'e' (Ethernet) or 'i' (ipv4)
+{
+    // 5 Mar 2004 - Don't call ioctl for every attempt to look up an Ethernet
+    // device name, because this causes the kernel to try to load weird kernel
+    // modules.
+    static time_t read_time = 0;
+    static Vector<String> device_names;
+    static Vector<String> device_addrs;
+
+    // XXX magic time constant
+    if (!read_time || read_time + 30 < time(0)) {
+	device_names.clear();
+	device_addrs.clear();
+	
+	int query_fd = socket(AF_INET, SOCK_DGRAM, 0);
+	if (query_fd < 0)
+	    return false;
+	struct ifreq ifr;
+	
+	String f = file_string("/proc/net/dev");
+	const char *begin = f.begin(), *end = f.end();
+	while (begin < end) {
+	    const char *colon = find(begin, end, ':');
+	    const char *nl = find(begin, end, '\n');
+	    if (colon > begin && colon < nl) {
+		const char *word = colon;
+		while (word > begin && !isspace(word[-1]))
+		    word--;
+		if ((size_t) (colon - word) < sizeof(ifr.ifr_name)) {
+		    // based on patch from Jose Vasconcellos
+		    // <jvasco@bellatlantic.net>
+		    String dev_name = f.substring(word, colon);
+		    strcpy(ifr.ifr_name, dev_name.c_str());
+		    if (ioctl(query_fd, SIOCGIFHWADDR, &ifr) >= 0
+			&& ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER) {
+			device_names.push_back(dev_name);
+			device_addrs.push_back(String('e') + String(ifr.ifr_hwaddr.sa_data, 6));
+		    }
+		    if (ioctl(query_fd, SIOCGIFADDR, &ifr) >= 0) {
+			device_names.push_back(dev_name);
+			device_addrs.push_back(String('i') + String((const char *)&((struct sockaddr_in *)&ifr.ifr_addr)->sin_addr, 4));
+		    }
+		}
+	    }
+	    begin = nl + 1;
+	}
+
+	close(query_fd);
+	read_time = time(0);
+    }
+
+    for (int i = 0; i < device_names.size(); i++)
+	if (device_names[i] == s && device_addrs[i][0] == type) {
+	    memcpy(store, device_addrs[i].data() + 1, len);
+	    return true;
+	}
+
+    return false;
+}
+
+#endif /* CLICK_USERLEVEL && defined(__linux__) */
+
+
 bool
 AddressInfo::query_ip(String s, unsigned char *store, Element *e)
 {
-  int colon = s.find_right(':');
-  if (colon >= 0 && s.substring(colon).lower() != ":ip"
-      && s.substring(colon).lower() != ":ip4")
-    return false;
-  else if (colon >= 0)
-    s = s.substring(0, colon);
+    int colon = s.find_right(':');
+    if (colon >= 0 && s.substring(colon).lower() != ":ip"
+	&& s.substring(colon).lower() != ":ip4")
+	return false;
+    else if (colon >= 0)
+	s = s.substring(0, colon);
   
-  if (AddressInfo *infoe = find_element(e))
-    if (const Info *info = infoe->query(s, INFO_IP, e->id())) {
-      memcpy(store, info->ip.c, 4);
-      return true;
+    if (AddressInfo *infoe = find_element(e))
+	if (const Info *info = infoe->query(s, INFO_IP, e->id())) {
+	    memcpy(store, info->ip.c, 4);
+	    return true;
+	}
+
+    // if it's a device name, return a primary IP address
+#if CLICK_LINUXMODULE
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 4, 0)
+    net_device *dev = dev_get_by_name(s.cc());
+    if (dev) {
+	bool found = false;
+	in_device *in_dev = in_dev_get(dev);
+	if (in_dev) {
+	    for_primary_ifa(in_dev) {
+		memcpy(store, &ifa->ifa_local, 4);
+		found = true;
+		break;
+	    }
+	    endfor_ifa(in_dev);
+	    in_dev_put(in_dev);
+	}
+	dev_put(dev);
+	if (found)
+	    return true;
     }
-  return false;
+# endif
+#elif CLICK_USERLEVEL && defined(__linux__)
+    if (query_netdevice(s, store, 'i', 4))
+	return true;
+#endif
+
+    return false;
 }
 
 bool
 AddressInfo::query_ip_prefix(String s, unsigned char *store,
 			     unsigned char *mask_store, Element *e)
 {
-  int colon = s.find_right(':');
-  if (colon >= 0 && s.substring(colon).lower() != ":ipnet"
-      && s.substring(colon).lower() != ":ip4net")
-    return false;
-  else if (colon >= 0)
-    s = s.substring(0, colon);
+    int colon = s.find_right(':');
+    if (colon >= 0 && s.substring(colon).lower() != ":ipnet"
+	&& s.substring(colon).lower() != ":ip4net")
+	return false;
+    else if (colon >= 0)
+	s = s.substring(0, colon);
   
-  if (AddressInfo *infoe = find_element(e))
-    if (const Info *info = infoe->query(s, INFO_IP_PREFIX, e->id())) {
-      memcpy(store, info->ip.c, 4);
-      memcpy(mask_store, info->ip_mask.c, 4);
-      return true;
-    }
-  return false;
+    if (AddressInfo *infoe = find_element(e))
+	if (const Info *info = infoe->query(s, INFO_IP_PREFIX, e->id())) {
+	    memcpy(store, info->ip.c, 4);
+	    memcpy(mask_store, info->ip_mask.c, 4);
+	    return true;
+	}
+
+    return false;
 }
 
 
@@ -295,68 +398,6 @@ AddressInfo::query_ip6_prefix(String s, unsigned char *store,
 #endif /* HAVE_IP6 */
 
 
-#if CLICK_USERLEVEL && defined(__linux__)
-
-static bool
-query_ethernet_device(const String &s, unsigned char *store)
-{
-    // 5 Mar 2004 - Don't call ioctl for every attempt to look up an Ethernet
-    // device name, because this causes the kernel to try to load weird kernel
-    // modules.
-    static time_t read_time = 0;
-    static Vector<String> device_names;
-    static Vector<String> device_eths;
-
-    // XXX magic time constant
-    if (!read_time || read_time + 30 < time(0)) {
-	device_names.clear();
-	device_eths.clear();
-	
-	int query_fd = socket(AF_INET, SOCK_DGRAM, 0);
-	if (query_fd < 0)
-	    return false;
-	struct ifreq ifr;
-	
-	String f = file_string("/proc/net/dev");
-	const char *begin = f.begin(), *end = f.end();
-	while (begin < end) {
-	    const char *colon = find(begin, end, ':');
-	    const char *nl = find(begin, end, '\n');
-	    if (colon > begin && colon < nl) {
-		const char *word = colon;
-		while (word > begin && !isspace(word[-1]))
-		    word--;
-		if ((size_t) (colon - word) < sizeof(ifr.ifr_name)) {
-		    // based on patch from Jose Vasconcellos
-		    // <jvasco@bellatlantic.net>
-		    String dev_name = f.substring(word, colon);
-		    strcpy(ifr.ifr_name, dev_name.c_str());
-		    if (ioctl(query_fd, SIOCGIFHWADDR, &ifr) >= 0
-			&& ifr.ifr_hwaddr.sa_family == ARPHRD_ETHER) {
-			device_names.push_back(dev_name);
-			device_eths.push_back(String(ifr.ifr_hwaddr.sa_data, 6));
-		    }
-		}
-	    }
-	    begin = nl + 1;
-	}
-
-	close(query_fd);
-	read_time = time(0);
-    }
-
-    for (int i = 0; i < device_names.size(); i++)
-	if (device_names[i] == s) {
-	    memcpy(store, device_eths[i].data(), 6);
-	    return true;
-	}
-
-    return false;
-}
-
-#endif /* CLICK_USERLEVEL && defined(__linux__) */
-
-
 bool
 AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
 {
@@ -387,7 +428,7 @@ AddressInfo::query_ethernet(String s, unsigned char *store, Element *e)
   } else if (dev)
     dev_put(dev);
 #elif CLICK_USERLEVEL && defined(__linux__)
-  if (query_ethernet_device(s, store))
+  if (query_netdevice(s, store, 'e', 6))
       return true;
 #endif
   
