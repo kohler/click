@@ -105,7 +105,7 @@ EOF
     done
 
     if test -n "$verbose" -a -n "$prefix"; then
-	echo "Prefix: $verbose" 1>&2
+	echo "Prefix: $prefix" 1>&2
     fi
 
     # add standards to provisions if necessary
@@ -136,7 +136,7 @@ $provisions"
 "`find ${pprefix}$i -follow \( -name \*.cc -o -name \*.c \) -print | grep -v '/[.,][^/]*$'`
 	elif test -r "${pprefix}$i"; then
 	    files="$files
-$i"
+${pprefix}$i"
 	fi
     done
     files=`echo "$files" | sort | uniq | grep .`
