@@ -1,3 +1,14 @@
+2003-03-02 Sunday 14:52  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/dsdvroutetable.cc (1.41): (potentially) sending
+	full dumps on a triggered updates is now disabled by default
+
+2003-03-02 Sunday 14:50  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.40), dsdvroutetable.hh
+	(1.30): compile time option: USE_GOOD_ROUTES, always use a better
+	route even if it's too early to advertise the sequence number
+
 2003-03-01 Saturday 18:04  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* elements/grid/: grid.hh (1.46), gridheaderinfo.cc (1.9),
