@@ -52,6 +52,7 @@ public:
 
   void set_new_dest(double v_lat, double v_lon);
 
+  unsigned int _seq_no;
 protected:
 
   int _move;    // Should we move?
@@ -68,7 +69,6 @@ protected:
   double uniform();
   virtual void choose_new_leg(double *, double *, double *);
 
-  unsigned int _seq_no;
 };
 
 #endif

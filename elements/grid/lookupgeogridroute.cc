@@ -95,7 +95,8 @@ LookupGeographicGridRoute::push(int port, Packet *packet)
   /*
    * send unknown packet type out error output
    */
-  if (gh->type != grid_hdr::GRID_NBR_ENCAP) {
+  if (gh->type != grid_hdr::GRID_NBR_ENCAP &&
+      gh->type != grid_hdr::GRID_LOC_REPLY) {
     click_chatter("LookupGeographicGridRoute %s: received unexpected Grid packet type: %s", 
 		  id().cc(), grid_hdr::type_string(gh->type).cc());
     output(2).push(packet);

@@ -171,7 +171,8 @@ loc_write_handler(const String &arg, Element *element,
   LocationInfo *l = (LocationInfo *) element;
   Vector<String> arg_list;
   cp_argvec(arg, arg_list);
-  
+
+  l->_seq_no++;
   return l->read_args(arg_list, errh);
 }
 
