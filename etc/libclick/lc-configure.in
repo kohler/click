@@ -143,12 +143,12 @@ dnl
 
 AC_LANG_C
 SOCKET_LIBS=
-if test "$enable_userlevel" = yes; then
+dnl if test "$enable_userlevel" = yes; then
     savelibs="$LIBS"; LIBS=
-    AC_SEARCH_LIBS(connect, socket, , , $savelibs)
     AC_SEARCH_LIBS(gethostbyname, nsl, , , $savelibs)
+    AC_SEARCH_LIBS(connect, socket, , , $savelibs)
     SOCKET_LIBS="$LIBS"; LIBS="$savelibs"
-fi
+dnl fi
 AC_SUBST(SOCKET_LIBS)
 AC_LANG_CPLUSPLUS
 
