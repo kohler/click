@@ -4,6 +4,7 @@
 # Eddie Kohler
 #
 # Copyright (c) 1999-2001 Massachusetts Institute of Technology
+# Copyright (c) 2004-2005 Regents of the University of California
 #
 # Permission is hereby granted, free of charge, to any person obtaining a
 # copy of this software and associated documentation files (the "Software"),
@@ -51,7 +52,7 @@ sub process_file ($) {
 	$headerfile = $headername;
     }
 
-    my $text;
+    my $text = "";
     foreach $i (@includes) {
 	if (open(IN, "$i/$headerfile")) {
 	    $text = <IN>;
@@ -59,16 +60,13 @@ sub process_file ($) {
 	    last;
 	}
     }
-    if (!$text) {
-	print STDERR "$headerfile: $!\n" if $headerfile eq $filename;
-	return;
-    }
 
     my $first;
     $first = @cxx_name;
     foreach $_ (split(m{^class(?=.*[\n\s]*\{)}m, $text)) {
 	my($cxx_class) = (/^\s*(\w+)(\s|:\s).*[\n\s]*\{/);
-	next if !$cxx_class;
+	my($click_name) = (/class_name.*return\s*\"([^\"]+)\"/);
+	next if !$click_name;
 	push @cxx_name, $cxx_class;
 	push @source_file, $filename;
 	push @header_file, $headername;
@@ -409,6 +407,7 @@ umask(022);
 open(OUT, ">&STDOUT");
 
 print OUT "<?xml version=\"1.0\" standalone=\"yes\"?>
+<?xml-stylesheet type=\"application/xml\" href=\"file:///Users/kohler/click/etc/elementmap.xsl\"?>
 <elementmap xmlns=\"http://www.lcdf.org/click/xml/\"";
 print OUT " sourcedir=\"$sourcedir\"" if defined($sourcedir);
 print OUT " provides=\"", join(' ', @provides), "\"";

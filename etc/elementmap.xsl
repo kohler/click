@@ -1,4 +1,4 @@
-<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform'  xmlns:click='http://www.lcdf.org/click/xml/'>
+<xsl:stylesheet version='1.0' xmlns:xsl='http://www.w3.org/1999/XSL/Transform' xmlns:click='http://www.lcdf.org/click/xml/'>
 
 <xsl:template match='/'>
 <html>
@@ -8,10 +8,10 @@ TD {
   padding: 2px 10px 2px 2px;
 }
 TR.l1 {
-  background-color: #ffffc9;
+  background-color: #ffffe9;
 }
 TR.l2 {
-  background-color: #f9f9ff;
+  background-color: #efefe9;
 }
 TR.lh {
   background-color: #d9d4f7;
