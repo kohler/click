@@ -259,29 +259,74 @@ int
 IPFilter::Primitive::set_mask(uint32_t full_mask, int shift, ErrorHandler *errh)
 {
   uint32_t data = _u.u;
-  
-  if (_op == OP_GT && data == 0) {
-    _op = OP_EQ;
-    _op_negated = !_op_negated;
-  }
-  
+
+  // Two kinds of GT or LT tests are OK: those that boil down to checking
+  // the upper bits against 0, and those that boil down to checking the upper
+  // bits against ~0.
   if (_op == OP_GT || _op == OP_LT) {
-    uint32_t pow2 = (_op == OP_GT ? data + 1 : data);
-    if ((pow2 & (pow2 - 1)) == 0 && (pow2 - 1) <= full_mask) {
-      // have a power of 2
+    // Check for power of 2 -- compare upper bits against 0.
+    uint32_t data_x = (_op == OP_GT ? data + 1 : data);
+    if ((data_x & (data_x - 1)) == 0 && (data_x - 1) <= full_mask && data_x <= full_mask) {
       _u.u = 0;
-      _mask.u = (full_mask & ~(pow2 - 1)) << shift;
+      _mask.u = (full_mask & ~(data_x - 1)) << shift;
       if (_op == OP_GT)
 	_op_negated = !_op_negated;
       return 0;
-    } else if ((_op == OP_LT && data == 0) || data >= full_mask)
-      return errh->error("comparison to value %d out of range (0-%u)", data, full_mask);
-    else
-      return errh->error("relation `%s%s %d' too hard, try a power of 2\n(I can only handle relations of the form `< X', `>= X', `<= X-1',\nand `> X-1' where X is a power of 2.)", ((_op == OP_LT) ^ _op_negated ? "<" : ">"), (_op_negated ? "=" : ""), data);
+    }
+
+    // Check for comparisons that are always true.
+    if ((_op == OP_LT && data == 0 && _op_negated)
+	|| (_op == OP_LT && data > full_mask && !_op_negated)
+	|| (_op == OP_GT && data >= full_mask && _op_negated)) {
+      if (data)
+	errh->warning("relation `%s %u' is always true (range 0-%u)", unparse_op().cc(), data, full_mask);
+      _u.u = _mask.u = 0;
+      _op_negated = false;
+      return 0;
+    }
+
+    // Check for comparisons that are always false.
+    if ((_op == OP_LT && (data == 0 || data > full_mask))
+	|| (_op == OP_GT && data >= full_mask)) {
+      errh->warning("relation `%s %u' is always false (range 0-%u)", unparse_op().cc(), data, full_mask);
+      _u.u = _mask.u = 0;
+      _op_negated = true;
+      return 0;
+    }
+
+    // Check for (full_mask - [power of 2]) -- compare upper bits against ~0.
+    // 8-bit field: can do > 191/<= 191, >= 192/< 192.
+    uint32_t data_x_comp = (~data_x & full_mask) + 1;
+    if ((data_x_comp & (data_x_comp - 1)) == 0 && data_x <= full_mask) {
+      _u.u = data_x << shift;
+      _mask.u = (full_mask & data_x) << shift;
+      if (_op == OP_LT)
+	_op_negated = !_op_negated;
+      return 0;
+    }
+
+    // Remaining possibility is too-complex expression; print helpful message.
+    uint32_t below_x_1 = 0, above_x_1 = 0, below_x_2 = 0, above_x_2 = 0;
+    for (int i = 31; i >= 0; i--)
+      if (data_x & (1 << i)) {
+	below_x_1 = 1 << i;
+	above_x_1 = below_x_1 << 1;
+	if (above_x_1 > full_mask || above_x_1 == 0)
+	  for (int j = i - 1; j >= 0; j--)
+	    if (!(data_x & (1 << j))) {
+	      below_x_2 = data_x & ~((2 << j) - 1);
+	      above_x_2 = below_x_2 | (1 << j);
+	      break;
+	    }
+	break;
+      }
+    uint32_t below_x = (below_x_2 && (data_x - below_x_2 < data_x - below_x_1) ? below_x_2 : below_x_1) - (_op == OP_GT ? 1 : 0);
+    uint32_t above_x = (above_x_2 && (above_x_2 - data_x < above_x_1 - data_x) ? above_x_2 : above_x_1) - (_op == OP_GT ? 1 : 0);
+    return errh->error("relation `%s %u' too hard\n(Closest possibilities are `%s %u' and `%s %u'.)", unparse_op().cc(), data, unparse_op().cc(), below_x, unparse_op().cc(), above_x);
   }
 
   if (data > full_mask)
-    return errh->error("value %d out of range (0-%u)", data, full_mask);
+    return errh->error("value %u out of range (0-%u)", data, full_mask);
 
   _u.u = data << shift;
   _mask.u = full_mask << shift;
@@ -342,6 +387,17 @@ String
 IPFilter::Primitive::unparse_type() const
 {
   return unparse_type(_srcdst, _type);
+}
+
+String
+IPFilter::Primitive::unparse_op() const
+{
+  if (_op == OP_GT)
+    return (_op_negated ? "<=" : ">");
+  else if (_op == OP_LT)
+    return (_op_negated ? ">=" : "<");
+  else
+    return (_op_negated ? "!=" : "=");
 }
 
 void
@@ -697,18 +753,19 @@ separate_words(Vector<String> &words)
     int len = words[i].length();
     int first = 0;
     for (int pos = 0; pos < len; pos++) {
-      if (data[pos] == '(' || data[pos] == ')' || data[pos] == '!') {
+      int length = -1;
+      if (data[pos] == '(' || data[pos] == ')' || data[pos] == '!')
+	length = 1;
+      else if (data[pos] == '&' || data[pos] == '|')
+	length = (pos < len-1 && data[pos+1] == data[pos] ? 2 : 1);
+      else if (data[pos] == '<' || data[pos] == '>')
+	length = (pos < len-1 && data[pos+1] == '=' ? 2 : 1);
+      if (length > 0) {
 	if (pos != first)
 	  out.push_back(words[i].substring(first, pos - first));
-	out.push_back(words[i].substring(pos, 1));
-	first = pos + 1;
-      } else if (data[pos] == '&' || data[pos] == '|') {
-	int j = (pos < len - 1 && data[pos+1] == data[pos] ? 2 : 1);
-	if (pos != first)
-	  out.push_back(words[i].substring(first, pos - first));
-	out.push_back(words[i].substring(pos, j));
-	first = pos + j;
-	pos += j - 1;
+	out.push_back(words[i].substring(pos, length));
+	first = pos + length;
+	pos += length - 1;
       }
     }
     if (len != first)

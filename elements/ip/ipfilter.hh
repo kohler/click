@@ -192,6 +192,7 @@ class IPFilter : public Classifier { public:
     void simple_negate();
     
     String unparse_type() const;
+    String unparse_op() const;
     static String unparse_type(int srcdst, int type);
     static String unparse_transp_proto(int transp_proto);
     

@@ -98,15 +98,15 @@ These primitives can be combined with the connectives `and', `or', and
 `not' (synonyms `&&', `||', and `!'), and with parentheses. For example,
 `(dst port www or dst port ssh) and tcp opt syn'.
 
-All primitives except B<tcp opt> accept an optional OPERATION, `==' or
-`!=', which can occur before the actual option. `src host == 10.0.0.10'
-matches packets whose source host is 10.0.0.10; `src host != 10.0.0.10'
-matches packets whose source host I<is not> 10.0.0.10. The B<ip
-proto>, B<port>, B<ip tos>, B<ip dscp>, B<ip ttl>, and B<icmp type>
-directives also support `<', `>', `<=', and `>=' operations for limited
-integer values. (Specifically, you can say `< POW', `> POW-1', `<= POW-1',
-or `>= POW' if POW is a power of 2.) If no OPERATION is specified, `==' is
-assumed.
+All primitives except B<tcp opt> accept an optional OPERATION, `==' or `!=',
+which can occur before the actual option. If no OPERATION is specified, `=='
+is assumed. `src host == 10.0.0.10' matches packets whose source host is
+10.0.0.10; `src host != 10.0.0.10' matches packets whose source host I<is not>
+10.0.0.10. Directives with integer values also support some `<', `>', `<=',
+and `>=' operations. (Specifically, you can say `< POW', `> POW-1', `<=
+POW-1', or `>= POW' if POW is a power of 2; and `< X', `> X-1', `<= X-1', or
+`>= X' if X equals the maximum value of the field minus POW-1, with POW some
+power of 2. For example, you can say `ip ttl < 128' and `ip ttl >= 192'.)
 
 For B<port> and B<icmp type> directives, `DIRECTIVE != VALUE' is not the
 same as `not (DIRECTIVE == VALUE)'. For example, `src tcp port != 5'
