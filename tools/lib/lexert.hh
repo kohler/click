@@ -22,7 +22,7 @@ enum {
 class Lexeme { public:
 
   Lexeme()				: _kind(lexEOF) { }
-  Lexeme(int k, const String &s)	: _kind(k), _s(s) { }
+  Lexeme(int k, const String &s, int p)	: _kind(k), _s(s), _pos(p) { }
   
   int kind() const			{ return _kind; }
   bool is(int k) const			{ return _kind == k; }
@@ -34,6 +34,7 @@ class Lexeme { public:
   
   int _kind;
   String _s;
+  int _pos;
   
 };
 

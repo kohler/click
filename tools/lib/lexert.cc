@@ -268,13 +268,13 @@ LexerT::next_lexeme()
     _pos = pos;
     String word = _big_string.substring(word_pos, pos - word_pos);
     if (word.length() == 16 && word == "connectiontunnel")
-      return Lexeme(lexTunnel, word);
+      return Lexeme(lexTunnel, word, word_pos);
     else if (word.length() == 12 && word == "elementclass")
-      return Lexeme(lexElementclass, word);
+      return Lexeme(lexElementclass, word, word_pos);
     else if (word.length() == 7 && word == "require")
-      return Lexeme(lexRequire, word);
+      return Lexeme(lexRequire, word, word_pos);
     else
-      return Lexeme(lexIdent, word);
+      return Lexeme(lexIdent, word, word_pos);
   }
 
   // check for variable
@@ -284,7 +284,7 @@ LexerT::next_lexeme()
       pos++;
     if (pos > word_pos + 1) {
       _pos = pos;
-      return Lexeme(lexVariable, _big_string.substring(word_pos, pos - word_pos));
+      return Lexeme(lexVariable, _big_string.substring(word_pos, pos - word_pos), word_pos);
     } else
       pos--;
   }
@@ -292,22 +292,22 @@ LexerT::next_lexeme()
   if (pos < _len - 1) {
     if (_data[pos] == '-' && _data[pos+1] == '>') {
       _pos = pos + 2;
-      return Lexeme(lexArrow, _big_string.substring(word_pos, 2));
+      return Lexeme(lexArrow, _big_string.substring(word_pos, 2), word_pos);
     } else if (_data[pos] == ':' && _data[pos+1] == ':') {
       _pos = pos + 2;
-      return Lexeme(lex2Colon, _big_string.substring(word_pos, 2));
+      return Lexeme(lex2Colon, _big_string.substring(word_pos, 2), word_pos);
     } else if (_data[pos] == '|' && _data[pos+1] == '|') {
       _pos = pos + 2;
-      return Lexeme(lex2Bar, _big_string.substring(word_pos, 2));
+      return Lexeme(lex2Bar, _big_string.substring(word_pos, 2), word_pos);
     }
   }
   if (pos < _len - 2 && _data[pos] == '.' && _data[pos+1] == '.' && _data[pos+2] == '.') {
     _pos = pos + 3;
-    return Lexeme(lex3Dot, _big_string.substring(word_pos, 3));
+    return Lexeme(lex3Dot, _big_string.substring(word_pos, 3), word_pos);
   }
   
   _pos = pos + 1;
-  return Lexeme(_data[word_pos], _big_string.substring(word_pos, 1));
+  return Lexeme(_data[word_pos], _big_string.substring(word_pos, 1), word_pos);
 }
 
 String
