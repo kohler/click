@@ -1,3 +1,18 @@
+2004-12-03 Friday 15:11  John Bicket <jbicket@mit.edu>
+
+	* elements/: ip6/setip6dscp.hh (1.5), wifi/arptable.hh (1.3),
+	wifi/autoratefallback.hh (1.8), wifi/copyrxstats.hh (1.3),
+	wifi/extradecap.hh (1.3), wifi/extraencap.hh (1.3),
+	wifi/filterfailures.hh (1.5), wifi/filtertx.hh (1.4),
+	wifi/linktable.hh (1.8), wifi/madwifirate.hh (1.5),
+	wifi/phyerrfilter.hh (1.3), wifi/prism2decap.hh (1.2),
+	wifi/prism2encap.hh (1.2), wifi/probetxrate.hh (1.12),
+	wifi/pushanno.hh (1.3), wifi/readanno.hh (1.3), wifi/rxstats.hh
+	(1.10), wifi/setrts.hh (1.3), wifi/settxpower.hh (1.6),
+	wifi/settxrate.hh (1.13), wifi/wifidecap.hh (1.4),
+	wifi/wifiencap.hh (1.3), wifi/sr/ettmetric.hh (1.10),
+	wifi/sr/txcountmetric.hh (1.2): documentation fixes.
+
 2004-12-02 Thursday 16:21  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: arptable.hh (1.2), autoratefallback.cc (1.12),
