@@ -87,6 +87,7 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 {
   int ret;
   _debug = false;
+  _route_dampening = true;
   ret = cp_va_parse(conf, this, errh,
                     cpKeywords,
 		    "ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -98,6 +99,7 @@ SRCR::configure (Vector<String> &conf, ErrorHandler *errh)
 		    /* below not required */
 		    "LM", cpElement, "LinkMetric element", &_metric,
 		    "DEBUG", cpBool, "Debug", &_debug,
+		    "ROUTE_DAMPENING", cpBool, "Enable Route Dampening", &_route_dampening,
                     0);
 
   if (!_et) 
@@ -720,7 +722,8 @@ SRCR::push(int port, Packet *p_in)
       max_switch.tv_usec = 0;
       timeradd(&current_path->_last_switch, &max_switch, &expire);
 
-      if (!current_path_valid || 
+      if (!_route_dampening ||
+	  !current_path_valid || 
 	  current_path_metric > 100 + best_metric ||
 	  timercmp(&expire, &now, <)) {
 	if (current_path->_p != best) {

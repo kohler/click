@@ -72,6 +72,7 @@ ETTStat::notify_noutputs(int n)
 int
 ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 {
+  _2hop_linkstate = true;
   int res = cp_va_parse(conf, this, errh,
 			cpKeywords,
 			"ETHTYPE", cpUnsigned, "Ethernet encapsulation type", &_et,
@@ -83,6 +84,7 @@ ETTStat::configure(Vector<String> &conf, ErrorHandler *errh)
 			"SIZE", cpUnsigned, "Probe size (bytes)", &_probe_size,
 			"ETT", cpElement, "ETT Metric element", &_ett_metric,
 			"ARP", cpElement, "ARPTable element", &_arp_table,
+			"2HOP_LINKSTATE", cpBool, "enable 2hop linkstate", &_2hop_linkstate,
 			0);
   if (res < 0)
     return res;
@@ -494,7 +496,7 @@ ETTStat::simple_action(Packet *p)
       l->fwd_5 = le->rev_5;
       l->fwd_11 = le->rev_11;
     } else {
-      if (_ett_metric) {
+      if (_2hop_linkstate && _ett_metric) {
 	_ett_metric->update_link(ip, le->ip, 
 				 le->fwd_small, le->rev_small,
 				 le->fwd_1, le->rev_1,

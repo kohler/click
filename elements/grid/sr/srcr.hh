@@ -212,7 +212,7 @@ private:
   int _num_replies_rx;
   int _bytes_replies_rx;
 
-
+  bool _route_dampening;
   bool _debug;
 
 

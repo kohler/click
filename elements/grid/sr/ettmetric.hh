@@ -85,9 +85,16 @@ public:
 
   int get_tx_rate(EtherAddress);
   void get_rate_and_tput(int *tput, int *rate, 
+			 int fwd_small,
 			 int fwd_1,
-			 int fwd_2, int fwd_5, 
-			 int fwd_11,  int rev_small);
+			 int fwd_2, 
+			 int fwd_5, 
+			 int fwd_11,  
+			 int rev_small,
+			 int rev_1,
+			 int rev_2,
+			 int rev_5,
+			 int rev_11);
   class LinkInfo {
   public:
     IPOrderedPair _p;
@@ -114,6 +121,7 @@ private:
   int _weight_2;
   int _weight_5;
   int _weight_11;
+  bool _enable_twoway;
 };
 
 CLICK_ENDDECLS

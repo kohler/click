@@ -284,7 +284,7 @@ private:
   struct timeval _next_5;
   struct timeval _next_11;
 
-
+  bool _2hop_linkstate;
  public:
 
 
