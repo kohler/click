@@ -28,6 +28,10 @@ This information is stored in the file header, and must be correct or tcpdump
 won't be able to read the file correctly. It can be `C<IP>', `C<ETHER>', or
 `C<FDDI>'; default is `C<ETHER>'.
 
+ToDump may have zero or one output. If it has an output, then it emits all
+received packets on that output. ToDump will schedule itself on the task list
+if it is used as a pull element with no outputs.
+
 Keyword arguments are:
 
 =over 8
@@ -76,6 +80,7 @@ class ToDump : public Element { public:
     ToDump *clone() const;
 
     // configure after FromDevice and FromDump
+    void notify_noutputs(int);
     int configure_phase() const		{ return CONFIGURE_PHASE_DEFAULT+100; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
@@ -83,6 +88,7 @@ class ToDump : public Element { public:
     void add_handlers();
 
     void push(int, Packet *);
+    Packet *pull(int);
     void run_scheduled();
 
   private:

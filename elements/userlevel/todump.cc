@@ -46,6 +46,12 @@ ToDump::clone() const
     return new ToDump;
 }
 
+void
+ToDump::notify_noutputs(int n)
+{
+    set_noutputs(n < 1 ? 0 : 1);
+}
+
 int
 ToDump::configure(Vector<String> &conf, ErrorHandler *errh)
 {
@@ -133,7 +139,7 @@ ToDump::initialize(ErrorHandler *errh)
     if (wrote_header != 1)
 	return errh->error("%s: unable to write file header", _filename.cc());
 
-    if (input_is_pull(0)) {
+    if (input_is_pull(0) && noutputs() == 0) {
 	ScheduleInfo::join_scheduler(this, &_task, errh);
 	_signal = Notifier::upstream_pull_signal(this, 0, &_task);
     }
@@ -186,7 +192,16 @@ ToDump::push(int, Packet *p)
 {
     if (_active)
 	write_packet(p);
-    p->kill();
+    checked_output_push(0, p);
+}
+
+Packet *
+ToDump::pull(int)
+{
+    Packet *p = input(0).pull();
+    if (_active && p)
+	write_packet(p);
+    return p;
 }
 
 void
@@ -205,7 +220,7 @@ ToDump::run_scheduled()
 void
 ToDump::add_handlers()
 {
-    if (input_is_pull(0))
+    if (input_is_pull(0) && noutputs() == 0)
 	add_task_handlers(&_task);
 }
 
