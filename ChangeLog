@@ -1,3 +1,11 @@
+2003-10-06 Monday 00:50  Eddie Kohler <kohler@icir.org>
+
+	* AUTHORS (1.24), NEWS (1.147), elements/analysis/fromipsumdump.hh
+	(1.32), elements/analysis/fromnetflowsumdump.hh (1.13),
+	elements/analysis/timesortedsched.hh (1.6),
+	elements/userlevel/fromdump.hh (1.47), include/click/notifier.hh
+	(1.8): update AUTHORS and NEWS, and documentation
+
 2003-10-06 Monday 00:06  Eddie Kohler <kohler@icir.org>
 
 	* configure.in (1.214), etc/libclick/lc-configure.in (1.25): bump
