@@ -197,16 +197,16 @@ struct grid_nbr_entry {
   };
 
   unsigned int metric;
+  bool metric_valid;
 
   /* ping-pong stats, valid only for 1-hop nbrs */
   /* 
-   * in our routing table, these stats are from this _neighbor's_
-   * measurements of packets sent by us; in our route advertisement
-   * packet these stats reflect _our_ measurements of packets sent by
-   * this neighbor.
+   * in our route advertisement packet these stats reflect _our_
+   * measurements of packets sent by this neighbor.  
    */
   int link_qual;
   int link_sig;
+  struct timeval measurement_time;
 
   grid_nbr_entry() : ip(0), next_hop_ip(0), num_hops(0), loc(0, 0), seq_no(0) 
   { assert(sizeof(grid_nbr_entry) % 4 == 0); }
@@ -253,6 +253,10 @@ struct grid_nbr_encap {
   unsigned short dst_loc_err;
   bool dst_loc_good;
   unsigned char hops_travelled;
+
+  int link_qual;
+  int link_sig;           
+  struct timeval measurement_time;  // secs
 };
 
 struct grid_loc_query {

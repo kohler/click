@@ -25,7 +25,7 @@ public:
   enum Action {
     UnknownAction = 0,
     SendToIP = 1,
-    ForwardDSDV = 2,     // data = next hop ip
+    ForwardDSDV = 2,     // data = next hop ip, data2 = (qual << 16) | (-sig & 0xFFff)
     FallbackToGF = 3,
     QueuedForLocQuery = 4,
     ForwardGF = 5,       // data = next hop ip, data2 = best nbr ip

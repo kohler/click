@@ -91,7 +91,8 @@ GridRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			cpEthernetAddress, "source Ethernet address", &_eth,
 			cpIPAddress, "source IP address", &_ip,
 			cpElement, "GridGatewayInfo element", &_gw_info,
-			cpElement, "AiroInfo element", &_airo_info,
+			cpElement, "LinkTracker element", &_link_tracker,
+			cpElement, "LinkStat element", &_link_stat,
 			cpKeywords,
 			"MAX_HOPS", cpInteger, "max hops", &_max_hops,
 			"LOGCHANNEL", cpString, "log channel name", &chan,
@@ -160,6 +161,19 @@ GridRouteTable::current_gateway()
   return NULL;
 }
 
+inline timeval
+operator- (const timeval &a, const timeval &b)
+{
+  timeval ts;
+  ts.tv_sec = a.tv_sec - b.tv_sec;
+  if (a.tv_usec > b.tv_usec)
+    ts.tv_usec = a.tv_usec - b.tv_usec;
+  else {
+    ts.tv_usec = a.tv_usec + 1000000 - b.tv_usec;
+    --ts.tv_sec;
+  }
+  return ts;
+}
 
 void
 GridRouteTable::init_metric(RTEntry &r)
@@ -178,18 +192,36 @@ GridRouteTable::init_metric(RTEntry &r)
     r.metric_valid = true;
     break;
   case MetricMinSigStrength:
-  case MetricMinSigQuality:
-    if (r.link_qual == 0 && r.link_sig == 0) {
-      click_chatter("GridRouteTable: link sig/qual stats from 1-hop neighbor %s seem to be invalid; no initializing metric\n",
+  case MetricMinSigQuality: {
+    int sig = 0;
+    int qual = 0;
+    struct timeval last;
+    bool res = _link_tracker->get_stat(r.dest_ip, sig, qual, last);
+    if (!res) {
+      click_chatter("GridRouteTable: no link sig/qual stats from 1-hop neighbor %s; not initializing metric\n",
 		    r.dest_ip.s().cc());
+      r.metric = 666999; // for debugging
       r.metric_valid = false;
+      return;
     }
-    else if (_metric_type == MetricMinSigQuality) 
-      r.metric = (unsigned int) r.link_qual;
+    struct timeval now;
+    gettimeofday(&now, 0);
+    now = now - last;
+    int delta_ms = 1000 * now.tv_sec + (now.tv_usec / 1000);
+    if (delta_ms > _timeout) {
+      click_chatter("GridRouteTable: link sig/qual stats from 1-hop neighbor %s are too old; not initializing metric\n",
+		    r.dest_ip.s().cc());
+      r.metric = 666999; // for debugging
+      r.metric_valid = false;
+      return;
+    }
+    if (_metric_type == MetricMinSigQuality) 
+      r.metric = (unsigned int) qual;
     else // _metric_type == MetricMinSigStrength
-      r.metric = (unsigned int) -r.link_sig; // deal in -dBm
+      r.metric = (unsigned int) -sig; // deal in -dBm
     r.metric_valid = true;
-    break;
+  }
+  break;
   default:
     assert(0);
   }
@@ -208,10 +240,13 @@ GridRouteTable::update_metric(RTEntry &r)
     return;
   }
 
-  if (!next_hop->metric_valid)
-    r.metric_valid = false;
   if (!r.metric_valid)
     return;
+
+  if (!next_hop->metric_valid) {
+    r.metric_valid = false;
+    return;
+  }
 
   switch (_metric_type) {
   case MetricHopCount:
@@ -239,7 +274,7 @@ GridRouteTable::update_metric(RTEntry &r)
 
 
 bool
-GridRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
+GridRouteTable::metric_is_preferable(const RTEntry &r1, const RTEntry &r2)
 {
   assert(r1.metric_valid && r2.metric_valid);
 
@@ -259,6 +294,38 @@ GridRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
   }
   return false;
 }
+
+
+bool
+GridRouteTable::should_replace_old_route(const RTEntry &old_route, const RTEntry &new_route)
+{
+  /* prefer a strictly newer route */
+  if (old_route.seq_no > new_route.seq_no) 
+    return false;
+  if (old_route.seq_no < new_route.seq_no)
+    return true;
+  
+  /* 
+   * routes have same age, choose based on metric 
+   */
+  
+  /* prefer a route with a valid metric */
+  if (old_route.metric_valid && !new_route.metric_valid)
+    return false;
+  if (!old_route.metric_valid && new_route.metric_valid)
+    return true;
+  
+  /* if neither metric is valid, just keep the route we have -- to aid
+   * in stability -- as if I have any notion about that....
+   * bwahhhaaaahahaha!!! */
+  if (!old_route.metric_valid && !new_route.metric_valid)
+    return false;;
+  
+  // both metrics are valid
+  /* only use a new route if the metric is better */
+  return metric_is_preferable(new_route, old_route);
+}
+
 
 /*
  * expects grid LR packets, with ethernet and grid hdrs
@@ -317,24 +384,55 @@ GridRouteTable::simple_action(Packet *packet)
     click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
 		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
 
+  /*
+   * well, for now we'll just do the ping-pong on route ads.  ideally
+   * we would piggyback the ping-pong data for a destination on any
+   * unicast packet to that destination, using the latest info from
+   * that destination.  we sould still do the ping-ponging in route
+   * ads as well, in case we aren't sending data to that destination.
+   * this would probably entail adding two elements: one to fill in
+   * outgoing packets with the right stats, and another to pick up the
+   * stats from incoming packets.  there would probably be a third
+   * element which is a table to hold these stats and take care of the
+   * averaging.  this could be the same as either the first or second
+   * element, and should have a hook so that the routing table (*this*
+   * element) can add information gleaned from the route ads.  one
+   * drag is that we can't properly do the averaging -- each new
+   * reading comes at a different time, not neccessarily evenly
+   * spaced.  we should use some time-weighted average, instead of the
+   * usual sample-based average.  the node measuring at the other end
+   * of the link needs to timestamp when packet come in and it takes
+   * the readings. 
+   */
+
+  /* 
+   * individual link metric smoothing, or route metric smoothing?  we
+   * will only smooth the ping-pong measurements on individual links;
+   * we won't smooth metrics at the route level.  that's because we
+   * can't even be sure that as the metrics change for a route to some
+   * destination, the metric are even for the same route, i.e. same
+   * set of links. 
+   */
+
   /* look for ping-pong link stats about us */
-  int qual = 0;
-  int sig = 0;
   int entry_sz = hlo->nbr_entry_sz;
   char *entry_ptr = (char *) (hlo + 1);
   for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
     if (_ip == curr->ip && curr->num_hops == 1) {
-      qual = ntohl(curr->link_qual);
-      sig = ntohl(curr->link_sig);
+      struct timeval tv;
+      tv.tv_sec = ntohl(curr->measurement_time.tv_sec);
+      tv.tv_usec = ntohl(curr->measurement_time.tv_usec);
+      _link_tracker->add_stat(ipaddr, ntohl(curr->link_sig), ntohl(curr->link_qual), tv);
       break;
     }
   }
 
   if (ntohl(hlo->ttl) > 0) {
-    RTEntry r(ipaddr, ethaddr, gh, hlo, jiff, qual, sig);
-    init_metric(r);
-    _rtes.insert(ipaddr, r);
+    RTEntry new_r(ipaddr, ethaddr, gh, hlo, jiff);
+    init_metric(new_r);
+    if (r == 0 || should_replace_old_route(*r, new_r))
+	_rtes.insert(ipaddr, new_r);
   }
   
   /*
@@ -343,6 +441,7 @@ GridRouteTable::simple_action(Packet *packet)
   Vector<RTEntry> triggered_rtes;
   Vector<IPAddress> broken_dests;
 
+  entry_ptr = (char *) (hlo + 1);
   for (int i = 0; i < hlo->num_nbrs; i++, entry_ptr += entry_sz) {
     
     grid_nbr_entry *curr = (grid_nbr_entry *) entry_ptr;
@@ -412,52 +511,10 @@ GridRouteTable::simple_action(Packet *packet)
       continue;
 
     /* 
-     * regular route entry 
+     * regular route entry -- should we stick it in the table?
      */
-
-    /* if we don't have a route, use this one */
-    if (our_rte == 0) 
-      goto use_new;
-
-    /* prefer a strictly newer route */
-    if (our_rte->seq_no > route.seq_no) 
-      continue;
-    if (our_rte->seq_no < route.seq_no)
-      goto use_new;
-
-    /* 
-     * routes have same age, choose based on metric 
-     */
-    
-    /* prefer a route with a valid metric */
-    if (our_rte->metric_valid && !route.metric_valid)
-      continue;
-    if (!our_rte->metric_valid && route.metric_valid)
-      goto use_new;
-
-    /* if neither metric is valid, just keep the route we have -- to
-     * aid in stability */
-    if (!our_rte->metric_valid && !route.metric_valid)
-      continue;
-    
-    // both metric are valid
-    /* only use a new route if the metric is better */
-    if (!metric_preferable(route, *our_rte))
-      continue;
-    
-#if 0 // old route selection logic
-    /* ignore old routes and routes with bad metrics */
-    if (our_rte                                  // we already have a route
-	&& our_rte->metric_valid                 // which has a valid metric
-	&& (our_rte->seq_no > route.seq_no       // which has a newer seq_no
-	    || (our_rte->seq_no == route.seq_no  //           or the same seq_no
-		&& !metric_preferable(route, *our_rte)))) //     and no better metric
-      continue;
-#endif
-
-  use_new:
-    /* add the new entry */
-    _rtes.insert(route.dest_ip, route);
+    if (our_rte == 0 || should_replace_old_route(*our_rte, route))
+      _rtes.insert(route.dest_ip, route);
   }
 
   /* delete broken routes */
@@ -499,6 +556,7 @@ GridRouteTable::print_rtes_v(Element *e, void *)
       + " loc=" + f.loc.s()
       + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
       + " seq=" + String(f.seq_no)
+      + " metric_valid=" + (f.metric_valid ? "yes" : "no")
       + " metric=" + String(f.metric)
       + "\n";
   }
@@ -540,9 +598,8 @@ GridRouteTable::print_nbrs_v(Element *e, void *)
     s += i.key().s();
     s += " eth=" + i.value().next_hop_eth.s();
     char buf[300];
-    snprintf(buf, 300, " metric_valid=%d metric=%d link_qual=%d link_sig=%d",
-	     i.value().metric_valid, i.value().metric,
-	     i.value().link_qual,i.value().link_sig);
+    snprintf(buf, 300, " metric_valid=%s metric=%d",
+	     i.value().metric_valid ? "yes" : "no", i.value().metric);
     s += buf;
     s += "\n";
   }
@@ -707,8 +764,12 @@ GridRouteTable::expire_routes()
       _extended_logging_errh->message ("expiring %s %ld %ld", i.value().dest_ip.s().cc(), tv.tv_sec, tv.tv_usec);  // extended logging
       table_changed = true;
 
-      if (i.value().num_hops == 1) /* may be another route's next hop */
+      if (i.value().num_hops == 1) {
+	/* may be another route's next hop */
 	expired_next_hops.insert(i.value().dest_ip, true);
+	/* clear link stats */
+	_link_tracker->remove_stat(i.value().dest_ip);
+      }
     }
   }
   
@@ -762,7 +823,10 @@ GridRouteTable::hello_hook(Timer *, void *thunk)
     /* because we called expire_routes() at the top of this function,
      * we know we are not propagating any route entries with ttl of 0
      * or that have timed out */
-    if (i.value().metric_valid)
+
+    /* if (i.value().metric_valid) */
+    // have to advertise routes even if they have invalid metrics, to
+    // kick-start the ping-pong link stats exchange
       rte_entries.push_back(i.value());
   }
 
@@ -893,7 +957,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 	     f.metric);
     _extended_logging_errh->message(str);
 
-    rte_info[i].fill_in(curr, _airo_info);
+    rte_info[i].fill_in(curr, _link_stat);
   }
   
   _extended_logging_errh->message("\n");
@@ -903,7 +967,7 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rtes_to_send,
 
 
 void
-GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, AiroInfo *a)
+GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, LinkStat *ls)
 {
   nb->ip = dest_ip;
   nb->next_hop_ip = next_hop_ip;
@@ -913,18 +977,21 @@ GridRouteTable::RTEntry::fill_in(grid_nbr_entry *nb, AiroInfo *a)
   nb->loc_good = loc_good;
   nb->seq_no = htonl(seq_no);
   nb->metric = htonl(metric);
+  nb->metric = metric_valid;
   nb->is_gateway = is_gateway;
   nb->ttl = htonl(ttl);
   
   /* ping-pong link stats back to sender */
   nb->link_qual = 0;
   nb->link_sig = 0;
-  if (a && num_hops == 1) {
-    int sig, qual;
-    bool res = a->get_signal_info(next_hop_eth, sig, qual);
-    if (res) {
-      nb->link_qual = htonl(qual);
-      nb->link_sig = htonl(sig);
+  nb->measurement_time.tv_sec = nb->measurement_time.tv_usec = 0;
+  if (ls && num_hops == 1) {
+    LinkStat::stat_t *s = ls->_stats.findp(next_hop_eth);
+    if (s) {
+      nb->link_qual = htonl(s->qual);
+      nb->link_sig = htonl(s->sig);
+      nb->measurement_time.tv_sec = htonl(s->when.tv_sec);
+      nb->measurement_time.tv_usec = htonl(s->when.tv_usec);
     }
     else
       click_chatter("GridRouteTable: error!  unable to get signal strength or quality info for one-hop neighbor %s\n",

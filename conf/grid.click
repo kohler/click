@@ -66,12 +66,14 @@ rph :: GridProbeHandler(GRID_MAC_ADDR, GRID_IP, lr, geo, fq);
 rpr :: GridProbeReplyReceiver(PROBE_CHANNEL);
 
 ai :: AiroInfo(an0);
+lt :: LinkTracker(2000);
 
 nb :: GridRouteTable(ROUTE_TIMEOUT,
 		     BROADCAST_PERIOD, BROADCAST_JITTER,
 		     GRID_MAC_ADDR, GRID_IP, 
 		     ggi, 
-                     ai,
+                     lt,
+                     ls,
 		     MAX_HOPS NUM_HOPS);
 lr :: LookupLocalGridRoute(GRID_MAC_ADDR, GRID_IP, nb, ggi);
 geo :: LookupGeographicGridRoute(GRID_MAC_ADDR, GRID_IP, nb, li);
@@ -99,6 +101,7 @@ from_grid_if :: FromDevice(GRID_NET_DEVICE, 0);
 to_grid_if :: TTLChecker;
 
 to_grid_if [0] -> FixSrcLoc(li)
+               -> PingPong(ls)
                -> SetGridChecksum
 	       -> ToDevice(GRID_NET_DEVICE);
 
@@ -113,7 +116,9 @@ from_grid_if
   //  -> Print("grid")
   -> HostEtherFilter(GRID_MAC_ADDR, 1)
   -> check_grid :: CheckGridHeader
-  -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0] 
+  -> fr :: FilterByRange(MAX_RANGE_FILTER, li) [0]
+  -> ls :: LinkStat(ai)
+  -> lt
   -> grid_demux;
 
 grid_demux [0]

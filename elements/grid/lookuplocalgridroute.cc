@@ -314,7 +314,12 @@ LookupLocalGridRoute::forward_grid_packet(Packet *xp, IPAddress dest_ip)
     gh->tx_ip = _ipaddr;
     encap->hops_travelled++;
     // leave src location update to FixSrcLoc element
-    notify_route_cbs(packet, dest_ip, GRCB::ForwardDSDV, next_hop_ip, 0);
+    int sig = 0;
+    int qual = 0;
+    struct timeval tv;
+    _rtes->_link_tracker->get_stat(next_hop_ip, sig, qual, tv);
+    unsigned int data2 = (qual << 16) | ((-sig) & 0xFFff);
+    notify_route_cbs(packet, dest_ip, GRCB::ForwardDSDV, next_hop_ip, data2);
     output(0).push(packet);
   }
   else {

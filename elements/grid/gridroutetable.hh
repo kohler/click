@@ -3,7 +3,7 @@
 
 /*
  * =c
- * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW, AiroInfo, [, I<KEYWORDS>])
+ * GridRouteTable(TIMEOUT, PERIOD, JITTER, ETH, IP, GW, LinkTracker, LinkStat [, I<KEYWORDS>])
  *
  * =s Grid
  * Run DSDV-like local routing protocol
@@ -16,9 +16,9 @@
  * removed TIMEOUT milliseconds after being installed.  PERIOD is the
  * milliseconds between route broadcasts, randomly offset by up to
  * JITTER milliseconds.  ETH and IP describe this node's Grid
- * addresses, and GW is the GridGatewayInfo element.  AiroInfo is an
- * AiroInfo element for the interface to which this element is
- * connected.
+ * addresses, and GW is the GridGatewayInfo element.  LinkTracker 
+ * and LinkStat are LinkTracker and LinkStat elements for the interface 
+ * to which this GridRouteTable element is connected.
  *
  * Routing message entries are marked with both a sequence number
  * (originated by the destination of the entry) and a real-time ttl.
@@ -67,13 +67,15 @@
  * use hopcount.
  *
  * =a
- * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes */
+ * SendGridHello, FixSrcLoc, SetGridChecksum, LookupLocalGridRoute, UpdateGridRoutes, 
+ * LinkStat, LinkTracker */
 
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
 #include <elements/grid/gridgatewayinfo.hh>
-#include <elements/grid/airoinfo.hh>
+#include <elements/grid/linktracker.hh>
+#include <elements/grid/linkstat.hh>
 #include "grid.hh"
 #include <click/timer.hh>
 
@@ -127,16 +129,10 @@ public:
                             calling initialize_metric or
                             update_metric. */
 
-    /* link stats from us to this neighbor, only valid if is 1-hop neighbor */
-    int link_qual;
-    int link_sig;
-
-    unsigned int delivery_rate; // 0-100 percent
-
     RTEntry() : 
       _init(false), num_hops(0), loc_good(false), is_gateway(false), 
-      seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false),
-    link_qual(0), link_sig(0) { }
+      seq_no(0), ttl(0), last_updated_jiffies(-1), metric_valid(false)
+    { }
     
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
 	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 
@@ -146,17 +142,15 @@ public:
       next_hop_eth(_next_hop_eth), num_hops(_num_hops), loc(_loc), 
       loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway), 
       seq_no(_seq_no), ttl(_ttl),
-      last_updated_jiffies(_last_updated_jiffies), metric_valid(false),
-      link_qual(0), link_sig(0)
+      last_updated_jiffies(_last_updated_jiffies), metric_valid(false)
     { }
 
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
-	    unsigned int jiff, int qual, int sig) :
+	    unsigned int jiff) :
       _init(true), dest_ip(ip), next_hop_ip(ip), next_hop_eth(eth), num_hops(1), 
       loc(gh->loc), loc_good(gh->loc_good), is_gateway(hlo->is_gateway),
-      last_updated_jiffies(jiff), metric_valid(false), 
-      link_qual(qual), link_sig(sig)
+      last_updated_jiffies(jiff), metric_valid(false)
     { 
       loc_err = ntohs(gh->loc_err); 
       seq_no = ntohl(hlo->seq_no); 
@@ -169,7 +163,7 @@ public:
       _init(true), dest_ip(nbr->ip), next_hop_ip(ip), next_hop_eth(eth),
       num_hops(nbr->num_hops + 1), loc(nbr->loc), loc_good(nbr->loc_good),  
       is_gateway(nbr->is_gateway), last_updated_jiffies(jiff), 
-      metric_valid(false), link_qual(0), link_sig(0)
+      metric_valid(nbr->metric_valid)
     {
       loc_err = ntohs(nbr->loc_err);
       seq_no = ntohl(nbr->seq_no);
@@ -178,7 +172,7 @@ public:
     }
     
     /* copy data from this into nb, converting to net byte order */
-    void fill_in(grid_nbr_entry *nb, AiroInfo *a = 0);
+    void fill_in(grid_nbr_entry *nb, LinkStat *ls = 0);
     
   };
   friend class RTEntry;
@@ -192,6 +186,8 @@ public:
   void get_rtes(Vector<RTEntry> *retval);
 
   const RTEntry *current_gateway();
+
+  friend class LookupLocalGridRoute;
   
 private:
   /* max time to keep an entry in RT */
@@ -203,7 +199,8 @@ private:
   int _jitter;
 
   GridGatewayInfo *_gw_info;
-  AiroInfo *_airo_info;
+  LinkTracker *_link_tracker;
+  LinkStat *_link_stat;
 
   /* interval at which to check RT entries for expiry */
   static const unsigned int EXPIRE_TIMER_PERIOD = 100; // msecs
@@ -256,7 +253,10 @@ private:
      metric -- note that this is a strict comparison, if the metrics
      are equivalent, then the function returns false.  this is
      necessary to get stability, e.g. when using the hopcount metric */
-  bool metric_preferable(const RTEntry &, const RTEntry &);
+  bool metric_is_preferable(const RTEntry &, const RTEntry &);
+
+  /* true iff we should replace the first route with the second route */
+  bool should_replace_old_route(const RTEntry &, const RTEntry &);
 
   static String print_rtes(Element *e, void *);
   static String print_rtes_v(Element *e, void *);
