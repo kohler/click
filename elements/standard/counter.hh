@@ -4,18 +4,37 @@
 #include <click/element.hh>
 #include <click/ewma.hh>
 #include <click/llrpc.h>
+class HandlerCall;
 
 /*
 =c
-Counter()
+
+Counter([I<KEYWORDS>])
 
 =s measurement
+
 measures packet count and rate
 
 =d
 
 Passes packets unchanged from its input to its output, maintaining statistics
 information about packet count and packet rate.
+
+Keyword arguments are:
+
+=over 8
+
+=item CALL_AFTER_COUNT
+
+Argument is `I<N> I<HANDLER> [I<VALUE>]'. When the packet count reaches I<N>,
+call the write handler I<HANDLER> with value I<VALUE>.
+
+=item CALL_AFTER_BYTES
+
+Argument is `I<N> I<HANDLER> [I<VALUE>]'. When the byte count reaches or
+exceeds I<N>, call the write handler I<HANDLER> with value I<VALUE>.
+
+=back
 
 =h count read-only
 
@@ -33,6 +52,14 @@ weighted moving average) in packets/bytes per second.
 =h reset write-only
 
 Resets the counts and rates to zero.
+
+=h call_after_count write-only
+
+Writes a new CALL_AFTER_COUNT argument. The handler can be omitted.
+
+=h call_after_bytes write-only
+
+Writes a new CALL_AFTER_BYTES argument. The handler can be omitted.
 
 =h CLICK_LLRPC_GET_RATE llrpc
 
@@ -65,6 +92,7 @@ class Counter : public Element { public:
     void reset();
 
     Counter *clone() const			{ return new Counter; }
+    int configure(const Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void add_handlers();
     int llrpc(unsigned, void *);
@@ -74,15 +102,26 @@ class Counter : public Element { public:
   private:
 
 #ifdef HAVE_INT64_TYPES
-    uint64_t _count;
-    uint64_t _byte_count;
+    typedef uint64_t counter_t;
 #else
-    uint32_t _count;
-    uint32_t _byte_count;
+    typedef uint32_t counter_t;
 #endif
+    
+    counter_t _count;
+    counter_t _byte_count;
     RateEWMA _rate;
 
+    counter_t _count_trigger;
+    HandlerCall *_count_trigger_h;
+
+    counter_t _byte_trigger;
+    HandlerCall *_byte_trigger_h;
+
+    bool _count_triggered : 1;
+    bool _byte_triggered : 1;
+
     static String read_handler(Element *, void *);
+    static int write_handler(const String&, Element*, void*, ErrorHandler*);
 
 };
 
