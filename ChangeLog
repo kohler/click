@@ -1,3 +1,39 @@
+2001-02-22 Thursday 18:50  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/ipaddress.hh: make IPAddress constructors for int,
+	unsigned int, long, and unsigned long (rather than a dangerous mix
+	of u_int32_t and unsigned long)
+
+2001-02-22 Thursday 18:31  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/threadsched.cc: file threadsched.cc was
+	initially added on branch smp_click.
+
+2001-02-22 Thursday 18:31  Benjie Chen <benjie@lcs.mit.edu>
+
+	* elements/standard/threadsched.hh: file threadsched.hh was
+	initially added on branch smp_click.
+
+2001-02-22 Thursday 14:16  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ethernet/arpquerier.cc, elements/ethernet/arpquerier.hh,
+	elements/ethernet/ip6ndsolicitor.cc,
+	elements/ethernet/ip6ndsolicitor.hh,
+	elements/etherswitch/spantree.cc, elements/etherswitch/spantree.hh,
+	elements/grid/floodinglocquerier.cc,
+	elements/grid/floodinglocquerier.hh,
+	elements/grid/locqueryresponder.cc,
+	elements/grid/locqueryresponder.hh, elements/grid/movesim.cc,
+	elements/grid/movesim.hh, elements/grid/updateroutes.cc,
+	elements/grid/updateroutes.hh, elements/standard/peekhandlers.cc,
+	elements/standard/peekhandlers.hh,
+	elements/standard/pokehandlers.cc,
+	elements/standard/pokehandlers.hh, elements/standard/unqueue.cc,
+	elements/tcpudp/iprewriter.cc, elements/tcpudp/iprewriter.hh,
+	elements/tcpudp/tcprewriter.cc, elements/tcpudp/tcprewriter.hh,
+	include/click/timer.hh, lib/timer.cc: changed TimerHook to take
+	(Timer *, void *) arguments instead of (unsigned long)
+
 2001-02-21 Wednesday 18:30  Benjie Chen <benjie@lcs.mit.edu>
 
 	* linuxmodule/skbmgr.old.c: file skbmgr.old.c was initially added
