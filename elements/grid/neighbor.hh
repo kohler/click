@@ -1,6 +1,38 @@
 #ifndef NEIGHBOR_HH
 #define NEIGHBOR_HH
 
+/*
+ * =c
+ * Neighbor(TIMEOUT, ETH, IP)
+ * =d
+ *
+ * Neighbor is an immediate neighbor routing protocol for Grid.  It
+ * encapsulates and sends packets to immediate neighbors that it knows
+ * about.  When Neighbor receives a Grid packet, it remembers the
+ * sender's Grid address and MAC address in its neighbor table.
+ *
+ * TIMEOUT is the timeout in milliseconds for entries in the neighbor
+ * table.  If a negative value is specified, neighbor entries are
+ * never discard.  ETH and IP are this node's MAC (Ethernet) and Grid
+ * (IP) addresses, respectively.
+ *
+ * Neighbor expects and produces Grid packets with MAC headers on
+ * input and output 0, and expects and produces IP packets on input
+ * and output 1.
+ *
+ * =e This example runs the neighbor protocol for a host with Grid
+ * address 13.0.0.2 listening on eth0.  Note that you need a Hello
+ * element so that Grid nodes can find out about each other initially.
+ *
+ * = nb :: Neighbor(0, 00:E0:98:09:27:C5, 13.0.0.2)
+ * = q :: Queue -> ToDevice(eth0)
+ * = FromDevice(eth0) -> Classifier(12/BABE) -> [0] nb [0] -> q
+ * = FromLinux(...) -> [1] nb [1] -> Queue -> ToLinux
+ * = Hello(...) -> q
+ *
+ * =a Hello
+ */
+
 
 #include "element.hh"
 #include "glue.hh"
@@ -12,21 +44,22 @@ class Neighbor : public Element {
 
 public:
 
-#if 0
-  class eth_ip_pair {
+  class NbrEntry {
     bool _init;
   public:
     EtherAddress eth;
     IPAddress ip;
-    eth_ip_pair() : _init(false) { }
-    eth_ip_pair(unsigned char *eth_in, unsigned char *ip_in) : _init(true), eth(eth_in), ip(ip_in) { }
+    int last_updated_jiffies;
+    NbrEntry() : _init(false), last_updated_jiffies(-1) { }
+    NbrEntry(EtherAddress eth_in, IPAddress ip_in, int jiff) 
+      : _init(true), eth(eth_in), ip(ip_in), last_updated_jiffies(jiff) { }
     operator bool() const { return _init; }
     unsigned int hashcode() const { return *(unsigned int *)ip.data(); }
-    String s() const { return eth.s() + " -- " + ip.s(); }
+    String s() const 
+    { return eth.s() + " -- " + ip.s() + " -- " + String(last_updated_jiffies); }
   };
-#endif
 
-  HashMap<IPAddress, EtherAddress> _addresses;
+  HashMap<IPAddress, NbrEntry> _addresses;
 
   Neighbor();
   ~Neighbor();
@@ -45,6 +78,7 @@ public:
 
   void push(int port, Packet *);
 
+  int _timeout_jiffies; // -1 if we are not timing out entries
 private:
   IPAddress _ipaddr;
   EtherAddress _ethaddr;

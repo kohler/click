@@ -1,5 +1,5 @@
 /*
- * neighbor.{cc,hh} -- queue element
+ * neighbor.{cc,hh} -- Grid local neighbor table element
  * Douglas S. J. De Couto
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology.
@@ -42,10 +42,22 @@ Neighbor::cast(const char *n)
 int
 Neighbor::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
-  return cp_va_parse(conf, this, errh,
+  int msec_timeout = 0;
+  int res = cp_va_parse(conf, this, errh,
+		     cpInteger, "entry timeout (msec)", &msec_timeout,
 		     cpEthernetAddress, "source Ethernet address", &_ethaddr,
 		     cpIPAddress, "source IP address", &_ipaddr,
 		     0);
+
+  // convert msecs to jiffies
+  if (msec_timeout < 0) {
+    _timeout_jiffies = (CLICK_HZ * msec_timeout) / 1000;
+    if (_timeout_jiffies < 1) 
+      return errh->error("timeout interval is too small");
+  }
+  else // never timeout
+    _timeout_jiffies = -1;
+  return res;
 }
 
 int
@@ -74,6 +86,8 @@ Neighbor::push(int port, Packet *packet)
    */
 
   assert(packet);
+  int jiff = click_jiffies();
+  
   if (port == 0) {
     /*
      * input from net device
@@ -87,12 +101,25 @@ Neighbor::push(int port, Packet *packet)
     }
     grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
     IPAddress ipaddr((unsigned char *) &gh->ip);
-    EtherAddress *ethaddr = _addresses.findp(ipaddr);
-    if (ethaddr == 0) {
+    EtherAddress ethaddr((unsigned char *) eh->ether_shost);
+    NbrEntry *nbr = _addresses.findp(ipaddr);
+    if (nbr == 0) {
       // this src addr not already in map, so add it
-      EtherAddress ea((unsigned char *) eh->ether_shost);
-      _addresses.insert(ipaddr, ea);
-      click_chatter("adding %s -- %s", ipaddr.s().cc(), ea.s().cc()); 
+      NbrEntry new_nbr(ethaddr, ipaddr, jiff);
+      _addresses.insert(ipaddr, new_nbr);
+      click_chatter("adding %s -- %s", ipaddr.s().cc(), ethaddr.s().cc()); 
+    }
+    else {
+      // update jiffies and MAC for existing entry
+      int old_jiff = nbr->last_updated_jiffies;
+      nbr->last_updated_jiffies = jiff;
+      if (nbr->eth != ethaddr) {
+	if ((jiff - old_jiff) < _timeout_jiffies) {
+	  // entry changed before timeout!
+	  click_chatter("updating %s -- %s", ipaddr.s().cc(), ethaddr.s().cc()); 
+	}
+	nbr->eth = ethaddr;
+      }
     }
 
     // perform further packet processing
@@ -117,10 +144,18 @@ Neighbor::push(int port, Packet *packet)
     assert(port == 1);
     // check to see is the desired dest is our neighbor
     IPAddress dst(packet->data() + offsetof(click_ip, ip_dst));
-    EtherAddress *ethaddr = _addresses.findp(dst);
-    if (ethaddr == 0) {
-      click_chatter("Neighbor: dropping packet for %s", dst.s().cc());
+    NbrEntry *nbr = _addresses.findp(dst);
+    if (nbr == 0) {
+      click_chatter("Neighbor: dropping packet for unknown destination: %s", dst.s().cc());
       packet->kill(); // too bad!
+    } 
+    else if (_timeout_jiffies > 0 && 
+	     (jiff - nbr->last_updated_jiffies) > _timeout_jiffies) {
+      // XXX would like to remove entry from HashMap so it doesn't
+      // grow too big, but don't know how!
+
+      // click_chatter("Neighbor: dropping packet for destination with stale entry: %s", dst.s().cc());
+      packet->kill(); 
     }
     else {
       // encapsulate packet with grid hdr and send it out!
@@ -128,7 +163,7 @@ Neighbor::push(int port, Packet *packet)
       bzero(packet->data(), sizeof(click_ether) + sizeof(grid_hdr));
       
       click_ether *eh = (click_ether *) packet->data();
-      memcpy(eh->ether_dhost, ethaddr->data(), 6);
+      memcpy(eh->ether_dhost, nbr->eth.data(), 6);
       memcpy(eh->ether_shost, _ethaddr.data(), 6);
       eh->ether_type = htons(ETHERTYPE_GRID);
       
@@ -151,6 +186,7 @@ Neighbor::clone() const
 static String
 print_nbrs(Element *f, void *)
 {
+  int jiff = click_jiffies();
   Neighbor *n = (Neighbor *) f;
 
   String s = "\nneighbor addrs (";
@@ -159,12 +195,15 @@ print_nbrs(Element *f, void *)
 
   int i = 0;
   IPAddress ipaddr;
-  EtherAddress ethaddr;
-  while (n->_addresses.each(i, ipaddr, ethaddr)) {
-    s += ipaddr.s();
-    s += " -- ";
-    s += ethaddr.s();
-    s += '\n';
+  Neighbor::NbrEntry nbr;
+  while (n->_addresses.each(i, ipaddr, nbr)) {
+    if (n->_timeout_jiffies < 0 || 
+	(jiff - nbr.last_updated_jiffies) < n->_timeout_jiffies) {
+      s += ipaddr.s();
+      s += " -- ";
+      s += nbr.eth.s();
+      s += '\n';
+    }
   }
   return s;
 }
@@ -176,3 +215,7 @@ Neighbor::add_handlers()
 }
 
 EXPORT_ELEMENT(Neighbor)
+
+#include "hashmap.cc"
+  template class HashMap<IPAddress, Neighbor::NbrEntry>;
+
