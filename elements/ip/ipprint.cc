@@ -58,11 +58,15 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
   _bytes = 1500;
   String contents = "no";
   _label = "";
+  bool print_id = false;
+  
   if (cp_va_parse(conf, this, errh,
 		  cpOptional,
 		  cpString, "label", &_label,
-		  cpWord, "print packet contents (no/hex/ascii)", &contents,
-		  cpInteger, "number of bytes to dump", &_bytes,
+		  cpKeywords,
+		  "CONTENTS", cpWord, "print packet contents (no/hex/ascii)", &contents,
+		  "NBYTES", cpInteger, "number of bytes to dump", &_bytes,
+		  "ID", cpBool, "print IP ID?", &print_id,
 		  cpEnd) < 0)
     return -1;
 
@@ -74,7 +78,9 @@ IPPrint::configure(const Vector<String> &conf, ErrorHandler* errh)
   else if (contents == "ASCII")
     _contents = 2;
   else
-    return errh->error("bad contents value `%s'; should be NO, HEX, or ASCII", contents.cc());
+    return errh->error("bad contents value `%s'; should be `false', `hex', or `ascii'", contents.cc());
+
+  _print_id = print_id;
   
   delete[] _buf;
   _buf = 0;
@@ -114,6 +120,9 @@ IPPrint::simple_action(Packet *p)
   StringAccum sa;
   if (_label)
     sa << _label << ": ";
+
+  if (_print_id)
+    sa << "id " << ntohs(iph->ip_id) << ": ";
   
   switch (iph->ip_p) {
     
@@ -173,7 +182,7 @@ IPPrint::simple_action(Packet *p)
   }
   
   default: {
-    sa << src << " > " << dst << ": ip protocol " << iph->ip_p;
+    sa << src << " > " << dst << ": ip protocol " << (int)iph->ip_p;
     break;
   }
   
