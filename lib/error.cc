@@ -278,7 +278,7 @@ ErrorHandler::verror(Seriousness seriousness, const String &where,
      }
      
      case 'c': {
-       int c = va_arg(val, char);
+       int c = va_arg(val, int);
        numbuf[0] = c;
        s1 = numbuf;
        s2 = s1 + 1;
