@@ -167,7 +167,8 @@ IPRateMonitor::print(_stats *s, String ip = "")
 	ret += "\t"; 
 	ret += cp_unparse_real 
 	  (s->counter[i].rate.average()*CLICK_HZ, s->counter[i].rate.scale());
-      } ret += "\t0";
+      } 
+      else ret += "\t0";
     
       ret += "\n";
       if(s->counter[i].flags & SPLIT) 
