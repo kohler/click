@@ -25,6 +25,18 @@
 #include <arpa/inet.h>
 #include <fcntl.h>
 
+const char *ControlSocket::protocol_version = "1.0";
+enum {
+  CSERR_OK			= 200,
+  CSERR_OK_HANDLER_WARNING	= 220,
+  CSERR_SYNTAX			= 500,
+  CSERR_UNIMPLEMENTED		= 501,
+  CSERR_NO_SUCH_ELEMENT		= 510,
+  CSERR_NO_SUCH_HANDLER		= 511,
+  CSERR_HANDLER_ERROR		= 520,
+  CSERR_PERMISSION		= 530,
+};
+
 struct ControlSocketErrorHandler : public ErrorHandler {
 
   Vector<String> _messages;
@@ -68,18 +80,22 @@ int
 ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   _socket_fd = -1;
+  _read_only = false;
   
   String socktype;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "type of socket (`TCP' or `UNIX')", &socktype,
 		  cpIgnoreRest, cpEnd) < 0)
     return -1;
-  
+
+  socktype = socktype.upper();
   if (socktype == "TCP") {
     unsigned portno;
     if (cp_va_parse(conf, this, errh,
 		    cpIgnore,
 		    cpUnsigned, "port number", &portno,
+		    cpOptional,
+		    cpBool, "read-only?", &_read_only,
 		    cpEnd) < 0)
       return -1;
     if (portno > 65535)
@@ -116,6 +132,8 @@ ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     if (cp_va_parse(conf, this, errh,
 		    cpIgnore,
 		    cpString, "filename", &_unix_pathname,
+		    cpOptional,
+		    cpBool, "read-only?", &_read_only,
 		    cpEnd) < 0)
       return -1;
 
@@ -188,15 +206,15 @@ ControlSocket::parse_handler(int fd, const String &handlername, Element **es)
 {
   int dot = handlername.find_left('.');
   if (dot < 0)
-    return message(fd, 999, "Bad handler name");
+    return message(fd, CSERR_SYNTAX, "Bad handler name");
   String element = handlername.substring(0, dot);
   String handler = handlername.substring(dot + 1);
   Element *e = router()->find(element);
   if (!e)
-    return message(fd, 999, "Bad element name");
+    return message(fd, CSERR_NO_SUCH_ELEMENT, "No element named `" + element + "'");
   int hid = router()->find_handler(e, handler);
   if (hid < 0)
-    return message(fd, 999, "No such handler");
+    return message(fd, CSERR_NO_SUCH_HANDLER, "Element has no handler named `" + handler + "'");
   *es = e;
   return hid;
 }
@@ -210,25 +228,28 @@ ControlSocket::write_command(int fd, const String &handlername, const String &da
     return hid;
   const Router::Handler &h = router()->handler(hid);
   if (!h.write)
-    return message(fd, 999, "Not a read handler");
+    return message(fd, CSERR_NO_SUCH_HANDLER, "Not a write handler");
+
+  if (_read_only)
+    return message(fd, CSERR_PERMISSION, "Permission denied");
   
   // set up error handler
   ControlSocketErrorHandler errh;
   (void) /*XXX*/ h.write(data, e, h.write_thunk, &errh);
 
-  int code = 200;
+  int code = CSERR_OK;
   String happened = "OK";
   if (errh.nerrors() > 0)
-    code = 290, happened = "error";
+    code = CSERR_HANDLER_ERROR, happened = "error";
   else if (errh.nwarnings() > 0)
-    code = 240;
+    code = CSERR_OK_HANDLER_WARNING, happened = "OK with warnings";
 
-  String context_string = "Write handler `" + h.name + "' ";
-  if (e) context_string += String("for `") + e->declaration() + "' ";
-  message(fd, code, context_string + happened);
   const Vector<String> &messages = errh.messages();
+  if (messages.size() > 0)
+    happened += ":";
+  message(fd, code, "Write handler " + happened, messages.size() > 0);
   for (int i = 0; i < messages.size(); i++)
-    message(fd, code, messages[i], true);
+    message(fd, code, messages[i], i < messages.size() - 1);
   
   return 0;
 }
@@ -242,35 +263,37 @@ ControlSocket::parse_command(int fd, const String &line)
     return 0;
   
   Element *e;
-  if (words[0] == "read" || words[0] == "get") {
+  String command = words[0].upper();
+  if (command == "READ" || command == "GET") {
     if (words.size() != 2)
-      return message(fd, 999, "Bad command syntax");
+      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
     int hid = parse_handler(fd, words[1], &e);
     if (hid < 0) return hid;
     const Router::Handler &h = router()->handler(hid);
     if (!h.read)
-      return message(fd, 999, "Not a read handler");
+      return message(fd, CSERR_NO_SUCH_HANDLER, "Not a read handler");
     String data = h.read(e, h.read_thunk);
-    message(fd, 200, "OK " + String(data.length()));
+    message(fd, CSERR_OK, "Read handler OK");
+    _out_texts[fd] += "DATA " + String(data.length()) + "\r\n";
     _out_texts[fd] += data;
     
-  } else if (words[0] == "write") {
+  } else if (command == "WRITE" || command == "SET") {
     if (words.size() < 2)
-      return message(fd, 999, "Bad command syntax");
+      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
     String data;
     for (int i = 2; i < words.size(); i++)
       data += (i == 2 ? "" : " ") + words[i];
     return write_command(fd, words[1], data);
     
-  } else if (words[0] == "writex") {
+  } else if (command == "WRITEDATA" || command == "SETDATA") {
     if (words.size() != 3)
-      return message(fd, 999, "Bad command syntax");
+      return message(fd, CSERR_SYNTAX, "Wrong number of arguments");
     int datalen;
     if (!cp_integer(words[2], &datalen) || datalen < 0)
-      return message(fd, 999, "writex bad command syntax");
+      return message(fd, CSERR_SYNTAX, "Syntax error in `writedata'");
     if (_in_texts[fd].length() < datalen) {
       if (_flags[fd] & READ_CLOSED)
-	return message(fd, 999, "Not enough data");
+	return message(fd, CSERR_SYNTAX, "Not enough data");
       else			// retry
 	return 1;
     }
@@ -278,16 +301,16 @@ ControlSocket::parse_command(int fd, const String &line)
     _in_texts[fd] = _in_texts[fd].substring(datalen);
     return write_command(fd, words[1], data);
 
-  } else if (words[0] == "close") {
+  } else if (command == "CLOSE" || command == "QUIT") {
     if (words.size() != 1)
-      message(fd, 999, "Bad command syntax");
-    message(fd, 200, "Goodbye!");
+      message(fd, CSERR_SYNTAX, "Bad command syntax");
+    message(fd, CSERR_OK, "Goodbye!");
     _flags[fd] |= READ_CLOSED;
     _in_texts[fd] = String();
     return 0;
     
   } else
-    return message(fd, 999, "Bad command " + words[0]);
+    return message(fd, CSERR_UNIMPLEMENTED, "Command `" + command + "' unimplemented");
 
   return 0;
 }
@@ -322,7 +345,8 @@ ControlSocket::selected(int fd)
     _flags[new_fd] = 0;
 
     fd = new_fd;
-    message(fd, 200, "Hello!");
+    _out_texts[new_fd] = "Click::ControlSocket/" + String(protocol_version) + "\r\n";
+    message(fd, CSERR_OK, "Hello! Ready for commands");
   }
 
   // find file descriptor
@@ -353,8 +377,13 @@ ControlSocket::selected(int fd)
     if (pos >= len && !(_flags[fd] & READ_CLOSED)) // incomplete command
       break;
 
+    // include end of line
+    if (pos < len - 1 && in_text[pos] == '\r' && in_text[pos+1] == '\n')
+      pos += 2;
+    else if (pos < len)		// '\r' or '\n' alone
+      pos++;
+    
     // grab string
-    if (pos < len) pos++;
     String old_text = _in_texts[fd];
     String line = old_text.substring(0, pos);
     _in_texts[fd] = old_text.substring(pos);

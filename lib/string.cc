@@ -16,6 +16,9 @@
 #include "string.hh"
 #ifdef __KERNEL__
 # include "straccum.hh"
+# include <linux/ctype.h>
+#else
+# include <ctype.h>
 #endif
 #include "glue.hh"
 #include <assert.h>
@@ -292,6 +295,28 @@ String::find_right(int c, int start) const
     if ((unsigned char)_data[i] == c)
       return i;
   return -1;
+}
+
+String
+String::lower() const
+{
+  String n(_data, _length);
+  char *s = (char *)n._data;
+  int len = n._length;
+  for (int i = 0; i < len; i++)
+    s[i] = tolower(s[i]);
+  return n;
+}
+
+String
+String::upper() const
+{
+  String n(_data, _length);
+  char *s = (char *)n._data;
+  int len = n._length;
+  for (int i = 0; i < len; i++)
+    s[i] = toupper(s[i]);
+  return n;
 }
 
 int

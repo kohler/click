@@ -90,6 +90,9 @@ class String {
   
   String substring(int, int) const;
   String substring(int left) const	{ return substring(left, _length); }
+
+  String lower() const;
+  String upper() const;
   
   String &operator=(const String &);
   String &operator=(const char *);
