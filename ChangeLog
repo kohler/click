@@ -1,3 +1,10 @@
+2005-01-02 Sunday 16:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fromdevice.cc (1.49), include/click/master.hh
+	(1.10), include/click/timestamp.hh (1.4), lib/master.cc (1.19),
+	lib/routerthread.cc (1.52): more timestamp hell, including fix for
+	FromDevice
+
 2005-01-02 Sunday 11:59  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* config-userlevel.h.in (1.22), config.h.in (1.29), configure
