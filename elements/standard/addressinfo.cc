@@ -163,8 +163,8 @@ AddressInfo::query_ip_mask(String s, unsigned char *store,
 			   unsigned char *mask_store, Element *e)
 {
   int colon = s.find_right(':');
-  if (colon >= 0 && s.substring(colon).lower() != ":ip"
-      && s.substring(colon).lower() != ":ipnet")
+  if (colon >= 0 && s.substring(colon).lower() != ":ipnet"
+      && s.substring(colon).lower() != ":ip4net")
     return false;
   else if (colon >= 0)
     s = s.substring(0, colon);
