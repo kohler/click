@@ -1,3 +1,11 @@
+2003-02-25 Tuesday 14:30  Eddie Kohler <kohler@icir.org>
+
+	* lib/router.cc (1.141): another bug
+
+2003-02-25 Tuesday 14:27  Eddie Kohler <kohler@icir.org>
+
+	* tools/lib/Makefile.in (1.29): oopslet
+
 2003-02-24 Monday 20:50  Eddie Kohler <kohler@icir.org>
 
 	* bsdmodule/Makefile.in (1.24), lib/driver.cc (1.9),
