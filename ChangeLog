@@ -1,3 +1,8 @@
+2004-07-10 Saturday 01:54  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/: fakepcap.cc (1.13), fakepcap.hh (1.16):
+	support HDLC linktype for Vern
+
 2004-07-10 Saturday 00:56  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* lib/confparse.cc (1.131): fix cp_eat_space bug, reported by Erik
