@@ -54,15 +54,10 @@ TimedSink::uninitialize()
 void
 TimedSink::run_scheduled()
 {
-  // if timer is scheduled, we don't care if a packet is upstream.
-  if (_timer.scheduled())
-    return;
-
   Packet *p = input(0).pull();
-  if (p) {
+  if (p)
     p->kill();
-    _timer.schedule_after_ms(_interval);
-  }
+  _timer.schedule_after_ms(_interval);
 }
 
 EXPORT_ELEMENT(TimedSink)
