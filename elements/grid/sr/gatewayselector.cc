@@ -262,6 +262,7 @@ GatewaySelector::best_gateway()
     Path p = _link_table->best_route(nfo._ip);
     int metric = _link_table->get_route_metric(p);
     if (timercmp(&now, &expire, <) && 
+	metric && 
 	((!best_metric) || best_metric > metric)) {
       best_gw = nfo._ip;
       best_metric = metric;
@@ -505,8 +506,8 @@ void
 GatewaySelector::add_handlers()
 {
   add_read_handler("gateway_stats", static_print_gateway_stats, 0);
-  add_read_handler("print_is_gateway", static_print_is_gateway, 0);
-  add_write_handler("write_is_gateway", static_write_is_gateway, 0);
+  add_read_handler("is_gateway", static_print_is_gateway, 0);
+  add_write_handler("is_gateway", static_write_is_gateway, 0);
 }
 
 void

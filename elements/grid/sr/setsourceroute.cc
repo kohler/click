@@ -195,7 +195,7 @@ SetSourceRoute::clear()
 void
 SetSourceRoute::add_handlers()
 {
-  add_read_handler("print_routes", static_print_routes, 0);
+  add_read_handler("routes", static_print_routes, 0);
   add_write_handler("clear", static_clear, 0);
   add_write_handler("set_route", static_set_route, 0);
 }
