@@ -46,6 +46,12 @@ class TulipStats : public AnyDevice {
   unsigned long _oco;
   unsigned long _base_rx_missed_errors;
   unsigned long _base_rx_fifo_errors;
+  unsigned long _base_tx_errors;
+  unsigned long _base_tx_aborted_errors;
+  unsigned long _base_tx_carrier_errors;
+  unsigned long _base_tx_window_errors;
+  unsigned long _base_tx_fifo_errors;
+  unsigned long _base_tx_heartbeat_errors;
   
   unsigned long _tbusy;
 

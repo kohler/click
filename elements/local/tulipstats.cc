@@ -219,6 +219,12 @@ TulipStats::reset_counts()
   _mfo = _oco = 0;
   _base_rx_missed_errors = _dev_stats->rx_missed_errors;
   _base_rx_fifo_errors = _dev_stats->rx_fifo_errors;
+  _base_tx_errors = _dev_stats->tx_errors;
+  _base_tx_aborted_errors = _dev_stats->tx_aborted_errors;
+  _base_tx_carrier_errors = _dev_stats->tx_carrier_errors;
+  _base_tx_window_errors = _dev_stats->tx_window_errors;
+  _base_tx_fifo_errors = _dev_stats->tx_fifo_errors;
+  _base_tx_heartbeat_errors = _dev_stats->tx_heartbeat_errors;
   _tbusy = 0;
 }
 
@@ -279,6 +285,12 @@ TulipStats::read_counts(Element *e, void *)
   append_line(sa, "MFC (missed frame ctr)", dev_stats->rx_missed_errors - ts->_base_rx_missed_errors);
   sa << "\n";
   append_line(sa, "TBZ (device xmit busy)", ts->_tbusy);
+  append_line(sa, "TXE (xmit errors)", dev_stats->tx_errors - ts->_base_tx_errors);
+  append_line(sa, "TXA (xmit aborted)", dev_stats->tx_aborted_errors - ts->_base_tx_aborted_errors);
+  append_line(sa, "TXC (xmit carrier)", dev_stats->tx_carrier_errors - ts->_base_tx_carrier_errors);
+  append_line(sa, "TXW (xmit window)", dev_stats->tx_window_errors - ts->_base_tx_window_errors);
+  append_line(sa, "TXF (xmit fifo)", dev_stats->tx_fifo_errors - ts->_base_tx_fifo_errors);
+  append_line(sa, "TXH (xmit heartbeat)", dev_stats->tx_heartbeat_errors - ts->_base_tx_heartbeat_errors);
   return sa.take_string();
 }
 
