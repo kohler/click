@@ -7,7 +7,7 @@ template <class T>
 class Vector { public:
 
   Vector()			: _l(0), _n(0), _cap(0) { }
-  explicit Vector(int capacity)	: _l(0), _n(0), _cap(0) { reserve(capacity); }
+  explicit Vector(int cap)	: _l(0), _n(0), _cap(0) { reserve(cap); }
   Vector(int n, const T &e)	: _l(0), _n(0), _cap(0) { resize(n, e); }
   Vector(const Vector<T> &);
   Vector(const Subvector<T> &);
@@ -15,6 +15,14 @@ class Vector { public:
   
   int size() const			{ return _n; }
   
+  typedef const T *const_iterator;
+  typedef T *iterator;
+  
+  const_iterator begin() const		{ return _l; }
+  iterator begin()			{ return _l; }
+  const_iterator end() const		{ return _l + _n; }
+  iterator end()			{ return _l + _n; }
+
   const T &at(int i) const		{ assert(i>=0 && i<_n); return _l[i]; }
   const T &operator[](int i) const	{ return at(i); }
   const T &back() const			{ return at(_n - 1); }
@@ -25,15 +33,8 @@ class Vector { public:
   T &back()				{ return at(_n - 1); }
   T &at_u(int i)			{ return _l[i]; }
 
-  typedef T *iterator;
-  typedef const T *const_iterator;
-  iterator begin()			{ return _l; }
-  const_iterator begin() const		{ return _l; }
-  iterator end()			{ return _l + _n; }
-  const_iterator end() const		{ return _l + _n; }
-
-  void push_back(const T &);
-  void pop_back();
+  inline void push_back(const T &);
+  inline void pop_back();
   
   void clear()				{ shrink(0); }
   bool reserve(int);
@@ -79,13 +80,21 @@ template <>
 class Vector<void *> { public:
   
   Vector()			: _l(0), _n(0), _cap(0) { }
-  explicit Vector(int capacity)	: _l(0), _n(0), _cap(0) { reserve(capacity); }
+  explicit Vector(int cap)	: _l(0), _n(0), _cap(0) { reserve(cap); }
   Vector(int n, void *e)	: _l(0), _n(0), _cap(0) { resize(n, e); }
   Vector(const Vector<void *> &);
   Vector(const Subvector<void *> &);
   ~Vector();
   
   int size() const			{ return _n; }
+  
+  typedef void * const *const_iterator;
+  typedef void **iterator;
+
+  const_iterator begin() const		{ return _l; }
+  iterator begin()			{ return _l; }
+  const_iterator end() const		{ return _l + _n; }
+  iterator end()			{ return _l + _n; }
   
   void *at(int i) const			{ assert(i>=0 && i<_n); return _l[i]; }
   void *operator[](int i) const		{ return at(i); }
@@ -97,15 +106,8 @@ class Vector<void *> { public:
   void *&back()				{ return at(_n - 1); }
   void *&at_u(int i)			{ return _l[i]; }
 
-  typedef void **iterator;
-  typedef void * const *const_iterator;
-  iterator begin()			{ return _l; }
-  const_iterator begin() const		{ return _l; }
-  iterator end()			{ return _l + _n; }
-  const_iterator end() const		{ return _l + _n; }
-  
-  void push_back(void *);
-  void pop_back();
+  inline void push_back(void *);
+  inline void pop_back();
   
   void clear()				{ _n = 0; }
   bool reserve(int);
@@ -150,7 +152,7 @@ class Vector<T *>: private Vector<void *> {
  public:
   
   Vector()			: Base() { }
-  explicit Vector(int capacity)	: Base(capacity) { }
+  explicit Vector(int cap)	: Base(cap) { }
   Vector(int n, T *e)		: Base(n, (void *)e) { }
   Vector(const Vector<T *> &o)	: Base(o) { }
   Vector(const Subvector<T *> &o) : Base(o) { }
@@ -158,6 +160,14 @@ class Vector<T *>: private Vector<void *> {
   
   int size() const		{ return Base::size(); }
   
+  typedef T * const *const_iterator;
+  typedef T **iterator;
+  
+  const_iterator begin() const	{ return (const_iterator)(Base::begin()); }
+  iterator begin()		{ return (iterator)(Base::begin()); }
+  const_iterator end() const	{ return (const_iterator)(Base::end()); }
+  iterator end()		{ return (iterator)(Base::end()); }
+    
   T *operator[](int i) const	{ return (T *)(Base::at(i)); }
   T *at(int i) const		{ return (T *)(Base::at(i)); }
   T *back() const		{ return (T *)(Base::back()); }
@@ -168,13 +178,6 @@ class Vector<T *>: private Vector<void *> {
   T *&back()			{ return (T *&)(Base::back()); }
   T *&at_u(int i)		{ return (T *&)(Base::at_u(i)); }
 
-  typedef T **iterator;
-  typedef T * const *const_iterator;
-  iterator begin()		{ return (iterator)(Base::begin()); }
-  const_iterator begin() const	{ return (const_iterator)(Base::begin()); }
-  iterator end()		{ return (iterator)(Base::end()); }
-  const_iterator end() const	{ return (const_iterator)(Base::end()); }
-  
   void push_back(T *e)		{ Base::push_back((void *)e); }
   void pop_back()		{ Base::pop_back(); }
   
