@@ -171,7 +171,8 @@ FloodingLocQuerier::send_query_for(const IPAddress &want_ip)
 void
 FloodingLocQuerier::handle_nbr_encap(Packet *p)
 {
-  grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
+  click_ether *eh = (click_ether *) p->data();
+  grid_hdr *gh = (grid_hdr *) (eh + 1);
   grid_nbr_encap *nb = (grid_nbr_encap *) (gh + 1);
 
 #if NOISY
@@ -183,6 +184,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
 #if NOISY
     click_chatter("FloodingLocQuerier %s: packet has loc info, sending immediately", id().cc(), IPAddress(nb->dst_ip).s().cc());
 #endif
+    // memcpy(&eh->ether_shost, _my_en.data(), 6); // LookupGeographicGridRoute does this for us
     output(0).push(p);
     return;
   }
@@ -198,7 +200,8 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
 #endif
       // ae data is cached from sending last p
       WritablePacket *q = p->uniqueify();
-      grid_hdr *gh2 = (grid_hdr *) (q->data() + sizeof(click_ether));
+      click_ether *eh2 = (click_ether *) q->data();
+      grid_hdr *gh2 = (grid_hdr *) (eh2 + 1);
       gh2->tx_ip = _my_ip;
       grid_nbr_encap *nb2 = (grid_nbr_encap *) (gh2 + 1);
       nb2->dst_loc = ae->loc;
@@ -206,6 +209,7 @@ FloodingLocQuerier::handle_nbr_encap(Packet *p)
       nb2->dst_loc_good = ae->loc_good;
       if (!ae->loc_good)
 	click_chatter("FloodingLocQuerier %s: ``bad'' location information in table!  sending packet anyway...", id().cc()); // XXX lame, should cache the packet and wait for some new info that is good.
+      // memcpy(&eh2->ether_shost, _my_en.data(), 6); 
       output(0).push(q);
     } 
     else { 
