@@ -85,7 +85,9 @@ class RouterT { public:
   int archive_index(const String &s) const	{ return _archive_map[s]; }
   const Vector<ArchiveElement> &archive() const	{ return _archive; }
   ArchiveElement &archive(int i)		{ return _archive[i]; }
+  const ArchiveElement &archive(int i) const	{ return _archive[i]; }
   ArchiveElement &archive(const String &s);
+  const ArchiveElement &archive(const String &s) const;
   
   bool has_connection(const Hookup &, const Hookup &) const;
   int find_connection(const Hookup &, const Hookup &) const;
@@ -119,7 +121,11 @@ class RouterT { public:
   void expand_into(RouterT *, const VariableEnvironment &, ErrorHandler *);
   void flatten(ErrorHandler *);
 
-  void configuration_string(StringAccum &, const String & = String()) const;
+  void unparse(StringAccum &, const String & = String()) const;
+  void unparse_requirements(StringAccum &, const String & = String()) const;
+  void unparse_classes(StringAccum &, const String & = String()) const;
+  void unparse_declarations(StringAccum &, const String & = String()) const;
+  void unparse_connections(StringAccum &, const String & = String()) const;
   String configuration_string() const;
 
   RouterT *cast_router()		{ return this; }
@@ -233,6 +239,12 @@ RouterT::has_connection(const Hookup &hfrom, const Hookup &hto) const
 
 inline ArchiveElement &
 RouterT::archive(const String &name)
+{
+  return _archive[_archive_map[name]];
+}
+
+inline const ArchiveElement &
+RouterT::archive(const String &name) const
 {
   return _archive[_archive_map[name]];
 }

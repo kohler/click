@@ -189,7 +189,7 @@ ElementClassT::complex_expand_element(RouterT *fromr, int which, const String &,
 }
 
 void
-ElementClassT::declaration_string(StringAccum &, const String &, const String &)
+ElementClassT::unparse_declaration(StringAccum &, const String &, const String &)
 {
 }
 
@@ -248,7 +248,7 @@ SynonymElementClassT::complex_expand_element(
 }
 
 void
-SynonymElementClassT::declaration_string(StringAccum &sa, const String &name, const String &indent)
+SynonymElementClassT::unparse_declaration(StringAccum &sa, const String &name, const String &indent)
 {
   sa << indent << "elementclass " << name << " " << _name << ";\n";
 }
@@ -449,7 +449,7 @@ CompoundElementClassT::complex_expand_element(
 }
 
 void
-CompoundElementClassT::declaration_string(StringAccum &sa, const String &name, const String &indent)
+CompoundElementClassT::unparse_declaration(StringAccum &sa, const String &name, const String &indent)
 {
   assert(!_circularity_flag);
   _circularity_flag = true;
@@ -463,7 +463,7 @@ CompoundElementClassT::declaration_string(StringAccum &sa, const String &name, c
     sa << " |";
   sa << "\n";
 
-  _router->configuration_string(sa, indent + "  ");
+  _router->unparse(sa, indent + "  ");
   
   sa << indent << "}\n";
   _circularity_flag = false;

@@ -93,6 +93,21 @@ LexerT::set_router(RouterT *r)
 
 // LEXING: LOWEST LEVEL
 
+String
+LexerT::remaining_text() const
+{
+  return _big_string.substring(_pos);
+}
+
+void
+LexerT::set_remaining_text(const String &s)
+{
+  _big_string = s;
+  _data = s.data();
+  _pos = 0;
+  _len = s.length();
+}
+
 unsigned
 LexerT::skip_line(unsigned pos)
 {
@@ -386,15 +401,22 @@ LexerT::unlex(const Lexeme &t)
 bool
 LexerT::expect(int kind, bool report_error = true)
 {
-  const Lexeme &t = lex();
-  if (t.is(kind))
-    return true;
-  else {
-    if (report_error)
-      lerror("expected %s", lexeme_string(kind).cc());
-    unlex(t);
-    return false;
+  // Never adds anything to '_tcircle'. This requires a nonobvious
+  // implementation.
+  if (_tpos != _tfull) {
+    if (_tcircle[_tpos].is(kind)) {
+      _tpos = (_tpos + 1) % TCIRCLE_SIZE;
+      return true;
+    }
+  } else {
+    unsigned old_pos = _pos;
+    if (next_lexeme().is(kind))
+      return true;
+    _pos = old_pos;
   }
+  if (report_error)
+    lerror("expected %s", lexeme_string(kind).cc());
+  return false;
 }
 
 
@@ -691,7 +713,7 @@ LexerT::yconnection()
       return true;
       
      default:
-      lerror("syntax error near `%s'", String(t.string()).cc());
+      lerror("syntax error near `%#s'", String(t.string()).cc());
       if (t.kind() >= lexIdent)	// save meaningful tokens
 	unlex(t);
       return true;
@@ -729,7 +751,7 @@ LexerT::yelementclass()
       _router->add_type_index(facclass_name, new SynonymElementClassT(tnext.string(), tclass));
 
   } else
-    lerror("syntax error near `%s'", String(tnext.string()).cc());
+    lerror("syntax error near `%#s'", String(tnext.string()).cc());
 }
 
 void
@@ -837,16 +859,25 @@ LexerT::yrequire()
 {
   if (expect('(')) {
     String requirement = lex_config();
+    expect(')');
+    // pre-read ';' to make it easier to write parsing extensions
+    expect(';', false);
+    
     Vector<String> args;
     String word;
     cp_argvec(requirement, args);
     for (int i = 0; i < args.size(); i++) {
-      if (!cp_word(args[i], &word))
-	lerror("bad requirement: should be a single word");
+      Vector<String> words;
+      cp_spacevec(args[i], words);
+      if (words.size() == 0)
+	/* do nothing */;
+      else if (!cp_word(words[0], &word))
+	lerror("bad requirement: not a word");
+      else if (words.size() > 1)
+	lerror("bad requirement: too many words");
       else
 	_router->add_requirement(word);
     }
-    expect(')');
   }
 }
 
@@ -892,7 +923,7 @@ LexerT::ystatement(bool nested)
     
    default:
    syntax_error:
-    lerror("syntax error near `%s'", String(t.string()).cc());
+    lerror("syntax error near `%#s'", String(t.string()).cc());
     return true;
     
   }

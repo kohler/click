@@ -79,19 +79,22 @@ read_router_file(const char *filename, bool empty_ok, RouterT *router,
   lexer.reset(s, filename);
   if (router)
     lexer.set_router(router);
-  while (lexer.ystatement())
-    /* nada */;
-  router = lexer.take_router();
-
-  // add archive bits
+  else
+    router = lexer.router();
+  
+  // add archive bits first
   if (router && archive.size()) {
     for (int i = 0; i < archive.size(); i++)
       if (archive[i].live() && archive[i].name != "config")
 	router->add_archive(archive[i]);
   }
 
+  // read statements
+  while (lexer.ystatement())
+    /* nada */;
+
   // done
-  return router;
+  return lexer.take_router();
 }
 
 RouterT *

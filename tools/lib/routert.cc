@@ -1010,6 +1010,17 @@ RouterT::expand_into(RouterT *tor, const VariableEnvironment &env, ErrorHandler 
   // add requirements
   for (int i = 0; i < _requirements.size(); i++)
     tor->add_requirement(_requirements[i]);
+
+  // add archive elements
+  for (int i = 0; i < _archive.size(); i++) {
+    const ArchiveElement &ae = _archive[i];
+    if (ae.live() && ae.name != "config") {
+      if (tor->archive_index(ae.name) >= 0)
+	errh->error("expansion confict: two archive elements named `%s'", String(ae.name).cc());
+      else
+	tor->add_archive(ae);
+    }
+  }
 }
 
 void
@@ -1189,32 +1200,42 @@ add_line_directive(StringAccum &sa, const String &landmark)
 }
 
 void
-RouterT::configuration_string(StringAccum &sa, const String &indent) const
+RouterT::unparse_requirements(StringAccum &sa, const String &indent) const
 {
-  int nelements = _elements.size();
-  int nelemtype = _element_classes.size();
-
   // print requirements
   if (_requirements.size() > 0) {
-    sa << "require(";
+    sa << indent << "require(";
     for (int i = 0; i < _requirements.size(); i++) {
       if (i) sa << ", ";
       sa << _requirements[i];
     }
     sa << ");\n\n";
   }
+}
+
+void
+RouterT::unparse_classes(StringAccum &sa, const String &indent) const
+{
+  int nelemtype = _element_classes.size();
 
   // print element classes
   int old_sa_len = sa.length();
   for (int i = 0; i < nelemtype; i++)
     if (_element_classes[i])
-      _element_classes[i]->declaration_string
+      _element_classes[i]->unparse_declaration
 	(sa, _element_type_names[i], indent);
   if (sa.length() != old_sa_len)
     sa << "\n";
-  
+}
+
+void
+RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
+{
+  int nelements = _elements.size();
+  int nelemtype = _element_classes.size();
+
   // print tunnel pairs
-  old_sa_len = sa.length();
+  int old_sa_len = sa.length();
   for (int i = 0; i < nelements; i++)
     if (_elements[i].type == TUNNEL_TYPE
 	&& _elements[i].tunnel_output >= 0
@@ -1245,7 +1266,11 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   }
   if (nprinted_elements)
     sa << "\n";
+}
 
+void
+RouterT::unparse_connections(StringAccum &sa, const String &indent) const
+{
   // mark loser connections
   int nhookup = _hookup_from.size();
   Bitvector used(nhookup, false);
@@ -1273,7 +1298,7 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   }
 
   // count line numbers so we can give reasonable error messages
-  if (nprinted_elements) {
+  {
     int lineno = 1;
     const char *s = sa.data();
     int len = sa.length();
@@ -1319,10 +1344,19 @@ RouterT::configuration_string(StringAccum &sa, const String &indent) const
   }
 }
 
+void
+RouterT::unparse(StringAccum &sa, const String &indent) const
+{
+  unparse_requirements(sa, indent);
+  unparse_classes(sa, indent);
+  unparse_declarations(sa, indent);
+  unparse_connections(sa, indent);
+}
+
 String
 RouterT::configuration_string() const
 {
   StringAccum sa;
-  configuration_string(sa);
+  unparse(sa);
   return sa.take_string();
 }

@@ -39,8 +39,8 @@ mkinstalldirs = @top_srcdir@/mkinstalldirs
 
 
 OBJS = vectori.o vectorv.o bitvector.o hashmapi.o straccum.o string.o error.o \
-	elementt.o routert.o variableenv.o lexert.o confparse.o \
-	archive.o processingt.o \
+	elementt.o routert.o variableenv.o lexert.o packageutils.o \
+	confparse.o archive.o processingt.o \
 	ipaddress.o ipaddressset.o etheraddress.o \
 	userutils.o toolutils.o clp.o @LIBOBJS@ @EXTRA_TOOL_OBJS@
 

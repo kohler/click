@@ -62,7 +62,7 @@ class ElementClassT { public:
   virtual void report_signatures(const String &, String, ErrorHandler *);
   virtual int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
   
-  virtual void declaration_string(StringAccum &, const String &, const String &);
+  virtual void unparse_declaration(StringAccum &, const String &, const String &);
 
   virtual bool direct_expansion() const	{ return true; }
   virtual CompoundElementClassT *cast_compound() { return 0; }
@@ -90,7 +90,7 @@ class SynonymElementClassT : public ElementClassT {
   ElementClassT *find_relevant_class(int ninputs, int noutputs, const Vector<String> &);
   int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
   
-  void declaration_string(StringAccum &, const String &, const String &);
+  void unparse_declaration(StringAccum &, const String &, const String &);
 
   bool direct_expansion() const		{ return false; }
   CompoundElementClassT *cast_compound();
@@ -129,7 +129,7 @@ class CompoundElementClassT : public ElementClassT {
   void report_signatures(const String &, String, ErrorHandler *);
   int complex_expand_element(RouterT *, int, const String &, Vector<String> &, RouterT *, const VariableEnvironment &, ErrorHandler *);
   
-  void declaration_string(StringAccum &, const String &, const String &);
+  void unparse_declaration(StringAccum &, const String &, const String &);
 
   bool direct_expansion() const		{ return false; }
   CompoundElementClassT *cast_compound() { return this; }
