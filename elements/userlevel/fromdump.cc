@@ -89,13 +89,13 @@ FromDump::initialize(ErrorHandler *errh)
   if (fread(&fh, sizeof(fh), 1, _fp) < 1)
     return errh->error("%s: not a tcpdump file (too short)", _filename.cc());
 
-  if (fh.magic == FAKE_TCPDUMP_MAGIC)
+  if (fh.magic == FAKE_PCAP_MAGIC)
     _swapped = false;
   else {
     swap_file_header(&fh);
     _swapped = true;
   }
-  if (fh.magic != FAKE_TCPDUMP_MAGIC)
+  if (fh.magic != FAKE_PCAP_MAGIC)
     return errh->error("%s: not a tcpdump file (bad magic number)", _filename.cc());
 
   if (fh.version_major != FAKE_PCAP_VERSION_MAJOR)

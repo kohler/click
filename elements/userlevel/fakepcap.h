@@ -10,7 +10,8 @@ struct pcap_t;
 #define PCAP_ERRBUF_SIZE 		16
 
 
-#define FAKE_TCPDUMP_MAGIC		0xa1b2c3d4
+#define FAKE_PCAP_MAGIC			0xa1b2c3d4
+#define	FAKE_MODIFIED_PCAP_MAGIC	0xa1b2cd34
 #define FAKE_PCAP_VERSION_MAJOR		2
 #define FAKE_PCAP_VERSION_MINOR		4
 
@@ -24,19 +25,19 @@ struct pcap_t;
  * padding; these files need to be interchangeable across architectures.
  */
 struct fake_pcap_file_header {
-	u_int32_t magic;
-	u_int16_t version_major;
-	u_int16_t version_minor;
+	uint32_t magic;
+	uint16_t version_major;
+	uint16_t version_minor;
 	int32_t thiszone;	/* gmt to local correction */
-	u_int32_t sigfigs;	/* accuracy of timestamps */
-	u_int32_t snaplen;	/* max length saved portion of each pkt */
-	u_int32_t linktype;	/* data link type (DLT_*) */
+	uint32_t sigfigs;	/* accuracy of timestamps */
+	uint32_t snaplen;	/* max length saved portion of each pkt */
+	uint32_t linktype;	/* data link type (DLT_*) */
 };
 
 struct fake_bpf_timeval
 {
-	u_int32_t tv_sec;
-	u_int32_t tv_usec;
+	uint32_t tv_sec;
+	uint32_t tv_usec;
 };
 
 /*
@@ -46,8 +47,19 @@ struct fake_bpf_timeval
  */
 struct fake_pcap_pkthdr {
 	struct fake_bpf_timeval ts;	/* time stamp */
-	u_int32_t caplen;	/* length of portion present */
-	u_int32_t len;		/* length this packet (off wire) */
+	uint32_t caplen;	/* length of portion present */
+	uint32_t len;		/* length this packet (off wire) */
+};
+
+/* Unfortunately, Linux tcpdump generates a different format. */
+struct fake_modified_pcap_pkthdr {
+	struct fake_pcap_pkthdr hdr;	/* the regular header */
+	uint32_t ifindex;	/* index, in *capturing* machine's list of
+				   interfaces, of the interface on which this
+				   packet came in. */
+	uint16_t protocol;	/* Ethernet packet type */
+	uint8_t pkt_type;	/* broadcast/multicast/etc. indication */
+	uint8_t pad;		/* pad to a 4-byte boundary */
 };
 
 #endif

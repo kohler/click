@@ -77,7 +77,7 @@ ToDump::initialize(ErrorHandler *errh)
 
   struct fake_pcap_file_header h;
 
-  h.magic = FAKE_TCPDUMP_MAGIC;
+  h.magic = FAKE_PCAP_MAGIC;
   h.version_major = FAKE_PCAP_VERSION_MAJOR;
   h.version_minor = FAKE_PCAP_VERSION_MINOR;
   
