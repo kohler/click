@@ -1,3 +1,7 @@
+2001-10-10 Wednesday 07:08  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc: DriverManager supports global handlers
+
 2001-10-09 Tuesday 16:57  Eddie Kohler <kohler@aciri.org>
 
 	* click-buildtool: add -S/--standards option to click-buildtool

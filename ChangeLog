@@ -1,3 +1,8 @@
+2001-10-10 Wednesday 07:08  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/drivermanager.cc (1.13): DriverManager supports
+	global handlers
+
 2001-10-10 Wednesday 06:32  Eddie Kohler <kohler@aciri.org>
 
 	* elements/standard/: pokehandlers.cc (1.20), pokehandlers.hh
