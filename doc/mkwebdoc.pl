@@ -175,6 +175,7 @@ if ($ELEMENTS) {
     open(IN, "/tmp/%click-webdoc/man/mann/elements.n") || die "/tmp/%click-webdoc/man/mann/elements.n: $!\n";
     $cocked = 0;
     while (<IN>) {
+	s/\\f[BRPI]//g;
 	push @{$esections[-1]}, scalar(@esubj) if /^\.SS/ && @esections;
 	push @esections, [$1, scalar(@esubj)] if /^\.SS \"(.*)\"/;
 	if (/^\.M (.*) n/ && $cocked == 1) {
