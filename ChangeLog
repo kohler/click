@@ -1,3 +1,8 @@
+2001-03-13 Tuesday 09:42  Robert Morris <rtm@lcs.mit.edu>
+
+	* elements/local/: webgen.cc, webgen.hh: WebGen -- web/tcp test
+	load generator.
+
 2001-03-13 Tuesday 00:55  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* doc/click.texi: updates
