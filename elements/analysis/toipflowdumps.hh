@@ -59,6 +59,16 @@ ToIPFlowDumps will ask the element for notification when flows are deleted. It
 uses that notification to free its state early. It's a very good idea to
 supply a NOTIFIER.
 
+=item ABSOLUTE_TIME
+
+Boolean. If true, print absolute timestamps instead of relative timestamps.
+Defaults to false.
+
+=item ABSOLUTE_SEQ
+
+Boolean. If true, print absolute sequence numbers instead of relative
+ones. Defaults to false.
+
 =back
 
 =n
@@ -128,7 +138,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 
     class Flow { public:
 
-	Flow(const Packet *, const String &);
+	Flow(const Packet *, const String &, bool absolute_time, bool absolute_seq);
 
 	uint32_t aggregate() const	{ return _aggregate; }
 	Flow *next() const		{ return _next; }
@@ -151,8 +161,9 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
 	int _npkt;
 	int _nnote;
 	int _pkt_off;
-	tcp_seq_t _first_seq[2];
+	struct timeval _first_timestamp;
 	bool _have_first_seq[2];
+	tcp_seq_t _first_seq[2];
 	Pkt _pkt[NPKT];
 	Note _note[NNOTE];
 	StringAccum _note_text;
@@ -170,6 +181,9 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     uint32_t _nnoagg;
     uint32_t _nagg;
     AggregateNotifier *_agg_notifier;
+
+    bool _absolute_time : 1;
+    bool _absolute_seq : 1;
     
     Task _task;
     NotifierSignal _signal;

@@ -29,7 +29,8 @@
 #include <sys/types.h>
 CLICK_DECLS
 
-ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename)
+ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename,
+			  bool absolute_time, bool absolute_seq)
     : _next(0),
       _flowid(p), _ip_p(p->ip_header()->ip_p), _aggregate(AGGREGATE_ANNO(p)),
       _filename(filename), _outputted(false),
@@ -47,7 +48,13 @@ ToIPFlowDumps::Flow::Flow(const Packet *p, const String &filename)
     if (PAINT_ANNO(p) & 1)	// reverse _flowid
 	_flowid = _flowid.rev();
     
-    _have_first_seq[0] = _have_first_seq[1] = false;
+    _have_first_seq[0] = _have_first_seq[1] = absolute_seq;
+    _first_seq[0] = _first_seq[1] = 0;
+
+    if (absolute_time)
+	_first_timestamp = make_timeval(0, 0);
+    else			// make first packet have timestamp .000001
+	_first_timestamp = p->timestamp_anno() - make_timeval(0, 1);
 
     // sanity checks
     assert(_aggregate && (_ip_p == IP_PROTO_TCP || _ip_p == IP_PROTO_UDP));
@@ -97,10 +104,14 @@ ToIPFlowDumps::Flow::output(bool done, ErrorHandler *errh)
 	    fprintf(f, "!data 'timestamp' 'direction' 'tcp flags' 'tcp seq' 'tcp ack' 'payload len'\n");
 	else
 	    fprintf(f, "!data 'timestamp' 'direction' 'payload len'\n");
-	if (_have_first_seq[0] && _ip_p == IP_PROTO_TCP)
-	    fprintf(f, "!first_seq > %u\n", _first_seq[0]);
-	if (_have_first_seq[1] && _ip_p == IP_PROTO_TCP)
-	    fprintf(f, "!first_seq < %u\n", _first_seq[1]);
+	if (_have_first_seq[0] && _first_seq[0] && _ip_p == IP_PROTO_TCP)
+	    fprintf(f, "!firstseq > %u\n", _first_seq[0]);
+	if (_have_first_seq[1] && _first_seq[1] && _ip_p == IP_PROTO_TCP)
+	    fprintf(f, "!firstseq < %u\n", _first_seq[1]);
+	if (timerisset(&_first_timestamp)) {
+	    struct timeval real_firsttime = _first_timestamp + make_timeval(0, 1);
+	    fprintf(f, "!firsttime %lu.%06ld\n", real_firsttime.tv_sec, real_firsttime.tv_usec);
+	}
     }
 
     int pi = 0, ni = 0;
@@ -168,7 +179,7 @@ ToIPFlowDumps::Flow::add_pkt(const Packet *p, ErrorHandler *errh)
     const click_ip *iph = p->ip_header();
     assert(iph->ip_p == _ip_p);
     
-    _pkt[_npkt].timestamp = p->timestamp_anno();
+    _pkt[_npkt].timestamp = p->timestamp_anno() - _first_timestamp;
     _pkt[_npkt].direction = direction;
 
     if (_ip_p == IP_PROTO_TCP) {
@@ -238,12 +249,16 @@ int
 ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     Element *e = 0;
+    bool absolute_time = false, absolute_seq = false;
+    
     if (cp_va_parse(conf, this, errh,
 		    cpOptional,
 		    cpFilename, "output filename pattern", &_filename_pattern,
 		    cpKeywords,
 		    "OUTPUT_PATTERN", cpFilename, "output filename pattern", &_filename_pattern,
 		    "NOTIFIER", cpElement, "aggregate deletion notifier", &e,
+		    "ABSOLUTE_TIME", cpBool, "print absolute timestamps?", &absolute_time,
+		    "ABSOLUTE_SEQ", cpBool, "print absolute sequence numbers?", &absolute_seq,
 		    0) < 0)
 	return -1;
 
@@ -254,6 +269,9 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     
     if (e && !(_agg_notifier = (AggregateNotifier *)e->cast("AggregateNotifier")))
 	return errh->error("%s is not an AggregateNotifier", e->id().cc());
+
+    _absolute_time = absolute_time;
+    _absolute_seq = absolute_seq;
 
     return 0;
 }
@@ -364,7 +382,7 @@ ToIPFlowDumps::find_aggregate(uint32_t agg, const Packet *p)
 
     if (f)
 	/* nada */;
-    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()))))
+    else if (p && (f = new Flow(p, expand_filename(p, ErrorHandler::default_handler()), _absolute_time, _absolute_seq)))
 	prev = f;
     else
 	return 0;
