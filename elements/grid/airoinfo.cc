@@ -78,10 +78,10 @@ AiroInfo::initialize(ErrorHandler *errh)
 }
 
 
+#ifdef __OpenBSD__
 bool
 AiroInfo::get_signal_info(const EtherAddress &e, int &dbm, int &quality)
 {
-#ifdef __OpenBSD__
   struct an_req areq;
   memset(&areq, 0, sizeof(areq));
   
@@ -112,16 +112,13 @@ AiroInfo::get_signal_info(const EtherAddress &e, int &dbm, int &quality)
       return true;
     }
   }
-#endif
 
   return false;
 }
 
-
 bool
 AiroInfo::get_tx_stats(const EtherAddress &e, int &num_successful, int &num_failed)
 {
-#ifdef __OpenBSD__
   struct an_req areq;
   memset(&areq, 0, sizeof(areq));
   
@@ -147,10 +144,25 @@ AiroInfo::get_tx_stats(const EtherAddress &e, int &num_successful, int &num_fail
       return true;
     }
   }
-#endif
- 
   return false;
 }
+
+#else 
+
+bool
+AiroInfo::get_signal_info(const EtherAddress &, int &, int &)
+{
+  return false;
+}
+
+bool
+AiroInfo::get_tx_stats(const EtherAddress &, int &, int &)
+{
+  return false;
+}
+#endif /* __OpenBSD__ */
+
+
 
 
 void

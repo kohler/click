@@ -105,10 +105,14 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
     /* init new entry */
     stat_t s2;
     s2.last_data = when;
-    s2.qual_bot = s2.sig_bot = 1;
-    s2.qual_top = qual;
-    s2.sig_top = sig;
     s2.last_update = now;
+
+    s2.qual_top = qual;
+    s2.qual_bot = 1.0;
+
+    s2.sig_top = sig;
+    s2.sig_bot = 1.0;
+   
     _stats.insert(dst, s2);
   }
   else {
@@ -118,25 +122,39 @@ LinkTracker::add_stat(IPAddress dst, int sig, int qual, struct timeval when)
       /* this isn't new data, just a repeat of an old statistic.  it
          may be true that packets can arrive at a node and stats can
          be generated faster than once per usec, (or whatever the
-         getimeofday granularity is), but we won't worry about that */
+         gettimeofday granularity is), but we won't worry about that */
       return; 
     }
     double delta = tv.tv_sec;
     delta += tv.tv_usec / 1.0e6;
     
-    double e_factor = exp(delta / _tau);
-    double sig_ = sig;
-    double qual_ = qual;
-    s->sig_top += qual_ * e_factor;
-    s->sig_bot += e_factor;
-    s->sig_top += sig_ * e_factor;
-    s->sig_bot += e_factor;
-    s->last_data = when;
+    double old_weight = exp(-delta / _tau);
 
+    s->qual_top *= old_weight;
+    s->qual_top += qual;
+
+    s->qual_bot *= old_weight;
+    s->qual_bot += 1.0;
+
+    s->sig_top *= old_weight;
+    s->sig_top += sig;
+
+    s->sig_bot *= old_weight;
+    s->sig_bot += 1.0;
+
+    s->last_data = when;
     s->last_update = now;
 
-    if (s->sig_top > 1e100) 
-      click_chatter("LinkTracker: warning, averages are getting really big!!!\n");
+    if (s->sig_top > 1e100) {
+      click_chatter("LinkTracker: warning, signal strength accumulators are getting really big!!!  Renormalizing.\n");
+      s->sig_top *= 1e-80;
+      s->sig_bot *= 1e-80;
+    }
+    if (s->qual_top > 1e100) {
+      click_chatter("LinkTracker: warning, signal quality accumulators are getting really big!!!  Renormalizing.\n");
+      s->qual_top *= 1e-80;
+      s->qual_bot *= 1e-80;
+    }
   }
 }
 

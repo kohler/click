@@ -27,7 +27,7 @@
 #include <click/glue.hh>
 #include "gridroutetable.hh"
 
-#define METRIC 1
+// #define METRIC 1
 
 GridRouteTable::GridRouteTable() : 
   Element(1, 1), 
