@@ -26,6 +26,7 @@ class Packet { public:
   struct sk_buff *steal_skb()		{ return skb(); }
   void kill() 				{ kfree_skb(skb()); }
 #else
+  static WritablePacket *make(unsigned char *, unsigned, void (*destructor)(unsigned char *));
   void kill()				{ if (--_use_count <= 0) delete this; }
 #endif
 
@@ -109,8 +110,6 @@ class Packet { public:
   const IP6Address &dst_ip6_anno() const;
   void set_dst_ip6_anno(const IP6Address &a);
 
-  unsigned char sniff_flags_anno() const { return anno()->sniff_flags; }
-  void set_sniff_flags_anno(unsigned char c) { anno()->sniff_flags = c; }
 #ifdef __KERNEL__
   PacketType packet_type_anno() const	{ return (PacketType)skb()->pkt_type; }
   void set_packet_type_anno(PacketType p) { skb()->pkt_type = p; }
@@ -130,12 +129,10 @@ class Packet { public:
   void set_timestamp_anno(const struct timeval &tv) { _timestamp = tv; }
   void set_timestamp_anno(int s, int us) { _timestamp.tv_sec = s; _timestamp.tv_usec = us; }
 #endif
-  bool fix_ip_src_anno() const		{ return anno()->fix_ip_src; }
-  void set_fix_ip_src_anno(bool f)	{ anno()->fix_ip_src = f; }
-  char param_off_anno() const		{ return anno()->param_off; }
-  void set_param_off_anno(char p)	{ anno()->param_off = p; }
-  char color_anno() const		{ return anno()->color; }
-  void set_color_anno(char c)		{ anno()->color = c; }
+  unsigned user_anno_u() const		{ return anno()->user_flags.u; }
+  void set_user_anno_u(unsigned u)	{ anno()->user_flags.u = u; }
+  unsigned char user_anno_c(int i) const { return anno()->user_flags.c[i]; }
+  void set_user_anno_c(int i, unsigned char c) { anno()->user_flags.c[i] = c; }
   int fwd_rate_anno() const		{ return anno()->fwd_rate; }
   void set_fwd_rate_anno(int r)		{ anno()->fwd_rate = r; }
   int rev_rate_anno() const		{ return anno()->rev_rate; }
@@ -153,12 +150,16 @@ class Packet { public:
       unsigned dst_ip4;
       unsigned char dst_ip6[16];
     } dst_ip;
-    unsigned char sniff_flags; // flags used for sniffers
-    bool fix_ip_src : 1;    // flag: asks FixIPSrc to set ip_src
-    char param_off;     // for ICMP Parameter Problem, byte offset of error
-    char color;         // one of 255 colors set by Paint element
+    
+    union {
+      unsigned u;
+      unsigned char c[4];
+    } user_flags;
+    // flag allocations: see packet_anno.hh
+    
     int fwd_rate;
     int rev_rate;
+    
 #ifdef __KERNEL__
     unsigned long long perfctr;
 #endif
@@ -172,6 +173,7 @@ class Packet { public:
   unsigned char *_data; /* where the packet starts */
   unsigned char *_tail; /* one beyond end of packet */
   unsigned char *_end;  /* one beyond end of allocated buffer */
+  void (*_destructor)(unsigned char *);
   unsigned char _cb[48];
   union {
     click_ip *iph;

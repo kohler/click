@@ -3,15 +3,24 @@
 #include <click/element.hh>
 
 /*
- * =c
- * Paint(X)
- * =s annotations
- * sets packet paint annotations
- * =d
- * Sets each packet's paint annotation to X, an integer 0..255.
- * Note that a packet may only be painted with one color.
- * =a PaintTee
- */
+=c
+
+Paint(X)
+
+=s annotations
+
+sets packet paint annotations
+
+=d
+
+Sets each packet's paint annotation to X, an integer 0..255. Note that a
+packet may only be painted with one color.
+
+=n
+
+The paint annotation is stored in user annotation 0.
+
+=a PaintTee */
 
 class Paint : public Element {
   
@@ -23,7 +32,7 @@ class Paint : public Element {
   ~Paint();
   
   const char *class_name() const		{ return "Paint"; }
-  const char *processing() const	{ return AGNOSTIC; }
+  const char *processing() const		{ return AGNOSTIC; }
   Paint *clone() const;
   int configure(const Vector<String> &, ErrorHandler *);
 

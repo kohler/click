@@ -27,6 +27,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/click_ip.h>
+#include <click/packet_anno.hh>
 
 FixIPSrc::FixIPSrc()
 {
@@ -64,7 +65,7 @@ FixIPSrc::fix_it(Packet *p_in)
 {
   WritablePacket *p = p_in->uniqueify();
   click_ip *ip = p->ip_header();
-  p->set_fix_ip_src_anno(0);
+  SET_FIX_IP_SRC_ANNO(p, 0);
   click_chatter("FixIPSrc changed %x to %x",
                 ip->ip_src.s_addr,
                 _my_ip.s_addr);
@@ -79,7 +80,7 @@ Packet *
 FixIPSrc::simple_action(Packet *p)
 {
   const click_ip *ip = p->ip_header();
-  if (p->fix_ip_src_anno() && ip)
+  if (FIX_IP_SRC_ANNO(p) && ip)
     p = fix_it(p);
   return p;
 }

@@ -8,14 +8,18 @@
  * sets IP source field if requested by annotation
  * =d
  *
- * Expects an IP packet as input. If its fix_ip_src annotation is set, then
+ * Expects an IP packet as input. If its Fix IP Source annotation is set, then
  * changes its IP source address field to IPADDR and recomputes the checksum.
  * Used by elements such as ICMPError that are required by standards to use
  * the IP address on the outgoing interface as the source. Such elements must
  * set ip_src to something reasonable in case the outgoing interface has no IP
  * address.
  *
- * Also clears the fix_ip_src annotation.
+ * Also clears the Fix IP Source annotation.
+ *
+ * =n
+ *
+ * The Fix IP Source annotation is stored as user annotation 3.
  * 
  * =a ICMPError */
 

@@ -2,21 +2,78 @@ Click NEWS
 
 Version 1.1
 
+* Element packages
+
+** Added support for element packages. An element package is a group of
+   elements that can be dynamically loaded into a driver. Required several
+   changes described below.
+
+** Rearranged include files. All include files formerly in `lib/' are now
+   stored in `include/click/' instead. Do not say `#include "element.hh"'
+   any more; say `#include <click/element.hh>' instead. Similar statements
+   hold for `<click/packet.hh>', `<click/confparse.hh>', and many others.
+   many other include files. Check under include/click for a full list.
+   Required for element package support.
+
+** Every element should say `MOD_INC_USE_COUNT;' in its constructor and
+   `MOD_DEC_USE_COUNT;' in its destructor. Required for element package
+   support.
+
+** Added a new directory, `etc/samplepackage', that demonstrates a simple
+   element package. In particular, this shows how to write a Makefile for
+   an element package.
+
 * General
 
-** Rearranged include files. Do not say `#include "element.hh"' any more;
-   say `#include <click/element.hh>' instead, and the same for many other
-   include files. Check under include/click for a full list. This was
-   required to support element packages better.
+** Compound element semantics: Connecting to a compound element port whose
+   corresponding `input' or `output' was not mentioned inside the compound
+   element is now an error. Leaving a compound element input or output port
+   unused is also an error.
 
-** Improved support for element packages. Required changes to the
-   configuration shell scripts, and added a new directory,
-   `etc/samplepackage', to show how packages should be compiled.
+** Compound element semantics: Added overloaded compound elements. A single
+   compound element can have multiple definitions; Click uses the
+   definition with matching numbers of arguments, input ports, and output
+   ports. See click(5) for details.
 
-** Minor change to compound element semantics: Connecting to a compound
-   element port whose corresponding `input' or `output' was not mentioned
-   inside the compound element is now an error. Leaving a compound element
-   input or output port unused is also an error.
+** Restructured build tools: created `click-buildtool' and
+   `click-mkelemmap'.
+
+** Changed element documentation format: list of keywords follows `=s'. See
+   elementdoc(7) for details.
+
+** The `cp_va_parse' family of functions supports keyword arguments. Use
+   cpKeywords, and see `elements/ip/ipprint.cc' for an example. Also
+   supported: adding and removing argument types dynamically.
+
+** Many other bug fixes and configuration fixes.
+
+* Elements
+
+** Added ICMPRewriter and ICMPPingRewriter. Reorganized ICMP elements into
+   `elements/icmp' directory.
+
+** Improved IPFilter parsing functions and added some new protocols.
+
+** CheckIPHeader, CheckIPHeader2, CheckICMPHeader, CheckTCPHeader, and
+   CheckUDPHeader can print more detailed information about why they are
+   dropping packets.
+
+* User-level driver
+
+** Fixed ToDump bugs.
+
+* Kernel driver
+
+** Changed /proc/click file handling: Now closing a write handler file may
+   report an error back to the user through the return value of close().
+   Also, can remove Click kernel module even while someone has a file in
+   /proc/click open.
+
+** Added TulipStats element for collecting information about Tulip
+   performance.
+
+** Fixed crash when Linux and Click both sent packets out the same
+   interface on an SMP machine.
 
 
 Version 1.1b1   4.Oct.2000

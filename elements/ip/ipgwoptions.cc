@@ -29,6 +29,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 
 IPGWOptions::IPGWOptions()
 {
@@ -193,7 +194,7 @@ IPGWOptions::handle_options(Packet *p_in)
  send_error:
   _drops++;
   if (noutputs() == 2){
-    p->set_param_off_anno(problem_offset);
+    SET_ICMP_PARAM_PROB_ANNO(p, problem_offset);
     output(1).push(p);
   } else {
     p->kill();

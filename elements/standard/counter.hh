@@ -2,6 +2,7 @@
 #define COUNTER_HH
 #include <click/element.hh>
 #include <click/ewma.hh>
+#include <click/llrpc.h>
 
 /* =c
  * Counter([TYPE])
@@ -19,6 +20,10 @@
  * weighted moving average) in packets/bytes per second.
  * =h reset write-only
  * Resets the count and rate to zero.
+ * =h CLICK_LLRPC_GET_RATE llrpc
+ * Argument is a pointer to an integer that must be 0.  Returns the recent
+ * arrival rate (measured by exponential weighted moving average) in
+ * packets/bytes per second. 
  */
 
 class Counter : public Element { protected:
@@ -45,6 +50,7 @@ class Counter : public Element { protected:
   int initialize(ErrorHandler *);
   int configure(const Vector<String> &, ErrorHandler *);
   void add_handlers();
+  int llrpc(unsigned, void *);
   
   /*void push(int port, Packet *);
     Packet *pull(int port);*/

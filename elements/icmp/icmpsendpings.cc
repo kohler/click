@@ -28,6 +28,7 @@
 #include <click/glue.hh>
 #include <click/click_ip.h>
 #include <click/click_icmp.h>
+#include <click/packet_anno.hh>
 
 ICMPSendPings::ICMPSendPings()
   : _timer(this)
@@ -96,7 +97,6 @@ ICMPSendPings::run_scheduled()
   icp->icmp_cksum = in_cksum((unsigned char *)icp, sizeof(icmp_generic));
 
   q->set_dst_ip_anno(IPAddress(_dst));
-  q->set_fix_ip_src_anno(1);
   q->set_ip_header(nip, sizeof(click_ip));
 
   output(0).push(q);

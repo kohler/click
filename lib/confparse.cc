@@ -699,7 +699,7 @@ cp_real(const String &str, int frac_digits, int *return_value)
 bool
 cp_real2(const String &str, int frac_bits, int *return_value)
 {
-  if (frac_bits > 29) {
+  if (frac_bits >= 29) {
     cp_errno = CPE_INVALID;
     return false;
   }

@@ -30,6 +30,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 
 ICMP6Error::ICMP6Error()
 {
@@ -201,7 +202,7 @@ if(_type == 2 && _code == 0){
   
   if(_type == 4 && _code == 0){
     /* Set the Parameter Problem pointer. */
-    ((struct icmp6_param *) icp)->pointer = p->param_off_anno();
+    ((struct icmp6_param *) icp)->pointer = ICMP_PARAM_PROB_ANNO(p);
   }
   
   memcpy((void *)(icp + 1), p->data(), xlen);
@@ -209,7 +210,7 @@ if(_type == 2 && _code == 0){
 
   
   q->set_dst_ip6_anno(IP6Address(nip->ip6_dst));
-  q->set_fix_ip_src_anno(1);
+  SET_FIX_IP_SRC_ANNO(q, 1);
   q->set_ip6_header(nip, sizeof(click_ip6));
 
  out:

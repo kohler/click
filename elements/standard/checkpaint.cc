@@ -25,6 +25,7 @@
 #include "checkpaint.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/packet_anno.hh>
 
 CheckPaint::CheckPaint()
   : Element(1, 2)
@@ -57,7 +58,7 @@ CheckPaint::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 CheckPaint::simple_action(Packet *p)
 {
-  if (p->color_anno() == _color)
+  if (PAINT_ANNO(p) == _color)
     output(1).push(p->clone());
   return(p);
 }

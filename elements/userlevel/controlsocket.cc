@@ -136,15 +136,6 @@ ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
       return errh->error("bind: %s", strerror(errno));
     }
 
-    // start listening
-    if (listen(_socket_fd, 2) < 0) {
-      uninitialize();
-      return errh->error("listen: %s", strerror(errno));
-    }
-    
-    // nonblocking I/O on the socket
-    fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
-    
   } else if (socktype == "UNIX") {
     if (cp_va_parse(conf, this, errh,
 		    cpIgnore,
@@ -172,18 +163,18 @@ ControlSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
       return errh->error("bind: %s", strerror(errno));
     }
 
-    // start listening
-    if (listen(_socket_fd, 2) < 0) {
-      uninitialize();
-      return errh->error("listen: %s", strerror(errno));
-    }
-    
-    // nonblocking I/O on the socket
-    fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
-
   } else
     return errh->error("unknown socket type `%s'", socktype.cc());
   
+  // start listening
+  if (listen(_socket_fd, 2) < 0) {
+    uninitialize();
+    return errh->error("listen: %s", strerror(errno));
+  }
+  
+  // nonblocking I/O on the socket
+  fcntl(_socket_fd, F_SETFL, O_NONBLOCK);
+
   return 0;
 }
 

@@ -4,8 +4,8 @@
 
 /*
  * =c
- * ControlSocket(tcp, PORTNUMBER [, READONLY?])
- * ControlSocket(unix, FILENAME [, READONLY?])
+ * ControlSocket("TCP", PORTNUMBER [, READONLY?])
+ * ControlSocket("UNIX", FILENAME [, READONLY?])
  * =s debugging
  * opens control sockets for other programs
  * =io
@@ -13,10 +13,10 @@
  * =d
  *
  * Opens a control socket that allows other user-level programs to call read
- * or write handlers on the router. The two forms of the command open a TCP
- * connection that listens to port PORTNUMBER, or a UNIX-domain socket that
- * listens on file FILENAME. Disallows write handlers if READONLY? is true; it
- * is false by default.
+ * or write handlers on the router. Depending on its configuration string,
+ * ControlSocket will open a TCP connection that listens to port PORTNUMBER,
+ * or a UNIX-domain socket that listens on file FILENAME. Disallows write
+ * handlers if READONLY? is true; it is false by default.
  *
  * The "server" (that is, the ControlSocket element) speaks a relatively
  * simple line-based protocol. Commands sent to the server are single lines of
@@ -108,7 +108,23 @@
  * =e
  *   ControlSocket(unix, /tmp/clicksocket); */
 
-class ControlSocket : public Element {
+class ControlSocket : public Element { public:
+
+  ControlSocket();
+  ~ControlSocket();
+
+  const char *class_name() const	{ return "ControlSocket"; }
+  ControlSocket *clone() const		{ return new ControlSocket; }
+  
+  int configure(const Vector<String> &conf, ErrorHandler *);
+  int initialize(ErrorHandler *);
+  void uninitialize();
+
+  void selected(int);
+
+  int message(int fd, int code, const String &, bool continuation = false);
+  
+ private:
 
   String _unix_pathname;
   int _socket_fd;
@@ -128,22 +144,6 @@ class ControlSocket : public Element {
   int write_command(int fd, const String &, const String &);
   int parse_command(int fd, const String &);
 
- public:
-
-  ControlSocket();
-  ~ControlSocket();
-
-  const char *class_name() const	{ return "ControlSocket"; }
-  ControlSocket *clone() const		{ return new ControlSocket; }
-  
-  int configure(const Vector<String> &conf, ErrorHandler *);
-  int initialize(ErrorHandler *);
-  void uninitialize();
-
-  void selected(int);
-
-  int message(int fd, int code, const String &, bool continuation = false);
-  
 };
 
 extern String click_userlevel_classes_string();

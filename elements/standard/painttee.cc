@@ -25,6 +25,7 @@
 #include "painttee.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/packet_anno.hh>
 
 PaintTee::PaintTee()
   : Element(1, 2)
@@ -56,7 +57,7 @@ PaintTee::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 PaintTee::simple_action(Packet *p)
 {
-  if (p->color_anno() == _color)
+  if (PAINT_ANNO(p) == _color)
     output(1).push(p->clone());
   return(p);
 }

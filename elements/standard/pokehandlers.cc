@@ -131,7 +131,7 @@ PokeHandlers::timer_hook(unsigned long thunk)
       const Router::Handler &rh = router->handler(i);
       if (rh.write) {
 	ContextErrorHandler cerrh
-	  (errh, "In write handler `" + he->id() + "." + hname + "':");
+	  (errh, "In write handler `" + hname + "' for `" + he->declaration() + "':");
 	rh.write(poke->_h_value[h], he, rh.write_thunk, &cerrh);
       } else
 	errh->error("%s: no write handler `%s.%s'", poke->id().cc(), he->id().cc(), hname.cc());

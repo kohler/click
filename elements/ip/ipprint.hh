@@ -40,6 +40,11 @@ dump. Default is 1500.
 Boolean. Determines whether to print each packet's IP ID field. Default is
 false.
 
+=item TIMESTAMP
+
+Boolean. Determines whether to print each packet's timestamp in seconds since
+1970. Default is false.
+
 =back
 
 =a Print, CheckIPHeader */
@@ -64,6 +69,7 @@ class IPPrint : public Element { public:
   char *_buf;			// To hold hex dump message
   unsigned _bytes;		// Number of bytes to dump
   bool _print_id : 1;		// Print IP ID?
+  bool _print_timestamp : 1;
   unsigned _contents : 2;	// Whether to dump packet contents
 
 };

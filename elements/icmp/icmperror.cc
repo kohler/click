@@ -30,6 +30,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 
 ICMPError::ICMPError()
 {
@@ -238,7 +239,7 @@ ICMPError::simple_action(Packet *p)
 
   if(_type == 12 && _code == 0){
     /* Set the Parameter Problem pointer. */
-    ((struct icmp_param *) icp)->pointer = p->param_off_anno();
+    ((struct icmp_param *) icp)->pointer = ICMP_PARAM_PROB_ANNO(p);
   }
   if(_type == 5){
     /* Redirect */
@@ -249,7 +250,7 @@ ICMPError::simple_action(Packet *p)
   icp->icmp_cksum = in_cksum((unsigned char *)icp, sizeof(icmp_generic) + xlen);
 
   q->set_dst_ip_anno(IPAddress(nip->ip_dst));
-  q->set_fix_ip_src_anno(1);
+  SET_FIX_IP_SRC_ANNO(q, 1);
   q->set_ip_header(nip, sizeof(click_ip));
 
  out:

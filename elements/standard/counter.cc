@@ -137,5 +137,18 @@ Counter::add_handlers()
   add_write_handler("reset", counter_reset_write_handler, 0);
 }
 
+int
+Counter::llrpc(unsigned command, void *data)
+{
+  if (command == CLICK_LLRPC_GET_RATE) {
+    unsigned d;
+    if (CLICK_LLRPC_GET_DATA(&d, data, sizeof(d)) < 0 || d)
+      return -EINVAL;
+    unsigned r = (rate()*rate_freq()) >> rate_scale();
+    return CLICK_LLRPC_PUT_DATA(data, &r, sizeof(r));
+  } else
+    return Element::llrpc(command, data);
+}
+
 
 EXPORT_ELEMENT(Counter)

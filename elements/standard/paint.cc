@@ -26,6 +26,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 
 Paint::Paint()
   : Element(1, 1)
@@ -56,7 +57,7 @@ Paint::configure(const Vector<String> &conf, ErrorHandler *errh)
 Packet *
 Paint::simple_action(Packet *p)
 {
-  p->set_color_anno(_color);
+  SET_PAINT_ANNO(p, _color);
   return p;
 }
 

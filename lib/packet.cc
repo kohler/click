@@ -67,23 +67,37 @@ Packet::Packet()
   _use_count = 1;
   _data_packet = 0;
   _head = _data = _tail = _end = 0;
+  _destructor = 0;
   clear_annotations();
 }
 
 Packet::~Packet()
 {
-  if (_data_packet) {
+  if (_data_packet)
     _data_packet->kill();
-  } else if (_head) {
+  else if (_head && _destructor)
+    _destructor(_head);
+  else
     delete[] _head;
-    _head = _data = 0;
-  }
+  _head = _data = 0;
 }
 
 inline WritablePacket *
 Packet::make(int, int, int)
 {
   return static_cast<WritablePacket *>(new Packet(6, 6, 6));
+}
+
+WritablePacket *
+Packet::make(unsigned char *data, unsigned len, void (*destruct)(unsigned char *))
+{
+  WritablePacket *p = new WritablePacket;
+  if (p) {
+    p->_head = p->_data = data;
+    p->_tail = p->_end = data + len;
+    p->_destructor = destruct;
+  }
+  return p;
 }
 
 void
@@ -94,6 +108,7 @@ Packet::alloc_data(unsigned headroom, unsigned len, unsigned tailroom)
   _data = _head + headroom;
   _tail = _data + len;
   _end = _head + n;
+  _destructor = 0;
 }
 
 WritablePacket *
@@ -148,6 +163,7 @@ Packet::clone()
   p->_data = _data;
   p->_tail = _tail;
   p->_end = _end;
+  p->_destructor = 0;
   p->copy_annotations(this);
   p->_nh.raw = _nh.raw;
   p->_h_raw = _h_raw;

@@ -28,6 +28,7 @@
 #include <click/glue.hh>
 #include <click/confparse.hh>
 #include <click/error.hh>
+#include <click/packet_anno.hh>
 #include "elements/standard/alignmentinfo.hh"
 
 IPInputCombo::IPInputCombo()
@@ -89,7 +90,7 @@ IPInputCombo::smaction(Packet *p)
   unsigned int src;
 
   /* Paint */
-  p->set_color_anno(_color);
+  SET_PAINT_ANNO(p, _color);
 
   /* Strip(14) */
   p->pull(14);

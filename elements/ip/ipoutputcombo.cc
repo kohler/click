@@ -26,6 +26,7 @@
 #include <click/confparse.hh>
 #include <click/error.hh>
 #include <click/glue.hh>
+#include <click/packet_anno.hh>
 
 IPOutputCombo::IPOutputCombo()
   : Element(1, 5)
@@ -69,7 +70,7 @@ IPOutputCombo::push(int, Packet *p_in)
   }
   
   // PaintTee
-  if (p_in->color_anno() == _color)
+  if (PAINT_ANNO(p_in) == _color)
     output(1).push(p_in->clone());
   
   // IPGWOptions
@@ -169,8 +170,8 @@ IPOutputCombo::push(int, Packet *p_in)
   }
 
   // FixIPSrc
-  if (p->fix_ip_src_anno()) {
-    p->set_fix_ip_src_anno(0);
+  if (FIX_IP_SRC_ANNO(p)) {
+    SET_FIX_IP_SRC_ANNO(p, 0);
     ip->ip_src = _my_ip;
     do_cksum = 1;
   }
@@ -203,7 +204,7 @@ IPOutputCombo::push(int, Packet *p_in)
   return;
 
  ipgw_send_error:
-  p->set_param_off_anno(problem_offset);
+  SET_ICMP_PARAM_PROB_ANNO(p, problem_offset);
   output(2).push(p);
 }
 
