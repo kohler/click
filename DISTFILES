@@ -229,7 +229,6 @@ samp05_other.mp
 ./etc/libclick:
 DISTFILES
 Makefile.in
-lc-ChangeLog
 lc-Makefile.in
 lc-configure.in
 lc-libsrc-Makefile.in
