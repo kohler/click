@@ -59,9 +59,9 @@ check-filenames:
 	if test -z $$a; then echo OK; else echo "*** warning: duplicate object file names:"; echo "$$a"; fi
 
 clean:
-	@-for d in @POSSIBLE_TARGETS@ tools; do (cd $$d && $(MAKE) clean); done
+	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) clean); done
 distclean:
-	@-for d in @POSSIBLE_TARGETS@ tools; do (cd $$d && $(MAKE) distclean); done
+	@-for d in @POSSIBLE_TARGETS@ tools doc; do (cd $$d && $(MAKE) distclean); done
 	-rm -f config.h Makefile config.status
 	-rm -f config.cache config.log mkelemlist.sh
 
