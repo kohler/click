@@ -70,14 +70,14 @@ performs already.
 .............
 
     If you add tests to `configure.in', you will want to change
-`config.h.in' so that the tests' results are stored in `config.h'.
+`config.h.in' so that the results make it to `config.h'.
 
 
 `Makefile.in'
 .............
 
-    `./configure' generates a Makefile from `Makefile.in'. You will
-definitely want to set the `package' variable to the name of your package.
+    `./configure' generates a Makefile from `Makefile.in'. Change the
+`package' variable to the name of your package.
 
     The rest of `Makefile.in' can generally stay as is. However, if you
 develop a complex source hierarchy -- where the element source code is in a
@@ -89,8 +89,8 @@ also want to rerun `./configure' automatically when `configure.in' changes.
 `kernelversion.c'
 .................
 
-    This file supports building a package for the Linux kernel driver. Use
-it unchanged.
+    This file helps build a package for the Linux kernel driver. Use it
+unchanged.
 
 
 Element source

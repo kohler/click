@@ -113,6 +113,7 @@ top_distdir = $(distdir)
 dist: distdir
 distdir:
 	@cd doc && $(MAKE) info
+	@cd $(srcdir)/etc/samplepackage && $(AUTOCONF)
 	-rm -rf $(distdir)
 	mkdir $(distdir)
 	@-chmod 777 $(distdir)

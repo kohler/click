@@ -66,9 +66,16 @@ etc/linux-2.4.4-patch
 
 etc/samplepackage
 etc/samplepackage/Makefile.in
+etc/samplepackage/README
+etc/samplepackage/config.h.in
+etc/samplepackage/configure
+etc/samplepackage/configure.in
+etc/samplepackage/install-sh
+etc/samplepackage/kernelversion.c
+etc/samplepackage/missing
+etc/samplepackage/mkinstalldirs
 etc/samplepackage/sampleelt.hh
 etc/samplepackage/sampleelt.cc
-etc/samplepackage/kernelversion.c
 etc/samplepackage/test.click
 
 include
