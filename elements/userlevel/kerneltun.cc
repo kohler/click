@@ -309,10 +309,12 @@ KernelTun::initialize(ErrorHandler *errh)
 	return -1;
     if (setup_tun(_near, _mask, errh) < 0)
 	return -1;
-  if (input_is_pull(0))
-    ScheduleInfo::join_scheduler(this, &_task, errh);
-  add_select(_fd, SELECT_READ);
-  return 0;
+    if (input_is_pull(0)) {
+	ScheduleInfo::join_scheduler(this, &_task, errh);
+	_signal = Notifier::upstream_pull_signal(this, 0, &_task);
+    }
+    add_select(_fd, SELECT_READ);
+    return 0;
 }
 
 void
@@ -390,7 +392,9 @@ KernelTun::run_task()
 {
     Packet *p = input(0).pull();
     if (p)
-	push(0, p); 
+	push(0, p);
+    else if (!_signal)
+	return false;
     _task.fast_reschedule();
     return p != 0;
 }

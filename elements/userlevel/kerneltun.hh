@@ -4,6 +4,7 @@
 #include <click/element.hh>
 #include <click/ipaddress.hh>
 #include <click/task.hh>
+#include <click/notifier.hh>
 CLICK_DECLS
 
 /*
@@ -114,6 +115,7 @@ class KernelTun : public Element { public:
     IPAddress _gw;
     int _headroom;
     Task _task;
+    NotifierSignal _signal;
     
     bool _ignore_q_errs;
     bool _printed_write_err;

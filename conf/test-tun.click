@@ -13,16 +13,17 @@
 // after starting the Click configuration.
 
 tun :: KernelTun(1.0.0.1/8);
+tunq :: Queue -> tun;
 tun[1] -> Print(tun-nonip) -> Discard;
 ICMPSendPings(1.0.0.2, 1.0.0.1)
-      -> tun;
+    -> tunq;
 
 tun -> ch :: CheckIPHeader;
 
 ch[0] -> IPPrint(tun-ok)
-      -> IPFilter(allow icmp type echo)
-      -> ICMPPingResponder
-      -> IPPrint(tun-ping)
-      -> tun;
+    -> IPFilter(allow icmp type echo)
+    -> ICMPPingResponder
+    -> IPPrint(tun-ping)
+    -> tunq;
 ch[1] -> Print(tun-bad)
-      -> Discard;
+    -> Discard;
