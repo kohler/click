@@ -137,9 +137,12 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     ToIPFlowDumps *clone() const	{ return new ToIPFlowDumps; }
 
     void notify_noutputs(int);
+    enum { CONFIGURE_PHASE = CONFIGURE_PHASE_DEFAULT };
+    int configure_phase() const		{ return CONFIGURE_PHASE; }
     int configure(Vector<String> &, ErrorHandler *);
     int initialize(ErrorHandler *);
     void cleanup(CleanupStage);
+    void add_handlers();
 
     void push(int, Packet *);
     Packet *pull(int);
@@ -242,6 +245,7 @@ class ToIPFlowDumps : public Element, public AggregateListener { public:
     void end_flow(Flow *, ErrorHandler *);
     inline void smaction(Packet *);
     static void gc_hook(Timer *, void *);
+    static int write_handler(const String &, Element *, void *, ErrorHandler*);
     
 };
 

@@ -719,7 +719,7 @@ ToIPFlowDumps::aggregate_notify(uint32_t agg, AggregateEvent event, const Packet
 void
 ToIPFlowDumps::gc_hook(Timer *t, void *thunk)
 {
-    ToIPFlowDumps *td = reinterpret_cast<ToIPFlowDumps *>(thunk);
+    ToIPFlowDumps *td = static_cast<ToIPFlowDumps *>(thunk);
     uint32_t limit_jiff = click_jiffies() - (CLICK_HZ / 4);
     int i;
     for (i = 0; i < td->_gc_aggs.size() && SEQ_LEQ(td->_gc_aggs[i+1], limit_jiff); i += 2)
@@ -734,6 +734,31 @@ ToIPFlowDumps::gc_hook(Timer *t, void *thunk)
 	td->_gc_aggs.resize(td->_gc_aggs.size() - i);
 	t->schedule_after_ms(250);
     }
+}
+
+enum { H_CLEAR };
+
+int
+ToIPFlowDumps::write_handler(const String &, Element *e, void *thunk, ErrorHandler *errh)
+{
+    ToIPFlowDumps *td = static_cast<ToIPFlowDumps *>(e);
+    switch ((intptr_t)thunk) {
+      case H_CLEAR:
+	for (int i = 0; i < NFLOWMAP; i++)
+	    while (Flow *f = td->_flowmap[i]) {
+		td->_flowmap[i] = f->next();
+		td->end_flow(f, errh);
+	    }
+	return 0;
+      default:
+	return -1;
+    }
+}
+
+void
+ToIPFlowDumps::add_handlers()
+{
+    add_write_handler("clear", write_handler, (void *)H_CLEAR);
 }
 
 CLICK_ENDDECLS
