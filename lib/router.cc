@@ -44,11 +44,11 @@ static Router::Handler *globalh;
 static int nglobalh;
 static int globalh_cap;
 
-Router::Router()
+Router::Router(const String &configuration)
   : _preinitialized(false), _initialized(false), _initialize_attempted(false),
     _cleaned(false), _have_connections(false), _have_hookpidx(false),
     _handlers(0), _nhandlers(-1), _handlers_cap(0), _root_element(0),
-    _arena_factory(new BigHashMap_ArenaFactory)
+    _configuration(configuration), _arena_factory(new BigHashMap_ArenaFactory)
 {
   _refcount = 0;
   _driver_runcount = 0;
@@ -77,9 +77,9 @@ Router::~Router()
   // Clean up elements in reverse configuration order
   if (_initialized) {
     for (int ord = _elements.size() - 1; ord >= 0; ord--)
-      _elements[ _configure_order[ord] ]->cleanup(Element::CLEANUP_ROUTER_INITIALIZED);
+      _elements[ _element_configure_order[ord] ]->cleanup(Element::CLEANUP_ROUTER_INITIALIZED);
   } else if (!_cleaned) {
-    assert(_configure_order.size() == 0);
+    assert(_element_configure_order.size() == 0);
     for (int i = _elements.size() - 1; i >= 0; i--)
       _elements[i]->cleanup(Element::CLEANUP_NO_ROUTER);
   }
@@ -92,9 +92,9 @@ Router::~Router()
   _timer_list.unschedule_all();
   
   // Delete elements in reverse configuration order
-  if (_configure_order.size())
+  if (_element_configure_order.size())
     for (int ord = _elements.size() - 1; ord >= 0; ord--)
-      delete _elements[ _configure_order[ord] ];
+      delete _elements[ _element_configure_order[ord] ];
   else
     for (int i = 0; i < _elements.size(); i++)
       delete _elements[i];
@@ -174,14 +174,14 @@ Router::default_configuration_string(int ei) const
   if (ei < 0 || ei >= nelements())
     return String::null_string();
   else
-    return _configurations[ei];
+    return _element_configurations[ei];
 }
 
 void
 Router::set_default_configuration_string(int ei, const String &s)
 {
   if (ei >= 0 && ei < nelements())
-    _configurations[ei] = s;
+    _element_configurations[ei] = s;
 }
 
 const String &
@@ -205,7 +205,7 @@ Router::add_element(Element *e, const String &ename, const String &conf,
   _elements.push_back(e);
   _element_names.push_back(ename);
   _element_landmarks.push_back(landmark);
-  _configurations.push_back(conf);
+  _element_configurations.push_back(conf);
   int i = _elements.size() - 1;
   e->attach_router(this, i);
   return i;
@@ -871,15 +871,15 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
   notify_hookup_range();
 
   // set up configuration order
-  _configure_order.assign(nelements(), 0);
-  if (_configure_order.size()) {
+  _element_configure_order.assign(nelements(), 0);
+  if (_element_configure_order.size()) {
     Vector<int> configure_phase(nelements(), 0);
     configure_order_phase = &configure_phase;
     for (int i = 0; i < _elements.size(); i++) {
       configure_phase[i] = _elements[i]->configure_phase();
-      _configure_order[i] = i;
+      _element_configure_order[i] = i;
     }
-    click_qsort(&_configure_order[0], _configure_order.size(), sizeof(int), configure_order_compar);
+    click_qsort(&_element_configure_order[0], _element_configure_order.size(), sizeof(int), configure_order_compar);
   }
 
   // Configure all elements in configure order. Remember the ones that failed
@@ -887,7 +887,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
   Element::CleanupStage success_stage = Element::CLEANUP_CONFIGURED;
   Vector<String> conf;
   for (int ord = 0; ord < _elements.size(); ord++) {
-    int i = _configure_order[ord];
+    int i = _element_configure_order[ord];
 #if CLICK_DMALLOC
     sprintf(dmalloc_buf, "c%d  ", i);
     CLICK_DMALLOC_REG(dmalloc_buf);
@@ -897,7 +897,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
     ErrorHandler *errh1 = (verbose_errors ? &cerrh : errh);
     int before = errh1->nerrors();
     conf.clear();
-    cp_argvec(_configurations[i], conf);
+    cp_argvec(_element_configurations[i], conf);
     if (_elements[i]->configure(conf, errh1) < 0) {
       element_ok[i] = all_ok = false;
       if (errh1->nerrors() == before)
@@ -925,7 +925,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
     success_stage = Element::CLEANUP_INITIALIZED;
     initialize_handlers(true, true);
     for (int ord = 0; ord < _elements.size(); ord++) {
-      int i = _configure_order[ord];
+      int i = _element_configure_order[ord];
       if (element_ok[i]) {
 #if CLICK_DMALLOC
 	sprintf(dmalloc_buf, "i%d  ", i);
@@ -961,7 +961,7 @@ Router::initialize(ErrorHandler *errh, bool verbose_errors)
     
     // Clean up elements
     for (int ord = _elements.size() - 1; ord >= 0; ord--) {
-      int i = _configure_order[ord];
+      int i = _element_configure_order[ord];
       _elements[i]->cleanup(element_ok[i] ? success_stage : failure_stage);
     }
     _cleaned = true;
@@ -1286,41 +1286,6 @@ Router::nglobal_handlers()
   return nglobalh;
 }
 
-static String
-version_global_handler(Element *, void *)
-{
-  return String(CLICK_VERSION "\n");
-}
-
-static int
-stop_global_handler(const String &s, Element *e, void *, ErrorHandler *errh)
-{
-  if (e) {
-    int n = 1;
-    (void) cp_integer(cp_uncomment(s), &n);
-    e->router()->adjust_driver_reservations(-n);
-  } else
-    errh->message("no router to stop");
-  return 0;
-}
-
-void
-Router::static_initialize()
-{
-  if (!nglobalh) {
-    add_read_handler(0, "version", version_global_handler, 0);
-    add_write_handler(0, "stop", stop_global_handler, 0);
-  }
-}
-
-void
-Router::static_cleanup()
-{
-  delete[] globalh;
-  globalh = 0;
-  nglobalh = globalh_cap = 0;
-}
-
 
 // ATTACHMENTS
 
@@ -1513,7 +1478,7 @@ Router::unparse_declarations(StringAccum &sa, const String &indent) const
   Vector<String> conf;
   for (int i = 0; i < nelements(); i++) {
     sa << indent << _element_names[i] << " :: " << _elements[i]->class_name();
-    String conf = (initialized() ? _elements[i]->configuration() : _configurations[i]);
+    String conf = (initialized() ? _elements[i]->configuration() : _element_configurations[i]);
     if (conf.length())
       sa << "(" << conf << ")";
     sa << ";\n";
@@ -1591,24 +1556,6 @@ Router::unparse(StringAccum &sa, const String &indent) const
 }
 
 String
-Router::flat_configuration_string() const
-{
-  StringAccum sa;
-  unparse(sa);
-  return sa.take_string();
-}
-
-String
-Router::element_list_string() const
-{
-  StringAccum sa;
-  sa << nelements() << "\n";
-  for (int i = 0; i < nelements(); i++)
-    sa << _element_names[i] << "\n";
-  return sa.take_string();
-}
-
-String
 Router::element_ports_string(int ei) const
 {
   if (ei < 0 || ei >= nelements())
@@ -1680,6 +1627,92 @@ Router::element_ports_string(int ei) const
   }
   
   return sa.take_string();
+}
+
+
+// STATIC INITIALIZATION, DEFAULT GLOBAL HANDLERS
+
+enum { GH_VERSION, GH_CONFIG, GH_FLATCONFIG, GH_LIST, GH_REQUIREMENTS };
+
+String
+Router::router_read_handler(Element *e, void *thunk)
+{
+  Router *r = (e ? e->router() : 0);
+  switch (reinterpret_cast<intptr_t>(thunk)) {
+
+   case GH_VERSION:
+    return String(CLICK_VERSION "\n");
+    
+   case GH_CONFIG:
+    if (r)
+      return r->configuration_string();
+    break;
+
+   case GH_FLATCONFIG:
+    if (r) {
+      StringAccum sa;
+      r->unparse(sa);
+      return sa.take_string();
+    }
+    break;
+
+   case GH_LIST:
+    if (r) {
+      StringAccum sa;
+      sa << r->nelements() << "\n";
+      for (int i = 0; i < r->nelements(); i++)
+	sa << r->_element_names[i] << "\n";
+      return sa.take_string();
+    }
+    break;
+
+   case GH_REQUIREMENTS:
+    if (r) {
+      StringAccum sa;
+      for (int i = 0; i < r->_requirements.size(); i++)
+	sa << r->_requirements[i] << "\n";
+      return sa.take_string();
+    }
+    break;
+
+   default:
+    return "<error>\n";
+    
+  }
+  return String();
+}
+
+static int
+stop_global_handler(const String &s, Element *e, void *, ErrorHandler *errh)
+{
+  if (e) {
+    int n = 1;
+    (void) cp_integer(cp_uncomment(s), &n);
+    e->router()->adjust_driver_reservations(-n);
+  } else
+    errh->message("no router to stop");
+  return 0;
+}
+
+void
+Router::static_initialize()
+{
+  if (!nglobalh) {
+    add_read_handler(0, "version", router_read_handler, (void *)GH_VERSION);
+    add_read_handler(0, "config", router_read_handler, (void *)GH_CONFIG);
+    add_read_handler(0, "flatconfig", router_read_handler, (void *)GH_FLATCONFIG);
+    add_read_handler(0, "list", router_read_handler, (void *)GH_LIST);
+    add_read_handler(0, "requirements", router_read_handler, (void *)GH_REQUIREMENTS);
+    add_write_handler(0, "stop", stop_global_handler, 0);
+  }
+}
+
+void
+Router::static_cleanup()
+{
+  delete[] globalh;
+  globalh = 0;
+  nglobalh = globalh_cap = 0;
 }
 
 

@@ -27,7 +27,7 @@ class Router { public:
     Hookup(int i, int p)			: idx(i), port(p) { }
   };
   
-  Router();
+  Router(const String &configuration = String());
   ~Router();
   void use()					{ _refcount++; }
   void unuse();
@@ -35,33 +35,25 @@ class Router { public:
   static void static_initialize();
   static void static_cleanup();
 
-  int add_element(Element *, const String &name, const String &conf, const String &landmark);
-  int add_connection(int from_idx, int from_port, int to_idx, int to_port);
-  
   bool initialized() const			{ return _initialized; }
 
-  // accessing elements
+  // ELEMENTS
   int nelements() const				{ return _elements.size(); }
-  // returns 0 on bad index or no router, root_element() on index -1
+  const Vector<Element *> &elements() const	{ return _elements; }
   static Element *element(const Router *, int);
   Element *element(int e) const			{ return element(this, e); }
+  // element() returns 0 on bad index or no router, root_element() on index -1
   Element *root_element() const			{ return _root_element; }
   
   const String &ename(int) const;
   const String &elandmark(int) const;
-  const Vector<Element *> &elements() const	{ return _elements; }
   const String &default_configuration_string(int) const;
   void set_default_configuration_string(int, const String &);
+  
   Element *find(const String &, ErrorHandler * = 0) const;
   Element *find(const String &, Element *context, ErrorHandler * = 0) const;
   Element *find(const String &, String prefix, ErrorHandler * = 0) const;
-
-  const Vector<String> &requirements() const	{ return _requirements; }
-  void add_requirement(const String &);
   
-  int ninput_pidx() const			{ return _input_eidx.size(); }
-  int noutput_pidx() const			{ return _output_eidx.size(); }
-
   int downstream_elements(Element *, int o, ElementFilter*, Vector<Element*>&);
   int downstream_elements(Element *, int o, Vector<Element *> &);
   int downstream_elements(Element *, Vector<Element *> &);
@@ -69,18 +61,14 @@ class Router { public:
   int upstream_elements(Element *, int i, Vector<Element *> &);  
   int upstream_elements(Element *, Vector<Element *> &);
 
-  void preinitialize();
-  int initialize(ErrorHandler *, bool verbose_errors = true);
-  void take_state(Router *, ErrorHandler *);
-
-  // handlers
+  // HANDLERS
   enum { FIRST_GLOBAL_HANDLER = 0x40000000 };
   int nhandlers() const				{ return _nhandlers; }
   static int nglobal_handlers();
   static int hindex(const Element *, const String &);
   static void element_hindexes(const Element *, Vector<int> &);
 
-  // NB: 'Handler *' pointers last only until a new handler is added!
+  // 'const Handler *' result pointers last only until a new handler is added
   static const Handler *handler(const Router *, int);
   static const Handler *handler(const Element *, int);
   const Handler *handler(int) const;
@@ -89,51 +77,63 @@ class Router { public:
   static void add_read_handler(const Element *, const String &, ReadHandler, void *);
   static void add_write_handler(const Element *, const String &, WriteHandler, void *);
   static int change_handler_flags(const Element *, const String &, uint32_t clear_flags, uint32_t set_flags);
-  
-  // thread(-1) is the quiescent thread
-  int nthreads() const				{ return _threads.size() - 1; }
-  RouterThread *thread(int id) const		{ return _threads[id + 1]; }
-  void add_thread(RouterThread *);
-  void remove_thread(RouterThread *);
 
-  TimerList *timer_list()			{ return &_timer_list; }
-  TaskList *task_list()				{ return &_task_list; }
-
-#if CLICK_USERLEVEL
-  enum { SELECT_READ = Element::SELECT_READ, SELECT_WRITE = Element::SELECT_WRITE };
-  int add_select(int fd, int element, int mask);
-  int remove_select(int fd, int element, int mask);
-#endif
-
+  // ATTACHMENTS AND REQUIREMENTS
   void *attachment(const String &) const;
   void *&force_attachment(const String &);
   void *set_attachment(const String &, void *);
+  const Vector<String> &requirements() const	{ return _requirements; }
 
   ErrorHandler *chatter_channel(const String &) const;
   BigHashMap_ArenaFactory *arena_factory() const;
 
-  void unparse(StringAccum &, const String & = String()) const;
-  void unparse_requirements(StringAccum &, const String & = String()) const;
-  void unparse_classes(StringAccum &, const String & = String()) const;
-  void unparse_declarations(StringAccum &, const String & = String()) const;
-  void unparse_connections(StringAccum &, const String & = String()) const;
-  String flat_configuration_string() const;
+  // THREADS
+  int nthreads() const				{ return _threads.size() - 1; }
+  RouterThread *thread(int id) const		{ return _threads[id + 1]; }
+  // thread(-1) is the quiescent thread
+  void add_thread(RouterThread *);
+  void remove_thread(RouterThread *);
   
-  String element_list_string() const;
-  String element_ports_string(int) const;
-
-#if CLICK_USERLEVEL
-  void run_selects(bool more_tasks);
-#endif
-  void run_timers();
-  
-  // stopping driver
+  // DRIVER RESERVATIONS
   void please_stop_driver()		{ adjust_driver_reservations(-1); }
   void reserve_driver()			{ adjust_driver_reservations(1); }
   void set_driver_reservations(int);
   void adjust_driver_reservations(int);
   bool check_driver();
   const volatile int *driver_runcount_ptr() const { return &_driver_runcount; }
+
+  // TIMERS AND SELECTS
+  TimerList *timer_list()			{ return &_timer_list; }
+  TaskList *task_list()				{ return &_task_list; }
+#if CLICK_USERLEVEL
+  enum { SELECT_READ = Element::SELECT_READ, SELECT_WRITE = Element::SELECT_WRITE };
+  int add_select(int fd, int element, int mask);
+  int remove_select(int fd, int element, int mask);
+#endif
+
+#if CLICK_USERLEVEL
+  void run_selects(bool more_tasks);
+#endif
+  void run_timers();
+  
+  // UNPARSING
+  const String &configuration_string() const	{ return _configuration; }
+  void unparse(StringAccum &, const String & = String()) const;
+  void unparse_requirements(StringAccum &, const String & = String()) const;
+  void unparse_classes(StringAccum &, const String & = String()) const;
+  void unparse_declarations(StringAccum &, const String & = String()) const;
+  void unparse_connections(StringAccum &, const String & = String()) const;
+  
+  String element_ports_string(int) const;
+  
+  // INITIALIZATION
+  void add_requirement(const String &);
+  int add_element(Element *, const String &name, const String &conf, const String &landmark);
+  int add_connection(int from_idx, int from_port, int to_idx, int to_port);
+  
+  void preinitialize();
+  int initialize(ErrorHandler *, bool verbose_errors = true);
+  void take_state(Router *, ErrorHandler *);
 
 #if CLICK_NS
   int sim_get_ifid(const char *ifname);
@@ -178,9 +178,9 @@ class Router { public:
   
   Vector<Element *> _elements;
   Vector<String> _element_names;
-  Vector<String> _configurations;
+  Vector<String> _element_configurations;
   Vector<String> _element_landmarks;
-  Vector<int> _configure_order;
+  Vector<int> _element_configure_order;
 
   Vector<RouterThread *> _threads;
   
@@ -218,6 +218,7 @@ class Router { public:
   Vector<void *> _attachments;
   
   Element *_root_element;
+  String _configuration;
 
   BigHashMap_ArenaFactory *_arena_factory;
   
@@ -235,6 +236,8 @@ class Router { public:
   int check_push_and_pull(ErrorHandler *);
   
   void make_pidxes();
+  int ninput_pidx() const		{ return _input_eidx.size(); }
+  int noutput_pidx() const		{ return _output_eidx.size(); }
   inline int input_pidx(const Hookup &) const;
   inline int input_pidx_element(int) const;
   inline int input_pidx_port(int) const;
@@ -259,6 +262,9 @@ class Router { public:
   int downstream_inputs(Element *, int o, ElementFilter *, Bitvector &);
   int upstream_outputs(Element *, int i, ElementFilter *, Bitvector &);
 
+  // global handlers
+  static String router_read_handler(Element *, void *);
+  
 };
 
 
