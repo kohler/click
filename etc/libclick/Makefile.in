@@ -70,6 +70,7 @@ distdir:
 	  fi; \
 	  echo $$df >>$(distdir)/DISTFILES; \
 	done
+	cd $(distdir) && $(PERL) -pi -e 's/enable_linuxmodule=yes/enable_linuxmodule=no/;' configure.in
 	cd $(distdir) && $(ACLOCAL) && $(AUTOCONF)
 	echo configure >>$(distdir)/DISTFILES
 
