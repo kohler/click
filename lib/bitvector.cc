@@ -104,8 +104,6 @@ Bitvector::assign(int n, bool value)
     resize(n);
     uint32_t bits = (value ? 0xFFFFFFFFU : 0U);
     int copy = max_word();
-    if (copy < MAX_INLINE_WORD)
-	copy = MAX_INLINE_WORD;
     for (int i = 0; i <= copy; i++)
 	_data[i] = bits;
     if (value)
