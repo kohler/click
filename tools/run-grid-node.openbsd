@@ -63,7 +63,7 @@ if (@ARGV < 2) {
 }
 
 $system_type = `uname`;
-if (!($system_type =~ /Open)) {
+if (!($system_type =~ "OpenBSD")) {
     print stderr "This script only supports OpenBSD\n";
     exit 1;
 }
@@ -162,7 +162,7 @@ $old_netmask = "";
 $old_bcast = "";
 $old_gw = "";
 
-if(!($ifconfig_out =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
+if(!(`netstat -I $grid_if` =~ /(([a-fA-F0-9]{2}:){5}[0-9a-fA-F]{2})/)){
     print "Unable to get MAC address\n";
     exit 1;
 }
@@ -209,7 +209,7 @@ my_system "ancontrol  $grid_if -n $grid_ssid";
     
 # set mtu to account for grid encapsulation
 # prob, how do we know we get tun0?  perhaps KernelTap should do it...
-my_system "ifconfig tun0 mtu 1350"
+my_system "ifconfig tun0 mtu 1350";
 
 # fire up click, substituting appropriate values into the config file,
 # and piping it into click stdin.
