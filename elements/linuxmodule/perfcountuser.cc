@@ -56,6 +56,7 @@ string_to_perfctr(const String &name_in)
   TRY(L2_LINES_OUT);
   TRY(L2_LINES_OUTM);
   TRY(L2_RQSTS);
+  TRY(BUS_LOCK_CLOCKS);
   return -1;
 #undef TRY
 }

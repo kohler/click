@@ -16,8 +16,10 @@
 #define L2_LD			0x29 | (0xF<<8)
 #define L2_LINES_OUTM		0x27
 #define L2_RQSTS		0x2E | (0xF<<8)
-#define BUS_TRAN_MEM		0x6F
+#define BUS_LOCK_CLOCKS         0x63
+#define BUS_TRAN_RFO            0x66
 #define BUS_TRAN_INVAL		0x69
+#define BUS_TRAN_MEM		0x6F
 
 #define MSR_OS (1<<17)
 #define MSR_OCCURRENCE (1<<18)
