@@ -130,7 +130,7 @@ FromDevice::initialize(ErrorHandler *errh)
 {
     // check for duplicate readers
     if (ifindex() >= 0) {
-	void *&used = router()->force_attachment("device_reader_" + ifindex());
+	void *&used = router()->force_attachment("device_reader_" + String(ifindex()));
 	if (used) {
 	    uninitialize_device();
 	    return errh->error("duplicate reader for device `%s'", _devname.cc());
