@@ -1,3 +1,12 @@
+2004-01-14 Wednesday 00:19  John Bicket <jbicket@mit.edu>
+
+	* elements/grid/sr/: ecnqueue.cc (1.3), ettmetric.cc (1.12),
+	ettmetric.hh (1.12), flashflood.cc (1.2), flashflood.hh (1.2),
+	inorderqueue.cc (1.8), srpacket.hh (1.9): new changes to
+	flashflood.  also changes to ettmetric to give some more interfaces
+	for other links it hears about also fix typos in
+	{ecn,inorder}queue.cc
+
 2004-01-13 Tuesday 10:18  Douglas S. J. De Couto <decouto@lcs.mit.edu>
 
 	* userlevel/Makefile.in (1.76): oops, need clp.c to link in for
