@@ -1,33 +1,28 @@
 // test-tap.click
 
-// !!!!!!!! NOTE !!!!!!!!
-// THE KERNELTAP ELEMENT IS DEPRECATED, AND SO IS THIS CONFIGURATION.
-// Please use 'test-tun.click' and the KernelTun element instead.
-
-Message("'test-tap.click' is deprecated; run 'test-tun.click' instead", WARNING)
-
-
-// Historical interest:
-//
 // This user-level configuration tests the KernelTap element, which accesses
 // Linux's ethertap device (or, equivalently, *BSD's /dev/tun* devices). These
-// devices let user-level programs trade packets with kernel IP processing
-// code. You will need to run it as root.
+// devices let user-level programs trade packets with the kernel.  You will
+// need to run it as root.
 //
 // This configuration should work on FreeBSD, OpenBSD, and Linux. It should
-// produce a stream of `tun-ok' printouts if all goes well. On OpenBSD, you
+// produce a stream of 'tap-ok' printouts if all goes well. On OpenBSD, you
 // may need to run
 //   route add 1.0.0.0 -interface 1.0.0.1
 // after starting the Click configuration.
 
-tun :: KernelTap(1.0.0.1/8);
+tap :: KernelTap(1.0.0.1/8);
 
 ICMPPingSource(1.0.0.2, 1.0.0.1)
 	-> EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2)
-	-> tun;
+	-> tap;
 
-tun -> Strip(14)
-	-> ch :: CheckIPHeader;
+tap -> Print(tap-in) -> c ::Classifier(12/0800, 12/0806);
 
-ch[0] -> Print(tun-ok) -> Discard;
-ch[1] -> Print(tun-bad) -> Discard;
+c[0] -> Strip(14)
+	-> ch :: CheckIPHeader
+	-> IPPrint(tap-ok)
+	-> Discard;
+  ch[1] -> Print(tap-bad) -> Discard;
+
+c[1] -> ARPResponder(0/0 1:1:1:1:1:1) -> tap;
