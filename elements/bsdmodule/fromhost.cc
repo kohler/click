@@ -28,6 +28,7 @@
 #include <net/ethernet.h>
 
 FromHost::FromHost()
+    : _inq(0)
 {
     MOD_INC_USE_COUNT;
     add_output();
@@ -43,7 +44,6 @@ FromHost::configure(Vector<String> &conf, ErrorHandler *errh)
 {
     _burst = 8;	// same as in FromDevice
     clear_need_wakeup();
-    _inq = NULL;
 
     if (cp_va_parse(conf, this, errh,
                     cpString, "interface name", &_devname,
