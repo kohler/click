@@ -83,9 +83,9 @@ CLICK_DECLS
  * =item METRIC
  *
  * String.  The type of metric that should be used to compare two
- * routes.  Allowable values are: ``hopcount'' or ``est_tx_count''
- * (estimated transmission count).  The default is to use estimated
- * transmission count.
+ * routes.  Allowable values are: ``hopcount'', ``est_tx_count''
+ * (estimated transmission count), ``delivery_rate_product'', or
+ * ``reverse_delivery_rate_product''.  The default is to use hopcount.
  *
  * =item LOG
  *
@@ -425,9 +425,11 @@ private:
   bool est_reverse_delivery_rate(const IPAddress &, unsigned int &);
 
   enum MetricType {
-    MetricUnknown = -1,
-    MetricHopCount = 0,            // unsigned int hop count
-    MetricEstTxCount               // unsigned int expected number of transmission * 100
+    MetricUnknown =                -1,
+    MetricHopCount =                0, // unsigned int hop count
+    MetricEstTxCount =              1, // unsigned int expected number of transmission, * 100
+    MetricDeliveryRateProduct =     2, // unsigned int product of fwd delivery rates, * 100
+    MetricRevDeliveryRateProduct =  3  // unsigned int product of rev delivery rates, * 100
   };
 
   static String metric_type_to_string(MetricType t);
@@ -436,7 +438,8 @@ private:
   enum MetricType _metric_type;
   unsigned int    _est_type;
 
-  enum {  // estimator types;try to keep vals in sync with GridRouteTable
+  // type of delivery rate estimator to use
+  enum {  
     EstByMeas = 3
   };
 

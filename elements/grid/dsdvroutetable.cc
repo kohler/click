@@ -33,7 +33,8 @@
 #include <elements/grid/timeutils.hh>
 CLICK_DECLS
 
-#define DBG 0
+#define DBG  0
+#define DBG2 0
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
@@ -111,7 +112,7 @@ DSDVRouteTable::cast(const char *n)
 int
 DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 {
-  String metric("est_tx_count");
+  String metric("hopcount");
   String logfile;
   int res = cp_va_parse(conf, this, errh,
 			cpUnsigned, "entry timeout (msec)", &_timeout,
@@ -201,7 +202,13 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
       return false;
     unsigned int tau;
     struct timeval t;
-    return _link_stat->get_forward_rate(r->dest_eth, &rate, &tau, &t);
+    bool res = _link_stat->get_forward_rate(r->dest_eth, &rate, &tau, &t);
+    if (res && rate > 100) {
+      click_chatter("DSDVRouteTable %s: ERROR: forward rate %u%% is too high for %s, capping at 100%%",
+		    id().cc(), rate, ip.s().cc());
+      rate = 100;
+    }
+    return res;
   }
 
   default:
@@ -220,7 +227,13 @@ DSDVRouteTable::est_reverse_delivery_rate(const IPAddress &ip, unsigned int &rat
     if (r == 0 || r->num_hops() > 1)
       return false;
     unsigned int tau;
-    return _link_stat->get_reverse_rate(r->dest_eth, &rate, &tau);
+    bool res = _link_stat->get_reverse_rate(r->dest_eth, &rate, &tau);
+    if (res && rate > 100) {
+      click_chatter("DSDVRouteTable %s: ERROR: reverse rate %u%% is too high for %s, capping at 100%%",
+		    id().cc(), rate, ip.s().cc());
+      rate = 100;
+    }
+    return res;
   }
 
   default:
@@ -496,22 +509,28 @@ DSDVRouteTable::init_metric(RTEntry &r)
     bool res2 = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
 
     if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
-      if (fwd_rate > 100) {
-	click_chatter("DSDVRouteTable %s: init_metric ERROR: fwd rate %d%% is too high for %s, capping at 100%%",
-		      id().cc(), fwd_rate, r.next_hop_ip.s().cc());
-	fwd_rate = 100;
-      }
-      if (rev_rate > 100) {
-	click_chatter("DSDVRouteTable %s: init_metric ERROR: rev rate %d%% is too high for %s, capping at 100%%",
-		      id().cc(), rev_rate, r.next_hop_ip.s().cc());
-	rev_rate = 100;
-      }
       r.metric = metric_t(100 * 100 * 100 / (fwd_rate * rev_rate));
       if (r.metric.val < 100) 
 	click_chatter("DSDVRouteTable %s: init_metric WARNING: metric %d%% transmissions to %s is too low for one hop",
 		      id().cc(), r.metric.val, r.next_hop_ip.s().cc());
     } 
     else 
+      r.metric = _bad_metric;
+    break;
+  }
+  case MetricRevDeliveryRateProduct:
+  case MetricDeliveryRateProduct: {
+    unsigned rate;
+    bool res = false;
+    if (_metric_type == MetricDeliveryRateProduct) 
+      res = est_forward_delivery_rate(r.next_hop_ip, rate);
+    else if (_metric_type == MetricRevDeliveryRateProduct) 
+      res = est_reverse_delivery_rate(r.next_hop_ip, rate);
+    else
+      dsdv_assert(0);
+    if (res)
+      r.metric = metric_t(rate);
+    else
       r.metric = _bad_metric;
     break;
   }
@@ -584,20 +603,34 @@ DSDVRouteTable::update_metric(RTEntry &r)
 
   switch (_metric_type) {
   case MetricHopCount:
-    if (next_hop->metric.val > 1)
-      click_chatter("DSDVRouteTable: WARNING metric type is hop count but next-hop %s metric is > 1 (%u)",
-		    next_hop->dest_ip.s().cc(), next_hop->metric.val);
+    r.metric.val += next_hop->metric.val;
+    if (r.metric.val != r.num_hops())
+      click_chatter("DSDVRouteTable %s: WARNING metric type is hop count but %s metric doesn't match hopcount",
+		    id().cc(), next_hop->dest_ip.s().cc());    
+    break;
+
   case MetricEstTxCount: 
-    if (_metric_type == MetricEstTxCount) {
-      if (r.metric.val < (unsigned) 100 * (r.num_hops() - 1))
-	click_chatter("update_metric WARNING received metric (%u%% transmissions) is too low for %s (%d hops)",
-		      r.metric.val, r.dest_ip.s().cc(), r.num_hops());
-      if (next_hop->metric.val < 100)
-	click_chatter("update_metric WARNING next hop %s for %s metric is too low (%u%% transmissions)",
-		      next_hop->dest_ip.s().cc(), r.dest_ip.s().cc(), next_hop->metric.val);
-    }
+    if (r.metric.val < (unsigned) 100 * (r.num_hops() - 1))
+      click_chatter("DSDVRouteTable %s: update_metric WARNING received transmission count %u%% is too low for %s (%d hops)",
+		    id().cc(), r.metric.val, r.dest_ip.s().cc(), r.num_hops());
+    if (next_hop->metric.val < 100)
+      click_chatter("DSDVRouteTable %s: update_metric WARNING next hop %s transmission count %u%% is too low for %s",
+		    id().cc(), next_hop->dest_ip.s().cc(), next_hop->metric.val, r.dest_ip.s().cc());
     r.metric.val += next_hop->metric.val;
     break;
+
+  case MetricDeliveryRateProduct:
+  case MetricRevDeliveryRateProduct:
+    if (r.metric.val > 100)
+      click_chatter("DSDVRouteTable %s: update_metric WARNING received delivery rate product %u%% is too high for %d",
+		    id().cc(), r.metric.val, r.dest_ip.s().cc());
+    if (next_hop->metric.val > 100)
+      click_chatter("DSDVRouteTable %s: update_metric WARNING next hop %s delivery rate product %u%% is too high for %s",
+		    id().cc(), next_hop->dest_ip.s().cc(), next_hop->metric.val, r.dest_ip.s().cc());
+    r.metric.val *= next_hop->metric.val;
+    r.metric.val /= 100;
+    break;
+
   default:
     dsdv_assert(0);
   }
@@ -607,11 +640,17 @@ DSDVRouteTable::update_metric(RTEntry &r)
 bool
 DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
 {
+  // true if r1 is preferable to r2
+#if DBG2
+  click_chatter("%s: XXX metric_preferable valid?  1:%s  2:%s   1 < 2? %s", id().cc(),
+		(r1.metric.valid ? "yes" : "no"), (r2.metric.valid ? "yes" : "no"),
+		(metric_val_lt(r1.metric.val, r2.metric.val) ? "yes" : "no"));
+#endif
   // prefer a route with a valid metric
   if (r1.metric.valid && !r2.metric.valid)
-    return false;
-  if (!r1.metric.valid && r2.metric.valid)
     return true;
+  if (!r1.metric.valid && r2.metric.valid)
+    return false;
   
   // If neither metric is valid, fall back to hopcount.  Would you
   // prefer a 5-hop route or a 2-hop route, given that you don't have
@@ -627,13 +666,14 @@ DSDVRouteTable::metric_preferable(const RTEntry &r1, const RTEntry &r2)
 bool
 DSDVRouteTable::metric_val_lt(unsigned int v1, unsigned int v2)
 {
+  // Better metric should be ``less''
+
   switch (_metric_type) {
-  case MetricHopCount: return v1 < v2; break;
-  case MetricEstTxCount: 
-    // add 0.25 tx count fudge factor
-    return v2 > v1 + 25; break;
-  default:
-    dsdv_assert(0);
+  case MetricHopCount:               return v1 < v2; break;
+  case MetricEstTxCount:             return v2 > v1 + 25; break; // add 0.25 tx count fudge factor
+  case MetricDeliveryRateProduct:    return v1 > v2; break;
+  case MetricRevDeliveryRateProduct: return v1 > v2; break;
+  default: dsdv_assert(0);
   }
   return false;
 }
@@ -795,6 +835,12 @@ DSDVRouteTable::handle_update(RTEntry &new_r, const bool was_sender, const unsig
   else if (old_r->seq_no() == new_r.seq_no()) {
     // Accept if better route
     dsdv_assert(new_r.good() ? old_r->good() : old_r->broken()); // same seq ==> same broken state
+#if DBG2
+    click_chatter("%s: XXX checking for better route to %s from %s with same seqno %u",
+		  id().cc(), new_r.dest_ip.s().cc(), new_r.next_hop_ip.s().cc(), new_r.seq_no());
+    click_chatter("%s: XXX good=%s  preferable=%s", id().cc(), new_r.good() ? "yes" : "no",
+		  metric_preferable(new_r, *old_r) ? "yes" : "no");
+#endif
     if (new_r.good() && metric_preferable(new_r, *old_r)) {
       if (metrics_differ(new_r.metric, new_r.last_adv_metric)) {
 	new_r.need_metric_ad = true;
@@ -1075,8 +1121,10 @@ String
 DSDVRouteTable::metric_type_to_string(MetricType t)
 {
   switch (t) {
-  case MetricHopCount: return "hopcount"; break;
-  case MetricEstTxCount:   return "est_tx_count"; break;
+  case MetricHopCount:        return "hopcount"; break;
+  case MetricEstTxCount:      return "est_tx_count"; break;
+  case MetricDeliveryRateProduct:    return "delivery_rate_product"; break;
+  case MetricRevDeliveryRateProduct: return "reverse_delivery_rate_product"; break;
   default: 
     return "unknown_metric_type";
   }
@@ -1093,12 +1141,11 @@ DSDVRouteTable::MetricType
 DSDVRouteTable::check_metric_type(const String &s)
 {
   String s2 = s.lower();
-  if (s2 == "hopcount")
-    return MetricHopCount;
-  else if (s2 == "est_tx_count")
-    return MetricEstTxCount;
-  else
-    return MetricUnknown;
+  if      (s2 == "hopcount")                return MetricHopCount;
+  else if (s2 == "est_tx_count")            return MetricEstTxCount;
+  else if (s2 == "delivery_rate_product")   return MetricDeliveryRateProduct;
+  else if (s2 == "reverse_delivery_rate_product")   return MetricRevDeliveryRateProduct;
+  else return MetricUnknown;
 }
 
 int
