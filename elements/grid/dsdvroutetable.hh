@@ -445,6 +445,7 @@ private:
 
   /* latest sequence number for this node's route entry */
   unsigned int _seq_no;
+  unsigned int _mtu;
   unsigned int _bcast_count;  // incremented on every broadcast
 
   /* local DSDV radius */

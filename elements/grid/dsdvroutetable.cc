@@ -153,7 +153,7 @@ DSDVRouteTable::use_old_route(const IPAddress &dst, unsigned jiff)
 DSDVRouteTable::DSDVRouteTable() : 
   GridGenericRouteTable(1, 1), _gw_info(0),
   _link_stat(0), _link_stat2(0), _txfb(0), _log(0), 
-  _seq_no(0), _bcast_count(0),
+  _seq_no(0), _mtu(2000), _bcast_count(0),
   _max_hops(3), _alpha(88), _wst0(6000),
   _last_periodic_update(0),
   _last_triggered_update(0), 
@@ -222,6 +222,7 @@ DSDVRouteTable::configure(Vector<String> &conf, ErrorHandler *errh)
 			"WST0", cpUnsigned, "initial weight settling time, wst0 (msec)", &_wst0,
 			"ALPHA", cpUnsigned, "alpha parameter for settling time computation, in percent (0 <= ALPHA <= 100)", &_alpha,
 			"SEQ0", cpUnsigned, "initial sequence number (must be even)", &_seq_no,
+			"MTU", cpUnsigned, "interface's MTU", &_mtu,
 			0);
 
   if (res < 0)
@@ -1847,11 +1848,11 @@ DSDVRouteTable::build_and_tx_ad(Vector<RTEntry> &rtes_to_send)
    */
 
   int hdr_sz = sizeof(click_ether) + sizeof(grid_hdr) + sizeof(grid_hello);
-  int max_rtes = (1500 - hdr_sz) / sizeof(grid_nbr_entry);
+  int max_rtes = (_mtu - hdr_sz) / sizeof(grid_nbr_entry);
   int num_rtes = min(max_rtes, rtes_to_send.size()); 
   int psz = hdr_sz + sizeof(grid_nbr_entry) * num_rtes;
 
-  dsdv_assert(psz <= 1500);
+  dsdv_assert(psz <= _mtu);
   if (num_rtes < rtes_to_send.size())
     click_chatter("DSDVRouteTable %s: too many routes, truncating route advertisement",
 		  id().cc());
