@@ -3,7 +3,8 @@
  * Eddie Kohler
  *
  * Copyright (c) 2000 Massachusetts Institute of Technology
- * Copyright (c) 2001 International Computer Science Institute
+ * Copyright (c) 2001-3 International Computer Science Institute
+ * Copyright (c) 2004 Regents of the University of California
  *
  * Permission is hereby granted, free of charge, to any person obtaining a
  * copy of this software and associated documentation files (the "Software"),
@@ -649,7 +650,7 @@ ControlSocket::parse_command(int fd, const String &line)
 }
 
 void
-ControlSocket::flush_write(int fd)
+ControlSocket::flush_write(int fd, bool read_needs_processing)
 {
   assert(_flags[fd] >= 0);
   if (!(_flags[fd] & WRITE_CLOSED)) {
@@ -664,8 +665,9 @@ ControlSocket::flush_write(int fd)
     }
     if (w < 0 && errno == EPIPE)
       _flags[fd] |= WRITE_CLOSED;
-    // don't select writes unless we have data to write
-    if (_out_texts[fd].length())
+    // don't select writes unless we have data to write (or read needs more
+    // processing)
+    if (_out_texts[fd].length() || read_needs_processing)
       add_select(fd, SELECT_WRITE);
     else
       remove_select(fd, SELECT_WRITE);
@@ -719,51 +721,52 @@ ControlSocket::selected(int fd)
   if (fd >= _in_texts.size() || _flags[fd] < 0)
     return;
 
-  // read commands from socket
+  // read commands from socket (but only a bit on each select)
   if (!(_flags[fd] & READ_CLOSED)) {
     char buf[2048];
-    int r;
-    while (1) {
-      while ((r = read(fd, buf, 2048)) > 0)
-	_in_texts[fd].append(buf, r);
-      if ((r < 0 && errno != EINTR) || r == 0)
-	break;
-    }
-    if (r == 0 || (r < 0 && errno != EAGAIN))
+    int r = read(fd, buf, 2048);
+    if (r > 0)
+      _in_texts[fd].append(buf, r);
+    else if (r == 0 || (r < 0 && errno != EAGAIN && errno != EINTR))
       _flags[fd] |= READ_CLOSED;
   }
   
   // parse commands
-  while (_in_texts[fd].length()) {
+  // 16.Jun.2004: process only one command each time through
+  bool blocked = false;
+  if (_in_texts[fd].length()) {
     const char *in_text = _in_texts[fd].data();
     int len = _in_texts[fd].length();
     int pos = 0;
     while (pos < len && in_text[pos] != '\r' && in_text[pos] != '\n')
       pos++;
-    if (pos >= len && !(_flags[fd] & READ_CLOSED)) // incomplete command
-      break;
+    if (pos < len || (_flags[fd] & READ_CLOSED)) {
+      // have a complete command, parse it
 
-    // include end of line
-    if (pos < len - 1 && in_text[pos] == '\r' && in_text[pos+1] == '\n')
-      pos += 2;
-    else if (pos < len)		// '\r' or '\n' alone
-      pos++;
+      // include end of line
+      if (pos < len - 1 && in_text[pos] == '\r' && in_text[pos+1] == '\n')
+	pos += 2;
+      else if (pos < len)	// '\r' or '\n' alone
+	pos++;
     
-    // grab string
-    String old_text = _in_texts[fd];
-    String line = old_text.substring(0, pos);
-    _in_texts[fd] = old_text.substring(pos);
+      // grab string
+      String old_text = _in_texts[fd];
+      String line = old_text.substring(0, pos);
+      _in_texts[fd] = old_text.substring(pos);
 
-    // parse each individual command
-    if (parse_command(fd, line) > 0) {
-      // more data to come, so wait
-      _in_texts[fd] = old_text;
-      break;
+      // parse each individual command
+      if (parse_command(fd, line) > 0) {
+	// more data to come, so wait
+	_in_texts[fd] = old_text;
+	blocked = true;
+      }
     }
   }
 
   // write data until blocked
-  flush_write(fd);
+  // The 2nd argument causes write events to remain selected when commands
+  // remain to be processed (whether or not CS has data to write).
+  flush_write(fd, _in_texts[fd].length() && !blocked);
 
   // maybe close out
   if (((_flags[fd] & READ_CLOSED) && !_out_texts[fd].length())

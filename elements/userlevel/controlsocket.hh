@@ -224,7 +224,7 @@ class ControlSocket : public Element { public:
   Vector<String> _in_texts;
   Vector<String> _out_texts;
   Vector<int> _flags;
-
+  
   String _proxied_handler;
   ErrorHandler *_proxied_errh;
 
@@ -250,7 +250,7 @@ class ControlSocket : public Element { public:
   int check_command(int fd, const String &, bool write);
   int llrpc_command(int fd, const String &, String);
   int parse_command(int fd, const String &);
-  void flush_write(int fd);
+  void flush_write(int fd, bool read_needs_processing);
 
   int report_proxy_errors(int fd, const String &);
   static ErrorHandler *proxy_error_function(const String &, void *);
