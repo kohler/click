@@ -5,7 +5,7 @@ CLICK_DECLS
 
 /*
  * =c
- * ICMPError(IPADDR, TYPE [, CODE, BADADDRS])
+ * ICMPError(IPADDR, TYPE [, CODE, I<keywords> BADADDRS])
  * =s ICMP, encapsulation
  * generates ICMP error packets
  * =d
@@ -31,10 +31,10 @@ CLICK_DECLS
  * element.
  *
  * ICMPError never generates a packet in response to an ICMP error packet, a
- * fragment, or a link broadcast. BADADDRS is an optional list of bad IP
- * addresses; if it is present, then ICMPError doesn't generate packets in
- * response to packets with one of those addresses as either source or
- * destination.
+ * fragment, or a link broadcast. The BADADDRS keyword argument supplies an
+ * optional list of bad IP addresses; if it is present, then ICMPError doesn't
+ * generate packets in response to packets with one of those addresses as
+ * either source or destination.
  *
  * The output of ICMPError should be connected to the routing lookup
  * machinery, much as if the ICMP errors came from a hardware interface.

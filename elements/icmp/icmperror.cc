@@ -90,6 +90,8 @@ ICMPError::configure(Vector<String> &conf, ErrorHandler *errh)
 		  cpOptional,
                   "ICMP.code", "ICMP error code", &_code,
 		  cpIPAddressSet, "bad IP addresses", &bad_addrs,
+		  cpKeywords,
+		  "BADADDRS", cpIPAddressSet, "bad IP addresses", &bad_addrs,
 		  0) < 0)
     return -1;
   if (_type < 0 || _type > 255 || _code < 0 || _code > 255)
