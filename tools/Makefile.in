@@ -15,8 +15,7 @@ bindir = @bindir@
 INSTALL = @INSTALL@
 mkinstalldirs = @top_srcdir@/mkinstalldirs
 
-TOOLS = click-align click-compile click-fastclassifier click-install \
-	click-xform
+TOOLDIRS = click-align click-fastclassifier click-install click-xform
 TARGETS = @TOOL_TARGETS@
 
 all: $(TARGETS)
@@ -37,7 +36,7 @@ Makefile: $(srcdir)/Makefile.in
 click-compile: $(srcdir)/click-compile.in
 	cd $(top_builddir) \
 	  && CONFIG_FILES=$(subdir)/$@ CONFIG_ELEMLISTS=no CONFIG_HEADERS= $(SHELL) ./config.status
-	@chmod +x click-compile
+	@chmod +x click-compile; touch click-compile
 
 clean:
 	@-for d in $(TOOLS); do (cd $$d 2>/dev/null && $(MAKE) clean); done
@@ -88,4 +87,4 @@ distdir:
 	done
 
 
-.PHONY: all $(TOOLS) clean distclean distdir install install-man install-subdirs
+.PHONY: all $(TOOLDIRS) clean distclean distdir install install-man install-subdirs
