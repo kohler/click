@@ -1,3 +1,23 @@
+2004-01-14 Wednesday 22:32  Eddie Kohler <kohler@icir.org>
+
+	* lib/master.cc (1.2): avoid Mac OS X crashes via a dummy struct
+	pollfd
+
+2004-01-14 Wednesday 22:24  Eddie Kohler <kohler@icir.org>
+
+	* acclick.m4 (1.36), aclocal.m4 (1.36), click-compile.in (1.27),
+	config.guess (1.3), etc/samplepackage/Makefile.in (1.39),
+	etc/samplepackage/acclick.m4 (1.14), etc/samplepackage/aclocal.m4
+	(1.10), etc/samplepackage/configure.in (1.9),
+	etc/samplepackage/kernelversion.c (1.4): dynamic linking updates:
+	add LDMODULEFLAGS symbol, and in etc/samplepackage, use
+	click-compile to compile and link, not reanalyzed GCCs
+
+2004-01-14 Wednesday 21:43  Eddie Kohler <kohler@icir.org>
+
+	* etc/samplepackage/Makefile.in (1.38): use $(U_CXX) to link
+	loadable modules [Mac OS X]
+
 2004-01-14 Wednesday 21:01  Eddie Kohler <kohler@icir.org>
 
 	* elements/userlevel/kerneltap.cc (1.39), lib/userutils.cc (1.36):
