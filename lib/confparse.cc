@@ -1420,9 +1420,9 @@ cp_ip_address_set(const String &str, IPAddressSet *set
 		  CP_CONTEXT_ARG)
 {
   Vector<String> words;
+  cp_spacevec(str, words);
   Vector<unsigned> additions;
   IPAddress ip;
-  cp_spacevec(str, words);
   for (int i = 0; i < words.size(); i++) {
     if (!cp_ip_address(words[i], &ip  CP_PASS_CONTEXT))
       return false;
