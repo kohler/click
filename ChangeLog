@@ -1,3 +1,8 @@
+2004-06-21 Monday 16:03  John Bicket <jbicket@mit.edu>
+
+	* elements/wifi/: probetxrate.cc (1.2), probetxrate.hh (1.2): fix
+	divide-by-zero error.
+
 2004-06-21 Monday 13:09  John Bicket <jbicket@mit.edu>
 
 	* configure.in (1.232), elements/wifi/autotxrate.cc (1.8),
