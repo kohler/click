@@ -386,7 +386,7 @@ FromDevice::kernel_drops(bool& known, int& max_drops) const
 {
 #ifdef FROMDEVICE_PCAP
     struct pcap_stat stats;
-    if (pcap_stats(fd->_pcap, &stats) >= 0)
+    if (pcap_stats(_pcap, &stats) >= 0)
 	known = true, max_drops = stats.ps_drop;
     else
 	known = false, max_drops = -1;
