@@ -552,10 +552,13 @@ ToIPFlowDumps::configure(Vector<String> &conf, ErrorHandler *errh)
     return 0;
 }
 
+extern "C" char **environ;
+
 int
 ToIPFlowDumps::add_compressable(const String &filename, ErrorHandler *errh)
 {
     bool nowait = filename.length();
+    static int arg_space = -1;
 
     // append current filename
     if (filename)
@@ -583,25 +586,29 @@ ToIPFlowDumps::add_compressable(const String &filename, ErrorHandler *errh)
 	return 0;
 
     // calculate maximum argument list size
+    if (arg_space < 0) {
 #ifdef _SC_ARG_MAX
-    int arg_space = sysconf(_SC_ARG_MAX);
+      arg_space = sysconf(_SC_ARG_MAX);
 #elif defined(ARG_MAX)
-    int arg_space = ARG_MAX;
+      arg_space = ARG_MAX;
 #else
-    int arg_space = 1024;
+      arg_space = 1024;
 #endif
-    arg_space -= 8;
+      for (char **eptr = environ; *eptr; eptr++)
+	arg_space -= strlen(*eptr) + 1;
+      arg_space = (arg_space < 64 ? 1024 : arg_space - 32);
+    }
 
     // fork child
     Vector<const char *> args;
     args.push_back("gzip");
     args.push_back("-f");
-    int n = 0;
+    int n = 0, my_arg_space = arg_space;
     for (int i = _compressables.size() - 1; i >= 0; i--, n++) {
 	if (_compressables[i][0] == '-') // beware initial dashes
 	    _compressables[i] = "./" + _compressables[i];
-	arg_space -= _compressables[i].length() + 1; // not too long a line
-	if (arg_space < 0)
+	my_arg_space -= _compressables[i].length() + 1; // not too long a line
+	if (my_arg_space < 0)
 	    break;
 	args.push_back(_compressables[i].cc());
     }
