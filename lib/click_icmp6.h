@@ -62,7 +62,7 @@ struct icmp6_param
 {
   unsigned char icmp6_type;		/* one of the ICMP_TYPE_*'s above */
   unsigned char icmp6_code;		/* one of the ICMP6_CODE_*'s above */
-  unsigned short icmp_cksum;		/* 16 1's comp csum */
+  unsigned short icmp6_cksum;		/* 16 1's comp csum */
   unsigned int  pointer;		/* which octect in orig. IP6 pkt was a problem */
   /* followed by as much of invoking packet as will fit without the ICMPv6 packet exceeding 576 octets*/
 };
