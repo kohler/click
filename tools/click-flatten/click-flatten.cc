@@ -56,9 +56,11 @@ output.\n\
 Usage: %s [OPTION]... [ROUTERFILE]\n\
 \n\
 Options:\n\
+  -c, --classes             Output list of classes used by configuration.\n\
+  -e, --elements            Output list of element names in flat config.\n\
+  -d, --declarations        Output list of declarations in flat config.\n\
   -f, --file FILE           Read router configuration from FILE.\n\
   -o, --output FILE         Write output configuration to FILE.\n\
-  -c, --classes             Output list of classes used by configuration.\n\
   -C, --clickpath PATH      Use PATH for CLICKPATH.\n\
       --help                Print this message and exit.\n\
   -v, --version             Print version number and exit.\n\
