@@ -56,10 +56,11 @@ c0	:: Classifier(12/0806 20/0001, -);
 pd	:: PollDevice($cltifs->[$d-1]->[1]);
 td	:: ToDevice($cltifs->[$d-1]->[1]);
 out	:: Queue(200) -> td;
+tol	:: ToLinux;
 
 pd -> [0]c0;
 c0[0] -> ar -> out;
-c0[1] -> Counter -> Discard;
+c0[1] -> Counter -> tol;
 
 ScheduleInfo(td 1, pd 1);
 EOF

@@ -80,6 +80,7 @@ rs :: RatedSource(\\<00000000111111112222222233333333444444445555>, $r, $t);
 rs -> UDPEncap(1234,1234,1)
    -> iph
    -> ethh
+   -> Counter
    -> out;
 
 // ticket for RatedSoure must be smaller so it won't overflow the queue
