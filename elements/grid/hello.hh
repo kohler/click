@@ -3,16 +3,18 @@
 
 /*
  * =c
- * Hello(T, eth)
+ * Hello(T, eth, ip)
  * =d
  * Every T seconds,
- * sends a Grid HELLO packet from eth
+ * sends a Grid HELLO packet from eth advertising ip
  *
- * =a Neighbor */
+ * =a Neighbor 
+ */
 
 #include "element.hh"
 #include "timer.hh"
 #include "etheraddress.hh"
+#include "ipaddress.hh"
 
 class Hello : public Element {
   
@@ -34,7 +36,8 @@ public:
   
 private:
   
-  EtherAddress _from;
+  EtherAddress _from_eth;
+  IPAddress _from_ip;
   int _period;
   Timer _timer;
   

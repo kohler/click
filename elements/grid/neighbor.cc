@@ -63,15 +63,19 @@ void
 Neighbor::push(int, Packet *packet)
 {
   assert(packet);
-
-  EtherAddress k(packet->data() + 6);
+  click_ether *eh = (click_ether *) packet->data();
+  if (ntohs(eh->ether_type) != ETHERTYPE_GRID) {
+    click_chatter("Neighbor: got non-Grid packet");
+    return;
+  }
+  eth_ip_pair k(eh->ether_shost, packet->data() + sizeof(click_ether));
   int *num = _addresses.findp(k);
   if (num == 0) {
     // this src addr not already in map, so add it
     _addresses.insert(k, 1);
   }
   else {
-    // increment exisiting count...
+    // increment existing count... // XXX why are we even counting. could use bool?
     assert(_addresses.insert(k, *num + 1) == false);
   }
 
@@ -93,11 +97,8 @@ print_nbrs(Element *f, void *)
   s += String(n->_addresses.count());
   s += "):\n";
 
-  char buf[19];
-  buf[17] = 0;
-
   int i = 0;
-  EtherAddress addr;
+  Neighbor::eth_ip_pair addr;
   int num;
   while (n->_addresses.each(i, addr, num)) {
     s += addr.s();
@@ -114,4 +115,4 @@ Neighbor::add_handlers()
 
 EXPORT_ELEMENT(Neighbor)
 #include "hashmap.cc"
-template class HashMap<EtherAddress, int>;
+template class HashMap<Neighbor::eth_ip_pair, int>;

@@ -39,7 +39,8 @@ Hello::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   return cp_va_parse(conf, this, errh,
 		     cpInteger, "period (sec)", &_period,
-		     cpEthernetAddress, "source Ethernet address", &_from,
+		     cpEthernetAddress, "source Ethernet address", &_from_eth,
+		     cpIPAddress, "source IP address", &_from_ip,
 		     0);
 }
 
@@ -48,7 +49,7 @@ Hello::initialize(ErrorHandler *errh)
 {
   ScheduleInfo::join_scheduler(this, errh);
   _timer.attach(this);
-  _timer.schedule_after_ms(_period * 1000); // Send an ARP reply periodically.
+  _timer.schedule_after_ms(_period * 1000); // Send Grid HELLO periodically
   return 0;
 }
 
@@ -57,18 +58,18 @@ Hello::run_scheduled()
 {
   output(0).push(make_hello());
   _timer.schedule_after_ms(_period * 1000);
-  click_chatter("hey ho let's go");
 }
 
 Packet *
 Hello::make_hello()
 {
-  Packet *p = Packet::make(sizeof(click_ether));
+  Packet *p = Packet::make(sizeof(click_ether) + 4); // XXX 
   memset(p->data(), 0, p->length());
   click_ether *eh = (click_ether *) p->data();
-  memset(eh->ether_dhost, 0xff, 6);
+  memset(eh->ether_dhost, 0xff, 6); // broadcast
   eh->ether_type = htons(ETHERTYPE_GRID);
-  memcpy(eh->ether_shost, _from.data(), 6);
+  memcpy(eh->ether_shost, _from_eth.data(), 6);
+  memcpy(p->data() + sizeof(click_ether), _from_ip.data(), 4);
   return p;
 }
 
