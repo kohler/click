@@ -1,3 +1,14 @@
+2001-12-27 Thursday 16:25  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/drivermanager.cc (1.17): DriverManager bug
+	fixes, continued
+
+2001-12-27 Thursday 15:54  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/drivermanager.cc (1.16): fix DriverManager:
+	would ignore first instruction if that instruction wasnt wait or
+	wait_stop. Reported by Andrew Gorelik at Mazu
+
 2001-12-27 Thursday 14:07  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-align/click-align.cc (1.37),

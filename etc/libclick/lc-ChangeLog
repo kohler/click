@@ -1,3 +1,13 @@
+2001-12-27 Thursday 16:25  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc: DriverManager bug fixes, continued
+
+2001-12-27 Thursday 15:54  Eddie Kohler <kohler@aciri.org>
+
+	* libsrc/drivermanager.cc: fix DriverManager: would ignore first
+	instruction if that instruction wasnt wait or wait_stop. Reported
+	by Andrew Gorelik at Mazu
+
 2001-12-26 Wednesday 16:05  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/straccum.hh, include/click/string.hh,
