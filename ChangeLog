@@ -1,3 +1,19 @@
+2005-02-16 Wednesday 15:36  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/ip/: directiplookup.cc (1.5), directiplookup.hh (1.6),
+	iproutetable.cc (1.10), iproutetable.hh (1.13), lineariplookup.cc
+	(1.9), lineariplookup.hh (1.8), lookupiproute.cc (1.30),
+	lookupiproute.hh (1.24), radixiplookup.cc (1.13), radixiplookup.hh
+	(1.13), sortediplookup.cc (1.8), sortediplookup.hh (1.4),
+	trieiplookup.cc (1.11), trieiplookup.hh (1.9): add IPRoute type,
+	and use it in add_route and remove_route
+
+2005-02-16 Wednesday 15:35  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* include/click/ipaddress.hh (1.27): add inline markers where
+	appropriate, and add mask_more_specific() to complement
+	mask_as_specific()
+
 2005-02-16 Wednesday 13:49  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* etc/libclick/: DISTFILES (1.26), lc-libsrc-Makefile.in (1.17):
