@@ -23,6 +23,7 @@ CLICKDIR/apps/ClickController	... Java program for interacting with drivers
 CLICKDIR/bsdmodule		FreeBSD 4.5 kernel module driver
 CLICKDIR/conf			configuration files
 CLICKDIR/doc			documentation
+CLICKDIR/drivers		polling device drivers
 CLICKDIR/elements		element source code
 CLICKDIR/elements/analysis	... for trace analysis and manipulation
 CLICKDIR/elements/app		... for application-level protocol elements
