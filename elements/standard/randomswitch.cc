@@ -40,7 +40,7 @@ RandomSwitch::notify_noutputs(int i)
 void
 RandomSwitch::push(int, Packet *p)
 {
-    int o = (random() % noutputs());
+    int o = (random() >> 5) % noutputs();
     output(o).push(p);
 }
 

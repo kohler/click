@@ -168,7 +168,7 @@ RandomBitErrors::simple_action(Packet *p_in)
     
     int idx = bit_flip_array_idx[nb];
     int n = bit_flip_array_idx[nb+1] - idx;
-    unsigned char errors = bit_flip_array[ (random() % n) + idx ];
+    unsigned char errors = bit_flip_array[ ((random() >> 5) % n) + idx ];
     
     if (kind == 0)
       data[i] &= ~errors;

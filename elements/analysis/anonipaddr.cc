@@ -62,7 +62,7 @@ AnonymizeIPAddr::new_node_block()
 static uint32_t
 rand32()
 {
-    return ((random()&0xffff)<<16)|(random()&0xffff);
+    return ((random() << 8) & 0xFFFF0000) | ((random() >> 12) & 0x0000FFFF);
 }
 
 void
