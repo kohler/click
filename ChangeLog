@@ -1,3 +1,117 @@
+2001-01-07 Sunday 23:47  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/radio/bim.cc, elements/standard/align.cc,
+	elements/standard/block.cc, elements/standard/bwratedunqueue.cc,
+	elements/standard/checkcrc32.cc, elements/standard/checkcrc32.hh,
+	elements/standard/checklength.cc, elements/standard/classifier.cc,
+	elements/standard/compblock.cc, elements/standard/discard.cc,
+	elements/standard/discardnofree.cc,
+	elements/standard/dropbroadcasts.cc,
+	elements/standard/dropbroadcasts.hh,
+	elements/standard/hashdemux.cc, elements/standard/hashswitch.cc,
+	elements/standard/idle.cc, elements/standard/nullelement.cc,
+	elements/standard/paint.cc, elements/standard/painttee.cc,
+	elements/standard/priosched.cc, elements/standard/probsplitter.cc,
+	elements/standard/pullswitch.cc, elements/standard/randomerror.cc,
+	elements/standard/randomlossage.cc,
+	elements/standard/randomlossage.hh,
+	elements/standard/randomsource.cc,
+	elements/standard/ratedunqueue.cc, elements/standard/rrswitch.cc,
+	elements/standard/rrswitch.hh, elements/standard/setcrc32.cc,
+	elements/standard/staticpullswitch.cc,
+	elements/standard/staticswitch.cc, elements/standard/strip.cc,
+	elements/standard/switch.cc, elements/standard/tee.cc,
+	elements/standard/timedsink.cc, elements/standard/timedsource.cc,
+	elements/tcpudp/settcpchecksum.cc, include/click/sync.hh: mostly
+	declaring elements MT_SAFE
+
+2001-01-07 Sunday 23:46  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/click-install/click-install.cc: add --threads option to
+	click-install
+
+2001-01-07 Sunday 23:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* configure.in: --enable-multithread, not --with-mt
+
+2001-01-07 Sunday 23:44  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* acconfig.h: define NUM_CLICK_CPUS, not __CLICK_NCPUS__
+
+2001-01-07 Sunday 13:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/timer.hh, lib/timer.cc: added schedule_at()
+	function (Mz)
+
+2001-01-07 Sunday 13:40  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/standard/counter.cc, elements/standard/counter.hh,
+	include/click/llrpc.h: remove GET_COUNTS_RESET llrpc; change
+	click_llrpc_counts_st to support transferring less data across KU
+	boundary (Mz)
+
+2001-01-07 Sunday 13:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipprint.cc: use new operator<<(StringAccum &, const
+	struct timeval &) (Mz)
+
+2001-01-07 Sunday 13:39  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/straccum.hh, lib/straccum.cc: changed operator<<
+	from member functions to global functions; added function for
+	struct timeval (Mz)
+
+2001-01-07 Sunday 13:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* lib/router.cc: don't bother to call select() if there are no
+	selects; also run work list fewer times before calling wait() at
+	user level (Mz)
+
+2001-01-07 Sunday 13:37  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* include/click/element.hh, lib/element.cc: added
+	CONFIGURE_PHASE_LATE constant and local_llrpc virtual function (Mz)
+
+2001-01-07 Sunday 13:36  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/ip/ipfilter.cc: IPFilter(true) failed; fixed (Mz)
+
+2001-01-07 Sunday 13:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* elements/: ethernet/etherencap.cc, ethernet/etherencap.hh,
+	ip/ipencap.cc, ip/ipencap.hh: added src and dst handlers; also
+	HAVE_FAST_CHECKSUM stuff in IPEncap (Mz)
+
+2001-01-07 Sunday 13:35  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* doc/click-elem2man: expand tabs to spaces early; improves
+	alignment of manual page stuff (Mz)
+
+2001-01-07 Sunday 13:34  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* tools/: Makefile.in, click-fastclassifier/Makefile.in,
+	click-fastclassifier/click-fastclassifier.cc,
+	click-fastclassifier/click-fastclassifier.hh,
+	click-fastclassifier/fc_classifier.cc,
+	click-fastclassifier/fc_ipclassifier.cc: updated fast-classifier
+	design to support possibility of linking in new handlers for
+	different kinds of Classifier (Mz)
+
+2001-01-07 Sunday 13:33  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* acconfig.h, elements/ip/checkipheader.cc,
+	elements/ip/checkipheader.hh, elements/ip/ipinputcombo.cc,
+	elements/ip/ipinputcombo.hh, elements/tcpudp/udpipencap.cc,
+	elements/tcpudp/udpipencap.hh: added HAVE_FAST_CHECKSUM and
+	FAST_CHECKSUM_ALIGNED symbols; use these symbols in elements to
+	avoid spurious alignment warnings and unnecessary use of
+	click-align (Mz)
+
+2001-01-07 Sunday 13:31  Eddie Kohler <eddietwo@lcs.mit.edu>
+
+	* Makefile.in: install $builddir/include/click/config.h -- reduces
+	recompilation of packages (Mz)
+
 2000-12-28 Thursday 11:14  Eddie Kohler <eddietwo@lcs.mit.edu>
 
 	* lib/atomic.cc: added
