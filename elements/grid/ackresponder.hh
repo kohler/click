@@ -10,9 +10,9 @@
  *
  * =d
  *
- * Input should be Ethernet packets.  When a packet is received on the
- * input, it is passed through to output 0, and an ACK response is
- * pushed out of output 1.
+ * Input should be Ethernet packets.  When a packet addressed to ETH
+ * is received on the input, it is passed through to output 0, and an
+ * ACK response is pushed out of output 1.
  * 
  * =a 
  * ACKRetrySender */
