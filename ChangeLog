@@ -1,3 +1,14 @@
+2001-08-04 Saturday 13:30  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap (1.13): mkelemmap nitlet
+
+2001-08-04 Saturday 13:03  Eddie Kohler <kohler@aciri.org>
+
+	* click-compile.in (1.14), click-mkelemmap (1.12),
+	tools/click-check/click-check.cc (1.20), tools/lib/toolutils.cc
+	(1.38), tools/lib/toolutils.hh (1.27): add initial support for
+	"bsdmodule" driver to click-compile, click-mkelemmap, and the tools
+
 2001-08-04 Saturday 03:38  Eddie Kohler <kohler@aciri.org>
 
 	* lib/confparse.cc (1.80): support abbreviated IP prefix strings
