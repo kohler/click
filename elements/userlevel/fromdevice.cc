@@ -39,6 +39,9 @@
 # endif
 #endif
 
+#include <click/click_ether.h>
+#include <click/click_ip.h>
+
 FromDevice::FromDevice()
   : Element(0, 1), _promisc(0), _packetbuf_size(0)
 {
@@ -48,7 +51,6 @@ FromDevice::FromDevice()
 #endif
 #if FROMDEVICE_LINUX
   _fd = -1;
-  _packetbuf = 0;
 #endif
 }
 
@@ -68,18 +70,29 @@ int
 FromDevice::configure(const Vector<String> &conf, ErrorHandler *errh)
 {
   bool promisc = false;
-  _packetbuf_size = 2048;
+  _packetbuf_size = 2046;
+  _force_ip = false;
+  String bpf_filter;
   if (cp_va_parse(conf, this, errh,
 		  cpString, "interface name", &_ifname,
 		  cpOptional,
 		  cpBool, "be promiscuous?", &promisc,
-#if FROMDEVICE_LINUX
 		  cpUnsigned, "maximum packet length", &_packetbuf_size,
-#endif
+		  cpKeywords,
+		  "PROMISC", cpBool, "be promiscuous?", &promisc,
+		  "SNAPLEN", cpUnsigned, "maximum packet length", &_packetbuf_size,
+		  "FORCE_IP", cpBool, "force IP packets?", &_force_ip,
+		  "BPF_FILTER", cpString, "BPF filter", &bpf_filter,
 		  cpEnd) < 0)
     return -1;
-  if (_packetbuf_size > 8192 || _packetbuf_size < 128)
+  if (_packetbuf_size > 8190 || _packetbuf_size < 14)
     return errh->error("maximum packet length out of range");
+#if FROMDEVICE_PCAP
+  _bpf_filter = bpf_filter;
+#else
+  if (bpf_filter)
+    errh->warning("not using pcap library, BPF filter ignored");
+#endif
   _promisc = promisc;
   return 0;
 }
@@ -205,7 +218,7 @@ FromDevice::initialize(ErrorHandler *errh)
    * assume we can use 0 pointer for program string and get ``empty''
    * filter program.  
    */
-  if (pcap_compile(_pcap, &fcode, 0, 0, netmask) < 0) {
+  if (pcap_compile(_pcap, &fcode, _bpf_filter.mutable_data(), 0, netmask) < 0) {
     return errh->error("%s: %s", ifname, pcap_geterr(_pcap));
   }
 
@@ -227,13 +240,6 @@ FromDevice::initialize(ErrorHandler *errh)
     _was_promisc = -1;
   } else
     _was_promisc = promisc_ok;
-
-  // create packet buffer
-  _packetbuf = new unsigned char[_packetbuf_size + 2]; // +2 for ether header alignment
-  if (!_packetbuf) {
-    close(_fd);
-    return errh->error("out of memory");
-  }
 
   add_select(_fd, SELECT_READ);
   
@@ -262,9 +268,24 @@ FromDevice::uninitialize()
     remove_select(_fd, SELECT_READ);
     _fd = -1;
   }
-  delete[] _packetbuf;
-  _packetbuf = 0;
 #endif
+}
+
+bool
+FromDevice::check_force_ip(Packet *p)
+{
+  if (p->length() >= sizeof(click_ether) + sizeof(click_ip)) {
+    const click_ether *ethh = (const click_ether *)p->data();
+    const click_ip *iph = (const click_ip *)(p->data() + sizeof(click_ether));
+    if (ethh->ether_type == htons(ETHERTYPE_IP)
+	&& p->length() >= sizeof(click_ether) + (iph->ip_hl << 2)) {
+      p->pull(sizeof(click_ether));
+      p->set_ip_header(iph, iph->ip_hl << 2);
+      return true;
+    }
+  }
+  p->kill();
+  return false;
 }
 
 #if FROMDEVICE_PCAP
@@ -287,19 +308,11 @@ FromDevice::get_packet(u_char* clientdata,
       p->set_packet_type_anno(Packet::MULTICAST);
   }
 
-  struct timeval tv;
-  int res = gettimeofday(&tv, 0);
-  if (res == 0) 
-    p->set_timestamp_anno(tv);
+  // set timestamp annotation
+  p->set_timestamp_anno(pkthdr->ts.tv_sec, pkthdr->ts.tv_usec);
 
-#if 1
-  assert(sizeof(long) == sizeof(int));
-  assert(Packet::USER_ANNO_I_SIZE >= 2);
-  p->set_user_anno_i(0, pkthdr->ts.tv_sec);
-  p->set_user_anno_i(1, pkthdr->ts.tv_usec);
-#endif
-  
-  fd->output(0).push(p);
+  if (!fd->_force_ip || fd->check_force_ip(p))
+    fd->output(0).push(p);
 }
 #endif
 
@@ -312,29 +325,26 @@ FromDevice::selected(int)
 #endif
 #ifdef FROMDEVICE_LINUX
   struct sockaddr_ll sa;
-  //memset(&sa, 0, sizeof(sa));
   socklen_t fromlen = sizeof(sa);
-  // store data offset 2 bytes into _packetbuf, assuming that first 14
+  // store data offset 2 bytes into the packet, assuming that first 14
   // bytes are ether header, and that we want remaining data to be
   // 4-byte aligned.  this assumes that _packetbuf is 4-byte aligned,
   // and that the buffer allocated by Packet::make is also 4-byte
-  // aligned.  Actually, it doesn't matter if _packetbuf is 4-byte
-  // aligned; perhpas there is some efficiency aspect?  who cares....
-  int len = recvfrom(_fd, _packetbuf + 2, _packetbuf_size - 2, 0,
-		     (sockaddr *)&sa, &fromlen);
-  if (len > 0) {
-    if (sa.sll_pkttype != PACKET_OUTGOING) {
-      Packet *p = Packet::make(_packetbuf, len + 2);
-      p->pull(2);
-      p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
-      struct timeval tv;
-      int res = gettimeofday(&tv, 0);
-      if (res == 0) 
-	p->set_timestamp_anno(tv);
+  // aligned.  Actually, it doesn't matter if the packet is 4-byte
+  // aligned; perhaps there is some efficiency aspect?  who cares....
+  WritablePacket *p = Packet::make(2, 0, _packetbuf_size, 0);
+  int len = recvfrom(_fd, p->data(), p->length(), 0, (sockaddr *)&sa, &fromlen);
+  if (len > 0 && sa.sll_pkttype != PACKET_OUTGOING) {
+    p->change_headroom_and_length(2, len);
+    p->set_packet_type_anno((Packet::PacketType)sa.sll_pkttype);
+    (void) ioctl(_fd, SIOCGSTAMP, &p->timestamp_anno());
+    if (!_force_ip || check_force_ip(p))
       output(0).push(p);
-    }
-  } else if (errno != EAGAIN)
-    click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
+  } else {
+    p->kill();
+    if (len <= 0 && errno != EAGAIN)
+      click_chatter("FromDevice(%s): recvfrom: %s", _ifname.cc(), strerror(errno));
+  }
 #endif
 }
 

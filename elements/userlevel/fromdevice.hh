@@ -2,37 +2,68 @@
 #define FROMDEVICE_HH
 
 /*
- * =title FromDevice.u
- * =c
- * FromDevice(DEVNAME [, PROMISC? [, MAXPACKETSIZE]])
- * =s devices
- * reads packets from network device (user-level)
- * =d
- *
- * This manual page describes the user-level version of the FromDevice
- * element. For the Linux kernel module element, read the FromDevice(n) manual
- * page.
- *
- * Reads packets from the kernel that were received on the network controller
- * named DEVNAME. Puts the device in promiscuous mode if PROMISC? (a Boolean)
- * is true. PROMISC? defaults to false. On some systems, packets larger than
- * MAXPACKETSIZE will be truncated; default MAXPACKETSIZE is 2048 bytes.
- *
- * The kernel networking code sees all of the packets that FromDevice
- * produces; be careful that at most one of Click and the kernel forwards each
- * packet.
- *
- * Under Linux, a FromDevice element will not receive packets sent by a
- * ToDevice element for the same device. Under other operating systems, your
- * mileage may vary.
- *
- * Sets the packet_type_anno annotation for link layer broadcast and
- * multicast packets.
- *
- * =e
- *   FromDevice(eth0, 0) -> ...
- *
- * =a ToDevice.u, FromDump, ToDump, FromDevice(n) */
+=title FromDevice.u
+
+=c
+
+FromDevice(DEVNAME [, PROMISC, SNAPLEN, I<KEYWORDS>])
+
+=s devices
+
+reads packets from network device (user-level)
+
+=d
+
+This manual page describes the user-level version of the FromDevice
+element. For the Linux kernel module element, read the FromDevice(n) manual
+page.
+
+Reads packets from the kernel that were received on the network controller
+named DEVNAME. Puts the device in promiscuous mode if PROMISC (a Boolean) is
+true. PROMISC defaults to false. On some systems, packets larger than SNAPLEN
+will be truncated; default SNAPLEN is 2046 bytes.
+
+The kernel networking code sees all of the packets that FromDevice
+produces; be careful that at most one of Click and the kernel forwards each
+packet.
+
+Under Linux, a FromDevice element will not receive packets sent by a
+ToDevice element for the same device. Under other operating systems, your
+mileage may vary.
+
+Sets the packet type annotation appropriately. Also sets the timestamp
+annotation to the time the kernel reports that the packet was received.
+
+Keyword arguments are:
+
+=over 8
+
+=item PROMISC
+
+Boolean. Same as the PROMISC argument.
+
+=item SNAPLEN
+
+Unsigned integer. Same as the SNAPLEN argument.
+
+=item FORCE_IP
+
+Boolean. If true, then output only IP packets, with Ethernet header removed.
+Default is false.
+
+=item BPF_FILTER
+
+String. A BPF filter expression used to select the interesting packets.
+Default is the empty string, which means all packets. If FromDevice is not
+using the pcap library to read its packets, any filter expression is ignored.
+
+=back
+
+=e
+
+  FromDevice(eth0) -> ...
+
+=a ToDevice.u, FromDump, ToDump, FromDevice(n) */
 
 #include <click/element.hh>
 
@@ -81,11 +112,6 @@ class FromDevice : public Element { public:
   
  private:
   
-  String _ifname;
-  bool _promisc : 1;
-  int _was_promisc : 2;
-  int _packetbuf_size;
-
 #if FROMDEVICE_LINUX
   int _fd;
   unsigned char *_packetbuf;
@@ -95,6 +121,17 @@ class FromDevice : public Element { public:
   static void get_packet(u_char *, const struct pcap_pkthdr *,
 			 const u_char *);
 #endif
+  bool _force_ip;
+  
+  String _ifname;
+  bool _promisc : 1;
+  int _was_promisc : 2;
+  int _packetbuf_size;
+#if FROMDEVICE_PCAP
+  String _bpf_filter;
+#endif
+
+  static bool check_force_ip(Packet *);
 
 };
 
