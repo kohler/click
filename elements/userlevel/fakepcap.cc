@@ -162,5 +162,5 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 }
 
 CLICK_ENDDECLS
-ELEMENT_REQUIRES(userlevel)
+ELEMENT_REQUIRES(userlevel|ns)
 ELEMENT_PROVIDES(FakePcap)

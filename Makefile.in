@@ -81,9 +81,7 @@ install-include: install-local-include
 	@cd tools && $(MAKE) install-include
 
 elemlist elemlists:
-	for target in @TARGETS@; do \
-	  echo $$target @element_groups@ | (cd $(top_srcdir); ./click-buildtool findelem -r "$$target $(PROVISIONS)") > $$target/elements.conf; \
-	done
+	@for d in @TARGETS@; do (cd $$d && $(MAKE) elemlist) || exit 1; done
 
 elementmap: $(srcdir)/click-buildtool $(srcdir)/click-mkelemmap always
 	t="@element_groups@ @TARGETS@ $(EXTRA_PROVIDES)"; echo $$t | (cd $(top_srcdir); ./click-buildtool findelem -r "$(PROVISIONS) @TARGETS@" | $(PERL) ./click-mkelemmap -r "$(PROVISIONS) $$t" -Iinclude) > elementmap

@@ -28,10 +28,11 @@ my(@includes) = ( '.' );
 sub driver_mask ($) {
     my($m) = 0;
     # XXX "|" syntax?
-    $m |= 1 if $_[0] =~ /\blinuxmodule\b/;
-    $m |= 2 if $_[0] =~ /\buserlevel\b/;
+    $m |= 1 if $_[0] =~ /\buserlevel\b/;
+    $m |= 2 if $_[0] =~ /\blinuxmodule\b/;
     $m |= 4 if $_[0] =~ /\bbsdmodule\b/;
-    ($m ? $m : 7);
+    $m |= 8 if $_[0] =~ /\bns\b/;
+    ($m ? $m : 15);
 }
 
 sub process_file ($) {

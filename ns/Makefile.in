@@ -41,21 +41,24 @@ mkinstalldirs = $(conf_auxdir)/mkinstalldirs
 
 GENERIC_OBJS = string.o straccum.o \
 	bitvector.o vectorv.o templatei.o bighashmap_arena.o \
-	ipaddress.o ip6address.o ipaddressset.o ipflowid.o etheraddress.o \
+	ipaddress.o ipaddressset.o ipflowid.o etheraddress.o \
 	packet.o \
 	error.o glue.o task.o timer.o atomic.o gaprate.o \
-	element.o routerthread.o \
-	confparse.o variableenv.o lexer.o archive.o elemfilter.o router.o \
-	packageutils.o crc32.o in_cksum.o iptable.o ip6table.o \
-	userutils.o handlercall.o notifier.o integers.o crc32.o \
-	in_cksum.o
+	element.o \
+	confparse.o variableenv.o lexer.o elemfilter.o \
+	routerthread.o router.o handlercall.o notifier.o \
+	integers.o crc32.o in_cksum.o iptable.o ewma64.o \
+	archive.o packageutils.o userutils.o \
+	$(EXTRA_DRIVER_OBJS)
+
+EXTRA_DRIVER_OBJS = @EXTRA_DRIVER_OBJS@
 
 -include elements.mk
 
 LIBOBJS = $(GENERIC_OBJS) \
-	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o clp.o \
-	$(ELEMENT_OBJS) simclick.o elements.o
-OBJS = $(ELEMENT_OBJS)
+	addressinfo.o alignmentinfo.o errorelement.o scheduleinfo.o \
+	drivermanager.o clp.o
+OBJS = $(ELEMENT_OBJS) elements.o nsclick.o
 
 CPPFLAGS = @CPPFLAGS@ -DCLICK_NS
 CFLAGS = @CFLAGS@
@@ -76,8 +79,8 @@ LINK = $(CCLD) $(CFLAGS) $(LDFLAGS) -o $@
 
 all: libnsclick.a
 
-libnsclick.a: Makefile $(LIBOBJS)
-	$(AR_CREATE) libnsclick.a $(LIBOBJS)
+libnsclick.a: Makefile $(LIBOBJS) $(OBJS)
+	$(AR_CREATE) libnsclick.a $(LIBOBJS) $(OBJS)
 	$(RANLIB) libnsclick.a
 
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
@@ -88,7 +91,7 @@ elemlist:
 	@/bin/rm -f elements.conf
 	@$(MAKE) elements.conf
 elements.conf: $(top_builddir)/config.status $(top_srcdir)/click-buildtool
-	echo "ns @element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem) > elements.conf
+	echo "ns userlevel @element_groups@" | (cd $(top_srcdir); ./click-buildtool findelem -r "ns @provisions@") > elements.conf
 elements.mk: elements.conf $(top_srcdir)/click-buildtool
 	$(top_srcdir)/click-buildtool elem2make -x addressinfo.o -x alignmentinfo.o -x errorelement.o -x scheduleinfo.o -x drivermanager.o < elements.conf > elements.mk
 elements.cc: elements.conf $(top_srcdir)/click-buildtool

@@ -64,7 +64,7 @@ Options:
       --defs              Outputs preprocessor options for userlevel drivers.
       --libs              Outputs link options for userlevel drivers.
   -t, --target TARGET     Sets target to `bsdmodule', `linuxmodule',
-                          `userlevel', or `tool'.
+                          `userlevel', `ns', or `tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
   -d, --directory DIR     Change to directory DIR.
   -q, --quiet             Be quiet (don't echo commands or print warnings).
@@ -136,6 +136,12 @@ fi
 
 
 case $target in
+  u|us|use|user|userl|userle|userlev|userleve|userlevel)
+    idefs="@DEFS@ -DCLICK_USERLEVEL"
+    iincludes="${include_source} -I${includedir}"
+    icxxflags="@CXXFLAGS@"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
+    target=userlevel;;
   k|ke|ker|kern|kerne|kernel|l|li|lin|linu|linux|linuxm|linuxmo|linuxmod|linuxmodu|linuxmodul|linuxmodule)
     idefs="@DEFS@ -DCLICK_LINUXMODULE"
     iincludes="${include_source} -I${includedir} -I${linuxdir}/include"
@@ -144,18 +150,18 @@ case $target in
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     c_command="${CC-@CC@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CFLAGS-$icflags} $cflags $compileflag"
     target=linuxmodule;;
-  u|us|use|user|userl|userle|userlev|userleve|userlevel)
-    idefs="@DEFS@ -DCLICK_USERLEVEL"
-    iincludes="${include_source} -I${includedir}"
-    icxxflags="@CXXFLAGS@"
-    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
-    target=userlevel;;
   b|bs|bsd|bsdm|bsdmo|bsdmod|bsdmodu|bsdmodul|bsdmodule)
     idefs="@DEFS@ -DCLICK_BSDMODULE"
     iincludes="${include_source} -I${includedir}"
     icxxflags="@CXXFLAGS_NDEBUG@"
     command="${CXX-@KERNEL_CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
     target=bsdmodule;;
+  ns|nsm|nsmo|nsmod|nsmodu|nsmodul|nsmodule)
+    idefs="@DEFS@ -DCLICK_NS"
+    iincludes="${include_source} -I${includedir}"
+    icxxflags="@CXXFLAGS@"
+    command="${CXX-@CXX@} ${DEFS-$idefs} ${INCLUDES-$iincludes} ${CPPFLAGS-} ${CXXFLAGS-$icxxflags} $cflags $compileflag"
+    target=ns;;
   t|to|too|tool)
     idefs="@DEFS@ -DCLICK_TOOL"
     iincludes="${include_source} -I${includedir}"
@@ -204,7 +210,7 @@ EOF
     exec_command $c_command $vfile.c
     exec_command "ld -r -o $package $files $vfile.o"
     exit 0 
-  elif test $target = userlevel -o $target = tool; then
+  elif test $target = userlevel -o $target = tool -o $target = ns; then
     exec_command "ld -shared -o $package $files"
     exit 0
   elif test $target = bsdmodule; then

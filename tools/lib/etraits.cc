@@ -34,14 +34,14 @@ ElementTraits ElementTraits::the_null_traits;
 const char *
 Driver::name(int d)
 {
-    if (d == LINUXMODULE)
-	return "linuxmodule";
-    else if (d == USERLEVEL)
+    if (d == USERLEVEL)
 	return "userlevel";
+    else if (d == LINUXMODULE)
+	return "linuxmodule";
     else if (d == BSDMODULE)
 	return "bsdmodule";
     else if (d == NSMODULE)
-	return "nsmodule";
+	return "ns";
     else
 	return "??";
 }
@@ -49,14 +49,14 @@ Driver::name(int d)
 const char *
 Driver::requirement(int d)
 {
-    if (d == LINUXMODULE)
-	return "linuxmodule";
-    else if (d == USERLEVEL)
+    if (d == USERLEVEL)
 	return "userlevel";
+    else if (d == LINUXMODULE)
+	return "linuxmodule";
     else if (d == BSDMODULE)
 	return "bsdmodule";
     else if (d == NSMODULE)
-	return "nsmodule";
+	return "ns";
     else
 	return "";
 }
@@ -121,13 +121,13 @@ void
 ElementTraits::calculate_driver_mask()
 {
     driver_mask = 0;
-    if (requirement_contains(requirements, "linuxmodule"))
-	driver_mask |= 1 << Driver::LINUXMODULE;
     if (requirement_contains(requirements, "userlevel"))
 	driver_mask |= 1 << Driver::USERLEVEL;
+    if (requirement_contains(requirements, "linuxmodule"))
+	driver_mask |= 1 << Driver::LINUXMODULE;
     if (requirement_contains(requirements, "bsdmodule"))
 	driver_mask |= 1 << Driver::BSDMODULE;
-    if (requirement_contains(requirements, "nsmodule"))
+    if (requirement_contains(requirements, "ns"))
 	driver_mask |= 1 << Driver::NSMODULE;
     if (driver_mask == 0)
 	driver_mask = Driver::ALLMASK;

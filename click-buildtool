@@ -344,7 +344,7 @@ Usage: click-buildtool elem2make [-t TARGET] [-V] < elements.conf
 
 Options:
   -t, --target TARGET      Set target to TARGET (`userlevel', `linuxmodule', 
-                           or `bsdmodule').
+                           `bsdmodule', or `ns').
   -v, --make-variable N    Use make variable N.
   -x, --exclude FILE       Do not include FILE.
   -V, --verbose            Print more information.
@@ -370,6 +370,9 @@ EOF
 	elif test "$driver" = 'bsdmodule'; then
 	    osuffix=".bo"
 	    defmakevar="B_ELEMENT_OBJS"
+	elif test "$driver" = 'ns' -o "$driver" = 'nsmodule'; then
+	    osuffix=".no"
+	    defmakevar="NS_ELEMENT_OBJS"
 	else
 	    echo "Unknown driver $driver" 1>&2
 	    exit 1
