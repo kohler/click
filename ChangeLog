@@ -1,3 +1,7 @@
+2004-07-29 Thursday 11:00  John Bicket <jbicket@mit.edu>
+
+	* include/click/packet_anno.hh (1.23): add more packet annotations.
+
 2004-07-28 Wednesday 19:33  Max Krohn <krohn@mit.edu>
 
 	* etc/debian-2.4.26-patch (1.1): Patch for patched Debian 2.4.26.
