@@ -34,6 +34,7 @@
 #include "glue.hh"
 #include "clickpackage.hh"
 #include "userutils.hh"
+#include "elements/userlevel/readhandler.hh"
 
 #if defined(HAVE_DLFCN_H) && defined(HAVE_LIBDL)
 # define HAVE_DYNAMIC_LINKING 1
@@ -103,6 +104,7 @@ static Vector<String> call_handlers;
 static ErrorHandler *errh;
 static int handler_duration = -1;
 static const char *handler_dir = 0;
+static ReadHandlerCaller* readhandler_element = 0;
 
 static void
 catch_sigint(int)
@@ -361,7 +363,8 @@ int call_read_handlers()
 static void
 catch_sigalrm(int)
 {
-  call_read_handlers();
+  if (readhandler_element) 
+    readhandler_element->schedule_immediately();
   alarm(handler_duration);
 }
 
@@ -555,6 +558,15 @@ particular purpose.\n");
     e->add_default_handlers(false);
     e->add_handlers();
   }
+  
+  // find read handler element
+  for (int i = 0; i < nelements; i++) {
+    Element *e = router->element(i);
+    readhandler_element = (ReadHandlerCaller*)e->cast("ReadHandlerCaller");
+    if (readhandler_element) break;
+  }
+  if (!readhandler_element)
+    errh->warning("No ReadHandler element: read handlers may not be called");
 
   alarm(handler_duration);
 
