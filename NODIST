@@ -17,13 +17,5 @@ elements/ip6/markip6header.hh
 elements/ip6/markip6header.cc
 elements/ip6/setip6address.hh
 elements/ip6/setip6address.cc
-elements/ip6/nat624.hh
-elements/ip6/nat624.cc
-elements/ip6/netaddresstranslator.hh
-elements/ip6/netaddresstranslator.cc
-elements/ip6/addresstranslator.hh
-elements/ip6/addresstranslator.cc
-elements/ip6/protocoltranslator.hh
-elements/ip6/protocoltranslator.cc
 elements/tcpudp/tcpipsend.hh
 elements/tcpudp/tcpipsend.cc
