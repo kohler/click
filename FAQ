@@ -13,7 +13,8 @@ Q. The Click Linux patch does not apply cleanly.
 
 A. You need a specific version of Linux. We currently distribute pactches
    for Linux 2.2.18, 2.2.19 [patch also works for 2.2.20 and 2.2.21],
-   2.4.18, 2.4.20, and 2.4.21. These patches may also work for later versions.
+   2.4.18, 2.4.20, 2.4.21, and 2.4.26. These patches may also work for
+   later versions.
 
 
 Q. How fast can Click route packets?
@@ -31,15 +32,14 @@ A. Device driver improvements, including polling, and language-level
 Q. Can I get that many packets through a Click router?
 
 A. You should be able to do that right now if you use DEC Tulip fast
-   Ethernet cards. This is currently the only device driver that we have
-   changed to use our polling extensions to Linux.
+   Ethernet cards or Intel E1000 gigabit Ethernet cards.  These are the
+   main device drivers that we have changed to use our polling extensions
+   to Linux.
 
 
 Q. How does Click run inside a Linux kernel?
 
-A. As a kernel thread. It continually loops over a list of things to do,
-   and does them---basically busy waiting. Other processes on the machine
-   will get run, but not as often as on a machine without Click.
+A. As a kernel thread.
 
 
 Q. What are the Grid elements?
@@ -54,18 +54,19 @@ SECTION 2: QUESTIONS ABOUT POLLING
 
 Q. How can I change a device driver to use the Click polling extensions?
 
-A. Benjie Chen, who designed the extensions, should be writing a document
-   that describes how to do this. For now, though, you'll have to look at
-   our additions to Linux's `struct device', and the way they are used by
-   our Tulip driver. You can always write us and ask for help:
+A. Benjie Chen, who designed the extensions, never wrote a document
+   describing how to do this.  For now, you'll have to look at our
+   additions to Linux's 'struct device', and the way they are used by our
+   drivers.  You can always write us and ask for help:
    <click@pdos.lcs.mit.edu>.
 
 
 Q. Can I use Click without updating device drivers (that is, without
    polling)?
 
-A. Sure you can. Just use FromDevice elements instead of PollDevice
-   elements. Your performance will suck though.
+A. Sure.  Just use FromDevice elements instead of PollDevice elements.
+   Your performance will generally be worse than Linux; we haven't
+   particularly optimized this.
 
 
 SECTION 3: CREATING YOUR OWN ELEMENTS
@@ -77,7 +78,7 @@ A. There are two ways to add an element class to Click: in the main Click
    collection, or in a package. We recommend that you use packages for
    nontrivial collections of elements. It has several advantages -- for
    example, it will keep your code separate from the main Click code. Check
-   out the sample package in `etc/samplepackage'. However, if you just want
+   out the sample package in 'etc/samplepackage'. However, if you just want
    to compile a single new element, it will be easier to add it to the main
    Click collection. This answer shows how.
 
@@ -123,39 +124,57 @@ A. There are two ways to add an element class to Click: in the main Click
 	ELEMENT_REQUIRES(linuxmodule)
 
      ELEMENT_REQUIRES can also take element names and package names like
-     `ip6':
+     'ip6':
 
 	ELEMENT_REQUIRES(linuxmodule Storage ip6)
 
-   Second, put your element in an `elements/' directory.
+   Second, put your element in an 'elements/' directory.
 
      Choose the directory that seems most appropriate for your element.
-     Often, this is `elements/local', which is designed for locally-created
-     elements. If you place your element in `local', make sure you provide
-     the `--enable-local' argument to `configure'.
+     Often, this is 'elements/local', which is designed for locally-created
+     elements. If you place your element in 'local', make sure you provide
+     the '--enable-local' argument to 'configure'.
 
-   Third, run `make elemlist'.
+   Third, run 'make elemlist'.
 
-     `make elemlist' checks the source files in the `elements/'
+     'make elemlist' checks the source files in the 'elements/'
      subdirectories for EXPORT_ELEMENT directives, and compiles a list of
-     elements that Click should compile. After running `make elemlist',
-     check the `userlevel/elements.conf' and `linuxmodule/elements.conf'
+     elements that Click should compile. After running 'make elemlist',
+     check the 'userlevel/elements.conf' and 'linuxmodule/elements.conf'
      files to see if your .cc file made it into this list.
 
-   Finally, run `make install'!
+   Finally, run 'make install'!
 
      You are done.
 
 
-Q. My element wasn't compiled! Click reports `unknown element class'.
+Q. My element wasn't compiled! Click reports 'unknown element class'.
 
 A. Check these things:
 
 	Do you have an EXPORT_ELEMENT statement?
 	Does your element require something with ELEMENT_REQUIRES that is
      not available?
-	Did you run `make elemlist'?
+	Did you run 'make elemlist'?
 	Is the relevant elements/ directory enabled? (For instance, for
-     elements/local, did you run `./configure --enable-local'?)
-	Is your element's .cc file present in `userlevel/elements.conf' or
-     `linuxmodule/elements.conf'?
+     elements/local, did you run './configure ... --enable-local'?)
+	Is your element's .cc file present in 'userlevel/elements.conf' or
+     'linuxmodule/elements.conf'?
+
+
+Q. How can I make Click compile a C++ file that doesn't contain an element?
+
+A. Add an ELEMENT_PROVIDES statement to your .cc file.  The Click build
+   process searches for C and C++ files with 'ELEMENT_PROVIDES' as well as
+   'EXPORT_ELEMENT'.  You'll have to come up with a one-word tag describing
+   the functionality that your .cc file provides.  See the end of
+   'elements/userlevel/fakepcap.cc' for an example; it looks like this:
+
+	...
+	CLICK_ENDDECLS
+	ELEMENT_REQUIRES(userlevel|ns)
+	ELEMENT_PROVIDES(FakePcap)
+
+   Elements that use the 'FakePcap' functionality explicitly require it
+   with ELEMENT_REQUIRES; see 'elements/userlevel/fromdump.cc' for an
+   example.
