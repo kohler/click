@@ -1,3 +1,10 @@
+2005-03-29 Tuesday 16:56  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* click-buildtool.in (1.65), configure (1.49), configure.in
+	(1.259), elements/standard/addressinfo.cc (1.35),
+	etc/linux-2.6.11.6-patch (1.1), linuxmodule/Makefile.in (1.96),
+	linuxmodule/clickfs.cc (1.41): initial Linux 2.6 support
+
 2005-03-27 Sunday 14:08  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* Makefile.in (1.127), click-buildtool.in (1.64), click-compile.in
