@@ -62,7 +62,8 @@ Usage: click-compile -t TARGET [OPTIONS] SOURCEFILE...
 Options:
       --defs              Outputs preprocessor options for userlevel drivers.
       --libs              Outputs link options for userlevel drivers.
-  -t, --target TARGET     Sets target to `linuxmodule', `userlevel', or `tool'.
+  -t, --target TARGET     Sets target to `bsdmodule', `linuxmodule',
+                          `userlevel', or `tool'.
   -p, --package PACKAGE   Build a dynamically loadable package named PACKAGE.
   -d, --directory DIR     Change to directory DIR.
   -q, --quiet             Be quiet (don't echo commands or print warnings).

@@ -606,10 +606,6 @@ particular purpose.\n");
     // (warning: creates circular element class references, which are
     // removed below by remove_unused_element_types())
     for (int i = 0; i < patterns.size(); i++) {
-      r->get_types_from(patterns[i]);
-      r->get_types_from(replacements[i]);
-    }
-    for (int i = 0; i < patterns.size(); i++) {
       patterns[i]->unify_type_indexes(r);
       replacements[i]->unify_type_indexes(r);
     }
