@@ -65,6 +65,7 @@ GridRouteTable::configure(const Vector<String> &conf, ErrorHandler *errh)
 			cpInteger, "Hello broadcast jitter (msec)", &_jitter,
 			cpEthernetAddress, "source Ethernet address", &_eth,
 			cpIPAddress, "source IP address", &_ip,
+			cpElement, "GridGatewayInfo element", &_gw_info,
 			cpOptional,
 			cpInteger, "max hops", &_max_hops,
 			0);
@@ -108,6 +109,20 @@ GridRouteTable::initialize(ErrorHandler *)
 }
 
 
+const GridRouteTable::RTEntry *
+GridRouteTable::current_gateway ()
+{
+  for (RTIter i = _rtes.first(); i; i++) {
+    const RTEntry &f = i.value();
+
+    if (f.is_gateway)
+      return &f;
+  }
+
+  return NULL;
+}
+
+
 /*
  * expects grid LR packets, with ethernet and grid hdrs
  */
@@ -137,14 +152,14 @@ GridRouteTable::simple_action(Packet *packet)
   IPAddress ipaddr((unsigned char *) &gh->tx_ip);
   EtherAddress ethaddr((unsigned char *) eh->ether_shost);
 
-  if (ethaddr == _eth) {
-    click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().cc());
-    packet->kill();
-    return 0;
-  }
-  
+  // this should be redundant (see HostEtherFilter in grid.click)
+//   if (ethaddr == _eth) {
+//     click_chatter("GridRouteTable %s: received own Grid packet; ignoring it", id().cc());
+//     packet->kill();
+//     return 0;
+//   }
+
   grid_hello *hlo = (grid_hello *) (gh + 1);
-   
    
   /*
    * add 1-hop route to packet's transmitter; perform some sanity
@@ -155,11 +170,11 @@ GridRouteTable::simple_action(Packet *packet)
     click_chatter("GridRouteTable %s: adding new 1-hop route %s -- %s", 
 		  id().cc(), ipaddr.s().cc(), ethaddr.s().cc()); 
   else if (r->num_hops == 1 && r->next_hop_eth != ethaddr)
-    click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
+    click_chatter("GridRouteTable %s: ethernet address of %s changed from %s to %s", 
+		  id().cc(), ipaddr.s().cc(), r->next_hop_eth.s().cc(), ethaddr.s().cc());
   
   _rtes.insert(ipaddr, RTEntry(ipaddr, ethaddr, gh, hlo, jiff));
   
-
   /*
    * loop through and process other route entries in hello message 
    */
@@ -275,11 +290,12 @@ GridRouteTable::print_rtes(Element *e, void *)
   for (RTIter i = n->_rtes.first(); i; i++) {
     const RTEntry &f = i.value();
     s += f.dest_ip.s() 
-      + " next_hop=" + f.next_hop_ip.s() 
-      + " num_hops=" + String((int) f.num_hops) 
-      + " loc=" + f.loc.s()
-      + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
-      + " seq_no=" + String(f.seq_no)
+      + " next=" + f.next_hop_ip.s() 
+      + " hops=" + String((int) f.num_hops) 
+      + " gw=" + (f.is_gateway ? "y" : "n")
+      //      + " loc=" + f.loc.s()
+      //      + " err=" + (f.loc_good ? "" : "-") + String(f.loc_err) // negate loc if invalid
+      + " seq=" + String(f.seq_no)
       + "\n";
   }
   
@@ -480,6 +496,8 @@ GridRouteTable::send_routing_update(Vector<RTEntry> &rte_info,
   hlo->num_nbrs = (unsigned char) num_rtes;
   hlo->nbr_entry_sz = sizeof(grid_nbr_entry);
   hlo->seq_no = htonl(_seq_no);
+
+  hlo->is_gateway = _gw_info->is_gateway ();
 
   /* 
    * Update the sequence number for periodic updates, but not for

@@ -125,6 +125,7 @@ struct grid_nbr_entry {
   struct grid_location loc;
   unsigned short loc_err;
   bool loc_good;
+  bool is_gateway;
   unsigned int seq_no;
   unsigned int age; 
 
@@ -139,6 +140,9 @@ struct grid_nbr_entry {
 struct grid_hello {
   unsigned int seq_no;
   unsigned int age; // decreasing, approximately in milliseconds
+
+  bool is_gateway; // is the hello's transmitter also a gateway?
+
   unsigned char num_nbrs;
   unsigned char nbr_entry_sz;
   // for GRID_LR_HELLO packets, followed by num_nbrs grid_nbr_entry

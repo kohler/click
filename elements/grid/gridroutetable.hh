@@ -8,6 +8,7 @@
 #include <click/bighashmap.hh>
 #include <click/etheraddress.hh>
 #include <click/ipaddress.hh>
+#include <elements/grid/gridgatewayinfo.hh>
 #include "grid.hh"
 #include <click/timer.hh>
 
@@ -46,6 +47,7 @@ public:
     struct grid_location loc; // location of dest, as contained in its route ads
     unsigned short loc_err;
     bool loc_good;
+    bool is_gateway;
 
     unsigned int seq_no; 
     unsigned int ttl;  // msecs
@@ -53,27 +55,30 @@ public:
     int last_updated_jiffies; // last time this entry was updated
 
     RTEntry() : 
-      _init(false), num_hops(0), loc_good(false), seq_no(0), ttl(0), 
-      last_updated_jiffies(-1) { }
+      _init(false), num_hops(0), loc_good(false), is_gateway(false), 
+      seq_no(0), ttl(0), last_updated_jiffies(-1) { }
     
     RTEntry(IPAddress _dest_ip, IPAddress _next_hop_ip, EtherAddress _next_hop_eth,
 	    unsigned char _num_hops, grid_location _loc, unsigned short _loc_err, 
-	    bool _loc_good, unsigned int _seq_no, unsigned int _ttl, 
+	    bool _loc_good, bool _is_gateway, unsigned int _seq_no, unsigned int _ttl, 
 	    int _last_updated_jiffies) :
       _init(true), dest_ip(_dest_ip), next_hop_ip(_next_hop_ip), 
       next_hop_eth(_next_hop_eth), num_hops(_num_hops), loc(_loc), 
-      loc_err(_loc_err), loc_good(_loc_good), seq_no(_seq_no), ttl(_ttl),
-      last_updated_jiffies(_last_updated_jiffies) { }
+      loc_err(_loc_err), loc_good(_loc_good), is_gateway(_is_gateway), 
+      seq_no(_seq_no), ttl(_ttl),
+      last_updated_jiffies(_last_updated_jiffies)
+    { }
 
     /* constructor for 1-hop route entry, converting from net byte order */
     RTEntry(IPAddress ip, EtherAddress eth, grid_hdr *gh, grid_hello *hlo,
 	    unsigned int jiff) :
       _init(true), dest_ip(ip), next_hop_ip(ip), next_hop_eth(eth), num_hops(1), 
-      loc(gh->loc), loc_good(gh->loc_good), last_updated_jiffies(jiff) 
+      loc(gh->loc), loc_good(gh->loc_good), is_gateway(hlo->is_gateway),
+      last_updated_jiffies(jiff)
     { 
       loc_err = ntohs(gh->loc_err); 
       seq_no = ntohl(hlo->seq_no); 
-      ttl = decr_ttl(ntohl(hlo->age), grid_hello::MIN_TTL_DECREMENT);
+      ttl = decr_ttl(ntohl(hlo->age), grid_hello::MIN_TTL_DECREMENT);      
     }
 
     /* constructor from grid_nbr_entry, converting from net byte order */
@@ -81,7 +86,7 @@ public:
 	    unsigned int jiff) :
       _init(true), dest_ip(nbr->ip), next_hop_ip(ip), next_hop_eth(eth),
       num_hops(nbr->num_hops + 1), loc(nbr->loc), loc_good(nbr->loc_good),  
-      last_updated_jiffies(jiff) 
+      is_gateway(nbr->is_gateway), last_updated_jiffies(jiff)      
     {
       loc_err = ntohs(nbr->loc_err);
       seq_no = ntohl(nbr->seq_no);
@@ -101,6 +106,8 @@ public:
   RTable _rtes;
 
   void get_rtes(Vector<RTEntry> *retval);
+
+  const RTEntry *current_gateway();
   
 private:
   /* max time to keep an entry in RT */
@@ -110,6 +117,8 @@ private:
   /* route broadcast timing parameters */
   int _period;
   int _jitter;
+
+  GridGatewayInfo *_gw_info;
 
   /* interval at which to check RT entries for expiry */
   static const unsigned int EXPIRE_TIMER_PERIOD = 100; // msecs

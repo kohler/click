@@ -61,9 +61,12 @@ private:
   bool get_next_hop(IPAddress dest_ip, EtherAddress *dest_eth) const;
   void forward_grid_packet(Packet *packet, IPAddress dest_ip);
 
+  GridGatewayInfo *_gw_info;
+
   GridRouteTable *_rtes;
   EtherAddress _ethaddr;
   IPAddress _ipaddr;
+  IPAddress _any_gateway_ip;
   Task _task;
 };
 
