@@ -131,7 +131,7 @@ Neighbor::push(int port, Packet *packet)
     case GRID_NBR_ENCAP:
       // XXX do we need to annotate the packet??  
       // check actual header length in case versions differ
-      packet->pull(sizeof(click_ether) + gh->len); 
+      packet->pull(sizeof(click_ether) + gh->hdr_len); 
       output(1).push(packet);
       break;
     default:
@@ -170,7 +170,8 @@ Neighbor::push(int port, Packet *packet)
       eh->ether_type = htons(ETHERTYPE_GRID);
       
       grid_hdr *gh = (grid_hdr *) (packet->data() + sizeof(click_ether));
-      gh->len = sizeof(grid_hdr);
+      gh->hdr_len = sizeof(grid_hdr);
+      gh->total_len = sizeof(grid_hdr);
       gh->type = GRID_NBR_ENCAP;
       memcpy((unsigned char *) &gh->ip, _ipaddr.data(), 4);
       

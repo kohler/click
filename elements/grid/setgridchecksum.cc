@@ -18,6 +18,7 @@
 #include "glue.hh"
 #include "grid.hh"
 #include "click_ether.h"
+#include "click_ip.h"
 
 SetGridChecksum::SetGridChecksum()
 {

@@ -89,7 +89,8 @@ Hello::make_hello()
   eh->ether_type = htons(ETHERTYPE_GRID);
   memcpy(eh->ether_shost, _from_eth.data(), 6);
   grid_hdr *gh = (grid_hdr *) (p->data() + sizeof(click_ether));
-  gh->len = sizeof(grid_hdr);
+  gh->hdr_len = sizeof(grid_hdr);
+  gh->total_len = sizeof(grid_hdr);
   gh->type = GRID_HELLO;
   memcpy(&gh->ip, _from_ip.data(), 4);
   return p;
