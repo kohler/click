@@ -1,3 +1,8 @@
+2001-12-07 Friday 17:24  Alexander Yip <yipal@pdos.lcs.mit.edu>
+
+	* etc/ron/: lookupiprouteron.cc (1.14), lookupiprouteron.hh (1.9):
+	moved send_rst, added support for random path selection
+
 2001-12-07 Friday 03:57  Eddie Kohler <kohler@aciri.org>
 
 	* tools/: click-pretty/click-pretty.cc (1.2), lib/lexert.cc (1.39),
