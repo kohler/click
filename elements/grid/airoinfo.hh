@@ -55,6 +55,10 @@ public:
    * and place the information into DBM and QUALITY.  Else return
    * false */
   bool get_tx_stats(const EtherAddress &e, int &num_successful, int &num_failed);
+
+  /* If possible, place the card's background noise measurements (in
+     dBm) into the arguments, and return true.  Else return false */
+  bool get_noise(int &avg_over_sec, int &avg_over_minute, int &max_over_minute);
   
   /* Clear all link-layer transmission statistics on the card */
   void clear_tx_stats();

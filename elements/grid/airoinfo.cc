@@ -159,6 +159,43 @@ AiroInfo::get_tx_stats(const EtherAddress &e, int &num_successful, int &num_fail
   }
   return false;
 }
+
+bool
+AiroInfo::get_noise(int &avg_over_sec, int &avg_over_minute, int &max_over_minute)
+{
+  struct an_req areq;
+  memeset(&areq, 0, sizeof(areq));
+
+  areq.an_len = AN_MAX_DATALEN;
+  areq.an_type = AN_RID_STATUS;
+  
+  _ifr.ifr_data = (char *) &areq;
+  int res = ioctl(_fd, SIOCGAIRONET, &_ifr);
+  if (res == -1) {
+    click_chatter("AiroInfo: ioctl(SIOCGAIRONET) error when reading noise from status struct: %s\n", 
+		  strerror(errno));
+    return false;
+  }
+  
+  // noise info from Marco Molteni (molter@tin.it)
+  // u_int8_t                an_noise_prev_sec_pc;   /* 0x7A */
+  // u_int8_t                an_noise_prev_sec_db;   /* 0x7B */
+  // u_int8_t                an_avg_noise_prev_min_pc;       /* 0x7C */
+  // u_int8_t                an_avg_noise_prev_min_db;       /* 0x7D */
+  // u_int8_t                an_max_noise_prev_min_pc;       /* 0x7E */
+  // u_int8_t                an_max_noise_prev_min_db;       /* 0x7F */
+
+  u_int8_t *u8 = _ifr.ifr_data + 0x7B;
+  avg_over_sec = *u8;
+
+  u8 = _ifr.ifr_data + 0x7D;
+  avg_over_minute = *u8;
+
+  u8 = _ifr.ifr_data + 0x7F;
+  max_over_minute = *u8;
+
+  return true;
+}
 #endif
 
 #ifdef __linux__
@@ -197,6 +234,12 @@ AiroInfo::get_tx_stats(const EtherAddress &, int &, int &)
 {
   return false;
 }
+
+bool
+AiroInfo::get_noise(int &, int &, int &)
+{
+  return false;
+}
 #endif
 
 
@@ -212,6 +255,14 @@ AiroInfo::get_tx_stats(const EtherAddress &, int &, int &)
 {
   return false;
 }
+
+bool
+AiroInfo::get_noise(int &, int &, int &)
+{
+  return false;
+}
+
+
 #endif /* !__linux__ && !__OpenBSD__ */
 
 
