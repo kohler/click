@@ -1,3 +1,8 @@
+2001-12-04 Tuesday 18:24  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.170): restore CPPFLAGS after testing FreeBSD
+	version
+
 2001-12-04 Tuesday 12:40  Eddie Kohler <kohler@aciri.org>
 
 	* configure.in (1.168), configure.in (1.169): stupidity
