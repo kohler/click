@@ -36,9 +36,6 @@ private:
   int entries;
 
   Radix *radix;
-
-  // is radix up-to-date?
-  bool dirty;
 };
 
 #endif

@@ -50,6 +50,7 @@ LookupIPRoute2::push(int, Packet *p)
   add_route_handler("2.2.0.0 255.255.0.0 2.2.2.2", this, (void *)0, (ErrorHandler *)0);
   add_route_handler("2.244.0.0 255.255.0.0 3.3.3.3", this, (void *)0, (ErrorHandler *)0);
   add_route_handler("2.0.0.0 255.255.0.0 4.4.4.4", this, (void *)0, (ErrorHandler *)0);
+  del_route_handler("2.1.3.0 255.255.0.0", this, (void *)0, (ErrorHandler *)0);
   click_chatter("Lookup for %x", ntohl(a.saddr()));
   */
 

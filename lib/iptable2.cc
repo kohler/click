@@ -18,7 +18,7 @@
 
 
 IPTable2::IPTable2()
-  : entries(0), dirty(true)
+  : entries(0)
 {
   radix = new Radix;
 }
@@ -49,7 +49,7 @@ IPTable2::add(unsigned dst, unsigned mask, unsigned gw)
 }
 
 
-// Deletes an entry from the stupid routing table. Radix is now dirty.
+// Deletes an entry from the stupid routing table.
 void
 IPTable2::del(unsigned dst, unsigned mask)
 {
@@ -57,7 +57,7 @@ IPTable2::del(unsigned dst, unsigned mask)
     if(_v[i]._valid && (_v[i]._dst == dst) && (_v[i]._mask == mask)) {
       _v[i]._valid = 0;
       entries--;
-      dirty = true;
+      radix->del(dst & mask);
       return;
     }
   }
@@ -85,14 +85,8 @@ IPTable2::get(int i, unsigned &dst, unsigned &mask, unsigned &gw)
 bool
 IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
 {
-  if(!entries)
-    return false;
-
-  // Use timer.
-  if(dirty)
-    build();
-
-  index = radix->lookup(dst);
+  if(!entries || !radix->lookup(dst, index))
+    goto nomatch;
 
   // Consider this a match if dst is part of range described by routing table.
   if((dst & _v[index]._mask) == (_v[index]._dst & _v[index]._mask)) {
@@ -100,11 +94,13 @@ IPTable2::lookup(unsigned dst, unsigned &gw, int &index)
     return true;
   }
 
+nomatch:
   gw = index = 0;
   return false;
 }
 
 
+#if 0
 void
 IPTable2::build()
 {
@@ -122,8 +118,8 @@ IPTable2::build()
   }
 
   entries = _v.size();
-  dirty = false;
 }
+#endif
 
 // generate Vector template instance
 #include "vector.cc"

@@ -22,6 +22,7 @@ Radix::Radix()
   root = new struct node;
   root->info = root->key = 0;
   root->bit_idx = KEYSIZE-1;
+  root->valid = false;
   root->left = root->right = root;
 }
 
@@ -63,6 +64,7 @@ Radix::insert(KEYTYPE v, INFOTYPE info)
   t->key = v;
   t->bit_idx = i;
   t->info = info;
+  t->valid = true;
 
   if(bits(v, t->bit_idx, 1) == 0) {
     t->left = t;
@@ -80,10 +82,30 @@ Radix::insert(KEYTYPE v, INFOTYPE info)
 
 
 // Returns info based on key
-INFOTYPE
-Radix::lookup(KEYTYPE v)
+bool
+Radix::lookup(KEYTYPE v, INFOTYPE &info)
 {
-  return(node_lookup(v)->info);
+  struct node *t;
+
+  t = node_lookup(v);
+  if(t->valid) {
+    info = t->info;
+    return(true);
+  } else
+    return(false);
+}
+
+
+void
+Radix::del(KEYTYPE v)
+{
+  struct node *t;
+
+  t = node_lookup(v);
+
+  // Only delete if this is an exact match
+  if(t->key == v)
+    t->valid = false;
 }
 
 

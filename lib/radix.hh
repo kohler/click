@@ -16,7 +16,8 @@ public:
   ~Radix();
 
   void insert(KEYTYPE v, INFOTYPE info);
-  INFOTYPE lookup(KEYTYPE v);
+  void del(KEYTYPE v);
+  bool lookup(KEYTYPE v, INFOTYPE &info);
 
 private:
   struct node {
@@ -24,6 +25,7 @@ private:
     int bit_idx;
     struct node *left, *right;
 
+    bool valid;
     INFOTYPE info;
   };
 
