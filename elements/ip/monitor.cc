@@ -20,7 +20,7 @@
 #include "glue.hh"
 
 Monitor::Monitor()
-  : _base(NULL)
+  : Element(1,1), _base(NULL)
 {
 }
 
@@ -31,10 +31,7 @@ Monitor::~Monitor()
 int
 Monitor::configure(const String &conf, ErrorHandler *errh)
 {
-#if IPVERSION == 6
-  click_chatter("Monitor doesn't know how to handle IPv6!");
-  return -1;
-#elif IPVERSION == 4
+#if IPVERSION == 4
   Vector<String> args;
   cp_argvec(conf, args);
 
@@ -71,24 +68,25 @@ Monitor::configure(const String &conf, ErrorHandler *errh)
   int change;
   for (int i = 2; i < args.size(); i++) {
     String arg = args[i];
-    if(cp_integer(arg, change, &arg) && cp_eat_space(arg)) {
+    if(cp_integer(arg, change, &arg) && cp_eat_space(arg))
       _inputs.push_back(change);
-      add_input();
-      add_output();
-    } else {
+    else {
       errh->error("expects \"SRC\"|\"DST\", MAX [, VAL1, VAL2, ..., VALn]");
       return -1;
     }
   }
 
   // Add default if not supplied.
-  if(_inputs.size() == 0) {
+  if(_inputs.size()) {
+    set_ninputs(_inputs.size());
+    set_noutputs(_inputs.size());
+  } else
     _inputs.push_back(1);
-    add_input();
-    add_output();
-  }
 
   return 0;
+#else
+  click_chatter("Monitor doesn't know how to handle non-IPv4!");
+  return -1;
 #endif
 }
 
@@ -108,17 +106,18 @@ Monitor::push(int port, Packet *p)
 }
 
 
+//
+// Dives in tables based on a and raises the appropriate entry by val.
+//
 void
 Monitor::update(IPAddress a, int val)
 {
-#if IPVERSION == 6
-    return;
-#elif IPVERSION == 4
-
+  assert(_base != NULL);
   unsigned int saddr = a.saddr();
 
-  // Dive in tables until non-split entry is found. Most likely that's
-  // immediately.
+  /* struct timeval tv;       */
+  /* click_gettimeofday(&tv); */
+
   struct _stats *s = _base;
   struct _counter *c = NULL;
   int bitshift;
@@ -135,8 +134,8 @@ Monitor::update(IPAddress a, int val)
   assert(bitshift >= 0);
   assert(c != NULL);
   assert(!(c->flags & SPLIT));
+
   c->value += val;
-#endif
 }
 
 
@@ -144,7 +143,7 @@ void
 Monitor::clean(_stats *s, int value = 0, bool recurse = false)
 {
   for(int i = 0; i < 256; i++) {
-    if(recurse && (s->counter[i].flags & SPLIT == SPLIT)) {
+    if(recurse && (s->counter[i].flags & SPLIT)) {
       clean(s->counter[i].next_level, value, true);
       delete s->counter[i].next_level;
     }
@@ -158,21 +157,19 @@ String
 Monitor::print(_stats *s, String ip = "")
 {
   String ret = "";
-
   for(int i = 0; i < 256; i++) {
-    String this_ip = String(i);
+    String this_ip;
     if(ip)
-      this_ip = ip + "." + this_ip;
-
-
-    if(s->counter[i].flags & SPLIT == SPLIT) {
+      this_ip = ip + "." + String(i);
+    else
+      this_ip = String(i);
+    if(s->counter[i].flags & SPLIT) {
       ret += this_ip + "\t*\n";
       ret += print(s->counter[i].next_level, "\t" + this_ip);
     }
     else
       ret += this_ip + "\t" + String(s->counter[i].value) + "\n";
   }
-
   return ret;
 }
 
@@ -181,9 +178,7 @@ Monitor::print(_stats *s, String ip = "")
 String
 Monitor::look_handler(Element *e, void *)
 {
-  Monitor *me;
-  me = (Monitor*) e;
-
+  Monitor *me = (Monitor*) e;
   return me->print(me->_base);
 }
 
@@ -200,7 +195,6 @@ Monitor::srcdst_whandler(const String &conf, Element *e, void *, ErrorHandler *e
 {
   Vector<String> args;
   cp_argvec(conf, args);
-
   Monitor* me = (Monitor *) e;
 
   if(args.size() != 1) {
@@ -214,7 +208,7 @@ Monitor::srcdst_whandler(const String &conf, Element *e, void *, ErrorHandler *e
     errh->error("expected \"SRC\" or \"DST\". Found neither.");
     return -1;
   }
-
+  me->clean(me->_base, 0, true);
   return 0;
 }
 
@@ -232,20 +226,17 @@ Monitor::max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh
 {
   Vector<String> args;
   cp_argvec(conf, args);
-
   Monitor* me = (Monitor *) e;
 
   if(args.size() != 1) {
     errh->error("expecting 1 integer");
     return -1;
   }
-
   int max;
   if(!cp_integer(args[0], max)) {
     errh->error("not an integer");
     return -1;
   }
-
   me->_max = max;
   return 0;
 }
@@ -255,20 +246,17 @@ Monitor::reset_handler(const String &conf, Element *e, void *, ErrorHandler *err
 {
   Vector<String> args;
   cp_argvec(conf, args);
-
   Monitor* me = (Monitor *) e;
 
   if(args.size() != 1) {
     errh->error("expecting 1 integer");
     return -1;
   }
-
   int init;
   if(!cp_integer(args[0], init)) {
     errh->error("not an integer");
     return -1;
   }
-
   me->clean(me->_base, init, true);
   return 0;
 }
@@ -287,6 +275,3 @@ Monitor::add_handlers()
 }
 
 EXPORT_ELEMENT(Monitor)
-
-/* #include "vector.cc"                   */
-/* template class Vector<Monitor::_base>; */

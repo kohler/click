@@ -34,10 +34,10 @@
  * Used to read/write MAX value.
  *
  * =h srcdst (read-write)
- * Used to read/write SRC/DST value.
+ * Used to read/write SRC/DST value. Resets all counters to 0.
  *
  * = reset (write)
- * Resets all entries to zero.
+ * Resets all entries to the supplied value.
  *
  * =e
  *
@@ -82,12 +82,14 @@ public:
 
 private:
 
-#define SPLIT   0x0001
-
   struct _stats;
 
+  // value entry is either used to count packets or - if flags & SPLIT - as a
+  // pointer to another struct.
   struct _counter {
     unsigned char flags;
+#define SPLIT     0x0001
+
     union {
       unsigned int value;
       struct _stats *next_level;
@@ -103,20 +105,20 @@ private:
 #define DST 1
 
   int _max;
-  Vector<int> _inputs;
+  Vector<int> _inputs;          // value associated with each input
   struct _stats *_base;
 
   void clean(_stats *s, int value = 0, bool recurse = false);
   void update(IPAddress a, int val);
   String print(_stats *s, String ip = "");
 
-  static String srcdst_rhandler(Element *e, void *);
-  static int srcdst_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
-  static String max_rhandler(Element *e, void *);
-  static int max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
-  static String look_handler(Element *e, void *);
-  static int reset_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
   void add_handlers();
+  static String srcdst_rhandler(Element *e, void *);
+  static String max_rhandler(Element *e, void *);
+  static String look_handler(Element *e, void *);
+  static int srcdst_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  static int max_whandler(const String &conf, Element *e, void *, ErrorHandler *errh);
+  static int reset_handler(const String &conf, Element *e, void *, ErrorHandler *errh);
 };
 
 #endif /* MONITOR_HH */
