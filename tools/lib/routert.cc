@@ -100,8 +100,8 @@ RouterT::check() const
 	    nt_found++;
 	}
     }
-    assert(nt_found == nt);
-
+    // note that nt_found might not equal nt, because of anonymous classes
+    
     // check element types
     HashMap<ElementClassT *, int> type_map(-1);
     for (int i = 0; i < nt; i++) {
@@ -1235,7 +1235,9 @@ RouterT::resolve(int ninputs, int noutputs, Vector<String> &args, ErrorHandler *
 	    closest = r;
 
 	ElementClassT *overload = r->_overload_type;
-	if (RouterT *next = (overload ? overload->cast_router() : 0))
+	if (!overload)
+	    break;
+	else if (RouterT *next = overload->cast_router())
 	    r = next;
 	else if (ElementClassT *result = overload->resolve(ninputs, noutputs, args, errh, landmark))
 	    return result;
