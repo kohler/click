@@ -67,7 +67,8 @@ AggregateFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
     for (Map::Iterator iter = table.first(); iter; iter++)
 	if (!iter.value().reverse()) {
 	    FlowInfo *finfo = const_cast<FlowInfo *>(&iter.value());
-	    if (finfo->uu.active_sec < (finfo->flow_over == 3 ? done_timeout : timeout)) {
+	    // circular comparison
+	    if ((int32_t)(finfo->uu.active_sec - (finfo->flow_over == 3 ? done_timeout : timeout)) < 0) {
 		finfo->uu.other = to_free;
 		to_free = finfo;
 	    }
@@ -85,8 +86,10 @@ AggregateFlows::clean_map(Map &table, uint32_t timeout, uint32_t done_timeout)
 void
 AggregateFlows::reap()
 {
-    clean_map(_tcp_map, _tcp_timeout, _tcp_done_timeout);
-    clean_map(_udp_map, _udp_timeout, _udp_timeout);
+    if (_gc_sec) {
+	clean_map(_tcp_map, _tcp_timeout, _tcp_done_timeout);
+	clean_map(_udp_map, _udp_timeout, _udp_timeout);
+    }
     _gc_sec = _active_sec + _gc_interval;
 }
 
@@ -116,7 +119,7 @@ AggregateFlows::simple_action(Packet *p)
 	finfo->_aggregate = _next;
 	FlowInfo *rfinfo = m.findp_force(flow.rev());
 	rfinfo->uu.other = finfo;
-	rfinfo->_reverse = 1;
+	rfinfo->_reverse = true;
 	paint = 0;
 	_next++;		// XXX check for 2^32
 	goto new_flow;
