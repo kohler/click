@@ -15,6 +15,7 @@
  * legally binding.
  */
 
+#include <assert.h>
 #include <click/config.h>
 #include "divertsocket.hh"
 #include <click/error.hh>
@@ -111,8 +112,10 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
   int confindex = 5;
   _have_sport = _have_dport = false;
 
+
+
   for(int i=0; i < conf.size(); i++){
-    printf("  %s\n", ((String)conf[i]).cc());
+    click_chatter("  %s\n", ((String)conf[i]).cc());
   }
 	   
   if (conf.size() < 6) {
@@ -123,15 +126,20 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
     errh->error("too many parameters for DivertSocket");
     return -1;
   }
+  /*
+  click_chatter("Hello 1 this = %x\n", (void *)this);
+  click_chatter("Hello 2 this = %x\n", (void *)this);
+  click_chatter("conf[0] = %s\n", conf[0].cc());
+  */
 
   // parse devicename
-  if (cp_va_parse(conf[0], this, errh, cpString, "device", &_device) < 0)
+  if (cp_va_parse(conf[0], this, errh, cpString, "device", &_device, cpEnd) < 0)
     return -1;
   // parse divert port number
-  if (cp_va_parse(conf[1], this, errh, cpUnsigned, "divertport", &_divertport) < 0)
+  if (cp_va_parse(conf[1], this, errh, cpUnsigned, "divertport", &_divertport, cpEnd) < 0)
     return -1;
   // parse rule number
-  if (cp_va_parse(conf[2], this, errh, cpUnsigned, "rulenumber", &_rulenumber) < 0)
+  if (cp_va_parse(conf[2], this, errh, cpUnsigned, "rulenumber", &_rulenumber, cpEnd) < 0)
     return -1;
   
 
@@ -194,8 +202,7 @@ DivertSocket::configure(const Vector<String> &conf, ErrorHandler *errh)
 
   // parse in/out
   if (confindex < conf.size() ) {
-    //printf("3 confindex = %d (%s)\n", confindex, conf[confindex].cc());
-    if (cp_va_parse(conf[confindex], this, errh, cpString, "in/out", &_inout) < 0)
+    if (cp_va_parse(conf[confindex], this, errh, cpString, "in/out", &_inout, cpEnd) < 0)
       return -1;
     if ( (_inout != "") && (_inout != "in") && (_inout != "out") ) {
       errh->error("illegal direction specifier: '%s'", _inout.cc());
@@ -313,7 +320,6 @@ DivertSocket::initialize(ErrorHandler *errh)
     fw.fw_dpts[0]=0;
     fw.fw_dpts[1]=0xffff;
   }
-  
 
   fw.fw_src.s_addr = _saddr.in_addr().s_addr;
   fw.fw_smsk.s_addr= _smask.in_addr().s_addr;
