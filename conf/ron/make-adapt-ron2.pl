@@ -14,7 +14,7 @@ sub TOHEX {
 # --------- MAIN ----------
 if (scalar(@ARGV) < 4){
     print("Not enough arguments\n");
-    print("usage: generate-adapt-ron.pl meIP meHW exitpointIP gwIP [neighborIP...]\n\n");
+    print("usage: generate-adapt-ron2.pl meIP meHW exitpointIP gwIP [neighborIP...]\n\n");
     exit(-1);
 }
 
@@ -174,7 +174,7 @@ print "\t-> dirPathC;\n\n";
 for($i=2; $i<$neigh+2; $i++) {
     print "routingtable[", $i, "]\n";
     print "\t-> Print(ROUTE2(forw", $i, "_))\n";
-    print "\t-> IPFragmenter(1400)\n";
+    print "\t-> fragfor", $i-2, "::IPFragmenter(1400)\n";
     print "\t-> SetIPAddress(", $neighbors[$i-2], ")\n";
     print "\t-> IPEncapPaint(0, 4, ", $meIP, ") // FORWARD pkts get painted 0 \n";
     print "\t-> setgw;\n\n";
@@ -217,7 +217,7 @@ print "iprw[1] -> IPPrint(IPRewritten1) -> GetIPAddress(16) -> [1]routingtable;\
 
 for ($i=1; $i<$neigh+1; $i++) {
     print "iprw[", 2*$i,   "] -> setgw;\n";
-    print "iprw[", 2*$i+1, "] -> IPFragmenter(1400)\n";
+    print "iprw[", 2*$i+1, "] -> fragrev",$i-1,"::IPFragmenter(1400)\n";
     print "\t-> SetIPAddress(", $neighbors[$i-1], ")\n";
     print "\t-> IPEncapPaint(1, 4, ", $meIP, ") // Tunnel (REV)\n";
     print "\t-> setgw;\n\n";
@@ -231,6 +231,12 @@ print "icmppingrw[1] -> IPPrint(IPPingRewritten2) -> setgw; // this is only for 
 
 print "setgw -> [0]arpq;\n";
 print "//setlaptop -> [0]arpq;\n\n";
+
+print "icmperror :: ICMPError(", $meIP, ", 3, 4) -> arpq;\n";
+for($i=0; $i<$neigh; $i++) {
+    print "fragfor", $i, "[1] -> icmperror;\n";
+    print "fragrev", $i, "[1] -> icmperror;\n";
+}
 
 print "arpq -> q :: Queue(100) -> Print(OutEth0,56) -> to0;\n";
 print "arpr -> Print(ARPResponseSent) -> q;\n";
