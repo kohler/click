@@ -35,6 +35,12 @@
  * <b>tcp opt TCPOPT</b>, where TCPOPT is a TCP option name (see below).
  * Matches TCP packets with the given option.
  *
+ * <b>ip tos TOS</b>, where TOS is a value between 0 and 255.
+ * Matches IP packets with the given TOS value.
+ *
+ * <b>ip dscp DSCP</b>, where DSCP is a value between 0 and 63.
+ * Matches IP packets with the given DSCP value (the upper 6 bits of TOS).
+ *
  * These primitives can be combined with the connectives `and', `or', and
  * `not' (synonyms `&&', `||', and `!'), and with parentheses. For example,
  * `(dst port www or dst port ssh) and tcp opt syn'.
@@ -96,7 +102,7 @@ class IPClassifier : public Classifier {
     NONE = 0,
     
     TYPE_HOST = 1, TYPE_NET = 2, TYPE_PORT = 3, TYPE_PROTO = 4,
-    TYPE_TCPOPT = 5,
+    TYPE_TCPOPT = 5, TYPE_TOS = 6, TYPE_DSCP = 7,
     
     SD_SRC = 1, SD_DST = 2, SD_AND = 3, SD_OR = 4,
     

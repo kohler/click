@@ -160,6 +160,18 @@ IPClassifier::Primitive::check(int slot, const Primitive &p, ErrorHandler *errh)
       return errh->error("pattern %d: bad protocol %d for `tcpopt' directive", slot, _transp_proto);
     if (_u.i < 0 || _u.i > 255)
       return errh->error("pattern %d: TCP option %d out of range", slot, _u.i);
+
+  } else if (_type == TYPE_TOS) {
+    if (_data != DATA_INT)
+      return errh->error("pattern %d: `ip tos' directive requires TOS value", slot);
+    if (_u.i < 0 || _u.i > 255)
+      return errh->error("pattern %d: IP TOS %d out of range", slot, _u.i);
+
+  } else if (_type == TYPE_DSCP) {
+    if (_data != DATA_INT)
+      return errh->error("pattern %d: `ip dscp' directive requires TOS value", slot);
+    if (_u.i < 0 || _u.i > 63)
+      return errh->error("pattern %d: IP DSCP %d out of range", slot, _u.i);
   }
 
   // fix _srcdst
@@ -233,20 +245,21 @@ IPClassifier::Primitive::add_exprs(Classifier *c, Vector<int> &tree, bool negate
     c->add_expr(tree, TRANSP_FAKE_OFFSET + 12, e.value.u, e.mask.u);
     c->finish_expr_subtree(tree, true);
     negated = false;		// did our own negation
+
+  } else if (_type == TYPE_TOS | _type == TYPE_DSCP) {
+    c->start_expr_subtree(tree);
+    e.mask.u = 0;
+    e.mask.c[1] = (_type == TYPE_DSCP ? 0xFC : 0xFF);
+    e.value.u = 0;
+    e.value.c[1] = (_type == TYPE_DSCP ? _u.i<<2 : _u.i);
+    c->add_expr(tree, 0, e.value.u, e.mask.u);
+    c->finish_expr_subtree(tree, true);
   }
 
   if (negated)
     c->negate_expr_subtree(tree);
 }
 
-
-// want to support
-// SD == src | dst | src or dst | src and dst
-// [SD] [ip] [tcp|udp|icmp] [host] $ipa
-// [SD] [ip] [net] $ipa/bits
-// [SD] [ip] [net] $ipa $ipa
-// [SD] [ip] [net] $ipa mask $ipa
-// [SD]
 
 static void
 separate_words(Vector<String> &words)
@@ -288,6 +301,15 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
   _align_offset = 0;
 
   // create IP protocol hashmap
+  HashMap<String, int> type_map(-1);
+  type_map.insert("host", TYPE_HOST);
+  type_map.insert("net", TYPE_NET);
+  type_map.insert("port", TYPE_PORT);
+  type_map.insert("proto", TYPE_PROTO);
+  type_map.insert("opt", TYPE_TCPOPT);
+  type_map.insert("tos", TYPE_TOS);
+  type_map.insert("dscp", TYPE_DSCP);
+  
   HashMap<String, int> ip_proto_map(-1);
   ip_proto_map.insert("icmp", IP_PROTO_ICMP);
   ip_proto_map.insert("igmp", IP_PROTO_IGMP);
@@ -377,16 +399,8 @@ IPClassifier::configure(const Vector<String> &conf, ErrorHandler *errh)
       // collect qualifiers
       for (; w < words.size(); w++) {
 	String wd = words[w];
-	if (wd == "host")
-	  prim.set_type(TYPE_HOST, slot, errh);
-	else if (wd == "net")
-	  prim.set_type(TYPE_NET, slot, errh);
-	else if (wd == "port")
-	  prim.set_type(TYPE_PORT, slot, errh);
-	else if (wd == "proto")
-	  prim.set_type(TYPE_PROTO, slot, errh);
-	else if (wd == "opt")
-	  prim.set_type(TYPE_TCPOPT, slot, errh);
+	if (type_map[wd] >= 0)
+	  prim.set_type(type_map[wd], slot, errh);
 
 	else if (wd == "src") {
 	  if (w < words.size() - 2 && (words[w+2] == "dst" || words[w+2] == "dest")) {
