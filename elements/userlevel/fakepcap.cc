@@ -146,6 +146,7 @@ fake_pcap_force_ip(Packet *&p, int dlt)
 	if (iph->ip_hl >= 5
 	    && p->length() - offset >= (iph->ip_hl << 2)) {
 	    p->set_ip_header(iph, iph->ip_hl << 2);
+	    p->set_dst_ip_anno(iph->ip_dst);
 	    return true;
 	}
     } else if (iph->ip_v == 6) {
