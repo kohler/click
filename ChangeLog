@@ -1,3 +1,10 @@
+2004-12-19 Sunday 16:16  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/standard/: fullnotequeue.cc (1.2), fullnotequeue.hh
+	(1.2), notifierqueue.cc (1.12), notifierqueue.hh (1.16),
+	simplequeue.cc (1.10), simplequeue.hh (1.12): make FullNoteQueue
+	the default Queue
+
 2004-12-17 Friday 21:30  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/icmp/icmperror.cc (1.21), lib/confparse.cc (1.136):
