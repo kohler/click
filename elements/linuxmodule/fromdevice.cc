@@ -7,7 +7,9 @@
 #include "packet.hh"
 #include "confparse.hh"
 #include "router.hh"
+extern "C" {
 #include <linux/netdevice.h>
+}
 
 static int min_ifindex;
 static Vector<FromDevice *> *ifindex_map;

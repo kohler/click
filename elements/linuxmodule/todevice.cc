@@ -7,6 +7,7 @@
 #include "etheraddress.hh"
 #include "confparse.hh"
 #include "router.hh"
+extern "C" {
 #define new xxx_new
 #define class xxx_class
 #define delete xxx_delete
@@ -15,6 +16,7 @@
 #undef new
 #undef class
 #undef delete
+}
 
 static int min_ifindex;
 static Vector<ToDevice *> *ifindex_map;
