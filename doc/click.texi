@@ -3,13 +3,12 @@
 @settitle Click
 @footnotestyle end
 
-@iftex
-@frenchspacing
-@end iftex
-
 @ifinfo
 @macro click {arg}
 @code{\arg\}
+@end macro
+@macro leq
+<=
 @end macro
 @end ifinfo
 @ifnotinfo
@@ -36,7 +35,7 @@
 
 @contents
 
-@node Top, Coding Standards, (dir), (dir)
+@node Top, Overview, (dir), (dir)
 @top
 
 @ifinfo
@@ -44,25 +43,26 @@ This document describes@dots{}
 @end ifinfo
 
 @menu
-* Coding Standards::            
-* Basics::                      
+* Overview::                    
+* Helper Classes::              
+* Packets::                     
 * Element Characteristics::     
 * Element Initialization::      
 * Element Runtime::             
 * Configuration Strings::       
 * Tasks::                       
 * Timers::                      
-* Index::                       
+* Coding Standards::            
+* Index::                       Index.
 
 @detailmenu
  --- The Detailed Node Listing ---
 
-Coding Standards
+Overview
 
-* Upper and lower case names::
-* Common name patterns::
+* Packet Transfer::             
 
-Basics
+Helper Classes
 
 * String::                      
 * StringAccum::                 
@@ -71,6 +71,8 @@ Basics
 * HashMap::                     
 * BigHashMap::                  
 * ErrorHandler::                
+* IPAddress::                   
+* IP6Address::                  
 
 String
 
@@ -100,6 +102,39 @@ ErrorHandler
 * Error Veneers::               
 * Writing Error Handlers::       
 
+IPAddress
+
+* IPAddress Constructors::      
+* IPAddress Data::              
+* IPAddress Operations::        
+* IPAddress Unparsing::         
+
+Packets
+
+* Packet Structure and Contents::  
+* Packet Creation::             
+* Packets and sk_buffs::        
+* Packet Sharing::              
+* Packet Buffer Manipulation::  
+* Annotations::                 
+* Packet Out-of-Memory::        
+
+Annotations
+
+* Header Annotations::          
+* User Annotations::            
+* Specific User Annotations::   
+* Other Annotations::           
+* Annotations In General::      
+
+Other Annotations
+
+* Destination Address Annotation::  
+* Timestamp Annotation::        
+* Device Annotation::           
+* Packet Type Annotation::      
+* Performance Counter Annotation::  
+
 Element Characteristics
 
 * Element Class::               
@@ -124,8 +159,18 @@ Element Initialization
 
 Element Runtime
 
+* Moving Packets::              
+* Handling Packets::            
+* Running Tasks::               
 * Handlers::                    
 * Live Reconfiguration::        
+
+Moving Packets
+
+* push::                        
+* pull::                        
+* Transferring Packets::        
+* simple_action::               
 
 Handlers
 
@@ -134,6 +179,10 @@ Handlers
 Live Reconfiguration
 
 * can_live_reconfigure::        
+
+Configuration Strings
+
+* Configuration String Structure::  
 
 Tasks
 
@@ -145,97 +194,28 @@ Tasks
 * Task Handlers::               
 * Destroying a Task::           
 
+Coding Standards
+
+* Upper and lower case names::
+* Common name patterns::
+
 @end detailmenu
 @end menu
 
-@node Coding Standards, Basics, Top, Top
-@chapter Coding Standards
-
+@node Overview, Helper Classes, Top, Top
+@chapter Overview
 
 @menu
-* Upper and lower case names::
-* Common name patterns::
+* Packet Transfer::             
 @end menu
 
-
-@node Upper and lower case names, Common name patterns, Coding Standards, Coding Standards
-@section Upper and Lower Case in Names
-
-Keep to the following consistent scheme for choosing between upper and
-lower case when naming variables, types, and functions.
-
-@table @strong
-@item Classes
-Use mixed case with an initial capital letter and no underscores:
-@code{LookupIPRoute}.
-
-@item Methods
-Use all lower case with underscores separating words:
-@code{negation_is_simple}.
-
-@item Constants
-Use all upper case with underscores separating words:
-@code{TYPE_ICMP_TYPE}.
-
-@item Instance variables
-Begin with an underscore, then use all lower case with underscores
-separating words: @code{_length}.
-
-@item Regular variables
-Use all lower case with underscores separating words: @code{i},
-@code{the_handler}.
-
-@item Class variables
-These variables are declared as @code{static} in the class header. Name
-them like regular variables: @code{nelements_allocated}.
-
-@item Functions
-Name them like methods: @code{quicksort_hook}.
-
-@item Other types
-This includes typedefs and enumerated types. Name them like classes:
-@code{CpVaParseCmd}, @code{ConfigurePhase}.
-@end table
-
-There are exceptions to these guidelines. In particular:
-
-@itemize @bullet
-@item
-Instance variables in C structs---that is, classes with few methods
-whose instance variables are mostly public---may be named like regular
-variables, without a preceding underscore. The same goes for the
-components of unions.
-
-@item
-Classes that act like simple types, such as @code{u_atomic32_t}, take
-names similar to the types they replace (in this case @code{u_int32_t}).
-@end itemize
+@node Packet Transfer,  , Overview, Overview
+@section Packet Transfer
 
 
-@node Common name patterns,  , Upper and lower case names, Coding Standards
-@section Common Name Patterns
 
-@itemize @bullet
-@item
-Many instance variables have associated @dfn{getter methods} that return
-their values, and/or @dfn{setter methods} that change their values. For
-an instance variable named @code{_x}, the getter method should be named
-@code{x()} and the setter method should be named @code{set_x()}.
-
-@item
-A variable or method which counts something is often named
-@code{n@var{object}s}---for instance, @code{_nwarnings},
-@code{ninputs()}, @code{_npackets}.
-
-@item
-Use a bare @samp{0} for a null pointer, except where some ambiguity
-might arise (for example, where an incorrect overloading might be
-selected).
-@end itemize
-
-
-@node Basics, Element Characteristics, Coding Standards, Top
-@chapter Basics
+@node Helper Classes, Packets, Overview, Top
+@chapter Helper Classes
 
 @menu
 * String::                      
@@ -245,10 +225,12 @@ selected).
 * HashMap::                     
 * BigHashMap::                  
 * ErrorHandler::                
+* IPAddress::                   
+* IP6Address::                  
 @end menu
 
 
-@node String, StringAccum, Basics, Basics
+@node String, StringAccum, Helper Classes, Helper Classes
 @section String
 
 The @code{String} class represents a string of characters.
@@ -276,11 +258,11 @@ passed to functions at will.
 Creates a string with no characters.
 @end deftypeop
 
-@deftypeop Constructor String {} String (const char *@var{s})
+@deftypeop Constructor String {} String @w{(const char *@var{s})}
 Creates a string containing a copy of the C string @var{s}.
 @end deftypeop
 
-@deftypeop Constructor String {} String (const char *@var{s}, int @var{len})
+@deftypeop Constructor String {} String @w{(const char *@var{s}}, @w{int @var{len})}
 Creates a string containing the first @var{len} characters of @var{s}.
 If @var{len} is negative, then this function treats @var{s} as a C
 string, effectively setting @var{len} to @code{strlen(@var{s})}.
@@ -310,7 +292,7 @@ situations where you wish to avoid unnecessary memory operations by
 returning string references instead of @code{String}s.
 @end deftypeop
 
-@deftypeop {Static method} String String claim_string (char *@var{s}, int @var{len})
+@deftypeop {Static method} String String claim_string @w{(char *@var{s},} @w{int @var{len})}
 Creates and returns a string containing the @var{len} bytes of data
 starting at @var{s}. If @var{len} is negative, then this function treats
 @var{s} as a C string, effectively setting @var{len} to
@@ -321,7 +303,7 @@ this memory is destroyed, the memory itself will be freed by calling
 @code{new[]}.)
 @end deftypeop
 
-@deftypeop {Static method} String String stable_string (const char *@var{s}, int @var{len})
+@deftypeop {Static method} String String stable_string @w{(const char *@var{s},} @w{int @var{len})}
 Creates and returns a string containing the @var{len} bytes of data
 starting at @var{s}. If @var{len} is negative, then this function treats
 @var{s} as a C string, effectively setting @var{len} to
@@ -368,7 +350,8 @@ valid.
 Returns the string's length in characters.
 @end deftypemethod
 
-@deftypemethod String {} {operator bool} () const
+@deftypemethod String {} {operator bool} ()
+@deftypemethodx String {} {operator bool} () const
 Returns true iff the string has at least one character.
 @end deftypemethod
 
@@ -557,7 +540,7 @@ encountered an out-of-memory condition. The result is normally zero.
 @end deftypeop
 
 
-@node StringAccum, Vector, String, Basics
+@node StringAccum, Vector, String, Helper Classes
 @section StringAccum
 
 The @code{StringAccum} class, like @code{String} (@pxref{String}),
@@ -571,6 +554,7 @@ could hold without reallocating memory.
 @menu
 * StringAccum Constructors::    
 * StringAccum operator<<::      
+* Special StringAccum operator<<::  
 * StringAccum Manipulation::    
 * StringAccum Contents::        
 * StringAccum Results::         
@@ -598,7 +582,7 @@ assigned or passed as arguments. Of course, references to
 common.
 
 
-@node StringAccum operator<<, StringAccum Manipulation, StringAccum Constructors, StringAccum
+@node StringAccum operator<<, Special StringAccum operator<<, StringAccum Constructors, StringAccum
 @subsection Appending with @code{operator<<}
 
 Generally, you append to a @code{StringAccum} using iostreams-like
@@ -614,14 +598,14 @@ sa << tv << ": There are " << n << " things.\n";
 @end example
 
 @deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, char @var{c})
-@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, unsigned char @var{c})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, @w{unsigned char @var{c}})
 Appends the character @var{c} to the @code{StringAccum} @var{sa} and
 returns @var{sa}.
 @end deftypefun
 
 @deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, const char *@var{s})
 @deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, const String &@var{s})
-@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, const StringAccum &@var{sa2})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, @w{const StringAccum &@var{sa2}})
 Appends the string @var{s}, or the value of the @code{StringAccum}
 @var{sa2}, to @var{sa} and returns @var{sa}.
 @end deftypefun
@@ -633,7 +617,7 @@ Appends the string @var{s}, or the value of the @code{StringAccum}
 @deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, long @var{n})
 @deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, unsigned long @var{n})
 @deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, long long @var{n})
-@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, unsigned long long @var{n})
+@deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, @w{unsigned long long @var{n}})
 @deftypefunx {StringAccum &} {operator<<} (StringAccum &@var{sa}, double @var{n})
 Appends an ASCII decimal representation of the number @var{n} to
 @var{sa} and returns @var{sa}. For example, if @var{n} is 20, then
@@ -641,15 +625,43 @@ Appends an ASCII decimal representation of the number @var{n} to
 "20"}. The @code{double} operator is not available in the kernel.
 @end deftypefun
 
-@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, const struct timeval &@var{tv})
+@node Special StringAccum operator<<, StringAccum Manipulation, StringAccum operator<<, StringAccum
+@subsection Appending Data Types
+
+@code{StringAccum} comes with @code{operator<<} definitions for the
+@code{struct timeval}, @code{IPAddress}, and @code{EtherAddress} types.
+Of course, you can write your own @code{operator<<} functions for other
+data types, either using existing @code{operator<<}s or the manipulation
+functions described in the next section.
+
+@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, @w{const struct timeval &@var{tv}})
 Appends an ASCII decimal representation of the time value @var{tv} to
 @var{sa} and returns @var{sa}. The time value is printed as if by
 @code{printf("%ld.%06ld", @var{tv}.tv_sec, @var{tv}.tv_usec)}.
 @end deftypefun
 
+@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, @w{IPAddress &@var{addr}})
+Appends the conventional dotted-quad representation of the IP address
+@var{addr} to @var{sa} and returns @var{sa}. For example, @samp{sa <<
+addr} might have the same effect as @samp{sa << "18.26.4.44"}.
+@end deftypefun
 
-@node StringAccum Manipulation, StringAccum Contents, StringAccum operator<<, StringAccum
-@subsection Low-Level Manipulation
+@deftypefun {StringAccum &} {operator<<} (StringAccum &@var{sa}, @w{const EtherAddress &@var{addr}})
+Appends the conventional colon-separated hexadecimal representation of
+the Ethernet address @var{addr} to @var{sa} and returns @var{sa}. For
+example, @samp{sa << addr} might have the same effect as @samp{sa <<
+"00:02:B3:06:06:36:EE"}.
+@end deftypefun
+
+
+@node StringAccum Manipulation, StringAccum Contents, Special StringAccum operator<<, StringAccum
+@subsection Manipulation
+
+This section describes lower-level methods for manipulating
+@code{StringAccum} objects. The @code{append} methods append data to the
+@code{StringAccum}; the @code{extend}, @code{reserve}, and
+@code{forward} methods add space to the end of it; and the @code{clear}
+and @code{pop_back} methods remove its characters.
 
 @deftypemethod StringAccum void append (char @var{c})
 @deftypemethodx StringAccum void append (unsigned char @var{c})
@@ -682,22 +694,8 @@ It may become invalid after the next call to a method that grows the
 @end quotation
 
 
-Several methods remove characters from a @code{StringAccum} rather than
-add characters to it.
-
-@deftypemethod StringAccum void clear ()
-Erases the @code{StringAccum}, making its length zero (an empty string).
-@end deftypemethod
-
-@deftypemethod StringAccum void pop_back ()
-@deftypemethodx StringAccum void pop_back (int @var{amt})
-Remove the last character, or the last @var{amt} characters, of the
-string. @var{amt} must be greater than or equal to zero, and less than
-or equal to the @code{StringAccum}'s length.
-@end deftypemethod
-
-Finally, the @code{reserve} and @code{forward} methods together provide
-a convenient, fast interface for appending strings of unknown, but
+The @code{reserve} and @code{forward} methods together provide a
+convenient, fast interface for appending strings of unknown, but
 bounded, length.
 
 @deftypemethod StringAccum {char *} reserve (int @var{len})
@@ -719,6 +717,20 @@ greater than or equal to zero, and less than or equal to the remaining
 capacity.
 @end deftypemethod
 
+Finally, these methods remove characters from a @code{StringAccum}
+rather than add characters to it.
+
+@deftypemethod StringAccum void clear ()
+Erases the @code{StringAccum}, making its length zero (an empty string).
+@end deftypemethod
+
+@deftypemethod StringAccum void pop_back ()
+@deftypemethodx StringAccum void pop_back (int @var{amt})
+Remove the last character, or the last @var{amt} characters, of the
+string. @var{amt} must be greater than or equal to zero, and less than
+or equal to the @code{StringAccum}'s length.
+@end deftypemethod
+
 
 @node StringAccum Contents, StringAccum Results, StringAccum Manipulation, StringAccum
 @subsection Contents
@@ -738,6 +750,11 @@ Returns a pointer to the character data contained in this
 
 @deftypemethod StringAccum int length () const
 Returns the number of characters in this @code{StringAccum}.
+@end deftypemethod
+
+@deftypemethod String {} {operator bool} ()
+@deftypemethodx String {} {operator bool} () const
+Returns true iff this @code{StringAccum} has at least one character.
 @end deftypemethod
 
 @deftypemethod StringAccum {const char *} c_str ()
@@ -816,20 +833,20 @@ that their return values are non-null.
 
 
 
-@node Vector, Bitvector, StringAccum, Basics
+@node Vector, Bitvector, StringAccum, Helper Classes
 @section Vector
 
-@node Bitvector, HashMap, Vector, Basics
+@node Bitvector, HashMap, Vector, Helper Classes
 @section Bitvector
 
-@node HashMap, BigHashMap, Bitvector, Basics
+@node HashMap, BigHashMap, Bitvector, Helper Classes
 @section HashMap
 
-@node BigHashMap, ErrorHandler, HashMap, Basics
+@node BigHashMap, ErrorHandler, HashMap, Helper Classes
 @section BigHashMap
 
 
-@node ErrorHandler,  , BigHashMap, Basics
+@node ErrorHandler, IPAddress, BigHashMap, Helper Classes
 @section ErrorHandler
 
 All Click error messages are passed to an instance of the
@@ -1283,7 +1300,7 @@ basic @code{ErrorHandler}, you will need to override just
 class, described below, lets you override just @code{decorate_text} when
 writing an error veneer.
 
-@deftypemethod ErrorHandler {virtual String} make_text (Seriousness @var{s}, const char *@var{format}, va_list @var{val})
+@deftypemethod ErrorHandler {virtual String} make_text @w{(Seriousness @var{s},} @w{const char *@var{format}}, va_list @var{val})
 Parses the format string @var{format} with arguments from @var{val},
 returning the results as a @var{String} object.
 
@@ -1311,7 +1328,7 @@ Any spaces and/or a final colon are stripped from the end of
 @samp{\}, are ignored.
 @end deftypemethod
 
-@deftypemethod ErrorHandler {virtual void} handle_text (Seriousness @var{s}, const String &@var{text})
+@deftypemethod ErrorHandler {virtual void} handle_text @w{(Seriousness @var{s}}, @w{const String &@var{text})}
 This method is responsible for printing or otherwise informing the user
 about the error message @var{text}. If @var{s} equals @code{ERR_FATAL},
 the method should exit the program or perform some other drastic action.
@@ -1343,7 +1360,1033 @@ base_errh}.
 @end deftypeop
 
 
-@node Element Characteristics, Element Initialization, Basics, Top
+@node IPAddress, IP6Address, ErrorHandler, Helper Classes
+@section IPAddress
+
+The @code{IPAddress} type represents an IPv4 address. It supports
+bitwise operations like @samp{&} and @samp{|} and provides methods for
+unparsing IP addresses into ASCII dotted-quad form.
+
+@menu
+* IPAddress Constructors::      
+* IPAddress Data::              
+* IPAddress Operations::        
+* IPAddress Unparsing::         
+@end menu
+
+@node IPAddress Constructors, IPAddress Data, IPAddress, IPAddress
+@subsection Constructors
+
+@code{IPAddress} objects can be constructed from network-order integers,
+from pointers to arrays of bytes, from ASCII strings, and from the
+conventional @code{struct in_addr} type.
+
+@deftypemethod IPAddress {} IPAddress ()
+Creates an IP address equal to 0.0.0.0.
+@end deftypemethod
+
+@deftypemethod IPAddress explicit IPAddress (const unsigned char *@var{value})
+Creates an IP address equal to
+`@var{value}@math{[0]}.@var{value}@math{[1]}.@var{value}@math{[2]}.@var{value}@math{[3]}'.
+@end deftypemethod
+
+@deftypemethod IPAddress {} IPAddress (unsigned int @var{value})
+@deftypemethodx IPAddress explicit IPAddress (int @var{value})
+@deftypemethodx IPAddress explicit IPAddress (long @var{value})
+@deftypemethodx IPAddress explicit IPAddress (unsigned long @var{value})
+Creates an IP address equal to @var{value}, which is an IP address in
+network byte order.
+@end deftypemethod
+
+@deftypemethod IPAddress {} IPAddress (struct in_addr @var{value})
+Creates an IP address equal to @var{value}.
+@end deftypemethod
+
+@deftypemethod IPAddress explicit IPAddress (const String &@var{text})
+Creates an IP address equal to @var{text}, which should be a dotted-quad
+string in ASCII. For example, @var{text} might equal
+@strcode{"18.26.4.44"}. If @var{text} does not parse into a dotted-quad
+string, the resulting @code{IPAddress} equals 0.0.0.0.
+@end deftypemethod
+
+@deftypeop {Static method} IPAddress IPAddress make_prefix (int @var{k})
+Creates and returns an IP address with the upper @var{k} bits on and all
+other bits off. @var{k} must be between 0 and 32, inclusive. For
+example, @code{make_prefix(0)} equals 0.0.0.0, @code{make_prefix(8)}
+equals 255.0.0.0, and @code{make_prefix(32)} equals 255.255.255.255. The
+netmask corresponding to a CIDR address @samp{@var{addr}/@var{k}}
+equals @code{IPAddress::make_prefix(@var{k})}.
+@end deftypeop
+
+
+@node IPAddress Data, IPAddress Operations, IPAddress Constructors, IPAddress
+@subsection Data
+
+These methods return an @code{IPAddress}'s data in a variety of ways.
+
+@deftypemethod IPAddress {} {operator bool} () const
+Returns true if and only if this IP address does not equal 0.0.0.0.
+@end deftypemethod
+
+@deftypemethod IPAddress {struct in_addr} in_addr () const
+@deftypemethodx IPAddress {} {operator struct in_addr} () const
+Returns this IP address as a @code{struct in_addr} object.
+@end deftypemethod
+
+@deftypemethod IPAddress u_int32_t addr () const
+@deftypemethodx IPAddress {} {operator u_int32_t} () const
+Returns this IP address as an unsigned integer in network byte order.
+@end deftypemethod
+  
+@deftypemethod IPAddress {const unsigned char *} data () const
+@deftypemethodx IPAddress {unsigned char *} data ()
+Returns a pointer to this IP address's data.
+@end deftypemethod
+
+@deftypemethod IPAddress int mask_to_prefix_bits () const
+Returns the number @var{k} so that this IP address equals
+@code{make_prefix(@var{k})}, or @math{-1} if there is no such number.
+@end deftypemethod
+
+@deftypemethod IPAddress unsigned hashcode () const
+Returns a number with the property that, for any two equal IP addresses
+@var{addr1} and @var{addr2}, @code{@var{addr1}.hashcode() ==
+@var{addr2}.hashcode()}. With this method, @code{IPAddress}es may be
+used as keys for @code{HashMap}s and @code{BigHashMap}s
+(@pxref{HashMap}).
+@end deftypemethod
+
+
+@node IPAddress Operations, IPAddress Unparsing, IPAddress Data, IPAddress
+@subsection Operations
+
+@deftypefun bool {operator==} (IPAddress @var{addr1}, IPAddress @var{addr2})
+Returns true if and only if @var{addr1} equals @var{addr2}. Equivalent
+to @code{@var{addr1}.addr() == @var{addr2}.addr()}.
+@end deftypefun
+
+@deftypefun bool {operator!=} (IPAddress @var{addr1}, IPAddress @var{addr2})
+Returns true if and only if @var{addr1} does not equal @var{addr2}.
+@end deftypefun
+
+@deftypefun IPAddress {operator&} (IPAddress @var{addr1}, IPAddress @var{addr2})
+Returns a new IP address equal to @var{addr1} masked by @var{addr2}.
+Equivalent to @code{IPAddress(@var{addr1}.addr() & @var{addr2}.addr())}.
+@end deftypefun
+
+@deftypefun IPAddress {operator|} (IPAddress @var{addr1}, IPAddress @var{addr2})
+Returns a new IP address equal to the bitwise or of @var{addr1} and
+@var{addr2}. Equivalent to @code{IPAddress(@var{addr1}.addr() |
+@var{addr2}.addr())}.
+@end deftypefun
+
+@deftypefun IPAddress {operator~} (IPAddress @var{addr})
+Returns a new IP address equal to the bitwise complement of @var{addr}.
+Equivalent to @code{IPAddress(~@var{addr1}.addr())}.
+@end deftypefun
+
+@deftypemethod IPAddress {IPAddress &} {operator&=} (IPAddress @var{addr1})
+Masks this IP address by @var{addr1} and returns the result. Equivalent
+to @code{*this = (*this & @var{addr1})}.
+@end deftypemethod
+
+@deftypemethod IPAddress {IPAddress &} {operator|=} (IPAddress @var{addr1})
+Bitwise-ors this IP address with @var{addr1} and returns the result.
+Equivalent to @code{*this = (*this | @var{addr1})}.
+@end deftypemethod
+
+
+@node IPAddress Unparsing,  , IPAddress Operations, IPAddress
+@subsection Unparsing
+
+These functions unparse IP addresses, IP netmasks, and address/netmask
+pairs into conventional ASCII text form.
+
+@deftypemethod IPAddress String unparse () const
+@deftypemethodx IPAddress String s () const
+@deftypemethodx IPAddress {} {operator String} () const
+Unparses this IP address into dotted-quad ASCII form and returns the
+result as a @code{String} object. A sample result might be
+@strcode{"18.26.4.9"}.
+@end deftypemethod
+
+@deftypemethod IPAddress String unparse_mask () const
+Unparses this IP address as a netmask. If the IP address equals
+@code{make_prefix(@var{k})} for some @var{k}, then the result is the
+ASCII decimal representation of @var{k}. Otherwise, it is just the
+dotted-quad ASCII form of the IP address. For example,
+@code{IPAddress("18.26.4.9").unparse_mask()} equals
+@strcode{"18.26.4.9"}, but @code{IPAddress("255.0.0.0").unparse_mask()}
+equals @strcode{"8"}.
+@end deftypemethod
+
+@deftypemethod IPAddress String unparse_with_mask (IPAddress @var{mask}) const
+Unparses this IP address with @var{mask} as its netmask. The result has
+the form @strcode{"@var{addrtext}/@var{masktext}"}, where @var{addrtext}
+equals @code{this->unparse()} and @var{masktext} equals
+@code{@var{mask}.unparse_mask()}.
+@end deftypemethod
+
+
+@node IP6Address,  , IPAddress, Helper Classes
+@section IP6Address
+
+
+
+@node Packets, Element Characteristics, Helper Classes, Top
+@chapter Packets
+
+The @code{Packet} class represents Click packets. The single
+@code{Packet} interface has multiple implementations, one per driver.
+Inside the Linux kernel driver, a @code{Packet} object is equivalent to
+a Linux @code{sk_buff} structure; most @code{Packet} methods are inline
+functions that expand to @code{sk_buff} calls. The user-level driver,
+however, uses a purpose-built @code{Packet} implementation.
+
+Click packets separate header information from data. The @w{@code{Packet
+*}} pointer points to a header structure, which holds pointers to the
+actual packet data and a set of @dfn{annotations}. Packet data may be
+shared by two or more packet headers. Packet headers, however, should
+never be shared.
+
+Packets come in two flavors, @code{Packet} and @code{WritablePacket}. A
+@code{Packet} object represents a packet header whose data might be
+shared with other packets. Because of this potential sharing,
+@code{Packet} data is read-only, and its methods return @code{const}
+pointers to data. A @code{WritablePacket} object, in contrast,
+represents a packet header whose data is known not to be shared. Its
+methods return non-@code{const} pointers. The @code{uniqueify} method
+turns a @code{Packet} into a @code{WritablePacket}, possibly by making a
+copy of the packet's data. @code{WritablePacket} is a subclass of
+@code{Packet}, so you can turn a @code{WritablePacket} into a
+@code{Packet} implicitly.
+
+The @code{Packet} and @code{WritablePacket} classes are defined in
+@samp{<click/packet.hh>}.
+
+@menu
+* Packet Structure and Contents::  
+* Packet Creation::             
+* Packets and sk_buffs::        
+* Packet Sharing::              
+* Packet Buffer Manipulation::  
+* Annotations::                 
+* Packet Out-of-Memory::        
+@end menu
+
+
+@node Packet Structure and Contents, Packet Creation, Packets, Packets
+@section Structure and Contents
+
+Packet data is stored in a single flat array of bytes. There is no
+support for linked chains @`a la BSD @code{mbuf}. The actual packet data
+is embedded inside a buffer that may be much larger, leaving unused
+spaces called @dfn{headroom} and @dfn{tailroom} before and after the
+data proper. Therefore, tasks like prepending a header need not always
+reallocate memory. If the headroom is big enough, prepending space for a
+new header just requires bumping a pointer.
+
+This diagram shows how a typical packet is laid out, with the relevant
+@code{Packet} methods' names.
+
+@example
+                      data
+        |<- headroom ->|<----- length ----->|<- tailroom ->|
+        |              |                    |              |
+        +==============+====================+==============+
+        |XXXXXXXXXXXXXX| PACKET CONTENTS... |XXXXXXXXXXXXXX|
+        +==============+====================+==============+
+        |                                                  |
+        |<---------------- buffer_length ----------------->|
+   buffer_data
+@end example
+
+@sp 1
+
+And here are those methods' descriptions.
+
+@deftypemethod Packet {const unsigned char *} data () const
+Returns a pointer to the packet data proper.
+@end deftypemethod
+
+@deftypemethod Packet unsigned length () const
+Returns the length of the packet data proper.
+@end deftypemethod
+
+@deftypemethod Packet {const unsigned char *} buffer_data () const
+Returns a pointer to the buffer that contains the packet data.
+@end deftypemethod
+
+@deftypemethod Packet unsigned headroom () const
+@deftypemethodx Packet unsigned tailroom () const
+@deftypemethodx Packet unsigned buffer_length () const
+Returns the length of the headroom area, the tailroom area, and the
+whole buffer, respectively.
+@end deftypemethod
+
+@deftypemethod WritablePacket {unsigned char *} data () const
+@deftypemethodx WritablePacket {unsigned char *} buffer_data () const
+These @code{WritablePacket} methods are identical to @code{Packet}'s
+@code{data} and @code{buffer_data} methods except for their
+non-@code{const} return type.
+@end deftypemethod
+
+Two invariants relate these methods' values:
+
+@display
+@t{buffer_length()} @math{=} @t{headroom()} @math{+} @t{length()} @math{+} @t{tailroom()}
+@t{data()} @math{=} @t{buffer_data()} @math{+} @t{headroom()}
+@end display
+
+
+@node Packet Creation, Packets and sk_buffs, Packet Structure and Contents, Packets
+@section Creation and Destruction
+
+Packets are created with the @code{Packet::make} static methods, and
+destroyed with the @code{Packet::kill} method. (The @code{Packet} and
+@code{WritablePacket} classes have private constructors and destructors;
+you cannot create or destroy packets with @code{new} or @code{delete}.)
+
+@subsection @code{Packet::make}
+
+The @code{make} methods always take the length of the packet data; some
+of them take the packet contents and the headroom and tailroom lengths
+as well. (The contents of any headroom and tailroom areas are always
+undefined.) Most of them return a @w{@code{WritablePacket *}}, since new
+packets are not shared.
+
+The @code{Packet} class defines two constants related to packet
+creation, @code{DEFAULT_HEADROOM} and @code{MIN_BUFFER_LENGTH}. Those
+@code{make} methods that do not take an explicit headroom parameter use
+@code{DEFAULT_HEADROOM} instead. Furthermore, no @code{make} method will
+create a packet with buffer length less than @code{MIN_BUFFER_LENGTH}.
+If the sum of a packet's headroom and length is less than this, the
+packet buffer is given extra tailroom to bump the buffer length up to
+@code{MIN_BUFFER_LENGTH}. These constants have the values
+@code{DEFAULT_HEADROOM} @math{= 28} and @code{MIN_BUFFER_LENGTH} @math{=
+64}.
+
+
+@deftypeop {Static method} Packet {WritablePacket *} make (unsigned @var{len})
+Returns a new packet containing @var{len} bytes of undefined data.
+@end deftypeop
+
+@deftypeop {Static method} Packet {WritablePacket *} make @w{(const char *@var{data}, unsigned @var{len})}
+@deftypeopx {Static method} Packet {WritablePacket *} make @w{(const unsigned char *@var{data}}, unsigned @var{len})
+Returns a new packet whose contents equal the first @var{len} bytes of
+@var{data}. @var{data} may be a null pointer, in which case the packet
+contains @var{len} bytes of undefined data.
+@end deftypeop
+
+@deftypeop {Static method} Packet {WritablePacket *} make (unsigned @var{headroom}, @w{const unsigned char *@var{data}}, unsigned @var{len}, unsigned @var{tailroom})
+Returns a new packet containing @var{headroom} bytes of headroom,
+@var{len} bytes of contents, and at least @var{tailroom} bytes of
+tailroom. The packet contents will equal the first @var{len} bytes of
+@var{data} unless @var{data} is a null pointer, in which case the
+contents are undefined.
+@end deftypeop
+
+The following @code{make} method is only available in the user-level
+driver.
+
+@deftypeop {Static method} Packet {WritablePacket *} make (@w{unsigned char *@var{data}}, @w{unsigned @var{len}}, @w{void (*@var{destructor})(unsigned char *, size_t)})
+Returns a new packet that uses @var{data} as a buffer. That is, the new
+packet will have the following characteristics:
+
+@multitable {@code{buffer_length}} {@code{buffer_length_buffer}}
+@item @code{buffer_data}
+@tab @var{data}
+@item @code{buffer_length}
+@tab @var{len}
+@item @code{headroom}
+@tab 0
+@item @code{length}
+@tab @var{len}
+@item @code{tailroom}
+@tab 0
+@end multitable
+
+@noindent
+When the resulting packet is destroyed, the function @var{destructor}
+will be called with @var{data} and @var{len} as arguments.
+@var{destructor} may be a null pointer, in which case @code{Packet}
+calls @w{@code{delete[] @var{data}}} instead.
+
+This method lets a user-level element manage packet memory itself,
+rather than relying on @code{Packet}.
+@end deftypeop
+
+@noindent
+@xref{Packets and sk_buffs}, for a @code{make} method only available in
+the Linux kernel driver.
+
+@subsection @code{Packet::kill}
+
+To destroy a @code{Packet}, simply call its @code{kill} method.
+
+@deftypemethod Packet void kill ()
+Frees this packet. If this packet contained the last reference to its
+data buffer, then frees the data buffer as well.
+@end deftypemethod
+
+
+@node Packets and sk_buffs, Packet Sharing, Packet Creation, Packets
+@section @code{Packet}s and @code{sk_buff}s
+
+In the Linux kernel driver, @code{Packet} objects are equivalent to
+@code{struct sk_buff}s. This avoids indirection overhead and makes it
+cheap to pass packets back and forth between Linux and Click. The
+@code{Packet} operations described in this section are mostly inline
+functions that expand to conventional @code{sk_buff} calls like
+@code{skb_clone()}.
+
+Click @code{Packet} @code{sk_buff}s should always have @code{skb->users}
+equal to 1. That is, the @code{sk_buff} headers should not be shared,
+although the data buffers they point to may be shared.
+
+The @code{make}, @code{skb}, and @code{steal_skb} methods described in
+this section convert @code{Packet}s to @code{sk_buff}s and vice versa.
+
+@deftypeop {Static method} Packet {Packet *} make (@w{struct sk_buff *@var{skb}})
+Returns a new packet equivalent to the @code{sk_buff} @var{skb}. All of
+@var{skb}'s data pointers and annotations are left unchanged. This
+method generally does nothing, since @code{Packet}s and @code{sk_buff}s
+are equivalent in the Linux kernel. However, if @code{@var{skb}->users}
+field is bigger than 1, the method will return a clone of @var{skb}.
+This method returns a @code{Packet *}, not a @w{@code{WritablePacket
+*}}, because the @var{skb} argument might share data with some other
+@code{sk_buff}.
+
+Do not use or manipulate @var{skb} after passing it to this method,
+since Click and the @code{Packet} implementation now own @var{skb}.
+@end deftypeop
+
+@deftypemethod Packet {struct sk_buff *} skb ()
+@deftypemethodx Packet {const struct sk_buff *} skb () const
+Returns the @code{sk_buff} corresponding to this packet. Use this method
+to examine the @code{sk_buff} version of a @code{Packet}.
+
+Do not pass the result to a function that might free it or increment its
+@code{users} field; use @code{steal_skb} for that.
+@end deftypemethod
+
+@deftypemethod Packet {struct sk_buff *} steal_skb ()
+Returns the @code{sk_buff} corresponding to this packet. Use this
+method to permanently change a @code{Packet} into an
+@code{sk_buff}---for example, to create an @code{sk_buff} you'd like to
+send to Linux.
+
+Do not use or manipulate a @code{Packet} after calling its
+@code{steal_skb} method, since Linux now owns the resulting
+@code{sk_buff}.
+@end deftypemethod
+
+
+@node Packet Sharing, Packet Buffer Manipulation, Packets and sk_buffs, Packets
+@section Sharing---@code{clone} and @code{uniqueify}
+
+The @code{clone} method creates a new packet header that shares data
+with an existing packet. The @code{uniqueify} method, in contrast,
+ensures that a packet's data is not shared by anyone, perhaps by making
+a copy of the data.
+
+@deftypemethod Packet {Packet *} clone ()
+Creates and returns a new packet header that shares this packet's data.
+The new packet's annotations are copied from this packet's annotations.
+
+The result may be a null pointer if there was not enough memory to make a
+new packet header.
+@end deftypemethod
+
+@deftypemethod Packet {WritablePacket *} uniqueify ()
+Ensures that this packet does not share data with any other packet. This
+may involve copying the packet data, and perhaps creating a new packet
+header, but if this packet is already unshared, no real work is
+required. Returns a @w{@code{WritablePacket *}} because the new packet
+is unshared.
+
+Do not use, manipulate, or free a @code{Packet} after calling its
+@code{uniqueify} method. Manipulate the returned @w{@code{WritablePacket
+*}} instead.
+
+The result may be a null pointer if there was not enough memory to make a
+required data copy. In this case, the old packet is freed.
+@end deftypemethod
+
+@deftypemethod Packet bool shared () const
+Returns true if and only if this packet shares data with some other
+packet.
+@end deftypemethod
+
+
+@node Packet Buffer Manipulation, Annotations, Packet Sharing, Packets
+@section Buffer Manipulation---@code{push}, @code{pull}, @code{put}, and @code{take}
+
+The @code{push}, @code{pull}, @code{put}, and @code{take} methods
+manipulate a packet's contents by adding or removing space from its
+headroom or tailroom. Given a packet, use @code{push} to add space to
+its beginning, @code{pull} to remove space from its beginning,
+@code{put} to add space to its end, and @code{take} to remove space from
+its end. The methods that add space, @code{push} and @code{put},
+uniqueify the relevant packet as a side effect. This ensures that the
+packet's data is unshared so you can immediately manipulate the added
+space.
+
+@deftypemethod Packet {WritablePacket *} push (unsigned @var{amt})
+Adds @var{amt} bytes of space to the beginning of the packet's data and
+returns the resulting packet. The new space is uninitialized. The result
+will not share data with any other packet; thus, it is a
+@w{@code{WritablePacket *}}. If this packet is unshared and its headroom
+is bigger than @var{amt}, then this operation is cheap, amounting to a
+bit of pointer arithmetic. Otherwise, it requires copying the packet
+data and possibly creating a new packet header.
+
+Do not use, manipulate, or free a @code{Packet} after calling its
+@code{push} method. Manipulate the returned @w{@code{WritablePacket
+*}} instead.
+
+The result may be a null pointer if there was not enough memory to make a
+required new packet. In this case, the old packet is freed.
+@end deftypemethod
+
+@deftypemethod Packet void pull (unsigned @var{amt})
+Removes @var{amt} bytes of space from the beginning of the packet's
+data. @var{amt} must be less than or equal to the packet's
+@code{length()}. This operation is always cheap, amounting to a bit of
+pointer arithmetic.
+@end deftypemethod
+
+@deftypemethod Packet {WritablePacket *} put (unsigned @var{amt})
+Adds @var{amt} bytes of space to the end of the packet's data and
+returns the resulting packet. The new space is uninitialized. The result
+will not share data with any other packet; thus, it is a
+@w{@code{WritablePacket *}}. If this packet is unshared and its tailroom
+is bigger than @var{amt}, then this operation is cheap, amounting to a
+bit of pointer arithmetic. Otherwise, it requires copying the packet
+data and possibly creating a new packet header.
+
+Do not use, manipulate, or free a @code{Packet} after calling its
+@code{put} method. Manipulate the returned @w{@code{WritablePacket *}}
+instead.
+
+The result may be a null pointer if there was not enough memory to make a
+required new packet. In this case, the old packet is freed.
+@end deftypemethod
+
+@deftypemethod Packet void take (unsigned @var{amt})
+Removes @var{amt} bytes of space from the end of the packet's data.
+@var{amt} must be less than or equal to the packet's @code{length()}.
+This operation is always cheap, amounting to a bit of pointer
+arithmetic.
+@end deftypemethod
+
+The @code{push} and @code{put} methods have ``nonunique'' variants,
+@code{nonunique_push} and @code{nonunique_put}, which do not have the
+side effect of uniqueifying their resulting packet. These methods are
+rarely used.
+
+@deftypemethod Packet {Packet *} nonunique_push (unsigned @var{amt})
+Adds @var{amt} bytes of space to the beginning of the packet's data and
+returns the resulting packet. The new space is uninitialized. The result
+may share data with other packets. If this packet's headroom is bigger
+than @var{amt}, then this operation is cheap, amounting to a bit of
+pointer arithmetic. Otherwise, it requires copying the packet data and
+possibly creating a new packet header.
+
+Do not use, manipulate, or free a @code{Packet} after calling its
+@code{nonunique_push} method. Manipulate the returned @w{@code{Packet
+*}} instead.
+
+The result may be a null pointer if there was not enough memory to make a
+required new packet. In this case, the old packet is freed.
+@end deftypemethod
+
+@deftypemethod Packet {Packet *} nonunique_put (unsigned @var{amt})
+Adds @var{amt} bytes of space to the end of the packet's data, returning
+the resulting packet. The new space is uninitialized. The result may
+share data with other packets. If this packet's tailroom is bigger than
+@var{amt}, then this operation is cheap, amounting to a bit of pointer
+arithmetic. Otherwise, it requires copying the packet data and possibly
+creating a new packet header.
+
+Do not use, manipulate, or free a @code{Packet} after calling its
+@code{nonunique_put} method. Manipulate the returned @w{@code{Packet *}}
+instead.
+
+The result may be a null pointer if there was not enough memory to make a
+required new packet. In this case, the old packet is freed.
+@end deftypemethod
+
+
+@node Annotations, Packet Out-of-Memory, Packet Buffer Manipulation, Packets
+@section Annotations
+
+Each packet header has space for a number of @dfn{annotations}, extra
+information about the packet that is not contained in its data. Click
+supports @dfn{header annotations}, which indicate where in the packet a
+network header, such as an IP header, is located; @dfn{user
+annotations}, whose semantics are left undefined by Click---different
+elements can treat them in different ways; and other specialized
+annotations, such as the @dfn{timestamp annotation}, the
+@dfn{destination IP address annotation}, and so forth.
+
+New packets begin with all annotations cleared: numeric annotations are
+zero, pointer annotations are null pointers. @code{clone},
+@code{uniqueify}, and their equivalents always copy each of the original
+packet's annotations in the appropriate way. (For example, the new
+header annotations will point into the new data, if a data copy was
+made.)
+
+@menu
+* Header Annotations::          
+* User Annotations::            
+* Specific User Annotations::   
+* Other Annotations::           
+* Annotations In General::      
+@end menu
+
+@node Header Annotations, User Annotations, Annotations, Annotations
+@subsection Header Annotations
+
+Many packets contain a network header of some kind, such as an IP
+header. This header may be located anywhere in the packet depending on
+how the packet was encapsulated. Furthermore, the data encapsulated by
+that network header may be located anywhere after the network header,
+given the presence of options. With the @dfn{network header annotation}
+and the @dfn{transport header annotation}, one element can determine
+where a network header is and how long it is, then store this
+information for other elements to use. For example, the
+@click{CheckIPHeader} element sets the header annotations on packets it
+receives. Elements like @click{SetIPDSCP} then require a non-null IP
+header annotation on their input packets.
+
+The header annotations on new packets are each set to a null pointer.
+
+@deftypemethod Packet {const unsigned char *} network_header () const
+@deftypemethodx WritablePacket {unsigned char *} network_header () const
+Returns the network header annotation. The resulting pointer is
+read-only on @code{Packet}s and read/write on @code{WritablePacket}s.
+@end deftypemethod
+
+@deftypemethod Packet {const unsigned char *} transport_header () const
+@deftypemethodx WritablePacket {unsigned char *} transport_header () const
+Returns the transport header annotation. The resulting pointer is
+read-only on @code{Packet}s and read/write on @code{WritablePacket}s.
+@end deftypemethod
+
+@deftypemethod Packet int network_header_offset () const
+Returns the offset from @code{data()} to @code{network_header()}. The
+result might be negative, since the @code{data} pointer may have been
+advanced past the network header annotation with the @code{pull} method.
+@end deftypemethod
+
+@deftypemethod Packet int network_header_length () const
+Returns the network header's length. This equals
+@code{transport_header()} @minus{} @code{network_header()}.
+@end deftypemethod
+
+@deftypemethod Packet unsigned transport_header_offset () const
+Returns the offset from @code{data()} to @code{transport_header()}. The
+result might be negative, since the @code{data} pointer may have been
+advanced past the transport header annotation with the @code{pull} method.
+@end deftypemethod
+
+Several invariants relate these methods' values whenever the header
+annotations are non-null:
+
+@display
+@code{buffer_data()} @math{@leq} @code{network_header()} @math{@leq} @code{transport_header()}
+             @math{@leq} @code{buffer_data()} @math{+} @code{buffer_length()}
+@code{network_header_offset()} @math{=} @code{network_header()} @minus{} @code{data()}
+@code{transport_header_offset()} @math{=} @code{transport_header()} @minus{} @code{data()}
+@code{network_header_length()} @math{=} @code{transport_header()} @minus{} @code{network_header()}
+@end display
+
+@sp 1
+
+Set the network and transport header annotations simultaneously with the
+@code{set_network_header} method.
+
+@deftypemethod Packet void set_network_header (@w{const unsigned char *@var{header}}, @w{unsigned @var{len}})
+Sets the network header annotation to @var{header}, which must lie
+between @code{buffer_data()} and @code{buffer_data()} @math{+}
+@code{buffer_length()}. The network header is @var{len} bytes long, so
+@code{network_header_length()} will equal @var{len} and
+@code{transport_header()} will equal @var{header} @math{+} @var{len}.
+@end deftypemethod
+
+@subsubsection Typed Header Annotations
+
+For convenience, @code{Packet} provides methods for accessing and
+setting the network header annotation as an IP or IPv6 header. These
+methods use the same annotations as the generic @code{network_header}
+methods; they are just typed differently.
+
+@deftypemethod Packet {const click_ip *} ip_header () const
+@deftypemethodx WritablePacket {click_ip *} ip_header () const
+@deftypemethodx Packet {const click_ip6 *} ip6_header () const
+@deftypemethodx WritablePacket {click_ip6 *} ip6_header () const
+Returns @code{network_header()} as a pointer to an IP or IPv6 header
+structure.
+@end deftypemethod
+
+@deftypemethod Packet int ip_header_offset () const
+@deftypemethodx Packet unsigned ip_header_length () const
+@deftypemethodx Packet int ip6_header_offset () const
+@deftypemethodx Packet unsigned ip6_header_length () const
+Equivalent to @code{network_header_offset()} and
+@code{network_header_length()}.
+@end deftypemethod
+
+@deftypemethod Packet void set_ip_header (@w{const click_ip *@var{header}}, @w{unsigned @var{len}})
+@deftypemethodx Packet void set_ip6_header (@w{const click_ip6 *@var{header}}, @w{unsigned @var{len}})
+Equivalent to @code{set_network_header(@var{header}, @var{len})}.
+@end deftypemethod
+
+@deftypemethod Packet void set_ip6_header (@w{const click_ip6 *@var{header}})
+Equivalent to @code{set_ip6_header(@var{header}, 40)}.
+@end deftypemethod
+
+
+@node User Annotations, Specific User Annotations, Header Annotations, Annotations
+@subsection User Annotations
+
+Each packet header has a @dfn{user annotation area}, space reserved for
+arbitrary annotations. Different methods access this space as an array
+of bytes, integers, or unsigned integers. The @code{Packet} class does
+not assign semantics to any particular byte in the user annotation area.
+Instead, macros in @w{@samp{<click/packet_anno.hh>}} provide names for
+particular bytes. Some of these names have overlapping byte ranges; the
+user must take care not to define a configuration whose elements use an
+annotation byte on a packet for different purposes. The next section
+describes the macros in Click's default
+@w{@samp{<click/packet_anno.hh>}}.
+
+These constants define the size of the annotation area.
+
+@table @code
+@item Packet::USER_ANNO_SIZE
+The size of the annotation area in bytes.
+@item Packet::USER_ANNO_U_SIZE
+The size of the annotation area in @code{unsigned int}s.
+@item Packet::USER_ANNO_I_SIZE
+The size of the annotation area in @code{int}s.
+@end table
+
+@noindent
+Currently, @code{USER_ANNO_SIZE} is 12 and @code{USER_ANNO_U_SIZE} and
+@code{USER_ANNO_I_SIZE} are both 3.
+
+The user annotation area may be accessed as an array of bytes, an array
+of @code{unsigned int}s, or an array of @code{int}s. The elements of
+these arrays are numbered from 0 to @math{@var{k} - 1}, where @var{k} is
+the appropriate @code{SIZE} constant.
+
+@deftypemethod Packet unsigned char user_anno_c (@w{int @var{i}}) const
+Returns the @var{i}th byte in the user annotation area. @var{i} must be
+between 0 and @code{USER_ANNO_SIZE} @minus{} 1.
+@end deftypemethod
+
+@deftypemethod Packet unsigned user_anno_u (@w{int @var{i}})
+@deftypemethodx Packet int user_anno_i (@w{int @var{i}})
+Returns the @var{i}th @code{unsigned int} or @code{int} in the user
+annotation area. @var{i} must be between 0 and @code{USER_ANNO_U_SIZE}
+@minus{} 1. The @var{i}th @code{unsigned int} or @code{int} annotation
+occupies bytes @math{4@var{i}} through @math{4@var{i} + 3} of the user
+annotation area.
+@end deftypemethod
+
+@deftypemethod Packet void set_user_anno_c (@w{int @var{i}}, @w{unsigned char @var{value}})
+@deftypemethodx Packet void set_user_anno_u (@w{int @var{i}}, @w{unsigned @var{value}})
+@deftypemethodx Packet void set_user_anno_i (@w{int @var{i}}, @w{int @var{value}})
+Sets the @var{i}th byte, @code{unsigned int}, or @code{int} user
+annotation to @var{value}.
+@end deftypemethod
+
+@deftypemethod Packet {unsigned *} all_user_anno_u ()
+Returns a pointer to the user annotation area, treated as an array of
+@code{unsigned int}s.
+@end deftypemethod
+
+
+@node Specific User Annotations, Other Annotations, User Annotations, Annotations
+@subsection Specific User Annotations
+
+The @w{@samp{<click/packet_anno.hh>}} header file defines macros for
+accessing a packet's user annotation area by name. These macros follow
+some simple guidelines. Each user annotation is given a name like
+@samp{PAINT} or @samp{FIX_IP_SRC}. Then, two macros are written for each
+annotation, @code{@var{name}_ANNO} and @code{SET_@var{name}_ANNO}.
+
+@deftypefn {Macro} {} {@var{name}_ANNO} (@w{const Packet *@var{p}})
+Returns the value of @var{p}'s @var{name} annotation.
+@end deftypefn
+
+@deftypefn {Macro} {} {SET_@var{name}_ANNO} (@w{Packet *@var{p}}, @var{value})
+Sets @var{p}'s @var{name} annotation to @var{value}.
+@end deftypefn
+
+@noindent
+For example, here are the definitions of @code{PAINT_ANNO} and
+@code{SET_PAINT_ANNO} from Click's default
+@samp{<click/packet_anno.hh>}.
+
+@example
+#define PAINT_ANNO(p)          ((p)->user_anno_c(0))
+#define SET_PAINT_ANNO(p, v)   ((p)->set_user_anno_c(0, (v)))
+@end example
+
+@sp 1
+
+This table lists the annotations declared in Click's default
+@samp{<click/packet_anno.hh>}.
+
+@multitable {@code{ICMP_PARAM_PROB}} {@code{unsigned char}} {Bytes} {Blah,blah,blah,blah,blah,blah,blah,blah}
+@item Annotation name
+@tab Type
+@tab Bytes
+@tab Some relevant elements
+@item @code{PAINT}
+@tab @code{unsigned char}
+@tab 0
+@tab @click{Paint}, @click{CheckPaint}, @click{PaintTee}
+@item @code{ICMP_PARAM_PROB}
+@tab @code{unsigned char}
+@tab 1
+@tab @click{IPGWOptions}, @click{ICMPError}
+@item @code{FIX_IP_SRC}
+@tab @code{unsigned char}
+@tab 3
+@tab @click{ICMPError}, @click{FixIPSrc}
+@item @code{FWD_RATE}
+@tab @code{int}
+@tab 4--7
+@tab @click{IPRateMonitor}
+@item @code{REV_RATE}
+@tab @code{int}
+@tab 8--11
+@tab @click{IPRateMonitor}
+@end multitable
+
+
+@node Other Annotations, Annotations In General, Specific User Annotations, Annotations
+@subsection Other Annotations
+
+Packet headers have space for four other particular annotations, and
+special methods for accessing them. These annotations do not overlap the
+user annotation area. There are annotations that hold a destination IP
+address, a timestamp, the device on which the packet arrived, a packet
+type constant, and, in the Linux kernel module, a performance counter
+value.
+
+@menu
+* Destination Address Annotation::  
+* Timestamp Annotation::        
+* Device Annotation::           
+* Packet Type Annotation::      
+* Performance Counter Annotation::  
+@end menu
+
+@node Destination Address Annotation, Timestamp Annotation, Other Annotations, Other Annotations
+@subsubsection Destination Address
+
+The destination address annotation stores the IP or IPv6 address of the
+next hop towards the packet's destination. Elements check and manipulate
+this address, rather than the IP header's destination address, since the
+next-hop address often differs from the final destination. The
+destination IP address and IPv6 address are different annotations, but
+they overlap; you may set only one at a time.
+
+@deftypemethod Packet IPAddress dst_ip_anno () const
+Returns this packet's destination IP address annotation.
+@end deftypemethod
+
+@deftypemethod Packet {const IP6Address &} dst_ip6_anno () const
+Returns a reference to this packet's destination IPv6 address
+annotation.
+@end deftypemethod
+
+@deftypemethod Packet void set_dst_ip_anno (@w{IPAddress @var{value}})
+@deftypemethodx Packet void set_dst_ip6_anno (@w{const IP6Address &@var{value}})
+Sets this packet's destination IP or IPv6 address annotation to
+@var{value}.
+@end deftypemethod
+
+The destination IP address annotation is set by the @click{GetIPAddress}
+and @click{SetIPAddress} elements, manipulated by @click{LookupIPRoute}
+and its cousins, and used by @click{ARPQuerier}. It defaults to zero.
+
+@node Timestamp Annotation, Device Annotation, Destination Address Annotation, Other Annotations
+@subsubsection Timestamp
+
+The timestamp annotation generally indicates when a packet was received.
+
+@deftypemethod Packet {const struct timeval &} timestamp_anno () const
+@deftypemethodx Packet {struct timeval &} timestamp_anno ()
+Returns a reference to this packet's timestamp annotation.
+@end deftypemethod
+
+@deftypemethod Packet void set_timestamp_anno (@w{const struct timeval &@var{value}})
+Sets this packet's timestamp annotation to @var{value}.
+@end deftypemethod
+
+@deftypemethod Packet void set_timestamp_anno (@w{int @var{sec}}, @w{int @var{usec}})
+Sets this packet's timestamp annotation to @var{sec} and @var{usec}.
+Equivalent to @code{struct timeval tv; tv.tv_sec = @var{sec}; tv.tv_usec
+= @var{usec}; set_timestamp_anno(tv)}.
+@end deftypemethod
+
+Linux device drivers set this annotation, so packets emitted by
+@click{FromDevice} and @click{PollDevice} in the Linux kernel driver
+have the annotation set. Packet sources like @click{InfiniteSource} and
+@click{RatedSource} also set the annotation, as does @click{FromDump} in
+the user-level driver. Debugging elements like @click{Print} generally
+take a keyword argument that makes them print packet timestamps.
+
+The timestamp annotation defaults to zero.
+
+@node Device Annotation, Packet Type Annotation, Timestamp Annotation, Other Annotations
+@subsubsection Device
+
+In the Linux kernel, packets received from some device are annotated
+with a pointer to the relevant @code{struct net_device} object. (In
+versions of the kernel prior to 2.3, this type was called @code{struct
+device}.) The @code{Packet} class provides access to this annotation.
+The annotation has type @w{@code{net_device *}}; Click defines
+@code{net_device} as a synonym for @code{struct device} in kernel
+versions 2.2 and prior.
+
+@deftypemethod Packet {net_device *} device_anno () const
+Returns this packet's device annotation.
+@end deftypemethod
+
+@deftypemethod Packet void set_device_anno (@w{net_device *@var{value}})
+Sets this packet's device annotation to @var{value}.
+@end deftypemethod
+
+@noindent
+In the user-level driver, @code{device_anno} always returns 0, and
+@code{set_device_anno} does nothing.
+
+The @click{ARPResponder} element sets this annotation on every generated
+response to the value of the annotation on the relevant query. Because
+of this, those responses can be safely forwarded to Linux: Linux's
+ARP-response code requires a correct device annotation.
+
+The device annotation defaults to a null pointer.
+
+@node Packet Type Annotation, Performance Counter Annotation, Device Annotation, Other Annotations
+@subsubsection Packet Type
+
+The packet type annotation specifies how a packet was received. Its
+value is one of the following constants, which are defined in the
+@code{Packet::PacketType} enumeration.
+
+@table @asis
+@item @samp{HOST}
+The packet was sent to this host.
+
+@item @samp{BROADCAST}
+The packet was sent to a link-level broadcast address.
+
+@item @samp{MULTICAST}
+The packet was sent to a link-level multicast address.
+
+@item @samp{OTHERHOST}
+The packet was sent to a different host, but received anyway. The
+relevant device is probably in promiscuous mode.
+
+@item @samp{OUTGOING}
+The packet was generated at this host and is being sent to another host.
+
+@item @samp{LOOPBACK}, @samp{FASTROUTE}
+See the Linux kernel documentation. These values correspond to
+@samp{PACKET_LOOPBACK} and @samp{PACKET_FASTROUTE}, which are defined in
+@samp{<linux/if_packet.h>}.
+@end table
+
+@deftypemethod Packet {Packet::PacketType} packet_type_anno () const
+Returns this packet's packet type annotation.
+@end deftypemethod
+
+@deftypemethod Packet void set_packet_type_anno (@w{Packet::PacketType @var{value}})
+Sets this packet's packet type annotation to @var{value}.
+@end deftypemethod
+
+In the Linux kernel, device drivers set the packet type annotation for
+the packets they receive. Thus, the @click{FromDevice} and
+@click{PollDevice} elements generate packets with correct packet type
+annotations. The user-level driver's @click{FromDevice} also sets the
+packet type annotation. The @click{ICMPError} and @click{DropBroadcasts}
+elements use the annotation's value.
+
+The packet type annotation defaults to @code{Packet::HOST}.
+
+@node Performance Counter Annotation,  , Packet Type Annotation, Other Annotations
+@subsubsection Performance Counter
+
+This annotation is available only in the Linux kernel driver. Its value
+is an @code{unsigned long long} that generally corresponds to some
+performance counter value.
+
+@deftypemethod Packet {unsigned long long} perfctr_anno () const
+Returns this packet's performance counter annotation.
+@end deftypemethod
+
+@deftypemethod Packet void set_perfctr_anno (@w{unsigned long long @var{value}})
+Sets this packet's performance counter annotation to @var{value}.
+@end deftypemethod
+
+The @click{SetCycleCount}, @click{SetPerfCount},
+@click{CycleCountAccum}, and @click{PerfCountAccum} elements manipulate
+this annotation. Its default value is zero.
+
+
+@node Annotations In General,  , Other Annotations, Annotations
+@subsection Annotations In General
+
+@code{Packet} provides methods for clearing a packet's annotations, and
+for copying all of a packet's annotations from another packet.
+
+@deftypemethod Packet void clear_annotations ()
+Clears all of this packet's annotations to their default state, which is
+generally zero.
+@end deftypemethod
+
+@deftypemethod Packet void copy_annotations (const Packet *@var{p})
+Copies all of @var{p}'s annotations into this packet except for its
+header annotations. (This packet's current header annotations are left
+unchanged.)
+@end deftypemethod
+
+
+@node Packet Out-of-Memory,  , Annotations, Packets
+@section Out-of-Memory Conditions
+
+Any method that potentially allocates memory for a @code{Packet} may
+fail due to an out-of-memory condition. The complete list of these
+methods follows:
+
+@itemize @bullet
+@item @code{make} variants
+@item @code{clone}
+@item @code{uniqueify}
+@item @code{push}
+@item @code{put}
+@item @code{nonunique_push}
+@item @code{nonunique_put}
+@end itemize
+
+@noindent
+These methods always return a null pointer on out-of-memory. The methods
+that were manipulating an existing packet---@code{uniqueify},
+@code{push}, @code{put}, @code{nonunique_push}, and
+@code{nonunique_put}---additionally free the existing packet before
+returning a null pointer. You should always check the results of these
+methods to see if you have run out of memory.
+
+
+@node Element Characteristics, Element Initialization, Packets, Top
 @chapter Element Characteristics
 
 @menu
@@ -1491,14 +2534,18 @@ Derived::cast(const char *name)
 Always explicitly cast @code{this} to the correct type before returning
 it. This is important because of multiple inheritance, where the value
 of a pointer to a supertype may be different from the value of
-@code{this}. Generally in C++, the type system determines when pointer
-arithmetic is necessary; unfortunately, @code{cast}'s @w{@code{void *}}
-return type hides type information, requiring explicit casts.
+@code{this}. (The type system generally determines when pointer
+arithmetic is necessary, but the @w{@code{void *}} return type hides
+this type information from @code{cast}'s caller.)
 
 We encourage you to write simple @code{cast} methods that compare the
 @var{name} argument against a set of fixed strings. Arbitrary
 computation inside @var{cast} is discouraged; we may eventually want to
-automatically parse @code{cast} definitions.
+analyze @code{cast} definitions.
+
+Click uses a @code{cast} method rather than C++'s standard
+@code{dynamic_cast} mechanism because it's difficult to use
+@code{dynamic_cast} in the Linux kernel.
 
 
 @node Element Names, Element Router, Element Casting, Element Characteristics
@@ -2058,14 +3105,13 @@ the element's processing code; it holds for push, pull, and agnostic
 ports.
 
 But what does it mean for a packet to ``travel'' from one port to
-another? The following principle will help you pick the right flow code
-for an element.
+another? This principle will help you pick the right flow code for an
+element: Consider how an element's flow matrix would affect a simple
+router.
 
-The basic idea is to consider how an element's flow matrix would affect
-a simple router. Take an input port, @math{i}, and output port,
-@math{j}, on some element @click{M}. To decide whether @math{m[i,j]}
-should be true, imagine this simple configuration (or a similar
-configuration):
+Take an input port, @math{i}, and output port, @math{j}, on some element
+@click{M}. To decide whether @math{m[i,j]} should be true, imagine this
+simple configuration (or a similar configuration):
 
 @example
 ... -> RED -> [@math{i}] M [@math{j}] -> Queue -> ...;
@@ -2091,15 +3137,14 @@ The @click{ARPResponder} element provides a contrasting example. It has
 one input port, which receives ARP queries, and one output port, which
 emits the corresponding ARP responses. A @click{RED} element upstream of
 @click{ARPResponder} would probably want to include a downstream
-@click{Queue}, since @click{ARPResponder}'s received queries are
-effectively transmuted, one-to-one, into emitted responses. Thus,
-@math{m[0,0]} is true, even though the packets @click{ARPResponder}
-emits are completely different from the packets it receives.
+@click{Queue}, since queries received by @click{ARPResponder} are
+effectively transmuted into emitted responses. Thus, @math{m[0,0]} is
+true, even though the packets @click{ARPResponder} emits are completely
+different from the packets it receives.
 
 If you find this confusing, don't fret. It is perfectly fine to be
-conservative when assigning flow codes. Most elements work well with
-@code{COMPLETE_FLOW}. Only about 4% of the Click distribution's elements
-use other flow codes.
+conservative when assigning flow codes. About 96% of the Click
+distribution's elements use @code{COMPLETE_FLOW}.
 
 
 @node initialize, uninitialize, flow_code, Element Initialization
@@ -2364,10 +3409,10 @@ Calls the @code{uninitialize} method on each element whose
 @code{initialize} method returned successfully.
 
 @item
-Some drivers, such as the Linux kernel module driver, call every
-element's @code{add_default_handlers} method to make information about
-the erroneous configuration available for debugging. The
-@handler{config} handler is always read-only.
+Some drivers, such as the Linux kernel driver, call every element's
+@code{add_default_handlers} method to make information about the
+erroneous configuration available for debugging. The @handler{config}
+handler is always read-only.
 @end enumerate
 @end enumerate
 
@@ -2376,12 +3421,119 @@ the erroneous configuration available for debugging. The
 @chapter Element Runtime
 
 @menu
+* Moving Packets::              
+* Handling Packets::            
+* Running Tasks::               
 * Handlers::                    
 * Live Reconfiguration::        
 @end menu
 
 
-@node Handlers, Live Reconfiguration, Element Runtime, Element Runtime
+@node Moving Packets, Handling Packets, Element Runtime, Element Runtime
+@section Moving Packets
+
+Two virtual functions on @code{Element}, @code{push} and @code{pull},
+provide Click's means are the main methods for packet transfer.
+
+@menu
+* push::                        
+* pull::                        
+* Transferring Packets::        
+* simple_action::               
+@end menu
+
+@node push, pull, Moving Packets, Moving Packets
+@subsection @code{push}
+
+@deftypemethod Element {virtual void} push (int @var{port}, Packet *@var{p})
+Called when an upstream element pushes the packet @var{p} onto this
+element's input port @var{port}. This element is expected to process the
+packet however it likes.
+@end deftypemethod
+
+@node pull, Transferring Packets, push, Moving Packets
+@subsection @code{pull}
+
+@deftypemethod Element {virtual Packet *} pull (int @var{port})
+Called when a downstream element makes a pull request of this element's
+output port @var{port}. This element is expected to process the request
+however it likes and to return a packet.
+@end deftypemethod
+
+@node Transferring Packets, simple_action, pull, Moving Packets
+@subsection Transferring Packets
+
+@deftypemethod {Element::Port} void push (Packet *@var{p}) const
+@end deftypemethod
+
+@deftypemethod {Element::Port} {Packet *} pull () const
+@end deftypemethod
+
+@node simple_action,  , Transferring Packets, Moving Packets
+@subsection @code{simple_action}
+
+@deftypemethod Element {Packet *} simple_action (Packet *@var{p})
+@end deftypemethod
+
+@node Handling Packets, Running Tasks, Moving Packets, Element Runtime
+@section Handling Packets
+
+Every @code{Packet} object should be single-threaded through Click: the
+same @code{Packet} pointer should never be in use in two different
+places. In particular, an element should not use a @code{Packet} after
+passing it downstream to the rest of the configuration (by calling
+@code{output().push}, for example).
+
+This, for example, is the wrong way to write a @click{Tee} with two
+outputs.
+
+@example
+void
+BadTee::push(int, Packet *p)
+@{
+  output(0).push(p);
+  output(1).push(p);
+@}
+@end example
+
+@noindent
+The same packet pointer, @code{p}, has been pushed to two different
+outputs. This is always illegal; the rest of the configuration may have
+modified or even freed the packet before returning control to
+@code{BadTee}. The correct definition uses the @code{clone} method:
+
+@example
+void
+GoodTee::push(int, Packet *p)
+@{
+  output(0).push(p->clone());
+  output(1).push(p);
+@}
+@end example
+
+Every @code{push} or @code{pull} method must account for every packet it
+receives by freeing it, emitting it on some output, or perhaps
+explicitly storing it for later. This @code{push} method, for example,
+contains a memory leak:
+
+@example
+void
+Leaky::push(int, Packet *p)
+@{
+  const click_ip *iph = p->ip_header();
+  // @r{@dots{} more processing @dots{}}
+  _counter++;
+  return;  // XXX @r{Oops!}
+  // @r{Must push the packet on, store it, or kill it before returning.}
+@}
+@end example
+
+
+@node Running Tasks, Handlers, Handling Packets, Element Runtime
+@section Running Tasks
+
+
+@node Handlers, Live Reconfiguration, Running Tasks, Element Runtime
 @section Handlers
 
 Click users interact with a running router through @dfn{handlers}.
@@ -2407,6 +3559,32 @@ Click users interact with a running router through @dfn{handlers}.
 
 @node Configuration Strings, Tasks, Element Runtime, Top
 @chapter Configuration Strings
+
+@menu
+* Configuration String Structure::  
+@end menu
+
+@node Configuration String Structure,  , Configuration Strings, Configuration Strings
+@section Structure
+
+A configuration string may contain comments and quoted substrings.
+
+Configuration strings use C++-style comments. There are two forms of
+comment, @samp{// @dots{} @r{EOL}} and @samp{/* @dots{} */}. The first
+form begins with two adjacent slashes, @samp{//}, and continues up to
+and including the next end of line. The second form begins with a
+slash-star combination, @samp{/*}, and continues up to and including the
+next star-slash, @samp{*/}.
+
+The quoted substring forms escape characters like commas and spaces. A
+double-quoted substring is set off with double quotes @samp{"}. Escape
+sequences introduced by @samp{\} may be used inside the double quotes. A
+single-quoted substring is set off with single quotes @samp{'}; escape
+sequences are not interpreted inside single quotes.
+
+A configuration string consists of zero or more @dfn{arguments}
+separated by commas. Commas inside comments and quoted strings are
+ignored.
 
 
 @node Tasks, Timers, Configuration Strings, Top
@@ -2571,8 +3749,8 @@ than @code{Task::MAX_TICKETS}, which equals 32768.
 
 @deftypemethod Task void set_tickets (int @var{t})
 Sets this task's tickets to @var{t}. The @var{t} parameter should lie
-between 1 and @code{Task::MAX_TICKETS}; numbers outside this range are
-constrained to the nearest valid value.
+between 1 and @code{Task::MAX_TICKETS}, inclusive; numbers outside this
+range are constrained to the nearest valid value.
 @end deftypemethod
 
 @deftypemethod Task void adj_tickets (int @var{delta})
@@ -2653,13 +3831,100 @@ element. Otherwise, returns a null pointer.
 @section Destroying a Task
 
 
-@node Timers, Index, Tasks, Top
+@node Timers, Coding Standards, Tasks, Top
 @chapter Timers
 
 Timers
 
 
-@node Index,  , Timers, Top
+
+@node Coding Standards, Index, Timers, Top
+@chapter Coding Standards
+
+
+@menu
+* Upper and lower case names::
+* Common name patterns::
+@end menu
+
+
+@node Upper and lower case names, Common name patterns, Coding Standards, Coding Standards
+@section Upper and Lower Case in Names
+
+Keep to the following consistent scheme for choosing between upper and
+lower case when naming variables, types, and functions.
+
+@table @strong
+@item Classes
+Use mixed case with an initial capital letter and no underscores:
+@code{LookupIPRoute}.
+
+@item Methods
+Use all lower case with underscores separating words:
+@code{negation_is_simple}.
+
+@item Constants
+Use all upper case with underscores separating words:
+@code{TYPE_ICMP_TYPE}.
+
+@item Instance variables
+Begin with an underscore, then use all lower case with underscores
+separating words: @code{_length}.
+
+@item Regular variables
+Use all lower case with underscores separating words: @code{i},
+@code{the_handler}.
+
+@item Class variables
+These variables are declared as @code{static} in the class header. Name
+them like regular variables: @code{nelements_allocated}.
+
+@item Functions
+Name them like methods: @code{quicksort_hook}.
+
+@item Other types
+This includes typedefs and enumerated types. Name them like classes:
+@code{CpVaParseCmd}, @code{ConfigurePhase}.
+@end table
+
+There are exceptions to these guidelines. In particular:
+
+@itemize @bullet
+@item
+Instance variables in C structs---that is, classes with few methods
+whose instance variables are mostly public---may be named like regular
+variables, without a preceding underscore. The same goes for the
+components of unions.
+
+@item
+Classes that act like simple types, such as @code{u_atomic32_t}, take
+names similar to the types they replace (in this case @code{u_int32_t}).
+@end itemize
+
+
+@node Common name patterns,  , Upper and lower case names, Coding Standards
+@section Common Name Patterns
+
+@itemize @bullet
+@item
+Many instance variables have associated @dfn{getter methods} that return
+their values, and/or @dfn{setter methods} that change their values. For
+an instance variable named @code{_x}, the getter method should be named
+@code{x()} and the setter method should be named @code{set_x()}.
+
+@item
+A variable or method which counts something is often named
+@code{n@var{object}s}---for instance, @code{_nwarnings},
+@code{ninputs()}, @code{_npackets}.
+
+@item
+Use a bare @samp{0} for a null pointer, except where some ambiguity
+might arise (for example, where an incorrect overloading might be
+selected).
+@end itemize
+
+
+@node Index,  , Coding Standards, Top
 @unnumbered Index
 
 @printindex cp
