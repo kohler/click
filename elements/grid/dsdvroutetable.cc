@@ -35,13 +35,12 @@ CLICK_DECLS
 
 #define DBG  0
 #define DBG2 0
+#define DBG3 0
 
 #define max(a, b) ((a) > (b) ? (a) : (b))
 #define min(a, b) ((a) < (b) ? (a) : (b))
 
 #define dsdv_assert(e) ((e) ? (void) 0 : dsdv_assert_(__FILE__, __LINE__, #e))
-
-const DSDVRouteTable::metric_t DSDVRouteTable::_bad_metric; // default metric state is ``bad''
 
 bool
 DSDVRouteTable::get_one_entry(IPAddress &dest_ip, RouteEntry &entry) 
@@ -195,10 +194,10 @@ DSDVRouteTable::est_forward_delivery_rate(const IPAddress &ip, unsigned int &rat
 {
   switch (_est_type) {
   case EstByMeas: {
-    if (!_link_stat)
+    if (!_link_stat) 
       return false;
     RTEntry *r = _rtes.findp(ip);
-    if (r == 0 || r->num_hops() > 1)
+    if (r == 0 || r->num_hops() > 1) 
       return false;
     unsigned int tau;
     struct timeval t;
@@ -507,7 +506,10 @@ DSDVRouteTable::init_metric(RTEntry &r)
     unsigned rev_rate = 0;
     bool res = est_forward_delivery_rate(r.next_hop_ip, fwd_rate);
     bool res2 = est_reverse_delivery_rate(r.next_hop_ip, rev_rate);
-
+#if DBG3
+    click_chatter("%s: XXX init_metric est_tx_count, res=%s, fwd_rate=%u, res2=%s rev_rate=%u\n",
+		  id().cc(), res ? "true" : "false", fwd_rate, res2 ? "true" : "false", rev_rate);
+#endif
     if (res && res2 && fwd_rate > 0 && rev_rate > 0) {
       r.metric = metric_t(100 * 100 * 100 / (fwd_rate * rev_rate));
       if (r.metric.val < 100) 
@@ -1189,8 +1191,15 @@ DSDVRouteTable::write_est_type(const String &arg, Element *el,
 			       void *, ErrorHandler *errh)
 {
   DSDVRouteTable *rt = (DSDVRouteTable *) el;
-  if (!cp_unsigned(arg, &rt->_est_type))
+  unsigned est_type = 0;
+  if (!cp_unsigned(arg, &est_type))
     return errh->error("est_type must be unsigned");
+  switch (est_type) {
+  case EstByMeas:
+    rt->_est_type = est_type; break;
+  default:
+    return errh->error("est_type %u is not valid", est_type);
+  }
   return 0;
 }
 

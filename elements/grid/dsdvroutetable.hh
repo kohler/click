@@ -145,6 +145,7 @@ private:
     bool valid;
     unsigned int val;
     metric_t() : valid(false), val(bad_metric) { }
+    metric_t(const metric_t &m) : valid(m.valid), val(m.val) { }
     metric_t(unsigned int m, bool v = true) : valid(v), val(m) { }
   };
   
@@ -443,7 +444,7 @@ private:
     EstByMeas = 3
   };
 
-  static const metric_t _bad_metric; // default value is ``bad''
+  const metric_t _bad_metric; // default value is ``bad''
 
   bool _frozen;
 
