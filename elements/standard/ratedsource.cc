@@ -22,7 +22,6 @@
 #include "ratedsource.hh"
 #include <click/confparse.hh>
 #include <click/error.hh>
-#include <click/timer.hh>
 #include <click/router.hh>
 #include "scheduleinfo.hh"
 #include <click/glue.hh>
@@ -199,7 +198,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
      if (!cp_bool(s, &active))
        return errh->error("active parameter must be boolean");
      rs->_active = active;
-     if (!rs->_task.scheduled() && active) {
+     if (rs->output_is_push(0) && !rs->_task.scheduled() && active) {
        rs->_rate.reset();
        rs->_task.reschedule();
      }
@@ -209,7 +208,7 @@ RatedSource::change_param(const String &in_s, Element *e, void *vparam,
    case 5: {			// reset
      rs->_count = 0;
      rs->_rate.reset();
-     if (!rs->_task.scheduled() && rs->_active)
+     if (rs->output_is_push(0) && !rs->_task.scheduled() && rs->_active)
        rs->_task.reschedule();
      break;
    }
@@ -236,3 +235,4 @@ RatedSource::add_handlers()
 }
 
 EXPORT_ELEMENT(RatedSource)
+
