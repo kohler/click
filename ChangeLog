@@ -1,3 +1,13 @@
+2005-03-14 Monday 12:32  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* lib/master.cc (1.28): comment out warning, since we fall back
+	safely to poll if kevent fails (Chema Gonzalez)
+
+2005-03-14 Monday 11:55  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/fakepcap.cc (1.18): misuse of
+	unaligned_net_short (Bob Keyes)
+
 2005-03-11 Friday 17:15  Eddie Kohler <kohler@cs.ucla.edu>
 
 	* elements/ip/: rangeiplookup.cc (1.2), rangeiplookup.hh (1.2): use
