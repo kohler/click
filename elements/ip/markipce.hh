@@ -8,14 +8,14 @@ MarkIPCE()
 
 =s IP
 
-sets IP packets' ECN Congestion Experienced bit
+sets IP packets' ECN field to Congestion Experienced
 
 =d
 
-Expects IP packets as input. Sets each incoming packet's ECN Congestion
-Experienced bit, incrementally recalculates the IP checksum, and passes the
-packet to output 0. Non-IP packets, and IP packets whose ECN Capable Transport
-bits are zero, are dropped. */
+Expects IP packets as input. Sets each incoming packet's ECN field to
+Congestion Experienced (value 3), incrementally recalculates the IP checksum,
+and passes the packet to output 0. Non-IP packets, and IP packets whose ECN
+field is zero (not ECN-capable), are dropped. */
 
 #include <click/element.hh>
 #include <click/atomic.hh>
