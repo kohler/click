@@ -1,6 +1,6 @@
-/* -*- c-basic-offset: 4 -*- */
-#ifndef AGGREGATEIP_HH
-#define AGGREGATEIP_HH
+// -*- mode: c++; c-basic-offset: 4 -*-
+#ifndef CLICK_AGGREGATEIP_HH
+#define CLICK_AGGREGATEIP_HH
 #include <click/element.hh>
 
 /*
