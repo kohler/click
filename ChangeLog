@@ -1,3 +1,11 @@
+2003-03-04 Tuesday 22:33  Douglas S. J. De Couto <decouto@lcs.mit.edu>
+
+	* elements/grid/: dsdvroutetable.cc (1.42), dsdvroutetable.hh
+	(1.31), linkstat.cc (1.19), linkstat.hh (1.9): 1) modify
+	DSDVRouteTable to have runtime option to use new routes right away,
+	even if it's too early to advertise them; 2) modify LinkStat to
+	store loss rates keyed by IP address, instead of ethernet address
+
 2003-03-04 Tuesday 19:08  Eddie Kohler <kohler@icir.org>
 
 	* doc/click.1 (1.10), userlevel/click.cc (1.77): remove userlevel
