@@ -1,3 +1,8 @@
+2002-01-07 Monday 18:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/bitvector.hh (1.5): fix Bitvector bug caught by
+	Doug DeCouto
+
 2002-01-05 Saturday 20:43  Eddie Kohler <kohler@aciri.org>
 
 	* tools/click-pretty/click-pretty.cc (1.15): click-pretty nitlets

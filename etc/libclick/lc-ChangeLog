@@ -1,3 +1,8 @@
+2002-01-07 Monday 18:12  Eddie Kohler <kohler@aciri.org>
+
+	* include/click/: bitvector.hh, bitvector.hh: fix Bitvector bug
+	caught by Doug DeCouto
+
 2002-01-05 Saturday 04:29  Eddie Kohler <kohler@aciri.org>
 
 	* include/click/bitvector.hh, include/click/bitvector.hh,
