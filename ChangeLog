@@ -1,3 +1,23 @@
+2001-11-03 Saturday 16:37  Eddie Kohler <kohler@aciri.org>
+
+	* Makefile.in (1.102), doc/Makefile.in (1.41), doc/mkwebdoc.pl
+	(1.23): doc nitlets
+
+2001-11-03 Saturday 16:28  Eddie Kohler <kohler@aciri.org>
+
+	* doc/click-elem2man (1.16), doc/elementdoc.7 (1.12),
+	doc/mkwebdoc.pl (1.22), elements/grid/updateroutes.hh (1.10),
+	elements/standard/peekhandlers.hh (1.14),
+	elements/standard/probsplitter.hh (1.10),
+	elements/standard/randomlossage.hh (1.17): doc updates: add
+	=deprecated to elementdoc format, and add [DBLU] notations to
+	element index
+
+2001-11-03 Saturday 16:27  Eddie Kohler <kohler@aciri.org>
+
+	* tools/lib/: lexert.cc (1.36), lexert.hh (1.18): add position in
+	large string to Lexemes
+
 2001-11-02 Friday 15:45  Eddie Kohler <kohler@aciri.org>
 
 	* doc/: mkwebdoc.pl (1.20), mkwebdoc.pl (1.21): webdoc update
