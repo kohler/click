@@ -3,7 +3,7 @@
 // This configuration reads packets from a device, and prints out any ICMP
 // echo requests it receives.
 
-// You can run it at user level as
+// You can run it at user level (as root) as
 // 'userlevel/click < conf/print-pings.click'
 // or in the kernel with
 // 'click-install conf/print-pings.click'

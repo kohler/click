@@ -72,7 +72,8 @@ my(@examples) = ([ 'test.click', 'Trivial Test Configuration' ],
 		 [ 'fake-iprouter.click', 'IP Router Simulation' ],
 		 [ 'fromhost-tunnel.click', 'Kernel FromHost Tunnel Example' ],
 		 [ 'dnsproxy.click', 'Trivial DNS Proxy' ],
-		 [ 'simple-dsdv.click', 'Simple DSDV Configuration' ]);
+		 [ 'simple-dsdv.click', 'Simple DSDV Configuration' ],
+		 [ 'print-pings.click', 'ICMP Ping Printer' ]);
 foreach $i (@examples) {
     my($fn, $title) = ('"' . $i->[0] . '"', '"' . $i->[1] . '"');
     my($html) = $fn;
