@@ -1,3 +1,69 @@
+2004-01-08 Thursday 05:24  Eddie Kohler <kohler@icir.org>
+
+	* test/: analysis/FromIPSummaryDump-ipopt-01.testie (1.8),
+	analysis/FromTcpdump-01.testie (1.1),
+	analysis/FromTcpdump-02.testie (1.1), tcpudp/UDPIPEncap-01.testie
+	(1.1): add tests for PortInfo and FromTcpdump
+
+2004-01-08 Thursday 05:24  Eddie Kohler <kohler@icir.org>
+
+	* elements/: analysis/fromdagdump.cc (1.16),
+	analysis/fromdagdump.hh (1.9), analysis/fromipsumdump.cc (1.57),
+	analysis/fromipsumdump.hh (1.34), analysis/fromlinefile.cc (1.2),
+	analysis/fromlinefile.hh (1.2), analysis/fromnetflowsumdump.cc
+	(1.17), analysis/fromnetflowsumdump.hh (1.14),
+	analysis/fromtcpdump.cc (1.4), analysis/fromtcpdump.hh (1.3),
+	userlevel/fromdump.cc (1.83), userlevel/fromdump.hh (1.52),
+	userlevel/fromfile.cc (1.2), userlevel/fromfile.hh (1.2): From*Dump
+	elements all use FromFile, for unified file handling and speed.
+	Also, the line-oriented elements were changed to use iterator-style
+	string actions -- begin and end -- which hopefully did not
+	introduce any bugs. Also, FromTcpdump handles sack, and is more
+	careful about packet lengths.
+
+2004-01-08 Thursday 05:17  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/portinfo.cc (1.2): const nit
+
+2004-01-08 Thursday 05:15  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/addressinfo.cc (1.28),
+	include/click/standard/addressinfo.hh (1.15): nits
+
+2004-01-08 Thursday 05:15  Eddie Kohler <kohler@icir.org>
+
+	* elements/tcpudp/: dynudpipencap.cc (1.14), dynudpipencap.hh
+	(1.9), tcpipsend.cc (1.11), udpipencap.cc (1.16): use new cp*Ports
+
+2004-01-08 Thursday 05:15  Eddie Kohler <kohler@icir.org>
+
+	* include/click/confparse.hh (1.39), lib/confparse.cc (1.116):
+	provide cp_tcpudp_port(), which uses PortInfo, and cpTCPPort and
+	cpUDPPort constants
+
+2004-01-08 Thursday 05:14  Eddie Kohler <kohler@icir.org>
+
+	* linuxmodule/Makefile.in (1.84), ns/Makefile.in (1.11),
+	userlevel/Makefile.in (1.75): the PortInfo element is standard
+
+2004-01-08 Thursday 05:12  Eddie Kohler <kohler@icir.org>
+
+	* elements/standard/portinfo.cc (1.1),
+	include/click/standard/portinfo.hh (1.1): add new PortInfo element
+	which maps port names to port numbers, either through information
+	elements or through getservbyname()
+
+2004-01-08 Thursday 05:08  Eddie Kohler <kohler@icir.org>
+
+	* config-userlevel.h.in (1.19), configure.in (1.219): check for the
+	<netdb.h> header file
+
+2004-01-08 Thursday 05:08  Eddie Kohler <kohler@icir.org>
+
+	* click-buildtool (1.46): fix minor bug ("-xFOO" didnt work), and
+	allow multiple space-separated --exclude/--unprovisions in a single
+	argument, and add PortInfo as a default provision
+
 2004-01-08 Thursday 02:28  Eddie Kohler <kohler@icir.org>
 
 	* test/: testie (1.25), analysis/FromIPSummaryDump-ipopt-01.testie
