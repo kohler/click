@@ -1,3 +1,14 @@
+2004-10-08 Friday 17:26  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* config-userlevel.h.in (1.21), configure (1.32), configure.in
+	(1.247), elements/standard/addressinfo.cc (1.32),
+	include/click/standard/addressinfo.hh (1.18): add BSD/Darwin
+	support to AddressInfo for device names
+
+2004-10-08 Friday 17:25  Eddie Kohler <kohler@cs.ucla.edu>
+
+	* elements/userlevel/todevice.hh (1.27): typo-fix
+
 2004-10-07 Thursday 20:42  John Bicket <jbicket@mit.edu>
 
 	* elements/wifi/: settxpower.hh (1.5), sr/ettmetric.cc (1.8),
