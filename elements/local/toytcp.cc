@@ -119,7 +119,10 @@ void
 ToyTCP::tcp_output()
 {
   int paylen = _state ? 1 : 0;
-  WritablePacket *p = Packet::make(sizeof(click_tcp) + paylen);
+  int plen = sizeof(click_tcp) + paylen;
+  WritablePacket *p = Packet::make(34, (const unsigned char *)0,
+                                   plen,
+                                   Packet::default_tailroom(plen));
   click_tcp *th = (click_tcp *) p->data();
 
   bzero(th, sizeof(*th));

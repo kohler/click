@@ -188,10 +188,11 @@ Packet::uniqueify_copy()
 WritablePacket *
 Packet::expensive_push(unsigned int nbytes)
 {
-  static int chatter = 1;
-  if(chatter){
-    click_chatter("expensive Packet::push");
-    chatter = 0;
+  static int chatter = 0;
+  if(chatter < 5){
+    click_chatter("expensive Packet::push; have %d wanted %d",
+                  headroom(), nbytes);
+    chatter++;
   }
 #ifdef __KERNEL__
   struct sk_buff *new_skb = skb_realloc_headroom(skb(), nbytes);
