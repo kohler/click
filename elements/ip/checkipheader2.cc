@@ -19,7 +19,6 @@
 #include "glue.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "bitvector.hh"
 
 CheckIPHeader2::CheckIPHeader2()
   : _drops(0)

@@ -2,7 +2,7 @@
 // udpgen setting - hopefully we will have a script soon
 
 ar   :: ARPResponder(7.0.0.2 255.255.255.255 00:E0:29:05:E2:D4);
-iph  :: IPEncap(17, 7.0.0.2, 5.0.0.2);
+udph :: UDPIPEncap(7.0.0.2, 1234, 5.0.0.2, 1234, 1);
 ethh :: EtherEncap(0x0800, 00:E0:29:05:E2:D4, 00:C0:95:E2:09:14);
 
 c0   :: Classifier(12/0806 20/0001, -);
@@ -23,8 +23,7 @@ c0[1] -> tol;
 
 rs :: RatedSource(\<00000000111111112222222233333333444444445555>, 100000, 10);
 
-rs -> UDPEncap(1234,1234,1) 
-   -> iph 
+rs -> udph
    -> ethh
    -> out;
 

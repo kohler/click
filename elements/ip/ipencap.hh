@@ -53,7 +53,7 @@ private:
   struct in_addr _ip_src;
   struct in_addr _ip_dst;
 
-  int _id;
+  short _id;
 
 };
 

@@ -17,7 +17,6 @@
 #include "glue.hh"
 #include "error.hh"
 #include "confparse.hh"
-#include "bitvector.hh"
 #include "straccum.hh"
 #include "alignmentinfo.hh"
 

@@ -42,8 +42,7 @@ Packet::make(unsigned headroom, const unsigned char *data, unsigned len,
     skb_reserve(skb, headroom);	// leave some headroom
     skb_put(skb, len);		// leave space for data
     if (data) memcpy(skb->data, data, len);
-  }
-  else {
+  } else {
     click_chatter("oops, kernel could not allocate memory for skbuff");
     return 0;
   }

@@ -51,8 +51,6 @@ IPEncap::configure(const String &conf, ErrorHandler *errh)
 int
 IPEncap::initialize(ErrorHandler *errh)
 {
-  if (_ip_p < 0)
-    return errh->error("not configured");
   _id = 0;
   return 0;
 }
@@ -63,7 +61,6 @@ IPEncap::simple_action(Packet *p)
   /* What the fuck was going on here???  -  ED*/
   p = p->push(sizeof(click_ip));
   click_ip *ip = (click_ip *) p->data();
-  memset(ip, '\0', sizeof(click_ip));
   
   ip->ip_v = IPVERSION;
   ip->ip_hl = sizeof(click_ip) >> 2;
@@ -73,16 +70,24 @@ IPEncap::simple_action(Packet *p)
   ip->ip_src = _ip_src;
   ip->ip_dst = _ip_dst;
 
-  if(p->ip_ttl_anno()) {
-    ip->ip_ttl = p->ip_ttl_anno();
+  if (p->ip_ttl_anno()) {
     ip->ip_tos = p->ip_tos_anno();
     /* We want to preserve the DF flag if set */
     ip->ip_off = htons(p->ip_off_anno() & IP_RF);
+    ip->ip_ttl = p->ip_ttl_anno();
   } else {
+    ip->ip_tos = 0;
+    ip->ip_off = 0;
     ip->ip_ttl = 250; //rtm
   }
 
-  ip->ip_sum = in_cksum(p->data(), sizeof(click_ip));
+  ip->ip_sum = 0;
+#ifndef __KERNEL__
+  ip->ip_sum = in_cksum((unsigned char *)ip, sizeof(click_ip));
+#else
+  ip->ip_sum = ip_fast_csum((unsigned char *)ip, sizeof(click_ip) >> 2);
+#endif
+  
   p->set_dst_ip_anno(IPAddress(ip->ip_dst));
   p->set_ip_header(ip, sizeof(click_ip));
   

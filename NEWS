@@ -4,14 +4,18 @@ Version 1.0.6
 
 * Kernel and user-level drivers
 
-** Fixed Packet::expensive_push. Patch by Richard Mortier
+** Fixed kernel Packet::expensive_push. Patch by Richard Mortier
    <rmm1002@cam.ac.uk>.
 
 * Elements
 
-** Fix UDPEncap to optionally not perform UDP checksum. Also fixed UDPEncap to
-   encode length in network order. Previously the htons was missing. Patch
-   by Richard Mortier <Richard.Mortier@cl.cam.ac.uk>.
+** Replace UDPEncap with UDPIPEncap. New element adds both IP and UDP
+   headers, and fixes several bugs in UDPEncap. Thanks to Richard Mortier
+   <Richard.Mortier@cl.cam.ac.uk>.
+
+* Miscellaneous
+
+** Fixed findelements.sh: Ethernet switch elements were not being included.
 
 
 Version 1.0.5   1.May.2000

@@ -79,8 +79,11 @@ while true; do
   exports1=`grep '^EXPORT_ELEMENT' $files | sed 's/.*(\(.*\)).*/\1/'`
   exports2=`grep '^ELEMENT_PROVIDES' $files | sed 's/.*(\(.*\)).*/\1/'`
   exports3=`echo "$files" | sed 's/^elements\/\([^\/]*\)\/.*/\1/'`
-  awk_exports=`echo "$exports1$exports2$exports3" | sed 's/\(.*\)/dep["\1"]=1;/'`
-  new_bad_files=`grep '^ELEMENT_REQUIRES' $files | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'}
+  awk_exports=`echo "$exports1"'
+'"$exports2"'
+'"$exports3" | sed 's/\(..*\)/dep["\1"]=1;/'`
+  new_bad_files=`grep '^ELEMENT_REQUIRES' $files | $awk -F: 'BEGIN {OFS="";'"$awk_exports"'dep["true"]=1; dep["1"]=1;
+}
 {
   sub(/ELEMENT_REQUIRES\(/, "", $2);
   sub(/\)/, "", $2);

@@ -19,7 +19,6 @@
 #include "glue.hh"
 #include "confparse.hh"
 #include "error.hh"
-#include "bitvector.hh"
 #ifdef __KERNEL__
 # include <net/checksum.h>
 #endif

@@ -64,7 +64,7 @@ class Packet {
   friend class ShutUpCompiler;
   
  public:
-  static unsigned default_headroom() { return 24; }
+  static unsigned default_headroom()	{ return 28; }
   static unsigned default_tailroom(unsigned len) { return (len<56?64-len:8); }
   
   static Packet *make(unsigned);
