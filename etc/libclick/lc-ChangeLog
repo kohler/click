@@ -1,3 +1,8 @@
+2001-10-29 Monday 13:48  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap: click-mkelemmap: generate elementmap lines for
+	files that contain no classes; reported by Doug
+
 2001-10-27 Saturday 17:38  Eddie Kohler <kohler@aciri.org>
 
 	* missing: syntax error fix

@@ -1,3 +1,22 @@
+2001-10-29 Monday 13:55  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/progressbar.cc (1.12): ProgressBar: #include
+	<sys/ioctl.h> (reported by Dan Aguayo). Previous change added
+	MINSIZE keyword
+
+2001-10-29 Monday 13:48  Eddie Kohler <kohler@aciri.org>
+
+	* click-mkelemmap (1.16), doc/click.5 (1.27),
+	elements/userlevel/progressbar.cc (1.11),
+	elements/userlevel/progressbar.hh (1.7): click-mkelemmap: generate
+	elementmap lines for files that contain no classes; reported by
+	Doug
+
+2001-10-29 Monday 13:14  Dan Aguayo <aguayo@pdos.lcs.mit.edu>
+
+	* elements/grid/gridroutetable.cc (1.17): propagate gateway flag in
+	route updates.	whoops.
+
 2001-10-29 Monday 12:17  Eddie Kohler <kohler@aciri.org>
 
 	* elements/analysis/fromipsumdump.hh (1.7): nitlet
