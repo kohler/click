@@ -20,16 +20,16 @@ class RouterT { public:
   void check() const;
   bool is_flat() const;
   
-  int ntypes() const			{ return _element_classes.size(); }
-  const String &type_name(int i) const	{ return _element_type_names[i]; }
-  ElementClassT *type_class(int i) const { return _element_classes[i]; }
+  int ntypes() const			{ return _etypes.size(); }
+  const String &type_name(int i) const	{ return _etypes[i].name; }
+  ElementClassT *type_class(int i) const { return _etypes[i].eclass; }
   ElementClassT *type_class(const String &) const;
   int type_index(const String &s) const { return _element_type_map[s]; }
-  int get_type_index(const String &, ElementClassT * = 0);
-  int add_type_index(const String &, ElementClassT *);
-  int get_anon_type_index(const String &, ElementClassT *);
-  void get_types_from(const RouterT *);
-  int unify_type_indexes(const RouterT *);
+  int get_type_index(const String &, ElementClassT * = 0, bool anon = false);
+  int get_anon_type_index(const String &, ElementClassT * = 0);
+  int add_type_index(const String &, ElementClassT * = 0, bool anon = false);
+  int unify_type_indexes(RouterT *);
+  void collect_primitive_classes(HashMap<String, int> &) const;
 
   int nelements() const			{ return _elements.size(); }
   int real_element_count() const	{ return _real_ecount; }
@@ -139,11 +139,18 @@ class RouterT { public:
     Pair(int f, int t) : from(f), to(t) { }
   };
 
+  struct ElementType {
+    String name;
+    ElementClassT *eclass;
+    bool anonymous;
+    ElementType() : eclass(0), anonymous(false) { }
+    ElementType(const String &n, ElementClassT *c, bool anon) : name(n), eclass(c), anonymous(anon) { }
+  };
+  
   int _use_count;
   
   StringMap _element_type_map;
-  Vector<String> _element_type_names;
-  Vector<ElementClassT *> _element_classes;
+  Vector<ElementType> _etypes;
   
   StringMap _element_name_map;
   Vector<ElementT> _elements;	// contains types
@@ -163,6 +170,7 @@ class RouterT { public:
   StringMap _archive_map;
   Vector<ArchiveElement> _archive;
 
+  int get_type_index(const ElementType &, bool redefinition = false);
   int add_element(const ElementT &);
   int prev_connection_from(int, int) const;
   int prev_connection_to(int, int) const;
@@ -179,7 +187,7 @@ inline ElementClassT *
 RouterT::type_class(const String &n) const
 {
   int i = type_index(n);
-  return (i < 0 ? 0 : _element_classes[i]);
+  return (i < 0 ? 0 : _etypes[i].eclass);
 }
 
 inline String
@@ -216,7 +224,7 @@ inline ElementClassT *
 RouterT::etype_class(int idx) const
 {
   int t = _elements[idx].type;
-  return (t >= 0 ? _element_classes[t] : 0);
+  return (t >= 0 ? _etypes[t].eclass : 0);
 }
 
 inline const String &
@@ -247,6 +255,24 @@ inline const ArchiveElement &
 RouterT::archive(const String &name) const
 {
   return _archive[_archive_map[name]];
+}
+
+inline int
+RouterT::get_type_index(const String &name, ElementClassT *eclass = 0, bool anonymous = false)
+{
+  return get_type_index(ElementType(name, eclass, anonymous), false);
+}
+
+inline int
+RouterT::get_anon_type_index(const String &name, ElementClassT *eclass)
+{
+  return get_type_index(name, eclass, true);
+}
+
+inline int
+RouterT::add_type_index(const String &name, ElementClassT *eclass = 0, bool anonymous = false)
+{
+  return get_type_index(ElementType(name, eclass, anonymous), true);
 }
 
 #endif

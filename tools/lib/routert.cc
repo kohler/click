@@ -31,22 +31,20 @@ RouterT::RouterT(RouterT *enclosing)
     _free_hookup(-1), _archive_map(-1)
 {
   // add space for tunnel type
-  _element_type_names.push_back("<tunnel>");
+  _etypes.push_back(ElementType("<tunnel>", 0, false));
   _element_type_map.insert("<tunnel>", TUNNEL_TYPE);
-  _element_classes.push_back(0);
   // borrow definitions from `enclosing'
   if (enclosing) {
-    for (int i = 0; i < enclosing->_element_classes.size(); i++)
-      if (ElementClassT *ec = enclosing->_element_classes[i])
-	add_type_index(enclosing->_element_type_names[i], ec);
+    for (int i = 0; i < enclosing->_etypes.size(); i++)
+      if (enclosing->_etypes[i].eclass)
+	get_type_index(enclosing->_etypes[i]);
   }
 }
 
 RouterT::RouterT(const RouterT &o)
   : _use_count(0),
     _element_type_map(o._element_type_map),
-    _element_type_names(o._element_type_names),
-    _element_classes(o._element_classes),
+    _etypes(o._etypes),
     _element_name_map(o._element_name_map),
     _elements(o._elements),
     _free_element(o._free_element),
@@ -62,16 +60,16 @@ RouterT::RouterT(const RouterT &o)
     _archive_map(o._archive_map),
     _archive(o._archive)
 {
-  for (int i = 0; i < _element_classes.size(); i++)
-    if (_element_classes[i])
-      _element_classes[i]->use();
+  for (int i = 0; i < _etypes.size(); i++)
+    if (_etypes[i].eclass)
+      _etypes[i].eclass->use();
 }
 
 RouterT::~RouterT()
 {
-  for (int i = 0; i < _element_classes.size(); i++)
-    if (_element_classes[i])
-      _element_classes[i]->unuse();
+  for (int i = 0; i < _etypes.size(); i++)
+    if (_etypes[i].eclass)
+      _etypes[i].eclass->unuse();
 }
 
 void
@@ -82,7 +80,6 @@ RouterT::check() const
   int nt = ntypes();
   
   // check basic sizes
-  assert(_element_type_names.size() == _element_classes.size());
   assert(_hookup_from.size() == _hookup_to.size()
 	 && _hookup_from.size() == _hookup_landmark.size()
 	 && _hookup_from.size() == _hookup_next.size());
@@ -147,8 +144,8 @@ RouterT::check() const
 bool
 RouterT::is_flat() const
 {
-  for (int i = 0; i < _element_classes.size(); i++)
-    if (ElementClassT *ec = _element_classes[i])
+  for (int i = 0; i < _etypes.size(); i++)
+    if (ElementClassT *ec = _etypes[i].eclass)
       if (ec->cast_router())
 	return false;
   return true;
@@ -156,39 +153,16 @@ RouterT::is_flat() const
 
 
 int
-RouterT::get_type_index(const String &name, ElementClassT *eclass = 0)
+RouterT::get_type_index(const ElementType &et, bool redefinition)
 {
-  int i = _element_type_map[name];
-  if (i < 0) {
-    i = _element_classes.size();
-    _element_type_map.insert(name, i);
-    _element_type_names.push_back(name);
-    _element_classes.push_back(eclass);
-    if (eclass) eclass->use();
-  }
-  return i;
-}
-
-int
-RouterT::get_anon_type_index(const String &name, ElementClassT *eclass)
-{
-  int i = _element_classes.size();
-  _element_type_names.push_back(name);
-  _element_classes.push_back(eclass);
-  if (eclass) eclass->use();
-  return i;
-}
-
-int
-RouterT::add_type_index(const String &name, ElementClassT *eclass)
-{
-  int i = _element_type_map[name];
-  if (i < 0 || _element_classes[i] != eclass) {
-    i = _element_classes.size();
-    _element_type_map.insert(name, i);
-    _element_type_names.push_back(name);
-    _element_classes.push_back(eclass);
-    if (eclass) eclass->use();
+  int i = _element_type_map[et.name];
+  if (i < 0 || et.anonymous
+      || (redefinition && _etypes[i].eclass != et.eclass)) {
+    i = _etypes.size();
+    _element_type_map.insert(et.name, i);
+    _etypes.push_back(et);
+    if (et.eclass)
+      et.eclass->use();
   }
   return i;
 }
@@ -242,7 +216,7 @@ int
 RouterT::get_anon_eindex(int type_index, const String &config,
 			 const String &landmark)
 {
-  String name = _element_type_names[type_index] + "@" + String(_real_ecount + 1);
+  String name = _etypes[type_index].name + "@" + String(_real_ecount + 1);
   return get_anon_eindex(name, type_index, config, landmark);
 }
 
@@ -258,38 +232,26 @@ RouterT::change_ename(int ei, const String &new_name)
   }
 }
 
-void
-RouterT::get_types_from(const RouterT *r)
-{
-  for (int i = 0; i < r->ntypes(); i++)
-    get_type_index(r->type_name(i), r->type_class(i));
-}
-
 int
-RouterT::unify_type_indexes(const RouterT *r)
+RouterT::unify_type_indexes(RouterT *r)
 {
   if (r == this)
     return 0;
   
   Vector<int> new_tidx;
-  for (int i = 0; i < ntypes(); i++) {
-    int t = r->type_index( type_name(i) );
-    if (t < 0)
-      return -1;
-    new_tidx.push_back(t);
-  }
+  for (int i = 0; i < ntypes(); i++)
+    new_tidx.push_back( r->get_type_index(_etypes[i], true) );
 
   // trash old element classes, make new element classes
-  for (int i = 0; i < _element_classes.size(); i++)
-    if (_element_classes[i])
-      _element_classes[i]->unuse();
+  for (int i = 0; i < _etypes.size(); i++)
+    if (_etypes[i].eclass)
+      _etypes[i].eclass->unuse();
 
   _element_type_map = r->_element_type_map;
-  _element_type_names = r->_element_type_names;
-  _element_classes = r->_element_classes;
-  for (int i = 0; i < _element_classes.size(); i++)
-    if (_element_classes[i])
-      _element_classes[i]->use();
+  _etypes = r->_etypes;
+  for (int i = 0; i < _etypes.size(); i++)
+    if (_etypes[i].eclass)
+      _etypes[i].eclass->use();
 
   // fix tindexes
   for (int i = 0; i < nelements(); i++)
@@ -299,6 +261,15 @@ RouterT::unify_type_indexes(const RouterT *r)
   return 0;
 }
 
+void
+RouterT::collect_primitive_classes(HashMap<String, int> &m) const
+{
+  for (int i = FIRST_REAL_TYPE; i < _etypes.size(); i++)
+    if (_etypes[i].eclass)
+      _etypes[i].eclass->collect_primitive_classes(_etypes[i].name, m);
+    else
+      m.insert(_etypes[i].name, 1);
+}
 
 bool
 RouterT::add_connection(Hookup hfrom, Hookup hto, const String &landmark)
@@ -935,7 +906,7 @@ RouterT::free_dead_elements()
 void
 RouterT::finish_remove_element_types(Vector<int> &new_tindex)
 {
-  int ntype = _element_classes.size();
+  int ntype = _etypes.size();
   int nelements = _elements.size();
 
   // find new ftypeindexes
@@ -961,22 +932,20 @@ RouterT::finish_remove_element_types(Vector<int> &new_tindex)
   for (int i = 0; i < ntype; i++) {
     j = new_tindex[i];
     if (j >= 0) {
-      _element_type_map.insert(_element_type_names[i], j);
-      _element_type_names[j] = _element_type_names[i];
-      _element_classes[j] = _element_classes[i];
-    } else if (_element_classes[i])
-      _element_classes[i]->unuse();
+      _element_type_map.insert(_etypes[i].name, j);
+      _etypes[j] = _etypes[i];
+    } else if (_etypes[i].eclass)
+      _etypes[i].eclass->unuse();
   }
 
   // resize element type arrays
-  _element_type_names.resize(new_ntype);
-  _element_classes.resize(new_ntype);
+  _etypes.resize(new_ntype);
 }
 
 void
 RouterT::remove_unused_element_types()
 {
-  Vector<int> new_tindex(_element_classes.size(), -1);
+  Vector<int> new_tindex(_etypes.size(), -1);
   int nelem = _elements.size();
   for (int i = 0; i < nelem; i++)
     new_tindex[ _elements[i].type ] = 0;
@@ -1214,14 +1183,14 @@ RouterT::unparse_requirements(StringAccum &sa, const String &indent) const
 void
 RouterT::unparse_classes(StringAccum &sa, const String &indent) const
 {
-  int nelemtype = _element_classes.size();
+  int nelemtype = _etypes.size();
 
   // print element classes
   int old_sa_len = sa.length();
   for (int i = 0; i < nelemtype; i++)
-    if (_element_classes[i])
-      _element_classes[i]->unparse_declaration
-	(sa, _element_type_names[i], indent);
+    if (_etypes[i].eclass)
+      _etypes[i].eclass->unparse_declaration
+	(sa, _etypes[i].name, indent);
   if (sa.length() != old_sa_len)
     sa << "\n";
 }
@@ -1230,7 +1199,7 @@ void
 RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
 {
   int nelements = _elements.size();
-  int nelemtype = _element_classes.size();
+  int nelemtype = _etypes.size();
 
   // print tunnel pairs
   int old_sa_len = sa.length();
@@ -1254,7 +1223,7 @@ RouterT::unparse_declarations(StringAccum &sa, const String &indent) const
     add_line_directive(sa, e.landmark);
     sa << indent << e.name << " :: ";
     if (e.type < nelemtype)
-      sa << _element_type_names[e.type];
+      sa << _etypes[e.type].name;
     else
       sa << "Error /*BAD_TYPE_" << e.type << "*/";
     if (e.configuration)
@@ -1358,3 +1327,5 @@ RouterT::configuration_string() const
   unparse(sa);
   return sa.take_string();
 }
+
+#include <click/vector.cc>
