@@ -171,7 +171,7 @@ DriverManager::step_insn()
     const Router::Handler &h = router()->handler(_args2[_insn_pos]);
     String result = h.read(e, h.read_thunk);
     ErrorHandler *errh = ErrorHandler::default_handler();
-    errh->message("%s.%s:\n%s", e->id().cc(), String(h.name).cc(), result.cc());
+    errh->message("%s.%s:\n%s\n", e->id().cc(), String(h.name).cc(), result.cc());
     return true;
   }
 

@@ -135,8 +135,7 @@ PeekHandlers::timer_hook(Timer *, void *thunk)
       
     const Router::Handler &rh = router->handler(hid);
     String value = rh.read(he, rh.read_thunk);
-    errh->message("%s.%s:", he->id().cc(), String(rh.name).cc());
-    errh->message(value);
+    errh->message("%s.%s:\n%s\n", he->id().cc(), String(rh.name).cc(), value.cc());
     pos++;
   }
 

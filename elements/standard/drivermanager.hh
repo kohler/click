@@ -58,6 +58,10 @@ to one. You may say `C<wait_stop>' instead of `C<wait_pause>'.
 Call ELEMENT's write handler named HANDLER, passing it the string DATA; then
 go to the next instruction. DATA defaults to the empty string.
 
+=item `C<print> ELEMENT.HANDLER'
+
+Call ELEMENT's read handler named HANDLER and print the result.
+
 =back
 
 DriverManager adds an implicit `C<stop>' instruction to the end of its
@@ -96,7 +100,7 @@ class DriverManager : public Element { public:
   
  private:
 
-  enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_CALL };
+  enum Insn { INSN_WAIT_STOP, INSN_WAIT, INSN_STOP, INSN_CALL, INSN_PRINT };
   
   Vector<int> _insns;
   Vector<int> _args;
