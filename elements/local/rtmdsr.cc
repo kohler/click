@@ -24,7 +24,7 @@
 CLICK_DECLS
 
 RTMDSR::RTMDSR()
-  : _timer(this)
+  : _timer(this), _link_stat(0)
 {
   MOD_INC_USE_COUNT;
 
@@ -39,7 +39,7 @@ RTMDSR::RTMDSR()
   QueryLife = 3;
   ARPLife = 30;
 
-  _dummy = Route();
+  _no_route = Route();
 }
 
 RTMDSR::~RTMDSR()
@@ -55,6 +55,8 @@ RTMDSR::configure (Vector<String> &conf, ErrorHandler *errh)
                     cpIPAddress, "IP address", &_ip,
                     cpEthernetAddress, "Ethernet address", &_en,
                     cpUnsigned, "Ethernet encapsulation type", &_et,
+                    cpKeywords,
+                    "LS", cpElement, "LinkStat element", &_link_stat,
                     0);
   _et = htons(_et);
   return ret;
@@ -127,19 +129,19 @@ RTMDSR::best_route(IPAddress dstip)
 
   int di = find_dst(dstip, false);
   if(di < 0)
-    return _dummy; // Oops
+    return _no_route; // Oops
 
   Dst &d = _dsts[di];
   for(i = 0; i < d._routes.size(); i++){
-    if(bi == -1 || d._routes[i]._pathmetric < bm){
+    if(bi == -1 || d._routes[i]._metric < bm){
       bi = i;
-      bm = d._routes[i]._pathmetric;
+      bm = d._routes[i]._metric;
     }
   }
 
   if(bi != -1)
     return d._routes[bi];
-  return _dummy; // Oops
+  return _no_route; // Oops
 }
 
 time_t
@@ -175,8 +177,6 @@ RTMDSR::start_data(const u_char *payload, u_long payload_len, Route &r)
 void
 RTMDSR::got_data(struct pkt *pk)
 {
-  click_chatter("DSR %s: rcvd data from net for us",
-                _ip.s().cc());
   Packet *p = Packet::make(pk->data(), pk->_dlen);
   output(0).push(p);
 }
@@ -202,6 +202,7 @@ RTMDSR::start_query(IPAddress dstip)
   pk->_type = htonl(PT_QUERY);
   pk->_qdst = d._ip;
   pk->_seq = htonl(d._seq + 1);
+  pk->_metric = htons(0);
   pk->_nhops = htons(1);
   pk->_hops[0] = _ip.in_addr();
   
@@ -266,11 +267,6 @@ RTMDSR::got_arp(IPAddress ip, u_char xen[6])
       return;
     }
   }
-
-  click_chatter("DSR %s: got_arp %s %s",
-                _ip.s().cc(),
-                ip.s().cc(),
-                en.s().cc());
       
   _arp.push_back(ARP(ip, en, time()));
 }
@@ -285,10 +281,6 @@ RTMDSR::find_arp(IPAddress ip, u_char en[6])
   for(i = 0; i < _arp.size(); i++){
     if(_arp[i]._ip == ip){
       memcpy(en, _arp[i]._en.data(), 6);
-      click_chatter("DSR %s: find_arp %s %s",
-                    _ip.s().cc(),
-                    ip.s().cc(),
-                    _arp[i]._en.s().cc());
       return true;
     }
   }
@@ -356,6 +348,7 @@ RTMDSR::forward_query(struct pkt *pk1)
 
   pk->_nhops = htons(nhops + 1);
   pk->_hops[nhops] = _ip.in_addr();
+  pk->_metric = htons(ntohs(pk->_metric) + 1);
 
   send(p);
 }
@@ -378,7 +371,7 @@ String
 RTMDSR::Route::s()
 {
   char buf[50];
-  sprintf(buf, "m=%d ", _pathmetric);
+  sprintf(buf, "m=%d ", _metric);
   String s(buf);
   int i;
   for(i = 0; i < _hops.size(); i++){
@@ -392,7 +385,10 @@ RTMDSR::Route::s()
 void
 RTMDSR::start_reply(struct pkt *pk1)
 {
-  int len = pk1->len();
+  u_short nhops = ntohs(pk1->_nhops);
+  if(nhops > MaxHops)
+    return;
+  int len = pkt::hlen1(nhops + 1);
   WritablePacket *p = Packet::make(len);
   if(p == 0)
     return;
@@ -400,8 +396,10 @@ RTMDSR::start_reply(struct pkt *pk1)
   
   memcpy(pk, pk1, len);
   pk->_type = htonl(PT_REPLY);
-  int nh = ntohs(pk->_nhops);
-  pk->_next = htons(nh - 1); // Indicates next hop.
+  pk->_nhops = htons(nhops + 1);
+  pk->_hops[nhops] = _ip.in_addr();
+  pk->_metric = htons(ntohs(pk->_metric) + 1);
+  pk->_next = htons(nhops - 1); // Indicates next hop.
 
   send(p);
 }
@@ -429,12 +427,11 @@ RTMDSR::got_reply(struct pkt *pk)
 
   Route r;
   r._when = time();
-  r._pathmetric = ntohs(pk->_nhops); // XXX
+  r._metric = ntohs(pk->_metric);
   int i;
   for(i = 0; i < ntohs(pk->_nhops); i++){
     r._hops.push_back(Hop(pk->_hops[i]));
   }
-  r._hops.push_back(Hop(dst._ip));
   dst._routes.push_back(r);
   click_chatter("DSR %s: installed route to %s via [%s]",
                 _ip.s().cc(),
@@ -465,12 +462,7 @@ RTMDSR::got_pkt(Packet *p_in)
   u_short next = ntohs(pk->_next);
 
   if(type == PT_QUERY && nhops >= 1){
-    click_chatter("DSR %s: query for %s from %s seq=%d hops=%d",
-                  _ip.s().cc(),
-                  IPAddress(pk->_qdst).s().cc(),
-                  IPAddress(pk->_hops[0]).s().cc(),
-                  ntohl(pk->_seq),
-                  nhops);
+    got_arp(IPAddress(pk->_hops[nhops-1]), pk->ether_shost);
     if(pk->_qdst == _ip.in_addr()){
       start_reply(pk);
     } else {
@@ -480,8 +472,10 @@ RTMDSR::got_pkt(Packet *p_in)
     if(pk->_hops[next] != _ip.in_addr()){
       // it's not for me. these are supposed to be unicast,
       // so how did this get to me?
-      click_chatter("DSR %s: reply not for me %s",
+      click_chatter("DSR %s: reply not for me %d/%d %s",
                     _ip.s().cc(),
+                    ntohs(pk->_next),
+                    ntohs(pk->_nhops),
                     IPAddress(pk->_hops[next]).s().cc());
       return;
     }

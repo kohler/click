@@ -71,6 +71,7 @@ private:
   IPAddress _ip;    // My IP address.
   EtherAddress _en; // My ethernet address.
   uint16_t _et;     // This protocol's ethertype.
+  class LinkStat *_link_stat;
 
   enum PacketType { PT_QUERY = 0x01010101,
                     PT_REPLY = 0x02020202,
@@ -82,11 +83,12 @@ private:
     uint8_t	ether_shost[6];
     uint16_t	ether_type;
 
-    u_long _type; // PacketType
+    u_long _type;  // PacketType
 
     // PT_QUERY
     in_addr _qdst; // Who are we looking for?
-    u_long _seq;     // Originator's sequence number.
+    u_long _seq;   // Originator's sequence number.
+    u_short _metric; // Path metric so far.
     
     // PT_REPLY
     // The data is in the PT_QUERY fields.
@@ -122,10 +124,10 @@ private:
   class Route {
   public:
     time_t _when; // When we learned about this route.
-    int _pathmetric;
+    int _metric;
     Vector<Hop> _hops;
     String s();
-    Route() { _when = 0; _pathmetric = 9999; };
+    Route() { _when = 0; _metric = 9999; };
   };
 
   // State of a destination.
@@ -168,7 +170,7 @@ private:
   };
   Vector<ARP> _arp;
 
-  Route _dummy;
+  Route _no_route;
 
   int find_dst(IPAddress ip, bool create);
   Route &best_route(IPAddress);
