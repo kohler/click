@@ -1,0 +1,212 @@
+#!/usr/bin/perl -w
+
+## utilities
+
+sub index2 ($$;$) {
+    my($result) = (defined($_[2]) ? index($_[0], $_[1], $_[2]) : index($_[0], $_[1]));
+    $result = length $_[0] if $result < 0;
+    $result;
+}
+
+
+## read file
+
+package Testicle;
+
+sub file_err ($$) {
+    my($tt, $text) = @_;
+    my($fn) = $tt->{'file'};
+    $fn = 'line ' if !defined($fn);
+    $fn .= ':' if $fn !~ /[ :]$/;
+    $text .= "\n" if $text !~ /\n$/s;
+    print STDERR $fn, $., ': ', $text;
+    $tt->{'err'}++;
+}
+
+sub _shell_split (\@$) {
+    my($arr, $text) = @_;
+    my($qf, $qb) = (0, 0);
+    my($sq, $dq, $bq, $nl) = (-2, -2, -2, -2);
+    my($first, $pos) = (0, 0);
+    
+    while ($pos < length $text) {
+	$sq = ::index2($text, "\'", $pos) if $sq < $pos;
+	$dq = ::index2($text, "\"", $pos) if $dq < $pos;
+	$bq = ::index2($text, "\`", $pos) if $bq < $pos;
+	$nl = ::index2($text, "\n", $pos) if $nl < $pos;
+	if ($qf == 1) {
+	    $qf = 0 if $sq < length $text;
+	    $pos = $sq + 1;
+	    next;
+	} elsif ($qf == 2) {
+	    $qf = 0 if $dq < length $text;
+	    $pos = $dq + 1;
+	    next;
+	}
+	if ($sq < $dq && $sq < $bq && $sq < $nl) {
+	    $qf = 1;
+	    $pos = $sq + 1;
+	} elsif ($dq < $sq && $dq < $bq && $dq < $nl) {
+	    $qf = 2;
+	    $pos = $dq + 1;
+	} elsif ($bq < $sq && $bq < $dq && $bq < $nl) {
+	    $qb = !$qb;
+	    $pos = $bq + 1;
+	} elsif (!$qb && ($nl == $pos || substr($text, $nl - 1, 1) ne "\\")) {
+	    push @$arr, substr($text, $first, $nl - $first + 1);
+	    $first = $pos = $nl + 1;
+	} else {
+	    $pos = $nl + 1;
+	}
+    }
+
+    push @$arr, substr($text, $first) if $first < length $text;
+    
+    if ($qf == 1) {
+	"unmatched single quote";
+    } elsif ($qf == 2) {
+	"unmatched double quote";
+    } elsif ($qb) {
+	"unmatched backquote";
+    } else {
+	"";
+    }
+}
+
+sub _read_text ($) {
+    my($fh) = @_;
+    my($r, $t) = ('');
+    while (defined($t = <$fh>)) {
+	last if $t =~ /^%/;
+	$t =~ s/^\\\%/%/;
+	$r .= $t;
+    }
+    ($r, $t);
+}
+
+sub _read_text_into ($$$) {
+    my($fh, $tt, $section) = @_;
+    my($r, $t) = _read_text($fh);
+    $tt->{$section} = '' if !defined($tt->{$section});
+    $tt->{$section} .= $r;
+    $t;
+}
+
+sub _read_script_section ($$$) {
+    my($fh, $tt, $args) = @_;
+    $tt->file_err("arguments to `%script' ignored") if $args ne '';
+    $tt->file_err("multiple `%script' sections defined") if $tt->{'script'};
+    my($r, $t) = _read_text($fh);
+    my($what) = _shell_split(@{$tt->{'script'}}, $r);
+    $tt->file_err("$what in `%script'") if $what ne '';
+    $t;
+}
+
+sub _read_file_section ($$$$) {
+    my($fh, $tt, $args, $secname) = @_;
+    $args =~ s/\s+$//;
+    my($fn, $length, $crap) = split(/\s+/, $args);
+
+    # assert that we understand $secname
+    die if $secname ne 'file' && $secname ne 'expect' && $secname ne 'expectv';
+    
+    if (!defined $fn) {
+	$tt->file_err("filename missing in `$secname' section");
+	return _skip_section($fh, $tt);
+    } elsif ($fn !~ /^\@\w+\@$/ && $fn ne 'stdin' && $fn ne 'stdout' && $fn ne 'stderr' && $fn ne 'all') {
+	$tt->file_err("odd filename `$fn' might not work");
+	$tt->file_err("(You probably want to add \@ signs at either end.)") if $fn !~ /^\@.*\@$/;
+    } elsif (($fn eq 'stdin' && $secname ne 'file')
+	     || (($fn eq 'stdout' || $fn eq 'stderr') && $secname eq 'file')
+	     || ($fn eq 'all' && $secname ne 'ignore')) {
+	$tt->file_err("`$fn' not meaningful for `%$secname'");
+    }
+
+    my($hashkey) = substr($secname, 0, 1) . ":" . $fn;
+    if (exists $tt->{$hashkey}) {
+	$tt->file_err("file `$fn' already defined");
+    } else {
+	push @{$tt->{$secname}}, $fn;
+    }
+
+    $tt->file_err("ignoring extra arguments to `%$secname'") if defined($crap);
+
+    my($t);
+    if (defined($length) && $length =~ /^\d+$/) {
+	read $fh, $tt->{$hashkey}, $length;
+	$tt->file_err("file too short") if length($tt->{$hashkey}) != $length;
+	$t = <$fh>;
+    } else {
+	$tt->file_err("bad length argument ignored") if defined($length);
+	($tt->{$hashkey}, $t) = _read_text($fh);
+    }
+    
+    $t;
+}
+
+sub _skip_section ($$) {
+    my($fh, $tt) = @_;
+    my($t);
+    while (defined($t = <$fh>)) {
+	last if $t =~ /^%/;
+    }
+    $t;
+}
+
+sub read (*;$) {
+    my($fh, $fn) = @_;
+    $fn = 'line ' if !defined $fn;
+    $fn .= ":" if $fn ne 'line ';
+    
+    my($tt) = bless { 'filename' => $fn, 'err' => 0 }, Testicle;
+    
+    my($t, $read_command) = (undef, 0);
+    $t = <$fh>;
+    while (defined($t)) {
+	if ($t =~ /^%\s*(\w+)\s*(.*?)\s*$/) {
+	    my($command, $args) = (lc($1), $2);
+	    if ($command eq 'script') {
+		$t = _read_script_section($fh, $tt, $args);
+	    } elsif ($command eq 'info') {
+		$tt->file_err("arguments to `%info' ignored") if $args ne '';
+		$t = _read_text_into($fh, $tt, 'info');
+	    } elsif ($command eq 'stdin' || $command eq 'input') {
+		$t = _read_file_section($fh, $tt, "stdin $args", 'file');
+	    } elsif ($command eq 'file') {
+		$args = 'stdin' if $args eq '';
+		$t = _read_file_section($fh, $tt, $args, 'file');
+	    } elsif ($command eq 'stdout' || $command eq 'output') {
+		$t = _read_file_section($fh, $tt, "stdout $args", 'expect');
+	    } elsif ($command eq 'stderr') {
+		$t = _read_file_section($fh, $tt, "stderr $args", 'expect');
+	    } elsif ($command eq 'expect') {
+		$args = 'stdout' if $args eq '';
+		$t = _read_file_section($fh, $tt, $args, 'expect');
+	    } elsif ($command eq 'expectv' || $command eq 'expect_verbatim'
+		     || $command eq 'verbatim') {
+		$args = 'stdout' if $args eq '';
+		$t = _read_file_section($fh, $tt, $args, 'expectv');
+	    } elsif ($command eq 'ignore') {
+		$args = 'all' if $args eq '';
+		$t = _read_file_section($fh, $tt, $args, 'ignore');
+	    } else {
+		$tt->file_err("unrecognized command `$command'");
+		$t = _skip_section($fh, $tt);
+	    }
+	    $read_command = 1;
+	} else {
+	    if ($t =~ /^%/) {
+		$tt->file_err("bad `%' command");
+	    } elsif ($t !~ /^[\#!]/ && $t =~ /\S/) {
+		$tt->file_err("warning: garbage ignored") if $read_command;
+		$read_command = 0;
+	    }
+	    $t = <$fh>;
+	}
+    }
+}
+
+
+package main;
+
+my($tt) = Testicle::read(STDIN);
