@@ -45,11 +45,18 @@ struct RouterAlign {
 
   RouterAlign(RouterT *, ErrorHandler *);
 
+  int iindex_eindex(int) const;
+  int iindex_port(int) const;
+  int oindex_eindex(int) const;
+  int oindex_port(int) const;
+  
   bool have_input();
   void have_output();
   
   void want_input();
   bool want_output();
+
+  void adjust();
   
   void print(FILE *);
   
@@ -67,6 +74,8 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
     id += _icount[i];
     od += _ocount[i];
   }
+  _ioffset.push_back(id);
+  _ooffset.push_back(od);
   // set alignments
   _ialign.assign(id, Alignment());
   _oalign.assign(od, Alignment());
@@ -80,6 +89,46 @@ RouterAlign::RouterAlign(RouterT *r, ErrorHandler *errh)
       aligner = default_aligner();
     _aligners.push_back(aligner);
   }
+}
+
+int
+RouterAlign::iindex_eindex(int ii) const
+{
+  int ne = _icount.size();
+  for (int i = 0; i < ne; i++)
+    if (ii < _ioffset[i+1])
+      return i;
+  return -1;
+}
+
+int
+RouterAlign::iindex_port(int ii) const
+{
+  int ne = _icount.size();
+  for (int i = 0; i < ne; i++)
+    if (ii < _ioffset[i+1])
+      return ii - _ioffset[i];
+  return -1;
+}
+
+int
+RouterAlign::oindex_eindex(int oi) const
+{
+  int ne = _icount.size();
+  for (int i = 0; i < ne; i++)
+    if (oi < _ooffset[i+1])
+      return i;
+  return -1;
+}
+
+int
+RouterAlign::oindex_port(int oi) const
+{
+  int ne = _icount.size();
+  for (int i = 0; i < ne; i++)
+    if (oi < _ooffset[i+1])
+      return oi - _ooffset[i];
+  return -1;
 }
 
 void
@@ -140,17 +189,28 @@ RouterAlign::want_output()
       int ooff = _ooffset[hf[i].idx] + hf[i].port;
       new_oalign[ooff] &= _ialign[ioff];
     }
-  for (int i = 0; i < noalign; i++)
+  /* for (int i = 0; i < noalign; i++)
     if (new_oalign[i].bad())
-      new_oalign[i] = Alignment();
+      new_oalign[i] = Alignment(); */
 
   // see if anything happened
   bool changed = false;
   for (int i = 0; i < noalign && !changed; i++)
-    if (new_oalign[i] != _oalign[i])
+    if (new_oalign[i] != _oalign[i]) {
+      /* fprintf(stderr, "%s[%d] %s <- %s\n", _router->ename(oindex_eindex(i)).cc(), oindex_port(i), new_oalign[i].s().cc(), _oalign[i].s().cc()); */
       changed = true;
+    }
   _oalign.swap(new_oalign);
   return changed;
+}
+
+void
+RouterAlign::adjust()
+{
+  int ne = _icount.size();
+  for (int i = 0; i < ne; i++)
+    _aligners[i]->adjust_flow(_ialign, _ioffset[i], _icount[i],
+			      _oalign, _ooffset[i], _ocount[i]);
 }
 
 void
@@ -163,7 +223,7 @@ RouterAlign::print(FILE *f)
       const Alignment &a = _ialign[ _ioffset[i] + j ];
       fprintf(f, " %d/%d", a.chunk(), a.offset());
     }
-    fprintf(f, " /");
+    fprintf(f, " -");
     for (int j = 0; j < _ocount[i]; j++) {
       const Alignment &a = _oalign[ _ooffset[i] + j ];
       fprintf(f, " %d/%d", a.chunk(), a.offset());
@@ -178,6 +238,9 @@ RouterT *
 prepared_router()
 {
   RouterT *r = new RouterT;
+  AlignClass *ac;
+
+  // specialized classes
   r->get_type_index("Align", new AlignAlignClass);
   r->get_type_index("Strip", new StripAlignClass);
   r->get_type_index("CheckIPHeader", new CheckIPHeaderAlignClass(1));
@@ -185,26 +248,46 @@ prepared_router()
   r->get_type_index("MarkIPHeader", new CheckIPHeaderAlignClass(0));
   r->get_type_index("Classifier", new AlignClass(new ClassifierAligner));
   r->get_type_index("EtherEncap", new AlignClass(new ShifterAligner(-14)));
-  Aligner *a = new GeneratorAligner(Alignment(4, 2));
-  r->get_type_index("FromDevice", new AlignClass(a));
-  r->get_type_index("PollDevice", new AlignClass(a));
-  r->get_type_index("FromLinux", new AlignClass(a));
-  a = new GeneratorAligner(Alignment(4, 0));
-  r->get_type_index("RatedSource", new AlignClass(a));
-  a = new WantAligner(Alignment(4, 2));
-  r->get_type_index("ToLinux", new AlignClass(a));
-  a = new WantAligner(Alignment(4, 0));
-  r->get_type_index("IPEncap", new AlignClass(a));
-  r->get_type_index("UDPIPEncap", new AlignClass(a));
-  r->get_type_index("ICMPPingEncap", new AlignClass(a));
-  r->get_type_index("RandomUDPIPEncap", new AlignClass(a));
-  r->get_type_index("RoundRobinUDPIPEncap", new AlignClass(a));
-  r->get_type_index("RoundRobinTCPIPEncap", new AlignClass(a));
-  a = new CombinedAligner(new ShifterAligner(14), new WantAligner(Alignment(4, 2)));
-  r->get_type_index("IPInputCombo", new AlignClass(a));
-  a = new WantAligner(Alignment(2, 0));
-  r->get_type_index("ARPResponder", new AlignClass(a));
-  r->get_type_index("ARPQuerier", new AlignClass(a));
+
+  r->get_type_index("IPInputCombo", new AlignClass(
+	new CombinedAligner(new ShifterAligner(14),
+			    new WantAligner(Alignment(4, 2)))));
+
+  // no alignment requirements, and do not transmit packets between input and
+  // output
+  ac = new AlignClass(new NullAligner);
+  r->get_type_index("Idle", ac);
+  r->get_type_index("Discard", ac);
+  
+  // generate alignment 4/2
+  ac = new AlignClass(new GeneratorAligner(Alignment(4, 2)));
+  r->get_type_index("FromDevice", ac);
+  r->get_type_index("PollDevice", ac);
+  r->get_type_index("FromLinux", ac);
+
+  // generate alignment 4/0
+  ac = new AlignClass(new GeneratorAligner(Alignment(4, 0)));
+  r->get_type_index("RatedSource", ac);
+  r->get_type_index("ICMPError", ac);
+
+  // want alignment 4/2
+  ac = new AlignClass(new WantAligner(Alignment(4, 2)));
+  r->get_type_index("ToLinux", ac);
+
+  // want alignment 4/0
+  ac = new AlignClass(new WantAligner(Alignment(4, 0)));
+  r->get_type_index("IPEncap", ac);
+  r->get_type_index("UDPIPEncap", ac);
+  r->get_type_index("ICMPPingEncap", ac);
+  r->get_type_index("RandomUDPIPEncap", ac);
+  r->get_type_index("RoundRobinUDPIPEncap", ac);
+  r->get_type_index("RoundRobinTCPIPEncap", ac);
+
+  // want alignment 2/0
+  ac = new AlignClass(new WantAligner(Alignment(2, 0)));
+  r->get_type_index("ARPResponder", ac);
+  r->get_type_index("ARPQuerier", ac);
+  
   return r;
 }
 
@@ -327,13 +410,17 @@ particular purpose.\n");
     router->flatten(errh);
   if (!router || errh->nerrors() > 0)
     exit(1);
-  int align_tindex = router->type_index("Align");
+  int align_tindex = router->get_type_index("Align", new AlignAlignClass);
+  assert(align_tindex >= 0);
 
   int original_nelements = router->nelements();
   int anonymizer = original_nelements + 1;
   while (router->eindex(aligner_name(anonymizer)) >= 0)
     anonymizer++;
 
+  /*
+   * Add Align elements directly required
+   */
   int num_aligns_added = 0;
   {
     // calculate current alignment
@@ -388,6 +475,39 @@ particular purpose.\n");
 	  for (int j = 0; j < nhook; j++)
 	    if (ht[j] == ht[i])
 	      router->change_connection_from(j, above[0]);
+	}
+      }
+  }
+
+  /*
+   * Add Aligns required for adjustment purposes
+   */
+  {
+    // calculate current alignment
+    RouterAlign ral(router, errh);
+    do {
+      ral.have_output();
+    } while (ral.have_input());
+    
+    // calculate adjusted alignment
+    RouterAlign want_ral(ral);
+    want_ral.adjust();
+
+    // add required aligns
+    for (int i = 0; i < original_nelements; i++)
+      for (int j = 0; j < ral._icount[i]; j++) {
+	Alignment have = ral._ialign[ ral._ioffset[i] + j ];
+	Alignment want = want_ral._ialign[ ral._ioffset[i] + j ];
+	if (have <= want || want.bad())
+	  /* do nothing */;
+	else {
+	  int ei = router->get_eindex
+	    (aligner_name(anonymizer), align_tindex,
+	     String(want.chunk()) + ", " + String(want.offset()),
+	     "<click-align>");
+	  router->insert_before(ei, Hookup(i, j));
+	  anonymizer++;
+	  num_aligns_added++;
 	}
       }
   }

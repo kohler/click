@@ -80,7 +80,8 @@ read_router_file(const char *filename, bool empty_ok, RouterT *router,
   lexer.reset(s, filename);
   if (router)
     lexer.set_router(router);
-  while (lexer.ystatement()) ;
+  while (lexer.ystatement())
+    /* nada */;
   router = lexer.take_router();
 
   // add archive bits

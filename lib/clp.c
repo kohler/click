@@ -1,5 +1,5 @@
 /* clp.c - Complete source code for CLP.
- * Copyright (C) 1997-9 Eddie Kohler, eddietwo@lcs.mit.edu
+ * Copyright (C) 1997-2001 Eddie Kohler, eddietwo@lcs.mit.edu
  * This file is part of CLP, the command line parser package.
  *
  * CLP is free software. You can copy, distribute, or alter it at will, as

@@ -1,6 +1,7 @@
 #ifndef ALIGNMENT_HH
 #define ALIGNMENT_HH
 #include <assert.h>
+#include <click/string.hh>
 
 class Alignment {
 
@@ -27,6 +28,9 @@ class Alignment {
   Alignment &operator-=(int);
   Alignment &operator|=(const Alignment &);
   Alignment &operator&=(const Alignment &);
+
+  String unparse() const;
+  String s() const			{ return unparse(); }
 
 };
 

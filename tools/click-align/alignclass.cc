@@ -47,10 +47,6 @@ combine_alignment(const Vector<Alignment> &a, int off, int n)
   return m;
 }
 
-Aligner::Aligner()
-{
-}
-
 void
 Aligner::have_flow(const Vector<Alignment> &ain, int offin, int nin, Vector<Alignment> &aout, int offout, int nout)
 {
@@ -65,6 +61,21 @@ Aligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alig
   Alignment a = combine_alignment(aout, offout, nout);
   for (int j = 0; j < nin; j++)
     ain[offin + j] = a;
+}
+
+void
+Aligner::adjust_flow(Vector<Alignment> &, int, int, const Vector<Alignment> &, int, int)
+{
+}
+
+void
+NullAligner::have_flow(const Vector<Alignment> &, int, int, Vector<Alignment> &, int, int)
+{
+}
+
+void
+NullAligner::want_flow(Vector<Alignment> &, int, int, const Vector<Alignment> &, int, int)
+{
 }
 
 void
@@ -119,9 +130,9 @@ WantAligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<
 }
 
 void
-ClassifierAligner::want_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &aout, int offout, int nout)
-{
-  Alignment a = combine_alignment(aout, offout, nout);
+ClassifierAligner::adjust_flow(Vector<Alignment> &ain, int offin, int nin, const Vector<Alignment> &, int, int)
+{ 
+  Alignment a = common_alignment(ain, offin, nin);
   if (a.chunk() < 4)
     a = Alignment(4, a.offset());
   for (int j = 0; j < nin; j++)

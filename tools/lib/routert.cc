@@ -1161,14 +1161,6 @@ RouterT::remove_compound_elements(ErrorHandler *errh)
   for (int i = 0; i < nelements; i++)
     if (_elements[i].live())	// allow for deleted elements
       ElementClassT::expand_element(this, i, this, env, errh);
-  
-  /* // remove all compound classes
-  int neclass = _element_classes.size();
-  Vector<int> removed_eclass(neclass, 0);
-  for (int i = 0; i < neclass; i++)
-    if (_element_classes[i] && _element_classes[i]->expands_away())
-      removed_eclass[i] = -1;
-      finish_remove_element_types(removed_eclass);*/ 
 }
 
 void

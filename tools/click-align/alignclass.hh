@@ -5,11 +5,22 @@
 
 class Aligner {
  public:
-  Aligner();
+  Aligner() { }
   virtual void have_flow(const Vector<Alignment> &in, int ioff, int nin,
 			 Vector<Alignment> &out, int ooff, int nout);
   virtual void want_flow(Vector<Alignment> &in, int ioff, int nin,
 			 const Vector<Alignment> &out, int ooff, int nout);
+  virtual void adjust_flow(Vector<Alignment> &in, int ioff, int nin,
+			   const Vector<Alignment> &out, int ooff, int nout);
+};
+
+class NullAligner : public Aligner {
+ public:
+  NullAligner() { }
+  void have_flow(const Vector<Alignment> &in, int ioff, int nin,
+		 Vector<Alignment> &out, int ooff, int nout);
+  void want_flow(Vector<Alignment> &in, int ioff, int nin,
+		 const Vector<Alignment> &out, int ooff, int nout);
 };
 
 class CombinedAligner : public Aligner {
@@ -54,8 +65,8 @@ class WantAligner : public Aligner {
 class ClassifierAligner : public Aligner {
  public:
   ClassifierAligner() { }
-  void want_flow(Vector<Alignment> &in, int ioff, int nin,
-		 const Vector<Alignment> &out, int ooff, int nout);
+  void adjust_flow(Vector<Alignment> &in, int ioff, int nin,
+		   const Vector<Alignment> &out, int ooff, int nout);
 };
 
 

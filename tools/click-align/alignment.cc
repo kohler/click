@@ -100,3 +100,14 @@ Alignment::operator&=(const Alignment &o)
   else
     return (*this = Alignment(-1, 0, 0));
 }
+
+String
+Alignment::unparse() const
+{
+  if (bad())
+    return "BAD";
+  else if (empty())
+    return "EMPTY";
+  else
+    return String(_chunk) + "/" + String(_offset);
+}
