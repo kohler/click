@@ -37,6 +37,7 @@ ToyTCP::ToyTCP()
   _irs = 0;
   _iss = tv.tv_sec & 0x0fffffff;
   _snd_nxt = _iss;
+  _grow = 0;
 }
 
 ToyTCP::~ToyTCP()
@@ -77,7 +78,7 @@ ToyTCP::initialize(ErrorHandler *)
 void
 ToyTCP::run_scheduled()
 {
-  tcp_output();
+  tcp_output(0);
   _timer.schedule_after_ms(1000);
 }
 
@@ -109,20 +110,44 @@ Packet *
 ToyTCP::simple_action(Packet *p)
 {
   tcp_input(p);
-  tcp_output();
-  tcp_output();
-  p->kill();
+  tcp_output(p);
+  if(_grow++ > 4){
+    tcp_output(0);
+    _grow = 0;
+  }
   return(0);
 }
 
+// Send a suitable TCP packet.
+// xp is a candidate packet buffer, to be re-used or freed.
 void
-ToyTCP::tcp_output()
+ToyTCP::tcp_output(Packet *xp)
 {
   int paylen = _state ? 1 : 0;
-  int plen = sizeof(click_tcp) + paylen;
-  WritablePacket *p = Packet::make(34, (const unsigned char *)0,
-                                   plen,
-                                   Packet::default_tailroom(plen));
+  unsigned int plen = sizeof(click_tcp) + paylen;
+  unsigned int headroom = 34;
+  WritablePacket *p = 0;
+
+  if(xp == 0 ||
+     xp->shared() ||
+     xp->headroom() < headroom ||
+     xp->length() + xp->tailroom() < plen){
+    if(xp){
+      click_chatter("could not re-use %d %d %d",
+                    xp->headroom(), xp->length(), xp->tailroom());
+      xp->kill();
+    }
+    p = Packet::make(headroom, (const unsigned char *)0,
+                     plen,
+                     Packet::default_tailroom(plen));
+  } else {
+    p = xp->uniqueify();
+    if(p->length() < plen)
+      p = p->put(plen - p->length());
+    else if(p->length() > plen)
+      p->take(p->length() - plen);
+  }
+
   click_tcp *th = (click_tcp *) p->data();
 
   memset(th, '\0', sizeof(*th));

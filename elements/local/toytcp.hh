@@ -47,8 +47,9 @@ private:
   unsigned _rcv_nxt;
 
   int _state;
+  int _grow;
 
-  void tcp_output();
+  void tcp_output(Packet *);
   void tcp_input(Packet *);
 };
 
