@@ -61,12 +61,14 @@ SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
   unsigned int hop_duration_ms = 0;
   unsigned int rt_duration_ms = 0;
   unsigned int endpoint_duration_ms = 0;
+  unsigned int real_duration_ms = 0;
   _threshold = 0;
   ret = cp_va_parse(conf, this, errh,
 		    cpKeywords,
 		    "RT_TIMEOUT", cpUnsigned, "ms", &rt_duration_ms,
 		    "HOP_TIMEOUT", cpUnsigned, "ms", &hop_duration_ms,
 		    "ENDPOINT_TIMEOUT", cpUnsigned, "ms", &endpoint_duration_ms,
+		    "REAL_TIMEOUT", cpUnsigned, "ms", &real_duration_ms,
 		    "THRESHOLD", cpInteger, "packets", &_threshold,
 		    "SR", cpElement, "SRForwarder element", &_sr_forwarder,
 		    "DEBUG", cpBool, "Debug", &_debug_token,
@@ -76,6 +78,10 @@ SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
     return errh->error("RT_TIMEOUT not specified");
   if (!hop_duration_ms) 
     return errh->error("HOP_TIMEOUT not specified");
+  if (!endpoint_duration_ms) 
+    return errh->error("ENDPOINT_TIMEOUT not specified");
+  if (!real_duration_ms) 
+    return errh->error("REAL_TIMEOUT not specified");
   if (_threshold < 0) 
     return errh->error("HOP_TIMEOUT must be specified and > 0");
   if (!_sr_forwarder) 
@@ -99,6 +105,11 @@ SRScheduler::configure (Vector<String> &conf, ErrorHandler *errh)
   /* convehop path_duration from ms to a struct timeval */
   _endpoint_duration.tv_sec = endpoint_duration_ms/1000;
   _endpoint_duration.tv_usec = (endpoint_duration_ms % 1000) * 1000;
+
+  timerclear(&_real_duration);
+  /* convehop path_duration from ms to a struct timeval */
+  _real_duration.tv_sec = real_duration_ms/1000;
+  _real_duration.tv_usec = (real_duration_ms % 1000) * 1000;
   
   return ret;
 }
@@ -207,6 +218,8 @@ SRScheduler::push(int port, Packet *p_in)
     /* i'm an endpoint */
     p_in->kill();
     return;
+  } else {
+    click_gettimeofday(&nfo->_last_real);
   }
   output(port).push(p_in);
 }
@@ -275,6 +288,7 @@ SRScheduler::pull(int)
 	nfo->_packets_sent = 0;
       }
       click_gettimeofday(&nfo->_last_tx);
+      click_gettimeofday(&nfo->_last_real);
       return input(1).pull();
     }
     return (0);
@@ -302,11 +316,27 @@ SRScheduler::pull(int)
     p = reverse_path(p);
   }
 
+  ScheduleInfo *nfo = find_nfo(p);
+  
+  struct timeval expire;
+  timeradd(&nfo->_last_real, &_real_duration, &expire);
+  if (timercmp(&expire, &now, <)) {
+    _schedules.remove(nfo->_p);
+    if (_debug_token) {
+      click_chatter("SRScheduler %s: delete_token\n",
+		    id().cc());
+    }
+    return (0);
+  }
+  
   if (ip != p[0]) {
     /* i'm an intermediate hop */
     return (0);
   }
-  ScheduleInfo *nfo = find_nfo(p);
+
+
+
+
 
   if (_debug_token) {
     click_chatter("SRScheduler %s: pass_token: fake\n",

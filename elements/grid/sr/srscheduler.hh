@@ -56,6 +56,7 @@ private:
     int _packets_sent;
     struct timeval _last_tx;
     struct timeval _last_rx;
+    struct timeval _last_real;
     ScheduleInfo() : 
       _p(), 
       _token(false), 
@@ -71,6 +72,7 @@ private:
   struct timeval _hop_duration;
   struct timeval _rt_duration;
   struct timeval _endpoint_duration;
+  struct timeval _real_duration;
 
   class SRForwarder *_sr_forwarder;
 
