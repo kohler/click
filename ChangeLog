@@ -1,3 +1,20 @@
+2001-07-19 Thursday 19:38  Eddie Kohler <kohler@aciri.org>
+
+	* elements/standard/: red.cc (1.32), red.hh (1.26): RED: add
+	live_reconfigure for Brecht
+
+2001-07-19 Thursday 19:37  Eddie Kohler <kohler@aciri.org>
+
+	* elements/userlevel/: controlsocket.cc (1.27), controlsocket.hh
+	(1.17), handlerproxy.hh (1.2): update ControlSocket error numbers
+
+2001-07-19 Thursday 19:37  Eddie Kohler <kohler@aciri.org>
+
+	* configure.in (1.129), elements/linuxmodule/anydevice.hh (1.32),
+	elements/linuxmodule/fromdevice.cc (1.63),
+	elements/linuxmodule/polldevice.cc (1.117),
+	elements/linuxmodule/todevice.cc (1.113): spelling nitlet
+
 2001-07-19 Thursday 17:50  Nickolai B. Zeldovich <kolya@lcs.mit.edu>
 
 	* elements/app/ftpportmapper.cc (1.16), elements/standard/print.cc
