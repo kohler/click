@@ -161,6 +161,11 @@ Text is a time interval. If END_TIME or one of its cousins was specified, then
 writing to this handler extends END_TIME by that many seconds. Also, ACTIVE is
 set to true.
 
+=n
+
+If FromDump uses mmap, then a corrupt file might cause Click to crash with a
+segmentation violation.
+
 =a
 
 ToDump, FromDevice.u, ToDevice.u, tcpdump(1), mmap(2), AggregateIPFlows */
