@@ -13,6 +13,8 @@ sub usage() {
     --channel
     --gateway
     --mode {a/b/g}
+    --ap ( act as an access point. off by default)
+    --txf (enable/disable tx-feedback. on by default)
 ";
     exit 1;
 }
@@ -51,14 +53,18 @@ sub mac_addr_to_ip($) {
 
 my $dev;
 my $channel = 3;
-my $ssid = "roofnet4";
+my $ssid;
 my $mode = "g";
 my $gateway = 0;
+my $ap = 1;
+my $txf = 1;
 GetOptions('device=s' => \$dev,
 	   'channel=i' => \$channel,
 	   'ssid=s' => \$ssid,
 	   'mode=s' => \$mode,
 	   'gateway' => \$gateway,
+	   'ap!' => \$ap,
+	   'txf!' => \$ap,
 	   ) or usage();
 
 if (! defined $dev) {
@@ -95,7 +101,9 @@ my $srcr_nm = "255.0.0.0";
 my $srcr_net = "5.0.0.0";
 my $srcr_bcast = "5.255.255.255";
 
-
+if (! defined $ssid) {
+    $ssid = "roofnet.$srcr_ip";
+}
 if ($wireless_mac eq "" or 
     $wireless_mac eq "00:00:00:00:00:00") {
     print STDERR "got invalid mac address!";
@@ -107,15 +115,20 @@ my $iwconfig = "/home/roofnet/bin/iwconfig";
 if (-f "/sbin/iwconfig") {
     $iwconfig = "/sbin/iwconfig";
 }
-system "$iwconfig $dev mode Ad-Hoc";
+if ($dev =~ /wlan/) {
+    system "$iwconfig $dev mode master";
+} else {
+    system "$iwconfig $dev mode Ad-Hoc";
+}
 system "$iwconfig $dev channel $channel";
 
 if (!($dev =~ /ath/)) {
-    system "/sbin/ifconfig $dev $safe_ip";
-    system "/sbin/ifconfig $dev mtu 1650";
+#    system "/sbin/ifconfig $dev $safe_ip";
+#    system "/sbin/ifconfig $dev mtu 1650";
 }
 
 if ($dev =~ /wlan/) {
+    system "/home/roofnet/bin/prism2_param $dev ptype 6";
     system "/home/roofnet/bin/prism2_param $dev pseudo_ibss 1";
     system "$iwconfig $dev essid $ssid";
     system "$iwconfig $dev rts off";
@@ -218,13 +231,7 @@ sched :: PrioSched()
 -> sniff_dev;
 
 route_q :: NotifierQueue(50) 
-EOF
-
-    if ($dev =~ /ath/) {
-    print "-> WifiEncap(0x00, 00:00:00:00:00:00)\n";
-}
-
-print <<EOF;
+-> WifiEncap(0x00, 00:00:00:00:00:00)
 -> [0] sched;
 
 data_q :: NotifierQueue(50)
@@ -234,31 +241,24 @@ data_q :: NotifierQueue(50)
 //-> auto_rate :: AutoRateFallback(OFFSET 0,
 //				 STEPUP 25,
 //				 RT rates)
-EOF
-
-if ($dev =~ /ath/) {
-    print "-> WifiEncap(0x00, 00:00:00:00:00:00)\n";
-}
-print <<EOF;
+-> WifiEncap(0x00, 00:00:00:00:00:00)
 //-> Print ("after_rate", TIMESTAMP true)
 -> [1] sched;
 
+Idle -> [1] auto_rate;
 
-Idle -> ap_control_q :: NotifierQueue(50) 
+Idle
+-> ap_control_q :: NotifierQueue(50) 
 -> [2] sched;
-Idle -> ap_data_q :: NotifierQueue(50)
 
-EOF
-
-if ($dev =~ /ath/) {
-    print "-> WifiEncap(0x02, $wireless_mac)\n";
-}
-
-print <<EOF;
-
--> SetTXRate(RATE 2)
+Idle 
+-> ap_data_q :: NotifierQueue(50)
+-> ap_auto_rate :: AutoRateFallback(OFFSET 4,
+				    STEPUP 25,
+				    RT rates)
 -> [3] sched;
 
+Idle -> [1] ap_auto_rate;
 // make sure this is listed first so it gets tap0
 srcr_host :: LinuxIPHost(srcr, $srcr_ip, $srcr_nm);
 
@@ -376,21 +376,144 @@ from_gw_cl [1] -> [1] srcr_set_gw [1] -> srcr_host;
 
 EOF
 
+    if ($txf) {
+print <<EOF;
+txf :: WifiTXFeedback() 
+-> txf_ap_cl :: Classifier(1/01%03, // TODS packets,
+			   -);
+
+txf [1] -> PrintWifi(txf-err) -> txf_ap_cl;
+
+txf_ap_cl 
+-> [1] ap_auto_rate;
+
+txf_ap_cl [1] 
+-> WifiDecap() 
+-> [1] auto_rate;
+
+
+EOF
+}
 
 print <<EOF;
-txf :: WifiTXFeedback() -> WifiDecap() -> [1] auto_rate;
-Idle -> WifiDecap() -> [1] auto_rate;
+
+sniff_dev 
+-> SetTimestamp() 
+-> dupe :: WifiDupeFilter(WINDOW 5) 
+-> wifi_cl :: Classifier(0/00%0c, //mgt
+			 0/04%0c, //ctl
+			 0/08%0c, //data
+			 -);
+
 
 
 EOF
 
 
-if ($dev =~ /ath/) {
-    print "sniff_dev -> SetTimestamp() -> dupe :: WifiDupeFilter(WINDOW 5) -> WifiDecap()\n";
+    if ($ap) {
+	print <<EOF;
+
+beacon_source :: BeaconSource(INTERVAL 100,
+                              CHANNEL $channel,
+                              SSID "$ssid",
+                              BSSID $wireless_mac,
+                              RT rates,
+                              );
+
+
+ar :: AssociationResponder(DEBUG true,
+                           INTERVAL 100,
+                           SSID "$ssid",
+                           BSSID $wireless_mac,
+                           RT rates,);
+
+pr :: ProbeResponder(DEBUG true,
+                     INTERVAL 100,
+                     SSID "$ssid",
+                     BSSID $wireless_mac,
+                     CHANNEL $channel,
+                     RT rates,);
+
+
+
+auth_resp :: OpenAuthResponder(DEBUG true,
+                          BSSID $wireless_mac);
+
+auth_req :: OpenAuthRequester(ETH $wireless_mac);
+assoc_req ::  AssociationRequester(ETH $wireless_mac,
+			       RT rates);
+
+auth_req -> ap_control_q;
+assoc_req -> ap_control_q;
+
+beacon_source -> ap_control_q;
+auth_resp -> ap_control_q;
+ar -> ap_control_q;
+pr -> ap_control_q;
+
+
+wifi_cl [0] 
+-> management_cl :: Classifier(0/00%f0, //assoc req
+			       0/10%f0, //assoc resp
+			       0/40%f0, //probe req
+			       0/50%f0, //probe resp
+			       0/80%f0, //beacon
+			       0/a0%f0, //disassoc
+			       0/b0%f0, //auth
+			       );
+
+
+
+management_cl [0] -> Print ("assoc_req") -> ar;
+management_cl [1] -> Print ("assoc_resp") -> assoc_req;
+management_cl [2] -> pr;
+management_cl [3] -> Print ("probe_resp", 200) -> bs :: BeaconScanner(RT rates) -> Discard;
+management_cl [4] -> bs;
+management_cl [5] -> Print ("disassoc") -> Discard;
+management_cl [6] -> Print ("auth") -> auth_t :: Tee(2) -> auth_resp;
+
+auth_t [1] -> auth_req;
+
+probe :: ProbeRequester(ETH $wireless_mac,
+			SSID "",
+			RT rates)
+    -> PrintWifi(probe-req) -> Print(probe-req) -> ap_control_q;
+
+
+EOF
 } else {
-    print "sniff_dev\n";
-}
 print <<EOF;
+    wifi_cl[0] -> Discard;
+EOF
+}
+
+print <<EOF;
+wifi_cl [1] -> Discard;
+wifi_cl [3] -> Discard;
+
+
+wifi_cl [2]
+-> ap_cl :: Classifier(1/01%03, // TODS packets
+		       -);
+
+ap_cl 
+-> WifiDecap() 
+-> SetPacketType(HOST)
+-> ToHost(ap);
+
+ap_host :: FromHost(ap, $ap_ip/$srcr_nm, ETHER $wireless_mac) 
+-> WifiEncap(0x02, $wireless_mac)
+-> ap_data_q;
+
+
+FromHost(station, 1.1.1.2/32, ETHER $wireless_mac)
+-> station_encap :: WifiEncap(0x01, $wireless_mac)
+-> ap_data_q;
+
+
+
+ap_cl [1] 
+-> WifiDecap()
 -> HostEtherFilter($wireless_mac, DROP_OTHER true, DROP_OWN true) 
 //-> rxstats :: RXStats()
 -> ncl :: Classifier(
@@ -410,19 +533,14 @@ srcr_query_t [1] -> srcr_query_responder;
 
 ncl[2] -> srcr_es;
 ncl[3] -> CheckSRHeader() -> srcr_gw;
-EOF
-
-
-if ($dev =~ /ath/) {
-print <<EOF;
 ncl[4] 
 -> ToHost(safe);
 
 FromHost(safe, $safe_ip/8, ETHER $wireless_mac) 
 -> WifiEncap(0x0, 00:00:00:00:00:00)
+-> SetTXRate(RATE 2)
 -> ap_control_q;
 
+
+
 EOF
-} else {
-    print "ncl[4] -> ToHost($dev);\n";
-}
