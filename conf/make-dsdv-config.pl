@@ -14,11 +14,16 @@ my $rt_period  = 15000;
 my $rt_jitter  =  7500;
 my $rt_min_period = 1000;
 my $rt_hops = 100; 
-my $probe_size = 148; # total bytes, including ethernet header
 
-my @allowable_metrics = ("etx", "hopcount", "lir", "thresh", "e2eloss");
+my $dsdv_config = "";  # extra DSDVRouteTable element configuration arguments
+
+my $probe_size = 148; # total bytes, including ethernet header
+my $probe_size2 = 34; # optional second probe size: min size is 34 bytes
+
+my @allowable_metrics = ("etx", "etx2", "hopcount", "lir", "thresh", "e2eloss", "yarvis");
 my $metric = "hopcount";
-my $metric_config = "";
+my $metric_config = "";  # extra metric element configuration arguments
+my $ls_config = "";      # extra linkstat element configuration arguments
 
 sub usage() {
     print "usage: $prog -i IF -a ADDR [OPTIONS]
@@ -41,6 +46,7 @@ Options:
    --max-jitter J      Jitter route ad timing up to J milliseconds.  Defaults to $rt_jitter.
    --min-period M      Don't send route ads more than once every M milliseconds.  Defaults to $rt_min_period.
    --max-hops H        Only propagate routes for H hops.  Defaults to $rt_hops.
+   --dsdv-config C     Pass extra configuration string C to DSDVRouteTable element.
    --metric M          Use metric M.  
       Possible metrics are ";
     print join ", ", @allowable_metrics;
@@ -48,6 +54,7 @@ print ".  Defaults to $metric.
    --metric-config C   Pass extra configuration string C to metric element.
    --probe-size N      Use N-byte link probes.  Ignored for hopcount metric.  Defaults to $probe_size.
    --force-probes      Send link probes even if the metric doesn't require them.
+   --linkstat-config C  Pass extra configuration string C to LinkStat elements.
 
    --click CLICK       Location of userlevel click executable.  If specified, will be used to 
                         dynamically determine protocol offsets and sizes.
@@ -126,6 +133,9 @@ while (scalar(@ARGV) > 0) {
     elsif ($arg eq "--max-hops") {
 	$rt_hops = get_arg();
     }
+    elsif ($arg eq "--dsdv-config") {
+	$dsdv_config = get_arg();
+    }
     elsif ($arg eq "--probe-size") {
 	$probe_size = get_arg();
     }
@@ -134,6 +144,9 @@ while (scalar(@ARGV) > 0) {
     }
     elsif ($arg eq "--metric-config") {
 	$metric_config = get_arg();
+    }
+    elsif ($arg eq "--linkstat-config") {
+	$ls_config = get_arg();
     }
     else {
 	print STDERR "$prog: Unknown argument `$arg'\n";
@@ -246,11 +259,21 @@ my $metric_el = "";
 if ($metric_config !~ /\S+/) { $metric_config = ""; } # convert all-white-space config to empty string
 my $comma_metric_config = ($metric_config eq "") ? "" : ", $metric_config"; # don't prepend empty string with comma
 
+if ($ls_config !~ /\S+/) { $ls_config = ""; } 
+my $comma_ls_config = ($ls_config eq "") ? "" : ", $ls_config"; 
+
+my $two_probe_sizes = 0; # some metrics want two LinkStats with different size packets
+
 my $probeswitcharg = -1; # disable probes by default
 
 if ($metric eq "etx") {
     $metric_el = "ETXMetric(ls $comma_metric_config)";
     $probeswitcharg = 0;
+}
+elsif ($metric eq "etx2") {
+    $metric_el = "ETX2Metric(ls, ls2  $comma_metric_config)";
+    $probeswitcharg = 0;
+    $two_probe_sizes = 1;
 }
 elsif ($metric eq "hopcount") {
     $metric_el = "HopcountMetric($metric_config)";
@@ -261,6 +284,10 @@ elsif ($metric eq "thresh") {
 }
 elsif ($metric eq "e2eloss") {
     $metric_el = "E2ELossMetric(ls $comma_metric_config)";
+    $probeswitcharg = 0;
+}
+elsif ($metric eq "yarvis") {
+    $metric_el = "YarvisMetric(ls $comma_metric_config)";
     $probeswitcharg = 0;
 }
 elsif ($metric eq "lir") {
@@ -274,6 +301,14 @@ if ($force_probes) {
     $probeswitcharg = 0;
 }
 
+my $ls2_element = "Idle";
+if ($two_probe_sizes) {
+    $ls2_element = "LinkStat(ETH me:eth, SIZE $probe_size2, USE_SECOND_PROTO true $comma_ls_config)";
+}
+
+
+if ($dsdv_config !~ /\S+/) { $dsdv_config = ""; } 
+my $comma_dsdv_config = ($dsdv_config eq "") ? "" : ", $dsdv_config"; 
 
 print "
 // This file automatically generated at $now with the following command:
@@ -322,17 +357,21 @@ elementclass FixupGridHeaders {
 elementclass ToGridDev {
   // push, no output
   \$dev |
-  input -> cl :: Classifier(12/7ffe,
+  input -> cl :: Classifier(12/7ffe, // LinkStat 1
+                            12/7ffd, // LinkStat 2
 			    $offset_grid_proto/02,
 			    $offset_grid_proto/03);
   prio :: PrioSched;
   cl [0] -> probe_counter :: Counter -> probe_q :: Queue(5) -> [0] prio;
-  cl [1] -> route_counter :: Counter -> route_q :: Queue(5) -> FixupGridHeaders(li) -> [1] prio;
-  cl [2] ->  data_counter :: Counter ->  data_q :: Queue(5)  
+  cl [1] -> probe_counter;
+  cl [2] -> route_counter :: Counter -> route_q :: Queue(5) -> FixupGridHeaders(li) -> [1] prio;
+  cl [3] ->  data_counter :: Counter ->  data_q :: Queue(5)  
     -> data_counter_out :: Counter
     -> tr :: TimeRange
     -> lr :: LookupLocalGridRoute2(me:eth, me:ip, nb) 
     -> FixupGridHeaders(li)
+    -> data_counter_out2 :: Counter
+    -> tr2 :: TimeRange
     -> [2] prio;
   prio
     -> dev_counter :: Counter
@@ -349,12 +388,16 @@ elementclass FromGridDev {
   FromDevice(\$dev, PROMISC false) 
     -> t :: Tee 
     -> HostEtherFilter(\$mac, DROP_OWN true)
-    -> cl :: Classifier(12/7fff, 12/7ffe);
+    -> cl :: Classifier(12/7fff, 12/7ffe, 12/7ffd, -);
   cl [0]  // `Grid' packets
     -> ck :: CheckGridHeader
     -> [0] output;
-  cl [1]  // `LinkStat' packets
+  cl [1]  // `LinkStat 1' packets
     -> [1] output;
+  cl [2]  // `LinkStat 2' packets
+    -> [1] output;
+  cl [3] // everything else
+    -> [2] output;
   t [1] -> $tosniffers;
   ck [1] -> Print('Bad Grid header received', TIMESTAMP true, NBYTES 166) -> Discard;
 };
@@ -380,15 +423,18 @@ elementclass GridLoad {
 
   ph :: PokeHandlers;
 }
-  
-ls :: LinkStat(ETH me:eth, SIZE $probe_size);
+
+ls2 :: $ls2_element;
+ls :: LinkStat(ETH me:eth, SIZE $probe_size $comma_ls_config);
 metric :: $metric_el;
 
 nb :: DSDVRouteTable($rt_timeout, $rt_period, $rt_jitter, $rt_min_period,
 		     me:eth, me:ip, 
 		     MAX_HOPS $rt_hops,
                      METRIC metric,
-		     VERBOSE false);
+		     VERBOSE false
+                     $comma_dsdv_config   
+                     );
 
 grid_demux :: Classifier($offset_grid_proto/03,    // encapsulated (data) packets
 			 $offset_grid_proto/02);   // route advertisement packets
@@ -408,7 +454,10 @@ grid_data_demux :: IPClassifier(dst host me,    // ip for us
 dev0 :: ToGridDev($ifname);
 from_dev0 :: FromGridDev($ifname, me:eth) 
 from_dev0 [0] -> Paint(0) -> grid_demux
-from_dev0 [1] -> Paint(0) -> ls -> probe_switch :: Switch($probeswitcharg) -> dev0;
+from_dev0 [1] -> Paint(0) -> probe_cl :: Classifier(12/7ffe, 12/7ffd);
+
+probe_cl [0] -> ls ->  probe_switch :: Switch($probeswitcharg) -> dev0;
+probe_cl [1] -> ls2 -> probe_switch;
 
 // support for traceroute
 dec_ip_ttl :: TTLChecker -> dev0;
@@ -427,6 +476,7 @@ to_host :: ToHost(grid0);
 to_host_encap :: EtherEncap(0x0800, 1:1:1:1:1:1, 2:2:2:2:2:2) -> to_host; 
 from_host :: FromHost(grid0, me/24) -> arp_demux -> ARPResponder(0.0.0.0/0 1:1:1:1:1:1) -> to_host;
 arp_demux [1] -> Strip(14) -> ip_input;
+from_dev0 [2] -> ToHost(me);
 ";
 }
 else {
@@ -436,6 +486,8 @@ to_host_encap :: KernelTun(me/24, HEADROOM $tun_input_headroom, MTU $tun_mtu) ->
 // not needed in userlevel
 Idle -> arp_demux [0] -> Idle;
 arp_demux [1] -> Idle;
+
+from_dev0 [2] -> Discard;
 
 ControlSocket(tcp, 7777);
 ";
