@@ -97,21 +97,15 @@ private:
 
   // if you change which timer to use and what the scale is, update look read
   // handler and the annotation code accordingly
-  typedef RateEWMAX<5, 10, HalfSecondsTimer> MyEWMA;
+  typedef RateEWMAX<5, 10, 2, HalfSecondsTimer> MyEWMA;
+  // fwd_rate is 0, rev_rate is 1
   
-  //
-  // Counter
-  //
-  // XXX: two EWMAs can be compressed two a dual-EWMA. They should share time of
-  // last update which is now seperate. Takes more space than necessary.
-  //
-  // one Counter for each address in a subnet
+  // Counter: one Counter for each address in a subnet
   static const int MAX_COUNTERS = 256;
   struct Stats;
   struct Counter {
     // two rates must use same EWMA class
-    MyEWMA rev_rate;
-    MyEWMA fwd_rate;
+    MyEWMA fwd_and_rev_rate;
     Stats *next_level;
     unsigned anno_this;
   };
@@ -172,7 +166,7 @@ private:
   void update(IPAddress, int, Packet *, bool, bool);
   void forced_fold();
   void fold(int);
-  Counter *make_counter(Stats *, unsigned char, MyEWMA *, MyEWMA *);
+  Counter *make_counter(Stats *, unsigned char, MyEWMA *);
 
   void show_agelist(void);
 
@@ -242,28 +236,28 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
 
     // allocate Counter if it doesn't exist yet
     if (!(c = s->counter[byte]))
-      if (!(c = make_counter(s, byte, NULL, NULL)))
+      if (!(c = make_counter(s, byte, NULL)))
         return;
 
     // update is done on every level. Result: Counter has sum of all the rates
     // of its children
     if(update_ewma) {
       if (forward)
-        c->fwd_rate.update(now, val);
+        c->fwd_and_rev_rate.update(val,0);
       else
-        c->rev_rate.update(now, val);
+        c->fwd_and_rev_rate.update(val,1);
     }
     
     if (_anno_packets && !annotated && (c->anno_this > now || !c->next_level)) {
       annotated = true;
 
       // annotate packet with fwd and rev rates for inspection by CompareBlock
-      int scale = c->fwd_rate.scale;
-      int freq = c->fwd_rate.freq();
+      int scale = c->fwd_and_rev_rate.scale;
+      int freq = c->fwd_and_rev_rate.freq();
 
-      int fwd_rate = c->fwd_rate.average(); 
+      int fwd_rate = c->fwd_and_rev_rate.average(0); 
       p->set_fwd_rate_anno((fwd_rate * freq) >> scale);
-      int rev_rate = c->rev_rate.average(); 
+      int rev_rate = c->fwd_and_rev_rate.average(1); 
       p->set_rev_rate_anno((rev_rate * freq) >> scale);
     }
 
@@ -273,8 +267,8 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
     s = c->next_level;
   }
   
-  int fwd_rate = c->fwd_rate.average(); 
-  int rev_rate = c->rev_rate.average(); 
+  int fwd_rate = c->fwd_and_rev_rate.average(0); 
+  int rev_rate = c->fwd_and_rev_rate.average(1); 
 
   //
   // Zoom in if a rate exceeds _thresh, but only if
@@ -293,7 +287,7 @@ IPRateMonitor::update(IPAddress saddr, int val, Packet *p,
   {
     unsigned char next_byte = (addr >> (bitshift+8)) & 0x000000ff;
     if (!(c->next_level = new Stats(this)) ||
-       !make_counter(c->next_level, next_byte, &c->fwd_rate, &c->rev_rate))
+       !make_counter(c->next_level, next_byte, &c->fwd_and_rev_rate))
     {
       if(c->next_level) {     // new Stats() may have succeeded: kill it.
         delete c->next_level;

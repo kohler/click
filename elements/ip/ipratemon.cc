@@ -128,8 +128,7 @@ IPRateMonitor::pull(int port)
 
 
 IPRateMonitor::Counter*
-IPRateMonitor::make_counter(Stats *s, unsigned char index, 
-                            MyEWMA *fwd, MyEWMA *rev)
+IPRateMonitor::make_counter(Stats *s, unsigned char index, MyEWMA *rate)
 {
   Counter *c = NULL;
 
@@ -141,15 +140,11 @@ IPRateMonitor::make_counter(Stats *s, unsigned char index,
     return NULL;
   _alloced_mem += sizeof(Counter);
 
-  if (!fwd)
-    c->fwd_rate.initialize();
+  if (!rate)
+    c->fwd_and_rev_rate.initialize();
   else
-    c->fwd_rate = *fwd;
+    c->fwd_and_rev_rate = *rate;
 
-  if (!rev)
-    c->rev_rate.initialize();
-  else
-    c->rev_rate = *rev;
   c->next_level = 0;
   c->anno_this = 0;
 
@@ -184,7 +179,6 @@ void
 IPRateMonitor::fold(int thresh)
 {
   char forward = ((char) random()) & 0x01;
-  int now = MyEWMA::now();
   _prev_deleted = _next_deleted = 0;
   Stats *s = (forward ? _first : _last);
 
@@ -201,13 +195,13 @@ start:
 
     // Shitty code, but avoids an update() and average() call if one of both
     // rates is not below thresh.
-    s->_parent->fwd_rate.update(now, 0);
-    if (s->_parent->fwd_rate.average() < thresh) {
-      s->_parent->rev_rate.update(now, 0);
-      if (s->_parent->rev_rate.average() < thresh) {
+    s->_parent->fwd_and_rev_rate.update(0, 0);
+    if (s->_parent->fwd_and_rev_rate.average(0) < thresh) {
+      s->_parent->fwd_and_rev_rate.update(0, 1);
+      if (s->_parent->fwd_and_rev_rate.average(1) < thresh) {
         delete s;
         if ((_alloced_mem < memmax) ||
-           !(s = (forward ? _next_deleted : _prev_deleted)))      // set by ~Stats().
+           !(s = (forward ? _next_deleted : _prev_deleted))) // set by ~Stats().
             break;
         goto start;
       }
@@ -299,14 +293,14 @@ IPRateMonitor::Stats::~Stats()
 String
 IPRateMonitor::print(Stats *s, String ip = "")
 {
-  int jiffs = MyEWMA::now();
   String ret = "";
   for (int i = 0; i < MAX_COUNTERS; i++) {
     Counter *c;
     if (!(c = s->counter[i]))
       continue;
 
-    if (c->rev_rate.average() > 0 || c->fwd_rate.average() > 0) {
+    if (c->fwd_and_rev_rate.average(1) > 0 || 
+	c->fwd_and_rev_rate.average(0) > 0) {
       String this_ip;
       if (ip)
         this_ip = ip + "." + String(i);
@@ -314,14 +308,16 @@ IPRateMonitor::print(Stats *s, String ip = "")
         this_ip = String(i);
       ret += this_ip;
 
-      c->fwd_rate.update(jiffs, 0);
-      c->rev_rate.update(jiffs, 0);
+      c->fwd_and_rev_rate.update(0, 0);
+      c->fwd_and_rev_rate.update(0, 1);
       ret += "\t"; 
-      ret += cp_unparse_real(c->fwd_rate.average()*c->fwd_rate.freq(),
-	                     c->fwd_rate.scale);
+      ret += cp_unparse_real(c->fwd_and_rev_rate.average(0) *
+	                     c->fwd_and_rev_rate.freq(),
+	                     c->fwd_and_rev_rate.scale);
       ret += "\t"; 
-      ret += cp_unparse_real(c->rev_rate.average()*c->rev_rate.freq(),
-	                     c->rev_rate.scale);
+      ret += cp_unparse_real(c->fwd_and_rev_rate.average(1) *
+	                     c->fwd_and_rev_rate.freq(),
+	                     c->fwd_and_rev_rate.scale);
       
       ret += "\n";
       if (c->next_level) 
